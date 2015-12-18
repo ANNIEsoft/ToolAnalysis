@@ -1,0 +1,18 @@
+#ToolChain dynamic setup file
+
+# Runtime Paramiters
+verbose 1
+error_level 0
+remote_port 24000
+service_discovery_address 239.192.1.1
+service_discovery_port 5000
+service_name test_service
+
+# Tools To Add
+Tools_File configfiles/ToolsConfig
+
+#Run Type
+Inline 0
+Interactive 0
+Remote 1
+
