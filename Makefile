@@ -1,7 +1,11 @@
 
 
-ZMQLib= -L ../zeromq-4.0.7/lib -lzmq -L /usr/local/lib -lboost_date_time
-ZMQInclude= -I ../zeromq-4.0.7/include/ -I /usr/local/include/
+ZMQLib= -L ../zeromq-4.0.7/lib -lzmq 
+ZMQInclude= -I ../zeromq-4.0.7/include/ 
+
+BoostLib= -L /usr/local/lib -lboost_date_time
+BoostInclude= -I /usr/local/include/
+
 DataModelInclude =
 DataModelLib =
 MyToolsInclude =
@@ -9,7 +13,8 @@ MyToolsLib =
 
 all: lib/libMyTools.so lib/libToolChain.so lib/libStore.so include/Tool.h  lib/libDataModel.so
 
-	g++ src/main.cpp -o main -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lpthread $(DataModelInclude) $(DataModelLib) $(MyToolsInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude)
+	g++ src/main.cpp -o main -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lpthread $(DataModelInclude) $(DataModelLib) $(MyToolsInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
 
 lib/libStore.so:
 
@@ -25,7 +30,6 @@ include/Tool.h:
 lib/libToolChain.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libMyTools.so
 
 	cp src/ToolChain/*.h include/
-	cp src/NodeDeamon/cppzmq/zmq.hpp include/
 	g++ -c --shared src/ToolChain/ToolChain.cpp -I include -lpthread -L /lib -lStore -lDataModel -lMyTools -o lib/libToolChain.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)
 
 
@@ -37,12 +41,13 @@ clean:
 lib/libDataModel.so: lib/libStore.so
 
 	cp DataModel/DataModel.h include/
-	g++ -c --shared DataModel/DataModel.cpp -I include -L lib -lStore -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib)
+	g++ -c --shared DataModel/DataModel.cpp -I include -L lib -lStore -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib)$(ZMQLib) $(ZMQInclude)
 
 
 lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so
 
 	cp UserTools/*.h include/
 	cp UserTools/Factory/*.h include/
-	g++  --shared -c UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib)
+	g++  --shared -c UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude)
+
 
