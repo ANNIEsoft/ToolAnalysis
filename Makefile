@@ -30,7 +30,8 @@ include/Tool.h:
 lib/libToolChain.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libMyTools.so
 
 	cp src/ToolChain/*.h include/
-	g++ -c --shared src/ToolChain/ToolChain.cpp -I include -lpthread -L /lib -lStore -lDataModel -lMyTools -o lib/libToolChain.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)
+	g++ -c --shared src/ToolChain/ToolChain.cpp -I include -lpthread -L /lib -lStore -lDataModel -lMyTools -o lib/libToolChain.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)$(BoostLib) $(BoostInclude)
+
 
 
 clean: 
@@ -41,13 +42,15 @@ clean:
 lib/libDataModel.so: lib/libStore.so
 
 	cp DataModel/DataModel.h include/
-	g++ -c --shared DataModel/DataModel.cpp -I include -L lib -lStore -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib)$(ZMQLib) $(ZMQInclude)
+	g++ -c --shared DataModel/DataModel.cpp -I include -L lib -lStore -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib)$(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
 
 
 lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so
 
 	cp UserTools/*.h include/
 	cp UserTools/Factory/*.h include/
-	g++  --shared -c UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude)
+	g++  --shared -c UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
 
 
