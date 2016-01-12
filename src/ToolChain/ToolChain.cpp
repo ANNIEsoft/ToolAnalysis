@@ -320,6 +320,7 @@ std::string ToolChain::ExecuteCommand(std::string command){
     returnmsg="Executing ToolChain";
   }
   else if (command=="Finalise"){
+    exeloop=false;
     Finalise();
     returnmsg="Finalising  ToolChain";
   }
@@ -356,7 +357,6 @@ std::string ToolChain::ExecuteCommand(std::string command){
   }
   else if(command!=""){
     std::cout<<"command not recognised please try again"<<std::endl;
-    returnmsg="command not recognised please try again";
   }
 
   if(exeloop) Execute();
