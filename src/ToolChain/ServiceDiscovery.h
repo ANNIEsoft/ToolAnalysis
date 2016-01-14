@@ -51,8 +51,8 @@ class ServiceDiscovery{
     
  public:
   
-  ServiceDiscovery(int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service);
-  
+  ServiceDiscovery(bool Send, bool Receive, int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service);
+  ServiceDiscovery( std::string address, int multicastport, zmq::context_t * incontext);  
   
   
  private:

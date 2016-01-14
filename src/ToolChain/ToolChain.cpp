@@ -31,7 +31,7 @@ ToolChain::ToolChain(std::string configfile){
 	  std::stringstream stream(line);
 	  
 	  if(stream>>name>>tool>>conf) Add(name,Factory(tool),conf);
-	  
+	 
 	}
 	
       }
@@ -49,13 +49,13 @@ ToolChain::ToolChain(std::string configfile){
   config.Get("Remote",remote);
  
   if(Inline>0){
-    ServiceDiscovery *SD=new ServiceDiscovery(m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
+    ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
     Initialise();
     Execute(Inline);
     Finalise();
   }
   else if(interactive){
-    ServiceDiscovery *SD=new ServiceDiscovery(m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
+    ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
     Interactive();
   }
   else if(remote)Remote(m_remoteport, m_multicastaddress, m_multicastport);
@@ -219,7 +219,7 @@ int ToolChain::Execute(int repeates){
 
 
 int ToolChain::Finalise(){
-  
+ 
   int result=0;
 
   if(Initialised){
@@ -309,41 +309,46 @@ void ToolChain::Interactive(){
 
 
 std::string ToolChain::ExecuteCommand(std::string command){
-  std::string returnmsg="";
+  std::stringstream returnmsg;
   
   if(command=="Initialise"){
-    Initialise();
-    returnmsg="Initialising ToolChain";
+    int ret=Initialise();
+    if (ret==0)returnmsg<<"Initialising ToolChain";
+    else returnmsg<<"Error Code "<<ret;
   }
   else if (command=="Execute"){
-    Execute();
-    returnmsg="Executing ToolChain";
+    int ret=Execute();
+    if (ret==0)returnmsg<<"Executing ToolChain";
+    else returnmsg<<"Error Code "<<ret;
   }
   else if (command=="Finalise"){
     exeloop=false;
-    Finalise();
-    returnmsg="Finalising  ToolChain";
+     int ret=Finalise();
+    if (ret==0)returnmsg<<"Finalising  ToolChain";
+    else returnmsg<<"Error Code "<<ret;
   }
-  else if (command=="Quit")exit(0);
+  else if (command=="Quit")returnmsg<<"Quitting";
   else if (command=="Start"){
-    Initialise();
+    int ret=Initialise();
     exeloop=true;
-    returnmsg="Starting ToolChain";
+    if (ret==0)returnmsg<<"Starting ToolChain";
+    else returnmsg<<"Error Code "<<ret;
   }
   else if(command=="Pause"){
     exeloop=false;
     paused=true;
-    returnmsg="Pausing ToolChain";
+    returnmsg<<"Pausing ToolChain";
   }
   else if(command=="Unpause"){
     exeloop=true;
     paused=false;
-    returnmsg="Unpausing ToolChain";
+    returnmsg<<"Unpausing ToolChain";
   }
   else if(command=="Stop") {
     exeloop=false;
-    Finalise();
-    returnmsg="Stopping ToolChain";
+    int ret=Finalise();
+    if (ret==0)returnmsg<<"Stopping ToolChain";
+    else returnmsg<<"Error Code "<<ret;
   }
   else if(command=="Status"){
     std::stringstream tmp;
@@ -353,14 +358,15 @@ std::string ToolChain::ExecuteCommand(std::string command){
       if(paused)tmp<<"ToolChain execution pasued";
       else tmp<<"ToolChain running (loop counter="<<execounter<<")";
     }
-    returnmsg=tmp.str();
+    returnmsg<<tmp.str();
   }
+ else if(command=="?")returnmsg<<" Available commands: Initialise, Execute, Finalise, Start, Stop, Pause, Unpause, Quit, Status, ?";
   else if(command!=""){
-    std::cout<<"command not recognised please try again"<<std::endl;
+    returnmsg<<"command not recognised please try again"<<std::endl;
   }
 
   if(exeloop) Execute();
-  return returnmsg;
+  return returnmsg.str();
 }
 
 
@@ -374,7 +380,7 @@ void ToolChain::Remote(int portnum, std::string SD_address, int SD_port){
   m_verbose=false;
   exeloop=false;
 
-  ServiceDiscovery *SD=new ServiceDiscovery(m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
+  ServiceDiscovery *SD=new ServiceDiscovery(true,true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
 
   
   std::stringstream tcp;
@@ -390,7 +396,7 @@ void ToolChain::Remote(int portnum, std::string SD_address, int SD_port){
     if(Ireceiver.recv(&message, ZMQ_NOBLOCK)){
       
       std::istringstream iss(static_cast<char*>(message.data()));
-      iss >> command;
+      command=iss.str();
 
       Store rr;
       rr.JsonPaser(command);
@@ -435,9 +441,10 @@ void ToolChain::Remote(int portnum, std::string SD_address, int SD_port){
 	snprintf ((char *) Qsignal2.data(), 256 , "%s" ,tmp.c_str()) ;
 	ServicePublisher.send(Qsignal1);
 	ServiceDiscovery.send(Qsignal2);
-	
+	exit(0);
       }
 
+      command="";
     }
   
     ExecuteCommand(command);

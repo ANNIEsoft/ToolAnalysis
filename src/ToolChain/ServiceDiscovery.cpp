@@ -1,6 +1,6 @@
 #include "ServiceDiscovery.h"
 
-ServiceDiscovery::ServiceDiscovery(int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service){
+ServiceDiscovery::ServiceDiscovery(bool Send, bool Receive, int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service){
   
   m_UUID=UUID;
   context=incontext;
@@ -12,11 +12,11 @@ ServiceDiscovery::ServiceDiscovery(int remoteport, std::string address, int mult
 
   thread_args args(m_UUID, context, m_multicastaddress, m_multicastport, m_service, m_remoteport);
 
-  pthread_create (&thread[0], NULL, ServiceDiscovery::MulticastListenThread, &args);
+  if (Receive) pthread_create (&thread[0], NULL, ServiceDiscovery::MulticastListenThread, &args);
   
-  pthread_create (&thread[1], NULL, ServiceDiscovery::MulticastPublishThread, &args);
+  if (Send) pthread_create (&thread[1], NULL, ServiceDiscovery::MulticastPublishThread, &args);
   
-  sleep(2);
+ sleep(2);
   
   
   //  zmq::socket_t ServiceDiscovery (*context, ZMQ_REQ);
@@ -28,6 +28,23 @@ ServiceDiscovery::ServiceDiscovery(int remoteport, std::string address, int mult
   
 }
 
+ServiceDiscovery::ServiceDiscovery( std::string address, int multicastport, zmq::context_t * incontext){
+
+  context=incontext;
+  m_multicastport=multicastport;
+  m_multicastaddress=address;
+  m_service="none";
+  m_remoteport=0;
+  m_UUID=boost::uuids::random_generator()();
+
+  thread_args args(m_UUID, context, m_multicastaddress, m_multicastport, m_service, m_remoteport);
+
+  pthread_create (&thread[0], NULL, ServiceDiscovery::MulticastListenThread, &args);
+
+  sleep(2);
+
+
+}
 
 
 void* ServiceDiscovery::MulticastPublishThread(void* arg){
@@ -346,14 +363,17 @@ void* ServiceDiscovery::MulticastListenThread(void* arg){
     
     if (items [0].revents & ZMQ_POLLIN) {
       
+
       cnt = recvfrom(sock, message, sizeof(message), 0, (struct sockaddr *) &addr, (socklen_t*) &addrlen);
       if (cnt < 0) {
-	//  perror("recvfrom");
+	//perror("recvfrom");
 	// exit(1);
       } 
       else if (cnt > 0){
 	//printf("%s: message = \"%s\"\n", inet_ntoa(addr.sin_addr), message);
 	
+
+
 	Store* newservice= new Store();
 	newservice->Set("ip",inet_ntoa(addr.sin_addr));
 	newservice->JsonPaser(message);
@@ -418,6 +438,7 @@ void* ServiceDiscovery::MulticastListenThread(void* arg){
       zmq::message_t comm;
  
       if(Ireceive.recv(&comm)){
+
 
 	std::istringstream iss(static_cast<char*>(comm.data()));
 	std::string arg1="";

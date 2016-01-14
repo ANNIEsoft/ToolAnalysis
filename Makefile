@@ -12,7 +12,7 @@ DataModelLib =
 MyToolsInclude =
 MyToolsLib =
 
-all: lib/libMyTools.so lib/libToolChain.so lib/libStore.so include/Tool.h  lib/libDataModel.so
+all: lib/libMyTools.so lib/libToolChain.so lib/libStore.so include/Tool.h  lib/libDataModel.so RemoteControl
 
 	g++ src/main.cpp -o main -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lpthread $(DataModelInclude) $(MyToolsInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
@@ -39,6 +39,7 @@ clean:
 	rm -f include/*.h
 	rm -f lib/*.so
 	rm -f main
+	rm -f RemoteControl
 
 lib/libDataModel.so: lib/libStore.so
 
@@ -53,5 +54,6 @@ lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so
 	cp UserTools/Factory/*.h include/
 	g++  -shared -fPIC UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
+RemoteControl: lib/libStore.so lib/libToolChain.so
 
-
+	g++ src/RemoteControl/RemoteControl.cpp -o RemoteControl -I include -L lib -lStore -l ToolChain $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude) 
