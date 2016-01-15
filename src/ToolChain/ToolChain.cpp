@@ -390,13 +390,17 @@ void ToolChain::Remote(int portnum, std::string SD_address, int SD_port){
   tcp<<"tcp://*:"<<m_remoteport;
 
   zmq::socket_t Ireceiver (*context, ZMQ_REP);
+  Ireceiver.setsockopt(ZMQ_RCVTIMEO, 120000);
+  Ireceiver.setsockopt(ZMQ_SNDTIMEO, 120000);
+
   Ireceiver.bind(tcp.str().c_str());
+  
   
   while (true){
 
     zmq::message_t message;
     std::string command="";
-    if(Ireceiver.recv(&message, ZMQ_NOBLOCK)){
+    if(Ireceiver.recv(&message, ZMQ_NOBLOCK)!=-1){
       
       std::istringstream iss(static_cast<char*>(message.data()));
       command=iss.str();
