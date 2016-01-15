@@ -329,11 +329,7 @@ std::string ToolChain::ExecuteCommand(std::string command){
   }
   else if (command=="Quit"){
     returnmsg<<"Quitting";
-    if (interactive) {
-
-      std::cout<<"calling exit 0"<<std::endl;
-exit(0);
-    }
+    if (interactive)exit(0);
 }
   else if (command=="Start"){
     int ret=Initialise();
