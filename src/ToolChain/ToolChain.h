@@ -56,6 +56,9 @@ private:
   bool m_verbose;
   int m_errorlevel;
   std::string m_service;
+  bool interactive;
+  bool remote;
+  int Inline;
   
   //status variables
   bool exeloop;

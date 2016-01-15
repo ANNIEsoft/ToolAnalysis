@@ -41,9 +41,9 @@ ToolChain::ToolChain(std::string configfile){
     
   }
 
-  int Inline=0;
-  bool interactive=false;
-  bool remote=false;
+  Inline=0;
+  interactive=false;
+  remote=false;
   config.Get("Inline",Inline);
   config.Get("Interactive",interactive);
   config.Get("Remote",remote);
@@ -327,7 +327,10 @@ std::string ToolChain::ExecuteCommand(std::string command){
     if (ret==0)returnmsg<<"Finalising  ToolChain";
     else returnmsg<<"Error Code "<<ret;
   }
-  else if (command=="Quit")returnmsg<<"Quitting";
+  else if (command=="Quit"){
+    returnmsg<<"Quitting";
+    if (Inline) exit(0);
+}
   else if (command=="Start"){
     int ret=Initialise();
     exeloop=true;
