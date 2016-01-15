@@ -128,9 +128,13 @@ int main(int argc, char** argv){
 
       if(Command=="Command"){
 
-	if(ServiceNum<=RemoteServices.size()){
+	if(ServiceNum<RemoteServices.size()){
 
 	zmq::socket_t ServiceSend (*context, ZMQ_REQ);
+	int a=120000;
+	ServiceSend.setsockopt(ZMQ_RCVTIMEO, a);
+	ServiceSend.setsockopt(ZMQ_SNDTIMEO, a);
+
 	std::stringstream connection;
 	connection<<"tcp://"<<*((*(RemoteServices.at(ServiceNum)))["ip"])<<":"<<*((*(RemoteServices.at(ServiceNum)))["remote_port"]);
 	ServiceSend.connect(connection.str().c_str());
