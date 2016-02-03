@@ -321,7 +321,8 @@ void* ServiceDiscovery::MulticastListenThread(void* arg){
   
   /* set up socket */
   sock = socket(AF_INET, SOCK_DGRAM, 0);
-  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+  int a =1;
+  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &a, sizeof(int));
   //fcntl(sock, F_SETFL, O_NONBLOCK); 
   if (sock < 0) {
     perror("socket");

@@ -59,4 +59,4 @@ RemoteControl: lib/libStore.so lib/libToolChain.so lib/libDataModel.so
 	g++ src/RemoteControl/RemoteControl.cpp -o RemoteControl -I include -L lib -lStore -lToolChain -lDataModel -lMyTools $(DataModelInclude)  $(MyToolsInclude)  $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 NodeDaemon: 
-	g++ src/NodeDaemon/NodeDaemon.cpp -o NodeDaemon -I ./include/ -L ./lib/ -lToolChain -lStore 
+	g++ src/NodeDaemon/NodeDaemon.cpp -o NodeDaemon -I ./include/ -L ./lib/ -lToolChain -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
