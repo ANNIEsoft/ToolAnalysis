@@ -18,6 +18,7 @@
 
 #include "Tool.h"
 #include "DataModel.h"
+#include "Logging.h"
 #include "zmq.hpp"
 #include "Factory.h"
 #include "Store.h"
@@ -26,7 +27,7 @@ class ToolChain{
   
  public:
   ToolChain(std::string configfile);
-  ToolChain(bool verbose=true, int errorlevel=0); 
+  ToolChain(int verbose=1, int errorlevel=0, std::string logmode="Interactive"); 
   //verbosity: true= print out status messages , false= print only error messages;
   //errorlevels: 0= do not exit; error 1= exit if unhandeled error ; exit 2= exit on handeled and unhandeled errors; 
   
@@ -44,6 +45,20 @@ private:
 
   static  void *InteractiveThread(void* arg);
   std::string ExecuteCommand(std::string connand);
+  /*
+  template <type T> bool Log(T message,int verboselevel=1){
+    if(m_verbose>0){
+      
+      if (m_logging=="Interactive" && verboselevel <= m_verbose)std::cout<<"["<<verboselevel<<"] "<<message<<std::endl;
+      
+    }
+  }
+  
+  
+  static  void *LogThread(void* arg);
+  */
+
+  // bool Log(std::string message, int messagelevel=1,bool verbose=true);
 
   //Tools configs and data
   std::vector<Tool*> m_tools;
@@ -53,8 +68,10 @@ private:
   
   //conf variables
   boost::uuids::uuid m_UUID;
-  bool m_verbose;
+  int m_verbose;
   int m_errorlevel;
+  std::string m_log_mode;
+  std::string m_log_local_path;
   std::string m_service;
   bool interactive;
   bool remote;

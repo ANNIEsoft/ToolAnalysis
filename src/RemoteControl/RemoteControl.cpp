@@ -123,8 +123,9 @@ int main(int argc, char** argv){
       int ServiceNum;
 
       std::string Send;
+      std::string var1;
 
-      input>>Command>>ServiceNum>>Send;
+      input>>Command>>ServiceNum>>Send>>var1;
 
       if(Command=="Command"){
 
@@ -155,6 +156,7 @@ int main(int argc, char** argv){
 	*bb["msg_time"]=isot.str();
 	*bb["msg_type"]="Command";
 	bb.Set("msg_value",Send);
+	bb.Set("var1",var1);
 	
 	
 	std::string tmp="";
@@ -164,16 +166,65 @@ int main(int argc, char** argv){
 	ServiceSend.send(send);
 	
 
-	zmq::message_t receive;
-	ServiceSend.recv(&receive);
-	std::istringstream iss(static_cast<char*>(receive.data()));
 	
-	std::string answer;
-	answer=iss.str();
-	
-	Store rr;
-	rr.JsonPaser(answer);
-	if(*rr["msg_type"]=="Command Reply") std::cout<<std::endl<<*rr["msg_value"]<<std::endl<<std::endl;
+	/////////////////////////////////
+	if(Send=="File"){
+
+	  std::stringstream connection;
+	  connection<<"tcp://"<<*((*(RemoteServices.at(ServiceNum)))["ip"])<<":"<<24001;
+
+	   
+	  zmq::socket_t ftp (*context, ZMQ_PUSH);
+	  int a=120000;
+	  ftp.setsockopt(ZMQ_RCVTIMEO, a);
+	  ftp.setsockopt(ZMQ_SNDTIMEO, a);
+	  ftp.connect(connection.str().c_str());
+	  
+	  // zmq::message_t file(256);
+	  std::string line;
+	  std::ifstream myfile (var1.c_str());
+	  if (myfile.is_open())
+	    {
+	      while ( getline (myfile,line) )
+		{
+		  //line+="\n";
+		  zmq::message_t file(line.length()+1);
+		  //std::cout<<"debug = "<<line.c_str()<<std::endl;
+		  // memcpy(file.data(), line.c_str(), line.length());
+		  snprintf ((char *) file.data(), line.length()+1 , "%s" ,line.c_str()) ;
+		  //std::cout<<"sending part"<<std::endl;
+		  ftp.send(file,ZMQ_SNDMORE);
+		  //ftp.send(file);
+		  //std::cout<<"sendt part ="<<line.c_str()<<std::endl;
+		}
+	      myfile.close();
+	    }
+	  
+	  zmq::message_t end(256);
+	  std::string tmp2="";
+	  snprintf ((char *) end.data(), 256 , "%s" ,tmp2.c_str()) ;
+	  //std::cout<<"sending end"<<std::endl;
+	  ftp.send(end,0);
+	  //std::cout<<"sent end"<<std::endl;
+	  
+	  
+	  
+	  
+	  ///////
+	}
+
+
+        zmq::message_t receive;
+        ServiceSend.recv(&receive);
+        std::istringstream iss(static_cast<char*>(receive.data()));
+
+        std::string answer;
+        answer=iss.str();
+
+        Store rr;
+        rr.JsonPaser(answer);
+        if(*rr["msg_type"]=="Command Reply") std::cout<<std::endl<<*rr["msg_value"]<<std::endl<<std::endl;
+
 	
 	}
 	

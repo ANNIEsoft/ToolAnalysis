@@ -10,6 +10,8 @@ bool DummyTool::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
+  m_data->Log->Log("test people",1);
+
   return true;
 }
 

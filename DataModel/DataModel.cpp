@@ -1,4 +1,5 @@
 #include "DataModel.h"
+#include "Logging.cpp"
 
 DataModel::DataModel(){}
 

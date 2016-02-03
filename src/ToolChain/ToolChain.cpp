@@ -1,3 +1,4 @@
+
 #include "ToolChain.h"
 #include "ServiceDiscovery.cpp"
 
@@ -8,6 +9,8 @@ ToolChain::ToolChain(std::string configfile){
   config.Get("verbose",m_verbose);
   config.Get("error_level",m_errorlevel);
   config.Get("remote_port",m_remoteport);
+  config.Get("log_mode",m_log_mode);
+  config.Get("log_local_path",m_log_local_path);
   config.Get("service_discovery_address",m_multicastaddress);
   config.Get("service_discovery_port",m_multicastport);
   config.Get("service_name",m_service);
@@ -16,7 +19,7 @@ ToolChain::ToolChain(std::string configfile){
 
   std::string toolsfile="";
   config.Get("Tools_File",toolsfile);
-  
+
   if(toolsfile!=""){
     std::ifstream file(toolsfile.c_str());
     std::string line;
@@ -62,12 +65,15 @@ ToolChain::ToolChain(std::string configfile){
   
 }
 
-ToolChain::ToolChain(bool verbose,int errorlevel){
+ToolChain::ToolChain(int verbose, int errorlevel, std::string logmode){
 
   m_verbose=verbose;
   m_errorlevel=errorlevel;
+  m_log_mode = logmode;
   m_service="test";
+
   Init();
+
   
 }
 
@@ -75,6 +81,7 @@ void ToolChain::Init(){
 
   context=new zmq::context_t(5);
   m_data.context=context;
+  m_data.Log= new Logging(context, m_log_mode, m_log_local_path);
   
   m_UUID = boost::uuids::random_generator()();
 
@@ -493,3 +500,25 @@ void* ToolChain::InteractiveThread(void* arg){
   return (NULL);
 
 }
+
+
+/*
+bool ToolChain::Log(std::string message, int messagelevel, bool verbose){
+
+  if(verbose){
+
+    if (m_logging=="Interactive" && verboselevel <= m_verbose)std::cout<<"\
+["<<verboselevel<<"] "<<message<<std::endl;
+
+  }
+
+
+}
+
+
+static  void *LogThread(void* arg){
+
+
+
+}
+*/
