@@ -19,7 +19,7 @@ int main(int argc, char** argv){
    long msg_id=0;
    
    
-   zmq::context_t *context=new zmq::context_t(3);
+   zmq::context_t context(3);
 
   //std::string address(argv[1]);
   // std::stringstream tmp (argv[2]);
@@ -32,11 +32,11 @@ int main(int argc, char** argv){
   int port=5000;
   //  tmp>>port;
 
-  ServiceDiscovery *SD=new ServiceDiscovery(address,port,context);
+  ServiceDiscovery SD(address,port,&context);
 
   bool running=true;
 
-  zmq::socket_t Ireceive (*context, ZMQ_DEALER);
+  zmq::socket_t Ireceive (context, ZMQ_DEALER);
   Ireceive.connect("inproc://ServiceDiscovery");
 
   while(running){
@@ -67,6 +67,9 @@ int main(int argc, char** argv){
       int size;
      iss>>size;
 
+     for(int i=0;i<RemoteServices.size();i++){
+       delete RemoteServices.at(i);
+     }
      RemoteServices.clear();
 
 
@@ -131,7 +134,7 @@ int main(int argc, char** argv){
 
 	if(ServiceNum<RemoteServices.size()){
 
-	zmq::socket_t ServiceSend (*context, ZMQ_REQ);
+	zmq::socket_t ServiceSend (context, ZMQ_REQ);
 	int a=120000;
 	ServiceSend.setsockopt(ZMQ_RCVTIMEO, a);
 	ServiceSend.setsockopt(ZMQ_SNDTIMEO, a);
@@ -174,7 +177,7 @@ int main(int argc, char** argv){
 	  connection<<"tcp://"<<*((*(RemoteServices.at(ServiceNum)))["ip"])<<":"<<24001;
 
 	   
-	  zmq::socket_t ftp (*context, ZMQ_PUSH);
+	  zmq::socket_t ftp (context, ZMQ_PUSH);
 	  int a=120000;
 	  ftp.setsockopt(ZMQ_RCVTIMEO, a);
 	  ftp.setsockopt(ZMQ_SNDTIMEO, a);

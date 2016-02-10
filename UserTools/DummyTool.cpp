@@ -9,15 +9,15 @@ bool DummyTool::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
 
   m_data= &data;
-
-  m_data->Log->Log("test people",1);
+  m_variables.Get("verbose",m_verbose);
+  m_data->Log->Log("test 1",1,m_verbose);
 
   return true;
 }
 
 
 bool DummyTool::Execute(){
-
+  m_data->Log->Log("test 2",2,m_verbose);
   return true;
 }
 

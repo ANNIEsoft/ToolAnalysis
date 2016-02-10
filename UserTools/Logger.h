@@ -1,17 +1,17 @@
-#ifndef DummyTool_H
-#define DummyTool_H
+#ifndef Logger_H
+#define Logger_H
 
 #include <string>
 #include <iostream>
 
 #include "Tool.h"
 
-class DummyTool: public Tool {
+class Logger: public Tool {
 
 
  public:
 
-  DummyTool();
+  Logger();
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
@@ -19,9 +19,8 @@ class DummyTool: public Tool {
 
  private:
 
-  int m_verbose;
-
-
+  int m_log_port;
+  zmq::socket_t *LogReceiver; 
 
 };
 

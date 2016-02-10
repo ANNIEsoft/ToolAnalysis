@@ -22,15 +22,16 @@
 #include "zmq.hpp"
 #include "Factory.h"
 #include "Store.h"
+#include "ServiceDiscovery.h"
 
 class ToolChain{
   
  public:
   ToolChain(std::string configfile);
-  ToolChain(int verbose=1, int errorlevel=0, std::string logmode="Interactive"); 
+  ToolChain(int verbose=1, int errorlevel=0, std::string logmode="Interactive",  std::string log_service="", int log_port=0); 
   //verbosity: true= print out status messages , false= print only error messages;
   //errorlevels: 0= do not exit; error 1= exit if unhandeled error ; exit 2= exit on handeled and unhandeled errors; 
-  
+  ~ToolChain(); 
   void Add(std::string name,Tool *tool,std::string configfile="");
   int Initialise();
   int Execute(int repeates=1);
@@ -60,11 +61,15 @@ private:
 
   // bool Log(std::string message, int messagelevel=1,bool verbose=true);
 
+  ServiceDiscovery *SD;
+
   //Tools configs and data
   std::vector<Tool*> m_tools;
   std::vector<std::string> m_toolnames;
   std::vector<std::string> m_configfiles;
   DataModel m_data;
+  std::streambuf  *bcout;
+  std::ostream *out;
   
   //conf variables
   boost::uuids::uuid m_UUID;
@@ -72,6 +77,8 @@ private:
   int m_errorlevel;
   std::string m_log_mode;
   std::string m_log_local_path;
+  std::string m_log_service;
+  int m_log_port;
   std::string m_service;
   bool interactive;
   bool remote;
@@ -83,7 +90,7 @@ private:
   bool Initialised;
   bool Finalised;
   bool paused;
-  
+  std::stringstream logmessage;  
 
   //socket coms and threading variables
   pthread_t thread[2];

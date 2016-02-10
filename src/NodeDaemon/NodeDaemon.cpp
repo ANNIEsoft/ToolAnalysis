@@ -83,30 +83,30 @@ int main(){
   long msg_id=0;
 
 
-  zmq::context_t *context=new zmq::context_t(3);
+  zmq::context_t context(3);
 
   std::string address("239.192.1.1");
   std::stringstream tmp ("5000");
 
   int port=5000;
 
-  ServiceDiscovery *SD=new ServiceDiscovery(true, false, 24000, address, port,context, m_UUID, "Node Daemon");
+  ServiceDiscovery SD(true, false, 24000, address, port,&context, m_UUID, "Node Daemon");
 
   int a =120000;
-  zmq::socket_t direct (*context, ZMQ_REP);
+  zmq::socket_t direct (context, ZMQ_REP);
   direct.setsockopt(ZMQ_RCVTIMEO, a);
   direct.setsockopt(ZMQ_SNDTIMEO, a);
   direct.bind("tcp://*:24000");
   
   
-  zmq::socket_t ftp (*context, ZMQ_PULL);
+  zmq::socket_t ftp (context, ZMQ_PULL);
   ftp.setsockopt(ZMQ_RCVTIMEO, a);
   ftp.setsockopt(ZMQ_SNDTIMEO, a);
   ftp.bind("tcp://*:24001");
   
   bool run=true;
-  std::vector< pid_t > *pids;
-  pids= new std::vector< pid_t >;
+  std::vector< pid_t > pids;
+  //pids= new std::vector< pid_t >;
   
   while (run){
     
@@ -144,22 +144,22 @@ int main(){
 
     else if (*(bb["msg_value"])=="FStop"){
       ret="Forcing ToolChain to Stop";
-      FStop(pids);      
+      FStop(&pids);      
     }    
 
     else if (*(bb["msg_value"])=="Stop"){
       ret="Stopping ToolChains";
-      Stop(pids);
+      Stop(&pids);
     }    
     else if(*(bb["msg_value"])=="Start"){
      
-      ret=Start(pids, *(bb["var1"]));  
+      ret=Start(&pids, *(bb["var1"]));  
     }
     else if(*(bb["msg_value"])=="Restart"){
       ret="Restarting ToolChan";
-      Stop(pids);
-      FStop(pids);
-      Start(pids); 
+      Stop(&pids);
+      FStop(&pids);
+      Start(&pids); 
       
     }
     
@@ -246,23 +246,25 @@ int main(){
   
    if(*(bb["msg_value"])=="KILL"){
       
-      Stop(pids);
-      FStop(pids);
+      Stop(&pids);
+      FStop(&pids);
       
       run=false;
 
       //may need to signal service discovery stop
-      
+      //std::cout<<"got kill run set to false"<<std::endl;
     }
     
     if(*(bb["msg_value"])=="Reboot"){
-      Stop(pids);
-      FStop(pids);
+      Stop(&pids);
+      FStop(&pids);
       system("reboot --force");
+   
     }
   } 
-    
-
-
+   
+ 
+  //  SD.~ServiceDiscovery();
+  //  std::cout<<"exiting main thread"<<std::endl;  
   return 0;
   }
