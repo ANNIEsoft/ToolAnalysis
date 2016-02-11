@@ -88,7 +88,6 @@ class Logging: public std::ostream {
   //  void Log(std::string message, int messagelevel=1, int verbose=1);
   //  void Log(std::ostringstream& ost, int messagelevel=1, int verbose=1);
 
-  
   template <typename T>  void Log(T message, int messagelevel=1, int verbose=1){
     std::stringstream tmp;
     tmp<<message;

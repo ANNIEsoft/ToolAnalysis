@@ -14,15 +14,11 @@ bool Logger::Initialise(std::string configfile, DataModel &data){
   
   LogReceiver = new zmq::socket_t(*m_data->context, ZMQ_PULL);
   
-  //int a=12000;
-  //LogReceiver->setsockopt(ZMQ_RCVTIMEO, a);
-  
+ 
   std::stringstream tmp;
   tmp<<"tcp://*:"<<m_log_port;
   
-  //  printf(" %s \n",tmp.str().c_str());
   LogReceiver->bind(tmp.str().c_str());
-  //LogReceiver->setsockopt(ZMQ_SUBSCRIBE, "", 0);
   
   return true;
 }

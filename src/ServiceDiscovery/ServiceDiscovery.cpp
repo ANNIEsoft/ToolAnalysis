@@ -560,28 +560,28 @@ ServiceDiscovery::~ServiceDiscovery(){
     delete args;
     args=0;
   }
+
+  
   //kill publish thread
 
   if (m_send){
-
+  
     zmq::socket_t ServicePublish (*context, ZMQ_PUSH);
     //int a=120000;
     //ServicePublish.setsockopt(ZMQ_RCVTIMEO, a);
     //ServicePublish.setsockopt(ZMQ_SNDTIMEO, a);
     ServicePublish.connect("inproc://ServicePublish");
 
+  
  
-
     zmq::message_t command(256);
     snprintf ((char *) command.data(), 256 , "%s" ,"Quit") ;
     ServicePublish.send(command);
-
+  
     pthread_join(thread[1], NULL);
-    
-    
+      
   }
-  
-  
+    
     //  zmq::socket_t ServiceDiscovery (*context, ZMQ_REQ);
     //ServiceDiscovery.connect("inproc://ServiceDiscovery");
 
@@ -593,26 +593,27 @@ ServiceDiscovery::~ServiceDiscovery(){
     //Ireceive.bind("inproc://ServiceDiscovery");
 
   if(m_receive){
-
+  
     zmq::socket_t ServiceDiscovery (*context, ZMQ_DEALER);
     //  int a=60000;
     //ServiceDiscovery.setsockopt(ZMQ_RCVTIMEO, a);
     //ServiceDiscovery.setsockopt(ZMQ_SNDTIMEO, a);    
     ServiceDiscovery.connect("inproc://ServiceDiscovery");
-
+  
 
     zmq::message_t command(256);
     snprintf ((char *) command.data(), 256 , "%s" ,"Quit 0") ;
     ServiceDiscovery.send(command);
+  
 
     zmq::message_t ret;
     ServiceDiscovery.recv(&ret);
       //std::istringstream tmp(static_cast<char*>(ret.data()));
 
     pthread_join(thread[0], NULL);
-
+    
   }
-  
+ 
 
 }
 

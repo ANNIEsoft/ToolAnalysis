@@ -56,6 +56,7 @@ ToolChain::ToolChain(std::string configfile){
     Initialise();
     Execute(Inline);
     Finalise();
+    exit(0);
   }
   else if(interactive){
     ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
@@ -226,7 +227,7 @@ int ToolChain::Execute(int repeates){
   
   if(Initialised){
 
-    if(interactive || Inline){
+    if(Inline){
     logmessage<<"********************************************************"<<std::endl<<"**** Executing toolchain "<<repeates<<" times ****"<<std::endl<<"********************************************************"<<std::endl;
     m_data.Log->Log( logmessage.str(),1,m_verbose);
     logmessage.str("");
@@ -294,7 +295,7 @@ o execute (uncaught error)"<<std::endl;
     }
     
     execounter++;
-    if(interactive || Inline){
+    if(Inline){
       logmessage<<"********************************************************"<<std::endl<<"**** Executed toolchain "<<repeates<<" times ****"<<std::endl<<"********************************************************"<<std::endl;
       m_data.Log->Log( logmessage.str(),1,m_verbose);
       logmessage.str("");
@@ -665,8 +666,9 @@ static  void *LogThread(void* arg){
 */
 
 ToolChain::~ToolChain(){
-
+  printf("%s /n","tdebug 1");
   delete SD;
+  printf("%s /n","tdebug 2");
   SD=0;
   delete context;
   context=0;
