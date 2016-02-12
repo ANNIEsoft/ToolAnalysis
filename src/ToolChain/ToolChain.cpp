@@ -164,14 +164,13 @@ int ToolChain::Initialise(){
       try{    
 	if(m_tools.at(i)->Initialise(m_configfiles.at(i), m_data)){
 	  //  if(m_verbose)*(m_data.Log)<<m_toolnames.at(i)<<" initialised successfully"<<std::endl<<std::endl;
-	  logmessage<<"Initialising "<<m_toolnames.at(i);
+	  logmessage<<m_toolnames.at(i)<<" initialised successfully"<<std::endl;
 	  m_data.Log->Log( logmessage.str(),2,m_verbose);
 	  logmessage.str("");
 	}
 	else{
 	  //*(m_data.Log)<<"WARNING !!!!! "<<m_toolnames.at(i)<<" Failed to initialise (exit error code)"<<std::endl<<std::endl;
-	  logmessage<<"WARNING !!!!! "<<m_toolnames.at(i)<<" Failed to \
-initialise (exit error code)"<<std::endl;
+	  logmessage<<"WARNING !!!!! "<<m_toolnames.at(i)<<" Failed to initialise (exit error code)"<<std::endl;
           m_data.Log->Log( logmessage.str(),0,m_verbose);
           logmessage.str("");
 	  result=1;
@@ -182,8 +181,7 @@ initialise (exit error code)"<<std::endl;
       
       catch(...){
 	//*(m_data.Log)<<"WARNING !!!!! "<<m_toolnames.at(i)<<" Failed to initialise (uncaught error)"<<std::endl<<std::endl;
-	logmessage<<"WARNING !!!!! "<<m_toolnames.at(i)<<" Failed to in\
-itialise (uncaught error)"<<std::endl;
+	logmessage<<"WARNING !!!!! "<<m_toolnames.at(i)<<" Failed to initialise (uncaught error)"<<std::endl;
 	m_data.Log->Log( logmessage.str(),0,m_verbose);
 	logmessage.str("");
 	result=2;
@@ -196,7 +194,7 @@ itialise (uncaught error)"<<std::endl;
     // *(m_data.Log)<<"********************************************************"<<std::endl<<std::endl;
     //  }
     
-    logmessage<<std::endl<<"**** Tool chain initilised ****"<<std::endl<<"********************************************************"<<std::endl;
+    logmessage<<std::endl<<"**** Tool chain initialised ****"<<std::endl<<"********************************************************"<<std::endl;
     m_data.Log->Log( logmessage.str(),1,m_verbose);
     logmessage.str("");
 
