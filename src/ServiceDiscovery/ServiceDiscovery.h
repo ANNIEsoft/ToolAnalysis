@@ -28,13 +28,15 @@
 
 struct thread_args{
   
-  thread_args(boost::uuids::uuid inUUID, zmq::context_t *incontext,std::string inmulticastaddress, int inmulticastport, std::string inservice, int inremoteport){
+  thread_args(boost::uuids::uuid inUUID, zmq::context_t *incontext,std::string inmulticastaddress, int inmulticastport, std::string inservice, int inremoteport, int  inpubsec=5, int inkicksec=5){
     UUID=inUUID;
     context=incontext;
     multicastaddress=inmulticastaddress;
     multicastport=inmulticastport;
     service=inservice;
     remoteport=inremoteport;
+    pubsec=inpubsec;
+    kicksec=inkicksec;
   }
   
   boost::uuids::uuid UUID;
@@ -43,6 +45,8 @@ struct thread_args{
   int multicastport;
   std::string service;
   int remoteport;
+  int pubsec;
+  int kicksec;
 };
 
 
@@ -51,8 +55,8 @@ class ServiceDiscovery{
     
  public:
   
-  ServiceDiscovery(bool Send, bool Receive, int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service);
-  ServiceDiscovery( std::string address, int multicastport, zmq::context_t * incontext);  
+  ServiceDiscovery(bool Send, bool Receive, int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service, int pubsec=5, int kicksec=60);
+  ServiceDiscovery( std::string address, int multicastport, zmq::context_t * incontext, int kicksec=60);  
   ~ServiceDiscovery();
   
   

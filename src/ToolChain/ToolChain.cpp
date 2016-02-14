@@ -14,6 +14,8 @@ ToolChain::ToolChain(std::string configfile){
   config.Get("service_name",m_service);
   config.Get("log_service",m_log_service);
   config.Get("log_port",m_log_port);
+  config.Get("service_publish_sec",m_pub_sec);
+  config.Get("service_kick_sec",m_kick_sec);
 
   Init();
 
@@ -52,28 +54,30 @@ ToolChain::ToolChain(std::string configfile){
   config.Get("Remote",remote);
  
   if(Inline>0){
-    ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
+    ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service,m_pub_sec,m_kick_sec);
     Initialise();
     Execute(Inline);
     Finalise();
     exit(0);
   }
   else if(interactive){
-    ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
+    ServiceDiscovery *SD=new ServiceDiscovery(false, true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service,m_pub_sec,m_kick_sec);
     Interactive();
   }
   else if(remote)Remote(m_remoteport, m_multicastaddress, m_multicastport);
   
 }
 
-ToolChain::ToolChain(int verbose, int errorlevel, std::string logmode, std::string log_service, int log_port){
+ToolChain::ToolChain(int verbose, int errorlevel, std::string service, std::string logmode, std::string log_service, int log_port, int pub_sec, int kick_sec){
 
   m_verbose=verbose;
   m_errorlevel=errorlevel;
   m_log_mode = logmode;
-  m_service="test";
+  m_service=service;
   m_log_service=log_service;
   m_log_port=log_port;
+  m_pub_sec=pub_sec;
+  m_kick_sec=kick_sec;
 
   Init();
 
@@ -534,7 +538,7 @@ void ToolChain::Remote(int portnum, std::string SD_address, int SD_port){
   //m_verbose=false;
   exeloop=false;
 
-  ServiceDiscovery *SD=new ServiceDiscovery(true,true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service);
+  ServiceDiscovery *SD=new ServiceDiscovery(true,true, m_remoteport, m_multicastaddress.c_str(),m_multicastport,context,m_UUID,m_service,m_pub_sec,m_kick_sec);
 
   
   std::stringstream tcp;

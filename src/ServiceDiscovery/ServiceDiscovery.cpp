@@ -1,6 +1,6 @@
 #include "ServiceDiscovery.h"
 
-ServiceDiscovery::ServiceDiscovery(bool Send, bool Receive, int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service){
+ServiceDiscovery::ServiceDiscovery(bool Send, bool Receive, int remoteport, std::string address, int multicastport, zmq::context_t * incontext, boost::uuids::uuid UUID, std::string service, int pubsec, int kicksec){
   
   m_UUID=UUID;
   context=incontext;
@@ -11,7 +11,7 @@ ServiceDiscovery::ServiceDiscovery(bool Send, bool Receive, int remoteport, std:
   m_send=Send;
   m_receive=Receive;
 
-  args= new thread_args(m_UUID, context, m_multicastaddress, m_multicastport, m_service, m_remoteport);
+  args= new thread_args(m_UUID, context, m_multicastaddress, m_multicastport, m_service, m_remoteport, pubsec, kicksec);
 
   if (Receive) pthread_create (&thread[0], NULL, ServiceDiscovery::MulticastListenThread, args);
   
@@ -29,7 +29,7 @@ ServiceDiscovery::ServiceDiscovery(bool Send, bool Receive, int remoteport, std:
   
 }
 
-ServiceDiscovery::ServiceDiscovery( std::string address, int multicastport, zmq::context_t * incontext){
+ServiceDiscovery::ServiceDiscovery( std::string address, int multicastport, zmq::context_t * incontext, int kicksec){
 
   context=incontext;
   m_multicastport=multicastport;
@@ -40,7 +40,7 @@ ServiceDiscovery::ServiceDiscovery( std::string address, int multicastport, zmq:
   m_receive=true;
   m_send=false;
 
-  args= new thread_args(m_UUID, context, m_multicastaddress, m_multicastport, m_service, m_remoteport);
+  args= new thread_args(m_UUID, context, m_multicastaddress, m_multicastport, m_service, m_remoteport, 0 , kicksec);
 
   pthread_create (&thread[0], NULL, ServiceDiscovery::MulticastListenThread, args);
 
@@ -287,7 +287,7 @@ void* ServiceDiscovery::MulticastPublishThread(void* arg){
 	}
       */
       
-      sleep(5);
+      sleep(args->pubsec);
       }
       
     }
@@ -439,7 +439,7 @@ void* ServiceDiscovery::MulticastListenThread(void* arg){
       //std::cout << boost::posix_time::to_iso_string(td) << std::endl;
       // std::cout<<"seconds = "<<td_tm.tm_sec<<std::endl; 
       // std::cout<<"mins = "<<td_tm.tm_min<<std::endl; 
-      if(td_tm.tm_min>0){
+       if(((td_tm.tm_min*60)+td_tm.tm_sec)>args->kicksec){
 	delete it->second;
 	RemoteServices.erase(it->first);
 	

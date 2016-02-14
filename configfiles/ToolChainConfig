@@ -15,12 +15,14 @@ log_port 24010
 service_discovery_address 239.192.1.1
 service_discovery_port 5000
 service_name main_service2
+service_publish_sec 5
+service_kick_sec 60
 
 ##### Tools To Add #####
 Tools_File configfiles/ToolsConfig
 
 ##### Run Type #####
 Inline 0
-Interactive 1
-Remote 0
+Interactive 0
+Remote 1
 
