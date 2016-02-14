@@ -5,12 +5,12 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 
 #include <zmq.hpp>
 
 #include <pthread.h>
 #include <time.h>
-
 
 #include <boost/uuid/uuid.hpp>            // uuid class
 #include <boost/uuid/uuid_generators.hpp> // generators

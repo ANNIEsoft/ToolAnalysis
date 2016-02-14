@@ -51,12 +51,24 @@ int Logging::MyStreamBuf::sync ( )
 {
   if(m_messagelevel <= m_verbose){
 
+
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+
+    time (&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer,80,"%d-%m-%Y %I:%M:%S",timeinfo);
+    std::string t(buffer);
+
+  
     if (m_mode=="Remote"){
       
       
       std::stringstream tmp;
       
-      tmp << "{"<<m_service<<"} ["<<m_messagelevel<<"]: "<< str();
+      tmp << "{"<<m_service<<":"<<t<<"} ["<<m_messagelevel<<"]: "<< str();
       str("");
       std::string line=tmp.str();
       zmq::message_t Send(line.length()+1);
@@ -65,7 +77,7 @@ int Logging::MyStreamBuf::sync ( )
     }
     
     else if(m_mode=="Local"){
-      output<< "{"<<m_service<<"} ["<<m_messagelevel<<"]: " << str();
+      output<< "{"<<m_service<<":"<<t<<"} ["<<m_messagelevel<<"]: " << str();
       str("");
       output.flush();
       

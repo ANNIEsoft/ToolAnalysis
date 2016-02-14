@@ -20,7 +20,7 @@ service_name main_service2
 Tools_File configfiles/ToolsConfig
 
 ##### Run Type #####
-Inline 1
-Interactive 0
+Inline 0
+Interactive 1
 Remote 0
 

@@ -52,7 +52,7 @@ lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libLog
 
 	cp UserTools/*.h include/
 	cp UserTools/Factory/*.h include/
-	g++  -shared -fPIC UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude)$(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+	g++  -shared -fPIC UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 RemoteControl: lib/libStore.so lib/libServiceDiscovery.so
 

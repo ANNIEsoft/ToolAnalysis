@@ -495,6 +495,13 @@ std::string ToolChain::ExecuteCommand(std::string command){
     if (ret==0)returnmsg<<"Stopping ToolChain";
     else returnmsg<<"Error Code "<<ret;
   }
+
+  else if(command=="Restart") {
+    int ret=Finalise()+Initialise();
+    if (ret==0)returnmsg<<"Restarting ToolChain";
+    else returnmsg<<"Error Code "<<ret;
+  }
+
   else if(command=="Status"){
     std::stringstream tmp;
     if(Finalised) tmp<<"Waiting to Initialise ToolChain";
@@ -503,9 +510,11 @@ std::string ToolChain::ExecuteCommand(std::string command){
       if(paused)tmp<<"ToolChain execution pasued";
       else tmp<<"ToolChain running (loop counter="<<execounter<<")";
     }
+
+    if(*(m_data.vars["Status"])!="") tmp<<" : "<<*(m_data.vars["Status"]);
     returnmsg<<tmp.str();
   }
- else if(command=="?")returnmsg<<" Available commands: Initialise, Execute, Finalise, Start, Stop, Pause, Unpause, Quit, Status, ?";
+ else if(command=="?")returnmsg<<" Available commands: Initialise, Execute, Finalise, Start, Stop, Restart, Pause, Unpause, Quit, Status, ?";
   else if(command!=""){
     returnmsg<<"command not recognised please try again";
   }
@@ -620,7 +629,7 @@ void* ToolChain::InteractiveThread(void* arg){
   //  std::cout<<"Please type command : Start, Pause, Unpause, Stop, Quit (Initialise, Execute, Finalise)"<<std::endl;
   // std::cout<<">";
 
-  printf("%s \n %s","Please type command : Start, Pause, Unpause, Stop, Status, Quit, ?, (Initialise, Execute, Finalise)",">");
+  printf("%s \n %s","Please type command : Start, Pause, Unpause, Stop, Restart, Status, Quit, ?, (Initialise, Execute, Finalise)",">");
   /* logmessage<<"Please type command : Start, Pause, Unpause, Stop, Quit (Initialise, Execute, Finalise)"<<std::endl<<">";
   m_data.Log->Log( logmessage.str(),0,m_verbose);
   logmessage.str("");
