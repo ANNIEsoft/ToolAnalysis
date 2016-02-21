@@ -7,6 +7,7 @@ ToolChain::ToolChain(std::string configfile){
   config.Get("verbose",m_verbose);
   config.Get("error_level",m_errorlevel);
   config.Get("remote_port",m_remoteport);
+  config.Get("attempt_recover",m_recover);
   config.Get("log_mode",m_log_mode);
   config.Get("log_local_path",m_log_local_path);
   config.Get("service_discovery_address",m_multicastaddress);
@@ -16,6 +17,7 @@ ToolChain::ToolChain(std::string configfile){
   config.Get("log_port",m_log_port);
   config.Get("service_publish_sec",m_pub_sec);
   config.Get("service_kick_sec",m_kick_sec);
+ 
 
   Init();
 
@@ -270,7 +272,13 @@ int ToolChain::Execute(int repeates){
 	    
 	    
 	    result=1;
-	    if(m_errorlevel>1)exit(1);
+	    if(m_errorlevel>1){
+	      if(m_recover){
+		m_errorlevel=0;
+		Finalise();
+	      }
+	      exit(1);
+	    }
 	  }  
 	}
 	
@@ -282,7 +290,13 @@ o execute (uncaught error)"<<std::endl;
 	  logmessage.str("");
 	  
 	  result=2;
-	  if(m_errorlevel>0)exit(1);
+	  if(m_errorlevel>0){
+	    if(m_recover){
+		m_errorlevel=0;
+		Finalise();
+	    }
+	    exit(1);
+	  }
 	}
 	
       } 

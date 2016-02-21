@@ -83,7 +83,8 @@ private:
   bool interactive;
   bool remote;
   int Inline;
-  
+  bool m_recover;
+    
   //status variables
   bool exeloop;
   long execounter;
