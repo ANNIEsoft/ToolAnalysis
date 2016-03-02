@@ -68,6 +68,7 @@ class Logging: public std::ostream {
       zmq::context_t *m_context;
       zmq::socket_t *LogSender;
       pthread_t thread;
+      Logging_thread_args *args;
 
       std::string m_service;
       std::string m_mode;

@@ -11,6 +11,8 @@ Logging::MyStreamBuf::~MyStreamBuf(){
     LogSender->send(Send);
     delete LogSender;
     LogSender=0;
+    delete args;
+    args=0;
   }
 
 
@@ -34,7 +36,7 @@ Logging::MyStreamBuf::MyStreamBuf (std::ostream& str ,zmq::context_t *context,  
 
   if(m_mode=="Remote"){
  
-    Logging_thread_args args(m_context, UUID , logservice, logport);
+    args=new Logging_thread_args(m_context, UUID , logservice, logport);
 
     pthread_create (&thread, NULL, Logging::MyStreamBuf::RemoteThread, &args); // make pushthread with two socets one going out one comming in and buffer socket
 

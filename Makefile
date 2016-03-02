@@ -2,8 +2,8 @@
 ZMQLib= -L ../zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I ../zeromq-4.0.7/include/ 
 
-BoostLib= -L ../boost_1_60_0/install/lib/ -lboost_date_time
-BoostInclude= -I ../boost_1_60_0/install/include/
+BoostLib= -L /usr/local/lib -lboost_date_time
+BoostInclude= -I /usr/local/include/
 
 DataModelInclude =
 DataModelLib =
