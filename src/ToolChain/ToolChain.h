@@ -15,6 +15,7 @@
 #include <boost/uuid/uuid_generators.hpp> // generators
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/progress.hpp>
 
 #include "Tool.h"
 #include "DataModel.h"

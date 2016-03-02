@@ -55,8 +55,8 @@ std::string Start(std::vector< pid_t > *pids, std::string configfile=""){
     ret="Uh-Oh! fork() failed.\n";
     exit(1);
   case 0: /* Child process */
-    if (configfile=="")    execl("./main", "./main",  NULL); /* Execute the program */
-    else execl("./main", "./main", configfile.c_str(), NULL);
+    if (configfile=="")    execl("/home/annie/ANNIEDAQ/main", "/home/annie/ANNIEDAQ/main",  NULL); /* Execute the program */
+    else execl("/home/annie/ANNIEDAQ/main", "/home/annie/ANNIEDAQ/main", configfile.c_str(), NULL);
     ret="Uh-Oh! execl() failed!"; /* execl doesn't return unless there's an error */
     //exit(1);
   default: /* Parent process */
