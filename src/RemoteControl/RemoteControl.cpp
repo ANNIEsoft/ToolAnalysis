@@ -32,7 +32,7 @@ int main(int argc, char** argv){
   int port=5000;
   //  tmp>>port;
 
-  ServiceDiscovery SD(address,port,&context,12);
+  ServiceDiscovery SD(address,port,&context,30);
 
   bool running=true;
 
