@@ -38,7 +38,7 @@ Logging::MyStreamBuf::MyStreamBuf (std::ostream& str ,zmq::context_t *context,  
  
     args=new Logging_thread_args(m_context, UUID , logservice, logport);
 
-    pthread_create (&thread, NULL, Logging::MyStreamBuf::RemoteThread, &args); // make pushthread with two socets one going out one comming in and buffer socket
+    pthread_create (&thread, NULL, Logging::MyStreamBuf::RemoteThread, args); // make pushthread with two socets one going out one comming in and buffer socket
 
     LogSender = new zmq::socket_t(*context, ZMQ_PUSH);
     LogSender->connect("inproc://LogSender");
