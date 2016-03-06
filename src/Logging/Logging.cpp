@@ -75,7 +75,7 @@ int Logging::MyStreamBuf::sync ( )
       std::string line=tmp.str();
       zmq::message_t Send(line.length()+1);
       snprintf ((char *) Send.data(), line.length()+1 , "%s" ,line.c_str());
-      LogSender->send(Send,ZMQ_NOBLOCK);
+      LogSender->send(Send);
     }
     
     else if(m_mode=="Local"){

@@ -76,7 +76,7 @@ std::string Start(std::vector< pid_t > *pids, std::string configfile=""){
   
 }
 
-int main(){
+int main(int argc, char* argv[]){
 
 
   boost::uuids::uuid m_UUID=boost::uuids::random_generator()();
@@ -90,7 +90,11 @@ int main(){
 
   int port=5000;
 
-  ServiceDiscovery SD(true, false, 24000, address, port,&context, m_UUID, "Node Daemon");
+  std::stringstream service;
+  if(argc ==2) service<<argv[1]<<" ";
+  service<<"Node Daemon";
+
+  ServiceDiscovery SD(true, false, 24000, address, port,&context, m_UUID, service.str());
 
   int a =120000;
   zmq::socket_t direct (context, ZMQ_REP);
