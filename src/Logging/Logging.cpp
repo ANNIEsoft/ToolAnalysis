@@ -316,8 +316,8 @@ void Logging::Log(std::ostringstream& message, int messagelevel, int verbose){
        
        
        zmq::socket_t RemoteSend (*context, ZMQ_PUSH);
-       //int a=12000;
-       //RemoteSend.setsockopt(ZMQ_SNDTIMEO, a);
+       int a=12000;
+       RemoteSend.setsockopt(ZMQ_SNDTIMEO, a);
        std::stringstream tmp;
        tmp<<"tcp://"<<ip<<":"<<logport;
        // printf("%s \n",tmp.str().c_str());
@@ -332,7 +332,7 @@ void Logging::Log(std::ostringstream& message, int messagelevel, int verbose){
        zmq::message_t rlogmessage(rmessage.length()+1);
        snprintf ((char *) rlogmessage.data(), rmessage.length()+1 , "%s" , rmessage.c_str()) ;
        // printf("%s \n",rmessage.c_str());       
-       RemoteSend.send(rlogmessage,ZMQ_NOBLOCK);
+       RemoteSend.send(rlogmessage);
     
      }
 
