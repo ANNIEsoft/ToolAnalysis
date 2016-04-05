@@ -90,8 +90,16 @@ void* ServiceDiscovery::MulticastPublishThread(void* arg){
   /* send */
   addr.sin_addr.s_addr = inet_addr(m_multicastaddress.c_str());
   
+  std::vector<Store> PubServices;
   
-  
+  Store bb; 
+  *bb["msg_type"]="Service Discovery";
+  bb.Set("msg_value",m_service);
+  bb.Set("remote_port",m_remoteport);
+  bb.Set("status_query",true);
+  bb.Set("uuid",m_UUID);
+  PubServices.push_back(bb);
+
   //  Initialize poll set
   zmq::pollitem_t items [] = {
     { Ireceive, 0, ZMQ_POLLIN, 0 },
@@ -107,195 +115,241 @@ void* ServiceDiscovery::MulticastPublishThread(void* arg){
 
     if ((items [0].revents & ZMQ_POLLIN) && running) {
       
-      zmq::message_t command;
-      Ireceive.recv(&command);
+      zmq::message_t commands;
+      Ireceive.recv(&commands);
       
-      std::istringstream tmp(static_cast<char*>(command.data()));
-      if(tmp.str()=="Quit"){
-
+      std::istringstream tmp(static_cast<char*>(commands.data()));
+      std::string command;
+      std::string service;
+      boost::uuids::uuid uuid;
+      int port;
+      bool statusquery;
+      
+           tmp>>command>>service>>uuid>>port>>statusquery;
+     
+     
+      if(command=="Quit"){
+	
 	running=false;
       }
-     
+      else if(command=="Add"){
+	
+	Store bb; 
+	*bb["msg_type"]="Service Discovery";
+	bb.Set("msg_value",service);
+	bb.Set("remote_port",port);
+	bb.Set("status_query",statusquery);
+	bb.Set("uuid",uuid);
+	PubServices.push_back(bb);
+
+      }
+      else if(command=="Delete"){
+       	std::vector<Store>::iterator it;
+	for (it = PubServices.begin() ; it != PubServices.end(); ++it){
+	  std::cout<<"d3.5 "<<*((*it)["msg_value"])<<std::endl;
+	  
+	  if(*((*it)["msg_value"])==service)break;
+	  
+	  
+	}
+	if (it!=PubServices.end())PubServices.erase(it);
+	
+	
+      }
       
     }
-
-    if ((items [1].revents & ZMQ_POLLOUT) && running){
-
-      char message[512];
-
-      //      const char* json = "{\"uuid\":\"\",\"msg_id\":0,\"msg_time\":\"\",\"msg_type\":\"\",\"msg_value\":\"\",\"params\":{\"port\":0,\"status\":\"\"}}";
-
-
     
-      /*
-
-
-      rapidjson::Document d;
-      d.Parse(json);
-      // d.SetObject();
-       //["hello"] = "rapidjson"; 
-      //   	test.SetString("My JSON Document", d.GetAllocator());
-      //  	d.AddMember("Doc Name", test , d.GetAllocator());
-	//	d.AddMember("uuid", tmp.str().c_str(), d.GetAllocator());
-      // (*newDoc)["Parameters"].SetObject();
-
-      msg_id++;
-      std::stringstream tmp;
-      tmp<<m_UUID;
-      d["uuid"].SetString(tmp.str().c_str(), strlen(tmp.str().c_str()));
-      std::cout<<" UUID = "<<tmp.str().c_str()<<std::endl;
-      std::cout<<" 1d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-      d["msg_id"].SetInt(msg_id);
-      std::cout<<" 2d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-      */
-      boost::posix_time::ptime t = boost::posix_time::microsec_clock::universal_time();
-      std::stringstream isot;
-      isot<<boost::posix_time::to_iso_extended_string(t) << "Z";
-      /*
-      std::cout<<" 3d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-      d["msg_time"].SetString(isot.str().c_str(), strlen(isot.str().c_str()));;
-      std::cout<<" 4d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-      d["msg_type"]="Service Discovery";
-      d["msg_value"].SetString(m_service.c_str(),strlen(m_service.c_str()));
-      
-      std::cout<<" 5d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-      */ zmq::socket_t StatusCheck (*context, ZMQ_REQ);
-      int a=12000;
-      StatusCheck.setsockopt(ZMQ_RCVTIMEO, a);
-      StatusCheck.setsockopt(ZMQ_SNDTIMEO, a);
-      std::stringstream connection;
-      connection<<"tcp://localhost:"<<m_remoteport;
-      StatusCheck.connect(connection.str().c_str());
+    if ((items [1].revents & ZMQ_POLLOUT) && running){
       
 
-      Store mm;
-      
-      mm.Set("msg_type","Command");
-      mm.Set("msg_value","Status");
+      for(int i=0;i<PubServices.size();i++){
 
-      std::string command;
-      mm>>command;
+	//	char message[512];
+	
+	//      const char* json = "{\"uuid\":\"\",\"msg_id\":0,\"msg_time\":\"\",\"msg_type\":\"\",\"msg_value\":\"\",\"params\":{\"port\":0,\"status\":\"\"}}";
+	
+	
+    
+	/*
+	  
+	  
+	  rapidjson::Document d;
+	  d.Parse(json);
+	  // d.SetObject();
+	  //["hello"] = "rapidjson"; 
+	  //   	test.SetString("My JSON Document", d.GetAllocator());
+	  //  	d.AddMember("Doc Name", test , d.GetAllocator());
+	  //	d.AddMember("uuid", tmp.str().c_str(), d.GetAllocator());
+	  // (*newDoc)["Parameters"].SetObject();
+	  
+	  msg_id++;
+	  std::stringstream tmp;
+	  tmp<<m_UUID;
+	  d["uuid"].SetString(tmp.str().c_str(), strlen(tmp.str().c_str()));
+	  std::cout<<" UUID = "<<tmp.str().c_str()<<std::endl;
+	  std::cout<<" 1d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	  d["msg_id"].SetInt(msg_id);
+	  std::cout<<" 2d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	*/
 
-      // zmq::message_t Esend(256);
-      //std::string command="Status;
 
-      
-      zmq::message_t Esend(256);
-      snprintf ((char *) Esend.data(), 256 , "%s" ,command.c_str()) ;
-      StatusCheck.send(Esend);
-      
-      
-      //std::cout<<"waiting for message "<<std::endl;
+	boost::posix_time::ptime t = boost::posix_time::microsec_clock::universal_time();
+	std::stringstream isot;
+	isot<<boost::posix_time::to_iso_extended_string(t) << "Z";
 
-      zmq::message_t Ereceive;
-      if(StatusCheck.recv (&Ereceive)){
-      std::istringstream ss(static_cast<char*>(Ereceive.data()));
-      
-      mm.JsonPaser(ss.str());
-      
-      /*
-      std::cout<<"received for publish "<<ss.str()<<std::endl;
-      std::cout<<" 6d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-      /*  rapidjson::Document params;
+	/*
+	  std::cout<<" 3d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	  d["msg_time"].SetString(isot.str().c_str(), strlen(isot.str().c_str()));;
+	  std::cout<<" 4d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	  d["msg_type"]="Service Discovery";
+	  d["msg_value"].SetString(m_service.c_str(),strlen(m_service.c_str()));
+	  
+	  std::cout<<" 5d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	*/ 
+	bool statusquery=false;
+	PubServices.at(i).Get("status_query",statusquery);
+	Store mm;
 
-      // params=d["params"].GetType();
-      std::cout<<d["params"].GetType()<<std::endl;
-      std::cout<<d["params"].IsNull()<<std::endl;
-      std::cout<<d["params"].IsFalse()<<std::endl;
-      std::cout<<d["params"].IsTrue()<<std::endl;
-      std::cout<<d["params"].IsBool()<<std::endl;
-      std::cout<<d["params"].IsObject()<<std::endl;
-      std::cout<<d["params"].IsArray()<<std::endl;
-      std::cout<<d["params"].IsNumber()<<std::endl;
-      std::cout<<d["params"].IsString()<<std::endl;
 
-      // std::string tmpsubstring=d["params"].GetString();
-      //std::cout<<"tmpsubstring "<<tmpsubstring<<std::endl;
-      // params.Parse(tmpsubstring.c_str());
-      
-      std::cout<<"debug 1 "<<std::endl;
-
-      params["port"].SetInt(m_multicastport);
-      params["status"].SetString(ss.str().c_str(),strlen(ss.str().c_str()));
-
-      rapidjson::StringBuffer subbuffer;
-      rapidjson::Writer<rapidjson::StringBuffer> subwriter(subbuffer);
-      params.Accept(subwriter);
-
-      std::string tmpbufferout=subbuffer.GetString();
-
-      std::cout<<" substringtest "<<tmpbufferout<<std::endl;
-
-      d["params"].SetString(tmpbufferout.c_str(), strlen(tmpbufferout.c_str()));
-      
-      for (rapidjson::Value::ConstMemberIterator itr = d["params"].MemberBegin();itr != d["params"].MemberEnd(); ++itr){
+	if(statusquery){
+	  
+	  zmq::socket_t StatusCheck (*context, ZMQ_REQ);
+	  int a=12000;
+	  StatusCheck.setsockopt(ZMQ_RCVTIMEO, a);
+	  StatusCheck.setsockopt(ZMQ_SNDTIMEO, a);
+	  std::stringstream connection;
+	  connection<<"tcp://localhost:"<<*(PubServices.at(i)["remote_port"]);
+	  StatusCheck.connect(connection.str().c_str());
+	  
+	  
+	  mm.Set("msg_type","Command");
+	  mm.Set("msg_value","Status");
+	  
+	  std::string command;
+	  mm>>command;
+	  
+	  // zmq::message_t Esend(256);
+	  //std::string command="Status;
+	
+	  
+	  zmq::message_t Esend(256);
+	  snprintf ((char *) Esend.data(), 256 , "%s" ,command.c_str()) ;
+	  StatusCheck.send(Esend);
+	  
+	  
+	  //std::cout<<"waiting for message "<<std::endl;
+	  
+	  zmq::message_t Ereceive;
+	  if(StatusCheck.recv (&Ereceive)){
+	    std::istringstream ss(static_cast<char*>(Ereceive.data()));
+	    
+	    mm.JsonPaser(ss.str());
+	  }
+	}
+	/*
+	std::cout<<"received for publish "<<ss.str()<<std::endl;
+	std::cout<<" 6d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	/*  rapidjson::Document params;
+	
+	// params=d["params"].GetType();
+	std::cout<<d["params"].GetType()<<std::endl;
+	std::cout<<d["params"].IsNull()<<std::endl;
+	std::cout<<d["params"].IsFalse()<<std::endl;
+	std::cout<<d["params"].IsTrue()<<std::endl;
+	std::cout<<d["params"].IsBool()<<std::endl;
+	std::cout<<d["params"].IsObject()<<std::endl;
+	std::cout<<d["params"].IsArray()<<std::endl;
+	std::cout<<d["params"].IsNumber()<<std::endl;
+	std::cout<<d["params"].IsString()<<std::endl;
+	
+	// std::string tmpsubstring=d["params"].GetString();
+	//std::cout<<"tmpsubstring "<<tmpsubstring<<std::endl;
+	// params.Parse(tmpsubstring.c_str());
+	
+	std::cout<<"debug 1 "<<std::endl;
+	
+	params["port"].SetInt(m_multicastport);
+	params["status"].SetString(ss.str().c_str(),strlen(ss.str().c_str()));
+	
+	rapidjson::StringBuffer subbuffer;
+	rapidjson::Writer<rapidjson::StringBuffer> subwriter(subbuffer);
+	params.Accept(subwriter);
+	
+	std::string tmpbufferout=subbuffer.GetString();
+	
+	std::cout<<" substringtest "<<tmpbufferout<<std::endl;
+	
+	d["params"].SetString(tmpbufferout.c_str(), strlen(tmpbufferout.c_str()));
+	
+	for (rapidjson::Value::ConstMemberIterator itr = d["params"].MemberBegin();itr != d["params"].MemberEnd(); ++itr){
 	
 	std::cout<<itr->name.GetString()<<std::endl;//<<" : "<< itr->value<<std::endl;
-//	if(itr->name.GetString()=="port") itr->value.SetInt(m_multicastport);
+	//	if(itr->name.GetString()=="port") itr->value.SetInt(m_multicastport);
 	//if(itr->name.GetString()=="status") itr->value.SetString(ss.str().c_str(),strlen(ss.str().c_str()));
-      }
-      */
-
-      
-      
-      //rapidjson::Document params=d["params"];
-      //params["port"].SetInt(m_multicastport,strlen();
-      // rapidjson::Value& params = d["params"]; 
-      // rapidjson::Document::AllocatorType& allocator = d.GetAllocator();
-      //    params.PushBack(i, allocator);
-      
-      // params.PushBack("key1","value1");
-       //params.PushBack("key2","value2");
-      /* 
-     std::cout<<" d[UUID] = "<<d["uuid"].GetString()<<std::endl;
-
-      rapidjson::StringBuffer buffer;
-      rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::ASCII<> > writer(buffer);
-      //rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-      d.Accept(writer);
-      std::string hhh=buffer.GetString();
-      std::cout<< "bufer = "<<hhh<<std::endl;
-      */
-    
-      msg_id++;
-
-      Store bb;
-      
-      bb.Set("uuid",m_UUID);
-      bb.Set("msg_id",msg_id);
-      *bb["msg_time"]=isot.str();
-      *bb["msg_type"]="Service Discovery";
-      bb.Set("msg_value",m_service);
-      bb.Set("remote_port",m_remoteport);
-      *bb["status"]=*mm["msg_value"];   
-
-      std::string pubmessage;
-      bb>>pubmessage;
-
-      //std::stringstream pubmessage;
-      
-      //pubmessage<<"{\"uuid\":\""<<m_UUID<<"\",\"msg_id\":"<<msg_id<<",\"msg_time\":\""<<isot.str()<<"\",\"msg_type\":\"Service Discovery\",\"msg_value\":\""<<m_service<<"\",\"params\":{\"port\":"<<m_remoteport<<",\"status\":\""<<ss.str()<<"\"}}";
-
-	//    snprintf (message, 512 , "%s" , buffer.GetString()) ;
-	snprintf (message, 512 , "%s" , pubmessage.c_str() ) ;
-	//printf("sending: %s\n", message);
-      cnt = sendto(sock, message, sizeof(message), 0,(struct sockaddr *) &addr, addrlen);
-      
-      /*
-	if (cnt < 0) {
-	perror("sendto");
 	}
-      */
+	  */
+	  
+	  
+	  
+	  //rapidjson::Document params=d["params"];
+	  //params["port"].SetInt(m_multicastport,strlen();
+	  // rapidjson::Value& params = d["params"]; 
+	  // rapidjson::Document::AllocatorType& allocator = d.GetAllocator();
+	  //    params.PushBack(i, allocator);
+	  
+	  // params.PushBack("key1","value1");
+       //params.PushBack("key2","value2");
+	  /* 
+	     std::cout<<" d[UUID] = "<<d["uuid"].GetString()<<std::endl;
+	     
+	     rapidjson::StringBuffer buffer;
+	     rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::ASCII<> > writer(buffer);
+	     //rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	     d.Accept(writer);
+	     std::string hhh=buffer.GetString();
+	     std::cout<< "bufer = "<<hhh<<std::endl;
+	  */	
+	  
+	  msg_id++;
+	  
+	  //	  PubServices.at(i).Set("uuid",m_UUID);
+	  PubServices.at(i).Set("msg_id",msg_id);
+	  *(PubServices.at(i))["msg_time"]=isot.str();
+	  // *bb["msg_type"]="Service Discovery";
+	  // bb.Set("msg_value",m_service);
+	  //bb.Set("remote_port",m_remoteport);
+	 	if(statusquery) *(PubServices.at(i))["status"]=*mm["msg_value"]; 
+		else *(PubServices.at(i))["status"]= "Unknown";
+	  std::string pubmessage;
+	   PubServices.at(i)>>pubmessage;
+	  
+	  //std::stringstream pubmessage;
+	  
+	  //pubmessage<<"{\"uuid\":\""<<m_UUID<<"\",\"msg_id\":"<<msg_id<<",\"msg_time\":\""<<isot.str()<<"\",\"msg_type\":\"Service Discovery\",\"msg_value\":\""<<m_service<<"\",\"params\":{\"port\":"<<m_remoteport<<",\"status\":\""<<ss.str()<<"\"}}";
+	 char message[512];
+
+	  //    snprintf (message, 512 , "%s" , buffer.GetString()) ;
+	  snprintf (message, 512 , "%s" , pubmessage.c_str() ) ;
+	  //	  printf("sending: %s\n", message);
+	   cnt = sendto(sock, message, sizeof(message), 0,(struct sockaddr *) &addr, addrlen);
+	  
+	  /*
+	    if (cnt < 0) {
+	    perror("sendto");
+	    }
+	  */
+	  
+	 
+      }
       
       sleep(args->pubsec);
-      }
       
     }
-
-
+    
+    
   }
   
-return (NULL);
+  return (NULL);
   
   
 }

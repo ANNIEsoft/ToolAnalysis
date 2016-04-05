@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include <boost/uuid/uuid.hpp>            // uuid class
 #include <boost/uuid/uuid_generators.hpp> // generators
@@ -77,6 +78,7 @@ class ServiceDiscovery{
 
   bool m_send;
   bool m_receive;
+
 
   
 };

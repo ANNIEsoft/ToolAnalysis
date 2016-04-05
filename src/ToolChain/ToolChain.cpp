@@ -91,6 +91,8 @@ void ToolChain::Init(){
   context=new zmq::context_t(5);
   m_data.context=context;
 
+  m_UUID = boost::uuids::random_generator()();
+
  
   bcout=std::cout.rdbuf();
   out=new  std::ostream(bcout);
@@ -98,8 +100,6 @@ void ToolChain::Init(){
   m_data.Log= new Logging(*out, context, m_UUID, m_service, m_log_mode, m_log_local_path, m_log_service, m_log_port);
 
   std::cout.rdbuf(&(m_data.Log->buffer));
-
-  m_UUID = boost::uuids::random_generator()();
   /*
     if(m_verbose){ 
     *(m_data.Log)<<"UUID = "<<m_UUID<<std::endl;
