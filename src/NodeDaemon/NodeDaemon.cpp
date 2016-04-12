@@ -142,7 +142,7 @@ int main(int argc, char* argv[]){
     }
     
     else if (*(bb["msg_value"])=="?"){
-      ret="Available commands: Status, Stop, FStop, Start, Restart, File name, Build, KILL, Reboot ";
+      ret="Available commands: Status, Stop, FStop, (Start / Create) Restart, File name, Build, KILL, Reboot ";
 
     }
 
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]){
       ret="Stopping ToolChains";
       Stop(&pids);
     }    
-    else if(*(bb["msg_value"])=="Start"){
+    else if(*(bb["msg_value"])=="Start" || *(bb["msg_value"])=="Create"){
      
       ret=Start(&pids, *(bb["var1"]));  
     }
