@@ -18,9 +18,17 @@ class Store{
   void Print();
   void Delete();
 
-  template<typename T> void Get(std::string name,T &out){
-    std::stringstream stream(m_variables[name]);
-    stream>>out;
+  template<typename T> bool Get(std::string name,T &out){
+    
+    if(m_variables.count(name)>0){
+
+      std::stringstream stream(m_variables[name]);
+      stream>>out;
+      return true;
+    }
+    
+    else return false;
+
   }
   
   template<typename T> void Set(std::string name,T in){
