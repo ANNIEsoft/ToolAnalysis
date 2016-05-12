@@ -5,7 +5,7 @@ cd ..
 git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
 wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz
 
-tar zxvf boost_1_60_0.tar.gz
+tar zxf boost_1_60_0.tar.gz
 
 cd zeromq-4.0.7
 
@@ -19,8 +19,8 @@ cd ../boost_1_60_0
 
 mkdir install
 
-./bootstrap.sh --prefix=`pwd`/install/ 
-./b2 install 
+./bootstrap.sh --prefix=`pwd`/install/ > /dev/null 2>/dev/null 
+./b2 install > /dev/null 2>/dev/null
 
 export LD_LIBRARY_PATH=`pwd`/install/lib:$LD_LIBRARY_PATH
 
