@@ -31,9 +31,6 @@ make
 
 export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
  
-ls
-echo "before main"
 
 ./main configfiles/ToolChainConfig
 
-echo "after main"
