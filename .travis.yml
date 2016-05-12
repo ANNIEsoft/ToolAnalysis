@@ -1,0 +1,22 @@
+language: cpp
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - git
+    - dpkg-dev
+    - make
+    - g++
+    - gcc
+    - binutils
+    - libx11-dev
+    - libxpm-dev
+    - libxft-dev
+    - libxext-dev
+
+install: true
+
+script: ./CI.sh;
+
