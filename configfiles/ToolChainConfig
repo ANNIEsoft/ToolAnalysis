@@ -23,7 +23,7 @@ service_kick_sec 60
 Tools_File configfiles/ToolsConfig
 
 ##### Run Type #####
-Inline 0
+Inline 1
 Interactive 0
-Remote 1
+Remote 0
 
