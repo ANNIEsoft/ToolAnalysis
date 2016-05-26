@@ -88,7 +88,7 @@ private:
     
   //status variables
   bool exeloop;
-  long execounter;
+  unsigned long execounter;
   bool Initialised;
   bool Finalised;
   bool paused;
