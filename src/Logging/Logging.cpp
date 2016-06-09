@@ -97,7 +97,14 @@ int Logging::MyStreamBuf::sync ( )
   return 0;
 }
 
+bool Logging::MyStreamBuf::ChangeOutFile(std::string localpath){
 
+  file.close();
+  file.open(localpath.c_str());
+  psbuf = file.rdbuf();
+  output.rdbuf(psbuf);
+  
+}
 
 //Logging(std::ostream& str,zmq::context_t *context,  boost::uuids::uuid UUID, std::string service, std::string mode, std::string localpath, std::string logservice, int logport):std::ostream(&buffer),buffer(str, context,  UUID, service, mode, localpath, logservice, logport){
 //}

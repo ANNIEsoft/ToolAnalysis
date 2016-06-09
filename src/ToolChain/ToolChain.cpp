@@ -494,6 +494,7 @@ std::string ToolChain::ExecuteCommand(std::string command){
   else if (command=="Start"){
     int ret=Initialise();
     exeloop=true;
+    execounter=0;
     if (ret==0)returnmsg<<"Starting ToolChain";
     else returnmsg<<"Error Code "<<ret;
   }

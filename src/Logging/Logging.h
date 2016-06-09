@@ -50,6 +50,8 @@ class Logging: public std::ostream {
 
       virtual int sync ( );
 
+      bool ChangeOutFile(std::string localpath);
+
       int m_messagelevel;
       int m_verbose;
 
@@ -98,6 +100,10 @@ class Logging: public std::ostream {
     buffer.m_messagelevel=1;
     buffer.m_verbose=1;
   } 
+
+  bool ChangeOutFile(std::string localpath){return buffer.ChangeOutFile(localpath);}
+
+
   /* 
   template<typename T>Logging& operator<<(T obj){ 
     std::stringstream tmp;

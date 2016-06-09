@@ -7,7 +7,7 @@ attempt_recover 1
 remote_port 24004
 
 ###### Logging #####
-log_mode Interactive # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
+log_mode Local # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
 log_local_path ./log
 log_service LogStore
 log_port 24010
@@ -23,7 +23,7 @@ service_kick_sec 60
 Tools_File configfiles/ToolsConfig
 
 ##### Run Type #####
-Inline 1
-Interactive 0
+Inline 0
+Interactive 1
 Remote 0
 
