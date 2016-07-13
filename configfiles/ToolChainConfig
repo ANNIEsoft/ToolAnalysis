@@ -1,7 +1,7 @@
 #ToolChain dynamic setup file
 
 ##### Runtime Paramiters #####
-verbose 1
+verbose 9
 error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
 attempt_recover 1
 remote_port 24004
