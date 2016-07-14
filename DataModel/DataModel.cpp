@@ -16,5 +16,13 @@ void DataModel::AddTTree(std::string name,TTree *tree){
 
 }
 
+
+void DataModel::DeleteTTree(std::string name){
+
+  delete GetTTree(name);
+  m_trees.erase(name);
+
+}
+
 */
 

@@ -20,6 +20,7 @@ class DataModel {
   DataModel();
   //TTree* GetTTree(std::string name);
   //void AddTTree(std::string name,TTree *tree);
+  //void DeleteTTree(std::string name,TTree *tree);
 
   Store vars;
   Logging *Log;
@@ -27,14 +28,6 @@ class DataModel {
   zmq::context_t* context;
 
 
-  //  bool (*Log)(std::string, int);
-
-  /*  
-  template<Type T>
-    struct Log {
-      typedef bool (*type)(T message,int verboselevel);
-    };
-  */
  private:
 
 
