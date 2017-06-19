@@ -7,7 +7,7 @@
 mkdir ToolDAQ
 cd ToolDAQ
 
-git clone https://github.com/ToolDAQ/ToolDAQFramework.git
+git clone --branch V1.0 https://github.com/ToolDAQ/ToolDAQFramework.git
 git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
 wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz
 tar zxvf boost_1_60_0.tar.gz
@@ -24,7 +24,7 @@ cd ../boost_1_60_0
 
 mkdir install
 
-./bootstrap.sh --prefix=`pwd`/install/ 
+./bootstrap.sh --prefix=`pwd`/install/  > /dev/null 2>/dev/null
 ./b2 install 
 
 export LD_LIBRARY_PATH=`pwd`/install/lib:$LD_LIBRARY_PATH
