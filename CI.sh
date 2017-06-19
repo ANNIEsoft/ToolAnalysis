@@ -1,6 +1,6 @@
 #!/bin/bash
  
-./GetToolDAQ.sh
+source ./GetToolDAQ.sh
 
 ./main configfiles/ToolChainConfig
 
