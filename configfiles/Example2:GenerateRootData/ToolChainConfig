@@ -1,29 +1,23 @@
-#ToolChain dynamic setup file
+B#ToolChain dynamic setup file
 
 ##### Runtime Paramiters #####
-verbose 9
+verbose 0
 error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
-attempt_recover 1
-remote_port 24004
+attempt_recover 1 
 
 ###### Logging #####
 log_mode Interactive # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
 log_local_path ./log
 log_service LogStore
-log_port 24010
 
 ###### Service discovery #####
-service_discovery_address 239.192.1.1
-service_discovery_port 5000
-service_name main_service2
-service_publish_sec 5
-service_kick_sec 60
+service_publish_sec -1
+service_kick_sec -1
 
 ##### Tools To Add #####
-Tools_File configfiles/ToolsConfig
+Tools_File configfiles/Example2:GenerateRootData/ToolsConfig
 
 ##### Run Type #####
-Inline 1
+Inline -1
 Interactive 0
-Remote 0
 

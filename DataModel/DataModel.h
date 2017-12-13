@@ -4,10 +4,12 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <stdlib.h>
 
 //#include "TTree.h"
 
 #include "Store.h"
+#include "BoostStore.h"
 #include "Logging.h"
 
 #include <zmq.hpp>
@@ -23,8 +25,10 @@ class DataModel {
   //void DeleteTTree(std::string name);
 
   Store vars;
+  BoostStore CStore;
+  std::map<std::string,BoostStore*> Stores;
+  
   Logging *Log;
-
   zmq::context_t* context;
 
 

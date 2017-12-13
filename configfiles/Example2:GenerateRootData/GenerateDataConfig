@@ -1,0 +1,4 @@
+#Generate Data Config File
+
+verbose 0
+NumEvents 1000

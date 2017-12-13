@@ -1,0 +1,4 @@
+# Save Store Config
+
+verbose 0
+OutFile ./output
