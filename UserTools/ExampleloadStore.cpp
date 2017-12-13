@@ -20,23 +20,25 @@ bool ExampleloadStore::Initialise(std::string configfile, DataModel &data){
   m_data->Stores["DataName"]=new BoostStore(false,2);
   m_data->Stores["DataName"]->Initialise(inputfile);
   m_data->Stores["DataName"]->GetHeader();
-  m_data->Stores["DataName"]->Get("TotalEnteries",NumEvents);
-
+  m_data->Stores["DataName"]->Get("TotalEntries",NumEvents);
+ 
   currententry=0;
-  
+ 
   return true;
 }
 
 
 bool ExampleloadStore::Execute(){
 
-  std::cout<<"d1"<<std::endl;
-  m_data->Stores["DataName"]->GetEntry(currententry);
-  std::cout<<"d2"<<std::endl;
+  logmessage<<"current event="<<currententry<<":"<<NumEvents;  
+  m_data->Log->Log(logmessage.str(),1,verbose);
+  logmessage.str(""); 
+ 
+  m_data->Stores["DataName"]->GetEntry(currententry);  
   currententry++;
-  std::cout<<"d3"<<std::endl;
+  
   if(currententry==NumEvents) m_data->vars.Set("StopLoop",1);
-
+  
   return true;
 }
 

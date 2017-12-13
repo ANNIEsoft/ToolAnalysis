@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include "Tool.h"
 
@@ -23,7 +24,7 @@ class ExamplePrintData: public Tool {
   double b;
   std::string c;
   int debug;
-
+  std::stringstream logmessage;
 
 };
 

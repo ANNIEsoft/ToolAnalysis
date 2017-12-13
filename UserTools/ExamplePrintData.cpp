@@ -25,9 +25,14 @@ bool ExamplePrintData::Execute(){
   m_data->Stores["DataName"]->Get("b",b);
   m_data->Stores["DataName"]->Get("c",c);
 
+  //Print outs in ToolDAQ can be done either mnormally with cout and prinf or by using the inbuilt log
+  //e.g.
+
   std::cout<<"a="<<a<<std::endl;
-  std::cout<<"b="<<b<<std::endl;
-  std::cout<<"c="<<c<<std::endl;
+  printf("b=%f\n",b);
+  logmessage<<"c="<<c;
+  m_data->Log->Log(logmessage.str());
+  logmessage.str("");
 
   return true;
 }

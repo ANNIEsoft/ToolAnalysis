@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include "Tool.h"
 
@@ -22,8 +23,9 @@ class ExampleloadStore: public Tool {
   long currententry;
   int verbose;
   std::string inputfile;
-  long NumEvents;
+  unsigned long NumEvents;
 
+  std::stringstream logmessage;
 
 };
 
