@@ -45,8 +45,7 @@ clean:
 lib/libDataModel.so: lib/libStore.so lib/libLogging.so
 
 	cp DataModel/*.h include/
-	cp DataModel/*.hh include/
-	g++ -std=c++0x -g -fPIC -shared DataModel/*.C DataModel/*.cc DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
+	g++ -std=c++0x -g -fPIC -shared DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libLogging.so
 
