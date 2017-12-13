@@ -10,7 +10,7 @@ if (tool=="ExampleSaveStore") ret=new ExampleSaveStore;
 if (tool=="ExampleSaveRoot") ret=new ExampleSaveRoot;
 if (tool=="ExampleloadStore") ret=new ExampleloadStore;
 if (tool=="ExamplePrintData") ret=new ExamplePrintData;
-//  if (tool=="ExampleLoadRoot") ret=new ExampleLoadRoot;
+if (tool=="ExampleLoadRoot") ret=new ExampleLoadRoot;
 
 return ret;
 }

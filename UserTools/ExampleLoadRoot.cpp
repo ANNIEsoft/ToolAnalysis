@@ -24,6 +24,7 @@ bool ExampleLoadRoot::Initialise(std::string configfile, DataModel &data){
   m_data->Stores["DataName"]=new BoostStore(false,2);
 
   currententry=1;
+  NumEvents=1000;
 
   return true;
 }
@@ -31,15 +32,19 @@ bool ExampleLoadRoot::Initialise(std::string configfile, DataModel &data){
 
 bool ExampleLoadRoot::Execute(){
 
-  std::cout<<"getentry="<<Data->GetEntry(currententry)<<std::endl;;
-  std::cout<<"currententry="<<currententry<<std::endl;
-  std::cout<<"a="<<Data->a<<std::endl;
-  std::cout<<"b="<<Data->b<<std::endl;
+  //std::cout<<"getentry="<<Data->GetEntry(currententry)<<std::endl;;
+  // std::cout<<"currententry="<<currententry<<std::endl;
+  // std::cout<<"a="<<Data->a<<std::endl;
+  //std::cout<<"b="<<Data->b<<std::endl;
   /// saving to store for the sake of printing
+  Data->GetEntry(currententry);
   m_data->Stores["DataName"]->Set("a",Data->a);
   m_data->Stores["DataName"]->Set("b",Data->b);
+  m_data->Stores["DataName"]->Set("c",*(Data->c));
 
   currententry++;
+
+  if(currententry==NumEvents) m_data->vars.Set("StopLoop",1);
 
   return true;
 }
