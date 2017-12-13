@@ -36,6 +36,16 @@ make
 
 export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
 
+wget https://root.cern.ch/download/root_v5.34.34.source.tar.gz
+tar zxvf root_v5.34.34.source.tar.gz
+cd root
+
+./configure --prefix=`pwd` --enable-rpath
+make
+make install
+
+source ./bin/thisroot.sh
+
 cd ../../
 
 make clean
