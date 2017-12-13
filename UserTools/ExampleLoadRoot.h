@@ -48,9 +48,10 @@ class ExampleLoadRoot: public Tool {
   ExampleRoot* Data;
 
   long currententry;
-  
+  long NumEvents;
 
 };
 
 
 #endif
+
