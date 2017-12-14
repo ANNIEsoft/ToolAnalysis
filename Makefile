@@ -40,7 +40,7 @@ lib/libToolChain.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libM
 clean: 
 	rm -f include/*.h
 	rm -f lib/*.so
-	rm -f main
+	rm -f Analyse
 
 lib/libDataModel.so: lib/libStore.so lib/libLogging.so
 
