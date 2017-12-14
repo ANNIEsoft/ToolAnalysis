@@ -32,10 +32,6 @@ bool ExampleLoadRoot::Initialise(std::string configfile, DataModel &data){
 
 bool ExampleLoadRoot::Execute(){
 
-  //std::cout<<"getentry="<<Data->GetEntry(currententry)<<std::endl;;
-  // std::cout<<"currententry="<<currententry<<std::endl;
-  // std::cout<<"a="<<Data->a<<std::endl;
-  //std::cout<<"b="<<Data->b<<std::endl;
   /// saving to store for the sake of printing
   Data->GetEntry(currententry);
   m_data->Stores["DataName"]->Set("a",Data->a);
