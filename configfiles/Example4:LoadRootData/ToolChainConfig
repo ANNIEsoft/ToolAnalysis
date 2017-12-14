@@ -1,7 +1,7 @@
 #ToolChain dynamic setup file
 
 ##### Runtime Paramiters #####
-verbose 9
+verbose 1
 error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
 attempt_recover 1
 
@@ -18,6 +18,6 @@ service_kick_sec -1
 Tools_File configfiles/Example4:LoadRootData/ToolsConfig
 
 ##### Run Type #####
-Inline 1
+Inline -1
 Interactive 0
 
