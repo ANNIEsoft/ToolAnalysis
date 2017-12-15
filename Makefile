@@ -3,7 +3,7 @@ ToolDAQFrameworkPath=ToolDAQ/ToolDAQFramework
 ZMQLib= -L ToolDAQ/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I ToolDAQ/zeromq-4.0.7/include/ 
 
-BoostLib= -L ToolDAQ/boost_1_60_0/install/lib -lboost_date_time -lboost_serialization
+BoostLib= -L ToolDAQ/boost_1_60_0/install/lib -lboost_date_time -lboost_serialization  -lboost_filesystem -lboost_iostreams 
 BoostInclude= -I ToolDAQ/boost_1_60_0/install/include
 
 RootInclude=  -I ToolDAQ/root/include

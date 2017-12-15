@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # rpms prerequisits needs root
-#yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git 
+#yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel
 
 
 mkdir ToolDAQ
@@ -25,7 +25,7 @@ cd ../boost_1_60_0
 mkdir install
 
 ./bootstrap.sh --prefix=`pwd`/install/  > /dev/null 2>/dev/null
-./b2 install 
+./b2 install iostreams
 
 export LD_LIBRARY_PATH=`pwd`/install/lib:$LD_LIBRARY_PATH
 
