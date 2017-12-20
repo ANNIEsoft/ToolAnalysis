@@ -6,8 +6,8 @@ ZMQInclude= -I ToolDAQ/zeromq-4.0.7/include/
 BoostLib= -L ToolDAQ/boost_1_60_0/install/lib -lboost_date_time -lboost_serialization  -lboost_filesystem -lboost_iostreams 
 BoostInclude= -I ToolDAQ/boost_1_60_0/install/include
 
-RootInclude=  -I ToolDAQ/root/include
-RootLib=   -L ToolDAQ/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64
+RootInclude=  $(shell root-config --cflags)
+RootLib= $(shell root-config --libs)
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
