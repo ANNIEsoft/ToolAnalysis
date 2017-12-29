@@ -3,17 +3,17 @@ ToolDAQFrameworkPath=ToolDAQ/ToolDAQFramework
 ZMQLib= -L ToolDAQ/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I ToolDAQ/zeromq-4.0.7/include/ 
 
-BoostLib= -L ToolDAQ/boost_1_60_0/install/lib -lboost_date_time -lboost_serialization  -lboost_filesystem -lboost_iostreams 
+BoostLib= -L ToolDAQ/boost_1_60_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams 
 BoostInclude= -I ToolDAQ/boost_1_60_0/install/include
 
 RootInclude=  -I ToolDAQ/root/include
-RootLib=   -L ToolDAQ/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64
+RootLib=   -L ToolDAQ/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude)
-MyToolsLib = $(RootLib)
+MyToolsInclude =  $(RootInclude) `python-config --cflags`
+MyToolsLib = $(RootLib) `python-config --libs`
 
 all: lib/libMyTools.so lib/libToolChain.so lib/libStore.so include/Tool.h  lib/libServiceDiscovery.so lib/libDataModel.so lib/libLogging.so
 

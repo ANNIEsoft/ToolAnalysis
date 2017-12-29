@@ -1,0 +1,4 @@
+# Load Store Config file
+
+verbose 1
+InputFile ./output

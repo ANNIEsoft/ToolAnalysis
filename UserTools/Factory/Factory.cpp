@@ -12,6 +12,7 @@ if (tool=="ExampleloadStore") ret=new ExampleloadStore;
 if (tool=="ExamplePrintData") ret=new ExamplePrintData;
 if (tool=="ExampleLoadRoot") ret=new ExampleLoadRoot;
 
+  if (tool=="PythonScript") ret=new PythonScript;
 return ret;
 }
 

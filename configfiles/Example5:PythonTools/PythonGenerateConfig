@@ -1,0 +1,7 @@
+# Config file for Python Script tool
+
+PythonScript ExamplePythonGenerate
+
+InitialiseFunction Initialise
+ExecuteFunction Execute
+FinaliseFunction Finalise

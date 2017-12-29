@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # rpms prerequisits needs root
-#yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel
+#yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
 
 mkdir ToolDAQ
