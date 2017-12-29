@@ -1,0 +1,7 @@
+# Config file for Python Script tool
+
+PythonScript ExamplePythonPrint
+
+InitialiseFunction Initialise
+ExecuteFunction Execute
+FinaliseFunction Finalise
