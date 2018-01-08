@@ -16,7 +16,6 @@ bool ExampleSaveStore::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("OutFile",outfile);
   m_variables.Get("verbose",verbose);
-  m_data->Stores["DataName"]->Save(outfile.c_str());
 
   return true;
 }
@@ -35,5 +34,6 @@ bool ExampleSaveStore::Finalise(){
   m_data->Stores["DataName"]->Close();
   m_data->Stores["DataName"]->Delete();
   m_data->Stores.clear();
+
   return true;
 }

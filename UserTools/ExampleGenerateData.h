@@ -21,7 +21,7 @@ class ExampleGenerateData: public Tool {
 
   unsigned long NumEvents;
   int verbose;
-  int currentevent;
+  unsigned long currentevent;
 
 };
 
