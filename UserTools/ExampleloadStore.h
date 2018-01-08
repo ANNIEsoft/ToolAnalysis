@@ -20,7 +20,7 @@ class ExampleloadStore: public Tool {
 
  private:
 
-  long currententry;
+  unsigned long currententry;
   int verbose;
   std::string inputfile;
   unsigned long NumEvents;

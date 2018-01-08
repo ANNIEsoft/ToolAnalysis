@@ -29,14 +29,13 @@ bool ExampleGenerateData::Initialise(std::string configfile, DataModel &data){
 
   // set multi entry header info 
   std::string headervalue="info";
-  m_data->Stores["DataName"]->Set("name",headervalue);
-  m_data->Stores["DataName"]->Set("a",a);
-  m_data->Stores["DataName"]->Set("b",b);
-  m_data->Stores["DataName"]->Set("TotalEntries",NumEvents);
+  m_data->Stores["DataName"]->Header->Set("name",headervalue);
+  m_data->Stores["DataName"]->Header->Set("a",a);
+  m_data->Stores["DataName"]->Header->Set("b",b);
 
   srand (time(NULL)); // random seed
 
-  currentevent=-1;
+  currentevent=0;
 
   return true;
 }

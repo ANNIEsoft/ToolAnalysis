@@ -19,8 +19,7 @@ bool ExampleloadStore::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores["DataName"]=new BoostStore(false,2);
   m_data->Stores["DataName"]->Initialise(inputfile);
-  m_data->Stores["DataName"]->GetHeader();
-  m_data->Stores["DataName"]->Get("TotalEntries",NumEvents);
+  m_data->Stores["DataName"]->Header->Get("TotalEntries",NumEvents);
  
   currententry=0;
  
