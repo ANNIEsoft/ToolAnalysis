@@ -20,7 +20,7 @@ bool ExampleLoadRoot::Initialise(std::string configfile, DataModel &data){
   file= new TFile(infile.c_str(),"READ");
   tree= (TTree*) file->Get("Data");
   Data= new ExampleRoot(tree);
-  m_data->CStore.SetPtr("Data",Data,false);
+  m_data->CStore.Set("Data",Data,false);
   m_data->Stores["DataName"]=new BoostStore(false,2);
 
   currententry=1;
