@@ -6,3 +6,6 @@
 #include "ExamplePrintData.cpp"
 #include "ExampleLoadRoot.cpp"
 #include "PythonScript.cpp"
+#include "LAPPDParseScope.cpp"
+#include "LAPPDFindPeak.cpp"
+#include "LAPPDSave.cpp"

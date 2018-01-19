@@ -11,6 +11,7 @@
 #include "Store.h"
 #include "BoostStore.h"
 #include "Logging.h"
+#include "LAPPD.h"
 
 #include <zmq.hpp>
 
