@@ -12,7 +12,7 @@ public:
 
   std::vector<double> waveform;
 
-  bool Print(){};
+  bool Print(){return true;};
 
  private:
 
