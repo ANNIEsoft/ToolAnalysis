@@ -1,4 +1,4 @@
-#include "ExampleloadStore.h"
+#include "ExampleLoadStore.h"
 
 ExampleloadStore::ExampleloadStore():Tool(){}
 

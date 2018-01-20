@@ -12,7 +12,10 @@ if (tool=="ExampleloadStore") ret=new ExampleloadStore;
 if (tool=="ExamplePrintData") ret=new ExamplePrintData;
 if (tool=="ExampleLoadRoot") ret=new ExampleLoadRoot;
 
-  if (tool=="PythonScript") ret=new PythonScript;
+if (tool=="PythonScript") ret=new PythonScript;
+if (tool=="FindMrdTracks") ret=new FindMrdTracks;
+if (tool=="LoadWCSim") ret=new LoadWCSim;
+if (tool=="PrintANNIEEvent") ret=new PrintANNIEEvent;
 return ret;
 }
 
