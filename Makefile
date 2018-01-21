@@ -17,13 +17,13 @@ MyToolsLib = $(RootLib) `python-config --libs`
 
 all: lib/libMyTools.so lib/libToolChain.so lib/libStore.so include/Tool.h  lib/libServiceDiscovery.so lib/libDataModel.so lib/libLogging.so
 
-	g++ -std=c++0x -g src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
+	g++ -std=c++1y -g src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 
 lib/libStore.so:
 
 	cp $(ToolDAQFrameworkPath)/src/Store/*.h include/
-	g++ -std=c++0x -g -fPIC -shared  -I include $(ToolDAQFrameworkPath)/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
+	g++ -std=c++1y -g -fPIC -shared  -I include $(ToolDAQFrameworkPath)/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
 
 
 include/Tool.h:
@@ -34,7 +34,7 @@ include/Tool.h:
 lib/libToolChain.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libMyTools.so lib/libServiceDiscovery.so lib/libLogging.so
 
 	cp $(ToolDAQFrameworkPath)/src/ToolChain/*.h include/
-	g++  -g -fPIC -shared $(ToolDAQFrameworkPath)/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
+	g++ -std=c++1y -g -fPIC -shared $(ToolDAQFrameworkPath)/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
 
 
 clean: 
@@ -45,13 +45,13 @@ clean:
 lib/libDataModel.so: lib/libStore.so lib/libLogging.so
 
 	cp DataModel/*.h include/
-	g++ -std=c++0x -g -fPIC -shared DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
+	g++ -std=c++1y -g -fPIC -shared DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libLogging.so
 
 	cp UserTools/*.h include/
 	cp UserTools/Factory/*.h include/
-	g++ -std=c++0x -g -fPIC -shared  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+	g++ -std=c++1y -g -fPIC -shared  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 lib/libServiceDiscovery.so: lib/libStore.so
 	cp $(ToolDAQFrameworkPath)/src/ServiceDiscovery/ServiceDiscovery.h include/
@@ -63,6 +63,8 @@ lib/libLogging.so: lib/libStore.so
 
 update:
 	cd $(ToolDAQFrameworkPath)
+	git pull
+	cd ToolDAQ/zeromq-4.0.7
 	git pull
 	cd ../..
 	git pull

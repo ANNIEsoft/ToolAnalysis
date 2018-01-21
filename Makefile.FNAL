@@ -40,17 +40,17 @@ include/Tool.h:
 lib/libToolChain.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libMyTools.so lib/libServiceDiscovery.so lib/libLogging.so
 
 	cp $(ToolDAQFrameworkPath)/src/ToolChain/*.h include/
-	g++ $(CPPFLAGS) -g -fPIC -shared $(ToolDAQFrameworkPath)/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
+	g++ $(CPPFLAGS) -std=c++1y -g -fPIC -shared $(ToolDAQFrameworkPath)/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
 
 
 clean: 
-	rm -f include/*.h include/*.hh include/*.C include/*.cxx
+	rm -f include/*.h include/*.hh
 	rm -f lib/*.so
 	rm -f Analyse
 
 lib/libDataModel.so: lib/libStore.so lib/libLogging.so
 
-	cp -L DataModel/* include/
+	cp -L DataModel/*.h include/
 	g++ $(CPPFLAGS) -std=c++1y -g -fPIC -shared DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude) $(UserLib)
 
 lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libLogging.so

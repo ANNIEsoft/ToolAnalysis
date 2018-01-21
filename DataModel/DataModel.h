@@ -12,6 +12,20 @@
 #include "BoostStore.h"
 #include "Logging.h"
 #include "LAPPD.h"
+#include "ANNIEalgorithms.h"
+#include "ANNIEconstants.h"
+#include "BeamStatus.h"
+#include "ChannelKey.h"
+#include "Detector.h"
+#include "Direction.h"
+#include "Geometry.h"
+#include "Hit.h"
+#include "Particle.h"
+#include "Position.h"
+#include "TimeClass.h"
+#include "TriggerClass.h"
+#include "Waveform.h"
+ 
 
 #include <zmq.hpp>
 
