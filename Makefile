@@ -62,9 +62,7 @@ lib/libLogging.so: lib/libStore.so
 	g++ -shared -fPIC -I include $(ToolDAQFrameworkPath)/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
 update:
-	cd $(ToolDAQFrameworkPath)
+	cd $(ToolDAQFrameworkPath); git pull
+	cd ToolDAQ/zeromq-4.0.7; git pull
 	git pull
-	cd ../zeromq-4.0.7
-	git pull
-	cd ../..
-	git pull
+
