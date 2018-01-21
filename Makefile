@@ -64,7 +64,7 @@ lib/libLogging.so: lib/libStore.so
 update:
 	cd $(ToolDAQFrameworkPath)
 	git pull
-	cd ToolDAQ/zeromq-4.0.7
+	cd ../zeromq-4.0.7
 	git pull
 	cd ../..
 	git pull
