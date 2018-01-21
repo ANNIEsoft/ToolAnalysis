@@ -6,13 +6,10 @@
 #include "Position.h"
 #include "Direction.h"
 #include "TimeClass.h"
-class Geometry;
 
 using namespace std;
 // world extent in WCSim is +-600cm in all directions!
 enum class tracktype : uint8_t { STARTONLY, ENDONLY, CONTAINED, UNCONTAINED };
-
-class ANNIEEvent;
 
 class Particle : public SerialisableObject{
 	
