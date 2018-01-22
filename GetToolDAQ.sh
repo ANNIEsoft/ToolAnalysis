@@ -5,6 +5,9 @@
 
 rootflag=1
 boostflag=1
+b1=1
+b3=1
+b5=1
 
 while [ ! $# -eq 0 ]
 do
@@ -30,30 +33,79 @@ do
 	    rootflag=0
 	    cp Makefile.FNAL Makefile
 	    ;;
+
+	--b1 )
+            echo "Installing ToolDAQ for FNAL"
+	    b3=0
+	    b5=0
+	    rootflag=0
+	    boostflag=0
+            ;;
+
+	--b2 )
+            echo "Installing ToolDAQ for FNAL"
+            b1=0
+	    b3=0
+	    rootflag=0
+	    b5=0
+            ;;
 	
-	esac
+	--b3 )
+            echo "Installing ToolDAQ for FNAL"
+            b1=0
+	    b5=0
+	    rootfalg=0
+	    boostflag=0
+            ;;
+	
+	--b4 )
+            echo "Installing ToolDAQ for FNAL"
+            b1=0
+	    b3=0
+            b5=0
+            boostflag=0
+            ;;
+	
+	--b3 )
+            echo "Installing ToolDAQ for FNAL"
+            b1=0
+            b3=0
+            rootfalg=0
+            boostflag=0
+            ;;
+
+    esac
     shift
 done
 
+if [ $b1 -eq 1 ]
+then
+    
+    mkdir ToolDAQ
+fi
 
-mkdir ToolDAQ
 cd ToolDAQ
 
-git clone https://github.com/ToolDAQ/ToolDAQFramework.git
-git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
-
-cd zeromq-4.0.7
-
-./configure --prefix=`pwd`
-make
-make install
-
-export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
+if [ $b1 -eq 1 ]
+then
+    git clone https://github.com/ToolDAQ/ToolDAQFramework.git
+    git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
+    
+    cd zeromq-4.0.7
+    
+    ./configure --prefix=`pwd`
+    make
+    make install
+    
+    export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
+    
+    cd ../
+fi
 
 if [ $boostflag -eq 1 ]
 then
-
-    cd ../
+    
+    
     wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz
     tar zxf boost_1_60_0.tar.gz
     
@@ -63,18 +115,23 @@ then
     
     ./bootstrap.sh --prefix=`pwd`/install/  > /dev/null 2>/dev/null
     ./b2 install iostreams
+    
+    export LD_LIBRARY_PATH=`pwd`/install/lib:$LD_LIBRARY_PATH
+    cd ../
 fi
 
-export LD_LIBRARY_PATH=`pwd`/install/lib:$LD_LIBRARY_PATH
-
-cd ../ToolDAQFramework
-
-make clean
-make
-
-cd ../
-
-export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
+if [ $b3 -eq 1 ]
+then
+    
+    cd ToolDAQFramework
+    
+    make clean
+    make
+    
+    export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
+    cd ../
+    
+fi
 
 if [ $rootflag -eq 1 ]
 then
@@ -88,15 +145,20 @@ then
     make install
     
     source ./bin/thisroot.sh
-
+    
     cd ../
+    
 fi
 
 cd ../
 
-echo "current directory"
-echo `pwd`
-make clean
-make
-
-export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
+if [ $b5 -eq 1 ]
+then
+    
+    echo "current directory"
+    echo `pwd`
+    make clean
+    make
+    
+    export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
+fi
