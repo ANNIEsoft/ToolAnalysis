@@ -55,7 +55,7 @@ lib/libDataModel.so: lib/libStore.so lib/libLogging.so
 
 lib/libMyTools.so: lib/libStore.so include/Tool.h lib/libDataModel.so lib/libLogging.so
 
-	cp UserTools/*.h include/
+	cp UserTools/*/*.h include/
 	cp UserTools/Factory/*.h include/
 	g++ $(CPPFLAGS) -std=c++1y -g -fPIC -shared  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude) $(UserLib)
 
