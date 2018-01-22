@@ -92,8 +92,6 @@ then
     cd ../
 fi
 
-cd ../
-
 echo "current directory"
 echo `pwd`
 make clean
