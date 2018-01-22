@@ -15,7 +15,7 @@ setup boost v1_57_0a -q debug:e9
 
 export LD_LIBRARY_PATH=${ToolAnalysisApp}/lib:${ToolAnalysisApp}/ToolDAQ/ToolDAQFramework/lib/:${ToolAnalysisApp}/ToolDAQ/zeromq-4.0.7/lib:$LD_LIBRARY_PATH
 
-for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
+for folder in `ls -d ${ToolAnalysisApp}/UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done
