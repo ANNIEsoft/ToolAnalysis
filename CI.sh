@@ -2,6 +2,9 @@
  
 source ./GetToolDAQ.sh
 
-./Analyse configfiles/ToolChainConfig
+echo current Dir
+echo `pwd`
+
+./Analyse 
 
 
