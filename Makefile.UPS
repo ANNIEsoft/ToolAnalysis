@@ -2,13 +2,13 @@ ToolDAQFrameworkPath=ToolDAQ/ToolDAQFramework
 
 CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
 
-PythonLib= `python-config --libs` -L $(PYTHON_LIB)/../src/Python-2.7.11
+PythonLib= `python-config --libs` -L $(PYTHON_LIB)
 PythonInclude=`python-config --cflags`
 
-ZMQLib= -L $(ZEROMQ_LIB) -lzmq 
+ZMQLib= -L $(ZEROMQ_LIB) -lzmq
 ZMQInclude= -I $(ZEROMQ_INC)
 
-BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams 
+BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams
 BoostInclude= -I $(BOOST_INC)
 
 RootInclude=  -I $(ROOT_INC)

@@ -6,6 +6,7 @@
 rootflag=1
 boostflag=1
 zeromqflag=1
+upsflag=0
 b1=1
 b3=1
 b5=1
@@ -53,6 +54,7 @@ do
             boostflag=0
 	    rootflag=0
 	    zeromqflag=0
+            upsflag=1
 	    cp Makefile.UPS Makefile
 	    ;;
 
@@ -103,7 +105,7 @@ done
 if [ $b1 -eq 1 ]
 then
     
-    mkdir ToolDAQ
+    mkdir -p ToolDAQ
 fi
 
 cd ToolDAQ
@@ -150,6 +152,11 @@ if [ $b3 -eq 1 ]
 then
     
     cd ToolDAQFramework
+
+    if [ $upsflag -eq 1 ]
+    then
+        patch Makefile ../../FrameworkMakefileUPS.patch
+    fi
     
     make clean
     make
