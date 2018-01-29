@@ -16,10 +16,10 @@ class Geometry : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Geometry() : Detectors(std::map<ChannelKey,Detector>{}), Version(0.), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(detectorstatus::OFF) {};
+  Geometry() : Detectors(std::map<ChannelKey,Detector>{}), Version(0.), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(detectorstatus::OFF) {serialise=true;}
 	
 	Geometry(std::map<ChannelKey,Detector> dets, double ver, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, detectorstatus statin)
-	: Detectors(dets), Version(ver), tank_radius(tankr), tank_halfheight(tankhh), mrd_width(mrdw), mrd_height(mrdh), mrd_depth(mrdd), mrd_start(mrds), numtankpmts(ntankpmts), nummrdpmts(nmrdpmts), numvetopmts(nvetopmts), numlappds(nlappds), Status(statin) {};
+	  : Detectors(dets), Version(ver), tank_radius(tankr), tank_halfheight(tankhh), mrd_width(mrdw), mrd_height(mrdh), mrd_depth(mrdd), mrd_start(mrds), numtankpmts(ntankpmts), nummrdpmts(nmrdpmts), numvetopmts(nvetopmts), numlappds(nlappds), Status(statin) {serialise=true;}
 	
 	inline std::map<ChannelKey,Detector>* GetDetectors(){return &Detectors;}
 	inline double GetVersion(){return Version;}

@@ -13,23 +13,25 @@ class Direction : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Direction() : x(0), y(0), z(0), phi(0), theta(0){};
+  Direction() : x(0), y(0), z(0), phi(0), theta(0){serialise=true;}
 	Direction(double x, double y, double z){
-		double mag=sqrt(pow(x,2.)+pow(y,2.)+pow(z,2.));
-		if(mag==1.){ x=x; y=y; z=z; }
-		else { x=x/mag; y=y/mag; z=z/mag; }
-		theta = (x == 0.0 && y == 0.0 && z == 0.0) ? 0.0 : atan2(sqrt(x*x + y*y),z);
-		phi = (x == 0.0 && y == 0.0) ? 0. : atan2(y, x);
+	  serialise=true;
+	  double mag=sqrt(pow(x,2.)+pow(y,2.)+pow(z,2.));
+	  if(mag==1.){ x=x; y=y; z=z; }
+	  else { x=x/mag; y=y/mag; z=z/mag; }
+	  theta = (x == 0.0 && y == 0.0 && z == 0.0) ? 0.0 : atan2(sqrt(x*x + y*y),z);
+	  phi = (x == 0.0 && y == 0.0) ? 0. : atan2(y, x);
 	};
 	
 	Direction(double phiin, double thetain){
-		theta=thetain;
-		phi=phiin;
-		x=cos(theta)*cos(phi);
-		y=cos(theta)*sin(phi);
-		z=sin(theta);
+	  serialise=true;	
+	  theta=thetain;
+	  phi=phiin;
+	  x=cos(theta)*cos(phi);
+	  y=cos(theta)*sin(phi);
+	  z=sin(theta);
 	};
-	
+  
 	inline double X(){return x;}
 	inline double Y(){return y;}
 	inline double Z(){return z;}

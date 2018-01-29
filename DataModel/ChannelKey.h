@@ -13,9 +13,9 @@ class ChannelKey : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	ChannelKey() : SubDetectorType(subdetector::ADC), DetectorElementIndex(0){};
+  ChannelKey() : SubDetectorType(subdetector::ADC), DetectorElementIndex(0){serialise=true;}
 	//ChannelKey(uint32_t subdetin, uint32_t detelin) : SubDetectorType(subdetin), DetectorElementIndex(detelin){};
-	ChannelKey(subdetector subdetin, uint32_t detelin) : SubDetectorType(subdetin), DetectorElementIndex(detelin){};
+  ChannelKey(subdetector subdetin, uint32_t detelin) : SubDetectorType(subdetin), DetectorElementIndex(detelin){serialise=true;}
 	
 	//inline uint32_t GetSubDetectorType() {return SubDetectorType;}
 	inline subdetector GetSubDetectorType() const{return SubDetectorType;}

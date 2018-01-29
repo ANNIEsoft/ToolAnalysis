@@ -19,13 +19,13 @@ class Particle : public SerialisableObject{
 	
 	Particle() : ParticlePDG(0), startEnergy(0), stopEnergy(0), startVertex(),
 	  stopVertex(), startTime(), stopTime(), startDirection(),
-	  trackLength(0), StartStopType(tracktype::UNCONTAINED) {};
+		     trackLength(0), StartStopType(tracktype::UNCONTAINED) {serialise=true;}
 	
 	Particle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
 	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein) 
 	: ParticlePDG(pdg), startEnergy(sttE), stopEnergy(stpE), startVertex(sttpos),
 	  stopVertex(stppos), startTime(sttt), stopTime(stpt), startDirection(startdir),
-	  trackLength(len), StartStopType(tracktypein) {};
+	  trackLength(len), StartStopType(tracktypein) {serialise=true;}
 	
 	inline void SetPdgCode(int code){ParticlePDG=code;}
 	inline void SetStartEnergy(double E){startEnergy=E;}
@@ -97,12 +97,12 @@ class MCParticle : public Particle {
 	public:
 	
 	MCParticle() : Particle(0, 0., 0., Position(), Position(), TimeClass(), TimeClass(), Direction(), 0.,
-	  tracktype::UNCONTAINED), ParticleID(0), ParentID(0) {};
+				tracktype::UNCONTAINED), ParticleID(0), ParentID(0) {serialise=true;}
 	
 	MCParticle(int partid, int parentid, int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
 	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein) 
 	: Particle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein), 
-	  ParticleID(partid), ParentID(parentid){};
+	  ParticleID(partid), ParentID(parentid){serialise=true;}
 	
 	inline int GetParticleID(){return ParticleID;}
 	inline int GetParentID(){return ParentID;}

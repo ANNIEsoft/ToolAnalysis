@@ -12,8 +12,8 @@ class TriggerClass : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	TriggerClass() : TriggerName(""), TriggerOccurred(false), TriggerTime(){};
-	TriggerClass(std::string trigname, bool trigocc, TimeClass trigtime) : TriggerName(trigname), TriggerOccurred(trigocc), TriggerTime(trigtime){};
+  TriggerClass() : TriggerName(""), TriggerOccurred(false), TriggerTime(){serialise=true;}
+  TriggerClass(std::string trigname, bool trigocc, TimeClass trigtime) : TriggerName(trigname), TriggerOccurred(trigocc), TriggerTime(trigtime){serialise=true;}
 	
 	inline std::string GetName(){return TriggerName;}
 	inline TimeClass GetTime(){return TriggerTime;}

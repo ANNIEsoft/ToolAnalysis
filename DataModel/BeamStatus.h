@@ -12,7 +12,7 @@ class BeamStatusClass : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	BeamStatusClass() : Timestamp(), Intensity(0), Power(0), Stability("") {};
+  BeamStatusClass() : Timestamp(), Intensity(0), Power(0), Stability(""){ serialise=true;}
 	BeamStatusClass(TimeClass ts, double beaminten, double beampow, std::string beamstab) : Timestamp(ts), Intensity(beaminten), Power(beampow), Stability(beamstab){};
 	
 	inline TimeClass GetTimestamp(){return Timestamp;}
