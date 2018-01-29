@@ -11,8 +11,8 @@ class Position : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Position() : x(0), y(0), z(0){};
-	Position(double xin, double yin, double zin) : x(xin), y(yin), z(zin){};
+  Position() : x(0), y(0), z(0){serialise=true;}
+  Position(double xin, double yin, double zin) : x(xin), y(yin), z(zin){serialise=true;}
 	
 	inline double X(){return x;}
 	inline double Y(){return y;}

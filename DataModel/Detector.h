@@ -23,9 +23,9 @@ class Detector : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Detector() : DetectorElement(""), DetectorPosition(), DetectorDirection(), DetectorId(0), DetectorType(""), Status(detectorstatus::OFF), AvgPulseRate(0.) {};
+  Detector() : DetectorElement(""), DetectorPosition(), DetectorDirection(), DetectorId(0), DetectorType(""), Status(detectorstatus::OFF), AvgPulseRate(0.) {serialise=true;}
 	
-	Detector(std::string detel, Position posin, Direction dirin, int detid, std::string detype, detectorstatus stat, double avgrate) : DetectorElement(detel), DetectorPosition(posin), DetectorDirection(dirin), DetectorId(detid), DetectorType(detype), Status(stat), AvgPulseRate(avgrate){};
+  Detector(std::string detel, Position posin, Direction dirin, int detid, std::string detype, detectorstatus stat, double avgrate) : DetectorElement(detel), DetectorPosition(posin), DetectorDirection(dirin), DetectorId(detid), DetectorType(detype), Status(stat), AvgPulseRate(avgrate){serialise=true;}
 	
 	std::string GetDetectorElement(){return DetectorElement;}
 	Position GetDetectorPosition(){return DetectorPosition;}

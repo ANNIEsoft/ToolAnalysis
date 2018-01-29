@@ -13,8 +13,8 @@ class Waveform : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Waveform() : StartTime(), Samples(std::vector<T>{}) {};
-	Waveform(TimeClass tsin, std::vector<T> samplesin) : StartTime(tsin), Samples(samplesin){};
+  Waveform() : StartTime(), Samples(std::vector<T>{}) {serialise=true;}
+  Waveform(TimeClass tsin, std::vector<T> samplesin) : StartTime(tsin), Samples(samplesin){serialise=true;}
 	
 	inline TimeClass GetStartTime(){return StartTime;}
 	inline std::vector<T>* GetSamples(){return &Samples;}

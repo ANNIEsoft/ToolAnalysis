@@ -11,8 +11,8 @@ class TimeClass : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	TimeClass() : unixns(0){};
-	TimeClass(double timens) : unixns(timens){};
+  TimeClass() : unixns(0){serialise=true;}
+  TimeClass(double timens) : unixns(timens){serialise=true;}
 	
 	inline uint64_t GetNs(){return unixns;}
 	inline void SetNs(uint64_t tns){unixns=tns;}

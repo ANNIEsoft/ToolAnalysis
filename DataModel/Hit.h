@@ -12,8 +12,8 @@ class Hit : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Hit() : TubeId(0), Time(TimeClass()), Charge(0){};
-	Hit(int tubeid, TimeClass thetime, double charge) : TubeId(tubeid), Time(thetime), Charge(charge){};
+  Hit() : TubeId(0), Time(TimeClass()), Charge(0){serialise=true;}
+  Hit(int tubeid, TimeClass thetime, double charge) : TubeId(tubeid), Time(thetime), Charge(charge){serialise=true;}
 	
 	inline int GetTubeId(){return TubeId;}
 	inline TimeClass GetTime(){return Time;}
