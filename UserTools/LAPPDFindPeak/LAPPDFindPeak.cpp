@@ -18,25 +18,33 @@ bool LAPPDFindPeak::Initialise(std::string configfile, DataModel &data){
 
 bool LAPPDFindPeak::Execute(){
 
-  LAPPD data;
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDData",data);
+  //std::cout<<"in FindPeak"<<std::endl;
+  Waveform<double> bwav;
+  //m_data->Stores["ANNIEEvent"]->Print();
 
-  int tracesize = data.waveform.size();
-  double max=0;
+  bool testval =  m_data->Stores["ANNIEEvent"]->Get("LAPPDtrace",bwav);
+  //std::cout<<"did i get from store "<<testval<<std::endl;
+  //int tracesize = bwav.GetSamples()->size();
+  //std::cout<<"trace size: "<<tracesize<<std::endl;
+
+  double themax=0;
   int maxbin=0;
-  for(int i=0; i<tracesize; i++){
 
-    if(max<data.waveform.at(i)){
-      max =data.waveform.at(i);
-      maxbin=i;
-    }
+  double themin=55555.;
+  int minbin = 0;
 
-    FindPulseMax();
+  // This function is defined in DataModel/ANNIEalgorithms.cpp
+  FindPulseMax(bwav.GetSamples(),themax,maxbin,themin,minbin);
 
-    std::cout<<"the max value is: "<<max<<" at sample #"<<maxbin<<std::endl;
-    m_data->Stores["ANNIEEvent"]->Set("peakmax",max);
 
-  }
+  std::cout<<"the max value is: "<<themax<<" at sample #"<<maxbin
+  <<"   the min value is: "<<themin<<" at sample #"<<minbin<<std::endl;
+
+  // add the measured peak values to the Store
+  m_data->Stores["ANNIEEvent"]->Set("peakmax",themax);
+  m_data->Stores["ANNIEEvent"]->Set("maxbin",maxbin);
+  m_data->Stores["ANNIEEvent"]->Set("peakmin",themin);
+  m_data->Stores["ANNIEEvent"]->Set("minbin",minbin);
 
   return true;
 }
