@@ -106,10 +106,10 @@ if [ $boostflag -eq 1 ]
 then
     
     
-    wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz
-    tar zxf boost_1_60_0.tar.gz
+    wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
+    tar zxf boost_1_66_0.tar.gz
     
-    cd boost_1_60_0
+    cd boost_1_66_0
     
     mkdir install
     
