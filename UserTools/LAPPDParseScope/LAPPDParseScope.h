@@ -3,7 +3,7 @@
 
 #include <string>
 #include <iostream>
-
+#include <TRandom3.h>
 #include "Tool.h"
 
 class LAPPDParseScope: public Tool {
@@ -19,7 +19,8 @@ class LAPPDParseScope: public Tool {
 
  private:
 
-
+  //ROOT random number generator
+  TRandom3* myTR;
 
 
 
