@@ -1,0 +1,16 @@
+--- Makefile	2018-01-22 22:52:49.266673013 -0600
++++ mak	2018-01-22 22:46:22.486197611 -0600
+@@ -1,9 +1,9 @@
+ 
+-ZMQLib= -L ../zeromq-4.0.7/lib -lzmq 
+-ZMQInclude= -I ../zeromq-4.0.7/include/ 
++ZMQLib= -L $(ZEROMQ_LIB) -lzmq 
++ZMQInclude= -I $(ZEROMQ_INC)
+ 
+-BoostLib= -L ../boost_1_60_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams
+-BoostInclude= -I ../boost_1_60_0/install/include/
++BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams
++BoostInclude= -I $(BOOST_INC)
+ 
+ DataModelInclude =
+ DataModelLib =

@@ -5,6 +5,8 @@
 
 rootflag=1
 boostflag=1
+zeromqflag=1
+upsflag=0
 b1=1
 b3=1
 b5=1
@@ -32,6 +34,28 @@ do
             boostflag=0
 	    rootflag=0
 	    cp Makefile.FNAL Makefile
+	    ;;
+
+	--ups | -u)
+            echo "Installing ToolDAQ for FNAL UPS"
+            if [ -z "$BOOST_DIR" ]; then
+                echo "The boost product has not been set up."
+                exit 1
+            elif [ -z "$ROOT_DIR" ]; then
+                echo "The root product has not been set up."
+                exit 2
+            elif [ -z "$ZEROMQ_DIR" ]; then
+                echo "The zeromq product has not been set up."
+                exit 3
+            elif [ -z "$PYTHON_DIR" ]; then
+                echo "The python product has not been set up."
+                exit 4
+            fi
+            boostflag=0
+	    rootflag=0
+	    zeromqflag=0
+            upsflag=1
+	    cp Makefile.UPS Makefile
 	    ;;
 
 	--b1 )
@@ -81,7 +105,7 @@ done
 if [ $b1 -eq 1 ]
 then
     
-    mkdir ToolDAQ
+    mkdir -p ToolDAQ
 fi
 
 cd ToolDAQ
@@ -89,17 +113,21 @@ cd ToolDAQ
 if [ $b1 -eq 1 ]
 then
     git clone https://github.com/ToolDAQ/ToolDAQFramework.git
-    git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
+
+    if [ $zeromqflag -eq 1 ]
+    then
+        git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
     
-    cd zeromq-4.0.7
+        cd zeromq-4.0.7
+
+        ./configure --prefix=`pwd`
+        make
+        make install
     
-    ./configure --prefix=`pwd`
-    make
-    make install
+        export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
     
-    export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
-    
-    cd ../
+        cd ../
+    fi
 fi
 
 if [ $boostflag -eq 1 ]
@@ -124,6 +152,11 @@ if [ $b3 -eq 1 ]
 then
     
     cd ToolDAQFramework
+
+    if [ $upsflag -eq 1 ]
+    then
+        patch Makefile ../../FrameworkMakefileUPS.patch
+    fi
     
     make clean
     make
