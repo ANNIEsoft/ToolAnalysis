@@ -94,7 +94,7 @@ then
     cd zeromq-4.0.7
     
     ./configure --prefix=`pwd`
-    make
+    make -j8
     make install
     
     export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
@@ -126,7 +126,7 @@ then
     cd ToolDAQFramework
     
     make clean
-    make
+    make -j8
     
     export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
     cd ../
@@ -140,9 +140,8 @@ then
     tar zxvf root_v5.34.34.source.tar.gz
     cd root
     
-    ./configure --prefix=`pwd` --enable-rpath
-    make
-    make install
+    ./configure --enable-rpath
+    make -j8
     
     source ./bin/thisroot.sh
     
@@ -158,7 +157,7 @@ then
     echo "current directory"
     echo `pwd`
     make clean
-    make
+    make -j8
     
     export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
 fi
