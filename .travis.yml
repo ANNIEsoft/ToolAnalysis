@@ -12,7 +12,11 @@ before_install:
   - docker pull anniesoft/toolanalysis:base
 
 install:
-  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; cat Makefile | sed s:'ToolDAQPath=ToolDAQ':ToolDAQPath=/ToolAnalysis/ToolDAQ: >Makefile.travis; cat Setup.sh | sed s:'ToolDAQapp=`pwd`':ToolDAQapp=/ToolAnalysis: >Setup.sh.travis ; mv Makefile.travis Makefile; mv Setup.sh.travis Setup.sh; make clean; make "
+  - cat Makefile | sed s:'ToolDAQPath=ToolDAQ':'ToolDAQPath=/ToolAnalysis/ToolDAQ': >Makefile.travis
+  -  cat Setup.sh | sed s:'ToolDAQapp=`pwd`':'ToolDAQapp=/ToolAnalysis': >Setup.sh.travis
+  - mv Makefile.travis Makefile
+  - mv tup.sh.travis Setup.sh
+  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; make clean; make "
 
 script:
   - docker start -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source Setup.sh ; ./Analyse "
