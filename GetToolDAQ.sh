@@ -3,11 +3,12 @@
 # rpms prerequisits needs root
 #yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
+init=1
+tooldaq=1
 rootflag=1
 boostflag=1
-b1=1
-b3=1
-b5=1
+zmq=1
+final=1
 
 while [ ! $# -eq 0 ]
 do
@@ -34,43 +35,55 @@ do
 	    cp Makefile.FNAL Makefile
 	    ;;
 
+	--no_init )
+	     echo "Installing ToolDAQ without creating ToolDAQ Folder"
+	    init=0;
+	    ;;
+
+	--no_zmq )
+            echo "Installing ToolDAQ without zmq"
+            zmq=0
+            ;;
+
+	--no_tooldaq )
+	    echo "Installing dependancies without ToolDAQ"
+	    tooldaq=0
+	    ;;
+
+	--no_final )
+            echo "Installing ToolDAQ without compiling ToolAnalysis"
+            final=0
+            ;;
+
+
 	--b1 )
-            echo "Installing ToolDAQ for FNAL"
-	    b3=0
-	    b5=0
+            echo "Installing ToolDAQ part1"
+	    final=0
 	    rootflag=0
 	    boostflag=0
             ;;
 
 	--b2 )
-            echo "Installing ToolDAQ for FNAL"
-            b1=0
-	    b3=0
+            echo "Installing ToolDAQ part2"
+            init=0
+	    zmq=0
 	    rootflag=0
-	    b5=0
+	    final=0
             ;;
 	
 	--b3 )
-            echo "Installing ToolDAQ for FNAL"
-            b1=0
-	    b5=0
-	    rootfalg=0
-	    boostflag=0
-            ;;
-	
-	--b4 )
-            echo "Installing ToolDAQ for FNAL"
-            b1=0
-	    b3=0
-            b5=0
+            echo "Installing ToolDAQ part3"
+            init=0
+	    zmq=0
+            final=0
             boostflag=0
             ;;
 	
-	--b3 )
-            echo "Installing ToolDAQ for FNAL"
-            b1=0
-            b3=0
-            rootfalg=0
+	--b4 )
+            echo "Installing ToolDAQ part4"
+            init=0
+	    zmq=0
+            rootflag=0
             boostflag=0
             ;;
 
@@ -78,7 +91,7 @@ do
     shift
 done
 
-if [ $b1 -eq 1 ]
+if [ $init -eq 1 ]
 then
     
     mkdir ToolDAQ
@@ -86,9 +99,14 @@ fi
 
 cd ToolDAQ
 
-if [ $b1 -eq 1 ]
+if [ $tooldaq -eq 1 ]
 then
-    git clone https://github.com/ToolDAQ/ToolDAQFramework.git
+
+git clone https://github.com/ToolDAQ/ToolDAQFramework.git
+fi
+
+if [ $zmq -eq 1 ]
+then
     git clone https://github.com/ToolDAQ/zeromq-4.0.7.git
     
     cd zeromq-4.0.7
@@ -120,19 +138,6 @@ then
     cd ../
 fi
 
-if [ $b3 -eq 1 ]
-then
-    
-    cd ToolDAQFramework
-    
-    make clean
-    make -j8
-    
-    export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
-    cd ../
-    
-fi
-
 if [ $rootflag -eq 1 ]
 then
     
@@ -151,13 +156,13 @@ fi
 
 cd ../
 
-if [ $b5 -eq 1 ]
+if [ $final -eq 1 ]
 then
     
     echo "current directory"
     echo `pwd`
     make clean
-    make -j8
+    make 
     
     export LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH
 fi
