@@ -15,7 +15,7 @@ install:
   - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; ln -s /ToolAnalysis/ToolDAQ ./ToolDAQ ; make clean; make "
 
 script:
-  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; ls; source ./Setup.sh ; ./Analyse "
+  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse "
 
 notifications:
   email:
