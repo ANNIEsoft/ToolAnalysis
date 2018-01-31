@@ -12,10 +12,10 @@ before_install:
   - docker pull anniesoft/toolanalysis:base
 
 install:
-  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /tooy/buildtest ;  make clean; make "
+  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ;  make clean; make "
 
 script:
-  - docker start -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd/root/buildtest ; source Setup.sh ; ./Analyse "
+  - docker start -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source Setup.sh ; ./Analyse "
 
 notifications:
   email:
