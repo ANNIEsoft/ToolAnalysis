@@ -1,29 +1,26 @@
-language: cpp
-
 sudo: false
 
-addons:
-  apt:
-    packages:
-    - git
-    - dpkg-dev
-    - make
-    - g++
-    - gcc
-    - binutils
-    - libx11-dev
-    - libxpm-dev
-    - libxft-dev
-    - libxext-dev
-    - libbz2-dev
-    - python-dev
+language: cpp
 
-install: true
+compiler: gcc
+dist: trusty
 
-script: 
-  - ./GetToolDAQ.sh --b1
-  - ./GetToolDAQ.sh --b2
-  - ./GetToolDAQ.sh --b3
-  - ./GetToolDAQ.sh --b4
-  - source Setup.sh; ./GetToolDAQ.sh --b5
+services:
+  - docker
+
+before_install:
+  - docker pull anniesoft/toolanalysis:base
+
+install:
+  - docker run -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /tooy/buildtest ;  make clean; make "
+
+script:
+  - docker start -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd/root/buildtest ; source Setup.sh ; ./Analyse "
+
+notifications:
+  email:
+    recipients:
+      - b.richards@qmul.ac.uk
+    on_success: never # default: change
+    on_failure: always # default: always
 
