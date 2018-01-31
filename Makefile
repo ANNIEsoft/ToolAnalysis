@@ -1,17 +1,17 @@
-ToolDAQFrameworkPath=ToolDAQ/ToolDAQFramework
+ToolDAQPath=ToolDAQ
 
 CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 
-ZMQLib= -L ToolDAQ/zeromq-4.0.7/lib -lzmq 
-ZMQInclude= -I ToolDAQ/zeromq-4.0.7/include/ 
+ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
+ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/ 
 
-BoostLib= -L ToolDAQ/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams 
-BoostInclude= -I ToolDAQ/boost_1_66_0/install/include
+BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams 
+BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
-RootInclude=  -I ToolDAQ/root/include
-RootLib=   -L ToolDAQ/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
+RootInclude=  -I $(ToolDAQPath)/root/include
+RootLib=   -L $(ToolDAQPath)/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
@@ -26,21 +26,21 @@ Analyse: src/main.cpp
 	g++ -std=c++1y -g -fPIC $(CPPFLAGS) src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 
-lib/libStore.so: $(ToolDAQFrameworkPath)/src/Store/*
+lib/libStore.so: $(ToolDAQPath)/ToolDAQFramework/src/Store/*
 
-	cp $(ToolDAQFrameworkPath)/src/Store/*.h include/
-	$(CC)  -I include $(ToolDAQFrameworkPath)/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
-
-
-include/Tool.h: $(ToolDAQFrameworkPath)/src/Tool/Tool.h
-
-	cp $(ToolDAQFrameworkPath)/src/Tool/Tool.h include/
+	cp $(ToolDAQPath)/ToolDAQFramework/src/Store/*.h include/
+	$(CC)  -I include $(ToolDAQPath)/ToolDAQFramework/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
 
 
-lib/libToolChain.so: $(ToolDAQFrameworkPath)/src/ToolChain/*
+include/Tool.h: $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h
 
-	cp $(ToolDAQFrameworkPath)/src/ToolChain/*.h include/
-	$(CC) $(ToolDAQFrameworkPath)/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
+	cp $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h include/
+
+
+lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/*
+
+	cp $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/*.h include/
+	$(CC) $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
 
 
 clean: 
@@ -59,16 +59,16 @@ lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libDataModel.so
 	cp UserTools/Factory/*.h include/
 	$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
-lib/libServiceDiscovery.so: $(ToolDAQFrameworkPath)/src/ServiceDiscovery/*
-	cp $(ToolDAQFrameworkPath)/src/ServiceDiscovery/ServiceDiscovery.h include/
-	$(CC) -I include $(ToolDAQFrameworkPath)/src/ServiceDiscovery/ServiceDiscovery.cpp -o lib/libServiceDiscovery.so -L lib/ -lStore  $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
+lib/libServiceDiscovery.so: $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/*
+	cp $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.h include/
+	$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.cpp -o lib/libServiceDiscovery.so -L lib/ -lStore  $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
-lib/libLogging.so: $(ToolDAQFrameworkPath)/src/Logging/*
-	cp $(ToolDAQFrameworkPath)/src/Logging/Logging.h include/
-	$(CC) -I include $(ToolDAQFrameworkPath)/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
+lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/*
+	cp $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.h include/
+	$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
 update:
-	cd $(ToolDAQFrameworkPath); git pull
-	cd ToolDAQ/zeromq-4.0.7; git pull
+	cd $(ToolDAQPath)/ToolDAQFramework; git pull
+	cd $(ToolDAQPath)/zeromq-4.0.7; git pull
 	git pull
 
