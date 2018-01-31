@@ -67,6 +67,7 @@ do
             echo "Installing ToolDAQ part2"
             init=0
 	    zmq=0
+	    tooldaq=0
 	    rootflag=0
 	    final=0
             ;;
@@ -75,6 +76,7 @@ do
             echo "Installing ToolDAQ part3"
             init=0
 	    zmq=0
+	    tooldaq=0
             final=0
             boostflag=0
             ;;
@@ -83,6 +85,7 @@ do
             echo "Installing ToolDAQ part4"
             init=0
 	    zmq=0
+	    tooldaq=0
             rootflag=0
             boostflag=0
             ;;
