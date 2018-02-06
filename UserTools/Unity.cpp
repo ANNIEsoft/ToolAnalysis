@@ -11,3 +11,7 @@
 #include "LAPPDSave/LAPPDSave.cpp"
 #include "LAPPDSim/LAPPDSim.cpp"
 #include "LAPPDSim/LAPPDresponse.cpp"
+#include "FindMrdTracks/FindMrdTracks.cpp"
+#include "LoadWCSim/LoadWCSim.cpp"
+#include "LoadWCSim/wcsimT.cpp"
+#include "PrintANNIEEvent/PrintANNIEEvent.cpp"
