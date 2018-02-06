@@ -2,7 +2,7 @@
 
 #Application path location of applicaiton
 
-ToolAnalysisApp="/annie/app/users/brichard/ToolAnalysis"
+ToolAnalysisApp=`pwd`
 
 source /grid/fermiapp/products/common/etc/setup
 export PRODUCTS=${PRODUCTS}:/grid/fermiapp/products/larsoft
@@ -13,7 +13,8 @@ setup -f Linux64bit+2.6-2.12 python v2_7_11
 
 setup boost v1_57_0a -q debug:e9
 
-export LD_LIBRARY_PATH=${ToolAnalysisApp}/lib:${ToolAnalysisApp}/ToolDAQ/ToolDAQFramework/lib/:${ToolAnalysisApp}/ToolDAQ/zeromq-4.0.7/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${ToolAnalysisApp}/lib:${ToolAnalysisApp}/ToolDAQ/ToolDAQFramework/lib/:${ToolAnalysisApp}/ToolDAQ/zeromq-4.0.7/lib:${ToolAnalysisApp}/ToolDAQ/LibWCSim/:${ToolAnalysisApp}/ToolDAQ/LibFindMrdTracks/src:$LD_LIBRARY_PATH
+export ROOT_INCLUDE_PATH=${ToolAnalysisApp}/ToolDAQ/LibWCSim/include/:$ROOT_INCLUDE_PATH
 
 for folder in `ls -d ${ToolAnalysisApp}/UserTools/*/ `
 do
