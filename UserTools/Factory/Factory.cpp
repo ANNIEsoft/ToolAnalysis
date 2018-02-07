@@ -12,11 +12,9 @@ if (tool=="ExampleloadStore") ret=new ExampleloadStore;
 if (tool=="ExamplePrintData") ret=new ExamplePrintData;
 if (tool=="ExampleLoadRoot") ret=new ExampleLoadRoot;
 if (tool=="PythonScript") ret=new PythonScript;
- if (tool=="LAPPDParseScope") ret=new LAPPDParseScope;
- if (tool=="LAPPDFindPeak") ret=new LAPPDFindPeak;
- if (tool=="LAPPDSave") ret=new LAPPDSave;
-
-
+if (tool=="LAPPDParseScope") ret=new LAPPDParseScope;
+if (tool=="LAPPDFindPeak") ret=new LAPPDFindPeak;
+if (tool=="LAPPDSave") ret=new LAPPDSave;
+if (tool=="LAPPDSim") ret=new LAPPDSim;
 return ret;
 }
-

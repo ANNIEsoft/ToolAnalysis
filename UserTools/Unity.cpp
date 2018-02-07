@@ -9,3 +9,5 @@
 #include "LAPPDParseScope/LAPPDParseScope.cpp"
 #include "LAPPDFindPeak/LAPPDFindPeak.cpp"
 #include "LAPPDSave/LAPPDSave.cpp"
+#include "LAPPDSim/LAPPDSim.cpp"
+#include "LAPPDSim/LAPPDresponse.cpp"
