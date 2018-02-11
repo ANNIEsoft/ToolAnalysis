@@ -6,36 +6,20 @@ FROM cern/cc7-base:latest
 ### Run the following commands as super user (root):
 USER root
 
-#######################
-### GCC ENVIRONMENT ###
-#######################
+Add ToolDAQ.tar.gz /
 
 ### Required package for ROOT
-RUN yum install -y \
-    wget \
-    tar \
-    cmake \
-    gcc-c++ \
-    gcc \
-    binutils \
-    libX11-devel \
-    libXpm-devel \
-    libXft-devel \
-    libXext-devel \
-    make \
-    file
-
-### Git and Other Requirments
-RUN yum install -y \
-    git \
-    bzip2-devel \
-    python-devel
-    
-Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ;
-Add ToolDAQ.tar.gz /ToolAnalysis/
-Run cd ToolAnalysis/ToolDAQ ;  git clone https://github.com/ToolDAQ/ToolDAQFramework.git;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --b4;
+RUN yum install -y git freetype-devel python-devel gcc-c++ make\
+    && git clone https://github.com/ANNIEsoft/ToolAnalysis.git \
+    && mv /ToolDAQ /ToolAnalysis/ \
+    && cd /ToolAnalysis/ToolDAQ \
+    && git clone https://github.com/ToolDAQ/ToolDAQFramework.git \
+    && cd /ToolAnalysis \ 
+    && ./GetToolDAQ.sh --b4 \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 
 ### Open terminal
 CMD ["/bin/bash"]
+
