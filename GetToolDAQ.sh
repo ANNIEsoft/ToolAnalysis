@@ -129,6 +129,7 @@ then
     
     wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
     tar zxf boost_1_66_0.tar.gz
+    rm -rf boost_1_66_0.tar.gz
     
     cd boost_1_66_0
     
@@ -146,6 +147,7 @@ then
     
     wget https://root.cern.ch/download/root_v5.34.34.source.tar.gz
     tar zxvf root_v5.34.34.source.tar.gz
+    rm -rf root_v5.34.34.source.tar.gz
     cd root
     
     ./configure --enable-rpath
