@@ -19,11 +19,6 @@ class LAPPDParseScope: public Tool {
 
  private:
 
-  //ROOT random number generator
-  TRandom3* myTR;
-
-
-
 };
 
 
