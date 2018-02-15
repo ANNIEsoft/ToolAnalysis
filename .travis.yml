@@ -19,15 +19,14 @@ jobs:
     - stage: test
       script: docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse "
     - 
-      script: docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example1"
+      script: 
+        - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example1"
+        - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example3"
+        - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example5"
     -
-      script: docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example2"
-    -
-      script: docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example3"
-    -
-      script: docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example4"
-    -
-      script: docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example5"
+      script: 
+        - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example2"
+        - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; source ./Setup.sh ; ./Analyse Example4"
 
 notifications:
   email:
