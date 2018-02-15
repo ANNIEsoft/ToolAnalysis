@@ -15,7 +15,7 @@ service_publish_sec -1
 service_kick_sec -1
 
 ##### Tools To Add #####
-Tools_File configfiles/Example1:GenerateStoreData/ToolsConfig
+Tools_File configfiles/Example1-GenerateStoreData/ToolsConfig
 
 ##### Run Type #####
 Inline -1
