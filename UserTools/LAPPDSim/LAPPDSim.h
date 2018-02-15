@@ -15,10 +15,12 @@ class LAPPDSim: public Tool {
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
-
+  Waveform<double> SimpleGenPulse(vector<double> pulsetimes);
 
  private:
 
+   //ROOT random number generator
+   TRandom3* myTR;
 
 
 
