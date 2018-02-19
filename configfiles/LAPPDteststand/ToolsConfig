@@ -1,4 +1,5 @@
 tool1 LAPPDParseScope null
-tool4 LAPPDSim null
-tool2 LAPPDFindPeak null
-tool3 LAPPDSave null
+tool2 GenerateHits null
+tool3 LAPPDSim null
+tool4 LAPPDFindPeak null
+tool5 LAPPDSave null
