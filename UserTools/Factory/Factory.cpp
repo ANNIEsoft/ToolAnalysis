@@ -16,5 +16,6 @@ if (tool=="LAPPDParseScope") ret=new LAPPDParseScope;
 if (tool=="LAPPDFindPeak") ret=new LAPPDFindPeak;
 if (tool=="LAPPDSave") ret=new LAPPDSave;
 if (tool=="LAPPDSim") ret=new LAPPDSim;
+  if (tool=="GenerateHits") ret=new GenerateHits;
 return ret;
 }
