@@ -31,22 +31,49 @@ bool LAPPDSim::Execute(){
 
   std::map<int,vector<Waveform<double>>> RawLAPPDData;
 
-  //loop over 5 channels, populate
-  for(int i=0; i<5; i++){
+  // get the MC Hits
+  std::map<int,vector<LAPPDHit>> lappdmchits;
+  bool testval =  m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHit",lappdmchits);
 
-    // fill every event with exactly two pulses at 20 samples and 70 samples (lame/boring)
+  map <int, vector<LAPPDHit>> :: iterator itr;
+
+  // loop over the number of lappds
+  for (itr = lappdmchits.begin(); itr != lappdmchits.end(); ++itr){
+    int tubeno = itr->first;
+
+    vector<LAPPDHit> mchits = itr->second;
+
     std::vector<double> pulsetimes;
-    pulsetimes.push_back(20);
-    pulsetimes.push_back(70);
-    // make the waveform
-    Waveform<double> awav = SimpleGenPulse(pulsetimes);
+    // loop over the pulses on each lappd
+    for(int j=0; j<mchits.size(); j++){
 
-    // stuff the waveform into a vector of Waveforms
-    vector<Waveform<double>> Vwavs;
-    Vwavs.push_back(awav);
+      // Here we would input these pulses into our lappd model
+      // and extract the signals on each of 60 channels...
+      // For now we just extract the 2 Tpsec times
+      // and input them in 5 channels
+
+      LAPPDHit ahit = mchits.at(j);
+      double atime = ahit.GetTpsec();
+      pulsetimes.push_back(atime) ;
+
+    }
+
+    //loop over 5 channels, populate with pulses
+    //this part of the code is totally made up
+    //as a place holder
+    for(int i=0; i<5; i++){
+
+      // make the waveform
+      Waveform<double> awav = SimpleGenPulse(pulsetimes);
+
+      // stuff the waveform into a vector of Waveforms
+      vector<Waveform<double>> Vwavs;
+      Vwavs.push_back(awav);
+      RawLAPPDData.insert(pair <int,vector<Waveform<double>>> (i,Vwavs));
+    }
 
     // put the vector of Waveforms into the LAPPDData Map with a channel FindPulseMax
-    RawLAPPDData.insert(pair <int,vector<Waveform<double>>> (i,Vwavs));
+
   }
 
   //put the fake LAPPD pulse into the ANNIEEvent Store, call it "LAPPDtrace"

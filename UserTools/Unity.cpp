@@ -11,3 +11,4 @@
 #include "LAPPDSave/LAPPDSave.cpp"
 #include "LAPPDSim/LAPPDSim.cpp"
 #include "LAPPDSim/LAPPDresponse.cpp"
+#include "GenerateHits/GenerateHits.cpp"
