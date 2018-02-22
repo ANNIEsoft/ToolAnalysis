@@ -7,6 +7,7 @@
 #include "Examples/ExampleLoadRoot.cpp"
 #include "PythonScript/PythonScript.cpp"
 #include "LAPPDParseScope/LAPPDParseScope.cpp"
+#include "LAPPDParseACC/LAPPDParseACC.cpp"
 #include "LAPPDFindPeak/LAPPDFindPeak.cpp"
 #include "LAPPDSave/LAPPDSave.cpp"
 #include "LAPPDSim/LAPPDSim.cpp"
