@@ -2,4 +2,4 @@ tool1 LAPPDParseScope null
 tool2 GenerateHits null
 tool3 LAPPDSim null
 tool4 LAPPDFindPeak null
-tool5 LAPPDSave null
+tool5 LAPPDSave configfiles/LAPPDteststand/ConfigVars
