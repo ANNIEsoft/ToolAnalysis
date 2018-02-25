@@ -13,3 +13,4 @@
 #include "LAPPDSim/LAPPDSim.cpp"
 #include "LAPPDSim/LAPPDresponse.cpp"
 #include "GenerateHits/GenerateHits.cpp"
+#include "LAPPDcfd/LAPPDcfd.cpp"
