@@ -19,5 +19,8 @@ if (tool=="LAPPDSave") ret=new LAPPDSave;
 if (tool=="LAPPDSim") ret=new LAPPDSim;
 if (tool=="GenerateHits") ret=new GenerateHits;
 if (tool=="LAPPDcfd") ret=new LAPPDcfd;
+if (tool=="NeutronStudyReadSandbox") ret=new NeutronStudyReadSandbox;
+if (tool=="NeutronStudyPMCS") ret=new NeutronStudyPMCS;
+  if (tool=="NeutronStudyWriteTree") ret=new NeutronStudyWriteTree;
 return ret;
 }
