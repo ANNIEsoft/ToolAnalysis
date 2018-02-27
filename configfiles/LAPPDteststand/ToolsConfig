@@ -3,4 +3,4 @@ GenerateHits GenerateHits null
 LAPPDSim LAPPDSim null
 LAPPDFindPeak LAPPDFindPeak null
 LAPPDcfd LAPPDcfd null
-LAPPDSave LAPPDSave null
+LAPPDSave LAPPDSave configfiles/LAPPDteststand/ConfigVars
