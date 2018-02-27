@@ -50,6 +50,7 @@ bool LAPPDFindPeak::Execute(){
         }
         std::cout<<" "<<std::endl;
     }
+
   }
 
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoLAPPDPulses",SimpleRecoLAPPDPulses);
@@ -136,7 +137,6 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
         pulsestarted=false;
       }
 		}
-
 	}
 	return thepulses;
 }

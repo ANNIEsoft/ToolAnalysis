@@ -5,6 +5,7 @@
 #include <iostream>
 #include "ANNIEalgorithms.h"
 #include "LAPPDPulse.h"
+#include "TVector3.h"
 
 #include "Tool.h"
 
