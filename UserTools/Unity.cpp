@@ -13,3 +13,7 @@
 #include "LAPPDSim/LAPPDSim.cpp"
 #include "LAPPDSim/LAPPDresponse.cpp"
 #include "GenerateHits/GenerateHits.cpp"
+#include "LAPPDcfd/LAPPDcfd.cpp"
+#include "NeutronStudyReadSandbox/NeutronStudyReadSandbox.cpp"
+#include "NeutronStudyPMCS/NeutronStudyPMCS.cpp"
+#include "NeutronStudyWriteTree/NeutronStudyWriteTree.cpp"

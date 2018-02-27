@@ -1,5 +1,6 @@
-tool1 LAPPDParseScope null
-tool2 GenerateHits null
-tool3 LAPPDSim null
-tool4 LAPPDFindPeak null
-tool5 LAPPDSave configfiles/LAPPDteststand/ConfigVars
+LAPPDParseScope LAPPDParseScope null
+GenerateHits GenerateHits null
+LAPPDSim LAPPDSim null
+LAPPDFindPeak LAPPDFindPeak null
+LAPPDcfd LAPPDcfd null
+LAPPDSave LAPPDSave configfiles/LAPPDteststand/ConfigVars

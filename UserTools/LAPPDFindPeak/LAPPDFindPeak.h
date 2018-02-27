@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include "ANNIEalgorithms.h"
+#include "LAPPDPulse.h"
+#include "TVector3.h"
 
 #include "Tool.h"
 
@@ -16,8 +18,8 @@ class LAPPDFindPeak: public Tool {
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
-  int FindPulses_TOT(std::vector<double> *theWav);
-  int FindPulses_Thresh(std::vector<double> *theWav);
+  std::vector<LAPPDPulse> FindPulses_TOT(std::vector<double> *theWav);
+  std::vector<LAPPDPulse> FindPulses_Thresh(std::vector<double> *theWav);
 
 
  private:
