@@ -1,0 +1,3 @@
+# Dummy config file
+verbose 2
+InputFile /myhome/reco-annie/data/RAWDataR812S0p6.root

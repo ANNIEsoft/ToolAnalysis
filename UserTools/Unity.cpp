@@ -17,3 +17,4 @@
 #include "NeutronStudyReadSandbox/NeutronStudyReadSandbox.cpp"
 #include "NeutronStudyPMCS/NeutronStudyPMCS.cpp"
 #include "NeutronStudyWriteTree/NeutronStudyWriteTree.cpp"
+#include "RawLoader/RawLoader.cpp"
