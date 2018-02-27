@@ -117,7 +117,10 @@ bool RawLoader::Initialise(const std::string config_file, DataModel& data)
   std::string input_file_name;
   m_variables.Get("InputFile", input_file_name);
 
-  Log("Opening input file " + input_file_name, 1, 1);
+  int verbosity;
+  m_variables.Get("verbose", verbosity);
+
+  Log("Opening input file " + input_file_name, 1, verbosity);
   // TODO: Switch to using
   // m_reader = std::make_unique<annie::RawReader>(input_file_name);
   // when our Docker image has C++14 support
@@ -131,6 +134,9 @@ bool RawLoader::Initialise(const std::string config_file, DataModel& data)
 }
 
 bool RawLoader::Execute() {
+
+  int verbosity;
+  m_variables.Get("verbose", verbosity);
 
   // Load the next raw data readout from the input file
   auto raw_readout = m_reader->next();
@@ -205,7 +211,7 @@ bool RawLoader::Execute() {
 
   Log("Loaded raw data for run " + std::to_string(run_number) + ", subrun "
     + std::to_string(subrun_number) + ", event "
-    + std::to_string(event_number), 1, 1);
+    + std::to_string(event_number), 2, verbosity);
 
   // TODO: store TDCData, CCData
 
