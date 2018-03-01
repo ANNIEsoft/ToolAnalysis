@@ -1,7 +1,8 @@
 // Object representing a reconstructed pulse on a single RawChannel
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RECOPULSE_H
+#define RECOPULSE_H
 
 // standard library includes
 #include <cstddef>
@@ -65,3 +66,5 @@ namespace annie {
   };
 
 }
+
+#endif

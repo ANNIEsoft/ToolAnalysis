@@ -2,15 +2,16 @@
 // to RawReadout objects.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RAWANALYZER_H
+#define RAWANALYZER_H
 
 // standard library includes
 #include <vector>
 
 // reco-annie includes
-#include "annie/RawReadout.hh"
-#include "annie/RecoPulse.hh"
-#include "annie/RecoReadout.hh"
+#include "RawReadout.h"
+#include "RecoPulse.h"
+#include "RecoReadout.h"
 
 namespace annie {
 
@@ -70,3 +71,5 @@ namespace annie {
   };
 
 }
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IFBEAMDATAPOINT_H
+#define IFBEAMDATAPOINT_H
 
 // standard library includes
 #include <string>
@@ -14,3 +15,5 @@ struct IFBeamDataPoint {
   double value;
   std::string unit;
 };
+
+#endif

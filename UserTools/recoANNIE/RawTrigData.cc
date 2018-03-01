@@ -1,5 +1,5 @@
 // recoANNIE includes
-#include "annie/RawTrigData.hh"
+#include "RawTrigData.h"
 
 annie::RawTrigData::RawTrigData(int FirmwareVersion, int FIFOOverflow,
   int DriverOverflow, const std::vector<unsigned short>& EventIDs,

@@ -2,7 +2,9 @@
 // DAQ readout
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+
+#ifndef RAWTRIGDATA_H
+#define RAWTRIGDATA_H
 
 #include <vector>
 
@@ -48,3 +50,5 @@ namespace annie {
       std::vector<unsigned int> trigger_counters_;
   };
 }
+
+#endif

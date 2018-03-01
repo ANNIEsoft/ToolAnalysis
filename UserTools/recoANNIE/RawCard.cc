@@ -2,7 +2,7 @@
 #include <limits>
 
 // reco-annie includes
-#include "annie/RawCard.hh"
+#include "RawCard.h"
 
 namespace {
   // Used to convert between seconds and nanoseconds

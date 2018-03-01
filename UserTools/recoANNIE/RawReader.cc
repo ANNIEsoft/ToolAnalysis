@@ -2,8 +2,8 @@
 #include <stdexcept>
 
 // reco-annie includes
-#include "annie/Constants.hh"
-#include "annie/RawReader.hh"
+#include "Constants.h"
+#include "RawReader.h"
 
 // anonymous namespace for definitions local to this source file
 namespace {

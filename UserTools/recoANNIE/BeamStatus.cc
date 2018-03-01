@@ -1,4 +1,4 @@
-#include "annie/BeamStatus.hh"
+#include "BeamStatus.h"
 
 annie::BeamStatus::BeamStatus() : time_(0), pot_(0), ok_(false)
 {}

@@ -3,16 +3,17 @@
 // or multiple triggers in Hefty mode.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RAWREADOUT_H
+#define RAWREADOUT_H
 
 // standard library includes
 #include <map>
 #include <string>
 
 // reco-annie includes
-#include "annie/Constants.hh"
-#include "annie/RawCard.hh"
-#include "annie/RawTrigData.hh"
+#include "Constants.h"
+#include "RawCard.h"
+#include "RawTrigData.h"
 
 namespace annie {
 
@@ -78,3 +79,5 @@ namespace annie {
       std::map<std::string, std::string> run_info_;
   };
 }
+
+#endif

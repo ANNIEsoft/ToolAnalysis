@@ -1,15 +1,16 @@
 // Object representing a reconstructed DAQ readout
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RECOREADOUT_H
+#define RECOREADOUT_H
 
 // standard library includes
 #include <map>
 #include <vector>
 
 // reco-annie includes
-#include "annie/Constants.hh"
-#include "annie/RecoPulse.hh"
+#include "Constants.h"
+#include "RecoPulse.h"
 
 namespace annie {
 
@@ -54,3 +55,5 @@ namespace annie {
   };
 
 }
+
+#endif

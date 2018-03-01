@@ -1,5 +1,4 @@
 ToolDAQPath=ToolDAQ
-recoANNIEPath=UserTools/RawLoader/recoANNIE
 
 CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
 
@@ -20,15 +19,12 @@ DataModelLib = $(RootLib)
 MyToolsInclude =  $(RootInclude) `python-config --cflags`
 MyToolsLib = $(RootLib) `python-config --libs`
 
-all: lib/libRecoANNIE.so lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
+all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 
-Analyse: src/main.cpp | lib/libMyTools.so lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so lib/libRecoANNIE.so
+Analyse: src/main.cpp | lib/libMyTools.so lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so
 
-	g++ -std=c++1y -g -fPIC $(CPPFLAGS) src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude) -lRecoANNIE
+	g++ -std=c++1y -g -fPIC $(CPPFLAGS) src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
-lib/libRecoANNIE.so:
-
-	g++ $(CPPFLAGS) -std=c++1y -g -fPIC -shared -I $(recoANNIEPath)/include $(RootInclude) $(RootLib) $(recoANNIEPath)/src/*.cc -o lib/libRecoANNIE.so
 
 lib/libStore.so: $(ToolDAQPath)/ToolDAQFramework/src/Store/*
 
@@ -57,11 +53,11 @@ lib/libDataModel.so: DataModel/* lib/libLogging.so | lib/libStore.so
 	cp DataModel/*.h include/
 	$(CC) DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
-lib/libMyTools.so: UserTools/*/* UserTools/* | include/Tool.h lib/libDataModel.so lib/libLogging.so lib/libStore.so lib/libRecoANNIE.so include/Tool.h
+lib/libMyTools.so: UserTools/*/* UserTools/* | include/Tool.h lib/libDataModel.so lib/libLogging.so lib/libStore.so include/Tool.h
 
 	cp UserTools/*/*.h include/
 	cp UserTools/Factory/*.h include/
-	$(CC)  UserTools/Factory/Factory.cpp -I include -I $(recoANNIEPath)/include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude) -lRecoANNIE
+	$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 lib/libServiceDiscovery.so: $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/* | lib/libStore.so
 	cp $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.h include/
