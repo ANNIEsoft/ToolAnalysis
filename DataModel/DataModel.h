@@ -14,7 +14,7 @@
 #include "LAPPD.h"
 #include "ANNIEalgorithms.h"
 #include "ANNIEconstants.h"
-#include "BeamStatus.h"
+#include "BeamStatusClass.h"
 #include "ChannelKey.h"
 #include "Detector.h"
 #include "Direction.h"
