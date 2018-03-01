@@ -21,6 +21,7 @@ if (tool=="GenerateHits") ret=new GenerateHits;
 if (tool=="LAPPDcfd") ret=new LAPPDcfd;
 if (tool=="NeutronStudyReadSandbox") ret=new NeutronStudyReadSandbox;
 if (tool=="NeutronStudyPMCS") ret=new NeutronStudyPMCS;
-  if (tool=="NeutronStudyWriteTree") ret=new NeutronStudyWriteTree;
+if (tool=="NeutronStudyWriteTree") ret=new NeutronStudyWriteTree;
+  if (tool=="RawLoader") ret=new RawLoader;
 return ret;
 }
