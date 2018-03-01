@@ -96,6 +96,7 @@ do
 	    boostflag=0
 	    zmq=0
 	    final=0
+	    ;;
 
 	--Final )
             echo "Compiling ToolDAQ"
