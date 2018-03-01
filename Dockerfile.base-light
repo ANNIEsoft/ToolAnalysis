@@ -16,7 +16,7 @@ Add ToolDAQ.tar.gz /ToolAnalysis/
 RUN cd /ToolAnalysis/ToolDAQ \
     && git clone https://github.com/ToolDAQ/ToolDAQFramework.git 
 RUN cd /ToolAnalysis \ 
-    && ./GetToolDAQ.sh --b4 
+    && ./GetToolDAQ.sh --Final 
 
 
 ### Open terminal
