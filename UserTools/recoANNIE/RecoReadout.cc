@@ -3,7 +3,7 @@
 #include <array>
 
 // reco-annie includes
-#include "annie/RecoReadout.hh"
+#include "RecoReadout.h"
 
 // Anonymous namespace for definitions local to this source file
 namespace {

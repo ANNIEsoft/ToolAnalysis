@@ -12,9 +12,9 @@
 #include "Waveform.h"
 
 // recoANNIE includes
-#include "annie/RawCard.hh"
-#include "annie/RawChannel.hh"
-#include "annie/RawReadout.hh"
+#include "RawCard.h"
+#include "RawChannel.h"
+#include "RawReadout.h"
 
 // Boost includes
 #include "boost/bimap.hpp"

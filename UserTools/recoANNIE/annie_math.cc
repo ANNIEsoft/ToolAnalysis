@@ -1,4 +1,4 @@
-#include "annie/annie_math.hh"
+#include "annie_math.h"
 
 namespace {
   long double xIncomplete_Beta_Function(long double x, long double a,

@@ -18,3 +18,4 @@
 #include "NeutronStudyPMCS/NeutronStudyPMCS.cpp"
 #include "NeutronStudyWriteTree/NeutronStudyWriteTree.cpp"
 #include "RawLoader/RawLoader.cpp"
+#include "recoANNIE/Unity_recoANNIE.cpp"

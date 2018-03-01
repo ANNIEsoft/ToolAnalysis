@@ -1,6 +1,6 @@
 /* vim:set noexpandtab tabstop=4 wrap */
-#ifndef BEAMSTATUS_H
-#define BEAMSTATUS_H
+#ifndef BEAMSTATUSCLASS_H
+#define BEAMSTATUSCLASS_H
 
 #include<SerialisableObject.h>
 #include "TimeClass.h"

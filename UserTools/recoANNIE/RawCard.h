@@ -2,13 +2,14 @@
 // that are monitored by a single DAQ VME card.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RAWCARD_H
+#define RAWCARD_H
 
 // standard library includes
 #include <map>
 
 // reco-annie includes
-#include "annie/RawChannel.hh"
+#include "RawChannel.h"
 
 namespace annie {
 
@@ -70,3 +71,5 @@ namespace annie {
       std::map<int, annie::RawChannel> channels_;
   };
 }
+
+#endif

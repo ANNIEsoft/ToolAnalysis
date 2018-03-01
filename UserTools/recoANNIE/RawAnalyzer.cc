@@ -5,12 +5,12 @@
 #include <memory>
 
 // reco-annie includes
-#include "annie/annie_math.hh"
-#include "annie/Constants.hh"
-#include "annie/RawAnalyzer.hh"
-#include "annie/RawCard.hh"
-#include "annie/RawChannel.hh"
-#include "annie/RawReadout.hh"
+#include "annie_math.h"
+#include "Constants.h"
+#include "RawAnalyzer.h"
+#include "RawCard.h"
+#include "RawChannel.h"
+#include "RawReadout.h"
 
 // Anonymous namespace for definitions local to this source file
 namespace {

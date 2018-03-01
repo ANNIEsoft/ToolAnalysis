@@ -9,7 +9,7 @@
 #include "Tool.h"
 
 // recoANNIE includes
-#include "annie/RawReader.hh"
+#include "RawReader.h"
 
 class RawLoader : public Tool {
 

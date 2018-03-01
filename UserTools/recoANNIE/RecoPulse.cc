@@ -1,4 +1,4 @@
-#include "annie/RecoPulse.hh"
+#include "RecoPulse.h"
 
 annie::RecoPulse::RecoPulse(size_t start_time, size_t peak_time,
   double baseline, double sigma_baseline, unsigned long area,

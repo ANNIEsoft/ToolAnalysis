@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 // reco-annie includes
-#include "annie/RawChannel.hh"
+#include "RawChannel.h"
 
 // The raw channel data are stored out of order (half at the beginning and half
 // midway through the channel buffer) so use an iterator to the start and an

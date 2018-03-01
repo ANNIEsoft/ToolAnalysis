@@ -3,7 +3,8 @@
 //
 // Based on C source files taken from www.mymathlib.com
 // Ported to C++ by Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef ANNIEMATH_H
+#define ANNIEMATH_H
 
 // standard library includes
 #include <cfloat>
@@ -15,3 +16,5 @@ namespace annie_math {
   double Beta_Function(double a, double b);
 
 }
+
+#endif

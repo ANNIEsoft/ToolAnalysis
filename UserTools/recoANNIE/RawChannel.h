@@ -2,7 +2,8 @@
 // one of the DAQ VME cards.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RAWCHANNEL_H
+#define RAWCHANNEL_H
 
 // standard library includes
 #include <vector>
@@ -49,3 +50,5 @@ namespace annie {
       std::vector< std::vector<unsigned short> > data_;
   };
 }
+
+#endif

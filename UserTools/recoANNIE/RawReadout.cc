@@ -1,5 +1,5 @@
 // reco-annie includes
-#include "annie/RawReadout.hh"
+#include "RawReadout.h"
 
 void annie::RawReadout::add_card(int CardID, unsigned long long LastSync,
   int StartTimeSec, int StartTimeNSec, unsigned long long StartCount,

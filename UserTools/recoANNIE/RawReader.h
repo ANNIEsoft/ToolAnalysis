@@ -3,7 +3,8 @@
 // from the phase I DAQ.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+#ifndef RAWREADER_H
+#define RAWREADER_H
 
 // standard library includes
 #include <memory>
@@ -15,7 +16,7 @@
 #include "TTree.h"
 
 // reco-annie includes
-#include "annie/RawReadout.hh"
+#include "RawReadout.h"
 
 namespace annie {
 
@@ -89,3 +90,5 @@ namespace annie {
       std::vector<unsigned int> br_TriggerCounters_; // [TriggerSize]
   };
 }
+
+#endif

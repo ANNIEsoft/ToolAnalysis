@@ -1,8 +1,10 @@
-#pragma once
 // Class to store beam status information retrieved from Fermilab's Intensity
 // Frontier beam database
 //
 // Steven Gardiner (sjgardiner@ucdavis.edu)
+
+#ifndef BEAMSTATUS_H
+#define BEAMSTATUS_H
 
 namespace annie {
   class BeamStatus {
@@ -38,3 +40,5 @@ namespace annie {
       inline void set_ok(bool ok) { ok_ = ok; }
   };
 }
+
+#endif
