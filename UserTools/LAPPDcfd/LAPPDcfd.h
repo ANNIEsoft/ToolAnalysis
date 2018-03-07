@@ -3,6 +3,8 @@
 
 #include <string>
 #include <iostream>
+#include "TSplineFit.h"
+#include "TPoly3.h"
 
 #include "Tool.h"
 
@@ -15,8 +17,8 @@ class LAPPDcfd: public Tool {
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
-  double CFD_Discriminator1(std::vector<double>* trace, double amp);
-  double CFD_Discriminator2(std::vector<double>* trace, double amp);
+  double CFD_Discriminator1(std::vector<double>* trace, LAPPDPulse pulse);
+  double CFD_Discriminator2(std::vector<double>* trace, LAPPDPulse pulse);
 
 
  private:
