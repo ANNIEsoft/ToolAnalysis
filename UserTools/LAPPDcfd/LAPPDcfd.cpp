@@ -90,7 +90,7 @@ double	LAPPDcfd::CFD_Discriminator1(std::vector<double>* trace, LAPPDPulse pulse
   for(int i=0; i<nbins; i++){
     hwav->SetBinContent(i+1,-trace->at(i));
   }
-  fsplinewav = new TSplineFit("SplineName", "SplineTitle", 20, PointsPerSpline, hwav, FitWindow_min, FitWindow_max);
+  TSplineFit* fsplinewav = new TSplineFit("SplineName", "SplineTitle", 20, PointsPerSpline, hwav, FitWindow_min, FitWindow_max);
 //TSplineFit* fsplinewav = new TSplineFit("thespline", "thespline", 20, PointsPerSpline, &trace[0], &trace[0], FitWindow_min, FitWindow_max);
 
 //		double th = -40;
