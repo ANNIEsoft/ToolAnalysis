@@ -32,7 +32,6 @@ bool LAPPDFindPeak::Execute(){
   // make reconstructed pulses
   std::map<int,vector<LAPPDPulse>> SimpleRecoLAPPDPulses;
 
-  // loop over all of the lappd channels (number is temporarily hard coded)
   map <int, vector<Waveform<double>>> :: iterator itr;
   for (itr = rawlappddata.begin(); itr != rawlappddata.end(); ++itr){
     int channelno = itr->first;
