@@ -4,7 +4,7 @@ CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 
 CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
 
-PythonLib= `python-config --libs` -L $(PYTHON_LIB)/../src/Python-2.7.11
+PythonLib= `python-config --libs` -L `python-config --prefix`/lib
 PythonInclude=`python-config --cflags`
 
 ZMQLib= -L ToolDAQ/zeromq-4.0.7/lib -lzmq 
