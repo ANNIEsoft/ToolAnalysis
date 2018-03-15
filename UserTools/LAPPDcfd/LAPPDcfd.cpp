@@ -12,49 +12,99 @@ bool LAPPDcfd::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  // Get the CFD threshold from the config file
+  m_variables.Get("Fraction_CFD", Fraction_CFD);
+  std::cout<<"Fraction_CFD="<<Fraction_CFD<<std::endl;
+
+  isSim=false;
+  // Check in the Boost Store whether this is a simulated event or not
+  m_data->Stores["ANNIEEvent"]->Header->Get("isSim",isSim);
+
   return true;
 }
 
 
 bool LAPPDcfd::Execute(){
 
-  std::cout<<"In CFD"<<std::endl;
   Waveform<double> bwav;
 
-  // get raw lappd data
+  // get raw lappd data from the Boost Store
   std::map<int,vector<Waveform<double>>> rawlappddata;
   bool testval =  m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
 
-  // get first-level pulse reco
+  // get first-level pulse reco from the Boost Store
   std::map<int,vector<LAPPDPulse>> SimpleRecoLAPPDPulses;
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoLAPPDPulses",SimpleRecoLAPPDPulses);
+  m_data->Stores["ANNIEEvent"]->Get("SimpleRecoLAPPDPulses",SimpleRecoLAPPDPulses);
 
+  // get the sim-level information
 
+  std::map<int,vector<LAPPDHit>> lappdmchits;
+  if(isSim){
+    m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHit",lappdmchits);
+  }
+
+  // Place to store the reconstructed pulses
+  std::map<int,vector<LAPPDPulse>> CFDRecoLAPPDPulses;
+
+  // Loop over all channels
   map <int, vector<Waveform<double>>> :: iterator itr;
   for (itr = rawlappddata.begin(); itr != rawlappddata.end(); ++itr){
+
+    // Get the channel number and a vector of Waveforms
     int channelno = itr->first;
     vector<Waveform<double>> Vwavs = itr->second;
-    // get the vector of pulses correseponding to the wavs
-    vector<LAPPDPulse> Vpulses = SimpleRecoLAPPDPulses.find(channelno)->second;
+
+    // get the vector of pulses correseponding to the channel
+    map<int, vector<LAPPDPulse>>::iterator p;
+    p = SimpleRecoLAPPDPulses.find(channelno);
+    vector<LAPPDPulse> Vpulses = p->second;
+
+    std::cout<<"************************************************"<<std::endl;
+    std::cout<<"IN LAPPDCFD:: channel: "<<channelno<<std::endl;
+
+    if(isSim){
+      // If the data is simulated data, we loop over the true hits
+      // and print them to screen
+      std::cout<<"simulated pulse: ";
+      map<int, vector<LAPPDHit>>::iterator p;
+      p = lappdmchits.find(0);
+      vector<LAPPDHit> Vhits = p->second;
+      std::cout<<Vhits.size()<<" simulated pulses. ";
+      for(int np=0; np<Vhits.size(); np++){
+        std::cout<<"p"<<np<<"=(t="<<(Vhits.at(np)).GetTpsec()<<") ";
+      }
+      std::cout<<" "<<std::endl;
+    }
+
+    std::vector<LAPPDPulse> thepulses;
 
     //loop over all Waveforms
     for(int i=0; i<Vwavs.size(); i++){
 
         Waveform<double> bwav = Vwavs.at(i);
 
-        // loop over all candidate pulses on each waveform
+        std::cout<<"reconstructed pulses: "<<std::endl;;
+
+        // loop over all candidate pulses on each waveform, as determined by the LAPPDFindPeak Tool
         for(int j=0; j<Vpulses.size(); j++){
 
-          CFD_Discriminator1(bwav.GetSamples(),Vpulses.at(j));
+          // for each pulse on the Waveform find the time using CFD1 algorithm
+          double cfdtime = CFD_Discriminator1(bwav.GetSamples(),Vpulses.at(j));
+          std::cout<<"for pulse #"<<j<<" (Q="<<(Vpulses.at(j)).GetCharge()<<",Amp="<<(Vpulses.at(j)).GetPeak()<<",LowRange="<<(Vpulses.at(j)).GetLowRange()<<",HiRange="<<(Vpulses.at(j)).GetHiRange()<<") "<<"  cfd_time="<<cfdtime<<std::endl;
 
-
+          // Store the reconstructed time in a new LAPPDPulse
+          TimeClass tc(0);
+          LAPPDPulse apulse(0,channelno,tc,(Vpulses.at(j)).GetCharge(),cfdtime,(Vpulses.at(j)).GetPeak(),(Vpulses.at(j)).GetLowRange(),(Vpulses.at(j)).GetHiRange());
+          thepulses.push_back(apulse);
         }
-
-
       }
         std::cout<<" "<<std::endl;
+        // Put the newly reconsructed LAPPDPulses into a map, by channel
+        CFDRecoLAPPDPulses.insert(pair <int,vector<LAPPDPulse>> (channelno,thepulses));
     }
 
+    // Add the CFD reconstructed information to the Boost Store
+    m_data->Stores["ANNIEEvent"]->Set("CFDRecoLAPPDPulses",CFDRecoLAPPDPulses);
 
 
 
@@ -73,10 +123,10 @@ double	LAPPDcfd::CFD_Discriminator1(std::vector<double>* trace, LAPPDPulse pulse
   double amp = pulse.GetPeak();
   double time = 0;
   // this should be a global variable that gets set from a config...
-  double Fraction_CFD = 0.5;
   double th = Fraction_CFD * amp;
-  double FitWindow_min = pulse.GetLowRange()-5;
-  double FitWindow_max = pulse.GetHiRange()+5;
+  double eps = 1e-2;
+  double FitWindow_min = (pulse.GetLowRange()-5)*100.;
+  double FitWindow_max = (pulse.GetHiRange()+5)*100.;
 
   double PointsPerSpline = 5;
 
@@ -85,38 +135,36 @@ double	LAPPDcfd::CFD_Discriminator1(std::vector<double>* trace, LAPPDPulse pulse
   int nbins = trace->size();
   double starttime=0.;
   double endtime = starttime + ((double)nbins)*100.;
-  TH1D* hwav = new TH1D("temptrace","temptrace",nbins,starttime,endtime);
+  TH1D* hwav = new TH1D("hwav","hwav",nbins,starttime,endtime);
 
   for(int i=0; i<nbins; i++){
     hwav->SetBinContent(i+1,-trace->at(i));
   }
-  TSplineFit* fsplinewav = new TSplineFit("SplineName", "SplineTitle", 20, PointsPerSpline, hwav, FitWindow_min, FitWindow_max);
-//TSplineFit* fsplinewav = new TSplineFit("thespline", "thespline", 20, PointsPerSpline, &trace[0], &trace[0], FitWindow_min, FitWindow_max);
 
-//		double th = -40;
-		double eps = 1e-4;
-		int bin = pulse.GetTpsec();
+//	int bin = pulse.GetTpsec();
 //		while(fsplinewav->V(hwav->GetBinCenter(bin))<=th) {bin--;}
-		double xlow = FitWindow_min;
-		double xhigh = hwav->GetBinCenter(bin);
+	double xlow = FitWindow_min;
+//	double xhigh = hwav->GetBinCenter(bin);
+  double xhigh = FitWindow_max;
+	double xmid = (xlow+xhigh)/2;
 
-		double xmid = (xlow+xhigh)/2;
+  if(hwav->Interpolate(xmid)-th==0) time = xmid;
+  //std::cout<<"^^^ "<<xhigh<<" "<<xlow<<" "<<th<<" "<<hwav->Interpolate(xmid)<<std::endl;
 
-/*
-  	if(fsplinewav->V(xmid)-th==0) time = xmid;
+  // gradually moving the high and low range of the search towards the point where the
+  // pulse crosses the threshold. Stop when the low and high range are closer than eps
+  while ((xhigh-xlow) >= eps ){
 
-		while ((xhigh-xlow) >= eps) {
-			xmid = (xlow + xhigh) / 2;
-			if (fsplinewav->V(xmid)-th == 0)
-				time = xmid;
-			if ((fsplinewav->V(xlow)-th)*(fsplinewav->V(xmid)-th) < 0)
-				xhigh = xmid;
-			else
-				xlow = xmid;
-		}
-		time = xlow;
-	}
-  */
+    xmid = (xlow + xhigh)/2.;
+    if(hwav->Interpolate(xmid)-th==0) time = xmid;
+    if ((hwav->Interpolate(xmid)-th) > 0)
+    xhigh = xmid;
+    else
+    xlow = xmid;
+  }
+  
+  time = xlow;
+  delete hwav;
 	return time;
 }
 

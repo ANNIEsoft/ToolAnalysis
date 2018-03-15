@@ -24,3 +24,6 @@
 #include "LAPPDcfd/TZigZag.cpp"
 #include "LAPPDcfd/TOnePadDisplay.cpp"
 #include "LAPPDcfd/TBandedLE.cpp"
+#include "LAPPDSaveROOT/LAPPDSaveROOT.cpp"
+#include "LAPPDFilter/LAPPDFilter.cpp"
+#include "LAPPDIntegratePulse/LAPPDIntegratePulse.cpp"

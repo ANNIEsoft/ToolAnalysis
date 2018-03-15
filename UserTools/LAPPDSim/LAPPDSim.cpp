@@ -20,6 +20,9 @@ bool LAPPDSim::Initialise(std::string configfile, DataModel &data){
   m_data->Stores["ANNIEEvent"]= new BoostStore(false,2);
   m_data->Stores["ANNIEEvent"]->Header->Set("test",test);
 
+  bool isSim = true;
+  m_data->Stores["ANNIEEvent"]->Header->Set("isSim",isSim);
+
   // initialize the ROOT random number generator
   myTR = new TRandom3();
 
@@ -104,11 +107,11 @@ Waveform<double> LAPPDSim::SimpleGenPulse(vector<double> pulsetimes){
       aGauss[i] = new TF1(gname,"gaus",0,256);
 
       // random pulse amplitude chosen with from a gaussian distribution
-      double theamp = fabs(myTR->Gaus(70.,50.)); // 50 mV mean, 50 mV sigma
+      double theamp = fabs(myTR->Gaus(30.,30.)); // 30 mV mean, 30 mV sigma
 
       aGauss[i]->SetParameter(0,theamp); // amplitude of the pulse
       aGauss[i]->SetParameter(1,pulsetimes.at(i)); // peak location (in samples)
-      aGauss[i]->SetParameter(2,10.); // width (sigma) of the pulse
+      aGauss[i]->SetParameter(2,8.); // width (sigma) of the pulse
     }
 
     // loop over 256 samples
@@ -125,7 +128,7 @@ Waveform<double> LAPPDSim::SimpleGenPulse(vector<double> pulsetimes){
       }
 
       double thevoltage = signal+noise;
-      thewav.PushSample(thevoltage);
+      thewav.PushSample(-thevoltage);
     }
 
     return thewav;

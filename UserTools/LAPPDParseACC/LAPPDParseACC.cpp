@@ -15,6 +15,8 @@ bool LAPPDParseACC::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  bool isSim = false;
+  m_data->Stores["ANNIEEvent"]->Header->Set("isSim",isSim);
 
   m_data->Stores["ANNIEEvent"] = new BoostStore(false, 2);
 

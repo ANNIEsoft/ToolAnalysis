@@ -24,7 +24,7 @@ class NeutronStudyPMCS: public Tool {
   double MuAnglesmear(double mu_px, double mu_py, double mu_pz, double angsmear);
   double RecoE(double mu_E,double mu_angle);
   int DetectedNeutrons(int totneut);
-  int BkgNeutrons();
+  int BkgNeutrons(double prob);
 
  private:
 
