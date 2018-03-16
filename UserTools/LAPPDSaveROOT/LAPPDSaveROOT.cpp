@@ -22,7 +22,7 @@ bool LAPPDSaveROOT::Initialise(std::string configfile, DataModel &data){
   // have the pulses been filtered? integrated? is this real or simulated data?
   m_data->Stores["ANNIEEvent"]->Header->Get("isFiltered",isFiltered);
   m_data->Stores["ANNIEEvent"]->Header->Get("isIntegrated",isIntegrated);
-  m_data->Stores["ANNIEEvent"]->Header->Get("isIntegrated",isSim);
+  m_data->Stores["ANNIEEvent"]->Header->Get("isSim",isSim);
 
   // from the config file, get the number of channels, the trigger channel, num histos, samplesize
   m_variables.Get("NChannels", NChannel);
