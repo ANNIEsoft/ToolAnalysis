@@ -19,6 +19,11 @@ class LAPPDParseScope: public Tool {
 
  private:
 
+   ifstream isin;
+   int NChannel;
+   int WavDimSize;
+   int TrigChannel;
+
 };
 
 

@@ -29,7 +29,7 @@ bool GenerateHits::Execute(){
   TimeClass tc;
 
   // MC truth hit 1
-  ptime = 20;
+  ptime = 50;
   Q=1.;
   pos.push_back(10.);
   pos.push_back(5.);
@@ -44,7 +44,7 @@ bool GenerateHits::Execute(){
   relpos.clear();
 
   // MC truth hit 2
-  ptime = 70.;
+  ptime = 140.;
   Q=1.;
   pos.push_back(20.);
   pos.push_back(10.);

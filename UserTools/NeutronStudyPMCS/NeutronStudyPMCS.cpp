@@ -28,7 +28,7 @@ bool NeutronStudyPMCS::Execute(){
 
   // input variables
   int primneut,totneut,ispi;
-  double nuE,muE,muAngle,mupx,mupy,mupz,piE,piAngle,q2,recoE;
+  double nuE,muE,muAngle,mupx,mupy,mupz,piE,piAngle,q2,recoE,recoE_nosmear;
 
   m_data->Stores["NeutrinoEvent"]->Get("Nprimaryneutrons",primneut);
   m_data->Stores["NeutrinoEvent"]->Get("Ntotalneutrons",totneut);
@@ -45,9 +45,9 @@ bool NeutronStudyPMCS::Execute(){
   m_data->Stores["NeutrinoEvent"]->Get("recoNeutrinoEnergy",recoE);
 
   // Output variables
-  int isgoodmuon,isPismeared,Ntotneutsmeared,Nprimneutsmeared,Nbkgdneutrons;
+  int isgoodmuon,isPismeared,Ntotneutsmeared,Nprimneutsmeared,Nbkgdneutrons,Nbkgdneutrons_high;
   int passedselection;
-  double smearedMuE,smearedMuangle,myRecoE,unsmearedMuangle,muonefficiency;
+  double smearedMuE,smearedMuangle,myRecoE,myRecoE_unsmeared,unsmearedMuangle,muonefficiency;
 
   bool passevent=false;
 
@@ -57,9 +57,12 @@ bool NeutronStudyPMCS::Execute(){
   //calculate unsmeared muon angle from px,py,pz
   unsmearedMuangle = MuAnglesmear(mupx,mupy,mupz,0);
 
-  // reconstruct the neutrino energy with smeared muon parameters
+  // kinematic reconstruction of the neutrino energy with smeared muon parameters
   double reconstructedE = RecoE(smearedMuE,smearedMuangle);
+  // kinematic reconstruction of the neutrino energy with unsmeared muon parameters
+  double reconstructedE_nosmear = RecoE(muE,unsmearedMuangle);
   myRecoE = (reconstructedE/1000.);
+  myRecoE_unsmeared = (reconstructedE_nosmear/1000.);
 
   // criteria for an experimentally CCQE-like event
 
@@ -96,18 +99,12 @@ bool NeutronStudyPMCS::Execute(){
   if(passevent) passedselection=1;
   else passedselection=0;
 
-  // smear muon energy and angle
-  smearedMuE = MuEsmear(muE,muEsmear); // 100 MeV smearing
-  // double smearedMuE = MuEsmear(muE,0.); // no smearing
-  smearedMuangle = MuAnglesmear(mupx,mupy,mupz,muAngsmear); // 5 deg res
-  // calculate reco energy
-  reconstructedE = RecoE(smearedMuE,smearedMuangle);
-
   //Apply efficiencies to neutron detection, apply bkgd
   Ntotneutsmeared=DetectedNeutrons(totneut);
   Nprimneutsmeared=DetectedNeutrons(primneut);
   // nbackground neutrons
-  Nbkgdneutrons = BkgNeutrons();
+  Nbkgdneutrons = BkgNeutrons(0.2);
+  Nbkgdneutrons_high = BkgNeutrons(0.5);
 
   passedselection=0;
   if(passevent) passedselection=1;
@@ -116,12 +113,15 @@ bool NeutronStudyPMCS::Execute(){
 
   m_data->Stores["NeutrinoEvent"]->Set("smearedMuonAngle",smearedMuangle);
   m_data->Stores["NeutrinoEvent"]->Set("smearedMuonEnergy",smearedMuE);
+  m_data->Stores["NeutrinoEvent"]->Set("originalrecoNeutrinoEnergy",recoE);
   m_data->Stores["NeutrinoEvent"]->Set("myrecoNeutrinoEnergy",myRecoE);
+  m_data->Stores["NeutrinoEvent"]->Set("myrecoNuEunsmeared",myRecoE_unsmeared);
   m_data->Stores["NeutrinoEvent"]->Set("isGoodMuon",isgoodmuon);
   m_data->Stores["NeutrinoEvent"]->Set("smearedIsPion",isPismeared);
   m_data->Stores["NeutrinoEvent"]->Set("smearedNtotalNeutrons",Ntotneutsmeared);
   m_data->Stores["NeutrinoEvent"]->Set("smearedNprimaryNeutrons",Nprimneutsmeared);
   m_data->Stores["NeutrinoEvent"]->Set("NbackgroundNeutrons",Nbkgdneutrons);
+  m_data->Stores["NeutrinoEvent"]->Set("NbackgroundNeutrons_high",Nbkgdneutrons_high);
   m_data->Stores["NeutrinoEvent"]->Set("PassedSelectionCuts",passedselection);
   m_data->Stores["NeutrinoEvent"]->Set("MuonEfficiency",muonefficiency);
 
@@ -215,22 +215,22 @@ double NeutronStudyPMCS::RecoE(double mu_E,double mu_angle)
 int NeutronStudyPMCS::DetectedNeutrons(int totneut)
 {
   int detneut=0;
-  double neutdeteffic = 0.8;
+  double neutdeteffic = 0.7;
   for(int i=0; i<totneut; i++){
     double rolln = ttr->Rndm();
     if(rolln<neutdeteffic) detneut++;
   }
 
   //return detneut;
-  return totneut;
+  return detneut;
 }
 
 
-int NeutronStudyPMCS::BkgNeutrons()
+int NeutronStudyPMCS::BkgNeutrons(double prob)
 {
   int bgneut=0;
   double rollbn=ttr->Rndm();
-  double neutbgrate=0.2;
+  double neutbgrate=prob;
   if(rollbn<neutbgrate) bgneut=1;
 
   //bgneut=0;

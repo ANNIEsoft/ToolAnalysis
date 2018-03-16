@@ -22,6 +22,9 @@ if (tool=="LAPPDcfd") ret=new LAPPDcfd;
 if (tool=="NeutronStudyReadSandbox") ret=new NeutronStudyReadSandbox;
 if (tool=="NeutronStudyPMCS") ret=new NeutronStudyPMCS;
 if (tool=="NeutronStudyWriteTree") ret=new NeutronStudyWriteTree;
-  if (tool=="RawLoader") ret=new RawLoader;
+if (tool=="RawLoader") ret=new RawLoader;
+if (tool=="LAPPDSaveROOT") ret=new LAPPDSaveROOT;
+if (tool=="LAPPDFilter") ret=new LAPPDFilter;
+if (tool=="LAPPDIntegratePulse") ret=new LAPPDIntegratePulse;
 return ret;
 }
