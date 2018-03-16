@@ -1,6 +1,9 @@
-LAPPDParseScope LAPPDParseScope null
-GenerateHits GenerateHits null
-LAPPDSim LAPPDSim null
-LAPPDFindPeak LAPPDFindPeak null
-LAPPDcfd LAPPDcfd null
+LAPPDParseScope LAPPDParseScope configfiles/LAPPDteststand/ConfigVars
+#GenerateHits GenerateHits null
+#LAPPDSim LAPPDSim null
+#LAPPDFilter LAPPDFilter configfiles/LAPPDteststand/ConfigVars
+LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDteststand/ConfigVars
+LAPPDIntegratePulse LAPPDIntegratePulse configfiles/LAPPDteststand/ConfigVars
+LAPPDcfd LAPPDcfd configfiles/LAPPDteststand/ConfigVars
+LAPPDSaveROOT LAPPDSaveROOT configfiles/LAPPDteststand/ConfigVars
 LAPPDSave LAPPDSave configfiles/LAPPDteststand/ConfigVars

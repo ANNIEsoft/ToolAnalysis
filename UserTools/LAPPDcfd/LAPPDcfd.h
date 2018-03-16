@@ -5,6 +5,10 @@
 #include <iostream>
 #include "TSplineFit.h"
 #include "TPoly3.h"
+#include "LAPPDPulse.h"
+#include "LAPPDHit.h"
+#include "Waveform.h"
+#include "TH1D.h"
 
 #include "Tool.h"
 
@@ -22,10 +26,8 @@ class LAPPDcfd: public Tool {
 
 
  private:
-
-
-
-
+   bool isSim;
+   double Fraction_CFD;
 
 };
 

@@ -12,6 +12,10 @@ bool LAPPDFindPeak::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  m_variables.Get("TotThreshold", TotThreshold);
+  m_variables.Get("MinimumTot", MinimumTot);
+  m_variables.Get("Deltat", Deltat);
+
   return true;
 }
 
@@ -38,17 +42,21 @@ bool LAPPDFindPeak::Execute(){
     vector<Waveform<double>> Vwavs = itr->second;
 
     //loop over all Waveforms
+    std::vector<LAPPDPulse> thepulses;
     for(int i=0; i<Vwavs.size(); i++){
 
         Waveform<double> bwav = Vwavs.at(i);
-        std::vector<LAPPDPulse> thepulses = FindPulses_TOT(bwav.GetSamples());
+        thepulses = FindPulses_TOT(bwav.GetSamples());
+        /*
         std::cout<<"The number of peaks for channel "<<channelno
                  <<", wavform "<<i<<" is: "<<thepulses.size()<<"   ";
         for(int j=0; j<thepulses.size(); j++){
           std::cout<<"...for pulse #"<<j<<" (Q="<<(thepulses.at(j)).GetCharge()<<",LowRange="<<(thepulses.at(j)).GetLowRange()<<",HiRange="<<(thepulses.at(j)).GetHiRange()<<") ";
         }
         std::cout<<" "<<std::endl;
+        */
     }
+    SimpleRecoLAPPDPulses.insert(pair <int,vector<LAPPDPulse>> (channelno,thepulses));
 
   }
 
@@ -96,11 +104,6 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
 
   std::vector<LAPPDPulse> thepulses;
 
-  // temporarily hard coding these parameters (should be in a config)..
-  double TotThreshold = 10.;
-  double MinimumTot =500.;
-  double Deltat=100.;
-
   int npeaks=0;
   int endbin=0;
   double Q=0.;
@@ -117,23 +120,26 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
 	int nbin = theWav->size();
 	int length = 0;
 	int MinimumTotBin = (int)(MinimumTot/Deltat);
+  std::cout<<"Min Tot Bin: "<<MinimumTotBin<<std::endl;
 	for(int i=0;i<nbin;i++) {
 		pvol = TMath::Abs(theWav->at(i));
     if(i>1) ppre = TMath::Abs(theWav->at(i-1));
 
 		if(pvol>threshold) {
       length++;
+      if(pvol>peak) peak = pvol;
       Q+=(theWav->at(i));
       if(!pulsestarted) low=(double)i;
       pulsestarted=true;
     }
 		else {
-			if(length<MinimumTotBin) {length=0; Q=0; pulsestarted=false; low=0; hi=0;}
+			if(length<MinimumTotBin) {length=0; Q=0; pulsestarted=false; low=0; hi=0; peak=0;}
 			else {
         npeaks++; length = 0; hi=(double)i;
         LAPPDPulse apulse(0,0,tc,Q,tp,peak,low,hi);
         thepulses.push_back(apulse);
         pulsestarted=false;
+        peak=0; Q=0; low=0; hi=0;
       }
 		}
 	}

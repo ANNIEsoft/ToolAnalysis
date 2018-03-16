@@ -24,9 +24,9 @@ class NeutronStudyWriteTree: public Tool {
 
  int primneut,totneut,ispi;
  double nuE,muE,muAngle,mupx,mupy,mupz,piE,piAngle,q2,recoE;
- int isgoodmuon,isPismeared,Ntotneutsmeared,Nprimneutsmeared,Nbkgdneutrons;
+ int isgoodmuon,isPismeared,Ntotneutsmeared,Nprimneutsmeared,Nbkgdneutrons,Nbkgdneutrons_high;
  int passedselection;
- double smearedMuE,smearedMuangle,myRecoE,unsmearedMuangle,muonefficiency;
+ double smearedMuE,smearedMuangle,myRecoE,myRecoE_unsmeared,origRecoE,unsmearedMuangle,muonefficiency;
 
 };
 

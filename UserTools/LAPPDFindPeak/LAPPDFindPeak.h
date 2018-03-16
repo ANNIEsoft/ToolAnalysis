@@ -24,7 +24,9 @@ class LAPPDFindPeak: public Tool {
 
  private:
 
-
+  double TotThreshold; 
+  double MinimumTot;
+  double Deltat;
 
 
 
