@@ -4,7 +4,9 @@
 
 ToolDAQapp=`pwd`
 
-export LD_LIBRARY_PATH=${ToolDAQapp}/lib:${ToolDAQapp}/ToolDAQ/zeromq-4.0.7/lib:${ToolDAQapp}/ToolDAQ/boost_1_66_0/install/lib:${ToolDAQapp}/ToolDAQ/root/lib:$LD_LIBRARY_PATH
+source ${ToolDAQapp}/ToolDAQ/root/bin/thisroot.sh
+
+export LD_LIBRARY_PATH=${ToolDAQapp}/lib:${ToolDAQapp}/ToolDAQ/zeromq-4.0.7/lib:${ToolDAQapp}/ToolDAQ/boost_1_66_0/install/lib:${ToolDAQapp}/ToolDAQ/root/lib:${ToolDAQapp}/ToolDAQ/WCSimLib/:${ToolDAQapp}/ToolDAQ/MrdTrackLib/src:$LD_LIBRARY_PATH
 
 for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
 do
