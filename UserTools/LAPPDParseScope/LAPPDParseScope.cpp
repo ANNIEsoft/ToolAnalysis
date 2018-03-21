@@ -14,16 +14,23 @@ bool LAPPDParseScope::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  // here I would open the input file
-
-  // here I would also store relevant geometry information
-
-  std::string test = "hello";
   m_data->Stores["ANNIEEvent"]= new BoostStore(false,2);
-  m_data->Stores["ANNIEEvent"]->Header->Set("test",test);
 
-  // initialize the ROOT random number generator
-  myTR = new TRandom3();
+  std::string FileInput = "test.fff";	 //default input file name
+  // get the actual input file name from the config file
+  m_variables.Get("FileInput", FileInput);
+  // open the data file
+  isin.open(FileInput, ios::in); //open input .txt files
+  std::cout<<"just opened: "<<FileInput<<std::endl;
+
+  // Get the details of the Waveform from the config file
+  m_variables.Get("Nsamples", WavDimSize);
+  m_variables.Get("NChannels", NChannel);
+  m_variables.Get("TrigChannel", TrigChannel);
+
+  // Since this is data, we set the isSim boolean to false
+  bool isSim = false;
+  m_data->Stores["ANNIEEvent"]->Header->Set("isSim",isSim);
 
   return true;
 }
@@ -31,41 +38,32 @@ bool LAPPDParseScope::Initialise(std::string configfile, DataModel &data){
 
 bool LAPPDParseScope::Execute(){
 
-  //create an instance of the Waveform class;
-  Waveform<double> mwav;
+  std::map<int,vector<Waveform<double>>> RawLAPPDData;
 
-  // choose a random amplitude and "time" for the pulse
-  // myTR is declared in the .h file and initialized in Initialise()
-  double theamp = myTR->Gaus(50.,20.); // 50 mV mean, 20 mV sigma
-  double thetime = myTR->Gaus(60.,0.5); // in the 60th sample, with RMS 0.5
+  //loop over the text file
 
-  TF1* aGauss = new TF1("aGauss","gaus",0,256);
-  aGauss->SetParameter(0,theamp); // amplitude of the pulse
-  aGauss->SetParameter(1,thetime); // peak location (in samples)
-  aGauss->SetParameter(2,10.); // width (sigma) of the pulse
-
-  // loop over 256 "psec" samples and fill the Waveform
-  for(int i=0; i<256; i++)
-  {
-    double noise = myTR->Gaus(0.,2.0); //add in random baseline noise (2 mV sig)
-
-    double signal  = aGauss->Eval(i,0,0,0);
-    double thevoltage = signal + noise;
-
-    mwav.PushSample(thevoltage);
-
-    //std::cout<<thevoltage<<std::endl;
+  double hsample;
+  for(int m=0;m<NChannel;m++) {
+   // create an instance of a Wavefom
+    vector<Waveform<double>> thewavs;
+    Waveform<double> hwav;
+    for(int n=0;n<WavDimSize;n++) {
+      isin>>hsample;
+      // push the samples into the Waveform, flip the sign
+      if(m==TrigChannel) hwav.PushSample(-hsample);
+      else hwav.PushSample(-hsample);
+      //std::cout<<"Sample from data: "<<hsample<<std::endl;
+    }
+    //std::cout<<"channel: "<<m<<" "<<"size: "<<(hwav.GetSamples())->size()<<std::endl;
+    thewavs.push_back(hwav);
+    RawLAPPDData.insert(pair <int,vector<Waveform<double>>> (m,thewavs));
   }
 
-  int thesize = mwav.GetSamples()->size();
-  //std::cout<<"the size here  "<<thesize<<std::endl;
-
-  //put the fake LAPPD pulse into the ANNIEEvent Store, call it "LAPPDtrace"
-  m_data->Stores["ANNIEEvent"]->Set("LAPPDtrace",mwav);
+  // add the map of Waveforms to the Boost Store
+  m_data->Stores["ANNIEEvent"]->Set("RawLAPPDData",RawLAPPDData);
 
   return true;
 }
-
 
 bool LAPPDParseScope::Finalise(){
 

@@ -6,7 +6,10 @@ FROM cern/cc7-base:latest
 ### Run the following commands as super user (root):
 USER root
 
-### Required package for ROOT
+#######################
+### GCC ENVIRONMENT ###
+#######################
+
 RUN yum install -y \
     wget \
     tar \
@@ -25,11 +28,13 @@ RUN yum install -y \
     python-devel \
     && yum clean all \
     && rm -rf /var/cache/yum
+
     
-Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ; cd ToolAnalysis ; ./GetToolDAQ.sh --b1;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --b2;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --b3;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --b4;
+Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
 
 ### Open terminal
 CMD ["/bin/bash"]
