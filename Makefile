@@ -11,13 +11,20 @@ BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_s
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
 RootInclude=  -I $(ToolDAQPath)/root/include
+ 
+WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
+WCSimInclude= -I ToolDAQ/WCSimLib/include
+
+MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
+MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
+
 RootLib=   -L $(ToolDAQPath)/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude) `python-config --cflags`
-MyToolsLib = $(RootLib) `python-config --libs`
+MyToolsInclude =  $(RootInclude) `python-config --cflags` $(MrdTrackInclude) $(WCSimInclude)
+MyToolsLib = $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 

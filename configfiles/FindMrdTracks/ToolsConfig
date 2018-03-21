@@ -1,0 +1,4 @@
+myLoadWCSim LoadWCSim ./configfiles/FindMrdTracks/LoadWCSimConfig
+myPrintANNIEEvent PrintANNIEEvent ./configfiles/FindMrdTracks/PrintANNIEEventConfig
+myFindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
+
