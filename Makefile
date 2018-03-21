@@ -70,5 +70,7 @@ lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/* | lib/libStore.
 update:
 	cd $(ToolDAQPath)/ToolDAQFramework; git pull
 	cd $(ToolDAQPath)/zeromq-4.0.7; git pull
+	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make
+	cd $(ToolDAQPath)/WCSimLib; git checkout . ; git pull; make
 	git pull
 
