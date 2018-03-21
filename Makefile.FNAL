@@ -2,7 +2,7 @@ ToolDAQPath=ToolDAQ
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 
-CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
+CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -fdiagnostics-color=always
 
 PythonLib= `python-config --libs` -L `python-config --prefix`/lib
 PythonInclude=`python-config --cflags`
@@ -19,8 +19,15 @@ RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lMinuit
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude) $(PythonInclude)
-MyToolsLib = $(RootLib) $(PythonLib)
+WCSimLib= -L ToolDAQ/LibWCSim -lWCSimRoot
+WCSimInclude= -I ToolDAQ/LibWCSim/include
+
+MrdTrackLib= -L ToolDAQ/LibFindMrdTracks/src -lFindMrdTracks
+MrdTrackInclude= -I ToolDAQ/LibFindMrdTracks/include
+
+
+MyToolsInclude =  $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude)
+MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib)
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
