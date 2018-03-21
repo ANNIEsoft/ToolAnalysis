@@ -1,0 +1,2 @@
+raw_loader RawLoader configfiles/PhaseI/RawLoaderConfig
+# test2 DummyTool configfiles/DummyToolConfig

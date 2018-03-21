@@ -9,6 +9,8 @@ rootflag=1
 boostflag=1
 zmq=1
 final=1
+MrdTrackLib=1
+WCSimlib=1
 
 while [ ! $# -eq 0 ]
 do
@@ -55,39 +57,56 @@ do
             final=0
             ;;
 
-
-	--b1 )
-            echo "Installing ToolDAQ part1"
-	    final=0
+	--ToolDAQ_ZMQ )
+            echo "Installing ToolDAQ & ZMQ"
 	    rootflag=0
 	    boostflag=0
+	    final=0
+	    MrdTrackLib=0
+	    WCSimlib=0   
             ;;
 
-	--b2 )
-            echo "Installing ToolDAQ part2"
-            init=0
-	    zmq=0
+	--Boost )
+            echo "Installing Boost"
+	    init=0
 	    tooldaq=0
 	    rootflag=0
+	    zmq=0
 	    final=0
+	    MrdTrackLib=0
+	    WCSimlib=0
             ;;
 	
-	--b3 )
-            echo "Installing ToolDAQ part3"
-            init=0
-	    zmq=0
+	--Root )
+            echo "Installing ToolDAQ"
+	    init=0
 	    tooldaq=0
-            final=0
-            boostflag=0
+	    boostflag=0
+	    zmq=0
+	    final=0
+	    MrdTrackLib=0
+	    WCSimlib=0
             ;;
 	
-	--b4 )
-            echo "Installing ToolDAQ part4"
-            init=0
-	    zmq=0
+	--WCSim )
+            echo "Installing WCSim libs"
+	    init=0
 	    tooldaq=0
-            rootflag=0
-            boostflag=0
+	    rootflag=0
+	    boostflag=0
+	    zmq=0
+	    final=0
+	    ;;
+
+	--Final )
+            echo "Compiling ToolDAQ"
+	    init=0
+	    tooldaq=0
+	    rootflag=0
+	    boostflag=0
+	    zmq=0
+	    MrdTrackLib=0
+	    WCSimlib=0
             ;;
 
     esac
@@ -159,7 +178,36 @@ then
     
 fi
 
+if [ $WCSimlib -eq 1 ]
+then
+
+    cd ../
+    source Setup.sh
+    cd -
+    git clone https://github.com/ANNIEsoft/WCSimLib.git
+    cd WCSimLib
+    make
+  
+    cd ../
+
+fi
+
+if [ $MrdTrackLib -eq 1 ]
+then
+    
+    cd ../
+    source Setup.sh
+    cd -
+    git clone https://github.com/ANNIEsoft/MrdTrackLib.git
+    cd MrdTrackLib
+    make
+    cd ../
+
+fi
+
 cd ../
+
+
 
 if [ $final -eq 1 ]
 then

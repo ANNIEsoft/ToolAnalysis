@@ -12,13 +12,14 @@ bool LAPPDSave::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  m_variables.Get("path", path);
   return true;
 }
 
 
 bool LAPPDSave::Execute(){
 
-  m_data->Stores["ANNIEEvent"]->Save("./testoutpt");
+  m_data->Stores["ANNIEEvent"]->Save(path);
   m_data->Stores["ANNIEEvent"]->Delete();
 
   return true;

@@ -14,18 +14,19 @@
 #include "LAPPD.h"
 #include "ANNIEalgorithms.h"
 #include "ANNIEconstants.h"
-#include "BeamStatus.h"
+#include "BeamStatusClass.h"
 #include "ChannelKey.h"
 #include "Detector.h"
 #include "Direction.h"
 #include "Geometry.h"
 #include "Hit.h"
 #include "Particle.h"
+#include "LAPPDHit.h"
 #include "Position.h"
 #include "TimeClass.h"
 #include "TriggerClass.h"
 #include "Waveform.h"
- 
+
 
 #include <zmq.hpp>
 
@@ -33,7 +34,7 @@ class DataModel {
 
 
  public:
-  
+
   DataModel();
   //TTree* GetTTree(std::string name);
   //void AddTTree(std::string name,TTree *tree);
@@ -42,7 +43,7 @@ class DataModel {
   Store vars;
   BoostStore CStore;
   std::map<std::string,BoostStore*> Stores;
-  
+
   Logging *Log;
   zmq::context_t* context;
 
@@ -50,11 +51,11 @@ class DataModel {
  private:
 
 
-  
-  //std::map<std::string,TTree*> m_trees; 
-  
-  
-  
+
+  //std::map<std::string,TTree*> m_trees;
+
+
+
 };
 
 

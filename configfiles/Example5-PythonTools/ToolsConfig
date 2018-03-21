@@ -1,0 +1,4 @@
+ExampleloadStore ExampleloadStore configfiles/Example5-PythonTools/LoadStoreDataConfig
+PythonPrint PythonScript configfiles/Example5-PythonTools/PythonPrintConfig
+PythonGenerate PythonScript configfiles/Example5-PythonTools/PythonGenerateConfig
+PythonPrint PythonScript configfiles/Example5-PythonTools/PythonPrintConfig
