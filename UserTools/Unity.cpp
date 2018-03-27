@@ -45,3 +45,5 @@
 #include "LoadANNIEEvent/LoadANNIEEvent.cpp"
 #include "PhaseITreeMaker/PhaseITreeMaker.cpp"
 #include "MrdPaddlePlot/MrdPaddlePlot.cpp"
+#include "LoadWCSimLAPPD/LoadWCSimLAPPD.cpp"
+#include "LoadWCSimLAPPD/LAPPDTree.cpp"
