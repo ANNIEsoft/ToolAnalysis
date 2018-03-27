@@ -182,9 +182,21 @@ bool RawLoader::Execute() {
       ChannelKey ck(subdetector::ADC, pmt_id);
       std::vector<Waveform<unsigned short> > raw_waveforms;
 
-      for ( const auto& minibuffer_data : channel.data() ) {
-        // TODO: add correct timestamp
-        raw_waveforms.emplace_back(TimeClass(), minibuffer_data);
+      size_t num_minibuffers = channel.num_minibuffers();
+      // TODO: test for Hefty mode (num_minibuffers > 1) here
+
+      for ( size_t mb = 0; mb < num_minibuffers; ++mb) {
+        const auto& minibuffer_data = channel.minibuffer_data( mb );
+
+        // Estimate the time in ns since the Unix epoch for the start of this
+        // minibuffer using the standard recoANNIE technique for non-Hefty
+        // data. This will be good enough for matching to the POT database
+        // but not good enough for Hefty mode calculations.
+        // TODO: switch to using Jonathan's timing scripts for Hefty mode data
+        uint64_t ns_since_epoch = card.trigger_time( mb );
+
+        // Create a new raw waveform object for the current minibuffer
+        raw_waveforms.emplace_back( TimeClass(ns_since_epoch), minibuffer_data);
       }
 
       raw_waveform_map[ck] = raw_waveforms;

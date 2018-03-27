@@ -11,8 +11,8 @@ class TimeClass : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-  TimeClass() : unixns(0){serialise=true;}
-  TimeClass(double timens) : unixns(timens){serialise=true;}
+  TimeClass() : unixns(0) {serialise=true;}
+  TimeClass(uint64_t timens) : unixns(timens) {serialise=true;}
 	
 	inline uint64_t GetNs(){return unixns;}
 	inline void SetNs(uint64_t tns){unixns=tns;}
@@ -24,7 +24,7 @@ class TimeClass : public SerialisableObject{
 	}
 	
 	private:
-	double unixns;
+	uint64_t unixns;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
@@ -33,7 +33,7 @@ class TimeClass : public SerialisableObject{
 	}
 	
 	void Clear(){
-		unixns=-1;
+		unixns = 0;
 	}
 	
 };
