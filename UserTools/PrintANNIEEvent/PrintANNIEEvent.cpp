@@ -36,6 +36,8 @@ bool PrintANNIEEvent::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 	m_data->Stores["ANNIEEvent"]->Get("RecoParticles",RecoParticles);
 	m_data->Stores["ANNIEEvent"]->Get("MCHits",MCHits);
+	//if(m_data->Stores["ANNIEEVENT"]->count("MCLAPPDHits")>0)
+	//m_data->Stores["ANNIEEVENT"]->Get("MCLAPPDHits",MCLAPPDHits);
 	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
 	m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
 	m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",RawLAPPDData);
@@ -88,6 +90,23 @@ bool PrintANNIEEvent::Execute(){
 		}
 	} else {
 		cout<<"No MCHits"<<endl;
+	}
+	if(MCLAPPDHits){
+		cout<<"Num MCLAPPDHits : "<<MCLAPPDHits->size()<<endl;
+		if(verbose>1){
+			cout<<"MCLAPPDHits : {"<<endl;
+			for(auto&& achannel : *MCLAPPDHits){
+				ChannelKey chankey = achannel.first;
+				auto& hits = achannel.second;
+				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"Hits : "<<endl;
+				for(auto&& ahit : hits) ahit.Print();
+				cout<<endl;
+			}
+			cout<<"}"<<endl;
+		}
+	} else {
+		cout<<"No MCLAPPDHits"<<endl;
 	}
 	if(TDCData){
 		cout<<"Num TDCData Hits : "<<TDCData->size()<<endl;
