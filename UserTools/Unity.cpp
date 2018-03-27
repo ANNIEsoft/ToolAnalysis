@@ -31,3 +31,4 @@
 #include "LAPPDSaveROOT/LAPPDSaveROOT.cpp"
 #include "LAPPDFilter/LAPPDFilter.cpp"
 #include "LAPPDIntegratePulse/LAPPDIntegratePulse.cpp"
+#include "ADCCalibrator/ADCCalibrator.cpp"

@@ -26,7 +26,7 @@ class LAPPDHit : public Hit{
 	inline void SetPosition(std::vector<double> pos){Position=pos;}
 	inline void SetLocalPosition(std::vector<double> locpos){LocalPosition=locpos;}
 
-	bool Print(){
+	bool Print() {
 		cout<<"TubeId : "<<TubeId<<endl;
 		cout<<"Time : "; Time.Print();
 		cout<<"Time (psec) : "<<Tpsec<<endl;

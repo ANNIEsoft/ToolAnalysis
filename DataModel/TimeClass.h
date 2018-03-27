@@ -14,10 +14,10 @@ class TimeClass : public SerialisableObject{
   TimeClass() : unixns(0) {serialise=true;}
   TimeClass(uint64_t timens) : unixns(timens) {serialise=true;}
 	
-	inline uint64_t GetNs(){return unixns;}
+	inline uint64_t GetNs() const {return unixns;}
 	inline void SetNs(uint64_t tns){unixns=tns;}
 	
-	bool Print(){
+	bool Print() {
 		cout<<"unixns : "<<unixns<<endl;
 		
 		return true;

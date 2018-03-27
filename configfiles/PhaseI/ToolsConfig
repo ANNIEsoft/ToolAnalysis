@@ -1,2 +1,3 @@
 raw_loader RawLoader configfiles/PhaseI/RawLoaderConfig
+adc_calibrator ADCCalibrator configfiles/PhaseI/ADCCalibratorConfig
 # test2 DummyTool configfiles/DummyToolConfig
