@@ -44,3 +44,4 @@
 #include "FindTrackLengthInWater/FindTrackLengthInWater.cpp"
 #include "LoadANNIEEvent/LoadANNIEEvent.cpp"
 #include "PhaseITreeMaker/PhaseITreeMaker.cpp"
+#include "MrdPaddlePlot/MrdPaddlePlot.cpp"
