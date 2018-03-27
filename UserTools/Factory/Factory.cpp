@@ -41,5 +41,6 @@ if (tool=="BeamFetcher") ret=new BeamFetcher;
 if (tool=="FindTrackLengthInWater") ret=new FindTrackLengthInWater;
 if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
 if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
+if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
 return ret;
 }
