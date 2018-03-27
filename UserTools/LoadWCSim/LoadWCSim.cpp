@@ -18,7 +18,6 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// Get the Tool configuration variables
 	// ====================================
 	m_variables.Get("verbose",verbose);
-	//verbose=10;
 	m_variables.Get("InputFile",MCFile);
 	
 	// Short Stores README
@@ -54,16 +53,31 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	NumEvents=wcsimtree->GetEntries();
 	WCSimEntry= new wcsimT(wcsimtree);
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
+	wcsimrootopts = WCSimEntry->wcsimrootopts;
 	if(verbose>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<endl;
+	int pretriggerwindow=wcsimrootopts->GetNDigitsPreTriggerWindow();
+	int posttriggerwindow=wcsimrootopts->GetNDigitsPostTriggerWindow();
 	
 	// put useful constants into the CStore
 	// ====================================
 	//m_data->CStore.Set("WCSimEntry",WCSimEntry,false); // pass on the WCSim entry - not possible
+	// pass on root options. TODO should these be saved somewhere?
+	m_data->CStore.Set("WCSimPreTriggerWindow",pretriggerwindow);
+	m_data->CStore.Set("WCSimPostTriggerWindow",posttriggerwindow);
+	// store the WCSimRootGeom for LAPPD reader calculation of global coords
+	intptr_t geomptr = reinterpret_cast<intptr_t>(wcsimrootgeom);
+	m_data->CStore.Set("WCSimRootGeom",geomptr);
+//	int wcsimgoemexists = m_data->Stores.count("WCSimRootGeomStore");
+//	if(wcsimgoemexists==0){
+//		m_data->Stores["WCSimRootGeomStore"] = new BoostStore(false,0);
+//		//m_data->Stores["WCSimRootGeomStore"]->Header->Set("WCSimRootGeom",wcsimrootgeom);
+//		m_data->Stores["WCSimRootGeomStore"]->Set("WCSimRootGeom",&wcsimrootgeom);
+//	}
 	
 	// Make the ANNIEEvent Store if it doesn't exist
 	// =============================================
 	int annieeventexists = m_data->Stores.count("ANNIEEvent");
-	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
+	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(true,2);
 	
 	// construct the Geometry to go in the header from the WCSimRootGeom
 	// =================================================================
@@ -151,6 +165,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		BeamStatus
 	*/
 	
+	EventNumber=0;
 	MCEventNum=-1;
 	MCTriggernum=0;
 	// pull the first entry with a trigger and use it's Date for the BeamStatus last recorded time. TODO
@@ -186,7 +201,7 @@ bool LoadWCSim::Execute(){
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores["ANNIEEvent"]->Clear();
 	
-	if(verbose>1) cout<<"Tool LoadWCSim getting entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
+	if(verbose) cout<<"Tool LoadWCSim getting entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
 	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = wcsimtree->GetCurrentFile()->GetName();
 	
@@ -371,7 +386,7 @@ bool LoadWCSim::Execute(){
 	if(verbose>1) cout<<"setting the store variables"<<endl;
 	m_data->Stores["ANNIEEvent"]->Set("RunNumber",RunNumber);
 	m_data->Stores["ANNIEEvent"]->Set("SubrunNumber",SubrunNumber);
-	m_data->Stores["ANNIEEvent"]->Set("EventNumber",MCEventNum);
+	m_data->Stores["ANNIEEvent"]->Set("EventNumber",EventNumber);
 	if(verbose>2) cout<<"particles"<<endl;
 	m_data->Stores["ANNIEEvent"]->Set("MCParticles",MCParticles,true);
 	if(verbose>2) cout<<"hits"<<endl;
@@ -395,18 +410,21 @@ bool LoadWCSim::Execute(){
 	//RecoParticles
 	
 	// this should be everything. save the entry to the BoostStore
-	if(verbose>2) cout<<"saving"<<endl;
+	if(verbose>2) cout<<"saving ANNIEEVENT "<<EventNumber<<endl;
 	m_data->Stores["ANNIEEvent"]->Save();
 	
+	EventNumber++;
 	MCTriggernum++;
 	if(verbose>2) cout<<"checking if we're done on trigs in this event"<<endl;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
 		MCEventNum++;
-		if(verbose>2) cout<<"new event"<<endl;
+		if(verbose>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
+	} else {
+		if(verbose>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
 	if(MCEventNum==NumEvents) m_data->vars.Set("StopLoop",1);
-	/*if(verbose>1)*/ cout<<"done loading event"<<endl;
+	if(verbose>1) cout<<"done loading event"<<endl;
 	return true;
 }
 
