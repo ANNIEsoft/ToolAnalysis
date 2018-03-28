@@ -60,7 +60,7 @@ bool ADCCalibrator::Execute() {
       raw_waveforms);
   }
 
-  annie_event->Set("CalibratedADCData", raw_waveform_map);
+  annie_event->Set("CalibratedADCData", calibrated_waveform_map);
 
   return true;
 }
