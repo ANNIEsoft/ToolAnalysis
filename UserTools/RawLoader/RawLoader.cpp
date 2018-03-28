@@ -1,5 +1,6 @@
 // ToolAnalysis includes
 #include "ChannelKey.h"
+#include "MinibufferLabel.h"
 #include "RawLoader.h"
 #include "Waveform.h"
 
@@ -162,6 +163,7 @@ bool RawLoader::Execute() {
   std::map<ChannelKey, std::vector<Waveform<unsigned short> > >
     raw_waveform_map;
 
+  size_t num_minibuffers = 0;
   for ( const auto& card_pair : raw_readout->cards() ) {
     const auto& card = card_pair.second;
 
@@ -174,7 +176,7 @@ bool RawLoader::Execute() {
       ChannelKey ck(subdetector::ADC, pmt_id);
       std::vector<Waveform<unsigned short> > raw_waveforms;
 
-      size_t num_minibuffers = channel.num_minibuffers();
+      num_minibuffers = channel.num_minibuffers();
       // TODO: test for Hefty mode (num_minibuffers > 1) here
 
       for ( size_t mb = 0; mb < num_minibuffers; ++mb) {
@@ -221,9 +223,56 @@ bool RawLoader::Execute() {
     }
   }
 
+  // Determine the trigger labels to use for each minibuffer
+  std::vector<MinibufferLabel> minibuffer_labels;
+
+  // If the raw data were not taken in Hefty mode, then we can assign
+  // a label describing the type of data in the single minibuffer using
+  // the run type (e.g., beam, cosmic, source)
+  bool hefty_mode = num_minibuffers > 1;
+  // TODO: enable a different method for Hefty mode data
+  if (true/*!hefty_mode*/) {
+    // Parse the RunType integer using the "InputVariables" JSON object
+    // that we loaded earlier from the RunInformation TTree
+    Store temp_store;
+    std::string temp_string;
+    annie_event->Get("InputVariables", temp_string);
+    temp_store.JsonParser(temp_string);
+
+    int run_type_code = BOGUS_INT;
+    temp_store.Get("RunType", run_type_code);
+
+    MinibufferLabel mb_label = MinibufferLabel::Unknown;
+    switch (run_type_code) {
+      case 1: mb_label = MinibufferLabel::LED; break;
+      case 2: mb_label = MinibufferLabel::Soft; break;
+      case 3: mb_label = MinibufferLabel::Beam; break;
+      case 4: mb_label = MinibufferLabel::Cosmic; break;
+      case 5: mb_label = MinibufferLabel::Source; break;
+      case 6: mb_label = MinibufferLabel::Hefty; break;
+      case 7: mb_label = MinibufferLabel::HeftySource; break;
+      default: break;
+    }
+
+    if (mb_label == MinibufferLabel::Hefty
+      || mb_label == MinibufferLabel::HeftySource)
+    {
+      Log("WARNING: Hefty run type encountered when loading non-Hefty data",
+        0, verbosity);
+    }
+
+    minibuffer_labels = std::vector<MinibufferLabel>(num_minibuffers, mb_label);
+  }
+  // TODO: add code to label the minibuffers for Hefty mode
+
+  annie_event->Set("MinibufferLabels", minibuffer_labels);
+
   Log("Loaded raw data for run " + std::to_string(run_number) + ", subrun "
     + std::to_string(subrun_number) + ", event "
-    + std::to_string(event_number), 2, verbosity);
+    + std::to_string(event_number) + " ("
+    // TODO: change this message when adapting to Hefty mode
+    + minibuffer_label_to_string( minibuffer_labels.back() ) + " data)",
+    2, verbosity);
 
   // TODO: store TDCData, CCData
 
