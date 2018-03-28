@@ -33,7 +33,7 @@ template <typename T> class CalibratedADCWaveform : public Waveform<T> {
     template<class Archive> void serialize(Archive & ar,
       const unsigned int version)
     {
-      Waveform<T>::serialise(ar, version);
+      Waveform<T>::template serialize<Archive>(ar, version);
 
       ar & fBaseline;
       ar & fSigmaBaseline;

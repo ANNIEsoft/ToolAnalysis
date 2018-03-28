@@ -30,5 +30,6 @@ if (tool=="LAPPDSaveROOT") ret=new LAPPDSaveROOT;
 if (tool=="LAPPDFilter") ret=new LAPPDFilter;
 if (tool=="LAPPDIntegratePulse") ret=new LAPPDIntegratePulse;
 if (tool=="ADCCalibrator") ret=new ADCCalibrator;
+if (tool=="ADCHitFinder") ret=new ADCHitFinder;
 return ret;
 }
