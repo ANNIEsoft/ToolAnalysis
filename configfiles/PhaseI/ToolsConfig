@@ -1,4 +1,5 @@
 raw_loader RawLoader configfiles/PhaseI/RawLoaderConfig
 adc_calibrator ADCCalibrator configfiles/PhaseI/ADCCalibratorConfig
 adc_hit_finder ADCHitFinder configfiles/PhaseI/ADCHitFinderConfig
+save LAPPDSave configfiles/PhaseI/LAPPDSaveConfig
 # test2 DummyTool configfiles/DummyToolConfig
