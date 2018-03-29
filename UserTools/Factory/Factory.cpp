@@ -31,5 +31,6 @@ if (tool=="LAPPDFilter") ret=new LAPPDFilter;
 if (tool=="LAPPDIntegratePulse") ret=new LAPPDIntegratePulse;
 if (tool=="ADCCalibrator") ret=new ADCCalibrator;
 if (tool=="ADCHitFinder") ret=new ADCHitFinder;
+if (tool=="BeamChecker") ret=new BeamChecker;
 return ret;
 }

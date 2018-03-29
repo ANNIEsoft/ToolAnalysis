@@ -2,6 +2,7 @@
 #ifndef TIMECLASS_H
 #define TIMECLASS_H
 
+#include <iostream>
 #include<SerialisableObject.h>
 
 using namespace std;
@@ -37,5 +38,13 @@ class TimeClass : public SerialisableObject{
 	}
 	
 };
+
+// Operator for printing the time since the Unix epoch (in ns) represented by
+// a TimeClass object to a std::ostream
+inline std::ostream& operator<<(std::ostream& out, const TimeClass& tc)
+{
+  out << tc.GetNs();
+  return out;
+}
 
 #endif

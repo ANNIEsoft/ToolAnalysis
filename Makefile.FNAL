@@ -29,8 +29,22 @@ MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 MyToolsInclude =  $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude)
 MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib)
 
+# Determine whether we should use rootcling or rootcint to generate
+# ROOT dictionaries (giving preference to rootcling because it is newer)
+ROOTCLING := $(shell command -v rootcling 2> /dev/null)
+ifndef ROOTCLING
+  ROOTCLING := $(shell command -v rootcint 2> /dev/null)
+endif
 
-all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
+DICTIONARY_INCLUDES := -I./DataModel IFBeamDataPoint.h LinkDef.h
+
+all: root_dictionary lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
+
+root_dictionary:
+	$(RM) src/RootDictionary*.*
+	$(ROOTCLING) -f src/RootDictionary.cpp -c $(DICTIONARY_INCLUDES)
+	$(CXX) $(RootInclude) $(RootLib) -I./DataModel -fPIC -o lib/RootDictionary.o -c src/RootDictionary.cpp
+	$(RM) src/RootDictionary*.*
 
 Analyse: src/main.cpp
 	g++ $(CPPFLAGS) -std=c++1y -g src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
@@ -58,10 +72,10 @@ clean:
 	rm -f lib/*.so
 	rm -f Analyse
 
-lib/libDataModel.so: DataModel/*
+lib/libDataModel.so: root_dictionary DataModel/*
 
 	cp -L DataModel/*.h include/
-	$(CC) DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude) $(UserLib)
+	$(CC) DataModel/*.C DataModel/*.cpp lib/RootDictionary.o -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude) $(UserLib)
 
 lib/libMyTools.so: UserTools/* UserTools/*/* include/Tool.h lib/libDataModel.so
 
