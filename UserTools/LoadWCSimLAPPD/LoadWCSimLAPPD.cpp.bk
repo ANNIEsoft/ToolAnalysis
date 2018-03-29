@@ -38,17 +38,19 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	int annieeventexists = m_data->Stores.count("ANNIEEvent");
 	if(annieeventexists==0){
 		cerr<<"LoadWCSimLAPPD tool need to run after LoadWCSim tool!"<<endl;
-		return false; // XXX we need various things from main files... 
+		return false; // TODO we need to read various things from main the files...
 	}
 	
-	// Get relevant temporary WCSimRootOptions from CStore
+	// Get trigger window parameters from CStore
+	// =========================================
 	m_data->CStore.Get("WCSimPreTriggerWindow",pretriggerwindow);
 	m_data->CStore.Get("WCSimPostTriggerWindow",posttriggerwindow);
 	if(verbose>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
 					  <<", WCSimPostTriggerWindow="<<posttriggerwindow<<endl;
 	// so far all simulations have used the SK defaults: pre: -400ns, post: 950ns
 	
-	// Get WCSimRootGeom so we can obtain CylLoc and tank geometry for calculating global pos
+	// Get WCSimRootGeom so we can obtain CylLoc for calculating global pos
+	// ====================================================================
 	intptr_t geomptr;
 	m_data->CStore.Get("WCSimRootGeom",geomptr);
 	geo = reinterpret_cast<WCSimRootGeom*>(geomptr);
@@ -78,7 +80,7 @@ bool LoadWCSimLAPPD::Execute(){
 	// we need to scan through the LAPPD hits and check for hits within the trigger time window.
 	// If you wish, you can bypass this easily enough, but in that case bear in mind the same 
 	// LAPPD hits may appear in multiple ToolAnalysis 'events' unless you otherwise handle it.
-	if(verbose) cout<<"Tool LoadWCSimLAPPD getting next entry "<<endl;
+	if(verbose) cout<<"Executing tool LoadWCSimLAPPD"<<endl;
 	
 	int storegetret=666; // return 1 success
 	storegetret = m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
