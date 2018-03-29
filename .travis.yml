@@ -12,7 +12,7 @@ before_install:
   - docker pull anniesoft/toolanalysis:base
 
 install:
-  - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; ln -s /ToolAnalysis/ToolDAQ ./ToolDAQ ; make clean; make "
+  - docker run --rm -v `pwd`:/root/buildtest anniesoft/toolanalysis:base /bin/sh -c " cd /root/buildtest ; ln -s /ToolAnalysis/ToolDAQ ./ToolDAQ ; source ./Setup.sh ; make clean; make "
 
 jobs:
   include:
