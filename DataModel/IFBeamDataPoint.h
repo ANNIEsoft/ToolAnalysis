@@ -1,7 +1,11 @@
-#ifndef IFBEAMDATAPOINT_H
-#define IFBEAMDATAPOINT_H
+#pragma once
+// Container used to store IF beam database information in a ROOT file
+// for easy offline retrieval
+//
+// Steven Gardiner <sjgardiner@ucdavis.edu>
 
 // standard library includes
+#include <map>
 #include <string>
 
 /// @brief Container to hold values from IF beam database queries, together
@@ -15,5 +19,3 @@ struct IFBeamDataPoint {
   double value;
   std::string unit;
 };
-
-#endif
