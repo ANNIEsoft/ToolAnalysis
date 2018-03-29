@@ -14,4 +14,7 @@ constexpr unsigned int NS_PER_ADC_SAMPLE = 2; // ns
 /// @brief A dummy value to use to initialize integers
 constexpr int BOGUS_INT = -9999;
 
+/// @brief The format code for a multievent binary BoostStore
+constexpr int BOOST_STORE_MULTIEVENT_FORMAT = 2;
+
 #endif

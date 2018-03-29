@@ -1,4 +1,4 @@
 # Dummy config file
 verbose 2
 BadPOTMax 1e11
-BeamDBFile /annie/app/users/gardiner/sorted_phase1_pot_maps.root
+BeamDBFile /annie/app/users/gardiner/phase1_beam_db.data
