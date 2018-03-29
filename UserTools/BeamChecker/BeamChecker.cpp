@@ -1,11 +1,14 @@
 // standard library includes
 #include <algorithm>
 #include <ctime>
+#include <fstream>
+#include <sstream>
 
 // ToolAnalysis includes
+#include "ANNIEconstants.h"
 #include "BeamChecker.h"
+#include "BeamDataPoint.h"
 #include "BeamStatus.h"
-#include "IFBeamDataPoint.h"
 
 // Definitions local to this source file
 namespace {
@@ -23,7 +26,9 @@ namespace {
 
 }
 
-BeamChecker::BeamChecker() : Tool() {}
+BeamChecker::BeamChecker() : Tool(),
+  beam_db_store_(false, BOOST_STORE_MULTIEVENT_FORMAT)
+{}
 
 bool BeamChecker::Initialise(std::string config_filename, DataModel& data)
 {
@@ -107,7 +112,16 @@ bool BeamChecker::Execute() {
 
     const auto& mb_label = minibuffer_labels.at(mb);
 
-    beam_statuses.push_back( get_beam_status(ns_since_epoch, mb_label) );
+    auto temp_beam_status = get_beam_status(ns_since_epoch, mb_label);
+
+    std::stringstream temp_ss;
+    temp_ss << std::scientific << std::setprecision(4);
+    temp_ss << temp_beam_status.pot();
+
+    Log(make_beam_condition_string( temp_beam_status.condition() )
+      + " beam minibuffer had " + temp_ss.str() + " POT", 2, verbosity_);
+
+    beam_statuses.push_back( temp_beam_status );
   }
 
   annie_event->Set("BeamStatuses", beam_statuses);
@@ -143,45 +157,56 @@ bool BeamChecker::initialise_beam_db() {
     return false;
   }
 
-  // TODO: switch to std::make_unique when our Docker container has a compiler
-  // that is C++14 compliant
-  beam_db_tfile_ = std::unique_ptr<TFile>(new TFile(db_filename.c_str(),
-    "read"));
-
-  if ( beam_db_tfile_->IsZombie() ) {
+  // Check that the beam database file exists using a dummy std::ifstream
+  std::ifstream dummy_in_file(db_filename);
+  if ( !dummy_in_file.good() ) {
     Log("Error: Could not open the beam database file \"" + db_filename
      + '\"', 0, verbosity_);
     return false;
   }
+  dummy_in_file.close();
 
-  db_tree_ = nullptr;
-  beam_db_tfile_->GetObject("BeamData", db_tree_);
+  beam_db_store_.Initialise( db_filename );
 
-  if ( !db_tree_ ) {
-    Log("Error: Could not find the BeamData TTree in the beam database"
-      " file \"" + db_filename + '\"', 0, verbosity_);
-    return false;
-  }
-  else if ( !db_tree_->GetBranch("beam_data") ) {
-    Log("Error: Could not find the \"beam_data\" branch in the BeamData"
-      " TTree in the beam database file \"" + db_filename + '\"', 0,
+  bool got_index = beam_db_store_.Header->Get("BeamDBIndex", beam_db_index_);
+
+  if ( !got_index ) {
+    Log("Error: Could not find the BeamDBIndex entry in the beam database"
+      " BoostStore header stored in the file \"" + db_filename + '\"', 0,
       verbosity_);
     return false;
   }
 
-  beam_db_index_ = nullptr;
-  beam_db_tfile_->GetObject("BeamIndex", beam_db_index_);
+  bool got_start = beam_db_store_.Header->Get("StartMillisecondsSinceEpoch",
+    start_ms_since_epoch_);
 
-  if ( !beam_db_index_ ) {
-    Log("Error: Could not find the BeamIndex map in the beam database"
-      " file \"" + db_filename + '\"', 0, verbosity_);
+  if ( !got_start ) {
+    Log("Error: Could not find the StartMillisecondsSinceEpoch entry in the"
+      " beam database BoostStore header stored in the file \"" + db_filename
+      + '\"', 0, verbosity_);
     return false;
   }
-  if ( beam_db_index_->empty() ) {
-    Log("Error: The BeamIndex map from the beam database"
-      " file \"" + db_filename + "\" is empty", 0, verbosity_);
+
+  bool got_end = beam_db_store_.Header->Get("EndMillisecondsSinceEpoch",
+    end_ms_since_epoch_);
+
+  if ( !got_end ) {
+    Log("Error: Could not find the EndMillisecondsSinceEpoch entry in the"
+      " beam database BoostStore header stored in the file \"" + db_filename
+      + '\"', 0, verbosity_);
     return false;
   }
+
+  if ( !beam_db_store_.Has("BeamDB") ) {
+    Log("Error: Missing BeamDB key in the beam database BoostStore stored"
+      " in the file \"" + db_filename
+      + '\"', 0, verbosity_);
+    return false;
+  }
+
+  Log("Loaded beam database entries for times between "
+    + make_time_string(start_ms_since_epoch_) + " and "
+    + make_time_string(end_ms_since_epoch_), 1, verbosity_);
 
   return true;
 }
@@ -199,15 +224,14 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
 
   // TODO: consider making the static variables used here into members of
   // the BeamChecker class instead
-  static std::map<std::string, std::map<unsigned long long, IFBeamDataPoint> >*
-    beam_data = NULL;
+  static std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
+    beam_data;
   static int current_beam_db_entry = 0;
   static bool got_first_beam_entry = false;
 
-  db_tree_->SetBranchAddress("beam_data", &beam_data);
-
   if ( !got_first_beam_entry ) {
-    db_tree_->GetEntry(current_beam_db_entry);
+    beam_db_store_.GetEntry(current_beam_db_entry);
+    beam_db_store_.Get("BeamDB", beam_data);
     got_first_beam_entry = true;
   }
 
@@ -219,8 +243,8 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
 
   // Find the beam database entry that contains POT information for the
   // moment of interest
-  auto iter = std::find_if(beam_db_index_->cbegin(),
-    beam_db_index_->cend(),
+  auto iter = std::find_if(beam_db_index_.cbegin(),
+    beam_db_index_.cend(),
     [ms_since_epoch](const std::pair<int, std::pair<unsigned long long,
       unsigned long long> >& pair) -> bool {
       unsigned long long start_ms = pair.second.first;
@@ -231,7 +255,7 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
 
   // If a suitable entry could not be found, then complain and return
   // a BeamStatus object that indicates that the data were missing
-  bool found_pot_entry = ( iter != beam_db_index_->cend() );
+  bool found_pot_entry = ( iter != beam_db_index_.cend() );
 
   if ( !found_pot_entry ) {
     Log("WARNING: unable to find a suitable entry for "
@@ -240,12 +264,15 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
     return BeamStatus( TimeClass(ns_since_epoch), 0., BeamCondition::Missing );
   }
 
-  // If we need to load a new entry from the beam database TTree, do so.
+  // If we need to load a new entry from the beam database, do so.
   // Avoid loading a new entry if you don't have to (the maps stored in
   // each entry are fairly large)
   int new_entry_number = iter->first;
   if ( new_entry_number != current_beam_db_entry ) {
-    db_tree_->GetEntry(new_entry_number);
+
+    beam_db_store_.GetEntry(new_entry_number);
+    beam_db_store_.Get("BeamDB", beam_data);
+
     current_beam_db_entry = new_entry_number;
   }
 
@@ -257,12 +284,12 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
 
     // TODO: remove hard-coded device name here
     // Get protons-on-target (POT) information from the parsed data
-    const std::map<unsigned long long, IFBeamDataPoint>& pot_map
-      = beam_data->at("E:TOR875");
+    const std::map<unsigned long long, BeamDataPoint>& pot_map
+      = beam_data.at("E:TOR875");
 
     // Find the POT entry with the closest time to that requested by the
     // user, and use it to create the BeamStatus object that will be returned
-    std::map<unsigned long long, IFBeamDataPoint>::const_iterator
+    std::map<unsigned long long, BeamDataPoint>::const_iterator
       low = pot_map.lower_bound(ms_since_epoch);
 
     if ( low == pot_map.cend() ) {
@@ -284,7 +311,7 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
     // closest to the value requested by the user
     else {
 
-      std::map<unsigned long long, IFBeamDataPoint>::const_iterator
+      std::map<unsigned long long, BeamDataPoint>::const_iterator
         prev = low;
       --prev;
 

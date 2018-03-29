@@ -26,22 +26,7 @@ DataModelLib = $(RootLib)
 MyToolsInclude =  $(RootInclude) `python-config --cflags` $(MrdTrackInclude) $(WCSimInclude)
 MyToolsLib = $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib)
 
-# Determine whether we should use rootcling or rootcint to generate
-# ROOT dictionaries (giving preference to rootcling because it is newer)
-ROOTCLING := $(shell command -v rootcling 2> /dev/null)
-ifndef ROOTCLING
-  ROOTCLING := $(shell command -v rootcint 2> /dev/null)
-endif
-
-DICTIONARY_INCLUDES := -I./DataModel IFBeamDataPoint.h LinkDef.h
-
-all: root_dictionary lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
-
-root_dictionary:
-	$(RM) src/RootDictionary*.*
-	$(ROOTCLING) -f src/RootDictionary.cpp -c $(DICTIONARY_INCLUDES)
-	$(CXX) $(RootInclude) $(RootLib) -I./DataModel -fPIC -o lib/RootDictionary.o -c src/RootDictionary.cpp
-	$(RM) src/RootDictionary*.*
+all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 
 Analyse: src/main.cpp | lib/libMyTools.so lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so
 
@@ -67,13 +52,13 @@ lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/* | lib/libLo
 
 clean: 
 	rm -f include/*.h
-	rm -f lib/*.so lib/*.o
+	rm -f lib/*.so
 	rm -f Analyse
 
-lib/libDataModel.so: root_dictionary DataModel/* lib/libLogging.so | lib/libStore.so
+lib/libDataModel.so: DataModel/* lib/libLogging.so | lib/libStore.so
 
 	cp DataModel/*.h include/
-	$(CC) DataModel/*.C DataModel/*.cpp lib/RootDictionary.o -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
+	$(CC) DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 lib/libMyTools.so: UserTools/*/* UserTools/* | include/Tool.h lib/libDataModel.so lib/libLogging.so lib/libStore.so include/Tool.h
 

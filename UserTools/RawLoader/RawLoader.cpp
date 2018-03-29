@@ -1,4 +1,5 @@
 // ToolAnalysis includes
+#include "ANNIEconstants.h"
 #include "ChannelKey.h"
 #include "MinibufferLabel.h"
 #include "RawLoader.h"
@@ -18,8 +19,6 @@
 #include <vector>
 
 namespace {
-
-  constexpr int BOOST_STORE_MULTIEVENT_FORMAT = 2;
 
   template <typename L, typename R> boost::bimap<L, R>
     makeBimap(std::initializer_list<

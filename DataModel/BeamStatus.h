@@ -8,6 +8,7 @@
 // standard library includes
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 // ToolAnalysis includes
 #include "SerialisableObject.h"
@@ -35,6 +36,12 @@ inline std::ostream& operator<<(std::ostream& out, const BeamCondition& bc)
       break;
   }
   return out;
+}
+
+inline std::string make_beam_condition_string(const BeamCondition& bc) {
+  std::stringstream temp_string_stream;
+  temp_string_stream << bc;
+  return temp_string_stream.str();
 }
 
 class BeamStatus : public SerialisableObject {
