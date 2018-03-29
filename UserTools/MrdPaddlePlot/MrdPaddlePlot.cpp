@@ -99,7 +99,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 
 bool MrdPaddlePlot::Execute(){
 	
-	if(verbose) cout<<"Tool MrdPaddlePlot updating histograms"<<endl;
+	if(verbose) cout<<"executing tool MrdPaddlePlot"<<endl;
 	
 	// Get the ANNIE event and extract information
 	// Maybe this information could be added to plots for reference
@@ -175,16 +175,15 @@ bool MrdPaddlePlot::Execute(){
 	
 	int thetracki=-1;
 	// loop over subevents (collections of hits on the MRD within a narrow time window)
-	cout<<"scanning "<<numsubevs<<" subevents in event "<<EventNumber<<endl;
-	cout<<"thesubeventarray="<<thesubeventarray<<endl;
-	cout<<"thesubeventarray TClonesArray says it has "<<thesubeventarray->GetEntries()<<" entries"<<endl;
+	if(verbose>2) cout<<"Printing  "<<numsubevs<<" MRD subevents in event "<<EventNumber<<endl;
+	if(verbose>3) cout<<"TClonesArray says it has "<<thesubeventarray->GetEntries()<<" entries"<<endl;
 	if(thesubeventarray->GetEntries()!=numsubevs){
 		cerr<<"mismatch between MRDTrack TClonesArray size and ANNIEEVENT recorded number of MRD Subevents!"<<endl;
 		return false;
 	}
 	for(int subevi=0; subevi<numsubevs; subevi++){
 		cMRDSubEvent* thesubevent = (cMRDSubEvent*)thesubeventarray->At(subevi);
-		cout<<"printing subevent "<<subevi<<endl;
+		if(verbose>3) cout<<"printing subevent "<<subevi<<endl;
 		thesubevent->Print();
 		
 		std::vector<cMRDTrack>* tracksthissubevent = thesubevent->GetTracks();
@@ -196,18 +195,18 @@ bool MrdPaddlePlot::Execute(){
 		totnumtracks+=numtracks;
 		//cout<<"event "<<evi<<", subevent "<<subevi<<" had "<<numtracks<<" tracks"<<endl;
 		// loop over tracks (collections of hits in a line within a subevent)
-		cout<<"scanning "<<numtracks<<" tracks in subevent "<<subevi<<endl;
+		if(verbose>2) cout<<"scanning "<<numtracks<<" tracks in subevent "<<subevi<<endl;
 		for(auto&& thetrack : *tracksthissubevent){
 			thetracki++;
-			cout<<"printing next track"<<endl;
-			thetrack.Print2();
+			if(verbose>3) cout<<"printing next track"<<endl;
+			thetrack.Print2(false); // do not re-print file/run/subrun/trigger/event num
 			
 			if(thetrack.ispenetrating) numpenetrated++;
 			else if(thetrack.isstopped) numstopped++;
 			else numsideexit++;
 			if(thetrack.interceptstank) numtankintercepts++;
 			else numtankmisses++;
-			if(!thetrack.interceptstank) earlyexit=true;
+			//if(!thetrack.interceptstank) earlyexit=true;
 			
 			hrun->Fill(thetrack.run_id);
 			hevent->Fill(thetrack.event_id);
@@ -254,7 +253,7 @@ bool MrdPaddlePlot::Execute(){
 			//cout<<"track "<<thetracki<<" started at ("<<sttv->X()<<", "<<sttv->Y()<<", "<<sttv->Z()<<")"
 			//	<<" and ended at ("<<stpv->X()<<", "<<stpv->Y()<<", "<<stpv->Z()<<")"<<endl;
 			
-			cout<<"adding track to event display"<<endl;
+			if(verbose) cout<<"adding track "<<thetracki<<" to event display"<<endl;
 			TEveLine* evl = new TEveLine("track1",2);
 			evl->SetLineWidth(4);
 			evl->SetLineStyle(1);
@@ -268,9 +267,9 @@ bool MrdPaddlePlot::Execute(){
 			if(!(pep->X()==0&&pep->Y()==0&&pep->Z()==0)){
 				evl->SetPoint(2,pep->X(),pep->Y(),pep->Z());
 				hpep->Fill(pep->X(),pep->Z(),pep->Y());
-				cout<<"back projected point intercepts the tank at ("
+				if(verbose) cout<<"back projected point intercepts the tank at ("
 					<<pep->X()<<", "<<pep->Y()<<", "<<pep->Z()<<")"<<endl;
-				if(abs(pep->X())>450.) earlyexit=true;
+				//if(abs(pep->X())>450.) earlyexit=true;
 			}
 			thiseventstracks.push_back(evl);
 			numtracksdrawn++;

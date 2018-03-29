@@ -27,10 +27,10 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	
 	// Make class private members; e.g. the LAPPDTree
 	// ==============================================
-	file= new TFile(MCFile.c_str(),"READ");
-	lappdtree= (TTree*) file->Get("LAPPDTree");
-	NumEvents=lappdtree->GetEntries();
-	LAPPDEntry= new LAPPDTree(lappdtree);
+//	file= new TFile(MCFile.c_str(),"READ");
+//	lappdtree= (TTree*) file->Get("LAPPDTree");
+//	NumEvents=lappdtree->GetEntries();
+//	LAPPDEntry= new LAPPDTree(lappdtree);
 	
 	// Make the ANNIEEvent Store if it doesn't exist
 	// =============================================

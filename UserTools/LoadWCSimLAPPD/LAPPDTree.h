@@ -24,7 +24,8 @@
 // Header file for the classes stored in the TTree if any.
 #include "vector"
 
-#define SINGLE_TREE    // TODO TODO TODO TODO shouldn't need this define
+#define SINGLE_TREE        // TODO TODO TODO TODO shouldn't need this define
+#define FILE_VERSION 2     // version 3 for multiple PMT types, version 1 is very old.
 
 class LAPPDTree {
 public :
@@ -129,21 +130,12 @@ LAPPDTree::LAPPDTree(TTree *tree) : fChain(0)
    // a single tree instead of a chain
    // TODO implement a verbosity arg
    if (tree == 0){
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_lappd_0.100.0.root");
-      if (!f || !f->IsOpen()) {
-         f = new TFile("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_lappd_0.100.0.root");
-      }
-      if(!f){ cerr<<"no wcsim_lappd file to load"<<endl; return; }
-      f->GetObject("LAPPDTree",tree);
+      cerr<<"LAPPDTree Treee mode constructor with no LAPPDTree!"<<endl; return;
    }
 #else // not SINGLE_TREE
    // The following code should be used if you want this class to access a chain of trees.
    if(tree == 0) {
-      TChain * chain = new TChain("LAPPDTree","");
-      std::string pattern="/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_lappd_0.*.root"; // TODO TODO make this an argument
-      if(verbose) cout<<"creating chain from files "<<pattern<<endl;
-      chain->Add(pattern.c_str());
-      tree = chain;
+      cerr<<"LAPPDTree Chain mode constructor with no TChain!"<<endl; return;
    }
 #endif // SINGLE_TREE
    Init(tree);
@@ -299,6 +291,7 @@ void LAPPDTree::Show(Long64_t entry)
    if (!fChain) return;
    fChain->Show(entry);
 }
+
 Int_t LAPPDTree::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
