@@ -1,5 +1,4 @@
 #include "annie_math.cc"
-#include "BeamStatus.cc"
 #include "RawAnalyzer.cc"
 #include "RawCard.cc"
 #include "RawChannel.cc"

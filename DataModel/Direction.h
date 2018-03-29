@@ -48,7 +48,7 @@ class Direction : public SerialisableObject{
 	inline void SetTheta(double th){theta=th;}
 	inline void SetThetaDeg(double thd){theta=thd*(M_PI/180.);}
 	
-	bool Print(){
+	bool Print() {
 		cout<<"x : "<<x<<" meters"<<endl;
 		cout<<"y : "<<y<<" meters"<<endl;
 		cout<<"z : "<<z<<" meters"<<endl;
