@@ -13,27 +13,28 @@ class Waveform : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-  Waveform() : StartTime(), Samples(std::vector<T>{}) {serialise=true;}
-  Waveform(TimeClass tsin, std::vector<T> samplesin) : StartTime(tsin), Samples(samplesin){serialise=true;}
+  Waveform() : fStartTime(), fSamples(std::vector<T>{}) {serialise=true;}
+  Waveform(TimeClass tsin, std::vector<T> samplesin) : fStartTime(tsin), fSamples(samplesin){serialise=true;}
 	
-	inline TimeClass GetStartTime(){return StartTime;}
-	inline std::vector<T>* GetSamples(){return &Samples;}
-	inline T GetSample(int i){return Samples.at(i);}
+	inline TimeClass GetStartTime() const {return fStartTime;}
+	inline std::vector<T>* GetSamples() {return &fSamples;}
+	inline const std::vector<T>& Samples() const { return fSamples; }
+	inline T GetSample(int i) const {return fSamples.at(i);}
 	
-	inline void SetStartTime(TimeClass ts){StartTime=ts;}
-	inline void SetSamples(std::vector<T> sam){Samples=sam;}
-	inline void PushSample(T asample){Samples.push_back(asample);}
-	inline void ClearSamples(){Samples.clear();}
+	inline void SetStartTime(TimeClass ts) {fStartTime=ts;}
+	inline void SetSamples(std::vector<T> sam) {fSamples=sam;}
+	inline void PushSample(T asample) {fSamples.push_back(asample);}
+	inline void ClearSamples() {fSamples.clear();}
 	
-	bool Print(){
+	bool Print() {
 		int verbose=0;
-		cout<<"StartTime : "; StartTime.Print();
-		cout<<"NSamples : "<<Samples.size()<<endl;
+		cout<<"StartTime : "; fStartTime.Print();
+		cout<<"NSamples : "<<fSamples.size()<<endl;
 		if(verbose){
 			cout<<"Samples : {";
-			for(int samplei=0; samplei<Samples.size(); samplei++){
-				cout<<Samples.at(samplei);
-				if((samplei+1)!=Samples.size()) cout<<", ";
+			for(int samplei=0; samplei<fSamples.size(); samplei++){
+				cout<<fSamples.at(samplei);
+				if((samplei+1)!=fSamples.size()) cout<<", ";
 			}
 			cout<<"}"<<endl;
 		}
@@ -42,13 +43,13 @@ class Waveform : public SerialisableObject{
 	}
 	
 	protected:
-	TimeClass StartTime;
-	std::vector<T> Samples;
+	TimeClass fStartTime;
+	std::vector<T> fSamples;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
-			ar & StartTime;
-			ar & Samples;
+			ar & fStartTime;
+			ar & fSamples;
 		}
 	}
 };

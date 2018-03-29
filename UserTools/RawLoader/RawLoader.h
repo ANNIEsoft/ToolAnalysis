@@ -1,3 +1,10 @@
+// RawLoader tool
+//
+// Loads objects in the ANNIEEvent store with data from an event in an
+// ANNIE Phase I raw data file. Uses code borrowed from the previous recoANNIE
+// framework.
+//
+// Steven Gardiner <sjgardiner@ucdavis.edu>
 #pragma once
 
 // standard library includes

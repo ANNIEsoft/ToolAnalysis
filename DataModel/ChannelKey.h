@@ -2,7 +2,8 @@
 #ifndef CHANNELKEY_H
 #define CHANNELKEY_H
 
-#include<SerialisableObject.h>
+#include <iostream>
+#include "SerialisableObject.h"
 
 using namespace std;
 
@@ -24,7 +25,7 @@ class ChannelKey : public SerialisableObject{
 	inline void SetSubDetectorType(subdetector subdetin){SubDetectorType=subdetin;}
 	inline void SetDetectorElementIndex(uint32_t detelin){DetectorElementIndex=detelin;}
 	
-	bool Print(){
+	bool Print() {
 		cout<<"SubDetectorType : "<<uint8_t(SubDetectorType)<<endl;
 		cout<<"DetectorElementIndex : "<<DetectorElementIndex<<endl;
 		

@@ -23,7 +23,7 @@ class TriggerClass : public SerialisableObject{
 	inline void SetOccurred(bool trigoc){TriggerOccurred=trigoc;}
 	inline void SetTime(TimeClass trigt){TriggerTime=trigt;}
 	
-	bool Print(){
+	bool Print() {
 		cout<<"TriggerName : "<<TriggerName<<endl;
 		cout<<"TriggerTime : "; TriggerTime.Print();
 		cout<<"TriggerOccurred : "<<TriggerOccurred<<endl;
