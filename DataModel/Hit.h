@@ -23,7 +23,7 @@ class Hit : public SerialisableObject{
 	inline void SetTime(TimeClass tc){Time=tc;}
 	inline void SetCharge(double chg){Charge=chg;}
 	
-	bool Print() {
+	bool Print(){
 		cout<<"TubeId : "<<TubeId<<endl;
 		cout<<"Time : "; Time.Print();
 		cout<<"Charge : "<<Charge<<endl;

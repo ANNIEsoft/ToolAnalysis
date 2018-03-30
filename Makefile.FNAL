@@ -19,14 +19,14 @@ RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lMinuit
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
-WCSimInclude= -I ToolDAQ/WCSimLib/include
+WCSimLib= -L ToolDAQ/LibWCSim -lWCSimRoot
+WCSimInclude= -I ToolDAQ/LibWCSim/include
 
-MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
-MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
+MrdTrackLib= -L ToolDAQ/LibFindMrdTracks/src -lFindMrdTracks
+MrdTrackInclude= -I ToolDAQ/LibFindMrdTracks/include
 
 
-MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude)
+MyToolsInclude =  $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude)
 MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib)
 
 

@@ -118,7 +118,7 @@ class Geometry : public SerialisableObject{
 		return MrdContained;
 	}
 	
-	bool Print() {
+	bool Print(){
 		int verbose=0;
 		cout<<"Num Detectors : "<<Detectors.size()<<endl;
 		if(verbose){

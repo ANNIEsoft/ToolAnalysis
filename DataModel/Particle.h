@@ -49,7 +49,7 @@ class Particle : public SerialisableObject{
 	inline double GetTrackLength(){return trackLength;}
 	inline tracktype GetStartStopType(){return StartStopType;}
 	
-	virtual bool Print() {
+	virtual bool Print(){
 		cout<<"ParticlePDG : "<<ParticlePDG<<endl;
 		cout<<"startEnergy : "<<startEnergy<<endl;
 		cout<<"stopEnergy : "<<stopEnergy<<endl;
@@ -109,7 +109,7 @@ class MCParticle : public Particle {
 	inline void SetParticleID(int partidin){ParticleID=partidin;}
 	inline void SetParentID(int parentidin){ParentID=parentidin;}
 	
-	bool Print() {
+	bool Print(){
 		cout<<"ParticleID : "<<ParticleID<<endl;
 		cout<<"ParentID : "<<ParentID<<endl;
 		cout<<"ParticlePDG : "<<ParticlePDG<<endl;
