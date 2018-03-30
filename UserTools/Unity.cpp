@@ -34,3 +34,5 @@
 #include "ADCCalibrator/ADCCalibrator.cpp"
 #include "ADCHitFinder/ADCHitFinder.cpp"
 #include "BeamChecker/BeamChecker.cpp"
+#include "BeamFetcher/IFBeamDBInterface.cpp"
+#include "BeamFetcher/BeamFetcher.cpp"
