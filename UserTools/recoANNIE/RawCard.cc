@@ -4,10 +4,10 @@
 // reco-annie includes
 #include "RawCard.h"
 
-namespace {
-  // Used to convert between seconds and nanoseconds
-  constexpr unsigned long long BILLION = 1000000000;
+// ToolAnalysis includes
+#include "ANNIEconstants.h"
 
+namespace {
   // The cards have clock frequencies of 125 MHz, so they take
   // samples every 8 ns.
   constexpr unsigned long long CLOCK_TICK = 8; // ns

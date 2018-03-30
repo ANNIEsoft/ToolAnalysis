@@ -24,7 +24,7 @@ DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
 MyToolsInclude =  $(RootInclude) `python-config --cflags` $(MrdTrackInclude) $(WCSimInclude)
-MyToolsLib = $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib)
+MyToolsLib = -lcurl $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 

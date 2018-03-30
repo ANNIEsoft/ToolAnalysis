@@ -13,10 +13,6 @@
 // Definitions local to this source file
 namespace {
 
-  // Used to convert from seconds and nanoseconds to milliseconds below
-  constexpr uint64_t THOUSAND = 1000ull;
-  constexpr uint64_t MILLION = 1000000ull;
-
   std::string make_time_string(uint64_t ms_since_epoch) {
     time_t s_since_epoch = ms_since_epoch / THOUSAND;
     std::string time_string = asctime(gmtime(&s_since_epoch));
