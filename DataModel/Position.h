@@ -21,7 +21,7 @@ class Position : public SerialisableObject{
 	inline void SetY(double yy){y=yy;}
 	inline void SetZ(double zz){z=zz;}
 	
-	bool Print() {
+	bool Print(){
 		cout<<"x : "<<x<<endl;
 		cout<<"y : "<<y<<endl;
 		cout<<"z : "<<z<<endl;

@@ -26,7 +26,7 @@ class LAPPDPulse : public Hit{
 	inline void SetPeak(double peak){Peak=peak;}
 	inline void SetRange(double low, double hi){LowRange=low; HiRange=hi;}
 
-	bool Print() {
+	bool Print(){
 		cout<<"TubeId : "<<TubeId<<endl;
 		cout<<"ChannelID : "<<ChannelID<<endl;
 		cout<<"Time : "; Time.Print();

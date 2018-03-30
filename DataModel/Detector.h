@@ -43,7 +43,7 @@ class Detector : public SerialisableObject{
 	void SetStatus(detectorstatus StatusIn){Status=StatusIn;}
 	void SetAvgPulseRate(double AvgPulseRateIn){AvgPulseRate=AvgPulseRateIn;}
 	
-	bool Print() {
+	bool Print(){
 		cout<<"DetectorElement : "<<DetectorElement<<endl;
 		cout<<"DetectorPosition : "; DetectorPosition.Print();
 		cout<<"DetectorDirection : "; DetectorDirection.Print();

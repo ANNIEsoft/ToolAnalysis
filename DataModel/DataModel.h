@@ -15,7 +15,6 @@
 #include "ANNIEalgorithms.h"
 #include "ANNIEconstants.h"
 #include "BeamStatusClass.h"
-#include "BeamStatus.h"
 #include "ChannelKey.h"
 #include "Detector.h"
 #include "Direction.h"

@@ -12,17 +12,20 @@
 #include "RawChannel.h"
 #include "RawReadout.h"
 
-// ToolAnalysis includes
-#include "ANNIEconstants.h"
-
 // Anonymous namespace for definitions local to this source file
 namespace {
+
+  // The impedance to assume when computing charge values for each RecoPulse
+  constexpr double IMPEDANCE = 50.; // Ohm
+
+  // Multiplying by this constant converts ADC counts to Volts
+  constexpr double ADC_TO_VOLT = 2.415 / std::pow(2., 12);
 
   // All F-distribution probabilities below this value will pass the
   // variance consistency test in ze3ra_baseline()
   constexpr double Q_CRITICAL = 1e-4;
 
-  // Computes the sample mean and sample variance for a vector of numerical
+  // Computes the sample mean and sample var for a vector of numerical
   // values. Based on http://tinyurl.com/mean-var-onl-alg.
   template<typename ElementType> void compute_mean_and_var(
     const std::vector<ElementType>& data, double& mean, double& var,
@@ -191,7 +194,7 @@ std::vector<annie::RecoPulse> annie::RawAnalyzer::find_pulses(
 
       // The charge detected in this pulse (nC)
       double charge = (raw_area - baseline*(pulse_end_sample
-        - pulse_start_sample)) * ADC_TO_VOLT * NS_PER_SAMPLE / ADC_IMPEDANCE;
+        - pulse_start_sample)) * ADC_TO_VOLT * NS_PER_SAMPLE / IMPEDANCE;
 
       // TODO: consider adding code to merge pulses if they occur
       // very close together (the end of one is just a few samples away
