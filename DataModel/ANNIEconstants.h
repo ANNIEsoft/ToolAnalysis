@@ -17,4 +17,11 @@ constexpr int BOGUS_INT = -9999;
 /// @brief The format code for a multievent binary BoostStore
 constexpr int BOOST_STORE_MULTIEVENT_FORMAT = 2;
 
+// Used to convert from seconds and nanoseconds to milliseconds when
+// creating timestamps in ms while interacting with the Intensity Frontier
+// beam database via the BeamChecker and BeamFetcher tools
+constexpr unsigned long long THOUSAND = 1000ull;
+constexpr unsigned long long MILLION = 1000000ull;
+constexpr unsigned long long BILLION = 1000000000ull;
+
 #endif
