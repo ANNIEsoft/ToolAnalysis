@@ -17,7 +17,6 @@ RUN yum install -y \
     gcc-c++ \
     gcc \
     binutils \
-    libcurl-devel \
     libX11-devel \
     libXpm-devel \
     libXft-devel \
