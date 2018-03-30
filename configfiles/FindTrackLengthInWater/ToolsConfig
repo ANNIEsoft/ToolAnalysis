@@ -1,0 +1,9 @@
+#ExampleloadStore ExampleloadStore configfiles/Example3:LoadStoreData/LoadStoreDataConfig
+#tool1 FindTrackLengthInWater NULL
+#ExamplePrintData ExamplePrintData NULL
+
+FindTrackLengthInWater FindTrackLengthInWater configfiles/FindTrackLengthInWater/LoadRecoInputFile
+
+#--- default:
+#test1 DummyTool configfiles/DummyToolConfig
+#test2 DummyTool configfiles/DummyToolConfig
