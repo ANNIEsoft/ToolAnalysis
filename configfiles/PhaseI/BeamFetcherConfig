@@ -1,0 +1,6 @@
+# Dummy config file
+verbose 2
+OutputFile ./my_beam_db.data
+StartMillisecondsSinceEpoch 1491132659000 # 6:30:49 AM 2 April 2017 (FNAL time)
+EndMillisecondsSinceEpoch   1491164001000 # 3:13:21 PM 2 April 2017 (FNAL time)
+TimeChunkStepInMilliseconds       7200000 # two hours
