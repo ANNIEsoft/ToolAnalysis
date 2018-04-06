@@ -143,6 +143,18 @@ std::unique_ptr<annie::RawReadout> annie::RawReader::load_next_entry(
     temp_tree->SetBranchAddress("TriggerCounts", br_TriggerCounts_.data());
     temp_tree->SetBranchAddress("Rates", br_Rates_.data());
 
+    // Memory corruption can occur if we call GetEntry with a zero-length
+    // branch enabled. We've already resized the vectors to zero above,
+    // so just disable their branches for the zero-length case here as needed.
+    if (fbs_temp == 0) temp_tree->SetBranchStatus("Data", false);
+    else temp_tree->SetBranchStatus("Data", true);
+
+    if (tn_temp == 0) temp_tree->SetBranchStatus("TriggerCounts", false);
+    else temp_tree->SetBranchStatus("TriggerCounts", true);
+
+    if (cs_temp == 0) temp_tree->SetBranchStatus("Rates", false);
+    else temp_tree->SetBranchStatus("Rates", true);
+
     temp_tree->GetEntry(local_entry);
 
     // If this is the first card to be loaded, store its SequenceID for
@@ -216,6 +228,27 @@ std::unique_ptr<annie::RawReadout> annie::RawReader::load_next_entry(
   temp_tree->SetBranchAddress("EventTimes", br_EventTimes_.data());
   temp_tree->SetBranchAddress("TriggerMasks", br_TriggerMasks_.data());
   temp_tree->SetBranchAddress("TriggerCounters", br_TriggerCounters_.data());
+
+  // Memory corruption can occur if we call GetEntry with a zero-length
+  // branch enabled. We've already resized the vectors to zero above,
+  // so just disable their branches for the zero-length case here as needed.
+  if (es_temp == 0) {
+    temp_tree->SetBranchStatus("EventIDs", false);
+    temp_tree->SetBranchStatus("EventTimes", false);
+  }
+  else {
+    temp_tree->SetBranchStatus("EventIDs", true);
+    temp_tree->SetBranchStatus("EventTimes", true);
+  }
+
+  if (ts_temp == 0) {
+    temp_tree->SetBranchStatus("TriggerMasks", false);
+    temp_tree->SetBranchStatus("TriggerCounters", false);
+  }
+  else {
+    temp_tree->SetBranchStatus("TriggerMasks", true);
+    temp_tree->SetBranchStatus("TriggerCounters", true);
+  }
 
   temp_tree->GetEntry(local_entry);
 
