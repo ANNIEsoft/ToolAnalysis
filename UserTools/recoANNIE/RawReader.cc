@@ -260,9 +260,16 @@ std::unique_ptr<annie::RawReadout> annie::RawReader::load_next_entry(
   // Check that the TrigData tree's SequenceID matches that of the PMTData tree
   // (if not, then we're loading data from two mismatched DAQ readouts!)
   if ( br_TrigData_SequenceID_ != raw_readout->sequence_id() ) {
-    throw std::runtime_error("Mismatched TrigData ("
+    std::string warning_message = "Mismatched TrigData ("
       + std::to_string(br_TrigData_SequenceID_) + ") and PMTData ("
-      + std::to_string( raw_readout->sequence_id() ) + ") SequenceID values");
+      + std::to_string( raw_readout->sequence_id() ) + ") SequenceID values";
+
+    if (throw_on_trig_pmt_sequenceID_mismatch_) {
+      throw std::runtime_error(warning_message);
+    }
+    else {
+      std::cerr << '\n' << "WARNING: " << warning_message << '\n';
+    }
   }
 
   // Remember the SequenceID of the last raw readout to be successfully loaded
@@ -302,4 +309,11 @@ std::unique_ptr<annie::RawReadout> annie::RawReader::load_next_entry(
   raw_readout->set_run_information(run_info);
 
   return raw_readout;
+}
+
+
+void annie::RawReader::set_throw_on_trig_pmt_sequenceID_mismatch(
+  bool should_I_throw)
+{
+  throw_on_trig_pmt_sequenceID_mismatch_ = should_I_throw;
 }
