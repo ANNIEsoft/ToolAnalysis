@@ -33,7 +33,7 @@ namespace annie {
         const std::vector<unsigned long long>& TriggerCounts,
         const std::vector<unsigned int>& Rates, bool overwrite_ok = false);
 
-      inline const std::map<int, annie::RawCard> cards() const
+      inline const std::map<int, annie::RawCard>& cards() const
         { return cards_; }
 
       inline const annie::RawCard& card(int index) const

@@ -178,99 +178,108 @@ std::unique_ptr<annie::RawReadout> annie::RawReader::load_next_entry(
     current_pmt_data_entry_ += step;
   }
 
-  ///// Load data from the TrigData tree /////
-  ///
-  // TChain::LoadTree returns the entry number that should be used with
-  // the current TTree object, which (together with the TBranch objects
-  // that it owns) doesn't know about the other TTrees in the TChain.
-  // If the return value is negative, there was an I/O error, or we've
-  // attempted to read past the end of the TChain.
-  current_trig_data_entry_ += step;
-  int local_entry = trig_data_chain_.LoadTree(current_trig_data_entry_);
-  if (local_entry < 0) {
-    // If we've reached the end of the TChain (or encountered an I/O error)
-    // return a nullptr.
-    return nullptr;
-    // TODO: consider throwing an exception here instead
-  }
+  // TODO: Re-activate reading from the TrigData tree when you can properly
+  // deal with ROOT's memory leak when setting the branch addresses for the
+  // variable-length arrays below.
 
-  // Load all of the branches except for the variable-length arrays, which
-  // we handle separately below using the sizes obtained from this call
-  // to TChain::GetEntry().
-  trig_data_chain_.GetEntry(current_trig_data_entry_);
+  /////// Load data from the TrigData tree /////
+  /////
+  //// TChain::LoadTree returns the entry number that should be used with
+  //// the current TTree object, which (together with the TBranch objects
+  //// that it owns) doesn't know about the other TTrees in the TChain.
+  //// If the return value is negative, there was an I/O error, or we've
+  //// attempted to read past the end of the TChain.
+  //current_trig_data_entry_ += step;
+  //int local_entry = trig_data_chain_.LoadTree(current_trig_data_entry_);
+  //if (local_entry < 0) {
+  //  // If we've reached the end of the TChain (or encountered an I/O error)
+  //  // return a nullptr.
+  //  return nullptr;
+  //  // TODO: consider throwing an exception here instead
+  //}
 
-  // Check that the variable-length array sizes are nonnegative. If one
-  // of them is negative, complain.
-  if (br_TrigData_EventSize_ < 0) throw std::runtime_error("Negative"
-    " EventSize value encountered in annie::RawReader::next()"
-    " while reading from the TrigData TTree");
-  if (br_TriggerSize_ < 0) throw std::runtime_error("Negative"
-    " TriggerSize value encountered in annie::RawReader::next()"
-    " while reading from the TrigData TTree");
+  //// Load all of the branches except for the variable-length arrays, which
+  //// we handle separately below using the sizes obtained from this call
+  //// to TChain::GetEntry().
+  //trig_data_chain_.GetEntry(current_trig_data_entry_);
 
-  // Check the variable-length array sizes and adjust the vector dimensions
-  // as needed before loading the corresponding branches.
-  size_t es_temp = static_cast<size_t>(br_TrigData_EventSize_);
-  if ( br_EventIDs_.size() != es_temp) br_EventIDs_.resize(es_temp);
-  if ( br_EventTimes_.size() != es_temp) br_EventTimes_.resize(es_temp);
+  //// Check that the variable-length array sizes are nonnegative. If one
+  //// of them is negative, complain.
+  //if (br_TrigData_EventSize_ < 0) throw std::runtime_error("Negative"
+  //  " EventSize value encountered in annie::RawReader::next()"
+  //  " while reading from the TrigData TTree");
+  //if (br_TriggerSize_ < 0) throw std::runtime_error("Negative"
+  //  " TriggerSize value encountered in annie::RawReader::next()"
+  //  " while reading from the TrigData TTree");
 
-  size_t ts_temp = static_cast<size_t>(br_TriggerSize_);
-  if ( br_TriggerMasks_.size() != ts_temp) br_TriggerMasks_.resize(ts_temp);
-  if ( br_TriggerCounters_.size() != ts_temp)
-    br_TriggerCounters_.resize(ts_temp);
+  //// Check the variable-length array sizes and adjust the vector dimensions
+  //// as needed before loading the corresponding branches.
+  //size_t es_temp = static_cast<size_t>(br_TrigData_EventSize_);
+  //if ( br_EventIDs_.size() != es_temp) br_EventIDs_.resize(es_temp);
+  //if ( br_EventTimes_.size() != es_temp) br_EventTimes_.resize(es_temp);
 
-  // Load the variable-length arrays from the current entry. The C++ standard
-  // guarantees that std::vector elements are stored contiguously in memory
-  // (something that is not true of std::deque elements), so we can use
-  // a pointer to the first element of each vector as each branch address.
-  TTree* temp_tree = trig_data_chain_.GetTree();
-  temp_tree->SetBranchAddress("EventIDs", br_EventIDs_.data());
-  temp_tree->SetBranchAddress("EventTimes", br_EventTimes_.data());
-  temp_tree->SetBranchAddress("TriggerMasks", br_TriggerMasks_.data());
-  temp_tree->SetBranchAddress("TriggerCounters", br_TriggerCounters_.data());
+  //size_t ts_temp = static_cast<size_t>(br_TriggerSize_);
+  //if ( br_TriggerMasks_.size() != ts_temp) br_TriggerMasks_.resize(ts_temp);
+  //if ( br_TriggerCounters_.size() != ts_temp)
+  //  br_TriggerCounters_.resize(ts_temp);
 
-  // Memory corruption can occur if we call GetEntry with a zero-length
-  // branch enabled. We've already resized the vectors to zero above,
-  // so just disable their branches for the zero-length case here as needed.
-  if (es_temp == 0) {
-    temp_tree->SetBranchStatus("EventIDs", false);
-    temp_tree->SetBranchStatus("EventTimes", false);
-  }
-  else {
-    temp_tree->SetBranchStatus("EventIDs", true);
-    temp_tree->SetBranchStatus("EventTimes", true);
-  }
+  //// Load the variable-length arrays from the current entry. The C++ standard
+  //// guarantees that std::vector elements are stored contiguously in memory
+  //// (something that is not true of std::deque elements), so we can use
+  //// a pointer to the first element of each vector as each branch address.
+  //TTree* temp_tree = trig_data_chain_.GetTree();
 
-  if (ts_temp == 0) {
-    temp_tree->SetBranchStatus("TriggerMasks", false);
-    temp_tree->SetBranchStatus("TriggerCounters", false);
-  }
-  else {
-    temp_tree->SetBranchStatus("TriggerMasks", true);
-    temp_tree->SetBranchStatus("TriggerCounters", true);
-  }
+  ///// BEGIN FATAL ROOT MEMORY LEAK
 
-  temp_tree->GetEntry(local_entry);
+  //temp_tree->SetBranchAddress("EventIDs", br_EventIDs_.data());
+  //temp_tree->SetBranchAddress("EventTimes", br_EventTimes_.data());
+  //temp_tree->SetBranchAddress("TriggerMasks", br_TriggerMasks_.data());
+  //temp_tree->SetBranchAddress("TriggerCounters", br_TriggerCounters_.data());
 
-  // Add the TrigData information to the incomplete RawReadout object
-  raw_readout->set_trig_data( annie::RawTrigData(br_FirmwareVersion_,
-    br_FIFOOverflow_, br_DriverOverflow_, br_EventIDs_, br_EventTimes_,
-    br_TriggerMasks_, br_TriggerCounters_) );
+  ///// BEGIN FATAL ROOT MEMORY LEAK
 
-  // Check that the TrigData tree's SequenceID matches that of the PMTData tree
-  // (if not, then we're loading data from two mismatched DAQ readouts!)
-  if ( br_TrigData_SequenceID_ != raw_readout->sequence_id() ) {
-    std::string warning_message = "Mismatched TrigData ("
-      + std::to_string(br_TrigData_SequenceID_) + ") and PMTData ("
-      + std::to_string( raw_readout->sequence_id() ) + ") SequenceID values";
+  //// Memory corruption can occur if we call GetEntry with a zero-length
+  //// branch enabled. We've already resized the vectors to zero above,
+  //// so just disable their branches for the zero-length case here as needed.
+  //if (es_temp == 0) {
+  //  temp_tree->SetBranchStatus("EventIDs", false);
+  //  temp_tree->SetBranchStatus("EventTimes", false);
+  //}
+  //else {
+  //  temp_tree->SetBranchStatus("EventIDs", true);
+  //  temp_tree->SetBranchStatus("EventTimes", true);
+  //}
 
-    if (throw_on_trig_pmt_sequenceID_mismatch_) {
-      throw std::runtime_error(warning_message);
-    }
-    else {
-      std::cerr << '\n' << "WARNING: " << warning_message << '\n';
-    }
-  }
+  //if (ts_temp == 0) {
+  //  temp_tree->SetBranchStatus("TriggerMasks", false);
+  //  temp_tree->SetBranchStatus("TriggerCounters", false);
+  //}
+  //else {
+  //  temp_tree->SetBranchStatus("TriggerMasks", true);
+  //  temp_tree->SetBranchStatus("TriggerCounters", true);
+  //}
+
+  //temp_tree->GetEntry(local_entry);
+
+  //// Add the TrigData information to the incomplete RawReadout object
+  //raw_readout->set_trig_data( annie::RawTrigData(br_FirmwareVersion_,
+  //  br_FIFOOverflow_, br_DriverOverflow_, br_EventIDs_, br_EventTimes_,
+  //  br_TriggerMasks_, br_TriggerCounters_) );
+
+  //// Check that the TrigData tree's SequenceID matches that of the PMTData tree
+  //// (if not, then we're loading data from two mismatched DAQ readouts!)
+  //if ( br_TrigData_SequenceID_ != raw_readout->sequence_id() ) {
+  //  std::string warning_message = "Mismatched TrigData ("
+  //    + std::to_string(br_TrigData_SequenceID_) + ") and PMTData ("
+  //    + std::to_string( raw_readout->sequence_id() ) + ") SequenceID values";
+
+  //  if (throw_on_trig_pmt_sequenceID_mismatch_) {
+  //    throw std::runtime_error(warning_message);
+  //  }
+  //  else {
+  //    std::cerr << '\n' << "WARNING: " << warning_message << '\n';
+  //  }
+  //}
 
   // Remember the SequenceID of the last raw readout to be successfully loaded
   last_sequence_id_ = raw_readout->sequence_id();
