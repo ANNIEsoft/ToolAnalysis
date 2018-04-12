@@ -35,5 +35,6 @@ if (tool=="BeamChecker") ret=new BeamChecker;
 if (tool=="BeamFetcher") ret=new BeamFetcher;
 if (tool=="FindTrackLengthInWater") ret=new FindTrackLengthInWater;
 if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
+if (tool=="PhaseIPlotMaker") ret=new PhaseIPlotMaker;
 return ret;
 }
