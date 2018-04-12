@@ -37,3 +37,4 @@
 #include "BeamFetcher/IFBeamDBInterface.cpp"	
 #include "BeamFetcher/BeamFetcher.cpp"
 #include "FindTrackLengthInWater/FindTrackLengthInWater.cpp"
+#include "LoadANNIEEvent/LoadANNIEEvent.cpp"

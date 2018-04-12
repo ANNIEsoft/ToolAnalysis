@@ -30,9 +30,10 @@ if (tool=="LAPPDSaveROOT") ret=new LAPPDSaveROOT;
 if (tool=="LAPPDFilter") ret=new LAPPDFilter;
 if (tool=="LAPPDIntegratePulse") ret=new LAPPDIntegratePulse;
 if (tool=="ADCCalibrator") ret=new ADCCalibrator;
-if (tool=="ADCHitFinder") ret=new ADCHitFinder;	
-if (tool=="BeamChecker") ret=new BeamChecker;	
+if (tool=="ADCHitFinder") ret=new ADCHitFinder;
+if (tool=="BeamChecker") ret=new BeamChecker;
 if (tool=="BeamFetcher") ret=new BeamFetcher;
 if (tool=="FindTrackLengthInWater") ret=new FindTrackLengthInWater;
+if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
 return ret;
 }
