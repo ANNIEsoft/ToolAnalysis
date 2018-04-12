@@ -1,0 +1,29 @@
+#!/bin/bash
+verbose 3
+
+OutputFile ./myplots.root
+
+#ListOfInputs MY_INPUT_FILES.txt
+#HistogramNumberOfTimeBins 250
+#HistogramTimeMin 0 # ns
+#HistogramTimeMax 80000 # ns
+
+#MakeBeamHistograms true
+#MakeSourceHistograms false
+
+#AfterpulsingCut true
+AfterpulsingCutTime 10000 # ns
+
+#UniqueWaterPMTCut true
+MaxUniqueWaterPMTs 7
+
+#TankChargeCut true
+MaxTankCharge 3.0 # nC
+TankChargeWindowLength 40 # ns
+
+#BeamQualityCut true
+
+NCVCoincidenceTolerance 40 # ns
+
+#ChannelIDForNCVPMT1 6
+#ChannelIDForNCVPMT2 49

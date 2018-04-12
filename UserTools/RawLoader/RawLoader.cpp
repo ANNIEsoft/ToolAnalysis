@@ -218,7 +218,7 @@ bool RawLoader::Execute() {
 
       // Store the extracted numbers in the ANNIEEvent directly
       annie_event->Set("RunNumber", run_number);
-      annie_event->Set("SubrunNumber", subrun_number);
+      annie_event->Set("SubRunNumber", subrun_number);
     }
   }
 
