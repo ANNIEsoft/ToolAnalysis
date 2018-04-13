@@ -122,6 +122,16 @@ bool PhaseITreeMaker::Execute() {
   // Determine the NCV position based on the run number
   ncv_position_ = get_NCV_position(run_number_);
 
+  // Create a new object to store the POT, etc. information for this NCV
+  // position if one doesn't exist yet
+  if ( !ncv_position_info_.count(ncv_position_) ) {
+    ncv_position_info_[ncv_position_] = NCVPositionInfo();
+  }
+
+  // Get a reference to the position information object. We will use this
+  // reference to update it as we analyze the current ANNIEEvent
+  auto& pos_info = ncv_position_info_.at(ncv_position_);
+
   //// Non-Hefty mode data
   //MinibufferLabel nonhefty_mb_label = mb_labels.front();
   //if (nonhefty_mb_label == MinibufferLabel::Beam)
@@ -143,7 +153,8 @@ bool PhaseITreeMaker::Execute() {
 
     // Determine the correct label for the events in this minibuffer
     // TODO: revise for Hefty mode
-    event_label_ = static_cast<uint8_t>( mb_labels.at(mb) );
+    MinibufferLabel event_mb_label = mb_labels.at(mb);
+    event_label_ = static_cast<uint8_t>( event_mb_label );
 
     // Skip beam minibuffers with bad or missing beam status information
     // TODO: consider printing a warning message here
@@ -152,8 +163,18 @@ bool PhaseITreeMaker::Execute() {
     if (beam_condition == BeamCondition::Missing
       || beam_condition == BeamCondition::Bad) continue;
     else if (beam_condition == BeamCondition::Ok) {
-      ++num_beam_spills_;
-      pot_total_ += beam_status.pot();
+      ++pos_info.num_beam_spills;
+      pos_info.total_POT += beam_status.pot();
+    }
+
+    if ( event_mb_label == MinibufferLabel::Source ) {
+      ++pos_info.num_source_triggers;
+    }
+    else if ( event_mb_label == MinibufferLabel::Cosmic ) {
+      ++pos_info.num_cosmic_triggers;
+    }
+    else if ( event_mb_label == MinibufferLabel::Soft ) {
+      ++pos_info.num_soft_triggers;
     }
 
     double old_time = std::numeric_limits<double>::lowest(); // ns
@@ -185,11 +206,44 @@ bool PhaseITreeMaker::Execute() {
 bool PhaseITreeMaker::Finalise() {
   output_tree_->Write();
 
-  TTree* beam_tree = new TTree("beam_tree", "ANNIE Phase I Beam Analysis Tree");
-  beam_tree->Branch("total_pot", &pot_total_, "total_pot/D");
-  beam_tree->Branch("num_beam_spills", &num_beam_spills_, "num_beam_spills/l");
+  TTree* beam_tree = new TTree("ncv_pos_info",
+    "Information about each NCV position");
 
-  beam_tree->Fill();
+  bool made_branches = false;
+  for (auto& pair : ncv_position_info_) {
+    int ncv_position = pair.first;
+
+    auto& info = pair.second;
+
+    if ( !made_branches ) {
+      beam_tree->Branch("ncv_position", &ncv_position, "ncv_position/I");
+      beam_tree->Branch("total_pot", &(info.total_POT), "total_pot/D");
+      beam_tree->Branch("num_beam_spills", &(info.num_beam_spills),
+        "num_beam_spills/l");
+      beam_tree->Branch("num_source_triggers", &(info.num_source_triggers),
+        "num_source_triggers/l");
+      beam_tree->Branch("num_cosmic_triggers", &(info.num_cosmic_triggers),
+        "num_cosmic_triggers/l");
+      beam_tree->Branch("num_soft_triggers", &(info.num_soft_triggers),
+        "num_soft_triggers/l");
+
+      made_branches = true;
+    }
+    else {
+      beam_tree->SetBranchAddress("ncv_position", &ncv_position);
+      beam_tree->SetBranchAddress("total_pot", &(info.total_POT));
+      beam_tree->SetBranchAddress("num_beam_spills", &(info.num_beam_spills));
+      beam_tree->SetBranchAddress("num_source_triggers",
+        &(info.num_source_triggers));
+      beam_tree->SetBranchAddress("num_cosmic_triggers",
+        &(info.num_cosmic_triggers));
+      beam_tree->SetBranchAddress("num_soft_triggers",
+        &(info.num_soft_triggers));
+    }
+
+    beam_tree->Fill();
+  }
+
   beam_tree->Write();
 
   output_tfile_->Close();
