@@ -8,7 +8,7 @@
 #include "BoostStore.h"
 #include "ChannelKey.h"
 #include "MinibufferLabel.h"
-#include "PhaseIPlotMaker.h"
+#include "PhaseITreeMaker.h"
 
 constexpr int UNKNOWN_NCV_POSITION = 0;
 
@@ -30,7 +30,7 @@ constexpr std::array<uint32_t, 56> water_tank_pmt_IDs = {
   44, 45, 46, 47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60
 };
 
-int PhaseIPlotMaker::get_NCV_position(uint32_t run_number) const {
+int PhaseITreeMaker::get_NCV_position(uint32_t run_number) const {
   if (run_number >= 635u && run_number < 704u) return 1;
   if (run_number >= 704u && run_number < 802u) return 2;
   if (run_number >= 802u && run_number < 808u) return 3;
@@ -42,9 +42,9 @@ int PhaseIPlotMaker::get_NCV_position(uint32_t run_number) const {
   else return UNKNOWN_NCV_POSITION;
 }
 
-PhaseIPlotMaker::PhaseIPlotMaker() : Tool() {}
+PhaseITreeMaker::PhaseITreeMaker() : Tool() {}
 
-bool PhaseIPlotMaker::Initialise(std::string config_filename, DataModel& data)
+bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
 {
   // Load configuration file variables
   if ( !config_filename.empty() ) m_variables.Initialise(config_filename);
@@ -85,13 +85,13 @@ bool PhaseIPlotMaker::Initialise(std::string config_filename, DataModel& data)
   return true;
 }
 
-bool PhaseIPlotMaker::Execute() {
+bool PhaseITreeMaker::Execute() {
 
   // Get a pointer to the ANNIEEvent Store
   auto* annie_event = m_data->Stores["ANNIEEvent"];
 
   if (!annie_event) {
-    Log("Error: The PhaseIPlotMaker tool could not find the ANNIEEvent Store",
+    Log("Error: The PhaseITreeMaker tool could not find the ANNIEEvent Store",
       0, verbosity_);
     return false;
   }
@@ -105,7 +105,7 @@ bool PhaseIPlotMaker::Execute() {
   bool hefty_mode = mb_labels.size() > 1u;
   if (hefty_mode) {
     Log("Error: Hefty mode data handling has not yet been implemented in the"
-      " PhaseIPlotMaker tool", 0, verbosity_);
+      " PhaseITreeMaker tool", 0, verbosity_);
     return false;
   }
 
@@ -182,7 +182,7 @@ bool PhaseIPlotMaker::Execute() {
 }
 
 
-bool PhaseIPlotMaker::Finalise() {
+bool PhaseITreeMaker::Finalise() {
   output_tree_->Write();
 
   TTree* beam_tree = new TTree("beam_tree", "ANNIE Phase I Beam Analysis Tree");
@@ -198,7 +198,7 @@ bool PhaseIPlotMaker::Finalise() {
 
 // Put all analysis cuts here (will be applied for both Hefty and non-Hefty
 // modes in the same way)
-bool PhaseIPlotMaker::approve_event(double event_time, double old_time,
+bool PhaseITreeMaker::approve_event(double event_time, double old_time,
   const ADCPulse& first_ncv1_pulse,
   const std::map<ChannelKey, std::vector< std::vector<ADCPulse> > >& adc_hits,
   int minibuffer_index)
@@ -258,7 +258,7 @@ bool PhaseIPlotMaker::approve_event(double event_time, double old_time,
 // Returns the integrated tank charge in a given time window.
 // Also loads the integer num_unique_water_pmts with the number
 // of hit water tank PMTs.
-double PhaseIPlotMaker::compute_tank_charge(size_t minibuffer_number,
+double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
   const std::map< ChannelKey, std::vector< std::vector<ADCPulse> > >& adc_hits,
   uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts) const
 {
