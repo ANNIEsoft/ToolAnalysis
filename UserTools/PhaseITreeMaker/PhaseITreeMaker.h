@@ -20,11 +20,11 @@
 class ADCPulse;
 class ChannelKey;
 
-class PhaseIPlotMaker : public Tool {
+class PhaseITreeMaker : public Tool {
 
   public:
 
-    PhaseIPlotMaker();
+    PhaseITreeMaker();
     bool Initialise(const std::string configfile, DataModel& data) override;
     bool Execute() override;
     bool Finalise() override;
@@ -39,7 +39,7 @@ class PhaseIPlotMaker : public Tool {
 
       // Check for problems
       if ( !got_object ) {
-        Log("Error: The PhaseIPlotMaker tool could not find the " + object_label
+        Log("Error: The PhaseITreeMaker tool could not find the " + object_label
           + " entry", 0, verbosity_);
         return false;
       }
@@ -53,7 +53,7 @@ class PhaseIPlotMaker : public Tool {
     {
       bool is_empty = obj.empty();
       if ( is_empty ) {
-        Log("Error: The PhaseIPlotMaker tool found an empty " + object_label
+        Log("Error: The PhaseITreeMaker tool found an empty " + object_label
           + " entry", 0, verbosity_);
       }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 verbose 3
 
-OutputFile ./myplots.root
+OutputFile ./mytrees.root
 
 #ListOfInputs MY_INPUT_FILES.txt
 #HistogramNumberOfTimeBins 250
