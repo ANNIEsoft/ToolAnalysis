@@ -17,6 +17,15 @@
 // ToolAnalysis includes
 #include "Tool.h"
 
+struct NCVPositionInfo {
+  NCVPositionInfo() {}
+  double total_POT = 0.;
+  uint64_t num_beam_spills = 0ull;
+  uint64_t num_source_triggers = 0ull;
+  uint64_t num_cosmic_triggers = 0ull;
+  uint64_t num_soft_triggers = 0ull;
+};
+
 class ADCPulse;
 class ChannelKey;
 
@@ -107,7 +116,6 @@ class PhaseITreeMaker : public Tool {
     uint64_t event_time_ns_ = 0u;
     uint8_t event_label_ = 0u;
 
-    // Other temporary storage
-    double pot_total_ = 0.;
-    uint64_t num_beam_spills_ = 0ull;
+    // Stores total POT, spill, etc. information for each NCV position
+    std::map<int, NCVPositionInfo> ncv_position_info_;
 };
