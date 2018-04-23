@@ -43,6 +43,7 @@ bool GenerateHits::Execute(){
   pos.clear();
   relpos.clear();
 
+/*
   // MC truth hit 2
   ptime = 140.;
   Q=1.;
@@ -53,10 +54,11 @@ bool GenerateHits::Execute(){
   relpos.push_back(10.);
   tc.SetNs(1);
   LAPPDHit ahit2(TubeID,tc,Q,pos,relpos,ptime);
+*/
 
   vector<LAPPDHit> hits;
   hits.push_back(ahit1);
-  hits.push_back(ahit2);
+//  hits.push_back(ahit2);
 
   // stuff the two hits into MCLAPPHit
   MCLAPPDHit.insert(pair <int,vector<LAPPDHit>> (0,hits));

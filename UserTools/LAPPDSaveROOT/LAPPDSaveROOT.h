@@ -35,6 +35,7 @@ class LAPPDSaveROOT: public Tool {
    bool isFiltered;
    bool isIntegrated;
    bool isSim;
+   bool isBLsub;
    int chno;
    double cfdtime;
    double amp;
