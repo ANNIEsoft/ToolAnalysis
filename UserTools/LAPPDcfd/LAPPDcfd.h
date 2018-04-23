@@ -28,6 +28,8 @@ class LAPPDcfd: public Tool {
  private:
    bool isSim;
    double Fraction_CFD;
+   string CFDInputWavLabel;
+
 
 };
 

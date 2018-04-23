@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "LAPPDresponse.hh"
 
 class LAPPDSim: public Tool {
 
@@ -21,9 +22,9 @@ class LAPPDSim: public Tool {
 
    //ROOT random number generator
    TRandom3* myTR;
+   TString SimInput;
 
-
-
+   int iter=0;
 
 };
 

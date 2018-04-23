@@ -1,0 +1,3 @@
+BeamTimeStudy BeamTimeTreeReader configfiles/BeamTimeStudy/ConfigVars
+BeamTimeStudy BeamTimeAna configfiles/BeamTimeStudy/ConfigVars
+BeamTimeStudy BeamTimeTreeMaker configfiles/BeamTimeStudy/ConfigVars
