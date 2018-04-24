@@ -6,27 +6,32 @@
 #include "TObject.h"
 #include "TH1.h"
 #include "TRandom3.h"
-
+#include <map>
+#include "Tool.h"
+#include "LAPPDPulse.h"
+#include "Waveform.h"
 //class LAPPDresponse : public TObject {
 class LAPPDresponse {
 
- public: 
+ public:
 
   LAPPDresponse();
 
   ~LAPPDresponse();
 
   void AddSinglePhotonTrace(double trans, double para, double time);
-	
-  TH1D* GetTrace(int CHnumber, int parity, double starttime, double samplesize, int numsamples, double thenoise);
+
+  Waveform<double> GetTrace(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise);
 
   int FindStripNumber(double trans);
 
   double StripCoordinate(int stripnumber);
 
+  map <int, vector<LAPPDPulse> > LAPPDPulseCluster;  //SD
+
   //  LAPPDpulseCluster* GetPulseCluster() {return _pulseCluster;}
 
- private: 
+ private:
 
 
 
@@ -36,7 +41,7 @@ class LAPPDresponse {
   //input parameters and distributions
   TH1D* _templatepulse;
   TH1D* _PHD;
-  TH1D* _pulsewidth; 
+  TH1D* _pulsewidth;
 
   //output responses
   TH1D** StripResponse_neg;
@@ -45,12 +50,12 @@ class LAPPDresponse {
   //  LAPPDpulseCluster* _pulseCluster;
 
   //randomizer
-  TRandom3* mrand;	
+  TRandom3* mrand;
 
   //useful functions
   int FindNearestStrip(double trans);
   double TransStripCenter(int CHnum);
-  
+
   //  ClassDef(LAPPDresponse,0)
 
 };

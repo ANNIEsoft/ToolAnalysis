@@ -1,0 +1,41 @@
+# General Parameters
+Nsamples 1032
+SampleSize 100
+NChannels 4
+TrigChannel 3
+
+#LAPPDBaselineSubtract
+LowBLfitrange 40000;
+HiBLfitrange  60000;
+
+# LAPPDSim
+SimInput  ./UserTools/LAPPDSim/pulsecharacteristics.root
+
+# LAPPDParseScope
+FileInput ../LAPPDdata_fff/LAPPD25_3.22.18/2300_2050_1200_ND4_2sided_root.fff
+
+#LAPPDFilter
+FilterInputWavLabel BLsubtractedLAPPDData
+doFilter false
+CutoffFrequency 500000000
+
+#LAPPDIntegratePulse
+IntegLow  64000
+IntegHi 67000
+
+#LAPPDFindPeak
+PeakInputWavLabel FiltLAPPDData
+TotThreshold 0.5
+MinimumTot 2000.
+Deltat 100.
+
+# LAPPDcfd
+CFDInputWavLabel FiltLAPPDData
+Fraction_CFD 0.4
+
+# LAPPDSave
+path ../LAPPDoutputs/2400_2100_1300_bsln_2sided_output
+
+# LAPPDSaveROOT
+outfile ../LAPPDoutputs/2400_2100_1300_bsln_2sided.root
+NHistos 100

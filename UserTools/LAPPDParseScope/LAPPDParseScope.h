@@ -23,6 +23,7 @@ class LAPPDParseScope: public Tool {
    int NChannel;
    int WavDimSize;
    int TrigChannel;
+   int iter;
 
 };
 

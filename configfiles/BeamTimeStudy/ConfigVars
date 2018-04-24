@@ -1,0 +1,8 @@
+infile /ANNIEcode/fluxfiles/beammc_annie_0010.root
+outfile /ANNIEcode/fluxfiles/beamtimetree_out_0010.root
+baseline 10000
+TargetR 100;
+rseed 30006;
+tc1 0.25
+tc2 0.5
+tc3 1.0
