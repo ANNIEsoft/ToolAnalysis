@@ -8,6 +8,7 @@
 //#include "TTree.h"
 
 #include "Store.h"
+#include "BoostStore.h"
 #include "Logging.h"
 
 #include <zmq.hpp>

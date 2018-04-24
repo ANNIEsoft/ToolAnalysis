@@ -2,6 +2,6 @@
  
 source ./GetToolDAQ.sh
 
-./main configfiles/ToolChainConfig
+./main configfiles/Dummy/ToolChainConfig
 
 
