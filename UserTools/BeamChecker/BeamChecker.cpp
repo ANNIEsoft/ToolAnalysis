@@ -9,6 +9,8 @@
 #include "BeamChecker.h"
 #include "BeamDataPoint.h"
 #include "BeamStatus.h"
+#include "HeftyInfo.h"
+#include "TimeClass.h"
 
 // Definitions local to this source file
 namespace {
@@ -48,25 +50,49 @@ bool BeamChecker::Execute() {
     return false;
   }
 
-  // Load the map containing the ADC raw waveform data. We will use this
-  // to get the timing information for each minibuffer.
-  // TODO: alter the ANNIEEvent format so that you don't have to load the
-  // raw waveforms in order to get the minibuffer timestamps
-  std::map<ChannelKey, std::vector<Waveform<unsigned short> > >
-    raw_waveform_map;
+  // Load timing information for each of the minibuffers from the event.
+  // The minibuffer times are represented differently for Hefty vs. non-Hefty
+  // data.
 
-  bool got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
+  // Decide whether we're using Hefty vs. non-Hefty data by checking whether
+  // the HeftyInfo object is present
+  bool hefty_mode = annie_event->Has("HeftyInfo");
 
-  // Check for problems
-  if ( !got_raw_data ) {
-    Log("Error: The BeamChecker tool could not find the RawADCData entry", 0,
-      verbosity_);
-    return false;
+  HeftyInfo hefty_info;
+  std::vector<TimeClass> mb_timestamps;
+
+  size_t num_minibuffers = 0u;
+
+  if (hefty_mode) {
+    bool got_hefty_info = annie_event->Get("HeftyInfo", hefty_info);
+
+    if ( !got_hefty_info ) {
+      Log("Error: The BeamChecker tool failed to load a HeftyInfo object", 0,
+        verbosity_);
+      return false;
+    }
+
+    num_minibuffers = hefty_info.num_minibuffers();
+
   }
-  else if ( raw_waveform_map.empty() ) {
-    Log("Error: The BeamChecker tool found an empty RawADCData entry", 0,
-      verbosity_);
-    return false;
+  else {
+    // non-Hefty data
+    bool got_mb_timestamps = annie_event->Get("MinibufferTimestamps",
+      mb_timestamps);
+
+    // Check for problems
+    if ( !got_mb_timestamps ) {
+      Log("Error: The BeamChecker tool could not find any minibuffer"
+        " timestamps", 0, verbosity_);
+      return false;
+    }
+    else if ( mb_timestamps.empty() ) {
+      Log("Error: The BeamChecker tool found an empty vector of minibuffer"
+        " timestamps", 0, verbosity_);
+      return false;
+    }
+
+    num_minibuffers = mb_timestamps.size();
   }
 
   // Load the minibuffer labels for the current event
@@ -86,25 +112,14 @@ bool BeamChecker::Execute() {
     return false;
   }
 
-  // Arbitrarily use channel 1 to get the minibuffer timestamps (should be good
-  // enough since the beam database has millisecond time resolution)
-  // TODO: consider if there's a better approach
-  const auto& channel_1_raw_waveforms = raw_waveform_map.at(
-    ChannelKey(subdetector::ADC, 1));
-
-  size_t num_minibuffers = minibuffer_labels.size();
-  if ( num_minibuffers != channel_1_raw_waveforms.size() ) {
-    Log("Error: Mismatch between the number of minibuffer labels and the"
-      " number of minibuffers", 0, verbosity_);
-    return false;
-  }
-
   // Build the vector of beam statuses (with one for each minibuffer)
   std::vector<BeamStatus> beam_statuses;
 
   for (size_t mb = 0; mb < num_minibuffers; ++mb) {
-    const auto& waveform = channel_1_raw_waveforms.at(mb);
-    uint64_t ns_since_epoch = waveform.GetStartTime().GetNs();
+
+    uint64_t ns_since_epoch = 0ull;
+    if (hefty_mode) ns_since_epoch = hefty_info.time(mb);
+    else ns_since_epoch = mb_timestamps.at(mb).GetNs();
 
     const auto& mb_label = minibuffer_labels.at(mb);
 
