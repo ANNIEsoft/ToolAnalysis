@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# rpms prerequisits needs root
-#yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
-
 init=1
 tooldaq=1
 boostflag=1
@@ -111,11 +108,16 @@ if [ $boostflag -eq 1 ]
 then
     
     
-    wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
-    tar zxf boost_1_66_0.tar.gz
-    rm -rf boost_1_66_0.tar.gz
+#    wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
+
+ #   tar zxf boost_1_66_0.tar.gz
+  #  rm -rf boost_1_66_0.tar.gz
     
-    cd boost_1_66_0
+#wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz
+
+git clone https://github.com/ToolDAQ/boost_1_60_0.git
+
+    cd boost_1_60_0
     
     mkdir install
     
