@@ -1,7 +1,7 @@
 // Class to store beam status information retrieved from Fermilab's Intensity
 // Frontier beam database
 //
-// Steven Gardiner (sjgardiner@ucdavis.edu)
+// Steven Gardiner <sjgardiner@ucdavis.edu>
 #ifndef BEAMSTATUS_H
 #define BEAMSTATUS_H
 
