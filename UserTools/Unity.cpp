@@ -34,6 +34,7 @@
 #include "NeutronStudyPMCS/NeutronStudyPMCS.cpp"
 #include "NeutronStudyWriteTree/NeutronStudyWriteTree.cpp"
 #include "RawLoader/RawLoader.cpp"
+#include "RawLoader/HeftyTreeReader.cpp"
 #include "recoANNIE/Unity_recoANNIE.cpp"
 #include "ADCCalibrator/ADCCalibrator.cpp"
 #include "ADCHitFinder/ADCHitFinder.cpp"
