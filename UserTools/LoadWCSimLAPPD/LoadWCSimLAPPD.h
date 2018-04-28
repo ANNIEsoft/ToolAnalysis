@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "Tool.h"
-//#include "LAPPDTree.h"
+#include "LAPPDTree.h"
 #include "LAPPDHit.h"
 #include "ChannelKey.h"
 #include "TimeClass.h"
@@ -32,7 +32,7 @@ class LoadWCSimLAPPD: public Tool {
 	// LAPPDTree variables
 	TFile* file=nullptr;
 	TTree* lappdtree=nullptr;
-	//LAPPDTree* LAPPDEntry=nullptr;  // tree event as a class object from MakeClass
+	LAPPDTree* LAPPDEntry=nullptr;  // tree event as a class object from MakeClass
 	long NumEvents;
 	
 	// retrieved from Store, populated by LoadWCSim tool
