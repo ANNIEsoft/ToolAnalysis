@@ -98,6 +98,10 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	int numlappds = wcsimrootgeom->GetWCNumLAPPD();
 	int nummrdpmts = wcsimrootgeom->GetWCNumMRDPMT();
 	numvetopmts = wcsimrootgeom->GetWCNumFACCPMT();
+	double tank_xcentre = wcsimrootgeom->GetWCOffset(0);
+	double tank_ycentre = wcsimrootgeom->GetWCOffset(1);
+	double tank_zcentre = wcsimrootgeom->GetWCOffset(2);
+	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
 	double tank_radius = wcsimrootgeom->GetWCCylRadius();
 	double tank_halfheight = wcsimrootgeom->GetWCCylLength();
 	// geometry variables not yet in wcsimrootgeom are in MRDSpecs.hh
@@ -148,7 +152,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// construct the goemetry 
-	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_radius, tank_halfheight, 
+	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius, tank_halfheight, 
 	                                   mrd_width, mrd_height, mrd_depth, mrd_start, numtankpmts, 
 	                                   nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
 	if(verbose>1) cout<<"constructed anniegom at "<<anniegeom<<endl;
@@ -197,7 +201,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	// Construct the other objects we'll be setting at event level,
 	// pass managed pointers to the ANNIEEvent Store
-	MCParticles = new std::vector<Particle>;
+	MCParticles = new std::vector<MCParticle>;
 	MCHits = new std::map<ChannelKey,std::vector<Hit>>;
 	TDCData = new std::map<ChannelKey,std::vector<Hit>>;
 	EventTime = new TimeClass();
@@ -263,35 +267,12 @@ bool LoadWCSim::Execute(){
 			Int_t     GetId()               wcsim trackid
 			*/
 			
-			// this is a method in Particle now
-//			double tankcentredzstart = nextrack->GetStart(2)-(tank_start+tank_radius);
-//			double tankcentredzend   = nextrack->GetStop (2) -(tank_start+tank_radius);
-//			double trackstartradius  = sqrt(pow(nextrack->GetStart(0),2.)+pow(tankcentredzstart,2.));
-//			double trackendradius    = sqrt(pow(nextrack->GetStop (0),2.)+pow(tankcentredzend,  2.));
-//			bool tankcontained =     (MRDSpecs::trackstartradius<MRDSpecs::tank_radius) 
-//								  && (nextrack->GetStart(1)<MRDSpecs::tank_halfheight)
-//								  && (trackendradius  <MRDSpecs::tank_radius) 
-//								  && (nextrack->GetStop (1)<MRDSpecs::tank_halfheight);
-//			bool mrdcontained  =     (nextrack->GetStop(2)>(MRDSpecs::MRD_start)) 
-//								 &&  (nextrack->GetStop(2)<(MRDSpecs::MRD_start+MRDSpecs::MRD_depth)) 
-//								 &&  (abs(nextrack->GetStop(0))<MRDSpecs::MRD_width ) 
-//								 &&  (abs(nextrack->GetStop(1))<MRDSpecs::MRD_height));
+			tracktype startstoptype = tracktype::UNDEFINED;
 			
-			tracktype startstoptype;
-			bool startinbounds = (    nextrack->GetFlag()!=-1
-								   && (abs(nextrack->GetStart(0))<550) 
-								   && (abs(nextrack->GetStart(0))<550) 
-								   && (abs(nextrack->GetStart(0))<550) );
-			bool stopinbounds = (     (abs(nextrack->GetStop(0))<550) 
-								   && (abs(nextrack->GetStop(0))<550) 
-								   && (abs(nextrack->GetStop(0))<550) );
+			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
+			// e.g. primary neutrino time is -1, but TimeClass accepts uint64_t - UNSIGNED = becomes 18446744073709551615
 			
-			if(startinbounds && stopinbounds) startstoptype = tracktype::CONTAINED;
-			else if( startinbounds ) startstoptype = tracktype::STARTONLY;
-			else if( stopinbounds  ) startstoptype = tracktype::ENDONLY;
-			else startstoptype = tracktype::UNCONTAINED;
-			
-			Particle thisparticle(
+			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0), nextrack->GetStart(1), nextrack->GetStart(2)),
 				Position(nextrack->GetStop(0), nextrack->GetStop(1), nextrack->GetStop(2)),
@@ -300,7 +281,7 @@ bool LoadWCSim::Execute(){
 				sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
 					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.)),
-					 startstoptype);
+					 startstoptype, tracki, nextrack->GetParenttype());
 			
 			MCParticles->push_back(thisparticle);
 		}

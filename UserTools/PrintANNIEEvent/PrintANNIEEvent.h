@@ -31,7 +31,7 @@ class PrintANNIEEvent: public Tool {
 	std::string inputfile;
 	unsigned long NumEvents;
 	
-	// contents of ANNIEEVENT
+	// contents of ANNIEEvent
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
 	uint32_t EventNumber;
