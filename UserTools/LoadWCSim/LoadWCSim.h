@@ -54,7 +54,7 @@ private:
 	uint32_t EventNumber; // will need to be tracked separately, since we flatten triggers
 	TimeClass* EventTime;
 	uint64_t EventTimeNs;
-	std::vector<Particle>* MCParticles;
+	std::vector<MCParticle>* MCParticles;
 	std::map<ChannelKey,std::vector<Hit>>* TDCData;
 	std::map<ChannelKey,std::vector<Hit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;

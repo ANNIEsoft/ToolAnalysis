@@ -31,6 +31,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	
 	// Make class private members; e.g. the LAPPDTree
 	// ==============================================
+	if(verbose>2) cout<<"LoadWCSimLAPPD Tool: loading file "<<MCFile<<endl;
 	file= new TFile(MCFile.c_str(),"READ");
 	lappdtree= (TTree*) file->Get("LAPPDTree");
 	NumEvents=lappdtree->GetEntries();
