@@ -1,9 +1,9 @@
-#include "LAPPDSave.h"
+#include "SaveANNIEEvent.h"
 
-LAPPDSave::LAPPDSave():Tool(){}
+SaveANNIEEvent::SaveANNIEEvent():Tool(){}
 
 
-bool LAPPDSave::Initialise(std::string configfile, DataModel &data){
+bool SaveANNIEEvent::Initialise(std::string configfile, DataModel &data){
 
   /////////////////// Usefull header ///////////////////////
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
@@ -17,7 +17,7 @@ bool LAPPDSave::Initialise(std::string configfile, DataModel &data){
 }
 
 
-bool LAPPDSave::Execute(){
+bool SaveANNIEEvent::Execute(){
 
   m_data->Stores["ANNIEEvent"]->Save(path);
   m_data->Stores["ANNIEEvent"]->Delete();
@@ -26,7 +26,7 @@ bool LAPPDSave::Execute(){
 }
 
 
-bool LAPPDSave::Finalise(){
+bool SaveANNIEEvent::Finalise(){
 
 
   m_data->Stores["ANNIEEvent"]->Close();
