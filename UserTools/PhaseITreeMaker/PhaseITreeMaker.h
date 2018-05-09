@@ -1,5 +1,5 @@
-// This tool makes the plots needed for the ANNIE Phase I publication about
-// beam-induced neutron backgrounds in SciBooNE hall.
+// This tool makes the ROOT trees needed to reproduce the plots from the ANNIE
+// Phase I publication about beam-induced neutron backgrounds in SciBooNE hall.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
 #pragma once
@@ -71,7 +71,7 @@ class PhaseITreeMaker : public Tool {
 
     int get_NCV_position(uint32_t run_number) const;
 
-    bool approve_event(double event_time, double old_time,
+    bool approve_event(int64_t event_time, int64_t old_time,
       const ADCPulse& first_ncv1_pulse, const std::map<ChannelKey, std::vector<
       std::vector<ADCPulse> > >& adc_hits, int minibuffer_index);
 
@@ -115,6 +115,8 @@ class PhaseITreeMaker : public Tool {
     int ncv_position_ = 0;
     uint64_t event_time_ns_ = 0u;
     uint8_t event_label_ = 0u;
+    bool hefty_mode_ = false;
+    int hefty_trigger_mask_ = 0;
 
     // Stores total POT, spill, etc. information for each NCV position
     std::map<int, NCVPositionInfo> ncv_position_info_;

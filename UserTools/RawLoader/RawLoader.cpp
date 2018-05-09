@@ -124,6 +124,9 @@ namespace {
     HEFTY_COSMIC_NCV_TO_MRD_DIAGONAL_TRIGGER_MASK |
     HEFTY_COSMIC_WATER_VERTICAL_TRIGGER_MASK |
     HEFTY_COSMIC_MRD_TO_NCV_DIAGONAL_TRIGGER_MASK;
+
+  // LED trigger
+  constexpr int HEFTY_LED_TRIGGER_MASK = 0x1 << 30;
 }
 
 RawLoader::RawLoader() : Tool()
@@ -368,6 +371,15 @@ bool RawLoader::Execute() {
       else if ( mask & HEFTY_SOURCE_TRIGGER_MASK )
         mb_label = MinibufferLabel::Source;
 
+      // Label minibuffers within the Hefty self-trigger window as
+      // "Hefty" minibuffers, even if they include a cosmic, soft, etc.
+      // trigger
+      else if ( mask & HEFTY_WINDOW_TRIGGER_MASK )
+        mb_label = MinibufferLabel::Hefty;
+
+      else if ( mask & HEFTY_LED_TRIGGER_MASK )
+        mb_label = MinibufferLabel::LED;
+
       else if ( mask & HEFTY_COSMIC_TRIGGER_MASK )
         mb_label = MinibufferLabel::Cosmic;
 
@@ -378,13 +390,6 @@ bool RawLoader::Execute() {
         || (mask & HEFTY_PERIODIC_TRIGGER_MASK)
         || (mask & HEFTY_MINRATE_TRIGGER_MASK) )
         mb_label = MinibufferLabel::Soft;
-
-      // Label minibuffers within the Hefty self-trigger window as "Hefty"
-      // minibuffers
-      else if ( mask & HEFTY_WINDOW_TRIGGER_MASK )
-        mb_label = MinibufferLabel::Hefty;
-
-      // TODO: add check for LED trigger mask
 
       minibuffer_labels.push_back( mb_label );
     }
