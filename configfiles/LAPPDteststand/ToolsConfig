@@ -5,4 +5,4 @@ LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDteststand/ConfigVarsScope
 LAPPDIntegratePulse LAPPDIntegratePulse configfiles/LAPPDteststand/ConfigVarsScope
 LAPPDcfd LAPPDcfd configfiles/LAPPDteststand/ConfigVarsScope
 LAPPDSaveROOT LAPPDSaveROOT configfiles/LAPPDteststand/ConfigVarsScope
-LAPPDSave LAPPDSave configfiles/LAPPDteststand/ConfigVarsScope
+LAPPDSave SaveANNIEEvent configfiles/LAPPDteststand/ConfigVarsScope

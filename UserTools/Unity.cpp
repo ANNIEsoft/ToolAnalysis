@@ -19,7 +19,7 @@
 #include "LAPPDParseACC/LAPPDParseACC.cpp"
 #include "LAPPDParseScope/LAPPDParseScope.cpp"
 #include "LAPPDSaveROOT/LAPPDSaveROOT.cpp"
-#include "LAPPDSave/LAPPDSave.cpp"
+#include "SaveANNIEEvent/SaveANNIEEvent.cpp"
 #include "LAPPDSim/LAPPDSim.cpp"
 #include "LAPPDSim/LAPPDresponse.cpp"
 #include "BeamTimeAna/BeamTimeAna.cpp"
