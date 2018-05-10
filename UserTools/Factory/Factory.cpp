@@ -15,7 +15,7 @@ if (tool=="PythonScript") ret=new PythonScript;
 if (tool=="LAPPDParseScope") ret=new LAPPDParseScope;
 if (tool=="LAPPDParseACC") ret=new LAPPDParseACC;
 if (tool=="LAPPDFindPeak") ret=new LAPPDFindPeak;
-if (tool=="LAPPDSave") ret=new LAPPDSave;
+if (tool=="SaveANNIEEvent") ret=new SaveANNIEEvent;
 if (tool=="LAPPDSim") ret=new LAPPDSim;
 if (tool=="LoadWCSim") ret=new LoadWCSim;
 if (tool=="FindMrdTracks") ret=new FindMrdTracks;
