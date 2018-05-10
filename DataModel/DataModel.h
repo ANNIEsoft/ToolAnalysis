@@ -20,6 +20,7 @@
 #include "Detector.h"
 #include "Direction.h"
 #include "Geometry.h"
+#include "HeftyInfo.h"
 #include "Hit.h"
 #include "Particle.h"
 #include "LAPPDHit.h"
