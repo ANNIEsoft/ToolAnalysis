@@ -6,4 +6,4 @@ LAPPDFilter LAPPDFilter configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDIntegratePulse LAPPDIntegratePulse configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDcfd LAPPDcfd configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDSaveROOT LAPPDSaveROOT configfiles/LAPPDsimtest/ConfigVarsPSEC4
-#LAPPDSave LAPPDSave configfiles/LAPPDsimtest/ConfigVarsPSEC4
+#LAPPDSave SaveANNIEEvent configfiles/LAPPDsimtest/ConfigVarsPSEC4
