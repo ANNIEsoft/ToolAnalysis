@@ -41,7 +41,7 @@ namespace annie {
       TChain hefty_db_chain_;
 
       // index of the current PMTData TChain entry
-      long long current_hefty_db_entry_ = 0;
+      long long current_hefty_db_entry_ = -1;
 
       /// @brief SequenceID value for the last Hefty DB entry that was
       /// successfully loaded from the input file(s)
