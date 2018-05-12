@@ -59,8 +59,8 @@ namespace annie {
       std::vector<int> br_Label_
         = std::vector<int>(NUMBER_OF_MINIBUFFERS);
 
-      std::vector<int> br_TSinceBeam_
-        = std::vector<int>(NUMBER_OF_MINIBUFFERS);
+      std::vector<long long> br_TSinceBeam_
+        = std::vector<long long>(NUMBER_OF_MINIBUFFERS);
 
       std::vector<int> br_More_
         = std::vector<int>(NUMBER_OF_MINIBUFFERS);

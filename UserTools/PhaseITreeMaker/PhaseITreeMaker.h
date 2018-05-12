@@ -113,7 +113,7 @@ class PhaseITreeMaker : public Tool {
     uint32_t subrun_number_ = 0u;
     uint32_t event_number_ = 0u;
     int ncv_position_ = 0;
-    uint64_t event_time_ns_ = 0u;
+    int64_t event_time_ns_ = 0;
     uint8_t event_label_ = 0u;
     bool hefty_mode_ = false;
     int hefty_trigger_mask_ = 0;

@@ -81,7 +81,7 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_tree_->Branch("subrun", &subrun_number_, "subrun/i");
   output_tree_->Branch("event", &event_number_, "event/i");
   output_tree_->Branch("ncv_position", &ncv_position_, "ncv_position/I");
-  output_tree_->Branch("event_time_ns", &event_time_ns_, "event_time_ns/l");
+  output_tree_->Branch("event_time_ns", &event_time_ns_, "event_time_ns/L");
   output_tree_->Branch("label", &event_label_, "label/b");
   output_tree_->Branch("hefty_mode", &hefty_mode_, "hefty_mode/O");
   // Used only for Hefty mode. Stores the trigger mask for the minibuffer
