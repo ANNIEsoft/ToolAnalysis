@@ -95,9 +95,9 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_tree_->Branch("charge_ncv1", &charge_ncv1_, "charge_ncv1/D");
   output_tree_->Branch("charge_ncv2", &charge_ncv2_, "charge_ncv2/D");
   output_tree_->Branch("raw_amplitude_ncv1", &raw_amplitude_ncv1_,
-    "raw_amplitude_ncv1/D");
+    "raw_amplitude_ncv1/s");
   output_tree_->Branch("raw_amplitude_ncv2", &raw_amplitude_ncv2_,
-    "raw_amplitude_ncv2/D");
+    "raw_amplitude_ncv2/s");
 
   return true;
 }
