@@ -5,6 +5,7 @@
 #include<SerialisableObject.h>
 #include <math.h> // defines M_PI
 #include <cmath>  // atan2
+#include <iostream>
 
 using namespace std;
 
@@ -49,9 +50,9 @@ class Direction : public SerialisableObject{
 	inline void SetThetaDeg(double thd){theta=thd*(M_PI/180.);}
 	
 	bool Print() {
-		cout<<"Unit Vector : ("<<x<<", "<<y<<", "<<z<<")"<<endl;
-		cout<<"theta : "<<theta<<" rads"<<endl;
-		cout<<"phi : "<<phi<<" rads"<<endl;
+		std::cout<<"Unit Vector : ("<<x<<", "<<y<<", "<<z<<")"<<std::endl;
+		std::cout<<"theta : "<<theta<<" rads"<<std::endl;
+		std::cout<<"phi : "<<phi<<" rads"<<std::endl;
 		
 		return true;
 	}

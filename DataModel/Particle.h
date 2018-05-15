@@ -5,6 +5,7 @@
 #include <map>
 #include <utility>
 #include <string>
+#include <iostream>
 
 #include<SerialisableObject.h>
 #include "Position.h"
@@ -65,17 +66,17 @@ class Particle : public SerialisableObject{
 	inline tracktype GetStartStopType(){return StartStopType;}
 	
 	virtual bool Print() {
-		cout<<"ParticlePDG : "<<ParticlePDG<<endl;
-		cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<endl;
-		cout<<"startEnergy : "<<startEnergy<<endl;
-		cout<<"stopEnergy : "<<stopEnergy<<endl;
-		cout<<"startVertex : "; startVertex.Print();
-		cout<<"stopVertex : "; stopVertex.Print();
-		cout<<"startTime : "; startTime.Print();
-		cout<<"stopTime : "; stopTime.Print();
-		cout<<"startDirection : "; startDirection.Print();
-		cout<<"trackLength : "<<trackLength<<endl;
-		cout<<"StartStopType : "; PrintStartStopType(StartStopType);
+		std::cout<<"ParticlePDG : "<<ParticlePDG<<std::endl;
+		std::cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<std::endl;
+		std::cout<<"startEnergy : "<<startEnergy<<std::endl;
+		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
+		std::cout<<"startVertex : "; startVertex.Print();
+		std::cout<<"stopVertex : "; stopVertex.Print();
+		std::cout<<"startTime : "; startTime.Print();
+		std::cout<<"stopTime : "; stopTime.Print();
+		std::cout<<"startDirection : "; startDirection.Print();
+		std::cout<<"trackLength : "<<trackLength<<std::endl;
+		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);
 		
 		return true;
 	}
@@ -89,7 +90,7 @@ class Particle : public SerialisableObject{
 			case tracktype::UNCONTAINED: printstring = "UNCONTAINED";
 			case tracktype::UNDEFINED: printstring = "UNDEFINED";
 		}
-		cout<<printstring<<endl;
+		std::cout<<printstring<<std::endl;
 	}
 	
 	std::string PdgToString (int pdgcode) const{
@@ -173,20 +174,20 @@ class MCParticle : public Particle {
 	}
 	
 	bool Print() {
-		cout<<"ParticlePDG : "<<ParticlePDG<<endl;
-		cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<endl;
-		cout<<"startEnergy : "<<startEnergy<<endl;
-		cout<<"stopEnergy : "<<stopEnergy<<endl;
-		cout<<"startVertex : "; startVertex.Print();
-		cout<<"stopVertex : "; stopVertex.Print();
-		cout<<"startTime : "; startTime.Print();
-		cout<<"stopTime : "; stopTime.Print();
-		cout<<"startDirection : "; startDirection.Print();
-		cout<<"trackLength : "<<trackLength<<endl;
-		cout<<"StartStopType : "; PrintStartStopType(StartStopType);
-		cout<<"ParticleID : "<<ParticleID<<endl;
-		cout<<"ParentPdg : "<<ParentPdg<<endl;
-		cout<<"Parent Particle Name : "<<PdgToString(ParentPdg)<<endl;
+		std::cout<<"ParticlePDG : "<<ParticlePDG<<std::endl;
+		std::cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<std::endl;
+		std::cout<<"startEnergy : "<<startEnergy<<std::endl;
+		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
+		std::cout<<"startVertex : "; startVertex.Print();
+		std::cout<<"stopVertex : "; stopVertex.Print();
+		std::cout<<"startTime : "; startTime.Print();
+		std::cout<<"stopTime : "; stopTime.Print();
+		std::cout<<"startDirection : "; startDirection.Print();
+		std::cout<<"trackLength : "<<trackLength<<std::endl;
+		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);
+		std::cout<<"ParticleID : "<<ParticleID<<std::endl;
+		std::cout<<"ParentPdg : "<<ParentPdg<<std::endl;
+		std::cout<<"Parent Particle Name : "<<PdgToString(ParentPdg)<<std::endl;
 		
 		return true;
 	}
