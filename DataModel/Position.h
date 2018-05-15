@@ -3,6 +3,7 @@
 #define POSITIONCLASS_H
 
 #include<SerialisableObject.h>
+#include <iostream>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ class Position : public SerialisableObject{
 	inline void SetZ(double zz){z=zz;}
 	
 	bool Print() {
-		cout<<"("<<x<<", "<<y<<", "<<z<<")"<<endl;
+		std::cout<<"("<<x<<", "<<y<<", "<<z<<")"<<std::endl;
 		return true;
 	}
 	
