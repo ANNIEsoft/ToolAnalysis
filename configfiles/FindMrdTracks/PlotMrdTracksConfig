@@ -1,0 +1,8 @@
+#FindMrdTracks Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+OutputDirectory /annie/app/users/moflaher/ToolAnalysis/toolAnalysisOutputs/FindMrdTracksTest
+verbose 100
+gdmlpath /pnfs/annie/persistent/users/moflaher/annie_v04.gdml
+# save images of hit paddles in each track identified. ONLY FOR SMALL NUM TRACKS AS DEBUG!
+saveimages true

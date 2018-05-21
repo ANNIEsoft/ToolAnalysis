@@ -18,7 +18,6 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// Get the Tool configuration variables
 	// ====================================
 	m_variables.Get("verbose",verbose);
-	//verbose=10;
 	m_variables.Get("InputFile",MCFile);
 	
 	// Short Stores README
@@ -54,11 +53,37 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	NumEvents=wcsimtree->GetEntries();
 	WCSimEntry= new wcsimT(wcsimtree);
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
-	if(verbose>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<endl;
+	wcsimrootopts = WCSimEntry->wcsimrootopts;
+	int pretriggerwindow=wcsimrootopts->GetNDigitsPreTriggerWindow();
+	int posttriggerwindow=wcsimrootopts->GetNDigitsPostTriggerWindow();
 	
 	// put useful constants into the CStore
 	// ====================================
 	//m_data->CStore.Set("WCSimEntry",WCSimEntry,false); // pass on the WCSim entry - not possible
+	// pass on root options. TODO should these be saved somewhere?
+	m_data->CStore.Set("WCSimPreTriggerWindow",pretriggerwindow);
+	m_data->CStore.Set("WCSimPostTriggerWindow",posttriggerwindow);
+	// store the WCSimRootGeom for LAPPD reader calculation of global coords
+	intptr_t geomptr = reinterpret_cast<intptr_t>(wcsimrootgeom);
+	if(verbose>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<", geomptr="<<geomptr<<endl;
+	m_data->CStore.Set("WCSimRootGeom",geomptr);
+//	int wcsimgoemexists = m_data->Stores.count("WCSimRootGeomStore");
+//	if(wcsimgoemexists==0){
+//		m_data->Stores["WCSimRootGeomStore"] = new BoostStore(false,0);
+//		//m_data->Stores.at("WCSimRootGeomStore")->Header->Set("WCSimRootGeom",wcsimrootgeom);
+//		m_data->Stores.at("WCSimRootGeomStore")->Set("WCSimRootGeom",&wcsimrootgeom);
+//	}
+	
+//	// Make a WCSimStore to store additional WCSim info passed between tools
+//	// =====================================================================
+//	int wcsimstoreexists = m_data->Stores.count("WCSimStore");
+//	cout<<"wcsimstoreexists="<<wcsimstoreexists<<endl;
+//	if(wcsimstoreexists==0){
+//		m_data->Stores["WCSimStore"] = new BoostStore(false,0);
+//	}
+//	m_data->Stores.at("WCSimStore")->Set("WCSimRootGeom",geomptr);
+//	m_data->Stores.at("WCSimStore")->Set("WCSimPreTriggerWindow",pretriggerwindow);
+//	m_data->Stores.at("WCSimStore")->Set("WCSimPostTriggerWindow",posttriggerwindow);
 	
 	// Make the ANNIEEvent Store if it doesn't exist
 	// =============================================
@@ -73,6 +98,10 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	int numlappds = wcsimrootgeom->GetWCNumLAPPD();
 	int nummrdpmts = wcsimrootgeom->GetWCNumMRDPMT();
 	numvetopmts = wcsimrootgeom->GetWCNumFACCPMT();
+	double tank_xcentre = wcsimrootgeom->GetWCOffset(0);
+	double tank_ycentre = wcsimrootgeom->GetWCOffset(1);
+	double tank_zcentre = wcsimrootgeom->GetWCOffset(2);
+	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
 	double tank_radius = wcsimrootgeom->GetWCCylRadius();
 	double tank_halfheight = wcsimrootgeom->GetWCCylLength();
 	// geometry variables not yet in wcsimrootgeom are in MRDSpecs.hh
@@ -80,7 +109,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	double mrd_height = MRDSpecs::MRD_height;
 	double mrd_depth =  MRDSpecs::MRD_depth;
 	double mrd_start =  MRDSpecs::MRD_start;
-	if(verbose>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts<<" mrd pmts... etc."<<endl;
+	if(verbose>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts
+					  <<" mrd pmts and "<<numlappds<<" lappds"<<endl;
 	
 	// loop over PMTs and make the map of Detectors
 	std::map<ChannelKey,Detector> Detectors;
@@ -122,11 +152,11 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// construct the goemetry 
-	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_radius, tank_halfheight, 
+	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius, tank_halfheight, 
 	                                   mrd_width, mrd_height, mrd_depth, mrd_start, numtankpmts, 
 	                                   nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
 	if(verbose>1) cout<<"constructed anniegom at "<<anniegeom<<endl;
-	m_data->Stores["ANNIEEvent"]->Header->Set("AnnieGeometry",anniegeom,true);
+	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 	
 	// Set run-level information in the ANNIEEvent
 	// ===========================================
@@ -151,6 +181,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		BeamStatus
 	*/
 	
+	EventNumber=0;
 	MCEventNum=-1;
 	MCTriggernum=0;
 	// pull the first entry with a trigger and use it's Date for the BeamStatus last recorded time. TODO
@@ -170,7 +201,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	// Construct the other objects we'll be setting at event level,
 	// pass managed pointers to the ANNIEEvent Store
-	MCParticles = new std::vector<Particle>;
+	MCParticles = new std::vector<MCParticle>;
 	MCHits = new std::map<ChannelKey,std::vector<Hit>>;
 	TDCData = new std::map<ChannelKey,std::vector<Hit>>;
 	EventTime = new TimeClass();
@@ -184,9 +215,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 bool LoadWCSim::Execute(){
 	
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
-	//m_data->Stores["ANNIEEvent"]->Clear();
+	//m_data->Stores.at("ANNIEEvent")->Clear();
 	
-	if(verbose>1) cout<<"Tool LoadWCSim getting entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
+	if(verbose) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
 	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = wcsimtree->GetCurrentFile()->GetName();
 	
@@ -236,35 +267,12 @@ bool LoadWCSim::Execute(){
 			Int_t     GetId()               wcsim trackid
 			*/
 			
-			// this is a method in Particle now
-//			double tankcentredzstart = nextrack->GetStart(2)-(tank_start+tank_radius);
-//			double tankcentredzend   = nextrack->GetStop (2) -(tank_start+tank_radius);
-//			double trackstartradius  = sqrt(pow(nextrack->GetStart(0),2.)+pow(tankcentredzstart,2.));
-//			double trackendradius    = sqrt(pow(nextrack->GetStop (0),2.)+pow(tankcentredzend,  2.));
-//			bool tankcontained =     (MRDSpecs::trackstartradius<MRDSpecs::tank_radius) 
-//								  && (nextrack->GetStart(1)<MRDSpecs::tank_halfheight)
-//								  && (trackendradius  <MRDSpecs::tank_radius) 
-//								  && (nextrack->GetStop (1)<MRDSpecs::tank_halfheight);
-//			bool mrdcontained  =     (nextrack->GetStop(2)>(MRDSpecs::MRD_start)) 
-//								 &&  (nextrack->GetStop(2)<(MRDSpecs::MRD_start+MRDSpecs::MRD_depth)) 
-//								 &&  (abs(nextrack->GetStop(0))<MRDSpecs::MRD_width ) 
-//								 &&  (abs(nextrack->GetStop(1))<MRDSpecs::MRD_height));
+			tracktype startstoptype = tracktype::UNDEFINED;
 			
-			tracktype startstoptype;
-			bool startinbounds = (    nextrack->GetFlag()!=-1
-								   && (abs(nextrack->GetStart(0))<550) 
-								   && (abs(nextrack->GetStart(0))<550) 
-								   && (abs(nextrack->GetStart(0))<550) );
-			bool stopinbounds = (     (abs(nextrack->GetStop(0))<550) 
-								   && (abs(nextrack->GetStop(0))<550) 
-								   && (abs(nextrack->GetStop(0))<550) );
+			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
+			// e.g. primary neutrino time is -1, but TimeClass accepts uint64_t - UNSIGNED = becomes 18446744073709551615
 			
-			if(startinbounds && stopinbounds) startstoptype = tracktype::CONTAINED;
-			else if( startinbounds ) startstoptype = tracktype::STARTONLY;
-			else if( stopinbounds  ) startstoptype = tracktype::ENDONLY;
-			else startstoptype = tracktype::UNCONTAINED;
-			
-			Particle thisparticle(
+			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0), nextrack->GetStart(1), nextrack->GetStart(2)),
 				Position(nextrack->GetStop(0), nextrack->GetStop(1), nextrack->GetStop(2)),
@@ -273,7 +281,7 @@ bool LoadWCSim::Execute(){
 				sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
 					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.)),
-					 startstoptype);
+					 startstoptype, tracki, nextrack->GetParenttype());
 			
 			MCParticles->push_back(thisparticle);
 		}
@@ -361,32 +369,32 @@ bool LoadWCSim::Execute(){
 	// fill LAPPDData properly. XXX XXX XXX XXX XXX XX XX XX XXX
 	
 	//int mrdentries;
-	//m_data->Stores["TDCData"]->Get("TotalEntries",mrdentries); // ??
-//	m_data->Stores["WCSimEntries"]->Set("wcsimrootevent",WCSimEntry->wcsimrootevent);
-//	m_data->Stores["WCSimEntries"]->Set("wcsimrootevent_mrd",WCSimEntry->wcsimrootevent_mrd);
-//	m_data->Stores["WCSimEntries"]->Set("wcsimrootevent_facc",*(WCSimEntry->wcsimrootevent_facc));
+	//m_data->Stores.at("TDCData")->Get("TotalEntries",mrdentries); // ??
+//	m_data->Stores("WCSimEntries")->Set("wcsimrootevent",WCSimEntry->wcsimrootevent);
+//	m_data->Stores("WCSimEntries")->Set("wcsimrootevent_mrd",WCSimEntry->wcsimrootevent_mrd);
+//	m_data->Stores("WCSimEntries")->Set("wcsimrootevent_facc",*(WCSimEntry->wcsimrootevent_facc));
 	
 	
 	// set event level variables
 	if(verbose>1) cout<<"setting the store variables"<<endl;
-	m_data->Stores["ANNIEEvent"]->Set("RunNumber",RunNumber);
-	m_data->Stores["ANNIEEvent"]->Set("SubrunNumber",SubrunNumber);
-	m_data->Stores["ANNIEEvent"]->Set("EventNumber",MCEventNum);
+	m_data->Stores.at("ANNIEEvent")->Set("RunNumber",RunNumber);
+	m_data->Stores.at("ANNIEEvent")->Set("SubrunNumber",SubrunNumber);
+	m_data->Stores.at("ANNIEEvent")->Set("EventNumber",EventNumber);
 	if(verbose>2) cout<<"particles"<<endl;
-	m_data->Stores["ANNIEEvent"]->Set("MCParticles",MCParticles,true);
+	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
 	if(verbose>2) cout<<"hits"<<endl;
-	m_data->Stores["ANNIEEvent"]->Set("MCHits",MCHits,true);
+	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
 	if(verbose>2) cout<<"tdcdata"<<endl;
-	m_data->Stores["ANNIEEvent"]->Set("TDCData",TDCData,true);
+	m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
 	if(verbose>2) cout<<"triggerdata"<<endl;
-	m_data->Stores["ANNIEEvent"]->Set("TriggerData",TriggerData,true);  // FIXME
+	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);  // FIXME
 	if(verbose>2) cout<<"eventtime"<<endl;
-	m_data->Stores["ANNIEEvent"]->Set("EventTime",EventTime,true);
-	m_data->Stores["ANNIEEvent"]->Set("MCEventNum",MCEventNum);
-	m_data->Stores["ANNIEEvent"]->Set("MCTriggernum",MCTriggernum);
-	m_data->Stores["ANNIEEvent"]->Set("MCFile",MCFile);
-	m_data->Stores["ANNIEEvent"]->Set("MCFlag",true);                   // constant 
-	m_data->Stores["ANNIEEvent"]->Set("BeamStatus",BeamStatus,true);
+	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
+	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
+	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum);
+	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
+	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant 
+	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
@@ -395,18 +403,21 @@ bool LoadWCSim::Execute(){
 	//RecoParticles
 	
 	// this should be everything. save the entry to the BoostStore
-	if(verbose>2) cout<<"saving"<<endl;
-	m_data->Stores["ANNIEEvent"]->Save();
+	if(verbose>2) cout<<"saving ANNIEEvent "<<EventNumber<<endl;
+	m_data->Stores.at("ANNIEEvent")->Save();
 	
+	EventNumber++;
 	MCTriggernum++;
 	if(verbose>2) cout<<"checking if we're done on trigs in this event"<<endl;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
 		MCEventNum++;
-		if(verbose>2) cout<<"new event"<<endl;
+		if(verbose>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
+	} else {
+		if(verbose>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
 	if(MCEventNum==NumEvents) m_data->vars.Set("StopLoop",1);
-	/*if(verbose>1)*/ cout<<"done loading event"<<endl;
+	if(verbose>1) cout<<"done loading event"<<endl;
 	return true;
 }
 
