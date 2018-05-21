@@ -41,7 +41,7 @@ namespace annie {
       TChain hefty_db_chain_;
 
       // index of the current PMTData TChain entry
-      long long current_hefty_db_entry_ = 0;
+      long long current_hefty_db_entry_ = -1;
 
       /// @brief SequenceID value for the last Hefty DB entry that was
       /// successfully loaded from the input file(s)
@@ -59,8 +59,8 @@ namespace annie {
       std::vector<int> br_Label_
         = std::vector<int>(NUMBER_OF_MINIBUFFERS);
 
-      std::vector<int> br_TSinceBeam_
-        = std::vector<int>(NUMBER_OF_MINIBUFFERS);
+      std::vector<long long> br_TSinceBeam_
+        = std::vector<long long>(NUMBER_OF_MINIBUFFERS);
 
       std::vector<int> br_More_
         = std::vector<int>(NUMBER_OF_MINIBUFFERS);

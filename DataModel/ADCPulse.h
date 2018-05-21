@@ -50,7 +50,11 @@ class ADCPulse : public Hit {
 
     // @brief Returns the charge (nC) of the calibrated (baseline-subtracted)
     // pulse
-    inline double charge() const { return charge_; }
+    // @details No official units have been established for the Charge member
+    // of the Hit class yet. If a convention is established that is different
+    // than that used for the ADCPulse class (nC), then this function should
+    // be modified to perform any necessary conversion to nC.
+    inline double charge() const { return GetCharge(); }
 
     // @brief Returns the amplitude (V) of the calibrated
     // (baseline-subtracted) pulse
@@ -80,6 +84,4 @@ class ADCPulse : public Hit {
 
     unsigned short raw_amplitude_; // ADC
     double calibrated_amplitude_; // V
-
-    double charge_; // nC
 };

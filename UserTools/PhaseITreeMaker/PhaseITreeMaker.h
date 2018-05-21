@@ -78,7 +78,7 @@ class PhaseITreeMaker : public Tool {
     double compute_tank_charge(size_t minibuffer_number,
       const std::map< ChannelKey, std::vector<
         std::vector<ADCPulse> > >& adc_hits, uint64_t start_time,
-        uint64_t end_time, int& num_unique_water_pmts) const;
+        uint64_t end_time, int& num_unique_water_pmts);
 
     /// @brief Integer that determines the level of logging to perform
     int verbosity_ = 0;
@@ -113,10 +113,17 @@ class PhaseITreeMaker : public Tool {
     uint32_t subrun_number_ = 0u;
     uint32_t event_number_ = 0u;
     int ncv_position_ = 0;
-    uint64_t event_time_ns_ = 0u;
+    int64_t event_time_ns_ = 0; // ns
     uint8_t event_label_ = 0u;
     bool hefty_mode_ = false;
     int hefty_trigger_mask_ = 0;
+
+    double amplitude_ncv1_ = 0.; // V
+    double amplitude_ncv2_ = 0.; // V
+    double charge_ncv1_ = 0.; // nC
+    double charge_ncv2_ = 0.; // nC
+    unsigned short raw_amplitude_ncv1_ = 0u; // ADC counts
+    unsigned short raw_amplitude_ncv2_ = 0u; // ADC counts
 
     // Stores total POT, spill, etc. information for each NCV position
     std::map<int, NCVPositionInfo> ncv_position_info_;
