@@ -130,7 +130,7 @@ bool BeamChecker::Execute() {
     temp_ss << temp_beam_status.pot();
 
     Log(make_beam_condition_string( temp_beam_status.condition() )
-      + " beam minibuffer had " + temp_ss.str() + " POT", 2, verbosity_);
+      + " minibuffer had " + temp_ss.str() + " POT", 2, verbosity_);
 
     beam_statuses.push_back( temp_beam_status );
   }

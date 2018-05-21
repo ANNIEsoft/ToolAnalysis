@@ -81,7 +81,7 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_tree_->Branch("subrun", &subrun_number_, "subrun/i");
   output_tree_->Branch("event", &event_number_, "event/i");
   output_tree_->Branch("ncv_position", &ncv_position_, "ncv_position/I");
-  output_tree_->Branch("event_time_ns", &event_time_ns_, "event_time_ns/l");
+  output_tree_->Branch("event_time_ns", &event_time_ns_, "event_time_ns/L");
   output_tree_->Branch("label", &event_label_, "label/b");
   output_tree_->Branch("hefty_mode", &hefty_mode_, "hefty_mode/O");
   // Used only for Hefty mode. Stores the trigger mask for the minibuffer
@@ -89,6 +89,15 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   // always be zero.
   output_tree_->Branch("hefty_trigger_mask", &hefty_trigger_mask_,
     "hefty_trigger_mask/I");
+  // Information about the two pulses in each NCV coincidence event
+  output_tree_->Branch("amplitude_ncv1", &amplitude_ncv1_, "amplitude_ncv1/D");
+  output_tree_->Branch("amplitude_ncv2", &amplitude_ncv2_, "amplitude_ncv2/D");
+  output_tree_->Branch("charge_ncv1", &charge_ncv1_, "charge_ncv1/D");
+  output_tree_->Branch("charge_ncv2", &charge_ncv2_, "charge_ncv2/D");
+  output_tree_->Branch("raw_amplitude_ncv1", &raw_amplitude_ncv1_,
+    "raw_amplitude_ncv1/s");
+  output_tree_->Branch("raw_amplitude_ncv2", &raw_amplitude_ncv2_,
+    "raw_amplitude_ncv2/s");
 
   return true;
 }
@@ -397,6 +406,17 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
       " minibuffer", 3, verbosity_);
     if ( std::abs( ncv1_time - ncv2_time ) <= ncv_coincidence_tolerance_ ) {
       found_coincidence = true;
+
+      // Store information about the coincident pulses in this NCV
+      // event to the appropriate branch variables for the output TTree
+      amplitude_ncv1_ = first_ncv1_pulse.amplitude();
+      charge_ncv1_ = first_ncv1_pulse.charge();
+      raw_amplitude_ncv1_ = first_ncv1_pulse.raw_amplitude();
+
+      amplitude_ncv2_ = pulse.amplitude();
+      charge_ncv2_ = pulse.charge();
+      raw_amplitude_ncv2_ = pulse.raw_amplitude();
+
       break;
     }
   }
@@ -416,7 +436,7 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
 // of hit water tank PMTs.
 double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
   const std::map< ChannelKey, std::vector< std::vector<ADCPulse> > >& adc_hits,
-  uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts) const
+  uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts)
 {
   double tank_charge = 0.;
   num_unique_water_pmts = 0;
@@ -453,5 +473,7 @@ double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
     }
   }
 
+  Log("Tank charge = " + std::to_string(tank_charge) + " nC", 4, verbosity_);
+  Log("Unique PMTs = " + std::to_string(num_unique_water_pmts), 4, verbosity_);
   return tank_charge;
 }
