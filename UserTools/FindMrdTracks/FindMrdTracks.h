@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "Tool.h"
-//#include "ANNIEEvent.h"  // ANNIEEvent is a BoostStore not a class
 #include "Geometry.h"
 #include "ChannelKey.h"
 #include "TimeClass.h"
@@ -15,9 +14,7 @@
 
 #include "TROOT.h"
 #include "TFile.h"
-//#include "TChain.h"
 #include "TTree.h"
-//#include "TBranch.h"
 #include "TClonesArray.h"
 
 class FindMrdTracks: public Tool {
@@ -31,17 +28,32 @@ public:
 	void StartNewFile();
 	
 private:
-	//ANNIEEvent* annieevent=nullptr; // used for retrieving the current event
-	// things to pull from the ANNIEEvent BoostStore
-	int runnum, subrunnum, eventnum, triggernum;
-	std::string currentfilestring;  // raw / MC file being analyzed
+	
+	// Variables stored in Config file
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	int verbose=1;
+	int minimumdigits;
+	double maxsubeventduration;
+	std::string outputdir="";
+	bool writefile=false;
+	
+	// Variables retrieved from ANNIEEVENT
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::string MCFile;      //-> currentfilestring
+	uint32_t RunNumber;     // -> runnum     (keep as the type is different: TODO align types)
+	uint32_t SubrunNumber;  // -> subrunnum  ( " " )
+	uint32_t EventNumber;   // -> eventnum   ( " " )
+	uint16_t MCTriggernum;  // -> triggernum ( " " )
+	uint64_t MCEventNum;    // not yet in MRDTrackClass 
 	std::map<ChannelKey,vector<Hit>>* TDCData;
-	Geometry* geo=nullptr;
-	int numvetopmts=0;              // current method for separating veto / mrd pmts in TDCData
+	Geometry* geo=nullptr;  // for num MRD PMTs
+	int numvetopmts=0;      // current method for separating veto / mrd pmts in TDCData
 	
 	// MRD TRACK RECONSTRUCTION
 	// ~~~~~~~~~~~~~~~~~~~~~~~~
 	// variables for file writing
+	int runnum, subrunnum, eventnum, triggernum;
+	std::string currentfilestring;  // raw / MC file being analyzed
 	TFile* mrdtrackfile=0;
 	TTree* mrdtree=0;  // mrd track reconstruction tree
 	std::vector<double> mrddigittimesthisevent;
@@ -55,14 +67,6 @@ private:
 	TBranch* nummrdtracksthiseventb=0;
 	TBranch* subeventsinthiseventb=0;
 	TClonesArray* SubEventArray=0;
-	
-	// Variables stored in Config file
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	int verbose;
-	int minimumdigits;
-	double maxsubeventduration;
-	std::string outputdir="";
-	bool writefile=false;
 };
 
 

@@ -4,7 +4,7 @@
 // This class has been automatically generated on
 // Tue Jan  2 12:36:35 2018 by ROOT version 6.06/04
 // from TTree wcsimT/WCSim Tree
-// found on file: /home/marc/LinuxSystemFiles/Bonsai/gitver/Bonsai_v0/wcsim_0.1001.root
+// found on file: /pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root
 //////////////////////////////////////////////////////////
 
 #ifndef wcsimT_h
@@ -18,6 +18,7 @@
 #include "TObject.h"
 #include "WCSimRootEvent.hh"
 #include "WCSimRootGeom.hh"
+#include "WCSimRootOptions.hh"
 
 #define SINGLE_TREE    // TODO TODO TODO TODO shouldn't need this define
 
@@ -31,36 +32,39 @@ public :
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
    // Declaration of leaf types
-   WCSimRootEvent  *wcsimrootevent=nullptr;
-   UInt_t          fUniqueID;
-   UInt_t          fBits;
-   WCSimRootEvent  *wcsimrootevent_mrd=nullptr;
-   UInt_t          mrd_fUniqueID;
-   UInt_t          mrd_fBits;
-   WCSimRootEvent  *wcsimrootevent_facc=nullptr;
-   UInt_t          facc_fUniqueID;
-   UInt_t          facc_fBits;
-   WCSimRootGeom   *wcsimrootgeom=nullptr;
-   int             verbose=0;
+   WCSimRootEvent     *wcsimrootevent=nullptr;
+   UInt_t             fUniqueID;
+   UInt_t             fBits;
+   WCSimRootEvent     *wcsimrootevent_mrd=nullptr;
+   UInt_t             mrd_fUniqueID;
+   UInt_t             mrd_fBits;
+   WCSimRootEvent     *wcsimrootevent_facc=nullptr;
+   UInt_t             facc_fUniqueID;
+   UInt_t             facc_fBits;
+   WCSimRootGeom      *wcsimrootgeom=nullptr;
+   WCSimRootOptions   *wcsimrootopts=nullptr;
+   
+   int             verbose=1;
 
    // List of branches
-   TBranch        *b_wcsimrootevent;   //!
-   TBranch        *b_wcsimrootevent_mrd;   //!
-   TBranch        *b_wcsimrootevent_facc;   //!
-   TBranch        *b_wcsimrootevent_fUniqueID;   //!
-   TBranch        *b_wcsimrootevent_fBits;   //!
-   TBranch        *b_wcsimrootevent_mrd_fUniqueID;   //!
-   TBranch        *b_wcsimrootevent_mrd_fBits;   //!
+   TBranch        *b_wcsimrootevent;                  //!
+   TBranch        *b_wcsimrootevent_mrd;              //!
+   TBranch        *b_wcsimrootevent_facc;             //!
+   TBranch        *b_wcsimrootevent_fUniqueID;        //!
+   TBranch        *b_wcsimrootevent_fBits;            //!
+   TBranch        *b_wcsimrootevent_mrd_fUniqueID;    //!
+   TBranch        *b_wcsimrootevent_mrd_fBits;        //!
    TBranch        *b_wcsimrootevent_facc_fUniqueID;   //!
-   TBranch        *b_wcsimrootevent_facc_fBits;   //!
-   TBranch        *b_wcsimrootgeom;   //!
+   TBranch        *b_wcsimrootevent_facc_fBits;       //!
+   TBranch        *b_wcsimrootgeom;                   //!
+   TBranch        *b_wcsimrootopts;                   //!
 
    wcsimT(TTree *tree=0);
    virtual ~wcsimT();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
-   virtual void     Init(TTree *tree, TTree* geotree);
+   virtual void     Init(TTree *tree, TTree* geotree, TTree* optstree);
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
@@ -76,28 +80,28 @@ wcsimT::wcsimT(TTree *tree) : fChain(0)
 #ifdef SINGLE_TREE
    // The following code should be used if you want this class to access
    // a single tree instead of a chain
-   // TODO TODO TODO implement a verbosity arg
+   // TODO implement a verbosity arg
    TTree* geotree=nullptr;
+   TTree* optstree=nullptr;
+   TFile *f=nullptr;
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root");
+      f = (TFile*)gROOT->GetListOfFiles()->FindObject("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root");
       if (!f || !f->IsOpen()) {
          f = new TFile("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root");
       }
       if(!f){ cerr<<"no wcsim file to load"<<endl; return; }
-      if(verbose) cout<<"getting trees from file "<<f->GetName()<<endl;
       f->GetObject("wcsimT",tree);
-      f->GetObject("wcsimGeoT",geotree);
-      if(verbose) cout<<"constructed wcsimT class with tree "<<tree<<", geotree "<<geotree<<endl;
    } else {
-      TFile* f = tree->GetCurrentFile();
-      if(verbose) cout<<"getting wcsim geotree from file "<<f->GetName()<<endl;
-      f->GetObject("wcsimGeoT",geotree);
+      f = tree->GetCurrentFile();
    }
+   f->GetObject("wcsimGeoT",geotree);
+   f->GetObject("wcsimRootOptionsT",optstree);
+   if(verbose) cout<<"constructed wcsimT class with file "<<f->GetName()<<endl;
 #else // not SINGLE_TREE
    // The following code should be used if you want this class to access a chain of trees.
    if(tree == 0) {
       TChain * chain = new TChain("wcsimT","");
-      std::string pattern="/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.*.*.root";    // FIXME FIXME FIXME FIXME FIXME FIXME should be an argument
+      std::string pattern="/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.*.root";  // TODO TODO TODO make this an argument
       if(verbose) cout<<"creating chain from files "<<pattern<<endl;
       chain->Add(pattern.c_str());
       tree = chain;
@@ -105,10 +109,12 @@ wcsimT::wcsimT(TTree *tree) : fChain(0)
    LoadTree(0); // need to load the tree for the first file
    TFile* f = tree->GetCurrentFile();
    TTree* geotree=nullptr;
+   TTree* optstree=nullptr;
    f->GetObject("wcsimGeoT",geotree);
+   f->GetObject("wcsimRootOptionsT",optstree);
 #endif // SINGLE_TREE
    
-   Init(tree, geotree);
+   Init(tree, geotree, optstree);
 }
 
 wcsimT::~wcsimT()
@@ -119,40 +125,39 @@ wcsimT::~wcsimT()
 
 Int_t wcsimT::GetEntry(Long64_t entry)
 {
-   if(verbose) cout<<"getting entry "<<entry<<endl;
+   if(verbose>2) cout<<"getting wcsimT entry "<<entry<<endl;
    Long64_t ientry = LoadTree(entry);
-   if(verbose) cout<<"corresponding localentry is "<<ientry;
+   if(verbose>3) cout<<"corresponding localentry is "<<ientry;
    if (ientry < 0) return -4;
 // Read contents of entry.
-   if(verbose) cout<<" from fChain "<<fChain;
+   if(verbose>3) cout<<" from fChain "<<fChain;
    if (!fChain) return 0;
-   if(verbose) cout<<" (which isn't 0)"<<endl;
-   return fChain->GetEntry(ientry);
-   if(verbose) cout<<"got entry"<<endl;
+   if(verbose>3) cout<<" (which isn't 0)"<<endl;
+   return fChain->GetEntry(entry);    // FIXME ientry or entry???
 }
 
 Long64_t wcsimT::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
-   if(verbose) cout<<"loading tree for entry "<<entry<<endl;
+   if(verbose>3) cout<<"loading tree for entry "<<entry<<endl;
    if (!fChain) return -5;
-   if(verbose) cout<<"we have a valid chain"<<endl;
+   if(verbose>3) cout<<"we have a valid chain"<<endl;
    Long64_t centry = fChain->LoadTree(entry);
-   if(verbose) cout<<"centry is "<<centry<<endl;
+   if(verbose>3) cout<<"centry is "<<centry<<endl;
    if (centry < 0) return centry;
-   if(verbose) cout<<"which is positive"<<endl;
+   if(verbose>3) cout<<"which is positive"<<endl;
    if (fChain->GetTreeNumber() != fCurrent) {
-      if(verbose) cout<<"this loaded a new tree; new tree number "<<fChain->GetTreeNumber()
+      if(verbose>3) cout<<"this loaded a new tree; new tree number "<<fChain->GetTreeNumber()
           <<", old tree number "<<fCurrent<<endl;
       fCurrent = fChain->GetTreeNumber();
-      if(verbose) cout<<"fCurrent is now "<<fCurrent<<endl;
+      if(verbose>3) cout<<"fCurrent is now "<<fCurrent<<endl;
       Notify();
    }
-   if(verbose) cout<<"returning "<<centry<<endl;
+   if(verbose>3) cout<<"returning "<<centry<<endl;
    return centry;
 }
 
-void wcsimT::Init(TTree *tree, TTree* geotree=0)
+void wcsimT::Init(TTree *tree, TTree* geotree=0, TTree* optstree=0)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -162,7 +167,8 @@ void wcsimT::Init(TTree *tree, TTree* geotree=0)
    // Init() will be called many times when running on PROOF
    // (once per file to be processed).
 
-   if(verbose) cout<<"calling WCSimT::Init() with tree="<<tree<<", geotree="<<geotree<<endl;
+   if(verbose>2) cout<<"calling WCSimT::Init() with tree="
+                   <<tree<<", geotree="<<geotree<<", optstree="<<optstree<<endl;
    // Set branch addresses and branch pointers
    if (!tree){ cerr<<"no tree!"<<endl; return; }
    fChain = tree;
@@ -194,9 +200,19 @@ void wcsimT::Init(TTree *tree, TTree* geotree=0)
       if(branchok<0){ cerr<<"Failed to set branch address for wcsimrootgeom"<<endl; return; }
       if(geotree->GetEntries()==0){ cerr<<"no geotree entries!"<<endl; return; }
       b_wcsimrootgeom->GetEntry(0);
-      if(verbose) cout<<"got geometry"<<endl;
+      if(verbose>2) cout<<"got geometry"<<endl;
    } else if(wcsimrootgeom==0){
       cerr<<"Init called with null geotree with no existing geometry!"<<endl; return;
+   }
+   
+   if (wcsimrootopts==0&&optstree!=0){
+      branchok = optstree->SetBranchAddress("wcsimrootoptions",&wcsimrootopts, &b_wcsimrootopts);
+      if(branchok<0){ cerr<<"Failed to set branch address for wcsimrootopts"<<endl; return; }
+      if(optstree->GetEntries()==0){ cerr<<"no optstree entries!"<<endl; return; }
+      b_wcsimrootopts->GetEntry(0);
+      if(verbose>2) cout<<"got wcsim options"<<endl;
+   } else if(wcsimrootopts==0){
+     cerr<<"Init called with null optstree with no existing wcsim options!"<<endl; return;
    }
    
    Notify();

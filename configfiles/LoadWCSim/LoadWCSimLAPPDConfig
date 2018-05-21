@@ -1,0 +1,8 @@
+#LoadWCSimLAPPD Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbose 3
+InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_24-09-17_BNB_Water_10k_22-05-17/wcsim_lappd_0.0.0.root
+# octagonal inner structure radius in cm (from drawings 106.64")
+InnerStructureRadius 135.45
+HistoricTriggeroffset 950

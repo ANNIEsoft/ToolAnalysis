@@ -2,6 +2,11 @@
 #ifndef PARTICLECLASS_H
 #define PARTICLECLASS_H
 
+#include <map>
+#include <utility>
+#include <string>
+#include <iostream>
+
 #include<SerialisableObject.h>
 #include "Position.h"
 #include "Direction.h"
@@ -9,7 +14,7 @@
 
 using namespace std;
 // world extent in WCSim is +-600cm in all directions!
-enum class tracktype : uint8_t { STARTONLY, ENDONLY, CONTAINED, UNCONTAINED };
+enum class tracktype : uint8_t { STARTONLY, ENDONLY, CONTAINED, UNCONTAINED, UNDEFINED };
 
 class Particle : public SerialisableObject{
 	
@@ -19,13 +24,24 @@ class Particle : public SerialisableObject{
 	
 	Particle() : ParticlePDG(0), startEnergy(0), stopEnergy(0), startVertex(),
 	  stopVertex(), startTime(), stopTime(), startDirection(),
-		     trackLength(0), StartStopType(tracktype::UNCONTAINED) {serialise=true;}
+		     trackLength(0), StartStopType(tracktype::UNDEFINED) {serialise=true;}
 	
 	Particle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
 	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein) 
 	: ParticlePDG(pdg), startEnergy(sttE), stopEnergy(stpE), startVertex(sttpos),
 	  stopVertex(stppos), startTime(sttt), stopTime(stpt), startDirection(startdir),
-	  trackLength(len), StartStopType(tracktypein) {serialise=true;}
+	  trackLength(len) {
+		serialise=true;
+		if(tracktypein!=tracktype::UNDEFINED){
+			StartStopType=tracktypein;
+		} else {
+			// calculate track containment type
+//			if(startinbounds && stopinbounds) startstoptype = tracktype::CONTAINED;
+//			else if( startinbounds ) startstoptype = tracktype::STARTONLY;
+//			else if( stopinbounds  ) startstoptype = tracktype::ENDONLY;
+//			else startstoptype = tracktype::UNCONTAINED;
+		}
+	}
 	
 	inline void SetPdgCode(int code){ParticlePDG=code;}
 	inline void SetStartEnergy(double E){startEnergy=E;}
@@ -45,23 +61,41 @@ class Particle : public SerialisableObject{
 	inline Position GetStopVertex(){return stopVertex;}
 	inline TimeClass GetStartTime(){return startTime;}
 	inline TimeClass GetStopTime(){return stopTime;}
-	inline Direction GetstartDirection(){return startDirection;}
+	inline Direction GetStartDirection(){return startDirection;}
 	inline double GetTrackLength(){return trackLength;}
 	inline tracktype GetStartStopType(){return StartStopType;}
 	
 	virtual bool Print() {
-		cout<<"ParticlePDG : "<<ParticlePDG<<endl;
-		cout<<"startEnergy : "<<startEnergy<<endl;
-		cout<<"stopEnergy : "<<stopEnergy<<endl;
-		cout<<"startVertex : "; startVertex.Print();
-		cout<<"stopVertex : "; stopVertex.Print();
-		cout<<"startTime : "; startTime.Print();
-		cout<<"stopTime : "; stopTime.Print();
-		cout<<"startDirection : "; startDirection.Print();
-		cout<<"trackLength : "<<trackLength<<endl;
-		cout<<"StartStopType : "<<uint8_t(StartStopType)<<endl;
+		std::cout<<"ParticlePDG : "<<ParticlePDG<<std::endl;
+		std::cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<std::endl;
+		std::cout<<"startEnergy : "<<startEnergy<<std::endl;
+		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
+		std::cout<<"startVertex : "; startVertex.Print();
+		std::cout<<"stopVertex : "; stopVertex.Print();
+		std::cout<<"startTime : "; startTime.Print();
+		std::cout<<"stopTime : "; stopTime.Print();
+		std::cout<<"startDirection : "; startDirection.Print();
+		std::cout<<"trackLength : "<<trackLength<<std::endl;
+		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);
 		
 		return true;
+	}
+	
+	void PrintStartStopType(tracktype typein){
+		std::string printstring="unknown type " + to_string(uint8_t(typein));
+		switch (typein){
+			case tracktype::STARTONLY: printstring = "STARTONLY";
+			case tracktype::ENDONLY: printstring = "ENDONLY";
+			case tracktype::CONTAINED: printstring = "CONTAINED";
+			case tracktype::UNCONTAINED: printstring = "UNCONTAINED";
+			case tracktype::UNDEFINED: printstring = "UNDEFINED";
+		}
+		std::cout<<printstring<<std::endl;
+	}
+	
+	std::string PdgToString (int pdgcode) const{
+		if(pdgcodetoname.count(pdgcode)!=0) return pdgcodetoname.at(pdgcode);
+		else return to_string(pdgcode);
 	}
 	
 	protected:
@@ -75,6 +109,9 @@ class Particle : public SerialisableObject{
 	TimeClass stopTime;
 	Direction startDirection;        // for primary particle initial scattering dir is most important.
 	double trackLength;              // meters
+	
+	// convenience member
+	static const std::map<int,std::string> pdgcodetoname;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
@@ -94,41 +131,70 @@ class Particle : public SerialisableObject{
 };
 
 class MCParticle : public Particle {
+	
+	friend class boost::serialization::access;
+	
 	public:
 	
 	MCParticle() : Particle(0, 0., 0., Position(), Position(), TimeClass(), TimeClass(), Direction(), 0.,
-				tracktype::UNCONTAINED), ParticleID(0), ParentID(0) {serialise=true;}
+				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0) {serialise=true;}
 	
-	MCParticle(int partid, int parentid, int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
-	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein) 
+	MCParticle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
+	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein,
+	  int partid, int parentpdg) 
 	: Particle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein), 
-	  ParticleID(partid), ParentID(parentid){serialise=true;}
+	  ParticleID(partid), ParentPdg(parentpdg){
+		serialise=true;
+		// override Hit tracktype
+		if(tracktypein!=tracktype::UNDEFINED){
+			StartStopType=tracktypein;
+		} else {
+			// calculate track containment type
+			if(GetWorldContained(0) && GetWorldContained(1)) StartStopType = tracktype::CONTAINED;
+			else if(GetWorldContained(0)) StartStopType = tracktype::STARTONLY;
+			else if(GetWorldContained(1)) StartStopType = tracktype::ENDONLY;
+			else StartStopType = tracktype::UNCONTAINED;
+		}
+	}
 	
 	inline int GetParticleID(){return ParticleID;}
-	inline int GetParentID(){return ParentID;}
+	inline int GetParentPdg(){return ParentPdg;}
 	inline void SetParticleID(int partidin){ParticleID=partidin;}
-	inline void SetParentID(int parentidin){ParentID=parentidin;}
+	inline void SetParentPdg(int parentpdgin){ParentPdg=parentpdgin;}
+	
+	bool GetWorldContained(int startstop, Position aVertex=Position(0,0,0)){
+		if(startstop==0) aVertex=startVertex;
+		else if(startstop==1) aVertex=stopVertex;
+		// else check the vertex passed in
+		if( (abs(aVertex.X())<550) && (abs(aVertex.Y())<550) && (abs(aVertex.Z())<550) ){
+			return true;
+		} else {
+			return false;
+		}
+	}
 	
 	bool Print() {
-		cout<<"ParticleID : "<<ParticleID<<endl;
-		cout<<"ParentID : "<<ParentID<<endl;
-		cout<<"ParticlePDG : "<<ParticlePDG<<endl;
-		cout<<"startEnergy : "<<startEnergy<<endl;
-		cout<<"stopEnergy : "<<stopEnergy<<endl;
-		cout<<"startVertex : "; startVertex.Print();
-		cout<<"stopVertex : "; stopVertex.Print();
-		cout<<"startTime : "; startTime.Print();
-		cout<<"stopTime : "; stopTime.Print();
-		cout<<"startDirection : "; startDirection.Print();
-		cout<<"trackLength : "<<trackLength<<endl;
-		cout<<"StartStopType : "<<uint8_t(StartStopType)<<endl;
+		std::cout<<"ParticlePDG : "<<ParticlePDG<<std::endl;
+		std::cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<std::endl;
+		std::cout<<"startEnergy : "<<startEnergy<<std::endl;
+		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
+		std::cout<<"startVertex : "; startVertex.Print();
+		std::cout<<"stopVertex : "; stopVertex.Print();
+		std::cout<<"startTime : "; startTime.Print();
+		std::cout<<"stopTime : "; stopTime.Print();
+		std::cout<<"startDirection : "; startDirection.Print();
+		std::cout<<"trackLength : "<<trackLength<<std::endl;
+		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);
+		std::cout<<"ParticleID : "<<ParticleID<<std::endl;
+		std::cout<<"ParentPdg : "<<ParentPdg<<std::endl;
+		std::cout<<"Parent Particle Name : "<<PdgToString(ParentPdg)<<std::endl;
 		
 		return true;
 	}
 	
-	private:
+	protected:
 	int ParticleID;
-	int ParentID;
+	int ParentPdg;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
@@ -143,7 +209,7 @@ class MCParticle : public Particle {
 			ar & trackLength;
 			ar & StartStopType;
 			ar & ParticleID;
-			ar & ParentID;
+			ar & ParentPdg;
 		}
 	}
 };
