@@ -14,7 +14,7 @@
 
 LAPPDresponse::LAPPDresponse()
 {
-  TFile* tf = new TFile("/ANNIEcode/ToolAnalysis/UserTools/LAPPDSim/pulsecharacteristics.root","READ");
+  TFile* tf = new TFile("/ANNIECode/ToolAnalysis/UserTools/LAPPDSim/pulsecharacteristics.root","READ");
 
   // the shape of a typical pulse
   _templatepulse = (TH1D*) tf->Get("templatepulse");
