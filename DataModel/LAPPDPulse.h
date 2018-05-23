@@ -14,8 +14,9 @@ class LAPPDPulse : public Hit{
 
 	public:
   LAPPDPulse() : Hit(), ChannelID(0), Tpsec(0), Peak(0), LowRange(0), HiRange(0) {serialise=true;}
-  LAPPDPulse(int tubeid, int channelid, TimeClass thetime, double charge, double tpsec, double peak, double low, double hi) : Hit(tubeid,thetime,charge), ChannelID(channelid), Tpsec(tpsec), Peak(peak), LowRange(low), HiRange(hi){serialise=true;}
+  LAPPDPulse(int tubeid, int channelid, TimeClass thetime, double charge, double tpsec, double peak, double low, double hi) : Hit(tubeid,thetime,charge), ChannelID(channelid), Tpsec(tpsec), Peak(peak), LowRange(low), HiRange(hi),thetime(thetime){serialise=true;}
 
+	inline TimeClass GetTheTime(){return thetime;}
 	inline int GetChannelID(){return ChannelID;}
 	inline double GetTpsec(){return Tpsec;}
 	inline double GetPeak(){return Peak;}
@@ -41,6 +42,7 @@ class LAPPDPulse : public Hit{
 	double Peak;
 	double LowRange;
 	double HiRange;
+	TimeClass thetime;
 
 
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
