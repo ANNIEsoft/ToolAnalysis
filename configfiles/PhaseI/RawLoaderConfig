@@ -1,4 +1,4 @@
 # Dummy config file
 verbose 2
-InputFile /home/sjg/reco-annie/data/RAWDataR650S5p10.root
+InputFile /home/sjg/reco-annie/data/RAWDataR683S0p0.root
 #HeftyTimingFile /home/sjg/reco-annie/data/timing/DataR812...
