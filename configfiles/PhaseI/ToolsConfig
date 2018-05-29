@@ -1,8 +1,8 @@
-load_annieevent LoadANNIEEvent configfiles/PhaseI/LoadANNIEEventConfig
-#raw_loader RawLoader configfiles/PhaseI/RawLoaderConfig
-#adc_calibrator ADCCalibrator configfiles/PhaseI/ADCCalibratorConfig
-#adc_hit_finder ADCHitFinder configfiles/PhaseI/ADCHitFinderConfig
-#beam_checker BeamChecker configfiles/PhaseI/BeamCheckerConfig
+#load_annieevent LoadANNIEEvent configfiles/PhaseI/LoadANNIEEventConfig
+raw_loader RawLoader configfiles/PhaseI/RawLoaderConfig
+adc_calibrator ADCCalibrator configfiles/PhaseI/ADCCalibratorConfig
+adc_hit_finder ADCHitFinder configfiles/PhaseI/ADCHitFinderConfig
+beam_checker BeamChecker configfiles/PhaseI/BeamCheckerConfig
 phaseI_trees PhaseITreeMaker configfiles/PhaseI/PhaseITreeMakerConfig
 #save SaveANNIEEvent configfiles/PhaseI/LAPPDSaveConfig
 # test2 DummyTool configfiles/DummyToolConfig

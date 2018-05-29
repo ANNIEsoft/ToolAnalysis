@@ -1,4 +1,5 @@
 # Dummy config file
 verbose 2
 BadPOTMax 1e11
-BeamDBFile /pnfs/annie/persistent/users/gardiner/phase1_beam_db.data
+BeamDBFile /home/sjg/reco-annie/data/my_beam_db.data
+#/pnfs/annie/persistent/users/gardiner/phase1_beam_db.data
