@@ -141,4 +141,5 @@ class PhaseITreeMaker : public Tool {
     int pulse_pmt_id_ = 0.; // nC
     unsigned short pulse_raw_amplitude_ = 0u; // ADC counts
     uint32_t spill_number_ = 0u;
+    bool in_spill_ = false;
 };
