@@ -124,6 +124,7 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_pulse_tree_->Branch("pulse_pmt_id", &pulse_pmt_id_, "pulse_pmt_id/I");
   output_pulse_tree_->Branch("pulse_raw_amplitude", &pulse_raw_amplitude_,
     "pulse_raw_amplitude/s");
+  output_pulse_tree_->Branch("in_spill", &in_spill_, "in_spill/O");
 
   return true;
 }
@@ -310,21 +311,26 @@ bool PhaseITreeMaker::Execute() {
           pulse_start_time_ns_ += hefty_info.t_since_beam(mb);
         }
 
-        // Record pulses only for minibuffers where TSinceBeam has been
-        // calculated
+        // Minibuffers for which TSinceBeam has been
+        // calculated are considered "in the spill" (i.e., the pulse time
+        // is expressed relative to the beam time), while those for which
+        // it is not are not "in the spill."
         if ( !hefty_mode_ || (event_mb_label == MinibufferLabel::Hefty
           || event_mb_label == MinibufferLabel::Beam
           || event_mb_label == MinibufferLabel::Source) )
         {
-          output_pulse_tree_->Fill();
-
-          Log("Found pulse on channel " + std::to_string(pulse_pmt_id_)
-            + " in run " + std::to_string(run_number_) + " subrun "
-            + std::to_string(subrun_number_) + " event "
-            + std::to_string(event_number_) + " in minibuffer "
-            + std::to_string(minibuffer_number_) + " at "
-            + std::to_string(pulse_start_time_ns_) + " ns", 3, verbosity_);
+          in_spill_ = true;
         }
+        else in_spill_ = false;
+
+        output_pulse_tree_->Fill();
+
+        Log("Found pulse on channel " + std::to_string(pulse_pmt_id_)
+          + " in run " + std::to_string(run_number_) + " subrun "
+          + std::to_string(subrun_number_) + " event "
+          + std::to_string(event_number_) + " in minibuffer "
+          + std::to_string(minibuffer_number_) + " at "
+          + std::to_string(pulse_start_time_ns_) + " ns", 3, verbosity_);
       }
     }
   }
