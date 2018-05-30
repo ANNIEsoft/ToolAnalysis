@@ -43,5 +43,6 @@ if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
 if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
 //if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
 if (tool=="LoadWCSimLAPPD") ret=new LoadWCSimLAPPD;
+  if (tool=="WCSimDemo") ret=new WCSimDemo;
 return ret;
 }
