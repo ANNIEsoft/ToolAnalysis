@@ -41,22 +41,16 @@ do
 
 	--ToolDAQ_ZMQ )
             echo "Installing ToolDAQ & ZMQ"
-	    rootflag=0
 	    boostflag=0
 	    final=0
-	    MrdTrackLib=0
-	    WCSimlib=0   
             ;;
 
 	--Boost )
             echo "Installing Boost"
 	    init=0
 	    tooldaq=0
-	    rootflag=0
 	    zmq=0
 	    final=0
-	    MrdTrackLib=0
-	    WCSimlib=0
             ;;
 	
 	
@@ -64,11 +58,8 @@ do
             echo "Compiling ToolDAQ"
 	    init=0
 	    tooldaq=0
-	    rootflag=0
 	    boostflag=0
 	    zmq=0
-	    MrdTrackLib=0
-	    WCSimlib=0
             ;;
 
     esac
@@ -108,20 +99,12 @@ if [ $boostflag -eq 1 ]
 then
     
     
-#    wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
-
- #   tar zxf boost_1_66_0.tar.gz
-  #  rm -rf boost_1_66_0.tar.gz
+    wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
     
-    wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz
-    
-    tar zxf boost_1_60_0.tar.gz
-    rm -rf boost_1_60_0.tar.gz
-    
-
-#git clone https://github.com/ToolDAQ/boost_1_60_0.git
-
-    cd boost_1_60_0
+    tar zxf boost_1_66_0.tar.gz
+    rm -rf boost_1_66_0.tar.gz
+     
+    cd boost_1_66_0
     
     mkdir install
     
