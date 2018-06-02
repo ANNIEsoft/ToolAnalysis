@@ -116,11 +116,11 @@ fi
 if [ $boostflag -eq 1 ]
 then
     
+    git clone https://github.com/ToolDAQ/boost_1_66_0.git
+    #wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
     
-    wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.gz
-    
-    tar zxf boost_1_66_0.tar.gz
-    rm -rf boost_1_66_0.tar.gz
+    #tar zxf boost_1_66_0.tar.gz
+    #rm -rf boost_1_66_0.tar.gz
      
     cd boost_1_66_0
     
