@@ -5,6 +5,7 @@ tooldaq=1
 boostflag=1
 zmq=1
 final=1
+rootflag=0
 
 while [ ! $# -eq 0 ]
 do
@@ -13,7 +14,12 @@ do
 	    helpmenu
 	    exit
 	    ;;
-		
+
+	--with_root | -r)
+	    echo "Installing ToolDAQ with root"
+	    rootflag=1 
+	    ;;
+	
 	--no_boost | -b)
             echo "Installing ToolDAQ without boost"
             boostflag=0
@@ -42,6 +48,7 @@ do
 	--ToolDAQ_ZMQ )
             echo "Installing ToolDAQ & ZMQ"
 	    boostflag=0
+	    rootflag=0
 	    final=0
             ;;
 
@@ -49,6 +56,16 @@ do
             echo "Installing Boost"
 	    init=0
 	    tooldaq=0
+	    zmq=0
+	    final=0
+	    rootflag=0
+            ;;
+
+	--Root )
+            echo "Installing Root"
+	    init=0
+	    tooldaq=0
+	    boostflag=0
 	    zmq=0
 	    final=0
             ;;
@@ -59,6 +76,7 @@ do
 	    init=0
 	    tooldaq=0
 	    boostflag=0
+	    rootflag=0
 	    zmq=0
             ;;
 
@@ -117,6 +135,23 @@ fi
 
 cd ../
 
+if [ $rootflag -eq 1 ]
+then
+    
+    wget https://root.cern.ch/download/root_v5.34.34.source.tar.gz
+    tar zxvf root_v5.34.34.source.tar.gz
+    rm -rf root_v5.34.34.source.tar.gz
+    cd root
+    
+    ./configure --enable-rpath
+    make -j8
+    make install
+    
+    source ./bin/thisroot.sh
+    
+    cd ../
+    
+fi
 
 
 if [ $final -eq 1 ]
