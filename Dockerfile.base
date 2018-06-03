@@ -1,0 +1,32 @@
+### Created by Dr. Benjamin Richards (b.richards@qmul.ac.uk)
+
+### Download base image from cern repo on docker hub
+FROM cern/cc7-base:latest
+
+### Run the following commands as super user (root):
+USER root
+
+#######################
+### GCC ENVIRONMENT ###
+#######################
+
+RUN yum install -y \
+    git \
+    zlib-devel \
+    wget \
+    tar \
+    gcc-c++ \
+    make \
+    file \
+    bzip2-devel \
+    which \
+    && yum clean all \
+    && rm -rf /var/cache/yum
+
+    
+Run git clone https://github.com/ToolDAQ/ToolDAQApplication.git ; cd ToolDAQApplication ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
+Run cd ToolDAQApplication ; ./GetToolDAQ.sh --Boost;
+Run cd ToolDAQApplication ; ./GetToolDAQ.sh --Final;
+
+### Open terminal
+CMD ["/bin/bash"]
