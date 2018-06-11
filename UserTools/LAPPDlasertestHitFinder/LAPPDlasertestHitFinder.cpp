@@ -39,6 +39,7 @@ AbsPosition.push_back(0);
 AbsPosition.push_back(0);
 std::vector<double> LocalPosition;
 std::vector<LAPPDPulse> NeighboursPulses;
+std::vector<LAPPDPulse> HitPulses;
 double ParaPosition;
 double PerpPosition;
 double HitTime;
@@ -66,7 +67,7 @@ double MaxAmp =-1.0;
 
 
 //ParallelPosition and time
-
+LAPPDPulse OpposPulse;
   if (TwoSided) {
 
     // what is the strip ID of the max channel?
@@ -113,6 +114,7 @@ double MaxAmp =-1.0;
   if (side == 1 && CenterChannel == MaxPulse.GetChannelID()){
     for (int i = -1; i < 2; i++){
       std::vector<LAPPDPulse> neighbourVector;
+      if(i!=0){
       neighbourVector = LAPPDPulseCluster.at(MaxPulse.GetChannelID() + i);
 
       for (int j = 0; j < neighbourVector.size(); j++){
@@ -121,7 +123,7 @@ double MaxAmp =-1.0;
         }
       }
     }
-
+}
 
     for (int i=0; i<3; i++){
       SumAbove +=  (x.at(i) * NeighboursPulses.at(i).GetPeak());
@@ -135,12 +137,21 @@ double MaxAmp =-1.0;
   m_data->Stores["ANNIEEvent"]->Set("RecoLaserTestHit",kHit);
   m_data->Stores["ANNIEEvent"]->Set("isTwoSided",TwoSided);
   if(TwoSided){
+  HitPulses.push_back(NeighboursPulses.at(0));
+  HitPulses.push_back(MaxPulse);
+  HitPulses.push_back(OpposPulse);
+}
+else
+{
+  HitPulses.push_back(NeighboursPulses.at(0));
+  HitPulses.push_back(MaxPulse);
+  HitPulses.push_back(NeighboursPulses.at(1));
+}
+  m_data->Stores["ANNIEEvent"]->Set("HitPulses",HitPulses);
 
 
-  } else{
+ 
 
-
-  }
 
   return true;
 }
