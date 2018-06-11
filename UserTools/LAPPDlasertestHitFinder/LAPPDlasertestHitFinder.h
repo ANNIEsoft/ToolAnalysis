@@ -21,20 +21,14 @@ class LAPPDlasertestHitFinder: public Tool {
 
 
  private:
+
+   double Deltatime;
+   std::vector<double> stripID = vector<double>(3);
+
    bool TwoSided;
    int CenterChannel;
-   double MaxAmp;
-   double Deltatime;
    double PTRange;
-   double ParaPosition;
-   double PerpPosition;
-   double HitTime;
-   std::vector<double> channelID = vector<double>(3);
-   std::vector<double> AbsPosition;
-   std::vector<double> LocalPosition;
-   std::vector<LAPPDPulse> NeighboursPulses;
-   LAPPDPulse MaxPulse;
-   LAPPDPulse OpposPulse;
+
    uint64_t MaxTimeWindow;
    uint64_t MinTimeWindow;
 
