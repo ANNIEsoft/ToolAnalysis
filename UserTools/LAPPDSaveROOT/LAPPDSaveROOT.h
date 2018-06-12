@@ -41,6 +41,19 @@ class LAPPDSaveROOT: public Tool {
    double amp;
    double twidth;
    double Deltat;
+
+   TTree* LAPPDTree;
+   double chrgCH1;
+   double chrgCH2;
+   double chrgCH3;
+   double ampCH1;
+   double ampCH2;
+   double ampCH3;
+   double tpsecCH1;
+   double tpsecCH2;
+   double tpsecCH3;
+   double ParaPos;
+   double TransPos;
 };
 
 
