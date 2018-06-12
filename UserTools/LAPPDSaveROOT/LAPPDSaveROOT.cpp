@@ -46,6 +46,19 @@ bool LAPPDSaveROOT::Initialise(std::string configfile, DataModel &data){
   outtree->Branch("amplitude",&amp);
   outtree->Branch("Twidth",&twidth);
 
+
+LAPPDTree = new TTree("ISULAPPDData","ISULAPPDData");
+LAPPDTree->Branch("Channel1Charge",&chrgCH1);
+LAPPDTree->Branch("Channel2Charge",&chrgCH2);
+LAPPDTree->Branch("Channel3Charge",&chrgCH3);
+LAPPDTree->Branch("Channel1Time",&tpsecCH1);
+LAPPDTree->Branch("Channel2Time",&tpsecCH2);
+LAPPDTree->Branch("Channel3Time",&tpsecCH3);
+LAPPDTree->Branch("Channel1Amp",&ampCH1);
+LAPPDTree->Branch("Channel2Amp",&ampCH2);
+LAPPDTree->Branch("Channel3Amp",&ampCH3);
+LAPPDTree->Branch("ParallelPosition",&ParaPos);
+LAPPDTree->Branch("Transverseposition",&TransPos);
   // declare the histograms
   hAmp = new TH1D*[NChannel];
   hTime = new TH1D*[NChannel];
@@ -73,9 +86,35 @@ bool LAPPDSaveROOT::Initialise(std::string configfile, DataModel &data){
 }
 
 
-bool LAPPDSaveROOT::Execute(){
-
-  // get raw lappd data
+  bool LAPPDSaveROOT::Execute(){
+  vector<LAPPDPulse> LAPPDHitPulses;
+  LAPPDHit ISUHits;
+  m_data->Stores["ANNIEEvent"]->Get("RecoLaserTestHit",ISUHits);
+  m_data->Stores["ANNIEEvent"]->Get("HitPulses", LAPPDHitPulses);
+  for(int i=0; i<LAPPDHitPulses.size(); i++){
+    if(LAPPDHitPulses.at(i).GetChannelID()==0)
+    {
+      ampCH1=LAPPDHitPulses.at(i).GetPeak();
+      tpsecCH1=LAPPDHitPulses.at(i).GetTpsec();
+      chrgCH1=LAPPDHitPulses.at(i).GetCharge();
+    }
+    else if(LAPPDHitPulses.at(i).GetChannelID()==1)
+    {
+      ampCH2=LAPPDHitPulses.at(i).GetPeak();
+      tpsecCH2=LAPPDHitPulses.at(i).GetTpsec();
+      chrgCH2=LAPPDHitPulses.at(i).GetCharge();
+    }
+    else if(LAPPDHitPulses.at(i).GetChannelID()==2)
+    {
+      ampCH3=LAPPDHitPulses.at(i).GetPeak();
+      tpsecCH3=LAPPDHitPulses.at(i).GetTpsec();
+      chrgCH3=LAPPDHitPulses.at(i).GetCharge();
+    }
+  ParaPos=ISUHits.GetLocalPosition().at(0);
+  TransPos=ISUHits.GetLocalPosition().at(1);
+}
+LAPPDTree->Fill();
+      // get raw lappd data
   std::map<int,vector<Waveform<double>>> rawlappddata;
   m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
   // get filtered data
