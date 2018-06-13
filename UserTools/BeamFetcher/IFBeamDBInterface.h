@@ -53,8 +53,8 @@ class IFBeamDBInterface {
     /// is to use the terminal utility date like this: @verbatim date +%s%3N
     /// @endverbatim
     /// I found this handy trick here: http://unix.stackexchange.com/a/123764
-    std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
-      QueryBeamDB(unsigned long long t0, unsigned long long t1) const;
+    std::map<std::string, std::map<uint64_t, BeamDataPoint> >
+      QueryBeamDB(uint64_t t0, uint64_t t1) const;
 
     /// @brief Get information about the BNB state from the database for the
     /// time interval [t0, t1]
@@ -64,25 +64,25 @@ class IFBeamDBInterface {
     /// csv-format data from the database
     /// @return The libcurl integer return code for the query (zero if
     /// everything worked ok, or nonzero if an error occurred)
-    int QueryBeamDB(unsigned long long t0, unsigned long long t1,
+    int QueryBeamDB(uint64_t t0, uint64_t t1,
       std::string& response_string) const;
 
     /// @brief Get information about the BNB state from the database as close
     /// as possible to a given time
     /// @param time Timestamp (milliseconds since the Unix epoch) to use when
     /// searching the database
-    BeamStatus GetBeamStatus(unsigned long long time) const;
+    BeamStatus GetBeamStatus(uint64_t time) const;
 
   protected:
 
     /// @brief Create the singleton IFBeamDBInterface object
     IFBeamDBInterface();
 
-    std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
+    std::map<std::string, std::map<uint64_t, BeamDataPoint> >
       ParseDBResponse(const std::string& response) const;
 
     void PostprocessParsedResponse(std::map<std::string,
-      std::map<unsigned long long, BeamDataPoint> >& parsed_response) const;
+      std::map<uint64_t, BeamDataPoint> >& parsed_response) const;
 
     /// @brief Pointer used to interact with libcurl
     CURL* fCurl = nullptr;
