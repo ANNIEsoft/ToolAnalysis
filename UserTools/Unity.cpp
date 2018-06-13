@@ -48,3 +48,4 @@
 #include "LoadWCSimLAPPD/LoadWCSimLAPPD.cpp"
 #include "LoadWCSimLAPPD/LAPPDTree.cpp"
 #include "WCSimDemo/WCSimDemo.cpp"
+#include "EventBuilder/EventBuilder.cpp"
