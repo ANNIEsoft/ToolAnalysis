@@ -399,7 +399,7 @@ bool RawLoader::Execute() {
 
   std::string event_description;
   if (!m_using_hefty_mode) {
-    minibuffer_label_to_string( minibuffer_labels.back() );
+    event_description = minibuffer_label_to_string( minibuffer_labels.back() );
   }
   else {
     // Hefty mode
