@@ -403,27 +403,26 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
     BeamCondition bc = BeamCondition::Ok;
 
     // POT cut
-    bool pot_out_of_range = (beam_status.pot() < pot_min)
-      || (beam_status.pot() > pot_max);
+    beam_status.add_cut("POT in range", (beam_status.pot() >= pot_min)
+      && (beam_status.pot() <= pot_max));
 
     // Peak horn current cut
-    bool horn_current_out_of_range = (peak_horn_current < horn_current_min)
-      || (peak_horn_current > horn_current_max);
+    beam_status.add_cut("peak horn current in range",
+      (peak_horn_current >= horn_current_min)
+      && (peak_horn_current <= horn_current_max));
 
     // Toroid disagreement cut
     double tor_diff_frac = 2.*std::abs( pot_second_toroid - pot_first_toroid )
       / ( pot_second_toroid + pot_first_toroid );
-    bool toroids_disagree = tor_diff_frac >= toroid_tol;
+    beam_status.add_cut("toroids agree", tor_diff_frac <= toroid_tol);
 
     // Timestamp cut. Make sure measurements within the timing tolerance
     // were available for all required devices
     int64_t ms_since_epoch = static_cast<int64_t>( ns_since_epoch / MILLION );
-    bool timestamps_disagree = std::abs(
-      ms_since_epoch_horn - ms_since_epoch ) > t_tol;
-    if ( !timestamps_disagree ) timestamps_disagree = std::abs(
-      ms_since_epoch_first_toroid - ms_since_epoch ) >  t_tol;
-    if ( !timestamps_disagree ) timestamps_disagree = std::abs(
-      ms_since_epoch_second_toroid - ms_since_epoch ) > t_tol;
+    beam_status.add_cut("timestamps agree",
+      ( std::abs(ms_since_epoch_horn - ms_since_epoch) <= t_tol )
+      &&  ( std::abs(ms_since_epoch_first_toroid - ms_since_epoch) <= t_tol )
+      &&  ( std::abs(ms_since_epoch_second_toroid - ms_since_epoch) <= t_tol ));
 
     Log("ANNIE DAQ ms since epoch = " + std::to_string(ms_since_epoch), 4,
       verbosity_);
@@ -435,12 +434,20 @@ BeamStatus BeamChecker::get_beam_status(uint64_t ns_since_epoch,
       + std::to_string(ms_since_epoch_second_toroid), 4, verbosity_);
 
     // Flag the beam spill as "bad" if it failed any of the cuts above
-    if ( pot_out_of_range || horn_current_out_of_range || toroids_disagree
-      || timestamps_disagree)
+    if ( !beam_status.passed_all_cuts() )
     {
       bc = BeamCondition::Bad;
 
       Log("WARNING: bad beam spill", 1, verbosity_);
+    }
+
+    if ( verbosity_ > 3 ) {
+      for ( const auto& pair : beam_status.cuts() ) {
+        std::string temp_string;
+        if (pair.second) temp_string = "PASSED ";
+        else temp_string = "FAILED ";
+        Log(temp_string + pair.first + " beam quality cut", 4, verbosity_);
+      }
     }
 
     beam_status.set_condition( bc );
