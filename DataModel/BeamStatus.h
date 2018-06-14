@@ -62,8 +62,8 @@ class BeamStatus : public SerialisableObject {
     inline double pot() const { return pot_; }
     inline BeamCondition condition() const { return condition_; }
     inline const std::map<std::string, std::pair<uint64_t, BeamDataPoint> >&
-      data() { return data_; }
-    inline const std::map<std::string, bool>& cuts() { return cuts_; }
+      data() const { return data_; }
+    inline const std::map<std::string, bool>& cuts() const { return cuts_; }
 
     // Good beam minibuffers for the analysis should use is_beam() == true
     // and ok() == true. Good non-beam minibuffers for the analysis

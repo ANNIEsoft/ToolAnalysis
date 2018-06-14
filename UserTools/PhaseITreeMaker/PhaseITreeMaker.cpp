@@ -126,6 +126,16 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
     "pulse_raw_amplitude/s");
   output_pulse_tree_->Branch("in_spill", &in_spill_, "in_spill/O");
 
+  // Create the branches for the output beam TTree
+  output_beam_tree_ = new TTree("beam_tree", "Beam quality cut tree");
+  output_beam_tree_->Branch("pot_ok", &pot_ok_, "pot_ok/O");
+  output_beam_tree_->Branch("horn_current_ok", &horn_current_ok_,
+    "horn_current_ok/O");
+  output_beam_tree_->Branch("timestamps_ok", &timestamps_ok_,
+    "timestamps_ok/O");
+  output_beam_tree_->Branch("toroids_agree", &toroids_agree_,
+    "toroids_agree/O");
+
   return true;
 }
 
@@ -376,6 +386,22 @@ bool PhaseITreeMaker::Execute() {
     // Skip beam minibuffers with bad or missing beam status information
     // TODO: consider printing a warning message here
     const auto& beam_status = beam_statuses.at(mb);
+
+    // Regardless of whether it should be used in the analysis, if the current
+    // minibuffer corresponds to a beam spill,store information about whether
+    // the spill passed the cuts in the output beam tree
+    if ( beam_status.is_beam() ) {
+
+      const auto& cuts = beam_status.cuts();
+
+      pot_ok_ = cuts.at("POT in range");
+      horn_current_ok_ = cuts.at("peak horn current in range");
+      timestamps_ok_ = cuts.at("toroids agree");
+      toroids_agree_ = cuts.at("timestamps agree");
+
+      output_beam_tree_->Fill();
+    }
+
     const auto& beam_condition = beam_status.condition();
     if (beam_condition == BeamCondition::Missing
       || beam_condition == BeamCondition::Bad)
@@ -476,8 +502,9 @@ bool PhaseITreeMaker::Execute() {
 bool PhaseITreeMaker::Finalise() {
   output_tree_->Write();
   output_pulse_tree_->Write();
+  output_beam_tree_->Write();
 
-  TTree* beam_tree = new TTree("ncv_pos_info",
+  TTree* ncv_tree = new TTree("ncv_pos_info",
     "Information about each NCV position");
 
   bool made_branches = false;
@@ -487,35 +514,35 @@ bool PhaseITreeMaker::Finalise() {
     auto& info = pair.second;
 
     if ( !made_branches ) {
-      beam_tree->Branch("ncv_position", &ncv_position, "ncv_position/I");
-      beam_tree->Branch("total_pot", &(info.total_POT), "total_pot/D");
-      beam_tree->Branch("num_beam_spills", &(info.num_beam_spills),
+      ncv_tree->Branch("ncv_position", &ncv_position, "ncv_position/I");
+      ncv_tree->Branch("total_pot", &(info.total_POT), "total_pot/D");
+      ncv_tree->Branch("num_beam_spills", &(info.num_beam_spills),
         "num_beam_spills/l");
-      beam_tree->Branch("num_source_triggers", &(info.num_source_triggers),
+      ncv_tree->Branch("num_source_triggers", &(info.num_source_triggers),
         "num_source_triggers/l");
-      beam_tree->Branch("num_cosmic_triggers", &(info.num_cosmic_triggers),
+      ncv_tree->Branch("num_cosmic_triggers", &(info.num_cosmic_triggers),
         "num_cosmic_triggers/l");
-      beam_tree->Branch("num_soft_triggers", &(info.num_soft_triggers),
+      ncv_tree->Branch("num_soft_triggers", &(info.num_soft_triggers),
         "num_soft_triggers/l");
 
       made_branches = true;
     }
     else {
-      beam_tree->SetBranchAddress("ncv_position", &ncv_position);
-      beam_tree->SetBranchAddress("total_pot", &(info.total_POT));
-      beam_tree->SetBranchAddress("num_beam_spills", &(info.num_beam_spills));
-      beam_tree->SetBranchAddress("num_source_triggers",
+      ncv_tree->SetBranchAddress("ncv_position", &ncv_position);
+      ncv_tree->SetBranchAddress("total_pot", &(info.total_POT));
+      ncv_tree->SetBranchAddress("num_beam_spills", &(info.num_beam_spills));
+      ncv_tree->SetBranchAddress("num_source_triggers",
         &(info.num_source_triggers));
-      beam_tree->SetBranchAddress("num_cosmic_triggers",
+      ncv_tree->SetBranchAddress("num_cosmic_triggers",
         &(info.num_cosmic_triggers));
-      beam_tree->SetBranchAddress("num_soft_triggers",
+      ncv_tree->SetBranchAddress("num_soft_triggers",
         &(info.num_soft_triggers));
     }
 
-    beam_tree->Fill();
+    ncv_tree->Fill();
   }
 
-  beam_tree->Write();
+  ncv_tree->Write();
 
   output_tfile_->Close();
   return true;

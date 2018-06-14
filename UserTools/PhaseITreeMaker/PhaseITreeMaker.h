@@ -142,4 +142,13 @@ class PhaseITreeMaker : public Tool {
     unsigned short pulse_raw_amplitude_ = 0u; // ADC counts
     uint32_t spill_number_ = 0u;
     bool in_spill_ = false;
+
+    // Tree that stores information about the beam quality cuts
+    TTree* output_beam_tree_ = nullptr;
+
+    // Beam tree branch variables
+    bool pot_ok_ = false;
+    bool horn_current_ok_ = false;
+    bool timestamps_ok_ = false;
+    bool toroids_agree_ = false;
 };
