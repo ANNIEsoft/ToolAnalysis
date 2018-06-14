@@ -18,6 +18,7 @@ void BeamStatus::clear()
   pot_ = 0.;
   condition_ = BeamCondition::Missing;
   data_.clear();
+  cuts_.clear();
 }
 
 void BeamStatus::add_measurement(const std::string& device_name,
