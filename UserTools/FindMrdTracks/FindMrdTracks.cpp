@@ -427,6 +427,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			m_data->Stores["MRDTracks"]->Set("InterceptsTank",atrack->GetInterceptsTank());
 			m_data->Stores["MRDTracks"]->Set("StartTime",atrack->GetStartTime());
 			// convert start posn from TVector3 to ANNIEEVENT Position class
+			// TODO: FIXME XXX CHECK UNITS XXX XXX XXX XXX 
 			Position startpos(atrack->GetStartVertex().X(), 
 							  atrack->GetStartVertex().Y(), 
 							  atrack->GetStartVertex().Z());
