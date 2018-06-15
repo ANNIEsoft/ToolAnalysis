@@ -136,9 +136,9 @@ bool LoadWCSimLAPPD::Execute(){
 		for(int lappdi=0; lappdi<LAPPDEntry->lappd_numhits; lappdi++){
 			// loop over LAPPDs that had at least one hit
 			int LAPPDID = LAPPDEntry->lappdhit_objnum[lappdi];
-			double pmtx = LAPPDEntry->lappdhit_x[lappdi];  // position of LAPPD in global coords
-			double pmty = LAPPDEntry->lappdhit_y[lappdi];
-			double pmtz = LAPPDEntry->lappdhit_z[lappdi];
+			double pmtx = (LAPPDEntry->lappdhit_x[lappdi]) / 1000.;  // position of LAPPD in global coords, convert mm to m
+			double pmty = (LAPPDEntry->lappdhit_y[lappdi]) / 1000.;
+			double pmtz = (LAPPDEntry->lappdhit_z[lappdi]) / 1000.;
 			
 #if FILE_VERSION<3  // manual calculation of global hit position part 1
 			WCSimRootPMT lappdobj = geo->GetLAPPD(LAPPDID-1);
@@ -172,8 +172,8 @@ bool LoadWCSimLAPPD::Execute(){
 			int lastrunningcount=runningcount;
 			// loop over all the hits on this lappd
 			for(;runningcount<(lastrunningcount+numhitsthislappd); runningcount++){
-				double peposx = LAPPDEntry->lappdhit_stripcoorx->at(runningcount);  // posn on tile
-				double peposy = LAPPDEntry->lappdhit_stripcoory->at(runningcount);
+				double peposx = (LAPPDEntry->lappdhit_stripcoorx->at(runningcount)) / 1000.;  // posn on tile
+				double peposy = (LAPPDEntry->lappdhit_stripcoory->at(runningcount)) / 1000.;  // convert mm to meters
 				
 #if FILE_VERSION<3  // manual calculation of global hit position part 2
 				double digitsx, digitsy, digitsz;
@@ -200,9 +200,9 @@ bool LoadWCSimLAPPD::Execute(){
 				}
 #else // if FILE_VERSION<3
 				
-				double digitsx=LAPPDEntry->lappdhit_globalcoorx->at(runningcount);
-				double digitsy=LAPPDEntry->lappdhit_globalcoory->at(runningcount);
-				double digitsz=LAPPDEntry->lappdhit_globalcoorz->at(runningcount);
+				double digitsx= (LAPPDEntry->lappdhit_globalcoorx->at(runningcount)) / 1000.;  // global WCSim coords - convert mm to m
+				double digitsy= (LAPPDEntry->lappdhit_globalcoory->at(runningcount)) / 1000.;
+				double digitsz= (LAPPDEntry->lappdhit_globalcoorz->at(runningcount)) / 1000.;
 #endif // FILE_VERSION<3
 				
 				// calculate relative time within trigger
@@ -215,7 +215,7 @@ bool LoadWCSimLAPPD::Execute(){
 				TimeClass digittime(digitstns); // absolute time
 				float digiq = 0; // N/A
 				ChannelKey key(subdetector::LAPPD,LAPPDID);
-				std::vector<double> globalpos{digitsx/10.,digitsy/10.,digitsz/10.}; // converted to cm
+				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
 				//LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
 				
@@ -243,9 +243,6 @@ bool LoadWCSimLAPPD::Execute(){
 	}         // end if MCTriggernum == 0
 	
 	if(verbose>3) cout<<"Saving MCLAPPDHits to ANNIEEvent"<<endl;
-	ChannelKey key(subdetector::LAPPD,666.);
-	LAPPDHit nexthit(666, 666., 666., std::vector<double>{6.,6.,6.}, std::vector<double>{6.,6.}, 6.);
-	if(MCLAPPDHits->size()==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 	m_data->Stores.at("ANNIEEvent")->Set("MCLAPPDHits",MCLAPPDHits,true);
 	
 	return true;
