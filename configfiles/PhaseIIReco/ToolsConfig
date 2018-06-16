@@ -1,3 +1,3 @@
 LoadWCSim LoadWCSim ./configfiles/PhaseIIReco/LoadWCSimConfig
 LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PhaseIIReco/LoadWCSimLAPPDConfig
-EventBuilder EventBuilder ./configfiles/PhaseIIReco/EventBuilder
+DigitBuilder DigitBuilder ./configfiles/PhaseIIReco/DigitBuilder

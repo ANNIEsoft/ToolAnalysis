@@ -7,7 +7,7 @@
 
 using namespace std;
 
-enum class subdetector : uint8_t { TDC, ADC, LAPPD};
+enum class subdetector : uint8_t { TDC, ADC, LAPPD };
 
 class ChannelKey : public SerialisableObject{
 	

@@ -251,7 +251,6 @@ bool LoadWCSimLAPPD::Execute(){
 	return true;
 }
 
-
 bool LoadWCSimLAPPD::Finalise(){
 
 	return true;

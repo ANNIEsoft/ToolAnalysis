@@ -18,6 +18,7 @@ bool WCSimDemo::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	
 	Log("Initializing Tool WCSimDemo",v_message,verbosity);
+	
 	return true;
 }
 

@@ -305,7 +305,7 @@ bool LoadWCSim::Execute(){
 			
 			ChannelKey key(subdetector::ADC,tubeid);
 			Hit nexthit(tubeid, digittime, digiq);
-			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit});
+			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit}); ///> J.Wang ???
 			else MCHits->at(key).push_back(nexthit);
 			if(verbose>2) cout<<"digit added"<<endl;
 		}
@@ -395,6 +395,9 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant 
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
+	m_data->CStore.Set("FilterDone",0);  ///> Data Filtering not done by default (to be moved to CStore)
+	m_data->CStore.Set("VertexFinderDone",0);  ///> Vertex finding not done by default (to be moved to CStore)
+	m_data->CStore.Set("RingFinderDone",0);  ///> Ring finding not done by default (to be moved to CStore)
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData

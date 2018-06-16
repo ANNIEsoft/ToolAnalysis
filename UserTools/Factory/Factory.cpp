@@ -44,6 +44,6 @@ if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
 //if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
 if (tool=="LoadWCSimLAPPD") ret=new LoadWCSimLAPPD;
 if (tool=="WCSimDemo") ret=new WCSimDemo;
-  if (tool=="EventBuilder") ret=new EventBuilder;
+  if (tool=="DigitBuilder") ret=new DigitBuilder;
 return ret;
 }
