@@ -1,4 +1,4 @@
-# General Parameters
+#General Parameters
 Nsamples 1032
 SampleSize 100
 NChannels 4
@@ -8,11 +8,11 @@ TrigChannel 3
 LowBLfitrange 40000;
 HiBLfitrange  60000;
 
-# LAPPDSim
+#LAPPDSim
 SimInput  ./UserTools/LAPPDSim/pulsecharacteristics.root
 
-# LAPPDParseScope
-FileInput ../LAPPDdata_fff/LAPPD25_3.22.18/2300_2050_1200_ND4_2sided_root.fff
+#LAPPDParseScope
+FileInput /annie/data/LAPPD25data/fffFiles/4.19.18/2500_2150_1350_nd4_3strip_p4_stop1_channel0_root.fff 
 
 #LAPPDFilter
 FilterInputWavLabel BLsubtractedLAPPDData
@@ -29,13 +29,23 @@ TotThreshold 0.5
 MinimumTot 2000.
 Deltat 100.
 
-# LAPPDcfd
+#LAPPDcfd
 CFDInputWavLabel FiltLAPPDData
 Fraction_CFD 0.4
 
-# LAPPDSave
-path ../LAPPDoutputs/2400_2100_1300_bsln_2sided_output
+#LAPPDSave
+path 2500_2150_1350_nd4_3strip_p6_stop0_channel0_root
 
-# LAPPDSaveROOT
-outfile ../LAPPDoutputs/2400_2100_1300_bsln_2sided.root
+#LAPPDlasertestHitFinder
+MinTimeWindow 64000
+MaxTimeWindow 79000
+TwoSided false
+StripID1 10
+StripID2 11
+StripID3 12
+CenterChannel 1
+PTRange 1000  
+
+#LAPPDSaveROOT
+outfile 2500_2150_1350_bsln_2sided.root
 NHistos 100
