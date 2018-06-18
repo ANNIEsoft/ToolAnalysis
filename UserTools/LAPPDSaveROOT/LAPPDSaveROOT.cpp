@@ -59,6 +59,7 @@ LAPPDTree->Branch("Channel2Amp",&ampCH2);
 LAPPDTree->Branch("Channel3Amp",&ampCH3);
 LAPPDTree->Branch("ParallelPosition",&ParaPos);
 LAPPDTree->Branch("Transverseposition",&TransPos);
+LAPPDTree->Branch("PulseNum",&PulseNum);
   // declare the histograms
   hAmp = new TH1D*[NChannel];
   hTime = new TH1D*[NChannel];
@@ -91,6 +92,7 @@ LAPPDTree->Branch("Transverseposition",&TransPos);
   LAPPDHit ISUHits;
   m_data->Stores["ANNIEEvent"]->Get("RecoLaserTestHit",ISUHits);
   m_data->Stores["ANNIEEvent"]->Get("HitPulses",LAPPDHitPulses);
+  m_data->Stores["ANNIEEvent"]->Get("PulseNum",PulseNum);
   std::cout<<LAPPDHitPulses.size()<<endl;
   for(int i=0; i<LAPPDHitPulses.size(); i++){
     LAPPDPulse tempPulse = LAPPDHitPulses.at(i);
@@ -122,10 +124,12 @@ LAPPDTree->Branch("Transverseposition",&TransPos);
  std::cout<<"Tpsec 3 "<<tpsecCH3<<endl;
  std::cout<<"Charge 3 "<<chrgCH3<<endl;
     }
-    // ParaPos=ISUHits.GetLocalPosition().at(0);
-    //    TransPos=ISUHits.GetLocalPosition().at(1);
-    // std::cout<<"ParaPos "<<ParaPos<<endl;
-    // std::cout<<"TransPos "<<TransPos<<endl;
+    
+    
+    ParaPos=ISUHits.GetLocalPosition().at(0);
+    TransPos=ISUHits.GetLocalPosition().at(1);
+    std::cout<<"ParaPos "<<ParaPos<<endl;
+    std::cout<<"TransPos "<<TransPos<<endl;
 
 }
  LAPPDTree->Fill(); 

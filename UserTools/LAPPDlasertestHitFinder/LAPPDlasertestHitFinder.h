@@ -23,8 +23,10 @@ class LAPPDlasertestHitFinder: public Tool {
  private:
 
    double Deltatime;
-   std::vector<double> stripID = vector<double>(3);
-
+   std::vector<double> stripID;
+   double stripID1;
+   double stripID2;
+   double stripID3;
    bool TwoSided;
    int CenterChannel;
    double PTRange;

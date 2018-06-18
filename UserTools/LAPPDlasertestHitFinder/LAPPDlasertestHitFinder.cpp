@@ -18,9 +18,9 @@ bool LAPPDlasertestHitFinder::Initialise(std::string configfile, DataModel &data
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  m_variables.Get("stripID1",stripID[0]);
-  m_variables.Get("stripID2",stripID[1]);
-  m_variables.Get("stripID3",stripID[2]);
+  m_variables.Get("stripID1",stripID1);
+  m_variables.Get("stripID2",stripID2);
+  m_variables.Get("stripID3",stripID3);
   m_variables.Get("MaxTimeWindow", MaxTimeWindow);
   m_variables.Get("MinTimeWindow", MinTimeWindow);
   m_variables.Get("TwoSided", TwoSided);
@@ -31,7 +31,9 @@ bool LAPPDlasertestHitFinder::Initialise(std::string configfile, DataModel &data
 
 
 bool LAPPDlasertestHitFinder::Execute(){
-
+  stripID.push_back(stripID1);
+  stripID.push_back(stripID2);
+  stripID.push_back(stripID3);
 std::vector<double> AbsPosition;
 AbsPosition.push_back(0);
 AbsPosition.push_back(0);
@@ -104,6 +106,7 @@ LAPPDPulse OpposPulse;
   else {
     ParaPosition = 0;
     HitTime = MaxPulse.GetTpsec();
+    LocalPosition.push_back(ParaPosition);
   }
 
 
@@ -128,12 +131,28 @@ LAPPDPulse OpposPulse;
       }
     }
 }
-
-  for (int i=0; i<NeighboursPulses.size(); i++){
-      SumAbove +=  (stripID[i] * NeighboursPulses.at(i).GetPeak());
-      SumBelow +=  (NeighboursPulses.at(i).GetPeak());
+    if(NeighboursPulses.size()>0){
+  for (int i=0; i<3; i++){
+    int j=0;
+    if(j<NeighboursPulses.size()){
+      if(i!=MaxPulse.GetChannelID())
+	{
+	SumAbove +=  (stripID[i] * NeighboursPulses.at(j).GetPeak());
+	SumBelow +=  (NeighboursPulses.at(j).GetPeak());
+	j++; 
+	}
+      else
+	{
+	SumAbove += (stripID[i] * MaxPulse.GetPeak());
+	SumBelow += MaxPulse.GetPeak();
+	}
     }
+  }
   PerpPosition = (SumAbove / SumBelow);
+    }
+    else {
+      PerpPosition =stripID.at(MaxPulse.GetChannelID());
+    }  
   }
   else
     {
@@ -146,15 +165,18 @@ LAPPDPulse OpposPulse;
 	   }
 	}
       }
-      PerpPosition=stripID[MaxPulse.GetChannelID()];
+      PerpPosition=stripID.at(MaxPulse.GetChannelID());
 	}
  LocalPosition.push_back(PerpPosition);
  
- 
+ std::cout<<stripID.at(0)<<endl;
+ std::cout<<stripID.at(1)<<endl;
+ std::cout<<stripID.at(2)<<endl;
 
   //Store data in LAPPDHit
   LAPPDHit kHit(MaxPulse.GetChannelID(), MaxPulse.GetTheTime(), MaxPulse.GetPeak(), AbsPosition, LocalPosition, MaxPulse.GetTpsec());
   std::cout<<"Hit created "<<endl;
+  int PulseNum;
   m_data->Stores["ANNIEEvent"]->Set("RecoLaserTestHit",kHit);
   std::cout<<"Hit saved  "<<endl;
   m_data->Stores["ANNIEEvent"]->Set("isTwoSided",TwoSided);
@@ -164,13 +186,16 @@ LAPPDPulse OpposPulse;
   HitPulses.push_back(NeighboursPulses.at(0));
   HitPulses.push_back(MaxPulse);
   HitPulses.push_back(OpposPulse);
+  PulseNum=3;
   std::cout<<"Stored twosided"<<endl;
     }
     else {
       LAPPDPulse FillerPulse;
+      FillerPulse.SetChannelID(7);
       HitPulses.push_back(FillerPulse);
       HitPulses.push_back(MaxPulse);
       HitPulses.push_back(OpposPulse);
+      PulseNum=2;
         std::cout<<"Stored twosided +filler"<<endl;
 }
   }
@@ -181,20 +206,25 @@ else
   HitPulses.push_back(NeighboursPulses.at(0));
   HitPulses.push_back(MaxPulse);
   HitPulses.push_back(NeighboursPulses.at(1));
+  PulseNum=3;
   std::cout<<"Stored Onesided"<<endl;
   }
   else if(NeighboursPulses.size()>0){
       LAPPDPulse FillerPulse;
+      FillerPulse.SetChannelID(7);
       HitPulses.push_back(NeighboursPulses.at(0));
       HitPulses.push_back(MaxPulse);
       HitPulses.push_back(FillerPulse);
+      PulseNum=2;
     }
     else
     {
       LAPPDPulse FillerPulse;
+      FillerPulse.SetChannelID(7);
       HitPulses.push_back(FillerPulse);
       HitPulses.push_back(MaxPulse);
       HitPulses.push_back(FillerPulse);
+      PulseNum=1;
   std::cout<<"Stored Onesided + filler"<<endl;
 }
  
@@ -203,7 +233,7 @@ else
   std::cout<<"first pulse "<<HitPulses.at(0).GetChannelID()<<endl;
   std::cout<<"second pulse "<<HitPulses.at(1).GetChannelID()<<endl;
   std::cout<<"third pulse "<<HitPulses.at(2).GetChannelID()<<endl;
-
+  m_data->Stores["ANNIEEvent"]->Set("PulseNum",PulseNum);
   return true;
 }
 

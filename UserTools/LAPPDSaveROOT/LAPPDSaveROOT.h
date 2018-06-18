@@ -54,6 +54,7 @@ class LAPPDSaveROOT: public Tool {
    double tpsecCH3;
    double ParaPos;
    double TransPos;
+   int PulseNum;
 };
 
 

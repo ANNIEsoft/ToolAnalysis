@@ -40,9 +40,9 @@ path 2500_2150_1350_nd4_3strip_p6_stop0_channel0_root
 MinTimeWindow 64000
 MaxTimeWindow 79000
 TwoSided false
-StripID1 10
-StripID2 11
-StripID3 12
+stripID1 10
+stripID2 11
+stripID3 12
 CenterChannel 1
 PTRange 1000  
 
