@@ -12,28 +12,27 @@ class Hit : public SerialisableObject{
 	friend class boost::serialization::access;
 
 	public:
-  Hit() : TubeId(0), Time(TimeClass()), Charge(0){serialise=true;}
-  Hit(int tubeid, TimeClass thetime, double charge) : TubeId(tubeid), Time(thetime), Charge(charge){serialise=true;}
+  Hit() : TubeId(0), Time(0), Charge(0){serialise=true;}
+  Hit(int tubeid, double thetime, double charge) : TubeId(tubeid), Time(thetime), Charge(charge){serialise=true;}
 
 	inline int GetTubeId() const {return TubeId;}
-	inline TimeClass GetTime() const {return Time;}
+	inline double GetTime() const {return Time;}
 	inline double GetCharge() const {return Charge;}
 
 	inline void SetTubeId(int tubeid){TubeId=tubeid;}
-	inline void SetTime(TimeClass tc){Time=tc;}
+	inline void SetTime(double tc){Time=tc;}
 	inline void SetCharge(double chg){Charge=chg;}
 
 	bool Print() {
 		cout<<"TubeId : "<<TubeId<<endl;
-		cout<<"Time : "; Time.Print();
+		cout<<"Time : "<<Time<<endl;
 		cout<<"Charge : "<<Charge<<endl;
-
 		return true;
 	}
 
 	protected:
 	int TubeId;
-	TimeClass Time;
+	double Time;
 	double Charge;
 
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
