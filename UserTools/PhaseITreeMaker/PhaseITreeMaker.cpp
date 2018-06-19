@@ -250,7 +250,7 @@ bool PhaseITreeMaker::Execute() {
     }
 
     for (const ADCPulse& pulse : ncv_pmt1_pulses.at(mb) ) {
-      int64_t pulse_time = pulse.start_time().GetNs();
+      int64_t pulse_time = pulse.start_time();
 
       // The afterpulsing veto (which uses the value of pulse_time assigned
       // above) can span over multiple Hefty minibuffers, so use the
@@ -263,13 +263,13 @@ bool PhaseITreeMaker::Execute() {
       }
 
       Log("Found NCV PMT #1 pulse at "
-        + std::to_string( pulse.start_time().GetNs() ) + " ns after the"
+        + std::to_string( pulse.start_time() ) + " ns after the"
         " start of the current minibuffer", 3, verbosity_);
       if ( approve_event(pulse_time, old_time, pulse, adc_hits, mb) ) {
         // For non-Hefty mode, the neutron capture candidate event time
         // is simply its timestamp relative to the start of the single
         // minibuffer.
-        event_time_ns_ = pulse.start_time().GetNs();
+        event_time_ns_ = pulse.start_time();
 
         // For Hefty mode, the event time within the current minibuffer
         // needs to be added to the TSinceBeam value for Hefty window
@@ -374,7 +374,7 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
 
   // Unique water PMT and tank charge cuts
   int num_unique_water_pmts = BOGUS_INT;
-  uint64_t tc_start_time = first_ncv1_pulse.start_time().GetNs();
+  uint64_t tc_start_time = first_ncv1_pulse.start_time();
   double tank_charge = compute_tank_charge(minibuffer_index,
     adc_hits, tc_start_time, tc_start_time + tank_charge_window_length_,
     num_unique_water_pmts);
@@ -397,10 +397,10 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
   // Minibuffers are short enough (80 us maximum for non-Hefty data, smaller
   // for Hefty mode data) that, even though the TimeClass has an underlying
   // type of uint64_t, an int64_t shouldn't overflow here.
-  int64_t ncv1_time = first_ncv1_pulse.start_time().GetNs();
+  int64_t ncv1_time = first_ncv1_pulse.start_time();
   bool found_coincidence = false;
   for ( const auto& pulse : ncv_pmt2_pulses ) {
-    int64_t ncv2_time = pulse.start_time().GetNs();
+    int64_t ncv2_time = pulse.start_time();
     Log("Found NCV PMT #2 pulse at "
       + std::to_string(ncv2_time) + " ns after the start of the current"
       " minibuffer", 3, verbosity_);
@@ -459,7 +459,7 @@ double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
     bool found_pulse_in_time_window = false;
 
     for ( const auto& pulse : pulse_vec ) {
-      size_t pulse_time = pulse.start_time().GetNs();
+      size_t pulse_time = pulse.start_time();
       if ( pulse_time >= start_time && pulse_time <= end_time) {
 
         // Increment the unique hit PMT counter if the current pulse is within
