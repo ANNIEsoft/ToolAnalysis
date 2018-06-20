@@ -26,7 +26,7 @@ bool GenerateHits::Execute(){
   std::vector<double> pos;
   std::vector<double> relpos;
   double ptime,Q;
-  TimeClass tc;
+  double tc;
 
   // MC truth hit 1
   ptime = 50;
@@ -36,7 +36,7 @@ bool GenerateHits::Execute(){
   pos.push_back(0.);
   relpos.push_back(10.);
   relpos.push_back(5.);
-  tc.SetNs(1);
+  tc = 1;
   LAPPDHit ahit1(TubeID,tc,Q,pos,relpos,ptime);
 
   // clear vectors

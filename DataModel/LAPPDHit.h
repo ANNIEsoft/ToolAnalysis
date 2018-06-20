@@ -16,8 +16,7 @@ class LAPPDHit : public Hit{
 //  LAPPDHit() : TubeId(0), Time(TimeClass()), Position(0), LocalPosition(0), Charge(0), Tpsec(0){serialise=true;}
 //  LAPPDHit(int tubeid, TimeClass thetime, std::vector<double> Position, std::vector<double> LocalPosition, double charge, double tpsec) : TubeId(tubeid), Time(thetime), Position(Position), LocalPosition(LocalPosition), Charge(charge), Tpsec(tpsec){serialise=true;}
 	LAPPDHit() : Hit(), Position(0), LocalPosition(0), Tpsec(0){serialise=true;}
-	LAPPDHit(int tubeid, TimeClass thetime, double charge, std::vector<double> Position, std::vector<double> LocalPosition, double tpsec) : Hit(tubeid,thetime,charge), Position(Position), LocalPosition(LocalPosition), Tpsec(tpsec){serialise=true;}
-
+	LAPPDHit(int tubeid, double thetime, double charge, std::vector<double> Position, std::vector<double> LocalPosition, double tpsec) : Hit(tubeid,thetime,charge), Position(Position), LocalPosition(LocalPosition), Tpsec(tpsec){serialise=true;}
 
 	inline double GetTpsec() const {return Tpsec;}
 	inline std::vector<double> GetPosition() const {return Position;}
@@ -28,7 +27,7 @@ class LAPPDHit : public Hit{
 
 	bool Print() {
 		cout<<"TubeId : "<<TubeId<<endl;
-		cout<<"Time : "; Time.Print();
+		cout<<"Time : "<<Time<<endl;
 		cout<<"Time (psec) : "<<Tpsec<<endl;
 		cout<<"X Pos : "<<Position.at(0)<<endl;
 		cout<<"Y Pos : "<<Position.at(1)<<endl;
