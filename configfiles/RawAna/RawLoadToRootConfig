@@ -1,0 +1,8 @@
+#RawLoadToRoot
+treeoutfile /anniecode/MRDData/MRDR798S1p0.root
+
+#Set onoffswitch to 0 to look at all trigger events or 1 to use bound settings
+#if set to something else will only cout RelEventNumbers
+onoffswitch 0
+lowerbound 1
+upperbound 10
