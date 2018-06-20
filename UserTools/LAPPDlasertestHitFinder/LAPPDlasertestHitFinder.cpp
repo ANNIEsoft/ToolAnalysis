@@ -57,7 +57,7 @@ double MaxAmp =-1.0;
   for (int i = 0; i < 3; i++){
     std::vector<LAPPDPulse> TempVector;
     TempVector = LAPPDPulseCluster.at(i);
-     std::cout<<"Temp Vector Size "<<TempVector.size()<<endl;
+     //std::cout<<"Temp Vector Size "<<TempVector.size()<<endl;
      //     std::cout<<"Temp Vector Channel "<<TempVector.at(i).GetChannelID()<<endl;
     for (int j = 0; j < TempVector.size(); j++){
       if (TempVector.at(j).GetTpsec() >= MinTimeWindow && TempVector.at(j).GetTpsec() <= MaxTimeWindow){
@@ -68,7 +68,7 @@ double MaxAmp =-1.0;
       }
     }
   }
-  std::cout<<"LargestPulse found"<<endl;
+  //std::cout<<"LargestPulse found"<<endl;
   int MPC=MaxPulse.GetChannelID();
 
 //ParallelPosition and time
@@ -115,7 +115,7 @@ LAPPDPulse OpposPulse;
   double SumBelow;
 
   if(!TwoSided){
-  std::cout<<"Not twosided"<<endl;
+  //std::cout<<"Not twosided"<<endl;
     for (int i =0;i<3; i++){
       std::vector<LAPPDPulse> neighbourVector;
        if(i!=MaxPulse.GetChannelID()){
@@ -127,7 +127,7 @@ LAPPDPulse OpposPulse;
 
 	   NeighboursPulses.push_back(neighbourVector.at(j));
         }
-	std::cout<<"NeighboursPulses size  "<<NeighboursPulses.size()<<endl;
+//	std::cout<<"NeighboursPulses size  "<<NeighboursPulses.size()<<endl;
       }
     }
 }
@@ -169,25 +169,25 @@ LAPPDPulse OpposPulse;
 	}
  LocalPosition.push_back(PerpPosition);
 
- std::cout<<stripID.at(0)<<endl;
- std::cout<<stripID.at(1)<<endl;
- std::cout<<stripID.at(2)<<endl;
+// std::cout<<stripID.at(0)<<endl;
+// std::cout<<stripID.at(1)<<endl;
+// std::cout<<stripID.at(2)<<endl;
 
   //Store data in LAPPDHit
   LAPPDHit kHit(MaxPulse.GetChannelID(), MaxPulse.GetTheTime(), MaxPulse.GetPeak(), AbsPosition, LocalPosition, MaxPulse.GetTpsec());
-  std::cout<<"Hit created "<<endl;
+//  std::cout<<"Hit created "<<endl;
   int PulseNum;
   m_data->Stores["ANNIEEvent"]->Set("RecoLaserTestHit",kHit);
-  std::cout<<"Hit saved  "<<endl;
+  //std::cout<<"Hit saved  "<<endl;
   m_data->Stores["ANNIEEvent"]->Set("isTwoSided",TwoSided);
-  std::cout<<"TwoSided Saved  "<<endl;
+  //std::cout<<"TwoSided Saved  "<<endl;
   if(TwoSided){
     if(NeighboursPulses.size()>0){
   HitPulses.push_back(NeighboursPulses.at(0));
   HitPulses.push_back(MaxPulse);
   HitPulses.push_back(OpposPulse);
   PulseNum=3;
-  std::cout<<"Stored twosided"<<endl;
+  //std::cout<<"Stored twosided"<<endl;
     }
     else {
       LAPPDPulse FillerPulse;
@@ -196,18 +196,18 @@ LAPPDPulse OpposPulse;
       HitPulses.push_back(MaxPulse);
       HitPulses.push_back(OpposPulse);
       PulseNum=2;
-        std::cout<<"Stored twosided +filler"<<endl;
+    //    std::cout<<"Stored twosided +filler"<<endl;
 }
   }
 else
 {
   if(NeighboursPulses.size()>1){
-  std::cout<<NeighboursPulses.size()<<std::endl;
+  //std::cout<<NeighboursPulses.size()<<std::endl;
   HitPulses.push_back(NeighboursPulses.at(0));
   HitPulses.push_back(MaxPulse);
   HitPulses.push_back(NeighboursPulses.at(1));
   PulseNum=3;
-  std::cout<<"Stored Onesided"<<endl;
+  //std::cout<<"Stored Onesided"<<endl;
   }
   else if(NeighboursPulses.size()>0){
       LAPPDPulse FillerPulse;
@@ -225,14 +225,14 @@ else
       HitPulses.push_back(MaxPulse);
       HitPulses.push_back(FillerPulse);
       PulseNum=1;
-  std::cout<<"Stored Onesided + filler"<<endl;
+  //std::cout<<"Stored Onesided + filler"<<endl;
 }
 
   m_data->Stores["ANNIEEvent"]->Set("HitPulses",HitPulses);
  }
-  std::cout<<"first pulse "<<HitPulses.at(0).GetChannelID()<<endl;
-  std::cout<<"second pulse "<<HitPulses.at(1).GetChannelID()<<endl;
-  std::cout<<"third pulse "<<HitPulses.at(2).GetChannelID()<<endl;
+//  std::cout<<"first pulse "<<HitPulses.at(0).GetChannelID()<<endl;
+  //std::cout<<"second pulse "<<HitPulses.at(1).GetChannelID()<<endl;
+  //std::cout<<"third pulse "<<HitPulses.at(2).GetChannelID()<<endl;
   m_data->Stores["ANNIEEvent"]->Set("PulseNum",PulseNum);
   return true;
 }
