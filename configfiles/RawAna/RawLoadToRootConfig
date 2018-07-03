@@ -1,8 +1,19 @@
 #RawLoadToRoot
-treeoutfile /anniecode/MRDData/MRDR798S1p0.root
 
-#Set onoffswitch to 0 to look at all trigger events or 1 to use bound settings
-#if set to something else will only cout RelEventNumbers
+#Output File
+treeoutfile /anniecode/MRDData/R924S44_FullSubrun.root
+
+#Set onoffswitches to 0 to look at all trigger events or 1 to use bound settings
+
+#full traces (bounds go by relative event number)
 onoffswitch 0
-lowerbound 1
+lowerbound 0
 upperbound 10
+
+#pulses (bounds go by absolute event number)
+onoffswitchII 0
+lowerboundII 10000
+upperboundII 10011
+
+#timing (in nanoseconds)->sets the bounds for the histograms
+timewindow 80000
