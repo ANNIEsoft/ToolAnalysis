@@ -10,6 +10,8 @@
 #include "TH1D.h"
 #include "TFile.h"
 #include "TString.h"
+#include "ADCPulse.h"
+#include "CalibratedADCWaveform.h"
 
 class RawLoadToRoot: public Tool {
 
@@ -27,11 +29,19 @@ class RawLoadToRoot: public Tool {
    TFile* treeoutput;
    TTree* rawtotree;
    TString treeoutfile;
+   TH1D* AllStartTimesHist;
    TH1D* theWaveformHist;
+   TH1D* BSubWaveformHist;
+   TH1D* thePulseformHist;
+   TH1D* ChanPulseHist;
 
    int lbound;
    int ubound;
    int onoffswitch;
+   int onoffswitchII;
+   int lboundII;
+   int uboundII;
+   int ttot;
    int RelEventNumber;
    int EventNumber;
    int RunNumber;
@@ -39,11 +49,12 @@ class RawLoadToRoot: public Tool {
    std::string key;
    std::string value;
 
-   std::map<ChannelKey, std::vector<Waveform<unsigned short> > >
+   std::map<ChannelKey, std::vector<Waveform<unsigned short>>>
     RawADCData;
 
-    //ChannelKey ck(subdetector::ADC, pmt_id);
-    //std::vector<Waveform<unsigned short> > raw_waveforms;
+    map<int,map<int,std::vector<ADCPulse>>> trigev;
+    std::map<ChannelKey, std::vector<CalibratedADCWaveform<double>>> caladcdata;
+
 
 
 
