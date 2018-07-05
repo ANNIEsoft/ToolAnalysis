@@ -1,4 +1,8 @@
 # Dummy config file
 verbose 2
+<<<<<<< HEAD:configfiles/RawAna/RawLoaderConfig
 InputFile /anniecode/MRDData/NewMRDData/R924S44/RAWDataR924S44*
+=======
+InputFile /home/sjg/reco-annie/data/RAWDataR683S0p0.root
+>>>>>>> dad58a747d9fee1fe551ad7b9349b6bbe0e38250:configfiles/PhaseI/RawLoaderConfig
 #HeftyTimingFile /home/sjg/reco-annie/data/timing/DataR812...
