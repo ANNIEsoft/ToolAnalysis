@@ -45,6 +45,7 @@ if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
 if (tool=="LoadWCSimLAPPD") ret=new LoadWCSimLAPPD;
 if (tool=="WCSimDemo") ret=new WCSimDemo;
 if (tool=="LAPPDlasertestHitFinder") ret=new LAPPDlasertestHitFinder;
-  if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
+if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
+  if (tool=="MRDPulseFinder") ret=new MRDPulseFinder;
 return ret;
 }

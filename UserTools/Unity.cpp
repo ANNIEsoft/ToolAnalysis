@@ -50,3 +50,4 @@
 #include "WCSimDemo/WCSimDemo.cpp"
 #include "LAPPDlasertestHitFinder/LAPPDlasertestHitFinder.cpp"
 #include "RawLoadToRoot/RawLoadToRoot.cpp"
+#include "MRDPulseFinder/MRDPulseFinder.cpp"
