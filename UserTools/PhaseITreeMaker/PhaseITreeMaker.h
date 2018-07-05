@@ -125,6 +125,15 @@ class PhaseITreeMaker : public Tool {
     unsigned short raw_amplitude_ncv1_ = 0u; // ADC counts
     unsigned short raw_amplitude_ncv2_ = 0u; // ADC counts
 
+    double tank_charge_; // nC
+    int unique_hit_water_pmts_;
+    int64_t time_since_last_event_; // ns
+
+    // Cut pass flags
+    bool passed_afterpulse_cut_ = false;
+    bool passed_unique_water_pmt_cut_ = false;
+    bool passed_tank_charge_cut_ = false;
+
     // Stores total POT, spill, etc. information for each NCV position
     std::map<int, NCVPositionInfo> ncv_position_info_;
 

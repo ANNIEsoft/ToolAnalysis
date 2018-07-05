@@ -371,17 +371,16 @@ bool RawLoader::Execute() {
       else if ( mask & HEFTY_SOURCE_TRIGGER_MASK )
         mb_label = MinibufferLabel::Source;
 
-      // Label minibuffers within the Hefty self-trigger window as
-      // "Hefty" minibuffers, even if they include a cosmic, soft, etc.
-      // trigger
-      else if ( mask & HEFTY_WINDOW_TRIGGER_MASK )
-        mb_label = MinibufferLabel::Hefty;
-
       else if ( mask & HEFTY_LED_TRIGGER_MASK )
         mb_label = MinibufferLabel::LED;
 
       else if ( mask & HEFTY_COSMIC_TRIGGER_MASK )
         mb_label = MinibufferLabel::Cosmic;
+
+      // Label minibuffers within the Hefty self-trigger window as "Hefty"
+      // minibuffers, even if they might actually be a "soft" minibuffer
+      else if ( mask & HEFTY_WINDOW_TRIGGER_MASK )
+        mb_label = MinibufferLabel::Hefty;
 
       // Label minrate and periodic minibuffers as "soft" in addition to
       // true "soft" minibuffers

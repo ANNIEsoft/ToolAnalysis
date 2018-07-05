@@ -99,6 +99,18 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_tree_->Branch("raw_amplitude_ncv2", &raw_amplitude_ncv2_,
     "raw_amplitude_ncv2/s");
 
+  output_tree_->Branch("tank_charge", &tank_charge_, "tank_charge/D");
+  output_tree_->Branch("unique_water_pmts", &unique_hit_water_pmts_,
+    "unique_water_pmts/I");
+  output_tree_->Branch("passed_afterpulse_cut", &passed_afterpulse_cut_,
+    "passed_afterpulse_cut/O");
+  output_tree_->Branch("passed_unique_water_pmt_cut",
+    &passed_unique_water_pmt_cut_, "passed_unique_water_pmt_cut/O");
+  output_tree_->Branch("passed_tank_charge_cut", &passed_tank_charge_cut_,
+    "passed_tank_charge_cut/O");
+  output_tree_->Branch("ns_since_last_ncv1_pulse", &time_since_last_event_,
+    "ns_since_last_ncv1_pulse/L");
+
   // Create the branches for the output pulse TTree
   output_pulse_tree_ = new TTree("pulse_tree", "Hefty window pulse tree");
   output_pulse_tree_->Branch("run", &run_number_, "run/i");
@@ -352,9 +364,11 @@ bool PhaseITreeMaker::Execute() {
   // neutron capture candidate. This time is used to apply an afterpulsing
   // veto. For Phase I, the afterpulsing veto was very conservative (10 us), so
   // it could apply to multiple minibuffers. The "old time" is reset to the
-  // lowest possible double value with each new DAQ readout since a single
-  // Hefty window will not be recorded across multiple readouts.
-  int64_t old_time = std::numeric_limits<int64_t>::lowest(); // ns
+  // lowest possible int value (not int64_t, since the afterpulsing veto
+  // time is specified as a regular int, and we want the first NCV coincidence
+  // in each ANNIEEvent to pass the cut) with each new DAQ readout since a
+  // single Hefty window will not be recorded across multiple readouts.
+  int64_t old_time = std::numeric_limits<int>::lowest(); // ns
 
   // TODO: add check that NCV PMT #1 and NCV PMT #2 have the same number
   // of minibuffers in their pulse vectors
@@ -560,31 +574,28 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
   // checks are for small time periods (typically 40 ns for phase I) so they
   // can use the time relative to the start of the current minibuffer (the
   // pulse object's "start time")
-  if (event_time <= old_time + afterpulsing_veto_time_) {
-    Log("Failed afterpulsing cut", 3, verbosity_);
-    return false;
-  }
-
-  Log("Passed afterpulsing cut", 3, verbosity_);
+  passed_afterpulse_cut_ = (event_time > old_time + afterpulsing_veto_time_);
+  time_since_last_event_ = event_time - old_time;
+  if ( passed_afterpulse_cut_ ) Log("Passed afterpulsing cut", 3, verbosity_);
+  else Log("Failed afterpulsing cut", 3, verbosity_);
 
   // Unique water PMT and tank charge cuts
-  int num_unique_water_pmts = BOGUS_INT;
+  unique_hit_water_pmts_ = BOGUS_INT;
   uint64_t tc_start_time = first_ncv1_pulse.start_time().GetNs();
-  double tank_charge = compute_tank_charge(minibuffer_index,
+  tank_charge_ = compute_tank_charge(minibuffer_index,
     adc_hits, tc_start_time, tc_start_time + tank_charge_window_length_,
-    num_unique_water_pmts);
+    unique_hit_water_pmts_);
 
-  if (num_unique_water_pmts > max_unique_water_pmts_) {
+  passed_unique_water_pmt_cut_ = (unique_hit_water_pmts_
+    <= max_unique_water_pmts_);
+  if ( passed_unique_water_pmt_cut_ )
+    Log("Passed unique water PMT cut", 3, verbosity_);
+  else
     Log("Failed unique water PMT cut", 3, verbosity_);
-    return false;
-  }
-  Log("Passed unique water PMT cut", 3, verbosity_);
 
-  if (tank_charge > max_tank_charge_) {
-    Log("Failed tank charge cut", 3, verbosity_);
-    return false;
-  }
-  Log("Passed tank charge cut", 3, verbosity_);
+  passed_tank_charge_cut_ = (tank_charge_ <= max_tank_charge_);
+  if ( passed_tank_charge_cut_ ) Log("Passed tank charge cut", 3, verbosity_);
+  else Log("Failed tank charge cut", 3, verbosity_);
 
   // NCV coincidence cut
   const std::vector<ADCPulse>& ncv_pmt2_pulses = adc_hits.at(
@@ -633,7 +644,7 @@ double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
   const std::map< ChannelKey, std::vector< std::vector<ADCPulse> > >& adc_hits,
   uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts)
 {
-  double tank_charge = 0.;
+  double temp_tank_charge = 0.;
   num_unique_water_pmts = 0;
 
   for (const auto& channel_pair : adc_hits) {
@@ -663,12 +674,13 @@ double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
           ++num_unique_water_pmts;
           found_pulse_in_time_window = true;
         }
-        tank_charge += pulse.charge();
+        temp_tank_charge += pulse.charge();
       }
     }
   }
 
-  Log("Tank charge = " + std::to_string(tank_charge) + " nC", 4, verbosity_);
+  Log("Tank charge = " + std::to_string(temp_tank_charge) + " nC", 4,
+    verbosity_);
   Log("Unique PMTs = " + std::to_string(num_unique_water_pmts), 4, verbosity_);
-  return tank_charge;
+  return temp_tank_charge;
 }
