@@ -25,7 +25,7 @@ template<typename ElementType> void ComputeMeanAndVariance(
   }
 
   size_t num_samples = 0;
-  double m2 = 0.;
+  double mean_x2 = 0.;
   mean = 0.;
 
   for (const ElementType& x : data) {
@@ -33,11 +33,11 @@ template<typename ElementType> void ComputeMeanAndVariance(
     double delta = x - mean;
     mean += delta / num_samples;
     double delta2 = x - mean;
-    m2 += delta * delta2;
+    mean_x2 = delta * delta2;
     if (num_samples == sample_cutoff) break;
   }
 
-  var = m2 / (num_samples - 1);
+  var = mean_x2 / (num_samples - 1);
   return;
 }
 

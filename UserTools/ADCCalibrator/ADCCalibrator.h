@@ -25,7 +25,7 @@ class ADCCalibrator : public Tool {
     /// @brief Compute the baseline for a particular RawChannel
     /// object using a technique taken from the ZE3RA code.
     /// @details See section 2.2 of https://arxiv.org/pdf/1106.0808.pdf for a
-    /// description of the algorithm.
+    /// full description of the algorithm.
     void ze3ra_baseline(const std::vector< Waveform<unsigned short> >& raw_data,
       double& baseline, double& sigma_baseline, size_t num_baseline_samples);
 

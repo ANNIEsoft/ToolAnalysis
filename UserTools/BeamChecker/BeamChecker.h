@@ -41,8 +41,12 @@ class BeamChecker: public Tool {
     /// time, end time) pairs giving the range of times (in ms since the Unix
     /// epoch) recorded for the E:TOR875 device (used to determine POT values)
     /// in each entry
-    std::map<int, std::pair<uint64_t, uint64_t> >
+    std::map<int, std::pair<unsigned long long, unsigned long long> >
       beam_db_index_;
+
+    /// @brief BeamStatus objects with a value of POT less than or equal to this
+    /// value will automatically be marked as "Bad"
+    double bad_pot_max_;
 
     /// @brief The verbosity to use when printing logging messages
     /// @details A larger value corresponds to more verbose output
@@ -50,9 +54,9 @@ class BeamChecker: public Tool {
 
     /// @brief The timestamp (ms since the Unix epoch) of the earliest POT
     /// information available in the current beam database file
-    uint64_t start_ms_since_epoch_;
+    unsigned long long start_ms_since_epoch_;
 
     /// @brief The timestamp (ms since the Unix epoch) of the latest POT
     /// information available in the current beam database file
-    uint64_t end_ms_since_epoch_;
+    unsigned long long end_ms_since_epoch_;
 };
