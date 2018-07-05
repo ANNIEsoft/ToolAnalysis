@@ -93,46 +93,46 @@ LAPPDTree->Branch("PulseNum",&PulseNum);
   m_data->Stores["ANNIEEvent"]->Get("RecoLaserTestHit",ISUHits);
   m_data->Stores["ANNIEEvent"]->Get("HitPulses",LAPPDHitPulses);
   m_data->Stores["ANNIEEvent"]->Get("PulseNum",PulseNum);
-  //std::cout<<LAPPDHitPulses.size()<<endl;
+  std::cout<<LAPPDHitPulses.size()<<endl;
   for(int i=0; i<LAPPDHitPulses.size(); i++){
     LAPPDPulse tempPulse = LAPPDHitPulses.at(i);
-    //std::cout<<tempPulse.GetChannelID()<<endl;
+    std::cout<<tempPulse.GetChannelID()<<endl;
     if(tempPulse.GetChannelID()==0)
     {
       ampCH1=LAPPDHitPulses.at(i).GetPeak();
       tpsecCH1=LAPPDHitPulses.at(i).GetTpsec();
       chrgCH1=LAPPDHitPulses.at(i).GetCharge();
-      // std::cout<<"Amp 1 "<<ampCH1<<endl;
-       //std::cout<<"Tpsec 1 "<<tpsecCH1<<endl;
-       //std::cout<<"Charge 1 "<<chrgCH1<<endl;
+       std::cout<<"Amp 1 "<<ampCH1<<endl;
+       std::cout<<"Tpsec 1 "<<tpsecCH1<<endl;
+       std::cout<<"Charge 1 "<<chrgCH1<<endl;
     }
      if(tempPulse.GetChannelID()==1)
     {
       ampCH2=LAPPDHitPulses.at(i).GetPeak();
       tpsecCH2=LAPPDHitPulses.at(i).GetTpsec();
       chrgCH2=LAPPDHitPulses.at(i).GetCharge();
-      //std::cout<<"Amp 2 "<<ampCH2<<endl;
-      //std::cout<<"Tpsec 2 " <<tpsecCH2<<endl;
-      //std::cout<<"Charge 2 "<<chrgCH2<<endl;
+      std::cout<<"Amp 2 "<<ampCH2<<endl;
+ std::cout<<"Tpsec 2 " <<tpsecCH2<<endl;
+ std::cout<<"Charge 2 "<<chrgCH2<<endl;
     }
     if(tempPulse.GetChannelID()==2)
     {
       ampCH3=LAPPDHitPulses.at(i).GetPeak();
       tpsecCH3=LAPPDHitPulses.at(i).GetTpsec();
       chrgCH3=LAPPDHitPulses.at(i).GetCharge();
-      //std::cout<<"Amp 3 "<<ampCH3<<endl;
-      //std::cout<<"Tpsec 3 "<<tpsecCH3<<endl;
-      //std::cout<<"Charge 3 "<<chrgCH3<<endl;
+      std::cout<<"Amp 3 "<<ampCH3<<endl;
+ std::cout<<"Tpsec 3 "<<tpsecCH3<<endl;
+ std::cout<<"Charge 3 "<<chrgCH3<<endl;
     }
-
-
+    
+    
     ParaPos=ISUHits.GetLocalPosition().at(0);
     TransPos=ISUHits.GetLocalPosition().at(1);
-    //std::cout<<"ParaPos "<<ParaPos<<endl;
-    //std::cout<<"TransPos "<<TransPos<<endl;
+    std::cout<<"ParaPos "<<ParaPos<<endl;
+    std::cout<<"TransPos "<<TransPos<<endl;
 
 }
- LAPPDTree->Fill();
+ LAPPDTree->Fill(); 
       // get raw lappd data
   std::map<int,vector<Waveform<double>>> rawlappddata;
   m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
