@@ -24,11 +24,11 @@ bool RawLoadToRoot::Initialise(std::string configfile, DataModel &data){
 
   treeoutput = new TFile(treeoutfile, "RECREATE");
   //treeoutput->mkdir("fullwaveforms");
-  treeoutput->mkdir("pulses");
-  treeoutput->mkdir("starttime");
+  //treeoutput->mkdir("pulses");
+  //treeoutput->mkdir("starttime");
   //treeoutput->mkdir("bsubwaveforms");
   treeoutput->mkdir("pulsewaveforms");
-  treeoutput->mkdir("movingbaseline");
+  //treeoutput->mkdir("movingbaseline");
 
   rawtotree = new TTree("RawLoadTree", "RawLoadTree");
 
@@ -236,11 +236,11 @@ bool RawLoadToRoot::Execute(){
 
   if((lboundII<=EventNumber && EventNumber<=uboundII && onoffswitchII==1)||onoffswitchII==0){
 
-    TString aname;
-    aname += "StartTime_Read";
-    aname += EventNumber;
+    //TString aname;
+    //aname += "StartTime_Read";
+    //aname += EventNumber;
 
-    TH1D* StartTimeHist = new TH1D(aname,aname,(ttot/20),0,ttot);
+    //TH1D* StartTimeHist = new TH1D(aname,aname,(ttot/20),0,ttot);
 
     map<int,map<int,std::vector<ADCPulse>>> :: iterator iter;
     for(iter=trigev.begin(); iter!=trigev.end(); ++iter){
@@ -260,7 +260,7 @@ bool RawLoadToRoot::Execute(){
             ADCPulse apulse = somepulses.at(ccc);
             if(ccc>0){prevpulse = somepulses.at(ccc-1);}
 
-            StartTimeHist->Fill(apulse.start_time());
+            //StartTimeHist->Fill(apulse.start_time());
             AllStartTimesHist->Fill(apulse.start_time());
             ChanPulseHist->Fill(channelnum);
           }
@@ -270,9 +270,9 @@ bool RawLoadToRoot::Execute(){
 
     }
 
-    treeoutput->cd("starttime");
-    StartTimeHist->Write();
-    delete StartTimeHist;
+    //treeoutput->cd("starttime");
+    //StartTimeHist->Write();
+    //delete StartTimeHist;
 
   }
 
