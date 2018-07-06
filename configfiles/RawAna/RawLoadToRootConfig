@@ -1,7 +1,7 @@
 #RawLoadToRoot
 
 #Output File
-treeoutfile /anniecode/MRDData/R924S44_FullSubrun.root
+treeoutfile /anniecode/MRDData/R925S0_TEST.root
 
 #Set onoffswitches to 0 to look at all trigger events or 1 to use bound settings
 
