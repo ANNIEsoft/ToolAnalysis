@@ -14,7 +14,7 @@
 
 LAPPDresponse::LAPPDresponse()
 {
-  TFile* tf = new TFile("/ANNIEcode/ToolAnalysis/UserTools/LAPPDSim/pulsecharacteristics.root","READ");
+  TFile* tf = new TFile("/ANNIECode/ToolAnalysis/UserTools/LAPPDSim/pulsecharacteristics.root","READ");
 
   // the shape of a typical pulse
   _templatepulse = (TH1D*) tf->Get("templatepulse");
@@ -84,7 +84,7 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
     //signal has to be larger than 0.5 mV
     if( (wspeak>0.5) && (wstrip>0) && (wstrip<31) ) {
       int tubeid = 0;
-      TimeClass thetime=0;
+      double thetime=0;
       double charge =0;
       double low = 0;
       double hi = 0;
@@ -174,8 +174,8 @@ Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double 
       double peakv=tempoVector.at(k).GetPeak();
       //arrival time of the pulse
       //double ptime = mpulse->Getpulsetime();
-      TimeClass thetime=0;
-      double ptime= thetime.GetNs();
+      double thetime=0;
+      double ptime= thetime;
       //transit time of the pulse along the strip
       double stime=tempoVector.at(k).GetTpsec();
       //looking at the signal to the left (parity=-1) or right (parity=1)?

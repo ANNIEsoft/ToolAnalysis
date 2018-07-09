@@ -1,0 +1,10 @@
+#MRDPulseFinder
+
+ #Threshold in ADC counts above the baseline
+ Threshold 8
+
+ #Minimum time (in ns) the pulse must be at or above the threshold to be counted as a pulse
+ MinPulseWidth 7
+
+ #Baseline 300
+ #SigmaBaseline 5
