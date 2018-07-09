@@ -219,7 +219,7 @@ std::vector<ADCPulse> ADCHitFinder::find_pulses(
       for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
         charge += calibrated_minibuffer_data.GetSample(p);
       }
-      
+
       // Convert the pulse integral to nC
       charge *= NS_PER_ADC_SAMPLE / ADC_IMPEDANCE;
 
@@ -229,7 +229,7 @@ std::vector<ADCPulse> ADCHitFinder::find_pulses(
 
       // Store the freshly made pulse in the vector of found pulses
       pulses.emplace_back(channel_key.GetDetectorElementIndex(),
-        TimeClass( pulse_start_sample * NS_PER_SAMPLE ),
+        ( pulse_start_sample * NS_PER_SAMPLE ),
         TimeClass( peak_sample * NS_PER_SAMPLE ),
         calibrated_minibuffer_data.GetBaseline(),
         calibrated_minibuffer_data.GetSigmaBaseline(),
