@@ -51,3 +51,4 @@
 #include "LAPPDlasertestHitFinder/LAPPDlasertestHitFinder.cpp"
 #include "RawLoadToRoot/RawLoadToRoot.cpp"
 #include "MRDPulseFinder/MRDPulseFinder.cpp"
+#include "LAPPDAnalysis/LAPPDAnalysis.cpp"
