@@ -27,7 +27,7 @@ class TimeClass : public SerialisableObject{
 
 	private:
 uint64_t unixns;
-  double psec;
+
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
 			ar & unixns;
