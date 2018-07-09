@@ -114,7 +114,7 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
   double peak=0.;
   double low=0.;
   double hi=0.;
-  TimeClass tc(0);
+  double tc=0;
   double tp=0.;
 
   bool pulsestarted=false;

@@ -115,21 +115,6 @@ double annie_math::Incomplete_Beta_Function(double x, double a, double b)
    return (beta > DBL_MAX) ? DBL_MAX : (double) beta;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// double Regularized_Beta_Function( double x, double a, double b )           //
-//                                                                            //
-//  Description:                                                              //
-//     The regularized beta function is the ratio of the incomplete beta      //
-//     function and the (complete) beta function.                             //
-////////////////////////////////////////////////////////////////////////////////
-double annie_math::Regularized_Beta_Function( double x, double a, double b)
-{
-  long double incomp_beta = xIncomplete_Beta_Function(x, a, b);
-  long double beta = xBeta_Function(a, b);
-  long double result = incomp_beta / beta;
-  return ( result > DBL_MAX ) ? DBL_MAX : (double) result;
-}
-
 namespace {
 ////////////////////////////////////////////////////////////////////////////////
 // long double xIncomplete_Beta_Function( long double x, long double a,       //

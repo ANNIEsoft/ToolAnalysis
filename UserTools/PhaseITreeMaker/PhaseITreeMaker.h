@@ -127,28 +127,4 @@ class PhaseITreeMaker : public Tool {
 
     // Stores total POT, spill, etc. information for each NCV position
     std::map<int, NCVPositionInfo> ncv_position_info_;
-
-    // Extra tree that stores information about each pulse found by the
-    // ADCHitFinder tool, regardless of whether it is part of an NCV
-    // coincidence event or not.
-    TTree* output_pulse_tree_ = nullptr;
-
-    // Pulse tree branch variables
-    uint32_t minibuffer_number_ = 0u;
-    int64_t pulse_start_time_ns_ = 0; // ns
-    double pulse_amplitude_ = 0.; // V
-    double pulse_charge_ = 0.; // nC
-    int pulse_pmt_id_ = 0.; // nC
-    unsigned short pulse_raw_amplitude_ = 0u; // ADC counts
-    uint32_t spill_number_ = 0u;
-    bool in_spill_ = false;
-
-    // Tree that stores information about the beam quality cuts
-    TTree* output_beam_tree_ = nullptr;
-
-    // Beam tree branch variables
-    bool pot_ok_ = false;
-    bool horn_current_ok_ = false;
-    bool timestamps_ok_ = false;
-    bool toroids_agree_ = false;
 };

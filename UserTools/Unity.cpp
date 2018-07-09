@@ -48,3 +48,7 @@
 #include "LoadWCSimLAPPD/LoadWCSimLAPPD.cpp"
 #include "LoadWCSimLAPPD/LAPPDTree.cpp"
 #include "WCSimDemo/WCSimDemo.cpp"
+#include "LAPPDlasertestHitFinder/LAPPDlasertestHitFinder.cpp"
+#include "RawLoadToRoot/RawLoadToRoot.cpp"
+#include "MRDPulseFinder/MRDPulseFinder.cpp"
+#include "LAPPDAnalysis/LAPPDAnalysis.cpp"

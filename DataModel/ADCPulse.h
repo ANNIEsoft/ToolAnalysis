@@ -21,14 +21,14 @@ class ADCPulse : public Hit {
 
     // TODO: consider using a ChannelKey object instead of the Hit class's
     // int TubeId member
-    ADCPulse(int TubeId, TimeClass start_time, TimeClass peak_time,
+    ADCPulse(int TubeId, double start_time, TimeClass peak_time,
       double baseline, double sigma_baseline, unsigned long raw_area,
       unsigned short raw_amplitude, double calibrated_amplitude,
       double charge);
 
     // @brief Returns the start time (ns) of the pulse relative to the
     // start of its minibuffer
-    inline TimeClass start_time() const { return start_time_; }
+    inline double start_time() const { return start_time_; }
 
     // @brief Returns the peak time (ns) of the pulse relative to the
     // start of its minibuffer
@@ -76,7 +76,7 @@ class ADCPulse : public Hit {
 
   protected:
 
-    TimeClass start_time_; // ns since beginning of minibuffer
+    double start_time_; // ns since beginning of minibuffer
     TimeClass peak_time_; // ns since beginning of minibuffer
     double baseline_; // mean (ADC)
     double sigma_baseline_; // standard deviation (ADC)

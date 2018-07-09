@@ -2,4 +2,4 @@
 verbose 2
 NumBaselineSamples 25
 NumSubMinibuffers 40 
-PCritical 0.01
+QCritical 1e-4

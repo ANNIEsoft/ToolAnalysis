@@ -7,8 +7,8 @@
 #include "IFBeamDBInterface.h"
 
 namespace {
-  constexpr uint64_t TWO_HOURS = 7200000ull; // ms
-  constexpr uint64_t THIRTY_SECONDS = 30000ull; // ms
+  constexpr unsigned long long TWO_HOURS = 7200000ull; // ms
+  constexpr unsigned long long THIRTY_SECONDS = 30000ull; // ms
 }
 
 BeamFetcher::BeamFetcher() : Tool(),
@@ -49,7 +49,7 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
 
 bool BeamFetcher::Execute() {
 
-  uint64_t start_ms_since_epoch;
+  unsigned long long start_ms_since_epoch;
   bool got_start_ms = m_variables.Get("StartMillisecondsSinceEpoch",
     start_ms_since_epoch);
 
@@ -59,7 +59,7 @@ bool BeamFetcher::Execute() {
     return false;
   }
 
-  uint64_t end_ms_since_epoch;
+  unsigned long long end_ms_since_epoch;
   bool got_end_ms = m_variables.Get("EndMillisecondsSinceEpoch",
     end_ms_since_epoch);
 
@@ -75,7 +75,7 @@ bool BeamFetcher::Execute() {
     return false;
   }
 
-  uint64_t chunk_step_ms;
+  unsigned long long chunk_step_ms;
   bool got_time_step = m_variables.Get("TimeChunkStepInMilliseconds",
     chunk_step_ms);
 
@@ -95,24 +95,26 @@ bool BeamFetcher::Finalise() {
   return true;
 }
 
-bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
-  uint64_t end_ms_since_epoch, uint64_t chunk_step_ms)
+bool BeamFetcher::fetch_beam_data(unsigned long long start_ms_since_epoch,
+  unsigned long long end_ms_since_epoch, unsigned long long chunk_step_ms)
 {
   // Get POT information backwards moving from the end time to the start
   // time in large chunks. Chunk sizes of two hours or so are recommended.
   // Chunks significantly longer than that will reliably cause some
   // database queries to fail.
-  uint64_t current_time = end_ms_since_epoch;
+  unsigned long long current_time = end_ms_since_epoch;
 
   // Get a const reference to the beam database interface
   const auto& db = IFBeamDBInterface::Instance();
 
   // Storage for parsed data from the IF beam database
-  std::map<std::string, std::map<uint64_t, BeamDataPoint> > beam_data;
+  std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
+    beam_data;
 
   // Index to save in the BoostStore header. Allows easy searching of the
   // BeamDB entries later
-  std::map<int, std::pair<uint64_t, uint64_t> > beam_db_index;
+  std::map<int, std::pair<unsigned long long, unsigned long long> >
+    beam_db_index;
 
   int current_entry = 0;
 
@@ -135,16 +137,16 @@ bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
 
     // Find the range of times for which E:TOR875 data exist in the
     // current beam database chunk
-    uint64_t start_ms
-      = std::numeric_limits<uint64_t>::max();
-    uint64_t end_ms = 0ull;
+    unsigned long long start_ms
+      = std::numeric_limits<unsigned long long>::max();
+    unsigned long long end_ms = 0ull;
     for (const auto& pair : pot_map) {
       if (pair.first < start_ms) start_ms = pair.first;
       if (pair.first > end_ms) end_ms = pair.first;
     }
 
-    beam_db_index[current_entry] = std::pair<uint64_t,
-      uint64_t>(start_ms, end_ms);
+    beam_db_index[current_entry] = std::pair<unsigned long long,
+      unsigned long long>(start_ms, end_ms);
 
     beam_db_store_.Set("BeamDB", beam_data);
     beam_db_store_.Save(db_filename_);
@@ -156,13 +158,13 @@ bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
   beam_db_store_.Header->Set("BeamDBIndex", beam_db_index);
 
   // Find the range of times covered by the entire downloaded database
-  uint64_t overall_start_ms
-      = std::numeric_limits<uint64_t>::max();
-  uint64_t overall_end_ms = 0ull;
+  unsigned long long overall_start_ms
+      = std::numeric_limits<unsigned long long>::max();
+  unsigned long long overall_end_ms = 0ull;
 
   for (const auto& pair : beam_db_index) {
-    uint64_t temp_start_ms = pair.second.first;
-    uint64_t temp_end_ms = pair.second.second;
+    unsigned long long temp_start_ms = pair.second.first;
+    unsigned long long temp_end_ms = pair.second.second;
     if (temp_start_ms < overall_start_ms) overall_start_ms = temp_start_ms;
     if (temp_end_ms > overall_end_ms) overall_end_ms = temp_end_ms;
   }
