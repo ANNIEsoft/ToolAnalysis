@@ -39,7 +39,7 @@ public :
    Int_t           lappdevt;                          // event number
    Int_t           lappd_numhits;                     // number of LAPPDs hit this evt
    Int_t           lappdhit_objnum[180];              //[lappd_numhits], hit LAPPD number
-   Double_t        lappdhit_x[180];                   //[lappd_numhits], hit LAPPD x position, [mm]
+   Double_t        lappdhit_x[180];                   //[lappd_numhits], hit LAPPD x position
    Double_t        lappdhit_y[180];                   //[lappd_numhits]
    Double_t        lappdhit_z[180];                   //[lappd_numhits]
    vector<double>  *lappdhit_stripcoorx;              // x pos within tile [mm]

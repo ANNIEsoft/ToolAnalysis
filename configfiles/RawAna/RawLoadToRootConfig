@@ -1,0 +1,19 @@
+#RawLoadToRoot
+
+#Output File
+treeoutfile /anniecode/MRDData/R925S0_TEST.root
+
+#Set onoffswitches to 0 to look at all trigger events or 1 to use bound settings
+
+#full traces (bounds go by relative event number)
+onoffswitch 0
+lowerbound 0
+upperbound 10
+
+#pulses (bounds go by absolute event number)
+onoffswitchII 0
+lowerboundII 10000
+upperboundII 10011
+
+#timing (in nanoseconds)->sets the bounds for the histograms
+timewindow 80000

@@ -43,6 +43,10 @@ if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
 if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
 //if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
 if (tool=="LoadWCSimLAPPD") ret=new LoadWCSimLAPPD;
-  if (tool=="WCSimDemo") ret=new WCSimDemo;
+if (tool=="WCSimDemo") ret=new WCSimDemo;
+if (tool=="LAPPDlasertestHitFinder") ret=new LAPPDlasertestHitFinder;
+if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
+if (tool=="MRDPulseFinder") ret=new MRDPulseFinder;
+  if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
 return ret;
 }
