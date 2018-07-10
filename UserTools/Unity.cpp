@@ -49,3 +49,5 @@
 #include "LoadWCSimLAPPD/LAPPDTree.cpp"
 #include "WCSimDemo/WCSimDemo.cpp"
 #include "DigitBuilder/DigitBuilder.cpp"
+#include "VtxSeedGenerator/VtxSeedGenerator.cpp"
+#include "VtxPointPositionFinder/VtxPointPositionFinder.cpp"

@@ -14,7 +14,6 @@
 
 class DigitBuilder: public Tool {
 
-
  public:
 
   DigitBuilder();
@@ -53,9 +52,10 @@ class DigitBuilder: public Tool {
  	/// Clear digit list
  	void Reset();
  	
-  int fverbosity=1;
+  int verbosity=1;
 	std::string fInputfile;
 	unsigned long fNumEvents;
+	double fMRDTrackLengthMax;
 	
 	/// contents of ANNIEEvent filled by LoadWCSim and LoadWCSimLAPPD
 	std::string fMCFile;
@@ -72,15 +72,15 @@ class DigitBuilder: public Tool {
 	TimeClass* fEventTime=nullptr;    ///< NDigits trigger time in ns from when the particles were generated
 	
 	/// verbosity levels: if 'verbosity' < this level, the message type will be logged.
-	int fv_error=0;
-	int fv_warning=1;
-	int fv_message=2;
-	int fv_debug=3;
-	std::string flogmessage;
-	int fget_ok;	
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;	
 	
 	/// Reconstructed information
-	std::vector<RecoDigit*>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
+	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
 	
 	/// \brief Clear reconstructed hits
   ///

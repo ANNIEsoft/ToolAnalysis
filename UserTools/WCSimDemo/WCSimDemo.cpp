@@ -22,7 +22,6 @@ bool WCSimDemo::Initialise(std::string configfile, DataModel &data){
 	return true;
 }
 
-
 bool WCSimDemo::Execute(){
 	Log("WCSimDemo Tool: Executing",v_debug,verbosity);
 	get_ok = m_data->Stores.count("ANNIEEvent");
@@ -127,7 +126,7 @@ bool WCSimDemo::Execute(){
 			if(chankey.GetSubDetectorType()==subdetector::LAPPD){ // redundant
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
-					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
+					if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// an LAPPDHit has adds (global x-y-z) position, (in-tile x-y) local position
 					// and time psecs
 				}

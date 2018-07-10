@@ -31,7 +31,7 @@ RecoVertex::RecoVertex( Position pos, Direction dir)
 }
 
 
-RecoVertex::RecoVertex( Position pos, TimeClass t, Direction dir, double fom, int nsteps, bool pass, int status )
+RecoVertex::RecoVertex( Position pos, double t, Direction dir, double fom, int nsteps, bool pass, int status )
 {
   this->Reset();
   this->SetVertex(pos);
@@ -41,7 +41,7 @@ RecoVertex::RecoVertex( Position pos, TimeClass t, Direction dir, double fom, in
   ANNIERecoObjectTable::Instance()->NewVertex();
 }
 
-RecoVertex::RecoVertex( Position pos, TimeClass t,Direction dir, double angle, double length,double fom, int nsteps, bool pass, int status )
+RecoVertex::RecoVertex( Position pos, double t,Direction dir, double angle, double length,double fom, int nsteps, bool pass, int status )
 {
   this->Reset();
   this->SetVertex(pos,t);
@@ -61,20 +61,43 @@ RecoVertex::~RecoVertex()
 
 void RecoVertex::SetVertex( Position pos )
 {
-  TimeClass t(950.0);
+  double t = 950.0;
   this->SetVertex(pos, t);
 }
 
-void RecoVertex::SetVertex( Position pos, TimeClass t )
+void RecoVertex::SetVertex( double vtxX, double vtxY, double vtxZ )
+{
+  double t = 950.0;
+  Position pos(vtxX, vtxY, vtxZ);
+  this->SetVertex(pos, t);
+  
+}
+
+void RecoVertex::SetVertex( Position pos, double t )
 {
   fPosition = pos;
   fTime  = t;
   fFoundVertex = 1;
 }
 
+void RecoVertex::SetVertex( double vtxX, double vtxY, double vtxZ, double vtxT )
+{
+  double t(vtxT);
+  Position pos(vtxX, vtxY, vtxZ);
+  this->SetVertex(pos, t);
+}
+
 void RecoVertex::SetDirection( Direction dir )
 {
   fDirection = dir;
+  fFoundDirection = 1;
+}
+
+void RecoVertex::SetDirection( double dirX, double dirY, double dirZ)
+{
+  fDirection.SetX(dirX);
+  fDirection.SetY(dirY);
+  fDirection.SetZ(dirZ);
   fFoundDirection = 1;
 }
 
@@ -95,7 +118,7 @@ void RecoVertex::SetFOM( Double_t fom, Int_t nsteps, Bool_t pass )
   fPass = pass;
 }
 
-void RecoVertex::SetTime(TimeClass vtxtime) {
+void RecoVertex::SetTime(double vtxtime) {
   fTime = vtxtime;	
 }
 
@@ -123,11 +146,10 @@ RecoVertex* RecoVertex::CloneVertex(RecoVertex* b) {
 
 void RecoVertex::Reset()
 { 
-  fPosition = Position(0,0,0);
-  fTime = TimeClass(0.0);
+  fPosition = Position(0.,0.,0.);
+  fTime = double(0.0);
   fFoundVertex = 0;
-
-  fDirection = Direction(0,0,0);
+  fDirection = Direction(0.,0.,0.);
   fFoundDirection = 0;
 
   fConeAngle = 0.0;
@@ -141,12 +163,13 @@ void RecoVertex::Reset()
   fStatus = RecoVertex::kOK;
 }
 
-void RecoVertex::PrintVertex() {
+bool RecoVertex::Print() {
 	std::cout<<"-------------------------------------------------------"<<std::endl;
   std::cout<<"     PrintVertex Vertex Information:"<<std::endl;
-  std::cout<<"     (x, y, z, t) = ("<<fPosition.X()<<", "<<fPosition.Y()<<", "<<fPosition.Z()<<", "<<fTime.GetNs()<<")"<<std::endl;
+  std::cout<<"     (x, y, z, t) = ("<<fPosition.X()<<", "<<fPosition.Y()<<", "<<fPosition.Z()<<", "<<fTime<<")"<<std::endl;
   std::cout<<"     (DirX, DirY, DirZ) = ("<<fDirection.X()<<", "<<fDirection.Y()<<", "<<fDirection.Z()<<")"<<std::endl;
   std::cout<<"     Figure Of Merit = "<<fFOM<<std::endl;
   std::cout<<"-------------------------------------------------------"<<std::endl;
+  return true;
 }
 

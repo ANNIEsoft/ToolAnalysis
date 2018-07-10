@@ -5,7 +5,6 @@
 
 #include<SerialisableObject.h>
 #include "Position.h"
-#include "TimeClass.h"
 #include "Direction.h"
 #include "ANNIERecoObjectTable.h"
 using namespace std;
@@ -29,27 +28,29 @@ class RecoVertex : public SerialisableObject {
   RecoVertex();
   RecoVertex( Position pos );
   RecoVertex( Position pos, Direction dir );
-  RecoVertex( Position pos, TimeClass t, Direction dir,
+  RecoVertex( Position pos, double t, Direction dir,
   								 double fom, int nsteps, bool pass, int status );
-  RecoVertex( Position pos, TimeClass t,Direction dir, 
+  RecoVertex( Position pos, double t,Direction dir, 
                    double angle, double length,
                    double fom, int nsteps, bool pass, int status );
   ~RecoVertex();
 
-  void SetVertex( Position pos, TimeClass t);
+  void SetVertex( Position pos, double t);
   void SetVertex( Position pos);
+  void SetVertex( double vtxX, double vtxY, double vtxZ);
+  void SetVertex( double vtxX, double vtxY, double vtxZ, double vtxT);
   void SetDirection( Direction dir);
+  void SetDirection(double dirX, double dirY, double dirZ);
   void SetConeAngle( double angle );
   void SetTrackLength( double length );
   void SetFOM(double fom, int nsteps, bool pass);
-  void SetTime(TimeClass vtxtime);
+  void SetTime(double vtxtime);
   void SetStatus(int status);
   RecoVertex* CloneVertex(RecoVertex* b); 
 
   Position GetPosition() { return fPosition;}
-  TimeClass GetTime() { return fTime; }
+  double GetTime() { return fTime; }
   bool FoundVertex() { return fFoundVertex; }
-  
 
   Direction GetDirection() { return fDirection; }
   bool FoundDirection() { return fFoundDirection; }
@@ -63,12 +64,12 @@ class RecoVertex : public SerialisableObject {
   int GetStatus(){ return fStatus; }
 
   void Reset();
-  void PrintVertex();
+  bool Print();
 
   private:
   	
   Position fPosition;
-  TimeClass fTime;
+  double fTime;
   Direction fDirection; 
   bool fFoundVertex;
   bool fFoundDirection;
@@ -78,6 +79,22 @@ class RecoVertex : public SerialisableObject {
   int fIterations;
   bool fPass;
   int fStatus;
+  
+  template<class Archive> void serialize(Archive & ar, const unsigned int version){
+		if(serialise){
+			ar & fPosition;
+			ar & fTime;
+			ar & fDirection;
+			ar & fFoundVertex;
+			ar & fFoundDirection;
+			ar & fConeAngle;
+			ar & fTrackLength;
+			ar & fFOM;
+			ar & fIterations;
+			ar & fPass;
+			ar & fStatus;
+		}
+	}
 
 };
 

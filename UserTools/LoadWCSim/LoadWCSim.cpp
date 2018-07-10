@@ -89,7 +89,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// =============================================
 	int annieeventexists = m_data->Stores.count("ANNIEEvent");
 	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
-	
+		
 	// construct the Geometry to go in the header from the WCSimRootGeom
 	// =================================================================
 	double WCSimGeometryVer = 1;                       // TODO pull this from some suitable variable
@@ -210,7 +210,6 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	return true;
 }
-
 
 bool LoadWCSim::Execute(){
 	

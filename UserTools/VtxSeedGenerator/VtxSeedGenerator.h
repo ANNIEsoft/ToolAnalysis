@@ -1,0 +1,115 @@
+#ifndef VtxSeedGenerator_H
+#define VtxSeedGenerator_H
+
+#include <string>
+#include <iostream>
+
+#include "Tool.h"
+#include "ANNIEGeometry.h"
+
+class VtxSeedGenerator: public Tool {
+
+
+ public:
+
+  VtxSeedGenerator();
+  bool Initialise(std::string configfile,DataModel &data);
+  bool Execute();
+  bool Finalise();
+
+ private:
+ 	
+ 	/// \brief Reset true vertex and vertex seeds
+ 	///
+ 	/// Clear true vertex and vertex seed list
+ 	void Reset();
+ 	
+ 	/// \brief Find true neutrino vertex
+ 	///
+ 	/// Loop over all MC particles and find the particle with highest energy. 
+ 	/// This particle is the primary muon. The muon start position, time and 
+ 	/// the muon direction are used to initise the true neutrino vertex 
+ 	RecoVertex* FindTrueVertex();
+ 	
+ 	/// \brief Calculate seed candidate
+ 	///
+ 	/// Use VertexGeometry to find the seeds
+ 	bool GenerateVertexSeeds(int NSeeds);
+ 	
+ 	/// \brief Calculate simple vertex
+ 	///
+ 	/// \param[in] double& vtxX: vertex x position
+ 	/// \param[in] double& vtxY: vertex y position
+ 	/// \param[in] double& vtxZ: vertex z position
+ 	/// \param[in] double& vtxTime: vertex time
+ 	void CalcSimpleVertex(double& vtxX, double& vtxY, double& vtxZ, double& vtxTime);
+ 	
+ 	/// \brief Choose a four-hit combination
+ 	///
+ 	/// Choose four different digits from the digit list
+ 	void ChooseNextQuadruple(double& x0, double& y0, double& z0, double& t0, 
+ 																				double& x1, double& y1, double& z1, double& t1, 
+ 																				double& x2, double& y2, double& z2, double& t2, 
+ 																				double& x3, double& y3, double& z3, double& t3);
+ 	
+ 	/// \brief Choose next digit
+ 	///
+ 	/// Choose a digit to form a quadruple. 
+ 	void ChooseNextDigit(double& xpos, double& ypos, double& zpos, double& time);
+ 	
+ 	/// \brief Save true neutrino vertex
+ 	///
+ 	/// Push true neutrino vertex to "RecoVertex"
+ 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
+ 	void PushTrueVertex(bool savetodisk);
+ 	
+ 	/// \brief Calculate seed candidate
+ 	///
+ 	/// Use VertexGeometry to find the seeds
+ 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
+ 	void PushVertexSeeds(bool savetodisk);
+ 	
+ 		
+ 	/// Data variables
+ 	uint64_t fMCEventNum;      ///< event number in MC file
+ 	uint16_t fMCTriggernum;    ///< trigger number in MC file
+ 	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
+	RecoVertex* fTrueVertex = nullptr; 	 ///< true vertex
+	int fNumSeeds;    ///< Number of seeds to be generated
+	
+	
+	/// Seed information
+	double fVtxX1;
+  double fVtxY1;
+  double fVtxZ1;
+  double fVtxTime1;
+  double fVtxX2;
+  double fVtxY2;
+  double fVtxZ2;
+  double fVtxTime2;
+  int fThisDigit;
+  int fLastEntry;
+  int fCounter;
+  int fSeedType;
+  std::vector<RecoVertex>* vSeedVtxList = nullptr;
+//	std::vector<double>* vSeedVtxX=nullptr;
+//  std::vector<double>* vSeedVtxY=nullptr;
+//  std::vector<double>* vSeedVtxZ=nullptr;
+//  std::vector<double>* vSeedVtxTime=nullptr;
+  std::vector<int> vSeedDigitList;	///< a vector thats stores the index of the digits used to calculate the seeds
+ 	std::vector<RecoDigit>* fDigitList=nullptr;
+ 	
+  /// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+  int verbosity=-1;
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;	
+	
+
+};
+
+
+#endif

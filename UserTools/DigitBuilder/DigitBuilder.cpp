@@ -19,7 +19,7 @@ DigitBuilder::~DigitBuilder() {
 bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 
   /////////////////// Usefull header ///////////////////////
-  if(fverbosity) cout<<"Initializing Tool DigitBuilder"<<endl;
+  if(verbosity) cout<<"Initializing Tool DigitBuilder"<<endl;
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
 
@@ -27,53 +27,109 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   
   /// Get the Tool configuration variables
-	m_variables.Get("verbosity",fverbosity);
-	Log("Initializing Tool DigitBuilder",fv_message,fverbosity);
+	m_variables.Get("verbosity",verbosity);
+	Log("Initializing Tool DigitBuilder",v_message,verbosity);
 	
 	/// Construct the other objects we'll be setting at event level,
-	/// pass managed pointers to the ANNIEEvent Store
-	fDigitList = new std::vector<RecoDigit*>;
+	fDigitList = new std::vector<RecoDigit>;
+		
+  fMRDTrackLengthMax = 0.;
+		
+	// Make the RecoDigit Store if it doesn't exist
+	int recoeventexists = m_data->Stores.count("RecoEvent");
+	if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
 	
   return true;
 }
 
 bool DigitBuilder::Execute(){
 	
-	if(fverbosity) cout<<"Executing tool DigitBuilder with MC entry "<<fMCEventNum<<", trigger "<<fMCTriggernum<<endl;
-	Log("DigitBuilder Tool: Executing",fv_debug,fverbosity);
-	fget_ok = m_data->Stores.count("ANNIEEvent");
-	if(!fget_ok){
-		Log("DigitBuilder Tool: No ANNIEEvent store!",fv_error,fverbosity);
+	if(verbosity) cout<<"Executing tool DigitBuilder with MC entry "<<fMCEventNum<<", trigger "<<fMCTriggernum<<endl;
+	get_ok = m_data->Stores.count("ANNIEEvent");
+	if(!get_ok){
+		Log("DigitBuilder Tool: No ANNIEEvent store!",v_error,verbosity);
 		return false;
 	};
 	
 	/// First, see if this is a delayed trigger in the event
-	fget_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
-	if(not fget_ok){ Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",fv_error,fverbosity); return false; }
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
+	if(not get_ok){ Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
 	
 	/// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
-	if(fMCTriggernum>0){ Log("DigitBuilder Tool: Skipping delayed trigger",fv_debug,fverbosity); return true;}
+	if(fMCTriggernum>0){ Log("DigitBuilder Tool: Skipping delayed trigger",v_debug,verbosity); return true;}
 	
 	/// Retrieve the hit info from ANNIEEvent
-	fget_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
-	if(not fget_ok){ Log("DigitBuilder Tool: Error retrieving Geometry,true from ANNIEEvent!",fv_error,fverbosity); return false; }
-	fget_ok = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCHits);
-	if(not fget_ok){ Log("DigitBuilder Tool: Error retrieving MCHits,true from ANNIEEvent!",fv_error,fverbosity); return false; }
-	fget_ok = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fMCLAPPDHits);
-	if(not fget_ok){ Log("DigitBuilder Tool: Error retrieving MCLAPPDHits,true from ANNIEEvent!",fv_error,fverbosity); return false; }
-  
-	/// Print the information.
-	flogmessage = "DigitBuilder Tool: Processing truth tracks and digits for "+fMCFile
-				+", MCEvent "+to_string(fMCEventNum)+", MCTrigger "+to_string(fMCTriggernum);
-	Log(flogmessage,fv_debug,fverbosity);
+	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
+	if(not get_ok){
+		Log("DigitBuilder Tool: Error retrieving Geometry,true from ANNIEEvent!",v_error,verbosity); \
+		return false; 
+	}
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCHits);
+	if(not get_ok){ 
+		Log("DigitBuilder Tool: Error retrieving MCHits,true from ANNIEEvent!",v_error,verbosity); 
+		return false; 
+	}
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fMCLAPPDHits);
+	if(not get_ok){
+		Log("DigitBuilder Tool: Error retrieving MCLAPPDHits,true from ANNIEEvent!",v_error,verbosity); 
+		return false;
+	}
 	
-	// Reset Digit infomation
-	this->Reset();
-	// Build RecoDigit
-	this->BuildRecoDigit();
-	this->PushRecoDigits(false);
+	/// Retrieve the reconstructed information from the MRD
 	
-  return true;
+	int mrdtrackexists = m_data->Stores.count("MRDTracks");
+	if(mrdtrackexists == 0) {
+	  Log("DigitBuilder Tool: MRDTracks store doesn't exist!",v_message,verbosity);
+	  Log("DigitBuilder Tool: Continue without MRD event selection!",v_message,verbosity);
+	  // Reset Digit infomation
+	  this->Reset();
+	  // Build RecoDigit
+	  this->BuildRecoDigit();
+	  this->PushRecoDigits(true); 	
+	  return true;
+	}
+	else {
+	  /// Get number of subentries
+	  int TotalEntries = 0;
+	  double mrdtracklength = 0.;
+	  int mrdlayershit = 0;
+	  
+	  get_ok = m_data->Stores["MRDTracks"]->Header->Get("TotalEntries",TotalEntries);
+	  if(not get_ok) {
+	    Log("DigitBuilder Tool: Error retrieving MRDTracks header!",v_error,verbosity); 
+	  	return false;	
+	  }
+	  logmessage = "DigitBuilder Tool: Found " + to_string(TotalEntries) + "entries of MRD tracks";
+	  Log(logmessage,v_message,verbosity);
+	  
+	  // If mrd track isn't found
+	  if(TotalEntries == 0) {
+	    Log("DigitBuilder Tool: Found no MRD Tracks",v_message,verbosity);
+	    return true;
+	  }
+	  // If mrd track is found
+	  for(int entrynum=0; entrynum<TotalEntries; entrynum++) {
+	    m_data->Stores["MRDTracks"]->GetEntry(entrynum);
+	    m_data->Stores.at("MRDTracks")->Get("TrackLength",mrdtracklength);
+	    m_data->Stores.at("MRDTracks")->Get("LayersHit",mrdlayershit);
+	    if(fMRDTrackLengthMax<mrdtracklength) fMRDTrackLengthMax = mrdtracklength;
+	  }
+	  /// Print the information.
+	  logmessage = "DigitBuilder Tool: Processing truth tracks and digits for "+fMCFile
+	  			+", MCEvent "+to_string(fMCEventNum)+", MCTrigger "+to_string(fMCTriggernum);
+	  Log(logmessage,v_debug,verbosity);
+	  
+	  // Reset Digit infomation
+	  this->Reset();
+	  
+	  // Build RecoDigit
+	  this->BuildRecoDigit();
+	  this->PushRecoDigits(true);
+	  
+	  std::cout<<std::endl<<std::endl;
+	  
+    return true;
+  }
 }
 
 bool DigitBuilder::Finalise(){
@@ -88,16 +144,17 @@ bool DigitBuilder::BuildRecoDigit() {
 }
 
 bool DigitBuilder::BuildPMTRecoDigit() {
+	Log("DigitBuilder Tool: Build PMT reconstructed digits",v_message,verbosity);
 	// now move to digit retrieval
-	int region;
-	TimeClass calT;
-	double calQ;
-	int digitType;
+	int region = -999;
+	double calT;
+	double calQ = 0.;
+	int digitType = -999;
 	Detector det;
 	Position  pos_sim, pos_reco;
 	// MCHits is a std::map<ChannelKey,std::vector<Hit>>
 	if(fMCHits){
-		Log("DigitBuilderool: Num PMT Digits = "+to_string(fMCHits->size()),fv_message, fverbosity);
+		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fMCHits->size()),v_message, verbosity);
 		// iterate over the map of sensors with a measurement
 		for(std::pair<ChannelKey,std::vector<Hit>>&& apair : *fMCHits){
 			ChannelKey chankey = apair.first;
@@ -107,7 +164,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			// get PMT position
 			det = fGeometry.GetDetector(chankey);
 			if(det.GetDetectorElement() == "") {
-				Log("DigitBuilder Tool: Detector not found! ",fv_message,fverbosity);
+				Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
 				continue;
 			}
 			
@@ -121,14 +178,14 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 				std::vector<Hit>& hits = apair.second;
 	
 			  for(Hit& ahit : hits){
-			  	ahit.Print();
+			  	//ahit.Print();
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// get calibrated PMT time (Use the MC time for now)
-					calT = ahit.GetTime();
+					calT = ahit.GetTime().GetNs()*1.0;
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::PMT8inch;
-					RecoDigit* recoDigit = new RecoDigit(region, pos_reco, calT, calQ, digitType);
-				  //recoDigit->Print();
+					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
+				  //if(v_message<verbosity) recoDigit.Print();
 				  fDigitList->push_back(recoDigit); 
         }
 			}
@@ -141,35 +198,36 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 }
 
 bool DigitBuilder::BuildLAPPDRecoDigit() {
-	int region;
-	TimeClass calT;
-	double calQ;
-	int digitType;
+	Log("DigitBuilder Tool: Build LAPPD reconstructed digits",v_message,verbosity);
+	int region = -999;
+	double calT = 0;
+	double calQ = 0;
+	int digitType = -999;
 	Detector det;
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
 	// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>
 	if(fMCLAPPDHits){
-		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fMCLAPPDHits->size()),fv_message,fverbosity);
+		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fMCLAPPDHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement
 		for(std::pair<ChannelKey,std::vector<LAPPDHit>>&& apair : *fMCLAPPDHits){
 			ChannelKey chankey = apair.first;
 			if(chankey.GetSubDetectorType()==subdetector::LAPPD){ // redundant
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
-					ahit.Print();
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// an LAPPDHit has adds (global x-y-z) position, (in-tile x-y) local position
 					// and time psecs
+					// convert the WCSim coordinates to the ANNIEreco coordinates
 					pos_reco.SetX(ahit.GetPosition().at(0)); //cm
 					pos_reco.SetY(ahit.GetPosition().at(1)+14.4649); //cm
 					pos_reco.SetZ(ahit.GetPosition().at(2)-168.1); //cm
-					calT = ahit.GetTime();
+					calT = ahit.GetTpsec()/1000 + 950.0;  // Add 950 ns offset relative to the trigger
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::lappd_v0;
-					RecoDigit* recoDigit = new RecoDigit(region, pos_reco, calT, calQ, digitType);
-					//recoDigit->Print();
-					fDigitList->push_back(recoDigit);
+					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
+					//if(v_message<verbosity) recoDigit.Print();
+				  fDigitList->push_back(recoDigit);
 				}
 			}
 		} // end loop over MCLAPPDHits
@@ -181,7 +239,10 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 }
 
 void DigitBuilder::PushRecoDigits(bool savetodisk) {
-	m_data->Stores.at("ANNIEEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to ANNIEEvent
+	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
+	// this should be everything. save the entry to the BoostStore
+	m_data->Stores.at("RecoEvent")->Save();
 }
 
 void DigitBuilder::Reset() {

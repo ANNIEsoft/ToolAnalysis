@@ -38,7 +38,6 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	return true;
 }
 
-
 bool FindMrdTracks::Execute(){
 	
 	if(verbose) cout<<"Tool FindMrdTracks finding tracks in next event."<<endl;
