@@ -52,3 +52,4 @@
 #include "RawLoadToRoot/RawLoadToRoot.cpp"
 #include "MRDPulseFinder/MRDPulseFinder.cpp"
 #include "LAPPDAnalysis/LAPPDAnalysis.cpp"
+#include "Examples/ExampleOverTool.cpp"
