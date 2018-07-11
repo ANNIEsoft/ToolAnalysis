@@ -47,6 +47,7 @@ if (tool=="WCSimDemo") ret=new WCSimDemo;
 if (tool=="LAPPDlasertestHitFinder") ret=new LAPPDlasertestHitFinder;
 if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
 if (tool=="MRDPulseFinder") ret=new MRDPulseFinder;
-  if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
+if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
+  if (tool=="ExampleOverTool") ret=new ExampleOverTool;
 return ret;
 }
