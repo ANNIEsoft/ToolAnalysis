@@ -18,12 +18,15 @@
 #include "Tool.h"
 
 struct NCVPositionInfo {
-  NCVPositionInfo() {}
+  NCVPositionInfo(int r = 0, int s = 0) : run(r), subrun(s) {}
   double total_POT = 0.;
   uint64_t num_beam_spills = 0ull;
   uint64_t num_source_triggers = 0ull;
   uint64_t num_cosmic_triggers = 0ull;
   uint64_t num_soft_triggers = 0ull;
+  uint64_t num_led_triggers = 0ull;
+  int run = 0;
+  int subrun = 0;
 };
 
 class ADCPulse;
@@ -73,12 +76,18 @@ class PhaseITreeMaker : public Tool {
 
     bool approve_event(int64_t event_time, int64_t old_time,
       const ADCPulse& first_ncv1_pulse, const std::map<ChannelKey, std::vector<
-      std::vector<ADCPulse> > >& adc_hits, int minibuffer_index);
+      std::vector<ADCPulse> > >& adc_hits, int minibuffer_index, int pmt_id,
+      const ADCPulse*& matching_pulse);
 
     double compute_tank_charge(size_t minibuffer_number,
       const std::map< ChannelKey, std::vector<
         std::vector<ADCPulse> > >& adc_hits, uint64_t start_time,
         uint64_t end_time, int& num_unique_water_pmts);
+
+    void find_ncv_events(const std::vector< std::vector<ADCPulse> >& pulses,
+      int pmt_id, int64_t& old_time, const std::map<ChannelKey, std::vector<
+      std::vector<ADCPulse> > >& adc_hits, const HeftyInfo& hefty_info,
+      const MinibufferLabel& event_mb_label, int mb);
 
     /// @brief Integer that determines the level of logging to perform
     int verbosity_ = 0;
@@ -124,6 +133,11 @@ class PhaseITreeMaker : public Tool {
     double charge_ncv2_ = 0.; // nC
     unsigned short raw_amplitude_ncv1_ = 0u; // ADC counts
     unsigned short raw_amplitude_ncv2_ = 0u; // ADC counts
+
+    bool ncv1_fired_ = false;
+    bool ncv2_fired_ = false;
+    int64_t ncv1_pulse_time_ns_ = 0; // ns
+    int64_t ncv2_pulse_time_ns_ = 0; // ns
 
     double tank_charge_; // nC
     int unique_hit_water_pmts_;
