@@ -300,8 +300,8 @@ MinuitOptimizer::MinuitOptimizer() {
 	fZmin = -152.0;
 	fZmax = 152.0;
 //  WCsim	
-	fTmin = 6600.0;
-	fTmax = 6800.0;
+	fTmin = 950.0;
+	fTmax = 1000.0;
 	
 //	//Sandbox
 //	fTmin = -10.0;
@@ -513,10 +513,10 @@ void MinuitOptimizer::ConePropertiesFoM(double& coneFOM, std::string fitOption)
 
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){
   	if(fitOption == "LAPPD" ) {
-  	  if(this->fVtxGeo->GetDigitType(idigit) != "lappd_v0") continue;	
+  	  if(this->fVtxGeo->GetDigitType(idigit) != RecoDigit::lappd_v0) continue;	
   	}
   	if(fitOption == "PMT") {
-  	  if(this->fVtxGeo->GetDigitType(idigit) != "PMT8inch" || this->fVtxGeo->GetDigitQ(idigit)<5) continue;	
+  	  if(this->fVtxGeo->GetDigitType(idigit) != RecoDigit::PMT8inch || this->fVtxGeo->GetDigitQ(idigit)<5) continue;	
   	}
   	
     if( this->fVtxGeo->IsFiltered(idigit) ){
@@ -993,7 +993,7 @@ void MinuitOptimizer::FitPointPositionWithMinuit() {
   fMinuitPointPosition->mnparm(0,"x",seedX,1.0,fXmin,fXmax,err);
   fMinuitPointPosition->mnparm(1,"y",seedY,1.0,fYmin,fYmax,err);
   fMinuitPointPosition->mnparm(2,"z",seedZ,5.0,fZmin,fZmax,err);
-  fMinuitPointPosition->mnparm(3,"Time",seedTime,10.0,fTmin,fTmax,err);
+  fMinuitPointPosition->mnparm(3,"Time",seedTime,1.0,fTmin,fTmax,err);
 
   flag = fMinuitPointPosition->Migrad();
   fMinuitPointPosition->GetParameter(0,fitXpos,fitXposErr);
@@ -1016,10 +1016,6 @@ void MinuitOptimizer::FitPointPositionWithMinuit() {
   if( flag==0 ) fPass = 1; // anything else: abnormal termination 
 
   fItr = point_position_iterations();
-  // calculate vertex
-  // ================
-//  this->fVtxGeo->CalcPointResiduals(fVtxX, fVtxY, fVtxZ, 0.0, 0.0, 0.0, 0.0);
-//  this->TimePropertiesLnL(fitTimepos,fitParam, vtxFOM); 
   this->PointPositionChi2(fVtxX,fVtxY,fVtxZ,fVtxTime,fVtxFOM);
   
   // set vertex and direction

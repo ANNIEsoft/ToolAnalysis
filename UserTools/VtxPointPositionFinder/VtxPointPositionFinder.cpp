@@ -12,15 +12,18 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
   
+  fUseTrueVertexAsSeed = false;
+  
   /// Get the Tool configuration variables
 	m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
+	m_variables.Get("verbosity", verbosity);
 
-
-  fUseTrueVertexAsSeed = false;
   return true;
 }
 
 bool VtxPointPositionFinder::Execute(){
+	// Clear 
+	
 	Log("Executing tool VtxPointPositionFinder with MC entry ", v_message, verbosity);
 	// Retrive digits from RecoEvent
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
@@ -32,7 +35,6 @@ bool VtxPointPositionFinder::Execute(){
   // Load digits to VertexGeometry
   VertexGeometry* myvtxgeo = VertexGeometry::Instance();
   myvtxgeo->LoadDigits(fDigitList);
-  
 	// Do point position reconstruction using MC truth information
   if( fUseTrueVertexAsSeed ){
     Log("VtxPointPositionFinder Tool: Run vertex reconstruction using MC truth information",v_message,verbosity);
@@ -49,8 +51,11 @@ bool VtxPointPositionFinder::Execute(){
     RecoVertex* vtx = new RecoVertex();
 	  vtx->SetVertex(vtxPos, vtxTime);
     vtx->SetDirection(vtxDir);
+    
     // return vertex
     RecoVertex* myvertex  = (RecoVertex*)(this->FitPointVertex(vtx)); 
+    delete vtx; vtx = 0;
+    
   }
 
   return true;
@@ -70,6 +75,7 @@ RecoVertex* VtxPointPositionFinder::FitPointVertex(RecoVertex* myvertex) {
   VertexGeometry* myvtxgeo = VertexGeometry::Instance();
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myOptimizer->LoadVertex(myvertex); //Load vertex seed
+  
   myOptimizer->FitPointVertexWithMinuit();
 //  RecoVertex* newVertex = (RecoVertex*)(this->FixPointVertex(myOptimizer->GetFittedVertex())); 
   delete myOptimizer; myOptimizer = 0;

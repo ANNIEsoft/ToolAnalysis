@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "RecoDigit.h"
 
 using namespace std;
 
@@ -17,7 +18,7 @@ class Parameters{
  	double fPMTPositionResolution;
  	double fLAPPDTimeResolution;
  	double fLAPPDPositionResolution;
- 	std::string fSeedDigitType;
+ 	int fSeedDigitType;
  	std::string fConfigurationType;
  	std::vector<int> fLappdId;
  	
@@ -32,16 +33,16 @@ class Parameters{
   static double CherenkovAngle();
   static double Index0(); //...chrom1.34
   static double TimeResolution(double Q);
-  static double TimeResolution(std::string DigitType);
-  static double TimeResolution(std::string DigitType, double Q);
-  static double PositionResolution(std::string DigitType);
+  static double TimeResolution(int DigitType);
+  static double TimeResolution(int DigitType, double Q);
+  static double PositionResolution(int DigitType);
   static double TimeSlew(double Q);
   static double RefractiveIndex(double r);
 
   static double ThetaC();     // Cherenkov Angle
   static double CosThetaC();  // Cosine of Cherenkov Angle
   static double TimeNoiseRate();
-  static std::string SeedDigitType();
+  static int SeedDigitType();
 //  static void LoadConfigFile(string configfilename);
 
   static void PrintParameters();
@@ -60,13 +61,13 @@ class Parameters{
   double GetCherenkovAngle();
   double GetTimeResolution(double Q);
   
-  double GetTimeResolution(std::string DigitType); 
-  double GetTimeResolution(std::string DigitType, double Q); 
-  double GetPositionResolution(std::string DigitType);
+  double GetTimeResolution(int DigitType); 
+  double GetTimeResolution(int DigitType, double Q); 
+  double GetPositionResolution(int DigitType);
   
   double GetTimeSlew(double Q);
   double GetRefractiveIndex(double r);
-  std::string GetSeedDigitType();
+  int GetSeedDigitType();
   std::string GetConfigurationType();
   
   double GetSimpleTimeResolution(double Q);

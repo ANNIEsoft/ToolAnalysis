@@ -35,7 +35,7 @@ Parameters::Parameters()
   fPMTPositionResolution = 1e-3; //PMT position is already taken care by the input file. Set a negligible value here
   fLAPPDTimeResolution = 0.1; // ns
   fLAPPDPositionResolution = 0.1; //0.1 cm
-  fSeedDigitType = "lappd_v0";
+  fSeedDigitType = RecoDigit::lappd_v0;
   fConfigurationType = "PMT";
 }
 
@@ -44,7 +44,7 @@ Parameters::~Parameters()
 
 }
   
-std::string Parameters::SeedDigitType() {
+int Parameters::SeedDigitType() {
   return Parameters::Instance()->GetSeedDigitType();
 }
 
@@ -80,19 +80,19 @@ double Parameters::TimeResolution(double Q)
   }
 }
 
-double Parameters::TimeResolution(std::string DigitType, double Q)
+double Parameters::TimeResolution(int DigitType, double Q)
 {
   
   return Parameters::Instance()->GetTimeResolution(DigitType, Q);
 }
 
-double Parameters::TimeResolution(std::string DigitType)
+double Parameters::TimeResolution(int DigitType)
 {
   
   return Parameters::Instance()->GetTimeResolution(DigitType);
 }
 
-double Parameters::PositionResolution(std::string DigitType)
+double Parameters::PositionResolution(int DigitType)
 {
   return Parameters::Instance()->GetPositionResolution(DigitType);
 }
@@ -183,7 +183,7 @@ double Parameters::TimeNoiseRate() {
 	return 0.10;	
 }
 
-std::string Parameters::GetSeedDigitType() {
+int Parameters::GetSeedDigitType() {
   return fSeedDigitType;
 }
 
@@ -196,11 +196,11 @@ double Parameters::GetCherenkovAngle()
   return fCherenkovAngle;
 }
 
-double Parameters::GetPositionResolution(std::string detType) {
-  if(detType == "PMT8inch") {
+double Parameters::GetPositionResolution(int detType) {
+  if(detType == RecoDigit::PMT8inch) {
   	  return fPMTPositionResolution; //
   	}
-    else if(detType == "lappd_v0") {
+    else if(detType == RecoDigit::lappd_v0) {
   	  return fLAPPDPositionResolution;
   	}
   	else {
@@ -208,11 +208,11 @@ double Parameters::GetPositionResolution(std::string detType) {
   	}	
 }
 
-double Parameters::GetTimeResolution(std::string detType) {
-  	if(detType == "PMT8inch") { //PMT
+double Parameters::GetTimeResolution(int detType) {
+  	if(detType == RecoDigit::PMT8inch) { //PMT
   	  return fPMTTimeResolution;
   	}
-    else if(detType == "lappd_v0") { //LAPPD
+    else if(detType == RecoDigit::lappd_v0) { //LAPPD
   	  return fLAPPDTimeResolution;
   	}
   	else {
@@ -220,9 +220,9 @@ double Parameters::GetTimeResolution(std::string detType) {
   	}
 }
 
-double Parameters::GetTimeResolution(std::string detType, double Q) {
+double Parameters::GetTimeResolution(int detType, double Q) {
   	double res = 0.;
-  	if(detType == "PMT8inch") { //PMT
+  	if(detType == RecoDigit::PMT8inch) { //PMT
   	  double qpes = Q;
   	  if( qpes<0.5 ) qpes = 0.5;
   	  if( qpes>32.0 ) qpes = 32.0;
@@ -230,7 +230,7 @@ double Parameters::GetTimeResolution(std::string detType, double Q) {
   	  if(res<0.58) res = 0.58;
   	  return res;
   	}
-    else if(detType == "lappd_v0") { //LAPPD, extv1, extv2
+    else if(detType == RecoDigit::lappd_v0) { //LAPPD, extv1, extv2
       double timingResConstant=0.001;              
       double qpes = (Q> 0.5) ? Q : 0.5;
       // based on a roughly similar form that gives ~60ps for Q~1 and ~5ps for Q~30
@@ -241,7 +241,7 @@ double Parameters::GetTimeResolution(std::string detType, double Q) {
       return res;
       //return 1.0;
   	}
-//  	else if(detType == "lappd_v0") { //LAPPD, extv3
+//  	else if(detType == RecoDigit::lappd_v0) { //LAPPD, extv3
 //      double timingResConstant=0.001;              // TTS: 50ps;
 //      double qpes = (Q> 0.5) ? Q : 0.5;
 //      // based on a roughly similar form that gives ~60ps for Q~1 and ~5ps for Q~30

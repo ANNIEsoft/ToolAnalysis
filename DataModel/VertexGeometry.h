@@ -46,11 +46,11 @@ class VertexGeometry {
     else return 0;
   }
   
-  std::string GetDigitType(int idigit) {
+  int GetDigitType(int idigit) {
     if( idigit>=0 && idigit<fNDigits ) {
       return fDigitType[idigit];
     }
-    else return "NULL";	
+    else return -999;	
   }
 
   double GetDigitX(int idigit) {
@@ -313,7 +313,7 @@ class VertexGeometry {
 
   bool* fIsFiltered;
   
-  std::string* fDigitType;   // Detector type (PMT or LAPPD)
+  int *fDigitType;   // Detector type (PMT or LAPPD)
 
   double* fDigitX;           // Digit X (cm)
   double* fDigitY;           // Digit Y (cm)

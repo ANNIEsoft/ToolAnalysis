@@ -17,6 +17,8 @@ DigitBuilder::~DigitBuilder() {
 }
 
 bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
+	// Reset
+	//this->Reset();
 
   /////////////////// Usefull header ///////////////////////
   if(verbosity) cout<<"Initializing Tool DigitBuilder"<<endl;

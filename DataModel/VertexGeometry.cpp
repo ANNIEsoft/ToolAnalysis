@@ -46,7 +46,7 @@ VertexGeometry::VertexGeometry()
   fVtxTime2 = 0.0;
   fQmin = 0;
   fIsFiltered = new bool[fNDigitsMax];
-  fDigitType = new std::string[fNDigitsMax];
+  fDigitType = new int[fNDigitsMax];
 
   fDigitX = new double[fNDigitsMax];
   fDigitY = new double[fNDigitsMax];
@@ -200,6 +200,7 @@ void VertexGeometry::LoadDigits(std::vector<RecoDigit>* vDigitList)
 
 
   fDigitList = vDigitList;
+  fNDigits = fDigitList->size();
   
   // sanity checks
   // =============

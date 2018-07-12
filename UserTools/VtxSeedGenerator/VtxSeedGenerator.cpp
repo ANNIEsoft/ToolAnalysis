@@ -217,9 +217,9 @@ bool VtxSeedGenerator::GenerateVertexSeeds(int NSeeds) {
                               fVtxX1,fVtxY1,fVtxZ1,fVtxTime1,
                               fVtxX2,fVtxY2,fVtxZ2,fVtxTime2);
 
-    std::cout << "   result: (x,y,z,t)=(" << fVtxX1 << "," << fVtxY1 << "," << fVtxZ1 << "," << fVtxTime1 << ") " << std::endl
-              << "   result: (x,y,z,t)=(" << fVtxX2 << "," << fVtxY2 << "," << fVtxZ2 << "," << fVtxTime2 << ") " << std::endl;
-    std::cout << std::endl;
+//    std::cout << "   result: (x,y,z,t)=(" << fVtxX1 << "," << fVtxY1 << "," << fVtxZ1 << "," << fVtxTime1 << ") " << std::endl
+//              << "   result: (x,y,z,t)=(" << fVtxX2 << "," << fVtxY2 << "," << fVtxZ2 << "," << fVtxTime2 << ") " << std::endl;
+//    std::cout << std::endl;
 
     if(fVtxX1==-99999.9 && fVtxX2==-99999.9) continue;
     bool inside_det;
@@ -321,7 +321,7 @@ void VtxSeedGenerator::ChooseNextDigit(double& xpos, double& ypos, double& zpos,
 }
 
 void VtxSeedGenerator::PushTrueVertex(bool savetodisk) {
-	m_data->Stores.at("RecoEvent")->Set("TureVertex", fTrueVertex, savetodisk); 
+	m_data->Stores.at("RecoEvent")->Set("TrueVertex", fTrueVertex, savetodisk); 
 }
 
 void VtxSeedGenerator::PushVertexSeeds(bool savetodisk) {
