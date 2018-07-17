@@ -8,14 +8,7 @@ bool VtxSeedGenerator::Initialise(std::string configfile, DataModel &data){
   /////////////////// Usefull header ///////////////////////
   if(verbosity) cout<<"Initializing Tool VtxSeedGenerator"<<endl;
   // Initialise variables
-	fVtxX1 = 0.0;
-  fVtxY1 = 0.0;
-  fVtxZ1 = 0.0;
-  fVtxTime1 = 0.0;
-  fVtxX2 = 0.0;
-  fVtxY2 = 0.0;
-  fVtxZ2 = 0.0;
-  fVtxTime2 = 0.0;
+
   fNumSeeds = 500;
   fThisDigit = 0;
   fLastEntry = 0; 
@@ -50,7 +43,6 @@ bool VtxSeedGenerator::Initialise(std::string configfile, DataModel &data){
 
 bool VtxSeedGenerator::Execute(){
 	
-	if(verbosity) cout<<"Executing tool VtxSeedGenerator with MC entry "<<fMCEventNum<<", trigger "<<fMCTriggernum<<endl;
 	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
 	
 	get_ok = m_data->Stores.count("RecoEvent");
@@ -63,7 +55,10 @@ bool VtxSeedGenerator::Execute(){
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
 	if(not get_ok){ Log("VtxSeedGenerator  Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
 	// if so, truth analysis is probablys not interested in this trigger. Primary muon will not be in the listed tracks.
-	if(fMCTriggernum>0){ Log("VtxSeedGenerator s Tool: Skipping delayed trigger",v_debug,verbosity); return true;}
+	if(fMCTriggernum>0){ 
+		Log("VtxSeedGenerator s Tool: Skipping delayed trigger",v_debug,verbosity); 
+		return true;
+	}
 		
 	// Load digits
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
@@ -137,21 +132,22 @@ void VtxSeedGenerator::Reset() {
 }
 
 bool VtxSeedGenerator::GenerateVertexSeeds(int NSeeds) {
+	double VtxX1 = 0.0;
+  double VtxY1 = 0.0;
+  double VtxZ1 = 0.0;
+  double VtxTime1 = 0.0;
+  double VtxX2 = 0.0;
+  double VtxY2 = 0.0;
+  double VtxZ2 = 0.0;
+  double VtxTime2 = 0.0;
 	// reset list of seeds
-//  vSeedVtxListX->clear();
-//  vSeedVtxListY->clear();
-//  vSeedVtxListZ->clear();
-//  vSeedVtxListTime->clear();
   vSeedVtxList->clear();
   // always calculate the simple vertex first
-  this->CalcSimpleVertex(fVtxX1,fVtxY1,fVtxZ1,fVtxTime1);
+  this->CalcSimpleVertex(VtxX1,VtxY1,VtxZ1,VtxTime1);
+  
   // add this vertex to seed list
-//  vSeedVtxListX->push_back(fVtxX1); 
-//  vSeedVtxListY->push_back(fVtxY1);
-//  vSeedVtxListZ->push_back(fVtxZ1);
-//  vSeedVtxListTime->push_back(fVtxTime1);
   RecoVertex vtxseed;
-  vtxseed.SetVertex(fVtxX1,fVtxY1,fVtxZ1,fVtxTime1);
+  vtxseed.SetVertex(VtxX1,VtxY1,VtxZ1,VtxTime1);
   vSeedVtxList->push_back(vtxseed);
   // check limit
   if( NSeeds<=1 ) return false;
@@ -214,33 +210,25 @@ bool VtxSeedGenerator::GenerateVertexSeeds(int NSeeds) {
                               x1,y1,z1,t1,
                               x2,y2,z2,t2,
                               x3,y3,z3,t3,
-                              fVtxX1,fVtxY1,fVtxZ1,fVtxTime1,
-                              fVtxX2,fVtxY2,fVtxZ2,fVtxTime2);
+                              VtxX1,VtxY1,VtxZ1,VtxTime1,
+                              VtxX2,VtxY2,VtxZ2,VtxTime2);
 
-//    std::cout << "   result: (x,y,z,t)=(" << fVtxX1 << "," << fVtxY1 << "," << fVtxZ1 << "," << fVtxTime1 << ") " << std::endl
-//              << "   result: (x,y,z,t)=(" << fVtxX2 << "," << fVtxY2 << "," << fVtxZ2 << "," << fVtxTime2 << ") " << std::endl;
+//    std::cout << "   result: (x,y,z,t)=(" << VtxX1 << "," << VtxY1 << "," << VtxZ1 << "," << VtxTime1 << ") " << std::endl
+//              << "   result: (x,y,z,t)=(" << VtxX2 << "," << VtxY2 << "," << VtxZ2 << "," << VtxTime2 << ") " << std::endl;
 //    std::cout << std::endl;
 
-    if(fVtxX1==-99999.9 && fVtxX2==-99999.9) continue;
+    if(VtxX1==-99999.9 && VtxX2==-99999.9) continue;
     bool inside_det;
 
     // add first digit
-    if( ANNIEGeometry::Instance()->InsideDetector(fVtxX1,fVtxY1,fVtxZ1) ){
-//      vSeedVtxListX->push_back(fVtxX1); 
-//      vSeedVtxListY->push_back(fVtxY1);
-//      vSeedVtxListZ->push_back(fVtxZ1);
-//      vSeedVtxListTime->push_back(fVtxTime1);
-      vtxseed.SetVertex(fVtxX1,fVtxY1,fVtxZ1,fVtxTime1);
+    if( ANNIEGeometry::Instance()->InsideDetector(VtxX1,VtxY1,VtxZ1) ){
+      vtxseed.SetVertex(VtxX1,VtxY1,VtxZ1,VtxTime1);
       vSeedVtxList->push_back(vtxseed);
     }
     
     // add second digit
-    if( ANNIEGeometry::Instance()->InsideDetector(fVtxX2,fVtxY2,fVtxZ2) ){
-//      vSeedVtxListX->push_back(fVtxX2);
-//      vSeedVtxListY->push_back(fVtxY2);
-//      vSeedVtxListZ->push_back(fVtxZ2);
-//      vSeedVtxListTime->push_back(fVtxTime2);
-			vtxseed.SetVertex(fVtxX2,fVtxY2,fVtxZ2,fVtxTime2);
+    if( ANNIEGeometry::Instance()->InsideDetector(VtxX2,VtxY2,VtxZ2) ){
+			vtxseed.SetVertex(VtxX2,VtxY2,VtxZ2,VtxTime2);
       vSeedVtxList->push_back(vtxseed);
     }
   }
@@ -325,10 +313,6 @@ void VtxSeedGenerator::PushTrueVertex(bool savetodisk) {
 }
 
 void VtxSeedGenerator::PushVertexSeeds(bool savetodisk) {
-//	m_data->Stores.at("RecoEvent")->Set("vSeedVtxListX", vSeedVtxListX, savetodisk); 
-//	m_data->Stores.at("RecoEvent")->Set("vSeedVtxListY", vSeedVtxListY, savetodisk); 
-//	m_data->Stores.at("RecoEvent")->Set("vSeedVtxListZ", vSeedVtxListZ, savetodisk); 
-//	m_data->Stores.at("RecoEvent")->Set("vSeedVtxListTime", vSeedVtxListTime, savetodisk); 
   m_data->Stores.at("RecoEvent")->Set("vSeedVtxList", vSeedVtxList, savetodisk); 
 }
 

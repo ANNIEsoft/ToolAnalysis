@@ -85,9 +85,13 @@ bool DigitBuilder::Execute(){
 	  Log("DigitBuilder Tool: Continue without MRD event selection!",v_message,verbosity);
 	  // Reset Digit infomation
 	  this->Reset();
+	  cout<<"DEBUG: DigitBuilder::Execute: Number of digit after reset = "<<fDigitList->size()<<endl;
 	  // Build RecoDigit
 	  this->BuildRecoDigit();
+	  cout<<"DEBUG: DigitBuilder::Execute: Number of digit after build = "<<fDigitList->size()<<endl;
+	  // Push to RecoEvent
 	  this->PushRecoDigits(true); 	
+	  cout<<"DEBUG: DigitBuilder::Execute: Number of digit after push = "<<fDigitList->size()<<endl;
 	  return true;
 	}
 	else {
@@ -123,11 +127,9 @@ bool DigitBuilder::Execute(){
 	  
 	  // Reset Digit infomation
 	  this->Reset();
-	  
 	  // Build RecoDigit
 	  this->BuildRecoDigit();
 	  this->PushRecoDigits(true);
-	  
 	  std::cout<<std::endl<<std::endl;
 	  
     return true;
@@ -177,8 +179,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			pos_reco.SetZ(pos_sim.Z()-168.1);
 	
 			if(chankey.GetSubDetectorType()==subdetector::ADC){
-				std::vector<Hit>& hits = apair.second;
-	
+				std::vector<Hit>& hits = apair.second;	
 			  for(Hit& ahit : hits){
 			  	//ahit.Print();
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose

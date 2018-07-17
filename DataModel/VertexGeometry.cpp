@@ -23,7 +23,7 @@ VertexGeometry* VertexGeometry::Instance()
 
 VertexGeometry::VertexGeometry()
 {
-  fNDigitsMax = 5000;
+  fNDigitsMax = 10000;
   fNDigits = 0;
   fNFilterDigits = 0;
   fThisDigit = 0;
@@ -198,9 +198,9 @@ void VertexGeometry::LoadDigits(std::vector<RecoDigit>* vDigitList)
   // get lists of digits
   // ==================
 
-
   fDigitList = vDigitList;
   fNDigits = fDigitList->size();
+  cout<<"############ Number of digits = "<<fNDigits<<"  ############"<<endl;
   
   // sanity checks
   // =============

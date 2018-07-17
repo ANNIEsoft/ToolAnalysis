@@ -20,6 +20,10 @@ class VtxPointPositionFinder: public Tool {
 
 
  private:
+ 	/// Data variables
+ 	uint64_t fMCEventNum;      ///< event number in MC file
+ 	uint16_t fMCTriggernum;    ///< trigger number in MC file
+ 	
  	RecoVertex* FitPointVertex(RecoVertex* myvertex);
  	
  	bool fUseTrueVertexAsSeed;

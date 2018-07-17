@@ -22,9 +22,18 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
 }
 
 bool VtxPointPositionFinder::Execute(){
-	// Clear 
 	
-	Log("Executing tool VtxPointPositionFinder with MC entry ", v_message, verbosity);
+	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
+
+	// First, see if this is a delayed trigger in the event
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
+	if(not get_ok){ Log("VtxSeedGenerator  Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
+	// if so, truth analysis is probablys not interested in this trigger. Primary muon will not be in the listed tracks.
+	if(fMCTriggernum>0){ 
+		Log("VtxSeedGenerator Tool: Skipping delayed trigger",v_debug,verbosity); 
+		return true;
+	}
+	
 	// Retrive digits from RecoEvent
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
   if(not get_ok){
@@ -34,6 +43,7 @@ bool VtxPointPositionFinder::Execute(){
   
   // Load digits to VertexGeometry
   VertexGeometry* myvtxgeo = VertexGeometry::Instance();
+  //myvtxgeo->Clear();
   myvtxgeo->LoadDigits(fDigitList);
 	// Do point position reconstruction using MC truth information
   if( fUseTrueVertexAsSeed ){
@@ -54,8 +64,7 @@ bool VtxPointPositionFinder::Execute(){
     
     // return vertex
     RecoVertex* myvertex  = (RecoVertex*)(this->FitPointVertex(vtx)); 
-    delete vtx; vtx = 0;
-    
+    delete vtx; vtx = 0;  
   }
 
   return true;

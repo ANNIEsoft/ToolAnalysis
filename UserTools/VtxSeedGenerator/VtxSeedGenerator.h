@@ -79,23 +79,11 @@ class VtxSeedGenerator: public Tool {
 	
 	
 	/// Seed information
-	double fVtxX1;
-  double fVtxY1;
-  double fVtxZ1;
-  double fVtxTime1;
-  double fVtxX2;
-  double fVtxY2;
-  double fVtxZ2;
-  double fVtxTime2;
   int fThisDigit;
   int fLastEntry;
   int fCounter;
   int fSeedType;
   std::vector<RecoVertex>* vSeedVtxList = nullptr;
-//	std::vector<double>* vSeedVtxX=nullptr;
-//  std::vector<double>* vSeedVtxY=nullptr;
-//  std::vector<double>* vSeedVtxZ=nullptr;
-//  std::vector<double>* vSeedVtxTime=nullptr;
   std::vector<int> vSeedDigitList;	///< a vector thats stores the index of the digits used to calculate the seeds
  	std::vector<RecoDigit>* fDigitList=nullptr;
  	
