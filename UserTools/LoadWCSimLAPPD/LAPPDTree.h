@@ -25,7 +25,6 @@
 #include "vector"
 
 #define SINGLE_TREE        // TODO TODO TODO TODO shouldn't need this define
-#define FILE_VERSION 2     // version 3 for multiple PMT types, version 1 is very old.
 
 class LAPPDTree {
 public :
@@ -46,11 +45,10 @@ public :
    vector<double>  *lappdhit_stripcoory;              // y pos within tile
    vector<double>  *lappdhit_stripcoort;              // photon true time (EVENT absolute) [ns]
    Double_t        lappdhit_edep[180];                //[lappd_numhits], total # photon hits on each lappd in the event (raw: no triggering or digitization applied)
-#if FILE_VERSION>3
    vector<double>  *lappdhit_globalcoorx;             // photon hit position within global coords
-   vector<double>  *lappdhit_globalcoory;
+   vector<double>  *lappdhit_globalcoory;             // only present in file vers > 3
    vector<double>  *lappdhit_globalcoorz;
-#endif
+   vector<double>  lappdhit_globalcoorxdummy, lappdhit_globalcoorydummy, lappdhit_globalcoorzdummy;
    
    /* DISABLED BRANCHES */
    //Int_t           lappdhit_totalpes_perevt;        // total photons on all LAPPDs in this event
@@ -84,11 +82,9 @@ public :
    TBranch        *b_lappdhit_stripcoory;             //!
    TBranch        *b_lappdhit_stripcoorz;             //!
    TBranch        *b_lappdhit_stripcoort;             //!
-#if FILE_VERSION>3
    TBranch        *b_lappdhit_globalcoorx;            //!
    TBranch        *b_lappdhit_globalcoory;            //!
    TBranch        *b_lappdhit_globalcoorz;            //!
-#endif
    TBranch        *b_lappdhit_process;                //!
    TBranch        *b_lappdhit_particleID;             //!
    TBranch        *b_lappdhit_trackID;                //!
@@ -196,11 +192,9 @@ void LAPPDTree::Init(TTree *tree)
    lappdhit_stripcoorx = 0;
    lappdhit_stripcoory = 0;
    lappdhit_stripcoort = 0;
-#if FILE_VERSION>3
    lappdhit_globalcoorx = 0;
    lappdhit_globalcoory = 0;
    lappdhit_globalcoorz = 0;
-#endif
    //lappdhit_stripcoorz = 0;
    //lappdhit_totalpes_perlappd2 = 0;
    //lappdhit_stripnum = 0;
@@ -228,11 +222,19 @@ void LAPPDTree::Init(TTree *tree)
    fChain->SetBranchAddress("lappdhit_stripcoorx", &lappdhit_stripcoorx, &b_lappdhit_stripcoorx);
    fChain->SetBranchAddress("lappdhit_stripcoory", &lappdhit_stripcoory, &b_lappdhit_stripcoory);
    fChain->SetBranchAddress("lappdhit_stripcoort", &lappdhit_stripcoort, &b_lappdhit_stripcoort);
-#if FILE_VERSION>3
-   fChain->SetBranchAddress("lappdhit_globalcoorx", &lappdhit_globalcoorx, &b_lappdhit_globalcoorx);
-   fChain->SetBranchAddress("lappdhit_globalcoory", &lappdhit_globalcoory, &b_lappdhit_globalcoory);
-   fChain->SetBranchAddress("lappdhit_globalcoorz", &lappdhit_globalcoorz, &b_lappdhit_globalcoorz);
-#endif
+   TBranch* br = (TBranch*)fChain->GetListOfBranches()->FindObject("lappdhit_globalcoorx"); // disable by test
+   if(br){
+     fChain->SetBranchAddress("lappdhit_globalcoorx", &lappdhit_globalcoorx, &b_lappdhit_globalcoorx);
+     fChain->SetBranchAddress("lappdhit_globalcoory", &lappdhit_globalcoory, &b_lappdhit_globalcoory);
+     fChain->SetBranchAddress("lappdhit_globalcoorz", &lappdhit_globalcoorz, &b_lappdhit_globalcoorz);
+   } else {
+     fChain->SetBranchStatus("lappdhit_globalcoorx", 0);
+     fChain->SetBranchStatus("lappdhit_globalcoory", 0);
+     fChain->SetBranchStatus("lappdhit_globalcoorz", 0);
+     lappdhit_globalcoorx = &lappdhit_globalcoorxdummy;
+     lappdhit_globalcoorx = &lappdhit_globalcoorydummy;
+     lappdhit_globalcoorx = &lappdhit_globalcoorzdummy;
+   }
    fChain->SetBranchAddress("lappdhit_edep", lappdhit_edep, &b_lappdhit_edep);
    fChain->SetBranchAddress("lappdhit_objnum", lappdhit_objnum, &b_lappdhit_objnum);
    

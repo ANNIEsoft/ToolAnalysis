@@ -34,6 +34,7 @@ class LoadWCSimLAPPD: public Tool {
 	
 	// LAPPDTree variables
 	TFile* file=nullptr;
+	int FILE_VERSION;
 	TTree* lappdtree=nullptr;
 	LAPPDTree* LAPPDEntry=nullptr;  // tree event as a class object from MakeClass
 	long NumEvents;
@@ -49,6 +50,7 @@ class LoadWCSimLAPPD: public Tool {
 	// internal things to keep between loops
 	std::vector<LAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
 	
+	bool DEBUG_DRAW_LAPPD_HITS;
 	TApplication* lappdRootDrawApp;
 	TCanvas* lappdRootCanvas;
 	TPolyMarker3D* lappdhitshist;

@@ -3,10 +3,6 @@
 #include "TCanvas.h"
 #include <numeric>      // std::iota
 
-#ifndef DEBUG_DRAW_MRD_TRACKS
-#define DEBUG_DRAW_MRD_TRACKS
-#endif
-
 FindMrdTracks::FindMrdTracks():Tool(){}
 
 bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
@@ -26,6 +22,7 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("MinDigitsForTrack",minimumdigits);
 	m_variables.Get("MaxMrdSubEventDuration",maxsubeventduration);
 	m_variables.Get("WriteTracksToFile",writefile);
+	m_variables.Get("DrawTracks",DEBUG_DRAW_MRD_TRACKS);
 	
 	// create a BoostStore for recording the found tracks
 	m_data->Stores["MRDTracks"] = new BoostStore(true,2);
@@ -39,12 +36,12 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
 	
-#ifdef DEBUG_DRAW_MRD_TRACKS
-	// create the ROOT application to show histograms
-	int myargc=0;
-	char *myargv[] = {(const char*)"somestring"};
-	mrdTrackDrawApp = new TApplication("mrdTrackDrawApp",&myargc,myargv);
-#endif
+	if(DEBUG_DRAW_MRD_TRACKS){
+		// create the ROOT application to show histograms
+		int myargc=0;
+		char *myargv[] = {(const char*)"somestring"};
+		mrdTrackDrawApp = new TApplication("mrdTrackDrawApp",&myargc,myargv);
+	}
 	
 	return true;
 }
@@ -66,9 +63,9 @@ bool FindMrdTracks::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("TriggerNumber",MCTriggernum);
 	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
 	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
-#ifdef DEBUG_DRAW_MRD_TRACKS
-	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
-#endif
+	if(DEBUG_DRAW_MRD_TRACKS){
+		m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
+	}
 	//cout<<"gotit"<<endl;
 	
 	// FIXME align types until we update MRDTrackClass/MRDSubEventClass
@@ -202,20 +199,20 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 //		std::vector<WCSimRootTrack*> truetrackpointers;               // removed from cMRDSubEvent
 		std::vector<std::pair<TVector3,TVector3>> truetrackvertices;  // replacement of above
 		std::vector<Int_t> truetrackpdgs;                             // replacement of above
-#ifdef DEBUG_DRAW_MRD_TRACKS
-		int numtracks = MCParticles->size();
-		for(int truetracki=0; truetracki<numtracks; truetracki++){
-			MCParticle nextrack = MCParticles->at(truetracki);
-			if(true&&nextrack.GetPdgCode()!=11){
-				Position startvp = nextrack.GetStartVertex();
-				TVector3 startv(startvp.X()*100.,startvp.Y()*100.,startvp.Z()*100.);
-				Position stopvp = nextrack.GetStopVertex();
-				TVector3 stopv(stopvp.X()*100.,stopvp.Y()*100.,stopvp.Z()*100.);
-				truetrackvertices.push_back({startv,stopv});
-				truetrackpdgs.push_back(nextrack.GetPdgCode());
+		if(DEBUG_DRAW_MRD_TRACKS){
+			int numtracks = MCParticles->size();
+			for(int truetracki=0; truetracki<numtracks; truetracki++){
+				MCParticle nextrack = MCParticles->at(truetracki);
+				if(true&&nextrack.GetPdgCode()!=11){
+					Position startvp = nextrack.GetStartVertex();
+					TVector3 startv(startvp.X()*100.,startvp.Y()*100.,startvp.Z()*100.);
+					Position stopvp = nextrack.GetStopVertex();
+					TVector3 stopv(stopvp.X()*100.,stopvp.Y()*100.,stopvp.Z()*100.);
+					truetrackvertices.push_back({startv,stopv});
+					truetrackpdgs.push_back(nextrack.GetPdgCode());
+				}
 			}
 		}
-#endif
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
 		// construct the subevent from all the digits
@@ -335,22 +332,21 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				//std::vector<WCSimRootTrack*> truetrackpointers;               // removed from cMRDSubEvent
 				std::vector<std::pair<TVector3,TVector3>> truetrackvertices;    // replacement of above
 				std::vector<Int_t> truetrackpdgs;                               // replacement of above
-#ifdef DEBUG_DRAW_MRD_TRACKS
-
-				for(int truetracki=0; truetracki<numtracks; truetracki++){
-					MCParticle nextrack = MCParticles->at(truetracki);
-					if((subeventnumthisevent2.at(truetracki)<0)&&(nextrack.GetStartTime().GetNs()<endtime)
-						&&(nextrack.GetPdgCode()!=11)){
-						Position startvp = nextrack.GetStartVertex();
-						TVector3 startv(startvp.X()*100.,startvp.Y()*100.,startvp.Z()*100.);
-						Position stopvp = nextrack.GetStopVertex();
-						TVector3 stopv(stopvp.X()*100.,stopvp.Y()*100.,stopvp.Z()*100.);
-						truetrackvertices.push_back({startv,stopv});
-						truetrackpdgs.push_back(nextrack.GetPdgCode());
-						subeventnumthisevent2.at(truetracki)=thissubevent;
+				if(DEBUG_DRAW_MRD_TRACKS){
+					for(int truetracki=0; truetracki<numtracks; truetracki++){
+						MCParticle nextrack = MCParticles->at(truetracki);
+						if((subeventnumthisevent2.at(truetracki)<0)&&(nextrack.GetStartTime().GetNs()<endtime)
+							&&(nextrack.GetPdgCode()!=11)){
+							Position startvp = nextrack.GetStartVertex();
+							TVector3 startv(startvp.X()*100.,startvp.Y()*100.,startvp.Z()*100.);
+							Position stopvp = nextrack.GetStopVertex();
+							TVector3 stopv(stopvp.X()*100.,stopvp.Y()*100.,stopvp.Z()*100.);
+							truetrackvertices.push_back({startv,stopv});
+							truetrackpdgs.push_back(nextrack.GetPdgCode());
+							subeventnumthisevent2.at(truetracki)=thissubevent;
+						}
 					}
 				}
-#endif
 				// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				
 				if(verbose>3){
@@ -538,11 +534,11 @@ bool FindMrdTracks::Finalise(){
 	cout<<"FindMrdTracks Tool Calling SubEventArray->Delete()"<<endl;
 	if(SubEventArray){ SubEventArray->Delete(); delete SubEventArray; SubEventArray=0;}
 	
-#ifdef DEBUG_DRAW_MRD_TRACKS
-	// cleanup track drawing TApplication
-	gSystem->ProcessEvents();
-	delete mrdTrackDrawApp;
-#endif
+	if(DEBUG_DRAW_MRD_TRACKS){
+		// cleanup track drawing TApplication
+		gSystem->ProcessEvents();
+		delete mrdTrackDrawApp;
+	}
 	
 	if(verbose>0) cout<<"FindMrdTracks exitting"<<endl;
 	return true;
