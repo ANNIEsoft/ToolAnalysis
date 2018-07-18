@@ -74,6 +74,7 @@ private:
 	
 	// For Debug Drawing Tracks During Looping
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	bool DEBUG_DRAW_MRD_TRACKS;
 	std::vector<MCParticle>* MCParticles=nullptr;
 	TApplication* mrdTrackDrawApp;
 };
