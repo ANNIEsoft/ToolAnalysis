@@ -36,8 +36,7 @@ bool PrintANNIEEvent::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 	m_data->Stores["ANNIEEvent"]->Get("RecoParticles",RecoParticles);
 	m_data->Stores["ANNIEEvent"]->Get("MCHits",MCHits);
-	//if(m_data->Stores["ANNIEEvent"]->count("MCLAPPDHits")>0)
-	//m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
+	m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
 	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
 	m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
 	m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",RawLAPPDData);
