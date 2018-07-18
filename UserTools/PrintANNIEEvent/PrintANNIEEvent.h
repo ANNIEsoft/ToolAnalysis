@@ -35,7 +35,7 @@ class PrintANNIEEvent: public Tool {
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
 	uint32_t EventNumber;
-	std::vector<Particle>* MCParticles=nullptr;
+	std::vector<MCParticle>* MCParticles=nullptr;
 	std::vector<Particle>* RecoParticles=nullptr;
 	std::map<ChannelKey,std::vector<Hit>>* MCHits=nullptr;
 	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;

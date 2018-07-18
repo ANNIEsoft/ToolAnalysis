@@ -151,10 +151,10 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Detectors.emplace(akey,adet);
 	}
 	
-	// construct the geometry
-	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius, tank_halfheight,
-	                                   mrd_width, mrd_height, mrd_depth, mrd_start, numtankpmts,
-	                                   nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
+	// construct the goemetry 
+	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius,
+	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
+	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
 	if(verbose>1) cout<<"constructed anniegom at "<<anniegeom<<endl;
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 	
@@ -396,9 +396,7 @@ bool LoadWCSim::Execute(){
 	//CalibratedLAPPDData
 	//RecoParticles
 	
-	// this should be everything. save the entry to the BoostStore
-	if(verbose>2) cout<<"saving ANNIEEvent "<<EventNumber<<endl;
-	m_data->Stores.at("ANNIEEvent")->Save();
+	// Save the entry to the BoostStore  - done in SaveANNIEEvent tool at end of ToolChain
 	
 	EventNumber++;
 	MCTriggernum++;
@@ -417,5 +415,9 @@ bool LoadWCSim::Execute(){
 
 
 bool LoadWCSim::Finalise(){
+	file->Close();
+	delete WCSimEntry;
+	//delete file;  // Done by WCSimEntry destructor
+	
 	return true;
 }
