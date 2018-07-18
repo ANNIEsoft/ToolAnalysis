@@ -1,4 +1,4 @@
 myLoadWCSim LoadWCSim ./configfiles/LoadWCSim/LoadWCSimConfig
-myPrintANNIEEvent PrintANNIEEvent ./configfiles/LoadWCSim/PrintANNIEEventConfig
 myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/LoadWCSim/LoadWCSimLAPPDConfig
+myPrintANNIEEvent PrintANNIEEvent ./configfiles/LoadWCSim/PrintANNIEEventConfig
 

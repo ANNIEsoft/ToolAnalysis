@@ -2,7 +2,13 @@
 
 #include "LoadWCSimLAPPD.h"
 #include <numeric>  // iota
-#include "TimeClass.h"
+
+#ifndef DEBUG_DRAW_LAPPD_HITS
+//#define DEBUG_DRAW_LAPPD_HITS
+//#include <thread>          std::this_thread::sleep_for
+//#include <chrono>          std::chrono::seconds
+//#include <time.h>          clock_t, clock, CLOCKS_PER_SEC
+#endif
 
 LoadWCSimLAPPD::LoadWCSimLAPPD():Tool(){}
 
@@ -72,6 +78,17 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	
 	// things to be saved to the ANNIEEvent Store
 	MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
+	
+#ifdef DEBUG_DRAW_LAPPD_HITS
+	// create the ROOT application to show histograms
+	int myargc=0;
+	char *myargv[] = {(const char*)"somestring"};
+	lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
+	lappdhitshist = new TPolyMarker3D();
+	digixpos = new TH1D("digixpos","digixpos",100,-2,2);
+	digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
+	digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
+#endif
 	
 	return true;
 }
@@ -198,9 +215,8 @@ bool LoadWCSimLAPPD::Execute(){
 								digitsz  = pmtz + peposy*TMath::Sin(tileangle);
 						}
 				}
-#else // if FILE_VERSION<3
-				
-				double digitsx= (LAPPDEntry->lappdhit_globalcoorx->at(runningcount)) / 1000.;  // global WCSim coords - [mm] to [m]
+#else // if FILE_VERSION>=3
+				double digitsx= (LAPPDEntry->lappdhit_globalcoorx->at(runningcount)) / 1000.;  // global WCSim coords - convert [mm] to [m]
 				double digitsy= (LAPPDEntry->lappdhit_globalcoory->at(runningcount)) / 1000.;
 				double digitsz= (LAPPDEntry->lappdhit_globalcoorz->at(runningcount)) / 1000.;
 #endif // FILE_VERSION<3
@@ -218,13 +234,21 @@ bool LoadWCSimLAPPD::Execute(){
 				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
 				//LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
+#ifdef DEBUG_DRAW_LAPPD_HITS
+				lappdhitshist->SetNextPoint(digitsx,digitsz, digitsy);
+				digixpos->Fill(digitsx);
+				digiypos->Fill(digitsy);
+				digizpos->Fill(digitsz);
+#endif
 				
-				if(verbose>4) cout<<"lappdhit time "<<digitstns
-					<<"ns, trigger window time ["<<wcsimtriggertime+pretriggerwindow
-					<<" - "<<wcsimtriggertime+posttriggerwindow<<"]"<<endl;
 				// we now have all the necessary info about this LAPPD hit:
 				// check if it falls within the current trigger window
-				if( digitstns>(wcsimtriggertime+pretriggerwindow) &&
+				if(verbose>4){
+					cout<<"LAPPD hit time is "<<digitstns<<"ns, triggertime is "<<wcsimtriggertime
+						<<", giving window ("<<(wcsimtriggertime+pretriggerwindow)
+						<<"), ("<<(wcsimtriggertime+posttriggerwindow)<<")"<<endl;
+				}
+				if( digitstns>(wcsimtriggertime+pretriggerwindow) && 
 					digitstns<(wcsimtriggertime+posttriggerwindow) ){
 					if(MCLAPPDHits->count(key)==0){
 						LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
@@ -250,5 +274,67 @@ bool LoadWCSimLAPPD::Execute(){
 
 
 bool LoadWCSimLAPPD::Finalise(){
+	
+#ifdef DEBUG_DRAW_LAPPD_HITS
+	Double_t canvwidth = 700;
+	Double_t canvheight = 600;
+	lappdRootCanvas = new TCanvas("lappdRootCanvas","lappdRootCanvas",canvwidth,canvheight);
+	lappdRootCanvas->SetWindowSize(canvwidth,canvheight);
+	lappdRootCanvas->cd();
+	
+	digixpos->Draw();
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("digixpos.png");
+	
+	digiypos->Draw();
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("digiypos.png");
+	
+	digizpos->Draw();
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("digizpos.png");
+	
+	lappdRootCanvas->Clear();
+	gStyle->SetOptStat(0);
+	// need to create axes to add to the TPolyMarker3D
+	TH3F *frame3d = new TH3F("frame3d","frame3d",10,-1.5,1.5,10,0,3.3,10,-2.5,2.5);
+	frame3d->Draw();
+	
+	lappdhitshist->Draw();
+	frame3d->SetTitle("LAPPD Hits - Isometric View");
+	lappdRootCanvas->Modified();
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("lappdhits_isometricview.png");
+	
+	frame3d->SetTitle("LAPPD Hits - Top View");
+	frame3d->GetXaxis()->SetLabelOffset(-0.1);
+	lappdRootCanvas->SetPhi(0);
+	lappdRootCanvas->SetTheta(90);
+	lappdRootCanvas->Modified();
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("lappdhits_topview.png");
+	
+	lappdRootCanvas->SetWindowSize(canvheight, canvwidth);
+	frame3d->SetTitle("LAPPD Hits - Side View");
+	//frame3d->GetXaxis()->SetLabelOffset(-0.1);
+	lappdRootCanvas->SetPhi(90);
+	lappdRootCanvas->SetTheta(0.); //-(45./2.)
+	lappdRootCanvas->Modified();
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("lappdhits_sideview.png");
+	gSystem->ProcessEvents();
+//	lappdRootDrawApp->Run();
+//	std::this_thread::sleep_for (std::chrono::seconds(5));
+//	lappdRootDrawApp->Terminate(0);
+	
+	delete digixpos;
+	delete digiypos;
+	delete digizpos;
+	delete frame3d;
+	delete lappdhitshist;
+	delete lappdRootCanvas;
+	delete lappdRootDrawApp;
+#endif
+	
 	return true;
 }

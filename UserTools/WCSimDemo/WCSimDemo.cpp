@@ -17,7 +17,7 @@ bool WCSimDemo::Initialise(std::string configfile, DataModel &data){
 	// Get the Tool configuration variables
 	m_variables.Get("verbosity",verbosity);
 	
-	Log("Initializing Tool WCSimDemo",v_message,verbosity);
+	Log("WCSimDemo Tool: Initializing",v_message,verbosity);
 	return true;
 }
 

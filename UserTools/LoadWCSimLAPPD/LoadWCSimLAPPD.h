@@ -7,9 +7,11 @@
 
 #include "Tool.h"
 #include "LAPPDTree.h"
-#include "LAPPDHit.h"
-#include "ChannelKey.h"
-#include "TimeClass.h"
+#include "TROOT.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TPolyMarker3D.h"
+#include "TSystem.h"
 
 class LoadWCSimLAPPD: public Tool {
 
@@ -45,6 +47,11 @@ class LoadWCSimLAPPD: public Tool {
 	
 	// internal things to keep between loops
 	std::vector<LAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
+	
+	TApplication* lappdRootDrawApp;
+	TCanvas* lappdRootCanvas;
+	TPolyMarker3D* lappdhitshist;
+	TH1D *digixpos, *digiypos, *digizpos;
 	
 	////////////////
 	// things that will be filled into the store from this WCSim LAPPD file.
