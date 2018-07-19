@@ -63,10 +63,7 @@ bool FindMrdTracks::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("TriggerNumber",MCTriggernum);
 	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
 	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
-	if(DEBUG_DRAW_MRD_TRACKS){
-		m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
-	}
-	//cout<<"gotit"<<endl;
+	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 	
 	// FIXME align types until we update MRDTrackClass/MRDSubEventClass
 	currentfilestring=MCFile;
