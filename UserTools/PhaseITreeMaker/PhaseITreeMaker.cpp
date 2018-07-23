@@ -80,6 +80,7 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_tree_->Branch("run", &run_number_, "run/i");
   output_tree_->Branch("subrun", &subrun_number_, "subrun/i");
   output_tree_->Branch("event", &event_number_, "event/i");
+  output_tree_->Branch("minibuffer", &minibuffer_number_, "minibuffer/I");
   output_tree_->Branch("ncv_position", &ncv_position_, "ncv_position/I");
   output_tree_->Branch("event_time_ns", &event_time_ns_, "event_time_ns/L");
   output_tree_->Branch("label", &event_label_, "label/b");
@@ -120,7 +121,7 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_pulse_tree_->Branch("event", &event_number_, "event/i");
   output_pulse_tree_->Branch("spill", &spill_number_, "spill/i");
   output_pulse_tree_->Branch("minibuffer_number", &minibuffer_number_,
-    "minibuffer_number/i");
+    "minibuffer_number/I");
   output_pulse_tree_->Branch("ncv_position", &ncv_position_, "ncv_position/I");
   output_pulse_tree_->Branch("pulse_start_time_ns", &pulse_start_time_ns_,
     "pulse_start_time_ns/L");

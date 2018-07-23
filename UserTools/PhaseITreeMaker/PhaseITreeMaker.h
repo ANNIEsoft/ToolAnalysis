@@ -121,6 +121,7 @@ class PhaseITreeMaker : public Tool {
     uint32_t run_number_ = 0u;
     uint32_t subrun_number_ = 0u;
     uint32_t event_number_ = 0u;
+    int minibuffer_number_ = 0;
     int ncv_position_ = 0;
     int64_t event_time_ns_ = 0; // ns
     uint8_t event_label_ = 0u;
@@ -157,7 +158,6 @@ class PhaseITreeMaker : public Tool {
     TTree* output_pulse_tree_ = nullptr;
 
     // Pulse tree branch variables
-    uint32_t minibuffer_number_ = 0u;
     int64_t pulse_start_time_ns_ = 0; // ns
     double pulse_amplitude_ = 0.; // V
     double pulse_charge_ = 0.; // nC
