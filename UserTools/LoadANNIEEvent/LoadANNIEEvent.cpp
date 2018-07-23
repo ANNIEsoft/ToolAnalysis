@@ -51,6 +51,7 @@ bool LoadANNIEEvent::Execute() {
   if ( stop_the_loop == 1 ) return false;
 
   if (need_new_file_) {
+    need_new_file_=false;
 
     // Delete the old ANNIEEvent Store if there is one
     if ( m_data->Stores.count("ANNIEEvent") ) {
@@ -78,11 +79,11 @@ bool LoadANNIEEvent::Execute() {
   ++current_entry_;
   
   if ( current_entry_ >= total_entries_in_file_ ) {
+    ++current_file_;
     if ( current_file_ >= input_filenames_.size() ) {
       m_data->vars.Set("StopLoop", 1);
     }
     else {
-      ++current_file_;
       current_entry_ = 0u;
       need_new_file_ = true;
     }
