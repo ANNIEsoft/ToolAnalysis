@@ -122,6 +122,8 @@ class PhaseITreeMaker : public Tool {
     uint32_t subrun_number_ = 0u;
     uint32_t event_number_ = 0u;
     int minibuffer_number_ = 0;
+    int spill_number_ = 0;
+    bool in_spill_ = false;
     int ncv_position_ = 0;
     int64_t event_time_ns_ = 0; // ns
     uint8_t event_label_ = 0u;
@@ -163,8 +165,6 @@ class PhaseITreeMaker : public Tool {
     double pulse_charge_ = 0.; // nC
     int pulse_pmt_id_ = 0.; // nC
     unsigned short pulse_raw_amplitude_ = 0u; // ADC counts
-    uint32_t spill_number_ = 0u;
-    bool in_spill_ = false;
 
     // Tree that stores information about the beam quality cuts
     TTree* output_beam_tree_ = nullptr;
