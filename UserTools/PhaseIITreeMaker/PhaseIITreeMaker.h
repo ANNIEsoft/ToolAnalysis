@@ -22,7 +22,7 @@ class PhaseIITreeMaker: public Tool {
 
  private:
  	/// \brief ROOT TFile that will be used to store the output from this tool
-  std::unique_ptr<TFile> fOutput_tfile = nullptr;
+  TFile* fOutput_tfile = nullptr;
 
   /// \brief TTree that will be used to store output
   TTree* fRecoTree = nullptr;

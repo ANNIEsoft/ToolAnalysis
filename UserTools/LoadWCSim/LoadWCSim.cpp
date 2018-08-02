@@ -61,6 +61,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// ====================================
 	//m_data->CStore.Set("WCSimEntry",WCSimEntry,false); // pass on the WCSim entry - not possible
 	// pass on root options. TODO should these be saved somewhere?
+	m_data->CStore.Set("WCSimNumEvents",NumEvents);
 	m_data->CStore.Set("WCSimPreTriggerWindow",pretriggerwindow);
 	m_data->CStore.Set("WCSimPostTriggerWindow",posttriggerwindow);
 	// store the WCSimRootGeom for LAPPD reader calculation of global coords

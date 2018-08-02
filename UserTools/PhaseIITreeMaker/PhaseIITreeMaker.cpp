@@ -15,7 +15,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbose", verbosity);
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
-  fOutput_tfile = std::unique_ptr<TFile>(new TFile(output_filename.c_str(), "recreate"));
+  fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
   fRecoTree = new TTree("phaseII", "ANNIE Phase II Reconstruction Tree");
   fRecoTree->Branch("nhits",&fNhits,"fNhits/I");
   fRecoTree->Branch("filter",&fIsFiltered);
@@ -34,6 +34,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
 bool PhaseIITreeMaker::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
   Log("PhaseIITreeMaker Tool: Executing",v_debug,verbosity);
+  
   
   // Get a pointer to the ANNIEEvent Store
   auto* annie_event = m_data->Stores["RecoEvent"];
@@ -58,16 +59,17 @@ bool PhaseIITreeMaker::Execute(){
     fDigitType.push_back(digit.GetDigitType());
   }
   fRecoTree->Fill();
-  //fOutput_tfile->cd();
+  fOutput_tfile->cd();
 	//fRecoTree->Write();
   return true;
 }
 
 
 bool PhaseIITreeMaker::Finalise(){
-	//fOutput_tfile->cd();
+	fOutput_tfile->cd();
 	fRecoTree->Write();
 	fOutput_tfile->Close();
+	if(verbosity>0) cout<<"PhaseIITreeMaker exitting"<<endl;
 
   return true;
 }

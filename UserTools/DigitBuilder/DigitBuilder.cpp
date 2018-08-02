@@ -43,7 +43,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 //  fDigitTree->Branch("digitZ",&fDigitZ);
 //  fDigitTree->Branch("digitT",&fDigitT);
 //  fDigitTree->Branch("digitQ",&fDigitQ);
-//  fDigitTree->Branch("digitType", &fDigitType, "fDigitType/I");
+//  fDigitTree->Branch("digitType", &fDigitType);
 //  gROOT->cd();
 	
 	/// Construct the other objects we'll be setting at event level,
@@ -103,9 +103,9 @@ bool DigitBuilder::Execute(){
 	  this->BuildRecoDigit();
 	  // Push to RecoEvent
 	  this->PushRecoDigits(true); 
-	  fNhits = fDigitList->size();
-	  fOutput_tfile->cd();
-	  fDigitTree->Fill();		
+	  //fNhits = fDigitList->size();
+	  //fOutput_tfile->cd();
+	  //fDigitTree->Fill();		
 	  return true;
 	}
 	else {
@@ -143,18 +143,19 @@ bool DigitBuilder::Execute(){
 	  this->BuildRecoDigit();
 	  // Push to RecoEvent
 	  this->PushRecoDigits(true); 
-	  fNhits = fDigitList->size();
-	  fOutput_tfile->cd();
-	  fDigitTree->Fill();	
+	  //fNhits = fDigitList->size();
+	  //fOutput_tfile->cd();
+	  //fDigitTree->Fill();	
 	  
     return true;
   }
 }
 
 bool DigitBuilder::Finalise(){
-	fOutput_tfile->cd();
+	//fOutput_tfile->cd();
 	//fDigitTree->Write();
-	fOutput_tfile->Close();
+	//fOutput_tfile->Close();
+	if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
   return true;
 }
 
@@ -208,16 +209,16 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::PMT8inch;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
-				  //if(v_message<verbosity) recoDigit.Print();
-				  fDigitList->push_back(recoDigit); 
-				  
-				  // push to tree 
-					fDigitX.push_back(pos_reco.X());
-					fDigitY.push_back(pos_reco.Y());
-					fDigitZ.push_back(pos_reco.Z());
-					fDigitT.push_back(calT);
-					fDigitQ.push_back(calQ);
-					fDigitType.push_back(digitType);
+//				  //if(v_message<verbosity) recoDigit.Print();
+//				  fDigitList->push_back(recoDigit); 
+//				  
+//				  // push to tree 
+//					fDigitX.push_back(pos_reco.X());
+//					fDigitY.push_back(pos_reco.Y());
+//					fDigitZ.push_back(pos_reco.Z());
+//					fDigitT.push_back(calT);
+//					fDigitQ.push_back(calQ);
+//					fDigitType.push_back(digitType);
         }
 			}
 		} // end loop over MCHits
@@ -264,14 +265,13 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
 					//if(v_message<verbosity) recoDigit.Print();
 				  fDigitList->push_back(recoDigit);
-				  
-				  // push to tree 
-					fDigitX.push_back(pos_reco.X());
-					fDigitY.push_back(pos_reco.Y());
-					fDigitZ.push_back(pos_reco.Z());
-					fDigitT.push_back(calT);
-					fDigitQ.push_back(calQ);
-					fDigitType.push_back(digitType);
+//				  // push to vector 
+//					fDigitX.push_back(pos_reco.X());
+//					fDigitY.push_back(pos_reco.Y());
+//					fDigitZ.push_back(pos_reco.Z());
+//					fDigitT.push_back(calT);
+//					fDigitQ.push_back(calQ);
+//					fDigitType.push_back(digitType);
 				}
 			}
 		} // end loop over MCLAPPDHits

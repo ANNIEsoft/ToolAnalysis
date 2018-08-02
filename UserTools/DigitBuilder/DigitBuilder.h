@@ -92,21 +92,21 @@ class DigitBuilder: public Tool {
 	/// Reconstructed information
 	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
 		
-	/// \brief ROOT TFile that will be used to store the output from this tool
-  std::unique_ptr<TFile> fOutput_tfile = nullptr;
-
-  /// \brief TTree that will be used to store output
-  TTree* fDigitTree = nullptr;
-  
-  /// \brief Branch variables
-  /// Digits
-  int fNhits;
-  std::vector<double> fDigitX;
-  std::vector<double> fDigitY;
-  std::vector<double> fDigitZ;
-  std::vector<double> fDigitT;
-  std::vector<double> fDigitQ;    
-  std::vector<int> fDigitType;
+//	/// \brief ROOT TFile that will be used to store the output from this tool
+//  std::unique_ptr<TFile> fOutput_tfile = nullptr;
+//
+//  /// \brief TTree that will be used to store output
+//  TTree* fDigitTree = nullptr;
+//  
+//  /// \brief Branch variables
+//  /// Digits
+//  int fNhits;
+//  std::vector<double> fDigitX;
+//  std::vector<double> fDigitY;
+//  std::vector<double> fDigitZ;
+//  std::vector<double> fDigitT;
+//  std::vector<double> fDigitQ;    
+//  std::vector<int> fDigitType;
 	
 };
 
