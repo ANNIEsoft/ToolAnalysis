@@ -22,6 +22,7 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
 }
 
 bool VtxPointPositionFinder::Execute(){
+	Log("===========================================================================================",v_debug,verbosity);
 	
 	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
 

@@ -6,3 +6,4 @@ verbose 1
 MinDigitsForTrack 4
 MaxMrdSubEventDuration 30  # [ns]
 WriteTracksToFile 1
+DrawTracks 0 # whether to draw track visualization

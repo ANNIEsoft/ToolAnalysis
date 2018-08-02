@@ -7,9 +7,12 @@
 
 #include "Tool.h"
 #include "LAPPDTree.h"
-#include "LAPPDHit.h"
-#include "ChannelKey.h"
-#include "TimeClass.h"
+#include "TROOT.h"
+// for drawing
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TPolyMarker3D.h"
+#include "TSystem.h"
 
 class LoadWCSimLAPPD: public Tool {
 
@@ -31,6 +34,7 @@ class LoadWCSimLAPPD: public Tool {
 	
 	// LAPPDTree variables
 	TFile* file=nullptr;
+	int FILE_VERSION;
 	TTree* lappdtree=nullptr;
 	LAPPDTree* LAPPDEntry=nullptr;  // tree event as a class object from MakeClass
 	long NumEvents;
@@ -45,6 +49,12 @@ class LoadWCSimLAPPD: public Tool {
 	
 	// internal things to keep between loops
 	std::vector<LAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
+	
+	bool DEBUG_DRAW_LAPPD_HITS;
+	TApplication* lappdRootDrawApp;
+	TCanvas* lappdRootCanvas;
+	TPolyMarker3D* lappdhitshist;
+	TH1D *digixpos, *digiypos, *digizpos;
 	
 	////////////////
 	// things that will be filled into the store from this WCSim LAPPD file.

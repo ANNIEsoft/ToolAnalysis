@@ -17,6 +17,10 @@
 #include "TTree.h"
 #include "TClonesArray.h"
 
+// for drawing
+#include "TApplication.h"
+#include "TSystem.h"
+
 class FindMrdTracks: public Tool {
 	
 public:
@@ -67,6 +71,12 @@ private:
 	TBranch* nummrdtracksthiseventb=0;
 	TBranch* subeventsinthiseventb=0;
 	TClonesArray* SubEventArray=0;
+	
+	// For Debug Drawing Tracks During Looping
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	bool DEBUG_DRAW_MRD_TRACKS;
+	std::vector<MCParticle>* MCParticles=nullptr;
+	TApplication* mrdTrackDrawApp;
 };
 
 

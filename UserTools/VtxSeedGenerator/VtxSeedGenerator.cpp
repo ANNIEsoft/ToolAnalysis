@@ -42,6 +42,7 @@ bool VtxSeedGenerator::Initialise(std::string configfile, DataModel &data){
 }
 
 bool VtxSeedGenerator::Execute(){
+	Log("===========================================================================================",v_debug,verbosity);
 	
 	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
 	

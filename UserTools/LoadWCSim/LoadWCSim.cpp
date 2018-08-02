@@ -25,8 +25,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// n.b. m_data->vars is a Store (of ben's Store type) that is not saved to disk?
 	//      m_data->CStore is a single entry binary BoostStore that is not saved to disk.
 	//      m_data->Stores["StoreName"] is a map of binary BoostStores that are saved to disk.
-	// If using Stores->BoostStore->Set("MyVariable") it will always be saved to disk 
-	// Using Stores->BoostStore.Set("MyVariable",&myvar) if myvar is a pointer (to an object on 
+	// If using Stores->BoostStore->Set("MyVariable") it will always be saved to disk
+	// Using Stores->BoostStore.Set("MyVariable",&myvar) if myvar is a pointer (to an object on
 	// the heap) puts myvar in the Store and it's deletion will be  handled by the Store.
 	// (provided your class has a suitable destructor.)
 	// Is 'BoostStore::Save' needed for single-entry stores?
@@ -67,13 +67,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	intptr_t geomptr = reinterpret_cast<intptr_t>(wcsimrootgeom);
 	if(verbose>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<", geomptr="<<geomptr<<endl;
 	m_data->CStore.Set("WCSimRootGeom",geomptr);
-//	int wcsimgoemexists = m_data->Stores.count("WCSimRootGeomStore");
-//	if(wcsimgoemexists==0){
+//	int wcsimgeomexists = m_data->Stores.count("WCSimRootGeomStore");
+//	if(wcsimgeomexists==0){
 //		m_data->Stores["WCSimRootGeomStore"] = new BoostStore(false,0);
 //		//m_data->Stores.at("WCSimRootGeomStore")->Header->Set("WCSimRootGeom",wcsimrootgeom);
 //		m_data->Stores.at("WCSimRootGeomStore")->Set("WCSimRootGeom",&wcsimrootgeom);
 //	}
-	
+//	
 //	// Make a WCSimStore to store additional WCSim info passed between tools
 //	// =====================================================================
 //	int wcsimstoreexists = m_data->Stores.count("WCSimStore");
@@ -98,17 +98,17 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	int numlappds = wcsimrootgeom->GetWCNumLAPPD();
 	int nummrdpmts = wcsimrootgeom->GetWCNumMRDPMT();
 	numvetopmts = wcsimrootgeom->GetWCNumFACCPMT();
-	double tank_xcentre = wcsimrootgeom->GetWCOffset(0);
-	double tank_ycentre = wcsimrootgeom->GetWCOffset(1);
-	double tank_zcentre = wcsimrootgeom->GetWCOffset(2);
+	double tank_xcentre = (wcsimrootgeom->GetWCOffset(0)) / 100.;  // convert [cm] to [m]
+	double tank_ycentre = (wcsimrootgeom->GetWCOffset(1)) / 100.;
+	double tank_zcentre = (wcsimrootgeom->GetWCOffset(2)) / 100.;
 	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
-	double tank_radius = wcsimrootgeom->GetWCCylRadius();
-	double tank_halfheight = wcsimrootgeom->GetWCCylLength();
+	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.;
+	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 100.;
 	// geometry variables not yet in wcsimrootgeom are in MRDSpecs.hh
-	double mrd_width =  MRDSpecs::MRD_width;
-	double mrd_height = MRDSpecs::MRD_height;
-	double mrd_depth =  MRDSpecs::MRD_depth;
-	double mrd_start =  MRDSpecs::MRD_start;
+	double mrd_width =  (MRDSpecs::MRD_width) / 100.;
+	double mrd_height = (MRDSpecs::MRD_height) / 100.;
+	double mrd_depth =  (MRDSpecs::MRD_depth) / 100.;
+	double mrd_start =  (MRDSpecs::MRD_start) / 100.;
 	if(verbose>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts
 					  <<" mrd pmts and "<<numlappds<<" lappds"<<endl;
 	
@@ -118,8 +118,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	for(int i=0; i<numtankpmts; i++){
 		ChannelKey akey(subdetector::ADC, i);
 		WCSimRootPMT apmt = wcsimrootgeom->GetPMT(i);
-		Detector adet("Tank", Position(apmt.GetPosition(0),apmt.GetPosition(1),apmt.GetPosition(2)), 
-		               Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)), 
+		Detector adet("Tank", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
+		               Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		               i, apmt.GetName(), detectorstatus::ON, 0.);
 		Detectors.emplace(akey,adet);
 	}
@@ -127,8 +127,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	for(int i=0; i<nummrdpmts; i++){
 		ChannelKey akey(subdetector::TDC, i);
 		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(i);
-		Detector adet("MRD", Position(apmt.GetPosition(0),apmt.GetPosition(1),apmt.GetPosition(2)), 
-		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)), 
+		Detector adet("MRD", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
+		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		              i, apmt.GetName(), detectorstatus::ON, 0.);
 		Detectors.emplace(akey,adet);
 	}
@@ -136,8 +136,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	for(int i=0; i<numvetopmts; i++){
 		ChannelKey akey(subdetector::TDC, i);
 		WCSimRootPMT apmt = wcsimrootgeom->GetFACCPMT(i);
-		Detector adet("Veto", Position(apmt.GetPosition(0),apmt.GetPosition(1),apmt.GetPosition(2)), 
-		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)), 
+		Detector adet("Veto", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
+		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		              i, apmt.GetName(), detectorstatus::ON, 0.);
 		Detectors.emplace(akey,adet);
 	}
@@ -145,16 +145,16 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	for(int i=0; i<numlappds; i++){
 		ChannelKey akey(subdetector::LAPPD, i);
 		WCSimRootPMT apmt = wcsimrootgeom->GetLAPPD(i);
-		Detector adet("Tank", Position(apmt.GetPosition(0),apmt.GetPosition(1),apmt.GetPosition(2)), 
-		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)), 
+		Detector adet("Tank", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
+		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		              i, apmt.GetName(), detectorstatus::ON, 0.);
 		Detectors.emplace(akey,adet);
 	}
 	
 	// construct the goemetry 
-	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius, tank_halfheight, 
-	                                   mrd_width, mrd_height, mrd_depth, mrd_start, numtankpmts, 
-	                                   nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
+	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius,
+	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
+	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
 	if(verbose>1) cout<<"constructed anniegom at "<<anniegeom<<endl;
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 	
@@ -213,6 +213,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 
 bool LoadWCSim::Execute(){
 	
+	cout<<endl<<endl<<endl<<endl;
+	if(verbose) cout<<"==========================================================================================="<<endl;
+	
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
 	
@@ -245,7 +248,7 @@ bool LoadWCSim::Execute(){
 		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
 			if(verbose>2) cout<<"getting track "<<tracki<<endl;
 			WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigt->GetTracks()->At(tracki);
-			/* a WCSimRootTrack has methods: 
+			/* a WCSimRootTrack has methods:
 			Int_t     GetIpnu()             pdg
 			Int_t     GetFlag()             -1: neutrino primary, -2: neutrino target, 0: other
 			Float_t   GetM()                mass
@@ -273,13 +276,13 @@ bool LoadWCSim::Execute(){
 			
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
-				Position(nextrack->GetStart(0), nextrack->GetStart(1), nextrack->GetStart(2)),
-				Position(nextrack->GetStop(0), nextrack->GetStop(1), nextrack->GetStop(2)),
+				Position(nextrack->GetStart(0) / 100., nextrack->GetStart(1) / 100., nextrack->GetStart(2) / 100.),
+				Position(nextrack->GetStop(0) / 100., nextrack->GetStop(1) / 100., nextrack->GetStop(2) / 100.),
 				TimeClass(nextrack->GetTime()), TimeClass(nextrack->GetStopTime()),
 				Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
-				sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
+				(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
-					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.)),
+					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
 					 startstoptype, tracki, nextrack->GetParenttype());
 			
 			MCParticles->push_back(thisparticle);
@@ -291,14 +294,14 @@ bool LoadWCSim::Execute(){
 		if(verbose>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
 		for(int digiti=0; digiti<numtankdigits; digiti++){
 			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
-			WCSimRootCherenkovDigiHit* digihit = 
+			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigt->GetCherenkovDigiHits()->At(digiti);
 			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ()
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			TimeClass digittime(digihit->GetT()+EventTimeNs); // add trigger time to make absolute
-			if(verbose>2){ cout<<"digittime is "; digittime.Print(); }
+			double digittime(digihit->GetT()); // add trigger time to make absolute
+			if(verbose>2){ cout<<"digittime is "<<digittime<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
 			
@@ -310,20 +313,18 @@ bool LoadWCSim::Execute(){
 		}
 		if(verbose>2) cout<<"done with tank digits"<<endl;
 		
-		// FIXME implement LAPPD hits
-		
 		//MRD Hits
 		int nummrddigits = atrigm ? atrigm->GetCherenkovDigiHits()->GetEntries() : 0;
 		if(verbose>1) cout<<"adding "<<nummrddigits<<" mrd digits"<<endl;
 		for(int digiti=0; digiti<nummrddigits; digiti++){
 			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
-			WCSimRootCherenkovDigiHit* digihit = 
+			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(digiti);
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId() + numvetopmts;
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			TimeClass digittime(digihit->GetT()+EventTimeNs); // add trigger time to make absolute
-			if(verbose>2){ cout<<"digittime is "; digittime.Print(); }
+			double digittime(digihit->GetT()); // add trigger time to make absolute
+			if(verbose>2){ cout<<"digittime is "<<digittime<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
 			
@@ -340,13 +341,13 @@ bool LoadWCSim::Execute(){
 		if(verbose>1) cout<<"adding "<<numvetodigits<<" veto digits"<<endl;
 		for(int digiti=0; digiti<numvetodigits; digiti++){
 			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
-			WCSimRootCherenkovDigiHit* digihit = 
+			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigv->GetCherenkovDigiHits()->At(digiti);
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			TimeClass digittime(digihit->GetT()+EventTimeNs); // add trigger time to make absolute
-			if(verbose>2){ cout<<"digittime is "; digittime.Print(); }
+			double digittime(digihit->GetT()); // add trigger time to make absolute
+			if(verbose>2){ cout<<"digittime is "<<digittime<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
 			
@@ -362,10 +363,6 @@ bool LoadWCSim::Execute(){
 		TriggerData->front().SetTime(EventTimeNs);
 		
 	//}
-	
-	// Load the corresponding entry from the LAPPD file.
-	// Loop over the triggers in this entry
-	// fill LAPPDData properly. XXX XXX XXX XXX XXX XX XX XX XXX
 	
 	//int mrdentries;
 	//m_data->Stores.at("TDCData")->Get("TotalEntries",mrdentries); // ??
@@ -392,7 +389,7 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
-	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant 
+	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
 	m_data->CStore.Set("FilterDone",0);  ///> Data Filtering not done by default (to be moved to CStore)
 	m_data->CStore.Set("VertexFinderDone",0);  ///> Vertex finding not done by default (to be moved to CStore)
@@ -404,9 +401,7 @@ bool LoadWCSim::Execute(){
 	//CalibratedLAPPDData
 	//RecoParticles
 	
-	// this should be everything. save the entry to the BoostStore
-	if(verbose>2) cout<<"saving ANNIEEvent "<<EventNumber<<endl;
-	m_data->Stores.at("ANNIEEvent")->Save();
+	// Save the entry to the BoostStore  - done in SaveANNIEEvent tool at end of ToolChain
 	
 	EventNumber++;
 	MCTriggernum++;
@@ -425,8 +420,9 @@ bool LoadWCSim::Execute(){
 
 
 bool LoadWCSim::Finalise(){
-	
-	
+	file->Close();
+	delete WCSimEntry;
+	//delete file;  // Done by WCSimEntry destructor
 	
 	return true;
 }

@@ -2,32 +2,37 @@
 
 #include "LoadWCSimLAPPD.h"
 #include <numeric>  // iota
-#include "TimeClass.h"
+
+#include <thread>          // std::this_thread::sleep_for
+#include <chrono>          // std::chrono::seconds
+#include <time.h>          // clock_t, clock, CLOCKS_PER_SEC
 
 LoadWCSimLAPPD::LoadWCSimLAPPD():Tool(){}
 
 bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
-
+	
 	/////////////////// Useful header ///////////////////////
 	
 	if(verbose) cout<<"Initializing Tool LoadWCSimLAPPD"<<endl;
 	
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
-
+	
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
 	
 	int returnval=0; // All BoostStore 'Get' calls must have their return value checked!!!
 	// 0 means the entry was not found, value is NOT set! 1 means OK. No compile time checking!!
 	
-		// Get the Tool configuration variables
+	// Get the Tool configuration variables
 	// ====================================
 	m_variables.Get("verbose",verbose);
 	//verbose=10;
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("InnerStructureRadius",Rinnerstruct);
 	m_variables.Get("HistoricTriggeroffset",triggeroffset);
+	m_variables.Get("DrawDebugGraphs",DEBUG_DRAW_LAPPD_HITS);
+	m_variables.Get("FileVersion",FILE_VERSION);
 	
 	// Make class private members; e.g. the LAPPDTree
 	// ==============================================
@@ -44,7 +49,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 		cerr<<"LoadWCSimLAPPD tool need to run after LoadWCSim tool!"<<endl;
 		return false; // TODO we need to read various things from main the files...
 	}
-	
+
 	// Get trigger window parameters from CStore
 	// =========================================
 	m_data->CStore.Get("WCSimPreTriggerWindow",pretriggerwindow);
@@ -73,6 +78,17 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	// things to be saved to the ANNIEEvent Store
 	MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
 	
+	if(DEBUG_DRAW_LAPPD_HITS){
+		// create the ROOT application to show histograms
+		int myargc=0;
+		char *myargv[] = {(const char*)"somestring"};
+		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
+		lappdhitshist = new TPolyMarker3D();
+		digixpos = new TH1D("digixpos","digixpos",100,-2,2);
+		digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
+		digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
+	}
+	
 	return true;
 }
 
@@ -83,7 +99,7 @@ bool LoadWCSimLAPPD::Execute(){
 	// To match real data, we flatten events out, creating one ToolAnalysis event per trigger.
 	// But LAPPD hits are truth info and aren't tied to a WCSim trigger;
 	// we need to scan through the LAPPD hits and check for hits within the trigger time window.
-	// If you wish, you can bypass this easily enough, but in that case bear in mind the same 
+	// If you wish, you can bypass this easily enough, but in that case bear in mind the same
 	// LAPPD hits may appear in multiple ToolAnalysis 'events' unless you otherwise handle it.
 	if(verbose) cout<<"Executing tool LoadWCSimLAPPD"<<endl;
 	
@@ -111,7 +127,7 @@ bool LoadWCSimLAPPD::Execute(){
 				LAPPDHit nexthit = unassignedhits.at(hiti);
 				TimeClass thehitstime = nexthit.GetTime();
 				uint64_t thehitstimens = thehitstime.GetNs();
-				if( thehitstimens>(wcsimtriggertime+pretriggerwindow) && 
+				if( thehitstimens>(wcsimtriggertime+pretriggerwindow) &&
 					thehitstimens<(wcsimtriggertime+posttriggerwindow) ){
 					// this lappd hit is within the trigger window; note it
 					ChannelKey key(subdetector::LAPPD,nexthit.GetTubeId());
@@ -136,74 +152,74 @@ bool LoadWCSimLAPPD::Execute(){
 		for(int lappdi=0; lappdi<LAPPDEntry->lappd_numhits; lappdi++){
 			// loop over LAPPDs that had at least one hit
 			int LAPPDID = LAPPDEntry->lappdhit_objnum[lappdi];
-			double pmtx = LAPPDEntry->lappdhit_x[lappdi];  // position of LAPPD in global coords
-			double pmty = LAPPDEntry->lappdhit_y[lappdi];
-			double pmtz = LAPPDEntry->lappdhit_z[lappdi];
+			double pmtx = (LAPPDEntry->lappdhit_x[lappdi]) / 1000.;  // pos of LAPPD in global coords, [mm] to [m]
+			double pmty = (LAPPDEntry->lappdhit_y[lappdi]) / 1000.;
+			double pmtz = (LAPPDEntry->lappdhit_z[lappdi]) / 1000.;
 			
-#if FILE_VERSION<3  // manual calculation of global hit position part 1
-			WCSimRootPMT lappdobj = geo->GetLAPPD(LAPPDID-1);
-			int lappdloc = lappdobj.GetCylLoc();
-			double Rthresh=Rinnerstruct*pow(2.,-0.5);
 			double tileangle;
 			int theoctagonside;
-			switch (lappdloc){
-				case 0: break; // top cap
-				case 2: break; // bottom cap
-				case 1: // wall
-					// we need to account for the angle of the LAPPD within the tank
-					// determine the angle based on it's position
-					double octangle1=TMath::Pi()*(3./8.);
-					double octangle2=TMath::Pi()*(1./8.);
-					pmtz+=-MRDSpecs::tank_start-MRDSpecs::tank_radius;
-						 if(pmtx<-Rthresh&&pmtz<0)         {tileangle=-octangle1; theoctagonside=0;}
-					else if(-Rthresh<pmtx&&pmtx<0&&pmtz<0) {tileangle=-octangle2; theoctagonside=1;}
-					else if(0<pmtx&&pmtx<Rthresh&&pmtz<0)  {tileangle= octangle2; theoctagonside=2;}
-					else if(Rthresh<pmtx&&pmtz<0)          {tileangle= octangle1; theoctagonside=3;}
-					else if(pmtx<-Rthresh&&pmtz>0)         {tileangle= octangle1; theoctagonside=4;}
-					else if(-Rthresh<pmtx&&pmtx<0&&pmtz>0) {tileangle= octangle2; theoctagonside=5;}
-					else if(0<pmtx&&pmtx<Rthresh&&pmtz>0)  {tileangle=-octangle2; theoctagonside=6;}
-					else if(Rthresh<pmtx&&pmtz>0)          {tileangle=-octangle1; theoctagonside=7;}
-					break;
-			}
-#endif // FILE_VERSION<3
+			int lappdloc;
+			if(FILE_VERSION<3){  // manual calculation of global hit position part 1
+				WCSimRootPMT lappdobj = geo->GetLAPPD(LAPPDID-1);
+				lappdloc = lappdobj.GetCylLoc();
+				double Rthresh=Rinnerstruct*pow(2.,-0.5);
+				switch (lappdloc){
+					case 0: break; // top cap
+					case 2: break; // bottom cap
+					case 1: // wall
+						// we need to account for the angle of the LAPPD within the tank
+						// determine the angle based on it's position
+						double octangle1=TMath::Pi()*(3./8.);
+						double octangle2=TMath::Pi()*(1./8.);
+						double pmtztankorigin = pmtz -((MRDSpecs::tank_start+MRDSpecs::tank_radius)/100.);
+							 if(pmtx<-Rthresh&&pmtztankorigin<0)         {tileangle=-octangle1; theoctagonside=0;}
+						else if(-Rthresh<pmtx&&pmtx<0&&pmtztankorigin<0) {tileangle=-octangle2; theoctagonside=1;}
+						else if(0<pmtx&&pmtx<Rthresh&&pmtztankorigin<0)  {tileangle= octangle2; theoctagonside=2;}
+						else if(Rthresh<pmtx&&pmtztankorigin<0)          {tileangle= octangle1; theoctagonside=3;}
+						else if(pmtx<-Rthresh&&pmtztankorigin>0)         {tileangle= octangle1; theoctagonside=4;}
+						else if(-Rthresh<pmtx&&pmtx<0&&pmtztankorigin>0) {tileangle= octangle2; theoctagonside=5;}
+						else if(0<pmtx&&pmtx<Rthresh&&pmtztankorigin>0)  {tileangle=-octangle2; theoctagonside=6;}
+						else if(Rthresh<pmtx&&pmtztankorigin>0)          {tileangle=-octangle1; theoctagonside=7;}
+						break;
+				}
+			} // FILE_VERSION<3
 			
 			int numhitsthislappd=LAPPDEntry->lappdhit_edep[lappdi];
 			if(verbose>3) cout<<"LAPPD "<<LAPPDID<<" had "<<numhitsthislappd<<" hits in total"<<endl;
 			int lastrunningcount=runningcount;
 			// loop over all the hits on this lappd
 			for(;runningcount<(lastrunningcount+numhitsthislappd); runningcount++){
-				double peposx = LAPPDEntry->lappdhit_stripcoorx->at(runningcount);  // posn on tile
-				double peposy = LAPPDEntry->lappdhit_stripcoory->at(runningcount);
+				double peposx = (LAPPDEntry->lappdhit_stripcoorx->at(runningcount)) / 1000.;  // pos on tile
+				double peposy = (LAPPDEntry->lappdhit_stripcoory->at(runningcount)) / 1000.;  // [mm] to [m]
 				
-#if FILE_VERSION<3  // manual calculation of global hit position part 2
 				double digitsx, digitsy, digitsz;
-				switch (lappdloc){
-					case 0: // top cap
-						digitsx  = pmtx - peposx;
-						digitsy  = pmty;
-						digitsz  = pmtz - peposy;
-						break;
-					case 2: // bottom cap
-						digitsx  = pmtx + peposx;
-						digitsy  = pmty;
-						digitsz  = pmtz - peposy;
-						break;
-					case 1: // wall
-						digitsy  = pmty + peposx;
-						if(theoctagonside<4){
-								digitsx  = pmtx - peposy*TMath::Cos(tileangle);
-								digitsz  = pmtz - peposy*TMath::Sin(tileangle);
-						} else {
-								digitsx  = pmtx + peposy*TMath::Cos(tileangle);
-								digitsz  = pmtz + peposy*TMath::Sin(tileangle);
-						}
-				}
-#else // if FILE_VERSION<3
-				
-				double digitsx=LAPPDEntry->lappdhit_globalcoorx->at(runningcount);
-				double digitsy=LAPPDEntry->lappdhit_globalcoory->at(runningcount);
-				double digitsz=LAPPDEntry->lappdhit_globalcoorz->at(runningcount);
-#endif // FILE_VERSION<3
+				if(FILE_VERSION<3){     // manual calculation of global hit position part 2
+					switch (lappdloc){
+						case 0: // top cap
+							digitsx  = pmtx - peposx;
+							digitsy  = pmty;
+							digitsz  = pmtz - peposy;
+							break;
+						case 2: // bottom cap
+							digitsx  = pmtx + peposx;
+							digitsy  = pmty;
+							digitsz  = pmtz - peposy;
+							break;
+						case 1: // wall
+							digitsy  = pmty + peposx;
+							if(theoctagonside<4){
+									digitsx  = pmtx - peposy*TMath::Cos(tileangle);
+									digitsz  = pmtz - peposy*TMath::Sin(tileangle);
+							} else {
+									digitsx  = pmtx + peposy*TMath::Cos(tileangle);
+									digitsz  = pmtz + peposy*TMath::Sin(tileangle);
+							}
+					}
+				} else {  // if FILE_VERSION>=3
+					digitsx= (LAPPDEntry->lappdhit_globalcoorx->at(runningcount)) / 1000.;  // global WCSim coords
+					digitsy= (LAPPDEntry->lappdhit_globalcoory->at(runningcount)) / 1000.;  //   [mm] to [m]
+					digitsz= (LAPPDEntry->lappdhit_globalcoorz->at(runningcount)) / 1000.;
+				} // if FILE_VERSION<3
 				
 				// calculate relative time within trigger
 				double digitst  = LAPPDEntry->lappdhit_stripcoort->at(runningcount);
@@ -212,30 +228,38 @@ bool LoadWCSimLAPPD::Execute(){
 				// LAPPD time is split into a ns and ps component: trim off ps part:
 				uint64_t digitstns = floor(digitst);
 				double digitstps = (digitst- digitstns)*1000.;
-				TimeClass digittime(digitstns); // absolute time
+				double digittime(digitstns); // absolute time
 				float digiq = 0; // N/A
 				ChannelKey key(subdetector::LAPPD,LAPPDID);
-				std::vector<double> globalpos{digitsx/10.,digitsy/10.,digitsz/10.}; // converted to cm
+				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
 				//LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
+				if(DEBUG_DRAW_LAPPD_HITS){
+					lappdhitshist->SetNextPoint(digitsx,digitsz, digitsy);
+					digixpos->Fill(digitsx);
+					digiypos->Fill(digitsy);
+					digizpos->Fill(digitsz);
+				}
 				
-				if(verbose>4) cout<<"lappdhit time "<<digitstns
-					<<"ns, trigger window time ["<<wcsimtriggertime+pretriggerwindow
-					<<" - "<<wcsimtriggertime+posttriggerwindow<<"]"<<endl;
 				// we now have all the necessary info about this LAPPD hit:
 				// check if it falls within the current trigger window
+				if(verbose>4){
+					cout<<"LAPPD hit time is "<<digitstns<<"ns, triggertime is "<<wcsimtriggertime
+						<<", giving window ("<<(wcsimtriggertime+pretriggerwindow)
+						<<"), ("<<(wcsimtriggertime+posttriggerwindow)<<")"<<endl;
+				}
 				if( digitstns>(wcsimtriggertime+pretriggerwindow) && 
 					digitstns<(wcsimtriggertime+posttriggerwindow) ){
 					if(MCLAPPDHits->count(key)==0){
 						LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
 						MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 					} else {
-						MCLAPPDHits->at(key).emplace_back(LAPPDID, digittime, digiq, globalpos, 
+						MCLAPPDHits->at(key).emplace_back(LAPPDID, digittime, digiq, globalpos,
 													localpos, digitstps);
 					}
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(LAPPDID, digittime, digiq, globalpos, 
+					unassignedhits.emplace_back(LAPPDID, digittime, digiq, globalpos,
 													localpos, digitstps);
 				}
 			} // end loop over photons on this lappd
@@ -243,15 +267,73 @@ bool LoadWCSimLAPPD::Execute(){
 	}         // end if MCTriggernum == 0
 	
 	if(verbose>3) cout<<"Saving MCLAPPDHits to ANNIEEvent"<<endl;
-	ChannelKey key(subdetector::LAPPD,666.);
-	LAPPDHit nexthit(666, 666., 666., std::vector<double>{6.,6.,6.}, std::vector<double>{6.,6.}, 6.);
-	if(MCLAPPDHits->size()==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 	m_data->Stores.at("ANNIEEvent")->Set("MCLAPPDHits",MCLAPPDHits,true);
 	
 	return true;
 }
 
 bool LoadWCSimLAPPD::Finalise(){
-
+	
+	if(DEBUG_DRAW_LAPPD_HITS){
+		Double_t canvwidth = 700;
+		Double_t canvheight = 600;
+		lappdRootCanvas = new TCanvas("lappdRootCanvas","lappdRootCanvas",canvwidth,canvheight);
+		lappdRootCanvas->SetWindowSize(canvwidth,canvheight);
+		lappdRootCanvas->cd();
+	
+		digixpos->Draw();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("digixpos.png");
+	
+		digiypos->Draw();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("digiypos.png");
+	
+		digizpos->Draw();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("digizpos.png");
+	
+		lappdRootCanvas->Clear();
+		gStyle->SetOptStat(0);
+		// need to create axes to add to the TPolyMarker3D
+		TH3F *frame3d = new TH3F("frame3d","frame3d",10,-1.5,1.5,10,0,3.3,10,-2.5,2.5);
+		frame3d->Draw();
+	
+		lappdhitshist->Draw();
+		frame3d->SetTitle("LAPPD Hits - Isometric View");
+		lappdRootCanvas->Modified();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("lappdhits_isometricview.png");
+	
+		frame3d->SetTitle("LAPPD Hits - Top View");
+		frame3d->GetXaxis()->SetLabelOffset(-0.1);
+		lappdRootCanvas->SetPhi(0);
+		lappdRootCanvas->SetTheta(90);
+		lappdRootCanvas->Modified();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("lappdhits_topview.png");
+	
+		lappdRootCanvas->SetWindowSize(canvheight, canvwidth);
+		frame3d->SetTitle("LAPPD Hits - Side View");
+		//frame3d->GetXaxis()->SetLabelOffset(-0.1);
+		lappdRootCanvas->SetPhi(90);
+		lappdRootCanvas->SetTheta(0.); //-(45./2.)
+		lappdRootCanvas->Modified();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("lappdhits_sideview.png");
+		gSystem->ProcessEvents();
+		//lappdRootDrawApp->Run();
+		//std::this_thread::sleep_for (std::chrono::seconds(5));
+		//lappdRootDrawApp->Terminate(0);
+	
+		delete digixpos;
+		delete digiypos;
+		delete digizpos;
+		delete frame3d;
+		delete lappdhitshist;
+		delete lappdRootCanvas;
+		delete lappdRootDrawApp;
+	}
+	
 	return true;
 }

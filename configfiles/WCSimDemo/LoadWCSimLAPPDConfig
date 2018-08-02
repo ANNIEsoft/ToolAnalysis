@@ -6,3 +6,4 @@ InputFile  /data/wcsim_lappd_0.0.0.root
 # octagonal inner structure radius in cm (from drawings 106.64")
 InnerStructureRadius 135.45
 HistoricTriggeroffset 950
+DrawDebugGraphs 0 # whether to draw TPolyMarker3D's of hits

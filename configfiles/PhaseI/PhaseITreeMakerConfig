@@ -1,4 +1,4 @@
-verbose 3
+verbose 1
 
 OutputFile ./mytrees.root
 

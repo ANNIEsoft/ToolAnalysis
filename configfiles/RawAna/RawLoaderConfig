@@ -1,0 +1,4 @@
+# Dummy config file
+verbose 2
+InputFile /anniecode/MRDData/NewMRDData/R925S0/RAWDataR925S0p1*
+#HeftyTimingFile /home/sjg/reco-annie/data/timing/DataR812...

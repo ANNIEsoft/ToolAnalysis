@@ -1,6 +1,7 @@
 # DigitBuilder config file
 
 verbosity 3
-
+OutputFile ./DigitBuilder.root
+LAPPDId 266 271 236 231 206
 
 

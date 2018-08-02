@@ -99,6 +99,43 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_tree_->Branch("raw_amplitude_ncv2", &raw_amplitude_ncv2_,
     "raw_amplitude_ncv2/s");
 
+  // Create the branches for the output pulse TTree
+  output_pulse_tree_ = new TTree("pulse_tree", "Hefty window pulse tree");
+  output_pulse_tree_->Branch("run", &run_number_, "run/i");
+  output_pulse_tree_->Branch("subrun", &subrun_number_, "subrun/i");
+  output_pulse_tree_->Branch("event", &event_number_, "event/i");
+  output_pulse_tree_->Branch("spill", &spill_number_, "spill/i");
+  output_pulse_tree_->Branch("minibuffer_number", &minibuffer_number_,
+    "minibuffer_number/i");
+  output_pulse_tree_->Branch("ncv_position", &ncv_position_, "ncv_position/I");
+  output_pulse_tree_->Branch("pulse_start_time_ns", &pulse_start_time_ns_,
+    "pulse_start_time_ns/L");
+  output_pulse_tree_->Branch("label", &event_label_, "label/b");
+  output_pulse_tree_->Branch("hefty_mode", &hefty_mode_, "hefty_mode/O");
+  // Used only for Hefty mode. Stores the trigger mask for the minibuffer
+  // in which the event took place. For non-Hefty data, this branch will
+  // always be zero.
+  output_pulse_tree_->Branch("hefty_trigger_mask", &hefty_trigger_mask_,
+    "hefty_trigger_mask/I");
+  // Information about the two pulses in each NCV coincidence event
+  output_pulse_tree_->Branch("pulse_amplitude", &pulse_amplitude_,
+    "pulse_amplitude/D");
+  output_pulse_tree_->Branch("pulse_charge", &pulse_charge_, "pulse_charge/D");
+  output_pulse_tree_->Branch("pulse_pmt_id", &pulse_pmt_id_, "pulse_pmt_id/I");
+  output_pulse_tree_->Branch("pulse_raw_amplitude", &pulse_raw_amplitude_,
+    "pulse_raw_amplitude/s");
+  output_pulse_tree_->Branch("in_spill", &in_spill_, "in_spill/O");
+
+  // Create the branches for the output beam TTree
+  output_beam_tree_ = new TTree("beam_tree", "Beam quality cut tree");
+  output_beam_tree_->Branch("pot_ok", &pot_ok_, "pot_ok/O");
+  output_beam_tree_->Branch("horn_current_ok", &horn_current_ok_,
+    "horn_current_ok/O");
+  output_beam_tree_->Branch("timestamps_ok", &timestamps_ok_,
+    "timestamps_ok/O");
+  output_beam_tree_->Branch("toroids_agree", &toroids_agree_,
+    "toroids_agree/O");
+
   return true;
 }
 
@@ -196,6 +233,118 @@ bool PhaseITreeMaker::Execute() {
   get_object_from_store("RecoADCHits", adc_hits, *annie_event);
   check_that_not_empty("RecoADCHits", adc_hits);
 
+  int old_spill_number = spill_number_;
+
+  for (const auto& pair : adc_hits) {
+
+    const auto& channel_key = pair.first;
+    const auto& minibuffer_pulses = pair.second;
+
+    // Use the same spill number for each channel by resetting it during
+    // each channel loop iteration. The final loop will increment it in a
+    // without resetting it for the next event.
+    spill_number_ = old_spill_number;
+
+    pulse_pmt_id_ = channel_key.GetDetectorElementIndex();
+
+    // Flag that vetos minibuffers because the last beam minibuffer failed
+    // the quality cuts.
+    bool beam_veto_active = false;
+
+    for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+
+      minibuffer_number_ = mb;
+
+      // Determine the correct label for the events in this minibuffer
+      MinibufferLabel event_mb_label = mb_labels.at(mb);
+      event_label_ = static_cast<uint8_t>( event_mb_label );
+
+      // If this is Hefty mode data, save the trigger mask for the
+      // current minibuffer. This is distinct from the MinibufferLabel
+      // assigned to the event_label_ variable above. The trigger
+      // mask branch isn't used for non-Hefty data.
+      if ( hefty_mode_ ) hefty_trigger_mask_ = hefty_info.label(mb);
+      else hefty_trigger_mask_ = 0;
+
+      // BEAM QUALITY CUT
+      // Skip beam minibuffers with bad or missing beam status information
+      // TODO: consider printing a warning message here
+      const auto& beam_status = beam_statuses.at(mb);
+      const auto& beam_condition = beam_status.condition();
+      if (beam_condition == BeamCondition::Missing
+        || beam_condition == BeamCondition::Bad)
+      {
+        // Skip all beam and Hefty window minibuffers until a good-quality beam
+        // spill is found again
+        beam_veto_active = true;
+      }
+      if ( beam_veto_active && beam_condition == BeamCondition::Ok ) {
+        // We've found a new beam minibuffer that passed the quality check,
+        // so disable the beam quality veto
+        beam_veto_active = false;
+      }
+      if (beam_veto_active && (event_mb_label == MinibufferLabel::Hefty
+          || event_mb_label == MinibufferLabel::Beam))
+      {
+        // Bad beam minibuffers and Hefty window minibuffers belonging to the
+        // bad beam spill need to be skipped. Since other minibuffers (e.g.,
+        // cosmic trigger minibuffers) are not part of the beam "macroevent,"
+        // they may still be processed normally.
+        continue;
+      }
+
+      if (beam_condition == BeamCondition::Ok) ++spill_number_;
+
+      for (const ADCPulse& pulse : minibuffer_pulses.at(mb) ) {
+        // For non-Hefty mode, the neutron capture candidate event time
+        // is simply its timestamp relative to the start of the single
+        // minibuffer.
+        pulse_start_time_ns_ = pulse.start_time();
+        pulse_amplitude_ = pulse.amplitude();
+        pulse_charge_ = pulse.charge();
+        pulse_raw_amplitude_ = pulse.raw_amplitude();
+
+        // For Hefty mode, the pulse time within the current minibuffer
+        // needs to be added to the TSinceBeam value for Hefty window
+        // minibuffers (labeled by the RawLoader tool with
+        // MinibufferLabel::Hefty). This should be zero for all other
+        // minibuffers (it defaults to that value in the heftydb TTree).
+        //
+        // NOTE: event times for minibuffer labels other than "Beam", "Source",
+        // and "Hefty" are calculated relative to the start of the minibuffer,
+        // not the beam, source trigger, etc. Only make timing plots using
+        // those 3 labels unless you're interested in single-minibuffer timing!
+        if ( hefty_mode_ && event_mb_label == MinibufferLabel::Hefty) {
+          // The name "TSinceBeam" is used in the heftydb tree for the time
+          // since a beam *or* a source trigger, since the two won't be used
+          // simultaneously.
+          pulse_start_time_ns_ += hefty_info.t_since_beam(mb);
+        }
+
+        // Minibuffers for which TSinceBeam has been
+        // calculated are considered "in the spill" (i.e., the pulse time
+        // is expressed relative to the beam time), while those for which
+        // it is not are not "in the spill."
+        if ( !hefty_mode_ || (event_mb_label == MinibufferLabel::Hefty
+          || event_mb_label == MinibufferLabel::Beam
+          || event_mb_label == MinibufferLabel::Source) )
+        {
+          in_spill_ = true;
+        }
+        else in_spill_ = false;
+
+        output_pulse_tree_->Fill();
+
+        Log("Found pulse on channel " + std::to_string(pulse_pmt_id_)
+          + " in run " + std::to_string(run_number_) + " subrun "
+          + std::to_string(subrun_number_) + " event "
+          + std::to_string(event_number_) + " in minibuffer "
+          + std::to_string(minibuffer_number_) + " at "
+          + std::to_string(pulse_start_time_ns_) + " ns", 3, verbosity_);
+      }
+    }
+  }
+
   // This variable stores the absolute time (non-Hefty mode: time within the
   // single minibuffer, Hefty mode: time within the current minibuffer + ns
   // since the Unix epoch of the current minibuffer) of the last NCV PMT #1
@@ -214,7 +363,13 @@ bool PhaseITreeMaker::Execute() {
   const std::vector< std::vector<ADCPulse> >& ncv_pmt1_pulses
     = adc_hits.at( ChannelKey(subdetector::ADC, NCV_PMT1_ID) );
 
+  // Flag that vetos minibuffers because the last beam minibuffer failed
+  // the quality cuts.
+  bool beam_veto_active = false;
+
   for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+
+    minibuffer_number_ = mb;
 
     // Determine the correct label for the events in this minibuffer
     MinibufferLabel event_mb_label = mb_labels.at(mb);
@@ -231,10 +386,48 @@ bool PhaseITreeMaker::Execute() {
     // Skip beam minibuffers with bad or missing beam status information
     // TODO: consider printing a warning message here
     const auto& beam_status = beam_statuses.at(mb);
+
+    // Regardless of whether it should be used in the analysis, if the current
+    // minibuffer corresponds to a beam spill,store information about whether
+    // the spill passed the cuts in the output beam tree
+    if ( beam_status.is_beam() ) {
+
+      const auto& cuts = beam_status.cuts();
+
+      pot_ok_ = cuts.at("POT in range");
+      horn_current_ok_ = cuts.at("peak horn current in range");
+      timestamps_ok_ = cuts.at("toroids agree");
+      toroids_agree_ = cuts.at("timestamps agree");
+
+      output_beam_tree_->Fill();
+    }
+
     const auto& beam_condition = beam_status.condition();
     if (beam_condition == BeamCondition::Missing
-      || beam_condition == BeamCondition::Bad) continue;
-    else if (beam_condition == BeamCondition::Ok) {
+      || beam_condition == BeamCondition::Bad)
+    {
+      // Skip all beam and Hefty window minibuffers until a good-quality beam
+      // spill is found again
+      beam_veto_active = true;
+    }
+    if ( beam_veto_active && beam_condition == BeamCondition::Ok ) {
+      // We've found a new beam minibuffer that passed the quality check,
+      // so disable the beam quality veto
+      beam_veto_active = false;
+    }
+    if (beam_veto_active && (event_mb_label == MinibufferLabel::Hefty
+        || event_mb_label == MinibufferLabel::Beam))
+    {
+      // Bad beam minibuffers and Hefty window minibuffers belonging to the
+      // bad beam spill need to be skipped. Since other minibuffers (e.g.,
+      // cosmic trigger minibuffers) are not part of the beam "macroevent,"
+      // they may still be processed normally.
+      continue;
+    }
+
+    // Increment beam POT count, etc. based on the characteristics of the
+    // current minibuffer
+    if (beam_condition == BeamCondition::Ok) {
       ++pos_info.num_beam_spills;
       pos_info.total_POT += beam_status.pot();
     }
@@ -250,7 +443,7 @@ bool PhaseITreeMaker::Execute() {
     }
 
     for (const ADCPulse& pulse : ncv_pmt1_pulses.at(mb) ) {
-      int64_t pulse_time = pulse.start_time().GetNs();
+      int64_t pulse_time = pulse.start_time();
 
       // The afterpulsing veto (which uses the value of pulse_time assigned
       // above) can span over multiple Hefty minibuffers, so use the
@@ -263,13 +456,13 @@ bool PhaseITreeMaker::Execute() {
       }
 
       Log("Found NCV PMT #1 pulse at "
-        + std::to_string( pulse.start_time().GetNs() ) + " ns after the"
+        + std::to_string( pulse.start_time() ) + " ns after the"
         " start of the current minibuffer", 3, verbosity_);
       if ( approve_event(pulse_time, old_time, pulse, adc_hits, mb) ) {
         // For non-Hefty mode, the neutron capture candidate event time
         // is simply its timestamp relative to the start of the single
         // minibuffer.
-        event_time_ns_ = pulse.start_time().GetNs();
+        event_time_ns_ = pulse.start_time();
 
         // For Hefty mode, the event time within the current minibuffer
         // needs to be added to the TSinceBeam value for Hefty window
@@ -308,8 +501,10 @@ bool PhaseITreeMaker::Execute() {
 
 bool PhaseITreeMaker::Finalise() {
   output_tree_->Write();
+  output_pulse_tree_->Write();
+  output_beam_tree_->Write();
 
-  TTree* beam_tree = new TTree("ncv_pos_info",
+  TTree* ncv_tree = new TTree("ncv_pos_info",
     "Information about each NCV position");
 
   bool made_branches = false;
@@ -319,35 +514,35 @@ bool PhaseITreeMaker::Finalise() {
     auto& info = pair.second;
 
     if ( !made_branches ) {
-      beam_tree->Branch("ncv_position", &ncv_position, "ncv_position/I");
-      beam_tree->Branch("total_pot", &(info.total_POT), "total_pot/D");
-      beam_tree->Branch("num_beam_spills", &(info.num_beam_spills),
+      ncv_tree->Branch("ncv_position", &ncv_position, "ncv_position/I");
+      ncv_tree->Branch("total_pot", &(info.total_POT), "total_pot/D");
+      ncv_tree->Branch("num_beam_spills", &(info.num_beam_spills),
         "num_beam_spills/l");
-      beam_tree->Branch("num_source_triggers", &(info.num_source_triggers),
+      ncv_tree->Branch("num_source_triggers", &(info.num_source_triggers),
         "num_source_triggers/l");
-      beam_tree->Branch("num_cosmic_triggers", &(info.num_cosmic_triggers),
+      ncv_tree->Branch("num_cosmic_triggers", &(info.num_cosmic_triggers),
         "num_cosmic_triggers/l");
-      beam_tree->Branch("num_soft_triggers", &(info.num_soft_triggers),
+      ncv_tree->Branch("num_soft_triggers", &(info.num_soft_triggers),
         "num_soft_triggers/l");
 
       made_branches = true;
     }
     else {
-      beam_tree->SetBranchAddress("ncv_position", &ncv_position);
-      beam_tree->SetBranchAddress("total_pot", &(info.total_POT));
-      beam_tree->SetBranchAddress("num_beam_spills", &(info.num_beam_spills));
-      beam_tree->SetBranchAddress("num_source_triggers",
+      ncv_tree->SetBranchAddress("ncv_position", &ncv_position);
+      ncv_tree->SetBranchAddress("total_pot", &(info.total_POT));
+      ncv_tree->SetBranchAddress("num_beam_spills", &(info.num_beam_spills));
+      ncv_tree->SetBranchAddress("num_source_triggers",
         &(info.num_source_triggers));
-      beam_tree->SetBranchAddress("num_cosmic_triggers",
+      ncv_tree->SetBranchAddress("num_cosmic_triggers",
         &(info.num_cosmic_triggers));
-      beam_tree->SetBranchAddress("num_soft_triggers",
+      ncv_tree->SetBranchAddress("num_soft_triggers",
         &(info.num_soft_triggers));
     }
 
-    beam_tree->Fill();
+    ncv_tree->Fill();
   }
 
-  beam_tree->Write();
+  ncv_tree->Write();
 
   output_tfile_->Close();
   return true;
@@ -374,7 +569,7 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
 
   // Unique water PMT and tank charge cuts
   int num_unique_water_pmts = BOGUS_INT;
-  uint64_t tc_start_time = first_ncv1_pulse.start_time().GetNs();
+  uint64_t tc_start_time = first_ncv1_pulse.start_time();
   double tank_charge = compute_tank_charge(minibuffer_index,
     adc_hits, tc_start_time, tc_start_time + tank_charge_window_length_,
     num_unique_water_pmts);
@@ -397,10 +592,10 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
   // Minibuffers are short enough (80 us maximum for non-Hefty data, smaller
   // for Hefty mode data) that, even though the TimeClass has an underlying
   // type of uint64_t, an int64_t shouldn't overflow here.
-  int64_t ncv1_time = first_ncv1_pulse.start_time().GetNs();
+  int64_t ncv1_time = first_ncv1_pulse.start_time();
   bool found_coincidence = false;
   for ( const auto& pulse : ncv_pmt2_pulses ) {
-    int64_t ncv2_time = pulse.start_time().GetNs();
+    int64_t ncv2_time = pulse.start_time();
     Log("Found NCV PMT #2 pulse at "
       + std::to_string(ncv2_time) + " ns after the start of the current"
       " minibuffer", 3, verbosity_);
@@ -459,7 +654,7 @@ double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
     bool found_pulse_in_time_window = false;
 
     for ( const auto& pulse : pulse_vec ) {
-      size_t pulse_time = pulse.start_time().GetNs();
+      size_t pulse_time = pulse.start_time();
       if ( pulse_time >= start_time && pulse_time <= end_time) {
 
         // Increment the unique hit PMT counter if the current pulse is within

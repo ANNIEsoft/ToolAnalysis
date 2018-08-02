@@ -11,6 +11,9 @@
 #include <TFile.h>
 
 #include "Tool.h"
+// ROOT includes
+#include "TFile.h"
+#include "TTree.h"
 
 class DigitBuilder: public Tool {
 
@@ -52,18 +55,25 @@ class DigitBuilder: public Tool {
  	/// Clear digit list
  	void Reset();
  	
+ 	/// \brief Clear reconstructed hits
+  ///
+  /// Fills the parameter name and appropriate parameter values into
+  /// the parameter container, to be used in the fit
+	void ClearDigitList() {fDigitList->clear();}
+ 	
   int verbosity=1;
 	std::string fInputfile;
 	unsigned long fNumEvents;
 	double fMRDTrackLengthMax;
 	
-	/// contents of ANNIEEvent filled by LoadWCSim and LoadWCSimLAPPD
+	/// \brief contents of ANNIEEvent filled by LoadWCSim and LoadWCSimLAPPD
 	std::string fMCFile;
 	uint32_t fRunNumber;       ///< retrieved from MC file but simulations tend to only ever be run 0. 
 	uint32_t fSubrunNumber;    ///< MC has no 'subrun', always 0
 	uint32_t fEventNumber;     ///< flattens the 'event -> trigger' MC hierarchy
 	uint64_t fMCEventNum;      ///< event number in MC file
 	uint16_t fMCTriggernum;    ///< trigger number in MC file
+	std::vector<int> fLAPPDId; ///< selected LAPPDs
 	
 	Geometry fGeometry;    ///< ANNIE Geometry
 	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
@@ -71,7 +81,7 @@ class DigitBuilder: public Tool {
 	std::map<ChannelKey,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
 	TimeClass* fEventTime=nullptr;    ///< NDigits trigger time in ns from when the particles were generated
 	
-	/// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
 	int v_warning=1;
 	int v_message=2;
@@ -81,12 +91,22 @@ class DigitBuilder: public Tool {
 	
 	/// Reconstructed information
 	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
-	
-	/// \brief Clear reconstructed hits
-  ///
-  /// Fills the parameter name and appropriate parameter values into
-  /// the parameter container, to be used in the fit
-	void ClearDigitList() {fDigitList->clear();}
+		
+	/// \brief ROOT TFile that will be used to store the output from this tool
+  std::unique_ptr<TFile> fOutput_tfile = nullptr;
+
+  /// \brief TTree that will be used to store output
+  TTree* fDigitTree = nullptr;
+  
+  /// \brief Branch variables
+  /// Digits
+  int fNhits;
+  std::vector<double> fDigitX;
+  std::vector<double> fDigitY;
+  std::vector<double> fDigitZ;
+  std::vector<double> fDigitT;
+  std::vector<double> fDigitQ;    
+  std::vector<int> fDigitType;
 	
 };
 

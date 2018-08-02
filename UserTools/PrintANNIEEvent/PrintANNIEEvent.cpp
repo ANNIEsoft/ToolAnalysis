@@ -29,15 +29,14 @@ bool PrintANNIEEvent::Execute(){
 	//logmessage.str(""); ??
 	
 	// Get the contents to be printed
-	if(verbose>1) cout<<"getting contents to be printed from ANNIEEvent at"<<m_data->Stores["ANNIEEvent"]<<endl;
+	if(verbose>1) cout<<"getting contents to be printed from ANNIEEvent at "<<m_data->Stores["ANNIEEvent"]<<endl;
 	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
 	m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNumber);
 	m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
 	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 	m_data->Stores["ANNIEEvent"]->Get("RecoParticles",RecoParticles);
 	m_data->Stores["ANNIEEvent"]->Get("MCHits",MCHits);
-	//if(m_data->Stores["ANNIEEvent"]->count("MCLAPPDHits")>0)
-	//m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
+	m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
 	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
 	m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
 	m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",RawLAPPDData);
@@ -76,7 +75,7 @@ bool PrintANNIEEvent::Execute(){
 	}
 	if(MCHits){
 		cout<<"Num MCHits : "<<MCHits->size()<<endl;
-		if(verbose>1){
+		if(verbose>2){
 			cout<<"MCHits : {"<<endl;
 			for(auto&& achannel : *MCHits){
 				ChannelKey chankey = achannel.first;
@@ -93,7 +92,7 @@ bool PrintANNIEEvent::Execute(){
 	}
 	if(MCLAPPDHits){
 		cout<<"Num MCLAPPDHits : "<<MCLAPPDHits->size()<<endl;
-		if(verbose>1){
+		if(verbose>2){
 			cout<<"MCLAPPDHits : {"<<endl;
 			for(auto&& achannel : *MCLAPPDHits){
 				ChannelKey chankey = achannel.first;
@@ -110,7 +109,7 @@ bool PrintANNIEEvent::Execute(){
 	}
 	if(TDCData){
 		cout<<"Num TDCData Hits : "<<TDCData->size()<<endl;
-		if(verbose>1){
+		if(verbose>2){
 			cout<<"TDCData : {"<<endl;
 			for(auto&& achannel : *TDCData){
 				ChannelKey chankey = achannel.first;
