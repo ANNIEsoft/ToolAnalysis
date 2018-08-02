@@ -24,7 +24,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   fRecoTree->Branch("digitZ",&fDigitZ);
   fRecoTree->Branch("digitT",&fDigitT);
   fRecoTree->Branch("digitQ",&fDigitQ);
-  fRecoTree->Branch("digitType", &fDigitType, "fDigitType/I");
+  fRecoTree->Branch("digitType", &fDigitType);
 	
 
   return true;
