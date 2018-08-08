@@ -21,6 +21,11 @@ class Position : public SerialisableObject{
 	inline void SetX(double xx){x=xx;}
 	inline void SetY(double yy){y=yy;}
 	inline void SetZ(double zz){z=zz;}
+	void UnitToCentimeter() {
+	  x = x*100;
+	  y = y*100;
+	  z = z*100;	
+	}
 	
 	bool Print() {
 		std::cout<<"("<<x<<", "<<y<<", "<<z<<")"<<std::endl;

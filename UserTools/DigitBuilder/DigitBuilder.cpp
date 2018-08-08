@@ -27,9 +27,11 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
+  fPhotodetectorConfiguration = "All";
   
   /// Get the Tool configuration variables
 	m_variables.Get("verbosity",verbosity);
+	m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
 //	m_variables.Get("LAPPDId", fLAPPDId);
   /// Create a root file
 //	std::string output_filename;
@@ -60,7 +62,6 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 
 bool DigitBuilder::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
-	if(verbosity) cout<<"Executing tool DigitBuilder with MC entry "<<fMCEventNum<<", trigger "<<fMCTriggernum<<endl;
 	get_ok = m_data->Stores.count("ANNIEEvent");
 	if(!get_ok){
 		Log("DigitBuilder Tool: No ANNIEEvent store!",v_error,verbosity);
@@ -77,7 +78,7 @@ bool DigitBuilder::Execute(){
 	/// Retrieve the hit info from ANNIEEvent
 	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
 	if(not get_ok){
-		Log("DigitBuilder Tool: Error retrieving Geometry,true from ANNIEEvent!",v_error,verbosity); \
+		Log("DigitBuilder Tool: Error retrieving Geometry,true from ANNIEEvent!",v_error,verbosity);
 		return false; 
 	}
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCHits);
@@ -160,10 +161,24 @@ bool DigitBuilder::Finalise(){
 }
 
 bool DigitBuilder::BuildRecoDigit() {
-	this->BuildPMTRecoDigit();
-	this->BuildLAPPDRecoDigit();
-  	
-	return true;
+	if(fPhotodetectorConfiguration == "PMT_only") {
+		this->BuildPMTRecoDigit();
+		return true;
+	}
+	if(fPhotodetectorConfiguration == "LAPPD_only") {
+		this->BuildLAPPDRecoDigit();
+		return true;
+	}
+	if(fPhotodetectorConfiguration == "All") {
+		this->BuildPMTRecoDigit();
+	  this->BuildLAPPDRecoDigit();
+	  return true;
+	}
+	else {
+	  cout<<"Wrong PhotoDetector Configuration! Allowed configurations: PMT_only, LAPPD_only, All"<<endl;
+	  return false;
+	}
+	
 }
 
 bool DigitBuilder::BuildPMTRecoDigit() {
@@ -195,9 +210,10 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			// convert the WCSim coordinates to the ANNIEreco coordinates
 			// convert the unit from m to cm
 			pos_sim = det.GetDetectorPosition();	
-			pos_reco.SetX(pos_sim.X()*100.);
-			pos_reco.SetY(pos_sim.Y()*100.+14.46469);
-			pos_reco.SetZ(pos_sim.Z()*100.-168.1);
+			pos_sim.UnitToCentimeter();
+			pos_reco.SetX(pos_sim.X());
+			pos_reco.SetY(pos_sim.Y()+14.46469);
+			pos_reco.SetZ(pos_sim.Z()-168.1);
 	
 			if(chankey.GetSubDetectorType()==subdetector::ADC){
 				std::vector<Hit>& hits = apair.second;	
@@ -210,9 +226,9 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 					digitType = RecoDigit::PMT8inch;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
 //				  //if(v_message<verbosity) recoDigit.Print();
-//				  fDigitList->push_back(recoDigit); 
+				  fDigitList->push_back(recoDigit); 
 //				  
-//				  // push to tree 
+//				  // push to tree vector 
 //					fDigitX.push_back(pos_reco.X());
 //					fDigitY.push_back(pos_reco.Y());
 //					fDigitZ.push_back(pos_reco.Z());
@@ -259,13 +275,13 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					pos_reco.SetX(ahit.GetPosition().at(0)*100.); //cm
 					pos_reco.SetY(ahit.GetPosition().at(1)*100.+14.4649); //cm
 					pos_reco.SetZ(ahit.GetPosition().at(2)*100.-168.1); //cm
-					calT = ahit.GetTpsec()/1000 + 950.0;  // Add 950 ns offset relative to the trigger
+					calT = ahit.GetTime() + ahit.GetTpsec()/1000 ;  // Add 950 ns offset
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::lappd_v0;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
 					//if(v_message<verbosity) recoDigit.Print();
 				  fDigitList->push_back(recoDigit);
-//				  // push to vector 
+//				  // push to tree vector 
 //					fDigitX.push_back(pos_reco.X());
 //					fDigitY.push_back(pos_reco.Y());
 //					fDigitZ.push_back(pos_reco.Z());

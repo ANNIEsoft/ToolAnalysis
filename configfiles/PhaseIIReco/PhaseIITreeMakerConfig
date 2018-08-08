@@ -1,4 +1,5 @@
 verbose 1
 
 OutputFile ./RecoTree.root
+NumEventsWritten 10
 

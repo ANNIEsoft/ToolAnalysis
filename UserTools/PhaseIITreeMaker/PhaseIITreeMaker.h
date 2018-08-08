@@ -8,6 +8,7 @@
 // ROOT includes
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1D.h"
 
 class PhaseIITreeMaker: public Tool {
 
@@ -21,13 +22,19 @@ class PhaseIITreeMaker: public Tool {
 
 
  private:
+ 	/// \brief Reset all variables. 
+ 	void ResetVariables();
+ 	
  	/// \brief ROOT TFile that will be used to store the output from this tool
   TFile* fOutput_tfile = nullptr;
 
   /// \brief TTree that will be used to store output
   TTree* fRecoTree = nullptr;
   
-  // Branch variables
+  /// \brief Number of events to be written to root file
+  int fNumEventsWritten = 0;
+  
+  /// \brief Branch variables
   // Digits
   int fNhits = 0;
   std::vector<int> fIsFiltered;
@@ -37,6 +44,45 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fDigitT;
   std::vector<double> fDigitQ;    
   std::vector<int> fDigitType;
+  	
+  // True muon
+  double fTrueVtxX;
+  double fTrueVtxY;
+  double fTrueVtxZ;
+  double fTrueVtxTime;
+  double fTrueDirX;
+  double fTrueDirY;
+  double fTrueDirZ;
+  double fTrueTheta;
+  double fTruePhi;
+  double fTrueEnergy; 
+  
+  // Reco vertex
+  // Vertex
+  double fRecoVtxX;
+  double fRecoVtxY;
+  double fRecoVtxZ;
+  double fRecoVtxTime;
+  double fRecoDirX;
+  double fRecoDirY;
+  double fRecoDirZ;
+  double fRecoTheta;
+  double fRecoPhi;
+  int fRecoStatus;
+  
+  //histograms
+  TH1D *hDeltaX; 
+  TH1D *hDeltaY;
+  TH1D *hDeltaZ;
+  TH1D *hDeltaR;
+  TH1D *hDeltaT;
+  TH1D *hDeltaParralel;
+  TH1D *hDeltaPerpendicular;
+  TH1D *hDeltaAzimuth;
+  TH1D *hDeltaZenith;  
+  TH1D *hDeltaAngle;
+  TH1I *hFitStatus;
+  
   	
   /// \brief Integer that determines the level of logging to perform
   int verbosity = 0;

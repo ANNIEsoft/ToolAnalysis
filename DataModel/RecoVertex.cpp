@@ -61,13 +61,13 @@ RecoVertex::~RecoVertex()
 
 void RecoVertex::SetVertex( Position pos )
 {
-  double t = 950.0;
+  double t = 0.0;
   this->SetVertex(pos, t);
 }
 
 void RecoVertex::SetVertex( double vtxX, double vtxY, double vtxZ )
 {
-  double t = 950.0;
+  double t = 0.0;
   Position pos(vtxX, vtxY, vtxZ);
   this->SetVertex(pos, t);
   

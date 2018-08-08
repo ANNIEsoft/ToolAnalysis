@@ -74,6 +74,7 @@ class DigitBuilder: public Tool {
 	uint64_t fMCEventNum;      ///< event number in MC file
 	uint16_t fMCTriggernum;    ///< trigger number in MC file
 	std::vector<int> fLAPPDId; ///< selected LAPPDs
+	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	
 	Geometry fGeometry;    ///< ANNIE Geometry
 	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits

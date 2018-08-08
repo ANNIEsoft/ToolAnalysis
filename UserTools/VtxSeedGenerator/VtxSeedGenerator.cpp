@@ -45,7 +45,7 @@ bool VtxSeedGenerator::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
 	
 	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
-	
+
 	get_ok = m_data->Stores.count("RecoEvent");
 	if(!get_ok){
 		Log("VtxSeedGenerator Tool: No RecoVertex store!",v_error,verbosity);
@@ -103,6 +103,7 @@ RecoVertex* VtxSeedGenerator::FindTrueVertex() {
 			if(aparticle.GetPdgCode()!=13) continue;       // not a muon
 			primarymuon = aparticle;                       // note the particle
 			mufound=true;                                  // note that we found it
+			//primarymuon.Print();
 			break;                                         // won't have more than one primary muon
 		}
 	} else {
@@ -114,17 +115,21 @@ RecoVertex* VtxSeedGenerator::FindTrueVertex() {
 	}
 	
 	// retrieve desired information from the particle
-	const Position neutrinovtx = primarymuon.GetStartVertex();    // only true if the muon is primary
-	const Direction muondirection = primarymuon.GetStartDirection();
+	Position neutrinovtxpos = primarymuon.GetStartVertex();    // only true if the muon is primary
+	double neutrinovtxpostime = primarymuon.GetStartTime().GetNs();
+	Direction muondirection = primarymuon.GetStartDirection();
 	double muonenergy = primarymuon.GetStartEnergy();
-	logmessage = "VtxSeedGenerator  Tool: Interaction Vertex is at ("+to_string(neutrinovtx.X())
-		+", "+to_string(neutrinovtx.Y())+", "+to_string(neutrinovtx.Z())+")\n"
-		+"Primary muon has energy "+to_string(muonenergy)+"GeV and direction ("
-		+to_string(muondirection.X())+", "+to_string(muondirection.Y())+", "+to_string(muondirection.Z())+")";
-	Log(logmessage,v_debug,verbosity);
 	// set true vertex
-	fTrueVertex->SetVertex(neutrinovtx);
+	// change unit
+	neutrinovtxpos.UnitToCentimeter(); // convert unit from meter to centimeter
+	// change coordinate
+	neutrinovtxpos.SetY(neutrinovtxpos.Y()+14.46469);
+	neutrinovtxpos.SetZ(neutrinovtxpos.Z()-168.1);
+	fTrueVertex->SetVertex(neutrinovtxpos, neutrinovtxpostime);
   fTrueVertex->SetDirection(muondirection);
+  logmessage = "  trueVtx=(" +to_string(neutrinovtxpos.X()) + ", " + to_string(neutrinovtxpos.Y()) + ", " + to_string(neutrinovtxpos.Z()) +", "+to_string(neutrinovtxpostime)+ "\n"
+            + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
+  Log(logmessage,v_debug,verbosity);
   return fTrueVertex;
 }
 

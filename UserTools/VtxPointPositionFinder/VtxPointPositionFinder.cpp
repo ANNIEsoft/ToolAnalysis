@@ -24,21 +24,21 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
 bool VtxPointPositionFinder::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
 	
-	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
+	Log("VtxPointPositionFinder Tool: Executing",v_debug,verbosity);
 
 	// First, see if this is a delayed trigger in the event
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
-	if(not get_ok){ Log("VtxSeedGenerator  Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
+	if(not get_ok){ Log("VtxPointPositionFinder  Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
 	// if so, truth analysis is probablys not interested in this trigger. Primary muon will not be in the listed tracks.
 	if(fMCTriggernum>0){ 
-		Log("VtxSeedGenerator Tool: Skipping delayed trigger",v_debug,verbosity); 
+		Log("VtxPointPositionFinder Tool: Skipping delayed trigger",v_debug,verbosity); 
 		return true;
 	}
 	
 	// Retrive digits from RecoEvent
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
   if(not get_ok){
-  	Log("VtxSeedGenerator  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
+  	Log("VtxPointPositionFinder  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
   	return false;
   }
   
@@ -62,18 +62,16 @@ bool VtxPointPositionFinder::Execute(){
     RecoVertex* vtx = new RecoVertex();
 	  vtx->SetVertex(vtxPos, vtxTime);
     vtx->SetDirection(vtxDir);
-    
     // return vertex
     RecoVertex* myvertex  = (RecoVertex*)(this->FitPointVertex(vtx)); 
     delete vtx; vtx = 0;  
   }
+  // Add reconstructed vertex to "RecoEvent" store
 
   return true;
 }
 
-
 bool VtxPointPositionFinder::Finalise(){
-
   return true;
 }
 
@@ -87,7 +85,8 @@ RecoVertex* VtxPointPositionFinder::FitPointVertex(RecoVertex* myvertex) {
   myOptimizer->LoadVertex(myvertex); //Load vertex seed
   
   myOptimizer->FitPointVertexWithMinuit();
-//  RecoVertex* newVertex = (RecoVertex*)(this->FixPointVertex(myOptimizer->GetFittedVertex())); 
+  //RecoVertex* newVertex = (RecoVertex*)(this->FixPointVertex(myOptimizer->GetFittedVertex())); 
+  
   delete myOptimizer; myOptimizer = 0;
 //  return newVertex;
   return 0;

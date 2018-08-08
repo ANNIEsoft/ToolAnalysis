@@ -299,13 +299,8 @@ MinuitOptimizer::MinuitOptimizer() {
 	fYmax = 198.0;
 	fZmin = -152.0;
 	fZmax = 152.0;
-//  WCsim	
-	fTmin = 950.0;
-	fTmax = 1000.0;
-	
-//	//Sandbox
-//	fTmin = -10.0;
-//	fTmax = 20.0;	
+	fTmin = 0.0;
+	fTmax = 40.0;
 	
 	fMinuitPointPosition = new TMinuit();
   fMinuitPointPosition->SetPrintLevel(-1);
@@ -986,10 +981,6 @@ void MinuitOptimizer::FitPointPositionWithMinuit() {
   fMinuitPointPosition->mncler();
   fMinuitPointPosition->SetFCN(point_position_chi2);
   fMinuitPointPosition->mnexcm("SET STR",arglist,1,err);
-//  fMinuitPointPosition->mnparm(0,"x",seedX,1.0,-152,152,err);
-//  fMinuitPointPosition->mnparm(1,"y",seedY,1.0,-212.46,183.54,err);
-//  fMinuitPointPosition->mnparm(2,"z",seedZ,1.0,15,319,err);
-//  fMinuitPointPosition->mnparm(3,"Time",seedTime,10.0,6500.0,6700.0,err);
   fMinuitPointPosition->mnparm(0,"x",seedX,1.0,fXmin,fXmax,err);
   fMinuitPointPosition->mnparm(1,"y",seedY,1.0,fYmin,fYmax,err);
   fMinuitPointPosition->mnparm(2,"z",seedZ,5.0,fZmin,fZmax,err);
@@ -1615,10 +1606,9 @@ double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
   double myConeEdgeSigma = 7.0;  // [degrees]
   TString configType = Parameters::Instance()->GetConfigurationType();
   
-  if(configType == "LAPPD")	{
-    for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
+  for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
       TString detType = this->fVtxGeo->GetDigitType(idigit); 
-      if( detType == "lappd_v0" && vtxgeo->IsFiltered(idigit) ){
+      if( vtxgeo->IsFiltered(idigit) ){
         delta = vtxgeo->GetDelta(idigit);    
         sigma = vtxgeo->GetDeltaSigma(idigit);
         weight = 1.0/(sigma*sigma); 
@@ -1635,51 +1625,6 @@ double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
         Sw  += deweight*weight;
       }
     }
-  }
-  
-  if(configType == "PMT")	{
-    for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
-      TString detType = this->fVtxGeo->GetDigitType(idigit); 
-      if( detType == "PMT8inch" && vtxgeo->IsFiltered(idigit) ){
-        delta = vtxgeo->GetDelta(idigit);    
-        sigma = vtxgeo->GetDeltaSigma(idigit);
-        weight = 1.0/(sigma*sigma); 
-        // profile in angle
-        deltaAngle = vtxgeo->GetAngle(idigit) - myConeEdge;      
-        // deweight hits outside cone
-        if( deltaAngle<=0.0 ){
-          deweight = 1.0;
-        }
-        else{
-          deweight = 1.0/(1.0+(deltaAngle*deltaAngle)/(myConeEdgeSigma*myConeEdgeSigma));
-        }
-        Swx += deweight*weight*delta; //delta is expected vertex time 
-        Sw  += deweight*weight;
-      }
-    }
-  }
-  
-  if(configType == "Combined" || configType == "Two-stage")	{
-    for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
-      TString detType = this->fVtxGeo->GetDigitType(idigit); 
-      if( (detType == "lappd_v0" || detType == "PMT8inch") && vtxgeo->IsFiltered(idigit) ){
-        delta = vtxgeo->GetDelta(idigit);    
-        sigma = vtxgeo->GetDeltaSigma(idigit);
-        weight = 1.0/(sigma*sigma); 
-        // profile in angle
-        deltaAngle = vtxgeo->GetAngle(idigit) - myConeEdge;      
-        // deweight hits outside cone
-        if( deltaAngle<=0.0 ){
-          deweight = 1.0;
-        }
-        else{
-          deweight = 1.0/(1.0+(deltaAngle*deltaAngle)/(myConeEdgeSigma*myConeEdgeSigma));
-        }
-        Swx += deweight*weight*delta; //delta is expected vertex time 
-        Sw  += deweight*weight;
-      }
-    }
-  }
   
   
   if( Sw>0.0 ){
@@ -1687,35 +1632,6 @@ double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
   }
   return meanTime; //return expected vertex time
 }
-
-
-/*double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
-  double meanTime = 0.0;
-  // calculate mean and rms of hits inside cone
-  // ==========================================
-  double Swx = 0.0;
-  double Sw = 0.0;
-  double delta = 0.0;
-  double sigma = 0.0;
-  double weight = 0.0;
-
-  TH1D *h1 = new TH1D("h1","h1", 2000, 6600, 6800);
-  for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
-  	if(this->fVtxGeo->GetDigitType(idigit) != "lappd_v0") continue; //use only the LAPPD timing
-    double delta = vtxgeo->GetDelta(idigit);
-    double charge = vtxgeo->GetDigitQ(idigit);
-    h1->Fill(delta, charge);
-  }
-  for(int i=0;i<2000;i++) {
-    weight = pow(h1->GetBinContent(i), 3);
-    Swx += weight * h1->GetBinCenter(i);
-    Sw += weight;
-  }
-  meanTime = Swx*1.0/Sw;
-  delete h1; h1 = 0;
-  return meanTime;
-}*/
-
 
 void MinuitOptimizer::PointPositionChi2(double vtxX, double vtxY, double vtxZ, double& vtxTime, double& fom)
 {  
