@@ -107,14 +107,14 @@ bool PhaseIITreeMaker::Execute(){
   }
   fRecoTree->Fill();
   fOutput_tfile->cd();
-	if(MCEventNum==	fNumEventsWritten) fRecoTree->Write();
+//	if(MCEventNum==	fNumEventsWritten) fRecoTree->Write();
   return true;
 }
 
 
 bool PhaseIITreeMaker::Finalise(){
 	fOutput_tfile->cd();
-	//fRecoTree->Write(); // code crashes. FIXME
+	fRecoTree->Write(); // code crashes. FIXME
 	fOutput_tfile->Close();
 	
 //	//histograms
