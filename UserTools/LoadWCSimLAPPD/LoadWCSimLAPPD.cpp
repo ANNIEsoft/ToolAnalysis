@@ -87,6 +87,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 		digixpos = new TH1D("digixpos","digixpos",100,-2,2);
 		digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
 		digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
+		digits = new TH1D("digits","digits",100,0,50);
 	}
 	
 	return true;
@@ -239,6 +240,7 @@ bool LoadWCSimLAPPD::Execute(){
 					digixpos->Fill(digitsx);
 					digiypos->Fill(digitsy);
 					digizpos->Fill(digitsz);
+					digits->Fill(digittime+(digitstps/1000.));
 				}
 				
 				// we now have all the necessary info about this LAPPD hit:
@@ -281,31 +283,35 @@ bool LoadWCSimLAPPD::Finalise(){
 		lappdRootCanvas = new TCanvas("lappdRootCanvas","lappdRootCanvas",canvwidth,canvheight);
 		lappdRootCanvas->SetWindowSize(canvwidth,canvheight);
 		lappdRootCanvas->cd();
-	
+		
 		digixpos->Draw();
 		lappdRootCanvas->Update();
 		lappdRootCanvas->SaveAs("digixpos.png");
-	
+		
 		digiypos->Draw();
 		lappdRootCanvas->Update();
 		lappdRootCanvas->SaveAs("digiypos.png");
-	
+		
 		digizpos->Draw();
 		lappdRootCanvas->Update();
 		lappdRootCanvas->SaveAs("digizpos.png");
-	
+		
+		digits->Draw();
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("digits.png");
+		
 		lappdRootCanvas->Clear();
 		gStyle->SetOptStat(0);
 		// need to create axes to add to the TPolyMarker3D
 		TH3F *frame3d = new TH3F("frame3d","frame3d",10,-1.5,1.5,10,0,3.3,10,-2.5,2.5);
 		frame3d->Draw();
-	
+		
 		lappdhitshist->Draw();
 		frame3d->SetTitle("LAPPD Hits - Isometric View");
 		lappdRootCanvas->Modified();
 		lappdRootCanvas->Update();
 		lappdRootCanvas->SaveAs("lappdhits_isometricview.png");
-	
+		
 		frame3d->SetTitle("LAPPD Hits - Top View");
 		frame3d->GetXaxis()->SetLabelOffset(-0.1);
 		lappdRootCanvas->SetPhi(0);
@@ -313,7 +319,7 @@ bool LoadWCSimLAPPD::Finalise(){
 		lappdRootCanvas->Modified();
 		lappdRootCanvas->Update();
 		lappdRootCanvas->SaveAs("lappdhits_topview.png");
-	
+		
 		lappdRootCanvas->SetWindowSize(canvheight, canvwidth);
 		frame3d->SetTitle("LAPPD Hits - Side View");
 		//frame3d->GetXaxis()->SetLabelOffset(-0.1);
@@ -326,7 +332,7 @@ bool LoadWCSimLAPPD::Finalise(){
 		//lappdRootDrawApp->Run();
 		//std::this_thread::sleep_for (std::chrono::seconds(5));
 		//lappdRootDrawApp->Terminate(0);
-	
+		
 		delete digixpos;
 		delete digiypos;
 		delete digizpos;
