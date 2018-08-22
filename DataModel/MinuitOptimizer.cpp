@@ -414,68 +414,80 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
   // loop over digits
   // ================
   
-  TString configType = Parameters::Instance()->GetConfigurationType();
-  	
-  if(configType == "LAPPD")	{
-    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-      if( detType == "lappd_v0" /*&& this->fVtxGeo->IsFiltered(idigit)*/){
-        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-        sigma = 1.2 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
-        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-        P = (1.0-Pnoise)*Preal + Pnoise; 
-        chi2 += -2.0*log(P);
-        ndof += 1.0; 
-      }
-    }
-  }
-  
-  else if(configType == "PMT") {
-    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-      if( detType == "PMT8inch" && this->fVtxGeo->GetDigitQ(idigit)>5/*&& this->fVtxGeo->IsFiltered(idigit)*/){
-        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-        sigma = 1.5 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
-        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-        P = (1.0-Pnoise)*Preal + Pnoise; 
-        chi2 += -2.0*log(P);
-        ndof += 1.0; 
-      }
-    }	
-  }
-  
-  else if(configType == "Combined") {
-    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
+  for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
+    	int detType = this->fVtxGeo->GetDigitType(idigit); 
       delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
       sigma = this->fVtxGeo->GetDeltaSigma(idigit);
-      if(detType == "lappd_v0") sigma = 1.2*sigma;
-      if(detType == "PMT8inch") sigma = 1.5*sigma;
+      sigma = 1.2*sigma; 
       A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
       Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
       P = (1.0-Pnoise)*Preal + Pnoise; 
       chi2 += -2.0*log(P);
       ndof += 1.0; 
-    }	
-  }
+  }	
   
-  else if (configType == "Two-stage") {
-    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-      if( detType == "lappd_v0" /*&& this->fVtxGeo->IsFiltered(idigit)*/){
-        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-        sigma = 1.2 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
-        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-        P = (1.0-Pnoise)*Preal + Pnoise; 
-        chi2 += -2.0*log(P);
-        ndof += 1.0; 
-      }
-    }	
-  }
-  
+//  TString configType = Parameters::Instance()->GetConfigurationType();
+//  	
+//  if(configType == "LAPPD")	{
+//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
+//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
+//      if( detType == "lappd_v0" /*&& this->fVtxGeo->IsFiltered(idigit)*/){
+//        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
+//        sigma = 1.2 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
+//        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
+//        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
+//        P = (1.0-Pnoise)*Preal + Pnoise; 
+//        chi2 += -2.0*log(P);
+//        ndof += 1.0; 
+//      }
+//    }
+//  }
+//  
+//  else if(configType == "PMT") {
+//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
+//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
+//      if( detType == "PMT8inch" && this->fVtxGeo->GetDigitQ(idigit)>5/*&& this->fVtxGeo->IsFiltered(idigit)*/){
+//        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
+//        sigma = 1.5 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
+//        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
+//        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
+//        P = (1.0-Pnoise)*Preal + Pnoise; 
+//        chi2 += -2.0*log(P);
+//        ndof += 1.0; 
+//      }
+//    }	
+//  }
+//  
+//  else if(configType == "Combined") {
+//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
+//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
+//      delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
+//      sigma = this->fVtxGeo->GetDeltaSigma(idigit);
+//      if(detType == "lappd_v0") sigma = 1.2*sigma;
+//      if(detType == "PMT8inch") sigma = 1.5*sigma;
+//      A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
+//      Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
+//      P = (1.0-Pnoise)*Preal + Pnoise; 
+//      chi2 += -2.0*log(P);
+//      ndof += 1.0; 
+//    }	
+//  }
+//  
+//  else if (configType == "Two-stage") {
+//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
+//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
+//      if( detType == "lappd_v0" /*&& this->fVtxGeo->IsFiltered(idigit)*/){
+//        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
+//        sigma = 1.2 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
+//        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
+//        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
+//        P = (1.0-Pnoise)*Preal + Pnoise; 
+//        chi2 += -2.0*log(P);
+//        ndof += 1.0; 
+//      }
+//    }	
+//  }
+
 
   // calculate figure of merit
   if( ndof>0.0 ){
@@ -1657,7 +1669,6 @@ void MinuitOptimizer::PointPositionChi2(double vtxX, double vtxY, double vtxZ, d
   // calculate overall figure of merit
   // =================================
   fom = vtxFOM + penaltyFOM + fixPositionFOM;
-
   // truncate
   if( fom<-999.999*fBaseFOM ) fom = -999.999*fBaseFOM;
 

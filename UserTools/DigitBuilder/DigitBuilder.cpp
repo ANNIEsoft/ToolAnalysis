@@ -225,7 +225,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::PMT8inch;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
-//				  //if(v_message<verbosity) recoDigit.Print();
+				  //recoDigit.Print();
 				  fDigitList->push_back(recoDigit); 
 //				  
 //				  // push to tree vector 
@@ -275,8 +275,11 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					pos_reco.SetX(ahit.GetPosition().at(0)*100.); //cm
 					pos_reco.SetY(ahit.GetPosition().at(1)*100.+14.4649); //cm
 					pos_reco.SetZ(ahit.GetPosition().at(2)*100.-168.1); //cm
-					calT = ahit.GetTime() + ahit.GetTpsec()/1000 ;  // Add 950 ns offset
+					calT = ahit.GetTime() + ahit.GetTpsec()/1000 + 950.;  // Add 950 ns offset
 					calQ = ahit.GetCharge();
+					// I found the charge is 0 for all the hits. In order to test the code, 
+					// here I just set the charge to 1. We should come back to this later. (Jingbo Wang)
+					calQ = 1.;
 					digitType = RecoDigit::lappd_v0;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType);
 					//if(v_message<verbosity) recoDigit.Print();

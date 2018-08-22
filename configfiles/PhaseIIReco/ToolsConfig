@@ -5,3 +5,4 @@ DigitBuilder DigitBuilder ./configfiles/PhaseIIReco/DigitBuilderConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIIReco/VtxSeedGeneratorConfig
 VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
 PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIIReco/PhaseIITreeMakerConfig
+VertexGeometryCheck VertexGeometryCheck ./configfiles/PhaseIIReco/VertexGeometryCheckConfig

@@ -75,6 +75,10 @@ bool PhaseIITreeMaker::Execute(){
   int MCEventNum;
   m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);  
   
+//  // MC trigger number
+//  int MCTriggerNum;
+//  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggerNum); 
+  
   // Read True Vertex   
   RecoVertex* truevtx = 0;
   auto get_vtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx);  ///> Get digits from "RecoEvent" 

@@ -81,7 +81,7 @@ bool VtxSeedGenerator::Execute(){
 }
 
 bool VtxSeedGenerator::Finalise(){
-
+  Log("VtxSeedGenerator exitting", v_debug,verbosity);
   return true;
 }
 

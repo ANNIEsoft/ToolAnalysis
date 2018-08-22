@@ -57,3 +57,5 @@
 #include "LAPPDAnalysis/LAPPDAnalysis.cpp"
 #include "Examples/ExampleOverTool.cpp"
 #include "PhaseIITreeMaker/PhaseIITreeMaker.cpp"
+#include "VertexGeometryCheck/VertexGeometryCheck.cpp"
+#include "LikelihoodFitterCheck/LikelihoodFitterCheck.cpp"

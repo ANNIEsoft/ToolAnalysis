@@ -4,6 +4,7 @@
 
 #include<SerialisableObject.h>
 #include <iostream>
+#include <TRandom3.h>
 
 using namespace std;
 
@@ -26,6 +27,11 @@ class Position : public SerialisableObject{
 	  y = y*100;
 	  z = z*100;	
 	}
+	void GaussianSmear(double sigmax, double sigmay, double sigmaz) {
+		x = r.Gaus(x, sigmax); // cm
+  	y = r.Gaus(y, sigmay);
+  	z = r.Gaus(z, sigmaz);		
+	}
 	
 	bool Print() {
 		std::cout<<"("<<x<<", "<<y<<", "<<z<<")"<<std::endl;
@@ -36,6 +42,7 @@ class Position : public SerialisableObject{
 	double x;
 	double y;
 	double z;
+	TRandom r;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){

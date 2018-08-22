@@ -53,17 +53,18 @@ bool VtxPointPositionFinder::Execute(){
     get_ok = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fTrueVertex);
 	  if(not get_ok){ 
 		  Log("VtxPointPositionFinder Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
-		return false; 
+		  return false; 
 	  }
 	  Position vtxPos = fTrueVertex->GetPosition();
 	  Direction vtxDir = fTrueVertex->GetDirection();
 	  double vtxTime = fTrueVertex->GetTime();
 	  //Set vertex seed
     RecoVertex* vtx = new RecoVertex();
+    vtxPos.GaussianSmear(5.0, 5.0, 5.0);
 	  vtx->SetVertex(vtxPos, vtxTime);
     vtx->SetDirection(vtxDir);
     // return vertex
-    RecoVertex* myvertex  = (RecoVertex*)(this->FitPointVertex(vtx)); 
+    RecoVertex* myvertex  = (RecoVertex*)(this->FitPointPosition(vtx)); 
     delete vtx; vtx = 0;  
   }
   // Add reconstructed vertex to "RecoEvent" store
@@ -75,6 +76,7 @@ bool VtxPointPositionFinder::Finalise(){
   return true;
 }
 
+//fit point vertex
 RecoVertex* VtxPointPositionFinder::FitPointVertex(RecoVertex* myvertex) {
 	Log("VtxPointPositionFinder::FitPointVertex: Fit point vertex",v_message,verbosity);
 	//fit with Minuit
@@ -89,5 +91,21 @@ RecoVertex* VtxPointPositionFinder::FitPointVertex(RecoVertex* myvertex) {
   
   delete myOptimizer; myOptimizer = 0;
 //  return newVertex;
+  return 0;
+}
+
+//fit point position 
+RecoVertex* VtxPointPositionFinder::FitPointPosition(RecoVertex* myVertex) {
+	Log("DEBUG [VertexFinderOpt::FitPointPosition]", v_message, verbosity);
+  
+  //fit with Minuit
+  MinuitOptimizer* myOptimizer = new MinuitOptimizer();
+  myOptimizer->SetPrintLevel(1);
+  VertexGeometry* myvtxgeo = VertexGeometry::Instance();
+  myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+  myOptimizer->LoadVertex(myVertex); //Load vertex seed
+  myOptimizer->FitPointPositionWithMinuit(); //scan the point position in 4D space
+  //RecoVertex* newVertex = (RecoVertex*)(this->FixPointPosition(myOptimizer->GetFittedVertex())); 
+  delete myOptimizer; myOptimizer = 0;
   return 0;
 }

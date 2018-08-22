@@ -1,0 +1,9 @@
+# DigitBuilder config file
+
+verbosity 3
+OutputFile ./DigitBuilder.root
+# There are three configurations: "PMT_only", "LAPPD_only", "All"
+PhotodetectorConfiguration All
+LAPPDId 266 271 236 231 206
+
+

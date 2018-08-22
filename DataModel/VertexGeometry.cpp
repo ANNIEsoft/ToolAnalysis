@@ -200,7 +200,6 @@ void VertexGeometry::LoadDigits(std::vector<RecoDigit>* vDigitList)
 
   fDigitList = vDigitList;
   fNDigits = fDigitList->size();
-  cout<<"############ Number of digits = "<<fNDigits<<"  ############"<<endl;
   
   // sanity checks
   // =============
@@ -581,7 +580,6 @@ void VertexGeometry::CalcResiduals(double vtxX, double vtxY, double vtxZ, double
     fPointResidualMean = 0.0;
     fExtendedResidualMean = 0.0;
   }
-
   // cone angle
   // ==========
   double thetadeg = Parameters::CherenkovAngle(); // degrees
@@ -612,6 +610,7 @@ void VertexGeometry::CalcResiduals(double vtxX, double vtxY, double vtxZ, double
     double ay = 0.0;
     double az = 0.0;
     double azideg = 0.0;
+    
 
     // calculate angles if direction is known
     if( dirX*dirX + dirY*dirY + dirZ*dirZ>0.0 ){
@@ -707,7 +706,6 @@ void VertexGeometry::CalcResiduals(double vtxX, double vtxY, double vtxZ, double
   
   fPointResidualMean = fPointResidualMean/fNDigits;
   fExtendedResidualMean = fExtendedResidualMean/fNDigits;
-
  //std::cout << "[CalcResiduals] (vtxX,vtxY,vtxZ,vtxTime) = (" << vtxX <<","<<vtxY<<","<<vtxZ<<","<<vtxTime<<"), (dirX,dirY,dirZ) = (" << dirX <<","<<dirY<<","<<dirZ << ")" << std::endl;
 
   return;
