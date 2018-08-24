@@ -48,6 +48,17 @@ bool VertexGeometryCheck::Execute(){
     return false;
   }
   
+  // MC entry number
+  m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",fMCEventNum);  
+  
+  // MC trigger number
+  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggerNum); 
+  
+  // ANNIE Event number
+  m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
+  
+  if(fEventNumber!=6) return true; // Only check this event
+  
   // check if event passes the cut
   bool EventCutstatus = false;
   auto get_evtstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutstatus);
@@ -59,10 +70,6 @@ bool VertexGeometryCheck::Execute(){
   	Log("Message: This event doesn't pass the event selection. ", v_message, verbosity);
     return true;	
   }
-  
-  // MC entry number
-  int MCEventNum;
-  m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);  
   
   // Read True Vertex   
   RecoVertex* truevtx = 0;
@@ -99,7 +106,7 @@ bool VertexGeometryCheck::Execute(){
 	int nhits = myvtxgeo->GetNDigits();
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, trueVtxT, trueDirX, trueDirY, trueDirZ);
-
+  myOptimizer->SetMeanTimeCalculatorType(1); //
   double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
   cout<<"meantime = "<<meantime<<endl;
   fmeanres->Fill(meantime);

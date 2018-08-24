@@ -11,6 +11,7 @@
 #include "RecoDigit.h"
 #include "TMath.h"
 
+#include<algorithm>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -302,6 +303,9 @@ MinuitOptimizer::MinuitOptimizer() {
 	fTmin = 0.0;
 	fTmax = 40.0;
 	
+	// default Mean time calculator type
+	fMeanTimeCalculatorType = 0;
+	
 	fMinuitPointPosition = new TMinuit();
   fMinuitPointPosition->SetPrintLevel(-1);
   fMinuitPointPosition->SetMaxIterations(5000);
@@ -504,7 +508,7 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
   return;
 }
 
-void MinuitOptimizer::ConePropertiesFoM(double& coneFOM, std::string fitOption)
+void MinuitOptimizer::ConePropertiesFoM(double& coneFOM)
 {  
   // calculate figure of merit
   // =========================
@@ -520,14 +524,7 @@ void MinuitOptimizer::ConePropertiesFoM(double& coneFOM, std::string fitOption)
 
   double fom = 0.0;
 
-  for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){
-  	if(fitOption == "LAPPD" ) {
-  	  if(this->fVtxGeo->GetDigitType(idigit) != RecoDigit::lappd_v0) continue;	
-  	}
-  	if(fitOption == "PMT") {
-  	  if(this->fVtxGeo->GetDigitType(idigit) != RecoDigit::PMT8inch || this->fVtxGeo->GetDigitQ(idigit)<5) continue;	
-  	}
-  	
+  for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 	
     if( this->fVtxGeo->IsFiltered(idigit) ){
       deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
       digitCharge = this->fVtxGeo->GetDigitQ(idigit);
@@ -835,11 +832,11 @@ void MinuitOptimizer::FitExtendedTimePropertiesLnL(double& vtxTime, double& vtxF
   return;
 }
 
-void MinuitOptimizer::FitConePropertiesFoM(double& coneAngle, double& coneFOM, std::string fitOption)
+void MinuitOptimizer::FitConePropertiesFoM(double& coneAngle, double& coneFOM)
 {
   coneAngle = Parameters::CherenkovAngle(); //...chrom1.38 // nominal cone angle
 
-  this->ConePropertiesFoM(coneFOM, fitOption);
+  this->ConePropertiesFoM(coneFOM);
 
   return;
 }
@@ -1604,24 +1601,25 @@ void MinuitOptimizer::FitCorrectedVertexWithMinuit() {
 
 //Given the position of the point vertex (x, y, z) and n digits, calculate the mean expected vertex time
 double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
-  double meanTime = 0.0;
-  // calculate mean and rms of hits inside cone
-  // ==========================================
-  double Swx = 0.0;
-  double Sw = 0.0;
-
-  double delta = 0.0;
-  double sigma = 0.0;
-  double weight = 0.0;
-  double deweight = 0.0;
-  double deltaAngle = 0.0;
-
-  double myConeEdge = Parameters::CherenkovAngle();      // [degrees]
-  double myConeEdgeSigma = 7.0;  // [degrees]
-  TString configType = Parameters::Instance()->GetConfigurationType();
-  
-  for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
-      TString detType = this->fVtxGeo->GetDigitType(idigit); 
+	double meanTime = 0.0;
+	// weighted average
+	if(fMeanTimeCalculatorType == 0) {
+    // calculate mean and rms of hits inside cone
+    // ==========================================
+    double Swx = 0.0;
+    double Sw = 0.0;
+    
+    double delta = 0.0;
+    double sigma = 0.0;
+    double weight = 0.0;
+    double deweight = 0.0;
+    double deltaAngle = 0.0;
+    
+    double myConeEdge = Parameters::CherenkovAngle();      // [degrees]
+    double myConeEdgeSigma = 7.0;  // [degrees]
+    
+    for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
+      int detType = this->fVtxGeo->GetDigitType(idigit); 
       if( vtxgeo->IsFiltered(idigit) ){
         delta = vtxgeo->GetDelta(idigit);    
         sigma = vtxgeo->GetDeltaSigma(idigit);
@@ -1639,11 +1637,55 @@ double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
         Sw  += deweight*weight;
       }
     }
+    if( Sw>0.0 ){
+      meanTime = Swx*1.0/Sw;
+    }
+	}
+	
+	// most probable time
+	if(fMeanTimeCalculatorType == 1) {
+		double sigma = 0.0;
+		double deltaAngle = 0.0;
+		double weight = 0.0;
+		double deweight = 0.0;
+		double myConeEdge = Parameters::CherenkovAngle();      // [degrees]
+    double myConeEdgeSigma = 7.0;  // [degrees]
+		vector<double> deltaTime1;
+		vector<double> deltaTime2;
+		vector<double> TimeWeight;
+		
+		for( int idigit=0; idigit<vtxgeo->GetNDigits(); idigit++ ){
+      if(vtxgeo->IsFiltered(idigit)){
+        deltaTime1.push_back(vtxgeo->GetDelta(idigit));  
+        deltaTime2.push_back(vtxgeo->GetDelta(idigit));   
+        sigma = vtxgeo->GetDeltaSigma(idigit);
+        weight = 1.0/(sigma*sigma); 
+        deltaAngle = vtxgeo->GetAngle(idigit) - myConeEdge;
+        if( deltaAngle<=0.0 ){
+          deweight = 1.0;
+        }
+        else{
+          deweight = 1.0/(1.0+(deltaAngle*deltaAngle)/(myConeEdgeSigma*myConeEdgeSigma));
+        }
+        TimeWeight.push_back(deweight*weight);
+      }
+    }
+    int n = deltaTime1.size();
+    std::sort(deltaTime1.begin(),deltaTime1.end());
+    double timeMin = deltaTime1.at(int((n-1)*0.05)); // 5% of the total entries
+    double timeMax = deltaTime1.at(int((n-1)*0.90)); // 90% of the total entries
+    int nbins = int(n/5);
+    TH1D *hDeltaTime = new TH1D("hDeltaTime", "hDeltaTime", nbins, timeMin, timeMax);
+    for(int i=0; i<n; i++) {
+      //hDeltaTime->Fill(deltaTime2.at(i), TimeWeight.at(i));	
+      hDeltaTime->Fill(deltaTime2.at(i));	
+    }
+    meanTime = hDeltaTime->GetBinCenter(hDeltaTime->GetMaximumBin());
+    delete hDeltaTime; hDeltaTime = 0;
+	}
+	
+	else std::cout<<"MinuitOptimizer Error: Wrong type of Mean time calculator! "<<std::endl;
   
-  
-  if( Sw>0.0 ){
-    meanTime = Swx*1.0/Sw;
-  }
   return meanTime; //return expected vertex time
 }
 
@@ -1694,7 +1736,7 @@ void MinuitOptimizer::PointDirectionChi2(double vtxX, double vtxY,
   // calculate figure of merit
   // =========================
   //this->FitPointConePropertiesLnL(vtxAngle,coneFOM);
-  this->FitConePropertiesFoM(vtxAngle,coneFOM, Parameters::Instance()->GetConfigurationType());
+  this->FitConePropertiesFoM(vtxAngle,coneFOM);
 
   // calculate overall figure of merit
   // =================================
@@ -1727,7 +1769,7 @@ void MinuitOptimizer::PointVertexChi2(double vtxX, double vtxY, double vtxZ,
   double coneFOM = 0.0;
   
   //this->FitPointConePropertiesLnL(vtxAngle, coneFOM);
-  this->FitConePropertiesFoM(vtxAngle,coneFOM, Parameters::Instance()->GetConfigurationType());
+  this->FitConePropertiesFoM(vtxAngle,coneFOM);
   this->FitPointTimePropertiesLnL(vtxTime, timeFOM);
   
   double fTimeFitWeight = this->fTimeFitWeight;
@@ -1766,8 +1808,7 @@ void MinuitOptimizer::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, 
   // calculate figure of merit
   // =========================
 
-  //this->FitExtendedConePropertiesLnL(vtxAngle,coneFOM);
-  this->FitConePropertiesFoM(vtxAngle,coneFOM, Parameters::Instance()->GetConfigurationType());
+  this->FitConePropertiesFoM(vtxAngle,coneFOM);
   this->FitExtendedTimePropertiesLnL(vtxTime,timeFOM);
   
   double fTimeFitWeight = this->fTimeFitWeight;
@@ -1806,7 +1847,7 @@ void MinuitOptimizer::CorrectedVertexChi2(double vtxX, double vtxY, double vtxZ,
   // calculate figure of merit
   // =========================
 
-  this->FitConePropertiesFoM(vtxAngle,coneFOM, "PMT8inch");
+  this->FitConePropertiesFoM(vtxAngle,coneFOM);
   fom = coneFOM;
 
   // truncate

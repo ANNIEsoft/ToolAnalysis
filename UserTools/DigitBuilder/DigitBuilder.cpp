@@ -412,11 +412,11 @@ bool DigitBuilder::EventSelectionByMCTruthInfo() {
   double fidcuty = 50.;
 	double fidcutz = 0.;
 	if(trueVtxZ > fidcutz) return false;
-//	if( (TMath::Sqrt(TMath::Power(trueVtxX, 2) + TMath::Power(trueVtxZ,2)) > fidcutradius) 
-//		  || (TMath::Abs(trueVtxY) > fidcuty) 
-//		  || (trueVtxZ > fidcutz) ){
-//    return false;
-//	}	 	
+	if( (TMath::Sqrt(TMath::Power(trueVtxX, 2) + TMath::Power(trueVtxZ,2)) > fidcutradius) 
+		  || (TMath::Abs(trueVtxY) > fidcuty) 
+		  || (trueVtxZ > fidcutz) ){
+    return false;
+	}	 	
 	
 //	// mrd cut
 //	double muonStopX, muonStopY, muonStopZ;

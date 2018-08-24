@@ -83,12 +83,13 @@ public:
  	MinuitOptimizer();
   ~MinuitOptimizer();
   void SetPrintLevel(int printlevel) {fPrintLevel = printlevel;}
+  void SetMeanTimeCalculatorType(int type) {fMeanTimeCalculatorType = type;}
   void LoadVertexGeometry(VertexGeometry* vtxgeo);
   void LoadVertex(RecoVertex* vtx);
   void LoadVertex(double vtxX, double vtxY, double vtxZ, double vtxTime, double vtxDirX, double vtxDirY, double vtxDirZ);
   void FitPointTimePropertiesLnL(double& vtxTime, double& vtxFOM);
   void FitExtendedTimePropertiesLnL(double& vtxTime, double& vtxFOM);
-  void FitConePropertiesFoM(double& coneAngle, double& coneFOM, std::string fitOption);
+  void FitConePropertiesFoM(double& coneAngle, double& coneFOM);
   void FitPointConePropertiesLnL(double& coneAngle, double& coneFOM);
   void FitExtendedConePropertiesLnL(double& coneAngle, double& coneFOM);
   void FitPointTimeWithMinuit();
@@ -100,7 +101,7 @@ public:
   
   double FindSimpleTimeProperties(VertexGeometry* vtxgeo);
   void TimePropertiesLnL(double vtxTime, double vtxParam, double& vtxFom);
-  void ConePropertiesFoM(double& chi2, std::string fitOption);
+  void ConePropertiesFoM(double& chi2);
   void ConePropertiesLnL(double coneParam0, double coneParam1, double coneParam2, double& coneAngle, double& coneFOM);
   void PointPositionChi2(double vtxX, double vtxY, double vtxZ, double& vtxTime, double& fom);
   void PointDirectionChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double& vtxAngle, double& fom);
@@ -156,6 +157,8 @@ public:
   
   double fTimeFitWeight;
   double fConeFitWeight;
+  
+  int fMeanTimeCalculatorType;
 
 };
 
