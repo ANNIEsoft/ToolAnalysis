@@ -13,11 +13,13 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   
   m_variables.Get("verbose", verbosity);
-  m_variables.Get("NumEventsWritten", fNumEventsWritten);
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
   fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
   fRecoTree = new TTree("phaseII", "ANNIE Phase II Reconstruction Tree");
+  fRecoTree->Branch("McEntryNumber",&fMCEventNum,"McEntryNumber/I");
+  fRecoTree->Branch("triggerNumber",&fMCTriggerNum,"triggerNumber/I");
+  fRecoTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
   fRecoTree->Branch("nhits",&fNhits,"fNhits/I");
   fRecoTree->Branch("filter",&fIsFiltered);
   fRecoTree->Branch("digitX",&fDigitX);
@@ -61,45 +63,54 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
 bool PhaseIITreeMaker::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
   Log("PhaseIITreeMaker Tool: Executing",v_debug,verbosity);
-  
+
   // Reset variables
   this->ResetVariables();
   // Get a pointer to the ANNIEEvent Store
   auto* annie_event = m_data->Stores["RecoEvent"];
   if (!annie_event) {
-    Log("Error: The PhaseITreeMaker tool could not find the ANNIEEvent Store",
-      0, verbosity);
+    Log("Error: The PhaseITreeMaker tool could not find the RecoEvent Store", v_error, verbosity);
     return false;
   }
-  // MC entry number
-  int MCEventNum;
-  m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);  
+
+  // check if event passes the cut
+  bool EventCutstatus = false;
+  auto get_evtstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutstatus);
+  if(!get_evtstatus) {
+    Log("Error: The PhaseITreeMaker tool could not find the Event selection status", v_error, verbosity);
+    return false;	
+  }
+
+  if(!EventCutstatus) {
+  	Log("Message: This event doesn't pass the event selection. ", v_message, verbosity);
+    return true;	
+  }
   
-//  // MC trigger number
-//  int MCTriggerNum;
-//  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggerNum); 
+  // MC entry number
+  m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",fMCEventNum);  
+  
+  // MC trigger number
+  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggerNum); 
+  
+  // ANNIE Event number
+  m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
   
   // Read True Vertex   
   RecoVertex* truevtx = 0;
-  auto get_vtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx);  ///> Get digits from "RecoEvent" 
-  if(!get_vtx){ 
-  	Log("PhaseIITreeMaker  Tool: Error retrieving TrueVertex! ",v_error,verbosity); 
-  	return true;
-  }
+  m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx); 
   
   fTrueVtxX = truevtx->GetPosition().X();
   fTrueVtxY = truevtx->GetPosition().Y();
   fTrueVtxZ = truevtx->GetPosition().Z();
   fTrueVtxTime = truevtx->GetTime();
+  fTrueDirX = truevtx->GetDirection().X();
+  fTrueDirY = truevtx->GetDirection().Y();
+  fTrueDirZ = truevtx->GetDirection().Z();
+  
   
   // Read digits
   std::vector<RecoDigit>* digitList = nullptr;
-	auto get_digit = m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
-  if(!get_digit){ 
-  	Log("PhaseIITreeMaker  Tool: Error retrieving RecoDigits,no digit from the RecoEvent store!",v_error,verbosity); 
-  	return true;
-  }
-  
+	m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
   fNhits = digitList->size();
   for( auto& digit : *digitList ){
     fDigitX.push_back(digit.GetPosition().X());
@@ -109,16 +120,14 @@ bool PhaseIITreeMaker::Execute(){
     fDigitQ.push_back(digit.GetCalCharge());
     fDigitType.push_back(digit.GetDigitType());
   }
+  
   fRecoTree->Fill();
-  fOutput_tfile->cd();
-//	if(MCEventNum==	fNumEventsWritten) fRecoTree->Write();
   return true;
 }
 
-
 bool PhaseIITreeMaker::Finalise(){
 	fOutput_tfile->cd();
-	fRecoTree->Write(); // code crashes. FIXME
+	fRecoTree->Write();
 	fOutput_tfile->Close();
 	
 //	//histograms
@@ -141,6 +150,9 @@ bool PhaseIITreeMaker::Finalise(){
 
 void PhaseIITreeMaker::ResetVariables() {
   // tree variables
+  fMCEventNum = 0;
+  fMCTriggerNum = 0;
+  fEventNumber = 0;
   fNhits = 0;
   fTrueVtxX = 0;
   fTrueVtxY = 0;

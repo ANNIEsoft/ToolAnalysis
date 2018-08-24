@@ -33,7 +33,7 @@ class RecoDigit : public SerialisableObject{
 			fIsFiltered = 1;
 			ANNIERecoObjectTable::Instance()->NewDigit();
 		}
-	~RecoDigit() {ANNIERecoObjectTable::Instance()->DeleteDigit();}
+	~RecoDigit() {/*ANNIERecoObjectTable::Instance()->DeleteDigit();*/}
 
 	inline int                 GetRegion() const {return fRegion;}
 	inline Position						 GetPosition() const {return fPosition;}

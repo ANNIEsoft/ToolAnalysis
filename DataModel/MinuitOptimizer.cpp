@@ -402,9 +402,10 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
   // tuning parameters
   // =================
   double fTimeFitNoiseRate = 0.02;  // hits/ns [0.40 for electrons, 0.02 for muons]
+  // need to simulate the rate of the cosmic background
   // add noise to model
   // ==================
-  double nFilterDigits = this->fVtxGeo->GetNFilterDigits(); //FIXME
+  double nFilterDigits = this->fVtxGeo->GetNFilterDigits(); 
   double Pnoise = fTimeFitNoiseRate/nFilterDigits;//FIXME
   Pnoise = 1e-8;//FIXME
   
@@ -424,6 +425,7 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
       P = (1.0-Pnoise)*Preal + Pnoise; 
       chi2 += -2.0*log(P);
       ndof += 1.0; 
+//      cout<<"(tm, t0, dt, sigma) = "<<this->fVtxGeo->GetDelta(idigit)<<", "<<vtxTime<<", "<<delta<<", "<<sigma<<endl;
   }	
   
 //  TString configType = Parameters::Instance()->GetConfigurationType();

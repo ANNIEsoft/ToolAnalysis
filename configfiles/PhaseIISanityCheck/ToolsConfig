@@ -5,4 +5,4 @@ DigitBuilder DigitBuilder ./configfiles/PhaseIISanityCheck/DigitBuilderConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIISanityCheck/VtxSeedGeneratorConfig
 VertexGeometryCheck VertexGeometryCheck ./configfiles/PhaseIISanityCheck/VertexGeometryCheckConfig
 LikelihoodFitterCheck LikelihoodFitterCheck ./configfiles/PhaseIISanityCheck/LikelihoodFitterCheckConfig
-#PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIISanityCheck/PhaseIITreeMakerConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIISanityCheck/PhaseIITreeMakerConfig

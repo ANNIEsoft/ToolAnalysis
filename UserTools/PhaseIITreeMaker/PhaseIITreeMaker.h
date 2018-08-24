@@ -31,10 +31,18 @@ class PhaseIITreeMaker: public Tool {
   /// \brief TTree that will be used to store output
   TTree* fRecoTree = nullptr;
   
-  /// \brief Number of events to be written to root file
-  int fNumEventsWritten = 0;
   
   /// \brief Branch variables
+  
+  /// \brief MC entry number
+  uint64_t fMCEventNum;
+  
+  /// \brief trigger number
+  uint16_t fMCTriggerNum;
+  
+  /// \brief ANNIE event number
+  uint32_t fEventNumber;
+  
   // Digits
   int fNhits = 0;
   std::vector<int> fIsFiltered;

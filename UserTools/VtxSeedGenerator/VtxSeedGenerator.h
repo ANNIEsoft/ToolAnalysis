@@ -24,12 +24,6 @@ class VtxSeedGenerator: public Tool {
  	/// Clear true vertex and vertex seed list
  	void Reset();
  	
- 	/// \brief Find true neutrino vertex
- 	///
- 	/// Loop over all MC particles and find the particle with highest energy. 
- 	/// This particle is the primary muon. The muon start position, time and 
- 	/// the muon direction are used to initise the true neutrino vertex 
- 	RecoVertex* FindTrueVertex();
  	
  	/// \brief Calculate seed candidate
  	///
@@ -56,12 +50,7 @@ class VtxSeedGenerator: public Tool {
  	///
  	/// Choose a digit to form a quadruple. 
  	void ChooseNextDigit(double& xpos, double& ypos, double& zpos, double& time);
- 	
- 	/// \brief Save true neutrino vertex
- 	///
- 	/// Push true neutrino vertex to "RecoVertex"
- 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
- 	void PushTrueVertex(bool savetodisk);
+
  	
  	/// \brief Calculate seed candidate
  	///
@@ -74,7 +63,6 @@ class VtxSeedGenerator: public Tool {
  	uint64_t fMCEventNum;      ///< event number in MC file
  	uint16_t fMCTriggernum;    ///< trigger number in MC file
  	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
-	RecoVertex* fTrueVertex = nullptr; 	 ///< true vertex
 	int fNumSeeds;    ///< Number of seeds to be generated
 	
 	
@@ -94,7 +82,6 @@ class VtxSeedGenerator: public Tool {
 	int v_message=2;
 	int v_debug=3;
 	std::string logmessage;
-	int get_ok;	
 	
 
 };

@@ -219,7 +219,6 @@ bool LoadWCSim::Execute(){
 	
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
-	
 	if(verbose) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
 	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = wcsimtree->GetCurrentFile()->GetName();

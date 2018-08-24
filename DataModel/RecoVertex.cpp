@@ -146,7 +146,7 @@ RecoVertex* RecoVertex::CloneVertex(RecoVertex* b) {
 
 void RecoVertex::Reset()
 { 
-  fPosition = Position(0.,0.,0.);
+  fPosition = Position(-999.,-999.,-999.);
   fTime = double(0.0);
   fFoundVertex = 0;
   fDirection = Direction(0.,0.,0.);

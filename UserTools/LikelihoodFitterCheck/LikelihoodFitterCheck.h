@@ -26,9 +26,15 @@ class LikelihoodFitterCheck: public Tool {
   /// \brief TTree that will be used to store output
   TTree* fVertexGeometry = nullptr;
   
-  /// Data variables
- 	uint64_t fMCEventNum;      ///< event number in MC file
- 	uint16_t fMCTriggernum;    ///< trigger number in MC file
+ 	/// \brief MC entry number
+  uint64_t fMCEventNum;
+  
+  /// \brief trigger number
+  uint16_t fMCTriggerNum;
+  
+  /// \brief ANNIE event number
+  uint32_t fEventNumber;
+  
  	std::vector<RecoDigit>* fDigitList = 0;
  	RecoVertex* fTrueVertex = 0;
  	

@@ -3,6 +3,6 @@ LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PhaseIIReco/LoadWCSimLAPPDConfig
 FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
 DigitBuilder DigitBuilder ./configfiles/PhaseIIReco/DigitBuilderConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIIReco/VtxSeedGeneratorConfig
-VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
+#VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
 PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIIReco/PhaseIITreeMakerConfig
-VertexGeometryCheck VertexGeometryCheck ./configfiles/PhaseIIReco/VertexGeometryCheckConfig
+#VertexGeometryCheck VertexGeometryCheck ./configfiles/PhaseIIReco/VertexGeometryCheckConfig

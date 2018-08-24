@@ -664,9 +664,8 @@ void VertexGeometry::CalcResiduals(double vtxX, double vtxY, double vtxZ, double
     double dt = fDigitT[idigit] - vtxTime; 
     double qpes = fDigitQ[idigit];
 //    double tres = Parameters::TimeResolution(qpes);
-//    double tres = Parameters::TimeResolution(fDigitType[idigit]); //add by JW
-    double tres = Parameters::TimeResolution(fDigitType[idigit], qpes); //add by JW
-    
+    double tres = Parameters::TimeResolution(fDigitType[idigit]); //add by JW
+//    double tres = Parameters::TimeResolution(fDigitType[idigit], qpes); //add by JW
     fConeAngle[idigit] = thetadeg; // degrees
     fZenith[idigit] = phideg;      // degrees
     fAzimuth[idigit] = azideg;     // degrees

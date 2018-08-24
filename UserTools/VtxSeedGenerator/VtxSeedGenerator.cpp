@@ -35,7 +35,6 @@ bool VtxSeedGenerator::Initialise(std::string configfile, DataModel &data){
 	}
 		
 	// Create an object to store the true MC neutrino vertex
-	fTrueVertex = new RecoVertex();
 	vSeedVtxList = new std::vector<RecoVertex>;
 		
   return true;
@@ -45,38 +44,41 @@ bool VtxSeedGenerator::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
 	
 	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
-
-	get_ok = m_data->Stores.count("RecoEvent");
-	if(!get_ok){
+	
+	// Reset everything
+	this->Reset();
+  
+	auto get_recoevent = m_data->Stores.count("RecoEvent");
+	if(!get_recoevent){
 		Log("VtxSeedGenerator Tool: No RecoVertex store!",v_error,verbosity);
 		return false;
 	};
 	
-	// First, see if this is a delayed trigger in the event
-	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
-	if(not get_ok){ Log("VtxSeedGenerator  Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
-	// if so, truth analysis is probablys not interested in this trigger. Primary muon will not be in the listed tracks.
-	if(fMCTriggernum>0){ 
-		Log("VtxSeedGenerator s Tool: Skipping delayed trigger",v_debug,verbosity); 
-		return true;
-	}
+	
+	// check if event passes the cut
+  bool EventCutstatus = false;
+  auto get_evtstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutstatus);
+  if(!get_evtstatus) {
+    Log("Error: The PhaseITreeMaker tool could not find the Event selection status", v_error, verbosity);
+    return false;	
+  }
+  if(!EventCutstatus) {
+  	Log("Message: This event doesn't pass the event selection. ", v_message, verbosity);
+    return true;	
+  }
+  
 		
 	// Load digits
-	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
-  if(not get_ok){ 
+	auto get_recodigit = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
+  if(!get_recodigit){ 
   	Log("VtxSeedGenerator  Tool: Error retrieving RecoDigits,no digit from the RecoEvent store!",v_error,verbosity); 
   	return true;
   }
- 
-	// Reset
-	fTrueVertex->Reset();
-	// Find true neutrino vertex and push to "RecoEvent" store
-  this->FindTrueVertex();
-  this->PushTrueVertex(true);
+
   // Generate vertex candidates and push to "RecoEvent" store
   this->GenerateVertexSeeds(fNumSeeds);
   this->PushVertexSeeds(true);
-  
+
   return true;
 }
 
@@ -85,56 +87,8 @@ bool VtxSeedGenerator::Finalise(){
   return true;
 }
 
-RecoVertex* VtxSeedGenerator::FindTrueVertex() {
-  // Retrieve particle information from ANNIEEvent
-  get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",fMCParticles);
-	if(not get_ok){ Log("VtxSeedGenerator Tool: Error retrieving MCParticles,true tracks from ANNIEEvent!",v_error,verbosity); return 0; }
-	
-	// loop over the MCParticles to find the highest enery primary muon
-	// MCParticles is a std::vector<MCParticle>
-	MCParticle primarymuon;  // primary muon
-	bool mufound=false;
-	if(fMCParticles){
-		Log("VtxSeedGenerator  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-		for(int particlei=0; particlei<fMCParticles->size(); particlei++){
-			MCParticle aparticle = fMCParticles->at(particlei);
-			//if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-			if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-			if(aparticle.GetPdgCode()!=13) continue;       // not a muon
-			primarymuon = aparticle;                       // note the particle
-			mufound=true;                                  // note that we found it
-			//primarymuon.Print();
-			break;                                         // won't have more than one primary muon
-		}
-	} else {
-		Log("VtxSeedGenerator  Tool: No MCParticles in the event!",v_error,verbosity);
-	}
-	if(not mufound){
-		Log("VtxSeedGenerator  Tool: No muon in this event",v_warning,verbosity);
-		return 0;
-	}
-	
-	// retrieve desired information from the particle
-	Position neutrinovtxpos = primarymuon.GetStartVertex();    // only true if the muon is primary
-	double neutrinovtxpostime = primarymuon.GetStartTime().GetNs();
-	Direction muondirection = primarymuon.GetStartDirection();
-	double muonenergy = primarymuon.GetStartEnergy();
-	// set true vertex
-	// change unit
-	neutrinovtxpos.UnitToCentimeter(); // convert unit from meter to centimeter
-	// change coordinate
-	neutrinovtxpos.SetY(neutrinovtxpos.Y()+14.46469);
-	neutrinovtxpos.SetZ(neutrinovtxpos.Z()-168.1);
-	fTrueVertex->SetVertex(neutrinovtxpos, neutrinovtxpostime);
-  fTrueVertex->SetDirection(muondirection);
-  logmessage = "  trueVtx=(" +to_string(neutrinovtxpos.X()) + ", " + to_string(neutrinovtxpos.Y()) + ", " + to_string(neutrinovtxpos.Z()) +", "+to_string(neutrinovtxpostime)+ "\n"
-            + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
-  Log(logmessage,v_debug,verbosity);
-  return fTrueVertex;
-}
-
 void VtxSeedGenerator::Reset() {
-  fTrueVertex->Reset();
+	vSeedVtxList->clear();
 }
 
 bool VtxSeedGenerator::GenerateVertexSeeds(int NSeeds) {
@@ -314,9 +268,6 @@ void VtxSeedGenerator::ChooseNextDigit(double& xpos, double& ypos, double& zpos,
   return;
 }
 
-void VtxSeedGenerator::PushTrueVertex(bool savetodisk) {
-	m_data->Stores.at("RecoEvent")->Set("TrueVertex", fTrueVertex, savetodisk); 
-}
 
 void VtxSeedGenerator::PushVertexSeeds(bool savetodisk) {
   m_data->Stores.at("RecoEvent")->Set("vSeedVtxList", vSeedVtxList, savetodisk); 
