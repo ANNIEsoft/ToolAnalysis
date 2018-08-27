@@ -83,6 +83,7 @@ bool VtxSeedGenerator::Execute(){
 }
 
 bool VtxSeedGenerator::Finalise(){
+	delete vSeedVtxList; vSeedVtxList = 0;
   Log("VtxSeedGenerator exitting", v_debug,verbosity);
   return true;
 }

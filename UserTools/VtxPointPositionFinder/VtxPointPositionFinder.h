@@ -15,23 +15,42 @@ class VtxPointPositionFinder: public Tool {
  public:
 
   VtxPointPositionFinder();
+  ~VtxPointPositionFinder();
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
 
 
  private:
- 	/// Data variables
- 	uint64_t fMCEventNum;      ///< event number in MC file
- 	uint16_t fMCTriggernum;    ///< trigger number in MC file
- 	TRandom3        r;
- 	
+ 	/// \brief MC entry number
+  uint64_t fMCEventNum;
+  
+  /// \brief trigger number
+  uint16_t fMCTriggerNum;
+  
+  /// \brief ANNIE event number
+  uint32_t fEventNumber;
+  
+  /// \brief Random number generator
+ 	TRandom3 r;
+ 	/// \brief 
  	RecoVertex* FitPointPosition(RecoVertex* myvertex);
- 	RecoVertex* FitPointVertex(RecoVertex* myvertex);
+ 	
+ 	/// \brief Reset everything
+ 	void Reset();
+ 	
+ 	/// \brief Push fitted point position to store
+ 	void PushPointPosition(RecoVertex* vtx, bool savetodisk);
  	
  	bool fUseTrueVertexAsSeed;
  	RecoVertex* fTrueVertex = 0;
  	std::vector<RecoDigit>* fDigitList = 0;
+ 		
+ 	/// \brief Simple position
+ 	RecoVertex* fSimplePosition = 0;
+ 	
+ 	/// \brief Point position
+ 	RecoVertex* fPointPosition = 0;
  	
  	/// verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=-1;

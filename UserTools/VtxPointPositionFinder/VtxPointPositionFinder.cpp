@@ -1,7 +1,7 @@
 #include "VtxPointPositionFinder.h"
 
 VtxPointPositionFinder::VtxPointPositionFinder():Tool(){}
-
+VtxPointPositionFinder::~VtxPointPositionFinder(){}
 
 bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data){
 
@@ -17,6 +17,14 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
   /// Get the Tool configuration variables
 	m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
 	m_variables.Get("verbosity", verbosity);
+	
+	/// Create Simple position and point position
+	/// Note that the objects created by "new" must be added to the "RecoEvent" store. 
+	/// The last tool SaveRecoEvent will delete these pointers and free the memory.
+	/// If these pointers are not added to any store, the user has to delete the pointers
+	/// and free the memory. 
+	fSimplePosition = new RecoVertex();
+	fPointPosition = new RecoVertex();
 
   return true;
 }
@@ -25,15 +33,31 @@ bool VtxPointPositionFinder::Execute(){
 	Log("===========================================================================================",v_debug,verbosity);
 	
 	Log("VtxPointPositionFinder Tool: Executing",v_debug,verbosity);
+	
+	// Reset everything
+	this->Reset();
 
-	// First, see if this is a delayed trigger in the event
-	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
-	if(not get_ok){ Log("VtxPointPositionFinder  Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); return false; }
-	// if so, truth analysis is probablys not interested in this trigger. Primary muon will not be in the listed tracks.
-	if(fMCTriggernum>0){ 
-		Log("VtxPointPositionFinder Tool: Skipping delayed trigger",v_debug,verbosity); 
-		return true;
-	}
+	// check if event passes the cut
+  bool EventCutstatus = false;
+  auto get_evtstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutstatus);
+  if(!get_evtstatus) {
+    Log("Error: The PhaseITreeMaker tool could not find the Event selection status", v_error, verbosity);
+    return false;	
+  }
+
+  if(!EventCutstatus) {
+  	Log("Message: This event doesn't pass the event selection. ", v_message, verbosity);
+    return true;	
+  }
+  
+  // MC entry number
+  m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",fMCEventNum);  
+  
+  // MC trigger number
+  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggerNum); 
+  
+  // ANNIE Event number
+  m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
 	
 	// Retrive digits from RecoEvent
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
@@ -56,48 +80,46 @@ bool VtxPointPositionFinder::Execute(){
 		  return false; 
 	  }
 	  Position vtxPos = fTrueVertex->GetPosition();
-	  Direction vtxDir = fTrueVertex->GetDirection();
+	  // Direction vtxDir = fTrueVertex->GetDirection();
 	  double vtxTime = fTrueVertex->GetTime();
-	  //Set vertex seed
+	  // Set vertex seed
     RecoVertex* vtx = new RecoVertex();
-    vtxPos.GaussianSmear(5.0, 5.0, 5.0);
+    // Use true vertex information
 	  vtx->SetVertex(vtxPos, vtxTime);
-    vtx->SetDirection(vtxDir);
+    //vtx->SetDirection(vtxDir);
     // return vertex
-    RecoVertex* myvertex  = (RecoVertex*)(this->FitPointPosition(vtx)); 
-    delete vtx; vtx = 0;  
+    fPointPosition  = (RecoVertex*)(this->FitPointPosition(vtx));
+    // Push fitted vertex to RecoEvent store
+    this->PushPointPosition(fPointPosition, true);
+    delete vtx; vtx = 0;
   }
-  // Add reconstructed vertex to "RecoEvent" store
+  
+  else {
+    	
+  }
 
   return true;
 }
 
 bool VtxPointPositionFinder::Finalise(){
+	// memory has to be freed in the Finalise() function
+	delete fSimplePosition; fSimplePosition = 0;
+	delete fPointPosition; fPointPosition = 0;
+	if(verbosity>0) cout<<"VtxPointPositionFinder exitting"<<endl;
   return true;
 }
 
-//fit point vertex
-RecoVertex* VtxPointPositionFinder::FitPointVertex(RecoVertex* myvertex) {
-	Log("VtxPointPositionFinder::FitPointVertex: Fit point vertex",v_message,verbosity);
-	//fit with Minuit
-  MinuitOptimizer* myOptimizer = new MinuitOptimizer();
-  myOptimizer->SetPrintLevel(1);
-  VertexGeometry* myvtxgeo = VertexGeometry::Instance();
-  myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
-  myOptimizer->LoadVertex(myvertex); //Load vertex seed
-  
-  myOptimizer->FitPointVertexWithMinuit();
-  //RecoVertex* newVertex = (RecoVertex*)(this->FixPointVertex(myOptimizer->GetFittedVertex())); 
-  
-  delete myOptimizer; myOptimizer = 0;
-//  return newVertex;
-  return 0;
-}
-
-//fit point position 
+/// fit point position 
+/// Note that it's highly discourged to return a pointer a local stack object. 
+/// You'll be ended up with potential memory leak issue. 
+/// In the old framework ANNIEReco, I spent lots of time dealing with the memory
+/// leak. 
+/// This function returns such a pointer, which means the user has to free the memory
+/// I don't like this type of function, but there are many functions like this in
+/// the code originally from WCSimAnalysis. Now we just keep them as they are and 
+/// we'll come back to fix this later.  (Jingbo Wang, Aug 24, 2018)
 RecoVertex* VtxPointPositionFinder::FitPointPosition(RecoVertex* myVertex) {
 	Log("DEBUG [VertexFinderOpt::FitPointPosition]", v_message, verbosity);
-  
   //fit with Minuit
   MinuitOptimizer* myOptimizer = new MinuitOptimizer();
   myOptimizer->SetPrintLevel(1);
@@ -105,7 +127,32 @@ RecoVertex* VtxPointPositionFinder::FitPointPosition(RecoVertex* myVertex) {
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myOptimizer->LoadVertex(myVertex); //Load vertex seed
   myOptimizer->FitPointPositionWithMinuit(); //scan the point position in 4D space
-  //RecoVertex* newVertex = (RecoVertex*)(this->FixPointPosition(myOptimizer->GetFittedVertex())); 
+  // Fitted vertex must be copied to a new vertex pointer that is created in this class 
+  // Once the optimizer is deleted, the fitted vertex is lost. 
+  // copy vertex to fPointPosition
+  RecoVertex* newVertex = new RecoVertex();
+  newVertex->CloneVertex(myOptimizer->GetFittedVertex());
+  newVertex->SetFOM(myOptimizer->GetFittedVertex()->GetFOM(),1,1);
+  // print vertex
+  // ============
+  if(verbosity >0) {
+  std::cout << "  set point position: " << std::endl
+  	        << "  status = "<<newVertex->GetStatus()<<std::endl
+            <<"     (vx,vy,vz)=(" << newVertex->GetPosition().X() << "," << newVertex->GetPosition().Y() << "," << newVertex->GetPosition().Z() << ") " << std::endl
+            << "      vtime=" << newVertex->GetTime() << " itr=" << newVertex->GetIterations() << " fom=" << newVertex->GetFOM() << std::endl;
+  }
   delete myOptimizer; myOptimizer = 0;
-  return 0;
+  return newVertex;
+}
+
+// Add point position to RecoEvent store
+void VtxPointPositionFinder::PushPointPosition(RecoVertex* vtx, bool savetodisk) {  
+  // push vertex to RecoEvent store
+  Log("VtxPointPositionFinder Tool: Push point position to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("PointPosition", fPointPosition, savetodisk);  ///> RecoEvent store is responsible to free the memory
+}
+
+void VtxPointPositionFinder::Reset() {
+	fSimplePosition->Reset();
+	fPointPosition->Reset();
 }
