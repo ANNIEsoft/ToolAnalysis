@@ -54,6 +54,7 @@ if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
 if (tool=="ExampleOverTool") ret=new ExampleOverTool;
 if (tool=="PhaseIITreeMaker") ret=new PhaseIITreeMaker;
 if (tool=="VertexGeometryCheck") ret=new VertexGeometryCheck;
-  if (tool=="LikelihoodFitterCheck") ret=new LikelihoodFitterCheck;
+if (tool=="LikelihoodFitterCheck") ret=new LikelihoodFitterCheck;
+  if (tool=="EventSelector") ret=new EventSelector;
 return ret;
 }

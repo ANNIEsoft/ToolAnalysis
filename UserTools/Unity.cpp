@@ -59,3 +59,4 @@
 #include "PhaseIITreeMaker/PhaseIITreeMaker.cpp"
 #include "VertexGeometryCheck/VertexGeometryCheck.cpp"
 #include "LikelihoodFitterCheck/LikelihoodFitterCheck.cpp"
+#include "EventSelector/EventSelector.cpp"
