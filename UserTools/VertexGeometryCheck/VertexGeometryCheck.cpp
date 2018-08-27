@@ -108,7 +108,6 @@ bool VertexGeometryCheck::Execute(){
   myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, trueVtxT, trueDirX, trueDirY, trueDirZ);
   myOptimizer->SetMeanTimeCalculatorType(1); //
   double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
-  cout<<"meantime = "<<meantime<<endl;
   fmeanres->Fill(meantime);
   double fom = -999.999*100;
   myOptimizer->TimePropertiesLnL(meantime,0.2,fom);

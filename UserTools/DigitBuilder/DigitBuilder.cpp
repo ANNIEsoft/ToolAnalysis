@@ -13,7 +13,6 @@ DigitBuilder* DigitBuilder::Instance()
 
 DigitBuilder::DigitBuilder():Tool(){}
 DigitBuilder::~DigitBuilder() {
-	
 }
 
 bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
@@ -146,9 +145,9 @@ bool DigitBuilder::Execute(){
 }
 
 bool DigitBuilder::Finalise(){
-	//fOutput_tfile->cd();
-	//fDigitTree->Write();
-	//fOutput_tfile->Close();
+	delete fMuonStartVertex; fMuonStartVertex = 0;
+	delete fMuonStopVertex; fMuonStopVertex = 0;
+	delete fDigitList; fDigitList = 0;
 	if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
   return true;
 }

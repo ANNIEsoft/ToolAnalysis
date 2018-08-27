@@ -300,8 +300,8 @@ MinuitOptimizer::MinuitOptimizer() {
 	fYmax = 198.0;
 	fZmin = -152.0;
 	fZmax = 152.0;
-	fTmin = 0.0;
-	fTmax = 40.0;
+	fTmin = 946;
+	fTmax = 958;
 	
 	// default Mean time calculator type
 	fMeanTimeCalculatorType = 0;
@@ -1187,7 +1187,7 @@ void MinuitOptimizer::FitPointVertexWithMinuit() {
   double seedZ = fSeedVtx->GetPosition().Z();
   double seedTime = fSeedVtx->GetTime();
   
-  seedTime = 0.0; // just for test
+  seedTime = 0.0; 
 
   double seedDirX = fSeedVtx->GetDirection().X();
   double seedDirY = fSeedVtx->GetDirection().Y();
