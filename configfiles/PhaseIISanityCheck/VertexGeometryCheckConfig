@@ -1,0 +1,4 @@
+verbosity 11
+
+OutputFile ./VertexGeometryCheck.root
+

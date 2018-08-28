@@ -272,7 +272,6 @@ bool LoadWCSimLAPPD::Execute(){
 	return true;
 }
 
-
 bool LoadWCSimLAPPD::Finalise(){
 	
 	if(DEBUG_DRAW_LAPPD_HITS){

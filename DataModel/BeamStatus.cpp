@@ -1,6 +1,6 @@
 #include "BeamStatus.h"
 
-BeamStatus::BeamStatus() : time_( TimeClass(0ull) ), pot_(0.),
+BeamStatus::BeamStatus() : time_( TimeClass(uint64_t(0)) ), pot_(0.),
   condition_(BeamCondition::Missing)
 {
   serialise = true;
@@ -14,7 +14,7 @@ BeamStatus::BeamStatus(TimeClass time, double POT,
 
 void BeamStatus::clear()
 {
-  time_ = TimeClass(0ull);
+  time_ = TimeClass(uint64_t(0));
   pot_ = 0.;
   condition_ = BeamCondition::Missing;
   data_.clear();

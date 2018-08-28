@@ -19,6 +19,7 @@ class LAPPDHit : public Hit{
 	LAPPDHit(int tubeid, double thetime, double charge, std::vector<double> Position, std::vector<double> LocalPosition, double tpsec) : Hit(tubeid,thetime,charge), Position(Position), LocalPosition(LocalPosition), Tpsec(tpsec){serialise=true;}
 
 	inline double GetTpsec() const {return Tpsec;}
+	inline int GetTubeId() const {return TubeId;}
 	inline std::vector<double> GetPosition() const {return Position;}
 	inline std::vector<double> GetLocalPosition() const {return LocalPosition;}
 	inline void SetTpsec(double tpsec){Tpsec=tpsec;}

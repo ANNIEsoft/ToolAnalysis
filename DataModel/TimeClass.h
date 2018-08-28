@@ -13,28 +13,37 @@ class TimeClass : public SerialisableObject{
 	
 	public:
   TimeClass() : unixns(0) {serialise=true;}
-  TimeClass(uint64_t timens) : unixns(timens) {serialise=true;}
+//  TimeClass(uint64_t timens) : unixns(timens) {serialise=true;}
+  TimeClass(float timens) {
+  	unixns = (uint64_t)timens;
+  	tpsec = (timens - unixns)*1000.; //fractional time in ps
+  	serialise=true;
+  }
 	
 	inline uint64_t GetNs() const {return unixns;}
+	inline float	GetTpsec() const {return tpsec;}
 	inline void SetNs(uint64_t tns){unixns=tns;}
 	
 	bool Print() {
 		cout<<"unixns : "<<unixns<<endl;
-		
+		cout<<"tpses: "<<tpsec<<endl;
 		return true;
 	}
 	
 	private:
 	uint64_t unixns;
+	float		 tpsec;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
 			ar & unixns;
+			ar & tpsec;
 		}
 	}
 	
 	void Clear(){
 		unixns = 0;
+		tpsec = 0.;
 	}
 	
 };

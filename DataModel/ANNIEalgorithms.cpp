@@ -20,7 +20,6 @@ double FindPulseMax(std::vector<double> *theWav, double &themax, int &maxbin, do
       minbin=i;
     }
 
-
   }
 
   return themax;

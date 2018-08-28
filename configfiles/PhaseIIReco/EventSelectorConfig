@@ -1,0 +1,4 @@
+# EventSelector config file
+
+MCTruthCut 1
+MRDRecoCut 0

@@ -51,6 +51,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	file= new TFile(MCFile.c_str(),"READ");
 	wcsimtree= (TTree*) file->Get("wcsimT");
 	NumEvents=wcsimtree->GetEntries();
+	if(verbose>1) cout<<"Total number of events = "<<NumEvents<<endl;
 	WCSimEntry= new wcsimT(wcsimtree);
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
 	wcsimrootopts = WCSimEntry->wcsimrootopts;
@@ -89,7 +90,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// =============================================
 	int annieeventexists = m_data->Stores.count("ANNIEEvent");
 	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
-	
+		
 	// construct the Geometry to go in the header from the WCSimRootGeom
 	// =================================================================
 	double WCSimGeometryVer = 1;                       // TODO pull this from some suitable variable
@@ -211,12 +212,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	return true;
 }
 
-
 bool LoadWCSim::Execute(){
+	
+	cout<<endl<<endl<<endl<<endl;
+	if(verbose) cout<<"==========================================================================================="<<endl;
 	
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
-	
 	if(verbose) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
 	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = wcsimtree->GetCurrentFile()->GetName();
@@ -305,7 +307,7 @@ bool LoadWCSim::Execute(){
 			
 			ChannelKey key(subdetector::ADC,tubeid);
 			Hit nexthit(tubeid, digittime, digiq);
-			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit});
+			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit}); ///> J.Wang ???
 			else MCHits->at(key).push_back(nexthit);
 			if(verbose>2) cout<<"digit added"<<endl;
 		}
@@ -389,6 +391,9 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
+	m_data->CStore.Set("FilterDone",0);  ///> Data Filtering not done by default (to be moved to CStore)
+	m_data->CStore.Set("VertexFinderDone",0);  ///> Vertex finding not done by default (to be moved to CStore)
+	m_data->CStore.Set("RingFinderDone",0);  ///> Ring finding not done by default (to be moved to CStore)
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
