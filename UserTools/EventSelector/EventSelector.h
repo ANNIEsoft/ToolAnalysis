@@ -71,10 +71,9 @@ class EventSelector: public Tool {
 
 	std::string fInputfile;
 	unsigned long fNumEvents;
-	bool fRunMRDRecoCut = false;
-	bool fRunMCTruthCut = false;
+	bool fMRDRecoCut = false;
+	bool fMCTruthCut = false;
 	bool fEventCutStatus;
-	bool fEventSelectionRan;
 
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;

@@ -14,8 +14,8 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
 
   //Get the tool configuration variables
   m_variables.Get("verbosity",verbosity);
-  m_variables.Get("RunMRDRecoCut", fRunMRDRecoCut);
-  m_variables.Get("RunMCTruthCut", fRunMCTruthCut);
+  m_variables.Get("MRDRecoCut", fMRDRecoCut);
+  m_variables.Get("MCTruthCut", fMCTruthCut);
 
   /// Construct the other objects we'll be setting at event level,
   fMuonStartVertex = new RecoVertex();
@@ -24,7 +24,8 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   // Make the RecoDigit Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
   if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
-  m_data->Stores.at("RecoEvent")->Set("EvtSelectionMask", fEvtSelectionMask); 
+  //TODO: Have an event selection mask filled based on what cuts are run
+  //m_data->Stores.at("RecoEvent")->Set("EvtSelectionMask", fEvtSelectionMask); 
   return true;
 }
 
@@ -37,6 +38,13 @@ bool EventSelector::Execute(){
   auto get_annieevent = m_data->Stores.count("ANNIEEvent");
   if(!get_annieevent){
   	Log("EventSelector Tool: No ANNIEEvent store!",v_error,verbosity); 
+  	return false;
+  };
+
+  // see if "RecoEvent" exists
+  auto get_recoevent = m_data->Stores.count("RecoEvent");
+  if(!get_recoevent){
+  	Log("EventSelector Tool: No RecoEvent store!",v_error,verbosity); 
   	return false;
   };
 
@@ -56,21 +64,23 @@ bool EventSelector::Execute(){
 	
   /// Find true neutrino vertex which is defined by the start point of the Primary muon
   this->FindTrueVertexFromMC();
-  fEventCutStatus = true;
-  if(fRunMCTruthCut){
+  
+  if(fMCTruthCut){
     bool passMCTruth= this->EventSelectionByMCTruthInfo();
     if(!passMCTruth) fEventCutStatus = false; 
   }
   //FIXME: This isn't working according to Jingbo
-  if(fRunMRDRecoCut){
+  if(fMRDRecoCut){
     std::cout << "EventSelector Tool: Currently not implemented. Setting to false" << std::endl;
     Log("EventSelector Tool: MRDReco not implemented.  Setting cut bit to false",v_message,verbosity);
-    bool passMRDRecoCut = false:
+    bool passMRDRecoCut = false;
     //bool passMRDRecoCut = this->EventSelectionByMRDReco(); 
     if(!passMRDRecoCut) fEventCutStatus = false; 
-  //}
-  // Event selection successfully run
-  EventSelectionRan = true;
+  }
+  // Event selection successfully run!
+  //If event passes cuts, store truth vertex info.
+  if(fEventCutStatus) this->PushTrueVertex(true);
+
   m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
   return true;
 }
@@ -232,6 +242,5 @@ void EventSelector::Reset() {
   // Reset 
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
-  fEventSelectionRan = false;
-  m_data->Stores.at("RecoEvent")->Set("EventSelectionRan", fEventSelectionRan);
+  fEventCutStatus = true; 
 } 

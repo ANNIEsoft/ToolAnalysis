@@ -56,36 +56,6 @@ class DigitBuilder: public Tool {
  	/// Clear digit list
  	void Reset();
  	
- 	
- 	/// \brief Event selection by MRD reconstructed information
- 	///
- 	/// Loop over all the MRC tracks. Find the track with the longest track
- 	/// length. If the longest track is stoped inside the MRD, the event is 
- 	/// selected
- 	bool EventSelectionByMRDReco();
- 	
- 	/// \brief Event selection by fidicual volume
- 	///
- 	/// The selection is based on the true vertex position from MC. 
- 	/// If the true vertex is inside the fidicual volume, the event 
- 	/// is selected. 
- 	/// The 
- 	bool EventSelectionByMCTruthInfo();
- 	
- 	/// \brief Find true neutrino vertex
- 	///
- 	/// Loop over all MC particles and find the particle with highest energy. 
- 	/// This particle is the primary muon. The muon start position, time and 
- 	/// the muon direction are used to initise the true neutrino vertex 
- 	RecoVertex* FindTrueVertexFromMC();
- 	
- 	/// \brief Save true neutrino vertex
- 	///
- 	/// Push true neutrino vertex to "RecoVertex"
- 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
- 	void PushTrueVertex(bool savetodisk);
- 	
- 	/// \brief Clear reconstructed hits
   ///
   /// Fills the parameter name and appropriate parameter values into
   /// the parameter container, to be used in the fit
@@ -94,9 +64,6 @@ class DigitBuilder: public Tool {
   int verbosity=1;
 	std::string fInputfile;
 	unsigned long fNumEvents;
-	bool fMRDRecoCut = false;
-	bool fMCTruthCut = false;
-	bool fEventCutStatus = false;
 	
 	/// \brief contents of ANNIEEvent filled by LoadWCSim and LoadWCSimLAPPD
 	std::string fMCFile;
@@ -114,10 +81,6 @@ class DigitBuilder: public Tool {
 	std::map<ChannelKey,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
 	TimeClass* fEventTime=nullptr;    ///< NDigits trigger time in ns from when the particles were generated
 	
-	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
-	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
-	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
-	
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
 	int v_warning=1;
@@ -125,6 +88,8 @@ class DigitBuilder: public Tool {
 	int v_debug=3;
 	std::string logmessage;
 	
+	///RecoEvent information
+	bool fEventCutStatus;
 	/// Reconstructed information
 	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
 	

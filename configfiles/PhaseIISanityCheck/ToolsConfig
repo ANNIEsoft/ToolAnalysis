@@ -1,6 +1,7 @@
 LoadWCSim LoadWCSim ./configfiles/PhaseIISanityCheck/LoadWCSimConfig
 LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PhaseIISanityCheck/LoadWCSimLAPPDConfig
 FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
+EventSelector EventSelector ./configfiles/PhaseIISanityCheck/EventSelectorConfig
 DigitBuilder DigitBuilder ./configfiles/PhaseIISanityCheck/DigitBuilderConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIISanityCheck/VtxSeedGeneratorConfig
 VertexGeometryCheck VertexGeometryCheck ./configfiles/PhaseIISanityCheck/VertexGeometryCheckConfig
