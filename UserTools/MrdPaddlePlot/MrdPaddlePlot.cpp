@@ -1,8 +1,8 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "MrdPaddlePlot.h"
 #include "TCanvas.h"
-#include "TGeoManager.h"
 #ifdef GOT_EVE
+#include "TGeoManager.h"
 #include "TEveLine.h"
 #include "TGLViewer.h"
 #endif
@@ -106,6 +106,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		mrdPaddlePlotApp = new TApplication("mrdPaddlePlotApp",&myargc,myargv);
 	}
 	
+#ifdef GOT_GEO
 	if(drawGdmlOverlay){
 		// Import the gdml geometry for the detector:
 		TGeoManager::Import(gdmlpath.c_str());
@@ -120,6 +121,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		// A canvas for other MRD track stats plots: TODO decouple from gdml
 		mrdTrackCanv = new TCanvas("mrdTrackCanv","mrdTrackCanv",canvwidth,canvheight);
 	}
+#endif
 	
 	// Get a pointer to the TClonesArray filled by FindMrdTracks
 	//m_data->CStore.Get("MrdSubEventTClonesArray",thesubeventarray);
@@ -323,6 +325,7 @@ bool MrdPaddlePlot::Execute(){
 			//cout<<"track "<<thetracki<<" started at ("<<sttv->X()<<", "<<sttv->Y()<<", "<<sttv->Z()<<")"
 			//	<<" and ended at ("<<stpv->X()<<", "<<stpv->Y()<<", "<<stpv->Z()<<")"<<endl;
 			
+#ifdef GOT_EVE
 			// If gdml track overlay is being drawn, construct the TEveLine for this track
 			if(drawGdmlOverlay){
 				// ONLY to overlay on gdml plot, we need to shift tracks to the same gdml coordinate system!
@@ -336,7 +339,6 @@ bool MrdPaddlePlot::Execute(){
 									 pep->Y()-buildingoffset.Y(),
 									 pep->Z()-buildingoffset.Z());
 				
-#ifdef GOT_EVE
 				if(verbosity>2) cout<<"adding track "<<thetracki<<" to event display"<<endl;
 				TEveLine* evl = new TEveLine("track1",2);
 				evl->SetLineWidth(4);
@@ -356,7 +358,6 @@ bool MrdPaddlePlot::Execute(){
 					//if(abs(pep->X())>450.) earlyexit=true;
 				}
 				thiseventstracks.push_back(evl);
-#endif
 				numtracksdrawn++;
 				//if(numtracksdrawn>100) earlyexit=true;
 				
@@ -371,14 +372,15 @@ bool MrdPaddlePlot::Execute(){
 //				thetrack.DrawReco(thesubevent->imgcanvas, thesubevent->trackarrows, thistrackscolour, thesubevent->paddlepointers);
 //				thetrack.DrawFit(thesubevent->imgcanvas, thesubevent->trackfitarrows, fittrackscolour);
 			}
+#endif
 			
 			if(earlyexit) break;
 		} // end loop over tracks
 		
 		// if gdml overlay is being drawn, draw it here
+#ifdef GOT_EVE
 		if(drawGdmlOverlay){
 			gdmlcanv->cd();
-#ifdef GOT_EVE
 			for(TEveLine* aline : thiseventstracks){
 				//cout<<"drawing track at "<<aline<<" from ("<<aline->GetLineStart().fX
 				//<<", "<<aline->GetLineStart().fY<<", "<<aline->GetLineStart().fZ<<") to ("
@@ -386,10 +388,10 @@ bool MrdPaddlePlot::Execute(){
 				//<<endl;
 				aline->Draw();
 			}
-#endif
 			gdmlcanv->Update();
 			//gEve->Redraw3D(kTRUE);
 		}
+#endif
 		
 		if(drawPaddlePlot){
 			if(verbosity>2) cout<<"Drawing paddle plot"<<endl;
@@ -426,7 +428,7 @@ bool MrdPaddlePlot::Execute(){
 		
 		//gSystem->ProcessEvents();
 		//gPad->WaitPrimitive();
-		if(enableTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
+		//if(enableTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
 		
 		//if(earlyexit) break;
 	} // end loop over subevents
@@ -449,6 +451,7 @@ bool MrdPaddlePlot::Finalise(){
 		<<numtankmisses<<" would not intercept the tank through back projection."<<endl;
 	
 	// make summary plots
+#ifdef GOT_EVE
 	if(drawGdmlOverlay){  // TODO separate this from GDML overlay
 		// FIXME: Why not being saved???
 		std::string imgname;
@@ -563,10 +566,15 @@ bool MrdPaddlePlot::Finalise(){
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
 		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
 	}
+#endif
 	
 	if(enableTApplication){
 		// cleanup track drawing TApplication
 		gSystem->ProcessEvents();
+		if(mrdTrackCanv) delete mrdTrackCanv;
+		if(gdmlcanv) delete gdmlcanv;
+		std::vector<TH1*> histos {hnumsubevs, hnumtracks, hrun, hevent, hmrdsubev, htrigger, hnumhclusters, hnumvclusters, hnumhcells, hnumvcells, hpaddleids, hpaddleinlayeridsh, hpaddleinlayeridsv, hdigittimes, hhangle, hhangleerr, hvangle, hvangleerr, htotangle, htotangleerr, henergyloss, henergylosserr, htracklength, htrackpen, htrackpenvseloss, htracklenvseloss, htrackstart, htrackstop, hpep};
+		for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=0; }
 		delete mrdPaddlePlotApp;
 	}
 	

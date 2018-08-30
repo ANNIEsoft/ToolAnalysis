@@ -85,43 +85,43 @@ class MrdPaddlePlot: public Tool {
 	bool enableTApplication;
 	bool drawPaddlePlot;
 	bool drawGdmlOverlay;
-	TApplication* mrdPaddlePlotApp;
+	TApplication* mrdPaddlePlotApp=nullptr;
 	
-	TCanvas* gdmlcanv;
-	TCanvas* mrdTrackCanv;
+	TCanvas* gdmlcanv=nullptr;
+	TCanvas* mrdTrackCanv=nullptr;
 	TClonesArray* thesubeventarray;  // retrieve from track finder
 	std::vector<TEveLine*> thiseventstracks;
 	
 	// Summary histograms on tracks found
-	TH1F* hnumsubevs;
-	TH1F* hnumtracks;
-	TH1F* hrun;
-	TH1F* hevent;
-	TH1F* hmrdsubev;
-	TH1F* htrigger;
-	TH1F* hnumhclusters;
-	TH1F* hnumvclusters;
-	TH1F* hnumhcells;
-	TH1F* hnumvcells;
-	TH1F* hpaddleids;
-	TH1F* hpaddleinlayeridsh;
-	TH1F* hpaddleinlayeridsv;
-	TH1D* hdigittimes;
-	TH1F* hhangle;
-	TH1F* hhangleerr;
-	TH1F* hvangle;
-	TH1F* hvangleerr;
-	TH1F* htotangle;
-	TH1F* htotangleerr;
-	TH1F* henergyloss;
-	TH1F* henergylosserr;
-	TH1F* htracklength;
-	TH1F* htrackpen;
-	TH2F* htrackpenvseloss;
-	TH2F* htracklenvseloss;
-	TH3D* htrackstart;
-	TH3D* htrackstop;
-	TH3D* hpep;
+	TH1F* hnumsubevs=nullptr;
+	TH1F* hnumtracks=nullptr;
+	TH1F* hrun=nullptr;
+	TH1F* hevent=nullptr;
+	TH1F* hmrdsubev=nullptr;
+	TH1F* htrigger=nullptr;
+	TH1F* hnumhclusters=nullptr;
+	TH1F* hnumvclusters=nullptr;
+	TH1F* hnumhcells=nullptr;
+	TH1F* hnumvcells=nullptr;
+	TH1F* hpaddleids=nullptr;
+	TH1F* hpaddleinlayeridsh=nullptr;
+	TH1F* hpaddleinlayeridsv=nullptr;
+	TH1D* hdigittimes=nullptr;
+	TH1F* hhangle=nullptr;
+	TH1F* hhangleerr=nullptr;
+	TH1F* hvangle=nullptr;
+	TH1F* hvangleerr=nullptr;
+	TH1F* htotangle=nullptr;
+	TH1F* htotangleerr=nullptr;
+	TH1F* henergyloss=nullptr;
+	TH1F* henergylosserr=nullptr;
+	TH1F* htracklength=nullptr;
+	TH1F* htrackpen=nullptr;
+	TH2F* htrackpenvseloss=nullptr;
+	TH2F* htracklenvseloss=nullptr;
+	TH3D* htrackstart=nullptr;
+	TH3D* htrackstop=nullptr;
+	TH3D* hpep=nullptr;
 	
 };
 
