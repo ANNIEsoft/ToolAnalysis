@@ -2,7 +2,9 @@
 #include "MrdPaddlePlot.h"
 #include "TCanvas.h"
 #include "TGeoManager.h"
+#ifdef GOT_EVE
 #include "TEveLine.h"
+#endif
 #include "TGLViewer.h"
 #include <thread>         // std::this_thread::sleep_for
 #include <chrono>         // std::chrono::seconds
@@ -230,8 +232,10 @@ bool MrdPaddlePlot::Execute(){
 	int numtracksdrawn=0;
 	int numtracksrunningtot=0;
 	// clear the track lines from the last event before adding new ones
+#ifdef GOT_EVE
 	if(verbosity>2) cout<<"deleting TEveLines"<<endl;
 	for(TEveLine* aline : thiseventstracks){ delete aline; }
+#endif
 	thiseventstracks.clear();
 	
 	if(verbosity>2) cout<<"Printing "<<numsubevs<<" MRD subevents in event "<<EventNumber<<endl;
@@ -332,6 +336,7 @@ bool MrdPaddlePlot::Execute(){
 									 pep->Y()-buildingoffset.Y(),
 									 pep->Z()-buildingoffset.Z());
 				
+#ifdef GOT_EVE
 				if(verbosity>2) cout<<"adding track "<<thetracki<<" to event display"<<endl;
 				TEveLine* evl = new TEveLine("track1",2);
 				evl->SetLineWidth(4);
@@ -351,6 +356,7 @@ bool MrdPaddlePlot::Execute(){
 					//if(abs(pep->X())>450.) earlyexit=true;
 				}
 				thiseventstracks.push_back(evl);
+#endif
 				numtracksdrawn++;
 				//if(numtracksdrawn>100) earlyexit=true;
 				
@@ -372,6 +378,7 @@ bool MrdPaddlePlot::Execute(){
 		// if gdml overlay is being drawn, draw it here
 		if(drawGdmlOverlay){
 			gdmlcanv->cd();
+#ifdef GOT_EVE
 			for(TEveLine* aline : thiseventstracks){
 				//cout<<"drawing track at "<<aline<<" from ("<<aline->GetLineStart().fX
 				//<<", "<<aline->GetLineStart().fY<<", "<<aline->GetLineStart().fZ<<") to ("
@@ -379,6 +386,7 @@ bool MrdPaddlePlot::Execute(){
 				//<<endl;
 				aline->Draw();
 			}
+#endif
 			gdmlcanv->Update();
 			//gEve->Redraw3D(kTRUE);
 		}
