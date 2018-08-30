@@ -35,7 +35,7 @@ private:
 	
 	// Variables stored in Config file
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	int verbose=1;
+	int verbosity=1;
 	int minimumdigits;
 	double maxsubeventduration;
 	std::string outputdir="";
@@ -72,9 +72,13 @@ private:
 	TBranch* subeventsinthiseventb=0;
 	TClonesArray* SubEventArray=0;
 	
+	// For saving to the BoostStore to pass between Tools
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::vector<BoostStore>* theMrdTracks;
+	
 	// For Debug Drawing Tracks During Looping
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	bool DEBUG_DRAW_MRD_TRACKS;
+	bool DrawTruthTracks;
 	std::vector<MCParticle>* MCParticles=nullptr;
 	TApplication* mrdTrackDrawApp;
 };

@@ -20,8 +20,6 @@
 #include "WCSimRootGeom.hh"
 #include "WCSimRootOptions.hh"
 
-#define SINGLE_TREE    // TODO TODO TODO TODO shouldn't need this define
-
 using namespace std;
 
 class wcsimT {
@@ -44,6 +42,7 @@ public :
    WCSimRootGeom      *wcsimrootgeom=nullptr;
    WCSimRootOptions   *wcsimrootopts=nullptr;
    
+   // TODO implement a verbosity arg
    int             verbose=1;
 
    // List of branches
@@ -77,42 +76,26 @@ wcsimT::wcsimT(TTree *tree) : fChain(0)
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
-#ifdef SINGLE_TREE
-   // The following code should be used if you want this class to access
-   // a single tree instead of a chain
-   // TODO implement a verbosity arg
+   TFile* f=nullptr; 
    TTree* geotree=nullptr;
    TTree* optstree=nullptr;
-   TFile *f=nullptr;
-   if (tree == 0) {
-      f = (TFile*)gROOT->GetListOfFiles()->FindObject("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root");
-      if (!f || !f->IsOpen()) {
-         f = new TFile("/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root");
-      }
-      if(!f){ cerr<<"no wcsim file to load"<<endl; return; }
-      f->GetObject("wcsimT",tree);
-   } else {
-      f = tree->GetCurrentFile();
-   }
-   f->GetObject("wcsimGeoT",geotree);
-   f->GetObject("wcsimRootOptionsT",optstree);
-   if(verbose) cout<<"constructed wcsimT class with file "<<f->GetName()<<endl;
-#else // not SINGLE_TREE
-   // The following code should be used if you want this class to access a chain of trees.
    if(tree == 0) {
+/*
       TChain * chain = new TChain("wcsimT","");
       std::string pattern="/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.*.root";  // TODO TODO TODO make this an argument
       if(verbose) cout<<"creating chain from files "<<pattern<<endl;
       chain->Add(pattern.c_str());
       tree = chain;
+*/
+      cerr<<"wcsimT constructed in Chain mode with null TChain!"<<endl;
+      return;
+   } else {
+     LoadTree(0); // need to load the tree from first file
+     f = tree->GetCurrentFile();
    }
-   LoadTree(0); // need to load the tree for the first file
-   TFile* f = tree->GetCurrentFile();
-   TTree* geotree=nullptr;
-   TTree* optstree=nullptr;
    f->GetObject("wcsimGeoT",geotree);
    f->GetObject("wcsimRootOptionsT",optstree);
-#endif // SINGLE_TREE
+   if(verbose) cout<<"constructed wcsimT class from TChain within files "<<f->GetName()<<endl;
    
    Init(tree, geotree, optstree);
 }
