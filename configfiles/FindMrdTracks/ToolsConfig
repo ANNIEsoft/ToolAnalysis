@@ -2,5 +2,5 @@ myLoadWCSim LoadWCSim ./configfiles/FindMrdTracks/LoadWCSimConfig
 #myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/FindMrdTracks/LoadWCSimLAPPDConfig
 #myPrintANNIEEvent PrintANNIEEvent ./configfiles/FindMrdTracks/PrintANNIEEventConfig
 myFindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
-#myMrdTrackPlotter MrdPaddlePlot ./configfiles/FindMrdTracks/PlotMrdTracksConfig
+myMrdTrackPlotter MrdPaddlePlot ./configfiles/FindMrdTracks/PlotMrdTracksConfig
 

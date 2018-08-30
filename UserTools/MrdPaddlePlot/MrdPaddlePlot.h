@@ -8,6 +8,11 @@
 #include "TClonesArray.h"
 #include "MRDSubEventClass.hh"      // a class for defining subevents
 #include "MRDTrackClass.hh"         // a class for defining MRD tracks
+// for drawing
+#include "TApplication.h"
+#include "TSystem.h"
+//#include "TEveLine.h"
+class TEveLine;
 
 class MrdPaddlePlot: public Tool {
 
@@ -23,18 +28,42 @@ class MrdPaddlePlot: public Tool {
 
 	// Variables stored in Config file
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	int verbose=1;
+	int verbosity=1;
 	std::string gdmlpath;
 	bool saveimages;
+	const char* plotDirectory;  // where to save images and plots
 	
 	// Variables from ANNIEEVENT
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~
-	std::string MCFile;      //-> currentfilestring
+	std::string MCFile;     //-> currentfilestring
 	uint32_t RunNumber;     // -> runnum     (keep as the type is different: TODO align types)
 	uint32_t SubrunNumber;  // -> subrunnum  ( " " )
 	uint32_t EventNumber;   // -> eventnum   ( " " )
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass 
+	
+	// Variables from MRDTracks BoostStore
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::vector<BoostStore>* theMrdTracks; // the actual tracks
+	uint16_t MrdTrackID;
+	uint16_t MrdSubEventID;
+	bool InterceptsTank;
+	double StartTime;
+	Position StartVertex;
+	Position StopVertex;
+	double TrackAngle;
+	double TrackAngleError;
+	std::vector<int> LayersHit;
+	double TrackLength;
+	bool IsMrdPenetrating;
+	bool IsMrdStopped;
+	bool IsMrdSideExit;
+	double PenetrationDepth;
+	double HtrackFitChi2;
+	double HtrackFitCov;
+	double VtrackFitChi2;
+	double VtrackFitCov;
+	std::vector<int> PMTsHit;
 	
 	// MRD TRACK DRAWING
 	// ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,8 +77,20 @@ class MrdPaddlePlot: public Tool {
 	int numtankintercepts=0;
 	int numtankmisses=0;
 	
+	// we need to subtract the an offset to draw TEveLines over gdml
+	Position buildingoffset;
+	
+	bool printTracks;
+	bool printTClonesTracks;
+	bool enableTApplication;
+	bool drawPaddlePlot;
+	bool drawGdmlOverlay;
+	TApplication* mrdPaddlePlotApp;
+	
 	TCanvas* gdmlcanv;
+	TCanvas* mrdTrackCanv;
 	TClonesArray* thesubeventarray;  // retrieve from track finder
+	std::vector<TEveLine*> thiseventstracks;
 	
 	// Summary histograms on tracks found
 	TH1F* hnumsubevs;
@@ -81,34 +122,6 @@ class MrdPaddlePlot: public Tool {
 	TH3D* htrackstart;
 	TH3D* htrackstop;
 	TH3D* hpep;
-	
-	TCanvas c2;
-	TCanvas c3;
-	TCanvas c4;
-	TCanvas c5;
-	TCanvas c6;
-	TCanvas c7;
-	TCanvas c8;
-	TCanvas c9;
-	TCanvas c10;
-	TCanvas c11;
-	TCanvas c12;
-	TCanvas c13;
-	TCanvas c14;
-	TCanvas c15;
-	TCanvas c16;
-	TCanvas c17;
-	TCanvas c18;
-	TCanvas c19;
-	TCanvas c20;
-	TCanvas c21;
-	TCanvas c22;
-	TCanvas c23;
-	TCanvas c24;
-	TCanvas c25;
-	TCanvas c26;
-	TCanvas c27;
-	TCanvas c28;
 	
 };
 
