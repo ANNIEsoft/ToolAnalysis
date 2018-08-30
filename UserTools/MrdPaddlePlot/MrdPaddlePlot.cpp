@@ -4,8 +4,8 @@
 #include "TGeoManager.h"
 #ifdef GOT_EVE
 #include "TEveLine.h"
-#endif
 #include "TGLViewer.h"
+#endif
 #include <thread>         // std::this_thread::sleep_for
 #include <chrono>         // std::chrono::seconds
 #include <time.h>         // clock_t, clock, CLOCKS_PER_SEC
