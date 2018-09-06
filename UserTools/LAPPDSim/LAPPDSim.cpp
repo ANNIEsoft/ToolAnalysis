@@ -62,7 +62,7 @@ bool LAPPDSim::Execute(){
       // and input them in 5 channels
 
       LAPPDHit ahit = mchits.at(j);
-      double atime = ahit.GetTpsec();
+      double atime = ahit.GetTime()*1000.;
       pulsetimes.push_back(atime) ;
       vector<double> localpos = ahit.GetLocalPosition();  //SD
       double trans = localpos.at(1);         //SD

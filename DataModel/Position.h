@@ -29,7 +29,7 @@ class Position : public SerialisableObject{
 	}
 	
 	bool Print(){
-		Print(true);
+		return Print(true);
 	}
 	
 	bool operator==(const Position &a) const {

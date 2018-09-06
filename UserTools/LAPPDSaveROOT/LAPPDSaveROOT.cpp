@@ -100,7 +100,7 @@ LAPPDTree->Branch("PulseNum",&PulseNum);
     if(tempPulse.GetChannelID()==0)
     {
       ampCH1=LAPPDHitPulses.at(i).GetPeak();
-      tpsecCH1=LAPPDHitPulses.at(i).GetTpsec();
+      tpsecCH1=LAPPDHitPulses.at(i).GetTime()*1000.;
       chrgCH1=LAPPDHitPulses.at(i).GetCharge();
        std::cout<<"Amp 1 "<<ampCH1<<endl;
        std::cout<<"Tpsec 1 "<<tpsecCH1<<endl;
@@ -109,7 +109,7 @@ LAPPDTree->Branch("PulseNum",&PulseNum);
      if(tempPulse.GetChannelID()==1)
     {
       ampCH2=LAPPDHitPulses.at(i).GetPeak();
-      tpsecCH2=LAPPDHitPulses.at(i).GetTpsec();
+      tpsecCH2=LAPPDHitPulses.at(i).GetTime()*1000.;
       chrgCH2=LAPPDHitPulses.at(i).GetCharge();
       std::cout<<"Amp 2 "<<ampCH2<<endl;
  std::cout<<"Tpsec 2 " <<tpsecCH2<<endl;
@@ -118,7 +118,7 @@ LAPPDTree->Branch("PulseNum",&PulseNum);
     if(tempPulse.GetChannelID()==2)
     {
       ampCH3=LAPPDHitPulses.at(i).GetPeak();
-      tpsecCH3=LAPPDHitPulses.at(i).GetTpsec();
+      tpsecCH3=LAPPDHitPulses.at(i).GetTime()*1000.;
       chrgCH3=LAPPDHitPulses.at(i).GetCharge();
       std::cout<<"Amp 3 "<<ampCH3<<endl;
  std::cout<<"Tpsec 3 "<<tpsecCH3<<endl;
@@ -194,11 +194,11 @@ LAPPDTree->Branch("PulseNum",&PulseNum);
 
         if(channelno>=0&&channelno<NChannel){
             hAmp[channelno]->Fill(thepulse.GetPeak());
-            hTime[channelno]->Fill(thepulse.GetTpsec());
+            hTime[channelno]->Fill(thepulse.GetTime()*1000.);
         }
 
         chno=channelno;
-        cfdtime=thepulse.GetTpsec();
+        cfdtime=thepulse.GetTime()*1000.;
         amp=thepulse.GetPeak();
         twidth=(thepulse.GetHiRange()-thepulse.GetLowRange())*Deltat;
         outtree->Fill();
