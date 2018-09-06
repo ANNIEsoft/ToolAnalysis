@@ -17,10 +17,6 @@
 #include "TTree.h"
 #include "TClonesArray.h"
 
-// for drawing
-#include "TApplication.h"
-#include "TSystem.h"
-
 class FindMrdTracks: public Tool {
 	
 public:
@@ -80,7 +76,6 @@ private:
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	bool DrawTruthTracks;
 	std::vector<MCParticle>* MCParticles=nullptr;
-	TApplication* mrdTrackDrawApp;
 };
 
 

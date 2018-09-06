@@ -87,7 +87,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 		digixpos = new TH1D("digixpos","digixpos",100,-2,2);
 		digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
 		digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
-		digits = new TH1D("digits","digits",100,0,50);
+		digits = new TH1D("digits","digits",100,triggeroffset-50,triggeroffset+100);
 	}
 	
 	return true;
@@ -126,10 +126,9 @@ bool LoadWCSimLAPPD::Execute(){
 							  <<" LAPPD hits that weren't in the first trigger window"<<endl;
 			for(int hiti=0; hiti<unassignedhits.size(); hiti++){
 				LAPPDHit nexthit = unassignedhits.at(hiti);
-				TimeClass thehitstime = nexthit.GetTime();
-				uint64_t thehitstimens = thehitstime.GetNs();
-				if( thehitstimens>(wcsimtriggertime+pretriggerwindow) &&
-					thehitstimens<(wcsimtriggertime+posttriggerwindow) ){
+				double relativedigitst = nexthit.GetTime(); // relative to Trigger time
+				if( (relativedigitst)>(pretriggerwindow) &&
+					(relativedigitst)<(posttriggerwindow) ){
 					// this lappd hit is within the trigger window; note it
 					ChannelKey key(subdetector::LAPPD,nexthit.GetTubeId());
 					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
@@ -224,45 +223,40 @@ bool LoadWCSimLAPPD::Execute(){
 				
 				// calculate relative time within trigger
 				double digitst  = LAPPDEntry->lappdhit_stripcoort->at(runningcount);
-				double relativedigitst=digitst+triggeroffset-wcsimtriggertime; // unused
+				double relativedigitst=digitst+triggeroffset-wcsimtriggertime;
 				
-				// LAPPD time is split into a ns and ps component: trim off ps part:
-				uint64_t digitstns = floor(digitst);
-				double digitstps = (digitst- digitstns)*1000.;
-				double digittime(digitstns); // absolute time
 				float digiq = 0; // N/A
 				ChannelKey key(subdetector::LAPPD,LAPPDID);
 				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
-				//LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
+				//LAPPDHit nexthit(LAPPDID, digitst, digiq, globalpos, localpos);
 				if(DEBUG_DRAW_LAPPD_HITS){
 					lappdhitshist->SetNextPoint(digitsx,digitsz, digitsy);
 					digixpos->Fill(digitsx);
 					digiypos->Fill(digitsy);
 					digizpos->Fill(digitsz);
-					digits->Fill(digittime+(digitstps/1000.));
+					digits->Fill(relativedigitst);
 				}
 				
 				// we now have all the necessary info about this LAPPD hit:
 				// check if it falls within the current trigger window
 				if(verbose>4){
-					cout<<"LAPPD hit time is "<<digitstns<<"ns, triggertime is "<<wcsimtriggertime
+					cout<<"LAPPD hit time is "<<relativedigitst<<" [ns], triggertime is "<<wcsimtriggertime
 						<<", giving window ("<<(wcsimtriggertime+pretriggerwindow)
 						<<"), ("<<(wcsimtriggertime+posttriggerwindow)<<")"<<endl;
 				}
-				if( digitstns>(wcsimtriggertime+pretriggerwindow) && 
-					digitstns<(wcsimtriggertime+posttriggerwindow) ){
+				if( relativedigitst>(pretriggerwindow) && 
+					relativedigitst<(posttriggerwindow) ){
 					if(MCLAPPDHits->count(key)==0){
-						LAPPDHit nexthit(LAPPDID, digittime, digiq, globalpos, localpos, digitstps);
+						LAPPDHit nexthit(LAPPDID, relativedigitst, digiq, globalpos, localpos);
 						MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 					} else {
-						MCLAPPDHits->at(key).emplace_back(LAPPDID, digittime, digiq, globalpos,
-													localpos, digitstps);
+						MCLAPPDHits->at(key).emplace_back(LAPPDID, relativedigitst, digiq,
+															globalpos, localpos);
 					}
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(LAPPDID, digittime, digiq, globalpos,
-													localpos, digitstps);
+					unassignedhits.emplace_back(LAPPDID, relativedigitst, digiq, globalpos, localpos);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event

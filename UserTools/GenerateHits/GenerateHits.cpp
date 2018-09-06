@@ -25,19 +25,17 @@ bool GenerateHits::Execute(){
   int TubeID =0;
   std::vector<double> pos;
   std::vector<double> relpos;
-  double ptime,Q;
-  double tc;
+  double tc,Q;
 
   // MC truth hit 1
-  ptime = 50;
   Q=1.;
   pos.push_back(10.);
   pos.push_back(5.);
   pos.push_back(0.);
   relpos.push_back(10.);
   relpos.push_back(5.);
-  tc = 1;
-  LAPPDHit ahit1(TubeID,tc,Q,pos,relpos,ptime);
+  tc = 1.050;
+  LAPPDHit ahit1(TubeID,tc,Q,pos,relpos);
 
   // clear vectors
   pos.clear();
@@ -45,15 +43,14 @@ bool GenerateHits::Execute(){
 
 /*
   // MC truth hit 2
-  ptime = 140.;
+  tc = 1.140;
   Q=1.;
   pos.push_back(20.);
   pos.push_back(10.);
   pos.push_back(0.);
   relpos.push_back(20.);
   relpos.push_back(10.);
-  tc.SetNs(1);
-  LAPPDHit ahit2(TubeID,tc,Q,pos,relpos,ptime);
+  LAPPDHit ahit2(TubeID,tc,Q,pos,relpos);
 */
 
   vector<LAPPDHit> hits;
