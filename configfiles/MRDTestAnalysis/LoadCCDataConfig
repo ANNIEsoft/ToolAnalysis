@@ -1,0 +1,4 @@
+# LoadCCData config file
+verbose 10
+FileList ./ccdatafiles
+
