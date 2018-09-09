@@ -1,0 +1,22 @@
+
+# if we have pre-processed data we can re-load the store with
+#load_annieevent LoadANNIEEvent configfiles/MRDTestAnalysis/LoadANNIEEventConfig
+# this could be useful to re-load PMTData when testing CCData Loading
+
+# steven's tools for PMT, Trigger and Timing Data. Keep the order. 
+raw_loader       RawLoader        configfiles/MRDTestAnalysis/RawLoaderConfig
+adc_calibrator   ADCCalibrator    configfiles/MRDTestAnalysis/ADCCalibratorConfig
+adc_hit_finder   ADCHitFinder     configfiles/MRDTestAnalysis/ADCHitFinderConfig
+
+# we only need to run the BeamFetcher once - it downloads the database file
+# it may be best to run the toolchain with just this tool the first time
+#beam_fetcher     BeamFetcher      configfiles/MRDTestAnalysis/BeamFetcherConfig
+# subsequent runs of the ToolChain can use the BeamChecker
+beam_checker    BeamChecker      configfiles/MRDTestAnalysis/BeamCheckerConfig
+
+
+# the star of the show
+myLoadCCData     LoadCCData       configfiles/MRDTestAnalysis/LoadCCDataConfig
+
+# save the data so we can use LoadANNIEEvent next time
+#mySaveANNIEEvent SaveANNIEEvent   configfiles/MRDTestAnalysis/SaveANNIEEventConfig
