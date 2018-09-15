@@ -16,6 +16,12 @@ annie::HeftyTreeReader::HeftyTreeReader(
   set_branch_addresses();
 }
 
+annie::HeftyTreeReader::HeftyTreeReader(TChain* inputChain) : hefty_db_chain_("heftydb")
+{
+  hefty_db_chain_.Add(inputChain);
+  set_branch_addresses();
+}
+
 void annie::HeftyTreeReader::set_branch_addresses() {
   hefty_db_chain_.SetBranchAddress("SequenceID", &br_SequenceID_);
   hefty_db_chain_.SetBranchAddress("Time", br_Time_.data());
