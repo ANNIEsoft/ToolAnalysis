@@ -1,6 +1,8 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 
 #include "LoadCCData.h"
+#include "PMTData.h"
+#include "MRDTree.h"
 #include <limits>
 //#include <unordered_map>
 //#include <algorithm>
@@ -29,7 +31,7 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbose",verbosity);
 	Log("LoadCCData Tool: Initializing Tool LoadCCData",v_message,verbosity);
 	
-	std::string filelist;
+	std::string filelist, alignmentfiles;
 	m_variables.Get("FileList",filelist);
 	m_variables.Get("AlignmentFileList",alignmentfiles);
 	m_variables.Get("UseHeftyTimes",useHeftyTimes);
@@ -62,11 +64,11 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	// =====================================
 	// 1. Load files from the file list
 	std::string line;
-	std::vector<std::string> filelist;
+	std::vector<std::string> filevector;
 	ifstream myfile (filelist.c_str());
 	if (myfile.is_open()){
 		while ( getline (myfile,line) ){
-			filelist.push_back(line);
+			filevector.push_back(line);
 		}
 		myfile.close();
 	} else {
@@ -79,7 +81,7 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	// but "MRDData" in post-processed files (e.g. V6DataR889S0p0T5Sep_25_1650.root).
 	// In either case the tree formats are the same, so the Tool should work on both.
 	// Use the first file in the list to determine the file type:
-	TFile* tempfile = TFile::Open(filelist.front().c_str());
+	TFile* tempfile = TFile::Open(filevector.front().c_str());
 	bool hasccdata = tempfile->GetListOfKeys()->Contains("CCData");
 	bool hasmrddata = tempfile->GetListOfKeys()->Contains("MRDData");
 	tempfile->Close();
@@ -92,7 +94,7 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 		return false;
 	}
 	// add the files to the TChain
-	for(std::string afile : filelist){
+	for(std::string afile : filevector){
 		Log("LoadCCData Tool: Loading file "+line,v_message,verbosity);
 		int filesadded = MRDChain->Add(afile.c_str());
 		Log(to_string(filesadded)+" files added to Chain",v_debug,verbosity);
@@ -135,8 +137,8 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// 3. Construct a Reader class from the TChain
-	if(not useHeftyTimes){ thePMTData   = new         PMTData(ADCTimestampChain); }
-	else                 { theHeftyData = new HeftyTreeReader(ADCTimestampChain); }
+	if(not useHeftyTimes){ thePMTData   = new                PMTData(ADCTimestampChain); }
+	else                 { theHeftyData = new annie::HeftyTreeReader(ADCTimestampChain); }
 	NumADCEntries = ADCTimestampChain->GetEntries();
 	ADCChainEntry=0;
 	
@@ -181,7 +183,7 @@ bool LoadCCData::Execute(){
 	// Use the presence/absence of HeftyInfo to check if we're reading Hefty data
 	
 	// Load the ADC info
-	std::vector<uint64_t> currentminibufts;
+	std::vector<unsigned long long> currentminibufts;
 	HeftyInfo* eventheftyinfo=nullptr;
 	get_ok = m_data->Stores["ANNIEEvent"]->Get("HeftyInfo",eventheftyinfo);
 	if(not get_ok){
@@ -227,7 +229,7 @@ bool LoadCCData::Execute(){
 	// Load all matching TDC hits into the ANNIEEvent
 	PerformMatching(currentminibufts);
 	
-	return fillok;
+	return true;
 }
 
 bool LoadCCData::Finalise(){
@@ -240,18 +242,18 @@ bool LoadCCData::Finalise(){
 	return true;
 }
 
-bool PerformMatching(std::vector<uint64_t> currentminibufts){
+bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibufts){
 	// scan the TDC data and return all hits matching the current minibuffers
 	
 	// loop over minibuffers in this Execute() iteration
 	for(int minibufi=0; minibufi<currentminibufts.size(); minibufi++){
 		// get this minibuffer's timestamp
-		uint64_t theminibufferTS = currentminibufts.at(minibufi);
+		unsigned long long theminibufferTS = currentminibufts.at(minibufi);
 		
 		// get the next minibuffer's timestamp. In the event that this is the last
 		// minibuffer of the current readout, we need to use the timestamp of the 
 		// first minibuffer from the next readout
-		uint64_t thenextminibufferTS;
+		unsigned long long thenextminibufferTS;
 		if((minibufi+1)<currentminibufts.size()){
 			thenextminibufferTS = currentminibufts.at(minibufi+1);
 		} else {
@@ -291,7 +293,7 @@ bool PerformMatching(std::vector<uint64_t> currentminibufts){
 					if(tubeid==std::numeric_limits<uint32_t>::max()){
 						// no matching PMT. This was not an MRD / FACC paddle hit.
 						Log("LoadCCData Tool: Ignoring hit on Slot " + to_string(MRDData->Slot->at(hiti))
-							+ ", Channel " + to_string(MRDData->Channel->at(hiti) + ", no matching MRD / FACC PMT",
+							+ ", Channel " + to_string(MRDData->Channel->at(hiti)) + ", no matching MRD / FACC PMT",
 							v_debug,verbosity);
 						continue;
 					}
@@ -332,29 +334,37 @@ bool PerformMatching(std::vector<uint64_t> currentminibufts){
 			
 		} while (true); // end of do loop looking for matching TDC readouts
 		
-	}
+	} // end loop over minibuffers in this Execute()
+	
+	return true;
+}
 
 bool LoadCCData::LoadPMTDataEntries(){
 	
 	if(ADCChainEntry!=NumADCEntries){
 		
 		// Load more ADC Data
-		if(UsePMTDataTimestamps){
+		if(useHeftyTimes){
 			// if using Raw PMTData tree, we'll use the annie:RawCard class
 			// to convert the timestamps to a useable format
 			Long64_t pentry = thePMTData->LoadTree(ADCChainEntry);
 			thePMTData->GetEntry(pentry);
-			std::vector<uint64_t> minibufTS = ConvertTimeStamps(  thePMTData->LastSync
-											thePMTData->StartTimeSec
-											thePMTData->StartTimeNSec
-											thePMTData->StartCount
-											thePMTData->TriggerCounts );
+			// n.b. PMTData::TriggerCounts is an array of size PMTData::TriggerNumber
+			// but annie::RawCard takes TriggerCounts as a vector
+			std::vector<unsigned long long> TriggerCountsAsVector(thePMTData->TriggerCounts, 
+				thePMTData->TriggerCounts + thePMTData->TriggerNumber);
+			std::vector<uint64_t> minibufTS = ConvertTimeStamps(
+												thePMTData->LastSync,
+												thePMTData->StartTimeSec,
+												thePMTData->StartTimeNSec,
+												thePMTData->StartCount,
+												TriggerCountsAsVector );
 			nextreadoutfirstminibufstart = minibufTS.front();
 		} else {
 			// if using the heftydb tree, we can just get the timestamps
 			// in a usable format directly
 			std::unique_ptr<HeftyInfo> entryinfo = theHeftyData->next();
-			nextreadoutfirstminibufstart = theHeftyData.time(0);
+			nextreadoutfirstminibufstart = entryinfo->time(0);
 		}
 		
 		// note that we've read this set of timestamps

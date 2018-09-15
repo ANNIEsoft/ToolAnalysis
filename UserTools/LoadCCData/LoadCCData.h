@@ -6,10 +6,10 @@
 #include <iostream>
 
 #include "Tool.h"
-//#include "PMTData.h"
-//#include "TrigData.h"
-//#include "RunInformation.h"
-#include "MRDTree.h"
+class PMTData;
+class MRDTree;
+//class TrigData;
+//class RunInformation;
 
 class LoadCCData: public Tool {
 
@@ -61,7 +61,7 @@ private:
 	int TriggerNumber;
 	
 	// alternatively variables for the HeftyReader class
-	HeftyTreeReader* theHeftyData = nullptr;
+	annie::HeftyTreeReader* theHeftyData = nullptr;
 	
 	// ANNIEEvent variables
 	std::map<ChannelKey,std::vector<std::vector<Hit>>>* TDCData=nullptr;
@@ -74,6 +74,10 @@ private:
 	std::string logmessage;
 	int get_ok;
 	
+	bool LoadPMTDataEntries();
+	bool PerformMatching(std::vector<unsigned long long> currentminibufts);
+	std::vector<uint64_t> ConvertTimeStamps(unsigned long long LastSync, int StartTimeSec, 
+		int StartTimeNSec, unsigned long long StartCount, std::vector<unsigned long long> TriggerCounts);
 	uint32_t TubeIdFromSlotChannel(unsigned int slot, unsigned int channel);
 	// map that converts TDC camac slot + channel to the corresponding MRD tube ID
 	// tubeID is a 6-digit ID of XXYYZZ.
