@@ -26,6 +26,7 @@ namespace annie {
       // the constructors may contain wildcards.
       HeftyTreeReader(const std::string& file_name);
       HeftyTreeReader(const std::vector<std::string>& file_names);
+      HeftyTreeReader(TChain* inputChain);
 
       // Retrieve the next annie::HeftyInfo object from the input file(s)
       std::unique_ptr<HeftyInfo> next();

@@ -1,4 +1,18 @@
 # LoadCCData config file
 verbose 10
-FileList ./ccdatafiles
 
+# text file containing list of CCData files to be used for TDC hits
+FileList configfiles/MRDTestAnalysis/ccdatafiles
+
+# whether to use corrected times for ADC timestamps or the raw PMTData files
+UseHeftyTimes 1
+
+# file with corrected minibuffer times
+AlignmentFileList configfiles/MRDTestAnalysis/ccalignmentfiles
+
+# PMT Data files used for times. May be raw OR post-processed
+#AlignmentFileList configfiles/MRDTestAnalysis/ccdatafiles
+
+## we should consolidate paths with other tools config files:
+## ccdatafiles and hefty timing files should be the same as those
+## passed to RawLoaderConfig file.

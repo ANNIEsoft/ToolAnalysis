@@ -34,6 +34,7 @@ class HeftyInfo : public SerialisableObject {
     inline long long t_since_beam(size_t mb) const
       { return t_since_beam_.at(mb); }
     inline bool more() const { return more_; }
+    inline std::vector<unsigned long long> all_times() const { return time_; }
 
     inline virtual bool Print() override {
       std::cout << "SequenceID = " << sequence_id_ << '\n';
