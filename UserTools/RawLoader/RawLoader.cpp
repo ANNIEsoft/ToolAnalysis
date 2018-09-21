@@ -143,6 +143,7 @@ bool RawLoader::Initialise(const std::string config_file, DataModel& data)
   // TODO: allow for multiple input files in the same run
   std::string input_file_name;
   m_variables.Get("InputFile", input_file_name);
+  m_data->CStore.Set("InputFile",input_file_name); // for other tools
 
   int verbosity;
   m_variables.Get("verbose", verbosity);
@@ -162,11 +163,13 @@ bool RawLoader::Initialise(const std::string config_file, DataModel& data)
   //m_using_hefty_mode = m_variables.Has("HeftyTimingFile");
   std::string dummy_str;
   m_using_hefty_mode = m_variables.Get("HeftyTimingFile", dummy_str);
+  m_data->CStore.Set("UsingHeftyMode",m_using_hefty_mode); // for other tools
   if ( m_using_hefty_mode ) {
 
     std::string hefty_timing_filename;
     bool got_timing_file = m_variables.Get("HeftyTimingFile",
       hefty_timing_filename);
+    m_data->CStore.Set("HeftyTimingFile",hefty_timing_filename); // for other tools
 
     if ( !got_timing_file ) {
       Log("ERROR: Failed to retrieve Hefty timing file name", 0, verbosity);

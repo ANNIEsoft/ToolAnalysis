@@ -4,12 +4,17 @@
 
 #include <string>
 #include <iostream>
-
+#include <fstream>
 #include "Tool.h"
 class PMTData;
 class MRDTree;
 //class TrigData;
 //class RunInformation;
+
+// for drawing
+class TApplication;
+class TCanvas;
+class TH1D;
 
 class LoadCCData: public Tool {
 
@@ -50,6 +55,9 @@ private:
 	Long64_t NumADCEntries;
 	TChain* ADCTimestampChain;
 	uint64_t nextreadoutfirstminibufstart;
+	std::vector<uint64_t> minibufTS=std::vector<uint64_t>{};      // minibuffer times taken from the alignment files
+	std::vector<uint64_t> nextminibufTs=std::vector<uint64_t>{};  // next event's minibuffer times " " files
+	uint64_t maxtimediff;
 	
 	// relevant variables in PMTData class
 	PMTData* thePMTData=nullptr;
@@ -82,6 +90,31 @@ private:
 	// map that converts TDC camac slot + channel to the corresponding MRD tube ID
 	// tubeID is a 6-digit ID of XXYYZZ.
 	static std::map<uint16_t,std::string> slotchantopmtid;
+	
+	// for debug drawing
+	bool DEBUG_DRAW_TDC_HITS;
+	TApplication* tdcRootDrawApp;
+	TCanvas* tdcRootCanvas;
+	TH1D *hTDCHitTimes, *hTDCTimeDiffs;
+	
+	TFile* tdcDebugRootFileOut=nullptr;
+	TTree* tdcDebugTreeOut=nullptr;
+	UInt_t camacslot;
+	UInt_t camacchannel;
+	UInt_t mrdpmtxnum, mrdpmtynum, mrdpmtznum;
+	Long64_t mrdtimeinreadout;
+	UInt_t mrdreadoutindex;
+	ULong64_t mrdreadouttime;
+	UInt_t adcreadoutindex;
+	UInt_t adcminibufferinreadout;
+	UInt_t adcminibufferindex;
+	ULong64_t adcminibuffertime;
+	Long64_t tdcadctimediff;
+	UInt_t tdcnumhitsthismb;
+	UInt_t tdchitnum;
+	
+	std::ofstream debugtimesdump;
+	uint32_t ExecuteIteration;
 	
 //	uint32_t oldest_adc_timestamp;
 //	uint16_t oldest_adc_timestamp_set;

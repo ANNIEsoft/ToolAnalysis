@@ -3,7 +3,15 @@
 #include "LoadCCData.h"
 #include "PMTData.h"
 #include "MRDTree.h"
+
+#include "TROOT.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TSystem.h"
+#include "TFile.h"
+
 #include <limits>
+#include <time.h>
 //#include <unordered_map>
 //#include <algorithm>
 
@@ -17,7 +25,9 @@ LoadCCData::LoadCCData():Tool(){}
 
 namespace {
 	constexpr uint64_t MRD_NS_PER_SAMPLE=4;
-	constexpr uint64_t ms_to_ns = 1000000;         // needed for TDC to convert timestamps to ns
+	constexpr uint64_t MS_TO_NS = 1000000;         // needed for TDC to convert timestamps to ns
+	constexpr uint64_t FIVE_HRS_IN_MS = 18000000;  // MRD timezone is off, so timestamps are off by 5 hours
+	constexpr uint64_t NS_TO_SECONDS = 1000000000;
 }
 
 bool LoadCCData::Initialise(std::string configfile, DataModel &data){
@@ -27,54 +37,72 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	//m_variables.Print();
 	
 	m_data= &data; //assigning transient data pointer
-	// XXX Cannot run Log before we've retrieved m_data!! XXX 
+	// XXX Cannot run Log before we've retrieved m_data!! XXX
 	m_variables.Get("verbose",verbosity);
 	Log("LoadCCData Tool: Initializing Tool LoadCCData",v_message,verbosity);
 	
-	std::string filelist, alignmentfiles;
-	m_variables.Get("FileList",filelist);
-	m_variables.Get("AlignmentFileList",alignmentfiles);
-	m_variables.Get("UseHeftyTimes",useHeftyTimes);
+	// get the files being processed for retrieving the CCData
+	std::string events_file;
+	get_ok = m_data->CStore.Get("InputFile",events_file);
+	if(not get_ok){
+		Log("LoadCCData Tool: No InputFile in CStore, expected to be loaded by RawLoader Tool",
+			v_error,verbosity);
+		return false;
+	}
+	cout<<"events_file="<<events_file<<endl;
 	
-	std::string filetype;
-	m_variables.Get("FileType",filetype); // should be "raw" or "postprocessed"
-	/////////////////////////////////////////////////////////////////
+	// files used for minibuffer timestamps need to be the same as those loaded by upstream tools
+	// to correctly map them.
+	std::string timing_file;
+	get_ok = m_data->CStore.Get("UsingHeftyMode",useHeftyTimes);
+	if(not get_ok){
+		Log("LoadCCData Tool: No UsingHeftyMode in CStore, expected to be loaded by RawLoader Tool",
+			v_error,verbosity);
+		return false;
+	}
+	if(useHeftyTimes) m_data->CStore.Get("HeftyTimingFile",timing_file);
+	else timing_file = events_file;
+	cout<<"timing_file="<<timing_file<<endl;
 	
-	// Make the ANNIEEvent Store if it doesn't exist
-	// =============================================
+	// maximum time difference for a match
+	get_ok = m_variables.Get("MaxTimeDiff",maxtimediff);
+	if(not get_ok) maxtimediff=std::numeric_limits<uint64_t>::max(); // no limit
+	
+	// check if making debug files
+	m_variables.Get("DrawDebugGraphs",DEBUG_DRAW_TDC_HITS);
+	
+	// Check the ANNIEEvent Store exists
+	// =================================
 	int annieeventexists = m_data->Stores.count("ANNIEEvent");
-	logmessage="LoadCCData Tool: ";
-	logmessage += (annieeventexists) ? "Loading ANNIEEvent Store" : "Creating ANNIEEvent Store";
-	Log(logmessage,v_debug,verbosity);
-	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
+	if(annieeventexists==0){
+		Log("LoadCCData Tool: No ANNIEEvent, expected to be loaded by RawLoader Tool",
+			v_error,verbosity);
+		return false;
+	}
 	
 	// ANNIEEvent TDC hit storage
 	// ==========================
 	TDCData = new std::map<ChannelKey, std::vector<std::vector<Hit>>>;
 	
-//	// fill the map with some empty containers - why? Need to remove TDCData->clear() if using this
-//	for(std::pair<uint16_t,std::string>& apmtit : slotchantopmtid){  // iterate over the map of PMTs
-//		std::string stringPMTID = apmtit.second;
-//		uint32_t tubeid = stoi(stringPMTID);
-//		ChannelKey key(subdetector::TDC,tubeid);
-//		TDCData.emplace_back(key,std::vector<std::vector<Hit>> avec{});
-//	}
-	
 	// Prepare the CC Data files for Reading
 	// =====================================
 	// 1. Load files from the file list
-	std::string line;
 	std::vector<std::string> filevector;
-	ifstream myfile (filelist.c_str());
-	if (myfile.is_open()){
-		while ( getline (myfile,line) ){
-			filevector.push_back(line);
-		}
-		myfile.close();
-	} else {
-		Log("LoadCCData Tool: Error: Bad CCData filename!",v_error,verbosity);
-		return false;
-	}
+	// 'filelist' was originally read from LoadCCDataConfig, and is the path to a file in which each line
+	// is a file to process. Since we need to load the same files as upstream, it's better not to have
+	// to specify files twice, but upstream doesn't provide support for processing multiple files....yet.
+//	std::string line;
+//	ifstream myfile (filelist.c_str());
+//	if (myfile.is_open()){
+//		while ( getline (myfile,line) ){
+//			filevector.push_back(line);
+//		}
+//		myfile.close();
+//	} else {
+//		Log("LoadCCData Tool: Error: Bad CCData filename!",v_error,verbosity);
+//		return false;
+//	}
+	filevector.push_back(events_file);
 	
 	// 2 : Construct the TChain
 	// tree name is "CCData" in RAW files (e.g. DataR900S4p0.root),
@@ -95,7 +123,7 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	}
 	// add the files to the TChain
 	for(std::string afile : filevector){
-		Log("LoadCCData Tool: Loading file "+line,v_message,verbosity);
+		Log("LoadCCData Tool: Loading file "+afile,v_message,verbosity);
 		int filesadded = MRDChain->Add(afile.c_str());
 		Log(to_string(filesadded)+" files added to Chain",v_debug,verbosity);
 	}
@@ -123,20 +151,28 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	
 	// 2. Load files from the file list into the TChain
 	Log("LoadCCData Tool: Loading files for timestamp alignment",v_message,verbosity);
-	myfile.open(alignmentfiles.c_str());
-	if (myfile.is_open()){
-		while ( getline (myfile,line) ){
-			Log("LoadCCData Tool: Loading file "+line+" for PMTData",v_debug,verbosity);
-			int filesadded = ADCTimestampChain->Add(line.c_str());
-			Log(to_string(filesadded)+" files added to alignment Chain",v_debug,verbosity);
-		}
-		myfile.close();
-	} else {
-		Log("LoadCCData Tool: Error: Bad alignment filename "+line+"!",v_error,verbosity);
-		return false;
-	}
+	// as per the CCData file list, a list of hefty_timing files was given via an
+	// 'alignmentfiles' file, passed in via LoadCCDataConfig
+//	myfile.open(alignmentfiles.c_str());
+//	if (myfile.is_open()){
+//		while ( getline (myfile,line) ){
+//			Log("LoadCCData Tool: Loading file "+line+" for PMTData",v_debug,verbosity);
+//			int filesadded = ADCTimestampChain->Add(line.c_str());
+//			Log(to_string(filesadded)+" files added to alignment Chain",v_debug,verbosity);
+//		}
+//		myfile.close();
+//	} else {
+//		Log("LoadCCData Tool: Error: Bad alignment filename "+line+"!",v_error,verbosity);
+//		return false;
+//	}
+	Log("LoadCCData Tool: Loading file "+timing_file+" for PMTData",v_debug,verbosity);
+	int filesadded = ADCTimestampChain->Add(timing_file.c_str());
+	Log(to_string(filesadded)+" files added to alignment Chain",v_debug,verbosity);
 	
 	// 3. Construct a Reader class from the TChain
+	logmessage = "LoadCCData Tool: Aligning CCData timestamps with ";
+	logmessage += ((useHeftyTimes) ? "HeftyData timestamps" : "PMTData timestamps");
+	Log(logmessage,v_debug,verbosity);
 	if(not useHeftyTimes){ thePMTData   = new                PMTData(ADCTimestampChain); }
 	else                 { theHeftyData = new annie::HeftyTreeReader(ADCTimestampChain); }
 	NumADCEntries = ADCTimestampChain->GetEntries();
@@ -147,17 +183,57 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	Log("LoadCCData Tool: Loading entry "+to_string(TDCChainEntry),v_debug,verbosity);
 	Long64_t mentry = MRDData->LoadTree(TDCChainEntry);
 	if(mentry < 0){
-		Log("LoadCCData Tool: Ran off end of TChain! Stopping ToolChain",v_warning,verbosity);
+		Log("LoadCCData Tool: Ran off end of TChain! Stopping ToolChain",v_error,verbosity);
 		if(TDCChainEntry==NumCCDataEntries) m_data->vars.Set("StopLoop",1);
 		return false;
 	} else {
-		Log("LoadCCData Tool: Getting TChain localentry" + to_string(mentry),v_debug,verbosity);
+		Log("LoadCCData Tool: Getting TChain localentry " + to_string(mentry),v_debug,verbosity);
 		MRDData->GetEntry(mentry);
 		TDCChainEntry++;
 		if(TDCChainEntry==NumCCDataEntries){
 			Log("LoadCCData Tool: Last entry in CCData TChain, stopping chain",v_message,verbosity);
 			m_data->vars.Set("StopLoop",1);
 		}
+	}
+	
+	// Pre-load the first advance ADC entry
+	///////////////////////////////////////
+	nextminibufTs.resize(2); // needs at least 2 entries
+	LoadPMTDataEntries();
+	
+	// For making debug Histograms/ROOT output file
+	///////////////////////////////////////////////
+	if(DEBUG_DRAW_TDC_HITS){
+		// create the ROOT application to show histograms
+		int myargc=0;
+		char *myargv[] = {(const char*)"somestring"};
+		tdcRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
+		hTDCHitTimes = new TH1D("hTDCHitTimes","TDC Hit Times in Readout",100,0,200);
+		hTDCTimeDiffs = new TH1D("hTDCTimeDiffs",
+			"Time Diff between TDC Readout Time and Closest Minibuffer Timestamp [ns]",100,-200000,200000);
+		
+		tdcDebugRootFileOut = new TFile("tdcDebugRootFileOut.root","RECREATE");
+		tdcDebugRootFileOut->cd();
+		tdcDebugTreeOut = new TTree("tdcDebugTree","Debug Info of TDC Alignment");
+		tdcDebugTreeOut->Branch("CamacSlot",&camacslot);
+		tdcDebugTreeOut->Branch("CamacChannel",&camacchannel);
+		tdcDebugTreeOut->Branch("MRDPMTXNum",&mrdpmtxnum);
+		tdcDebugTreeOut->Branch("MRDPMTYNum",&mrdpmtynum);
+		tdcDebugTreeOut->Branch("MRDPMTZNum",&mrdpmtznum);
+		tdcDebugTreeOut->Branch("MRDTimeInReadout",&mrdtimeinreadout);
+		tdcDebugTreeOut->Branch("MRDReadoutIndex",&mrdreadoutindex);
+		tdcDebugTreeOut->Branch("MRDReadoutTime",&mrdreadouttime);
+		tdcDebugTreeOut->Branch("ADCReadoutIndex",&adcreadoutindex);
+		tdcDebugTreeOut->Branch("ADCMinibufferInReadout",&adcminibufferinreadout);
+		tdcDebugTreeOut->Branch("ADCMinibufferIndex",&adcminibufferindex); // flattened minibuffer numbers
+		tdcDebugTreeOut->Branch("ADCMinibufferTime",&adcminibuffertime);
+		tdcDebugTreeOut->Branch("TDCADCTimeDiff",&tdcadctimediff);
+		tdcDebugTreeOut->Branch("TDCHitNum",&tdchitnum);
+		gROOT->cd();
+		
+		if(useHeftyTimes) debugtimesdump.open("debugheftytimes.csv"); // dump minibuf timestamps to file
+		else              debugtimesdump.open("debugrawtimes.csv");
+		ExecuteIteration=0;
 	}
 	
 	return true;
@@ -167,8 +243,8 @@ bool LoadCCData::Execute(){
 	
 	Log("LoadCCData Tool: Executing",v_debug,verbosity);
 	
-	/* 
-	On each Execute() call, we should load the ANNIEEvent with any TDC hits matching each of the 
+	/*
+	On each Execute() call, we should load the ANNIEEvent with any TDC hits matching each of the
 	40 ADC minibuffers currently being processed.
 	We assume both streams of timestamps increase monotonically, and that we start processing from
 	the start of the chain. We then check if a TDC timestamp better matches this ADC timestamp or the next.
@@ -184,13 +260,12 @@ bool LoadCCData::Execute(){
 	
 	// Load the ADC info
 	std::vector<unsigned long long> currentminibufts;
-	HeftyInfo* eventheftyinfo=nullptr;
+	HeftyInfo eventheftyinfo;
 	get_ok = m_data->Stores["ANNIEEvent"]->Get("HeftyInfo",eventheftyinfo);
 	if(not get_ok){
 		// Non-Hefty mode
 		Log("LoadCCData Tool: ANNIEEvent had no HeftyInfo - assuming non-Hefty data",v_warning,verbosity);
 		//m_data->Stores["ANNIEEvent"]->Print(false);
-		eventheftyinfo=nullptr;
 		std::vector<TimeClass> mb_timestamps; // 1-element vector
 		get_ok = m_data->Stores["ANNIEEvent"]->Get("MinibufferTimestamps", mb_timestamps);
 		if(not get_ok){
@@ -203,25 +278,26 @@ bool LoadCCData::Execute(){
 		currentminibufts.emplace_back(mb_timestamps.front().GetNs());
 	} else {
 		// Hefty Mode
-		// CCData tree is 'flattened' relative to Hefty data - 
+		// CCData tree is 'flattened' relative to Hefty data -
 		// each readout corresponds to a single minibuffer, but we process multiple minibuffers
-		// simultaneously. We'll need an internal loop to read as many TDCData entries 
+		// simultaneously. We'll need an internal loop to read as many TDCData entries
 		// as there are minibuffers in each ADC Readout.
-		currentminibufts = eventheftyinfo->all_times();
-		int numminibuffers = eventheftyinfo->num_minibuffers();
+		Log("Getting HeftyInfo times",v_debug,verbosity);
+		currentminibufts = eventheftyinfo.all_times();
+		int numminibuffers = eventheftyinfo.num_minibuffers();
 		if(currentminibufts.size()!=numminibuffers){
 			Log("LoadCCData Tool: HeftyInfo mismatch between num minibuffers "
-				+ to_string(numminibuffers) + "and size of returned times vector " 
+				+ to_string(numminibuffers) + "and size of returned times vector "
 				+ to_string(currentminibufts.size()),v_error,verbosity);
 		}
 	}
 	
-	logmessage = "LoadCCData Tool: first minibuffer time = " + to_string(currentminibufts.front());
-	if(currentminibufts.size()>1){
-		logmessage += ", last minibuffer [" + to_string(currentminibufts.size()) + "] at time " + 
-						to_string(currentminibufts.back());
-	}
-	Log(logmessage,v_debug,verbosity);
+//	logmessage = "LoadCCData Tool: first minibuffer time = " + to_string(currentminibufts.front());
+//	if(currentminibufts.size()>1){
+//		logmessage += ", last minibuffer [" + to_string(currentminibufts.size()) + "] at time " +
+//						to_string(currentminibufts.back());
+//	}
+//	Log(logmessage,v_debug,verbosity);
 	
 	// Also load the next ADCData entry, so we have access to the first timestamp from the upcoming event
 	LoadPMTDataEntries();
@@ -229,11 +305,41 @@ bool LoadCCData::Execute(){
 	// Load all matching TDC hits into the ANNIEEvent
 	PerformMatching(currentminibufts);
 	
+	ExecuteIteration++;
 	return true;
 }
 
 bool LoadCCData::Finalise(){
 	Log("LoadCCData Tool: Finalizing Tool",v_message,verbosity);
+	
+	if(DEBUG_DRAW_TDC_HITS){
+		tdcDebugRootFileOut->Write("",TObject::kOverwrite);
+		
+		Double_t canvwidth = 700;
+		Double_t canvheight = 600;
+		tdcRootCanvas = new TCanvas("tdcRootCanvas","tdcRootCanvas",canvwidth,canvheight);
+		tdcRootCanvas->SetWindowSize(canvwidth,canvheight);
+		tdcRootCanvas->cd();
+		
+		hTDCHitTimes->Draw();
+		tdcRootCanvas->Update();
+		tdcRootCanvas->SaveAs("HitTimeInReadout.png");
+		
+		hTDCTimeDiffs->Draw();
+		tdcRootCanvas->Update();
+		tdcRootCanvas->SaveAs("TimeDiffToClosestMinibuf.png");
+		
+		// cleanup
+		tdcDebugTreeOut->ResetBranchAddresses();
+		tdcDebugRootFileOut->Close();
+		delete tdcDebugRootFileOut;
+		delete tdcRootCanvas;
+		delete hTDCHitTimes;
+		delete hTDCTimeDiffs;
+		delete tdcRootDrawApp;
+		
+		debugtimesdump.close();
+	}
 	
 	if(MRDData) delete MRDData;
 	if(thePMTData) delete thePMTData;
@@ -249,68 +355,256 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 	for(int minibufi=0; minibufi<currentminibufts.size(); minibufi++){
 		// get this minibuffer's timestamp
 		unsigned long long theminibufferTS = currentminibufts.at(minibufi);
+		if(theminibufferTS==0){
+			Log("Event Minibuffer Time Is 0!",v_warning,verbosity);
+		}
 		
 		// get the next minibuffer's timestamp. In the event that this is the last
-		// minibuffer of the current readout, we need to use the timestamp of the 
+		// minibuffer of the current readout, we need to use the timestamp of the
 		// first minibuffer from the next readout
 		unsigned long long thenextminibufferTS;
 		if((minibufi+1)<currentminibufts.size()){
 			thenextminibufferTS = currentminibufts.at(minibufi+1);
+			if(thenextminibufferTS==0){
+				//Log("Event Next Minibuffer Time Is 0!",v_warning,verbosity); // don't report twice
+			}
 		} else {
 			thenextminibufferTS = nextreadoutfirstminibufstart;
+		}
+		
+		// check for non-monotonic increase of timestamps. If ADC timestamps go backwards
+		// it screws up our check, so we need to discard the sample
+		if(thenextminibufferTS<theminibufferTS){
+			// get the next next minibuffer, to see where it lies
+			uint64_t nextnextminibufferTS;
+			if((minibufi+2)<currentminibufts.size()){
+				nextnextminibufferTS = currentminibufts.at(minibufi+2);
+			} else if(thenextminibufferTS!=nextreadoutfirstminibufstart){
+				nextnextminibufferTS=nextreadoutfirstminibufstart;
+			} else {
+				nextnextminibufferTS=nextminibufTs.at(1);
+			}
+			
+			if(thenextminibufferTS!=0){  // zero timestamps are reported separately
+				logmessage="LoadCCData Tool: Non-monotonic increase of ADC timestamps!";
+				if((minibufi+1)<currentminibufts.size()){
+					logmessage+= " Minibuffer "+to_string(minibufi+1);
+				} else {
+					logmessage+= " First minibuffer from next readout";
+				}
+				logmessage+=" is earlier than minibuffer "+to_string(minibufi)+"/"
+					  + to_string(currentminibufts.size())+"!";
+				Log(logmessage,v_warning,verbosity);
+				
+				if(not (verbosity<v_debug)){
+					// convert to readable format to print some human readable checks
+					uint64_t rounded_seconds = static_cast<uint64_t>(floor(theminibufferTS/NS_TO_SECONDS));
+					time_t rawtime = rounded_seconds;
+					uint64_t mb_remaining_ns = theminibufferTS - rounded_seconds*NS_TO_SECONDS;
+					struct tm * ptm;               // time structure from which components can be retrieved
+					ptm = gmtime(&rawtime);        // fill timestructure with UTC time
+					struct tm tm_mb = tm(*ptm);    // the struct filled by gmtime is internal, so gets overridden
+										           // by subsequent calls. We need to make a copy.
+					
+					rounded_seconds = static_cast<uint64_t>(floor(thenextminibufferTS/NS_TO_SECONDS));
+					rawtime = rounded_seconds;
+					uint64_t nmb_remaining_ns = thenextminibufferTS - rounded_seconds*NS_TO_SECONDS;
+					ptm = gmtime(&rawtime);
+					struct tm tm_nmb = tm(*ptm);
+					
+					rounded_seconds = static_cast<uint64_t>(floor(nextnextminibufferTS/NS_TO_SECONDS));
+					rawtime = rounded_seconds;
+					uint64_t nnmb_remaining_ns = nextnextminibufferTS - rounded_seconds*NS_TO_SECONDS;
+					ptm = gmtime(&rawtime);
+					struct tm tm_nnmb = tm(*ptm);
+					
+					int bufsize=300;
+					char logbuffer[bufsize];
+					int discardedcharcount = snprintf(logbuffer, bufsize,
+						"this minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu), "
+						"next minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu), "
+						"next next minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu)",
+						tm_mb.tm_year+1900,tm_mb.tm_mon,tm_mb.tm_mday,tm_mb.tm_hour,tm_mb.tm_min,
+							tm_mb.tm_sec,mb_remaining_ns,theminibufferTS,
+						tm_nmb.tm_year+1900,tm_nmb.tm_mon,tm_nmb.tm_mday,tm_nmb.tm_hour,tm_nmb.tm_min,
+							tm_nmb.tm_sec,nmb_remaining_ns,thenextminibufferTS,
+						tm_nnmb.tm_year+1900,tm_nnmb.tm_mon,tm_nnmb.tm_mday,tm_nnmb.tm_hour,tm_nnmb.tm_min,
+							tm_nnmb.tm_sec,nnmb_remaining_ns,nextnextminibufferTS);
+				
+					Log(logbuffer,v_debug,verbosity);
+				} // verbosity >= debug
+			} // don't report 0 timestamps as non-monotonic
+			
+			// now how to handle this...
+			if(nextnextminibufferTS<theminibufferTS){
+				// maybe *this* timestamp is bad - the next two are both before it...
+				// skip trying to match TDC hits to this timestamp...
+				Log("Skipping attempts to match hits to this minibuffer",v_warning,verbosity);
+				continue;
+			} else {
+				// try to skip the next timestamp
+				thenextminibufferTS = nextnextminibufferTS;
+				Log("using nextnextminibufferTS as thenextminibufferTS",v_debug,verbosity);
+			}
 		}
 		
 		// scan forward from last matched TDC sample,
 		// looking for all TDC samples that match this minibuffer better than the next
 		// (we assume both time series increase monotonically)
+		bool endoftdctchain=false;
 		do{
 			// the last TDC entry we loaded didn't match the previous minibuffer
 			// so we have a TDC entry pre-loaded
 			
 			// 1. Get the TDC readout start time
 			ULong64_t MRDTimeStamp = MRDData->TimeStamp; // in unix ms - need to convert ms to ns
-			TimeClass MRDEventTime = TimeClass(static_cast<uint64_t>(MRDTimeStamp*ms_to_ns));
-			logmessage = "LoadCCData Tool: TDC readout [" + to_string(MRDData->Trigger) 
-						 + "] at time " + to_string(MRDEventTime.GetNs());
-			Log(logmessage,v_debug,verbosity);                     // XXX
+			TimeClass MRDEventTime = TimeClass(static_cast<uint64_t>((MRDTimeStamp+FIVE_HRS_IN_MS)*MS_TO_NS));
+			
+			//logmessage = "LoadCCData Tool: TDC readout [" + to_string(MRDData->Trigger)
+			//			 + "] at time " + to_string(MRDEventTime.GetNs());
+			//Log(logmessage,v_debug,verbosity);
 			
 			// Compare this TDC readout time with the current and next minibuffer time.
 			// if it better fits this minibuffer time, we'll call it a match
-			if(abs(theminibufferTS - MRDEventTime.GetNs()) < abs(thenextminibufferTS - MRDEventTime.GetNs())){
-				// it's a match!
-				
-				// Add all the hits in this readout to the TDC hits matching the minibuffer
-				UInt_t numhitsthisevent = MRDData->OutNumber;
-				Log("LoadCCData Tool: Looping over "+to_string(numhitsthisevent)+" TDC hits",v_debug,verbosity);
-				
-				for(int hiti=0; hiti<numhitsthisevent; hiti++){
+			// need to put the result into a signed type before we can take abs!
+			int64_t time_to_this_mb = theminibufferTS - MRDEventTime.GetNs();
+			int64_t time_to_next_mb = thenextminibufferTS - MRDEventTime.GetNs();
+			
+			if(abs(time_to_this_mb) < abs(time_to_next_mb)){
+				if(abs(time_to_this_mb)<maxtimediff){
+					// it's a match!
 					
-					//convert time since TDC Timestamp from ticks to ns
-					double hit_time_ns = static_cast<double>(MRDData->Value->at(hiti)) / MRD_NS_PER_SAMPLE;
-					
-					// Get the MRD PMT ID plugged into this TDC Card + Channel
-					uint32_t tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
-					if(tubeid==std::numeric_limits<uint32_t>::max()){
-						// no matching PMT. This was not an MRD / FACC paddle hit.
-						Log("LoadCCData Tool: Ignoring hit on Slot " + to_string(MRDData->Slot->at(hiti))
-							+ ", Channel " + to_string(MRDData->Channel->at(hiti)) + ", no matching MRD / FACC PMT",
-							v_debug,verbosity);
-						continue;
+					if(not (verbosity<v_debug)){
+						// convert to readable format
+						uint64_t rounded_seconds = static_cast<uint64_t>(floor(MRDEventTime.GetNs()/NS_TO_SECONDS));
+						time_t rawtime = rounded_seconds;
+						uint64_t mrd_remaining_ns = MRDEventTime.GetNs() - rounded_seconds*NS_TO_SECONDS;
+						struct tm * ptm;               // time structure from which components can be retrieved
+						ptm = gmtime(&rawtime);        // fill timestructure with UTC time
+						struct tm tm_mrd = tm(*ptm);   // the struct filled by gmtime is internal and overwritten
+													   // by subsequent calls. We need to make a copy.
+						
+						rounded_seconds = static_cast<uint64_t>(floor(theminibufferTS/NS_TO_SECONDS));
+						rawtime = rounded_seconds;
+						uint64_t mb_remaining_ns = theminibufferTS - rounded_seconds*NS_TO_SECONDS;
+						ptm = gmtime(&rawtime);
+						struct tm tm_mb = tm(*ptm);
+						
+						rounded_seconds = static_cast<uint64_t>(floor(thenextminibufferTS/NS_TO_SECONDS));
+						rawtime = rounded_seconds;
+						uint64_t nmb_remaining_ns = thenextminibufferTS - rounded_seconds*NS_TO_SECONDS;
+						ptm = gmtime(&rawtime);
+						
+						int bufsize=300;
+						char logbuffer[bufsize];
+						int discardedcharcount = snprintf(logbuffer, bufsize,
+							"matched TDC readout at %d/%d/%d %d:%d:%d.%09llu (%llu) "
+							"to minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu), "
+							"c.f. next minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu)",
+							tm_mrd.tm_year+1900,tm_mrd.tm_mon,tm_mrd.tm_mday,tm_mrd.tm_hour,tm_mrd.tm_min,
+								tm_mrd.tm_sec,mrd_remaining_ns,MRDEventTime.GetNs(),
+							tm_mb.tm_year+1900,tm_mb.tm_mon,tm_mb.tm_mday,tm_mb.tm_hour,tm_mb.tm_min,
+								tm_mb.tm_sec,mb_remaining_ns,theminibufferTS,
+							ptm->tm_year+1900,ptm->tm_mon,ptm->tm_mday,ptm->tm_hour,ptm->tm_min,
+								ptm->tm_sec,nmb_remaining_ns,thenextminibufferTS);
+						Log(logbuffer,v_debug,verbosity);
 					}
-					ChannelKey key(subdetector::TDC,tubeid);
 					
-					// construct the hit in the ANNIEEvent TDCData
-					// Hit nexthit(tubeid, hit_time_ns, -1.); // charge = -1, not recorded
-					if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<std::vector<Hit>>{});
-					TDCData->at(key).at(minibufi).emplace_back(tubeid, hit_time_ns, -1.);
-					logmessage  = "LoadCCData Tool: Hit on tube " + to_string(tubeid);
-					logmessage += " at " + to_string(hit_time_ns) + " ns relative to TDC readout time";
-					Log(logmessage,v_debug,verbosity);
+					// Add all the hits in this readout to the TDC hits matching the minibuffer
+					UInt_t numhitsthisevent = MRDData->OutNumber;
+					Log("LoadCCData Tool: Looping over "+to_string(numhitsthisevent)+" TDC hits",v_debug,verbosity);
 					
-				} // end loop over hits this TDC readout
+					int usedhiti=0; // since trigger hits are skipped
+					for(int hiti=0; hiti<numhitsthisevent; hiti++){
+						
+						// Get the MRD PMT ID plugged into this TDC Card + Channel
+						uint32_t tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
+						if(tubeid==std::numeric_limits<uint32_t>::max()){
+							// no matching PMT. This was not an MRD / FACC paddle hit.
+							// mostly hits on the last channel of the TDC card, to trigger readout
+							
+							if(MRDData->Channel->at(hiti)!=31){  // last channel is used to trigger TDC readout
+								Log("LoadCCData Tool: Ignoring hit on Slot " + to_string(MRDData->Slot->at(hiti))
+									+ ", Channel " + to_string(MRDData->Channel->at(hiti))
+									+ ", no matching MRD / FACC PMT", v_warning,verbosity);
+							}
+							continue;
+						}
+						ChannelKey key(subdetector::TDC,tubeid);
+						
+						//convert time since TDC Timestamp from ticks to ns
+						double hit_time_ns = static_cast<double>(MRDData->Value->at(hiti)) / MRD_NS_PER_SAMPLE;
+						
+						// construct the hit in the ANNIEEvent TDCData
+						// Hit nexthit(tubeid, hit_time_ns, -1.); // charge = -1, not recorded
+						logmessage  = "LoadCCData Tool: Hit on tube " + to_string(tubeid);
+						logmessage += " at " + to_string(hit_time_ns) + " ns relative to TDC readout time";
+						Log(logmessage,v_debug,verbosity);
+						
+						if(TDCData->count(key)==0){
+							TDCData->emplace(key, std::vector<std::vector<Hit>>(currentminibufts.size()));
+						}
+						TDCData->at(key).at(minibufi).emplace_back(tubeid, hit_time_ns, -1.);
+						
+						if(DEBUG_DRAW_TDC_HITS){
+							// fill debug histograms
+							if(usedhiti==0) hTDCTimeDiffs->Fill(time_to_this_mb);
+							hTDCHitTimes->Fill(hit_time_ns);
+							// fill debug ROOT tree
+							camacslot=MRDData->Slot->at(hiti);
+							camacchannel=MRDData->Channel->at(hiti);
+							mrdpmtxnum=floor(tubeid/10000);
+							mrdpmtznum=tubeid-(100*floor(tubeid/100));
+							mrdpmtynum=(tubeid-(10000*mrdpmtxnum)-mrdpmtznum)/100;
+							mrdtimeinreadout=hit_time_ns;
+							mrdreadoutindex=TDCChainEntry;
+							mrdreadouttime=MRDEventTime.GetNs();
+							adcreadoutindex=ADCChainEntry;
+							adcminibufferinreadout=minibufi;
+							adcminibufferindex=(ADCChainEntry*currentminibufts.size())+minibufi;
+							adcminibuffertime=theminibufferTS;
+							tdcadctimediff=time_to_this_mb;
+							tdchitnum=usedhiti;
+							tdcDebugTreeOut->Fill();
+						}
+						usedhiti++;
+					} // end loop over hits this TDC readout
+				} else {
+					Log("Skipping TDC readout at "+to_string(MRDEventTime.GetNs())+" as time to closest "
+						"minibuffer time is greater than maximum difference",v_message,verbosity);
+					if(DEBUG_DRAW_TDC_HITS){
+						// add them to the debug file, so we can see what we skipped
+						UInt_t numhitsthisevent = MRDData->OutNumber;
+						int usedhiti=0; // since trigger hits are skipped
+						for(int hiti=0; hiti<numhitsthisevent; hiti++){
+							uint32_t tubeid =
+								TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
+							if(tubeid==std::numeric_limits<uint32_t>::max()){ continue; }
+							double hit_time_ns =
+								static_cast<double>(MRDData->Value->at(hiti)) / MRD_NS_PER_SAMPLE;
+							// fill debug ROOT tree
+							camacslot=MRDData->Slot->at(hiti);
+							camacchannel=MRDData->Channel->at(hiti);
+							mrdpmtxnum=floor(tubeid/10000);
+							mrdpmtznum=tubeid-(100*floor(tubeid/100));
+							mrdpmtynum=(tubeid-(10000*mrdpmtxnum)-mrdpmtznum)/100;
+							mrdtimeinreadout=hit_time_ns;
+							mrdreadoutindex=TDCChainEntry;
+							mrdreadouttime=MRDEventTime.GetNs();
+							adcreadoutindex=ADCChainEntry;
+							adcminibufferinreadout=minibufi;
+							adcminibufferindex=(ADCChainEntry*currentminibufts.size())+minibufi;
+							adcminibuffertime=theminibufferTS;
+							tdcadctimediff=time_to_this_mb;
+							tdchitnum=hiti;
+							tdcDebugTreeOut->Fill();
+							usedhiti++;
+						}
+					}
+				}
 				
-				// Load the TDC readout
-				///////////////////////
+				// Load the next TDC readout
+				////////////////////////////
 				Log("LoadCCData Tool: Loading entry "+to_string(TDCChainEntry),v_debug,verbosity);
 				Long64_t mentry = MRDData->LoadTree(TDCChainEntry);
 				if(mentry < 0){
@@ -318,21 +612,28 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 					if(TDCChainEntry==NumCCDataEntries) m_data->vars.Set("StopLoop",1);
 					return false;
 				} else {
-					Log("LoadCCData Tool: Getting TChain localentry" + to_string(mentry),v_debug,verbosity);
+					Log("LoadCCData Tool: Getting TChain localentry " + to_string(mentry),v_debug,verbosity);
 					MRDData->GetEntry(mentry);
 					TDCChainEntry++;
 					if(TDCChainEntry==NumCCDataEntries){
 						Log("LoadCCData Tool: Last entry in CCData TChain, stopping chain",v_message,verbosity);
 						m_data->vars.Set("StopLoop",1);
+						endoftdctchain=true;
 					}
 				} // next entry loaded, loop back round to compare it to this minibuffer timestamp
 				
 			} else {
 				// This TDC readout better matches the next minibuffer. End of matching TDC readouts
+				logmessage="next TDC readout better matches next minibuffer time, done matching\n"
+						   "mbTS="+to_string(theminibufferTS)+", nextmbTS="+to_string(thenextminibufferTS)
+						  +", mrdTS="+to_string(MRDEventTime.GetNs())
+						  +"\ntime_to_this_mb="+to_string(time_to_this_mb)
+						  +"\ntime_to_next_mb="+to_string(time_to_next_mb);
+				Log(logmessage,v_debug,verbosity);
 				break;
 			}
 			
-		} while (true); // end of do loop looking for matching TDC readouts
+		} while (not endoftdctchain); // end of do loop looking for matching TDC readouts
 		
 	} // end loop over minibuffers in this Execute()
 	
@@ -344,33 +645,57 @@ bool LoadCCData::LoadPMTDataEntries(){
 	if(ADCChainEntry!=NumADCEntries){
 		
 		// Load more ADC Data
-		if(useHeftyTimes){
+		//Log("LoadCCData Tool: Getting alignment entry "+to_string(ADCChainEntry)
+		//	+" in execution "+to_string(ExecuteIteration),v_debug,verbosity);
+		if(not useHeftyTimes){
 			// if using Raw PMTData tree, we'll use the annie:RawCard class
 			// to convert the timestamps to a useable format
+			
 			Long64_t pentry = thePMTData->LoadTree(ADCChainEntry);
 			thePMTData->GetEntry(pentry);
 			// n.b. PMTData::TriggerCounts is an array of size PMTData::TriggerNumber
 			// but annie::RawCard takes TriggerCounts as a vector
-			std::vector<unsigned long long> TriggerCountsAsVector(thePMTData->TriggerCounts, 
+			std::vector<unsigned long long> TriggerCountsAsVector(thePMTData->TriggerCounts,
 				thePMTData->TriggerCounts + thePMTData->TriggerNumber);
-			std::vector<uint64_t> minibufTS = ConvertTimeStamps(
-												thePMTData->LastSync,
+			//minibufTS = nextminibufTs;
+			nextminibufTs = ConvertTimeStamps(	thePMTData->LastSync,
 												thePMTData->StartTimeSec,
 												thePMTData->StartTimeNSec,
 												thePMTData->StartCount,
 												TriggerCountsAsVector );
-			nextreadoutfirstminibufstart = minibufTS.front();
+			nextreadoutfirstminibufstart = nextminibufTs.front();
+			
 		} else {
 			// if using the heftydb tree, we can just get the timestamps
 			// in a usable format directly
 			std::unique_ptr<HeftyInfo> entryinfo = theHeftyData->next();
-			nextreadoutfirstminibufstart = entryinfo->time(0);
+			if(entryinfo){
+				//minibufTS = nextminibufTs;
+				//nextminibufTs.clear();
+				//for(auto&& anentry: entryinfo->all_times()) nextminibufTs.push_back(anentry);
+				nextminibufTs.at(1)=entryinfo->time(1); // for nextnextminibufferTS
+				nextreadoutfirstminibufstart = entryinfo->time(0);
+			} else {
+				Log("theHeftyData failed to return HeftyInfo on next() call. Last entry?",v_warning,verbosity);
+			}
+			
+		}
+		
+		if(DEBUG_DRAW_TDC_HITS){
+			// dump timestamps to file for debug checking
+			debugtimesdump << ADCChainEntry <<endl;
+			for(uint64_t ats : nextminibufTs){ debugtimesdump << ats << endl; }
+			debugtimesdump << endl;
 		}
 		
 		// note that we've read this set of timestamps
 		ADCChainEntry++;
 		
-	}  // else this is the last entry in the TChain. 
+	} else {
+		// no more entries in the TChain.
+		nextreadoutfirstminibufstart = std::numeric_limits<uint64_t>::max();
+		nextminibufTs.at(1)=std::numeric_limits<uint64_t>::max();
+	}
 	
 	return true;
 }
@@ -399,19 +724,24 @@ std::vector<uint64_t> LoadCCData::ConvertTimeStamps(unsigned long long LastSync,
 
 uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int channel){
 	// map TDC Slot + Channel into a MRD PMT Tube ID
+	uint32_t tubeid=-1;
 	uint16_t slotchan = static_cast<uint16_t>(slot*100)+static_cast<uint16_t>(channel);
 	if(slotchantopmtid.count(slotchan)){
 		std::string stringPMTID = slotchantopmtid.at(slotchan);
 		int iPMTID = stoi(stringPMTID);
-		return static_cast<uint32_t>(iPMTID);
+		tubeid = static_cast<uint32_t>(iPMTID);
 	} else if(channel==31){
 		// this is the Trigger card output to force the TDCs to always fire
-		return std::numeric_limits<uint32_t>::max();
+		tubeid = std::numeric_limits<uint32_t>::max();
 	} else {
-		std::cerr<<"Unknown TDC Slot + Channel combination: "<<slotchan
-				<<", no matching MRD PMT ID!"<<endl;
-		return std::numeric_limits<uint32_t>::max();
+		//Log("Unknown TDC Slot + Channel combination: "+to_string(slotchan) // reported in use
+		//	+", no matching MRD PMT ID!",v_message,verbosity);
+		tubeid = std::numeric_limits<uint32_t>::max();
 	}
+	logmessage="LoadCCData Tool: Calculated TubeId from Slot "+to_string(slot)
+				+", channel "+to_string(channel)+" = "+to_string(tubeid);
+	//Log(logmessage,v_debug,verbosity);
+	return tubeid;
 }
 
 // PMT ID is constructed from X, Y, Z position:
@@ -504,7 +834,7 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 };
 
 
-///////////// 
+/////////////
 // MRDTesting TDC setup, part 1:
 //	std::map<uint16_t,std::string> slotchantopmtid{
 //		std::pair<uint16_t,std::string>{1423u,"000002"},
@@ -607,10 +937,10 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 //			5. Channels with a hit will have an entry created with 'Value' = clock ticks between the common
 //			   start and when the hit arrived. Channels that timed out have no entry.
 //		
-//		Timestamp is a UTC [MILLISECONDS] timestamp of when the readout ended. 
-//		To correctly map Value to an actual time one would need to match the MRD timestamp 
+//		Timestamp is a UTC [MILLISECONDS] timestamp of when the readout ended.
+//		To correctly map Value to an actual time one would need to match the MRD timestamp
 //		to the trigger card timestamp (which will be more accurate)
-//		then add Value * MRD_NS_PER_SAMPLE to the Trigger time. 
+//		then add Value * MRD_NS_PER_SAMPLE to the Trigger time.
 //		
 //		Only the first pulse will be recorded .... IS THIS OK? XXX
 //		What about pre-trigger? - common start issued by trigger is from Beam not on NDigits,

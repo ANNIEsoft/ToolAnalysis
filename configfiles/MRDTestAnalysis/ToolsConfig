@@ -12,7 +12,7 @@ adc_hit_finder   ADCHitFinder     configfiles/MRDTestAnalysis/ADCHitFinderConfig
 # it may be best to run the toolchain with just this tool the first time
 #beam_fetcher     BeamFetcher      configfiles/MRDTestAnalysis/BeamFetcherConfig
 # subsequent runs of the ToolChain can use the BeamChecker
-beam_checker    BeamChecker      configfiles/MRDTestAnalysis/BeamCheckerConfig
+#beam_checker    BeamChecker      configfiles/MRDTestAnalysis/BeamCheckerConfig
 
 
 # the star of the show
