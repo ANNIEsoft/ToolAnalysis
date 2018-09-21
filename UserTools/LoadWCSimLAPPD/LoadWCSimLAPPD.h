@@ -6,13 +6,14 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "LAPPDTree.h"
-#include "TROOT.h"
+//#include "LAPPDTree.h"
+class LAPPDTree;
+
 // for drawing
-#include "TApplication.h"
-#include "TCanvas.h"
-#include "TPolyMarker3D.h"
-#include "TSystem.h"
+class TApplication;
+class TCanvas;
+class TPolyMarker3D;
+class TH1D;
 
 class LoadWCSimLAPPD: public Tool {
 
