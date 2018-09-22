@@ -208,9 +208,9 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 		int myargc=0;
 		char *myargv[] = {(const char*)"somestring"};
 		tdcRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
-		hTDCHitTimes = new TH1D("hTDCHitTimes","TDC Hit Times in Readout",100,0,200);
+		hTDCHitTimes = new TH1D("hTDCHitTimes","TDC Hit Times in Readout",100,0,260);
 		hTDCTimeDiffs = new TH1D("hTDCTimeDiffs",
-			"Time Diff between TDC Readout Time and Closest Minibuffer Timestamp [ns]",100,-200000,200000);
+			"Time Diff between TDC Readout Time and Closest Minibuffer Timestamp [ms]",200,-2,5);
 		
 		tdcDebugRootFileOut = new TFile("tdcDebugRootFileOut.root","RECREATE");
 		tdcDebugRootFileOut->cd();
@@ -548,7 +548,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 						
 						if(DEBUG_DRAW_TDC_HITS){
 							// fill debug histograms
-							if(usedhiti==0) hTDCTimeDiffs->Fill(time_to_this_mb);
+							if(usedhiti==0) hTDCTimeDiffs->Fill(static_cast<double>(time_to_this_mb)/1000000.);
 							hTDCHitTimes->Fill(hit_time_ns);
 							// fill debug ROOT tree
 							camacslot=MRDData->Slot->at(hiti);
