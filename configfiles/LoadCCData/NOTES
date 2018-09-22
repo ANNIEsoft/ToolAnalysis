@@ -1,15 +1,14 @@
 TO change input file:
 1) it must be changed in RawLoaderConfig
-2) it must be changed in ccdatafiles file (in ToolAnalysis directory)
-3) the beam fetch times or the beamchecker file must be changed!
+AND 
+2) the beam fetch times or the beamchecker file must be changed!
 
-if using hefty mode data, you need to pass it a Hefty timing file, generated from the entire run (all subruns and parts needed) using one of jonathan's interpolation python scripts.
+if using hefty mode data, you need to pass the RawLoaderConfig a Hefty timing file, generated from the entire run (all subruns and parts needed) using one of jonathan's interpolation python scripts.
 
-moflaher: The DAQ SQL page tells me there was only one subrun, but there's 26 part files... so i can't really tell if thats as many as there were... 
-sjg: That's about the going rate if I remember correctly.
+n.b. phase 1 had about 26 part files per subrun 
 
+sjg:
 I have a bunch of pre-made timing files in `/pnfs/annie/scratch/users/gardiner/hefty_timing/`
-Which reminds me, I should move those to persistent before long
 If you want to make them yourself, here's the procedure:
 1. `cd` to a folder where you have write permission
 2. `source /cvmfs/annie.opensciencegrid.org/annietools/setup_timing.sh`

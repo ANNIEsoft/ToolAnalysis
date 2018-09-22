@@ -8,13 +8,13 @@ DrawDebugGraphs 0 # debug histograms
 
 ###### following entries redundant, retrieved from upstream Tools
 # text file containing list of CCData files to be used for TDC hits
-#FileList configfiles/MRDTestAnalysis/ccdatafiles
+#FileList configfiles/LoadCCData/ccdatafiles
 
 # whether to use corrected times for ADC timestamps or the raw PMTData files
 #UseHeftyTimes 0
 
 # file with corrected minibuffer times
-#AlignmentFileList configfiles/MRDTestAnalysis/ccalignmentfiles
+#AlignmentFileList configfiles/LoadCCData/ccalignmentfiles
 
 # PMT Data files used for times. May be raw OR post-processed
-#AlignmentFileList configfiles/MRDTestAnalysis/ccdatafiles
+#AlignmentFileList configfiles/LoadCCData/ccdatafiles
