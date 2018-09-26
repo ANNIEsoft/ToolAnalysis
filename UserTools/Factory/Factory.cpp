@@ -49,6 +49,7 @@ if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
 if (tool=="MRDPulseFinder") ret=new MRDPulseFinder;
 if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
 if (tool=="ExampleOverTool") ret=new ExampleOverTool;
+if (tool=="LoadCCData") ret=new LoadCCData;
 
 return ret;
 }

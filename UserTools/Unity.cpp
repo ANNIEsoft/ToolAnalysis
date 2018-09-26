@@ -53,3 +53,8 @@
 #include "MRDPulseFinder/MRDPulseFinder.cpp"
 #include "LAPPDAnalysis/LAPPDAnalysis.cpp"
 #include "Examples/ExampleOverTool.cpp"
+#include "LoadCCData/LoadCCData.cpp"
+#include "LoadCCData/MRDTree.cpp"
+#include "LoadCCData/PMTData.cpp"
+//#include "LoadCCData/RunInformation.cpp"
+//#include "LoadCCData/TrigData.cpp"

@@ -1,0 +1,6 @@
+# Dummy config file
+verbose 1
+#InputFile /annie/data/users/moflaher/DataR900S4p0.root
+InputFile /pnfs/annie/persistent/raw/raw/0798/RAWDataR798S0p0.root
+# if using hefty files, you need to pass a hefty timing file. See NOTES on how to make this.
+HeftyTimingFile /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/DataR798S0p0_timing.root
