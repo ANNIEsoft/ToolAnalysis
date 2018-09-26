@@ -1,6 +1,16 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 
 #include "LoadWCSimLAPPD.h"
+#include "LAPPDTree.h"
+
+// for drawing
+#include "TROOT.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TH1.h"
+#include "TPolyMarker3D.h"
+#include "TSystem.h"
+
 #include <numeric>  // iota
 
 #include <thread>          // std::this_thread::sleep_for
