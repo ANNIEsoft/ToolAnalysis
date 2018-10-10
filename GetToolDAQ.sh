@@ -133,7 +133,6 @@ then
     cd ../
 fi
 
-cd ../
 
 if [ $rootflag -eq 1 ]
 then
@@ -153,6 +152,7 @@ then
     
 fi
 
+cd ../
 
 if [ $final -eq 1 ]
 then
