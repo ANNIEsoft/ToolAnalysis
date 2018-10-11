@@ -69,6 +69,7 @@ if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
 if (tool=="MonitorMRDTime") ret=new MonitorMRDTime;
 if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
 if (tool=="PulseSimulation") ret=new PulseSimulation;
+if (tool=="PlotWaveforms") ret=new PlotWaveforms;
 
 return ret;
 }

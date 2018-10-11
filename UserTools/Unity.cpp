@@ -77,3 +77,4 @@
 #include "MonitorMRDTime/MonitorMRDTime.cpp"
 #include "MonitorMRDLive/MonitorMRDLive.cpp"
 #include "PulseSimulation/PulseSimulation.cpp"
+#include "PlotWaveforms/PlotWaveforms.cpp"
