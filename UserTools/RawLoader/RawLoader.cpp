@@ -195,7 +195,9 @@ bool RawLoader::Execute() {
   m_variables.Get("verbose", verbosity);
 
   // Load the next raw data readout from the input file
-  auto raw_readout = m_reader->next();
+  auto raw_readout_unique = m_reader->next();
+  annie::RawReadout raw_readout = raw_readout_unique.release(); // so we can put it in the ANNIEEvent
+  m_data->Stores.at("ANNIEEvent")->Set("RawReadout",raw_readout,false);  // for e.g. PlotWaveforms Tool
 
   std::unique_ptr<HeftyInfo> hefty_info = nullptr;
   if (m_using_hefty_mode) hefty_info = m_hefty_tree_reader->next();
