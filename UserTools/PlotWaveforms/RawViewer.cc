@@ -112,8 +112,11 @@ void annie::RawViewer::prepare_gui() {
 
   // Create a main frame that we'll use to run the GUI
   if(not gClient){ std::cerr<<"no gClient!"<<std::endl; return; }
-  main_frame_ = std::make_unique<TGMainFrame>(gClient->GetRoot(), 1240, 794,
-    kMainFrame | kVerticalFrame);
+  //main_frame_ = std::make_unique<TGMainFrame>(gClient->GetRoot(), 1240, 794,
+  //  kMainFrame | kVerticalFrame);
+  std::unique_ptr<annie::RawReader>(
+    new TGMainFrame(gClient->GetRoot(), 1240, 794, kMainFrame | kVerticalFrame));
+    
   main_frame_->SetName("main_frame_");
   main_frame_->SetWindowName("recoANNIE Raw Data Viewer");
   main_frame_->SetLayoutBroken(true);
