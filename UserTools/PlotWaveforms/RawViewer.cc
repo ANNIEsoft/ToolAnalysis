@@ -114,7 +114,7 @@ void annie::RawViewer::prepare_gui() {
   if(not gClient){ std::cerr<<"no gClient!"<<std::endl; return; }
   //main_frame_ = std::make_unique<TGMainFrame>(gClient->GetRoot(), 1240, 794,
   //  kMainFrame | kVerticalFrame);
-  main_frame_ = std::unique_ptr<annie::RawReader>(
+  main_frame_ = std::unique_ptr<TGMainFrame>(
     new TGMainFrame(gClient->GetRoot(), 1240, 794, kMainFrame | kVerticalFrame));
     
   main_frame_->SetName("main_frame_");
