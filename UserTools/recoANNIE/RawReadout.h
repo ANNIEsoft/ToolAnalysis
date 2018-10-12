@@ -17,6 +17,8 @@
 #include "ANNIEconstants.h"
 
 
+#include "ANNIEconstants.h"
+
 namespace annie {
 
   class RawReadout {
