@@ -46,14 +46,12 @@ bool PlotWaveforms::Execute(){
 	if(viewer_closed) return true;
 	
 	// update the viewer data
-	intptr_t raw_readout_asint;
-	get_ok = m_data->Stores.at("ANNIEEvent")->Get("RawReadout",raw_readout_asint);
+	annie::RawReadout* raw_readout;
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("RawReadout",raw_readout);
 	if(not get_ok){
 		Log("PlotWaveforms Tool: RawReadout pointer not in ANNIEEvent store",v_error,verbosity);
 		return false;
 	}
-	
-	annie::RawReadout* raw_readout = reinterpret_cast<annie::RawReadout*>(raw_readout_asint);
 	
 	std::promise<int> barrier;  // will hold until we're done viewing waveforms
 	std::future<int> barrier_future = barrier.get_future();
