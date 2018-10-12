@@ -1,6 +1,6 @@
 ToolDAQPath=ToolDAQ
 
-CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
+CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Wl,--no-as-needed
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 
@@ -18,13 +18,15 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-RootLib=   -L $(ToolDAQPath)/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
+RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
+
+RootLib=   -L $(ToolDAQPath)/root/lib  -lGui -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
 MyToolsInclude =  $(RootInclude) `python-config --cflags` $(MrdTrackInclude) $(WCSimInclude)
-MyToolsLib = -lcurl $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib)
+MyToolsLib = -lcurl $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib) $(RawViewerLib)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 

@@ -59,3 +59,4 @@
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
 #include "PlotWaveforms/PlotWaveforms.cpp"
+#include "PlotWaveforms/RawViewer.cc"

@@ -6,13 +6,15 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <future>
 
 // ROOT includes
 #include "RQ_OBJECT.h"
+#include "TGClient.h"
 
 // recoANNIE includes
-#include "annie/RawReader.hh"
-#include "annie/RawReadout.hh"
+#include "RawReader.h"
+#include "RawReadout.h"
 
 class TGMainFrame;
 class TGraph;
@@ -33,16 +35,19 @@ namespace annie {
 
       void handle_next_button();
       //void handle_previous_button();  // cannot go to last event in ToolChain
+      void handle_close_button();  // close the viewer and allow ToolChain to complete
       void handle_channel_selection();
 
       void prepare_gui();
 
-      void UpdateEventData(std::map<ChannelKey, std::vector<Waveform<unsigned short> > > raw_waveform_map);
+      void next_readout(annie::RawReadout* nextreadout, std::promise<int> finishedin);
       void update_plot();
       void update_channel_selector();
       void update_text_view();
 
     protected:
+
+      std::promise<int> finished;   // use to hold the ToolChain until we're done looking at the plots
 
       annie::RawReadout* raw_readout_ = nullptr;
 
@@ -63,6 +68,7 @@ namespace annie {
       TGTextView* text_view_;
       TGTextButton* next_button_;
       TGTextButton* previous_button_;
+      TGTextButton* close_button_;
       TGLabel* canvas_label_;
 
     RQ_OBJECT("annie::RawViewer")

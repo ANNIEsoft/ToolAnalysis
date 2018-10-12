@@ -7,8 +7,10 @@
 TOOLANALYSIS_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source /cvmfs/annie.opensciencegrid.org/setup_annie.sh --local
+export PRODUCTS=${PRODUCTS}:/grid/fermiapp/products/larsoft   # hopefully this doesn't cause problems
+setup -f Linux64bit+2.6-2.12 git v2_14_1  # newer git version, available from larsoft. Nice features like git diff --word-diff
 
-export LD_LIBRARY_PATH=${TOOLANALYSIS_ROOT}/lib:${TOOLANALYSIS_ROOT}/ToolDAQ/ToolDAQFramework/lib/:${TOOLANALYSIS_ROOT}/ToolDAQ/zeromq-4.0.7/lib:${TOOLANALYSIS_ROOT}/ToolDAQ/WCSimLib:${TOOLANALYSIS_ROOT}/ToolDAQ/MrdTrackLib/src:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${TOOLANALYSIS_ROOT}/lib:${TOOLANALYSIS_ROOT}/ToolDAQ/ToolDAQFramework/lib/:${TOOLANALYSIS_ROOT}/ToolDAQ/zeromq-4.0.7/lib:${TOOLANALYSIS_ROOT}/ToolDAQ/WCSimLib:${TOOLANALYSIS_ROOT}/ToolDAQ/MrdTrackLib/src:${TOOLANALYSIS_ROOT}/UserTools/PlotWaveforms:$LD_LIBRARY_PATH
 export ROOT_INCLUDE_PATH=${TOOLANALYSIS_ROOT}/ToolDAQ/WCSimLib/include/:$ROOT_INCLUDE_PATH
 
 for folder in `ls -d ${TOOLANALYSIS_ROOT}/UserTools/*/ `
