@@ -9,40 +9,28 @@
 #include "TGResourcePool.h"
 #include "TRootEmbeddedCanvas.h"
 
+#include "TGClient.h"
 #include "TGLabel.h"
 #include "TGListBox.h"
 #include "TGTextView.h"
 
 // recoANNIE includes
-#include "annie/Constants.hh"
+#include "Constants.h"
 
 // ToolAnalysis includes
 #include "Waveform.h"
 
 // viewer includes
-#include "RawViewer.hh"
+#include "RawViewer.h"
 
 annie::RawViewer::RawViewer()
 {
   prepare_gui();
-  //handle_next_button();
 }
 
-void annie::RawViewer::handle_next_button() {
-  // FIXME allow ToolChain to continue, 
+void annie::RawViewer::next_readout(annie::RawReadout* nextreadout, std::promise<int> finishedin) {
 
-//  auto rr = reader_.next();
-//  if (!rr) return;
-
-//  raw_readout_ = std::move(rr);
-
-//  update_channel_selector();
-//  update_text_view();
-//  update_plot();
-}
-
-void annie::RawViewer::next_readout(annie::RawReadout* nextreadout) {
-
+  finished = std::promise<int>(std::move(finishedin));
   raw_readout_ = nextreadout;
   if (!raw_readout_) return;
 
@@ -50,6 +38,10 @@ void annie::RawViewer::next_readout(annie::RawReadout* nextreadout) {
   update_text_view();
   update_plot();
   
+}
+
+void annie::RawViewer::handle_next_button() {
+  finished.set_value(1);
 }
 
 //void annie::RawViewer::handle_previous_button() {
@@ -62,6 +54,11 @@ void annie::RawViewer::next_readout(annie::RawReadout* nextreadout) {
 //  update_text_view();
 //  update_plot();
 //}
+
+void annie::RawViewer::handle_close_button() {
+  finished.set_value(0);
+  //delete this;
+}
 
 // Updates the waveform plot based on the currently selected channel
 void annie::RawViewer::handle_channel_selection() {
@@ -114,6 +111,7 @@ annie::RawViewer::~RawViewer() {
 void annie::RawViewer::prepare_gui() {
 
   // Create a main frame that we'll use to run the GUI
+  if(not gClient){ std::cerr<<"no gClient!"<<std::endl; return; }
   main_frame_ = std::make_unique<TGMainFrame>(gClient->GetRoot(), 1240, 794,
     kMainFrame | kVerticalFrame);
   main_frame_->SetName("main_frame_");
@@ -222,6 +220,23 @@ void annie::RawViewer::prepare_gui() {
 //  // Set up previous readout action
 //  previous_button_->Connect("Clicked()", "annie::RawViewer", this,
 //    "handle_previous_button()");
+
+  // "Close Viewer" button
+  close_button_ = new TGTextButton(composite_frame_, "close viewer",
+    -1, TGTextButton::GetDefaultGC()(), TGTextButton::GetDefaultFontStruct(),
+    kRaisedFrame);
+  close_button_->SetTextJustify(36);
+  close_button_->SetMargins(0, 0, 0, 0);
+  close_button_->SetWrapLength(-1);
+  close_button_->Resize(99, 48);
+  composite_frame_->AddFrame(previous_button_,
+    new TGLayoutHints(kLHintsLeft | kLHintsTop, 2, 2, 2, 2));
+  close_button_->MoveResize(920, 568, 99, 48);
+
+  // Set up close readout action
+  close_button_->Connect("Clicked()", "annie::RawViewer", this,
+    "handle_close_button()");
+
 
   // Add the completed composite frame to the main frame.
   // Resize everything as needed.

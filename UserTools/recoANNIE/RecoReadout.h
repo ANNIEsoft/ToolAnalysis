@@ -12,6 +12,8 @@
 #include "Constants.h"
 #include "RecoPulse.h"
 
+#include "ANNIEconstants.h"
+
 namespace annie {
 
   class RecoReadout {

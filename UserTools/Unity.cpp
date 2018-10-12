@@ -78,3 +78,4 @@
 #include "MonitorMRDLive/MonitorMRDLive.cpp"
 #include "PulseSimulation/PulseSimulation.cpp"
 #include "PlotWaveforms/PlotWaveforms.cpp"
+#include "PlotWaveforms/RawViewer.cc"
