@@ -1,4 +1,4 @@
-# LAPPDSave
+# SaveANNIEEvent
 
 This tool will save each ANNIEEvent as it passes through.
 

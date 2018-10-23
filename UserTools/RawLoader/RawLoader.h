@@ -14,6 +14,8 @@
 
 // ToolAnalysis includes
 #include "Tool.h"
+#include "HeftyInfo.h"
+#include "HeftyTreeReader.h"
 
 // recoANNIE includes
 #include "RawReader.h"
@@ -31,4 +33,11 @@ class RawLoader : public Tool {
 
   // Helper object used to load the raw data from the ROOT file
   std::unique_ptr<annie::RawReader> m_reader;
+
+  // Helper object used to load the Hefty mode timing data from a ROOT file
+  std::unique_ptr<annie::HeftyTreeReader> m_hefty_tree_reader;
+
+  // Flag indicating whether we're processing Hefty mode data (true) or not
+  // (false)
+  bool m_using_hefty_mode;
 };

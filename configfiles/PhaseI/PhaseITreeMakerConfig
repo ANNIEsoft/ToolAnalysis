@@ -1,0 +1,12 @@
+verbose 1
+
+OutputFile ./mytrees.root
+
+AfterpulsingCutTime 10000 # ns
+
+MaxUniqueWaterPMTs 7
+
+MaxTankCharge 3.0 # nC
+TankChargeWindowLength 40 # ns
+
+NCVCoincidenceTolerance 40 # ns

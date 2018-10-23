@@ -14,7 +14,7 @@ BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostre
 BoostInclude= -I $(BOOST_INC)
 
 RootInclude=  -I $(ROOT_INC)
-RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lMinuit
+RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
@@ -47,10 +47,11 @@ include/Tool.h: $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h include/
 
 
-lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/*
+lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/* | lib/libLogging.so lib/libStore.so lib/libMyTools.so lib/libServiceDiscovery.so lib/libLogging.so lib/libDataModel.so
 
+	cp UserTools/Factory/*.h include/
 	cp $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/*.h include/
-	$(CC) $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lMyTools -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
+	$(CC) $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
 
 
 clean: 
@@ -63,7 +64,7 @@ lib/libDataModel.so: DataModel/*
 	cp -L DataModel/*.h include/
 	$(CC) DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude) $(UserLib)
 
-lib/libMyTools.so: UserTools/* UserTools/*/* include/Tool.h lib/libDataModel.so
+lib/libMyTools.so: UserTools/* UserTools/*/* include/Tool.h lib/libDataModel.so | lib/libToolChain.so
 
 	cp UserTools/*/*.h include/
 	cp UserTools/Factory/*.h include/

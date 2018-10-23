@@ -11,6 +11,7 @@
 #include "Particle.h"
 #include "Waveform.h"
 #include "Hit.h"
+#include "LAPPDHit.h"
 #include "TriggerClass.h"
 #include "TimeClass.h"
 #include "BeamStatus.h"
@@ -26,17 +27,18 @@ class PrintANNIEEvent: public Tool {
 	
 	private:
 	
-	int verbose;
+	int verbose=1;
 	std::string inputfile;
 	unsigned long NumEvents;
 	
-	// contents of ANNIEEVENT
+	// contents of ANNIEEvent
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
 	uint32_t EventNumber;
-	std::vector<Particle>* MCParticles=nullptr;
+	std::vector<MCParticle>* MCParticles=nullptr;
 	std::vector<Particle>* RecoParticles=nullptr;
 	std::map<ChannelKey,std::vector<Hit>>* MCHits=nullptr;
+	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
 	std::map<ChannelKey,std::vector<Hit>>* TDCData=nullptr;
 	std::map<ChannelKey,std::vector<Waveform<uint16_t>>>* RawADCData=nullptr;
 	std::map<ChannelKey,std::vector<Waveform<uint16_t>>>* RawLAPPDData=nullptr;

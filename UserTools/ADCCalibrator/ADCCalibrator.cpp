@@ -1,3 +1,5 @@
+#include <string>
+
 // ToolAnalysis includes
 #include "ADCCalibrator.h"
 #include "ANNIEalgorithms.h"
@@ -56,6 +58,9 @@ bool ADCCalibrator::Execute() {
     const auto& channel_key = temp_pair.first;
     const auto& raw_waveforms = temp_pair.second;
 
+    Log("Making calibrated waveforms for ADC channel " +
+      std::to_string(channel_key.GetDetectorElementIndex()), 3, verbosity);
+
     calibrated_waveform_map[channel_key] = make_calibrated_waveforms(
       raw_waveforms);
   }
@@ -74,17 +79,22 @@ void ADCCalibrator::ze3ra_baseline(
   const std::vector< Waveform<unsigned short> >& raw_data,
   double& baseline, double& sigma_baseline, size_t num_baseline_samples)
 {
-  // All F-distribution probabilities below this value will pass the
-  // variance consistency test in ze3ra_baseline()
-  double q_critical;
-  m_variables.Get("QCritical", q_critical);
+  int verbosity;
+  m_variables.Get("verbose", verbosity);
+
+  // All F-distribution probabilities above this value will pass the
+  // variance consistency test in ze3ra_baseline(). That is, p_critical
+  // is the maximum p-value for which we will reject the null hypothesis
+  // of equal variances.
+  double p_critical;
+  m_variables.Get("PCritical", p_critical);
 
   // Signal ADC means, variances, and F-distribution probability values
-  // ("Q") for the first num_baseline_samples from each minibuffer
+  // ("P") for the first num_baseline_samples from each minibuffer
   // (in Hefty mode) or from each sub-minibuffer (in non-Hefty mode)
   std::vector<double> means;
   std::vector<double> variances;
-  std::vector<double> Qs;
+  std::vector<double> Ps;
 
   // Hefty mode uses multiple minibuffers, non-Hefty mode uses a single
   // minibuffer
@@ -136,11 +146,20 @@ void ADCCalibrator::ze3ra_baseline(
     else F = sigma2_jp1 / sigma2_j;
 
     double nu = (num_baseline_samples - 1) / 2.;
-    double Q = std::tgamma(2*nu)
-      * annie_math::Incomplete_Beta_Function(1. / (1. + F), nu, nu)
-      / (2. * std::tgamma(nu));
+    double P = annie_math::Regularized_Beta_Function(1. / (1. + F), nu, nu);
 
-    Qs.push_back(Q);
+    // Two-tailed hypothesis test (we need to exclude unusually small values
+    // as well as unusually large ones). The tails have equal sizes, so we
+    // may use symmetry and simply multiply our earlier result by 2.
+    P *= 2.;
+
+    // I've never seen this problem (the numerical values for the regularized
+    // beta function that I've checked all fall within [0,1]), but the book
+    // Numerical Recipes includes this check in a similar block of code,
+    // so I'll add it just in case.
+    if (P > 1.) P = 2. - P;
+
+    Ps.push_back(P);
   }
 
   // Compute the mean and standard deviation of the baseline signal
@@ -149,29 +168,60 @@ void ADCCalibrator::ze3ra_baseline(
   // the critical value.
   baseline = 0.;
   sigma_baseline = 0.;
+  double variance_baseline = 0.;
   size_t num_passing = 0;
-  for (size_t k = 0; k < Qs.size(); ++k) {
-    if (Qs.at(k) < q_critical) {
+  for (size_t k = 0; k < Ps.size(); ++k) {
+    if (Ps.at(k) > p_critical) {
       ++num_passing;
       baseline += means.at(k);
-      sigma_baseline += std::sqrt( variances.at(k) );
+      variance_baseline += variances.at(k);
     }
   }
 
-  if (num_passing > 0) {
+  if (num_passing > 1) {
     baseline /= num_passing;
-    sigma_baseline /= num_passing;
+
+    variance_baseline *= static_cast<double>(num_baseline_samples - 1)
+      / (num_passing*num_baseline_samples - 1);
+    // Now that we've combined the sample variances correctly, take the
+    // square root to get the standard deviation
+    sigma_baseline = std::sqrt( variance_baseline );
+  }
+  else if (num_passing == 1) {
+    // We only have one set of sample statistics, so all we need to
+    // do is take the square root of the variance to get the standard
+    // deviation.
+    sigma_baseline = std::sqrt( variance_baseline );
   }
   else {
     // If none of the minibuffers passed the F-distribution test,
-    // choose the one closest to passing and adopt its baseline statistics
+    // choose the one closest to passing (i.e., the one with the largest
+    // P-value) and adopt its baseline statistics. For a sufficiently large
+    // number of minibuffers (e.g., 40), such a situation should be very rare.
     // TODO: consider changing this approach
-    auto min_iter = std::min_element(Qs.cbegin(), Qs.cend());
-    int min_index = std::distance(Qs.cbegin(), min_iter);
+    auto max_iter = std::max_element(Ps.cbegin(), Ps.cend());
+    int max_index = std::distance(Ps.cbegin(), max_iter);
 
-    baseline = means.at(min_index);
-    sigma_baseline = std::sqrt( variances.at(min_index) );
+    baseline = means.at(max_index);
+    sigma_baseline = std::sqrt( variances.at(max_index) );
   }
+
+  std::string mb_temp_string = "minibuffer";
+  if ( !hefty_mode ) mb_temp_string = "sub-minibuffer";
+
+  if (verbosity >= 4) {
+    for ( size_t x = 0; x < Ps.size(); ++x ) {
+      Log("  " + mb_temp_string + " " + std::to_string(x) + ", mean = "
+        + std::to_string(means.at(x)) + ", var = "
+        + std::to_string(variances.at(x)) + ", p-value = "
+        + std::to_string(Ps.at(x)), 4, verbosity);
+    }
+  }
+
+  Log(std::to_string(num_passing) + " " + mb_temp_string + " pairs passed the"
+    " F-test", 3, verbosity);
+  Log("Baseline estimate: " + std::to_string(baseline) + " ± "
+    + std::to_string(sigma_baseline) + " ADC counts", 3, verbosity);
 
 }
 

@@ -12,9 +12,12 @@ bool LAPPDcfd::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  TString CIWL;
+  m_variables.Get("CFDInputWavLabel",CIWL);
+  CFDInputWavLabel = CIWL;
   // Get the CFD threshold from the config file
   m_variables.Get("Fraction_CFD", Fraction_CFD);
-  std::cout<<"Fraction_CFD="<<Fraction_CFD<<std::endl;
+  //std::cout<<"Fraction_CFD="<<Fraction_CFD<<std::endl;
 
   isSim=false;
   // Check in the Boost Store whether this is a simulated event or not
@@ -30,7 +33,7 @@ bool LAPPDcfd::Execute(){
 
   // get raw lappd data from the Boost Store
   std::map<int,vector<Waveform<double>>> rawlappddata;
-  bool testval =  m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
+  bool testval =  m_data->Stores["ANNIEEvent"]->Get(CFDInputWavLabel,rawlappddata);
 
   // get first-level pulse reco from the Boost Store
   std::map<int,vector<LAPPDPulse>> SimpleRecoLAPPDPulses;
@@ -59,21 +62,23 @@ bool LAPPDcfd::Execute(){
     p = SimpleRecoLAPPDPulses.find(channelno);
     vector<LAPPDPulse> Vpulses = p->second;
 
-    std::cout<<"************************************************"<<std::endl;
-    std::cout<<"IN LAPPDCFD:: channel: "<<channelno<<std::endl;
+//    std::cout<<"************************************************"<<std::endl;
+//    std::cout<<"IN LAPPDCFD:: channel: "<<channelno<<std::endl;
 
     if(isSim){
       // If the data is simulated data, we loop over the true hits
       // and print them to screen
-      std::cout<<"simulated pulse: ";
+//      std::cout<<"simulated pulse: ";
       map<int, vector<LAPPDHit>>::iterator p;
       p = lappdmchits.find(0);
       vector<LAPPDHit> Vhits = p->second;
+/*
       std::cout<<Vhits.size()<<" simulated pulses. ";
       for(int np=0; np<Vhits.size(); np++){
         std::cout<<"p"<<np<<"=(t="<<(Vhits.at(np)).GetTpsec()<<") ";
       }
       std::cout<<" "<<std::endl;
+*/
     }
 
     std::vector<LAPPDPulse> thepulses;
@@ -83,22 +88,22 @@ bool LAPPDcfd::Execute(){
 
         Waveform<double> bwav = Vwavs.at(i);
 
-        std::cout<<"reconstructed pulses: "<<std::endl;;
+        //std::cout<<"reconstructed pulses: "<<std::endl;;
 
         // loop over all candidate pulses on each waveform, as determined by the LAPPDFindPeak Tool
         for(int j=0; j<Vpulses.size(); j++){
 
           // for each pulse on the Waveform find the time using CFD1 algorithm
           double cfdtime = CFD_Discriminator1(bwav.GetSamples(),Vpulses.at(j));
-          std::cout<<"for pulse #"<<j<<" (Q="<<(Vpulses.at(j)).GetCharge()<<",Amp="<<(Vpulses.at(j)).GetPeak()<<",LowRange="<<(Vpulses.at(j)).GetLowRange()<<",HiRange="<<(Vpulses.at(j)).GetHiRange()<<") "<<"  cfd_time="<<cfdtime<<std::endl;
+          //std::cout<<"for pulse #"<<j<<" (Q="<<(Vpulses.at(j)).GetCharge()<<",Amp="<<(Vpulses.at(j)).GetPeak()<<",LowRange="<<(Vpulses.at(j)).GetLowRange()<<",HiRange="<<(Vpulses.at(j)).GetHiRange()<<") "<<"  cfd_time="<<cfdtime<<std::endl;
 
           // Store the reconstructed time in a new LAPPDPulse
-          TimeClass tc(0);
+          double tc(0);
           LAPPDPulse apulse(0,channelno,tc,(Vpulses.at(j)).GetCharge(),cfdtime,(Vpulses.at(j)).GetPeak(),(Vpulses.at(j)).GetLowRange(),(Vpulses.at(j)).GetHiRange());
           thepulses.push_back(apulse);
         }
       }
-        std::cout<<" "<<std::endl;
+        //std::cout<<" "<<std::endl;
         // Put the newly reconsructed LAPPDPulses into a map, by channel
         CFDRecoLAPPDPulses.insert(pair <int,vector<LAPPDPulse>> (channelno,thepulses));
     }
@@ -162,7 +167,7 @@ double	LAPPDcfd::CFD_Discriminator1(std::vector<double>* trace, LAPPDPulse pulse
     else
     xlow = xmid;
   }
-  
+
   time = xlow;
   delete hwav;
 	return time;

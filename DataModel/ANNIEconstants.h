@@ -6,7 +6,7 @@
 constexpr double ADC_IMPEDANCE = 50.; // Ohm
 
 /// @brief Multiplying by this constant converts ADC counts to Volts
-constexpr double ADC_TO_VOLT = 2.415 / std::pow(2., 12);
+const double ADC_TO_VOLT = 2.415 / std::pow(2., 12);
 
 /// @brief The number of nanoseconds per ADC sample
 constexpr unsigned int NS_PER_ADC_SAMPLE = 2; // ns
