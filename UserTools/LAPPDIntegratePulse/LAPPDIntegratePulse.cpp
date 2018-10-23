@@ -55,7 +55,7 @@ bool LAPPDIntegratePulse::Execute(){
         //convert to number of electrons
         double Qelectrons = Qcoulomb/(1.60217733e-19);
         acharge.push_back(Qelectrons);
-        cout<<channelno<<" "<<Qelectrons<<endl;
+        //cout<<channelno<<" "<<Qelectrons<<endl;
       }
 
       // store the charge vector by channel

@@ -1,0 +1,4 @@
+RawLoader RawLoader configfiles/RawAna/RawLoaderConfig
+ADCCalibrator ADCCalibrator configfiles/RawAna/ADCCalibratorConfig
+MRDPulseFinder MRDPulseFinder configfiles/RawAna/MRDPulseFinderConfig
+RawLoadToRoot RawLoadToRoot configfiles/RawAna/RawLoadToRootConfig

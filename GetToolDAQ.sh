@@ -11,6 +11,7 @@ zmq=1
 final=1
 MrdTrackLib=1
 WCSimlib=1
+fnalflag=0
 
 while [ ! $# -eq 0 ]
 do
@@ -34,6 +35,7 @@ do
             echo "Installing ToolDAQ for FNAL"
             boostflag=0
 	    rootflag=0
+	    fnalflag=1
 	    cp Makefile.FNAL Makefile
 	    ;;
 
@@ -200,6 +202,9 @@ then
     cd -
     git clone https://github.com/ANNIEsoft/MrdTrackLib.git
     cd MrdTrackLib
+    if [ $fnalflag -eq 1 ]; then
+      cp Makefile.FNAL Makefile
+    fi
     make
     cd ../
 

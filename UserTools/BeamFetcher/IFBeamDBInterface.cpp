@@ -34,8 +34,8 @@ const IFBeamDBInterface& IFBeamDBInterface::Instance() {
   return *the_instance;
 }
 
-std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
-  IFBeamDBInterface::QueryBeamDB(unsigned long long t0, unsigned long long t1)
+std::map<std::string, std::map<uint64_t, BeamDataPoint> >
+  IFBeamDBInterface::QueryBeamDB(uint64_t t0, uint64_t t1)
   const
 {
   // Temporary storage for the response from the IF beam database
@@ -51,8 +51,8 @@ std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
   return beam_data;
 }
 
-int IFBeamDBInterface::QueryBeamDB(unsigned long long t0,
-  unsigned long long t1, std::string& response_string) const
+int IFBeamDBInterface::QueryBeamDB(uint64_t t0,
+  uint64_t t1, std::string& response_string) const
 {
   if (!fCurl) {
     throw std::runtime_error("IFBeamDBInterface::QueryBeamDB() called"
@@ -131,11 +131,11 @@ int IFBeamDBInterface::QueryBeamDB(unsigned long long t0,
 //   * BTH2T2 - target air cooling temperature. This is the temperature of the
 //     air going into the horn.
 
-std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
+std::map<std::string, std::map<uint64_t, BeamDataPoint> >
   IFBeamDBInterface::ParseDBResponse(const std::string& response) const
 {
   // Create an empty map to store the parsed data.
-  std::map<std::string, std::map<unsigned long long,
+  std::map<std::string, std::map<uint64_t,
     BeamDataPoint> > beam_data;
 
   // Use a stringstream to parse the data
@@ -143,7 +143,7 @@ std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
 
   // Temporary storage for the comma-separated fields in the database response
   // string
-  unsigned long long time_stamp;
+  uint64_t time_stamp;
   std::string data_type;
   std::string unit;
   double value;
@@ -171,7 +171,7 @@ std::map<std::string, std::map<unsigned long long, BeamDataPoint> >
 }
 
 void IFBeamDBInterface::PostprocessParsedResponse(std::map<std::string,
-  std::map<unsigned long long, BeamDataPoint> >& parsed_response) const
+  std::map<uint64_t, BeamDataPoint> >& parsed_response) const
 {
   // Perform postprocessing for the given device names
   // The only two devices currently selected for postprocessing are toroids
@@ -209,14 +209,14 @@ void IFBeamDBInterface::PostprocessParsedResponse(std::map<std::string,
   }
 }
 
-BeamStatus IFBeamDBInterface::GetBeamStatus(unsigned long long time) const
+BeamStatus IFBeamDBInterface::GetBeamStatus(uint64_t time) const
 {
-  constexpr unsigned long long TIME_OFFSET = 5000ull; // ms
+  constexpr uint64_t TIME_OFFSET = 5000ull; // ms
 
   // The exact time given by the user might not appear in the database, so
   // look for entries on the interval [time - TIME_OFFSET, time + TIME_OFFSET]
-  unsigned long long t0 = time - TIME_OFFSET;
-  unsigned long long t1 = time + TIME_OFFSET;
+  uint64_t t0 = time - TIME_OFFSET;
+  uint64_t t1 = time + TIME_OFFSET;
 
   // Ask the beam database for information about the time window of interest.
   // If there are any problems, then return a bogus BeamStatus object.

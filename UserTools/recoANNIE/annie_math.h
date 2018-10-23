@@ -14,6 +14,7 @@ namespace annie_math {
 
   double Incomplete_Beta_Function(double x, double a, double b);
   double Beta_Function(double a, double b);
+  double Regularized_Beta_Function(double x, double a, double b);
 
 }
 

@@ -37,6 +37,12 @@ namespace annie {
         return trig_data_chain_.GetFile();
       }
 
+      // Set the flag that determines whether a mismatch between the SequenceID
+      // value recorded in the TrigData TTree and the SequenceID value recorded
+      // in the PMTData TTree should result in a thrown std::runtime_error
+      // or simply a warning message printed to std::cerr.
+      void set_throw_on_trig_pmt_sequenceID_mismatch(bool should_I_throw);
+
       // Attempt to retrieve the readout with the given SequenceID from the
       // input file(s)
       //std::unique_ptr<RawReadout> get_sequence_id(int SequenceID);
@@ -88,6 +94,12 @@ namespace annie {
       std::vector<unsigned long long> br_EventTimes_; // [EventSize]
       std::vector<unsigned int> br_TriggerMasks_; // [TriggerSize]
       std::vector<unsigned int> br_TriggerCounters_; // [TriggerSize]
+
+      // A flag that determines whether a mismatch between the SequenceID
+      // value recorded in the TrigData TTree and the SequenceID value recorded
+      // in the PMTData TTree should result in a thrown std::runtime_error
+      // (true) or simply a warning message printed to std::cerr (false).
+      bool throw_on_trig_pmt_sequenceID_mismatch_ = false;
   };
 }
 
