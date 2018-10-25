@@ -55,7 +55,7 @@ class LoadWCSimLAPPD: public Tool {
 	TApplication* lappdRootDrawApp;
 	TCanvas* lappdRootCanvas;
 	TPolyMarker3D* lappdhitshist;
-	TH1D *digixpos, *digiypos, *digizpos;
+	TH1D *digixpos, *digiypos, *digizpos, *digits;
 	
 	////////////////
 	// things that will be filled into the store from this WCSim LAPPD file.
