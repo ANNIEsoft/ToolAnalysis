@@ -237,7 +237,8 @@ bool EventSelector::EventSelectionByMCTruthInfo() {
   	  || (TMath::Abs(trueVtxY) > fidcuty) 
   	  || (trueVtxZ > fidcutz) ){
   return false;
-  }	 
+  }	
+  /* 
   // mrd cut
   double muonStopX, muonStopY, muonStopZ;
   muonStopX = fMuonStopVertex->GetPosition().X();
@@ -255,7 +256,7 @@ bool EventSelector::EventSelectionByMCTruthInfo() {
   	|| muonStopX<-1.0*mrdWidthX || muonStopX>mrdWidthX
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {
     return false;	
-  }
+  }*/
   return true;
 }
 
