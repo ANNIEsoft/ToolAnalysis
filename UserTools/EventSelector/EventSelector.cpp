@@ -134,9 +134,9 @@ RecoVertex* EventSelector::FindTrueVertexFromMC() {
   
   // retrieve desired information from the particle
   Position muonstartpos = primarymuon.GetStartVertex();    // only true if the muon is primary
-  double muonstarttime = primarymuon.GetStartTime().GetNs() + primarymuon.GetStopTime().GetTpsec()/1000 ;
+  double muonstarttime = primarymuon.GetStartTime().GetNs();
   Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
-  double muonstoptime = primarymuon.GetStopTime().GetNs() + primarymuon.GetStopTime().GetTpsec()/1000;
+  double muonstoptime = primarymuon.GetStopTime().GetNs();
   
   Direction muondirection = primarymuon.GetStartDirection();
   double muonenergy = primarymuon.GetStartEnergy();
