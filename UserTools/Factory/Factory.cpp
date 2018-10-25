@@ -41,15 +41,25 @@ if (tool=="BeamFetcher") ret=new BeamFetcher;
 if (tool=="FindTrackLengthInWater") ret=new FindTrackLengthInWater;
 if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
 if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
-if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
+//if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
 if (tool=="LoadWCSimLAPPD") ret=new LoadWCSimLAPPD;
 if (tool=="WCSimDemo") ret=new WCSimDemo;
+if (tool=="DigitBuilder") ret=new DigitBuilder;
+if (tool=="VtxSeedGenerator") ret=new VtxSeedGenerator;
+if (tool=="VtxPointPositionFinder") ret=new VtxPointPositionFinder;
 if (tool=="LAPPDlasertestHitFinder") ret=new LAPPDlasertestHitFinder;
 if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
 if (tool=="MRDPulseFinder") ret=new MRDPulseFinder;
 if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
 if (tool=="ExampleOverTool") ret=new ExampleOverTool;
+if (tool=="PhaseIITreeMaker") ret=new PhaseIITreeMaker;
+if (tool=="VertexGeometryCheck") ret=new VertexGeometryCheck;
+if (tool=="LikelihoodFitterCheck") ret=new LikelihoodFitterCheck;
+if (tool=="EventSelector") ret=new EventSelector;
+if (tool=="SaveRecoEvent") ret=new SaveRecoEvent;
+if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
+if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
+if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
-
 return ret;
 }
