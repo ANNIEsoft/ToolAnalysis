@@ -234,8 +234,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					pos_reco.SetX(ahit.GetPosition().at(0)*100.); //cm
 					pos_reco.SetY(ahit.GetPosition().at(1)*100.+14.4649); //cm
 					pos_reco.SetZ(ahit.GetPosition().at(2)*100.-168.1); //cm
-					//calT = ahit.GetTime() + ahit.GetTpsec()/1000 + 950.;  // Add 950 ns offset
-					calT = ahit.GetTime() + ahit.GetTpsec()/1000;  // 
+					calT = ahit.GetTime();  // 
 					calT = frand.Gaus(calT, 0.1); // time is smeared with 100 ps time resolution. Harded-coded for now.
 					calQ = ahit.GetCharge();
 					// I found the charge is 0 for all the hits. In order to test the code, 
