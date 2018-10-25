@@ -101,7 +101,7 @@ bool DigitBuilder::Execute(){
 		Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_error,verbosity); 
 		return false;
 	}
-	 
+	
 	/// Build RecoDigit
 	this->BuildRecoDigit();
 	
@@ -203,7 +203,8 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 }
 
 bool DigitBuilder::BuildLAPPDRecoDigit() {
-	Log("DigitBuilder Tool: Build LAPPD reconstructed digits",v_message,verbosity);
+	std::string name = "DigitBuilder::BuildLAPPDRecoDigit(): ";
+	Log(name + " Build LAPPD reconstructed digits",v_message,verbosity);
 	int region = -999;
 	double calT = 0;
 	double calQ = 0;
@@ -222,7 +223,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 			//Tube ID is different from that in ANNIEReco
 			LAPPDId = det.GetDetectorId();
 			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
-			if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
+			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
                         if(chankey.GetSubDetectorType()==subdetector::LAPPD){ // redundant
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
