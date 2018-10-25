@@ -13,36 +13,30 @@ class LAPPDPulse : public Hit{
 	friend class boost::serialization::access;
 
 	public:
-  LAPPDPulse() : Hit(), ChannelID(0), Tpsec(0), Peak(0), LowRange(0), HiRange(0) {serialise=true;}
-  LAPPDPulse(int tubeid, int channelid, double thetime, double charge, double tpsec, double peak, double low, double hi) : Hit(tubeid,thetime,charge), ChannelID(channelid), Tpsec(tpsec), Peak(peak), LowRange(low), HiRange(hi),thetime(thetime){serialise=true;}
+  LAPPDPulse() : Hit(), ChannelID(0), Peak(0), LowRange(0), HiRange(0) {serialise=true;}
+  LAPPDPulse(int tubeid, int channelid, double thetime, double charge, double peak, double low, double hi) : Hit(tubeid,thetime,charge), ChannelID(channelid), Peak(peak), LowRange(low), HiRange(hi) {serialise=true;}
 
-	inline double GetTheTime(){return thetime;}
 	inline int GetChannelID(){return ChannelID;}
-	inline double GetTpsec(){return Tpsec;}
 	inline double GetPeak(){return Peak;}
 	inline double GetLowRange(){return LowRange;}
 	inline double GetHiRange(){return HiRange;}
 	inline void SetChannelID(int channelid){ChannelID=channelid;}
-	inline void SetTpsec(double tpsec){Tpsec=tpsec;}
 	inline void SetPeak(double peak){Peak=peak;}
 	inline void SetRange(double low, double hi){LowRange=low; HiRange=hi;}
 
 	bool Print() {
 		cout<<"TubeId : "<<TubeId<<endl;
 		cout<<"ChannelID : "<<ChannelID<<endl;
-		cout<<"Time : "<<thetime<<endl;
+		cout<<"Time : "<<Time<<endl;
 		cout<<"Charge : "<<Charge<<endl;
 		return true;
 	}
 
 	protected:
-	int TubeId;
 	double ChannelID;
-	double Tpsec;
 	double Peak;
 	double LowRange;
 	double HiRange;
-	double thetime;
 
 
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
@@ -51,7 +45,6 @@ class LAPPDPulse : public Hit{
 			ar & ChannelID;
 			ar & Time;
 			ar & Charge;
-			ar & Tpsec;
 			ar & Peak;
 			ar & LowRange;
 			ar & HiRange;

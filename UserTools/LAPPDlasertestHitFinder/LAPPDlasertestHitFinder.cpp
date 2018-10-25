@@ -60,7 +60,7 @@ double MaxAmp =-1.0;
      std::cout<<"Temp Vector Size "<<TempVector.size()<<endl;
      //     std::cout<<"Temp Vector Channel "<<TempVector.at(i).GetChannelID()<<endl;
     for (int j = 0; j < TempVector.size(); j++){
-      if (TempVector.at(j).GetTpsec() >= MinTimeWindow && TempVector.at(j).GetTpsec() <= MaxTimeWindow){
+      if (TempVector.at(j).GetTime()*1000. >= MinTimeWindow && TempVector.at(j).GetTime()*1000. <= MaxTimeWindow){
         if (TempVector.at(j).GetPeak() > MaxAmp){
           MaxAmp = TempVector.at(j).GetPeak();
           MaxPulse = LAPPDPulseCluster.at(i).at(j);
@@ -94,18 +94,18 @@ LAPPDPulse OpposPulse;
     LAPPDPulse OpposPulse;
     for (int j = 0; j < negaVector.size(); j++){
     //Find pulse inside this vector that has the same peak and thetime
-      if (fabs(negaVector.at(j).GetTpsec() - MaxPulse.GetTpsec()) < PTRange && (fabs(negaVector.at(j).GetPeak() - MaxAmp) / MaxAmp) <= 0.1){
+      if (fabs(negaVector.at(j).GetTime()*1000. - MaxPulse.GetTime()*1000.) < PTRange && (fabs(negaVector.at(j).GetPeak() - MaxAmp) / MaxAmp) <= 0.1){
         OpposPulse = negaVector.at(j);
-        Deltatime = (MaxPulse.GetTpsec() - OpposPulse.GetTpsec());
+        Deltatime = (MaxPulse.GetTime()*1000. - OpposPulse.GetTime()*1000.);
       }
       ParaPosition = Deltatime*c;
       LocalPosition.push_back(ParaPosition);
-      HitTime = (MaxPulse.GetTpsec() + OpposPulse.GetTpsec())/2;
+      HitTime = (MaxPulse.GetTime()*1000. + OpposPulse.GetTime()*1000.)/2;
     }
   }
   else {
     ParaPosition = 0;
-    HitTime = MaxPulse.GetTpsec();
+    HitTime = MaxPulse.GetTime()*1000.;
     LocalPosition.push_back(ParaPosition);
   }
 
@@ -123,7 +123,7 @@ LAPPDPulse OpposPulse;
       neighbourVector = LAPPDPulseCluster.at(i);
 
       for (int j = 0; j < neighbourVector.size(); j++){
-        if (fabs(neighbourVector.at(j).GetTpsec() - MaxPulse.GetTpsec()) < PTRange){
+        if (fabs(neighbourVector.at(j).GetTime()*1000. - MaxPulse.GetTime()*1000.) < PTRange){
 
 	   NeighboursPulses.push_back(neighbourVector.at(j));
         }
@@ -159,7 +159,7 @@ LAPPDPulse OpposPulse;
       for(int i =0; i<3; i++){
 	if(i!=MaxPulse.GetChannelID() && i!=OpposPulse.GetChannelID()){
 	  for (int j = 0; j < LAPPDPulseCluster.at(i).size(); j++){
-	    if (fabs(LAPPDPulseCluster.at(i).at(j).GetTpsec() - MaxPulse.GetTpsec()) < PTRange){
+	    if (fabs(LAPPDPulseCluster.at(i).at(j).GetTime()*1000. - MaxPulse.GetTime()*1000.) < PTRange){
 	       NeighboursPulses.push_back(LAPPDPulseCluster.at(i).at(j));
 	     }
 	   }
@@ -174,7 +174,7 @@ LAPPDPulse OpposPulse;
  std::cout<<stripID.at(2)<<endl;
 
   //Store data in LAPPDHit
-  LAPPDHit kHit(MaxPulse.GetChannelID(), MaxPulse.GetTheTime(), MaxPulse.GetPeak(), AbsPosition, LocalPosition, MaxPulse.GetTpsec());
+  LAPPDHit kHit(MaxPulse.GetChannelID(), MaxPulse.GetTime(), MaxPulse.GetPeak(), AbsPosition, LocalPosition);
   std::cout<<"Hit created "<<endl;
   int PulseNum;
   m_data->Stores["ANNIEEvent"]->Set("RecoLaserTestHit",kHit);

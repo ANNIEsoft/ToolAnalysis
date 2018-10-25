@@ -115,7 +115,6 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
   double low=0.;
   double hi=0.;
   double tc=0;
-  double tp=0.;
 
   bool pulsestarted=false;
 	double threshold = TotThreshold*2;
@@ -140,7 +139,7 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
 			if(length<MinimumTotBin) {length=0; Q=0; pulsestarted=false; low=0; hi=0; peak=0;}
 			else {
         npeaks++; length = 0; hi=(double)i;
-        LAPPDPulse apulse(0,0,tc,Q,tp,peak,low,hi);
+        LAPPDPulse apulse(0,0,tc,Q,peak,low,hi);
         thepulses.push_back(apulse);
         pulsestarted=false;
         peak=0; Q=0; low=0; hi=0;

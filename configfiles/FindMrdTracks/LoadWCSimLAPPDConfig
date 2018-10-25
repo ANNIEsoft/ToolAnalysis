@@ -1,0 +1,9 @@
+#LoadWCSimLAPPD Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbose 1
+InputFile /pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_lappd_0.0.0.root
+# octagonal inner structure radius in m (from drawings 106.64")
+InnerStructureRadius 1.3545
+HistoricTriggeroffset 950
+DrawDebugGraphs 0 # whether to draw TPolyMarker3D's of hits

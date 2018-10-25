@@ -98,8 +98,7 @@ bool LAPPDcfd::Execute(){
           //std::cout<<"for pulse #"<<j<<" (Q="<<(Vpulses.at(j)).GetCharge()<<",Amp="<<(Vpulses.at(j)).GetPeak()<<",LowRange="<<(Vpulses.at(j)).GetLowRange()<<",HiRange="<<(Vpulses.at(j)).GetHiRange()<<") "<<"  cfd_time="<<cfdtime<<std::endl;
 
           // Store the reconstructed time in a new LAPPDPulse
-          double tc(0);
-          LAPPDPulse apulse(0,channelno,tc,(Vpulses.at(j)).GetCharge(),cfdtime,(Vpulses.at(j)).GetPeak(),(Vpulses.at(j)).GetLowRange(),(Vpulses.at(j)).GetHiRange());
+          LAPPDPulse apulse(0,channelno,(cfdtime/1000.),(Vpulses.at(j)).GetCharge(),(Vpulses.at(j)).GetPeak(),(Vpulses.at(j)).GetLowRange(),(Vpulses.at(j)).GetHiRange());
           thepulses.push_back(apulse);
         }
       }
