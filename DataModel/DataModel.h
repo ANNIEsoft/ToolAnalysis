@@ -28,7 +28,7 @@
 #include "TimeClass.h"
 #include "TriggerClass.h"
 #include "Waveform.h"
-
+#include "Channel.h"
 
 #include <zmq.hpp>
 
