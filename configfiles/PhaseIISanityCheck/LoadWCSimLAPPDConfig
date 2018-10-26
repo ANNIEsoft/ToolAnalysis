@@ -5,4 +5,3 @@ verbose 1
 InputFile  /data/wcsim_lappd_0.0.0.root
 # octagonal inner structure radius in cm (from drawings 106.64")
 InnerStructureRadius 1.3545
-HistoricTriggeroffset 0
