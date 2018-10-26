@@ -1,0 +1,8 @@
+#FindMrdTracks Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+OutputDirectory .
+verbose 1
+MinDigitsForTrack 4
+MaxMrdSubEventDuration 30  # [ns]
+WriteTracksToFile 1

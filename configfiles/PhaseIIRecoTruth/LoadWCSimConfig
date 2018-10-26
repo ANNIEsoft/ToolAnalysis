@@ -1,0 +1,5 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbose 1
+InputFile /AnnieShare/p2r_data/wcsim_0.2.9.root
