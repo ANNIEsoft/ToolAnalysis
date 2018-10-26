@@ -84,7 +84,6 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
     //signal has to be larger than 0.5 mV
     if( (wspeak>0.5) && (wstrip>0) && (wstrip<31) ) {
       int tubeid = 0;
-      double thetime=0;
       double charge =0;
       double low = 0;
       double hi = 0;
@@ -92,7 +91,7 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
       //std::cout<<"which strip "<<wstrip<<" peakvalue"<<wspeak<<std::endl;
 
 
-      LAPPDPulse pulse(tubeid, wstrip, thetime, charge, time + righttime, wspeak, low, hi);  //SD
+      LAPPDPulse pulse(tubeid, wstrip, (time + righttime)/1000., charge, wspeak, low, hi);  //SD
       if(LAPPDPulseCluster.count(wstrip)==1){
         std::vector<LAPPDPulse> tempVector;
         tempVector = LAPPDPulseCluster.at(wstrip);
@@ -108,7 +107,7 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
       }
 
       pulse.SetChannelID(-1.0*wstrip); //SD
-      pulse.SetTpsec((time +lefttime)); //SD
+      pulse.SetTime((time +lefttime)/1000.); //SD
       if(LAPPDPulseCluster.count(-wstrip)==1){
         std::vector<LAPPDPulse> tempVector;
         tempVector = LAPPDPulseCluster.at(-wstrip);
@@ -177,7 +176,7 @@ Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double 
       double thetime=0;
       double ptime= thetime;
       //transit time of the pulse along the strip
-      double stime=tempoVector.at(k).GetTpsec();
+      double stime=tempoVector.at(k).GetTime()*1000.;
       //looking at the signal to the left (parity=-1) or right (parity=1)?
 
       //if(parity<0) stime = mpulse->Getlefttime();
