@@ -40,7 +40,6 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	//verbose=10;
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("InnerStructureRadius",Rinnerstruct);
-	m_variables.Get("HistoricTriggeroffset",triggeroffset);
 	m_variables.Get("DrawDebugGraphs",DEBUG_DRAW_LAPPD_HITS);
 	m_variables.Get("FileVersion",FILE_VERSION);
 	
@@ -97,7 +96,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 		digixpos = new TH1D("digixpos","digixpos",100,-2,2);
 		digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
 		digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
-		digits = new TH1D("digits","digits",100,triggeroffset-50,triggeroffset+100);
+		digits = new TH1D("digits","digits",100,-50,100);
 	}
 	
 	return true;
@@ -233,7 +232,7 @@ bool LoadWCSimLAPPD::Execute(){
 				
 				// calculate relative time within trigger
 				double digitst  = LAPPDEntry->lappdhit_stripcoort->at(runningcount);
-				double relativedigitst=digitst+triggeroffset-wcsimtriggertime;
+				double relativedigitst=digitst-wcsimtriggertime;
 				
 				float digiq = 0; // N/A
 				ChannelKey key(subdetector::LAPPD,LAPPDID);

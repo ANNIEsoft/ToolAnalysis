@@ -30,6 +30,7 @@ public:
 private:
 
 	int verbose=1;
+	int HistoricTriggeroffset;
 	// WCSim variables
 	TFile* file;
 	TTree* wcsimtree;
