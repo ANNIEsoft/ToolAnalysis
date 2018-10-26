@@ -1,0 +1,5 @@
+verbosity 11
+
+OutputFile ./VertexGeometryCheck.root
+ShowEvent 62
+
