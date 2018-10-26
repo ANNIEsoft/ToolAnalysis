@@ -31,7 +31,6 @@ class LoadWCSimLAPPD: public Tool {
 	int verbose=1;
 	std::string MCFile;
 	double Rinnerstruct;    // cm octagonal inner structure radius
-	int triggeroffset;      // whether the historic 950ns offset was included
 	
 	// LAPPDTree variables
 	TFile* file=nullptr;
