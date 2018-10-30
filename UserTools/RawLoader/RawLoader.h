@@ -20,6 +20,9 @@
 // recoANNIE includes
 #include "RawReader.h"
 
+// Boost includes
+#include "boost/bimap.hpp"
+
 class RawLoader : public Tool {
 
  public:
@@ -28,6 +31,7 @@ class RawLoader : public Tool {
   bool Initialise(const std::string config_file, DataModel& data) override;
   bool Execute() override;
   bool Finalise() override;
+  void FillBimap(std::string bimapfile);
 
  protected:
 
@@ -36,6 +40,9 @@ class RawLoader : public Tool {
 
   // Helper object used to load the Hefty mode timing data from a ROOT file
   std::unique_ptr<annie::HeftyTreeReader> m_hefty_tree_reader;
+  
+  // bimap between PMT id and DAQ card + channel, read from file specified in config (for now)
+  boost::bimap<int, std::pair<int, int> > pmt_ID_and_card_channel_bimap;
 
   // Flag indicating whether we're processing Hefty mode data (true) or not
   // (false)

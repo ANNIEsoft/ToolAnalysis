@@ -17,9 +17,6 @@
 // recoANNIE includes
 #include "Constants.h"
 
-// ToolAnalysis includes
-#include "Waveform.h"
-
 // viewer includes
 #include "RawViewer.h"
 
