@@ -44,6 +44,10 @@ bool PlotWaveforms::Initialise(std::string configfile, DataModel &data){
 bool PlotWaveforms::Execute(){
 	// if viewer is closed, do not update
 	if(viewer_closed) return true;
+	// also prevent the viewer showing if loop is stopping, we may not have any data
+	bool loop_stopping;
+	m_data->vars.Get("StopLoop", loop_stopping);
+	if(loop_stopping) return true;
 	
 	// update the viewer data
 	annie::RawReadout* raw_readout;
