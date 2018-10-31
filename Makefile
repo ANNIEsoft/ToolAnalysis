@@ -18,7 +18,7 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-RootLib=   -L $(ToolDAQPath)/root/lib  -lGenVector -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 -lMultiProc -lGui
+RootLib=   -L $(ToolDAQPath)/root/lib  `root-config --glibs` -lGenVector -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 -lMultiProc -lGui -lMinuit -lGeom -lEve -lGL  -lGLEW -lGLU
 
 RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
