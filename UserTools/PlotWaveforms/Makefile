@@ -1,5 +1,5 @@
 ifndef CXXFLAGS
-  CXXFLAGS = -std=c++11 -O3
+  CXXFLAGS = -std=c++1y -O3
 endif
 
 BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams 
