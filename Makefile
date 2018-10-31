@@ -23,7 +23,8 @@ RATEventInclude= -I ToolDAQ/RATEventLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-RootLib=  -L $(ToolDAQPath)/root-6.06.08/install/lib -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -m64 -lGui -lGenVector
+RootLib=  -L $(ToolDAQPath)/root-6.06.08/install/lib `root-config --glibs` -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -m64 -lGui -lGenVector -lMinuit -lGeom -lEve -lGL  -lGLEW -lGLU
+
 RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
 DataModelInclude = $(RootInclude)
