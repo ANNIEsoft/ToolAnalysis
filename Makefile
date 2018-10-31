@@ -20,7 +20,7 @@ MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
 RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
-RootLib=   -L $(ToolDAQPath)/root/lib  -lGui -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 -lMultiProc
+RootLib=   -L $(ToolDAQPath)/root/lib `root-config --glibs` -lMinuit -lGeom -lEve -lGL  -lGLEW -lGLU
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)

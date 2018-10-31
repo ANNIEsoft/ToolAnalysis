@@ -1,6 +1,9 @@
 ifndef CXXFLAGS
-  CXXFLAGS = -std=c++14 -O3
+  CXXFLAGS = -std=c++11 -O3
 endif
+
+BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams 
+BoostInclude= -I $(BOOST_INC)
 
 all: libRawViewer.so
 
@@ -77,7 +80,7 @@ dict.o: dictionary dict.cc
 
 %.o: %.cc
 	@echo "making $@"
-	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include -o $@ -c $^
+	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include  $(BoostInclude) $(BoostLib) -o $@ -c $^
 
 libRawViewer.so: dict.o RawViewer.o
 	@echo "making $@"
