@@ -1,6 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "MrdPaddlePlot.h"
 #include "TCanvas.h"
+#define GOT_EVE 1
 #ifdef GOT_EVE
 #include "TGeoManager.h"
 #include "TEveLine.h"
@@ -106,7 +107,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		mrdPaddlePlotApp = new TApplication("mrdPaddlePlotApp",&myargc,myargv);
 	}
 	
-#ifdef GOT_GEO
+#ifdef GOT_EVE
 	if(drawGdmlOverlay){
 		// Import the gdml geometry for the detector:
 		TGeoManager::Import(gdmlpath.c_str());
@@ -439,8 +440,9 @@ bool MrdPaddlePlot::Execute(){
 		}
 		
 		//gSystem->ProcessEvents();
-		if(enableTApplication) gPad->WaitPrimitive();
+		//if(enableTApplication) gPad->WaitPrimitive();
 		//if(enableTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
+		if(enableTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
 		
 		//if(earlyexit) break;
 	} // end loop over subevents
