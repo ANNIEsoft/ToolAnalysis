@@ -20,7 +20,7 @@ MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
 RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
-RootLib=   -L $(ToolDAQPath)/root/lib `root-config --glibs` -lMinuit -lGeom -lEve -lGL  -lGLEW -lGLU
+RootLib=   -L $(ToolDAQPath)/root/lib `root-config --glibs` -lMinuit -lGeom -lEve #-lGL  -lGLEW -lGLU
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
