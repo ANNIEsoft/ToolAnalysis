@@ -1,6 +1,6 @@
 # DigitBuilder config file
 
-verbosity 3
+verbosity 0
 OutputFile ./DigitBuilder.root
 MCTruthCut 1
 MRDRecoCut 0
