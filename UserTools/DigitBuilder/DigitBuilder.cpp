@@ -191,6 +191,9 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 					digitType = RecoDigit::PMT8inch;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
 				  //recoDigit.Print();
+				  
+				  //make some cuts here. will be moved to HitCleaer Tool
+				  if(calQ<5) continue;
 				  fDigitList->push_back(recoDigit); 
         }
 			}
@@ -244,6 +247,8 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					digitType = RecoDigit::lappd_v0;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType,LAPPDId);
 					//if(v_message<verbosity) recoDigit.Print();
+				  //make some cuts here. It will be moved to the Hitcleaning tool
+				  if(calT>5) continue; // cut off delayed hits
 				  fDigitList->push_back(recoDigit);
 				}
 			}
