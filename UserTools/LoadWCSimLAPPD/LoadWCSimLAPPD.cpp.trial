@@ -2,7 +2,6 @@
 
 #include "LoadWCSimLAPPD.h"
 #include <numeric>  // iota
-#include "TimeClass.h"
 
 LoadWCSimLAPPD::LoadWCSimLAPPD():Tool(){}
 
@@ -79,9 +78,9 @@ bool LoadWCSimLAPPD::Execute(){
   	
 	if(verbose) cout<<"Tool LoadWCSimLAPPD getting next entry "<<endl;
 	
-	//LAPPDHit(int tubeid, TimeClass thetime, double charge, std::vector<double> Position, std::vector<double> LocalPosition, double tpsec)
+	//LAPPDHit(int tubeid, double thetime, double charge, std::vector<double> Position, std::vector<double> LocalPosition, double tpsec)
 	int lappdid=1;
-	TimeClass timens(1.);
+	double timens(1.);
 	double charge=1.;
 	std::vector<double> globalpos{1.,1.,1.};
 	std::vector<double> localpos{1.,1.};
