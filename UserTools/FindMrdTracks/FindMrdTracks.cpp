@@ -103,7 +103,7 @@ bool FindMrdTracks::Execute(){
 		/*
 		digihit is of type std::pair<ChannelKey,vector<TDCHit>>,
 		ChannelKey has members SubDetectorIndex (uint) and DetectorElementIndex (uint)
-		TDCHit has members Time (type Timeclass),
+		TDCHit has members Time,
 		*/
 		
 		ChannelKey chankey = anmrdpmt.first;
