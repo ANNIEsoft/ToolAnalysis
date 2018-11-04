@@ -230,7 +230,7 @@ std::vector<ADCPulse> ADCHitFinder::find_pulses(
       // Store the freshly made pulse in the vector of found pulses
       pulses.emplace_back(channel_key.GetDetectorElementIndex(),
         ( pulse_start_sample * NS_PER_SAMPLE ),
-        TimeClass( peak_sample * NS_PER_SAMPLE ),
+        peak_sample * NS_PER_SAMPLE,
         calibrated_minibuffer_data.GetBaseline(),
         calibrated_minibuffer_data.GetSigmaBaseline(),
         raw_area, max_ADC, calibrated_amplitude, charge);

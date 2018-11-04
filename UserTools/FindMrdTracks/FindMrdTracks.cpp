@@ -338,7 +338,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				if(DrawTruthTracks){
 					for(int truetracki=0; truetracki<numtracks; truetracki++){
 						MCParticle nextrack = MCParticles->at(truetracki);
-						if((subeventnumthisevent2.at(truetracki)<0)&&(nextrack.GetStartTime().GetNs()<endtime)
+						if((subeventnumthisevent2.at(truetracki)<0)&&(nextrack.GetStartTime()<endtime)
 							&&(nextrack.GetPdgCode()!=11)){
 							Position startvp = nextrack.GetStartVertex();
 							TVector3 startv(startvp.X()*100.,startvp.Y()*100.,startvp.Z()*100.);
