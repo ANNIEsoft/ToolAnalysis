@@ -1,0 +1,30 @@
+#----- Tool: EnergyReco -----
+
+This tool contains python scripts for:
+i)  the muon energy reconstruction - BDT_MuonEnergyReco.py
+ii) the neutrino energy reconstruction - BDT_NeutrinoEnergyReco.py
+
+Commands and packages needed to be installed: 
+yum -y install python-matplotlib
+yum -y install python-pip 
+
+pip install numpy
+pip install pandas
+pip install tensorflow
+pip install sklearn
+pip install root_numpy
+
+#--- Description of the methods:
+* Training and test samples must be different to avoid biases and overtraining
+* The input files for each script can be changed in the beginning of each file: 
+   #--- evts for training:
+   infile = "../LocalFolder/vars_Ereco.csv"
+   #--- evts for prediction:
+   infile2 = "../LocalFolder/vars_Ereco.csv"
+   #----------------
+* These files can reproduce the results of the DOE proposal.
+* Due to lack of available statistics at the time, we used the same file, then split the sample in half and used different event samples for training/testing and different events for prediction/energy reconstruction. 
+
+* TO DO:
+  The aim is to use a large datasample for training/testing and fine-tune the algorithm. Then the prediction will be in collected data.  
+
