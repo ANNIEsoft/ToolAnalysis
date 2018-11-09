@@ -16,7 +16,7 @@ bool PlotLAPPDTimesFromStore::Initialise(std::string configfile, DataModel &data
 	
 	/////////////////// Useful header ///////////////////////
 	
-	if(verbose) cout<<"Initializing Tool PlotLAPPDTimesFromStore"<<endl;
+	if(verbosity) cout<<"Initializing Tool PlotLAPPDTimesFromStore"<<endl;
 	
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
@@ -26,7 +26,7 @@ bool PlotLAPPDTimesFromStore::Initialise(std::string configfile, DataModel &data
 	
 	// Get the Tool configuration variables
 	// ====================================
-	m_variables.Get("verbose",verbose);
+	m_variables.Get("verbose",verbosity);
 	
 	// Get trigger window parameters from CStore
 	// =========================================
@@ -34,65 +34,102 @@ bool PlotLAPPDTimesFromStore::Initialise(std::string configfile, DataModel &data
 	int posttriggerwindow;
 	m_data->CStore.Get("WCSimPreTriggerWindow",pretriggerwindow);
 	m_data->CStore.Get("WCSimPostTriggerWindow",posttriggerwindow);
-	if(verbose>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
-					  <<", WCSimPostTriggerWindow="<<posttriggerwindow<<endl;
+	logmessage = "WCSimPreTriggerWindow="+to_string(pretriggerwindow)
+				+", WCSimPostTriggerWindow="+to_string(posttriggerwindow);
+	Log(logmessage,v_message,verbosity);
 	
 	// create the ROOT application to show histograms
 	int myargc=0;
 	char *myargv[] = {(const char*)"somestring"};
 	lappdRootDrawApp = new TApplication("lappdRootStoreTimesDrawApp",&myargc,myargv);
-	digitime = new TH1D("lappdstoretimes","lappd digitimes",100,-500,1500);
-	digitimewithmuon = new TH1D("lappdstoretimes_withmuon","lappd digitimes for events w/ a muon",100,-500,1500);
-	mutime = new TH1D("muonstoretimes","muon start times from store",100,-500,1500);
+	digitime = new TH1D("lappdstoretimes","lappd digitimes",100,-10,50);
+	digitimewithmuon = new TH1D("lappdstoretimes_withmuon","lappd digitimes for events w/ a muon",100,-10,50);
+	mutime = new TH1D("muonstoretimes","muon start times from store",100,-10,50);
+//	digitime = new TH1D("lappdstoretimes","lappd digitimes",100,6660,6720);
+//	digitimewithmuon = new TH1D("lappdstoretimes_withmuon","lappd digitimes for events w/ a muon",100,6660,6720);
+//	mutime = new TH1D("muonstoretimes","muon start times from store",100,6660,6720);
 	
 	return true;
 }
 
 bool PlotLAPPDTimesFromStore::Execute(){
 	
-	if(verbose) cout<<"Executing tool PlotLAPPDTimesFromStore"<<endl;
+	Log("Executing tool PlotLAPPDTimesFromStore",v_message,verbosity);
 	
+	bool allok=true;
 	MCLAPPDHits=nullptr; MCParticles=nullptr;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);
+	if(not get_ok){
+		Log("PlotLAPPDTimesFromStore: Could not find MCEventNum in ANNIEEvent!",v_error,verbosity);
+		allok=false;
+	}
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggernum);
+	if(not get_ok){
+		Log("PlotLAPPDTimesFromStore: Could not find MCTriggernum in ANNIEEvent!",v_error,verbosity);
+		allok=false;
+	}
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("EventTime",EventTime);
+	if(not get_ok){
+		Log("PlotLAPPDTimesFromStore: Could not find EventTime in ANNIEEvent!",v_error,verbosity);
+		allok=false;
+	}
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",MCLAPPDHits);
+	if(not get_ok){
+		Log("PlotLAPPDTimesFromStore: Could not find MCLAPPDHits in ANNIEEvent!",v_error,verbosity);
+		allok=false;
+	}
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",MCParticles);
+	if(not get_ok){
+		Log("PlotLAPPDTimesFromStore: Could not find MCParticles in ANNIEEvent!",v_error,verbosity);
+		allok=false;
+	}
+	if(not allok){ return false; }
 	
 	double wcsimtriggertime = static_cast<double>(EventTime->GetNs()); // returns a uint64_t
-	if(verbose>2) cout<<"LAPPDTool: Trigger time for event "<<MCEventNum<<", trigger "
-					  <<MCTriggernum<<" was "<<wcsimtriggertime<<"ns"<<endl;
+	logmessage = "LAPPDTool: Trigger time for event "+to_string(MCEventNum)
+				+", trigger "+to_string(MCTriggernum)+" was "+to_string(wcsimtriggertime)+"ns";
+	Log(logmessage,v_message,verbosity);
 	
 	// check times relative to the time of the primary muon
 	MCParticle primarymuon;  // primary muon
 	bool mufound=false;
 	if(MCParticles){
+		// MCParticles is a std::vector<MCParticle>*
 		for(int particlei=0; particlei<MCParticles->size(); particlei++){
 			MCParticle aparticle = MCParticles->at(particlei);
 			if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
 			if(aparticle.GetPdgCode()!=13) continue;       // not a muon
 			primarymuon = aparticle;                       // note the particle
 			mufound=true;                                  // note that we found it
+			Log("primary muon at "+to_string(aparticle.GetStartTime()),v_message,verbosity);
 			break;                                         // won't have more than one primary muon
 		}
 	} else {
-		//Log("WCSimDemo Tool: No MCParticles in the event!",v_message,verbosity);
+		Log("WCSimDemo Tool: No MCParticles in the event!",v_message,verbosity);
 	}
 	
 	if(MCLAPPDHits){
+		Log("MCLAPPDHits has "+to_string(MCLAPPDHits->size())+" entries",v_message,verbosity);
+		// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>*
+		//std::cout<<"LAPPD hits at: ";
 		for(auto&& achannel : *MCLAPPDHits){
 			ChannelKey chankey = achannel.first;
 			auto& hits = achannel.second;
+			logmessage = "tile "+to_string(chankey.GetDetectorElementIndex())
+						+" has "+to_string(hits.size())+" hits";
+			Log(logmessage,v_message,verbosity);
 			for(auto&& ahit : hits){
 				digitime->Fill(ahit.GetTime());
+				//std::cout<<ahit.GetTime()<<", ";
 				if(mufound){
 					digitimewithmuon->Fill(ahit.GetTime());
 					mutime->Fill(primarymuon.GetStartTime());  // or GetStopTime
 				}
 			}
 		}
+		//std::cout<<std::endl;
 	} else {
-		cout<<"No MCLAPPDHits"<<endl;
+		Log("No MCLAPPDHits",v_warning,verbosity);
 	}
 	
 	return true;
@@ -101,33 +138,50 @@ bool PlotLAPPDTimesFromStore::Execute(){
 
 bool PlotLAPPDTimesFromStore::Finalise(){
 	
-	Log("plotlappdtimesfromstore finalising",0,12);
+	Log("plotlappdtimesfromstore finalising",v_message,verbosity);
 	Double_t canvwidth = 700;
 	Double_t canvheight = 600;
 	lappdRootCanvas = new TCanvas("lappdTimesFromStoreCanvas","lappdTimesFromStoreCanvas",canvwidth,canvheight);
-	Log("canvas created",0,12);
+	Log("canvas created",v_message,verbosity);
 	lappdRootCanvas->SetWindowSize(canvwidth,canvheight);
 	lappdRootCanvas->cd();
-	Log("canvas selected",0,12);
+	Log("canvas selected",v_message,verbosity);
 	
 	digitime->Draw();
-	Log("histo drawn",0,12);
+	Log("histo drawn",v_message,verbosity);
 	//lappdRootCanvas->SetLogy(1);  // spits errors about negative axis
-	gPad->SetLogy(1);
-	Log("logy set",0,12);
+	//gPad->SetLogy(1);
+	//Log("logy set",v_message,verbosity);
 	lappdRootCanvas->Update();
 	lappdRootCanvas->SaveAs("lappddigitimes_instore.png");
-	Log("saved, deleting hist",0,12);
+	Log("saved, deleting hist",v_message,verbosity);
+	
+	digitimewithmuon->Draw();
+	Log("histo 2 drawn",v_message,verbosity);
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("lappddigitimeswithmuon_instore.png");
+	Log("saved, deleting hist",v_message,verbosity);
+	
+	mutime->Draw();
+	Log("histo 3 drawn",v_message,verbosity);
+	lappdRootCanvas->Update();
+	lappdRootCanvas->SaveAs("lappdmuontimes_instore.png");
+	Log("saved, deleting hist",v_message,verbosity);
 	
 	//lappdRootDrawApp->Run();
 	//std::this_thread::sleep_for (std::chrono::seconds(5));
 	//lappdRootDrawApp->Terminate(0);
 	
-	delete digitime;
-	Log("deleting canvas",0,12);
+	lappdRootCanvas->Clear();
+	
+	if(digitime){ delete digitime; digitime=nullptr; }
+	if(digitimewithmuon){ delete digitimewithmuon; digitimewithmuon=nullptr; }
+	if(mutime){ delete mutime; mutime=nullptr; }
+	
+	Log("deleting canvas",v_message,verbosity);
 	delete lappdRootCanvas;
-	Log("deleting app",0,12);
+	Log("deleting app",v_message,verbosity);
 	delete lappdRootDrawApp;
-	Log("exiting",0,12);
+	Log("exiting",v_message,verbosity);
 	return true;
 }
