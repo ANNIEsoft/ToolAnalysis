@@ -41,7 +41,9 @@ bool PlotLAPPDTimesFromStore::Initialise(std::string configfile, DataModel &data
 	int myargc=0;
 	char *myargv[] = {(const char*)"somestring"};
 	lappdRootDrawApp = new TApplication("lappdRootStoreTimesDrawApp",&myargc,myargv);
-	digitime = new TH1D("lappd_digitime_store","lappd digitimes",100,-500,1500);
+	digitime = new TH1D("lappdstoretimes","lappd digitimes",100,-500,1500);
+	digitimewithmuon = new TH1D("lappdstoretimes_withmuon","lappd digitimes for events w/ a muon",100,-500,1500);
+	mutime = new TH1D("muonstoretimes","muon start times from store",100,-500,1500);
 	
 	return true;
 }
@@ -50,21 +52,44 @@ bool PlotLAPPDTimesFromStore::Execute(){
 	
 	if(verbose) cout<<"Executing tool PlotLAPPDTimesFromStore"<<endl;
 	
-	MCLAPPDHits=nullptr;
+	MCLAPPDHits=nullptr; MCParticles=nullptr;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggernum);
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("EventTime",EventTime);
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",MCLAPPDHits);
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",MCParticles);
 	
-	double wcsimtriggertime = 0; // static_cast<double>(EventTime->GetNs()); // returns a uint64_t
+	double wcsimtriggertime = static_cast<double>(EventTime->GetNs()); // returns a uint64_t
 	if(verbose>2) cout<<"LAPPDTool: Trigger time for event "<<MCEventNum<<", trigger "
 					  <<MCTriggernum<<" was "<<wcsimtriggertime<<"ns"<<endl;
+	
+	// check times relative to the time of the primary muon
+	MCParticle primarymuon;  // primary muon
+	bool mufound=false;
+	if(MCParticles){
+		for(int particlei=0; particlei<MCParticles->size(); particlei++){
+			MCParticle aparticle = MCParticles->at(particlei);
+			if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
+			if(aparticle.GetPdgCode()!=13) continue;       // not a muon
+			primarymuon = aparticle;                       // note the particle
+			mufound=true;                                  // note that we found it
+			break;                                         // won't have more than one primary muon
+		}
+	} else {
+		//Log("WCSimDemo Tool: No MCParticles in the event!",v_message,verbosity);
+	}
 	
 	if(MCLAPPDHits){
 		for(auto&& achannel : *MCLAPPDHits){
 			ChannelKey chankey = achannel.first;
 			auto& hits = achannel.second;
-			for(auto&& ahit : hits){ digitime->Fill(ahit.GetTime()); }
+			for(auto&& ahit : hits){
+				digitime->Fill(ahit.GetTime());
+				if(mufound){
+					digitimewithmuon->Fill(ahit.GetTime());
+					mutime->Fill(primarymuon.GetStartTime());  // or GetStopTime
+				}
+			}
 		}
 	} else {
 		cout<<"No MCLAPPDHits"<<endl;

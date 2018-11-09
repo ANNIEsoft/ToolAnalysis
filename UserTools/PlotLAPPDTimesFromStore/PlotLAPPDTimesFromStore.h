@@ -29,9 +29,10 @@ class PlotLAPPDTimesFromStore: public Tool {
   uint64_t MCEventNum;
   uint16_t MCTriggernum;
   std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
+  std::vector<MCParticle>* MCParticles=nullptr;
   TApplication* lappdRootDrawApp;
   TCanvas* lappdRootCanvas;
-  TH1D* digitime;
+  TH1D* digitime, *digitimewithmuon, *mutime;
 
 };
 
