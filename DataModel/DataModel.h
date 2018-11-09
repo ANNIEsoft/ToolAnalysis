@@ -28,6 +28,11 @@
 #include "TimeClass.h"
 #include "TriggerClass.h"
 #include "Waveform.h"
+#include "Parameters.h"
+#include "ANNIERecoObjectTable.h"
+#include "RecoDigit.h"
+#include "RecoVertex.h"
+#include "RecoRing.h"
 
 
 #include <zmq.hpp>

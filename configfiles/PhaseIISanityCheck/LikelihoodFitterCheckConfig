@@ -1,0 +1,6 @@
+verbosity 3
+
+OutputFile ./LikelihoodFitterCheck.root
+ifPlot2DFOM 0
+ShowEvent 62
+
