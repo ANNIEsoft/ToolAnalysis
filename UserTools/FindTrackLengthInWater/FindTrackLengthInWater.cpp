@@ -16,7 +16,7 @@ bool FindTrackLengthInWater::Initialise(std::string configfile, DataModel &data)
 
   file= new TFile(infile.c_str(),"READ");
   regTree= (TTree*) file->Get("vertextree");
-  std::cout<<"Number of entries: "<<regTree->GetEntries()<<std::endl;
+  std::cout<<"Number of entries in tree: "<<regTree->GetEntries()<<std::endl;
 
   currententry=1;
     
@@ -32,7 +32,10 @@ bool FindTrackLengthInWater::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("Outputfile",myfile);
   csvfile.open(myfile);   
 
-      std::cout<<" open file.. "<<maxhits0<<std::endl;  
+      std::cout<<" open file.. max number of hits: "<<maxhits0<<std::endl;  
+      if(maxhits0>1100){ 
+        std::cerr<<" Please change the dim of double lambda_vec[1100]={0.}; double digitt[1100]={0.}; from 1100 to max number of hits"<<std::endl; 
+      }
       //--- write to file: ---//
       //if(first==1 && deny_access==0){
       //    deny_access=1;
@@ -54,11 +57,23 @@ bool FindTrackLengthInWater::Initialise(std::string configfile, DataModel &data)
              const char * tname = T_name.c_str();
              csvfile<<tname<<",";
           }
-        csvfile<<"lambda_max"<<",";
+        csvfile<<"lambda_max"<<","; //first estimation of track length(using photons projection on track)
         csvfile<<"totalPMTs"<<",";
         csvfile<<"totalLAPPDs"<<",";
         csvfile<<"lambda_max"<<",";
-        csvfile<<"TrueTrackLengthInWater";
+        csvfile<<"TrueTrackLengthInWater"<<",";
+        csvfile<<"neutrinoE"<<",";
+        csvfile<<"trueKE"<<",";
+        csvfile<<"diffDirAbs"<<",";
+        csvfile<<"TrueTrackLengthInMrd"<<",";
+        csvfile<<"recoDWallR"<<",";
+        csvfile<<"recoDWallZ"<<",";
+        csvfile<<"dirX"<<",";
+        csvfile<<"dirY"<<",";
+        csvfile<<"dirZ"<<",";
+        csvfile<<"vtxX"<<",";
+        csvfile<<"vtxY"<<",";
+        csvfile<<"vtxZ";
         csvfile<<'\n';
       // }
 
@@ -131,9 +146,10 @@ bool FindTrackLengthInWater::Execute(){
    int totalPMTs=0; int totalLAPPDs=0; recoDWallR2=0; recoDWallZ2=0; diffDirAbs2=0;
    double lambda_vec[1100]={0.}; double digitt[1100]={0.};
 
-   if(recoStatus == 0){
-     if((*TrueInteractionType == "QES - Weak[CC]") && TrueTrackLengthInMrd>0.){
-   	std::cout<<"current entry: "<<currententry<<" with nhits: "<<nhits<<std::endl;
+   std::cout<<"currententry: "<<currententry<<endl;
+   if(recoStatus == 0){ count1++;
+     if((*TrueInteractionType == "QES - Weak[CC]") && TrueTrackLengthInMrd>0.){ 
+   	//std::cout<<"current entry: "<<currententry<<" with nhits: "<<nhits<<std::endl;
 
         //calculate diff dir with (0,0,1)  
         double diffDirAbs0 = TMath::ACos(dirZ)*TMath::RadToDeg();
@@ -164,19 +180,6 @@ bool FindTrackLengthInWater::Execute(){
   	}
         //std::cout<<"the track length in the water tank (1st approx) is: "<<lambda_max<<std::endl;
 
-        //--- write to file: 
-        for(int i=0; i<maxhits0;++i){
-           csvfile<<lambda_vec[i]<<",";
-        }
-        for(int i=0; i<maxhits0;++i){
-           csvfile<<digitt[i]<<",";
-        } 
-        csvfile<<lambda_max<<",";
-        csvfile<<totalPMTs<<",";
-        csvfile<<totalLAPPDs<<",";
-        csvfile<<lambda_max<<",";
-        csvfile<<TrueTrackLengthInWater;
-        csvfile<<'\n';
        //---------------------------------
        //---- add values to tree for energy reconstruction: 
        ievt=currententry;
@@ -192,13 +195,42 @@ bool FindTrackLengthInWater::Execute(){
        TrueTrackLengthInWater2 = TrueTrackLengthInWater/500.;
        TrueTrackLengthInMrd2 = TrueTrackLengthInMrd/200.;       
 
+        //----- write to .csv file - including variables for track length & energy reconstruction:
+        for(int i=0; i<maxhits0;++i){
+           csvfile<<lambda_vec[i]<<",";
+        }
+        for(int i=0; i<maxhits0;++i){
+           csvfile<<digitt[i]<<",";
+        }
+        csvfile<<lambda_max<<",";
+        csvfile<<totalPMTs<<",";
+        csvfile<<totalLAPPDs<<",";
+        csvfile<<lambda_max<<",";
+        csvfile<<TrueTrackLengthInWater<<",";
+        csvfile<<trueNeuE<<",";
+        csvfile<<trueE<<",";
+        csvfile<<diffDirAbs2<<",";
+        csvfile<<TrueTrackLengthInMrd2<<",";
+        csvfile<<recoDWallR2<<",";
+        csvfile<<recoDWallZ2<<",";
+        csvfile<<dirX2<<",";
+        csvfile<<dirY2<<",";
+        csvfile<<dirZ2<<",";
+        csvfile<<vtxX2<<",";
+        csvfile<<vtxY2<<",";
+        csvfile<<vtxZ2;
+        csvfile<<'\n';
+        //------------------------  
+ 
+
+
        nu_eneNEW->Fill();
      }
    }
    currententry++;
 
-  // if(currententry==regTree->GetEntries()) m_data->vars.Set("StopLoop",1);
-  //if(currententry==5) m_data->vars.Set("StopLoop",1);
+   if(currententry==regTree->GetEntries()) m_data->vars.Set("StopLoop",1);
+   //if(currententry==5) m_data->vars.Set("StopLoop",1);
 
   return true;
 }
@@ -258,7 +290,7 @@ double FindTrackLengthInWater::find_lambda(double xmu_rec,double ymu_rec,double 
 }
 
 bool FindTrackLengthInWater::Finalise(){
-
+ 
   nu_eneNEW->Write();
   return true;
 }
