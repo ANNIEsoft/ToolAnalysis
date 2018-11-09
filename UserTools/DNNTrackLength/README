@@ -1,0 +1,26 @@
+#----- Tool: DNNTrackLength -----
+
+This tool contains python scripts for:
+i)  the reconstruction of the track length in the water tank - DNNFindTrackLengthInWater.py
+ii) It uses .csv files created by "FindTrackLengthInWater" and creates .csv to be used at the enery reconstruction. 
+iii)Change input filenames at:
+    #--- evts for training:
+    infile = "../LocalFolder/NEWdata_forRecoLength_9_10MRD.csv"
+    #--- evts for prediction:
+    infile2 = "../LocalFolder/NEWdata_forRecoLength_0_8MRD.csv"
+iv) the output file is: vars_Ereco.csv 
+
+Commands and packages needed to be installed: 
+yum -y install python-matplotlib
+yum -y install python-pip 
+
+pip install numpy
+pip install pandas
+pip install tensorflow
+pip install sklearn
+pip install root_numpy
+
+#--- Description of the methods:
+* Training and test samples must be different to avoid biases and overtraining
+* enter the event file names in infile variable to reconstruct the track length in the water tank
+
