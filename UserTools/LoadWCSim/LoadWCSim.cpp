@@ -19,6 +19,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// ====================================
 	m_variables.Get("verbose",verbose);
 	m_variables.Get("InputFile",MCFile);
+	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
 	
 	// Short Stores README
 	//////////////////////
@@ -298,7 +299,7 @@ bool LoadWCSim::Execute(){
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT())); // relative to trigger
+			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
@@ -321,7 +322,7 @@ bool LoadWCSim::Execute(){
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId() + numvetopmts;
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT())); // relative to trigger
+			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
@@ -344,7 +345,7 @@ bool LoadWCSim::Execute(){
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT())); // relative to trigger
+			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;

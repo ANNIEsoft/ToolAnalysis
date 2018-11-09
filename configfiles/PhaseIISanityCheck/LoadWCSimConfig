@@ -1,0 +1,5 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbose 1
+InputFile /data/wcsim_0.0.0.root
