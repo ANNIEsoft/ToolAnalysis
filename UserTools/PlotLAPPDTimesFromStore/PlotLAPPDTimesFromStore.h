@@ -23,7 +23,7 @@ class PlotLAPPDTimesFromStore: public Tool {
 
  private:
 
-  int verbose;
+  int verbosity;
   int get_ok;
   TimeClass* EventTime=nullptr;
   uint64_t MCEventNum;
@@ -33,6 +33,13 @@ class PlotLAPPDTimesFromStore: public Tool {
   TApplication* lappdRootDrawApp;
   TCanvas* lappdRootCanvas;
   TH1D* digitime, *digitimewithmuon, *mutime;
+  
+  // verbosity levels: if 'verbosity' < this level, the message type will be logged.
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  std::string logmessage;
 
 };
 
