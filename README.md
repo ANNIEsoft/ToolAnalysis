@@ -1,6 +1,6 @@
 # DAQFramework
 
-ToolDAQ Application is an open source general DAQ Applicaiton template built using the modular ToolDAQ Framework core[1] to give speration between core and implimentation code.
+ToolDAQ Application is an open source general DAQ Application template built using the modular ToolDAQ Framework core[1] to give separation between core and implementation code.
 
 ****************************
 #Concept
