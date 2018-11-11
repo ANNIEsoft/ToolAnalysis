@@ -95,6 +95,7 @@ lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/* | lib/libStore.
 	#$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
 update:
+	@echo -e "\n*************** Updating ****************"
 	cd $(ToolDAQPath)/ToolDAQFramework; git pull
 	cd $(ToolDAQPath)/zeromq-4.0.7; git pull
 	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make
