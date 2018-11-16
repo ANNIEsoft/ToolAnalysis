@@ -33,8 +33,8 @@ class BeamFetcher: public Tool {
 
     /// @brief Helper function that downloads and processes the beam
     /// information
-    bool fetch_beam_data(unsigned long long start_ms_since_epoch,
-      unsigned long long end_ms_since_epoch, unsigned long long chunk_step_ms);
+    bool fetch_beam_data(uint64_t start_ms_since_epoch,
+      uint64_t end_ms_since_epoch, uint64_t chunk_step_ms);
 
     /// @brief Name of the output file in which the beam database information
     /// will be saved
