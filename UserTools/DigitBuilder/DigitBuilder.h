@@ -81,7 +81,6 @@ class DigitBuilder: public Tool {
 	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
 	std::map<ChannelKey,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
 	std::map<ChannelKey,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
-	TimeClass* fEventTime=nullptr;    ///< NDigits trigger time in ns from when the particles were generated
 	TRandom3 frand;  ///< Random number generator
 	
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

@@ -4,7 +4,6 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TF1.h"
-#include "TimeClass.h"
 #include <vector>
 #include <iostream>
 #include <cmath>
