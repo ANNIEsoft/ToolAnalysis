@@ -186,7 +186,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// get calibrated PMT time (Use the MC time for now)
 					//calT = ahit.GetTime()*1.0;
-					calT = ahit.GetTime()*1.0 - 950.0; // remove 950 ns offs
+					calT = ahit.GetTime()*1.0; // remove 950 ns offs
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::PMT8inch;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
