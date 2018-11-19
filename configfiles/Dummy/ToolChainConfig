@@ -5,6 +5,7 @@ verbose 9
 error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
 attempt_recover 1
 remote_port 24004
+IO_Threads 1 ## Number of threads for network traffic (~ 1/Gbps)
 
 ###### Logging #####
 log_mode Interactive # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
