@@ -1,6 +1,6 @@
 # ToolAnalysis
 
-ToolAnalysis is a modular analysis program written for the ANNIE collaboration. It is based on ToolDAQ Application[1] which is an open source general DAQ Applicaiton template built using the modular ToolDAQ Framework core[2] to give speration between core and implimentation code.
+ToolAnalysis is a modular analysis program written for the ANNIE collaboration. It is based on ToolDAQ Application[1] which is an open source general DAQ Application template built using the modular ToolDAQ Framework core[2] to give separation between core and implementation code.
 
 ****************************
 #Concept
