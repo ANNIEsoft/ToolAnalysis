@@ -36,12 +36,15 @@
 #include "MRDOut.h"
 #include "Channel.h"
 
+
 #include <zmq.hpp>
 
 class DataModel {
 
 
  public:
+
+  Channel a();
 
   DataModel();
 
