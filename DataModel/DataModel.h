@@ -30,12 +30,15 @@
 #include "Waveform.h"
 #include "Channel.h"
 
+
 #include <zmq.hpp>
 
 class DataModel {
 
 
  public:
+
+  Channel a();
 
   DataModel();
   //TTree* GetTTree(std::string name);
