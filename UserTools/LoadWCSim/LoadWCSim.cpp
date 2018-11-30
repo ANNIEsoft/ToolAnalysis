@@ -278,6 +278,7 @@ bool LoadWCSim::Execute(){
 			
 			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
 		        //MC particle times now stored relative to the trigger time	
+			// e.g. primary neutrino time is -1, but TimeClass accepts uint64_t - UNSIGNED = becomes 18446744073709551615
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0) / 100., nextrack->GetStart(1) / 100., nextrack->GetStart(2) / 100.),
