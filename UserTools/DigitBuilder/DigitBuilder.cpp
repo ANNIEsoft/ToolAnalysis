@@ -185,7 +185,6 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			  	//ahit.Print();
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// get calibrated PMT time (Use the MC time for now)
-					//calT = ahit.GetTime()*1.0;
 					calT = ahit.GetTime()*1.0; // remove 950 ns offs
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::PMT8inch;
@@ -223,7 +222,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 			//Tube ID is different from that in ANNIEReco
 			LAPPDId = det.GetDetectorId();
 			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
-			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
+			if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
                         if(chankey.GetSubDetectorType()==subdetector::LAPPD){ // redundant
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){

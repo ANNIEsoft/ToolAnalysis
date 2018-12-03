@@ -18,14 +18,15 @@ Describe any configuration variables for VtxSeedGenerator.
 	m_variables.Get("NumberOfSeeds", fNumSeeds);
 	m_variables.Get("verbosity", verbosity);
 	m_variables.Get("UseSeedGrid", UseSeedGrid);
+
 SeedType (int)
 NumberOfSeeds (int)
 verbosity (int)
 UseSeedGrid (bool)
 
 SeedType specifies whether to use PMTs, LAPPDs, or all. 
-SeedType 0: Use only LAPPDs for seed
-SeedType 1: User only LAPPDs for seed
+SeedType 0: Use only LAPPDs for calculating median seed time
+SeedType 1: User only LAPPDs for calculating median seed time
 SeedType 2: Use both the LAPPDs and the PMTs
  
 NumberOfSeeds specifies how many points to generate in the grid, or how

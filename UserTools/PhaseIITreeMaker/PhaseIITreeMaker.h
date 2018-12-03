@@ -73,6 +73,7 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fSeedVtxX;
   std::vector<double> fSeedVtxY;
   std::vector<double> fSeedVtxZ;
+  std::vector<double> fSeedVtxFOM;
   double fSeedVtxTime;
   
   // Reco vertex
