@@ -89,8 +89,9 @@ bool VtxPointPositionFinder::Execute(){
       fPointPosition  = (RecoVertex*)(this->FitPointPosition(fTrueVertex));
     } else {
       Log("VtxPointPositionFinder Tool: You've chosen to use MC truth information but not use Minuit for position fit... returning True MC vertex as Point Position",v_message,verbosity);
-      fPointPosition = fTrueVertex;
-    // Push fitted vertex to RecoEvent store
+    RecoVertex* newVertex = new RecoVertex();
+    newVertex->CloneVertex(fTrueVertex);
+    fPointPosition = (RecoVertex*)(newVertex);
     this->PushPointPosition(fPointPosition, true);
     }
   
