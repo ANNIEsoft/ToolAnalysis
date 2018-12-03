@@ -13,9 +13,11 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
   /////////////////////////////////////////////////////////////////
   
   fUseTrueVertexAsSeed = false;
+  fUseMinuit = true;
   
   /// Get the Tool configuration variables
 	m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
+	m_variables.Get("UseMinuitForPos",fUseMinuit);
 	m_variables.Get("verbosity", verbosity);
 	
 	/// Create Simple position and point position
@@ -26,6 +28,8 @@ bool VtxPointPositionFinder::Initialise(std::string configfile, DataModel &data)
 	fSimplePosition = new RecoVertex();
 	fPointPosition = new RecoVertex();
 
+        // Now Create the list of Seed FOMs
+        vSeedFOMList = new std::vector<double>;
   return true;
 }
 
@@ -70,7 +74,8 @@ bool VtxPointPositionFinder::Execute(){
   VertexGeometry* myvtxgeo = VertexGeometry::Instance();
   //myvtxgeo->Clear();
   myvtxgeo->LoadDigits(fDigitList);
-	// Do point position reconstruction using MC truth information
+  
+  // Do point position reconstruction using MC truth information
   if( fUseTrueVertexAsSeed ){
     Log("VtxPointPositionFinder Tool: Run vertex reconstruction using MC truth information",v_message,verbosity);
     // get truth vertex information 
@@ -80,12 +85,17 @@ bool VtxPointPositionFinder::Execute(){
 		  return false; 
 	  }
     // return vertex
-    fPointPosition  = (RecoVertex*)(this->FitPointPosition(fTrueVertex));
+    if (fUseMinuit){
+      fPointPosition  = (RecoVertex*)(this->FitPointPosition(fTrueVertex));
+    } else {
+      Log("VtxPointPositionFinder Tool: You've chosen to use MC truth information but not use Minuit for position fit... returning True MC vertex as Point Position",v_message,verbosity);
+      fPointPosition = fTrueVertex;
     // Push fitted vertex to RecoEvent store
     this->PushPointPosition(fPointPosition, true);
-  }
+    }
   
-  else {
+  // Do point position reconstruction using Seeds
+  } else {
   	// Get vertex seed candidates from the store
   	std::vector<RecoVertex>* vSeedVtxList = 0;
   	auto get_seedlist = m_data->Stores.at("RecoEvent")->Get("vSeedVtxList", vSeedVtxList);
@@ -98,10 +108,18 @@ bool VtxPointPositionFinder::Execute(){
   	fSimplePosition = this->FindSimplePosition(vSeedVtxList);
   	// Push selected simple position to RecoEvent store
   	this->PushSimplePosition(fSimplePosition, true);
-  	// Use the found simple position as the seed 
-    fPointPosition  = (RecoVertex*)(this->FitPointPosition(fSimplePosition));
-    // Push fitted vertex to RecoEvent store
-    this->PushPointPosition(fPointPosition, true);	
+    
+    // If sing Minuit, Use the found simple position as the seed
+    if (fUseMinuit){ 
+      fPointPosition  = (RecoVertex*)(this->FitPointPosition(fSimplePosition));
+      this->PushPointPosition(fPointPosition, true);	
+    } else { 
+      //Simple position is the point position seed for pointVtx
+      RecoVertex* newVertex = new RecoVertex();
+      newVertex->CloneVertex(fSimplePosition);
+      fPointPosition = (RecoVertex*)(newVertex);
+      this->PushPointPosition(fPointPosition, true);
+    }
   }
 
   return true;
@@ -111,6 +129,7 @@ bool VtxPointPositionFinder::Finalise(){
 	// memory has to be freed in the Finalise() function
 	delete fSimplePosition; fSimplePosition = 0;
 	delete fPointPosition; fPointPosition = 0;
+	delete vSeedFOMList; vSeedFOMList = 0;
 	if(verbosity>0) cout<<"VtxPointPositionFinder exitting"<<endl;
   return true;
 }
@@ -172,10 +191,14 @@ RecoVertex* VtxPointPositionFinder::FindSimplePosition(std::vector<RecoVertex>* 
     myOptimizer->LoadVertex(vSeed); //Load vertex seed
     myOptimizer->FitPointTimeWithMinuit(); //scan time for fixed position
     vtxFOM = myOptimizer->GetFittedVertex()->GetFOM();
+    vSeedFOMList->push_back(vtxFOM);
     if( vtxFOM>bestFOM ){
       newVertex->CloneVertex(myOptimizer->GetFittedVertex());
+      bestFOM = vtxFOM;
     }
-  }                                   
+  }
+  //Push the vSeedFOMList to the Store
+  this->PushVertexSeedFOMList(true);
   if(verbosity>0 && newVertex->GetPass()==1) {
     std::cout << "  simple position: " << std::endl
               << "    (vx,vy,vz)=(" << newVertex->GetPosition().X() << "," << newVertex->GetPosition().Y() << "," << newVertex->GetPosition().Z() << ") " << std::endl
@@ -189,20 +212,23 @@ RecoVertex* VtxPointPositionFinder::FindSimplePosition(std::vector<RecoVertex>* 
 void VtxPointPositionFinder::Reset() {
 	fSimplePosition->Reset();
 	fPointPosition->Reset();
+	vSeedFOMList->clear();
 }
 
 // Add simple position to RecoEvent store
-void VtxPointPositionFinder::PushSimplePosition(RecoVertex* vtx, bool savetodisk) {  
+void VtxPointPositionFinder::PushSimplePosition(RecoVertex* thevtx, bool savetodisk) {  
   // push vertex to RecoEvent store
   Log("VtxPointPositionFinder Tool: Push simple position to the RecoEvent store",v_message,verbosity);
-	m_data->Stores.at("RecoEvent")->Set("SimplePosition", fSimplePosition, savetodisk);  ///> RecoEvent store is responsible to free the memory
+	m_data->Stores.at("RecoEvent")->Set("SimplePosition", thevtx, savetodisk);  ///> RecoEvent store is responsible to free the memory
 }
 
 // Add point position to RecoEvent store
-void VtxPointPositionFinder::PushPointPosition(RecoVertex* vtx, bool savetodisk) {  
+void VtxPointPositionFinder::PushPointPosition(RecoVertex* thevtx, bool savetodisk) {  
   // push vertex to RecoEvent store
   Log("VtxPointPositionFinder Tool: Push point position to the RecoEvent store",v_message,verbosity);
-	m_data->Stores.at("RecoEvent")->Set("PointPosition", fPointPosition, savetodisk);  ///> RecoEvent store is responsible to free the memory
+	m_data->Stores.at("RecoEvent")->Set("PointPosition", thevtx, savetodisk);  ///> RecoEvent store is responsible to free the memory
 }
 
-
+void VtxPointPositionFinder::PushVertexSeedFOMList(bool savetodisk) {
+  m_data->Stores.at("RecoEvent")->Set("vSeedFOMList", vSeedFOMList, savetodisk); 
+}

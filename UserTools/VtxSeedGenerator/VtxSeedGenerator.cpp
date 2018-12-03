@@ -151,7 +151,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
   //Assuming roughly equal distance, we can calculate the number of
   //layers needed to have close to even spacing, and # points on each disk
   double approx_points = pow((NSeeds*tankradius/tanklength),(2.0/3.0));
-  int numlayers = (int) pow(pow(tankradius,2)/approx_points,(1.0/2.0));
+  int numlayers = (int) (tanklength/pow(pow(tankradius,2)/approx_points,(1.0/2.0)));
   int points_ondisk = (int) approx_points;
 
   //Now, fill a vector of doubles with the xy plane points 
