@@ -25,7 +25,7 @@ verbosity (int)
 UseSeedGrid (bool)
 
 SeedType specifies whether to use PMTs, LAPPDs, or all. 
-SeedType 0: Use only LAPPDs for calculating median seed time
+SeedType 0: Use only PMTs for calculating median seed time
 SeedType 1: User only LAPPDs for calculating median seed time
 SeedType 2: Use both the LAPPDs and the PMTs
  
