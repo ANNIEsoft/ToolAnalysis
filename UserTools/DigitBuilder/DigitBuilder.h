@@ -73,7 +73,6 @@ class DigitBuilder: public Tool {
 	uint32_t fSubrunNumber;    ///< MC has no 'subrun', always 0
 	uint32_t fEventNumber;     ///< flattens the 'event -> trigger' MC hierarchy
 	uint64_t fMCEventNum;      ///< event number in MC file
-	uint16_t fMCTriggernum;    ///< trigger number in MC file
 	std::vector<int> fLAPPDId; ///< selected LAPPDs
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	

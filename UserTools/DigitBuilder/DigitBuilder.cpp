@@ -59,19 +59,6 @@ bool DigitBuilder::Execute(){
   		return false;
 	};
 	
-	/// First, see if this is a delayed trigger in the event
-	auto get_mctrigger = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
-	if(!get_mctrigger){ 
-		Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
-		return false; 
-	}
-	
-	/// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
-	if(fMCTriggernum>0){ 
-		Log("DigitBuilder Tool: Skipping delayed trigger",v_debug,verbosity); 
-		return true;
-	}
-	
 	/// check if EventCutStatus exists
   auto get_evtcutstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",fEventCutStatus);
 	if(!get_evtcutstatus){
