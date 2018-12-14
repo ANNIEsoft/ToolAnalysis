@@ -3,3 +3,4 @@
 verbosity 3
 MCTruthCut 1
 MRDRecoCut 0
+PromptTrigOnly 1
