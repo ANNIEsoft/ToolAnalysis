@@ -9,6 +9,8 @@ various event selection criteria.  Current event selection flags that can be
 utilized include:
   - MRDRecoCut Flags muon events that reconstruct within a defined radius and height
   - MCTruthCut: Flags MC muon events generated within a defined radius and height 
+  - PromptTrigOnly: Flags muon events that do not have an MCTriggernum of 0
+                    (any store event with MCTriggernum>0 is a delayed trigger)
 
 For each event, all cuts defined with the config file are checked.  If the event
 passes all cuts, EventCutStatus is set to true and saved to the RecoEvent store.
@@ -28,4 +30,5 @@ master EventCutStatus bit checked by all following tools
 verbosity bool
 MRDRecoCut (1 or 0)
 MCTruthCut (1 or 0)
+PromptTrigOnly (1 or 0)
 ```

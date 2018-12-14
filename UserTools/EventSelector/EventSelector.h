@@ -39,6 +39,13 @@ class EventSelector: public Tool {
  	/// length. If the longest track is stoped inside the MRD, the event is 
  	/// selected
  	bool EventSelectionByMRDReco();
+
+ 	/// \brief Event selection by trigger number
+ 	///
+ 	/// The selection is based on the trigger number for the event
+ 	/// in the store "ANNIEEvent".  Events are selected if they have
+ 	/// an MCTriggernum == 0 (i.e. they are a prompt trigger) 
+ 	bool PromptTriggerCheck();
  	
  	/// \brief Event selection by fidicual volume
  	///
@@ -65,7 +72,7 @@ class EventSelector: public Tool {
   uint64_t fMCEventNum;
   
   /// \brief trigger number
-  uint16_t fMCTriggerNum;
+  uint16_t fMCTriggernum;
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
@@ -81,6 +88,7 @@ class EventSelector: public Tool {
 	std::string fInputfile;
 	bool fMRDRecoCut = false;
 	bool fMCTruthCut = false;
+        bool fPromptTrigOnly = true;
 	bool fEventCutStatus;
 
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
