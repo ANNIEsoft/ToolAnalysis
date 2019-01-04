@@ -44,7 +44,7 @@ class DataModel {
 
  public:
 
-  Channel a();
+  
 
   DataModel();
 
