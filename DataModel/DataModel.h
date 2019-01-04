@@ -38,7 +38,7 @@ class DataModel {
 
  public:
 
-  Channel a();
+  
 
   DataModel();
   //TTree* GetTTree(std::string name);
