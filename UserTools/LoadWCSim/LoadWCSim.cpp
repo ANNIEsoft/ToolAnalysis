@@ -156,7 +156,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	std::vector<std::map<unsigned long,Detector>* > dets;
 	Geometry* anniegeom = new Geometry(dets, WCSimGeometryVer, tank_centre, tank_radius,
 	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
-	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, 1);
+	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, geostatus::FULLY_OPERATIONAL);
 	if(verbose>1) cout<<"constructed anniegom at "<<anniegeom<<endl;
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 

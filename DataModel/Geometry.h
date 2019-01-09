@@ -9,7 +9,7 @@
 #include "Channel.h"
 using namespace std;
 
-// enum class geo : uint8_t { FULLY_OPERATIONAL, TANK_ONLY, MRD_ONLY, }; ??? how we do this?
+enum class geostatus : uint8_t { FULLY_OPERATIONAL, TANK_ONLY, MRD_ONLY, };
 
 class Geometry : public SerialisableObject{
 
@@ -17,13 +17,13 @@ class Geometry : public SerialisableObject{
 
 	public:
 // Do we care to have the overloaded empty constructor?
-  Geometry() : Detectors(std::vector<std::map<unsigned long,Detector>* >{}), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status() {serialise=true;}
+  Geometry() : Detectors(std::vector<std::map<unsigned long,Detector>* >{}), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL) {serialise=true;}
 
-	Geometry(std::vector<std::map<unsigned long,Detector>* >dets, double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, int statin);
+	Geometry(std::vector<std::map<unsigned long,Detector>* >dets, double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin);
 
 	inline std::vector<std::map<unsigned long,Detector>* >* GetDetectors(){return &Detectors;}
 	inline double GetVersion(){return Version;}
-	inline int GetStatus(){return Status;}
+	inline geostatus GetStatus(){return Status;}
 	inline Position GetTankCentre(){return tank_centre;}
 	inline double GetTankRadius(){return tank_radius;}
 	inline double GetTankHalfheight(){return tank_halfheight;}
@@ -33,9 +33,9 @@ class Geometry : public SerialisableObject{
 	inline double GetMrdStart(){return mrd_start;}
 	inline double GetMrdEnd(){return mrd_start+mrd_depth;}
 
-	inline void SetDetectors(std::vector<std::map<unsigned long,Detector>* >DetectorsIn){Detectors = DetectorsIn;}
+
 	inline void SetVersion(double VersionIn){Version = VersionIn;}
-	inline void SetStatus(int StatusIn){Status = StatusIn;}
+	inline void SetStatus(geostatus StatusIn){Status=StatusIn;}
 	inline void SetTankCentre(Position tank_centrein){tank_centre = tank_centrein;}
 	inline void SetTankRadius(double tank_radiusIn){tank_radius = tank_radiusIn;}
 	inline void SetTankHalfheight(double tank_halfheightIn){tank_halfheight = tank_halfheightIn;}
@@ -47,20 +47,8 @@ class Geometry : public SerialisableObject{
 //	inline void AddDetector(ChannelKey key, Detector det){
 	//	Detectors.emplace(key,det);
 //	}
-/*
-		Detector GetDetector(ChannelKey key){
-		if(Detectors.count(key)==0) return Detector{};
-		return Detectors.at(key);
-	}
-*/
-/*	std::pair<ChannelKey,Detector> GetDetector(int index){
-		if(index>Detectors.size()) return std::pair<ChannelKey,Detector>{};
-		auto el = Detectors.begin();
-		for(int i=0; i<index; i++) ++el;
-		return (*el);
-	}
-*/
-//sd
+
+
 Detector* GetDetector(unsigned long DetectorKey);
 
 	inline int GetNumDetectors(){return Detectors.size();}
@@ -155,7 +143,7 @@ Detector* GetDetector(unsigned long DetectorKey);
 			cout<<"}"<<endl;
 		}
 		cout<<"Version : "<<Version<<endl;
-		cout<<"Status : " <<Status<<endl;
+		cout<<"Status : "; PrintStatus(Status);
 		cout<<"tank_centre : "; tank_centre.Print();
 		cout<<"tank_radius : "<<tank_radius<<endl;
 		cout<<"tank_halfheight : "<<tank_halfheight<<endl;
@@ -171,12 +159,22 @@ Detector* GetDetector(unsigned long DetectorKey);
 	std::map<unsigned long,Detector> MRD;
 	std::map<unsigned long,Channel> Misc;
 
+
+	bool PrintStatus(geostatus status){
+			switch(status){
+				case (geostatus::FULLY_OPERATIONAL): cout<<"FULLY OPERATIONAL"<<endl; break;
+				case (geostatus::TANK_ONLY): cout<<"TANK ONLY"<<endl; break;
+				case (geostatus::MRD_ONLY) : cout<<"MRD ONLY"<<endl; break;
+			}
+			return true;
+	}
 	private:
 //	std::map<ChannelKey,Detector> Detectors;
+	inline void SetDetectors(std::vector<std::map<unsigned long,Detector>* >DetectorsIn){Detectors = DetectorsIn;}
 	std::map<unsigned long,Detector*> ChannelMap;
 	std::vector<std::map<unsigned long,Detector>*> Detectors; //sd
 	double Version;
-	int Status;
+	geostatus Status;
 	Position tank_centre;
 	double tank_radius;
 	double tank_halfheight;
