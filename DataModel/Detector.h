@@ -35,9 +35,8 @@ class Detector : public SerialisableObject{
 	void SetDetectorType(std::string DetectorTypeIn){DetectorType=DetectorTypeIn;}
 	void SetStatus(detectorstatus StatusIn){Status=StatusIn;}
 	void SetAvgPulseRate(double AvgPulseRateIn){AvgPulseRate=AvgPulseRateIn;}
-	void SetChannels(map<unsigned long,Channel> chans){Channels=chans;}
 	bool Print() {
-  		cout<<"DetectorPosition : "; DetectorPosition.Print();
+  	cout<<"DetectorPosition : "; DetectorPosition.Print();
 		cout<<"DetectorDirection : "; DetectorDirection.Print();
 		cout<<"DetectorID : "<<DetectorID<<endl;
 		cout<<"DetectorType : "<<DetectorType<<endl;
@@ -55,6 +54,7 @@ class Detector : public SerialisableObject{
       return true;
   }
 	private:
+	void SetChannels(map<unsigned long,Channel> chans){Channels=chans;}
 	std::string DetectorElement;   // "PMT", "MRD", "LAPPD"...
 	Position DetectorPosition;     // meters
 	Direction DetectorDirection;   //
