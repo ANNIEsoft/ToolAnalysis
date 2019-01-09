@@ -160,7 +160,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// construct the goemetry 
 	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius,
 	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
-	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
+	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, geostatus::FULLY_OPERATIONAL);
 	if(verbose>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_centre.Print(); }
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 	
