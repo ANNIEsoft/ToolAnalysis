@@ -70,3 +70,4 @@
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
 
+#include "DigitBuilderDoE/DigitBuilderDoE.cpp"
