@@ -2,4 +2,4 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbose 1
-InputFile /AnnieShare/p2r_data/wcsim_0.2.9.root
+InputFile /AnnieShare/p2r_data/p2v6/wcsim_0.1.9.root
