@@ -1,6 +1,8 @@
 # EventSelector config file
 
 verbosity 3
-MCTruthCut 1
+MCTruthCut 0
+MCPiKCut 0
+GetPionKaonInfo 1
 MRDRecoCut 0
 PromptTrigOnly 1
