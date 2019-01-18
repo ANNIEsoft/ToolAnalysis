@@ -21,10 +21,27 @@ class Position : public SerialisableObject{
 	inline void SetX(double xx){x=xx;}
 	inline void SetY(double yy){y=yy;}
 	inline void SetZ(double zz){z=zz;}
-	
-	bool Print() {
-		std::cout<<"("<<x<<", "<<y<<", "<<z<<")"<<std::endl;
+	void UnitToCentimeter() {
+          x = x*100.;
+          y = y*100.;
+          z = z*100.;
+        }
+	bool Print(bool withendline) {
+		std::cout<<"("<<x<<", "<<y<<", "<<z<<")";
+		if(withendline) cout<<std::endl;
 		return true;
+	}
+	
+	bool Print(){
+		return Print(true);
+	}
+	
+	bool operator==(const Position &a) const {
+		return ((x==a.X()) && (y==a.Y()) && (z==a.Z()));
+	}
+	
+	bool operator!=(const Position &a) const {
+		return ((x!=a.X()) || (y!=a.Y()) || (z!=a.Z()));
 	}
 	
 	private:

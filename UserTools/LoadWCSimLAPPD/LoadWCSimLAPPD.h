@@ -31,7 +31,6 @@ class LoadWCSimLAPPD: public Tool {
 	int verbose=1;
 	std::string MCFile;
 	double Rinnerstruct;    // cm octagonal inner structure radius
-	int triggeroffset;      // whether the historic 950ns offset was included
 	
 	// LAPPDTree variables
 	TFile* file=nullptr;
@@ -55,7 +54,7 @@ class LoadWCSimLAPPD: public Tool {
 	TApplication* lappdRootDrawApp;
 	TCanvas* lappdRootCanvas;
 	TPolyMarker3D* lappdhitshist;
-	TH1D *digixpos, *digiypos, *digizpos;
+	TH1D *digixpos, *digiypos, *digizpos, *digits;
 	
 	////////////////
 	// things that will be filled into the store from this WCSim LAPPD file.

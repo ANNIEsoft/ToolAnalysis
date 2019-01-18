@@ -2,7 +2,22 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 OutputDirectory /annie/app/users/moflaher/ToolAnalysis/toolAnalysisOutputs/FindMrdTracksTest
-verbose 100
+verbosity 1
 gdmlpath /pnfs/annie/persistent/users/moflaher/annie_v04.gdml
+## because we're only interested in drawing tracks over the gdml subvolume representing the hall, 
+## (not the world entirely), but we want the coordinates to match those from WCSim
+## (which match the world), we need to offset our WCSim positions by the position of the hall within the world
+#gdmlpath /annie/app/users/moflaher/wcsim/root_work/annie_v04_aligned.gdml ## has buildingoffsets included
+## units cm
+buildingoffsetx 206.82
+buildingoffsety 54.3225
+buildingoffsetz 243.43894
+
 # save images of hit paddles in each track identified. ONLY FOR SMALL NUM TRACKS AS DEBUG!
-saveimages true
+drawCanvases 0          # required for ANY kind of graphical output
+drawPaddlePlot 0        # draw the top/side view paddle plot of tracks
+drawGdmlOverlay 0       # draw a 3D representation of the ANNIE detector overlaid with MRD tracks
+saveimages 0            # save the paddle plots as images. Currently not working...
+plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
+printTracks 1           # verbose printout of track information from BoostStore
+printTClonesTracks 0    # verbose printout of track information from TClonesArray

@@ -21,21 +21,32 @@ RUN yum install -y \
     libXpm-devel \
     libXft-devel \
     libXext-devel \
+    libxml2-devel \
+    libpng \ 
+    libpng-devel \
+    libjpeg-devel \
+    graphviz-devel \
+    mesa-libGL-devel \
+    mesa-libGLU-devel \
     make \
     file \
     git \
     bzip2-devel \
     python-devel \
     libcurl-devel \
+    python-matplotlib
+    python-pip \
     && yum clean all \
     && rm -rf /var/cache/yum
 
     
 Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root6;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
 
 ### Open terminal
 CMD ["/bin/bash"]
+

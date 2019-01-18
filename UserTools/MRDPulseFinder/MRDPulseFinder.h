@@ -8,7 +8,6 @@
 #include "ChannelKey.h"
 #include "Waveform.h"
 #include "ADCPulse.h"
-#include "TimeClass.h"
 #include "CalibratedADCWaveform.h"
 
 class MRDPulseFinder: public Tool {

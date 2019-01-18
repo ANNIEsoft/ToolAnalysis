@@ -6,11 +6,13 @@
 init=1
 tooldaq=1
 rootflag=1
+root6flag=0
 boostflag=1
 zmq=1
 final=1
 MrdTrackLib=1
 WCSimlib=1
+Python=1
 fnalflag=0
 
 while [ ! $# -eq 0 ]
@@ -66,6 +68,7 @@ do
 	    final=0
 	    MrdTrackLib=0
 	    WCSimlib=0   
+	    Python=0
             ;;
 
 	--Boost )
@@ -77,6 +80,7 @@ do
 	    final=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    Python=0
             ;;
 	
 	--Root )
@@ -88,6 +92,21 @@ do
 	    final=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    Python=0
+            ;;
+
+        --Root6 )
+            echo "Installing ToolDAQ"
+            init=0
+            tooldaq=0
+            boostflag=0
+            zmq=0
+            final=0
+            MrdTrackLib=0
+            WCSimlib=0
+	    rootflag=0
+	    root6flag=1
+	    Python=0
             ;;
 	
 	--WCSim )
@@ -98,7 +117,20 @@ do
 	    boostflag=0
 	    zmq=0
 	    final=0
+	    Python=0
 	    ;;
+
+	--Python )
+            echo "Compiling ToolDAQ"
+            init=0
+            tooldaq=0
+            rootflag=0
+            boostflag=0
+            zmq=0
+            MrdTrackLib=0
+            WCSimlib=0
+            final=0
+            ;;
 
 	--Final )
             echo "Compiling ToolDAQ"
@@ -109,6 +141,7 @@ do
 	    zmq=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    Python=0
             ;;
 
     esac
@@ -180,6 +213,25 @@ then
     
 fi
 
+if [ $root6flag -eq 1 ]
+then
+
+    wget https://root.cern.ch/download/root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
+    tar zxvf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
+    rm -rf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
+    cd root
+
+    ./configure --enable-rpath
+    make -j8
+
+    source ./bin/thisroot.sh
+
+    cd ../
+
+fi
+
+
+
 if [ $WCSimlib -eq 1 ]
 then
 
@@ -212,6 +264,13 @@ fi
 
 cd ../
 
+
+if [ $Python -eq 1 ]
+then
+
+    pip install numpy pandas tensorflow sklearn root_numpy
+
+fi
 
 
 if [ $final -eq 1 ]

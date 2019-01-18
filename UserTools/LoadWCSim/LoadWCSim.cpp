@@ -20,6 +20,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbose",verbose);
 	m_variables.Get("InputFile",MCFile);
 
+	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
+	
+
 	// Short Stores README
 	//////////////////////
 	// n.b. m_data->vars is a Store (of ben's Store type) that is not saved to disk?
@@ -52,6 +55,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	wcsimtree= (TTree*) file->Get("wcsimT");
 	NumEvents=wcsimtree->GetEntries();
 	WCSimEntry= new wcsimT(wcsimtree);
+	gROOT->cd();
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
 	wcsimrootopts = WCSimEntry->wcsimrootopts;
 	int pretriggerwindow=wcsimrootopts->GetNDigitsPreTriggerWindow();
@@ -156,8 +160,10 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	std::vector<std::map<unsigned long,Detector>* > dets;
 	Geometry* anniegeom = new Geometry(dets, WCSimGeometryVer, tank_centre, tank_radius,
 	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
+
 	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, geostatus::FULLY_OPERATIONAL);
-	if(verbose>1) cout<<"constructed anniegom at "<<anniegeom<<endl;
+	if(verbose>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_centre.Print(); }
+
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 
 	// Set run-level information in the ANNIEEvent
@@ -272,13 +278,14 @@ bool LoadWCSim::Execute(){
 			tracktype startstoptype = tracktype::UNDEFINED;
 
 			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
-			// e.g. primary neutrino time is -1, but TimeClass accepts uint64_t - UNSIGNED = becomes 18446744073709551615
+
+		        //MC particle times now stored relative to the trigger time	
 
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0) / 100., nextrack->GetStart(1) / 100., nextrack->GetStart(2) / 100.),
 				Position(nextrack->GetStop(0) / 100., nextrack->GetStop(1) / 100., nextrack->GetStop(2) / 100.),
-				TimeClass(nextrack->GetTime()), TimeClass(nextrack->GetStopTime()),
+				(static_cast<double>(nextrack->GetTime()-EventTimeNs)), (static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
 				Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
 				(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
@@ -300,8 +307,8 @@ bool LoadWCSim::Execute(){
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(digihit->GetT()); // add trigger time to make absolute
-			if(verbose>2){ cout<<"digittime is "<<digittime<<endl; }
+			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
+			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
 
@@ -323,8 +330,8 @@ bool LoadWCSim::Execute(){
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId() + numvetopmts;
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(digihit->GetT()); // add trigger time to make absolute
-			if(verbose>2){ cout<<"digittime is "<<digittime<<endl; }
+			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
+			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
 
@@ -346,8 +353,8 @@ bool LoadWCSim::Execute(){
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(digihit->GetT()); // add trigger time to make absolute
-			if(verbose>2){ cout<<"digittime is "<<digittime<<endl; }
+			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
+			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
 

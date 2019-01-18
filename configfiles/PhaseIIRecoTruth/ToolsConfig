@@ -1,0 +1,8 @@
+LoadWCSim LoadWCSim ./configfiles/PhaseIIRecoTruth/LoadWCSimConfig
+LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PhaseIIRecoTruth/LoadWCSimLAPPDConfig
+#FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
+EventSelector EventSelector ./configfiles/PhaseIIRecoTruth/EventSelectorConfig
+DigitBuilder DigitBuilder ./configfiles/PhaseIIRecoTruth/DigitBuilderConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/PhaseIIRecoTruth/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIIRecoTruth/PhaseIITreeMakerConfig
+#SaveRecoEvent SaveRecoEvent ./configfiles/PhaseIIRecoTruth/SaveRecoEventConfig

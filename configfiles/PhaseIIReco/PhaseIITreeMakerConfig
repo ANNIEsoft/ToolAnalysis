@@ -1,0 +1,9 @@
+verbose 3
+
+muonRecoDebug_fill 1
+muonMCTruth_fill 1
+muonTruthRecoDiff_fill 1
+
+OutputFile /Jingbo/RecoGridSeed_5LAPPD_0.1.7.root
+NumEventsWritten 1000
+

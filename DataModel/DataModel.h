@@ -29,6 +29,14 @@
 #include "TriggerClass.h"
 #include "Waveform.h"
 #include "Channel.h"
+#include "Parameters.h"
+#include "ANNIERecoObjectTable.h"
+#include "RecoDigit.h"
+#include "RecoVertex.h"
+#include "RecoRing.h"
+
+
+
 
 
 #include <zmq.hpp>
@@ -41,6 +49,7 @@ class DataModel {
   
 
   DataModel();
+
   //TTree* GetTTree(std::string name);
   //void AddTTree(std::string name,TTree *tree);
   //void DeleteTTree(std::string name);

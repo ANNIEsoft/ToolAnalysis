@@ -1,0 +1,5 @@
+verbose 3
+
+OutputFile ./RecoTree.root
+NumEventsWritten 10
+
