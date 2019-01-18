@@ -175,33 +175,32 @@ bool PhaseIITreeMaker::Execute(){
   RecoVertex* recovtx = 0;
   auto get_extendedvtx = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",recovtx); 
   if(!get_extendedvtx) {
-    Log("Error: The PhaseITreeMaker tool could not find ExtendedVertex", v_error, verbosity);
-    return false;	
-  }
-  fRecoVtxX = recovtx->GetPosition().X();
-  fRecoVtxY = recovtx->GetPosition().Y();
-  fRecoVtxZ = recovtx->GetPosition().Z();
-  fRecoVtxTime = recovtx->GetTime();
-  fRecoVtxFOM = recovtx->GetFOM();
-  fRecoDirX = recovtx->GetDirection().X();
-  fRecoDirY = recovtx->GetDirection().Y();
-  fRecoDirZ = recovtx->GetDirection().Z();
-  fRecoTheta = TMath::ACos(fRecoDirZ);
-  if (fRecoDirX>0.0){
-    fRecoPhi = atan(fRecoDirY/fRecoDirX);
-  }
-  if (fRecoDirX<0.0){
-    fRecoPhi = atan(fRecoDirY/fRecoDirX);
-    if( fRecoDirY>0.0) fRecoPhi += TMath::Pi();
-    if( fRecoDirY<=0.0) fRecoPhi -= TMath::Pi();
-  }
-  if (fRecoDirX==0.0){
-    if( fRecoDirY>0.0) fRecoPhi = 0.5*TMath::Pi();
-    else if( fRecoDirY<0.0) fRecoPhi = -0.5*TMath::Pi();
-    else fRecoPhi = 0;
-  }
-  fRecoStatus = recovtx->GetStatus();
- 
+    Log("Warning: The PhaseITreeMaker tool could not find ExtendedVertex. Continuing to build tree", v_message, verbosity);
+  } else {
+    fRecoVtxX = recovtx->GetPosition().X();
+    fRecoVtxY = recovtx->GetPosition().Y();
+    fRecoVtxZ = recovtx->GetPosition().Z();
+    fRecoVtxTime = recovtx->GetTime();
+    fRecoVtxFOM = recovtx->GetFOM();
+    fRecoDirX = recovtx->GetDirection().X();
+    fRecoDirY = recovtx->GetDirection().Y();
+    fRecoDirZ = recovtx->GetDirection().Z();
+    fRecoTheta = TMath::ACos(fRecoDirZ);
+    if (fRecoDirX>0.0){
+      fRecoPhi = atan(fRecoDirY/fRecoDirX);
+    }
+    if (fRecoDirX<0.0){
+      fRecoPhi = atan(fRecoDirY/fRecoDirX);
+      if( fRecoDirY>0.0) fRecoPhi += TMath::Pi();
+      if( fRecoDirY<=0.0) fRecoPhi -= TMath::Pi();
+    }
+    if (fRecoDirX==0.0){
+      if( fRecoDirY>0.0) fRecoPhi = 0.5*TMath::Pi();
+      else if( fRecoDirY<0.0) fRecoPhi = -0.5*TMath::Pi();
+      else fRecoPhi = 0;
+    }
+    fRecoStatus = recovtx->GetStatus();
+  } 
   // Read True Vertex if flag is set   
   RecoVertex* truevtx = 0;
   auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx); 
@@ -303,20 +302,24 @@ bool PhaseIITreeMaker::Execute(){
 
 
   if (muonTruthRecoDiff_fill){
-    //Let's fill in stuff from the RecoSummary
-    fDeltaVtxX = fRecoVtxX - fTrueVtxX;
-    fDeltaVtxY = fRecoVtxY - fTrueVtxY;
-    fDeltaVtxZ = fRecoVtxZ - fTrueVtxZ;
-    fDeltaVtxT = fRecoVtxTime - fTrueVtxTime;
-    fDeltaVtxR = sqrt(pow(fDeltaVtxX,2) + pow(fDeltaVtxY,2) + pow(fDeltaVtxZ,2)); 
-    fDeltaParallel = fDeltaVtxX*fRecoDirX + fDeltaVtxY*fRecoDirY + fDeltaVtxZ*fRecoDirZ;
-    fDeltaPerpendicular = sqrt(pow(fDeltaVtxR,2) - pow(fDeltaParallel,2));
-    fDeltaAzimuth = (fRecoTheta - fTrueTheta)/(TMath::Pi()/180.0);
-    fDeltaZenith = (fRecoPhi - fTruePhi)/(TMath::Pi()/180.0); 
-    double cosphi = fTrueDirX*fRecoDirX+fTrueDirY*fRecoDirY+fTrueDirZ*fRecoDirZ;
-    double phi = TMath::ACos(cosphi); // radians
-    double TheAngle = phi/(TMath::Pi()/180.0); // radians->degrees
-    fDeltaAngle = TheAngle;
+    if (!get_muonMC || !get_extendedvtx) {
+      Log("PhaseIITreeMaker Tool: No True Muon Vertex or Extended Vertex information found.  Continuing to build remaining tree",v_message,verbosity);
+    } else {
+      //Let's fill in stuff from the RecoSummary
+      fDeltaVtxX = fRecoVtxX - fTrueVtxX;
+      fDeltaVtxY = fRecoVtxY - fTrueVtxY;
+      fDeltaVtxZ = fRecoVtxZ - fTrueVtxZ;
+      fDeltaVtxT = fRecoVtxTime - fTrueVtxTime;
+      fDeltaVtxR = sqrt(pow(fDeltaVtxX,2) + pow(fDeltaVtxY,2) + pow(fDeltaVtxZ,2)); 
+      fDeltaParallel = fDeltaVtxX*fRecoDirX + fDeltaVtxY*fRecoDirY + fDeltaVtxZ*fRecoDirZ;
+      fDeltaPerpendicular = sqrt(pow(fDeltaVtxR,2) - pow(fDeltaParallel,2));
+      fDeltaAzimuth = (fRecoTheta - fTrueTheta)/(TMath::Pi()/180.0);
+      fDeltaZenith = (fRecoPhi - fTruePhi)/(TMath::Pi()/180.0); 
+      double cosphi = fTrueDirX*fRecoDirX+fTrueDirY*fRecoDirY+fTrueDirZ*fRecoDirZ;
+      double phi = TMath::ACos(cosphi); // radians
+      double TheAngle = phi/(TMath::Pi()/180.0); // radians->degrees
+      fDeltaAngle = TheAngle;
+    }
   }
 
   fRecoTree->Fill();

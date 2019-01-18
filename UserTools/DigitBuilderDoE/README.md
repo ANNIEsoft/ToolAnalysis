@@ -10,6 +10,7 @@ Describe any configuration variables for DigitBuilderDoE.
 ```
 InputFile string
 treename string
-
+PhotoDetectorConfiguration string
+HistoricOffset double
 
 ```

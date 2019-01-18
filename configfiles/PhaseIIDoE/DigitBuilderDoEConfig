@@ -1,9 +1,8 @@
 # DigitBuilder config file
 
 verbosity 3
-OutputFile ./DigitBuilder.root
-MCTruthCut 1
-MRDRecoCut 0
-# There are three configurations: "PMT_only", "LAPPD_only", "All"
-PhotodetectorConfiguration PMT_only 
+InputFile /AnnieShare/p2r_data/DoEProp/WCSimtrueQEvertexinfo_extv3.root
+# There are three configurations: "PMT_only", "LAPPD_only", "All" CURRENTLY NOT WORKING
+PhotoDetectorConfiguration PMT_only
+HistoricOffset 6670
 #LAPPDId 266 271 236 231 206

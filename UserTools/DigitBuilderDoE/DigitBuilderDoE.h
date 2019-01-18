@@ -15,10 +15,15 @@
 #include <TLorentzVector.h>
 #include <TVector3.h>
 #include <TBox.h>
-#include <Math/GenVector/PxPyPzE4D.h>
-#include <Math/GenVector/LorentzVector.h>
+#include <Math/Vector4D.h>
+#include <Math/Vector3D.h>
+//#include <Math/PxPyPzE4D.h>
+//#include <Math/LorentzVector.h>
+
 //DataModel includes
 #include "ANNIEGeometry.h"
+#include "Position.h"
+#include "Direction.h"
 
 using namespace ROOT::Math;
 
@@ -28,9 +33,11 @@ class DigitBuilderDoE: public Tool {
  public:
 
   DigitBuilderDoE();
+  ~DigitBuilderDoE();
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
+  static DigitBuilderDoE* Instance();
 
  private:
   // Sets branch addresses in TChain to link properly to initialized variables
@@ -39,27 +46,33 @@ class DigitBuilderDoE: public Tool {
  	/// Push true neutrino vertex to "RecoVertex"
  	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
  	void PushTrueVertex(bool savetodisk);
+ 	void PushRecoDigits(bool savetodisk);
+
 
   TChain* doechain;
 
 	std::string doefilename;
 	std::string doetreename;
-  int NumEvents;
-	int EventNum;
+  std::string fPhotodetectorConfiguration;
+  double fHistoricOffset;
+
+  uint32_t NumEvents;
+	uint32_t EventNum;
+  uint64_t MCEventNum;
   std::vector<RecoDigit>* fDigitList;
 	void ClearDigitList() {fDigitList->clear();}
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
-	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
+	//RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
 
   //Digit Hit information
-  std::vector< ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >>* DigitVertices; //X,Y,Z,T in vec
+  std::vector<ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >>* DigitVertices; //X,Y,Z,T in vec
 	std::vector<std::string>* DigitWhichDet;
 	std::vector<double>* DigitCharges;
 	std::vector<int>* DigitIdArray;
 	TLorentzVector *MuonStartVertex;
 	TLorentzVector *MuonStopVertex;
 	TVector3 *MuonDirection;	
-  double* TrackLengthInMrd;
+  double TrackLengthInMrd;
 
   int verbosity=1;
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
