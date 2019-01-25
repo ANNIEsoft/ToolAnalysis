@@ -10,3 +10,4 @@ Run cd ToolAnalysis; bash -c "source Setup.sh; make update; make;"
 
 ### Open terminal
 CMD ["/bin/bash"]
+

@@ -7,4 +7,3 @@ echo `pwd`
 
 ./Analyse 
 
-

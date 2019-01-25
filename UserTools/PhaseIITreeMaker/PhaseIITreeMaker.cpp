@@ -71,7 +71,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   if (muonRecoDebug_fill){
     fRecoTree->Branch("seedVtxX",&fSeedVtxX); 
     fRecoTree->Branch("seedVtxY",&fSeedVtxY); 
-    fRecoTree->Branch("seedVtxZ",&fSeedVtxZ); 
+    fRecoTree->Branch("seedVtxZ",&fSeedVtxZ);
+    fRecoTree->Branch("seedVtxFOM",&fSeedVtxFOM); 
     fRecoTree->Branch("seedVtxTime",&fSeedVtxTime,"seedVtxTime/D");
     
     fRecoTree->Branch("pointPosX",&fPointPosX,"pointPosX/D");
@@ -85,7 +86,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fRecoTree->Branch("pointDirY",&fPointDirY,"pointDirY/D");
     fRecoTree->Branch("pointDirZ",&fPointDirZ,"pointDirZ/D");
     fRecoTree->Branch("pointDirTime",&fPointDirTime,"pointDirTime/D");
-    fRecoTree->Branch("pointDirStatus",&fPointDirStatus,"pointDirStatus/D");
+    fRecoTree->Branch("pointDirStatus",&fPointDirStatus,"pointDirStatus/I");
     fRecoTree->Branch("pointDirFOM",&fPointDirFOM,"pointDirFOM/D");
     
     fRecoTree->Branch("pointVtxPosX",&fPointVtxPosX,"pointVtxPosX/D");
@@ -96,7 +97,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fRecoTree->Branch("pointVtxDirY",&fPointVtxDirY,"pointVtxDirY/D");
     fRecoTree->Branch("pointVtxDirZ",&fPointVtxDirZ,"pointVtxDirZ/D");
     fRecoTree->Branch("pointVtxFOM",&fPointVtxFOM,"pointVtxFOM/D");
-    fRecoTree->Branch("pointVtxStatus",&fPointVtxStatus,"pointVtxStatus/D");
+    fRecoTree->Branch("pointVtxStatus",&fPointVtxStatus,"pointVtxStatus/I");
   } 
 
   // Difference in MC Truth and Muon Reconstruction Analysis
@@ -233,7 +234,7 @@ bool PhaseIITreeMaker::Execute(){
   if (muonRecoDebug_fill){
     // Read Seed candidates   
     std::vector<RecoVertex>* seedvtxlist = 0;
-    auto get_seedvtxlist = m_data->Stores.at("RecoEvent")->Get("vSeedVtxList",seedvtxlist);  ///> Get List of seeds from "RecoEvent" 
+    auto get_seedvtxlist = m_data->Stores.at("RecoEvent")->Get("vSeedVtxList",seedvtxlist);  ///> Get List of seeds from "RecoEvent"
     if(get_seedvtxlist){
       for( auto& seed : *seedvtxlist ){
         fSeedVtxX.push_back(seed.GetPosition().X());
@@ -244,7 +245,16 @@ bool PhaseIITreeMaker::Execute(){
     } else {  
   	Log("PhaseIITreeMaker  Tool: No Seed List found.  Continuing to build tree ",v_message,verbosity); 
     }
-
+    std::vector<double>* seedfomlist = 0;
+    auto get_seedfomlist = m_data->Stores.at("RecoEvent")->Get("vSeedFOMList",seedfomlist);  ///> Get List of seed FOMs from "RecoEvent" 
+    if(get_seedfomlist){
+      for( auto& seedFOM : *seedfomlist ){
+        fSeedVtxFOM.push_back(seedFOM);
+      }
+    } else {  
+  	Log("PhaseIITreeMaker  Tool: No Seed FOM List found.  Continuing to build tree ",v_message,verbosity); 
+    }
+    
     // Read PointPosition-fitted Vertex   
     RecoVertex* pointposvtx = 0;
     auto get_pointposdata = m_data->Stores.at("RecoEvent")->Get("PointPosition",pointposvtx);
@@ -345,6 +355,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fSeedVtxX.clear();
     fSeedVtxY.clear();
     fSeedVtxZ.clear();
+    fSeedVtxFOM.clear();
     fSeedVtxTime = 0;
     fPointPosX = 0;
     fPointPosY = 0;
