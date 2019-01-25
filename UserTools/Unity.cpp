@@ -69,3 +69,5 @@
 #include "LoadCCData/PMTData.cpp"
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
+#include "HitResiduals/HitResiduals.cpp"
+

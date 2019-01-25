@@ -16,6 +16,7 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("MRDRecoCut", fMRDRecoCut);
   m_variables.Get("MCTruthCut", fMCTruthCut);
+  m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
 
   /// Construct the other objects we'll be setting at event level,
   fMuonStartVertex = new RecoVertex();
@@ -52,13 +53,13 @@ bool EventSelector::Execute(){
   m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",fMCEventNum);  
   
   // MC trigger number
-  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggerNum); 
+  m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum); 
   
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
   
   std::string logmessage = "EventSelector Tool: Processing MCEntry "+to_string(fMCEventNum)+
-  	", MCTrigger "+to_string(fMCTriggerNum) + ", Event "+to_string(fEventNumber);
+  	", MCTrigger "+to_string(fMCTriggernum) + ", Event "+to_string(fEventNumber);
 	Log(logmessage,v_message,verbosity);
   
   auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
@@ -80,6 +81,10 @@ bool EventSelector::Execute(){
   if(fMCTruthCut){
     bool passMCTruth= this->EventSelectionByMCTruthInfo();
     if(!passMCTruth) fEventCutStatus = false; 
+  }
+  if(fPromptTrigOnly){
+    bool isPromptTrigger= this->PromptTriggerCheck();
+    if(!isPromptTrigger) fEventCutStatus = false; 
   }
   
   //FIXME: This isn't working according to Jingbo
@@ -134,9 +139,9 @@ RecoVertex* EventSelector::FindTrueVertexFromMC() {
   
   // retrieve desired information from the particle
   Position muonstartpos = primarymuon.GetStartVertex();    // only true if the muon is primary
-  double muonstarttime = primarymuon.GetStartTime().GetNs();
+  double muonstarttime = primarymuon.GetStartTime();
   Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
-  double muonstoptime = primarymuon.GetStopTime().GetNs();
+  double muonstoptime = primarymuon.GetStopTime();
   
   Direction muondirection = primarymuon.GetStartDirection();
   double muonenergy = primarymuon.GetStartEnergy();
@@ -167,6 +172,22 @@ void EventSelector::PushTrueVertex(bool savetodisk) {
   Log("EventSelector Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
   m_data->Stores.at("RecoEvent")->Set("TrueVertex", fMuonStartVertex, savetodisk); 
 }
+
+bool EventSelector::PromptTriggerCheck() {
+  /// First, see if this is a delayed trigger in the event
+  auto get_mctrigger = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
+  if(!get_mctrigger){ 
+    Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
+    return false; 
+  }	
+  /// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
+  if(fMCTriggernum>0){ 
+    Log("DigitBuilder Tool: This event is not a prompt trigger",v_debug,verbosity); 
+    return false;
+  }
+  return true;
+}
+	
 
 // This function isn't working now, because the MRDTracks store must have been changed. 
 // We have to contact Marcus and ask how we can retieve the MRD track information. 
@@ -238,8 +259,9 @@ bool EventSelector::EventSelectionByMCTruthInfo() {
   	  || (trueVtxZ > fidcutz) ){
   return false;
   }	
-  /* 
+  
   // mrd cut
+  /*
   double muonStopX, muonStopY, muonStopZ;
   muonStopX = fMuonStopVertex->GetPosition().X();
   muonStopY = fMuonStopVertex->GetPosition().Y();
@@ -256,7 +278,8 @@ bool EventSelector::EventSelectionByMCTruthInfo() {
   	|| muonStopX<-1.0*mrdWidthX || muonStopX>mrdWidthX
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {
     return false;	
-  }*/
+  }
+  */
   return true;
 }
 

@@ -9,7 +9,6 @@
 // ToolAnalysis includes
 #include "ChannelKey.h"
 #include "Hit.h"
-#include "TimeClass.h"
 
 class ADCPulse : public Hit {
 
@@ -21,7 +20,7 @@ class ADCPulse : public Hit {
 
     // TODO: consider using a ChannelKey object instead of the Hit class's
     // int TubeId member
-    ADCPulse(int TubeId, double start_time, TimeClass peak_time,
+    ADCPulse(int TubeId, double start_time, double peak_time,
       double baseline, double sigma_baseline, unsigned long raw_area,
       unsigned short raw_amplitude, double calibrated_amplitude,
       double charge);
@@ -32,7 +31,7 @@ class ADCPulse : public Hit {
 
     // @brief Returns the peak time (ns) of the pulse relative to the
     // start of its minibuffer
-    inline TimeClass peak_time() const { return peak_time_; }
+    inline double peak_time() const { return peak_time_; }
 
     // @brief Returns the approximate baseline (ADC) used to calibrate the
     // pulse
@@ -77,7 +76,7 @@ class ADCPulse : public Hit {
   protected:
 
     double start_time_; // ns since beginning of minibuffer
-    TimeClass peak_time_; // ns since beginning of minibuffer
+    double peak_time_; // ns since beginning of minibuffer
     double baseline_; // mean (ADC)
     double sigma_baseline_; // standard deviation (ADC)
     unsigned long raw_area_; // (ADC * samples)

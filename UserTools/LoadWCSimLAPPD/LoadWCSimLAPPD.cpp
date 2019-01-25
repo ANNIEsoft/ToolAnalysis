@@ -126,6 +126,8 @@ bool LoadWCSimLAPPD::Execute(){
 	if(verbose>2) cout<<"LAPPDTool: Trigger time for event "<<MCEventNum<<", trigger "
 					  <<MCTriggernum<<" was "<<wcsimtriggertime<<"ns"<<endl;
 	
+	MCLAPPDHits->clear(); // clear any hits from previous trigger
+	
 	if(MCTriggernum>0){
 		if(unassignedhits.size()==0){
 			if(verbose>2) cout<<"no LAPPD hits to add to this trigger"<<endl;
@@ -135,10 +137,13 @@ bool LoadWCSimLAPPD::Execute(){
 							  <<" LAPPD hits that weren't in the first trigger window"<<endl;
 			for(int hiti=0; hiti<unassignedhits.size(); hiti++){
 				LAPPDHit nexthit = unassignedhits.at(hiti);
-				double relativedigitst = nexthit.GetTime(); // relative to Trigger time
+				double digitst = nexthit.GetTime(); // ABSOLUTE
+				double relativedigitst=digitst-wcsimtriggertime; // relative to trigger time
 				if( (relativedigitst)>(pretriggerwindow) &&
 					(relativedigitst)<(posttriggerwindow) ){
 					// this lappd hit is within the trigger window; note it
+					nexthit.SetTime(relativedigitst); // correct for this trigger time
+					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					ChannelKey key(subdetector::LAPPD,nexthit.GetTubeId());
 					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 					else MCLAPPDHits->at(key).push_back(nexthit);
@@ -147,7 +152,6 @@ bool LoadWCSimLAPPD::Execute(){
 			}
 		}
 	} else {  // MCTriggernum == 0
-		MCLAPPDHits->clear();
 		if(verbose>3) cout<<"loading LAPPDEntry"<<MCEventNum<<endl;
 		LAPPDEntry->GetEntry(MCEventNum);
 		
@@ -256,6 +260,7 @@ bool LoadWCSimLAPPD::Execute(){
 				}
 				if( relativedigitst>(pretriggerwindow) && 
 					relativedigitst<(posttriggerwindow) ){
+					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					if(MCLAPPDHits->count(key)==0){
 						LAPPDHit nexthit(LAPPDID, relativedigitst, digiq, globalpos, localpos);
 						MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
@@ -265,7 +270,7 @@ bool LoadWCSimLAPPD::Execute(){
 					}
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(LAPPDID, relativedigitst, digiq, globalpos, localpos);
+					unassignedhits.emplace_back(LAPPDID, digitst, digiq, globalpos, localpos);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event

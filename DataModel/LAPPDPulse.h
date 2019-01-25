@@ -4,7 +4,6 @@
 
 #include<Hit.h>
 #include<SerialisableObject.h>
-#include "TimeClass.h"
 
 using namespace std;
 
@@ -62,7 +61,7 @@ class TDCHit : public Hit {
 
 class RecoHit : public Hit {
 	public:
-	RecoHit(TimeClass thetime, double thecharge) : Time(thetime), Charge(thecharge){};
+	RecoHit(double thetime, double thecharge) : Time(thetime), Charge(thecharge){};
 
 	inline double GetCharge(){return Charge;}
 	inline void SetCharge(double chg){Charge=chg;}

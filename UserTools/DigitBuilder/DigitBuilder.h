@@ -73,7 +73,6 @@ class DigitBuilder: public Tool {
 	uint32_t fSubrunNumber;    ///< MC has no 'subrun', always 0
 	uint32_t fEventNumber;     ///< flattens the 'event -> trigger' MC hierarchy
 	uint64_t fMCEventNum;      ///< event number in MC file
-	uint16_t fMCTriggernum;    ///< trigger number in MC file
 	std::vector<int> fLAPPDId; ///< selected LAPPDs
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	
@@ -81,7 +80,6 @@ class DigitBuilder: public Tool {
 	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
 	std::map<ChannelKey,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
 	std::map<ChannelKey,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
-	TimeClass* fEventTime=nullptr;    ///< NDigits trigger time in ns from when the particles were generated
 	TRandom3 frand;  ///< Random number generator
 	
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
