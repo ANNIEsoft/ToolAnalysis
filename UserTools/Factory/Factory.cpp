@@ -61,6 +61,7 @@ if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
 if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
-  if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
+if (tool=="HitResiduals") ret=new HitResiduals;
+if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
 return ret;
 }
