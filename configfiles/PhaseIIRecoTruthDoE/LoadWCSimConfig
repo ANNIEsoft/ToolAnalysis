@@ -1,6 +1,0 @@
-#LoadWCSim Config File
-# all variables retrieved with m_variables.Get() must be defined here!
-
-verbose 1
-InputFile #INPUT_FILE_PMT#
-HistoricTriggeroffset 0

@@ -2,8 +2,6 @@
 
 verbosity 3
 OutputFile ./DigitBuilder.root
-MCTruthCut 1
-MRDRecoCut 0
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
-PhotodetectorConfiguration PMT_only 
+PhotoDetectorConfiguration PMT_only 
 #LAPPDId 266 271 236 231 206
