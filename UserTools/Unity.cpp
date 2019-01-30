@@ -70,4 +70,5 @@
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
 #include "HitResiduals/HitResiduals.cpp"
-
+#include "MonitorReceive/MonitorReceive.cpp"
+#include "MonitorSimReceive/MonitorSimReceive.cpp"

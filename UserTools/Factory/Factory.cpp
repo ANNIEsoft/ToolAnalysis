@@ -1,4 +1,4 @@
-#include "../Unity.cpp"
+B#include "../Unity.cpp"
 
 Tool* Factory(std::string tool){
 Tool* ret=0;
@@ -62,5 +62,9 @@ if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="HitResiduals") ret=new HitResiduals;
+if (tool=="MonitorReceive") ret=new MonitorReceive;
+if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
+
+
 return ret;
 }
