@@ -33,13 +33,6 @@ class EventSelectorDoE: public Tool {
 	/// Clear reconstruction info.
  	void Reset();
 
- 	/// \brief Event selection by MRD reconstructed information
- 	///
- 	/// Loop over all the MRC tracks. Find the track with the longest track
- 	/// length. If the longest track is stoped inside the MRD, the event is 
- 	/// selected
- 	bool EventSelectionByMRDReco();
-
  	/// \brief Event selection by trigger number
  	///
  	/// The selection is based on the trigger number for the event
@@ -51,7 +44,8 @@ class EventSelectorDoE: public Tool {
  	///
  	/// The selection is based on the true vertex position from MC. 
  	/// If the true vertex is inside the fidicual volume, the event 
- 	/// is selected. 
+ 	/// is selected.  Also requires muon has nonzero track length
+  /// in the MRD.
  	/// The 
  	bool EventSelectionByMCTruthInfo();
  	

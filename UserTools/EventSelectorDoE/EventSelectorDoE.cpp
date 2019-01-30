@@ -14,7 +14,6 @@ bool EventSelectorDoE::Initialise(std::string configfile, DataModel &data){
 
   //Get the tool configuration variables
   m_variables.Get("verbosity",verbosity);
-  m_variables.Get("MRDRecoCut", fMRDRecoCut);
   m_variables.Get("MCTruthCut", fMCTruthCut);
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
 
