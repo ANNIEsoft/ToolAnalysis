@@ -26,7 +26,7 @@
 #include "TimeClass.h"
 #include "TriggerClass.h"
 #include "Waveform.h"
-
+#include "MRDOut.h"
 
 #include <zmq.hpp>
 

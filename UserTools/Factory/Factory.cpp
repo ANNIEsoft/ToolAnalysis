@@ -26,5 +26,7 @@ if (tool=="RawLoader") ret=new RawLoader;
 if (tool=="LAPPDSaveROOT") ret=new LAPPDSaveROOT;
 if (tool=="LAPPDFilter") ret=new LAPPDFilter;
 if (tool=="LAPPDIntegratePulse") ret=new LAPPDIntegratePulse;
+if (tool=="MonitorReceive") ret=new MonitorReceive;
+  if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
 return ret;
 }

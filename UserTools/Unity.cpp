@@ -27,3 +27,5 @@
 #include "LAPPDSaveROOT/LAPPDSaveROOT.cpp"
 #include "LAPPDFilter/LAPPDFilter.cpp"
 #include "LAPPDIntegratePulse/LAPPDIntegratePulse.cpp"
+#include "MonitorReceive/MonitorReceive.cpp"
+#include "MonitorSimReceive/MonitorSimReceive.cpp"
