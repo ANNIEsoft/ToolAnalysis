@@ -26,10 +26,10 @@ class BeamStatusClass : public SerialisableObject{
 	inline void SetStability(std::string StabilityIn){Stability = StabilityIn;}
 	
 	bool Print(){
-		cout<<"Timestamp : "; Timestamp.Print();
+		cout<<"Beam Status Timestamp : "; Timestamp.Print();
 		cout<<"Beam Intensity [ETOR875] : "<<Intensity<<endl;
 		cout<<"Beam Power [protons/hr] : "<<Power<<endl;
-		cout<<"Stability : "<<Stability<<endl;
+		cout<<"Beam Stability : "<<Stability<<endl;
 		
 		return true;
 	}

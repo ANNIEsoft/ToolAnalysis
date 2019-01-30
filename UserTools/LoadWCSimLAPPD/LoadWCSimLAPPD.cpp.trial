@@ -1,0 +1,132 @@
+/* vim:set noexpandtab tabstop=4 wrap */
+
+#include "LoadWCSimLAPPD.h"
+#include <numeric>  // iota
+
+LoadWCSimLAPPD::LoadWCSimLAPPD():Tool(){}
+
+bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
+
+	/////////////////// Useful header ///////////////////////
+	
+	if(verbose) cout<<"Initializing Tool LoadWCSimLAPPD"<<endl;
+	
+	if(configfile!="") m_variables.Initialise(configfile); //loading config file
+	//m_variables.Print();
+
+	m_data= &data; //assigning transient data pointer
+	/////////////////////////////////////////////////////////////////
+
+		// Get the Tool configuration variables
+	// ====================================
+	m_variables.Get("verbose",verbose);
+	m_variables.Get("InputFile",MCFile);
+	m_variables.Get("InnerStructureRadius",Rinnerstruct);
+	m_variables.Get("HistoricTriggeroffset",triggeroffset);
+	
+	// Make class private members; e.g. the LAPPDTree
+	// ==============================================
+//	file= new TFile(MCFile.c_str(),"READ");
+//	lappdtree= (TTree*) file->Get("LAPPDTree");
+//	NumEvents=lappdtree->GetEntries();
+//	LAPPDEntry= new LAPPDTree(lappdtree);
+
+	// Make the ANNIEEvent Store if it doesn't exist
+	// =============================================
+	int annieeventexists = m_data->Stores.count("ANNIEEvent");
+		if(annieeventexists==0){
+		cerr<<"LoadWCSimLAPPD tool need to run after LoadWCSim tool!"<<endl;
+		return false; // XXX we need various things from main files... 
+	}
+		
+	// Get relevant temporary WCSimRootOptions from CStore
+//	m_data->CStore.Get("WCSimPreTriggerWindow",pretriggerwindow);    // XXX XXX XXX <<< enabled
+//	m_data->CStore.Get("WCSimPostTriggerWindow",posttriggerwindow);  // XXX XXX XXX <<< enabled
+	m_data->Stores["WCSimStore"]->Get("WCSimPreTriggerWindow",pretriggerwindow);
+	m_data->Stores["WCSimStore"]->Get("WCSimPostTriggerWindow",posttriggerwindow);
+	if(verbose>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
+					  <<", WCSimPostTriggerWindow="<<posttriggerwindow<<endl;
+	// so far all simulations have used the SK defaults: pre: -400ns, post: 950ns
+	
+	
+	
+	// Get WCSimRootGeom so we can obtain CylLoc and tank geometry for calculating global pos
+	intptr_t geomptr;
+	//m_data->CStore.Get("WCSimRootGeom",geomptr);                   // XXX XXX XXX <<< enabled
+	m_data->Stores["WCSimStore"]->Get("WCSimRootGeom",geomptr);
+	geo = reinterpret_cast<WCSimRootGeom*>(geomptr);
+//	int wcsimgoemexists = m_data->Stores.count("WCSimRootGeomStore");
+//	if(wcsimgoemexists==0){
+//		m_data->Stores["WCSimRootGeomStore"]->Header->Get("WCSimRootGeom",geo);
+//	} else {
+//		cerr<<"No WCSimRootGeom needed by LoadWCSimLAPPD tool!"<<endl;
+//	}
+	if(verbose>3){
+		int numlappds = geo->GetWCNumLAPPD();
+		cout<<"we have "<<numlappds<<" LAPPDs"<<endl;
+	}
+	
+	// things to be saved to the ANNIEEvent Store
+	MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
+       
+	
+	return true;
+}
+
+
+bool LoadWCSimLAPPD::Execute(){
+  	
+	if(verbose) cout<<"Tool LoadWCSimLAPPD getting next entry "<<endl;
+	
+	//LAPPDHit(int tubeid, double thetime, double charge, std::vector<double> Position, std::vector<double> LocalPosition, double tpsec)
+	int lappdid=1;
+	double timens(1.);
+	double charge=1.;
+	std::vector<double> globalpos{1.,1.,1.};
+	std::vector<double> localpos{1.,1.};
+	double timeps=1.;
+	
+	ChannelKey key(subdetector::LAPPD,lappdid);
+	LAPPDHit nexthit(lappdid, timens, charge, globalpos, localpos, timeps);
+	std::vector<LAPPDHit> nextvechit{nexthit};
+	MCLAPPDHitsnonp.emplace(key,nextvechit);
+	MCLAPPDHits->emplace(key, nextvechit);
+	
+	m_data->Stores["ANNIEEvent"]->Set("AMCLAPPDHit",nexthit);
+	m_data->Stores["ANNIEEvent"]->Set("AMCLAPPDHitVec",nextvechit);
+	m_data->Stores["ANNIEEvent"]->Set("MCLAPPDHitsnonp",MCLAPPDHitsnonp);
+	m_data->Stores["ANNIEEvent"]->Set("MCLAPPDHits",MCLAPPDHits,true);
+	
+	m_data->Stores["ANNIEEvent"]->Print(false);
+	
+	LAPPDHit nexthit2;
+	std::vector<LAPPDHit> nextvechit2;
+	std::map<ChannelKey,std::vector<LAPPDHit>> MCLAPPDHitsnonp2;
+	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits2 = nullptr;
+	
+	bool myreturn;
+	cout<<"retrieving 1 LAPPDHit"<<endl;
+	myreturn = m_data->Stores["ANNIEEvent"]->Get("AMCLAPPDHit",nexthit2);
+	cout<<"1 lappdhit returned "<<myreturn<<endl;
+	
+	cout<<"retrieving a vector of lappdhits"<<endl;
+	m_data->Stores["ANNIEEvent"]->Get("AMCLAPPDHitVec",nextvechit2);
+	cout<<"vec lappdhit returned "<<myreturn<<endl;
+	
+	cout<<"retrieving a map of vectors of lappdhits"<<endl;
+	myreturn = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHitsnonp",MCLAPPDHitsnonp2);
+	cout<<"map of vec of lappdhits returned "<<myreturn<<endl;
+	
+	cout<<"retrieving a pointer to a map of vectors of lappdhits"<<endl;
+	myreturn = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits2);
+	cout<<"pointer to map of vectors of lappdhits retruned "<<myreturn<<endl;
+	
+	
+	return true;
+}
+
+
+bool LoadWCSimLAPPD::Finalise(){
+
+	return true;
+}

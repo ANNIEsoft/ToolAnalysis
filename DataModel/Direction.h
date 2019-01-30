@@ -5,6 +5,7 @@
 #include<SerialisableObject.h>
 #include <math.h> // defines M_PI
 #include <cmath>  // atan2
+#include <iostream>
 
 using namespace std;
 
@@ -13,32 +14,32 @@ class Direction : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-  Direction() : x(0), y(0), z(0), phi(0), theta(0){serialise=true;}
-	Direction(double x, double y, double z){
-	  serialise=true;
-	  double mag=sqrt(pow(x,2.)+pow(y,2.)+pow(z,2.));
-	  if(mag==1.){ x=x; y=y; z=z; }
-	  else { x=x/mag; y=y/mag; z=z/mag; }
-	  theta = (x == 0.0 && y == 0.0 && z == 0.0) ? 0.0 : atan2(sqrt(x*x + y*y),z);
-	  phi = (x == 0.0 && y == 0.0) ? 0. : atan2(y, x);
+	Direction() : x(0), y(0), z(0), phi(0), theta(0){serialise=true;}
+	Direction(double xin, double yin, double zin){
+		serialise=true;
+		double mag=sqrt(pow(xin,2.)+pow(yin,2.)+pow(zin,2.));
+		if(mag==1.){ x=xin; y=yin; z=zin; }
+		else { x=xin/mag; y=yin/mag; z=zin/mag; }
+		theta = (x == 0.0 && y == 0.0 && z == 0.0) ? 0.0 : atan2(sqrt(x*x + y*y),z);
+		phi = (x == 0.0 && y == 0.0) ? 0. : atan2(y, x);
 	};
 	
 	Direction(double phiin, double thetain){
-	  serialise=true;	
-	  theta=thetain;
-	  phi=phiin;
-	  x=cos(theta)*cos(phi);
-	  y=cos(theta)*sin(phi);
-	  z=sin(theta);
+		serialise=true;
+		theta=thetain;
+		phi=phiin;
+		x=cos(theta)*cos(phi);
+		y=cos(theta)*sin(phi);
+		z=sin(theta);
 	};
-  
-	inline double X(){return x;}
-	inline double Y(){return y;}
-	inline double Z(){return z;}
-	inline double Phi(){return phi;}
-	inline double PhiDeg(){return phi*(180./M_PI);}
-	inline double Theta(){return theta;}
-	inline double ThetaDeg(){return theta*(180./M_PI);}
+	  
+	inline double X() const {return x;}
+	inline double Y() const {return y;}
+	inline double Z() const {return z;}
+	inline double Phi() const {return phi;}
+	inline double PhiDeg() const {return phi*(180./M_PI);}
+	inline double Theta() const {return theta;}
+	inline double ThetaDeg() const {return theta*(180./M_PI);}
 	
 	inline void SetX(double xx){x=xx;}
 	inline void SetY(double yy){y=yy;}
@@ -48,12 +49,10 @@ class Direction : public SerialisableObject{
 	inline void SetTheta(double th){theta=th;}
 	inline void SetThetaDeg(double thd){theta=thd*(M_PI/180.);}
 	
-	bool Print(){
-		cout<<"x : "<<x<<" meters"<<endl;
-		cout<<"y : "<<y<<" meters"<<endl;
-		cout<<"z : "<<z<<" meters"<<endl;
-		cout<<"theta : "<<theta<<" rads"<<endl;
-		cout<<"phi : "<<phi<<" rads"<<endl;
+	bool Print() {
+		std::cout<<"Unit Vector : ("<<x<<", "<<y<<", "<<z<<")"<<std::endl;
+		std::cout<<"theta : "<<theta<<" rads"<<std::endl;
+		std::cout<<"phi : "<<phi<<" rads"<<std::endl;
 		
 		return true;
 	}

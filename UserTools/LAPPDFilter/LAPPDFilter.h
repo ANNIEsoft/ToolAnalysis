@@ -27,6 +27,7 @@ class LAPPDFilter: public Tool {
   int DimSize;
   double CutoffFrequency;
   double Deltat;
+  string FilterInputWavLabel;
 
 
 };

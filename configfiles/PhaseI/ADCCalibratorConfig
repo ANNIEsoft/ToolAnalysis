@@ -1,0 +1,5 @@
+# Dummy config file
+verbose 2
+NumBaselineSamples 25
+NumSubMinibuffers 40 
+PCritical 0.01

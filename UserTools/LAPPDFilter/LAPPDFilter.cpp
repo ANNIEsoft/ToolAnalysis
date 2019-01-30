@@ -15,6 +15,10 @@ bool LAPPDFilter::Initialise(std::string configfile, DataModel &data){
   bool isFiltered = true;
   m_data->Stores["ANNIEEvent"]->Header->Set("isFiltered",isFiltered);
 
+  TString FIWL;
+  //FilterInputWavLabel;
+  m_variables.Get("FilterInputWavLabel",FIWL);
+  FilterInputWavLabel = FIWL;
   m_variables.Get("Nsamples", DimSize);
   m_variables.Get("CutoffFrequency", CutoffFrequency);
   m_variables.Get("SampleSize",Deltat);
@@ -28,7 +32,9 @@ bool LAPPDFilter::Execute(){
 
   // get raw lappd data
   std::map<int,vector<Waveform<double>>> rawlappddata;
-  m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
+
+  //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
+  m_data->Stores["ANNIEEvent"]->Get(FilterInputWavLabel,rawlappddata);
 
   // the filtered Waveform
   std::map<int,vector<Waveform<double>>> filteredlappddata;
@@ -83,12 +89,12 @@ Waveform<double> LAPPDFilter::Waveform_FFT(Waveform<double> iwav) {
 	hr->SetTitle("Real part of the 1st transform");
 	hr->GetXaxis()->Set(DimSize,0,1e10); //Hz
 
-/*	//Look at the imaginary part of the output
-	 TH1 *him = 0;
+	//Look at the imaginary part of the output
+	TH1 *him = 0;
 	him = hwav->FFT(him, "IM");
 	him->SetName("him");
 	him->SetTitle("Imaginary part of the 1st transform");
-	him->GetXaxis()->Set(DimSize,0,1e10);*/
+	him->GetXaxis()->Set(DimSize,0,1e10);
 
 	//Look at the DC component and the Nyquist harmonic:
 	double re, im;
@@ -105,6 +111,8 @@ Waveform<double> LAPPDFilter::Waveform_FFT(Waveform<double> iwav) {
 	  //		double f = Waveform_Filter1(5e8, i*1.0e10/DimSize);
 	  double f = Waveform_Filter2(CutoffFrequency, 4, i*1.0e10/DimSize);
 
+    re_full[i] = re_full[i]*f;
+    im_full[i] = im_full[i]*f;
 	  freqq->SetBinContent(i+1,re_full[i]);
 	}
 
@@ -128,15 +136,18 @@ Waveform<double> LAPPDFilter::Waveform_FFT(Waveform<double> iwav) {
 	  //  freqq2->SetBinContent(i+1,abs(re_fft[i]));
 	}
 
+  delete freqq;
+  delete freqq2;
+  delete hwav;
 	delete hr;
-	//   delete him;
+  delete him;
 	delete hb;
 	delete re_full;
 	delete im_full;
 	delete fft;
 	delete fft_back;
 	hr=0;
-	//   him=0;
+  him=0;
 	hb=0;
 	re_full=0;
 	im_full=0;

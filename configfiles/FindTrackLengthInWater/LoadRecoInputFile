@@ -1,0 +1,10 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbose 9
+InputFile /LocalFolder/reco26_5LAPPDs+128PMTs_extv3_9.root
+Outputfile /LocalFolder/data_forRecoLength_9.csv
+OutputDirectory /LocalFolder/vars_Ereco.root
+WriteTrackLengthToFile 1
+  
+

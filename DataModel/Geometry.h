@@ -16,14 +16,15 @@ class Geometry : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-  Geometry() : Detectors(std::map<ChannelKey,Detector>{}), Version(0.), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(detectorstatus::OFF) {serialise=true;}
+  Geometry() : Detectors(std::map<ChannelKey,Detector>{}), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(detectorstatus::OFF) {serialise=true;}
 	
-	Geometry(std::map<ChannelKey,Detector> dets, double ver, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, detectorstatus statin)
-	  : Detectors(dets), Version(ver), tank_radius(tankr), tank_halfheight(tankhh), mrd_width(mrdw), mrd_height(mrdh), mrd_depth(mrdd), mrd_start(mrds), numtankpmts(ntankpmts), nummrdpmts(nmrdpmts), numvetopmts(nvetopmts), numlappds(nlappds), Status(statin) {serialise=true;}
+	Geometry(std::map<ChannelKey,Detector> dets, double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, detectorstatus statin)
+	  : Detectors(dets), Version(ver), tank_centre(tankc), tank_radius(tankr), tank_halfheight(tankhh), mrd_width(mrdw), mrd_height(mrdh), mrd_depth(mrdd), mrd_start(mrds), numtankpmts(ntankpmts), nummrdpmts(nmrdpmts), numvetopmts(nvetopmts), numlappds(nlappds), Status(statin) {serialise=true;}
 	
 	inline std::map<ChannelKey,Detector>* GetDetectors(){return &Detectors;}
 	inline double GetVersion(){return Version;}
 	inline detectorstatus GetStatus(){return Status;}
+	inline Position GetTankCentre(){return tank_centre;}
 	inline double GetTankRadius(){return tank_radius;}
 	inline double GetTankHalfheight(){return tank_halfheight;}
 	inline double GetMrdWidth(){return mrd_width;}
@@ -35,6 +36,7 @@ class Geometry : public SerialisableObject{
 	inline void SetDetectors(std::map<ChannelKey,Detector> DetectorsIn){Detectors = DetectorsIn;}
 	inline void SetVersion(double VersionIn){Version = VersionIn;}
 	inline void SetStatus(detectorstatus StatusIn){Status = StatusIn;}
+	inline void SetTankCentre(Position tank_centrein){tank_centre = tank_centrein;}
 	inline void SetTankRadius(double tank_radiusIn){tank_radius = tank_radiusIn;}
 	inline void SetTankHalfheight(double tank_halfheightIn){tank_halfheight = tank_halfheightIn;}
 	inline void SetMrdWidth(double mrd_widthIn){mrd_width = mrd_widthIn;}
@@ -103,22 +105,33 @@ class Geometry : public SerialisableObject{
 		return numlappds;
 	}
 	
-	bool GetTankContained(Particle part){
-		Position stopVertex = part.GetStopVertex();
-		bool tankcontained = (abs(stopVertex.X())<tank_radius) &&
-							 (abs(stopVertex.Z())<tank_radius) &&
-							 (abs(stopVertex.Y())<tank_halfheight);
+	bool GetTankContained(Particle part, int startstop=0){
+		Position aVertex = (startstop==0) ? part.GetStopVertex() : part.GetStartVertex();
+		bool tankcontained = (sqrt(pow(aVertex.X(),2.)+pow(aVertex.Z()-tank_centre.Z(),2.)) < tank_radius) &&
+							 (abs(aVertex.Y()-tank_centre.Y())<tank_halfheight);
 		return tankcontained;
 	}
-	bool GetMrdContained(Particle part){
-		Position stopVertex = part.GetStopVertex();
-		bool MrdContained = (abs(stopVertex.X())<mrd_width/2.) &&
-							(stopVertex.Z()>mrd_start) && (stopVertex.Z()<(mrd_start+mrd_depth)) &&
-							(abs(stopVertex.Y())<mrd_height/2.);
+	bool GetTankContained(Position aVertex){
+		bool tankcontained = (sqrt(pow(aVertex.X(),2.)+pow(aVertex.Z()-tank_centre.Z(),2.)) < tank_radius) &&
+							 (abs(aVertex.Y()-tank_centre.Y())<tank_halfheight);
+		return tankcontained;
+	}
+	
+	bool GetMrdContained(Particle part, int startstop=0){
+		Position aVertex = (startstop==0) ? part.GetStopVertex() : part.GetStartVertex();
+		bool MrdContained = (abs(aVertex.X())<mrd_width/2.) &&
+							(aVertex.Z()>mrd_start) && (aVertex.Z()<(mrd_start+mrd_depth)) &&
+							(abs(aVertex.Y())<mrd_height/2.);
+		return MrdContained;
+	}
+	bool GetMrdContained(Position aVertex){
+		bool MrdContained = (abs(aVertex.X())<mrd_width/2.) &&
+							(aVertex.Z()>mrd_start) && (aVertex.Z()<(mrd_start+mrd_depth)) &&
+							(abs(aVertex.Y())<mrd_height/2.);
 		return MrdContained;
 	}
 	
-	bool Print(){
+	bool Print() {
 		int verbose=0;
 		cout<<"Num Detectors : "<<Detectors.size()<<endl;
 		if(verbose){
@@ -132,6 +145,7 @@ class Geometry : public SerialisableObject{
 		}
 		cout<<"Version : "<<Version<<endl;
 		cout<<"Status : "; PrintStatus(Status);
+		cout<<"tank_centre : "; tank_centre.Print();
 		cout<<"tank_radius : "<<tank_radius<<endl;
 		cout<<"tank_halfheight : "<<tank_halfheight<<endl;
 		cout<<"mrd_width : "<<mrd_width<<endl;
@@ -146,6 +160,7 @@ class Geometry : public SerialisableObject{
 	std::map<ChannelKey,Detector> Detectors;
 	double Version;
 	detectorstatus Status;
+	Position tank_centre;
 	double tank_radius;
 	double tank_halfheight;
 	double mrd_width;
@@ -162,6 +177,7 @@ class Geometry : public SerialisableObject{
 			ar & Detectors;
 			ar & Version;
 			ar & Status;
+			ar & tank_centre;
 			ar & tank_radius;
 			ar & tank_halfheight;
 			ar & mrd_width;

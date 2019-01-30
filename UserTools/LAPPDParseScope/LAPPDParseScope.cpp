@@ -32,6 +32,8 @@ bool LAPPDParseScope::Initialise(std::string configfile, DataModel &data){
   bool isSim = false;
   m_data->Stores["ANNIEEvent"]->Header->Set("isSim",isSim);
 
+  iter=0;
+
   return true;
 }
 
@@ -39,6 +41,8 @@ bool LAPPDParseScope::Initialise(std::string configfile, DataModel &data){
 bool LAPPDParseScope::Execute(){
 
   std::map<int,vector<Waveform<double>>> RawLAPPDData;
+
+  if(iter%1000==0)cout<<"iteration: "<<iter<<endl;
 
   //loop over the text file
 
@@ -61,6 +65,8 @@ bool LAPPDParseScope::Execute(){
 
   // add the map of Waveforms to the Boost Store
   m_data->Stores["ANNIEEvent"]->Set("RawLAPPDData",RawLAPPDData);
+
+  iter++;
 
   return true;
 }
