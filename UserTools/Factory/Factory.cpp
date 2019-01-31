@@ -63,5 +63,6 @@ if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
+if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
 return ret;
 }

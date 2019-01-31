@@ -1,5 +1,5 @@
 DigitBuilderDoE DigitBuilderDoE ./configfiles/PhaseIIDoE/DigitBuilderDoEConfig
-EventSelectorDoE EventSelectorDoE ./configfiles/PhaseIIDoE/EventSelectorConfig
+EventSelectorDoE EventSelectorDoE ./configfiles/PhaseIIDoE/EventSelectorDoEConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIIReco/VtxSeedGeneratorConfig
 VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
 VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/PhaseIIReco/VtxPointDirectionFinderConfig

@@ -59,7 +59,7 @@ class EventSelectorDoE: public Tool {
   uint32_t fEventNumber;
 
 	Geometry fGeometry;    ///< ANNIE Geometry
-	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
+	RecoVertex* fMuonVertex = nullptr; 	 ///< true muon start vertex
   double fTrackLengthInMrd;
 
 	//verbosity initialization

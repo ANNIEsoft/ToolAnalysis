@@ -71,7 +71,8 @@ bool DigitBuilderDoE::Initialise(std::string configfile, DataModel &data){
 
 
 bool DigitBuilderDoE::Execute(){
-	// see if "ANNIEEvent" exists
+	this->Reset();
+  // see if "ANNIEEvent" exists
 	auto get_annieevent = m_data->Stores.count("ANNIEEvent");
 	if(!get_annieevent){
 		Log("DigitBuilder Tool: No ANNIEEvent store!",v_error,verbosity); 
@@ -86,7 +87,6 @@ bool DigitBuilderDoE::Execute(){
 	};
   
   doechain->GetEntry(EventNum);
-  this->ClearDigitList();
 
   //First, load digits from event into RecoDigit classes
   //Loop through and convert information to the right form for the
@@ -124,6 +124,7 @@ bool DigitBuilderDoE::Execute(){
           pos_reco.SetZ(DigitVertices->at(i).Z() - 168.1);
           calQ = 1; //Charges not well modeled yet; don't use
           calT = DigitVertices->at(i).T() - fHistoricOffset;
+					calT = frand.Gaus(calT, 0.1); // time is smeared with 100 ps time resolution. Harded-coded for now.
     		  RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, DigitId);
     		  fDigitList->push_back(recoDigit);
         }
@@ -140,11 +141,10 @@ bool DigitBuilderDoE::Execute(){
   muonstartpos.SetX(MuonStartVertex->X()); 
   muonstartpos.SetY(MuonStartVertex->Y() + 14.46469);
   muonstartpos.SetZ(MuonStartVertex->Z() - 168.1);
-  std::cout << "MUON INFORMATION: X = " <<muonstartpos.X()<<", Y = "<<muonstartpos.Y()<<
-      ", Z = "<<muonstartpos.Z()<<", T = "<<muonstarttime<<std::endl;
   muonstarttime = MuonStartVertex->T() - fHistoricOffset;
   fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
   fMuonStartVertex->SetDirection(muondirection);
+
 
 	/// Push recodigits and muon truth info to RecoEvent
   this->PushRecoDigits(true); 
@@ -176,6 +176,7 @@ bool DigitBuilderDoE::Finalise(){
 	delete MuonStopVertex;
 	delete MuonDirection;	
   delete doechain;
+  delete fMuonStartVertex;
   //TODO: Track length in MRD deletion here?
   return true;
 }
@@ -202,4 +203,8 @@ void DigitBuilderDoE::LinkChain(){
  doechain->SetBranchAddress("DigitPmtId", &DigitIdArray);
 }
 
-
+void DigitBuilderDoE::Reset() {
+	// Reset 
+  fDigitList->clear();
+  fMuonStartVertex->Reset();
+}

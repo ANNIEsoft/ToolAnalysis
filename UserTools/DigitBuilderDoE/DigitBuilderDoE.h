@@ -40,6 +40,8 @@ class DigitBuilderDoE: public Tool {
   static DigitBuilderDoE* Instance();
 
  private:
+  /// Reset the digit list and start muon vertex
+  void Reset();
   // Sets branch addresses in TChain to link properly to initialized variables
   void LinkChain();
  
@@ -56,11 +58,12 @@ class DigitBuilderDoE: public Tool {
   std::string fPhotodetectorConfiguration;
   double fHistoricOffset;
 
+	TRandom3 frand;  ///< Random number generator
+
   uint32_t NumEvents;
 	uint32_t EventNum;
   uint64_t MCEventNum;
   std::vector<RecoDigit>* fDigitList;
-	void ClearDigitList() {fDigitList->clear();}
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
 	//RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
 
