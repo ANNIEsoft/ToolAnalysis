@@ -18,7 +18,7 @@ bool EventSelectorDoE::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
 
   /// Construct the other objects we'll be setting at event level,
-  fMuonStartVertex = new RecoVertex();
+  fMuonVertex = new RecoVertex();
   
   // Make the RecoDigit Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
@@ -58,6 +58,12 @@ bool EventSelectorDoE::Execute(){
 
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
+ 
+  auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonVertex);
+	if(!get_truevtx){ 
+		Log("EventSelectorDoE Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
+		return false; 
+	}
   
   std::string logmessage = "EventSelectorDoE Tool: Processing MCEntry "+to_string(fMCEventNum)+
   	", MCTrigger "+to_string(fMCTriggernum) + ", Event "+to_string(fEventNumber);
@@ -75,9 +81,7 @@ bool EventSelectorDoE::Execute(){
   }
   
   // Event selection successfully run!
-  //If event passes cuts, store truth vertex info.
-  if(fEventCutStatus) this->PushTrueVertex(true);
-
+  //Push the EventCutStatus, which determines if reco is run.
   m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
   return true;
 }
@@ -85,6 +89,7 @@ bool EventSelectorDoE::Execute(){
 
 bool EventSelectorDoE::Finalise(){
   if(verbosity>0) cout<<"EventSelectorDoE exitting"<<endl;
+  delete fMuonVertex;
   return true;
 }
 
@@ -92,12 +97,12 @@ bool EventSelectorDoE::PromptTriggerCheck() {
   /// First, see if this is a delayed trigger in the event
   auto get_mctrigger = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
   if(!get_mctrigger){ 
-    Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
+    Log("EventSelectorDoE Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
     return false; 
   }	
   /// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
   if(fMCTriggernum>0){ 
-    Log("DigitBuilder Tool: This event is not a prompt trigger",v_debug,verbosity); 
+    Log("EventSelectorDoE Tool: This event is not a prompt trigger",v_debug,verbosity); 
     return false;
   }
   return true;
@@ -105,10 +110,10 @@ bool EventSelectorDoE::PromptTriggerCheck() {
 	
 
 bool EventSelectorDoE::EventSelectionByMCTruthInfo() {
-  if(!fMuonStartVertex) return false;
+  if(!fMuonVertex) return false;
   double trueVtxX, trueVtxY, trueVtxZ;
-  Position vtxPos = fMuonStartVertex->GetPosition();
-  Direction vtxDir = fMuonStartVertex->GetDirection();
+  Position vtxPos = fMuonVertex->GetPosition();
+  Direction vtxDir = fMuonVertex->GetDirection();
   trueVtxX = vtxPos.X();
   trueVtxY = vtxPos.Y();
   trueVtxZ = vtxPos.Z();
@@ -118,12 +123,14 @@ bool EventSelectorDoE::EventSelectionByMCTruthInfo() {
   double fidcuty = 50.;
   double fidcutz = 0.;
   if(trueVtxZ > fidcutz) return false;
+
+  std::cout << "MADE IT PAST THE ZCUT" << std::endl;
+  std::cout << "MUON INFO: X," << trueVtxX << " Y, " << trueVtxY << " Z, " << trueVtxZ << std::endl;
   if( (TMath::Sqrt(TMath::Power(trueVtxX, 2) + TMath::Power(trueVtxZ,2)) > fidcutradius) 
-  	  || (TMath::Abs(trueVtxY) > fidcuty) 
-  	  || (trueVtxZ > fidcutz) ){
+  	  || (TMath::Abs(trueVtxY) > fidcuty)){
     return false;
   }	
-  
+  std::cout << "MADE IT PAST THE FIDUCIAL VOLUME CUT" << std::endl; 
   //mrd cut
   if (fTrackLengthInMrd == 0){
     return false;
@@ -133,6 +140,5 @@ bool EventSelectorDoE::EventSelectionByMCTruthInfo() {
 
 void EventSelectorDoE::Reset() {
   // Reset 
-  fMuonStartVertex->Reset();
   fEventCutStatus = true; 
 } 
