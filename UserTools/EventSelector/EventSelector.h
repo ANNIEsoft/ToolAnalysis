@@ -54,14 +54,29 @@ class EventSelector: public Tool {
  	/// is selected. 
  	/// The 
  	bool EventSelectionByMCTruthInfo();
- 	
+
+ 	/// \brief Event selection by Pion Kaon count
+  /////
+ 	/// This event selection criteria requires that no pions or 
+ 	/// kaons are parent particles in the event.  This will help
+  /// Select the CC0Pi events when testing reconstruction.
+ 	bool EventSelectionNoPiK();
+
  	/// \brief Find true neutrino vertex
  	///
  	/// Loop over all MC particles and find the particle with highest energy. 
  	/// This particle is the primary muon. The muon start position, time and 
  	/// the muon direction are used to initise the true neutrino vertex 
  	RecoVertex* FindTrueVertexFromMC();
+
+ 	/// \brief Find PionKaon Count 
+ 	///
+ 	/// Loop over all MC particles and find any particles with PDG codes
+  /// Consistent with Pions or Kaons of any charges. Racks up a count
+  /// of the number of each type of particle
  	
+  void FindPionKaonCountFromMC();
+
  	/// \brief Save true neutrino vertex
  	///
  	/// Push true neutrino vertex to "RecoVertex"
@@ -88,7 +103,9 @@ class EventSelector: public Tool {
 	std::string fInputfile;
 	bool fMRDRecoCut = false;
 	bool fMCTruthCut = false;
-        bool fPromptTrigOnly = true;
+	bool fMCPiKCut = false;
+  bool fGetPiKInfo = false;
+  bool fPromptTrigOnly = true;
 	bool fEventCutStatus;
 
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

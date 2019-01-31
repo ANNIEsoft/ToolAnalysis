@@ -31,6 +31,8 @@ reconstruction chain are saved to the tree.  Values include seeds from SeedVtxFi
 fits from PointPosFinder, and FOMs for likelihood fits at each reconstruction step.
 Will output to tree if 1.
 
+pionKaonCount_fill (1 or 0)
+Input determines if MC Truth pion and kaon counts are output to Phase II tree.
 param1 value1
 param2 value2
 ```
