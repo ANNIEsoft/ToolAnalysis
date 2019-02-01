@@ -49,3 +49,4 @@ Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
 
 ### Open terminal
 CMD ["/bin/bash"]
+

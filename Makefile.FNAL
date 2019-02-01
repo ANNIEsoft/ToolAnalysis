@@ -14,7 +14,7 @@ BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostre
 BoostInclude= -I $(BOOST_INC)
 
 RootInclude=  -I $(ROOT_INC)
-RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
+RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lGenVector -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)

@@ -62,5 +62,11 @@ if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="HitCleaner") ret=new HitCleaner;
+if (tool=="HitResiduals") ret=new HitResiduals;
+if (tool=="MonitorReceive") ret=new MonitorReceive;
+if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
+if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
+if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
+
 return ret;
 }

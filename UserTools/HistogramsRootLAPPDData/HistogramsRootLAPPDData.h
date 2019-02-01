@@ -10,7 +10,6 @@
 #include "Tool.h"
 #include "LAPPDHit.h"
 #include "LAPPDresponse.hh"
-#include "TimeClass.h"
 #include "LAPPDPulse.h"
 class HistogramsRootLAPPDData: public Tool {
 

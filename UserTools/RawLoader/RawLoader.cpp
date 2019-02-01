@@ -269,7 +269,7 @@ bool RawLoader::Execute() {
         }
 
         // Create a new raw waveform object for the current minibuffer
-        raw_waveforms.emplace_back( TimeClass(ns_since_epoch), minibuffer_data);
+        raw_waveforms.emplace_back( ns_since_epoch, minibuffer_data);
       }
 
       raw_waveform_map[ck] = raw_waveforms;
