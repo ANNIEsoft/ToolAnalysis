@@ -1,7 +1,6 @@
 #LoadWCSim Config File
 # all variables retrieved with m_variables.Get() must be defined here!
 
-verbose 0
+verbose 1
 
 InputFile /Jingbo/wcsim_files/wcsim_0.1.7.root
-HistoricTriggeroffset 950

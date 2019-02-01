@@ -10,4 +10,4 @@ VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/PhaseIIReco/VtxPoi
 VtxPointVertexFinder VtxPointVertexFinder ./configfiles/PhaseIIReco/VtxPointVertexFinderConfig
 VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/PhaseIIReco/VtxExtendedVertexFinderConfig
 PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIIReco/PhaseIITreeMakerConfig
-#SaveRecoEvent SaveRecoEvent ./configfiles/PhaseIIReco/SaveRecoEventConfig
+SaveRecoEvent SaveRecoEvent ./configfiles/PhaseIIReco/SaveRecoEventConfig

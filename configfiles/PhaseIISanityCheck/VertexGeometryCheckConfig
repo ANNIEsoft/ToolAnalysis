@@ -1,5 +1,5 @@
 verbosity 0
 
 OutputFile ./VertexGeometryCheck.root
-ShowEvent -1
+ShowEvent 62
 
