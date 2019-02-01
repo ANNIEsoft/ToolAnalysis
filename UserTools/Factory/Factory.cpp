@@ -64,7 +64,8 @@ if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
 if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
-
+if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
+if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
 
 return ret;
 }

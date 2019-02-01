@@ -72,3 +72,5 @@
 #include "HitResiduals/HitResiduals.cpp"
 #include "MonitorReceive/MonitorReceive.cpp"
 #include "MonitorSimReceive/MonitorSimReceive.cpp"
+#include "EventSelectorDoE/EventSelectorDoE.cpp"
+#include "DigitBuilderDoE/DigitBuilderDoE.cpp"
