@@ -6,9 +6,13 @@
 
 #include "Tool.h"
 // ROOT includes
+#include "TApplication.h"
+#include <Math/PxPyPzE4D.h>
+#include <Math/LorentzVector.h>
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
+
 
 class PhaseIITreeMaker: public Tool {
 
