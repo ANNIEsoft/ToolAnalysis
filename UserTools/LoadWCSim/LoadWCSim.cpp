@@ -270,9 +270,8 @@ bool LoadWCSim::Execute(){
 			*/
 			
 			tracktype startstoptype = tracktype::UNDEFINED;
-			
 			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
-			
+
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0) / 100., nextrack->GetStart(1) / 100., nextrack->GetStart(2) / 100.),

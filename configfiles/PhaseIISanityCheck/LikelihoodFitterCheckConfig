@@ -1,6 +1,6 @@
-verbosity 3
+verbosity 4
 
 OutputFile ./LikelihoodFitterCheck.root
 ifPlot2DFOM 0
-ShowEvent 62
+ShowEvent 4
 
