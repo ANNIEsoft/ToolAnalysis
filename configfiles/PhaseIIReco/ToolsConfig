@@ -4,10 +4,10 @@ LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PhaseIIReco/LoadWCSimLAPPDConfig
 EventSelector EventSelector ./configfiles/PhaseIIReco/EventSelectorConfig
 DigitBuilder DigitBuilder ./configfiles/PhaseIIReco/DigitBuilderConfig
 HitCleaner HitCleaner ./configfiles/PhaseIIReco/HitCleanerConfig
-#VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIIReco/VtxSeedGeneratorConfig
-#VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
-#VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/PhaseIIReco/VtxPointDirectionFinderConfig
-#VtxPointVertexFinder VtxPointVertexFinder ./configfiles/PhaseIIReco/VtxPointVertexFinderConfig
+VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIIReco/VtxSeedGeneratorConfig
+VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
+VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/PhaseIIReco/VtxPointDirectionFinderConfig
+VtxPointVertexFinder VtxPointVertexFinder ./configfiles/PhaseIIReco/VtxPointVertexFinderConfig
 VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/PhaseIIReco/VtxExtendedVertexFinderConfig
 PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIIReco/PhaseIITreeMakerConfig
 #SaveRecoEvent SaveRecoEvent ./configfiles/PhaseIIReco/SaveRecoEventConfig
