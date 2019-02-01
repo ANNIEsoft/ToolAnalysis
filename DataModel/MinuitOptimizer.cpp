@@ -1827,7 +1827,6 @@ void MinuitOptimizer::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, 
   // calculate overall figure of merit
   // =================================
   fom = vtxFOM + penaltyFOM + fixPositionFOM + fixDirectionFOM;
-  fom = timeFOM;
 
   // truncate
   if( fom<-999.999*fBaseFOM ) fom = -999.999*fBaseFOM;

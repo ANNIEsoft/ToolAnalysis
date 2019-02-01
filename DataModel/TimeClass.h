@@ -13,10 +13,10 @@ class TimeClass : public SerialisableObject{
 	
 	public:
   TimeClass() : unixns(0) {serialise=true;}
-  TimeClass(float timens) : unixns(timens) {serialise=true;}
+  TimeClass(uint64_t timens) : unixns(timens) {serialise=true;}
 	
-	inline float GetNs() const {return unixns;}
-	inline void SetNs(float tns){unixns=tns;}
+	inline uint64_t GetNs() const {return unixns;}
+	inline void SetNs(uint64_t tns){unixns=tns;}
 	
 	bool Print() {
 		cout<<"unixns : "<<unixns<<endl;
@@ -25,7 +25,7 @@ class TimeClass : public SerialisableObject{
 	}
 	
 	private:
-	float unixns;
+	uint64_t unixns;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
