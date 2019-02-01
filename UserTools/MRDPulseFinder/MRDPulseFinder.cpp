@@ -77,7 +77,7 @@ std::vector<ADCPulse> MRDPulseFinder::FindPulse(vector<short unsigned int>* some
   int binfin=0;
   double Q=0.;
   double peak=0.;
-  TimeClass peaktime(0);
+  double peaktime=0;
   double low=0.;
   double hi=0.;
   double pktime=0.;
@@ -192,7 +192,7 @@ std::vector<ADCPulse> MRDPulseFinder::FindPulse(vector<short unsigned int>* some
     if((curval-bline)>thresh){
 
       length++;
-      if((curval-bline)>peak){peak=(curval-bline); peaktime=TimeClass(bbb); pktime=2*((double)bbb);}
+      if((curval-bline)>peak){peak=(curval-bline); peaktime=bbb; pktime=2*((double)bbb);}
       Q+=((*someWave)[bbb]);
       if(!pulsebeg) low=2*((double)bbb);
       pulsebeg=true;

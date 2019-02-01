@@ -4,7 +4,6 @@
 #define RECODIGITCLASS_H
 
 #include<SerialisableObject.h>
-#include "TimeClass.h"
 #include "Position.h"
 #include "ANNIERecoObjectTable.h"
 

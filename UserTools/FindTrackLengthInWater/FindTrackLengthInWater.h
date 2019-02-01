@@ -33,6 +33,7 @@ class FindTrackLengthInWater: public Tool {
   bool first=1; bool deny_access=0;
   double diffDirAbs2=0; double diffDirAbs=0;
   double recoDWallR2=0; double recoDWallZ2=0;
+  int count1=0;
   
   std::ofstream csvfile;
   std::string myfile;

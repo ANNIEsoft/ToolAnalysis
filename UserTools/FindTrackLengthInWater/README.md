@@ -2,18 +2,6 @@
 
 FindTrackLengthInWater
 
-## Data
+* Takes the .root file from reconstruction (e.g. reco26_5LAPPDs+128PMTs_extv3_9.root), calculates the track length as the distance between the first and last Cherenkov photon emission point along the track and stores variables for track length reconstruction using DNN in a .csv file. 
+* Set input/output file names at: configfiles/FindTrackLengthInWater/LoadRecoInputFile
 
-Describe any data formats FindTrackLengthInWater creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
-## Configuration
-
-Describe any configuration variables for FindTrackLengthInWater.
-
-```
-param1 value1
-param2 value2
-```

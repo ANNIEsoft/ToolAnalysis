@@ -10,7 +10,7 @@ template <typename T> class CalibratedADCWaveform : public Waveform<T> {
 
     CalibratedADCWaveform() : Waveform<T>(), fBaseline(0.),
       fSigmaBaseline(0.) {}
-    CalibratedADCWaveform(const TimeClass& tc, const std::vector<T>& samples,
+    CalibratedADCWaveform(const double& tc, const std::vector<T>& samples,
       double baseline, double sigma_bl)
       : Waveform<T>(tc, samples), fBaseline(baseline),
       fSigmaBaseline(sigma_bl) {}

@@ -10,7 +10,6 @@
 #include<SerialisableObject.h>
 #include "Position.h"
 #include "Direction.h"
-#include "TimeClass.h"
 
 using namespace std;
 // world extent in WCSim is +-600cm in all directions!
@@ -27,7 +26,7 @@ class Particle : public SerialisableObject{
 		     trackLength(0), StartStopType(tracktype::UNDEFINED) {serialise=true;}
 	
 	Particle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
-	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein) 
+	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein) 
 	: ParticlePDG(pdg), startEnergy(sttE), stopEnergy(stpE), startVertex(sttpos),
 	  stopVertex(stppos), startTime(sttt), stopTime(stpt), startDirection(startdir),
 	  trackLength(len) {
@@ -48,8 +47,8 @@ class Particle : public SerialisableObject{
 	inline void SetStopEnergy(double E){stopEnergy=E;}
 	inline void SetStartVertex(Position pos){startVertex=pos;}
 	inline void SetStopVertex(Position pos){stopVertex=pos;}
-	inline void SetStartTime(TimeClass stime){startTime=stime;}
-	inline void SetStopTime(TimeClass stime){stopTime=stime;}
+	inline void SetStartTime(double stime){startTime=stime;}
+	inline void SetStopTime(double stime){stopTime=stime;}
 	inline void SetstartDirection(Direction dir){startDirection=dir;}
 	inline void SetTrackLength(double len){trackLength=len;}
 	inline void SetTrackStartStopType(tracktype tracktypein){StartStopType=tracktypein;}
@@ -59,8 +58,8 @@ class Particle : public SerialisableObject{
 	inline double GetStopEnergy(){return stopEnergy;}
 	inline Position GetStartVertex(){return startVertex;}
 	inline Position GetStopVertex(){return stopVertex;}
-	inline TimeClass GetStartTime(){return startTime;}
-	inline TimeClass GetStopTime(){return stopTime;}
+	inline double GetStartTime(){return startTime;}
+	inline double GetStopTime(){return stopTime;}
 	inline Direction GetStartDirection(){return startDirection;}
 	inline double GetTrackLength(){return trackLength;}
 	inline tracktype GetStartStopType(){return StartStopType;}
@@ -72,8 +71,8 @@ class Particle : public SerialisableObject{
 		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
 		std::cout<<"startVertex : "; startVertex.Print();
 		std::cout<<"stopVertex : "; stopVertex.Print();
-		std::cout<<"startTime : "; startTime.Print();
-		std::cout<<"stopTime : "; stopTime.Print();
+		std::cout<<"startTime : "<<startTime<<std::endl;
+		std::cout<<"stopTime : "<<stopTime<<std::endl;
 		std::cout<<"startDirection : "; startDirection.Print();
 		std::cout<<"trackLength : "<<trackLength<<std::endl;
 		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);
@@ -105,8 +104,8 @@ class Particle : public SerialisableObject{
 	double stopEnergy;
 	Position startVertex;            // meters
 	Position stopVertex;
-	TimeClass startTime;
-	TimeClass stopTime;
+	double startTime;                // ns since Trigger time
+	double stopTime;                 //
 	Direction startDirection;        // for primary particle initial scattering dir is most important.
 	double trackLength;              // meters
 	
@@ -136,11 +135,11 @@ class MCParticle : public Particle {
 	
 	public:
 	
-	MCParticle() : Particle(0, 0., 0., Position(), Position(), TimeClass(), TimeClass(), Direction(), 0.,
+	MCParticle() : Particle(0, 0., 0., Position(), Position(), 0., 0., Direction(), 0.,
 				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0) {serialise=true;}
 	
 	MCParticle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
-	  TimeClass sttt, TimeClass stpt, Direction startdir, double len, tracktype tracktypein,
+	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein,
 	  int partid, int parentpdg) 
 	: Particle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein), 
 	  ParticleID(partid), ParentPdg(parentpdg){
@@ -180,8 +179,8 @@ class MCParticle : public Particle {
 		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
 		std::cout<<"startVertex : "; startVertex.Print();
 		std::cout<<"stopVertex : "; stopVertex.Print();
-		std::cout<<"startTime : "; startTime.Print();
-		std::cout<<"stopTime : "; stopTime.Print();
+		std::cout<<"startTime : "<<startTime<<std::endl;;
+		std::cout<<"stopTime : "<<stopTime<<std::endl;
 		std::cout<<"startDirection : "; startDirection.Print();
 		std::cout<<"trackLength : "<<trackLength<<std::endl;
 		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);

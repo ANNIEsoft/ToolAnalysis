@@ -59,19 +59,6 @@ bool DigitBuilder::Execute(){
   		return false;
 	};
 	
-	/// First, see if this is a delayed trigger in the event
-	auto get_mctrigger = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
-	if(!get_mctrigger){ 
-		Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
-		return false; 
-	}
-	
-	/// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
-	if(fMCTriggernum>0){ 
-		Log("DigitBuilder Tool: Skipping delayed trigger",v_debug,verbosity); 
-		return true;
-	}
-	
 	/// check if EventCutStatus exists
   auto get_evtcutstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",fEventCutStatus);
 	if(!get_evtcutstatus){
@@ -185,8 +172,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			  	//ahit.Print();
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// get calibrated PMT time (Use the MC time for now)
-					//calT = ahit.GetTime()*1.0;
-					calT = ahit.GetTime()*1.0 - 950.0; // remove 950 ns offs
+					calT = ahit.GetTime()*1.0; // remove 950 ns offs
 					calQ = ahit.GetCharge();
 					digitType = RecoDigit::PMT8inch;
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);

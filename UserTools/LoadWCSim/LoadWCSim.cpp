@@ -243,7 +243,6 @@ bool LoadWCSim::Execute(){
 		EventTimeNs = atrigt->GetHeader()->GetDate();
 		EventTime->SetNs(EventTimeNs);
 		if(verbose>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
-		
 		if(verbose>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
 		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
 			if(verbose>2) cout<<"getting track "<<tracki<<endl;
@@ -271,12 +270,12 @@ bool LoadWCSim::Execute(){
 			
 			tracktype startstoptype = tracktype::UNDEFINED;
 			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
-
+		        //MC particle times now stored relative to the trigger time	
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0) / 100., nextrack->GetStart(1) / 100., nextrack->GetStart(2) / 100.),
 				Position(nextrack->GetStop(0) / 100., nextrack->GetStop(1) / 100., nextrack->GetStop(2) / 100.),
-				(static_cast<double>(nextrack->GetTime())), (static_cast<double>(nextrack->GetStopTime())),
+				(static_cast<double>(nextrack->GetTime()-EventTimeNs)), (static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
 				Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
 				(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+

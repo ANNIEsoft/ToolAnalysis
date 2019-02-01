@@ -6,9 +6,13 @@
 
 #include "Tool.h"
 // ROOT includes
+#include "TApplication.h"
+#include <Math/PxPyPzE4D.h>
+#include <Math/LorentzVector.h>
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
+
 
 class PhaseIITreeMaker: public Tool {
 
@@ -73,6 +77,7 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fSeedVtxX;
   std::vector<double> fSeedVtxY;
   std::vector<double> fSeedVtxZ;
+  std::vector<double> fSeedVtxFOM;
   double fSeedVtxTime;
   
   // Reco vertex
@@ -114,6 +119,7 @@ class PhaseIITreeMaker: public Tool {
   double fRecoPhi;
   int fRecoStatus;
   
+  // Difference between MC and Truth
   double fDeltaVtxX; 
   double fDeltaVtxY;
   double fDeltaVtxZ;
@@ -125,7 +131,14 @@ class PhaseIITreeMaker: public Tool {
   double fDeltaZenith;  
   double fDeltaAngle;
   
-  	
+  // Pion and kaon counts for event
+  int fPi0Count;
+  int fPiPlusCount;
+  int fPiMinusCount;
+  int fK0Count;
+  int fKPlusCount;
+  int fKMinusCount;
+
   /// \brief Integer that determines the level of logging to perform
   int verbosity = 0;
   int v_error=0;
@@ -139,6 +152,7 @@ class PhaseIITreeMaker: public Tool {
   int muonMCTruth_fill = 0; //Output the MC truth information
   int muonRecoDebug_fill = 0; //Outputs results of Reconstruction at each step (best fits, FOMs, etc.)
   int muonTruthRecoDiff_fill = 0; //Output difference in truth and reconstructed values
+  int pionKaonCount_fill = 0;  //Output the number of pions and kaons based on truth info
 };
 
 

@@ -39,6 +39,13 @@ class EventSelector: public Tool {
  	/// length. If the longest track is stoped inside the MRD, the event is 
  	/// selected
  	bool EventSelectionByMRDReco();
+
+ 	/// \brief Event selection by trigger number
+ 	///
+ 	/// The selection is based on the trigger number for the event
+ 	/// in the store "ANNIEEvent".  Events are selected if they have
+ 	/// an MCTriggernum == 0 (i.e. they are a prompt trigger) 
+ 	bool PromptTriggerCheck();
  	
  	/// \brief Event selection by fidicual volume
  	///
@@ -47,14 +54,29 @@ class EventSelector: public Tool {
  	/// is selected. 
  	/// The 
  	bool EventSelectionByMCTruthInfo();
- 	
+
+ 	/// \brief Event selection by Pion Kaon count
+  /////
+ 	/// This event selection criteria requires that no pions or 
+ 	/// kaons are parent particles in the event.  This will help
+  /// Select the CC0Pi events when testing reconstruction.
+ 	bool EventSelectionNoPiK();
+
  	/// \brief Find true neutrino vertex
  	///
  	/// Loop over all MC particles and find the particle with highest energy. 
  	/// This particle is the primary muon. The muon start position, time and 
  	/// the muon direction are used to initise the true neutrino vertex 
  	RecoVertex* FindTrueVertexFromMC();
+
+ 	/// \brief Find PionKaon Count 
+ 	///
+ 	/// Loop over all MC particles and find any particles with PDG codes
+  /// Consistent with Pions or Kaons of any charges. Racks up a count
+  /// of the number of each type of particle
  	
+  void FindPionKaonCountFromMC();
+
  	/// \brief Save true neutrino vertex
  	///
  	/// Push true neutrino vertex to "RecoVertex"
@@ -65,7 +87,7 @@ class EventSelector: public Tool {
   uint64_t fMCEventNum;
   
   /// \brief trigger number
-  uint16_t fMCTriggerNum;
+  uint16_t fMCTriggernum;
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
@@ -81,6 +103,9 @@ class EventSelector: public Tool {
 	std::string fInputfile;
 	bool fMRDRecoCut = false;
 	bool fMCTruthCut = false;
+	bool fMCPiKCut = false;
+  bool fGetPiKInfo = false;
+  bool fPromptTrigOnly = true;
 	bool fEventCutStatus;
 
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

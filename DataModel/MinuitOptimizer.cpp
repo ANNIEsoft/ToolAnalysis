@@ -392,7 +392,8 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
   double delta = 0.0;       // time residual of each hit
   double sigma = 0.0;       // time resolution of each hit
   double A = 0.0;           // normalisation of first Gaussian
-
+  int type;                 // Digit type (LAPPD or PMT)
+  
   double Preal = 0.0;       // probability of real hit
   double P = 0.0;           // probability of hit
 
@@ -410,8 +411,8 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
   // add noise to model
   // ==================
   double nFilterDigits = this->fVtxGeo->GetNFilterDigits(); 
-  double Pnoise = fTimeFitNoiseRate/nFilterDigits;//FIXME
-  Pnoise = 1e-8;//FIXME
+  double Pnoise; 
+  //Pnoise = fTimeFitNoiseRate/nFilterDigits;//FIXME
   
   //bool istruehits = (Interface::Instance())->IsTrueHits();
   bool istruehits = 0; // for test only. JW
@@ -423,7 +424,15 @@ void MinuitOptimizer::TimePropertiesLnL(double vtxTime, double vtxParam, double&
     	int detType = this->fVtxGeo->GetDigitType(idigit); 
       delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
       sigma = this->fVtxGeo->GetDeltaSigma(idigit);
-      sigma = 1.2*sigma; 
+      type = this->fVtxGeo->GetDigitType(idigit);
+      if (type == RecoDigit::PMT8inch){  //PMT8Inch
+        sigma = 1.5*sigma;
+        Pnoise = 1e-8; //FIXME; Need implementation of noise model 
+      } 
+      if (type == RecoDigit::lappd_v0){  //lappd
+        sigma = 1.2*sigma;
+        Pnoise = 1e-8;  //FIXME; Need implementation of noise model 
+      }
       A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
       Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
       P = (1.0-Pnoise)*Preal + Pnoise; 

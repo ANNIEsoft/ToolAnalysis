@@ -70,3 +70,8 @@
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
 #include "HitCleaner/HitCleaner.cpp"
+#include "HitResiduals/HitResiduals.cpp"
+#include "MonitorReceive/MonitorReceive.cpp"
+#include "MonitorSimReceive/MonitorSimReceive.cpp"
+#include "EventSelectorDoE/EventSelectorDoE.cpp"
+#include "DigitBuilderDoE/DigitBuilderDoE.cpp"
