@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <cstdint>
 
 #include "Tool.h"
 #include "time.h"
@@ -72,7 +73,7 @@ class LoadRATPAC: public Tool {
 	TimeClass* EventTime;
 	BeamStatusClass* BeamStatus;
 	
-  uint64_t EventTimeNs;
+  Int_t EventTimeNs;
 
   RAT::DSReader *dsReader;
   RAT::DS::Root   *ds;

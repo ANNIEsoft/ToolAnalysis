@@ -57,6 +57,7 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
 	MCParticles = new std::vector<MCParticle>;
   MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
 	MCHits = new std::map<ChannelKey,std::vector<Hit>>;
+	EventTime = new TimeClass();
   
   this->LoadANNIEGeometry();
 
@@ -101,13 +102,19 @@ bool LoadRATPAC::Execute(){
     std::cout << "LoadRATPAC tool: end of file reached.  Returning true" << std::endl;
     return true;
   }
-  //chain->GetEntry(EventNumber); 
+  
+  if(verbose) std::cout<<"LoadRATPAC tool: Loading event in DSReader"<<std::endl;
+  //chain->GetEntry(EventNumber);
+  //Ds takesin a Ulong64_t... this is cludgy but should work
+  ULong64_t evnum = static_cast<ULong64_t>(EventNumber);
   ds = dsReader->GetEvent(EventNumber);
 
+  if(verbose) std::cout<<"LoadRATPAC tool: Loading event time in TimeClass"<<std::endl;
   //FIXME: WCSim gives in trigger data, but we don't have triggers in RAT-PAC yet
-  uint64_t  EventTimeNs = 0; //FIXME: Should be called with chain->GetUTC() when we do have evnet times?
+  EventTimeNs = 0; //FIXME: Should be called with chain->GetUTC() when we do have evnet times?
 	EventTime->SetNs(EventTimeNs);
 
+  if(verbose) std::cout<<"LoadRATPAC tool: Begin the PMT loop"<<std::endl;
   //PMT loop
   for( size_t iPMT = 0; iPMT < ds->GetMC()->GetMCPMTCount(); iPMT++ ){
     if(verbose>2) std::cout<<"getting PMT "<<iPMT<<std::endl;
@@ -201,6 +208,8 @@ bool LoadRATPAC::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
 	if(verbose>2) cout<<"hits"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
+	if(verbose>2) cout<<"LAPPDhits"<<endl;
+	m_data->Stores.at("ANNIEEvent")->Set("MCLAPPDHits",MCLAPPDHits,true);
 	if(verbose>2) cout<<"tdcdata"<<endl;
 	//m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
 	//if(verbose>2) cout<<"triggerdata"<<endl;
