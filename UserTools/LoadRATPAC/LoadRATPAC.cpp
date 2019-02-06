@@ -183,7 +183,10 @@ bool LoadRATPAC::Execute(){
     Int_t parentid = thistrack->GetParentID();
     Int_t pdgcode = thistrack->GetPDGCode();
     std::string particlename = thistrack->GetParticleName();
+    logmessage = "  Particle name = " +particlename + " \n";
+	  Log(logmessage,v_debug,verbosity);
     if(particlename=="opticalphoton") continue; //Do not save optical photons
+    if(particlename=="gamma") continue; //Do not save optical photons
     Float_t tracklength = thistrack->GetLength();
     RAT::DS::MCTrackStep* firstStep = thistrack->GetMCTrackStep(0);
     RAT::DS::MCTrackStep* lastStep = thistrack->GetMCTrackStep(thistrack->GetMCTrackStepCount()-1); 
@@ -191,9 +194,11 @@ bool LoadRATPAC::Execute(){
     Float_t EndKE = lastStep->GetKE();
     Double_t endtime = lastStep->GetGlobalTime();
     TVector3 startpoint = firstStep->GetEndpoint();
-    logmessage = "  Particle start position = (" +to_string(startpoint.X()) + ", " + to_string(startpoint.Y()) + ", " + to_string(startpoint.Z()) +" \n";
-	  Log(logmessage,v_debug,verbosity);
     Double_t starttime = firstStep->GetGlobalTime();
+    logmessage = "  Particle start position = (" +to_string(startpoint.X()) + ", " + to_string(startpoint.Y()) + ", " + to_string(startpoint.Z()) +" \n";
+    logmessage += "  Particle end position = (" +to_string(endpoint.X()) + ", " + to_string(endpoint.Y()) + ", " + to_string(endpoint.Z()) +" \n";
+    logmessage += "  Particle start time = (" +to_string(starttime) + " \n";
+	  Log(logmessage,v_debug,verbosity);
     Float_t StartKE = firstStep->GetKE();
     TVector3 particledir = firstStep->GetMomentum();
     particledir = particledir.Unit();
@@ -205,7 +210,7 @@ bool LoadRATPAC::Execute(){
             startpoint.Y()/1000., startpoint.Z()/1000.), Position(endpoint.X()/1000.,
             endpoint.Y()/1000., endpoint.Z()/1000.), starttime-EventTimeNs,
             endtime-EventTimeNs, Direction(particledir.X(), particledir.Y(),
-            particledir.Z()), tracklength, startstoptype, iTrack, parentid);
+            particledir.Z()), tracklength/1000., startstoptype, iTrack, parentid);
     MCParticles->push_back(thisparticle);
   }
 
