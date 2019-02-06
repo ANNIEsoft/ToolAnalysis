@@ -31,6 +31,7 @@ private:
 
 	int verbose=1;
 	int HistoricTriggeroffset;
+	int use_smeared_digit_time;   // digit_time = (T): first photon smeared time, (F): first photon true time
 	// WCSim variables
 	TFile* file;
 	TTree* wcsimtree;
