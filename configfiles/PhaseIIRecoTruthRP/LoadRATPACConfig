@@ -2,4 +2,4 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbosity 5
-InputFile /AnnieShare/p2r_data/RATPAC_TestFile.root
+InputFile /AnnieShare/p2r_data/Muons_500MeV_wTracks_wLight.root
