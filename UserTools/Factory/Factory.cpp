@@ -67,5 +67,6 @@ if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
 if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
 if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
 
+if (tool=="PulseSimulation") ret=new PulseSimulation;
 return ret;
 }

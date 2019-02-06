@@ -74,3 +74,4 @@
 #include "MonitorSimReceive/MonitorSimReceive.cpp"
 #include "EventSelectorDoE/EventSelectorDoE.cpp"
 #include "DigitBuilderDoE/DigitBuilderDoE.cpp"
+#include "PulseSimulation/PulseSimulation.cpp"
