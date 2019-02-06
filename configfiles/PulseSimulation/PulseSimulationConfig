@@ -1,0 +1,8 @@
+#PulseSimulation Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbosity 1000
+MinibuffersPerFullbuffer 40
+PMTGain 1e7
+PulseHeightFudgeFactor 0.003333
+DrawDebugPlots 1
