@@ -3,5 +3,5 @@
 verbosity 0
 OutputFile ./DigitBuilder.root
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
-PhotodetectorConfiguration LAPPD_only s
+PhotodetectorConfiguration LAPPD_only 
 #LAPPDId 266 271 236 231 206
