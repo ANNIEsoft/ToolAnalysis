@@ -8,12 +8,12 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
   /////////////////// Usefull header ///////////////////////
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	
-  if(verbose) std::cout<<"Initializing Tool LoadRATPAC"<<std::endl;
+  if(verbosity) std::cout<<"Initializing Tool LoadRATPAC"<<std::endl;
 
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 	m_variables.Get("InputFile",filename_ratpac);
- 
+  m_variables.Get("verbosity",verbosity);
 
   // Initialize the TChain reading event info from our file
   //chain = new TChain("T");
@@ -84,13 +84,13 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
 	double beampow=3.2545e+16;
 	BeamStatus = new BeamStatusClass(RunStartTime, beaminten, beampow, "stable");
   
-  if(verbose) std::cout<<"Initialization of Tool LoadRATPAC Complete"<<std::endl;
+  if(verbosity) std::cout<<"Initialization of Tool LoadRATPAC Complete"<<std::endl;
   return true;
 }
 
 
 bool LoadRATPAC::Execute(){
-  if(verbose) std::cout<<"Executing Tool LoadRATPAC"<<std::endl;
+  if(verbosity) std::cout<<"Executing Tool LoadRATPAC"<<std::endl;
   // First, reset all counters kept track of per event
   this->Reset();
   
@@ -103,24 +103,24 @@ bool LoadRATPAC::Execute(){
     return true;
   }
   
-  if(verbose) std::cout<<"LoadRATPAC tool: Loading event in DSReader"<<std::endl;
+  if(verbosity) std::cout<<"LoadRATPAC tool: Loading event in DSReader"<<std::endl;
   //chain->GetEntry(EventNumber);
   //Ds takesin a Ulong64_t... this is cludgy but should work
   ULong64_t evnum = static_cast<ULong64_t>(EventNumber);
   ds = dsReader->GetEvent(EventNumber);
 
-  if(verbose) std::cout<<"LoadRATPAC tool: Loading event time in TimeClass"<<std::endl;
+  if(verbosity) std::cout<<"LoadRATPAC tool: Loading event time in TimeClass"<<std::endl;
   //FIXME: WCSim gives in trigger data, but we don't have triggers in RAT-PAC yet
   EventTimeNs = 0; //FIXME: Should be called with chain->GetUTC() when we do have evnet times?
 	EventTime->SetNs(EventTimeNs);
 
-  if(verbose) std::cout<<"LoadRATPAC tool: Begin the PMT loop"<<std::endl;
+  if(verbosity) std::cout<<"LoadRATPAC tool: Begin the PMT loop"<<std::endl;
   //PMT loop
   for( size_t iPMT = 0; iPMT < ds->GetMC()->GetMCPMTCount(); iPMT++ ){
-    if(verbose>2) std::cout<<"getting PMT "<<iPMT<<std::endl;
+    if(verbosity>2) std::cout<<"getting PMT "<<iPMT<<std::endl;
     RAT::DS::MCPMT *aPMT = ds->GetMC()->GetMCPMT(iPMT);
     int tubeid = aPMT->GetID();
-	  if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
+	  if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
     //Loop over photons that hit the PMT for digits
     ChannelKey key(subdetector::ADC, tubeid);
     for(long iPhot = 0; iPhot < aPMT->GetMCPhotonCount(); iPhot++){
@@ -129,17 +129,17 @@ bool LoadRATPAC::Execute(){
       Hit thishit(tubeid, hittime, hitcharge);
       if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{thishit});
       else MCHits->at(key).push_back(thishit);
-      if(verbose>2) cout<<"digit added"<<endl;
+      if(verbosity>2) cout<<"digit added"<<endl;
     }
   }
   std::cout << "Done loading event's PMT hits" << std::endl;
 
   //LAPPD loop
   for( size_t iLAPPD = 0; iLAPPD < ds->GetMC()->GetMCLAPPDCount(); iLAPPD++ ){
-    if(verbose>2) std::cout<<"getting LAPPD "<<iLAPPD<<std::endl;
+    if(verbosity>2) std::cout<<"getting LAPPD "<<iLAPPD<<std::endl;
     RAT::DS::MCLAPPD *aLAPPD = ds->GetMC()->GetMCLAPPD(iLAPPD);
     int lappdid = aLAPPD->GetID();
-	  if(verbose>2) cout<<"tubeid="<<lappdid<<endl;
+	  if(verbosity>2) cout<<"tubeid="<<lappdid<<endl;
     //Loop over photons that hit the LAPPD for digits
     ChannelKey key(subdetector::ADC, lappdid);
     for(long iPhot = 0; iPhot < aLAPPD->GetMCPhotonCount(); iPhot++){
@@ -159,18 +159,25 @@ bool LoadRATPAC::Execute(){
       localPosition.push_back(localx);
       localPosition.push_back(localy);
       localPosition.push_back(localz);
-      LAPPDHit thishit(lappdid, hittime, hitcharge, lappdPosition, localPosition);
+	    logmessage = "  LAPPDPosition = ("+to_string(lappdPosition[0]) + ", " + to_string(lappdPosition[1]) + ", " + to_string(lappdPosition[2]) + ") "+ "\n";
+	    logmessage += "  LAPPDLocalPosition = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + ", " + to_string(localPosition[2]) + ") "+ "\n";
+	    Log(logmessage,v_debug,verbosity);
+      LAPPDHit thishit(lappdid, hittime, hitcharge,lappdPosition, localPosition);
+      //thishit.SetPosition(lappdPosition);
+      //thishit.SetLocalPosition(localPosition);
       if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{thishit});
       else MCLAPPDHits->at(key).push_back(thishit);
-      if(verbose>2) cout<<"LAPPD hit added"<<endl;
+      if(verbosity>2) cout<<"LAPPD hit added"<<endl;
     }
   }
   std::cout << "Done loading event's LAPPD hits" << std::endl;
 
-  if(verbose>1) cout<<"getting "<<ds->GetMC()->GetMCTrackCount()<<" tracks"<<endl;
+  if(verbosity>1) cout<<"getting "<<ds->GetMC()->GetMCTrackCount()<<" tracks"<<endl;
   //Loop through all the tracks and get particle information.  We'll load it
   //Load MC Parent Particles
 	tracktype startstoptype = tracktype::UNDEFINED;
+  logmessage = "  Particle count = " +to_string(ds->GetMC()->GetMCTrackCount()) + " \n";
+	Log(logmessage,v_debug,verbosity);
   for (long iTrack=0; iTrack<ds->GetMC()->GetMCTrackCount(); iTrack++){
     RAT::DS::MCTrack  *thistrack = ds->GetMC()->GetMCTrack(iTrack);
     Int_t parentid = thistrack->GetParentID();
@@ -184,14 +191,18 @@ bool LoadRATPAC::Execute(){
     Float_t EndKE = lastStep->GetKE();
     Double_t endtime = lastStep->GetGlobalTime();
     TVector3 startpoint = firstStep->GetEndpoint();
+    logmessage = "  Particle start position = (" +to_string(startpoint.X()) + ", " + to_string(startpoint.Y()) + ", " + to_string(startpoint.Z()) +" \n";
+	  Log(logmessage,v_debug,verbosity);
     Double_t starttime = firstStep->GetGlobalTime();
     Float_t StartKE = firstStep->GetKE();
     TVector3 particledir = firstStep->GetMomentum();
     particledir = particledir.Unit();
+    logmessage = "  Particle mom. direction = (" +to_string(particledir.X()) + ", " + to_string(particledir.Y()) + ", " + to_string(particledir.Z()) +" \n";
+	  Log(logmessage,v_debug,verbosity);
     //Load information into MCParticle class used in ToolAnalysis
     MCParticle thisparticle(
             pdgcode, StartKE, EndKE, Position(startpoint.X()/1000., 
-            startpoint.Y(), startpoint.Z()), Position(endpoint.X()/1000.,
+            startpoint.Y()/1000., startpoint.Z()/1000.), Position(endpoint.X()/1000.,
             endpoint.Y()/1000., endpoint.Z()/1000.), starttime-EventTimeNs,
             endtime-EventTimeNs, Direction(particledir.X(), particledir.Y(),
             particledir.Z()), tracklength, startstoptype, iTrack, parentid);
@@ -200,21 +211,21 @@ bool LoadRATPAC::Execute(){
 
 
 	// set event level variables
-	if(verbose>1) std::cout<<"setting the store variables"<<std::endl;
+	if(verbosity>1) std::cout<<"setting the store variables"<<std::endl;
 	m_data->Stores.at("ANNIEEvent")->Set("RunNumber",RunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("SubrunNumber",SubrunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("EventNumber",EventNumber);
-	if(verbose>2) cout<<"particles"<<endl;
+	if(verbosity>2) cout<<"particles"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
-	if(verbose>2) cout<<"hits"<<endl;
+	if(verbosity>2) cout<<"hits"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
-	if(verbose>2) cout<<"LAPPDhits"<<endl;
+	if(verbosity>2) cout<<"LAPPDhits"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCLAPPDHits",MCLAPPDHits,true);
-	if(verbose>2) cout<<"tdcdata"<<endl;
+	if(verbosity>2) cout<<"tdcdata"<<endl;
 	//m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
-	//if(verbose>2) cout<<"triggerdata"<<endl;
+	//if(verbosity>2) cout<<"triggerdata"<<endl;
 	//m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);  // FIXME
-	if(verbose>2) cout<<"eventtime"<<endl;
+	if(verbosity>2) cout<<"eventtime"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum);
@@ -232,9 +243,6 @@ bool LoadRATPAC::Execute(){
 
 
 bool LoadRATPAC::Finalise(){
-  save.Clear();
-  log.Clear();
-  
   delete chain;
   delete dsReader;
   
@@ -280,7 +288,7 @@ void LoadRATPAC::LoadANNIEGeometry(){
 	double mrd_height = (MRDSpecs::MRD_height) / 100.;
 	double mrd_depth =  (MRDSpecs::MRD_depth) / 100.;
 	double mrd_start =  (MRDSpecs::MRD_start) / 100.;
-	if(verbose>1) cout<<"we have "<<numtankpmts<<" tank pmts, and "<<numlappds<<" lappds"<<endl;
+	if(verbosity>1) cout<<"we have "<<numtankpmts<<" tank pmts, and "<<numlappds<<" lappds"<<endl;
 	
 	// loop over PMTs and make the map of Detectors
 	std::map<ChannelKey,Detector> Detectors;
@@ -289,6 +297,8 @@ void LoadRATPAC::LoadANNIEGeometry(){
 		ChannelKey akey(subdetector::ADC, i);
     TVector3 pmtpos = pmtInfo->GetPosition(i);
     TVector3 pmtdir = pmtInfo->GetDirection(i);
+    logmessage = "  PMT position = (" +to_string(pmtpos.X()) + ", " + to_string(pmtpos.Y()) + ", " + to_string(pmtpos.Z()) +" \n";
+	  Log(logmessage,v_debug,verbosity);
     int modelType = pmtInfo->GetModel(i);
 		Detector adet("Tank", Position(pmtpos.X()/1000.,pmtpos.Y()/1000.,pmtpos.Z()/1000.),
 		               Direction(pmtdir.X(),pmtdir.Y(),pmtdir.Z()),
@@ -311,6 +321,6 @@ void LoadRATPAC::LoadANNIEGeometry(){
 	Geometry* anniegeom = new Geometry(Detectors, RATPACGeometryVersion, tank_center, tank_radius,
 	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
 	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
-	if(verbose>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_center.Print(); }
+	if(verbosity>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_center.Print(); }
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
 }	

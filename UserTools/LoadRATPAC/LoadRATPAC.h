@@ -61,8 +61,6 @@ class LoadRATPAC: public Tool {
 
  private:
 	
-  int verbose=1;
-
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
 
@@ -88,19 +86,11 @@ class LoadRATPAC: public Tool {
 
   // Input file to read RATPAC Data from
   std::string filename_ratpac;
+	std::string logmessage;
   
   // time infos
   std::clock_t start;
   double duration;
-  
-  TFile *f_input, *file;
-  TString save, log;
-  
-  // Variables
-  Double_t init_time, fin_time;
-  Double_t disp,deltat;
-  Double_t charge_tot;
-  Double_t distance_nCap_muTrack, distance_nCap_muStart;
   
   
   // TTrees, TChains and all that ROOT stuff
@@ -121,11 +111,17 @@ class LoadRATPAC: public Tool {
 	std::map<ChannelKey,std::vector<Hit>>* MCHits;
 	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits;
   
-  // TVectors
-
   ULong64_t entry;
   ULong64_t NbEntries;
-  
+
+	//verbosity initialization
+	int verbosity=1;
+	
+  /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
 };
 
 
