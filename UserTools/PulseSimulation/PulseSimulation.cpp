@@ -523,7 +523,7 @@ void PulseSimulation::FillEmulatedPMTData(){
 	AddNoiseToWaveforms();
 	
 	// next, shuffle your library. this also copies temporary_databuffers into emulated_pmtdata_readout
-	RiffleShuffle(false); // pass true for phase 1 shuffle, needed for either
+	RiffleShuffle(true); // pass true for phase 1 shuffle, needed for either
 	
 	//cout<<"Filling PMTData tree"<<endl;
 	// loop over all cards and fill the PMTData tree with the constructed data

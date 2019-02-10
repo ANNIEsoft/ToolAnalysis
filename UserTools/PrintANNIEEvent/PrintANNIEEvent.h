@@ -28,6 +28,7 @@ class PrintANNIEEvent: public Tool {
 	private:
 	
 	int verbose=1;
+	int get_ok;
 	std::string inputfile;
 	unsigned long NumEvents;
 	
