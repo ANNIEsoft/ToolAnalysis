@@ -42,6 +42,8 @@ namespace {
 	constexpr double ADC_INPUT_RESISTANCE = 50.;               // Ohm
 	//constexpr double ADC_TO_VOLT = 2.415 / std::pow(2., 12); // * by this constant converts ADC counts to Volts
 	
+	int MAXEVENTSIZE=10;                             // initial array sizes for TriggerData tree
+	int MAXTRIGGERSIZE=10;                           // must not be const
 	constexpr int BOGUS_INT = std::numeric_limits<int>::max();
 }
 
@@ -66,6 +68,7 @@ class PulseSimulation: public Tool {
 	std::string logmessage;
 	
 	bool DRAW_DEBUG_PLOTS;
+	int FILE_VERSION;                 // simulation file version
 	TApplication* pulseRootDrawApp=nullptr;
 	double canvwidth, canvheight;
 	TCanvas* landaucanvas=nullptr;
@@ -85,6 +88,7 @@ class PulseSimulation: public Tool {
 	void LoadOutputFiles();
 	void FillInitialFileInfo();
 	void FillEmulatedRunInformation();
+	void FillEmulatedTrigData();
 	std::vector<std::string>* GetTemplateRunInfo();
 	
 	int num_adc_cards;                       // 
@@ -139,6 +143,15 @@ class PulseSimulation: public Tool {
 	ULong64_t* fileout_TriggerCounts=nullptr;
 	UInt_t* fileout_Rates=nullptr;
 	UShort_t* fileout_Data=nullptr;
+	
+	// trigger data tree
+	// ~~~~~~~~~~~~~~~~~
+	TTree* tTrigData;
+	Int_t fileout_FirmwareVersion, fileout_TriggerSize, /*fileout_EventSize, << same variable in tPMTData*/
+		fileout_FIFOOverflow, fileout_DriverOverfow;
+	UShort_t* fileout_EventIDs=nullptr;
+	ULong64_t* fileout_EventTimes=nullptr;
+	UInt_t* fileout_TriggerMasks=nullptr, *fileout_TriggerCounters=nullptr;
 	
 	// run info tree
 	// ~~~~~~~~~~~~~

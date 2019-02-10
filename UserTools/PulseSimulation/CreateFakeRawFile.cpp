@@ -83,7 +83,29 @@ void PulseSimulation::LoadOutputFiles(){
 	//*............................................................................*
 	TBranch *bInfoTitle = tRunInformation->Branch("InfoTitle", &fileout_InfoTitle);
 	TBranch *bInfoMessage = tRunInformation->Branch("InfoMessage", &fileout_InfoMessage);
-	
+	//*----------------------------------------------------------------------------*
+	// We'll fill these with filler data, but the RawLoader tool needs them
+	//cout<<"Creating TrigData tree - making arrays: MAXEVENTSIZE="<<MAXEVENTSIZE
+	//	<<",MAXTRIGGERSIZE="<<MAXTRIGGERSIZE<<endl;
+	tTrigData                 = new TTree("TrigData","");
+	fileout_EventIDs          = new UShort_t[MAXEVENTSIZE];    // must be >= Eventsize
+	fileout_EventTimes        = new ULong64_t[MAXEVENTSIZE];   // must be >= Eventsize
+	fileout_TriggerMasks      = new UInt_t[MAXTRIGGERSIZE];    // must be >= TriggerSize
+	fileout_TriggerCounters   = new UInt_t[MAXTRIGGERSIZE];    // muse be >= TriggerSize
+	//*............................................................................*
+	TBranch *bFirmwareVersion = tTrigData->Branch("FirmwareVersion", &fileout_FirmwareVersion);
+	TBranch *bSequenceID2     = tTrigData->Branch("SequenceID", &fileout_SequenceID);
+	TBranch *bEventsize2      = tTrigData->Branch("EventSize", &fileout_Eventsize);
+	TBranch *bTriggerSize     = tTrigData->Branch("TriggerSize", &fileout_TriggerSize);
+	TBranch *bFIFOOverflow    = tTrigData->Branch("FIFOOverflow", &fileout_FIFOOverflow);
+	TBranch *bDriverOverfow   = tTrigData->Branch("DriverOverfow", &fileout_DriverOverfow);
+	TBranch *bEventIDs        = tTrigData->Branch("EventIDs", &fileout_EventIDs,
+		"EventIDs[EventSize]/s");
+	TBranch *bEventTimes      = tTrigData->Branch("EventTimes", &fileout_EventTimes,
+		"EventTimes[EventSize]/l");
+	TBranch *bTriggerMasks    = tTrigData->Branch("TriggerMasks", &fileout_TriggerMasks,
+		"TriggerMasks[TriggerSize]/I");
+	TBranch *bTriggerCounters = tTrigData->Branch("TriggerCounters", &fileout_TriggerCounters, "TriggerCounters[TriggerSize]/I");
 	//*----------------------------------------------------------------------------*
 	// Since we can't properly synthesize all the timing variables
 	// we'll directly create the simplified output Hefty Timing file
@@ -117,6 +139,7 @@ void PulseSimulation::FillInitialFileInfo(){
 	//===============================
 	Log("PulseSimulation Tool: Filling run start date and setting constants",v_debug,verbosity);
 	FillEmulatedRunInformation();
+	FillEmulatedTrigData();
 	
 	// StartTimeSec represents the unix seconds of the start of the run
 	// Read "run date" from the options file and convert to unixns

@@ -2,6 +2,7 @@
 #include "PulseSimulation.h"
 #include "CreateFakeRawFile.cpp"
 #include "GetTemplateRunInfo.cpp"
+#include "FillEmulatedTriggerdata.cpp"
 
 PulseSimulation::PulseSimulation():Tool(){}
 
@@ -17,6 +18,7 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("PMTGain",PMT_gain);
 	m_variables.Get("PulseHeightFudgeFactor",PULSE_HEIGHT_FUDGE_FACTOR);
 	m_variables.Get("DrawDebugPlots",DRAW_DEBUG_PLOTS);
+	m_variables.Get("WCSimVersion",FILE_VERSION);
 	
 	/////////////////////////////////////////////////////////////////
 	
