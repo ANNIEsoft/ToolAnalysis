@@ -107,6 +107,16 @@ void PulseSimulation::LoadOutputFiles(){
 		"TriggerMasks[TriggerSize]/I");
 	TBranch *bTriggerCounters = tTrigData->Branch("TriggerCounters", &fileout_TriggerCounters, "TriggerCounters[TriggerSize]/I");
 	//*----------------------------------------------------------------------------*
+	tCCData = new TTree("CCData","");
+	//*............................................................................*
+	TBranch *bTrigger   = tCCData->Branch("Trigger", &fileout_Trigger);         // readout number
+	TBranch *bOutNumber = tCCData->Branch("OutNumber", &fileout_OutNumber);     // num hits this event/readout
+	TBranch *bType      = tCCData->Branch("Type", &fileout_Type);               // card type string, "TDC", "ADC"
+	TBranch *bValue     = tCCData->Branch("Value", &fileout_Value);             // see below
+	TBranch *bSlot      = tCCData->Branch("Slot", &fileout_Slot);               // card position in crate
+	TBranch *bChannel   = tCCData->Branch("Channel", &fileout_Channel);         // channel in card
+	TBranch *bTimeStamp = tCCData->Branch("TimeStamp", &fileout_TimeStamp);     // see below
+	//*----------------------------------------------------------------------------*
 	// Since we can't properly synthesize all the timing variables
 	// we'll directly create the simplified output Hefty Timing file
 	std::string timingfilename="DataR"+to_string(rawfilerun)+
@@ -139,16 +149,12 @@ void PulseSimulation::FillInitialFileInfo(){
 	//===============================
 	Log("PulseSimulation Tool: Filling run start date and setting constants",v_debug,verbosity);
 	FillEmulatedRunInformation();
-	FillEmulatedTrigData();
 	
 	// StartTimeSec represents the unix seconds of the start of the run
-	// Read "run date" from the options file and convert to unixns
+	// Convert "run date", read from the options file, to unixns
 	// first convert config file string to parts
-	std::string startDate;
-	get_ok = m_variables.Get("RunStartDate",startDate);
-	
 	int hh, mm, ss, MM, DD, YYYY;
-	sscanf(startDate.c_str(), "%d/%d/%d %d:%d:%d", &DD, &MM, &YYYY, &hh, &mm, &ss);
+	sscanf(runStartDateTime.c_str(), "%d/%d/%d %d:%d:%d", &DD, &MM, &YYYY, &hh, &mm, &ss);
 	// combine parts into a time structure
 	struct std::tm runstart;
 	runstart.tm_year = YYYY;
