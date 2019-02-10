@@ -34,6 +34,7 @@ class TCanvas;
 namespace {
 	// RAW file DAQ constants
 	constexpr int channels_per_adc_card = 4; // for converting tube Id to card / channel, or minibuffer number
+	constexpr int channels_per_tdc_card = 32;
 	
 	// for converting digit charge to pulse area in [ADC counts*ADC samples]
 	constexpr double E_CHARGE = 1.60217662e-19;                // 
@@ -41,6 +42,9 @@ namespace {
 	constexpr int ADC_NS_PER_SAMPLE=2;                         // sample rate
 	constexpr double ADC_INPUT_RESISTANCE = 50.;               // Ohm
 	//constexpr double ADC_TO_VOLT = 2.415 / std::pow(2., 12); // * by this constant converts ADC counts to Volts
+	constexpr int TDC_NS_PER_SAMPLE = 4;                       //
+	constexpr int MRD_TIMEOUT_NS=4200;                         //
+	constexpr int MRD_TIMESTAMP_DELAY = static_cast<unsigned long long>(MRD_TIMEOUT_NS);
 	
 	int MAXEVENTSIZE=10;                             // initial array sizes for TriggerData tree
 	int MAXTRIGGERSIZE=10;                           // must not be const
@@ -69,6 +73,7 @@ class PulseSimulation: public Tool {
 	
 	bool DRAW_DEBUG_PLOTS;
 	int FILE_VERSION;                 // simulation file version
+	int HistoricTriggeroffset;
 	TApplication* pulseRootDrawApp=nullptr;
 	double canvwidth, canvheight;
 	TCanvas* landaucanvas=nullptr;
@@ -89,6 +94,8 @@ class PulseSimulation: public Tool {
 	void FillInitialFileInfo();
 	void FillEmulatedRunInformation();
 	void FillEmulatedTrigData();
+	void AddCCDataEntry(Hit* digihit);
+	void FillEmulatedCCData();
 	std::vector<std::string>* GetTemplateRunInfo();
 	
 	int num_adc_cards;                       // 
@@ -110,6 +117,7 @@ class PulseSimulation: public Tool {
 	
 	// variables for connecting events into a run and filling the other file variables
 	TRandom3 R;
+	std::string runStartDateTime;            // read from config, used to generate fileout_StartTimeSec
 	uint64_t runningeventtime;               // beam timing, ns from the start of the run to the beam spill
 	double currenteventtime;                 // time from start of the beam spill to first trigger of this event
 	int triggertime;                         // time from the simulation event to the trigger
@@ -152,6 +160,14 @@ class PulseSimulation: public Tool {
 	UShort_t* fileout_EventIDs=nullptr;
 	ULong64_t* fileout_EventTimes=nullptr;
 	UInt_t* fileout_TriggerMasks=nullptr, *fileout_TriggerCounters=nullptr;
+	
+	// mrd data tree
+	// ~~~~~~~~~~~~~
+	TTree* tCCData;
+	UInt_t fileout_Trigger, fileout_OutNumber;
+	ULong64_t fileout_TimeStamp;
+	std::vector<string> fileout_Type;
+	std::vector<unsigned int> fileout_Value, fileout_Slot, fileout_Channel;
 	
 	// run info tree
 	// ~~~~~~~~~~~~~

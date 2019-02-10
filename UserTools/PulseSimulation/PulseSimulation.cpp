@@ -3,6 +3,7 @@
 #include "CreateFakeRawFile.cpp"
 #include "GetTemplateRunInfo.cpp"
 #include "FillEmulatedTriggerdata.cpp"
+#include "FillEmulatedCCData.cpp"
 
 PulseSimulation::PulseSimulation():Tool(){}
 
@@ -19,6 +20,8 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("PulseHeightFudgeFactor",PULSE_HEIGHT_FUDGE_FACTOR);
 	m_variables.Get("DrawDebugPlots",DRAW_DEBUG_PLOTS);
 	m_variables.Get("WCSimVersion",FILE_VERSION);
+	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
+	m_variables.Get("RunStartDate",runStartDateTime);
 	
 	/////////////////////////////////////////////////////////////////
 	
@@ -80,7 +83,15 @@ bool PulseSimulation::Execute(){
 		Log("PulseSimulation Tool: Failed to get hits from ANNIEEvent!",v_error,verbosity);
 		return false;
 	}
+	std::map<ChannelKey,std::vector<Hit>>* TDCData=nullptr;
+	std::cout<<"getting TDCData"<<endl;
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
+	if(not get_ok){
+		Log("PulseSimulation Tool: Failed to get mrd hits from ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
 	
+	// get other info from ANNIEEvent
 	int numMCtriggersthisevt;
 	std::cout<<"getting numtriggersthisevt"<<std::endl;
 	get_ok = m_data->CStore.Get("NumTriggersThisMCEvt",numMCtriggersthisevt);
@@ -88,6 +99,8 @@ bool PulseSimulation::Execute(){
 		Log("PulseSimulation Tool: Failed to get NumTriggersThisMCEvt from ANNIEEvent",v_error,verbosity);
 		return false;
 	}
+	
+	// if this is the last minibuffer and we have remaining sub-events, they must be dropped
 	bool droppingremainingsubtriggers = 
 		((minibuffer_id+1)==minibuffers_per_fullbuffer) &&      // we're filling last minibuffer
 		((triggernum+1)!=(numMCtriggersthisevt));               // but there are more subtriggers
@@ -104,34 +117,56 @@ bool PulseSimulation::Execute(){
 	AddMinibufferStartTime(droppingremainingsubtriggers);
 	
 	// convert hits into pulses
-	Log("PulseSimulation Tool: Looping over Digits",v_debug,verbosity);
-	cout<<"we had "<<MCHits->size()<<" hit PMTs"<<endl;
+	logmessage="PulseSimulation Tool: Looping over Digits on "+to_string(MCHits->size())+" hit PMTs";
+	Log(logmessage,v_debug,verbosity);
 	for(std::pair<ChannelKey,std::vector<Hit>>&& hitsonapmt : (*MCHits)){
 		std::vector<Hit>* hitsonthistube = &(hitsonapmt.second);
-		if(verbosity<v_debug){
+		if(verbosity>v_debug){
 			int thetubeid=hitsonthistube->front().GetTubeId();
 			int thechannelid=(thetubeid)%channels_per_adc_card;
 			int thecardid=(thetubeid-thechannelid)/channels_per_adc_card;
-			cout<<"next PMT is tube "<<thetubeid
-				<<", corresponding to card "<<thecardid
-				<<", channel "<<thechannelid
-				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
+//			cout<<"next PMT is tube "<<thetubeid
+//				<<", corresponding to card "<<thecardid
+//				<<", channel "<<thechannelid
+//				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
 		}
 		for(Hit apmthit : (*hitsonthistube)){
 			AddPMTDataEntry(&apmthit);
 		}
 	}
-	cout<<"done adding hits"<<endl;
 	
 	// advance the counter of triggers (minibuffers)
 	minibuffer_id++;
 	if(minibuffer_id==minibuffers_per_fullbuffer){
-		Log("PulseSimulation Tool: Filling Emulated Data Tree",v_debug,verbosity);
+		Log("PulseSimulation Tool: Filling Emulated PMTData and TrigData Trees",v_debug,verbosity);
 		FillEmulatedPMTData();
+		FillEmulatedTrigData();
 		sequence_id++;
 		minibuffer_id=0;
 	}
-	cout<<"done filling emulated ttree"<<endl;
+	
+	// Add TDC Hits
+	logmessage="PulseSimulation Tool: Looping over TDC Digits on "
+		+to_string(TDCData->size())+" hit paddles";
+	Log(logmessage,v_debug,verbosity);
+	for(std::pair<ChannelKey,std::vector<Hit>>&& hitsonapmt : (*TDCData)){
+		std::vector<Hit>* hitsonthistube = &(hitsonapmt.second);
+		if(verbosity>v_debug){
+			int thetubeid=hitsonthistube->front().GetTubeId();
+			int thechannelid=(thetubeid)%channels_per_adc_card;
+			int thecardid=(thetubeid-thechannelid)/channels_per_adc_card;
+//			cout<<"next PMT is tube "<<thetubeid
+//				<<", corresponding to card "<<thecardid
+//				<<", channel "<<thechannelid
+//				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
+		}
+		for(Hit apmthit : (*hitsonthistube)){
+			AddCCDataEntry(&apmthit);
+		}
+	}
+	
+	Log("PulseSimulation Tool: Filling Emulated CCData Tree",v_debug,verbosity);
+	FillEmulatedCCData();
 	
 	// raw file emulation: remaining sub-triggers after the last minibuffer fall in DAQ deadtime
 	if(minibuffer_id==0){
@@ -154,6 +189,7 @@ bool PulseSimulation::Finalise(){
 		// since we only write out full buffers, write out one last time any partial buffers
 		Log("PulseSimulation Tool: Filling Final Partial Readout",v_debug,verbosity);
 		FillEmulatedPMTData();
+		FillEmulatedTrigData();
 	}
 	
 	Log("PulseSimulation Tool: Writing events to file",v_debug,verbosity);
@@ -167,6 +203,9 @@ bool PulseSimulation::Finalise(){
 	rawfileout->cd();
 	tPMTData->Write("PMTData",TObject::kOverwrite);
 	tRunInformation->Write("RunInformation",TObject::kOverwrite);
+	tTrigData->Write("TrigData",TObject::kOverwrite);
+	tCCData->Write("CCData",TObject::kOverwrite);
+	
 	rawfileout->Close();
 	delete rawfileout;
 	rawfileout=nullptr;
