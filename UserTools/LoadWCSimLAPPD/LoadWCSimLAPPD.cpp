@@ -41,7 +41,20 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("InnerStructureRadius",Rinnerstruct);
 	m_variables.Get("DrawDebugGraphs",DEBUG_DRAW_LAPPD_HITS);
-	m_variables.Get("FileVersion",FILE_VERSION);
+	// Get LAPPD simulation file version
+	m_variables.Get("WCSimVersion",FILE_VERSION);
+	// See if we loaded a WCSim simulation file version
+	int LoadWCSimToolFILE_VERSION=-1;
+	int get_ok = m_data->CStore.Get("WCSimVersion",LoadWCSimToolFILE_VERSION);
+	if(get_ok){
+		// if we did, check if they're from the same version
+		if(FILE_VERSION!=LoadWCSimToolFILE_VERSION){
+			cerr<<"LoadWCSimLAPPD Tool: WARNING: LoadWCSimLAPPD simulation version differs from LoadWCSim version!"<<endl;
+		}
+	} else {
+		// if we didn't, put this version into the CStore for downstream tools
+		m_data->CStore.Set("WCSimVersion",FILE_VERSION);
+	}
 	
 	// Make class private members; e.g. the LAPPDTree
 	// ==============================================

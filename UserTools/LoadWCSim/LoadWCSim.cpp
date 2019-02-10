@@ -20,6 +20,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbose",verbose);
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
+	m_variables.Get("WCSimVersion",FILE_VERSION);
+	// put in the CStore for downstream tools
+	m_data->CStore.Set("WCSimVersion",FILE_VERSION);
 	
 	// Short Stores README
 	//////////////////////
