@@ -8,5 +8,5 @@ PulseHeightFudgeFactor 0.003333
 DrawDebugPlots 0
 WCSimVersion 3
 HistoricTriggeroffset 0
-RunStartDate "23/01/2010 13:05:01"  # UK date format ;)
+RunStartDate "23/01/2010_13:05:01"  # UK date format ;)
 

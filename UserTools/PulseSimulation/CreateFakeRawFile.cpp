@@ -154,7 +154,7 @@ void PulseSimulation::FillInitialFileInfo(){
 	// Convert "run date", read from the options file, to unixns
 	// first convert config file string to parts
 	int hh, mm, ss, MM, DD, YYYY;
-	sscanf(runStartDateTime.c_str(), "%d/%d/%d %d:%d:%d", &DD, &MM, &YYYY, &hh, &mm, &ss);
+	sscanf(runStartDateTime.c_str(), "%d/%d/%d_%d:%d:%d", &DD, &MM, &YYYY, &hh, &mm, &ss);
 	// combine parts into a time structure
 	struct std::tm runstart;
 	runstart.tm_year = YYYY;
