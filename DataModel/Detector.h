@@ -22,7 +22,7 @@ class Detector : public SerialisableObject{
 	string GetDetectorElement(){return DetectorElement;}
 	Position GetDetectorPosition(){return DetectorPosition;}
 	Direction GetDetectorDirection(){return DetectorDirection;}
-	int GetDetectorID(){return DetectorID;}
+	int GetDetectorID(){return static_cast<int>(DetectorID);}
 	std::string GetDetectorType(){return DetectorType;}
 	detectorstatus GetStatus(){return Status;}
 	double GetAvgPulseRate(){return AvgPulseRate;}
