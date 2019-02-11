@@ -92,8 +92,8 @@ bool HitResiduals::Execute(){
 		// iterate over the map of sensors with a measurement
 		for(std::pair<ChannelKey,std::vector<Hit>>&& apair : *MCHits){
 			ChannelKey chankey = apair.first;
-			Detector thistube = anniegeom->GetDetector(chankey);
-			Position tubeposition = thistube.GetDetectorPosition();
+			Detector* thistube = anniegeom->GetDetector(chankey.GetDetectorElementIndex());
+			Position tubeposition = thistube->GetDetectorPosition();
 			double distance = sqrt(pow((tubeposition.X()-muonvertex.X()),2.)+
 								   pow((tubeposition.Y()-muonvertex.Y()),2.)+
 								   pow((tubeposition.Z()-muonvertex.Z()),2.));
@@ -118,8 +118,8 @@ bool HitResiduals::Execute(){
 		// iterate over the map of sensors with a measurement
 		for(std::pair<ChannelKey,std::vector<LAPPDHit>>&& apair : *MCLAPPDHits){
 			ChannelKey chankey = apair.first;
-			Detector thistube = anniegeom->GetDetector(chankey);
-			Position tubeposition = thistube.GetDetectorPosition();
+			Detector* thistube = anniegeom->GetDetector(chankey.GetDetectorElementIndex());
+			Position tubeposition = thistube->GetDetectorPosition();
 			double distance = sqrt(pow((tubeposition.X()-muonvertex.X()),2.)+
 								   pow((tubeposition.Y()-muonvertex.Y()),2.)+
 								   pow((tubeposition.Z()-muonvertex.Z()),2.));
