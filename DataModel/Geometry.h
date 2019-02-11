@@ -47,8 +47,6 @@ class Geometry : public SerialisableObject{
 //	inline void AddDetector(ChannelKey key, Detector det){
 	//	Detectors.emplace(key,det);
 //	}
-
-
 Detector* GetDetector(unsigned long DetectorKey);
 
 	inline int GetNumDetectors(){return Detectors.size();}
@@ -154,10 +152,6 @@ Detector* GetDetector(unsigned long DetectorKey);
 
 		return true;
 	}
-	std::map<unsigned long,Detector> LAPPD;
-	std::map<unsigned long,Detector> PMT;
-	std::map<unsigned long,Detector> MRD;
-	std::map<unsigned long,Channel> Misc;
 
 
 	bool PrintStatus(geostatus status){
