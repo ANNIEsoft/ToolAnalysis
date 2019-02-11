@@ -154,9 +154,8 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			// a 'subdetector' (enum class), with types ADC, LAPPD, TDC
 			// and a DetectorElementIndex, i.e. the ID of the detector of that type
 			// get PMT position
-      std::cout << "ID FROM CHANNELKEY: " << chankey.GetDetectorElementIndex() << std::endl;
-			det = fGeometry.GetDetector(chankey.GetDetectorElementIndex());
 			int PMTId = chankey.GetDetectorElementIndex();
+      det = fGeometry.GetDetector(PMTId);
 			if(det->GetDetectorElement() == "") {
 				Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
 				continue;
@@ -223,7 +222,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	double calT = 0;
 	double calQ = 0;
 	int digitType = -999;
-        int LAPPDId = -1;
+  int LAPPDId = -1;
 	Detector* det;
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
@@ -266,7 +265,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	} else {
 		cout<<"No MCLAPPDHits"<<endl;
 		return false;
-	}	
+	}
 	return true;
 }
 

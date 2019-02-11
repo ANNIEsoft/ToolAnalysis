@@ -16,7 +16,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "ANNIEGeometry.h"
-
+#include "Detector.h"
 
 class DigitBuilder: public Tool {
 

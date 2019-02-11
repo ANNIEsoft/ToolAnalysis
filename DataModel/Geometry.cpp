@@ -20,11 +20,11 @@ Geometry::Geometry(std::vector<std::map<unsigned long,Detector>* >dets, double v
 
 
 Detector*  Geometry::GetDetector(unsigned long DetectorKey){
-
 	for(int i=0 ; i<Detectors.size(); i++){
 		for (std::map<unsigned long,Detector>::iterator it=Detectors.at(i)->begin(); it!=Detectors.at(i)->end(); ++it){
-
-			if(DetectorKey==it->first) {Detector* det= &it->second; return det;}
+			if(DetectorKey==it->first) {
+        Detector* det= &it->second;
+        return det;}
 
 		}
 	}
