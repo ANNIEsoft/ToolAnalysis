@@ -157,6 +157,7 @@ bool LoadWCSimLAPPD::Execute(){
 					// this lappd hit is within the trigger window; note it
 					nexthit.SetTime(relativedigitst); // correct for this trigger time
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
+          //NOTE: as ordered in LoadWCSim, This ID will be the same as the DetectorID
 					ChannelKey key(subdetector::LAPPD,nexthit.GetTubeId());
 					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 					else MCLAPPDHits->at(key).push_back(nexthit);
@@ -252,6 +253,7 @@ bool LoadWCSimLAPPD::Execute(){
 				double relativedigitst=digitst-wcsimtriggertime;
 				
 				float digiq = 0; // N/A
+        //NOTE: as ordered in LoadWCSim, This ID will be the same as the DetectorID
 				ChannelKey key(subdetector::LAPPD,LAPPDID);
 				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};

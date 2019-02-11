@@ -154,6 +154,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			// a 'subdetector' (enum class), with types ADC, LAPPD, TDC
 			// and a DetectorElementIndex, i.e. the ID of the detector of that type
 			// get PMT position
+      std::cout << "ID FROM CHANNELKEY: " << chankey.GetDetectorElementIndex() << std::endl;
 			det = fGeometry.GetDetector(chankey.GetDetectorElementIndex());
 			int PMTId = chankey.GetDetectorElementIndex();
 			if(det->GetDetectorElement() == "") {
