@@ -18,7 +18,7 @@ class Detector : public SerialisableObject{
 
 	public:
 	Detector() :DetectorElement(), DetectorPosition(), DetectorDirection(), DetectorID(0), DetectorType(""), Status(detectorstatus::OFF), AvgPulseRate(0.), Channels() {serialise=true;}
-	  Detector(string DetEle,Position posin, Direction dirin, int detid, std::string detype, detectorstatus stat, double avgrate, map<unsigned long,Channel> channels) : DetectorPosition(posin), DetectorDirection(dirin), DetectorID(detid), DetectorType(detype), Status(stat), AvgPulseRate(avgrate), Channels(channels) {serialise=true;}
+	  Detector(string DetEle,Position posin, Direction dirin, int detid, std::string detype, detectorstatus stat, double avgrate, map<unsigned long,Channel> channels) : DetectorElement(DetEle), DetectorPosition(posin), DetectorDirection(dirin), DetectorID(detid), DetectorType(detype), Status(stat), AvgPulseRate(avgrate), Channels(channels) {serialise=true;}
 	string GetDetectorElement(){return DetectorElement;}
 	Position GetDetectorPosition(){return DetectorPosition;}
 	Direction GetDetectorDirection(){return DetectorDirection;}
@@ -36,11 +36,12 @@ class Detector : public SerialisableObject{
 	void SetStatus(detectorstatus StatusIn){Status=StatusIn;}
 	void SetAvgPulseRate(double AvgPulseRateIn){AvgPulseRate=AvgPulseRateIn;}
 	bool Print() {
-  		cout<<"DetectorPosition : "; DetectorPosition.Print();
+    cout<<"DetectorPosition : "; DetectorPosition.Print();
 		cout<<"DetectorDirection : "; DetectorDirection.Print();
+    cout<<"DetectorElement : "<<DetectorElement<<endl;
 		cout<<"DetectorID : "<<DetectorID<<endl;
 		cout<<"DetectorType : "<<DetectorType<<endl;
-	 	 cout<<"Status : "; PrintStatus(Status);
+	  cout<<"Status : "; PrintStatus(Status);
 		cout<<"AvgPulseRate : "<<AvgPulseRate<<endl;
 
 		return true;
