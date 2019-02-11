@@ -142,7 +142,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 	double calT;
 	double calQ = 0.;
 	int digitType = -999;
-	Detector det;
+	Detector* det;
 	Position  pos_sim, pos_reco;
 	/// MCHits is a std::map<ChannelKey,std::vector<Hit>>
 	if(fMCHits){
@@ -154,16 +154,16 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			// a 'subdetector' (enum class), with types ADC, LAPPD, TDC
 			// and a DetectorElementIndex, i.e. the ID of the detector of that type
 			// get PMT position
-			det = fGeometry.GetDetector(chankey);
-			int PMTId = det.GetDetectorId();
-			if(det.GetDetectorElement() == "") {
+			det = fGeometry.GetDetector(chankey.GetDetectorElementIndex());
+			int PMTId = chankey.GetDetectorElementIndex();
+			if(det->GetDetectorElement() == "") {
 				Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
 				continue;
 			}
 			
 			// convert the WCSim coordinates to the ANNIEreco coordinates
 			// convert the unit from m to cm
-			pos_sim = det.GetDetectorPosition();	
+			pos_sim = det->GetDetectorPosition();	
 			pos_sim.UnitToCentimeter();
 			pos_reco.SetX(pos_sim.X());
 			pos_reco.SetY(pos_sim.Y()+14.46469);
@@ -223,7 +223,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	double calQ = 0;
 	int digitType = -999;
         int LAPPDId = -1;
-	Detector det;
+	Detector* det;
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
 	// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>
@@ -232,9 +232,9 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 		// iterate over the map of sensors with a measurement
 		for(std::pair<ChannelKey,std::vector<LAPPDHit>>&& apair : *fMCLAPPDHits){
 			ChannelKey chankey = apair.first;
-			det = fGeometry.GetDetector(chankey);
+			det = fGeometry.GetDetector(chankey.GetDetectorElementIndex());
 			//Tube ID is different from that in ANNIEReco
-			LAPPDId = det.GetDetectorId();
+			LAPPDId = chankey.GetDetectorElementIndex();
 			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
 			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue; 
       //if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;

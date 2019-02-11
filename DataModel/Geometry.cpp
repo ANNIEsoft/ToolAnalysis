@@ -16,13 +16,10 @@ Geometry::Geometry(std::vector<std::map<unsigned long,Detector>* >dets, double v
 	numvetopmts=nvetopmts;
 	numlappds=nlappds;
 	serialise=true;
-	Detectors.push_back(&LAPPD);
-	Detectors.push_back(&PMT);
-	Detectors.push_back(&MRD);
-
 }
 
-Detector *  Geometry::GetDetector(unsigned long DetectorKey){
+
+Detector*  Geometry::GetDetector(unsigned long DetectorKey){
 
 	for(int i=0 ; i<Detectors.size(); i++){
 		for (std::map<unsigned long,Detector>::iterator it=Detectors.at(i)->begin(); it!=Detectors.at(i)->end(); ++it){
