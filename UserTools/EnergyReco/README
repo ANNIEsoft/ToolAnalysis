@@ -29,3 +29,7 @@ pip install root_numpy (4.7.3.dev0)
 * TO DO:
   The aim is to use a large datasample for training/testing and fine-tune the algorithm. Then the prediction will be in collected data.  
 
+* NEW: The training and prediction step has been split to two different scripts. In this way we avoid different trainings and we can all use 
+the same training results to reconstruct the energy. For example you can use BDT_MuonEnergyReco_train.py to train the BDT
+on the muon energy and save the weights of this step to finalized_BDTmodel_forMuonEnergy.sav. Using BDT_MuonEnergyReco_pred.py you can load the
+weights from the training step and directly reconstruct the muon energy. Previously, these steps were incorporated in BDT_MuonEnergyReco.py.  
