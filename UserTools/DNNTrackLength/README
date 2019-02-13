@@ -10,15 +10,16 @@ iii)Change input filenames at:
     infile2 = "../LocalFolder/NEWdata_forRecoLength_0_8MRD.csv"
 iv) the output file is: vars_Ereco.csv 
 
+This script needs to use: python/3.7.0/bin/python3
 Commands and packages needed to be installed: 
-yum -y install python-matplotlib
+yum -y install python-matplotlib (3.0.0 )
 yum -y install python-pip 
 
-pip install numpy
-pip install pandas
-pip install tensorflow
-pip install sklearn
-pip install root_numpy
+pip install numpy (1.15.2)
+pip install pandas (0.23.4)
+pip install tensorflow (0.12.0)
+pip install sklearn (0.20.0)
+pip install root_numpy (4.7.3.dev0)
 
 #--- Description of the methods:
 * Training and test samples must be different to avoid biases and overtraining
