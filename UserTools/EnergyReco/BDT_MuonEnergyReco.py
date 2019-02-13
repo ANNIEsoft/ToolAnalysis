@@ -71,7 +71,7 @@ def Execute():
     print(filein2)
     df00b = pd.read_csv(filein2)
     df0b=df00b[['totalPMTs','totalLAPPDs','TrueTrackLengthInWater','neutrinoE','trueKE','diffDirAbs','TrueTrackLengthInMrd','recoDWallR','recoDWallZ','dirX','dirY','dirZ','vtxX','vtxY','vtxZ','DNNRecoLength']]
-    dfsel_pred=df0b.loc[df0['neutrinoE'] < E_threshold]
+    dfsel_pred=df0b.loc[df0b['neutrinoE'] < E_threshold]
     #print to check:
     print("check predicting sample: ",dfsel_pred.shape," ",dfsel_pred.head())
 #    print(dfsel_pred.iloc[5:10,0:5])
