@@ -156,7 +156,7 @@ def Execute():
         Y[i] = 100.*(test_data_trueKE_hi_E[i]-BDTGoutput_E[i])/(1.*test_data_trueKE_hi_E[i])
 #        print("MC Energy: ", test_data_trueKE_hi_E[i]," Reco Energy: ",BDTGoutput_E[i]," DE/E[%]: ",Y[i])
 
-    df1 = pd.DataFrame(test_data_trueKE_hi_E,columns=['MuonEnergy'])
+    df1 = pd.DataFrame(test_data_trueKE_hi_E,columns=['NeutrinoEnergy'])
     df2 = pd.DataFrame(BDTGoutput_E,columns=['RecoE'])
     df_final = pd.concat([df1,df2],axis=1)
  
