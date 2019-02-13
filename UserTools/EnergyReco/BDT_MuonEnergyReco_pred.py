@@ -107,7 +107,7 @@ def Execute():
     ########### BDTG ############
     n_estimators=1000
 
-    # save the model to disk
+    # read model from the disk
     filename = 'finalized_BDTmodel_forMuonEnergy.sav'
     #pickle.dump(model, open(filename, 'wb'))
  
