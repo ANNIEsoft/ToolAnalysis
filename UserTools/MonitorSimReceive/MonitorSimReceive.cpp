@@ -51,7 +51,8 @@ bool MonitorSimReceive::Execute(){
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
 
-    m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+    //m_data->Stores["CCData"]->Set("FileData",MRDData,false);        //false option creates problems in the monitoring tools--> check later
+    m_data->Stores["CCData"]->Set("FileData",MRDData);
 
   }
   else{
