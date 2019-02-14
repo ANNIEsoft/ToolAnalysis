@@ -67,5 +67,7 @@ if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
 if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
 if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
 
+if (tool=="MonitorMRDTime") ret=new MonitorMRDTime;
+  if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
 return ret;
 }
