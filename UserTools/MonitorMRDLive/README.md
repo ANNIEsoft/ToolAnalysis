@@ -4,17 +4,15 @@ MonitorMRDLive
 
 ## Data
 
-Describe any data formats MonitorMRDLive creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+Creates live event plots for raw data from the MRD DAQ, to be shown on the monitoring webpage. 
 
 ## Configuration
 
-Describe any configuration variables for MonitorMRDLive.
+MonitorMRDLive has the following configuration variables:
 
 ```
-param1 value1
-param2 value2
+verbose 2
+OutputPath /ANNIECode/MRDMonitorTest/               #if output path for plots needs to be set manually
+#OutputPath fromStore                               #if output path for plots can be taken from m_data
+ActiveSlots configfiles/Monitoring/MRD_activech.txt #define which channels of the crate are connected
 ```
