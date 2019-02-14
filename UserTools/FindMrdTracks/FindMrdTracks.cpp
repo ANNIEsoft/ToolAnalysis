@@ -31,13 +31,14 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	theMrdTracks = new std::vector<BoostStore>(5);
 	
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geo);
-	numvetopmts = geo->GetNumVetoPMTs();
+	//numvetopmts = geo->GetNumVetoPMTs();
 	
 	// create clonesarray for storing the MRD Track details as they're found
 	if(SubEventArray==nullptr) SubEventArray = new TClonesArray("cMRDSubEvent");  // string is class name
 	// put the pointer in the CStore, so it can be retrieved by MrdTrackPlotter tool Init
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
+	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
 	
 	return true;
 }
@@ -64,7 +65,7 @@ bool FindMrdTracks::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
 	m_data->Stores["ANNIEEvent"]->Get("TriggerNumber",MCTriggernum);
 	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
-	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<TDCHit>>
 	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 	
 	// FIXME align types until we update MRDTrackClass/MRDSubEventClass
@@ -105,13 +106,14 @@ bool FindMrdTracks::Execute(){
 		ChannelKey has members SubDetectorIndex (uint) and DetectorElementIndex (uint)
 		TDCHit has members Time,
 		*/
+	
+		unsigned long chankey = anmrdpmt.first;
+		Detector* thedetector = geo->ChannelToDetector(chankey);
+		int wcsimtubeid = channelkey_to_mrdpmtid.at(chankey);
 		
-		ChannelKey chankey = anmrdpmt.first;
-		// subdetector thispmtssubdetector = chankey.GetSubDetectorType(); will be TDC by nature
-		int thispmtsid = chankey.GetDetectorElementIndex();
-		if(thispmtsid < numvetopmts) continue; // this is a veto hit, not an MRD hit.
+		if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit.
 		for(auto&& hitsonthismrdpmt : anmrdpmt.second){
-			mrddigitpmtsthisevent.push_back(thispmtsid-(numvetopmts+1));
+			mrddigitpmtsthisevent.push_back(wcsimtubeid);
 			mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 			mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
 		}

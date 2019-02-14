@@ -136,6 +136,9 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
   output_beam_tree_->Branch("toroids_agree", &toroids_agree_,
     "toroids_agree/O");
 
+  // Get the geometry
+  m_data->Stores.at("ANNIEEvent")->Get("ANNIEGeometry",anniegeom);
+
   return true;
 }
 
@@ -228,7 +231,7 @@ bool PhaseITreeMaker::Execute() {
   auto& pos_info = ncv_position_info_.at(ncv_position_);
 
   // Load the reconstructed ADC hits
-  std::map<ChannelKey, std::vector< std::vector<ADCPulse> > > adc_hits;
+  std::map<unsigned long, std::vector< std::vector<ADCPulse> > > adc_hits;
 
   get_object_from_store("RecoADCHits", adc_hits, *annie_event);
   check_that_not_empty("RecoADCHits", adc_hits);
@@ -245,7 +248,7 @@ bool PhaseITreeMaker::Execute() {
     // without resetting it for the next event.
     spill_number_ = old_spill_number;
 
-    pulse_pmt_id_ = channel_key.GetDetectorElementIndex();
+    pulse_pmt_id_ = channel_key;
 
     // Flag that vetos minibuffers because the last beam minibuffer failed
     // the quality cuts.
@@ -361,7 +364,7 @@ bool PhaseITreeMaker::Execute() {
 
   // Find NCV coincidence events
   const std::vector< std::vector<ADCPulse> >& ncv_pmt1_pulses
-    = adc_hits.at( ChannelKey(subdetector::ADC, NCV_PMT1_ID) );
+    = adc_hits.at( NCV_PMT1_ID );
 
   // Flag that vetos minibuffers because the last beam minibuffer failed
   // the quality cuts.
@@ -552,7 +555,7 @@ bool PhaseITreeMaker::Finalise() {
 // modes in the same way)
 bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
   const ADCPulse& first_ncv1_pulse,
-  const std::map<ChannelKey, std::vector< std::vector<ADCPulse> > >& adc_hits,
+  const std::map<unsigned long, std::vector< std::vector<ADCPulse> > >& adc_hits,
   int minibuffer_index)
 {
   // Afterpulsing cut (uses the absolute event time relative to the last beam
@@ -588,7 +591,7 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
 
   // NCV coincidence cut
   const std::vector<ADCPulse>& ncv_pmt2_pulses = adc_hits.at(
-    ChannelKey(subdetector::ADC, NCV_PMT2_ID) ).at(minibuffer_index);
+    (unsigned long)NCV_PMT2_ID ).at(minibuffer_index);
   // Minibuffers are short enough (80 us maximum for non-Hefty data, smaller
   // for Hefty mode data) that, even though the TimeClass has an underlying
   // type of uint64_t, an int64_t shouldn't overflow here.
@@ -630,22 +633,22 @@ bool PhaseITreeMaker::approve_event(int64_t event_time, int64_t old_time,
 // Also loads the integer num_unique_water_pmts with the number
 // of hit water tank PMTs.
 double PhaseITreeMaker::compute_tank_charge(size_t minibuffer_number,
-  const std::map< ChannelKey, std::vector< std::vector<ADCPulse> > >& adc_hits,
+  const std::map< unsigned long, std::vector< std::vector<ADCPulse> > >& adc_hits,
   uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts)
 {
   double tank_charge = 0.;
   num_unique_water_pmts = 0;
 
   for (const auto& channel_pair : adc_hits) {
-    const ChannelKey& ck = channel_pair.first;
+    const unsigned long& ck = channel_pair.first;
 
     // Only consider ADC channels that belong to water tank PMTs
-    if (ck.GetSubDetectorType() != subdetector::ADC) continue;
+    Detector* det = anniegeom->ChannelToDetector(ck);
+    if (det->GetDetectorElement() != "Tank") continue;
 
     // Skip non-water-tank PMTs
-    uint32_t pmt_id = ck.GetDetectorElementIndex();
     if ( std::find(std::begin(water_tank_pmt_IDs), std::end(water_tank_pmt_IDs),
-       pmt_id) == std::end(water_tank_pmt_IDs) ) continue;
+       uint32_t(ck)) == std::end(water_tank_pmt_IDs) ) continue;
 
     // Get the vector of pulses for the current channel and minibuffer of
     // interest
