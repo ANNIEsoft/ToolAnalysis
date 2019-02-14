@@ -38,10 +38,11 @@ class WCSimDemo: public Tool {
 	uint16_t MCTriggernum;    // trigger number in MC file
 	
 	std::vector<MCParticle>* MCParticles=nullptr;                      // truth tracks
-	std::map<ChannelKey,std::vector<Hit>>* MCHits=nullptr;             // PMT hits
-	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;   // LAPPD hits
-	std::map<ChannelKey,std::vector<Hit>>* TDCData=nullptr;            // MRD & veto hits
+	std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;             // PMT hits
+	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;   // LAPPD hits
+	std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;            // MRD & veto hits
 	TimeClass* EventTime=nullptr;    // NDigits trigger time in ns from when the particles were generated
+	Geometry* anniegeom=nullptr;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;

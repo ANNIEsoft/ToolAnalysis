@@ -227,7 +227,7 @@ bool RawLoader::Execute() {
 
   // Build the ChannelKey -> (raw) Waveform map from the annie::RawReadout
   // object
-  std::map<ChannelKey, std::vector<Waveform<unsigned short> > >
+  std::map<unsigned long, std::vector<Waveform<unsigned short> > >
     raw_waveform_map;
 
   size_t num_minibuffers = 0;
@@ -241,7 +241,8 @@ bool RawLoader::Execute() {
       int pmt_id = pmt_ID_and_card_channel_bimap.right.at(
         std::pair<int, int>(card.card_id(), channel.channel_id()) );
 
-      ChannelKey ck(subdetector::ADC, pmt_id);
+      unsigned long ck = pmt_id; // bypassing the Geometry::ConsumeNextFreeChannelKey !!!
+      // Note: in this case pmt_id's MUST be unique!
       std::vector<Waveform<unsigned short> > raw_waveforms;
 
       num_minibuffers = channel.num_minibuffers();

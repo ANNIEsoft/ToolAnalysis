@@ -44,9 +44,12 @@ private:
 	uint32_t EventNumber;   // -> eventnum   ( " " )
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass 
-	std::map<ChannelKey,vector<Hit>>* TDCData;
+	std::map<unsigned long,vector<Hit>>* TDCData;
 	Geometry* geo=nullptr;  // for num MRD PMTs
 	int numvetopmts=0;      // current method for separating veto / mrd pmts in TDCData
+	
+	// From the CStore, for converting WCSim TubeId t channelkey
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	
 	// MRD TRACK RECONSTRUCTION
 	// ~~~~~~~~~~~~~~~~~~~~~~~~

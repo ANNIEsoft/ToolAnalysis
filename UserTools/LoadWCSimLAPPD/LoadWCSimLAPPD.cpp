@@ -78,7 +78,10 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	m_data->CStore.Get("WCSimPostTriggerWindow",posttriggerwindow);
 	if(verbose>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
 					  <<", WCSimPostTriggerWindow="<<posttriggerwindow<<endl;
-	// so far all simulations have used the SK defaults: pre: -400ns, post: 950ns
+	
+	// Get the mapping of WCSim tubeid to detectorkey needed for filling ANNIEEVENT MCHits
+	m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+	m_data->CStore.Get("lappd_tubeid_to_detectorkey",lappd_tubeid_to_detectorkey);
 	
 	// Get WCSimRootGeom so we can obtain CylLoc for calculating global pos
 	// ====================================================================
@@ -98,7 +101,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// things to be saved to the ANNIEEvent Store
-	MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
+	MCLAPPDHits = new std::map<unsigned long,std::vector<LAPPDHit>>;
 	
 	if(DEBUG_DRAW_LAPPD_HITS){
 		// create the ROOT application to show histograms
@@ -157,8 +160,7 @@ bool LoadWCSimLAPPD::Execute(){
 					// this lappd hit is within the trigger window; note it
 					nexthit.SetTime(relativedigitst); // correct for this trigger time
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
-          //NOTE: as ordered in LoadWCSim, This ID will be the same as the DetectorID
-					ChannelKey key(subdetector::LAPPD,nexthit.GetTubeId());
+					unsigned int key = nexthit.GetTubeId();
 					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 					else MCLAPPDHits->at(key).push_back(nexthit);
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
@@ -179,6 +181,10 @@ bool LoadWCSimLAPPD::Execute(){
 		for(int lappdi=0; lappdi<LAPPDEntry->lappd_numhits; lappdi++){
 			// loop over LAPPDs that had at least one hit
 			int LAPPDID = LAPPDEntry->lappdhit_objnum[lappdi];
+			// convert LAPPDID to channelkey
+			unsigned int detkey = lappd_tubeid_to_detectorkey.at(LAPPDID);
+			Detector* thedet = anniegeom->GetDetector(detkey);
+			unsigned int key = thedet->GetChannels().begin()->first; // first strip on this LAPPD
 			double pmtx = (LAPPDEntry->lappdhit_x[lappdi]) / 1000.;  // pos of LAPPD in global coords, [mm] to [m]
 			double pmty = (LAPPDEntry->lappdhit_y[lappdi]) / 1000.;
 			double pmtz = (LAPPDEntry->lappdhit_z[lappdi]) / 1000.;
@@ -253,11 +259,9 @@ bool LoadWCSimLAPPD::Execute(){
 				double relativedigitst=digitst-wcsimtriggertime;
 				
 				float digiq = 0; // N/A
-        //NOTE: as ordered in LoadWCSim, This ID will be the same as the DetectorID
-				ChannelKey key(subdetector::LAPPD,LAPPDID);
 				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
-				//LAPPDHit nexthit(LAPPDID, digitst, digiq, globalpos, localpos);
+				//LAPPDHit nexthit(key, digitst, digiq, globalpos, localpos);
 				if(DEBUG_DRAW_LAPPD_HITS){
 					lappdhitshist->SetNextPoint(digitsx,digitsz, digitsy);
 					digixpos->Fill(digitsx);
@@ -277,15 +281,15 @@ bool LoadWCSimLAPPD::Execute(){
 					relativedigitst<(posttriggerwindow) ){
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					if(MCLAPPDHits->count(key)==0){
-						LAPPDHit nexthit(LAPPDID, relativedigitst, digiq, globalpos, localpos);
+						LAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos);
 						MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
 					} else {
-						MCLAPPDHits->at(key).emplace_back(LAPPDID, relativedigitst, digiq,
+						MCLAPPDHits->at(key).emplace_back(key, relativedigitst, digiq,
 															globalpos, localpos);
 					}
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(LAPPDID, digitst, digiq, globalpos, localpos);
+					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event

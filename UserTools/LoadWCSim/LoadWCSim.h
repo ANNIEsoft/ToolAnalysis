@@ -19,21 +19,51 @@
 #include "Detector.h"
 #include "BeamStatus.h"
 
+namespace{
+	//PMTs
+	constexpr int ADC_CHANNELS_PER_CARD=4;
+	constexpr int ADC_CARDS_PER_CRATE=20;
+	constexpr int MT_CHANNELS_PER_CARD=4;
+	constexpr int MT_CARDS_PER_CRATE=20;
+	//LAPPDs
+	constexpr int ACDC_CHANNELS_PER_CARD=30;
+	constexpr int ACDC_CARDS_PER_CRATE=20;
+	constexpr int ACC_CHANNELS_PER_CARD=8;
+	constexpr int ACC_CARDS_PER_CRATE=20;
+	//TDCs
+	constexpr int TDC_CHANNELS_PER_CARD=32;
+	constexpr int TDC_CARDS_PER_CRATE=6;
+	//HV
+	constexpr int CAEN_HV_CHANNELS_PER_CARD=16;
+	constexpr int CAEN_HV_CARDS_PER_CRATE=10;
+	constexpr int LECROY_HV_CHANNELS_PER_CARD=16;
+	constexpr int LECROY_HV_CARDS_PER_CRATE=16;
+	constexpr int LAPPD_HV_CHANNELS_PER_CARD=4; // XXX ??? XXX
+	constexpr int LAPPD_HV_CARDS_PER_CRATE=10;  // XXX ??? XXX
+}
+
 class LoadWCSim: public Tool {
-
-public:
-
+	
+	public:
+	
 	LoadWCSim();
 	bool Initialise(std::string configfile,DataModel &data);
 	bool Execute();
 	bool Finalise();
-
-private:
-
+	
+	private:
+	
+	// variables from config file
+	/////////////////////////////
 	int verbose=1;
 	int HistoricTriggeroffset;
 	int use_smeared_digit_time;   // digit_time = (T): first photon smeared time, (F): first photon true time
+	int LappdNumStrips;           // number of Channels per LAPPD
+	double LappdStripLength;      // [mm] for calculating relative x position for dual-ended readout
+	double LappdStripSeparation;  // [mm] for calculating relative y position of each stripline
+	
 	// WCSim variables
+	//////////////////
 	TFile* file;
 	TTree* wcsimtree;
 	wcsimT* WCSimEntry; // from makeclass
@@ -42,12 +72,27 @@ private:
 	WCSimRootOptions* wcsimrootopts;
 	int FILE_VERSION;   // WCSim version
 	
+	// Misc Others
+	//////////////
 	long NumEvents;
-
 	int numtankpmts;
 	int numlappds;
 	int nummrdpmts;
-
+	int numvetopmts;
+	
+	// For constructing ToolChain Geometry
+	//////////////////////////////////////
+	void ConstructToolChainGeometry();
+	std::map<int,unsigned long> lappd_tubeid_to_detectorkey;
+	std::map<int,unsigned long> pmt_tubeid_to_channelkey;
+	std::map<int,unsigned long> mrd_tubeid_to_channelkey;
+	std::map<int,unsigned long> facc_tubeid_to_channelkey;
+	// inverse
+	std::map<unsigned long,int> detectorkey_to_lappdid;
+	std::map<unsigned long,int> channelkey_to_pmtdit;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	std::map<unsigned long,int> channelkey_to_faccpmtid;
+	
 	////////////////
 	// things that will be filled into the store from this WCSim file.
 	// note: filling everything in the right format is a complex process;
@@ -63,19 +108,11 @@ private:
 	TimeClass* EventTime;
 	uint64_t EventTimeNs;
 	std::vector<MCParticle>* MCParticles;
-	std::map<ChannelKey,std::vector<Hit>>* TDCData;
-	std::map<ChannelKey,std::vector<Hit>>* MCHits;
+	std::map<unsigned long,std::vector<Hit>>* TDCData;
+	std::map<unsigned long,std::vector<Hit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;
 	BeamStatusClass* BeamStatus;
-
-  std::map<unsigned long, Detector>* tanklappds;
-  std::map<unsigned long, Detector>* tankpmts;
-  std::map<unsigned long, Detector>* mrdpmts;
-  std::map<unsigned long, Detector>* vetopmts;
-
-	// currently used to separate Veto/MRD PMTs
-	int numvetopmts;
-
+	
 };
 
 

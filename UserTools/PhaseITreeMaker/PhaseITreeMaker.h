@@ -72,11 +72,11 @@ class PhaseITreeMaker : public Tool {
     int get_NCV_position(uint32_t run_number) const;
 
     bool approve_event(int64_t event_time, int64_t old_time,
-      const ADCPulse& first_ncv1_pulse, const std::map<ChannelKey, std::vector<
+      const ADCPulse& first_ncv1_pulse, const std::map<unsigned long, std::vector<
       std::vector<ADCPulse> > >& adc_hits, int minibuffer_index);
 
     double compute_tank_charge(size_t minibuffer_number,
-      const std::map< ChannelKey, std::vector<
+      const std::map< unsigned long, std::vector<
         std::vector<ADCPulse> > >& adc_hits, uint64_t start_time,
         uint64_t end_time, int& num_unique_water_pmts);
 
@@ -151,4 +151,7 @@ class PhaseITreeMaker : public Tool {
     bool horn_current_ok_ = false;
     bool timestamps_ok_ = false;
     bool toroids_agree_ = false;
+    
+    // Geometry
+    Geometry* anniegeom=nullptr;
 };
