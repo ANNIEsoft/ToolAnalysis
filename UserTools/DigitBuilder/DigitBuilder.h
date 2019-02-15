@@ -75,7 +75,8 @@ class DigitBuilder: public Tool {
 	uint64_t fMCEventNum;      ///< event number in MC file
 	std::vector<int> fLAPPDId; ///< selected LAPPDs
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
-	
+	bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
+
 	Geometry fGeometry;    ///< ANNIE Geometry
 	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
 	std::map<ChannelKey,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
