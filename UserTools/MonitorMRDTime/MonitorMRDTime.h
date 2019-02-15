@@ -79,6 +79,7 @@ class MonitorMRDTime: public Tool {
 
   //time variables to check for regular time intervals
   boost::posix_time::time_duration period_update;
+  boost::posix_time::time_duration duration;
   boost::posix_time::ptime last;
 
   //define live storing variables
