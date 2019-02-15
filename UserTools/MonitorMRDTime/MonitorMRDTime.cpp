@@ -79,6 +79,10 @@ bool MonitorMRDTime::Execute(){
 
    if (verbosity > 3) std::cout <<"Tool MonitorMRDTime: Executing ...."<<std::endl;
 
+  	boost::posix_time::ptime current(boost::posix_time::second_clock::local_time());
+  	duration = boost::posix_time::time_duration(current - last);
+  	if (verbosity > 2) std::cout <<"duration: "<<duration.total_milliseconds()/1000./60.<<" mins since last time plot"<<std::endl;
+
    std::string State;
 
    m_data->CStore.Get("State",State);
@@ -103,9 +107,6 @@ bool MonitorMRDTime::Execute(){
    }
 
   //check if time has passed without something happening / whether it's time to update the plot again
-  boost::posix_time::ptime current(boost::posix_time::second_clock::local_time());
-  boost::posix_time::time_duration duration(current - last);
-  if (verbosity > 2) std::cout <<"duration: "<<duration.total_milliseconds()/1000./60.<<" mins since last time plot"<<std::endl;
 
   if(duration>period_update){
     std::cout <<"5mins passed... Updating plots!"<<std::endl;
@@ -686,7 +687,7 @@ void MonitorMRDTime::MRDTimePlots(){
 
 //plot all the distributions
 
-	  TCanvas *canvas_ch = new TCanvas("canvas_ch","Channel Canvas",900,600);
+	TCanvas *canvas_ch = new TCanvas("canvas_ch","Channel Canvas",900,600);
     TCanvas *canvas_ch_rms = new TCanvas("canvas_ch_rms","Channel RMS Canvas",900,600);
     TCanvas *canvas_ch_freq = new TCanvas("canvas_ch_freq","Channel Freq Canvas",900,600);
   	TCanvas *canvas_slot = new TCanvas("canvas_slot","Slot Canvas",900,600);
@@ -1957,20 +1958,20 @@ void MonitorMRDTime::UpdateMonitorSources(){
 				times_channel_hour.at(i_channel)[i_mins] = times_channel_hour.at(i_channel)[i_mins+1];
 				rms_channel_hour.at(i_channel)[i_mins] = rms_channel_hour.at(i_channel)[i_mins+1];
 				frequency_channel_hour.at(i_channel)[i_mins] = frequency_channel_hour.at(i_channel)[i_mins+1];
-        n_channel_hour.at(i_channel)[i_mins] = n_channel_hour.at(i_channel)[i_mins+1];
+        		n_channel_hour.at(i_channel)[i_mins] = n_channel_hour.at(i_channel)[i_mins+1];
 			}
 
 			if (!data_available || live_mins.at(i_channel).empty()){
 			times_channel_hour.at(i_channel)[num_fivemin-1] = 0;
 			rms_channel_hour.at(i_channel)[num_fivemin-1] = 0;
 			frequency_channel_hour.at(i_channel)[num_fivemin-1] = 0;
-      n_channel_hour.at(i_channel)[num_fivemin-1] = 0;
+      		n_channel_hour.at(i_channel)[num_fivemin-1] = 0;
 			} else {
 				times_channel_hour.at(i_channel)[num_fivemin-1] = std::accumulate(live_mins.at(i_channel).begin(),live_mins.at(i_channel).end(),0.0)/live_mins.at(i_channel).size();
 				rms_channel_hour.at(i_channel)[num_fivemin-1] = compute_variance(times_channel_hour.at(i_channel)[num_fivemin-1],live_mins.at(i_channel));
 				frequency_channel_hour.at(i_channel)[num_fivemin-1] = live_mins.at(i_channel).size()/duration_fivemin;
-        n_channel_hour.at(i_channel)[num_fivemin-1] = live_mins.at(i_channel).size();
-        //std::cout <<"Filling tdc "<<std::accumulate(live_mins.at(i_channel).begin(),live_mins.at(i_channel).end(),0.0)/live_mins.at(i_channel).size()<<", rms: "<<compute_variance(times_channel_hour.at(i_channel)[num_fivemin-1],live_mins.at(i_channel))<<", freq: "<<live_mins.at(i_channel).size()/duration_fivemin<<", size: "<<live_mins.at(i_channel).size()<<std::endl;
+        		n_channel_hour.at(i_channel)[num_fivemin-1] = live_mins.at(i_channel).size();
+        		//std::cout <<"Filling tdc "<<std::accumulate(live_mins.at(i_channel).begin(),live_mins.at(i_channel).end(),0.0)/live_mins.at(i_channel).size()<<", rms: "<<compute_variance(times_channel_hour.at(i_channel)[num_fivemin-1],live_mins.at(i_channel))<<", freq: "<<live_mins.at(i_channel).size()/duration_fivemin<<", size: "<<live_mins.at(i_channel).size()<<std::endl;
 				live_mins.at(i_channel).clear();
 			}
 
@@ -1981,19 +1982,19 @@ void MonitorMRDTime::UpdateMonitorSources(){
 					times_channel_sixhour.at(i_channel)[i_halfhour] = times_channel_sixhour.at(i_channel)[i_halfhour+1];
 					rms_channel_sixhour.at(i_channel)[i_halfhour] = rms_channel_sixhour.at(i_channel)[i_halfhour+1];
 					frequency_channel_sixhour.at(i_channel)[i_halfhour] = frequency_channel_sixhour.at(i_channel)[i_halfhour+1];
-          n_channel_sixhour.at(i_channel)[i_halfhour] = n_channel_sixhour.at(i_channel)[i_halfhour+1];
+          			n_channel_sixhour.at(i_channel)[i_halfhour] = n_channel_sixhour.at(i_channel)[i_halfhour+1];
 				}
 				if (live_halfhour.at(i_channel).empty()){
           if (verbosity > 3) std::cout <<"live vector empty for channel "<<i_channel<<std::endl;
 				times_channel_sixhour.at(i_channel)[num_halfhour-1] = 0;
 				rms_channel_sixhour.at(i_channel)[num_halfhour-1] = 0;
 				frequency_channel_sixhour.at(i_channel)[num_halfhour-1] = 0;
-        n_channel_sixhour.at(i_channel)[num_halfhour-1] = 0;
+        		n_channel_sixhour.at(i_channel)[num_halfhour-1] = 0;
 				} else {
 				times_channel_sixhour.at(i_channel)[num_halfhour-1] = std::accumulate(live_halfhour.at(i_channel).begin(),live_halfhour.at(i_channel).end(),0.0)/live_halfhour.at(i_channel).size();
 				rms_channel_sixhour.at(i_channel)[num_halfhour-1] = compute_variance(times_channel_sixhour.at(i_channel)[num_halfhour-1],live_halfhour.at(i_channel));
 				frequency_channel_sixhour.at(i_channel)[num_halfhour-1] = live_halfhour.at(i_channel).size()/duration_halfhour;
-        n_channel_sixhour.at(i_channel)[num_halfhour-1] = live_halfhour.at(i_channel).size();
+        		n_channel_sixhour.at(i_channel)[num_halfhour-1] = live_halfhour.at(i_channel).size();
         //std::cout << " Filling tdc "<< std::accumulate(live_halfhour.at(i_channel).begin(),live_halfhour.at(i_channel).end(),0.0)/live_halfhour.at(i_channel).size()<<", rms: "<<compute_variance(times_channel_sixhour.at(i_channel)[num_halfhour-1],live_halfhour.at(i_channel))<<", freq: "<<live_halfhour.at(i_channel).size()/duration_fivemin<<", size: "<<live_halfhour.at(i_channel).size()<<std::endl;
 				live_halfhour.at(i_channel).clear();
 
@@ -2001,25 +2002,25 @@ void MonitorMRDTime::UpdateMonitorSources(){
 			}
 
 			if (j_fivemin%12 == 0 && !initial){
-        if (verbosity > 3) std::cout <<"Updating 24h plots!"<<std::endl;
+        		if (verbosity > 3) std::cout <<"Updating 24h plots!"<<std::endl;
 				update_hour=true;
 				for (int i_hour = 0;i_hour<num_hour-1;i_hour++){
 					times_channel_day.at(i_channel)[i_hour] = times_channel_day.at(i_channel)[i_hour+1];
 					rms_channel_day.at(i_channel)[i_hour] = rms_channel_day.at(i_channel)[i_hour+1];
 					frequency_channel_day.at(i_channel)[i_hour] = frequency_channel_day.at(i_channel)[i_hour+1];
-          n_channel_day.at(i_channel)[i_hour] = n_channel_day.at(i_channel)[i_hour+1];
+          			n_channel_day.at(i_channel)[i_hour] = n_channel_day.at(i_channel)[i_hour+1];
 				}
 				if (live_hour.at(i_channel).empty()){
-          if (verbosity > 3) std::cout <<"live vector empty for channel "<<i_channel<<std::endl;
+          			if (verbosity > 3) std::cout <<"live vector empty for channel "<<i_channel<<std::endl;
 				times_channel_day.at(i_channel)[num_hour-1] = 0;
 				rms_channel_day.at(i_channel)[num_hour-1] = 0;
 				frequency_channel_day.at(i_channel)[num_hour-1] = 0;
-        n_channel_day.at(i_channel)[num_hour-1] = 0;
+        		n_channel_day.at(i_channel)[num_hour-1] = 0;
 				}else {
 				times_channel_day.at(i_channel)[num_hour-1] = std::accumulate(live_hour.at(i_channel).begin(),live_hour.at(i_channel).end(),0.0)/live_hour.at(i_channel).size();
 				rms_channel_day.at(i_channel)[num_hour-1] = compute_variance(times_channel_day.at(i_channel)[num_hour-1],live_hour.at(i_channel));
 				frequency_channel_day.at(i_channel)[num_hour-1] = live_hour.at(i_channel).size()/duration_hour;
-        n_channel_day.at(i_channel)[num_hour-1] = live_hour.at(i_channel).size();
+        		n_channel_day.at(i_channel)[num_hour-1] = live_hour.at(i_channel).size();
 				live_hour.at(i_channel).clear();
 				}
 			}
@@ -2041,11 +2042,13 @@ void MonitorMRDTime::UpdateMonitorSources(){
           }
 
 
-          if (timediff_file.at(i_channel).at(i_live) > (j_fivemin%6+1)*5*60*1000.){         //timediff bigger than 30 mins? --> also fill in 6h graph
-
-              int bin = (timediff_file.at(i_channel).at(i_live)-(j_fivemin%6+1)*5*60*1000.)/int(30*60*1000)+1;
+          if (timediff_file.at(i_channel).at(i_live) > ((j_fivemin-1)%6+1)*5*60*1000.){         //timediff bigger than 30 mins? --> also fill in 6h graph
+          	  
+              int bin = (timediff_file.at(i_channel).at(i_live)-((j_fivemin-1)%6+1)*5*60*1000.)/int(30*60*1000);
+              if (j_fivemin%6==0) bin++;
               if (bin < 12){
                   //std::cout <<">30mins, bin nr: "<<bin;
+              	  //std::cout <<"SIX HOUR array: Multiple of 6: "<<j_fivemin%6;
                   //std::cout<<", times channel ["<<num_halfhour-1-bin<<"]: "<< (times_channel_sixhour.at(i_channel)[num_halfhour-1-bin]*n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+live_file.at(i_channel).at(i_live))/(n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+1)<<std::endl;
                   times_channel_sixhour.at(i_channel)[num_halfhour-1-bin] = (times_channel_sixhour.at(i_channel)[num_halfhour-1-bin]*n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+live_file.at(i_channel).at(i_live))/(n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+1);
                   rms_channel_sixhour.at(i_channel)[num_halfhour-1-bin] = (rms_channel_sixhour.at(i_channel)[num_halfhour-1-bin]*(n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]-1)+pow(live_file.at(i_channel).at(i_live)-times_channel_sixhour.at(i_channel)[num_halfhour-1-bin],2))/(n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+1);
@@ -2054,11 +2057,13 @@ void MonitorMRDTime::UpdateMonitorSources(){
               }
 
 
-            if (timediff_file.at(i_channel).at(i_live) > (j_fivemin+1)*5*60*1000.){        //timediff bigger than 60 mins? --> also fill in 24h graph
+            if (timediff_file.at(i_channel).at(i_live) > (j_fivemin)*5*60*1000.){        //timediff bigger than 60 mins? --> also fill in 24h graph
 
-              int bin = (timediff_file.at(i_channel).at(i_live)-(j_fivemin+1)*5*60*1000.)/int(60*60*1000.)+1;
+              int bin = (timediff_file.at(i_channel).at(i_live)-(j_fivemin)*5*60*1000.)/int(60*60*1000.);
+              if (j_fivemin%12==0) bin++;
               if (bin<24){
                   //std::cout <<">60mins, bin nr: "<<bin;
+              	  //std::cout <<"DAY array: Multiple of 12: "<<j_fivemin%12;
                   //std::cout<<", times channel ["<<num_hour-1-bin<<"]: "<< (times_channel_day.at(i_channel)[num_hour-1-bin]*n_channel_day.at(i_channel)[num_hour-1-bin]+live_file.at(i_channel).at(i_live))/(n_channel_day.at(i_channel)[num_hour-1-bin]+1)<<std::endl;
                   times_channel_day.at(i_channel)[num_hour-1-bin] = (times_channel_day.at(i_channel)[num_hour-1-bin]*n_channel_day.at(i_channel)[num_hour-1-bin]+live_file.at(i_channel).at(i_live))/(n_channel_day.at(i_channel)[num_hour-1-bin]+1);
                   rms_channel_day.at(i_channel)[num_hour-1-bin] = (rms_channel_day.at(i_channel)[num_hour-1-bin]*(n_channel_day.at(i_channel)[num_hour-1-bin]-1)+pow(live_file.at(i_channel).at(i_live)-times_channel_day.at(i_channel)[num_hour-1-bin],2))/(n_channel_day.at(i_channel)[num_hour-1-bin]+1);
@@ -2269,15 +2274,18 @@ void MonitorMRDTime::FillEvents(){
       timestamp_file.at(ch).push_back(MRDout.TimeStamp);
       timediff_file.at(ch).push_back(dt_ms);         //in msecs,
 
-      if (dt_ms<(j_fivemin+1)*5*60*1000){
+      //if (dt_ms<(j_fivemin%12+1)*5*60*1000){
+       if (dt_ms<(j_fivemin*5*60*1000+duration.total_milliseconds())){
         if (verbosity > 3) std::cout <<"filling hour vector with "<<MRDout.Value.at(i_entry)<<"..."<<std::endl;
         live_hour.at(ch).push_back(MRDout.Value.at(i_entry));   //save newest entries for all live vectors
         timestamp_hour.at(ch).push_back(timestamp);         //save corresponding timestamps to the events
-        if (dt_ms<((j_fivemin%6+1)*5*60*1000)){
+        //if (dt_ms<((j_fivemin%6+1)*5*60*1000)){
+          if (dt_ms<((j_fivemin%6)*5*60*10000+duration.total_milliseconds())){
           if (verbosity > 3) std::cout <<"filling half hour vector with "<<MRDout.Value.at(i_entry)<<"..."<<std::endl;
           live_halfhour.at(ch).push_back(MRDout.Value.at(i_entry));
           timestamp_halfhour.at(ch).push_back(timestamp);
-          if (dt_ms<5*60*1000){
+          //if (dt_ms<5*60*1000){
+          if (dt_ms<duration.total_milliseconds()){
             if (verbosity > 3) std::cout <<"filling 5mins vector with "<<MRDout.Value.at(i_entry)<<"..."<<std::endl;
             live_mins.at(ch).push_back(MRDout.Value.at(i_entry));
             timestamp_mins.at(ch).push_back(timestamp);
