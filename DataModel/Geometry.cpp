@@ -19,6 +19,7 @@ Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, doub
 	numlappds=nlappds;
 	Detectors=dets;
 	serialise=true;
+	RealDetectors.reserve(10);
 }
 
 Detector*  Geometry::GetDetector(unsigned long DetectorKey){

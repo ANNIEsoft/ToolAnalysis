@@ -17,7 +17,10 @@ class Geometry : public SerialisableObject{
 	
 	public:
 	// Do we care to have the overloaded empty constructor?
-	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL), Detectors(std::vector<std::map<unsigned long,Detector>* >{}) {serialise=true;}
+	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL), Detectors(std::vector<std::map<unsigned long,Detector>* >{}) {
+		serialise=true;
+		RealDetectors.reserve(10);
+	}
 	
 	Geometry(double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets=std::vector<std::map<unsigned long,Detector>* >{});
 	
@@ -60,24 +63,25 @@ class Geometry : public SerialisableObject{
 		int detectorsetindex=-1;
 		if(DetectorElements.count(thedetel)==0){
 			// this is a new detector element - create a new entry in the Detectors vector
-			Detectors.resize(Detectors.size()+1);
-			DetectorElements.emplace(thedetel,Detectors.size()-1);  // maps detector element string to index
-			detectorsetindex = Detectors.size()-1;
+			RealDetectors.resize(RealDetectors.size()+1);
+			Detectors.push_back(&RealDetectors.back());
+			DetectorElements.emplace(thedetel,RealDetectors.size()-1); // maps det. element to vector index
+			detectorsetindex = RealDetectors.size()-1;
 		} else {
 			// we already have a detector set for this detector element: add this detector to that set
 			detectorsetindex = DetectorElements.at(thedetel);
 		}
-		if(Detectors.at(detectorsetindex)->count(detin.GetDetectorID())!=0){
-			std::cerr<<"Geometry error! AddDetector called with non-unique DetectorKey "
-					 <<detin.GetDetectorID()<<std::endl;
-			return false;
+		if(Detectors.at(detectorsetindex)->count(detin.GetDetectorID())!=0){  // search it for this key
+				std::cerr<<"Geometry error! AddDetector called with non-unique DetectorKey "
+						 <<detin.GetDetectorID()<<std::endl;
+				return false;
+		} else {
+			Detectors.at(detectorsetindex)->emplace(detin.GetDetectorID(), detin);
 		}
-		Detectors.at(detectorsetindex)->emplace(detin.GetDetectorID(), detin);
-		
 		return true;
 	}
 	
-	inline int GetNumDetectors(){return Detectors.size();}
+	inline int GetNumDetectors(){return Detectors.size();}  // FIXME this is the num detector SETS
 	Detector* GetDetector(unsigned long DetectorKey);
 	Detector* ChannelToDetector(unsigned long ChannelKey);
 	Channel* GetChannel(unsigned long ChannelKey);
@@ -189,6 +193,7 @@ class Geometry : public SerialisableObject{
 	unsigned long NextFreeDetectorKey;
 	unsigned long NextFreeChannelKey;
 	std::map<unsigned long,Detector*> ChannelMap;
+	std::vector<std::map<unsigned long,Detector> > RealDetectors;
 	std::vector<std::map<unsigned long,Detector>*> Detectors;
 	std::map<std::string, int> DetectorElements;
 	double Version;

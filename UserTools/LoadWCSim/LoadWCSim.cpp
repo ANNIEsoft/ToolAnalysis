@@ -174,8 +174,12 @@ bool LoadWCSim::Execute(){
 	//for(int MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
 		if(verbose>1) cout<<"getting triggers"<<endl;
 		atrigt = WCSimEntry->wcsimrootevent->GetTrigger(MCTriggernum);
-		atrigm = WCSimEntry->wcsimrootevent_mrd->GetTrigger(MCTriggernum);
-		atrigv = WCSimEntry->wcsimrootevent_facc->GetTrigger(MCTriggernum);
+		if(MCTriggernum<(WCSimEntry->wcsimrootevent_mrd->GetNumberOfEvents())){
+			atrigm = WCSimEntry->wcsimrootevent_mrd->GetTrigger(MCTriggernum);
+		} else { atrigm=nullptr; }
+		if(MCTriggernum<(WCSimEntry->wcsimrootevent_facc->GetNumberOfEvents())){
+			atrigv = WCSimEntry->wcsimrootevent_facc->GetTrigger(MCTriggernum);
+		} else { atrigv=nullptr; }
 		if(verbose>2) cout<<"wcsimrootevent="<<WCSimEntry->wcsimrootevent<<endl;
 		if(verbose>2) cout<<"wcsimrootevent_mrd="<<WCSimEntry->wcsimrootevent_mrd<<endl;
 		if(verbose>2) cout<<"wcsimrootevent_facc="<<WCSimEntry->wcsimrootevent_facc<<endl;
