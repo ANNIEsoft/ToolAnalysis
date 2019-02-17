@@ -170,7 +170,7 @@ bool PhaseIITreeMaker::Execute(){
   
   // Read digits
   std::vector<RecoDigit>* digitList = nullptr;
-	auto get_digits = m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
+  auto get_digits = m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
   if(!get_digits) {
     Log("PhaseITreeMaker tool: no digit list in store!", v_error, verbosity);
     return false;	
