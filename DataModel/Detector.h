@@ -23,7 +23,7 @@ class Detector : public SerialisableObject{
 	int GetDetectorID(){return static_cast<int>(DetectorID);}
 	std::string GetDetectorType(){return DetectorType;}
 	detectorstatus GetStatus(){return Status;}
-	std::map<unsigned long,Channel> GetChannels() {return Channels;}
+	std::map<unsigned long,Channel>* GetChannels() {return &Channels;}
 	void AddChannel(Channel chanin){ Channels.emplace(chanin.GetChannelID(),chanin); }
 	
 	void SetDetectorElement(std::string DetEleIn){DetectorElement=DetEleIn;}
@@ -48,6 +48,11 @@ class Detector : public SerialisableObject{
 			case (detectorstatus::UNSTABLE) : std::cout<<"UNSTABLE"<<std::endl; break;
 		}
 		return true;
+	}
+	void PrintChannels(){
+		cout<<"Detector "<<DetectorID<<" has "<<Channels.size()<<" channels: {";
+		for(auto&& achan : Channels){ cout<<"("<<achan.first<<":"<<(&achan.second)<<"), "; }
+		cout<<endl;
 	}
 	
 	private:
