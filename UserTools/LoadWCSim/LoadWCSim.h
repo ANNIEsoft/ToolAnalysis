@@ -89,7 +89,7 @@ class LoadWCSim: public Tool {
 	std::map<int,unsigned long> facc_tubeid_to_channelkey;
 	// inverse
 	std::map<unsigned long,int> detectorkey_to_lappdid;
-	std::map<unsigned long,int> channelkey_to_pmtdit;
+	std::map<unsigned long,int> channelkey_to_pmtid;
 	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	std::map<unsigned long,int> channelkey_to_faccpmtid;
 	
