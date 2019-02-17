@@ -183,9 +183,9 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           std::sort(hitTimes.begin(), hitTimes.end());
           size_t timesize = hitTimes.size();
           if (timesize % 2 == 0){
-            calT = (hitTimes[timesize/2 - 1] + hitTimes[timesize/2])/2;
+            calT = (hitTimes.at(timesize/2 - 1) + hitTimes.at(timesize/2))/2;
           } else {
-            calT = hitTimes[timesize/2];
+            calT = hitTimes.at(timesize/2);
           }
           calQ = 0.;
           for(std::vector<double>::iterator it = hitCharges.begin(); it != hitCharges.end(); ++it){
