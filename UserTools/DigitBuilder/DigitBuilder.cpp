@@ -208,7 +208,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			  }
       }
 		} // end loop over MCHits
-  } else {
+	} else {
 		cout<<"No MCHits"<<endl;
 		return false;
 	}
