@@ -2,7 +2,7 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbose 3
-InputFile /AnnieShare/p2r_data/p2v6/wcsim_lappd_0.1.9.root
+InputFile /AnnieShare/p2r_data/p2v6/nodigitization/wcsim_lappd_0.0.14.root
 # octagonal inner structure radius in m (from drawings 106.64")
 InnerStructureRadius 1.3545
 HistoricTriggeroffset 0
