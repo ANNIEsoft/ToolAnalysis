@@ -537,10 +537,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 								 channelstatus::ON);
 			
 			// Add this channel to the geometry
+			if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 			adet.AddChannel(lappdchannel);
 		}
+		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		// Add this detector to the geometry
 		anniegeom->AddDetector(adet);
+		if(verbose>4) cout<<"printing geometry"<<endl;
+		if(verbose>4) anniegeom->PrintChannels();
 	}
 	
 	// tank PMTs
@@ -592,10 +596,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 							channelstatus::ON);
 		
 		// Add this channel to the geometry
+		if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 		adet.AddChannel(pmtchannel);
 		
 		// Add this detector to the geometry
+		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
+		if(verbose>4) cout<<"printing geometry"<<endl;
+		if(verbose>4) anniegeom->PrintChannels();
 	}
 	
 	// mrd PMTs
@@ -645,10 +653,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 							channelstatus::ON);
 		
 		// Add this channel to the geometry
+		if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 		adet.AddChannel(pmtchannel);
 		
 		// Add this detector to the geometry
+		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
+		if(verbose>4) cout<<"printing geometry"<<endl;
+		if(verbose>4) anniegeom->PrintChannels();
 	}
 	
 	// veto PMTs
@@ -698,10 +710,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 							channelstatus::ON);
 		
 		// Add this channel to the geometry
+		if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 		adet.AddChannel(pmtchannel);
 		
 		// Add this detector to the geometry
+		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
+		if(verbose>4) cout<<"printing geometry"<<endl;
+		if(verbose>4) anniegeom->PrintChannels();
 	}
 	
 	// for other WCSim tools that may need the WCSim Tube IDs

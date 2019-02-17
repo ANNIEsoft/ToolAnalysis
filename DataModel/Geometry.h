@@ -189,6 +189,8 @@ class Geometry : public SerialisableObject{
 		return true;
 	}
 	
+	void PrintChannels();
+	
 	private:
 	unsigned long NextFreeDetectorKey;
 	unsigned long NextFreeChannelKey;
