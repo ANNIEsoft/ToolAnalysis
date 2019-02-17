@@ -1,3 +1,4 @@
+/* vim:set noexpandtab tabstop=2 wrap */
 /// This tool reads the raw data from the file and creates a DigitBuilder object
 /// Jingbo Wang <jiowang@ucdavis.edu>
 
@@ -19,51 +20,51 @@
 #include "Detector.h"
 
 class DigitBuilder: public Tool {
-
- public:
-
-  DigitBuilder();
-  ~DigitBuilder();
-  bool Initialise(std::string configfile,DataModel &data);
-  bool Execute();
-  bool Finalise();
-  static DigitBuilder* Instance();
-
- private:
- 	/// \brief Build reconstructed object in ANNIEEvent
-  ///
-  /// It loops over all PMT and LAPPD hits, adds hits to a RecoDigit vector
-  /// It also creates empty vertex and ring vectors
-  ///
-  /// \param[in] bool usetruth: buld event from MC simulation if usetruth=1
- 	bool BuildRecoDigit();
- 	
- 	/// \brief Build PMT digits
-  ///
-  /// It adds PMT hits to the RecoDigit list
- 	bool BuildPMTRecoDigit();
- 	
- 	/// \brief Build LAPPD digits
-  ///
-  /// It adds LAPPD hits to the RecoDigit list
- 	bool BuildLAPPDRecoDigit();
- 	
- 	/// \brief Push reco digits to ANNIEEvent
-  ///
-  /// It adds the vector of PMT and LAPPD digits to ANNIEEvent
- 	void PushRecoDigits(bool savetodisk);
- 	
- 	/// \brief Reset digits
- 	///
- 	/// Clear digit list
- 	void Reset();
- 	
-  ///
-  /// Fills the parameter name and appropriate parameter values into
-  /// the parameter container, to be used in the fit
+	
+	public:
+	
+	DigitBuilder();
+	~DigitBuilder();
+	bool Initialise(std::string configfile,DataModel &data);
+	bool Execute();
+	bool Finalise();
+	static DigitBuilder* Instance();
+	
+	private:
+	/// \brief Build reconstructed object in ANNIEEvent
+	///
+	/// It loops over all PMT and LAPPD hits, adds hits to a RecoDigit vector
+	/// It also creates empty vertex and ring vectors
+	///
+	/// \param[in] bool usetruth: buld event from MC simulation if usetruth=1
+	bool BuildRecoDigit();
+	
+	/// \brief Build PMT digits
+	///
+	/// It adds PMT hits to the RecoDigit list
+	bool BuildPMTRecoDigit();
+	
+	/// \brief Build LAPPD digits
+	///
+	/// It adds LAPPD hits to the RecoDigit list
+	bool BuildLAPPDRecoDigit();
+	
+	/// \brief Push reco digits to ANNIEEvent
+	///
+	/// It adds the vector of PMT and LAPPD digits to ANNIEEvent
+	void PushRecoDigits(bool savetodisk);
+	
+	/// \brief Reset digits
+	///
+	/// Clear digit list
+	void Reset();
+	
+	///
+	/// Fills the parameter name and appropriate parameter values into
+	/// the parameter container, to be used in the fit
 	void ClearDigitList() {fDigitList->clear();}
- 	
-  int verbosity=1;
+	
+	int verbosity=1;
 	std::string fInputfile;
 	unsigned long fNumEvents;
 	
@@ -76,7 +77,7 @@ class DigitBuilder: public Tool {
 	std::vector<int> fLAPPDId; ///< selected LAPPDs
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
-
+	
 	Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
 	std::map<unsigned long,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
 	std::map<unsigned long,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
@@ -93,23 +94,23 @@ class DigitBuilder: public Tool {
 	///RecoEvent information
 	bool fEventCutStatus;
 	/// Reconstructed information
-	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
+	std::vector<RecoDigit>* fDigitList;  ///< Reconstructed Hits including both LAPPD hits and PMT hits
 	
 //	/// \brief ROOT TFile that will be used to store the output from this tool
-//  std::unique_ptr<TFile> fOutput_tfile = nullptr;
-//
-//  /// \brief TTree that will be used to store output
-//  TTree* fDigitTree = nullptr;
-//  
-//  /// \brief Branch variables
-//  /// Digits
-//  int fNhits;
-//  std::vector<double> fDigitX;
-//  std::vector<double> fDigitY;
-//  std::vector<double> fDigitZ;
-//  std::vector<double> fDigitT;
-//  std::vector<double> fDigitQ;    
-//  std::vector<int> fDigitType;
+//	std::unique_ptr<TFile> fOutput_tfile = nullptr;
+//	
+//	/// \brief TTree that will be used to store output
+//	TTree* fDigitTree = nullptr;
+//	
+//	/// \brief Branch variables
+//	/// Digits
+//	int fNhits;
+//	std::vector<double> fDigitX;
+//	std::vector<double> fDigitY;
+//	std::vector<double> fDigitZ;
+//	std::vector<double> fDigitT;
+//	std::vector<double> fDigitQ;
+//	std::vector<int> fDigitType;
 	
 	// retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
 	// Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates
