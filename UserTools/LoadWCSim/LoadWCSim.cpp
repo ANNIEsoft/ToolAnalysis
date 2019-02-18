@@ -585,6 +585,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		Channel pmtchannel( uniquechannelkey,
 							Position(0,0,0.),
 							0, // stripside
+							0, // stripnum
 							ADC_Crate_Num,
 							ADC_Card_Num,
 							ADC_Chan_Num,
@@ -642,6 +643,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		Channel pmtchannel( uniquechannelkey,
 							Position(0,0,0.),
 							0, // stripside
+							0, // stripnum
 							TDC_Crate_Num,
 							TDC_Card_Num,
 							TDC_Chan_Num,
@@ -699,6 +701,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		Channel pmtchannel( uniquechannelkey,
 							Position(0,0,0.),
 							0, // stripside
+							0, // stripnum
 							TDC_Crate_Num,
 							TDC_Card_Num,
 							TDC_Chan_Num,

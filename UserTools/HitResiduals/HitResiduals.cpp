@@ -98,7 +98,7 @@ bool HitResiduals::Execute(){
 			double distance = sqrt(pow((tubeposition.X()-muonvertex.X()),2.)+
 								   pow((tubeposition.Y()-muonvertex.Y()),2.)+
 								   pow((tubeposition.Z()-muonvertex.Z()),2.));
-			if(chankey.GetSubDetectorType()==subdetector::ADC){  // ADC, LAPPD, TDC
+			if(thistube->GetDetectorElement()=="Tank"){  // ADC, LAPPD, TDC
 				std::vector<Hit>& hits = apair.second;
 				for(Hit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
@@ -124,7 +124,7 @@ bool HitResiduals::Execute(){
 			double distance = sqrt(pow((tubeposition.X()-muonvertex.X()),2.)+
 								   pow((tubeposition.Y()-muonvertex.Y()),2.)+
 								   pow((tubeposition.Z()-muonvertex.Z()),2.));
-			if(chankey.GetSubDetectorType()==subdetector::LAPPD){  // ADC, LAPPD, TDC
+			if(thistube->GetDetectorElement()=="LAPPD"){  // ADC, LAPPD, TDC
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
