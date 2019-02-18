@@ -15,7 +15,6 @@
 #include "TriggerClass.h"
 #include "Geometry.h"
 #include "MRDspecs.hh"
-#include "ChannelKey.h"
 #include "Detector.h"
 #include "BeamStatus.h"
 

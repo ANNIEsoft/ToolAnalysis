@@ -97,7 +97,7 @@ bool WCSimDemo::Execute(){
 	// see Particle.h for other information in the MCParticle class
 	
 	// now move to digit retrieval
-	// MCHits is a std::map<ChannelKey,std::vector<Hit>>
+	// MCHits is a std::map<unsigned long,std::vector<Hit>>
 	if(MCHits){
 		Log("WCSimDemo Tool: Num PMT Digits = "+to_string(MCHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement
@@ -118,7 +118,7 @@ bool WCSimDemo::Execute(){
 	}
 	
 	// repeat for LAPPD hits
-	// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>
+	// MCLAPPDHits is a std::map<unsigned long,std::vector<LAPPDHit>>
 	if(MCLAPPDHits){
 		Log("WCSimDemo Tool: Num LAPPD Digits = "+to_string(MCLAPPDHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement

@@ -85,9 +85,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>2){
 			cout<<"MCHits : {"<<endl;
 			for(auto&& achannel : *MCHits){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& hits = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Hits : "<<endl;
 				for(auto&& ahit : hits) ahit.Print();
 				cout<<endl;
@@ -102,9 +102,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>2){
 			cout<<"MCLAPPDHits : {"<<endl;
 			for(auto&& achannel : *MCLAPPDHits){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& hits = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Hits : "<<endl;
 				for(auto&& ahit : hits) ahit.Print();
 				cout<<endl;
@@ -119,9 +119,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>2){
 			cout<<"TDCData : {"<<endl;
 			for(auto&& achannel : *TDCData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& hits = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Hits : "<<endl;
 				for(auto&& ahit : hits) ahit.Print();
 				cout<<endl;
@@ -136,9 +136,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"RawADCData : {"<<endl;
 			for(auto&& achannel : *RawADCData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;
@@ -156,9 +156,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"RawLAPPDData : {"<<endl;
 			for(auto&& achannel : *RawLAPPDData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;
@@ -176,9 +176,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"CalibratedADCData : {"<<endl;
 			for(auto&& achannel : *CalibratedADCData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;
@@ -196,9 +196,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"CalibratedLAPPDData : {"<<endl;
 			for(auto&& achannel : *CalibratedLAPPDData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;

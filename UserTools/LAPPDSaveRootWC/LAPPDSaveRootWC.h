@@ -6,7 +6,6 @@
 #include "TFile.h"
 #include "TH1D.h"
 #include "TString.h"
-#include "ChannelKey.h"
 #include "Tool.h"
 
 class LAPPDSaveRootWC: public Tool {

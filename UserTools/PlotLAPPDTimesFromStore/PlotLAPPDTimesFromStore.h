@@ -28,11 +28,12 @@ class PlotLAPPDTimesFromStore: public Tool {
   TimeClass* EventTime=nullptr;
   uint64_t MCEventNum;
   uint16_t MCTriggernum;
-  std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
+  std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
   std::vector<MCParticle>* MCParticles=nullptr;
   TApplication* lappdRootDrawApp;
   TCanvas* lappdRootCanvas;
   TH1D* digitime, *digitimewithmuon, *mutime;
+  Geometry* anniegeom=nullptr;
   
   // verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int v_error=0;

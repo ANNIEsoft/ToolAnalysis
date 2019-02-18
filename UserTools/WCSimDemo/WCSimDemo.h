@@ -7,7 +7,6 @@
 #include <sstream>
 
 #include "Tool.h"
-#include "ChannelKey.h"
 #include "Particle.h"
 #include "Hit.h"
 #include "LAPPDHit.h"

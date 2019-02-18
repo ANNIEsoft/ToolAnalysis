@@ -27,7 +27,6 @@ struct NCVPositionInfo {
 };
 
 class ADCPulse;
-class ChannelKey;
 
 class PhaseITreeMaker : public Tool {
 

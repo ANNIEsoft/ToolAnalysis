@@ -40,7 +40,7 @@ bool ADCHitFinder::Execute() {
     }
 
     // Load the map containing the ADC raw waveform data
-    std::map<ChannelKey, std::vector<Waveform<unsigned short> > >
+    std::map<unsigned long, std::vector<Waveform<unsigned short> > >
       raw_waveform_map;
 
     bool got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
@@ -58,7 +58,7 @@ bool ADCHitFinder::Execute() {
     }
 
     // Load the map containing the ADC calibrated waveform data
-    std::map<ChannelKey, std::vector<CalibratedADCWaveform<double> > >
+    std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
       calibrated_waveform_map;
 
     bool got_calibrated_data = annie_event->Get("CalibratedADCData",
@@ -84,7 +84,7 @@ bool ADCHitFinder::Execute() {
     m_variables.Get("DefaultThresholdType", default_threshold_type);
 
     // Build the map of pulses
-    std::map<ChannelKey, std::vector< std::vector<ADCPulse> > > pulse_map;
+    std::map<unsigned long, std::vector< std::vector<ADCPulse> > > pulse_map;
 
     for (const auto& temp_pair : raw_waveform_map) {
       const auto& channel_key = temp_pair.first;
@@ -106,7 +106,7 @@ bool ADCHitFinder::Execute() {
       // If the user has not set a specific ADC threshold for the current
       // channel, then use the default
       bool user_set_threshold = m_variables.Get("ADCThresholdForChannel"
-        + std::to_string( channel_key.GetDetectorElementIndex() ), adc_threshold);
+        + std::to_string( channel_key ), adc_threshold);
       if ( !user_set_threshold ) adc_threshold = default_adc_threshold;
 
       std::vector< std::vector<ADCPulse> > pulse_vec;
@@ -124,7 +124,7 @@ bool ADCHitFinder::Execute() {
 
         if (mb == 0) Log("ADCHitFinder will use ADC threshold = "
           + std::to_string(adc_threshold) + " for channel "
-          + std::to_string( channel_key.GetDetectorElementIndex() ),
+          + std::to_string( channel_key ),
           2, verbosity);
 
           pulse_vec.push_back(find_pulses(raw_waveforms.at(mb),
@@ -158,7 +158,7 @@ bool ADCHitFinder::Finalise() {
 std::vector<ADCPulse> ADCHitFinder::find_pulses(
   const Waveform<unsigned short>& raw_minibuffer_data,
   const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
-  unsigned short adc_threshold, const ChannelKey& channel_key) const
+  unsigned short adc_threshold, const unsigned long& channel_key) const
 {
   if ( raw_minibuffer_data.Samples().size()
     != calibrated_minibuffer_data.Samples().size() )
@@ -228,7 +228,7 @@ std::vector<ADCPulse> ADCHitFinder::find_pulses(
       // from the start of another)
 
       // Store the freshly made pulse in the vector of found pulses
-      pulses.emplace_back(channel_key.GetDetectorElementIndex(),
+      pulses.emplace_back(channel_key,
         ( pulse_start_sample * NS_PER_SAMPLE ),
         peak_sample * NS_PER_SAMPLE,
         calibrated_minibuffer_data.GetBaseline(),

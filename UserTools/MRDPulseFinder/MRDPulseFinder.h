@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "ChannelKey.h"
 #include "Waveform.h"
 #include "ADCPulse.h"
 #include "CalibratedADCWaveform.h"
@@ -31,8 +30,8 @@ class MRDPulseFinder: public Tool {
    double sigbline;
    int channelno;
    int minibuffernum;
-   std::map<ChannelKey, std::vector<Waveform<unsigned short>>> rawadcdata;
-   std::map<ChannelKey, std::vector<CalibratedADCWaveform<double>>> caladc;
+   std::map<unsigned long, std::vector<Waveform<unsigned short>>> rawadcdata;
+   std::map<unsigned long, std::vector<CalibratedADCWaveform<double>>> caladc;
 
 
 };

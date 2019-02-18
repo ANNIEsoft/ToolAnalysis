@@ -49,6 +49,13 @@ bool PlotLAPPDTimesFromStore::Initialise(std::string configfile, DataModel &data
 //	digitimewithmuon = new TH1D("lappdstoretimes_withmuon","lappd digitimes for events w/ a muon",100,6660,6720);
 //	mutime = new TH1D("muonstoretimes","muon start times from store",100,6660,6720);
 	
+	// Get the anniegeom
+	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+	if(not get_ok){
+		Log("PlotLAPPDTimesFromStore: Could not get the AnnieGeometry from ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
+	
 	return true;
 }
 
@@ -110,12 +117,14 @@ bool PlotLAPPDTimesFromStore::Execute(){
 	
 	if(MCLAPPDHits){
 		Log("MCLAPPDHits has "+to_string(MCLAPPDHits->size())+" entries",v_message,verbosity);
-		// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>*
+		// MCLAPPDHits is a std::map<unsigned long,std::vector<LAPPDHit>>*
 		//std::cout<<"LAPPD hits at: ";
 		for(auto&& achannel : *MCLAPPDHits){
-			ChannelKey chankey = achannel.first;
+			unsigned long chankey = achannel.first;
+			Detector* thedet = anniegeom->ChannelToDetector(chankey);
+			int detid = thedet->GetDetectorID();
 			auto& hits = achannel.second;
-			logmessage = "tile "+to_string(chankey.GetDetectorElementIndex())
+			logmessage = "tile "+to_string(detid)
 						+" has "+to_string(hits.size())+" hits";
 			Log(logmessage,v_message,verbosity);
 			for(auto&& ahit : hits){

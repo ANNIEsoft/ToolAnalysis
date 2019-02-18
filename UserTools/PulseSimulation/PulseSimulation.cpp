@@ -76,14 +76,14 @@ bool PulseSimulation::Execute(){
 	}
 	
 	// Get the Hits
-	std::map<ChannelKey,std::vector<Hit>>* MCHits=nullptr;
+	std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
 	std::cout<<"getting MCHits"<<endl;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCHits",MCHits);
 	if(not get_ok){
 		Log("PulseSimulation Tool: Failed to get hits from ANNIEEvent!",v_error,verbosity);
 		return false;
 	}
-	std::map<ChannelKey,std::vector<Hit>>* TDCData=nullptr;
+	std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
 	std::cout<<"getting TDCData"<<endl;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
 	if(not get_ok){
@@ -119,7 +119,7 @@ bool PulseSimulation::Execute(){
 	// convert hits into pulses
 	logmessage="PulseSimulation Tool: Looping over Digits on "+to_string(MCHits->size())+" hit PMTs";
 	Log(logmessage,v_debug,verbosity);
-	for(std::pair<ChannelKey,std::vector<Hit>>&& hitsonapmt : (*MCHits)){
+	for(std::pair<unsigned long,std::vector<Hit>>&& hitsonapmt : (*MCHits)){
 		std::vector<Hit>* hitsonthistube = &(hitsonapmt.second);
 		if(verbosity>v_debug){
 			int thetubeid=hitsonthistube->front().GetTubeId();
@@ -149,7 +149,7 @@ bool PulseSimulation::Execute(){
 	logmessage="PulseSimulation Tool: Looping over TDC Digits on "
 		+to_string(TDCData->size())+" hit paddles";
 	Log(logmessage,v_debug,verbosity);
-	for(std::pair<ChannelKey,std::vector<Hit>>&& hitsonapmt : (*TDCData)){
+	for(std::pair<unsigned long,std::vector<Hit>>&& hitsonapmt : (*TDCData)){
 		std::vector<Hit>* hitsonthistube = &(hitsonapmt.second);
 		if(verbosity>v_debug){
 			int thetubeid=hitsonthistube->front().GetTubeId();

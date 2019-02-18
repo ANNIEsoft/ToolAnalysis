@@ -243,7 +243,6 @@ bool LoadWCSim::Execute(){
 		}
 		if(verbose>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
 		
-		// n.b. ChannelKey is currently typedef'd as an int: it's just a unique PMT id for MRD+Tank+FACC
 		WCSimRootTrigger* firsttrig=WCSimEntry->wcsimrootevent->GetTrigger(0);  // photons are all in first trig
 		int numtankdigits = atrigt ? atrigt->GetCherenkovDigiHits()->GetEntries() : 0;
 		if(verbose>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
