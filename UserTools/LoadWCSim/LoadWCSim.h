@@ -38,6 +38,7 @@ private:
 	WCSimRootTrigger* atrigt, *atrigm, *atrigv;
 	WCSimRootGeom* wcsimrootgeom;
 	WCSimRootOptions* wcsimrootopts;
+	int FILE_VERSION;   // WCSim version
 	
 	long NumEvents;
 	
