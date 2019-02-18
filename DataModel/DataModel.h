@@ -44,8 +44,6 @@ class DataModel {
 
  public:
 
-  
-
   DataModel();
 
   //TTree* GetTTree(std::string name);
