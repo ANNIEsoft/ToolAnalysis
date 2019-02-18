@@ -15,8 +15,14 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MRDDataPath", MRDDataPath);
   m_variables.Print();
   
-  MRDData=new BoostStore(false,2);
-  MRDData->Initialise(MRDDataPath);
+  BoostStore* indata=new BoostStore(false,0); //tis leaks but its jsut for testing
+  indata->Initialise(MRDDataPath);
+
+  MRDData= new BoostStore(false,2);
+  indata->Get("CCData",MRDData);
+
+  //MRDData=new BoostStore(false,2);
+  //MRDData->Initialise(MRDDataPath);
 
   srand(time(NULL));
 
