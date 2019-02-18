@@ -13,15 +13,31 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   m_variables.Get("MRDDataPath", MRDDataPath);
-  m_variables.Print();
+  //m_variables.Print();
   
-  MRDData=new BoostStore(false,2);
-  MRDData->Initialise(MRDDataPath);
+
+  //std::cout<<"d1"<<std::endl;
+  BoostStore* indata=new BoostStore(false,0); //tis leaks but its jsut for testing
+  //std::cout<<"d2"<<std::endl;  
+  indata->Initialise(MRDDataPath);
+
+  //indata->Print(false);
+
+ //std::cout<<"d3"<<std::endl;
+ MRDData= new BoostStore(false,2);
+ MRDData2= new BoostStore(false,2);
+  //std::cout<<"d4"<<std::endl;  
+  indata->Get("CCData",*MRDData);
+  indata->Get("CCData",*MRDData2);
+ //std::cout<<"d5"<<std::endl;
+  //MRDData=new BoostStore(false,2);
+  //MRDData->Initialise(MRDDataPath);
 
   srand(time(NULL));
-
+  //std::cout<<"d6"<<std::endl;
   m_data->Stores["CCData"]=new BoostStore(false,2);  
-
+  //  m_data->Stores["CCData"]->Save("tmp");
+  //std::cout<<"d7"<<std::endl;
   return true;
 }
 
@@ -34,25 +50,34 @@ bool MonitorSimReceive::Execute(){
 
   
   if(!a){
-
+    //std::cout<<"f1"<<std::endl;
     int event=rand() % 1000;
-
+    //std::cout<<"f2"<<std::endl;
     std::string State="MRDSingle";
     m_data->CStore.Set("State",State);
-
+    //std::cout<<"f3"<<std::endl;
     MRDOut tmp;
+    //MRDData->Print(false);
+    long entries;
+    MRDData->Header->Get("TotalEntries",entries);
+    //std::cout<<"f4 "<< entries<<" "<<event<<std::endl;
     MRDData->GetEntry(event);
+    //std::cout<<"f5"<<std::endl;
     MRDData->Get("Data", tmp);
+    //std::cout<<"f6"<<std::endl;
     m_data->Stores["CCData"]->Set("Single",tmp);
-
+    //std::cout<<"f7"<<std::endl;
   }
   else if(!b){
-
+    //std::cout<<"f8"<<std::endl;
     std::string State="DataFile";
+    //std::cout<<"f9"<<std::endl;
     m_data->CStore.Set("State",State);
-
+    //std::cout<<"f10"<<std::endl;
     //m_data->Stores["CCData"]->Set("FileData",MRDData,false);        //false option creates problems in the monitoring tools--> check later
-    m_data->Stores["CCData"]->Set("FileData",MRDData);
+    MRDData2->Save("tmp");
+    m_data->Stores["CCData"]->Set("FileData",MRDData2);
+    //std::cout<<"f11"<<std::endl;
 
   }
   else{

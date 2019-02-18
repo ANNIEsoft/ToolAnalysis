@@ -31,6 +31,7 @@ private:
 
 	int verbose=1;
 	int HistoricTriggeroffset;
+	int use_smeared_digit_time;   // digit_time = (T): first photon smeared time, (F): first photon true time
 	// WCSim variables
 	TFile* file;
 	TTree* wcsimtree;
@@ -38,6 +39,7 @@ private:
 	WCSimRootTrigger* atrigt, *atrigm, *atrigv;
 	WCSimRootGeom* wcsimrootgeom;
 	WCSimRootOptions* wcsimrootopts;
+	int FILE_VERSION;   // WCSim version
 	
 	long NumEvents;
 	
