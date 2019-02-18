@@ -311,14 +311,18 @@ bool LoadWCSim::Execute(){
 			} else {
 				// instead take the true time of the first photon
 				std::vector<int> photonids = digihit->GetPhotonIds();   // indices of the digit's photons
-				int first_photon_index = photonids.front();
-				WCSimRootCherenkovHitTime* thehittimeobject =
-					 (WCSimRootCherenkovHitTime*)firsttrig->GetCherenkovHitTimes()->At(first_photon_index);
-				if(thehittimeobject==nullptr){
-					cerr<<"LoadWCSim Tool: ERROR! Retrieval of first photon from digit returned nullptr!"<<endl;
-					continue;
+				double earliestphotontruetime=999999999999;
+				for(int& aphotonindex : photonids){
+					WCSimRootCherenkovHitTime* thehittimeobject =
+						 (WCSimRootCherenkovHitTime*)firsttrig->GetCherenkovHitTimes()->At(aphotonindex);
+					if(thehittimeobject==nullptr){
+						cerr<<"LoadWCSim Tool: ERROR! Retrieval of photon from digit returned nullptr!"<<endl;
+						continue;
+					}
+					double aphotontime = static_cast<double>(thehittimeobject->GetTruetime());
+					if(aphotontime<earliestphotontruetime){ earliestphotontruetime = aphotontime; }
 				}
-				digittime = static_cast<double>(thehittimeobject->GetTruetime());
+				digittime = earliestphotontruetime;
 			}
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
