@@ -122,7 +122,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// tank pmts
 	for(int i=0; i<numtankpmts; i++){
 		ChannelKey akey(subdetector::ADC, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetPMT(i+1);
+		WCSimRootPMT apmt = wcsimrootgeom->GetPMT(i);
 		Detector adet("Tank", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
 		               Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		               i, apmt.GetName(), detectorstatus::ON, 0.);
@@ -131,7 +131,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// mrd pmts
 	for(int i=0; i<nummrdpmts; i++){
 		ChannelKey akey(subdetector::TDC, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(i+1);
+		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(i);
 		Detector adet("MRD", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
 		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		              i, apmt.GetName(), detectorstatus::ON, 0.);
@@ -149,7 +149,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// lappds
 	for(int i=0; i<numlappds; i++){
 		ChannelKey akey(subdetector::LAPPD, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetLAPPD(i+1);
+		WCSimRootPMT apmt = wcsimrootgeom->GetLAPPD(i);
 		Detector adet("Tank", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
 		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
 		              i, apmt.GetName(), detectorstatus::ON, 0.);
