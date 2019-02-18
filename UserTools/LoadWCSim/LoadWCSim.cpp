@@ -20,6 +20,10 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbose",verbose);
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
+	m_variables.Get("UseDigitSmearedTime",use_smeared_digit_time);
+	m_variables.Get("WCSimVersion",FILE_VERSION);
+	// put in the CStore for downstream tools
+	m_data->CStore.Set("WCSimVersion",FILE_VERSION);
 	
 	// Short Stores README
 	//////////////////////
@@ -195,6 +199,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	atrigt = WCSimEntry->wcsimrootevent->GetTrigger(0);
 	TimeClass RunStartTime(atrigt->GetHeader()->GetDate());
 	MCEventNum=0;
+	MCFile = wcsimtree->GetCurrentFile()->GetName();
+	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
@@ -288,17 +294,36 @@ bool LoadWCSim::Execute(){
 		if(verbose>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
 		
 		// n.b. ChannelKey is currently typedef'd as an int: it's just a unique PMT id for MRD+Tank+FACC
+		WCSimRootTrigger* firsttrig=WCSimEntry->wcsimrootevent->GetTrigger(0);  // photons are all in first trig
 		int numtankdigits = atrigt ? atrigt->GetCherenkovDigiHits()->GetEntries() : 0;
 		if(verbose>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
 		for(int digiti=0; digiti<numtankdigits; digiti++){
 			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigt->GetCherenkovDigiHits()->At(digiti);
-			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ()
+			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ(), GetPhotonIds()
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId();
+			int tubeid = digihit->GetTubeId()-1;  // WCSim Digi TubeIds start from 1!
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
+			double digittime;
+			if(use_smeared_digit_time){
+				digittime = static_cast<double>(digihit->GetT()-HistoricTriggeroffset); // relative to trigger
+			} else {
+				// instead take the true time of the first photon
+				std::vector<int> photonids = digihit->GetPhotonIds();   // indices of the digit's photons
+				double earliestphotontruetime=999999999999;
+				for(int& aphotonindex : photonids){
+					WCSimRootCherenkovHitTime* thehittimeobject =
+						 (WCSimRootCherenkovHitTime*)firsttrig->GetCherenkovHitTimes()->At(aphotonindex);
+					if(thehittimeobject==nullptr){
+						cerr<<"LoadWCSim Tool: ERROR! Retrieval of photon from digit returned nullptr!"<<endl;
+						continue;
+					}
+					double aphotontime = static_cast<double>(thehittimeobject->GetTruetime());
+					if(aphotontime<earliestphotontruetime){ earliestphotontruetime = aphotontime; }
+				}
+				digittime = earliestphotontruetime;
+			}
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
@@ -319,7 +344,7 @@ bool LoadWCSim::Execute(){
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(digiti);
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId() + numvetopmts;
+			int tubeid = digihit->GetTubeId()-1 + numvetopmts;
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
 			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
@@ -342,7 +367,7 @@ bool LoadWCSim::Execute(){
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigv->GetCherenkovDigiHits()->At(digiti);
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId();
+			int tubeid = digihit->GetTubeId()-1;
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
 			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
 			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
@@ -389,14 +414,13 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
+	m_data->CStore.Set("NumTriggersThisMCEvt",WCSimEntry->wcsimrootevent->GetNumberOfEvents());
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
 	//RawLAPPDData
 	//CalibratedLAPPDData
 	//RecoParticles
-	
-	// Save the entry to the BoostStore  - done in SaveANNIEEvent tool at end of ToolChain
 	
 	EventNumber++;
 	MCTriggernum++;

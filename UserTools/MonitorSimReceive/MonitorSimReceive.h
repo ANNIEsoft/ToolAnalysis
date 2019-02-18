@@ -23,7 +23,7 @@ class MonitorSimReceive: public Tool {
 
   std::string MRDDataPath;
   BoostStore* MRDData;
-
+  BoostStore* MRDData2;
 
 
 
