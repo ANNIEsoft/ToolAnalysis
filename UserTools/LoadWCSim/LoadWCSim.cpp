@@ -19,13 +19,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// ====================================
 	m_variables.Get("verbose", verbose);
 	m_variables.Get("InputFile", MCFile);
-	m_variables.Get("LappdNumStrips", LappdNumStrips);
-	m_variables.Get("LappdStripLength", LappdStripLength);          // [mm]
-	m_variables.Get("LappdStripSeparation", LappdStripSeparation);  // [mm]
 	m_variables.Get("HistoricTriggeroffset", HistoricTriggeroffset); // [ns]
-	m_variables.Get("UseDigitSmearedTime", use_smeared_digit_time);
 	m_variables.Get("WCSimVersion", FILE_VERSION);
-	// put in the CStore for downstream tools
+	m_variables.Get("UseDigitSmearedTime", use_smeared_digit_time);
+	m_variables.Get("LappdNumStrips", LappdNumStrips);
+	m_variables.Get("LappdStripLength", LappdStripLength);           // [mm]
+	m_variables.Get("LappdStripSeparation", LappdStripSeparation);   // [mm]
+	// put version in the CStore for downstream tools
 	m_data->CStore.Set("WCSimVersion", FILE_VERSION);
 	
 	// Short Stores README
@@ -220,7 +220,6 @@ bool LoadWCSim::Execute(){
 			
 			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
 			//MC particle times are relative to the trigger time
-			// e.g. primary neutrino time is -1, but TimeClass accepts uint64_t - UNSIGNED = becomes 18446744073709551615
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0) / 100.,
@@ -254,7 +253,7 @@ bool LoadWCSim::Execute(){
 				(WCSimRootCherenkovDigiHit*)atrigt->GetCherenkovDigiHits()->At(digiti);
 			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ(), GetPhotonIds()
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId()-1;  // WCSim Digi TubeIds start from 1!
+			int tubeid = digihit->GetTubeId();  // geometry TubeID->channelkey map is made INCLUDING offset of 1
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
 			if(pmt_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: tank PMT with no associated ChannelKey!"<<endl;
@@ -300,7 +299,7 @@ bool LoadWCSim::Execute(){
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(digiti);
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId()-1;
+			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
 			if(mrd_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: MRD PMT with no associated ChannelKey!"<<endl;
@@ -327,7 +326,7 @@ bool LoadWCSim::Execute(){
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigv->GetCherenkovDigiHits()->At(digiti);
 			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId()-1;
+			int tubeid = digihit->GetTubeId();
 			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
 			if(facc_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: FACC PMT with no associated ChannelKey!"<<endl;
