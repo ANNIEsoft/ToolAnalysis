@@ -106,10 +106,10 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 		char *myargv[] = {(const char*)"somestring"};
 		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
 		lappdhitshist = new TPolyMarker3D();
-		digixpos = new TH1D("digixpos","digixpos",100,-2,2);
-		digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
-		digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
-		digits = new TH1D("digits","digits",100,-50,100);
+		digixpos = new TH1D("digixpos","lappd digixpos",100,-2,2);
+		digiypos = new TH1D("digiypos","lappd digiypos",100,-2.5,2.5);
+		digizpos = new TH1D("digizpos","lappd digizpos",100,0.,4.);
+		digits = new TH1D("digits","lappd digits",100,-50,100);
 	}
 	
 	return true;
@@ -307,19 +307,26 @@ bool LoadWCSimLAPPD::Finalise(){
 		
 		digixpos->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digixpos.png");
+		lappdRootCanvas->SaveAs("lappddigixpos.png");
 		
 		digiypos->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digiypos.png");
+		lappdRootCanvas->SaveAs("lappddigiypos.png");
 		
 		digizpos->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digizpos.png");
+		lappdRootCanvas->SaveAs("lappddigizpos.png");
 		
 		digits->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digits.png");
+		lappdRootCanvas->SaveAs("lappddigits.png");
+		//lappdRootCanvas->SetLogy(1);  // spits errors about negative axis
+		gPad->SetLogy(1);
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("lappddigits_logy.png");
+		//lappdRootCanvas->SetLogy(0);
+		gPad->SetLogy(0);
+
 		
 		lappdRootCanvas->Clear();
 		gStyle->SetOptStat(0);
