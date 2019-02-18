@@ -1,6 +1,5 @@
 // ToolAnalysis includes
 #include "ANNIEconstants.h"
-#include "ChannelKey.h"
 #include "MinibufferLabel.h"
 #include "RawLoader.h"
 #include "Waveform.h"

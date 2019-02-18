@@ -102,11 +102,10 @@ bool FindMrdTracks::Execute(){
 		//WCSimRootCherenkovDigiHit* digihit =
 		//	(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(i);
 		/*
-		digihit is of type std::pair<ChannelKey,vector<TDCHit>>,
-		ChannelKey has members SubDetectorIndex (uint) and DetectorElementIndex (uint)
-		TDCHit has members Time,
+		digihit is of type std::pair<unsigned long,vector<TDCHit>>,
+		the unsigned long is a unique number allocated to all signal channels
 		*/
-	
+		
 		unsigned long chankey = anmrdpmt.first;
 		Detector* thedetector = geo->ChannelToDetector(chankey);
 		int wcsimtubeid = channelkey_to_mrdpmtid.at(chankey);
@@ -141,7 +140,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			nummrdsubeventsthiseventb->Fill();
 			nummrdtracksthiseventb->Fill();
 			subeventsinthiseventb->Fill();
-			//mrdtree->Fill();						// fill the branches so the entries align.
+			//mrdtree->Fill();                // fill the branches so the entries align.
 			mrdtrackfile->cd();
 			mrdtree->SetEntries(nummrdtracksthiseventb->GetEntries());
 			mrdtree->Write("",TObject::kOverwrite);
@@ -331,7 +330,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			particleidsinasubevent.assign(digittimesinasubevent.size(),0); // FIXME replacement of above
 			
 			// construct the subevent from all the digits
-			if(digitidsinasubevent.size()>=minimumdigits){	// must have enough for a subevent
+			if(digitidsinasubevent.size()>=minimumdigits){  // must have enough for a subevent
 				// pull true tracks in window to draw overlaid on reconstructed tracks
 				// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				//std::vector<WCSimRootTrack*> truetrackpointers;               // removed from cMRDSubEvent

@@ -6,7 +6,6 @@
 
 #include "Tool.h"
 #include "Geometry.h"
-#include "ChannelKey.h"
 #include "Hit.h"
 #include "MRDSubEventClass.hh"      // a class for defining subevents
 #include "MRDTrackClass.hh"         // a class for defining MRD tracks

@@ -33,7 +33,7 @@ bool ADCCalibrator::Execute() {
   }
 
   // Load the map containing the ADC raw waveform data
-  std::map<ChannelKey, std::vector<Waveform<unsigned short> > >
+  std::map<unsigned long, std::vector<Waveform<unsigned short> > >
     raw_waveform_map;
 
   bool got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
@@ -51,7 +51,7 @@ bool ADCCalibrator::Execute() {
   }
 
   // Build the calibrated waveforms
-  std::map<ChannelKey, std::vector<CalibratedADCWaveform<double> > >
+  std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
     calibrated_waveform_map;
 
   for (const auto& temp_pair : raw_waveform_map) {
@@ -59,7 +59,7 @@ bool ADCCalibrator::Execute() {
     const auto& raw_waveforms = temp_pair.second;
 
     Log("Making calibrated waveforms for ADC channel " +
-      std::to_string(channel_key.GetDetectorElementIndex()), 3, verbosity);
+      std::to_string(channel_key), 3, verbosity);
 
     calibrated_waveform_map[channel_key] = make_calibrated_waveforms(
       raw_waveforms);

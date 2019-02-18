@@ -151,7 +151,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 	int digitType = -999;
 	Detector* det=nullptr;
 	Position  pos_sim, pos_reco;
-	/// MCHits is a std::map<ChannelKey,std::vector<Hit>>
+	/// MCHits is a std::map<unsigned long,std::vector<Hit>>
 	if(fMCHits){
 		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fMCHits->size()),v_message, verbosity);
 		/// iterate over the map of sensors with a measurement
@@ -229,7 +229,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	Detector* det=nullptr;
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
-	// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>
+	// MCLAPPDHits is a std::map<unsigned long,std::vector<LAPPDHit>>
 	if(fMCLAPPDHits){
 		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fMCLAPPDHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement

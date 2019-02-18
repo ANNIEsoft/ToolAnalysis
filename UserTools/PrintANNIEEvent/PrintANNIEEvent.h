@@ -7,7 +7,6 @@
 #include <sstream>
 
 #include "Tool.h"
-#include "ChannelKey.h"
 #include "Particle.h"
 #include "Waveform.h"
 #include "Hit.h"
@@ -38,13 +37,13 @@ class PrintANNIEEvent: public Tool {
 	uint32_t EventNumber;
 	std::vector<MCParticle>* MCParticles=nullptr;
 	std::vector<Particle>* RecoParticles=nullptr;
-	std::map<ChannelKey,std::vector<Hit>>* MCHits=nullptr;
-	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
-	std::map<ChannelKey,std::vector<Hit>>* TDCData=nullptr;
-	std::map<ChannelKey,std::vector<Waveform<uint16_t>>>* RawADCData=nullptr;
-	std::map<ChannelKey,std::vector<Waveform<uint16_t>>>* RawLAPPDData=nullptr;
-	std::map<ChannelKey,std::vector<Waveform<double>>>* CalibratedADCData=nullptr;
-	std::map<ChannelKey,std::vector<Waveform<double>>>* CalibratedLAPPDData=nullptr;
+	std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
+	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
+	std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>>* RawADCData=nullptr;
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>>* RawLAPPDData=nullptr;
+	std::map<unsigned long,std::vector<Waveform<double>>>* CalibratedADCData=nullptr;
+	std::map<unsigned long,std::vector<Waveform<double>>>* CalibratedLAPPDData=nullptr;
 	std::vector<TriggerClass>* TriggerData=nullptr;
 	bool MCFlag;
 	TimeClass* EventTime=nullptr;

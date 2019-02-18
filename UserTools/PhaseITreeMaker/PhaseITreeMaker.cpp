@@ -6,7 +6,6 @@
 #include "ANNIEconstants.h"
 #include "BeamStatus.h"
 #include "BoostStore.h"
-#include "ChannelKey.h"
 #include "HeftyInfo.h"
 #include "MinibufferLabel.h"
 #include "PhaseITreeMaker.h"
