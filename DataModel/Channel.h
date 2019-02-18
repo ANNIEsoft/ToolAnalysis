@@ -12,13 +12,14 @@ class Channel : public SerialisableObject{
 	
 	public:
 	
-	Channel() : ChannelID(-1), channelrelposition(Position(-1,-1,-1)), stripside(2), signal_crate(-1), signal_card(-1), signal_channel(-1), level2_crate(-1), level2_card(-1), level2_channel(-1), hv_crate(-1), hv_card(-1), hv_channel(-1), status(channelstatus::OFF)
+	Channel() : ChannelID(-1), channelrelposition(Position(-1,-1,-1)), stripside(2), stripnum(-1), signal_crate(-1), signal_card(-1), signal_channel(-1), level2_crate(-1), level2_card(-1), level2_channel(-1), hv_crate(-1), hv_card(-1), hv_channel(-1), status(channelstatus::OFF)
 	 {serialise=true;}
-	Channel(unsigned long chnID, Position chanpos, int strp, unsigned int sig_crt, unsigned int sig_crd, unsigned int sig_chn, unsigned int lv2_crt, unsigned int lv2_crd, unsigned int lv2_ch, unsigned int hv_crt, unsigned int hv_crd, unsigned int hv_chn, channelstatus chanstat) : ChannelID(chnID), channelrelposition(chanpos), stripside(strp), signal_crate(sig_crt), signal_card(sig_crd), signal_channel(sig_chn), level2_crate(lv2_crt), level2_card(lv2_crd), hv_crate(hv_crt), hv_card(hv_crd), hv_channel(hv_chn), status(chanstat) {serialise=true;}
+	Channel(unsigned long chnID, Position chanpos, int strp, int strpnm, unsigned int sig_crt, unsigned int sig_crd, unsigned int sig_chn, unsigned int lv2_crt, unsigned int lv2_crd, unsigned int lv2_ch, unsigned int hv_crt, unsigned int hv_crd, unsigned int hv_chn, channelstatus chanstat) : ChannelID(chnID), channelrelposition(chanpos), stripside(strp), stripnum(strpnm), signal_crate(sig_crt), signal_card(sig_crd), signal_channel(sig_chn), level2_crate(lv2_crt), level2_card(lv2_crd), hv_crate(hv_crt), hv_card(hv_crd), hv_channel(hv_chn), status(chanstat) {serialise=true;}
 	
 	unsigned long GetChannelID(){return ChannelID;}
 	Position GetChannelPosition(){return channelrelposition;}
 	int GetStripSide(){return stripside;}
+	int GetStripNum(){return stripnum;}
 	unsigned int GetSignalCrate(){return signal_crate;}
 	unsigned int GetSignalCard(){return signal_card;}
 	unsigned int GetSignalChannel(){return signal_channel;}
@@ -33,6 +34,7 @@ class Channel : public SerialisableObject{
 	void SetChannelID(unsigned long channelIDin){ChannelID=channelIDin;}
 	void SetRelPos(Position pos){ channelrelposition=pos;}
 	void SetStripSide(int stripsidein){stripside=stripsidein;}
+	void SetStripNum(int stripnumin){stripnum=stripnumin;}
 	void SetSignalCrate(unsigned int cratein){signal_crate=cratein;}
 	void SetSignalCard(unsigned int cardin){signal_card=cardin;}
 	void SetSignalChannel(unsigned int chanin){signal_channel=chanin;}
@@ -47,7 +49,8 @@ class Channel : public SerialisableObject{
 	bool Print(){
 		std::cout<<"ChannelID          : "<<ChannelID<<std::endl;
 		std::cout<<"ChannelRelPosition : "; channelrelposition.Print();
-		std::cout<<"StripSide          : "<<(stripside)<<std::endl;
+		std::cout<<"StripSide          : "<<stripside<<std::endl;
+		std::cout<<"StripNum           : "<<stripnum<<std::endl;
 		std::cout<<"Signal Crate       : "<<signal_crate<<std::endl;
 		std::cout<<"Signal Card        : "<<signal_card<<std::endl;
 		std::cout<<"Signal Channel     : "<<signal_channel<<std::endl;
@@ -72,7 +75,7 @@ class Channel : public SerialisableObject{
 	private:
 	unsigned long ChannelID;   // unique ChannelKey
 	Position channelrelposition;
-	int stripside;
+	int stripside, stripnum;
 	unsigned int signal_crate, signal_card, signal_channel, level2_crate, level2_card, level2_channel,
 	hv_crate, hv_card, hv_channel;
 	channelstatus status;
@@ -81,6 +84,7 @@ class Channel : public SerialisableObject{
 			ar & ChannelID;
 			ar & channelrelposition;
 			ar & stripside;
+			ar & stripnum;
 			ar & signal_crate;
 			ar & signal_card;
 			ar & signal_channel;

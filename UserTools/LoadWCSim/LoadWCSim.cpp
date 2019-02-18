@@ -507,8 +507,9 @@ void LoadWCSim::ConstructToolChainGeometry(){
 			unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
 			
 			int stripside = ((stripi%2)==0);   // StripSide=0 for LHS (x<0), StripSide=1 for RHS (x>0)
+			int stripnum = (int)(stripi/2);    // Strip number: add 2 channels per strip as we go
 			double xpos = (stripside) ? -LappdStripLength : LappdStripLength;
-			double ypos = (stripi*LappdStripSeparation) - ((LappdNumStrips*LappdStripSeparation)/2.);
+			double ypos = (stripnum*LappdStripSeparation) - ((LappdNumStrips*LappdStripSeparation)/2.);
 			
 			// fill up ADC cards and channels monotonically, they're arbitrary for simulation
 			ACDC_Chan_Num++;
@@ -524,6 +525,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 			Channel lappdchannel(uniquechannelkey,
 								 Position(xpos,ypos,0.),
 								 stripside,
+								 stripnum,
 								 ACDC_Crate_Num,
 								 ACDC_Card_Num,
 								 ACDC_Chan_Num,
