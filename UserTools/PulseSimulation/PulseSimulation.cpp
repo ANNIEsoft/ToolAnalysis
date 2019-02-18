@@ -26,9 +26,9 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 	/////////////////////////////////////////////////////////////////
 	
 	Log("PulseSimulation Tool: Initializing",v_message,verbosity);
-	Geometry* anniegeom;
+	Geometry* anniegeom=nullptr;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
-	int numtankpmts = anniegeom->GetNumTankPMTs();
+	int numtankpmts = anniegeom->GetNumDetectorsInSet("Tank");
 	Log("PulseSimulation Tool: constructing cards for "+to_string(numtankpmts)+"PMTs",v_debug,verbosity);
 	cout<<"channels_per_adc_card="<<channels_per_adc_card<<endl;
 	num_adc_cards = (numtankpmts-1)/channels_per_adc_card + 1; // rounded up

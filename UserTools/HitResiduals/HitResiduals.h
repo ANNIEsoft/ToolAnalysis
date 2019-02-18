@@ -18,8 +18,8 @@ class HitResiduals: public Tool {
 	private:
 	TimeClass* EventTime=nullptr;
 	std::vector<MCParticle>* MCParticles=nullptr;
-	std::map<ChannelKey,std::vector<Hit>>* MCHits=nullptr;
-	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
+	std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
+	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
 	Geometry* anniegeom=nullptr;
 	
 	TApplication* hitResidualApp = nullptr;

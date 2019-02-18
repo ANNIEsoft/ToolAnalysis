@@ -45,7 +45,10 @@ class Geometry : public SerialisableObject{
 	inline void SetMrdHeight(double mrd_heightIn){mrd_height = mrd_heightIn;}
 	inline void SetMrdDepth(double mrd_depthIn){mrd_depth = mrd_depthIn;}
 	inline void SetMrdStart(double mrd_startIn){mrd_start = mrd_startIn;}
-	void SetDetectors(std::vector<std::map<unsigned long,Detector>* >DetectorsIn){Detectors = DetectorsIn; }
+	void SetDetectors(std::vector<std::map<unsigned long,Detector>* >DetectorsIn){
+		Detectors = DetectorsIn;
+		detectorcounts.clear();
+	}
 	
 	unsigned long ConsumeNextFreeChannelKey(){
 		unsigned long thefreechannelkey = NextFreeChannelKey;
@@ -78,6 +81,12 @@ class Geometry : public SerialisableObject{
 		} else {
 			Detectors.at(detectorsetindex)->emplace(detin.GetDetectorID(), detin);
 		}
+		// increment counters of the number of detectors in each set
+		if(detectorcounts.count(thedetel)==0){
+			detectorcounts.emplace(thedetel,1);
+		} else {
+			detectorcounts.at(thedetel)++;
+		}
 		return true;
 	}
 	
@@ -86,6 +95,37 @@ class Geometry : public SerialisableObject{
 	Detector* ChannelToDetector(unsigned long ChannelKey);
 	Channel* GetChannel(unsigned long ChannelKey);
 	void InitChannelMap();
+	
+	int GetNumDetectorsInSet(std::string SetName){
+		// if we've calculated it before, such as during filling with Geometry::AddDetector
+		if(detectorcounts.count(SetName)!=0) return detectorcounts.at(SetName);
+		// we may not have an existing count if Geometry::SetDetectors was used
+		// in which case, scan the Detectors for this set and count its members
+		int numdetectorsinthisset=-1;
+		for(std::vector<std::map<unsigned long,Detector>>::iterator detsetit  = RealDetectors.begin();
+																	detsetit != RealDetectors.end();
+																	++detsetit){
+			int setsize = detsetit->size();
+			if(setsize==0){
+				cerr<<"Geometry::GetNumTankPMTs ERROR: Detector set "
+					<<std::distance(RealDetectors.begin(),detsetit)
+					<<" had no Detectors!"<<endl;
+					continue;
+			}
+			std::map<unsigned long,Detector>::iterator detectorsit = detsetit->begin();
+			std::string detectorsetelement = detectorsit->second.GetDetectorElement();
+			if(detectorsetelement==SetName){
+				numdetectorsinthisset = setsize;
+				break; // found the Tank detector set
+			}
+		}
+		if(numdetectorsinthisset<0){
+			cerr<<"Geometry::GetNumTankPMTs ERROR: Could not find a detector set with detectorElement \"Tank\"!"<<endl;
+			return 0;
+		}
+		detectorcounts.emplace(SetName,numdetectorsinthisset);
+		return numdetectorsinthisset;
+	}
 	
 	/*  FIXME to make work with the new detector styling
 	int GetNumTankPMTs(){
@@ -197,6 +237,7 @@ class Geometry : public SerialisableObject{
 	std::map<unsigned long,Detector*> ChannelMap;
 	std::vector<std::map<unsigned long,Detector> > RealDetectors;
 	std::vector<std::map<unsigned long,Detector>*> Detectors;
+	std::map<std::string, int> detectorcounts;  // not stored
 	std::map<std::string, int> DetectorElements;
 	double Version;
 	geostatus Status;
