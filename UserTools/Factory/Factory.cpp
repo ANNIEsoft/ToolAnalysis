@@ -67,8 +67,11 @@ if (tool=="MonitorReceive") ret=new MonitorReceive;
 if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
 if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
 if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
-
 if (tool=="MonitorMRDTime") ret=new MonitorMRDTime;
-  if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
+if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
+if (tool=="PulseSimulation") ret=new PulseSimulation;
+if (tool=="PlotLAPPDTimesFromStore") ret=new PlotLAPPDTimesFromStore;
+if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
+
 return ret;
 }
