@@ -79,7 +79,7 @@ bool HitResiduals::Execute(){
 			muonvertex = primarymuon.GetStartVertex();
 		} else {
 			cerr<<"No Primary Muon"<<endl;
-			return false;
+			return true;
 		}
 	} else {
 		cerr<<"No MCParticles"<<endl;
@@ -155,7 +155,7 @@ bool HitResiduals::Finalise(){
 	htimeresidlappd->Draw("same");
 	hitResidCanv->BuildLegend();
 	hitResidCanv->SaveAs("HitTimeResiduals.png");
-	while(gROOT->FindObject("htimeresidpmt")!=nullptr){
+	while(gROOT->FindObject("hitResidCanv")!=nullptr){
 		gSystem->ProcessEvents();
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
@@ -163,7 +163,7 @@ bool HitResiduals::Finalise(){
 	// cleanup track drawing TApplication
 	if(htimeresidpmt) delete htimeresidpmt;
 	if(htimeresidlappd) delete htimeresidlappd;
-	if(hitResidCanv) delete hitResidCanv;
+	if(gROOT->FindObject("hitResidCanv")!=nullptr)delete hitResidCanv;
 	delete hitResidualApp;
 	
 	return true;
