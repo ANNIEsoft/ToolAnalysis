@@ -72,7 +72,7 @@ private:
 	annie::HeftyTreeReader* theHeftyData = nullptr;
 	
 	// ANNIEEvent variables
-	std::map<ChannelKey,std::vector<std::vector<Hit>>>* TDCData=nullptr;
+	std::map<unsigned long,std::vector<std::vector<Hit>>>* TDCData=nullptr;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
