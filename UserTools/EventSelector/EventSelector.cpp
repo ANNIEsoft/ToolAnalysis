@@ -210,6 +210,7 @@ RecoVertex* EventSelector::FindTrueVertexFromMC() {
   // MCParticles is a std::vector<MCParticle>
   MCParticle primarymuon;  // primary muon
   bool mufound=false;
+  double muStartEnergy = 0;
   if(fMCParticles){
     Log("EventSelector::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
     for(int particlei=0; particlei<fMCParticles->size(); particlei++){
@@ -217,6 +218,8 @@ RecoVertex* EventSelector::FindTrueVertexFromMC() {
       //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
       if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
       if(aparticle.GetPdgCode()!=13) continue;       // not a muon
+      if(aparticle.GetStartEnergy()<muStartEnergy) continue; // select muon with higher energy
+      else muStartEnergy = aparticle.GetStartEnergy(); 
       primarymuon = aparticle;                       // note the particle
       mufound=true;                                  // note that we found it
       //primarymuon.Print();
