@@ -77,3 +77,6 @@
 #include "DigitBuilderDoE/DigitBuilderDoE.cpp"
 #include "MonitorMRDTime/MonitorMRDTime.cpp"
 #include "MonitorMRDLive/MonitorMRDLive.cpp"
+#include "PulseSimulation/PulseSimulation.cpp"
+#include "PlotLAPPDTimesFromStore/PlotLAPPDTimesFromStore.cpp"
+#include "CheckDetectorCounts/CheckDetectorCounts.cpp"

@@ -1,0 +1,4 @@
+#PrintANNIEEvent Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbose 1
