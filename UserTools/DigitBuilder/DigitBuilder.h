@@ -16,7 +16,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "ANNIEGeometry.h"
-
+#include "Detector.h"
 
 class DigitBuilder: public Tool {
 
@@ -77,10 +77,10 @@ class DigitBuilder: public Tool {
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
 
-	Geometry fGeometry;    ///< ANNIE Geometry
-	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
-	std::map<ChannelKey,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
-	std::map<ChannelKey,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
+	Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
+	std::map<unsigned long,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
+	std::map<unsigned long,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
+	std::map<unsigned long,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
 	TRandom3 frand;  ///< Random number generator
 	
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
@@ -110,6 +110,13 @@ class DigitBuilder: public Tool {
 //  std::vector<double> fDigitT;
 //  std::vector<double> fDigitQ;    
 //  std::vector<int> fDigitType;
+	
+	// retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
+	// Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates
+	// the correct number of Channel (stripline) objects, all hits are on the 
+	// first Channel (stripline) of the Detector (tile).
+	std::map<unsigned long,int> detectorkey_to_lappdid;
+	std::map<unsigned long,int> channelkey_to_pmtid;
 	
 };
 

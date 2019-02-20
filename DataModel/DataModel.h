@@ -34,6 +34,8 @@
 #include "RecoVertex.h"
 #include "RecoRing.h"
 #include "MRDOut.h"
+#include "Channel.h"
+
 
 #include <zmq.hpp>
 

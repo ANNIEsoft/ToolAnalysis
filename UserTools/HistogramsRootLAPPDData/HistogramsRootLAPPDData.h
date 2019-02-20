@@ -6,7 +6,6 @@
 #include "TFile.h"
 #include "TH1D.h"
 #include "TString.h"
-#include "ChannelKey.h"
 #include "Tool.h"
 #include "LAPPDHit.h"
 #include "LAPPDresponse.hh"
@@ -28,6 +27,11 @@ class HistogramsRootLAPPDData: public Tool {
    int miter;
    TH1D* HitMultiplicity;
    TH2D* TimeToStrip;
+   
+   // converting between LAPPDID and channelkey
+   Geometry* anniegeom=nullptr;
+   std::map<unsigned long,int> detectorkey_to_lappdid;
+   int get_ok;
 
 
 

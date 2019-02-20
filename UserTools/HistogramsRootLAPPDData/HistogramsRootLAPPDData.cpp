@@ -29,6 +29,16 @@ bool HistogramsRootLAPPDData::Initialise(std::string configfile, DataModel &data
    AmpTree = new TTree("AmpTree", "AmpTree");
    AmpTree-> Branch("Amp",&amp);
  
+  get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+  if(not get_ok){
+    cerr<<"HistogramsRootLAPPDData Tool: Could not get AnnieGeometry from ANNIEEvent!"<<endl;
+    return false;
+  }
+  get_ok = m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
+  if(not get_ok){
+    cerr<<"HistogramsRootLAPPDData Tool: Could not get detectorkey_to_lappdid from ANNIEEvent!"<<endl;
+    return false;
+  }
 
   return true;
 }
@@ -40,7 +50,7 @@ bool HistogramsRootLAPPDData::Initialise(std::string configfile, DataModel &data
     
     
     LAPPDresponse response;
-    std::map<ChannelKey,vector<LAPPDHit>> mclappdhits;
+    std::map<unsigned long,vector<LAPPDHit>> mclappdhits;
     m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",mclappdhits);
     std::map<int,vector<Waveform<double>>> rawlappddata;
     m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData" ,rawlappddata);
@@ -49,11 +59,18 @@ bool HistogramsRootLAPPDData::Initialise(std::string configfile, DataModel &data
     
     
     
-    std::map<ChannelKey, vector<LAPPDHit>> :: iterator itrr;
+    std::map<unsigned long, vector<LAPPDHit>> :: iterator itrr;
     for (itrr =mclappdhits.begin(); itrr != mclappdhits.end(); ++itrr)
       {
 	
-	ChannelKey lappdnumber = itrr->first;
+	unsigned long stripkey = itrr->first;
+	Detector* det = anniegeom->ChannelToDetector(stripkey);
+	if(det==nullptr){
+		cerr<<"HistogramsRootLAPPDData Tool: LAPPD Detector not found! "<<endl;
+		continue;
+	}
+	int detkey = det->GetDetectorID();
+	int lappdnumber = detectorkey_to_lappdid.at(detkey);  // FIXME should transition to using detkey
 	//Watch yo back
 	vector<LAPPDHit> hitlist = itrr->second;
 	double hitcount =0;
@@ -61,9 +78,9 @@ bool HistogramsRootLAPPDData::Initialise(std::string configfile, DataModel &data
 	eventnum +="Event";
 	eventnum +=miter;
 	eventnum +="LAPPD";
-	eventnum +=lappdnumber.GetDetectorElementIndex();
+	eventnum +=lappdnumber;
 	TH2D*  TimeToStrip = new TH2D("HSHM"+eventnum,"HSHM"+eventnum,50,0.5,1000.5,50,0.5,30.5);
-	if((lappdnumber.GetDetectorElementIndex()==26)||(lappdnumber.GetDetectorElementIndex()==51)||(lappdnumber.GetDetectorElementIndex()==56)||(lappdnumber.GetDetectorElementIndex()==86)||(lappdnumber.GetDetectorElementIndex()==91))
+	if((lappdnumber==26)||(lappdnumber==51)||(lappdnumber==56)||(lappdnumber==86)||(lappdnumber==91))
 	  {
 	    for(int i=0; i<hitlist.size(); i++)
 	      {
@@ -71,7 +88,7 @@ bool HistogramsRootLAPPDData::Initialise(std::string configfile, DataModel &data
 		xpos= hitlist.at(i).GetPosition().at(0);
 		ypos= hitlist.at(i).GetPosition().at(1);
 		zpos= hitlist.at(i).GetPosition().at(2);
-		LAPPDnumber = lappdnumber.GetDetectorElementIndex();
+		LAPPDnumber = lappdnumber;
 		int stripint = response.FindStripNumber(hitlist.at(i).GetLocalPosition().at(1));
 		double strip = stripint;
 		double tpsec =hitlist.at(i).GetTpsec();
