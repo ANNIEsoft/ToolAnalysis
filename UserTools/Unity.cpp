@@ -69,6 +69,7 @@
 #include "LoadCCData/PMTData.cpp"
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
+#include "HitCleaner/HitCleaner.cpp"
 #include "HitResiduals/HitResiduals.cpp"
 #include "MonitorReceive/MonitorReceive.cpp"
 #include "MonitorSimReceive/MonitorSimReceive.cpp"

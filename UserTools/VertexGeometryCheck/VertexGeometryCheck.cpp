@@ -26,6 +26,7 @@ bool VertexGeometryCheck::Initialise(std::string configfile, DataModel &data){
   fazimuth = new TH1D("azimuth","azimuth angle",180,0,360);
   fconeangle = new TH1D("coneangle","cone angle",90,0,90);
   fdigitcharge = new TH1D("digitcharge","digit charge", 150,0,150);
+  fdigittime = new TH1D("digittime", "digit time", 200, -10, 10);
   flappdtimesmear = new TH1D("lappdtimesmear","lappdtimesmear", 100, 0, 0.1);
   fpmttimesmear = new TH1D("pmttimesmear","pmttimesmear",100, 0, 1.0);   
   fYvsDigitTheta_all = new TH2D("YvsDigitTheta_all", "Y vs DigitTheta", 400, -200, 200, 400, -200, 200);
@@ -112,7 +113,7 @@ bool VertexGeometryCheck::Execute(){
 	int nhits = myvtxgeo->GetNDigits();
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, trueVtxT, trueDirX, trueDirY, trueDirZ);
-  myOptimizer->SetMeanTimeCalculatorType(1); //
+  myOptimizer->SetMeanTimeCalculatorType(0); //
   double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
   fmeanres->Fill(meantime);
   double fom = -999.999*100;
@@ -121,6 +122,7 @@ bool VertexGeometryCheck::Execute(){
     digitX = fDigitList->at(n).GetPosition().X();
     digitY = fDigitList->at(n).GetPosition().Y();
     digitZ = fDigitList->at(n).GetPosition().Z();
+    digitT = fDigitList->at(n).GetCalTime();
     dx = digitX-trueVtxX;                    
     dy = digitY-trueVtxY;                    
     dz = digitZ-trueVtxZ;                    
@@ -161,6 +163,7 @@ bool VertexGeometryCheck::Execute(){
     fazimuth->Fill(myvtxgeo->GetAzimuth(n)); //
     fconeangle->Fill(myvtxgeo->GetConeAngle(n)); //
     fdigitcharge->Fill(myvtxgeo->GetDigitQ(n));
+    fdigittime->Fill(digitT);
     if(myvtxgeo->GetDigitType(n)==RecoDigit::lappd_v0) flappdtimesmear->Fill(Parameters::TimeResolution(RecoDigit::lappd_v0, myvtxgeo->GetDigitQ(n)));
     if(myvtxgeo->GetDigitType(n)==RecoDigit::PMT8inch) fpmttimesmear->Fill(Parameters::TimeResolution(RecoDigit::PMT8inch, myvtxgeo->GetDigitQ(n)));
   }

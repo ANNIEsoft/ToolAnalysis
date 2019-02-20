@@ -217,7 +217,6 @@ bool LoadWCSim::Execute(){
 			*/
 			
 			tracktype startstoptype = tracktype::UNDEFINED;
-			
 			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
 			//MC particle times are relative to the trigger time
 			MCParticle thisparticle(

@@ -55,6 +55,8 @@ bool VtxExtendedVertexFinder::Execute(){
   
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
+  
+  std::cout<<"event number = "<<fEventNumber<<std::endl;
 	
 	// Retrive digits from RecoEvent
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
