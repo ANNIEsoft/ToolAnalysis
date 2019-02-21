@@ -2,11 +2,15 @@
 #define DigitBuilderROOT_H
 
 #include <string>
+#include <vector>
 #include <iostream>
 
 #include "Tool.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TString.h"
+#include "TChain.h"
+#include "TMath.h"
 
 #include "Position.h"
 #include "Direction.h"
@@ -48,14 +52,13 @@ class DigitBuilderROOT: public Tool {
 
   // Digits
   int fNhits = 0;
-  std::vector<int> fIsFiltered;
-  std::vector<double> fDigitX;
-  std::vector<double> fDigitY;
-  std::vector<double> fDigitZ;
-  std::vector<double> fDigitT;
-  std::vector<double> fDigitQ;    
-  std::vector<int> fDigitType;
-  std::vector<int> fDigitDetID;
+  std::vector<double> *fDigitX = nullptr;
+  std::vector<double> *fDigitY = nullptr;
+  std::vector<double> *fDigitZ = nullptr;
+  std::vector<double> *fDigitT = nullptr;
+  std::vector<double> *fDigitQ = nullptr;    
+  std::vector<int> *fDigitType = nullptr;
+  std::vector<int> *fDigitDetID = nullptr;
   	
   // True muon
   double fTrueVtxX;
@@ -67,6 +70,12 @@ class DigitBuilderROOT: public Tool {
   double fTrueDirZ;
   double fTrueEnergy; 
 
+  // Event Cut Status from previous run
+  bool fEventCutStatus;
+
+	uint64_t fMCEventNum;
+	uint16_t fMCTriggerNum;
+	uint32_t fEventNumber; // will need to be tracked separately, since we flatten triggers
 };
 
 
