@@ -1,6 +1,6 @@
 # EventSelector config file
 
-verbosity 3
+verbosity 0
 MCTruthCut 1
 MRDRecoCut 0
 MCPiKCut 0

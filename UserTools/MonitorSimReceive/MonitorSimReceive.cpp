@@ -29,11 +29,23 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
   //std::cout<<"d4"<<std::endl;  
   indata->Get("CCData",*MRDData);
   indata->Get("CCData",*MRDData2);
- //std::cout<<"d5"<<std::endl;
+  //std::cout<<"d5"<<std::endl;
   //MRDData=new BoostStore(false,2);
   //MRDData->Initialise(MRDDataPath);
 
-  srand(time(NULL));
+  //  MRDData->Print();
+  //std::cout<<"d6"<<std::endl;
+  //MRDData->GetEntry(20);
+
+  //std::cout<<"d7"<<std::endl;
+  // MRDOut data2;
+  //MRDData->Get("Data",data2);
+
+  //std::cout<<"d8"<<std::endl;
+
+  //std::cout<<"d9 "<<data2.Trigger<<std::endl;
+
+   srand(time(NULL));
   //std::cout<<"d6"<<std::endl;
   m_data->Stores["CCData"]=new BoostStore(false,2);  
   //  m_data->Stores["CCData"]->Save("tmp");
@@ -61,6 +73,7 @@ bool MonitorSimReceive::Execute(){
     long entries;
     MRDData->Header->Get("TotalEntries",entries);
     //std::cout<<"f4 "<< entries<<" "<<event<<std::endl;
+    
     MRDData->GetEntry(event);
     //std::cout<<"f5"<<std::endl;
     MRDData->Get("Data", tmp);
@@ -76,8 +89,15 @@ bool MonitorSimReceive::Execute(){
     //std::cout<<"f10"<<std::endl;
     //m_data->Stores["CCData"]->Set("FileData",MRDData,false);        //false option creates problems in the monitoring tools--> check later
     MRDData2->Save("tmp");
-    m_data->Stores["CCData"]->Set("FileData",MRDData2);
-    //std::cout<<"f11"<<std::endl;
+    m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
+
+    //    BoostStore* test;
+    // m_data->Stores["CCData"]->Get("FileData",test);
+    //test->Print(false);
+    //test->GetEntry(20);
+    //MRDOut tmp;
+    //test->Get("Data",tmp);
+    //std::cout<<"f11 "<<tmp.Trigger<<std::endl;
 
   }
   else{

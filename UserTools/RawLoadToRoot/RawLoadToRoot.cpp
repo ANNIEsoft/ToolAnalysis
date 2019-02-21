@@ -1,5 +1,4 @@
 #include "RawLoadToRoot.h"
-#include "ChannelKey.h"
 
 RawLoadToRoot::RawLoadToRoot():Tool(){}
 
@@ -59,15 +58,15 @@ bool RawLoadToRoot::Execute(){
   //restricts tool to range of trigger events specified in config file
   if((lbound<=RelEventNumber && RelEventNumber<=ubound && onoffswitch==1)||onoffswitch==0){
 
-    map<ChannelKey,vector<Waveform<unsigned short>>> :: iterator itr;
-    map<ChannelKey,std::vector<CalibratedADCWaveform<double>>> :: iterator ijk;
+    map<unsigned long,vector<Waveform<unsigned short>>> :: iterator itr;
+    map<unsigned long,std::vector<CalibratedADCWaveform<double>>> :: iterator ijk;
 
     int chancount=0;
     for(itr=RawADCData.begin(),ijk=caladcdata.begin(); itr!=RawADCData.end(),ijk!=caladcdata.end(); ++itr,++ijk){  //loop through channels
 
-      ChannelKey ck = itr->first;
+      unsigned long ck = itr->first;
       vector<Waveform<unsigned short>> TheWaveforms = itr->second;
-      ChannelKey chank = ijk->first;
+      unsigned long chank = ijk->first;
       vector<CalibratedADCWaveform<double>> calwaves = ijk->second;
 
       for(int mmm=0; mmm<TheWaveforms.size(); mmm++){  //loop through minibuffers
@@ -75,7 +74,7 @@ bool RawLoadToRoot::Execute(){
         CalibratedADCWaveform<double> acalwave = calwaves.at(mmm);
         double basline = acalwave.GetBaseline();
 
-        int pulsize = trigev.at(mmm).at(ck.GetDetectorElementIndex()-1).size();
+        int pulsize = trigev.at(mmm).at(ck).size();  // TODO check if (ck-1) was still needed!!
 
         //TString wname;
         //wname+="Waveform_CH";
