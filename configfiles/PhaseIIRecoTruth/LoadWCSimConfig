@@ -2,4 +2,8 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbose 1
-InputFile /AnnieShare/p2r_data/p2v6/wcsim_0.1.9.root
+HistoricTriggeroffset 0
+InputFile /AnnieShare/p2r_data/p2v6/nodigitization/wcsim_0.0.14.root
+LappdNumStrips 60        ## num channels to construct from each LAPPD
+LappdStripLength 100     ## relative x position of each LAPPD strip, for dual-sided readout [mm]
+LappdStripSeparation 10  ## stripline separation, for calculating relative y position of each LAPPD strip [mm]

@@ -2,79 +2,81 @@
 #ifndef DETECTORCLASS_H
 #define DETECTORCLASS_H
 
-#include<SerialisableObject.h>
+#include <SerialisableObject.h>
 #include "Position.h"
 #include "Direction.h"
-
-using namespace std;
+#include "Channel.h"
 
 enum class detectorstatus : uint8_t { OFF, ON, UNSTABLE };
-bool PrintStatus(detectorstatus status){
-	switch(status){
-		case (detectorstatus::OFF): cout<<"OFF"<<endl; break;
-		case (detectorstatus::ON): cout<<"ON"<<endl; break;
-		case (detectorstatus::UNSTABLE): cout<<"UNSTABLE"<<endl; break;
-	}
-	return true;
-}
 
 class Detector : public SerialisableObject{
 	
 	friend class boost::serialization::access;
 	
 	public:
-  Detector() : DetectorElement(""), DetectorPosition(), DetectorDirection(), DetectorId(0), DetectorType(""), Status(detectorstatus::OFF), AvgPulseRate(0.) {serialise=true;}
-	
-  Detector(std::string detel, Position posin, Direction dirin, int detid, std::string detype, detectorstatus stat, double avgrate) : DetectorElement(detel), DetectorPosition(posin), DetectorDirection(dirin), DetectorId(detid), DetectorType(detype), Status(stat), AvgPulseRate(avgrate){serialise=true;}
-	
+	Detector() : DetectorID(0), DetectorElement(), DetectorPosition(), DetectorDirection(), DetectorType(""),
+		Status(detectorstatus::OFF), Channels() {serialise=true;}
+	Detector(int detid, std::string DetEle, Position posin, Direction dirin, std::string detype, detectorstatus stat, double avgrate, map<unsigned long,Channel> channelsin={}) : DetectorID(detid), DetectorElement(DetEle), DetectorPosition(posin), DetectorDirection(dirin), DetectorType(detype), Status(stat), Channels(channelsin) {serialise=true;}
 	std::string GetDetectorElement(){return DetectorElement;}
 	Position GetDetectorPosition(){return DetectorPosition;}
 	Direction GetDetectorDirection(){return DetectorDirection;}
-	int GetDetectorId(){return DetectorId;}
+	int GetDetectorID(){return static_cast<int>(DetectorID);}
 	std::string GetDetectorType(){return DetectorType;}
 	detectorstatus GetStatus(){return Status;}
-	double GetAvgPulseRate(){return AvgPulseRate;}
+	std::map<unsigned long,Channel>* GetChannels() {return &Channels;}
+	void AddChannel(Channel chanin){ Channels.emplace(chanin.GetChannelID(),chanin); }
 	
-	void SetDetectorElement(std::string DetectorElementIn){DetectorElement=DetectorElementIn;}
+	void SetDetectorElement(std::string DetEleIn){DetectorElement=DetEleIn;}
 	void SetDetectorPosition(Position DetectorPositionIn){DetectorPosition=DetectorPositionIn;}
 	void SetDetectorDirection(Direction DetectorDirectionIn){DetectorDirection=DetectorDirectionIn;}
-	void SetDetectorId(int DetectorIdIn){DetectorId=DetectorIdIn;}
+	void SetDetectorID(int DetectorIDIn){DetectorID=DetectorIDIn;}
 	void SetDetectorType(std::string DetectorTypeIn){DetectorType=DetectorTypeIn;}
 	void SetStatus(detectorstatus StatusIn){Status=StatusIn;}
-	void SetAvgPulseRate(double AvgPulseRateIn){AvgPulseRate=AvgPulseRateIn;}
-	
-	bool Print() {
-		cout<<"DetectorElement : "<<DetectorElement<<endl;
-		cout<<"DetectorPosition : "; DetectorPosition.Print();
-		cout<<"DetectorDirection : "; DetectorDirection.Print();
-		cout<<"DetectorId : "<<DetectorId<<endl;
-		cout<<"DetectorType : "<<DetectorType<<endl;
-		cout<<"Status : "; PrintStatus(Status);
-		cout<<"AvgPulseRate : "<<AvgPulseRate<<endl;
-		
+	bool Print(){
+		std::cout<<"DetectorPosition  : "; DetectorPosition.Print();
+		std::cout<<"DetectorDirection : "; DetectorDirection.Print();
+		std::cout<<"DetectorElement   : "<<DetectorElement<<std::endl;
+		std::cout<<"DetectorID        : "<<DetectorID<<std::endl;
+		std::cout<<"DetectorType      : "<<DetectorType<<std::endl;
+		std::cout<<"Status            : "; PrintStatus(Status);
 		return true;
+	}
+	bool PrintStatus(detectorstatus status){
+		switch(status){
+			case (detectorstatus::OFF): std::cout<<"OFF"<<std::endl; break;
+			case (detectorstatus::ON): std::cout<<"ON"<<std::endl; break;
+			case (detectorstatus::UNSTABLE) : std::cout<<"UNSTABLE"<<std::endl; break;
+		}
+		return true;
+	}
+	void PrintChannels(){
+		cout<<"Detector "<<DetectorID<<" has "<<Channels.size()<<" channels: {";
+		for(auto&& achan : Channels){ cout<<"("<<achan.first<<":"<<(&achan.second)<<"), "; }
+		cout<<endl;
 	}
 	
 	private:
-	std::string DetectorElement;   // "Tank", "MRD"... 
+	void SetChannels(map<unsigned long,Channel> chans){Channels=chans;}
+	std::string DetectorElement;   // "PMT", "MRD", "LAPPD"...
 	Position DetectorPosition;     // meters
-	Direction DetectorDirection;   // 
-	int DetectorId;                // ID within DetectorElement
+	Direction DetectorDirection;   //
+	unsigned long DetectorID;      // unique DetectorKey
 	std::string DetectorType;      // e.g. "Hamamatsu R7081"
 	detectorstatus Status;         // on, off, unstable....
-	double AvgPulseRate;           // 
+	std::map<unsigned long,Channel> Channels;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
-			ar & DetectorElement;
-			ar & DetectorPosition;
-			ar & DetectorDirection;
-			ar & DetectorId;
-			ar & DetectorType;
-			ar & Status;
-			ar & AvgPulseRate;
+		ar & DetectorElement;
+		ar & Channels;
+		ar & DetectorPosition;
+		ar & DetectorDirection;
+		ar & DetectorID;
+		ar & DetectorType;
+		ar & Status;
 		}
 	}
+	
 };
 
 #endif

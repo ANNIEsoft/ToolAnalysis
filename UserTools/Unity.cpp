@@ -69,6 +69,7 @@
 #include "LoadCCData/PMTData.cpp"
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
+#include "HitCleaner/HitCleaner.cpp"
 #include "HitResiduals/HitResiduals.cpp"
 #include "MonitorReceive/MonitorReceive.cpp"
 #include "MonitorSimReceive/MonitorSimReceive.cpp"
@@ -78,4 +79,5 @@
 #include "MonitorMRDLive/MonitorMRDLive.cpp"
 #include "PulseSimulation/PulseSimulation.cpp"
 #include "PlotLAPPDTimesFromStore/PlotLAPPDTimesFromStore.cpp"
+#include "CheckDetectorCounts/CheckDetectorCounts.cpp"
 #include "DigitBuilderROOT/DigitBuilderROOT.cpp"

@@ -3,6 +3,7 @@ LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PhaseIIReco/LoadWCSimLAPPDConfig
 #FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
 EventSelector EventSelector ./configfiles/PhaseIIReco/EventSelectorConfig
 DigitBuilder DigitBuilder ./configfiles/PhaseIIReco/DigitBuilderConfig
+HitCleaner HitCleaner ./configfiles/PhaseIIReco/HitCleanerConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/PhaseIIReco/VtxSeedGeneratorConfig
 VtxPointPositionFinder VtxPointPositionFinder ./configfiles/PhaseIIReco/VtxPointPositionFinderConfig
 VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/PhaseIIReco/VtxPointDirectionFinderConfig
