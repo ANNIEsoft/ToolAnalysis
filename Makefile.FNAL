@@ -25,9 +25,12 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
+GenieInclude= -I$(GENIE)/../include/GENIE
+GenieLibs= `genie-config --libs`
 
-MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude)
-MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib)
+
+MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(GenieInclude)
+MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(GenieLibs)
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse

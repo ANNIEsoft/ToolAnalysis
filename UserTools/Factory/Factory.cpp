@@ -72,6 +72,7 @@ if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
 if (tool=="PulseSimulation") ret=new PulseSimulation;
 if (tool=="PlotLAPPDTimesFromStore") ret=new PlotLAPPDTimesFromStore;
 if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
+if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
 
 return ret;
 }
