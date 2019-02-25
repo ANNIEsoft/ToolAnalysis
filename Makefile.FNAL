@@ -28,9 +28,11 @@ MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
 RATEventInclude= -I ToolDAQ/RATEventLib/include
 
-MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
-MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib)
+GenieInclude= -I$(GENIE)/../include/GENIE
+GenieLibs= `genie-config --libs`
 
+MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude)
+MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(GenieLibs)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 

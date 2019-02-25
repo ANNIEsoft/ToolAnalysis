@@ -23,3 +23,6 @@ for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done
+
+# setup genie support
+. ${ToolDAQapp}/UserTools/LoadGenieEvent/setupgenie.sh
