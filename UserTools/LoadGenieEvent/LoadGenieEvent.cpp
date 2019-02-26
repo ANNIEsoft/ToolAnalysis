@@ -51,10 +51,6 @@ Genie 2.12 GNTP files: /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k
 
 */
 
-// function to fill the info into the handy genieinfostruct
-// TODO: move to header
-void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint, GenieInfo& thegenieinfo, bool printneutrinoevent=false);
-
 LoadGenieEvent::LoadGenieEvent():Tool(){}
 
 bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
@@ -78,13 +74,13 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	
 	// Open the flux files
 	///////////////////////
-	Log("Opening TChain",v_debug,verbosity);
+	Log("Tool LoadGenieEvent: Opening TChain",v_debug,verbosity);
 	flux = new TChain("gtree");
 	std::string inputfiles = filedir+"/"+filepattern;
 	int numbytes = flux->Add(inputfiles.c_str());
-	Log("Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
-	Log("Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
-	Log("Setting branch addresses",v_debug,verbosity);
+	Log("Tool LoadGenieEvent: Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
+	Log("Tool LoadGenieEvent: Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
+	Log("Tool LoadGenieEvent: Setting branch addresses",v_debug,verbosity);
 	// neutrino event information
 	flux->SetBranchAddress("gmcrec",&genieintx);
 	flux->GetBranch("gmcrec")->SetAutoDelete(kTRUE);
@@ -106,13 +102,20 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 
 bool LoadGenieEvent::Execute(){
 	
+	Log("Tool LoadGenieEvent: Loading tchain entry "+to_string(tchainentrynum),v_debug,verbosity);
 	local_entry = flux->LoadTree(tchainentrynum);
+	Log("Tool LoadGenieEvent: localentry is "+to_string(local_entry),v_debug,verbosity);
+	if(local_entry<0){
+		Log("Tool LoadGenieEvent: Reached end of file, returning",v_message,verbosity);
+		return -1;
+	}
 	flux->GetEntry(local_entry);
 	curf = flux->GetCurrentFile();
 	if(curf!=curflast || curflast==nullptr){
 		TString curftstring = curf->GetName();
 		currentfilestring = std::string(curftstring.Data());
 		curflast=curf;
+		Log("Tool LoadGenieEvent: Opening new file \""+currentfilestring+"\"",v_debug,verbosity);
 	}
 	tchainentrynum++;
 	
@@ -164,6 +167,7 @@ bool LoadGenieEvent::Execute(){
 		// FLUXVER 1 - genie::flux::GSimpleNtpEntry
 		// ========================================
 		// extract the target intx details from the GSimpleNtpNuMI object
+		Log("Tool LoadGenieEvent: Retrieving interaction info from GSimpleNtpNuMI object",v_debug,verbosity);
 		parentpdg = gsimplenumientry->ptype;
 		parentdecaymode = gsimplenumientry->ndecay;
 		parentdecayvtx_x = gsimplenumientry->vx;
@@ -197,8 +201,8 @@ bool LoadGenieEvent::Execute(){
 	genie::Interaction* genieint = gevtRec->Summary();
 	//cout<<"scraping interaction info"<<endl;
 	GenieInfo thegenieinfo;
-	GetGenieEntryInfo(gevtRec, genieint, thegenieinfo);  // fill convenience struct with nu intx info
-	//cout<<"done interaction info"<<endl;
+	Log("Tool LoadGenieEvent: Filling GenieInfo struct",v_debug,verbosity);
+	GetGenieEntryInfo(gevtRec, genieint, thegenieinfo, (verbosity>v_debug));
 	
 	// retrieve info from the struct
 	IsQuasiElastic=thegenieinfo.eventtypes.at("IsQuasiElastic");
@@ -250,8 +254,7 @@ bool LoadGenieEvent::Execute(){
 	numfspiplus = thegenieinfo.numfspiplus = genieint->ExclTag().NPiPlus();
 	numfspiminus = thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
 	
-	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
-	
+	Log("Tool LoadGenieEvent: Passing information to the GenieEvent store",v_debug,verbosity);
 	// Update the Store with all the current event information
 	// =======================================================
 	geniestore->Set("file",currentfilestring);
@@ -316,6 +319,10 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("NumFSPiMinus",numfspiminus);
 	geniestore->Set("TheGenieInfo",thegenieinfo);
 	
+	Log("Tool LoadGenieEvent: Clearing genieintx",v_debug,verbosity);
+	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
+	
+	Log("Tool LoadGenieEvent: done",v_debug,verbosity);
 	return true;
 }
 

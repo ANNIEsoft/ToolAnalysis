@@ -67,8 +67,8 @@ class LoadGenieEvent: public Tool {
 	// genie file variables
 	int fluxver;                         // 0 = old flux, 1 = new flux
 	std::string currentfilestring;
-	unsigned long local_entry;           // 
-	unsigned int tchainentrynum;         // 
+	unsigned long local_entry=0;           // 
+	unsigned int tchainentrynum=0;         // 
 	
 	// common input/output variables to both Robert/Zarko filesets
 	int parentpdg;
