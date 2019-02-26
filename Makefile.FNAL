@@ -2,7 +2,7 @@ ToolDAQPath=ToolDAQ
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 
-CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -fdiagnostics-color=always
+CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -fdiagnostics-color=always #-Wl,--as-needed 
 
 PythonLib= `python-config --libs` -L `python-config --prefix`/lib
 PythonInclude=`python-config --cflags`
@@ -14,7 +14,7 @@ BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostre
 BoostInclude= -I $(BOOST_INC)
 
 RootInclude=  -I $(ROOT_INC)
-RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lGenVector -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
+RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lGenVector -lMinuit -lGeom -lEve -lEGPythia6 #-lGL -lGLU -lGLEW
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
@@ -25,9 +25,9 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-GenieInclude= -I$(GENIE)/../include/GENIE
-GenieLibs= `genie-config --libs`
-
+GenieInclude= -I$(GENIE)/../include/GENIE -I/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/log4cpp/v1_1_1b/Linux64bit+2.6-2.12-e7-debug/include
+#GenieInclude= -I$(`genie-config --topsrcdir`)
+GenieLibs= `genie-config --libs` -lxml2 -L/grid/fermiapp/products/genie/externals/log4cpp/v1_1_1b/Linux64bit+2.6-2.12-e7-debug/lib -llog4cpp
 
 MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(GenieInclude)
 MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(GenieLibs)

@@ -73,6 +73,8 @@ if (tool=="PulseSimulation") ret=new PulseSimulation;
 if (tool=="PlotLAPPDTimesFromStore") ret=new PlotLAPPDTimesFromStore;
 if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
 if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
 
 return ret;
 }

@@ -81,3 +81,4 @@
 #include "PlotLAPPDTimesFromStore/PlotLAPPDTimesFromStore.cpp"
 #include "CheckDetectorCounts/CheckDetectorCounts.cpp"
 #include "LoadGenieEvent/LoadGenieEvent.cpp"
+#include "PrintGenieEvent/PrintGenieEvent.cpp"
