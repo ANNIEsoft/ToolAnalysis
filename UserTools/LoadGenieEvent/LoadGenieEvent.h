@@ -8,22 +8,105 @@
 #include "genieinfo_struct.cpp"
 
 class LoadGenieEvent: public Tool {
-
-
- public:
-
-  LoadGenieEvent();
-  bool Initialise(std::string configfile,DataModel &data);
-  bool Execute();
-  bool Finalise();
-
-
- private:
-  
-
-
-
-
+	
+	public:
+	
+	LoadGenieEvent();
+	bool Initialise(std::string configfile,DataModel &data);
+	bool Execute();
+	bool Finalise();
+	
+	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	int verbosity;
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;
+	
+	private:
+	
+	// function to fill the info into the handy genieinfostruct
+	void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint,
+	  GenieInfo& thegenieinfo, bool printneutrinoevent=false);
+	
+	TChain* oldflux = nullptr;
+	TFile* curf = nullptr;       // keep track of file changes
+	TFile* curflast = nullptr;
+	genie::NtpMCEventRecord* genieintx = nullptr; // = new genie::NtpMCEventRecord;
+	// for fluxver 0 files
+	genie::flux::GNuMIFluxPassThroughInfo* gnumipassthruentry  = nullptr;
+	// for fluxver 1 files
+	genie::flux::GSimpleNtpEntry* gsimpleentry = nullptr;
+	genie::flux::GSimpleNtpAux* gsimpleauxinfo = nullptr;
+	
+	// genie file variables
+	int fluxver;                         // 0 = old flux, 1 = new flux
+	std::string currentfilestring;
+	unsigned long local_entry;           // 
+	unsigned int tchainentrynum;         // 
+	
+#ifdef do these want to be in the other tool
+	// common input/output variables to both Robert/Zarko filesets
+	int parentpdg;
+	std::string parenttypestring;
+	int parentdecaymode;                 // some arbitrary number that maps to a decay mode string.
+	std::string parentdecaystring;       // descriptive string. Should we store a map of the translation?
+	float parentdecayvtx_x, parentdecayvtx_y, parentdecayvtx_z;
+	TVector3 parentdecayvtx;
+	float parentdecaymom_x, parentdecaymom_y, parentdecaymom_z;
+	TVector3 parentdecaymom;
+	float parentprodmom_x, parentprodmom_y, parentprodmom_z;
+	TVector3 parentprodmom;
+	int parentprodmedium;                // they're all 0
+	std::string parentprodmediumstring;  // do we even have this mapping?
+	int parentpdgattgtexit;
+	std::string parenttypestringattgtexit;
+	TVector3 parenttgtexitmom;
+	float parenttgtexitmom_x, parenttgtexitmom_y, parenttgtexitmom_z;
+#endif
+	
+	// Additional zarko-only information
+	// TODO fillme
+	
+	// store the neutrino info from gntp files
+	// a load of variables to specify interaction type
+	bool IsQuasiElastic=false;
+	bool IsResonant=false;
+	bool IsDeepInelastic=false;
+	bool IsCoherent=false;
+	bool IsDiffractive=false;
+	bool IsInverseMuDecay=false;
+	bool IsIMDAnnihilation=false;
+	bool IsSingleKaon=false;
+	bool IsNuElectronElastic=false;
+	bool IsEM=false;
+	bool IsWeakCC=false;
+	bool IsWeakNC=false;
+	bool IsMEC=false;
+	std::string interactiontypestring="";
+	int neutcode=-1;
+	// ok, moving on
+	double nuIntxVtx_X; // cm
+	double nuIntxVtx_Y; // cm
+	double nuIntxVtx_Z; // cm
+	double nuIntxVtx_T; // ns
+	bool isintank=false;
+	bool isinfiducialvol=false;
+	double eventq2=-1;
+	double eventEnu=-1;
+	int neutrinopdg=-1;
+	double muonenergy=-1;
+	double muonangle=-1;
+	std::string fsleptonname; // assumed to be muon, but we should confirm
+	// these may not be properly copied... 
+	int numfsprotons;
+	int numfsneutrons;
+	int numfspi0;
+	int numfspiplus;
+	int numfspiminus;
+	
 };
 
 

@@ -1,3 +1,4 @@
+/* vim:set noexpandtab tabstop=2 wrap */
 #include "LoadGenieEvent.h"
 //GENIE
 #include <FluxDrivers/GSimpleNtpFlux.h>
@@ -49,47 +50,436 @@ Genie 2.12 GNTP files: /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k
 
 */
 
-#ifndef FLUX_STAGE
-//#define FLUX_STAGE 0 // gsimple / bnb_annie_* files
-#define FLUX_STAGE 1   // gntp files
-#endif
-
-#if FLUX_STAGE==1
-// for fluxstage=1 (gntp files) we can retrieve info about the neutrino interaction
-#include <GHEP/GHepUtils.h>               // neut reaction codes
+#include <GHEP/GHepUtils.h>
 #include <PDG/PDGLibrary.h>
 #include <Ntuple/NtpMCEventRecord.h>
 #include <Conventions/Constants.h>
 #include "src/genieinfo_struct.cpp"       // definition of a struct to hold genie info
 
-
 // function to fill the info into the handy genieinfostruct
 // TODO: move to header
 void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint, GenieInfo& thegenieinfo, bool printneutrinoevent=false);
-#endif
 
 LoadGenieEvent::LoadGenieEvent():Tool(){}
 
 bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 
-  /////////////////// Useful header ///////////////////////
-  if(configfile!="")  m_variables.Initialise(configfile); //loading config file
-  //m_variables.Print();
-
-  m_data= &data; //assigning transient data pointer
-  /////////////////////////////////////////////////////////////////
-
-  return true;
+	/////////////////// Useful header ///////////////////////
+	if(configfile!="") m_variables.Initialise(configfile); //loading config file
+	//m_variables.Print();
+	
+	m_data= &data; //assigning transient data pointer
+	/////////////////////////////////////////////////////////////////
+	
+	m_variables.Get("verbosity",verbosity);
+	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
+	m_variables.Get("FileDir",filedir);
+	m_variables.Get("FilePattern",&filepattern);
+	
+	// create a store for holding Genie information to pass to downstream Tools
+	// will be a single entry BoostStore containing a vector of single entry BoostStores
+	BoostStore* geniestore = new BoostStore(true,0); // enable type-checking, BoostStore type binary
+	m_data->Stores.emplace("GenieInfo",geniestore);
+	
+	// Open the flux files
+	///////////////////////
+	flux = new TChain("gtree");
+	std::string inputfiles = filedir+"/"+filepattern;
+	flux->Add(inputfiles.c_str());s
+	Log("Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
+	Log("Setting branch addresses",v_debug,verbosity);
+	// neutrino event information
+	flux->SetBranchAddress("gmcrec",&genieintx);
+	flux->GetBranch("gmcrec")->SetAutoDelete(kTRUE);
+	// input (BNB intx) event information
+	if(fluxver==0){   // rhatcher files
+		flux->SetBranchAddress("flux",&gnumipassthruentry);
+		flux->GetBranch("flux")->SetAutoDelete(kTRUE);
+	} else {          // zarko files
+		flux->SetBranchAddress("numi",&gsimplenumientry);
+		flux->GetBranch("numi")->SetAutoDelete(kTRUE);
+		flux->SetBranchAddress("simple",&gsimpleentry);
+		flux->GetBranch("simple")->SetAutoDelete(kTRUE);
+		flux->SetBranchAddress("aux",&gsimpleauxinfo);
+		flux->GetBranch("aux")->SetAutoDelete(kTRUE);
+	}
+	
+	return true;
 }
-
 
 bool LoadGenieEvent::Execute(){
-
-  return true;
+	
+	local_entry = flux->LoadTree(tchainentrynum);
+	flux->GetEntry(local_entry);
+	curf = flux->GetCurrentFile();
+	if(curf!=curflast || curflast==nullptr){
+		TString curftstring = curf->GetName();
+		currentfilestring = std::string(curftstring.Data());
+		curflast=curf;
+	}
+	tchainentrynum++;
+	
+	// Expand out the neutrino event info
+	// =======================================================
+	
+	// header only contains the event number
+	genie::NtpMCRecHeader hdr = genieintx->hdr;
+	unsigned int genie_event_num = hdr.ievent;
+	
+	// all neutrino intx details are in the event record
+	genie::EventRecord* gevtRec = genieintx->event;
+	
+	if(fluxver==0){
+		// FLUXVER 0 - genie::flux::GNuMIFluxPassThroughInfo
+		// =================================================
+		// extract the target intx details from the GNuMIFluxPassThroughInfo object
+		parentpdg = gnumipassthruentry->ptype;
+		parentdecaymode = gnumipassthruentry->ndecay;
+		parentdecayvtx_x = gnumipassthruentry->vx;
+		parentdecayvtx_y = gnumipassthruentry->vy;
+		parentdecayvtx_z = gnumipassthruentry->vz;
+		parentdecaymom_x = gnumipassthruentry->pdpx;
+		parentdecaymom_y = gnumipassthruentry->pdpy;
+		parentdecaymom_z = gnumipassthruentry->pdpz;
+		parentprodmom_x = gnumipassthruentry->ppdxdz;
+		parentprodmom_y = gnumipassthruentry->ppdydz;
+		parentprodmom_z = gnumipassthruentry->pppz;
+		//parentprodmedium = gnumipassthruentry->ppmedium;
+		parentpdgattgtexit = gnumipassthruentry->tptype;
+		parenttgtexitmom_x = gnumipassthruentry->tpx;
+		parenttgtexitmom_y = gnumipassthruentry->tpy;
+		parenttgtexitmom_z = gnumipassthruentry->tpz;
+		
+		// convenience type conversions
+		parentdecayvtx = TVector3(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
+		parentdecaymom = TVector3(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
+		parentprodmom = TVector3(parentprodmom_x,parentprodmom_y,parentprodmom_z);
+		parenttgtexitmom = TVector3(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
+		parenttypestring = (fluxstage==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
+		parenttypestringattgtexit = (fluxstage==0) ? 
+			GnumiToString(parentpdgattgtexit) : PdgToString(parentpdgattgtexit);
+		parentdecaystring = DecayTypeToString(parentdecaymode);
+		//parentprodmediumstring = MediumToString(parentprodmedium);
+		
+	} else {
+		// FLUXVER 1 - genie::flux::GSimpleNtpEntry
+		// ========================================
+		// extract the target intx details from the GSimpleNtpNuMI object
+		parentpdg = gsimplenumientry->ptype;
+		parentdecaymode = gsimplenumientry->ndecay;
+		parentdecayvtx_x = gsimplenumientry->vx;
+		parentdecayvtx_y = gsimplenumientry->vy;
+		parentdecayvtx_z = gsimplenumientry->vz;
+		parentdecaymom_x = gsimplenumientry->pdpx;
+		parentdecaymom_y = gsimplenumientry->pdpy;
+		parentdecaymom_z = gsimplenumientry->pdpz;
+		parentprodmom_x = gsimplenumientry->pppx/gsimplenumientry->pppz; // ??? is this ppdxdz?
+		parentprodmom_y = gsimplenumientry->pppy/gsimplenumientry->pppz;
+		parentprodmom_z = gsimplenumientry->pppz;
+		//parentprodmedium = gsimplenumientry->ppmedium;
+		parentpdgattgtexit = gsimplenumientry->tptype;
+		parenttgtexitmom_x = gsimplenumientry->tpx;
+		parenttgtexitmom_y = gsimplenumientry->tpy;
+		parenttgtexitmom_z = gsimplenumientry->tpz;
+		
+		// convenience type conversions
+		parentdecayvtx = TVector3(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
+		parentdecaymom = TVector3(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
+		parentprodmom = TVector3(parentprodmom_x,parentprodmom_y,parentprodmom_z);
+		parenttgtexitmom = TVector3(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
+		parenttypestring = PdgToString(parentpdg);
+		parenttypestringattgtexit = PdgToString(parentpdgattgtexit);
+		parentdecaystring = DecayTypeToString(parentdecaymode);
+		//parentprodmediumstring = MediumToString(parentprodmedium);
+		
+	}
+	
+	// neutrino interaction info
+	genie::Interaction* genieint = gevtRec->Summary();
+	//cout<<"scraping interaction info"<<endl;
+	GenieInfo thegenieinfo;
+	GetGenieEntryInfo(gevtRec, genieint, thegenieinfo);  // fill convenience struct with nu intx info
+	//cout<<"done interaction info"<<endl;
+	
+	// retrieve info from the struct
+	IsQuasiElastic=thegenieinfo.eventtypes.at("IsQuasiElastic");
+	IsResonant=thegenieinfo.eventtypes.at("IsResonant");
+	IsDeepInelastic=thegenieinfo.eventtypes.at("IsDeepInelastic");
+	IsCoherent=thegenieinfo.eventtypes.at("IsCoherent");
+	IsDiffractive=thegenieinfo.eventtypes.at("IsDiffractive");
+	IsInverseMuDecay=thegenieinfo.eventtypes.at("IsInverseMuDecay");
+	IsIMDAnnihilation=thegenieinfo.eventtypes.at("IsIMDAnnihilation");
+	IsSingleKaon=thegenieinfo.eventtypes.at("IsSingleKaon");
+	IsNuElectronElastic=thegenieinfo.eventtypes.at("IsNuElectronElastic");
+	IsEM=thegenieinfo.eventtypes.at("IsEM");
+	IsWeakCC=thegenieinfo.eventtypes.at("IsWeakCC");
+	IsWeakNC=thegenieinfo.eventtypes.at("IsWeakNC");
+	IsMEC=thegenieinfo.eventtypes.at("IsMEC");
+	interactiontypestring=thegenieinfo.interactiontypestring;
+	neutcode=thegenieinfo.neutinteractioncode; // currently disabled to prevent excessive verbosity
+	
+	eventq2=thegenieinfo.Q2;
+	eventEnu=thegenieinfo.probeenergy;
+	neutrinopdg=thegenieinfo.probepdg;
+	muonenergy=thegenieinfo.fsleptonenergy;
+	muonangle=thegenieinfo.fslangle;
+	
+	nuIntxVtx_X=thegenieinfo.Intx_x; // cm
+	nuIntxVtx_Y=thegenieinfo.Intx_y; // cm
+	nuIntxVtx_Z=thegenieinfo.Intx_z; // cm
+	nuIntxVtx_T=thegenieinfo.Intx_t; // ns
+	// check in tank
+	if( ( sqrt( pow(nuIntxVtx_X, 2) + pow(nuIntxVtx_Z-MRDSpecs::tank_start-MRDSpecs::tank_radius,2) )
+		  < MRDSpecs::tank_radius ) && 
+		  ( abs(nuIntxVtx_Y-MRDSpecs::tank_yoffset) < MRDSpecs::tank_halfheight) ){
+		isintank=true;
+	} else { isintank=false; }
+	// check in fiducial volume
+	if( isintank &&
+	  ( sqrt (pow(nuIntxVtx_X, 2) + pow(nuIntxVtx_Z-MRDSpecs::tank_start-MRDSpecs::tank_radius,2)) 
+	  < MRDSpecs::fidcutradius ) && 
+	  ( abs(nuIntxVtx_Y-MRDSpecs::tank_yoffset) < MRDSpecs::fidcuty ) && 
+	  ( (nuIntxVtx_Z-MRDSpecs::tank_start-MRDSpecs::tank_radius) < MRDSpecs::fidcutz) ){
+		isinfiducialvol=true;
+	} else { isinfiducialvol = false; }
+	
+	fsleptonname = std::string(thegenieinfo.fsleptonname.Data());
+	// this data does not appear to be populated...
+	numfsprotons = thegenieinfo.numfsprotons = genieint->ExclTag().NProtons();
+	numfsneutrons = thegenieinfo.numfsneutrons = genieint->ExclTag().NNeutrons();
+	numfspi0 = thegenieinfo.numfspi0 = genieint->ExclTag().NPi0();
+	numfspiplus = thegenieinfo.numfspiplus = genieint->ExclTag().NPiPlus();
+	numfspiminus = thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
+	
+	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
+	
+	// Update the Store with all the current event information
+	// =======================================================
+	geniestore->Set("file",currentfilestring);
+	geniestore->Set("fluxver",fluxver);
+	geniestore->Set("evtnum",tchainentrynum);
+	geniestore->Set("ParentPdg",parentpdg);
+	geniestore->Set("ParentTypeString",parenttypestring);
+	geniestore->Set("ParentDecayMode",parentdecaymode);
+	geniestore->Set("ParentDecayString",parentdecaystring);
+	geniestore->Set("ParentDecayVtx",parentdecayvtx);
+	geniestore->Set("ParentDecayVtx_X",parentdecayvtx_x);
+	geniestore->Set("ParentDecayVtx_Y",parentdecayvtx_y);
+	geniestore->Set("ParentDecayVtx_Z",parentdecayvtx_z);
+	geniestore->Set("ParentDecayMom",parentdecaymom);
+	geniestore->Set("ParentDecayMom_X",parentdecaymom_x);
+	geniestore->Set("ParentDecayMom_Y",parentdecaymom_y);
+	geniestore->Set("ParentDecayMom_Z",parentdecaymom_z);
+	geniestore->Set("ParentProdMom",parentprodmom);
+	geniestore->Set("ParentProdMom_X",parentprodmom_x);
+	geniestore->Set("ParentProdMom_Y",parentprodmom_y);
+	geniestore->Set("ParentProdMom_Z",parentprodmom_z);
+	//geniestore->Set("ParentProdMedium",parentprodmedium);
+	//geniestore->Set("ParentProdMediumString",parentprodmediumstring);
+	geniestore->Set("ParentPdgAtTgtExit",parentpdgattgtexit);
+	geniestore->Set("ParentTypeAtTgtExitString",parenttypestringattgtexit);
+	geniestore->Set("ParentTgtExitMom",parenttgtexitmom);
+	geniestore->Set("ParentTgtExitMom_X",parenttgtexitmom_x);
+	geniestore->Set("ParentTgtExitMom_Y",parenttgtexitmom_y);
+	geniestore->Set("ParentTgtExitMom_Z",parenttgtexitmom_z);
+	
+	geniestore->Set("IsQuasiElastic",IsQuasiElastic);
+	geniestore->Set("IsResonant",IsResonant);
+	geniestore->Set("IsDeepInelastic",IsDeepInelastic);
+	geniestore->Set("IsCoherent",IsCoherent);
+	geniestore->Set("IsDiffractive",IsDiffractive);
+	geniestore->Set("IsInverseMuDecay",IsInverseMuDecay);
+	geniestore->Set("IsIMDAnnihilation",IsIMDAnnihilation);
+	geniestore->Set("IsSingleKaon",IsSingleKaon);
+	geniestore->Set("IsNuElectronElastic",IsNuElectronElastic);
+	geniestore->Set("IsEM",IsEM);
+	geniestore->Set("IsWeakCC",IsWeakCC);
+	geniestore->Set("IsWeakNC",IsWeakNC);
+	geniestore->Set("IsMEC",IsMEC);
+	geniestore->Set("InteractionTypeString",interactiontypestring);
+	geniestore->Set("NeutCode",neutcode);
+	geniestore->Set("NuIntxVtx_X",nuIntxVtx_X);
+	geniestore->Set("NuIntxVtx_Y",nuIntxVtx_Y);
+	geniestore->Set("NuIntxVtx_Z",nuIntxVtx_Z);
+	geniestore->Set("NuIntxVtx_T",nuIntxVtx_T);
+	geniestore->Set("NuVtxInTank",isintank);
+	geniestore->Set("NuVtxInFidVol",isinfiducialvol);
+	geniestore->Set("EventQ2",eventq2);
+	geniestore->Set("NeutrinoEnergy",eventEnu);
+	geniestore->Set("NeutrinoPDG",neutrinopdg);
+	geniestore->Set("MuonEnergy",muonenergy);
+	geniestore->Set("MuonAngle",muonangle);
+	geniestore->Set("FSLeptonName",fsleptonname);
+	geniestore->Set("NumFSProtons",numfsprotons);
+	geniestore->Set("NumFSNeutrons",numfsneutrons);
+	geniestore->Set("NumFSPi0",numfspi0);
+	geniestore->Set("NumFSPiPlus",numfspiplus);
+	geniestore->Set("NumFSPiMinus",numfspiminus);
+	
+	return true;
 }
 
-
 bool LoadGenieEvent::Finalise(){
+	
+	return true;
+}
 
-  return true;
+void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint, GenieInfo &thegenieinfo, bool printneutrinoevent){
+	// process information:
+	/*TString*/ thegenieinfo.procinfostring = genieint->ProcInfo().AsString();
+	/*TString*/ thegenieinfo.scatteringtypestring = genieint->ProcInfo().ScatteringTypeAsString();
+	/*TString*/ thegenieinfo.interactiontypestring = genieint->ProcInfo().InteractionTypeAsString();
+	thegenieinfo.eventtypes.at("IsQuasiElastic") = genieint->ProcInfo().IsQuasiElastic();
+	thegenieinfo.eventtypes.at("IsResonant") = genieint->ProcInfo().IsResonant();
+	thegenieinfo.eventtypes.at("IsDeepInelastic") = genieint->ProcInfo().IsDeepInelastic();
+	thegenieinfo.eventtypes.at("IsCoherent") = genieint->ProcInfo().IsCoherent();
+	thegenieinfo.eventtypes.at("IsDiffractive") = genieint->ProcInfo().IsDiffractive();
+	thegenieinfo.eventtypes.at("IsInverseMuDecay") = genieint->ProcInfo().IsInverseMuDecay();
+	thegenieinfo.eventtypes.at("IsIMDAnnihilation") = genieint->ProcInfo().IsIMDAnnihilation();
+	thegenieinfo.eventtypes.at("IsSingleKaon") = genieint->ProcInfo().IsSingleKaon();
+	thegenieinfo.eventtypes.at("IsNuElectronElastic") = genieint->ProcInfo().IsNuElectronElastic();
+	thegenieinfo.eventtypes.at("IsEM") = genieint->ProcInfo().IsEM();
+	thegenieinfo.eventtypes.at("IsWeakCC") = genieint->ProcInfo().IsWeakCC();
+	thegenieinfo.eventtypes.at("IsWeakNC") = genieint->ProcInfo().IsWeakNC();
+	thegenieinfo.eventtypes.at("IsMEC") = genieint->ProcInfo().IsMEC();
+	/*
+	getting the neut reaction code results in the printing of a bunch of surplus info, e.g:
+1501283211 NOTICE GHepUtils : [n] <GHepUtils.cxx::NeutReactionCode (106)> : Current event is RES or DIS with W<2
+1501283211 NOTICE GHepUtils : [n] <GHepUtils.cxx::NeutReactionCode (153)> : Num of primary particles: 
+ p = 1, n = 0, pi+ = 0, pi- = 1, pi0 = 0, eta = 0, K+ = 0, K- = 0, K0 = 0, Lambda's = 0, gamma's = 0
+	if we could redirect and capture this (rather than printing it to stdout) it might actually be useful,
+	as extracting number of other hadrons doesn't work! but for now, just turn it off to reduce verbosity.
+	*/
+	/*Int_t*/ //thegenieinfo.neutinteractioncode = genie::utils::ghep::NeutReactionCode(gevtRec);
+	/*Int_t*/ thegenieinfo.nuanceinteractioncode	= genie::utils::ghep::NuanceReactionCode(gevtRec);
+	/*TLorentzVector**/ thegenieinfo.IntxVtx = gevtRec->Vertex();
+	/*Double_t*/ thegenieinfo.Intx_x = thegenieinfo.IntxVtx->X() * 100.;	 // same info as nuvtx in g4dirt file
+	/*Double_t*/ thegenieinfo.Intx_y = thegenieinfo.IntxVtx->Y() * 100.;	 // GENIE uses meters
+	/*Double_t*/ thegenieinfo.Intx_z = thegenieinfo.IntxVtx->Z() * 100.;	 // GENIE uses meters
+	/*Double_t*/ thegenieinfo.Intx_t = thegenieinfo.IntxVtx->T() * 1000000000; // GENIE uses seconds
+	
+	// neutrino information:
+	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab);	// GeV
+	/*Int_t*/ thegenieinfo.probepdg = genieint->InitState().Probe()->PdgCode();
+	/*TString*/ thegenieinfo.probepartname = genieint->InitState().Probe()->GetName();
+	/*TLorentzVector**/ thegenieinfo.probemomentum = gevtRec->Probe()->P4();
+	/*TVector3*/ thegenieinfo.probethreemomentum = thegenieinfo.probemomentum->Vect();
+	/*TVector3*/ thegenieinfo.probemomentumdir = thegenieinfo.probethreemomentum.Unit();
+	/*Double_t*/ thegenieinfo.probeanglex = 
+		TMath::ATan(thegenieinfo.probethreemomentum.X()/thegenieinfo.probethreemomentum.Z());
+	/*Double_t*/ thegenieinfo.probeangley = 
+		TMath::ATan(thegenieinfo.probethreemomentum.Y()/thegenieinfo.probethreemomentum.Z());
+	/*Double_t*/ thegenieinfo.probeangle = TMath::Max(thegenieinfo.probeanglex,thegenieinfo.probeangley);
+	// n.b.	genieint->InitState().Probe != gevtRec->Probe()
+	
+	// target nucleon:
+	/*genie::GHepParticle**/ thegenieinfo.targetnucleon = gevtRec->HitNucleon();
+	/*int*/ thegenieinfo.targetnucleonpdg = genieint->InitState().Tgt().HitNucPdg();
+	/*TString*/ thegenieinfo.targetnucleonname="";
+	if ( genie::pdg::IsNeutronOrProton(thegenieinfo.targetnucleonpdg) ) {
+		TParticlePDG * p = genie::PDGLibrary::Instance()->Find(thegenieinfo.targetnucleonpdg);
+		thegenieinfo.targetnucleonname = p->GetName();
+	} else {
+		thegenieinfo.targetnucleonname = std::to_string(thegenieinfo.targetnucleonpdg);
+	}
+	/*TVector3*/ thegenieinfo.targetnucleonthreemomentum=TVector3(0.,0.,0.);
+	/*Double_t*/ thegenieinfo.targetnucleonenergy=0.;
+	if(thegenieinfo.targetnucleon){
+		TLorentzVector* targetnucleonmomentum = thegenieinfo.targetnucleon->P4();
+		thegenieinfo.targetnucleonthreemomentum = targetnucleonmomentum->Vect();
+		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy(); //GeV
+	}
+	
+	// target nucleus:
+	/*Int_t*/ thegenieinfo.targetnucleuspdg = genieint->InitState().Tgt().Pdg();
+	/*TParticlePDG**/ thegenieinfo.targetnucleus = 
+		genie::PDGLibrary::Instance()->Find(thegenieinfo.targetnucleuspdg);
+	/*TString*/ thegenieinfo.targetnucleusname = "unknown";
+	if(thegenieinfo.targetnucleus){ thegenieinfo.targetnucleusname = thegenieinfo.targetnucleus->GetName(); }
+	/*Int_t*/ thegenieinfo.targetnucleusZ = genieint->InitState().Tgt().Z();
+	/*Int_t*/ thegenieinfo.targetnucleusA = genieint->InitState().Tgt().A();
+	
+	// remnant nucleus:
+	int remnucpos = gevtRec->RemnantNucleusPosition(); 
+	/*TString*/ thegenieinfo.remnantnucleusname="n/a";
+	/*Double_t*/ thegenieinfo.remnantnucleusenergy=-1.;
+	if(remnucpos>-1){
+		thegenieinfo.remnantnucleusname = gevtRec->Particle(remnucpos)->Name();
+		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy(); //GeV
+	}
+	
+	// final state lepton:
+	int fsleppos = gevtRec->FinalStatePrimaryLeptonPosition();
+	/*TString*/ thegenieinfo.fsleptonname="n/a";
+	/*Double_t*/ thegenieinfo.fsleptonenergy=-1.;
+	if(fsleppos>-1){
+		thegenieinfo.fsleptonname = gevtRec->Particle(fsleppos)->Name();
+		thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy();
+	}
+	
+	// other remnants: TODO: this information is NOT being correctly read in
+	/*Int_t*/ thegenieinfo.numfsprotons = genieint->ExclTag().NProtons();
+	/*Int_t*/ thegenieinfo.numfsneutrons = genieint->ExclTag().NNeutrons();
+	/*Int_t*/ thegenieinfo.numfspi0 = genieint->ExclTag().NPi0();
+	/*Int_t*/ thegenieinfo.numfspiplus = genieint->ExclTag().NPiPlus();
+	/*Int_t*/ thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
+	
+	// kinematic information
+	Double_t NucleonM	= genie::constants::kNucleonMass; 
+	// Calculate kinematic variables "as an experimentalist would measure them; 
+	// neglecting fermi momentum and off-shellness of bound nucleons"
+	/*TLorentzVector**/ thegenieinfo.k1 = gevtRec->Probe()->P4();
+	/*TLorentzVector**/ thegenieinfo.k2 = gevtRec->FinalStatePrimaryLepton()->P4();
+	/*Double_t*/ thegenieinfo.costhfsl = TMath::Cos( thegenieinfo.k2->Vect().Angle(thegenieinfo.k1->Vect()) );
+	/*Double_t*/ thegenieinfo.fslangle = thegenieinfo.k2->Vect().Angle(thegenieinfo.k1->Vect());
+	// q=k1-k2, 4-p transfer
+	/*TLorentzVector*/ thegenieinfo.q	= (*(thegenieinfo.k1))-(*(thegenieinfo.k2));
+//	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();	// not set in our GENIE files!
+	// momemtum transfer
+	/*Double_t*/ thegenieinfo.Q2 = -1 * thegenieinfo.q.M2();
+	// E transfer to the nucleus
+	/*Double_t*/ thegenieinfo.Etransf	= (thegenieinfo.targetnucleon) ? thegenieinfo.q.Energy() : -1;
+	// Bjorken x
+	/*Double_t*/ thegenieinfo.x	= 
+		(thegenieinfo.targetnucleon) ? 0.5*thegenieinfo.Q2/(NucleonM*thegenieinfo.Etransf) : -1;
+	// Inelasticity, y = q*P1/k1*P1
+	/*Double_t*/ thegenieinfo.y	= 
+		(thegenieinfo.targetnucleon) ? thegenieinfo.Etransf/thegenieinfo.k1->Energy() : -1;
+	// Hadronic Invariant mass ^ 2
+	/*Double_t*/ thegenieinfo.W2 = 
+	(thegenieinfo.targetnucleon) ? (NucleonM*NucleonM + 2*NucleonM*thegenieinfo.Etransf - thegenieinfo.Q2) : -1;
+	
+	if(printneutrinoevent){
+		cout<<"This was a "<< thegenieinfo.procinfostring <<" (neut code "<<thegenieinfo.neutinteractioncode
+			<<") interaction of a "
+			<<thegenieinfo.probeenergy<<"GeV " << thegenieinfo.probepartname << " on a "; 
+		
+		if( thegenieinfo.targetnucleonpdg==2212 || thegenieinfo.targetnucleonpdg==2122 ){
+			cout<<thegenieinfo.targetnucleonname<<" in a ";
+		} else {
+			cout<<"PDG-Code " << thegenieinfo.targetnucleonpdg<<" in a ";
+		}
+		
+		if( thegenieinfo.targetnucleusname!="unknown"){ cout<<thegenieinfo.targetnucleusname<<" nucleus, "; }
+		else { cout<<"Z=["<<thegenieinfo.targetnucleusZ<<","<<thegenieinfo.targetnucleusA<<"] nucleus, "; }
+		
+		if(remnucpos>-1){
+			cout<<"producing a "<<thegenieinfo.remnantnucleusenergy<<"GeV "<<thegenieinfo.remnantnucleusname;
+		} else { cout<<"with no remnant nucleus"; }	// DIS on 16O produces no remnant nucleus?!
+		
+		if(fsleppos>-1){
+			cout<<" and a "<<thegenieinfo.fsleptonenergy<<"GeV "<<thegenieinfo.fsleptonname<<endl;
+		} else{ cout<<" and no final state leptons"<<endl; }
+		
+		cout<<endl<<"Q^2 was "<<thegenieinfo.Q2<<"(GeV/c)^2, with final state lepton"
+			<<" ejected at Cos(θ)="<<thegenieinfo.costhfsl<<endl;
+		cout<<"Additional final state particles included "<<endl;
+		cout<< " N(p) = "	 << thegenieinfo.numfsprotons
+			<< " N(n) = "	 << thegenieinfo.numfsneutrons
+			<< endl
+			<< " N(pi^0) = "	<< thegenieinfo.numfspi0
+			<< " N(pi^+) = "	<< thegenieinfo.numfspiplus
+			<< " N(pi^-) = "	<< thegenieinfo.numfspiminus
+			<<endl;
+	}
 }
