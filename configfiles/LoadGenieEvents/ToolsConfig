@@ -1,0 +1,2 @@
+myLoadGenieEvent LoadGenieEvent configfiles/LoadGenieEvents/LoadGenieEventConfig
+myPrintGenieEvent PrintGenieEvent configfiles/LoadGenieEvents/PrintGenieEventConfig

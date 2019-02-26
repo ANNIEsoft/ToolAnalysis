@@ -1,8 +1,9 @@
 /* vim:set noexpandtab tabstop=2 wrap */
 #include "LoadGenieEvent.h"
-//GENIE
-#include <FluxDrivers/GSimpleNtpFlux.h>
-#include <FluxDrivers/GNuMIFlux.h>
+
+//using namespace genie;
+//using namespace genie::constants;
+//using namespace genie::flux;
 
 /*
 GENIE INPUTS
@@ -50,12 +51,6 @@ Genie 2.12 GNTP files: /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k
 
 */
 
-#include <GHEP/GHepUtils.h>
-#include <PDG/PDGLibrary.h>
-#include <Ntuple/NtpMCEventRecord.h>
-#include <Conventions/Constants.h>
-#include "src/genieinfo_struct.cpp"       // definition of a struct to hold genie info
-
 // function to fill the info into the handy genieinfostruct
 // TODO: move to header
 void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint, GenieInfo& thegenieinfo, bool printneutrinoevent=false);
@@ -74,18 +69,20 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
 	m_variables.Get("FileDir",filedir);
-	m_variables.Get("FilePattern",&filepattern);
+	m_variables.Get("FilePattern",filepattern);
 	
 	// create a store for holding Genie information to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
-	BoostStore* geniestore = new BoostStore(true,0); // enable type-checking, BoostStore type binary
+	geniestore = new BoostStore(true,0); // enable type-checking, BoostStore type binary
 	m_data->Stores.emplace("GenieInfo",geniestore);
 	
 	// Open the flux files
 	///////////////////////
+	Log("Opening TChain",v_debug,verbosity);
 	flux = new TChain("gtree");
 	std::string inputfiles = filedir+"/"+filepattern;
-	flux->Add(inputfiles.c_str());s
+	int numbytes = flux->Add(inputfiles.c_str());
+	Log("Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
 	Log("Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
 	Log("Setting branch addresses",v_debug,verbosity);
 	// neutrino event information
@@ -93,8 +90,8 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	flux->GetBranch("gmcrec")->SetAutoDelete(kTRUE);
 	// input (BNB intx) event information
 	if(fluxver==0){   // rhatcher files
-		flux->SetBranchAddress("flux",&gnumipassthruentry);
-		flux->GetBranch("flux")->SetAutoDelete(kTRUE);
+//		flux->SetBranchAddress("flux",&gnumipassthruentry);
+//		flux->GetBranch("flux")->SetAutoDelete(kTRUE);
 	} else {          // zarko files
 		flux->SetBranchAddress("numi",&gsimplenumientry);
 		flux->GetBranch("numi")->SetAutoDelete(kTRUE);
@@ -130,6 +127,7 @@ bool LoadGenieEvent::Execute(){
 	genie::EventRecord* gevtRec = genieintx->event;
 	
 	if(fluxver==0){
+/*
 		// FLUXVER 0 - genie::flux::GNuMIFluxPassThroughInfo
 		// =================================================
 		// extract the target intx details from the GNuMIFluxPassThroughInfo object
@@ -151,15 +149,16 @@ bool LoadGenieEvent::Execute(){
 		parenttgtexitmom_z = gnumipassthruentry->tpz;
 		
 		// convenience type conversions
-		parentdecayvtx = TVector3(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
-		parentdecaymom = TVector3(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
-		parentprodmom = TVector3(parentprodmom_x,parentprodmom_y,parentprodmom_z);
-		parenttgtexitmom = TVector3(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
+		parentdecayvtx = Position(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
+		parentdecaymom = Position(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
+		parentprodmom = Position(parentprodmom_x,parentprodmom_y,parentprodmom_z);
+		parenttgtexitmom = Position(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
 		parenttypestring = (fluxstage==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
 		parenttypestringattgtexit = (fluxstage==0) ? 
 			GnumiToString(parentpdgattgtexit) : PdgToString(parentpdgattgtexit);
 		parentdecaystring = DecayTypeToString(parentdecaymode);
 		//parentprodmediumstring = MediumToString(parentprodmedium);
+*/
 		
 	} else {
 		// FLUXVER 1 - genie::flux::GSimpleNtpEntry
@@ -183,10 +182,10 @@ bool LoadGenieEvent::Execute(){
 		parenttgtexitmom_z = gsimplenumientry->tpz;
 		
 		// convenience type conversions
-		parentdecayvtx = TVector3(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
-		parentdecaymom = TVector3(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
-		parentprodmom = TVector3(parentprodmom_x,parentprodmom_y,parentprodmom_z);
-		parenttgtexitmom = TVector3(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
+		parentdecayvtx = Position(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
+		parentdecaymom = Position(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
+		parentprodmom = Position(parentprodmom_x,parentprodmom_y,parentprodmom_z);
+		parenttgtexitmom = Position(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
 		parenttypestring = PdgToString(parentpdg);
 		parenttypestringattgtexit = PdgToString(parentpdgattgtexit);
 		parentdecaystring = DecayTypeToString(parentdecaymode);
@@ -315,6 +314,7 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("NumFSPi0",numfspi0);
 	geniestore->Set("NumFSPiPlus",numfspiplus);
 	geniestore->Set("NumFSPiMinus",numfspiminus);
+	geniestore->Set("TheGenieInfo",thegenieinfo);
 	
 	return true;
 }
@@ -483,3 +483,171 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 			<<endl;
 	}
 }
+
+// type conversion functions:
+std::string LoadGenieEvent::GnumiToString(int code){
+	if(gnumicodetoname.size()==0) GenerateGnumiMap();
+	if(gnumicodetoname.count(code)!=0){
+		return gnumicodetoname.at(code);
+	} else {
+		cerr<<"unknown gnumi code "<<code<<endl;
+		return std::to_string(code);
+	}
+}
+
+std::string LoadGenieEvent::PdgToString(int code){
+	if(pdgcodetoname.size()==0) GeneratePdgMap();
+	if(pdgcodetoname.count(code)!=0){
+		return pdgcodetoname.at(code);
+	} else {
+		cerr<<"unknown pdg code "<<code<<endl;
+		return std::to_string(code);
+	}
+}
+
+std::string LoadGenieEvent::DecayTypeToString(int code){
+	if(decaymap.size()==0) GenerateDecayMap();
+	if(decaymap.count(code)!=0){
+		return decaymap.at(code);
+	} else {
+		cerr<<"unknown decay code "<<code<<endl;
+		return std::to_string(code);
+	}
+}
+
+std::string LoadGenieEvent::MediumToString(int code){
+	return std::to_string(code); // TODO fill this out
+}
+
+std::map<int,std::string>* LoadGenieEvent::GenerateGnumiMap(){
+	if(gnumicodetoname.size()!=0) return &gnumicodetoname;
+	gnumicodetoname.emplace(14 ,"Proton");
+	gnumicodetoname.emplace(15 ,"Anti Proton");
+	gnumicodetoname.emplace(3 ,"Electron");
+	gnumicodetoname.emplace(2 ,"Positron");
+	gnumicodetoname.emplace(53 ,"Electron Neutrino");
+	gnumicodetoname.emplace(52 ,"Anti Electron Neutrino");
+	gnumicodetoname.emplace(1 ,"Photon");
+	gnumicodetoname.emplace(13 ,"Neutron");
+	gnumicodetoname.emplace(25 ,"Anti Neutron");
+	gnumicodetoname.emplace(5 ,"Muon+");
+	gnumicodetoname.emplace(6 ,"Muon-");
+	gnumicodetoname.emplace(10 ,"Kaonlong");
+	gnumicodetoname.emplace(8 ,"Pion+");
+	gnumicodetoname.emplace(9 ,"Pion-");
+	gnumicodetoname.emplace(11 ,"Kaon+");
+	gnumicodetoname.emplace(12 ,"Kaon-");
+	gnumicodetoname.emplace(18 ,"Lambda");
+	gnumicodetoname.emplace(26 ,"Antilambda");
+	gnumicodetoname.emplace(16 ,"Kaonshort");
+	gnumicodetoname.emplace(21 ,"Sigma-");
+	gnumicodetoname.emplace(19 ,"Sigma+");
+	gnumicodetoname.emplace(20 ,"Sigma0");
+	gnumicodetoname.emplace(7 ,"Pion0");
+	gnumicodetoname.emplace(99,"Kaon0");  // gnumi particle code for Kaon0 and Antikaon0
+	gnumicodetoname.emplace(98,"Antikaon0");  // are both listed as "10 & 16" ... 
+	gnumicodetoname.emplace(56 ,"Muon Neutrino");
+	gnumicodetoname.emplace(55 ,"Anti Muon Neutrino");
+	gnumicodetoname.emplace(27 ,"Anti Sigma-");
+	gnumicodetoname.emplace(28 ,"Anti Sigma0");
+	gnumicodetoname.emplace(29 ,"Anti Sigma+");
+	gnumicodetoname.emplace(22 ,"Xsi0");
+	gnumicodetoname.emplace(30 ,"Anti Xsi0");
+	gnumicodetoname.emplace(23 ,"Xsi-");
+	gnumicodetoname.emplace(31 ,"Xsi+");
+	gnumicodetoname.emplace(24 ,"Omega-");
+	gnumicodetoname.emplace(32 ,"Omega+");
+	gnumicodetoname.emplace(33 ,"Tau+");
+	gnumicodetoname.emplace(34 ,"Tau-");
+	return &gnumicodetoname;
+}
+
+std::map<int,std::string>* LoadGenieEvent::GeneratePdgMap(){
+	if(pdgcodetoname.size()!=0) return &pdgcodetoname;
+	pdgcodetoname.emplace(2212,"Proton");
+	pdgcodetoname.emplace(-2212,"Anti Proton");
+	pdgcodetoname.emplace(11,"Electron");
+	pdgcodetoname.emplace(-11,"Positron");
+	pdgcodetoname.emplace(12,"Electron Neutrino");
+	pdgcodetoname.emplace(-12,"Anti Electron Neutrino");
+	pdgcodetoname.emplace(22,"Gamma");
+	pdgcodetoname.emplace(2112,"Neutron");
+	pdgcodetoname.emplace(-2112,"Anti Neutron");
+	pdgcodetoname.emplace(-13,"Muon+");
+	pdgcodetoname.emplace(13,"Muon-");
+	pdgcodetoname.emplace(130,"Kaonlong");
+	pdgcodetoname.emplace(211,"Pion+");
+	pdgcodetoname.emplace(-211,"Pion-");
+	pdgcodetoname.emplace(321,"Kaon+");
+	pdgcodetoname.emplace(-321,"Kaon-");
+	pdgcodetoname.emplace(3122,"Lambda");
+	pdgcodetoname.emplace(-3122,"Antilambda");
+	pdgcodetoname.emplace(310,"Kaonshort");
+	pdgcodetoname.emplace(3112,"Sigma-");
+	pdgcodetoname.emplace(3222,"Sigma+");
+	pdgcodetoname.emplace(3212,"Sigma0");
+	pdgcodetoname.emplace(111,"Pion0");
+	pdgcodetoname.emplace(311,"Kaon0");
+	pdgcodetoname.emplace(-311,"Antikaon0");
+	pdgcodetoname.emplace(14,"Muon Neutrino");
+	pdgcodetoname.emplace(-14,"Anti Muon Neutrino");
+	pdgcodetoname.emplace(-3222,"Anti Sigma-");
+	pdgcodetoname.emplace(-3212,"Anti Sigma0");
+	pdgcodetoname.emplace(-3112,"Anti Sigma+");
+	pdgcodetoname.emplace(3322,"Xsi0");
+	pdgcodetoname.emplace(-3322,"Anti Xsi0");
+	pdgcodetoname.emplace(3312,"Xsi-");
+	pdgcodetoname.emplace(-3312,"Xsi+");
+	pdgcodetoname.emplace(3334,"Omega-");
+	pdgcodetoname.emplace(-3334,"Omega+");
+	pdgcodetoname.emplace(-15,"Tau+");
+	pdgcodetoname.emplace(15,"Tau-");
+	pdgcodetoname.emplace(100,"OpticalPhoton");
+	pdgcodetoname.emplace(3328,"Alpha");
+	pdgcodetoname.emplace(3329,"Deuteron");
+	pdgcodetoname.emplace(3330,"Triton");
+	pdgcodetoname.emplace(3351,"Li7");
+	pdgcodetoname.emplace(3331,"C10");
+	pdgcodetoname.emplace(3345,"B11");
+	pdgcodetoname.emplace(3332,"C12");
+	pdgcodetoname.emplace(3350,"C13");
+	pdgcodetoname.emplace(3349,"N13");
+	pdgcodetoname.emplace(3340,"N14");
+	pdgcodetoname.emplace(3333,"N15");
+	pdgcodetoname.emplace(3334,"N16");
+	pdgcodetoname.emplace(3335,"O16");
+	pdgcodetoname.emplace(3346,"Al27");
+	pdgcodetoname.emplace(3341,"Fe54");
+	pdgcodetoname.emplace(3348,"Mn54");
+	pdgcodetoname.emplace(3342,"Mn55");
+	pdgcodetoname.emplace(3352,"Mn56");
+	pdgcodetoname.emplace(3343,"Fe56");
+	pdgcodetoname.emplace(3344,"Fe57");
+	pdgcodetoname.emplace(3347,"Fe58");
+	pdgcodetoname.emplace(3353,"Eu154");
+	pdgcodetoname.emplace(3336,"Gd158");
+	pdgcodetoname.emplace(3337,"Gd156");
+	pdgcodetoname.emplace(3338,"Gd157");
+	pdgcodetoname.emplace(3339,"Gd155");
+	return &pdgcodetoname;
+}
+
+std::map<int,std::string>* LoadGenieEvent::GenerateDecayMap(){
+	if(decaymap.size()!=0) return &decaymap;
+	decaymap.emplace(1,"K0L -> nue, pi-, e+");  //→
+	decaymap.emplace(2,"K0L -> nuebar, pi+, e-");
+	decaymap.emplace(3,"K0L -> numu, pi-, mu+");
+	decaymap.emplace(4,"K0L -> numubar, pi+, mu-");
+	decaymap.emplace(5,"K+  -> numu, mu+");
+	decaymap.emplace(6,"K+  -> nue, pi0, e+");
+	decaymap.emplace(7,"K+  -> numu, pi0, mu+");
+	decaymap.emplace(8,"K-  -> numubar, mu-");
+	decaymap.emplace(9,"K-  -> nuebar, pi0, e-");
+	decaymap.emplace(10,"K-  -> numubar, pi0, mu-");
+	decaymap.emplace(11,"mu+ -> numubar, nue, e+");
+	decaymap.emplace(12,"mu- -> numu, nuebar, e-");
+	decaymap.emplace(13,"pi+ -> numu, mu+");
+	decaymap.emplace(14,"pi- -> numubar, mu-");
+	return &decaymap;
+}
+

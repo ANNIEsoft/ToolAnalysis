@@ -5,6 +5,14 @@
 #include <iostream>
 
 #include "Tool.h"
+//GENIE
+#include <FluxDrivers/GSimpleNtpFlux.h>
+#include <FluxDrivers/GNuMIFlux.h>
+#include <GHEP/GHepUtils.h>               // neut reaction codes
+#include <PDG/PDGLibrary.h>
+#include <Ntuple/NtpMCEventRecord.h>
+#include <Conventions/Constants.h>
+// other
 #include "genieinfo_struct.cpp"
 
 class LoadGenieEvent: public Tool {
@@ -30,16 +38,31 @@ class LoadGenieEvent: public Tool {
 	// function to fill the info into the handy genieinfostruct
 	void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint,
 	  GenieInfo& thegenieinfo, bool printneutrinoevent=false);
+	// type conversion functions:
+	std::map<int,std::string> pdgcodetoname;
+	std::map<int,std::string> decaymap;
+	std::map<int,std::string> gnumicodetoname;
+	std::map<int,std::string>* GenerateGnumiMap();
+	std::map<int,std::string>* GeneratePdgMap();
+	std::map<int,std::string>* GenerateDecayMap();
+	std::string GnumiToString(int code);
+	std::string PdgToString(int code);
+	std::string DecayTypeToString(int code);
+	std::string MediumToString(int code);
 	
-	TChain* oldflux = nullptr;
+	BoostStore* geniestore = nullptr;
+	int fluxstage;
+	std::string filedir, filepattern;
+	TChain* flux = nullptr;
 	TFile* curf = nullptr;       // keep track of file changes
 	TFile* curflast = nullptr;
 	genie::NtpMCEventRecord* genieintx = nullptr; // = new genie::NtpMCEventRecord;
-	// for fluxver 0 files
-	genie::flux::GNuMIFluxPassThroughInfo* gnumipassthruentry  = nullptr;
+//	// for fluxver 0 files
+//	genie::flux::GNuMIFluxPassThroughInfo* gnumipassthruentry  = nullptr;
 	// for fluxver 1 files
 	genie::flux::GSimpleNtpEntry* gsimpleentry = nullptr;
 	genie::flux::GSimpleNtpAux* gsimpleauxinfo = nullptr;
+	genie::flux::GSimpleNtpNuMI* gsimplenumientry = nullptr;
 	
 	// genie file variables
 	int fluxver;                         // 0 = old flux, 1 = new flux
@@ -47,25 +70,23 @@ class LoadGenieEvent: public Tool {
 	unsigned long local_entry;           // 
 	unsigned int tchainentrynum;         // 
 	
-#ifdef do these want to be in the other tool
 	// common input/output variables to both Robert/Zarko filesets
 	int parentpdg;
 	std::string parenttypestring;
 	int parentdecaymode;                 // some arbitrary number that maps to a decay mode string.
 	std::string parentdecaystring;       // descriptive string. Should we store a map of the translation?
 	float parentdecayvtx_x, parentdecayvtx_y, parentdecayvtx_z;
-	TVector3 parentdecayvtx;
+	Position parentdecayvtx;
 	float parentdecaymom_x, parentdecaymom_y, parentdecaymom_z;
-	TVector3 parentdecaymom;
+	Position parentdecaymom;
 	float parentprodmom_x, parentprodmom_y, parentprodmom_z;
-	TVector3 parentprodmom;
+	Position parentprodmom;
 	int parentprodmedium;                // they're all 0
 	std::string parentprodmediumstring;  // do we even have this mapping?
 	int parentpdgattgtexit;
 	std::string parenttypestringattgtexit;
-	TVector3 parenttgtexitmom;
+	Position parenttgtexitmom;
 	float parenttgtexitmom_x, parenttgtexitmom_y, parenttgtexitmom_z;
-#endif
 	
 	// Additional zarko-only information
 	// TODO fillme
