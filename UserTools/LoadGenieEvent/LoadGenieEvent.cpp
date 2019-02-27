@@ -102,9 +102,6 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 
 bool LoadGenieEvent::Execute(){
 	
-	Log("Tool LoadGenieEvent: Clearing genieintx",v_debug,verbosity);
-	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
-	
 	Log("Tool LoadGenieEvent: Loading tchain entry "+to_string(tchainentrynum),v_debug,verbosity);
 	local_entry = flux->LoadTree(tchainentrynum);
 	Log("Tool LoadGenieEvent: localentry is "+to_string(local_entry),v_debug,verbosity);
@@ -320,10 +317,14 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("NumFSPi0",numfspi0);
 	geniestore->Set("NumFSPiPlus",numfspiplus);
 	geniestore->Set("NumFSPiMinus",numfspiminus);
+	geniestore->Set("GenieInfo",thegenieinfo);
+	//geniestore->Set("TheGenieInfoPtr",&thegenieinfo,false);
 	//intptr_t thegenieinfoptr = reinterpret_cast<intptr_t>(&thegenieinfo);
-	//geniestore->Set("TheGenieInfoPtr",thegenieinfoptr);
-	geniestore->Set("TheGenieInfoPtr",&thegenieinfo,false);
-		
+	//m_data->CStore.Set("TheGenieInfoPtr2",thegenieinfoptr);
+	
+	Log("Tool LoadGenieEvent: Clearing genieintx",v_debug,verbosity);
+	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
+	
 	Log("Tool LoadGenieEvent: done",v_debug,verbosity);
 	return true;
 }
@@ -360,18 +361,24 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	as extracting number of other hadrons doesn't work! but for now, just turn it off to reduce verbosity.
 	*/
 	/*Int_t*/ //thegenieinfo.neutinteractioncode = genie::utils::ghep::NeutReactionCode(gevtRec);
-	/*Int_t*/ thegenieinfo.nuanceinteractioncode	= genie::utils::ghep::NuanceReactionCode(gevtRec);
+	/*Int_t*/ thegenieinfo.nuanceinteractioncode = genie::utils::ghep::NuanceReactionCode(gevtRec);
 	TLorentzVector* IntxVtx = gevtRec->Vertex();
-	/*Double_t*/ thegenieinfo.Intx_x = IntxVtx->X() * 100.;	 // same info as nuvtx in g4dirt file
-	/*Double_t*/ thegenieinfo.Intx_y = IntxVtx->Y() * 100.;	 // GENIE uses meters
-	/*Double_t*/ thegenieinfo.Intx_z = IntxVtx->Z() * 100.;	 // GENIE uses meters
+	/*Double_t*/ thegenieinfo.Intx_x = IntxVtx->X() * 100.;   // same info as nuvtx in g4dirt file
+	/*Double_t*/ thegenieinfo.Intx_y = IntxVtx->Y() * 100.;   // GENIE uses meters
+	/*Double_t*/ thegenieinfo.Intx_z = IntxVtx->Z() * 100.;   // GENIE uses meters
 	/*Double_t*/ thegenieinfo.Intx_t = IntxVtx->T() * 1000000000; // GENIE uses seconds
 	
 	// neutrino information:
-	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab);	// GeV
+	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab);  // GeV
 	/*Int_t*/ thegenieinfo.probepdg = genieint->InitState().Probe()->PdgCode();
 	/*TString*/ thegenieinfo.probepartname = genieint->InitState().Probe()->GetName();
 	TLorentzVector* probemomentum = gevtRec->Probe()->P4();
+	if(probemomentum->E()!=thegenieinfo.probeenergy){
+		logmessage = "LoadGenieEvent Tool: WARNING, Probe energy from probemomentum.E and ProbeE differ!";
+		logmessage+= "ProbeE = "+to_string(thegenieinfo.probeenergy);
+		logmessage+= ", ProbeMomentum[0] = "+to_string(probemomentum->E());
+		Log(logmessage,v_warning,verbosity);
+	}
 	/*TVector3*/ thegenieinfo.probethreemomentum = probemomentum->Vect();
 	/*TVector3*/ thegenieinfo.probemomentumdir = thegenieinfo.probethreemomentum.Unit();
 	/*Double_t*/ thegenieinfo.probeanglex = 
@@ -379,7 +386,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.probeangley = 
 		TMath::ATan(thegenieinfo.probethreemomentum.Y()/thegenieinfo.probethreemomentum.Z());
 	/*Double_t*/ thegenieinfo.probeangle = TMath::Max(thegenieinfo.probeanglex,thegenieinfo.probeangley);
-	// n.b.	genieint->InitState().Probe != gevtRec->Probe()
+	// n.b. genieint->InitState().Probe != gevtRec->Probe()
 	
 	// target nucleon:
 	genie::GHepParticle* targetnucleon = gevtRec->HitNucleon();
@@ -434,7 +441,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Int_t*/ thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
 	
 	// kinematic information
-	Double_t NucleonM	= genie::constants::kNucleonMass; 
+	Double_t NucleonM = genie::constants::kNucleonMass; 
 	// Calculate kinematic variables "as an experimentalist would measure them; 
 	// neglecting fermi momentum and off-shellness of bound nucleons"
 	TLorentzVector* k1 = gevtRec->Probe()->P4();
@@ -442,17 +449,17 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.costhfsl = TMath::Cos( k2->Vect().Angle(k1->Vect()) );
 	/*Double_t*/ thegenieinfo.fslangle = k2->Vect().Angle(k1->Vect());
 	// q=k1-k2, 4-p transfer
-	/*TLorentzVector*/ thegenieinfo.q	= (*(k1))-(*(k2));
-//	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();	// not set in our GENIE files!
+	/*TLorentzVector*/ thegenieinfo.q = (*(k1))-(*(k2));
+//	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();  // not set in our GENIE files!
 	// momemtum transfer
 	/*Double_t*/ thegenieinfo.Q2 = -1 * thegenieinfo.q.M2();
 	// E transfer to the nucleus
-	/*Double_t*/ thegenieinfo.Etransf	= (thegenieinfo.targetnucleon) ? thegenieinfo.q.Energy() : -1;
+	/*Double_t*/ thegenieinfo.Etransf = (thegenieinfo.targetnucleon) ? thegenieinfo.q.Energy() : -1;
 	// Bjorken x
-	/*Double_t*/ thegenieinfo.x	= 
+	/*Double_t*/ thegenieinfo.x = 
 		(thegenieinfo.targetnucleon) ? 0.5*thegenieinfo.Q2/(NucleonM*thegenieinfo.Etransf) : -1;
 	// Inelasticity, y = q*P1/k1*P1
-	/*Double_t*/ thegenieinfo.y	= 
+	/*Double_t*/ thegenieinfo.y = 
 		(thegenieinfo.targetnucleon) ? thegenieinfo.Etransf/thegenieinfo.k1->Energy() : -1;
 	// Hadronic Invariant mass ^ 2
 	/*Double_t*/ thegenieinfo.W2 = 
@@ -474,7 +481,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 		
 		if(remnucpos>-1){
 			cout<<"producing a "<<thegenieinfo.remnantnucleusenergy<<"GeV "<<thegenieinfo.remnantnucleusname;
-		} else { cout<<"with no remnant nucleus"; }	// DIS on 16O produces no remnant nucleus?!
+		} else { cout<<"with no remnant nucleus"; }  // DIS on 16O produces no remnant nucleus?!
 		
 		if(fsleppos>-1){
 			cout<<" and a "<<thegenieinfo.fsleptonenergy<<"GeV "<<thegenieinfo.fsleptonname<<endl;
@@ -483,12 +490,12 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 		cout<<endl<<"Q^2 was "<<thegenieinfo.Q2<<"(GeV/c)^2, with final state lepton"
 			<<" ejected at Cos(θ)="<<thegenieinfo.costhfsl<<endl;
 		cout<<"Additional final state particles included "<<endl;
-		cout<< " N(p) = "	 << thegenieinfo.numfsprotons
-			<< " N(n) = "	 << thegenieinfo.numfsneutrons
+		cout<< " N(p) = "  << thegenieinfo.numfsprotons
+			<< " N(n) = "    << thegenieinfo.numfsneutrons
 			<< endl
-			<< " N(pi^0) = "	<< thegenieinfo.numfspi0
-			<< " N(pi^+) = "	<< thegenieinfo.numfspiplus
-			<< " N(pi^-) = "	<< thegenieinfo.numfspiminus
+			<< " N(pi^0) = " << thegenieinfo.numfspi0
+			<< " N(pi^+) = " << thegenieinfo.numfspiplus
+			<< " N(pi^-) = " << thegenieinfo.numfspiminus
 			<<endl;
 	}
 }
