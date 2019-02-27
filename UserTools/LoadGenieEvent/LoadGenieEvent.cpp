@@ -53,6 +53,9 @@ Genie 2.12 GNTP files: /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k
 
 LoadGenieEvent::LoadGenieEvent():Tool(){}
 
+Position TVector3ToPosition(TVector3 tvecin);
+FourVector TLorentzVectorToFourVector(TLorentzVector tlvecin);
+
 bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 
 	/////////////////// Useful header ///////////////////////
@@ -246,7 +249,7 @@ bool LoadGenieEvent::Execute(){
 		isinfiducialvol=true;
 	} else { isinfiducialvol = false; }
 	
-	fsleptonname = std::string(thegenieinfo.fsleptonname.Data());
+	fsleptonname = std::string(thegenieinfo.fsleptonname);
 	// this data does not appear to be populated...
 	numfsprotons = thegenieinfo.numfsprotons = genieint->ExclTag().NProtons();
 	numfsneutrons = thegenieinfo.numfsneutrons = genieint->ExclTag().NNeutrons();
@@ -379,7 +382,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 		logmessage+= ", ProbeMomentum[0] = "+to_string(probemomentum->E());
 		Log(logmessage,v_warning,verbosity);
 	}
-	/*TVector3*/ thegenieinfo.probethreemomentum = probemomentum->Vect();
+	/*TVector3*/ thegenieinfo.probethreemomentum = TVector3ToPosition(probemomentum->Vect());
 	/*TVector3*/ thegenieinfo.probemomentumdir = thegenieinfo.probethreemomentum.Unit();
 	/*Double_t*/ thegenieinfo.probeanglex = 
 		TMath::ATan(thegenieinfo.probethreemomentum.X()/thegenieinfo.probethreemomentum.Z());
@@ -398,11 +401,11 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	} else {
 		thegenieinfo.targetnucleonname = std::to_string(thegenieinfo.targetnucleonpdg);
 	}
-	/*TVector3*/ thegenieinfo.targetnucleonthreemomentum=TVector3(0.,0.,0.);
+	/*TVector3*/ thegenieinfo.targetnucleonthreemomentum=Position(0.,0.,0.);
 	/*Double_t*/ thegenieinfo.targetnucleonenergy=0.;
 	if(targetnucleon){
 		TLorentzVector* targetnucleonmomentum = targetnucleon->P4();
-		thegenieinfo.targetnucleonthreemomentum = targetnucleonmomentum->Vect();
+		thegenieinfo.targetnucleonthreemomentum = TVector3ToPosition(targetnucleonmomentum->Vect());
 		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy(); //GeV
 	}
 	
@@ -449,21 +452,21 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.costhfsl = TMath::Cos( k2->Vect().Angle(k1->Vect()) );
 	/*Double_t*/ thegenieinfo.fslangle = k2->Vect().Angle(k1->Vect());
 	// q=k1-k2, 4-p transfer
-	/*TLorentzVector*/ thegenieinfo.q = (*(k1))-(*(k2));
+	/*TLorentzVector*/ thegenieinfo.q = TLorentzVectorToFourVector((*k1)-(*k2));
 //	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();  // not set in our GENIE files!
 	// momemtum transfer
 	/*Double_t*/ thegenieinfo.Q2 = -1 * thegenieinfo.q.M2();
 	// E transfer to the nucleus
-	/*Double_t*/ thegenieinfo.Etransf = (thegenieinfo.targetnucleon) ? thegenieinfo.q.Energy() : -1;
+	/*Double_t*/ thegenieinfo.Etransf = (targetnucleon) ? thegenieinfo.q.E() : -1;
 	// Bjorken x
 	/*Double_t*/ thegenieinfo.x = 
-		(thegenieinfo.targetnucleon) ? 0.5*thegenieinfo.Q2/(NucleonM*thegenieinfo.Etransf) : -1;
+		(targetnucleon) ? 0.5*thegenieinfo.Q2/(NucleonM*thegenieinfo.Etransf) : -1;
 	// Inelasticity, y = q*P1/k1*P1
 	/*Double_t*/ thegenieinfo.y = 
-		(thegenieinfo.targetnucleon) ? thegenieinfo.Etransf/thegenieinfo.k1->Energy() : -1;
+		(targetnucleon) ? thegenieinfo.Etransf/k1->Energy() : -1;
 	// Hadronic Invariant mass ^ 2
 	/*Double_t*/ thegenieinfo.W2 = 
-	(thegenieinfo.targetnucleon) ? (NucleonM*NucleonM + 2*NucleonM*thegenieinfo.Etransf - thegenieinfo.Q2) : -1;
+	(targetnucleon) ? (NucleonM*NucleonM + 2*NucleonM*thegenieinfo.Etransf - thegenieinfo.Q2) : -1;
 	
 	if(printneutrinoevent){
 		cout<<"This was a "<< thegenieinfo.procinfostring <<" (neut code "<<thegenieinfo.neutinteractioncode
@@ -667,3 +670,19 @@ std::map<int,std::string>* LoadGenieEvent::GenerateDecayMap(){
 	return &decaymap;
 }
 
+Position TVector3ToPosition(TVector3 tvecin){
+	Position pos(0,0,0);
+	pos.SetX(tvecin.X());
+	pos.SetY(tvecin.Y());
+	pos.SetZ(tvecin.Z());
+	return pos;
+}
+
+FourVector TLorentzVectorToFourVector(TLorentzVector tlvecin){
+	FourVector vec(0,0,0,0);
+	vec.SetT(tlvecin.T());
+	vec.SetX(tlvecin.X());
+	vec.SetY(tlvecin.Y());
+	vec.SetZ(tlvecin.Z());
+	return vec;
+}
