@@ -1,8 +1,4 @@
-#include <GHEP/GHepParticle.h>
-#include <EVGCore/EventRecord.h>
-#include <TParticlePDG.h>
-#include <Interaction/Interaction.h>
-#include <Ntuple/NtpMCEventRecord.h>
+/* vim:set noexpandtab tabstop=2 wrap */
 class GenieInfo {
 	public:
 	
@@ -29,19 +25,19 @@ class GenieInfo {
 	std::map<std::string,bool> eventtypes;
 	int neutinteractioncode=-1;
 	int nuanceinteractioncode=-1;
-	FourVector* IntxVtx=0;                        // [secs,m,m,m]
-	double Intx_x=0.;                               // cm
-	double Intx_y=0.;                               // cm
-	double Intx_z=0.;                               // cm
-	double Intx_t=0.;                               // ns
+	//FourVector* IntxVtx=0;                         // [secs,m,m,m]
+	double Intx_x=0.;                                // cm
+	double Intx_y=0.;                                // cm
+	double Intx_z=0.;                                // cm
+	double Intx_t=0.;                                // ns
 	
 	// neutrino information:
 	double probeenergy=0.;                           // GeV
 	int probepdg=-1;
 	std::string probepartname="";
-	FourVector* probemomentum=0;                   // GeV/c?
-	Position probethreemomentum=TVector3(0.,0.,0.);    // GeV/c?
-	Position probemomentumdir=TVector3(0.,0.,0.);      // unit vector
+	//FourVector* probemomentum=0;                   // GeV/c?
+	Position probethreemomentum=Position(0.,0.,0.);  // GeV/c?
+	Position probemomentumdir=Position(0.,0.,0.);    // unit vector
 	double probeanglex=0.;                           // rads
 	double probeangley=0.;                           // rads
 	double probeangle=0.;                            // rads
@@ -49,23 +45,23 @@ class GenieInfo {
 	// target nucleon:
 	//genie::GHepParticle* targetnucleon=0;
 	int targetnucleonpdg=-1;
-	std::string targetnucleonname="";                      // pdg if name not known
-	Position targetnucleonthreemomentum=TVector3(0.,0.,0.);  // GeV/c? only defined if there is a target nucleon: not true for all events
-	double targetnucleonenergy=0.;                   // GeV. only defined if there is a target nucleon
+	std::string targetnucleonname="";                        // pdg if name not known
+	Position targetnucleonthreemomentum=Position(0.,0.,0.);  // GeV/c? only defined if there is a target nucleon: not true for all events
+	double targetnucleonenergy=0.;                           // GeV. only defined if there is a target nucleon
 	
 	// target nucleus:
 	int targetnucleuspdg=-1;
-	int* targetnucleus=0;
-	std::string targetnucleusname="";                      // "unknown" if there is no defined targetnucleus
+	//TParticlePDG* targetnucleus=0;
+	std::string targetnucleusname="";                // "unknown" if there is no defined targetnucleus
 	int targetnucleusZ=-1;
 	int targetnucleusA=-1;
 	
 	// remnant nucleus:
-	std::string remnantnucleusname="";                     // "n/a" if not defined
+	std::string remnantnucleusname="";               // "n/a" if not defined
 	double remnantnucleusenergy=0.;                  // GeV. -1 if not defined
 	
 	// final state lepton:
-	std::string fsleptonname="";                           // "n/a" if not defined
+	std::string fsleptonname="";                     // "n/a" if not defined
 	double fsleptonenergy=0.;                        // GeV. -1 if not defined
 	
 	// other remnants: TODO: this information is NOT being correctly read in
@@ -76,9 +72,9 @@ class GenieInfo {
 	int numfspiminus=-1;
 	
 	// kinematic information
-	FourVector* k1=0;                               // GeV/c? Neutrino incoming momentum vector
-	FourVector* k2=0;                               // GeV/c? Muon outgoign momentum vector
-	FourVector q=FourVector(0.,0.,0.,0.);       // GeV/c? 4-momentum transfer: k1-k2
+	//FourVector* k1=0;                               // GeV/c? Neutrino incoming momentum vector
+	//FourVector* k2=0;                               // GeV/c? Muon outgoign momentum vector
+	FourVector q=FourVector(0.,0.,0.,0.);             // GeV/c? 4-momentum transfer: k1-k2
 	double costhfsl=0.;                               // 
 	double fslangle=0.;                               // rads?
 	double Q2=0.;                                     // GeV/c?
@@ -88,7 +84,51 @@ class GenieInfo {
 	double W2=0.;                                     // Hadronic Invariant mass ^ 2. -1 if not defined
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
-		
+		if(serialise){
+			ar & procinfostring;
+			ar & scatteringtypestring;
+			ar & interactiontypestring;
+			ar & eventtypes;
+			ar & neutinteractioncode;
+			ar & nuanceinteractioncode;
+			ar & Intx_x;
+			ar & Intx_y;
+			ar & Intx_z;
+			ar & Intx_t;
+			ar & probeenergy;
+			ar & probepdg;
+			ar & probepartname;
+			ar & probethreemomentum;
+			ar & probemomentumdir;
+			ar & probeanglex;
+			ar & probeangley;
+			ar & probeangle;
+			ar & targetnucleonpdg;
+			ar & targetnucleonname;
+			ar & targetnucleonthreemomentum
+			ar & targetnucleonenergy;
+			ar & targetnucleuspdg;
+			ar & targetnucleusname;
+			ar & targetnucleusZ;
+			ar & targetnucleusA;
+			ar & remnantnucleusname;
+			ar & remnantnucleusenergy;
+			ar & fsleptonname;
+			ar & fsleptonenergy;
+			ar & numfsprotons;
+			ar & numfsneutrons;
+			ar & numfspi0;
+			ar & numfspiplus;
+			ar & numfspiminus;
+			ar & q;
+			ar & costhfsl;
+			ar & fslangle;
+			ar & Q2;
+			ar & Etransf;
+			ar & x;
+			ar & y;
+			ar & W2;
+		}
 	}
 	
 };
