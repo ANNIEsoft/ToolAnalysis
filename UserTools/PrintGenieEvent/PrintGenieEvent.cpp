@@ -17,8 +17,17 @@ bool PrintGenieEvent::Initialise(std::string configfile, DataModel &data){
 bool PrintGenieEvent::Execute(){
 	
 	// Get the genie event
-	GenieInfo thegenieinfo;
-	m_data->Stores.at("GenieInfo")->Get("TheGenieInfo",thegenieinfo);
+	
+//	intptr_t thegenieinfoptr;
+	GenieInfo* thegenieinfoptr;
+	int get_ok = m_data->Stores.at("GenieInfo")->Get("TheGenieInfoPtr",thegenieinfoptr);
+	
+	if(!get_ok){
+		Log("PrintGenieEvent Tool: Failed to retrieve TheGenieInfo rom GenieInfo BoostStore!",1,0);
+		return false;
+	}
+	//GenieInfo* thegenieinfop = reinterpret_cast<GenieInfo*>(thegenieinfoptr);
+	GenieInfo thegenieinfo = (*thegenieinfoptr);
 	
 	// Print the info
 	cout<<"This was a "<< thegenieinfo.procinfostring <<" (neut code "<<thegenieinfo.neutinteractioncode
