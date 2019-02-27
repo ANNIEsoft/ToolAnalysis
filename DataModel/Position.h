@@ -51,7 +51,17 @@ class Position : public SerialisableObject{
 		Position unitvec(x/thismag,y/thismag,z/thismag);
 		return unitvec;
 	}
+	
 	inline double M() const { return Mag(); }
+	inline double M2() const { return Mag2(); }
+	
+	inline double Mag() const {
+		return sqrt(Mag2());
+	}
+	inline double M() const { return Mag(); }
+	inline double Mag2() const{
+		return (pow(x,2.)+pow(y,2.)+pow(z,2.));
+	}
 	inline double M2() const { return Mag2(); }
 	
 	bool Print(bool withendline) const {
@@ -192,12 +202,25 @@ class FourVector : public SerialisableObject{
 	}
 	
 	Position Vect(){ return Position(x,y,z); }
-	bool Print(bool withendline) {
-		std::cout<<"("<<t<<", "<<x<<", "<<y<<", "<<z<<")";
-		if(withendline) cout<<std::endl;
-		return true;
-	}
+        inline Position Unit(){
+                double thismag = Mag(); 
+                Position unitvec(x/thismag,y/thismag,z/thismag);
+                return unitvec;
+        }
+        inline double Mag() const {
+                return sqrt(Mag2());
+        }
+        inline double M() const { return Mag(); }
+        inline double Mag2() const{
+                return (pow(x,2.)+pow(y,2.)+pow(z,2.));
+        }
+        inline double M2() const { return Mag2(); }
 	
+        bool Print(bool withendline) {
+                std::cout<<"("<<t<<", "<<x<<", "<<y<<", "<<z<<")";
+                if(withendline) cout<<std::endl;
+                return true;
+        }
 	bool Print(){
 		return Print(true);
 	}

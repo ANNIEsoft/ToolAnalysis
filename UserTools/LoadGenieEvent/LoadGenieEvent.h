@@ -12,8 +12,13 @@
 #include <PDG/PDGLibrary.h>
 #include <Ntuple/NtpMCEventRecord.h>
 #include <Conventions/Constants.h>
+#include <GHEP/GHepParticle.h>
+#include <EVGCore/EventRecord.h>
+#include <TParticlePDG.h>
+#include <Interaction/Interaction.h>
+
 // other
-#include "genieinfo_struct.cpp"
+#include "genieinfo_struct_noroot.cpp"
 
 class LoadGenieEvent: public Tool {
 	
