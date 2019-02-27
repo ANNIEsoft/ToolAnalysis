@@ -23,6 +23,7 @@ setup_genie_2_12(){
   fi
   
   setup -f Linux64bit+2.6-2.12 -q debug:e10 xerces_c v3_1_3  # xerces needed for gdml parsing? (needed for geant4 gdml...)
+  setup log4cpp v1_1_1b -q debug:e7
   export XERCESROOT=/grid/fermiapp/products/larsoft/xerces_c/v3_1_3/Linux64bit+2.6-2.12-e10-debug
   export ROOT_INCLUDE_PATH=${ROOT_INCLUDE_PATH}:${GENIE}/../include/GENIE
   export ROOT_LIBRARY_PATH=${ROOT_LIBRARY_PATH}:${GENIE}/../lib
