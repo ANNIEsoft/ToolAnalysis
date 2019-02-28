@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "Tool.h"
+
+#if LOADED_GENIE==1                       // disable this tool unless Genie is loaded (FNAL)
 //GENIE
 #include <FluxDrivers/GSimpleNtpFlux.h>
 #include <FluxDrivers/GNuMIFlux.h>
@@ -16,8 +18,9 @@
 #include <EVGCore/EventRecord.h>
 #include <TParticlePDG.h>
 #include <Interaction/Interaction.h>
-
 // other
+#endif  // LOADED_GENIE==1
+
 #include "genieinfo_struct_noroot.cpp"
 
 class LoadGenieEvent: public Tool {
@@ -40,6 +43,7 @@ class LoadGenieEvent: public Tool {
 	
 	private:
 	
+#if LOADED_GENIE==1
 	// function to fill the info into the handy genieinfostruct
 	void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint,
 	  GenieInfo& thegenieinfo, bool printneutrinoevent=false);
@@ -132,6 +136,8 @@ class LoadGenieEvent: public Tool {
 	int numfspi0;
 	int numfspiplus;
 	int numfspiminus;
+	
+#endif   // LOADED_GENIE==1
 	
 };
 

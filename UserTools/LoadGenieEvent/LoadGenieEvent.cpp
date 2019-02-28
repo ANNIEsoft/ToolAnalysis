@@ -65,6 +65,8 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
 	
+#if LOADED_GENIE==1 // only load the Tool if genie is available
+	
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
 	m_variables.Get("FileDir",filedir);
@@ -100,10 +102,17 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		flux->GetBranch("aux")->SetAutoDelete(kTRUE);
 	}
 	
+#else
+	Log("Tool LoadGenieEvent is disabled as Genie is not loaded",v_warning,verbosity);
+#endif
+	
 	return true;
+
 }
 
 bool LoadGenieEvent::Execute(){
+	
+#if LOADED_GENIE==1
 	
 	Log("Tool LoadGenieEvent: Loading tchain entry "+to_string(tchainentrynum),v_debug,verbosity);
 	local_entry = flux->LoadTree(tchainentrynum);
@@ -330,12 +339,24 @@ bool LoadGenieEvent::Execute(){
 	
 	Log("Tool LoadGenieEvent: done",v_debug,verbosity);
 	return true;
+	
+#else
+	return true;
+#endif // LOADED_GENIE
+
 }
 
 bool LoadGenieEvent::Finalise(){
 	
+	if(flux){
+		flux->ResetBranchAddresses();
+		delete flux;
+		flux=nullptr;
+	}
 	return true;
 }
+
+#if LOADED_GENIE==1
 
 void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint, GenieInfo &thegenieinfo, bool printneutrinoevent){
 	// process information:
@@ -669,6 +690,8 @@ std::map<int,std::string>* LoadGenieEvent::GenerateDecayMap(){
 	decaymap.emplace(14,"pi- -> numubar, mu-");
 	return &decaymap;
 }
+
+#endif // LOADED_GENIE==1
 
 Position TVector3ToPosition(TVector3 tvecin){
 	Position pos(0,0,0);

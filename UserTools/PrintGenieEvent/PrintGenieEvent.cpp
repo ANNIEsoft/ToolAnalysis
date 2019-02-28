@@ -10,17 +10,21 @@ bool PrintGenieEvent::Initialise(std::string configfile, DataModel &data){
 	
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
+#if LOADED_GENIE==1
 	return true;
+#else
+	Log("Tool PrintGenieEvent is disabled as Genie is not loaded",0,1);
+	return true;
+#endif
+	
 }
 
 
 bool PrintGenieEvent::Execute(){
 	
-	// Get the genie event
+#if LOADED_GENIE==1
 	
-//	intptr_t thegenieinfoptr;
-	//GenieInfo* thegenieinfoptr;
-	//int get_ok = m_data->Stores.at("GenieInfo")->Get("TheGenieInfoPtr",thegenieinfoptr);
+	// Get the genie event
 	GenieInfo thegenieinfo;
 	int get_ok = m_data->Stores.at("GenieInfo")->Get("GenieInfo",thegenieinfo);
 	
@@ -28,8 +32,6 @@ bool PrintGenieEvent::Execute(){
 		Log("PrintGenieEvent Tool: Failed to retrieve TheGenieInfo rom GenieInfo BoostStore!",1,0);
 		return false;
 	}
-	//GenieInfo* thegenieinfop = reinterpret_cast<GenieInfo*>(thegenieinfoptr);
-	//GenieInfo thegenieinfo = (*thegenieinfoptr);
 	
 	// Print the info
 	cout<<"This was a "<< thegenieinfo.procinfostring <<" (neut code "<<thegenieinfo.neutinteractioncode
@@ -64,6 +66,8 @@ bool PrintGenieEvent::Execute(){
 		<< " N(pi^-) = "	<< thegenieinfo.numfspiminus
 		<<endl;
 	
+#endif
+
 	return true;
 }
 
