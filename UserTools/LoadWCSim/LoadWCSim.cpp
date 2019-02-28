@@ -169,6 +169,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
+	// pass first genie file info to the CStore for downstream tools
+	TString geniefilename = atrigt->GetHeader()->GetGenieFileName();
+	Int_t genieentry = atrigt->GetHeader()->GetGenieEntryNum();
+	if(verbose>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+	m_data->CStore.Set("GenieFile",geniefilename);
+	m_data->CStore.Set("GenieEntry",genieentry);
+	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
 	double beampow=3.2545e+16;
@@ -245,6 +252,7 @@ bool LoadWCSim::Execute(){
 		SubrunNumber = 0;
 		EventTimeNs = atrigt->GetHeader()->GetDate();
 		EventTime->SetNs(EventTimeNs);
+<<<<<<< HEAD
 		if(verbosity>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
 		
 		// Load ALL MC particles (for all delayed MC triggers) only on MCTrigger 0
@@ -257,6 +265,12 @@ bool LoadWCSim::Execute(){
 			ParticleId_to_TankCharge->clear();
 			ParticleId_to_MrdCharge->clear();
 			ParticleId_to_VetoCharge->clear();
+			
+			TString geniefilename = atrigt->GetHeader()->GetGenieFileName();
+			Int_t genieentry = atrigt->GetHeader()->GetGenieEntryNum();
+			if(verbose>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+			m_data->CStore.Set("GenieFile",geniefilename);
+			m_data->CStore.Set("GenieEntry",genieentry);
 			
 			for(int trigi=0; trigi<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); trigi++){
 				

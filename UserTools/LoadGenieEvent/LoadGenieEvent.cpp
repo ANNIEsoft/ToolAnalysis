@@ -80,10 +80,15 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	// Open the flux files
 	///////////////////////
 	Log("Tool LoadGenieEvent: Opening TChain",v_debug,verbosity);
-	flux = new TChain("gtree");
-	std::string inputfiles = filedir+"/"+filepattern;
-	int numbytes = flux->Add(inputfiles.c_str());
-	Log("Tool LoadGenieEvent: Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
+	loadwcsimsource = (filepattern=="LoadWCSimTool");
+	if(not loadwcsimsource){
+		// construct a new TChain and add all the files at once
+		std::string inputfiles = filedir+"/"+filepattern;
+		tchainentrynum=0;
+		flux = new TChain("gtree");
+		int numbytes = flux->Add(inputfiles.c_str());
+		Log("Tool LoadGenieEvent: Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
+	}
 	Log("Tool LoadGenieEvent: Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
 	Log("Tool LoadGenieEvent: Setting branch addresses",v_debug,verbosity);
 	// neutrino event information
@@ -114,12 +119,37 @@ bool LoadGenieEvent::Execute(){
 	
 #if LOADED_GENIE==1
 	
+	if(loadwcsimsource){
+		// retrieve the genie file and entry number from the LoadWCSim tool
+		get_ok = m_data->CStore.Get("GenieFile",inputfiles);
+		if(!get_ok){
+			Log("Tool LoadGenieEvent: Failed to find GenieFile in CStore",v_error,verbosity);
+			return false;
+		}
+		m_data->CStore.Get("GenieEntry",tchainentrynum);
+		if(!get_ok){
+			Log("Tool LoadGenieEvent: Failed to find GenieEntry in CStore",v_error,verbosity);
+			return false;
+		}
+		
+		// check if this is a new file
+		if(inputfiles!=curf->GetName()){
+			// we need to load the new file
+			if(flux) flux->ResetBranchAddresses();
+			if(curf) curf->Close();
+			Log("Tool LoadGenieEvent: Loading new file "+inputfiles,v_debug,verbosity);
+			curf=TFile::Open(inputfiles.c_str());
+			flux=(TChain*)curf->Get("gtree");
+		}
+	}
+	
 	Log("Tool LoadGenieEvent: Loading tchain entry "+to_string(tchainentrynum),v_debug,verbosity);
 	local_entry = flux->LoadTree(tchainentrynum);
 	Log("Tool LoadGenieEvent: localentry is "+to_string(local_entry),v_debug,verbosity);
 	if(local_entry<0){
 		Log("Tool LoadGenieEvent: Reached end of file, returning",v_message,verbosity);
-		return -1;
+		m_data->vars.Set("StopLoop",1);
+		return true;
 	}
 	flux->GetEntry(local_entry);
 	curf = flux->GetCurrentFile();
@@ -348,11 +378,13 @@ bool LoadGenieEvent::Execute(){
 
 bool LoadGenieEvent::Finalise(){
 	
+#if LOADED_GENIE==1
 	if(flux){
 		flux->ResetBranchAddresses();
 		delete flux;
 		flux=nullptr;
 	}
+#endif
 	return true;
 }
 
