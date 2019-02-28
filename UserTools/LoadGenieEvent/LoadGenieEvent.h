@@ -62,6 +62,7 @@ class LoadGenieEvent: public Tool {
 	BoostStore* geniestore = nullptr;
 	int fluxstage;
 	std::string filedir, filepattern;
+	bool loadwcsimsource;
 	TChain* flux = nullptr;
 	TFile* curf = nullptr;       // keep track of file changes
 	TFile* curflast = nullptr;

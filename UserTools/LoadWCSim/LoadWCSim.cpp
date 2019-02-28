@@ -140,6 +140,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCFile = wcsimtree->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
+	// pass first genie file info to the CStore for downstream tools
+	TString geniefilename = atrigt->GetHeader()->GetGenieFileName();
+	Int_t genieentry = atrigt->GetHeader()->GetGenieEntryNum();
+	if(verbose>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+	m_data->CStore.Set("GenieFile",geniefilename);
+	m_data->CStore.Set("GenieEntry",genieentry);
+	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
 	double beampow=3.2545e+16;
@@ -191,6 +198,11 @@ bool LoadWCSim::Execute(){
 		EventTimeNs = atrigt->GetHeader()->GetDate();
 		EventTime->SetNs(EventTimeNs);
 		if(verbose>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
+		TString geniefilename = atrigt->GetHeader()->GetGenieFileName();
+		Int_t genieentry = atrigt->GetHeader()->GetGenieEntryNum();
+		if(verbose>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+		m_data->CStore.Set("GenieFile",geniefilename);
+		m_data->CStore.Set("GenieEntry",genieentry);
 		if(verbose>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
 		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
 			if(verbose>2) cout<<"getting track "<<tracki<<endl;
