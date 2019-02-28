@@ -44,6 +44,9 @@ class LoadGenieEvent: public Tool {
 	private:
 	
 #if LOADED_GENIE==1
+	// function to load the branch addresses
+	void SetBranchAddresses();
+
 	// function to fill the info into the handy genieinfostruct
 	void GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint,
 	  GenieInfo& thegenieinfo, bool printneutrinoevent=false);
@@ -68,7 +71,7 @@ class LoadGenieEvent: public Tool {
 	TFile* curflast = nullptr;
 	genie::NtpMCEventRecord* genieintx = nullptr; // = new genie::NtpMCEventRecord;
 //	// for fluxver 0 files
-//	genie::flux::GNuMIFluxPassThroughInfo* gnumipassthruentry  = nullptr;
+	genie::flux::GNuMIFluxPassThroughInfo* gnumipassthruentry  = nullptr;
 	// for fluxver 1 files
 	genie::flux::GSimpleNtpEntry* gsimpleentry = nullptr;
 	genie::flux::GSimpleNtpAux* gsimpleauxinfo = nullptr;
