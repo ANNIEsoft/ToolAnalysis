@@ -88,23 +88,8 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		flux = new TChain("gtree");
 		int numbytes = flux->Add(inputfiles.c_str());
 		Log("Tool LoadGenieEvent: Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
-	}
-	Log("Tool LoadGenieEvent: Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
-	Log("Tool LoadGenieEvent: Setting branch addresses",v_debug,verbosity);
-	// neutrino event information
-	flux->SetBranchAddress("gmcrec",&genieintx);
-	flux->GetBranch("gmcrec")->SetAutoDelete(kTRUE);
-	// input (BNB intx) event information
-	if(fluxver==0){   // rhatcher files
-//		flux->SetBranchAddress("flux",&gnumipassthruentry);
-//		flux->GetBranch("flux")->SetAutoDelete(kTRUE);
-	} else {          // zarko files
-		flux->SetBranchAddress("numi",&gsimplenumientry);
-		flux->GetBranch("numi")->SetAutoDelete(kTRUE);
-		flux->SetBranchAddress("simple",&gsimpleentry);
-		flux->GetBranch("simple")->SetAutoDelete(kTRUE);
-		flux->SetBranchAddress("aux",&gsimpleauxinfo);
-		flux->GetBranch("aux")->SetAutoDelete(kTRUE);
+		Log("Tool LoadGenieEvent: Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
+		SetBranchAddresses();
 	}
 	
 #else
@@ -121,25 +106,31 @@ bool LoadGenieEvent::Execute(){
 	
 	if(loadwcsimsource){
 		// retrieve the genie file and entry number from the LoadWCSim tool
+		std::string inputfiles;
 		get_ok = m_data->CStore.Get("GenieFile",inputfiles);
 		if(!get_ok){
 			Log("Tool LoadGenieEvent: Failed to find GenieFile in CStore",v_error,verbosity);
 			return false;
 		}
+		// XXX WCSim currently only records the genie file name, but not absolute path!
+		// we still need to provide the path via config file!
+		inputfiles = filedir+"/"+inputfiles;
 		m_data->CStore.Get("GenieEntry",tchainentrynum);
 		if(!get_ok){
 			Log("Tool LoadGenieEvent: Failed to find GenieEntry in CStore",v_error,verbosity);
 			return false;
 		}
 		
+		std::string curfname = ((curf) ? curf->GetName() : "");
 		// check if this is a new file
-		if(inputfiles!=curf->GetName()){
+		if(inputfiles!=curfname){
 			// we need to load the new file
 			if(flux) flux->ResetBranchAddresses();
 			if(curf) curf->Close();
 			Log("Tool LoadGenieEvent: Loading new file "+inputfiles,v_debug,verbosity);
 			curf=TFile::Open(inputfiles.c_str());
 			flux=(TChain*)curf->Get("gtree");
+			SetBranchAddresses();
 		}
 	}
 	
@@ -172,7 +163,6 @@ bool LoadGenieEvent::Execute(){
 	genie::EventRecord* gevtRec = genieintx->event;
 	
 	if(fluxver==0){
-/*
 		// FLUXVER 0 - genie::flux::GNuMIFluxPassThroughInfo
 		// =================================================
 		// extract the target intx details from the GNuMIFluxPassThroughInfo object
@@ -203,7 +193,6 @@ bool LoadGenieEvent::Execute(){
 			GnumiToString(parentpdgattgtexit) : PdgToString(parentpdgattgtexit);
 		parentdecaystring = DecayTypeToString(parentdecaymode);
 		//parentprodmediumstring = MediumToString(parentprodmedium);
-*/
 		
 	} else {
 		// FLUXVER 1 - genie::flux::GSimpleNtpEntry
@@ -389,6 +378,26 @@ bool LoadGenieEvent::Finalise(){
 }
 
 #if LOADED_GENIE==1
+
+void LoadGenieEvent::SetBranchAddresses(){
+	Log("Tool LoadGenieEvent: Setting branch addresses",v_debug,verbosity);
+	// neutrino event information
+	flux->SetBranchAddress("gmcrec",&genieintx);
+	flux->GetBranch("gmcrec")->SetAutoDelete(kTRUE);
+	// input (BNB intx) event information
+	if(fluxver==0){   // rhatcher files
+		flux->SetBranchAddress("flux",&gnumipassthruentry);
+		flux->GetBranch("flux")->SetAutoDelete(kTRUE);
+	} else {          // zarko files
+		flux->Print();
+		flux->SetBranchAddress("numi",&gsimplenumientry);
+		flux->GetBranch("numi")->SetAutoDelete(kTRUE);
+		flux->SetBranchAddress("simple",&gsimpleentry);
+		flux->GetBranch("simple")->SetAutoDelete(kTRUE);
+		flux->SetBranchAddress("aux",&gsimpleauxinfo);
+		flux->GetBranch("aux")->SetAutoDelete(kTRUE);
+	}
+}
 
 void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Interaction* genieint, GenieInfo &thegenieinfo, bool printneutrinoevent){
 	// process information:
