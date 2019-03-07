@@ -14,6 +14,9 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 	m_variables.Get("InputFile",filename_ratpac);
   m_variables.Get("verbosity",verbosity);
+	m_variables.Get("LappdNumStrips", LappdNumStrips);
+	m_variables.Get("LappdStripLength", LappdStripLength);           // [mm]
+	m_variables.Get("LappdStripSeparation", LappdStripSeparation);   // [mm]
 
   // Initialize the TChain reading event info from our file
   //chain = new TChain("T");
@@ -55,8 +58,8 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
 	
   // things to be saved to the ANNIEEvent Store
 	MCParticles = new std::vector<MCParticle>;
-  MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
-	MCHits = new std::map<ChannelKey,std::vector<Hit>>;
+	MCHits = new std::map<unsigned long,std::vector<Hit>>;
+	MCLAPPDHits = new std::map<unsigned long,std::vector<LAPPDHit>>;
 	EventTime = new TimeClass();
   
   this->LoadANNIEGeometry();
@@ -111,7 +114,7 @@ bool LoadRATPAC::Execute(){
 
   if(verbosity) std::cout<<"LoadRATPAC tool: Loading event time in TimeClass"<<std::endl;
   //FIXME: WCSim gives in trigger data, but we don't have triggers in RAT-PAC yet
-  EventTimeNs = 0; //FIXME: Should be called with chain->GetUTC() when we do have evnet times?
+  EventTimeNs = 0; //FIXME:  Should be called with chain->GetUTC() when we do have evnet times?
 	EventTime->SetNs(EventTimeNs);
 
   if(verbosity) std::cout<<"LoadRATPAC tool: Begin the PMT loop"<<std::endl;
@@ -121,12 +124,16 @@ bool LoadRATPAC::Execute(){
     RAT::DS::MCPMT *aPMT = ds->GetMC()->GetMCPMT(iPMT);
     int tubeid = aPMT->GetID();
 	  if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
+    if(pmt_tubeid_to_channelkey.count(tubeid)==0){
+      cerr<<"LoadRATPAC ERROR: tank PMT with no associated ChannelKey!"<<endl;
+      return false;
+    }
+    unsigned long key = pmt_tubeid_to_channelkey.at(tubeid);
     //Loop over photons that hit the PMT for digits
-    ChannelKey key(subdetector::ADC, tubeid);
     for(long iPhot = 0; iPhot < aPMT->GetMCPhotonCount(); iPhot++){
       float hitcharge = aPMT->GetMCPhoton(iPhot)->GetCharge();
       float hittime = aPMT->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
-      Hit thishit(tubeid, hittime, hitcharge);
+      Hit thishit(key, hittime, hitcharge);
       if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{thishit});
       else MCHits->at(key).push_back(thishit);
       if(verbosity>2) cout<<"digit added"<<endl;
@@ -135,38 +142,41 @@ bool LoadRATPAC::Execute(){
   std::cout << "Done loading event's PMT hits" << std::endl;
 
   //LAPPD loop
+  if(verbosity) std::cout<<"LoadRATPAC tool: Begin the LAPPD loop"<<std::endl;
   for( size_t iLAPPD = 0; iLAPPD < ds->GetMC()->GetMCLAPPDCount(); iLAPPD++ ){
     if(verbosity>2) std::cout<<"getting LAPPD "<<iLAPPD<<std::endl;
     RAT::DS::MCLAPPD *aLAPPD = ds->GetMC()->GetMCLAPPD(iLAPPD);
     int lappdid = aLAPPD->GetID();
-	  if(verbosity>2) cout<<"tubeid="<<lappdid<<endl;
+	  if(verbosity>2) cout<<"LAPPDid="<<lappdid<<endl;
+    if(lappd_tubeid_to_detectorkey.count(lappdid)==0){
+      cerr<<"LoadRATPAC ERROR: LAPPD with no associated ChannelKey!"<<endl;
+      return false;
+    }
+    unsigned int detkey = lappd_tubeid_to_detectorkey.at(lappdid);
+    Detector* thedet = anniegeom->GetDetector(detkey);
+    unsigned int key = thedet->GetChannels()->begin()->first; // first strip on this LAPPD
+    if(verbosity>2) cout<<"Channelkey for LAPPD="<<key<<endl;
     //Loop over photons that hit the LAPPD for digits
-    ChannelKey key(subdetector::ADC, lappdid);
     for(long iPhot = 0; iPhot < aLAPPD->GetMCPhotonCount(); iPhot++){
-      float hitcharge = aLAPPD->GetMCPhoton(iPhot)->GetCharge();
-      float hittime = aLAPPD->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
-      std::vector<double> lappdPosition;
+      double hitcharge = aLAPPD->GetMCPhoton(iPhot)->GetCharge();
+      double hittime = aLAPPD->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
       double lappdx = lappdInfo->GetPosition(lappdid).X();
       double lappdy = lappdInfo->GetPosition(lappdid).Y();
       double lappdz = lappdInfo->GetPosition(lappdid).Z();
-      lappdPosition.push_back(lappdx);
-      lappdPosition.push_back(lappdy);
-      lappdPosition.push_back(lappdz);
-      std::vector<double> localPosition;
+      std::vector<double> lappdPosition{lappdx,lappdy,lappdz};
       double localx = aLAPPD->GetMCPhoton(iPhot)->GetPosition().X();
       double localy = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Y();
       double localz = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Z();
-      localPosition.push_back(localx);
-      localPosition.push_back(localy);
-      localPosition.push_back(localz);
+      std::vector<double> localPosition{localx,localy,localz};;
 	    logmessage = "  LAPPDPosition = ("+to_string(lappdPosition[0]) + ", " + to_string(lappdPosition[1]) + ", " + to_string(lappdPosition[2]) + ") "+ "\n";
 	    logmessage += "  LAPPDLocalPosition = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + ", " + to_string(localPosition[2]) + ") "+ "\n";
 	    Log(logmessage,v_debug,verbosity);
-      LAPPDHit thishit(lappdid, hittime, hitcharge,lappdPosition, localPosition);
-      //thishit.SetPosition(lappdPosition);
-      //thishit.SetLocalPosition(localPosition);
-      if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{thishit});
-      else MCLAPPDHits->at(key).push_back(thishit);
+      LAPPDHit thishit(key, hittime, hitcharge,lappdPosition, localPosition);
+      if(MCLAPPDHits->count(key)==0){
+          MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{thishit});
+      } else {
+        MCLAPPDHits->at(key).push_back(thishit);
+      }
       if(verbosity>2) cout<<"LAPPD hit added"<<endl;
     }
   }
@@ -180,8 +190,8 @@ bool LoadRATPAC::Execute(){
 	Log(logmessage,v_debug,verbosity);
   for (long iTrack=0; iTrack<ds->GetMC()->GetMCTrackCount(); iTrack++){
     RAT::DS::MCTrack  *thistrack = ds->GetMC()->GetMCTrack(iTrack);
-    Int_t parentid = thistrack->GetParentID();
-    Int_t pdgcode = thistrack->GetPDGCode();
+    int parentid = thistrack->GetParentID();
+    int pdgcode = thistrack->GetPDGCode();
     std::string particlename = thistrack->GetParticleName();
     logmessage = "  Particle name = " +particlename + " \n";
 	  Log(logmessage,v_debug,verbosity);
@@ -191,26 +201,33 @@ bool LoadRATPAC::Execute(){
     RAT::DS::MCTrackStep* firstStep = thistrack->GetMCTrackStep(0);
     RAT::DS::MCTrackStep* lastStep = thistrack->GetMCTrackStep(thistrack->GetMCTrackStepCount()-1); 
     TVector3 endpoint = lastStep->GetEndpoint();
-    Float_t EndKE = lastStep->GetKE();
-    Double_t endtime = lastStep->GetGlobalTime();
+    double EndKE = lastStep->GetKE();
+    double endtime = lastStep->GetGlobalTime();
     TVector3 startpoint = firstStep->GetEndpoint();
-    Double_t starttime = firstStep->GetGlobalTime();
+    double starttime = firstStep->GetGlobalTime();
     logmessage = "  Particle start position = (" +to_string(startpoint.X()) + ", " + to_string(startpoint.Y()) + ", " + to_string(startpoint.Z()) +" \n";
     logmessage += "  Particle end position = (" +to_string(endpoint.X()) + ", " + to_string(endpoint.Y()) + ", " + to_string(endpoint.Z()) +" \n";
     logmessage += "  Particle start time = (" +to_string(starttime) + " \n";
 	  Log(logmessage,v_debug,verbosity);
-    Float_t StartKE = firstStep->GetKE();
+    double StartKE = firstStep->GetKE();
     TVector3 particledir = firstStep->GetMomentum();
     particledir = particledir.Unit();
     logmessage = "  Particle mom. direction = (" +to_string(particledir.X()) + ", " + to_string(particledir.Y()) + ", " + to_string(particledir.Z()) +" \n";
 	  Log(logmessage,v_debug,verbosity);
+    double parx = particledir.X();
+    double pary = particledir.Y();
+    double parz = particledir.Z();
+    Direction partdir;
+    partdir.SetX(parx);
+    partdir.SetY(pary);
+    partdir.SetZ(parz);
     //Load information into MCParticle class used in ToolAnalysis
     MCParticle thisparticle(
             pdgcode, StartKE, EndKE, Position(startpoint.X()/1000., 
             startpoint.Y()/1000., startpoint.Z()/1000.), Position(endpoint.X()/1000.,
-            endpoint.Y()/1000., endpoint.Z()/1000.), starttime-EventTimeNs,
-            endtime-EventTimeNs, Direction(particledir.X(), particledir.Y(),
-            particledir.Z()), tracklength/1000., startstoptype, iTrack, parentid);
+            endpoint.Y()/1000., endpoint.Z()/1000.), starttime,
+            endtime, partdir,
+            tracklength/1000., startstoptype, iTrack, parentid);
     MCParticles->push_back(thisparticle);
   }
 
@@ -266,66 +283,231 @@ void LoadRATPAC::Reset(){
 
 void LoadRATPAC::LoadANNIEGeometry(){	
   // Make the ANNIEEvent Store if it doesn't exist
-	// =============================================
-	int annieeventexists = m_data->Stores.count("ANNIEEvent");
-	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
+  // =============================================
+  int annieeventexists = m_data->Stores.count("ANNIEEvent");
+  if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
 
   std::cout<<"LoadRATPAC tool: Loading the ANNIE geometry now"<<std::endl;  
-	// construct the Geometry to go in the header Based on the RATPAC Geometry
-	// =================================================================
-	double RATPACGeometryVersion = 1;                       // TODO pull this from some suitable variable
+  // construct the Geometry to go in the header Based on the RATPAC Geometry
+  // =================================================================
+  double RATPACGeometryVersion = 1;                       // TODO pull this from some suitable variable
+  
   
   int numtankpmts = pmtInfo->GetPMTCount();
   int numlappds = lappdInfo->GetLAPPDCount();
-	int nummrdpmts = 0;
+  int nummrdpmts = 0;
   int numvetopmts = 0;
   
   //TODO: Have these values saved to the RATDS? Hard-coded for now
   //
   double tank_xcenter = (0.0) / 1000.;  // convert [mm] to [m]
-	double tank_ycenter = (0.0) / 1000.;
-	double tank_zcenter = (1724.0) / 1000.;
-	Position tank_center(tank_xcenter, tank_ycenter, tank_zcenter);
-	double tank_radius = (1524.0) / 1000.;
-	double tank_halfheight = (1981.2) / 1000.;
-	//geometry variables not yet in RATPAC grabbed from MRDSpecs.hh
-	double mrd_width =  (MRDSpecs::MRD_width) / 100.; // convert [cm] to [m]
-	double mrd_height = (MRDSpecs::MRD_height) / 100.;
-	double mrd_depth =  (MRDSpecs::MRD_depth) / 100.;
-	double mrd_start =  (MRDSpecs::MRD_start) / 100.;
-	if(verbosity>1) cout<<"we have "<<numtankpmts<<" tank pmts, and "<<numlappds<<" lappds"<<endl;
-	
-	// loop over PMTs and make the map of Detectors
-	std::map<ChannelKey,Detector> Detectors;
-	// tank pmts
-	for(int i=0; i<numtankpmts; i++){
-		ChannelKey akey(subdetector::ADC, i);
-    TVector3 pmtpos = pmtInfo->GetPosition(i);
-    TVector3 pmtdir = pmtInfo->GetDirection(i);
+  double tank_ycenter = (-133.0) / 1000.;
+  double tank_zcenter = (1724.0) / 1000.;
+  Position tank_center(tank_xcenter, tank_ycenter, tank_zcenter);
+  double tank_radius = (1524.0) / 1000.;
+  double tank_halfheight = (1981.2) / 1000.;
+  //geometry variables not yet in RATPAC. grabbed from MRDSpecs.hh
+  double mrd_width =  (MRDSpecs::MRD_width) / 100.; // convert [cm] to [m]
+  double mrd_height = (MRDSpecs::MRD_height) / 100.;
+  double mrd_depth =  (MRDSpecs::MRD_depth) / 100.;
+  double mrd_start =  (MRDSpecs::MRD_start) / 100.;
+  if(verbosity>1) cout<<"we have "<<numtankpmts<<" tank pmts, and "<<numlappds<<" lappds"<<endl;
+  
+  // construct the goemetry
+  anniegeom = new Geometry(RATPACGeometryVersion,
+                           tank_center,
+                           tank_radius,
+                           tank_halfheight,
+                           mrd_width,
+                           mrd_height,
+                           mrd_depth,
+                           mrd_start,
+                           numtankpmts,
+                           nummrdpmts,
+                           numvetopmts,
+                           numlappds,
+                           geostatus::FULLY_OPERATIONAL);
+  
+  if(verbosity>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_center.Print(); }
+  m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
+  
+  // Construct the Detectors and Channels
+  // Taken from LoadWCSim by Marcus
+  // ====================================
+  // PMTs
+  unsigned int ADC_Crate_Num = 0;
+  unsigned int ADC_Card_Num  = 0;
+  unsigned int ADC_Chan_Num = 0;
+  unsigned int MT_Crate_Num = 0;
+  unsigned int MT_Card_Num = 0;
+  unsigned int MT_Chan_Num = 0;
+  // LAPPDs
+  unsigned int ACDC_Crate_Num = 0;
+  unsigned int ACDC_Card_Num = 0;
+  unsigned int ACDC_Chan_Num = 0;
+  unsigned int ACC_Crate_Num = 0;
+  unsigned int ACC_Card_Num = 0;
+  unsigned int ACC_Chan_Num = 0;
+  // TDCs (not in RAT-PAC yet)
+  //unsigned int TDC_Crate_Num = 0;
+  //unsigned int TDC_Card_Num = 0;
+  //unsigned int TDC_Chan_Num = 0;
+  // HV
+  unsigned int CAEN_HV_Crate_Num = 0;
+  unsigned int CAEN_HV_Card_Num = 0;
+  unsigned int CAEN_HV_Chan_Num = 0;
+  // MRD not in RAT-PAC yet , so no LeCroy HV
+  //unsigned int LeCroy_HV_Crate_Num = 0;
+  //unsigned int LeCroy_HV_Card_Num = 0;
+  //unsigned int LeCroy_HV_Chan_Num = 0;
+  unsigned int LAPPD_HV_Crate_Num = 0;
+  unsigned int LAPPD_HV_Card_Num = 0;
+  unsigned int LAPPD_HV_Chan_Num = 0;
+  
+  
+  // lappds
+  for(int lappdi=0; lappdi<numlappds; lappdi++){
+    TVector3 lappdpos = lappdInfo->GetPosition(lappdi);
+    TVector3 lappddir = lappdInfo->GetDirection(lappdi);
+    int modelType = lappdInfo->GetModel(lappdi);
+    
+    // Construct the detector associated with this tile
+    unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+    lappd_tubeid_to_detectorkey.emplace(lappdi,uniquedetectorkey);
+    detectorkey_to_lappdid.emplace(uniquedetectorkey,lappdi);
+    Detector adet(uniquedetectorkey,
+                  "LAPPD",
+                  Position( lappdpos.X()/1000.,
+                            lappdpos.Y()/1000.,
+                            lappdpos.Z()/1000.),
+                  Direction(lappddir.X(),
+                            lappddir.Y(),
+                            lappddir.Z()),
+                  lappdInfo->GetModelName(modelType),
+                  detectorstatus::ON,
+                  0.);
+    
+    // construct all the channels associated with this LAPPD
+    for(int stripi=0; stripi<LappdNumStrips; stripi++){
+      unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+      lappd_tubeid_to_channelkey.emplace(stripi, uniquechannelkey);
+      channelkey_to_lappdid.emplace(uniquechannelkey,stripi);
+      int stripside = ((stripi%2)==0);   // StripSide=0 for LHS (x<0), StripSide=1 for RHS (x>0)
+      int stripnum = (int)(stripi/2);    // Strip number: add 2 channels per strip as we go
+      double xpos = (stripside) ? -LappdStripLength : LappdStripLength;
+      double ypos = (stripnum*LappdStripSeparation) - ((LappdNumStrips*LappdStripSeparation)/2.);
+      
+      // fill up ADC cards and channels monotonically, they're arbitrary for simulation
+      ACDC_Chan_Num++;
+      if(ACDC_Chan_Num>=RC::ACDC_CHANNELS_PER_CARD)  { ACDC_Chan_Num=0; ACDC_Card_Num++; ACC_Chan_Num++; }
+      if(ACDC_Card_Num>=RC::ACDC_CARDS_PER_CRATE)    { ACDC_Card_Num=0; ACDC_Crate_Num++; }
+      if(ACC_Chan_Num>=RC::ACC_CHANNELS_PER_CARD)    { ACC_Chan_Num=0; ACC_Card_Num++;    }
+      if(ACC_Card_Num>=RC::ACC_CARDS_PER_CRATE)      { ACC_Card_Num=0; ACC_Crate_Num++;   }
+      // same for HV
+      LAPPD_HV_Chan_Num++;
+      if(LAPPD_HV_Chan_Num>=RC::LAPPD_HV_CHANNELS_PER_CARD)    { LAPPD_HV_Chan_Num=0; LAPPD_HV_Card_Num++;  }
+      if(LAPPD_HV_Card_Num>=RC::LAPPD_HV_CARDS_PER_CRATE) { LAPPD_HV_Card_Num=0; LAPPD_HV_Crate_Num++; }
+      
+      Channel lappdchannel(uniquechannelkey,
+                           Position(xpos,ypos,0.),
+                           stripside,
+                           stripnum,
+                           ACDC_Crate_Num,
+                           ACDC_Card_Num,
+                           ACDC_Chan_Num,
+                           ACC_Crate_Num,
+                           ACC_Card_Num,
+                           ACC_Chan_Num,
+                           LAPPD_HV_Crate_Num,
+                           LAPPD_HV_Card_Num,
+                           LAPPD_HV_Chan_Num,
+                           channelstatus::ON);
+      
+      // Add this channel to the geometry
+      if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+      adet.AddChannel(lappdchannel);
+    }
+    if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+    // Add this detector to the geometry
+    anniegeom->AddDetector(adet);
+    if(verbosity>4) cout<<"printing geometry"<<endl;
+    if(verbosity>4) anniegeom->PrintChannels();
+  }
+  
+  // tank PMTs
+  for(int pmti=0; pmti<numtankpmts; pmti++){
+    TVector3 pmtpos = pmtInfo->GetPosition(pmti);
+    TVector3 pmtdir = pmtInfo->GetDirection(pmti);
+    int modelType = pmtInfo->GetModel(pmti);
     logmessage = "  PMT position = (" +to_string(pmtpos.X()) + ", " + to_string(pmtpos.Y()) + ", " + to_string(pmtpos.Z()) +" \n";
-	  Log(logmessage,v_debug,verbosity);
-    int modelType = pmtInfo->GetModel(i);
-		Detector adet("Tank", Position(pmtpos.X()/1000.,pmtpos.Y()/1000.,pmtpos.Z()/1000.),
-		               Direction(pmtdir.X(),pmtdir.Y(),pmtdir.Z()),
-		               i, pmtInfo->GetModelName(modelType) , detectorstatus::ON, 0.);
-		Detectors.emplace(akey,adet);
-	}
-	// lappds
-	for(int i=0; i<numlappds; i++){
-		ChannelKey akey(subdetector::LAPPD, i);
-    TVector3 lappdpos = lappdInfo->GetPosition(i);
-    TVector3 lappddir = lappdInfo->GetDirection(i);
-    int modelType = lappdInfo->GetModel(i);
-		Detector adet("Tank", Position(lappdpos.X()/1000.,lappdpos.Y()/1000.,lappdpos.Z()/1000.),
-		               Direction(lappddir.X(),lappddir.Y(),lappddir.Z()),
-		               i, lappdInfo->GetModelName(modelType) , detectorstatus::ON, 0.);
-		Detectors.emplace(akey,adet);
-	}
-
-	// construct the goemetry 
-	Geometry* anniegeom = new Geometry(Detectors, RATPACGeometryVersion, tank_center, tank_radius,
-	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
-	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
-	if(verbosity>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_center.Print(); }
-	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
+    Log(logmessage,v_debug,verbosity);
+    
+    // Construct the detector associated with this PMT
+    unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+    Detector adet(uniquedetectorkey,
+                  "Tank",
+                  Position( pmtpos.X()/1000.,
+                            pmtpos.Y()/1000.,
+                            pmtpos.Z()/1000.),
+                  Direction(pmtdir.X(),
+                            pmtdir.Y(),
+                            pmtdir.Z()),
+                  pmtInfo->GetModelName(modelType),
+                  detectorstatus::ON,
+                  0.);
+    
+    // construct the channel associated with this PMT
+    unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+    pmt_tubeid_to_channelkey.emplace(pmti, uniquechannelkey);
+    channelkey_to_pmtid.emplace(uniquechannelkey,pmti);
+    
+    // fill up ADC cards and channels monotonically, they're arbitrary for simulation
+    ADC_Chan_Num++;
+    if(ADC_Chan_Num>=RC::ADC_CHANNELS_PER_CARD)  { ADC_Chan_Num=0; ADC_Card_Num++; MT_Chan_Num++; }
+    if(ADC_Card_Num>=RC::ADC_CARDS_PER_CRATE)    { ADC_Card_Num=0; ADC_Crate_Num++; }
+    if(MT_Chan_Num>=RC::MT_CHANNELS_PER_CARD)    { MT_Chan_Num=0; MT_Card_Num++; }
+    if(MT_Card_Num>=RC::MT_CARDS_PER_CRATE)      { MT_Card_Num=0; MT_Crate_Num++; }
+    // same for HV
+    CAEN_HV_Chan_Num++;
+    if(CAEN_HV_Chan_Num>=RC::CAEN_HV_CHANNELS_PER_CARD)    { CAEN_HV_Chan_Num=0; CAEN_HV_Card_Num++;  }
+    if(CAEN_HV_Card_Num>=RC::CAEN_HV_CARDS_PER_CRATE) { CAEN_HV_Card_Num=0; CAEN_HV_Crate_Num++; }
+    
+    Channel pmtchannel( uniquechannelkey,
+                        Position(0,0,0.),
+                        0, // stripside
+                        0, // stripnum
+                        ADC_Crate_Num,
+                        ADC_Card_Num,
+                        ADC_Chan_Num,
+                        MT_Crate_Num,
+                        MT_Card_Num,
+                        MT_Chan_Num,
+                        CAEN_HV_Crate_Num,
+                        CAEN_HV_Card_Num,
+                        CAEN_HV_Chan_Num,
+                        channelstatus::ON);
+    
+    // Add this channel to the geometry
+    if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+    adet.AddChannel(pmtchannel);
+    
+    // Add this detector to the geometry
+    if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+    anniegeom->AddDetector(adet);
+    if(verbosity>4) cout<<"printing geometry"<<endl;
+    if(verbosity>4) anniegeom->PrintChannels();
+  }
+	// for other RATPAC tools that may need the RATPAC IDs
+	m_data->CStore.Set("lappd_tubeid_to_detectorkey",lappd_tubeid_to_detectorkey);
+	m_data->CStore.Set("lappd_tubeid_to_channelkey",lappd_tubeid_to_channelkey);
+  m_data->CStore.Set("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
+	m_data->CStore.Set("mrd_tubeid_to_channelkey",mrd_tubeid_to_channelkey);
+	m_data->CStore.Set("facc_tubeid_to_channelkey",facc_tubeid_to_channelkey);
+	// inverse
+	m_data->CStore.Set("detectorkey_to_lappdid",detectorkey_to_lappdid);
+	m_data->CStore.Set("channelkey_to_lappdid",channelkey_to_lappdid);
+	m_data->CStore.Set("channelkey_to_pmtid",channelkey_to_pmtid);
+	m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	m_data->CStore.Set("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
+	
 }	

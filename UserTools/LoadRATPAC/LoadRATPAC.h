@@ -38,13 +38,37 @@
 #include "Direction.h"
 #include "Hit.h"
 #include "LAPPDHit.h"
-#include "ChannelKey.h"
 #include "TriggerClass.h"
 #include "BeamStatus.h"
+#include "Geometry.h"
+#include "Detector.h"
 
 //Currently the specs in WCSim; need to have RAT-PAC's
 //MRD implementation match when made
 #include "MRDspecs.hh"
+
+namespace RC{
+	//PMTs
+	constexpr int ADC_CHANNELS_PER_CARD=4;
+	constexpr int ADC_CARDS_PER_CRATE=20;
+	constexpr int MT_CHANNELS_PER_CARD=4;
+	constexpr int MT_CARDS_PER_CRATE=20;
+	//LAPPDs
+	constexpr int ACDC_CHANNELS_PER_CARD=30;
+	constexpr int ACDC_CARDS_PER_CRATE=20;
+	constexpr int ACC_CHANNELS_PER_CARD=8;
+	constexpr int ACC_CARDS_PER_CRATE=20;
+	//TDCs
+	//constexpr int TDC_CHANNELS_PER_CARD=32;
+	//constexpr int TDC_CARDS_PER_CRATE=6;
+	//HV
+	constexpr int CAEN_HV_CHANNELS_PER_CARD=16;
+	constexpr int CAEN_HV_CARDS_PER_CRATE=10;
+	//constexpr int LECROY_HV_CHANNELS_PER_CARD=16;
+	//constexpr int LECROY_HV_CARDS_PER_CRATE=16;
+	constexpr int LAPPD_HV_CHANNELS_PER_CARD=4; // XXX ??? XXX
+	constexpr int LAPPD_HV_CARDS_PER_CRATE=10;  // XXX ??? XXX
+}
 
 
 class LoadRATPAC: public Tool {
@@ -71,7 +95,7 @@ class LoadRATPAC: public Tool {
 	TimeClass* EventTime;
 	BeamStatusClass* BeamStatus;
 	
-  Int_t EventTimeNs;
+  int EventTimeNs;
 
   RAT::DSReader *dsReader;
   RAT::DS::Root   *ds;
@@ -92,31 +116,43 @@ class LoadRATPAC: public Tool {
   std::clock_t start;
   double duration;
   
-  
   // TTrees, TChains and all that ROOT stuff
   TTree *nutri;
   TChain *chain;
   RAT::DS::Run *run;
   RAT::DS::PMTInfo *pmtInfo;
   RAT::DS::LAPPDInfo *lappdInfo;
-  
-  // Fixed size dimensions of array or collections stored in the TTree if any.
-  static const Int_t kMaxprocResult = 4;
-  static const Int_t kMaxmc = 1;
-  static const Int_t kMaxcalib = 1;
-  static const Int_t kMaxev = 1;
- 
+
+	int LappdNumStrips;           // number of Channels per LAPPD
+	double LappdStripLength;      // [mm] for calculating relative x position for dual-ended readout
+	double LappdStripSeparation;  // [mm] for calculating relative y position of each stripline
+
 	std::vector<MCParticle>* MCParticles;
-	std::map<ChannelKey,std::vector<Hit>>* TDCData;
-	std::map<ChannelKey,std::vector<Hit>>* MCHits;
-	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits;
+	std::map<unsigned long,std::vector<Hit>>* MCHits;
+	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits;
   
   ULong64_t entry;
   ULong64_t NbEntries;
 
 	//verbosity initialization
 	int verbosity=1;
-	
+
+  Geometry* anniegeom;
+
+	// For constructing ToolChain Geometry
+	//////////////////////////////////////
+	std::map<int,unsigned long> lappd_tubeid_to_detectorkey;
+	std::map<int,unsigned long> pmt_tubeid_to_channelkey;
+	std::map<int,unsigned long> lappd_tubeid_to_channelkey;
+	std::map<int,unsigned long> mrd_tubeid_to_channelkey;
+	std::map<int,unsigned long> facc_tubeid_to_channelkey;
+	// inverse
+	std::map<unsigned long,int> detectorkey_to_lappdid;
+	std::map<unsigned long,int> channelkey_to_pmtid;
+	std::map<unsigned long,int> channelkey_to_lappdid;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	std::map<unsigned long,int> channelkey_to_faccpmtid;
+
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
 	int v_warning=1;

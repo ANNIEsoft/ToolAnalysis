@@ -6,3 +6,7 @@ MCPiKCut 0
 GetPionKaonInfo 1
 MRDRecoCut 0
 PromptTrigOnly 1
+
+xshift 0.0
+yshift 13.3
+zshift 172.4

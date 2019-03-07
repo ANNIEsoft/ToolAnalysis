@@ -19,6 +19,9 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MCPiKCut", fMCPiKCut);
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
+  m_variables.Get("xshift",xshift);
+  m_variables.Get("yshift",yshift);
+  m_variables.Get("zshift",zshift);
 
   /// Construct the other objects we'll be setting at event level,
   fMuonStartVertex = new RecoVertex();
@@ -246,13 +249,15 @@ RecoVertex* EventSelector::FindTrueVertexFromMC() {
   muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
   muonstoppos.UnitToCentimeter(); // convert unit from meter to centimeter
   // change coordinate for muon start vertex
-  muonstartpos.SetY(muonstartpos.Y()+14.46469);
-  muonstartpos.SetZ(muonstartpos.Z()-168.1);
+  muonstartpos.SetX(muonstartpos.X()+xshift);
+  muonstartpos.SetY(muonstartpos.Y()+yshift);
+  muonstartpos.SetZ(muonstartpos.Z()-zshift);
   fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
   fMuonStartVertex->SetDirection(muondirection);
   //  charge coordinate for muon stop vertex
-  muonstoppos.SetY(muonstoppos.Y()+14.46469);
-  muonstoppos.SetZ(muonstoppos.Z()-168.1);
+  muonstoppos.SetX(muonstoppos.X()+xshift);
+  muonstoppos.SetY(muonstoppos.Y()+yshift);
+  muonstoppos.SetZ(muonstoppos.Z()+zshift);
   fMuonStopVertex->SetVertex(muonstoppos, muonstoptime); 
   
   logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"

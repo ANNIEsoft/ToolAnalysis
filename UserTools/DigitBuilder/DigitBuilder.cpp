@@ -32,8 +32,11 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("ParametricModel", fParametricModel);
 	m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
+	m_variables.Get("xshift", xshift);
+	m_variables.Get("yshift", yshift);
+	m_variables.Get("zshift", zshift);
 	
-	/// Construct the other objects we'll be setting at event level,
+  /// Construct the other objects we'll be setting at event level,
 	fDigitList = new std::vector<RecoDigit>;
 		
 	// Make the RecoDigit Store if it doesn't exist
@@ -169,13 +172,14 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			// convert the unit from m to cm
 			pos_sim = det->GetDetectorPosition();
 			pos_sim.UnitToCentimeter();
-			pos_reco.SetX(pos_sim.X());
-			pos_reco.SetY(pos_sim.Y()+14.46469);
-			pos_reco.SetZ(pos_sim.Z()-168.1);
+			pos_reco.SetX(pos_sim.X()+xshift);
+			pos_reco.SetY(pos_sim.Y()+yshift);
+			pos_reco.SetZ(pos_sim.Z()+zshift);
 	
 			if(det->GetDetectorElement()=="Tank"){
 				std::vector<Hit>& hits = apair.second;
         if(fParametricModel){
+          if(verbosity>2) std::cout << "Using parametric model to build PMT hits" << std::endl;
           //We'll get all hit info and then define a time/charge for each digit
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
@@ -256,9 +260,9 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					// and time psecs
 					// convert the WCSim coordinates to the ANNIEreco coordinates
 					// convert the unit from m to cm
-					pos_reco.SetX(ahit.GetPosition().at(0)*100.); //cm
-					pos_reco.SetY(ahit.GetPosition().at(1)*100.+14.4649); //cm
-					pos_reco.SetZ(ahit.GetPosition().at(2)*100.-168.1); //cm
+					pos_reco.SetX(ahit.GetPosition().at(0)*100.+xshift); //cm
+					pos_reco.SetY(ahit.GetPosition().at(1)*100.+yshift); //cm
+					pos_reco.SetZ(ahit.GetPosition().at(2)*100.+zshift); //cm
 					calT = ahit.GetTime();  // 
 					calT = frand.Gaus(calT, 0.1); // time is smeared with 100 ps time resolution. Harded-coded for now.
 					calQ = ahit.GetCharge();

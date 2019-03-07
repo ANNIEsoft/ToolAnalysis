@@ -12,8 +12,7 @@
 #include <TRandom3.h>
 
 #include "Tool.h"
-// ROOT includes
-#include "TFile.h"
+// ROOT includes #include "TFile.h"
 #include "TTree.h"
 #include "ANNIEGeometry.h"
 #include "Detector.h"
@@ -89,7 +88,11 @@ class DigitBuilder: public Tool {
 	int v_message=2;
 	int v_debug=3;
 	std::string logmessage;
-	
+
+  //Shifts needed for simulation package in use
+  double xshift = 0.0;
+  double yshift = 14.46469;
+  double zshift = -168.1;
 	///RecoEvent information
 	bool fEventCutStatus;
 	/// Reconstructed information
