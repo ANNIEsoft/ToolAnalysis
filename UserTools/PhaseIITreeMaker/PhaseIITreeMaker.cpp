@@ -170,7 +170,11 @@ bool PhaseIITreeMaker::Execute(){
   
   // Read digits
   std::vector<RecoDigit>* digitList = nullptr;
-	m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
+  auto get_digits = m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
+  if(!get_digits) {
+    Log("PhaseITreeMaker tool: no digit list in store!", v_error, verbosity);
+    return false;	
+  }
   fNhits = digitList->size();
   for( auto& digit : *digitList ){
     fDigitX.push_back(digit.GetPosition().X());
@@ -469,10 +473,15 @@ void PhaseIITreeMaker::RecoSummary() {
   cosphi = fTrueDirX*fRecoDirX+fTrueDirY*fRecoDirY+fTrueDirZ*fRecoDirZ;
   phi = TMath::ACos(cosphi); // radians
   DeltaAngle = phi/(TMath::Pi()/180.0); // radians->degrees
+  std::cout << "============================================================================"<<std::endl;
+  std::cout << " Event number " << fEventNumber << std::endl;
   std::cout << "  trueVtx=(" << fTrueVtxX << ", " << fTrueVtxY << ", " << fTrueVtxZ <<", "<< fTrueVtxTime<< std::endl
             << "           " << fTrueDirX << ", " << fTrueDirY << ", " << fTrueDirZ << ") " << std::endl;
   std::cout << "  recoVtx=(" << fRecoVtxX << ", " << fRecoVtxY << ", " << fRecoVtxZ <<", "<< fRecoVtxTime << std::endl
             << "           " << fRecoDirX << ", " << fRecoDirY << ", " << fRecoDirZ << ") " << std::endl;
   std::cout << "  DeltaR = "<<deltaR<<"[cm]"<<"\t"<<"  DeltaAngle = "<<DeltaAngle<<" [degree]"<<std::endl;
+  std::cout << "  FOM = " << fRecoVtxFOM << std::endl;
+  std::cout << "  RecoStatus = " << fRecoStatus <<std::endl;
+  std::cout << std::endl;
 }
 

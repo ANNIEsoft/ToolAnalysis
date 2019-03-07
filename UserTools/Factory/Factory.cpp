@@ -61,11 +61,17 @@ if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
 if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
+if (tool=="HitCleaner") ret=new HitCleaner;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
 if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
 if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
 if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
+if (tool=="MonitorMRDTime") ret=new MonitorMRDTime;
+if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
+if (tool=="PulseSimulation") ret=new PulseSimulation;
+if (tool=="PlotLAPPDTimesFromStore") ret=new PlotLAPPDTimesFromStore;
+if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
 if (tool=="LoadRATPAC") ret=new LoadRATPAC;
 return ret;
 }

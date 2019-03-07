@@ -82,7 +82,7 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	
 	// ANNIEEvent TDC hit storage
 	// ==========================
-	TDCData = new std::map<ChannelKey, std::vector<std::vector<Hit>>>;
+	TDCData = new std::map<unsigned long, std::vector<std::vector<Hit>>>;
 	
 	// Prepare the CC Data files for Reading
 	// =====================================
@@ -530,7 +530,11 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 							}
 							continue;
 						}
-						ChannelKey key(subdetector::TDC,tubeid);
+						// FIXME: when we implement loading raw file geometries
+						// we'll need to have some way to map from TDC slot+channel to channelkey
+						// Then we can probably replace the use of tubeid as this tool interprets it
+						// - i.e. as position XXYYZZ - with Channel::GetPosition 
+						unsigned long key = tubeid;
 						
 						//convert time since TDC Timestamp from ticks to ns
 						double hit_time_ns = static_cast<double>(MRDData->Value->at(hiti)) / MRD_NS_PER_SAMPLE;
