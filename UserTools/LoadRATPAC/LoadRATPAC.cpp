@@ -100,7 +100,6 @@ bool LoadRATPAC::Execute(){
   // Starts the timer to load this event
   start = clock();
 
-  TH1::SetDefaultSumw2(kTRUE);
   if (EventNumber >= NbEntries){
     std::cout << "LoadRATPAC tool: end of file reached.  Returning true" << std::endl;
     return true;
@@ -156,22 +155,30 @@ bool LoadRATPAC::Execute(){
     Detector* thedet = anniegeom->GetDetector(detkey);
     unsigned int key = thedet->GetChannels()->begin()->first; // first strip on this LAPPD
     if(verbosity>2) cout<<"Channelkey for LAPPD="<<key<<endl;
+    Direction lappddir = thedet->GetDetectorDirection();
+    TVector3 d(lappddir.X(),lappddir.Y(),lappddir.Z());
     //Loop over photons that hit the LAPPD for digits
     for(long iPhot = 0; iPhot < aLAPPD->GetMCPhotonCount(); iPhot++){
       double hitcharge = aLAPPD->GetMCPhoton(iPhot)->GetCharge();
       double hittime = aLAPPD->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
-      double lappdx = lappdInfo->GetPosition(lappdid).X();
-      double lappdy = lappdInfo->GetPosition(lappdid).Y();
-      double lappdz = lappdInfo->GetPosition(lappdid).Z();
-      std::vector<double> lappdPosition{lappdx,lappdy,lappdz};
-      double localx = aLAPPD->GetMCPhoton(iPhot)->GetPosition().X();
-      double localy = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Y();
-      double localz = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Z();
-      std::vector<double> localPosition{localx,localy,localz};;
-	    logmessage = "  LAPPDPosition = ("+to_string(lappdPosition[0]) + ", " + to_string(lappdPosition[1]) + ", " + to_string(lappdPosition[2]) + ") "+ "\n";
-	    logmessage += "  LAPPDLocalPosition = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + ", " + to_string(localPosition[2]) + ") "+ "\n";
+      double lappdx = lappdInfo->GetPosition(lappdid).Y()/1000.;
+      double lappdy = lappdInfo->GetPosition(lappdid).Z()/1000.;
+      double lappdz = lappdInfo->GetPosition(lappdid).X()/1000.;
+      double localx = aLAPPD->GetMCPhoton(iPhot)->GetPosition().X()/1000.;
+      double localy = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Y()/1000.;
+      double localz = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Z()/1000.;
+      TVector3 local(localx,localy,localz);
+      TVector3 localnorm(0.,0.,1.);
+      TMatrixD drot = this->Rotateatob(localnorm,d);
+      TVector3 trans = drot*local;
+      std::vector<double> globalPosition{lappdx+trans.X(),lappdy+trans.Y(),lappdz+trans.Z()};
+      std::vector<double> localPosition{localx,localy};
+	    logmessage = "  LAPPDPosition = ("+to_string(lappdx) + ", " + to_string(lappdy) + ", " + to_string(lappdz) + ") "+ "\n";
+      logmessage = "  LAPPDHitGlobalPosition = ("+to_string(globalPosition[0]) + ", " + to_string(globalPosition[1]) + ", " + to_string(globalPosition[2]) + ") "+ "\n";
+      logmessage = "  RotatedLocalPosition = ("+to_string(trans.X()) + ", " + to_string(trans.Y()) + ", " + to_string(trans.Z()) + ") "+ "\n";
+	    logmessage += "  LAPPDHitLocalPosition(x,y,z in plane coord) = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + "," + to_string(localPosition[2]) + ") "+ "\n";
 	    Log(logmessage,v_debug,verbosity);
-      LAPPDHit thishit(key, hittime, hitcharge,lappdPosition, localPosition);
+      LAPPDHit thishit(key, hittime, hitcharge,globalPosition, localPosition);
       if(MCLAPPDHits->count(key)==0){
           MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{thishit});
       } else {
@@ -224,7 +231,7 @@ bool LoadRATPAC::Execute(){
     //Load information into MCParticle class used in ToolAnalysis
     MCParticle thisparticle(
             pdgcode, StartKE, EndKE, Position(startpoint.X()/1000., 
-            startpoint.Y()/1000., startpoint.Z()/1000.), Position(endpoint.X()/1000.,
+            startpoint.Y()/1000., (startpoint.Z())/1000.), Position(endpoint.X()/1000.,
             endpoint.Y()/1000., endpoint.Z()/1000.), starttime,
             endtime, partdir,
             tracklength/1000., startstoptype, iTrack, parentid);
@@ -370,19 +377,21 @@ void LoadRATPAC::LoadANNIEGeometry(){
     TVector3 lappdpos = lappdInfo->GetPosition(lappdi);
     TVector3 lappddir = lappdInfo->GetDirection(lappdi);
     int modelType = lappdInfo->GetModel(lappdi);
-    
+    logmessage = "  LAPPD position = (" +to_string(lappdpos.X()) + ", " + to_string(lappdpos.Y()) + ", " + to_string(lappdpos.Z()) +" \n";
+    logmessage += "  LAPPD direction = (" +to_string(lappddir.X()) + ", " + to_string(lappddir.Y()) + ", " + to_string(lappddir.Z()) +" \n";
+    Log(logmessage,v_debug,verbosity);
     // Construct the detector associated with this tile
     unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
     lappd_tubeid_to_detectorkey.emplace(lappdi,uniquedetectorkey);
     detectorkey_to_lappdid.emplace(uniquedetectorkey,lappdi);
     Detector adet(uniquedetectorkey,
                   "LAPPD",
-                  Position( lappdpos.X()/1000.,
-                            lappdpos.Y()/1000.,
-                            lappdpos.Z()/1000.),
-                  Direction(lappddir.X(),
-                            lappddir.Y(),
-                            lappddir.Z()),
+                  Position( lappdpos.Y()/1000.,
+                            lappdpos.Z()/1000.,
+                            lappdpos.X()/1000.),
+                  Direction(lappddir.Y(),
+                            lappddir.Z(),
+                            lappddir.X()),
                   lappdInfo->GetModelName(modelType),
                   detectorstatus::ON,
                   0.);
@@ -446,12 +455,12 @@ void LoadRATPAC::LoadANNIEGeometry(){
     unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
     Detector adet(uniquedetectorkey,
                   "Tank",
-                  Position( pmtpos.X()/1000.,
-                            pmtpos.Y()/1000.,
-                            pmtpos.Z()/1000.),
-                  Direction(pmtdir.X(),
-                            pmtdir.Y(),
-                            pmtdir.Z()),
+                  Position( pmtpos.Y()/1000.,
+                            pmtpos.Z()/1000.,
+                            pmtpos.X()/1000.),
+                  Direction(pmtdir.Y(),
+                            pmtdir.Z(),
+                            pmtdir.X()),
                   pmtInfo->GetModelName(modelType),
                   detectorstatus::ON,
                   0.);
@@ -510,4 +519,28 @@ void LoadRATPAC::LoadANNIEGeometry(){
 	m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
 	m_data->CStore.Set("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
 	
-}	
+}
+
+
+TMatrixD LoadRATPAC::Rotateatobv2(TVector3 a, TVector3 b){
+  //Get rotation matrix that rotates the z-axis of one coordinate system
+  // to vector d.
+  //d must be normalized.
+  TVector3 au = a.Unit();
+  TVector3 bu = b.Unit();
+  TVector3 cu = au.Cross(bu);
+  double cosa = au.Dot(bu);
+  double s = sqrt(1- cosa*cosa);
+  double C = 1-cosa;
+  TMatrixD rotn(3,3);
+  rotn[0][0]= (cu.X()*cu.X()*C + cosa);
+  rotn[0][1]= (cu.X()*cu.Y()*C)-(cu.Z()*s);
+  rotn[0][2]= (cu.X()*cu.Z()*C)+(cu.Y()*s);
+  rotn[1][0]= (cu.Y()*cu.X()*C)+(cu.Z()*s);
+  rotn[1][1]= (cu.Y()*cu.Y()*C)+cosa;
+  rotn[1][2]= (cu.Y()*cu.Z()*C)-(cu.X()*s);
+  rotn[2][0]= (cu.Z()*cu.X()*C)-(cu.Y()*s);
+  rotn[2][1]= (cu.Z()*cu.Y()*C)-(cu.X()*s);
+  rotn[2][2]= (cu.Z()*cu.Z()*C)-cosa;
+  return rotn;
+} 

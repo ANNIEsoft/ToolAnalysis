@@ -11,8 +11,10 @@
 // ROOT Dependencies
 #include "TChain.h"
 #include "TFile.h"
+#include "TVector3.h"
 #include "TTree.h"
 #include "TMath.h"
+#include "Math/GenVector/Rotation3D.h"
 
 // RATEvent Library dependencies
 #include "Run.hh"
@@ -84,7 +86,8 @@ class LoadRATPAC: public Tool {
   void Reset();
 
  private:
-	
+
+  TMatrixD Rotateatob(TVector3 a, TVector3 b);
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
 

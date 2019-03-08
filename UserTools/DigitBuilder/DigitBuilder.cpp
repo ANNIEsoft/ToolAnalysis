@@ -199,6 +199,13 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           for(std::vector<double>::iterator it = hitCharges.begin(); it != hitCharges.end(); ++it){
             calQ += *it;
           }
+          if (verbosity>4) { 
+            std::cout << "PMT position (X<Y<Z): " << 
+                    to_string(pos_reco.X()) << "," << to_string(pos_reco.Y()) <<
+                    "," << to_string(pos_reco.Z()) << std::endl;
+            std::cout << "PMT Charge,Time: " << to_string(calQ) << "," <<
+                    to_string(calT) << std::endl;
+          }
 				  digitType = RecoDigit::PMT8inch;
 				  RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
 				  fDigitList->push_back(recoDigit); 
@@ -208,6 +215,13 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 				  	// get calibrated PMT time (Use the MC time for now)
 				  	calT = ahit.GetTime()*1.0; 
             calQ = ahit.GetCharge();
+            if (verbosity>4) { 
+              std::cout << "PMT position (X<Y<Z): " << 
+                      to_string(pos_reco.X()) << "," << to_string(pos_reco.Y()) <<
+                      "," << to_string(pos_reco.Z()) << std::endl;
+              std::cout << "PMT Charge,Time: " << to_string(calQ) << "," <<
+                      to_string(calT) << std::endl;
+            }
 				  	digitType = RecoDigit::PMT8inch;
 				  	RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
 				    //recoDigit.Print();
@@ -266,6 +280,13 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					calT = ahit.GetTime();  // 
 					calT = frand.Gaus(calT, 0.1); // time is smeared with 100 ps time resolution. Harded-coded for now.
 					calQ = ahit.GetCharge();
+          if (verbosity>4) { 
+            std::cout << "LAPPD position (X<Y<Z): " << 
+                    to_string(pos_reco.X()) << "," << to_string(pos_reco.Y()) <<
+                    "," << to_string(pos_reco.Z()) << std::endl;
+            std::cout << "LAPPD Charge,Time: " << to_string(calQ) << "," <<
+                    to_string(calT) << std::endl;
+          }
 					// I found the charge is 0 for all the hits. In order to test the code, 
 					// here I just set the charge to 1. We should come back to this later. (Jingbo Wang)
 					calQ = 1.;
