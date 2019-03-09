@@ -251,7 +251,7 @@ RecoVertex* EventSelector::FindTrueVertexFromMC() {
   // change coordinate for muon start vertex
   muonstartpos.SetX(muonstartpos.X()+xshift);
   muonstartpos.SetY(muonstartpos.Y()+yshift);
-  muonstartpos.SetZ(muonstartpos.Z()-zshift);
+  muonstartpos.SetZ(muonstartpos.Z()+zshift);
   fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
   fMuonStartVertex->SetDirection(muondirection);
   //  charge coordinate for muon stop vertex

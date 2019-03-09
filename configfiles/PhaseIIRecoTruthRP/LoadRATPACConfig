@@ -2,7 +2,10 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbosity 3
-InputFile /AnnieShare/p2r_data/Muons_500MeV_wTracks_wLight.root
+InputFile /AnnieShare/p2r_data/Muons_500MeV_Zaxisagain_wTracks_wLight.root
 LappdNumStrips 60        ## num channels to construct from each LAPPD
 LappdStripLength 100     ## relative x position of each LAPPD strip, for dual-sided readout [mm]
 LappdStripSeparation 10  ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
+xshift 0.0
+yshift 133.0
+zshift -1724.0

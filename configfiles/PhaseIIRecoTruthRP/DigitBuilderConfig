@@ -1,9 +1,10 @@
 # DigitBuilder config file
 
 verbosity 5
-ParametricModel 0
+ParametricModel 1
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
 PhotoDetectorConfiguration All
+#Shift to apply to digits
 xshift 0.0
-yshift 0.0 #13.3
-zshift 0.0 #172.4
+yshift 0.0 
+zshift 0.0 

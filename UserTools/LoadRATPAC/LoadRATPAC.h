@@ -161,6 +161,11 @@ class LoadRATPAC: public Tool {
 	int v_warning=1;
 	int v_message=2;
 	int v_debug=3;
+
+  //Position shifts needed for simulation package used
+  double xshift = 0.0;
+  double yshift = 133.0;
+  double zshift = -1724.0;
 };
 
 
