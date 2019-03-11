@@ -14,13 +14,13 @@
 MrdPaddlePlot::MrdPaddlePlot():Tool(){}
 
 bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
-
+	
 	if(verbosity) cout<<"Initializing tool MrdPaddlePlot"<<endl;
-
+	
 	/////////////////// Usefull header ///////////////////////
 	if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
-
+	
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
 	
@@ -284,15 +284,25 @@ bool MrdPaddlePlot::Execute(){
 			hmrdsubev->Fill(thetrack.mrdsubevent_id);
 			htrigger->Fill(thetrack.trigger);
 			
+			// recording hits on paddles; generally and split by position in layer
+			// also record times of digits, as held within clusters
 			hnumhclusters->Fill(thetrack.htrackclusters.size());
 			hnumvclusters->Fill(thetrack.vtrackclusters.size());
+			// loop over clusters on horizontal paddles
 			for(auto&& acluster : thetrack.htrackclusters){
+				// record a hit at this position (the cluster centre) within within the layer
 				hpaddleinlayeridsh->Fill(acluster.GetCentreIndex());
+				// for all paddles within the cluster, record hits on those paddles
+				// get the id of the paddle at the top of the cluster
 				Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
+				// get the id of the paddle at the bottom of the cluster (if it spans multiple paddles)
 				Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
+				// scan over the range of paddle ids and record that they were hit
 				for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
+				// record the times of all hits in this cluster
 				for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
 			}
+			// repeat above for clusters on vertical paddles
 			for(auto&& acluster : thetrack.vtrackclusters){
 				hpaddleinlayeridsv->Fill(acluster.GetCentreIndex());
 				Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
@@ -300,9 +310,11 @@ bool MrdPaddlePlot::Execute(){
 				for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
 				for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
 			}
+			// fill histogram of the number of cells in h/v tracks
 			hnumhcells->Fill(thetrack.htrackcells.size());
 			hnumvcells->Fill(thetrack.vtrackcells.size());
 			
+			// fill histograms recording reconstructed track properties
 			hhangle->Fill(thetrack.htrackgradient);
 			hhangleerr->Fill(thetrack.htrackgradienterror);
 			hvangle->Fill(thetrack.htrackgradient);
@@ -406,7 +418,7 @@ bool MrdPaddlePlot::Execute(){
 				thesubevent->imgcanvas->GetPad(subpad)->Update();
 			}
 //			gSystem->ProcessEvents();
-
+			
 //			for(int subpad=1; subpad<3; subpad++){ // loop over the top and side views
 //				TList* imgcanvasprimaries = thesubevent->imgcanvas->GetPad(subpad)->GetListOfPrimitives();
 //				//imgcanvasprimaries->ls();
@@ -427,7 +439,7 @@ bool MrdPaddlePlot::Execute(){
 		}
 		
 		//gSystem->ProcessEvents();
-		//gPad->WaitPrimitive();
+		if(enableTApplication) gPad->WaitPrimitive();
 		//if(enableTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
 		
 		//if(earlyexit) break;
