@@ -236,6 +236,25 @@ class MCParticle : public Particle {
 		std::cout<<"ParentPdg : "<<ParentPdg<<std::endl;
 		std::cout<<"Parent Particle Name : "<<PdgToString(ParentPdg)<<std::endl;
 		
+		std::cout <<"StartsInFiducialVolume = "<<StartsInFiducialVolume <<std::endl;
+		std::cout <<"TrackAngleX = "<<TrackAngleX <<std::endl;
+		std::cout <<"TrackAngleY = "<<TrackAngleY <<std::endl;
+		std::cout <<"TrackAngleFromBeam = "<<TrackAngleFromBeam <<std::endl;
+		std::cout <<"EntersTank = "<<EntersTank <<std::endl;
+		std::cout <<"TankEntryPoint = "; TankEntryPoint.Print();
+		std::cout <<"ExitsTank = "<<ExitsTank <<std::endl;
+		std::cout <<"TankExitPoint = "; TankExitPoint.Print();
+		std::cout <<"TrackLengthInTank = "<<TrackLengthInTank <<std::endl;
+		std::cout <<"EntersMrd = "<<EntersMrd <<std::endl;
+		std::cout <<"MrdEntryPoint = "; MrdEntryPoint.Print();
+		std::cout <<"ExitsMrd = "<<ExitsMrd <<std::endl;
+		std::cout <<"MrdExitPoint = "; MrdExitPoint.Print();
+		std::cout <<"PenetratesMrd = "<<PenetratesMrd <<std::endl;
+		std::cout <<"TrackLengthInMrd = "<<TrackLengthInMrd <<std::endl;
+		std::cout <<"MrdPenetration = "<<MrdPenetration <<std::endl;       // [m]
+		std::cout <<"MrdLayersPenetrated = "<<MrdLayersPenetrated <<std::endl;  // scint layers hit
+		std::cout <<"MrdEnergyLoss = "<<MrdEnergyLoss <<std::endl;        // [MeV]
+		
 		return true;
 	}
 	
@@ -296,11 +315,11 @@ class MCParticle : public Particle {
 			ar & MrdEntryPoint;
 			ar & ExitsMrd;
 			ar & MrdExitPoint;
-			ar & PenetratesMrd;        // full: enters at front, exits at back
+			ar & PenetratesMrd;
 			ar & TrackLengthInMrd;
-			ar & MrdPenetration;       // [m]
-			ar & MrdLayersPenetrated;  // scint layers hit
-			ar & MrdEnergyLoss;        // [MeV]
+			ar & MrdPenetration;
+			ar & MrdLayersPenetrated;
+			ar & MrdEnergyLoss;
 		}
 	}
 };
