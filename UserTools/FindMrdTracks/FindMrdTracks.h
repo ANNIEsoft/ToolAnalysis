@@ -14,6 +14,10 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TClonesArray.h"
+// for drawing
+class TApplication;
+class TCanvas;
+class TH1D;
 
 class FindMrdTracks: public Tool {
 	
@@ -77,6 +81,13 @@ private:
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	bool DrawTruthTracks;
 	std::vector<MCParticle>* MCParticles=nullptr;
+	
+	bool MakeMrdDigitTimePlot=false;
+	TApplication* findMrdRootApp=nullptr;
+	TCanvas* findMrdRootCanvas=nullptr;
+	TH1D* mrddigitts=nullptr;
+	Double_t canvwidth;
+	Double_t canvheight;
 };
 
 
