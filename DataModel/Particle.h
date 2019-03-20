@@ -158,8 +158,53 @@ class MCParticle : public Particle {
 	
 	inline int GetParticleID(){return ParticleID;}
 	inline int GetParentPdg(){return ParentPdg;}
+	
+	inline bool GetStartsInFiducialVolume(){return StartsInFiducialVolume;}
+	
+	inline double GetTrackAngleX(){return TrackAngleX;}
+	inline double GetTrackAngleY(){return TrackAngleY;}
+	inline double GetTrackAngleFromBeam(){return TrackAngleFromBeam;}
+	
+	inline bool GetEntersTank(){return EntersTank;}
+	inline Position GetTankEntryPoint(){return TankEntryPoint;}
+	inline bool GetExitsTank(){return ExitsTank;}
+	inline Position GetTankExitPoint(){return TankExitPoint;}
+	inline double GetTrackLengthInTank(){return TrackLengthInTank;}
+	
+	inline bool GetEntersMrd(){return EntersMrd;}
+	inline Position GetMrdEntryPoint(){return MrdEntryPoint;}
+	inline bool GetExitsMrd(){return ExitsMrd;}
+	inline Position GetMrdExitPoint(){return MrdExitPoint;}
+	inline bool GetPenetratesMrd(){return PenetratesMrd;} // full penetration: enters front face, exits back
+	inline double GetTrackLengthInMrd(){return TrackLengthInMrd;}
+	inline double GetMrdPenetration(){return MrdPenetration;} // [m], depth of reconstructed track in MRD
+	inline int GetNumMrdLayersPenetrated(){return MrdLayersPenetrated;}
+	inline double GetMrdEnergyLoss(){return MrdEnergyLoss;}
+	
 	inline void SetParticleID(int partidin){ParticleID=partidin;}
 	inline void SetParentPdg(int parentpdgin){ParentPdg=parentpdgin;}
+	
+	inline void SetStartsInFiducialVolume(bool iStartsInFiducialVolume){StartsInFiducialVolume = iStartsInFiducialVolume;}
+	
+	inline void SetEntersTank(bool iEntersTank){EntersTank = iEntersTank;}
+	inline void SetTankEntryPoint(Position iTankEntryPoint){TankEntryPoint = iTankEntryPoint;}
+	inline void SetExitsTank(bool iExitsTank){ExitsTank = iExitsTank;}
+	inline void SetTankExitPoint(Position iTankExitPoint){TankExitPoint = iTankExitPoint;}
+	inline void SetTrackLengthInTank(double iTrackLengthInTank){TrackLengthInTank = iTrackLengthInTank;}
+	
+	inline void SetEntersMrd(bool iEntersMrd){EntersMrd = iEntersMrd;}
+	inline void SetMrdEntryPoint(Position iMrdEntryPoint){MrdEntryPoint = iMrdEntryPoint;}
+	inline void SetExitsMrd(bool iExitsMrd){ExitsMrd = iExitsMrd;}
+	inline void SetMrdExitPoint(Position iMrdExitPoint){MrdExitPoint = iMrdExitPoint ;}
+	inline void SetPenetratesMrd(bool iPenetratesMrd){PenetratesMrd = iPenetratesMrd;}
+	inline void SetTrackLengthInMrd(double iTrackLengthInMrd){TrackLengthInMrd = iTrackLengthInMrd;}
+	inline void SetMrdPenetration(double iMrdPenetration){MrdPenetration = iMrdPenetration;}
+	inline void SetNumMrdLayersPenetrated(int iMrdLayersPenetrated){MrdLayersPenetrated = iMrdLayersPenetrated;}
+	inline void SetMrdEnergyLoss(double iMrdEnergyLoss){MrdEnergyLoss = iMrdEnergyLoss;}
+	
+	inline void SetTrackAngleX(double iTrackAngleX){TrackAngleX = iTrackAngleX;}
+	inline void SetTrackAngleY(double iTrackAngleY){TrackAngleY = iTrackAngleY;}
+	inline void SetTrackAngleFromBeam(double iTrackAngleFromBeam){TrackAngleFromBeam = iTrackAngleFromBeam;}
 	
 	bool GetWorldContained(int startstop, Position aVertex=Position(0,0,0)){
 		if(startstop==0) aVertex=startVertex;
@@ -183,6 +228,9 @@ class MCParticle : public Particle {
 		std::cout<<"stopTime : "<<stopTime<<std::endl;
 		std::cout<<"startDirection : "; startDirection.Print();
 		std::cout<<"trackLength : "<<trackLength<<std::endl;
+		std::cout<<"track angle from beam axis: "<<TrackAngleFromBeam<<std::endl;
+		std::cout<<"track angle in horizontal paddles: "<<TrackAngleY<<std::endl;
+		std::cout<<"track angle in vertical paddles: "<<TrackAngleX<<std::endl;
 		std::cout<<"StartStopType : "; PrintStartStopType(StartStopType);
 		std::cout<<"ParticleID : "<<ParticleID<<std::endl;
 		std::cout<<"ParentPdg : "<<ParentPdg<<std::endl;
@@ -194,6 +242,28 @@ class MCParticle : public Particle {
 	protected:
 	int ParticleID;
 	int ParentPdg;
+	
+	bool StartsInFiducialVolume;
+	
+	double TrackAngleX;
+	double TrackAngleY;
+	double TrackAngleFromBeam;  // [rads]
+	
+	bool EntersTank;
+	Position TankEntryPoint;
+	bool ExitsTank;
+	Position TankExitPoint;
+	double TrackLengthInTank;
+	
+	double EntersMrd;
+	Position MrdEntryPoint;
+	bool ExitsMrd;
+	Position MrdExitPoint;
+	bool PenetratesMrd;          // full: enters at front, exits at back
+	double TrackLengthInMrd;
+	double MrdPenetration;       // [m]
+	int MrdLayersPenetrated;     // scint layers hit
+	double MrdEnergyLoss;        // [MeV]
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
@@ -209,6 +279,28 @@ class MCParticle : public Particle {
 			ar & StartStopType;
 			ar & ParticleID;
 			ar & ParentPdg;
+			
+			ar & StartsInFiducialVolume;
+			
+			ar & TrackAngleX;
+			ar & TrackAngleY;
+			ar & TrackAngleFromBeam;
+			
+			ar & EntersTank;
+			ar & TankEntryPoint;
+			ar & ExitsTank;
+			ar & TankExitPoint;
+			ar & TrackLengthInTank;
+			
+			ar & EntersMrd;
+			ar & MrdEntryPoint;
+			ar & ExitsMrd;
+			ar & MrdExitPoint;
+			ar & PenetratesMrd;        // full: enters at front, exits at back
+			ar & TrackLengthInMrd;
+			ar & MrdPenetration;       // [m]
+			ar & MrdLayersPenetrated;  // scint layers hit
+			ar & MrdEnergyLoss;        // [MeV]
 		}
 	}
 };
