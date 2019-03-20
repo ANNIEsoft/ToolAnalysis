@@ -55,12 +55,12 @@ bool MCParticleProperties::Execute(){
 		if(verbosity>3) cout<<"track "<<tracki<<endl;
 		// Get the track details
 		MCParticle* nextparticle = &MCParticles->at(tracki);
-		if(nextparticle->GetPdgCode()!=13) continue; // XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+		if(nextparticle->GetPdgCode()!=13) continue; // XXX
 		Position startvertex = nextparticle->GetStartVertex();
 		startvertex.UnitToCentimeter();
 		Position stopvertex = nextparticle->GetStopVertex();
 		stopvertex.UnitToCentimeter();
-		if(stopvertex.Z()<MRDSpecs::MRD_start) continue; // XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+		if(stopvertex.Z()<MRDSpecs::MRD_start) continue; // XXX
 		
 		Position differencevector = (stopvertex-startvertex);
 		double atracklengthtotal = differencevector.Mag();
