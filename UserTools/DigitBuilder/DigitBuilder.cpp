@@ -104,6 +104,7 @@ bool DigitBuilder::Execute(){
 	
 	if(fDigitList->size()<4) {
 		Log("DigitBuilder Tool: Event has less than 4 digits",v_message,verbosity);
+		m_data->Stores.at("RecoEvent")->Set("EventCutStatus", false); //update the event selector flag
 		return true;
 	}
 	
@@ -180,12 +181,15 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
           for(Hit& ahit : hits){
-					  hitTimes.push_back(ahit.GetTime()*1.0); 
-            hitCharges.push_back(ahit.GetCharge());
+          	if(calT>-10 && calT<40) {
+					    hitTimes.push_back(ahit.GetTime()*1.0); 
+              hitCharges.push_back(ahit.GetCharge());
+            }
           }
           // Do median and sum
           std::sort(hitTimes.begin(), hitTimes.end());
           size_t timesize = hitTimes.size();
+          if (timesize == 0) continue;
           if (timesize % 2 == 0){
             calT = (hitTimes.at(timesize/2 - 1) + hitTimes.at(timesize/2))/2;
           } else {
@@ -195,9 +199,11 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           for(std::vector<double>::iterator it = hitCharges.begin(); it != hitCharges.end(); ++it){
             calQ += *it;
           }
-				  digitType = RecoDigit::PMT8inch;
-				  RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
-				  fDigitList->push_back(recoDigit); 
+          if(calQ>10) {
+				    digitType = RecoDigit::PMT8inch;
+				    RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
+				    fDigitList->push_back(recoDigit); 
+				  }
         } else {
 			    for(Hit& ahit : hits){
 				  	//if(v_message<verbosity) ahit.Print(); // << VERY verbose
@@ -247,7 +253,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 			// but I recommend transitioning to a more robust method
 			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
 			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
-			//if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
+			if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
 			if(det->GetDetectorElement()=="LAPPD"){ // redundant, MCLAPPDHits are LAPPD hitss
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
