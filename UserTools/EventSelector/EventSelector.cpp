@@ -357,7 +357,6 @@ bool EventSelector::EventSelectionByMCTruthInfo() {
   }	
   
   // mrd cut
-  /*
   double muonStopX, muonStopY, muonStopZ;
   muonStopX = fMuonStopVertex->GetPosition().X();
   muonStopY = fMuonStopVertex->GetPosition().Y();
@@ -375,7 +374,6 @@ bool EventSelector::EventSelectionByMCTruthInfo() {
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {
     return false;	
   }
-  */
   return true;
 }
 
