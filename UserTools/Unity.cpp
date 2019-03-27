@@ -80,3 +80,4 @@
 #include "PulseSimulation/PulseSimulation.cpp"
 #include "PlotLAPPDTimesFromStore/PlotLAPPDTimesFromStore.cpp"
 #include "CheckDetectorCounts/CheckDetectorCounts.cpp"
+#include "DigitBuilderROOT/DigitBuilderROOT.cpp"
