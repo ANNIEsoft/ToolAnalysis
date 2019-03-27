@@ -98,12 +98,6 @@ bool DigitBuilder::Execute(){
 	/// Build RecoDigit
 	this->BuildRecoDigit();
 	
-	if(fDigitList->size()<4) {
-		Log("DigitBuilder Tool: Event has less than 4 digits",v_message,verbosity);
-		m_data->Stores.at("RecoEvent")->Set("EventCutStatus", false); //update the event selector flag
-		return true;
-	}
-	
 	/// Push recodigits to RecoEvent
 	this->PushRecoDigits(true); 
 	

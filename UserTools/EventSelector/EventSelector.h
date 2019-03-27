@@ -55,7 +55,13 @@ class EventSelector: public Tool {
  	/// in the store "ANNIEEvent".  Events are selected if they have
  	/// an MCTriggernum == 0 (i.e. they are a prompt trigger) 
  	bool PromptTriggerCheck();
- 	
+
+ 	/// \brief Event selection by number of digits hit
+ 	///
+  /// Require a minimum amount of digits to be hit in the event.
+  /// If the criteria is not met, the event is flagged.
+ 	bool NHitCountCheck(int NHitCount);
+
  	/// \brief Event selection by fidicual volume
  	///
  	/// The selection is based on the true vertex position from MC. 
@@ -95,7 +101,7 @@ class EventSelector: public Tool {
 	Geometry fGeometry;    ///< ANNIE Geometry
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
 	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
-	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
+	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
 
 	//verbosity initialization
 	int verbosity=1;
@@ -105,6 +111,7 @@ class EventSelector: public Tool {
 	bool fMCFVCut = false;
 	bool fMCMRDCut = false;
 	bool fMCPiKCut = false;
+  bool fNHitCut = true;
   bool fPromptTrigOnly = true;
 	bool fEventCutStatus;
 

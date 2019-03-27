@@ -18,9 +18,11 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MCFVCut", fMCFVCut);
   m_variables.Get("MCMRDCut", fMCMRDCut);
   m_variables.Get("MCPiKCut", fMCPiKCut);
+  m_variables.Get("NHitCut", fNHitCut);
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
 
-  /// Construct the other objects we'll be setting at event level,
+  /// Construct the other objects we'll be needing at event level,
+	fDigitList = new std::vector<RecoDigit>;
   fMuonStartVertex = new RecoVertex();
   fMuonStopVertex = new RecoVertex();
   
@@ -73,15 +75,22 @@ bool EventSelector::Execute(){
   // get truth vertex information 
   auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
 	if(!get_truevtx){ 
-	  Log("VtxExtendedVertexFinder Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
+	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
 	  return false; 
 	}
   auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
 	if(!get_truestopvtx){ 
-	  Log("VtxExtendedVertexFinder Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
+	  Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
 	  return false; 
 	}
-  
+
+	// Retrive digits from RecoEvent
+	auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
+  if(not get_ok){
+  	Log("EventSelector  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
+  	return false;
+  }
+
   if (fMCPiKCut){
     fEventApplied |= EventSelector::kFlagMCPiK; 
     bool passNoPiK = this->EventSelectionNoPiK();
@@ -104,7 +113,14 @@ bool EventSelector::Execute(){
     bool isPromptTrigger= this->PromptTriggerCheck();
     if(!isPromptTrigger) fEventFlagged |= EventSelector::kFlagPromptTrig;
   }
-	
+
+  if(fNHitCut){
+    fEventApplied |= EventSelector::kFlagNHit;
+    int DefaultCut = 4; //TODO: could add to the config?
+    bool HasEnoughHits = this->NHitCountCheck(DefaultCut);
+    if(!HasEnoughHits) fEventFlagged |= EventSelector::kFlagNHit;
+  }
+
   //FIXME: This isn't working according to Jingbo
   if(fMRDRecoCut){
     fEventApplied |= EventSelector::kFlagRecoMRD; 
@@ -166,7 +182,14 @@ bool EventSelector::PromptTriggerCheck() {
   }
   return true;
 }
-	
+
+bool EventSelector::NHitCountCheck(int NHitCut) {
+  if(fDigitList->size()<NHitCut) {
+		Log("EventSelector Tool: Event has less than 4 digits",v_message,verbosity);
+		return false;
+	}
+  return true;
+}
 
 // This function isn't working now, because the MRDTracks store must have been changed. 
 // We have to contact Marcus and ask how we can retieve the MRD track information. 
@@ -273,6 +296,7 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
 
 void EventSelector::Reset() {
   // Reset 
+  fDigitList->clear();
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
   fEventApplied = EventSelector::kFlagNone;
