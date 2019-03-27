@@ -107,18 +107,6 @@ bool HitCleaner::Execute(){
   		return false;
 	};
 	
-	/// check if EventCutStatus exists
-  auto get_evtcutstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",fEventCutStatus);
-	if(!get_evtcutstatus){
-		Log(name + ": Error retrieving EventCutStatus from RecoEvent! Need to run EventSelector first!", v_error,verbosity);
-		return false;
-
-	  /// Check if event passed all cuts checked with EventSelector
-	  if(!fEventCutStatus){
-	     Log(name + ": Event doesn't pass all event cuts from EventSelector",v_message,verbosity);
-	     return true;
-	  }
-  } 
   // get true vertex
   auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fTrueVertex);
 	if(!get_truevtx){ 

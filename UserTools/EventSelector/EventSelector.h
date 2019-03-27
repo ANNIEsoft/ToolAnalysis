@@ -53,7 +53,15 @@ class EventSelector: public Tool {
  	/// If the true vertex is inside the fidicual volume, the event 
  	/// is selected. 
  	/// The 
- 	bool EventSelectionByMCTruthInfo();
+ 	bool EventSelectionByMCTruthFV();
+
+ 	/// \brief Event selection by Muon MRD stop position
+  /////
+ 	/// The selection is based on the true vertex stop position from MC. 
+ 	/// If the true muon vertex stops inside the MRD, the event 
+ 	/// is selected. 
+ 	/// The 
+ 	bool EventSelectionByMCTruthMRD();
 
  	/// \brief Event selection by Pion Kaon count
   /////
@@ -62,27 +70,6 @@ class EventSelector: public Tool {
   /// Select the CC0Pi events when testing reconstruction.
  	bool EventSelectionNoPiK();
 
- 	/// \brief Find true neutrino vertex
- 	///
- 	/// Loop over all MC particles and find the particle with highest energy. 
- 	/// This particle is the primary muon. The muon start position, time and 
- 	/// the muon direction are used to initise the true neutrino vertex 
- 	RecoVertex* FindTrueVertexFromMC();
-
- 	/// \brief Find PionKaon Count 
- 	///
- 	/// Loop over all MC particles and find any particles with PDG codes
-  /// Consistent with Pions or Kaons of any charges. Racks up a count
-  /// of the number of each type of particle
- 	
-  void FindPionKaonCountFromMC();
-
- 	/// \brief Save true neutrino vertex
- 	///
- 	/// Push true neutrino vertex to "RecoVertex"
- 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
- 	void PushTrueVertex(bool savetodisk);
- 	
  	/// \brief MC entry number
   uint64_t fMCEventNum;
   
@@ -102,9 +89,9 @@ class EventSelector: public Tool {
 
 	std::string fInputfile;
 	bool fMRDRecoCut = false;
-	bool fMCTruthCut = false;
+	bool fMCFVCut = false;
+	bool fMCMRDCut = false;
 	bool fMCPiKCut = false;
-  bool fGetPiKInfo = false;
   bool fPromptTrigOnly = true;
 	bool fEventCutStatus;
 
