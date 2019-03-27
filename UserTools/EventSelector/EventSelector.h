@@ -27,6 +27,15 @@ class EventSelector: public Tool {
   bool Execute();
   bool Finalise();
 
+  typedef enum EventFlags {
+   kFlagNone  = 0x00, //0
+   kFlagMCFV    = 0x01, //1
+   kFlagMCMRD    = 0x02, //2
+   kFlagMCPiK   = 0x04, //4
+   kFlagRecoMRD    = 0x08, //8
+   kFlagPromptTrig     = 0x10, //16
+   kFlagNHit     = 0x20, //32
+  } EventFlags_t;
 
  private:
  	
@@ -78,6 +87,10 @@ class EventSelector: public Tool {
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
+
+  // \brief Event Status bitwords
+  int fEventApplied; //Integer indicates what event cleaning flags were checked for the event
+  int fEventFlagged; //Integer indicates what evt. cleaning flags the event was flagged with
 
 	Geometry fGeometry;    ///< ANNIE Geometry
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex

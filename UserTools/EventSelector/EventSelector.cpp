@@ -83,32 +83,43 @@ bool EventSelector::Execute(){
 	}
   
   if (fMCPiKCut){
+    fEventApplied |= EventSelector::kFlagMCPiK; 
     bool passNoPiK = this->EventSelectionNoPiK();
-    if(!passNoPiK) fEventCutStatus = false;
+    if(!passNoPiK) fEventFlagged |= EventSelector::kFlagMCPiK;
   }  
   if(fMCFVCut){
+    fEventApplied |= EventSelector::kFlagMCFV; 
     bool passMCTruth= this->EventSelectionByMCTruthFV();
-    if(!passMCTruth) fEventCutStatus = false; 
+    if(!passMCTruth) fEventFlagged |= EventSelector::kFlagMCFV;
+; 
   }
   if(fMCMRDCut){
+    fEventApplied |= EventSelector::kFlagMCMRD; 
     bool passMCTruth= this->EventSelectionByMCTruthMRD();
-    if(!passMCTruth) fEventCutStatus = false; 
+    if(!passMCTruth) fEventFlagged |= EventSelector::kFlagMCMRD;
   }
+
   if(fPromptTrigOnly){
+    fEventApplied |= EventSelector::kFlagPromptTrig; 
     bool isPromptTrigger= this->PromptTriggerCheck();
-    if(!isPromptTrigger) fEventCutStatus = false; 
+    if(!isPromptTrigger) fEventFlagged |= EventSelector::kFlagPromptTrig;
   }
 	
   //FIXME: This isn't working according to Jingbo
   if(fMRDRecoCut){
+    fEventApplied |= EventSelector::kFlagRecoMRD; 
     std::cout << "EventSelector Tool: Currently not implemented. Setting to false" << std::endl;
     Log("EventSelector Tool: MRDReco not implemented.  Setting cut bit to false",v_message,verbosity);
     bool passMRDRecoCut = false;
     //bool passMRDRecoCut = this->EventSelectionByMRDReco(); 
-    if(!passMRDRecoCut) fEventCutStatus = false; 
+    if(!passMRDRecoCut) fEventFlagged |= EventSelector::kFlagRecoMRD; 
   }
 
+  if(fEventFlagged != EventSelector::kFlagNone) fEventCutStatus = false;
+
   m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+  m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
+  m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
   return true;
 }
 
@@ -264,5 +275,7 @@ void EventSelector::Reset() {
   // Reset 
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
+  fEventApplied = EventSelector::kFlagNone;
+  fEventFlagged = EventSelector::kFlagNone;
   fEventCutStatus = true; 
 } 
