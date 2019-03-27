@@ -29,7 +29,13 @@ class VtxExtendedVertexFinder: public Tool {
  	
  	/// \brief 
  	RecoVertex* FitExtendedVertex(RecoVertex* myvertex);
- 	
+
+ 	/// \brief Run ExtendedVertex with every grid seed
+ 	RecoVertex* FitGridSeeds(std::vector<RecoVertex>* vSeedVtxList);
+
+ 	/// \brief Find a simple direction using weighted sum of digit charges 
+ 	RecoVertex* FindSimpleDirection(RecoVertex* myvertex);
+
  	/// \brief Reset everything
  	void Reset();
  	
@@ -37,6 +43,8 @@ class VtxExtendedVertexFinder: public Tool {
  	void PushExtendedVertex(RecoVertex* vtx, bool savetodisk);
  	
  	bool fUseTrueVertexAsSeed;
+ 	bool fSeedGridFits;
+
  	RecoVertex* fTrueVertex = 0;
  	std::vector<RecoDigit>* fDigitList = 0;
  	

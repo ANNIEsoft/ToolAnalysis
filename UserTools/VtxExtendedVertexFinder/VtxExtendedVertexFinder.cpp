@@ -15,6 +15,7 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   fUseTrueVertexAsSeed = false;
   /// Get the Tool configuration variables
 	m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
+	m_variables.Get("FitAllOnSeedGrid",fSeedGridFits);
 	m_variables.Get("verbosity", verbosity);
 	
 	/// Create extended vertex
@@ -23,7 +24,7 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
 	/// If these pointers are not added to any store, the user has to delete the pointers
 	/// and free the memory. 
 	/// In this tool, the pointer is 
-	fExtendedVertex = new RecoVertex();
+  fExtendedVertex = new RecoVertex();
   
   return true;
 }
@@ -82,6 +83,23 @@ bool VtxExtendedVertexFinder::Execute(){
     // Push fitted vertex to RecoEvent store
     this->PushExtendedVertex(fExtendedVertex, true);
   }
+  
+  else if(fSeedGridFits){
+    Log("VtxExtendedVertexFinder Tool: Run vertex reconstruction at all grid seed positions",v_message,verbosity);
+  	// Get vertex seed candidates from the store
+  	std::vector<RecoVertex>* vSeedVtxList = 0;
+  	auto get_seedlist = m_data->Stores.at("RecoEvent")->Get("vSeedVtxList", vSeedVtxList);
+  	if(!get_seedlist){ 
+		  Log("VtxPointPositionFinder Tool: Error retrieving vertex seeds from RecoEvent!",v_error,verbosity);
+		  Log("VtxPointPositionFinder Tool: Needs to run VtxSeedGenerator first!",v_error,verbosity);
+		  return false;
+	  }
+    //Now, run FindGridSeeds.
+    fExtendedVertex = (RecoVertex*)(this->FitGridSeeds(vSeedVtxList));
+    // Push fitted vertex to RecoEvent store
+    this->PushExtendedVertex(fExtendedVertex, true);
+  }
+  
   else {
     Log("VtxExtendedVertexFinder Tool: Run extended vertex reconstruction using point vertex",v_message,verbosity);
     // get point vertex
@@ -144,4 +162,119 @@ void VtxExtendedVertexFinder::PushExtendedVertex(RecoVertex* vtx, bool savetodis
 
 void VtxExtendedVertexFinder::Reset() {
 	fExtendedVertex->Reset();
+}
+
+RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeedVtxList) {
+  double vtxFOM = 0.0;
+  double bestFOM = -1.0;
+  unsigned int nlast = vSeedVtxList->size();
+  
+  //Find best time with Minuit
+  MinuitOptimizer* myOptimizer = new MinuitOptimizer();
+  myOptimizer->SetPrintLevel(0);
+  myOptimizer->SetMeanTimeCalculatorType(1);
+  VertexGeometry* myvtxgeo = VertexGeometry::Instance();
+  myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+  RecoVertex* fSeedPos = 0;
+  RecoVertex* fSimpleVertex = new RecoVertex();
+  RecoVertex* bestGridVertex = new RecoVertex(); // FIXME: pointer must be deleted by the invoker
+  
+  for( unsigned int n=0; n<nlast; n++ ){
+  	fSeedPos = &(vSeedVtxList->at(n));
+  	fSimpleVertex= this->FindSimpleDirection(fSeedPos);
+    myOptimizer->LoadVertex(fSimpleVertex); //Load vertex seed
+    myOptimizer->FitExtendedVertexWithMinuit(); //scan the point position in 4D space
+    vtxFOM = myOptimizer->GetFittedVertex()->GetFOM();
+    if( vtxFOM>bestFOM ){
+      bestGridVertex->CloneVertex(myOptimizer->GetFittedVertex());
+      bestFOM = vtxFOM;
+    }
+  }
+	delete myOptimizer; myOptimizer = 0;
+	return bestGridVertex;
+}
+
+RecoVertex* VtxExtendedVertexFinder::FindSimpleDirection(RecoVertex* myVertex) {
+	
+  /// get vertex position
+  double vtxX = myVertex->GetPosition().X();
+  double vtxY = myVertex->GetPosition().Y();
+  double vtxZ = myVertex->GetPosition().Z();
+  double vtxTime = myVertex->GetTime();
+  
+  // current status
+  // ==============
+  int status = myVertex->GetStatus();
+  
+  /// loop over digits
+  /// ================
+  double Swx = 0.0;
+  double Swy = 0.0;
+  double Swz = 0.0;
+  double Sw = 0.0;
+  double digitq = 0.;
+  double dx, dy, dz, ds, px, py, pz, q;
+  
+  RecoDigit digit;
+  for( int idigit=0; idigit<fDigitList->size(); idigit++ ){
+  	digit = fDigitList->at(idigit);
+    if( digit.GetFilterStatus() ){ 
+      q = digit.GetCalCharge();
+      dx = digit.GetPosition().X() - vtxX;
+      dy = digit.GetPosition().Y() - vtxY;
+      dz = digit.GetPosition().Z() - vtxZ;
+      ds = sqrt(dx*dx+dy*dy+dz*dz);
+      px = dx/ds;
+      py = dx/ds;
+      pz = dz/ds;
+      Swx += q*px;
+      Swy += q*py;
+      Swz += q*pz;
+      Sw  += q;
+    }
+  }
+
+  /// average direction
+  /// =================
+  double dirX = 0.0;
+  double dirY = 0.0;
+  double dirZ = 0.0;
+    
+  int itr = 0;
+  bool pass = 0; 
+  double fom = 0.0;
+
+  if( Sw>0.0 ){
+    double qx = Swx/Sw;
+    double qy = Swy/Sw;
+    double qz = Swz/Sw;
+    double qs = sqrt(qx*qx+qy*qy+qz*qz);
+
+    dirX = qx/qs;
+    dirY = qy/qs;
+    dirZ = qz/qs;
+
+    fom = 1.0;
+    itr = 1;
+    pass = 1; 
+  }  
+
+  // set vertex and direction
+  // ========================
+  RecoVertex* newVertex = new RecoVertex(); // Note: pointer must be deleted by the invoker
+  
+  if( pass ){
+    newVertex->SetVertex(vtxX,vtxY,vtxZ,vtxTime);
+    newVertex->SetDirection(dirX,dirY,dirZ);
+    newVertex->SetFOM(fom,itr,pass);
+  }
+
+  // set status
+  // ==========
+  if( !pass ) status |= RecoVertex::kFailSimpleDirection;
+  newVertex->SetStatus(status);
+
+  // return vertex
+  // =============
+  return newVertex;
 }
