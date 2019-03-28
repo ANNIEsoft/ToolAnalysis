@@ -1,0 +1,3 @@
+verbosity 100
+drawHistos 0                          # comparison of properties of primary muons that were or werent reconstructed
+plotDirectory ./MrdEfficiencyPlots    # where to save the plots

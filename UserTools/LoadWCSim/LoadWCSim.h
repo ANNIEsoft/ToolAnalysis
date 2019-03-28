@@ -54,7 +54,7 @@ class LoadWCSim: public Tool {
 	
 	// variables from config file
 	/////////////////////////////
-	int verbose=1;
+	int verbosity=1;
 	int HistoricTriggeroffset;
 	int use_smeared_digit_time;   // digit_time = (T): first photon smeared time, (F): first photon true time
 	int LappdNumStrips;           // number of Channels per LAPPD
@@ -75,6 +75,7 @@ class LoadWCSim: public Tool {
 	// Misc Others
 	//////////////
 	long NumEvents;
+	long MaxEntries;   // maximum MC entries to process before stopping the loop. -1 for indefinite
 	int numtankpmts;
 	int numlappds;
 	int nummrdpmts;
