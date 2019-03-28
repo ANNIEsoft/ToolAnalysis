@@ -183,9 +183,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	TriggerData = new std::vector<TriggerClass>{beamtrigger}; // FIXME ? one trigger and resetting time is ok?
 	
 	// we'll put these in the CStore: so don't delete them in Finalise! It'll get handled by the Store
-	ParticleId_to_TankTubeIds = new std::map<int,std::map<int,double>>;
-	ParticleId_to_MrdTubeIds = new std::map<int,std::map<int,double>>;
-	ParticleId_to_VetoTubeIds = new std::map<int,std::map<int,double>>;
+	ParticleId_to_TankTubeIds = new std::map<int,std::map<unsigned long,double>>;
+	ParticleId_to_MrdTubeIds = new std::map<int,std::map<unsigned long,double>>;
+	ParticleId_to_VetoTubeIds = new std::map<int,std::map<unsigned long,double>>;
 	ParticleId_to_TankCharge = new std::map<int,double>;
 	ParticleId_to_MrdCharge = new std::map<int,double>;
 	ParticleId_to_VetoCharge = new std::map<int,double>;
@@ -448,12 +448,15 @@ bool LoadWCSim::Execute(){
 		// copy over additional information about tracks and which tank/mrd/veto PMTs they hit
 		if(MCTriggernum==0){
 			// populate the maps of additional MC Truth information
-			// ParticleId_to_TankTubeIds is a std::map<ParticleId,std::map<TubeId,TotalCharge>>
+			// ParticleId_to_TankTubeIds is a std::map<ParticleId,std::map<ChannelKey,TotalCharge>>
 			// where TotalCharge is the total charge from that particle on that tube
 			// (in the event that the particle generated several hits on the tube)
-			MakeParticleToPmtMap(atrigt, firsttrigt, ParticleId_to_TankTubeIds, ParticleId_to_TankCharge);
-			MakeParticleToPmtMap(atrigm, firsttrigm, ParticleId_to_MrdTubeIds, ParticleId_to_MrdCharge);
-			MakeParticleToPmtMap(atrigv, firsttrigv, ParticleId_to_VetoTubeIds, ParticleId_to_VetoCharge);
+			// ParticleId_to_TankCharge is a std::map<ParticleId,TotalCharge> 
+			// where TotalCharge is summed over all digits, on all pmts, which contained
+			// light from that particle
+			MakeParticleToPmtMap(atrigt, firsttrigt, ParticleId_to_TankTubeIds, ParticleId_to_TankCharge, pmt_tubeid_to_channelkey);
+			MakeParticleToPmtMap(atrigm, firsttrigm, ParticleId_to_MrdTubeIds, ParticleId_to_MrdCharge, mrd_tubeid_to_channelkey);
+			MakeParticleToPmtMap(atrigv, firsttrigv, ParticleId_to_VetoTubeIds, ParticleId_to_VetoCharge, facc_tubeid_to_channelkey);
 		}
 		
 	//}
@@ -487,12 +490,12 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
 	m_data->CStore.Set("NumTriggersThisMCEvt",WCSimEntry->wcsimrootevent->GetNumberOfEvents());
 	// auxilliary information about MC Truth particles
-	m_data->CStore.Set("ParticleId_to_TankTubeIds", ParticleId_to_TankTubeIds, false);
-	m_data->CStore.Set("ParticleId_to_TankCharge", ParticleId_to_TankCharge, false);
-	m_data->CStore.Set("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds, false);
-	m_data->CStore.Set("ParticleId_to_MrdCharge", ParticleId_to_MrdCharge, false);
-	m_data->CStore.Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
-	m_data->CStore.Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_TankTubeIds", ParticleId_to_TankTubeIds, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_TankCharge", ParticleId_to_TankCharge, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_MrdCharge", ParticleId_to_MrdCharge, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
@@ -528,9 +531,9 @@ bool LoadWCSim::Finalise(){
 	// any pointers put in Stores to objects we do not want the Store to clean up
 	// must be nullified before in finalise to prevent double free
 	// can't just put 0 or nullptr directly as type must be recognisable as a pointer
-//	std::map<int,std::map<int,double>>* ParticleId_to_TankTubeIds_nullptr = nullptr;
-//	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds_nullptr = nullptr;
-//	std::map<int,std::map<int,double>>* ParticleId_to_VetoTubeIds_nullptr = nullptr;
+//	std::map<int,std::map<unsigned long,double>>* ParticleId_to_TankTubeIds_nullptr = nullptr;
+//	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds_nullptr = nullptr;
+//	std::map<int,std::map<unsigned long,double>>* ParticleId_to_VetoTubeIds_nullptr = nullptr;
 //	std::map<int,double>* ParticleId_to_TankCharge_nullptr = nullptr;
 //	std::map<int,double>* ParticleId_to_MrdCharge_nullptr = nullptr;
 //	std::map<int,double>* ParticleId_to_VetoCharge_nullptr = nullptr;
@@ -874,7 +877,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 	
 }
 
-void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<int,double>>* ParticleId_to_TubeIds, std::map<int,double>* ParticleId_to_Charge){
+void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_TubeIds, std::map<int,double>* ParticleId_to_Charge, std::map<int,unsigned long> tubeid_to_channelkey){
 	if(thistrig==nullptr) return;
 	ParticleId_to_TubeIds->clear();
 	ParticleId_to_Charge->clear();
@@ -915,7 +918,7 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 	for(int digiti=0; digiti<numdigits; digiti++){
 		WCSimRootCherenkovDigiHit* digihit =
 			(WCSimRootCherenkovDigiHit*)thistrig->GetCherenkovDigiHits()->At(digiti);
-		int tubeid = digihit->GetTubeId()-1;
+		int tubeid = digihit->GetTubeId();
 		// loop over the photons in this digit
 		std::vector<int> truephotonindices = digihit->GetPhotonIds();
 		for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
@@ -923,20 +926,22 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 			if(WCSimVersion<2){
 				thephotonsid+=timeArrayOffsetMap.at(tubeid);
 			}
+			// we should use ChannelKey instead of tubeid.
+			int channelkey = tubeid_to_channelkey.at(tubeid);
 			WCSimRootCherenkovHitTime *thehittimeobject = 
 				(WCSimRootCherenkovHitTime*)(firstTrig->GetCherenkovHitTimes()->At(thephotonsid));
 			if(thehittimeobject==nullptr) cerr<<"HITTIME IS NULL"<<endl;
 			Int_t thephotonsparenttrackid = (thehittimeobject) ? thehittimeobject->GetParentID() : -1;
 			if(ParticleId_to_TubeIds->count(thephotonsparenttrackid)==0){
 				// we've not recorded any hits for this particle: make an empty map for it
-				ParticleId_to_TubeIds->emplace(thephotonsparenttrackid,std::map<int,double>{});
+				ParticleId_to_TubeIds->emplace(thephotonsparenttrackid,std::map<unsigned long,double>{});
 			}
-			if(ParticleId_to_TubeIds->at(thephotonsparenttrackid).count(tubeid)==0){
+			if(ParticleId_to_TubeIds->at(thephotonsparenttrackid).count(channelkey)==0){
 				// in the map for this particle record that this tube was hit
-				ParticleId_to_TubeIds->at(thephotonsparenttrackid).emplace(tubeid,digihit->GetQ());
+				ParticleId_to_TubeIds->at(thephotonsparenttrackid).emplace(channelkey,digihit->GetQ());
 			} else {
 				// add another hit on this tube from this particle
-				ParticleId_to_TubeIds->at(thephotonsparenttrackid).at(tubeid)+=digihit->GetQ();
+				ParticleId_to_TubeIds->at(thephotonsparenttrackid).at(channelkey)+=digihit->GetQ();
 			}
 			if(ParticleId_to_Charge->count(thephotonsparenttrackid)==0){
 				// first time seeing this particle

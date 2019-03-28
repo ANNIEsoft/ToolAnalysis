@@ -38,9 +38,9 @@ class MrdDistributions: public Tool {
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass
 	
-	// Retrieved from CStore
-	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds;
-	std::vector<double>* ParticleId_to_MrdCharge;
+	// Retrieved from ANNIEvent
+	//std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
+	//std::vector<double>* ParticleId_to_MrdCharge;
 	
 	// Variables from MRDTracks BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

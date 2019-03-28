@@ -21,7 +21,8 @@ class MrdEfficiency: public Tool {
 	bool Finalise();
 	
 	private:
-	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds; // the MC Truth information
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds; // the MC Truth information
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;           // 
 	std::vector<BoostStore>* theMrdTracks;                        // the reconstructed tracks
 	std::vector<MCParticle>* MCParticles=nullptr;                 // the true particles
 	std::vector<int> PMTsHit;

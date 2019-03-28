@@ -102,6 +102,12 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	}
 	thesubeventarray = reinterpret_cast<TClonesArray*>(subevptr);
 	
+	// to show true tracks on the paddle plot we give hit paddles a border with a colour
+	// unique for each true particle
+	// But ParticleId_to_MrdTubeIds matches to paddle ChannelKeys, whereas the paddle plot
+	// uses WCSim TubeIds. We need to map from one to the other.
+	highlight_true_paddles = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	
 	return true;
 }
 
@@ -296,16 +302,17 @@ bool MrdPaddlePlot::Execute(){
 			
 			// if we have the truth information, we can highlight paddles that were hit
 			// by true particles, to compare the reconstruction
-			std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds;
-			get_ok = m_data->CStore.Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
-			if(get_ok){  // of course, if this isn't a simulation chain, we won't have this info
+			std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
+			get_ok = m_data->Stores["ANNIEEvent"]->Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
+			if(highlight_true_paddles && get_ok){  // if this isn't a simulation chain, we won't have this info
 				std::vector<std::vector<int>> paddlesToHighlight;
-				for(std::pair<const int,std::map<int,double>>& aparticle : *ParticleId_to_MrdTubeIds){
-					std::map<int,double>* pmtshit = &aparticle.second;
+				for(std::pair<const int,std::map<unsigned long,double>>& aparticle : *ParticleId_to_MrdTubeIds){
+					std::map<unsigned long,double>* pmtshit = &aparticle.second;
 					std::vector<int> tempvector;
-					for(std::pair<const int,double>& apmt : *pmtshit){
-						int pmtsid = apmt.first;
-						tempvector.push_back(pmtsid);
+					for(std::pair<const unsigned long,double>& apmt : *pmtshit){
+						unsigned long channelkey = apmt.first;
+						int pmtsid = channelkey_to_mrdpmtid.at(channelkey);
+						tempvector.push_back(pmtsid-1); // -1 to align with MrdTrackLib
 					}
 					paddlesToHighlight.push_back(tempvector);
 				}

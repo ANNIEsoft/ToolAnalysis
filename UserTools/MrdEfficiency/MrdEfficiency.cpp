@@ -100,6 +100,15 @@ bool MrdEfficiency::Initialise(std::string configfile, DataModel &data){
 		
 	}
 	
+	// to match true and reconstructed tracks we match the ids of paddles they contain
+	// But ParticleId_to_MrdTubeIds matches to paddle ChannelKeys, whereas reconstructed
+	// tracks contain a list of WCSim TubeIds. We need to map from one to the other
+	get_ok = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	if(not get_ok){
+		Log("MrdEfficiency Tool: Could not find channelkey_to_mrdpmtid map in the CStore!",v_error,verbosity);
+		return false;
+	}
+	
 	return true;
 }
 
@@ -111,7 +120,7 @@ bool MrdEfficiency::Execute(){
 	// The eaiest way to do this is by comparing the hit paddles that make up the track.
 	
 	// retrieve the collections of PMTs hit by true particles
-	get_ok = m_data->CStore.Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
 	if(not get_ok){
 		Log("MrdEfficiency Tool: Could not find ParticleId_to_MrdTubeIds in CStore!",v_error,verbosity);
 		return false;
@@ -121,12 +130,14 @@ bool MrdEfficiency::Execute(){
 	// Get the true particles and which PMTs they hit
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::map<int,std::vector<int>> paddlesInTrackTrue;
-	for(std::pair<const int,std::map<int,double>>& aparticle : *ParticleId_to_MrdTubeIds){
-		std::map<int,double>* pmtshit = &aparticle.second;
+	for(std::pair<const int,std::map<unsigned long,double>>& aparticle : *ParticleId_to_MrdTubeIds){
+		std::map<unsigned long,double>* pmtshit = &aparticle.second;
 		std::vector<int> tempvector;
-		for(std::pair<const int,double>& apmt : *pmtshit){
-			int pmtsid = apmt.first;
-			tempvector.push_back(pmtsid);
+		for(std::pair<const unsigned long,double>& apmt : *pmtshit){
+			unsigned long channelkey = apmt.first;
+			// map to WCSim PMT ID
+			int pmtsid = channelkey_to_mrdpmtid.at(channelkey);
+			tempvector.push_back(pmtsid - 1); // -1 to align with MrdTrackLib
 		}
 		if(tempvector.size()) paddlesInTrackTrue.emplace(aparticle.first, tempvector);
 	}
