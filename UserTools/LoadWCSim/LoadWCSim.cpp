@@ -8,7 +8,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	/////////////////// Useful header ///////////////////////
 	
-	if(verbose) cout<<"Initializing Tool LoadWCSim"<<endl;
+	if(verbosity) cout<<"Initializing Tool LoadWCSim"<<endl;
 	
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
@@ -17,38 +17,40 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	// Get the Tool configuration variables
 	// ====================================
-	get_ok = m_variables.Get("verbose", verbose);
-	if(not get_ok) verbose=1;
+	get_ok = m_variables.Get("verbose", verbosity);
+	if(not get_ok) verbosity=1;
+	get_ok = m_variables.Get("MaxEntries",MaxEntries);
+	if(not get_ok) MaxEntries=-1;
 	get_ok = m_variables.Get("InputFile", MCFile);
-	if(not get_ok){ Log("LoadWCSim Tool: ERROR: No InputFile defined!",v_error,verbose); return false; }
+	if(not get_ok){ Log("LoadWCSim Tool: ERROR: No InputFile defined!",v_error,verbosity); return false; }
 	get_ok = m_variables.Get("HistoricTriggeroffset", HistoricTriggeroffset); // [ns]
 	if(not get_ok){
-		Log("LoadWCSim Tool: ERROR: HistoricTriggeroffset not set in config file!",v_error,verbose);
+		Log("LoadWCSim Tool: ERROR: HistoricTriggeroffset not set in config file!",v_error,verbosity);
 		return false;
 	}
 	get_ok = m_variables.Get("WCSimVersion", WCSimVersion);
 		if(not get_ok){
-			Log("LoadWCSim Tool: ERROR: WCSimVersion not set in config file!",v_error,verbose);
+			Log("LoadWCSim Tool: ERROR: WCSimVersion not set in config file!",v_error,verbosity);
 			return false;
 	}
 	get_ok = m_variables.Get("UseDigitSmearedTime", use_smeared_digit_time);
 	if(not get_ok){
-		Log("LoadWCSim Tool: Assuming to use smeared digit times",v_warning,verbose);
+		Log("LoadWCSim Tool: Assuming to use smeared digit times",v_warning,verbosity);
 		use_smeared_digit_time=1;
 	}
 	get_ok = m_variables.Get("LappdNumStrips", LappdNumStrips);
 	if(not get_ok){
-		Log("LoadWCSim Tool: Assuming to use 56 LAPPD striplines",v_warning,verbose);
+		Log("LoadWCSim Tool: Assuming to use 56 LAPPD striplines",v_warning,verbosity);
 		LappdNumStrips = 56;
 	}
 	get_ok = m_variables.Get("LappdStripLength", LappdStripLength);           // [mm]
 	if(not get_ok){
-		Log("LoadWCSim Tool: Assuming to LAPPD stripline length of 200mm",v_warning,verbose);
+		Log("LoadWCSim Tool: Assuming to LAPPD stripline length of 200mm",v_warning,verbosity);
 		LappdStripLength = 200;
 	}
 	get_ok = m_variables.Get("LappdStripSeparation", LappdStripSeparation);   // [mm]
 	if(not get_ok){
-		Log("LoadWCSim Tool: Assuming LAPPD stripline separation of 7.14mm",v_warning,verbose);
+		Log("LoadWCSim Tool: Assuming LAPPD stripline separation of 7.14mm",v_warning,verbosity);
 		LappdStripSeparation = 7.14;
 	}
 	// put version in the CStore for downstream tools
@@ -100,7 +102,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	m_data->CStore.Set("WCSimPostTriggerWindow",posttriggerwindow);
 	// store the WCSimRootGeom for LAPPD reader calculation of global coords
 	intptr_t geomptr = reinterpret_cast<intptr_t>(wcsimrootgeom);
-	if(verbose>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<", geomptr="<<geomptr<<endl;
+	if(verbosity>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<", geomptr="<<geomptr<<endl;
 	m_data->CStore.Set("WCSimRootGeom",geomptr);
 //	int wcsimgeomexists = m_data->Stores.count("WCSimRootGeomStore");
 //	if(wcsimgeomexists==0){
@@ -155,7 +157,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCEventNum=-1;
 	MCTriggernum=0;
 	// pull the first entry with a trigger and use it's Date for the BeamStatus last recorded time. TODO
-	if(verbose>1) cout<<"getting Run start time"<<endl;
+	if(verbosity>1) cout<<"getting Run start time"<<endl;
 	do{
 		MCEventNum++;
 		WCSimEntry->GetEntry(MCEventNum);
@@ -197,8 +199,19 @@ bool LoadWCSim::Execute(){
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
 	
-	if(verbose) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
-	WCSimEntry->GetEntry(MCEventNum);
+	if(verbosity) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
+	int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+	if(nbytesread<=0){
+		cerr<<"############################"<<endl;
+		logmessage = "LoadWCSim Tool had no entry "+to_string(MCEventNum);
+		if(nbytesread==-4){
+			logmessage+=": Overran end of TChain! Have you specified more iterations than are available in ToolChainConfig?";
+		} else if(nbytesread==0){
+			logmessage+=": No TChain loaded! Is your filepath correct?";
+		}
+		Log(logmessage,v_error,verbosity);
+		cerr<<"############################"<<endl;
+	}
 	MCFile = wcsimtree->GetCurrentFile()->GetName();
 	
 	MCParticles->clear();
@@ -206,7 +219,7 @@ bool LoadWCSim::Execute(){
 	TDCData->clear();
 	
 	//for(int MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
-		if(verbose>1) cout<<"getting triggers"<<endl;
+		if(verbosity>1) cout<<"getting triggers"<<endl;
 		// cherenkovhit(times) are all in first trig
 		firsttrigt=WCSimEntry->wcsimrootevent->GetTrigger(0);
 		firsttrigm=WCSimEntry->wcsimrootevent_mrd->GetTrigger(0);
@@ -218,20 +231,20 @@ bool LoadWCSim::Execute(){
 		if(MCTriggernum<(WCSimEntry->wcsimrootevent_facc->GetNumberOfEvents())){
 			atrigv = WCSimEntry->wcsimrootevent_facc->GetTrigger(MCTriggernum);
 		} else { atrigv=nullptr; }
-		if(verbose>2) cout<<"wcsimrootevent="<<WCSimEntry->wcsimrootevent<<endl;
-		if(verbose>2) cout<<"wcsimrootevent_mrd="<<WCSimEntry->wcsimrootevent_mrd<<endl;
-		if(verbose>2) cout<<"wcsimrootevent_facc="<<WCSimEntry->wcsimrootevent_facc<<endl;
-		if(verbose>2) cout<<"atrigt="<<atrigt<<", atrigm="<<atrigm<<", atrigv="<<atrigv<<endl;
+		if(verbosity>2) cout<<"wcsimrootevent="<<WCSimEntry->wcsimrootevent<<endl;
+		if(verbosity>2) cout<<"wcsimrootevent_mrd="<<WCSimEntry->wcsimrootevent_mrd<<endl;
+		if(verbosity>2) cout<<"wcsimrootevent_facc="<<WCSimEntry->wcsimrootevent_facc<<endl;
+		if(verbosity>2) cout<<"atrigt="<<atrigt<<", atrigm="<<atrigm<<", atrigv="<<atrigv<<endl;
 		
-		if(verbose>1) cout<<"getting event date"<<endl;
+		if(verbosity>1) cout<<"getting event date"<<endl;
 		RunNumber = atrigt->GetHeader()->GetRun();
 		SubrunNumber = 0;
 		EventTimeNs = atrigt->GetHeader()->GetDate();
 		EventTime->SetNs(EventTimeNs);
-		if(verbose>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
-		if(verbose>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
+		if(verbosity>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
+		if(verbosity>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
 		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
-			if(verbose>2) cout<<"getting track "<<tracki<<endl;
+			if(verbosity>2) cout<<"getting track "<<tracki<<endl;
 			WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigt->GetTracks()->At(tracki);
 			/* a WCSimRootTrack has methods:
 			Int_t     GetIpnu()             pdg
@@ -256,7 +269,7 @@ bool LoadWCSim::Execute(){
 			
 			tracktype startstoptype = tracktype::UNDEFINED;
 			//MC particle times are relative to the trigger time
-			//if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
+			if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 				Position(nextrack->GetStart(0) / 100.,
@@ -273,29 +286,42 @@ bool LoadWCSim::Execute(){
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
 					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
 				startstoptype,
-				tracki,
+				nextrack->GetId(),
 				nextrack->GetParenttype());
+			if(nextrack->GetIpnu()==13){
+				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
+					+ ", parent type " + to_string(nextrack->GetParenttype())
+					+ ", Id " + to_string(nextrack->GetId())
+					+ ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
+					+ ", " + to_string(nextrack->GetStart(1)/100.)
+					+ ", " + to_string(nextrack->GetStart(2)/100.)
+					+ "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
+					+ ", " + to_string(nextrack->GetStop(1)/100.)
+					+ ", " + to_string(nextrack->GetStop(2)/100.)
+					+ ")";
+				Log(logmessage,v_debug,verbosity);
+			}
 			
 			MCParticles->push_back(thisparticle);
 		}
-		if(verbose>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
+		if(verbosity>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
 		
 		int numtankdigits = atrigt ? atrigt->GetCherenkovDigiHits()->GetEntries() : 0;
-		if(verbose>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
+		if(verbosity>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
 		for(int digiti=0; digiti<numtankdigits; digiti++){
-			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
+			if(verbosity>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigt->GetCherenkovDigiHits()->At(digiti);
 			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ(), GetPhotonIds()
-			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
+			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();  // geometry TubeID->channelkey map is made INCLUDING offset of 1
-			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
+			if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
 			if(pmt_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: tank PMT with no associated ChannelKey!"<<endl;
 				return false;
 			}
 			unsigned long key = pmt_tubeid_to_channelkey.at(tubeid);
-			if(verbose>2) cout<<"ChannelKey="<<key<<endl;
+			if(verbosity>2) cout<<"ChannelKey="<<key<<endl;
 			double digittime;
 			if(use_smeared_digit_time){
 				digittime = static_cast<double>(digihit->GetT()-HistoricTriggeroffset); // relative to trigger
@@ -315,27 +341,27 @@ bool LoadWCSim::Execute(){
 				}
 				digittime = earliestphotontruetime;
 			}
-			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
+			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
-			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
+			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			
 			Hit nexthit(key, digittime, digiq);
 			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit});
 			else MCHits->at(key).push_back(nexthit);
-			if(verbose>2) cout<<"digit added"<<endl;
+			if(verbosity>2) cout<<"digit added"<<endl;
 		}
-		if(verbose>2) cout<<"done with tank digits"<<endl;
+		if(verbosity>2) cout<<"done with tank digits"<<endl;
 		
 		//MRD Hits
 		int nummrddigits = atrigm ? atrigm->GetCherenkovDigiHits()->GetEntries() : 0;
-		if(verbose>1) cout<<"adding "<<nummrddigits<<" mrd digits"<<endl;
+		if(verbosity>1) cout<<"adding "<<nummrddigits<<" mrd digits"<<endl;
 		for(int digiti=0; digiti<nummrddigits; digiti++){
-			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
+			if(verbosity>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(digiti);
-			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
+			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
-			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
+			if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
 			if(mrd_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: MRD PMT with no associated ChannelKey!"<<endl;
 				return false;
@@ -360,27 +386,27 @@ bool LoadWCSim::Execute(){
 				}
 				digittime = earliestphotontruetime;
 			}
-			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
+			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
-			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
+			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			
 			Hit nexthit(key, digittime, digiq);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<Hit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
-			if(verbose>2) cout<<"digit added"<<endl;
+			if(verbosity>2) cout<<"digit added"<<endl;
 		}
-		if(verbose>2) cout<<"done with mrd digits"<<endl;
+		if(verbosity>2) cout<<"done with mrd digits"<<endl;
 		
 		// Veto Hits
 		int numvetodigits = atrigv ? atrigv->GetCherenkovDigiHits()->GetEntries() : 0;
-		if(verbose>1) cout<<"adding "<<numvetodigits<<" veto digits"<<endl;
+		if(verbosity>1) cout<<"adding "<<numvetodigits<<" veto digits"<<endl;
 		for(int digiti=0; digiti<numvetodigits; digiti++){
-			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
+			if(verbosity>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigv->GetCherenkovDigiHits()->At(digiti);
-			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
+			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
-			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
+			if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
 			if(facc_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: FACC PMT with no associated ChannelKey!"<<endl;
 				return false;
@@ -405,18 +431,18 @@ bool LoadWCSim::Execute(){
 				}
 				digittime = earliestphotontruetime;
 			}
-			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
+			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
-			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
+			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			
 			Hit nexthit(key, digittime, digiq);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<Hit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
-			if(verbose>2) cout<<"digit added"<<endl;
+			if(verbosity>2) cout<<"digit added"<<endl;
 		}
-		if(verbose>2) cout<<"done with veto digits"<<endl;
+		if(verbosity>2) cout<<"done with veto digits"<<endl;
 		
-		if(verbose>2) cout<<"setting triggerdata time to "<<EventTimeNs<<"ns"<<endl;
+		if(verbosity>2) cout<<"setting triggerdata time to "<<EventTimeNs<<"ns"<<endl;
 		TriggerData->front().SetTime(EventTimeNs);
 		
 		// copy over additional information about tracks and which tank/mrd/veto PMTs they hit
@@ -440,19 +466,19 @@ bool LoadWCSim::Execute(){
 	
 	
 	// set event level variables
-	if(verbose>1) cout<<"setting the store variables"<<endl;
+	if(verbosity>1) cout<<"setting the store variables"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("RunNumber",RunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("SubrunNumber",SubrunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("EventNumber",EventNumber);
-	if(verbose>2) cout<<"particles"<<endl;
+	if(verbosity>2) cout<<"particles"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
-	if(verbose>2) cout<<"hits"<<endl;
+	if(verbosity>2) cout<<"hits"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
-	if(verbose>2) cout<<"tdcdata"<<endl;
+	if(verbosity>2) cout<<"tdcdata"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
-	if(verbose>2) cout<<"triggerdata"<<endl;
+	if(verbosity>2) cout<<"triggerdata"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);  // FIXME
-	if(verbose>2) cout<<"eventtime"<<endl;
+	if(verbosity>2) cout<<"eventtime"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum);
@@ -476,16 +502,21 @@ bool LoadWCSim::Execute(){
 	
 	EventNumber++;
 	MCTriggernum++;
-	if(verbose>2) cout<<"checking if we're done on trigs in this event"<<endl;
+	if(verbosity>2) cout<<"checking if we're done on trigs in this event"<<endl;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
 		MCEventNum++;
-		if(verbose>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
+		if(verbosity>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
 	} else {
-		if(verbose>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
+		if(verbosity>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
-	if(MCEventNum==NumEvents) m_data->vars.Set("StopLoop",1);
-	if(verbose>1) cout<<"done loading event"<<endl;
+	if(MCEventNum>=NumEvents){
+		cout<<"LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain"<<endl;
+		m_data->vars.Set("StopLoop",1);
+	} else if(MCEventNum>=MaxEntries && MaxEntries>0){
+		cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
+	}
+	if(verbosity>1) cout<<"done loading event"<<endl;
 	return true;
 }
 
@@ -534,7 +565,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 	double mrd_height =  (MRDSpecs::MRD_height) / 100.;
 	double mrd_depth  =  (MRDSpecs::MRD_depth)  / 100.;
 	double mrd_start  =  (MRDSpecs::MRD_start)  / 100.;
-	if(verbose>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts
+	if(verbosity>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts
 					  <<" mrd pmts and "<<numlappds<<" lappds"<<endl;
 	
 	// construct the ToolChain Goemetry
@@ -552,7 +583,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 									   numvetopmts,
 									   numlappds,
 									   geostatus::FULLY_OPERATIONAL);
-	if(verbose>1){
+	if(verbosity>1){
 		cout<<"constructed anniegeom at "<<anniegeom<<" with tank origin "; tank_centre.Print();
 	}
 	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
@@ -644,14 +675,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 								 channelstatus::ON);
 			
 			// Add this channel to the geometry
-			if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+			if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 			adet.AddChannel(lappdchannel);
 		}
-		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		// Add this detector to the geometry
 		anniegeom->AddDetector(adet);
-		if(verbose>4) cout<<"printing geometry"<<endl;
-		if(verbose>4) anniegeom->PrintChannels();
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
 	}
 	
 	// tank PMTs
@@ -704,14 +735,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 							channelstatus::ON);
 		
 		// Add this channel to the geometry
-		if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 		adet.AddChannel(pmtchannel);
 		
 		// Add this detector to the geometry
-		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
-		if(verbose>4) cout<<"printing geometry"<<endl;
-		if(verbose>4) anniegeom->PrintChannels();
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
 	}
 	
 	// mrd PMTs
@@ -762,14 +793,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 							channelstatus::ON);
 		
 		// Add this channel to the geometry
-		if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 		adet.AddChannel(pmtchannel);
 		
 		// Add this detector to the geometry
-		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
-		if(verbose>4) cout<<"printing geometry"<<endl;
-		if(verbose>4) anniegeom->PrintChannels();
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
 	}
 	
 	// veto PMTs
@@ -820,14 +851,14 @@ void LoadWCSim::ConstructToolChainGeometry(){
 							channelstatus::ON);
 		
 		// Add this channel to the geometry
-		if(verbose>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
 		adet.AddChannel(pmtchannel);
 		
 		// Add this detector to the geometry
-		if(verbose>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
-		if(verbose>4) cout<<"printing geometry"<<endl;
-		if(verbose>4) anniegeom->PrintChannels();
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
 	}
 	
 	// for other WCSim tools that may need the WCSim Tube IDs
@@ -849,7 +880,7 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 	ParticleId_to_Charge->clear();
 	// scan through the parents IDs of the photons contributing to each digit
 	// make note of which parent contributes to which digit, and which digits are associated with each parent
-	Log("Making Particle to PMT Map",v_message,verbose);
+	Log("Making Particle to PMT Map",v_message,verbosity);
 	// technically the charge will be a lower limit as this sums the charge from all digits
 	// that a given particle contributed to, but not all this digit's charge may have been
 	// from this particle.

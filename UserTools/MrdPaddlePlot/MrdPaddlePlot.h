@@ -52,10 +52,13 @@ class MrdPaddlePlot: public Tool {
 	bool printTClonesTracks;
 	bool drawPaddlePlot;
 	bool drawGdmlOverlay;
-	TApplication* mrdPaddlePlotApp=nullptr;
+	bool drawStatistics;
+	TApplication* rootTApp=nullptr;
 	
 	TCanvas* gdmlcanv=nullptr;
 	TCanvas* mrdTrackCanv=nullptr;
+	Double_t canvwidth = 700;
+	Double_t canvheight = 600;
 	TClonesArray* thesubeventarray;  // retrieve from track finder
 	std::vector<TEveLine*> thiseventstracks;
 	

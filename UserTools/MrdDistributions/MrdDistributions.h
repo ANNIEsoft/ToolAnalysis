@@ -17,7 +17,6 @@ class MrdDistributions: public Tool {
 	// from config file
 	int verbosity=1;
 	bool printTracks;
-	bool saveimages;
 	std::string plotDirectory;  // where to save images and plots
 	
 	MrdDistributions();
@@ -145,8 +144,8 @@ class MrdDistributions: public Tool {
 	
 	// TApplication for making histograms
 	bool drawHistos;
-	TApplication* mrdEffApp=nullptr;
-	TCanvas* mrdEffCanv=nullptr;
+	TApplication* rootTApp=nullptr;
+	TCanvas* mrdDistCanv=nullptr;
 	double canvwidth, canvheight;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
