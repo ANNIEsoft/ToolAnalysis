@@ -67,9 +67,10 @@ class LoadWCSim: public Tool {
 	TTree* wcsimtree;
 	wcsimT* WCSimEntry; // from makeclass
 	WCSimRootTrigger* atrigt, *atrigm, *atrigv;
+	WCSimRootTrigger* firsttrigt, *firsttrigm, *firsttrigv;
 	WCSimRootGeom* wcsimrootgeom;
 	WCSimRootOptions* wcsimrootopts;
-	int FILE_VERSION;   // WCSim version
+	int WCSimVersion;   // WCSim version
 	
 	// Misc Others
 	//////////////
@@ -111,6 +112,23 @@ class LoadWCSim: public Tool {
 	std::map<unsigned long,std::vector<Hit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;
 	BeamStatusClass* BeamStatus;
+	
+	// additional info
+	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<int,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId);
+	std::map<int,std::map<int,double>>* ParticleId_to_TankTubeIds = nullptr;
+	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds = nullptr;
+	std::map<int,std::map<int,double>>* ParticleId_to_VetoTubeIds = nullptr;
+	std::map<int,double>* ParticleId_to_TankCharge = nullptr;
+	std::map<int,double>* ParticleId_to_MrdCharge = nullptr;
+	std::map<int,double>* ParticleId_to_VetoCharge = nullptr;
+	
+	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;
 	
 };
 
