@@ -115,10 +115,10 @@ class LoadWCSim: public Tool {
 	BeamStatusClass* BeamStatus;
 	
 	// additional info
-	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<int,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId);
-	std::map<int,std::map<int,double>>* ParticleId_to_TankTubeIds = nullptr;
-	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds = nullptr;
-	std::map<int,std::map<int,double>>* ParticleId_to_VetoTubeIds = nullptr;
+	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId, std::map<int,unsigned long> tubeid_to_channelkey);
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_TankTubeIds = nullptr;
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds = nullptr;
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_VetoTubeIds = nullptr;
 	std::map<int,double>* ParticleId_to_TankCharge = nullptr;
 	std::map<int,double>* ParticleId_to_MrdCharge = nullptr;
 	std::map<int,double>* ParticleId_to_VetoCharge = nullptr;

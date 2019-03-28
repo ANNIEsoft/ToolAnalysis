@@ -44,6 +44,8 @@ class MrdPaddlePlot: public Tool {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~
 	int numsubevs;
 	int numtracksinev;
+	bool highlight_true_paddles;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	
 	// we need to subtract the an offset to draw TEveLines over gdml
 	Position buildingoffset;

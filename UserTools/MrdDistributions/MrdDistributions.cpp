@@ -342,9 +342,6 @@ bool MrdDistributions::Execute(){
 		Log("MrdDistributions Tool: No MCParticles in ANNIEEvent!",v_error,verbosity);
 		return false;
 	}
-	// Some additional information to help determine the true track's path
-	//m_data->CStore.Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
-	//m_data->CStore.Get("ParticleId_to_MrdCharge", ParticleId_to_MrdCharge);
 	
 	// Fill counter histograms
 	// ~~~~~~~~~~~~~~~~~~~~~~~
@@ -384,7 +381,7 @@ bool MrdDistributions::Execute(){
 		// skip fit chi2
 		
 		// TODO PMTsHit = std::vector<int> Mrd PMT Tube IDs Hit
-		// we can get this from ParticleId_to_MrdTubeIds: std::map<ParticleId,std::map<TubeId,Charge>>
+		// we can get this from ParticleId_to_MrdTubeIds: std::map<ParticleId,std::map<ChannelKey,Charge>>
 		
 		TankExitPoint = nextparticle->GetTankExitPoint();                 // [m]
 		cout<<"TankExitPoint: ("<<TankExitPoint.X()<<", "<<TankExitPoint.Y()<<", "<<TankExitPoint.Z()<<")"<<endl;
