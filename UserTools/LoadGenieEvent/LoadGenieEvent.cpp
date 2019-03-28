@@ -114,7 +114,7 @@ bool LoadGenieEvent::Execute(){
 		}
 		// XXX WCSim currently only records the genie file name, but not absolute path!
 		// we still need to provide the path via config file!
-		inputfiles = filedir+"/"+inputfiles;
+		if(filedir!="NA") inputfiles = filedir+"/"+inputfiles;
 		m_data->CStore.Get("GenieEntry",tchainentrynum);
 		if(!get_ok){
 			Log("Tool LoadGenieEvent: Failed to find GenieEntry in CStore",v_error,verbosity);
