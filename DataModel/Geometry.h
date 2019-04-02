@@ -226,6 +226,9 @@ class Geometry : public SerialisableObject{
 		cout<<"mrd_height : "<<mrd_height<<endl;
 		cout<<"mrd_depth : "<<mrd_depth<<endl;
 		cout<<"mrd_start : "<<mrd_start<<endl;
+		cout<<"Number of tank PMTs : " << numtankpmts << endl;
+		cout<<"Number of MRD PMTs : " << nummrdpmts << endl;
+		cout<<"Number of veto PMTs : " << numvetopmts << endl;
 		
 		return true;
 	}

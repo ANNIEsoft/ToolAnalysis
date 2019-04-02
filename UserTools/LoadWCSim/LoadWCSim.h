@@ -63,8 +63,8 @@ class LoadWCSim: public Tool {
 	
 	// WCSim variables
 	//////////////////
-	TFile* file;
-	TTree* wcsimtree;
+	//TFile* file;
+	//TTree* wcsimtree;
 	wcsimT* WCSimEntry; // from makeclass
 	WCSimRootTrigger* atrigt, *atrigm, *atrigv;
 	WCSimRootTrigger* firsttrigt, *firsttrigm, *firsttrigv;

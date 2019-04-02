@@ -6,8 +6,8 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "TH1.h"
-#include "TH3.h"
+
+class TGraphErrors;
 
 class MrdEfficiency: public Tool {
 	
@@ -50,6 +50,8 @@ class MrdEfficiency: public Tool {
 	TH1F* henergyloss_recod = nullptr;
 	TH1F* htracklength_recod = nullptr;
 	TH1F* htrackpen_recod = nullptr;
+	TH1F* hnummrdpmts_recod = nullptr;
+	TH1F* hq2_recod = nullptr;
 	TH3D* htrackstart_recod = nullptr;
 	TH3D* htrackstop_recod = nullptr;
 	TH3D* hpep_recod = nullptr;
@@ -62,10 +64,19 @@ class MrdEfficiency: public Tool {
 	TH1F* henergyloss_nrecod = nullptr;
 	TH1F* htracklength_nrecod = nullptr;
 	TH1F* htrackpen_nrecod = nullptr;
+	TH1F* hnummrdpmts_nrecod = nullptr;
+	TH1F* hq2_nrecod = nullptr;
 	TH3D* htrackstart_nrecod = nullptr;
 	TH3D* htrackstop_nrecod = nullptr;
 	TH3D* hpep_nrecod = nullptr;
 	TH3D* hmpep_nrecod = nullptr;
+	
+	// more useful: efficiency vs various metrics
+	TGraphErrors* heff_vs_mrdlength = nullptr;
+	TGraphErrors* heff_vs_penetration = nullptr;
+	TGraphErrors* heff_vs_q2 = nullptr;
+	TGraphErrors* heff_vs_angle = nullptr;
+	TGraphErrors* heff_vs_npmts = nullptr;
 	
 	int num_primary_muons_that_hit_MRD = 0;
 	int num_primary_muons_that_missed_MRD = 0;
