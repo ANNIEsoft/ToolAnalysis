@@ -70,16 +70,24 @@ bool DigitBuilder::Execute(){
 	/// see if "RecoEvent" exists.  If not, make it
  	auto get_recoevent = m_data->Stores.count("RecoEvent");
  	if(!get_recoevent){
-  		Log("EventSelector Tool: No RecoEvent store!",v_error,verbosity); 
+  		Log("DigitBuilder Tool: No RecoEvent store!",v_error,verbosity); 
   		return false;
 	};
 	
-  /// Retrieve the hit info from ANNIEEvent
+    /// Retrieve necessary info from ANNIEEvent
 	auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
 	if(!get_geometry){
 		Log("DigitBuilder Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
 		return false; 
 	}
+
+    auto get_mcparticles = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",
+            fMCParticles);
+    if(!get_mcparticles){
+      Log("EventSelector:: Tool: Error retrieving MCParticles from ANNIEEvent!",
+              v_error,verbosity);
+      return false;
+    }
 	auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCHits);
 	if(!get_mchits){ 
 		Log("DigitBuilder Tool: Error retrieving MCHits from ANNIEEvent!",v_error,verbosity); 
@@ -91,24 +99,26 @@ bool DigitBuilder::Execute(){
 		return false;
 	}
 
-  /// Find true neutrino vertex which is defined by the start point of the Primary muon
+  /// If simulated data, Get MC Particle information
   this->FindTrueVertexFromMC();
   if (fGetPiKInfo) this->FindPionKaonCountFromMC();
 
-	/// Build RecoDigit
-	this->BuildRecoDigit();
+  /// Build RecoDigit
+  this->BuildRecoDigit();
 	
-	/// Push recodigits to RecoEvent
-	this->PushRecoDigits(true); 
-	
+  /// Push Particle & hit info. to RecoEvent
+  this->PushRecoDigits(true); 
+  this->PushTrueVertex(true);
+  this->PushTrueStopVertex(true);
+
   return true;
 }
 
 bool DigitBuilder::Finalise(){
-	delete fDigitList; fDigitList = 0;
+  delete fDigitList; fDigitList = 0;
   delete fMuonStartVertex;
   delete fMuonStopVertex;
-	if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
+  if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
   return true;
 }
 
@@ -333,8 +343,6 @@ void DigitBuilder::FindTrueVertexFromMC() {
   Log(logmessage,v_debug,verbosity);
 	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
 	Log(logmessage,v_debug,verbosity);
-  this->PushTrueVertex(true);
-  this->PushTrueStopVertex(true);
 }
 
 void DigitBuilder::FindPionKaonCountFromMC() {
@@ -406,7 +414,7 @@ void DigitBuilder::PushTrueVertex(bool savetodisk) {
 
 
 void DigitBuilder::PushTrueStopVertex(bool savetodisk) {
-  Log("DigitBuilder Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
+  Log("DigitBuilder Tool: Push true stop vertex to the RecoEvent store",v_message,verbosity);
   m_data->Stores.at("RecoEvent")->Set("TrueStopVertex", fMuonStopVertex, savetodisk); 
 }
 
