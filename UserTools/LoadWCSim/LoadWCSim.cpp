@@ -84,10 +84,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	// Make class private members; e.g. the WCSimT and WCSimRootGeom
 	// =============================================================
-	file= new TFile(MCFile.c_str(),"READ");
-	wcsimtree= (TTree*) file->Get("wcsimT");
-	NumEvents=wcsimtree->GetEntries();
-	WCSimEntry= new wcsimT(wcsimtree);
+//	file= new TFile(MCFile.c_str(),"READ");
+//	wcsimtree= (TTree*) file->Get("wcsimT");
+//	NumEvents=wcsimtree->GetEntries();
+//	WCSimEntry= new wcsimT(wcsimtree);
+	WCSimEntry= new wcsimT(MCFile.c_str(),verbosity);
+	NumEvents=WCSimEntry->GetEntries();
+	
 	gROOT->cd();
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
 	wcsimrootopts = WCSimEntry->wcsimrootopts;
@@ -165,7 +168,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	atrigt = WCSimEntry->wcsimrootevent->GetTrigger(0);
 	TimeClass RunStartTime(atrigt->GetHeader()->GetDate());
 	MCEventNum=0;
-	MCFile = wcsimtree->GetCurrentFile()->GetName();
+	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
 	// use nominal beam values TODO
@@ -212,7 +215,7 @@ bool LoadWCSim::Execute(){
 		Log(logmessage,v_error,verbosity);
 		cerr<<"############################"<<endl;
 	}
-	MCFile = wcsimtree->GetCurrentFile()->GetName();
+	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
 	MCParticles->clear();
 	MCHits->clear();
@@ -524,9 +527,8 @@ bool LoadWCSim::Execute(){
 }
 
 bool LoadWCSim::Finalise(){
-	file->Close();
+	WCSimEntry->GetCurrentFile()->Close();
 	delete WCSimEntry;
-	//delete file;  // Done by WCSimEntry destructor
 	
 	// any pointers put in Stores to objects we do not want the Store to clean up
 	// must be nullified before in finalise to prevent double free

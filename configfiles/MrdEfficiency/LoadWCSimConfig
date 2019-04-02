@@ -7,7 +7,9 @@ verbose 1
 #InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_3-12-18_ANNIEp2v6_BNB_Water_10k_22-05-17/wcsim_0.0.0.root
 #InputFile /pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root   #  beam file
 #InputFile /annie/app/users/moflaher/wcsim/root_work/in/MRD_muon_sample/ANNIEtest_MRD_muon_sample_1a0f480.root  # MRD sample file; muons shot into MRD
-InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/root_work/out/wcsim_mrdtest_0.root
+#InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/root_work/out/wcsim_mrdtest_0.root
+InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_29_03_19_ANNIEp2v6_muonsonly_nodigit_BNB_Water_10k_22-05-17/wcsim_0.*.root
+#InputFile wcsim_0.0.0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
@@ -15,3 +17,4 @@ UseDigitSmearedTime 1        ## whether to use smeared digit time (T), or true t
 LappdNumStrips 56            ## num channels to construct from each LAPPD
 LappdStripLength 100         ## relative x position of each LAPPD strip, for dual-sided readout [mm]
 LappdStripSeparation 10      ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
+#MaxEntries 500
