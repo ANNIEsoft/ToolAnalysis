@@ -22,9 +22,6 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
 
   /// Construct the other objects we'll be needing at event level,
-	fDigitList = new std::vector<RecoDigit>;
-  fMuonStartVertex = new RecoVertex();
-  fMuonStopVertex = new RecoVertex();
   
   // Make the RecoDigit Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
@@ -63,14 +60,14 @@ bool EventSelector::Execute(){
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
   
   std::string logmessage = "EventSelector Tool: Processing MCEntry "+to_string(fMCEventNum)+
-  	", MCTrigger "+to_string(fMCTriggernum) + ", Event "+to_string(fEventNumber);
-	Log(logmessage,v_message,verbosity);
+  ", MCTrigger "+to_string(fMCTriggernum) + ", Event "+to_string(fEventNumber);
+  Log(logmessage,v_message,verbosity);
   
   auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
-	if(!get_geometry){
-		Log("EventSelector Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
-		return false; 
-	}
+  if(!get_geometry){
+    Log("EventSelector Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
+    return false; 
+  }
 
   // get truth vertex information 
   auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
@@ -98,14 +95,14 @@ bool EventSelector::Execute(){
   }  
   if(fMCFVCut){
     fEventApplied |= EventSelector::kFlagMCFV; 
-    bool passMCTruth= this->EventSelectionByMCTruthFV();
-    if(!passMCTruth) fEventFlagged |= EventSelector::kFlagMCFV;
+    bool passMCFVCut= this->EventSelectionByMCTruthFV();
+    if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
 ; 
   }
   if(fMCMRDCut){
     fEventApplied |= EventSelector::kFlagMCMRD; 
-    bool passMCTruth= this->EventSelectionByMCTruthMRD();
-    if(!passMCTruth) fEventFlagged |= EventSelector::kFlagMCMRD;
+    bool passMCMRDCut= this->EventSelectionByMCTruthMRD();
+    if(!passMCMRDCut) fEventFlagged |= EventSelector::kFlagMCMRD;
   }
 
   if(fPromptTrigOnly){
@@ -132,7 +129,9 @@ bool EventSelector::Execute(){
   }
 
   if(fEventFlagged != EventSelector::kFlagNone) fEventCutStatus = false;
-
+  if(fEventCutStatus){  
+    Log("EventSelector Tool: Event is clean according to current event selection.",v_message,verbosity);
+  }
   m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
@@ -141,8 +140,6 @@ bool EventSelector::Execute(){
 
 
 bool EventSelector::Finalise(){
-  delete fMuonStartVertex;
-  delete fMuonStopVertex;
   if(verbosity>0) cout<<"EventSelector exitting"<<endl;
   return true;
 }
@@ -172,12 +169,12 @@ bool EventSelector::PromptTriggerCheck() {
   /// First, see if this is a delayed trigger in the event
   auto get_mctrigger = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",fMCTriggernum);
   if(!get_mctrigger){ 
-    Log("DigitBuilder Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
+    Log("EventSelector Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
     return false; 
   }	
   /// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
   if(fMCTriggernum>0){ 
-    Log("DigitBuilder Tool: This event is not a prompt trigger",v_debug,verbosity); 
+    Log("EventSelector Tool: This event is not a prompt trigger",v_message,verbosity); 
     return false;
   }
   return true;
@@ -187,8 +184,10 @@ bool EventSelector::NHitCountCheck(int NHitCut) {
   if(fDigitList->size()<NHitCut) {
 		Log("EventSelector Tool: Event has less than 4 digits",v_message,verbosity);
 		return false;
-	}
+  }
+  else {
   return true;
+  }
 }
 
 // This function isn't working now, because the MRDTracks store must have been changed. 
@@ -250,7 +249,7 @@ bool EventSelector::EventSelectionByMCTruthFV() {
   trueVtxX = vtxPos.X();
   trueVtxY = vtxPos.Y();
   trueVtxZ = vtxPos.Z();
-  // fiducial volume cut
+  std::cout<<"trueVtxX, Y, Z = "<<trueVtxX<<", "<<trueVtxY<<", "<<trueVtxZ<<std::endl;
   double tankradius = ANNIEGeometry::Instance()->GetCylRadius();	
   double fidcutradius = 0.8 * tankradius;
   double fidcuty = 50.;
@@ -259,6 +258,7 @@ bool EventSelector::EventSelectionByMCTruthFV() {
   if( (TMath::Sqrt(TMath::Power(trueVtxX, 2) + TMath::Power(trueVtxZ,2)) > fidcutradius) 
   	  || (TMath::Abs(trueVtxY) > fidcuty) 
   	  || (trueVtxZ > fidcutz) ){
+  Log("EventSelector Tool: This MC Event's muon was not generated in the FV",v_message,verbosity); 
   return false;
   }	
  
@@ -266,13 +266,7 @@ bool EventSelector::EventSelectionByMCTruthFV() {
 }
 
 bool EventSelector::EventSelectionByMCTruthMRD() {
-  if(!fMuonStartVertex) return false;
-  double trueVtxX, trueVtxY, trueVtxZ;
-  Position vtxPos = fMuonStartVertex->GetPosition();
-  Direction vtxDir = fMuonStartVertex->GetDirection();
-  trueVtxX = vtxPos.X();
-  trueVtxY = vtxPos.Y();
-  trueVtxZ = vtxPos.Z();
+  if(!fMuonStopVertex) return false;
   // mrd cut
   double muonStopX, muonStopY, muonStopZ;
   muonStopX = fMuonStopVertex->GetPosition().X();
@@ -289,6 +283,7 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
   if(muonStopZ<mrdStartZ || muonStopZ>mrdEndZ
   	|| muonStopX<-1.0*mrdWidthX || muonStopX>mrdWidthX
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {
+    Log("EventSelector Tool: This MC Event's muon does not stop in the MRD",v_message,verbosity); 
     return false;	
   }
   return true;
@@ -296,9 +291,6 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
 
 void EventSelector::Reset() {
   // Reset 
-  fDigitList->clear();
-  fMuonStartVertex->Reset();
-  fMuonStopVertex->Reset();
   fEventApplied = EventSelector::kFlagNone;
   fEventFlagged = EventSelector::kFlagNone;
   fEventCutStatus = true; 
