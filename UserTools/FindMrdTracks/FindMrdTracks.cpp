@@ -65,7 +65,7 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 
 bool FindMrdTracks::Execute(){
 	
-	if(verbosity>1) cout<<"Tool FindMrdTracks finding tracks in next event."<<endl;
+	if(verbosity) cout<<"Tool FindMrdTracks finding tracks in next event."<<endl;
 	
 	// ensure the previous tracks are cleared so we don't have any carry over
 	SubEventArray->Clear("C");
@@ -511,6 +511,8 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			thisTrackAsBoostStore->Set("LayersHit",atrack->GetLayersHit());
 			thisTrackAsBoostStore->Set("TrackLength",atrack->GetTrackLength() / 100.);
 			thisTrackAsBoostStore->Set("IsMrdPenetrating",atrack->GetIsPenetrating());
+			thisTrackAsBoostStore->Set("EnergyLoss",atrack->GetEnergyLoss());
+			thisTrackAsBoostStore->Set("EnergyLossError",atrack->GetEnergyLossError());
 			thisTrackAsBoostStore->Set("IsMrdStopped",atrack->GetIsStopped());
 			thisTrackAsBoostStore->Set("IsMrdSideExit",atrack->GetIsSideExit());
 			thisTrackAsBoostStore->Set("PenetrationDepth",atrack->GetPenetrationDepth() / 100.);
@@ -520,8 +522,26 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			thisTrackAsBoostStore->Set("VtrackFitCov",atrack->GetVtrackFitCov());
 			thisTrackAsBoostStore->Set("PMTsHit",atrack->GetPMTsHit());
 			
+			thisTrackAsBoostStore->Set("HtrackOrigin",atrack->GetHtrackOrigin());
+			thisTrackAsBoostStore->Set("HtrackOriginError",atrack->GetHtrackOriginError());
+			thisTrackAsBoostStore->Set("HtrackGradient",atrack->GetHtrackGradient());
+			thisTrackAsBoostStore->Set("HtrackGradientError",atrack->GetHtrackGradientError());
+			thisTrackAsBoostStore->Set("VtrackOrigin",atrack->GetVtrackOrigin());
+			thisTrackAsBoostStore->Set("VtrackOriginError",atrack->GetVtrackOriginError());
+			thisTrackAsBoostStore->Set("VtrackGradient",atrack->GetVtrackGradient());
+			thisTrackAsBoostStore->Set("VtrackGradientError",atrack->GetVtrackGradientError());
+			
+			// convert back projections to Position class
+			Position TankExitPoint( atrack->GetTankExitPoint().X() / 100.,
+									atrack->GetTankExitPoint().Y() / 100.,
+									atrack->GetTankExitPoint().Z() / 100.);
+			Position MrdEntryPoint( atrack->GetMrdEntryPoint().X() / 100.,  // not implemented
+									atrack->GetMrdEntryPoint().Y() / 100.,
+									atrack->GetMrdEntryPoint().Z() / 100.);
+			thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
+			thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+			
 			// this stuff either isn't important or isn't yet implemented, don't store:
-//			thisTrackAsBoostStore->Set("TankExitPoint",atrack->GetTankExitPoint());
 //			thisTrackAsBoostStore->Set("NumPMTsHit",atrack->GetNumPMTsHit());
 //			thisTrackAsBoostStore->Set("KEStart",atrack->GetKEStart());
 //			thisTrackAsBoostStore->Set("KEEnd",atrack->GetKEEnd());
@@ -529,19 +549,10 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 //			thisTrackAsBoostStore->Set("NumLayersHit",atrack->GetNumLayersHit());
 //			thisTrackAsBoostStore->Set("LayerEdeps",atrack->GetEdeps());
 //			thisTrackAsBoostStore->Set("NumDigits",atrack->GetNumDigits());
-//			thisTrackAsBoostStore->Set("MrdEntryPoint",atrack->GetMrdEntryPoint());
 //			thisTrackAsBoostStore->Set("MrdEntryBoundsX",atrack->GetMrdEntryBoundsX());
 //			thisTrackAsBoostStore->Set("MrdEntryBoundsY",atrack->GetMrdEntryBoundsY());
 //			//thisTrackAsBoostStore->Set("TrueTrackID",atrack->GetTrueTrackID());
 //			//thisTrackAsBoostStore->Set("TrueTrack",atrack->GetTrueTrack());
-//			thisTrackAsBoostStore->Set("HtrackOrigin",atrack->GetHtrackOrigin());
-//			thisTrackAsBoostStore->Set("HtrackOriginError",atrack->GetHtrackOriginError());
-//			thisTrackAsBoostStore->Set("HtrackGradient",atrack->GetHtrackGradient());
-//			thisTrackAsBoostStore->Set("HtrackGradientError",atrack->GetHtrackGradientError());
-//			thisTrackAsBoostStore->Set("VtrackOrigin",atrack->GetVtrackOrigin());
-//			thisTrackAsBoostStore->Set("VtrackOriginError",atrack->GetVtrackOriginError());
-//			thisTrackAsBoostStore->Set("VtrackGradient",atrack->GetVtrackGradient());
-//			thisTrackAsBoostStore->Set("VtrackGradientError",atrack->GetVtrackGradientError());
 //			thisTrackAsBoostStore->Set("DigitIds",atrack->GetDigitIds());
 //			thisTrackAsBoostStore->Set("DigitQs",atrack->GetDigitQs());
 //			thisTrackAsBoostStore->Set("DigitTs",atrack->GetDigitTs());
