@@ -30,6 +30,9 @@ class Geometry : public SerialisableObject{
 	inline Position GetTankCentre(){return tank_centre;}
 	inline double GetTankRadius(){return tank_radius;}
 	inline double GetTankHalfheight(){return tank_halfheight;}
+	inline double GetFiducialCutRadius(){return fiducialradius;}
+	inline double GetFiducialCutY(){return fiducialcuty;}
+	inline double GetFiducialCutZ(){return fiducialcutz;}
 	inline double GetMrdWidth(){return mrd_width;}
 	inline double GetMrdHeight(){return mrd_height;}
 	inline double GetMrdDepth(){return mrd_depth;}
@@ -41,6 +44,9 @@ class Geometry : public SerialisableObject{
 	inline void SetTankCentre(Position tank_centrein){tank_centre = tank_centrein;}
 	inline void SetTankRadius(double tank_radiusIn){tank_radius = tank_radiusIn;}
 	inline void SetTankHalfheight(double tank_halfheightIn){tank_halfheight = tank_halfheightIn;}
+	inline void SetFiducialCutRadius(double fidcutradiusin){fiducialradius = fidcutradiusin;}
+	inline void SetFiducialCutZ(double fidcutzin){fiducialcutz = fidcutzin;}
+	inline void SetFiducialCutY(double fidcutyin){fiducialcuty = fidcutyin;}
 	inline void SetMrdWidth(double mrd_widthIn){mrd_width = mrd_widthIn;}
 	inline void SetMrdHeight(double mrd_heightIn){mrd_height = mrd_heightIn;}
 	inline void SetMrdDepth(double mrd_depthIn){mrd_depth = mrd_depthIn;}
@@ -213,6 +219,9 @@ class Geometry : public SerialisableObject{
 		cout<<"tank_centre : "; tank_centre.Print();
 		cout<<"tank_radius : "<<tank_radius<<endl;
 		cout<<"tank_halfheight : "<<tank_halfheight<<endl;
+		cout<<"tank fiducial radius: "<<fiducialradius<<endl;
+		cout<<"tank fiducial z cut: "<<fiducialcutz<<endl;
+		cout<<"tank fiducial y cut: "<<fiducialcuty<<endl;
 		cout<<"mrd_width : "<<mrd_width<<endl;
 		cout<<"mrd_height : "<<mrd_height<<endl;
 		cout<<"mrd_depth : "<<mrd_depth<<endl;
@@ -252,10 +261,13 @@ class Geometry : public SerialisableObject{
 	int nummrdpmts;
 	int numvetopmts;
 	int numlappds;
+	double fiducialradius;
+	double fiducialcutz;
+	double fiducialcuty;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
-			ar & Detectors;
+			ar & RealDetectors;
 			ar & Version;
 			ar & Status;
 			ar & tank_centre;
@@ -265,6 +277,9 @@ class Geometry : public SerialisableObject{
 			ar & mrd_height;
 			ar & mrd_depth;
 			ar & mrd_start;
+			ar & fiducialradius;
+			ar & fiducialcutz;
+			ar & fiducialcuty;
 		}
 	}
 };
