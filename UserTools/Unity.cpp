@@ -80,4 +80,6 @@
 #include "PulseSimulation/PulseSimulation.cpp"
 #include "PlotLAPPDTimesFromStore/PlotLAPPDTimesFromStore.cpp"
 #include "CheckDetectorCounts/CheckDetectorCounts.cpp"
+#include "MrdDistributions/MrdDistributions.cpp"
+#include "MCParticleProperties/MCParticleProperties.cpp"
 #include "DigitBuilderROOT/DigitBuilderROOT.cpp"
