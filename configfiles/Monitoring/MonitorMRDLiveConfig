@@ -1,7 +1,8 @@
 # MonitorMRDLive config file
 
 verbose 2
-#OutputPath /ANNIECode/MRDMonitorTest/
-OutputPath fromStore
+OutputPath /ANNIECode/MRDMonitorTest/
+#OutputPath fromStore
 ActiveSlots configfiles/Monitoring/MRD_activech.txt #define which channels of the crate are connected
+AveragePlots 0
 #ActiveSlots /ANNIECode/ToolAnalysis/configfiles/Monitoring/MRD_activech.txt #define which channels of the crate are connected

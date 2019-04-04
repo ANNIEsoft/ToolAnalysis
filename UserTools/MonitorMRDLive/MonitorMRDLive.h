@@ -41,6 +41,7 @@ class MonitorMRDLive: public Tool {
   MRDOut MRDout;      //the class that has all the information about the mrd data format
   std::string active_slots;
   int verbosity;
+  bool draw_average;
 
   static const int num_crates = 2;      //crate numbers are 7 and 8
   static const int num_slots = 24;      //CAMAC crate has 24 slots
