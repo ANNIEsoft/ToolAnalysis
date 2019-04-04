@@ -12,6 +12,9 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  std::string outpath="";
+  m_variables.Get("OutPath",outpath);
+  m_data->CStore.Set("OutPath",outpath);
 
   MonitorReceiver= new zmq::socket_t(*m_data->context, ZMQ_SUB);
   MonitorReceiver->setsockopt(ZMQ_SUBSCRIBE, "", 0);
