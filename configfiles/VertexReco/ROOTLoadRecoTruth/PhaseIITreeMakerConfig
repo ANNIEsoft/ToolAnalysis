@@ -1,0 +1,10 @@
+verbose 0
+
+muonRecoDebug_fill 1
+muonMCTruth_fill 1
+muonTruthRecoDiff_fill 1
+pionKaonCount_fill 1
+
+OutputFile /ToolAnalysis/JingboComb_Reprocessed.root
+NumEventsWritten 2000
+

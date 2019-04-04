@@ -2,13 +2,11 @@
 #configuration on the annie Fermilab machine using nohup.  
 #To use this script, make the
 #following changes:
+#  - Select your Config of choice by defining $CONFIG
 #  - Define the directory where all of your wcsim data files are (DATADIR)
 #  - Define the basenames of the PMT/LAPPD files in DATADIR, as well as the desired
 #    basename of the root tree output files 
-#  - Select your Configuration of choice by defining $CONFIGDIR.  
-#  - In the directory specified by $CONFIGDIR, make a new directory named 
-#    template.  Move a copy of your config here.
-#  - Modify the template directory configuration as as follows:
+#  - In your ToolAnalysis configfiles directory, make a template as follows:
 #    In LoadWCSimConfig: InputFile #INPUT_FILE_PMT#
 #    In LoadWCSimLAPPDConfig: InputFile #INPUT_FILE_LAPPD#
 #    In PhaseIITreeMaker: OutputFile #OUTPUT_FILE_TREE#
@@ -27,12 +25,12 @@ OUTPUT_NAMEBASE=PhaseIIRecoTruth_0
 
 #Modify to define which WCSim file indexes to run ToolAnalysis with 
 declare -a firstind=(1010) #1011 1012)
-declare -a secondind=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
+declare -a secondind=(1 2) #3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
 
 #ToolAnalysis home directory and configuration directory
 HOMEDIR=/annie/app/users/wjingbo/ToolAnalysis/
 CONFIGDIR=${HOMEDIR}configfiles/PhaseIIRecoTruthJobs/
-OUTPUTDIR=${HOMEDIR}/TAOutput/
+OUTPUTDIR=${HOMEDIR}/TAOutput/RecoTruth_KDECone/
 LOGDIR=${HOMEDIR}/TAOutlog/
 #source the ToolAnalysis and Fermilab Cluster UPS setup
 source ${HOMEDIR}SetupFNAL.sh
@@ -58,6 +56,6 @@ for l in $(seq 0 $NUMFIRST)
             sed -i "s|#INPUT_CONFIG_DIR#|${THISJOBCONFIG}|g" ${THISJOBCONFIG}*Config
             sed -i "s|#INPUT_TOOLS_CONFIG#|${THISJOBCONFIG}/ToolsConfig|g" ${THISJOBCONFIG}*Config
             cd ${HOMEDIR}
-            ./Analyse ${THISJOBCONFIG}/ToolChainConfig  #${LOGDIR}/ourlog_run${firstind[l]}.${secondind[k]}.txt 2>&1 &
+            nohup ./Analyse ${THISJOBCONFIG}/ToolChainConfig  ${LOGDIR}/ourlog_run${firstind[l]}.${secondind[k]}.txt 2>&1 &
     done
 done

@@ -534,7 +534,7 @@ void MinuitOptimizer::ConePropertiesFoM(double& coneFOM)
   double fom = 0.0;
 
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 	
-    if( this->fVtxGeo->IsFiltered(idigit) ){
+    if( this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch){
       deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
       digitCharge = this->fVtxGeo->GetDigitQ(idigit);
 

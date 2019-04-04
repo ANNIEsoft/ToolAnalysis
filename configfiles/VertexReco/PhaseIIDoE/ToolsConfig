@@ -1,0 +1,8 @@
+DigitBuilderDoE DigitBuilderDoE ./configfiles/VertexReco/PhaseIIDoE/DigitBuilderDoEConfig
+EventSelectorDoE EventSelectorDoE ./configfiles/VertexReco/PhaseIIDoE/EventSelectorDoEConfig
+VtxSeedGenerator VtxSeedGenerator ./configfiles/VertexReco/PhaseIIDoE/VtxSeedGeneratorConfig
+VtxPointPositionFinder VtxPointPositionFinder ./configfiles/VertexReco/PhaseIIDoE/VtxPointPositionFinderConfig
+VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/VertexReco/PhaseIIDoE/VtxPointDirectionFinderConfig
+VtxPointVertexFinder VtxPointVertexFinder ./configfiles/VertexReco/PhaseIIDoE/VtxPointVertexFinderConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/VertexReco/PhaseIIDoE/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIIDoE/PhaseIITreeMakerConfig

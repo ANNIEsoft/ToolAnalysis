@@ -112,9 +112,6 @@ class HitCleaner: public Tool {
   // vectors of clusters
   std::vector<RecoCluster*>* fClusterList;
   	
-  // event selection status
-  bool fEventCutStatus;
-  
   // true vertex
   RecoVertex* fTrueVertex = 0; 
   
