@@ -15,13 +15,17 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
 
   MonitorReceiver= new zmq::socket_t(*m_data->context, ZMQ_SUB);
   MonitorReceiver->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+ 
+  items[0].socket = *MonitorReceiver;
+  items[0].fd = 0;
+  items[0].events = ZMQ_POLLIN;
+  items[0].revents =0;
+  
 
-  items[0]={MonitorReceiver, 0, ZMQ_POLLIN, 0};
-
-  UpdateMonitorSources();
-
-  last= boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
-  period =boost::posix_time::time_duration(0,0,10,0);
+  sources=UpdateMonitorSources();
+ 
+ last= boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
+  period =boost::posix_time::time_duration(0,0,5,0);
 
   m_data->Stores["CCData"]=new BoostStore(false,0);
 
@@ -37,41 +41,41 @@ bool MonitorReceive::Execute(){
   boost::posix_time::time_duration duration(current - last);
   if(duration>period){
     last=current;
-    UpdateMonitorSources();
+    sources=UpdateMonitorSources();
   }
 
-  zmq::poll(&items[0], 1, 0);
-
-  if ((items [0].revents & ZMQ_POLLIN)) {
-
-    zmq::message_t command;
-    MonitorReceiver->recv(&command);
+  std::string State="Wait";
+  m_data->CStore.Set("State",State);
+ 
+  if(sources>0){
+    zmq::poll(&items[0], 1, 0);
     
-    std::istringstream tmp(static_cast<char*>(command.data()));
-    m_data->CStore.Set("State",tmp.str());
-    
-    if (tmp.str()=="MRDSingle"){
+    if ((items [0].revents & ZMQ_POLLIN)) {
+      //   std::cout<<"in poll in"<<std::endl;
+      zmq::message_t command;
+      MonitorReceiver->recv(&command);
+      
+      std::istringstream tmp(static_cast<char*>(command.data()));
+      m_data->CStore.Set("State",tmp.str());
+      
+      if (tmp.str()=="MRDSingle"){
+	//	std::cout<<"received single"<<std::endl;	
+	MRDOut data;
+	data.Receive(MonitorReceiver);
+	m_data->Stores["CCData"]->Set("Single",data);      
 
-      MRDOut data;
-      data.Receive(MonitorReceiver);
-      m_data->Stores["CCData"]->Set("Single",data);      
-
-    }
-
-    else if(tmp.str()=="DataFile"){
-
-
-      //do stuff
+      }
+      
+      else if(tmp.str()=="DataFile"){
+	
+	
+	//do stuff
+	
+      }
       
     }
     
   }
-  else{
-    std::string State="Wait";
-    m_data->CStore.Set("State",State);
-
-  }
-  
 
   return true;
 }
@@ -99,9 +103,9 @@ bool MonitorReceive::Finalise(){
 }
 
 
-void MonitorReceive::UpdateMonitorSources(){
+int MonitorReceive::UpdateMonitorSources(){
 
-
+  //std::cout<<"updating monitor sources"<<std::endl;
   boost::uuids::uuid m_UUID=boost::uuids::random_generator()();
   long msg_id=0;
   
@@ -146,10 +150,13 @@ void MonitorReceive::UpdateMonitorSources(){
       service->Get("remote_port",port);
       std::string tmp="tcp://"+ ip +":"+port;
       MonitorReceiver->connect(tmp.c_str());
+      //      MonitorReceiver->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+      //std::cout<<type<<" = "<<tmp<<std::endl;
     }  
     
     
     
   }
   
+  return connections.size();
 }
