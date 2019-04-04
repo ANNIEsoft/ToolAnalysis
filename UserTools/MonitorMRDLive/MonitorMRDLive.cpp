@@ -17,6 +17,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OutputPath",outpath);
   m_variables.Get("ActiveSlots",active_slots);
   m_variables.Get("verbose",verbosity);
+  m_variables.Get("AveragePlots",draw_average);
 
   if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
   std::cout <<"Output path for plots is "<<outpath<<std::endl;
@@ -45,6 +46,9 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   }
   file.close();
   num_active_slots = n_active_slots_cr1+n_active_slots_cr2;
+
+  //omit warning messages from ROOT
+  gROOT->ProcessLine("gErrorIgnoreLevel = 1001;");
 
   return true;
 
@@ -152,7 +156,7 @@ void MonitorMRDLive::MRDTDCPlots(){
     std::string slot_str = "_slot";
     ss_name_hist<<crate_str<<crate_num<<slot_str<<slot_num;
     ss_title_hist << title_time.str() << " (Crate " << crate_num << " Slot " << slot_num <<")";
-    TH1I *hist = new TH1I(ss_name_hist.str().c_str(),ss_title_hist.str().c_str(),num_channels,0,num_channels-1);
+    TH1I *hist = new TH1I(ss_name_hist.str().c_str(),ss_title_hist.str().c_str(),num_channels,0,num_channels);
     hist->GetXaxis()->SetTitle("Channel #");
     hist->GetYaxis()->SetTitle("TDC");
     hist->SetLineWidth(2);
@@ -317,7 +321,7 @@ void MonitorMRDLive::MRDTDCPlots(){
       hChannel_cr1->SetLineWidth(2);
       hChannel_cr2->SetLineWidth(2);
 
-
+      //std::cout <<"Draw hChannel_cr1 & hChannel_cr2"<<std::endl;
       hChannel_cr1->Draw();
       hChannel_cr2->Draw("same");
       TLine *separate_crates = new TLine(num_channels*n_active_slots_cr1,min_ch-5,num_channels*n_active_slots_cr1,max_ch+5);
@@ -376,6 +380,7 @@ void MonitorMRDLive::MRDTDCPlots(){
       hSlot_cr2->SetLineWidth(2);
       c_FreqSlots->SetGridy();
       c_FreqSlots->SetGridx();
+      //std::cout <<"Drawing hSlot_cr1 & hSlot_cr2"<<std::endl;
       hSlot_cr1->Draw();
       hSlot_cr2->Draw("same");
       TLine *separate_crates2 = new TLine(n_active_slots_cr1,min_slot-5,n_active_slots_cr1,max_slot+5);
@@ -388,7 +393,7 @@ void MonitorMRDLive::MRDTDCPlots(){
 
       std::stringstream ss_ch;
       ss_ch<<outpath<<"TDC_Slots.jpg";
-      c_FreqSlots->SaveAs(ss_ch.str().c_str());
+      if (draw_average) c_FreqSlots->SaveAs(ss_ch.str().c_str());
 
       if (verbosity > 2) std::cout <<"Creating Crate Frequency plot..."<<std::endl;
       c_FreqCrates = new TCanvas("MRD Freq crates","MRD TDC monitor 3",900,600);
@@ -402,11 +407,12 @@ void MonitorMRDLive::MRDTDCPlots(){
       hCrate->GetXaxis()->SetBinLabel(2,labels_crate[1]);
       c_FreqCrates->SetGridx();
       c_FreqCrates->SetGridy();
+      //std::cout <<"Drawing hCrate..."<<std::endl;
       hCrate->Draw();
 
       std::stringstream ss_crate;
       ss_crate<<outpath<<"TDC_Crates.jpg";
-      c_FreqCrates->SaveAs(ss_crate.str().c_str());
+      if (draw_average) c_FreqCrates->SaveAs(ss_crate.str().c_str());
 
 
       c_Freq2D = new TCanvas("MRD Freq 2D","MRD TDC monitor 4",1000,600);
@@ -435,6 +441,7 @@ void MonitorMRDLive::MRDTDCPlots(){
         }
       }      
       h2D_cr1->LabelsOption("v");
+      //std::cout <<"Drawing h2D_cr1..."<<std::endl;
       h2D_cr1->Draw("colz");
 
        //coloring inactive slots in the histograms in grey-ish
@@ -480,6 +487,7 @@ void MonitorMRDLive::MRDTDCPlots(){
         
       }
       h2D_cr2->LabelsOption("v");
+      //std::cout <<"Draw h2D_cr2..."<<std::endl;
       h2D_cr2->Draw("colz");
       //coloring inactive slots in the histograms in grey-ish
       for (int i_slot=0;i_slot<num_slots;i_slot++){
@@ -517,16 +525,24 @@ void MonitorMRDLive::MRDTDCPlots(){
       hTimes->SetLineWidth(2);
       hTimes->SetTitle(title_time.str().c_str());
       if (hTimes->GetEntries() == 0) {
-        hTimes->GetXaxis()->SetRangeUser(0,100);
-        hTimes->GetYaxis()->SetRangeUser(1,0); 
+        TH1F *hTimes_temp = new TH1F("hTimes_temp",title_time.str().c_str(),200,0,100);
+        hTimes_temp->Draw();
+        std::stringstream ss_Times;
+        ss_Times<<outpath<<"TDC_Hist.jpg";
+        c_Times->SaveAs(ss_Times.str().c_str());
+        delete hTimes_temp;
+      } else {
+        //std::cout <<"Draw hTimes..."<<std::endl;
+        //std::cout <<"hTimes entries: "<<hTimes->GetEntries()<<", max: "<<hTimes->GetMaximum()<<", min: "<<hTimes->GetMinimum()<<std::endl;
+        hTimes->Draw();
+        std::stringstream ss_Times;
+        ss_Times<<outpath<<"TDC_Hist.jpg";
+        c_Times->SaveAs(ss_Times.str().c_str());
       }
-      hTimes->Draw();
-      std::stringstream ss_Times;
-      ss_Times<<outpath<<"TDC_Hist.jpg";
-      c_Times->SaveAs(ss_Times.str().c_str());
 
       for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
 
+        /*                            //too verbose, omit displaying single channel plots for all slots for now
         std::stringstream ss_title;
         std::string prefix = "TDC_SlotChannels_";
         ss_title << prefix << (i_slot)+1;
@@ -539,8 +555,9 @@ void MonitorMRDLive::MRDTDCPlots(){
         c_SlotChannels->SetGridx();
         c_SlotChannels->SaveAs(ss_savepath.str().c_str());
         c_SlotChannels->Clear();
+        delete c_SlotChannels;*/
+
         delete hSlot_Channel.at(i_slot);
-        delete c_SlotChannels;
 
       }
 
