@@ -44,6 +44,8 @@ class MrdPaddlePlot: public Tool {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~
 	int numsubevs;
 	int numtracksinev;
+	bool highlight_true_paddles;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	
 	// we need to subtract the an offset to draw TEveLines over gdml
 	Position buildingoffset;
@@ -52,10 +54,13 @@ class MrdPaddlePlot: public Tool {
 	bool printTClonesTracks;
 	bool drawPaddlePlot;
 	bool drawGdmlOverlay;
-	TApplication* mrdPaddlePlotApp=nullptr;
+	bool drawStatistics;
+	TApplication* rootTApp=nullptr;
 	
 	TCanvas* gdmlcanv=nullptr;
 	TCanvas* mrdTrackCanv=nullptr;
+	Double_t canvwidth = 700;
+	Double_t canvheight = 600;
 	TClonesArray* thesubeventarray;  // retrieve from track finder
 	std::vector<TEveLine*> thiseventstracks;
 	

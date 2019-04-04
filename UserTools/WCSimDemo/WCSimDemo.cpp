@@ -18,7 +18,11 @@ bool WCSimDemo::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	
 	// Get the geometry
-	m_data->Stores.at("ANNIEEvent")->Get("ANNIEGeometry",anniegeom);
+	int get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+	if(not get_ok){
+		Log("No AnnieGeometry in ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
 	
 	Log("WCSimDemo Tool: Initializing",v_message,verbosity);
 	return true;

@@ -29,17 +29,17 @@ class Particle : public SerialisableObject{
 	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein) 
 	: ParticlePDG(pdg), startEnergy(sttE), stopEnergy(stpE), startVertex(sttpos),
 	  stopVertex(stppos), startTime(sttt), stopTime(stpt), startDirection(startdir),
-	  trackLength(len) {
+	  trackLength(len), StartStopType(tracktypein) {
 		serialise=true;
-		if(tracktypein!=tracktype::UNDEFINED){
-			StartStopType=tracktypein;
-		} else {
-			// calculate track containment type
-//			if(startinbounds && stopinbounds) startstoptype = tracktype::CONTAINED;
-//			else if( startinbounds ) startstoptype = tracktype::STARTONLY;
-//			else if( stopinbounds  ) startstoptype = tracktype::ENDONLY;
-//			else startstoptype = tracktype::UNCONTAINED;
-		}
+//		if(tracktypein!=tracktype::UNDEFINED){
+//			StartStopType=tracktypein;
+//		} else {
+//			// calculate track containment type
+////			if(startinbounds && stopinbounds) startstoptype = tracktype::CONTAINED;
+////			else if( startinbounds ) startstoptype = tracktype::STARTONLY;
+////			else if( stopinbounds  ) startstoptype = tracktype::ENDONLY;
+////			else startstoptype = tracktype::UNCONTAINED;
+//		}
 	}
 	
 	inline void SetPdgCode(int code){ParticlePDG=code;}
@@ -136,13 +136,14 @@ class MCParticle : public Particle {
 	public:
 	
 	MCParticle() : Particle(0, 0., 0., Position(), Position(), 0., 0., Direction(), 0.,
-				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0) {serialise=true;}
+				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0) {serialise=true;}
 	
 	MCParticle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
 	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein,
 	  int partid, int parentpdg) 
 	: Particle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein), 
-	  ParticleID(partid), ParentPdg(parentpdg){
+	  ParticleID(partid), ParentPdg(parentpdg), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0)
+	  {
 		serialise=true;
 		// override Hit tracktype
 		if(tracktypein!=tracktype::UNDEFINED){
@@ -296,6 +297,7 @@ class MCParticle : public Particle {
 			ar & startDirection;
 			ar & trackLength;
 			ar & StartStopType;
+			
 			ar & ParticleID;
 			ar & ParentPdg;
 			
