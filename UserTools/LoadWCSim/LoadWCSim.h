@@ -54,7 +54,7 @@ class LoadWCSim: public Tool {
 	
 	// variables from config file
 	/////////////////////////////
-	int verbose=1;
+	int verbosity=1;
 	int HistoricTriggeroffset;
 	int use_smeared_digit_time;   // digit_time = (T): first photon smeared time, (F): first photon true time
 	int LappdNumStrips;           // number of Channels per LAPPD
@@ -63,8 +63,8 @@ class LoadWCSim: public Tool {
 	
 	// WCSim variables
 	//////////////////
-	TFile* file;
-	TTree* wcsimtree;
+	//TFile* file;
+	//TTree* wcsimtree;
 	wcsimT* WCSimEntry; // from makeclass
 	WCSimRootTrigger* atrigt, *atrigm, *atrigv;
 	WCSimRootTrigger* firsttrigt, *firsttrigm, *firsttrigv;
@@ -75,6 +75,7 @@ class LoadWCSim: public Tool {
 	// Misc Others
 	//////////////
 	long NumEvents;
+	long MaxEntries;   // maximum MC entries to process before stopping the loop. -1 for indefinite
 	int numtankpmts;
 	int numlappds;
 	int nummrdpmts;
@@ -114,10 +115,10 @@ class LoadWCSim: public Tool {
 	BeamStatusClass* BeamStatus;
 	
 	// additional info
-	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<int,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId);
-	std::map<int,std::map<int,double>>* ParticleId_to_TankTubeIds = nullptr;
-	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds = nullptr;
-	std::map<int,std::map<int,double>>* ParticleId_to_VetoTubeIds = nullptr;
+	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId, std::map<int,unsigned long> tubeid_to_channelkey);
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_TankTubeIds = nullptr;
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds = nullptr;
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_VetoTubeIds = nullptr;
 	std::map<int,double>* ParticleId_to_TankCharge = nullptr;
 	std::map<int,double>* ParticleId_to_MrdCharge = nullptr;
 	std::map<int,double>* ParticleId_to_VetoCharge = nullptr;
