@@ -4,4 +4,4 @@ myMCParticleProperties MCParticleProperties ./configfiles/MrdDistributions/MCPar
 #myPrintANNIEEvent PrintANNIEEvent ./configfiles/MrdDistributions/PrintANNIEEventConfig
 myFindMrdTracks FindMrdTracks ./configfiles/MrdDistributions/FindMrdTracksConfig
 myMrdTrackPlotter MrdPaddlePlot ./configfiles/MrdDistributions/PlotMrdTracksConfig
-#myMrdDistributions MrdDistributions ./configfiles/MrdDistributions/MrdDistributionsConfig
+myMrdDistributions MrdDistributions ./configfiles/MrdDistributions/MrdDistributionsConfig

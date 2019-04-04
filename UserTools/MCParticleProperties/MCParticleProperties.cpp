@@ -394,24 +394,25 @@ bool MCParticleProperties::CheckLineBox( Position L1, Position L2, Position B1, 
 	if(verbose){
 		cout<<"finding interceptions"<<endl;
 	}
+	Position temphit;
 	thisinterception=
-	GetIntersection( L1.X()-B1.X(), L2.X()-B1.X(), L1, L2, Hit) && InBox(Hit, B1, B2, 1);
-	if(thisinterception){ interceptions.push_back(Hit); anyinterception=true; }
+	GetIntersection( L1.X()-B1.X(), L2.X()-B1.X(), L1, L2, temphit) && InBox(temphit, B1, B2, 1);
+	if(thisinterception){ interceptions.push_back(temphit); anyinterception=true; }
 	thisinterception=
-	GetIntersection( L1.Y()-B1.Y(), L2.Y()-B1.Y(), L1, L2, Hit) && InBox( Hit, B1, B2, 2 );
-	if(thisinterception){ interceptions.push_back(Hit); anyinterception=true; }
+	GetIntersection( L1.Y()-B1.Y(), L2.Y()-B1.Y(), L1, L2, temphit) && InBox( temphit, B1, B2, 2 );
+	if(thisinterception){ interceptions.push_back(temphit); anyinterception=true; }
 	thisinterception=
-	GetIntersection( L1.Z()-B1.Z(), L2.Z()-B1.Z(), L1, L2, Hit) && InBox( Hit, B1, B2, 3 );
-	if(thisinterception){ interceptions.push_back(Hit); anyinterception=true; }
+	GetIntersection( L1.Z()-B1.Z(), L2.Z()-B1.Z(), L1, L2, temphit) && InBox( temphit, B1, B2, 3 );
+	if(thisinterception){ interceptions.push_back(temphit); anyinterception=true; }
 	thisinterception=
-	GetIntersection( L1.X()-B2.X(), L2.X()-B2.X(), L1, L2, Hit) && InBox( Hit, B1, B2, 1 );
-	if(thisinterception){ interceptions.push_back(Hit); anyinterception=true; }
+	GetIntersection( L1.X()-B2.X(), L2.X()-B2.X(), L1, L2, temphit) && InBox( temphit, B1, B2, 1 );
+	if(thisinterception){ interceptions.push_back(temphit); anyinterception=true; }
 	thisinterception=
-	GetIntersection( L1.Y()-B2.Y(), L2.Y()-B2.Y(), L1, L2, Hit) && InBox( Hit, B1, B2, 2 );
-	if(thisinterception){ interceptions.push_back(Hit); anyinterception=true; }
+	GetIntersection( L1.Y()-B2.Y(), L2.Y()-B2.Y(), L1, L2, temphit) && InBox( temphit, B1, B2, 2 );
+	if(thisinterception){ interceptions.push_back(temphit); anyinterception=true; }
 	thisinterception=
-	GetIntersection( L1.Z()-B2.Z(), L2.Z()-B2.Z(), L1, L2, Hit) && InBox( Hit, B1, B2, 3 );
-	if(thisinterception){ interceptions.push_back(Hit); anyinterception=true; }
+	GetIntersection( L1.Z()-B2.Z(), L2.Z()-B2.Z(), L1, L2, temphit) && InBox( temphit, B1, B2, 3 );
+	if(thisinterception){ interceptions.push_back(temphit); anyinterception=true; }
 	
 	if(verbose){
 		cout<<"found "<<interceptions.size()<<" interceptions";
