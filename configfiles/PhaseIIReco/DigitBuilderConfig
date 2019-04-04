@@ -1,6 +1,0 @@
-# DigitBuilder config file
-
-verbosity 3
-ParametricModel 1
-# There are three configurations: "PMT_only", "LAPPD_only", "All"
-PhotoDetectorConfiguration All

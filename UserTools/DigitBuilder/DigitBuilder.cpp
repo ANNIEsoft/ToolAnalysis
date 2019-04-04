@@ -32,10 +32,15 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("ParametricModel", fParametricModel);
 	m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
-	
+  m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
+
+
 	/// Construct the other objects we'll be setting at event level,
 	fDigitList = new std::vector<RecoDigit>;
-		
+  fMuonStartVertex = new RecoVertex();
+  fMuonStopVertex = new RecoVertex();
+
+
 	// Make the RecoDigit Store if it doesn't exist
 	int recoeventexists = m_data->Stores.count("RecoEvent");
 	if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
@@ -62,32 +67,27 @@ bool DigitBuilder::Execute(){
 		return false;
 	};
 	
-	/// see if "RecoEvent" exists
+	/// see if "RecoEvent" exists.  If not, make it
  	auto get_recoevent = m_data->Stores.count("RecoEvent");
  	if(!get_recoevent){
-  		Log("EventSelector Tool: No RecoEvent store!",v_error,verbosity); 
+  		Log("DigitBuilder Tool: No RecoEvent store!",v_error,verbosity); 
   		return false;
 	};
 	
-	/// check if EventCutStatus exists
-  auto get_evtcutstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",fEventCutStatus);
-	if(!get_evtcutstatus){
-		Log("DigitBuilder Tool: Error retrieving EventCutStatus from RecoEvent! Need to run EventSelector first!", v_error,verbosity);
-		return false;
-
-	  /// Check if event passed all cuts checked with EventSelector
-	  if(!fEventCutStatus){
-	     Log("DigitBuilder Tool: Event doesn't pass all event cuts from EventSelector",v_message,verbosity);
-	     return true;
-	  }
-  } 
-  
-  /// Retrieve the hit info from ANNIEEvent
+    /// Retrieve necessary info from ANNIEEvent
 	auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",fGeometry);
 	if(!get_geometry){
 		Log("DigitBuilder Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
 		return false; 
 	}
+
+    auto get_mcparticles = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",
+            fMCParticles);
+    if(!get_mcparticles){
+      Log("EventSelector:: Tool: Error retrieving MCParticles from ANNIEEvent!",
+              v_error,verbosity);
+      return false;
+    }
 	auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCHits);
 	if(!get_mchits){ 
 		Log("DigitBuilder Tool: Error retrieving MCHits from ANNIEEvent!",v_error,verbosity); 
@@ -98,24 +98,27 @@ bool DigitBuilder::Execute(){
 		Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_error,verbosity); 
 		return false;
 	}
+
+  /// If simulated data, Get MC Particle information
+  this->FindTrueVertexFromMC();
+  if (fGetPiKInfo) this->FindPionKaonCountFromMC();
+
+  /// Build RecoDigit
+  this->BuildRecoDigit();
 	
-	/// Build RecoDigit
-	this->BuildRecoDigit();
-	
-	if(fDigitList->size()<4) {
-		Log("DigitBuilder Tool: Event has less than 4 digits",v_message,verbosity);
-		return true;
-	}
-	
-	/// Push recodigits to RecoEvent
-	this->PushRecoDigits(true); 
-	
+  /// Push Particle & hit info. to RecoEvent
+  this->PushRecoDigits(true); 
+  this->PushTrueVertex(true);
+  this->PushTrueStopVertex(true);
+
   return true;
 }
 
 bool DigitBuilder::Finalise(){
-	delete fDigitList; fDigitList = 0;
-	if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
+  delete fDigitList; fDigitList = 0;
+  delete fMuonStartVertex;
+  delete fMuonStopVertex;
+  if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
   return true;
 }
 
@@ -180,12 +183,15 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
           for(Hit& ahit : hits){
-					  hitTimes.push_back(ahit.GetTime()*1.0); 
-            hitCharges.push_back(ahit.GetCharge());
+          	if(calT>-10 && calT<40) {
+					    hitTimes.push_back(ahit.GetTime()*1.0); 
+              hitCharges.push_back(ahit.GetCharge());
+            }
           }
           // Do median and sum
           std::sort(hitTimes.begin(), hitTimes.end());
           size_t timesize = hitTimes.size();
+          if (timesize == 0) continue;
           if (timesize % 2 == 0){
             calT = (hitTimes.at(timesize/2 - 1) + hitTimes.at(timesize/2))/2;
           } else {
@@ -195,9 +201,11 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           for(std::vector<double>::iterator it = hitCharges.begin(); it != hitCharges.end(); ++it){
             calQ += *it;
           }
-				  digitType = RecoDigit::PMT8inch;
-				  RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
-				  fDigitList->push_back(recoDigit); 
+          if(calQ>10) {
+				    digitType = RecoDigit::PMT8inch;
+				    RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
+				    fDigitList->push_back(recoDigit); 
+				  }
         } else {
 			    for(Hit& ahit : hits){
 				  	//if(v_message<verbosity) ahit.Print(); // << VERY verbose
@@ -247,7 +255,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 			// but I recommend transitioning to a more robust method
 			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
 			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
-			//if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
+			if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
 			if(det->GetDetectorElement()=="LAPPD"){ // redundant, MCLAPPDHits are LAPPD hitss
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
@@ -281,6 +289,136 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	return true;
 }
 
+void DigitBuilder::FindTrueVertexFromMC() {
+  
+  // loop over the MCParticles to find the highest enery primary muon
+  // MCParticles is a std::vector<MCParticle>
+  MCParticle primarymuon;  // primary muon
+  bool mufound=false;
+  if(fMCParticles){
+    Log("DigitBuilder::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
+    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
+      MCParticle aparticle = fMCParticles->at(particlei);
+      //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
+      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
+      if(aparticle.GetPdgCode()!=13) continue;       // not a muon
+      primarymuon = aparticle;                       // note the particle
+      mufound=true;                                  // note that we found it
+      //primarymuon.Print();
+      break;                                         // won't have more than one primary muon
+    }
+  } else {
+    Log("DigitBuilder::  Tool: No MCParticles in the event!",v_error,verbosity);
+  }
+  if(not mufound){
+    Log("DigitBuilder::  Tool: No muon in this event",v_warning,verbosity);
+    return;
+  }
+  
+  // retrieve desired information from the particle
+  Position muonstartpos = primarymuon.GetStartVertex();    // only true if the muon is primary
+  double muonstarttime = primarymuon.GetStartTime();
+  Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
+  double muonstoptime = primarymuon.GetStopTime();
+  
+  Direction muondirection = primarymuon.GetStartDirection();
+  double muonenergy = primarymuon.GetStartEnergy();
+  // set true vertex
+  // change unit
+  muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
+  muonstoppos.UnitToCentimeter(); // convert unit from meter to centimeter
+  // change coordinate for muon start vertex
+  muonstartpos.SetY(muonstartpos.Y()+14.46469);
+  muonstartpos.SetZ(muonstartpos.Z()-168.1);
+  fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
+  fMuonStartVertex->SetDirection(muondirection);
+  //  charge coordinate for muon stop vertex
+  muonstoppos.SetY(muonstoppos.Y()+14.46469);
+  muonstoppos.SetZ(muonstoppos.Z()-168.1);
+  fMuonStopVertex->SetVertex(muonstoppos, muonstoptime); 
+  
+  logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"
+            + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
+  
+  Log(logmessage,v_debug,verbosity);
+	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
+	Log(logmessage,v_debug,verbosity);
+}
+
+void DigitBuilder::FindPionKaonCountFromMC() {
+  
+  // loop over the MCParticles to find the highest enery primary muon
+  // MCParticles is a std::vector<MCParticle>
+  bool pionfound=false;
+  bool kaonfound=false;
+  int pi0count = 0;
+  int pipcount = 0;
+  int pimcount = 0;
+  int K0count = 0;
+  int Kpcount = 0;
+  int Kmcount = 0;
+  if(fMCParticles){
+    Log("DigitBuilder::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
+    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
+      MCParticle aparticle = fMCParticles->at(particlei);
+      //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
+      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
+      if(aparticle.GetPdgCode()==111){               // is a primary pi0
+        pionfound = true;
+        pi0count++;
+      }
+      if(aparticle.GetPdgCode()==211){               // is a primary pi+
+        pionfound = true;
+        pipcount++;
+      }
+      if(aparticle.GetPdgCode()==-211){               // is a primary pi-
+        pionfound = true;
+        pimcount++;
+      }
+      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
+      if(aparticle.GetPdgCode()==311){               // is a primary K0
+        kaonfound = true;
+        K0count++;
+      }
+      if(aparticle.GetPdgCode()==321){               // is a primary K+
+        kaonfound = true;
+        Kpcount++;
+      }
+      if(aparticle.GetPdgCode()==-321){               // is a primary K-
+        kaonfound = true;
+        Kmcount++;
+      }
+    }
+  } else {
+    Log("DigitBuilder::  Tool: No MCParticles in the event!",v_error,verbosity);
+  }
+  if(not pionfound){
+    Log("DigitBuilder::  Tool: No primary pions in this event",v_warning,verbosity);
+  }
+  if(not kaonfound){
+    Log("DigitBuilder::  Tool: No kaons in this event",v_warning,verbosity);
+  }
+  //Fill in pion counts for this event
+  m_data->Stores.at("RecoEvent")->Set("MCPi0Count", pi0count);
+  m_data->Stores.at("RecoEvent")->Set("MCPiPlusCount", pipcount);
+  m_data->Stores.at("RecoEvent")->Set("MCPiMinusCount", pimcount);
+  m_data->Stores.at("RecoEvent")->Set("MCK0Count", K0count);
+  m_data->Stores.at("RecoEvent")->Set("MCKPlusCount", Kpcount);
+  m_data->Stores.at("RecoEvent")->Set("MCKMinusCount", Kmcount);
+}
+
+void DigitBuilder::PushTrueVertex(bool savetodisk) {
+  Log("DigitBuilder Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
+  m_data->Stores.at("RecoEvent")->Set("TrueVertex", fMuonStartVertex, savetodisk); 
+}
+
+
+void DigitBuilder::PushTrueStopVertex(bool savetodisk) {
+  Log("DigitBuilder Tool: Push true stop vertex to the RecoEvent store",v_message,verbosity);
+  m_data->Stores.at("RecoEvent")->Set("TrueStopVertex", fMuonStopVertex, savetodisk); 
+}
+
+
 void DigitBuilder::PushRecoDigits(bool savetodisk) {
 	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
@@ -289,4 +427,6 @@ void DigitBuilder::PushRecoDigits(bool savetodisk) {
 void DigitBuilder::Reset() {
 	// Reset 
   fDigitList->clear();
+  fMuonStartVertex->Reset();
+  fMuonStopVertex->Reset();
 }

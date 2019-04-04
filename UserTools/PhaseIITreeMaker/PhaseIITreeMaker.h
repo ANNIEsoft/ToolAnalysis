@@ -49,7 +49,11 @@ class PhaseIITreeMaker: public Tool {
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
-  
+
+  // \brief Event Status flag masks
+  int fEventStatusApplied;
+  int fEventStatusFlagged;
+
   // Digits
   int fNhits = 0;
   std::vector<int> fIsFiltered;
@@ -149,6 +153,7 @@ class PhaseIITreeMaker: public Tool {
   int get_ok;	
 
   /// \Integer flags that control additional output to the PhaseIITree
+  int fillCleanEventsOnly = 1; //Only output events not flagged by EventSelector tool
   int muonMCTruth_fill = 0; //Output the MC truth information
   int muonRecoDebug_fill = 0; //Outputs results of Reconstruction at each step (best fits, FOMs, etc.)
   int muonTruthRecoDiff_fill = 0; //Output difference in truth and reconstructed values
