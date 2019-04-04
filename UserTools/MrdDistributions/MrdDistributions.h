@@ -17,7 +17,6 @@ class MrdDistributions: public Tool {
 	// from config file
 	int verbosity=1;
 	bool printTracks;
-	bool saveimages;
 	std::string plotDirectory;  // where to save images and plots
 	
 	MrdDistributions();
@@ -39,9 +38,9 @@ class MrdDistributions: public Tool {
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass
 	
-	// Retrieved from CStore
-	std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds;
-	std::vector<double>* ParticleId_to_MrdCharge;
+	// Retrieved from ANNIEvent
+	//std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
+	//std::vector<double>* ParticleId_to_MrdCharge;
 	
 	// Variables from MRDTracks BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,8 +144,8 @@ class MrdDistributions: public Tool {
 	
 	// TApplication for making histograms
 	bool drawHistos;
-	TApplication* mrdEffApp=nullptr;
-	TCanvas* mrdEffCanv=nullptr;
+	TApplication* rootTApp=nullptr;
+	TCanvas* mrdDistCanv=nullptr;
 	double canvwidth, canvheight;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.

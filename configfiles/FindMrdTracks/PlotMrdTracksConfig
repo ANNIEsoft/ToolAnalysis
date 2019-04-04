@@ -15,6 +15,7 @@ buildingoffsetz 243.43894
 # save images of hit paddles in each track identified. ONLY FOR SMALL NUM TRACKS AS DEBUG!
 drawPaddlePlot 1        # draw the top/side view paddle plot of tracks
 drawGdmlOverlay 0       # draw a 3D representation of the ANNIE detector overlaid with MRD tracks
-saveimages 0            # save the paddle plots as images. Currently not working...
+drawStatistics 0        # histograms plotting some debug statistics about the track reconstruction
+saveimages 0            # save the paddle plots as images.
 plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
 printTClonesTracks 0    # verbose printout of track information from TClonesArray

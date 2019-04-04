@@ -33,6 +33,8 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	plotDirectory = plotDirectoryString.c_str();
 	m_variables.Get("drawPaddlePlot",drawPaddlePlot);
 	m_variables.Get("drawGdmlOverlay",drawGdmlOverlay);
+	m_variables.Get("drawStatistics",drawStatistics);
+	m_variables.Get("printTClonesTracks",printTClonesTracks); // from the FindMrdTracks Tool
 	
 	// for gdml overlay
 	double buildingoffsetx, buildingoffsety, buildingoffsetz;
@@ -40,28 +42,41 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("buildingoffsety",buildingoffsety);
 	m_variables.Get("buildingoffsetz",buildingoffsetz);
 	buildingoffset = Position(buildingoffsetx,buildingoffsety,buildingoffsetz);
-	m_variables.Get("printTClonesTracks",printTClonesTracks); // from the FindMrdTracks Tool
 	
 	//////////////////////////////////////////////////////////////////
 	
-	Double_t canvwidth = 700;
-	Double_t canvheight = 600;
 	// create the ROOT application to show histograms
-	if(verbosity>3) cout<<"Tool MrdPaddlePlot: constructing TApplication"<<endl;
 	int myargc=0;
 	char *myargv[] = {(const char*)"somestring2"};
-	mrdPaddlePlotApp = new TApplication("mrdPaddlePlotApp",&myargc,myargv);
+	// get or make the TApplication
+	intptr_t tapp_ptr=0;
+	get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+	if(not get_ok){
+		if(verbosity>2) cout<<"MrdPaddlePlot Tool: making global TApplication"<<endl;
+		rootTApp = new TApplication("rootTApp",&myargc,myargv);
+		tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+		m_data->CStore.Set("RootTApplication",tapp_ptr);
+	} else {
+		if(verbosity>2) cout<<"MrdPaddlePlot Tool: Retrieving global TApplication"<<std::endl;
+		rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+	}
+	int tapplicationusers;
+	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+	if(not get_ok) tapplicationusers=1;
+	else tapplicationusers++;
+	m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
+	//rootTApp = new TApplication("rootTApp",&myargc,myargv);
 	
-	// A canvas for other MRD track stats plots
-	mrdTrackCanv = new TCanvas("mrdTrackCanv","mrdTrackCanv",canvwidth,canvheight);
-	hnumhclusters = new TH1D("hnumhclusters","Num track clusters in H view",10,0,10);
-	hnumvclusters = new TH1D("hnumvclusters","Num track clusters in V view",10,0,10);
-	hnumhcells = new TH1D("hnumhcells","Num track cells in H view",10,0,10);
-	hnumvcells = new TH1D("hnumvcells","Num track cells in V view",10,0,10);
-	hpaddleids = new TH1D("hpaddleids","Hits on Individual Paddles",400,0,400);
-	hpaddleinlayeridsh = new TH1D("hpaddleinlayeridsh","Hits on Paddle Positions in H Layers",13,0,13);
-	hpaddleinlayeridsv = new TH1D("hpaddleinlayeridsv","Hits on Paddle Positions in V Layers",17,0,17);
-	hdigittimes = new TH1D("hdigittimes","MRD Track Digit Times",100,0,1000);
+	if(drawStatistics){
+		hnumhclusters = new TH1D("hnumhclusters","Num track clusters in H view",10,0,10);
+		hnumvclusters = new TH1D("hnumvclusters","Num track clusters in V view",10,0,10);
+		hnumhcells = new TH1D("hnumhcells","Num track cells in H view",10,0,10);
+		hnumvcells = new TH1D("hnumvcells","Num track cells in V view",10,0,10);
+		hpaddleids = new TH1D("hpaddleids","Hits on Individual Paddles",400,0,400);
+		hpaddleinlayeridsh = new TH1D("hpaddleinlayeridsh","Hits on Paddle Positions in H Layers",13,0,13);
+		hpaddleinlayeridsv = new TH1D("hpaddleinlayeridsv","Hits on Paddle Positions in V Layers",17,0,17);
+		hdigittimes = new TH1D("hdigittimes","MRD Track Digit Times",100,0,1000);
+	}
 	
 #ifdef GOT_GEO
 	if(drawGdmlOverlay){
@@ -86,6 +101,12 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		return false;
 	}
 	thesubeventarray = reinterpret_cast<TClonesArray*>(subevptr);
+	
+	// to show true tracks on the paddle plot we give hit paddles a border with a colour
+	// unique for each true particle
+	// But ParticleId_to_MrdTubeIds matches to paddle ChannelKeys, whereas the paddle plot
+	// uses WCSim TubeIds. We need to map from one to the other.
+	highlight_true_paddles = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
 	
 	return true;
 }
@@ -169,45 +190,47 @@ bool MrdPaddlePlot::Execute(){
 			// most properties of the reconstructed tracks are plotted in MrdEfficiency Tool
 			// but some a recorded here as the information is more readily accessible in reconstructed
 			// track object members (mrdclusters, mrdcells)
-			hnumhclusters->Fill(thetrack.htrackclusters.size());
-			hnumvclusters->Fill(thetrack.vtrackclusters.size());
-			// loop over clusters on horizontal paddles
-			for(auto&& acluster : thetrack.htrackclusters){
-				// record a hit at this position (the cluster centre) within within the layer
-				hpaddleinlayeridsh->Fill(acluster.GetCentreIndex());
-				// for all paddles within the cluster, record hits on those paddles:
-				// 1) get the id of the paddle at the top of the cluster
-				Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
-				// 2) get the id of the paddle at the bottom of the cluster (if it spans multiple paddles)
-				Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
-				// 3) scan over the range of paddle ids and record that they were hit
-				for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
-				// record the times of all hits in this cluster
-				for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
+			if(drawStatistics){
+				hnumhclusters->Fill(thetrack.htrackclusters.size());
+				hnumvclusters->Fill(thetrack.vtrackclusters.size());
+				// loop over clusters on horizontal paddles
+				for(auto&& acluster : thetrack.htrackclusters){
+					// record a hit at this position (the cluster centre) within within the layer
+					hpaddleinlayeridsh->Fill(acluster.GetCentreIndex());
+					// for all paddles within the cluster, record hits on those paddles:
+					// 1) get the id of the paddle at the top of the cluster
+					Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
+					// 2) get the id of the paddle at the bottom of the cluster (if it spans multiple paddles)
+					Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
+					// 3) scan over the range of paddle ids and record that they were hit
+					for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
+					// record the times of all hits in this cluster
+					for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
+				}
+				// repeat above for clusters on vertical paddles
+				for(auto&& acluster : thetrack.vtrackclusters){
+					hpaddleinlayeridsv->Fill(acluster.GetCentreIndex());
+					Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
+					Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
+					for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
+					for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
+				}
+				// fill histogram of the number of cells in h/v tracks
+				hnumhcells->Fill(thetrack.htrackcells.size());
+				hnumvcells->Fill(thetrack.vtrackcells.size());
 			}
-			// repeat above for clusters on vertical paddles
-			for(auto&& acluster : thetrack.vtrackclusters){
-				hpaddleinlayeridsv->Fill(acluster.GetCentreIndex());
-				Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
-				Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
-				for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
-				for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
-			}
-			// fill histogram of the number of cells in h/v tracks
-			hnumhcells->Fill(thetrack.htrackcells.size());
-			hnumvcells->Fill(thetrack.vtrackcells.size());
-			
-			// N.B. track positions are in cm!
-			TVector3* sttv = &thetrack.trackfitstart;
-			TVector3* stpv = &thetrack.trackfitstop;
-			TVector3* pep = &thetrack.projectedtankexitpoint;
-			//cout<<"track "<<thetracki<<" started at ("<<sttv->X()<<", "<<sttv->Y()<<", "<<sttv->Z()<<")"
-			//	<<" and ended at ("<<stpv->X()<<", "<<stpv->Y()<<", "<<stpv->Z()<<")"<<endl;
 			
 #ifdef GOT_EVE
-			// If gdml track overlay is being drawn, construct the TEveLine for this track
 			if(drawGdmlOverlay){
+				// If gdml track overlay is being drawn, construct the TEveLine for this track
+				TVector3* sttv = &thetrack.trackfitstart;
+				TVector3* stpv = &thetrack.trackfitstop;
+				TVector3* pep = &thetrack.projectedtankexitpoint;
+				//cout<<"track "<<thetracki<<" started at ("<<sttv->X()<<", "<<sttv->Y()<<", "<<sttv->Z()<<")"
+				//	<<" and ended at ("<<stpv->X()<<", "<<stpv->Y()<<", "<<stpv->Z()<<")"<<endl;
+			
 				// ONLY to overlay on gdml plot, we need to shift tracks to the same gdml coordinate system!
+				// N.B. track positions are in cm!
 				(*sttv) =  TVector3(sttv->X()-buildingoffset.X(),
 									sttv->Y()-buildingoffset.Y(),
 									sttv->Z()-buildingoffset.Z());
@@ -279,16 +302,17 @@ bool MrdPaddlePlot::Execute(){
 			
 			// if we have the truth information, we can highlight paddles that were hit
 			// by true particles, to compare the reconstruction
-			std::map<int,std::map<int,double>>* ParticleId_to_MrdTubeIds;
-			get_ok = m_data->CStore.Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
-			if(get_ok){  // of course, if this isn't a simulation chain, we won't have this info
+			std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
+			get_ok = m_data->Stores["ANNIEEvent"]->Get("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds);
+			if(highlight_true_paddles && get_ok){  // if this isn't a simulation chain, we won't have this info
 				std::vector<std::vector<int>> paddlesToHighlight;
-				for(std::pair<const int,std::map<int,double>>& aparticle : *ParticleId_to_MrdTubeIds){
-					std::map<int,double>* pmtshit = &aparticle.second;
+				for(std::pair<const int,std::map<unsigned long,double>>& aparticle : *ParticleId_to_MrdTubeIds){
+					std::map<unsigned long,double>* pmtshit = &aparticle.second;
 					std::vector<int> tempvector;
-					for(std::pair<const int,double>& apmt : *pmtshit){
-						int pmtsid = apmt.first;
-						tempvector.push_back(pmtsid);
+					for(std::pair<const unsigned long,double>& apmt : *pmtshit){
+						unsigned long channelkey = apmt.first;
+						int pmtsid = channelkey_to_mrdpmtid.at(channelkey);
+						tempvector.push_back(pmtsid-1); // -1 to align with MrdTrackLib
 					}
 					paddlesToHighlight.push_back(tempvector);
 				}
@@ -338,9 +362,11 @@ bool MrdPaddlePlot::Execute(){
 bool MrdPaddlePlot::Finalise(){
 	
 	// make summary plots
-#ifdef GOT_EVE
-	if(drawGdmlOverlay){  // TODO separate this from GDML overlay
-		// FIXME: Why not being saved???
+	if(drawStatistics){
+		
+		// A canvas for other MRD track stats plots
+		mrdTrackCanv = new TCanvas("mrdTrackCanv","mrdTrackCanv",canvwidth,canvheight);
+		
 		std::string imgname;
 		mrdTrackCanv->cd();
 		hnumhclusters->Draw();
@@ -368,15 +394,28 @@ bool MrdPaddlePlot::Finalise(){
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
 		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
 	}
-#endif
 	
-	// cleanup track drawing TApplication
-	gSystem->ProcessEvents();
-	if(mrdTrackCanv) delete mrdTrackCanv;
-	if(gdmlcanv) delete gdmlcanv;
+	// cleanup
 	std::vector<TH1*> histos {hnumhclusters, hnumvclusters, hnumhcells, hnumvcells, hpaddleids, hpaddleinlayeridsh, hpaddleinlayeridsv, hdigittimes};
 	for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=0; }
-	delete mrdPaddlePlotApp;
+	
+	if(gROOT->FindObject("mrdTrackCanv")){
+		delete mrdTrackCanv;
+		mrdTrackCanv=nullptr;
+	}
+	if(gdmlcanv) delete gdmlcanv;
+	
+	int tapplicationusers=0;
+	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+	if(not get_ok || tapplicationusers==1){
+		if(rootTApp){
+			std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
+			delete rootTApp;
+			rootTApp=nullptr;
+		}
+	} else if(tapplicationusers>1){
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+	}
 	
 	return true;
 }
