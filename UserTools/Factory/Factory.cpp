@@ -74,6 +74,8 @@ if (tool=="PlotLAPPDTimesFromStore") ret=new PlotLAPPDTimesFromStore;
 if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
 if (tool=="MrdDistributions") ret=new MrdDistributions;
 if (tool=="MCParticleProperties") ret=new MCParticleProperties;
+if (tool=="DigitBuilderROOT") ret=new DigitBuilderROOT;
+if (tool=="MrdEfficiency") ret=new MrdEfficiency;
 if (tool=="LoadRATPAC") ret=new LoadRATPAC;
 return ret;
 }

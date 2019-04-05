@@ -22,10 +22,11 @@ class MonitorReceive: public Tool {
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
-  void UpdateMonitorSources();
+  int UpdateMonitorSources();
 
  private:
 
+  int sources;
   zmq::socket_t* MonitorReceiver;
   boost::posix_time::ptime last;
   boost::posix_time::time_duration period;
