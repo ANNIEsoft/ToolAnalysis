@@ -8,8 +8,8 @@ ToolDAQapp="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source /cvmfs/annie.opensciencegrid.org/setup_annie.sh --local
 
-export LD_LIBRARY_PATH=${ToolDAQapp}/lib:${ToolDAQapp}/ToolDAQ/ToolDAQFramework/lib/:${ToolDAQapp}/ToolDAQ/zeromq-4.0.7/lib:${ToolDAQapp}/ToolDAQ/WCSimLib:${ToolDAQapp}/ToolDAQ/RATEventLib:${ToolDAQapp}/ToolDAQ/MrdTrackLib/src:$LD_LIBRARY_PATH
-export ROOT_INCLUDE_PATH=${ToolDAQapp}/ToolDAQ/WCSimLib/include/:{ToolDAQapp}/ToolDAQ/RATEventLib/include/:${ToolDAQapp}/ToolDAQ/MrdTrackLib/include:$ROOT_INCLUDE_PATH
+export LD_LIBRARY_PATH=${ToolDAQapp}/lib:${ToolDAQapp}/ToolDAQ/ToolDAQFramework/lib/:${ToolDAQapp}/ToolDAQ/zeromq-4.0.7/lib:${ToolDAQapp}/ToolDAQ/WCSimLib:${ToolDAQapp}/ToolDAQ/RATEventLib/src:${ToolDAQapp}/ToolDAQ/MrdTrackLib/src:$LD_LIBRARY_PATH
+export ROOT_INCLUDE_PATH=${ToolDAQapp}/ToolDAQ/WCSimLib/include/:${ToolDAQapp}/ToolDAQ/RATEventLib/include/:${ToolDAQapp}/ToolDAQ/MrdTrackLib/include:$ROOT_INCLUDE_PATH
 
 for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
 do
