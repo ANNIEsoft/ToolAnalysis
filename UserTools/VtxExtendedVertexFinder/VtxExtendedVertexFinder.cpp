@@ -13,6 +13,7 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   /////////////////////////////////////////////////////////////////
 
   fUseTrueVertexAsSeed = false;
+  fSeedGridFits = false;
   /// Get the Tool configuration variables
   m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
   m_variables.Get("FitAllOnSeedGrid",fSeedGridFits);
