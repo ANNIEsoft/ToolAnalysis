@@ -28,13 +28,14 @@ class EventSelector: public Tool {
   bool Finalise();
 
   typedef enum EventFlags {
-   kFlagNone  = 0x00, //0
-   kFlagMCFV    = 0x01, //1
-   kFlagMCMRD    = 0x02, //2
-   kFlagMCPiK   = 0x04, //4
-   kFlagRecoMRD    = 0x08, //8
-   kFlagPromptTrig     = 0x10, //16
-   kFlagNHit     = 0x20, //32
+   kFlagNone         = 0x00, //0
+   kFlagMCFV         = 0x01, //1
+   kFlagMCMRD        = 0x02, //2
+   kFlagMCPiK        = 0x04, //4
+   kFlagRecoMRD      = 0x08, //8
+   kFlagPromptTrig   = 0x10, //16
+   kFlagNHit         = 0x20, //32
+   kFlagRecoFV       = 0x30, //64
   } EventFlags_t;
 
  private:
@@ -64,11 +65,10 @@ class EventSelector: public Tool {
 
  	/// \brief Event selection by fidicual volume
  	///
- 	/// The selection is based on the true vertex position from MC. 
- 	/// If the true vertex is inside the fidicual volume, the event 
- 	/// is selected. 
- 	/// The 
- 	bool EventSelectionByMCTruthFV();
+ 	/// The selection is based on the muon interaction point. 
+ 	/// If isMC is true, checks the Event using muon truth info. 
+    /// If False, the reconstructed vertex is used. 
+ 	bool EventSelectionByFV(bool isMC);
 
  	/// \brief Event selection by Muon MRD stop position
   /////
@@ -102,6 +102,7 @@ class EventSelector: public Tool {
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
 	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
 	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
+	RecoVertex* fRecoVertex = nullptr; 	 ///< Reconstructed Vertex 
 
 	//verbosity initialization
 	int verbosity=1;
@@ -109,12 +110,15 @@ class EventSelector: public Tool {
 	std::string fInputfile;
 	bool fMRDRecoCut = false;
 	bool fMCFVCut = false;
+	bool fRecoFVCut = false;
 	bool fMCMRDCut = false;
 	bool fMCPiKCut = false;
   bool fNHitCut = true;
   bool fPromptTrigOnly = true;
 	bool fEventCutStatus;
 
+
+    bool fSaveStatusToStore = true;
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
 	int v_warning=1;
