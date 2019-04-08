@@ -81,7 +81,7 @@ class MonitorMRDTime: public Tool {
   std::vector<int> nr_slot;
 
   double max_canvas, min_canvas, max_canvas_rms, min_canvas_rms, max_canvas_freq, min_canvas_freq, max_canvas_hist, min_canvas_hist;
-  long max_sum_hour, max_sum_sixhour, max_sum_day;
+  long max_sum_fivemin, max_sum_hour, max_sum_sixhour, max_sum_day;
 
   //MRD store includes the following variables
   unsigned int OutN, Trigger;
@@ -113,7 +113,7 @@ class MonitorMRDTime: public Tool {
   double duration_halfhour = 30.;
   double duration_hour = 60.;
   double denominator_duration, denominator_start;
-  long t_file_start, t_file_end, t_file_start_previous, t_file_end_previous;
+  long t_file_start, t_file_end, t_file_start_previous, t_file_end_previous, i_file_fivemin;
 
   TDatime label_fivemin[12];					//the labels to be displayed on the x-axis
   TDatime label_halfhour[12];
@@ -158,9 +158,9 @@ class MonitorMRDTime: public Tool {
   std::vector<TGraph*> gr_crate_frequency_hour, gr_crate_frequency_sixhour, gr_crate_frequency_day;
   std::vector<TH2F*> hist_times_hour, hist_times_sixhour, hist_times_day; //scatter plot histograms
 
-  TH1F *hist_hitmap_hour_cr1, *hist_hitmap_sixhour_cr1, *hist_hitmap_day_cr1;   //hitmap histograms
-  TH1F *hist_hitmap_hour_cr2, *hist_hitmap_sixhour_cr2, *hist_hitmap_day_cr2;
-  std::vector<TH1I*> hist_hitmap_hour_Channel, hist_hitmap_sixhour_Channel, hist_hitmap_day_Channel;
+  TH1F *hist_hitmap_fivemin_cr1, *hist_hitmap_hour_cr1, *hist_hitmap_sixhour_cr1, *hist_hitmap_day_cr1;   //hitmap histograms
+  TH1F *hist_hitmap_fivemin_cr2, *hist_hitmap_hour_cr2, *hist_hitmap_sixhour_cr2, *hist_hitmap_day_cr2;
+  std::vector<TH1I*> hist_hitmap_fivemin_Channel, hist_hitmap_hour_Channel, hist_hitmap_sixhour_Channel, hist_hitmap_day_Channel;
 
   int color_scheme[16] = {1,2,3,4,5,6,7,8,9,13,15,205,/*51,*/94,220,221,225}; //define colors for multitude of TGraphs for each channel
 
