@@ -50,21 +50,26 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
 
   ifstream file(active_slots.c_str());
   int temp_crate, temp_slot;
+  int loopnum=0;
   while (!file.eof()){
     file>>temp_crate>>temp_slot;
-    if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
+    loopnum++;
+    std::cout<<loopnum<<" , "<<temp_crate<<" , "<<temp_slot<<std::endl;
+    if (loopnum!=13){
+      if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
         std::cout <<"Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
-    }
-    if (temp_slot<1 || temp_slot>num_slots){
+      }
+      if (temp_slot<1 || temp_slot>num_slots){
         std::cout <<"Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
         continue;
+      }
+      active_channel[temp_crate-min_crate][temp_slot-1]=1;		//slot start with number 1 instead of 0, crates with 7
+      nr_slot.push_back((temp_crate-min_crate)*100+(temp_slot)); 
+      num_active_slots++;
+      if (temp_crate-min_crate==0) {num_active_slots_cr1++;active_slots_cr1.push_back(temp_slot);}
+      if (temp_crate-min_crate==1) {num_active_slots_cr2++;active_slots_cr2.push_back(temp_slot);}
     }
-    active_channel[temp_crate-min_crate][temp_slot-1]=1;		//slot start with number 1 instead of 0, crates with 7
-    nr_slot.push_back((temp_crate-min_crate)*100+(temp_slot)); 
-    num_active_slots++;
-    if (temp_crate-min_crate==0) {num_active_slots_cr1++;active_slots_cr1.push_back(temp_slot);}
-    if (temp_crate-min_crate==1) {num_active_slots_cr2++;active_slots_cr2.push_back(temp_slot);}
   }
   file.close();
 
