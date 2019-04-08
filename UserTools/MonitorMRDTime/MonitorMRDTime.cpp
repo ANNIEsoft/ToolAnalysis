@@ -55,7 +55,8 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
     file>>temp_crate>>temp_slot;
     loopnum++;
     std::cout<<loopnum<<" , "<<temp_crate<<" , "<<temp_slot<<std::endl;
-    if (loopnum!=13){
+    if (file.eof()) break;
+    //if (loopnum!=13){
       if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
         std::cout <<"Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
@@ -69,7 +70,7 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
       num_active_slots++;
       if (temp_crate-min_crate==0) {num_active_slots_cr1++;active_slots_cr1.push_back(temp_slot);}
       if (temp_crate-min_crate==1) {num_active_slots_cr2++;active_slots_cr2.push_back(temp_slot);}
-    }
+    //}
   }
   file.close();
 
@@ -93,6 +94,7 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   }
   //update_mins = true;
   enum_slots = 0;
+  i_file_fivemin = 0;
 
   t_file_start_previous = 0;
   t_file_end_previous = 0;
@@ -144,7 +146,7 @@ bool MonitorMRDTime::Execute(){
     //--------------MRDMonitorTime executed------------------
     //-------------------------------------------------------
 
-   	std::cout<<"MRDMonitorTime: New data file available."<<std::endl;
+   	if (verbosity > 1) std::cout<<"MRDMonitorTime: New data file available."<<std::endl;
    	m_data->Stores["CCData"]->Get("FileData",MRDdata);
     MRDdata->Print(false);
    	data_available = true;
@@ -153,11 +155,12 @@ bool MonitorMRDTime::Execute(){
     FillEvents();
     t_file_start_previous=t_file_start;
     t_file_end_previous=t_file_end;
+    i_file_fivemin++;
 
 
    }else {
 
-   	std::cout <<"MRDMonitorTime: State not recognized: "<<State<<std::endl;
+   	if (verbosity > 1) std::cout <<"MRDMonitorTime: State not recognized: "<<State<<std::endl;
 
    }
 
@@ -166,7 +169,7 @@ bool MonitorMRDTime::Execute(){
   //-------------------------------------------------------
 
   if(duration>=period_update){
-    std::cout <<"MRDMonitorTime: 5 mins passed... Updating plots!"<<std::endl;
+    if (verbosity > 1) std::cout <<"MRDMonitorTime: 5 mins passed... Updating plots!"<<std::endl;
     update_mins=true;
   	j_fivemin++;
     last=current;
@@ -175,7 +178,8 @@ bool MonitorMRDTime::Execute(){
     if (j_fivemin%12 == 0) j_fivemin = 0;
     max_files=0;
     initial=false;
-    std::cout <<"-----------------------------------------------------------------------------------"<<std::endl; //marking end of one plotting period
+    i_file_fivemin=0;
+    if (verbosity > 1) std::cout <<"-----------------------------------------------------------------------------------"<<std::endl; //marking end of one plotting period
 	}
   
   i_loop++;
@@ -186,7 +190,7 @@ bool MonitorMRDTime::Execute(){
 
 bool MonitorMRDTime::Finalise(){
 
-  std::cout <<"Tool MonitorMRDTime: Finalising ...."<<std::endl;
+  if (verbosity > 1) std::cout <<"Tool MonitorMRDTime: Finalising ...."<<std::endl;
   MRDdata->Delete();
   return true;
 }
@@ -199,24 +203,32 @@ void MonitorMRDTime::InitializeVectors(){
 
   if (verbosity > 2) std::cout <<"MonitorMRDTime: Initialize Vectors..."<<std::endl;
 
+  hist_hitmap_fivemin_cr1 = new TH1F("hist_hitmap_fivemin_cr1","Hitmap last 5 mins Rack 7",num_channels*num_active_slots,0,num_channels*num_active_slots);
+  hist_hitmap_fivemin_cr2 = new TH1F("hist_hitmap_fivemin_cr2","Hitmap last 5 mins Rack 8",num_channels*num_active_slots,0,num_channels*num_active_slots);
   hist_hitmap_hour_cr1 = new TH1F("hist_hitmap_hour_cr1","Hitmap last hour Rack 7",num_channels*num_active_slots,0,num_channels*num_active_slots);
   hist_hitmap_hour_cr2 = new TH1F("hist_hitmap_hour_cr2","Hitmap last hour Rack 8",num_channels*num_active_slots,0,num_channels*num_active_slots);
   hist_hitmap_sixhour_cr1 = new TH1F("hist_hitmap_sixhour_cr1","Hitmap last 6 hours Rack 7",num_channels*num_active_slots,0,num_channels*num_active_slots);
   hist_hitmap_sixhour_cr2 = new TH1F("hist_hitmap_sixhour_cr2","Hitmap last 6 hours Rack 7",num_channels*num_active_slots,0,num_channels*num_active_slots);
   hist_hitmap_day_cr1 = new TH1F("hist_hitmap_day_cr1","Hitmap last day Rack 7",num_channels*num_active_slots,0,num_channels*num_active_slots);
   hist_hitmap_day_cr2 = new TH1F("hist_hitmap_day_cr2","Hitmap last day Rack 8",num_channels*num_active_slots,0,num_channels*num_active_slots);
+  hist_hitmap_fivemin_cr1->SetLineColor(8);
+  hist_hitmap_fivemin_cr2->SetLineColor(9);
   hist_hitmap_hour_cr1->SetLineColor(8);
   hist_hitmap_hour_cr2->SetLineColor(9);
   hist_hitmap_sixhour_cr1->SetLineColor(8);
   hist_hitmap_sixhour_cr2->SetLineColor(9);
   hist_hitmap_day_cr1->SetLineColor(8);
   hist_hitmap_day_cr2->SetLineColor(9);
+  hist_hitmap_fivemin_cr1->SetFillColor(8);
+  hist_hitmap_fivemin_cr2->SetFillColor(9);
   hist_hitmap_hour_cr1->SetFillColor(8);
   hist_hitmap_hour_cr2->SetFillColor(9);
   hist_hitmap_sixhour_cr1->SetFillColor(8);
   hist_hitmap_sixhour_cr2->SetFillColor(9);
   hist_hitmap_day_cr1->SetFillColor(8);
-  hist_hitmap_day_cr2->SetFillColor(9);
+  hist_hitmap_day_cr2->SetFillColor(9);  
+  hist_hitmap_fivemin_cr1->SetStats(0);
+  hist_hitmap_fivemin_cr2->SetStats(0);
   hist_hitmap_hour_cr1->SetStats(0);
   hist_hitmap_hour_cr2->SetStats(0);
   hist_hitmap_sixhour_cr1->SetStats(0);
@@ -566,18 +578,28 @@ void MonitorMRDTime::InitializeVectors(){
         std::string str_day = " (last day)";
         std::string str_sixhour = " (last 6 hours)";
         std::string str_hour = " (last hour)";
+        std::string str_fivemin = " (last 5 mins)";
+        std::string name_fivemin = "_fivemin";
         std::string name_hour = "_hour";
         std::string name_sixhour = "_sixhour";
         std::string name_day = "_day";
+        std::string title_hist_fivemin = "Crate "+ss_crate.str()+" slot "+ss_slot.str()+str_fivemin;
         std::string title_hist_hour = "Crate "+ss_crate.str()+" slot "+ss_slot.str()+str_hour;
         std::string title_hist_sixhour = "Crate "+ss_crate.str()+" slot "+ss_slot.str()+str_sixhour;
         std::string title_hist_day = "Crate "+ss_crate.str()+" slot "+ss_slot.str()+str_day;
+        std::string name_hist_fivemin = "crate"+ss_crate.str()+"_slot"+ss_slot.str()+name_fivemin;
         std::string name_hist_hour = "crate"+ss_crate.str()+"_slot"+ss_slot.str()+name_hour;
         std::string name_hist_sixhour = "crate"+ss_crate.str()+"_slot"+ss_slot.str()+name_sixhour;
         std::string name_hist_day = "crate"+ss_crate.str()+"_slot"+ss_slot.str()+name_day;
+        TH1I *hist_Slot_fivemin = new TH1I(name_hist_fivemin.c_str(),title_hist_fivemin.c_str(),num_channels,0,num_channels);
         TH1I *hist_Slot_hour = new TH1I(name_hist_hour.c_str(),title_hist_hour.c_str(),num_channels,0,num_channels);
         TH1I *hist_Slot_sixhour = new TH1I(name_hist_sixhour.c_str(),title_hist_sixhour.c_str(),num_channels,0,num_channels);
         TH1I *hist_Slot_day = new TH1I(name_hist_day.c_str(),title_hist_day.c_str(),num_channels,0,num_channels);
+        hist_Slot_fivemin->GetXaxis()->SetTitle("Channel #");
+        hist_Slot_fivemin->GetYaxis()->SetTitle("# of hits");
+        hist_Slot_fivemin->SetLineWidth(2);
+        if (i_crate == 0){hist_Slot_fivemin->SetFillColor(8);hist_Slot_fivemin->SetLineColor(8);}
+        else {hist_Slot_fivemin->SetFillColor(9);hist_Slot_fivemin->SetLineColor(9);}
         hist_Slot_hour->GetXaxis()->SetTitle("Channel #");
         hist_Slot_hour->GetYaxis()->SetTitle("# of hits");
         hist_Slot_hour->SetLineWidth(2);
@@ -593,6 +615,7 @@ void MonitorMRDTime::InitializeVectors(){
         hist_Slot_day->SetLineWidth(2);
         if (i_crate == 0){hist_Slot_day->SetFillColor(8);hist_Slot_day->SetLineColor(8);}
         else {hist_Slot_day->SetFillColor(9); hist_Slot_day->SetLineColor(9);}
+        hist_hitmap_fivemin_Channel.push_back(hist_Slot_fivemin);
         hist_hitmap_hour_Channel.push_back(hist_Slot_hour);
         hist_hitmap_sixhour_Channel.push_back(hist_Slot_sixhour);
         hist_hitmap_day_Channel.push_back(hist_Slot_day);
@@ -735,6 +758,7 @@ void MonitorMRDTime::MRDTimePlots(){
 //fill the TGraphs first before plotting them
 
   //variables for scaling hitmaps
+  max_sum_fivemin=0;
   max_sum_hour=0;
   max_sum_sixhour=0;
   max_sum_day=0;
@@ -785,6 +809,7 @@ void MonitorMRDTime::MRDTimePlots(){
       //--------------Updating hitmaps-------------------------
       //-------------------------------------------------------
       if (draw_hitmap){
+      long sum_fivemin=0;
       long sum_hour=0;
       long sum_sixhour=0;
       long sum_day=0;
@@ -794,6 +819,9 @@ void MonitorMRDTime::MRDTimePlots(){
           sum_sixhour+=n_channel_overall_day.at(i_channel)[i_overall_mins];
           if (i_overall_mins>=int(23./24*num_overall_fivemin)){               //only the last part starting from 23/24 (last hour)
             sum_hour+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+            if (i_overall_mins>=int(num_overall_fivemin-1)){                  //only the last 5 mins
+              sum_fivemin+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+            }
           }
         }
       }
@@ -804,11 +832,20 @@ void MonitorMRDTime::MRDTimePlots(){
 
 
       if (i_channel<num_active_slots_cr1*num_channels){
+        hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,0.001);
         hist_hitmap_hour_cr2->SetBinContent(i_channel+1,0.001);
         hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,0.001);
         hist_hitmap_day_cr2->SetBinContent(i_channel+1,0.001);
         std::vector<int>::iterator it = std::find(active_slots_cr1.begin(),active_slots_cr1.end(),num_slot);
         int index = std::distance(active_slots_cr1.begin(),it);
+        if (sum_fivemin!=0) {
+          if (max_sum_fivemin < sum_fivemin) max_sum_fivemin = sum_fivemin;
+          hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,sum_fivemin);
+          hist_hitmap_fivemin_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_fivemin);
+        } else {
+          hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,0.001);
+          hist_hitmap_fivemin_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
+        }
         if (sum_hour!=0) {
           if (max_sum_hour < sum_hour) max_sum_hour = sum_hour;
           hist_hitmap_hour_cr1->SetBinContent(i_channel+1,sum_hour);
@@ -834,11 +871,20 @@ void MonitorMRDTime::MRDTimePlots(){
           hist_hitmap_day_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
         } 
       } else {
+        hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,0.001);
         hist_hitmap_hour_cr1->SetBinContent(i_channel+1,0.001);
         hist_hitmap_sixhour_cr1->SetBinContent(i_channel+1,0.001);
         hist_hitmap_day_cr1->SetBinContent(i_channel+1,0.001);
         std::vector<int>::iterator it = std::find(active_slots_cr2.begin(),active_slots_cr2.end(),num_slot);
         int index = std::distance(active_slots_cr2.begin(),it);
+        if (sum_fivemin!=0) {
+          if (max_sum_fivemin < sum_fivemin) max_sum_fivemin = sum_fivemin;
+          hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,sum_fivemin);
+          hist_hitmap_fivemin_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_fivemin);
+        } else {
+          hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,0.001);
+          hist_hitmap_fivemin_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
+        }
         if (sum_hour!=0) {
           if (max_sum_hour < sum_hour) max_sum_hour = sum_hour;
           hist_hitmap_hour_cr2->SetBinContent(i_channel+1,sum_hour);
@@ -956,6 +1002,7 @@ void MonitorMRDTime::MRDTimePlots(){
 	TCanvas *canvas_crate = new TCanvas("canvas_crate","Crate Canvas",900,600);
   TCanvas *canvas_crate_rms = new TCanvas("canvas_crate_rms","Crate RMS Canvas",900,600);
   TCanvas *canvas_crate_freq = new TCanvas("canvas_crate_freq","Crate Freq Canvas",900,600);
+  TCanvas *canvas_hitmap_fivemin = new TCanvas("canvas_hitmap_fivemin","Hitmap (5 mins)",900,600);
   TCanvas *canvas_hitmap_hour = new TCanvas("canvas_hitmap_hour","Hitmap (1 hour)",900,600);
   TCanvas *canvas_hitmap_sixhour = new TCanvas("canvas_hitmap_sixhour","Hitmap (6 hours)",900,600);
   TCanvas *canvas_hitmap_day = new TCanvas("canvas_hitmap_day","Hitmap (day)",900,600);
@@ -987,11 +1034,13 @@ void MonitorMRDTime::MRDTimePlots(){
   //--------------Update 1 Hour Plots ---------------------
   //-------------------------------------------------------
 
-  std::cout <<"Updating: ";
-  if (update_mins) std::cout <<" 1 hour plots";
-  if (update_halfhour) std::cout <<" + 6 hour plots";
-  if (update_hour) std::cout <<" + 24 hour plots";
-  std::cout<<" ..."<<std::endl;
+  if (verbosity > 2) {
+    std::cout <<"Updating: ";
+    if (update_mins) std::cout <<" 1 hour plots";
+    if (update_halfhour) std::cout <<" + 6 hour plots";
+    if (update_hour) std::cout <<" + 24 hour plots";
+    std::cout<<" ..."<<std::endl;
+  }
 
   //std::cout <<"MRDMonitorTime: Beginning drawing canvas..."<<std::endl;
   if (update_mins){
@@ -1019,8 +1068,8 @@ void MonitorMRDTime::MRDTimePlots(){
         if (i_channel != 0){
           int num_crate = (i_channel>num_active_slots_cr1*num_channels)? min_crate+1 : min_crate;
           int num_slot = (mapping_vector_ch.at(i_channel-1)-(i_channel-1)%num_channels-(num_crate-min_crate)*num_slots)/num_channels+1;
-          if (i_channel==num_ch) std::cout<<"Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
-          if (i_channel==times_channel_hour.size()-1) std::cout<<i_channel+1<<std::endl;
+          if (i_channel==num_ch) if (verbosity > 1) std::cout<<"Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
+          if (i_channel==times_channel_hour.size()-1) if (verbosity > 1) std::cout<<i_channel+1<<std::endl;
           ss_ch.str("");
           ss_ch_rms.str("");
           ss_ch_freq.str("");
@@ -1367,6 +1416,65 @@ void MonitorMRDTime::MRDTimePlots(){
     } // close draw average
 
     if (draw_hitmap){
+
+    //HITMAP - 5 MINS
+    canvas_hitmap_fivemin->cd();
+    hist_hitmap_fivemin_cr1->GetYaxis()->SetTitle("# of entries");
+    hist_hitmap_fivemin_cr1->GetXaxis()->SetNdivisions(int(num_active_slots));
+    hist_hitmap_fivemin_cr2->GetXaxis()->SetNdivisions(int(num_active_slots));
+    for (int i_label=0;i_label<int(num_active_slots);i_label++){
+      if (i_label<num_active_slots_cr1){
+        std::stringstream ss_slot;
+        ss_slot<<(active_slots_cr1.at(i_label));
+        std::string str_slot = "slot "+ss_slot.str();
+        hist_hitmap_fivemin_cr1->GetXaxis()->SetBinLabel(num_channels*(i_label+0.5),str_slot.c_str());
+      }
+      else {
+        std::stringstream ss_slot;
+        ss_slot<<(active_slots_cr2.at(i_label-num_active_slots_cr1));
+        std::string str_slot = "slot "+ss_slot.str();
+        hist_hitmap_fivemin_cr1->GetXaxis()->SetBinLabel(num_channels*(i_label+0.5),str_slot.c_str());          
+      }
+    }
+    hist_hitmap_fivemin_cr1->LabelsOption("v");
+    hist_hitmap_fivemin_cr1->SetTickLength(0,"X");   //workaround to only have labels for every slot
+    hist_hitmap_fivemin_cr2->SetTickLength(0,"X");
+    hist_hitmap_fivemin_cr1->GetYaxis()->SetRangeUser(0.8,max_sum_fivemin+10);
+    hist_hitmap_fivemin_cr2->GetYaxis()->SetRangeUser(0.8,max_sum_fivemin+10);
+    canvas_hitmap_fivemin->SetGridy();
+    canvas_hitmap_fivemin->SetLogy();
+    hist_hitmap_fivemin_cr1->SetLineWidth(2);
+    hist_hitmap_fivemin_cr2->SetLineWidth(2);
+    std::string Hitmap = "Hitmap ";
+    std::string string_lastfivemin = " (last 5 mins)";
+    ss_hist_title<<Hitmap<<title_time.str()<<string_lastfivemin;
+    hist_hitmap_fivemin_cr1->SetTitle(ss_hist_title.str().c_str());
+    hist_hitmap_fivemin_cr1->SetTitleSize(0.3,"t");
+    hist_hitmap_fivemin_cr1->Draw();
+    hist_hitmap_fivemin_cr2->Draw("same");
+    TLine *separate_crates = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_fivemin+10);
+    separate_crates->SetLineStyle(2);
+    separate_crates->SetLineWidth(2);
+    separate_crates->Draw("same");
+    TPaveText *label_cr1 = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
+    label_cr1->SetFillColor(0);
+    label_cr1->SetTextColor(8);
+    label_cr1->AddText("Rack 7");
+    label_cr1->Draw();
+    TPaveText *label_cr2 = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
+    label_cr2->SetFillColor(0);
+    label_cr2->SetTextColor(9);
+    label_cr2->AddText("Rack 8");
+    label_cr2->Draw();
+    canvas_hitmap_fivemin->Update();
+    TF1 *f1 = new TF1("f1","x",0,num_active_slots);       //workaround to only have labels for every slot
+    TGaxis *labels_grid = new TGaxis(0,canvas_hitmap_fivemin->GetUymin(),num_active_slots*num_channels,canvas_hitmap_fivemin->GetUymin(),"f1",num_active_slots,"w");
+    labels_grid->SetLabelSize(0);
+    labels_grid->Draw("w");
+    std::string str_hitmaps_fivemin = "Hitmaps_lastfivemins.jpg";
+    std::string save_path_fivemin = outpath+str_hitmaps_fivemin;
+    canvas_hitmap_fivemin->SaveAs(save_path_fivemin.c_str());
+
     //HITMAP - 1 HOUR
     canvas_hitmap_hour->cd();
     /*min_cr1=hist_hitmap_hour_cr1->GetMinimum();
@@ -1401,32 +1509,31 @@ void MonitorMRDTime::MRDTimePlots(){
     canvas_hitmap_hour->SetLogy();
     hist_hitmap_hour_cr1->SetLineWidth(2);
     hist_hitmap_hour_cr2->SetLineWidth(2);
-    std::string Hitmap = "Hitmap ";
     std::string string_lasthour = " (last hour)";
+    ss_hist_title.str("");
     ss_hist_title<<Hitmap<<title_time.str()<<string_lasthour;
     hist_hitmap_hour_cr1->SetTitle(ss_hist_title.str().c_str());
     hist_hitmap_hour_cr1->SetTitleSize(0.3,"t");
     hist_hitmap_hour_cr1->Draw();
     hist_hitmap_hour_cr2->Draw("same");
-    TLine *separate_crates = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_hour+10);
+    separate_crates = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_hour+10);
     separate_crates->SetLineStyle(2);
     separate_crates->SetLineWidth(2);
     separate_crates->Draw("same");
-    TPaveText *label_cr1 = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
+    label_cr1 = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
     label_cr1->SetFillColor(0);
     label_cr1->SetTextColor(8);
     label_cr1->AddText("Rack 7");
     label_cr1->Draw();
-    TPaveText *label_cr2 = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
+    label_cr2 = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
     label_cr2->SetFillColor(0);
     label_cr2->SetTextColor(9);
     label_cr2->AddText("Rack 8");
     label_cr2->Draw();
     canvas_hitmap_hour->Update();
-    TF1 *f1 = new TF1("f1","x",0,num_active_slots);       //workaround to only have labels for every slot
-    TGaxis *labels_grid = new TGaxis(0,canvas_hitmap_hour->GetUymin(),num_active_slots*num_channels,canvas_hitmap_hour->GetUymin(),"f1",num_active_slots,"w");
-    labels_grid->SetLabelSize(0);
-    labels_grid->Draw("w");
+    TGaxis *labels_grid_hour = new TGaxis(0,canvas_hitmap_hour->GetUymin(),num_active_slots*num_channels,canvas_hitmap_hour->GetUymin(),"f1",num_active_slots,"w");
+    labels_grid_hour->SetLabelSize(0);
+    labels_grid_hour->Draw("w");
     std::string str_hitmaps_hour = "Hitmaps_lasthour.jpg";
     std::string save_path_hour = outpath+str_hitmaps_hour;
     canvas_hitmap_hour->SaveAs(save_path_hour.c_str());
@@ -1577,19 +1684,34 @@ void MonitorMRDTime::MRDTimePlots(){
     canvas_hitmap_day->SaveAs(save_path_day.c_str());
 
     //HITMAPS - SINGLE CHANNEL DISTRIBUTIONS
-    TCanvas *canvas_Hitmap_Slots_hour, *canvas_Hitmap_Slots_sixhour, *canvas_Hitmap_Slots_day;
+    TCanvas *canvas_Hitmap_Slots_fivemin, *canvas_Hitmap_Slots_hour, *canvas_Hitmap_Slots_sixhour, *canvas_Hitmap_Slots_day;
 
       for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
-        std::stringstream ss_title_hour, ss_title_sixhour, ss_title_day;
+        std::stringstream ss_title_fivemin, ss_title_hour, ss_title_sixhour, ss_title_day;
+        std::string prefix_fivemin = "Hitmaps_lastfivemin_Slot";
         std::string prefix_hour = "Hitmaps_lasthour_Slot";
         std::string prefix_sixhour = "Hitmaps_lastsixhours_Slot";
         std::string prefix_day = "Hitmaps_lastday_Slot";
+        ss_title_fivemin << prefix_fivemin << (i_slot)+1;
         ss_title_hour << prefix_hour << (i_slot)+1;
         ss_title_sixhour << prefix_sixhour << (i_slot)+1;
         ss_title_day << prefix_day << (i_slot)+1;
+        canvas_Hitmap_Slots_fivemin = new TCanvas(ss_title_fivemin.str().c_str(),"CanvasFiveMin",900,600);
         canvas_Hitmap_Slots_hour = new TCanvas(ss_title_hour.str().c_str(),"CanvasHour",900,600);
         canvas_Hitmap_Slots_sixhour = new TCanvas(ss_title_sixhour.str().c_str(),"CanvasSixHour",900,600);
         canvas_Hitmap_Slots_day = new TCanvas(ss_title_day.str().c_str(),"CanvasDay",900,600);
+        canvas_Hitmap_Slots_fivemin->cd();
+        hist_hitmap_fivemin_Channel.at(i_slot)->SetStats(0);
+        hist_hitmap_fivemin_Channel.at(i_slot)->Draw();
+        if (hist_hitmap_fivemin_Channel.at(i_slot)->GetMaximum()>500) {
+          canvas_Hitmap_Slots_fivemin->SetLogy();
+          hist_hitmap_fivemin_Channel.at(i_slot)->GetYaxis()->SetRangeUser(0.8,hist_hitmap_fivemin_Channel.at(i_slot)->GetMaximum()+10);
+        }
+        std::stringstream ss_savepath_fivemin;
+        ss_savepath_fivemin << outpath << prefix_fivemin << (i_slot+1) <<".jpg";
+        canvas_Hitmap_Slots_fivemin->SetGridx();
+        canvas_Hitmap_Slots_fivemin->SaveAs(ss_savepath_fivemin.str().c_str());
+        canvas_Hitmap_Slots_fivemin->Clear();
         canvas_Hitmap_Slots_hour->cd();
         hist_hitmap_hour_Channel.at(i_slot)->SetStats(0);
         hist_hitmap_hour_Channel.at(i_slot)->Draw();
@@ -1626,6 +1748,7 @@ void MonitorMRDTime::MRDTimePlots(){
         canvas_Hitmap_Slots_day->SetGridx();
         canvas_Hitmap_Slots_day->SaveAs(ss_savepath_day.str().c_str());
         canvas_Hitmap_Slots_day->Clear();
+        delete canvas_Hitmap_Slots_fivemin;
         delete canvas_Hitmap_Slots_hour;
         delete canvas_Hitmap_Slots_sixhour;
         delete canvas_Hitmap_Slots_day;
@@ -1654,8 +1777,8 @@ void MonitorMRDTime::MRDTimePlots(){
           int num_crate = (i_channel>num_active_slots_cr1*num_channels)? min_crate+1 : min_crate;
           int num_slot = (mapping_vector_ch.at(i_channel-1)-(i_channel-1)%num_channels-(num_crate-min_crate)*num_slots)/num_channels+1;
           //std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
-          if (i_channel==num_ch) std::cout<<"Scattering Plots: Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
-          if (i_channel==times_channel_hour.size()-1) std::cout<<i_channel+1<<std::endl;
+          if (i_channel==num_ch) if (verbosity > 1) std::cout<<"Scattering Plots: Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
+          if (i_channel==times_channel_hour.size()-1) if (verbosity > 1) std::cout<<i_channel+1<<std::endl;
           ss_ch_hist<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (1 hour) ["<<enum_ch_canvas+1<<"]";
           ss_ch_hist_sixhour<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (6 hours) ["<<enum_ch_canvas+1<<"]";
           ss_ch_hist_day<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (1 day) ["<<enum_ch_canvas+1<<"]";
@@ -2506,9 +2629,14 @@ void MonitorMRDTime::MRDTimePlots(){
   delete canvas_ch_hist;
   delete canvas_ch_hist_sixhour;
   delete canvas_ch_hist_day;
+  delete canvas_hitmap_fivemin;
   delete canvas_hitmap_hour;
   delete canvas_hitmap_sixhour;
   delete canvas_hitmap_day;
+
+  for (int i_channel = 0; i_channel < num_channels; i_channel++){
+    delete canvas_ch_temp[i_channel];
+  }
 
   //std::cout <<"deleted all canvases..."<<std::endl;
 
@@ -2769,7 +2897,7 @@ void MonitorMRDTime::UpdateMonitorSources(){
               boost::posix_time::ptime temp_bin_start = *Epoch + boost::posix_time::time_duration(int((bin_start+offset_date)/1000./60./60.),int((bin_start+offset_date)/1000./60.)%60,int((bin_start+offset_date)/1000.)%60,(bin_start+offset_date)%1000);
               boost::posix_time::ptime temp_bin_end = *Epoch + boost::posix_time::time_duration(int((bin_end+offset_date)/1000./60./60.),int((bin_end+offset_date)/1000./60.)%60,int((bin_end+offset_date)/1000.)%60,(bin_end+offset_date)%1000);  
               boost::posix_time::ptime temp_current = *Epoch + boost::posix_time::time_duration(int((timestamp_temp+offset_date)/1000./60./60.),int((timestamp_temp+offset_date)/1000./60.)%60,int((timestamp_temp+offset_date)/1000.)%60,(timestamp_temp+offset_date)%1000);  
-              std::cout <<"WARNING (1 HOUR): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
+              if (verbosity > 1) std::cout <<"WARNING (1 HOUR): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
               //std::cout <<"t_file_start: "<<t_file_start<<", t_file_end: "<<t_file_end<<", bin start: "<<current_stamp-(bin+1)*5*60*1000<<", bin end: "<<current_stamp-(bin)*5*60*1000<<std::endl;
               //std::cout <<"HOUR: denominator duration: "<<denominator_duration<<", denominator start: "<<denominator_start<<std::endl;
             }
@@ -2809,7 +2937,7 @@ void MonitorMRDTime::UpdateMonitorSources(){
                     boost::posix_time::ptime temp_bin_start = *Epoch + boost::posix_time::time_duration(int((bin_start+offset_date)/1000./60./60.),int((bin_start+offset_date)/1000./60.)%60,int((bin_start+offset_date)/1000.)%60,(bin_start+offset_date)%1000);
                     boost::posix_time::ptime temp_bin_end = *Epoch + boost::posix_time::time_duration(int((bin_end+offset_date)/1000./60./60.),int((bin_end+offset_date)/1000./60.)%60,int((bin_end+offset_date)/1000.)%60,(bin_end+offset_date)%1000);  
                     boost::posix_time::ptime temp_current = *Epoch + boost::posix_time::time_duration(int((timestamp_temp+offset_date)/1000./60./60.),int((timestamp_temp+offset_date)/1000./60.)%60,int((timestamp_temp+offset_date)/1000.)%60,(timestamp_temp+offset_date)%1000);  
-                    std::cout <<"WARNING (6 HOURS): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
+                    if (verbosity > 1) std::cout <<"WARNING (6 HOURS): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
                   }
                   //6 hours - n_channel
                   if (n_channel_sixhour_file.at(i_channel)[num_halfhour-1-bin] == 0) frequency_channel_sixhour.at(i_channel)[num_halfhour-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
@@ -2849,7 +2977,7 @@ void MonitorMRDTime::UpdateMonitorSources(){
                     boost::posix_time::ptime temp_bin_start = *Epoch + boost::posix_time::time_duration(int((bin_start+offset_date)/1000./60./60.),int((bin_start+offset_date)/1000./60.)%60,int((bin_start+offset_date)/1000.)%60,(bin_start+offset_date)%1000);
                     boost::posix_time::ptime temp_bin_end = *Epoch + boost::posix_time::time_duration(int((bin_end+offset_date)/1000./60./60.),int((bin_end+offset_date)/1000./60.)%60,int((bin_end+offset_date)/1000.)%60,(bin_end+offset_date)%1000);  
                     boost::posix_time::ptime temp_current = *Epoch + boost::posix_time::time_duration(int((timestamp_temp+offset_date)/1000./60./60.),int((timestamp_temp+offset_date)/1000./60.)%60,int((timestamp_temp+offset_date)/1000.)%60,(timestamp_temp+offset_date)%1000);  
-                    std::cout <<"WARNING (DAY): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
+                    if (verbosity > 1) std::cout <<"WARNING (DAY): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
                   }
                   if (n_channel_day_file.at(i_channel)[num_hour-1-bin] == 0) frequency_channel_day.at(i_channel)[num_hour-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
                   else frequency_channel_day.at(i_channel)[num_hour-1-bin] = frequency_channel_day.at(i_channel)[num_hour-1-bin]+1./denominator_duration;
@@ -3086,7 +3214,7 @@ void MonitorMRDTime::FillEvents(){
   MRDdata->Header->Get("TotalEntries",total_number_entries);
   if (verbosity > 1) std::cout <<"MonitorMRDTime: MRDdata number of events: "<<total_number_entries<<std::endl;
   int count=0;
-  std::cout <<"Data File: time = ";
+  if (verbosity > 1) std::cout <<"Data File: time = ";
 
 	for (int i_event = 0; i_event <  total_number_entries; i_event++){
 
@@ -3099,17 +3227,18 @@ void MonitorMRDTime::FillEvents(){
     timestamp+=offset_date;
     eventtime = *Epoch + boost::posix_time::time_duration(int(timestamp/1000./60./60.),int(timestamp/1000./60.)%60,int(timestamp/1000.)%60,timestamp%1000);   //default last entry in miliseconds, need special compilation option for nanosec hh:mm:ss:msms
     //if (verbosity > 2 && count == 0) std::cout <<"Starting from /1/08/1970, this results in the date: "<<eventtime.date()<<", with the time: "<<eventtime.time_of_day()<<std::endl;
-    if (i_event == 0) std::cout <<eventtime.date()<<","<<eventtime.time_of_day();
-    if (i_event == total_number_entries-1) std::cout <<" ... "<<eventtime.date()<<","<<eventtime.time_of_day()<<std::endl;
+    if (i_event == 0) if (verbosity > 1) std::cout <<eventtime.date()<<","<<eventtime.time_of_day();
+    if (i_event == total_number_entries-1) if (verbosity > 1) std::cout <<" ... "<<eventtime.date()<<","<<eventtime.time_of_day()<<std::endl;
     boost::posix_time::time_duration dt = eventtime - current;
     double dt_ms = -(dt.total_milliseconds());
+    double dt_ms_to_bin = (duration_fivemin*60*1000. - duration.total_milliseconds()) + dt_ms;
     boost::posix_time::time_duration current_stamp_duration = boost::posix_time::time_duration(current - *Epoch);
     current_stamp = current_stamp_duration.total_milliseconds();
     current_stamp-=offset_date;
     //if (verbosity > 5) std::cout <<"Current time stamp: "<<current_stamp<<", data time stamp: "<<MRDout.TimeStamp<<", difference: "<<(current_stamp-MRDout.TimeStamp)<<", dt ms: "<<dt_ms<<std::endl;
 
     //get end and start points for processed data file
-    if (i_event==0) t_file_start = MRDout.TimeStamp;
+    if (i_event==0 && i_file_fivemin==0) t_file_start = MRDout.TimeStamp;
     if (timestamp > t_file_end) t_file_end = MRDout.TimeStamp;
     if (timestamp < t_file_start) t_file_start = MRDout.TimeStamp;
 
@@ -3138,7 +3267,7 @@ void MonitorMRDTime::FillEvents(){
       int ch = active_slot_nr*num_channels+MRDout.Channel.at(i_entry);
       live_file.at(ch).push_back(MRDout.Value.at(i_entry));
       timestamp_file.at(ch).push_back(MRDout.TimeStamp);
-      timediff_file.at(ch).push_back(dt_ms);         //in msecs
+      timediff_file.at(ch).push_back(dt_ms_to_bin);         //in msecs
       n_new_file.at(ch)++;
 
       //fill data in recent data arrays
@@ -3172,7 +3301,7 @@ void MonitorMRDTime::FillEvents(){
 
   //check if current file has already been procesed
   if (fabs(t_file_start-t_file_start_previous)<0.001 && fabs(t_file_end-t_file_end_previous)<0.001) {
-    std::cout <<"MRDMonitorTime: File with the same start and end times has already been processed. Omit entries..."<<std::endl;
+    if (verbosity > 1) std::cout <<"MRDMonitorTime: File with the same start and end times has already been processed. Omit entries..."<<std::endl;
     omit_entries = true;     //don't double-count files that are identical [identical start & end time]
   }
 
