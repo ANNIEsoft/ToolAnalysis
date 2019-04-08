@@ -22,6 +22,12 @@
 #include "TDatime.h"  //for labeling the x-axis with time labels
 #include "TPaveText.h"
 #include "TFile.h"
+#include "TPad.h"
+#include "TAxis.h"
+#include "TROOT.h"
+#include <vector>
+#include "TH2F.h"
+#include "TH1I.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
