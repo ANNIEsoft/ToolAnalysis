@@ -61,5 +61,7 @@ if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
 if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
+if (tool=="LAPPDnnls") ret=new LAPPDnnls;
+  if (tool=="LAPPDRawToACDC") ret=new LAPPDRawToACDC;
 return ret;
 }
