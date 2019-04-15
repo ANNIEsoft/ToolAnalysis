@@ -1,0 +1,3 @@
+GenerateHits GenerateHits configfiles/LAPPDnnlstest/ToolChainConfig
+LAPPDSim LAPPDSim configfiles/LAPPDnnlstest/ToolChainConfig
+LAPPDnnls LAPPDnnls configfiles/LAPPDnnlstest/ToolChainConfig

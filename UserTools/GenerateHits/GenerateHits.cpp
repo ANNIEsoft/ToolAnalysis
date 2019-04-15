@@ -41,21 +41,21 @@ bool GenerateHits::Execute(){
   pos.clear();
   relpos.clear();
 
-/*
+
   // MC truth hit 2
-  tc = 1.140;
+  tc = 10.140;
   Q=1.;
-  pos.push_back(20.);
-  pos.push_back(10.);
+  pos.push_back(2.);
+  pos.push_back(2.);
   pos.push_back(0.);
-  relpos.push_back(20.);
-  relpos.push_back(10.);
+  relpos.push_back(2.);
+  relpos.push_back(2.);
   LAPPDHit ahit2(TubeID,tc,Q,pos,relpos);
-*/
+
 
   vector<LAPPDHit> hits;
   hits.push_back(ahit1);
-//  hits.push_back(ahit2);
+  hits.push_back(ahit2);
 
   // stuff the two hits into MCLAPPHit
   MCLAPPDHit.insert(pair <int,vector<LAPPDHit>> (0,hits));

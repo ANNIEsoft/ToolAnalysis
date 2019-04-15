@@ -70,3 +70,5 @@
 //#include "LoadCCData/RunInformation.cpp"
 //#include "LoadCCData/TrigData.cpp"
 
+#include "LAPPDnnls/LAPPDnnls.cpp"
+#include "LAPPDRawToACDC/LAPPDRawToACDC.cpp"

@@ -52,7 +52,7 @@ bool LAPPDSim::Execute(){
 
     std::vector<double> pulsetimes;
     //LAPPDresponse* response = new LAPPDresponse();  //SD
-    LAPPDresponse response;
+    LAPPDresponse response(SimInput);
 
     // loop over the pulses on each lappd
     for(int j=0; j<mchits.size(); j++){
