@@ -4,16 +4,29 @@ This tool contains python scripts for:
 i)  the muon energy reconstruction - BDT_MuonEnergyReco.py
 ii) the neutrino energy reconstruction - BDT_NeutrinoEnergyReco.py
 
-This script needs to use: python/3.7.0/bin/python3
-Commands and packages needed to be installed: 
-yum -y install python-matplotlib (3.0.0 )
-yum -y install python-pip 
+--- These scripts have been tested (locally) with:
+python3: 3.4.9
+and pip3 --version: pip 8.1.2 from /usr/lib/python3.4/site-packages (python 3.4)
 
-pip install numpy (1.15.2)
-pip install pandas (0.23.4)
-pip install tensorflow (0.12.0)
-pip install sklearn (0.20.0)
-pip install root_numpy (4.7.3.dev0)
+Packages:                        Install using:
+numpy: 1.16.2                    pip3 install numpy
+pandas: 0.23.3                   pip3 install pandas
+tensorflow: 1.13.1               pip3 install --user --upgrade tensorflow
+matplotlib: 2.2.2                pip3 install matplotlib
+sklearn: 0.19.1                  pip3 install sklearn
+
+--- In ToolAnalysis they have been tested with: Python 2.7.5: 
+To install packages use: yum -y install python-matplotlib
+                         yum -y install python-pip 
+                         pip install --upgrade pip
+                         pip install package_name 
+packages versions:
+matplotlib.__version__ '1.2.0'
+numpy.__version__ '1.16.1'
+pandas.__version__ '0.24.1'
+sklearn.__version__ '0.20.2'
+tensorflow.__version__ '1.12.0'
+root_numpy.__version__ '4.8.0' (this is no longer needed for the energy and track length reconstruction)
 
 #--- Description of the methods:
 * Training and test samples must be different to avoid biases and overtraining
