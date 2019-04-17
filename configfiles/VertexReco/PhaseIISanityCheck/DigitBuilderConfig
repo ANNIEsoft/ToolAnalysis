@@ -1,0 +1,8 @@
+# DigitBuilder config file
+
+verbosity 0
+OutputFile ./DigitBuilder.root
+MCTruthCut 1
+MRDRecoCut 0
+# There are three configurations: "PMT_only", "LAPPD_only", "All"
+PhotoDetectorConfiguration LAPPD_only 

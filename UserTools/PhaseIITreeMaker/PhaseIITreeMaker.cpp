@@ -13,9 +13,11 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   
   m_variables.Get("verbose", verbosity);
+  m_variables.Get("fillCleanEventsOnly", fillCleanEventsOnly);
   m_variables.Get("muonMCTruth_fill", muonMCTruth_fill);
   m_variables.Get("muonRecoDebug_fill", muonRecoDebug_fill);
   m_variables.Get("muonTruthRecoDiff_fill", muonTruthRecoDiff_fill);
+  m_variables.Get("pionKaonCount_fill", pionKaonCount_fill);
 
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
@@ -26,6 +28,11 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   fRecoTree->Branch("triggerNumber",&fMCTriggerNum,"triggerNumber/I");
   fRecoTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
 
+
+  //Event Staus Flag Information
+  fRecoTree->Branch("eventStatusApplied",&fEventStatusApplied,"eventStatusApplied/I");
+  fRecoTree->Branch("eventStatusFlagged",&fEventStatusFlagged,"eventStatusFlagged/I");
+  
   //Hit information (PMT and LAPPD)
   //Always output in Phase II Reco Tree
   fRecoTree->Branch("nhits",&fNhits,"fNhits/I");
@@ -103,18 +110,28 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   // Difference in MC Truth and Muon Reconstruction Analysis
   // Output to tree when muonTruthRecoDiff_fill = 1 in config
   if (muonTruthRecoDiff_fill){
-    fRecoTree->Branch("DeltaVtxX",&fDeltaVtxX,"DeltaVtxX/D");
-    fRecoTree->Branch("DeltaVtxY",&fDeltaVtxY,"DeltaVtxY/D");
-    fRecoTree->Branch("DeltaVtxZ",&fDeltaVtxZ,"DeltaVtxZ/D");
-    fRecoTree->Branch("DeltaVtxR",&fDeltaVtxR,"DeltaVtxR/D");
-    fRecoTree->Branch("DeltaVtxT",&fDeltaVtxT,"DeltaVtxT/D");
-    fRecoTree->Branch("DeltaParallel",&fDeltaParallel,"DeltaParallel/D");
-    fRecoTree->Branch("DeltaPerpendicular",&fDeltaPerpendicular,"DeltaPerpendicular/D");
-    fRecoTree->Branch("DeltaAzimuth",&fDeltaAzimuth,"DeltaAzimuth/D");
-    fRecoTree->Branch("DeltaZenith",&fDeltaZenith,"DeltaZenith/D");
-    fRecoTree->Branch("DeltaAngle",&fDeltaAngle,"DeltaAngle/D");
+    fRecoTree->Branch("deltaVtxX",&fDeltaVtxX,"deltaVtxX/D");
+    fRecoTree->Branch("deltaVtxY",&fDeltaVtxY,"deltaVtxY/D");
+    fRecoTree->Branch("deltaVtxZ",&fDeltaVtxZ,"deltaVtxZ/D");
+    fRecoTree->Branch("deltaVtxR",&fDeltaVtxR,"deltaVtxR/D");
+    fRecoTree->Branch("deltaVtxT",&fDeltaVtxT,"deltaVtxT/D");
+    fRecoTree->Branch("deltaParallel",&fDeltaParallel,"deltaParallel/D");
+    fRecoTree->Branch("deltaPerpendicular",&fDeltaPerpendicular,"deltaPerpendicular/D");
+    fRecoTree->Branch("deltaAzimuth",&fDeltaAzimuth,"deltaAzimuth/D");
+    fRecoTree->Branch("deltaZenith",&fDeltaZenith,"deltaZenith/D");
+    fRecoTree->Branch("deltaAngle",&fDeltaAngle,"deltaAngle/D");
   } 
-	
+
+  // Pion and kaon counts as found in MC Truth based on PDG codes
+  if (pionKaonCount_fill){
+    fRecoTree->Branch("Pi0Count",&fPi0Count,"Pi0Count/I");
+    fRecoTree->Branch("PiPlusCount",&fPiPlusCount,"PiPlusCount/I");
+    fRecoTree->Branch("PiMinusCount",&fPiMinusCount,"PiMinusCount/I");
+    fRecoTree->Branch("K0Count",&fK0Count,"K0Count/I");
+    fRecoTree->Branch("KPlusCount",&fKPlusCount,"KPlusCount/I");
+    fRecoTree->Branch("KMinusCount",&fKMinusCount,"KMinusCount/I");
+  }
+
   return true;
 }
 
@@ -139,7 +156,7 @@ bool PhaseIITreeMaker::Execute(){
     return false;	
   }
 
-  if(!EventCutstatus) {
+  if(!EventCutstatus && fillCleanEventsOnly) {
   	Log("Message: This event doesn't pass the event selection. ", v_message, verbosity);
     return true;	
   }
@@ -156,10 +173,23 @@ bool PhaseIITreeMaker::Execute(){
   std::string logmessage = "  Retriving information for MCEntry "+to_string(fMCEventNum)+
   	", MCTrigger "+ to_string(fMCTriggerNum) + ", EventNumber " + to_string(fEventNumber);
   Log(logmessage, v_message, verbosity);
-  
+ 
+
+  // Read Event Selector Status information
+  auto get_flagsapp = m_data->Stores.at("RecoEvent")->Get("EventFlagApplied",fEventStatusApplied);
+  auto get_flags = m_data->Stores.at("RecoEvent")->Get("EventFlagged",fEventStatusFlagged);  
+  if(!get_flagsapp || !get_flags) {
+    Log("PhaseITreeMaker tool: No Event status applied or flagged bitmask!!", v_error, verbosity);
+    return false;	
+  }
+
   // Read digits
   std::vector<RecoDigit>* digitList = nullptr;
-	m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
+  auto get_digits = m_data->Stores.at("RecoEvent")->Get("RecoDigit",digitList);  ///> Get digits from "RecoEvent" 
+  if(!get_digits) {
+    Log("PhaseITreeMaker tool: no digit list in store!", v_error, verbosity);
+    return false;	
+  }
   fNhits = digitList->size();
   for( auto& digit : *digitList ){
     fDigitX.push_back(digit.GetPosition().X());
@@ -175,33 +205,32 @@ bool PhaseIITreeMaker::Execute(){
   RecoVertex* recovtx = 0;
   auto get_extendedvtx = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",recovtx); 
   if(!get_extendedvtx) {
-    Log("Error: The PhaseITreeMaker tool could not find ExtendedVertex", v_error, verbosity);
-    return false;	
-  }
-  fRecoVtxX = recovtx->GetPosition().X();
-  fRecoVtxY = recovtx->GetPosition().Y();
-  fRecoVtxZ = recovtx->GetPosition().Z();
-  fRecoVtxTime = recovtx->GetTime();
-  fRecoVtxFOM = recovtx->GetFOM();
-  fRecoDirX = recovtx->GetDirection().X();
-  fRecoDirY = recovtx->GetDirection().Y();
-  fRecoDirZ = recovtx->GetDirection().Z();
-  fRecoTheta = TMath::ACos(fRecoDirZ);
-  if (fRecoDirX>0.0){
-    fRecoPhi = atan(fRecoDirY/fRecoDirX);
-  }
-  if (fRecoDirX<0.0){
-    fRecoPhi = atan(fRecoDirY/fRecoDirX);
-    if( fRecoDirY>0.0) fRecoPhi += TMath::Pi();
-    if( fRecoDirY<=0.0) fRecoPhi -= TMath::Pi();
-  }
-  if (fRecoDirX==0.0){
-    if( fRecoDirY>0.0) fRecoPhi = 0.5*TMath::Pi();
-    else if( fRecoDirY<0.0) fRecoPhi = -0.5*TMath::Pi();
-    else fRecoPhi = 0;
-  }
-  fRecoStatus = recovtx->GetStatus();
- 
+    Log("Warning: The PhaseITreeMaker tool could not find ExtendedVertex. Continuing to build tree", v_message, verbosity);
+  } else {
+    fRecoVtxX = recovtx->GetPosition().X();
+    fRecoVtxY = recovtx->GetPosition().Y();
+    fRecoVtxZ = recovtx->GetPosition().Z();
+    fRecoVtxTime = recovtx->GetTime();
+    fRecoVtxFOM = recovtx->GetFOM();
+    fRecoDirX = recovtx->GetDirection().X();
+    fRecoDirY = recovtx->GetDirection().Y();
+    fRecoDirZ = recovtx->GetDirection().Z();
+    fRecoTheta = TMath::ACos(fRecoDirZ);
+    if (fRecoDirX>0.0){
+      fRecoPhi = atan(fRecoDirY/fRecoDirX);
+    }
+    if (fRecoDirX<0.0){
+      fRecoPhi = atan(fRecoDirY/fRecoDirX);
+      if( fRecoDirY>0.0) fRecoPhi += TMath::Pi();
+      if( fRecoDirY<=0.0) fRecoPhi -= TMath::Pi();
+    }
+    if (fRecoDirX==0.0){
+      if( fRecoDirY>0.0) fRecoPhi = 0.5*TMath::Pi();
+      else if( fRecoDirY<0.0) fRecoPhi = -0.5*TMath::Pi();
+      else fRecoPhi = 0;
+    }
+    fRecoStatus = recovtx->GetStatus();
+  } 
   // Read True Vertex if flag is set   
   RecoVertex* truevtx = 0;
   auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx); 
@@ -301,22 +330,46 @@ bool PhaseIITreeMaker::Execute(){
     }
   }
 
+  if (pionKaonCount_fill){
+    int pi0count, pipcount, pimcount, K0count, Kpcount, Kmcount;
+    auto get_pi0 = m_data->Stores.at("RecoEvent")->Get("MCPi0Count",pi0count);
+    auto get_pim = m_data->Stores.at("RecoEvent")->Get("MCPiMinusCount",pimcount);
+    auto get_pip = m_data->Stores.at("RecoEvent")->Get("MCPiPlusCount",pipcount);
+    auto get_k0 = m_data->Stores.at("RecoEvent")->Get("MCK0Count",K0count);
+    auto get_km = m_data->Stores.at("RecoEvent")->Get("MCKMinusCount",Kmcount);
+    auto get_kp = m_data->Stores.at("RecoEvent")->Get("MCKPlusCount",Kpcount);
+    if(get_pi0 && get_pim && get_pip && get_k0 && get_km && get_kp) {
+      // set values in tree to thouse grabbed from the RecoEvent Store
+      fPi0Count = pi0count;
+      fPiPlusCount = pipcount;
+      fPiMinusCount = pimcount;
+      fK0Count = K0count;
+      fKPlusCount = Kpcount;
+      fKMinusCount = Kmcount;
+    } else {
+      Log("PhaseIITreeMaker Tool: Missing MC Pion/Kaon count information. Continuing to build remaining tree",v_message,verbosity);
+    }
+  } 
 
   if (muonTruthRecoDiff_fill){
-    //Let's fill in stuff from the RecoSummary
-    fDeltaVtxX = fRecoVtxX - fTrueVtxX;
-    fDeltaVtxY = fRecoVtxY - fTrueVtxY;
-    fDeltaVtxZ = fRecoVtxZ - fTrueVtxZ;
-    fDeltaVtxT = fRecoVtxTime - fTrueVtxTime;
-    fDeltaVtxR = sqrt(pow(fDeltaVtxX,2) + pow(fDeltaVtxY,2) + pow(fDeltaVtxZ,2)); 
-    fDeltaParallel = fDeltaVtxX*fRecoDirX + fDeltaVtxY*fRecoDirY + fDeltaVtxZ*fRecoDirZ;
-    fDeltaPerpendicular = sqrt(pow(fDeltaVtxR,2) - pow(fDeltaParallel,2));
-    fDeltaAzimuth = (fRecoTheta - fTrueTheta)/(TMath::Pi()/180.0);
-    fDeltaZenith = (fRecoPhi - fTruePhi)/(TMath::Pi()/180.0); 
-    double cosphi = fTrueDirX*fRecoDirX+fTrueDirY*fRecoDirY+fTrueDirZ*fRecoDirZ;
-    double phi = TMath::ACos(cosphi); // radians
-    double TheAngle = phi/(TMath::Pi()/180.0); // radians->degrees
-    fDeltaAngle = TheAngle;
+    if (!get_muonMC || !get_extendedvtx) {
+      Log("PhaseIITreeMaker Tool: No True Muon Vertex or Extended Vertex information found.  Continuing to build remaining tree",v_message,verbosity);
+    } else {
+      //Let's fill in stuff from the RecoSummary
+      fDeltaVtxX = fRecoVtxX - fTrueVtxX;
+      fDeltaVtxY = fRecoVtxY - fTrueVtxY;
+      fDeltaVtxZ = fRecoVtxZ - fTrueVtxZ;
+      fDeltaVtxT = fRecoVtxTime - fTrueVtxTime;
+      fDeltaVtxR = sqrt(pow(fDeltaVtxX,2) + pow(fDeltaVtxY,2) + pow(fDeltaVtxZ,2)); 
+      fDeltaParallel = fDeltaVtxX*fRecoDirX + fDeltaVtxY*fRecoDirY + fDeltaVtxZ*fRecoDirZ;
+      fDeltaPerpendicular = sqrt(pow(fDeltaVtxR,2) - pow(fDeltaParallel,2));
+      fDeltaAzimuth = (fRecoTheta - fTrueTheta)/(TMath::Pi()/180.0);
+      fDeltaZenith = (fRecoPhi - fTruePhi)/(TMath::Pi()/180.0); 
+      double cosphi = fTrueDirX*fRecoDirX+fTrueDirY*fRecoDirY+fTrueDirZ*fRecoDirZ;
+      double phi = TMath::ACos(cosphi); // radians
+      double TheAngle = phi/(TMath::Pi()/180.0); // radians->degrees
+      fDeltaAngle = TheAngle;
+    }
   }
 
   fRecoTree->Fill();
@@ -378,7 +431,8 @@ void PhaseIITreeMaker::ResetVariables() {
     fPointVtxTime = 0;
     fPointVtxStatus = 0;
     fPointVtxFOM = 0;
-  } 
+  }
+
   fRecoVtxX = 0;
   fRecoVtxY = 0;
   fRecoVtxZ = 0;
@@ -411,6 +465,15 @@ void PhaseIITreeMaker::ResetVariables() {
     fDeltaZenith = 0;
     fDeltaAngle = 0;
   }
+
+  if (pionKaonCount_fill){
+    fPi0Count = -1;
+    fPiPlusCount = -1;
+    fPiMinusCount = -1;
+    fK0Count = -1;
+    fKPlusCount = -1;
+    fKMinusCount = -1;
+  }
 }
 
 void PhaseIITreeMaker::RecoSummary() {
@@ -425,10 +488,15 @@ void PhaseIITreeMaker::RecoSummary() {
   cosphi = fTrueDirX*fRecoDirX+fTrueDirY*fRecoDirY+fTrueDirZ*fRecoDirZ;
   phi = TMath::ACos(cosphi); // radians
   DeltaAngle = phi/(TMath::Pi()/180.0); // radians->degrees
+  std::cout << "============================================================================"<<std::endl;
+  std::cout << " Event number " << fEventNumber << std::endl;
   std::cout << "  trueVtx=(" << fTrueVtxX << ", " << fTrueVtxY << ", " << fTrueVtxZ <<", "<< fTrueVtxTime<< std::endl
             << "           " << fTrueDirX << ", " << fTrueDirY << ", " << fTrueDirZ << ") " << std::endl;
   std::cout << "  recoVtx=(" << fRecoVtxX << ", " << fRecoVtxY << ", " << fRecoVtxZ <<", "<< fRecoVtxTime << std::endl
             << "           " << fRecoDirX << ", " << fRecoDirY << ", " << fRecoDirZ << ") " << std::endl;
   std::cout << "  DeltaR = "<<deltaR<<"[cm]"<<"\t"<<"  DeltaAngle = "<<DeltaAngle<<" [degree]"<<std::endl;
+  std::cout << "  FOM = " << fRecoVtxFOM << std::endl;
+  std::cout << "  RecoStatus = " << fRecoStatus <<std::endl;
+  std::cout << std::endl;
 }
 

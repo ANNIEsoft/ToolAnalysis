@@ -8,7 +8,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	/////////////////// Useful header ///////////////////////
 	
-	if(verbose) cout<<"Initializing Tool LoadWCSim"<<endl;
+	if(verbosity) cout<<"Initializing Tool LoadWCSim"<<endl;
 	
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
@@ -17,9 +17,44 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	// Get the Tool configuration variables
 	// ====================================
-	m_variables.Get("verbose",verbose);
-	m_variables.Get("InputFile",MCFile);
-	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
+	get_ok = m_variables.Get("verbose", verbosity);
+	if(not get_ok) verbosity=1;
+	get_ok = m_variables.Get("MaxEntries",MaxEntries);
+	if(not get_ok) MaxEntries=-1;
+	get_ok = m_variables.Get("InputFile", MCFile);
+	if(not get_ok){ Log("LoadWCSim Tool: ERROR: No InputFile defined!",v_error,verbosity); return false; }
+	get_ok = m_variables.Get("HistoricTriggeroffset", HistoricTriggeroffset); // [ns]
+	if(not get_ok){
+		Log("LoadWCSim Tool: ERROR: HistoricTriggeroffset not set in config file!",v_error,verbosity);
+		return false;
+	}
+	get_ok = m_variables.Get("WCSimVersion", WCSimVersion);
+		if(not get_ok){
+			Log("LoadWCSim Tool: ERROR: WCSimVersion not set in config file!",v_error,verbosity);
+			return false;
+	}
+	get_ok = m_variables.Get("UseDigitSmearedTime", use_smeared_digit_time);
+	if(not get_ok){
+		Log("LoadWCSim Tool: Assuming to use smeared digit times",v_warning,verbosity);
+		use_smeared_digit_time=1;
+	}
+	get_ok = m_variables.Get("LappdNumStrips", LappdNumStrips);
+	if(not get_ok){
+		Log("LoadWCSim Tool: Assuming to use 56 LAPPD striplines",v_warning,verbosity);
+		LappdNumStrips = 56;
+	}
+	get_ok = m_variables.Get("LappdStripLength", LappdStripLength);           // [mm]
+	if(not get_ok){
+		Log("LoadWCSim Tool: Assuming to LAPPD stripline length of 200mm",v_warning,verbosity);
+		LappdStripLength = 200;
+	}
+	get_ok = m_variables.Get("LappdStripSeparation", LappdStripSeparation);   // [mm]
+	if(not get_ok){
+		Log("LoadWCSim Tool: Assuming LAPPD stripline separation of 7.14mm",v_warning,verbosity);
+		LappdStripSeparation = 7.14;
+	}
+	// put version in the CStore for downstream tools
+	m_data->CStore.Set("WCSimVersion", WCSimVersion);
 	
 	// Short Stores README
 	//////////////////////
@@ -28,7 +63,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	//      m_data->Stores["StoreName"] is a map of binary BoostStores that are saved to disk.
 	// If using Stores->BoostStore->Set("MyVariable") it will always be saved to disk
 	// Using Stores->BoostStore.Set("MyVariable",&myvar) if myvar is a pointer (to an object on
-	// the heap) puts myvar in the Store and it's deletion will be  handled by the Store.
+	// the heap) puts myvar in the Store and it's deletion will be handled by the Store.
 	// (provided your class has a suitable destructor.)
 	// Is 'BoostStore::Save' needed for single-entry stores?
 	// ----------------
@@ -49,10 +84,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	// Make class private members; e.g. the WCSimT and WCSimRootGeom
 	// =============================================================
-	file= new TFile(MCFile.c_str(),"READ");
-	wcsimtree= (TTree*) file->Get("wcsimT");
-	NumEvents=wcsimtree->GetEntries();
-	WCSimEntry= new wcsimT(wcsimtree);
+//	file= new TFile(MCFile.c_str(),"READ");
+//	wcsimtree= (TTree*) file->Get("wcsimT");
+//	NumEvents=wcsimtree->GetEntries();
+//	WCSimEntry= new wcsimT(wcsimtree);
+	WCSimEntry= new wcsimT(MCFile.c_str(),verbosity);
+	NumEvents=WCSimEntry->GetEntries();
+	
 	gROOT->cd();
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
 	wcsimrootopts = WCSimEntry->wcsimrootopts;
@@ -67,7 +105,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	m_data->CStore.Set("WCSimPostTriggerWindow",posttriggerwindow);
 	// store the WCSimRootGeom for LAPPD reader calculation of global coords
 	intptr_t geomptr = reinterpret_cast<intptr_t>(wcsimrootgeom);
-	if(verbose>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<", geomptr="<<geomptr<<endl;
+	if(verbosity>1) cout<<"wcsimrootgeom at "<<wcsimrootgeom<<", geomptr="<<geomptr<<endl;
 	m_data->CStore.Set("WCSimRootGeom",geomptr);
 //	int wcsimgeomexists = m_data->Stores.count("WCSimRootGeomStore");
 //	if(wcsimgeomexists==0){
@@ -92,73 +130,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	int annieeventexists = m_data->Stores.count("ANNIEEvent");
 	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
 	
-	// construct the Geometry to go in the header from the WCSimRootGeom
-	// =================================================================
-	double WCSimGeometryVer = 1;                       // TODO pull this from some suitable variable
-	// some variables are available from wcsimrootgeom.   TODO: put everything into wcsimrootgeom
-	int numtankpmts = wcsimrootgeom->GetWCNumPMT();
-	int numlappds = wcsimrootgeom->GetWCNumLAPPD();
-	int nummrdpmts = wcsimrootgeom->GetWCNumMRDPMT();
-	numvetopmts = wcsimrootgeom->GetWCNumFACCPMT();
-	double tank_xcentre = (wcsimrootgeom->GetWCOffset(0)) / 100.;  // convert [cm] to [m]
-	double tank_ycentre = (wcsimrootgeom->GetWCOffset(1)) / 100.;
-	double tank_zcentre = (wcsimrootgeom->GetWCOffset(2)) / 100.;
-	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
-	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.;
-	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 100.;
-	// geometry variables not yet in wcsimrootgeom are in MRDSpecs.hh
-	double mrd_width =  (MRDSpecs::MRD_width) / 100.;
-	double mrd_height = (MRDSpecs::MRD_height) / 100.;
-	double mrd_depth =  (MRDSpecs::MRD_depth) / 100.;
-	double mrd_start =  (MRDSpecs::MRD_start) / 100.;
-	if(verbose>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts
-					  <<" mrd pmts and "<<numlappds<<" lappds"<<endl;
-	
-	// loop over PMTs and make the map of Detectors
-	std::map<ChannelKey,Detector> Detectors;
-	// tank pmts
-	for(int i=0; i<numtankpmts; i++){
-		ChannelKey akey(subdetector::ADC, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetPMT(i);
-		Detector adet("Tank", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
-		               Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
-		               i, apmt.GetName(), detectorstatus::ON, 0.);
-		Detectors.emplace(akey,adet);
-	}
-	// mrd pmts
-	for(int i=0; i<nummrdpmts; i++){
-		ChannelKey akey(subdetector::TDC, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(i);
-		Detector adet("MRD", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
-		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
-		              i, apmt.GetName(), detectorstatus::ON, 0.);
-		Detectors.emplace(akey,adet);
-	}
-	// veto pmts
-	for(int i=0; i<numvetopmts; i++){
-		ChannelKey akey(subdetector::TDC, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetFACCPMT(i);
-		Detector adet("Veto", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
-		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
-		              i, apmt.GetName(), detectorstatus::ON, 0.);
-		Detectors.emplace(akey,adet);
-	}
-	// lappds
-	for(int i=0; i<numlappds; i++){
-		ChannelKey akey(subdetector::LAPPD, i);
-		WCSimRootPMT apmt = wcsimrootgeom->GetLAPPD(i);
-		Detector adet("Tank", Position(apmt.GetPosition(0)/100.,apmt.GetPosition(1)/100.,apmt.GetPosition(2)/100.),
-		              Direction(apmt.GetOrientation(0),apmt.GetOrientation(1),apmt.GetOrientation(2)),
-		              i, apmt.GetName(), detectorstatus::ON, 0.);
-		Detectors.emplace(akey,adet);
-	}
-	
-	// construct the goemetry 
-	Geometry* anniegeom = new Geometry(Detectors, WCSimGeometryVer, tank_centre, tank_radius,
-	                           tank_halfheight, mrd_width, mrd_height, mrd_depth, mrd_start,
-	                           numtankpmts, nummrdpmts, numvetopmts, numlappds, detectorstatus::ON);
-	if(verbose>1){ cout<<"constructed anniegom at "<<anniegeom<<" with tank origin "; tank_centre.Print(); }
-	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
+	// Convert WCSimRootGeom into ToolChain Geometry class
+	ConstructToolChainGeometry();
 	
 	// Set run-level information in the ANNIEEvent
 	// ===========================================
@@ -187,7 +160,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCEventNum=-1;
 	MCTriggernum=0;
 	// pull the first entry with a trigger and use it's Date for the BeamStatus last recorded time. TODO
-	if(verbose>1) cout<<"getting Run start time"<<endl;
+	if(verbosity>1) cout<<"getting Run start time"<<endl;
 	do{
 		MCEventNum++;
 		WCSimEntry->GetEntry(MCEventNum);
@@ -195,6 +168,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	atrigt = WCSimEntry->wcsimrootevent->GetTrigger(0);
 	TimeClass RunStartTime(atrigt->GetHeader()->GetDate());
 	MCEventNum=0;
+	MCFile = WCSimEntry->GetCurrentFile()->GetName();
+	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
@@ -204,11 +179,19 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// Construct the other objects we'll be setting at event level,
 	// pass managed pointers to the ANNIEEvent Store
 	MCParticles = new std::vector<MCParticle>;
-	MCHits = new std::map<ChannelKey,std::vector<Hit>>;
-	TDCData = new std::map<ChannelKey,std::vector<Hit>>;
+	MCHits = new std::map<unsigned long,std::vector<Hit>>;
+	TDCData = new std::map<unsigned long,std::vector<Hit>>;
 	EventTime = new TimeClass();
 	TriggerClass beamtrigger("beam",true,0);
 	TriggerData = new std::vector<TriggerClass>{beamtrigger}; // FIXME ? one trigger and resetting time is ok?
+	
+	// we'll put these in the CStore: so don't delete them in Finalise! It'll get handled by the Store
+	ParticleId_to_TankTubeIds = new std::map<int,std::map<unsigned long,double>>;
+	ParticleId_to_MrdTubeIds = new std::map<int,std::map<unsigned long,double>>;
+	ParticleId_to_VetoTubeIds = new std::map<int,std::map<unsigned long,double>>;
+	ParticleId_to_TankCharge = new std::map<int,double>;
+	ParticleId_to_MrdCharge = new std::map<int,double>;
+	ParticleId_to_VetoCharge = new std::map<int,double>;
 	
 	return true;
 }
@@ -219,33 +202,52 @@ bool LoadWCSim::Execute(){
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
 	
-	if(verbose) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
-	WCSimEntry->GetEntry(MCEventNum);
-	MCFile = wcsimtree->GetCurrentFile()->GetName();
+	if(verbosity) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
+	int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+	if(nbytesread<=0){
+		cerr<<"############################"<<endl;
+		logmessage = "LoadWCSim Tool had no entry "+to_string(MCEventNum);
+		if(nbytesread==-4){
+			logmessage+=": Overran end of TChain! Have you specified more iterations than are available in ToolChainConfig?";
+		} else if(nbytesread==0){
+			logmessage+=": No TChain loaded! Is your filepath correct?";
+		}
+		Log(logmessage,v_error,verbosity);
+		cerr<<"############################"<<endl;
+	}
+	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
 	MCParticles->clear();
 	MCHits->clear();
 	TDCData->clear();
 	
 	//for(int MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
-		if(verbose>1) cout<<"getting triggers"<<endl;
+		if(verbosity>1) cout<<"getting triggers"<<endl;
+		// cherenkovhit(times) are all in first trig
+		firsttrigt=WCSimEntry->wcsimrootevent->GetTrigger(0);
+		firsttrigm=WCSimEntry->wcsimrootevent_mrd->GetTrigger(0);
+		firsttrigv=WCSimEntry->wcsimrootevent_facc->GetTrigger(0);
 		atrigt = WCSimEntry->wcsimrootevent->GetTrigger(MCTriggernum);
-		atrigm = WCSimEntry->wcsimrootevent_mrd->GetTrigger(MCTriggernum);
-		atrigv = WCSimEntry->wcsimrootevent_facc->GetTrigger(MCTriggernum);
-		if(verbose>2) cout<<"wcsimrootevent="<<WCSimEntry->wcsimrootevent<<endl;
-		if(verbose>2) cout<<"wcsimrootevent_mrd="<<WCSimEntry->wcsimrootevent_mrd<<endl;
-		if(verbose>2) cout<<"wcsimrootevent_facc="<<WCSimEntry->wcsimrootevent_facc<<endl;
-		if(verbose>2) cout<<"atrigt="<<atrigt<<", atrigm="<<atrigm<<", atrigv="<<atrigv<<endl;
+		if(MCTriggernum<(WCSimEntry->wcsimrootevent_mrd->GetNumberOfEvents())){
+			atrigm = WCSimEntry->wcsimrootevent_mrd->GetTrigger(MCTriggernum);
+		} else { atrigm=nullptr; }
+		if(MCTriggernum<(WCSimEntry->wcsimrootevent_facc->GetNumberOfEvents())){
+			atrigv = WCSimEntry->wcsimrootevent_facc->GetTrigger(MCTriggernum);
+		} else { atrigv=nullptr; }
+		if(verbosity>2) cout<<"wcsimrootevent="<<WCSimEntry->wcsimrootevent<<endl;
+		if(verbosity>2) cout<<"wcsimrootevent_mrd="<<WCSimEntry->wcsimrootevent_mrd<<endl;
+		if(verbosity>2) cout<<"wcsimrootevent_facc="<<WCSimEntry->wcsimrootevent_facc<<endl;
+		if(verbosity>2) cout<<"atrigt="<<atrigt<<", atrigm="<<atrigm<<", atrigv="<<atrigv<<endl;
 		
-		if(verbose>1) cout<<"getting event date"<<endl;
+		if(verbosity>1) cout<<"getting event date"<<endl;
 		RunNumber = atrigt->GetHeader()->GetRun();
 		SubrunNumber = 0;
 		EventTimeNs = atrigt->GetHeader()->GetDate();
 		EventTime->SetNs(EventTimeNs);
-		if(verbose>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
-		if(verbose>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
+		if(verbosity>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
+		if(verbosity>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
 		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
-			if(verbose>2) cout<<"getting track "<<tracki<<endl;
+			if(verbosity>2) cout<<"getting track "<<tracki<<endl;
 			WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigt->GetTracks()->At(tracki);
 			/* a WCSimRootTrack has methods:
 			Int_t     GetIpnu()             pdg
@@ -269,96 +271,196 @@ bool LoadWCSim::Execute(){
 			*/
 			
 			tracktype startstoptype = tracktype::UNDEFINED;
-			
-			//nextrack->GetFlag()!=-1 ????? do we need to skip/override anything for these?
-		        //MC particle times now stored relative to the trigger time	
+			//MC particle times are relative to the trigger time
+			if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
 			MCParticle thisparticle(
 				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
-				Position(nextrack->GetStart(0) / 100., nextrack->GetStart(1) / 100., nextrack->GetStart(2) / 100.),
-				Position(nextrack->GetStop(0) / 100., nextrack->GetStop(1) / 100., nextrack->GetStop(2) / 100.),
-				(static_cast<double>(nextrack->GetTime()-EventTimeNs)), (static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
+				Position(nextrack->GetStart(0) / 100.,
+						 nextrack->GetStart(1) / 100.,
+						 nextrack->GetStart(2) / 100.),
+				Position(nextrack->GetStop(0) / 100.,
+						 nextrack->GetStop(1) / 100.,
+						 nextrack->GetStop(2) / 100.),
+				//MC particle times now stored relative to the trigger time
+				(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
+				(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
 				Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
 				(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
 					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
-					 startstoptype, tracki, nextrack->GetParenttype());
+				startstoptype,
+				nextrack->GetId(),
+				nextrack->GetParenttype());
+			if(nextrack->GetIpnu()==13){
+				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
+					+ ", parent type " + to_string(nextrack->GetParenttype())
+					+ ", Id " + to_string(nextrack->GetId())
+					+ ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
+					+ ", " + to_string(nextrack->GetStart(1)/100.)
+					+ ", " + to_string(nextrack->GetStart(2)/100.)
+					+ "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
+					+ ", " + to_string(nextrack->GetStop(1)/100.)
+					+ ", " + to_string(nextrack->GetStop(2)/100.)
+					+ ")";
+				Log(logmessage,v_debug,verbosity);
+			}
 			
 			MCParticles->push_back(thisparticle);
 		}
-		if(verbose>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
+		if(verbosity>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
 		
-		// n.b. ChannelKey is currently typedef'd as an int: it's just a unique PMT id for MRD+Tank+FACC
 		int numtankdigits = atrigt ? atrigt->GetCherenkovDigiHits()->GetEntries() : 0;
-		if(verbose>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
+		if(verbosity>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
 		for(int digiti=0; digiti<numtankdigits; digiti++){
-			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
+			if(verbosity>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigt->GetCherenkovDigiHits()->At(digiti);
-			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ()
-			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId();
-			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
-			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
+			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ(), GetPhotonIds()
+			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
+			int tubeid = digihit->GetTubeId();  // geometry TubeID->channelkey map is made INCLUDING offset of 1
+			if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
+			if(pmt_tubeid_to_channelkey.count(tubeid)==0){
+				cerr<<"LoadWCSim ERROR: tank PMT with no associated ChannelKey!"<<endl;
+				return false;
+			}
+			unsigned long key = pmt_tubeid_to_channelkey.at(tubeid);
+			if(verbosity>2) cout<<"ChannelKey="<<key<<endl;
+			double digittime;
+			if(use_smeared_digit_time){
+				digittime = static_cast<double>(digihit->GetT()-HistoricTriggeroffset); // relative to trigger
+			} else {
+				// instead take the true time of the first photon
+				std::vector<int> photonids = digihit->GetPhotonIds();   // indices of the digit's photons
+				double earliestphotontruetime=999999999999;
+				for(int& aphotonindex : photonids){
+					WCSimRootCherenkovHitTime* thehittimeobject =
+						 (WCSimRootCherenkovHitTime*)firsttrigt->GetCherenkovHitTimes()->At(aphotonindex);
+					if(thehittimeobject==nullptr){
+						cerr<<"LoadWCSim Tool: ERROR! Retrieval of photon from digit returned nullptr!"<<endl;
+						continue;
+					}
+					double aphotontime = static_cast<double>(thehittimeobject->GetTruetime());
+					if(aphotontime<earliestphotontruetime){ earliestphotontruetime = aphotontime; }
+				}
+				digittime = earliestphotontruetime;
+			}
+			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
-			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
+			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			
-			ChannelKey key(subdetector::ADC,tubeid);
-			Hit nexthit(tubeid, digittime, digiq);
+			Hit nexthit(key, digittime, digiq);
 			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit});
 			else MCHits->at(key).push_back(nexthit);
-			if(verbose>2) cout<<"digit added"<<endl;
+			if(verbosity>2) cout<<"digit added"<<endl;
 		}
-		if(verbose>2) cout<<"done with tank digits"<<endl;
+		if(verbosity>2) cout<<"done with tank digits"<<endl;
 		
 		//MRD Hits
 		int nummrddigits = atrigm ? atrigm->GetCherenkovDigiHits()->GetEntries() : 0;
-		if(verbose>1) cout<<"adding "<<nummrddigits<<" mrd digits"<<endl;
+		if(verbosity>1) cout<<"adding "<<nummrddigits<<" mrd digits"<<endl;
 		for(int digiti=0; digiti<nummrddigits; digiti++){
-			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
+			if(verbosity>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(digiti);
-			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
-			int tubeid = digihit->GetTubeId() + numvetopmts;
-			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
-			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
+			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
+			int tubeid = digihit->GetTubeId();
+			if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
+			if(mrd_tubeid_to_channelkey.count(tubeid)==0){
+				cerr<<"LoadWCSim ERROR: MRD PMT with no associated ChannelKey!"<<endl;
+				return false;
+			}
+			unsigned long key = mrd_tubeid_to_channelkey.at(tubeid);
+			double digittime;
+			if(use_smeared_digit_time){
+				digittime = static_cast<double>(digihit->GetT()-HistoricTriggeroffset); // relative to trigger
+			} else {
+				// instead take the true time of the first photon
+				std::vector<int> photonids = digihit->GetPhotonIds();   // indices of the digit's photons
+				double earliestphotontruetime=999999999999;
+				for(int& aphotonindex : photonids){
+					WCSimRootCherenkovHitTime* thehittimeobject =
+						 (WCSimRootCherenkovHitTime*)firsttrigm->GetCherenkovHitTimes()->At(aphotonindex);
+					if(thehittimeobject==nullptr){
+						cerr<<"LoadWCSim Tool: ERROR! Retrieval of photon from digit returned nullptr!"<<endl;
+						continue;
+					}
+					double aphotontime = static_cast<double>(thehittimeobject->GetTruetime());
+					if(aphotontime<earliestphotontruetime){ earliestphotontruetime = aphotontime; }
+				}
+				digittime = earliestphotontruetime;
+			}
+			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
-			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
+			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			
-			ChannelKey key(subdetector::TDC,tubeid);
-			Hit nexthit(tubeid, digittime, digiq);
+			Hit nexthit(key, digittime, digiq);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<Hit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
-			if(verbose>2) cout<<"digit added"<<endl;
+			if(verbosity>2) cout<<"digit added"<<endl;
 		}
-		if(verbose>2) cout<<"done with mrd digits"<<endl;
+		if(verbosity>2) cout<<"done with mrd digits"<<endl;
 		
 		// Veto Hits
 		int numvetodigits = atrigv ? atrigv->GetCherenkovDigiHits()->GetEntries() : 0;
-		if(verbose>1) cout<<"adding "<<numvetodigits<<" veto digits"<<endl;
+		if(verbosity>1) cout<<"adding "<<numvetodigits<<" veto digits"<<endl;
 		for(int digiti=0; digiti<numvetodigits; digiti++){
-			if(verbose>2) cout<<"getting digit "<<digiti<<endl;
+			if(verbosity>2) cout<<"getting digit "<<digiti<<endl;
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigv->GetCherenkovDigiHits()->At(digiti);
-			if(verbose>2) cout<<"next digihit at "<<digihit<<endl;
+			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();
-			if(verbose>2) cout<<"tubeid="<<tubeid<<endl;
-			double digittime(static_cast<double>(digihit->GetT()-HistoricTriggeroffset)); // relative to trigger
-			if(verbose>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
+			if(verbosity>2) cout<<"tubeid="<<tubeid<<endl;
+			if(facc_tubeid_to_channelkey.count(tubeid)==0){
+				cerr<<"LoadWCSim ERROR: FACC PMT with no associated ChannelKey!"<<endl;
+				return false;
+			}
+			unsigned int key = facc_tubeid_to_channelkey.at(tubeid);
+			double digittime;
+			if(use_smeared_digit_time){
+				digittime = static_cast<double>(digihit->GetT()-HistoricTriggeroffset); // relative to trigger
+			} else {
+				// instead take the true time of the first photon
+				std::vector<int> photonids = digihit->GetPhotonIds();   // indices of the digit's photons
+				double earliestphotontruetime=999999999999;
+				for(int& aphotonindex : photonids){
+					WCSimRootCherenkovHitTime* thehittimeobject =
+						 (WCSimRootCherenkovHitTime*)firsttrigm->GetCherenkovHitTimes()->At(aphotonindex);
+					if(thehittimeobject==nullptr){
+						cerr<<"LoadWCSim Tool: ERROR! Retrieval of photon from digit returned nullptr!"<<endl;
+						continue;
+					}
+					double aphotontime = static_cast<double>(thehittimeobject->GetTruetime());
+					if(aphotontime<earliestphotontruetime){ earliestphotontruetime = aphotontime; }
+				}
+				digittime = earliestphotontruetime;
+			}
+			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
-			if(verbose>2) cout<<"digit Q is "<<digiq<<endl;
+			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			
-			ChannelKey key(subdetector::TDC,tubeid);
-			Hit nexthit(tubeid, digittime, digiq);
+			Hit nexthit(key, digittime, digiq);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<Hit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
-			if(verbose>2) cout<<"digit added"<<endl;
+			if(verbosity>2) cout<<"digit added"<<endl;
 		}
-		if(verbose>2) cout<<"done with veto digits"<<endl;
+		if(verbosity>2) cout<<"done with veto digits"<<endl;
 		
-		if(verbose>2) cout<<"setting triggerdata time to "<<EventTimeNs<<"ns"<<endl;
+		if(verbosity>2) cout<<"setting triggerdata time to "<<EventTimeNs<<"ns"<<endl;
 		TriggerData->front().SetTime(EventTimeNs);
+		
+		// copy over additional information about tracks and which tank/mrd/veto PMTs they hit
+		if(MCTriggernum==0){
+			// populate the maps of additional MC Truth information
+			// ParticleId_to_TankTubeIds is a std::map<ParticleId,std::map<ChannelKey,TotalCharge>>
+			// where TotalCharge is the total charge from that particle on that tube
+			// (in the event that the particle generated several hits on the tube)
+			// ParticleId_to_TankCharge is a std::map<ParticleId,TotalCharge> 
+			// where TotalCharge is summed over all digits, on all pmts, which contained
+			// light from that particle
+			MakeParticleToPmtMap(atrigt, firsttrigt, ParticleId_to_TankTubeIds, ParticleId_to_TankCharge, pmt_tubeid_to_channelkey);
+			MakeParticleToPmtMap(atrigm, firsttrigm, ParticleId_to_MrdTubeIds, ParticleId_to_MrdCharge, mrd_tubeid_to_channelkey);
+			MakeParticleToPmtMap(atrigv, firsttrigv, ParticleId_to_VetoTubeIds, ParticleId_to_VetoCharge, facc_tubeid_to_channelkey);
+		}
 		
 	//}
 	
@@ -370,25 +472,33 @@ bool LoadWCSim::Execute(){
 	
 	
 	// set event level variables
-	if(verbose>1) cout<<"setting the store variables"<<endl;
+	if(verbosity>1) cout<<"setting the store variables"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("RunNumber",RunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("SubrunNumber",SubrunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("EventNumber",EventNumber);
-	if(verbose>2) cout<<"particles"<<endl;
+	if(verbosity>2) cout<<"particles"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
-	if(verbose>2) cout<<"hits"<<endl;
+	if(verbosity>2) cout<<"hits"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
-	if(verbose>2) cout<<"tdcdata"<<endl;
+	if(verbosity>2) cout<<"tdcdata"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
-	if(verbose>2) cout<<"triggerdata"<<endl;
+	if(verbosity>2) cout<<"triggerdata"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);  // FIXME
-	if(verbose>2) cout<<"eventtime"<<endl;
+	if(verbosity>2) cout<<"eventtime"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
+	m_data->CStore.Set("NumTriggersThisMCEvt",WCSimEntry->wcsimrootevent->GetNumberOfEvents());
+	// auxilliary information about MC Truth particles
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_TankTubeIds", ParticleId_to_TankTubeIds, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_TankCharge", ParticleId_to_TankCharge, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_MrdCharge", ParticleId_to_MrdCharge, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
+	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
@@ -396,28 +506,451 @@ bool LoadWCSim::Execute(){
 	//CalibratedLAPPDData
 	//RecoParticles
 	
-	// Save the entry to the BoostStore  - done in SaveANNIEEvent tool at end of ToolChain
-	
 	EventNumber++;
 	MCTriggernum++;
-	if(verbose>2) cout<<"checking if we're done on trigs in this event"<<endl;
+	if(verbosity>2) cout<<"checking if we're done on trigs in this event"<<endl;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
 		MCEventNum++;
-		if(verbose>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
+		if(verbosity>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
 	} else {
-		if(verbose>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
+		if(verbosity>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
-	if(MCEventNum==NumEvents) m_data->vars.Set("StopLoop",1);
-	if(verbose>1) cout<<"done loading event"<<endl;
+	if(MCEventNum>=NumEvents){
+		cout<<"LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain"<<endl;
+		m_data->vars.Set("StopLoop",1);
+	} else if(MCEventNum>=MaxEntries && MaxEntries>0){
+		cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
+	}
+	if(verbosity>1) cout<<"done loading event"<<endl;
 	return true;
 }
 
-
 bool LoadWCSim::Finalise(){
-	file->Close();
+	WCSimEntry->GetCurrentFile()->Close();
 	delete WCSimEntry;
-	//delete file;  // Done by WCSimEntry destructor
+	
+	// any pointers put in Stores to objects we do not want the Store to clean up
+	// must be nullified before in finalise to prevent double free
+	// can't just put 0 or nullptr directly as type must be recognisable as a pointer
+//	std::map<int,std::map<unsigned long,double>>* ParticleId_to_TankTubeIds_nullptr = nullptr;
+//	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds_nullptr = nullptr;
+//	std::map<int,std::map<unsigned long,double>>* ParticleId_to_VetoTubeIds_nullptr = nullptr;
+//	std::map<int,double>* ParticleId_to_TankCharge_nullptr = nullptr;
+//	std::map<int,double>* ParticleId_to_MrdCharge_nullptr = nullptr;
+//	std::map<int,double>* ParticleId_to_VetoCharge_nullptr = nullptr;
+	
+//	m_data->CStore.Set("ParticleId_to_TankTubeIds", ParticleId_to_TankTubeIds_nullptr, false);
+//	m_data->CStore.Set("ParticleId_to_TankCharge", ParticleId_to_TankCharge_nullptr, false);
+//	m_data->CStore.Set("ParticleId_to_MrdTubeIds", ParticleId_to_MrdTubeIds_nullptr, false);
+//	m_data->CStore.Set("ParticleId_to_MrdCharge", ParticleId_to_MrdCharge_nullptr, false);
+//	m_data->CStore.Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds_nullptr, false);
+//	m_data->CStore.Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge_nullptr, false);
 	
 	return true;
+}
+
+void LoadWCSim::ConstructToolChainGeometry(){
+	// Pull details from the WCSimRootGeom
+	// ===================================
+	double WCSimGeometryVer = 1;                      // TODO: pull this from some suitable variable
+	// some variables are available from wcsimrootgeom.  TODO: put everything into wcsimrootgeom
+	numtankpmts = wcsimrootgeom->GetWCNumPMT();
+	numlappds = wcsimrootgeom->GetWCNumLAPPD();
+	nummrdpmts = wcsimrootgeom->GetWCNumMRDPMT();
+	numvetopmts = wcsimrootgeom->GetWCNumFACCPMT();
+	double tank_xcentre = (wcsimrootgeom->GetWCOffset(0)) / 100.;  // convert [cm] to [m]
+	double tank_ycentre = (wcsimrootgeom->GetWCOffset(1)) / 100.;
+	double tank_zcentre = (wcsimrootgeom->GetWCOffset(2)) / 100.;
+	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
+	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.;
+	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 100.;
+	// geometry variables not yet in wcsimrootgeom are in MRDSpecs.hh
+	double mrd_width  =  (MRDSpecs::MRD_width)  / 100.;
+	double mrd_height =  (MRDSpecs::MRD_height) / 100.;
+	double mrd_depth  =  (MRDSpecs::MRD_depth)  / 100.;
+	double mrd_start  =  (MRDSpecs::MRD_start)  / 100.;
+	if(verbosity>1) cout<<"we have "<<numtankpmts<<" tank pmts, "<<nummrdpmts
+					  <<" mrd pmts and "<<numlappds<<" lappds"<<endl;
+	
+	// construct the ToolChain Goemetry
+	// ================================
+	Geometry* anniegeom = new Geometry(WCSimGeometryVer,
+									   tank_centre,
+									   tank_radius,
+									   tank_halfheight,
+									   mrd_width,
+									   mrd_height,
+									   mrd_depth,
+									   mrd_start,
+									   numtankpmts,
+									   nummrdpmts,
+									   numvetopmts,
+									   numlappds,
+									   geostatus::FULLY_OPERATIONAL);
+	if(verbosity>1){
+		cout<<"constructed anniegeom at "<<anniegeom<<" with tank origin "; tank_centre.Print();
+	}
+	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",anniegeom,true);
+	
+	// Construct the Detectors and Channels
+	// ====================================
+	// PMTs
+	unsigned int ADC_Crate_Num = 0;
+	unsigned int ADC_Card_Num  = 0;
+	unsigned int ADC_Chan_Num = 0;
+	unsigned int MT_Crate_Num = 0;
+	unsigned int MT_Card_Num = 0;
+	unsigned int MT_Chan_Num = 0;
+	// LAPPDs
+	unsigned int ACDC_Crate_Num = 0;
+	unsigned int ACDC_Card_Num = 0;
+	unsigned int ACDC_Chan_Num = 0;
+	unsigned int ACC_Crate_Num = 0;
+	unsigned int ACC_Card_Num = 0;
+	unsigned int ACC_Chan_Num = 0;
+	// TDCs
+	unsigned int TDC_Crate_Num = 0;
+	unsigned int TDC_Card_Num = 0;
+	unsigned int TDC_Chan_Num = 0;
+	// HV
+	unsigned int CAEN_HV_Crate_Num = 0;
+	unsigned int CAEN_HV_Card_Num = 0;
+	unsigned int CAEN_HV_Chan_Num = 0;
+	unsigned int LeCroy_HV_Crate_Num = 0;
+	unsigned int LeCroy_HV_Card_Num = 0;
+	unsigned int LeCroy_HV_Chan_Num = 0;
+	unsigned int LAPPD_HV_Crate_Num = 0;
+	unsigned int LAPPD_HV_Card_Num = 0;
+	unsigned int LAPPD_HV_Chan_Num = 0;
+	
+	// lappds
+	for(int lappdi=0; lappdi<numlappds; lappdi++){
+		WCSimRootPMT anlappd = wcsimrootgeom->GetLAPPD(lappdi);
+		
+		// Construct the detector associated with this tile
+		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		lappd_tubeid_to_detectorkey.emplace(anlappd.GetTubeNo(),uniquedetectorkey);
+		detectorkey_to_lappdid.emplace(uniquedetectorkey,anlappd.GetTubeNo());
+		Detector adet(uniquedetectorkey,
+					  "LAPPD",
+					  Position( anlappd.GetPosition(0)/100.,
+					            anlappd.GetPosition(1)/100.,
+					            anlappd.GetPosition(2)/100.),
+					  Direction(anlappd.GetOrientation(0),
+					            anlappd.GetOrientation(1),
+					            anlappd.GetOrientation(2)),
+					  anlappd.GetName(),
+					  detectorstatus::ON,
+					  0.);
+		
+		// construct all the channels associated with this LAPPD
+		for(int stripi=0; stripi<LappdNumStrips; stripi++){
+			unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+			
+			int stripside = ((stripi%2)==0);   // StripSide=0 for LHS (x<0), StripSide=1 for RHS (x>0)
+			int stripnum = (int)(stripi/2);    // Strip number: add 2 channels per strip as we go
+			double xpos = (stripside) ? -LappdStripLength : LappdStripLength;
+			double ypos = (stripnum*LappdStripSeparation) - ((LappdNumStrips*LappdStripSeparation)/2.);
+			
+			// fill up ADC cards and channels monotonically, they're arbitrary for simulation
+			ACDC_Chan_Num++;
+			if(ACDC_Chan_Num>=ACDC_CHANNELS_PER_CARD)  { ACDC_Chan_Num=0; ACDC_Card_Num++; ACC_Chan_Num++; }
+			if(ACDC_Card_Num>=ACDC_CARDS_PER_CRATE)    { ACDC_Card_Num=0; ACDC_Crate_Num++; }
+			if(ACC_Chan_Num>=ACC_CHANNELS_PER_CARD)    { ACC_Chan_Num=0; ACC_Card_Num++;    }
+			if(ACC_Card_Num>=ACC_CARDS_PER_CRATE)      { ACC_Card_Num=0; ACC_Crate_Num++;   }
+			// same for HV
+			LAPPD_HV_Chan_Num++;
+			if(LAPPD_HV_Chan_Num>=LAPPD_HV_CHANNELS_PER_CARD)    { LAPPD_HV_Chan_Num=0; LAPPD_HV_Card_Num++;  }
+			if(LAPPD_HV_Card_Num>=LAPPD_HV_CARDS_PER_CRATE) { LAPPD_HV_Card_Num=0; LAPPD_HV_Crate_Num++; }
+			
+			Channel lappdchannel(uniquechannelkey,
+								 Position(xpos,ypos,0.),
+								 stripside,
+								 stripnum,
+								 ACDC_Crate_Num,
+								 ACDC_Card_Num,
+								 ACDC_Chan_Num,
+								 ACC_Crate_Num,
+								 ACC_Card_Num,
+								 ACC_Chan_Num,
+								 LAPPD_HV_Crate_Num,
+								 LAPPD_HV_Card_Num,
+								 LAPPD_HV_Chan_Num,
+								 channelstatus::ON);
+			
+			// Add this channel to the geometry
+			if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+			adet.AddChannel(lappdchannel);
+		}
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		// Add this detector to the geometry
+		anniegeom->AddDetector(adet);
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
+	}
+	
+	// tank PMTs
+	for(int pmti=0; pmti<numtankpmts; pmti++){
+		WCSimRootPMT apmt = wcsimrootgeom->GetPMT(pmti);
+		
+		// Construct the detector associated with this PMT
+		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		Detector adet(uniquedetectorkey,
+					  "Tank",
+					  Position( apmt.GetPosition(0)/100.,
+					            apmt.GetPosition(1)/100.,
+					            apmt.GetPosition(2)/100.),
+					  Direction(apmt.GetOrientation(0),
+					            apmt.GetOrientation(1),
+					            apmt.GetOrientation(2)),
+					  apmt.GetName(),
+					  detectorstatus::ON,
+					  0.);
+		
+		// construct the channel associated with this PMT
+		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		pmt_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
+		channelkey_to_pmtid.emplace(uniquechannelkey,apmt.GetTubeNo());
+		
+		// fill up ADC cards and channels monotonically, they're arbitrary for simulation
+		ADC_Chan_Num++;
+		if(ADC_Chan_Num>=ADC_CHANNELS_PER_CARD)  { ADC_Chan_Num=0; ADC_Card_Num++; MT_Chan_Num++; }
+		if(ADC_Card_Num>=ADC_CARDS_PER_CRATE)    { ADC_Card_Num=0; ADC_Crate_Num++; }
+		if(MT_Chan_Num>=MT_CHANNELS_PER_CARD)    { MT_Chan_Num=0; MT_Card_Num++; }
+		if(MT_Card_Num>=MT_CARDS_PER_CRATE)      { MT_Card_Num=0; MT_Crate_Num++; }
+		// same for HV
+		CAEN_HV_Chan_Num++;
+		if(CAEN_HV_Chan_Num>=CAEN_HV_CHANNELS_PER_CARD)    { CAEN_HV_Chan_Num=0; CAEN_HV_Card_Num++;  }
+		if(CAEN_HV_Card_Num>=CAEN_HV_CARDS_PER_CRATE) { CAEN_HV_Card_Num=0; CAEN_HV_Crate_Num++; }
+		
+		Channel pmtchannel( uniquechannelkey,
+							Position(0,0,0.),
+							0, // stripside
+							0, // stripnum
+							ADC_Crate_Num,
+							ADC_Card_Num,
+							ADC_Chan_Num,
+							MT_Crate_Num,
+							MT_Card_Num,
+							MT_Chan_Num,
+							CAEN_HV_Crate_Num,
+							CAEN_HV_Card_Num,
+							CAEN_HV_Chan_Num,
+							channelstatus::ON);
+		
+		// Add this channel to the geometry
+		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+		adet.AddChannel(pmtchannel);
+		
+		// Add this detector to the geometry
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		anniegeom->AddDetector(adet);
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
+	}
+	
+	// mrd PMTs
+	for(int mrdpmti=0; mrdpmti<nummrdpmts; mrdpmti++){
+		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(mrdpmti);
+		
+		// Construct the detector associated with this PMT
+		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		Detector adet(uniquedetectorkey,
+					  "MRD",
+					  Position( apmt.GetPosition(0)/100.,
+					            apmt.GetPosition(1)/100.,
+					            apmt.GetPosition(2)/100.),
+					  Direction(apmt.GetOrientation(0),
+					            apmt.GetOrientation(1),
+					            apmt.GetOrientation(2)),
+					  apmt.GetName(),
+					  detectorstatus::ON,
+					  0.);
+		
+		// construct the channel associated with this PMT
+		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		mrd_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
+		channelkey_to_mrdpmtid.emplace(uniquechannelkey, apmt.GetTubeNo());
+		
+		// fill up TDC cards and channels monotonically, they're arbitrary for simulation
+		TDC_Chan_Num++;
+		if(TDC_Chan_Num>=TDC_CHANNELS_PER_CARD)  { TDC_Chan_Num=0; TDC_Card_Num++;  }
+		if(TDC_Card_Num>=TDC_CARDS_PER_CRATE)    { TDC_Card_Num=0; TDC_Crate_Num++; }
+		// same for HV
+		LeCroy_HV_Chan_Num++;
+		if(LeCroy_HV_Chan_Num>=LECROY_HV_CHANNELS_PER_CARD)    { LeCroy_HV_Chan_Num=0; LeCroy_HV_Card_Num++;  }
+		if(LeCroy_HV_Card_Num>=LECROY_HV_CARDS_PER_CRATE) { LeCroy_HV_Card_Num=0; LeCroy_HV_Crate_Num++; }
+		
+		Channel pmtchannel( uniquechannelkey,
+							Position(0,0,0.),
+							0, // stripside
+							0, // stripnum
+							TDC_Crate_Num,
+							TDC_Card_Num,
+							TDC_Chan_Num,
+							-1,                 // TDC has no level 2 signal handling
+							-1,
+							-1,
+							LeCroy_HV_Crate_Num,
+							LeCroy_HV_Card_Num,
+							LeCroy_HV_Chan_Num,
+							channelstatus::ON);
+		
+		// Add this channel to the geometry
+		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+		adet.AddChannel(pmtchannel);
+		
+		// Add this detector to the geometry
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		anniegeom->AddDetector(adet);
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
+	}
+	
+	// veto PMTs
+	for(int faccpmti=0; faccpmti<numvetopmts; faccpmti++){
+		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(faccpmti);
+		
+		// Construct the detector associated with this PMT
+		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		Detector adet(uniquedetectorkey,
+					  "Veto",
+					  Position( apmt.GetPosition(0)/100.,
+					            apmt.GetPosition(1)/100.,
+					            apmt.GetPosition(2)/100.),
+					  Direction(apmt.GetOrientation(0),
+					            apmt.GetOrientation(1),
+					            apmt.GetOrientation(2)),
+					  apmt.GetName(),
+					  detectorstatus::ON,
+					  0.);
+		
+		// construct the channel associated with this PMT
+		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		facc_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
+		channelkey_to_faccpmtid.emplace(uniquechannelkey, apmt.GetTubeNo());
+		
+		// fill up TDC cards and channels monotonically, they're arbitrary for simulation
+		TDC_Chan_Num++;
+		if(TDC_Chan_Num>=TDC_CHANNELS_PER_CARD)  { TDC_Chan_Num=0; TDC_Card_Num++;  }
+		if(TDC_Card_Num>=TDC_CARDS_PER_CRATE)    { TDC_Card_Num=0; TDC_Crate_Num++; }
+		// same for HV
+		LeCroy_HV_Chan_Num++;
+		if(LeCroy_HV_Chan_Num>=LECROY_HV_CHANNELS_PER_CARD)    { LeCroy_HV_Chan_Num=0; LeCroy_HV_Card_Num++;  }
+		if(LeCroy_HV_Card_Num>=LECROY_HV_CARDS_PER_CRATE) { LeCroy_HV_Card_Num=0; LeCroy_HV_Crate_Num++; }
+		
+		Channel pmtchannel( uniquechannelkey,
+							Position(0,0,0.),
+							0, // stripside
+							0, // stripnum
+							TDC_Crate_Num,
+							TDC_Card_Num,
+							TDC_Chan_Num,
+							-1,                 // TDC has no level 2 signal handling
+							-1,
+							-1,
+							LeCroy_HV_Crate_Num,
+							LeCroy_HV_Card_Num,
+							LeCroy_HV_Chan_Num,
+							channelstatus::ON);
+		
+		// Add this channel to the geometry
+		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+		adet.AddChannel(pmtchannel);
+		
+		// Add this detector to the geometry
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		anniegeom->AddDetector(adet);
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
+	}
+	
+	// for other WCSim tools that may need the WCSim Tube IDs
+	m_data->CStore.Set("lappd_tubeid_to_detectorkey",lappd_tubeid_to_detectorkey);
+	m_data->CStore.Set("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
+	m_data->CStore.Set("mrd_tubeid_to_channelkey",mrd_tubeid_to_channelkey);
+	m_data->CStore.Set("facc_tubeid_to_channelkey",facc_tubeid_to_channelkey);
+	// inverse
+	m_data->CStore.Set("detectorkey_to_lappdid",detectorkey_to_lappdid);
+	m_data->CStore.Set("channelkey_to_pmtid",channelkey_to_pmtid);
+	m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	m_data->CStore.Set("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
+	
+}
+
+void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_TubeIds, std::map<int,double>* ParticleId_to_Charge, std::map<int,unsigned long> tubeid_to_channelkey){
+	if(thistrig==nullptr) return;
+	ParticleId_to_TubeIds->clear();
+	ParticleId_to_Charge->clear();
+	// scan through the parents IDs of the photons contributing to each digit
+	// make note of which parent contributes to which digit, and which digits are associated with each parent
+	Log("Making Particle to PMT Map",v_message,verbosity);
+	// technically the charge will be a lower limit as this sums the charge from all digits
+	// that a given particle contributed to, but not all this digit's charge may have been
+	// from this particle.
+	
+	// To match digits to their parent particles we need the corresponding CherenkovHitTimes
+	// both CherenkovHits and CherenkovHitTimes are stored in the first trigger
+	//--------------------------------------------------------------------------------------
+	int ncherenkovhits=firstTrig->GetCherenkovHits()->GetEntries(); //atrigt->GetNcherenkovhits();
+	int nhittimes = firstTrig->GetCherenkovHitTimes()->GetEntries();
+	
+	std::map<int,int> timeArrayOffsetMap;
+	if(WCSimVersion<2){
+		// The CherenkovHitTimes is a flattened array (over PMTs) of arrays (over photons)
+		// For WCSimVersion<2, the PhotonIds available from a digit are the indices 
+		// *within the subarray for that PMT*
+		// we therefore need we need to offset these indices by the start of the pmt's subarray.
+		// This offset may be found by scanning the CherenkovHits array (over PMTs),
+		// finding the correct TubeID, and retrieving the 'GetTotalPe(0)' member for this entry.
+		for(int ihit = 0; ihit < ncherenkovhits; ihit++){
+			// each WCSimRootCherenkovHit represents a hit PMT
+			WCSimRootCherenkovHit* hitobject = 
+				(WCSimRootCherenkovHit*)firstTrig->GetCherenkovHits()->At(ihit);
+			if(hitobject==nullptr) cerr<<"HITOBJECT IS NULL!"<<endl;
+			int tubeNumber = hitobject->GetTubeID();
+			int timeArrayOffset = hitobject->GetTotalPe(0);
+			timeArrayOffsetMap.emplace(tubeNumber,timeArrayOffset);
+		}
+	}
+	
+	// Loop over all digits 
+	int numdigits = thistrig->GetCherenkovDigiHits()->GetEntries();
+	for(int digiti=0; digiti<numdigits; digiti++){
+		WCSimRootCherenkovDigiHit* digihit =
+			(WCSimRootCherenkovDigiHit*)thistrig->GetCherenkovDigiHits()->At(digiti);
+		int tubeid = digihit->GetTubeId();
+		// loop over the photons in this digit
+		std::vector<int> truephotonindices = digihit->GetPhotonIds();
+		for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
+			int thephotonsid = truephotonindices.at(truephoton);
+			if(WCSimVersion<2){
+				thephotonsid+=timeArrayOffsetMap.at(tubeid);
+			}
+			// we should use ChannelKey instead of tubeid.
+			int channelkey = tubeid_to_channelkey.at(tubeid);
+			WCSimRootCherenkovHitTime *thehittimeobject = 
+				(WCSimRootCherenkovHitTime*)(firstTrig->GetCherenkovHitTimes()->At(thephotonsid));
+			if(thehittimeobject==nullptr) cerr<<"HITTIME IS NULL"<<endl;
+			Int_t thephotonsparenttrackid = (thehittimeobject) ? thehittimeobject->GetParentID() : -1;
+			if(ParticleId_to_TubeIds->count(thephotonsparenttrackid)==0){
+				// we've not recorded any hits for this particle: make an empty map for it
+				ParticleId_to_TubeIds->emplace(thephotonsparenttrackid,std::map<unsigned long,double>{});
+			}
+			if(ParticleId_to_TubeIds->at(thephotonsparenttrackid).count(channelkey)==0){
+				// in the map for this particle record that this tube was hit
+				ParticleId_to_TubeIds->at(thephotonsparenttrackid).emplace(channelkey,digihit->GetQ());
+			} else {
+				// add another hit on this tube from this particle
+				ParticleId_to_TubeIds->at(thephotonsparenttrackid).at(channelkey)+=digihit->GetQ();
+			}
+			if(ParticleId_to_Charge->count(thephotonsparenttrackid)==0){
+				// first time seeing this particle
+				ParticleId_to_Charge->emplace(thephotonsparenttrackid,digihit->GetQ());
+			} else {
+				ParticleId_to_Charge->at(thephotonsparenttrackid)+=digihit->GetQ();
+			}
+		}
+	}  // end loop over digits
 }

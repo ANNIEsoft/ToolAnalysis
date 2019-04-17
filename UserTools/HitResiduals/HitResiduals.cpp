@@ -35,6 +35,9 @@ bool HitResiduals::Initialise(std::string configfile, DataModel &data){
 	htimeresidlappd = new TH1D("htimeresidlappd","LAPPD Digit Time residual",300,-10,25);
 	hitResidCanv = new TCanvas("hitResidCanv","hitResidCanv",canvwidth,canvheight);
 	
+	get_ok = m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",anniegeom);
+	if(get_ok==0){ cerr<<"No AnnieGeometry in ANNIEEVENT!"<<endl; return false; }
+	
 	return true;
 }
 
@@ -51,8 +54,6 @@ bool HitResiduals::Execute(){
 	if(get_ok==0){ cerr<<"No MCHits in ANNIEEVENT!"<<endl; return false; }
 	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
 	if(get_ok==0){ cerr<<"No MCLAPPDHits in ANNIEEVENT!"<<endl; return false; }
-	get_ok = m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",anniegeom);
-	if(get_ok==0){ cerr<<"No AnnieGeometry in ANNIEEVENT!"<<endl; return false; }
 	
 	// FIRST GET THE TRIGGER TIME. IF WE HAVE A PROMPT TRIGGER, THIS SHOULD BE 0
 	double triggertime = static_cast<double>(EventTime->GetNs());
@@ -78,7 +79,7 @@ bool HitResiduals::Execute(){
 			muonvertex = primarymuon.GetStartVertex();
 		} else {
 			cerr<<"No Primary Muon"<<endl;
-			return false;
+			return true;
 		}
 	} else {
 		cerr<<"No MCParticles"<<endl;
@@ -90,14 +91,14 @@ bool HitResiduals::Execute(){
 	if(MCHits){
 		cout<<"Num MCHits : "<<MCHits->size()<<endl;
 		// iterate over the map of sensors with a measurement
-		for(std::pair<ChannelKey,std::vector<Hit>>&& apair : *MCHits){
-			ChannelKey chankey = apair.first;
-			Detector thistube = anniegeom->GetDetector(chankey);
-			Position tubeposition = thistube.GetDetectorPosition();
+		for(std::pair<unsigned long,std::vector<Hit>>&& apair : *MCHits){
+			unsigned long chankey = apair.first;
+			Detector* thistube = anniegeom->ChannelToDetector(chankey);
+			Position tubeposition = thistube->GetDetectorPosition();
 			double distance = sqrt(pow((tubeposition.X()-muonvertex.X()),2.)+
 								   pow((tubeposition.Y()-muonvertex.Y()),2.)+
 								   pow((tubeposition.Z()-muonvertex.Z()),2.));
-			if(chankey.GetSubDetectorType()==subdetector::ADC){  // ADC, LAPPD, TDC
+			if(thistube->GetDetectorElement()=="Tank"){  // ADC, LAPPD, TDC
 				std::vector<Hit>& hits = apair.second;
 				for(Hit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
@@ -116,14 +117,14 @@ bool HitResiduals::Execute(){
 	if(MCLAPPDHits){
 		cout<<"Num MCLAPPDHits : "<<MCLAPPDHits->size()<<endl;
 		// iterate over the map of sensors with a measurement
-		for(std::pair<ChannelKey,std::vector<LAPPDHit>>&& apair : *MCLAPPDHits){
-			ChannelKey chankey = apair.first;
-			Detector thistube = anniegeom->GetDetector(chankey);
-			Position tubeposition = thistube.GetDetectorPosition();
+		for(std::pair<unsigned long,std::vector<LAPPDHit>>&& apair : *MCLAPPDHits){
+			unsigned long chankey = apair.first;
+			Detector* thistube = anniegeom->ChannelToDetector(chankey);
+			Position tubeposition = thistube->GetDetectorPosition();
 			double distance = sqrt(pow((tubeposition.X()-muonvertex.X()),2.)+
 								   pow((tubeposition.Y()-muonvertex.Y()),2.)+
 								   pow((tubeposition.Z()-muonvertex.Z()),2.));
-			if(chankey.GetSubDetectorType()==subdetector::LAPPD){  // ADC, LAPPD, TDC
+			if(thistube->GetDetectorElement()=="LAPPD"){  // ADC, LAPPD, TDC
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
@@ -154,7 +155,7 @@ bool HitResiduals::Finalise(){
 	htimeresidlappd->Draw("same");
 	hitResidCanv->BuildLegend();
 	hitResidCanv->SaveAs("HitTimeResiduals.png");
-	while(gROOT->FindObject("htimeresidpmt")!=nullptr){
+	while(gROOT->FindObject("hitResidCanv")!=nullptr){
 		gSystem->ProcessEvents();
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
@@ -162,7 +163,7 @@ bool HitResiduals::Finalise(){
 	// cleanup track drawing TApplication
 	if(htimeresidpmt) delete htimeresidpmt;
 	if(htimeresidlappd) delete htimeresidlappd;
-	if(hitResidCanv) delete hitResidCanv;
+	if(gROOT->FindObject("hitResidCanv")!=nullptr)delete hitResidCanv;
 	delete hitResidualApp;
 	
 	return true;

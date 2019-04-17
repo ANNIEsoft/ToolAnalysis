@@ -58,7 +58,8 @@ public :
    TBranch        *b_wcsimrootgeom;                   //!
    TBranch        *b_wcsimrootopts;                   //!
 
-   wcsimT(TTree *tree=0);
+   wcsimT(TTree *tree=0, int verbosein=0);
+   wcsimT(std::string pattern, int verbosein=0);
    virtual ~wcsimT();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -67,12 +68,15 @@ public :
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
+   virtual TFile*   GetCurrentFile();
+   virtual ULong64_t GetEntries();
 };
 
 #endif
 
 #ifdef wcsimT_cxx
-wcsimT::wcsimT(TTree *tree) : fChain(0) 
+// TTree constructor
+wcsimT::wcsimT(TTree *tree, int verbosein) : fChain(0), verbose(verbosein)
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
@@ -80,13 +84,6 @@ wcsimT::wcsimT(TTree *tree) : fChain(0)
    TTree* geotree=nullptr;
    TTree* optstree=nullptr;
    if(tree == 0) {
-/*
-      TChain * chain = new TChain("wcsimT","");
-      std::string pattern="/pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.*.root";  // TODO TODO TODO make this an argument
-      if(verbose) cout<<"creating chain from files "<<pattern<<endl;
-      chain->Add(pattern.c_str());
-      tree = chain;
-*/
       cerr<<"wcsimT constructed in Chain mode with null TChain!"<<endl;
       return;
    } else {
@@ -98,6 +95,26 @@ wcsimT::wcsimT(TTree *tree) : fChain(0)
    if(verbose) cout<<"constructed wcsimT class from TChain within files "<<f->GetName()<<endl;
    
    Init(tree, geotree, optstree);
+}
+
+// pattern constructor
+wcsimT::wcsimT(std::string pattern, int verbosein) : verbose(verbosein)
+{
+   TChain* chain = new TChain("wcsimT","");
+   if(verbose) cout<<"creating chain from files "<<pattern<<endl;
+   chain->Add(pattern.c_str());
+   fChain = chain;
+   LoadTree(0); // need to load the tree from first file
+   
+   TFile* f = fChain->GetCurrentFile();
+   if(not f){ cerr<<"fChain has no file!"<<endl; return; }
+   TTree* geotree=nullptr;
+   TTree* optstree=nullptr;
+   f->GetObject("wcsimGeoT",geotree);
+   f->GetObject("wcsimRootOptionsT",optstree);
+   if(verbose) cout<<"constructed wcsimT class from TChain within files "<<f->GetName()<<endl;
+   
+   Init(fChain, geotree, optstree);
 }
 
 wcsimT::~wcsimT()
@@ -199,6 +216,14 @@ void wcsimT::Init(TTree *tree, TTree* geotree=0, TTree* optstree=0)
    }
    
    Notify();
+}
+
+TFile* wcsimT::GetCurrentFile(){
+   return fChain->GetCurrentFile();
+}
+
+ULong64_t wcsimT::GetEntries(){
+   return fChain->GetEntries();
 }
 
 Bool_t wcsimT::Notify()

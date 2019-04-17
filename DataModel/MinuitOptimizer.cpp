@@ -301,7 +301,7 @@ MinuitOptimizer::MinuitOptimizer() {
 	fZmin = -152.0;
 	fZmax = 152.0;
 	fTmin = -10.0;
-	fTmax = 20.0;
+	fTmax = 10.0;
 	
 	// default Mean time calculator type
 	fMeanTimeCalculatorType = 0;
@@ -534,7 +534,7 @@ void MinuitOptimizer::ConePropertiesFoM(double& coneFOM)
   double fom = 0.0;
 
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 	
-    if( this->fVtxGeo->IsFiltered(idigit) ){
+    if( this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch){
       deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
       digitCharge = this->fVtxGeo->GetDigitQ(idigit);
 
@@ -1648,7 +1648,7 @@ double MinuitOptimizer::FindSimpleTimeProperties(VertexGeometry* vtxgeo) {
 	}
 	
 	// most probable time
-	if(fMeanTimeCalculatorType == 1) {
+	else if(fMeanTimeCalculatorType == 1) {
 		double sigma = 0.0;
 		double deltaAngle = 0.0;
 		double weight = 0.0;
