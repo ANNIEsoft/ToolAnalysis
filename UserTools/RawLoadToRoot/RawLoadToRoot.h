@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "ChannelKey.h"
 #include "Waveform.h"
 #include "TH1D.h"
 #include "TFile.h"
@@ -49,11 +48,11 @@ class RawLoadToRoot: public Tool {
    std::string key;
    std::string value;
 
-   std::map<ChannelKey, std::vector<Waveform<unsigned short>>>
+   std::map<unsigned long, std::vector<Waveform<unsigned short>>>
     RawADCData;
 
     map<int,map<int,std::vector<ADCPulse>>> trigev;
-    std::map<ChannelKey, std::vector<CalibratedADCWaveform<double>>> caladcdata;
+    std::map<unsigned long, std::vector<CalibratedADCWaveform<double>>> caladcdata;
 
 
 

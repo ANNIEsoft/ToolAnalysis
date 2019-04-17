@@ -1,0 +1,9 @@
+verbose 3
+
+muonRecoDebug_fill 0
+muonMCTruth_fill 1
+muonTruthRecoDiff_fill 1
+
+OutputFile /ToolAnalysis/ToolAnalysisDoE_PMTOnly.ntuple.root
+NumEventsWritten 2000
+

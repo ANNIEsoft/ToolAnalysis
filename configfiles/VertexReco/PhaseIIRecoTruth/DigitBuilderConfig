@@ -1,0 +1,8 @@
+# DigitBuilder config file
+
+verbosity 4
+ParametricModel 1
+# There are three configurations: "PMT_only", "LAPPD_only", "All"
+PhotoDetectorConfiguration All
+#Get Pion/Kaon counts from MC Truth
+GetPionKaonInfo 1

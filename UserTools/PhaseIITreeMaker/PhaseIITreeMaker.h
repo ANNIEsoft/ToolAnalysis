@@ -6,9 +6,13 @@
 
 #include "Tool.h"
 // ROOT includes
+#include "TApplication.h"
+#include <Math/PxPyPzE4D.h>
+#include <Math/LorentzVector.h>
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
+
 
 class PhaseIITreeMaker: public Tool {
 
@@ -45,7 +49,11 @@ class PhaseIITreeMaker: public Tool {
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
-  
+
+  // \brief Event Status flag masks
+  int fEventStatusApplied;
+  int fEventStatusFlagged;
+
   // Digits
   int fNhits = 0;
   std::vector<int> fIsFiltered;
@@ -115,6 +123,7 @@ class PhaseIITreeMaker: public Tool {
   double fRecoPhi;
   int fRecoStatus;
   
+  // Difference between MC and Truth
   double fDeltaVtxX; 
   double fDeltaVtxY;
   double fDeltaVtxZ;
@@ -126,7 +135,14 @@ class PhaseIITreeMaker: public Tool {
   double fDeltaZenith;  
   double fDeltaAngle;
   
-  	
+  // Pion and kaon counts for event
+  int fPi0Count;
+  int fPiPlusCount;
+  int fPiMinusCount;
+  int fK0Count;
+  int fKPlusCount;
+  int fKMinusCount;
+
   /// \brief Integer that determines the level of logging to perform
   int verbosity = 0;
   int v_error=0;
@@ -137,9 +153,11 @@ class PhaseIITreeMaker: public Tool {
   int get_ok;	
 
   /// \Integer flags that control additional output to the PhaseIITree
+  int fillCleanEventsOnly = 1; //Only output events not flagged by EventSelector tool
   int muonMCTruth_fill = 0; //Output the MC truth information
   int muonRecoDebug_fill = 0; //Outputs results of Reconstruction at each step (best fits, FOMs, etc.)
   int muonTruthRecoDiff_fill = 0; //Output difference in truth and reconstructed values
+  int pionKaonCount_fill = 0;  //Output the number of pions and kaons based on truth info
 };
 
 

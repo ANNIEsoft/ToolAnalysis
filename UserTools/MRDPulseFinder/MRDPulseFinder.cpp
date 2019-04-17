@@ -29,8 +29,8 @@ bool MRDPulseFinder::Execute(){
 
   map<int,map<int,std::vector<ADCPulse>>> MiniBufferPulses;
 
-  map<ChannelKey,std::vector<Waveform<unsigned short>>> :: iterator itr;
-  //map<ChannelKey,std::vector<CalibratedADCWaveform<double>>> :: iterator itrr;
+  map<unsigned long,std::vector<Waveform<unsigned short>>> :: iterator itr;
+  //map<unsigned long,std::vector<CalibratedADCWaveform<double>>> :: iterator itrr;
   int vectsize = rawadcdata.begin()->second.size();
 
   for(int aaa=0; aaa<vectsize; aaa++){
@@ -41,9 +41,9 @@ bool MRDPulseFinder::Execute(){
     //for(itr=rawadcdata.begin(),itrr=caladc.begin(); itr!=rawadcdata.end(),itrr!=caladc.end(); ++itr,++itrr){
     for(itr=rawadcdata.begin(); itr!=rawadcdata.end(); ++itr){
 
-      ChannelKey ck = itr->first;
+      unsigned long ck = itr->first;
       std::vector<Waveform<unsigned short>> TheWaveforms = itr->second;
-      //ChannelKey ckey = itrr->first;
+      //unsigned long ckey = itrr->first;
       //std::vector<CalibratedADCWaveform<double>> somecalwavs = itrr->second;
       //CalibratedADCWaveform<double> onecalwav = somecalwavs.at(aaa);
       //bline = onecalwav.GetBaseline();

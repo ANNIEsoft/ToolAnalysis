@@ -16,7 +16,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "ANNIEGeometry.h"
-
+#include "Detector.h"
 
 class DigitBuilder: public Tool {
 
@@ -47,7 +47,34 @@ class DigitBuilder: public Tool {
   ///
   /// It adds LAPPD hits to the RecoDigit list
  	bool BuildLAPPDRecoDigit();
+
+ 	/// \brief Find true neutrino vertex
+ 	///
+ 	/// Loop over all MC particles and find the particle with highest energy. 
+ 	/// This particle is the primary muon. The muon start position, time and 
+ 	/// the muon direction are used to initise the true neutrino vertex 
+ 	void FindTrueVertexFromMC();
+
+ 	/// \brief Find PionKaon Count 
+ 	///
+ 	/// Loop over all MC particles and find any particles with PDG codes
+  /// Consistent with Pions or Kaons of any charges. Racks up a count
+  /// of the number of each type of particle
  	
+  void FindPionKaonCountFromMC();
+
+ 	/// \brief Save true neutrino vertex
+ 	///
+ 	/// Push true muon vertex to "RecoVertex"
+ 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
+ 	void PushTrueVertex(bool savetodisk);
+
+ 	/// \brief Save true neutrino vertex
+ 	///
+ 	/// Push true muon stop vertex to "RecoVertex"
+ 	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
+ 	void PushTrueStopVertex(bool savetodisk);
+
  	/// \brief Push reco digits to ANNIEEvent
   ///
   /// It adds the vector of PMT and LAPPD digits to ANNIEEvent
@@ -75,11 +102,13 @@ class DigitBuilder: public Tool {
 	uint64_t fMCEventNum;      ///< event number in MC file
 	std::vector<int> fLAPPDId; ///< selected LAPPDs
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
+	bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
+  bool fGetPiKInfo = false;
 	
-	Geometry fGeometry;    ///< ANNIE Geometry
-	std::map<ChannelKey,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
-	std::map<ChannelKey,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
-	std::map<ChannelKey,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
+  Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
+	std::map<unsigned long,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
+	std::map<unsigned long,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
+	std::map<unsigned long,std::vector<Hit>>* fTDCData=nullptr;            ///< MRD & veto hits
 	TRandom3 frand;  ///< Random number generator
 	
 	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
@@ -93,22 +122,16 @@ class DigitBuilder: public Tool {
 	bool fEventCutStatus;
 	/// Reconstructed information
 	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
-	
-//	/// \brief ROOT TFile that will be used to store the output from this tool
-//  std::unique_ptr<TFile> fOutput_tfile = nullptr;
-//
-//  /// \brief TTree that will be used to store output
-//  TTree* fDigitTree = nullptr;
-//  
-//  /// \brief Branch variables
-//  /// Digits
-//  int fNhits;
-//  std::vector<double> fDigitX;
-//  std::vector<double> fDigitY;
-//  std::vector<double> fDigitZ;
-//  std::vector<double> fDigitT;
-//  std::vector<double> fDigitQ;    
-//  std::vector<int> fDigitType;
+	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
+	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
+	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
+
+	// retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
+	// Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates
+	// the correct number of Channel (stripline) objects, all hits are on the 
+	// first Channel (stripline) of the Detector (tile).
+	std::map<unsigned long,int> detectorkey_to_lappdid;
+	std::map<unsigned long,int> channelkey_to_pmtid;
 	
 };
 

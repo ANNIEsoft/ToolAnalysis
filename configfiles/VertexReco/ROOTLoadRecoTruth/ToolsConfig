@@ -1,0 +1,4 @@
+DigitBuilderROOT DigitBuilderROOT ./configfiles/VertexReco/ROOTLoadRecoTruth/DigitBuilderROOTConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/VertexReco/ROOTLoadRecoTruth/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/ROOTLoadRecoTruth/PhaseIITreeMakerConfig
+#SaveRecoEvent SaveRecoEvent ./configfiles/VertexReco/ROOTLoadRecoTruth/SaveRecoEventConfig

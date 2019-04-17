@@ -1,7 +1,15 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "FindMrdTracks.h"
-#include "TCanvas.h"
 #include <numeric>      // std::iota
+// for drawing
+#include "TROOT.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TH1.h"
+#include "TSystem.h"
+// for sleeping
+#include <thread>          // std::this_thread::sleep_for
+#include <chrono>          // std::chrono::seconds
 
 FindMrdTracks::FindMrdTracks():Tool(){}
 
@@ -23,6 +31,7 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("MaxMrdSubEventDuration",maxsubeventduration);
 	m_variables.Get("WriteTracksToFile",writefile);
 	m_variables.Get("DrawTruthTracks",DrawTruthTracks);
+	m_variables.Get("MakeMrdDigitTimePlot",MakeMrdDigitTimePlot);
 	
 	// create a store for holding MRD tracks to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
@@ -31,13 +40,24 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	theMrdTracks = new std::vector<BoostStore>(5);
 	
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geo);
-	numvetopmts = geo->GetNumVetoPMTs();
+	//numvetopmts = geo->GetNumVetoPMTs();
 	
 	// create clonesarray for storing the MRD Track details as they're found
 	if(SubEventArray==nullptr) SubEventArray = new TClonesArray("cMRDSubEvent");  // string is class name
 	// put the pointer in the CStore, so it can be retrieved by MrdTrackPlotter tool Init
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
+	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	
+	if(MakeMrdDigitTimePlot){
+		// create the ROOT application to show histograms
+		int myargc=0;
+		char *myargv[] = {(const char*)"Ahh shark!"};
+		findMrdRootApp = new TApplication("findMrdRootApp",&myargc,myargv);
+		mrddigitts = new TH1D("mrddigitts","mrd digit times",500,-50,2000);
+		canvwidth = 900;
+		canvheight = 600;
+	}
 	
 	return true;
 }
@@ -64,7 +84,7 @@ bool FindMrdTracks::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
 	m_data->Stores["ANNIEEvent"]->Get("TriggerNumber",MCTriggernum);
 	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
-	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<TDCHit>>
 	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 	
 	// FIXME align types until we update MRDTrackClass/MRDSubEventClass
@@ -86,11 +106,11 @@ bool FindMrdTracks::Execute(){
 	mrddigitpmtsthisevent.clear();
 	mrddigitchargesthisevent.clear();
 	if(!TDCData){
-		if(verbosity>1) cout<<"no TDC data to find MRD tracks in."<<endl;
+		if(verbosity) cout<<"no TDC data to find MRD tracks in."<<endl;
 		return true;
 	}
 	if(TDCData->size()==0){
-		if(verbosity>1) cout<<"no TDC hits to find tracks in."<<endl;
+		if(verbosity) cout<<"no TDC hits to find tracks in."<<endl;
 		return true;
 	}
 	
@@ -101,19 +121,25 @@ bool FindMrdTracks::Execute(){
 		//WCSimRootCherenkovDigiHit* digihit =
 		//	(WCSimRootCherenkovDigiHit*)atrigm->GetCherenkovDigiHits()->At(i);
 		/*
-		digihit is of type std::pair<ChannelKey,vector<TDCHit>>,
-		ChannelKey has members SubDetectorIndex (uint) and DetectorElementIndex (uint)
-		TDCHit has members Time,
+		digihit is of type std::pair<unsigned long,vector<TDCHit>>,
+		the unsigned long is a unique number allocated to all signal channels
 		*/
 		
-		ChannelKey chankey = anmrdpmt.first;
-		// subdetector thispmtssubdetector = chankey.GetSubDetectorType(); will be TDC by nature
-		int thispmtsid = chankey.GetDetectorElementIndex();
-		if(thispmtsid < numvetopmts) continue; // this is a veto hit, not an MRD hit.
+		unsigned long chankey = anmrdpmt.first;
+		Detector* thedetector = geo->ChannelToDetector(chankey);
+		int wcsimtubeid = channelkey_to_mrdpmtid.at(chankey);
+		assert(wcsimtubeid>0&&"FindMrdTracks WCSimTubeId==0!");
+		
+		if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit.
 		for(auto&& hitsonthismrdpmt : anmrdpmt.second){
-			mrddigitpmtsthisevent.push_back(thispmtsid-(numvetopmts+1));
+			mrddigitpmtsthisevent.push_back(wcsimtubeid-1);
+			//cout<<"recording MRD hit at time "<<hitsonthismrdpmt.GetTime()<<endl;
 			mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 			mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
+			if(MakeMrdDigitTimePlot){
+				// fill the histogram if we're checking
+				mrddigitts->Fill(hitsonthismrdpmt.GetTime());
+			}
 		}
 	}
 	int numdigits = mrddigittimesthisevent.size();
@@ -121,7 +147,7 @@ bool FindMrdTracks::Execute(){
 	///////////////////////////
 	// now do the track finding
 	
-	if(verbosity) cout<<"Searching for MRD tracks in event "<<eventnum<<endl;
+	if(verbosity>1) cout<<"Searching for MRD tracks in event "<<eventnum<<endl;
 	if(verbosity>2) cout<<"mrddigittimesthisevent.size()="<<numdigits<<endl;
 /*
 if your class contains pointers, use TrackArray.Clear("C"). You MUST then provide a Clear() method in your class that properly performs clearing and memory freeing. (or "implements the reset procedure for pointer objects")
@@ -139,7 +165,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			nummrdsubeventsthiseventb->Fill();
 			nummrdtracksthiseventb->Fill();
 			subeventsinthiseventb->Fill();
-			//mrdtree->Fill();						// fill the branches so the entries align.
+			//mrdtree->Fill();                // fill the branches so the entries align.
 			mrdtrackfile->cd();
 			mrdtree->SetEntries(nummrdtracksthiseventb->GetEntries());
 			mrdtree->Write("",TObject::kOverwrite);
@@ -165,7 +191,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 	if((eventduration<maxsubeventduration)&&(numdigits>=minimumdigits)){
 	// JUST ONE SUBEVENT
 	// =================
-		if(verbosity){
+		if(verbosity>1){
 			cout<<"all hits this event within one subevent."<<endl;
 		}
 		std::vector<int> digitidsinasubevent(numdigits);
@@ -219,7 +245,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
 		// construct the subevent from all the digits
-		if(verbosity){
+		if(verbosity>1){
 			cout<<"constructing a single subevent for this event"<<endl;
 		}
 		cMRDSubEvent* currentsubevent = new((*SubEventArray)[0]) cMRDSubEvent(0, currentfilestring, runnum, eventnum, triggernum, digitidsinasubevent, mrddigitpmtsthisevent, digitqsinasubevent, mrddigittimesthisevent, digitnumtruephots, photontimesinasubevent, particleidsinasubevent, truetrackvertices, truetrackpdgs);
@@ -229,7 +255,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 		// necessary, saving time. In that case, we do not need to call SubEventArray.Clear();
 		
 		int tracksthissubevent=currentsubevent->GetTracks()->size();
-		if(verbosity){
+		if(verbosity>1){
 			cout<<"the only subevent this event found "<<tracksthissubevent<<" tracks"<<endl;
 		}
 		nummrdsubeventsthisevent=1;
@@ -271,8 +297,26 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				}
 			}
 		}
-		if(verbosity){
+		if(verbosity>1){
 			cout<<subeventhittimesv.size()<<" subevents this event"<<endl;
+		}
+		// for checking the timing splitting of subevents, draw a histogram of the times
+		if(MakeMrdDigitTimePlot){
+			// remake the canvas: close it when done viewing (deleted by ROOT)
+			if(gROOT->FindObject("findMrdRootCanvas")) delete findMrdRootCanvas;
+			findMrdRootCanvas = new TCanvas("findMrdRootCanvas","findMrdRootCanvas",canvwidth,canvheight);
+			findMrdRootCanvas->SetWindowSize(canvwidth,canvheight);
+			findMrdRootCanvas->cd();
+			mrddigitts->Draw();
+			findMrdRootCanvas->Modified();
+			findMrdRootCanvas->Update();
+			gSystem->ProcessEvents();
+			//findMrdRootApp->Run();
+			//std::this_thread::sleep_for (std::chrono::seconds(5));
+			while(gROOT->FindObject("findMrdRootCanvas")!=nullptr){
+				gSystem->ProcessEvents();
+				std::this_thread::sleep_for (std::chrono::milliseconds(500));
+			}
 		}
 		
 		// a vector to record the subevent number for each hit, to know if we've allocated it yet.
@@ -329,7 +373,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			particleidsinasubevent.assign(digittimesinasubevent.size(),0); // FIXME replacement of above
 			
 			// construct the subevent from all the digits
-			if(digitidsinasubevent.size()>=minimumdigits){	// must have enough for a subevent
+			if(digitidsinasubevent.size()>=minimumdigits){  // must have enough for a subevent
 				// pull true tracks in window to draw overlaid on reconstructed tracks
 				// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				//std::vector<WCSimRootTrack*> truetrackpointers;               // removed from cMRDSubEvent
@@ -467,6 +511,8 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			thisTrackAsBoostStore->Set("LayersHit",atrack->GetLayersHit());
 			thisTrackAsBoostStore->Set("TrackLength",atrack->GetTrackLength() / 100.);
 			thisTrackAsBoostStore->Set("IsMrdPenetrating",atrack->GetIsPenetrating());
+			thisTrackAsBoostStore->Set("EnergyLoss",atrack->GetEnergyLoss());
+			thisTrackAsBoostStore->Set("EnergyLossError",atrack->GetEnergyLossError());
 			thisTrackAsBoostStore->Set("IsMrdStopped",atrack->GetIsStopped());
 			thisTrackAsBoostStore->Set("IsMrdSideExit",atrack->GetIsSideExit());
 			thisTrackAsBoostStore->Set("PenetrationDepth",atrack->GetPenetrationDepth() / 100.);
@@ -476,8 +522,26 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			thisTrackAsBoostStore->Set("VtrackFitCov",atrack->GetVtrackFitCov());
 			thisTrackAsBoostStore->Set("PMTsHit",atrack->GetPMTsHit());
 			
+			thisTrackAsBoostStore->Set("HtrackOrigin",atrack->GetHtrackOrigin());
+			thisTrackAsBoostStore->Set("HtrackOriginError",atrack->GetHtrackOriginError());
+			thisTrackAsBoostStore->Set("HtrackGradient",atrack->GetHtrackGradient());
+			thisTrackAsBoostStore->Set("HtrackGradientError",atrack->GetHtrackGradientError());
+			thisTrackAsBoostStore->Set("VtrackOrigin",atrack->GetVtrackOrigin());
+			thisTrackAsBoostStore->Set("VtrackOriginError",atrack->GetVtrackOriginError());
+			thisTrackAsBoostStore->Set("VtrackGradient",atrack->GetVtrackGradient());
+			thisTrackAsBoostStore->Set("VtrackGradientError",atrack->GetVtrackGradientError());
+			
+			// convert back projections to Position class
+			Position TankExitPoint( atrack->GetTankExitPoint().X() / 100.,
+									atrack->GetTankExitPoint().Y() / 100.,
+									atrack->GetTankExitPoint().Z() / 100.);
+			Position MrdEntryPoint( atrack->GetMrdEntryPoint().X() / 100.,  // not implemented
+									atrack->GetMrdEntryPoint().Y() / 100.,
+									atrack->GetMrdEntryPoint().Z() / 100.);
+			thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
+			thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+			
 			// this stuff either isn't important or isn't yet implemented, don't store:
-//			thisTrackAsBoostStore->Set("TankExitPoint",atrack->GetTankExitPoint());
 //			thisTrackAsBoostStore->Set("NumPMTsHit",atrack->GetNumPMTsHit());
 //			thisTrackAsBoostStore->Set("KEStart",atrack->GetKEStart());
 //			thisTrackAsBoostStore->Set("KEEnd",atrack->GetKEEnd());
@@ -485,19 +549,10 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 //			thisTrackAsBoostStore->Set("NumLayersHit",atrack->GetNumLayersHit());
 //			thisTrackAsBoostStore->Set("LayerEdeps",atrack->GetEdeps());
 //			thisTrackAsBoostStore->Set("NumDigits",atrack->GetNumDigits());
-//			thisTrackAsBoostStore->Set("MrdEntryPoint",atrack->GetMrdEntryPoint());
 //			thisTrackAsBoostStore->Set("MrdEntryBoundsX",atrack->GetMrdEntryBoundsX());
 //			thisTrackAsBoostStore->Set("MrdEntryBoundsY",atrack->GetMrdEntryBoundsY());
 //			//thisTrackAsBoostStore->Set("TrueTrackID",atrack->GetTrueTrackID());
 //			//thisTrackAsBoostStore->Set("TrueTrack",atrack->GetTrueTrack());
-//			thisTrackAsBoostStore->Set("HtrackOrigin",atrack->GetHtrackOrigin());
-//			thisTrackAsBoostStore->Set("HtrackOriginError",atrack->GetHtrackOriginError());
-//			thisTrackAsBoostStore->Set("HtrackGradient",atrack->GetHtrackGradient());
-//			thisTrackAsBoostStore->Set("HtrackGradientError",atrack->GetHtrackGradientError());
-//			thisTrackAsBoostStore->Set("VtrackOrigin",atrack->GetVtrackOrigin());
-//			thisTrackAsBoostStore->Set("VtrackOriginError",atrack->GetVtrackOriginError());
-//			thisTrackAsBoostStore->Set("VtrackGradient",atrack->GetVtrackGradient());
-//			thisTrackAsBoostStore->Set("VtrackGradientError",atrack->GetVtrackGradientError());
 //			thisTrackAsBoostStore->Set("DigitIds",atrack->GetDigitIds());
 //			thisTrackAsBoostStore->Set("DigitQs",atrack->GetDigitQs());
 //			thisTrackAsBoostStore->Set("DigitTs",atrack->GetDigitTs());
@@ -550,6 +605,12 @@ bool FindMrdTracks::Finalise(){
 	//SubEventArray->Clear("C");
 	if(verbosity>0) cout<<"FindMrdTracks Tool Calling SubEventArray->Delete()"<<endl;
 	if(SubEventArray){ SubEventArray->Delete(); delete SubEventArray; SubEventArray=0;}
+	
+	if(MakeMrdDigitTimePlot){
+		if(mrddigitts) delete mrddigitts;
+		if(gROOT->FindObject("findMrdRootCanvas")) delete findMrdRootCanvas;
+		if(findMrdRootApp) delete findMrdRootApp;
+	}
 	
 	if(verbosity>0) cout<<"FindMrdTracks exiting"<<endl;
 	return true;

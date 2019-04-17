@@ -30,25 +30,32 @@ bool PrintANNIEEvent::Execute(){
 	
 	// Get the contents to be printed
 	if(verbose>1) cout<<"getting contents to be printed from ANNIEEvent at "<<m_data->Stores["ANNIEEvent"]<<endl;
-	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
-	m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNumber);
-	m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
-	m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
-	m_data->Stores["ANNIEEvent"]->Get("RecoParticles",RecoParticles);
-	m_data->Stores["ANNIEEvent"]->Get("MCHits",MCHits);
-	m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
-	m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
-	m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
-	m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",RawLAPPDData);
-	m_data->Stores["ANNIEEvent"]->Get("CalibratedADCData",CalibratedADCData);
-	m_data->Stores["ANNIEEvent"]->Get("CalibratedLAPPDData",CalibratedLAPPDData);
-	m_data->Stores["ANNIEEvent"]->Get("TriggerData Entries",TriggerData);
-	m_data->Stores["ANNIEEvent"]->Get("MCFlag",MCFlag);
-	m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
-	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
-	m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
-	m_data->Stores["ANNIEEvent"]->Get("MCFile",MCFile);
-	m_data->Stores["ANNIEEvent"]->Get("BeamStatus",BeamStatus);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
+	if(get_ok==0) RunNumber=-1;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNumber);
+	if(get_ok==0) SubrunNumber=-1;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
+	if(get_ok==0) EventNumber=-1;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("RecoParticles",RecoParticles);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCHits",MCHits);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",RawLAPPDData);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("CalibratedADCData",CalibratedADCData);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("CalibratedLAPPDData",CalibratedLAPPDData);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("TriggerData",TriggerData);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCFlag",MCFlag);
+	if(get_ok==0) MCFlag=0;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
+	if(get_ok==0) MCEventNum=-1;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+	if(get_ok==0) MCTriggernum=-1;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCFile",MCFile);
+	if(get_ok==0) MCFile="";
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("BeamStatus",BeamStatus);
 	
 	cout<<"RunNumber : "<<RunNumber<<endl;
 	cout<<"SubrunNumber : "<<SubrunNumber<<endl;
@@ -78,9 +85,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>2){
 			cout<<"MCHits : {"<<endl;
 			for(auto&& achannel : *MCHits){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& hits = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Hits : "<<endl;
 				for(auto&& ahit : hits) ahit.Print();
 				cout<<endl;
@@ -95,9 +102,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>2){
 			cout<<"MCLAPPDHits : {"<<endl;
 			for(auto&& achannel : *MCLAPPDHits){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& hits = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Hits : "<<endl;
 				for(auto&& ahit : hits) ahit.Print();
 				cout<<endl;
@@ -112,9 +119,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>2){
 			cout<<"TDCData : {"<<endl;
 			for(auto&& achannel : *TDCData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& hits = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Hits : "<<endl;
 				for(auto&& ahit : hits) ahit.Print();
 				cout<<endl;
@@ -129,9 +136,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"RawADCData : {"<<endl;
 			for(auto&& achannel : *RawADCData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;
@@ -149,9 +156,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"RawLAPPDData : {"<<endl;
 			for(auto&& achannel : *RawLAPPDData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;
@@ -169,9 +176,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"CalibratedADCData : {"<<endl;
 			for(auto&& achannel : *CalibratedADCData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;
@@ -189,9 +196,9 @@ bool PrintANNIEEvent::Execute(){
 		if(verbose>1){
 			cout<<"CalibratedLAPPDData : {"<<endl;
 			for(auto&& achannel : *CalibratedLAPPDData){
-				ChannelKey chankey = achannel.first;
+				unsigned long chankey = achannel.first;
 				auto& waveforms = achannel.second;
-				cout<<"ChannelKey : "; chankey.Print();
+				cout<<"ChannelKey : "<<chankey<<endl;
 				cout<<"Has "<<waveforms.size()<<" waveforms"<<endl;
 				if(verbose>2){
 					cout<<"Waveforms : "<<endl;

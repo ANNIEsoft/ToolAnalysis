@@ -16,16 +16,14 @@ class TPolyMarker3D;
 class TH1D;
 
 class LoadWCSimLAPPD: public Tool {
-
-
+	
 	public:
-
+	
 	LoadWCSimLAPPD();
 	bool Initialise(std::string configfile,DataModel &data);
 	bool Execute();
 	bool Finalise();
-
-
+	
 	private:
 	// config file variables
 	int verbose=1;
@@ -47,6 +45,10 @@ class LoadWCSimLAPPD: public Tool {
 	int posttriggerwindow;
 	TimeClass* EventTime=nullptr;
 	
+	// converting between LAPPDID and channelkey
+	Geometry* anniegeom=nullptr;
+	std::map<int,unsigned long> lappd_tubeid_to_detectorkey;
+	
 	// internal things to keep between loops
 	std::vector<LAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
 	
@@ -62,8 +64,7 @@ class LoadWCSimLAPPD: public Tool {
 	// so we do not need to do any matching of run, subrun, etc.
 	// Note though that these are the "RAW" hits (photons+noise), pre-digitizer-integration and
 	// pre-trigger-selection (so no WCSim trigger association is included)
-	std::map<ChannelKey,std::vector<LAPPDHit>>* MCLAPPDHits;
-	std::map<ChannelKey,std::vector<LAPPDHit>> MCLAPPDHitsnonp;
+	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits;
 	
 };
 

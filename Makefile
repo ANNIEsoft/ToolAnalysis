@@ -7,7 +7,7 @@ CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/ 
 
-BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams 
+BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
 RootInclude=  -I $(ToolDAQPath)/root/include
@@ -18,7 +18,7 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-RootLib=   -L $(ToolDAQPath)/root/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
+RootLib=   -L $(ToolDAQPath)/root/lib  -lGenVector -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)

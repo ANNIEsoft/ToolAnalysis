@@ -148,16 +148,15 @@ bool LAPPDSaveRootWC::Initialise(std::string configfile, DataModel &data){
   std::map<int,vector<LAPPDPulse>> SimpleRecoLAPPDPulses;
   m_data->Stores["ANNIEEvent"]->Get("SimpleRecoLAPPDPulses",SimpleRecoLAPPDPulses);
   //    std::cout<<rawlappddata.size()<<endl;
-    std::map<ChannelKey,vector<LAPPDHit>> mclappdhits;
+    std::map<unsigned long,vector<LAPPDHit>> mclappdhits;
     m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",mclappdhits);
     
     // for(int pds=0; pds<180;pds++)
 
-    //        std::map<ChannelKey,vector<LAPPDHit>> :: iterator itrr;
+    //        std::map<unsigned long,vector<LAPPDHit>> :: iterator itrr;
     // for(itrr= mclappdhits.begin(); itrr != mclappdhits.end(); ++itrr)
     // { 
-    //	   ChannelKey lappdno = itrr->first;
-    //	  int lappd=lappdno.GetDetectorElementIndex();
+    //	   unsigned long lappd = itrr->first;
     // TString name;
     // name+="LAPPD";
     //  name+=lappd; 
