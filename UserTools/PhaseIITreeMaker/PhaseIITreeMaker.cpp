@@ -71,6 +71,9 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fRecoTree->Branch("trueDirZ",&fTrueDirZ,"trueDirZ/D");
     fRecoTree->Branch("trueTheta",&fTrueTheta,"trueTheta/D");
     fRecoTree->Branch("truePhi",&fTruePhi,"truePhi/D");
+    fRecoTree->Branch("trueMuonEnergy",&fTrueMuonEnergy, "trueMuonEnergy/D");
+    fRecoTree->Branch("trueTrackLengthInWater",&fTrueTrackLengthInWater,"trueTrackLengthInWater/D");
+    fRecoTree->Branch("trueTrackLengthInMRD",&fTrueTrackLengthInMRD,"trueTrackLengthInMRD/D");
   }
   
   // Reconstructed variables from each step in Muon Reco Analysis
@@ -231,34 +234,10 @@ bool PhaseIITreeMaker::Execute(){
     }
     fRecoStatus = recovtx->GetStatus();
   } 
-  // Read True Vertex if flag is set   
-  RecoVertex* truevtx = 0;
-  auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx); 
-  if(get_muonMC){ 
-    fTrueVtxX = truevtx->GetPosition().X();
-    fTrueVtxY = truevtx->GetPosition().Y();
-    fTrueVtxZ = truevtx->GetPosition().Z();
-    fTrueVtxTime = truevtx->GetTime();
-    fTrueDirX = truevtx->GetDirection().X();
-    fTrueDirY = truevtx->GetDirection().Y();
-    fTrueDirZ = truevtx->GetDirection().Z();
-    fTrueTheta = TMath::ACos(fTrueDirZ);
-    if (fTrueDirX>0.0){
-      fTruePhi = atan(fTrueDirY/fTrueDirX);
-    }
-    if (fTrueDirX<0.0){
-      fTruePhi = atan(fTrueDirY/fTrueDirX);
-      if( fTrueDirY>0.0) fTruePhi += TMath::Pi();
-      if( fTrueDirY<=0.0) fTruePhi -= TMath::Pi();
-    }
-    if (fTrueDirX==0.0){
-      if( fTrueDirY>0.0) fTruePhi = 0.5*TMath::Pi();
-      else if( fTrueDirY<0.0) fTruePhi = -0.5*TMath::Pi();
-      else fTruePhi = 0;
-    }
-  } else {
-    Log("PhaseIITreeMaker Tool: No MC Truth data found; is this MC?  Continuing to build remaining tree",v_message,verbosity);
-  } 
+  // Read True Vertex if flag is set
+  if(muonMCTruth_fill){
+    this->FillMCTruthInfo();
+  }
 
   if (muonRecoDebug_fill){
     // Read Seed candidates   
@@ -352,9 +331,13 @@ bool PhaseIITreeMaker::Execute(){
   } 
 
   if (muonTruthRecoDiff_fill){
-    if (!get_muonMC || !get_extendedvtx) {
-      Log("PhaseIITreeMaker Tool: No True Muon Vertex or Extended Vertex information found.  Continuing to build remaining tree",v_message,verbosity);
+    bool successload = this->FillMCTruthInfo();
+    RecoVertex* recovtx = 0;
+    auto get_extendedvtx = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",recovtx); 
+    if (!successload || !get_extendedvtx) {
+      Log("PhaseIITreeMaker Tool: Error loading True Muon Vertex or Extended Vertex information.  Continuing to build remaining tree",v_message,verbosity);
     } else {
+      //Make sure MCTruth Information is loaded from store
       //Let's fill in stuff from the RecoSummary
       fDeltaVtxX = fRecoVtxX - fTrueVtxX;
       fDeltaVtxY = fRecoVtxY - fTrueVtxY;
@@ -389,19 +372,22 @@ bool PhaseIITreeMaker::Finalise(){
 
 void PhaseIITreeMaker::ResetVariables() {
   // tree variables
-  fMCEventNum = 0;
-  fMCTriggerNum = 0;
-  fEventNumber = 0;
-  fNhits = 0;
+  fMCEventNum = -1;
+  fMCTriggerNum = -1;
+  fEventNumber = -1;
+  fNhits = -1;
   
-  fTrueVtxX = 0;
-  fTrueVtxY = 0;
-  fTrueVtxZ = 0;
-  fTrueVtxTime = 0;
-  fTrueDirX = 0;
-  fTrueDirY = 0;
-  fTrueDirZ = 0;
-  fTrueTheta = 0;
+  fTrueVtxX = -1;
+  fTrueVtxY = -1;
+  fTrueVtxZ = -1;
+  fTrueVtxTime = -1;
+  fTrueMuonEnergy = -1;
+  fTrueTrackLengthInWater = -1;
+  fTrueTrackLengthInMRD = -1;
+  fTrueDirX = -1;
+  fTrueDirY = -1;
+  fTrueDirZ = -1;
+  fTrueTheta = -1;
   fTruePhi = 0;
  
   if (muonRecoDebug_fill){ 
@@ -409,41 +395,41 @@ void PhaseIITreeMaker::ResetVariables() {
     fSeedVtxY.clear();
     fSeedVtxZ.clear();
     fSeedVtxFOM.clear();
-    fSeedVtxTime = 0;
-    fPointPosX = 0;
-    fPointPosY = 0;
-    fPointPosZ = 0;
-    fPointPosTime = 0;
-    fPointPosFOM = 0;
-    fPointPosStatus = 0;
-    fPointDirX = 0;
-    fPointDirY = 0;
-    fPointDirZ = 0;
-    fPointDirTime = 0;
-    fPointDirFOM = 0;
-    fPointDirStatus = 0;
-    fPointVtxPosX = 0;
-    fPointVtxPosY = 0;
-    fPointVtxPosZ = 0;
-    fPointVtxDirX = 0;
-    fPointVtxDirY = 0;
-    fPointVtxDirZ = 0;
-    fPointVtxTime = 0;
-    fPointVtxStatus = 0;
-    fPointVtxFOM = 0;
+    fSeedVtxTime = -1;
+    fPointPosX = -1;
+    fPointPosY = -1;
+    fPointPosZ = -1;
+    fPointPosTime = -1;
+    fPointPosFOM = -1;
+    fPointPosStatus = -1;
+    fPointDirX = -1;
+    fPointDirY = -1;
+    fPointDirZ = -1;
+    fPointDirTime = -1;
+    fPointDirFOM = -1;
+    fPointDirStatus = -1;
+    fPointVtxPosX = -1;
+    fPointVtxPosY = -1;
+    fPointVtxPosZ = -1;
+    fPointVtxDirX = -1;
+    fPointVtxDirY = -1;
+    fPointVtxDirZ = -1;
+    fPointVtxTime = -1;
+    fPointVtxStatus = -1;
+    fPointVtxFOM = -1;
   }
 
-  fRecoVtxX = 0;
-  fRecoVtxY = 0;
-  fRecoVtxZ = 0;
-  fRecoStatus = 0;
-  fRecoVtxTime = 0;
-  fRecoVtxFOM = 0;
-  fRecoDirX = 0;
-  fRecoDirY = 0;
-  fRecoDirZ = 0;
-  fRecoTheta = 0;
-  fRecoPhi = 0;
+  fRecoVtxX = -1;
+  fRecoVtxY = -1;
+  fRecoVtxZ = -1;
+  fRecoStatus = -1;
+  fRecoVtxTime = -1;
+  fRecoVtxFOM = -1;
+  fRecoDirX = -1;
+  fRecoDirY = -1;
+  fRecoDirZ = -1;
+  fRecoTheta = -1;
+  fRecoPhi = -1;
   fIsFiltered.clear();
   fDigitX.clear();
   fDigitY.clear();
@@ -454,16 +440,16 @@ void PhaseIITreeMaker::ResetVariables() {
   fDigitDetID.clear();	
   
   if (muonTruthRecoDiff_fill){ 
-    fDeltaVtxX = 0;
-    fDeltaVtxY = 0;
-    fDeltaVtxZ = 0;
-    fDeltaVtxR = 0;
-    fDeltaVtxT = 0;
-    fDeltaParallel = 0;
-    fDeltaPerpendicular = 0;
-    fDeltaAzimuth = 0;
-    fDeltaZenith = 0;
-    fDeltaAngle = 0;
+    fDeltaVtxX = -1;
+    fDeltaVtxY = -1;
+    fDeltaVtxZ = -1;
+    fDeltaVtxR = -1;
+    fDeltaVtxT = -1;
+    fDeltaParallel = -1;
+    fDeltaPerpendicular = -1;
+    fDeltaAzimuth = -1;
+    fDeltaZenith = -1;
+    fDeltaAngle = -1;
   }
 
   if (pionKaonCount_fill){
@@ -474,6 +460,50 @@ void PhaseIITreeMaker::ResetVariables() {
     fKPlusCount = -1;
     fKMinusCount = -1;
   }
+}
+
+bool PhaseIITreeMaker::FillMCTruthInfo() {
+  bool successful_load = true;
+  RecoVertex* truevtx = 0;
+  auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx);
+  auto get_muonMCEnergy = m_data->Stores.at("RecoEvent")->Get("TrueMuonEnergy",fTrueMuonEnergy);
+  if(get_muonMC && get_muonMCEnergy){ 
+    fTrueVtxX = truevtx->GetPosition().X();
+    fTrueVtxY = truevtx->GetPosition().Y();
+    fTrueVtxZ = truevtx->GetPosition().Z();
+    fTrueVtxTime = truevtx->GetTime();
+    fTrueDirX = truevtx->GetDirection().X();
+    fTrueDirY = truevtx->GetDirection().Y();
+    fTrueDirZ = truevtx->GetDirection().Z();
+    fTrueTheta = TMath::ACos(fTrueDirZ);
+    if (fTrueDirX>0.0){
+      fTruePhi = atan(fTrueDirY/fTrueDirX);
+    }
+    if (fTrueDirX<0.0){
+      fTruePhi = atan(fTrueDirY/fTrueDirX);
+      if( fTrueDirY>0.0) fTruePhi += TMath::Pi();
+      if( fTrueDirY<=0.0) fTruePhi -= TMath::Pi();
+    }
+    if (fTrueDirX==0.0){
+      if( fTrueDirY>0.0) fTruePhi = 0.5*TMath::Pi();
+      else if( fTrueDirY<0.0) fTruePhi = -0.5*TMath::Pi();
+      else fTruePhi = 0;
+    }
+  } else {
+    Log("PhaseIITreeMaker Tool: Missing MC Energy/Vertex info; is this MC?  Continuing to build remaining tree",v_message,verbosity);
+    successful_load = false;
+  }
+  double waterT, MRDT;
+  auto get_tankTrackLength = m_data->Stores.at("RecoEvent")->Get("TrueTrackLengthInWater",waterT); 
+  auto get_MRDTrackLength = m_data->Stores.at("RecoEvent")->Get("TrueTrackLengthInMRD",MRDT); 
+  if (get_tankTrackLength && get_MRDTrackLength){
+    fTrueTrackLengthInWater = waterT;
+    fTrueTrackLengthInMRD = MRDT;
+  } else {
+    Log("PhaseIITreeMaker Tool: True track lengths missing. Continuing to build tree",v_message,verbosity);
+    successful_load = false;
+  }
+  return successful_load;
 }
 
 void PhaseIITreeMaker::RecoSummary() {
@@ -491,6 +521,7 @@ void PhaseIITreeMaker::RecoSummary() {
   std::cout << "============================================================================"<<std::endl;
   std::cout << " Event number " << fEventNumber << std::endl;
   std::cout << "  trueVtx=(" << fTrueVtxX << ", " << fTrueVtxY << ", " << fTrueVtxZ <<", "<< fTrueVtxTime<< std::endl
+            << " TrueMuonEnergy= " << fTrueMuonEnergy << std::endl
             << "           " << fTrueDirX << ", " << fTrueDirY << ", " << fTrueDirZ << ") " << std::endl;
   std::cout << "  recoVtx=(" << fRecoVtxX << ", " << fRecoVtxY << ", " << fRecoVtxZ <<", "<< fRecoVtxTime << std::endl
             << "           " << fRecoDirX << ", " << fRecoDirY << ", " << fRecoDirZ << ") " << std::endl;

@@ -77,9 +77,13 @@ class DigitBuilder: public Tool {
 
  	/// \brief Push reco digits to ANNIEEvent
   ///
-  /// It adds the vector of PMT and LAPPD digits to ANNIEEvent
+  /// It adds the vector of PMT and LAPPD digits to RecoEvent
  	void PushRecoDigits(bool savetodisk);
- 	
+
+  /// \brief Push muon track lengths to RecoEvent Store
+  void PushTrueWaterTrackLength(double WaterT);
+  void PushTrueMRDTrackLength(double MRDT);
+
  	/// \brief Reset digits
  	///
  	/// Clear digit list
@@ -125,6 +129,8 @@ class DigitBuilder: public Tool {
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
 	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
 	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
+  double WaterTrackLength = -999.;
+  double MRDTrackLength = -999.;
 
 	// retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
 	// Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates

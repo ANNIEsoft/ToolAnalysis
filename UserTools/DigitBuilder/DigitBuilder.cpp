@@ -110,6 +110,8 @@ bool DigitBuilder::Execute(){
   this->PushRecoDigits(true); 
   this->PushTrueVertex(true);
   this->PushTrueStopVertex(true);
+  this->PushTrueWaterTrackLength(WaterTrackLength);
+  this->PushTrueMRDTrackLength(MRDTrackLength);
 
   return true;
 }
@@ -320,9 +322,13 @@ void DigitBuilder::FindTrueVertexFromMC() {
   double muonstarttime = primarymuon.GetStartTime();
   Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
   double muonstoptime = primarymuon.GetStopTime();
-  
   Direction muondirection = primarymuon.GetStartDirection();
+  
   double muonenergy = primarymuon.GetStartEnergy();
+  m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", muonenergy);
+
+  MRDTrackLength = primarymuon.GetTrackLengthInMrd();
+  WaterTrackLength = primarymuon.GetTrackLengthInTank();
   // set true vertex
   // change unit
   muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
@@ -344,6 +350,7 @@ void DigitBuilder::FindTrueVertexFromMC() {
 	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
 	Log(logmessage,v_debug,verbosity);
 }
+
 
 void DigitBuilder::FindPionKaonCountFromMC() {
   
@@ -422,6 +429,16 @@ void DigitBuilder::PushTrueStopVertex(bool savetodisk) {
 void DigitBuilder::PushRecoDigits(bool savetodisk) {
 	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
+}
+
+void DigitBuilder::PushTrueWaterTrackLength(double WaterT) {
+	Log("DigitBuilder Tool: Push true track length in tank to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInWater", WaterT);  ///> Add digits to RecoEvent
+}
+
+void DigitBuilder::PushTrueMRDTrackLength(double MRDT) {
+	Log("DigitBuilder Tool: Push true track length in MRD to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD", MRDT);  ///> Add digits to RecoEvent
 }
 
 void DigitBuilder::Reset() {
