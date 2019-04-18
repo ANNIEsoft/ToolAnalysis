@@ -24,6 +24,11 @@ class PhaseIITreeMaker: public Tool {
   bool Execute();
   bool Finalise();
 
+  /// \brief Load MCTruth information into ROOT file variables
+  //
+  /// Function loads the Muon MC Truth variables with the information
+  /// Saved in the RecoEvent store.
+  bool FillMCTruthInfo();
 
  private:
  	/// \brief Reset all variables. 
@@ -75,7 +80,9 @@ class PhaseIITreeMaker: public Tool {
   double fTrueDirZ;
   double fTrueTheta;
   double fTruePhi;
-  double fTrueEnergy; 
+  double fTrueMuonEnergy;
+  double fTrueTrackLengthInWater; 
+  double fTrueTrackLengthInMRD; 
 
   // Seed vertex
   std::vector<double> fSeedVtxX;
