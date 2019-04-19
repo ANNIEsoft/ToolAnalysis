@@ -394,7 +394,7 @@ void PhaseIITreeMaker::ResetVariables() {
   fTrueDirY = -9999;
   fTrueDirZ = -9999;
   fTrueAngle = -9999;
-  fTruePhi = -;
+  fTruePhi = -9999;
  
   if (muonRecoDebug_fill){ 
     fSeedVtxX.clear();
