@@ -45,8 +45,8 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 	// create the ROOT application to show debug plots
 	if(DRAW_DEBUG_PLOTS){
 		int myargc=0;
-		char *myargv[] = {(const char*)"somestring"};
-		pulseRootDrawApp = new TApplication("PulseRootDrawApp",&myargc,myargv);
+		//char *myargv[] = {(const char*)"somestring"};
+		pulseRootDrawApp = new TApplication("PulseRootDrawApp",&myargc,0);
 		canvwidth = 700;
 		canvheight = 600;
 	}
