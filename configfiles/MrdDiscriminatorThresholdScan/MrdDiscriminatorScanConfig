@@ -1,0 +1,5 @@
+verbosity 100
+drawHistos 1
+plotDirectory MrdDiscriminatorScan
+filedir .
+filelist DiscriminatorFiles
