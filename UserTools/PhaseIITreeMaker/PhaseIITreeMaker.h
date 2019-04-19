@@ -54,7 +54,9 @@ class PhaseIITreeMaker: public Tool {
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
-
+	
+  uint32_t fRunNumber;
+  uint32_t fSubrunNumber;
   // \brief Event Status flag masks
   int fEventStatusApplied;
   int fEventStatusFlagged;
@@ -78,7 +80,7 @@ class PhaseIITreeMaker: public Tool {
   double fTrueDirX;
   double fTrueDirY;
   double fTrueDirZ;
-  double fTrueTheta;
+  double fTrueAngle;
   double fTruePhi;
   double fTrueMuonEnergy;
   double fTrueTrackLengthInWater; 
@@ -126,7 +128,7 @@ class PhaseIITreeMaker: public Tool {
   double fRecoDirY;
   double fRecoDirZ;
   double fRecoVtxFOM;
-  double fRecoTheta;
+  double fRecoAngle;
   double fRecoPhi;
   int fRecoStatus;
   
