@@ -27,7 +27,7 @@ namespace {
 	constexpr uint64_t MRD_NS_PER_SAMPLE=4;
 	constexpr uint64_t MS_TO_NS = 1000000;         // needed for TDC to convert timestamps to ns
 	constexpr uint64_t FIVE_HRS_IN_MS = 18000000;  // MRD timezone is off, so timestamps are off by 5 hours
-	constexpr uint64_t NS_TO_SECONDS = 1000000000;
+//	constexpr uint64_t NS_TO_SECONDS = 1000000000; // now defined in TimeClass
 }
 
 bool LoadCCData::Initialise(std::string configfile, DataModel &data){
@@ -206,8 +206,8 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	if(DEBUG_DRAW_TDC_HITS){
 		// create the ROOT application to show histograms
 		int myargc=0;
-		char *myargv[] = {(const char*)"somestring"};
-		tdcRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
+		//char *myargv[] = {(const char*)"somestring"};
+		tdcRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,0);
 		hTDCHitTimes = new TH1D("hTDCHitTimes","TDC Hit Times in Readout",100,0,260);
 		hTDCTimeDiffs = new TH1D("hTDCTimeDiffs",
 			"Time Diff between TDC Readout Time and Closest Minibuffer Timestamp [ms]",200,-2,5);
@@ -354,7 +354,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 	// loop over minibuffers in this Execute() iteration
 	for(int minibufi=0; minibufi<currentminibufts.size(); minibufi++){
 		// get this minibuffer's timestamp
-		unsigned long long theminibufferTS = currentminibufts.at(minibufi);
+		uint64_t theminibufferTS = currentminibufts.at(minibufi);
 		if(theminibufferTS==0){
 			Log("Event Minibuffer Time Is 0!",v_warning,verbosity);
 		}
@@ -362,7 +362,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 		// get the next minibuffer's timestamp. In the event that this is the last
 		// minibuffer of the current readout, we need to use the timestamp of the
 		// first minibuffer from the next readout
-		unsigned long long thenextminibufferTS;
+		uint64_t thenextminibufferTS;
 		if((minibufi+1)<currentminibufts.size()){
 			thenextminibufferTS = currentminibufts.at(minibufi+1);
 			if(thenextminibufferTS==0){
@@ -421,9 +421,9 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 					int bufsize=300;
 					char logbuffer[bufsize];
 					int discardedcharcount = snprintf(logbuffer, bufsize,
-						"this minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu), "
-						"next minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu), "
-						"next next minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu)",
+						"this minibuffer at %d/%d/%d %d:%d:%d.%09lu (%lu), "
+						"next minibuffer at %d/%d/%d %d:%d:%d.%09lu (%lu), "
+						"next next minibuffer at %d/%d/%d %d:%d:%d.%09lu (%lu)",
 						tm_mb.tm_year+1900,tm_mb.tm_mon,tm_mb.tm_mday,tm_mb.tm_hour,tm_mb.tm_min,
 							tm_mb.tm_sec,mb_remaining_ns,theminibufferTS,
 						tm_nmb.tm_year+1900,tm_nmb.tm_mon,tm_nmb.tm_mday,tm_nmb.tm_hour,tm_nmb.tm_min,
@@ -498,9 +498,9 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 						int bufsize=300;
 						char logbuffer[bufsize];
 						int discardedcharcount = snprintf(logbuffer, bufsize,
-							"matched TDC readout at %d/%d/%d %d:%d:%d.%09llu (%llu) "
-							"to minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu), "
-							"c.f. next minibuffer at %d/%d/%d %d:%d:%d.%09llu (%llu)",
+							"matched TDC readout at %d/%d/%d %d:%d:%d.%09lu (%lu) "
+							"to minibuffer at %d/%d/%d %d:%d:%d.%09lu (%lu), "
+							"c.f. next minibuffer at %d/%d/%d %d:%d:%d.%09lu (%lu)",
 							tm_mrd.tm_year+1900,tm_mrd.tm_mon,tm_mrd.tm_mday,tm_mrd.tm_hour,tm_mrd.tm_min,
 								tm_mrd.tm_sec,mrd_remaining_ns,MRDEventTime.GetNs(),
 							tm_mb.tm_year+1900,tm_mb.tm_mon,tm_mb.tm_mday,tm_mb.tm_hour,tm_mb.tm_min,

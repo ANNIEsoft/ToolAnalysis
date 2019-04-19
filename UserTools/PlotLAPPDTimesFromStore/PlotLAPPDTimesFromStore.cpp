@@ -40,8 +40,8 @@ bool PlotLAPPDTimesFromStore::Initialise(std::string configfile, DataModel &data
 	
 	// create the ROOT application to show histograms
 	int myargc=0;
-	char *myargv[] = {(const char*)"somestring"};
-	lappdRootDrawApp = new TApplication("lappdRootStoreTimesDrawApp",&myargc,myargv);
+	//char *myargv[] = {(const char*)"somestring"};
+	lappdRootDrawApp = new TApplication("lappdRootStoreTimesDrawApp",&myargc,0);
 	digitime = new TH1D("lappdstoretimes","lappd digitimes",100,-10,50);
 	digitimewithmuon = new TH1D("lappdstoretimes_withmuon","lappd digitimes for events w/ a muon",100,-10,50);
 	mutime = new TH1D("muonstoretimes","muon start times from store",100,-10,50);
