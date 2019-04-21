@@ -97,6 +97,8 @@ class Geometry : public SerialisableObject{
 		} else {
 			detectorcounts.at(thedetel)++;
 		}
+		// Pass a pointer to it's owning geometry to this Detector
+		detin.SetGeometryPtr(this);
 		return true;
 	}
 	
