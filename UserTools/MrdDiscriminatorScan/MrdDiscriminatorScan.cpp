@@ -2,12 +2,18 @@
 #include "MrdDiscriminatorScan.h"
 
 #include <boost/algorithm/string.hpp>   // for trim
-#include <sys/types.h> // for stat() test to see if file or folder
+#include <sys/types.h>     // for stat() test to see if file or folder
 #include <sys/stat.h>
+#include <thread>          // std::this_thread::sleep_for
+#include <chrono>          // std::chrono::seconds
+#include "TROOT.h"
+#include "TSystem.h"
+#include "TStyle.h"
 #include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TMultiGraph.h"
 #include "TLegend.h"
+#include "TLegendEntry.h"
 #include "TString.h"
 #include "TApplication.h"
 
@@ -30,9 +36,6 @@ bool MrdDiscriminatorScan::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("drawHistos",drawHistos);
 	m_variables.Get("filelist",filelist);
 	m_variables.Get("filedir",filedir);
-	
-	TimeClass atime(1555684669048000000);
-	atime.Print();
 	
 	// check the output directory exists and is suitable
 	Log("MrdDiscriminatorScan Tool: Checking output directory "+plotDirectory,v_message,verbosity);
@@ -122,9 +125,8 @@ bool MrdDiscriminatorScan::Execute(){
 	BoostStore* indata=new BoostStore(false,0);
 	Log("MrdDiscriminatorScan Tool: Initializing BoostStore from file "+filepath,v_message,verbosity);
 	indata->Initialise(filepath);
-	indata->Print(false);
 	
-	BoostStore* MRDData= new BoostStore(true,2);
+	BoostStore* MRDData= new BoostStore(false,2);
 	Log("MrdDiscriminatorScan Tool: Getting CCData Multi-Entry BoostStore from loaded file",v_debug,verbosity);
 	get_ok = indata->Get("CCData",*MRDData);
 	if(not get_ok){
@@ -139,25 +141,26 @@ bool MrdDiscriminatorScan::Execute(){
 	std::map<int,std::map<int,std::map<int,int>>> hit_counts_on_channels;
 	TimeClass first_timestamp, last_timestamp;
 	Log("MrdDiscriminatorScan Tool: Scanning hits in this file",v_debug,verbosity);
-	CountChannelHits(MRDData, hit_counts_on_channels, first_timestamp, last_timestamp);
+	bool success = CountChannelHits(MRDData, hit_counts_on_channels, first_timestamp, last_timestamp);
+	if(not success) return false;
 	double total_run_seconds = last_timestamp.GetNs() - first_timestamp.GetNs();
 	Log("MrdDiscriminatorScan Tool: Total duration of this run was: "
-		+std::to_string(total_run_seconds),v_debug,verbosity);
+		+std::to_string(total_run_seconds)+" seconds",v_debug,verbosity);
 	
 	// Loop over the TGraphs and set the next datapoint
 	current_threshold = filei+15;  // in mV... probably
 	Log("MrdDiscriminatorScan Tool: Converting hit counts to rates",v_debug,verbosity);
 	for( auto&& acrate : hit_counts_on_channels){
 		int cratei=acrate.first;
-		cout<<"crate "<<cratei<<endl;
+		//cout<<"crate "<<cratei<<endl;
 		for(auto&& acard : acrate.second){
 			int sloti=acard.first;
-			cout<<"	slot "<<sloti<<endl;
+			//cout<<"	slot "<<sloti<<endl;
 			for(auto&& achannel : acard.second){
 				// Add the rate for this channel to the TGraph of rate vs threshold for this card
 				int channeli=achannel.first;
 				int num_hits_on_this_channel = achannel.second;
-				cout<<"		channel "<<channeli<<" : "<<num_hits_on_this_channel<<endl;
+				//cout<<"		channel "<<channeli<<" had "<<num_hits_on_this_channel<<" hits"<<endl;
 				double hitrate = double(num_hits_on_this_channel) / total_run_seconds;
 				
 				// check if this graph key exists and make it if not
@@ -177,13 +180,17 @@ bool MrdDiscriminatorScan::Execute(){
 				// set the next datapoint on the tgraph for this channel
 				logmessage = "MrdDiscriminatorScan Tool: Setting rate for "
 					+to_string(cratei)+"_"+to_string(sloti)+"_"+to_string(channeli)
-					+" to "+to_string(hitrate);
-				Log(logmessage,v_debug,verbosity);
+					+" based on "+to_string(num_hits_on_this_channel)+ " hits to "+to_string(hitrate)+"Hz";
+				//Log(logmessage,v_debug,verbosity);
 				TGraphErrors* thisgraph = rategraphs.at(cratei).at(sloti).at(channeli);
+				if(cratei==7&&channeli==4){
+					cout<<"setting crate "<<cratei<<" channel "<<channeli<<" point ("<<current_threshold
+						<<", "<<hitrate<<")"<<std::endl;
+				}
 				if(thisgraph==nullptr){
 					Log("MrdDiscriminatorScan Tool: Null TGraph pointer setting datapoint!?",v_error,verbosity);
 				} else {
-					thisgraph->SetPoint(filei, current_threshold, hitrate);  // XXX add errors
+					thisgraph->SetPoint(thisgraph->GetN(), current_threshold, hitrate);  // XXX add errors
 				}
 			}
 			Log("MrdDiscriminatorScan Tool: Looping to next slot",v_debug,verbosity);
@@ -221,7 +228,7 @@ bool MrdDiscriminatorScan::Execute(){
 
 bool MrdDiscriminatorScan::Finalise(){
 	
-	Log("MrdDiscriminatorScan Tool: Processed "+std::to_string(filei)+" files",v_message,verbosity);
+	Log("MrdDiscriminatorScan Tool: Processed "+std::to_string(filei+1)+" files",v_message,verbosity);
 	
 	// make a canvas
 	int canvwidth = 700;
@@ -233,47 +240,75 @@ bool MrdDiscriminatorScan::Finalise(){
 	Log("MrdDiscriminatorScan Tool: Drawing TGraphs",v_debug,verbosity);
 	for(auto&& acrate : rategraphs){
 		int cratei = acrate.first;
-		cout<<"crate : "<<cratei<<endl;
+		//cout<<"crate : "<<cratei<<endl;
 		// loop over card in this crate
 		for(auto&& aslot : acrate.second){
 			int sloti = aslot.first;
-			cout<<"	slot : "<<sloti<<endl;
+			//cout<<"	slot : "<<sloti<<endl;
 			// clear the canvas (just in case), we'll plot one tdc per graph
 			mrdScanCanv->Clear();
 			TMultiGraph* allgraphsforthiscard = new TMultiGraph();
 			for(auto&& achannel : aslot.second){
 				int channeli=achannel.first;
-				cout<<"		channel : "<<channeli<<endl;
+				//cout<<"		channel : "<<channeli<<endl;
 				TGraphErrors* thisgraph = rategraphs.at(cratei).at(sloti).at(channeli);
-				
-				//gStyle->SetPalette(colorPalette);
-				//int nColors = gStyle->GetNumberOfColors();
-				//int nHistos = histos.size();
-				//for (size_t i = 0; i < nHistos; ++i) {
-				//	int histoColor = (float)nColors / nHistos * i;
-				//	histos[i]->SetLineColor(gStyle->GetColorPalette(histoColor));
-				
-				//thisgraph->SetLineColor(??????);
-				// option "same PLC PMC" will automatically pick unique colors for multiple TH1s
-				// or for THStack just "PFC nostack" when drawing the stack
-				// or for TMultiGraph, pass "PLC" when adding *and* "PMC PLC" when drawing TMultiGraph
 				if(thisgraph==nullptr){
 					logmessage = "MrdDiscriminatorScan Tool: No TGraph to draw for crate " + to_string(cratei)
 					+ ", slot " + to_string(sloti) + ", channel " + to_string(channeli);
 					Log(logmessage,v_error,verbosity);
 				} else {
-					allgraphsforthiscard->Add(thisgraph,"PL");
+					thisgraph->SetMarkerStyle(20);  // filled circles
+					thisgraph->SetMarkerSize(0.7);  // big enough to see the fill colour
+					thisgraph->SetFillStyle(0);
+					thisgraph->SetFillColor(0); // even with no fill, this makes a border around the legend entry
+					auto thecolour = gStyle->GetColorPalette((float)gStyle->GetNumberOfColors()/32*channeli);
+					thisgraph->SetLineColor(thecolour);
+					thisgraph->SetMarkerColor(thecolour);
+					allgraphsforthiscard->Add(thisgraph,"PL"); // ,"PL");
+					// for sufficiently new ROOT, using TMultiGraph::Add(graph,"PL") and the option
+					// TMultiGraph::Draw("same PLC PMC") will automatically pick unique colors for multiple TH1s
+					// (or for THStack just "PFC nostack" when drawing the stack)
+					// but we don't have sufficiently new ROOT
 				}
+				std::cout<<"Channel "<<channeli<<" points:"<<std::endl;
+				thisgraph->Print();
 			}
 			Log("MrdDiscriminatorScan Tool: Drawing TMultiGraph for crate "+to_string(cratei)
 				+", slot "+to_string(sloti),v_debug,verbosity);
-			allgraphsforthiscard->Draw("A pmc plc");
-			TLegend* theleg = mrdScanCanv->BuildLegend();  // XXX position and resize
+			allgraphsforthiscard->Draw("APL");
+			TLegend* leg = mrdScanCanv->BuildLegend();  // XXX position and resize
+			leg-> SetNColumns(4);
+			leg->SetX1NDC(0.01);
+			leg->SetX2NDC(0.4);
+			leg->SetY1NDC(0.25);
+			leg->SetY2NDC(0.5);
+			leg->SetBorderSize(0);
+			leg->SetFillStyle(0);
+			// set options for the entries
+			TList *legentries = leg->GetListOfPrimitives();
+			TIter next(legentries);
+			TObject *obj;
+			TLegendEntry *alegentry;
+			while ((obj = next())) {
+				alegentry = (TLegendEntry*)obj;
+				alegentry->SetFillStyle(0);
+				alegentry->SetLineStyle(0);
+			}
+			// 
+			gPad->Update();
+			gPad->Modified();
+			
 			Log("MrdDiscriminatorScan Tool: Saving TMultiGraph",v_debug,verbosity);
-			mrdScanCanv->SaveAs(TString::Format("Crate_%i_TDC_%i_Threshold_%imV.C",cratei, sloti, current_threshold));
-			mrdScanCanv->SaveAs(TString::Format("Crate_%i_TDC_%i_Threshold_%imV.png",cratei, sloti, current_threshold));
+			mrdScanCanv->SaveAs(TString::Format("%s/Crate_%i_%i_%imV.C",plotDirectory.c_str(),cratei, sloti, current_threshold));
+			mrdScanCanv->SaveAs(TString::Format("%s/Crate_%i_%i_%imV.png",plotDirectory.c_str(),cratei, sloti, current_threshold));
+//			// wait and allow the user to inspect
+//			while(gROOT->FindObject("mrdScanCanv")!=nullptr){
+//				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+//				gSystem->ProcessEvents();
+//			}
+//			mrdScanCanv = new TCanvas("mrdScanCanv","",canvwidth,canvheight);
 			Log("MrdDiscriminatorScan Tool: graph cleanup",v_debug,verbosity);
-			delete theleg; theleg=nullptr;
+			delete leg; leg=nullptr;
 			delete allgraphsforthiscard; allgraphsforthiscard=nullptr;
 			// the TMultiGraph owns it's contents: do not delete them individually
 			Log("MrdDiscriminatorScan Tool: Looping to next slot",v_debug,verbosity);
@@ -333,11 +368,15 @@ bool MrdDiscriminatorScan::GetNextFile(){
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-void MrdDiscriminatorScan::CountChannelHits(BoostStore* MRDData, std::map<int,std::map<int,std::map<int,int>>> &hit_counts_on_channels, TimeClass& first_timestamp, TimeClass& last_timestamp){
+bool MrdDiscriminatorScan::CountChannelHits(BoostStore* MRDData, std::map<int,std::map<int,std::map<int,int>>> &hit_counts_on_channels, TimeClass& first_timestamp, TimeClass& last_timestamp){
 	
 	// we should have 10k events per threshold
-	int total_number_entries;
-	MRDData->Header->Get("TotalEntries",total_number_entries);
+	unsigned long total_number_entries=0;
+	get_ok = MRDData->Header->Get("TotalEntries",total_number_entries);
+	if(not get_ok){
+		Log("MrdDiscriminatorScan Tool: No TotalEntries member in the header of MRDData!",v_error,verbosity);
+		return false;
+	}
 	logmessage = "MrdDiscriminatorScan Tool: file " + to_string(filei)
 				  +" has " + std::to_string(total_number_entries) + " readouts";
 	Log(logmessage,v_debug,verbosity);
@@ -347,30 +386,24 @@ void MrdDiscriminatorScan::CountChannelHits(BoostStore* MRDData, std::map<int,st
 		
 		MRDData->GetEntry(readouti);       // MRDData is a multi-entry BoostStore: load the next event
 		MRDOut mrdReadout;                 // class defined in the DataModel to contain an MRD readout
-		MRDData->Get("Data",mrdReadout);   // get the readout
+		get_ok = MRDData->Get("Data",mrdReadout);   // get the readout
+		if(not get_ok){
+			Log("MrdDiscriminatorScan Tool: Could not get Data member from MRDData entry "+to_string(readouti),v_error,verbosity);
+			return false;
+		}
 		
 		// each mrdReadout has a trigger number, a readout number (usually the same), a trigger timestamp,
 		// and then vectors of crate, slot, channel, tdc value and a type string, one entry for each hit
 		ULong64_t timestamp = mrdReadout.TimeStamp;
-		TimeClass timestampclass(timestamp);
-		if(readouti==0) first_timestamp = timestamp;
-		if(readouti==(total_number_entries-1)) last_timestamp = timestamp;
+		TimeClass timestampclass(timestamp*1000*1000);                            // [ms] to [ns]
+		if(readouti==0) first_timestamp = timestamp/1000.;                        // [ms] to [s]
+		if(readouti==(total_number_entries-1)) last_timestamp = timestamp/1000.;  // [ms] to [s]
 		
 		// we don't actually care about the times of the hits, we just want to count how many there were
 		// so just for interest
 		if(readouti == 0){
-			logmessage = "First entry of next file had timestamp: " + std::to_string(timestamp)
-						+ "(" + timestampclass.AsString() + ").\n There were " 
-			 			+ to_string(mrdReadout.Channel.size())+" hits in this readout";
-			Log(logmessage,v_debug,verbosity);
-			
-			//printing intormation about the event XXX REMOVE later
-			std::cout <<"------------------------------------------------------------"<<std::endl;
-			std::cout <<"readouti: "<<readouti<<", TimeStamp: "<<timestamp<<std::endl;
-			std::cout <<"Slot size: "<<mrdReadout.Slot.size()<<", Crate size: "<<mrdReadout.Crate.size()
-					  <<", Channel size: "<<mrdReadout.Channel.size()<<std::endl
-					  <<"OutN: "<<mrdReadout.OutN<<", Trigger: "<<mrdReadout.Trigger
-					  <<", Type size: "<<mrdReadout.Type.size()<<std::endl;
+			Log("First entry of next file had timestamp: " + timestampclass.AsString(),v_debug,verbosity);
+			//Log("There were " + to_string(mrdReadout.Channel.size())+" hits in this readout",v_debug,verbosity);
 		}
 		
 		// loop over all hits in this readout
@@ -422,5 +455,5 @@ void MrdDiscriminatorScan::CountChannelHits(BoostStore* MRDData, std::map<int,st
 		mrdReadout.Type.clear();
 	}  // loop to next readout
 	
-	return;
+	return true;
 }
