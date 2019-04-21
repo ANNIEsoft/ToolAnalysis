@@ -40,7 +40,7 @@ class TimeClass : public SerialisableObject{
 		int bufsize=100;
 		char logbuffer[bufsize];
 		int discardedcharcount = snprintf(logbuffer, bufsize,
-			"%d/%d/%d %2d:%2d:%2d.%09lu UTC (%lu NS since Unix Epoch)",
+			"%d/%d/%d %02d:%02d:%02d.%09lu UTC (%lu NS since Unix Epoch)",
 			tm_mb.tm_year+1900,tm_mb.tm_mon+1,tm_mb.tm_mday,tm_mb.tm_hour,tm_mb.tm_min,
 			tm_mb.tm_sec,remaining_ns,unixns); // month+1 because it's "months since january"
 		
