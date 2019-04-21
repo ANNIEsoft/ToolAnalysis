@@ -32,7 +32,7 @@ class MrdDiscriminatorScan: public Tool {
 	std::ifstream fin;    // file reader
 	
 	bool GetNextFile();
-	void CountChannelHits(BoostStore* MRDData, std::map<int,std::map<int,std::map<int,int>>> &hit_counts_on_channels, TimeClass& first_timestamp, TimeClass& last_timestamp);
+	bool CountChannelHits(BoostStore* MRDData, std::map<int,std::map<int,std::map<int,int>>> &hit_counts_on_channels, TimeClass& first_timestamp, TimeClass& last_timestamp);
 	int current_threshold;
 	
 	// TApplication for making histograms
