@@ -1,5 +1,12 @@
 /* vim:set noexpandtab tabstop=2 wrap */
 #include "TotalLightMap.h"
+#include "TPolyMarker.h"
+#include "TPointSet3D.h"
+
+/*
+make scatter plot (TPolyMarker2D) of the projected tank exit of pion/gammas/muons based on their initial momentum. 
+Then also show scatter plot (or colour plot) of hits on tank walls from each species (might need special WCSim mod that saves true position of hit on PMT surface...)
+*/
 
 TotalLightMap::TotalLightMap():Tool(){}
 
@@ -40,15 +47,8 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 		isdir=false;
 	}
 	
-	if(drawHistos && (!plotDirectoryExists || !isdir)){
+	if(/*drawHistos &&*/ (!plotDirectoryExists || !isdir)){   // we need to either draw or save
 		Log("TotalLightMap Tool: output directory "+plotDirectory+" does not exist or is not a writable directory; please check and re-run.",v_error,verbosity);
-		return false;
-	}
-	
-	// Get the anniegeom <<< XXX do we need this? XXX
-	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
-	if(not get_ok){
-		Log("TotalLightMap: Could not get the AnnieGeometry from ANNIEEvent!",v_error,verbosity);
 		return false;
 	}
 	
@@ -56,7 +56,7 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	// There may only be one TApplication, so see if another tool has already made one
 	// and register ourself as a user if so. Otherwise, make one and put a pointer in the
 	// CStore for other Tools
-	// ~~~~~~~~~~
+	// ======================
 	if(drawHistos){
 		// create the ROOT application to show histograms
 		int myargc=0;
@@ -81,31 +81,53 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 	}
 	
+	// Get the anniegeom
+	// =================
+	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+	if(not get_ok){
+		Log("TotalLightMap: Could not get the AnnieGeometry from ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
+	
+	// Get properties of the detector we need
+	tank_radius = geom.GetTankRadius();
+	tank_height = geom.GetTankHalfheight();
+	// in fact at present these are incorrect, and we'll need to override them manually:
+	tank_radius = 1.277;  // [m]
+	tank_height = 3.134;  // [m]
+	// Get the detectors too
+	Detectors = geom.GetDetectors();
+	
 	// define the hitmaps
 	// we'll create maps of:
 	// unbinned true position (for the best resolution) << Is this useful with PMTs? Use Sandbox?
 	// binned true position   (so we can take bin differences and compare distributions)
 	// and PMT maps           (we we have PMT distribution differences)
 	
-	TCanvas* lightMapCanv=nullptr;	// XXX this will need 3 TPads XXX
+	TCanvas* lightMapCanv=nullptr;  // XXX this will need 3 TPads XXX
 //	// polymarkers of unbinned true vertices of photon hits
-//	lightmapmu = new TPolyMarker(); lightmapmu->SetName("lightmapmu");
-//	lightmappip = new TPolyMarker(); lightmappip->SetName("lightmappip");
-//	lightmappim = new TPolyMarker(); lightmappim->SetName("lightmappim");
-//	lightmappigamma = new TPolyMarker(); lightmappigamma->SetName("lightmappigamma");
-//	lightmapother = new TPolyMarker(); lightmapother->SetName("lightmapother");
+//	lightmapmu = new TPolyMarker(); lightmapmu->SetTitle("lightmapmu");
+//	lightmappip = new TPolyMarker(); lightmappip->SetTitle("lightmappip");
+//	lightmappim = new TPolyMarker(); lightmappim->SetTitle("lightmappim");
+//	lightmappigamma = new TPolyMarker(); lightmappigamma->SetTitle("lightmappigamma");
+//	lightmapother = new TPolyMarker(); lightmapother->SetTitle("lightmapother");
 	
 	// polymarkers of unbinned true vertices of photon hits
-	lightmapmu = new TPolyMarker(); lightmapmu->SetName("lightmapmu");
-	lightmappip = new TPolyMarker(); lightmappip->SetName("lightmappip");
-	lightmappim = new TPolyMarker(); lightmappim->SetName("lightmappim");
-	lightmappigamma = new TPolyMarker(); lightmappigamma->SetName("lightmappigamma");
-	lightmapother = new TPolyMarker(); lightmapother->SetName("lightmapother");
-	TH2D* blightmapmu=nullptr, *blightmappip=nullptr, *blightmappim=nullptr, *blightmappigamma=nullptr
+	lightmapmu = new TPolyMarker(); lightmapmu->SetTitle("lightmapmu");
+	lightmappip = new TPolyMarker(); lightmappip->SetTitle("lightmappip");
+	lightmappim = new TPolyMarker(); lightmappim->SetTitle("lightmappim");
+	lightmappigamma = new TPolyMarker(); lightmappigamma->SetTitle("lightmappigamma");
+	lightmapother = new TPolyMarker(); lightmapother->SetTitle("lightmapother");
+	TH2D* blightmapmu=nullptr, *blightmappip=nullptr, *blightmappim=nullptr, *blightmappigamma=nullptr,
 		*blightmapother=nullptr;
-	TPolyMarker2D *plightmapmu=nullptr, *plightmappip=nullptr, *plightmappim=nullptr, *plightmappigamma=nullptr
+	TPolyMarker2D *plightmapmu=nullptr, *plightmappip=nullptr, *plightmappim=nullptr, *plightmappigamma=nullptr,
 		*plightmapother=nullptr;
 	
+	///////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////
+	// CODE DUMP
+	///////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////
 	// make a map of polymarkers, which will mark the PMT locations
 	// each marker collection will represent a different PMT type
 	std::map<std::string, TPointSet3D*> pmt_polymarkers;
@@ -125,7 +147,7 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 								 <<" has no type!"<<std::endl;
 			}
 			pmt_polymarkers.emplace(pmt_type_name, new TPointSet3D());
-			pmt_polymarkers.at(pmt_type_name)->SetName(pmt_type_name.c_str());
+			pmt_polymarkers.at(pmt_type_name)->SetTitle(pmt_type_name.c_str());
 			pmt_counts.emplace(pmt_type_name,0);
 		}
 		// add this pmt to the marker collection
@@ -241,84 +263,59 @@ void EventDisplay::draw_event_PMTs(){
 	marker_pmts_bottom.clear();
 	marker_pmts_wall.clear();
 	
-	for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
-		double x[1];
-		double y[1];
-		if (charge[i_pmt]<threshold || ( threshold_time_high!=-999 && time[i_pmt]>threshold_time_high) || (threshold_time_low!=-999 && time[i_pmt]<threshold_time_low)) continue;  // if PMT does not have the charge required by threhold, discard
-	
-		if (/*fabs(y_pmt[i_pmt]-1.99043)<0.01*/fabs(y_pmt[i_pmt]-max_y)<0.01){  //draw PMTs on the top of tank
-			
-			//x[0]=0.5+size_top_drawing*z_pmt[i_pmt]/tank_radius;
-			x[0]=0.5-size_top_drawing*x_pmt[i_pmt]/tank_radius;
-			//y[0]=0.5+(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*x_pmt[i_pmt]/tank_radius;
-			y[0]=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*z_pmt[i_pmt]/tank_radius;
-			
-			TPolyMarker *marker_top = new TPolyMarker(1,x,y,"");
-			if (mode == "Charge") color_marker = Bird_Idx+int(charge[i_pmt]/maximum_pmts*254);
-			else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
-			else if (mode == "Time") color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
-			//std::cout <<"time: "<<time[i_pmt]<<", color: "<<color_marker<<std::endl;
-			
-			marker_top->SetMarkerColor(color_marker);
-			marker_top->SetMarkerStyle(8);
-			marker_top->SetMarkerSize(1);
-			marker_pmts_top.push_back(marker_top);
-			//marker_top->Draw();
-		} else if (/*fabs(y_pmt[i_pmt]+2.0037)<0.01*/fabs(y_pmt[i_pmt]-min_y)<0.01 || fabs(y_pmt[i_pmt]+1.30912)<0.01){
-			//draw PMTs on the bottom of tank
-			
-			//x[0]=0.5+size_top_drawing*z_pmt[i_pmt]/tank_radius;
-			x[0]=0.5-size_top_drawing*x_pmt[i_pmt]/tank_radius;
-			//y[0]=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*x_pmt[i_pmt]/tank_radius;
-			y[0]=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*z_pmt[i_pmt]/tank_radius;
-			
-			TPolyMarker *marker_bottom = new TPolyMarker(1,x,y,"");
-			if (mode == "Charge") color_marker = Bird_Idx+int(charge[i_pmt]/maximum_pmts*254);
-			else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254); 
-			else if (mode == "Time") color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
-			//std::cout <<"time: "<<time[i_pmt]<<", color: "<<color_marker<<std::endl;
-			marker_bottom->SetMarkerColor(color_marker);
-			marker_bottom->SetMarkerStyle(8);
-			marker_bottom->SetMarkerSize(1);
-			marker_pmts_bottom.push_back(marker_bottom);
-		//marker_bottom->Draw();
+	// Loop over PMTs
+	for (std::map<ChannelKey,Detector>::iterator it = Detectors->begin(); it != Detectors->end();it++){
+		// if it's not a tank PMT, ignore it
+		if( (it->second.GetDetectorElement()!="Tank") || (it->Second.GetChannels().size()>1) ){
+			continue;
+		}
+		Position PMT_position = it->second.GetPositionInTank();  // this is PMT position relative the tank centre
 		
-		} else { //draw PMTs on the tank bulk
-			
-			double phi;
-	//		if (z_pmt[i_pmt]<0.001) phi = -TMath::Pi();
-	//		else {
-			
-			if (x_pmt[i_pmt]>0 && z_pmt[i_pmt]>0) phi = atan(z_pmt[i_pmt]/x_pmt[i_pmt])+TMath::Pi()/2;
-			else if (x_pmt[i_pmt]>0 && z_pmt[i_pmt]<0) phi = atan(x_pmt[i_pmt]/-z_pmt[i_pmt]);
-			else if (x_pmt[i_pmt]<0 && z_pmt[i_pmt]<0) phi = 3*TMath::Pi()/2+atan(z_pmt[i_pmt]/x_pmt[i_pmt]);
-			else if (x_pmt[i_pmt]<0 && z_pmt[i_pmt]>0) phi = TMath::Pi()+atan(-x_pmt[i_pmt]/z_pmt[i_pmt]);
-			//phi+=TMath::Pi();
-			if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
-				phi-=TMath::Pi();
-	//		}
-			if (phi < - TMath::Pi()) phi = -TMath::Pi();
-			
-			if (phi<-TMath::Pi() || phi>TMath::Pi()) std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<x_pmt[i_pmt]<<", y="<<y_pmt[i_pmt]<<", z="<<z_pmt[i_pmt]<<std::endl;
-			
-			x[0]=0.5+phi*size_top_drawing;
-			y[0]=0.5+y_pmt[i_pmt]/tank_height*tank_height/tank_radius*size_top_drawing;
-			
-			TPolyMarker *marker_bulk = new TPolyMarker(1,x,y,"");
-			if (mode == "Charge") color_marker = Bird_Idx+int(charge[i_pmt]/maximum_pmts*254);
-			else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
-			else if (mode == "Time") color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
-			marker_bulk->SetMarkerColor(color_marker);
-			marker_bulk->SetMarkerStyle(8);
-			marker_bulk->SetMarkerSize(1);
-			marker_pmts_wall.push_back(marker_bulk);
-			//std::cout <<"time: "<<time[i_pmt]<<", color: "<<color_marker<<std::endl;
-			//marker_bulk->Draw();
-			
+		double markerx=0.,markery=0.;
+		// calculate position on canvas
+		if (it->second.GetTankLocation()=="TopCap"){
+			// top cap
+			markerx=0.5-size_top_drawing*PMT_position.X()/tank_radius;
+			markery=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*PMT_position.Z()/tank_radius;
+			theset = *marker_pmts_top;
+		} else if (it->second.GetTankLocation()=="BottomCap"){
+			// bottom cap
+			markerx=0.5-size_top_drawing*PMT_position.Z()/tank_radius;
+			markery=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*PMT_position.Z()/tank_radius;
+			theset = &marker_pmts_bottom;
+		} else if (it->second.GetTankLocation()=="Barrel"){
+			// wall
+			markerx=0.5+it->second.GetPhi()*size_top_drawing;
+			markery=0.5+y_pmt[i_pmt]/tank_height*tank_height/tank_radius*size_top_drawing;
+			theset = &marker_pmts_wall;
+		} else {
+			Log("TotalLightMap Tool: Unrecognised cylinder location of tank PMT: "
+					+(it->second.GetTankLocation()), v_warning, verbosity);
 		}
 		
+		// Make the Polymarker
+		TPolyMarker* marker = new TPolyMarker(1,&markerx,&markery,"");
+		
+		// set the colour based on the time / charge of the hit
+		if (mode == "Charge")
+			// colour based on charge
+			color_marker = Bird_Idx+int(charge[i_pmt]/maximum_pmts*254);
+		else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999)
+			// if we have no time window in effect, colour based on time within event
+			color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
+		else if (mode == "Time")
+			// else if we have a time window, colour based on time within window
+			color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+		
+		// Set the marker properties
+		marker->SetMarkerColor(color_marker);
+		marker->SetMarkerStyle(8);
+		marker->SetMarkerSize(1);
+		// Add to the relevant set
+		theset->push_back(marker);
 	}
 	
+	// draw all the markers
 	for (int i_marker=0;i_marker<marker_pmts_top.size();i_marker++){
 		marker_pmts_top.at(i_marker)->Draw();
 	}
@@ -343,65 +340,81 @@ void EventDisplay::draw_event_PMTs(){
 	double x[1];
 	double y[1];
 	double charge_single=1.;  //FIXME when charge is implemented in LoadWCSimLAPPD
-	bool draw_lappd_markers=false;
-//		if (z_pmt[i_pmt]<0.001) phi = -TMath::Pi();
-//		else {
+	
+	// loop over LAPPDs with a hit
 	for (int i_lappd_hits=0;i_lappd_hits<hits_LAPPDs.size();i_lappd_hits++){
-		for (int i_single_lappd=1;i_single_lappd<hits_LAPPDs.at(i_lappd_hits).size();i_single_lappd++){ //start at 1 to avoid the default fill of the first entry with zero vector
-			//threshold check: 
-			//std::cout <<"i_lappd_hit: "<<i_lappd_hits<<", i_single_lappd: "<<i_single_lappd<<std::endl;
-			double time_lappd_single = time_lappd.at(i_lappd_hits).at(i_single_lappd-1);
-			//std::cout <<"lappd single time: "<<time_lappd_single<<std::endl;
-			//std::cout <<"threshold value: "<<threshold_lappd<<std::endl;
-			if (charge_single<threshold_lappd || (threshold_time_high!=-999 && time_lappd_single>threshold_time_high) || (threshold_time_low!=-999 && time_lappd_single<threshold_time_low)) continue; 
-			draw_lappd_markers=true;
+		// Lop over hits on this LAPPD
+		for (int i_single_lappd=1; i_single_lappd<hits_LAPPDs.at(i_lappd_hits).size(); i_single_lappd++){ 
+			//start at 1 to avoid the default fill of the first entry with zero vector XXX ??? huh??
 			
+			// get time of this hit
+			double time_lappd_single = time_lappd.at(i_lappd_hits).at(i_single_lappd-1);
+			
+			// skip drawing this LAPPD hit if the time/charge is outside the plot range...
+			if( (charge_single<threshold_lappd) ||
+				  (threshold_time_high !=-999 && time_lappd_single>threshold_time_high) ||
+				  (threshold_time_low  !=-999 && time_lappd_single<threshold_time_low )  ) continue;
+			
+			// get LAPPD position
 			double x_lappd = hits_LAPPDs.at(i_lappd_hits).at(i_single_lappd).X();
 			double y_lappd = hits_LAPPDs.at(i_lappd_hits).at(i_single_lappd).Y();
 			double z_lappd = hits_LAPPDs.at(i_lappd_hits).at(i_single_lappd).Z();
 			x_lappd-=tank_center_x;
 			y_lappd-=tank_center_y;
 			z_lappd-=tank_center_z;
-			//std::cout <<"Threshold was surpassed."<<std::endl;
 			
+			// calculate LAPPD phi
 			if (x_lappd>0 && z_lappd>0) phi = atan(z_lappd/x_lappd)+TMath::Pi()/2;
 			else if (x_lappd>0 && z_lappd<0) phi = atan(x_lappd/-z_lappd);
 			else if (x_lappd<0 && z_lappd<0) phi = 3*TMath::Pi()/2+atan(z_lappd/x_lappd);
 			else if (x_lappd<0 && z_lappd>0) phi = TMath::Pi()+atan(-x_lappd/z_lappd);
-			//phi+=TMath::Pi();
 			if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
 			phi-=TMath::Pi();
-			
-//		}
 			if (phi < - TMath::Pi()) phi = -TMath::Pi();
-			if (phi < - TMath::Pi() || phi>TMath::Pi()) std::cout <<"Drawing LAPPD event: Phi out of bounds! "<<", x= "<<x_lappd<<", y="<<y_lappd<<", z="<<z_lappd<<std::endl;
+			if (phi < - TMath::Pi() || phi>TMath::Pi())
+				std::cout <<"Drawing LAPPD event: Phi out of bounds! "
+									<<", x= "<<x_lappd
+									<<", y="<<y_lappd
+									<<", z="<<z_lappd
+									<<", phi="<<phi
+									<<std::endl;
 			
-			//std::cout <<"x = "<<x_lappd<<", y="<<y_lappd<<", z="<<z_lappd<<", phi="<<phi<<std::endl;
-			//std::cout <<"rho = "<<sqrt(x_lappd*x_lappd+z_lappd*z_lappd);
-			
+			// calculate position on canvas
 			x[0]=0.5+phi*size_top_drawing;
 			y[0]=0.5+y_lappd/tank_height*tank_height/tank_radius*size_top_drawing;
 			
+			// make the polymarker
 			TPolyMarker *marker_lappd = new TPolyMarker(1,x,y,"");
-			//std::cout <<"determine the color of the marker: "<<std::endl;
-			if (mode == "Charge") color_marker = Bird_Idx+254;
-			else if (mode == "Time" && threshold_time_high==-999 && threshold_time_low==-999) {
-				if (time_lappd_single > maximum_time_overall || time_lappd_single < min_time_overall) std::cout <<"lappd time: "<<time_lappd_single<<", min time: "<<min_time_overall<<", max time: "<<maximum_time_overall<<std::endl;
-				color_marker = Bird_Idx+int((time_lappd_single-min_time_overall)/(maximum_time_overall-min_time_overall)*254);}
-			else if (mode == "Time") color_marker = Bird_Idx+int((time_lappd_single-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+			// set the colour based on the time / charge of the hit
+			if (mode == "Charge")
+				// colour based on charge (placeholder; LAPPD hits do not have charge)
+				color_marker = Bird_Idx+254;
+			else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) {
+				// if we have no time window in effect, colour based on time within event
+				if (time_lappd_single > maximum_time_overall || time_lappd_single < min_time_overall){
+					std::cout <<"lappd time: "<<time_lappd_single
+										<<", min time: "<<min_time_overall
+										<<", max time: "<<maximum_time_overall
+										<<std::endl;
+				}
+				color_marker = Bird_Idx+int((time_lappd_single-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
+			}
+			else if (mode == "Time")
+				// else if we have a time window, colour based on time within window
+				color_marker = Bird_Idx+int((time_lappd_single-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+			
+			// Set the marker properties
 			marker_lappd->SetMarkerColor(color_marker);
 			marker_lappd->SetMarkerStyle(8);
 			marker_lappd->SetMarkerSize(0.4);
+			// Add to the relevant set
 			marker_lappds.push_back(marker_lappd);
-			//marker_bulk->Draw();
 		}
 	}
 	
-	//std::cout <<"finalisation of drawing markers"<<std::endl;
-	if (draw_lappd_markers){
-		for (int i_draw=0; i_draw<marker_lappds.size();i_draw++){
-			marker_lappds.at(i_draw)->Draw();
-		}
+	// draw the polymarkers
+	for (int i_draw=0; i_draw<marker_lappds.size();i_draw++){
+		marker_lappds.at(i_draw)->Draw();
 	}
 	
 }
@@ -435,63 +448,102 @@ void EventDisplay::draw_event_PMTs(){
 
 void EventDisplay::find_projected_xyz(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double &projected_x, double &projected_y, double &projected_z){
 
-    double time_top, time_wall, time_wall1, time_wall2, time_min;
-    double a,b,c; //for calculation of time_wall
+	double time_top, time_wall, time_wall1, time_wall2, time_min;
+	double a,b,c; //for calculation of time_wall
 
-    time_top = (dirY > 0)? (max_y-vtxY)/dirY : (min_y - vtxY)/dirY;
-    a = dirX*dirX + dirZ*dirZ;
-    b = 2*vtxX*dirX + 2*vtxZ*dirZ;
-    c = vtxX*vtxX+vtxZ*vtxZ-tank_radius*tank_radius;
-    time_wall1 = (-b+sqrt(b*b-4*a*c))/(2*a);
-    time_wall2 = (-b-sqrt(b*b-4*a*c))/(2*a);
-    if (time_wall2>=0 && time_wall1>=0) time_wall = (time_wall1<time_wall2) ? time_wall1 : time_wall2;
-    else if (time_wall2 < 0 ) time_wall = time_wall1;
-    else if (time_wall1 < 0 ) time_wall = time_wall2;
+	time_top = (dirY > 0)? (max_y-vtxY)/dirY : (min_y - vtxY)/dirY;
+	a = dirX*dirX + dirZ*dirZ;
+	b = 2*vtxX*dirX + 2*vtxZ*dirZ;
+	c = vtxX*vtxX+vtxZ*vtxZ-tank_radius*tank_radius;
+	time_wall1 = (-b+sqrt(b*b-4*a*c))/(2*a);
+	time_wall2 = (-b-sqrt(b*b-4*a*c))/(2*a);
+	if (time_wall2>=0 && time_wall1>=0) time_wall = (time_wall1<time_wall2) ? time_wall1 : time_wall2;
+	else if (time_wall2 < 0 ) time_wall = time_wall1;
+	else if (time_wall1 < 0 ) time_wall = time_wall2;
 
-    time_min = (time_wall < time_top && time_wall >=0 )? time_wall : time_top;
+	time_min = (time_wall < time_top && time_wall >=0 )? time_wall : time_top;
 
-   // std::cout <<"time_min: "<<time_min<<", time wall1: "<<time_wall1<<", time wall2: "<<time_wall2<<", time wall: "<<time_wall<<", time top: "<<time_top<<std::endl;
+	projected_x = vtxX+dirX*time_min;
+	projected_y = vtxY+dirY*time_min;
+	projected_z = vtxZ+dirZ*time_min;
 
-    projected_x = vtxX+dirX*time_min;
-    projected_y = vtxY+dirY*time_min;
-    projected_z = vtxZ+dirZ*time_min;
-
-  }
+}
 
 //////////////////////////////////////////
 
-  void EventDisplay::translate_xy(double vtxX, double vtxY, double vtxZ, double &xWall, double &yWall, int &status_hit, double &phi_calc){
+void EventDisplay::translate_xy(double vtxX, double vtxY, double vtxZ, double &xWall, double &yWall, int &status_hit, double &phi_calc){
+	
+	if (fabs(vtxY-max_y)<0.01){            //draw vtx projection on the top of tank
+		
+		xWall=0.5-size_top_drawing*vtxX/tank_radius;
+		yWall=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*vtxZ/tank_radius;
+		status_hit = 1;
+		phi_calc = -999;
+		if (sqrt(vtxX*vtxX+vtxZ*vtxZ)>tank_radius) status_hit = 4;
+	} else if (fabs(vtxY-min_y)<0.01){            //draw vtx projection on the top of tank
+		xWall=0.5-size_top_drawing*vtxX/tank_radius;
+		yWall=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*vtxZ/tank_radius;
+		status_hit = 2;
+		phi_calc = -999;
+		if (sqrt(vtxX*vtxX+vtxZ*vtxZ)>tank_radius) status_hit = 4;
+	}else {
+		double phi;
+		if (vtxX>0 && vtxZ>0) phi = atan(vtxZ/vtxX)+TMath::Pi()/2;
+		else if (vtxX>0 && vtxZ<0) phi = atan(vtxX/-vtxZ);
+		else if (vtxX<0 && vtxZ<0) phi = 3*TMath::Pi()/2+atan(vtxZ/vtxX);
+		else if (vtxX<0 && vtxZ>0) phi = TMath::Pi()+atan(-vtxX/vtxZ);
+		if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
+		phi-=TMath::Pi();
+		if (phi < - TMath::Pi()) phi = -TMath::Pi();
+		xWall=0.5+phi*size_top_drawing;
+		yWall=0.5+vtxY/tank_height*tank_height/tank_radius*size_top_drawing;
+		status_hit = 3;
+		phi_calc = phi;
+		if (vtxY>max_y && vtxY<min_y) status_hit = 4;
+		
+	}
+	
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
 
-    if (fabs(vtxY-max_y)<0.01){            //draw vtx projection on the top of tank
+	std::map<ChannelKey,Detector> *Detectors = anniegeom->GetDetectors();
+	ChannelKey ck;
+	Position position_PMT;
+	int detector_id;
+	max_y = -100.;
+	min_y =  100.;
+	
+	for (std::map<ChannelKey,Detector>::iterator it = Detectors->begin(); it != Detectors->end();it++){
+		ck = it->first;
+		
+		// if it's an MRD PMT record it's position
+		if (it->second.GetDetectorElement() == "MRD"){
+			position_PMT = it->second.GetDetectorPosition();
+			detector_id = it->second.GetDetectorId();
+			x_MRD[detector_id]=position_PMT.X()-tank_center_x;
+			y_MRD[detector_id]=position_PMT.Y()-tank_center_y;
+			z_MRD[detector_id]=position_PMT.Z()-tank_center_z;
+		}
+		
+		// if it's a Tank detector...
+		if(it->second.GetDetectorElement() =="Tank"){
+			// if it's an LAPPD, just increment the counter and then continue XXX redundant
+			if (it->second.GetDetectorType()=="lappd_v1"){
+				n_lappds++;
+				continue;
+			}
+			// if it's a tank PMT, record it's position, and get the maximum extents
+			// for tank PMTs
+			position_PMT = it->second.GetDetectorPosition();
+			detector_id = it->second.GetDetectorId();
+			x_pmt[detector_id]=position_PMT.X()-tank_center_x;
+			y_pmt[detector_id]=position_PMT.Y()-tank_center_y;
+			z_pmt[detector_id]=position_PMT.Z()-tank_center_z;
+			if (y_pmt[detector_id]>max_y) max_y = y_pmt[detector_id];
+			if (y_pmt[detector_id]<min_y) min_y = y_pmt[detector_id];
+		}
+	} // loop over detectors
 
-      xWall=0.5-size_top_drawing*vtxX/tank_radius;
-      yWall=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*vtxZ/tank_radius;
-      status_hit = 1;
-      phi_calc = -999;
-      if (sqrt(vtxX*vtxX+vtxZ*vtxZ)>tank_radius) status_hit = 4;
-    } else if (fabs(vtxY-min_y)<0.01){            //draw vtx projection on the top of tank
-
-      xWall=0.5-size_top_drawing*vtxX/tank_radius;
-      yWall=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*vtxZ/tank_radius;
-      status_hit = 2;
-      phi_calc = -999;
-      if (sqrt(vtxX*vtxX+vtxZ*vtxZ)>tank_radius) status_hit = 4;
-    }else {
-      double phi;
-      if (vtxX>0 && vtxZ>0) phi = atan(vtxZ/vtxX)+TMath::Pi()/2;
-      else if (vtxX>0 && vtxZ<0) phi = atan(vtxX/-vtxZ);
-      else if (vtxX<0 && vtxZ<0) phi = 3*TMath::Pi()/2+atan(vtxZ/vtxX);
-      else if (vtxX<0 && vtxZ>0) phi = TMath::Pi()+atan(-vtxX/vtxZ);
-      if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
-      phi-=TMath::Pi();
-      if (phi < - TMath::Pi()) phi = -TMath::Pi();
-      xWall=0.5+phi*size_top_drawing;
-      yWall=0.5+vtxY/tank_height*tank_height/tank_radius*size_top_drawing;
-      status_hit = 3;
-      phi_calc = phi;
-      if (vtxY>max_y && vtxY<min_y) status_hit = 4;
-
-    }
-
-  }

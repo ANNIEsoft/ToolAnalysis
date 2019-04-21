@@ -638,8 +638,18 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
 		lappd_tubeid_to_detectorkey.emplace(anlappd.GetTubeNo(),uniquedetectorkey);
 		detectorkey_to_lappdid.emplace(uniquedetectorkey,anlappd.GetTubeNo());
+		std::string CylLocString;
+		switch (anlappd.GetCylLoc()){
+			case 0:  CylLocString = "TopCap";    break;
+			case 2:  CylLocString = "BottomCap"; break;
+			case 1:  CylLocString = "Barrel";    break;
+			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
+			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			default: CylLocString = "NA";        break;  // unknown
+		}
 		Detector adet(uniquedetectorkey,
 					  "LAPPD",
+					  CylLocString,
 					  Position( anlappd.GetPosition(0)/100.,
 					            anlappd.GetPosition(1)/100.,
 					            anlappd.GetPosition(2)/100.),
@@ -702,8 +712,18 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		
 		// Construct the detector associated with this PMT
 		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		std::string CylLocString;
+		switch (apmt.GetCylLoc()){
+			case 0:  CylLocString = "TopCap";    break;
+			case 2:  CylLocString = "BottomCap"; break;
+			case 1:  CylLocString = "Barrel";    break;
+			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
+			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			default: CylLocString = "NA";        break;  // unknown
+		}
 		Detector adet(uniquedetectorkey,
 					  "Tank",
+					  CylLocString,
 					  Position( apmt.GetPosition(0)/100.,
 					            apmt.GetPosition(1)/100.,
 					            apmt.GetPosition(2)/100.),
@@ -762,8 +782,18 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		
 		// Construct the detector associated with this PMT
 		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		std::string CylLocString;
+		switch (apmt.GetCylLoc()){
+			case 0:  CylLocString = "TopCap";    break;
+			case 2:  CylLocString = "BottomCap"; break;
+			case 1:  CylLocString = "Barrel";    break;
+			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
+			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			default: CylLocString = "NA";        break;  // unknown
+		}
 		Detector adet(uniquedetectorkey,
 					  "MRD",
+					  CylLocString,
 					  Position( apmt.GetPosition(0)/100.,
 					            apmt.GetPosition(1)/100.,
 					            apmt.GetPosition(2)/100.),
@@ -820,8 +850,18 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		
 		// Construct the detector associated with this PMT
 		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		std::string CylLocString;
+		switch (apmt.GetCylLoc()){
+			case 0:  CylLocString = "TopCap";    break;
+			case 2:  CylLocString = "BottomCap"; break;
+			case 1:  CylLocString = "Barrel";    break;
+			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
+			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			default: CylLocString = "NA";        break;  // unknown
+		}
 		Detector adet(uniquedetectorkey,
 					  "Veto",
+					  CylLocString,
 					  Position( apmt.GetPosition(0)/100.,
 					            apmt.GetPosition(1)/100.,
 					            apmt.GetPosition(2)/100.),

@@ -6,25 +6,47 @@
 #include "Position.h"
 #include "Direction.h"
 #include "Channel.h"
+class Geometry;
 
 enum class detectorstatus : uint8_t { OFF, ON, UNSTABLE };
+constexpr double PI=4.*atan(1.);
 
 class Detector : public SerialisableObject{
 	
 	friend class boost::serialization::access;
 	
 	public:
-	Detector() : DetectorID(0), DetectorElement(), DetectorPosition(), DetectorDirection(), DetectorType(""),
+	Detector() : DetectorID(0), DetectorElement(), TankLocation(), DetectorPosition(), DetectorDirection(), DetectorType(""),
 		Status(detectorstatus::OFF), Channels() {serialise=true;}
-	Detector(int detid, std::string DetEle, Position posin, Direction dirin, std::string detype, detectorstatus stat, double avgrate, map<unsigned long,Channel> channelsin={}) : DetectorID(detid), DetectorElement(DetEle), DetectorPosition(posin), DetectorDirection(dirin), DetectorType(detype), Status(stat), Channels(channelsin) {serialise=true;}
+	Detector(int detid, std::string DetEle, std::string CylLoc, Position posin, Direction dirin, std::string detype, detectorstatus stat, double avgrate, map<unsigned long,Channel> channelsin={}) : DetectorID(detid), DetectorElement(DetEle), TankLocation(CylLoc), DetectorPosition(posin), DetectorDirection(dirin), DetectorType(detype), Status(stat), Channels(channelsin) {
+		serialise=true;
+		
+		// calculate and populate tank location
+		if(DetectorElement=="Tank"){
+			// Calculate angle from beam axis, measured clockwise while looking down
+			double thexval = DetectorPosition.X();
+			double thezval = DetectorPosition.Z();
+			double thethetaval = atan(thexval/abs(thezval));
+			if(thezval<0.){ (thexval<0.) ? thethetaval=(-PI+thethetaval) : thethetaval=(PI-thethetaval); }
+			Phi = thethetaval;
+		} else {
+			Phi=-999;
+		}
+	}
+	
 	std::string GetDetectorElement(){return DetectorElement;}
 	Position GetDetectorPosition(){return DetectorPosition;}
+	Position GetPositionInTank();
 	Direction GetDetectorDirection(){return DetectorDirection;}
 	int GetDetectorID(){return static_cast<int>(DetectorID);}
 	std::string GetDetectorType(){return DetectorType;}
 	detectorstatus GetStatus(){return Status;}
 	std::map<unsigned long,Channel>* GetChannels() {return &Channels;}
 	void AddChannel(Channel chanin){ Channels.emplace(chanin.GetChannelID(),chanin); }
+	std::string GetTankLocation(){ return TankLocation; }
+	double GetPhi(){ return Phi; }
+	double GetR();
+	Geometry* GetGeometryPtr(){ return GeometryPtr; }
 	
 	void SetDetectorElement(std::string DetEleIn){DetectorElement=DetEleIn;}
 	void SetDetectorPosition(Position DetectorPositionIn){DetectorPosition=DetectorPositionIn;}
@@ -32,9 +54,16 @@ class Detector : public SerialisableObject{
 	void SetDetectorID(int DetectorIDIn){DetectorID=DetectorIDIn;}
 	void SetDetectorType(std::string DetectorTypeIn){DetectorType=DetectorTypeIn;}
 	void SetStatus(detectorstatus StatusIn){Status=StatusIn;}
+	void SetTankLocation(std::string locin){TankLocation=locin;}
+	void SetPhi(double phiin){Phi=phiin;}
+	void SetGeometryPtr(Geometry* geomin){ GeometryPtr=geomin; }
 	bool Print(){
 		std::cout<<"DetectorPosition  : "; DetectorPosition.Print();
 		std::cout<<"DetectorDirection : "; DetectorDirection.Print();
+		if(DetectorElement=="Tank"){
+		std::cout<<"Location in Tank  : "<<TankLocation<<std::endl;
+		std::cout<<"Angular Position  : "<<Phi<<std::endl;
+		}
 		std::cout<<"DetectorElement   : "<<DetectorElement<<std::endl;
 		std::cout<<"DetectorID        : "<<DetectorID<<std::endl;
 		std::cout<<"DetectorType      : "<<DetectorType<<std::endl;
@@ -64,6 +93,9 @@ class Detector : public SerialisableObject{
 	std::string DetectorType;      // e.g. "Hamamatsu R7081"
 	detectorstatus Status;         // on, off, unstable....
 	std::map<unsigned long,Channel> Channels;
+	std::string TankLocation;      // "Barrel", "TopCap", "BottomCap", "MRD"*, "FACC"*, or "NA". *may change
+	double Phi;                    // angle from beam z axis measured clockwise looking down. For tank PMTs.
+	Geometry* GeometryPtr=nullptr; // a pointer to the parent geometry to which this Detector belongs
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
@@ -71,6 +103,8 @@ class Detector : public SerialisableObject{
 		ar & Channels;
 		ar & DetectorPosition;
 		ar & DetectorDirection;
+		ar & TankLocation;
+		ar & Phi;
 		ar & DetectorID;
 		ar & DetectorType;
 		ar & Status;

@@ -34,22 +34,25 @@ class TotalLightMap: public Tool {
 	uint64_t MCEventNum;
 	uint16_t MCTriggernum;
 	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
-	std::map<unsigned long,std::vector<MCHit>>* MCHits=nullptr;
-	std::vector<MCParticle>* MCParticles=nullptr;
+	std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
 	// alt
-	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds; // the MC Truth information
-	std::map<unsigned long,int> channelkey_to_mrdpmtid;           // 
-	std::vector<BoostStore>* theMrdTracks;                        // the reconstructed tracks
-	std::vector<MCParticle>* MCParticles=nullptr;                 // the true particles
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds=nullptr; // the MC Truth information
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;                             // 
+	std::vector<BoostStore>* theMrdTracks=nullptr;                                  // the reconstructed tracks
+	std::vector<MCParticle>* MCParticles=nullptr;                                   // the true particles
+	
+	double tank_height;
+	double tank_radius;
+	std::map<ChannelKey,Detector>* Detectors=nullptr;
 	
 	// TApplication for making histograms
 	TApplication* rootTApp=nullptr;
 	TCanvas* lightMapCanv=nullptr;
-	TPolyMarker *lightmapmu=nullptr, *lightmappip=nullptr, *lightmappim=nullptr, *lightmappigamma=nullptr
+	TPolyMarker *lightmapmu=nullptr, *lightmappip=nullptr, *lightmappim=nullptr, *lightmappigamma=nullptr,
 		*lightmapother=nullptr;
-	TH2D* blightmapmu=nullptr, *blightmappip=nullptr, *blightmappim=nullptr, *blightmappigamma=nullptr
+	TH2D* blightmapmu=nullptr, *blightmappip=nullptr, *blightmappim=nullptr, *blightmappigamma=nullptr,
 		*blightmapother=nullptr;
-	TPolyMarker2D *plightmapmu=nullptr, *plightmappip=nullptr, *plightmappim=nullptr, *plightmappigamma=nullptr
+	TPolyMarker2D *plightmapmu=nullptr, *plightmappip=nullptr, *plightmappim=nullptr, *plightmappigamma=nullptr,
 		*plightmapother=nullptr;
 	
 	std::string plotDirectory;
