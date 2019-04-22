@@ -33,6 +33,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("ParametricModel", fParametricModel);
 	m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
+  m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
 
 
 	/// Construct the other objects we'll be setting at event level,
@@ -50,6 +51,10 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   // but for tools that need them, in the LoadWCSim tool I put a map of WCSim TubeId to channelkey
   m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
   m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
+
+  //Read the LAPPDID file, if given
+  if(fLAPPDIDFile){
+    this->ReadLAPPDIDFile();
   
   return true;
 }
@@ -429,4 +434,16 @@ void DigitBuilder::Reset() {
   fDigitList->clear();
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
+}
+
+void DigitBuilder::ReadLAPPDIDFile() {
+  std::string line;
+  ifstream myfile(fLAPPDIDFile);
+  if (myfile.is_open()){
+    while(getline(myfile,line)){
+      std::cout << "LINE IN LAPPD TEXT" << line << std::endl;
+    }
+  } else {
+    Log("Unable to open given LAPPD ID File",v_error,verbosity);
+  }
 }
