@@ -53,9 +53,9 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
 
   //Read the LAPPDID file, if given
-  if(fLAPPDIDFile){
+  if(fLAPPDIDFile!="none"){
     this->ReadLAPPDIDFile();
-  
+  }  
   return true;
 }
 
@@ -254,13 +254,17 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 				continue;
 			}
 			int detkey = det->GetDetectorID();
-			int LAPPDId = detectorkey_to_lappdid.at(detkey); // WCSim's LAPPDID
-			// XXX ^ this is here for demonstration, since it will tie up with
-			// the hard-coded numbers in the commented lines below (presumably old WCSim IDs)
-			// but I recommend transitioning to a more robust method
-			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
-			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
-			if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
+			int LAPPDId = detectorkey_to_lappdid.at(detkey);
+      //Check if LAPPD is in selected LAPPDs
+      bool isSelectedLAPPD = false;
+      for(int i=0;i<fLAPPDId.size();i++){
+			  if(LAPPDId == fLAPPDId.at(i)) isSelectedLAPPD=true;
+      }
+      if(!isSelectedLAPPD && fLAPPDId.size()>0) continue;
+      if(verbosity>3){
+        std::cout << "Loading in digit for LAPPDID " << LAPPDId << std::endl;
+      }
+
 			if(det->GetDetectorElement()=="LAPPD"){ // redundant, MCLAPPDHits are LAPPD hitss
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
@@ -441,7 +445,11 @@ void DigitBuilder::ReadLAPPDIDFile() {
   ifstream myfile(fLAPPDIDFile);
   if (myfile.is_open()){
     while(getline(myfile,line)){
-      std::cout << "LINE IN LAPPD TEXT" << line << std::endl;
+      if(verbosity>0){
+        std::cout << "DigitBuilder tool: Loading hits from LAPPD ID " << line << std::endl;
+      }
+      int thisID = std::atoi(line.c_str());
+      fLAPPDId.push_back(thisID);
     }
   } else {
     Log("Unable to open given LAPPD ID File",v_error,verbosity);

@@ -5,3 +5,4 @@ ParametricModel 1
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
 PhotoDetectorConfiguration All
 GetPionKaonInfo 1
+LAPPDIDFile ./LAPPDIDs.txt

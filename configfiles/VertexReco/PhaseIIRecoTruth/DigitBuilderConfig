@@ -6,4 +6,4 @@ ParametricModel 1
 PhotoDetectorConfiguration All
 #Get Pion/Kaon counts from MC Truth
 GetPionKaonInfo 1
-LAPPDIDFile /ToolAnalysis/configfiles/VertexReco/PhaseIIRecoTruth/LAPPDIDs.txt
+LAPPDIDFile ./LAPPDIDs.txt
