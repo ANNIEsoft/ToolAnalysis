@@ -10,6 +10,7 @@
 #include "TSystem.h"
 #include "TStyle.h"
 #include "TCanvas.h"
+#include "TH1.h"
 #include "TGraphErrors.h"
 #include "TMultiGraph.h"
 #include "TLegend.h"
@@ -143,7 +144,10 @@ bool MrdDiscriminatorScan::Execute(){
 	Log("MrdDiscriminatorScan Tool: Scanning hits in this file",v_debug,verbosity);
 	bool success = CountChannelHits(MRDData, hit_counts_on_channels, first_timestamp, last_timestamp);
 	if(not success) return false;
-	double total_run_seconds = last_timestamp.GetNs() - first_timestamp.GetNs();
+	//double total_run_seconds = last_timestamp.GetNs() - first_timestamp.GetNs(); no no no
+	// each run has 10k readouts, each readout records a 4us window (single word mode with resolution set at 4ns)
+	// so in total we record 10e3 x 4e-6 = 40e-3ns of actual time
+	double total_run_seconds = 40E-3;
 	Log("MrdDiscriminatorScan Tool: Total duration of this run was: "
 		+std::to_string(total_run_seconds)+" seconds",v_debug,verbosity);
 	
@@ -159,6 +163,7 @@ bool MrdDiscriminatorScan::Execute(){
 			for(auto&& achannel : acard.second){
 				// Add the rate for this channel to the TGraph of rate vs threshold for this card
 				int channeli=achannel.first;
+				if(cratei==7&&sloti==11&&channeli==15) continue; // RWM
 				int num_hits_on_this_channel = achannel.second;
 				//cout<<"		channel "<<channeli<<" had "<<num_hits_on_this_channel<<" hits"<<endl;
 				double hitrate = double(num_hits_on_this_channel) / total_run_seconds;
@@ -183,10 +188,6 @@ bool MrdDiscriminatorScan::Execute(){
 					+" based on "+to_string(num_hits_on_this_channel)+ " hits to "+to_string(hitrate)+"Hz";
 				//Log(logmessage,v_debug,verbosity);
 				TGraphErrors* thisgraph = rategraphs.at(cratei).at(sloti).at(channeli);
-				if(cratei==7&&channeli==4){
-					cout<<"setting crate "<<cratei<<" channel "<<channeli<<" point ("<<current_threshold
-						<<", "<<hitrate<<")"<<std::endl;
-				}
 				if(thisgraph==nullptr){
 					Log("MrdDiscriminatorScan Tool: Null TGraph pointer setting datapoint!?",v_error,verbosity);
 				} else {
@@ -259,23 +260,32 @@ bool MrdDiscriminatorScan::Finalise(){
 				} else {
 					thisgraph->SetMarkerStyle(20);  // filled circles
 					thisgraph->SetMarkerSize(0.7);  // big enough to see the fill colour
+					thisgraph->SetLineStyle(0);     // no lines, makes it too busy
 					thisgraph->SetFillStyle(0);
 					thisgraph->SetFillColor(0); // even with no fill, this makes a border around the legend entry
 					auto thecolour = gStyle->GetColorPalette((float)gStyle->GetNumberOfColors()/32*channeli);
 					thisgraph->SetLineColor(thecolour);
 					thisgraph->SetMarkerColor(thecolour);
-					allgraphsforthiscard->Add(thisgraph,"PL"); // ,"PL");
+					allgraphsforthiscard->Add(thisgraph,"P"); // ,"PL");
 					// for sufficiently new ROOT, using TMultiGraph::Add(graph,"PL") and the option
 					// TMultiGraph::Draw("same PLC PMC") will automatically pick unique colors for multiple TH1s
 					// (or for THStack just "PFC nostack" when drawing the stack)
 					// but we don't have sufficiently new ROOT
+					std::string graphname = TString::Format("%d_%d_%d",cratei,sloti,channeli).Data();
+					std::string alltitles = graphname+";Threshold [mV];Pulse Rate [Hz]";
+					thisgraph->GetHistogram()->SetTitle(alltitles.c_str());
+					thisgraph->Draw("AP");
+					//mrdScanCanv->BuildLegend();
+					mrdScanCanv->Modified();
+					mrdScanCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),graphname.c_str()));
+
 				}
-				std::cout<<"Channel "<<channeli<<" points:"<<std::endl;
-				thisgraph->Print();
+				//std::cout<<"Channel "<<channeli<<" points:"<<std::endl;
+				//thisgraph->Print();
 			}
 			Log("MrdDiscriminatorScan Tool: Drawing TMultiGraph for crate "+to_string(cratei)
 				+", slot "+to_string(sloti),v_debug,verbosity);
-			allgraphsforthiscard->Draw("APL");
+			allgraphsforthiscard->Draw("AP");
 			TLegend* leg = mrdScanCanv->BuildLegend();  // XXX position and resize
 			leg-> SetNColumns(4);
 			leg->SetX1NDC(0.01);
@@ -294,13 +304,13 @@ bool MrdDiscriminatorScan::Finalise(){
 				alegentry->SetFillStyle(0);
 				alegentry->SetLineStyle(0);
 			}
-			// 
+			// apply all settings
 			gPad->Update();
 			gPad->Modified();
 			
 			Log("MrdDiscriminatorScan Tool: Saving TMultiGraph",v_debug,verbosity);
-			mrdScanCanv->SaveAs(TString::Format("%s/Crate_%i_%i_%imV.C",plotDirectory.c_str(),cratei, sloti, current_threshold));
-			mrdScanCanv->SaveAs(TString::Format("%s/Crate_%i_%i_%imV.png",plotDirectory.c_str(),cratei, sloti, current_threshold));
+			mrdScanCanv->SaveAs(TString::Format("%s/Crate_%i_%i.C",plotDirectory.c_str(),cratei, sloti));
+			mrdScanCanv->SaveAs(TString::Format("%s/Crate_%i_%i.png",plotDirectory.c_str(),cratei, sloti));
 //			// wait and allow the user to inspect
 //			while(gROOT->FindObject("mrdScanCanv")!=nullptr){
 //				std::this_thread::sleep_for(std::chrono::milliseconds(500));
