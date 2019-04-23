@@ -30,12 +30,14 @@ class EventSelector: public Tool {
   typedef enum EventFlags {
    kFlagNone         = 0x00, //0
    kFlagMCFV         = 0x01, //1
-   kFlagMCMRD        = 0x02, //2
-   kFlagMCPiK        = 0x04, //4
-   kFlagRecoMRD      = 0x08, //8
-   kFlagPromptTrig   = 0x10, //16
-   kFlagNHit         = 0x20, //32
-   kFlagRecoFV       = 0x30, //64
+   kFlagMCPMTVol     = 0x02, //2
+   kFlagMCMRD        = 0x04, //4
+   kFlagMCPiK        = 0x08, //8
+   kFlagRecoMRD      = 0x10, //16
+   kFlagPromptTrig   = 0x20, //32
+   kFlagNHit         = 0x40, //64
+   kFlagRecoFV       = 0x80, //128
+   kFlagRecoPMTVol   = 0x100, //256
   } EventFlags_t;
 
  private:
@@ -70,6 +72,13 @@ class EventSelector: public Tool {
     /// If False, the reconstructed vertex is used. 
  	bool EventSelectionByFV(bool isMC);
 
+ 	/// \brief Event selection by PMT Volume 
+ 	///
+ 	/// The selection is based on the muon interaction point. 
+ 	/// If isMC is true, checks the Event using muon truth info. 
+    /// If False, the reconstructed vertex is used. 
+ 	bool EventSelectionByPMTVol(bool isMC);
+
  	/// \brief Event selection by Muon MRD stop position
   /////
  	/// The selection is based on the true vertex stop position from MC. 
@@ -97,35 +106,37 @@ class EventSelector: public Tool {
   // \brief Event Status bitwords
   int fEventApplied; //Integer indicates what event cleaning flags were checked for the event
   int fEventFlagged; //Integer indicates what evt. cleaning flags the event was flagged with
-
-	Geometry fGeometry;    ///< ANNIE Geometry
-	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
-	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
-	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
-	RecoVertex* fRecoVertex = nullptr; 	 ///< Reconstructed Vertex 
-
-	//verbosity initialization
-	int verbosity=1;
-
-	std::string fInputfile;
-	bool fMRDRecoCut = false;
-	bool fMCFVCut = false;
-	bool fRecoFVCut = false;
-	bool fMCMRDCut = false;
-	bool fMCPiKCut = false;
+  
+  Geometry fGeometry;    ///< ANNIE Geometry
+  RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
+  RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
+  std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
+  RecoVertex* fRecoVertex = nullptr; 	 ///< Reconstructed Vertex 
+  
+  //verbosity initialization
+  int verbosity=1;
+  
+  std::string fInputfile;
+  bool fMRDRecoCut = false;
+  bool fMCFVCut = false;
+  bool fMCPMTVolCut = false;
+  bool fMCMRDCut = false;
+  bool fMCPiKCut = false;
   bool fNHitCut = true;
+  bool fRecoPMTVolCut = false;
+  bool fRecoFVCut = false;
   bool fPromptTrigOnly = true;
-	bool fEventCutStatus;
-
-
-    bool fSaveStatusToStore = true;
-	/// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
-	int v_error=0;
-	int v_warning=1;
-	int v_message=2;
-	int v_debug=3;
-	std::string logmessage;
-
+  bool fEventCutStatus;
+  
+  
+  bool fSaveStatusToStore = true;
+  /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  std::string logmessage;
+  
 };
 
 
