@@ -1,5 +1,5 @@
-verbosity 100
-drawHistos 1
+verbosity 1
+drawHistos 0
 plotDirectory MrdDiscriminatorScan
-filedir .
-filelist DiscriminatorFiles
+filedir /pnfs/annie/persistent/users/moflaher/MrdDiscriminatorScanData
+filelist configfiles/MrdDiscriminatorThresholdScan/DiscriminatorFiles
