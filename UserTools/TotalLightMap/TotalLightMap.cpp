@@ -90,13 +90,13 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// Get properties of the detector we need
-	tank_radius = geom.GetTankRadius();
-	tank_height = geom.GetTankHalfheight();
+	tank_radius = anniegeom->GetTankRadius();
+	tank_height = anniegeom->GetTankHalfheight();
 	// in fact at present these are incorrect, and we'll need to override them manually:
 	tank_radius = 1.277;  // [m]
 	tank_height = 3.134;  // [m]
 	// Get the detectors too
-	Detectors = geom.GetDetectors();
+	Detectors = anniegeom->GetDetectors();
 	
 	// define the hitmaps
 	// we'll create maps of:
@@ -170,6 +170,7 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 		themarkers->Draw("same");
 		cout<<"We have "<<pmt_counts.at(amarkerset.first)<<" PMTs of type "<<amarkerset.first<<endl;
 		//N.B. themarkers->GetN() returns the ALLOCATED SPACE and is NOT the number of points!!
+		// ^^ for pointset3d, not for tpolymarker!
 	}
 	thecanvas.BuildLegend();
 	
