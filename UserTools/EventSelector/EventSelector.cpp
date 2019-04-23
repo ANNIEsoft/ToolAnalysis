@@ -293,7 +293,7 @@ bool EventSelector::EventSelectionByFV(bool isMC) {
   if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
   	  || (TMath::Abs(checkedVtxY) > fidcuty) 
   	  || (checkedVtxZ > fidcutz) ){
-  Log("EventSelector Tool: This event did not reconstruct inside the FV",v_message,verbosity); 
+  Log("EventSelector Tool: This event is not contained inside the FV",v_message,verbosity); 
   return false;
   }	
  
@@ -318,11 +318,11 @@ bool EventSelector::EventSelectionByPMTVol(bool isMC) {
   checkedVtxY = vtxPos.Y();
   checkedVtxZ = vtxPos.Z();
   //Currently hard-coded; estimated with a tape measure on the ANNIE frame :)
-  double fidcutradius = 87.;
-  double fidcuty = 85.;
+  double fidcutradius = 100.;
+  double fidcuty = 145;
   if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
   	  || (TMath::Abs(checkedVtxY) > fidcuty)){
-  Log("EventSelector Tool: This event did not reconstruct inside the PMT volume",v_message,verbosity); 
+  Log("EventSelector Tool: This event is not contained within the PMT volume",v_message,verbosity); 
   return false;
   }	
  
