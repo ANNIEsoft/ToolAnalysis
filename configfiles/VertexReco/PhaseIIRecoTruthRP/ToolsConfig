@@ -1,6 +1,7 @@
 LoadRATPAC LoadRATPAC ./configfiles/PhaseIIRecoTruthRP/LoadRATPACConfig
-EventSelector EventSelector ./configfiles/PhaseIIRecoTruthRP/EventSelectorConfig
+MCParticleProperties MCParticleProperties ./configfiles/PhaseIIRecoTruthRP/MCParticlePropertiesConfig
 DigitBuilder DigitBuilder ./configfiles/PhaseIIRecoTruthRP/DigitBuilderConfig
+EventSelector EventSelector ./configfiles/PhaseIIRecoTruthRP/EventSelectorConfig
 VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/PhaseIIRecoTruthRP/VtxExtendedVertexFinderConfig
 PhaseIITreeMaker PhaseIITreeMaker ./configfiles/PhaseIIRecoTruthRP/PhaseIITreeMakerConfig
 #SaveRecoEvent SaveRecoEvent ./configfiles/PhaseIIRecoTruthRP/SaveRecoEventConfig

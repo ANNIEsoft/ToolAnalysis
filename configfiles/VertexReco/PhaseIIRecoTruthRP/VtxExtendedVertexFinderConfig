@@ -2,3 +2,4 @@
 
 verbosity 3
 UseTrueVertexAsSeed 1
+FitAllOnSeedGrid 0
