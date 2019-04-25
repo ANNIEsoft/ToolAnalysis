@@ -20,14 +20,12 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MCPiKCut", fMCPiKCut);
   m_variables.Get("NHitCut", fNHitCut);
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
-  m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
-  m_variables.Get("xshift",xshift);
-  m_variables.Get("yshift",yshift);
-  m_variables.Get("zshift",zshift);
+  m_variables.Get("RecoFVCut", fRecoFVCut);
+  m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
 
   /// Construct the other objects we'll be needing at event level,
   
-  // Make the RecoDigit Store if it doesn't exist
+  // Make the RecoEvent Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
   if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
   //TODO: Have an event selection mask filled based on what cuts are run
@@ -47,13 +45,6 @@ bool EventSelector::Execute(){
   	return false;
   };
 
-  // see if "RecoEvent" exists
-  auto get_recoevent = m_data->Stores.count("RecoEvent");
-  if(!get_recoevent){
-  	Log("EventSelector Tool: No RecoEvent store!",v_error,verbosity); 
-  	return false;
-  };
-  
   // MC entry number
   m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",fMCEventNum);  
   
@@ -73,17 +64,6 @@ bool EventSelector::Execute(){
     return false; 
   }
 
-  // get truth vertex information 
-  auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
-	if(!get_truevtx){ 
-	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
-	  return false; 
-	}
-  auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
-	if(!get_truestopvtx){ 
-	  Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
-	  return false; 
-	}
 
 	// Retrive digits from RecoEvent
 	auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
@@ -98,12 +78,23 @@ bool EventSelector::Execute(){
     if(!passNoPiK) fEventFlagged |= EventSelector::kFlagMCPiK;
   }  
   if(fMCFVCut){
+    // get truth vertex information 
+    auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
+	if(!get_truevtx){ 
+	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
+	  return false; 
+	}
     fEventApplied |= EventSelector::kFlagMCFV; 
-    bool passMCFVCut= this->EventSelectionByMCTruthFV();
+    bool passMCFVCut= this->EventSelectionByFV(true);
     if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
 ; 
   }
   if(fMCMRDCut){
+    auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
+    if(!get_truestopvtx){ 
+      Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
+      return false; 
+    }
     fEventApplied |= EventSelector::kFlagMCMRD; 
     bool passMCMRDCut= this->EventSelectionByMCTruthMRD();
     if(!passMCMRDCut) fEventFlagged |= EventSelector::kFlagMCMRD;
@@ -122,6 +113,18 @@ bool EventSelector::Execute(){
     if(!HasEnoughHits) fEventFlagged |= EventSelector::kFlagNHit;
   }
 
+  if(fRecoFVCut){
+	// Retrive Reconstructed vertex from RecoEvent 
+	auto get_ok = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",fRecoVertex);  ///> Get reconstructed vertex 
+    if(not get_ok){
+  	  Log("EventSelector Tool: Error retrieving Extended vertex from RecoEvent!",v_error,verbosity); 
+  	  return false;
+    }
+    fEventApplied |= EventSelector::kFlagRecoFV; 
+    bool passRecoFVCut= this->EventSelectionByFV(false);
+    if(!passRecoFVCut) fEventFlagged |= EventSelector::kFlagRecoFV;
+  }
+
   //FIXME: This isn't working according to Jingbo
   if(fMRDRecoCut){
     fEventApplied |= EventSelector::kFlagRecoMRD; 
@@ -136,7 +139,7 @@ bool EventSelector::Execute(){
   if(fEventCutStatus){  
     Log("EventSelector Tool: Event is clean according to current event selection.",v_message,verbosity);
   }
-  m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+  if(fSaveStatusToStore) m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
   return true;
@@ -167,135 +170,6 @@ bool EventSelector::EventSelectionNoPiK() {
   } else{
     return true;
   }
-}
-
-void EventSelector::FindPionKaonCountFromMC() {
-  
-  // loop over the MCParticles to find the highest enery primary muon
-  // MCParticles is a std::vector<MCParticle>
-  bool pionfound=false;
-  bool kaonfound=false;
-  int pi0count = 0;
-  int pipcount = 0;
-  int pimcount = 0;
-  int K0count = 0;
-  int Kpcount = 0;
-  int Kmcount = 0;
-  if(fMCParticles){
-    Log("EventSelector::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
-      MCParticle aparticle = fMCParticles->at(particlei);
-      //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()==111){               // is a primary pi0
-        pionfound = true;
-        pi0count++;
-      }
-      if(aparticle.GetPdgCode()==211){               // is a primary pi+
-        pionfound = true;
-        pipcount++;
-      }
-      if(aparticle.GetPdgCode()==-211){               // is a primary pi-
-        pionfound = true;
-        pimcount++;
-      }
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()==311){               // is a primary K0
-        kaonfound = true;
-        K0count++;
-      }
-      if(aparticle.GetPdgCode()==321){               // is a primary K+
-        kaonfound = true;
-        Kpcount++;
-      }
-      if(aparticle.GetPdgCode()==-321){               // is a primary K-
-        kaonfound = true;
-        Kmcount++;
-      }
-    }
-  } else {
-    Log("EventSelector::  Tool: No MCParticles in the event!",v_error,verbosity);
-  }
-  if(not pionfound){
-    Log("EventSelector::  Tool: No primary pions in this event",v_warning,verbosity);
-  }
-  if(not kaonfound){
-    Log("EventSelector::  Tool: No kaons in this event",v_warning,verbosity);
-  }
-  //Fill in pion counts for this event
-  m_data->Stores.at("RecoEvent")->Set("MCPi0Count", pi0count);
-  m_data->Stores.at("RecoEvent")->Set("MCPiPlusCount", pipcount);
-  m_data->Stores.at("RecoEvent")->Set("MCPiMinusCount", pimcount);
-  m_data->Stores.at("RecoEvent")->Set("MCK0Count", K0count);
-  m_data->Stores.at("RecoEvent")->Set("MCKPlusCount", Kpcount);
-  m_data->Stores.at("RecoEvent")->Set("MCKMinusCount", Kmcount);
-}
-
-RecoVertex* EventSelector::FindTrueVertexFromMC() {
-  
-  // loop over the MCParticles to find the highest enery primary muon
-  // MCParticles is a std::vector<MCParticle>
-  MCParticle primarymuon;  // primary muon
-  bool mufound=false;
-  double muStartEnergy = 0;
-  if(fMCParticles){
-    Log("EventSelector::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
-      MCParticle aparticle = fMCParticles->at(particlei);
-      //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()!=13) continue;       // not a muon
-      if(aparticle.GetStartEnergy()<muStartEnergy) continue; // select muon with higher energy
-      else muStartEnergy = aparticle.GetStartEnergy(); 
-      primarymuon = aparticle;                       // note the particle
-      mufound=true;                                  // note that we found it
-      //primarymuon.Print();
-      break;                                         // won't have more than one primary muon
-    }
-  } else {
-    Log("EventSelector::  Tool: No MCParticles in the event!",v_error,verbosity);
-  }
-  if(not mufound){
-    Log("EventSelector::  Tool: No muon in this event",v_warning,verbosity);
-    return 0;
-  }
-  
-  // retrieve desired information from the particle
-  Position muonstartpos = primarymuon.GetStartVertex();    // only true if the muon is primary
-  double muonstarttime = primarymuon.GetStartTime();
-  Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
-  double muonstoptime = primarymuon.GetStopTime();
-  
-  Direction muondirection = primarymuon.GetStartDirection();
-  double muonenergy = primarymuon.GetStartEnergy();
-  // set true vertex
-  // change unit
-  muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
-  muonstoppos.UnitToCentimeter(); // convert unit from meter to centimeter
-  // change coordinate for muon start vertex
-  muonstartpos.SetX(muonstartpos.X()+xshift);
-  muonstartpos.SetY(muonstartpos.Y()+yshift);
-  muonstartpos.SetZ(muonstartpos.Z()+zshift);
-  fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
-  fMuonStartVertex->SetDirection(muondirection);
-  //  charge coordinate for muon stop vertex
-  muonstoppos.SetX(muonstoppos.X()+xshift);
-  muonstoppos.SetY(muonstoppos.Y()+yshift);
-  muonstoppos.SetZ(muonstoppos.Z()+zshift);
-  fMuonStopVertex->SetVertex(muonstoppos, muonstoptime); 
-  
-  logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"
-            + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
-  
-  Log(logmessage,v_debug,verbosity);
-	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
-	Log(logmessage,v_debug,verbosity);
-  return fMuonStartVertex;
-}
-
-void EventSelector::PushTrueVertex(bool savetodisk) {
-  Log("EventSelector Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
-  m_data->Stores.at("RecoEvent")->Set("TrueVertex", fMuonStartVertex, savetodisk); 
 }
 
 bool EventSelector::PromptTriggerCheck() {
@@ -374,24 +248,33 @@ bool EventSelector::EventSelectionByMRDReco() {
 }
 
 
-bool EventSelector::EventSelectionByMCTruthFV() {
-  if(!fMuonStartVertex) return false;
-  double trueVtxX, trueVtxY, trueVtxZ;
-  Position vtxPos = fMuonStartVertex->GetPosition();
-  Direction vtxDir = fMuonStartVertex->GetDirection();
-  trueVtxX = vtxPos.X();
-  trueVtxY = vtxPos.Y();
-  trueVtxZ = vtxPos.Z();
-  std::cout<<"trueVtxX, Y, Z = "<<trueVtxX<<", "<<trueVtxY<<", "<<trueVtxZ<<std::endl;
-  double tankradius = ANNIEGeometry::Instance()->GetCylRadius();	
+bool EventSelector::EventSelectionByFV(bool isMC) {
+  if(isMC && !fMuonStartVertex) return false;
+  if(!isMC && !fRecoVertex) return false;
+  RecoVertex* checkedVertex;
+  if(isMC){
+      Log("EventSelector Tool: Checking FV cut for true muon vertex",v_debug,verbosity); 
+      checkedVertex=fMuonStartVertex;
+  } else {
+      Log("EventSelector Tool: Checking FV cut for reconstructed muon vertex",v_debug,verbosity); 
+    checkedVertex=fRecoVertex;
+  }
+  double checkedVtxX, checkedVtxY, checkedVtxZ;
+  Position vtxPos = checkedVertex->GetPosition();
+  Direction vtxDir = checkedVertex->GetDirection();
+  checkedVtxX = vtxPos.X();
+  checkedVtxY = vtxPos.Y();
+  checkedVtxZ = vtxPos.Z();
+  std::cout<<"checkedVtxX, Y, Z = "<<checkedVtxX<<", "<<checkedVtxY<<", "<<checkedVtxZ<<std::endl;
+  double tankradius = ANNIEGeometry::Instance()->GetCylRadius();
   double fidcutradius = 0.8 * tankradius;
   double fidcuty = 50.;
   double fidcutz = 0.;
-  if(trueVtxZ > fidcutz) return false;
-  if( (TMath::Sqrt(TMath::Power(trueVtxX, 2) + TMath::Power(trueVtxZ,2)) > fidcutradius) 
-  	  || (TMath::Abs(trueVtxY) > fidcuty) 
-  	  || (trueVtxZ > fidcutz) ){
-  Log("EventSelector Tool: This MC Event's muon was not generated in the FV",v_message,verbosity); 
+  if(checkedVtxZ > fidcutz) return false;
+  if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
+  	  || (TMath::Abs(checkedVtxY) > fidcuty) 
+  	  || (checkedVtxZ > fidcutz) ){
+  Log("EventSelector Tool: This event did not reconstruct inside the FV",v_message,verbosity); 
   return false;
   }	
  

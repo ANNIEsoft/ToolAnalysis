@@ -1,14 +1,14 @@
 #ToolChain dynamic setup file
 
 ##### Runtime Paramiters #####
-verbose 1 ## Verbosity level of ToolChain
+verbose 0 ## Verbosity level of ToolChain
 error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
 attempt_recover 1 ## 1= will attempt to finalise if an execute fails
 remote_port 24002
 IO_Threads 1 ## Number of threads for network traffic (~ 1/Gbps)
 
 ###### Logging #####
-log_mode Interactive # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
+log_mode Local # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
 log_local_path ./log
 log_service LogStore
 
