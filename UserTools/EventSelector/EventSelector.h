@@ -107,11 +107,6 @@ class EventSelector: public Tool {
 	//verbosity initialization
 	int verbosity=1;
 
-  //Position shifts needed for simulation package used
-  double xshift = 0.0;
-  double yshift = 14.46469;
-  double zshift = -168.1;
-
 	std::string fInputfile;
 	bool fMRDRecoCut = false;
 	bool fMCFVCut = false;
