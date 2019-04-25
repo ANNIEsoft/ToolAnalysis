@@ -1,14 +1,14 @@
 # MRDMonitoring config file
 
-verbose 2
-OutputPath /ANNIECode/MRDMonitorTest/
-#OutputPath fromStore
-ActiveSlots /ANNIECode/ToolAnalysis/configfiles/Monitoring/MRD_activech.txt #define which channels of the crate are connected
+verbose 0
+#OutputPath /ANNIECode/MRDMonitorTest/
+OutputPath fromStore
+ActiveSlots /ToolAnalysis/configfiles/Monitoring/MRD_activech.txt #define which channels of the crate are connected
 StartTime 1970/1/1	#default: 1970/1/1
 OffsetDate 0
 #OffsetDate 25200000
 #OffsetDate 39600000	#in milliseconds, default 0
-Mode FileList #options: FileList / Continuous
+Mode Continuous #options: FileList / Continuous
 DrawMarker 1
 HitMapPlots 1
 ScatterPlots 0

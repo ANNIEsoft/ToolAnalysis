@@ -31,6 +31,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   while (!file.eof()){
 
     file>>temp_crate>>temp_slot;
+    if (file.eof()) break;
     if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
         std::cout <<"Specified crate "<<temp_crate<<" out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
@@ -113,7 +114,7 @@ bool MonitorMRDLive::Execute(){
 
   } else {
 
-    std::cout <<"State not recognized: "<<State<<std::endl;
+    if (verbosity > 1) std::cout <<"State not recognized: "<<State<<std::endl;
     return true;
 
   }
@@ -131,7 +132,7 @@ bool MonitorMRDLive::Finalise(){
 
 void MonitorMRDLive::MRDTDCPlots(){
 
-  std::cout <<"Plotting MRD Single Event Monitors...."<<std::endl;
+  if (verbosity > 1) std::cout <<"Plotting MRD Single Event Monitors...."<<std::endl;
 
   TH1I *hChannel_cr1, *hChannel_cr2;  //two separate histograms for the channels of the two respective crates
   TH1D *hSlot_cr1, *hSlot_cr2;

@@ -71,7 +71,31 @@ bool MonitorReceive::Execute(){
       
       else if(tmp.str()=="DataFile"){
 	
-	
+	zmq::message_t filepath;
+	MonitorReceiver->recv(&filepath);
+
+	std::istringstream iss(static_cast<char*>(filepath.data()));
+
+	std::cout<<"received data file="<<iss.str()<<std::endl;
+
+
+	BoostStore* indata=new BoostStore(false,0); 
+	indata->Initialise(iss.str());
+
+	BoostStore* MRDData= new BoostStore(false,2);
+	////MRDData2= new BoostStore(false,2);
+	indata->Get("CCData",*MRDData);
+	////	indata->Get("CCData",*MRDData2);
+
+	//m_data->Stores["CCData"]=new BoostStore(false,2);
+	MRDData->Save("tmp");
+	m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+	//	indata->Get("CCData",*(m_data->Stores["CCData"]));
+
+	//execute
+
+	//	m_data->Stores["CCData"]->Save("tmp");
+	//	m_data->Stores["CCData"]->Set("FileData",MRDData,false);	
 	//do stuff
 	
       }

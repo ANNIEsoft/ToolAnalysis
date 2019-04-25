@@ -1,5 +1,5 @@
 MonitorReceive MonitorReceive configfiles/Monitoring/MonitorReceiveConfig
 #myMonitorSimReceive MonitorSimReceive configfiles/Monitoring/MonitorSimReceiveConfig
 myMonitorMRDLive MonitorMRDLive configfiles/Monitoring/MonitorMRDLiveConfig
-#myMonitorMRDTime MonitorMRDTime configfiles/Monitoring/MonitorMRDTimeConfig
+myMonitorMRDTime MonitorMRDTime configfiles/Monitoring/MonitorMRDTimeConfig
 #myMRDEventDisplay MRDEventDisplay configfiles/Monitoring/MRDEventDisplay

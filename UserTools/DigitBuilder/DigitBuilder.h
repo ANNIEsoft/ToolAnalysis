@@ -117,10 +117,11 @@ class DigitBuilder: public Tool {
 	int v_debug=3;
 	std::string logmessage;
 
-  //Shifts needed for simulation package in use
+  //Shifts needed for simulation package in use (in cm)
   double xshift = 0.0;
   double yshift = 14.46469;
   double zshift = -168.1;
+
 	///RecoEvent information
 	bool fEventCutStatus;
 	/// Reconstructed information

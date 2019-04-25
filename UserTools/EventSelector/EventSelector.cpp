@@ -24,10 +24,12 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("xshift",xshift);
   m_variables.Get("yshift",yshift);
   m_variables.Get("zshift",zshift);
+  m_variables.Get("RecoFVCut", fRecoFVCut);
+  m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
 
   /// Construct the other objects we'll be needing at event level,
   
-  // Make the RecoDigit Store if it doesn't exist
+  // Make the RecoEvent Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
   if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
   //TODO: Have an event selection mask filled based on what cuts are run
@@ -47,13 +49,6 @@ bool EventSelector::Execute(){
   	return false;
   };
 
-  // see if "RecoEvent" exists
-  auto get_recoevent = m_data->Stores.count("RecoEvent");
-  if(!get_recoevent){
-  	Log("EventSelector Tool: No RecoEvent store!",v_error,verbosity); 
-  	return false;
-  };
-  
   // MC entry number
   m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",fMCEventNum);  
   
@@ -73,17 +68,6 @@ bool EventSelector::Execute(){
     return false; 
   }
 
-  // get truth vertex information 
-  auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
-	if(!get_truevtx){ 
-	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
-	  return false; 
-	}
-  auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
-	if(!get_truestopvtx){ 
-	  Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
-	  return false; 
-	}
 
 	// Retrive digits from RecoEvent
 	auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
@@ -98,12 +82,23 @@ bool EventSelector::Execute(){
     if(!passNoPiK) fEventFlagged |= EventSelector::kFlagMCPiK;
   }  
   if(fMCFVCut){
+    // get truth vertex information 
+    auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
+	if(!get_truevtx){ 
+	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
+	  return false; 
+	}
     fEventApplied |= EventSelector::kFlagMCFV; 
-    bool passMCFVCut= this->EventSelectionByMCTruthFV();
+    bool passMCFVCut= this->EventSelectionByFV(true);
     if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
 ; 
   }
   if(fMCMRDCut){
+    auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
+    if(!get_truestopvtx){ 
+      Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
+      return false; 
+    }
     fEventApplied |= EventSelector::kFlagMCMRD; 
     bool passMCMRDCut= this->EventSelectionByMCTruthMRD();
     if(!passMCMRDCut) fEventFlagged |= EventSelector::kFlagMCMRD;
@@ -122,6 +117,18 @@ bool EventSelector::Execute(){
     if(!HasEnoughHits) fEventFlagged |= EventSelector::kFlagNHit;
   }
 
+  if(fRecoFVCut){
+	// Retrive Reconstructed vertex from RecoEvent 
+	auto get_ok = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",fRecoVertex);  ///> Get reconstructed vertex 
+    if(not get_ok){
+  	  Log("EventSelector Tool: Error retrieving Extended vertex from RecoEvent!",v_error,verbosity); 
+  	  return false;
+    }
+    fEventApplied |= EventSelector::kFlagRecoFV; 
+    bool passRecoFVCut= this->EventSelectionByFV(false);
+    if(!passRecoFVCut) fEventFlagged |= EventSelector::kFlagRecoFV;
+  }
+
   //FIXME: This isn't working according to Jingbo
   if(fMRDRecoCut){
     fEventApplied |= EventSelector::kFlagRecoMRD; 
@@ -136,7 +143,7 @@ bool EventSelector::Execute(){
   if(fEventCutStatus){  
     Log("EventSelector Tool: Event is clean according to current event selection.",v_message,verbosity);
   }
-  m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+  if(fSaveStatusToStore) m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
   return true;
@@ -374,24 +381,33 @@ bool EventSelector::EventSelectionByMRDReco() {
 }
 
 
-bool EventSelector::EventSelectionByMCTruthFV() {
-  if(!fMuonStartVertex) return false;
-  double trueVtxX, trueVtxY, trueVtxZ;
-  Position vtxPos = fMuonStartVertex->GetPosition();
-  Direction vtxDir = fMuonStartVertex->GetDirection();
-  trueVtxX = vtxPos.X();
-  trueVtxY = vtxPos.Y();
-  trueVtxZ = vtxPos.Z();
-  std::cout<<"trueVtxX, Y, Z = "<<trueVtxX<<", "<<trueVtxY<<", "<<trueVtxZ<<std::endl;
-  double tankradius = ANNIEGeometry::Instance()->GetCylRadius();	
+bool EventSelector::EventSelectionByFV(bool isMC) {
+  if(isMC && !fMuonStartVertex) return false;
+  if(!isMC && !fRecoVertex) return false;
+  RecoVertex* checkedVertex;
+  if(isMC){
+      Log("EventSelector Tool: Checking FV cut for true muon vertex",v_debug,verbosity); 
+      checkedVertex=fMuonStartVertex;
+  } else {
+      Log("EventSelector Tool: Checking FV cut for reconstructed muon vertex",v_debug,verbosity); 
+    checkedVertex=fRecoVertex;
+  }
+  double checkedVtxX, checkedVtxY, checkedVtxZ;
+  Position vtxPos = checkedVertex->GetPosition();
+  Direction vtxDir = checkedVertex->GetDirection();
+  checkedVtxX = vtxPos.X();
+  checkedVtxY = vtxPos.Y();
+  checkedVtxZ = vtxPos.Z();
+  std::cout<<"checkedVtxX, Y, Z = "<<checkedVtxX<<", "<<checkedVtxY<<", "<<checkedVtxZ<<std::endl;
+  double tankradius = ANNIEGeometry::Instance()->GetCylRadius();
   double fidcutradius = 0.8 * tankradius;
   double fidcuty = 50.;
   double fidcutz = 0.;
-  if(trueVtxZ > fidcutz) return false;
-  if( (TMath::Sqrt(TMath::Power(trueVtxX, 2) + TMath::Power(trueVtxZ,2)) > fidcutradius) 
-  	  || (TMath::Abs(trueVtxY) > fidcuty) 
-  	  || (trueVtxZ > fidcutz) ){
-  Log("EventSelector Tool: This MC Event's muon was not generated in the FV",v_message,verbosity); 
+  if(checkedVtxZ > fidcutz) return false;
+  if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
+  	  || (TMath::Abs(checkedVtxY) > fidcuty) 
+  	  || (checkedVtxZ > fidcutz) ){
+  Log("EventSelector Tool: This event did not reconstruct inside the FV",v_message,verbosity); 
   return false;
   }	
  
