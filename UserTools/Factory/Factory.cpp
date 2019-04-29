@@ -4,7 +4,7 @@ Tool* Factory(std::string tool){
 Tool* ret=0;
 
 // if (tool=="Type") tool=new Type;
-if (tool=="DummyTool") ret=new DummyTool;
+/*if (tool=="DummyTool") ret=new DummyTool;
 if (tool=="ExampleGenerateData") ret=new ExampleGenerateData;
 if (tool=="ExampleSaveStore") ret=new ExampleSaveStore;
 if (tool=="ExampleSaveRoot") ret=new ExampleSaveRoot;
@@ -16,9 +16,9 @@ if (tool=="LAPPDParseScope") ret=new LAPPDParseScope;
 if (tool=="LAPPDParseACC") ret=new LAPPDParseACC;
 if (tool=="LAPPDFindPeak") ret=new LAPPDFindPeak;
 if (tool=="SaveANNIEEvent") ret=new SaveANNIEEvent;
-if (tool=="LAPPDSim") ret=new LAPPDSim;
+if (tool=="LAPPDSim") ret=new LAPPDSim;*/
 if (tool=="LoadWCSim") ret=new LoadWCSim;
-if (tool=="FindMrdTracks") ret=new FindMrdTracks;
+/*if (tool=="FindMrdTracks") ret=new FindMrdTracks;
 if (tool=="PrintANNIEEvent") ret=new PrintANNIEEvent;
 if (tool=="GenerateHits") ret=new GenerateHits;
 if (tool=="LAPPDcfd") ret=new LAPPDcfd;
@@ -41,9 +41,9 @@ if (tool=="BeamFetcher") ret=new BeamFetcher;
 if (tool=="FindTrackLengthInWater") ret=new FindTrackLengthInWater;
 if (tool=="LoadANNIEEvent") ret=new LoadANNIEEvent;
 if (tool=="PhaseITreeMaker") ret=new PhaseITreeMaker;
-if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;
+if (tool=="MrdPaddlePlot") ret=new MrdPaddlePlot;*/
 if (tool=="LoadWCSimLAPPD") ret=new LoadWCSimLAPPD;
-if (tool=="WCSimDemo") ret=new WCSimDemo;
+/*if (tool=="WCSimDemo") ret=new WCSimDemo;
 if (tool=="DigitBuilder") ret=new DigitBuilder;
 if (tool=="VtxSeedGenerator") ret=new VtxSeedGenerator;
 if (tool=="VtxPointPositionFinder") ret=new VtxPointPositionFinder;
@@ -75,7 +75,8 @@ if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
 if (tool=="MrdDistributions") ret=new MrdDistributions;
 if (tool=="MCParticleProperties") ret=new MCParticleProperties;
 if (tool=="DigitBuilderROOT") ret=new DigitBuilderROOT;
-if (tool=="MrdEfficiency") ret=new MrdEfficiency;
+if (tool=="MrdEfficiency") ret=new MrdEfficiency;*/
 
+  if (tool=="EventDisplay") ret=new EventDisplay;
 return ret;
 }
