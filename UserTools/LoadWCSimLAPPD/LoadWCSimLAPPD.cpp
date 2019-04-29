@@ -10,6 +10,8 @@
 #include "TH1.h"
 #include "TPolyMarker3D.h"
 #include "TSystem.h"
+#include "TMath.h"
+#include "TH3F.h"
 
 #include <numeric>  // iota
 
