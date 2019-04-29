@@ -6,10 +6,10 @@ EventDisplay produces 2D Event Display plots of ANNIE events. Event Displays can
 
 EventDisplay needs access to the hit PMT information in ANNIEEvent. So far, it is only used on simulation therefore needing access to
 
-**MCParticles** `map<ChannelKey, std::vector<Hit>>`
+**MCHits** `map<unsigned long, std::vector<Hit>>`
 * Takes this data from the `ANNIEEvent` store and loops over the hit times / charges for all PMTs
 
-**MCParticlesLAPPD** `map<ChannelKey, std::vector<LAPPDHit>>`
+**MCLAPPDHits** `map<unsigned long, std::vector<LAPPDHit>>`
 * Takes this data from the `ANNIEEvent` store and loops over the hit times / charges for all LAPPDs
 
 ## Configuration
