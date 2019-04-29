@@ -118,6 +118,7 @@ class DigitBuilder: public Tool {
 	std::string logmessage;
 
   //Shifts needed for simulation package in use (in cm)
+  //Defaults to values needed for WCSim MC data
   double xshift = 0.0;
   double yshift = 14.46469;
   double zshift = -168.1;

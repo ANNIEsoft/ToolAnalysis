@@ -1,12 +1,12 @@
 #LoadRATPAC Config File
 # all variables retrieved with m_variables.Get() must be defined here!
 
-verbosity 3
-InputFile INPUT_FILE_RATPAC
+verbosity 4
+InputFile #INPUT_FILE_PMT#
 LappdNumStrips 60        ## num channels to construct from each LAPPD
 LappdStripLength 100     ## relative x position of each LAPPD strip, for dual-sided readout [mm]
 LappdStripSeparation 10  ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
-#Shifts added in LoadRATPAC tool to move to tank coordinates
-xshift 0.0
-yshift 133.0
-zshift -1724.0
+#Shifts loaded into the Geometry to move to tank coordinates
+xtankcenter 0.0
+ytankcenter 133.3
+ztankcenter -1724.0

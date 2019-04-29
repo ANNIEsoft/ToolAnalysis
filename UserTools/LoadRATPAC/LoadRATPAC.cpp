@@ -9,17 +9,16 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	
   if(verbosity) std::cout<<"Initializing Tool LoadRATPAC"<<std::endl;
-
-  m_data= &data; //assigning transient data pointer
+m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
-	m_variables.Get("InputFile",filename_ratpac);
+  m_variables.Get("InputFile",filename_ratpac);
   m_variables.Get("verbosity",verbosity);
-	m_variables.Get("LappdNumStrips", LappdNumStrips);
-	m_variables.Get("LappdStripLength", LappdStripLength);           // [mm]
-	m_variables.Get("LappdStripSeparation", LappdStripSeparation);   // [mm]
-  m_variables.Get("xshift",xshift);
-  m_variables.Get("yshift",yshift);
-  m_variables.Get("zshift",zshift);
+  m_variables.Get("LappdNumStrips", LappdNumStrips);
+  m_variables.Get("LappdStripLength", LappdStripLength);           // [mm]
+  m_variables.Get("LappdStripSeparation", LappdStripSeparation);   // [mm]
+  m_variables.Get("xtankcenter",xtankcenter);
+  m_variables.Get("ytankcenter",ytankcenter);
+  m_variables.Get("ztankcenter",ztankcenter);
   
   // Initialize the TChain reading event info from our file
   //chain = new TChain("T");
@@ -42,9 +41,6 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
      return false; // else, no runT, so don't register runtri with RunStore
   }
   delete ftemp;
-  //RAT::DS::Root *branchDS = new RAT::DS::Root();
-  //tri->SetBranchAddress("ds", &branchDS);
-  //RAT::DS::RunStore::GetRun(branchDS);
   
   ds = dsReader->GetEvent(0);
   run = new RAT::DS::Run;
@@ -60,25 +56,25 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
   NbEntries = dsReader->GetTotal();
 	
   // things to be saved to the ANNIEEvent Store
-	MCParticles = new std::vector<MCParticle>;
-	MCHits = new std::map<unsigned long,std::vector<Hit>>;
-	MCLAPPDHits = new std::map<unsigned long,std::vector<LAPPDHit>>;
-	EventTime = new TimeClass();
+  MCParticles = new std::vector<MCParticle>;
+  MCHits = new std::map<unsigned long,std::vector<Hit>>;
+  MCLAPPDHits = new std::map<unsigned long,std::vector<LAPPDHit>>;
+  EventTime = new TimeClass();
   
   this->LoadANNIEGeometry();
 
-	//FIXME: No triggers in RAT-PAC yet, but should be fine without for now
+  //FIXME: No triggers in RAT-PAC yet, but should be fine without for now
   //TriggerData = new std::vector<TriggerClass>{beamtrigger}; 
   
   //Counter corresponding to Store number
-	EventNumber=0;
+  EventNumber=0;
 
   //Counter corresponding to event number in MC
   //Without tracking any detector triggers, is the same as EventNum
-	MCEventNum=0;
+  MCEventNum=0;
 
   //Currently, RAT-PAC has no trigger really; just per event.  Keep this zero
-	MCTriggernum=0;
+  MCTriggernum=0;
 
   //FIXME: Fill in the run start time as GetUTC from first event?  Or is in runT?
   time_t runstarttime = run->GetStartTime();
@@ -86,9 +82,9 @@ bool LoadRATPAC::Initialise(std::string configfile, DataModel &data){
   TimeClass RunStartTime(runstart);
 	
   // use nominal beam values for now.  Eventually, will be loaded in data
-	double beaminten=4.777e+12;
-	double beampow=3.2545e+16;
-	BeamStatus = new BeamStatusClass(RunStartTime, beaminten, beampow, "stable");
+  double beaminten=4.777e+12;
+  double beampow=3.2545e+16;
+  BeamStatus = new BeamStatusClass(RunStartTime, beaminten, beampow, "stable");
   
   if(verbosity) std::cout<<"Initialization of Tool LoadRATPAC Complete"<<std::endl;
   return true;
@@ -100,8 +96,6 @@ bool LoadRATPAC::Execute(){
   // First, reset all counters kept track of per event
   this->Reset();
   
-  // Starts the timer to load this event
-  start = clock();
 
   if (EventNumber >= NbEntries){
     std::cout << "LoadRATPAC tool: end of file reached.  Returning true" << std::endl;
@@ -117,7 +111,7 @@ bool LoadRATPAC::Execute(){
   if(verbosity) std::cout<<"LoadRATPAC tool: Loading event time in TimeClass"<<std::endl;
   //FIXME: WCSim gives in trigger data, but we don't have triggers in RAT-PAC yet
   EventTimeNs = 0; //FIXME:  Should be called with chain->GetUTC() when we do have evnet times?
-	EventTime->SetNs(EventTimeNs);
+ EventTime->SetNs(EventTimeNs);
 
   if(verbosity) std::cout<<"LoadRATPAC tool: Begin the PMT loop"<<std::endl;
   //PMT loop
@@ -233,10 +227,11 @@ bool LoadRATPAC::Execute(){
     partdir.SetY(particledir.Y());
     partdir.SetZ(particledir.Z());
     //Load information into MCParticle 
+    //TODO: RATPAC should be changed have particles & hits in same coordinates..
     MCParticle thisparticle(
-            pdgcode, StartKE, EndKE, Position((startpoint.X()+xshift)/1000., 
-            (startpoint.Y()+yshift)/1000., (startpoint.Z()+zshift)/1000.), Position((endpoint.X()+xshift)/1000.,
-            (endpoint.Y()+yshift)/1000., (endpoint.Z()+zshift)/1000.), starttime,
+            pdgcode, StartKE, EndKE, Position((startpoint.X()+xtankcenter)/1000., 
+            (startpoint.Y()+ytankcenter)/1000., (startpoint.Z()+ztankcenter)/1000.), Position((endpoint.X()+xtankcenter)/1000.,
+            (endpoint.Y()+ytankcenter)/1000., (endpoint.Z()+ztankcenter)/1000.), starttime,
             endtime, partdir,
             tracklength/1000., startstoptype, iTrack, parentid);
     MCParticles->push_back(thisparticle);
@@ -268,20 +263,15 @@ bool LoadRATPAC::Execute(){
 
   EventNumber+=1;
   MCEventNum+=1;
-  // Ends the timer for tool's execute
-  duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
-  cout << "Execution time: " << duration << " seconds\n";
   return true;
 }
 
 
 bool LoadRATPAC::Finalise(){
-  delete chain;
+  Log("LoadRATPACTool: Exitting",v_message,verbosity);
+  //delete chain;
   delete dsReader;
-  
-  // Ends the timer
-  duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
-  std::cout << "Execution time: " << duration << " seconds\n";
+  delete run;
   return true;
 }
 
@@ -311,9 +301,9 @@ void LoadRATPAC::LoadANNIEGeometry(){
   
   //TODO: Have these values saved to the RATDS? Hard-coded for now
   //
-  double tank_xcenter = (xshift) / 1000.;  // convert [mm] to [m]
-  double tank_ycenter = (yshift) / 1000.;
-  double tank_zcenter = (zshift) / 1000.;
+  double tank_xcenter = (xtankcenter) / 1000.;  // convert [mm] to [m]
+  double tank_ycenter = (ytankcenter) / 1000.;
+  double tank_zcenter = (ztankcenter) / 1000.;
   Position tank_center(tank_xcenter, tank_ycenter, tank_zcenter);
   double tank_radius = (1524.0) / 1000.;
   double tank_halfheight = (1981.2) / 1000.;

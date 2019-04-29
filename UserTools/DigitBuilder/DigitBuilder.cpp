@@ -304,7 +304,7 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType,LAPPDId);
 					//if(v_message<verbosity) recoDigit.Print();
 				  //make some cuts here. It will be moved to the Hitcleaning tool
-				  //if(calT>5) continue; // cut off delayed hits
+				  if(calT>40 || calT<-10) continue; // cut off delayed hits
 				  fDigitList->push_back(recoDigit);
 				}
 			}

@@ -79,6 +79,16 @@ bool VtxExtendedVertexFinder::Execute(){
     Log("VtxExtendedVertexFinder Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
     return false; 
   }
+  if(verbosity>3){
+    Position muonstartpos = fTrueVertex->GetPosition();
+    double muonstarttime = fTrueVertex->GetTime();
+    Direction muondirection = fTrueVertex->GetDirection();
+    std::cout << "VtxExtendedVertexFinder Tool: Printing muon info going into Minuit" << std::endl;
+    logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"
+              + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
+    
+    Log(logmessage,v_debug,verbosity);
+  }
   // return vertex
   fExtendedVertex  = (RecoVertex*)(this->FitExtendedVertex(fTrueVertex));
   // Push fitted vertex to RecoEvent store

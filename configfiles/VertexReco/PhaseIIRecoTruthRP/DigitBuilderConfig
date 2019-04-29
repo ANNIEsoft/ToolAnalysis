@@ -6,7 +6,8 @@ ParametricModel 1
 PhotoDetectorConfiguration All
 #Get Pion/Kaon counts from MC Truth
 GetPionKaonInfo 1
-#Shift to apply to digits and loaded MC Particles (puts into tank coordinates)
+#Shift to apply to digits and loaded MC Particles
+#(Used to put into tank coordinates, if hits/particles in store are not already)
 xshift 0.0
 yshift 0.0 
 zshift 0.0 

@@ -1,9 +1,9 @@
 # EventSelector config file
 
 verbosity 4
-MCFVCut 1
-MCMRDCut 1
-MCPiKCut 1
+MCFVCut 0
+MCMRDCut 0
+MCPiKCut 0
 MRDRecoCut 0
 NHitCut 1
 PromptTrigOnly 1
