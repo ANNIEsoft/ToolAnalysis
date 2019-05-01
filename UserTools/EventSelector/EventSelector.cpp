@@ -16,11 +16,13 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("MRDRecoCut", fMRDRecoCut);
   m_variables.Get("MCFVCut", fMCFVCut);
+  m_variables.Get("MCPMTVolCut", fMCPMTVolCut);
   m_variables.Get("MCMRDCut", fMCMRDCut);
   m_variables.Get("MCPiKCut", fMCPiKCut);
   m_variables.Get("NHitCut", fNHitCut);
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
   m_variables.Get("RecoFVCut", fRecoFVCut);
+  m_variables.Get("RecoPMTVolCut", fRecoPMTVolCut);
   m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
 
   /// Construct the other objects we'll be needing at event level,
@@ -72,23 +74,32 @@ bool EventSelector::Execute(){
   	return false;
   }
 
+  // BEGIN CUTS USING TRUTH INFORMATION //
   if (fMCPiKCut){
     fEventApplied |= EventSelector::kFlagMCPiK; 
     bool passNoPiK = this->EventSelectionNoPiK();
     if(!passNoPiK) fEventFlagged |= EventSelector::kFlagMCPiK;
   }  
-  if(fMCFVCut){
+
+  if(fMCFVCut || fMCPMTVolCut){
     // get truth vertex information 
     auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
 	if(!get_truevtx){ 
 	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
 	  return false; 
 	}
-    fEventApplied |= EventSelector::kFlagMCFV; 
-    bool passMCFVCut= this->EventSelectionByFV(true);
-    if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
-; 
+    if (fMCFVCut){
+      fEventApplied |= EventSelector::kFlagMCFV; 
+      bool passMCFVCut= this->EventSelectionByFV(true);
+      if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
+    }
+    if (fMCPMTVolCut){
+      fEventApplied |= EventSelector::kFlagMCPMTVol; 
+      bool passMCPMTCut= this->EventSelectionByPMTVol(true);
+      if(!passMCPMTCut) fEventFlagged |= EventSelector::kFlagMCPMTVol;
+    }
   }
+
   if(fMCMRDCut){
     auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
     if(!get_truestopvtx){ 
@@ -113,16 +124,24 @@ bool EventSelector::Execute(){
     if(!HasEnoughHits) fEventFlagged |= EventSelector::kFlagNHit;
   }
 
-  if(fRecoFVCut){
+  // BEGIN CUTS USING RECONSTRUCTED INFORMATION //
+  if(fRecoFVCut || fRecoPMTVolCut){
 	// Retrive Reconstructed vertex from RecoEvent 
 	auto get_ok = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",fRecoVertex);  ///> Get reconstructed vertex 
     if(not get_ok){
   	  Log("EventSelector Tool: Error retrieving Extended vertex from RecoEvent!",v_error,verbosity); 
   	  return false;
     }
-    fEventApplied |= EventSelector::kFlagRecoFV; 
-    bool passRecoFVCut= this->EventSelectionByFV(false);
-    if(!passRecoFVCut) fEventFlagged |= EventSelector::kFlagRecoFV;
+    if(fRecoFVCut){
+      fEventApplied |= EventSelector::kFlagRecoFV; 
+      bool passRecoFVCut= this->EventSelectionByFV(false);
+      if(!passRecoFVCut) fEventFlagged |= EventSelector::kFlagRecoFV;
+    }
+    if(fRecoPMTVolCut){
+      fEventApplied |= EventSelector::kFlagRecoPMTVol; 
+      bool passRecoPMTVolCut= this->EventSelectionByPMTVol(false);
+      if(!passRecoPMTVolCut) fEventFlagged |= EventSelector::kFlagRecoPMTVol;
+    }
   }
 
   //FIXME: This isn't working according to Jingbo
@@ -277,7 +296,36 @@ bool EventSelector::EventSelectionByFV(bool isMC) {
   if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
   	  || (TMath::Abs(checkedVtxY) > fidcuty) 
   	  || (checkedVtxZ > fidcutz) ){
-  Log("EventSelector Tool: This event did not reconstruct inside the FV",v_message,verbosity); 
+  Log("EventSelector Tool: This event is not contained inside the FV",v_message,verbosity); 
+  return false;
+  }	
+ 
+  return true;
+}
+
+bool EventSelector::EventSelectionByPMTVol(bool isMC) {
+  if(isMC && !fMuonStartVertex) return false;
+  if(!isMC && !fRecoVertex) return false;
+  RecoVertex* checkedVertex;
+  if(isMC){
+      Log("EventSelector Tool: Checking PMT volume cut for true muon vertex",v_debug,verbosity); 
+      checkedVertex=fMuonStartVertex;
+  } else {
+      Log("EventSelector Tool: Checking PMT volume cut for reconstructed muon vertex",v_debug,verbosity); 
+    checkedVertex=fRecoVertex;
+  }
+  double checkedVtxX, checkedVtxY, checkedVtxZ;
+  Position vtxPos = checkedVertex->GetPosition();
+  Direction vtxDir = checkedVertex->GetDirection();
+  checkedVtxX = vtxPos.X();
+  checkedVtxY = vtxPos.Y();
+  checkedVtxZ = vtxPos.Z();
+  //Currently hard-coded; estimated with a tape measure on the ANNIE frame :)
+  double fidcutradius = 100.;
+  double fidcuty = 145;
+  if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
+  	  || (TMath::Abs(checkedVtxY) > fidcuty)){
+  Log("EventSelector Tool: This event is not contained within the PMT volume",v_message,verbosity); 
   return false;
   }	
  
