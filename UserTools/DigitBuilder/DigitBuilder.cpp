@@ -110,6 +110,8 @@ bool DigitBuilder::Execute(){
   this->PushRecoDigits(true); 
   this->PushTrueVertex(true);
   this->PushTrueStopVertex(true);
+  this->PushTrueWaterTrackLength(WaterTrackLength);
+  this->PushTrueMRDTrackLength(MRDTrackLength);
 
   return true;
 }
@@ -183,8 +185,13 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
           for(Hit& ahit : hits){
-          	if(calT>-10 && calT<40) {
-					    hitTimes.push_back(ahit.GetTime()*1.0); 
+            if(verbosity>3){
+              std::cout << "This HIT'S TIME AND CHARGE: " << ahit.GetTime() <<
+                  "," << ahit.GetCharge() << std::endl;
+            }
+            double hitTime = ahit.GetTime()*1.0;
+          	if(hitTime>-10 && hitTime<40) {
+			  hitTimes.push_back(ahit.GetTime()*1.0); 
               hitCharges.push_back(ahit.GetCharge());
             }
           }
@@ -200,6 +207,10 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           calQ = 0.;
           for(std::vector<double>::iterator it = hitCharges.begin(); it != hitCharges.end(); ++it){
             calQ += *it;
+          }
+          if(verbosity>3){
+            std::cout << "PARAMETRIC MODEL TIME AND CHARGE FOR THIS PMT: " << calT <<
+                "," << calQ << std::endl;
           }
           if(calQ>10) {
 				    digitType = RecoDigit::PMT8inch;
@@ -320,9 +331,16 @@ void DigitBuilder::FindTrueVertexFromMC() {
   double muonstarttime = primarymuon.GetStartTime();
   Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
   double muonstoptime = primarymuon.GetStopTime();
-  
   Direction muondirection = primarymuon.GetStartDirection();
+  
   double muonenergy = primarymuon.GetStartEnergy();
+  m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", muonenergy);
+
+  // MCParticleProperties tool fills in MRD track in m, but
+  // Water track in cm...
+  MRDTrackLength = primarymuon.GetTrackLengthInMrd()*100.;
+  WaterTrackLength = primarymuon.GetTrackLengthInTank();
+
   // set true vertex
   // change unit
   muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
@@ -344,6 +362,7 @@ void DigitBuilder::FindTrueVertexFromMC() {
 	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
 	Log(logmessage,v_debug,verbosity);
 }
+
 
 void DigitBuilder::FindPionKaonCountFromMC() {
   
@@ -422,6 +441,16 @@ void DigitBuilder::PushTrueStopVertex(bool savetodisk) {
 void DigitBuilder::PushRecoDigits(bool savetodisk) {
 	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
+}
+
+void DigitBuilder::PushTrueWaterTrackLength(double WaterT) {
+	Log("DigitBuilder Tool: Push true track length in tank to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInWater", WaterT);  ///> Add digits to RecoEvent
+}
+
+void DigitBuilder::PushTrueMRDTrackLength(double MRDT) {
+	Log("DigitBuilder Tool: Push true track length in MRD to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD", MRDT);  ///> Add digits to RecoEvent
 }
 
 void DigitBuilder::Reset() {
