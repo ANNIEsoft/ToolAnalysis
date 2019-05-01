@@ -29,28 +29,36 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   fParametricModel = 0;
 
   /// Get the Tool configuration variables
-	m_variables.Get("verbosity",verbosity);
-	m_variables.Get("ParametricModel", fParametricModel);
-	m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
+  m_variables.Get("verbosity",verbosity);
+  m_variables.Get("ParametricModel", fParametricModel);
+  m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
+  m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
 
 
-	/// Construct the other objects we'll be setting at event level,
-	fDigitList = new std::vector<RecoDigit>;
+  /// Construct the other objects we'll be setting at event level,
+  fDigitList = new std::vector<RecoDigit>;
   fMuonStartVertex = new RecoVertex();
   fMuonStopVertex = new RecoVertex();
 
 
-	// Make the RecoDigit Store if it doesn't exist
-	int recoeventexists = m_data->Stores.count("RecoEvent");
-	if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
+  // Make the RecoDigit Store if it doesn't exist
+  int recoeventexists = m_data->Stores.count("RecoEvent");
+  if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
   
   // Some hard-coded values of old WCSim LAPPDIDs are in this Tool
   // I would recommend moving away from the use of WCSim IDs if possible as they are liable to change
   // but for tools that need them, in the LoadWCSim tool I put a map of WCSim TubeId to channelkey
   m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
   m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
-  
+
+  //Read the LAPPDID file, if given
+  if(fLAPPDIDFile!="none"){
+    if(verbosity>2) std::cout << "Loading digits from LAPPD IDs in file " << fLAPPDIDFile << std::endl;
+    this->ReadLAPPDIDFile();
+  } else {
+    if(verbosity>2) std::cout << "Loading digits from all LAPPDs" << std::endl;
+  }
   return true;
 }
 
@@ -260,13 +268,17 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 				continue;
 			}
 			int detkey = det->GetDetectorID();
-			int LAPPDId = detectorkey_to_lappdid.at(detkey); // WCSim's LAPPDID
-			// XXX ^ this is here for demonstration, since it will tie up with
-			// the hard-coded numbers in the commented lines below (presumably old WCSim IDs)
-			// but I recommend transitioning to a more robust method
-			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
-			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
-			if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
+			int LAPPDId = detectorkey_to_lappdid.at(detkey);
+      //Check if LAPPD is in selected LAPPDs
+      bool isSelectedLAPPD = false;
+      for(int i=0;i<fLAPPDId.size();i++){
+			  if(LAPPDId == fLAPPDId.at(i)) isSelectedLAPPD=true;
+      }
+      if(!isSelectedLAPPD && fLAPPDId.size()>0) continue;
+      if(verbosity>2){
+        std::cout << "Loading in digits for LAPPDID " << LAPPDId << std::endl;
+      }
+
 			if(det->GetDetectorElement()=="LAPPD"){ // redundant, MCLAPPDHits are LAPPD hitss
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
@@ -458,4 +470,20 @@ void DigitBuilder::Reset() {
   fDigitList->clear();
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
+}
+
+void DigitBuilder::ReadLAPPDIDFile() {
+  std::string line;
+  ifstream myfile(fLAPPDIDFile);
+  if (myfile.is_open()){
+    while(getline(myfile,line)){
+      if(verbosity>0){
+        std::cout << "DigitBuilder tool: Loading hits from LAPPD ID " << line << std::endl;
+      }
+      int thisID = std::atoi(line.c_str());
+      fLAPPDId.push_back(thisID);
+    }
+  } else {
+    Log("Unable to open given LAPPD ID File. Using all LAPPDs",v_error,verbosity);
+  }
 }
