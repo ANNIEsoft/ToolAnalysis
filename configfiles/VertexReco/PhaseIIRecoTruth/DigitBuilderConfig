@@ -6,3 +6,5 @@ ParametricModel 1
 PhotoDetectorConfiguration All
 #Get Pion/Kaon counts from MC Truth
 GetPionKaonInfo 1
+#File must be in /pnfs/ space when loading on Fermilab cluster
+LAPPDIDFile ./LAPPDIDs.txt

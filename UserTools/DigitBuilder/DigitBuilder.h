@@ -88,7 +88,11 @@ class DigitBuilder: public Tool {
  	///
  	/// Clear digit list
  	void Reset();
- 	
+
+ 	/// \brief Read LAPPD ID File for LAPPDs to load digits from
+ 	///
+ 	void ReadLAPPDIDFile();
+
   ///
   /// Fills the parameter name and appropriate parameter values into
   /// the parameter container, to be used in the fit
@@ -108,7 +112,8 @@ class DigitBuilder: public Tool {
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
   bool fGetPiKInfo = false;
-	
+  std::string  fLAPPDIDFile="none";
+
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
 	std::map<unsigned long,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
 	std::map<unsigned long,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits

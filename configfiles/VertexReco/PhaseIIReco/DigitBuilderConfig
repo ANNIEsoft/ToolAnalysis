@@ -5,3 +5,5 @@ ParametricModel 1
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
 PhotoDetectorConfiguration All
 GetPionKaonInfo 1
+#File must be in /pnfs/ space when reading on cluster
+LAPPDIDFile ./LAPPDIDs.txt
