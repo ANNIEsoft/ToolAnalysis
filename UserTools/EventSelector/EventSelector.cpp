@@ -188,6 +188,9 @@ bool EventSelector::PromptTriggerCheck() {
 }
 
 bool EventSelector::NHitCountCheck(int NHitCut) {
+  if(verbosity>3){
+    std::cout << "SIZE OF DIGIT LIST FOR EVENT IS: " << fDigitList->size() << std::endl;
+  }
   if(fDigitList->size()<NHitCut) {
 		Log("EventSelector Tool: Event has less than 4 digits",v_message,verbosity);
 		return false;

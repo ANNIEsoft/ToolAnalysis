@@ -1,5 +1,6 @@
 LoadWCSim LoadWCSim ./configfiles/VertexReco/PhaseIIRecoTruth/LoadWCSimConfig
 LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/VertexReco/PhaseIIRecoTruth/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIReco/MCParticlePropertiesConfig
 #FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
 DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIRecoTruth/DigitBuilderConfig
 EventSelector EventSelector ./configfiles/VertexReco/PhaseIIRecoTruth/EventSelectorConfig

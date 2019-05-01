@@ -1,0 +1,10 @@
+LoadWCSim LoadWCSim #INPUT_CONFIG_DIR#/LoadWCSimConfig
+LoadWCSimLAPPD LoadWCSimLAPPD #INPUT_CONFIG_DIR#/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties #INPUT_CONFIG_DIR#/MCParticlePropertiesConfig
+#FindMrdTracks FindMrdTracks #INPUT_CONFIG_DIR#/FindMrdTracksConfig
+DigitBuilder DigitBuilder #INPUT_CONFIG_DIR#//DigitBuilderConfig
+EventSelector EventSelector #INPUT_CONFIG_DIR#/EventSelectorConfig
+VtxSeedGenerator VtxSeedGenerator #INPUT_CONFIG_DIR#/VtxSeedGeneratorConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder #INPUT_CONFIG_DIR#/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker #INPUT_CONFIG_DIR#/PhaseIITreeMakerConfig
+#SaveRecoEvent SaveRecoEvent #INPUT_CONFIG_DIR#/SaveRecoEventConfig
