@@ -29,33 +29,39 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   fParametricModel = 0;
 
   /// Get the Tool configuration variables
-	m_variables.Get("verbosity",verbosity);
-	m_variables.Get("ParametricModel", fParametricModel);
-	m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
-	m_variables.Get("xshift", xshift);
-	m_variables.Get("yshift", yshift);
-	m_variables.Get("zshift", zshift);
-	
-  /// Construct the other objects we'll be setting at event level,
+  m_variables.Get("verbosity",verbosity);
+  m_variables.Get("ParametricModel", fParametricModel);
+  m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
+  m_variables.Get("xshift", xshift);
+  m_variables.Get("yshift", yshift);
+  m_variables.Get("zshift", zshift);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
+  m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
 
 
-	/// Construct the other objects we'll be setting at event level,
-	fDigitList = new std::vector<RecoDigit>;
+  /// Construct the other objects we'll be setting at event level,
+  fDigitList = new std::vector<RecoDigit>;
   fMuonStartVertex = new RecoVertex();
   fMuonStopVertex = new RecoVertex();
 
 
-	// Make the RecoDigit Store if it doesn't exist
-	int recoeventexists = m_data->Stores.count("RecoEvent");
-	if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
+  // Make the RecoDigit Store if it doesn't exist
+  int recoeventexists = m_data->Stores.count("RecoEvent");
+  if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
   
   // Some hard-coded values of old WCSim LAPPDIDs are in this Tool
   // I would recommend moving away from the use of WCSim IDs if possible as they are liable to change
   // but for tools that need them, in the LoadWCSim tool I put a map of WCSim TubeId to channelkey
   m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
   m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
-  
+
+  //Read the LAPPDID file, if given
+  if(fLAPPDIDFile!="none"){
+    if(verbosity>2) std::cout << "Loading digits from LAPPD IDs in file " << fLAPPDIDFile << std::endl;
+    this->ReadLAPPDIDFile();
+  } else {
+    if(verbosity>2) std::cout << "Loading digits from all LAPPDs" << std::endl;
+  }
   return true;
 }
 
@@ -115,6 +121,8 @@ bool DigitBuilder::Execute(){
   this->PushRecoDigits(true); 
   this->PushTrueVertex(true);
   this->PushTrueStopVertex(true);
+  this->PushTrueWaterTrackLength(WaterTrackLength);
+  this->PushTrueMRDTrackLength(MRDTrackLength);
 
   return true;
 }
@@ -189,8 +197,13 @@ bool DigitBuilder::BuildPMTRecoDigit() {
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
           for(Hit& ahit : hits){
-          	if(calT>-10 && calT<40) {
-					    hitTimes.push_back(ahit.GetTime()*1.0); 
+            if(verbosity>3){
+              std::cout << "This HIT'S TIME AND CHARGE: " << ahit.GetTime() <<
+                  "," << ahit.GetCharge() << std::endl;
+            }
+            double hitTime = ahit.GetTime()*1.0;
+          	if(hitTime>-10 && hitTime<40) {
+			  hitTimes.push_back(ahit.GetTime()*1.0); 
               hitCharges.push_back(ahit.GetCharge());
             }
           }
@@ -269,13 +282,17 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 				continue;
 			}
 			int detkey = det->GetDetectorID();
-			int LAPPDId = detectorkey_to_lappdid.at(detkey); // WCSim's LAPPDID
-			// XXX ^ this is here for demonstration, since it will tie up with
-			// the hard-coded numbers in the commented lines below (presumably old WCSim IDs)
-			// but I recommend transitioning to a more robust method
-			//if(LAPPDId != 266 && LAPPDId != 271 && LAPPDId != 236 && LAPPDId != 231 && LAPPDId != 206) continue;
-			//if(LAPPDId != 90 && LAPPDId != 83 && LAPPDId != 56 && LAPPDId != 59 && LAPPDId != 22) continue;
-			if(LAPPDId != 11 && LAPPDId != 13 && LAPPDId != 14 && LAPPDId != 15 && LAPPDId != 17) continue;
+			int LAPPDId = detectorkey_to_lappdid.at(detkey);
+      //Check if LAPPD is in selected LAPPDs
+      bool isSelectedLAPPD = false;
+      for(int i=0;i<fLAPPDId.size();i++){
+			  if(LAPPDId == fLAPPDId.at(i)) isSelectedLAPPD=true;
+      }
+      if(!isSelectedLAPPD && fLAPPDId.size()>0) continue;
+      if(verbosity>2){
+        std::cout << "Loading in digits for LAPPDID " << LAPPDId << std::endl;
+      }
+
 			if(det->GetDetectorElement()=="LAPPD"){ // redundant, MCLAPPDHits are LAPPD hitss
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
@@ -347,9 +364,16 @@ void DigitBuilder::FindTrueVertexFromMC() {
   double muonstarttime = primarymuon.GetStartTime();
   Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
   double muonstoptime = primarymuon.GetStopTime();
-  
   Direction muondirection = primarymuon.GetStartDirection();
+  
   double muonenergy = primarymuon.GetStartEnergy();
+  m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", muonenergy);
+
+  // MCParticleProperties tool fills in MRD track in m, but
+  // Water track in cm...
+  MRDTrackLength = primarymuon.GetTrackLengthInMrd()*100.;
+  WaterTrackLength = primarymuon.GetTrackLengthInTank();
+
   // set true vertex
   // change unit
   muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
@@ -373,6 +397,7 @@ void DigitBuilder::FindTrueVertexFromMC() {
 	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
 	Log(logmessage,v_debug,verbosity);
 }
+
 
 void DigitBuilder::FindPionKaonCountFromMC() {
   
@@ -453,9 +478,35 @@ void DigitBuilder::PushRecoDigits(bool savetodisk) {
 	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
 }
 
+void DigitBuilder::PushTrueWaterTrackLength(double WaterT) {
+	Log("DigitBuilder Tool: Push true track length in tank to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInWater", WaterT);  ///> Add digits to RecoEvent
+}
+
+void DigitBuilder::PushTrueMRDTrackLength(double MRDT) {
+	Log("DigitBuilder Tool: Push true track length in MRD to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD", MRDT);  ///> Add digits to RecoEvent
+}
+
 void DigitBuilder::Reset() {
 	// Reset 
   fDigitList->clear();
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
+}
+
+void DigitBuilder::ReadLAPPDIDFile() {
+  std::string line;
+  ifstream myfile(fLAPPDIDFile);
+  if (myfile.is_open()){
+    while(getline(myfile,line)){
+      if(verbosity>0){
+        std::cout << "DigitBuilder tool: Loading hits from LAPPD ID " << line << std::endl;
+      }
+      int thisID = std::atoi(line.c_str());
+      fLAPPDId.push_back(thisID);
+    }
+  } else {
+    Log("Unable to open given LAPPD ID File. Using all LAPPDs",v_error,verbosity);
+  }
 }

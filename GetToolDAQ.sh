@@ -12,6 +12,7 @@ zmq=1
 final=1
 MrdTrackLib=1
 WCSimlib=1
+RATEventlib=1
 Python=1
 fnalflag=0
 
@@ -67,7 +68,8 @@ do
 	    boostflag=0
 	    final=0
 	    MrdTrackLib=0
-	    WCSimlib=0   
+	    WCSimlib=0
+	    RATEventlib=0
 	    Python=0
             ;;
 
@@ -80,6 +82,7 @@ do
 	    final=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    RATEventlib=0
 	    Python=0
             ;;
 	
@@ -92,6 +95,7 @@ do
 	    final=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    RATEventlib=0
 	    Python=0
             ;;
 
@@ -104,6 +108,7 @@ do
             final=0
             MrdTrackLib=0
             WCSimlib=0
+            RATEventlib=0
 	    rootflag=0
 	    root6flag=1
 	    Python=0
@@ -129,6 +134,7 @@ do
             zmq=0
             MrdTrackLib=0
             WCSimlib=0
+            RATEventlib=0
             final=0
             ;;
 
@@ -141,6 +147,7 @@ do
 	    zmq=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    RATEventlib=0
 	    Python=0
             ;;
 
@@ -240,6 +247,22 @@ then
     cd -
     git clone https://github.com/ANNIEsoft/WCSimLib.git
     cd WCSimLib
+    make
+  
+    cd ../
+
+fi
+
+if [ $RATEventlib -eq 1 ]
+then
+
+    cd ../
+    source Setup.sh
+    cd -
+    git clone https://github.com/ANNIEsoft/RATEventLib.git
+    cd RATEventLib
+    if [ $fnalflag -eq 1 ]; then
+      cp GNUmakefile.FNAL Makefile
     make
   
     cd ../

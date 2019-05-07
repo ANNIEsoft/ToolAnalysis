@@ -76,14 +76,22 @@ class DigitBuilder: public Tool {
 
  	/// \brief Push reco digits to ANNIEEvent
   ///
-  /// It adds the vector of PMT and LAPPD digits to ANNIEEvent
+  /// It adds the vector of PMT and LAPPD digits to RecoEvent
  	void PushRecoDigits(bool savetodisk);
- 	
+
+  /// \brief Push muon track lengths to RecoEvent Store
+  void PushTrueWaterTrackLength(double WaterT);
+  void PushTrueMRDTrackLength(double MRDT);
+
  	/// \brief Reset digits
  	///
  	/// Clear digit list
  	void Reset();
- 	
+
+ 	/// \brief Read LAPPD ID File for LAPPDs to load digits from
+ 	///
+ 	void ReadLAPPDIDFile();
+
   ///
   /// Fills the parameter name and appropriate parameter values into
   /// the parameter container, to be used in the fit
@@ -103,7 +111,8 @@ class DigitBuilder: public Tool {
 	std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
 	bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
   bool fGetPiKInfo = false;
-	
+  std::string  fLAPPDIDFile="none";
+
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
 	std::map<unsigned long,std::vector<Hit>>* fMCHits=nullptr;             ///< PMT hits
 	std::map<unsigned long,std::vector<LAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
@@ -130,6 +139,8 @@ class DigitBuilder: public Tool {
 	RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
 	RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
 	std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
+  double WaterTrackLength = -999.;
+  double MRDTrackLength = -999.;
 
 	// retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
 	// Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates

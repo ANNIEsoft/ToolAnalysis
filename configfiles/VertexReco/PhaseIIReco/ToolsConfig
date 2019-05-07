@@ -1,5 +1,6 @@
 LoadWCSim LoadWCSim ./configfiles/VertexReco/PhaseIIReco/LoadWCSimConfig
 LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/VertexReco/PhaseIIReco/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIReco/MCParticlePropertiesConfig
 #FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
 DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIReco/DigitBuilderConfig
 HitCleaner HitCleaner ./configfiles/VertexReco/PhaseIIReco/HitCleanerConfig

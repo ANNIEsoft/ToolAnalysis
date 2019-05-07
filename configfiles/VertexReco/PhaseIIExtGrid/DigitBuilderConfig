@@ -1,9 +1,8 @@
 # DigitBuilder config file
 
-verbosity 3
+verbosity 1
 ParametricModel 1
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
-PhotoDetectorConfiguration All
+PhotoDetectorConfiguration PMT_only
+#Get Pion/Kaon counts from MC Truth
 GetPionKaonInfo 1
-#File must be in /pnfs/ space when reading on cluster
-LAPPDIDFile ./LAPPDIDs.txt
