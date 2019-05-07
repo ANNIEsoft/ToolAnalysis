@@ -320,8 +320,8 @@ bool EventSelector::EventSelectionByPMTVol(bool isMC) {
   checkedVtxX = vtxPos.X();
   checkedVtxY = vtxPos.Y();
   checkedVtxZ = vtxPos.Z();
-  double fidcutradius = fGeometry.GetPMTRadius()*100.;
-  double fidcuty = fGeometry.GetPMTHalfheight()*100.;
+  double fidcutradius = fGeometry.GetPMTEnclosedRadius()*100.;
+  double fidcuty = fGeometry.GetPMTEnclosedHalfheight()*100.;
   if( (TMath::Sqrt(TMath::Power(checkedVtxX, 2) + TMath::Power(checkedVtxZ,2)) > fidcutradius) 
   	  || (TMath::Abs(checkedVtxY) > fidcuty)){
   Log("EventSelector Tool: This event is not contained within the PMT volume",v_message,verbosity); 
