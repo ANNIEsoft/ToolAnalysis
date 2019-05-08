@@ -84,3 +84,4 @@
 #include "MCParticleProperties/MCParticleProperties.cpp"
 #include "DigitBuilderROOT/DigitBuilderROOT.cpp"
 #include "MrdEfficiency/MrdEfficiency.cpp"
+#include "MCRecoEventLoader/MCRecoEventLoader.cpp"

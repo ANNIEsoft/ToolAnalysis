@@ -4,11 +4,11 @@
 #Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically asigned to an internal map for the relavent Tool to use.
-
-
+This configuration is used to run the reconstruction chain on Simulated data
+generated using WCSim. The true muon vertex information is given to the
+extended vertex fitter as the fit seed.  Minuit is ran once and the position
+with the highest figure of merit is accepted.
+ 
 ************************
 #Useage
 ************************
