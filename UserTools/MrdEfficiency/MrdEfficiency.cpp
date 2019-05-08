@@ -7,6 +7,9 @@
 #include "TSystem.h"
 #include <thread>
 #include <chrono>
+#include <sys/types.h> // for stat() test to see if file or folder
+#include <sys/stat.h>
+//#include <unistd.h>
 
 MrdEfficiency::MrdEfficiency():Tool(){}
 
