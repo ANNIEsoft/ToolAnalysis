@@ -290,7 +290,8 @@ bool LoadWCSim::Execute(){
 					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
 				startstoptype,
 				nextrack->GetId(),
-				nextrack->GetParenttype());
+				nextrack->GetParenttype(),
+				nextrack->GetFlag());
 			if(nextrack->GetIpnu()==13){
 				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
 					+ ", parent type " + to_string(nextrack->GetParenttype())
@@ -565,6 +566,9 @@ void LoadWCSim::ConstructToolChainGeometry(){
 	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
 	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.;
 	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 100.;
+	//Currently hard-coded; estimated with a tape measure on the ANNIE frame :)
+	double pmt_enclosed_radius = 1.0;
+	double pmt_enclosed_halfheight = 1.45;
 	// geometry variables not yet in wcsimrootgeom are in MRDSpecs.hh
 	double mrd_width  =  (MRDSpecs::MRD_width)  / 100.;
 	double mrd_height =  (MRDSpecs::MRD_height) / 100.;
@@ -579,6 +583,8 @@ void LoadWCSim::ConstructToolChainGeometry(){
 									   tank_centre,
 									   tank_radius,
 									   tank_halfheight,
+									   pmt_enclosed_radius,
+									   pmt_enclosed_halfheight,
 									   mrd_width,
 									   mrd_height,
 									   mrd_depth,

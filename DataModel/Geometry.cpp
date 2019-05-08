@@ -1,7 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "Geometry.h"
 
-Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets){
+Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets){
 	NextFreeChannelKey=0;
 	NextFreeDetectorKey=0;
 	Version=ver;
@@ -9,6 +9,8 @@ Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, doub
 	tank_centre=tankc;
 	tank_radius=tankr;
 	tank_halfheight=tankhh;
+	pmt_enclosed_radius=pmtencr;
+	pmt_enclosed_halfheight=pmtenchh;
 	mrd_width=mrdw;
 	mrd_height=mrdh;
 	mrd_depth=mrdd;
