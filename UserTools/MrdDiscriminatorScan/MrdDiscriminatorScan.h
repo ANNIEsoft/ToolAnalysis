@@ -30,10 +30,12 @@ class MrdDiscriminatorScan: public Tool {
 	std::string filepath; // full path to next mrd file
 	int filei;            // index of file we're reading
 	std::ifstream fin;    // file reader
+	std::string x_variable; // "threshold" for threshold, or "time" for relative time
 	
 	bool GetNextFile();
 	bool CountChannelHits(BoostStore* MRDData, std::map<int,std::map<int,std::map<int,int>>> &hit_counts_on_channels, TimeClass& first_timestamp, TimeClass& last_timestamp);
-	int current_threshold;
+	unsigned long current_threshold;
+	unsigned long very_first_timestamp=0;
 	
 	// TApplication for making histograms
 	TApplication* rootTApp=nullptr;
