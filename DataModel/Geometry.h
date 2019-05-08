@@ -17,12 +17,12 @@ class Geometry : public SerialisableObject{
 	
 	public:
 	// Do we care to have the overloaded empty constructor?
-	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL), Detectors(std::vector<std::map<unsigned long,Detector>* >{}) {
+	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), pmt_enclosed_radius(0.), pmt_enclosed_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL), Detectors(std::vector<std::map<unsigned long,Detector>* >{}) {
 		serialise=true;
 		RealDetectors.reserve(10);
 	}
 	
-	Geometry(double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets=std::vector<std::map<unsigned long,Detector>* >{});
+	Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets=std::vector<std::map<unsigned long,Detector>* >{});
 	
 	inline std::vector<std::map<unsigned long,Detector>* >* GetDetectors(){return &Detectors;}
 	inline double GetVersion(){return Version;}
@@ -30,6 +30,8 @@ class Geometry : public SerialisableObject{
 	inline Position GetTankCentre(){return tank_centre;}
 	inline double GetTankRadius(){return tank_radius;}
 	inline double GetTankHalfheight(){return tank_halfheight;}
+	inline double GetPMTEnclosedRadius(){return pmt_enclosed_radius;}
+	inline double GetPMTEnclosedHalfheight(){return pmt_enclosed_halfheight;}
 	inline double GetFiducialCutRadius(){return fiducialradius;}
 	inline double GetFiducialCutY(){return fiducialcuty;}
 	inline double GetFiducialCutZ(){return fiducialcutz;}
@@ -44,6 +46,8 @@ class Geometry : public SerialisableObject{
 	inline void SetTankCentre(Position tank_centrein){tank_centre = tank_centrein;}
 	inline void SetTankRadius(double tank_radiusIn){tank_radius = tank_radiusIn;}
 	inline void SetTankHalfheight(double tank_halfheightIn){tank_halfheight = tank_halfheightIn;}
+	inline void SetPMTEnclosedRadius(double pmt_enclosed_radiusIn){pmt_enclosed_radius = pmt_enclosed_radiusIn;}
+	inline void SetPMTEnclosedHalfheight(double pmt_enclosed_halfheightIn){pmt_enclosed_halfheight = pmt_enclosed_halfheightIn;}
 	inline void SetFiducialCutRadius(double fidcutradiusin){fiducialradius = fidcutradiusin;}
 	inline void SetFiducialCutZ(double fidcutzin){fiducialcutz = fidcutzin;}
 	inline void SetFiducialCutY(double fidcutyin){fiducialcuty = fidcutyin;}
@@ -219,6 +223,8 @@ class Geometry : public SerialisableObject{
 		cout<<"tank_centre : "; tank_centre.Print();
 		cout<<"tank_radius : "<<tank_radius<<endl;
 		cout<<"tank_halfheight : "<<tank_halfheight<<endl;
+		cout<<"pmt_enclosed_radius : "<<pmt_enclosed_radius<<endl;
+		cout<<"pmt_enclosed_halfheight : "<<pmt_enclosed_halfheight<<endl;
 		cout<<"tank fiducial radius: "<<fiducialradius<<endl;
 		cout<<"tank fiducial z cut: "<<fiducialcutz<<endl;
 		cout<<"tank fiducial y cut: "<<fiducialcuty<<endl;
@@ -256,6 +262,8 @@ class Geometry : public SerialisableObject{
 	Position tank_centre;
 	double tank_radius;
 	double tank_halfheight;
+	double pmt_enclosed_radius;
+	double pmt_enclosed_halfheight;
 	double mrd_width;
 	double mrd_height;
 	double mrd_depth;
@@ -276,6 +284,8 @@ class Geometry : public SerialisableObject{
 			ar & tank_centre;
 			ar & tank_radius;
 			ar & tank_halfheight;
+			ar & pmt_enclosed_radius;
+			ar & pmt_enclosed_halfheight;
 			ar & mrd_width;
 			ar & mrd_height;
 			ar & mrd_depth;
