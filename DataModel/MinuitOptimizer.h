@@ -73,10 +73,11 @@ public:
  	MinuitOptimizer();
   ~MinuitOptimizer();
   void SetPrintLevel(int printlevel) {fPrintLevel = printlevel;}
-  void SetMeanTimeCalculatorType(int type) {fMeanTimeCalculatorType = type;}
   void SetTimeFitWeight(double tweight);
   void SetConeFitWeight(double cweight);
-  void SetConeAngle(double cangle){ fConeAngle=cangle};
+  void SetMeanTimeCalculatorType(int type);
+  void SetNumberOfIterations(int iterations);
+  void SetConeAngle(double cangle){ fConeAngle=cangle;}
   void LoadVertexGeometry(VertexGeometry* vtxgeo);
   void LoadVertex(RecoVertex* vtx);
   void LoadVertex(double vtxX, double vtxY, double vtxZ, double vtxTime, double vtxDirX, double vtxDirY, double vtxDirZ);
