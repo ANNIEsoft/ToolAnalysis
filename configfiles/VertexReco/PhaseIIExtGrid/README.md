@@ -4,10 +4,10 @@
 #Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically asigned to an internal map for the relavent Tool to use.
-
+This configuration is used to run the reconstruction chain on Simulated data
+generated using WCSim. Minuit is ran multiple times using each point on a 
+position grid as the fitter seed.  The result with the best figure of merit
+is accepted as the best fit.
 
 ************************
 #Useage
