@@ -1,5 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "MCParticleProperties.h"
+#include "MRDSubEventClass.hh"      // a class for defining subevents
+#include "MRDTrackClass.hh"         // a class for defining MRD tracks  - needed for cMRDTrack EnergyLoss TF1
 
 #include "Position.h"
 #include "TF1.h"
@@ -32,6 +34,12 @@ bool MCParticleProperties::Initialise(std::string configfile, DataModel &data){
 	tank_yoffset = (anniegeom->GetTankCentre().Y())*100.;
 	tank_halfheight = (anniegeom->GetTankHalfheight())*100.;
 	
+	// XXX override as anniegeom versions are wrong
+	tank_radius = MRDSpecs::tank_radius;
+	tank_start = MRDSpecs::tank_start;
+	tank_yoffset = MRDSpecs::tank_yoffset;
+	tank_halfheight = MRDSpecs::tank_halfheight;
+	
 	return true;
 }
 
@@ -52,15 +60,21 @@ bool MCParticleProperties::Execute(){
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Log("MCParticleProperties Tool: Looping over MCParticles",v_debug,verbosity);
 	for(int tracki=0; tracki<MCParticles->size(); tracki++){
-		if(verbosity>3) cout<<"track "<<tracki<<endl;
+		Log("MCParticleProperties Tool: Processing MCParticle "+to_string(tracki),v_debug,verbosity);
 		// Get the track details
 		MCParticle* nextparticle = &MCParticles->at(tracki);
-		if(nextparticle->GetPdgCode()!=13) continue; // XXX
+		Log("MCParticleProperties Tool: Printing existing particle stats",v_debug,verbosity);
+		if(verbosity>v_debug){
+			cout<<"###############################"<<endl;
+			nextparticle->Print();
+			cout<<"###############################"<<endl;
+		}
+		//if(nextparticle->GetPdgCode()!=13) continue; // XXX
 		Position startvertex = nextparticle->GetStartVertex();
 		startvertex.UnitToCentimeter();
 		Position stopvertex = nextparticle->GetStopVertex();
 		stopvertex.UnitToCentimeter();
-		if(stopvertex.Z()<MRDSpecs::MRD_start) continue; // XXX
+		//if(stopvertex.Z()<MRDSpecs::MRD_start) continue; // XXX
 		
 		Position differencevector = (stopvertex-startvertex);
 		double atracklengthtotal = differencevector.Mag();
@@ -180,7 +194,7 @@ bool MCParticleProperties::Execute(){
 				<<muytracklength<<", "<<mrdpenetrationcm<<")"<<endl
 				<<"compare to maximum extents ("<<(2*MRDSpecs::MRD_width)
 				<<", "<<(2*MRDSpecs::MRD_height)<<", "<<MRDSpecs::MRD_depth<<")"<<endl
-				<<"Track goes = ("<<MRDentrypoint.X()<<", "<<MRDentrypoint.Y()<<", "
+				<<"MRD Track goes = ("<<MRDentrypoint.X()<<", "<<MRDentrypoint.Y()<<", "
 				<<MRDentrypoint.Z()<<") -> ("<<MRDexitpoint.X()<<", "<<MRDexitpoint.Y()<<", "
 				<<MRDexitpoint.Z()<<") and ";
 				if(atrackstopsinmrd) cerr<<"stops in the MRD"<<endl;
@@ -213,15 +227,16 @@ bool MCParticleProperties::Execute(){
 		nextparticle->SetNumMrdLayersPenetrated(mrdpenetrationlayers);
 		nextparticle->SetTrackLengthInMrd(atracklengthinmrd/100.);
 		double dEdx = cMRDTrack::MRDenergyvspenetration.Eval(atrackangle);
-		nextparticle->SetMrdEnergyLoss(atracklengthinmrd*dEdx);
+		double energylossinmrd = (atracklengthinmrd) ? (atracklengthinmrd*dEdx) : 0;
+		nextparticle->SetMrdEnergyLoss(energylossinmrd);
 		cout<<"atrackangle: "<<atrackangle<<endl
 			<<"atrackentersmrd: "<<atrackentersmrd<<endl
 			<<"atrackstopsinmrd: "<<atrackstopsinmrd<<endl
 			<<"mrdpenetrationcm: "<<mrdpenetrationcm<<endl
 			<<"mrdpenetrationlayers: "<<mrdpenetrationlayers<<endl
 			<<"atracklengthinmrd: "<<atracklengthinmrd<<endl
-			<<"energylossinmrd: "<<(atracklengthinmrd*dEdx)<<endl
-			<<"Track goes = ("<<MRDentrypoint.X()<<", "<<MRDentrypoint.Y()<<", "
+			<<"energylossinmrd: "<<(energylossinmrd)<<endl
+			<<"MRD track goes = ("<<MRDentrypoint.X()<<", "<<MRDentrypoint.Y()<<", "
 			<<MRDentrypoint.Z()<<") -> ("<<MRDexitpoint.X()<<", "<<MRDexitpoint.Y()<<", "
 			<<MRDexitpoint.Z()<<")"<<endl;
 		
@@ -234,29 +249,71 @@ bool MCParticleProperties::Execute(){
 		
 		// first check if the start and endpoints are in the tank - if so, there is no tank exit point
 		// and track length in tank is total length. 
-		double atracklengthintank;
-		bool interceptstank;
+		Log("MCParticleProperties Tool: Estimating track length in tank",v_debug,verbosity);
+		double atracklengthintank=0;
+		bool interceptstank=false;
 		Position tankentryvtx, tankexitvtx;
 		
 		bool trackstartsintank = ( sqrt(pow(startvertex.X(),2.) +
-										pow(startvertex.Z()-MRDSpecs::tank_start,2.))
-										 < MRDSpecs::tank_radius ) &&
-								 ( abs(startvertex.Y()-MRDSpecs::tank_yoffset)
-										 < MRDSpecs::tank_halfheight );
+										pow(startvertex.Z()-tank_start-tank_radius,2.))
+										 < tank_radius ) &&
+								 ( abs(startvertex.Y()-tank_yoffset)
+										 < tank_halfheight );
 		bool trackstopsintank = ( sqrt(pow(stopvertex.X(),2.) +
-										pow(stopvertex.Z()-MRDSpecs::tank_start,2.))
-										 < MRDSpecs::tank_radius ) &&
-								 ( abs(stopvertex.Y()-MRDSpecs::tank_yoffset)
-										 < MRDSpecs::tank_halfheight );
+										pow(stopvertex.Z()-tank_start-tank_radius,2.))
+										 < tank_radius ) &&
+								 ( abs(stopvertex.Y()-tank_yoffset)
+										 < tank_halfheight );
+		
+		if(false && nextparticle->GetTankExitPoint()!=Position(0,0,0)){  // XXX XXX XXX bypass for debug only
+			// Later versions of WCSim record the tank exit point explicitly, so we do not need
+			// to estimate it.
+			tankexitvtx = nextparticle->GetTankExitPoint();
+		}
+		
 		if(trackstartsintank&&trackstopsintank){
+			// If track starts and stops in tank, track length in tank is just the total length
+			logmessage="MCParticleProperties Tool: Track starts & ends in tank; tank length is total length";
+			Log(logmessage,v_debug,verbosity);
 			atracklengthintank=differencevector.Mag();
+			
+		} else if(trackstartsintank && tankexitvtx!=Position(0,0,0)){
+			// If we have a true tank exit point and the track started in the tank,
+			// we can again take our length directly
+			logmessage="MCParticleProperties Tool: Track starts in tank and has truth exit point recorded"
+						", taking tank length as difference";
+			Log(logmessage,v_debug,verbosity);
+			atracklengthintank = (tankexitvtx-startvertex).Mag();
+			
 		} else {
-			// either start or endpoint may be outside the track. 
-			// We need to find relevant intercepts for the relevant points, in the process checking
+			logmessage="MCParticleProperties Tool: Estimating tank track length";
+			Log(logmessage,v_debug,verbosity);
+			// Three potential cases here:
+			// 1. start is outside the tank
+			// 2. Endpoint is outside the tank, but true exit point was not recorded by WCSim
+			// 3. both of the above
+			// We need to find any possible intercepts for the relevant points, in the process checking
 			// there is indeed tank interception
-			interceptstank = CheckTankIntercepts(startvertex, stopvertex, avgtrackgradx, avgtrackgrady, trackstartsintank, trackstopsintank, tankexitvtx, tankentryvtx);
+			// 'CheckTankIntercepts' is designed to find intercepts with no information but tank
+			// start and end. If we do have a recorded truth exit point we can use the same method
+			// but substituting the truth exit point for the end.
+			
+			Position theendvertex = (tankexitvtx==Position(0,0,0)) ? stopvertex : tankexitvtx;
+			Position estimatedtankexitvtx;
+			if((verbosity>3) && (tankexitvtx==Position(0,0,0))){
+				cout<<"Using track endpoint to estimate tank exit location"<<endl;
+			} else {
+				cout<<"Using WCSim truth endpoint to estimate tank exit location"<<endl;
+			}
+			interceptstank = CheckTankIntercepts(startvertex, theendvertex, avgtrackgradx, avgtrackgrady, trackstartsintank, trackstopsintank, estimatedtankexitvtx, tankentryvtx,1);
+			cout<<"checktankintercepts returned "<<interceptstank<<endl;
+			cout<<"and set tankexitvtx to: ("<<estimatedtankexitvtx.X()
+				<<", "<<estimatedtankexitvtx.Y()<<", "<<estimatedtankexitvtx.Z()<<")"<<endl;
+			cout<<"and set tankentryvtx to ("<<tankentryvtx.X()<<", "<<tankentryvtx.Y()
+				<<", "<<tankentryvtx.Z()<<")"<<endl;
 			if(trackstartsintank) tankentryvtx=startvertex;
 			if(trackstopsintank) tankexitvtx=stopvertex;
+			if(tankexitvtx==Position(0,0,0)) tankexitvtx = estimatedtankexitvtx;
 			
 			// we're now able to determine particle track length in the tank:
 			atracklengthintank = sqrt( pow((tankexitvtx.X()-tankentryvtx.X()),2)+
@@ -266,15 +323,21 @@ bool MCParticleProperties::Execute(){
 			double maxtanktracklength = 
 			sqrt(pow(tank_radius*2.,2.)+pow(tank_halfheight*2.,2.));
 			if(verbosity>3){
-				cout<<"max tank track length is "<<maxtanktracklength<<endl;
+				cout<<"TRACK SUMMARY"<<endl;
+				cout<<"track start point : ("<<startvertex.X()<<", "<<startvertex.Y()
+					<<", "<<startvertex.Z()<<")"<<endl
+					<<"track stop point : ("<<stopvertex.X()<<", "<<stopvertex.Y()
+					<<", "<<stopvertex.Z()<<")"<<endl;
+				cout<<"track starts "<<((trackstartsintank) ? "inside" : "outside")<<" tank, and ends "
+					<<((trackstopsintank) ? "inside" : "outside")<<" the tank"<<endl;
+				cout<<"tank entry point : ("<<tankentryvtx.X()<<", "<<tankentryvtx.Y()
+					<<", "<<tankentryvtx.Z()<<")"<<endl;
+				cout<<"tank exit point: ("<<tankexitvtx.X()<<", "<<tankexitvtx.Y()<<", "<<tankexitvtx.Z()<<") "
+					<<endl;
 				cout<<"tank track length: ("<<(tankexitvtx.X()-tankentryvtx.X())
 					<<", "<<(tankexitvtx.Y()-tankentryvtx.Y())<<", "
 					<<(tankexitvtx.Z()-tankentryvtx.Z())<<") = "<<atracklengthintank<<"cm total"<<endl;
-				cout<<"tank exit point: ("<<tankexitvtx.X()<<", "<<tankexitvtx.Y()<<", "<<tankexitvtx.Z()<<") ";
-				cout<<"track start point : ("<<tankentryvtx.X()<<", "<<tankentryvtx.Y()
-					<<", "<<tankentryvtx.Z()<<")"<<endl
-					<<"track stop point : ("<<stopvertex.X()<<", "<<stopvertex.Y()
-					<<", "<<stopvertex.Z()<<")"<<endl;
+				cout<<"c.f. max possible tank track length is "<<maxtanktracklength<<endl;
 			}
 			if(atracklengthintank > maxtanktracklength){
 				cout<<"Track length is impossibly long!"<<endl;
@@ -291,16 +354,47 @@ bool MCParticleProperties::Execute(){
 		
 		}
 		
+		// We can also use a slightly modified version of the CheckTankIntercepts to find
+		// the projected tank exit point for particles that started in the tank, regardless
+		// of whether they left it. This is useful for e.g. showing pion decay gamma vertices,
+		// even if the light is not produced by the gammas themselves
+		Log("MCParticleProperties Tool: Calculating projected tank exit",v_debug,verbosity);
+		Position projectedexitvertex;
+		if(tankexitvtx==Position(0,0,0)){
+			if(trackstartsintank && trackstopsintank){ // also require track starts in tank
+				bool projectok = ProjectTankIntercepts(startvertex, stopvertex, avgtrackgradx, avgtrackgrady, projectedexitvertex);
+				if(not projectok){
+					cerr<<"MCParticleProperties Tool: ProjectTankIntercepts returned false?!"<<std::endl;
+				} else {
+					Log("MCParticleProperties Tool: Projected track exit OK",v_debug,verbosity);
+					cout<<"projected exit is: "; projectedexitvertex.Print();
+				}
+			} else {
+				Log("MCParticleProperties Tool: Track did not start in tank; no projected exit",v_debug,verbosity);
+			}
+		} else {
+			Log("MCParticleProperties Tool: Using true/estimated tank exit",v_debug,verbosity);
+		}
+		
 		// transfer to ANNIEEvent
 		// ~~~~~~~~~~~~~~~~~~~~~~
 		nextparticle->SetEntersTank(interceptstank);
+		tankentryvtx.UnitToMeter();
 		nextparticle->SetTankEntryPoint(tankentryvtx);
 		nextparticle->SetExitsTank(!trackstopsintank);
-		nextparticle->SetTankExitPoint(tankexitvtx);
-		nextparticle->SetTrackLengthInTank(atracklengthintank);
-		cout<<"tankentryvtx: ("<<tankentryvtx.X()<<", "<<tankentryvtx.Y()<<", "<<tankentryvtx.Z()<<")"<<endl
-			<<", tankexitvtx: ("<<tankexitvtx.X()<<", "<<tankexitvtx.Y()<<", "<<tankexitvtx.Z()<<")"<<endl
-			<<"atracklengthintank: "<<atracklengthintank<<endl;
+		if(tankexitvtx!=Position(0,0,0)){
+			tankexitvtx.UnitToMeter();
+			nextparticle->SetTankExitPoint(tankexitvtx);
+		} else {
+			projectedexitvertex.UnitToMeter();
+			nextparticle->SetTankExitPoint(projectedexitvertex);
+		}
+		nextparticle->SetTrackLengthInTank(atracklengthintank/100.);
+		if(verbosity>3){
+			cout<<"tankentryvtx: ("<<tankentryvtx.X()<<", "<<tankentryvtx.Y()<<", "<<tankentryvtx.Z()<<")"
+				<<", tankexitvtx: ("<<tankexitvtx.X()<<", "<<tankexitvtx.Y()<<", "<<tankexitvtx.Z()<<")"
+				<<", atracklengthintank: "<<atracklengthintank<<endl;
+		}
 		
 	} // end of loop over MCParticles
 	
@@ -464,10 +558,37 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 	
 	// simple checks to save time
 	if( 
-		( (abs(startvertex.X()) > tank_radius) && (abs(stopvertex.X()) > tank_radius) ) ||
-		( (abs(startvertex.Y()-tank_yoffset) > tank_halfheight) && (abs(stopvertex.Y()-tank_yoffset) > tank_yoffset) ) ||
-		( (startvertex.Z()>(tank_start+2.*tank_radius)) && (stopvertex.Z()>(tank_start+2.*tank_radius)) )
-	){ return false; }
+		( (startvertex.X() > tank_radius) && (stopvertex.X() > tank_radius) ) ||
+		( (startvertex.X() < -tank_radius) && (stopvertex.X() < -tank_radius) ) ||
+		( ((startvertex.Y()-tank_yoffset) > tank_halfheight) && ((stopvertex.Y()-tank_yoffset) > tank_halfheight) ) ||
+		( ((startvertex.Y()-tank_yoffset) < -tank_halfheight) && ((stopvertex.Y()-tank_yoffset) < -tank_halfheight) ) ||
+		( (startvertex.Z() < tank_start) && (stopvertex.Z() < tank_start) ) ||
+		( (startvertex.Z() > (tank_start+2.*tank_radius)) && (stopvertex.Z() > (tank_start+2.*tank_radius)) )
+	){
+		logmessage = "MCParticleProperties Tool::CheckTankIntercepts breaking early as start and endpoints"
+					 " are both on the same side outside of the tank bounds";
+		Log(logmessage,v_debug,verbosity);
+		
+		cout<<"tank_start="<<tank_start<<", tank_radius="<<tank_radius<<", tank_yoffset="<<tank_yoffset
+			<<", tank_halfheight="<<tank_halfheight<<endl;
+		
+		if(verbose){
+		if( (startvertex.X() > tank_radius) && (stopvertex.X() > tank_radius) )
+			cout<<"track entirely on right of tank"<<endl;
+		if( (startvertex.X() < -tank_radius) && (stopvertex.X() < -tank_radius) )
+			cout<<"track entirely on left of tank"<<endl;
+		if( ((startvertex.Y()-tank_yoffset) > tank_halfheight) && ((stopvertex.Y()-tank_yoffset) > tank_halfheight) )
+			cout<<"track entirely above tank"<<endl;
+		if( ((startvertex.Y()-tank_yoffset) < -tank_halfheight) && ((stopvertex.Y()-tank_yoffset) < -tank_halfheight) )
+			cout<<"track entirely below tank"<<endl;
+		if( (startvertex.Z() < tank_start) && (stopvertex.Z() < tank_start) )
+			cout<<"track entirely before tank"<<endl;
+		if( (startvertex.Z() > (tank_start+2.*tank_radius)) && (stopvertex.Z() > (tank_start+2.*tank_radius)) )
+			cout<<"track entirely after tank"<<endl;
+		}
+		
+		return false;
+	}
 	
 	// first check for the track being in the z plane, as this will produce infinite gradients
 	if(abs(stopvertex.Z()-startvertex.Z())<0.1){
@@ -749,6 +870,189 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 		// return only the appropriate vertices
 		if(!trackstopsintank) Hit=Position(tankendpointx,tankendpointy,tankendpointz);
 		if(!trackstartsintank) Hit2=Position(tankstartpointx,tankstartpointy,tankstartpointz);
+	}
+	
+	return true;
+}
+
+//=========================================================================================
+//=========================================================================================
+// Find the particle would have left the tank, had it done so
+
+bool MCParticleProperties::ProjectTankIntercepts(Position startvertex, Position stopvertex, double avgtrackgradx, double avgtrackgrady, Position &Hit, int verbose){
+	// this is based on CheckTankIntercepts which estimates the tank entry and exit points,
+	// but only if the track did indeed enter or exit the tank
+	// ProjectTankIntercepts cuts out all the checks, and
+	// 1. assumes the particle started in the tank
+	// 2. projects an exit point regardless of whether it is beyond the track end
+	
+	if(verbose){
+		cout<<"ProjectTankIntercepts with startvertex=("<<startvertex.X()<<", "<<startvertex.Y()
+			<<", "<<startvertex.Z()<<"), stopvertex=("<<stopvertex.X()<<", "
+			<<stopvertex.Y()<<", "<<stopvertex.Z()<<")"<<endl;
+	}
+	
+	// first check for the track being in the z plane, as this will produce infinite gradients
+	if(abs(stopvertex.Z()-startvertex.Z())<0.1){
+		// we have a simpler case: the tank is simply a box of height tankheight
+		// and width = length of a chord at the given z
+		if(verbose){
+			cout<<"track is in z plane, using alt method"<<endl;
+		}
+		double base = abs(startvertex.Z()-tank_start-tank_radius);
+		double chordlen = sqrt(pow(tank_radius,2.)-pow(base,2.)); // half the chord length, strictly. 
+		if(verbose){
+			cout<<"half width of tank in plane z="<<startvertex.Z()<<" is "<<chordlen<<endl;
+		}
+		
+		if(verbose){
+			cout<<"track intercepted tank somewhere"<<endl;
+		}
+		// second possibility: track is parallel to x-axis: then d*/dz=inf AND dx/dy=inf
+		if((stopvertex.Y()-startvertex.Y())<0.1){
+			if(verbose){
+				cout<<"track ran parallel to x axis"<<endl;
+			}
+			// even simpler: entry and exit points are just the tank walls in that z plane
+			bool isrightgoing = (stopvertex.X()>startvertex.X());
+			(isrightgoing) ? Hit.SetX(chordlen) : Hit.SetX(-chordlen); // exit point is tank extent in that plane
+			Hit.SetY(startvertex.Y()); Hit.SetZ(startvertex.Z());      // parallel to y and z axes: no change
+			
+		} else {
+			// track is in z-plane, but not along the X axis: line through a box scenario
+			double trackdxdy = (stopvertex.X()-startvertex.X())/(stopvertex.Y()-startvertex.Y());
+			if(verbose){
+				cout<<"trackdxdy="<<trackdxdy<<endl;
+			}
+			// there are 4 possible intersection points (2x, 2y), of which only 1 or 2 may be relevant
+			double xentry=-1., xexit=-1., yentry=-1., yexit=-1.;
+			bool entryfound=true, exitfound=false;
+			
+			// find exit point
+			if(verbose){
+				cout<<"finding projected exit point"<<endl;
+			}
+			// find y exit - calculate points for both barrel and cap exit
+			bool isupgoing = (stopvertex.Y()>startvertex.Y());
+			(isupgoing) ? yexit=tank_halfheight : yexit=-tank_halfheight;
+			double distancetoyexit =  yexit - startvertex.Y(); // signed
+			double xatyexit = startvertex.X()+(trackdxdy*distancetoyexit);
+			if(abs(xatyexit)<chordlen){ Hit.SetX(xatyexit); Hit.SetY(yexit+tank_yoffset); exitfound=true; }
+			// else track entered via a wall
+			if(verbose){
+				if(exitfound) cout<<"track exited via cap at ("<<Hit.X()<<", "<<(Hit.Y()-tank_yoffset)<<")"<<endl;
+				else cout<<"track exited via the wall, as xatyexit="<<xatyexit<<endl;
+			}
+			
+			// find wall exit
+			if(!exitfound){
+				bool isrightgoing = (stopvertex.X()>startvertex.X());
+				(isrightgoing) ? xexit=chordlen : xexit=-chordlen;
+				double distancetoxexit =  xexit - (startvertex.X()); // signed
+				double yatxexit = startvertex.Y()+(distancetoxexit/trackdxdy);
+				if(abs(yatxexit)<tank_halfheight){ Hit.SetX(xexit); Hit.SetY(yatxexit); exitfound=true; }
+				// else track entered via a cap
+				if(verbose){
+					if(entryfound) cout<<"track exited through the barrel at ("<<Hit.X()<<", "<<(Hit.Y()-tank_yoffset)<<")"<<endl;
+					else cerr<<"but yatxexit="<<yatxexit
+							 <<">tank_halfheight suggests we should have already found a cap exit!"<<endl;
+				}
+			} // else we already found a cap exit
+			
+			if(!exitfound) cerr<<"MCParticleProperties::ProjectTankExit could not find track exit point!?"<<endl;
+			else Hit.SetZ(startvertex.Z());
+			if(verbose){
+				if(exitfound) cout<<"setting exit Z to "<<(Hit.Z()-tank_start-tank_radius)<<endl;
+			}
+		} // end else track did not run along x-axis
+		
+	} else {  // track was not in z plane: use old method, based on dx/dz, dy/dz
+		
+		// parameterize the track by it's z position, and find the 
+		// z value where the tank would leave the radius of the tank
+		double xattankcentre = startvertex.X() - (startvertex.Z()-tank_start-tank_radius)*avgtrackgradx;
+		double firstterm = -avgtrackgradx*xattankcentre;
+		double thirdterm = 1+pow(avgtrackgradx,2.);
+		double secondterm = (pow(tank_radius,2.)*thirdterm) - pow(xattankcentre,2.);
+		if(secondterm<=0){
+			if(verbose){ cout<<"MCParticleProperties::ProjectTankExit says Tank miss?!"<<endl; }
+			return false; // Doens't hit the tank.
+		}
+		double solution1 = (firstterm + sqrt(secondterm))/thirdterm;
+		double solution2 = (firstterm - sqrt(secondterm))/thirdterm;
+		double tankendpointz;
+		if(stopvertex.Z() > startvertex.Z()){
+			tankendpointz = solution1;    //forward going track
+		} else {
+			tankendpointz = solution2;    // backward going track
+		}
+		// correct for tank z offset
+		tankendpointz += tank_start+tank_radius;
+		if(verbose){
+			// for sanity check:
+			cout<<"z'1 = "<<solution1<<", z1 = "<<(solution1+startvertex.Z())
+				<<", x1 = "<<(startvertex.X()+(avgtrackgradx*(solution1+startvertex.Z())))
+				<<", r1 = "<<sqrt(pow(solution1+startvertex.Z(),2.)+pow((startvertex.X()+(avgtrackgradx*(solution1+startvertex.Z()))),2.))<<endl;
+			cout<<"z'2 = "<<solution2<<", z2 = "<<(solution2+startvertex.Z())
+				<<", x2 = "<<(startvertex.X()+(avgtrackgradx*(solution2+startvertex.Z())))
+				<<", r2 = "<<sqrt(pow(solution2+startvertex.Z(),2.)+pow((startvertex.X()+(avgtrackgradx*(solution2+startvertex.Z()))),2.))<<endl;
+		}
+		
+		// calculate x by projecting track along parameterization
+		double tankendpointx = startvertex.X() + (tankendpointz-startvertex.Z())*avgtrackgradx;
+		
+		// and same for y
+		double tankendpointy = startvertex.Y() + (tankendpointz-startvertex.Z())*avgtrackgrady;
+		
+		if(verbose){
+			cout<<"tank start: "<<tank_start<<endl;
+			cout<<"tank end: "<<(tank_start+2*tank_radius)<<endl;
+			cout<<"tank radius: "<<tank_radius<<endl;
+			Position trackdir = (stopvertex - startvertex).Unit();
+			cout<<"start dir =("<<trackdir.X()<<", "<<trackdir.Y()
+				<<", "<<trackdir.Z()<<")"<<endl;
+			cout<<"avgtrackgradx="<<avgtrackgradx<<endl;
+			cout<<"avgtrackgrady="<<avgtrackgrady<<endl;
+			cout<<"xattankcentre="<<xattankcentre<<endl;
+			cout<<"firstterm="<<firstterm<<endl;
+			cout<<"thirdterm="<<thirdterm<<endl;
+			cout<<"secondterm="<<secondterm<<endl;
+			cout<<"tank intercept z solution1="<<solution1<<endl;
+			cout<<"tank intercept z solution2="<<solution2<<endl<<endl;
+			
+			cout<<"tankendpointz="<<tankendpointz<<endl;
+			cout<<"tankendpointx="<<tankendpointx<<endl;
+			cout<<"tankendpointy="<<tankendpointy<<endl;
+			
+			cout<<"TMath::Abs(startvertex.Y()-tank_yoffset)="
+				<<TMath::Abs(startvertex.Y()-tank_yoffset)
+				<<"(tank_halfheight)="<<(tank_halfheight)<<endl;
+		}
+		
+		// now check if the particle would have exited through one of the caps before reaching this point
+		// if projected y value at the radial exit is outside the tank, and the track started inside the tank,
+		// then the tank must have left prior to this point via one of the caps
+		if( TMath::Abs(tankendpointy-tank_yoffset)>(tank_halfheight) && 
+			TMath::Abs(startvertex.Y()-tank_yoffset)<(tank_halfheight)){
+			// ^ second condition due to slight (mm) differences in tank y height in WCSim.
+			// this trajectory exits through the cap. Need to recalculate x, z exiting points...!
+			if(stopvertex.Y()>startvertex.Y()){
+				tankendpointy = tank_halfheight+tank_yoffset; // by definition of leaving through cap
+			} else {
+				tankendpointy = -tank_halfheight+tank_yoffset;
+			}
+			tankendpointz = 
+			startvertex.Z() + (tankendpointy-startvertex.Y())/avgtrackgrady;
+			tankendpointx = 
+			startvertex.X() + (tankendpointz-startvertex.Z())*avgtrackgradx;
+		} // else this trajectory exited the tank by a side point; existing value is valid
+		
+		if(verbose){
+			cout<<"values after cap exit check"<<endl;
+			cout<<"tankendpointz="<<tankendpointz<<endl;
+			cout<<"tankendpointx="<<tankendpointx<<endl;
+			cout<<"tankendpointy="<<tankendpointy<<endl;
+		}
 	}
 	
 	return true;

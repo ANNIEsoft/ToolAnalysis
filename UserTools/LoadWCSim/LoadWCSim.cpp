@@ -179,8 +179,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// Construct the other objects we'll be setting at event level,
 	// pass managed pointers to the ANNIEEvent Store
 	MCParticles = new std::vector<MCParticle>;
-	MCHits = new std::map<unsigned long,std::vector<Hit>>;
-	TDCData = new std::map<unsigned long,std::vector<Hit>>;
+	MCHits = new std::map<unsigned long,std::vector<MCHit>>;
+	TDCData = new std::map<unsigned long,std::vector<MCHit>>;
 	EventTime = new TimeClass();
 	TriggerClass beamtrigger("beam",true,0);
 	TriggerData = new std::vector<TriggerClass>{beamtrigger}; // FIXME ? one trigger and resetting time is ok?
@@ -192,6 +192,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	ParticleId_to_TankCharge = new std::map<int,double>;
 	ParticleId_to_MrdCharge = new std::map<int,double>;
 	ParticleId_to_VetoCharge = new std::map<int,double>;
+	trackid_to_mcparticleindex = new std::map<int,int>;
 	
 	return true;
 }
@@ -246,6 +247,7 @@ bool LoadWCSim::Execute(){
 		EventTime->SetNs(EventTimeNs);
 		if(verbosity>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
 		if(verbosity>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
+		trackid_to_mcparticleindex->clear(); // clear out any previous tracks
 		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
 			if(verbosity>2) cout<<"getting track "<<tracki<<endl;
 			WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigt->GetTracks()->At(tracki);
@@ -292,6 +294,26 @@ bool LoadWCSim::Execute(){
 				nextrack->GetId(),
 				nextrack->GetParenttype(),
 				nextrack->GetFlag());
+			if((abs(nextrack->GetIpnu())==13)||(abs(nextrack->GetIpnu())==211)||(nextrack->GetIpnu()==111)){
+				std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+						<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
+						<<" track id "<<nextrack->GetId()
+						<< ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
+						<< ", " + to_string(nextrack->GetStart(1)/100.)
+						<< ", " + to_string(nextrack->GetStart(2)/100.)
+						<< "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
+						<< ", " + to_string(nextrack->GetStop(1)/100.)
+						<< ", " + to_string(nextrack->GetStop(2)/100.)
+						<< ")"
+						<<std::endl;
+			}
+			if(((abs(nextrack->GetIpnu())==13)||(nextrack->GetIpnu()==22)) &&
+			   ((abs(nextrack->GetParenttype())==211)||(nextrack->GetParenttype()==111))){
+				std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+						<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
+						<<" track id "<<nextrack->GetId()
+						<<" at position "<<MCParticles->size()<<std::endl;
+			}
 			if(nextrack->GetIpnu()==13){
 				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
 					+ ", parent type " + to_string(nextrack->GetParenttype())
@@ -306,6 +328,7 @@ bool LoadWCSim::Execute(){
 				Log(logmessage,v_debug,verbosity);
 			}
 			
+			trackid_to_mcparticleindex->emplace(nextrack->GetId(),MCParticles->size());
 			MCParticles->push_back(thisparticle);
 		}
 		if(verbosity>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
@@ -348,9 +371,11 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
+			// Get hit parent information
+			std::vector<int> parents = GetHitParentId(digihit, firsttrigt);
 			
-			Hit nexthit(key, digittime, digiq);
-			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{nexthit});
+			MCHit nexthit(key, digittime, digiq, parents);
+			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<MCHit>{nexthit});
 			else MCHits->at(key).push_back(nexthit);
 			if(verbosity>2) cout<<"digit added"<<endl;
 		}
@@ -393,9 +418,11 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
+			// Get hit parent information
+			std::vector<int> parents = GetHitParentId(digihit, firsttrigm);
 			
-			Hit nexthit(key, digittime, digiq);
-			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<Hit>{nexthit});
+			MCHit nexthit(key, digittime, digiq, parents);
+			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
 			if(verbosity>2) cout<<"digit added"<<endl;
 		}
@@ -425,7 +452,7 @@ bool LoadWCSim::Execute(){
 				double earliestphotontruetime=999999999999;
 				for(int& aphotonindex : photonids){
 					WCSimRootCherenkovHitTime* thehittimeobject =
-						 (WCSimRootCherenkovHitTime*)firsttrigm->GetCherenkovHitTimes()->At(aphotonindex);
+						 (WCSimRootCherenkovHitTime*)firsttrigv->GetCherenkovHitTimes()->At(aphotonindex);
 					if(thehittimeobject==nullptr){
 						cerr<<"LoadWCSim Tool: ERROR! Retrieval of photon from digit returned nullptr!"<<endl;
 						continue;
@@ -438,9 +465,11 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2){ cout<<"digittime is "<<digittime<<" [ns] from Trigger"<<endl; }
 			float digiq = digihit->GetQ();
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
+			// Get hit parent information
+			std::vector<int> parents = GetHitParentId(digihit, firsttrigv);
 			
-			Hit nexthit(key, digittime, digiq);
-			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<Hit>{nexthit});
+			MCHit nexthit(key, digittime, digiq, parents);
+			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
 			if(verbosity>2) cout<<"digit added"<<endl;
 		}
@@ -500,6 +529,7 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_MrdCharge", ParticleId_to_MrdCharge, false);
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
+	m_data->Stores.at("ANNIEEvent")->Set("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex,false);
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
@@ -517,7 +547,7 @@ bool LoadWCSim::Execute(){
 	} else {
 		if(verbosity>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
-	if(MCEventNum>=NumEvents){
+	if(false && MCEventNum>=NumEvents){
 		cout<<"LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain"<<endl;
 		m_data->vars.Set("StopLoop",1);
 	} else if(MCEventNum>=MaxEntries && MaxEntries>0){
@@ -713,12 +743,15 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		// Construct the detector associated with this PMT
 		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
 		std::string CylLocString;
-		switch (apmt.GetCylLoc()){
+		int cylloc = apmt.GetCylLoc();
+		if(apmt.GetName().find("EMI9954KB")!= std::string::npos){ cylloc=6; }     // FIXME set OD pmts in WCSim
+		switch (cylloc){
 			case 0:  CylLocString = "TopCap";    break;
 			case 2:  CylLocString = "BottomCap"; break;
 			case 1:  CylLocString = "Barrel";    break;
 			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
 			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			case 6:  CylLocString = "OD";        break;
 			default: CylLocString = "NA";        break;  // unknown
 		}
 		Detector adet(uniquedetectorkey,
@@ -939,27 +972,6 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 	// To match digits to their parent particles we need the corresponding CherenkovHitTimes
 	// both CherenkovHits and CherenkovHitTimes are stored in the first trigger
 	//--------------------------------------------------------------------------------------
-	int ncherenkovhits=firstTrig->GetCherenkovHits()->GetEntries(); //atrigt->GetNcherenkovhits();
-	int nhittimes = firstTrig->GetCherenkovHitTimes()->GetEntries();
-	
-	std::map<int,int> timeArrayOffsetMap;
-	if(WCSimVersion<2){
-		// The CherenkovHitTimes is a flattened array (over PMTs) of arrays (over photons)
-		// For WCSimVersion<2, the PhotonIds available from a digit are the indices 
-		// *within the subarray for that PMT*
-		// we therefore need we need to offset these indices by the start of the pmt's subarray.
-		// This offset may be found by scanning the CherenkovHits array (over PMTs),
-		// finding the correct TubeID, and retrieving the 'GetTotalPe(0)' member for this entry.
-		for(int ihit = 0; ihit < ncherenkovhits; ihit++){
-			// each WCSimRootCherenkovHit represents a hit PMT
-			WCSimRootCherenkovHit* hitobject = 
-				(WCSimRootCherenkovHit*)firstTrig->GetCherenkovHits()->At(ihit);
-			if(hitobject==nullptr) cerr<<"HITOBJECT IS NULL!"<<endl;
-			int tubeNumber = hitobject->GetTubeID();
-			int timeArrayOffset = hitobject->GetTotalPe(0);
-			timeArrayOffsetMap.emplace(tubeNumber,timeArrayOffset);
-		}
-	}
 	
 	// Loop over all digits 
 	int numdigits = thistrig->GetCherenkovDigiHits()->GetEntries();
@@ -971,15 +983,21 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 		std::vector<int> truephotonindices = digihit->GetPhotonIds();
 		for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
 			int thephotonsid = truephotonindices.at(truephoton);
+			// get the index of the photon CherenkovHit object in the TClonesArray
 			if(WCSimVersion<2){
+				if(timeArrayOffsetMap.size()==0) BuildTimeArrayOffsetMap(firstTrig);
 				thephotonsid+=timeArrayOffsetMap.at(tubeid);
 			}
-			// we should use ChannelKey instead of tubeid.
-			int channelkey = tubeid_to_channelkey.at(tubeid);
+			// Get the CherenkovHitTime object that records the photon's Parent ID
 			WCSimRootCherenkovHitTime *thehittimeobject = 
 				(WCSimRootCherenkovHitTime*)(firstTrig->GetCherenkovHitTimes()->At(thephotonsid));
 			if(thehittimeobject==nullptr) cerr<<"HITTIME IS NULL"<<endl;
+			// get the parent ID from the CherenkovHitTime
 			Int_t thephotonsparenttrackid = (thehittimeobject) ? thehittimeobject->GetParentID() : -1;
+			// We'll want a map of particle ID to channel keys, so convert WCSim TubeId to channelkey
+			int channelkey = tubeid_to_channelkey.at(tubeid);
+			
+			// Finally we can record this pairing of Tube to Particle
 			if(ParticleId_to_TubeIds->count(thephotonsparenttrackid)==0){
 				// we've not recorded any hits for this particle: make an empty map for it
 				ParticleId_to_TubeIds->emplace(thephotonsparenttrackid,std::map<unsigned long,double>{});
@@ -999,4 +1017,57 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 			}
 		}
 	}  // end loop over digits
+}
+
+std::vector<int> LoadWCSim::GetHitParentId(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig){
+	/* Get the ID of the MCParticle(s) that produced this digit */
+	std::vector<int> parentids; // a hit could technically have more than one contrbuting particle
+	
+	// loop over the photons in this digit
+	std::vector<int> truephotonindices = digihit->GetPhotonIds();
+	for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
+		int thephotonsid = truephotonindices.at(truephoton);
+		// get the indices of the digit's photon CherenkovHitTime objects
+		if(WCSimVersion<2){
+			if(timeArrayOffsetMap.size()==0) BuildTimeArrayOffsetMap(firstTrig);
+			thephotonsid+=timeArrayOffsetMap.at(digihit->GetTubeId());
+		}
+		// get the CherenkovHitTime objects themselves, which contain the photon parent IDs
+		WCSimRootCherenkovHitTime *thehittimeobject = 
+			(WCSimRootCherenkovHitTime*)(firstTrig->GetCherenkovHitTimes()->At(thephotonsid));
+		if(thehittimeobject==nullptr) cerr<<"HITTIME IS NULL"<<endl;
+		else {
+			int theparenttrackid = thehittimeobject->GetParentID();
+			// check if this parent track was saved. Not all particles are saved.
+			if(trackid_to_mcparticleindex->count(theparenttrackid)){
+				parentids.push_back(trackid_to_mcparticleindex->at(theparenttrackid));
+			} // else this photon may have come from e.g. an electron or gamma that wasn't recorded
+		}
+	}
+	return parentids;
+}
+
+void LoadWCSim::BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig){
+	if(WCSimVersion<2){
+		// The CherenkovHitTimes is a flattened array (over PMTs) of arrays (over photons)
+		// For WCSimVersion<2, the PhotonIds available from a digit are the indices 
+		// *within the subarray for that PMT*
+		// we therefore need we need to offset these indices by the start of the pmt's subarray.
+		// This offset may be found by scanning the CherenkovHits array (over PMTs),
+		// finding the correct TubeID, and retrieving the 'GetTotalPe(0)' member for this entry.
+		int ncherenkovhits=firstTrig->GetCherenkovHits()->GetEntries(); //atrigt->GetNcherenkovhits();
+		//int nhittimes = firstTrig->GetCherenkovHitTimes()->GetEntries();
+		
+		for(int ihit = 0; ihit < ncherenkovhits; ihit++){
+			// each WCSimRootCherenkovHit represents a hit PMT
+			WCSimRootCherenkovHit* hitobject = 
+				(WCSimRootCherenkovHit*)firstTrig->GetCherenkovHits()->At(ihit);
+			if(hitobject==nullptr) cerr<<"HITOBJECT IS NULL!"<<endl;
+			int tubeNumber = hitobject->GetTubeID();
+			int timeArrayOffset = hitobject->GetTotalPe(0);
+			timeArrayOffsetMap.emplace(tubeNumber,timeArrayOffset);
+		}
+	} else {
+		Log("LoadWCSim Tool: BuildTimeArrayOffsetMap called with WCSimVersion<2: This is not needed!?",v_error,verbosity);
+	}
 }

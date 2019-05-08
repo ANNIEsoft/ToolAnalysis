@@ -1,0 +1,4 @@
+verbosity 100
+plotDirectory .
+drawHistos 1
+ColourScaleParameter Parent

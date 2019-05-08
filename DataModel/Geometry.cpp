@@ -96,3 +96,18 @@ void Geometry::PrintChannels(){
 		}
 	}
 }
+
+void Geometry::CartesianToPolar(Position posin, double& R, double& Phi, double& Theta, bool tankcentered){
+	// Calculate angle from beam axis, measured clockwise while looking down
+	// first shift to place relative to the tank origin if needed
+	if(not tankcentered){ posin -= tank_centre; }
+	// calculate the angle from the beam axis
+	double thethetaval = atan(posin.X()/abs(posin.Z()));
+	if(posin.Z()<0.){ (posin.X()<0.) ? thethetaval=(-M_PI+thethetaval) : thethetaval=(M_PI-thethetaval); }
+	Phi = thethetaval;
+	// calculate angle from the x-z plane
+	Theta = atan(posin.Y() / sqrt(pow(posin.X(),2.)+pow(posin.Z(),2.)));
+	// calculate the radial distance from the tank centre
+	R = sqrt(pow(posin.X(),2.)+pow(posin.Z(),2.));
+	return;
+}
