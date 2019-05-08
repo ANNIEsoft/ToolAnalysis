@@ -290,7 +290,8 @@ bool LoadWCSim::Execute(){
 					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
 				startstoptype,
 				nextrack->GetId(),
-				nextrack->GetParenttype());
+				nextrack->GetParenttype(),
+				nextrack->GetFlag());
 			if(nextrack->GetIpnu()==13){
 				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
 					+ ", parent type " + to_string(nextrack->GetParenttype())

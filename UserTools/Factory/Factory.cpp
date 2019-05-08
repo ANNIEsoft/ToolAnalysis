@@ -76,6 +76,7 @@ if (tool=="MrdDistributions") ret=new MrdDistributions;
 if (tool=="MCParticleProperties") ret=new MCParticleProperties;
 if (tool=="DigitBuilderROOT") ret=new DigitBuilderROOT;
 if (tool=="MrdEfficiency") ret=new MrdEfficiency;
-
+if (tool=="EventDisplay") ret=new EventDisplay;
+if (tool=="TankCalibrationDiffuser") ret=new TankCalibrationDiffuser;
 return ret;
 }
