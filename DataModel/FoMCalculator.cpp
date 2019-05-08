@@ -24,12 +24,8 @@ void FoMCalculator::LoadVertexGeometry(VertexGeometry* vtxgeo) {
 }
 
 
-void FoMCalculator::TimePropertiesLnL(double vtxTime, double vtxParam, double& vtxFOM)
+void FoMCalculator::TimePropertiesLnL(double vtxTime, double& vtxFOM)
 { 
-  // nuisance parameters
-  // ===================
-  double scatter = vtxParam; 
-
   // internal variables
   // ==================
   double weight = 0.0;
@@ -43,24 +39,19 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double vtxParam, double& v
 
   double chi2 = 0.0;        // log-likelihood: chi2 = -2.0*log(L)
   double ndof = 0.0;        // total number of hits
-  double fom = 0.0;         // figure of merit
+  double fom = -9999.;         // figure of merit
 
-  // tuning parameters
-  // =================
-  double fTimeFitNoiseRate = 0.02;  // hits/ns [0.40 for electrons, 0.02 for muons]
-  // need to simulate the rate of the cosmic background
   // add noise to model
   // ==================
-  double nFilterDigits = this->fVtxGeo->GetNFilterDigits(); 
-  double Pnoise; 
-  //Pnoise = fTimeFitNoiseRate/nFilterDigits;//FIXME
-  
-  //bool istruehits = (Interface::Instance())->IsTrueHits();
-  bool istruehits = 0; // for test only. JW
+  double Pnoise;
 
+  //FIXME: We need an implementation of noise models for PMTs and LAPPDs
+  //double nFilterDigits = this->fVtxGeo->GetNFilterDigits(); 
+  //double fTimeFitNoiseRate = 0.02;  // hits/ns [0.40 for electrons, 0.02 for muons]
+  //Pnoise = fTimeFitNoiseRate/nFilterDigits;
+  
   // loop over digits
   // ================
-  
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
     	int detType = this->fVtxGeo->GetDigitType(idigit); 
       delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
@@ -79,71 +70,7 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double vtxParam, double& v
       P = (1.0-Pnoise)*Preal + Pnoise; 
       chi2 += -2.0*log(P);
       ndof += 1.0; 
-//      cout<<"(tm, t0, dt, sigma) = "<<this->fVtxGeo->GetDelta(idigit)<<", "<<vtxTime<<", "<<delta<<", "<<sigma<<endl;
   }	
-  
-//  TString configType = Parameters::Instance()->GetConfigurationType();
-//  	
-//  if(configType == "LAPPD")	{
-//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-//      if( detType == "lappd_v0" /*&& this->fVtxGeo->IsFiltered(idigit)*/){
-//        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-//        sigma = 1.2 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
-//        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-//        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-//        P = (1.0-Pnoise)*Preal + Pnoise; 
-//        chi2 += -2.0*log(P);
-//        ndof += 1.0; 
-//      }
-//    }
-//  }
-//  
-//  else if(configType == "PMT") {
-//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-//      if( detType == "PMT8inch" && this->fVtxGeo->GetDigitQ(idigit)>5/*&& this->fVtxGeo->IsFiltered(idigit)*/){
-//        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-//        sigma = 1.5 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
-//        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-//        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-//        P = (1.0-Pnoise)*Preal + Pnoise; 
-//        chi2 += -2.0*log(P);
-//        ndof += 1.0; 
-//      }
-//    }	
-//  }
-//  
-//  else if(configType == "Combined") {
-//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-//      delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-//      sigma = this->fVtxGeo->GetDeltaSigma(idigit);
-//      if(detType == "lappd_v0") sigma = 1.2*sigma;
-//      if(detType == "PMT8inch") sigma = 1.5*sigma;
-//      A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-//      Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-//      P = (1.0-Pnoise)*Preal + Pnoise; 
-//      chi2 += -2.0*log(P);
-//      ndof += 1.0; 
-//    }	
-//  }
-//  
-//  else if (configType == "Two-stage") {
-//    for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
-//    	TString detType = this->fVtxGeo->GetDigitType(idigit); 
-//      if( detType == "lappd_v0" /*&& this->fVtxGeo->IsFiltered(idigit)*/){
-//        delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
-//        sigma = 1.2 * this->fVtxGeo->GetDeltaSigma(idigit); //chose factor 1.2 to optimize the fitter performance
-//        A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
-//        Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
-//        P = (1.0-Pnoise)*Preal + Pnoise; 
-//        chi2 += -2.0*log(P);
-//        ndof += 1.0; 
-//      }
-//    }	
-//  }
-
 
   // calculate figure of merit
   if( ndof>0.0 ){
@@ -153,8 +80,6 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double vtxParam, double& v
   // return figure of merit
   // ======================
   vtxFOM = fom;
-  
-
   return;
 }
 
@@ -167,14 +92,12 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   // =========================
   double coneEdgeLow = 21.0;  // cone edge (low side)      
   double coneEdgeHigh = 3.0;  // cone edge (high side)   [muons: 3.0, electrons: 7.0]
-
   double deltaAngle = 0.0;
   double digitCharge = 0.0;
- 
   double coneCharge = 0.0;
   double allCharge = 0.0;
 
-  double fom = 0.0;
+  double fom = -9999.;
 
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 	
     if( this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch){
@@ -199,7 +122,6 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   // return figure of merit
   // ======================
   coneFOM = fom;
-
   return;
 }
 
@@ -294,13 +216,11 @@ double FoMCalculator::FindSimpleTimeProperties(double myConeEdge) {
   return meanTime; //return expected vertex time
 }
 
-void FoMCalculator::PointPositionChi2(double vtxX, double vtxY, double vtxZ, double vtxParam0, double vtxTime, double& fom)
+void FoMCalculator::PointPositionChi2(double vtxX, double vtxY, double vtxZ, double vtxTime, double& fom)
 {  
   // figure of merit
   // ===============
-  double vtxFOM = 0.0;
-  double penaltyFOM = 0.0;
-  double fixPositionFOM = 0.0;
+  double vtxFOM = -9999.;
   
   // calculate residuals
   // ===================
@@ -308,15 +228,11 @@ void FoMCalculator::PointPositionChi2(double vtxX, double vtxY, double vtxZ, dou
 
   // calculate figure of merit
   // =========================
-  this->TimePropertiesLnL(vtxTime,vtxParam0, vtxFOM);
-
-  // calculate penalty
-  // =================
-  //this->PenaltyChi2(vtxX,vtxY,vtxZ,penaltyFOM);
+  this->TimePropertiesLnL(vtxTime, vtxFOM);
 
   // calculate overall figure of merit
   // =================================
-  fom = vtxFOM + penaltyFOM + fixPositionFOM;
+  fom = vtxFOM;
   // truncate
   if( fom<-9999. ) fom = -9999.;
 
@@ -333,8 +249,7 @@ void FoMCalculator::PointDirectionChi2(double vtxX, double vtxY,
 {  
   // figure of merit
   // ===============
-  double coneFOM = 0.0;
-  double fixPositionFOM = 0.0;
+  double coneFOM = -9999.;
   
   // calculate residuals
   // ===================
@@ -356,15 +271,12 @@ void FoMCalculator::PointDirectionChi2(double vtxX, double vtxY,
 }
 
 void FoMCalculator::PointVertexChi2(double vtxX, double vtxY, double vtxZ, 
-	                                    double dirX, double dirY, double dirZ, double vtxParam0,
+	                                    double dirX, double dirY, double dirZ,
 	                                    double coneAngle, double vtxTime, double& fom)
 {  
   // figure of merit
   // ===============
-  double vtxFOM = 0.0;
-  double penaltyFOM = 0.0;
-  double fixPositionFOM = 0.0;
-  double fixDirectionFOM = 0.0;
+  double vtxFOM = -9999.;
 
   // calculate residuals
   // ===================
@@ -372,40 +284,32 @@ void FoMCalculator::PointVertexChi2(double vtxX, double vtxY, double vtxZ,
                                  dirX, dirY, dirZ); //calculate expected vertex time for each digit
   // calculate figure of merit
   // =========================
-  double timeFOM = 0.0;
-  double coneFOM = 0.0;
+  double timeFOM = -9999.;
+  double coneFOM = -9999.;
   
   this->ConePropertiesFoM(coneAngle,coneFOM);
-  this->TimePropertiesLnL(vtxTime, vtxParam0, timeFOM);
+  this->TimePropertiesLnL(vtxTime, timeFOM);
   
   double fTimeFitWeight = this->fTimeFitWeight;
   double fConeFitWeight = this->fConeFitWeight;
   vtxFOM = (fTimeFitWeight*timeFOM+fConeFitWeight*coneFOM)/(fTimeFitWeight+fConeFitWeight);
 
-  // calculate penalty
-  // =================
-  //this->PenaltyChi2(vtxX,vtxY,vtxZ,penaltyFOM);
-
   // calculate overall figure of merit
   // =================================
-  
-  fom = vtxFOM + penaltyFOM + fixPositionFOM + fixDirectionFOM;
+  fom = vtxFOM;
   // truncate
   if( fom<-9999. ) fom = -9999.;
 
   return;
 }
 
-void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double vtxParam0, double coneAngle, double vtxTime, double& fom)
+void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneAngle, double vtxTime, double& fom)
 {  
   // figure of merit
   // ===============
-  double vtxFOM = 0.0;
-  double timeFOM = 0.0;
-  double coneFOM = 0.0;
-  double penaltyFOM = 0.0;
-  double fixPositionFOM = 0.0;
-  double fixDirectionFOM = 0.0;
+  double vtxFOM = -9999.;
+  double timeFOM = -9999.;
+  double coneFOM = -9999.;
 
   // calculate residuals
   // ===================
@@ -415,20 +319,15 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
   // =========================
 
   this->ConePropertiesFoM(coneAngle,coneFOM);
-  this->TimePropertiesLnL(vtxTime,vtxParam0, timeFOM);
-  //this->FitExtendedTimePropertiesLnL(vtxTime,timeFOM);
+  this->TimePropertiesLnL(vtxTime, timeFOM);
   
   double fTimeFitWeight = this->fTimeFitWeight;
   double fConeFitWeight = this->fConeFitWeight;
   vtxFOM = (fTimeFitWeight*timeFOM+fConeFitWeight*coneFOM)/(fTimeFitWeight+fConeFitWeight);
 
-  // calculate penalty
-  // =================
-  //this->PenaltyChi2(vtxX,vtxY,vtxZ,penaltyFOM);
-
   // calculate overall figure of merit
   // =================================
-  fom = vtxFOM + penaltyFOM + fixPositionFOM + fixDirectionFOM;
+  fom = vtxFOM;
 
   // truncate
   if( fom<-9999. ) fom = -9999.;

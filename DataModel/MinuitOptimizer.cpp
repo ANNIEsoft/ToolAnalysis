@@ -26,16 +26,12 @@ static void vertex_time_lnl(int&, double*, double& f, double* par, int)
   bool printDebugMessages = 0;
   
   double vtxTime = par[0]; // nanoseconds
-  double vtxParam0 = fgMinuitOptimizer->fFixTimeParam0; //scatterring parameter
-  if( fgMinuitOptimizer->fFitTimeParams ){
-    vtxParam0 = par[1]; 
-  }
-  double fom = 0.0;
+  double fom = -9999.;
   fgMinuitOptimizer->time_fit_itr();  
-  fgFoMCalculator->TimePropertiesLnL(vtxTime,vtxParam0, fom);
+  fgFoMCalculator->TimePropertiesLnL(vtxTime, fom);
   f = -fom; // note: need to maximize this fom
   if( printDebugMessages ){
-    std::cout << "  [vertex_time_lnl] [" << fgMinuitOptimizer->time_fit_iterations() << "] vtime=" << vtxTime << " vparam=" << vtxParam0 << " fom=" << fom << std::endl;
+    std::cout << "  [vertex_time_lnl] [" << fgMinuitOptimizer->time_fit_iterations() << "] vtime=" << vtxTime << " fom=" << fom << std::endl;
   }
   return;
 }
@@ -48,11 +44,10 @@ static void point_position_chi2(int&, double*, double& f, double* par, int)
   double vtxY = par[1]; // centimetres
   double vtxZ = par[2]; // centimetres
   double vtxTime = par[3]; //ns, added by JW
-  double vtxParam0 = 0.2; //scatterring parameter
 
-  double fom = 0.0;
+  double fom = -9999.;
   fgMinuitOptimizer->point_position_itr();
-  fgFoMCalculator->PointPositionChi2(vtxX,vtxY,vtxZ,fFixTimeParam0, vtxTime,fom);
+  fgFoMCalculator->PointPositionChi2(vtxX,vtxY,vtxZ,vtxTime,fom);
 
 
   f = -fom; // note: need to maximize this fom
@@ -83,12 +78,14 @@ static void point_direction_chi2(int&, double*, double& f, double* par, int)
   dirY= sin(dirTheta)*sin(dirPhi);
   dirZ = cos(dirTheta);
 
-  double fom = 0.0;
+  double fom = -9999.;
+
+  double coneAngle = fgMinuitOptimizer->fConeAngle; //Cherenkov cone angle
 
   fgMinuitOptimizer->point_direction_itr();
   fgFoMCalculator->PointDirectionChi2(vtxX,vtxY,vtxZ,
                                      dirX,dirY,dirZ,
-                                     fConeAngle, fom);
+                                     coneAngle, fom);
   f = -fom; // note: need to maximize this fom
 
   if( printDebugMessages ){
@@ -114,11 +111,13 @@ static void point_vertex_chi2(int&, double*, double& f, double* par, int)
   double dirX = sin(dirTheta)*cos(dirPhi);
   double dirY = sin(dirTheta)*sin(dirPhi);
   double dirZ = cos(dirTheta);
-
-  double fom = 0.0;
   
+  double fom = -9999.;
+ 
+  double coneAngle = fgMinuitOptimizer->fConeAngle; //Cherenkov cone angle
+
   fgMinuitOptimizer->point_vertex_itr();
-  fgFoMCalculator->PointVertexChi2(vtxX,vtxY,vtxZ,dirX,dirY,dirZ,fConeAngle, vtxTime,fom);
+  fgFoMCalculator->PointVertexChi2(vtxX,vtxY,vtxZ,dirX,dirY,dirZ,coneAngle, vtxTime,fom);
   f = -fom; // note: need to maximize this fom
 
   if( printDebugMessages ){
@@ -145,14 +144,15 @@ static void extended_vertex_chi2(int&, double*, double& f, double* par, int)
   double dirY = sin(dirTheta)*sin(dirPhi);
   double dirZ = cos(dirTheta);
 
-  double fom = 0.0;
+  double coneAngle = fgMinuitOptimizer->fConeAngle; //Cherenkov cone angle
+
+  double fom = -9999.;
 
   fgMinuitOptimizer->extended_vertex_itr();
   
-  double vtxParam0 = fgMinuitOptimizer->fFixTimeParam0; //scatterring parameter
   fgFoMCalculator->ExtendedVertexChi2(vtxX,vtxY,vtxZ,
-                                     dirX,dirY,dirZ, vtxParam0,
-                                     fConeAngle, vtxTime,fom);
+                                     dirX,dirY,dirZ, 
+                                     coneAngle, vtxTime,fom);
 
   f = -fom; // note: need to maximize this fom
 
@@ -171,15 +171,15 @@ MinuitOptimizer::MinuitOptimizer() {
   fgFoMCalculator = new FoMCalculator();
   fSeedVtx = 0;
   fFittedVtx = new RecoVertex();
-  fVtxX = 0.;
-  fVtxY = 0.;
-  fVtxZ = 0.;
-  fVtxTime = 0.;
-  fDirX = 0.;
-  fDirY = 0.;
-  fDirZ = 0.;
-  fVtxFOM = 0.;
-  fConeAngle = = Parameters::CherenkovAngle();
+  fVtxX = -9999.;
+  fVtxY = -9999.;
+  fVtxZ = -9999.;
+  fVtxTime = -9999.;
+  fDirX = -9999.;
+  fDirY = -9999.;
+  fDirZ = -9999.;
+  fVtxFOM = -9999.;
+  fConeAngle = Parameters::CherenkovAngle();
   fTimeFitItr = 0;
   fPointPosItr = 0;
   fPointDirItr = 0;
@@ -189,9 +189,7 @@ MinuitOptimizer::MinuitOptimizer() {
   fItr = 0;
   fPrintLevel = -1;
 
-  // fitting parameters ported from vertexFinder (FIXME)
-  fFitTimeParams = 0;     // don't fit by default
-  fFixTimeParam0 = 0.20;  // scattering parameter
+  fFixTimeParam0 = 0.20;  // scattering parameter (not currently used)
   
   //KEPT FOR HISTORY; NOT IN USE (Cone parameters)
   //fConeFitItr = 0;
@@ -215,7 +213,7 @@ MinuitOptimizer::MinuitOptimizer() {
   fTmax = 10.0;
   
   // default Mean time calculator type
-  fMeanTimeCalculatorType = 0;
+  this->SetMeanTimeCalculatorType(0);
   
   fMinuitPointPosition = new TMinuit();
   fMinuitPointPosition->SetPrintLevel(-1);
@@ -265,12 +263,28 @@ void MinuitOptimizer::LoadVertexGeometry(VertexGeometry* vtxgeo) {
   fgFoMCalculator->fVtxGeo = vtxgeo;	
 }
 
+void MinuitOptimizer::SetNumberOfIterations(int iterations) {
+  fMinuitPointPosition->SetMaxIterations(iterations);
+  fMinuitPointDirection->SetMaxIterations(iterations);
+  fMinuitPointVertex->SetMaxIterations(iterations);
+  fMinuitExtendedVertex->SetMaxIterations(iterations); 
+  fMinuitTimeFit->SetMaxIterations(iterations);   
+
+  //fMinuitCorrectedVertex = new TMinuit();
+  //fMinuitCorrectedVertex->SetPrintLevel(-1);
+  //fMinuitCorrectedVertex->SetMaxIterations(5000);
+}
+
 void MinuitOptimizer::SetTimeFitWeight(double tweight) {
   fgFoMCalculator->SetTimeFitWeight(tweight);	
 }
 
 void MinuitOptimizer::SetConeFitWeight(double cweight) {
   fgFoMCalculator->SetConeFitWeight(cweight);	
+}
+
+void MinuitOptimizer::SetMeanTimeCalculatorType(int type) {
+  fgFoMCalculator->SetMeanTimeCalculatorType(type);	
 }
 
 //Load vertex
@@ -319,7 +333,6 @@ void MinuitOptimizer::FitPointTimeWithMinuit() {
   int flag = 0;
 
   double seedTime = meanvtxTime;
-  double fitParam = fFixTimeParam0;
   double fitTime = 0.0;
   double fitTimeErr = 0.0;  
   
@@ -341,13 +354,13 @@ void MinuitOptimizer::FitPointTimeWithMinuit() {
   // fitting done; calculate best-fit figure of merit
   // =========================
   double fom = -9999.;
-  fgFoMCalculator->TimePropertiesLnL(fitTime,fitParam, fom);
+  fgFoMCalculator->TimePropertiesLnL(fitTime, fom);
   
-  vtxTime = fitTime;
-  vtxFOM = fom;
+  fVtxTime = fitTime;
+  fVtxFOM = fom;
   
-  fFittedVtx->SetVertex(fVtxX, fVtxY, fVtxZ, vtxTime);
-  fFittedVtx->SetFOM(vtxFOM, 1, 1);
+  fFittedVtx->SetVertex(fVtxX, fVtxY, fVtxZ, fVtxTime);
+  fFittedVtx->SetFOM(fVtxFOM, 1, 1);
   return;
 }
 
@@ -401,7 +414,6 @@ void MinuitOptimizer::FitPointPositionWithMinuit() {
   double fitZposErr = 0.0;
   double fitTimeposErr = 0.0; //JW
   
-  double fitParam = 0.2; //scattering parameter
 
   double* arglist = new double[10];
   arglist[0]=1;  // 1: standard minimization
@@ -431,13 +443,13 @@ void MinuitOptimizer::FitPointPositionWithMinuit() {
   fVtxZ = fitZpos;
   fVtxTime = fitTimepos;
 
-  double vtxFOM = 0.0;
+  fVtxFOM = -9999.;
   
   fPass = 0;               // flag = 0: normal termination
   if( flag==0 ) fPass = 1; // anything else: abnormal termination 
 
   fItr = point_position_iterations();
-  fgFoMCalculator->PointPositionChi2(fVtxX,fVtxY,fVtxZ,fFixTimeParam0,fVtxTime,fVtxFOM);
+  fgFoMCalculator->PointPositionChi2(fVtxX,fVtxY,fVtxZ,fVtxTime,fVtxFOM);
   
   // set vertex and direction
   // ========================
@@ -470,8 +482,6 @@ void MinuitOptimizer::FitPointDirectionWithMinuit() {
   // ==============
   bool foundSeed = ( fSeedVtx->FoundVertex() && fSeedVtx->FoundDirection() );
 
-  double vtxFOM = 0.0;
-  
   // seed direction
   // ==============
   double seedDirX = fSeedVtx->GetDirection().X();
@@ -549,7 +559,7 @@ void MinuitOptimizer::FitPointDirectionWithMinuit() {
   this->fDirY = sin(dirTheta)*sin(dirPhi);
   this->fDirZ = cos(dirTheta);
   
-  fVtxFOM = 0.0;
+  fVtxFOM = -9999.;
   
   fPass = 0;               // flag = 0: normal termination
   if( flag==0 ) fPass = 1; // anything else: abnormal termination 
@@ -588,8 +598,6 @@ void MinuitOptimizer::FitPointDirectionWithMinuit() {
 }
 
 void MinuitOptimizer::FitPointVertexWithMinuit() {
-  
-  double vtxFOM = 0.0;
   
   // seed vertex
   // ===========  
@@ -704,7 +712,7 @@ void MinuitOptimizer::FitPointVertexWithMinuit() {
   fDirY = sin(fitTheta)*sin(fitPhi);
   fDirZ = cos(fitTheta);  
 
-  vtxFOM = 0.0;
+  fVtxFOM = -9999.0;
   
   fPass = 0;               // flag = 0: normal termination
   if( flag==0 ) fPass = 1; // anything else: abnormal termination 
@@ -743,10 +751,6 @@ void MinuitOptimizer::FitPointVertexWithMinuit() {
 }
 
 void MinuitOptimizer::FitExtendedVertexWithMinuit() {
-  // initialization
-  // ==============
-  double vtxAngle = Parameters::CherenkovAngle();
-  double vtxFOM = 0.0;
   // seed vertex
   // ===========
   bool foundSeed = ( fSeedVtx->FoundVertex() 
@@ -800,7 +804,7 @@ void MinuitOptimizer::FitExtendedVertexWithMinuit() {
   
   // run Minuit
   // ==========  
-  // five-parameter fit to vertex and direction
+  // six-parameter fit to vertex position, time and direction
 
   int err = 0;
   int flag = 0;
@@ -862,7 +866,7 @@ void MinuitOptimizer::FitExtendedVertexWithMinuit() {
   fDirY = sin(fitTheta)*sin(fitPhi);
   fDirZ = cos(fitTheta);  
   
-  fVtxFOM = 0.0;
+  fVtxFOM = -9999.0;
   
   fPass = 0;               // flag = 0: normal termination
   if( flag==0 ) fPass = 1; // anything else: abnormal termination 
@@ -871,9 +875,8 @@ void MinuitOptimizer::FitExtendedVertexWithMinuit() {
   
   // fit complete; calculate fit results
   // ================
-  double vtxParam0 = fgMinuitOptimizer->fFixTimeParam0; //scatterring parameter
   fgFoMCalculator->ExtendedVertexChi2(fVtxX,fVtxY,fVtxZ,
-                           fDirX,fDirY,fDirZ, vtxParam0, 
+                           fDirX,fDirY,fDirZ, 
                            fConeAngle, fVtxTime,fVtxFOM);
                            
   // set vertex and direction
