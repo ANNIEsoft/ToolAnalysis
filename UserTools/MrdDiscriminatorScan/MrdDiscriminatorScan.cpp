@@ -37,6 +37,7 @@ bool MrdDiscriminatorScan::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("drawHistos",drawHistos);
 	m_variables.Get("filelist",filelist);
 	m_variables.Get("filedir",filedir);
+	m_variables.Get("Graph_X_variable",x_variable);
 	
 	// check the output directory exists and is suitable
 	Log("MrdDiscriminatorScan Tool: Checking output directory "+plotDirectory,v_message,verbosity);
@@ -144,15 +145,30 @@ bool MrdDiscriminatorScan::Execute(){
 	Log("MrdDiscriminatorScan Tool: Scanning hits in this file",v_debug,verbosity);
 	bool success = CountChannelHits(MRDData, hit_counts_on_channels, first_timestamp, last_timestamp);
 	if(not success) return false;
-	//double total_run_seconds = last_timestamp.GetNs() - first_timestamp.GetNs(); no no no
 	// each run has 10k readouts, each readout records a 4us window (single word mode with resolution set at 4ns)
 	// so in total we record 10e3 x 4e-6 = 40e-3ns of actual time
-	double total_run_seconds = 40E-3;
+	//double total_run_seconds = 40E-3;
+	unsigned long num_readouts_this_run = 0;
+        get_ok = MRDData->Header->Get("TotalEntries",num_readouts_this_run);
+	double total_run_seconds = 4E-6 * num_readouts_this_run;
+	// get relative time of the start of this run....
+	if(very_first_timestamp==0){
+		very_first_timestamp = first_timestamp.GetNs();
+		Log("MrdDiscriminatorScan Tool: Found start time of first run to be "+to_string(very_first_timestamp),v_debug,verbosity);
+	}
+	unsigned long relative_runstart_ns = 
+first_timestamp.GetNs() - very_first_timestamp;
 	Log("MrdDiscriminatorScan Tool: Total duration of this run was: "
 		+std::to_string(total_run_seconds)+" seconds",v_debug,verbosity);
+	cout<<"MrdDiscriminatorScan Tool: Run ran from " << first_timestamp.AsString() <<" to "
+	    <<last_timestamp.AsString()<<endl;
+	cout<<"This run started at "<<relative_runstart_ns<<" nanoseconds since the first"<<endl;
+	// discriminator threshold for this run
+	current_threshold = filei+15;  // in... mV, maybe?
+	
+	double current_x_value = (x_variable=="threshold") ? current_threshold : (relative_runstart_ns/(86400E9));
 	
 	// Loop over the TGraphs and set the next datapoint
-	current_threshold = filei+15;  // in mV... probably
 	Log("MrdDiscriminatorScan Tool: Converting hit counts to rates",v_debug,verbosity);
 	for( auto&& acrate : hit_counts_on_channels){
 		int cratei=acrate.first;
@@ -191,7 +207,7 @@ bool MrdDiscriminatorScan::Execute(){
 				if(thisgraph==nullptr){
 					Log("MrdDiscriminatorScan Tool: Null TGraph pointer setting datapoint!?",v_error,verbosity);
 				} else {
-					thisgraph->SetPoint(thisgraph->GetN(), current_threshold, hitrate);  // XXX add errors
+					thisgraph->SetPoint(thisgraph->GetN(), current_x_value, hitrate);  // XXX add errors
 				}
 			}
 			Log("MrdDiscriminatorScan Tool: Looping to next slot",v_debug,verbosity);
@@ -272,7 +288,8 @@ bool MrdDiscriminatorScan::Finalise(){
 					// (or for THStack just "PFC nostack" when drawing the stack)
 					// but we don't have sufficiently new ROOT
 					std::string graphname = TString::Format("%d_%d_%d",cratei,sloti,channeli).Data();
-					std::string alltitles = graphname+";Threshold [mV];Pulse Rate [Hz]";
+					std::string xaxistitle = (x_variable=="threshold") ? "Threshold [mV]" : "Run Start [days]";
+					std::string alltitles = graphname+";"+xaxistitle+";Pulse Rate [Hz]";
 					thisgraph->GetHistogram()->SetTitle(alltitles.c_str());
 					thisgraph->Draw("AP");
 					//mrdScanCanv->BuildLegend();
@@ -406,8 +423,8 @@ bool MrdDiscriminatorScan::CountChannelHits(BoostStore* MRDData, std::map<int,st
 		// and then vectors of crate, slot, channel, tdc value and a type string, one entry for each hit
 		ULong64_t timestamp = mrdReadout.TimeStamp;
 		TimeClass timestampclass(timestamp*1000*1000);                            // [ms] to [ns]
-		if(readouti==0) first_timestamp = timestamp/1000.;                        // [ms] to [s]
-		if(readouti==(total_number_entries-1)) last_timestamp = timestamp/1000.;  // [ms] to [s]
+		if(readouti==0) first_timestamp = timestampclass;                         // [ms] to [s]
+		if(readouti==(total_number_entries-1)) last_timestamp = timestampclass;   // [ms] to [s]
 		
 		// we don't actually care about the times of the hits, we just want to count how many there were
 		// so just for interest
