@@ -136,13 +136,13 @@ class MCParticle : public Particle {
 	public:
 	
 	MCParticle() : Particle(0, 0., 0., Position(), Position(), 0., 0., Direction(), 0.,
-				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0) {serialise=true;}
+				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0), Flag(0) {serialise=true;}
 	
 	MCParticle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
 	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein,
-	  int partid, int parentpdg) 
+	  int partid, int parentpdg, int flagid) 
 	: Particle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein), 
-	  ParticleID(partid), ParentPdg(parentpdg), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0)
+	  ParticleID(partid), ParentPdg(parentpdg), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0), Flag(flagid)
 	  {
 		serialise=true;
 		// override Hit tracktype
@@ -159,6 +159,7 @@ class MCParticle : public Particle {
 	
 	inline int GetParticleID(){return ParticleID;}
 	inline int GetParentPdg(){return ParentPdg;}
+	inline int GetFlag(){return Flag;}
 	
 	inline bool GetStartsInFiducialVolume(){return StartsInFiducialVolume;}
 	
@@ -184,6 +185,7 @@ class MCParticle : public Particle {
 	
 	inline void SetParticleID(int partidin){ParticleID=partidin;}
 	inline void SetParentPdg(int parentpdgin){ParentPdg=parentpdgin;}
+	inline void SetFlag(int flagidin){Flag=flagidin;}
 	
 	inline void SetStartsInFiducialVolume(bool iStartsInFiducialVolume){StartsInFiducialVolume = iStartsInFiducialVolume;}
 	
@@ -262,6 +264,7 @@ class MCParticle : public Particle {
 	protected:
 	int ParticleID;
 	int ParentPdg;
+	int Flag;
 	
 	bool StartsInFiducialVolume;
 	
@@ -322,6 +325,7 @@ class MCParticle : public Particle {
 			ar & MrdPenetration;
 			ar & MrdLayersPenetrated;
 			ar & MrdEnergyLoss;
+			ar & Flag;
 		}
 	}
 };
