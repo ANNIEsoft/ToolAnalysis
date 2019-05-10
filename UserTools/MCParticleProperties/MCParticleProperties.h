@@ -53,14 +53,6 @@ class MCParticleProperties: public Tool {
 	std::string logmessage;
 	int get_ok;
 	
-	// debug plots
-	TH1D* vertexphihist = nullptr;
-	TH1D* vertexthetahist = nullptr;
-	TH1D* vertexyhist = nullptr;
-	TH1D* vertexphihist2 = nullptr;
-	TH1D* vertexthetahist2 = nullptr;
-	TH1D* vertexyhist2 = nullptr;
-	
 };
 
 #endif

@@ -63,20 +63,6 @@ bool MCParticleProperties::Execute(){
 		Log("MCParticleProperties Tool: Processing MCParticle "+to_string(tracki),v_debug,verbosity);
 		// Get the track details
 		MCParticle* nextparticle = &MCParticles->at(tracki);
-//		if( !(abs(nextparticle->GetPdgCode())==13)
-//			&&
-//			!(
-//				(
-//					(abs(nextparticle->GetPdgCode())==22)||
-//					(abs(nextparticle->GetPdgCode())==13)
-//				)
-//				&&
-//				(
-//					(abs(nextparticle->GetParentPdg())==211)||
-//					(abs(nextparticle->GetParentPdg())==111)
-//				)
-//			)
-//		){ continue; }
 		Log("MCParticleProperties Tool: Printing existing particle stats",v_debug,verbosity);
 		if(verbosity>v_debug){
 			cout<<"###############################"<<endl;
@@ -87,8 +73,6 @@ bool MCParticleProperties::Execute(){
 		startvertex.UnitToCentimeter();
 		Position stopvertex = nextparticle->GetStopVertex();
 		stopvertex.UnitToCentimeter();
-		//if(nextparticle->GetPdgCode()!=13) continue; // XXX
-		//if(stopvertex.Z()<MRDSpecs::MRD_start) continue; // XXX
 		
 		Position differencevector = (stopvertex-startvertex);
 		double atracklengthtotal = differencevector.Mag();
@@ -105,7 +89,7 @@ bool MCParticleProperties::Execute(){
 		nextparticle->SetStartsInFiducialVolume(isinfiducialvol);
 		
 		//====================================================================================================
-		// Estimate MRD penetration TODO add tank/mrd entry/exit points to WCSim Tracks?
+		// Estimate MRD penetration TODO add mrd entry/exit points to WCSim Tracks?
 		//====================================================================================================
 		
 		// The mrd is as wide as the tank. We can ensure a track enters the mrd by projecting
@@ -282,7 +266,7 @@ bool MCParticleProperties::Execute(){
 								 ( abs(stopvertex.Y()-tank_yoffset)
 										 < tank_halfheight );
 		
-		if(false && nextparticle->GetTankExitPoint()!=Position(0,0,0)){  // XXX XXX XXX bypass for debug only
+		if(nextparticle->GetTankExitPoint()!=Position(0,0,0)){
 			// Later versions of WCSim record the tank exit point explicitly
 			truetankexitvtx = nextparticle->GetTankExitPoint();
 			truetankexitvtx.UnitToCentimeter();
@@ -364,39 +348,22 @@ bool MCParticleProperties::Execute(){
 		// of whether they left it. This is useful for e.g. showing pion decay gamma vertices,
 		// even if the light is not produced by the gammas themselves
 		Log("MCParticleProperties Tool: Calculating projected tank exit",v_debug,verbosity);
-//		std::cout<<"####################"<<std::endl;
-//		std::cout<<"interceptstank="<<interceptstank<<", trackstartsintank="
-//			<<trackstartsintank<<", trackstopsintank="<<trackstopsintank<<", hastrueexitvtx="
-//			<<hastrueexitvtx<<endl;
-//		std::cout<<"startvtx="; startvertex.Print();
-//		std::cout<<"stopvtx="; stopvertex.Print();
-//		std::cout<<"tankexitvtx="; tankexitvtx.Print();
 		Position projectedexitvertex;
 		if(hastrueexitvtx||(interceptstank&&(!trackstopsintank))){
-//	cout<<"Track left tank, should have tank exit from CheckTankIntercepts."<<std::endl;
-//	std::cout<<" True direction was: "; differencevector.Unit().Print();
-//	std::cout<<"Estimated exit dir was: "; (tankexitvtx-startvertex).Unit().Print();
 			Log("MCParticleProperties Tool: Using true/estimated tank exit",v_debug,verbosity);
 		} else {
 			// exit projection only makes sense for tracks starting in tank
 			if(trackstartsintank && trackstopsintank){
 			bool projectok = ProjectTankIntercepts(startvertex, stopvertex, projectedexitvertex);
-//	std::cout<<"Projecting intercept with direction ";
-//	differencevector.Unit().Print();
-//	Position diffvector2 = projectedexitvertex-startvertex;
-//	std::cout<<"Projected exit dir was :"; diffvector2.Unit().Print();
-//	std::cout<<" or Phi="<<projectedexitvertex.GetPhi()<<", Theta="<<projectedexitvertex.GetTheta()<<std::endl;
 				if(not projectok){
 					cerr<<"MCParticleProperties Tool: ProjectTankIntercepts returned false?!"<<std::endl;
 				} else {
 					Log("MCParticleProperties Tool: Projected track exit OK",v_debug,verbosity);
-					//cout<<"projected exit is: "; projectedexitvertex.Print();
 				}
 			} else {
 				// TODO we could relax the requirement that it started in the tank;
 				// provided it either started in the tank *or* had a tankentryvtx
 				// we can project an exit. Leave that for now though. FIXME
-//	std::cout<<"not projecting: track didn't start & stop in tank"<<std::endl;
 				Log("MCParticleProperties Tool: Track did not start in tank; no projected exit",v_debug,verbosity);
 			}
 		}
@@ -421,98 +388,6 @@ bool MCParticleProperties::Execute(){
 				<<", tankexitvtx: ("<<tankexitvtx.X()<<", "<<tankexitvtx.Y()<<", "<<tankexitvtx.Z()<<")"
 				<<", atracklengthintank: "<<atracklengthintank<<endl;
 		}
-/*
-		// Checks of ProjectTankExit logic to ensure it's working
-		std::cout<<"#####################################################"<<std::endl;
-		//CheckTankIntercepts(startvertex, theendvertex, trackstartsintank, trackstopsintank, tankexitvtx, tankentryvtx);
-		Position tankcentre(0,tank_yoffset,tank_start+tank_radius);
-		Position testvertex;
-		startvertex=Position(0,0,0);
-		startvertex+=tankcentre;
-		// ###
-		stopvertex=Position(0,0,1);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (0,0,1)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(0,1,0);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (0,1,0)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(1,0,0);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (1,0,0)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(0.5,0,0.5);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (0.5,0,0.5)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(-0.5,0,0.5);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (-0.5,0,0.5)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(-0.5,0,-0.5);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (-0.5,0,-0.5)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(0.5,0,-0.5);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (0.5,0,-0.5)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(0.5,0.5,0.5);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (0.5,0.5,0.5)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-		// ###
-		stopvertex=Position(0.2,0.9,0.3);
-		stopvertex+=tankcentre;
-		std::cout<<"Projecting intercept with direction (0.2,0.9,0.3)"<<std::endl;
-		ProjectTankIntercepts(startvertex, stopvertex, testvertex);
-		testvertex-=tankcentre;
-		std::cout<<"Projected exit dir was :"; testvertex.Unit().Print();
-		std::cout<<" or Phi="<<testvertex.GetPhi()<<", Theta="<<testvertex.GetTheta()<<std::endl;
-*/
-		
-//		std::cout<<"MCParticleProperties: projected the initial direction ("
-//				 <<nextparticle->GetStartDirection().GetTheta()<<", "
-//				 <<nextparticle->GetStartDirection().GetPhi()<<")"<<endl;
-//		std::cout<<" to tank exit and obtained vertex with direction ("
-//				 <<nextparticle->GetTankExitPoint().GetTheta()<<", "
-//				 <<nextparticle->GetTankExitPoint().GetPhi()<<")"<<endl;
-//		std::cout<<" or in cartesian true initial direction was: ";
-//		nextparticle->GetStartDirection().Print();
-//		std::cout<<", projected was: ";
-//		nextparticle->GetTankExitPoint().Unit().Print();
 		
 	} // end of loop over MCParticles
 	
