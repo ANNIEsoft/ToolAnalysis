@@ -129,8 +129,8 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	// in fact at time of writing these are incorrect, and we'll need to override them manually:
 	//tank_radius = 1.277;     // [m]
 	//tank_height = 3.134;  // [m]   actually the tank *half* height
-	tank_radius = MRDSpecs::tank_radius;
-	tank_height = 2.*MRDSpecs::tank_halfheight;
+	tank_radius = 1.5*MRDSpecs::tank_radius/100.;
+	tank_height = 2.*MRDSpecs::tank_halfheight/100.;
 	
 	// Get the Detectors
 	// =================
@@ -191,6 +191,11 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	lmpigammas = new TH2F("lmpigammas","LightMap Pion Products", 25, -180, 180, 25, -80.5, 80.5);
 	lmdiff2 = new TH2F("lmdiff2","LightMap PrimaryMuon - PionProducts",  25, -180, 180, 25, -80.5, 80.5);
 	
+	// debug plots
+	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
+	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
+	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
+	
 	Log("TotalLightMap Tool: Finished Intialize",v_debug,verbosity);
 	return true;
 }
@@ -225,8 +230,10 @@ bool TotalLightMap::Execute(){
 	
 	// we'll pull out a few particles in particular
 	MCParticle primarymuon;   // primary muon
-	MCParticle firstgamma;    // up to 2 decay products from pions
-	MCParticle secondgamma;   // Need not be gammas, could be muons from charged pion decay
+	primarymuon.SetParticleID(-1);
+	// we'll compare the IDs later when looking at hits, so set the IDs to out of range dummy values
+	// in case the particles don't exist in the event
+	std::vector<MCParticle> particlesofinterest;
 	
 	// Find these particles
 	Log("TotalLightMap Tool: Searching for MCParticles",v_debug,verbosity);
@@ -240,11 +247,14 @@ bool TotalLightMap::Execute(){
 			if((aparticle.GetParentPdg()==0) && (aparticle.GetPdgCode()==13)){
 				primarymuon = aparticle;
 				mufound=true;
-			} else if( ((aparticle.GetParentPdg()==111)||(abs(aparticle.GetParentPdg())==211)) // pion daughter
-							 &&((aparticle.GetPdgCode()==22)||(abs(aparticle.GetPdgCode())==13)) ){    // gamma or muon
+			} else if( (abs(aparticle.GetPdgCode())==211) || (aparticle.GetPdgCode()==111) ||   // a Pion
+							  (((aparticle.GetPdgCode()==22)||(abs(aparticle.GetPdgCode())==13)) &&     // gamma or muon
+			           ((aparticle.GetParentPdg()==111)||(abs(aparticle.GetParentPdg())==211))) // pion daughter
+							 ){   // i.e. if it's either a charged pion, or a pion daughter of interest
+							      // actually the pion parentage is passed down, so light is reported as
+							      // from pions (event pi0's) not their daughters*
 				// pi0 (111), pi+ (211), pi- (-211)
-				if(firstgamma.GetPdgCode()==0) firstgamma = aparticle;
-				else secondgamma = aparticle;
+				particlesofinterest.push_back(aparticle);
 			}
 		}
 	} else {
@@ -260,21 +270,24 @@ bool TotalLightMap::Execute(){
 	
 	// note the interesting particle indices for comparing against MCHit parents
 	// =========================================================================
-	// particlesofinterest[0] should always be the primary muon
-	particlesofinterest.clear();
-	particlesofinterest.push_back(primarymuon.GetParticleID());
-	if(firstgamma.GetPdgCode()!=0) particlesofinterest.push_back(firstgamma.GetParticleID());
-	if(secondgamma.GetPdgCode()!=0) particlesofinterest.push_back(secondgamma.GetParticleID());
-	Log("TotalLightMap Tool: We noted "+to_string(particlesofinterest.size())+" particles",v_debug,verbosity);
+	// particleidsofinterest[0] should always be the primary muon
+	particleidsofinterest.clear();
+	particleidsofinterest.push_back(primarymuon.GetParticleID());    // primary muon id must be first entry
+	particlesofinterest.push_back(primarymuon);
+	for(MCParticle& aparticle : particlesofinterest){
+		if((aparticle.GetPdgCode()==111)||(abs(aparticle.GetPdgCode())==211)){
+			particleidsofinterest.push_back(aparticle.GetParticleID());  // *for ids, only note pions, not daughters
+		}
+	}
 	std::cout<<"Particles of interest are: {";
-	for(auto&& ap : particlesofinterest){ std::cout<<ap<<", "; }
+	for(auto&& ap : particleidsofinterest){ std::cout<<ap<<", "; }
 	std::cout<<"}"<<std::endl;
 	// to plot light from all particles, don't specify any particles of interest XXX
 	
 	// get the interaction type
 	// ========================
 	// if we had any pion daughters, we'll assume this is CCNPi for now XXX
-	interaction_type = (firstgamma.GetPdgCode()!=0) ? "CC1PI" : "CCQE";
+	interaction_type = (particlesofinterest.size()>1) ? "CC1PI" : "CCQE";
 	Log("TotalLightMap Tool: Calling this a "+interaction_type+" event",v_debug,verbosity);
 	
 	// ========================================================
@@ -297,14 +310,8 @@ bool TotalLightMap::Execute(){
 	// markers at the projected tank exit of true particles of interest
 	// for the traditional event display and Wiener Triple cumulative display
 	//Log("TotalLightMap Tool: Making polymarker for primary muon vertex",v_debug,verbosity);
-	make_vertex_markers(primarymuon);
-	if(firstgamma.GetPdgCode()!=0){
-		//Log("TotalLightMap Tool: Making polymarker for first pion daughter vertex",v_debug,verbosity);
-		make_vertex_markers(firstgamma);
-	}
-	if(secondgamma.GetPdgCode()!=0){
-		//Log("TotalLightMap Tool: Making polymarker for second pion daughter vertex",v_debug,verbosity);
-		make_vertex_markers(secondgamma);
+	for(MCParticle& aparticle : particlesofinterest){
+		make_vertex_markers(aparticle);
 	}
 	
 	// ========================================================
@@ -432,6 +439,13 @@ bool TotalLightMap::Finalise(){
 	// Free memory
 	FinalCleanup();
 	
+	TCanvas* phicanv = new TCanvas();
+	vertexphihist->Draw();
+	TCanvas* thetacanv = new TCanvas();
+	vertexthetahist->Draw();
+	TCanvas* ycanv = new TCanvas();
+	vertexyhist->Draw();
+	
 	// FIXME wait because ToolAnalysis is currently segfaulting after Finalise
 	TCanvas* c1 = new TCanvas();
 	c1->WaitPrimitive();
@@ -475,23 +489,24 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			
 			// if we're only plotting the light from specific particles, check the hit parents
 			// (if we've not specified any particles of interest, include all hits)
-			if(particlesofinterest.size()){
+			if(particleidsofinterest.size()){
 				const std::vector<int>* parentindices = nexthit.GetParents();
 				bool hitofinterest=false;
 				for(const int& aparent : *parentindices){
 					std::vector<int>::iterator parentofinterest = 
-						std::find(particlesofinterest.begin(), particlesofinterest.end(), aparent);
-//					if(parentofinterest!=particlesofinterest.end()){
-//						int parentofinterestnum = std::distance(particlesofinterest.begin(), parentofinterest);
-//						chargesfromparents.at(parentofinterestnum)+= nexthit.GetCharge();
-//						hitofinterest=true;
-//					}
-					if(parentofinterest==particlesofinterest.begin()){
-						chargesfromparents.at(0)+= nexthit.GetCharge();  // this hit was from primary muon
-					} else {
-						chargesfromparents.at(1)+= nexthit.GetCharge();  // all other light
+						std::find(particleidsofinterest.begin(), particleidsofinterest.end(), aparent);
+					if(parentofinterest!=particleidsofinterest.end()){
+						int parentofinterestnum = std::distance(particleidsofinterest.begin(), parentofinterest);
+						chargesfromparents.at(parentofinterestnum)+= nexthit.GetCharge();
+						hitofinterest=true;
 					}
-					hitofinterest=true;
+//					if(parentofinterest==particleidsofinterest.begin()){
+//					if(aparent==particleidsofinterest.at(0)){
+//						chargesfromparents.at(0)+= nexthit.GetCharge();  // this hit was from primary muon
+//					} else {
+//						chargesfromparents.at(1)+= nexthit.GetCharge();  // all other light
+//					}
+//					hitofinterest=true;
 				}
 				if(not hitofinterest){ continue; } // ignore hits on this PMT not from a particle of interest
 			}
@@ -506,7 +521,7 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		}
 		
 		// keep track of the maximum charge on a PMT for colour scale range
-		if(maximum_charge_on_a_pmt<total_pmt_charge) maximum_charge_on_a_pmt = total_pmt_charge;
+		if(maximum_charge_on_a_pmt<total_pmt_charge){ maximum_charge_on_a_pmt = total_pmt_charge; }
 		
 		// Skip if uninteresting
 		// =====================
@@ -534,9 +549,9 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			theset = &marker_pmts_bottom;
 		} else if (thepmt->GetTankLocation()=="Barrel"){
 			// wall
-			double phi = -PMT_position.GetPhi();  // not sure why it needs the -1 for the display.... =_=
+			double phi = -PMT_position.GetPhi();  // not sure why it needs the -1 for the display....
 			markerx=0.5+phi*size_top_drawing;
-			markery=0.5+2.*PMT_position.Y()/tank_height*tank_height/tank_radius*size_top_drawing; // XXX XXX 2*PMY_Y??
+			markery=0.5+2.*PMT_position.Y()/tank_height*tank_height/tank_radius*size_top_drawing;
 			theset = &marker_pmts_wall;
 		} else {
 			Log("TotalLightMap Tool: Unrecognised cylinder location of tank PMT: "
@@ -591,8 +606,12 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		
 		// Set the marker properties
 		marker->SetMarkerColor(color_marker);
-		marker->SetMarkerStyle(8);
-		marker->SetMarkerSize(1);
+		marker->SetMarkerStyle(8);  // or 20?
+		if((mode=="Charge")||(mode=="Time")){
+			marker->SetMarkerSize(1);
+		} else {
+			marker->SetMarkerSize(int(total_pmt_charge));
+		}
 		// Add to the relevant set
 		theset->push_back(marker);
 		//logmessage = "TotalLightMap Tool: Adding the marker; we now have "+to_string(theset->size())+" markers";
@@ -694,23 +713,23 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			// if we're only plotting the light from specific particles, check the hit parents
 			// (if we've not specified any particles of interest, include all hits)
 			std::vector<float> chargesfromparents(3,0);
-			if(particlesofinterest.size()){
+			if(particleidsofinterest.size()){
 				const std::vector<int>* parentindices = nexthit.GetParents();
 				bool hitofinterest=false;
 				for(const int& aparent : *parentindices){
 					std::vector<int>::iterator parentofinterest = 
-						std::find(particlesofinterest.begin(), particlesofinterest.end(), aparent);
-//					if(parentofinterest!=particlesofinterest.end()){
-//						int parentofinterestnum = std::distance(particlesofinterest.begin(), parentofinterest);
-//						chargesfromparents.at(parentofinterestnum)+= nexthit.GetCharge();
-//						hitofinterest=true;
-//					}
-					if(parentofinterest==particlesofinterest.begin()){
-						chargesfromparents.at(0)+= nexthit.GetCharge();  // this hit was from primary muon
-					} else {
-						chargesfromparents.at(1)+= nexthit.GetCharge();  // all other light
+						std::find(particleidsofinterest.begin(), particleidsofinterest.end(), aparent);
+					if(parentofinterest!=particleidsofinterest.end()){
+						int parentofinterestnum = std::distance(particleidsofinterest.begin(), parentofinterest);
+						chargesfromparents.at(parentofinterestnum)+= nexthit.GetCharge();
+						hitofinterest=true;
 					}
-					hitofinterest=true;
+//					if(aparent==particleidsofinterest.at(0)){
+//						chargesfromparents.at(0)+= nexthit.GetCharge();  // this hit was from primary muon
+//					} else {
+//						chargesfromparents.at(1)+= nexthit.GetCharge();  // all other light
+//					}
+//					hitofinterest=true;
 				}
 				if(not hitofinterest){ continue; } // ignore hits on this PMT not from a particle of interest
 			}
@@ -740,7 +759,7 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			// calculate marker position on canvas
 			double markerx=0.,markery=0.;
 			markerx=0.5+phi*size_top_drawing;
-			markery=0.5+y_lappd/tank_height*tank_height/tank_radius*size_top_drawing;
+			markery=0.5+2.*y_lappd/tank_height*tank_height/tank_radius*size_top_drawing;
 			
 			// make the polymarker
 			TPolyMarker *marker_lappd = new TPolyMarker(1,&markerx,&markery,"");
@@ -794,26 +813,22 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 
 void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	
-	Position truevtx = aparticle.GetStartVertex() - anniegeom->GetTankCentre();
-	Direction truedir = aparticle.GetStartDirection();
-	std::cout<<"vertex marker for particle starting at: "; truevtx.Print(false);
-	std::cout<<", going in direction: "; truedir.Print();
-	double truevtx_x = truevtx.X();
-	double truevtx_y = truevtx.Y();
-	double truevtx_z = truevtx.Z();
-	double truedir_x = truedir.X();
-	double truedir_y = truedir.Y();
-	double truedir_z = truedir.Z();
-	double vtxproj_x, vtxproj_y, vtxproj_z;
+	// get true or projected tank exit point of particle in tank centred coordinates
+	Position exitpoint = aparticle.GetTankExitPoint() - anniegeom->GetTankCentre();
 	
-	Position exitpoint = aparticle.GetTankExitPoint();
-	if(exitpoint!=Position(0,0,0)){
-		vtxproj_x = exitpoint.X();  // if we have a true or pre-calculated tank exit point, use it.
-		vtxproj_y = exitpoint.Y();  // We may not have one if the particle didn't actually exit the tank
-		vtxproj_z = exitpoint.Z();  //
-	} else {
-		find_projected_xyz(truevtx_x, truevtx_y, truevtx_z, truedir_x, truedir_y, truedir_z, vtxproj_x, vtxproj_y, vtxproj_z);  // if not, project forward the track to where it would have exited
-	}
+				Position truevtx = aparticle.GetStartVertex() - anniegeom->GetTankCentre();
+				Direction truedir = aparticle.GetStartDirection();
+				std::cout<<"vertex marker for particle starting at: "; truevtx.Print(false);
+				std::cout<<", going in direction: "; truedir.Print();
+				std::cout<<", with tank exit: "; exitpoint.Print();
+		
+				vertexphihist->Fill(truedir.GetPhi());
+				vertexthetahist->Fill(truedir.GetTheta());
+				vertexyhist->Fill(exitpoint.Y());
+	
+	double vtxproj_x = exitpoint.X();  // We may not have one if the particle didn't start in and exit the tank
+	double vtxproj_y = exitpoint.Y();  // this could be fixed in MCParticleProperties
+	double vtxproj_z = exitpoint.Z();  //
 	std::cout <<"projected vtx on wall: ( "<< vtxproj_x<<" , "<<vtxproj_y<<" , "<<vtxproj_z<< " )"<<std::endl;
 	//std::cout <<"drawing vertex on EventDisplay.... "<<std::endl;
 	
@@ -826,21 +841,31 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	std::string particletype="";
 	if(aparticle.GetPdgCode()==13 && abs(aparticle.GetParentPdg())==0){
 		particletype = "PrimaryMuon";
-		thecolour = kViolet;
+		thecolour = kMagenta+2;  // dark purple
 	} else if(aparticle.GetPdgCode()==13 && aparticle.GetParentPdg()==-211){
 		particletype = "MuonFromPiMinus";
-		thecolour = kGreen+1;
+		thecolour = kGreen+1;  // green
 	} else if(aparticle.GetPdgCode()==-13 && abs(aparticle.GetParentPdg())==211){
 		particletype = "AntiMuonFromPiPlus";
-		thecolour = kOrange+8;
+		thecolour = kOrange+7; // dark orange
 	} else if(aparticle.GetPdgCode()==22 && aparticle.GetParentPdg()==111){
 		particletype = "GammaFromPiZero";
-		thecolour = kAzure+6;
+		thecolour = kAzure+7;  // dark turquoise
+	} else if(aparticle.GetPdgCode()==211){
+		particletype = "Pi+";
+		thecolour = kPink+9;  // very pink/magenta
+	} else if(aparticle.GetPdgCode()==-211){
+		particletype = "Pi-";
+		thecolour = kViolet+5;   // like Lilac
+	} else if(aparticle.GetPdgCode()==111){
+		particletype = "Pi0";
+		thecolour = kSpring-9;   // spring green
 	} else {
 		particletype = "Other";
-		thecolour = kTeal+5;
+		thecolour = 11; // Grey
 	}
-	Log("TotalLightMap Tool: Making vertex marker for "+particletype,v_debug,verbosity);
+	std::string infotype = (particletype=="Other") ? to_string(aparticle.GetPdgCode()) : particletype;
+	Log("TotalLightMap Tool: Making vertex marker for "+infotype,v_debug,verbosity);
 	std::cout<<"marker vertex is ("<<xTemp<<", "<<yTemp<<")"<<std::endl;
 	
 	TPolyMarker* marker_vtx = new TPolyMarker(1,&xTemp,&yTemp,"");
@@ -881,17 +906,25 @@ void TotalLightMap::DrawMarkers(){
 		// colour based on charge
 		colour_full_scale = maximum_charge_on_a_pmt;  // XXX do we want to do PMTs and LAPPDs separately?
 		colour_offset = 0;
+		size_full_scale = 3.;
+		size_offset = 0;
 	} else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999){
 		// if we have no time window in effect, colour based on time within event
 		colour_full_scale = event_latest_hit_time-event_earliest_hit_time;
 		colour_offset = event_earliest_hit_time;
+		size_full_scale = 3.;
+		size_offset = 0;
 	} else if (mode == "Time"){
 		// else if we have a time window, colour based on time within window
 		colour_full_scale = threshold_time_high-threshold_time_low;
 		colour_offset = threshold_time_low;
+		size_full_scale = 3.;
+		size_offset = 0;
 	} else if (mode == "Parent"){
-		colour_full_scale = 1./254.;
+		colour_full_scale = 254.;
 		colour_offset = 0;
+		size_full_scale = maximum_charge_on_a_pmt;
+		size_offset = 0;
 	}
 	logmessage = "TotalLightMap Tool: Event colour scale will use mode "+mode
 							+", offset "+to_string(colour_offset)
@@ -905,24 +938,42 @@ void TotalLightMap::DrawMarkers(){
 	Log("TotalLightMap Tool: drawing "+to_string(marker_pmts_top.size())+" top cap PMT markers",v_debug,verbosity);
 	for (int i_marker=0;i_marker<marker_pmts_top.size();i_marker++){
 		TPolyMarker* marker = marker_pmts_top.at(i_marker);
-		double colour_marker_temp = (double(marker->GetMarkerColor())-colour_offset)/(colour_full_scale*254.);
+		double colour_marker_temp = 254.*((double(marker->GetMarkerColor())-colour_offset)/colour_full_scale);
 		color_marker = int(colour_marker_temp);
+		if((mode=="Time")||(mode=="Charge")){
+			color_marker+=Bird_Idx;
+		} else {
+			double size_marker_temp = 3.*(double(marker->GetMarkerSize()))/size_full_scale;
+			marker->SetMarkerSize(size_marker_temp);
+		}
 		marker->SetMarkerColor(color_marker);
 		marker->Draw();
 	}
 	Log("TotalLightMap Tool: drawing "+to_string(marker_pmts_bottom.size())+" bottom cap PMT markers",v_debug,verbosity);
 	for (int i_marker=0;i_marker<marker_pmts_bottom.size();i_marker++){
 		TPolyMarker* marker = marker_pmts_bottom.at(i_marker);
-		double colour_marker_temp = (double(marker->GetMarkerColor())-colour_offset)/(colour_full_scale*254.);
+		double colour_marker_temp = 254.*((double(marker->GetMarkerColor())-colour_offset)/colour_full_scale);
 		color_marker = int(colour_marker_temp);
+		if((mode=="Time")||(mode=="Charge")){
+			color_marker+=Bird_Idx;
+		} else {
+			double size_marker_temp = 3.*(double(marker->GetMarkerSize()))/size_full_scale;
+			marker->SetMarkerSize(size_marker_temp);
+		}
 		marker->SetMarkerColor(color_marker);
 		marker->Draw();
 	}
 	Log("TotalLightMap Tool: drawing "+to_string(marker_pmts_wall.size())+" barrel PMT markers",v_debug,verbosity);
 	for (int i_marker=0;i_marker<marker_pmts_wall.size();i_marker++){
 		TPolyMarker* marker = marker_pmts_wall.at(i_marker);
-		double colour_marker_temp = (double(marker->GetMarkerColor())-colour_offset)/(colour_full_scale*254.);
+		double colour_marker_temp = 254.*((double(marker->GetMarkerColor())-colour_offset)/colour_full_scale);
 		color_marker = int(colour_marker_temp);
+		if((mode=="Time")||(mode=="Charge")){
+			color_marker+=Bird_Idx;
+		} else {
+			double size_marker_temp = 3.*(double(marker->GetMarkerSize()))/size_full_scale;
+			marker->SetMarkerSize(size_marker_temp);
+		}
 		marker->SetMarkerColor(color_marker);
 		marker->Draw();
 	}
@@ -931,8 +982,9 @@ void TotalLightMap::DrawMarkers(){
 	Log("TotalLightMap Tool: drawing "+to_string(marker_lappds.size())+" LAPPD markers",v_debug,verbosity);
 	for (int i_marker=0; i_marker<marker_lappds.size();i_marker++){
 		TPolyMarker* marker = marker_lappds.at(i_marker);
-		double colour_marker_temp = (double(marker->GetMarkerColor())-colour_offset)/(colour_full_scale*254.);
+		double colour_marker_temp = 254.*((double(marker->GetMarkerColor())-colour_offset)/colour_full_scale);
 		color_marker = int(colour_marker_temp);
+		if((mode=="Time")||(mode=="Charge")) color_marker+=Bird_Idx;
 		marker->SetMarkerColor(color_marker);
 		marker->Draw();
 	}
@@ -1038,6 +1090,17 @@ void TotalLightMap::make_gui(){   // make the canvas, the tank unrolled outline,
 	
 	canvas_ev_display->Modified();
 	canvas_ev_display->Update();
+	
+	if((mode=="Charge")||(mode=="Time")){
+		// gStyle->SetPalette(kBird); // doesn't seem to apply to markers....
+		//calculate the numbers of the color palette
+		Double_t stops[9] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
+		Double_t red[9]   = { 0.2082, 0.0592, 0.0780, 0.0232, 0.1802, 0.5301, 0.8186, 0.9956, 0.9764};
+		Double_t green[9] = { 0.1664, 0.3599, 0.5041, 0.6419, 0.7178, 0.7492, 0.7328, 0.7862, 0.9832};
+		Double_t blue[9]  = { 0.5293, 0.8684, 0.8385, 0.7914, 0.6425, 0.4662, 0.3499, 0.1968, 0.0539};
+		Double_t alpha=1.;  //make colors opaque, not transparent
+		Bird_Idx = TColor::CreateGradientColorTable(9, stops, red, green, blue, 255, alpha);
+	}
 	
 }
 
@@ -1236,8 +1299,9 @@ void TotalLightMap::draw_pmt_legend(){
 void TotalLightMap::find_projected_xyz(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double &projected_x, double &projected_y, double &projected_z){
 	
 	// projected y position of tank exit... 
-	double max_y = tank_height/2.;
-	double min_y = -tank_height/2.;
+	double max_y = tank_height;
+	double min_y = -tank_height;
+	vtxY*=2.;
 	
 	double time_top = (dirY > 0)? (max_y-vtxY)/dirY : (min_y - vtxY)/dirY;
 	double a = dirX*dirX + dirZ*dirZ;
@@ -1261,8 +1325,9 @@ void TotalLightMap::find_projected_xyz(double vtxX, double vtxY, double vtxZ, do
 
 void TotalLightMap::translate_xy(double vtxX, double vtxY, double vtxZ, double &xWall, double &yWall){
 	
-	double max_y = tank_height/2.;
-	double min_y = -tank_height/2.;
+	double max_y = tank_height;
+	double min_y = -tank_height;
+	vtxY*=2.;
 	//if (cylloc=="TopCap"){                   //draw vtx projection on the top of tank
 	if (fabs(vtxY-max_y)<0.01){ 
 		Log("TotalLightMap Tool: translate_xy placing marker on top cap",v_debug,verbosity);
@@ -1279,13 +1344,6 @@ void TotalLightMap::translate_xy(double vtxX, double vtxY, double vtxZ, double &
 		Log("TotalLightMap Tool: translate_xy placing marker on barrel",v_debug,verbosity);
 		Position vtxpos(vtxX, vtxY, vtxZ);
 		double phi=-vtxpos.GetPhi();
-//		if (vtxX>0 && vtxZ>0) phi = atan(vtxZ/vtxX)+TMath::Pi()/2;
-//		else if (vtxX>0 && vtxZ<0) phi = atan(vtxX/-vtxZ);
-//		else if (vtxX<0 && vtxZ<0) phi = 3*TMath::Pi()/2+atan(vtxZ/vtxX);
-//		else if (vtxX<0 && vtxZ>0) phi = TMath::Pi()+atan(-vtxX/vtxZ);
-//		if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
-//		phi-=TMath::Pi();
-//		if (phi < - TMath::Pi()) phi = -TMath::Pi();
 		xWall=0.5+phi*size_top_drawing;
 		yWall=0.5+vtxY/tank_height*tank_height/tank_radius*size_top_drawing;
 		std::cout<<"vtxY="<<vtxY<<", (vtxY/tank_height)="<<(vtxY/tank_height)
