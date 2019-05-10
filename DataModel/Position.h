@@ -27,13 +27,13 @@ class Position : public SerialisableObject{
 	
 	inline double GetPhi(){
 		// Angle from beam axis, measured clockwise while looking down [rads]
-		double Phi = atan(x/abs(z));
+		double Phi = (z==0) ? 0 : atan(x/abs(z));
 		if(z<0.){ (x<0.) ? Phi=(-M_PI-Phi) : Phi=(M_PI-Phi); }
 		return Phi;
 	}
 	inline double GetTheta(){
 		// Angle measured relative to the x-z plane [rads]
-		return atan(y/sqrt(pow(x,2.)+pow(z,2.)));
+		return (x==0&&z==0) ? 0 : atan(y/sqrt(pow(x,2.)+pow(z,2.)));
 	}
 	inline double GetR(){ return sqrt(pow(x,2.)+pow(z,2.));}
 	
@@ -89,6 +89,14 @@ class Position : public SerialisableObject{
 		x -= b.x;
 		y -= b.y;
 		z -= b.z;
+		return *this;
+	}
+	
+	inline Position& operator+= (const Position & b){
+		//(*this) = (*this) + b;
+		x += b.x;
+		y += b.y;
+		z += b.z;
 		return *this;
 	}
 	

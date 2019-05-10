@@ -55,6 +55,7 @@ class TotalLightMap: public Tool {
 	TEllipse *bottom_circle=nullptr;
 	TBox *box=nullptr;
 	double size_top_drawing=0.125;
+	double yscale=1.5;  // alter aspect ratio of tank to make it better fill a square canvas
 	// for mapping value to colour
 	double colour_full_scale=0;
 	double colour_offset=0;
@@ -122,10 +123,10 @@ class TotalLightMap: public Tool {
 	TH2F* lmpigammas = nullptr;
 	TH2F* lmdiff2 = nullptr;
 	
-	// debug plots
-	TH1D* vertexphihist = nullptr;
-	TH1D* vertexthetahist = nullptr;
-	TH1D* vertexyhist = nullptr;
+//	// debug plots
+//	TH1D* vertexphihist = nullptr;
+//	TH1D* vertexthetahist = nullptr;
+//	TH1D* vertexyhist = nullptr;
 	
 	////////////////////////////////////////////
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

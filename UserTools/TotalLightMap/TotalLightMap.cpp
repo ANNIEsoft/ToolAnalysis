@@ -129,8 +129,8 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	// in fact at time of writing these are incorrect, and we'll need to override them manually:
 	//tank_radius = 1.277;     // [m]
 	//tank_height = 3.134;  // [m]   actually the tank *half* height
-	tank_radius = 1.5*MRDSpecs::tank_radius/100.;
-	tank_height = 2.*MRDSpecs::tank_halfheight/100.;
+	tank_radius = MRDSpecs::tank_radius/100.;
+	tank_height = yscale*MRDSpecs::tank_halfheight/100.;
 	
 	// Get the Detectors
 	// =================
@@ -191,10 +191,10 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	lmpigammas = new TH2F("lmpigammas","LightMap Pion Products", 25, -180, 180, 25, -80.5, 80.5);
 	lmdiff2 = new TH2F("lmdiff2","LightMap PrimaryMuon - PionProducts",  25, -180, 180, 25, -80.5, 80.5);
 	
-	// debug plots
-	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
-	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
-	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
+//	// debug plots
+//	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
+//	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
+//	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
 	
 	Log("TotalLightMap Tool: Finished Intialize",v_debug,verbosity);
 	return true;
@@ -439,12 +439,12 @@ bool TotalLightMap::Finalise(){
 	// Free memory
 	FinalCleanup();
 	
-	TCanvas* phicanv = new TCanvas();
-	vertexphihist->Draw();
-	TCanvas* thetacanv = new TCanvas();
-	vertexthetahist->Draw();
-	TCanvas* ycanv = new TCanvas();
-	vertexyhist->Draw();
+//	TCanvas* phicanv = new TCanvas();
+//	vertexphihist->Draw();
+//	TCanvas* thetacanv = new TCanvas();
+//	vertexthetahist->Draw();
+//	TCanvas* ycanv = new TCanvas();
+//	vertexyhist->Draw();
 	
 	// FIXME wait because ToolAnalysis is currently segfaulting after Finalise
 	TCanvas* c1 = new TCanvas();
@@ -551,7 +551,7 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			// wall
 			double phi = -PMT_position.GetPhi();  // not sure why it needs the -1 for the display....
 			markerx=0.5+phi*size_top_drawing;
-			markery=0.5+2.*PMT_position.Y()/tank_height*tank_height/tank_radius*size_top_drawing;
+			markery=0.5+yscale*PMT_position.Y()/tank_height*tank_height/tank_radius*size_top_drawing;
 			theset = &marker_pmts_wall;
 		} else {
 			Log("TotalLightMap Tool: Unrecognised cylinder location of tank PMT: "
@@ -759,7 +759,7 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			// calculate marker position on canvas
 			double markerx=0.,markery=0.;
 			markerx=0.5+phi*size_top_drawing;
-			markery=0.5+2.*y_lappd/tank_height*tank_height/tank_radius*size_top_drawing;
+			markery=0.5+yscale*y_lappd/tank_height*tank_height/tank_radius*size_top_drawing;
 			
 			// make the polymarker
 			TPolyMarker *marker_lappd = new TPolyMarker(1,&markerx,&markery,"");
@@ -818,13 +818,13 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	
 				Position truevtx = aparticle.GetStartVertex() - anniegeom->GetTankCentre();
 				Direction truedir = aparticle.GetStartDirection();
-				std::cout<<"vertex marker for particle starting at: "; truevtx.Print(false);
-				std::cout<<", going in direction: "; truedir.Print();
-				std::cout<<", with tank exit: "; exitpoint.Print();
+//				std::cout<<"vertex marker for particle starting at: "; truevtx.Print(false);
+//				std::cout<<", going in direction: "; truedir.Print();
+//				std::cout<<", with tank exit: "; exitpoint.Print();
 		
-				vertexphihist->Fill(truedir.GetPhi());
-				vertexthetahist->Fill(truedir.GetTheta());
-				vertexyhist->Fill(exitpoint.Y());
+//				vertexphihist->Fill(truedir.GetPhi());
+//				vertexthetahist->Fill(truedir.GetTheta());
+//				vertexyhist->Fill(exitpoint.Y());
 	
 	double vtxproj_x = exitpoint.X();  // We may not have one if the particle didn't start in and exit the tank
 	double vtxproj_y = exitpoint.Y();  // this could be fixed in MCParticleProperties
@@ -1301,7 +1301,7 @@ void TotalLightMap::find_projected_xyz(double vtxX, double vtxY, double vtxZ, do
 	// projected y position of tank exit... 
 	double max_y = tank_height;
 	double min_y = -tank_height;
-	vtxY*=2.;
+	vtxY*=yscale;
 	
 	double time_top = (dirY > 0)? (max_y-vtxY)/dirY : (min_y - vtxY)/dirY;
 	double a = dirX*dirX + dirZ*dirZ;
@@ -1327,7 +1327,7 @@ void TotalLightMap::translate_xy(double vtxX, double vtxY, double vtxZ, double &
 	
 	double max_y = tank_height;
 	double min_y = -tank_height;
-	vtxY*=2.;
+	vtxY*=yscale;
 	//if (cylloc=="TopCap"){                   //draw vtx projection on the top of tank
 	if (fabs(vtxY-max_y)<0.01){ 
 		Log("TotalLightMap Tool: translate_xy placing marker on top cap",v_debug,verbosity);
