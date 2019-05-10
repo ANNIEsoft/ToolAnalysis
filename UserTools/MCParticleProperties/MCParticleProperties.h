@@ -38,9 +38,9 @@ class MCParticleProperties: public Tool {
 	int InBox( Position Hit, Position B1, Position B2, const int Axis);
 	int GetIntersection( float fDst1, float fDst2, Position P1, Position P2, Position &Hit);
 	// helper function for finding tank intersection points
-	bool CheckTankIntercepts( Position startvertex, Position stopvertex, double avgtrackgradx, double avgtrackgrady, bool trackstartsintank, bool trackstopsintank, Position &Hit, Position &Hit2, int verbose=0);
+	bool CheckTankIntercepts( Position startvertex, Position stopvertex, bool trackstartsintank, bool trackstopsintank, Position &Hit, Position &Hit2, int verbose=0);
 	// helper function for finding where the track would have left the tank, if it didn't
-	bool ProjectTankIntercepts(Position startvertex, Position stopvertex, double avgtrackgradx, double avgtrackgrady, Position &Hit, int verbose=0);
+	bool ProjectTankIntercepts(Position startvertex, Position stopvertex, Position &Hit, int verbose=0);
 	std::map<int,std::string>* GeneratePdgMap();
 	std::string PdgToString(int code);
 	static std::map<int,std::string> pdgcodetoname;
@@ -52,6 +52,14 @@ class MCParticleProperties: public Tool {
 	int v_debug=3;
 	std::string logmessage;
 	int get_ok;
+	
+	// debug plots
+	TH1D* vertexphihist = nullptr;
+	TH1D* vertexthetahist = nullptr;
+	TH1D* vertexyhist = nullptr;
+	TH1D* vertexphihist2 = nullptr;
+	TH1D* vertexthetahist2 = nullptr;
+	TH1D* vertexyhist2 = nullptr;
 	
 };
 
