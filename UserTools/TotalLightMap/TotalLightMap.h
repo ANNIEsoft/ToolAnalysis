@@ -54,13 +54,16 @@ class TotalLightMap: public Tool {
 	TEllipse *top_circle=nullptr;
 	TEllipse *bottom_circle=nullptr;
 	TBox *box=nullptr;
-	double size_top_drawing=0.1;
+	double size_top_drawing=0.125;
 	// for mapping value to colour
 	double colour_full_scale=0;
 	double colour_offset=0;
+	double size_full_scale = 0;
+	double size_offset = 0;
 	// for the colour legend
 	TPaveLabel* colourscalemax;
 	TPaveLabel* colourscalemin;
+	int Bird_Idx;
 	std::vector<TMarker*> legend_dots;
 	
 	// eventwise markers for making hit maps on the event display gui
@@ -73,7 +76,7 @@ class TotalLightMap: public Tool {
 	
 	// keep note of the Particle IDs of those particles we wish to plot light from -
 	// these will be the primary muon, and if applicable the light from (up to) 2 pion decay daughters
-	std::vector<int> particlesofinterest;
+	std::vector<int> particleidsofinterest;
 	std::string interaction_type; // "CCQE" or "CC1PI"
 	
 	// we need to create colours for the markers on the heap, and somehow know a free unique number
@@ -118,6 +121,11 @@ class TotalLightMap: public Tool {
 	TH2F* lmmuon = nullptr;
 	TH2F* lmpigammas = nullptr;
 	TH2F* lmdiff2 = nullptr;
+	
+	// debug plots
+	TH1D* vertexphihist = nullptr;
+	TH1D* vertexthetahist = nullptr;
+	TH1D* vertexyhist = nullptr;
 	
 	////////////////////////////////////////////
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
