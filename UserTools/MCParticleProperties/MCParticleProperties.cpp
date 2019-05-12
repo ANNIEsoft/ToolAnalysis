@@ -48,6 +48,17 @@ bool MCParticleProperties::Execute(){
 	
 	Log("Tool MCParticleProperties Executing",v_message,verbosity);
 	
+	// first check if this is a delayed MCTrigger; if it is, we've already run
+	// on this set of particles and we don't need to do it again
+	uint16_t MCTriggernum;
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+	if(not get_ok){
+		Log("MCParticleProperties Tool: No MCTriggernum in ANNIEEvent!",v_error,verbosity);
+		return false;
+	} else if(MCTriggernum>0){
+		return true; // nothing to do
+	}
+	
 	// retrieve the tracks from the BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
@@ -65,9 +76,9 @@ bool MCParticleProperties::Execute(){
 		MCParticle* nextparticle = &MCParticles->at(tracki);
 		Log("MCParticleProperties Tool: Printing existing particle stats",v_debug,verbosity);
 		if(verbosity>v_debug){
-			cout<<"###############################"<<endl;
+			cout<<"<<<<<<<<<<<<<<<<"<<endl;
 			nextparticle->Print();
-			cout<<"###############################"<<endl;
+			cout<<"<<<<<<<<<<<<<<<<"<<endl;
 		}
 		Position startvertex = nextparticle->GetStartVertex();
 		startvertex.UnitToCentimeter();
@@ -206,7 +217,7 @@ bool MCParticleProperties::Execute(){
 				<<"avgtrackangley="<<avgtrackangley<<", avgtrackanglex="<<avgtrackanglex<<endl
 				<<"CheckLineBox error is "<<checkboxlinerror<<endl;
 			
-			assert(false);
+			//return false;
 		}
 		
 		// transfer to ANNIEEvent
@@ -325,22 +336,23 @@ bool MCParticleProperties::Execute(){
 				<<", "<<tankentryvtx.Z()<<")"<<endl;
 			cout<<"tank exit point: ("<<tankexitvtx.X()<<", "<<tankexitvtx.Y()<<", "<<tankexitvtx.Z()<<") "
 				<<endl;
+			cout<<"tank "<<((hastrueexitvtx) ? "had" : "didn't have")<<" a truth recorded exit point"<<endl;
 			cout<<"tank track length: ("<<(tankexitvtx.X()-tankentryvtx.X())
 				<<", "<<(tankexitvtx.Y()-tankentryvtx.Y())<<", "
 				<<(tankexitvtx.Z()-tankentryvtx.Z())<<") = "<<atracklengthintank<<"cm total"<<endl;
 			cout<<"c.f. max possible tank track length is "<<maxtanktracklength<<endl;
 		}
 		if(atracklengthintank > maxtanktracklength){
-			cout<<"Track length is impossibly long!"<<endl;
-			assert(false);
+			cerr<<"MCParticleProperties Tool: Track length is impossibly long!"<<endl;
+			//return false;
 		}
 		if(atracklengthintank > differencevector.Mag()){
-			cout<<"Track length in tank is greater than total track length"<<endl;
-			assert(false);
+			cerr<<"MCParticleProperties Tool: Track length in tank is greater than total track length"<<endl;
+			//return false;
 		}
 		if(TMath::IsNaN(atracklengthintank)){
-			cout<<"NaN RESULT FROM MU TRACK LENGTH IN TANK?!"<<endl;
-			assert(false);
+			cerr<<"MCParticleProperties Tool: NaN RESULT FROM MU TRACK LENGTH IN TANK?!"<<endl;
+			//return false;
 		}
 		
 		// We can also use a slightly modified version of the CheckTankIntercepts to find
@@ -375,7 +387,10 @@ bool MCParticleProperties::Execute(){
 		nextparticle->SetTankEntryPoint(tankentryvtx);
 		nextparticle->SetExitsTank(interceptstank&&!trackstopsintank);
 		// TankExitPoint is either a projected or true exit point
-		if(hastrueexitvtx||(interceptstank&&(!trackstopsintank))){
+		if(hastrueexitvtx){
+			// do nothing: the tankexitvtx is already populated by LoadWCSim
+		}
+		else if(interceptstank&&(!trackstopsintank)){
 			tankexitvtx.UnitToMeter();
 			nextparticle->SetTankExitPoint(tankexitvtx);
 		} else {
@@ -513,7 +528,6 @@ bool MCParticleProperties::CheckLineBox( Position L1, Position L2, Position B1, 
 		for(auto&& avec : interceptions)
 			cerr<<"("<<avec.X()<<", "<<avec.Y()<<", "<<avec.Z()<<")"<<endl;
 		error=true;
-		//assert(false); // leave for later so we can print debug info.
 		return false;
 	} else if(interceptions.size()==2){
 		auto vec1 = interceptions.at(0);
