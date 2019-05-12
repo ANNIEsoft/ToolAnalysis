@@ -98,6 +98,7 @@ class TotalLightMap: public Tool {
 	// canvases for wiener tripel light maps
 	TCanvas* lightmap_by_eventtype_canvas = nullptr;
 	TCanvas* lightmap_by_parent_canvas = nullptr;
+	TCanvas* mercatorCanv = nullptr;
 	
 	// unbinned cumulative plots of light from different particles / different event types
 	// one TPolyMarker set for CCQE hits and one for CCNPI to compare light distributions (red vs blue)
