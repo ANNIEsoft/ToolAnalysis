@@ -123,10 +123,10 @@ class TotalLightMap: public Tool {
 	TH2F* lmpigammas = nullptr;
 	TH2F* lmdiff2 = nullptr;
 	
-//	// debug plots
-//	TH1D* vertexphihist = nullptr;
-//	TH1D* vertexthetahist = nullptr;
-//	TH1D* vertexyhist = nullptr;
+	// debug plots
+	TH1D* vertexphihist = nullptr;
+	TH1D* vertexthetahist = nullptr;
+	TH1D* vertexyhist = nullptr;
 	
 	////////////////////////////////////////////
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -142,7 +142,7 @@ class TotalLightMap: public Tool {
 	// function to scan over PMT hits in the ANNIEEvent and make a marker for each PMT
 	void make_pmt_markers(MCParticle primarymuon);
 	// function to scan over LAPPD hits in the ANNIEEvent and make a marker for each LAPPD hit
-	void make_lappd_markers();
+	void make_lappd_markers(MCParticle primarymuon);
 	// function to project a particle and make a marker for it's exit point
 	void make_vertex_markers(MCParticle aparticle);
 	// function to draw the markers on the event display

@@ -191,10 +191,10 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	lmpigammas = new TH2F("lmpigammas","LightMap Pion Products", 25, -180, 180, 25, -80.5, 80.5);
 	lmdiff2 = new TH2F("lmdiff2","LightMap PrimaryMuon - PionProducts",  25, -180, 180, 25, -80.5, 80.5);
 	
-//	// debug plots
-//	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
-//	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
-//	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
+	// debug plots
+	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
+	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
+	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
 	
 	Log("TotalLightMap Tool: Finished Intialize",v_debug,verbosity);
 	return true;
@@ -302,7 +302,7 @@ bool TotalLightMap::Execute(){
 	// Make markers from LAPPD hits
 	// ============================
 	Log("TotalLightMap Tool: Executing make_lappd_markers",v_debug,verbosity);
-	make_lappd_markers();  // this also calls Fill() on the cumulative histograms
+	make_lappd_markers(primarymuon);  // this also calls Fill() on the cumulative histograms
 	
 	// Make markers from the particles
 	// ===============================
@@ -356,8 +356,9 @@ bool TotalLightMap::Execute(){
 	// delete and re-create (clear) the event-wise Wiener TPolyMarker plots
 	
 	// clear the vectors for event-wise wiener tripel plots, but don't delete the markers
-	// or TColors for any markers we want to keep for cumulative plots
+	// - they're kept for cumulative plots
 	/* for(TPolyMarker* amarker : chargemapcc1p)     { delete amarker; } */ chargemapcc1p.clear();
+	lightmap_by_parent_canvas->Clear();
 	
 	// reset: colours are scaled to the range of charges/times seen in the event - reset for next event
 	Log("TotalLightMap Tool: Resetting event times and charges scale range",v_debug,verbosity);
@@ -439,12 +440,12 @@ bool TotalLightMap::Finalise(){
 	// Free memory
 	FinalCleanup();
 	
-//	TCanvas* phicanv = new TCanvas();
-//	vertexphihist->Draw();
-//	TCanvas* thetacanv = new TCanvas();
-//	vertexthetahist->Draw();
-//	TCanvas* ycanv = new TCanvas();
-//	vertexyhist->Draw();
+	TCanvas* phicanv = new TCanvas();
+	vertexphihist->Draw();
+	TCanvas* thetacanv = new TCanvas();
+	vertexthetahist->Draw();
+	TCanvas* ycanv = new TCanvas();
+	vertexyhist->Draw();
 	
 	// FIXME wait because ToolAnalysis is currently segfaulting after Finalise
 	TCanvas* c1 = new TCanvas();
@@ -499,14 +500,9 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 						int parentofinterestnum = std::distance(particleidsofinterest.begin(), parentofinterest);
 						chargesfromparents.at(parentofinterestnum)+= nexthit.GetCharge();
 						hitofinterest=true;
+					} else {
+						std::cout<<"Hit had parent "<<aparent<<" which was not a recognised primary"<<std::endl;
 					}
-//					if(parentofinterest==particleidsofinterest.begin()){
-//					if(aparent==particleidsofinterest.at(0)){
-//						chargesfromparents.at(0)+= nexthit.GetCharge();  // this hit was from primary muon
-//					} else {
-//						chargesfromparents.at(1)+= nexthit.GetCharge();  // all other light
-//					}
-//					hitofinterest=true;
 				}
 				if(not hitofinterest){ continue; } // ignore hits on this PMT not from a particle of interest
 			}
@@ -584,6 +580,11 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 				// ok, so to make a new TColor we need a free unique index for it
 				// (that index (a 'Color_t') is actually the number we pass to 'SetMarkerColor')
 				color_marker = startingcolournum + eventcolours.size();
+				// we need to scale the charge values by the ratio of total pmt charge to RGB full scale (255),
+				// so that a marker with 100% charge from a muon has RGB (255,0,0) not arbitrary (178,0,0)
+				// as this would produce a darkened marker. By scaling relative to pmt total charge, dark markers
+				// indicate charge from parents included in particlesofinterest.
+				for(auto& ap : chargesfromparents){ ap*=255./total_pmt_charge; }
 				TColor* thetcolor = 
 					new TColor(color_marker,chargesfromparents.at(0),chargesfromparents.at(1),chargesfromparents.at(2));
 				// fortunately as we're specifying RGB components no scaling will be needed
@@ -620,7 +621,6 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		// =================================
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// =================================
-/*
 		
 		// Calculate the Winkel Triple Coordinates
 		// =======================================
@@ -628,67 +628,79 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		// the primary muon trajectory along (0,0), to align all events
 		double phi = PMT_position.GetPhi() - primarymuon.GetStartDirection().GetPhi();
 		double theta = PMT_position.GetTheta() - primarymuon.GetStartDirection().GetTheta();
-		logmessage="TotalLightMap Tool: Polar position is (Phi="+to_string(phi)+", Theta="+to_string(theta)+")";
-		Log(logmessage,v_debug,verbosity);
+		//logmessage="TotalLightMap Tool: Polar position is (Phi="+to_string(phi)+", Theta="+to_string(theta)+")";
+		//Log(logmessage,v_debug,verbosity);
 		
 		double x_winkel, y_winkel;
 		DoTheWinkelTripel(theta, phi, x_winkel, y_winkel);
-		logmessage="TotalLightMap Tool: Wiener position is ("+to_string(x_winkel)+", "+to_string(y_winkel)+")";
-		Log(logmessage,v_debug,verbosity);
+		x_winkel *= -1;   // flip x axis, michael's phi definition is different and we use it for vertex markers
+		x_winkel += 0.5;  // to center on canvas
+		y_winkel += 0.5;
+//		logmessage="TotalLightMap Tool: Wiener position is ("+to_string(x_winkel)+", "+to_string(y_winkel)+")";
+//		Log(logmessage,v_debug,verbosity);
 		
-		// Add to the cumulative polymarker plots
-		// ======================================
-		// first cumulative hit maps for each event type
+		// Add to the event topology polymarker plots
+		// ==========================================
+		// cumulative hit maps for each event type
 		if(interaction_type=="CCQE"){
-			Log("TotalLightMap Tool: Adding Winkel marker to CCQE plot",v_debug,verbosity);
 			lightmapccqe->SetNextPoint(x_winkel, y_winkel); //, total_pmt_charge);
-			std::cout<<"We now have "<<lightmapcc1p->GetN()<<" points in the CCQE plot"<<std::endl;
+			//Log("TotalLightMap Tool: Adding Winkel marker "+to_string(lightmapccqe->GetN())
+			//		+" to CCQE plot",v_debug,verbosity);
+			// TPolyMarker::GetN() actually returns the capacity, not the number of actual markers
+			// so this will not be accurate, and will go up in doublings
 		}
 		if(interaction_type=="CC1PI"){
-			Log("TotalLightMap Tool: Adding Winkel marker to CC1Pi plot",v_debug,verbosity);
 			lightmapcc1p->SetNextPoint(x_winkel, y_winkel); //, total_pmt_charge);
-			std::cout<<"We now have "<<lightmapcc1p->GetN()<<" points in the CCNPi plot"<<std::endl;
+			//Log("TotalLightMap Tool: Adding Winkel marker "+to_string(lightmapcc1p->GetN())
+			//		+" to CC1Pi plot",v_debug,verbosity);
 		}
 		
-		// Then, for CCNPi events, we use a collection of TPolyMarkers, because the colour
-		// is based on the ratio of charge from parent particle
+		// Add to the event-wise polymarker plots (CC1Pi events only)
+		// ==========================================================
+		// event-wise and cumulative hit maps, with marker colour based on charge from parent particle
 		if(interaction_type=="CC1PI"){
 			// Make the Polymarker
 			TPolyMarker* markerwinkel = new TPolyMarker(1,&x_winkel,&y_winkel,"");
 			
 			// set the marker properties
 			markerwinkel->SetMarkerColor(color_marker);
-			markerwinkel->SetMarkerStyle(8);
-			markerwinkel->SetMarkerSize(1);
-		
+			markerwinkel->SetMarkerStyle(8);  // or 20? or 7?
+			if((mode=="Charge")||(mode=="Time")){
+				markerwinkel->SetMarkerSize(1);
+			} else {
+				markerwinkel->SetMarkerSize(int(total_pmt_charge));
+			}
+			
 			// Add to the appropriate PolyMarker(s), both event-wise and cumulative
-			Log("TotalLightMap Tool: Adding marker cc1pi charge map",v_debug,verbosity);
+			//Log("TotalLightMap Tool: Adding marker cc1pi charge map",v_debug,verbosity);
 			chargemapcc1p.push_back(markerwinkel);
 			chargemapcc1p_cum.push_back(markerwinkel);
-			std::cout<<"We now have "<<chargemapcc1p.size()<<" CC1Pi PolyMarkers in this event and "
-							 <<chargemapcc1p_cum.size()<<" accumlated CC1Pi polymarkers over all events"<<std::endl;
+//			std::cout<<"We now have "<<chargemapcc1p.size()<<" CC1Pi PolyMarkers in this event and "
+//							 <<chargemapcc1p_cum.size()<<" accumlated CC1Pi polymarkers over all events"<<std::endl;
 		}
-*/
 		
-/*
-		// Also fill the standard Mercator 2D histograms
-		Log("TotalLightMap Tool: Filling 2D histos",v_debug,verbosity);
+		// Also fill the standard Winkel 2D histograms
+		// ==============================================
+		// first cumulative light split by parent
+		double totchargenotfrommuon=0;
+		for(int parenti=1; parenti<(chargesfromparents.size()-1); parenti++){
+			totchargenotfrommuon+=chargesfromparents.at(parenti);
+		}
+		//Log("TotalLightMap Tool: Filling 2D histos",v_debug,verbosity);
 		// first tank charge from the muon (weight the PMT fill by it's charge from the muon)
 		if(chargesfromparents.at(0)>0) lmmuon->Fill(x_winkel, y_winkel, chargesfromparents.at(0));
 		// same for light from the pion daughters
-		if((chargesfromparents.at(1)+chargesfromparents.at(2))>0){
-			lmpigammas->Fill(x_winkel, y_winkel, chargesfromparents.at(1)+chargesfromparents.at(2));
+		if(totchargenotfrommuon>0){
+			lmpigammas->Fill(x_winkel, y_winkel, totchargenotfrommuon);
 		}
 		
-		// lastly fill total light hisotgrams for CCQE and CC1PI events
+		// then cumulative light split by event topology
 		if(interaction_type=="CCQE"){
 			lmccqe->Fill(x_winkel, y_winkel, chargesfromparents.at(0));
 		}
 		if(interaction_type=="CC1PI"){
-			lmcc1p->Fill(x_winkel, y_winkel, chargesfromparents.at(1)+chargesfromparents.at(2));
+			lmcc1p->Fill(x_winkel, y_winkel, totchargenotfrommuon);
 		}
-		
-*/
 		
 	} // end loop over PMTs
 	
@@ -698,7 +710,7 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 // ##################### Process LAPPD Hits #####################
 // ##############################################################
 
-	void TotalLightMap::make_lappd_markers(){
+	void TotalLightMap::make_lappd_markers(MCParticle primarymuon){
 	
 	/* Loops over all LAPPD Hits and draws a marker for each, with colour based on either time or charge. */
 	/* In contrast to PMTs, we make one marker per hit, not per LAPPD, since each has a unique position   */
@@ -724,12 +736,6 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 						chargesfromparents.at(parentofinterestnum)+= nexthit.GetCharge();
 						hitofinterest=true;
 					}
-//					if(aparent==particleidsofinterest.at(0)){
-//						chargesfromparents.at(0)+= nexthit.GetCharge();  // this hit was from primary muon
-//					} else {
-//						chargesfromparents.at(1)+= nexthit.GetCharge();  // all other light
-//					}
-//					hitofinterest=true;
 				}
 				if(not hitofinterest){ continue; } // ignore hits on this PMT not from a particle of interest
 			}
@@ -780,6 +786,11 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 					// ok, so to make a new TColor we need a free unique index for it
 					// (that index (a 'Color_t') is actually the number we pass to 'SetMarkerColor')
 					color_marker = startingcolournum + eventcolours.size();
+				// we need to scale the charge values by the ratio of total pmt charge to RGB full scale (255),
+				// so that a marker with 100% charge from a muon has RGB (255,0,0) not arbitrary (178,0,0)
+				// as this would produce a darkened marker. By scaling relative to pmt total charge, dark markers
+				// indicate charge from parents included in particlesofinterest.
+				for(auto& ap : chargesfromparents){ ap*=255./hit_charge; }
 					TColor* thetcolor = 
 						new TColor(color_marker,chargesfromparents.at(0),chargesfromparents.at(1),chargesfromparents.at(2));
 					// fortunately as we're specifying RGB components no scaling will be needed
@@ -803,6 +814,63 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 			// Add to the relevant set
 			marker_lappds.push_back(marker_lappd);
 			
+			// =================================
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// =================================
+			
+			// for LAPPD hits, limited LAPPD photocoverage may not work well with binned histogramming
+			// and accumulating hits over many events may produce too many polymarkers
+			if(interaction_type=="CC1PI"){
+				
+				// Add the Winkel Triple Marker
+				// =================================
+				// this plot will show the whole 360° view of the tank, with the views rotated to place
+				// the primary muon trajectory along (0,0), to align all events
+				double phi_shifted = phi - primarymuon.GetStartDirection().GetPhi();
+				double theta = lappdhitglobalpos.GetTheta() - primarymuon.GetStartDirection().GetTheta();
+			
+				double x_winkel, y_winkel;
+				DoTheWinkelTripel(theta, phi_shifted, x_winkel, y_winkel);
+				//x_winkel *= -1.;  // to match michael's backwards phi mapping
+				x_winkel += 0.5;  // to center on canvas
+				y_winkel += 0.5;
+//			logmessage="TotalLightMap Tool: Wiener position is ("+to_string(x_winkel)+", "+to_string(y_winkel)+")";
+//			Log(logmessage,v_debug,verbosity);
+				
+				// Add to the event topology polymarker plots
+				// ==========================================
+				// cumulative hit maps for each event type
+				if(interaction_type=="CCQE"){
+					//Log("TotalLightMap Tool: Adding LAPPD Winkel marker "+to_string(lightmapccqe->GetN())
+					//		+" to CCQE plot",v_debug,verbosity);
+					lightmapccqe->SetNextPoint(x_winkel, y_winkel);
+				}
+				if(interaction_type=="CC1PI"){
+					//Log("TotalLightMap Tool: Adding LAPPD Winkel marker "+to_string(lightmapcc1p->GetN())
+					//		+" to CC1Pi plot",v_debug,verbosity);
+					lightmapcc1p->SetNextPoint(x_winkel, y_winkel);
+				}
+				
+				// Make the Polymarker
+				TPolyMarker* markerwinkel = new TPolyMarker(1,&x_winkel,&y_winkel,"");
+				
+				// set the marker properties
+				markerwinkel->SetMarkerColor(color_marker);
+				markerwinkel->SetMarkerStyle(2);
+				if((mode=="Charge")||(mode=="Time")){
+					markerwinkel->SetMarkerSize(1);
+				} else {
+					//markerwinkel->SetMarkerSize(int(hit_charge));   // FIXME unlike the standard event display,
+					markerwinkel->SetMarkerSize(500);                 // Winkel plots combine lappd & pmt markers
+				}                                                   // so scaling to maximum charge isn't suitable
+				                                                    // (especially as right now LAPPDs have no charge)
+				
+				// Add to the appropriate PolyMarker(s), both event-wise and cumulative
+//				Log("TotalLightMap Tool: Adding marker cc1pi charge map",v_debug,verbosity);
+				chargemapcc1p.push_back(markerwinkel);
+				chargemapcc1p_cum.push_back(markerwinkel);
+			}
+			
 		} // loop over hits on this LAPPD
 	} // loop over LAPPDs
 }
@@ -818,23 +886,16 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	
 				Position truevtx = aparticle.GetStartVertex() - anniegeom->GetTankCentre();
 				Direction truedir = aparticle.GetStartDirection();
-//				std::cout<<"vertex marker for particle starting at: "; truevtx.Print(false);
-//				std::cout<<", going in direction: "; truedir.Print();
-//				std::cout<<", with tank exit: "; exitpoint.Print();
-		
-//				vertexphihist->Fill(truedir.GetPhi());
-//				vertexthetahist->Fill(truedir.GetTheta());
-//				vertexyhist->Fill(exitpoint.Y());
+				vertexphihist->Fill(truedir.GetPhi());
+				vertexthetahist->Fill(truedir.GetTheta());
+				vertexyhist->Fill(exitpoint.Y());
 	
 	double vtxproj_x = exitpoint.X();  // We may not have one if the particle didn't start in and exit the tank
 	double vtxproj_y = exitpoint.Y();  // this could be fixed in MCParticleProperties
 	double vtxproj_z = exitpoint.Z();  //
-	std::cout <<"projected vtx on wall: ( "<< vtxproj_x<<" , "<<vtxproj_y<<" , "<<vtxproj_z<< " )"<<std::endl;
-	//std::cout <<"drawing vertex on EventDisplay.... "<<std::endl;
 	
 	double xTemp, yTemp;
 	translate_xy(vtxproj_x,vtxproj_y,vtxproj_z,xTemp,yTemp);
-	std::cout<<"translated_xy = ("<<xTemp<<", "<<yTemp<<")"<<std::endl;
 	
 	// colour the marker based on the particle type and parentage
 	Color_t thecolour=0;
@@ -866,7 +927,6 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	}
 	std::string infotype = (particletype=="Other") ? to_string(aparticle.GetPdgCode()) : particletype;
 	Log("TotalLightMap Tool: Making vertex marker for "+infotype,v_debug,verbosity);
-	std::cout<<"marker vertex is ("<<xTemp<<", "<<yTemp<<")"<<std::endl;
 	
 	TPolyMarker* marker_vtx = new TPolyMarker(1,&xTemp,&yTemp,"");
 	marker_vtx->SetMarkerStyle(22);
@@ -879,6 +939,8 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	// we need to convert it into Winkel Triple coordinates first
 	double x_winkel, y_winkel;
 	DoTheWinkelTripel(vtxproj_x,vtxproj_y,vtxproj_z, x_winkel, y_winkel);
+	x_winkel+=0.5;  // to centre (0,0) on canvas (0.5,0.5);
+	y_winkel+=0.5;
 	
 	// we'll accumulate markers in a map with one TPolymarker per particle type
 	// we'll actually use the colour code as a key, as it distinguishes primary muons vs pi- decay muons
@@ -926,10 +988,10 @@ void TotalLightMap::DrawMarkers(){
 		size_full_scale = maximum_charge_on_a_pmt;
 		size_offset = 0;
 	}
-	logmessage = "TotalLightMap Tool: Event colour scale will use mode "+mode
-							+", offset "+to_string(colour_offset)
-							+", and maximum "+to_string(colour_full_scale);
-	Log(logmessage,v_debug,verbosity);
+	//logmessage = "TotalLightMap Tool: Event colour scale will use mode "+mode
+	//						+", offset "+to_string(colour_offset)
+	//						+", and maximum "+to_string(colour_full_scale);
+	//Log(logmessage,v_debug,verbosity);
 	
 	// Select the Event display canvas
 	canvas_ev_display->cd();
@@ -1002,7 +1064,19 @@ void TotalLightMap::DrawMarkers(){
 	lightmap_by_parent_canvas->cd();
 	
 	for(int i_marker=0; i_marker<chargemapcc1p.size();i_marker++){
-		chargemapcc1p.at(i_marker)->Draw();  // colour is already set based on particle type
+		TPolyMarker* marker = chargemapcc1p.at(i_marker);
+		double colour_marker_temp = 254.*((double(marker->GetMarkerColor())-colour_offset)/colour_full_scale);
+		color_marker = int(colour_marker_temp);
+		if((mode=="Time")||(mode=="Charge")){
+			color_marker+=Bird_Idx;
+		} else {
+			double size_marker_temp;
+			if(marker->GetMarkerSize()==500){ size_marker_temp = 0.4; }  // bypass for LAPPD markers
+			else { size_marker_temp = 3.*(double(marker->GetMarkerSize()))/size_full_scale; }
+			marker->SetMarkerSize(size_marker_temp);
+		}
+		marker->SetMarkerColor(color_marker);
+		marker->Draw();
 	}
 	
 	// draw the true vertex markers
@@ -1027,30 +1101,37 @@ void TotalLightMap::DrawCumulativeMarkers(){
 	lightmap_by_eventtype_canvas->cd();
 	
 	// draw unbinned light from CCQE events
+	Log("Drawing cumulative hitmap of CCQE events",v_debug,verbosity);
 	lightmapccqe->Draw();
 	// draw unbinned light from CCNPi events
+	Log("Adding cumulative hitmap of CCNPi events",v_debug,verbosity);
 	lightmapcc1p->Draw();  // seems like "same" isn't needed
 	
 	// Draw all the true particle projected exit vertices
+	Log("Drawing all the true particle exit vertices",v_debug,verbosity);
 	for(std::pair<const int,TPolyMarker*>& amarkerset : marker_vtxs_map){
 		amarkerset.second->Draw();
 	}
 	
+	Log("Updating the canvas",v_debug,verbosity);
 	lightmap_by_eventtype_canvas->Modified();
 	lightmap_by_eventtype_canvas->Update();
 	
 	// Select Canvas
 	lightmap_by_parent_canvas->cd();
 	
+	Log("Drawing cumulative hitmap of CCNPi events, colour coded by parent",v_debug,verbosity);
 	for(TPolyMarker* amarker : chargemapcc1p_cum){
 		amarker->Draw();
 	}
 	
 	// Draw all the true particle projected exit vertices
+	Log("Drawing all the true particle exit vertices",v_debug,verbosity);
 	for(std::pair<const int,TPolyMarker*>& amarkerset : marker_vtxs_map){
 		amarkerset.second->Draw();
 	}
 	
+	Log("Updating the canvas",v_debug,verbosity);
 	lightmap_by_parent_canvas->Modified();
 	lightmap_by_parent_canvas->Update();
 	
@@ -1329,28 +1410,28 @@ void TotalLightMap::translate_xy(double vtxX, double vtxY, double vtxZ, double &
 	double min_y = -tank_height;
 	vtxY*=yscale;
 	//if (cylloc=="TopCap"){                   //draw vtx projection on the top of tank
-	if (fabs(vtxY-max_y)<0.01){ 
-		Log("TotalLightMap Tool: translate_xy placing marker on top cap",v_debug,verbosity);
+	if (fabs(vtxY-max_y)<0.01){     // FIXME find a better way to identify location
+		//Log("TotalLightMap Tool: translate_xy placing marker on top cap",v_debug,verbosity);
 		xWall=0.5-size_top_drawing*vtxX/tank_radius;
 		yWall=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*vtxZ/tank_radius;
 		
 	//} else if (cylloc=="BottomCap"){         //draw vtx projection on the bottom of tank
 	} else if (fabs(vtxY-min_y)<0.01){ 
-		Log("TotalLightMap Tool: translate_xy placing marker on bottom cap",v_debug,verbosity);
+		//Log("TotalLightMap Tool: translate_xy placing marker on bottom cap",v_debug,verbosity);
 		xWall=0.5-size_top_drawing*vtxX/tank_radius;
 		yWall=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*vtxZ/tank_radius;
 		
 	} else {
-		Log("TotalLightMap Tool: translate_xy placing marker on barrel",v_debug,verbosity);
+		//Log("TotalLightMap Tool: translate_xy placing marker on barrel",v_debug,verbosity);
 		Position vtxpos(vtxX, vtxY, vtxZ);
 		double phi=-vtxpos.GetPhi();
 		xWall=0.5+phi*size_top_drawing;
 		yWall=0.5+vtxY/tank_height*tank_height/tank_radius*size_top_drawing;
-		std::cout<<"vtxY="<<vtxY<<", (vtxY/tank_height)="<<(vtxY/tank_height)
-						 <<", (tank_height/tank_radius)="<<(tank_height/tank_radius)
-						 <<", size_top_drawing="<<size_top_drawing
-						 <<", (vtxY/tank_height*tank_height/tank_radius*size_top_drawing)="
-						 <<vtxY/tank_height*tank_height/tank_radius*size_top_drawing<<endl;
+//		std::cout<<"vtxY="<<vtxY<<", (vtxY/tank_height)="<<(vtxY/tank_height)
+//						 <<", (tank_height/tank_radius)="<<(tank_height/tank_radius)
+//						 <<", size_top_drawing="<<size_top_drawing
+//						 <<", (vtxY/tank_height*tank_height/tank_radius*size_top_drawing)="
+//						 <<vtxY/tank_height*tank_height/tank_radius*size_top_drawing<<endl;
 	}
 	
 }
@@ -1358,7 +1439,7 @@ void TotalLightMap::translate_xy(double vtxX, double vtxY, double vtxZ, double &
 /////////////////////////////////////////
 
 void TotalLightMap::DoTheWinkelTripel(double x, double y, double z, double& x_winkel, double& y_winkel){
-	// convert x,y,z to longtitude and latitude
+	// convert x,y,z to longitude and latitude
 	double R, Phi, Theta;
 	anniegeom->CartesianToPolar(Position(x,y,z), R, Phi, Theta, true); // true: x,y,z are already tank centered
 	// then do the winkel tripel
@@ -1368,30 +1449,76 @@ void TotalLightMap::DoTheWinkelTripel(double x, double y, double z, double& x_wi
 void TotalLightMap::DoTheWinkelTripel(double latitude, double longitude, double& x_winkel, double& y_winkel){
 	// latitude and longitude in RADIANS: those are theta and phi, angle from x-z plane and y-z plane respectively
 	double R=1.0;   // scaling... not sure what it scales.
+	double central_meridian=0; //M_PI;
 	
+	// phi should run -Pi to Pi, theta should run -Pi/2 to Pi/2
+	// before anything else, wrap the input values if needed
+	while(longitude>M_PI){
+		longitude-=M_PI;
+	}
+	while(longitude<-M_PI){
+		longitude+=M_PI;
+	}
+	while(latitude>M_PI){
+		latitude-=M_PI;
+	}
+	while(latitude<-M_PI){
+		latitude+=M_PI;
+	}
+	if(latitude>M_PI/2.){
+		latitude = M_PI/2.-latitude;
+		if(longitude<0) longitude = -1.*(M_PI-abs(longitude));
+		else      longitude =  1.*(M_PI-abs(longitude));
+	}
+	if(latitude<-M_PI/2.){
+		latitude+=M_PI/2.;
+		if(longitude<0) longitude = -1.*(M_PI-abs(longitude));
+		else      longitude =  1.*(M_PI-abs(longitude));
+	}
+	
+	// ok.
 	// first we need the cylindrical equidistant projection plotting coordinates
 	// for which we need to define:
 	double standard_parallel = 50. + (28./60.); // 50°28'. Apparently it needs to be this value for WikelTripel...
 	// we can then calculate the projection coordinates as:
-	double x_ce = R*longitude*cos(standard_parallel);                 /* 3. */
+	double x_ce = R*(longitude-central_meridian)*cos(standard_parallel);                 /* 3. */
 	double y_ce = R*latitude;                                         /* 4. */
 	
 	// next we need the Aitoff projection coordinates as well
 	double x_aitoff, y_aitoff;
 	// for which we need to define:
-	double D = acos(cos(latitude)*cos(longitude/2.));                 /* 5. */
-	if(D==0){  // protect against division by 0
+	double D = acos(cos(latitude)*cos((longitude-central_meridian)/2.));                 /* 5. */
+	if(D==0){  // protect against division by 0. D=0 when longitude=0 or latitude = N/S pole
 		x_aitoff = 0;                                                   /* 6. */
 		y_aitoff = 0;                                                   /* 7. */
 	} else {
 		double C = sin(latitude)/sin(D);                                /* 8. */
-		x_aitoff = 2.*R*D*sqrt(1.-pow(C,2.));                           /* 9. */
+		double longsign = ((longitude-central_meridian)>0) ? 1. : -1.;  /* 19.*/
+		x_aitoff = longsign*2.*R*D*sqrt(1.-pow(C,2.));                  /* 9. */
 		y_aitoff = R*D*C;                                               /* 10.*/
 	}
+	
+	// Phi should collapse (all x_aitoff converge) at the poles
+	// since R!=0 and D=0 only for both lat=1 AND long=1, this collapse is driven
+	// by C=1 -> sin(lat)=1 -> lat=+-Pi/2, i.e. we have poles at latitudes of +-Pi/2
+	// lat 0 = downstream equator, -Pi = upstream equator
+	
+	// x_aitoff*longsign<0 never happens as R>0, sqrt()>0 and D α acos() > 0 (acos ranges 0->Pi)
+	// so x_aitoff runs 0->2*PI, but we use longsign to correct the sign (??)
+	// so then x_aitoff runs -Pi->Pi.
+	// The canvas centre is then at x_aitoff=0, which occurs when D*sqrt(1-C²)=0.
+	// Since D=0 only at (0,0), this is driven by C=1, or when sin(lat)=sin(D), or lat=D
+	// or lat = acos[cos(lat)cos(lon/2)], or when cos(lon/2)=1. i.e. at longitude (phi) = 0.
 	
 	// finally the Winkel Tripel is simply the average:
 	x_winkel = (x_ce + x_aitoff)/2.;                                  /* 1. */
 	y_winkel = (y_ce + y_aitoff)/2.;                                  /* 2. */
+	
+	// These values run from -Pi to Pi in x and -Pi/2 to Pi/2 in y.
+	// Scale them to run -0.5 to 0.5
+	x_winkel = x_winkel/(2.*M_PI);
+	y_winkel = y_winkel/M_PI;
+	
 }
 
 void TotalLightMap::DoTheMercator(double latitude, double longitude, double& x_mercater, double& y_mercater, double mapHeight, double mapWidth){
