@@ -166,9 +166,10 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	
 	// Other canvases
 	// ==============
-	// Canvases for unbinned light distributions
+	// Canvases for unbinned light distributions.
+	// only make the ones needed for event-wise plots now, so we don't have blank canvases floating around
 	Log("TotalLightMap Tool: Making canvases for polymarker plots",v_debug,verbosity);
-	// + split by parent type: blue markers = muon hits, red markers = Pion daughter hits
+	// + split by parent type: green markers = muon hits, red markers = Pion daughter hits
 	lightmap_by_parent_canvas = new TCanvas("lightmap_by_parent_canvas","",600,400);
 	
 	// unbinned hit plots
@@ -191,10 +192,10 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	lmpigammas = new TH2F("lmpigammas","LightMap Pion Products", 25, -180, 180, 25, -80.5, 80.5);
 	lmdiff2 = new TH2F("lmdiff2","LightMap PrimaryMuon - PionProducts",  25, -180, 180, 25, -80.5, 80.5);
 	
-	// debug plots
-	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
-	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
-	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
+//	// debug plots
+//	vertexphihist = new TH1D("vertexphihist","Histogram of Phi of primary vertices",100,-2.*M_PI,2.*M_PI);
+//	vertexthetahist = new TH1D("vertexthetahist","Histogram of Theta of primary vertices",100,-2.*M_PI, 2.*M_PI);
+//	vertexyhist = new TH1D("vertexyhist","Histogram of Y of primary vertices",100,-2.*tank_height,2.*tank_height);
 	
 	Log("TotalLightMap Tool: Finished Intialize",v_debug,verbosity);
 	return true;
@@ -323,12 +324,12 @@ bool TotalLightMap::Execute(){
 	Log("TotalLightMap Tool: Drawing Polymarkers",v_debug,verbosity);
 	DrawMarkers();
 	
-	// save histos or wait for viewer
-	// XXX DEBUG ONLY XXX   V
+//	// save histos or wait for viewer
+//	// XXX DEBUG ONLY XXX   V
 //	while(gROOT->FindObject("canvas_ev_display")!=nullptr){
-		Log("TotalLightMap Tool: Waiting for user to evaluate event display",v_debug,verbosity);
-		gSystem->ProcessEvents();
-		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//		Log("TotalLightMap Tool: Waiting for user to evaluate event display",v_debug,verbosity);
+//		gSystem->ProcessEvents();
+//		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		gPad->WaitPrimitive();
 //	}
 //	canvas_ev_display = new TCanvas("canvas_ev_display","Event Display",900,900);
@@ -397,59 +398,64 @@ bool TotalLightMap::Finalise(){
 	
 	// Draw and Save the 2D histos
 	Log("TotalLightMap Tool: Making Mercator Projection Canvas",v_debug,verbosity);
-	TCanvas* mercatorCanv = new TCanvas("mercatorCanv","Mercator Canvas", 900,700);
+	mercatorCanv = new TCanvas("mercatorCanv","Mercator Canvas", 900,700);
 	gStyle->SetOptTitle(1);
 	mercatorCanv->cd();
 	
 	Log("TotalLightMap Tool: Drawing Accumulated CCQE Histogram",v_debug,verbosity);
 	lmccqe->Draw("mercator");
 	mercatorCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),lmccqe->GetTitle()).Data());
-	mercatorCanv->Clear();
+	mercatorCanv->GetListOfPrimitives()->Clear();
+	// TCanvas::Clear deletes the objects contained on the canvas! Stop interfering with memory management ROOT!
 	
 	Log("TotalLightMap Tool: Drawing Accumulated CCNPi Histogram",v_debug,verbosity);
 	lmcc1p->Draw("mercator");
 	mercatorCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),lmcc1p->GetTitle()).Data());
-	mercatorCanv->Clear();
+	mercatorCanv->GetListOfPrimitives()->Clear();
 	
 	Log("TotalLightMap Tool: Drawing CCQE - CCNPi Light Difference Histogram",v_debug,verbosity);
 	lmdiff->Draw("mercator");
 	mercatorCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),lmdiff->GetTitle()).Data());
-	mercatorCanv->Clear();
+	mercatorCanv->GetListOfPrimitives()->Clear();
 	
 	Log("TotalLightMap Tool: Drawing Accumulated Muon Light Map Histogram",v_debug,verbosity);
 	lmmuon->Draw("mercator");
 	mercatorCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),lmmuon->GetTitle()).Data());
-	mercatorCanv->Clear();
+	mercatorCanv->GetListOfPrimitives()->Clear();
 	
 	Log("TotalLightMap Tool: Drawing Accumulated Daughter Light Map Histogram",v_debug,verbosity);
 	lmpigammas->Draw("mercator");
 	mercatorCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),lmpigammas->GetTitle()).Data());
-	mercatorCanv->Clear();
+	mercatorCanv->GetListOfPrimitives()->Clear();
 	
 	Log("TotalLightMap Tool: Drawing Muon - Daughter Light Map Histogram",v_debug,verbosity);
 	lmdiff2->Draw("mercator");
 	mercatorCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),lmdiff2->GetTitle()).Data());
-	mercatorCanv->Clear();
-	delete mercatorCanv; mercatorCanv=nullptr;
+	mercatorCanv->GetListOfPrimitives()->Clear();
 	
 	// Draw the cumulative tpolymarker plots
 	Log("TotalLightMap Tool: Drawing Cumulative PolyMarker Plots",v_debug,verbosity);
 	DrawCumulativeMarkers();
+	
 	// TODO: LEGENDS. LEGENDS EVERYWHERE.
+	
+	// wait for viewer
+	TCanvas* c1 = new TCanvas("muhcanvas");
+	c1->WaitPrimitive();
+	delete c1;
 	
 	// Free memory
 	FinalCleanup();
 	
-	TCanvas* phicanv = new TCanvas();
-	vertexphihist->Draw();
-	TCanvas* thetacanv = new TCanvas();
-	vertexthetahist->Draw();
-	TCanvas* ycanv = new TCanvas();
-	vertexyhist->Draw();
-	
-	// FIXME wait because ToolAnalysis is currently segfaulting after Finalise
-	TCanvas* c1 = new TCanvas();
-	c1->WaitPrimitive();
+//	TCanvas* phicanv = new TCanvas();
+//	vertexphihist->Draw();
+//	TCanvas* thetacanv = new TCanvas();
+//	vertexthetahist->Draw();
+//	TCanvas* ycanv = new TCanvas();
+//	vertexyhist->Draw();
+//	delete phicanv;
+//	delete thetacanv;
+//	delete ycanv;
 	
 	return true;
 }
@@ -671,6 +677,12 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 				markerwinkel->SetMarkerSize(int(total_pmt_charge));
 			}
 			
+			// before we push the marker ready for drawing: we want to be able to draw it, clear the canvas,
+			// and then re-draw it later. For some arbitrary ROOT objects, TCanvas::Clear will delete the
+			// objects upon Clear (for others, it won't). We need to ensure it doesn't, so that we maintain
+			// the responsibility for deletion
+			markerwinkel->ResetBit(kCanDelete);
+			
 			// Add to the appropriate PolyMarker(s), both event-wise and cumulative
 			//Log("TotalLightMap Tool: Adding marker cc1pi charge map",v_debug,verbosity);
 			chargemapcc1p.push_back(markerwinkel);
@@ -686,20 +698,29 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		for(int parenti=1; parenti<(chargesfromparents.size()-1); parenti++){
 			totchargenotfrommuon+=chargesfromparents.at(parenti);
 		}
+		// we'll actually use the in-built ROOT 'Mercator' projection, which is available for TH1s
+		// FIXME is this necessary, or was the histogram axis just wrong!?
+		// x_winkel runs from 0-1, but the mercator projection option assumes data running from
+		// -180 to 180 and -90 to 90? so we'll need to scale accordingly
+		x_winkel = 360.*x_winkel - 180.;
+		y_winkel = 180.*y_winkel - 90.;
+		// N.B. when given the mercator option, the x-axis runs -180 to 180,
+		// but the y-axis is scaled to +-2.5... ¯\_(ツ)_/¯
+		
 		//Log("TotalLightMap Tool: Filling 2D histos",v_debug,verbosity);
 		// first tank charge from the muon (weight the PMT fill by it's charge from the muon)
-		if(chargesfromparents.at(0)>0) lmmuon->Fill(x_winkel, y_winkel, chargesfromparents.at(0));
+		if(chargesfromparents.at(0)>0) lmmuon->Fill(x_winkel, y_winkel); //, chargesfromparents.at(0));
 		// same for light from the pion daughters
 		if(totchargenotfrommuon>0){
-			lmpigammas->Fill(x_winkel, y_winkel, totchargenotfrommuon);
+			lmpigammas->Fill(x_winkel, y_winkel); //, totchargenotfrommuon);
 		}
 		
 		// then cumulative light split by event topology
 		if(interaction_type=="CCQE"){
-			lmccqe->Fill(x_winkel, y_winkel, chargesfromparents.at(0));
+			lmccqe->Fill(x_winkel, y_winkel); //, chargesfromparents.at(0));
 		}
 		if(interaction_type=="CC1PI"){
-			lmcc1p->Fill(x_winkel, y_winkel, totchargenotfrommuon);
+			lmcc1p->Fill(x_winkel, y_winkel); //, totchargenotfrommuon);
 		}
 		
 	} // end loop over PMTs
@@ -865,6 +886,12 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 				}                                                   // so scaling to maximum charge isn't suitable
 				                                                    // (especially as right now LAPPDs have no charge)
 				
+				// before we push the marker ready for drawing: we want to be able to draw it, clear the canvas,
+				// and then re-draw it later. For some arbitrary ROOT objects, TCanvas::Clear will delete the
+				// objects upon Clear (for others, it won't). We need to ensure it doesn't, so that we maintain
+				// the responsibility for deletion
+				markerwinkel->ResetBit(kCanDelete);
+				
 				// Add to the appropriate PolyMarker(s), both event-wise and cumulative
 //				Log("TotalLightMap Tool: Adding marker cc1pi charge map",v_debug,verbosity);
 				chargemapcc1p.push_back(markerwinkel);
@@ -884,11 +911,11 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	// get true or projected tank exit point of particle in tank centred coordinates
 	Position exitpoint = aparticle.GetTankExitPoint() - anniegeom->GetTankCentre();
 	
-				Position truevtx = aparticle.GetStartVertex() - anniegeom->GetTankCentre();
-				Direction truedir = aparticle.GetStartDirection();
-				vertexphihist->Fill(truedir.GetPhi());
-				vertexthetahist->Fill(truedir.GetTheta());
-				vertexyhist->Fill(exitpoint.Y());
+//				Position truevtx = aparticle.GetStartVertex() - anniegeom->GetTankCentre();
+//				Direction truedir = aparticle.GetStartDirection();
+//				vertexphihist->Fill(truedir.GetPhi());
+//				vertexthetahist->Fill(truedir.GetTheta());
+//				vertexyhist->Fill(exitpoint.Y());
 	
 	double vtxproj_x = exitpoint.X();  // We may not have one if the particle didn't start in and exit the tank
 	double vtxproj_y = exitpoint.Y();  // this could be fixed in MCParticleProperties
@@ -1102,14 +1129,19 @@ void TotalLightMap::DrawCumulativeMarkers(){
 	
 	// draw unbinned light from CCQE events
 	Log("Drawing cumulative hitmap of CCQE events",v_debug,verbosity);
+	lightmapccqe->SetMarkerStyle(7);  // 7 is small but visible, 8 is visible circle
+	lightmapccqe->SetMarkerColor(kGreen);
 	lightmapccqe->Draw();
 	// draw unbinned light from CCNPi events
 	Log("Adding cumulative hitmap of CCNPi events",v_debug,verbosity);
+	lightmapcc1p->SetMarkerStyle(7);
+	lightmapcc1p->SetMarkerColor(kRed);
 	lightmapcc1p->Draw();  // seems like "same" isn't needed
 	
 	// Draw all the true particle projected exit vertices
 	Log("Drawing all the true particle exit vertices",v_debug,verbosity);
 	for(std::pair<const int,TPolyMarker*>& amarkerset : marker_vtxs_map){
+		amarkerset.second->SetMarkerStyle(29); // filled star ☆
 		amarkerset.second->Draw();
 	}
 	
@@ -1224,6 +1256,7 @@ void TotalLightMap::FinalCleanup(){
 	
 	if(lightmap_by_eventtype_canvas) delete lightmap_by_eventtype_canvas; lightmap_by_eventtype_canvas=nullptr;
 	if(lightmap_by_parent_canvas) delete lightmap_by_parent_canvas; lightmap_by_parent_canvas=nullptr;
+	if(mercatorCanv) delete mercatorCanv; mercatorCanv=nullptr;
 	
 	// final event display gui cleanup
 	if(top_circle) delete top_circle; top_circle=nullptr;
