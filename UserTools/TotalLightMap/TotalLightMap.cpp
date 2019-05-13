@@ -312,7 +312,7 @@ bool TotalLightMap::Execute(){
 	// for the traditional event display and Wiener Triple cumulative display
 	//Log("TotalLightMap Tool: Making polymarker for primary muon vertex",v_debug,verbosity);
 	for(MCParticle& aparticle : particlesofinterest){
-		make_vertex_markers(aparticle);
+		make_vertex_markers(aparticle, primarymuon);
 	}
 	
 	// ========================================================
@@ -630,10 +630,15 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		
 		// Calculate the Winkel Triple Coordinates
 		// =======================================
-		// this plot will show the whole 360° view of the tank, with the views rotated to place
+		// this plot will show the whole 360° view of the tank, with the views translated and rotated to place
 		// the primary muon trajectory along (0,0), to align all events
-		double phi = PMT_position.GetPhi() - primarymuon.GetStartDirection().GetPhi();
-		double theta = PMT_position.GetTheta() - primarymuon.GetStartDirection().GetTheta();
+		// first we need to get the PMT position relative to the primary muon start point
+		Position PMT_pos_rel = PMT_position - (primarymuon.GetStartVertex()-anniegeom->GetTankCentre());
+		std::cout<<"adding PMT marker to winkel tripel plot; PMT_position is"; PMT_position.Print(false);
+		std::cout<<", relative position to primary muon vertex at "; (primarymuon.GetStartVertex()-anniegeom->GetTankCentre()).Print(false);
+		std::cout<<" is "; PMT_pos_rel.Print();
+		double phi = PMT_pos_rel.GetPhi() - primarymuon.GetStartDirection().GetPhi();
+		double theta = PMT_pos_rel.GetTheta() - primarymuon.GetStartDirection().GetTheta();
 		//logmessage="TotalLightMap Tool: Polar position is (Phi="+to_string(phi)+", Theta="+to_string(theta)+")";
 		//Log(logmessage,v_debug,verbosity);
 		
@@ -845,14 +850,16 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 				
 				// Add the Winkel Triple Marker
 				// =================================
-				// this plot will show the whole 360° view of the tank, with the views rotated to place
+				// this plot will show the whole 360° view of the tank, with the views translated and rotated to place
 				// the primary muon trajectory along (0,0), to align all events
-				double phi_shifted = phi - primarymuon.GetStartDirection().GetPhi();
-				double theta = lappdhitglobalpos.GetTheta() - primarymuon.GetStartDirection().GetTheta();
+				// first we need to get the PMT position relative to the primary muon start point
+				Position LAPPD_pos_rel = lappdhitglobalpos - (primarymuon.GetStartVertex()-anniegeom->GetTankCentre());
+				double phi_shifted = LAPPD_pos_rel.GetPhi() - primarymuon.GetStartDirection().GetPhi();
+				double theta = LAPPD_pos_rel.GetTheta() - primarymuon.GetStartDirection().GetTheta();
 			
 				double x_winkel, y_winkel;
 				DoTheWinkelTripel(theta, phi_shifted, x_winkel, y_winkel);
-				//x_winkel *= -1.;  // to match michael's backwards phi mapping
+				x_winkel *= -1.;  // flip x axis, michael's phi definition is different and we use it for vertex markers
 				x_winkel += 0.5;  // to center on canvas
 				y_winkel += 0.5;
 //			logmessage="TotalLightMap Tool: Wiener position is ("+to_string(x_winkel)+", "+to_string(y_winkel)+")";
@@ -906,7 +913,7 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 // ################## Process True Vertices #####################
 // ##############################################################
 
-void TotalLightMap::make_vertex_markers(MCParticle aparticle){
+void TotalLightMap::make_vertex_markers(MCParticle aparticle, MCParticle primarymuon){
 	
 	// get true or projected tank exit point of particle in tank centred coordinates
 	Position exitpoint = aparticle.GetTankExitPoint() - anniegeom->GetTankCentre();
@@ -962,11 +969,27 @@ void TotalLightMap::make_vertex_markers(MCParticle aparticle){
 	// add it to the set of current event true vertices
 	marker_vtxs.push_back(marker_vtx);
 	
-	// to add this true vertex to the cumulative displays
-	// we need to convert it into Winkel Triple coordinates first
+	// =================================
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// =================================
+	
+	// Add the vertex to the Winkel Tripel plots
 	double x_winkel, y_winkel;
-	DoTheWinkelTripel(vtxproj_x,vtxproj_y,vtxproj_z, x_winkel, y_winkel);
-	x_winkel+=0.5;  // to centre (0,0) on canvas (0.5,0.5);
+	if(aparticle.GetParticleID()==primarymuon.GetParticleID()){
+		// we always place the muon at 0,0
+		x_winkel=0;
+		y_winkel=0;
+	} else{
+		// we need to translate/rotate the exit vertex to be relative to the primary muon
+		// then convert it into Winkel Triple coordinates
+		Position exit_pos_rel = exitpoint - (primarymuon.GetStartVertex()-anniegeom->GetTankCentre());
+		double phi = exit_pos_rel.GetPhi() - primarymuon.GetStartDirection().GetPhi();
+		double theta = exit_pos_rel.GetTheta() - primarymuon.GetStartDirection().GetTheta();
+		DoTheWinkelTripel(theta, phi, x_winkel, y_winkel);
+	}
+	
+	x_winkel *= -1;   // flip x axis, michael's phi definition is different and we use it for vertex markers
+	x_winkel+=0.5;    // to centre (0,0) on canvas (0.5,0.5);
 	y_winkel+=0.5;
 	
 	// we'll accumulate markers in a map with one TPolymarker per particle type
