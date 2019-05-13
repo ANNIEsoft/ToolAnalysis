@@ -145,7 +145,7 @@ class TotalLightMap: public Tool {
 	// function to scan over LAPPD hits in the ANNIEEvent and make a marker for each LAPPD hit
 	void make_lappd_markers(MCParticle primarymuon);
 	// function to project a particle and make a marker for it's exit point
-	void make_vertex_markers(MCParticle aparticle);
+	void make_vertex_markers(MCParticle aparticle, MCParticle primarymuon);
 	// function to draw the markers on the event display
 	void DrawMarkers();
 	// function to draw the polymarkers for the accumulative event displays
