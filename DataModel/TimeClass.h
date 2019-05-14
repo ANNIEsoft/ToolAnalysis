@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <time.h>
-#include <cmath> 
+#include <cmath>
 #include<SerialisableObject.h>
 
 using namespace std;
