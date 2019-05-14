@@ -7,7 +7,7 @@
 
 #include<SerialisableObject.h>
 #include <iostream>
-#include <cmath> 
+#include <cmath>
 
 using namespace std;
 
