@@ -294,6 +294,7 @@ bool LoadWCSim::Execute(){
 				nextrack->GetId(),
 				nextrack->GetParenttype(),
 				nextrack->GetFlag());
+/*
 			if((abs(nextrack->GetIpnu())==13)||(abs(nextrack->GetIpnu())==211)||(nextrack->GetIpnu()==111)){
 				std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
 						<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
@@ -314,6 +315,7 @@ bool LoadWCSim::Execute(){
 						<<" track id "<<nextrack->GetId()
 						<<" at position "<<MCParticles->size()<<std::endl;
 			}
+*/
 			if(nextrack->GetIpnu()==13){
 				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
 					+ ", parent type " + to_string(nextrack->GetParenttype())

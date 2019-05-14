@@ -45,9 +45,7 @@ class Detector : public SerialisableObject{
 	bool Print(){
 		std::cout<<"DetectorPosition  : "; DetectorPosition.Print();
 		std::cout<<"DetectorDirection : "; DetectorDirection.Print();
-		if(DetectorElement=="Tank"){
-			std::cout<<"Location in Tank  : "<<TankLocation<<std::endl;
-		}
+		std::cout<<"Location          : "<<TankLocation<<std::endl;
 		std::cout<<"DetectorElement   : "<<DetectorElement<<std::endl;
 		std::cout<<"DetectorID        : "<<DetectorID<<std::endl;
 		std::cout<<"DetectorType      : "<<DetectorType<<std::endl;
