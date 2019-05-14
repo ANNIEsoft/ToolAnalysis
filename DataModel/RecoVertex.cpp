@@ -14,7 +14,7 @@ RecoVertex::RecoVertex( Position pos)
 {
   this->Reset();
   this->SetVertex(pos);
-  this->SetFOM(0.0,1,1);
+  this->SetFOM(-9999.,1,1);
 
   ANNIERecoObjectTable::Instance()->NewVertex();
 }
@@ -25,7 +25,7 @@ RecoVertex::RecoVertex( Position pos, Direction dir)
 
   this->SetVertex(pos);
   this->SetDirection(dir);
-  this->SetFOM(0.0,1,1);
+  this->SetFOM(-9999.,1,1);
   
   ANNIERecoObjectTable::Instance()->NewVertex();
 }
@@ -153,10 +153,9 @@ void RecoVertex::Reset()
   fFoundDirection = 0;
 
   fConeAngle = 0.0;
-  fConeAngle = 42.0;
   fTrackLength = 0.0;
 
-  fFOM = 0.0;
+  fFOM = -9999.;
   fIterations = 0;
   fPass = 0;
   
