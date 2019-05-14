@@ -8,25 +8,25 @@ class MRDOut  : public SerialisableObject{
 
   friend class boost::serialization::access;
 
-public:
-  
+ public:
+
   MRDOut();
-  
+
   unsigned int OutN, Trigger;
   std::vector<unsigned int> Value, Slot, Channel, Crate;
   std::vector<std::string> Type;
-  //ULong64_t 
+  //ULong64_t
   long TimeStamp;
 
   bool  Send(zmq::socket_t *socket);
   bool Receive(zmq::socket_t *socket);
 
   bool Print();
-  
+
  private:
-  
+
   template <class Archive> void serialize(Archive& ar, const unsigned int version){
-    
+
     ar & OutN;
     ar & Trigger;
     ar & Value;
@@ -35,13 +35,8 @@ public:
     ar & Crate;
     ar & Type;
     ar & TimeStamp;
-    
+
   }
-
-  
-
-
-
 
 };
 

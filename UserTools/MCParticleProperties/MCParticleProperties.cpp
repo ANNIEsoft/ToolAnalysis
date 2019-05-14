@@ -235,7 +235,7 @@ bool MCParticleProperties::Execute(){
 		// first check if the start and endpoints are in the tank - if so, there is no tank exit point
 		// and track length in tank is total length. 
 		double atracklengthintank;
-		bool interceptstank=true;
+		bool interceptstank;
 		Position tankentryvtx, tankexitvtx;
 		
 		bool trackstartsintank = ( sqrt(pow(startvertex.X(),2.) +
