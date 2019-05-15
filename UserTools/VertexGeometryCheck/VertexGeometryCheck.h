@@ -4,6 +4,9 @@
 #include <string>
 #include <iostream>
 
+#include "FoMCalculator.h"
+#include "VertexGeometry.h"
+#include "Parameters.h"
 #include "Tool.h"
 
 class VertexGeometryCheck: public Tool {
