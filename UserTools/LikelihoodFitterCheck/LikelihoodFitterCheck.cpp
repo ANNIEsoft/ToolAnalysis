@@ -77,7 +77,8 @@ bool LikelihoodFitterCheck::Execute(){
 	double recoVtxX, recoVtxY, recoVtxZ, recoVtxT, recoDirX, recoDirY, recoDirZ;
   double trueVtxX, trueVtxY, trueVtxZ, trueVtxT, trueDirX, trueDirY, trueDirZ;
   double seedX, seedY, seedZ, seedT, seedDirX, seedDirY, seedDirZ;
-  
+  double ConeAngle = Parameters::CherenkovAngle();
+
   // Get true Vertex information
   Position vtxPos = fTrueVertex->GetPosition();
 	Direction vtxDir = fTrueVertex->GetDirection();
@@ -91,11 +92,10 @@ bool LikelihoodFitterCheck::Execute(){
   
   if(verbosity>0) cout<<"True vertex  = ("<<trueVtxX<<", "<<trueVtxY<<", "<<trueVtxZ<<", "<<trueVtxT<<", "<<trueDirX<<", "<<trueDirY<<", "<<trueDirZ<<")"<<endl;
   
-  MinuitOptimizer * myOptimizer = new MinuitOptimizer();
-	VertexGeometry* myvtxgeo = VertexGeometry::Instance();
+  FoMCalculator * myFoMCalculator = new FoMCalculator();
+  VertexGeometry* myvtxgeo = VertexGeometry::Instance();
   myvtxgeo->LoadDigits(fDigitList);
-  myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
-  myOptimizer->SetMeanTimeCalculatorType(0); //
+  myFoMCalculator->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   //parallel direction
   double dl = 1.0; // step size  = 1 cm along the track
   double dx = dl * trueDirX;
@@ -113,13 +113,12 @@ bool LikelihoodFitterCheck::Execute(){
     seedDirZ = trueDirZ;
     myvtxgeo->CalcExtendedResiduals(seedX, seedY, seedZ, 0.0, seedDirX, seedDirY, seedDirZ);
     int nhits = myvtxgeo->GetNDigits();
-    double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
+    double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
     Double_t fom = -999.999*100;
     double timefom = -999.999*100;
     double conefom = -999.999*100;
-    double coneAngle = 42.0;
-    myOptimizer->TimePropertiesLnL(meantime,0.2,timefom);
-    myOptimizer->FitConePropertiesFoM(coneAngle,conefom);
+    myFoMCalculator->TimePropertiesLnL(meantime,timefom);
+    myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
     fom = timefom*0.5+conefom*0.5;
     cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
     fom = timefom;
@@ -146,14 +145,14 @@ bool LikelihoodFitterCheck::Execute(){
     seedDirY = trueDirY;
     seedDirZ = trueDirZ;
     myvtxgeo->CalcExtendedResiduals(seedX, seedY, seedZ, 0.0, seedDirX, seedDirY, seedDirZ);
-    int nhits = myOptimizer->fVtxGeo->GetNDigits();
-    double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
+    int nhits = myvtxgeo->GetNDigits();
+    double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
     Double_t fom = -999.999*100;
     double timefom = -999.999*100;
     double conefom = -999.999*100;
     double coneAngle = 42.0;
-    myOptimizer->TimePropertiesLnL(meantime,0.2,timefom);
-    myOptimizer->FitConePropertiesFoM(coneAngle,conefom);
+    myFoMCalculator->TimePropertiesLnL(meantime,timefom);
+    myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
     fom = timefom*0.5+conefom*0.5;
     //fom = timefom;
     cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
@@ -181,14 +180,14 @@ bool LikelihoodFitterCheck::Execute(){
         	seedDirY = trueDirY;
         	seedDirZ = trueDirZ;
         	myvtxgeo->CalcExtendedResiduals(seedX, seedY, seedZ, seedT, seedDirX, seedDirY, seedDirZ);
-        	int nhits = myOptimizer->fVtxGeo->GetNDigits();
-          double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
+        	int nhits = myvtxgeo->GetNDigits();
+          double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
           Double_t fom = -999.999*100;
           double timefom = -999.999*100;
           double conefom = -999.999*100;
           double coneAngle = 42.0;
-          myOptimizer->TimePropertiesLnL(meantime,0.2,timefom);
-          myOptimizer->FitConePropertiesFoM(coneAngle,conefom);
+          myFoMCalculator->TimePropertiesLnL(meantime,timefom);
+          myFoMCalculator->ConePropertiesFoM(coneAngle,conefom);
           fom = timefom*0.5+conefom*0.5;
           //fom = timefom;
           cout<<"k,m, timeFOM, coneFOM, fom = "<<k<<", "<<m<<", "<<timefom<<", "<<conefom<<", "<<fom<<endl;
@@ -196,7 +195,7 @@ bool LikelihoodFitterCheck::Execute(){
         }
       }
     }
-
+  delete myFoMCalculator;
   return true;
 }
 

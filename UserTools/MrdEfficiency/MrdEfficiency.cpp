@@ -60,14 +60,13 @@ bool MrdEfficiency::Initialise(std::string configfile, DataModel &data){
 		canvheight = 600;
 		// create the ROOT application to show histograms
 		int myargc=0;
-		char *myargv[] = {(const char*)"mrdeff"};
+		//char *myargv[] = {(const char*)"mrdeff"};
 		// get or make the TApplication
 		intptr_t tapp_ptr=0;
 		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
 		if(not get_ok){
 			Log("MrdEfficiency Tool: Making global TApplication",v_error,verbosity);
-			rootTApp = new TApplication("rootTApp",&myargc,myargv);
-			std::cout<<"rootTApp="<<rootTApp<<std::endl;
+			rootTApp = new TApplication("rootTApp",&myargc,0);
 			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
 			m_data->CStore.Set("RootTApplication",tapp_ptr);
 		} else {

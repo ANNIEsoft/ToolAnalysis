@@ -8,6 +8,10 @@
 #include "TH1.h"
 #include "TH2D.h"
 
+#include "FoMCalculator.h"
+#include "VertexGeometry.h"
+#include "Parameters.h"
+
 class LikelihoodFitterCheck: public Tool {
 
 

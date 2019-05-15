@@ -47,13 +47,13 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	
 	// create the ROOT application to show histograms
 	int myargc=0;
-	char *myargv[] = {(const char*)"somestring2"};
+	//char *myargv[] = {(const char*)"somestring2"};
 	// get or make the TApplication
 	intptr_t tapp_ptr=0;
 	get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
 	if(not get_ok){
 		if(verbosity>2) cout<<"MrdPaddlePlot Tool: making global TApplication"<<endl;
-		rootTApp = new TApplication("rootTApp",&myargc,myargv);
+		rootTApp = new TApplication("rootTApp",&myargc,0);
 		tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
 		m_data->CStore.Set("RootTApplication",tapp_ptr);
 	} else {
@@ -65,7 +65,6 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	if(not get_ok) tapplicationusers=1;
 	else tapplicationusers++;
 	m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
-	//rootTApp = new TApplication("rootTApp",&myargc,myargv);
 	
 	if(drawStatistics){
 		hnumhclusters = new TH1D("hnumhclusters","Num track clusters in H view",10,0,10);
