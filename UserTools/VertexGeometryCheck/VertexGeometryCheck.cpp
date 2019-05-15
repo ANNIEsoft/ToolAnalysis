@@ -106,18 +106,19 @@ bool VertexGeometryCheck::Execute(){
   trueDirX = vtxDir.X();
   trueDirY = vtxDir.Y();
   trueDirZ = vtxDir.Z();
-	
-	MinuitOptimizer * myOptimizer = new MinuitOptimizer();
-	VertexGeometry* myvtxgeo = VertexGeometry::Instance();
+
+  double ConeAngle = Parameters::CherenkovAngle();
+
+  FoMCalculator * myFoMCalculator = new FoMCalculator();
+  VertexGeometry* myvtxgeo = VertexGeometry::Instance();
   myvtxgeo->LoadDigits(fDigitList);
-	int nhits = myvtxgeo->GetNDigits();
-  myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+  myFoMCalculator->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+  int nhits = myvtxgeo->GetNDigits();
   myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, trueVtxT, trueDirX, trueDirY, trueDirZ);
-  myOptimizer->SetMeanTimeCalculatorType(0); //
-  double meantime = myOptimizer->FindSimpleTimeProperties(myvtxgeo);
+  double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
   fmeanres->Fill(meantime);
   double fom = -999.999*100;
-  myOptimizer->TimePropertiesLnL(meantime,0.2,fom);  
+  myFoMCalculator->TimePropertiesLnL(meantime,fom);  
   for(int n=0;n<nhits;n++) {
     digitX = fDigitList->at(n).GetPosition().X();
     digitY = fDigitList->at(n).GetPosition().Y();
@@ -167,6 +168,7 @@ bool VertexGeometryCheck::Execute(){
     if(myvtxgeo->GetDigitType(n)==RecoDigit::lappd_v0) flappdtimesmear->Fill(Parameters::TimeResolution(RecoDigit::lappd_v0, myvtxgeo->GetDigitQ(n)));
     if(myvtxgeo->GetDigitType(n)==RecoDigit::PMT8inch) fpmttimesmear->Fill(Parameters::TimeResolution(RecoDigit::PMT8inch, myvtxgeo->GetDigitQ(n)));
   }
+  delete myFoMCalculator;
   return true;
 }
 

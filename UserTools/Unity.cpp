@@ -87,4 +87,5 @@
 #include "EventDisplay/EventDisplay.cpp"
 #include "TankCalibrationDiffuser/TankCalibrationDiffuser.cpp"
 #include "MrdDiscriminatorScan/MrdDiscriminatorScan.cpp"
+#include "MCRecoEventLoader/MCRecoEventLoader.cpp"
 

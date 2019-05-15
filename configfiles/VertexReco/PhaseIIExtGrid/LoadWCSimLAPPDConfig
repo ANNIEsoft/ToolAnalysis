@@ -3,7 +3,6 @@
 
 verbose 3
 InputFile #INPUT_FILE_LAPPD# 
-WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 # octagonal inner structure radius in m (from drawings 106.64")
 InnerStructureRadius 1.3545
 HistoricTriggeroffset 0
