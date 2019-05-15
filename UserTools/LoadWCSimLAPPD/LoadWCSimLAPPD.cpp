@@ -8,10 +8,10 @@
 #include "TApplication.h"
 #include "TCanvas.h"
 #include "TH1.h"
+#include "TH3.h"
 #include "TPolyMarker3D.h"
 #include "TSystem.h"
 #include "TMath.h"
-#include "TH3F.h"
 
 #include <numeric>  // iota
 
@@ -103,7 +103,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// things to be saved to the ANNIEEvent Store
-	MCLAPPDHits = new std::map<unsigned long,std::vector<LAPPDHit>>;
+	MCLAPPDHits = new std::map<unsigned long,std::vector<MCLAPPDHit>>;
 	
 	if(DEBUG_DRAW_LAPPD_HITS){
 		// create the ROOT application to show histograms
@@ -135,6 +135,7 @@ bool LoadWCSimLAPPD::Execute(){
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggernum);
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("EventTime",EventTime);
+	storegetret = m_data->Stores.at("ANNIEEvent")->Get("TrackId_to_MCParticleIndex",TrackId_to_MCParticleIndex);
 	if(EventTime==nullptr){
 		cerr<<"Failed to load WCSim trigger time with code "<<storegetret<<"!"<<endl;
 		return false;
@@ -154,7 +155,7 @@ bool LoadWCSimLAPPD::Execute(){
 			if(verbose>2) cout<<"looping over "<<unassignedhits.size()
 							  <<" LAPPD hits that weren't in the first trigger window"<<endl;
 			for(int hiti=0; hiti<unassignedhits.size(); hiti++){
-				LAPPDHit nexthit = unassignedhits.at(hiti);
+				MCLAPPDHit nexthit = unassignedhits.at(hiti);
 				double digitst = nexthit.GetTime(); // ABSOLUTE
 				double relativedigitst=digitst-wcsimtriggertime; // relative to trigger time
 				if( (relativedigitst)>(pretriggerwindow) &&
@@ -163,7 +164,7 @@ bool LoadWCSimLAPPD::Execute(){
 					nexthit.SetTime(relativedigitst); // correct for this trigger time
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					unsigned int key = nexthit.GetTubeId();
-					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
+					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					else MCLAPPDHits->at(key).push_back(nexthit);
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				}
@@ -260,7 +261,7 @@ bool LoadWCSimLAPPD::Execute(){
 				double digitst  = LAPPDEntry->lappdhit_stripcoort->at(runningcount);
 				double relativedigitst=digitst-wcsimtriggertime;
 				
-				float digiq = 0; // N/A
+				float digiq = 1; // N/A, but useful to be non-zero
 				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
 				//LAPPDHit nexthit(key, digitst, digiq, globalpos, localpos);
@@ -270,6 +271,10 @@ bool LoadWCSimLAPPD::Execute(){
 					digiypos->Fill(digitsy);
 					digizpos->Fill(digitsz);
 					digits->Fill(relativedigitst);
+				}
+				std::vector<int> parents; // info about which particle generated the photon for this hit
+				if(TrackId_to_MCParticleIndex->count(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount))){
+					parents.push_back(TrackId_to_MCParticleIndex->at(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount)));
 				}
 				
 				// we now have all the necessary info about this LAPPD hit:
@@ -283,15 +288,15 @@ bool LoadWCSimLAPPD::Execute(){
 					relativedigitst<(posttriggerwindow) ){
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					if(MCLAPPDHits->count(key)==0){
-						LAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos);
-						MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
+						MCLAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos, parents);
+						MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					} else {
 						MCLAPPDHits->at(key).emplace_back(key, relativedigitst, digiq,
-															globalpos, localpos);
+															globalpos, localpos, parents);
 					}
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos);
+					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event

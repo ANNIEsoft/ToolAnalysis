@@ -1,0 +1,79 @@
+This tool got way too large and handles way too much memory.
+This is a guide to keep track of allocation and freeing.
+
+initialise:
+	make_gui:
+		canvas_ev_display=new TCanvas
+		top_circle = new TEllipse
+		box = new TBox
+		bottom_circle = new TEllipse
+	
+	lightmap_by_eventtype_canvas = new TCanvas
+	lightmap_by_parent_canvas = new TCanvas
+	
+	lightmapccqe = new TPolyMarker();
+	lightmapcc1p = new TPolyMarker();
+	
+	lmccqe = new TH2F
+	lmcc1p = new TH2F
+	lmdiff = new TH2F
+	lmmuon = new TH2F
+	lmpigammas = new TH2F
+	lmdiff2 = new TH2F
+	
+Execute:
+	make_pmt_markers:
+		TPolyMarker* marker = new TPolyMarker();
+		theset->push_back(marker);   << one of 'marker_pmts_top' etc
+		TColor* thetcolor = new TColor();  << made for some hits only
+		eventcolours.push_back(thetcolor);
+		
+		TPolyMarker* markerwinkel = new TPolyMarker(); << for CCNPi events only
+		chargemapcc1p.push_back(markerwinkel);     << marker added to both event-wise and cumulative sets
+		chargemapcc1p_cum.push_back(markerwinkel); << delete markers from this set *only*
+	
+	make_lappd_markers:
+		TPolyMarker *marker_lappd = new TPolyMarker();
+		marker_lappds.push_back(marker_lappd);
+	
+	make_vertex_markers:
+		TPolyMarker* marker_vtx = new TPolyMarker(); << event-wise vertex marker on event GUI
+		marker_vtxs.push_back(marker_vtx);
+		
+		TPolyMarker* thepolymarkers = new TPolyMarker(1,&x_winkel, &y_winkel,"");  << 1 set per vertex type
+		marker_vtxs_map.emplace(thecolour, thepolymarkers);  << delete them from here on finalise
+	
+	event_cleanup:
+		for(TPolyMarker* amarker : marker_pmts_top)   { delete amarker; } marker_pmts_top.clear();
+		for(TPolyMarker* amarker : marker_pmts_bottom){ delete amarker; } marker_pmts_bottom.clear();
+		for(TPolyMarker* amarker : marker_pmts_wall)  { delete amarker; } marker_pmts_wall.clear();
+		for(TPolyMarker* amarker : marker_lappds)     { delete amarker; } marker_lappds.clear();
+		for(TPolyMarker* amarker : marker_vtxs)       { delete amarker; } marker_vtxs.clear();
+		
+		// clear event-wise CC1Pi charge map, but keep the markers for the cumulative plot
+		chargemapcc1p.clear();
+	
+Finalise:
+	FinalCleanup:
+		delete lightmapccqe;
+		delete lightmapcc1p;
+		
+		for(std::pair<const int,TPolyMarker*>& amarkerset : marker_vtxs_map){ delete amarkerset.second; }
+		for(TPolyMarker* amarker : chargemapcc1p_cum)                       { delete amarker; }
+		for(TColor* acolor : eventcolours)                                  { delete acolor; }
+		
+		// gui cleanup
+		delete top_circle;
+		delete bottom_circle;
+		delete box;
+		delete canvas_ev_display;
+		
+		delete lmccqe;
+		delete lmcc1p;
+		delete lmdiff;
+		delete lmmuon;
+		delete lmpigammas;
+		delete lmdiff2;
+		
+		delete lightmap_by_eventtype_canvas;
+		delete lightmap_by_parent_canvas;
