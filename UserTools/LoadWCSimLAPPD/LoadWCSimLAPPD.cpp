@@ -108,8 +108,8 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	if(DEBUG_DRAW_LAPPD_HITS){
 		// create the ROOT application to show histograms
 		int myargc=0;
-		char *myargv[] = {(const char*)"somestring"};
-		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
+		//char *myargv[] = {(const char*)"somestring"};
+		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,0);
 		lappdhitshist = new TPolyMarker3D();
 		digixpos = new TH1D("digixpos","lappd digixpos",100,-2,2);
 		digiypos = new TH1D("digiypos","lappd digiypos",100,-2.5,2.5);
@@ -192,9 +192,9 @@ bool LoadWCSimLAPPD::Execute(){
 			double pmty = (LAPPDEntry->lappdhit_y[lappdi]) / 1000.;
 			double pmtz = (LAPPDEntry->lappdhit_z[lappdi]) / 1000.;
 			
-			double tileangle;
-			int theoctagonside;
-			int lappdloc;
+			double tileangle=-1;
+			int theoctagonside=-1;
+			int lappdloc=-1;
 			if(FILE_VERSION<3){  // manual calculation of global hit position part 1
 				WCSimRootPMT lappdobj = geo->GetLAPPD(LAPPDID-1);
 				lappdloc = lappdobj.GetCylLoc();
@@ -228,7 +228,7 @@ bool LoadWCSimLAPPD::Execute(){
 				double peposx = (LAPPDEntry->lappdhit_stripcoorx->at(runningcount)) / 1000.;  // pos on tile
 				double peposy = (LAPPDEntry->lappdhit_stripcoory->at(runningcount)) / 1000.;  // [mm] to [m]
 				
-				double digitsx, digitsy, digitsz;
+				double digitsx=-1, digitsy=-1, digitsz=-1;
 				if(FILE_VERSION<3){     // manual calculation of global hit position part 2
 					switch (lappdloc){
 						case 0: // top cap

@@ -29,8 +29,8 @@ bool HitResiduals::Initialise(std::string configfile, DataModel &data){
 	Double_t canvheight = 600;
 	// create the ROOT application to show histograms
 	int myargc=0;
-	char *myargv[] = {(const char*)"somestring"};
-	hitResidualApp = new TApplication("HitResidualApp",&myargc,myargv);
+	//char *myargv[] = {(const char*)"somestring"};
+	hitResidualApp = new TApplication("HitResidualApp",&myargc,0);
 	htimeresidpmt = new TH1D("htimeresidpmt","PMT Digit Time residual",300,-10,25);
 	htimeresidlappd = new TH1D("htimeresidlappd","LAPPD Digit Time residual",300,-10,25);
 	hitResidCanv = new TCanvas("hitResidCanv","hitResidCanv",canvwidth,canvheight);
