@@ -7,6 +7,9 @@
 #include "TSystem.h"
 #include <thread>
 #include <chrono>
+#include <sys/types.h> // for stat() test to see if file or folder
+#include <sys/stat.h>
+//#include <unistd.h>
 
 MrdEfficiency::MrdEfficiency():Tool(){}
 
@@ -27,7 +30,7 @@ bool MrdEfficiency::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("drawHistos",drawHistos);
 	
 	// check the output directory exists and is suitable
-	bool isdir, plotDirectoryExists=false;
+	bool isdir=false, plotDirectoryExists=false;
 	struct stat s;
 	if(stat(plotDirectory.c_str(),&s)==0){
 		plotDirectoryExists=true;

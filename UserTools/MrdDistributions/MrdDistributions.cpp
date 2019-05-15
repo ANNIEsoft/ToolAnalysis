@@ -32,7 +32,7 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("drawHistos",drawHistos);
 	m_variables.Get("plotDirectory",plotDirectory);
 	
-	bool isdir, plotDirectoryExists=false;
+	bool isdir=false, plotDirectoryExists=false;
 	struct stat s;
 	if(stat(plotDirectory.c_str(),&s)==0){
 		plotDirectoryExists=true;
