@@ -116,6 +116,7 @@ class Geometry : public SerialisableObject{
 		// we may not have an existing count if Geometry::SetDetectors was used
 		// in which case, scan the Detectors for this set and count its members
 		int numdetectorsinthisset=-1;
+		int setindex=-1;
 		for(std::vector<std::map<unsigned long,Detector>>::iterator detsetit  = RealDetectors.begin();
 																	detsetit != RealDetectors.end();
 																	++detsetit){
@@ -129,8 +130,9 @@ class Geometry : public SerialisableObject{
 			std::map<unsigned long,Detector>::iterator detectorsit = detsetit->begin();
 			std::string detectorsetelement = detectorsit->second.GetDetectorElement();
 			if(detectorsetelement==SetName){
+				setindex = std::distance(RealDetectors.begin(), detsetit);
 				numdetectorsinthisset = setsize;
-				break; // found the Tank detector set
+				break; // found the requested detector set
 			}
 		}
 		if(numdetectorsinthisset<0){
@@ -138,51 +140,46 @@ class Geometry : public SerialisableObject{
 			return 0;
 		}
 		detectorcounts.emplace(SetName,numdetectorsinthisset);
+		if(DetectorElements.count(SetName)==0){
+			DetectorElements.emplace(SetName,setindex);
+		}
 		return numdetectorsinthisset;
 	}
 	
-	/*  FIXME to make work with the new detector styling
-	int GetNumTankPMTs(){
-		if(numtankpmts!=0) return numtankpmts;
-		for(auto adet : Detectors){
-			unsigned long  chankey = adet.first; // subdetector 1 is ADC
-			if(chankey.GetSubDetectorType()==subdetector::ADC) numtankpmts++;
+	int GetNumTankPMTs(){  // n.b. this doesn't include OD PMTs
+		if(numtankpmts==0){  // double check, in case this variable isn't set
+			numtankpmts = GetNumDetectorsInSet("Tank");
 		}
 		return numtankpmts;
 	}
+	
 	int GetNumMrdPMTs(){
-		if(nummrdpmts!=0) return nummrdpmts;
-		for(auto&& adet : Detectors){
-			ChannelKey chankey = adet.first; // subdetector 0 is TDC...
-			if(chankey.GetSubDetectorType()==subdetector::TDC){
-				if( true FIXME ) nummrdpmts++;
-			}
+		if(nummrdpmts==0){  // double check, in case this variable isn't set
+			nummrdpmts = GetNumDetectorsInSet("MRD");
 		}
-		nummrdpmts -= 26; // FIXME
 		return nummrdpmts;
 	}
-	// XXX how do we distinguish MRD vs Veto channels?
+	
 	int GetNumVetoPMTs(){
-		if(numvetopmts!=0) return numvetopmts;
-//		for(auto&& adet : Detectors){
-//			ChannelKey chankey = adet.first; // subdetector 0 is TDC...
-//			if(chankey.GetSubDetectorType()==subdetector::TDC){
-//				if( false FIXME ) numvetopmts++;
-//			}
-//		}
-		numvetopmts=26;  // FIXME
+		if(numvetopmts==0){  // double check, in case this variable isn't set
+			numvetopmts = GetNumDetectorsInSet("Veto");
+		}
 		return numvetopmts;
 	}
+	
 	int GetNumLAPPDs(){
-		// FIXME this will be inefficient if num lappds are actually 0!
-		if(numlappds!=0) return numlappds;
-		for(auto&& adet : Detectors){
-			ChannelKey chankey = adet.first; // subdetector 2 is LAPPDs...
-			if(chankey.GetSubDetectorType()==subdetector::LAPPD) numlappds++;
+		if(numlappds==0){  // double check, in case this variable isn't set
+			numlappds = GetNumDetectorsInSet("LAPPD");
 		}
 		return numlappds;
 	}
-	*/
+	
+	int GetNumODPMTs(){
+		if(numodpmts==0){  // double check, in case this variable isn't set
+			numodpmts = GetNumDetectorsInSet("OD");
+		}
+		return numodpmts;
+	}
 	
 	bool GetTankContained(Particle part, int startstop=0){
 		Position aVertex = (startstop==0) ? part.GetStopVertex() : part.GetStartVertex();
@@ -239,6 +236,8 @@ class Geometry : public SerialisableObject{
 		cout<<"Number of tank PMTs : " << numtankpmts << endl;
 		cout<<"Number of MRD PMTs : " << nummrdpmts << endl;
 		cout<<"Number of veto PMTs : " << numvetopmts << endl;
+		cout<<"Number of OD PMTs : "<< numodpmts << endl;
+		cout<<"Number of LAPPDs : "<< numlappds << endl;
 		
 		return true;
 	}
@@ -263,7 +262,7 @@ class Geometry : public SerialisableObject{
 	std::map<unsigned long,Detector*> ChannelMap;
 	std::vector<std::map<unsigned long,Detector> > RealDetectors;
 	std::vector<std::map<unsigned long,Detector>*> Detectors;
-	std::map<std::string, int> detectorcounts;  // not stored
+	std::map<std::string, int> detectorcounts;
 	std::map<std::string, int> DetectorElements;
 	double Version;
 	geostatus Status;
@@ -280,6 +279,7 @@ class Geometry : public SerialisableObject{
 	int nummrdpmts;
 	int numvetopmts;
 	int numlappds;
+	int numodpmts;
 	double fiducialradius;
 	double fiducialcutz;
 	double fiducialcuty;
@@ -287,6 +287,8 @@ class Geometry : public SerialisableObject{
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
 			ar & RealDetectors;
+			ar & DetectorElements;
+			ar & detectorcounts;
 			ar & Version;
 			ar & Status;
 			ar & tank_centre;
