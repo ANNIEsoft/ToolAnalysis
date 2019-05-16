@@ -31,7 +31,6 @@ class Hit : public SerialisableObject{
 	}
 	
 	protected:
-	// XXX ~~~~~~ adding members? Don't forget to update the operators of derived classes! ~~~~~~ XXX
 	int TubeId;
 	double Time;
 	double Charge;
@@ -47,7 +46,11 @@ class Hit : public SerialisableObject{
 
 //  Derived classes
 
-class MCHit : virtual public Hit {
+class MCHit : public Hit {
+	// XXX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ XXX
+	// XXX ~~~~~~~~~~~~~~~~~~~~~~~~ UPDATING THIS CLASS? ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ XXX
+	// XXX ~~~~~ Everything added in this class must be duplicated in MCLAPPDHit!~~~~ XXX
+	// XXX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ XXX
 	
 	friend class boost::serialization::access;
 	
@@ -58,48 +61,6 @@ class MCHit : virtual public Hit {
 	
 	const std::vector<int>* GetParents() const { return &Parents; }
 	void SetParents(std::vector<int> parentsin){ Parents = parentsin; }
-	
-	// compiler warns about default implementation of move assignment operator for
-	// classes inheriting from a virtual base class. We need to specify them manually.
-	MCHit(const MCHit& rhs) : Hit(rhs){  // Copy Ctor
-		Parents = rhs.Parents;
-	};
-	MCHit& operator=(const MCHit& rhs){  // Copy Assignment
-		Hit::operator=(rhs);
-		Parents = rhs.Parents;
-		return *this;
-	};
-	MCHit(MCHit&& rhs) /*: Hit(rhs)*/ {      // Move Ctor
-		// calling base Hit methods seems to invoke a copy construction to convert MCHit to Hit...
-		TubeId  = std::move(rhs.TubeId);
-		Time    = std::move(rhs.Time);
-		Charge  = std::move(rhs.Charge);
-		Parents = std::move(rhs.Parents);
-		// no other initialization needed
-	};
-	MCHit& operator=(MCHit&& rhs){       // Move Assignment
-		// no initial cleanup of 'this' needed
-		//Hit::operator=(rhs);
-		TubeId  = std::move(rhs.TubeId);
-		Time    = std::move(rhs.Time);
-		Charge  = std::move(rhs.Charge);
-		Parents = std::move(rhs.Parents);
-		return *this;
-	};
-	
-	// see MCLAPPDHit for the usage of this method
-	MCHit& PartialAssign(const MCHit& rhs){
-		// Initialize only the non-inherited members of this class
-		Parents = rhs.Parents;
-		return *this;
-	}
-	
-	// see MCLAPPDHit for the usage of this method
-	MCHit& PartialAssign(MCHit&& rhs){
-		// Initialize only the non-inherited members of this class
-		Parents = std::move(rhs.Parents);
-		return *this;
-	}
 	
 	bool Print(){
 		cout<<"TubeId : "<<TubeId<<endl;
@@ -119,7 +80,6 @@ class MCHit : virtual public Hit {
 	}
 	
 	protected:
-	// XXX ~~~~~~ adding members? Don't forget to update PartialAssign methods! ~~~~~~~ XXX
 	std::vector<int> Parents;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
@@ -146,10 +106,3 @@ class RecoHit : public Hit {
 */
 
 #endif
-
-//    person(const std::string& name, int age);        // Ctor
-//    person(const person &) = default;                // Copy Ctor
-//    person(person &&) noexcept = default;            // Move Ctor
-//    person& operator=(const person &) = default;     // Copy Assignment
-//    person& operator=(person &&) noexcept = default; // Move Assignment
-//    ~person() noexcept = default;                    // Dtor
