@@ -17,7 +17,7 @@ class LoadGeometry: public Tool {
   bool Finalise();
 
   bool FileExists(const std::string& name);
-  std::string GetTitleLine(const std::string& name);
+  std::string GetKeyLine(const std::string& name);
 
 
  private:

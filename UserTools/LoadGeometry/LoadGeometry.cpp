@@ -32,23 +32,27 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
 
 bool LoadGeometry::Execute(){
-
   return true;
 }
 
 
 bool LoadGeometry::Finalise(){
-
+  std::cout << "LoadGeometry tool exitting" << std::endl;
   return true;
 }
 
 void LoadGeometry::ConstructGeometry(){
   int GeometryVersion = 1;
-  
-  int numtankpmts = -1;
-  int numlappds = -1;
-  int nummrdpmts = -1; 
-  int numvetopmts = -1;
+
+  //First, get the MRD file data key
+  std::string MRDKey = this->GetKeyLine(fFACCMRDGeoFile);
+ 
+  //Initialize at zero; will be set later after channels are loaded 
+  int numtankpmts = 0;
+  int numlappds = 0;
+  int nummrdpmts = 0; 
+  int numvetopmts = 0;
+
   //units in meters
   double tank_xcenter = 0; 
   double tank_ycenter = 0; 
@@ -90,14 +94,14 @@ bool LoadGeometry::FileExists(const std::string& name) {
 }
 
 
-std::string DigitBuilder::GetTitleLine(const std::string& name) {
-  std::string TitleLineLabel = "TITLE_LINE";
+std::string DigitBuilder::GetKeyLine(const std::string& name) {
+  std::string KeyLineLabel = "KEY_LINE";
   std::string line;
   ifstream myfile(name.c_str());
   if (myfile.is_open()){
     while(getline(myfile,line)){
       if(line.find("#") continue;
-      if(line.find(TitleLineLabel){
+      if(line.find(KeyLineLabel){
         //Next line is the title line
         getline(myfile,line);
         return line;
@@ -106,7 +110,7 @@ std::string DigitBuilder::GetTitleLine(const std::string& name) {
   } else {
     Log("LoadGeometry tool: Something went wrong opening a file!!!",v_error,verbosity);
   }
-  Log("LoadGeometry tool: Title line label not found!!!",v_error,verbosity);
+  Log("LoadGeometry tool: Key line label not found!!!",v_error,verbosity);
   return "null";
 
 }
