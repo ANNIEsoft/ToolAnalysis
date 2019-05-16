@@ -1,0 +1,4 @@
+#Units are in meters
+KEY_LINE
+tank_xcenter,tank_ycenter,tank_zcenter,tank_radius,tank_halfheight,pmt_enclosed_radius,pmt_enclosed_halfheight,mrd_width,mrd_height,mrd_depth,mrd_start
+0.0,0.144649,-168.1,1.52,3.96,1.0,1.45,

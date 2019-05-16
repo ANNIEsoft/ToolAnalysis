@@ -3,7 +3,7 @@
 #,,,,0=bottom,,,,,,,,,,,,,,,,,,,,,,,,,
 #,,,,1=top,,,,,,,,,,,,,,,,,,,,,,,,,
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-TITLE_LINE
+KEY_LINE
 channel_num,detector_system,orientation,layer,side,num,x (center),y (center),z (center),x width,y width,z width,Rack,TDC slot,TDC channel,Discrim. slot,Discrim. ch,Patch Panel Row,Patch Panel Col,Amp Slot,Amp Channel,hv_crate,hv_slot,hv_channel,nominal HV,polarity,PMT type,cable label,paddle label,notes
 0,0,0,0,0,1,-210.613,-198.699875,5.08,,,,8,2,0,1,1,1,1,-1,-1,2,14,0,-1871,-1,EMI9815,MRD_x00_y00_z00,4SW,
 1,0,0,0,0,2,-210.613,-167.999875,5.08,,,,8,2,1,1,2,1,2,-1,-1,2,14,1,-1838,-1,EMI9815,MRD_x00_y01_z00,U39,
