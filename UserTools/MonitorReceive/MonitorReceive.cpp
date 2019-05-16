@@ -51,7 +51,7 @@ bool MonitorReceive::Execute(){
   m_data->CStore.Set("State",State);
  
   if(sources>0){
-    zmq::poll(&items[0], 1, 0);
+    zmq::poll(&items[0], 1, 100);
     
     if ((items [0].revents & ZMQ_POLLIN)) {
       //   std::cout<<"in poll in"<<std::endl;
