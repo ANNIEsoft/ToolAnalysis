@@ -18,10 +18,9 @@ class LoadGeometry: public Tool {
 
   bool FileExists(const std::string& name);
   std::string GetKeyLine(const std::string& name);
-  ConstructGeometry();
-  InitializeGeometry();
-  LoadFACCMRDDetectors();
-
+  void InitializeGeometry();
+  void LoadFACCMRDDetectors();
+  Detector*  ParseMRDDataEntry(std::vector<std::string> DataEntries);
   Geometry* AnnieGeometry;
 
  private:
