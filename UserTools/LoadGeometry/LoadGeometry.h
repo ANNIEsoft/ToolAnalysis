@@ -12,15 +12,17 @@ class LoadGeometry: public Tool {
 
  public:
 
+  LoadGeometry();
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
 
   bool FileExists(const std::string& name);
-  std::string GetKeyLine(const std::string& name);
+  std::string GetLegendLine(const std::string& name);
   void InitializeGeometry();
   void LoadFACCMRDDetectors();
-  Detector*  ParseMRDDataEntry(std::vector<std::string> DataEntries);
+  Detector  ParseMRDDataEntry(std::vector<std::string> SpecLine, 
+                               std::vector<std::string> MRDLegendEntries);
   Geometry* AnnieGeometry;
 
  private:
@@ -38,15 +40,16 @@ class LoadGeometry: public Tool {
 
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
-  std::string[20] MRDIntegerValues = {"detector_num","channel_num","detector_system","orientation","layer","side","num",
+  std::vector<std::string> MRDIntegerValues{"detector_num","channel_num","detector_system","orientation","layer","side","num",
                                    "rack","TDC slot","TDC channel","discrim_slot","discrim_ch",
                                    "patch_panel_row","patch_panel_col","amp_slot","amp_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV","polarity"};
-  std::string[6] MRDDoubleValues = {"x_center","y_center","z_center","x_width","y_width","z_width"};
-  std::string[3] MRDStringValues = {"PMT_type","cable_label","paddle_label"};
+  std::vector<std::string> MRDDoubleValues{"x_center","y_center","z_center","x_width","y_width","z_width"};
+  std::vector<std::string> MRDStringValues{"PMT_type","cable_label","paddle_label"};
 
 	//verbosity levels: if 'verbosity' < this level, the message type will be logged.
-	int v_error=0;
+	int verbosity=1;
+  int v_error=0;
 	int v_warning=1;
 	int v_message=2;
 	int v_debug=3;
