@@ -35,6 +35,7 @@
 #include "RecoRing.h"
 #include "MRDOut.h"
 #include "Channel.h"
+#include "LAPPDPulse.h"
 
 
 #include <zmq.hpp>

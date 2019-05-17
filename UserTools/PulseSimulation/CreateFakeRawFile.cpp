@@ -1,3 +1,4 @@
+#include <PulseSimulation.h>
 /* vim:set noexpandtab tabstop=4 wrap */
 
 // CREATE+OPEN RAW FORMAT OUTPUT FILE

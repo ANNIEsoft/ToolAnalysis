@@ -89,4 +89,7 @@
 #include "TotalLightMap/TotalLightMap.cpp"
 #include "MrdDiscriminatorScan/MrdDiscriminatorScan.cpp"
 #include "MCRecoEventLoader/MCRecoEventLoader.cpp"
-
+#include "PulseSimulation/CreateFakeRawFile.cpp"
+#include "PulseSimulation/GetTemplateRunInfo.cpp"
+#include "PulseSimulation/FillEmulatedTriggerdata.cpp"
+#include "PulseSimulation/FillEmulatedCCData.cpp"

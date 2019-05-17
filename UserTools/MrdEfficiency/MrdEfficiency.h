@@ -6,6 +6,13 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TH1F.h"
+#include "TH3D.h"
+#include <TStyle.h>
+#include "TMath.h"
+#include "TROOT.h"
 
 class TGraphErrors;
 
