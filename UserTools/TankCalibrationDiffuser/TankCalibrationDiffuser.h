@@ -21,6 +21,9 @@
 #include "TMath.h"
 #include "TF1.h"
 #include "TCanvas.h"
+#include "TH2.h"
+#include "TH2F.h"
+#include "TFile.h"
 
 class TankCalibrationDiffuser: public Tool {
 

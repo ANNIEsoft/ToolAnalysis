@@ -26,6 +26,8 @@
 #include "TROOT.h"
 #include "TCanvas.h"
 #include "TGraph.h"
+#include "TRandom3.h"
+#include "TF1.h"
 
 // for drawing
 class TApplication;

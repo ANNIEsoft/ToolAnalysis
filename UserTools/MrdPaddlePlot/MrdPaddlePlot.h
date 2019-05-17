@@ -11,6 +11,10 @@
 // for drawing
 #include "TApplication.h"
 #include "TSystem.h"
+#include "TH1D.h"
+#include "MRDspecs.hh"
+#include "TROOT.h"
+
 //#include "TEveLine.h"
 class TEveLine;
 

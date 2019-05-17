@@ -1,6 +1,10 @@
 // Enum class that represents the type of trigger that led to the
 // creation of a particular minibuffer
-#pragma once
+//#pragma once
+
+#ifndef MINIBUFFERLABEL_H
+#define MINIBUFFERLABEL_H
+
 #include <fstream>
 #include <sstream>
 
@@ -46,3 +50,5 @@ std::string minibuffer_label_to_string(const MinibufferLabel& mbl) {
   temp_stream << mbl;
   return temp_stream.str();
 }
+
+#endif

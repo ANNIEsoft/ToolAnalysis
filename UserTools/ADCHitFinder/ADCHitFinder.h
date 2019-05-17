@@ -8,6 +8,7 @@
 #include "CalibratedADCWaveform.h"
 #include "Tool.h"
 #include "Waveform.h"
+#include "Constants.h"
 
 class ADCHitFinder : public Tool {
 

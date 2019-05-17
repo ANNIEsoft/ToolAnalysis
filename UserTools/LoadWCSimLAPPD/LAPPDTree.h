@@ -21,8 +21,14 @@
 #include "TSystemDirectory.h"
 #include <TString.h>
 
+#include <iostream>
 // Header file for the classes stored in the TTree if any.
 #include "vector"
+
+#include <TStyle.h>
+#include <MRDspecs.hh>
+
+using namespace std;
 
 #define SINGLE_TREE        // TODO TODO TODO TODO shouldn't need this define
 

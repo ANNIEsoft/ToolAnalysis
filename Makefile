@@ -102,3 +102,14 @@ update:
 	cd $(ToolDAQPath)/WCSimLib; git checkout . ; git pull; make
 	git pull
 
+test: $(patsubst %.cpp, %.o, $(wildcard UserTools/*/*.cpp))
+	@echo -e "\n*************** Making " $@ "****************"
+	cp UserTools/*/*.h include/
+	cp UserTools/Factory/*.h include/
+	cp UserTools/*.h include/
+	#echo `more UserTools/Unity.o`
+	$(CC)  UserTools/Factory/Factory.cpp `more UserTools/Unity.o` -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
+%.o: %.cpp
+	cp $(shell dirname $^)/*.h include
+	-$(CC) -c -o $@ $< -I include -L lib -lStore -lDataModel -lLogging $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)

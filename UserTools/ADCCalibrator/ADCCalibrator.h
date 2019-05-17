@@ -10,6 +10,7 @@
 #include "CalibratedADCWaveform.h"
 #include "Tool.h"
 #include "Waveform.h"
+#include "annie_math.h"
 
 class ADCCalibrator : public Tool {
 
