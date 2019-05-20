@@ -90,12 +90,12 @@ bool DigitBuilder::Execute(){
 	}
     
     if (fIsMC){
-	  auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fPMTHits);
+	  auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCPMTHits);
 	  if(!get_mchits){ 
 	  	Log("DigitBuilder Tool: Error retrieving MCHits from ANNIEEvent!",v_error,verbosity); 
 	  	return false; 
 	  }
-	  auto get_mclappdhits = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fLAPPDHits);
+	  auto get_mclappdhits = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fMCLAPPDHits);
 	  if(!get_mclappdhits){
 	  	Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_error,verbosity); 
 	  	return false;
@@ -106,7 +106,11 @@ bool DigitBuilder::Execute(){
     }
 
   /// Build RecoDigit
-  this->BuildRecoDigit();
+  if (fIsMC){
+    this->BuildMCRecoDigit();
+  } else {
+    Log("DigitBuilder Tool: ERROR; Currently no non-MC hits loading implemented!",v_error,verbosity);
+  }
 	
   /// Hit info. to RecoEvent
   this->PushRecoDigits(true); 
@@ -119,19 +123,19 @@ bool DigitBuilder::Finalise(){
   return true;
 }
 
-bool DigitBuilder::BuildRecoDigit() {
+bool DigitBuilder::BuildMCRecoDigit() {
 	
 	if(fPhotodetectorConfiguration == "PMT_only") {
-		this->BuildPMTRecoDigit();
+		this->BuildMCPMTRecoDigit();
 		return true;
 	}
 	if(fPhotodetectorConfiguration == "LAPPD_only") {
-		this->BuildLAPPDRecoDigit();
+		this->BuildMCLAPPDRecoDigit();
 		return true;
 	}
 	if(fPhotodetectorConfiguration == "All") {
-		this->BuildPMTRecoDigit();
-	  this->BuildLAPPDRecoDigit();
+		this->BuildMCPMTRecoDigit();
+	  this->BuildMCLAPPDRecoDigit();
 	  return true;
 	}
 	else {
@@ -141,7 +145,7 @@ bool DigitBuilder::BuildRecoDigit() {
 	
 }
 
-bool DigitBuilder::BuildPMTRecoDigit() {
+bool DigitBuilder::BuildMCPMTRecoDigit() {
 	
 	Log("DigitBuilder Tool: Build PMT reconstructed digits",v_message,verbosity);
 	/// now move to digit retrieval
@@ -152,13 +156,18 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 	Detector* det=nullptr;
 	Position  pos_sim, pos_reco;
 	/// MCHits is a std::map<unsigned long,std::vector<Hit>>
-	if(fPMTHits){
-		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fPMTHits->size()),v_message, verbosity);
+	if(fMCPMTHits){
+		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fMCPMTHits->size()),v_message, verbosity);
 		/// iterate over the map of sensors with a measurement
-		for(std::pair<unsigned long,std::vector<Hit>>&& apair : *fPMTHits){
+		for(std::pair<unsigned long,std::vector<MCHit>>&& apair : *fMCPMTHits){
+            std::cout << "DigitBuilder Tool: GETTING CHANNEL KEY " << std::endl;
 			unsigned long chankey = apair.first;
+            std::cout << "DigitBuilder Tool: THIS CHANNELKEY IS " << chankey << std::endl;
 			// the channel key is a unique identifier of this signal input channel
+            std::cout << "DigitBuilder tool: GETTING DETECTOR WITH CHANNELKEY" << std::endl;
 			det = fGeometry->ChannelToDetector(chankey);
+            det->Print();
+            std::cout << "DigitBuilder tool: GETTING PMT ID WITH CHANNELKEY_TO_PMTID" << std::endl;
 			int PMTId = channelkey_to_pmtid.at(chankey);  //PMTID In WCSim
 			if(det==nullptr){
 				Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
@@ -167,6 +176,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			
 			// convert the WCSim coordinates to the ANNIEreco coordinates
 			// convert the unit from m to cm
+            std::cout << "DigitBuilder Tool: GETTING DETECTOR POSITION " << std::endl;
 			pos_sim = det->GetDetectorPosition();
 			pos_sim.UnitToCentimeter();
 			pos_reco.SetX(pos_sim.X());
@@ -174,12 +184,13 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 			pos_reco.SetZ(pos_sim.Z()-168.1);
 	
 			if(det->GetDetectorElement()=="Tank"){
-				std::vector<Hit>& hits = apair.second;
+				std::vector<MCHit>& hits = apair.second;
         if(fParametricModel){
           //We'll get all hit info and then define a time/charge for each digit
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
-          for(Hit& ahit : hits){
+          std::cout << "DigitBuilder Tool: GETTING HIT TIME/CHARGES IN PARAMETRIC MODEL " << std::endl;
+          for(MCHit& ahit : hits){
             if(verbosity>3){
               std::cout << "This HIT'S TIME AND CHARGE: " << ahit.GetTime() <<
                   "," << ahit.GetCharge() << std::endl;
@@ -213,7 +224,7 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 				    fDigitList->push_back(recoDigit); 
 				  }
         } else {
-			    for(Hit& ahit : hits){
+			    for(MCHit& ahit : hits){
 				  	//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 				  	// get calibrated PMT time (Use the MC time for now)
 				  	calT = ahit.GetTime()*1.0; 
@@ -233,8 +244,8 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 	return true;
 }
 
-bool DigitBuilder::BuildLAPPDRecoDigit() {
-	std::string name = "DigitBuilder::BuildLAPPDRecoDigit(): ";
+bool DigitBuilder::BuildMCLAPPDRecoDigit() {
+	std::string name = "DigitBuilder::BuildMCLAPPDRecoDigit(): ";
 	Log(name + " Build LAPPD reconstructed digits",v_message,verbosity);
 	int region = -999;
 	double calT = 0;
@@ -244,10 +255,10 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
 	// MCLAPPDHits is a std::map<unsigned long,std::vector<LAPPDHit>>
-	if(fLAPPDHits){
-		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fLAPPDHits->size()),v_message,verbosity);
+	if(fMCLAPPDHits){
+		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fMCLAPPDHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement
-		for(std::pair<unsigned long,std::vector<LAPPDHit>>&& apair : *fLAPPDHits){
+		for(std::pair<unsigned long,std::vector<MCLAPPDHit>>&& apair : *fMCLAPPDHits){
 			unsigned long chankey = apair.first;
 			det = fGeometry->ChannelToDetector(chankey);
 			if(det==nullptr){
@@ -267,8 +278,8 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
       }
 
 			if(det->GetDetectorElement()=="LAPPD"){ // redundant, MCLAPPDHits are LAPPD hitss
-				std::vector<LAPPDHit>& hits = apair.second;
-				for(LAPPDHit& ahit : hits){
+				std::vector<MCLAPPDHit>& hits = apair.second;
+				for(MCLAPPDHit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 					// an LAPPDHit has adds (global x-y-z) position, (in-tile x-y) local position
 					// and time psecs
