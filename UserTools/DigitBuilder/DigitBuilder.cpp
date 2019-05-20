@@ -160,14 +160,10 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
 		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fMCPMTHits->size()),v_message, verbosity);
 		/// iterate over the map of sensors with a measurement
 		for(std::pair<unsigned long,std::vector<MCHit>>&& apair : *fMCPMTHits){
-            std::cout << "DigitBuilder Tool: GETTING CHANNEL KEY " << std::endl;
 			unsigned long chankey = apair.first;
-            std::cout << "DigitBuilder Tool: THIS CHANNELKEY IS " << chankey << std::endl;
 			// the channel key is a unique identifier of this signal input channel
-            std::cout << "DigitBuilder tool: GETTING DETECTOR WITH CHANNELKEY" << std::endl;
 			det = fGeometry->ChannelToDetector(chankey);
             det->Print();
-            std::cout << "DigitBuilder tool: GETTING PMT ID WITH CHANNELKEY_TO_PMTID" << std::endl;
 			int PMTId = channelkey_to_pmtid.at(chankey);  //PMTID In WCSim
 			if(det==nullptr){
 				Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
@@ -176,7 +172,6 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
 			
 			// convert the WCSim coordinates to the ANNIEreco coordinates
 			// convert the unit from m to cm
-            std::cout << "DigitBuilder Tool: GETTING DETECTOR POSITION " << std::endl;
 			pos_sim = det->GetDetectorPosition();
 			pos_sim.UnitToCentimeter();
 			pos_reco.SetX(pos_sim.X());
@@ -189,7 +184,6 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
           //We'll get all hit info and then define a time/charge for each digit
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
-          std::cout << "DigitBuilder Tool: GETTING HIT TIME/CHARGES IN PARAMETRIC MODEL " << std::endl;
           for(MCHit& ahit : hits){
             if(verbosity>3){
               std::cout << "This HIT'S TIME AND CHARGE: " << ahit.GetTime() <<
