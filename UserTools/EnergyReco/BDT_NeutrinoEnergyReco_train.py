@@ -104,7 +104,7 @@ def Execute():
     
     print("training BDTG...")
     net_hi_E = ensemble.GradientBoostingRegressor(**params)
-    net_hi_E.fit(arr2_hi_E_train, arr3_hi_E_train)
+    model = net_hi_E.fit(arr2_hi_E_train, arr3_hi_E_train)
     net_hi_E
 
     # save the model to disk
