@@ -163,7 +163,6 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
 			unsigned long chankey = apair.first;
 			// the channel key is a unique identifier of this signal input channel
 			det = fGeometry->ChannelToDetector(chankey);
-            det->Print();
 			int PMTId = channelkey_to_pmtid.at(chankey);  //PMTID In WCSim
 			if(det==nullptr){
 				Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
