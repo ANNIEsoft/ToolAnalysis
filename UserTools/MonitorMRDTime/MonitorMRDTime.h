@@ -8,6 +8,8 @@
 #include "Tool.h"
 #include "zmq.h"
 
+#include "TObjectTable.h"
+
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TF1.h"
@@ -170,12 +172,6 @@ class MonitorMRDTime: public Tool {
 
 double compute_variance(const double mean, const std::vector<double>& numbers){
 
-/*
-  if (numbers.size() <= 1u)
-    std::cout <<"compute variance: returning not a number..."<<std::endl;
-    return std::numeric_limits<double>::quiet_NaN();
-    */
-
   auto add_square = [mean](double sum, int i)
     {
       auto d = i - mean;
@@ -223,7 +219,7 @@ long accumulate_longarray12(const std::vector<std::array<long,12> >& numbers, in
 
   if (numbers.size() <= 1u)
     return std::numeric_limits<double>::quiet_NaN();
-  int entries;
+  int entries=0;
   long return_value=0.;
   for (int i_vector=start; i_vector<stop; i_vector++){
     entries++;

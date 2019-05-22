@@ -20,6 +20,8 @@
 #include "TPaletteAxis.h"
 #include "TPaveText.h"
 
+#include "TObjectTable.h"
+
 
 class MonitorMRDLive: public Tool {
 

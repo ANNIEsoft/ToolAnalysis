@@ -1,1 +1,3 @@
-MRDDataPath ./MRDTest12DISCp0
+MRDDataPath ./MRDTest26commonstopp22
+MRDTxtFile ./configfiles/Monitoring/MRDfiles.txt
+Mode FileList

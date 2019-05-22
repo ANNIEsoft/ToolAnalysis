@@ -21,10 +21,14 @@ class MonitorSimReceive: public Tool {
 
  private:
 
-  std::string MRDDataPath;
+  std::string MRDDataPath, MRDDataPathSingle;
+  std::string MRD_path_to_file;
+  std::string mode;
   BoostStore* MRDData;
   BoostStore* MRDData2;
 
+  std::vector<std::string> vec_filename;
+  int i_loop;
 
 
 };

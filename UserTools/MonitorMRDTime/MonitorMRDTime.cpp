@@ -13,8 +13,11 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   //-------------------------------------------------------
 
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
-  //m_variables.Print();
   m_data= &data; //assigning transient data pointer
+
+  //only for debugging memory leaks, otherwise comment out
+  std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
+  gObjectTable->Print();
 
   //-------------------------------------------------------
   //-----------------Get Configuration---------------------
@@ -54,7 +57,7 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   while (!file.eof()){
     file>>temp_crate>>temp_slot;
     loopnum++;
-    std::cout<<loopnum<<" , "<<temp_crate<<" , "<<temp_slot<<std::endl;
+    //std::cout<<loopnum<<" , "<<temp_crate<<" , "<<temp_slot<<std::endl;
     if (file.eof()) break;
     //if (loopnum!=13){
       if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
@@ -183,6 +186,11 @@ bool MonitorMRDTime::Execute(){
 	}
   
   i_loop++;
+
+    //only for debugging memory leaks, otherwise comment out
+  std::cout <<"List of Objects (after execute step): "<<std::endl;
+  gObjectTable->Print();
+
   return true;
 
 }
@@ -191,7 +199,64 @@ bool MonitorMRDTime::Execute(){
 bool MonitorMRDTime::Finalise(){
 
   if (verbosity > 1) std::cout <<"Tool MonitorMRDTime: Finalising ...."<<std::endl;
+
   MRDdata->Delete();
+
+  //delete all the pointer to objects that are still active
+  delete Epoch;
+  delete hist_hitmap_fivemin_cr1;
+  delete hist_hitmap_fivemin_cr2;
+  delete hist_hitmap_hour_cr1;
+  delete hist_hitmap_hour_cr2;
+  delete hist_hitmap_sixhour_cr1;
+  delete hist_hitmap_sixhour_cr2;
+  delete hist_hitmap_day_cr1;
+  delete hist_hitmap_day_cr2;
+
+  for (int i_gr=0; i_gr < gr_times_hour.size(); i_gr++){
+    delete gr_times_hour.at(i_gr);
+    delete gr_rms_hour.at(i_gr);
+    delete gr_frequency_hour.at(i_gr);
+    delete gr_times_sixhour.at(i_gr);
+    delete gr_rms_sixhour.at(i_gr);
+    delete gr_frequency_sixhour.at(i_gr);
+    delete gr_times_day.at(i_gr);
+    delete gr_rms_day.at(i_gr);
+    delete gr_frequency_day.at(i_gr);
+    delete hist_times_hour.at(i_gr);
+    delete hist_times_sixhour.at(i_gr);
+    delete hist_times_day.at(i_gr);
+  }
+  for (int i_gr_slot=0; i_gr_slot < gr_slot_times_hour.size(); i_gr_slot++){
+    delete gr_slot_times_hour.at(i_gr_slot);
+    delete gr_slot_rms_hour.at(i_gr_slot);
+    delete gr_slot_frequency_hour.at(i_gr_slot);  
+    delete gr_slot_times_sixhour.at(i_gr_slot);
+    delete gr_slot_rms_sixhour.at(i_gr_slot);
+    delete gr_slot_frequency_sixhour.at(i_gr_slot);
+    delete gr_slot_times_day.at(i_gr_slot);
+    delete gr_slot_rms_day.at(i_gr_slot);
+    delete gr_slot_frequency_day.at(i_gr_slot); 
+  }
+  for (int i_gr_crate = 0; i_gr_crate < gr_crate_times_hour.size(); i_gr_crate++){
+    delete gr_crate_times_hour.at(i_gr_crate);
+    delete gr_crate_rms_hour.at(i_gr_crate);
+    delete gr_crate_frequency_hour.at(i_gr_crate);
+    delete gr_crate_times_sixhour.at(i_gr_crate);
+    delete gr_crate_rms_sixhour.at(i_gr_crate);
+    delete gr_crate_frequency_sixhour.at(i_gr_crate);
+    delete gr_crate_times_day.at(i_gr_crate);
+    delete gr_crate_rms_day.at(i_gr_crate);
+    delete gr_crate_frequency_day.at(i_gr_crate); 
+
+  }
+  for (int i_hist=0; i_hist < hist_hitmap_fivemin_Channel.size(); i_hist++){
+    delete hist_hitmap_fivemin_Channel.at(i_hist);
+    delete hist_hitmap_hour_Channel.at(i_hist);
+    delete hist_hitmap_sixhour_Channel.at(i_hist);
+    delete hist_hitmap_day_Channel.at(i_hist);
+  }
+
   return true;
 }
 
@@ -751,11 +816,11 @@ void MonitorMRDTime::InitializeVectors(){
 
 void MonitorMRDTime::MRDTimePlots(){
 
-//-------------------------------------------------------
-//------------------MRDTimePlots-------------------------
-//-------------------------------------------------------
+  //-------------------------------------------------------
+  //------------------MRDTimePlots-------------------------
+  //-------------------------------------------------------
 
-//fill the TGraphs first before plotting them
+  //fill the TGraphs first before plotting them
 
   //variables for scaling hitmaps
   max_sum_fivemin=0;
@@ -770,25 +835,25 @@ void MonitorMRDTime::MRDTimePlots(){
     //-------------------------------------------------------
 
     if (draw_scatter){
-    if (hist_times_hour.at(i_channel)->GetEntries()>0) hist_times_hour.at(i_channel)->Reset();
-    if (hist_times_sixhour.at(i_channel)->GetEntries()>0) hist_times_sixhour.at(i_channel)->Reset();
-    if (hist_times_day.at(i_channel)->GetEntries()>0) hist_times_day.at(i_channel)->Reset();
+      if (hist_times_hour.at(i_channel)->GetEntries()>0) hist_times_hour.at(i_channel)->Reset();
+      if (hist_times_sixhour.at(i_channel)->GetEntries()>0) hist_times_sixhour.at(i_channel)->Reset();
+      if (hist_times_day.at(i_channel)->GetEntries()>0) hist_times_day.at(i_channel)->Reset();
 
-    for (int i_entry=0; i_entry<times_channel_overall_hour.at(i_channel).size(); i_entry++){
-      double hist_time = (3600.-(current_stamp-stamp_channel_overall_hour.at(i_channel).at(i_entry))/(1000.));
-      if (verbosity > 5) std::cout <<"1 hour: time diff: "<< (current_stamp-stamp_channel_overall_hour.at(i_channel).at(i_entry)) <<", hist time bin: "<<hist_time<<std::endl;
-      if (hist_time>0. && hist_time<3600.) hist_times_hour.at(i_channel)->Fill(hist_time,times_channel_overall_hour.at(i_channel).at(i_entry));
-    }
-    for (int i_entry=0; i_entry<times_channel_overall_sixhour.at(i_channel).size();i_entry++){
-      double hist_time_sixhour = (21600.-(current_stamp-stamp_channel_overall_sixhour.at(i_channel).at(i_entry))/(1000.));
-      if (verbosity > 5) std::cout <<"6 hours: time diff: "<< (current_stamp-stamp_channel_overall_sixhour.at(i_channel).at(i_entry)) <<", hist time bin: "<<hist_time_sixhour<<std::endl;
-      if (hist_time_sixhour>0. && hist_time_sixhour < 21600.) hist_times_sixhour.at(i_channel)->Fill(hist_time_sixhour,times_channel_overall_sixhour.at(i_channel).at(i_entry));
-    }
-    for (int i_entry=0;i_entry<times_channel_overall_day.at(i_channel).size();i_entry++){
-      double hist_time_day = (86400.-(current_stamp-stamp_channel_overall_day.at(i_channel).at(i_entry))/(1000.));
-      if (verbosity > 5) std::cout <<"DAY: time diff: "<< (current_stamp-stamp_channel_overall_day.at(i_channel).at(i_entry)) <<", hist time bin: "<<hist_time_day<<std::endl;
-      if (hist_time_day>0. && hist_time_day < 86400.) hist_times_day.at(i_channel)->Fill(hist_time_day,times_channel_overall_day.at(i_channel).at(i_entry));
-    }
+      for (int i_entry=0; i_entry<times_channel_overall_hour.at(i_channel).size(); i_entry++){
+        double hist_time = (3600.-(current_stamp-stamp_channel_overall_hour.at(i_channel).at(i_entry))/(1000.));
+        if (verbosity > 5) std::cout <<"1 hour: time diff: "<< (current_stamp-stamp_channel_overall_hour.at(i_channel).at(i_entry)) <<", hist time bin: "<<hist_time<<std::endl;
+        if (hist_time>0. && hist_time<3600.) hist_times_hour.at(i_channel)->Fill(hist_time,times_channel_overall_hour.at(i_channel).at(i_entry));
+      }
+      for (int i_entry=0; i_entry<times_channel_overall_sixhour.at(i_channel).size();i_entry++){
+        double hist_time_sixhour = (21600.-(current_stamp-stamp_channel_overall_sixhour.at(i_channel).at(i_entry))/(1000.));
+        if (verbosity > 5) std::cout <<"6 hours: time diff: "<< (current_stamp-stamp_channel_overall_sixhour.at(i_channel).at(i_entry)) <<", hist time bin: "<<hist_time_sixhour<<std::endl;
+        if (hist_time_sixhour>0. && hist_time_sixhour < 21600.) hist_times_sixhour.at(i_channel)->Fill(hist_time_sixhour,times_channel_overall_sixhour.at(i_channel).at(i_entry));
+      }
+      for (int i_entry=0;i_entry<times_channel_overall_day.at(i_channel).size();i_entry++){
+        double hist_time_day = (86400.-(current_stamp-stamp_channel_overall_day.at(i_channel).at(i_entry))/(1000.));
+        if (verbosity > 5) std::cout <<"DAY: time diff: "<< (current_stamp-stamp_channel_overall_day.at(i_channel).at(i_entry)) <<", hist time bin: "<<hist_time_day<<std::endl;
+        if (hist_time_day>0. && hist_time_day < 86400.) hist_times_day.at(i_channel)->Fill(hist_time_day,times_channel_overall_day.at(i_channel).at(i_entry));
+      }
     }
 
     //-------------------------------------------------------
@@ -797,198 +862,204 @@ void MonitorMRDTime::MRDTimePlots(){
 
     if (update_mins){
       if (draw_average){
-      for (int i_mins=0;i_mins<num_fivemin;i_mins++){
-        if (verbosity > 3) std::cout <<"MonitorMRDTime: Stored data (1 hour): bin "<<i_mins<<", time: "<<label_fivemin[i_mins].GetTime()<<", tdc: "<<times_channel_hour.at(i_channel)[i_mins]<<std::endl;
-        gr_times_hour.at(i_channel)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),times_channel_hour.at(i_channel)[i_mins]);
-        gr_rms_hour.at(i_channel)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),rms_channel_hour.at(i_channel)[i_mins]);
-        gr_frequency_hour.at(i_channel)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),frequency_channel_hour.at(i_channel)[i_mins]);
-      }
+        for (int i_mins=0;i_mins<num_fivemin;i_mins++){
+          if (verbosity > 3) std::cout <<"MonitorMRDTime: Stored data (1 hour): Channel #: "<<i_channel<<", bin "<<i_mins<<", time: "<<label_fivemin[i_mins].GetTime()<<", tdc: "<<times_channel_hour.at(i_channel)[i_mins]<<std::endl;
+          gr_times_hour.at(i_channel)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),times_channel_hour.at(i_channel)[i_mins]);
+          gr_rms_hour.at(i_channel)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),rms_channel_hour.at(i_channel)[i_mins]);
+          gr_frequency_hour.at(i_channel)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),frequency_channel_hour.at(i_channel)[i_mins]);
+        }
       }//close draw average
 
       //-------------------------------------------------------
       //--------------Updating hitmaps-------------------------
       //-------------------------------------------------------
       if (draw_hitmap){
-      long sum_fivemin=0;
-      long sum_hour=0;
-      long sum_sixhour=0;
-      long sum_day=0;
-      for (int i_overall_mins=0;i_overall_mins<num_overall_fivemin;i_overall_mins++){
-        sum_day+=n_channel_overall_day.at(i_channel)[i_overall_mins];
-        if (i_overall_mins>=0.75*num_overall_fivemin){
-          sum_sixhour+=n_channel_overall_day.at(i_channel)[i_overall_mins];
-          if (i_overall_mins>=int(23./24*num_overall_fivemin)){               //only the last part starting from 23/24 (last hour)
-            sum_hour+=n_channel_overall_day.at(i_channel)[i_overall_mins];
-            if (i_overall_mins>=int(num_overall_fivemin-1)){                  //only the last 5 mins
-              sum_fivemin+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+
+        long sum_fivemin=0;
+        long sum_hour=0;
+        long sum_sixhour=0;
+        long sum_day=0;
+        for (int i_overall_mins=0;i_overall_mins<num_overall_fivemin;i_overall_mins++){
+          sum_day+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+          if (i_overall_mins>=0.75*num_overall_fivemin){
+            sum_sixhour+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+            if (i_overall_mins>=int(23./24*num_overall_fivemin)){               //only the last part starting from 23/24 (last hour)
+              sum_hour+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+              if (i_overall_mins>=int(num_overall_fivemin-1)){                  //only the last 5 mins
+                sum_fivemin+=n_channel_overall_day.at(i_channel)[i_overall_mins];
+              }
             }
           }
         }
-      }
 
-      int num_crate = (i_channel < num_active_slots_cr1*num_channels)? min_crate : min_crate+1; 
-      int num_slot = (mapping_vector_ch.at(i_channel)-(i_channel)%num_channels-(num_crate-min_crate)*num_slots)/num_channels+1;
-      //if (verbosity > 4) std::cout <<"Channel number: "<<i_channel<<", slot number: "<<num_slot<<std::endl;
+        int num_crate = (i_channel < num_active_slots_cr1*num_channels)? min_crate : min_crate+1; 
+        int num_slot = (mapping_vector_ch.at(i_channel)-(i_channel)%num_channels-(num_crate-min_crate)*num_slots)/num_channels+1;
+        //if (verbosity > 4) std::cout <<"Channel number: "<<i_channel<<", slot number: "<<num_slot<<std::endl;
 
 
-      if (i_channel<num_active_slots_cr1*num_channels){
-        hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,0.001);
-        hist_hitmap_hour_cr2->SetBinContent(i_channel+1,0.001);
-        hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,0.001);
-        hist_hitmap_day_cr2->SetBinContent(i_channel+1,0.001);
-        std::vector<int>::iterator it = std::find(active_slots_cr1.begin(),active_slots_cr1.end(),num_slot);
-        int index = std::distance(active_slots_cr1.begin(),it);
-        if (sum_fivemin!=0) {
-          if (max_sum_fivemin < sum_fivemin) max_sum_fivemin = sum_fivemin;
-          hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,sum_fivemin);
-          hist_hitmap_fivemin_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_fivemin);
+        if (i_channel<num_active_slots_cr1*num_channels){
+          hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,0.001);
+          hist_hitmap_hour_cr2->SetBinContent(i_channel+1,0.001);
+          hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,0.001);
+          hist_hitmap_day_cr2->SetBinContent(i_channel+1,0.001);
+          std::vector<int>::iterator it = std::find(active_slots_cr1.begin(),active_slots_cr1.end(),num_slot);
+          int index = std::distance(active_slots_cr1.begin(),it);
+          if (sum_fivemin!=0) {
+            if (max_sum_fivemin < sum_fivemin) max_sum_fivemin = sum_fivemin;
+            hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,sum_fivemin);
+            hist_hitmap_fivemin_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_fivemin);
+          } else {
+            hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_fivemin_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }
+          if (sum_hour!=0) {
+            if (max_sum_hour < sum_hour) max_sum_hour = sum_hour;
+            hist_hitmap_hour_cr1->SetBinContent(i_channel+1,sum_hour);
+            hist_hitmap_hour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_hour);
+          } else {
+            hist_hitmap_hour_cr1->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_hour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }
+          if (sum_sixhour!=0) {
+            if (max_sum_sixhour < sum_sixhour) max_sum_sixhour = sum_sixhour;
+            hist_hitmap_sixhour_cr1->SetBinContent(i_channel+1,sum_sixhour);
+            hist_hitmap_sixhour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_sixhour);
+          } else {
+            hist_hitmap_sixhour_cr1->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_sixhour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }
+          if (sum_day!=0) {
+            if (max_sum_day < sum_day) max_sum_day = sum_day;
+            hist_hitmap_day_cr1->SetBinContent(i_channel+1,sum_day);
+            hist_hitmap_day_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_day);
+          } else {
+            hist_hitmap_day_cr1->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_day_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
+          } 
         } else {
           hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_fivemin_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
-        }
-        if (sum_hour!=0) {
-          if (max_sum_hour < sum_hour) max_sum_hour = sum_hour;
-          hist_hitmap_hour_cr1->SetBinContent(i_channel+1,sum_hour);
-          hist_hitmap_hour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_hour);
-        } else {
           hist_hitmap_hour_cr1->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_hour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
-        }
-        if (sum_sixhour!=0) {
-          if (max_sum_sixhour < sum_sixhour) max_sum_sixhour = sum_sixhour;
-          hist_hitmap_sixhour_cr1->SetBinContent(i_channel+1,sum_sixhour);
-          hist_hitmap_sixhour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_sixhour);
-        } else {
           hist_hitmap_sixhour_cr1->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_sixhour_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
-        }
-        if (sum_day!=0) {
-          if (max_sum_day < sum_day) max_sum_day = sum_day;
-          hist_hitmap_day_cr1->SetBinContent(i_channel+1,sum_day);
-          hist_hitmap_day_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_day);
-        } else {
           hist_hitmap_day_cr1->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_day_Channel.at(index)->SetBinContent(i_channel%num_channels+1,0.001);
-        } 
-      } else {
-        hist_hitmap_fivemin_cr1->SetBinContent(i_channel+1,0.001);
-        hist_hitmap_hour_cr1->SetBinContent(i_channel+1,0.001);
-        hist_hitmap_sixhour_cr1->SetBinContent(i_channel+1,0.001);
-        hist_hitmap_day_cr1->SetBinContent(i_channel+1,0.001);
-        std::vector<int>::iterator it = std::find(active_slots_cr2.begin(),active_slots_cr2.end(),num_slot);
-        int index = std::distance(active_slots_cr2.begin(),it);
-        if (sum_fivemin!=0) {
-          if (max_sum_fivemin < sum_fivemin) max_sum_fivemin = sum_fivemin;
-          hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,sum_fivemin);
-          hist_hitmap_fivemin_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_fivemin);
-        } else {
-          hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_fivemin_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
+          std::vector<int>::iterator it = std::find(active_slots_cr2.begin(),active_slots_cr2.end(),num_slot);
+          int index = std::distance(active_slots_cr2.begin(),it);
+          if (sum_fivemin!=0) {
+            if (max_sum_fivemin < sum_fivemin) max_sum_fivemin = sum_fivemin;
+            hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,sum_fivemin);
+            hist_hitmap_fivemin_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_fivemin);
+          } else {
+            hist_hitmap_fivemin_cr2->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_fivemin_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }
+          if (sum_hour!=0) {
+            if (max_sum_hour < sum_hour) max_sum_hour = sum_hour;
+            hist_hitmap_hour_cr2->SetBinContent(i_channel+1,sum_hour);
+            hist_hitmap_hour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_hour);
+          } else {
+            hist_hitmap_hour_cr2->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_hour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }
+          if (sum_sixhour!=0) {
+            if (max_sum_sixhour < sum_sixhour) max_sum_sixhour = sum_sixhour;         
+            hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,sum_sixhour);
+            hist_hitmap_sixhour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_sixhour);
+          } else {
+            hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_sixhour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }
+          if (sum_day!=0) {
+            if (max_sum_day < sum_day) max_sum_day = sum_day;
+            hist_hitmap_day_cr2->SetBinContent(i_channel+1,sum_day);
+            hist_hitmap_day_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_day);
+          } else {
+            hist_hitmap_day_cr2->SetBinContent(i_channel+1,0.001);
+            hist_hitmap_day_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
+          }       
         }
-        if (sum_hour!=0) {
-          if (max_sum_hour < sum_hour) max_sum_hour = sum_hour;
-          hist_hitmap_hour_cr2->SetBinContent(i_channel+1,sum_hour);
-          hist_hitmap_hour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_hour);
-        } else {
-          hist_hitmap_hour_cr2->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_hour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
-        }
-        if (sum_sixhour!=0) {
-          if (max_sum_sixhour < sum_sixhour) max_sum_sixhour = sum_sixhour;         
-          hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,sum_sixhour);
-          hist_hitmap_sixhour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_sixhour);
-        } else {
-          hist_hitmap_sixhour_cr2->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_sixhour_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
-        }
-        if (sum_day!=0) {
-          if (max_sum_day < sum_day) max_sum_day = sum_day;
-          hist_hitmap_day_cr2->SetBinContent(i_channel+1,sum_day);
-          hist_hitmap_day_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_day);
-        } else {
-          hist_hitmap_day_cr2->SetBinContent(i_channel+1,0.001);
-          hist_hitmap_day_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,0.001);
-        }       
       }
-    }
     }//close draw hitmap
 
     if (draw_average){
-    if (update_halfhour){
-  	 for (int i_halfhour=0;i_halfhour<num_halfhour;i_halfhour++){
-        if (verbosity > 3) std::cout <<"MonitorMRDTime: Stored data (6 hours): bin "<<i_halfhour<<", time: "<<label_halfhour[i_halfhour].GetTime()<<", TDC: "<<times_channel_sixhour.at(i_channel)[i_halfhour]<<std::endl;
-		    gr_times_sixhour.at(i_channel)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),times_channel_sixhour.at(i_channel)[i_halfhour]);
-		    gr_rms_sixhour.at(i_channel)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),rms_channel_sixhour.at(i_channel)[i_halfhour]);
-		    gr_frequency_sixhour.at(i_channel)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),frequency_channel_sixhour.at(i_channel)[i_halfhour]);
+      if (update_halfhour){
+    	 for (int i_halfhour=0;i_halfhour<num_halfhour;i_halfhour++){
+          if (verbosity > 3) std::cout <<"MonitorMRDTime: Stored data (6 hours): bin "<<i_halfhour<<", time: "<<label_halfhour[i_halfhour].GetTime()<<", TDC: "<<times_channel_sixhour.at(i_channel)[i_halfhour]<<std::endl;
+  		    gr_times_sixhour.at(i_channel)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),times_channel_sixhour.at(i_channel)[i_halfhour]);
+  		    gr_rms_sixhour.at(i_channel)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),rms_channel_sixhour.at(i_channel)[i_halfhour]);
+  		    gr_frequency_sixhour.at(i_channel)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),frequency_channel_sixhour.at(i_channel)[i_halfhour]);
+        }
       }
-    }
-    if (update_hour){
-      for (int i_hour=0;i_hour<num_hour;i_hour++){
-        if (verbosity > 3) std::cout <<"MonitorMRDTime: Stored data (day): bin "<<i_hour<<", time: "<<label_hour[i_hour].GetTime()<<", TDC: "<<times_channel_day.at(i_channel)[i_hour]<<std::endl;
-        gr_times_day.at(i_channel)->SetPoint(i_hour,label_hour[i_hour].Convert(),times_channel_day.at(i_channel)[i_hour]);
-        gr_rms_day.at(i_channel)->SetPoint(i_hour,label_hour[i_hour].Convert(),rms_channel_day.at(i_channel)[i_hour]);
-        gr_frequency_day.at(i_channel)->SetPoint(i_hour,label_hour[i_hour].Convert(),frequency_channel_day.at(i_channel)[i_hour]);
+      if (update_hour){
+        for (int i_hour=0;i_hour<num_hour;i_hour++){
+          if (verbosity > 3) std::cout <<"MonitorMRDTime: Stored data (day): bin "<<i_hour<<", time: "<<label_hour[i_hour].GetTime()<<", TDC: "<<times_channel_day.at(i_channel)[i_hour]<<std::endl;
+          gr_times_day.at(i_channel)->SetPoint(i_hour,label_hour[i_hour].Convert(),times_channel_day.at(i_channel)[i_hour]);
+          gr_rms_day.at(i_channel)->SetPoint(i_hour,label_hour[i_hour].Convert(),rms_channel_day.at(i_channel)[i_hour]);
+          gr_frequency_day.at(i_channel)->SetPoint(i_hour,label_hour[i_hour].Convert(),frequency_channel_day.at(i_channel)[i_hour]);
+        }
       }
-    }
     }//close draw average
   }
 
   //-------------------------------------------------------
   //--------------Updating slot graphs---------------------
   //-------------------------------------------------------
+  std::cout <<"Updating slot graphs..."<<std::endl;
 
   if (draw_average){
-  for (int i_slot = 0; i_slot<num_active_slots;i_slot++){
-    if (update_mins){
-      for (int i_mins = 0;i_mins<num_fivemin;i_mins++){
-        gr_slot_times_hour.at(i_slot)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),times_slot_hour.at(i_slot)[i_mins]);
-        gr_slot_rms_hour.at(i_slot)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),rms_slot_hour.at(i_slot)[i_mins]);
-        gr_slot_frequency_hour.at(i_slot)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),frequency_slot_hour.at(i_slot)[i_mins]);
+    for (int i_slot = 0; i_slot<num_active_slots;i_slot++){
+      if (update_mins){
+        for (int i_mins = 0;i_mins<num_fivemin;i_mins++){
+          gr_slot_times_hour.at(i_slot)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),times_slot_hour.at(i_slot)[i_mins]);
+          gr_slot_rms_hour.at(i_slot)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),rms_slot_hour.at(i_slot)[i_mins]);
+          gr_slot_frequency_hour.at(i_slot)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),frequency_slot_hour.at(i_slot)[i_mins]);
+        }
+      }
+      if (update_halfhour){
+        for (int i_halfhour = 0; i_halfhour<num_halfhour;i_halfhour++){	
+          gr_slot_times_sixhour.at(i_slot)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),times_slot_sixhour.at(i_slot)[i_halfhour]);
+          gr_slot_rms_sixhour.at(i_slot)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),rms_slot_sixhour.at(i_slot)[i_halfhour]);
+          gr_slot_frequency_sixhour.at(i_slot)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),frequency_slot_sixhour.at(i_slot)[i_halfhour]);
+        }
+      }
+      if (update_hour){
+  	   for (int i_hour = 0; i_hour<num_hour;i_hour++){
+  		    gr_slot_times_day.at(i_slot)->SetPoint(i_hour,label_hour[i_hour].Convert(),times_slot_day.at(i_slot)[i_hour]);
+  		    gr_slot_rms_day.at(i_slot)->SetPoint(i_hour,label_hour[i_hour].Convert(),rms_slot_day.at(i_slot)[i_hour]);
+  		    gr_slot_frequency_day.at(i_slot)->SetPoint(i_hour,label_hour[i_hour].Convert(),frequency_slot_day.at(i_slot)[i_hour]);
+        }
       }
     }
-    if (update_halfhour){
-      for (int i_halfhour = 0; i_halfhour<num_halfhour;i_halfhour++){	
-        gr_slot_times_sixhour.at(i_slot)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),times_slot_sixhour.at(i_slot)[i_halfhour]);
-        gr_slot_rms_sixhour.at(i_slot)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),rms_slot_sixhour.at(i_slot)[i_halfhour]);
-        gr_slot_frequency_sixhour.at(i_slot)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),frequency_slot_sixhour.at(i_slot)[i_halfhour]);
-      }
-    }
-    if (update_hour){
-	   for (int i_hour = 0; i_hour<num_hour;i_hour++){
-		    gr_slot_times_day.at(i_slot)->SetPoint(i_hour,label_hour[i_hour].Convert(),times_slot_day.at(i_slot)[i_hour]);
-		    gr_slot_rms_day.at(i_slot)->SetPoint(i_hour,label_hour[i_hour].Convert(),rms_slot_day.at(i_slot)[i_hour]);
-		    gr_slot_frequency_day.at(i_slot)->SetPoint(i_hour,label_hour[i_hour].Convert(),frequency_slot_day.at(i_slot)[i_hour]);
-      }
-    }
-  }
 
-  //-------------------------------------------------------
-  //--------------Updating crate graphs--------------------
-  //-------------------------------------------------------
+    //-------------------------------------------------------
+    //--------------Updating crate graphs--------------------
+    //-------------------------------------------------------
 
-  for (int i_crate = 0; i_crate<num_crates;i_crate++){
-    if (update_mins){
-    	for (int i_mins = 0;i_mins<num_fivemin;i_mins++){
-  		  gr_crate_times_hour.at(i_crate)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),times_crate_hour.at(i_crate)[i_mins]);
-  		  gr_crate_rms_hour.at(i_crate)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),rms_crate_hour.at(i_crate)[i_mins]);
-  		  gr_crate_frequency_hour.at(i_crate)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),frequency_crate_hour.at(i_crate)[i_mins]);
+
+    std::cout <<"Updating crate graphs..."<<std::endl;
+
+
+    for (int i_crate = 0; i_crate<num_crates;i_crate++){
+      if (update_mins){
+      	for (int i_mins = 0;i_mins<num_fivemin;i_mins++){
+    		  gr_crate_times_hour.at(i_crate)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),times_crate_hour.at(i_crate)[i_mins]);
+    		  gr_crate_rms_hour.at(i_crate)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),rms_crate_hour.at(i_crate)[i_mins]);
+    		  gr_crate_frequency_hour.at(i_crate)->SetPoint(i_mins,label_fivemin[i_mins].Convert(),frequency_crate_hour.at(i_crate)[i_mins]);
+        }
+      }
+      if (update_halfhour){
+        for (int i_halfhour = 0; i_halfhour<num_halfhour;i_halfhour++){
+      	 gr_crate_times_sixhour.at(i_crate)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),times_crate_sixhour.at(i_crate)[i_halfhour]);
+         gr_crate_rms_sixhour.at(i_crate)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),rms_crate_sixhour.at(i_crate)[i_halfhour]);
+         gr_crate_frequency_sixhour.at(i_crate)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),frequency_crate_sixhour.at(i_crate)[i_halfhour]);
+        }  
+      }
+      if (update_hour){
+        for (int i_hour = 0; i_hour<num_hour;i_hour++){
+    		  gr_crate_times_day.at(i_crate)->SetPoint(i_hour,label_hour[i_hour].Convert(),times_crate_day.at(i_crate)[i_hour]);
+    		  gr_crate_rms_day.at(i_crate)->SetPoint(i_hour,label_hour[i_hour].Convert(),rms_crate_day.at(i_crate)[i_hour]);
+    	   	gr_crate_frequency_day.at(i_crate)->SetPoint(i_hour,label_hour[i_hour].Convert(),frequency_crate_day.at(i_crate)[i_hour]);
+        }
       }
     }
-    if (update_halfhour){
-      for (int i_halfhour = 0; i_halfhour<num_halfhour;i_halfhour++){
-    	 gr_crate_times_sixhour.at(i_crate)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),times_crate_sixhour.at(i_crate)[i_halfhour]);
-       gr_crate_rms_sixhour.at(i_crate)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),rms_crate_sixhour.at(i_crate)[i_halfhour]);
-       gr_crate_frequency_sixhour.at(i_crate)->SetPoint(i_halfhour,label_halfhour[i_halfhour].Convert(),frequency_crate_sixhour.at(i_crate)[i_halfhour]);
-      }  
-    }
-    if (update_hour){
-      for (int i_hour = 0; i_hour<num_hour;i_hour++){
-  		  gr_crate_times_day.at(i_crate)->SetPoint(i_hour,label_hour[i_hour].Convert(),times_crate_day.at(i_crate)[i_hour]);
-  		  gr_crate_rms_day.at(i_crate)->SetPoint(i_hour,label_hour[i_hour].Convert(),rms_crate_day.at(i_crate)[i_hour]);
-  	   	gr_crate_frequency_day.at(i_crate)->SetPoint(i_hour,label_hour[i_hour].Convert(),frequency_crate_day.at(i_crate)[i_hour]);
-      }
-    }
-  }
   }//close draw average
 
   //defining all canvases
@@ -1046,18 +1117,18 @@ void MonitorMRDTime::MRDTimePlots(){
   if (update_mins){
 
     //1 HOUR - CHANNELS
-    TLegend *leg;
-    TLegend *leg_rms;
-    TLegend *leg_freq;
+    TLegend *leg = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_rms = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_freq = new TLegend(0.7,0.7,0.88,0.88);
     max_canvas = 0;
     min_canvas = 9999999.;
     max_canvas_rms = 0;
     min_canvas_rms = 99999999.;
     max_canvas_freq = 0;
     min_canvas_freq = 999999999.;
-    TMultiGraph *multi_ch;
-    TMultiGraph *multi_ch_rms;
-    TMultiGraph *multi_ch_freq;
+    TMultiGraph *multi_ch = new TMultiGraph();
+    TMultiGraph *multi_ch_rms = new TMultiGraph();
+    TMultiGraph *multi_ch_freq = new TMultiGraph();
     int num_ch = 16;   //channels per canvas
     int enum_ch_canvas=0;
 
@@ -1077,97 +1148,115 @@ void MonitorMRDTime::MRDTimePlots(){
           ss_ch_rms<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (1 hour) ["<<enum_ch_canvas+1<<"]";
           ss_ch_freq<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (1 hour) ["<<enum_ch_canvas+1<<"]";
           if (draw_average){
-          if ( i_channel == times_channel_hour.size() - 1){
-            ss_leg_ch.str("");
-            ss_leg_ch<<"ch "<<i_channel%num_channels;
-            multi_ch->Add(gr_times_hour.at(i_channel));
-            leg->AddEntry(gr_times_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-            multi_ch_rms->Add(gr_rms_hour.at(i_channel));
-            leg_rms->AddEntry(gr_rms_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-            multi_ch_freq->Add(gr_frequency_hour.at(i_channel));
-            leg_freq->AddEntry(gr_frequency_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-          }
-          canvas_ch->cd();
-          multi_ch->Draw("apl");
-          //multi_ch->GetYaxis()->SetRangeUser(0,1.2*max_canvas);
-          multi_ch->SetTitle(ss_ch.str().c_str());
-          multi_ch->GetYaxis()->SetTitle("TDC");
-          multi_ch->GetXaxis()->SetTimeDisplay(1);
-          multi_ch->GetXaxis()->SetLabelSize(0.03);
-          multi_ch->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
-          leg->Draw();
-          canvas_ch_rms->cd();
-          multi_ch_rms->Draw("apl");
-          //multi_ch_rms->GetYaxis()->SetRangeUser(0.,1.2*max_canvas_rms);
-          multi_ch_rms->SetTitle(ss_ch_rms.str().c_str());
-          multi_ch_rms->GetYaxis()->SetTitle("RMS (TDC)");
-          multi_ch_rms->GetYaxis()->SetTitleSize(0.035);
-          multi_ch_rms->GetYaxis()->SetTitleOffset(1.3);
-          multi_ch_rms->GetXaxis()->SetTimeDisplay(1);
-          multi_ch_rms->GetXaxis()->SetLabelSize(0.03);
-          multi_ch_rms->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
-          leg_rms->Draw();
-          canvas_ch_freq->cd();
-          multi_ch_freq->Draw("apl");
-          //multi_ch_freq->GetYaxis()->SetRangeUser(0.,1.2*max_canvas_freq);
-          multi_ch_freq->SetTitle(ss_ch_freq.str().c_str());
-          multi_ch_freq->GetYaxis()->SetTitle("Freq [1/min]");
-          multi_ch_freq->GetYaxis()->SetTitleSize(0.035);
-          multi_ch_freq->GetYaxis()->SetTitleOffset(1.3);
-          multi_ch_freq->GetXaxis()->SetTimeDisplay(1);
-          multi_ch_freq->GetXaxis()->SetLabelSize(0.03);
-          multi_ch_freq->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
-          leg_freq->Draw();
-          ss_ch.str("");
-          ss_ch_rms.str("");
-          ss_ch_freq.str("");
-          ss_ch<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_"<<enum_ch_canvas<<"_HourTrend_TDC.jpg";
-          ss_ch_rms<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_"<<enum_ch_canvas<<"_HourTrend_RMS.jpg";
-          ss_ch_freq<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_"<<enum_ch_canvas<<"_HourTrend_Freq.jpg";
-          canvas_ch->SaveAs(ss_ch.str().c_str());
-          canvas_ch_rms->SaveAs(ss_ch_rms.str().c_str());
-          canvas_ch_freq->SaveAs(ss_ch_freq.str().c_str()); 
+            if ( i_channel == times_channel_hour.size() - 1){
+              ss_leg_ch.str("");
+              ss_leg_ch<<"ch "<<i_channel%num_channels;
+              multi_ch->Add(gr_times_hour.at(i_channel));
+              leg->AddEntry(gr_times_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+              multi_ch_rms->Add(gr_rms_hour.at(i_channel));
+              leg_rms->AddEntry(gr_rms_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+              multi_ch_freq->Add(gr_frequency_hour.at(i_channel));
+              leg_freq->AddEntry(gr_frequency_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+            }
+            canvas_ch->cd();
+            multi_ch->Draw("apl");
+            //multi_ch->GetYaxis()->SetRangeUser(0,1.2*max_canvas);
+            multi_ch->SetTitle(ss_ch.str().c_str());
+            multi_ch->GetYaxis()->SetTitle("TDC");
+            multi_ch->GetXaxis()->SetTimeDisplay(1);
+            multi_ch->GetXaxis()->SetLabelSize(0.03);
+            multi_ch->GetXaxis()->SetLabelOffset(0.03);
+            multi_ch->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+            leg->Draw();
+            canvas_ch_rms->cd();
+            multi_ch_rms->Draw("apl");
+            //multi_ch_rms->GetYaxis()->SetRangeUser(0.,1.2*max_canvas_rms);
+            multi_ch_rms->SetTitle(ss_ch_rms.str().c_str());
+            multi_ch_rms->GetYaxis()->SetTitle("RMS (TDC)");
+            multi_ch_rms->GetYaxis()->SetTitleSize(0.035);
+            multi_ch_rms->GetYaxis()->SetTitleOffset(1.3);
+            multi_ch_rms->GetXaxis()->SetTimeDisplay(1);
+            multi_ch_rms->GetXaxis()->SetLabelSize(0.03);
+            multi_ch_rms->GetXaxis()->SetLabelOffset(0.03);
+            multi_ch_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+            leg_rms->Draw();
+            canvas_ch_freq->cd();
+            multi_ch_freq->Draw("apl");
+            //multi_ch_freq->GetYaxis()->SetRangeUser(0.,1.2*max_canvas_freq);
+            multi_ch_freq->SetTitle(ss_ch_freq.str().c_str());
+            multi_ch_freq->GetYaxis()->SetTitle("Freq [1/min]");
+            multi_ch_freq->GetYaxis()->SetTitleSize(0.035);
+            multi_ch_freq->GetYaxis()->SetTitleOffset(1.3);
+            multi_ch_freq->GetXaxis()->SetTimeDisplay(1);
+            multi_ch_freq->GetXaxis()->SetLabelSize(0.03);
+            multi_ch_freq->GetXaxis()->SetLabelOffset(0.03);
+            multi_ch_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+            leg_freq->Draw();
+            ss_ch.str("");
+            ss_ch_rms.str("");
+            ss_ch_freq.str("");
+            ss_ch<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_"<<enum_ch_canvas<<"_HourTrend_TDC.jpg";
+            ss_ch_rms<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_"<<enum_ch_canvas<<"_HourTrend_RMS.jpg";
+            ss_ch_freq<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_"<<enum_ch_canvas<<"_HourTrend_Freq.jpg";
+            canvas_ch->SaveAs(ss_ch.str().c_str());
+            canvas_ch_rms->SaveAs(ss_ch_rms.str().c_str());
+            canvas_ch_freq->SaveAs(ss_ch_freq.str().c_str()); 
           }//close draw average
 
           enum_ch_canvas++;  
           enum_ch_canvas=enum_ch_canvas%2;
-        }
+
+          for (int i_gr=0; i_gr < num_ch; i_gr++){
+            int i_balance = (i_channel == times_channel_hour.size()-1)? 1 : 0;
+            multi_ch->RecursiveRemove(gr_times_hour.at(i_channel-num_ch+i_gr+i_balance));
+            multi_ch_rms->RecursiveRemove(gr_rms_hour.at(i_channel-num_ch+i_gr+i_balance));
+            multi_ch_freq->RecursiveRemove(gr_frequency_hour.at(i_channel-num_ch+i_gr+i_balance));
+          }
+
+        } //close i_channel!=0
   		
         canvas_ch->Clear();
         canvas_ch_rms->Clear();
         canvas_ch_freq->Clear();
-        multi_ch = new TMultiGraph();
-        multi_ch_rms = new TMultiGraph();
-        multi_ch_freq = new TMultiGraph();
-        leg = new TLegend(0.7,0.7,0.88,0.88);
-        leg->SetNColumns(4);
-        leg_rms = new TLegend(0.7,0.7,0.88,0.88);
-        leg_rms->SetNColumns(4);
-        leg_freq = new TLegend(0.7,0.7,0.88,0.88);
-        leg_freq->SetNColumns(4);
-        leg->SetLineColor(0);
-        leg_rms->SetLineColor(0);
-        leg_freq->SetLineColor(0);
-  	   }
 
-      if (draw_average){
-      ss_leg_ch.str("");
-      ss_leg_ch<<"ch "<<i_channel%num_channels;
-      multi_ch->Add(gr_times_hour.at(i_channel));
-      if (gr_times_hour.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_times_hour.at(i_channel)->GetMaximum();
-      if (gr_times_hour.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_times_hour.at(i_channel)->GetMinimum();
-      leg->AddEntry(gr_times_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      multi_ch_rms->Add(gr_rms_hour.at(i_channel));
-      leg_rms->AddEntry(gr_rms_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_rms_hour.at(i_channel)->GetMaximum()>max_canvas_rms) max_canvas_rms = gr_rms_hour.at(i_channel)->GetMaximum();
-      if (gr_rms_hour.at(i_channel)->GetMinimum()<min_canvas_rms) min_canvas_rms = gr_rms_hour.at(i_channel)->GetMinimum();
-      multi_ch_freq->Add(gr_frequency_hour.at(i_channel));
-      leg_freq->AddEntry(gr_frequency_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_frequency_hour.at(i_channel)->GetMaximum()>max_canvas_freq) max_canvas_freq = gr_frequency_hour.at(i_channel)->GetMaximum();
-      if (gr_frequency_hour.at(i_channel)->GetMinimum()<min_canvas_freq) min_canvas_freq = gr_frequency_hour.at(i_channel)->GetMinimum();
+        delete multi_ch;
+        delete multi_ch_rms;
+        delete multi_ch_freq;
+        delete leg;
+        delete leg_rms;
+        delete leg_freq;
+
+        if (i_channel!=times_channel_hour.size()-1){
+          multi_ch = new TMultiGraph();
+          multi_ch_rms = new TMultiGraph();
+          multi_ch_freq = new TMultiGraph();
+          leg = new TLegend(0.7,0.7,0.88,0.88);
+          leg->SetNColumns(4);
+          leg_rms = new TLegend(0.7,0.7,0.88,0.88);
+          leg_rms->SetNColumns(4);
+          leg_freq = new TLegend(0.7,0.7,0.88,0.88);
+          leg_freq->SetNColumns(4);
+          leg->SetLineColor(0);
+          leg_rms->SetLineColor(0);
+          leg_freq->SetLineColor(0);
+        }
+  	   } //close i_channel%num_channel=0 
+
+      if (draw_average && (i_channel != times_channel_hour.size()-1)){
+        ss_leg_ch.str("");
+        ss_leg_ch<<"ch "<<i_channel%num_channels;
+        multi_ch->Add(gr_times_hour.at(i_channel));
+        if (gr_times_hour.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_times_hour.at(i_channel)->GetMaximum();
+        if (gr_times_hour.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_times_hour.at(i_channel)->GetMinimum();
+        leg->AddEntry(gr_times_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        multi_ch_rms->Add(gr_rms_hour.at(i_channel));
+        leg_rms->AddEntry(gr_rms_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_rms_hour.at(i_channel)->GetMaximum()>max_canvas_rms) max_canvas_rms = gr_rms_hour.at(i_channel)->GetMaximum();
+        if (gr_rms_hour.at(i_channel)->GetMinimum()<min_canvas_rms) min_canvas_rms = gr_rms_hour.at(i_channel)->GetMinimum();
+        multi_ch_freq->Add(gr_frequency_hour.at(i_channel));
+        leg_freq->AddEntry(gr_frequency_hour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_frequency_hour.at(i_channel)->GetMaximum()>max_canvas_freq) max_canvas_freq = gr_frequency_hour.at(i_channel)->GetMaximum();
+        if (gr_frequency_hour.at(i_channel)->GetMinimum()<min_canvas_freq) min_canvas_freq = gr_frequency_hour.at(i_channel)->GetMinimum();
       }//close draw average
 
       //single channel plots - omit, too many plots!
@@ -1181,7 +1270,7 @@ void MonitorMRDTime::MRDTimePlots(){
       ss_ch_hist_temp<<outpath<<"Crate"<<num_crate<<"_Slot"<<num_slot<<"_Channel"<<(i_channel%(num_channels))<<"_HourTrend_Scatter.jpg";
       canvas_ch_temp[i_channel%(num_channels)]->SaveAs(ss_ch_hist_temp.str().c_str());
     */
-  	} 
+  	} //close i_channel loop
 
     if (draw_average){
     //1 HOUR - SLOTS (1)
@@ -1224,7 +1313,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot->GetXaxis()->SetTimeDisplay(1);
     multi_slot->GetXaxis()->SetLabelSize(0.03);
     multi_slot->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot->Draw();
     canvas_slot_rms->cd();
     multi_slot_rms->Draw("apl");
@@ -1236,7 +1325,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot_rms->GetXaxis()->SetTimeDisplay(1);
     multi_slot_rms->GetXaxis()->SetLabelSize(0.03);
     multi_slot_rms->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot_rms->Draw();
     canvas_slot_freq->cd();
     multi_slot_freq->Draw("apl");
@@ -1248,7 +1337,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot_freq->GetXaxis()->SetTimeDisplay(1);
     multi_slot_freq->GetXaxis()->SetLabelSize(0.03);
     multi_slot_freq->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot_freq->Draw();
     std::stringstream ss_slot, ss_slot_rms, ss_slot_freq;
   	ss_slot<<outpath<<"Crate7_Slots_HourTrend_TDC.jpg";
@@ -1301,7 +1390,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2->GetXaxis()->SetTimeDisplay(1);
     multi_slot2->GetXaxis()->SetLabelSize(0.03);
     multi_slot2->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot2->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2->Draw();
     canvas_slot_rms->cd();
     multi_slot2_rms->Draw("apl");
@@ -1313,7 +1402,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2_rms->GetXaxis()->SetTimeDisplay(1);
     multi_slot2_rms->GetXaxis()->SetLabelOffset(0.03);
     multi_slot2_rms->GetXaxis()->SetLabelSize(0.03);
-    multi_slot2_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2_rms->Draw();
     canvas_slot_freq->cd();
     multi_slot2_freq->Draw("apl");
@@ -1325,7 +1414,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2_freq->GetXaxis()->SetTimeDisplay(1);
     multi_slot2_freq->GetXaxis()->SetLabelSize(0.03);
     multi_slot2_freq->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot2_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2_freq->Draw();
   	ss_slot.str("");
   	ss_slot_rms.str("");
@@ -1380,7 +1469,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate->GetXaxis()->SetTimeDisplay(1);
     multi_crate->GetXaxis()->SetLabelSize(0.03);
     multi_crate->GetXaxis()->SetLabelOffset(0.03);
-    multi_crate->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate->Draw();
     canvas_crate_rms->cd();
     multi_crate_rms->Draw("apl");
@@ -1392,7 +1481,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate_rms->GetXaxis()->SetTimeDisplay(1);
     multi_crate_rms->GetXaxis()->SetLabelSize(0.03);
     multi_crate_rms->GetXaxis()->SetLabelOffset(0.03);
-    multi_crate_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate_rms->Draw();
     canvas_crate_freq->cd();
     multi_crate_freq->Draw("apl");
@@ -1404,7 +1493,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate_freq->GetXaxis()->SetTimeDisplay(1);
     multi_crate_freq->GetXaxis()->SetLabelSize(0.03);
     multi_crate_freq->GetXaxis()->SetLabelOffset(0.03);
-    multi_crate_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate_freq->Draw();
     std::stringstream ss_crate, ss_crate_rms, ss_crate_freq;
     ss_crate<<outpath<<"Crates_HourTrend_TDC.jpg";
@@ -1413,6 +1502,44 @@ void MonitorMRDTime::MRDTimePlots(){
     canvas_crate->SaveAs(ss_crate.str().c_str());
     canvas_crate_rms->SaveAs(ss_crate_rms.str().c_str());
     canvas_crate_freq->SaveAs(ss_crate_freq.str().c_str());
+
+    //delete all remaining pointers to objects
+
+    for (int i_slot = 0;i_slot<num_active_slots_cr2;i_slot++){
+      multi_slot->RecursiveRemove(gr_slot_times_hour.at(i_slot));
+      multi_slot_rms->RecursiveRemove(gr_slot_rms_hour.at(i_slot));
+      multi_slot_freq->RecursiveRemove(gr_slot_frequency_hour.at(i_slot));
+      multi_slot2->RecursiveRemove(gr_slot_times_hour.at(i_slot+num_active_slots_cr1));
+      multi_slot2_rms->RecursiveRemove(gr_slot_rms_hour.at(i_slot+num_active_slots_cr1));
+      multi_slot2_freq->RecursiveRemove(gr_slot_frequency_hour.at(i_slot+num_active_slots_cr1));
+    }
+    
+    for (int i_crate = 0; i_crate < num_crates; i_crate++){
+      multi_crate->RecursiveRemove(gr_crate_times_hour.at(i_crate));
+      multi_crate_rms->RecursiveRemove(gr_crate_rms_hour.at(i_crate));
+      multi_crate_freq->RecursiveRemove(gr_crate_frequency_hour.at(i_crate));
+    }
+
+    delete multi_slot;
+    delete multi_slot_rms;
+    delete multi_slot_freq;
+    delete multi_slot2;
+    delete multi_slot2_rms;
+    delete multi_slot2_freq;
+    delete multi_crate;
+    delete multi_crate_rms;
+    delete multi_crate_freq;
+
+    delete leg_slot;
+    delete leg_slot_rms;
+    delete leg_slot_freq;
+    delete leg_slot2;
+    delete leg_slot2_rms;
+    delete leg_slot2_freq;
+    delete leg_crate;
+    delete leg_crate_rms;
+    delete leg_crate_freq;
+
     } // close draw average
 
     if (draw_hitmap){
@@ -1475,6 +1602,11 @@ void MonitorMRDTime::MRDTimePlots(){
     std::string save_path_fivemin = outpath+str_hitmaps_fivemin;
     canvas_hitmap_fivemin->SaveAs(save_path_fivemin.c_str());
 
+    delete separate_crates;
+    delete label_cr1;
+    delete label_cr2;
+    delete labels_grid;
+
     //HITMAP - 1 HOUR
     canvas_hitmap_hour->cd();
     /*min_cr1=hist_hitmap_hour_cr1->GetMinimum();
@@ -1516,20 +1648,20 @@ void MonitorMRDTime::MRDTimePlots(){
     hist_hitmap_hour_cr1->SetTitleSize(0.3,"t");
     hist_hitmap_hour_cr1->Draw();
     hist_hitmap_hour_cr2->Draw("same");
-    separate_crates = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_hour+10);
-    separate_crates->SetLineStyle(2);
-    separate_crates->SetLineWidth(2);
-    separate_crates->Draw("same");
-    label_cr1 = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
-    label_cr1->SetFillColor(0);
-    label_cr1->SetTextColor(8);
-    label_cr1->AddText("Rack 7");
-    label_cr1->Draw();
-    label_cr2 = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
-    label_cr2->SetFillColor(0);
-    label_cr2->SetTextColor(9);
-    label_cr2->AddText("Rack 8");
-    label_cr2->Draw();
+    TLine *separate_crates_hour = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_hour+10);
+    separate_crates_hour->SetLineStyle(2);
+    separate_crates_hour->SetLineWidth(2);
+    separate_crates_hour->Draw("same");
+    TPaveText *label_cr1_hour = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
+    label_cr1_hour->SetFillColor(0);
+    label_cr1_hour->SetTextColor(8);
+    label_cr1_hour->AddText("Rack 7");
+    label_cr1_hour->Draw();
+    TPaveText *label_cr2_hour = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
+    label_cr2_hour->SetFillColor(0);
+    label_cr2_hour->SetTextColor(9);
+    label_cr2_hour->AddText("Rack 8");
+    label_cr2_hour->Draw();
     canvas_hitmap_hour->Update();
     TGaxis *labels_grid_hour = new TGaxis(0,canvas_hitmap_hour->GetUymin(),num_active_slots*num_channels,canvas_hitmap_hour->GetUymin(),"f1",num_active_slots,"w");
     labels_grid_hour->SetLabelSize(0);
@@ -1537,6 +1669,11 @@ void MonitorMRDTime::MRDTimePlots(){
     std::string str_hitmaps_hour = "Hitmaps_lasthour.jpg";
     std::string save_path_hour = outpath+str_hitmaps_hour;
     canvas_hitmap_hour->SaveAs(save_path_hour.c_str());
+
+    delete separate_crates_hour;
+    delete label_cr1_hour;
+    delete label_cr2_hour;
+    delete labels_grid_hour;
 
     //HITMAP - 6 HOURS
     canvas_hitmap_sixhour->cd();
@@ -1587,20 +1724,20 @@ void MonitorMRDTime::MRDTimePlots(){
     max_scale = (max_cr1>max_cr2)? max_cr1 : max_cr2;*/
     hist_hitmap_sixhour_cr1->GetYaxis()->SetRangeUser(0.8,max_sum_sixhour+10);
     hist_hitmap_sixhour_cr2->GetYaxis()->SetRangeUser(0.8,max_sum_sixhour+10);
-    separate_crates = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_sixhour+10);
-    separate_crates->SetLineStyle(2);
-    separate_crates->SetLineWidth(2);
-    separate_crates->Draw("same");
-    label_cr1 = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
-    label_cr1->SetFillColor(0);
-    label_cr1->SetTextColor(8);
-    label_cr1->AddText("Rack 7");
-    label_cr1->Draw();
-    label_cr2 = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
-    label_cr2->SetFillColor(0);
-    label_cr2->SetTextColor(9);
-    label_cr2->AddText("Rack 8");
-    label_cr2->Draw();
+    TLine *separate_crates_sixhour = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_sixhour+10);
+    separate_crates_sixhour->SetLineStyle(2);
+    separate_crates_sixhour->SetLineWidth(2);
+    separate_crates_sixhour->Draw("same");
+    TPaveText *label_cr1_sixhour = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
+    label_cr1_sixhour->SetFillColor(0);
+    label_cr1_sixhour->SetTextColor(8);
+    label_cr1_sixhour->AddText("Rack 7");
+    label_cr1_sixhour->Draw();
+    TPaveText *label_cr2_sixhour = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
+    label_cr2_sixhour->SetFillColor(0);
+    label_cr2_sixhour->SetTextColor(9);
+    label_cr2_sixhour->AddText("Rack 8");
+    label_cr2_sixhour->Draw();
     canvas_hitmap_sixhour->Update();
     TGaxis *labels_grid_sixhour = new TGaxis(0,canvas_hitmap_sixhour->GetUymin(),num_active_slots*num_channels,canvas_hitmap_sixhour->GetUymin(),"f1",num_active_slots,"w");
     labels_grid_sixhour->SetLabelSize(0);
@@ -1608,6 +1745,11 @@ void MonitorMRDTime::MRDTimePlots(){
     std::string str_hitmaps_sixhours = "Hitmaps_lastsixhours.jpg";
     std::string save_path_sixhours = outpath+str_hitmaps_sixhours;
     canvas_hitmap_sixhour->SaveAs(save_path_sixhours.c_str());
+
+    delete separate_crates_sixhour;
+    delete label_cr1_sixhour;
+    delete label_cr2_sixhour;
+    delete labels_grid_sixhour;
 
     //HITMAP - DAY
     canvas_hitmap_day->cd();
@@ -1661,20 +1803,20 @@ void MonitorMRDTime::MRDTimePlots(){
     //std::cout << "hitmap DAY: max sum: "<<max_sum_day<<std::endl;
     hist_hitmap_day_cr1->GetYaxis()->SetRangeUser(0.8,max_sum_day+10);
     hist_hitmap_day_cr2->GetYaxis()->SetRangeUser(0.8,max_sum_day+10);
-    separate_crates = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_day+10);
-    separate_crates->SetLineStyle(2);
-    separate_crates->SetLineWidth(2);
-    separate_crates->Draw("same");
-    label_cr1 = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
-    label_cr1->SetFillColor(0);
-    label_cr1->SetTextColor(8);
-    label_cr1->AddText("Rack 7");
-    label_cr1->Draw();
-    label_cr2 = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
-    label_cr2->SetFillColor(0);
-    label_cr2->SetTextColor(9);
-    label_cr2->AddText("Rack 8");
-    label_cr2->Draw();
+    TLine *separate_crates_day = new TLine(num_channels*num_active_slots_cr1,0.8,num_channels*num_active_slots_cr1,max_sum_day+10);
+    separate_crates_day->SetLineStyle(2);
+    separate_crates_day->SetLineWidth(2);
+    separate_crates_day->Draw("same");
+    TPaveText *label_cr1_day = new TPaveText(0.02,0.93,0.17,0.98,"NDC");
+    label_cr1_day->SetFillColor(0);
+    label_cr1_day->SetTextColor(8);
+    label_cr1_day->AddText("Rack 7");
+    label_cr1_day->Draw();
+    TPaveText *label_cr2_day = new TPaveText(0.83,0.93,0.98,0.98,"NDC");
+    label_cr2_day->SetFillColor(0);
+    label_cr2_day->SetTextColor(9);
+    label_cr2_day->AddText("Rack 8");
+    label_cr2_day->Draw();
     canvas_hitmap_day->Update();
     TGaxis *labels_grid_day = new TGaxis(0,canvas_hitmap_day->GetUymin(),num_active_slots*num_channels,canvas_hitmap_day->GetUymin(),"f1",num_active_slots,"w");
     labels_grid_day->SetLabelSize(0);
@@ -1682,6 +1824,12 @@ void MonitorMRDTime::MRDTimePlots(){
     std::string str_hitmaps_day = "Hitmaps_lastday.jpg";
     std::string save_path_day = outpath+str_hitmaps_day;
     canvas_hitmap_day->SaveAs(save_path_day.c_str());
+
+    delete separate_crates_day;
+    delete label_cr1_day;
+    delete label_cr2_day;
+    delete labels_grid_day;
+    delete f1;
 
     //HITMAPS - SINGLE CHANNEL DISTRIBUTIONS
     TCanvas *canvas_Hitmap_Slots_fivemin, *canvas_Hitmap_Slots_hour, *canvas_Hitmap_Slots_sixhour, *canvas_Hitmap_Slots_day;
@@ -1758,9 +1906,9 @@ void MonitorMRDTime::MRDTimePlots(){
   if (draw_scatter){   //update only the scatter plots if 5 mins have not passed
     //1 HOUR - SCATTER
     //std::cout <<"MRDMonitorTime: Updating Scatter Plots: "<<std::endl;
-    TLegend *leg_hist;
-    TLegend *leg_hist_sixhour;
-    TLegend *leg_hist_day;
+    TLegend *leg_hist = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_hist_sixhour = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_hist_day = new TLegend(0.7,0.7,0.88,0.88);
     max_canvas_hist = 0.;
     min_canvas_hist = 999999999.;
     int num_ch = 16;   //channels per canvas
@@ -1830,15 +1978,22 @@ void MonitorMRDTime::MRDTimePlots(){
         canvas_ch_hist->Clear();
         canvas_ch_hist_sixhour->Clear();
         canvas_ch_hist_day->Clear();
-        leg_hist = new TLegend(0.7,0.7,0.88,0.88);
-        leg_hist->SetNColumns(4);
-        leg_hist_sixhour = new TLegend(0.7,0.7,0.88,0.88);
-        leg_hist_sixhour->SetNColumns(4);
-        leg_hist_day = new TLegend(0.7,0.7,0.88,0.88);
-        leg_hist_day->SetNColumns(4);
-        leg_hist->SetLineColor(0);
-        leg_hist_sixhour->SetLineColor(0);
-        leg_hist_day->SetLineColor(0);
+
+        delete leg_hist;
+        delete leg_hist_sixhour;
+        delete leg_hist_day;
+
+        if (i_channel != times_channel_hour.size()-1){
+          leg_hist = new TLegend(0.7,0.7,0.88,0.88);
+          leg_hist->SetNColumns(4);
+          leg_hist_sixhour = new TLegend(0.7,0.7,0.88,0.88);
+          leg_hist_sixhour->SetNColumns(4);
+          leg_hist_day = new TLegend(0.7,0.7,0.88,0.88);
+          leg_hist_day->SetNColumns(4);
+          leg_hist->SetLineColor(0);
+          leg_hist_sixhour->SetLineColor(0);
+          leg_hist_day->SetLineColor(0);
+        }
       }
 
       canvas_ch_hist->cd();
@@ -1847,21 +2002,21 @@ void MonitorMRDTime::MRDTimePlots(){
         hist_times_hour.at(i_channel)->GetXaxis()->SetLabelOffset(0.03);
         hist_times_hour.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
         hist_times_hour.at(i_channel)->GetXaxis()->SetTimeOffset(timeoffset_hour.Convert());
-        hist_times_hour.at(i_channel)->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+        hist_times_hour.at(i_channel)->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
         hist_times_hour.at(i_channel)->Draw();
         canvas_ch_hist_sixhour->cd();
         hist_times_sixhour.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
         hist_times_sixhour.at(i_channel)->GetXaxis()->SetLabelOffset(0.03);
         hist_times_sixhour.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
         hist_times_sixhour.at(i_channel)->GetXaxis()->SetTimeOffset(timeoffset_sixhour.Convert());
-        hist_times_sixhour.at(i_channel)->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+        hist_times_sixhour.at(i_channel)->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
         hist_times_sixhour.at(i_channel)->Draw();
         canvas_ch_hist_day->cd();
         hist_times_day.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
         hist_times_day.at(i_channel)->GetXaxis()->SetLabelOffset(0.03);
         hist_times_day.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
         hist_times_day.at(i_channel)->GetXaxis()->SetTimeOffset(timeoffset_day.Convert());
-        hist_times_day.at(i_channel)->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+        hist_times_day.at(i_channel)->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
         hist_times_day.at(i_channel)->Draw();
       } else {
         hist_times_hour.at(i_channel)->Draw("same");
@@ -1900,18 +2055,18 @@ void MonitorMRDTime::MRDTimePlots(){
   if (update_halfhour){
 
     //6 HOURS - CHANNELS
-    TLegend *leg;
-    TLegend *leg_rms;
-    TLegend *leg_freq;
+    TLegend *leg = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_rms = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_freq = new TLegend(0.7,0.7,0.88,0.88);
     max_canvas = 0;
     min_canvas = 9999999.;
     max_canvas_rms = 0;
     min_canvas_rms = 99999999.;
     max_canvas_freq = 0;
     min_canvas_freq = 999999999.;
-    TMultiGraph *multi_ch;
-    TMultiGraph *multi_ch_rms;
-    TMultiGraph *multi_ch_freq;
+    TMultiGraph *multi_ch = new TMultiGraph();
+    TMultiGraph *multi_ch_rms = new TMultiGraph();
+    TMultiGraph *multi_ch_freq = new TMultiGraph();
     int enum_ch_canvas = 0;
     int num_ch = 16;
 
@@ -1929,7 +2084,7 @@ void MonitorMRDTime::MRDTimePlots(){
           ss_ch<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (6 hours) ["<<enum_ch_canvas+1<<"]";
           ss_ch_rms<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (6 hours) ["<<enum_ch_canvas+1<<"]";
           ss_ch_freq<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (6 hours) ["<<enum_ch_canvas+1<<"]";
-          if ( i_channel == times_channel_hour.size() - 1){
+          if ( i_channel == times_channel_sixhour.size() - 1){
             ss_leg_ch.str("");
             ss_leg_ch<<"ch "<<i_channel%num_channels;
             multi_ch->Add(gr_times_sixhour.at(i_channel));
@@ -1947,7 +2102,7 @@ void MonitorMRDTime::MRDTimePlots(){
           multi_ch->GetXaxis()->SetTimeDisplay(1);
           multi_ch->GetXaxis()->SetLabelSize(0.03);
           multi_ch->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+          multi_ch->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
           leg->Draw();
           canvas_ch_rms->cd();
           multi_ch_rms->Draw("apl");
@@ -1959,7 +2114,7 @@ void MonitorMRDTime::MRDTimePlots(){
           multi_ch_rms->GetXaxis()->SetTimeDisplay(1);
           multi_ch_rms->GetXaxis()->SetLabelSize(0.03);
           multi_ch_rms->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+          multi_ch_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
           leg_rms->Draw();
           canvas_ch_freq->cd();
           multi_ch_freq->Draw("apl");
@@ -1971,7 +2126,7 @@ void MonitorMRDTime::MRDTimePlots(){
           multi_ch_freq->GetXaxis()->SetTimeDisplay(1);
           multi_ch_freq->GetXaxis()->SetLabelSize(0.03);
           multi_ch_freq->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+          multi_ch_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
           leg_freq->Draw();
           ss_ch.str("");
           ss_ch_rms.str("");
@@ -1984,39 +2139,60 @@ void MonitorMRDTime::MRDTimePlots(){
           canvas_ch_freq->SaveAs(ss_ch_freq.str().c_str());    
           enum_ch_canvas++;
           enum_ch_canvas = enum_ch_canvas%2;
+
+          for (int i_gr=0; i_gr < num_ch; i_gr++){
+            int i_balance = (i_channel == times_channel_sixhour.size()-1)? 1 : 0;
+            multi_ch->RecursiveRemove(gr_times_sixhour.at(i_channel-num_ch+i_gr+i_balance));
+            multi_ch_rms->RecursiveRemove(gr_rms_sixhour.at(i_channel-num_ch+i_gr+i_balance));
+            multi_ch_freq->RecursiveRemove(gr_frequency_sixhour.at(i_channel-num_ch+i_gr+i_balance));
+          }
         }
       
         canvas_ch->Clear();
         canvas_ch_rms->Clear();
         canvas_ch_freq->Clear();
-        multi_ch = new TMultiGraph();
-        multi_ch_rms = new TMultiGraph();
-        multi_ch_freq = new TMultiGraph();
-        leg = new TLegend(0.7,0.7,0.88,0.88);
-        leg->SetNColumns(4);
-        leg_rms = new TLegend(0.7,0.7,0.88,0.88);
-        leg_rms->SetNColumns(4);
-        leg_freq = new TLegend(0.7,0.7,0.88,0.88);
-        leg_freq->SetNColumns(4);
-        leg->SetLineColor(0);
-        leg_rms->SetLineColor(0);
-        leg_freq->SetLineColor(0);
+
+
+
+        delete leg;
+        delete leg_rms;
+        delete leg_freq;
+        delete multi_ch;
+        delete multi_ch_rms;
+        delete multi_ch_freq;
+
+        if (i_channel != times_channel_sixhour.size() - 1){
+          multi_ch = new TMultiGraph();
+          multi_ch_rms = new TMultiGraph();
+          multi_ch_freq = new TMultiGraph();
+          leg = new TLegend(0.7,0.7,0.88,0.88);
+          leg->SetNColumns(4);
+          leg_rms = new TLegend(0.7,0.7,0.88,0.88);
+          leg_rms->SetNColumns(4);
+          leg_freq = new TLegend(0.7,0.7,0.88,0.88);
+          leg_freq->SetNColumns(4);
+          leg->SetLineColor(0);
+          leg_rms->SetLineColor(0);
+          leg_freq->SetLineColor(0);
+        }
       }
 
-      ss_leg_ch.str("");
-      ss_leg_ch<<"ch "<<i_channel%num_channels;
-      multi_ch->Add(gr_times_sixhour.at(i_channel));
-      leg->AddEntry(gr_times_sixhour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_times_sixhour.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_times_sixhour.at(i_channel)->GetMaximum();
-      if (gr_times_sixhour.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_times_sixhour.at(i_channel)->GetMinimum();
-      multi_ch_rms->Add(gr_rms_sixhour.at(i_channel));
-      leg_rms->AddEntry(gr_rms_sixhour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_rms_sixhour.at(i_channel)->GetMaximum()>max_canvas_rms) max_canvas_rms = gr_rms_sixhour.at(i_channel)->GetMaximum();
-      if (gr_rms_sixhour.at(i_channel)->GetMinimum()<min_canvas_rms) min_canvas_rms = gr_rms_sixhour.at(i_channel)->GetMinimum();
-      multi_ch_freq->Add(gr_frequency_sixhour.at(i_channel));
-      leg_freq->AddEntry(gr_frequency_sixhour.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_frequency_sixhour.at(i_channel)->GetMaximum()>max_canvas_freq) max_canvas_freq = gr_frequency_sixhour.at(i_channel)->GetMaximum();
-      if (gr_frequency_sixhour.at(i_channel)->GetMinimum()<min_canvas_freq) min_canvas_freq = gr_frequency_sixhour.at(i_channel)->GetMinimum();
+      if (i_channel != times_channel_hour.size()-1){
+        ss_leg_ch.str("");
+        ss_leg_ch<<"ch "<<i_channel%num_channels;
+        multi_ch->Add(gr_times_sixhour.at(i_channel));
+        leg->AddEntry(gr_times_sixhour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_times_sixhour.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_times_sixhour.at(i_channel)->GetMaximum();
+        if (gr_times_sixhour.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_times_sixhour.at(i_channel)->GetMinimum();
+        multi_ch_rms->Add(gr_rms_sixhour.at(i_channel));
+        leg_rms->AddEntry(gr_rms_sixhour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_rms_sixhour.at(i_channel)->GetMaximum()>max_canvas_rms) max_canvas_rms = gr_rms_sixhour.at(i_channel)->GetMaximum();
+        if (gr_rms_sixhour.at(i_channel)->GetMinimum()<min_canvas_rms) min_canvas_rms = gr_rms_sixhour.at(i_channel)->GetMinimum();
+        multi_ch_freq->Add(gr_frequency_sixhour.at(i_channel));
+        leg_freq->AddEntry(gr_frequency_sixhour.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_frequency_sixhour.at(i_channel)->GetMaximum()>max_canvas_freq) max_canvas_freq = gr_frequency_sixhour.at(i_channel)->GetMaximum();
+        if (gr_frequency_sixhour.at(i_channel)->GetMinimum()<min_canvas_freq) min_canvas_freq = gr_frequency_sixhour.at(i_channel)->GetMinimum();
+      }
     } 
 
     //6 HOURS - SLOTS (1)
@@ -2059,7 +2235,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot->GetXaxis()->SetTimeDisplay(1);
     multi_slot->GetXaxis()->SetLabelSize(0.03);
     multi_slot->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot->Draw();
     canvas_slot_rms->cd();
     multi_slot_rms->Draw("apl");
@@ -2071,7 +2247,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot_rms->GetXaxis()->SetTimeDisplay(1);
     multi_slot_rms->GetXaxis()->SetLabelSize(0.03);
     multi_slot_rms->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot_rms->Draw();
     canvas_slot_freq->cd();
     multi_slot_freq->Draw("apl");
@@ -2083,7 +2259,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot_freq->GetXaxis()->SetTimeDisplay(1);
     multi_slot_freq->GetXaxis()->SetLabelSize(0.03);
     multi_slot_freq->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot_freq->Draw();
     std::stringstream ss_slot, ss_slot_rms, ss_slot_freq;
     ss_slot<<outpath<<"Crate7_Slots_6HourTrend_TDC.jpg";
@@ -2136,7 +2312,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2->GetXaxis()->SetTimeDisplay(1);
     multi_slot2->GetXaxis()->SetLabelSize(0.03);
     multi_slot2->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot2->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2->Draw();
     canvas_slot_rms->cd();
     multi_slot2_rms->Draw("apl");
@@ -2148,7 +2324,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2_rms->GetXaxis()->SetTimeDisplay(1);
     multi_slot2_rms->GetXaxis()->SetLabelOffset(0.03);
     multi_slot2_rms->GetXaxis()->SetLabelSize(0.03);
-    multi_slot2_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2_rms->Draw();
     canvas_slot_freq->cd();
     multi_slot2_freq->Draw("apl");
@@ -2160,7 +2336,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2_freq->GetXaxis()->SetTimeDisplay(1);
     multi_slot2_freq->GetXaxis()->SetLabelOffset(0.03);
     multi_slot2_freq->GetXaxis()->SetLabelSize(0.03);
-    multi_slot2_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2_freq->Draw();
     ss_slot.str("");
     ss_slot_rms.str("");
@@ -2215,7 +2391,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate->GetXaxis()->SetTimeDisplay(1);
     multi_crate->GetXaxis()->SetLabelOffset(0.03);
     multi_crate->GetXaxis()->SetLabelSize(0.03);
-    multi_crate->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate->Draw();
     canvas_crate_rms->cd();
     multi_crate_rms->Draw("apl");
@@ -2227,7 +2403,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate_rms->GetXaxis()->SetTimeDisplay(1);
     multi_crate_rms->GetXaxis()->SetLabelOffset(0.03);
     multi_crate_rms->GetXaxis()->SetLabelSize(0.03);
-    multi_crate_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate_rms->Draw();
     canvas_crate_freq->cd();
     multi_crate_freq->Draw("apl");
@@ -2239,7 +2415,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate_freq->GetXaxis()->SetTimeDisplay(1);
     multi_crate_freq->GetXaxis()->SetLabelSize(0.03);
     multi_crate_freq->GetXaxis()->SetLabelOffset(0.03);
-    multi_crate_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate_freq->Draw();
     std::stringstream ss_crate, ss_crate_rms, ss_crate_freq;
     ss_crate<<outpath<<"Crates_6HourTrend_TDC.jpg";
@@ -2248,6 +2424,41 @@ void MonitorMRDTime::MRDTimePlots(){
     canvas_crate->SaveAs(ss_crate.str().c_str());
     canvas_crate_rms->SaveAs(ss_crate_rms.str().c_str());
     canvas_crate_freq->SaveAs(ss_crate_freq.str().c_str());
+
+    for (int i_slot = 0;i_slot<num_active_slots_cr2;i_slot++){
+      multi_slot->RecursiveRemove(gr_slot_times_sixhour.at(i_slot));
+      multi_slot_rms->RecursiveRemove(gr_slot_rms_sixhour.at(i_slot));
+      multi_slot_freq->RecursiveRemove(gr_slot_frequency_sixhour.at(i_slot));
+      multi_slot2->RecursiveRemove(gr_slot_times_sixhour.at(i_slot+num_active_slots_cr1));
+      multi_slot2_rms->RecursiveRemove(gr_slot_rms_sixhour.at(i_slot+num_active_slots_cr1));
+      multi_slot2_freq->RecursiveRemove(gr_slot_frequency_sixhour.at(i_slot+num_active_slots_cr1));
+    }
+    
+    for (int i_crate = 0; i_crate < num_crates; i_crate++){
+      multi_crate->RecursiveRemove(gr_crate_times_sixhour.at(i_crate));
+      multi_crate_rms->RecursiveRemove(gr_crate_rms_sixhour.at(i_crate));
+      multi_crate_freq->RecursiveRemove(gr_crate_frequency_sixhour.at(i_crate));
+    }
+
+    delete multi_slot;
+    delete multi_slot_rms;
+    delete multi_slot_freq;
+    delete multi_slot2;
+    delete multi_slot2_rms;
+    delete multi_slot2_freq;
+    delete multi_crate;
+    delete multi_crate_rms;
+    delete multi_crate_freq;
+
+    delete leg_slot;
+    delete leg_slot_rms;
+    delete leg_slot_freq;
+    delete leg_slot2;
+    delete leg_slot2_rms;
+    delete leg_slot2_freq;
+    delete leg_crate;
+    delete leg_crate_rms;
+    delete leg_crate_freq;
 
   }
 
@@ -2258,18 +2469,18 @@ void MonitorMRDTime::MRDTimePlots(){
   if (update_hour){
 
     //DAY - CHANNELS
-    TLegend *leg;
-    TLegend *leg_rms;
-    TLegend *leg_freq;
+    TLegend *leg = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_rms = new TLegend(0.7,0.7,0.88,0.88);
+    TLegend *leg_freq = new TLegend(0.7,0.7,0.88,0.88);
     max_canvas = 0;
     min_canvas = 9999999.;
     max_canvas_rms = 0;
     min_canvas_rms = 99999999.;
     max_canvas_freq = 0;
     min_canvas_freq = 999999999.;
-    TMultiGraph *multi_ch;
-    TMultiGraph *multi_ch_rms;
-    TMultiGraph *multi_ch_freq;
+    TMultiGraph *multi_ch = new TMultiGraph();
+    TMultiGraph *multi_ch_rms = new TMultiGraph();
+    TMultiGraph *multi_ch_freq = new TMultiGraph();
     int num_ch = 16;
     int enum_ch_canvas = 0;
 
@@ -2305,7 +2516,7 @@ void MonitorMRDTime::MRDTimePlots(){
           multi_ch->GetXaxis()->SetTimeDisplay(1);
           multi_ch->GetXaxis()->SetLabelOffset(0.03);
           multi_ch->GetXaxis()->SetLabelSize(0.03);
-          multi_ch->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+          multi_ch->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
           leg->Draw();
           canvas_ch_rms->cd();
           multi_ch_rms->Draw("apl");
@@ -2317,7 +2528,7 @@ void MonitorMRDTime::MRDTimePlots(){
           multi_ch_rms->GetXaxis()->SetTimeDisplay(1);
           multi_ch_rms->GetXaxis()->SetLabelSize(0.03);
           multi_ch_rms->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+          multi_ch_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
           leg_rms->Draw();
           canvas_ch_freq->cd();
           multi_ch_freq->Draw("apl");
@@ -2329,7 +2540,7 @@ void MonitorMRDTime::MRDTimePlots(){
           multi_ch_freq->GetXaxis()->SetTimeDisplay(1);
           multi_ch_freq->GetXaxis()->SetLabelSize(0.03);
           multi_ch_freq->GetXaxis()->SetLabelOffset(0.03);
-          multi_ch_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+          multi_ch_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
           leg_freq->Draw();
           ss_ch.str("");
           ss_ch_rms.str("");
@@ -2342,39 +2553,58 @@ void MonitorMRDTime::MRDTimePlots(){
           canvas_ch_freq->SaveAs(ss_ch_freq.str().c_str());   
           enum_ch_canvas++;
           enum_ch_canvas = enum_ch_canvas%2; 
+
+          for (int i_gr=0; i_gr < num_ch; i_gr++){
+            int i_balance = (i_channel == times_channel_day.size()-1)? 1 : 0;
+            multi_ch->RecursiveRemove(gr_times_day.at(i_channel-num_ch+i_gr+i_balance));
+            multi_ch_rms->RecursiveRemove(gr_rms_day.at(i_channel-num_ch+i_gr+i_balance));
+            multi_ch_freq->RecursiveRemove(gr_frequency_day.at(i_channel-num_ch+i_gr+i_balance));
+          }
         }
 
         canvas_ch->Clear();
         canvas_ch_rms->Clear();
         canvas_ch_freq->Clear();
-        multi_ch = new TMultiGraph();
-        multi_ch_rms = new TMultiGraph();
-        multi_ch_freq = new TMultiGraph();
-        leg = new TLegend(0.7,0.7,0.88,0.88);
-        leg->SetNColumns(4);
-        leg_rms = new TLegend(0.7,0.7,0.88,0.88);
-        leg_rms->SetNColumns(4);
-        leg_freq = new TLegend(0.7,0.7,0.88,0.88);
-        leg_freq->SetNColumns(4);
-        leg->SetLineColor(0);
-        leg_rms->SetLineColor(0);
-        leg_freq->SetLineColor(0);
+
+        delete multi_ch;
+        delete multi_ch_rms;
+        delete multi_ch_freq;
+        delete leg;
+        delete leg_rms;
+        delete leg_freq;
+
+        if (i_channel != times_channel_hour.size() - 1){
+          multi_ch = new TMultiGraph();
+          multi_ch_rms = new TMultiGraph();
+          multi_ch_freq = new TMultiGraph();
+          leg = new TLegend(0.7,0.7,0.88,0.88);
+          leg->SetNColumns(4);
+          leg_rms = new TLegend(0.7,0.7,0.88,0.88);
+          leg_rms->SetNColumns(4);
+          leg_freq = new TLegend(0.7,0.7,0.88,0.88);
+          leg_freq->SetNColumns(4);
+          leg->SetLineColor(0);
+          leg_rms->SetLineColor(0);
+          leg_freq->SetLineColor(0);
+        }
       }
 
-      ss_leg_ch.str("");
-      ss_leg_ch<<"ch "<<i_channel%num_channels;
-      multi_ch->Add(gr_times_day.at(i_channel));
-      leg->AddEntry(gr_times_day.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_times_day.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_times_day.at(i_channel)->GetMaximum();
-      if (gr_times_day.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_times_day.at(i_channel)->GetMinimum();
-      multi_ch_rms->Add(gr_rms_day.at(i_channel));
-      leg_rms->AddEntry(gr_rms_day.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_rms_day.at(i_channel)->GetMaximum()>max_canvas_rms) max_canvas_rms = gr_rms_day.at(i_channel)->GetMaximum();
-      if (gr_rms_day.at(i_channel)->GetMinimum()<min_canvas_rms) min_canvas_rms = gr_rms_day.at(i_channel)->GetMinimum();
-      multi_ch_freq->Add(gr_frequency_day.at(i_channel));
-      leg_freq->AddEntry(gr_frequency_day.at(i_channel),ss_leg_ch.str().c_str(),"l");
-      if (gr_frequency_day.at(i_channel)->GetMaximum()>max_canvas_freq) max_canvas_freq = gr_frequency_day.at(i_channel)->GetMaximum();
-      if (gr_frequency_day.at(i_channel)->GetMinimum()<min_canvas_freq) min_canvas_freq = gr_frequency_day.at(i_channel)->GetMinimum();
+      if (i_channel != times_channel_hour.size() -1){
+        ss_leg_ch.str("");
+        ss_leg_ch<<"ch "<<i_channel%num_channels;
+        multi_ch->Add(gr_times_day.at(i_channel));
+        leg->AddEntry(gr_times_day.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_times_day.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_times_day.at(i_channel)->GetMaximum();
+        if (gr_times_day.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_times_day.at(i_channel)->GetMinimum();
+        multi_ch_rms->Add(gr_rms_day.at(i_channel));
+        leg_rms->AddEntry(gr_rms_day.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_rms_day.at(i_channel)->GetMaximum()>max_canvas_rms) max_canvas_rms = gr_rms_day.at(i_channel)->GetMaximum();
+        if (gr_rms_day.at(i_channel)->GetMinimum()<min_canvas_rms) min_canvas_rms = gr_rms_day.at(i_channel)->GetMinimum();
+        multi_ch_freq->Add(gr_frequency_day.at(i_channel));
+        leg_freq->AddEntry(gr_frequency_day.at(i_channel),ss_leg_ch.str().c_str(),"l");
+        if (gr_frequency_day.at(i_channel)->GetMaximum()>max_canvas_freq) max_canvas_freq = gr_frequency_day.at(i_channel)->GetMaximum();
+        if (gr_frequency_day.at(i_channel)->GetMinimum()<min_canvas_freq) min_canvas_freq = gr_frequency_day.at(i_channel)->GetMinimum();
+      }
     } 
 
     //DAY - SLOTS (1)
@@ -2417,7 +2647,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot->GetXaxis()->SetTimeDisplay(1);
     multi_slot->GetXaxis()->SetLabelOffset(0.03);
     multi_slot->GetXaxis()->SetLabelSize(0.03);
-    multi_slot->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot->Draw();
     canvas_slot_rms->cd();
     multi_slot_rms->Draw("apl");
@@ -2429,7 +2659,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot_rms->GetXaxis()->SetTimeDisplay(1);
     multi_slot_rms->GetXaxis()->SetLabelOffset(0.03);
     multi_slot_rms->GetXaxis()->SetLabelSize(0.03);
-    multi_slot_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot_rms->Draw();
     canvas_slot_freq->cd();
     multi_slot_freq->Draw("apl");
@@ -2441,7 +2671,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot_freq->GetXaxis()->SetTimeDisplay(1);
     multi_slot_freq->GetXaxis()->SetLabelOffset(0.03);
     multi_slot_freq->GetXaxis()->SetLabelSize(0.03);
-    multi_slot_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot_freq->Draw();
 
     //DAY - SLOTS (2)
@@ -2494,7 +2724,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2->GetXaxis()->SetTimeDisplay(1);
     multi_slot2->GetXaxis()->SetLabelSize(0.03);
     multi_slot2->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot2->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2->Draw();
     canvas_slot_rms->cd();
     multi_slot2_rms->Draw("apl");
@@ -2506,7 +2736,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2_rms->GetXaxis()->SetTimeDisplay(1);
     multi_slot2_rms->GetXaxis()->SetLabelSize(0.03);
     multi_slot2_rms->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot2_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2_rms->Draw();
     canvas_slot_freq->cd();
     multi_slot2_freq->Draw("apl");
@@ -2518,7 +2748,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_slot2_freq->GetXaxis()->SetTimeDisplay(1);
     multi_slot2_freq->GetXaxis()->SetLabelSize(0.03);
     multi_slot2_freq->GetXaxis()->SetLabelOffset(0.03);
-    multi_slot2_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_slot2_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_slot2_freq->Draw();
     ss_slot.str("");
     ss_slot_rms.str("");
@@ -2573,7 +2803,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate->GetXaxis()->SetTimeDisplay(1);
     multi_crate->GetXaxis()->SetLabelOffset(0.03);
     multi_crate->GetXaxis()->SetLabelSize(0.03);
-    multi_crate->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate->Draw();
     canvas_crate_rms->cd();
     multi_crate_rms->Draw("apl");
@@ -2585,7 +2815,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate_rms->GetXaxis()->SetTimeDisplay(1);
     multi_crate_rms->GetXaxis()->SetLabelOffset(0.03);
     multi_crate_rms->GetXaxis()->SetLabelSize(0.03);
-    multi_crate_rms->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate_rms->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     leg_crate_rms->Draw();
     canvas_crate_freq->cd();
     multi_crate_freq->Draw("apl");
@@ -2597,7 +2827,7 @@ void MonitorMRDTime::MRDTimePlots(){
     multi_crate_freq->GetXaxis()->SetTimeDisplay(1);
     multi_crate_freq->GetXaxis()->SetLabelOffset(0.03);
     multi_crate_freq->GetXaxis()->SetLabelSize(0.03);
-    multi_crate_freq->GetXaxis()->SetTimeFormat("#splitline{%m\/%d}{%H:%M}");
+    multi_crate_freq->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
     multi_crate_freq->GetYaxis()->SetTitle("Freq [1/min]");
     leg_crate_freq->Draw();
     std::stringstream ss_crate, ss_crate_rms, ss_crate_freq;
@@ -2607,6 +2837,42 @@ void MonitorMRDTime::MRDTimePlots(){
     canvas_crate->SaveAs(ss_crate.str().c_str());
     canvas_crate_rms->SaveAs(ss_crate_rms.str().c_str());
     canvas_crate_freq->SaveAs(ss_crate_freq.str().c_str());
+
+    for (int i_slot = 0;i_slot<num_active_slots_cr2;i_slot++){
+      multi_slot->RecursiveRemove(gr_slot_times_day.at(i_slot));
+      multi_slot_rms->RecursiveRemove(gr_slot_rms_day.at(i_slot));
+      multi_slot_freq->RecursiveRemove(gr_slot_frequency_day.at(i_slot));
+      multi_slot2->RecursiveRemove(gr_slot_times_day.at(i_slot+num_active_slots_cr1));
+      multi_slot2_rms->RecursiveRemove(gr_slot_rms_day.at(i_slot+num_active_slots_cr1));
+      multi_slot2_freq->RecursiveRemove(gr_slot_frequency_day.at(i_slot+num_active_slots_cr1));
+    }
+
+    for (int i_crate = 0; i_crate < num_crates; i_crate++){
+      multi_crate->RecursiveRemove(gr_crate_times_day.at(i_crate));
+      multi_crate_rms->RecursiveRemove(gr_crate_rms_day.at(i_crate));
+      multi_crate_freq->RecursiveRemove(gr_crate_frequency_day.at(i_crate));
+    }
+
+    delete multi_slot;
+    delete multi_slot_rms;
+    delete multi_slot_freq;
+    delete multi_slot2;
+    delete multi_slot2_rms;
+    delete multi_slot2_freq;
+    delete multi_crate;
+    delete multi_crate_rms;
+    delete multi_crate_freq;
+
+    delete leg_slot;
+    delete leg_slot_rms;
+    delete leg_slot_freq;
+    delete leg_slot2;
+    delete leg_slot2_rms;
+    delete leg_slot2_freq;
+    delete leg_crate;
+    delete leg_crate_rms;
+    delete leg_crate_freq;
+
 
   }
   }//close draw average
@@ -2901,7 +3167,7 @@ void MonitorMRDTime::UpdateMonitorSources(){
               //std::cout <<"t_file_start: "<<t_file_start<<", t_file_end: "<<t_file_end<<", bin start: "<<current_stamp-(bin+1)*5*60*1000<<", bin end: "<<current_stamp-(bin)*5*60*1000<<std::endl;
               //std::cout <<"HOUR: denominator duration: "<<denominator_duration<<", denominator start: "<<denominator_start<<std::endl;
             }
-            if (n_channel_hour_file.at(i_channel)[num_fivemin-1-bin] == 0) frequency_channel_hour.at(i_channel)[num_fivemin-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
+            if (n_channel_hour_file.at(i_channel)[num_fivemin-1-bin] == 0) frequency_channel_hour.at(i_channel)[num_fivemin-1-bin] = frequency_channel_hour.at(i_channel)[num_fivemin-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
             else frequency_channel_hour.at(i_channel)[num_fivemin-1-bin] = frequency_channel_hour.at(i_channel)[num_fivemin-1-bin]+1./denominator_duration;
             //1 hour - n_channel
             n_channel_hour.at(i_channel)[num_fivemin-1-bin]+=1;
@@ -2940,7 +3206,7 @@ void MonitorMRDTime::UpdateMonitorSources(){
                     if (verbosity > 1) std::cout <<"WARNING (6 HOURS): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
                   }
                   //6 hours - n_channel
-                  if (n_channel_sixhour_file.at(i_channel)[num_halfhour-1-bin] == 0) frequency_channel_sixhour.at(i_channel)[num_halfhour-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
+                  if (n_channel_sixhour_file.at(i_channel)[num_halfhour-1-bin] == 0) frequency_channel_sixhour.at(i_channel)[num_halfhour-1-bin] = frequency_channel_sixhour.at(i_channel)[num_halfhour-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
                   else frequency_channel_sixhour.at(i_channel)[num_halfhour-1-bin] = frequency_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+1./denominator_duration;
                   n_channel_sixhour.at(i_channel)[num_halfhour-1-bin]+=1;
                   n_channel_sixhour_file.at(i_channel)[num_halfhour-1-bin]++;
@@ -2979,7 +3245,7 @@ void MonitorMRDTime::UpdateMonitorSources(){
                     boost::posix_time::ptime temp_current = *Epoch + boost::posix_time::time_duration(int((timestamp_temp+offset_date)/1000./60./60.),int((timestamp_temp+offset_date)/1000./60.)%60,int((timestamp_temp+offset_date)/1000.)%60,(timestamp_temp+offset_date)%1000);  
                     if (verbosity > 1) std::cout <<"WARNING (DAY): Denominator duration < 0! File "<<temp_start.time_of_day()<<"-"<<temp_end.time_of_day()<<", Bin: "<<temp_bin_start.time_of_day()<<"-"<<temp_bin_end.time_of_day()<<", current: "<<temp_current.time_of_day()<<std::endl;
                   }
-                  if (n_channel_day_file.at(i_channel)[num_hour-1-bin] == 0) frequency_channel_day.at(i_channel)[num_hour-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
+                  if (n_channel_day_file.at(i_channel)[num_hour-1-bin] == 0) frequency_channel_day.at(i_channel)[num_hour-1-bin] = frequency_channel_day.at(i_channel)[num_hour-1-bin]*(denominator_start/(denominator_duration))+1./denominator_duration;
                   else frequency_channel_day.at(i_channel)[num_hour-1-bin] = frequency_channel_day.at(i_channel)[num_hour-1-bin]+1./denominator_duration;
                   //1 day - n_channel
                   n_channel_day.at(i_channel)[num_hour-1-bin]+=1;
@@ -3000,7 +3266,6 @@ void MonitorMRDTime::UpdateMonitorSources(){
     //---------------------------------------------------
 
       if (draw_average){
-      if (verbosity > 3) std::cout <<"MRDMonitorTime: Updating RMS values..."<<std::endl;
       for (int i_live = 0; i_live< live_file.at(i_channel).size(); i_live++){
         if (timediff_file.at(i_channel).at(i_live) > 5*60*1000.){           //timediff bigger than 5 mins?  --> fill in 1h graph
           int bin = timediff_file.at(i_channel).at(i_live)/int((5*60*1000));
