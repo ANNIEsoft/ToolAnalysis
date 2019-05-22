@@ -56,7 +56,7 @@ class TankCalibrationDiffuser: public Tool {
    TimeClass* EventTime=nullptr;
    std::vector<TriggerClass>* TriggerData;
    BeamStatusClass* BeamStatus=nullptr;
-   std::map<unsigned long, std::vector<Hit>>* MCHits = nullptr;
+   std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
    Geometry *geom = nullptr;
    Detector det;
    std::map<unsigned long,int> channelkey_to_pmtid;

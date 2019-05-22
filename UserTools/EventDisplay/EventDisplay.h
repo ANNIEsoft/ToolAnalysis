@@ -86,13 +86,13 @@ class EventDisplay: public Tool {
     int runnumber;
     int subrunnumber;
     int terminate_execution;  //for continuous execution of multiple events, prompt user input
-    std::map<unsigned long,vector<Hit>>* TDCData;
+    std::map<unsigned long,vector<MCHit>>* TDCData;
     TimeClass* EventTime=nullptr;
     BeamStatusClass* BeamStatus=nullptr;
     std::vector<TriggerClass>* TriggerData;
     std::vector<MCParticle>* mcparticles=nullptr;
-    std::map<unsigned long, std::vector<Hit>>* MCHits=nullptr;
-    std::map<unsigned long, std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
+    std::map<unsigned long, std::vector<MCHit>>* MCHits=nullptr;
+    std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits=nullptr;
     Geometry *geom = nullptr;
     Detector det;
     TPad *p1;

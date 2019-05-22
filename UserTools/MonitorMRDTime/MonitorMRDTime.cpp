@@ -16,8 +16,8 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
 
   //only for debugging memory leaks, otherwise comment out
-  std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
+  //gObjectTable->Print();
 
   //-------------------------------------------------------
   //-----------------Get Configuration---------------------
@@ -188,8 +188,8 @@ bool MonitorMRDTime::Execute(){
   i_loop++;
 
     //only for debugging memory leaks, otherwise comment out
-  std::cout <<"List of Objects (after execute step): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"List of Objects (after execute step): "<<std::endl;
+  //gObjectTable->Print();
 
   return true;
 
@@ -1002,7 +1002,7 @@ void MonitorMRDTime::MRDTimePlots(){
   //-------------------------------------------------------
   //--------------Updating slot graphs---------------------
   //-------------------------------------------------------
-  std::cout <<"Updating slot graphs..."<<std::endl;
+  if (verbosity > 2) std::cout <<"Updating slot graphs..."<<std::endl;
 
   if (draw_average){
     for (int i_slot = 0; i_slot<num_active_slots;i_slot++){
@@ -1034,7 +1034,7 @@ void MonitorMRDTime::MRDTimePlots(){
     //-------------------------------------------------------
 
 
-    std::cout <<"Updating crate graphs..."<<std::endl;
+    if (verbosity > 2) std::cout <<"Updating crate graphs..."<<std::endl;
 
 
     for (int i_crate = 0; i_crate<num_crates;i_crate++){

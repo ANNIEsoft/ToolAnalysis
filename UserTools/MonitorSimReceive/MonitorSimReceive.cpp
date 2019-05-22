@@ -56,11 +56,11 @@ bool MonitorSimReceive::Execute(){
         MRDDataPath = MRDDataPathSingle;
     } 
 
-    std::cout <<"initialise indata"<<std::endl;
+    //std::cout <<"initialise indata"<<std::endl;
     BoostStore* indata=new BoostStore(false,0); //this leaks but its jsut for testing
     indata->Initialise(MRDDataPath);
 
-    std::cout <<"delete MRDData/2"<<std::endl;
+    //std::cout <<"delete MRDData/2"<<std::endl;
 
     //the following two lines do not work to free up memory
     //if (MRDData) delete MRDData;
@@ -70,7 +70,7 @@ bool MonitorSimReceive::Execute(){
     MRDData2 = new BoostStore(false,2);
 
 
-    std::cout <<"Get MRDData from CCData"<<std::endl;
+    //std::cout <<"Get MRDData from CCData"<<std::endl;
     indata->Get("CCData",*MRDData);
     indata->Get("CCData",*MRDData2);
 
