@@ -4,6 +4,7 @@
 
 #include <string>
 #include <iostream>
+//#include <boost/algorithm/string.hpp>  // for boost::algorithm::to_lower(string)
 
 #include "Tool.h"
 #include "TFile.h"
@@ -93,6 +94,12 @@ class LoadWCSim: public Tool {
 	std::map<unsigned long,int> channelkey_to_pmtid;
 	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	std::map<unsigned long,int> channelkey_to_faccpmtid;
+	// alternatively? Better? Save the parentage in each MCHit. Each MCHit will contain
+	// the index of it's parent MCParticle in the MCParticles vector
+	std::map<int,int>* trackid_to_mcparticleindex=nullptr;
+	std::vector<int> GetHitParentId(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig);
+	std::map<int,int> timeArrayOffsetMap;
+	void BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig);
 	
 	////////////////
 	// things that will be filled into the store from this WCSim file.
@@ -109,8 +116,8 @@ class LoadWCSim: public Tool {
 	TimeClass* EventTime;
 	uint64_t EventTimeNs;
 	std::vector<MCParticle>* MCParticles;
-	std::map<unsigned long,std::vector<Hit>>* TDCData;
-	std::map<unsigned long,std::vector<Hit>>* MCHits;
+	std::map<unsigned long,std::vector<MCHit>>* TDCData;
+	std::map<unsigned long,std::vector<MCHit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;
 	BeamStatusClass* BeamStatus;
 	
