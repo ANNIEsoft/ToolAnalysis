@@ -7,6 +7,10 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
 
   if(verbose > 0) cout <<"Initialising Tool TankCalibrationDiffuser ..."<<endl;
 
+  //only for debugging memory leaks, otherwise comment out
+  /*std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
+  gObjectTable->Print();*/
+
   //---------------------------------------------------------------------------
   //---------------Useful header-----------------------------------------------
   //---------------------------------------------------------------------------
@@ -65,23 +69,23 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
     int i=0;
     int pmt_case;
     while (getline(file_geo, pmt_type)) {
-	  if (pmt_type=="R5912HQE") pmt_case=1;
-	  else if (pmt_type=="R7081") pmt_case=2;
+  	  if (pmt_type=="R5912HQE") pmt_case=1;
+  	  else if (pmt_type=="R7081") pmt_case=2;
       else if (pmt_type=="D784KFLB") pmt_case=3;
       else pmt_case = 4;
       switch (pmt_case){
-		case 1: radius_PMT[i] = 0.1016; 
-			break;
-		case 2: radius_PMT[i] = 0.127;
-			break;
-		case 3: radius_PMT[i] = 0.1397;
-			break; 
-		case 4: radius_PMT[i] = 0.10;	//FIXME: default value of 10 cm for unknown PMT types?
-			break; 
-		}
-	 	i++;
-	}
-	file_geo.close();
+    		case 1: radius_PMT[i] = 0.1016;   //looked up in the geometry config of WCSim
+    			break;
+    		case 2: radius_PMT[i] = 0.127;  //looked up in the geometry config of WCSim
+    			break;
+    		case 3: radius_PMT[i] = 0.1397;  //looked up in the geometry config of WCSim
+    			break; 
+    		case 4: radius_PMT[i] = 0.10;    //FIXME: default value of 10 cm for unknown PMT types?
+    			break; 
+		  }
+      i++;
+	   }
+	   file_geo.close();
    }
 
   //----------------------------------------------------------------------------
@@ -111,28 +115,38 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
       Detector* thedetector = geom->ChannelToDetector(chankey);
       if (verbose > 2) std::cout <<"chankey: "<<chankey<<std::endl;
       if (Detectors->size()==1 || i_detector == 1) {
-        //std::cout <<"PMT id: "<<channelkey_to_pmtid[chankey];
+
         Position position_PMT = thedetector->GetDetectorPosition();
         if (verbose > 2) std::cout <<"chankey: "<<chankey<<std::endl;
         if (verbose > 2) std::cout <<"filling PMT IDs: ID "<<detkey-n_lappds<<", wcsim ID: "<< channelkey_to_pmtid[chankey]<<std::endl;
+
+
         unsigned long detector_id = channelkey_to_pmtid[chankey]-1;
         x_PMT.insert(std::pair<unsigned long,double>(detector_id,position_PMT.X()-tank_center_x));
         y_PMT.insert(std::pair<unsigned long,double>(detector_id,position_PMT.Y()-tank_center_y));
         z_PMT.insert(std::pair<unsigned long,double>(detector_id,position_PMT.Z()-tank_center_z));
+
+
         double rho = sqrt(pow(x_PMT.at(detector_id),2)+pow(y_PMT.at(detector_id),2));
         if (x_PMT.at(detector_id) < 0) rho*=-1;
         rho_PMT.insert(std::pair<unsigned long, double>(detector_id,rho));
+
+
         double phi;
         if (x_PMT.at(detector_id)>0 && z_PMT.at(detector_id)>0) phi = atan(x_PMT.at(detector_id)/z_PMT.at(detector_id));
         if (x_PMT.at(detector_id)>0 && z_PMT.at(detector_id)<0) phi = TMath::Pi()/2+atan(x_PMT.at(detector_id)/-z_PMT.at(detector_id));
         if (x_PMT.at(detector_id)<0 && z_PMT.at(detector_id)<0) phi = TMath::Pi()+atan(x_PMT.at(detector_id)/z_PMT.at(detector_id));
         if (x_PMT.at(detector_id)<0 && z_PMT.at(detector_id)>0) phi = 3*TMath::Pi()/2+atan(-x_PMT.at(detector_id)/z_PMT.at(detector_id));
         phi_PMT.insert(std::pair<unsigned long,double>(detector_id,phi));
+
+
         double expectedT = (sqrt(pow(x_PMT.at(detector_id)-diffuser_x,2)+pow(y_PMT.at(detector_id)-diffuser_y,2)+pow(z_PMT.at(detector_id)-diffuser_z,2))-radius_PMT[detector_id])/c_vacuum*n_water*1E9;
         expected_time.insert(std::pair<unsigned long,double>(detector_id,expectedT));
         if (verbose > 2) std::cout <<"WCSim ID: "<<channelkey_to_pmtid[chankey]<<", position: ("<<position_PMT.X()<<","<<position_PMT.Y()<<","<<position_PMT.Z()<<")"<<std::endl;
         if (verbose > 2) std::cout <<"rho PMT "<<detector_id<<": "<<rho<<std::endl;
         if (verbose > 2) std::cout <<"y PMT: "<<y_PMT.at(detector_id)<<std::endl;
+
+
         PMT_ishit.insert(std::pair<unsigned long, int>(detector_id,0));
         n_tank_pmts++;
       }
@@ -152,28 +166,31 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   hist_charge_2D_y_phi = new TH2F("hist_charge_2D_y_phi","Spatial distribution of charge (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_time_2D_y_phi = new TH2F("hist_time_2D_y_phi","Spatial distribution of time (all PMTs)",100,0,360,25,-2.5,2.5);
 
-
   for (int i_tube=0;i_tube<n_tank_pmts;i_tube++){
-	stringstream ss;
-	ss<<i_tube+1;
-	string tubeN=ss.str();
-	string name_general_charge="hist_charge_";
-	string description_general_charge="Hit charges for tube ";
-	string name_hist_charge=name_general_charge+tubeN;
-	string description_hist_charge=description_general_charge+tubeN;
-	hist_charge_singletube[i_tube] = new TH1F(name_hist_charge.c_str(),description_hist_charge.c_str(),100,0,10);
 
-	string name_general_time="hist_time_";
-	string description_general_time="Hit times for tube ";
-	string name_hist_time=name_general_time+tubeN;
-	string description_hist_time=description_general_time+tubeN;
-	hist_time_singletube[i_tube] = new TH1F(name_hist_time.c_str(),description_hist_time.c_str(),100,0,20);
+  	stringstream ss;
+  	ss<<i_tube+1;
+  	string tubeN=ss.str();
+  	string name_general_charge="hist_charge_";
+  	string description_general_charge="Hit charges for tube ";
+  	string name_hist_charge=name_general_charge+tubeN;
+  	string description_hist_charge=description_general_charge+tubeN;
+  	hist_charge_singletube[i_tube] = new TH1F(name_hist_charge.c_str(),description_hist_charge.c_str(),100,0,10);
+
+  	string name_general_time="hist_time_";
+  	string description_general_time="Hit times for tube ";
+  	string name_hist_time=name_general_time+tubeN;
+  	string description_hist_time=description_general_time+tubeN;
+  	hist_time_singletube[i_tube] = new TH1F(name_hist_time.c_str(),description_hist_time.c_str(),100,0,20);
+
   }
 
   hist_charge_mean = new TH1F("hist_charge_mean","Mean values of detected charges",100,0,5);
   hist_time_mean = new TH1F("hist_time_mean","Mean values of detected hit times",100,-5,5);
 
-
+  //---------------------------------------------------------------------------------
+  //create root-file that will contain all analysis graphs for this calibration run--
+  //---------------------------------------------------------------------------------
 
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
   std::stringstream ss_run;
@@ -193,7 +210,7 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   if (use_tapplication){
 	  if (verbose > 0) std::cout <<"open TApplication..."<<std::endl;
 	  int myargc = 0;
-	  char *myargv[] {(const char*) "options"};
+	  char *myargv[] {(char*) "options"};
 	  app_stability = new TApplication("app_stability",&myargc,myargv);
 	  if (verbose > 0) std::cout <<"TApplication initialized..."<<std::endl;
 	}
@@ -218,9 +235,7 @@ bool TankCalibrationDiffuser::Execute(){
 
   m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
-  m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
   m_data->Stores["ANNIEEvent"]->Get("BeamStatus",BeamStatus);
-  m_data->Stores["ANNIEEvent"]->Get("TriggerData",TriggerData);
 
 
   //----------------------------------------------------------------------------
@@ -246,9 +261,9 @@ bool TankCalibrationDiffuser::Execute(){
         hist_charge->Fill(ahit.GetCharge());
         hist_time->Fill(ahit.GetTime());
         hist_tubeid->Fill(ahit.GetTubeId());
-		hist_charge_singletube[ahit.GetTubeId()]->Fill(ahit.GetCharge());
-		hist_time_singletube[ahit.GetTubeId()]->Fill(ahit.GetTime());
-		}
+		    hist_charge_singletube[ahit.GetTubeId()]->Fill(ahit.GetCharge());
+		    hist_time_singletube[ahit.GetTubeId()]->Fill(ahit.GetTime());
+		  }
     }
   }
 
@@ -319,10 +334,10 @@ bool TankCalibrationDiffuser::Finalise(){
     hist_time_mean->Fill(mean_time_fit[i_tube]-expected_time[i_tube]);
 
     if (verbose > 2){
-    	std::cout <<"expected hit time: "<<expected_time[i_tube]<<endl;
-		std::cout <<"detected hit time: "<<mean_time_fit[i_tube]<<endl;
-  		std::cout << "deviation: "<<mean_time_fit[i_tube]-expected_time[i_tube]<<endl;
-  	}
+      std::cout <<"expected hit time: "<<expected_time[i_tube]<<endl;
+      std::cout <<"detected hit time: "<<mean_time_fit[i_tube]<<endl;
+      std::cout << "deviation: "<<mean_time_fit[i_tube]-expected_time[i_tube]<<endl;
+    }
 
   //fill spatial detector plots as well
 
@@ -335,6 +350,8 @@ bool TankCalibrationDiffuser::Finalise(){
     hist_charge_2D_y_phi->SetBinContent(int(phi_PMT[i_tube]/2/TMath::Pi()*100)+1,int((y_PMT[i_tube]+2.5)/5.*25)+2,mean_charge_fit[i_tube]);
   }
   result_file<<i_tube+1<<"  "<<mean_charge_fit[i_tube]<<"  "<<mean_time_fit[i_tube]-expected_time[i_tube]<<endl;
+
+  vector_tf1.push_back(total);
 }
   result_file<<1000<<"  "<<hist_charge_mean->GetMean()<<"  "<<hist_charge_mean->GetRMS()<<"  "<<hist_time_mean->GetMean()<<"  "<<hist_time_mean->GetRMS()<<endl; //1000 is identifier key for average value
   result_file.close();
@@ -527,14 +544,26 @@ bool TankCalibrationDiffuser::Finalise(){
 
  //histograms deleted by closing the files ealier
 
+ std::cout <<"delete TBoxes..."<<std::endl;
+ for (int i_box = 0; i_box < vector_tbox.size();i_box++){
+  delete vector_tbox.at(i_box);
+ }
+ std::cout <<"delete tf1s..."<<std::endl;
+ for (int i_tf = 0; i_tf< vector_tf1.size(); i_tf++){
+  delete vector_tf1.at(i_tf);
+ } 
+
+ std::cout <<"delete canvas, application, files, geom, mchits"<<std::endl;
  delete canvas_overview;
  if (use_tapplication) delete app_stability;
  delete help_file;
  delete file_out;
- delete EventTime;
- delete TriggerData;
  delete geom;
  delete MCHits;
+
+  //only for debugging memory leaks, otherwise comment out
+  /*std::cout <<"List of Objects (end of finalise): "<<std::endl;
+  gObjectTable->Print();*/
 
 
  return true;
@@ -569,6 +598,8 @@ bool TankCalibrationDiffuser::Finalise(){
     b->SetLineColor(2);
     b->SetLineWidth(2);
     b->Draw();
+
+    vector_tbox.push_back(b);
   }
 
 

@@ -13,6 +13,10 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
 
   if (verbose > 0) std::cout <<"Initialising tool: EventDisplay"<<std::endl;
 
+  //only for debugging memory leaks, otherwise comment out
+  /*std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
+  gObjectTable->Print();*/
+
   //--------------------------------------------
   //---------loading config file----------------
   //--------------------------------------------
@@ -219,7 +223,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   if (use_tapplication){
     if (verbose > 0) std::cout <<"initialize TApplication"<<std::endl;
     int myargc = 0;
-    char *myargv[] {(const char*) "options"};
+    char *myargv[] {(char*) "options"};
     app_event_display = new TApplication("app_event_display",&myargc,myargv);
     if (verbose > 0) std::cout <<"TApplication running."<<std::endl;
   }
@@ -365,6 +369,7 @@ bool EventDisplay::Execute(){
     canvas_lappd->Clear();
   }
 
+
   if (charge_PMTs) charge_PMTs->Delete();
   if (time_PMTs) time_PMTs->Delete();
   if (charge_time_PMTs) charge_time_PMTs->Delete();
@@ -372,6 +377,8 @@ bool EventDisplay::Execute(){
     if (charge_LAPPDs[i]) charge_LAPPDs[i]->Delete();
     if (time_LAPPDs[i]) time_LAPPDs[i]->Delete();
   }
+  if (leg_charge) delete leg_charge;
+  if (leg_time) delete leg_time;
 
   charge_PMTs = new TH1F("charge_PMTs","Charge of PMTs",100,0,100);
   charge_PMTs->GetXaxis()->SetTitle("charge [p.e.]");
@@ -576,7 +583,7 @@ bool EventDisplay::Execute(){
     canvas_lappd->cd(1);
     charge_LAPPDs[max_lappd_charge]->SetStats(0);
     charge_LAPPDs[max_lappd_charge]->Draw();
-    TLegend *leg_charge = new TLegend(0.6,0.6,0.9,0.9);
+    leg_charge = new TLegend(0.6,0.6,0.9,0.9);
     leg_charge->SetLineColor(0);
     std::string lappd_str = "LAPPD ";
     std::string lappd_nr = std::to_string(max_lappd_charge+1);
@@ -595,7 +602,7 @@ bool EventDisplay::Execute(){
     canvas_lappd->cd(2);
     time_LAPPDs[max_lappd_time]->SetStats(0);
     time_LAPPDs[max_lappd_time]->Draw();
-    TLegend *leg_time = new TLegend(0.6,0.6,0.9,0.9);
+    leg_time = new TLegend(0.6,0.6,0.9,0.9);
     //leg_time->SetNColumns(5);
     leg_time->SetLineColor(0);
     lappd_nr = std::to_string(max_lappd_time+1);
@@ -699,6 +706,10 @@ bool EventDisplay::Execute(){
     else {std::cout <<"No valid input format. Proceeding with next event."<<std::endl;}
   }
 
+  //only for debugging memory leaks, otherwise comment out
+  //std::cout <<"List of Objects (end of execute): "<<std::endl;
+  //gObjectTable->Print();
+
   return true;
 }
 
@@ -709,11 +720,27 @@ bool EventDisplay::Finalise(){
   //---------------- Delete remaining objects -----------------------
   //-----------------------------------------------------------------
 
-  canvas_ev_display->Modified();
-  canvas_ev_display->Update();
-  cin >>terminate_execution;
+  canvas_ev_display->Clear();
   canvas_ev_display->Close();
-  if (use_tapplication) app_event_display->Terminate();
+  delete_canvas_contents();
+
+  if (use_tapplication) {
+    app_event_display->Terminate();
+    delete app_event_display;
+  }
+  if (draw_histograms){
+    delete leg_charge;
+    delete leg_time;
+  }
+  delete canvas_pmt;
+  delete canvas_pmt_supplementary;
+  delete canvas_lappd;
+  delete canvas_ev_display;
+
+  //only for debugging memory leaks, otherwise comment out
+  //std::cout <<"List of Objects (end of finalise): "<<std::endl;
+  //gObjectTable->Print();
+
   return true;
 
 }
@@ -744,14 +771,14 @@ void EventDisplay::make_gui(){
     top_circle->Draw();
     
     //draw bulk
-    TBox *box = new TBox(0.5-TMath::Pi()*size_top_drawing,0.5-tank_height/tank_radius*size_top_drawing,0.5+TMath::Pi()*size_top_drawing,0.5+tank_height/tank_radius*size_top_drawing);
+    box = new TBox(0.5-TMath::Pi()*size_top_drawing,0.5-tank_height/tank_radius*size_top_drawing,0.5+TMath::Pi()*size_top_drawing,0.5+tank_height/tank_radius*size_top_drawing);
     box->SetFillColor(1);
     box->SetLineColor(1);
     box->SetLineWidth(1);
     box->Draw();
 
     //draw lower circle
-    TEllipse *bottom_circle = new TEllipse(0.5,0.5-(tank_height/tank_radius+1)*size_top_drawing,size_top_drawing,size_top_drawing);
+    bottom_circle = new TEllipse(0.5,0.5-(tank_height/tank_radius+1)*size_top_drawing,size_top_drawing,size_top_drawing);
     bottom_circle->SetFillColor(1);
     bottom_circle->SetLineColor(1);
     bottom_circle->SetLineWidth(1);
@@ -792,20 +819,30 @@ void EventDisplay::draw_event(){
     canvas_ev_display->cd(1);
     draw_event_PMTs();
     if (verbose > 2) std::cout <<"Drawing event PMTs finished"<<std::endl;
+
     draw_event_LAPPDs();
     if (verbose >2) std::cout <<"Drawing event LAPPDs finished."<<std::endl;
+
     //if (draw_mrd) draw_event_MRD();  //not implemented yet
+
     if (text_box) draw_event_box();
     if (verbose > 2) std::cout <<"Drawing event box finished."<<std::endl;
+
     draw_pmt_legend();
     if (verbose > 2) std::cout <<"Drawing pmt legend finished."<<std::endl;
+
     draw_lappd_legend();
     if (verbose > 2) std::cout <<"Drawing lappd legend finished." << std::endl;
+
     draw_schematic_detector();
     if (verbose > 2) std::cout <<"Drawing schematic detector finished."<<std::endl;
+
     if (draw_vertex_temp) draw_true_vertex();
     if (verbose > 2) std::cout <<"Drawing true vertex finished."<<std::endl;
+
     if (draw_ring_temp) draw_true_ring();
+    else current_n_polylines=0;
+
     if (verbose > 2) std::cout <<"Drawing true ring finished."<<std::endl;
 
 }
@@ -868,7 +905,6 @@ void EventDisplay::draw_event_box(){
 
     //draw pmt legend on the left side
 
-    TPaveLabel *pmt_title = nullptr;
     if (mode == "Charge") pmt_title = new TPaveLabel(0.05,0.5+tank_height/tank_radius*size_top_drawing-0.03,0.15,0.5+tank_height/tank_radius*size_top_drawing,"charge [PMTs]","l");
     else if (mode == "Time") pmt_title = new TPaveLabel(0.05,0.5+tank_height/tank_radius*size_top_drawing-0.03,0.15,0.5+tank_height/tank_radius*size_top_drawing,"time [PMTs]","l");
     pmt_title->SetTextFont(40); 
@@ -884,6 +920,7 @@ void EventDisplay::draw_event_box(){
         colordot->SetMarkerColor(Bird_Idx+co);
         colordot->SetMarkerSize(3.);
         colordot->Draw();
+        vector_colordot.push_back(colordot);
     }
 
     std::string max_charge_pre = std::to_string(int(maximum_pmts));
@@ -895,7 +932,6 @@ void EventDisplay::draw_event_box(){
     if (threshold_time_high==-999) max_time = max_time_pre+time_string;
     else max_time = std::to_string(int(threshold_time_high))+time_string;
     //std::cout <<"max time: "<<max_time<<std::endl;
-    TPaveLabel *max_text = nullptr;
     if (mode == "Charge") max_text = new TPaveLabel(0.10,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.95,0.17,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*1.05,max_charge.c_str(),"L");
     else if (mode == "Time") max_text = new TPaveLabel(0.10,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.95,0.17,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*1.05,max_time.c_str(),"L");
     max_text->SetFillColor(0);
@@ -911,7 +947,6 @@ void EventDisplay::draw_event_box(){
     std::string min_time;
     if (threshold_time_low==-999) min_time = min_time_pre+time_string;
     else min_time = std::to_string(int(threshold_time_low))+time_string;
-    TPaveLabel *min_text = nullptr;
     if (mode == "Charge") min_text = new TPaveLabel(0.10,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*(-0.05),0.17,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.05,min_charge.c_str(),"L");
     else if (mode == "Time") min_text = new TPaveLabel(0.10,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*(-0.05),0.17,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.05,min_time.c_str(),"L");
     min_text->SetFillColor(0);
@@ -927,7 +962,6 @@ void EventDisplay::draw_event_box(){
 
     //draw LAPPD legend on the right side of the event display
 
-    TPaveLabel *lappd_title = nullptr;
     if (mode == "Charge") lappd_title = new TPaveLabel(0.85,0.5+tank_height/tank_radius*size_top_drawing-0.03,0.95,0.5+tank_height/tank_radius*size_top_drawing,"charge [LAPPDs]","l");
     else if (mode == "Time") lappd_title = new TPaveLabel(0.85,0.5+tank_height/tank_radius*size_top_drawing-0.03,0.95,0.5+tank_height/tank_radius*size_top_drawing,"time [LAPPDs]","l");
     lappd_title->SetTextFont(40);
@@ -943,6 +977,7 @@ void EventDisplay::draw_event_box(){
         colordot->SetMarkerColor(Bird_Idx+co);
         colordot->SetMarkerSize(3.);
         colordot->Draw();
+        vector_colordot_lappd.push_back(colordot);
     }
     
     std::string max_time_pre = std::to_string(int(maximum_time_overall));
@@ -951,7 +986,6 @@ void EventDisplay::draw_event_box(){
     if (threshold_time_high==-999) max_time_lappd = max_time_pre+time_string;
     else max_time_lappd = std::to_string(int(threshold_time_high))+time_string;
     //std::cout <<"max time lappd: "<<max_time_lappd<<std::endl;
-    TPaveLabel *max_lappd = nullptr;
     if (mode == "Charge") max_lappd = new TPaveLabel(0.88,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.95,0.95,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*1.05,"1 hit","L");
     else if (mode == "Time") max_lappd = new TPaveLabel(0.88,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.95,0.95,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*1.05,max_time_lappd.c_str(),"L");
     max_lappd->SetFillColor(0);
@@ -966,7 +1000,6 @@ void EventDisplay::draw_event_box(){
     std::string min_time_pre = std::to_string(int(min_time_overall));
     if (threshold_time_low==-999) min_time_lappd = min_time_pre+time_string;
     else min_time_lappd = std::to_string(int(threshold_time_low))+time_string; 
-    TPaveLabel *min_lappd = nullptr;
     if (mode == "Charge") min_lappd = new TPaveLabel(0.88,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*(-0.05),0.95,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.05,"0 hits","L");
     else if (mode == "Time") min_lappd = new TPaveLabel(0.88,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*(-0.05),0.95,0.5-tank_height/tank_radius*size_top_drawing+0.03+0.7*2*tank_height/tank_radius*size_top_drawing*0.05,min_time_lappd.c_str(),"L");
     min_lappd->SetFillColor(0);
@@ -1033,6 +1066,7 @@ void EventDisplay::draw_event_box(){
         else if (x_pmt[i_pmt]>0 && z_pmt[i_pmt]<0) phi = atan(x_pmt[i_pmt]/-z_pmt[i_pmt]);
         else if (x_pmt[i_pmt]<0 && z_pmt[i_pmt]<0) phi = 3*TMath::Pi()/2+atan(z_pmt[i_pmt]/x_pmt[i_pmt]);
         else if (x_pmt[i_pmt]<0 && z_pmt[i_pmt]>0) phi = TMath::Pi()+atan(-x_pmt[i_pmt]/z_pmt[i_pmt]);
+        else phi = 0.;
         if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
         phi-=TMath::Pi();
         if (phi < - TMath::Pi()) phi = -TMath::Pi();
@@ -1087,6 +1121,7 @@ void EventDisplay::draw_event_box(){
           else if (x_lappd>0 && z_lappd<0) phi = atan(x_lappd/-z_lappd);
           else if (x_lappd<0 && z_lappd<0) phi = 3*TMath::Pi()/2+atan(z_lappd/x_lappd);
           else if (x_lappd<0 && z_lappd>0) phi = TMath::Pi()+atan(-x_lappd/z_lappd);
+          else phi = 0.;
           if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
           phi-=TMath::Pi();
           if (phi < - TMath::Pi()) phi = -TMath::Pi();
@@ -1146,7 +1181,7 @@ void EventDisplay::draw_event_box(){
     double x_vtx[1] = {xTemp};
     double y_vtx[1] = {yTemp};
 
-    TPolyMarker *marker_vtx = new TPolyMarker(1,x_vtx,y_vtx,"");
+    marker_vtx = new TPolyMarker(1,x_vtx,y_vtx,"");
     marker_vtx->SetMarkerColor(2);
     marker_vtx->SetMarkerStyle(22);
     marker_vtx->SetMarkerSize(1.);
@@ -1377,13 +1412,14 @@ void EventDisplay::draw_event_box(){
       }
     }
 
-    TPolyLine *ring_visual[10];     //individual ring segments for parts of the ring that change between top/bottom/wall
     for (int i_area = 0; i_area<= i_ring_area;i_area++){
         ring_visual[i_area] = new TPolyLine(points_area[i_area],xring[i_area],yring[i_area]);
         ring_visual[i_area]->SetLineColor(2);
         ring_visual[i_area]->SetLineWidth(2);
         ring_visual[i_area]->Draw();
     }
+
+    current_n_polylines = i_ring_area+1;
 
 
   }
@@ -1406,6 +1442,7 @@ void EventDisplay::draw_event_box(){
     if (time_wall2>=0 && time_wall1>=0) time_wall = (time_wall1<time_wall2) ? time_wall1 : time_wall2;
     else if (time_wall2 < 0 ) time_wall = time_wall1;
     else if (time_wall1 < 0 ) time_wall = time_wall2;
+    else time_wall = 0;
     if ((vtxY+dirY*time_wall > max_y || vtxY+dirY*time_wall < min_y)) time_wall = 999;
     time_min = (time_wall < time_top && time_wall >=0 )? time_wall : time_top;
 
@@ -1439,6 +1476,7 @@ void EventDisplay::draw_event_box(){
       else if (vtxX>0 && vtxZ<0) phi = atan(vtxX/-vtxZ);
       else if (vtxX<0 && vtxZ<0) phi = 3*TMath::Pi()/2+atan(vtxZ/vtxX);
       else if (vtxX<0 && vtxZ>0) phi = TMath::Pi()+atan(-vtxX/vtxZ);
+      else phi = 0.;
       if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
       phi-=TMath::Pi();
       if (phi < - TMath::Pi()) phi = -TMath::Pi();
@@ -1456,8 +1494,10 @@ void EventDisplay::draw_event_box(){
 
     //delete all objects that were drawn on the canvas so far
 
+    if (verbose > 3) std::cout <<"Delete canvas contents..."<<std::endl;
     if (text_event_info) delete text_event_info;
     if (pmt_title) delete pmt_title;
+    if (lappd_title) delete lappd_title;
     if (schematic_tank) delete schematic_tank;
     if (schematic_facc) delete schematic_facc;
     if (schematic_mrd) delete schematic_mrd;
@@ -1466,12 +1506,49 @@ void EventDisplay::draw_event_box(){
     if (top_circle) delete top_circle;
     if (bottom_circle) delete bottom_circle;
     if (box) delete box;
-    if (box_mrd_top) delete box_mrd_top;
-    if (box_mrd_side) delete box_mrd_side;
 
-    /*marker_pmts_wall.clear();
-    marker_pmts_top.clear();
-    marker_pmts_bottom.clear();*/
+    if (max_text) delete max_text;
+    if (min_text) delete min_text;
+    if (max_lappd) delete max_lappd;
+    if (min_lappd) delete min_lappd;
+
+    for (int i_color=0; i_color < vector_colordot.size();i_color++){
+      delete vector_colordot.at(i_color);
+    }    
+    for (int i_color=0; i_color < vector_colordot_lappd.size();i_color++){
+      delete vector_colordot_lappd.at(i_color);
+    }
+    vector_colordot.clear();
+    vector_colordot_lappd.clear();
+
+    /*
+
+    //markers, lines are automatically deleted when calling TCanvas::Clear
+    std::cout <<"Delete marker pmts (top)"<<std::endl;
+    for (int i_top = 0; i_top< marker_pmts_top.size(); i_top++){
+      delete marker_pmts_top.at(i_top);
+    }
+    std::cout <<"Delete marker pmts (bottom)"<<std::endl;
+    for (int i_bottom = 0; i_bottom< marker_pmts_bottom.size(); i_bottom++){
+      delete marker_pmts_bottom.at(i_bottom);
+    }
+    std::cout <<"Delete marker pmts (wall)"<<std::endl;
+    for (int i_wall = 0; i_wall< marker_pmts_wall.size(); i_wall++){
+      delete marker_pmts_wall.at(i_wall);
+    }
+    std::cout <<"Delete marker lappds"<<std::endl;
+    for (int i_lappd=0; i_lappd < marker_lappds.size(); i_lappd++){
+      delete marker_lappds.at(i_lappd);
+    }
+    std::cout <<"Delete marker vtx"<<std::endl;
+    if (marker_vtx) delete marker_vtx;
+    std::cout <<"Delete ring visual polylines"<<std::endl;*/
+
+    std::cout <<"current n polylines: "<<current_n_polylines<<std::endl;
+    for (int i_ring=0; i_ring < current_n_polylines; i_ring++){
+      if (ring_visual[i_ring]) delete ring_visual[i_ring];
+    }
+
 
   }
 
