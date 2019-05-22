@@ -448,15 +448,17 @@ bool EventDisplay::Execute(){
   if (verbose > 0) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
   if (vectsize!=0) tank_hit = true;
   total_hits_pmts=0;
-  for(std::pair<unsigned long, std::vector<Hit>>&& apair : *MCHits){
+  for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
     unsigned long chankey = apair.first;
+    if (verbose > 3) std::cout <<"chankey: "<<chankey<<std::endl;
     int wcsim_pmt_id = channelkey_to_pmtid[chankey];
+    if (verbose > 3) std::cout <<"wcsim_pmt_id: "<<wcsim_pmt_id<<std::endl;
     Detector* thistube = geom->ChannelToDetector(chankey);
     if (thistube->GetDetectorElement()=="Tank"){
-      std::vector<Hit>& Hits = apair.second;
+      std::vector<MCHit>& Hits = apair.second;
       int hits_pmt = 0;
       int wcsim_id;
-      for (Hit &ahit : Hits){
+      for (MCHit &ahit : Hits){
         charge[wcsim_pmt_id-1] += ahit.GetCharge();
         time[wcsim_pmt_id-1] += ahit.GetTime();
         hits_pmt++;
@@ -502,7 +504,7 @@ bool EventDisplay::Execute(){
   num_lappds_hit=0;
   if (verbose > 0) std::cout <<"Size of MCLAPPDhits: "<<MCLAPPDHits->size()<<std::endl;
   if(MCLAPPDHits){
-    for (std::pair<unsigned long, std::vector<LAPPDHit>>&& apair : *MCLAPPDHits){
+    for (std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits){
       unsigned long chankey = apair.first;
       Detector *det = geom->ChannelToDetector(chankey);
       if(det==nullptr){
@@ -511,9 +513,9 @@ bool EventDisplay::Execute(){
       }
       int detkey = det->GetDetectorID();
       int LAPPDId = detectorkey_to_lappdid.at(detkey);
-      std::vector<LAPPDHit>& hits = apair.second;
+      std::vector<MCLAPPDHit>& hits = apair.second;
       if (verbose > 2) std::cout <<"detector key: "<<detkey<<", LAPPD ID: "<<LAPPDId<<std::endl;
-      for (LAPPDHit& ahit : hits){
+      for (MCLAPPDHit& ahit : hits){
         std::vector<double> temp_pos = ahit.GetPosition();
         double x_lappd = temp_pos.at(0)-tank_center_x;
         double y_lappd = temp_pos.at(1)-tank_center_y;

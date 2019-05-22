@@ -248,15 +248,15 @@ bool TankCalibrationDiffuser::Execute(){
 
   int vectsize = MCHits->size();
   if (verbose > 0) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
-  for(std::pair<unsigned long, std::vector<Hit>>&& apair : *MCHits){
+  for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
     unsigned long chankey = apair.first;
     int wcsim_pmt_id = channelkey_to_pmtid[chankey];
     Detector* thistube = geom->ChannelToDetector(chankey);
     if (thistube->GetDetectorElement()=="Tank"){
-      std::vector<Hit>& Hits = apair.second;
+      std::vector<MCHit>& Hits = apair.second;
       int wcsim_id;
       PMT_ishit[wcsim_pmt_id-1] = 1;
-      for (Hit &ahit : Hits){
+      for (MCHit &ahit : Hits){
       	if (verbose > 2) std::cout <<"charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<", tubeid: "<<ahit.GetTubeId()<<std::endl;
         hist_charge->Fill(ahit.GetCharge());
         hist_time->Fill(ahit.GetTime());
