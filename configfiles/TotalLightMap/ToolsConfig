@@ -1,0 +1,4 @@
+myLoadWCSim LoadWCSim configfiles/TotalLightMap/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/TotalLightMap/LoadWCSimLAPPDConfig
+myMCParticleProperties MCParticleProperties configfiles/TotalLightMap/MCParticlePropertiesConfig
+myTotalLightMap TotalLightMap configfiles/TotalLightMap/TotalLightMapConfig

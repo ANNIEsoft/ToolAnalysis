@@ -78,5 +78,9 @@ if (tool=="DigitBuilderROOT") ret=new DigitBuilderROOT;
 if (tool=="MrdEfficiency") ret=new MrdEfficiency;
 if (tool=="EventDisplay") ret=new EventDisplay;
 if (tool=="TankCalibrationDiffuser") ret=new TankCalibrationDiffuser;
+if (tool=="TotalLightMap") ret=new TotalLightMap;
+if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
+if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
+
 return ret;
 }

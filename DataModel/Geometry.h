@@ -72,6 +72,10 @@ class Geometry : public SerialisableObject{
 	}
 	
 	bool AddDetector(Detector detin){
+		// Pass a pointer to it's owning geometry to this Detector
+		// we need to do this before calling `emplace` as that must do a copy-construction
+		detin.SetGeometryPtr(this);
+		
 		std::string thedetel = detin.GetDetectorElement();
 		int detectorsetindex=-1;
 		if(DetectorElements.count(thedetel)==0){
@@ -248,6 +252,10 @@ class Geometry : public SerialisableObject{
 	}
 	
 	void PrintChannels();
+	
+	// helper functions
+	Position GlobalToTankCentered(Position posin){ return (posin - tank_centre); }
+	void CartesianToPolar(Position posin, double& R, double& Phi, double& Theta, bool tankcentered=false);
 	
 	private:
 	unsigned long NextFreeDetectorKey;
