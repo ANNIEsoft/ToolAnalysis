@@ -302,7 +302,7 @@ Int_t LAPPDTree::Cut(Long64_t entry)
    return 1;
 }
 
-TChain* LAPPDTree::AddFiles(const char* inputdir, bool addsubfolders){
+TChain* LAPPDTree::AddFiles(const char* inputdir, bool addsubfolders=false){
 	// Add files by pattern, directory. Optionally check subdirectories, but only 1 level deep. 
 	if(strcmp(inputdir,"")==0){ cerr<<"no wcsim_lappd file to load"<<endl; return nullptr; }
 	if(verbose){
