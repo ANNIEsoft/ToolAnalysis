@@ -102,7 +102,7 @@ public :
    TBranch        *b_lappdhit_neighstrip_righttime;   //!
 
    LAPPDTree(TTree *tree=0);
-   LAPPDTree(const char* filepath, bool addsubdirs);
+   LAPPDTree(const char* filepath, bool addsubdirs=false);
    virtual ~LAPPDTree();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -302,7 +302,7 @@ Int_t LAPPDTree::Cut(Long64_t entry)
    return 1;
 }
 
-TChain* LAPPDTree::AddFiles(const char* inputdir, bool addsubfolders=false){
+TChain* LAPPDTree::AddFiles(const char* inputdir, bool addsubfolders){
 	// Add files by pattern, directory. Optionally check subdirectories, but only 1 level deep. 
 	if(strcmp(inputdir,"")==0){ cerr<<"no wcsim_lappd file to load"<<endl; return nullptr; }
 	if(verbose){
