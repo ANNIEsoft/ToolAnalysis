@@ -543,23 +543,27 @@ bool LoadWCSim::Execute(){
 	EventNumber++;
 	MCTriggernum++;
 	if(verbosity>2) cout<<"checking if we're done on trigs in this event"<<endl;
+	bool newentry=false;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
 		MCEventNum++;
+		newentry=true;
 		if(verbosity>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
 	} else {
 		if(verbosity>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
 	
 	// Pre-load next entry so we can stop the loop if it this was the last one in the chain
-	if(MCEventNum>=MaxEntries && MaxEntries>0){
-		cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
-		m_data->vars.Set("StopLoop",1);
-	} else {
-		int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
-		if(nbytesread<=0){
-			Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
+	if(newentry){  // if next loop is processing the next trigger in the same entry, no need to re-load it
+		if(MCEventNum>=MaxEntries && MaxEntries>0){
+			cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
 			m_data->vars.Set("StopLoop",1);
+		} else {
+			int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+			if(nbytesread<=0){
+				Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
+				m_data->vars.Set("StopLoop",1);
+			}
 		}
 	}
 	return true;
