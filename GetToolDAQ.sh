@@ -39,6 +39,7 @@ do
             boostflag=0
 	    rootflag=0
 	    fnalflag=1
+            Python=0
 	    cp Makefile.FNAL Makefile
 	    ;;
 
@@ -243,12 +244,21 @@ if [ $WCSimlib -eq 1 ]
 then
 
     cd ../
-    source Setup.sh
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
     cd -
     git clone https://github.com/ANNIEsoft/WCSimLib.git
     cd WCSimLib
-    make
-  
+    if [ $fnalflag -eq 1 ]; then
+      make -f GNUmakefile.FNAL
+    else
+      make
+      make # run twice, some sort of circular dependancy, works with ROOT 5.34
+    fi
+
     cd ../
 
 fi
@@ -273,7 +283,11 @@ if [ $MrdTrackLib -eq 1 ]
 then
     
     cd ../
-    source Setup.sh
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
     cd -
     git clone https://github.com/ANNIEsoft/MrdTrackLib.git
     cd MrdTrackLib
@@ -285,13 +299,15 @@ then
 
 fi
 
-cd ../
+#cd ../
 
 
 if [ $Python -eq 1 ]
 then
-
-    pip install numpy pandas tensorflow sklearn root_numpy
+    if [ $fnalflag -eq 0 ]; then
+      source Setup.sh
+      pip install numpy pandas tensorflow sklearn root_numpy
+    fi
 
 fi
 
@@ -299,6 +315,7 @@ fi
 if [ $final -eq 1 ]
 then
     
+    cd ..
     echo "current directory"
     echo `pwd`
     make clean

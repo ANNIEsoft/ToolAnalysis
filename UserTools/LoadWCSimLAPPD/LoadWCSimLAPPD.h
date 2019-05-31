@@ -50,7 +50,7 @@ class LoadWCSimLAPPD: public Tool {
 	std::map<int,unsigned long> lappd_tubeid_to_detectorkey;
 	
 	// internal things to keep between loops
-	std::vector<LAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
+	std::vector<MCLAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
 	
 	bool DEBUG_DRAW_LAPPD_HITS;
 	TApplication* lappdRootDrawApp;
@@ -64,7 +64,8 @@ class LoadWCSimLAPPD: public Tool {
 	// so we do not need to do any matching of run, subrun, etc.
 	// Note though that these are the "RAW" hits (photons+noise), pre-digitizer-integration and
 	// pre-trigger-selection (so no WCSim trigger association is included)
-	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits;
+	std::map<unsigned long,std::vector<MCLAPPDHit>>* MCLAPPDHits;
+	std::map<int,int>* TrackId_to_MCParticleIndex=nullptr; // maps WCSim trackId to index in MCParticles
 	
 };
 

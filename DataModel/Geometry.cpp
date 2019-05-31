@@ -1,7 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "Geometry.h"
 
-Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets){
+Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets){
 	NextFreeChannelKey=0;
 	NextFreeDetectorKey=0;
 	Version=ver;
@@ -9,6 +9,8 @@ Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, doub
 	tank_centre=tankc;
 	tank_radius=tankr;
 	tank_halfheight=tankhh;
+	pmt_enclosed_radius=pmtencr;
+	pmt_enclosed_halfheight=pmtenchh;
 	mrd_width=mrdw;
 	mrd_height=mrdh;
 	mrd_depth=mrdd;
@@ -93,4 +95,19 @@ void Geometry::PrintChannels(){
 			}
 		}
 	}
+}
+
+void Geometry::CartesianToPolar(Position posin, double& R, double& Phi, double& Theta, bool tankcentered){
+	// Calculate angle from beam axis, measured clockwise while looking down
+	// first shift to place relative to the tank origin if needed
+	if(not tankcentered){ posin -= tank_centre; }
+	// calculate the angle from the beam axis
+	double thethetaval = atan(posin.X()/abs(posin.Z()));
+	if(posin.Z()<0.){ (posin.X()<0.) ? thethetaval=(-M_PI+thethetaval) : thethetaval=(M_PI-thethetaval); }
+	Phi = thethetaval;
+	// calculate angle from the x-z plane
+	Theta = atan(posin.Y() / sqrt(pow(posin.X(),2.)+pow(posin.Z(),2.)));
+	// calculate the radial distance from the tank centre
+	R = sqrt(pow(posin.X(),2.)+pow(posin.Z(),2.));
+	return;
 }

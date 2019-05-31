@@ -27,22 +27,22 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   ///////////////////// Defaults for Config ///////////////
   fPhotodetectorConfiguration = "All";
   fParametricModel = 0;
+  fIsMC = 1;
+
 
   /// Get the Tool configuration variables
   m_variables.Get("verbosity",verbosity);
+  m_variables.Get("isMC",fIsMC);
   m_variables.Get("ParametricModel", fParametricModel);
   m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
   m_variables.Get("xshift", xshift);
   m_variables.Get("yshift", yshift);
   m_variables.Get("zshift", zshift);
-  m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
   m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
 
 
   /// Construct the other objects we'll be setting at event level,
   fDigitList = new std::vector<RecoDigit>;
-  fMuonStartVertex = new RecoVertex();
-  fMuonStopVertex = new RecoVertex();
 
 
   // Make the RecoDigit Store if it doesn't exist
@@ -91,46 +91,33 @@ bool DigitBuilder::Execute(){
 		Log("DigitBuilder Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
 		return false; 
 	}
-
-    auto get_mcparticles = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",
-            fMCParticles);
-    if(!get_mcparticles){
-      Log("EventSelector:: Tool: Error retrieving MCParticles from ANNIEEvent!",
-              v_error,verbosity);
+    
+    if (fIsMC){
+	  auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fPMTHits);
+	  if(!get_mchits){ 
+	  	Log("DigitBuilder Tool: Error retrieving MCHits from ANNIEEvent!",v_error,verbosity); 
+	  	return false; 
+	  }
+	  auto get_mclappdhits = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fLAPPDHits);
+	  if(!get_mclappdhits){
+	  	Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_error,verbosity); 
+	  	return false;
+	  }
+    } else {
+      Log("DigitBuilder Tool: ERROR; Currently no non-MC hits boost store!",v_error,verbosity);
       return false;
     }
-	auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCHits);
-	if(!get_mchits){ 
-		Log("DigitBuilder Tool: Error retrieving MCHits from ANNIEEvent!",v_error,verbosity); 
-		return false; 
-	}
-	auto get_mclappdhits = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fMCLAPPDHits);
-	if(!get_mclappdhits){
-		Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_error,verbosity); 
-		return false;
-	}
-
-  /// If simulated data, Get MC Particle information
-  this->FindTrueVertexFromMC();
-  if (fGetPiKInfo) this->FindPionKaonCountFromMC();
 
   /// Build RecoDigit
   this->BuildRecoDigit();
 	
-  /// Push Particle & hit info. to RecoEvent
+  /// Hit info. to RecoEvent
   this->PushRecoDigits(true); 
-  this->PushTrueVertex(true);
-  this->PushTrueStopVertex(true);
-  this->PushTrueWaterTrackLength(WaterTrackLength);
-  this->PushTrueMRDTrackLength(MRDTrackLength);
-
   return true;
 }
 
 bool DigitBuilder::Finalise(){
   delete fDigitList; fDigitList = 0;
-  delete fMuonStartVertex;
-  delete fMuonStopVertex;
   if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
   return true;
 }
@@ -168,10 +155,10 @@ bool DigitBuilder::BuildPMTRecoDigit() {
 	Detector* det=nullptr;
 	Position  pos_sim, pos_reco;
 	/// MCHits is a std::map<unsigned long,std::vector<Hit>>
-	if(fMCHits){
-		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fMCHits->size()),v_message, verbosity);
+	if(fPMTHits){
+		Log("DigitBuilder Tool: Num PMT Digits = "+to_string(fPMTHits->size()),v_message, verbosity);
 		/// iterate over the map of sensors with a measurement
-		for(std::pair<unsigned long,std::vector<Hit>>&& apair : *fMCHits){
+		for(std::pair<unsigned long,std::vector<Hit>>&& apair : *fPMTHits){
 			unsigned long chankey = apair.first;
 			// the channel key is a unique identifier of this signal input channel
 			det = fGeometry->ChannelToDetector(chankey);
@@ -271,10 +258,10 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
 	// MCLAPPDHits is a std::map<unsigned long,std::vector<LAPPDHit>>
-	if(fMCLAPPDHits){
-		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fMCLAPPDHits->size()),v_message,verbosity);
+	if(fLAPPDHits){
+		Log("DigitBuilder Tool: Num LAPPD Digits = "+to_string(fLAPPDHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement
-		for(std::pair<unsigned long,std::vector<LAPPDHit>>&& apair : *fMCLAPPDHits){
+		for(std::pair<unsigned long,std::vector<LAPPDHit>>&& apair : *fLAPPDHits){
 			unsigned long chankey = apair.first;
 			det = fGeometry->ChannelToDetector(chankey);
 			if(det==nullptr){
@@ -333,166 +320,14 @@ bool DigitBuilder::BuildLAPPDRecoDigit() {
 	return true;
 }
 
-void DigitBuilder::FindTrueVertexFromMC() {
-  
-  // loop over the MCParticles to find the highest enery primary muon
-  // MCParticles is a std::vector<MCParticle>
-  MCParticle primarymuon;  // primary muon
-  bool mufound=false;
-  if(fMCParticles){
-    Log("DigitBuilder::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
-      MCParticle aparticle = fMCParticles->at(particlei);
-      //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()!=13) continue;       // not a muon
-      primarymuon = aparticle;                       // note the particle
-      mufound=true;                                  // note that we found it
-      //primarymuon.Print();
-      break;                                         // won't have more than one primary muon
-    }
-  } else {
-    Log("DigitBuilder::  Tool: No MCParticles in the event!",v_error,verbosity);
-  }
-  if(not mufound){
-    Log("DigitBuilder::  Tool: No muon in this event",v_warning,verbosity);
-    return;
-  }
-  
-  // retrieve desired information from the particle
-  Position muonstartpos = primarymuon.GetStartVertex();    // only true if the muon is primary
-  double muonstarttime = primarymuon.GetStartTime();
-  Position muonstoppos = primarymuon.GetStopVertex();    // only true if the muon is primary
-  double muonstoptime = primarymuon.GetStopTime();
-  Direction muondirection = primarymuon.GetStartDirection();
-  
-  double muonenergy = primarymuon.GetStartEnergy();
-  m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", muonenergy);
-
-  // MCParticleProperties tool fills in MRD track in m, but
-  // Water track in cm...
-  MRDTrackLength = primarymuon.GetTrackLengthInMrd()*100.;
-  WaterTrackLength = primarymuon.GetTrackLengthInTank();
-
-  // set true vertex
-  // change unit
-  muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
-  muonstoppos.UnitToCentimeter(); // convert unit from meter to centimeter
-  // change coordinate for muon start vertex
-  muonstartpos.SetX(muonstartpos.X()+xshift);
-  muonstartpos.SetY(muonstartpos.Y()+yshift);
-  muonstartpos.SetZ(muonstartpos.Z()+zshift);
-  fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
-  fMuonStartVertex->SetDirection(muondirection);
-  //  charge coordinate for muon stop vertex
-  muonstoppos.SetX(muonstoppos.X()+xshift);
-  muonstoppos.SetY(muonstoppos.Y()+yshift);
-  muonstoppos.SetZ(muonstoppos.Z()+zshift);
-  fMuonStopVertex->SetVertex(muonstoppos, muonstoptime); 
-  
-  logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"
-            + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
-  
-  Log(logmessage,v_debug,verbosity);
-	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
-	Log(logmessage,v_debug,verbosity);
-}
-
-
-void DigitBuilder::FindPionKaonCountFromMC() {
-  
-  // loop over the MCParticles to find the highest enery primary muon
-  // MCParticles is a std::vector<MCParticle>
-  bool pionfound=false;
-  bool kaonfound=false;
-  int pi0count = 0;
-  int pipcount = 0;
-  int pimcount = 0;
-  int K0count = 0;
-  int Kpcount = 0;
-  int Kmcount = 0;
-  if(fMCParticles){
-    Log("DigitBuilder::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
-      MCParticle aparticle = fMCParticles->at(particlei);
-      //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()==111){               // is a primary pi0
-        pionfound = true;
-        pi0count++;
-      }
-      if(aparticle.GetPdgCode()==211){               // is a primary pi+
-        pionfound = true;
-        pipcount++;
-      }
-      if(aparticle.GetPdgCode()==-211){               // is a primary pi-
-        pionfound = true;
-        pimcount++;
-      }
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()==311){               // is a primary K0
-        kaonfound = true;
-        K0count++;
-      }
-      if(aparticle.GetPdgCode()==321){               // is a primary K+
-        kaonfound = true;
-        Kpcount++;
-      }
-      if(aparticle.GetPdgCode()==-321){               // is a primary K-
-        kaonfound = true;
-        Kmcount++;
-      }
-    }
-  } else {
-    Log("DigitBuilder::  Tool: No MCParticles in the event!",v_error,verbosity);
-  }
-  if(not pionfound){
-    Log("DigitBuilder::  Tool: No primary pions in this event",v_warning,verbosity);
-  }
-  if(not kaonfound){
-    Log("DigitBuilder::  Tool: No kaons in this event",v_warning,verbosity);
-  }
-  //Fill in pion counts for this event
-  m_data->Stores.at("RecoEvent")->Set("MCPi0Count", pi0count);
-  m_data->Stores.at("RecoEvent")->Set("MCPiPlusCount", pipcount);
-  m_data->Stores.at("RecoEvent")->Set("MCPiMinusCount", pimcount);
-  m_data->Stores.at("RecoEvent")->Set("MCK0Count", K0count);
-  m_data->Stores.at("RecoEvent")->Set("MCKPlusCount", Kpcount);
-  m_data->Stores.at("RecoEvent")->Set("MCKMinusCount", Kmcount);
-}
-
-void DigitBuilder::PushTrueVertex(bool savetodisk) {
-  Log("DigitBuilder Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
-  m_data->Stores.at("RecoEvent")->Set("TrueVertex", fMuonStartVertex, savetodisk); 
-}
-
-
-void DigitBuilder::PushTrueStopVertex(bool savetodisk) {
-  Log("DigitBuilder Tool: Push true stop vertex to the RecoEvent store",v_message,verbosity);
-  m_data->Stores.at("RecoEvent")->Set("TrueStopVertex", fMuonStopVertex, savetodisk); 
-}
-
-
 void DigitBuilder::PushRecoDigits(bool savetodisk) {
 	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
 }
 
-void DigitBuilder::PushTrueWaterTrackLength(double WaterT) {
-	Log("DigitBuilder Tool: Push true track length in tank to the RecoEvent store",v_message,verbosity);
-	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInWater", WaterT);  ///> Add digits to RecoEvent
-}
-
-void DigitBuilder::PushTrueMRDTrackLength(double MRDT) {
-	Log("DigitBuilder Tool: Push true track length in MRD to the RecoEvent store",v_message,verbosity);
-	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD", MRDT);  ///> Add digits to RecoEvent
-}
-
 void DigitBuilder::Reset() {
-	// Reset 
+  // Reset 
   fDigitList->clear();
-  fMuonStartVertex->Reset();
-  fMuonStopVertex->Reset();
 }
 
 void DigitBuilder::ReadLAPPDIDFile() {

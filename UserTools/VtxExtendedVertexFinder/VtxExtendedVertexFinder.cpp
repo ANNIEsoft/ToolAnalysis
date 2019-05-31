@@ -163,7 +163,7 @@ RecoVertex* VtxExtendedVertexFinder::FitExtendedVertex(RecoVertex* myVertex) {
 }
 
 RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeedVtxList) {
-  double vtxFOM = 0.0;
+  double vtxFOM = -9999.;
   double bestFOM = -1.0;
   int vtxRecoStatus = -1;
   unsigned int nlast = vSeedVtxList->size();

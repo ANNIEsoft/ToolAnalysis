@@ -52,8 +52,8 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	if(MakeMrdDigitTimePlot){
 		// create the ROOT application to show histograms
 		int myargc=0;
-		char *myargv[] = {(const char*)"Ahh shark!"};
-		findMrdRootApp = new TApplication("findMrdRootApp",&myargc,myargv);
+		//char *myargv[] = {(const char*)"Ahh shark!"};
+		findMrdRootApp = new TApplication("findMrdRootApp",&myargc,0);
 		mrddigitts = new TH1D("mrddigitts","mrd digit times",500,-50,2000);
 		canvwidth = 900;
 		canvheight = 600;

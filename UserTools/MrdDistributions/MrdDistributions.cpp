@@ -32,7 +32,7 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("drawHistos",drawHistos);
 	m_variables.Get("plotDirectory",plotDirectory);
 	
-	bool isdir, plotDirectoryExists=false;
+	bool isdir=false, plotDirectoryExists=false;
 	struct stat s;
 	if(stat(plotDirectory.c_str(),&s)==0){
 		plotDirectoryExists=true;
@@ -72,13 +72,13 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 		// create the ROOT application to show histograms
 		Log("MrdDistributions Tool: constructing TApplication",v_debug,verbosity);
 		int myargc=0;
-		char *myargv[] = {(const char*)"mrddist"};
+		//char *myargv[] = {(const char*)"mrddist"};
 		// get or make the TApplication
 		intptr_t tapp_ptr=0;
 		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
 		if(not get_ok){
 			Log("MrdDistributions Tool: Making global TApplication",v_error,verbosity);
-			rootTApp = new TApplication("rootTApp",&myargc,myargv);
+			rootTApp = new TApplication("rootTApp",&myargc,0);
 			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
 			m_data->CStore.Set("RootTApplication",tapp_ptr);
 		} else {
@@ -582,7 +582,6 @@ bool MrdDistributions::Finalise(){
 		
 		int tapplicationusers=0;
 		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
-		std::cout<<"rootTApp="<<rootTApp<<std::endl;
 		if(not get_ok || tapplicationusers==1){
 			if(rootTApp){
 				Log("MrdDistributions Tool: deleting gloabl TApplication",v_debug,verbosity);
