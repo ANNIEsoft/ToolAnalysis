@@ -17,8 +17,8 @@ class LoadGeometry: public Tool {
   bool Execute();
   bool Finalise();
 
-  bool FileExists(const std::string& name);
-  std::string GetLegendLine(const std::string& name);
+  bool FileExists(std::string name);
+  std::string GetLegendLine(std::string name);
   void InitializeGeometry();
   void LoadFACCMRDDetectors();
   Detector  ParseMRDDataEntry(std::vector<std::string> SpecLine, 
