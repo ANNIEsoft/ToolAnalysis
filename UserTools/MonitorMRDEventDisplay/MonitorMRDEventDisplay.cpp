@@ -23,6 +23,10 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
 
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Initialising"<<std::endl;
 
+  if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
+  std::cout <<"Output path for plots is "<<outpath<<std::endl;
+
+
   //get objects with allocated memory in ROOT
   //std::cout <<"List of Objects (Start of Initialise)"<<std::endl;
   //gObjectTable->Print();
