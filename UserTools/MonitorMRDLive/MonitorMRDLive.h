@@ -39,7 +39,6 @@ class MonitorMRDLive: public Tool {
   //config input variables
   BoostStore *CCData;
   std::string outpath;
-  bool init;
   MRDOut MRDout;      //the class that has all the information about the mrd data format
   std::string active_slots;
   int verbosity;

@@ -15,7 +15,14 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     m_variables.Get("MRDDataPath", MRDDataPathSingle);
     m_variables.Get("MRDTxtFile", MRD_path_to_file);
     m_variables.Get("Mode",mode);
+    m_variables.Get("verbose",verbosity);
     //m_variables.Print();
+
+    if (verbosity > 2) {
+        std::cout <<"MRDDataPath: "<<MRDDataPathSingle<<std::endl;
+        std::cout <<"MRDTxtFile: "<<MRD_path_to_file<<std::endl;
+        std::cout <<"Mode: "<<mode<<std::endl;
+    }
 
     if (mode != "Random" && mode != "FileList") mode = "Random";
 
@@ -33,6 +40,8 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
         std::cout <<"Data Filelist vector size: "<<vec_filename.size()<<std::endl;
     }
 
+    if (verbosity > 2) std::cout <<"Define CCData BoostStore"<<std::endl;
+
     srand(time(NULL));
     m_data->Stores["CCData"]=new BoostStore(false,2);  
     //m_data->Stores["CCData"]->Save("tmp");
@@ -48,12 +57,13 @@ bool MonitorSimReceive::Execute(){
 
         if (i_loop<vec_filename.size()){
             MRDDataPath = vec_filename.at(i_loop);
-            std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
+            if (verbosity > 2) std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
         } else {
             MRDDataPath = MRDDataPathSingle;
         }
     } else {
         MRDDataPath = MRDDataPathSingle;
+        if (verbosity > 2) std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
     } 
 
     //std::cout <<"initialise indata"<<std::endl;
