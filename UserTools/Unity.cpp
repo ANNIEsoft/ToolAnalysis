@@ -89,4 +89,4 @@
 #include "TotalLightMap/TotalLightMap.cpp"
 #include "MrdDiscriminatorScan/MrdDiscriminatorScan.cpp"
 #include "MCRecoEventLoader/MCRecoEventLoader.cpp"
-
+#include "MonitorMRDEventDisplay/MonitorMRDEventDisplay.cpp"

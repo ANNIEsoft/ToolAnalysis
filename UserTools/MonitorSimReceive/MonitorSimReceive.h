@@ -24,6 +24,8 @@ class MonitorSimReceive: public Tool {
   std::string MRDDataPath, MRDDataPathSingle;
   std::string MRD_path_to_file;
   std::string mode;
+  int verbosity;
+  
   BoostStore* MRDData;
   BoostStore* MRDData2;
 

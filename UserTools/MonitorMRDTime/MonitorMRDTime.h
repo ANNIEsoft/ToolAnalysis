@@ -65,6 +65,10 @@ class MonitorMRDTime: public Tool {
   bool draw_scatter;
   bool draw_average;
   bool draw_hitmap;
+  bool draw_hour;
+  bool draw_sixhour;
+  bool draw_day;
+  bool draw_vital;
   int max_files;
 
   boost::posix_time::ptime *Epoch;
@@ -84,6 +88,7 @@ class MonitorMRDTime: public Tool {
 
   double max_canvas, min_canvas, max_canvas_rms, min_canvas_rms, max_canvas_freq, min_canvas_freq, max_canvas_hist, min_canvas_hist;
   long max_sum_fivemin, max_sum_hour, max_sum_sixhour, max_sum_day;
+  std::vector<long> max_sum_day_channel;
 
   //MRD store includes the following variables
   unsigned int OutN, Trigger;

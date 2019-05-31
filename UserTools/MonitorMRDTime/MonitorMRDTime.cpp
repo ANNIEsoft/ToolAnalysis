@@ -33,6 +33,10 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ScatterPlots",draw_scatter);
   m_variables.Get("AveragePlots",draw_average);
   m_variables.Get("HitMapPlots",draw_hitmap);
+  m_variables.Get("EvolutionHour",draw_hour);
+  m_variables.Get("EvolutionSixHour",draw_sixhour);
+  m_variables.Get("EvolutionDay",draw_day);
+  m_variables.Get("OnlyVitalPlots",draw_vital);
 
   if (mode != "Continuous" && mode != "FileList") mode = "Continuous";
 
@@ -827,6 +831,7 @@ void MonitorMRDTime::MRDTimePlots(){
   max_sum_hour=0;
   max_sum_sixhour=0;
   max_sum_day=0;
+  //max_sum_day_channel.assign(num_active_slots,0);
 
   for (int i_channel=0; i_channel<num_active_slots*num_channels;i_channel++){
 
