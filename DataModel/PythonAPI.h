@@ -3,7 +3,7 @@
 
 #include "BoostStore.h"
 
-BoostStore* gstore;
+static BoostStore* gstore;
 
 static PyObject* GetStoreInt(PyObject *self, PyObject *args){
   const char *command;

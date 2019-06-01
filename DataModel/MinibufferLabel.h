@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <string>
 
 // TODO: update this to allow for all known minibuffer labels
 enum class MinibufferLabel : uint8_t { Unknown = 0u, LED, Soft, Beam, Cosmic,
@@ -45,7 +46,7 @@ inline std::ostream& operator<<(std::ostream& out, const MinibufferLabel& mbl)
   return out;
 }
 
-std::string minibuffer_label_to_string(const MinibufferLabel& mbl) {
+inline std::string minibuffer_label_to_string(const MinibufferLabel& mbl){
   std::stringstream temp_stream;
   temp_stream << mbl;
   return temp_stream.str();
