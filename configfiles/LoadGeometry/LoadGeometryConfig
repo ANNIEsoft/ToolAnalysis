@@ -1,4 +1,4 @@
-verbosity 5
-FACCMRDGeoFile /pnfs/annie/persistent/users/pershint/MRDG.csv
-DetectorGeoFile /pnfs/annie/persistent/users/pershint/DetectorGeometrySpecs.csv
+verbosity 0
+FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
+DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
 
