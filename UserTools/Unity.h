@@ -55,7 +55,7 @@
 #include "RawLoadToRoot.h"
 #include "MRDPulseFinder.h"
 #include "LAPPDAnalysis.h"
-//#include "ExampleOverTool.h"
+#include "ExampleOverTool.h"
 #include "PhaseIITreeMaker.h"
 #include "VertexGeometryCheck.h"
 #include "LikelihoodFitterCheck.h"

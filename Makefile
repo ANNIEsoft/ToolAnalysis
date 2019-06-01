@@ -3,6 +3,8 @@ ToolDAQPath=ToolDAQ
 CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
+CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
+
 
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/ 
@@ -62,7 +64,7 @@ clean:
 lib/libDataModel.so: DataModel/* lib/libLogging.so | lib/libStore.so
 	@echo -e "\n*************** Making " $@ "****************"
 	cp DataModel/*.h include/
-	$(CC) DataModel/*.C DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
+	$(CC) DataModel/*.cpp -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 lib/libMyTools.so: UserTools/*/* UserTools/* | include/Tool.h lib/libDataModel.so lib/libLogging.so lib/libStore.so include/Tool.h lib/libToolChain.so 
 	@echo -e "\n*************** Making " $@ "****************"
@@ -108,8 +110,17 @@ test: $(patsubst %.cpp, %.o, $(wildcard UserTools/*/*.cpp))
 	cp UserTools/Factory/*.h include/
 	cp UserTools/*.h include/
 	#echo `more UserTools/Unity.o`
-	$(CC)  UserTools/Factory/Factory.cpp `more UserTools/Unity.o` -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+	$(CC)  UserTools/Factory/Factory.cpp UserTools/*/*.o -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 %.o: %.cpp
+	@echo -e "\n*************** Making " $@ "****************"
 	cp $(shell dirname $^)/*.h include
 	-$(CC) -c -o $@ $< -I include -L lib -lStore -lDataModel -lLogging $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
+target: remove $(patsubst %.cpp, %.o, $(wildcard UserTools/$(TOOL)/*.cpp))
+
+
+
+remove:
+	echo "removing"
+	-rm UserTools/$(TOOL)/*.o

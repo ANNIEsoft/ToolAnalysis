@@ -1,6 +1,7 @@
 #include "../Unity.h"
+#include "Factory.h"
 
-Tool* Factory(std::string tool){
+Tool* Factory(std::string tool) {
 Tool* ret=0;
 
 // if (tool=="Type") tool=new Type;
@@ -51,7 +52,7 @@ if (tool=="LAPPDlasertestHitFinder") ret=new LAPPDlasertestHitFinder;
 if (tool=="RawLoadToRoot") ret=new RawLoadToRoot;
 if (tool=="MRDPulseFinder") ret=new MRDPulseFinder;
 if (tool=="LAPPDAnalysis") ret=new LAPPDAnalysis;
-//if (tool=="ExampleOverTool") ret=new ExampleOverTool;
+if (tool=="ExampleOverTool") ret=new ExampleOverTool;
 if (tool=="PhaseIITreeMaker") ret=new PhaseIITreeMaker;
 if (tool=="VertexGeometryCheck") ret=new VertexGeometryCheck;
 if (tool=="LikelihoodFitterCheck") ret=new LikelihoodFitterCheck;
@@ -82,5 +83,6 @@ if (tool=="TotalLightMap") ret=new TotalLightMap;
 if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
 if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
 
+  if (tool=="Reader") ret=new Reader;
 return ret;
 }
