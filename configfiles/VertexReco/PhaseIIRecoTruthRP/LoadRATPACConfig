@@ -2,7 +2,7 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbosity 4
-InputFile #INPUT_FILE_PMT#
+InputFile /pnfs/annie/scratch/users/pershint/data/BeamMuons_config12_28-05-2019.00.root
 LappdNumStrips 60        ## num channels to construct from each LAPPD
 LappdStripLength 100     ## relative x position of each LAPPD strip, for dual-sided readout [mm]
 LappdStripSeparation 10  ## stripline separation, for calculating relative y position of each LAPPD strip [mm]

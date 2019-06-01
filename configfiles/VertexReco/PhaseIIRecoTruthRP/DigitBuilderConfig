@@ -1,11 +1,14 @@
 # DigitBuilder config file
 
-verbosity 5
+verbosity 4
 ParametricModel 1
+#Reading in MC files
+IsMC 1
 # There are three configurations: "PMT_only", "LAPPD_only", "All"
 PhotoDetectorConfiguration All
-#Get Pion/Kaon counts from MC Truth
-GetPionKaonInfo 1
+#File must be in /pnfs/ space when loading on Fermilab cluster
+#LAPPDIDFile ./configfiles/VertexReco/PhaseIIExtGrid/LAPPDIDs.txt
+
 #Shift to apply to digits and loaded MC Particles
 #(Used to put into tank coordinates, if hits/particles in store are not already)
 xshift 0.0

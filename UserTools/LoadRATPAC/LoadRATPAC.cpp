@@ -199,6 +199,7 @@ bool LoadRATPAC::Execute(){
   for (long iTrack=0; iTrack<ds->GetMC()->GetMCTrackCount(); iTrack++){
     RAT::DS::MCTrack  *thistrack = ds->GetMC()->GetMCTrack(iTrack);
     int parentid = thistrack->GetParentID();
+    int particleid = thistrack->GetID();
     int pdgcode = thistrack->GetPDGCode();
     std::string particlename = thistrack->GetParticleName();
     logmessage = "  Particle name = " +particlename + " \n";
@@ -233,7 +234,7 @@ bool LoadRATPAC::Execute(){
             (startpoint.Y()+ytankcenter)/1000., (startpoint.Z()+ztankcenter)/1000.), Position((endpoint.X()+xtankcenter)/1000.,
             (endpoint.Y()+ytankcenter)/1000., (endpoint.Z()+ztankcenter)/1000.), starttime,
             endtime, partdir,
-            tracklength/1000., startstoptype, iTrack, parentid);
+            tracklength/1000., startstoptype, particleid, parentid, -9999);
     MCParticles->push_back(thisparticle);
   }
 
@@ -307,6 +308,9 @@ void LoadRATPAC::LoadANNIEGeometry(){
   Position tank_center(tank_xcenter, tank_ycenter, tank_zcenter);
   double tank_radius = (1524.0) / 1000.;
   double tank_halfheight = (1981.2) / 1000.;
+  //Currently hard-coded; estimated with a tape measure on the ANNIE frame :)
+  double pmt_enclosed_radius = 1.0;
+  double pmt_enclosed_halfheight = 1.45;
   //geometry variables not yet in RATPAC. grabbed from MRDSpecs.hh
   double mrd_width =  (MRDSpecs::MRD_width) / 100.; // convert [cm] to [m]
   double mrd_height = (MRDSpecs::MRD_height) / 100.;
@@ -319,6 +323,8 @@ void LoadRATPAC::LoadANNIEGeometry(){
                            tank_center,
                            tank_radius,
                            tank_halfheight,
+                           pmt_enclosed_radius,
+                           pmt_enclosed_halfheight,
                            mrd_width,
                            mrd_height,
                            mrd_depth,
@@ -380,6 +386,7 @@ void LoadRATPAC::LoadANNIEGeometry(){
     lappd_tubeid_to_detectorkey.emplace(lappdi,uniquedetectorkey);
     detectorkey_to_lappdid.emplace(uniquedetectorkey,lappdi);
     Detector adet(uniquedetectorkey,
+                  "LAPPD",
                   "LAPPD",
                   Position( lappdpos.Y()/1000.,
                             lappdpos.Z()/1000.,
@@ -450,6 +457,7 @@ void LoadRATPAC::LoadANNIEGeometry(){
     // Different than RATPAC global coordinates
     unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
     Detector adet(uniquedetectorkey,
+                  "Tank",
                   "Tank",
                   Position( pmtpos.Y()/1000.,
                             pmtpos.Z()/1000.,
