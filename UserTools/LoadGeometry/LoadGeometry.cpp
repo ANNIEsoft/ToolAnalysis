@@ -12,23 +12,24 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  // Make the RecoDigit Store if it doesn't exist
-  int recoeventexists = m_data->Stores.count("RecoEvent");
-  if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
+  // Make the ANNIEEvent Store if it doesn't exist
+  int recoeventexists = m_data->Stores.count("ANNIEEvent");
+  if(recoeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
+
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("FACCMRDGeoFile", fFACCMRDGeoFile);
   m_variables.Get("TankPMTGeoFile", fTankPMTGeoFile);
-  m_variables.Get("VetoPMTGeoFile", fVetoPMTGeoFile);
   m_variables.Get("LAPPDGeoFile", fLAPPDGeoFile);
   m_variables.Get("DetectorGeoFile", fDetectorGeoFile);
+
   //Check files exist 
   if(!this->FileExists(fDetectorGeoFile)){
-		Log("LoadGeometry Tool: File for Detector Geomtry does not exist!",v_error,verbosity); 
+		Log("LoadGeometry Tool: File for Detector Geometry does not exist!",v_error,verbosity); 
         std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
 		return false;
   }
   if(!this->FileExists(fFACCMRDGeoFile)){
-		Log("LoadGeometry Tool: File for FACC/MRD Geomtry does not exist!",v_error,verbosity);
+		Log("LoadGeometry Tool: File for FACC/MRD Geometry does not exist!",v_error,verbosity);
         std::cout << "Filepath was... " << fFACCMRDGeoFile << std::endl;
 		return false;
   }
@@ -39,7 +40,8 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   //Load MRD Geometry Detector/Channel Information
   this->LoadFACCMRDDetectors();
 
-	m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
+  m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
+  
   return true;
 }
 
@@ -56,6 +58,7 @@ bool LoadGeometry::Finalise(){
 
 
 void LoadGeometry::InitializeGeometry(){
+  Log("LoadGeometry tool: Now loading DetectorGeoFile and initializing geometry",v_message,verbosity);
   //Get the Detector file data key
   std::string DetectorLegend = this->GetLegendLine(fDetectorGeoFile);
   std::vector<std::string> DetectorLegendEntries;
@@ -84,7 +87,7 @@ void LoadGeometry::InitializeGeometry(){
     //Loop over lines, collect all detector data (should only be one line here)
     while(getline(myfile,line)){
       std::cout << line << std::endl; //has our stuff;
-      if(line.find("#")) continue;
+      if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> DataEntries;
       boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on); 
@@ -128,11 +131,12 @@ void LoadGeometry::InitializeGeometry(){
   } else {
     Log("LoadGeometry tool: Something went wrong opening a file!!!",v_error,verbosity);
   }
+  myfile.close();
 }
 
 void LoadGeometry::LoadFACCMRDDetectors(){
   //First, get the MRD file data key
-  if(verbosity>1) std::cout << "NOW LOADING MRD DETECTORS INTO GEOMETRY" << std::endl;
+  Log("LoadGeometry tool: Now loading FACC/MRD detectors",v_message,verbosity);
   std::string MRDLegend = this->GetLegendLine(fFACCMRDGeoFile);
   std::vector<std::string> MRDLegendEntries;
   boost::split(MRDLegendEntries,MRDLegend, boost::is_any_of(","), boost::token_compress_on); 
@@ -142,18 +146,17 @@ void LoadGeometry::LoadFACCMRDDetectors(){
   if (myfile.is_open()){
     //First, get to where data starts
     while(getline(myfile,line)){
-      if(line.find("#")) continue;
-      if(!line.find(DataStartLineLabel)) continue;
-      else break;
+      if(line.find("#")!=std::string::npos) continue;
+      if(line.find(DataStartLineLabel)!=std::string::npos) break;
     }
     //Loop over lines, collect all detector specs 
     while(getline(myfile,line)){
       std::cout << line << std::endl; //has our stuff;
-      if(line.find("#")) continue;
+      if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on); 
-      if(verbosity>4) std::cout << "This detector spec line is " << line << std::endl;
+      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       Detector FACCMRDDetector = this->ParseMRDDataEntry(SpecLine,MRDLegendEntries);
       AnnieGeometry->AddDetector(FACCMRDDetector);
@@ -161,11 +164,12 @@ void LoadGeometry::LoadFACCMRDDetectors(){
   } else {
     Log("LoadGeometry tool: Something went wrong opening a file!!!",v_error,verbosity);
   }
+  if(myfile.is_open()) myfile.close();
+    Log("LoadGeometry tool: FACC/MRD Detector/Channel loading complete",v_message,verbosity);
 }
 
 Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
         std::vector<std::string> MRDLegendEntries){
-  if(verbosity>2) std::cout << "Now parsing data line into variables" << std::endl;
   //Parse the line for information needed to fill the detector & channel classes
   int detector_num,channel_num,detector_system,orientation,layer,side,num,
       rack,TDC_slot,TDC_channel,discrim_slot,discrim_ch,
@@ -175,14 +179,28 @@ Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   std::string PMT_type,cable_label,paddle_label;
 
   //Search for Legend entry.  Fill value type if found.
+  Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
   for (int i=0; i<SpecLine.size(); i++){
     int ivalue;
     double dvalue;
     std::string svalue;
     for (int j=0; j<MRDIntegerValues.size(); j++){
-      if(MRDLegendEntries.at(i) == MRDIntegerValues.at(j)) ivalue = std::stoi(SpecLine.at(i));
-      else if(MRDLegendEntries.at(i) == MRDIntegerValues.at(j)) svalue = SpecLine.at(i);
-      else if(MRDLegendEntries.at(i) == MRDDoubleValues.at(j)) dvalue = std::stod(SpecLine.at(i));
+      if(MRDLegendEntries.at(i) == MRDIntegerValues.at(j)){
+        ivalue = std::stoi(SpecLine.at(i));
+        break;
+      }
+    }
+    for (int j=0; j<MRDStringValues.size(); j++){
+      if(MRDLegendEntries.at(i) == MRDStringValues.at(j)){
+        svalue = SpecLine.at(i);
+        break;
+      }
+    }
+    for (int j=0; j<MRDDoubleValues.size(); j++){
+      if(MRDLegendEntries.at(i) == MRDDoubleValues.at(j)){
+        dvalue = std::stod(SpecLine.at(i));
+        break;
+      }
     }
     //Integers
     if (MRDLegendEntries.at(i) == "detector_num") detector_num = ivalue;
@@ -229,6 +247,7 @@ Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   //  - cable_label, paddle_label
   //  - x_width, y_width, z_width
   //
+  if(verbosity>4) std::cout << "Filling a FACC/MRD data line into Detector/Channel classes" << std::endl;
   Detector adet(detector_num,
                 "MRD",
                 "MRD", //Change to orientation for PaddleDetector class?
@@ -271,7 +290,7 @@ bool LoadGeometry::FileExists(std::string name) {
 
 
 std::string LoadGeometry::GetLegendLine(std::string name) {
-  if(verbosity>4) std::cout << "GETTING LEGEND OF FILE " << name << std::endl;
+  if(verbosity>4) std::cout << "Getting legend of file: " << name << std::endl;
   std::string line;
   std::string legendline = "null";
   ifstream myfile(name.c_str());
@@ -283,7 +302,7 @@ std::string LoadGeometry::GetLegendLine(std::string name) {
         //Next line is the title line
         getline(myfile,line);
         legendline = line;
-        std::cout<<"LEGEND LINE IS: " << legendline << std::endl;
+        if(verbosity>4) std::cout<<"Legend line loaded. Legend is: " << legendline << std::endl;
         break;
       }
     }
@@ -293,6 +312,7 @@ std::string LoadGeometry::GetLegendLine(std::string name) {
   if(legendline=="null"){
     Log("LoadGeometry tool: Legend line label not found!!!",v_error,verbosity);
   }
+  myfile.close();
   return legendline;
 }
 

@@ -28,7 +28,6 @@ class LoadGeometry: public Tool {
  private:
   std::string fFACCMRDGeoFile;
   std::string fTankPMTGeoFile;
-  std::string fVetoPMTGeoFile;
   std::string fLAPPDGeoFile;
   std::string fDetectorGeoFile;
   
@@ -45,7 +44,7 @@ class LoadGeometry: public Tool {
                                    "patch_panel_row","patch_panel_col","amp_slot","amp_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV","polarity"};
   std::vector<std::string> MRDDoubleValues{"x_center","y_center","z_center","x_width","y_width","z_width"};
-  std::vector<std::string> MRDStringValues{"PMT_type","cable_label","paddle_label"};
+  std::vector<std::string> MRDStringValues{"PMT_type","cable_label","paddle_label","notes"};
 
 	//verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int verbosity=1;
