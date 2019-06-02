@@ -97,7 +97,7 @@ class LoadWCSim: public Tool {
 	// alternatively? Better? Save the parentage in each MCHit. Each MCHit will contain
 	// the index of it's parent MCParticle in the MCParticles vector
 	std::map<int,int>* trackid_to_mcparticleindex=nullptr;
-	std::vector<int> GetHitParentId(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig);
+	std::vector<int> GetHitParentIds(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig);
 	std::map<int,int> timeArrayOffsetMap;
 	void BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig);
 	
