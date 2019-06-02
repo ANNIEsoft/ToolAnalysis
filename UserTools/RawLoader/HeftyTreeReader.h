@@ -2,8 +2,9 @@
 // files produced by Jonathan Eisch's annietools package
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
-
+//#pragma once
+#ifndef HEFTYTREETEADER_H
+#define HEFTYTREETEADER_H
 // standard library includes
 #include <memory>
 
@@ -67,3 +68,5 @@ namespace annie {
         = std::vector<int>(NUMBER_OF_MINIBUFFERS);
   };
 }
+
+#endif

@@ -27,6 +27,7 @@
 #include "Position.h"
 #include "Direction.h"
 #include "LAPPDHit.h"
+#include "TList.h"
 
 class EventDisplay: public Tool {
 

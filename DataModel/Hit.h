@@ -4,6 +4,8 @@
 
 #include<SerialisableObject.h>
 
+#include <iostream>
+
 using namespace std;
 
 class Hit : public SerialisableObject{
@@ -23,9 +25,9 @@ class Hit : public SerialisableObject{
 	inline void SetCharge(double chg){Charge=chg;}
 	
 	bool Print() {
-		cout<<"TubeId : "<<TubeId<<endl;
-		cout<<"Time : "<<Time<<endl;
-		cout<<"Charge : "<<Charge<<endl;
+	  std::cout<<"TubeId : "<<TubeId<<endl;
+	  std::cout<<"Time : "<<Time<<endl;
+	  std::cout<<"Charge : "<<Charge<<endl;
 		return true;
 	}
 	
@@ -57,18 +59,18 @@ class MCHit : virtual public Hit {
 	void SetParents(std::vector<int> parentsin){ Parents = parentsin; }
 	
 	bool Print(){
-		cout<<"TubeId : "<<TubeId<<endl;
-		cout<<"Time : "<<Time<<endl;
-		cout<<"Charge : "<<Charge<<endl;
+	  std::cout<<"TubeId : "<<TubeId<<endl;
+	  std::cout<<"Time : "<<Time<<endl;
+		std::cout<<"Charge : "<<Charge<<endl;
 		if(Parents.size()){
-			cout<<"Parent MCPartice indices: {";
+			std::cout<<"Parent MCPartice indices: {";
 			for(int parenti=0; parenti<Parents.size(); ++parenti){
-				cout<<Parents.at(parenti);
-				if((parenti+1)<Parents.size()) cout<<", ";
+				std::cout<<Parents.at(parenti);
+				if((parenti+1)<Parents.size()) std::cout<<", ";
 			}
-			cout<<"}"<<endl;
+			std::cout<<"}"<<endl;
 		} else {
-			cout<<"No recorded parents"<<endl;
+			std::cout<<"No recorded parents"<<endl;
 		}
 		return true;
 	}

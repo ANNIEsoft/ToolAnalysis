@@ -1,0 +1,20 @@
+The {\ttfamily \hyperlink{classTankCalibrationDiffuser}{Tank\-Calibration\-Diffuser}} tool analyzes the P\-M\-T responses after laser light has been distributed uniformly across the whole detector with a diffusion ball. The time and charge response of all P\-M\-Ts is evaluated
+
+\subsection*{Data}
+
+The \hyperlink{classTankCalibrationDiffuser}{Tank\-Calibration\-Diffuser} tool needs access to the hit information within A\-N\-N\-I\-E events\-:
+
+{\bfseries M\-C\-Hits} {\ttfamily map$<$unsigned long, vector$<$\hyperlink{classHit}{Hit}$>$$>$}
+\begin{DoxyItemize}
+\item Takes this data from the {\ttfamily A\-N\-N\-I\-E\-Event} store and evaluates whether observed and expected times and charges correspond to one another.
+\end{DoxyItemize}
+
+\subsection*{Configuration}
+
+The following variables can be configured for the \hyperlink{classTankCalibrationDiffuser}{Tank\-Calibration\-Diffuser} tool\-:
+
+``` Output\-File /\-A\-N\-N\-I\-E\-Code/\-Tool\-Analysis/histogrammed\-\_\-pmt\-\_\-charge.root \#\-Output root file for the current calibration run Stability\-File /\-A\-N\-N\-I\-E\-Code/\-Tool\-Analysis/stability\-\_\-pmtcharge.root \#\-Output root file that displays the stability over multiple runs Geometry\-File configfiles/\-Tank\-Calibration\-Diffuser/geofile\-\_\-128\-P\-M\-Ts.\-txt \hyperlink{classGeometry}{Geometry} file specifying the different radii of the P\-M\-Ts (taken from file geofile.\-txt in W\-C\-Sim installation directory for the respective installation) Diffuser\-X 0. \#x-\/position of the diffuser ball Diffuser\-Y 0. \#y-\/position of the diffuser ball Diffuser\-Z 0. \#z-\/position of the diffuser ball Tolerance\-Charge 0.\-5 \#tolerance of fit single p.\-e. value for being classified as a bad P\-M\-T Tolerance\-Time 0.\-5 \#tolerance of mean time value \mbox{[}ns\mbox{]} for being classified as a bad P\-M\-T T\-Application 0 \#0/1, depending on whether plots should be shown interactively or not
+
+verbose 1 \#verbosity of the application
+
+``` 

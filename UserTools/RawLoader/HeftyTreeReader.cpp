@@ -1,5 +1,6 @@
 // standard library includes
 #include <stdexcept>
+#include "HeftyTreeReader.h"
 
 annie::HeftyTreeReader::HeftyTreeReader(const std::string& file_name)
   : HeftyTreeReader(std::vector<std::string>( { file_name } ))

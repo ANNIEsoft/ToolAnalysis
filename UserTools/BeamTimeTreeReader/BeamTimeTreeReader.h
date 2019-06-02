@@ -5,6 +5,10 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TBranch.h"
+#include "TMath.h"
 
 class BeamTimeTreeReader: public Tool {
 
