@@ -6,6 +6,9 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TH1D.h"
 
 class HitResiduals: public Tool {
 	

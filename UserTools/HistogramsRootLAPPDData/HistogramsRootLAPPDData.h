@@ -8,8 +8,11 @@
 #include "TString.h"
 #include "Tool.h"
 #include "LAPPDHit.h"
-#include "LAPPDresponse.hh"
+#include "LAPPDresponse.h"
 #include "LAPPDPulse.h"
+#include "TTree.h"
+#include "TH2D.h"
+
 class HistogramsRootLAPPDData: public Tool {
 
 

@@ -8,13 +8,14 @@
 using std::cout;
 using std::endl;
 
-class LAPPDHit : virtual public Hit{
+class LAPPDHit : public Hit{
 	
 	friend class boost::serialization::access;
 	
 	public:
 	LAPPDHit() : Hit(), Position(0), LocalPosition(0) {serialise=true;}
 	LAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition) : Hit(thetubeid,thetime,thecharge), Position(theposition), LocalPosition(thelocalposition) {serialise=true;}
+	virtual ~LAPPDHit(){};
 	
 	inline std::vector<double> GetPosition() const {return Position;}
 	inline std::vector<double> GetLocalPosition() const {return LocalPosition;}
@@ -48,23 +49,17 @@ class LAPPDHit : virtual public Hit{
 	}
 };
 
-//  Derived classes, if there's a reason to have them
-
-class MCLAPPDHit : public MCHit, public LAPPDHit{
+//  Derived classes
+class MCLAPPDHit : public LAPPDHit{
 	
 	friend class boost::serialization::access;
 	
 	public:
-	MCLAPPDHit() : LAPPDHit(), MCHit() {serialise=true;}
-	MCLAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition, std::vector<int> theparents){
-		TubeId = thetubeid;
-		Time=thetime;
-		Charge=thecharge;
-		Position=theposition;
-		LocalPosition=thelocalposition;
-		Parents=theparents;
-		serialise=true;
-	}
+	MCLAPPDHit() : LAPPDHit(), Parents(std::vector<int>{}) {serialise=true;}
+	MCLAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition, std::vector<int> theparents) : LAPPDHit(thetubeid, thetime, thecharge,theposition,thelocalposition), Parents(theparents) {serialise=true;}
+	
+	const std::vector<int>* GetParents() const { return &Parents; }
+	void SetParents(std::vector<int> parentsin){ Parents = parentsin; }
 	
 	bool Print() {
 		cout<<"TubeId : "<<TubeId<<endl;
@@ -99,6 +94,9 @@ class MCLAPPDHit : public MCHit, public LAPPDHit{
 			// - it only adds parent MCParticle indices, and these aren't saved... 
 		}
 	}
+	
+	protected:
+	std::vector<int> Parents;
 };
 
 /*

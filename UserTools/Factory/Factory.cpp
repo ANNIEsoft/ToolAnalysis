@@ -1,6 +1,6 @@
-#include "../Unity.cpp"
+#include "Factory.h"
 
-Tool* Factory(std::string tool){
+Tool* Factory(std::string tool) {
 Tool* ret=0;
 
 // if (tool=="Type") tool=new Type;
@@ -81,7 +81,6 @@ if (tool=="TankCalibrationDiffuser") ret=new TankCalibrationDiffuser;
 if (tool=="TotalLightMap") ret=new TotalLightMap;
 if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
 if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
-
-  if (tool=="LoadGeometry") ret=new LoadGeometry;
+if (tool=="LoadGeometry") ret=new LoadGeometry;
 return ret;
 }

@@ -7,7 +7,7 @@
 #include "BeamStatus.h"
 #include "BoostStore.h"
 #include "HeftyInfo.h"
-#include "MinibufferLabel.h"
+//#include "MinibufferLabel.h"
 #include "PhaseITreeMaker.h"
 #include "TimeClass.h"
 

@@ -6,6 +6,12 @@
 #include <iostream>
 #include <fstream>
 #include "Tool.h"
+#include "TChain.h"
+#include "TFile.h"
+#include "TH1D.h"
+#include "HeftyTreeReader.h"
+#include "RawCard.h"
+
 class PMTData;
 class MRDTree;
 //class TrigData;

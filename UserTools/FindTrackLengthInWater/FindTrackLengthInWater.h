@@ -7,6 +7,10 @@
 #include "ANNIEalgorithms.h"
 
 #include "Tool.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TMath.h"
+#include "ExampleRoot.h"
 
 class FindTrackLengthInWater: public Tool {
 

@@ -1,3 +1,5 @@
+#include <PulseSimulation.h>
+
 std::vector<std::string>* PulseSimulation::GetTemplateRunInfo(){
 	// RunInformation tree in RAW file is essentially a map of strings.
 	// It stores (at present) 11 entries, each with a 'key' in InfoTitle branch, 

@@ -14,6 +14,8 @@
 #include "Constants.h"
 #include "RawCard.h"
 #include "RawTrigData.h"
+#include "ANNIEconstants.h"
+
 
 namespace annie {
 

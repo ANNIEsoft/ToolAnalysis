@@ -1,6 +1,11 @@
 #ifndef CARDDATA_H
 #define CARDDATA_H
 
+#include <vector>
+#include "ANNIEconstants.h"
+#include "TROOT.h"
+#include <limits>  
+
 namespace{
 //  constexpr int BOGUS_INT = std::numeric_limits<int>::max();
   //std::numeric_limits<double>::quiet_NaN()
@@ -36,17 +41,5 @@ class CardData{
   void Reset();
   
 };
-
-void CardData::Reset(){
-  SequenceID = BOGUS_INT;
-  CardID = BOGUS_INT;
-  LastSync = BOGUS_UINT64;
-  StartTimeSec = BOGUS_INT;
-  StartTimeNSec = BOGUS_INT;
-  StartCount = BOGUS_UINT64;
-  TriggerCounts.assign(TriggerNumber,BOGUS_UINT64);
-  Rates.assign(Channels,BOGUS_UINT32);
-  Data.assign(FullBufferSize,0); //BOGUS_UINT16); // makes it awkward to view partially filled buffers
-}
 
 #endif

@@ -16,6 +16,7 @@
 
 // ToolAnalysis includes
 #include "Tool.h"
+#include "MinibufferLabel.h"
 
 struct NCVPositionInfo {
   NCVPositionInfo() {}

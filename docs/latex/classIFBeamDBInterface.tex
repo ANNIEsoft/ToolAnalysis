@@ -1,0 +1,138 @@
+\hypertarget{classIFBeamDBInterface}{\section{I\-F\-Beam\-D\-B\-Interface Class Reference}
+\label{classIFBeamDBInterface}\index{I\-F\-Beam\-D\-B\-Interface@{I\-F\-Beam\-D\-B\-Interface}}
+}
+
+
+Singleton used to interact with the Intensity Frontier beam database at Fermilab.  
+
+
+
+
+{\ttfamily \#include $<$I\-F\-Beam\-D\-B\-Interface.\-h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classIFBeamDBInterface_ac6e95cfed4db9c455289234f26a2f1c1}{\hyperlink{classIFBeamDBInterface_ac6e95cfed4db9c455289234f26a2f1c1}{$\sim$\-I\-F\-Beam\-D\-B\-Interface} ()}\label{classIFBeamDBInterface_ac6e95cfed4db9c455289234f26a2f1c1}
+
+\begin{DoxyCompactList}\small\item\em Clean up libcurl stuff as the \hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} object is destroyed. \end{DoxyCompactList}\item 
+\hypertarget{classIFBeamDBInterface_aac246a02f0726c599a8bd6db201c9c81}{\hyperlink{classIFBeamDBInterface_aac246a02f0726c599a8bd6db201c9c81}{I\-F\-Beam\-D\-B\-Interface} (const \hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \&)=delete}\label{classIFBeamDBInterface_aac246a02f0726c599a8bd6db201c9c81}
+
+\begin{DoxyCompactList}\small\item\em Deleted copy constructor. \end{DoxyCompactList}\item 
+\hypertarget{classIFBeamDBInterface_ae53bfb59f783375aeb96e520e1b8a4c8}{\hyperlink{classIFBeamDBInterface_ae53bfb59f783375aeb96e520e1b8a4c8}{I\-F\-Beam\-D\-B\-Interface} (\hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \&\&)=delete}\label{classIFBeamDBInterface_ae53bfb59f783375aeb96e520e1b8a4c8}
+
+\begin{DoxyCompactList}\small\item\em Deleted move constructor. \end{DoxyCompactList}\item 
+\hypertarget{classIFBeamDBInterface_ad3af28661e5c86ba91c795f841678188}{\hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \& \hyperlink{classIFBeamDBInterface_ad3af28661e5c86ba91c795f841678188}{operator=} (const \hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \&)=delete}\label{classIFBeamDBInterface_ad3af28661e5c86ba91c795f841678188}
+
+\begin{DoxyCompactList}\small\item\em Deleted copy assignment operator. \end{DoxyCompactList}\item 
+\hypertarget{classIFBeamDBInterface_adbdd5916724ed8747b0e6ca705e07184}{\hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \& \hyperlink{classIFBeamDBInterface_adbdd5916724ed8747b0e6ca705e07184}{operator=} (\hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \&\&)=delete}\label{classIFBeamDBInterface_adbdd5916724ed8747b0e6ca705e07184}
+
+\begin{DoxyCompactList}\small\item\em Deleted move assignment operator. \end{DoxyCompactList}\item 
+std\-::map$<$ std\-::string, \\*
+std\-::map$<$ uint64\-\_\-t, \\*
+\hyperlink{structBeamDataPoint}{Beam\-Data\-Point} $>$ $>$ \hyperlink{classIFBeamDBInterface_a7b0e4c42767791f1904540b63772a74d}{Query\-Beam\-D\-B} (uint64\-\_\-t t0, uint64\-\_\-t t1) const 
+\begin{DoxyCompactList}\small\item\em Get information about the Booster Neutrino Beam (B\-N\-B) state from the database for the time interval \mbox{[}t0, t1\mbox{]}. \end{DoxyCompactList}\item 
+int \hyperlink{classIFBeamDBInterface_a034ef023cb78989270a4ec2d54a5aa4f}{Query\-Beam\-D\-B} (uint64\-\_\-t t0, uint64\-\_\-t t1, std\-::string \&response\-\_\-string) const 
+\begin{DoxyCompactList}\small\item\em Get information about the B\-N\-B state from the database for the time interval \mbox{[}t0, t1\mbox{]}. \end{DoxyCompactList}\item 
+\hyperlink{classBeamStatus}{Beam\-Status} \hyperlink{classIFBeamDBInterface_add525c53cbf0b85c3cd0d39a5b9b0fdd}{Get\-Beam\-Status} (uint64\-\_\-t time) const 
+\begin{DoxyCompactList}\small\item\em Get information about the B\-N\-B state from the database as close as possible to a given time. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classIFBeamDBInterface_a677ed1a3b7dbfc70ffb0688078ae5fb0}{static const \hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} \& \hyperlink{classIFBeamDBInterface_a677ed1a3b7dbfc70ffb0688078ae5fb0}{Instance} ()}\label{classIFBeamDBInterface_a677ed1a3b7dbfc70ffb0688078ae5fb0}
+
+\begin{DoxyCompactList}\small\item\em Get a const reference to the singleton instance of the \hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classIFBeamDBInterface_af5275e528b9b43d4c5dacd0a8a3ca62b}{\hyperlink{classIFBeamDBInterface_af5275e528b9b43d4c5dacd0a8a3ca62b}{I\-F\-Beam\-D\-B\-Interface} ()}\label{classIFBeamDBInterface_af5275e528b9b43d4c5dacd0a8a3ca62b}
+
+\begin{DoxyCompactList}\small\item\em Create the singleton \hyperlink{classIFBeamDBInterface}{I\-F\-Beam\-D\-B\-Interface} object. \end{DoxyCompactList}\item 
+\hypertarget{classIFBeamDBInterface_a950bec54fb41eaf48471a8a1eab8ab71}{std\-::map$<$ std\-::string, \\*
+std\-::map$<$ uint64\-\_\-t, \\*
+\hyperlink{structBeamDataPoint}{Beam\-Data\-Point} $>$ $>$ {\bfseries Parse\-D\-B\-Response} (const std\-::string \&response) const }\label{classIFBeamDBInterface_a950bec54fb41eaf48471a8a1eab8ab71}
+
+\item 
+\hypertarget{classIFBeamDBInterface_a2d7b151e8b21fe5f7d255d442d37e321}{void {\bfseries Postprocess\-Parsed\-Response} (std\-::map$<$ std\-::string, std\-::map$<$ uint64\-\_\-t, \hyperlink{structBeamDataPoint}{Beam\-Data\-Point} $>$ $>$ \&parsed\-\_\-response) const }\label{classIFBeamDBInterface_a2d7b151e8b21fe5f7d255d442d37e321}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classIFBeamDBInterface_a7dea07c539e0f0ca765f02d198345d2d}{C\-U\-R\-L $\ast$ \hyperlink{classIFBeamDBInterface_a7dea07c539e0f0ca765f02d198345d2d}{f\-Curl} = nullptr}\label{classIFBeamDBInterface_a7dea07c539e0f0ca765f02d198345d2d}
+
+\begin{DoxyCompactList}\small\item\em Pointer used to interact with libcurl. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Singleton used to interact with the Intensity Frontier beam database at Fermilab. 
+
+\subsection{Member Function Documentation}
+\hypertarget{classIFBeamDBInterface_add525c53cbf0b85c3cd0d39a5b9b0fdd}{\index{I\-F\-Beam\-D\-B\-Interface@{I\-F\-Beam\-D\-B\-Interface}!Get\-Beam\-Status@{Get\-Beam\-Status}}
+\index{Get\-Beam\-Status@{Get\-Beam\-Status}!IFBeamDBInterface@{I\-F\-Beam\-D\-B\-Interface}}
+\subsubsection[{Get\-Beam\-Status}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Beam\-Status} I\-F\-Beam\-D\-B\-Interface\-::\-Get\-Beam\-Status (
+\begin{DoxyParamCaption}
+\item[{uint64\-\_\-t}]{time}
+\end{DoxyParamCaption}
+) const}}\label{classIFBeamDBInterface_add525c53cbf0b85c3cd0d39a5b9b0fdd}
+
+
+Get information about the B\-N\-B state from the database as close as possible to a given time. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em time} & Timestamp (milliseconds since the Unix epoch) to use when searching the database \\
+\hline
+\end{DoxyParams}
+\hypertarget{classIFBeamDBInterface_a7b0e4c42767791f1904540b63772a74d}{\index{I\-F\-Beam\-D\-B\-Interface@{I\-F\-Beam\-D\-B\-Interface}!Query\-Beam\-D\-B@{Query\-Beam\-D\-B}}
+\index{Query\-Beam\-D\-B@{Query\-Beam\-D\-B}!IFBeamDBInterface@{I\-F\-Beam\-D\-B\-Interface}}
+\subsubsection[{Query\-Beam\-D\-B}]{\setlength{\rightskip}{0pt plus 5cm}std\-::map$<$ std\-::string, std\-::map$<$ uint64\-\_\-t, {\bf Beam\-Data\-Point} $>$ $>$ I\-F\-Beam\-D\-B\-Interface\-::\-Query\-Beam\-D\-B (
+\begin{DoxyParamCaption}
+\item[{uint64\-\_\-t}]{t0, }
+\item[{uint64\-\_\-t}]{t1}
+\end{DoxyParamCaption}
+) const}}\label{classIFBeamDBInterface_a7b0e4c42767791f1904540b63772a74d}
+
+
+Get information about the Booster Neutrino Beam (B\-N\-B) state from the database for the time interval \mbox{[}t0, t1\mbox{]}. 
+
+\begin{DoxyVerb}@param t0 Starting timestamp (milliseconds since the Unix epoch)
+@param t1 Starting timestamp (milliseconds since the Unix epoch)
+@return A nested map containing the parsed data. Keys of the outer map
+are device names, values are inner maps. Keys of the inner map are
+timestamps (milliseconds since the Unix epoch), values are
+BeamDataPoint structs that hold a numerical value and a unit string.
+@note An easy way to get the current milliseconds since the Unix epoch
+is to use the terminal utility date like this:@verbatim date +%s%3N
+\end{DoxyVerb}
+ ///  I found this handy trick here\-: \href{http://unix.stackexchange.com/a/123764}{\tt http\-://unix.\-stackexchange.\-com/a/123764} \hypertarget{classIFBeamDBInterface_a034ef023cb78989270a4ec2d54a5aa4f}{\index{I\-F\-Beam\-D\-B\-Interface@{I\-F\-Beam\-D\-B\-Interface}!Query\-Beam\-D\-B@{Query\-Beam\-D\-B}}
+\index{Query\-Beam\-D\-B@{Query\-Beam\-D\-B}!IFBeamDBInterface@{I\-F\-Beam\-D\-B\-Interface}}
+\subsubsection[{Query\-Beam\-D\-B}]{\setlength{\rightskip}{0pt plus 5cm}int I\-F\-Beam\-D\-B\-Interface\-::\-Query\-Beam\-D\-B (
+\begin{DoxyParamCaption}
+\item[{uint64\-\_\-t}]{t0, }
+\item[{uint64\-\_\-t}]{t1, }
+\item[{std\-::string \&}]{response\-\_\-string}
+\end{DoxyParamCaption}
+) const}}\label{classIFBeamDBInterface_a034ef023cb78989270a4ec2d54a5aa4f}
+
+
+Get information about the B\-N\-B state from the database for the time interval \mbox{[}t0, t1\mbox{]}. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em t0} & Starting timestamp (milliseconds since the Unix epoch) \\
+\hline
+ & {\em t1} & Starting timestamp (milliseconds since the Unix epoch) \\
+\hline
+\mbox{\tt out}  & {\em response\-\_\-string} & A string that will be loaded with the csv-\/format data from the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The libcurl integer return code for the query (zero if everything worked ok, or nonzero if an error occurred) 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+User\-Tools/\-Beam\-Fetcher/I\-F\-Beam\-D\-B\-Interface.\-h\item 
+User\-Tools/\-Beam\-Fetcher/I\-F\-Beam\-D\-B\-Interface.\-cpp\end{DoxyCompactItemize}
