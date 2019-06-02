@@ -108,7 +108,7 @@ public :
    TBranch        *b_lappdhit_neighstrip_righttime;   //!
 
    LAPPDTree(TTree *tree=0);
-   LAPPDTree(const char* filepath, bool addsubdirs);
+   LAPPDTree(const char* filepath, bool addsubdirs=false);
    virtual ~LAPPDTree();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
