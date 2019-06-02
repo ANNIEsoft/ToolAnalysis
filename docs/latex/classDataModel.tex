@@ -1,0 +1,49 @@
+\hypertarget{classDataModel}{\section{Data\-Model Class Reference}
+\label{classDataModel}\index{Data\-Model@{Data\-Model}}
+}
+
+
+{\ttfamily \#include $<$Data\-Model.\-h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classDataModel_abff03aef2cb531142a35781bb87c3365}{\hyperlink{classDataModel_abff03aef2cb531142a35781bb87c3365}{Data\-Model} ()}\label{classDataModel_abff03aef2cb531142a35781bb87c3365}
+
+\begin{DoxyCompactList}\small\item\em Simple constructor. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classDataModel_a4baac5fe364a7a23762d70d2c2216486}{Store \hyperlink{classDataModel_a4baac5fe364a7a23762d70d2c2216486}{vars}}\label{classDataModel_a4baac5fe364a7a23762d70d2c2216486}
+
+\begin{DoxyCompactList}\small\item\em This Store can be used for any variables. It is an inefficent ascii based storage. \end{DoxyCompactList}\item 
+\hypertarget{classDataModel_a878e0d87285f0b3541a3e7116a5f00b6}{Boost\-Store \hyperlink{classDataModel_a878e0d87285f0b3541a3e7116a5f00b6}{C\-Store}}\label{classDataModel_a878e0d87285f0b3541a3e7116a5f00b6}
+
+\begin{DoxyCompactList}\small\item\em This is a more efficent binary Boost\-Store that can be used to store a dynamic set of inter Tool variables. \end{DoxyCompactList}\item 
+\hypertarget{classDataModel_ad1ffc080c3b263bf3ee382a531321ad4}{std\-::map$<$ std\-::string, \\*
+Boost\-Store $\ast$ $>$ \hyperlink{classDataModel_ad1ffc080c3b263bf3ee382a531321ad4}{Stores}}\label{classDataModel_ad1ffc080c3b263bf3ee382a531321ad4}
+
+\begin{DoxyCompactList}\small\item\em This is a map of named Boo\-Store pointers which can be deffined to hold a nammed collection of any tipe of Boost\-Store. It is usefull to store data that needs subdividing into differnt stores. \end{DoxyCompactList}\item 
+\hypertarget{classDataModel_aa777da4c632e4659ee5b1447ad513458}{Logging $\ast$ \hyperlink{classDataModel_aa777da4c632e4659ee5b1447ad513458}{Log}}\label{classDataModel_aa777da4c632e4659ee5b1447ad513458}
+
+\begin{DoxyCompactList}\small\item\em Log class pointer for use in Tools, it can be used to send messages which can have multiple error levels and destination end points. \end{DoxyCompactList}\item 
+\hypertarget{classDataModel_a2c6dfd692e50f90e55338970ea7f8d61}{zmq\-::context\-\_\-t $\ast$ \hyperlink{classDataModel_a2c6dfd692e50f90e55338970ea7f8d61}{context}}\label{classDataModel_a2c6dfd692e50f90e55338970ea7f8d61}
+
+\begin{DoxyCompactList}\small\item\em Z\-M\-Q contex used for producing zmq sockets for inter thread, process, or computer communication. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+This class Is a transient data model class for your Tools within the Tool\-Chain. If Tools need to comunicate they pass all data objects through the data model. There fore inter tool data objects should be deffined in this class.
+
+\begin{DoxyParagraph}{Author\-:}
+B.\-Richards 
+\end{DoxyParagraph}
+\begin{DoxyParagraph}{Date\-:}
+2019/05/26 18\-:34\-:00 
+\end{DoxyParagraph}
+Contact\-: \href{mailto:b.richards@qmul.ac.uk}{\tt b.\-richards@qmul.\-ac.\-uk} 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+Data\-Model/Data\-Model.\-h\item 
+Data\-Model/Data\-Model.\-cpp\end{DoxyCompactItemize}

@@ -1,4 +1,3 @@
-#include "../Unity.h"
 #include "Factory.h"
 
 Tool* Factory(std::string tool) {
@@ -83,6 +82,5 @@ if (tool=="TotalLightMap") ret=new TotalLightMap;
 if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
 if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
 
-  if (tool=="Reader") ret=new Reader;
 return ret;
 }
