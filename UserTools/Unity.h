@@ -21,7 +21,7 @@
 #include "LAPPDSaveROOT.h"
 #include "SaveANNIEEvent.h"
 #include "LAPPDSim.h"
-#include "LAPPDresponse.hh"
+#include "LAPPDresponse.h"
 #include "BeamTimeAna.h"
 #include "BeamTimeTreeMaker.h"
 #include "BeamTimeTreeReader.h"
