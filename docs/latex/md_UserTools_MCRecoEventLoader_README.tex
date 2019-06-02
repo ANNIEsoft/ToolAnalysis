@@ -1,0 +1,19 @@
+\hyperlink{classMCRecoEventLoader}{M\-C\-Reco\-Event\-Loader}
+
+The \hyperlink{classMCRecoEventLoader}{M\-C\-Reco\-Event\-Loader} tool is used to load truth information associated with a particle vertex into the Reco\-Event store. This truth information can be used as a seed for the reconstruction tools, and is ultimately passed to the \hyperlink{classPhaseIITreeMaker}{Phase\-I\-I\-Tree\-Maker} tool and saved in the final output.
+
+The \hyperlink{classMCRecoEventLoader}{M\-C\-Reco\-Event\-Loader} tool also loads in the number of pions/kaons that were parent particles for the event in consideration.
+
+\subsection*{Data}
+
+Describe any data formats \hyperlink{classMCRecoEventLoader}{M\-C\-Reco\-Event\-Loader} creates, destroys, changes, or analyzes. E.\-G.
+
+\subsection*{Configuration}
+
+Describe any configuration variables for \hyperlink{classMCRecoEventLoader}{M\-C\-Reco\-Event\-Loader}.
+
+``` Get\-Pion\-Kaon\-Info bool Decides whether or not true pion/kaon information is loaded into the Reco\-Event store. If the M\-C\-Pi\-K flag is to be used in the \hyperlink{classEventSelector}{Event\-Selector}, this must be set to 1!
+
+Particle\-I\-D int The given integer is used to determine which parent particle type's vertex information is loaded into the Reco\-Event store. Default is muon.
+
+``` 

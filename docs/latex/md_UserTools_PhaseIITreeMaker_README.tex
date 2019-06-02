@@ -1,0 +1,24 @@
+\hyperlink{classPhaseIITreeMaker}{Phase\-I\-I\-Tree\-Maker}
+
+\subsection*{Data}
+
+Describe any data formats \hyperlink{classPhaseIITreeMaker}{Phase\-I\-I\-Tree\-Maker} creates, destroys, changes, or analyzes. E.\-G.
+
+{\bfseries Raw\-L\-A\-P\-P\-D\-Data} {\ttfamily map$<$\hyperlink{classGeometry}{Geometry}, vector$<$\hyperlink{classWaveform}{Waveform}$<$double$>$$>$$>$}
+\begin{DoxyItemize}
+\item Takes this data from the {\ttfamily A\-N\-N\-I\-E\-Event} store and finds the number of peaks
+\end{DoxyItemize}
+
+\subsection*{Configuration}
+
+Describe any configuration variables for \hyperlink{classPhaseIITreeMaker}{Phase\-I\-I\-Tree\-Maker}.
+
+``` verbose (1 or 0) Defines the level of verbosity for outputs of \hyperlink{classPhaseIITreeMaker}{Phase\-I\-I\-Tree\-Maker} algorithm.
+
+muon\-M\-C\-Truth\-\_\-fill (1 or 0) Input will determine if Truth information from files given is saved to the reco tree. Will output to tree if 1.
+
+muon\-Truth\-Reco\-Diff\-\_\-fill (1 or 0) Input determines if the difference in truth and reco information is saved to the reco tree. Will output to tree if 1.
+
+muon\-Reco\-Debug\-\_\-fill (1 or 0) Input determines if reconstruction variables at each step in the muon event reconstruction chain are saved to the tree. Values include seeds from Seed\-Vtx\-Finder, fits from Point\-Pos\-Finder, and F\-O\-Ms for likelihood fits at each reconstruction step. Will output to tree if 1.
+
+pion\-Kaon\-Count\-\_\-fill (1 or 0) Input determines if M\-C Truth pion and kaon counts are output to Phase I\-I tree. param1 value1 param2 value2 ``` 
