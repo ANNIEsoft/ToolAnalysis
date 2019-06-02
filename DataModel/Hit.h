@@ -15,6 +15,7 @@ class Hit : public SerialisableObject{
 	public:
 	Hit() : TubeId(0), Time(0), Charge(0){serialise=true;}
 	Hit(int thetubeid, double thetime, double thecharge) : TubeId(thetubeid), Time(thetime), Charge(thecharge){serialise=true;}
+	virtual ~Hit(){};
 	
 	inline int GetTubeId() const {return TubeId;}
 	inline double GetTime() const {return Time;}
@@ -47,13 +48,18 @@ class Hit : public SerialisableObject{
 
 //  Derived classes
 
-class MCHit : virtual public Hit {
+class MCHit : public Hit {
+	// XXX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ XXX
+	// XXX ~~~~~~~~~~~~~~~~~~~~~~~~ UPDATING THIS CLASS? ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ XXX
+	// XXX ~~~~~ Everything added in this class must be duplicated in MCLAPPDHit!~~~~ XXX
+	// XXX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ XXX
 	
 	friend class boost::serialization::access;
 	
 	public:
 	MCHit() : Hit(), Parents(std::vector<int>{}) {serialise=true;}
 	MCHit(int tubeid, double thetime, double thecharge, std::vector<int> theparents) : Hit(tubeid, thetime, thecharge), Parents(theparents) {serialise=true;}
+	virtual ~MCHit(){};
 	
 	const std::vector<int>* GetParents() const { return &Parents; }
 	void SetParents(std::vector<int> parentsin){ Parents = parentsin; }
