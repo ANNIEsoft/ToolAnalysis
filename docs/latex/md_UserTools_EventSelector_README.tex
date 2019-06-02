@@ -1,0 +1,31 @@
+\hyperlink{classEventSelector}{Event\-Selector}
+
+\subsection*{Data}
+
+The event selector tool flags events in the input data file as passing or failing various event selection criteria. Current event selection flags that can be utilized include\-:
+\begin{DoxyItemize}
+\item M\-C\-Pi\-K\-Cut\-: Flags events that had a primary muon or pion produced
+\item M\-R\-D\-Reco\-Cut Flags muon events that do not stop in the M\-R\-D according to reco.
+\item M\-C\-F\-V\-Cut\-: Flags M\-C muon events that are not generated in the defined Fiducial volume
+\item M\-C\-P\-M\-T\-Vol\-Cut\-: Flags M\-C muon events that are not generated inside the P\-M\-T volume
+\item M\-C\-M\-R\-D\-Cut\-: Flags M\-C muon events with muons that do not stop in the M\-R\-D
+\item Prompt\-Trig\-Only\-: Flags muon events that do not have an M\-C\-Triggernum of 0 (any store event with M\-C\-Triggernum$>$0 is a delayed trigger)
+\item N\-Hit\-: Flags events that do not have at least some number of hits (default is 4)
+\item Identical cuts, but with the reconstructed information, are prefaced with \char`\"{}\-Reco\char`\"{}
+\end{DoxyItemize}
+
+After running the event selector tool, two bitmasks are added to the Reco\-Event store\-: \char`\"{}\-Event\-Flag\-Applied\char`\"{} and \char`\"{}\-Event\-Flagged\char`\"{}. The prior indicates which event selection criteria were checked on the event, while the latter indicates which event selection the event actually failed. The bitmask as of now is given by\-:
+
+k\-Flag\-None = 0x00, //0 k\-Flag\-M\-C\-F\-V = 0x01, //1 k\-Flag\-M\-C\-P\-M\-T\-Vol = 0x02, //2 k\-Flag\-M\-C\-M\-R\-D = 0x04, //4 k\-Flag\-M\-C\-Pi\-K = 0x08, //8 k\-Flag\-Reco\-M\-R\-D = 0x10, //16 k\-Flag\-Prompt\-Trig = 0x20, //32 k\-Flag\-N\-Hit = 0x40, //64 k\-Flag\-Reco\-F\-V = 0x80, //128 k\-Flag\-Reco\-P\-M\-T\-Vol = 0x100, //256
+
+For each event, all cuts defined with the config file are checked.
+
+The f\-Save\-Status\-To\-Store bool determines if the \char`\"{}\-Event\-Cut\-Status\char`\"{} bool in the store is updated after running event selection. If the event passes all cuts and f\-Save\-Status\-To\-Store==true, Event\-Cut\-Status is set to true in the Reco\-Event store. If any cut fails, Event\-Cut\-Status is set to false.
+
+The Event\-Cut\-Status tool is used by downstream tools to determine whether to run the tool or not.
+
+\subsection*{Configuration}
+
+Configurables tell \hyperlink{classEventSelector}{Event\-Selector} which cuts to run/check when defining the master Event\-Cut\-Status bit checked by all following tools
+
+``` All bools (1 or 0) verbosity M\-R\-D\-Reco\-Cut M\-C\-F\-V\-Cut M\-C\-P\-M\-T\-Vol\-Cut M\-C\-M\-R\-D\-Cut M\-C\-Pi\-K\-Cut N\-Hit\-Cut Prompt\-Trig\-Only Reco\-F\-V\-Cut Reco\-P\-M\-T\-Vol\-Cut Save\-Status\-To\-Store ``` 

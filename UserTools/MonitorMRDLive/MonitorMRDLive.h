@@ -19,7 +19,8 @@
 #include "TLegend.h"
 #include "TPaletteAxis.h"
 #include "TPaveText.h"
-
+#include "TROOT.h"
+#include "TList.h"
 
 class MonitorMRDLive: public Tool {
 

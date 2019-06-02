@@ -16,6 +16,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "ANNIEGeometry.h"
+#include "TMath.h"
 
 class EventSelectorDoE: public Tool {
 

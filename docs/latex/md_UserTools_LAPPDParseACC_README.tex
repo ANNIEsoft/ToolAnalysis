@@ -1,0 +1,30 @@
+This tool is made to parse the files produced from the A\-N\-N\-I\-E Central Card electronics. The design and format of those files is described at this \href{https://github.com/lappd-daq/acdc-daq}{\tt github page}.
+
+There are three items added into an {\ttfamily A\-N\-N\-I\-E\-Event} boost store\-:
+
+{\bfseries Pedestal Data} {\ttfamily map$<$int, vector$<$\hyperlink{classWaveform}{Waveform}$<$double$>$$>$$>$}
+\begin{DoxyItemize}
+\item key\-: some integer representing boards and channels (soon to be replaced with \hyperlink{classGeometry}{Geometry} class).
+\item value\-: vector of length one with a \hyperlink{classWaveform}{Waveform} whose samples represent the raw pedestal data in P\-S\-E\-C A\-D\-C counts
+\item store-\/$>$(\char`\"{}raw\-Ped\-Data\char`\"{})
+\end{DoxyItemize}
+
+{\bfseries A\-C\-C Data} {\ttfamily map$<$int, vector$<$\hyperlink{classWaveform}{Waveform}$<$double$>$$>$$>$}
+\begin{DoxyItemize}
+\item key\-: some integer representing boards and channels (soon to be replaced with \hyperlink{classGeometry}{Geometry} class).
+\item value\-: vector of length one with a \hyperlink{classWaveform}{Waveform} whose samples represent the pedestal subtracted data in P\-S\-E\-C A\-D\-C counts
+\item store-\/$>$\char`\"{}\-Raw\-L\-A\-P\-P\-D\-Data\char`\"{}
+\end{DoxyItemize}
+
+{\bfseries Meta Data} {\ttfamily map$<$int, map$<$string, double$>$$>$}
+\begin{DoxyItemize}
+\item key\-: some integer representing boards and channels (soon to be replaced with \hyperlink{classGeometry}{Geometry} class).
+\item value\-: a map between strings and double with all the keywords listed in the data.\-meta file and their corresponding values
+\item store-\/$>$Header-\/$>$\char`\"{}meta\-Data\char`\"{}
+\end{DoxyItemize}
+
+\subsection*{Options}
+
+The following need to be defined at configuration level ``` filepath $<$the base=\char`\"{}\char`\"{} folder=\char`\"{}\char`\"{} of=\char`\"{}\char`\"{} the=\char`\"{}\char`\"{} input=\char`\"{}\char`\"{} files$>$=\char`\"{}\char`\"{}$>$ filename $<$the base=\char`\"{}\char`\"{} name=\char`\"{}\char`\"{} of=\char`\"{}\char`\"{} the=\char`\"{}\char`\"{} three=\char`\"{}\char`\"{} files$>$=\char`\"{}\char`\"{}$>$ print $<$true/false$>$ \# Verbosity level ```
+
+an example of this would be ``` filepath ./fakedata filename test print false ``` This would read the three following files ``` fakedata/test.\-ped fakedata/test.\-acdc fakedata/test.\-meta ``` 

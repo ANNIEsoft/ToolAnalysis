@@ -8,6 +8,7 @@
 #include "Tool.h"
 #include "RecoCluster.h"
 #include "RecoClusterDigit.h"
+#include "TString.h"
 
 class HitCleaner: public Tool {
 

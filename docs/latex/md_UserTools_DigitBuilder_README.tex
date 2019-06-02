@@ -1,0 +1,24 @@
+Interface
+
+\subsection*{Data}
+
+This tool is responsible for loading hit information from the A\-N\-N\-I\-E\-Event store and converting them to Reco\-Digits. Reco\-Digits are the standard hit format used by all tools in the reconstruction chain.
+
+By default, all individual P\-M\-T true hit times and charges (with time smeared in W\-C\-Sim) are loaded into a \hyperlink{classRecoDigit}{Reco\-Digit}. True \hyperlink{classLAPPD}{L\-A\-P\-P\-D} hit times, with a 100 ps time smearing, are loaded.
+
+\subsection*{Configuration}
+
+Describe any configuration variables for Interface.
+
+``` Parametric\-Model bool
+
+If this bool is set to 1, the P\-M\-T parametric model of hits is used to fill Reco\-Digits. To form a P\-M\-T parametric model hit, the following process is performed for a P\-M\-T\-:
+\begin{DoxyItemize}
+\item Gather all true hits on the P\-M\-T in the current event.
+\item The parametric hit time is taken as the median of all hit times.
+\item The parametric hit charge is taken as the sum of all hit charges.
+\end{DoxyItemize}
+
+Photo\-Detector\-Configuration string This configuration is used to decide what digit types are loaded into Reco\-Digits and used for reconstruction. Options are (L\-A\-P\-P\-D\-\_\-only, P\-M\-T\-\_\-only, or All)
+
+``` 

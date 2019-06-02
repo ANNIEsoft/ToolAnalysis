@@ -14,6 +14,7 @@
 #include "TChain.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1D.h"
 
 // reco-annie includes
 #include "RawReadout.h"

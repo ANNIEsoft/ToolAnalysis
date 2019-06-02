@@ -1,4 +1,4 @@
-#include "LAPPDresponse.hh"
+#include "LAPPDresponse.h"
 #include "TObject.h"
 #include "TString.h"
 #include "TFile.h"

@@ -1,0 +1,23 @@
+\hyperlink{classEventDisplay}{Event\-Display} produces 2\-D Event Display plots of A\-N\-N\-I\-E events. Event Displays can be drawn showing the charge or the time distribution. Thresholds for the P\-M\-T and \hyperlink{classLAPPD}{L\-A\-P\-P\-D} charge as well as a time window for the shown events can be set in the config file (see Configuration for details).
+
+\subsection*{Data}
+
+\hyperlink{classEventDisplay}{Event\-Display} needs access to the hit P\-M\-T information in A\-N\-N\-I\-E\-Event. So far, it is only used on simulation therefore needing access to
+
+{\bfseries M\-C\-Hits} {\ttfamily map$<$unsigned long, std\-::vector$<$\hyperlink{classHit}{Hit}$>$$>$}
+\begin{DoxyItemize}
+\item Takes this data from the {\ttfamily A\-N\-N\-I\-E\-Event} store and loops over the hit times / charges for all P\-M\-Ts
+\end{DoxyItemize}
+
+{\bfseries M\-C\-L\-A\-P\-P\-D\-Hits} {\ttfamily map$<$unsigned long, std\-::vector$<$\hyperlink{classLAPPDHit}{L\-A\-P\-P\-D\-Hit}$>$$>$}
+\begin{DoxyItemize}
+\item Takes this data from the {\ttfamily A\-N\-N\-I\-E\-Event} store and loops over the hit times / charges for all L\-A\-P\-P\-Ds
+\end{DoxyItemize}
+
+\subsection*{Configuration}
+
+The following settings can be set in the \hyperlink{classEventDisplay}{Event\-Display} config file to customize the Event Display
+
+``` Event -\/999 \#use -\/999 if want to loop over all events in file, otherwise the specific event number (0 ... N\-\_\-events -\/ 1) Mode Time \#select Display Mode (Charge / Time) Format Simulation \#choose Store format to read from. Simulation\-: use A\-N\-N\-I\-E\-Event variables with the true M\-C\-Particles variables, Reco\-: use the Reco\-Store and the associated charge and time classes Threshold\-\_\-\-Charge 40 \#choose threshold for events in charge (lower limit) Event\-List None \#/\-A\-N\-N\-I\-E\-Code/\-Tool\-Analysis/exemplary\-\_\-event\-\_\-list.dat \#possibility to plot only certain Event Numbers within a W\-C\-Sim file, specified in a text file Threshold\-\_\-\-Charge\-L\-A\-P\-P\-D 1. \#same as threshold, but for L\-A\-P\-P\-Ds Threshold\-\_\-\-Time\-Low -\/999 \#for time, use lower and upper limits, use -\/999 if min and max values should be taken from data Threshold\-\_\-\-Time\-High -\/999 Text\-Box 1 \#choose if Text\-Box with information about run \& event should be displayed (0\-: not shown, 1\-: shown) L\-A\-P\-P\-Ds\-Selected 0 \#if true, only the L\-A\-P\-P\-Ds specified in L\-A\-P\-P\-Ds\-File will be used in the analysis. If false, all \hyperlink{classLAPPD}{L\-A\-P\-P\-D} hits will be displayed L\-A\-P\-P\-Ds\-File lappd\-\_\-active.\-txt \#specify the \hyperlink{classLAPPD}{L\-A\-P\-P\-D} I\-Ds that are active (one I\-D per line) Draw\-Vertex 1 \#true vertex is drawn Draw\-Ring 1 \#true expected ring shape is drawn Save\-Plots 0 \#decide whether to save plots as png or not Histogram\-Plots 0 \#decide whether histogram plots (charge/time) are shown in addition to \hyperlink{classEventDisplay}{Event\-Display} User\-Input 0 \#manually decide if next event shown Graphics 0 \#should a T\-Application be launched? Output\-File electrons\-\_\-iso \#output file name for saved Event Display plots Detector\-Configuration A\-N\-N\-I\-Ep2v6 \#specify the detector configuration used in the simulation (options e.\-g. A\-N\-N\-I\-Ep2v2, A\-N\-N\-I\-Ep2v4, A\-N\-N\-I\-Ep2v6)
+
+verbose 1 ``` 

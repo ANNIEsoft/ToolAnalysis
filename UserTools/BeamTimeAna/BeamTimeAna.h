@@ -7,6 +7,8 @@
 #include "Tool.h"
 
 #include "TVector3.h"
+#include "TH1D.h"
+#include "TH2D.h"
 
 class BeamTimeAna: public Tool {
 

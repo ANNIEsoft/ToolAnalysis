@@ -6,6 +6,10 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TApplication.h"
+#include "TStyle.h"
+#include "TCanvas.h"
+#include "TROOT.h"
 
 class TH1F;
 class TH2F;
