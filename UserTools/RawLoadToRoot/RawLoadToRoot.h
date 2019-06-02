@@ -11,6 +11,7 @@
 #include "TString.h"
 #include "ADCPulse.h"
 #include "CalibratedADCWaveform.h"
+#include "TTree.h"
 
 class RawLoadToRoot: public Tool {
 

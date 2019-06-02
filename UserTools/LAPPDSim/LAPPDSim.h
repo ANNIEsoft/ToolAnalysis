@@ -5,7 +5,8 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "LAPPDresponse.hh"
+#include "LAPPDresponse.h"
+#include "TF1.h"
 
 class LAPPDSim: public Tool {
 

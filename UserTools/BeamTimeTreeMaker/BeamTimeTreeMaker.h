@@ -6,7 +6,8 @@
 
 #include "Tool.h"
 #include "TRandom3.h"
-
+#include "TTree.h"
+#include "TFile.h"
 
 class BeamTimeTreeMaker: public Tool {
 

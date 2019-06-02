@@ -11,6 +11,7 @@
 #include "FoMCalculator.h"
 #include "VertexGeometry.h"
 #include "Parameters.h"
+#include "TTree.h"
 
 class LikelihoodFitterCheck: public Tool {
 

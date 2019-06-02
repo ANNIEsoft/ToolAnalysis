@@ -194,6 +194,18 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	ParticleId_to_VetoCharge = new std::map<int,double>;
 	trackid_to_mcparticleindex = new std::map<int,int>;
 	
+	// Pre-load first entry
+	int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+	if(nbytesread<=0){
+		logmessage = "LoadWCSim Tool had no entry "+to_string(MCEventNum);
+		if(nbytesread==-4){
+			logmessage+=": Overran end of TChain! Have you specified more iterations than are available in ToolChainConfig?";
+		} else if(nbytesread==0){
+			logmessage+=": No TChain loaded! Is your filepath correct?";
+		}
+		Log(logmessage,v_error,verbosity);
+	}
+	
 	return true;
 }
 
@@ -204,21 +216,8 @@ bool LoadWCSim::Execute(){
 	//m_data->Stores.at("ANNIEEvent")->Clear();
 	
 	if(verbosity) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
-	int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
-	if(nbytesread<=0){
-		cerr<<"############################"<<endl;
-		logmessage = "LoadWCSim Tool had no entry "+to_string(MCEventNum);
-		if(nbytesread==-4){
-			logmessage+=": Overran end of TChain! Have you specified more iterations than are available in ToolChainConfig?";
-		} else if(nbytesread==0){
-			logmessage+=": No TChain loaded! Is your filepath correct?";
-		}
-		Log(logmessage,v_error,verbosity);
-		cerr<<"############################"<<endl;
-	}
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
-	MCParticles->clear();
 	MCHits->clear();
 	TDCData->clear();
 	
@@ -246,94 +245,145 @@ bool LoadWCSim::Execute(){
 		EventTimeNs = atrigt->GetHeader()->GetDate();
 		EventTime->SetNs(EventTimeNs);
 		if(verbosity>2) cout<<"EventTime is "<<EventTimeNs<<"ns"<<endl;
-		if(verbosity>1) cout<<"getting "<<atrigt->GetNtrack()<<" tracks"<<endl;
-		trackid_to_mcparticleindex->clear(); // clear out any previous tracks
-		for(int tracki=0; tracki<atrigt->GetNtrack(); tracki++){
-			if(verbosity>2) cout<<"getting track "<<tracki<<endl;
-			WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigt->GetTracks()->At(tracki);
-			/* a WCSimRootTrack has methods:
-			Int_t     GetIpnu()             pdg
-			Int_t     GetFlag()             -1: neutrino primary, -2: neutrino target, 0: other
-			Float_t   GetM()                mass
-			Float_t   GetP()                momentum magnitude
-			Float_t   GetE()                energy (inc rest mass^2)
-			Float_t   GetEndE()             energy on stopping of particle tracking
-			Float_t   GetEndP()             momentum on stopping of particle tracking
-			Int_t     GetStartvol()         starting volume: 10 is tank, 20 is facc, 30 is mrd
-			Int_t     GetStopvol()          stopping volume: but these may not be set.
-			Float_t   GetDir(Int_t i=0)     momentum unit vector
-			Float_t   GetPdir(Int_t i=0)    momentum vector
-			Float_t   GetPdirEnd(Int_t i=0) direction vector on stop tracking
-			Float_t   GetStop(Int_t i=0)    stopping vertex x,y,z for i=0-2, in cm
-			Float_t   GetStart(Int_t i=0)   starting vertex x,y,z for i=0-2, in cm
-			Int_t     GetParenttype()       parent pdg, 0 for primary.
-			Float_t   GetTime()             trj->GetGlobalTime(); starting time of particle
-			Float_t   GetStopTime()
-			Int_t     GetId()               wcsim trackid
-			*/
+		
+		// Load ALL MC particles (for all delayed MC triggers) only on MCTrigger 0
+		if(MCTriggernum==0){
+			MCParticles->clear();
+			trackid_to_mcparticleindex->clear();
+			ParticleId_to_TankTubeIds->clear();
+			ParticleId_to_MrdTubeIds->clear();
+			ParticleId_to_VetoTubeIds->clear();
+			ParticleId_to_TankCharge->clear();
+			ParticleId_to_MrdCharge->clear();
+			ParticleId_to_VetoCharge->clear();
 			
-			tracktype startstoptype = tracktype::UNDEFINED;
-			//MC particle times are relative to the trigger time
-			if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
-			MCParticle thisparticle(
-				nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
-				Position(nextrack->GetStart(0) / 100.,
-						 nextrack->GetStart(1) / 100.,
-						 nextrack->GetStart(2) / 100.),
-				Position(nextrack->GetStop(0) / 100.,
-						 nextrack->GetStop(1) / 100.,
-						 nextrack->GetStop(2) / 100.),
-				//MC particle times now stored relative to the trigger time
-				(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
-				(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
-				Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
-				(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
-					 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
-					 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
-				startstoptype,
-				nextrack->GetId(),
-				nextrack->GetParenttype(),
-				nextrack->GetFlag());
+			for(int trigi=0; trigi<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); trigi++){
+				
+				WCSimRootTrigger* atrigtt = WCSimEntry->wcsimrootevent->GetTrigger(trigi);
+				if(verbosity>1) cout<<"getting "<<atrigtt->GetNtrack()<<" tracks"<<endl;
+				for(int tracki=0; tracki<atrigtt->GetNtrack(); tracki++){
+					if(verbosity>2) cout<<"getting track "<<tracki<<endl;
+					WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigtt->GetTracks()->At(tracki);
+					/* a WCSimRootTrack has methods:
+					Int_t     GetIpnu()             pdg
+					Int_t     GetFlag()             -1: neutrino primary, -2: neutrino target, 0: other
+					Float_t   GetM()                mass
+					Float_t   GetP()                momentum magnitude
+					Float_t   GetE()                energy (inc rest mass^2)
+					Float_t   GetEndE()             energy on stopping of particle tracking
+					Float_t   GetEndP()             momentum on stopping of particle tracking
+					Int_t     GetStartvol()         starting volume: 10 is tank, 20 is facc, 30 is mrd
+					Int_t     GetStopvol()          stopping volume: but these may not be set.
+					Float_t   GetDir(Int_t i=0)     momentum unit vector
+					Float_t   GetPdir(Int_t i=0)    momentum vector
+					Float_t   GetPdirEnd(Int_t i=0) direction vector on stop tracking
+					Float_t   GetStop(Int_t i=0)    stopping vertex x,y,z for i=0-2, in cm
+					Float_t   GetStart(Int_t i=0)   starting vertex x,y,z for i=0-2, in cm
+					Int_t     GetParenttype()       parent pdg, 0 for primary.
+					Float_t   GetTime()             trj->GetGlobalTime(); starting time of particle
+					Float_t   GetStopTime()
+					Int_t     GetId()               wcsim trackid
+					*/
+					
+					tracktype startstoptype = tracktype::UNDEFINED;
+					//MC particle times are relative to the trigger time
+					if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
+					MCParticle thisparticle(
+						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
+						Position(nextrack->GetStart(0) / 100.,
+								 nextrack->GetStart(1) / 100.,
+								 nextrack->GetStart(2) / 100.),
+						Position(nextrack->GetStop(0) / 100.,
+								 nextrack->GetStop(1) / 100.,
+								 nextrack->GetStop(2) / 100.),
+						//MC particle times now stored relative to the trigger time
+						(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
+						(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
+						Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
+						(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
+							 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
+							 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
+						startstoptype,
+						nextrack->GetId(),
+						nextrack->GetParenttype(),
+						nextrack->GetFlag());
+					if((abs(nextrack->GetIpnu())==13)||
+					   (abs(nextrack->GetIpnu())==211)||
+					   (nextrack->GetIpnu()==111)){
+						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
+								<<" track id "<<nextrack->GetId()
+								<< ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
+								<< ", " + to_string(nextrack->GetStart(1)/100.)
+								<< ", " + to_string(nextrack->GetStart(2)/100.)
+								<< "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
+								<< ", " + to_string(nextrack->GetStop(1)/100.)
+								<< ", " + to_string(nextrack->GetStop(2)/100.)
+								<< ")"
+								<<std::endl;
+					}
 /*
-			if((abs(nextrack->GetIpnu())==13)||(abs(nextrack->GetIpnu())==211)||(nextrack->GetIpnu()==111)){
-				std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
-						<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
-						<<" track id "<<nextrack->GetId()
-						<< ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
-						<< ", " + to_string(nextrack->GetStart(1)/100.)
-						<< ", " + to_string(nextrack->GetStart(2)/100.)
-						<< "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
-						<< ", " + to_string(nextrack->GetStop(1)/100.)
-						<< ", " + to_string(nextrack->GetStop(2)/100.)
-						<< ")"
-						<<std::endl;
-			}
-			if(((abs(nextrack->GetIpnu())==13)||(nextrack->GetIpnu()==22)) &&
-			   ((abs(nextrack->GetParenttype())==211)||(nextrack->GetParenttype()==111))){
-				std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
-						<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
-						<<" track id "<<nextrack->GetId()
-						<<" at position "<<MCParticles->size()<<std::endl;
-			}
+					// Print primary muons or the first track
+					if(((nextrack->GetIpnu()==13) && (nextrack->GetParenttype()==0))||
+					   (MCParticles->size()==0)){
+						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
+								<<" track id "<<nextrack->GetId()
+								<<" at position "<<MCParticles->size()<<std::endl;
+					}
+					// print pions
+					if((abs(nextrack->GetIpnu())==211)||
+					   (nextrack->GetIpnu()==111)){
+						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
+								<<" track id "<<nextrack->GetId()
+								<< ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
+								<< ", " + to_string(nextrack->GetStart(1)/100.)
+								<< ", " + to_string(nextrack->GetStart(2)/100.)
+								<< "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
+								<< ", " + to_string(nextrack->GetStop(1)/100.)
+								<< ", " + to_string(nextrack->GetStop(2)/100.)
+								<< ")"
+								<<std::endl;
+					}
+					// print muons or gammas from pion decays
+					if(((abs(nextrack->GetIpnu())==13)||(nextrack->GetIpnu()==22)) &&
+					   ((abs(nextrack->GetParenttype())==211)||(nextrack->GetParenttype()==111))){
+						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
+								<<" track id "<<nextrack->GetId()
+								<<" at position "<<MCParticles->size()<<std::endl;
+					}
 */
-			if(nextrack->GetIpnu()==13){
-				logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
-					+ ", parent type " + to_string(nextrack->GetParenttype())
-					+ ", Id " + to_string(nextrack->GetId())
-					+ ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
-					+ ", " + to_string(nextrack->GetStart(1)/100.)
-					+ ", " + to_string(nextrack->GetStart(2)/100.)
-					+ "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
-					+ ", " + to_string(nextrack->GetStop(1)/100.)
-					+ ", " + to_string(nextrack->GetStop(2)/100.)
-					+ ")";
-				Log(logmessage,v_debug,verbosity);
+					if(nextrack->GetIpnu()==13){
+						logmessage = "Muon found with flag: "+to_string(nextrack->GetFlag())
+							+ ", parent type " + to_string(nextrack->GetParenttype())
+							+ ", Id " + to_string(nextrack->GetId())
+							+ ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
+							+ ", " + to_string(nextrack->GetStart(1)/100.)
+							+ ", " + to_string(nextrack->GetStart(2)/100.)
+							+ "), and end vertex (" + to_string(nextrack->GetStop(0)/100.)
+							+ ", " + to_string(nextrack->GetStop(1)/100.)
+							+ ", " + to_string(nextrack->GetStop(2)/100.)
+							+ ")";
+						Log(logmessage,v_debug,verbosity);
+					}
+					
+					trackid_to_mcparticleindex->emplace(nextrack->GetId(),MCParticles->size());
+					MCParticles->push_back(thisparticle);
+				}
+				if(verbosity>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
+				
+			}  // loop over loading particles from all MC triggers on first MC trigger
+		} else { 
+			// if MCTrigger>0, since particle times are relative to the trigger time,
+			// we need to update all the particle times
+			double timediff = EventTimeNs - firsttrigt->GetHeader()->GetDate();
+			for(MCParticle& aparticle : *MCParticles){
+				aparticle.SetStartTime(aparticle.GetStartTime()-timediff);
+				aparticle.SetStopTime (aparticle.GetStopTime() -timediff);
 			}
-			
-			trackid_to_mcparticleindex->emplace(nextrack->GetId(),MCParticles->size());
-			MCParticles->push_back(thisparticle);
-		}
-		if(verbosity>2) cout<<"MCParticles has "<<MCParticles->size()<<" entries"<<endl;
+		} // end updating particle times
 		
 		int numtankdigits = atrigt ? atrigt->GetCherenkovDigiHits()->GetEntries() : 0;
 		if(verbosity>1) cout<<"looping over "<<numtankdigits<<" tank digits"<<endl;
@@ -374,7 +424,7 @@ bool LoadWCSim::Execute(){
 			float digiq = digihit->GetQ();
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
-			std::vector<int> parents = GetHitParentId(digihit, firsttrigt);
+			std::vector<int> parents = GetHitParentIds(digihit, firsttrigt);
 			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<MCHit>{nexthit});
@@ -421,7 +471,7 @@ bool LoadWCSim::Execute(){
 			float digiq = digihit->GetQ();
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
-			std::vector<int> parents = GetHitParentId(digihit, firsttrigm);
+			std::vector<int> parents = GetHitParentIds(digihit, firsttrigm);
 			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
@@ -468,7 +518,7 @@ bool LoadWCSim::Execute(){
 			float digiq = digihit->GetQ();
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
-			std::vector<int> parents = GetHitParentId(digihit, firsttrigv);
+			std::vector<int> parents = GetHitParentIds(digihit, firsttrigv);
 			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
@@ -538,24 +588,34 @@ bool LoadWCSim::Execute(){
 	//RawLAPPDData
 	//CalibratedLAPPDData
 	//RecoParticles
+	if(verbosity>1) cout<<"done loading event"<<endl;
 	
 	EventNumber++;
 	MCTriggernum++;
 	if(verbosity>2) cout<<"checking if we're done on trigs in this event"<<endl;
+	bool newentry=false;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
 		MCEventNum++;
+		newentry=true;
 		if(verbosity>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
 	} else {
 		if(verbosity>2) cout<<"there are further triggers in this event: next loop will process the trigger "<<MCTriggernum<<"/"<<WCSimEntry->wcsimrootevent->GetNumberOfEvents()<<endl;
 	}
-	if(false && MCEventNum>=NumEvents){
-		cout<<"LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain"<<endl;
-		m_data->vars.Set("StopLoop",1);
-	} else if(MCEventNum>=MaxEntries && MaxEntries>0){
-		cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
+	
+	// Pre-load next entry so we can stop the loop if it this was the last one in the chain
+	if(newentry){  // if next loop is processing the next trigger in the same entry, no need to re-load it
+		if(MCEventNum>=MaxEntries && MaxEntries>0){
+			cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
+			m_data->vars.Set("StopLoop",1);
+		} else {
+			int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+			if(nbytesread<=0){
+				Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
+				m_data->vars.Set("StopLoop",1);
+			}
+		}
 	}
-	if(verbosity>1) cout<<"done loading event"<<endl;
 	return true;
 }
 
@@ -1021,7 +1081,7 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 	}  // end loop over digits
 }
 
-std::vector<int> LoadWCSim::GetHitParentId(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig){
+std::vector<int> LoadWCSim::GetHitParentIds(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig){
 	/* Get the ID of the MCParticle(s) that produced this digit */
 	std::vector<int> parentids; // a hit could technically have more than one contrbuting particle
 	

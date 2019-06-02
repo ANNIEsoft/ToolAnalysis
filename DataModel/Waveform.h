@@ -2,7 +2,8 @@
 #ifndef WAVEFORMCLASS_H
 #define WAVEFORMCLASS_H
 
-#include<SerialisableObject.h>
+#include <SerialisableObject.h>
+#include <iostream>
 
 using namespace std;
 
