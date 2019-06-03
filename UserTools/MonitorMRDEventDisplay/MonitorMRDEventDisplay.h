@@ -14,6 +14,7 @@
 #include "TLegend.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TList.h"
 #include "TPaletteAxis.h"
 #include "MRDOut.h"
 #include "TObjectTable.h"
