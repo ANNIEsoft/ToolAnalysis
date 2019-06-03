@@ -6,6 +6,7 @@
 
 #include "Tool.h"
 #include "Geometry.h"
+#include <boost/algorithm/string.hpp>
 
 class LoadGeometry: public Tool {
 

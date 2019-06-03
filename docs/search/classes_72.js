@@ -8,7 +8,6 @@ var searchData=
   ['rawreader',['RawReader',['../classannie_1_1RawReader.html',1,'annie']]],
   ['rawreadout',['RawReadout',['../classannie_1_1RawReadout.html',1,'annie']]],
   ['rawtrigdata',['RawTrigData',['../classannie_1_1RawTrigData.html',1,'annie']]],
-  ['reader',['Reader',['../classReader.html',1,'']]],
   ['recocluster',['RecoCluster',['../classRecoCluster.html',1,'']]],
   ['recoclusterdigit',['RecoClusterDigit',['../classRecoClusterDigit.html',1,'']]],
   ['recodigit',['RecoDigit',['../classRecoDigit.html',1,'']]],
