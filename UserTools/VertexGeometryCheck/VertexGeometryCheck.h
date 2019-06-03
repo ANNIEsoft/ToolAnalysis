@@ -8,6 +8,8 @@
 #include "VertexGeometry.h"
 #include "Parameters.h"
 #include "Tool.h"
+#include "TTree.h"
+#include "TH2D.h"
 
 class VertexGeometryCheck: public Tool {
 

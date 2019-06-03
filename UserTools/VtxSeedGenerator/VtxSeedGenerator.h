@@ -7,6 +7,8 @@
 #include "Tool.h"
 #include "ANNIEGeometry.h"
 #include "Parameters.h"
+#include "TMath.h"
+#include "TRandom.h"
 
 class VtxSeedGenerator: public Tool {
 

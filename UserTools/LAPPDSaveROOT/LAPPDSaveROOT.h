@@ -8,6 +8,7 @@
 #include "TString.h"
 
 #include "Tool.h"
+#include "TTree.h"
 
 class LAPPDSaveROOT: public Tool {
 

@@ -6,6 +6,11 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TH1D.h"
+#include "TList.h"
+#include "TROOT.h"
+#include "TStyle.h"
+#include "MRDspecs.hh"
 
 // for drawing
 class TApplication;

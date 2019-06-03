@@ -6,6 +6,8 @@
 #include "TVirtualFFT.h"
 
 #include "Tool.h"
+#include "TH1D.h"
+#include "TMath.h"
 
 class LAPPDFilter: public Tool {
 

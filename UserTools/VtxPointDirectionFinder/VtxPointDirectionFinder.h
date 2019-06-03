@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "VertexGeometry.h"
+#include "MinuitOptimizer.h"
 
 class VtxPointDirectionFinder: public Tool {
 

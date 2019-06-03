@@ -6,6 +6,8 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "MRDspecs.hh"
+#include "TMath.h"
 
 class MCParticleProperties: public Tool {
 	

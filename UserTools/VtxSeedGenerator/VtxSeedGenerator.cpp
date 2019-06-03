@@ -186,6 +186,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
       vSeedVtxList->push_back(thisgridseed);
     }
   }
+  return true;
 }
 
 double VtxSeedGenerator::GetMedianSeedTime(Position pos){
