@@ -26,6 +26,8 @@
 #include "TROOT.h"
 #include "TCanvas.h"
 #include "TGraph.h"
+#include "TRandom3.h"
+#include "TF1.h"
 
 // for drawing
 class TApplication;
@@ -48,7 +50,7 @@ namespace {
 	
 	int MAXEVENTSIZE=10;                             // initial array sizes for TriggerData tree
 	int MAXTRIGGERSIZE=10;                           // must not be const
-	constexpr int BOGUS_INT = std::numeric_limits<int>::max();
+	//	constexpr int BOGUS_INT = std::numeric_limits<int>::max();
 }
 
 class PulseSimulation: public Tool {

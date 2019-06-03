@@ -6,7 +6,7 @@ then
     more template/MyTool.h | sed s:MyTool:$1: | sed s:MYTOOL_H:$1_H: > ./$1/$1.h
     more template/MyTool.cpp | sed s:MyTool:$1: | sed s:MyTool\(\):$1\(\): > ./$1/$1.cpp
     more template/README.md | sed s:MyTool:$1: | sed s:MyTool\(\):$1\(\): > ./$1/README.md
-    echo "#include \"$1/$1.cpp\"" >>Unity.cpp
+    echo "#include \"$1/$1.h\"" >>Unity.h
 
     while read line
     do

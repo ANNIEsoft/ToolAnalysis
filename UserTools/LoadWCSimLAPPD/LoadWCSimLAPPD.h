@@ -4,8 +4,11 @@
 
 #include <string>
 #include <iostream>
-
+#include <WCSimRootGeom.hh>
 #include "Tool.h"
+#include "TTree.h"
+#include "TFile.h"
+
 //#include "LAPPDTree.h"
 class LAPPDTree;
 

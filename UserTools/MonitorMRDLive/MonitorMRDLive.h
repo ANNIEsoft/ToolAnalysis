@@ -22,6 +22,8 @@
 
 #include "TObjectTable.h"
 
+#include "TROOT.h"
+#include "TList.h"
 
 class MonitorMRDLive: public Tool {
 

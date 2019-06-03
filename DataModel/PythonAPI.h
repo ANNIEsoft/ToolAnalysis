@@ -1,7 +1,9 @@
 #ifndef PYTHON_API
 #define PYTHON_API
 
-BoostStore* gstore;
+#include "BoostStore.h"
+
+static BoostStore* gstore;
 
 static PyObject* GetStoreInt(PyObject *self, PyObject *args){
   const char *command;

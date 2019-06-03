@@ -175,7 +175,7 @@ class MonitorMRDTime: public Tool {
 
 //simple functions to compute mean values and variances
 
-double compute_variance(const double mean, const std::vector<double>& numbers){
+static double compute_variance(const double mean, const std::vector<double>& numbers){
 
   auto add_square = [mean](double sum, int i)
     {
@@ -191,7 +191,7 @@ double compute_variance(const double mean, const std::vector<double>& numbers){
   return sqrt(total/ (numbers.size() - 1));
 }
 
-double accumulate_array12(const std::vector<std::array<double,12> >& numbers, int start, int stop, int entry){    //sum up and calculate average
+static double accumulate_array12(const std::vector<std::array<double,12> >& numbers, int start, int stop, int entry){    //sum up and calculate average
 
   if (numbers.size() <= 1u)
     return std::numeric_limits<double>::quiet_NaN();
@@ -205,7 +205,7 @@ double accumulate_array12(const std::vector<std::array<double,12> >& numbers, in
   return return_value;
 }
 
-double accumulate_array24(const std::vector<std::array<double,24> >& numbers, int start, int stop, int entry){      //sum up and calculate average
+static double accumulate_array24(const std::vector<std::array<double,24> >& numbers, int start, int stop, int entry){      //sum up and calculate average
 
   if (numbers.size() <= 1u)
     return std::numeric_limits<double>::quiet_NaN();
@@ -220,7 +220,7 @@ double accumulate_array24(const std::vector<std::array<double,24> >& numbers, in
   return return_value;
 }
 
-long accumulate_longarray12(const std::vector<std::array<long,12> >& numbers, int start, int stop, int entry){        //sum up and calculate average
+static long accumulate_longarray12(const std::vector<std::array<long,12> >& numbers, int start, int stop, int entry){        //sum up and calculate average
 
   if (numbers.size() <= 1u)
     return std::numeric_limits<double>::quiet_NaN();
@@ -235,7 +235,7 @@ long accumulate_longarray12(const std::vector<std::array<long,12> >& numbers, in
   return return_value;
 }
 
-long accumulate_longarray24(const std::vector<std::array<long,24> >& numbers, int start, int stop, int entry){        //sum up and calculate average
+static long accumulate_longarray24(const std::vector<std::array<long,24> >& numbers, int start, int stop, int entry){        //sum up and calculate average
 
   if (numbers.size() <= 1u)
     return std::numeric_limits<double>::quiet_NaN();
