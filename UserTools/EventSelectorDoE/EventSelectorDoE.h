@@ -15,6 +15,7 @@
 // ROOT includes
 #include "TFile.h"
 #include "TTree.h"
+#include "TMath.h"
 #include "ANNIEGeometry.h"
 #include "TMath.h"
 

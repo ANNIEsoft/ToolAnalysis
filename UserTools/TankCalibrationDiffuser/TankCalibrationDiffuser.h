@@ -6,6 +6,8 @@
 #include <cmath>
 #include <fstream>
 
+#include "TObjectTable.h"
+
 #include "Tool.h"
 #include "Hit.h"
 #include "BeamStatus.h"
@@ -57,7 +59,7 @@ class TankCalibrationDiffuser: public Tool {
    TimeClass* EventTime=nullptr;
    std::vector<TriggerClass>* TriggerData;
    BeamStatusClass* BeamStatus=nullptr;
-   std::map<unsigned long, std::vector<Hit>>* MCHits = nullptr;
+   std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
    Geometry *geom = nullptr;
    Detector det;
    std::map<unsigned long,int> channelkey_to_pmtid;
@@ -96,6 +98,12 @@ class TankCalibrationDiffuser: public Tool {
    TH1F *hist_time_mean = nullptr;
    TH2F *hist_charge_2D_y_phi = nullptr;
    TH2F *hist_time_2D_y_phi = nullptr;
+
+   //container for red boxes surrounding badly calibrated PMTs
+   std::vector<TBox*> vector_tbox;
+
+   //container for TF1s used to fit the distributions
+   std::vector<TF1*> vector_tf1;
 
    //define graphs for stability plots
    TGraphErrors *gr_stability = nullptr;

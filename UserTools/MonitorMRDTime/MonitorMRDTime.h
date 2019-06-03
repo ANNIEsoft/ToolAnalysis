@@ -8,6 +8,8 @@
 #include "Tool.h"
 #include "zmq.h"
 
+#include "TObjectTable.h"
+
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TF1.h"
@@ -63,6 +65,10 @@ class MonitorMRDTime: public Tool {
   bool draw_scatter;
   bool draw_average;
   bool draw_hitmap;
+  bool draw_hour;
+  bool draw_sixhour;
+  bool draw_day;
+  bool draw_vital;
   int max_files;
 
   boost::posix_time::ptime *Epoch;
@@ -82,6 +88,7 @@ class MonitorMRDTime: public Tool {
 
   double max_canvas, min_canvas, max_canvas_rms, min_canvas_rms, max_canvas_freq, min_canvas_freq, max_canvas_hist, min_canvas_hist;
   long max_sum_fivemin, max_sum_hour, max_sum_sixhour, max_sum_day;
+  std::vector<long> max_sum_day_channel;
 
   //MRD store includes the following variables
   unsigned int OutN, Trigger;
@@ -170,12 +177,6 @@ class MonitorMRDTime: public Tool {
 
 static double compute_variance(const double mean, const std::vector<double>& numbers){
 
-/*
-  if (numbers.size() <= 1u)
-    std::cout <<"compute variance: returning not a number..."<<std::endl;
-    return std::numeric_limits<double>::quiet_NaN();
-    */
-
   auto add_square = [mean](double sum, int i)
     {
       auto d = i - mean;
@@ -223,7 +224,7 @@ static long accumulate_longarray12(const std::vector<std::array<long,12> >& numb
 
   if (numbers.size() <= 1u)
     return std::numeric_limits<double>::quiet_NaN();
-  int entries;
+  int entries=0;
   long return_value=0.;
   for (int i_vector=start; i_vector<stop; i_vector++){
     entries++;
