@@ -117,11 +117,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keyword">static</span> <a class="code" href="classDigitBuilder.html">DigitBuilder</a>* Instance();</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordtype">bool</span> BuildRecoDigit();</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordtype">bool</span> BuildMCRecoDigit();</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">bool</span> BuildPMTRecoDigit();</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">bool</span> BuildMCPMTRecoDigit();</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordtype">bool</span> BuildLAPPDRecoDigit();</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordtype">bool</span> BuildMCLAPPDRecoDigit();</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordtype">void</span> PushRecoDigits(<span class="keywordtype">bool</span> savetodisk);</div>
@@ -143,9 +143,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  std::string  fLAPPDIDFile=<span class="stringliteral">&quot;none&quot;</span>;</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <a class="code" href="classGeometry.html">Geometry</a>* fGeometry=<span class="keyword">nullptr</span>;    </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    std::map&lt;unsigned long,std::vector&lt;Hit&gt;&gt;* fPMTHits=<span class="keyword">nullptr</span>;             </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    std::map&lt;unsigned long,std::vector&lt;LAPPDHit&gt;&gt;* fLAPPDHits=<span class="keyword">nullptr</span>;   </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    std::map&lt;unsigned long,std::vector&lt;Hit&gt;&gt;* fTDCData=<span class="keyword">nullptr</span>;            </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    std::map&lt;unsigned long,std::vector&lt;MCHit&gt;&gt;* fMCPMTHits=<span class="keyword">nullptr</span>;             </div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    std::map&lt;unsigned long,std::vector&lt;MCLAPPDHit&gt;&gt;* fMCLAPPDHits=<span class="keyword">nullptr</span>;   </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    std::map&lt;unsigned long,std::vector&lt;MCHit&gt;&gt;* fTDCData=<span class="keyword">nullptr</span>;            </div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    TRandom3 frand;  </div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    </div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordtype">int</span> v_error=0;</div>
