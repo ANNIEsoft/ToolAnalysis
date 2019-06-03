@@ -182,7 +182,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="comment">// alternatively? Better? Save the parentage in each MCHit. Each MCHit will contain</span></div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="comment">// the index of it&#39;s parent MCParticle in the MCParticles vector</span></div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    std::map&lt;int,int&gt;* trackid_to_mcparticleindex=<span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    std::vector&lt;int&gt; GetHitParentId(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig);</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    std::vector&lt;int&gt; GetHitParentIds(WCSimRootCherenkovDigiHit* digihit, WCSimRootTrigger* firstTrig);</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    std::map&lt;int,int&gt; timeArrayOffsetMap;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keywordtype">void</span> BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig);</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    </div>

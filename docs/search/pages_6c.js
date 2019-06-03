@@ -10,5 +10,6 @@ var searchData=
   ['likelihoodfittercheck',['LikelihoodFitterCheck',['../md_UserTools_LikelihoodFitterCheck_README.html',1,'']]],
   ['loadannieevent',['LoadANNIEEvent',['../md_UserTools_LoadANNIEEvent_README.html',1,'']]],
   ['loadccdata',['LoadCCData',['../md_UserTools_LoadCCData_README.html',1,'']]],
+  ['loadgeometry',['LoadGeometry',['../md_UserTools_LoadGeometry_README.html',1,'']]],
   ['loadwcsimlappd',['LoadWCSimLAPPD',['../md_UserTools_LoadWCSimLAPPD_README.html',1,'']]]
 ];
