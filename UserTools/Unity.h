@@ -89,4 +89,5 @@
 #include "TotalLightMap.h"
 #include "MrdDiscriminatorScan.h"
 #include "MCRecoEventLoader.h"
+#include "MonitorMRDEventDisplay.h"
 #include "LoadGeometry.h"

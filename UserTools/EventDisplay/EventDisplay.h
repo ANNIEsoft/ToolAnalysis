@@ -87,13 +87,13 @@ class EventDisplay: public Tool {
     int runnumber;
     int subrunnumber;
     int terminate_execution;  //for continuous execution of multiple events, prompt user input
-    std::map<unsigned long,vector<Hit>>* TDCData;
+    std::map<unsigned long,vector<MCHit>>* TDCData;
     TimeClass* EventTime=nullptr;
     BeamStatusClass* BeamStatus=nullptr;
     std::vector<TriggerClass>* TriggerData;
     std::vector<MCParticle>* mcparticles=nullptr;
-    std::map<unsigned long, std::vector<Hit>>* MCHits=nullptr;
-    std::map<unsigned long, std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
+    std::map<unsigned long, std::vector<MCHit>>* MCHits=nullptr;
+    std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits=nullptr;
     Geometry *geom = nullptr;
     Detector det;
     TPad *p1;
@@ -131,8 +131,11 @@ class EventDisplay: public Tool {
     TBox *border_schematic_facc = nullptr;
     TBox *border_schematic_mrd = nullptr;
     TPaveLabel *pmt_title = nullptr;
-    std::vector<TEllipse*> mrd_paddles_top;
-    std::vector<TEllipse*> mrd_paddles_side;
+    TPaveLabel *max_text = nullptr;
+    TPaveLabel *min_text = nullptr;
+    TPaveLabel *lappd_title = nullptr;
+    TPaveLabel *max_lappd = nullptr;
+    TPaveLabel *min_lappd = nullptr;
 
     std::map<int, double> x_pmt, y_pmt, z_pmt;          //143 currently max configuration with additional 2 inch PMTs
 
@@ -189,13 +192,23 @@ class EventDisplay: public Tool {
     TCanvas *canvas_lappd;
     TPaveText* text_event_info = nullptr;
 
+    //markers
+    std::vector<TMarker*> vector_colordot;
+    std::vector<TMarker*> vector_colordot_lappd;
+    TPolyMarker *marker_vtx = nullptr;
+    TPolyLine *ring_visual[10] = {};     //individual ring segments for parts of the ring that change between top/bottom/wall
+    int current_n_polylines = 0;
+
     //histograms
     TH1F *time_PMTs = nullptr;
     TH1F *time_LAPPDs[max_num_lappds];
-
     TH1F *charge_PMTs = nullptr;
     TH2F *charge_time_PMTs = nullptr;
     TH1F *charge_LAPPDs[max_num_lappds];
+
+    //legends
+    TLegend *leg_charge = nullptr;
+    TLegend *leg_time = nullptr;
 
     //variables regarding true interaction vertex and expected ring
     Position truevtx;
