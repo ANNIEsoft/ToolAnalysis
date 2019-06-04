@@ -1,6 +1,0 @@
-# DigitBuilderROOT config file
-
-verbosity 5
-InputFile /AnnieShare/JingboComb.root
-# There are three configurations: "PMT_only", "LAPPD_only", "All"
-PhotoDetectorConfiguration All

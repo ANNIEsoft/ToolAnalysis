@@ -1,0 +1,29 @@
+\hyperlink{classLoadGeometry}{Load\-Geometry}
+
+\subsection*{Data}
+
+The \hyperlink{classLoadGeometry}{Load\-Geometry} tool takes in the specifications for all A\-N\-N\-I\-E detector subsystems and creates an instance of the \hyperlink{classGeometry}{Geometry} class. After loading the detector geometry's information, the geometry instance is saved to the A\-N\-N\-I\-E\-Event store with the 'Annie\-Geometry' key.
+
+\subsection*{Writing a geometry file}
+
+An example of how to write a geometry file can be found in ./configfiles/\-Load\-Geometry/\-Full\-M\-R\-D\-Geometry.csv
+
+The line following L\-E\-G\-E\-N\-D\-\_\-\-L\-I\-N\-E specifies the name of each data type. The comma-\/separated lines between D\-A\-T\-A\-\_\-\-S\-T\-A\-R\-T and D\-A\-T\-A\-\_\-\-E\-N\-D are the data for the geometry being loaded.
+
+If you're writing a geometry file and things won't load for some reason, here are some common pitfalls\-:
+\begin{DoxyItemize}
+\item Make sure there are no commas in any strings in your data lines. The parser will split the string and your data line will now have more entries than your legend can identify with.
+\item Make sure your data line reader is reading in the data into the correct variable type. Refer to the method Parse\-Data\-Entry() for how to handle this.
+\end{DoxyItemize}
+
+\subsection*{Configuration}
+
+Describe any configuration variables for \hyperlink{classLoadGeometry}{Load\-Geometry}.
+
+``` Detector\-Geo\-File string Specifies what C\-S\-V file to use to load the M\-R\-D specifications into the \hyperlink{classGeometry}{Geometry} class. String should be a full file path to the C\-S\-V file.
+
+F\-A\-C\-C\-M\-R\-D\-Geo\-File string Specifies what C\-S\-V file to use to load the M\-R\-D specifications into the \hyperlink{classGeometry}{Geometry} class. String should be a full file path to the C\-S\-V file.
+
+Tank\-P\-M\-T\-Geo\-File string Specifies what C\-S\-V file to use to load the Tank P\-M\-T specifications into the \hyperlink{classGeometry}{Geometry} class. String should be a full file path to the C\-S\-V file.
+
+L\-A\-P\-P\-D\-Geo\-File string Specifies what C\-S\-V file to use to load the \hyperlink{classLAPPD}{L\-A\-P\-P\-D} detector/channel specifications into the \hyperlink{classGeometry}{Geometry} class. String should be a full file path to the C\-S\-V file. ``` 

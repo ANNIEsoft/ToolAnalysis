@@ -1,6 +1,0 @@
-PythonScript DNNFindTrackLengthInWater
-
-InitialiseFunction Initialise
-ExecuteFunction Execute
-FinaliseFunction Finalise
-

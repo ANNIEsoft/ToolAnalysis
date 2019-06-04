@@ -1,4 +1,0 @@
-DigitBuilderDoE DigitBuilderDoE ./configfiles/VertexReco/PhaseIIDoE/DigitBuilderDoEConfig
-EventSelectorDoE EventSelectorDoE ./configfiles/VertexReco/PhaseIIDoE/EventSelectorDoEConfig
-VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/VertexReco/PhaseIIDoE/VtxExtendedVertexFinderConfig
-PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIIDoE/PhaseIITreeMakerConfig

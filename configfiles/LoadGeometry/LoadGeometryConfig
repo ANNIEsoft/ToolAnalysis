@@ -1,4 +1,0 @@
-verbosity 0
-FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
-DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
-

@@ -1,6 +1,0 @@
-#PythonScript BDT_MuonEnergyReco
-PythonScript BDT_NeutrinoEnergyReco
-
-InitialiseFunction Initialise
-ExecuteFunction Execute
-FinaliseFunction Finalise

@@ -1,7 +1,0 @@
-myLoadWCSim LoadWCSim ./configfiles/LoadWCSim/LoadWCSimConfig
-myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/LoadWCSim/LoadWCSimLAPPDConfig
-#myPrintANNIEEvent PrintANNIEEvent ./configfiles/LoadWCSim/PrintANNIEEventConfig
-myHitTimeResiduals HitResiduals ./configfiles/LoadWCSim/HitResidualsConfig
-#myPlotLAPPDTimesFromStore PlotLAPPDTimesFromStore ./configfiles/LoadWCSim/PlotLAPPDTimesFromStoreConfig
-myCheckDetectorCounts CheckDetectorCounts ./configfiles/LoadWCSim/CheckDetectorCountsConfig
-

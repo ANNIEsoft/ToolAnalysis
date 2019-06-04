@@ -1,5 +1,0 @@
-myLoadWCSim LoadWCSim ./configfiles/WCSimDemo/LoadWCSimConfig
-myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/WCSimDemo/LoadWCSimLAPPDConfig
-myWCSimDemo WCSimDemo ./configfiles/WCSimDemo/WCSimDemoConfig
-#myPrintANNIEEvent PrintANNIEEvent ./configfiles/WCSimDemo/PrintANNIEEventConfig
-#mySaveANNIEEvent SaveANNIEEvent ./configfiles/WCSimDemo/SaveANNIEEventConfig

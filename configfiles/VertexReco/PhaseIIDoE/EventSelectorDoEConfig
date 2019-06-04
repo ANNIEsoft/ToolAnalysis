@@ -1,5 +1,0 @@
-# EventSelector config file
-
-verbosity 3
-MCTruthCut 1
-PromptTrigOnly 1
