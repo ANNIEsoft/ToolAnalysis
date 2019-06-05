@@ -42,21 +42,22 @@ bool VtxSeedGenerator::Initialise(std::string configfile, DataModel &data){
 }
 
 bool VtxSeedGenerator::Execute(){
-	Log("===========================================================================================",v_debug,verbosity);
-	
-	Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
-	
-	// Reset everything
-	this->Reset();
+  Log("===========================================================================================",v_debug,verbosity);
   
-	auto get_recoevent = m_data->Stores.count("RecoEvent");
-	if(!get_recoevent){
-		Log("VtxSeedGenerator Tool: RecoEvent store doesn't exist!",v_error,verbosity);
-		return false;
-	};
-	
-	
-	// check if event passes the cut
+  Log("VtxSeedGenerator Tool: Executing",v_debug,verbosity);
+  
+  // Reset everything
+  this->Reset();
+  
+  auto get_recoevent = m_data->Stores.count("RecoEvent");
+  if(!get_recoevent){
+  	Log("VtxSeedGenerator Tool: RecoEvent store doesn't exist!",v_error,verbosity);
+  	return false;
+  };
+  
+  
+  // check if event passes the cut
+  Log("VtxSeedGenerator Tool: Loading EventCutStatus",v_debug,verbosity);
   bool EventCutstatus = false;
   auto get_evtstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutstatus);
   if(!get_evtstatus) {
@@ -68,27 +69,29 @@ bool VtxSeedGenerator::Execute(){
     return true;	
   }
   
-		
-	// Load digits
-	auto get_recodigit = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
-  if(!get_recodigit){ 
-  	Log("VtxSeedGenerator  Tool: Error retrieving RecoDigits,no digit from the RecoEvent store!",v_error,verbosity); 
-  	return true;
+  Log("VtxSeedGenerator Tool: Loading Digits",v_debug,verbosity);
+  // Load digits
+  auto get_recodigit = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
+  if (!get_recodigit){ 
+  Log("VtxSeedGenerator  Tool: Error retrieving RecoDigits,no digit from the RecoEvent store!",v_error,verbosity); 
+  return false;
   }
 
   // Generate vertex candidates and push to "RecoEvent" store
   if (UseSeedGrid){
+    Log("VtxSeedGenerator Tool: Generating seed grid",v_debug,verbosity);
     this->GenerateSeedGrid(fNumSeeds);
   } else {
+    Log("VtxSeedGenerator Tool: Generating quadfitter seeds",v_debug,verbosity);
     this->GenerateVertexSeeds(fNumSeeds);
   }
   this->PushVertexSeeds(true);
-
+  Log("VtxSeedGenerator Tool: Execution complete",v_debug,verbosity);
   return true;
 }
 
 bool VtxSeedGenerator::Finalise(){
-	delete vSeedVtxList; vSeedVtxList = 0;
+  delete vSeedVtxList; vSeedVtxList = 0;
   Log("VtxSeedGenerator exitting", v_debug,verbosity);
   return true;
 }
@@ -117,7 +120,8 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
   if( NSeeds<=1 ) return false;
 
   // form list of golden digits used in class methods
-  // Here, the digit type (PMT or LAPPD or all) is specified. 
+  // Here, the digit type (PMT or LAPPD or all) is specified.
+  Log("VtxSeedGenerator Tool: Getting clean RecoDigits for event", v_debug,verbosity);
   vSeedDigitList.clear();  
   RecoDigit digit;
   for( fThisDigit=0; fThisDigit<fDigitList->size(); fThisDigit++ ){
@@ -143,7 +147,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
   //We will use Vogel's method to populate disks with equidistant points
   //inside the ANNIE tank.  The z separation for each disk will be approx. the
   //average separation of points on the disk.
-  
+  Log("VtxSeedGenerator Tool: Generating grid of positions", v_debug,verbosity);
   //Here, we need to get the radius and height of the ANNIE tank from the geo
   double pmtradius = ANNIEGeometry::Instance()->GetPMTRadius();	
   double pmtlength = ANNIEGeometry::Instance()->GetCylLength();
@@ -186,6 +190,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
       vSeedVtxList->push_back(thisgridseed);
     }
   }
+  Log("VtxSeedGenerator Tool: Grid of positions and median times calculated", v_debug,verbosity);
   return true;
 }
 
