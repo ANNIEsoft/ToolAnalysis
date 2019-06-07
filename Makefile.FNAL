@@ -10,11 +10,11 @@ PythonInclude=`python-config --cflags`
 ZMQLib= -L ToolDAQ/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I ToolDAQ/zeromq-4.0.7/include/ 
 
-BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams 
+BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams -lboost_system
 BoostInclude= -I $(BOOST_INC)
 
 RootInclude=  -I $(ROOT_INC)
-RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
+RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lGenVector -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)

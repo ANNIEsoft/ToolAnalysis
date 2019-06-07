@@ -2,7 +2,10 @@
 // to beam minibuffers in the ANNIEEvent
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+//#pragma once
+
+#ifndef BEAMCHECKER_H
+#define BEAMCHECKER_H
 
 // standard library includes
 #include <map>
@@ -13,6 +16,15 @@
 #include "BeamStatus.h"
 #include "Tool.h"
 #include "MinibufferLabel.h"
+#include "ANNIEconstants.h"
+#include "BeamDataPoint.h"
+#include "BeamStatus.h"
+#include "HeftyInfo.h"
+#include "TimeClass.h"
+#include <algorithm>
+#include <ctime>
+#include <fstream>
+#include <sstream>
 
 class BeamChecker: public Tool {
 
@@ -56,3 +68,5 @@ class BeamChecker: public Tool {
     /// information available in the current beam database file
     uint64_t end_ms_since_epoch_;
 };
+
+#endif

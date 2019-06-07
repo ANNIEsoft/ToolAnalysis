@@ -1,0 +1,71 @@
+\hypertarget{classEventSelector}{\section{Event\-Selector Class Reference}
+\label{classEventSelector}\index{Event\-Selector@{Event\-Selector}}
+}
+Inheritance diagram for Event\-Selector\-:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classEventSelector}
+\end{center}
+\end{figure}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum {\bfseries Event\-Flags} \{ \\*
+{\bfseries k\-Flag\-None} = 0x00, 
+{\bfseries k\-Flag\-M\-C\-F\-V} = 0x01, 
+{\bfseries k\-Flag\-M\-C\-P\-M\-T\-Vol} = 0x02, 
+{\bfseries k\-Flag\-M\-C\-M\-R\-D} = 0x04, 
+\\*
+{\bfseries k\-Flag\-M\-C\-Pi\-K} = 0x08, 
+{\bfseries k\-Flag\-Reco\-M\-R\-D} = 0x10, 
+{\bfseries k\-Flag\-Prompt\-Trig} = 0x20, 
+{\bfseries k\-Flag\-N\-Hit} = 0x40, 
+\\*
+{\bfseries k\-Flag\-Reco\-F\-V} = 0x80, 
+{\bfseries k\-Flag\-Reco\-P\-M\-T\-Vol} = 0x100
+ \}
+\item 
+\hypertarget{classEventSelector_ab9f5d192d2badda9754e2e91f430a012}{typedef enum \\*
+Event\-Selector\-::\-Event\-Flags {\bfseries Event\-Flags\-\_\-t}}\label{classEventSelector_ab9f5d192d2badda9754e2e91f430a012}
+
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classEventSelector_a839f44332021b0345d0277f68ae612a8}{Initialise} (std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data)
+\item 
+bool \hyperlink{classEventSelector_a0edbb6c1b1a8c3fcd9453d3dd5796005}{Execute} ()
+\item 
+\hypertarget{classEventSelector_a73c813845d7cfce13f160e94b44b56c1}{bool {\bfseries Finalise} ()}\label{classEventSelector_a73c813845d7cfce13f160e94b44b56c1}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classEventSelector_a0edbb6c1b1a8c3fcd9453d3dd5796005}{\index{Event\-Selector@{Event\-Selector}!Execute@{Execute}}
+\index{Execute@{Execute}!EventSelector@{Event\-Selector}}
+\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool Event\-Selector\-::\-Execute (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classEventSelector_a0edbb6c1b1a8c3fcd9453d3dd5796005}
+\begin{quotation}
+Get digits from \char`\"{}\-Reco\-Event\char`\"{} \end{quotation}
+
+
+\begin{quotation}
+Get reconstructed vertex \end{quotation}
+\hypertarget{classEventSelector_a839f44332021b0345d0277f68ae612a8}{\index{Event\-Selector@{Event\-Selector}!Initialise@{Initialise}}
+\index{Initialise@{Initialise}!EventSelector@{Event\-Selector}}
+\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool Event\-Selector\-::\-Initialise (
+\begin{DoxyParamCaption}
+\item[{std\-::string}]{configfile, }
+\item[{{\bf Data\-Model} \&}]{data}
+\end{DoxyParamCaption}
+)}}\label{classEventSelector_a839f44332021b0345d0277f68ae612a8}
+Construct the other objects we'll be needing at event level, 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+User\-Tools/\-Event\-Selector/Event\-Selector.\-h\item 
+User\-Tools/\-Event\-Selector/Event\-Selector.\-cpp\end{DoxyCompactItemize}

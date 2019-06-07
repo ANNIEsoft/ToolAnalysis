@@ -1,0 +1,15 @@
+LoadWCSim LoadWCSim ./configfiles/VertexReco/PhaseIIReco/LoadWCSimConfig
+LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/VertexReco/PhaseIIReco/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIRecoTruth/MCParticlePropertiesConfig
+MCRecoEventLoader MCRecoEventLoader ./configfiles/VertexReco/PhaseIIRecoTruth/MCRecoEventLoaderConfig
+#FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
+DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIReco/DigitBuilderConfig
+HitCleaner HitCleaner ./configfiles/VertexReco/PhaseIIReco/HitCleanerConfig
+EventSelector EventSelector ./configfiles/VertexReco/PhaseIIReco/EventSelectorConfig
+VtxSeedGenerator VtxSeedGenerator ./configfiles/VertexReco/PhaseIIReco/VtxSeedGeneratorConfig
+VtxPointPositionFinder VtxPointPositionFinder ./configfiles/VertexReco/PhaseIIReco/VtxPointPositionFinderConfig
+VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/VertexReco/PhaseIIReco/VtxPointDirectionFinderConfig
+VtxPointVertexFinder VtxPointVertexFinder ./configfiles/VertexReco/PhaseIIReco/VtxPointVertexFinderConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/VertexReco/PhaseIIReco/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIIReco/PhaseIITreeMakerConfig
+SaveRecoEvent SaveRecoEvent ./configfiles/VertexReco/PhaseIIReco/SaveRecoEventConfig

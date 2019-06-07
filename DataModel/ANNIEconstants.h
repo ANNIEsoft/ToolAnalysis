@@ -1,12 +1,14 @@
 #ifndef ANNIECONSTANTS_H
 #define ANNIECONSTANTS_H
 
+#include <math.h>
+
 /// @brief The impedance (in Ohms) to assume when computing charge values for
 /// calibrated ADC hits
 constexpr double ADC_IMPEDANCE = 50.; // Ohm
 
 /// @brief Multiplying by this constant converts ADC counts to Volts
-const double ADC_TO_VOLT = 2.415 / std::pow(2., 12);
+const double ADC_TO_VOLT = 2.415 / pow(2., 12);
 
 /// @brief The number of nanoseconds per ADC sample
 constexpr unsigned int NS_PER_ADC_SAMPLE = 2; // ns

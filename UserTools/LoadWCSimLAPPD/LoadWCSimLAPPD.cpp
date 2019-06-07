@@ -8,8 +8,10 @@
 #include "TApplication.h"
 #include "TCanvas.h"
 #include "TH1.h"
+#include "TH3.h"
 #include "TPolyMarker3D.h"
 #include "TSystem.h"
+#include "TMath.h"
 
 #include <numeric>  // iota
 
@@ -41,15 +43,29 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("InnerStructureRadius",Rinnerstruct);
 	m_variables.Get("DrawDebugGraphs",DEBUG_DRAW_LAPPD_HITS);
-	m_variables.Get("FileVersion",FILE_VERSION);
+	// Get LAPPD simulation file version
+	m_variables.Get("WCSimVersion",FILE_VERSION);
+	// See if we loaded a WCSim simulation file version
+	int LoadWCSimToolFILE_VERSION=-1;
+	int get_ok = m_data->CStore.Get("WCSimVersion",LoadWCSimToolFILE_VERSION);
+	if(get_ok){
+		// if we did, check if they're from the same version
+		if(FILE_VERSION!=LoadWCSimToolFILE_VERSION){
+			cerr<<"LoadWCSimLAPPD Tool: WARNING: LoadWCSimLAPPD simulation version differs from LoadWCSim version!"<<endl;
+		}
+	} else {
+		// if we didn't, put this version into the CStore for downstream tools
+		m_data->CStore.Set("WCSimVersion",FILE_VERSION);
+	}
 	
 	// Make class private members; e.g. the LAPPDTree
 	// ==============================================
 	if(verbose>2) cout<<"LoadWCSimLAPPD Tool: loading file "<<MCFile<<endl;
-	file= new TFile(MCFile.c_str(),"READ");
-	lappdtree= (TTree*) file->Get("LAPPDTree");
-	NumEvents=lappdtree->GetEntries();
-	LAPPDEntry= new LAPPDTree(lappdtree);
+	//file= new TFile(MCFile.c_str(),"READ");
+	//lappdtree= (TTree*) file->Get("LAPPDTree");
+	//NumEvents=lappdtree->GetEntries();
+	//LAPPDEntry= new LAPPDTree(lappdtree);
+	LAPPDEntry = new LAPPDTree(MCFile.c_str());
 	
 	// Make the ANNIEEvent Store if it doesn't exist
 	// =============================================
@@ -65,7 +81,10 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	m_data->CStore.Get("WCSimPostTriggerWindow",posttriggerwindow);
 	if(verbose>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
 					  <<", WCSimPostTriggerWindow="<<posttriggerwindow<<endl;
-	// so far all simulations have used the SK defaults: pre: -400ns, post: 950ns
+	
+	// Get the mapping of WCSim tubeid to detectorkey needed for filling ANNIEEVENT MCHits
+	m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+	m_data->CStore.Get("lappd_tubeid_to_detectorkey",lappd_tubeid_to_detectorkey);
 	
 	// Get WCSimRootGeom so we can obtain CylLoc for calculating global pos
 	// ====================================================================
@@ -85,18 +104,18 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	// things to be saved to the ANNIEEvent Store
-	MCLAPPDHits = new std::map<ChannelKey,std::vector<LAPPDHit>>;
+	MCLAPPDHits = new std::map<unsigned long,std::vector<MCLAPPDHit>>;
 	
 	if(DEBUG_DRAW_LAPPD_HITS){
 		// create the ROOT application to show histograms
 		int myargc=0;
-		char *myargv[] = {(const char*)"somestring"};
-		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,myargv);
+		//char *myargv[] = {(const char*)"somestring"};
+		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,0);
 		lappdhitshist = new TPolyMarker3D();
-		digixpos = new TH1D("digixpos","digixpos",100,-2,2);
-		digiypos = new TH1D("digiypos","digiypos",100,-2.5,2.5);
-		digizpos = new TH1D("digizpos","digizpos",100,0.,4.);
-		digits = new TH1D("digits","digits",100,-50,100);
+		digixpos = new TH1D("digixpos","lappd digixpos",100,-2,2);
+		digiypos = new TH1D("digiypos","lappd digiypos",100,-2.5,2.5);
+		digizpos = new TH1D("digizpos","lappd digizpos",100,0.,4.);
+		digits = new TH1D("digits","lappd digits",100,-50,100);
 	}
 	
 	return true;
@@ -117,6 +136,7 @@ bool LoadWCSimLAPPD::Execute(){
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggernum);
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("EventTime",EventTime);
+	storegetret = m_data->Stores.at("ANNIEEvent")->Get("TrackId_to_MCParticleIndex",TrackId_to_MCParticleIndex);
 	if(EventTime==nullptr){
 		cerr<<"Failed to load WCSim trigger time with code "<<storegetret<<"!"<<endl;
 		return false;
@@ -126,6 +146,8 @@ bool LoadWCSimLAPPD::Execute(){
 	if(verbose>2) cout<<"LAPPDTool: Trigger time for event "<<MCEventNum<<", trigger "
 					  <<MCTriggernum<<" was "<<wcsimtriggertime<<"ns"<<endl;
 	
+	MCLAPPDHits->clear(); // clear any hits from previous trigger
+	
 	if(MCTriggernum>0){
 		if(unassignedhits.size()==0){
 			if(verbose>2) cout<<"no LAPPD hits to add to this trigger"<<endl;
@@ -134,20 +156,22 @@ bool LoadWCSimLAPPD::Execute(){
 			if(verbose>2) cout<<"looping over "<<unassignedhits.size()
 							  <<" LAPPD hits that weren't in the first trigger window"<<endl;
 			for(int hiti=0; hiti<unassignedhits.size(); hiti++){
-				LAPPDHit nexthit = unassignedhits.at(hiti);
-				double relativedigitst = nexthit.GetTime(); // relative to Trigger time
+				MCLAPPDHit nexthit = unassignedhits.at(hiti);
+				double digitst = nexthit.GetTime(); // ABSOLUTE
+				double relativedigitst=digitst-wcsimtriggertime; // relative to trigger time
 				if( (relativedigitst)>(pretriggerwindow) &&
 					(relativedigitst)<(posttriggerwindow) ){
 					// this lappd hit is within the trigger window; note it
-					ChannelKey key(subdetector::LAPPD,nexthit.GetTubeId());
-					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
+					nexthit.SetTime(relativedigitst); // correct for this trigger time
+					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
+					unsigned int key = nexthit.GetTubeId();
+					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					else MCLAPPDHits->at(key).push_back(nexthit);
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				}
 			}
 		}
 	} else {  // MCTriggernum == 0
-		MCLAPPDHits->clear();
 		if(verbose>3) cout<<"loading LAPPDEntry"<<MCEventNum<<endl;
 		LAPPDEntry->GetEntry(MCEventNum);
 		
@@ -161,13 +185,17 @@ bool LoadWCSimLAPPD::Execute(){
 		for(int lappdi=0; lappdi<LAPPDEntry->lappd_numhits; lappdi++){
 			// loop over LAPPDs that had at least one hit
 			int LAPPDID = LAPPDEntry->lappdhit_objnum[lappdi];
+			// convert LAPPDID to channelkey
+			unsigned int detkey = lappd_tubeid_to_detectorkey.at(LAPPDID);
+			Detector* thedet = anniegeom->GetDetector(detkey);
+			unsigned int key = thedet->GetChannels()->begin()->first; // first strip on this LAPPD
 			double pmtx = (LAPPDEntry->lappdhit_x[lappdi]) / 1000.;  // pos of LAPPD in global coords, [mm] to [m]
 			double pmty = (LAPPDEntry->lappdhit_y[lappdi]) / 1000.;
 			double pmtz = (LAPPDEntry->lappdhit_z[lappdi]) / 1000.;
 			
-			double tileangle;
-			int theoctagonside;
-			int lappdloc;
+			double tileangle=-1;
+			int theoctagonside=-1;
+			int lappdloc=-1;
 			if(FILE_VERSION<3){  // manual calculation of global hit position part 1
 				WCSimRootPMT lappdobj = geo->GetLAPPD(LAPPDID-1);
 				lappdloc = lappdobj.GetCylLoc();
@@ -201,7 +229,7 @@ bool LoadWCSimLAPPD::Execute(){
 				double peposx = (LAPPDEntry->lappdhit_stripcoorx->at(runningcount)) / 1000.;  // pos on tile
 				double peposy = (LAPPDEntry->lappdhit_stripcoory->at(runningcount)) / 1000.;  // [mm] to [m]
 				
-				double digitsx, digitsy, digitsz;
+				double digitsx=-1, digitsy=-1, digitsz=-1;
 				if(FILE_VERSION<3){     // manual calculation of global hit position part 2
 					switch (lappdloc){
 						case 0: // top cap
@@ -234,17 +262,20 @@ bool LoadWCSimLAPPD::Execute(){
 				double digitst  = LAPPDEntry->lappdhit_stripcoort->at(runningcount);
 				double relativedigitst=digitst-wcsimtriggertime;
 				
-				float digiq = 0; // N/A
-				ChannelKey key(subdetector::LAPPD,LAPPDID);
+				float digiq = 1; // N/A, but useful to be non-zero
 				std::vector<double> globalpos{digitsx,digitsy,digitsz};
 				std::vector<double> localpos{peposx, peposy};
-				//LAPPDHit nexthit(LAPPDID, digitst, digiq, globalpos, localpos);
+				//LAPPDHit nexthit(key, digitst, digiq, globalpos, localpos);
 				if(DEBUG_DRAW_LAPPD_HITS){
 					lappdhitshist->SetNextPoint(digitsx,digitsz, digitsy);
 					digixpos->Fill(digitsx);
 					digiypos->Fill(digitsy);
 					digizpos->Fill(digitsz);
 					digits->Fill(relativedigitst);
+				}
+				std::vector<int> parents; // info about which particle generated the photon for this hit
+				if(TrackId_to_MCParticleIndex->count(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount))){
+					parents.push_back(TrackId_to_MCParticleIndex->at(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount)));
 				}
 				
 				// we now have all the necessary info about this LAPPD hit:
@@ -256,16 +287,17 @@ bool LoadWCSimLAPPD::Execute(){
 				}
 				if( relativedigitst>(pretriggerwindow) && 
 					relativedigitst<(posttriggerwindow) ){
+					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					if(MCLAPPDHits->count(key)==0){
-						LAPPDHit nexthit(LAPPDID, relativedigitst, digiq, globalpos, localpos);
-						MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{nexthit});
+						MCLAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos, parents);
+						MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					} else {
-						MCLAPPDHits->at(key).emplace_back(LAPPDID, relativedigitst, digiq,
-															globalpos, localpos);
+						MCLAPPDHits->at(key).emplace_back(key, relativedigitst, digiq,
+															globalpos, localpos, parents);
 					}
 					if(verbose>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(LAPPDID, relativedigitst, digiq, globalpos, localpos);
+					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event
@@ -289,19 +321,26 @@ bool LoadWCSimLAPPD::Finalise(){
 		
 		digixpos->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digixpos.png");
+		lappdRootCanvas->SaveAs("lappddigixpos.png");
 		
 		digiypos->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digiypos.png");
+		lappdRootCanvas->SaveAs("lappddigiypos.png");
 		
 		digizpos->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digizpos.png");
+		lappdRootCanvas->SaveAs("lappddigizpos.png");
 		
 		digits->Draw();
 		lappdRootCanvas->Update();
-		lappdRootCanvas->SaveAs("digits.png");
+		lappdRootCanvas->SaveAs("lappddigits.png");
+		//lappdRootCanvas->SetLogy(1);  // spits errors about negative axis
+		gPad->SetLogy(1);
+		lappdRootCanvas->Update();
+		lappdRootCanvas->SaveAs("lappddigits_logy.png");
+		//lappdRootCanvas->SetLogy(0);
+		gPad->SetLogy(0);
+
 		
 		lappdRootCanvas->Clear();
 		gStyle->SetOptStat(0);

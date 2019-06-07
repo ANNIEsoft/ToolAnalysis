@@ -4,7 +4,12 @@
 #include <string>
 #include <iostream>
 
+#include "FoMCalculator.h"
+#include "VertexGeometry.h"
+#include "Parameters.h"
 #include "Tool.h"
+#include "TTree.h"
+#include "TH2D.h"
 
 class VertexGeometryCheck: public Tool {
 
@@ -56,6 +61,7 @@ class VertexGeometryCheck: public Tool {
   TH1D *fazimuth;
   TH1D *fconeangle;
   TH1D *fdigitcharge;
+  TH1D *fdigittime;
   TH1D *flappdtimesmear; 
   TH1D *fpmttimesmear;
   TH2D *fYvsDigitTheta_all;

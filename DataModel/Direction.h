@@ -20,26 +20,26 @@ class Direction : public SerialisableObject{
 		double mag=sqrt(pow(xin,2.)+pow(yin,2.)+pow(zin,2.));
 		if(mag==1.){ x=xin; y=yin; z=zin; }
 		else { x=xin/mag; y=yin/mag; z=zin/mag; }
-		theta = (x == 0.0 && y == 0.0 && z == 0.0) ? 0.0 : atan2(sqrt(x*x + y*y),z);
-		phi = (x == 0.0 && y == 0.0) ? 0. : atan2(y, x);
+		phi = (x == 0.0 && y == 0.0 && z == 0.0) ? 0.0 : atan2(sqrt(x*x + y*y),z);
+		theta = (x == 0.0 && y == 0.0) ? 0. : atan2(y, x);
 	};
 	
 	Direction(double phiin, double thetain){
 		serialise=true;
 		theta=thetain;
 		phi=phiin;
-		x=cos(theta)*cos(phi);
-		y=cos(theta)*sin(phi);
-		z=sin(theta);
+		x=cos(phi)*cos(theta);
+		y=cos(phi)*sin(theta);
+		z=sin(phi);
 	};
 	  
 	inline double X() const {return x;}
 	inline double Y() const {return y;}
 	inline double Z() const {return z;}
-	inline double Phi() const {return phi;}
-	inline double PhiDeg() const {return phi*(180./M_PI);}
-	inline double Theta() const {return theta;}
-	inline double ThetaDeg() const {return theta*(180./M_PI);}
+	inline double GetPhi() const {return phi;}
+	inline double GetPhiDeg() const {return phi*(180./M_PI);}
+	inline double GetTheta() const {return theta;}
+	inline double GetThetaDeg() const {return theta*(180./M_PI);}
 	
 	inline void SetX(double xx){x=xx;}
 	inline void SetY(double yy){y=yy;}
@@ -58,11 +58,11 @@ class Direction : public SerialisableObject{
 	}
 	
 	private:
-	double x;      // meters
+	double x;        // meters
 	double y;
 	double z;
-	double theta;  // relative to beam direction (z), rads
-	double phi;    // relative to x axis, rads
+	double phi;      // clockwise looking down, 0 pointing downstream along beam, rads
+	double theta;    // pitch angle, relative to the x-z (beamline) plane, rads
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){

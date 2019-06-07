@@ -1,0 +1,24 @@
+\hyperlink{classVtxPointPositionFinder}{Vtx\-Point\-Position\-Finder}
+
+\subsection*{Data}
+
+Describe any data formats \hyperlink{classVtxPointPositionFinder}{Vtx\-Point\-Position\-Finder} creates, destroys, changes, or analyzes. E.\-G.
+
+{\bfseries Raw\-L\-A\-P\-P\-D\-Data} {\ttfamily map$<$\hyperlink{classGeometry}{Geometry}, vector$<$\hyperlink{classWaveform}{Waveform}$<$double$>$$>$$>$}
+\begin{DoxyItemize}
+\item Takes this data from the {\ttfamily A\-N\-N\-I\-E\-Event} store and finds the number of peaks
+\end{DoxyItemize}
+
+\subsection*{Configuration}
+
+Describe any configuration variables for \hyperlink{classVtxPointPositionFinder}{Vtx\-Point\-Position\-Finder}.
+
+``` Use\-True\-Vertex\-As\-Seed bool If true, any information from the seed list is not used. The True M\-C Vertex will instead be used as the input to the Minuit-\/based Point \hyperlink{classPosition}{Position} fitting algorithm.
+
+Use\-Minuit\-For\-Pos bool If true, Minuit is used to vary both the position and time to find the highest point position F\-O\-M. Initial fit parameters will be the vertex seed the highest F\-O\-M, or the True M\-C Vertex.
+
+If false, the seed with the highest F\-O\-M (whose vertex time was fit using Minuit) will be returned as the point position vertex.
+
+If both of the above are false, the Point \hyperlink{classPosition}{Position} vertex is set equal to the true M\-C Vertex.
+
+``` 

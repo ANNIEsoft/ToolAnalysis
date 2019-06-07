@@ -10,6 +10,7 @@
 #include "Tool.h"
 #include "LAPPDPulse.h"
 #include "Waveform.h"
+#include "TFile.h"
 //class LAPPDresponse : public TObject {
 class LAPPDresponse {
 
