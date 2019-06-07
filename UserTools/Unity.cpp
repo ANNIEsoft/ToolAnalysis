@@ -72,3 +72,4 @@
 
 #include "LAPPDnnls/LAPPDnnls.cpp"
 #include "LAPPDRawToACDC/LAPPDRawToACDC.cpp"
+#include "FTBFAnalysis/FTBFAnalysis.cpp"
