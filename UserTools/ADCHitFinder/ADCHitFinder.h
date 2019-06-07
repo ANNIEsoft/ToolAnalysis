@@ -6,9 +6,9 @@
 // ToolAnalysis includes
 #include "ADCPulse.h"
 #include "CalibratedADCWaveform.h"
-#include "ChannelKey.h"
 #include "Tool.h"
 #include "Waveform.h"
+#include "Constants.h"
 
 class ADCHitFinder : public Tool {
 
@@ -24,5 +24,5 @@ class ADCHitFinder : public Tool {
     std::vector<ADCPulse> find_pulses(
       const Waveform<unsigned short>& raw_minibuffer_data,
       const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
-      unsigned short adc_threshold, const ChannelKey& channel_key) const;
+      unsigned short adc_threshold, const unsigned long& channel_key) const;
 };

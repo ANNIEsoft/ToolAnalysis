@@ -5,20 +5,34 @@
 // framework.
 //
 // Steven Gardiner <sjgardiner@ucdavis.edu>
-#pragma once
+//#pragma once
+
+#ifndef RAWLOADER_H
+#define RAWLOADER_H
 
 // standard library includes
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
+#include <map>
 
 // ToolAnalysis includes
 #include "Tool.h"
 #include "HeftyInfo.h"
 #include "HeftyTreeReader.h"
+// ToolAnalysis includes
+#include "ANNIEconstants.h"
+#include "MinibufferLabel.h"
+#include "Waveform.h"
 
-// recoANNIE includes
+// recoANNIE includes                                                                                                                                                                                   #include "RawCard.h"
+#include "RawChannel.h"
+#include "RawReadout.h"
 #include "RawReader.h"
+
+// Boost includes                                                                                                                                                
+#include "boost/bimap.hpp"
 
 class RawLoader : public Tool {
 
@@ -41,3 +55,5 @@ class RawLoader : public Tool {
   // (false)
   bool m_using_hefty_mode;
 };
+
+#endif

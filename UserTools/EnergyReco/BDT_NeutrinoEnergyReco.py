@@ -71,7 +71,7 @@ def Execute():
     print(filein2)
     df00b = pd.read_csv(filein2)
     df0b=df00b[['totalPMTs','totalLAPPDs','TrueTrackLengthInWater','neutrinoE','trueKE','diffDirAbs','TrueTrackLengthInMrd','recoDWallR','recoDWallZ','dirX','dirY','dirZ','vtxX','vtxY','vtxZ','DNNRecoLength']]
-    dfsel_pred=df0b.loc[df0['neutrinoE'] < E_threshold]
+    dfsel_pred=df0b.loc[df0b['neutrinoE'] < E_threshold]
     #print to check:
     print("check predicting sample: ",dfsel_pred.shape," ",dfsel_pred.head())
 #    print(dfsel_pred.iloc[5:10,0:5])
@@ -156,7 +156,7 @@ def Execute():
         Y[i] = 100.*(test_data_trueKE_hi_E[i]-BDTGoutput_E[i])/(1.*test_data_trueKE_hi_E[i])
 #        print("MC Energy: ", test_data_trueKE_hi_E[i]," Reco Energy: ",BDTGoutput_E[i]," DE/E[%]: ",Y[i])
 
-    df1 = pd.DataFrame(test_data_trueKE_hi_E,columns=['MuonEnergy'])
+    df1 = pd.DataFrame(test_data_trueKE_hi_E,columns=['NeutrinoEnergy'])
     df2 = pd.DataFrame(BDTGoutput_E,columns=['RecoE'])
     df_final = pd.concat([df1,df2],axis=1)
  

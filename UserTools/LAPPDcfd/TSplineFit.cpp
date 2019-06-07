@@ -3648,8 +3648,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t M, Int_t m,
     ifail = Solve(debug);
   }
   if (ifail) {
-    cout << "TSplineFit::TSplineFit Problem in finding solution" << endl;
-    cout << "   ifail = " << ifail << endl;
+    std::cout << "TSplineFit::TSplineFit Problem in finding solution" << std::endl;
+    std::cout << "   ifail = " << ifail << std::endl;
   }
   else  {
     AddThisFit();
@@ -3892,8 +3892,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
     ifail = Solve(debug);
   }
   if (ifail) {
-    cout << "TSplineFit::TSplineFit Problem in finding solution" << endl;
-    cout << "   ifail = " << ifail << endl;
+    std::cout << "TSplineFit::TSplineFit Problem in finding solution" << std::endl;
+    std::cout << "   ifail = " << ifail << std::endl;
   }
   else  {
     AddThisFit();
@@ -4014,7 +4014,7 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
   //M = npoints;
   M = GetDimensionHist(xmin,xmax,eps,h); //XZ
 
-  if(M==0)cout << "TSplineFit::TSplineFit ERROR: found NO data in the histogram!" <<endl;
+  if(M==0)std::cout << "TSplineFit::TSplineFit ERROR: found NO data in the histogram!" <<std::endl;
   InitDimensions(M,m);
   GetDataFromHist(xmin,xmax,eps,h);
   ok = InitCheckBounds();
@@ -4029,8 +4029,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
     ifail = Solve(debug);
   }
   if (ifail) {
-    cout << "TSplineFit::TSplineFit Problem in finding solution" << endl;
-    cout << "   ifail = " << ifail << endl;
+    std::cout << "TSplineFit::TSplineFit Problem in finding solution" << std::endl;
+    std::cout << "   ifail = " << ifail << std::endl;
   }
   else  {
     AddThisFit();
@@ -4170,8 +4170,8 @@ TSplineFit::TSplineFit(TH1D *h,Int_t cat,Int_t m,Bool_t lowbounded,Double_t ylow
     ifail = Solve(debug);
   }
   if (ifail) {
-    cout << "TSplineFit::TSplineFit Problem in finding solution" << endl;
-    cout << "   ifail = " << ifail << endl;
+    std::cout << "TSplineFit::TSplineFit Problem in finding solution" << std::endl;
+    std::cout << "   ifail = " << ifail << std::endl;
   }
   else  {
     AddThisFit();
@@ -4296,8 +4296,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
   M       = nbinsx*nbinsy;
   if (m<=1) {
     m=2;
-    cout << "2D constructor of TSplineFit: nb of measurements per spline" << endl;
-    cout << "  must be >1 ! We set it to 2" << endl;
+    std::cout << "2D constructor of TSplineFit: nb of measurements per spline" << std::endl;
+    std::cout << "  must be >1 ! We set it to 2" << std::endl;
   }
   fType = SplineFit2D;
   fProvidedH2D = h;
@@ -4318,8 +4318,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
   Fill();
   ifail = Solve(debug);
   if (ifail) {
-    cout << "TSplineFit::TSplineFit Problem in finding solution" << endl;
-    cout << "   ifail = " << ifail << endl;
+    std::cout << "TSplineFit::TSplineFit Problem in finding solution" << std::endl;
+    std::cout << "   ifail = " << ifail << std::endl;
   }
   else  {
     AddThisFit();
@@ -4444,8 +4444,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
   M       = nbinsx*nbinsy*nbinsz;
   if (m<=1) {
     m=2;
-    cout << "3D constructor of TSplineFit: nb of measurements per spline" << endl;
-    cout << "  must be >1 ! We set it to 2" << endl;
+    std::cout << "3D constructor of TSplineFit: nb of measurements per spline" << std::endl;
+    std::cout << "  must be >1 ! We set it to 2" << std::endl;
   }
   fType = SplineFit3D;
   fProvidedH3D = h;
@@ -4468,8 +4468,8 @@ TSplineFit::TSplineFit(Text_t *name,Text_t *title,Int_t cat,Int_t m,
   Fill();
   ifail = Solve(debug);
   if (ifail) {
-    cout << "TSplineFit::TSplineFit Problem in finding solution" << endl;
-    cout << "   ifail = " << ifail << endl;
+    std::cout << "TSplineFit::TSplineFit Problem in finding solution" << std::endl;
+    std::cout << "   ifail = " << ifail << std::endl;
   }
   else  {
     AddThisFit();
@@ -4612,7 +4612,7 @@ void TSplineFit::AddNumbering(Int_t k,TString &s) {
     else if (k<100) s.Append('0');
     s += k;
   }
-  else cout << "TSplineFit::AddNumbering : Error : number outside bounds  k = " << k << endl;
+  else std::cout << "TSplineFit::AddNumbering : Error : number outside bounds  k = " << k << std::endl;
 }
 void TSplineFit::AddThisFit() {
 //Add this fit to the list of fits. Do not add it into the data base file.
@@ -4724,7 +4724,7 @@ Bool_t TSplineFit::AlreadySeen(TString &sprefixn,TString &sprefixt) const {
         i    = 0;
         while ((!already) && (i<N)) {
           nb += fgFitTree->GetEntry(i);
-//          cout << "TSplineFit::AlreadySeen read tree   i = " << i << endl;
+//          std::cout << "TSplineFit::AlreadySeen read tree   i = " << i << std::endl;
           if (fit->fCat == fCat) {
             sprefixn = fit->GetName();
             sprefixt = fit->GetTitle();
@@ -4734,9 +4734,9 @@ Bool_t TSplineFit::AlreadySeen(TString &sprefixn,TString &sprefixt) const {
           }
           i++;
         }//end while ((!found) && (i<N))
-//        cout << "TSplineFit::AlreadySeen before delete fit" << endl;
+//        std::cout << "TSplineFit::AlreadySeen before delete fit" << std::endl;
         delete fit;
-//        cout << "TSplineFit::AlreadySeen after  delete fit" << endl;
+//        std::cout << "TSplineFit::AlreadySeen after  delete fit" << std::endl;
         fit = 0;
       }//end if (fgFitTree)
     }//end if (ok1)
@@ -4824,7 +4824,7 @@ void TSplineFit::BelongsToFamily(Int_t k,Double_t par,Text_t *def) {
     previousfit = (TSplineFit *)fgFits->Before(this);
     if (previousfit) {
       if (fParameter<previousfit->fParameter)
-        cout << "TSplineFit::BelongsToFamily ERROR parameter not in increasing order" << endl;
+        std::cout << "TSplineFit::BelongsToFamily ERROR parameter not in increasing order" << std::endl;
     }
   }
 }
@@ -4888,7 +4888,7 @@ Double_t TSplineFit::Chi2(Bool_t raw) const {
   Double_t chi2 = 0.0;
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::Chi2 ERROR: fit is not defined" << endl;
+      std::cout << "TSplineFit::Chi2 ERROR: fit is not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
@@ -4999,7 +4999,7 @@ void TSplineFit::DrawData(Option_t *option) {
 //
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::DrawData WARNING type of fit not defined" << endl;
+      std::cout << "TSplineFit::DrawData WARNING type of fit not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
@@ -5059,7 +5059,7 @@ void TSplineFit::DrawFit(Option_t *option,Int_t facx, Int_t facy, Int_t facz) {
   else gOneDisplay->fPad->cd();
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::DrawFit WARNING type of fit not defined" << endl;
+      std::cout << "TSplineFit::DrawFit WARNING type of fit not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
@@ -5131,8 +5131,8 @@ void TSplineFit::DrawFitsInCollection() {
       fit = (TSplineFit *)(*fgFits)[i];
       fit->SetDefaultLabels();
       fit->DrawFit();
-      cout << "enter n to continue  q to quit : ";
-      cin  >> c;
+      std::cout << "enter n to continue  q to quit : ";
+      std::cin  >> c;
       fit->ClearGraphs();
       i++;
     } while ((i<N) && (c!='q'));
@@ -5160,8 +5160,8 @@ void TSplineFit::DrawFitsInFile() {
       nb += fgFitTree->GetEntry(i);
       fit->SetDefaultLabels();
       fit->DrawFit();
-      cout << "enter n to continue  q to quit : ";
-      cin  >> c;
+      std::cout << "enter n to continue  q to quit : ";
+      std::cin  >> c;
       fit->ClearGraphs();
       i++;
     } while ((i<N) && (c!='q'));
@@ -5202,7 +5202,7 @@ void TSplineFit::DrawHere(Double_t ymin,Double_t ymax) {
   Int_t    facz   = 1;
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::DrawFit WARNING type of fit not defined" << endl;
+      std::cout << "TSplineFit::DrawFit WARNING type of fit not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
@@ -5273,7 +5273,7 @@ void TSplineFit::DrawHisto(Option_t *option) {
   else gOneDisplay->fPad->cd();
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::DrawHisto WARNING type of fit not defined" << endl;
+      std::cout << "TSplineFit::DrawHisto WARNING type of fit not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
@@ -5292,8 +5292,8 @@ void TSplineFit::DrawHisto(Option_t *option) {
         gPad->Update();
       }
       else {
-        cout << "TSplineFit::DrawHisto WARNING no histo to be drawn" << endl;
-        cout << "                      Call DrawFit instead" << endl;
+        std::cout << "TSplineFit::DrawHisto WARNING no histo to be drawn" << std::endl;
+        std::cout << "                      Call DrawFit instead" << std::endl;
       }
      break;
     case SplineFit2D:
@@ -5709,7 +5709,7 @@ void TSplineFit::Fill() {
           case 90:
             break;
           default:
-            cout << "TSplineFit::Fill : error on index ij" << endl;
+            std::cout << "TSplineFit::Fill : error on index ij" << std::endl;
             break;
         }//end switch (ij)
       }//end for (j=0;j<mband;j++)
@@ -5727,7 +5727,7 @@ void TSplineFit::Fill() {
           if (is<nrowsA) fB(is,0) = zero;
           break;
          default:
-            cout << "TSplineFit::Fill : error on index i" << endl;
+            std::cout << "TSplineFit::Fill : error on index i" << std::endl;
           break;
       }//end switch (i)
     }//end for (i=0;i<fgU;i++)
@@ -5985,7 +5985,7 @@ TSplineFit *TSplineFit::FindFirstInFamily(Int_t &kfirst) {
     }
     if (fit) kfirst = fgFits->BinarySearch(fit);
   }
-  else cout << "TSplineFit::FindFirstInFamily ERROR this is not member of a family" << endl;
+  else std::cout << "TSplineFit::FindFirstInFamily ERROR this is not member of a family" << std::endl;
   return fit;
 }
 TSplineFit *TSplineFit::FindFirstInFamily(const Text_t *family,Int_t &kfirst) {
@@ -6181,7 +6181,7 @@ Double_t TSplineFit::GetRandom() const {
     z = fHGenRandom->GetRandom();
     bin = fHShowRandom->Fill(z);
   }
-  else cout << "TSplineFit::GetRandom ERROR UseForRandom not called" << endl;
+  else std::cout << "TSplineFit::GetRandom ERROR UseForRandom not called" << std::endl;
   return z;
 }
 Double_t TSplineFit::GetRandom(Int_t M,Double_t p) {
@@ -6242,8 +6242,8 @@ Double_t TSplineFit::GetRandom(Int_t M,Double_t p) {
     }//end else if (M==1)
   }//end if (fNbInFamily==0)
   else {
-    cout << "TSplineFit::GetRandom ERROR call GetRandom(.,.) with the 1st member" << endl;
-    cout << "  of the family!" << endl;
+    std::cout << "TSplineFit::GetRandom ERROR call GetRandom(.,.) with the 1st member" << std::endl;
+    std::cout << "  of the family!" << std::endl;
   }//end else if (fNbInFamily==0)
   return z;
 }
@@ -6453,8 +6453,8 @@ Bool_t TSplineFit::InitCatAndBounds(Int_t cat,Bool_t lowbounded,Double_t ylow,
   if ((fCat<0) || (fCat>99)) {
     ok = kFALSE;
     fCat = 99;
-    cout << "TSplineFit::InitCatAndBounds: Error : 0 <= categories <=99  !" << endl;
-    cout << "   category put to 99 !" << endl;
+    std::cout << "TSplineFit::InitCatAndBounds: Error : 0 <= categories <=99  !" << std::endl;
+    std::cout << "   category put to 99 !" << std::endl;
   }
   fBoundedLow = lowbounded;
   fLowBound   = ylow;
@@ -6477,8 +6477,8 @@ Bool_t TSplineFit::InitCheckBounds() {
       if (fMv[i]<fLowBound) {
         ok = kFALSE;
         fMv[i] = fLowBound;
-        cout << "TSplinefit::InitCheckBounds : y data below lower bound" << endl;
-        cout << "  data set to lower bound" << endl;
+        std::cout << "TSplinefit::InitCheckBounds : y data below lower bound" << std::endl;
+        std::cout << "  data set to lower bound" << std::endl;
       }
       if (fMv[i]>ymax) ymax = fMv[i];
       if (fMv[i]<ymin) ymin = fMv[i];
@@ -6693,7 +6693,7 @@ Int_t TSplineFit::LoadFamily() const {
       else finished = kTRUE;
     }
   }
-  else cout << "TSplineFit::LoadFamily ERROR LoadFamily called with fit without family" << endl;
+  else std::cout << "TSplineFit::LoadFamily ERROR LoadFamily called with fit without family" << std::endl;
   return N;
 }Int_t TSplineFit::LoadFamily(const Text_t *family) {
 // In case family is the name of a family of fits, load all members of the
@@ -6767,8 +6767,8 @@ void TSplineFit::MinMax(Bool_t &ismin,Double_t &xmin,Double_t &ymin,
     }//end for (i=0;i<fN;i++)
   }//end if (!fBoundedLow)
   else {
-    cout << "TSplineFit::MinMax : Do not call MinMax for a fit with a lower bound" << endl;
-    cout << "  this method is not working in case of lower bound" << endl;
+    std::cout << "TSplineFit::MinMax : Do not call MinMax for a fit with a lower bound" << std::endl;
+    std::cout << "  this method is not working in case of lower bound" << std::endl;
   }//end else if (!fBoundedLow)
 }
 void TSplineFit::MinMax(Int_t i,Bool_t &ismin,Double_t &xmin,Double_t &ymin,
@@ -6829,8 +6829,8 @@ void TSplineFit::MinMax(Int_t i,Bool_t &ismin,Double_t &xmin,Double_t &ymin,
     }//end if (ok)
   }//end if (!fBoundedLow)
   else {
-    cout << "TSplineFit::MinMax : Do not call MinMax for a fit with a lower bound" << endl;
-    cout << "  this method is not working in case of lower bound" << endl;
+    std::cout << "TSplineFit::MinMax : Do not call MinMax for a fit with a lower bound" << std::endl;
+    std::cout << "  this method is not working in case of lower bound" << std::endl;
   }//end else if (!fBoundedLow)
 }
 void TSplineFit::MultinomialAsWeight(TH1 *h) {
@@ -7068,43 +7068,43 @@ Double_t TSplineFit::Pedestal(Double_t xmin,Double_t xmax) {
 }
 void TSplineFit::Print() {
 // Print all infos on this fit
-  cout << endl;
-  cout << "      " << GetTitle() << endl;
-  cout << endl;
-  cout << fSource.Data() << endl;
-  cout << endl;
-  cout << "Name of the fit        : " << GetName() << endl;
-  cout << "Type of the fit        : " << fType << endl;
-  cout << "Category               : " << fCat << endl;
-  cout << "Family number          : " << fNbInFamily << endl;
-  cout << "Nb. of measurements    : " << fM << endl;
-  cout << "Nb. meas/spline        : " << fMi << endl;
-  cout << "Nb. meas. last spline  : " << fMl << endl;
-  cout << "Nb. of splines         : " << fN << endl;
-  cout << "Slope    for [-1,1]    : " << fSlope << endl;
-  cout << "Constant for [-1,1]    : " << fCst << endl;
-  cout << "Has a lower bound      : " << fBoundedLow;
-  if (fBoundedLow) cout << "    " << fLowBound;
-  cout << endl;
-  cout << "Has an upper bound     : " << fBoundedUp;
-  if (fBoundedUp) cout << "    " << fUpBound;
-  cout << endl;
-  cout << "Xmin                   : " << fKhi[0] << endl;
-  cout << "Xmax                   : " << fKhi[fN] << endl;
-  cout << "Used for random gen.   : " << fUseForRandom << endl;
-  cout << "Associated parameter   : " << fParameter << endl;
-  cout << "Parameter definition   : " << fParameterDef.Data() << endl;
-  cout << "Creation date          : " << fDate.Data() << endl;
-  cout << "CINT macro of this fit : " << fMacro.Data() << endl;
-  cout << "X axis                 : " << fXLabel.Data() << endl;
+  std::cout << std::endl;
+  std::cout << "      " << GetTitle() << std::endl;
+  std::cout << std::endl;
+  std::cout << fSource.Data() << std::endl;
+  std::cout << std::endl;
+  std::cout << "Name of the fit        : " << GetName() << std::endl;
+  std::cout << "Type of the fit        : " << fType << std::endl;
+  std::cout << "Category               : " << fCat << std::endl;
+  std::cout << "Family number          : " << fNbInFamily << std::endl;
+  std::cout << "Nb. of measurements    : " << fM << std::endl;
+  std::cout << "Nb. meas/spline        : " << fMi << std::endl;
+  std::cout << "Nb. meas. last spline  : " << fMl << std::endl;
+  std::cout << "Nb. of splines         : " << fN << std::endl;
+  std::cout << "Slope    for [-1,1]    : " << fSlope << std::endl;
+  std::cout << "Constant for [-1,1]    : " << fCst << std::endl;
+  std::cout << "Has a lower bound      : " << fBoundedLow;
+  if (fBoundedLow) std::cout << "    " << fLowBound;
+  std::cout << std::endl;
+  std::cout << "Has an upper bound     : " << fBoundedUp;
+  if (fBoundedUp) std::cout << "    " << fUpBound;
+  std::cout << std::endl;
+  std::cout << "Xmin                   : " << fKhi[0] << std::endl;
+  std::cout << "Xmax                   : " << fKhi[fN] << std::endl;
+  std::cout << "Used for random gen.   : " << fUseForRandom << std::endl;
+  std::cout << "Associated parameter   : " << fParameter << std::endl;
+  std::cout << "Parameter definition   : " << fParameterDef.Data() << std::endl;
+  std::cout << "Creation date          : " << fDate.Data() << std::endl;
+  std::cout << "CINT macro of this fit : " << fMacro.Data() << std::endl;
+  std::cout << "X axis                 : " << fXLabel.Data() << std::endl;
   if ((fType==SplineFit2D) || (fType==SplineFit3D))
-    cout << "Y axis                 : " << fYLabel.Data() << endl;
+    std::cout << "Y axis                 : " << fYLabel.Data() << std::endl;
   if (fType==SplineFit3D)
-    cout << "Z axis                 : " << fZLabel.Data() << endl;
-  cout << "Values axis            : " << fVLabel.Data() << endl;
-  cout << "Memory reduced         : " << fMemoryReduced << endl;
-  cout << "Chi2 of fit            : " << Chi2() << endl;
-  cout << endl;
+    std::cout << "Z axis                 : " << fZLabel.Data() << std::endl;
+  std::cout << "Values axis            : " << fVLabel.Data() << std::endl;
+  std::cout << "Memory reduced         : " << fMemoryReduced << std::endl;
+  std::cout << "Chi2 of fit            : " << Chi2() << std::endl;
+  std::cout << std::endl;
 }
 void TSplineFit::Purge() {
 // The collection fgFits is purged
@@ -7148,18 +7148,18 @@ Int_t TSplineFit::RedoFit(Bool_t debug) {
 //debug is for having debug printing.
   Int_t  ifail = -9;
   if (fMemoryReduced) {
-    cout << "TSplineFit::RedoFit WARNING you cannot redo the fit" << endl;
-    cout << "  Memory has been reduced: measurements are lost" << endl;
+    std::cout << "TSplineFit::RedoFit WARNING you cannot redo the fit" << std::endl;
+    std::cout << "  Memory has been reduced: measurements are lost" << std::endl;
   }//end if (fMemoryReduced)
   else {
     switch (fType) {
       case NotDefined:
-        cout << "TSplineFit::RedoFit ERROR type of fit undefined" << endl;
+        std::cout << "TSplineFit::RedoFit ERROR type of fit undefined" << std::endl;
         break;
       case LinInterpol:
       case SplineInterpol:
-        cout << "TSplineFit::RedoFit WARNING no fit to redo" << endl;
-        cout << GetName() << " is an interpolation, not a fit" << endl;
+        std::cout << "TSplineFit::RedoFit WARNING no fit to redo" << std::endl;
+        std::cout << GetName() << " is an interpolation, not a fit" << std::endl;
         break;
       case SplineFit1D:
       case SplineFit2D:
@@ -7167,14 +7167,14 @@ Int_t TSplineFit::RedoFit(Bool_t debug) {
         Bool_t ok;
         ok = InitCheckBounds();
         InitIntervals(fKhi[0],fKhi[fN]);
-        if (fMi<=1) cout << "TSplineFit::RedoFit ERROR fMi cannot be 1" << endl;
+        if (fMi<=1) std::cout << "TSplineFit::RedoFit ERROR fMi cannot be 1" << std::endl;
         else {
           Fill();
           ifail = Solve(debug);
         }
         if (ifail) {
-          cout << "TSplineFit::RedoFit Problem in finding solution" << endl;
-          cout << "   ifail = " << ifail << endl;
+          std::cout << "TSplineFit::RedoFit Problem in finding solution" << std::endl;
+          std::cout << "   ifail = " << ifail << std::endl;
         }
         break;
     }//end switch (fType)
@@ -7433,12 +7433,12 @@ void TSplineFit::SetYLabel(Text_t *label) {
 // Gives a title to the Y axis. Valid only for 2D and 3D fits
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::SetYLabel ERROR fit is not defined" << endl;
+      std::cout << "TSplineFit::SetYLabel ERROR fit is not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
     case SplineFit1D:
-      cout << "TSplineFit::SetYLabel WARNING replacing y axis by v axis!" << endl;
+      std::cout << "TSplineFit::SetYLabel WARNING replacing y axis by v axis!" << std::endl;
       fVLabel = label;
       break;
     case SplineFit2D:
@@ -7451,13 +7451,13 @@ void TSplineFit::SetZLabel(Text_t *label) {
 // Gives a title to the Z axis. Valid only for 3D fits
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::SetZLabel ERROR fit is not defined" << endl;
+      std::cout << "TSplineFit::SetZLabel ERROR fit is not defined" << std::endl;
       break;
     case LinInterpol:
     case SplineInterpol:
     case SplineFit1D:
     case SplineFit2D:
-      cout << "TSplineFit::SetZLabel WARNING replacing z axis by v axis!" << endl;
+      std::cout << "TSplineFit::SetZLabel WARNING replacing z axis by v axis!" << std::endl;
       fVLabel = label;
       break;
     case SplineFit3D:
@@ -7472,9 +7472,9 @@ void TSplineFit::ShowFitsInFile() {
   TSplineFit *fit;
   if (!fgFileName) NameFile();
   Int_t N = 0;
-  cout << endl;
-  cout << "    All fits in file" << endl;
-  cout << endl;
+  std::cout << std::endl;
+  std::cout << "    All fits in file" << std::endl;
+  std::cout << std::endl;
   fgFitFile = new TFile(fgFileName->Data(),"READ");
   fgFitTree = (TTree *)fgFitFile->Get("AllFits");
   fit = new TSplineFit();
@@ -7484,20 +7484,20 @@ void TSplineFit::ShowFitsInFile() {
   nb   = 0;
   for (i=0;i<nfit;i++) {
     nb += fgFitTree->GetEntry(i);
-    cout.width(30);
-    cout.fill('.');
-    cout.setf(ios::left,ios::adjustfield);
-    cout << fit->GetName() << "     ";
-    cout.width(60);
-    cout.fill('.');
-    cout.setf(ios::left,ios::adjustfield);
-    cout << fit->GetTitle();
-    cout << "    cat : "   << fit->fCat << endl;
+    std::cout.width(30);
+    std::cout.fill('.');
+    std::cout.setf(std::ios::left,std::ios::adjustfield);
+    std::cout << fit->GetName() << "     ";
+    std::cout.width(60);
+    std::cout.fill('.');
+    std::cout.setf(std::ios::left,std::ios::adjustfield);
+    std::cout << fit->GetTitle();
+    std::cout << "    cat : "   << fit->fCat << std::endl;
     N++;
   }
-  cout << endl;
-  cout << "Nb. of fits : " << N << endl;
-  cout << endl;
+  std::cout << std::endl;
+  std::cout << "Nb. of fits : " << N << std::endl;
+  std::cout << std::endl;
   delete fit;
   fit = 0;
   fgFitFile->Close();
@@ -7526,16 +7526,16 @@ Int_t TSplineFit::Solve(Bool_t debug) {
   ndim = fX.fN;
   nrow = ble.fV.GetNrows();
   if (ndim != nrow) {
-    cout << "TSplineFit::Solve ERROR fX has bad dimension" << endl;
+    std::cout << "TSplineFit::Solve ERROR fX has bad dimension" << std::endl;
     fX.Set(nrow);
   }
   if (!ifail) for (i=0;i<nrow;i++) fX[i] = ble.fV(i);
   else {
     for (i=0;i<nrow;i++) fX[i] = zero;
-    cout << "TSplineFit::Solve : fit has failed !!!" << endl;
+    std::cout << "TSplineFit::Solve : fit has failed !!!" << std::endl;
   }
   eps = ble.Verify();
-  if (debug) cout << "TSplineFit::Solve  Verify : " << eps << endl;
+  if (debug) std::cout << "TSplineFit::Solve  Verify : " << eps << std::endl;
   return ifail;
 }
 Bool_t TSplineFit::SolveLeft(Double_t &x,Double_t y0,Bool_t interval,
@@ -7574,8 +7574,8 @@ Bool_t TSplineFit::UpdateFile(Bool_t first) {
   TSplineFit *fit;
   Bool_t ok = kFALSE;
   if (!fCat) {
-    cout << "TSplineFit::UpdateFile WARNING:" << endl;
-    cout << "  Fits of category 0 are not put into the database file" << endl;
+    std::cout << "TSplineFit::UpdateFile WARNING:" << std::endl;
+    std::cout << "  Fits of category 0 are not put into the database file" << std::endl;
     return ok;
   }
   if (first) {
@@ -7631,13 +7631,13 @@ Bool_t TSplineFit::UseForRandom(Bool_t usefr) {
     TString s1,t1,s2,t2;
     switch (fType) {
       case NotDefined:
-        cout << "TSplineFit::UseForRandom ERROR fit not defined" << endl;
+        std::cout << "TSplineFit::UseForRandom ERROR fit not defined" << std::endl;
         break;
       case LinInterpol:
       case SplineInterpol:
-        cout << "TSplineFit::UseForRandom WARNING be sure that no value" << endl;
-        cout << "  of the fit be negative in the whole range [xmin,xmax]" << endl;
-        cout << "  in case of linear or spline interpolation" << endl;
+        std::cout << "TSplineFit::UseForRandom WARNING be sure that no value" << std::endl;
+        std::cout << "  of the fit be negative in the whole range [xmin,xmax]" << std::endl;
+        std::cout << "  in case of linear or spline interpolation" << std::endl;
       case SplineFit1D:
         Int_t i;
         Double_t x,y,w,ws2;
@@ -7669,12 +7669,12 @@ Bool_t TSplineFit::UseForRandom(Bool_t usefr) {
             x += w;
           }
         }
-        else cout << "TSplineFit::UseForRandom : ERROR : fit not bounded > 0" << endl;
+        else std::cout << "TSplineFit::UseForRandom : ERROR : fit not bounded > 0" << std::endl;
         break;
       case SplineFit2D:
       case SplineFit3D:
-        cout << "TSplineFit::UseForRandom ERROR 2D or 3D fits cannot be used" << endl;
-        cout << "  for random number generation" << endl;
+        std::cout << "TSplineFit::UseForRandom ERROR 2D or 3D fits cannot be used" << std::endl;
+        std::cout << "  for random number generation" << std::endl;
         break;
     }//end switch (fType)
   }//end if (usefr)
@@ -7700,7 +7700,7 @@ Double_t TSplineFit::V(Double_t x) const {
   Double_t A,B,C,D; //coefficients of spline
   switch (fType) {
     case NotDefined:
-      cout << "TSplineFit::V() ERROR type of fit not defined" << endl;
+      std::cout << "TSplineFit::V() ERROR type of fit not defined" << std::endl;
       break;
     case LinInterpol:
       Double_t x1,x2,y1,y2,m;
@@ -7766,9 +7766,9 @@ Double_t TSplineFit::V(Double_t x,Double_t y) const {
       v2 = V(Tn[1]);
       value = v1 + ((v2-v1)/(Yn[1]-Yn[0]))*(yi-Yn[0]);
     }
-    else cout << "TSplineFit::V(x,y) ERROR: nearest points not found" << endl;
+    else std::cout << "TSplineFit::V(x,y) ERROR: nearest points not found" << std::endl;
   }
-  else cout << "TSplineFit::V(x,y) ERROR: V(x,y) is only for 2D fits" << endl;
+  else std::cout << "TSplineFit::V(x,y) ERROR: V(x,y) is only for 2D fits" << std::endl;
   return value;
 }
 Double_t TSplineFit::V(Double_t x,Double_t y,Double_t z) {
@@ -7790,9 +7790,9 @@ Double_t TSplineFit::V(Double_t x,Double_t y,Double_t z) {
         value += W[i]*v;
       }
     }
-    else cout << "TSplineFit::V(x,y,z) ERROR: nearest points not found" << endl;
+    else std::cout << "TSplineFit::V(x,y,z) ERROR: nearest points not found" << std::endl;
   }
-  else cout << "TSplineFit::V(x,y,z) ERROR: V(x,y) is only for 3D fits" << endl;
+  else std::cout << "TSplineFit::V(x,y,z) ERROR: V(x,y) is only for 3D fits" << std::endl;
   return value;
 }
 Double_t TSplineFit::V(Int_t M,Double_t x,Double_t p) {
@@ -7836,8 +7836,8 @@ Double_t TSplineFit::V(Int_t M,Double_t x,Double_t p) {
     }//end else if (M==1)
   }//end if (fNbInFamily==0)
   else {
-    cout << "TSplineFit::V V for families must be called by the 1st member" << endl;
-    cout << "  of the family" << endl;
+    std::cout << "TSplineFit::V V for families must be called by the 1st member" << std::endl;
+    std::cout << "  of the family" << std::endl;
   }//end else if (fNbInFamily==1)
   return y;
 }

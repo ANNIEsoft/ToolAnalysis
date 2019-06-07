@@ -1,0 +1,6 @@
+verbosity 1
+drawHistos 0
+plotDirectory MrdDiscriminatorScan2
+filedir /pnfs/annie/persistent/users/moflaher/MrdDiscriminatorScanData2
+filelist configfiles/MrdDiscriminatorThresholdScan/DiscriminatorFiles2
+x_variable time

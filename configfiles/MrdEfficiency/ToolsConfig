@@ -1,0 +1,9 @@
+myLoadWCSim LoadWCSim ./configfiles/MrdEfficiency/LoadWCSimConfig
+#myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/MrdEfficiency/LoadWCSimLAPPDConfig
+myMCParticleProperties MCParticleProperties ./configfiles/MrdEfficiency/MCParticlePropertiesConfig
+#myPrintANNIEEvent PrintANNIEEvent ./configfiles/MrdEfficiency/PrintANNIEEventConfig
+myFindMrdTracks FindMrdTracks ./configfiles/MrdEfficiency/FindMrdTracksConfig
+#myMrdTrackPlotter MrdPaddlePlot ./configfiles/MrdEfficiency/PlotMrdTracksConfig
+#myMrdDistributions MrdDistributions ./configfiles/MrdEfficiency/MrdDistributionsConfig
+myMrdEfficiency MrdEfficiency ./configfiles/MrdEfficiency/MrdEfficiencyConfig
+
