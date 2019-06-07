@@ -361,7 +361,7 @@ Bool_t TZigZag::NearestPoints(Double_t x, Double_t y, Double_t z, TArrayI &I, TA
       kz = Int_t((zi-dzs2)/dz) + 1;
     }
     else {
-      cout << "TZigZag::NearestPoints : ERROR point inside not found" << endl;
+      std::cout << "TZigZag::NearestPoints : ERROR point inside not found" << std::endl;
     }
   }//end else if ((x>xl) && (x<xr) && (y>yl) && (y<yr) && (z>zl) && (z<zr))
   if (ok) {
@@ -491,7 +491,7 @@ Int_t TZigZag::NToZZ(Int_t i) const {
       break;
     default:
       k = -1;
-      cout << "TZigZag::NTOZZ ERROR bad dimension" << endl;
+      std::cout << "TZigZag::NTOZZ ERROR bad dimension" << std::endl;
       break;
   }
   return k;
@@ -625,7 +625,7 @@ Bool_t TZigZag::PointsNear(Double_t x, Double_t y, Double_t &yi,
       ky = Int_t((yi-dys2)/dy) + 1;
     }
     else {
-      cout << "TZigZag::PointsNear : ERROR point inside not found" << endl;
+      std::cout << "TZigZag::PointsNear : ERROR point inside not found" << std::endl;
     }
   }//end else if ((x>xl) && (x<xr) && (y>yl) && (y<yr))
   if (ok) {
@@ -701,7 +701,7 @@ Double_t TZigZag::T(Int_t i) const {
       break;
     default:
       t = -1;
-      cout << "TZigZag::T() ERROR bad dimension" << endl;
+      std::cout << "TZigZag::T() ERROR bad dimension" << std::endl;
       break;
   }
   return t;

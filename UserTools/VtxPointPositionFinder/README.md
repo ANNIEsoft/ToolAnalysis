@@ -14,6 +14,17 @@ Describe any data formats VtxPointPositionFinder creates, destroys, changes, or 
 Describe any configuration variables for VtxPointPositionFinder.
 
 ```
-param1 value1
-param2 value2
+UseTrueVertexAsSeed bool
+If true, any information from the seed list is not used.  The True MC Vertex will instead be used
+as the input to the Minuit-based Point Position fitting algorithm.
+
+UseMinuitForPos bool
+If true, Minuit is used to vary both the position and time to find the highest point position
+FOM.  Initial fit parameters will be the vertex seed the highest FOM, or the True MC Vertex.
+
+If false, the seed with the highest FOM (whose vertex time was fit using Minuit) will be returned
+ as the point position vertex.
+
+If both of the above are false, the Point Position vertex is set equal to the true MC Vertex.
+
 ```

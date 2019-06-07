@@ -1,0 +1,11 @@
+LoadWCSim LoadWCSim ./configfiles/VertexReco/PhaseIIExtGrid/LoadWCSimConfig
+LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/VertexReco/PhaseIIExtGrid/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIExtGrid/MCParticlePropertiesConfig
+MCRecoEventLoader MCRecoEventLoader ./configfiles/VertexReco/PhaseIIExtGrid/MCRecoEventLoaderConfig
+#FindMrdTracks FindMrdTracks ./configfiles/VertexReco/PhaseIIExtGrid/FindMrdTracksConfig
+DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIExtGrid//DigitBuilderConfig
+EventSelector EventSelector ./configfiles/VertexReco/PhaseIIExtGrid/EventSelectorConfig
+VtxSeedGenerator VtxSeedGenerator ./configfiles/VertexReco/PhaseIIExtGrid/VtxSeedGeneratorConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/VertexReco/PhaseIIExtGrid/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIIExtGrid/PhaseIITreeMakerConfig
+#SaveRecoEvent SaveRecoEvent ./configfiles/VertexReco/PhaseIIExtGrid/SaveRecoEventConfig

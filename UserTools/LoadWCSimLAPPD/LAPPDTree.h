@@ -21,8 +21,14 @@
 #include "TSystemDirectory.h"
 #include <TString.h>
 
+#include <iostream>
 // Header file for the classes stored in the TTree if any.
 #include "vector"
+
+#include <TStyle.h>
+#include <MRDspecs.hh>
+
+using namespace std;
 
 #define SINGLE_TREE        // TODO TODO TODO TODO shouldn't need this define
 
@@ -49,6 +55,7 @@ public :
    vector<double>  *lappdhit_globalcoory;             // only present in file vers > 3
    vector<double>  *lappdhit_globalcoorz;
    vector<double>  lappdhit_globalcoorxdummy, lappdhit_globalcoorydummy, lappdhit_globalcoorzdummy;
+   vector<int>     *lappdhit_primaryParentID2;      // G4 internal trackID of photon parent
    
    /* DISABLED BRANCHES */
    //Int_t           lappdhit_totalpes_perevt;        // total photons on all LAPPDs in this event
@@ -60,7 +67,6 @@ public :
    //vector<int>     *lappdhit_totalpes_perlappd2;    // same as lappdhit_edep
    //vector<int>     *lappdhit_stripnum;              // strip (anode) num of photon hit
    //vector<float>   *lappdhit_smeartime2;            // smeared hit time: incorrect timing res though
-   //vector<int>     *lappdhit_primaryParentID2;      // G4 internal trackID of photon parent
    //vector<int>     *lappdhit_NoOfneighstripsHit;    // size of below vectors
    //vector<int>     *lappdhit_neighstripnum;         // strip num of neighbour
    //vector<double>  *lappdhit_neighstrippeak;        // pulse amplitude on that strip
@@ -102,7 +108,7 @@ public :
    TBranch        *b_lappdhit_neighstrip_righttime;   //!
 
    LAPPDTree(TTree *tree=0);
-   LAPPDTree(const char* filepath, bool addsubdirs);
+   LAPPDTree(const char* filepath, bool addsubdirs=false);
    virtual ~LAPPDTree();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -195,12 +201,12 @@ void LAPPDTree::Init(TTree *tree)
    lappdhit_globalcoorx = 0;
    lappdhit_globalcoory = 0;
    lappdhit_globalcoorz = 0;
+   lappdhit_primaryParentID2 = 0;
    //lappdhit_stripcoorz = 0;
    //lappdhit_totalpes_perlappd2 = 0;
    //lappdhit_stripnum = 0;
    //lappdhit_truetime2 = 0;
    //lappdhit_smeartime2 = 0;
-   //lappdhit_primaryParentID2 = 0;
    //lappdhit_NoOfneighstripsHit = 0;
    //lappdhit_neighstripnum = 0;
    //lappdhit_neighstrippeak = 0;
@@ -237,6 +243,7 @@ void LAPPDTree::Init(TTree *tree)
    }
    fChain->SetBranchAddress("lappdhit_edep", lappdhit_edep, &b_lappdhit_edep);
    fChain->SetBranchAddress("lappdhit_objnum", lappdhit_objnum, &b_lappdhit_objnum);
+   fChain->SetBranchAddress("lappdhit_primaryParentID2", &lappdhit_primaryParentID2, &b_lappdhit_primaryParentID2);
    
    //fChain->SetBranchAddress("lappdhit_stripcoorz", &lappdhit_stripcoorz, &b_lappdhit_stripcoorz);
    //fChain->SetBranchAddress("lappdhit_process", lappdhit_process, &b_lappdhit_process);
@@ -247,7 +254,6 @@ void LAPPDTree::Init(TTree *tree)
    //fChain->SetBranchAddress("lappdhit_stripnum", &lappdhit_stripnum, &b_lappdhit_stripnum);
    //fChain->SetBranchAddress("lappdhit_truetime2", &lappdhit_truetime2, &b_lappdhit_truetime2);
    //fChain->SetBranchAddress("lappdhit_smeartime2", &lappdhit_smeartime2, &b_lappdhit_smeartime2);
-   //fChain->SetBranchAddress("lappdhit_primaryParentID2", &lappdhit_primaryParentID2, &b_lappdhit_primaryParentID2);
    //fChain->SetBranchAddress("lappdhit_NoOfneighstripsHit", &lappdhit_NoOfneighstripsHit, &b_lappdhit_NoOfneighstripsHit);
    //fChain->SetBranchAddress("lappdhit_neighstripnum", &lappdhit_neighstripnum, &b_lappdhit_neighstripnum);
    //fChain->SetBranchAddress("lappdhit_neighstrippeak", &lappdhit_neighstrippeak, &b_lappdhit_neighstrippeak);
@@ -263,7 +269,7 @@ void LAPPDTree::Init(TTree *tree)
    fChain->SetBranchStatus("lappdhit_stripnum",0);
    fChain->SetBranchStatus("lappdhit_truetime2",0);
    fChain->SetBranchStatus("lappdhit_smeartime2",0);
-   fChain->SetBranchStatus("lappdhit_primaryParentID2",0);
+//   fChain->SetBranchStatus("lappdhit_primaryParentID2",0);
    fChain->SetBranchStatus("lappdhit_NoOfneighstripsHit",0);
    fChain->SetBranchStatus("lappdhit_neighstripnum",0);
    fChain->SetBranchStatus("lappdhit_neighstrippeak",0);

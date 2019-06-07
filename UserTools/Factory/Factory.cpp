@@ -1,6 +1,6 @@
-#include "../Unity.cpp"
+#include "Factory.h"
 
-Tool* Factory(std::string tool){
+Tool* Factory(std::string tool) {
 Tool* ret=0;
 
 // if (tool=="Type") tool=new Type;
@@ -63,6 +63,29 @@ if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="LAPPDnnls") ret=new LAPPDnnls;
 if (tool=="LAPPDRawToACDC") ret=new LAPPDRawToACDC;
-  if (tool=="FTBFAnalysis") ret=new FTBFAnalysis;
+if (tool=="FTBFAnalysis") ret=new FTBFAnalysis;
+if (tool=="HitCleaner") ret=new HitCleaner;
+if (tool=="HitResiduals") ret=new HitResiduals;
+if (tool=="MonitorReceive") ret=new MonitorReceive;
+if (tool=="MonitorSimReceive") ret=new MonitorSimReceive;
+if (tool=="DigitBuilderDoE") ret=new DigitBuilderDoE;
+if (tool=="EventSelectorDoE") ret=new EventSelectorDoE;
+if (tool=="MonitorMRDTime") ret=new MonitorMRDTime;
+if (tool=="MonitorMRDLive") ret=new MonitorMRDLive;
+if (tool=="PulseSimulation") ret=new PulseSimulation;
+if (tool=="PlotLAPPDTimesFromStore") ret=new PlotLAPPDTimesFromStore;
+if (tool=="CheckDetectorCounts") ret=new CheckDetectorCounts;
+if (tool=="MrdDistributions") ret=new MrdDistributions;
+if (tool=="MCParticleProperties") ret=new MCParticleProperties;
+if (tool=="DigitBuilderROOT") ret=new DigitBuilderROOT;
+if (tool=="MrdEfficiency") ret=new MrdEfficiency;
+if (tool=="EventDisplay") ret=new EventDisplay;
+if (tool=="TankCalibrationDiffuser") ret=new TankCalibrationDiffuser;
+if (tool=="TotalLightMap") ret=new TotalLightMap;
+if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
+if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
+if (tool=="MonitorMRDEventDisplay") ret=new MonitorMRDEventDisplay;
+if (tool=="LoadGeometry") ret=new LoadGeometry;
+
 return ret;
 }

@@ -1,0 +1,3 @@
+verbosity 100
+drawHistos 1                          # plots of how the efficiency varied against various event metrics
+plotDirectory ./MrdEfficiencyPlots    # where to save the plots

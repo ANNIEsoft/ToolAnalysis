@@ -50,12 +50,20 @@ class VtxPointPositionFinder: public Tool {
  		
  	/// \brief Push fitted point position to store
  	void PushPointPosition(RecoVertex* vtx, bool savetodisk);
+
+ 	/// \brief Push vtx seed FOMs to store
+ 	void PushVertexSeedFOMList(bool savetodisk);
  	
  	bool fUseTrueVertexAsSeed;
+ 	bool fUseMinuit; //If True, give the best GridSeed to the Minuit Optimizer
+
  	RecoVertex* fTrueVertex = 0;
  	std::vector<RecoDigit>* fDigitList = 0;
- 		
- 	/// \brief Simple position
+
+	// Create an object to store the Grid Seed FOMs 
+        std::vector<double>* vSeedFOMList;
+ 	
+        /// \brief Simple position
  	RecoVertex* fSimplePosition = 0;
  	
  	/// \brief Point position

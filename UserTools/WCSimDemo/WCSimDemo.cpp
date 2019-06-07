@@ -17,6 +17,13 @@ bool WCSimDemo::Initialise(std::string configfile, DataModel &data){
 	// Get the Tool configuration variables
 	m_variables.Get("verbosity",verbosity);
 	
+	// Get the geometry
+	int get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
+	if(not get_ok){
+		Log("No AnnieGeometry in ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
+	
 	Log("WCSimDemo Tool: Initializing",v_message,verbosity);
 	return true;
 }
@@ -94,17 +101,15 @@ bool WCSimDemo::Execute(){
 	// see Particle.h for other information in the MCParticle class
 	
 	// now move to digit retrieval
-	// MCHits is a std::map<ChannelKey,std::vector<Hit>>
+	// MCHits is a std::map<unsigned long,std::vector<Hit>>
 	if(MCHits){
 		Log("WCSimDemo Tool: Num PMT Digits = "+to_string(MCHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement
-		for(std::pair<ChannelKey,std::vector<Hit>>&& apair : *MCHits){
-			ChannelKey chankey = apair.first;
-			// a ChannelKey is a detector descriptor, containing 2 elements:
-			// a 'subdetector' (enum class), with types ADC, LAPPD, TDC
-			// and a DetectorElementIndex, i.e. the ID of the detector of that type
+		for(std::pair<unsigned long,std::vector<Hit>>&& apair : *MCHits){
+			unsigned long chankey = apair.first;
+			Detector* thedet = anniegeom->ChannelToDetector(chankey);
 			
-			if(chankey.GetSubDetectorType()==subdetector::ADC){
+			if(thedet->GetDetectorElement()=="Tank"){
 				std::vector<Hit>& hits = apair.second;
 				for(Hit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose
@@ -117,13 +122,15 @@ bool WCSimDemo::Execute(){
 	}
 	
 	// repeat for LAPPD hits
-	// MCLAPPDHits is a std::map<ChannelKey,std::vector<LAPPDHit>>
+	// MCLAPPDHits is a std::map<unsigned long,std::vector<LAPPDHit>>
 	if(MCLAPPDHits){
 		Log("WCSimDemo Tool: Num LAPPD Digits = "+to_string(MCLAPPDHits->size()),v_message,verbosity);
 		// iterate over the map of sensors with a measurement
-		for(std::pair<ChannelKey,std::vector<LAPPDHit>>&& apair : *MCLAPPDHits){
-			ChannelKey chankey = apair.first;
-			if(chankey.GetSubDetectorType()==subdetector::LAPPD){ // redundant
+		for(std::pair<unsigned long,std::vector<LAPPDHit>>&& apair : *MCLAPPDHits){
+			unsigned long chankey = apair.first;
+			Detector* thedet = anniegeom->ChannelToDetector(chankey);
+			
+			if(thedet->GetDetectorElement()=="LAPPD"){ // redundant
 				std::vector<LAPPDHit>& hits = apair.second;
 				for(LAPPDHit& ahit : hits){
 					//if(v_message<verbosity) ahit.Print(); // << VERY verbose

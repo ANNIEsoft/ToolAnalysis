@@ -1,0 +1,12 @@
+# EventSelector config file
+
+verbosity 5
+MCPMTVolCut 0
+MCFVCut 1
+MCMRDCut 0
+MCPiKCut 0
+MRDRecoCut 0
+RecoPMTVolCut 0
+RecoFVCut 1
+NHitCut 1
+PromptTrigOnly 1
