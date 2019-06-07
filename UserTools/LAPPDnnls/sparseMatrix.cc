@@ -115,7 +115,8 @@ int sparseMatrix::load_as_txt(const char* fn)
   }
   
   size_t m, n;  size_t nz;
-  int retval = fscanf(fp, "%zu %zu %zu", &m, &n, &nz);
+  ssize_t r;
+  r = fscanf(fp, "%zu %zu %zu", &m, &n, &nz);
   fclose(fp);
 
   fprintf(stderr, "Found (%zu,%zu,%zu) matrix\n",m,n,nz);
@@ -137,7 +138,7 @@ int sparseMatrix::load_as_txt(const char* fn)
   }
 
   for (size_t i = 0; i < n; i++) 
-    retval = fscanf(fp, "%zu", &cols[i]);
+    r = fscanf(fp, "%zu", &cols[i]);
   fclose(fp);
   
   // Now read in all the rowindices
@@ -147,7 +148,7 @@ int sparseMatrix::load_as_txt(const char* fn)
     return -3;
   }
   for (size_t i = 0; i <nz; i++)
-    retval = fscanf(fp, "%zu", &ridx[i]);
+    r = fscanf(fp, "%zu", &ridx[i]);
 
   fclose(fp);
   
@@ -158,7 +159,7 @@ int sparseMatrix::load_as_txt(const char* fn)
     return -4;
   }
   for (size_t i = 0; i <nz; i++)
-    retval = fscanf(fp, "%lf", &data[i]);
+    r = fscanf(fp, "%lf", &data[i]);
   fclose(fp);
 
   return 0;

@@ -30,6 +30,18 @@
 
 using namespace nsNNLS;
 
+
+denseMatrix::denseMatrix(size_t r, size_t c)
+ : matrix(r, c) { 
+      assert (r > 0 && c > 0);
+      data = new double[r*c];
+      size = r*c;
+      external = false;
+    }
+
+denseMatrix::~denseMatrix()
+{ if (!external) delete[] data;}
+
 int denseMatrix::load(const char* fn, bool asbin)
 {
   if (asbin)
@@ -83,13 +95,14 @@ int denseMatrix::load_as_txt(const char* fn)
 {
   FILE* fp = fopen(fn, "r");
   size_t m, n;
+  int r;
 
-  int retval = fscanf(fp, "%zu %zu\n", &m, &n);
+  r = fscanf(fp, "%zu %zu\n", &m, &n);
   setsize(m, n);
   size = m*n;
   data = new double[size];
   for (size_t i = 0; i < size; i++) 
-    retval = fscanf(fp, "%lf", &data[i]);
+    r = fscanf(fp, "%lf", &data[i]);
 
   fclose(fp);
 

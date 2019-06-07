@@ -93,6 +93,7 @@ namespace nsNNLS {
     }
 
     nnls (matrix* A, vector* b, vector* x0, int maxit)  { nnls(A, b, maxit); this->x0 = x0;}
+    ~nnls(){beta = 0.0;}
 
     // The various accessors and mutators (or whatever one calls 'em!)
 

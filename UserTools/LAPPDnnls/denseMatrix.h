@@ -33,20 +33,11 @@ namespace nsNNLS {
     double* data;
     bool external;              // is data managed externally
   public:
-    denseMatrix() { external = true; data = 0;}
 
-    denseMatrix (size_t r, size_t c) : matrix(r, c) { 
-      assert (r > 0 && c > 0);
-      data = new double[r*c];
-      size = r*c;
-      external = false;
-    }
+    denseMatrix(size_t r, size_t c);
 
-    ~denseMatrix () { if (!external) delete[] data;}
+    ~denseMatrix();
     
-    denseMatrix(size_t r, size_t c, double* data) : matrix(r, c) 
-    { external = true; size=r*c; this->data=data;}
-
     int load(const char* fn, bool asbin);
 
   private:
