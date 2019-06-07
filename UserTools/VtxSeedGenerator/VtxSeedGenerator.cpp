@@ -145,13 +145,13 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
   //average separation of points on the disk.
   
   //Here, we need to get the radius and height of the ANNIE tank from the geo
-  double tankradius = ANNIEGeometry::Instance()->GetCylRadius();	
-  double tanklength = ANNIEGeometry::Instance()->GetCylLength();	
-  
+  double pmtradius = ANNIEGeometry::Instance()->GetPMTRadius();	
+  double pmtlength = ANNIEGeometry::Instance()->GetCylLength();
+  pmtlength = pmtlength * (0.75); //FIXME: Can we add a PMTLength to the geometry? 
   //Assuming roughly equal distance, we can calculate the number of
   //layers needed to have close to even spacing, and # points on each disk
-  double approx_points = pow((NSeeds*tankradius/tanklength),(2.0/3.0));
-  int numlayers = (int) pow(pow(tankradius,2)/approx_points,(1.0/2.0));
+  double approx_points = pow((NSeeds*pmtradius/pmtlength),(2.0/3.0));
+  int numlayers = (int) (pmtlength/pow(pow(pmtradius,2)/approx_points,(1.0/2.0)));
   int points_ondisk = (int) approx_points;
 
   //Now, fill a vector of doubles with the xy plane points 
@@ -162,7 +162,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
   for (int i=0; i<points_ondisk; i++) {
     ind = (double) i;
     phi = ind * increment;
-    radius = tankradius * sqrt(ind/approx_points);
+    radius = pmtradius * sqrt(ind/approx_points);
     z = radius * cos(phi); //z is the beam axis
     x = radius * sin(phi);
     xpoints.push_back(x);
@@ -175,7 +175,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
     for (int k=0; k<points_ondisk; k++) {
       diskind = (double) j;
       layers = (double) numlayers;
-      disk_height = tanklength*((diskind+0.5)/layers) - (tanklength/2.0);
+      disk_height = pmtlength*((diskind+0.5)/layers) - (pmtlength/2.0);
       Position thisgridpos;
       thisgridpos.SetX(xpoints[k]);
       thisgridpos.SetZ(zpoints[k]);
@@ -186,6 +186,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
       vSeedVtxList->push_back(thisgridseed);
     }
   }
+  return true;
 }
 
 double VtxSeedGenerator::GetMedianSeedTime(Position pos){

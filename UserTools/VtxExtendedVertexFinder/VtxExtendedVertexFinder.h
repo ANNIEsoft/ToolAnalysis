@@ -5,6 +5,9 @@
 #include <iostream>
 
 #include "Tool.h"
+#include <VertexGeometry.h>
+#include <TMinuit.h>
+#include <MinuitOptimizer.h>
 
 class VtxExtendedVertexFinder: public Tool {
 
@@ -27,31 +30,42 @@ class VtxExtendedVertexFinder: public Tool {
   /// \brief ANNIE event number
   uint32_t fEventNumber;
  	
- 	/// \brief 
- 	RecoVertex* FitExtendedVertex(RecoVertex* myvertex);
- 	
- 	/// \brief Reset everything
- 	void Reset();
- 	
- 	/// \brief Push fitted extended vertex to store
- 	void PushExtendedVertex(RecoVertex* vtx, bool savetodisk);
- 	
- 	bool fUseTrueVertexAsSeed;
- 	RecoVertex* fTrueVertex = 0;
- 	std::vector<RecoDigit>* fDigitList = 0;
- 	
- 	/// \brief extended vertex
- 	RecoVertex* fExtendedVertex = 0;
- 	
- 	/// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+  /// \brief 
+  RecoVertex* FitExtendedVertex(RecoVertex* myvertex);
+  
+  /// \brief Run ExtendedVertex with every grid seed
+  RecoVertex* FitGridSeeds(std::vector<RecoVertex>* vSeedVtxList);
+  
+  /// \brief Find a simple direction using weighted sum of digit charges 
+  RecoVertex* FindSimpleDirection(RecoVertex* myvertex);
+  
+  /// \brief Reset everything
+  void Reset();
+  
+  /// \brief Push fitted extended vertex to store
+  void PushExtendedVertex(RecoVertex* vtx, bool savetodisk);
+  
+  bool fUseTrueVertexAsSeed;
+  bool fSeedGridFits;
+  
+  RecoVertex* fTrueVertex = 0;
+  std::vector<RecoDigit>* fDigitList = 0;
+  
+  /// \brief extended vertex
+  RecoVertex* fExtendedVertex = 0;
+  
+  /// Vertex Geometry shared by Fitter tools
+  VertexGeometry* myvtxgeo;
+  
+  /// verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=-1;
-	int v_error=0;
-	int v_warning=1;
-	int v_message=2;
-	int v_debug=3;
-	std::string logmessage;
-	int get_ok;	
-
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  std::string logmessage;
+  int get_ok;	
+  
 
 
 

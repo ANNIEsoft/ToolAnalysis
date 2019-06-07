@@ -1,0 +1,10 @@
+LoadWCSim LoadWCSim ./configfiles/VertexReco/PhaseIISanityCheck/LoadWCSimConfig
+LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/VertexReco/PhaseIISanityCheck/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIReco/MCParticlePropertiesConfig
+#FindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
+EventSelector EventSelector ./configfiles/VertexReco/PhaseIISanityCheck/EventSelectorConfig
+DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIISanityCheck/DigitBuilderConfig
+#VtxSeedGenerator VtxSeedGenerator ./configfiles/VertexReco/PhaseIISanityCheck/VtxSeedGeneratorConfig
+VertexGeometryCheck VertexGeometryCheck ./configfiles/VertexReco/PhaseIISanityCheck/VertexGeometryCheckConfig
+LikelihoodFitterCheck LikelihoodFitterCheck ./configfiles/VertexReco/PhaseIISanityCheck/LikelihoodFitterCheckConfig
+#PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIISanityCheck/PhaseIITreeMakerConfig

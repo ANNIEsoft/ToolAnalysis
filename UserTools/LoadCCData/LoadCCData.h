@@ -6,6 +6,12 @@
 #include <iostream>
 #include <fstream>
 #include "Tool.h"
+#include "TChain.h"
+#include "TFile.h"
+#include "TH1D.h"
+#include "HeftyTreeReader.h"
+#include "RawCard.h"
+
 class PMTData;
 class MRDTree;
 //class TrigData;
@@ -72,7 +78,7 @@ private:
 	annie::HeftyTreeReader* theHeftyData = nullptr;
 	
 	// ANNIEEvent variables
-	std::map<ChannelKey,std::vector<std::vector<Hit>>>* TDCData=nullptr;
+	std::map<unsigned long,std::vector<std::vector<Hit>>>* TDCData=nullptr;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;

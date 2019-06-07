@@ -7,6 +7,8 @@
 #include "Tool.h"
 #include "ToolChain.h"
 
+class ToolChain;
+
 class ExampleOverTool: public Tool {
 
 
