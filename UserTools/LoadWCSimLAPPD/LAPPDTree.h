@@ -21,8 +21,14 @@
 #include "TSystemDirectory.h"
 #include <TString.h>
 
+#include <iostream>
 // Header file for the classes stored in the TTree if any.
 #include "vector"
+
+#include <TStyle.h>
+#include <MRDspecs.hh>
+
+using namespace std;
 
 #define SINGLE_TREE        // TODO TODO TODO TODO shouldn't need this define
 
@@ -102,7 +108,7 @@ public :
    TBranch        *b_lappdhit_neighstrip_righttime;   //!
 
    LAPPDTree(TTree *tree=0);
-   LAPPDTree(const char* filepath, bool addsubdirs);
+   LAPPDTree(const char* filepath, bool addsubdirs=false);
    virtual ~LAPPDTree();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);

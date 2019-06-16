@@ -5,6 +5,9 @@
 #include <iostream>
 
 #include "Tool.h"
+#include <VertexGeometry.h>
+#include <TMinuit.h>
+#include <MinuitOptimizer.h>
 
 class VtxExtendedVertexFinder: public Tool {
 

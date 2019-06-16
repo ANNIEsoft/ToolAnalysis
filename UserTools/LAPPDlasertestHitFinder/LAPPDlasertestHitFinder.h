@@ -5,9 +5,11 @@
 #include <string>
 #include <iostream>
 #include "Tool.h"
-#include "../LAPPDSim/LAPPDresponse.hh"
+#include "LAPPDresponse.h"
 #include "LAPPDHit.h"
 #include "LAPPDFindPeak.h"
+
+using namespace std;
 
 class LAPPDlasertestHitFinder: public Tool {
 

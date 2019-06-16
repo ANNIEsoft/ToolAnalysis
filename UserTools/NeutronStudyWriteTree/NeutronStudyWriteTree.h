@@ -5,6 +5,9 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TString.h"
 
 class NeutronStudyWriteTree: public Tool {
 

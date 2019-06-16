@@ -1,9 +1,9 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "PulseSimulation.h"
-#include "CreateFakeRawFile.cpp"
-#include "GetTemplateRunInfo.cpp"
-#include "FillEmulatedTriggerdata.cpp"
-#include "FillEmulatedCCData.cpp"
+//#include "CreateFakeRawFile.cpp"/
+//#include "GetTemplateRunInfo.cpp"
+//#include "FillEmulatedTriggerdata.cpp"
+//#include "FillEmulatedCCData.cpp"
 
 PulseSimulation::PulseSimulation():Tool(){}
 

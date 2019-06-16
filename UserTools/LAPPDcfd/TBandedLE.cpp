@@ -99,14 +99,14 @@
 //    }
 //  }
 //  A.Print();
-//  cout << endl;
+//  std::cout << std::endl;
 //  TBandedLE ble(A,B,M,kFALSE); //A NOT given in compact form !
 //  A.Print();
 //  ifail = ble.Solve();
-//  cout << "ifail : " << ifail << endl;
-//  for (i=0;i<N;i++) cout << "fV(" << i << ") : " << ble.fV(i) << endl;
+//  std::cout << "ifail : " << ifail << std::endl;
+//  for (i=0;i<N;i++) std::cout << "fV(" << i << ") : " << ble.fV(i) << std::endl;
 //  eps = ble.Verify();
-//  cout << "Verify : " << eps << endl;
+//  std::cout << "Verify : " << eps << std::endl;
 //}
 //
 TBandedLE::TBandedLE() {
@@ -162,31 +162,31 @@ TBandedLE::TBandedLE(Int_t N,Int_t M,Int_t K,TMatrixD &A,TMatrixD &B,Bool_t cpt)
   nrowsB  = fB->GetNrows();
   if (fN<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | unacceptable value for N     : " << fN     << endl;
+    std::cout << "TBandedLE::TBandedLE | unacceptable value for N     : " << fN     << std::endl;
   }
   if ((fM<=0) || (fM>=fN)) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | unacceptable value for M     : " << fM     << endl;
+    std::cout << "TBandedLE::TBandedLE | unacceptable value for M     : " << fM     << std::endl;
   }
   if (fK<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | unacceptable value for K     : " << fK     << endl;
+    std::cout << "TBandedLE::TBandedLE | unacceptable value for K     : " << fK     << std::endl;
   }
   if (nrowsA<fN) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | A : nb. of rows too small    : " << nrowsA << endl;
+    std::cout << "TBandedLE::TBandedLE | A : nb. of rows too small    : " << nrowsA << std::endl;
   }
   if (ncolsA<mband) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | A : nb. of columns too small : " << ncolsA << endl;
+    std::cout << "TBandedLE::TBandedLE | A : nb. of columns too small : " << ncolsA << std::endl;
   }
   if (nrowsB<fN) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | B : nb. of rows too small    : " << nrowsB << endl;
+    std::cout << "TBandedLE::TBandedLE | B : nb. of rows too small    : " << nrowsB << std::endl;
   }
   if (ncolsB<fK) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | B : nb. of columns too small : " << ncolsB << endl;
+    std::cout << "TBandedLE::TBandedLE | B : nb. of columns too small : " << ncolsB << std::endl;
   }
 }
 TBandedLE::TBandedLE(TMatrixD &A,TMatrixD &B,Int_t M,Bool_t cpt) {
@@ -232,27 +232,27 @@ TBandedLE::TBandedLE(TMatrixD &A,TMatrixD &B,Int_t M,Bool_t cpt) {
 //Number of lines in A must be >= 1
   if (nrowsA<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of lines in A must be >=1" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of lines in A must be >=1" << std::endl;
   }
 //Number of lines in A and B must be equal
   if (nrowsA != nrowsB) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of lines in A and B must be the same" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of lines in A and B must be the same" << std::endl;
   }
 //Number of columns in A must be >= 1
   if (ncolsA<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of columnss in A must be >=1" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of columnss in A must be >=1" << std::endl;
   }
 //Number of lines in B must be >= 1
   if (nrowsB<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of lines in B must be >=1" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of lines in B must be >=1" << std::endl;
   }
 //Number of columns in B must be >= 1
   if (ncolsB<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of columns in B must be >=1" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of columns in B must be >=1" << std::endl;
   }
 }
 TBandedLE::TBandedLE(TMatrixD &A,Int_t M,Bool_t cpt) {
@@ -299,12 +299,12 @@ TBandedLE::TBandedLE(TMatrixD &A,Int_t M,Bool_t cpt) {
 //Number of lines in A must be >= 1
   if (nrowsA<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of lines in A must be >=1" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of lines in A must be >=1" << std::endl;
   }
 //Number of columns in A must be >= 1
   if (ncolsA<1) {
     fF = -2;
-    cout << "TBandedLE::TBandedLE | Nb. of columnss in A must be >=1" << endl;
+    std::cout << "TBandedLE::TBandedLE | Nb. of columnss in A must be >=1" << std::endl;
   }
   if (!fF) {
     fB    = new TMatrixD(fN,fN);

@@ -13,4 +13,3 @@ for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done
-

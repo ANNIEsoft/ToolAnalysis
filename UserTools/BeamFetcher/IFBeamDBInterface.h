@@ -14,7 +14,7 @@
 
 // ToolAnalysis includes
 #include "BeamDataPoint.h"
-
+#include "BeamStatus.h"
 /// @brief Singleton used to interact with the Intensity Frontier beam database
 /// at Fermilab
 class IFBeamDBInterface {

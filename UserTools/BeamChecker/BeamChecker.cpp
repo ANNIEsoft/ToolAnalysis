@@ -1,16 +1,16 @@
 // standard library includes
-#include <algorithm>
-#include <ctime>
-#include <fstream>
-#include <sstream>
+//#include <algorithm>
+//#include <ctime>
+//#include <fstream>
+//#include <sstream>
 
 // ToolAnalysis includes
-#include "ANNIEconstants.h"
+//#include "ANNIEconstants.h"
 #include "BeamChecker.h"
-#include "BeamDataPoint.h"
-#include "BeamStatus.h"
-#include "HeftyInfo.h"
-#include "TimeClass.h"
+//#include "BeamDataPoint.h"
+//#include "BeamStatus.h"
+//#include "HeftyInfo.h"
+//#include "TimeClass.h"
 
 // Definitions local to this source file
 namespace {

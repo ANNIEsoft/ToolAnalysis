@@ -9,10 +9,12 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
 
   /////////////////// Useful header ///////////////////////
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
-  //m_variables.Print();
-
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
+
+  //only for debugging memory leaks, otherwise comment out
+  /*std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
+  gObjectTable->Print();*/
 
   m_variables.Get("OutputPath",outpath);
   m_variables.Get("ActiveSlots",active_slots);
@@ -105,7 +107,11 @@ bool MonitorMRDLive::Execute(){
     MRDout.Crate.clear();
     MRDout.Type.clear();
 
-  return true;
+    //only for debugging memory leaks, otherwise comment out
+    /*std::cout <<"List of Objects (after execute step)"<<std::endl;
+    gObjectTable->Print();*/
+
+    return true;
 
   } else if (State == "DataFile" || State == "Wait"){
 
@@ -445,11 +451,13 @@ void MonitorMRDLive::MRDTDCPlots(){
       //std::cout <<"Drawing h2D_cr1..."<<std::endl;
       h2D_cr1->Draw("colz");
 
+      std::vector<TBox*> vector_box_inactive;
        //coloring inactive slots in the histograms in grey-ish
       for (int i_slot=0;i_slot<num_slots;i_slot++){
         if (active_channel[0][i_slot]==0){
          
           TBox *box_inactive = new TBox(i_slot,0,i_slot+1,num_channels);
+          vector_box_inactive.push_back(box_inactive);
           box_inactive->SetFillStyle(3004);
           box_inactive->SetFillColor(1);
           box_inactive->Draw("same");  
@@ -494,6 +502,7 @@ void MonitorMRDLive::MRDTDCPlots(){
       for (int i_slot=0;i_slot<num_slots;i_slot++){
         if (active_channel[1][i_slot]==0){
           TBox *box_inactive = new TBox(i_slot,0,i_slot+1,num_channels);
+          vector_box_inactive.push_back(box_inactive);
           box_inactive->SetFillColor(1);
           box_inactive->SetFillStyle(3004);
           box_inactive->Draw("same");  
@@ -563,7 +572,15 @@ void MonitorMRDLive::MRDTDCPlots(){
       }
 
     
-    
+    delete separate_crates;
+    delete separate_crates2;
+    delete label_cr1;
+    delete label_cr2;
+    delete f1;
+    delete labels_grid;
+    for (int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
+          delete vector_box_inactive.at(i_box);
+    }
     delete hChannel_cr1;
     delete hChannel_cr2;
     delete hSlot_cr1;

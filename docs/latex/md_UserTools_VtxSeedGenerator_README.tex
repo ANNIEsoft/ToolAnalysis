@@ -1,0 +1,26 @@
+\hyperlink{classVtxSeedGenerator}{Vtx\-Seed\-Generator}
+
+\subsection*{Data}
+
+Describe any data formats \hyperlink{classVtxSeedGenerator}{Vtx\-Seed\-Generator} creates, destroys, changes, or analyzes. E.\-G.
+
+{\bfseries Raw\-L\-A\-P\-P\-D\-Data} {\ttfamily map$<$\hyperlink{classGeometry}{Geometry}, vector$<$\hyperlink{classWaveform}{Waveform}$<$double$>$$>$$>$}
+\begin{DoxyItemize}
+\item Takes this data from the {\ttfamily A\-N\-N\-I\-E\-Event} store and finds the number of peaks
+\end{DoxyItemize}
+
+\subsection*{Configuration}
+
+Describe any configuration variables for \hyperlink{classVtxSeedGenerator}{Vtx\-Seed\-Generator}.
+
+``` m\-\_\-variables.\-Get(\char`\"{}\-Seed\-Type\char`\"{},f\-Seed\-Type); m\-\_\-variables.\-Get(\char`\"{}\-Number\-Of\-Seeds\char`\"{}, f\-Num\-Seeds); m\-\_\-variables.\-Get(\char`\"{}verbosity\char`\"{}, verbosity); m\-\_\-variables.\-Get(\char`\"{}\-Use\-Seed\-Grid\char`\"{}, Use\-Seed\-Grid);
+
+Seed\-Type (int) Number\-Of\-Seeds (int) verbosity (int) Use\-Seed\-Grid (bool)
+
+Seed\-Type specifies whether to use P\-M\-Ts, L\-A\-P\-P\-Ds, or all. Seed\-Type 0\-: Use only P\-M\-Ts for calculating median seed time Seed\-Type 1\-: User only L\-A\-P\-P\-Ds for calculating median seed time Seed\-Type 2\-: Use both the L\-A\-P\-P\-Ds and the P\-M\-Ts
+
+Number\-Of\-Seeds specifies how many points to generate in the grid, or how many seeds to predict using the quad fitting technique.
+
+If Use\-Seed\-Grid is used, vertex seeds are generated evenly through the A\-N\-N\-I\-E cylinder. The vertex time is the median of the time distribution calculated extrapolating each hit back to the vertex position via speed of light in the medium.
+
+``` 
