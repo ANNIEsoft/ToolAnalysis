@@ -3,5 +3,5 @@
 verbosity 5
 UseTrueVertexAsSeed 1
 FitAllOnSeedGrid 0
-FitTimeWindowMin  6650
+FitTimeWindowMin 6650
 FitTimeWindowMax 6700
