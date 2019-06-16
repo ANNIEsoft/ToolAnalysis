@@ -57,8 +57,8 @@ m_data= &data; //assigning transient data pointer
 	
   // things to be saved to the ANNIEEvent Store
   MCParticles = new std::vector<MCParticle>;
-  MCHits = new std::map<unsigned long,std::vector<Hit>>;
-  MCLAPPDHits = new std::map<unsigned long,std::vector<LAPPDHit>>;
+  MCHits = new std::map<unsigned long,std::vector<MCHit>>;
+  MCLAPPDHits = new std::map<unsigned long,std::vector<MCLAPPDHit>>;
   EventTime = new TimeClass();
   
   this->LoadANNIEGeometry();
@@ -125,12 +125,13 @@ bool LoadRATPAC::Execute(){
       return false;
     }
     unsigned long key = pmt_tubeid_to_channelkey.at(tubeid);
+    std::vector<int> hitparents = {}; //FIXME: Get parent particles of hits
     //Loop over photons that hit the PMT for digits
     for(long iPhot = 0; iPhot < aPMT->GetMCPhotonCount(); iPhot++){
       float hitcharge = aPMT->GetMCPhoton(iPhot)->GetCharge();
       float hittime = aPMT->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
-      Hit thishit(key, hittime, hitcharge);
-      if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<Hit>{thishit});
+      MCHit thishit(key, hittime, hitcharge, hitparents);
+      if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<MCHit>{thishit});
       else MCHits->at(key).push_back(thishit);
       if(verbosity>2) cout<<"digit added"<<endl;
     }
@@ -158,6 +159,7 @@ bool LoadRATPAC::Execute(){
     TVector3 d(lappddir.X(),lappddir.Y(),lappddir.Z());
     //Loop over photons that hit the LAPPD for digits
     for(long iPhot = 0; iPhot < aLAPPD->GetMCPhotonCount(); iPhot++){
+      std::vector<int> lappdhitparents = {}; //FIXME: Get parent particles of lappdhits
       double hitcharge = aLAPPD->GetMCPhoton(iPhot)->GetCharge();
       double hittime = aLAPPD->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
       //Put LAPPD position into ToolAnalysis coordinates
@@ -179,9 +181,9 @@ bool LoadRATPAC::Execute(){
       logmessage = "  RotatedLocalPosition = ("+to_string(trans.X()) + ", " + to_string(trans.Y()) + ", " + to_string(trans.Z()) + ") "+ "\n";
 	    logmessage += "  LAPPDHitLocalPosition(x,y,z in plane coord) = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + "," + to_string(localPosition[2]) + ") "+ "\n";
 	    Log(logmessage,v_debug,verbosity);
-      LAPPDHit thishit(key, hittime, hitcharge,globalPosition, localPosition);
+      MCLAPPDHit thishit(key, hittime, hitcharge,globalPosition, localPosition,lappdhitparents);
       if(MCLAPPDHits->count(key)==0){
-          MCLAPPDHits->emplace(key, std::vector<LAPPDHit>{thishit});
+          MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{thishit});
       } else {
         MCLAPPDHits->at(key).push_back(thishit);
       }

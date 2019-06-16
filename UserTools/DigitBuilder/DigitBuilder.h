@@ -107,7 +107,6 @@ class DigitBuilder: public Tool {
   // first Channel (stripline) of the Detector (tile).
   std::map<unsigned long,int> detectorkey_to_lappdid;
   std::map<unsigned long,int> channelkey_to_pmtid;
-  TRandom3 frand;  ///< Random number generator
 };
 
 

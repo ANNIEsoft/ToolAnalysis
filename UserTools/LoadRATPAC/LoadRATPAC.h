@@ -14,7 +14,7 @@
 #include "TVector3.h"
 #include "TTree.h"
 #include "TMath.h"
-#include "Math/GenVector/Rotation3D.h"
+#include "TMatrixD.h"
 
 // RATEvent Library dependencies
 #include "Run.hh"
@@ -131,8 +131,8 @@ class LoadRATPAC: public Tool {
 	double LappdStripSeparation;  // [mm] for calculating relative y position of each stripline
 
 	std::vector<MCParticle>* MCParticles;
-	std::map<unsigned long,std::vector<Hit>>* MCHits;
-	std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits;
+	std::map<unsigned long,std::vector<MCHit>>* MCHits;
+	std::map<unsigned long,std::vector<MCLAPPDHit>>* MCLAPPDHits;
   
   ULong64_t entry;
   ULong64_t NbEntries;

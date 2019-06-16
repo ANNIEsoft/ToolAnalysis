@@ -23,13 +23,13 @@ RATEventInclude= -I ToolDAQ/RATEventLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-RootLib=   -L $(ToolDAQPath)/root/lib  -lGui -lGenVector -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
+RootLib=   -L $(ToolDAQPath)/root-6.06.08/install/lib  -lGui -lGenVector -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -pthread -m64 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude) `python-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
-MyToolsLib = -lcurl $(RootLib) `python-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib)
+MyToolsInclude =  $(RootInclude) `python3-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
+MyToolsLib = -lcurl $(RootLib) `python3-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse RemoteControl NodeDaemon
 
