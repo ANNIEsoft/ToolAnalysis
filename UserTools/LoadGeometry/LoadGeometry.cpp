@@ -34,6 +34,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 		return false;
   }
 
+  //Make the map of channel key to crate space info
+  ChannelNumToCrateSpaceMap = new std::map<int,std::vector<int>>;
+
   //Initialize the geometry using the geometry CSV file entries 
   this->InitializeGeometry();
 
@@ -41,6 +44,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   this->LoadFACCMRDDetectors();
 
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
+  m_data->Stores.at("ANNIEEvent")->Set("ChannelNumToCrateSpaceMap",ChannelNumToCrateSpaceMap,true);
   
   return true;
 }
@@ -279,6 +283,15 @@ Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   // Add this channel to the geometry
   if(verbosity>4) cout<<"Adding channel "<<channel_num<<" to detector "<<detector_num<<endl;
   adet.AddChannel(pmtchannel);
+
+  // Also add this channel to the electronics map
+  if(ChannelNumToCrateSpaceMap->count(channel_num)==0){
+    ChannelNumToCrateSpaceMap->emplace(channel_num, std::vector<int>{rack});
+    ChannelNumToCrateSpaceMap->at(channel_num).push_back(TDC_slot);
+    ChannelNumToCrateSpaceMap->at(channel_num).push_back(TDC_channel);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried loading crate space info for a channel number already in map!!! ",v_error, verbosity);
+  }
   return adet;
 }
 
