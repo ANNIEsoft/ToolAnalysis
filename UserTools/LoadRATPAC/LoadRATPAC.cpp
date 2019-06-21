@@ -175,8 +175,8 @@ bool LoadRATPAC::Execute(){
       TVector3 sensor_position(lappdx,lappdy,lappdz);
       hit_position.RotateUz(sensor_direction);
       //Load hit position into MCLAPPDHit in z-beam coordinates.
-      std::vector<double> globalPosition{(hit_position.Y()+sensor_position.Y())/1000.,
-              (hit_position.Z()+sensor_position.Z())/1000.,(hit_position.X()+sensor_position.X())/1000.};
+      std::vector<double> globalPosition{(hit_position.X()+sensor_position.X())/1000.,
+              (hit_position.Z()+sensor_position.Z())/1000.,-(hit_position.Y()+sensor_position.Y())/1000.};
       //std::vector<double> globalPosition{lappdx+trans.X(),lappdy+trans.Y(),lappdz+trans.Z()};
       std::vector<double> localPosition{localx,localy};
 	    logmessage = "  LAPPDPosition = ("+to_string(lappdx) + ", " + to_string(lappdy) + ", " + to_string(lappdz) + ") "+ "\n";
@@ -394,12 +394,12 @@ void LoadRATPAC::LoadANNIEGeometry(){
     Detector adet(uniquedetectorkey,
                   "LAPPD",
                   "LAPPD",
-                  Position( lappdpos.Y()/1000.,
+                  Position( lappdpos.X()/1000.,
                             lappdpos.Z()/1000.,
-                            lappdpos.X()/1000.),
-                  Direction(lappddir.Y(),
+                            -lappdpos.Y()/1000.),
+                  Direction(lappddir.X(),
                             lappddir.Z(),
-                            lappddir.X()),
+                            -lappddir.Y()),
                   lappdInfo->GetModelName(modelType),
                   detectorstatus::ON,
                   0.);
@@ -465,12 +465,12 @@ void LoadRATPAC::LoadANNIEGeometry(){
     Detector adet(uniquedetectorkey,
                   "Tank",
                   "Tank",
-                  Position( pmtpos.Y()/1000.,
+                  Position( pmtpos.X()/1000.,
                             pmtpos.Z()/1000.,
-                            pmtpos.X()/1000.),
-                  Direction(pmtdir.Y(),
+                            -pmtpos.Y()/1000.),
+                  Direction(pmtdir.X(),
                             pmtdir.Z(),
-                            pmtdir.X()),
+                            -pmtdir.Y()),
                   pmtInfo->GetModelName(modelType),
                   detectorstatus::ON,
                   0.);
