@@ -153,33 +153,36 @@ bool LoadRATPAC::Execute(){
     Detector* thedet = anniegeom->GetDetector(detkey);
     unsigned int key = thedet->GetChannels()->begin()->first; // first strip on this LAPPD
     if(verbosity>2) cout<<"Channelkey for LAPPD="<<key<<endl;
-    Direction lappddir = thedet->GetDetectorDirection();
-    std::cout<<"LAPPD DIRECTION FROM GEO,XYZ: " << lappddir.X() << "," <<
+    TVector3 lappddir = lappdInfo->GetDirection(lappdid);
+    std::cout<<"LAPPD DIRECTION IN RATPAC COORD:: " << lappddir.X() << "," <<
         lappddir.Y() << "," << lappddir.Z() << std::endl;
-    TVector3 d(lappddir.X(),lappddir.Y(),lappddir.Z());
+    TVector3 sensor_direction(lappddir.X(),lappddir.Y(),lappddir.Z());
     //Loop over photons that hit the LAPPD for digits
     for(long iPhot = 0; iPhot < aLAPPD->GetMCPhotonCount(); iPhot++){
       std::vector<int> lappdhitparents = {}; //FIXME: Get parent particles of lappdhits
       double hitcharge = aLAPPD->GetMCPhoton(iPhot)->GetCharge();
       double hittime = aLAPPD->GetMCPhoton(iPhot)->GetHitTime(); //Time relative to event start (ns)
-      //Put LAPPD position into ToolAnalysis coordinates
-      double lappdx = lappdInfo->GetPosition(lappdid).Y()/1000.;
-      double lappdy = lappdInfo->GetPosition(lappdid).Z()/1000.;
-      double lappdz = lappdInfo->GetPosition(lappdid).X()/1000.;
-      //Keep local position coordinates, rotate to ToolAnalysis direction
-      double localx = aLAPPD->GetMCPhoton(iPhot)->GetPosition().X()/1000.;
-      double localy = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Y()/1000.;
-      double localz = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Z()/1000.;
-      TVector3 local(localx,localy,localz);
-      TVector3 localnorm(0.,0.,1.);
-      TMatrixD drot = this->Rotateatob(localnorm,d);
-      TVector3 trans = drot*local;
-      std::vector<double> globalPosition{lappdx+trans.X(),lappdy+trans.Y(),lappdz+trans.Z()};
+      //Get LAPPD Position in RATPAC coordinates
+      double lappdx = lappdInfo->GetPosition(lappdid).X();
+      double lappdy = lappdInfo->GetPosition(lappdid).Y();
+      double lappdz = lappdInfo->GetPosition(lappdid).Z();
+      // Get Local hit position on LAPPD relative to sensor center position
+      double localx = aLAPPD->GetMCPhoton(iPhot)->GetPosition().X();
+      double localy = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Y();
+      double localz = aLAPPD->GetMCPhoton(iPhot)->GetPosition().Z();
+      // Rotate local hit position into RATPAC coordinates frame
+      TVector3 hit_position(localx,localy,localz);
+      TVector3 sensor_position(lappdx,lappdy,lappdz);
+      hit_position.RotateUz(sensor_direction);
+      //Load hit position into MCLAPPDHit in z-beam coordinates.
+      std::vector<double> globalPosition{(hit_position.Y()+sensor_position.Y())/1000.,
+              (hit_position.Z()+sensor_position.Z())/1000.,(hit_position.X()+sensor_position.X())/1000.};
+      //std::vector<double> globalPosition{lappdx+trans.X(),lappdy+trans.Y(),lappdz+trans.Z()};
       std::vector<double> localPosition{localx,localy};
 	    logmessage = "  LAPPDPosition = ("+to_string(lappdx) + ", " + to_string(lappdy) + ", " + to_string(lappdz) + ") "+ "\n";
       logmessage = "  LAPPDHitGlobalPosition = ("+to_string(globalPosition[0]) + ", " + to_string(globalPosition[1]) + ", " + to_string(globalPosition[2]) + ") "+ "\n";
-      logmessage = "  RotatedLocalPosition = ("+to_string(trans.X()) + ", " + to_string(trans.Y()) + ", " + to_string(trans.Z()) + ") "+ "\n";
-	    logmessage += "  LAPPDHitLocalPosition(x,y,z in plane coord) = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + "," + to_string(localPosition[2]) + ") "+ "\n";
+      //logmessage = "  RotatedLocalPosition = ("+to_string(trans.X()) + ", " + to_string(trans.Y()) + ", " + to_string(trans.Z()) + ") "+ "\n";
+      //logmessage += "  LAPPDHitLocalPosition(x,y,z in plane coord) = ("+to_string(localPosition[0]) + ", " + to_string(localPosition[1]) + "," + to_string(localPosition[2]) + ") "+ "\n";
 	    Log(logmessage,v_debug,verbosity);
       MCLAPPDHit thishit(key, hittime, hitcharge,globalPosition, localPosition,lappdhitparents);
       if(MCLAPPDHits->count(key)==0){
@@ -230,11 +233,11 @@ bool LoadRATPAC::Execute(){
     partdir.SetY(particledir.Y());
     partdir.SetZ(particledir.Z());
     //Load information into MCParticle 
-    //TODO: RATPAC should be changed have particles & hits in same coordinates..
+    //TODO: RATPAC particles are already in z-beam axis coordinates!  We should make particles & detectors match coordinates in RATPAC..
     MCParticle thisparticle(
-            pdgcode, StartKE, EndKE, Position((startpoint.X()+xtankcenter)/1000., 
-            (startpoint.Y()+ytankcenter)/1000., (startpoint.Z()+ztankcenter)/1000.), Position((endpoint.X()+xtankcenter)/1000.,
-            (endpoint.Y()+ytankcenter)/1000., (endpoint.Z()+ztankcenter)/1000.), starttime,
+            pdgcode, StartKE, EndKE, Position((startpoint.X())/1000., 
+            (startpoint.Y())/1000., (startpoint.Z())/1000.), Position((endpoint.X())/1000.,
+            (endpoint.Y())/1000., (endpoint.Z())/1000.), starttime,
             endtime, partdir,
             tracklength/1000., startstoptype, particleid, parentid, -9999);
     MCParticles->push_back(thisparticle);
@@ -387,6 +390,7 @@ void LoadRATPAC::LoadANNIEGeometry(){
     unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
     lappd_tubeid_to_detectorkey.emplace(lappdi,uniquedetectorkey);
     detectorkey_to_lappdid.emplace(uniquedetectorkey,lappdi);
+    //Unit conversion for position applied post-hit rotations
     Detector adet(uniquedetectorkey,
                   "LAPPD",
                   "LAPPD",
