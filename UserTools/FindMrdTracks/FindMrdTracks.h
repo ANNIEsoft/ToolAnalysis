@@ -33,9 +33,9 @@ private:
 	
 	// Variables stored in Config file
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	int verbosity=1;
 	int minimumdigits;
 	double maxsubeventduration;
+	double minimum_subevent_timeseparation;
 	std::string outputdir="";
 	bool writefile=false;
 	
@@ -83,11 +83,20 @@ private:
 	std::vector<MCParticle>* MCParticles=nullptr;
 	
 	bool MakeMrdDigitTimePlot=false;
-	TApplication* findMrdRootApp=nullptr;
+	TApplication* rootTApp=nullptr;
 	TCanvas* findMrdRootCanvas=nullptr;
 	TH1D* mrddigitts=nullptr;
 	Double_t canvwidth;
 	Double_t canvheight;
+	
+	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	int verbosity=1;
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;
 };
 
 
