@@ -1,0 +1,17 @@
+# match reconstructed tracks in the tank with tracks in the MRD.
+# 
+# TODO make tool which, for tank tracks with no found MRD track,
+# associates MRD hits close in time and tries to do some crude
+# reconstruction just measuring the penetration
+# 
+myLoadWCSim LoadWCSim configfiles/TankMrdTrackCombiner/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/TankMrdTrackCombiner/LoadWCSimLAPPDConfig
+myMCParticleProperties MCParticleProperties configfiles/TankMrdTrackCombiner/MCParticlePropertiesConfig
+myFindMrdTracks FindMrdTracks configfiles/TankMrdTrackCombiner/FindMrdTracksConfig
+myMCRecoEventLoader MCRecoEventLoader configfiles/TankMrdTrackCombiner/MCRecoEventLoaderConfig
+myDigitBuilder DigitBuilder configfiles/TankMrdTrackCombiner/DigitBuilderConfig
+myEventSelector EventSelector configfiles/TankMrdTrackCombiner/EventSelectorConfig
+myVtxSeedGenerator VtxSeedGenerator configfiles/TankMrdTrackCombiner/VtxSeedGeneratorConfig
+myVtxExtendedVertexFinder VtxExtendedVertexFinder configfiles/TankMrdTrackCombiner/myVtxExtendedVertexFinderConfig
+myPhaseIITreeMaker PhaseIITreeMaker configfiles/TankMrdTrackCombiner/PhaseIITreeMakerConfig
+
