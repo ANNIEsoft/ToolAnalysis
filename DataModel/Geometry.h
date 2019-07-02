@@ -18,14 +18,13 @@ class Geometry : public SerialisableObject{
 	
 	public:
 	// Do we care to have the overloaded empty constructor?
-	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), pmt_enclosed_radius(0.), pmt_enclosed_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL), Detectors(std::vector<std::map<unsigned long,Detector>* >{}) {
+	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), pmt_enclosed_radius(0.), pmt_enclosed_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL) {
 		serialise=true;
-		RealDetectors.reserve(10);
 	}
 	
-	Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets=std::vector<std::map<unsigned long,Detector>* >{});
+	Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::map<std::string,std::map<unsigned long,Detector> >dets=std::map<std::string,std::map<unsigned long,Detector> >{});
 	
-	inline std::vector<std::map<unsigned long,Detector>* >* GetDetectors(){return &Detectors;}
+	inline std::map<std::string, std::map<unsigned long,Detector> >* GetDetectors(){return &Detectors;}
 	inline double GetVersion(){return Version;}
 	inline geostatus GetStatus(){return Status;}
 	inline Position GetTankCentre(){return tank_centre;}
@@ -56,9 +55,8 @@ class Geometry : public SerialisableObject{
 	inline void SetMrdHeight(double mrd_heightIn){mrd_height = mrd_heightIn;}
 	inline void SetMrdDepth(double mrd_depthIn){mrd_depth = mrd_depthIn;}
 	inline void SetMrdStart(double mrd_startIn){mrd_start = mrd_startIn;}
-	void SetDetectors(std::vector<std::map<unsigned long,Detector>* >DetectorsIn){
+	void SetDetectors(std::map<std::string,std::map<unsigned long,Detector> >DetectorsIn){
 		Detectors = DetectorsIn;
-		detectorcounts.clear();
 	}
 	void SetPaddles(std::map<unsigned long,Paddle> PaddlesIn){
 		Paddles = PaddlesIn;
@@ -110,30 +108,12 @@ class Geometry : public SerialisableObject{
 		detin.SetGeometryPtr(this);
 		
 		std::string thedetel = detin.GetDetectorElement();
-		int detectorsetindex=-1;
-		if(DetectorElements.count(thedetel)==0){
-			// this is a new detector element - create a new entry in the Detectors vector
-			RealDetectors.resize(RealDetectors.size()+1);
-			Detectors.push_back(&RealDetectors.back());
-			DetectorElements.emplace(thedetel,RealDetectors.size()-1); // maps det. element to vector index
-			detectorsetindex = RealDetectors.size()-1;
-		} else {
-			// we already have a detector set for this detector element: add this detector to that set
-			detectorsetindex = DetectorElements.at(thedetel);
+		if(Detectors.count(thedetel)==0){
+			// this is a new detector element - create a new entry in the Detectors map
+			Detectors.emplace(thedetel,std::map<unsigned long,Detector>{});
 		}
-		if(Detectors.at(detectorsetindex)->count(detin.GetDetectorID())!=0){  // search it for this key
-				std::cerr<<"Geometry error! AddDetector called with non-unique DetectorKey "
-						 <<detin.GetDetectorID()<<std::endl;
-				return false;
-		} else {
-			Detectors.at(detectorsetindex)->emplace(detin.GetDetectorID(), detin);
-		}
-		// increment counters of the number of detectors in each set
-		if(detectorcounts.count(thedetel)==0){
-			detectorcounts.emplace(thedetel,1);
-		} else {
-			detectorcounts.at(thedetel)++;
-		}
+		Detectors.at(thedetel).emplace(detin.GetDetectorID(), detin);
+		
 		return true;
 	}
 	
@@ -153,39 +133,10 @@ class Geometry : public SerialisableObject{
 	void InitChannelMap();
 	
 	int GetNumDetectorsInSet(std::string SetName){
-		// if we've calculated it before, such as during filling with Geometry::AddDetector
-		if(detectorcounts.count(SetName)!=0) return detectorcounts.at(SetName);
-		// we may not have an existing count if Geometry::SetDetectors was used
-		// in which case, scan the Detectors for this set and count its members
-		int numdetectorsinthisset=-1;
-		int setindex=-1;
-		for(std::vector<std::map<unsigned long,Detector>>::iterator detsetit  = RealDetectors.begin();
-																	detsetit != RealDetectors.end();
-																	++detsetit){
-			int setsize = detsetit->size();
-			if(setsize==0){
-				cerr<<"Geometry::GetNumTankPMTs ERROR: Detector set "
-					<<std::distance(RealDetectors.begin(),detsetit)
-					<<" had no Detectors!"<<endl;
-					continue;
-			}
-			std::map<unsigned long,Detector>::iterator detectorsit = detsetit->begin();
-			std::string detectorsetelement = detectorsit->second.GetDetectorElement();
-			if(detectorsetelement==SetName){
-				setindex = std::distance(RealDetectors.begin(), detsetit);
-				numdetectorsinthisset = setsize;
-				break; // found the requested detector set
-			}
-		}
-		if(numdetectorsinthisset<0){
-			cerr<<"Geometry::GetNumTankPMTs ERROR: Could not find a detector set with detectorElement \"Tank\"!"<<endl;
+		if(Detectors.count(SetName)==0){
 			return 0;
 		}
-		detectorcounts.emplace(SetName,numdetectorsinthisset);
-		if(DetectorElements.count(SetName)==0){
-			DetectorElements.emplace(SetName,setindex);
-		}
-		return numdetectorsinthisset;
+		return Detectors.at(SetName).size();
 	}
 	
 	int GetNumTankPMTs(){  // n.b. this doesn't include OD PMTs
@@ -303,10 +254,7 @@ class Geometry : public SerialisableObject{
 	unsigned long NextFreeChannelKey;
 	std::map<int,int> DetectorKeys;
 	std::map<unsigned long,Detector*> ChannelMap;
-	std::vector<std::map<unsigned long,Detector> > RealDetectors;
-	std::vector<std::map<unsigned long,Detector>*> Detectors;
-	std::map<std::string, int> detectorcounts;
-	std::map<std::string, int> DetectorElements;
+	std::map<std::string,std::map<unsigned long,Detector>> Detectors;
 	std::map<unsigned long, Paddle> Paddles;
 	double Version;
 	geostatus Status;
@@ -330,10 +278,8 @@ class Geometry : public SerialisableObject{
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
-			ar & RealDetectors;
+			ar & Detectors;
 			ar & Paddles;
-			ar & DetectorElements;
-			ar & detectorcounts;
 			ar & Version;
 			ar & Status;
 			ar & tank_centre;
