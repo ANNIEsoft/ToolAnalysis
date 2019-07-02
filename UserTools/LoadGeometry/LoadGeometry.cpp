@@ -42,7 +42,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
   
-  AnnieGeometry->GetChannel(0); // trigger InitChannelMap
+  //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
   
   return true;
 }

@@ -302,7 +302,6 @@ class Geometry : public SerialisableObject{
 	unsigned long NextFreeDetectorKey;
 	unsigned long NextFreeChannelKey;
 	std::map<int,int> DetectorKeys;
-	std::map<int,int> ChannelKeys;
 	std::map<unsigned long,Detector*> ChannelMap;
 	std::vector<std::map<unsigned long,Detector> > RealDetectors;
 	std::vector<std::map<unsigned long,Detector>*> Detectors;
