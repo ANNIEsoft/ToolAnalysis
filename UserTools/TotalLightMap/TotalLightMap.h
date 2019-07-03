@@ -43,9 +43,6 @@ class TotalLightMap: public Tool {
 	double tank_height;
 	double tank_radius;
 	// 
-	std::map<unsigned long,Detector>* TankDetectors=nullptr;
-	std::map<unsigned long,Detector>* LAPPDDetectors=nullptr;
-	
 	// hits, particles from the ANNIEEvent
 	std::map<unsigned long,std::vector<MCLAPPDHit>>* MCLAPPDHits=nullptr;
 	std::map<unsigned long,std::vector<MCHit>>* MCHits=nullptr;
