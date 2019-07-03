@@ -4,7 +4,9 @@ verbose 1
 
 #InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root
 #InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_03-05-17_rhatcher/wcsim_0.1000.root      ## first of the DOE proposal files
-InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_3-12-18_ANNIEp2v6_BNB_Water_10k_22-05-17/wcsim_0.0.0.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_3-12-18_ANNIEp2v6_BNB_Water_10k_22-05-17/wcsim_0.0.0.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.0.0.root
+InputFile ./25_04_19_wcsim_0.0.0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger

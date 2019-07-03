@@ -42,6 +42,8 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
   
+  //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
+  
   return true;
 }
 
@@ -158,8 +160,10 @@ void LoadGeometry::LoadFACCMRDDetectors(){
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on); 
       if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
-      Detector FACCMRDDetector = this->ParseMRDDataEntry(SpecLine,MRDLegendEntries);
-      AnnieGeometry->AddDetector(FACCMRDDetector);
+      bool add_ok = this->ParseMRDDataEntry(SpecLine,MRDLegendEntries);
+      if(not add_ok){
+        std::cerr<<"Faild to add Detector to Geometry!"<<std::endl;
+      }
     }
   } else {
     Log("LoadGeometry tool: Something went wrong opening a file!!!",v_error,verbosity);
@@ -168,7 +172,7 @@ void LoadGeometry::LoadFACCMRDDetectors(){
     Log("LoadGeometry tool: FACC/MRD Detector/Channel loading complete",v_message,verbosity);
 }
 
-Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
+bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
         std::vector<std::string> MRDLegendEntries){
   //Parse the line for information needed to fill the detector & channel classes
   int detector_num,channel_num,detector_system,orientation,layer,side,num,
@@ -261,6 +265,26 @@ Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
                 detectorstatus::ON,
                 0.);
 
+  int MRD_x, MRD_y, MRD_z;
+  // orientation 0=horizontal, 1=vertical
+  MRD_x = (orientation) ? num  : side;
+  MRD_y = (orientation) ? side : num;
+  // veto layers are both cabled as z=0, with the layers differentiated by x=0, x=1
+  // in practice of course, both span the same x, but are offset in z.
+  if(layer>0) MRD_z = layer;
+  else        MRD_z = side;
+  
+  Paddle apad( MRD_x,
+               MRD_y,
+               MRD_z,
+               orientation,
+               Position( x_center/100.,
+                         y_center/100.,
+                         z_center/100.),
+               std::pair<double,double>{x_center-(x_width/200.), x_center+(x_width/200.)},
+               std::pair<double,double>{y_center-(y_width/200.), y_center+(y_width/200.)},
+               std::pair<double,double>{z_center-(z_width/200.), z_center+(z_width/200.)});
+  
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),
                       -1, // stripside
@@ -279,7 +303,11 @@ Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   // Add this channel to the geometry
   if(verbosity>4) cout<<"Adding channel "<<channel_num<<" to detector "<<detector_num<<endl;
   adet.AddChannel(pmtchannel);
-  return adet;
+  if(verbosity>5) cout<<"Adding detector to Geometry"<<endl;
+  AnnieGeometry->AddDetector(adet);
+  if(verbosity>4) cout<<"Adding paddle to Geometry"<<endl;
+  AnnieGeometry->SetDetectorPaddle(detector_num, apad);
+  return true;
 }
 
 
