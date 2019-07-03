@@ -24,7 +24,7 @@ class Geometry : public SerialisableObject{
 	
 	Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::map<std::string,std::map<unsigned long,Detector> >dets=std::map<std::string,std::map<unsigned long,Detector> >{});
 	
-	inline std::map<std::string, std::map<unsigned long,Detector> >* GetDetectors(){return &Detectors;}
+	inline std::map<std::string, std::map<unsigned long,Detector*> >* GetDetectors(){return &Detectors;}
 	inline double GetVersion(){return Version;}
 	inline geostatus GetStatus(){return Status;}
 	inline Position GetTankCentre(){return tank_centre;}
@@ -56,7 +56,18 @@ class Geometry : public SerialisableObject{
 	inline void SetMrdDepth(double mrd_depthIn){mrd_depth = mrd_depthIn;}
 	inline void SetMrdStart(double mrd_startIn){mrd_start = mrd_startIn;}
 	void SetDetectors(std::map<std::string,std::map<unsigned long,Detector> >DetectorsIn){
-		Detectors = DetectorsIn;
+		RealDetectors = DetectorsIn;  // copy them in; we want to own our detectors
+		// although if we're going to use this, we may wish to provide a method for passing in
+		// detectors on the heap and taking ownership of them to avoid the copy.. TODO
+		// build the map of pointers
+		Detectors.clear(); // just in case.
+		for(auto&& aset : RealDetectors){
+			std::map<unsigned long,Detector*> tempset;
+			for(auto&& adetector : aset.second){
+				tempset.emplace(adetector.first,&adetector.second);
+			}
+			Detectors.emplace(aset.first,tempset);
+		}
 	}
 	void SetPaddles(std::map<unsigned long,Paddle> PaddlesIn){
 		Paddles = PaddlesIn;
@@ -110,9 +121,12 @@ class Geometry : public SerialisableObject{
 		std::string thedetel = detin.GetDetectorElement();
 		if(Detectors.count(thedetel)==0){
 			// this is a new detector element - create a new entry in the Detectors map
-			Detectors.emplace(thedetel,std::map<unsigned long,Detector>{});
+			RealDetectors.emplace(thedetel,std::map<unsigned long,Detector>{});
+			Detectors.emplace(thedetel,std::map<unsigned long,Detector*>{});
 		}
-		Detectors.at(thedetel).emplace(detin.GetDetectorID(), detin);
+		RealDetectors.at(thedetel).emplace(detin.GetDetectorID(), detin);
+		Detectors.at(thedetel).emplace(detin.GetDetectorID(),
+										&RealDetectors.at(thedetel).at(detin.GetDetectorID()));
 		
 		return true;
 	}
@@ -254,7 +268,8 @@ class Geometry : public SerialisableObject{
 	unsigned long NextFreeChannelKey;
 	std::map<int,int> DetectorKeys;
 	std::map<unsigned long,Detector*> ChannelMap;
-	std::map<std::string,std::map<unsigned long,Detector>> Detectors;
+	std::map<std::string,std::map<unsigned long,Detector>> RealDetectors;
+	std::map<std::string,std::map<unsigned long,Detector*>> Detectors;
 	std::map<unsigned long, Paddle> Paddles;
 	double Version;
 	geostatus Status;
@@ -278,7 +293,7 @@ class Geometry : public SerialisableObject{
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
-			ar & Detectors;
+			ar & RealDetectors;
 			ar & Paddles;
 			ar & Version;
 			ar & Status;
