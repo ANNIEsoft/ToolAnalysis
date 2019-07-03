@@ -22,7 +22,7 @@ class LoadGeometry: public Tool {
   std::string GetLegendLine(std::string name);
   void InitializeGeometry();
   void LoadFACCMRDDetectors();
-  Detector  ParseMRDDataEntry(std::vector<std::string> SpecLine, 
+  bool  ParseMRDDataEntry(std::vector<std::string> SpecLine,
                                std::vector<std::string> MRDLegendEntries);
   Geometry* AnnieGeometry;
 

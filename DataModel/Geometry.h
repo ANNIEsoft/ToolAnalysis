@@ -5,6 +5,7 @@
 #include<SerialisableObject.h>
 #include "ChannelKey.h"
 #include "Detector.h"
+#include "Paddle.h"
 #include "Particle.h"
 #include "Channel.h"
 using namespace std;
@@ -59,6 +60,9 @@ class Geometry : public SerialisableObject{
 		Detectors = DetectorsIn;
 		detectorcounts.clear();
 	}
+	void SetPaddles(std::map<unsigned long,Paddle> PaddlesIn){
+		Paddles = PaddlesIn;
+	}
 	
 	unsigned long ConsumeNextFreeChannelKey(){
 		unsigned long thefreechannelkey = NextFreeChannelKey;
@@ -71,7 +75,36 @@ class Geometry : public SerialisableObject{
 		return thefreedetectorkey;
 	}
 	
+	bool SetDetectorPaddle(unsigned long detectorkey, Paddle paddlein){
+		// quickly check we have a Detector associated to this DetectorKey
+		if(DetectorKeys.count(detectorkey)==0){
+			std::cerr<<"Geometry error! AddPaddle called with unknown DetectorKey "
+					 <<detectorkey<<std::endl;
+			return false;
+		} else {
+			// check if we've already allocated a Paddle to this DetectorKey
+			if(Paddles.count(detectorkey)){
+				std::cerr<<"Geometry error! SetDetectorPaddle called for detector "<<detectorkey
+						 <<" but this Detector already has a Paddle allocated!"<<std::endl;
+				return false;
+			} else {
+				// Add the paddle
+				Paddles.emplace(detectorkey,paddlein);
+				return true;
+			}
+		}
+	}
+	
 	bool AddDetector(Detector detin){
+		// quickly check if we've allocated this DetectorKey
+		if(DetectorKeys.count(detin.GetDetectorID())){
+			std::cerr<<"Geometry error! AddDetector called with non-unique DetectorKey "
+					 <<detin.GetDetectorID()<<std::endl;
+			return false;
+		} else {
+			DetectorKeys.emplace(detin.GetDetectorID(),1);
+		}
+		
 		// Pass a pointer to it's owning geometry to this Detector
 		// we need to do this before calling `emplace` as that must do a copy-construction
 		detin.SetGeometryPtr(this);
@@ -108,6 +141,15 @@ class Geometry : public SerialisableObject{
 	Detector* GetDetector(unsigned long DetectorKey);
 	Detector* ChannelToDetector(unsigned long ChannelKey);
 	Channel* GetChannel(unsigned long ChannelKey);
+	Paddle* GetDetectorPaddle(unsigned long DetectorKey){
+		if(Paddles.count(DetectorKey)){
+			return (&(Paddles.at(DetectorKey)));
+		} else {
+			std::cerr<<"Geometry Error: Attempt to retreive Paddle for detector "
+					 <<DetectorKey<<" which has no paddle"<<std::endl;
+			return 0;
+		}
+	}
 	void InitChannelMap();
 	
 	int GetNumDetectorsInSet(std::string SetName){
@@ -259,11 +301,13 @@ class Geometry : public SerialisableObject{
 	private:
 	unsigned long NextFreeDetectorKey;
 	unsigned long NextFreeChannelKey;
+	std::map<int,int> DetectorKeys;
 	std::map<unsigned long,Detector*> ChannelMap;
 	std::vector<std::map<unsigned long,Detector> > RealDetectors;
 	std::vector<std::map<unsigned long,Detector>*> Detectors;
 	std::map<std::string, int> detectorcounts;
 	std::map<std::string, int> DetectorElements;
+	std::map<unsigned long, Paddle> Paddles;
 	double Version;
 	geostatus Status;
 	Position tank_centre;
@@ -287,6 +331,7 @@ class Geometry : public SerialisableObject{
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
 			ar & RealDetectors;
+			ar & Paddles;
 			ar & DetectorElements;
 			ar & detectorcounts;
 			ar & Version;
