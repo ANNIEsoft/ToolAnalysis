@@ -19,13 +19,13 @@ Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, doub
 	nummrdpmts=nmrdpmts;
 	numvetopmts=nvetopmts;
 	numlappds=nlappds;
-	Detectors=dets;
+	RealDetectors=dets;
 	serialise=true;
 }
 
 Detector*  Geometry::GetDetector(unsigned long DetectorKey){
-	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = Detectors.begin();
-		it!=Detectors.end();
+	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = RealDetectors.begin();
+		it!=RealDetectors.end();
 		++it){
 		for (std::map<unsigned long,Detector>::iterator it2=it->second.begin();
 														it2!=it->second.end();
@@ -53,8 +53,8 @@ Channel* Geometry::GetChannel(unsigned long ChannelKey){
 
 void Geometry::InitChannelMap(){
 	// loop over detector sets
-	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = Detectors.begin();
-																		 it!=Detectors.end();
+	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = RealDetectors.begin();
+																		 it!=RealDetectors.end();
 																		 ++it){
 		// loop over detectors in a set
 		for(std::map<unsigned long,Detector>::iterator it2=it->second.begin();
@@ -78,13 +78,13 @@ void Geometry::InitChannelMap(){
 }
 
 void Geometry::PrintChannels(){
-	cout<<"scanning "<<Detectors.size()<<" detector sets"<<endl;
+	cout<<"scanning "<<RealDetectors.size()<<" detector sets"<<endl;
 	// loop over detector sets
-	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = Detectors.begin();
-																		 it!=Detectors.end();
+	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = RealDetectors.begin();
+																		 it!=RealDetectors.end();
 																		 ++it){
-		cout<<"set "<<std::distance(Detectors.begin(),it)
-			<<" has "<<it->second.size()<<" Detectors"<<endl;
+		cout<<"set "<<std::distance(RealDetectors.begin(),it)
+			<<" has "<<it->second.size()<<" RealDetectors"<<endl;
 		// loop over detectors in this set
 		for(std::map<unsigned long,Detector>::iterator it2=it->second.begin();
 													   it2!=it->second.end();

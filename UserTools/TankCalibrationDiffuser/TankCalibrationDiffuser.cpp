@@ -49,11 +49,8 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
 
-  m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
-  m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
-
-  std::vector<std::map<unsigned long,Detector>* >* Detectors = geom->GetDetectors();
-  std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;
+  std::map<std::string, std::map<unsigned long,Detector*>>* Detectors = geom->GetDetectors();
+  std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;  // num detector sets...
 
 
   //----------------------------------------------------------------------------
@@ -92,65 +89,44 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   //---------------calculate expected hit times for PMTs------------------------
   //----------------------------------------------------------------------------
 
-  Position position_PMT;
+  for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("Tank").begin();
+                                                    it != Detectors->at("Tank").end();
+                                                  ++it){
 
-  n_tank_pmts = 0;
+    Detector* apmt = it->second;
+    unsigned long detkey = it->first;
+    unsigned long chankey = apmt->GetChannels()->begin()->first;
 
-  for (int i_detector = 0; i_detector < Detectors->size(); i_detector++){
+    Position position_PMT = apmt->GetDetectorPosition();
+    if (verbose > 2) std::cout <<"detkey: "<<detkey<<", chankey: "<<chankey<<std::endl;
+    if (verbose > 2) std::cout <<"filling PMT position maps"<<std::endl;
 
-    std::map<unsigned long, Detector>* temp_map = Detectors->at(i_detector);
-
-    for(auto&& apmt : (*temp_map)){
-      unsigned long detkey = apmt.first;
-      unsigned long chankey;
-      if (verbose > 2) std::cout <<"i_detector: "<<i_detector;
-      if (verbose > 2) std::cout <<", detkey: "<<detkey<<", n_lappds: "<<n_lappds<<std::endl;
-      if (Detectors->size()==1){
-      	chankey = pmt_tubeid_to_channelkey[detkey-n_lappds+1];
-      } else {
-      	if (i_detector == 0) chankey = detkey*n_channels_per_lappd;
-      	else if (i_detector == 1) chankey = pmt_tubeid_to_channelkey[detkey-n_lappds+1];
-      	else chankey = n_channels_per_lappd*n_lappds+(detkey-n_lappds);
-      }
-      Detector* thedetector = geom->ChannelToDetector(chankey);
-      if (verbose > 2) std::cout <<"chankey: "<<chankey<<std::endl;
-      if (Detectors->size()==1 || i_detector == 1) {
-
-        Position position_PMT = thedetector->GetDetectorPosition();
-        if (verbose > 2) std::cout <<"chankey: "<<chankey<<std::endl;
-        if (verbose > 2) std::cout <<"filling PMT IDs: ID "<<detkey-n_lappds<<", wcsim ID: "<< channelkey_to_pmtid[chankey]<<std::endl;
+    x_PMT.insert(std::pair<unsigned long,double>(detkey,position_PMT.X()-tank_center_x));
+    y_PMT.insert(std::pair<unsigned long,double>(detkey,position_PMT.Y()-tank_center_y));
+    z_PMT.insert(std::pair<unsigned long,double>(detkey,position_PMT.Z()-tank_center_z));
 
 
-        unsigned long detector_id = channelkey_to_pmtid[chankey]-1;
-        x_PMT.insert(std::pair<unsigned long,double>(detector_id,position_PMT.X()-tank_center_x));
-        y_PMT.insert(std::pair<unsigned long,double>(detector_id,position_PMT.Y()-tank_center_y));
-        z_PMT.insert(std::pair<unsigned long,double>(detector_id,position_PMT.Z()-tank_center_z));
+    double rho = sqrt(pow(x_PMT.at(detkey),2)+pow(y_PMT.at(detkey),2));
+    if (x_PMT.at(detkey) < 0) rho*=-1;
+    rho_PMT.insert(std::pair<unsigned long, double>(detkey,rho));
 
 
-        double rho = sqrt(pow(x_PMT.at(detector_id),2)+pow(y_PMT.at(detector_id),2));
-        if (x_PMT.at(detector_id) < 0) rho*=-1;
-        rho_PMT.insert(std::pair<unsigned long, double>(detector_id,rho));
+    double phi;
+    if (x_PMT.at(detkey)>0 && z_PMT.at(detkey)>0) phi = atan(x_PMT.at(detkey)/z_PMT.at(detkey));
+    if (x_PMT.at(detkey)>0 && z_PMT.at(detkey)<0) phi = TMath::Pi()/2+atan(x_PMT.at(detkey)/-z_PMT.at(detkey));
+    if (x_PMT.at(detkey)<0 && z_PMT.at(detkey)<0) phi = TMath::Pi()+atan(x_PMT.at(detkey)/z_PMT.at(detkey));
+    if (x_PMT.at(detkey)<0 && z_PMT.at(detkey)>0) phi = 3*TMath::Pi()/2+atan(-x_PMT.at(detkey)/z_PMT.at(detkey));
+    phi_PMT.insert(std::pair<unsigned long,double>(detkey,phi));
 
 
-        double phi;
-        if (x_PMT.at(detector_id)>0 && z_PMT.at(detector_id)>0) phi = atan(x_PMT.at(detector_id)/z_PMT.at(detector_id));
-        if (x_PMT.at(detector_id)>0 && z_PMT.at(detector_id)<0) phi = TMath::Pi()/2+atan(x_PMT.at(detector_id)/-z_PMT.at(detector_id));
-        if (x_PMT.at(detector_id)<0 && z_PMT.at(detector_id)<0) phi = TMath::Pi()+atan(x_PMT.at(detector_id)/z_PMT.at(detector_id));
-        if (x_PMT.at(detector_id)<0 && z_PMT.at(detector_id)>0) phi = 3*TMath::Pi()/2+atan(-x_PMT.at(detector_id)/z_PMT.at(detector_id));
-        phi_PMT.insert(std::pair<unsigned long,double>(detector_id,phi));
+    double expectedT = (sqrt(pow(x_PMT.at(detkey)-diffuser_x,2)+pow(y_PMT.at(detkey)-diffuser_y,2)+pow(z_PMT.at(detkey)-diffuser_z,2))-radius_PMT[detkey])/c_vacuum*n_water*1E9;
+    expected_time.insert(std::pair<unsigned long,double>(detkey,expectedT));
+    if (verbose > 2) std::cout <<"detectorkey: "<<detkey<<", position: ("<<position_PMT.X()<<","<<position_PMT.Y()<<","<<position_PMT.Z()<<")"<<std::endl;
+    if (verbose > 2) std::cout <<"rho PMT "<<detkey<<": "<<rho<<std::endl;
+    if (verbose > 2) std::cout <<"y PMT: "<<y_PMT.at(detkey)<<std::endl;
 
 
-        double expectedT = (sqrt(pow(x_PMT.at(detector_id)-diffuser_x,2)+pow(y_PMT.at(detector_id)-diffuser_y,2)+pow(z_PMT.at(detector_id)-diffuser_z,2))-radius_PMT[detector_id])/c_vacuum*n_water*1E9;
-        expected_time.insert(std::pair<unsigned long,double>(detector_id,expectedT));
-        if (verbose > 2) std::cout <<"WCSim ID: "<<channelkey_to_pmtid[chankey]<<", position: ("<<position_PMT.X()<<","<<position_PMT.Y()<<","<<position_PMT.Z()<<")"<<std::endl;
-        if (verbose > 2) std::cout <<"rho PMT "<<detector_id<<": "<<rho<<std::endl;
-        if (verbose > 2) std::cout <<"y PMT: "<<y_PMT.at(detector_id)<<std::endl;
-
-
-        PMT_ishit.insert(std::pair<unsigned long, int>(detector_id,0));
-        n_tank_pmts++;
-      }
-    }
+    PMT_ishit.insert(std::pair<unsigned long, int>(detkey,0));
   }
 
   std::cout <<"Number of tank PMTs: "<<n_tank_pmts<<std::endl;
@@ -250,12 +226,12 @@ bool TankCalibrationDiffuser::Execute(){
   if (verbose > 0) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
   for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
     unsigned long chankey = apair.first;
-    int wcsim_pmt_id = channelkey_to_pmtid[chankey];
     Detector* thistube = geom->ChannelToDetector(chankey);
+    int detectorkey = thistube->GetDetectorID();
     if (thistube->GetDetectorElement()=="Tank"){
       std::vector<MCHit>& Hits = apair.second;
       int wcsim_id;
-      PMT_ishit[wcsim_pmt_id-1] = 1;
+      PMT_ishit[detectorkey] = 1;
       for (MCHit &ahit : Hits){
       	if (verbose > 2) std::cout <<"charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<", tubeid: "<<ahit.GetTubeId()<<std::endl;
         hist_charge->Fill(ahit.GetCharge());
