@@ -91,3 +91,5 @@
 #include "MCRecoEventLoader.h"
 #include "MonitorMRDEventDisplay.h"
 #include "LoadGeometry.h"
+#include "TimeClustering.h"
+#include "GracefulStop.h"

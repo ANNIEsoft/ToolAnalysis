@@ -457,6 +457,20 @@ bool TotalLightMap::Finalise(){
 //	delete thetacanv;
 //	delete ycanv;
 	
+	// see if we're the last user of the TApplication and release it if so,
+	// otherwise de-register us as a user since we're done
+	int tapplicationusers=0;
+	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+	if(not get_ok || tapplicationusers==1){
+		if(rootTApp){
+			std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
+			delete rootTApp;
+			rootTApp=nullptr;
+		}
+	} else if(tapplicationusers>1){
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+	}
+	
 	return true;
 }
 
