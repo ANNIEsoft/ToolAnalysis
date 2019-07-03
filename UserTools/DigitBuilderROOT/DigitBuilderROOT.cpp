@@ -18,14 +18,16 @@ bool DigitBuilderROOT::Initialise(std::string configfile, DataModel &data){
   int recoeventexists = m_data->Stores.count("RecoEvent");
   if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
 
-	int annieeventexists = m_data->Stores.count("ANNIEEvent");
-	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
+  int annieeventexists = m_data->Stores.count("ANNIEEvent");
+  if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
+
+  if(verbosity>4) std::cout << "DigitBuilderROOT Tool: loading ntuple file " << NtupleFile << std::endl;
 
   P2Chain = new TChain("phaseII");
   P2Chain->Add(NtupleFile.c_str());
  
   fMuonVertex = new RecoVertex();
-	fDigitList = new std::vector<RecoDigit>;
+  fDigitList = new std::vector<RecoDigit>;
   
   fDigitX = new std::vector<double>;
   fDigitY = new std::vector<double>;
@@ -37,9 +39,11 @@ bool DigitBuilderROOT::Initialise(std::string configfile, DataModel &data){
   Log("DigitBuilderROOT Tool: Setting all branch addresses now",v_debug,verbosity);
   //Hit information (PMT and LAPPD)
   //Always output in Phase II Reco Tree
-  P2Chain->SetBranchAddress("McEntryNumber",&fMCEventNum);
+  P2Chain->SetBranchAddress("mcEntryNumber",&fMCEventNum);
   P2Chain->SetBranchAddress("triggerNumber",&fMCTriggerNum);
   P2Chain->SetBranchAddress("eventNumber",&fEventNumber);
+  P2Chain->SetBranchAddress("runNumber",&fRunNumber);
+  P2Chain->SetBranchAddress("subrunNumber",&fSubRunNumber);
   P2Chain->SetBranchAddress("nhits",&fNhits);
   P2Chain->SetBranchAddress("digitX",&fDigitX);
   P2Chain->SetBranchAddress("digitY",&fDigitY);
@@ -57,6 +61,21 @@ bool DigitBuilderROOT::Initialise(std::string configfile, DataModel &data){
   P2Chain->SetBranchAddress("trueDirX",&fTrueDirX);
   P2Chain->SetBranchAddress("trueDirY",&fTrueDirY);
   P2Chain->SetBranchAddress("trueDirZ",&fTrueDirZ);
+  P2Chain->SetBranchAddress("trueMuonEnergy",&fTrueMuonEnergy);
+  P2Chain->SetBranchAddress("trueTrackLengthInWater",&fTrueTrackLengthInWater);
+  P2Chain->SetBranchAddress("trueTrackLengthInMRD",&fTrueTrackLengthInMRD);
+
+  //Pion/Kaon Count Truth Information
+  P2Chain->SetBranchAddress("Pi0Count",&fPi0Count);
+  P2Chain->SetBranchAddress("PiPlusCount",&fPiPlusCount);
+  P2Chain->SetBranchAddress("PiMinusCount",&fPiMinusCount);
+  P2Chain->SetBranchAddress("K0Count",&fK0Count);
+  P2Chain->SetBranchAddress("KPlusCount",&fKPlusCount);
+  P2Chain->SetBranchAddress("KMinusCount",&fKMinusCount);
+
+  //Event status information from previous run
+  P2Chain->SetBranchAddress("eventStatusApplied",&fEventStatusApplied);
+  P2Chain->SetBranchAddress("eventStatusFlagged",&fEventStatusFlagged);
 
   TotalEntries = P2Chain->GetEntries();
   EntryNum = 0;
@@ -78,6 +97,10 @@ bool DigitBuilderROOT::Execute(){
   fMuonVertex->SetDirection(muondirection);
   this->PushTrueVertex(true);
 
+  this->PushTrueWaterTrackLength(fTrueTrackLengthInWater);
+  this->PushTrueMRDTrackLength(fTrueTrackLengthInMRD);
+  m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", fTrueMuonEnergy);
+
   Log("DigitBuilderROOT Tool: Looping through and loading all digits",v_debug,verbosity);
   //Loop through all Digits and load their information as RecoDigits
   for(int j=0;j<fDigitType->size();j++){
@@ -87,12 +110,22 @@ bool DigitBuilderROOT::Execute(){
     Position pos_reco(fDigitX->at(j), fDigitY->at(j),fDigitZ->at(j));
     int digitType = fDigitType->at(j);
     int digitID = fDigitDetID->at(j);
-		RecoDigit aDigit(region, pos_reco, calT, calQ,digitType,digitID);
+    RecoDigit aDigit(region, pos_reco, calT, calQ,digitType,digitID);
     fDigitList->push_back(aDigit); 
   }
   this->PushRecoDigits(true);
+
+  Log("DigitBuilderROOT Tool: Loading all pion/kaon counts",v_debug,verbosity);
+  //Fill in pion counts for this event
+  m_data->Stores.at("RecoEvent")->Set("MCPi0Count", fPi0Count);
+  m_data->Stores.at("RecoEvent")->Set("MCPiPlusCount", fPiPlusCount);
+  m_data->Stores.at("RecoEvent")->Set("MCPiMinusCount", fPiMinusCount);
+  m_data->Stores.at("RecoEvent")->Set("MCfK0Count", fK0Count);
+  m_data->Stores.at("RecoEvent")->Set("MCfKPlusCount", fKPlusCount);
+  m_data->Stores.at("RecoEvent")->Set("MCfKMinusCount", fKMinusCount);
+
   EntryNum++;
-	if(EntryNum==TotalEntries){
+  if(EntryNum==TotalEntries){
     m_data->vars.Set("StopLoop",1);
     Log("DigitBuilderROOT Tool: All entries in ROOT file read.",v_message,verbosity);
   }
@@ -104,9 +137,19 @@ bool DigitBuilderROOT::Execute(){
   
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Set("EventNumber",fEventNumber);
-  
-  fEventCutStatus = true; //FIXME: Need to read EventCutStatus into PhaseIITreeMaker
+
+
+
+  // Event Status information
+  Log("DigitBuilderROOT Tool: Loading Event Status Information",v_debug,verbosity);
+  m_data->Stores.at("RecoEvent")->Set("EventFlagApplied",fEventStatusApplied);
+  m_data->Stores.at("RecoEvent")->Set("EventFlagged",fEventStatusFlagged);
+
+  if ((fEventStatusApplied & fEventStatusFlagged)==0) fEventCutStatus = true;
+  else fEventCutStatus = false;
+ 
   m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+ 
   return true;
 }
 
@@ -146,3 +189,14 @@ void DigitBuilderROOT::PushRecoDigits(bool savetodisk) {
 	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("RecoDigit", fDigitList, savetodisk);  ///> Add digits to RecoEvent
 }
+
+void DigitBuilderROOT::PushTrueWaterTrackLength(double WaterT) {
+	Log("DigitBuilderROOT Tool: Push true track length in tank to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInWater", WaterT);  ///> Add digits to RecoEvent
+}
+
+void DigitBuilderROOT::PushTrueMRDTrackLength(double MRDT) {
+	Log("DigitBuilderROOT Tool: Push true track length in MRD to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD", MRDT);  ///> Add digits to RecoEvent
+}
+
