@@ -49,6 +49,8 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
 	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	// pass this to TrackCombiner
+	m_data->CStore.Set("DrawMrdTruthTracks",DrawTruthTracks);
 	
 	if(MakeMrdDigitTimePlot){
 		// Make the TApplication
