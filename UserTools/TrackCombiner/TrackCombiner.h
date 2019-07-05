@@ -29,6 +29,10 @@ class TrackCombiner: public Tool {
 	
 	private:
 	std::map<unsigned long,vector<MCHit>>* TDCData;
+	RecoVertex* theExtendedVertex=nullptr;
+	Geometry* anniegeom=nullptr;
+	TClonesArray* thesubeventarray = nullptr;
+	std::vector<MCParticle>* MCParticles=nullptr;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int verbosity=1;
