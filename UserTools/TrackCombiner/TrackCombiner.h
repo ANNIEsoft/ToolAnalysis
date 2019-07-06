@@ -27,12 +27,26 @@ class TrackCombiner: public Tool {
 	bool Execute(); ///< Execute function used to perform Tool purpose.
 	bool Finalise(); ///< Finalise funciton used to clean up resorces.
 	
+	BoostStore* FindShortMrdTracks(std::map<unsigned long,vector<double>> mrdhits);
+	
 	private:
+	// from config file, requirements
+	int min_layers_v;
+	int min_layers_h;
+	double max_allowed_tdiff;
+	
+	// things from ANNIEEvent/MrdTracks/RecoEvent
 	std::map<unsigned long,vector<MCHit>>* TDCData;
 	RecoVertex* theExtendedVertex=nullptr;
 	Geometry* anniegeom=nullptr;
 	TClonesArray* thesubeventarray = nullptr;
 	std::vector<MCParticle>* MCParticles=nullptr;
+	std::vector<BoostStore>* theMrdTracks=nullptr;
+	
+	// tool variables
+	int numsubevs;
+	int numtracksinev;
+	int DrawMrdTruthTracks=0;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int verbosity=1;

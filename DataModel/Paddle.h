@@ -14,23 +14,44 @@ class Paddle : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	Paddle() : x(-1), y(-1), z(-1), orientation(-1){serialise=true;};
-	Paddle(int xin, int yin, int zin, int orientationin, Position originin, std::pair<double,double> xextsin, std::pair<double,double> yextsin, std::pair<double,double> zextsin) : 
-	x(xin), y(yin), z(zin), orientation(orientationin), origin(originin), extents_x(xextsin), extents_y(yextsin), extents_z(zextsin){
+	Paddle() : detectorkey(-1), x(-1), y(-1), z(-1), orientation(-1){serialise=true;};
+	Paddle(unsigned long detkey, int xin, int yin, int zin, int orientationin, Position originin, std::pair<double,double> xextsin, std::pair<double,double> yextsin, std::pair<double,double> zextsin) :
+	detectorkey(detkey), x(xin), y(yin), z(zin), orientation(orientationin), origin(originin), extents_x(xextsin), extents_y(yextsin), extents_z(zextsin){
 		serialise=true;
 		if((extents_x.first>extents_x.second) ||
 		   (extents_y.first>extents_y.second) ||
 		   (extents_z.first>extents_z.second) ){
 			std::cerr<<"WARNING! Paddle extents should be passed {min,max}"<<std::endl;
 		}
+		
+		// each MRD layer is split into two halves; top/bottom for vertical layers
+		// and left/right for horizontal layers. 'half' will denote which half
+		// 0=bottom/left, 1=top/right
+		half = (orientation) ? (origin.Y()>0) : (origin.X()>0);
+		
+		// it's useful when coordinating with alternate view paddles to also know
+		// which side of a half-layer this paddle is on (or if it straddles the origin)
+		// this will be the paddle 'side'.
+		std::pair<double,double> theextents = (orientation) ? extents_x : extents_y;
+		if( (theextents.first>0) && (theextents.second>0)){
+			side = 1;
+		} else if( (theextents.first<0) && (theextents.second<0)){
+			side = -1;
+		} else {
+			side = 0;
+		}
+		
 	}
 	
+	unsigned long GetDetectorID(){ return detectorkey; }
 	int GetPaddleX(){ return x; }
 	int GetPaddleY(){ return y; }
 	int GetPaddleZ(){ return z; }
 	int GetLayer(){ return z; }
 	Position GetOrigin(){ return origin; }
 	int GetOrientation(){ return orientation; }
+	int GetHalf(){ return half; }
+	int GetSide(){ return side; }
 	std::string GetOrientationString(){ return ((orientation) ? "Vertical" : "Horizontal"); }
 	std::pair<double,double> GetExtentsX(){ return extents_x; }
 	std::pair<double,double> GetExtentsY(){ return extents_y; }
@@ -41,7 +62,15 @@ class Paddle : public SerialisableObject{
 	double GetYmax(){ return extents_y.second; }
 	double GetZmin(){ return extents_z.first; }
 	double GetZmax(){ return extents_z.second; }
+	double GetPaddleWidth(){
+		if(orientation){
+			return (extents_x.second-extents_x.first);
+		} else {
+			return (extents_y.second-extents_y.first);
+		}
+	}
 	
+	void SetDetectorID(unsigned long detkey){ detectorkey=detkey; }
 	void SetX(int xin){ x=xin; }
 	void SetY(int yin){ y=yin; }
 	void SetZ(int zin){ z=zin; }
@@ -49,6 +78,8 @@ class Paddle : public SerialisableObject{
 	void SetOrigin(Position posin){ origin=posin; }
 	void SetOrigin(double x, double y, double z){ origin=Position(x,y,z); }
 	void SetOrientation(int orientationin){ orientation=orientationin; }
+	void SetSide(int sidein){ side=sidein; }
+	void SetHalf(int halfin){ half=halfin; }
 	bool SetExtentsX(std::pair<double,double> extsin){
 		// for safety, check our extents have been ordered correctly
 		if(extsin.first>extsin.second){
@@ -104,17 +135,30 @@ class Paddle : public SerialisableObject{
 	bool Print(){
 		std::cout<<"Paddle MRD_x"<<x<<"_y"<<y<<"_z"<<z
 				 <<" is a "<<GetOrientationString()
-				 <<" paddle with origin at ";
+				 <<" paddle in the ";
+		if(orientation){
+			if(half){ std::cout<<"top";   } else { std::cout<<"bottom"; }
+			if(side){ std::cout<<"right"; } else { std::cout<<"left"; }
+		} else {
+			if(half){ std::cout<<"right"; } else { std::cout<<"left"; }
+			if(side){ std::cout<<"top";   } else { std::cout<<"bottom"; }
+		}
+		std::cout<<" of layer "<<z;
+		std::cout<<"; The paddle origin is ";
 				 origin.Print(false);
 		std::cout<<" and extents x={"<<extents_x.first<<" -> "<<extents_x.second<<" }"
 				 <<", y={"<<extents_y.first<<" -> "<<extents_y.second<<" }"
-				 <<", z={"<<extents_z.first<<" -> "<<extents_z.second<<" }"
+				 <<", z={"<<extents_z.first<<" -> "<<extents_z.second<<" }";
+		std::cout<<". It is associated with DetectorKey "<<detectorkey
 				 <<std::endl;
 		return true;
 	}
 	
 	private:
+	unsigned long detectorkey;
 	int orientation;   // H is 0, V is 1
+	int side; // -1, 0, 1. see constructor for definition.
+	int half; // 0 or 1.
 	// these are NUMBERS in the MRD numbering scheme, not positions (hence ints)
 	int x;
 	int y;
@@ -126,7 +170,10 @@ class Paddle : public SerialisableObject{
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
+			ar & detectorkey;
 			ar & orientation;
+			ar & side;
+			ar & half;
 			ar & x;
 			ar & y;
 			ar & z;

@@ -12,7 +12,7 @@ class MrdStub : public SerialisableObject{
 	friend class boost::serialization::access;
 	
 	public:
-	MrdStub() : {serialise=true;};
+	MrdStub(){serialise=true;};
 	MrdStub(StubCluster& acluster);
 	
 	// Getters and Setters
