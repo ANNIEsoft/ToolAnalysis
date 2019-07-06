@@ -23,13 +23,13 @@ bool MrdStub::AddCluster(StubCluster& acluster){
 	}
 	
 	// next check if the forward projection is within the accepted span
-	double projected_pos = (pos + current_dxdz*(acluster->GetOrigin().Z()-current_z));
+	double projected_pos = (current_pos + current_dxdz*(acluster.GetOrigin().Z()-current_z));
 	std::pair<double,double> candidate_span = GetClusterSpanPlusOne(acluster);
 	if( (candidate_span.first<projected_pos) && (projected_pos<candidate_span.second) ){
 		// candidate success! update our properties
 		current_layer = acluster.GetLayer();
 		double new_pos = (orientation) ? acluster.GetOrigin().X() : acluster.GetOrigin().Y();
-		current_dxdz = (new_pos-current_pos)/(acluster->GetOrigin().Z()-current_z);
+		current_dxdz = (new_pos-current_pos)/(acluster.GetOrigin().Z()-current_z);
 		current_pos = new_pos;
 		current_z = acluster.GetOrigin().Z();
 		
@@ -41,9 +41,9 @@ bool MrdStub::AddCluster(StubCluster& acluster){
 };
 
 std::pair<double,double> MrdStub::GetClusterSpanPlusOne(StubCluster& acluster){
-	double xmin = acluster.GetExtents.first;
-	double xmax = acluster.GetExtents.second;
-	double paddle_width = acluster.GetPaddles().begin()->GetPaddleWidth();
+	double xmin = acluster.GetExtents().first;
+	double xmax = acluster.GetExtents().second;
+	double paddle_width = acluster.GetPaddles().front()->GetPaddleWidth();
 	return std::pair<double,double>{xmin-paddle_width,xmax+paddle_width};
 }
 

@@ -5,21 +5,25 @@
 #include <iostream>
 
 #include<SerialisableObject.h>
+#include "Position.h"
+#include "Paddle.h"
 
 class StubCluster : public SerialisableObject{
 	
 	friend class boost::serialization::access;
 	
 	public:
-	StubCluster() : {serialise=true;};
+	StubCluster(){serialise=true;};
 	StubCluster(Paddle* apaddle);
 	
 	// Getters and Setters
 	int GetLayer(){ return layer; }
 	Position GetOrigin(){ return origin; }
 	int GetHalf(){ return half; }
+	int GetOrientation(){ return orientation; }
 	std::string GetOrientationString(){ return ((orientation) ? "V" : "H"); }
 	std::vector<Paddle*> GetPaddles(){ return paddles; }
+	std::pair<double,double> GetExtents(){ return extents; }
 	
 	// reconstruction member functions
 	bool Merge(Paddle* apaddle);
@@ -41,6 +45,13 @@ class StubCluster : public SerialisableObject{
 		std::cout<<" and extent is {"<<extents.first<<" -> "<<extents.second<<" }"
 				 <<std::endl;
 		return true;
+	}
+	
+	// need to define this manually so that we can specify it as const
+	// to work around issues with "no matching operator== b/w StubCluster and const StubCluster...
+	bool operator==(const StubCluster& rhs) const {
+		// for our purposes it should be sufficient to check that all paddles are the same
+		return (paddles==rhs.paddles);
 	}
 	
 	// member variables
