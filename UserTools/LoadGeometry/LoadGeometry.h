@@ -38,7 +38,7 @@ class LoadGeometry: public Tool {
   std::string DataEndLineLabel = "DATA_END";
 
   //Map of channel number to electronics map entry
-  std::map<int,std::vector<int>>* ChannelNumToCrateSpaceMap;
+  std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap;
   
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
