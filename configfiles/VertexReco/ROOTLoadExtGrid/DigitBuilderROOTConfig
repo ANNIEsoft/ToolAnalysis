@@ -1,0 +1,6 @@
+# DigitBuilderROOT config file
+
+verbosity 5
+InputFile /AnnieShare/FullRecoChain/LiliaFiles_05202019/PMTLAPPDReco_05202019.root
+# There are three configurations: "PMT_only", "LAPPD_only", "All"
+PhotoDetectorConfiguration All

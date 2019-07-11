@@ -1,0 +1,5 @@
+myGracefulStop GracefulStop ./configfiles/TimeCluster/GracefulStopConfig
+myLoadWCSim LoadWCSim ./configfiles/TimeCluster/LoadWCSimConfig
+#myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/TimeCluster/LoadWCSimLAPPDConfig
+#myPrintANNIEEvent PrintANNIEEvent ./configfiles/TimeCluster/PrintANNIEEventConfig
+myTimeCluster TimeClustering ./configfiles/TimeCluster/TimeClusterConfig

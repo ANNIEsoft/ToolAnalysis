@@ -1,7 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "Geometry.h"
 
-Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::vector<std::map<unsigned long,Detector>* >dets){
+Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::map<std::string,std::map<unsigned long,Detector> >dets){
 	NextFreeChannelKey=0;
 	NextFreeDetectorKey=0;
 	Version=ver;
@@ -19,18 +19,19 @@ Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, doub
 	nummrdpmts=nmrdpmts;
 	numvetopmts=nvetopmts;
 	numlappds=nlappds;
-	Detectors=dets;
+	RealDetectors=dets;
 	serialise=true;
-	RealDetectors.reserve(10);
 }
 
 Detector*  Geometry::GetDetector(unsigned long DetectorKey){
-	for(int i=0 ; i<Detectors.size(); i++){
-		for (std::map<unsigned long,Detector>::iterator it=Detectors.at(i)->begin();
-														it!=Detectors.at(i)->end();
-														++it){
-			if(DetectorKey==it->first){
-				Detector* det= &it->second;
+	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = RealDetectors.begin();
+		it!=RealDetectors.end();
+		++it){
+		for (std::map<unsigned long,Detector>::iterator it2=it->second.begin();
+														it2!=it->second.end();
+														++it2){
+			if(DetectorKey==it2->first){
+				Detector* det= &it2->second;
 				return det;
 			}
 		}
@@ -51,47 +52,58 @@ Channel* Geometry::GetChannel(unsigned long ChannelKey){
 }
 
 void Geometry::InitChannelMap(){
-	for(int i=0 ; i<Detectors.size(); i++){
-		for(std::map<unsigned long,Detector>::iterator it=Detectors.at(i)->begin();
-													   it!=Detectors.at(i)->end();
-													   ++it){
-			for(std::map<unsigned long,Channel>::iterator it2=it->second.GetChannels()->begin();
-														  it2!=it->second.GetChannels()->end();
-														  ++it2){
-					if(ChannelMap.count(it2->first)!=0){
-						cerr<<"ERROR: Geometry::InitChannelMap(): Detector "
-							<<it->first<<" channel "
-							<<std::distance(it->second.GetChannels()->begin(),it2)
-							<<" has channel key "<<it2->first<<" which is not unique!"<<endl;
-					} else {
-						ChannelMap.emplace(it2->first,&(it->second));
-					}
+	// loop over detector sets
+	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = RealDetectors.begin();
+																		 it!=RealDetectors.end();
+																		 ++it){
+		// loop over detectors in a set
+		for(std::map<unsigned long,Detector>::iterator it2=it->second.begin();
+													   it2!=it->second.end();
+													   ++it2){
+			// loop over channels in a detector
+			for(std::map<unsigned long,Channel>::iterator it3=it2->second.GetChannels()->begin();
+														  it3!=it2->second.GetChannels()->end();
+														  ++it3){
+				if(ChannelMap.count(it3->first)!=0){
+					cerr<<"ERROR: Geometry::InitChannelMap(): Detector "
+						<<it2->first<<" channel "
+						<<std::distance(it2->second.GetChannels()->begin(),it3)
+						<<" has channel key "<<it3->first<<" which is not unique!"<<endl;
+				} else {
+					ChannelMap.emplace(it3->first,&(it2->second));
+				}
 			}
 		}
 	}
 }
 
 void Geometry::PrintChannels(){
-	cout<<"scanning "<<Detectors.size()<<" detector sets"<<endl;
-	for(int i=0 ; i<Detectors.size(); i++){
-		cout<<"set "<<i<<" has "<<Detectors.at(i)->size()<<" Detectors"<<endl;
-		for(std::map<unsigned long,Detector>::iterator it=Detectors.at(i)->begin();
-													   it!=Detectors.at(i)->end();
-													   ++it){
-			cout<<"Detector "<<std::distance(Detectors.at(i)->begin(),it)
-			<<" has detectorkey "<<it->first<<" and "
-				<<it->second.GetChannels()->size()<<" channels"<<endl;
+	cout<<"scanning "<<RealDetectors.size()<<" detector sets"<<endl;
+	// loop over detector sets
+	for(std::map<std::string,std::map<unsigned long,Detector>>::iterator it = RealDetectors.begin();
+																		 it!=RealDetectors.end();
+																		 ++it){
+		cout<<"set "<<std::distance(RealDetectors.begin(),it)
+			<<" has "<<it->second.size()<<" RealDetectors"<<endl;
+		// loop over detectors in this set
+		for(std::map<unsigned long,Detector>::iterator it2=it->second.begin();
+													   it2!=it->second.end();
+													   ++it2){
+			cout<<"Detector "<<std::distance(it->second.begin(),it2)
+				<<" has detectorkey "<<it2->first<<" and "
+				<<it2->second.GetChannels()->size()<<" channels"<<endl;
 			cout<<"calling Detector::PrintChannels()"<<endl;
-			it->second.PrintChannels();
+			it2->second.PrintChannels();
 			cout<<"doing scan over retrieved channels"<<endl;
-			for(std::map<unsigned long,Channel>::iterator it2=it->second.GetChannels()->begin();
-														  it2!=it->second.GetChannels()->end();
-														  ++it2){
+			// loop over channels in this detector
+			for(std::map<unsigned long,Channel>::iterator it3=it2->second.GetChannels()->begin();
+														  it3!=it2->second.GetChannels()->end();
+														  ++it3){
 					cout<<"next channel"<<endl;
-					cout<<"Channel "<<std::distance(it->second.GetChannels()->begin(),it2);
-					cout<<" has channelkey "<<it2->first;
-					cout<<" at "<<(&(it2->second))<<endl;
-					cout<<" and Detector "<<(&(it->second))<<endl;
+					cout<<"Channel "<<std::distance(it2->second.GetChannels()->begin(),it3);
+					cout<<" has channelkey "<<it3->first;
+					cout<<" at "<<(&(it3->second))<<endl;
+					cout<<" and Detector "<<(&(it2->second))<<endl;
 			}
 		}
 	}

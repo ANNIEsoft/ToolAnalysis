@@ -29,8 +29,9 @@ class MCRecoEventLoader: public Tool {
   RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
   RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
   std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth tracks
-  double WaterTrackLength = -999.;
-  double MRDTrackLength = -999.;
+  double TrueMuonEnergy = -9999.;
+  double WaterTrackLength = -9999.;
+  double MRDTrackLength = -9999.;
 
   /// \brief Find true neutrino vertex
   ///
@@ -60,6 +61,7 @@ class MCRecoEventLoader: public Tool {
   void PushTrueStopVertex(bool savetodisk);
 
   /// \brief Push muon track lengths to RecoEvent Store
+  void PushTrueMuonEnergy(double MuE);
   void PushTrueWaterTrackLength(double WaterT);
   void PushTrueMRDTrackLength(double MRDT);
 
