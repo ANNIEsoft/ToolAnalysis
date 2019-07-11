@@ -1,0 +1,21 @@
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+#THIS IS A DUMMY FILE; VALUES ARENOT LEGITIMATE AND MUST BE UPDATED WITH ALL REAL ONES
+#Some notes to help with making the real one though...
+#  - detector_num and channel_num start at the end of the MRD detector and channel numbers.
+#  - Top and bottom PMTs have no panel number, so it's just set to -1
+#  - Side PMTs are all WATCHMAN, Hamamatsu, and WATCHBOY; top are all ETL; bottom are all LUX
+#
+LEGEND_LINE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+detector_num,channel_num,detector_tank_location,panel_number,x_pos,y_pos,z_pos,x_dir,y_dir,z_dir,signal_crate,signal_slot,signal_channel,mt_crate,mt_slot,mt_channel,hv_crate,hv_slot,hv_channel,nominal_HV,PMT_type,cable_label,detector_status,notes
+
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DATA_START,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+332,332,Barrel,1,-105.0,0,0,1.,0,0,6,0,0,6,1,0,1,0,0,1550,HamamatsuModel,HM076,OFF,
+333,333,Barrel,2,105,0,0,-1.0,0,0,6,0,1,6,1,0,1,0,1,1550,WatchboyModel,WB002,ON,
+334,334,Barrel,3,0,0,105.0,0,0,-1,6,0,2,6,1,0,1,0,2,1550,WatchboyModel,WB032,ON,
+335,335,Barrel,4,74.2,15,-74.2,-0.707,0,0.707,6,0,3,6,1,0,1,0,3,1550,WatchmanModel,WM1,ON,
+336,336,Top,-1,5,106,5,0,-1,0,6,0,4,6,1,2,1,0,4,1550,ETELModel,178,ON,
+337,337,Top,-1,0,106,20,0,-1,0,6,0,5,6,1,2,1,0,5,1550,ETELModel,472,UNSTABLE,
+338,338,Bottom,-1,4,-111,4,0,1,0,6,0,6,6,1,2,1,0,6,1550,LUXModel,N4,ON,
+339,339,Bottom,-1,-4,-111,4,0,-1,0,6,0,7,6,1,2,1,0,7,1550,LUXModel,S1,ON,
+DATA_END,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
