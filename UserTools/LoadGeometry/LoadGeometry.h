@@ -43,7 +43,7 @@ class LoadGeometry: public Tool {
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
   std::vector<std::string> MRDIntegerValues{"detector_num","channel_num","detector_system","orientation","layer","side","num",
-                                   "rack","TDC slot","TDC channel","discrim_slot","discrim_ch",
+                                   "rack","TDC_slot","TDC_channel","discrim_slot","discrim_ch",
                                    "patch_panel_row","patch_panel_col","amp_slot","amp_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV","polarity"};
   std::vector<std::string> MRDDoubleValues{"x_center","y_center","z_center","x_width","y_width","z_width"};

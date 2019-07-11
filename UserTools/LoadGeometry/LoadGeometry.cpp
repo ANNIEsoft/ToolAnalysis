@@ -45,6 +45,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
   m_data->CStore.Set("CrateSpaceToChannelNumMap",CrateSpaceToChannelNumMap);
+
   return true;
 }
 
@@ -284,7 +285,9 @@ Detector LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   adet.AddChannel(pmtchannel);
 
   // Also add this channel to the electronics map
-  std::vector<int> crate_map{rack,TDC_slot,TDC_channel};
+  std::vector<int> crate_map{rack};
+  crate_map.push_back(TDC_slot);
+  crate_map.push_back(TDC_channel);
   if(CrateSpaceToChannelNumMap->count(crate_map)==0){
     CrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
