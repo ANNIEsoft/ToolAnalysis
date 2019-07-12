@@ -79,7 +79,7 @@ bool MonitorReceive::Execute(){
 
 	std::istringstream iss(static_cast<char*>(filepath.data()));
 
-	std::cout<<"received data file="<<iss.str()<<std::endl;
+	//std::cout<<"received data file="<<iss.str()<<std::endl;
 
 	if(MRDData!=0){
 	  MRDData->Close();
