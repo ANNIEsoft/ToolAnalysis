@@ -2,7 +2,7 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 OutputDirectory .
-verbosity 100
+verbosity 1
 MinDigitsForTrack 4
 MaxMrdSubEventDuration 30  # [ns] if all hits are within this period, just make one subevent
 MinSubeventTimeSep 30      # [ns] gaps of at leas this long delimit subevents
