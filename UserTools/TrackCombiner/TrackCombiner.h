@@ -31,8 +31,8 @@ class TrackCombiner: public Tool {
 	
 	private:
 	// from config file, requirements
-	int min_layers_v;
-	int min_layers_h;
+	int min_layer_v;
+	int min_layer_h;
 	double max_allowed_tdiff;
 	
 	// things from ANNIEEvent/MrdTracks/RecoEvent
@@ -42,6 +42,9 @@ class TrackCombiner: public Tool {
 	TClonesArray* thesubeventarray = nullptr;
 	std::vector<MCParticle>* MCParticles=nullptr;
 	std::vector<BoostStore>* theMrdTracks=nullptr;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	std::vector<int> coincident_tubeids;      // wcsimtubeids in time, all get highlighted in paddleplot
+	std::vector<double> coincident_tubetimes; // used to colour the paddles, must be same size as # hit paddles
 	
 	// tool variables
 	int numsubevs;

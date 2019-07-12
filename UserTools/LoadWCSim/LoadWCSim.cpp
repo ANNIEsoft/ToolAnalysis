@@ -946,15 +946,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			assert(false);
 		}
 		// calculate MRD_x_y_z ... MRDSpecs doesn't provide a nice way to do this
-		std::vector<int>::const_iterator layerstartit = MRDSpecs::layeroffsets.begin();
-		do{
-			++layerstartit;
-			if(layerstartit==MRDSpecs::layeroffsets.end()){
-				Log("LoadWCSim Error: MRD PMT "+to_string(mrdpmti)+" ran off end of layeroffsets!",v_error,verbosity);
-				break;
-			}
-		} while (mrdpmti>(*layerstartit));
-		int layernum = std::distance(MRDSpecs::layeroffsets.begin(),layerstartit)-1;
+		int layernum=0;
+		while ((mrdpmti+1) > MRDSpecs::layeroffsets.at(layernum+1)){ layernum++; }
 		int in_layer_pmtnum = mrdpmti - MRDSpecs::layeroffsets.at(layernum);
 		// paddles in each layer alternate on sides; i.e. paddles 0 and 1 are on opposite sides
 		int side = in_layer_pmtnum%2;
