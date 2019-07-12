@@ -24,6 +24,17 @@ class StubCluster : public SerialisableObject{
 	std::string GetOrientationString(){ return ((orientation) ? "V" : "H"); }
 	std::vector<Paddle*> GetPaddles(){ return paddles; }
 	std::pair<double,double> GetExtents(){ return extents; }
+	// for allowing for uncertainties, we often want to extend the range by one paddle
+	// on either side, so provide a method for getting this span too
+	std::pair<double,double> GetExtentsPlusOne(){
+		double paddle_width = paddles.front()->GetPaddleWidth();
+		return std::pair<double,double>{extents.first-paddle_width,extents.second+paddle_width};
+	}
+	// turns out we need to allow more flexibility than that
+	std::pair<double,double> GetExtentsPlusTwo(){
+		double paddle_width = paddles.front()->GetPaddleWidth();
+		return std::pair<double,double>{extents.first-(2.*paddle_width),extents.second+(2.*paddle_width)};
+	}
 	
 	// reconstruction member functions
 	bool Merge(Paddle* apaddle);

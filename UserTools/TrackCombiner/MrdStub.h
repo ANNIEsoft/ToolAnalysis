@@ -23,7 +23,6 @@ class MrdStub : public SerialisableObject{
 	// Member functions for reconstruction
 	bool AddCluster(StubCluster& acluster); // add a cluster to this stub, if it's consistent
 	bool Init(StubCluster& acluster);       // initalize stub from it's first cluster
-	std::pair<double,double> GetClusterSpanPlusOne(StubCluster& acluster);
 	
 	// Generic member functions
 	bool Print(){
@@ -40,7 +39,12 @@ class MrdStub : public SerialisableObject{
 	int current_layer;   // MRD z number
 	double current_pos;  // x or y position depending on orientation, meters
 	double current_z;    // z position, meters
-	double current_dxdz; // 
+	double current_dxdz; // for projecting to next layer to check consistency
+	// for projecting to next layer to check consistency, when we already made a match
+	// but want to evaluate a potential better one in the same layer
+	double last_pos;
+	double last_z;
+	double last_dxdz;
 	
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){
