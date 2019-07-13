@@ -1,0 +1,9 @@
+verbose 1
+
+
+PulseFindingApproach threshold
+ADCThresholdDB ./configfiles/PhaseIIHitLoader/TankPMTTresholds.txt
+DefaultADCThreshold 7
+DefaultThresholdType absolute
+PulseWindowStart -5
+PulseWindowEnd 30
