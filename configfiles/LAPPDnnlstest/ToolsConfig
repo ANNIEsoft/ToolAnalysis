@@ -1,3 +1,4 @@
-GenerateHits GenerateHits configfiles/LAPPDnnlstest/ToolChainConfig
-LAPPDSim LAPPDSim configfiles/LAPPDnnlstest/ToolChainConfig
-LAPPDnnls LAPPDnnls configfiles/LAPPDnnlstest/ToolChainConfig
+generate_hits GenerateHits configfiles/LAPPDnnlstest/ToolChainConfig
+lappd_sim LAPPDSim configfiles/LAPPDnnlstest/ToolChainConfig
+waveform_nnls WaveformNNLS configfiles/LAPPDnnlstest/ToolChainConfig
+ftbf_analysis FTBFAnalysis configfiles/LAPPDnnlstest/ToolChainConfig

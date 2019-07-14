@@ -23,24 +23,43 @@
 
 #include "denseMatrix.h"
 #include <cstdio>
+#include <iostream>
 
 #ifdef _HAVE_CBLAS
 #include <cblas.h>
 #endif 
 
-using namespace nsNNLS;
+
+using namespace std;
 
 
-denseMatrix::denseMatrix(size_t r, size_t c)
- : matrix(r, c) { 
-      assert (r > 0 && c > 0);
-      data = new double[r*c];
-      size = r*c;
-      external = false;
+denseMatrix::denseMatrix()
+{
+  external = true;
+  data = 0;
+}
+
+
+denseMatrix::denseMatrix(size_t r, size_t c) : nnlsmatrix(r, c) { 
+      if(r <= 0 || c <= 0)
+      {
+        data = 0;
+        external = true;
+      }
+      else
+      {
+        data = new double[r*c];
+        size = r*c;
+        external = false;
+      }
+      
     }
+  
 
 denseMatrix::~denseMatrix()
 { if (!external) delete[] data;}
+
+
 
 int denseMatrix::load(const char* fn, bool asbin)
 {
@@ -109,73 +128,75 @@ int denseMatrix::load_as_txt(const char* fn)
   return 0;
 }
 
-/// Returns 'r'-th row into pre-alloced vector
-int denseMatrix::get_row (size_t i, vector*& v)
+/// Returns 'r'-th row into pre-alloced nnlsvector
+int denseMatrix::get_row (size_t i, nnlsvector*& v)
 {
   return -1;
 }
 
-/// Returns 'c'-th col as a vector
-int denseMatrix::get_col (size_t j, vector*& c)
+/// Returns 'c'-th col as a nnlsvector
+int denseMatrix::get_col (size_t j, nnlsvector*& c)
 {
   return -1;
 }
 
 /// Returns main or second diagonal (if p == true)
-int denseMatrix::get_diag(bool p, vector*& d)
+int denseMatrix::get_diag(bool p, nnlsvector*& d)
 {
   return -1;
 }
     
-/// Sets the specified row to the given vector
-int denseMatrix::set_row(size_t i, vector*& r)
+/// Sets the specified row to the given nnlsvector
+int denseMatrix::set_row(size_t i, nnlsvector*& r)
 {
   return -1;
 }
 
-/// Sets the specified col to the given vector
-int denseMatrix::set_col(size_t j, vector*& c)
+/// Sets the specified col to the given nnlsvector
+int denseMatrix::set_col(size_t j, nnlsvector*& c)
 {
   return -1;
 }
 
-/// Sets the specified diagonal to the given vector
-int denseMatrix::set_diag(bool p, vector*&d)
+/// Sets the specified diagonal to the given nnlsvector
+int denseMatrix::set_diag(bool p, nnlsvector*&d)
 {
   return -1;
 }
 
-/// Vector l_p norms for this matrix, p > 0
+/// nnlsvector l_p norms for this matrix, p > 0
 double denseMatrix::norm (double p)
 {
   return -1;
 }
 
-/// Vector l_p norms, p is 'l1', 'l2', 'fro', 'inf'
+/// nnlsvector l_p norms, p is 'l1', 'l2', 'fro', 'inf'
 double denseMatrix::norm (const char*  p)
 {
   return -1;
 }
 
 /// r = a*row(i) + r
-int    denseMatrix::row_daxpy(size_t i, double a, vector* r)
+int    denseMatrix::row_daxpy(size_t i, double a, nnlsvector* r)
 {
   return -1;
 }
 
 /// c = a*col(j) + c
-int  denseMatrix::col_daxpy(size_t j, double a, vector* c)
+int  denseMatrix::col_daxpy(size_t j, double a, nnlsvector* c)
 {
   return -1;
 }
 
 /// Let r := this * x or  this^T * x depending on tranA
-int denseMatrix::dot (bool transp, vector* x, vector*r)
+int denseMatrix::dot (bool transp, nnlsvector* x, nnlsvector*r)
 {
   // Replace by call to BLAS library, in case it is available; otherwise
   // the under-optimized code below will be invoked
 
+
 #ifdef _HAVE_CBLAS
+
   if (transp)
     cblas_dgemv(CblasRowMajor, CblasTrans, nrows(), ncols(), 
                 1.0, data, ncols(), x->getData(), 1, 0.0, r->getData(), 1);
@@ -183,6 +204,7 @@ int denseMatrix::dot (bool transp, vector* x, vector*r)
     cblas_dgemv(CblasRowMajor, CblasNoTrans, nrows(), ncols(), 
                 1.0, data, ncols(), x->getData(), 1, 0.0, r->getData(), 1);
 #else
+
   double* pr = r->getData();
   double* px = x->getData();
   double* rp;
@@ -196,7 +218,9 @@ int denseMatrix::dot (bool transp, vector* x, vector*r)
       }
     }
   } else {                      // M'*x
+
     r->zeroOut();
+
     for (size_t i = 0; i < nrows(); i++) {
       rp = &data[i*ncols()];
       for (size_t j = 0; j < ncols(); j++) {

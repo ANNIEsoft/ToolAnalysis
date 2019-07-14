@@ -89,7 +89,6 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
 
       //std::cout<<"which strip "<<wstrip<<" peakvalue"<<wspeak<<std::endl;
 
-
       LAPPDPulse pulse(tubeid, wstrip, (time + righttime)/1000., charge, wspeak, low, hi);  //SD
       if(LAPPDPulseCluster.count(wstrip)==1){
         std::vector<LAPPDPulse> tempVector;
@@ -157,7 +156,6 @@ Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double 
   else{
 
     //if there are pulses on the strip, loop over the N pulses on that strip
-
     std::vector<LAPPDPulse> tempoVector = LAPPDPulseCluster.at(CHnumber);   //SD
     for(int k=0; k<tempoVector.size(); k++){           //SD
       //  for(int k=0; k<4; k++){
@@ -202,7 +200,10 @@ Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double 
 
         //if the sample time actually falls in the window for when the pulse
         //should arrive, evaluate the pulse value at that sample point
-        if( (bcent > tottime) && (bcent< tottime+3000) ) mbincontent+=(peakv*(_templatepulse->Interpolate(bcent-tottime)));
+        if( (bcent > tottime) && (bcent< tottime+3000) ) 
+          {
+            mbincontent+=(peakv*(_templatepulse->Interpolate(bcent-tottime)));
+          }
 
         //add this on to the contributions to the trace from previous pulses
         double obincontent = trace->GetBinContent(j+1);

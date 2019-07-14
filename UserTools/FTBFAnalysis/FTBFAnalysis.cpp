@@ -2,7 +2,7 @@
 
 using namespace std;
 
-FTBFAnalysis::FTBFAnalysis():Tool(){}
+FTBFAnalysis::FTBFAnalysis():Tool(),_event_counter(0),_file_number(0),_display_config(0),_display(nullptr){}
 
 
 bool FTBFAnalysis::Initialise(std::string configfile, DataModel &data){
@@ -15,172 +15,123 @@ bool FTBFAnalysis::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   // setup the output files
-  TString OutFile = "lappdout.root";	 //default input file
-  m_variables.Get("outfile", OutFile);
-  tff = new TFile(OutFile,"RECREATE");
+  std::string OutFile = "lappdout.root";	 //default input file
+  m_variables.Get("OutputFile", OutFile);
+  OutFile.erase(OutFile.size()-5);
+  OutFile = OutFile + "00.root";
+  cout << "FTBF filename: " << OutFile << endl;
+
+
+  m_variables.Get("EventDisplay", _display_config);
+
+  if (_display_config > 0)
+  {
+        _display = new LAPPDDisplay(OutFile, _display_config);
+  }
+
 
   return true;
 }
 
 
 bool FTBFAnalysis::Execute(){
-  int event;
-  int board;
-  m_variables.Get("eventno", event);
-  m_variables.Get("boardno", board);
-  //HeatmapEvent(event, board);
-  //PlotSeparateChannels(event, board);
-  
 
-  return true;
+    //The files become too large, if one tries to save all WCSim events into one file.
+    //Every 100 events get a new file.
+    if(_event_counter == (20 * (_file_number + 1)))
+    {
+        _display->OpenNewFile(_file_number);
+        _file_number++;
+    }
+    //Initialise the histogram for displaying all LAPPDs at once
+    if (_display_config > 0)
+    {
+        _display->InitialiseHistoAllLAPPDs(_event_counter);
+    }
+
+    bool testval = false; //test for checking the store
+    
+    testval = m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData", LAPPDWaveforms);
+    /*
+    if(testval)
+    {
+        PlotRawHists();
+    }
+    */
+    testval = m_data->Stores["ANNIEEvent"]->Get("nnls_solution", NNLSsoln);
+    if(testval)
+    {
+        cout << "got the objects" << endl;
+        for(int i = 0; i < NNLSsoln.size(); i++)
+        {
+            NnlsSolution tmp = NNLSsoln.at(i);
+            tmp.Print();
+        }
+    }
+    
+
+
+    if (_display_config > 0)
+    {
+        _display->FinaliseHistoAllLAPPDs();
+    }
+
+    return true;
+
+}
+
+
+void FTBFAnalysis::PlotNNLSandRaw()
+{
+
+    return; 
+
+}   
+
+
+void FTBFAnalysis::PlotRawHists()
+{
+    int tube_no = 1; //temporary
+    vector<Waveform<double>> vwavs; 
+    if(_display_config > 0)
+    {
+        for(int ch = 0; ch < LAPPDWaveforms.size(); ch++)
+        {
+            vwavs.push_back(LAPPDWaveforms[ch].front());
+        }
+
+        _display->RecoDrawing(_event_counter, tube_no, vwavs);
+        if (_display_config == 2)
+        {
+            do
+            {
+                std::cout << "Press a key to continue..." << std::endl;
+            } while (cin.get() != '\n');
+
+            std::cout << "Continuing" << std::endl;
+        }
+
+    }
+    return;
 }
 
 
 //write's a heatmap of an event to 
 //the rootfile
-void FTBFAnalysis::HeatmapEvent(int event, int board){
-	map<int, map<int, map<int, Waveform<double>>>> rawData;
-    m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData_ftbf",rawData);
-    vector<float> sampletimes;
-    map<int, map<string, vector<float>>> caldata;
-    m_data->Stores["ANNIEEvent"]->Get("psec4caldata", caldata);
-    sampletimes = caldata[board]["sampletimes"];
-
-    int n_cells;
-    int n_chs;
-    m_data->Stores["ANNIEEvent"]->Get("num_cells", n_cells);
-    m_data->Stores["ANNIEEvent"]->Get("num_chs", n_chs);
-
-    double maxtime = sampletimes.at(0);
-    for(vector<float>::iterator it = sampletimes.begin(); it != sampletimes.end(); ++it)
-    {
-    	if(*it > maxtime) maxtime = *it;
-    }
-
-    TH2D *VoltageMap = new TH2D("VoltageMap","VoltageMap",n_cells,0.5,maxtime+0.5,n_chs,0.5,n_chs+0.5);
-    map<int, Waveform<double>>::iterator itr;
-    Waveform<double> tempwav;
-    for(itr = rawData[event][board].begin(); itr != rawData[event][board].end(); ++itr)
-    {
-    	//check to make sure that this
-    	//waveform has as many samples as
-    	//the size of the time array
-    	int ch = itr->first;
-    	tempwav = itr->second; 
-    	if(tempwav.GetSamples()->size() != sampletimes.size())
-    	{
-    		cout << "Mismatch between sample times and loaded waveforms. Check calibration file" << endl;
-    		return;
-    	}
-
-		for(int sp = 0; sp < n_cells; sp++)
-		{
-			VoltageMap->Fill(sampletimes.at(sp), ch, tempwav.GetSample(sp));
-		}
-    	
-
-    }
-
-    //label the figure
-    string title = "heatmap event " + to_string(event) + " board " + to_string(board);
-    int ntemp = title.length();
-    char chartitle[ntemp + 1];
-    strcpy(chartitle, title.c_str());
-    VoltageMap->SetNameTitle(chartitle, chartitle);
-    VoltageMap->SetMaximum(20);
-    VoltageMap->SetMinimum(-50);
-
-    TCanvas* c1 = new TCanvas(chartitle, chartitle);
-    c1->cd();
-    VoltageMap->Draw("COLZ");
-    c1->Modified(); c1->Update();
-    c1->Write();
+void FTBFAnalysis::HeatmapEvent(int event, int board)
+{
     return;
-
 }
 
 //write's a heatmap of an event to 
 //the rootfile. Currently not working
 //because it only draws one channel? 
-void FTBFAnalysis::PlotSeparateChannels(int event, int board){
-	//get data and sample times for each channel
-	map<int, map<int, map<int, Waveform<double>>>> rawData;
-    m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData_ftbf",rawData);
-    vector<float> sampletimes;
-    map<int, map<string, vector<float>>> caldata;
-    m_data->Stores["ANNIEEvent"]->Get("psec4caldata", caldata);
-    sampletimes = caldata[board]["sampletimes"];
-
-    int n_cells;
-    int n_chs;
-    m_data->Stores["ANNIEEvent"]->Get("num_cells", n_cells);
-    m_data->Stores["ANNIEEvent"]->Get("num_chs", n_chs);
-
-    //find max time for determining binning of hist
-    double maxtime = sampletimes.at(0);
-    for(vector<float>::iterator it = sampletimes.begin(); it != sampletimes.end(); ++it)
-    {
-    	if(*it > maxtime) maxtime = *it;
-    }
-
-
-    //create title for a canvas
-    string cantitle ="event " + to_string(event) + " board " + to_string(board);
-   	int ntempcan = cantitle.length();
-    char chartitlecan[ntempcan + 1];
-    strcpy(chartitlecan, cantitle.c_str());
-    TCanvas* cdivided = new TCanvas(chartitlecan, chartitlecan, 1000, 950);
-
-    //divide canvas into subplots by channel
-    cdivided->Divide(6, 5);
-
-    vector<TH1D*> WaveHists;
-    for(int i = 0; i < n_chs; i++)
-    {
-    	cantitle = to_string(i+1);
-    	ntempcan = cantitle.length();
-    	char whtitle[ntempcan+1];
-    	strcpy(whtitle, cantitle.c_str());
-    	WaveHists.push_back(new TH1D(whtitle, whtitle, n_cells, 0.5, 0.5+maxtime));
-    }
-
-    map<int, Waveform<double>>::iterator itr;
-    Waveform<double> tempwav;
-    for(itr = rawData[event][board].begin(); itr != rawData[event][board].end(); ++itr)
-    {
-    	//check to make sure that this
-    	//waveform has as many samples as
-    	//the size of the time array
-    	int ch = itr->first;
-    	tempwav = itr->second; 
-    	if(tempwav.GetSamples()->size() != sampletimes.size())
-    	{
-    		cout << "Mismatch between sample times and loaded waveforms. Check calibration file" << endl;
-    		return;
-    	}
-
-		for(int sp = 0; sp < n_cells; sp++)
-		{
-			WaveHists.at(ch-1)->Fill(sampletimes.at(sp), tempwav.GetSample(sp));
-		}
-		string title ="channel " + to_string(ch);
-   		int ntemp = title.length();
-    	char chartitle[ntemp + 1];
-    	strcpy(chartitle, title.c_str());
-		WaveHists.at(ch-1)->SetNameTitle(chartitle, chartitle);
-		//select the subplot
-		cdivided->cd(ch-1);
-		WaveHists.at(ch-1)->Draw();
-    }
-
-   	cdivided->cd();
-    cdivided->Write();
-
+void FTBFAnalysis::PlotSeparateChannels(int event, int board)
+{
     return;
-
 }
 
-bool FTBFAnalysis::Finalise(){
-  tff->Close();
+bool FTBFAnalysis::Finalise()
+{
   return true;
 }

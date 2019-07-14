@@ -25,36 +25,49 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <iostream>
 #include <algorithm>
 
-using namespace nsNNLS;
+using namespace std;
+
 
 int nnls::optimize()
 {
+
   out.start = clock();
+
   initialize();
+
 
   int term = 0;
   double step;
   double *px = x->getData();
 
-  fprintf(stderr, "Iter           Obj           ||g||\n");
-  fprintf(stderr, "----------------------------------\n");
+  cerr << "Iter           Obj           ||g||" << endl;
+  cerr << "----------------------------------" << endl;
+
   while (!term) {
     out.iter++;
+
     term = checkTermination();
 
+
     findFixedVariables();
+
     computeXandGradDelta();
 
+
     step = computeBBStep();
+
 
     x->scalePlusAdd(-step, g); // x = x - step*gradient
     
     // project
+
     for (size_t i = 0; i < x->length(); i++)
       if (px[i] < 0) px[i] = 0.0;
  
+
     computeObjGrad();
     // check the descent condition
     if (out.iter % M == 0) {
@@ -62,6 +75,8 @@ int nnls::optimize()
     }
     if (out.iter % 10 == 0)
       showStatus();
+
+    //return 0;
   }
   showStatus();
   cleanUp();
@@ -84,14 +99,14 @@ int nnls::saveStats(const char* fn)
 
 void nnls::computeObjGrad()
 {
-  A->dot(matrix::NOTRAN, x, ax);
+  A->dot(nnlsmatrix::NOTRAN, x, ax);
   ax->sub(b);        // ax = ax - b
   double d;
   d = ax->norm2();
   double tm  = (double) (clock() - out.start) / CLOCKS_PER_SEC; 
   out.obj->set(out.iter, 0.5*d*d);
   out.time->set(out.iter, tm);
-  A->dot(matrix::TRAN, ax, g);          // A'(ax)
+  A->dot(nnlsmatrix::TRAN, ax, g);          // A'(ax)
 }
 
 void nnls::findFixedVariables()
@@ -189,49 +204,66 @@ void nnls::checkDescentUpdateBeta()
 int nnls::initialize()
 {
   size_t n = A->ncols();
-  x = new vector(n);
-  g = new vector(n);
-  refx = new vector(n);
-  refg = new vector(n);
-  oldx = new vector(n);
-  oldg = new vector(n);
-  xdelta = new vector(n);
-  gdelta =  new vector(n);
+  x = new nnlsvector(n);
+  g = new nnlsvector(n);
+  refx = new nnlsvector(n);
+  refg = new nnlsvector(n);
+  oldx = new nnlsvector(n);
+  oldg = new nnlsvector(n);
+  xdelta = new nnlsvector(n);
+  gdelta =  new nnlsvector(n);
   out.memory += 8*n*sizeof(double);
 
-  ax = new vector(A->nrows());
+  ax = new nnlsvector(A->nrows());
   out.memory += sizeof(double)*ax->length();
 
+
   fset = (size_t*) malloc(sizeof(size_t)*n);
+
   out.memory += sizeof(size_t)*n;
+
 
   x->setAll(.5);
 
-  out.obj = new vector(maxit+1);
-  out.pgnorms = new vector(maxit+1);
-  out.time = new vector(maxit+1);
+  out.obj = new nnlsvector(maxit+1);
+  out.pgnorms = new nnlsvector(maxit+1);
+  out.time = new nnlsvector(maxit+1);
 
   out.memory += sizeof(double)*3*(maxit+1);
 
+
   if (x0) {
+
     x->copy(x0);
-    A->dot(matrix::NOTRAN, x, ax); ax->sub(b);
-    A->dot(matrix::TRAN, ax, g);
+    A->dot(nnlsmatrix::NOTRAN, x, ax); ax->sub(b);
+    A->dot(nnlsmatrix::TRAN, ax, g);
+
   } else {
+
     // Initial gradient = A'(0 - b), since x0 = 0
-    A->dot(matrix::TRAN, b, oldg);
+    A->dot(nnlsmatrix::TRAN, b, oldg);
+
     double* dat = oldg->getData();
+
     for (size_t i = 0; i < oldg->length(); i++)
+    {
       dat[i] = -dat[i];
+    }
   }
 
   // old gradient = A'*(ax - b)
-  A->dot(matrix::NOTRAN, x, ax);  ax->sub(b);
-  A->dot(matrix::TRAN, ax, g);
+
+  A->dot(nnlsmatrix::NOTRAN, x, ax);  
+
+  ax->sub(b);
+
+  A->dot(nnlsmatrix::TRAN, ax, g);
+
 
   // Set the reference iterations
   refx->copy(x);
   refg->copy(g);
+
 
   return 0;
 }
