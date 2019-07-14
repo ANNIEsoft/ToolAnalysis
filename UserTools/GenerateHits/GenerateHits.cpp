@@ -1,4 +1,6 @@
 #include "GenerateHits.h"
+#include <cstdlib>
+#include <time.h>
 
 GenerateHits::GenerateHits():Tool(){}
 
@@ -27,36 +29,36 @@ bool GenerateHits::Execute(){
   std::vector<double> relpos;
   double tc,Q;
 
-  // MC truth hit 1
-  Q=1.;
-  pos.push_back(10.);
-  pos.push_back(5.);
-  pos.push_back(0.);
-  relpos.push_back(10.);
-  relpos.push_back(5.);
-  tc = 1.050;
-  LAPPDHit ahit1(TubeID,tc,Q,pos,relpos);
+  int nhits;
+  m_variables.Get("nhits", nhits);
 
-  // clear vectors
-  pos.clear();
-  relpos.clear();
+  //initialize random seed
+  srand(time(NULL));
 
-
-  // MC truth hit 2
-  tc = 10.140;
-  Q=1.;
-  pos.push_back(2.);
-  pos.push_back(2.);
-  pos.push_back(0.);
-  relpos.push_back(2.);
-  relpos.push_back(2.);
-  LAPPDHit ahit2(TubeID,tc,Q,pos,relpos);
-
-
+  //all the hits
   vector<LAPPDHit> hits;
-  hits.push_back(ahit1);
-  hits.push_back(ahit2);
 
+  //generate uniformly distributed hits
+  //accross the surface of the LAPPD with
+  //random values of position charge and time
+  for(int i = 0; i < nhits; i++)
+  {
+    Q=1; 
+    //abs pos is not used for my analysis at the moment
+    pos.push_back(0.);
+    pos.push_back(0.);
+    pos.push_back(0.);
+    relpos.push_back(fRand(-98, 98));
+    relpos.push_back(fRand(-98, 98));
+    tc = fRand(0, 24.9); //ns, converted to ps later in LAPPDSim processing
+    LAPPDHit temphit(TubeID,tc,Q,pos,relpos);
+    pos.clear();
+    relpos.clear();
+    hits.push_back(temphit);
+
+  }
+
+  cout << "inserting " << hits.size() << " synthetic hits " << endl;
   // stuff the two hits into MCLAPPHit
   MCLAPPDHit.insert(pair <int,vector<LAPPDHit>> (0,hits));
 
@@ -67,7 +69,14 @@ bool GenerateHits::Execute(){
 }
 
 
+double GenerateHits::fRand(double fMin, double fMax)
+{
+    double f = (double)rand() / RAND_MAX;
+    return fMin + f * (fMax - fMin);
+}
+
 bool GenerateHits::Finalise(){
+  cout << "Finalized generate alright " << endl;
 
   return true;
 }

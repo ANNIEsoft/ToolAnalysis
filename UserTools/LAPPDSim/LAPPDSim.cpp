@@ -74,9 +74,9 @@ bool LAPPDSim::Execute(){
       if(i==0){
         continue;
       }
-      Waveform<double> awav = response.GetTrace(i, 0.0, 100, 256, 1.0);
+      Waveform<double> awav = response.GetTrace(i, 0.0, 97, 256, 1.0);
       vector<Waveform<double>> Vwavs;
-      Vwavs.push_back(awav);
+      Vwavs.push_back(awav); 
       RawLAPPDData.insert(pair <int,vector<Waveform<double>>> (ic,Vwavs));
       ic++;
     }

@@ -2,7 +2,7 @@
 
 #LAPPDParseACC configs
 filepath /docker_toolchain/data
-filename spills_planacon3
+filename chain
 calibfile psec4_calibration.txt
 
 #FTBFAnalysis configs
@@ -11,9 +11,9 @@ boardno 0
 outfile /docker_toolchain/data/analysis.root
 
 #LAPPDnnls configs
-tempfilename /docker_toolchain/data/planacon_template.root
+tempfilename /docker_toolchain/data/pulsecharacteristics.root
 temphistname templatepulse #name of the TH1D in the template file
-sampling_factor 2.5
+sampling_factor 10 #larger number is smaller nnls matrices
 maxiter 30
 
 

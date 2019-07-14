@@ -5,6 +5,13 @@
 #include <iostream>
 
 #include "Tool.h"
+#include <TH2.h>
+#include <TH1.h>
+#include <TFile.h>
+#include <TCanvas.h>
+#include <TString.h>
+#include "LAPPDDisplay.h"
+#include "NnlsSolution.h"
 
 class FTBFAnalysis: public Tool {
 
@@ -17,13 +24,18 @@ class FTBFAnalysis: public Tool {
   bool Finalise();
   void HeatmapEvent(int event, int board);
   void PlotSeparateChannels(int event, int board);
+  void PlotRawHists();
+  void PlotNNLSandRaw();
+
 
 
  private:
- 	TFile* tff;
-
-
-
+ 	int _display_config;
+ 	int _event_counter;
+    int _file_number;
+    LAPPDDisplay* _display;
+    map<int, vector<Waveform<double>>> LAPPDWaveforms;
+    map<int, NnlsSolution> NNLSsoln;
 
 
 };

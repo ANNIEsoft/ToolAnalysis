@@ -25,7 +25,6 @@
 #include <cstdio>
 #include <string>
 
-using namespace nsNNLS;
 
 int sparseMatrix::load(const char* fn, bool asbin)
 {
@@ -191,50 +190,50 @@ int sparseMatrix::set (size_t i, size_t j, double val)
   return -1;
 }
     
-/// Returns 'r'-th row into pre-alloced vector
-int sparseMatrix::get_row (size_t i, vector*& r)
+/// Returns 'r'-th row into pre-alloced nnlsvector
+int sparseMatrix::get_row (size_t i, nnlsvector*& r)
 {
   return -1;
 }
 
-/// Returns 'c'-th col as a vector
-int sparseMatrix::get_col (size_t j, vector*& c)
+/// Returns 'c'-th col as a nnlsvector
+int sparseMatrix::get_col (size_t j, nnlsvector*& c)
 {
   return -1;
 }
 
 /// Returns main or second diagonal (if p == true)
-int sparseMatrix::get_diag(bool p, vector*& d) 
+int sparseMatrix::get_diag(bool p, nnlsvector*& d) 
 {
   return -1;
 }
 
-/// Vector l_p norms for this matrix, p > 0
+/// nnlsvector l_p norms for this matrix, p > 0
 double sparseMatrix::norm (double p)
 {
   return -1;
 }
 
-/// Vector l_p norms, p is 'l1', 'l2', 'fro', 'inf'
+/// nnlsvector l_p norms, p is 'l1', 'l2', 'fro', 'inf'
 double sparseMatrix::norm (const char*  p)
 {
   return -1;
 }
 
 /// r = a*row(i) + r
-int  sparseMatrix::row_daxpy(size_t i, double a, vector* r)
+int  sparseMatrix::row_daxpy(size_t i, double a, nnlsvector* r)
 {
   return -1;
 }
 
 /// c = a*col(j) + c
-int  sparseMatrix::col_daxpy(size_t j, double a, vector* c)
+int  sparseMatrix::col_daxpy(size_t j, double a, nnlsvector* c)
 {
   return -1;
 }
 
 /// Let r := this * x or  this^T * x depending on tranA
-int sparseMatrix::dot (bool transp, vector* x, vector*r)
+int sparseMatrix::dot (bool transp, nnlsvector* x, nnlsvector*r)
 {
   double* px = x->getData();
   double* pr = r->getData();
