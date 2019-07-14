@@ -341,6 +341,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         }
 
         // Convert the pulse integral to nC
+        // FIXME: We need a static database with each PMT's impedance
         charge *= NS_PER_ADC_SAMPLE / ADC_IMPEDANCE;
 
         // TODO: consider adding code to merge pulses if they occur
