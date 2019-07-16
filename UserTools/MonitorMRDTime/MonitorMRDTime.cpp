@@ -6,7 +6,7 @@ MonitorMRDTime::MonitorMRDTime():Tool(){}
 
 bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
 
-  std::cout <<"Tool MonitorMRDTime: Initialising...."<<std::endl;
+  if (verbosity > 1) std::cout <<"Tool MonitorMRDTime: Initialising...."<<std::endl;
 
   //-------------------------------------------------------
   //---------------Initialise config file------------------
@@ -65,11 +65,11 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
     if (file.eof()) break;
     //if (loopnum!=13){
       if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
-        std::cout <<"Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDTime): Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
       }
       if (temp_slot<1 || temp_slot>num_slots){
-        std::cout <<"Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDTime): Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
         continue;
       }
       active_channel[temp_crate-min_crate][temp_slot-1]=1;		//slot start with number 1 instead of 0, crates with 7
@@ -115,8 +115,8 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
 
   //counting number of iterations
   i_loop = 0;
-  //omit warning messages from ROOT
-  gROOT->ProcessLine("gErrorIgnoreLevel = 1001;");
+  //omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
+  gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
   
   return true;
 }
@@ -831,7 +831,7 @@ void MonitorMRDTime::MRDTimePlots(){
   max_sum_hour=0;
   max_sum_sixhour=0;
   max_sum_day=0;
-  //max_sum_day_channel.assign(num_active_slots,0);
+  max_sum_day_channel.assign(num_active_slots,0);
 
   for (int i_channel=0; i_channel<num_active_slots*num_channels;i_channel++){
 
@@ -935,6 +935,7 @@ void MonitorMRDTime::MRDTimePlots(){
           }
           if (sum_day!=0) {
             if (max_sum_day < sum_day) max_sum_day = sum_day;
+            if (max_sum_day_channel.at(i_channel/num_channels) < sum_day) max_sum_day_channel.at(i_channel/num_channels) = sum_day;
             hist_hitmap_day_cr1->SetBinContent(i_channel+1,sum_day);
             hist_hitmap_day_Channel.at(index)->SetBinContent(i_channel%num_channels+1,sum_day);
           } else {
@@ -974,6 +975,7 @@ void MonitorMRDTime::MRDTimePlots(){
           }
           if (sum_day!=0) {
             if (max_sum_day < sum_day) max_sum_day = sum_day;
+            if (max_sum_day_channel.at(i_channel/num_channels) < sum_day) max_sum_day_channel.at(i_channel/num_channels) = sum_day;
             hist_hitmap_day_cr2->SetBinContent(i_channel+1,sum_day);
             hist_hitmap_day_Channel.at(num_active_slots_cr1+index)->SetBinContent(i_channel%num_channels+1,sum_day);
           } else {
@@ -1144,8 +1146,8 @@ void MonitorMRDTime::MRDTimePlots(){
         if (i_channel != 0){
           int num_crate = (i_channel>num_active_slots_cr1*num_channels)? min_crate+1 : min_crate;
           int num_slot = (mapping_vector_ch.at(i_channel-1)-(i_channel-1)%num_channels-(num_crate-min_crate)*num_slots)/num_channels+1;
-          if (i_channel==num_ch) if (verbosity > 1) std::cout<<"Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
-          if (i_channel==times_channel_hour.size()-1) if (verbosity > 1) std::cout<<i_channel+1<<std::endl;
+          if (i_channel==num_ch && verbosity > 1) std::cout<<"Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
+          if (i_channel==times_channel_hour.size()-1 && verbosity > 1) std::cout<<i_channel+1<<std::endl;
           ss_ch.str("");
           ss_ch_rms.str("");
           ss_ch_freq.str("");
@@ -1894,7 +1896,8 @@ void MonitorMRDTime::MRDTimePlots(){
         hist_hitmap_day_Channel.at(i_slot)->Draw();
         if (hist_hitmap_day_Channel.at(i_slot)->GetMaximum()>500) {
           canvas_Hitmap_Slots_day->SetLogy();
-          hist_hitmap_day_Channel.at(i_slot)->GetYaxis()->SetRangeUser(0.8,hist_hitmap_day_Channel.at(i_slot)->GetMaximum()+10);
+          hist_hitmap_day_Channel.at(i_slot)->GetYaxis()->SetRangeUser(0.8,max_sum_day_channel.at(i_slot)+10);
+          //hist_hitmap_day_Channel.at(i_slot)->GetYaxis()->SetRangeUser(0.8,hist_hitmap_day_Channel.at(i_slot)->GetMaximum()+10);
         }
         std::stringstream ss_savepath_day;
         ss_savepath_day << outpath << prefix_day << (i_slot+1) <<".jpg";
@@ -1906,6 +1909,7 @@ void MonitorMRDTime::MRDTimePlots(){
         delete canvas_Hitmap_Slots_sixhour;
         delete canvas_Hitmap_Slots_day;
       }
+      max_sum_day_channel.clear();
       }//close draw hitmap
   }  
   if (draw_scatter){   //update only the scatter plots if 5 mins have not passed
@@ -1930,8 +1934,8 @@ void MonitorMRDTime::MRDTimePlots(){
           int num_crate = (i_channel>num_active_slots_cr1*num_channels)? min_crate+1 : min_crate;
           int num_slot = (mapping_vector_ch.at(i_channel-1)-(i_channel-1)%num_channels-(num_crate-min_crate)*num_slots)/num_channels+1;
           //std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
-          if (i_channel==num_ch) if (verbosity > 1) std::cout<<"Scattering Plots: Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
-          if (i_channel==times_channel_hour.size()-1) if (verbosity > 1) std::cout<<i_channel+1<<std::endl;
+          if (i_channel==num_ch && verbosity > 1) std::cout<<"Scattering Plots: Looping over channels: 0 ...";//std::cout <<"i_channel: "<<i_channel<<", num crate: "<<num_crate<<", num_slot: "<<num_slot<<", i_channel%num_ch: "<<i_channel%num_ch<<std::endl;
+          if (i_channel==times_channel_hour.size()-1 && verbosity > 1) std::cout<<i_channel+1<<std::endl;
           ss_ch_hist<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (1 hour) ["<<enum_ch_canvas+1<<"]";
           ss_ch_hist_sixhour<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (6 hours) ["<<enum_ch_canvas+1<<"]";
           ss_ch_hist_day<<"Crate "<<num_crate<<" Slot "<<num_slot<<" (1 day) ["<<enum_ch_canvas+1<<"]";
@@ -3497,8 +3501,8 @@ void MonitorMRDTime::FillEvents(){
     timestamp+=offset_date;
     eventtime = *Epoch + boost::posix_time::time_duration(int(timestamp/1000./60./60.),int(timestamp/1000./60.)%60,int(timestamp/1000.)%60,timestamp%1000);   //default last entry in miliseconds, need special compilation option for nanosec hh:mm:ss:msms
     //if (verbosity > 2 && count == 0) std::cout <<"Starting from /1/08/1970, this results in the date: "<<eventtime.date()<<", with the time: "<<eventtime.time_of_day()<<std::endl;
-    if (i_event == 0) if (verbosity > 1) std::cout <<eventtime.date()<<","<<eventtime.time_of_day();
-    if (i_event == total_number_entries-1) if (verbosity > 1) std::cout <<" ... "<<eventtime.date()<<","<<eventtime.time_of_day()<<std::endl;
+    if (i_event == 0 && verbosity > 1) std::cout <<eventtime.date()<<","<<eventtime.time_of_day();
+    if (i_event == total_number_entries-1 && verbosity > 1) std::cout <<" ... "<<eventtime.date()<<","<<eventtime.time_of_day()<<std::endl;
     boost::posix_time::time_duration dt = eventtime - current;
     double dt_ms = -(dt.total_milliseconds());
     double dt_ms_to_bin = (duration_fivemin*60*1000. - duration.total_milliseconds()) + dt_ms;
