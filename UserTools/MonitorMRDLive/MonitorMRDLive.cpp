@@ -22,7 +22,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("AveragePlots",draw_average);
 
   if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
-  std::cout <<"Output path for plots is "<<outpath<<std::endl;
+  if (verbosity > 1) std::cout <<"Output path for plots is "<<outpath<<std::endl;
 
   num_active_slots=0;
   n_active_slots_cr1=0;
@@ -35,11 +35,11 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
     file>>temp_crate>>temp_slot;
     if (file.eof()) break;
     if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
-        std::cout <<"Specified crate "<<temp_crate<<" out of range [7...8]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDLive): Specified crate "<<temp_crate<<" out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
     }
     if (temp_slot<1 || temp_slot>num_slots){
-        std::cout <<"Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDLive): Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
         continue;
     }
     active_channel[temp_crate-min_crate][temp_slot-1]=1;        //crates numbering starts at 7, slot numbering at 1
@@ -50,8 +50,8 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   file.close();
   num_active_slots = n_active_slots_cr1+n_active_slots_cr2;
 
-  //omit warning messages from ROOT
-  gROOT->ProcessLine("gErrorIgnoreLevel = 1001;");
+  //omit warning messages from ROOT: info messages - 1001, warning messages - 2001, error messages - 3001
+  gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
 
   return true;
 
@@ -228,7 +228,7 @@ void MonitorMRDLive::MRDTDCPlots(){
                 h2D_cr1->SetBinContent(Slot.at(i),Channel.at(i)+1,Value.at(i));
                 hSlot_Channel.at(index)->SetBinContent(Channel.at(i)+1,Value.at(i));
             } else {
-              std::cout <<"Slot # "<<Slot.at(i)<<" is not connected according to the configuration file. Abort this entry..."<<std::endl;
+              std::cout <<"ERROR (MonitorMRDLive): Slot # "<<Slot.at(i)<<" is not connected according to the configuration file. Abort this entry..."<<std::endl;
               continue;
             }
         } else if (Crate.at(i) == min_crate+1) {
@@ -239,14 +239,14 @@ void MonitorMRDLive::MRDTDCPlots(){
                 h2D_cr2->SetBinContent(Slot.at(i),Channel.at(i)+1,Value.at(i));
                 hSlot_Channel.at(n_active_slots_cr1+index)->SetBinContent(Channel.at(i)+1,Value.at(i));
           }else {
-            std::cout <<"Slot # "<<Slot.at(i)<<" is not connected according to the configuration file. Abort this entry..."<<std::endl;
+            std::cout <<"ERROR (MonitorMRDLive): Slot # "<<Slot.at(i)<<" is not connected according to the configuration file. Abort this entry..."<<std::endl;
             continue;
           }
         }
-        else std::cout <<"The read-in crate number does not exist. Continue with next event... "<<std::endl;
+        else std::cout <<"ERROR (MonitorMRDLive): The read-in crate number does not exist. Continue with next event... "<<std::endl;
       }
 
-      if (verbosity > 2)std::cout <<"Iterating over slots..."<<std::endl;
+      if (verbosity > 2) std::cout <<"Iterating over slots..."<<std::endl;
 
       for (int i_slot=0;i_slot<num_slots;i_slot++){
 
