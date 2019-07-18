@@ -946,15 +946,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			assert(false);
 		}
 		// calculate MRD_x_y_z ... MRDSpecs doesn't provide a nice way to do this
-		std::vector<int>::const_iterator layerstartit = MRDSpecs::layeroffsets.begin();
-		do{
-			++layerstartit;
-			if(layerstartit==MRDSpecs::layeroffsets.end()){
-				Log("LoadWCSim Error: MRD PMT "+to_string(mrdpmti)+" ran off end of layeroffsets!",v_error,verbosity);
-				break;
-			}
-		} while (mrdpmti>(*layerstartit));
-		int layernum = std::distance(MRDSpecs::layeroffsets.begin(),layerstartit)-1;
+		int layernum=0;
+		while ((mrdpmti+1) > MRDSpecs::layeroffsets.at(layernum+1)){ layernum++; }
 		int in_layer_pmtnum = mrdpmti - MRDSpecs::layeroffsets.at(layernum);
 		// paddles in each layer alternate on sides; i.e. paddles 0 and 1 are on opposite sides
 		int side = in_layer_pmtnum%2;
@@ -964,7 +957,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		int MRD_y = (orientation) ? side : in_layer_pmtnum;
 		int MRD_z = layernum+2;  // first MRD z layer num is 2 (veto are 0,1)
 		
-		Paddle apaddle( MRD_x,
+		Paddle apaddle( uniquedetectorkey,
+						MRD_x,
 						MRD_y,
 						MRD_z,
 						orientation,
@@ -1058,7 +1052,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		double paddle_zorigin = (MRD_z) ? 0.0728 : 0.0508;  // numbers from geofile.txt
 		double paddle_yorigin = facc_paddle_yorigins.at(faccpmti)/100.;
 		
-		Paddle apaddle( MRD_x,
+		Paddle apaddle( uniquedetectorkey,
+						MRD_x,
 						MRD_y,
 						MRD_z,
 						0,  // orientation 0=horizontal, 1=vertical
