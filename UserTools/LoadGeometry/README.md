@@ -23,8 +23,11 @@ some common pitfalls:
     will split the string and your data line will now have more entries than your
     legend can identify with.
   - Make sure your data line reader is reading in the data into the correct 
-    variable type.  Refer to the method ParseDataEntry() for how to handle this.
-
+    variable type.  Refer to any of the ParseDataEntry() methods for how to handle this.
+  - If you're seeing duplicate entries of variables of the same type, confirm that
+    the labels defined in the vectors of the header file match the ones used in the
+    .cpp file to pair data entries with variables via the legend line.  
+    You may just have a typo in one of the three places.
 
 ## Configuration
 
