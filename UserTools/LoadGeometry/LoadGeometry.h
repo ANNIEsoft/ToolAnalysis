@@ -42,7 +42,9 @@ class LoadGeometry: public Tool {
   std::string DataStartLineLabel = "DATA_START";
   std::string DataEndLineLabel = "DATA_END";
 
-
+  //Map of channel number to electronics map entry
+  std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap;
+  
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
   std::vector<std::string> MRDIntegerValues{"detector_num","channel_num","detector_system","orientation","layer","side","num",
@@ -51,6 +53,7 @@ class LoadGeometry: public Tool {
                                    "hv_crate","hv_slot","hv_channel","nominal_HV","polarity"};
   std::vector<std::string> MRDDoubleValues{"x_center","y_center","z_center","x_width","y_width","z_width"};
   std::vector<std::string> MRDStringValues{"PMT_type","cable_label","paddle_label","notes"};
+
 
   //Vector of strings indicating variables of interest and their data types in
   //The TankPMT file.  Used in the LoadTankPMTDetectors() method
@@ -62,11 +65,14 @@ class LoadGeometry: public Tool {
   std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","notes"};
 
   //verbosity levels: if 'verbosity' < this level, the message type will be logged.
+
   int verbosity=1;
   int v_error=0;
   int v_warning=1;
   int v_message=2;
   int v_debug=3;
+
+
 };
 
 
