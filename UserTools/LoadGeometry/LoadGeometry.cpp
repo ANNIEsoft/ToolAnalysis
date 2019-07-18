@@ -279,7 +279,8 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   if(layer>0) MRD_z = layer;
   else        MRD_z = side;
   
-  Paddle apad( MRD_x,
+  Paddle apad( detector_num,
+               MRD_x,
                MRD_y,
                MRD_z,
                orientation,
