@@ -63,7 +63,6 @@ if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="WaveformNNLS") ret=new WaveformNNLS;
 if (tool=="LAPPDRawToACDC") ret=new LAPPDRawToACDC;
-if (tool=="FTBFAnalysis") ret=new FTBFAnalysis;
 if (tool=="HitCleaner") ret=new HitCleaner;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
@@ -86,8 +85,6 @@ if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
 if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
 if (tool=="MonitorMRDEventDisplay") ret=new MonitorMRDEventDisplay;
 if (tool=="LoadGeometry") ret=new LoadGeometry;
-
-if (tool=="LoadFTBFgeometry") ret=new LoadFTBFgeometry;
-  if (tool=="LAPPDCalibrationWriter") ret=new LAPPDCalibrationWriter;
+if (tool=="LAPPDCalibrationWriter") ret=new LAPPDCalibrationWriter;
 return ret;
 }
