@@ -93,4 +93,5 @@
 #include "LoadGeometry.h"
 #include "WaveformNNLS.h"
 #include "FTBFAnalysis.h"
-#include "LAPPDRawToACDC.h"
+#include "LAPPDRawToACDC.h"#include "LoadFTBFgeometry/LoadFTBFgeometry.h"
+#include "LAPPDCalibrationWriter/LAPPDCalibrationWriter.h"

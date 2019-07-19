@@ -87,5 +87,7 @@ if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
 if (tool=="MonitorMRDEventDisplay") ret=new MonitorMRDEventDisplay;
 if (tool=="LoadGeometry") ret=new LoadGeometry;
 
+if (tool=="LoadFTBFgeometry") ret=new LoadFTBFgeometry;
+  if (tool=="LAPPDCalibrationWriter") ret=new LAPPDCalibrationWriter;
 return ret;
 }

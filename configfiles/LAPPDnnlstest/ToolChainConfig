@@ -11,9 +11,8 @@ SimInput /docker_toolchain/data/pulsecharacteristics.root
 rawdataname RawLAPPDData
 tempfilename /docker_toolchain/data/pulsecharacteristics.root
 temphistname templatepulse #name of the TH1D in the template file
-sampling_factor 30 #larger number is smaller nnls matrices, 10 is pretty precise
+sampling_factor 10 #larger number is smaller nnls matrices, 10 is pretty precise
 maxiter 20
-savedecomposed 1
 
 
 # FTBFAnalysis and LAPPDDisplay configs
