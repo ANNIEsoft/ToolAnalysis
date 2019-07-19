@@ -92,5 +92,4 @@
 #include "MonitorMRDEventDisplay.h"
 #include "LoadGeometry.h"
 #include "WaveformNNLS.h"
-#include "LAPPDRawToACDC.h"
 #include "LAPPDCalibrationWriter/LAPPDCalibrationWriter.h"

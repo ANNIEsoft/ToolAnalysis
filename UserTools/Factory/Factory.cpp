@@ -62,7 +62,6 @@ if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
 if (tool=="WaveformNNLS") ret=new WaveformNNLS;
-if (tool=="LAPPDRawToACDC") ret=new LAPPDRawToACDC;
 if (tool=="HitCleaner") ret=new HitCleaner;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
