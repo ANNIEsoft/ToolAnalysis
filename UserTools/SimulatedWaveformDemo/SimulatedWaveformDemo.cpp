@@ -115,14 +115,14 @@ bool SimulatedWaveformDemo::Execute(){
 	// contain multiple triggers (minibuffers).
 	// For the simplest case, configure the PulseSimulation tool with MinibuffersPerFullbuffer = 1.
 	// ---------------------------------------------------------------------------------------------------
-	pmtDataStore->Set("SequenceID",pmtDataSequenceID);
+	pmtDataStore->Get("SequenceID",pmtDataSequenceID);
 	
 	// =================================================================================================
 	
 	// The heftydbStore also contains one entry per ADC readout.
 	// Each variable in the Store is a c-style array of size MinibuffersPerFullbuffer.
 	// -------------------------------------------------------------------------------------------------
-	heftydbStore->Set("SequenceID",heftydbSequenceID);
+	heftydbStore->Get("SequenceID",heftydbSequenceID);
 	
 	// =================================================================================================
 	
@@ -133,6 +133,10 @@ bool SimulatedWaveformDemo::Execute(){
 		Log("SimulatedWaveformDemo Tool: Looping over "+to_string(ChannelsPerAdcCard)
 			 +" ADC channels",v_debug,verbosity);
 		const std::vector<uint16_t>* card_data = pmtDataVector.at(cardi);
+		if(card_data->size()==0){
+			Log("SimulatedWaveformDemo Tool: Card data vector is empty!",v_error,verbosity);
+			return false;
+		}
 		// Each waveform entry is a concatenation of waveforms for each channels on that card:
 		// [Chan 1][Chan 2][Chan 3][Chan 4]
 		for(int chani=0; chani<ChannelsPerAdcCard; chani++){
@@ -157,9 +161,6 @@ bool SimulatedWaveformDemo::Execute(){
 				std::vector<uint16_t>::const_iterator stopit = startit;
 				std::advance(stopit,SamplesPerMinibuffer);
 				const uint16_t thismax = *std::max_element(startit, stopit);
-				if(&thismax==&card_data->back()){
-					std::cerr<<"max element is off end?"<<std::endl;
-				}
 				Log("SimulatedWaveformDemo Tool: checking max "+to_string(thismax)+" against "
 					+to_string(maxwfrmamp),v_debug,verbosity);
 				if(thismax<maxwfrmamp){ continue; }
