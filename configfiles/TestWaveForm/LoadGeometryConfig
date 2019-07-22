@@ -1,0 +1,5 @@
+verbosity 7
+LAPPDChannelCount 60
+FACCMRDGeoFile ./configfiles/TestWaveForm/FullMRDGeometry.csv
+DetectorGeoFile ./configfiles/TestWaveForm/DetectorGeometrySpecs.csv
+LAPPDGeoFile ./configfiles/TestWaveForm/LAPPDGeometry.csv

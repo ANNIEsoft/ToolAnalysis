@@ -1,4 +1,5 @@
 verbosity 0
+LAPPDChannelCount 60
 FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
 DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
-
+LAPPDGeoFile ./configfiles/TestWaveForm/LAPPDGeometry.csv
