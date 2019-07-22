@@ -24,7 +24,7 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Initialising"<<std::endl;
 
   if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
-  std::cout <<"Output path for plots is "<<outpath<<std::endl;
+  if (verbosity > 1) std::cout <<"Output path for plots is "<<outpath<<std::endl;
 
 
   //get objects with allocated memory in ROOT
@@ -49,11 +49,11 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
     if (file.eof()) break;
     //if (loopnum!=13){
       if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
-        std::cout <<"Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDEventDisplay): Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
       }
       if (temp_slot<1 || temp_slot>num_slots){
-        std::cout <<"Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDEventDisplay): Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
         continue;
       }
       active_channel[temp_crate-min_crate][temp_slot-1]=1;		//slot start with number 1 instead of 0, crates with 7
@@ -78,15 +78,15 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
     if (file_inactive.eof()) break;
 
       if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
-        std::cout <<"Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDEventDisplay): Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
         continue;
       }
       if (temp_slot<1 || temp_slot>num_slots){
-        std::cout <<"Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
+        std::cout <<"ERROR (MonitorMRDEventDisplay): Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
         continue;
       }
       if (temp_channel<0 || temp_channel > num_channels){
-		std::cout <<"Specified channel out of range [0...31]. Continue with next entry."<<std::endl;
+	std::cout <<"ERROR (MonitorMRDEventDisplay): Specified channel out of range [0...31]. Continue with next entry."<<std::endl;
         continue;
       }
 
@@ -97,7 +97,7 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
       	inactive_ch_crate2.push_back(temp_channel);
       	inactive_slot_crate2.push_back(temp_slot);
       } else {
-      	std::cout <<"Crate # out of range, entry ("<<temp_crate<<"/"<<temp_slot<<"/"<<temp_channel<<") not added to inactive channel configuration." <<std::endl;
+      	std::cout <<"ERROR (MonitorMRDEventDisplay): Crate # out of range, entry ("<<temp_crate<<"/"<<temp_slot<<"/"<<temp_channel<<") not added to inactive channel configuration." <<std::endl;
       }
     
   }
@@ -159,7 +159,7 @@ bool MonitorMRDEventDisplay::Execute(){
     		
     		std::vector<int>::iterator it = std::find(nr_slot.begin(), nr_slot.end(), (Slot.at(i_entry))+(Crate.at(i_entry)-min_crate)*100);
 			if (it == nr_slot.end()){
-        		std::cout <<"Read-out Crate/Slot/Channel number not active according to configuration file. Check the configfile to process the data..."<<std::endl;
+        		std::cout <<"ERROR (MonitorMRDEventDisplay): Read-out Crate/Slot/Channel number not active according to configuration file. Check the configfile to process the data..."<<std::endl;
         		std::cout <<"Crate: "<<Crate.at(i_entry)<<", Slot: "<<Slot.at(i_entry)<<std::endl;
         		continue;
       		}
@@ -170,6 +170,8 @@ bool MonitorMRDEventDisplay::Execute(){
     		live_tdc.at(ch).push_back(Value.at(i_entry));
     		//std::cout <<"append timestamp to live_timestamp"<<std::endl;
     		live_timestamp.at(ch).push_back(TimeStamp);
+        live_tdc_hour.at(ch).push_back(Value.at(i_entry));
+        live_timestamp_hour.at(ch).push_back(TimeStamp);
 
     	}
 
@@ -193,7 +195,7 @@ bool MonitorMRDEventDisplay::Execute(){
 		//do nothing
 		if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: State is "<<State<<", do nothing"<<std::endl;
 	}else {
-		if (verbosity > 0) std::cout <<"State not recognized! Please check data format of MRD file."<<std::endl;
+		std::cout <<"ERROR (MonitorMRDEventDisplay): State not recognized! Please check data format of MRD file."<<std::endl;
 	}
 
   //-------------------------------------------------------
@@ -226,9 +228,13 @@ bool MonitorMRDEventDisplay::Finalise(){
 	//delete all the pointer to objects that are still active
 	delete rate_crate1;
 	delete rate_crate2;
+	delete rate_crate1_hour;
+	delete rate_crate2_hour;
 	delete TDC_hist;
+	delete TDC_hist_hour;
 	delete TDC_hist_coincidence;
 	delete n_paddles_hit;
+	delete n_paddles_hit_hour;
 	delete n_paddles_hit_coincidence;
 
 	return true;
@@ -245,6 +251,12 @@ void MonitorMRDEventDisplay::EraseOldData(){
 				live_timestamp.at(i_ch).erase(live_timestamp.at(i_ch).begin()+i);
 			}
 		}
+		for (int i=0; i<live_tdc_hour.at(i_ch).size();i++){
+			if (current_stamp - live_timestamp_hour.at(i_ch).at(i) > integration_period2*60*1000){
+				live_tdc_hour.at(i_ch).erase(live_tdc_hour.at(i_ch).begin()+i);
+				live_timestamp_hour.at(i_ch).erase(live_timestamp_hour.at(i_ch).begin()+i);
+			}
+		}
 	}
 	
 	for (int i_entry = 0; i_entry < vector_timestamp.size(); i_entry++){
@@ -254,17 +266,26 @@ void MonitorMRDEventDisplay::EraseOldData(){
 		}
 	}
 
+	for (int i_entry = 0; i_entry < vector_timestamp_hour.size(); i_entry++){
+		if (current_stamp - vector_timestamp_hour.at(i_entry) > integration_period2*60*1000){
+			vector_timestamp_hour.erase(vector_timestamp_hour.begin()+i_entry);
+			vector_nchannels_hour.erase(vector_nchannels_hour.begin()+i_entry);
+		}
+	}
+
 }
 
 void MonitorMRDEventDisplay::InitializeVectors(){
 
 	if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: InitializeVectors"<<std::endl;
 
-	std::vector<unsigned int> vec_tdc;
-	std::vector<ULong64_t> vec_timestamp;
+	std::vector<unsigned int> vec_tdc, vec_tdc_hour;
+	std::vector<ULong64_t> vec_timestamp, vec_timestamp_hour;
 	for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
 		live_tdc.push_back(vec_tdc);
 		live_timestamp.push_back(vec_timestamp);
+		live_tdc_hour.push_back(vec_tdc_hour);
+		live_timestamp_hour.push_back(vec_timestamp_hour);
 	}
 
 }
@@ -352,8 +373,10 @@ void MonitorMRDEventDisplay::UpdateMonitorPlots(){
     	else slot_id = nr_slot.at(i_ch / num_channels) - 100.;
     	int channel_id = i_ch % num_channels;
 
-    	std::cout <<"Crate: "<<crate_id<<", Slot: "<<slot_id<<", Channel: "<<channel_id<<std::endl;
-    	std::cout <<"live_tdc.size: "<<live_tdc.at(i_ch).size()<<", rate: "<<live_tdc.at(i_ch).size()/(integration_period*60)<<std::endl;
+    	if (verbosity > 2){
+	  std::cout <<"Crate: "<<crate_id<<", Slot: "<<slot_id<<", Channel: "<<channel_id<<std::endl;
+    	  std::cout <<"live_tdc.size: "<<live_tdc.at(i_ch).size()<<", rate: "<<live_tdc.at(i_ch).size()/(integration_period*60)<<std::endl;
+	}
 
     	for (int i_entry= 0; i_entry < live_tdc.at(i_ch).size(); i_entry++){
 
@@ -399,7 +422,7 @@ void MonitorMRDEventDisplay::UpdateMonitorPlots(){
 		}
 	}
 	for (int i_ch = 0; i_ch < inactive_ch_crate1.size(); i_ch++){
-			std::cout <<"inactive ch crate1, entry "<<i_ch<<std::endl;
+			if (verbosity > 2) std::cout <<"inactive ch crate1, entry "<<i_ch<<std::endl;
 			TBox *box_inactive = new TBox(inactive_slot_crate1.at(i_ch)-1,inactive_ch_crate1.at(i_ch),inactive_slot_crate1.at(i_ch),inactive_ch_crate1.at(i_ch)+1);
 			vector_box_inactive.push_back(box_inactive);
 			box_inactive->SetFillStyle(3004);
@@ -434,7 +457,7 @@ void MonitorMRDEventDisplay::UpdateMonitorPlots(){
 		}
 	}
 	for (int i_ch = 0; i_ch < inactive_ch_crate2.size(); i_ch++){
-		std::cout <<"inactive ch crate2, entry "<<i_ch<<std::endl;
+		if (verbosity > 2) std::cout <<"inactive ch crate2, entry "<<i_ch<<std::endl;
 		TBox *box_inactive = new TBox(inactive_slot_crate2.at(i_ch)-1,inactive_ch_crate2.at(i_ch),inactive_slot_crate2.at(i_ch),inactive_ch_crate2.at(i_ch)+1);
 		vector_box_inactive.push_back(box_inactive);
 		box_inactive->SetFillStyle(3004);
@@ -495,9 +518,13 @@ void MonitorMRDEventDisplay::UpdateMonitorPlots(){
 
     delete rate_crate1;
     delete rate_crate2;
+    delete rate_crate1_hour;
+    delete rate_crate2_hour;
     delete TDC_hist;
+    delete TDC_hist_hour;
     delete TDC_hist_coincidence;
     delete n_paddles_hit;
+    delete n_paddles_hit_hour;
     delete n_paddles_hit_coincidence;
 
     delete canvas_tdc;

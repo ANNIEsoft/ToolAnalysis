@@ -1,0 +1,4 @@
+#FIXME: Need a tool that takes the WCSim-simulated raw waveforms and puts them into the 
+##Format that's assumed in the ANNIEEvent store right now
+myLoadGeometry LoadGeometry ./configfiles/PhaseIIHitFinder/LoadGeometryConfig
+myPhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/PhaseIIHitFinder/PhaseIIADCHitFinderConfig
