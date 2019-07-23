@@ -85,8 +85,6 @@ if (tool=="MonitorMRDEventDisplay") ret=new MonitorMRDEventDisplay;
 if (tool=="LoadGeometry") ret=new LoadGeometry;
 if (tool=="TimeClustering") ret=new TimeClustering;
 if (tool=="GracefulStop") ret=new GracefulStop;
-if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
-if (tool=="TrackCombiner") ret=new TrackCombiner;
-
-return ret;
+if (tool=="TestWaveForm") ret=new TestWaveForm;
+ return ret;
 }

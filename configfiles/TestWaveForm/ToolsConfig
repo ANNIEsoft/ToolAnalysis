@@ -1,0 +1,2 @@
+myLoadGeometry LoadGeometry configfiles/TestWaveForm/LoadGeometryConfig
+myTestWaveForm TestWaveForm configfiles/TestWaveForm/TestWaveFormConfig

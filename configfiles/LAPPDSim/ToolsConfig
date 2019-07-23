@@ -1,0 +1,3 @@
+myLoadWCSim LoadWCSim configfiles/LAPPDSim/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/LAPPDSim/LoadWCSimLAPPDConfig
+myLAPPDSim LAPPDSim configfiles/LAPPDSim/ConfigVarsPSEC4
