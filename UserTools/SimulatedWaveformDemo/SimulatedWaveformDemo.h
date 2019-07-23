@@ -62,11 +62,15 @@ class SimulatedWaveformDemo: public Tool {
 	Int_t BufferSize;                            // minibuf_samples_per_ch * minibufs_per_fullbuf
 	std::vector< const std::vector<uint16_t>* > pmtDataVector;   // vector (per card) of waveforms
 	
+	// ANNIEEvent members:
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawADCData;
+	
 	// internal members:
 	int SamplesPerMinibuffer;
 	std::vector<int> numberline;
 	std::vector<int> upcastdata;
 	int maxwfrmamp=0;
+	int WaveformSource;
 	
 	// Logging variables
 	// -----------------
