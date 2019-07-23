@@ -48,6 +48,8 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 	int nummrdpmts = anniegeom->GetNumDetectorsInSet("MRD");
 	NumFaccPMTs = anniegeom->GetNumDetectorsInSet("Veto");
 	num_tdc_cards = (nummrdpmts+NumFaccPMTs-1)/channels_per_tdc_card +1;  // don't actually need to know this
+	// for converting back when filling RawADCData
+	m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
 	
 	Log("Creating Output Files",v_debug,verbosity);
 	LoadOutputFiles();
@@ -231,7 +233,8 @@ bool PulseSimulation::Execute(){
 	minibuffer_id++;
 	if(minibuffer_id==minibuffers_per_fullbuffer){
 		Log("PulseSimulation Tool: Filling Emulated PMTData and TrigData Trees",v_debug,verbosity);
-		FillEmulatedPMTData();
+		get_ok = FillEmulatedPMTData();
+		if(not get_ok) return false; // ... won't do us much good?
 		FillEmulatedTrigData();
 		sequence_id++;
 		minibuffer_id=0;
@@ -292,7 +295,8 @@ bool PulseSimulation::Finalise(){
 	if(minibuffer_id!=0){
 		// since we only write out full buffers, write out one last time any partial buffers
 		Log("PulseSimulation Tool: Filling Final Partial Readout",v_debug,verbosity);
-		FillEmulatedPMTData();
+		get_ok = FillEmulatedPMTData();
+		//if(not get_ok) return false; ... won't do us much good?
 		FillEmulatedTrigData();
 	}
 	
@@ -617,7 +621,7 @@ void PulseSimulation::ConstructEmulatedPmtDataReadout(){
 	
 }
 
-void PulseSimulation::FillEmulatedPMTData(){
+bool PulseSimulation::FillEmulatedPMTData(){
 	
 	// PMTData tree has: one entry per VME card, 16 entries (cards) per readout, 40 minibuffers per readout.
 	// A single trigger may span multiple minibuffers, but there's nothing to indicate it - just the
@@ -711,6 +715,39 @@ void PulseSimulation::FillEmulatedPMTData(){
 		pmtDataStore->Set("SequenceID",fileout_SequenceID);
 		//pmtDataStore->Set("CardID",fileout_CardID);    // meaningless if we save all cards in one entry
 		//pmtDataStore->Set("AllData",pmtDataVector);    // does not need to be re-set every time...
+		// funny thing: rather than having a waveform for each card and channel, the BoostStores
+		// want a map of channelkey to waveform ... convert things back again
+		int unusedchannelcount=0;  // sanity check
+		for(auto& acard : emulated_pmtdata_readout){
+			std::vector<uint16_t>::iterator startit = acard.Data.begin();
+			std::vector<uint16_t>::iterator stopit = startit+minibuffer_datapoints_per_channel;
+			for(int channeli=0; channeli<channels_per_adc_card; channeli++){
+				int wcsimtubeid = (acard.CardID*channels_per_adc_card)+channeli;
+				if(pmt_tubeid_to_channelkey.count(wcsimtubeid)==0){
+					unusedchannelcount++;
+					if(unusedchannelcount>3){
+						Log("PulseSimulation Tool: bad ADC channel:channelkey mapping!",v_error,verbosity);
+						return false;
+					}
+					continue; // since # channels on cards is a multiple of 4, we may have up to 3 unused.
+				}
+				unsigned long channelkey = pmt_tubeid_to_channelkey.at(wcsimtubeid);
+				for(int minibufferi=0; minibufferi<minibuffers_per_fullbuffer; minibufferi++){
+					// copy data from the card buffer to the RawWaveform map
+					if(RawADCData.count(channelkey)==0){
+						RawADCData.emplace(channelkey,std::vector<Waveform<uint16_t>>(minibuffers_per_fullbuffer));
+					}
+					std::vector<uint16_t>* wfrmsamples = RawADCData.at(channelkey).at(minibufferi).GetSamples();
+					wfrmsamples->assign(startit,stopit);  // copies including *startit but not stopit
+					// time relative to beam: timefileout_TSinceBeam[minibufferi]
+					// absolute minibuffer time: timefileout_Time[minibufferi]
+					RawADCData.at(channelkey).at(minibufferi).SetStartTime(timefileout_TSinceBeam[minibufferi]);
+					startit=stopit;
+					std::advance(stopit,minibuffer_datapoints_per_channel);
+				}
+			}
+		}
+		m_data->Stores.at("ANNIEEvent")->Set("RawADCData",RawADCData);
 	}
 	
 	// Fill the hefty timing file. 
@@ -772,6 +809,7 @@ void PulseSimulation::FillEmulatedPMTData(){
 //	tPMTData->SetBranchAddress("Data",fileout_Data);
 //	z.clear();
 	
+	return true;
 }
 
 void PulseSimulation::AddNoiseToWaveforms(){

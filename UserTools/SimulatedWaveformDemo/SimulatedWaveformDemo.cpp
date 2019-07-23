@@ -10,6 +10,7 @@ bool SimulatedWaveformDemo::Initialise(std::string configfile, DataModel &data){
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
 	m_variables.Get("verbosity",verbosity);
+	m_variables.Get("WaveformSource",WaveformSource);  // ANNIEEvent::RawADCData=0, pmtDataStore::AllData=1
 	
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
@@ -126,41 +127,41 @@ bool SimulatedWaveformDemo::Execute(){
 	
 	// =================================================================================================
 	
-	// The pmtDataStore AllData vector contains one waveform entry per ADC card.
-	Log("SimulatedWaveformDemo Tool: Looping over "+to_string(pmtDataVector.size())
-		 +" ADC cards",v_debug,verbosity);
-	for(int cardi=0; cardi<pmtDataVector.size(); cardi++){
-		Log("SimulatedWaveformDemo Tool: Looping over "+to_string(ChannelsPerAdcCard)
-			 +" ADC channels",v_debug,verbosity);
-		const std::vector<uint16_t>* card_data = pmtDataVector.at(cardi);
-		if(card_data->size()==0){
-			Log("SimulatedWaveformDemo Tool: Card data vector is empty!",v_error,verbosity);
-			return false;
-		}
-		// Each waveform entry is a concatenation of waveforms for each channels on that card:
-		// [Chan 1][Chan 2][Chan 3][Chan 4]
-		for(int chani=0; chani<ChannelsPerAdcCard; chani++){
-			int chan_start_index = BufferSize*chani;
-			// Furthermore, within each cards subset, all minibuffers for that full readout are concatenated:
-			// [Chan 1] == [{chan 1, minibuffer 1}{chan 1, minibuffer 2}...{chan 1, minibuffer N}]
-			Log("SimulatedWaveformDemo Tool: Looping over "+to_string(MiniBuffersPerFullBuffer)
+	// < NEW >
+	// Phase 2 oriented ToolAnalysis approach to analysing waveforms is via ANNIEEvent::RawADCData
+	// This is a map<channelkey, vector<Waveform>>, where the vector contains one Waveform per minibuffer.
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("RawADCData",RawADCData);
+	if(not get_ok){
+		Log("SimulatedWaveformDemo Tool: Failed to get RawADCData from ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
+	
+	// WORKING WITH THE WAVEFORMS
+	// --------------------------
+	
+	// =================================================================================================
+	// METHOD 1
+	// =================================================================================================
+	if(WaveformSource==0){
+		// Method 1: Accessing waveforms via the RawADCData
+		Log("SimulatedWaveformDemo Tool: Looping over "+to_string(RawADCData.size())
+			 +" Tank PMT channels",v_debug,verbosity);
+		for(std::pair<const unsigned long,std::vector<Waveform<uint16_t>>>& achannel : RawADCData){
+			const unsigned long channelkey = achannel.first;
+			
+			// Each Waveform represents one minibuffer on this channel
+			Log("SimulatedWaveformDemo Tool: Looping over "+to_string(achannel.second.size())
 				 +" minibuffers",v_debug,verbosity);
-			for(int minibufi=0; minibufi<MiniBuffersPerFullBuffer; minibufi++){
-				int minibuffer_start_index = chan_start_index + (SamplesPerMinibuffer*minibufi);
+			for(Waveform<uint16_t>& wfrm : achannel.second){
+				std::vector<uint16_t>* samples = wfrm.GetSamples();
+				// Note that because these are built directly from the simulated minibuffers,
+				// samples will have the Phase 1 interleaving unless it is disabled in the
+				// PulseSimulation tool by passing config variable DoPhaseOneRiffle=0
 				
-				// Note that in phase 1 the samples within each waveform were not in order;
-				// samples from the first and second half of the waveform were interleaved.
-				// To disable this "shuffling" of samples, set DoPhaseOneRiffle = false
-				// in the PulseSimulation tool.
-				
-				// As a demonstration, let's just plot the minibuffer waveform
-				// To try not to draw lots of boring plots with no pulses in, only
+				// As a demonstration, let's just plot the waveform on a TGraph
+				// To avoid drawing lots of boring plots with no pulses in, only
 				// draw the minibuffer if it has a larger pulse than any we've seen before!
-				std::vector<uint16_t>::const_iterator startit = card_data->begin();
-				std::advance(startit,minibuffer_start_index);
-				std::vector<uint16_t>::const_iterator stopit = startit;
-				std::advance(stopit,SamplesPerMinibuffer);
-				const uint16_t thismax = *std::max_element(startit, stopit);
+				const uint16_t thismax = *std::max_element(samples->begin(), samples->end());
 				Log("SimulatedWaveformDemo Tool: checking max "+to_string(thismax)+" against "
 					+to_string(maxwfrmamp),v_debug,verbosity);
 				if(thismax<maxwfrmamp){ continue; }
@@ -169,10 +170,11 @@ bool SimulatedWaveformDemo::Execute(){
 				// for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
 				Log("SimulatedWaveformDemo Tool: Making TGraph",v_debug,verbosity);
 				for(int samplei=0; samplei<SamplesPerMinibuffer; samplei++){
-					upcastdata.at(samplei) = card_data->at(minibuffer_start_index+samplei);
+					upcastdata.at(samplei) = samples->at(samplei);
 				}
 				if(mb_graph){ delete mb_graph; }
 				mb_graph = new TGraph(SamplesPerMinibuffer, numberline.data(), upcastdata.data());
+				mb_graph->SetName("mb_graph");
 				if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
 				mb_canv->cd();
 				mb_canv->Clear();
@@ -186,8 +188,78 @@ bool SimulatedWaveformDemo::Execute(){
 				} while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
 				Log("SimulatedWaveformDemo Tool: graph closed, looping",v_debug,verbosity);
 			} // end loop over minibuffers
-		} // end loop over channels on this ADC card
-	} // end loop over ADC cards
+		} // end loop over channelkeys
+		
+	
+	// =================================================================================================
+	// METHOD 2
+	// =================================================================================================
+	} else {
+		// Method 2: Accessing waveforms via AllData.
+		// This was the initial conversion, based on putting a simplified phase 1 file format into BoostStores.
+		// The pmtDataStore AllData vector contains one waveform entry per ADC card.
+		Log("SimulatedWaveformDemo Tool: Looping over "+to_string(pmtDataVector.size())
+			 +" ADC cards",v_debug,verbosity);
+		for(int cardi=0; cardi<pmtDataVector.size(); cardi++){
+			Log("SimulatedWaveformDemo Tool: Looping over "+to_string(ChannelsPerAdcCard)
+				 +" ADC channels",v_debug,verbosity);
+			const std::vector<uint16_t>* card_data = pmtDataVector.at(cardi);
+			if(card_data->size()==0){
+				Log("SimulatedWaveformDemo Tool: Card data vector is empty!",v_error,verbosity);
+				return false;
+			}
+			// Each waveform entry is a concatenation of waveforms for each channels on that card:
+			// [Chan 1][Chan 2][Chan 3][Chan 4]
+			for(int chani=0; chani<ChannelsPerAdcCard; chani++){
+				int chan_start_index = BufferSize*chani;
+				// Furthermore, within each cards subset, all minibuffers for that full readout are concatenated:
+				// [Chan 1] == [{chan 1, minibuffer 1}{chan 1, minibuffer 2}...{chan 1, minibuffer N}]
+				Log("SimulatedWaveformDemo Tool: Looping over "+to_string(MiniBuffersPerFullBuffer)
+					 +" minibuffers",v_debug,verbosity);
+				for(int minibufi=0; minibufi<MiniBuffersPerFullBuffer; minibufi++){
+					int minibuffer_start_index = chan_start_index + (SamplesPerMinibuffer*minibufi);
+					
+					// Note that in phase 1 the samples within each waveform were not in order;
+					// samples from the first and second half of the waveform were interleaved.
+					// To disable this "shuffling" of samples, set DoPhaseOneRiffle = false
+					// in the PulseSimulation tool.
+					
+					// As a demonstration, let's just plot the minibuffer waveform
+					// To avoid drawing lots of boring plots with no pulses in, only
+					// draw the minibuffer if it has a larger pulse than any we've seen before!
+					std::vector<uint16_t>::const_iterator startit = card_data->begin();
+					std::advance(startit,minibuffer_start_index);
+					std::vector<uint16_t>::const_iterator stopit = startit;
+					std::advance(stopit,SamplesPerMinibuffer);
+					const uint16_t thismax = *std::max_element(startit, stopit);
+					Log("SimulatedWaveformDemo Tool: checking max "+to_string(thismax)+" against "
+						+to_string(maxwfrmamp),v_debug,verbosity);
+					if(thismax<maxwfrmamp){ continue; }
+					maxwfrmamp = thismax;
+					
+					// for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
+					Log("SimulatedWaveformDemo Tool: Making TGraph",v_debug,verbosity);
+					for(int samplei=0; samplei<SamplesPerMinibuffer; samplei++){
+						upcastdata.at(samplei) = card_data->at(minibuffer_start_index+samplei);
+					}
+					if(mb_graph){ delete mb_graph; }
+					mb_graph = new TGraph(SamplesPerMinibuffer, numberline.data(), upcastdata.data());
+					if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
+					mb_canv->cd();
+					mb_canv->Clear();
+					mb_graph->Draw("alp");
+					mb_canv->Modified();
+					mb_canv->Update();
+					gSystem->ProcessEvents();
+					do{
+						gSystem->ProcessEvents();
+						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					} while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
+					Log("SimulatedWaveformDemo Tool: graph closed, looping",v_debug,verbosity);
+				} // end loop over minibuffers
+			} // end loop over channels on this ADC card
+		} // end loop over ADC cards
+	}
 	
 	Log("SimulatedWaveformDemo Tool: finished Execute",v_debug,verbosity);
 	return true;

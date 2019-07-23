@@ -3,6 +3,7 @@
 #define PulseSimulation_H
 
 #include "Tool.h"
+#include "Waveform.h"
 
 #include <string>
 #include <iostream>
@@ -92,6 +93,7 @@ class PulseSimulation: public Tool {
 	std::map<unsigned long,int> channelkey_to_pmtid;
 	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	std::map<unsigned long,int> channelkey_to_faccpmtid;
+	std::map<int,unsigned long> pmt_tubeid_to_channelkey;
 	int NumFaccPMTs;
 	
 	// Internal Functions
@@ -100,7 +102,7 @@ class PulseSimulation: public Tool {
 	void GenerateMinibufferPulse(int digit_index, double adjusted_digit_q, std::vector<uint16_t> &pulsevector);
 	void AddMinibufferStartTime(bool droppingremainingsubtriggers);
 	void ConstructEmulatedPmtDataReadout();
-	void FillEmulatedPMTData();
+	bool FillEmulatedPMTData();
 	void AddNoiseToWaveforms();
 	void RiffleShuffle(bool do_shuffle);
 	void LoadOutputFiles();
@@ -161,6 +163,7 @@ class PulseSimulation: public Tool {
 	BoostStore* heftydbStore;        // equivalant of theftydb
 	BoostStore* CCDataStore;         // equivalant of tCCData
 	std::vector<intptr_t> pmtDataVector;
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawADCData;
 	
 	// timing heftydb tree
 	// ~~~~~~~~~~~~~~~~~~~
