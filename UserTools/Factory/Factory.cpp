@@ -86,5 +86,5 @@ if (tool=="LoadGeometry") ret=new LoadGeometry;
 if (tool=="TimeClustering") ret=new TimeClustering;
 if (tool=="GracefulStop") ret=new GracefulStop;
 if (tool=="TestWaveForm") ret=new TestWaveForm;
-return ret;
+ return ret;
 }

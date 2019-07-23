@@ -94,3 +94,7 @@
 #include "TimeClustering.h"
 #include "GracefulStop.h"
 #include "TestWaveForm.h"
+#include "PhaseIIADCHitFinder.h"
+#include "TrackCombiner.h"
+
+

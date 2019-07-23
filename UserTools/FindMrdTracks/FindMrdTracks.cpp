@@ -49,6 +49,8 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
 	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	// pass this to TrackCombiner
+	m_data->CStore.Set("DrawMrdTruthTracks",DrawTruthTracks);
 	
 	if(MakeMrdDigitTimePlot){
 		// Make the TApplication
@@ -515,6 +517,16 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			
 			// get the BoostStore to hold this track
 			BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(subevi+tracki));
+			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// If no tracks are found to match the reconstructed event vertex, the TrackCombiner Tool
+			// may perform a cruder reconstruction and append an Mrd Track to this vector.
+			// Since we don't remove and re-create the BoostStores each Execute, any members that are
+			// not updated by both tools could result in spurious track properties being propagated!
+			// !!!!!!!!!!!!! It is therefore crucial to keep these two Tools in sync! !!!!!!!!!!!!!!!
+			// XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+			// IF ADDING MEMBERS TO THE MRDTRACK BOOSTSTORE HERE, ADD THEM TO THE TRACKCOMBINER TOO!
+			// XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			
 			// fill with this track's data
 			thisTrackAsBoostStore->Set("MrdTrackID",atrack->GetTrackID());
@@ -560,7 +572,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			Position TankExitPoint( atrack->GetTankExitPoint().X() / 100.,
 									atrack->GetTankExitPoint().Y() / 100.,
 									atrack->GetTankExitPoint().Z() / 100.);
-			Position MrdEntryPoint( atrack->GetMrdEntryPoint().X() / 100.,  // not implemented
+			Position MrdEntryPoint( atrack->GetMrdEntryPoint().X() / 100.,
 									atrack->GetMrdEntryPoint().Y() / 100.,
 									atrack->GetMrdEntryPoint().Z() / 100.);
 			thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
