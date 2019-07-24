@@ -34,12 +34,14 @@ class LoadGeometry: public Tool {
                                std::vector<std::string> PMTLegendEntries);
 
   Geometry* AnnieGeometry;
+
+
+ private:
+  
   int detector_num_store = 0;
   int counter = 0;
   Detector* adet;
   int LAPPD_channel_count;
-
- private:
   std::string fFACCMRDGeoFile;
   std::string fTankPMTGeoFile;
   std::string fLAPPDGeoFile;
@@ -74,10 +76,6 @@ class LoadGeometry: public Tool {
                                             "channel_level2_crate","channel_level2_card","channel_level2_channel",
                                             "channel_hv_crate","channel_hv_card","channel_hv_channel","channel_num"};
 
-	//verbosity levels: if 'verbosity' < this level, the message type will be logged.
-	int verbosity=1;
-
-
   //Vector of strings indicating variables of interest and their data types in
   //The TankPMT file.  Used in the LoadTankPMTDetectors() method
   std::vector<std::string> TankPMTIntegerValues{"detector_num","channel_num","panel_number"
@@ -86,6 +84,9 @@ class LoadGeometry: public Tool {
                                    "hv_crate","hv_slot","hv_channel","nominal_HV"};
   std::vector<std::string> TankPMTDoubleValues{"x_pos","y_pos","z_pos","x_dir","y_dir","z_dir"};
   std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","notes"};
+  
+  //verbosity levels: if 'verbosity' < this level, the message type will be logged.
+  int verbosity=1;
   int v_error=0;
   int v_warning=1;
   int v_message=2;
