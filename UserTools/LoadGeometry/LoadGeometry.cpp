@@ -25,10 +25,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   //Check files exist
   if(!this->FileExists(fDetectorGeoFile)){
-
-		Log("LoadGeometry Tool: File for Detector Geometry does not exist!",v_error,verbosity);
-        std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
-		return false;
+     Log("LoadGeometry Tool: File for Detector Geometry does not exist!",v_error,verbosity);
+     std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+     return false;
   }
   if(!this->FileExists(fFACCMRDGeoFile)){
     Log("LoadGeometry Tool: File for FACC/MRD Geometry does not exist!",v_error,verbosity);
@@ -346,36 +345,40 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
 }
 
 
-void LoadGeometry::LoadLAPPDs(){
-  //First, get the LAPPD file data key
-  Log("LoadGeometry tool: Now loading LAPPDs",v_message,verbosity);
-  std::string LAPPDLegend = this->GetLegendLine(fLAPPDGeoFile);
-  std::vector<std::string> LAPPDLegendEntries;
-  boost::split(LAPPDLegendEntries,LAPPDLegend, boost::is_any_of(","), boost::token_compress_on);
-
+void LoadGeometry::LoadTankPMTDetectors(){
+  //First, get the Tank PMT file legend key
+  Log("LoadGeometry tool: Now loading TankPMT detectors",v_message,verbosity);
+  std::string TankPMTLegend = this->GetLegendLine(fTankPMTGeoFile);
+  std::vector<std::string> TankPMTLegendEntries;
+  boost::split(TankPMTLegendEntries,TankPMTLegend, boost::is_any_of(","), boost::token_compress_on); 
+ 
   std::string line;
-  ifstream myfile(fLAPPDGeoFile.c_str());
-  
-    detector_num_store = 100000;
-    counter = 0;
+  ifstream myfile(fTankPMTGeoFile.c_str());
+  if (myfile.is_open()){
+    //First, get to where data starts
+    while(getline(myfile,line)){
+      if(line.find("#")!=std::string::npos) continue;
+      if(line.find(DataStartLineLabel)!=std::string::npos) break;
+    }
+    //Loop over lines, collect all detector specs 
     while(getline(myfile,line)){
       std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
-      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
+      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on); 
       if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
-      bool add_ok = this->ParseLAPPDDataEntry(SpecLine,LAPPDLegendEntries);
+      bool add_ok = this->ParseTankPMTDataEntry(SpecLine,TankPMTLegendEntries);
       if(not add_ok){
-        std::cerr<<"Faild to add Detector to Geometry!"<<std::endl;
+        std::cerr<<"Failed to add Tank PMT Detector to Geometry!"<<std::endl;
       }
     }
   } else {
-    Log("LoadGeometry tool: Something went wrong opening a file!!!",v_error,verbosity);
+    Log("LoadGeometry tool: Something went wrong opening the Tank PMT file!!!",v_error,verbosity);
   }
   if(myfile.is_open()) myfile.close();
-    Log("LoadGeometry tool: LAPPD Detector/Channel loading complete",v_message,verbosity);
+    Log("LoadGeometry tool: Tank PMT Detector/Channel loading complete",v_message,verbosity);
 }
 
 bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
@@ -501,39 +504,44 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
 }
 
 
-  
-void LoadGeometry::LoadTankPMTDetectors(){
-  //First, get the Tank PMT file legend key
-  Log("LoadGeometry tool: Now loading TankPMT detectors",v_message,verbosity);
-  std::string TankPMTLegend = this->GetLegendLine(fTankPMTGeoFile);
-  std::vector<std::string> TankPMTLegendEntries;
-  boost::split(TankPMTLegendEntries,TankPMTLegend, boost::is_any_of(","), boost::token_compress_on); 
- 
-  std::string line;
-  ifstream myfile(fTankPMTGeoFile.c_str());
 
+void LoadGeometry::LoadLAPPDs(){
+  //First, get the LAPPD file data key
+  Log("LoadGeometry tool: Now loading LAPPDs",v_message,verbosity);
+  std::string LAPPDLegend = this->GetLegendLine(fLAPPDGeoFile);
+  std::vector<std::string> LAPPDLegendEntries;
+  boost::split(LAPPDLegendEntries,LAPPDLegend, boost::is_any_of(","), boost::token_compress_on);
+
+  std::string line;
+  ifstream myfile(fLAPPDGeoFile.c_str());
   if (myfile.is_open()){
     //First, get to where data starts
     while(getline(myfile,line)){
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataStartLineLabel)!=std::string::npos) break;
     }
-      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on); 
+    //Loop over lines, collect all detector specs
+    detector_num_store = 100000;
+    counter = 0;
+    while(getline(myfile,line)){
+      std::cout << line << std::endl; //has our stuff;
+      if(line.find("#")!=std::string::npos) continue;
+      if(line.find(DataEndLineLabel)!=std::string::npos) break;
+      std::vector<std::string> SpecLine;
+      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
       if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
-      bool add_ok = this->ParseTankPMTDataEntry(SpecLine,TankPMTLegendEntries);
+      bool add_ok = this->ParseLAPPDDataEntry(SpecLine,LAPPDLegendEntries);
       if(not add_ok){
-        std::cerr<<"Failed to add Tank PMT Detector to Geometry!"<<std::endl;
+        std::cerr<<"Faild to add Detector to Geometry!"<<std::endl;
       }
     }
   } else {
-    Log("LoadGeometry tool: Something went wrong opening the Tank PMT file!!!",v_error,verbosity);
+    Log("LoadGeometry tool: Something went wrong opening a file!!!",v_error,verbosity);
   }
   if(myfile.is_open()) myfile.close();
-    Log("LoadGeometry tool: Tank PMT Detector/Channel loading complete",v_message,verbosity);
+    Log("LoadGeometry tool: LAPPD Detector/Channel loading complete",v_message,verbosity);
 }
-
-    
     
 
 bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
