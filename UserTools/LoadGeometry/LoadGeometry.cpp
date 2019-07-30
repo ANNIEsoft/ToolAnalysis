@@ -58,7 +58,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   //Load TankPMT Geometry Detector/Channel Information
   this->LoadTankPMTDetectors();
-  
+
   //Load LAPPD Geometry Information
   this->LoadLAPPDs();
 
@@ -297,7 +297,7 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   // in practice of course, both span the same x, but are offset in z.
   if(layer>0) MRD_z = layer;
   else        MRD_z = side;
-  
+
   Paddle apad( detector_num,
                MRD_x,
                MRD_y,
@@ -350,8 +350,8 @@ void LoadGeometry::LoadTankPMTDetectors(){
   Log("LoadGeometry tool: Now loading TankPMT detectors",v_message,verbosity);
   std::string TankPMTLegend = this->GetLegendLine(fTankPMTGeoFile);
   std::vector<std::string> TankPMTLegendEntries;
-  boost::split(TankPMTLegendEntries,TankPMTLegend, boost::is_any_of(","), boost::token_compress_on); 
- 
+  boost::split(TankPMTLegendEntries,TankPMTLegend, boost::is_any_of(","), boost::token_compress_on);
+
   std::string line;
   ifstream myfile(fTankPMTGeoFile.c_str());
   if (myfile.is_open()){
@@ -360,13 +360,13 @@ void LoadGeometry::LoadTankPMTDetectors(){
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataStartLineLabel)!=std::string::npos) break;
     }
-    //Loop over lines, collect all detector specs 
+    //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
       std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
-      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on); 
+      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
       if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseTankPMTDataEntry(SpecLine,TankPMTLegendEntries);
@@ -441,7 +441,7 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
     if (TankPMTLegendEntries.at(i) == "PMT_type") PMT_type = svalue;
     if (TankPMTLegendEntries.at(i) == "cable_label") cable_label = svalue;
     if (TankPMTLegendEntries.at(i) == "detector_status") detector_status = svalue;
-  } 
+  }
 
   //Parse out the Detector Status for filling into Detector class
   detectorstatus detstatus;
@@ -461,15 +461,15 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
   else {
     Log("LoadGeometry Tool: Undefined status of Tank PMT detector",v_error,verbosity);
     if (verbosity > v_error) std::cout << "channel_num is " << channel_num << std::endl;
-  } 
+  }
 
   //FIXME: things that are not loaded in with the default det/channel format:
   //      - panel_number
-  
+
   if(verbosity>4) std::cout << "Filling a Tank PMT data line into Detector/Channel classes" << std::endl;
   Detector adet(detector_num,
                 "Tank",
-                detector_tank_location, 
+                detector_tank_location,
                 Position( x_pos/1000.,
                           y_pos/1000.,
                           z_pos/1000.),
@@ -494,7 +494,7 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                       hv_slot,
                       hv_channel,
                       chanstatus); //channel status same as detector status here
-  
+
   // Add this channel to the geometry
   if(verbosity>4) cout<<"Adding channel "<<channel_num<<" to detector "<<detector_num<<endl;
   adet.AddChannel(pmtchannel);
@@ -542,7 +542,7 @@ void LoadGeometry::LoadLAPPDs(){
   if(myfile.is_open()) myfile.close();
     Log("LoadGeometry tool: LAPPD Detector/Channel loading complete",v_message,verbosity);
 }
-    
+
 
 bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
         std::vector<std::string> LAPPDLegendEntries){
@@ -690,8 +690,8 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   }
   return true;
 }
-  
-  
+
+
 bool LoadGeometry::FileExists(std::string name) {
   ifstream myfile(name.c_str());
   return myfile.good();

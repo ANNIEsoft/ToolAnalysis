@@ -28,7 +28,7 @@ class LoadGeometry: public Tool {
 
   bool  ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
                               std::vector<std::string> LAPPDLegendEntries);
- 
+
   void LoadTankPMTDetectors();
   bool ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                                std::vector<std::string> PMTLegendEntries);
@@ -37,7 +37,7 @@ class LoadGeometry: public Tool {
 
 
  private:
-  
+
   int detector_num_store = 0;
   int counter = 0;
   Detector* adet;
@@ -54,7 +54,7 @@ class LoadGeometry: public Tool {
 
   //Map of channel number to electronics map entry
   std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap;
-  
+
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
   std::vector<std::string> MRDIntegerValues{"detector_num","channel_num","detector_system","orientation","layer","side","num",
@@ -83,8 +83,8 @@ class LoadGeometry: public Tool {
                                    "mt_crate","mt_slot","mt_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV"};
   std::vector<std::string> TankPMTDoubleValues{"x_pos","y_pos","z_pos","x_dir","y_dir","z_dir"};
-  std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","notes"};
-  
+  std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","detector_status","notes"};
+
   //verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=1;
   int v_error=0;
