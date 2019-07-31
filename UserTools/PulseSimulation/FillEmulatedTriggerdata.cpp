@@ -54,5 +54,10 @@ void PulseSimulation::FillEmulatedTrigData(){
 		fileout_TriggerCounters[i] = 0;   // FIXME
 	}
 	
-	tTrigData->Fill();
+	if(GenerateFakeRootFiles){
+		tTrigData->Fill();
+	}
+	if(PutOutputsIntoStore){
+		// actually, nothing worth storing
+	}
 }

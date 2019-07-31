@@ -87,6 +87,7 @@ if (tool=="TimeClustering") ret=new TimeClustering;
 if (tool=="GracefulStop") ret=new GracefulStop;
 if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
+if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
 
 return ret;
 }
