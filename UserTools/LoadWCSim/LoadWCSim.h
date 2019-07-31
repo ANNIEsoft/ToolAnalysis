@@ -115,8 +115,10 @@ class LoadWCSim: public Tool {
 	uint16_t MCTriggernum;
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
-	uint32_t EventNumber; // will need to be tracked separately, since we flatten triggers
+	uint32_t EventNumber;    // will need to be tracked separately, since we flatten triggers
 	TimeClass* EventTime;
+	uint64_t RunStartUser;   // sets the run start time, since WCSim doesn't have one
+	TimeClass RunStartTime;  // as set from user
 	uint64_t EventTimeNs;
 	std::vector<MCParticle>* MCParticles;
 	std::map<unsigned long,std::vector<MCHit>>* TDCData;
