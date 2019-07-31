@@ -267,7 +267,7 @@ bool MrdDistributions::Execute(){
 		thisTrackAsBoostStore->Get("VtrackFitCov",VtrackFitCov);                // 
 		thisTrackAsBoostStore->Get("PMTsHit",PMTsHit);                          // 
 		thisTrackAsBoostStore->Get("TankExitPoint",TankExitPoint);              // [m]
-		thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);              // [m] ?? TODO?
+		thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);              // [m]
 		
 		// some additional histograms are available in the MrdPaddlePlot Tool,
 		// since the cMRDTrack classes used for reconstruction contain mrdcluster objects
