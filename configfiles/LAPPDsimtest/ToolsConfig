@@ -1,7 +1,8 @@
 GenerateHits GenerateHits null
 LAPPDSim LAPPDSim configfiles/LAPPDsimtest/ConfigVarsPSEC4
+LAPPDRawToACDC LAPPDRawToACDC configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDsimtest/ConfigVarsPSEC4
-LAPPDFilter LAPPDFilter configfiles/LAPPDsimtest/ConfigVarsPSEC4
+#LAPPDFilter LAPPDFilter configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDIntegratePulse LAPPDIntegratePulse configfiles/LAPPDsimtest/ConfigVarsPSEC4
 #LAPPDcfd LAPPDcfd configfiles/LAPPDsimtest/ConfigVarsPSEC4
