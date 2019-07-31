@@ -22,8 +22,13 @@ class LoadGeometry: public Tool {
   std::string GetLegendLine(std::string name);
   void InitializeGeometry();
   void LoadFACCMRDDetectors();
-  Detector  ParseMRDDataEntry(std::vector<std::string> SpecLine, 
+  bool  ParseMRDDataEntry(std::vector<std::string> SpecLine,
                                std::vector<std::string> MRDLegendEntries);
+  
+  void LoadTankPMTDetectors();
+  bool ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
+                               std::vector<std::string> PMTLegendEntries);
+
   Geometry* AnnieGeometry;
 
  private:
@@ -37,22 +42,37 @@ class LoadGeometry: public Tool {
   std::string DataStartLineLabel = "DATA_START";
   std::string DataEndLineLabel = "DATA_END";
 
-
+  //Map of channel number to electronics map entry
+  std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap;
+  
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
   std::vector<std::string> MRDIntegerValues{"detector_num","channel_num","detector_system","orientation","layer","side","num",
-                                   "rack","TDC slot","TDC channel","discrim_slot","discrim_ch",
+                                   "rack","TDC_slot","TDC_channel","discrim_slot","discrim_ch",
                                    "patch_panel_row","patch_panel_col","amp_slot","amp_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV","polarity"};
   std::vector<std::string> MRDDoubleValues{"x_center","y_center","z_center","x_width","y_width","z_width"};
   std::vector<std::string> MRDStringValues{"PMT_type","cable_label","paddle_label","notes"};
 
-	//verbosity levels: if 'verbosity' < this level, the message type will be logged.
-	int verbosity=1;
+
+  //Vector of strings indicating variables of interest and their data types in
+  //The TankPMT file.  Used in the LoadTankPMTDetectors() method
+  std::vector<std::string> TankPMTIntegerValues{"detector_num","channel_num","panel_number"
+                                   "signal_crate","signal_slot","signal_channel",
+                                   "mt_crate","mt_slot","mt_channel",
+                                   "hv_crate","hv_slot","hv_channel","nominal_HV"};
+  std::vector<std::string> TankPMTDoubleValues{"x_pos","y_pos","z_pos","x_dir","y_dir","z_dir"};
+  std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","notes"};
+
+  //verbosity levels: if 'verbosity' < this level, the message type will be logged.
+
+  int verbosity=1;
   int v_error=0;
-	int v_warning=1;
-	int v_message=2;
-	int v_debug=3;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+
+
 };
 
 

@@ -181,6 +181,12 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
     }
     delete myOptimizer; myOptimizer = 0;
   }
+  if (verbosity>4){
+    std::cout << "Best fit vertex information: " << std::endl;
+    std::cout << "bestFOM: " << bestFOM << std::endl;
+    std::cout << "best fit reco status: " << bestGridVertex->GetStatus() << std::endl;
+    std::cout << "BestVertex info: " << bestGridVertex->Print() << std::endl;
+  }
   return bestGridVertex;
 }
 
