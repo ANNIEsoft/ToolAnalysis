@@ -1,0 +1,12 @@
+#PulseSimulation Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbosity 1
+MinibuffersPerFullbuffer 1
+PulseHeightFudgeFactor 0.003333
+DrawDebugPlots 0
+RunStartDate "23/01/2010_13:05:01"  # UK date format ;)
+PhaseOneRiffleShuffle 0  # whether to do phase 1 interleaving
+GenerateFakeRootFiles 0  # whether to generate phase 1 data format root files
+PutOutputsIntoStore 1    # whether to put data into BoostStores
+
