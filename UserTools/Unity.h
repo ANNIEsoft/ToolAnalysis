@@ -97,3 +97,4 @@
 #include "PhaseIIADCHitFinder.h"
 #include "TrackCombiner.h"
 #include "SimulatedWaveformDemo.h"
+#include "PhaseIIADCCalibrator.h"

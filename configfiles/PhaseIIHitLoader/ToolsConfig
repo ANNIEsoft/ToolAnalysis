@@ -1,4 +1,14 @@
-#FIXME: Need a tool that takes the WCSim-simulated raw waveforms and puts them into the 
-##Format that's assumed in the ANNIEEvent store right now
-myLoadGeometry LoadGeometry ./configfiles/PhaseIIHitFinder/LoadGeometryConfig
+#LoadWCSim and pulse finding tools
+#myLoadGeometry LoadGeometry ./configfiles/PhaseIIHitFinder/LoadGeometryConfig
+myLoadWCSim LoadWCSim ./configfiles/PhaseIIHitFinder/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PulseSimulation/LoadWCSimLAPPDConfig
+myPulseSimulation PulseSimulation ./configfiles/PulseSimulation/PulseSimulationConfig
+mySimulatedWaveformDemo SimulatedWaveformDemo ./configfiles/PulseSimulation/SimulatedWaveformDemoConfig
+myPhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/PhaseIIADCCalibrator/PhaseIIADCCalibratorConfig
 myPhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/PhaseIIHitFinder/PhaseIIADCHitFinderConfig
+#Needed tools for reconstruction info. loading
+myMCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIExtGrid/MCParticlePropertiesConfig
+myMCRecoEventLoader MCRecoEventLoader ./configfiles/VertexReco/PhaseIIExtGrid/MCRecoEventLoaderConfig
+#TODO: We still need DigitBuilder to load Hits from the Store, not MCHits, for this case
+myDigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIExtGrid//DigitBuilderConfig
+myPhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIIExtGrid/PhaseIITreeMakerConfig
