@@ -10,33 +10,31 @@ void PulseSimulation::LoadOutputFiles(){
 	std::string wcsimfilename;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCFile", wcsimfilename); // wcsim_0.AAA.B.root
 	
-	// use regexp to pull out the file numbers - we'll call this 'run' and 'subrun'
-	std::match_results<string::const_iterator> submatches;
-	// filename is of the form "wcsim_0.AAA.B.root"
-	//std::regex theexpression (".*/[^0-9]+\\.([0-9]+)\\.([0-9]+)\\.root");
-	//std::regex theexpression (".*/?[^\\.]+\\.([0-9]+)\\.?([0-9]+)?\\.root");
-	std::regex theexpression (".*/?[^\\.]+\\.([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?\\.root");
-	Log("PulseSimulation Tool: Matching regex for filename "+wcsimfilename,v_message,verbosity);
-	std::regex_match (wcsimfilename, submatches, theexpression);
-	std::string submatch = (std::string)submatches[0]; // match 0 is whole match
 	int rawfilerun, rawfilesubrun, rawfilepart;
-	if(submatch==""){ 
+	// filename is of the form "wcsim_0.AAA.B.root"
+	int numargs = 0;
+	try{
+		std::reverse(wcsimfilename.begin(),wcsimfilename.end());
+		// Get the address
+		char * p = std::strtok(const_cast<char*>(wcsimfilename.c_str()),".-_");
+		while(numargs <3){
+			p = std::strtok(NULL,".-_");
+			std::string capturedstring(p);
+			std::reverse(capturedstring.begin(),capturedstring.end());
+			if (numargs == 0) rawfilepart = std::stoi(capturedstring.c_str());
+			else if (numargs == 1) rawfilesubrun = std::stoi(capturedstring.c_str());
+			else if (numargs == 2) rawfilerun = std::stoi(capturedstring.c_str());
+			numargs++;
+		}
+		std::reverse(wcsimfilename.begin(),wcsimfilename.end());
+	} catch (int e){
 		cerr<<"unrecognised input file pattern: "<<wcsimfilename
 			<<", will set rawfilerun=0, rawfilesubrun=0, rawfilepart=0"<<endl;
 		//return;
 		rawfilerun=0;
 		rawfilesubrun=0;
 		rawfilepart = 0;
-	} else {
-		submatch = (std::string)submatches[1];
-		//cout<<"extracted submatch is "<<submatch<<endl;
-		rawfilerun = atoi(submatch.c_str());
-		submatch = (std::string)submatches[2];
-		rawfilesubrun = atoi(submatch.c_str());
-		submatch = (std::string)submatches[3];
-		rawfilepart = atoi(submatch.c_str());
-	}
-	
+	}	
 	std::string rawfilename="RAWDataR"+to_string(rawfilerun)+
 		"S"+to_string(rawfilesubrun)+"p"+to_string(rawfilepart)+".root";
 	
