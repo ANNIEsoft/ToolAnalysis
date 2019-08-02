@@ -10,7 +10,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>     // remove and remove_if
-#include <regex>
 #include <stdlib.h>      // atoi
 #include <sys/types.h>   // for stat() test to see if file or folder
 #include <sys/stat.h>
