@@ -12,9 +12,13 @@ Describe any data formats MCHitToHitComparer creates, destroys, changes, or anal
 
 ## Configuration
 
-Describe any configuration variables for MCHitToHitComparer.
+The MCHitToHitComparer tool is a tool meant for comparing time/charge information in
+the MCHits and Hits maps found within the ANNIEEvent store.  Currently, this tool
+only prints out the time/charge information in each store; however, the tool will
+eventually be expanded to display more sophisticated checks, such as time and
+charge distributions.
+
 
 ```
-param1 value1
-param2 value2
+verbosity bool
 ```
