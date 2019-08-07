@@ -16,7 +16,6 @@
 #include "TF1.h"
 #include "TThread.h"
 #include "MRDOut.h"
-#include "TLegend.h"
 #include "TPaletteAxis.h"
 #include "TPaveText.h"
 
