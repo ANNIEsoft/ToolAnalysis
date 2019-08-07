@@ -9,4 +9,3 @@ RunStartDate "23/01/2010_13:05:01"  # UK date format ;)
 PhaseOneRiffleShuffle 0  # whether to do phase 1 interleaving
 GenerateFakeRootFiles 0  # whether to generate phase 1 data format root files
 PutOutputsIntoStore 1    # whether to put data into BoostStores
-

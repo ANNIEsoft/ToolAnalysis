@@ -15,9 +15,9 @@ service_publish_sec -1
 service_kick_sec -1
 
 ##### Tools To Add #####
-Tools_File configfiles/PhaseIIHitFinder/ToolsConfig
+Tools_File configfiles/PhaseIIHitLoader/ToolsConfig
 
 ##### Run Type #####
-Inline 50 ## number of Execute steps in program, -1 infinite loop that is ended by user 
+Inline 10 ## number of Execute steps in program, -1 infinite loop that is ended by user 
 Interactive 0 ## set to 1 if you want to run the code interactively
 

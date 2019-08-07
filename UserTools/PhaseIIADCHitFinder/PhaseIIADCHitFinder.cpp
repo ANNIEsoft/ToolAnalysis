@@ -223,7 +223,12 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
     throw std::runtime_error("Size mismatch between the raw and calibrated"
       " waveforms encountered in PhaseIIADCHitFinder::find_pulses()");
   }
-
+  
+  if (verbosity>v_debug){
+    std::cout << "PhaseIIADCHitFinder searcing for pulses now..." <<
+    "in signal of PMT ID " << channel_key << std::endl;
+  }
+  
   std::vector<ADCPulse> pulses;
 
   unsigned short baseline_plus_one_sigma = static_cast<unsigned short>(
@@ -304,6 +309,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
     for (size_t s = 0; s < num_samples; ++s) {
       if ( !in_pulse && raw_minibuffer_data.GetSample(s) > adc_threshold ) {
         in_pulse = true;
+        std::cout << "IN A PULSE..." << std::endl;
         pulse_start_sample = s;
       }
       // In the second test below, we force a pulse to end if we reach the end of
@@ -350,8 +356,8 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
 
         // Store the freshly made pulse in the vector of found pulses
         pulses.emplace_back(channel_key,
-          ( pulse_start_sample * NS_PER_SAMPLE ),
-          peak_sample * NS_PER_SAMPLE,
+          ( pulse_start_sample * NS_PER_ADC_SAMPLE ),
+          peak_sample * NS_PER_ADC_SAMPLE,
           calibrated_minibuffer_data.GetBaseline(),
           calibrated_minibuffer_data.GetSigmaBaseline(),
           raw_area, max_ADC, calibrated_amplitude, charge);
