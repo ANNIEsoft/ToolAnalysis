@@ -68,6 +68,7 @@ class PhaseIIADCHitFinder : public Tool {
     //Takes the ADC pulse vectors (one per minibuffer) and converts them to a vector of hits
     std::vector<Hit> convert_adcpulses_to_hits(unsigned long channel_key,std::vector<std::vector<ADCPulse>> pulses);
 
+    std::map<unsigned long,std::vector<Hit>>* hit_map;
 };
 
 #endif
