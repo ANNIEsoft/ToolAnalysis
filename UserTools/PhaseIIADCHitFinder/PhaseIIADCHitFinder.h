@@ -46,8 +46,8 @@ class PhaseIIADCHitFinder : public Tool {
     std::string threshold_type;
     std::string adc_threshold_db;
     std::string pulse_window_type;
-    size_t pulse_window_start_shift;
-    size_t pulse_window_end_shift;
+    int pulse_window_start_shift;
+    int pulse_window_end_shift;
     std::map<unsigned long, unsigned short> channel_threshold_map;
     
     // Load a PMT's threshold from the channel_threshold_map. If none, returns default ADC threshold
