@@ -147,7 +147,6 @@ bool PhaseIIADCHitFinder::Execute() {
         HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
         for(int j=0; j < HitsOnPMT.size(); j++){
 		  Hit ahit = HitsOnPMT.at(j);
-          std::cout << "EMPLACING HIT INTO HIT MAP,ID"<< ahit.GetTubeId() << std::endl;
           if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
           else hit_map->at(channel_key).push_back(ahit);
         }
@@ -160,7 +159,6 @@ bool PhaseIIADCHitFinder::Execute() {
     
     //Store the pulse and hit maps in the ANNIEEvent store
     annie_event->Set("RecoADCHits", pulse_map);
-    std::cout << "SETTING MAP, SIZE IS " << hit_map->size() << std::endl;
     annie_event->Set("Hits", hit_map,true);
     return true;
   }
@@ -381,7 +379,6 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
 
 std::vector<Hit> PhaseIIADCHitFinder::convert_adcpulses_to_hits(unsigned long channel_key,std::vector<std::vector<ADCPulse>> pulses){
   std::vector<Hit> thispmt_hits;
-  std::cout << "FILLING PULSES INTO HITS NOW" << std::endl;
   for(int i=0; i < pulses.size(); i++){
     std::vector<ADCPulse> apulsevector = pulses.at(i);
     for(int j=0; j < apulsevector.size(); j++){
@@ -389,7 +386,6 @@ std::vector<Hit> PhaseIIADCHitFinder::convert_adcpulses_to_hits(unsigned long ch
       //Get the time and charge
       double time = apulse.peak_time();
       double charge = apulse.charge();
-      std::cout << "TIME,CHARGE ARE" << time << "," << charge << std::endl;
       Hit ahit(channel_key, time, charge);
       thispmt_hits.push_back(ahit);
     } 
