@@ -3,7 +3,8 @@
 // It saves the CalibratedWaveform objects to the ANNIEEvent store using the
 // key "CalibratedADCData".
 //
-// Steven Gardiner <sjgardiner@ucdavis.edu>
+// Phase I version by Steven Gardiner <sjgardiner@ucdavis.edu>
+// Modified for Phase II by Teal Pershing <tjpershing@ucdavis.edu>
 #pragma once
 
 // ToolAnalysis includes

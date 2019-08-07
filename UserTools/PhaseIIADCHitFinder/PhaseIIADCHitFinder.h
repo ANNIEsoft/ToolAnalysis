@@ -1,4 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
+
+// This tool finds PMT pulses using both raw and calibrated ADC waveforms
+// Modified for Phase II by Teal Pershing <tjpershing@ucdavis.edu>
 #ifndef PhaseIIADCHitFinder_H
 #define PhaseIIADCHitFinder_H
 
