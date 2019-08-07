@@ -1,6 +1,5 @@
-#ifndef MonitorMRDTime_H
-#define MonitorMRDTime_H
-
+#ifndef MonitorTankTime_H
+#define MonitorTankTime_H
 
 #include <string>
 #include <iostream>
@@ -15,6 +14,7 @@
 #include "TF1.h"
 #include "TThread.h"
 #include "MRDOut.h"
+//#include "PMTOut.h"						//include later
 #include "TApplication.h"
 #include "TLegend.h"
 #include "TPaletteAxis.h"
@@ -31,16 +31,26 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "MonitorMRDTime.h"
 
-class MonitorMRDTime: public Tool {
+
+/**
+ * \class MonitorTankTime
+*
+* $Author: M. Nieslony $
+* $Date: 2019/07/31 13:10:00 $
+* Contact: mnieslon@uni-mainz.de
+*/
+
+class MonitorTankTime: public Tool {
 
 
  public:
 
-  MonitorMRDTime();
-  bool Initialise(std::string configfile,DataModel &data);
-  bool Execute();
-  bool Finalise();
+  MonitorTankTime(); ///< Simple constructor
+  bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resorces. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
+  bool Execute(); ///< Executre function used to perform Tool perpose. 
+  bool Finalise(); ///< Finalise funciton used to clean up resorces.
 
   void MRDTimePlots();
   void UpdateMonitorSources();
@@ -173,7 +183,7 @@ class MonitorMRDTime: public Tool {
 
 //simple functions to compute mean values and variances
 
-static double compute_variance(const double mean, const std::vector<double>& numbers){
+/*static double compute_variance(const double mean, const std::vector<double>& numbers){
 
   auto add_square = [mean](double sum, int i)
     {
@@ -246,7 +256,6 @@ static long accumulate_longarray24(const std::vector<std::array<long,24> >& numb
   if (entries>0) return_value/=double(entries);
 
   return return_value;
-}
-
+}*/
 
 #endif
