@@ -9,8 +9,7 @@
 
 #include "Tool.h"
 
-#define NUM_CELLS 256
-#define NUM_CHS 30
+
 
 class LAPPDParseACC: public Tool {
 
@@ -26,8 +25,9 @@ class LAPPDParseACC: public Tool {
  private:
    ifstream dfs, mfs;
    vector<int> boards;
-   int event;
    string meta_header;
+   int n_cells;
+   int n_chs;
 
 
 

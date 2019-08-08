@@ -12,7 +12,7 @@ then
     do
 	if [ "$line" == "return ret;" ]
 	then
-	    echo "  if (tool==\""$1"\") ret=new "$1";" >>Factory/Factory.cpp.tmp
+	    echo "if (tool==\""$1"\") ret=new "$1";" >>Factory/Factory.cpp.tmp
 	fi
 	echo $line >>Factory/Factory.cpp.tmp
     done < Factory/Factory.cpp
