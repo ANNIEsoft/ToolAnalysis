@@ -242,7 +242,6 @@ bool LAPPDSim::Execute()
 
 			//Get the channels of each LAPPD
 			std::map<unsigned long, Channel>* lappdchannel = thelappd->GetChannels();
-			thelappd->Print();
 			int numberOfLAPPDChannels = lappdchannel->size();
 			std::map<unsigned long, Channel>::iterator chitr;
 			//Loop over all channels for the assignment of the waveforms to the channels for storing the waveforms
@@ -296,6 +295,7 @@ bool LAPPDSim::Execute()
 		m_data->Stores.at("ANNIEEvent")->Set("LAPPDWaveforms", LAPPDWaveforms, true);
 	}
 	_event_counter++;
+
 	return true;
 }
 
