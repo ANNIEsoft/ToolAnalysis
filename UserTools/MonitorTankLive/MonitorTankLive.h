@@ -32,7 +32,7 @@
  * \class MonitorTankLive
 *
 * $Author: M. Nieslony $
-* $Date: 2019/07/31 12:55:00 $
+* $Date: 2019/08/07 12:55:00 $
 * Contact: mnieslon@uni-mainz.de
 */
 
@@ -82,7 +82,7 @@ class MonitorTankLive: public Tool {
   bool init;
   TH2F *h2D_ped, *h2D_sigma, *h2D_rate; //define 2D histograms to show the current rates, pedestal values, sigma values
   TH2F *h2D_pedtime, *h2D_sigmatime;
-  std::vector<TH1I*> hChannels_temp;	//temp plots for each channel
+  std::vector<TH1F*> hChannels_temp;	//temp plots for each channel
   std::vector<TH1I*> hChannels_freq;		//frequency plots for each channel
   TCanvas *canvas_ped, *canvas_sigma, *canvas_rate, *canvas_pedtime, *canvas_sigmatime;
   std::vector<TCanvas*> canvas_Channels_temp;
@@ -91,6 +91,7 @@ class MonitorTankLive: public Tool {
   std::vector<unsigned long> channels_timestamps;
   std::vector<double> channels_mean;
   std::vector<double> channels_sigma;
+  //std::string str_ped, str_sigma, str_rate, str_pedtime, str_sigmatime;
 
   std::vector<std::vector<double>> timeev_ped;
   std::vector<std::vector<double>> timeev_sigma; 
