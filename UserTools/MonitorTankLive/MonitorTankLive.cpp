@@ -269,12 +269,17 @@ bool MonitorTankLive::Finalise(){
     delete h2D_rate;
     delete h2D_pedtime;
     delete h2D_sigmatime;
+    delete h2D_pedtime_short;
+    delete h2D_sigmatime_short;
+
     std::cout <<"Delete canvasses for 2D hists"<<std::endl;
     delete canvas_ped;
     delete canvas_sigma;
     delete canvas_rate;
     delete canvas_pedtime;
     delete canvas_sigmatime;
+    delete canvas_pedtime_short;
+    delete canvas_sigmatime_short;
 
     std::cout <<"Delete channel-wise histograms"<<std::endl;
     for (int i_channel = 0; i_channel < num_channels_tank*num_active_slots; i_channel++){
@@ -301,37 +306,46 @@ void MonitorTankLive::InitializeHists(){
 
 	if (verbosity >= 3) std::cout <<"MonitorTankLive: Initialize Hists."<<std::endl;
 
-  /*str_ped = " Pedestal Mean (VME)";
-  str_sigma = " Pedestal Sigma (VME)";
-  str_rate = " Signal Counts (VME)";
-  str_pedtime = " Pedestal Evolution (100 values)";
-  str_sigmatime = " Sigma Evolution (100 values)";
+  std::string str_ped = " Pedestal Mean (VME)";
+  std::string str_sigma = " Pedestal Sigma (VME)";
+  std::string str_rate = " Signal Counts (VME)";
+  std::string str_pedtime = " Pedestal Evolution (100 values)";
+  std::string str_sigmatime = " Sigma Evolution (100 values)";
+  std::string str_pedtime_short = " Pedestal Evolution (5 values)";
+  std::string str_sigmatime_short = " Sigma Evolution (5 values)";
 
-  std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_pedtime, ss_title_sigmatime;
+  std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_pedtime, ss_title_sigmatime, ss_title_pedtime_short, ss_title_sigmatime_short;
   ss_title_ped << title_time.str() << str_ped;
   ss_title_sigma << title_time.str() << str_sigma;
   ss_title_rate << title_time.str() << str_rate;
   ss_title_pedtime << title_time.str() << str_pedtime;
   ss_title_sigmatime << title_time.str() << str_sigmatime;
+  ss_title_pedtime_short << title_time.str() << str_pedtime_short;
+  ss_title_sigmatime_short << title_time.str() << str_sigmatime_short;
 
 	h2D_ped = new TH2F("h2D_ped",ss_title_ped.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);								//Fitted gauss ADC distribution mean in 2D representation of channels, slots
 	h2D_sigma = new TH2F("h2D_sigma",ss_title_sigma.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);							//Fitted gauss ADC distribution sigma in 2D representation of channels, slots
 	h2D_rate = new TH2F("h2D_rate",ss_title_rate.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);								//Rate in 2D representation of channels, slots
 	h2D_pedtime = new TH2F("h2D_pedtime",ss_title_pedtime.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);		//Time evolution of fitted pedestal mean values of all PMT channels (in percent)
 	h2D_sigmatime = new TH2F("h2D_sigmatime",ss_title_sigmatime.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);		//Time evolution of fitted sigma values of all PMT channels (in percent)
-*/
+  h2D_pedtime_short = new TH2F("h2D_pedtime_short",ss_title_pedtime_short.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time evolution of fitted pedestal mean values of all PMT channels (in percent)
+  h2D_sigmatime_short = new TH2F("h2D_sigmatime_short",ss_title_sigmatime_short.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time evolution of fitted sigma values of all PMT channels (in percent)
+
+/*
   h2D_ped = new TH2F("h2D_ped","ped",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);               //Fitted gauss ADC distribution mean in 2D representation of channels, slots
   h2D_sigma = new TH2F("h2D_sigma","sigma",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);             //Fitted gauss ADC distribution sigma in 2D representation of channels, slots
   h2D_rate = new TH2F("h2D_rate","rate",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);                //Rate in 2D representation of channels, slots
   h2D_pedtime = new TH2F("h2D_pedtime","pedtime",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time evolution of fitted pedestal mean values of all PMT channels (in percent)
   h2D_sigmatime = new TH2F("h2D_sigmatime","sigmatime",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time evolution of fitted sigma values of all PMT channels (in percent)
-
+*/
 
 	canvas_ped = new TCanvas("canvas_ped","Pedestal Mean (VME)",900,600);
 	canvas_sigma = new TCanvas("canvas_sigma","Pedestal Sigma (VME)",900,600);
 	canvas_rate = new TCanvas("canvas_rate","Signal Counts (VME)",900,600);
 	canvas_pedtime = new TCanvas("canvas_pedtime","Pedestal Time Evolution (VME)",900,600);
 	canvas_sigmatime = new TCanvas("canvas_sigmatime","Sigma Time Evolution (VME)",900,600);
+  canvas_pedtime_short = new TCanvas("canvas_pedtime_short","Pedestal Time Evolution Short (VME)",900,600);
+  canvas_sigmatime_short = new TCanvas("canvas_sigmatime_short","Sigma Time Evolution Short (VME)",900,600); 
 
 	for (int i_active = 0; i_active<num_active_slots; i_active++){
 	    int slot_num, crate_num;
@@ -428,6 +442,10 @@ void MonitorTankLive::TankPlots(){
   double min_pedtime = 999999.;
   double max_sigmatime = 0.;
   double min_sigmatime = 9999999.;
+  double max_pedtime_short = 0.;
+  double min_pedtime_short = 999999.;
+  double max_sigmatime_short = 0.;
+  double min_sigmatime_short = 9999999.;
 
 
   //update the timestamp for the monitoring histograms
@@ -506,17 +524,30 @@ void MonitorTankLive::TankPlots(){
     hChannels_freq.at(i_active*num_channels_tank)->SetTitle(ss_title_hist.str().c_str());
     //std::cout <<"i_active: "<<i_active<<", ss_title_hist: "<<ss_title_hist.str()<<std::endl;
 
-    /*std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_pedtime, ss_title_sigmatime;
+  std::string str_ped = " Pedestal Mean (VME)";
+  std::string str_sigma = " Pedestal Sigma (VME)";
+  std::string str_rate = " Signal Counts (VME)";
+  std::string str_pedtime = " Pedestal Evolution (100 values)";
+  std::string str_sigmatime = " Sigma Evolution (100 values)";
+  std::string str_pedtime_short = " Pedestal Evolution (5 values)";
+  std::string str_sigmatime_short = " Sigma Evolution (5 values)";
+
+    std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_pedtime, ss_title_sigmatime, ss_title_pedtime_short, ss_title_sigmatime_short;
     ss_title_ped << title_time.str() << str_ped;
     ss_title_sigma << title_time.str() << str_sigma;
     ss_title_rate << title_time.str() << str_rate;
     ss_title_pedtime << title_time.str() << str_pedtime;
     ss_title_sigmatime << title_time.str() << str_sigmatime;
+    ss_title_pedtime_short << title_time.str() << str_pedtime_short;
+    ss_title_sigmatime_short << title_time.str() << str_sigmatime_short;
+
     h2D_ped->SetTitle(ss_title_ped.str().c_str());
     h2D_sigma->SetTitle(ss_title_sigma.str().c_str());
     h2D_rate->SetTitle(ss_title_rate.str().c_str());
     h2D_pedtime->SetTitle(ss_title_pedtime.str().c_str());
-    h2D_sigmatime->SetTitle(ss_title_sigmatime.str().c_str());*/
+    h2D_sigmatime->SetTitle(ss_title_sigmatime.str().c_str());
+    h2D_pedtime_short->SetTitle(ss_title_pedtime_short.str().c_str());
+    h2D_sigmatime_short->SetTitle(ss_title_sigmatime_short.str().c_str());
 
     if (init){
 	    for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
@@ -531,7 +562,7 @@ void MonitorTankLive::TankPlots(){
 	    	//std::cout <<"i_channel: "<<i_channel<<", ss_title_hist_temp: "<<ss_title_hist_temp.str()<<std::endl;
 	    	TH1F* hChannel_temp = new TH1F(ss_name_hist_temp.str().c_str(),ss_title_hist_temp.str().c_str(),BufferSize,0,BufferSize);		//Temporal distribution for current event, 1 canvas per slot
 	    	hChannel_temp->GetXaxis()->SetTitle("Buffer Position");
-	    	hChannel_temp->GetYaxis()->SetTitle("Counts");
+	    	hChannel_temp->GetYaxis()->SetTitle("Volts");
 	    	hChannel_temp->SetLineWidth(2);
 	    	hChannel_temp->SetLineColor(i_channel+1);
 	    	hChannel_temp->GetYaxis()->SetTitleOffset(1.35);
@@ -615,15 +646,22 @@ void MonitorTankLive::TankPlots(){
 		timeev_ped.at(i_loop).at(99) = channels_mean.at(i_loop);
 		timeev_sigma.at(i_loop).at(99) = channels_sigma.at(i_loop);
 
-		h2D_pedtime->SetBinContent(x,y,(channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)));					//calculate ped change in %
-		h2D_sigmatime->SetBinContent(x,y,(channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)));			//calculate sigma change in %
+		h2D_pedtime->SetBinContent(x,y,(channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)));					//calculate ped change in absolute units
+		h2D_sigmatime->SetBinContent(x,y,(channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)));			//calculate sigma change in absolute units
+    h2D_pedtime_short->SetBinContent(x,y,(channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(95)));         //calculate ped change in absolute units for the last 5 values
+    h2D_sigmatime_short->SetBinContent(x,y,(channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(95)));      //calculate sigma change in absolute units for the last 5 values
 
 		if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)))>max_pedtime) max_pedtime = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0));
 		if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)))<min_pedtime) min_pedtime = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0));
 		if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)))>max_sigmatime) max_sigmatime = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0));
 		if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)))<min_sigmatime) min_sigmatime = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0));
 
-		i_loop++;														//increase loop variable to keep count of all the channels
+    if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(95)))>max_pedtime_short) max_pedtime_short = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(95));
+    if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(95)))<min_pedtime_short) min_pedtime_short = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(95));
+    if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(95)))>max_sigmatime_short) max_sigmatime_short = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(95));
+    if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(95)))<min_sigmatime_short) min_sigmatime_short = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(95));
+
+		i_loop++;						//increase loop variable to keep count of all the channels
 	} 
 	}
 
@@ -710,7 +748,7 @@ void MonitorTankLive::TankPlots(){
  	line2->SetLineWidth(2);
  	line2->Draw("same");
 
-    std::stringstream ss_crate1, ss_crate2, ss_crate3;
+  std::stringstream ss_crate1, ss_crate2, ss_crate3;
  	ss_crate1 << "ANNIEVME0"<<crate_numbers.at(0);
  	ss_crate2 << "ANNIEVME0"<<crate_numbers.at(1);
  	ss_crate3 << "ANNIEVME0"<<crate_numbers.at(2);
@@ -978,6 +1016,126 @@ void MonitorTankLive::TankPlots(){
       canvas_sigmatime->SaveAs(ss_sigmatime.str().c_str());
       if (verbosity >=2) std::cout <<"Output path Pedestal Sigma Time Evolution plot: "<<ss_sigmatime.str()<<std::endl;
 
+      //----------------------------------------
+      //draw short time evolution plots
+      //----------------------------------------
+
+        //draw pedestal time evolution plot
+
+  TPad *p_pedtime_short = (TPad*) canvas_pedtime_short->cd();
+  h2D_pedtime_short->SetStats(0);
+  h2D_pedtime_short->GetXaxis()->SetNdivisions(num_slots_tank);
+  h2D_pedtime_short->GetYaxis()->SetNdivisions(num_crates_tank*num_channels_tank);
+  p_pedtime_short->SetGrid();
+  for (int i_label = 0; i_label < int(num_slots_tank); i_label++){
+        std::stringstream ss_slot;
+        ss_slot<<(i_label+1);
+        std::string str_slot = "slot "+ss_slot.str();
+        h2D_pedtime_short->GetXaxis()->SetBinLabel(i_label+1,str_slot.c_str());
+  }
+  for (int i_label=0; i_label < int(num_channels_tank*num_crates_tank); i_label++){
+    std::stringstream ss_ch;
+     if (i_label < 4) ss_ch<<((3-i_label)%4);
+    else if (i_label < 8) ss_ch<<((7-i_label)%4);
+    else ss_ch<<((11-i_label)%4);
+        std::string str_ch = "ch "+ss_ch.str();
+        h2D_pedtime_short->GetYaxis()->SetBinLabel(i_label+1,str_ch.c_str());
+  }
+  h2D_pedtime_short->LabelsOption("v");
+  h2D_pedtime_short->Draw("colz");
+
+  for (int i_box =0; i_box < vector_box_inactive.size(); i_box++){
+    vector_box_inactive.at(i_box)->Draw("same");
+  }
+
+  line1->Draw("same");
+  line2->Draw("same");
+  text_crate1->Draw();
+  text_crate2->Draw();
+  text_crate3->Draw();
+  TLatex *label_pedtime_short = new TLatex(0.905,0.92,"#Delta #mu_{Ped}");
+    label_pedtime_short->SetNDC(1);
+    label_pedtime_short->SetTextSize(0.030);
+    label_pedtime_short->Draw();
+  p_pedtime_short->Update();
+
+  if (h2D_pedtime_short->GetMaximum()>0.){
+        if (abs(max_pedtime_short-min_pedtime_short)==0) h2D_pedtime_short->GetZaxis()->SetRangeUser(min_pedtime_short-1,max_pedtime_short+1);
+        else h2D_pedtime_short->GetZaxis()->SetRangeUser(min_pedtime_short-0.5,max_pedtime_short+0.5);
+        TPaletteAxis *palette = 
+      (TPaletteAxis*)h2D_pedtime->GetListOfFunctions()->FindObject("palette");
+        palette->SetX1NDC(0.9);
+        palette->SetX2NDC(0.92);
+        palette->SetY1NDC(0.1);
+        palette->SetY2NDC(0.9);
+        //h2D_pedtime->GetZaxis()->SetTitle("Pedestal evolution");
+      }
+      p_pedtime_short->Update();
+
+      std::stringstream ss_pedtime_short;
+      ss_pedtime_short<<outpath<<"PMT_2D_PedTime_Short.jpg";
+      canvas_pedtime_short->SaveAs(ss_pedtime_short.str().c_str());
+      if (verbosity >=2) std::cout <<"Output path Pedestal Time Evolution plot (short=: "<<ss_pedtime_short.str()<<std::endl;
+
+
+    //draw sigma time evolution plot
+
+  TPad *p_sigmatime_short = (TPad*) canvas_sigmatime_short->cd();
+  h2D_sigmatime_short->SetStats(0);
+  h2D_sigmatime_short->GetXaxis()->SetNdivisions(num_slots_tank);
+  h2D_sigmatime_short->GetYaxis()->SetNdivisions(num_crates_tank*num_channels_tank);
+  p_sigmatime_short->SetGrid();
+  for (int i_label = 0; i_label < int(num_slots_tank); i_label++){
+        std::stringstream ss_slot;
+        ss_slot<<(i_label+1);
+        std::string str_slot = "slot "+ss_slot.str();
+        h2D_sigmatime_short->GetXaxis()->SetBinLabel(i_label+1,str_slot.c_str());
+  }
+  for (int i_label=0; i_label < int(num_channels_tank*num_crates_tank); i_label++){
+    std::stringstream ss_ch;
+     if (i_label < 4) ss_ch<<((3-i_label)%4);
+    else if (i_label < 8) ss_ch<<((7-i_label)%4);
+    else ss_ch<<((11-i_label)%4);
+        std::string str_ch = "ch "+ss_ch.str();
+        h2D_sigmatime_short->GetYaxis()->SetBinLabel(i_label+1,str_ch.c_str());
+  }
+  h2D_sigmatime_short->LabelsOption("v");
+  h2D_sigmatime_short->Draw("colz");
+
+  for (int i_box =0; i_box < vector_box_inactive.size(); i_box++){
+    vector_box_inactive.at(i_box)->Draw("same");
+  }
+
+  line1->Draw("same");
+  line2->Draw("same");
+  text_crate1->Draw();
+  text_crate2->Draw();
+  text_crate3->Draw();
+  TLatex *label_sigmatime_short = new TLatex(0.905,0.92,"#Delta #sigma_{Ped}");
+    label_sigmatime_short->SetNDC(1);
+    label_sigmatime_short->SetTextSize(0.030);
+    label_sigmatime_short->Draw();
+
+  p_sigmatime_short->Update();
+
+  if (h2D_sigmatime_short->GetMaximum()>0.){
+        if (abs(max_sigmatime_short-min_sigmatime_short)==0) h2D_sigmatime_short->GetZaxis()->SetRangeUser(min_sigmatime_short-1,max_sigmatime_short+1);
+        else h2D_sigmatime_short->GetZaxis()->SetRangeUser(min_sigmatime_short-0.5,max_sigmatime_short+0.5);
+        TPaletteAxis *palette = 
+      (TPaletteAxis*)h2D_sigmatime_short->GetListOfFunctions()->FindObject("palette");
+        palette->SetX1NDC(0.9);
+        palette->SetX2NDC(0.92);
+        palette->SetY1NDC(0.1);
+        palette->SetY2NDC(0.9);
+        //h2D_sigmatime->GetZaxis()->SetTitle("Sigma evolution [%]");
+      }
+
+      std::stringstream ss_sigmatime_short;
+      ss_sigmatime_short<<outpath<<"PMT_2D_SigmaTime_Short.jpg";
+      canvas_sigmatime_short->SaveAs(ss_sigmatime_short.str().c_str());
+      if (verbosity >=2) std::cout <<"Output path Pedestal Sigma Time Evolution plot (short): "<<ss_sigmatime_short.str()<<std::endl;
+
+      //end of short time evolution plots
 
       //std::cout <<"Drawing single slot diagrams... hChannels_freq.size: "<<hChannels_freq.size()<<", hChannels_temp.size: "<<hChannels_temp.size()<<std::endl;
 
@@ -1097,6 +1255,8 @@ void MonitorTankLive::TankPlots(){
 	h2D_sigma->Reset();
 	h2D_pedtime->Reset();
 	h2D_sigmatime->Reset();
+  h2D_pedtime_short->Reset();
+  h2D_sigmatime_short->Reset();
 
 	std::cout <<"Deleting Boxes"<<std::endl;
     for (int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
@@ -1109,6 +1269,8 @@ void MonitorTankLive::TankPlots(){
 	canvas_sigma->Clear();
 	canvas_pedtime->Clear();
 	canvas_sigmatime->Clear();
+  canvas_pedtime_short->Clear();
+  canvas_sigmatime_short->Clear();
 
 	std::cout <<"Deleting labels, lines, texts"<<std::endl;
 	delete label_mean;
@@ -1116,6 +1278,8 @@ void MonitorTankLive::TankPlots(){
 	delete label_rate;
 	delete label_sigmatime;
 	delete label_pedtime;
+  delete label_sigmatime_short;
+  delete label_pedtime_short;
 	delete line1;
 	delete line2;
 	delete text_crate1;
