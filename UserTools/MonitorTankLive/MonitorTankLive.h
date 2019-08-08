@@ -81,17 +81,16 @@ class MonitorTankLive: public Tool {
   int buffersize;
   bool init;
   TH2F *h2D_ped, *h2D_sigma, *h2D_rate; //define 2D histograms to show the current rates, pedestal values, sigma values
-  TH2F *h2D_pedtime, *h2D_sigmatime;
+  TH2F *h2D_pedtime, *h2D_sigmatime, *h2D_pedtime_short, *h2D_sigmatime_short;
   std::vector<TH1F*> hChannels_temp;	//temp plots for each channel
   std::vector<TH1I*> hChannels_freq;		//frequency plots for each channel
-  TCanvas *canvas_ped, *canvas_sigma, *canvas_rate, *canvas_pedtime, *canvas_sigmatime;
+  TCanvas *canvas_ped, *canvas_sigma, *canvas_rate, *canvas_pedtime, *canvas_sigmatime, *canvas_pedtime_short, *canvas_sigmatime_short;
   std::vector<TCanvas*> canvas_Channels_temp;
   std::vector<TCanvas*> canvas_Channels_freq;
   std::vector<int> channels_rates;	//map of PMT VME channel # to the rate of the respective PMT
   std::vector<unsigned long> channels_timestamps;
   std::vector<double> channels_mean;
   std::vector<double> channels_sigma;
-  //std::string str_ped, str_sigma, str_rate, str_pedtime, str_sigmatime;
 
   std::vector<std::vector<double>> timeev_ped;
   std::vector<std::vector<double>> timeev_sigma; 
