@@ -120,7 +120,7 @@ bool MonitorTankLive::Execute(){
     //fill ADC values with Gaussian pedestal and Delta peak-like signal structure, distributed equally over the whole buffer
     //
 	
-    TRandom3 random_data;
+  TRandom3 random_data;
 	TRandom3 random_data2;
 	BufferSize = 40000;
 	SequenceID = 0;
@@ -211,6 +211,7 @@ bool MonitorTankLive::Execute(){
     	std::cout <<"StartTimeSec: "<<StartTimeSec<<std::endl;
     	std::cout <<"StartTimeNSec: "<<StartTimeNSec<<std::endl;
     	std::cout <<"TriggerCounts size: "<<TriggerCounts.size()<<std::endl;
+      std::cout <<"CrateID size: "<<CrateID.size()<<std::endl;
     	std::cout <<"CardID size: "<<CardID.size()<<std::endl;
     	std::cout <<"Channels size: "<<Channels.size()<<std::endl;
     	std::cout <<"Rates size: "<<Rates.size()<<std::endl;
@@ -229,10 +230,13 @@ bool MonitorTankLive::Execute(){
 
     //clean up the vectors in use
     TriggerCounts.clear();
+    CrateID.clear();
     CardID.clear();
     Channels.clear();
     //Rates.clear();
     Data.clear();
+
+    std::cout <<"Sizes after clearing vectors: CrateID = "<<CrateID.size()<<", CardID = "<<CardID.size()<<std::endl;
 
     //only for debugging memory leaks, otherwise comment out
     std::cout <<"List of Objects (after execute step)"<<std::endl;
@@ -258,7 +262,7 @@ bool MonitorTankLive::Execute(){
 bool MonitorTankLive::Finalise(){
 
   	if (verbosity >= 2) std::cout <<"Tool MonitorTankLive: Finalising..."<<std::endl;
-/*
+
   	std::cout <<"Delete 2D hists"<<std::endl;
     delete h2D_ped;
     delete h2D_sigma;
@@ -284,7 +288,7 @@ bool MonitorTankLive::Finalise(){
     	delete canvas_Channels_temp.at(i_slot);
     	delete canvas_Channels_freq.at(i_slot);
     }
-*/
+
   	//only for debugging memory leaks, otherwise comment out
     std::cout <<"List of Objects (after finalise step)"<<std::endl;
     gObjectTable->Print();
@@ -297,11 +301,31 @@ void MonitorTankLive::InitializeHists(){
 
 	if (verbosity >= 3) std::cout <<"MonitorTankLive: Initialize Hists."<<std::endl;
 
-	h2D_ped = new TH2F("h2D_ped","Pedestal Mean (VME)",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);								//Fitted gauss ADC distribution mean in 2D representation of channels, slots
-	h2D_sigma = new TH2F("h2D_sigma","Pedestal Sigma (VME)",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);							//Fitted gauss ADC distribution sigma in 2D representation of channels, slots
-	h2D_rate = new TH2F("h2D_rate","Signal Counts (VME)",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);								//Rate in 2D representation of channels, slots
-	h2D_pedtime = new TH2F("h2D_pedtime","Pedestal time evolution (100 values)",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);		//Time evolution of fitted pedestal mean values of all PMT channels (in percent)
-	h2D_sigmatime = new TH2F("h2D_sigmatime","Sigma time evolution (100 values)",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);		//Time evolution of fitted sigma values of all PMT channels (in percent)
+  /*str_ped = " Pedestal Mean (VME)";
+  str_sigma = " Pedestal Sigma (VME)";
+  str_rate = " Signal Counts (VME)";
+  str_pedtime = " Pedestal Evolution (100 values)";
+  str_sigmatime = " Sigma Evolution (100 values)";
+
+  std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_pedtime, ss_title_sigmatime;
+  ss_title_ped << title_time.str() << str_ped;
+  ss_title_sigma << title_time.str() << str_sigma;
+  ss_title_rate << title_time.str() << str_rate;
+  ss_title_pedtime << title_time.str() << str_pedtime;
+  ss_title_sigmatime << title_time.str() << str_sigmatime;
+
+	h2D_ped = new TH2F("h2D_ped",ss_title_ped.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);								//Fitted gauss ADC distribution mean in 2D representation of channels, slots
+	h2D_sigma = new TH2F("h2D_sigma",ss_title_sigma.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);							//Fitted gauss ADC distribution sigma in 2D representation of channels, slots
+	h2D_rate = new TH2F("h2D_rate",ss_title_rate.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);								//Rate in 2D representation of channels, slots
+	h2D_pedtime = new TH2F("h2D_pedtime",ss_title_pedtime.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);		//Time evolution of fitted pedestal mean values of all PMT channels (in percent)
+	h2D_sigmatime = new TH2F("h2D_sigmatime",ss_title_sigmatime.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);		//Time evolution of fitted sigma values of all PMT channels (in percent)
+*/
+  h2D_ped = new TH2F("h2D_ped","ped",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);               //Fitted gauss ADC distribution mean in 2D representation of channels, slots
+  h2D_sigma = new TH2F("h2D_sigma","sigma",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);             //Fitted gauss ADC distribution sigma in 2D representation of channels, slots
+  h2D_rate = new TH2F("h2D_rate","rate",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);                //Rate in 2D representation of channels, slots
+  h2D_pedtime = new TH2F("h2D_pedtime","pedtime",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time evolution of fitted pedestal mean values of all PMT channels (in percent)
+  h2D_sigmatime = new TH2F("h2D_sigmatime","sigmatime",num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time evolution of fitted sigma values of all PMT channels (in percent)
+
 
 	canvas_ped = new TCanvas("canvas_ped","Pedestal Mean (VME)",900,600);
 	canvas_sigma = new TCanvas("canvas_sigma","Pedestal Sigma (VME)",900,600);
@@ -407,10 +431,54 @@ void MonitorTankLive::TankPlots(){
 
 
   //update the timestamp for the monitoring histograms
-  for (int i_active = 0; i_active<num_active_slots; i_active++){
-  	//std::cout <<"i_active: "<<i_active<<std::endl;
-    int slot_num, crate_num;
-    if (i_active < n_active_slots_cr1){
+  //for (int i_active = 0; i_active<num_active_slots; i_active++){
+  for (int i_data=0; i_data < CrateID.size(); i_data++){
+
+    int slot_num, crate_num, i_active;
+    slot_num = CardID.at(i_data);
+    crate_num = CrateID.at(i_data);
+
+    if (crate_num == crate_numbers.at(0)){
+     if (std::find(active_slots_cr1.begin(),active_slots_cr1.end(),slot_num)==active_slots_cr1.end()) {
+            std::cout <<"MonitorTankLive ERROR: Slot read out from data ("<<slot_num<<") should not be active according to config file. Check config file..."<<std::endl;
+     }
+     i_crate = 0;
+     //std::cout <<"i_crate: 0"<<std::endl;
+     std::vector<int>::iterator it = std::find(active_slots_cr1.begin(),active_slots_cr1.end(),slot_num);
+     i_active = std::distance(active_slots_cr1.begin(), it);
+    // std::cout <<"i_active: "<<i_active<<std::endl;
+    }
+  	else if (crate_num == crate_numbers.at(1)){
+      if (std::find(active_slots_cr2.begin(),active_slots_cr2.end(),slot_num)==active_slots_cr2.end()) {
+            std::cout <<"MonitorTankLive ERROR: Slot read out from data ("<<slot_num<<") should not be active according to config file. Check config file..."<<std::endl;
+     }
+     i_crate = 1;
+     //std::cout <<"i_crate: 1"<<std::endl;
+     std::vector<int>::iterator it = std::find(active_slots_cr2.begin(),active_slots_cr2.end(),slot_num);
+     i_active = n_active_slots_cr1 + std::distance(active_slots_cr2.begin(), it);  
+     //std::cout <<"i_active: "<<i_active<<std::endl; 
+    } 
+    else if (crate_num == crate_numbers.at(2)) {
+     if (std::find(active_slots_cr3.begin(),active_slots_cr3.end(),slot_num)==active_slots_cr3.end()) {
+            std::cout <<"MonitorTankLive ERROR: Slot read out from data ("<<slot_num<<") should not be active according to config file. Check config file..."<<std::endl;
+     }
+     i_crate = 2;
+     //std::cout <<"i_crate: 2"<<std::endl;
+     std::vector<int>::iterator it = std::find(active_slots_cr3.begin(),active_slots_cr3.end(),slot_num);
+     i_active = n_active_slots_cr1 + n_active_slots_cr2 + std::distance(active_slots_cr3.begin(), it);
+     //std::cout <<"i_active: "<<i_active<<std::endl; 
+    }
+    else {
+      std::cout <<"MonitorTankLive ERROR: Crate read out from data ("<<CrateID.at(i_data)<<") should not be active according to config file. Check config file..."<<std::endl;
+      continue;
+    }
+    i_slot = slot_num - 1;
+
+    std::cout <<"i_active from long method: "<<i_active<<std::endl;
+    //std::cout <<"i_active from short method: "<<map_crateslot_vector.at(std::make_pair(crate_num,slot_num));
+
+    //std::cout <<"i_active: "<<i_active<<std::endl;
+    /*if (i_active < n_active_slots_cr1){
       crate_num = crate_numbers.at(0);
       slot_num = active_slots_cr1.at(i_active);
       i_crate = 0;
@@ -427,7 +495,7 @@ void MonitorTankLive::TankPlots(){
     	slot_num = active_slots_cr3.at(i_active-n_active_slots_cr1-n_active_slots_cr2);
     	i_crate = 2;
     	i_slot = slot_num-1;
-    }
+    }*/
 
     std::stringstream ss_title_hist, ss_title_hist_temp, ss_name_hist_temp;
     std::string crate_str="cr";
@@ -438,6 +506,18 @@ void MonitorTankLive::TankPlots(){
     hChannels_freq.at(i_active*num_channels_tank)->SetTitle(ss_title_hist.str().c_str());
     //std::cout <<"i_active: "<<i_active<<", ss_title_hist: "<<ss_title_hist.str()<<std::endl;
 
+    /*std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_pedtime, ss_title_sigmatime;
+    ss_title_ped << title_time.str() << str_ped;
+    ss_title_sigma << title_time.str() << str_sigma;
+    ss_title_rate << title_time.str() << str_rate;
+    ss_title_pedtime << title_time.str() << str_pedtime;
+    ss_title_sigmatime << title_time.str() << str_sigmatime;
+    h2D_ped->SetTitle(ss_title_ped.str().c_str());
+    h2D_sigma->SetTitle(ss_title_sigma.str().c_str());
+    h2D_rate->SetTitle(ss_title_rate.str().c_str());
+    h2D_pedtime->SetTitle(ss_title_pedtime.str().c_str());
+    h2D_sigmatime->SetTitle(ss_title_sigmatime.str().c_str());*/
+
     if (init){
 	    for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
 
@@ -446,17 +526,17 @@ void MonitorTankLive::TankPlots(){
 
 	    	//std::cout <<"Pushing back hChannel_temp with ";
 
-			ss_name_hist_temp<<crate_str<<crate_num<<slot_str<<slot_num<<ch_str<<i_channel<<"_temp";
+        ss_name_hist_temp<<crate_str<<crate_num<<slot_str<<slot_num<<ch_str<<i_channel<<"_temp";
 	    	ss_title_hist_temp << title_time.str() << " Temp (VME Crate " << crate_num << " Slot " << slot_num <<")";
 	    	//std::cout <<"i_channel: "<<i_channel<<", ss_title_hist_temp: "<<ss_title_hist_temp.str()<<std::endl;
-	    	TH1I* hChannel_temp = new TH1I(ss_name_hist_temp.str().c_str(),ss_title_hist_temp.str().c_str(),BufferSize,0,BufferSize);		//Temporal distribution for current event, 1 canvas per slot
+	    	TH1F* hChannel_temp = new TH1F(ss_name_hist_temp.str().c_str(),ss_title_hist_temp.str().c_str(),BufferSize,0,BufferSize);		//Temporal distribution for current event, 1 canvas per slot
 	    	hChannel_temp->GetXaxis()->SetTitle("Buffer Position");
 	    	hChannel_temp->GetYaxis()->SetTitle("Counts");
 	    	hChannel_temp->SetLineWidth(2);
 	    	hChannel_temp->SetLineColor(i_channel+1);
 	    	hChannel_temp->GetYaxis()->SetTitleOffset(1.35);
 	    	hChannel_temp->SetStats(0);
-			hChannels_temp.push_back(hChannel_temp);
+        hChannels_temp.push_back(hChannel_temp);
 
 		}
 	}
@@ -495,8 +575,9 @@ void MonitorTankLive::TankPlots(){
 		//compute & fill the temporal plots
 		double conversion = 2.415/pow(2.0, 12.0);
 		for (int i_buffer = 0; i_buffer < BufferSize/4; i_buffer++){
-
-			int offset = channels_mean.at(i_loop);
+      int offset = channels_mean.at(i_loop);
+     // std::cout <<"offset: "<<offset<<", conversion: "<<conversion<<", data: "<<Data.at(i_active*num_channels_tank*BufferSize+i_channel*BufferSize+i_buffer*2)<<std::endl;
+     // std::cout <<"Setting bin content (temp): "<<(Data.at(i_active*num_channels_tank*BufferSize+i_channel*BufferSize+i_buffer*2)-offset)*conversion<<std::endl;
 			hChannels_temp.at(i_loop)->SetBinContent(i_buffer*4,(Data.at(i_active*num_channels_tank*BufferSize+i_channel*BufferSize+i_buffer*2)-offset)*conversion);
 			hChannels_temp.at(i_loop)->SetBinContent(i_buffer*4+1,(Data.at(i_active*num_channels_tank*BufferSize+i_channel*BufferSize+i_buffer*2+1)-offset)*conversion);
 			hChannels_temp.at(i_loop)->SetBinContent(i_buffer*4+2,(Data.at(i_active*num_channels_tank*BufferSize+i_channel*BufferSize+i_buffer*2+BufferSize/2)-offset)*conversion);
@@ -534,23 +615,19 @@ void MonitorTankLive::TankPlots(){
 		timeev_ped.at(i_loop).at(99) = channels_mean.at(i_loop);
 		timeev_sigma.at(i_loop).at(99) = channels_sigma.at(i_loop);
 
-		double denominator_ped = (timeev_ped.at(i_loop).at(0)<1)? 1 : timeev_ped.at(i_loop).at(0);
-		double denominator_sigma = (timeev_sigma.at(i_loop).at(0)<1)? 1 : timeev_sigma.at(i_loop).at(0);
-		h2D_pedtime->SetBinContent(x,y,(channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0))/denominator_ped);					//calculate ped change in %
-		h2D_sigmatime->SetBinContent(x,y,(channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0))/denominator_sigma);			//calculate sigma change in %
+		h2D_pedtime->SetBinContent(x,y,(channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)));					//calculate ped change in %
+		h2D_sigmatime->SetBinContent(x,y,(channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)));			//calculate sigma change in %
 
-		if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0))/denominator_ped)>max_pedtime) max_pedtime = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0))/denominator_ped;
-		if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0))/denominator_ped)<min_pedtime) min_pedtime = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0))/denominator_ped;
-		if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0))/denominator_sigma)>max_sigmatime) max_sigmatime = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0))/denominator_ped;
-		if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0))/denominator_sigma)<min_sigmatime) min_sigmatime = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0))/denominator_ped;
+		if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)))>max_pedtime) max_pedtime = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0));
+		if (((channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0)))<min_pedtime) min_pedtime = (channels_mean.at(i_loop)-timeev_ped.at(i_loop).at(0));
+		if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)))>max_sigmatime) max_sigmatime = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0));
+		if (((channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0)))<min_sigmatime) min_sigmatime = (channels_sigma.at(i_loop)-timeev_sigma.at(i_loop).at(0));
 
 		i_loop++;														//increase loop variable to keep count of all the channels
 	} 
 	}
 
 	init = false;
-
-
 
 	//std::cout <<"Drawing 2D histograms... "<<std::endl;
  	//draw pedestal 2D histogram
@@ -908,7 +985,8 @@ void MonitorTankLive::TankPlots(){
 	for (int i_slot = 0; i_slot<num_active_slots; i_slot++){
 
 		int max_freq = 0;
-		int max_temp = 0;
+		double max_temp = -999999.;
+    double min_temp = 999999.;
 
 		//std::cout <<"i_slot "<<i_slot<<", ";
 
@@ -935,9 +1013,10 @@ void MonitorTankLive::TankPlots(){
 			hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Draw("same");
 			//td::cout <<"Temp title: "<<hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetTitle()<<std::endl;
 			if (hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMaximum() > max_temp) max_temp = hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMaximum();
-			leg->AddEntry(hChannels_temp.at(i_slot*num_channels_tank+i_channel),ss_channel.str().c_str(),"l");
+			if (hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMinimum() < min_temp) min_temp = hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMinimum();
+      leg->AddEntry(hChannels_temp.at(i_slot*num_channels_tank+i_channel),ss_channel.str().c_str(),"l");
 		}
-		hChannels_temp.at(i_slot*num_channels_tank)->GetYaxis()->SetRangeUser(0.,max_temp+5);
+		hChannels_temp.at(i_slot*num_channels_tank)->GetYaxis()->SetRangeUser(min_temp,max_temp);
 		leg->Draw();
 		std::stringstream ss_canvas_temp;
 		ss_canvas_temp << outpath << "PMT_Temp_Cr"<<crate_num<<"_Sl"<<slot_num<<".jpg";
@@ -947,6 +1026,7 @@ void MonitorTankLive::TankPlots(){
 		//std::cout <<"List of primitives canvas_Channels_temp: "<<std::endl;
 		//list_temp->Print();
 		//std::cout <<std::endl;
+    //std::cout <<"max temp: "<<max_temp<<std::endl;
 
 		canvas_Channels_freq.at(i_slot)->cd();
 		TLegend *leg_freq = new TLegend(0.75,0.7,0.9,0.9);
@@ -959,12 +1039,15 @@ void MonitorTankLive::TankPlots(){
 			if (hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetMaximum() > max_freq) max_freq = hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetMaximum();
 			leg_freq->AddEntry(hChannels_freq.at(i_slot*num_channels_tank+i_channel),ss_channel.str().c_str());
 		}
-		hChannels_freq.at(i_slot*num_channels_tank)->GetYaxis()->SetRangeUser(0.,max_freq+5);
+		hChannels_freq.at(i_slot*num_channels_tank)->GetYaxis()->SetRangeUser(0.,max_freq);
 		leg_freq->Draw();
 		std::stringstream ss_canvas_freq;
 		ss_canvas_freq << outpath << "PMT_Freq_Cr"<<crate_num<<"_Sl"<<slot_num<<".jpg";
 		canvas_Channels_freq.at(i_slot)->SaveAs(ss_canvas_freq.str().c_str());
 		delete leg_freq;
+
+    //std::cout <<"max freq: "<<max_freq<<std::endl;
+
 		//TList *list_freq = (TList*) canvas_Channels_freq.at(i_slot)->GetListOfPrimitives();
 		//std::cout <<"List of primitives canvas_Channels_freq: "<<std::endl;
 		//list_freq->Print();
@@ -976,33 +1059,35 @@ void MonitorTankLive::TankPlots(){
 		delete vector_gaus.at(i_gaus);
 	}
 	std::cout <<"vector_gaus.size: "<<vector_gaus.size()<<std::endl;
+  vector_gaus.clear();
+  std::cout <<"vector_gaus.size after clearing: "<<vector_gaus.size()<<std::endl;
 
 	std::cout <<"Resetting & Clearing Channel histograms, canvasses"<<std::endl;
 	for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
 		
 		for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
 			//hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Clear();
-			if (i_slot==0 || i_slot==1) std::cout <<"Before Reset: "; hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetListOfFunctions()->ls();
+			//if (i_slot==0 || i_slot==1) std::cout <<"Before Reset: "; hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetListOfFunctions()->ls();
 			hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Reset();
-			if (i_slot==0 || i_slot ==1) std::cout <<"After Reset: "; hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetListOfFunctions()->ls();
+			//if (i_slot==0 || i_slot ==1) std::cout <<"After Reset: "; hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetListOfFunctions()->ls();
 
 			//hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Clear();
 			//if (i_slot==0) hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetListOfFunctions()->ls();
 			hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Reset();
 			//if (i_slot==0) hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetListOfFunctions()->ls();
 		}
-		if (i_slot == 0) {
+		/*if (i_slot == 0) {
 			std::cout <<"Before clearing the canvasses..."<<std::endl;
 			canvas_Channels_freq.at(i_slot)->GetListOfPrimitives()->ls();
 			canvas_Channels_temp.at(i_slot)->GetListOfPrimitives()->ls();
-		}
+		}*/
 		/*canvas_Channels_freq.at(i_slot)->Clear();
 		canvas_Channels_temp.at(i_slot)->Clear();*/
-		if (i_slot == 0) {
+		/*if (i_slot == 0) {
 			std::cout <<"After clearing the canvasses..."<<std::endl;
 			canvas_Channels_freq.at(i_slot)->GetListOfPrimitives()->ls();
 			canvas_Channels_temp.at(i_slot)->GetListOfPrimitives()->ls();
-		}
+		}*/
 
 	}
 
@@ -1018,8 +1103,8 @@ void MonitorTankLive::TankPlots(){
           delete vector_box_inactive.at(i_box);
     }
 
-    std::cout <<"Clearing Canvasses"<<std::endl;
-    canvas_rate->Clear();
+  std::cout <<"Clearing Canvasses"<<std::endl;
+  canvas_rate->Clear();
 	canvas_ped->Clear();
 	canvas_sigma->Clear();
 	canvas_pedtime->Clear();
