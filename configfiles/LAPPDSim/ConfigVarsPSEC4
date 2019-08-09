@@ -1,0 +1,50 @@
+# General Parameters
+verbose 1
+PathToPulsecharacteristics /nfs/neutrino/data2/stenderm/PhD/ToolAnalysis/ToolAnalysis/UserTools/LAPPDSim/pulsecharacteristics.root #This is the path to the 												pulsecharacteristics.root file, which must be set before running the tool
+EventDisplay 1 #0 = no event display; 1 = histos will be written, but not displayed; 2 histos will be displayed and written
+OutputFile /nfs/neutrino/data2/stenderm/PhD/ToolAnalysis/ToolAnalysis/LAPPDHistograms.root #This is the path to the output file. This must be also set befor running the tool.
+ArtificialEvent 0 #1 = artificial Events will be used; 0 = MC Events will be used;
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LAPPDBaselineSubtract
+LowBLfitrange 5000;
+HiBLfitrange  10000;
+
+# LAPPDSim
+SimInput  ./UserTools/LAPPDSim/pulsecharacteristics.root
+
+# LAPPDParseScope
+FileInput ../LAPPDdata_fff/LAPPD25_3.22.18/2400_2100_1300_bsln_2sided_root.fff
+
+#LAPPDFilter
+FilterInputWavLabel RawLAPPDData
+#FilterInputWavLabel BLsubtractedLAPPDData
+doFilter false
+CutoffFrequency 500000000
+
+#LAPPDIntegratePulse
+IntegLow  10000
+IntegHi 15000
+
+#LAPPDFindPeak
+#PeakInputWavLabel FiltLAPPDData
+PeakInputWavLabel RawLAPPDData
+TotThreshold 0.5
+MinimumTot 2000.
+Deltat 100.
+
+# LAPPDcfd
+#CFDInputWavLabel FiltLAPPDData
+CFDInputWavLabel RawLAPPDData
+Fraction_CFD 0.4
+
+# LAPPDSave
+path ./testoutput
+
+# LAPPDSaveROOT
+outfile ../LAPPDoutputs/SimTest.root
+#outfile ./testout.root
+NHistos 100

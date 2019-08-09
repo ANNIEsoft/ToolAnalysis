@@ -96,4 +96,5 @@
 #include "GracefulStop.h"
 #include "PhaseIIADCHitFinder.h"
 #include "TrackCombiner.h"
+#include "PMTPulseGenerator.h"
 #include "SimulatedWaveformDemo.h"
