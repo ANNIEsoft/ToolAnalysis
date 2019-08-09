@@ -23,6 +23,8 @@
 #include "TLatex.h"
 #include "TList.h"
 #include "TObject.h"
+#include "TTree.h"
+#include "TFile.h"
 
 #include "TObjectTable.h"
 
@@ -87,7 +89,7 @@ class MonitorTankLive: public Tool {
     TCanvas *canvas_ped, *canvas_sigma, *canvas_rate, *canvas_pedtime, *canvas_sigmatime, *canvas_pedtime_short, *canvas_sigmatime_short;
     std::vector<TCanvas*> canvas_Channels_temp;
     std::vector<TCanvas*> canvas_Channels_freq;
-    
+
     std::vector<int> channels_rates;	//map of PMT VME channel # to the rate of the respective PMT
     std::vector<unsigned long> channels_timestamps;
     std::vector<double> channels_mean;
