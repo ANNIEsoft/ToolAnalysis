@@ -436,7 +436,7 @@ bool TotalLightMap::Finalise(){
 	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
 	if(not get_ok || tapplicationusers==1){
 		if(rootTApp){
-			std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
+			std::cout<<"PulseSimulation Tool: Deleting global TApplication"<<std::endl;
 			delete rootTApp;
 			rootTApp=nullptr;
 		}
