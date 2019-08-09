@@ -117,6 +117,7 @@ bool MonitorTankLive::Execute(){
   //fill ADC values with Gaussian pedestal and Delta peak-like signal structure, distributed equally over the whole buffer
   //
 
+  /*
   TRandom3 random_data;
   TRandom3 random_data2;
   BufferSize = 40000;
@@ -147,52 +148,55 @@ bool MonitorTankLive::Execute(){
       }
     }
   }
+  */
 
   //
   // read in data from phase I root file for more realistic data
   //
 
-  /*
-  TFile *f = new TFile("~/Desktop/ANNIECode/data/RAWDataPhaseI/RAWDataR829S0p26.root");
-  TTree *t = (TTree*) f->Get("PMTData");
-  Long64_t nentries = t->GetEntries();
+  
+  TFile *f = new TFile("/ANNIECode/data/RAWDataPhaseI/RAWDataR829S0p26.root");
+  TTree *tree = (TTree*) f->Get("PMTData");
+  Long64_t nentries = tree->GetEntries();
   std::cout <<"Number of entries: "<<nentries<<std::endl;
   unsigned short data[1000000];
 
-  t->SetBranchAddress("SequenceID",&SequenceID);
-  t->SetBranchAddress("StartCount",&StartCount);
-  t->SetBranchAddress("StartTimeSec",&StartTimeSec);
-  t->SetBranchAddress("StartTimeNSec",&StartTimeNSec);
+  tree->SetBranchAddress("SequenceID",&SequenceID);
+  tree->SetBranchAddress("StartCount",&StartCount);
+  tree->SetBranchAddress("StartTimeSec",&StartTimeSec);
+  tree->SetBranchAddress("StartTimeNSec",&StartTimeNSec);
   //t->SetBranchAddress("CardID",&CardID);			//reassign card and crate numbers according to new configuration
-  t->SetBranchAddress("Channels",&Channels);
-  t->SetBranchAddress("BufferSize",&BufferSize);
-  t->SetBranchAddress("FullBufferSize",&FullBufferSize);
-  t->SetBranchAddress("Eventsize",&EventSize);
-  t->SetBranchAddress("Data",data);
+  tree->SetBranchAddress("Channels",&Channels);
+  tree->SetBranchAddress("BufferSize",&BufferSize);
+  tree->SetBranchAddress("FullBufferSize",&FullBufferSize);
+  tree->SetBranchAddress("Eventsize",&EventSize);
+  tree->SetBranchAddress("Data",data);
 
   int crate_id, card_id;
 
   for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
-  t->GetEntry(i_slot);
-  if (i_slot < n_active_slots_cr1) {
-    crate_id = num_crates_tank.at(i_slot);
-    card_id = active_slots_cr1.at(i_slot);
+    tree->GetEntry(i_slot);
+    if (i_slot < n_active_slots_cr1) {
+      crate_id = crate_numbers.at(0);
+      card_id = active_slots_cr1.at(i_slot);
+    }
+    else if (i_slot < n_active_slots_cr1+n_active_slots_cr2) {
+      crate_id = crate_numbers.at(1);
+      card_id = active_slots_cr2.at(i_slot-n_active_slots_cr1);
+    }
+    else {
+      crate_id = crate_numbers.at(2);
+      card_id = active_slots_cr3.at(i_slot-n_active_slots_cr1-n_active_slots_cr2);
+    }
+    for (int i_buffer = 0; i_buffer < FullBufferSize; i_buffer++){
+      Data.push_back(data[i_buffer]);
+    }
+    CrateID.push_back(crate_id);
+    CardID.push_back(card_id);
   }
-  else if (i_slot < n_active_slots_cr1+n_active_slots_cr2) {
-    crate_id = num_crates_tank.at(i_slot);
-    card_id = active_slots_cr2.at(i_slot-n_active_slots_cr1);
-  }
-  else {
-    crate_id = num_crates_tank.at(i_slot);
-    card_id = active_slots_cr3.at(i_slot-n_active_slots_cr1-n_active_slots_cr2);
-  }
-  for (int i_buffer = 0; i_buffer < FullBufferSize; i_buffer++){
-    Data.push_back(data[i_buffer]);
-  }
-  CrateID.push_back(crate_id);
-  CardID.push_back(card_id);
 
-  }*/
+  std::cout <<"CrateID.size: "<<CrateID.size()<<std::endl;
+  std::cout <<"CardID.size: "<<CardID.size()<<std::endl;
 
   //for high verbosity runs, provide entire available information as output
   if (verbosity >= 2){

@@ -41,7 +41,6 @@ bool MonitorTankTime::Initialise(std::string configfile, DataModel &data){
   num_active_slots=0;
   num_active_slots_cr1=0;
   num_active_slots_cr2=0;
-  max_files=0;
 
   //-------------------------------------------------------
   //-----------------Get active channels-------------------
