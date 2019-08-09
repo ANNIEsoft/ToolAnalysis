@@ -104,7 +104,7 @@ class EventDisplay: public Tool {
     TBox *box_mrd_top = nullptr;
     double tank_height;
     double tank_radius;
-    static const int max_num_lappds = 200;              //one is allowed to dream, right?
+    int max_num_lappds = 200;              //one is allowed to dream, right?
     double detector_version;
     std::string detector_config;
     bool draw_ring_temp;
@@ -116,8 +116,8 @@ class EventDisplay: public Tool {
     int n_mrd_pmts;
     int n_veto_pmts;
     int n_lappds;
-    std::vector<int> active_lappds;
-    int act_lappds[max_num_lappds]={0};
+    std::map<int,int> active_lappds_user;  // WCSim LAPPD IDs read from config file
+    std::map<int,int> active_lappds;       // converted to detectorkey
     double max_y;
     double min_y;
 
@@ -143,18 +143,18 @@ class EventDisplay: public Tool {
     double tank_center_y;
     double tank_center_z;
 
-    std::map<unsigned long,int> detectorkey_to_lappdid;
+    std::map<int,unsigned long> lappdid_to_detectorkey;
     std::map<unsigned long,int> channelkey_to_pmtid;
     std::map<int,unsigned long> pmt_tubeid_to_channelkey;
     std::map<unsigned long,int> channelkey_to_mrdpmtid;
     std::map<unsigned long,int> channelkey_to_faccpmtid;
     static const unsigned long n_channels_per_lappd = 60;
 
-    double charge[200];
-    double time[200];
-    double charge_lappd[max_num_lappds];
-    std::vector<std::vector<Position>> hits_LAPPDs;
-    std::vector<std::vector<double>> time_lappd;
+    std::map<unsigned long,double> charge;
+    std::map<unsigned long,double> time;
+    std::map<unsigned long,double> charge_lappd;
+    std::map<unsigned long,std::vector<Position>> hits_LAPPDs;
+    std::map<unsigned long,std::vector<double>> time_lappd;
     std::vector<double> mrddigittimesthisevent;
     std::vector<int> mrddigitpmtsthisevent;
     std::vector<double> mrddigitchargesthisevent;
@@ -200,11 +200,14 @@ class EventDisplay: public Tool {
     int current_n_polylines = 0;
 
     //histograms
+    std::vector<unsigned long> lappd_detkeys;
+    std::vector<unsigned long> pmt_detkeys;
+    std::vector<unsigned long> hitpmt_detkeys;
     TH1F *time_PMTs = nullptr;
-    TH1F *time_LAPPDs[max_num_lappds];
+    std::map<int,TH1F*> time_LAPPDs;	//the keys for the LAPPD histogram maps are the indices of the lappd_detkeys vector
     TH1F *charge_PMTs = nullptr;
     TH2F *charge_time_PMTs = nullptr;
-    TH1F *charge_LAPPDs[max_num_lappds];
+    std::map<int,TH1F*> charge_LAPPDs;
 
     //legends
     TLegend *leg_charge = nullptr;
