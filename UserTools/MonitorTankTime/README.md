@@ -4,17 +4,18 @@ MonitorTankTime
 
 ## Data
 
-Describe any data formats MonitorTankTime creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+Creates time evolution plots for raw data from the Tank PMT DAQ, to be shown on the monitoring webpage. 
 
 ## Configuration
 
-Describe any configuration variables for MonitorTankTime.
+MonitorTankTime has the following configuration variables:
 
 ```
-param1 value1
-param2 value2
+verbose 2
+OutputPath /ANNIECode/TankMonitorTest/              #if output path for plots needs to be set manually
+#OutputPath fromStore                               #if output path for plots can be taken from m_data
+ActiveSlots configfiles/Monitoring/PMT_activech.txt #define which cards in which VME crates are connected
+StartTime 1970/1/1	                                #used for conversion of timestamps to date/times. default: 1970/1/1
+OffsetDate 0	                                      #if the TimeStamp variable of PMTOut has an offset, adjust number of msec
 ```
+
