@@ -96,12 +96,12 @@ void LoadGeometry::InitializeGeometry(){
   int numvetopmts = 0;
 
   //Initialize data that will be fed to Geometry (units in meters)
-  int geometry_version;
-  double tank_xcenter,tank_ycenter,tank_zcenter;
-  double tank_radius,tank_halfheight, pmt_enclosed_radius, pmt_enclosed_halfheight;
-  double mrd_width,mrd_height,mrd_depth,mrd_start;
+  int geometry_version = 0;
+  double tank_xcenter = 0.0,tank_ycenter = 0.0,tank_zcenter = 0.0;
+  double tank_radius = 0.0,tank_halfheight = 0.0, pmt_enclosed_radius = 0.0, pmt_enclosed_halfheight = 0.0;
+  double mrd_width = 0.0,mrd_height = 0.0,mrd_depth = 0.0,mrd_start = 0.0;
 
-  std::string line;
+  std::string line = "default";
   ifstream myfile(fDetectorGeoFile.c_str());
   if (myfile.is_open()){
     //First, get to where data starts
@@ -118,8 +118,8 @@ void LoadGeometry::InitializeGeometry(){
       boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
       for (int i=0; i<DataEntries.size(); i++){
         //Check Legend at i, load correct data type
-        int ivalue;
-        double dvalue;
+        int ivalue = 0;
+        double dvalue = 0.0;
         if(DetectorLegendEntries.at(i) == "geometry_version") ivalue = std::stoi(DataEntries.at(i));
         else dvalue = std::stod(DataEntries.at(i));
         if (DetectorLegendEntries.at(i) == "geometry_version") geometry_version = ivalue;
@@ -198,19 +198,19 @@ void LoadGeometry::LoadFACCMRDDetectors(){
 bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
         std::vector<std::string> MRDLegendEntries){
   //Parse the line for information needed to fill the detector & channel classes
-  int detector_num,channel_num,detector_system,orientation,layer,side,num,
-      rack,TDC_slot,TDC_channel,discrim_slot,discrim_ch,
-      patch_panel_row,patch_panel_col,amp_slot,amp_channel,
-      hv_crate,hv_slot,hv_channel,nominal_HV,polarity;
-  double x_center,y_center,z_center,x_width,y_width,z_width;
-  std::string PMT_type,cable_label,paddle_label;
+  int detector_num = 0,channel_num = 0,detector_system = 0,orientation = 0,layer = 0,side = 0,num = 0,
+      rack = 0,TDC_slot = 0,TDC_channel = 0,discrim_slot = 0,discrim_ch = 0,
+      patch_panel_row = 0,patch_panel_col = 0,amp_slot = 0,amp_channel = 0,
+      hv_crate = 0,hv_slot = 0,hv_channel = 0,nominal_HV,polarity = 0;
+  double x_center = 0.0,y_center = 0.0,z_center = 0.0,x_width = 0.0,y_width = 0.0,z_width = 0.0;
+  std::string PMT_type = "default",cable_label = "default",paddle_label = "default";
 
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
   for (int i=0; i<SpecLine.size(); i++){
-    int ivalue;
-    double dvalue;
-    std::string svalue;
+    int ivalue = 0;
+    double dvalue = 0.0;
+    std::string svalue = "default";
     for (int j=0; j<MRDIntegerValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
@@ -352,7 +352,7 @@ void LoadGeometry::LoadTankPMTDetectors(){
   std::vector<std::string> TankPMTLegendEntries;
   boost::split(TankPMTLegendEntries,TankPMTLegend, boost::is_any_of(","), boost::token_compress_on);
 
-  std::string line;
+  std::string line = "default";
   ifstream myfile(fTankPMTGeoFile.c_str());
   if (myfile.is_open()){
     //First, get to where data starts
@@ -385,17 +385,17 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
         std::vector<std::string> TankPMTLegendEntries){
 
   //Parse the line for information needed to fill the Tdetector & channel classes
-  int detector_num,channel_num,panel_number,signal_crate,signal_slot,signal_channel,
-      mt_crate, mt_slot, mt_channel, hv_crate,hv_slot,hv_channel,nominal_HV,polarity;
-  double x_pos,y_pos,z_pos,x_dir,y_dir,z_dir;
-  std::string detector_tank_location,PMT_type,cable_label,detector_status;
+  int detector_num = 0,channel_num = 0,panel_number = 0,signal_crate = 0,signal_slot = 0,signal_channel = 0,
+      mt_crate = 0, mt_slot = 0, mt_channel = 0, hv_crate = 0,hv_slot = 0,hv_channel = 0,nominal_HV = 0,polarity = 0;
+  double x_pos = 0.0,y_pos = 0.0,z_pos = 0.0,x_dir = 0.0,y_dir = 0.0,z_dir = 0.0;
+  std::string detector_tank_location = "default",PMT_type = "default",cable_label = "default",detector_status = "default";
 
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
   for (int i=0; i<SpecLine.size(); i++){
-    int ivalue;
-    double dvalue;
-    std::string svalue;
+    int ivalue = 0;
+    double dvalue = 0.0;
+    std::string svalue = "default";
     for (int j=0; j<TankPMTIntegerValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
@@ -444,8 +444,8 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
   }
 
   //Parse out the Detector Status for filling into Detector class
-  detectorstatus detstatus;
-  channelstatus chanstatus;
+  detectorstatus detstatus = detectorstatus::OFF;
+  channelstatus chanstatus = channelstatus::OFF;
   if(detector_status == "ON"){
     detstatus = detectorstatus::ON;
     chanstatus = channelstatus::ON;
@@ -547,17 +547,19 @@ void LoadGeometry::LoadLAPPDs(){
 bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
         std::vector<std::string> LAPPDLegendEntries){
   //Parse the line for information needed to fill the detector & channel classes
-   int detector_num,channel_strip_side,channel_strip_num;
-   unsigned int channel_signal_crate,channel_signal_card,channel_signal_channel,channel_level2_crate,channel_level2_card,channel_level2_channel,channel_hv_crate,channel_hv_card,channel_hv_channel,channel_num;
-   double detector_position_x,detector_position_y,detector_position_z,detector_direction_x,detector_direction_y,detector_direction_z,channel_position_x,channel_position_y,channel_position_z;
-   std::string detector_type,detector_status,channel_status;
+   int detector_num = 0,channel_strip_side = 0,channel_strip_num = 0;
+   unsigned int channel_signal_crate = 0,channel_signal_card = 0,channel_signal_channel = 0,channel_level2_crate = 0,channel_level2_card = 0,channel_level2_channel = 0,channel_hv_crate = 0,
+   channel_hv_card = 0,channel_hv_channel = 0,channel_num = 0;
+   double detector_position_x = 0.0,detector_position_y = 0.0,detector_position_z = 0.0,detector_direction_x = 0.0,detector_direction_y = 0.0,detector_direction_z = 0.0,
+   channel_position_x = 0.0,channel_position_y = 0.0,channel_position_z = 0.0;
+   std::string detector_type = "default",detector_status = "default",channel_status = "default";
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
   for (int i=0; i<SpecLine.size(); i++){
-    int ivalue;
-    unsigned int uivalue;
-    double dvalue;
-    std::string svalue;
+    int ivalue = 0;
+    unsigned int uivalue =0;
+    double dvalue = 0.0;
+    std::string svalue = "default";
     for (int j=0; j<LAPPDIntegerValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
@@ -618,7 +620,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
 
   if(verbosity>4) std::cout << "Filling a LAPPD data line into Detector/Channel classes" << std::endl;
   if(detector_num != detector_num_store){
-  detectorstatus detstat;
+  detectorstatus detstat = detectorstatus::OFF;
   if(detector_status == "OFF"){
     detstat = detectorstatus::OFF;
     }
@@ -647,7 +649,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   detector_num_store = detector_num;
   }
 
-  channelstatus channelstat;
+  channelstatus channelstat = channelstatus::OFF;
   if(channel_status == "OFF"){
       channelstat = channelstatus::OFF;
       }
