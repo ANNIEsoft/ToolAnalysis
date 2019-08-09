@@ -3,6 +3,7 @@
 #define PulseSimulation_H
 
 #include "Tool.h"
+#include "Waveform.h"
 
 #include <string>
 #include <iostream>
@@ -43,7 +44,7 @@ namespace {
 	constexpr uint64_t SEC_TO_NS = 1000000000;                 // 
 	constexpr int ADC_NS_PER_SAMPLE=2;                         // sample rate
 	constexpr double ADC_INPUT_RESISTANCE = 50.;               // Ohm
-	//constexpr double ADC_TO_VOLT = 2.415 / std::pow(2., 12); // * by this constant converts ADC counts to Volts
+	//constexpr double ADC_TO_VOLT = 2.415 / std::pow(2., 12); // multiply to convert ADC counts to Volts
 	constexpr int TDC_NS_PER_SAMPLE = 4;                       //
 	constexpr int MRD_TIMEOUT_NS=4200;                         //
 	constexpr int MRD_TIMESTAMP_DELAY = static_cast<unsigned long long>(MRD_TIMEOUT_NS);
@@ -63,7 +64,8 @@ class PulseSimulation: public Tool {
 	bool Finalise();
 	
 	private:
-	
+	// Logging variables
+	// -----------------
 	int get_ok;
 	int verbosity;
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
@@ -73,10 +75,10 @@ class PulseSimulation: public Tool {
 	int v_debug=3;
 	std::string logmessage;
 	
+	// ROOT TApplication variables
+	// ---------------------------
 	bool DRAW_DEBUG_PLOTS;
-	int FILE_VERSION;                 // simulation file version
-	int HistoricTriggeroffset;
-	TApplication* pulseRootDrawApp=nullptr;
+	TApplication* rootTApp=nullptr;
 	double canvwidth, canvheight;
 	TCanvas* landaucanvas=nullptr;
 	TCanvas* buffercanvas=nullptr;
@@ -85,22 +87,37 @@ class PulseSimulation: public Tool {
 	TGraph* pulsegraph=nullptr;       // a new pulse
 	TGraph* fullbuffergraph=nullptr;
 	
-	void AddPMTDataEntry(Hit* digihit);
+	// ANNIEEvent variables
+	// --------------------
+	Geometry* anniegeom=nullptr;
+	std::map<unsigned long,int> channelkey_to_pmtid;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	std::map<unsigned long,int> channelkey_to_faccpmtid;
+	std::map<int,unsigned long> pmt_tubeid_to_channelkey;
+	int NumFaccPMTs;
+	
+	// Internal Functions
+	// ------------------
+	void AddPMTDataEntry(MCHit* digihit);
 	void GenerateMinibufferPulse(int digit_index, double adjusted_digit_q, std::vector<uint16_t> &pulsevector);
 	void AddMinibufferStartTime(bool droppingremainingsubtriggers);
 	void ConstructEmulatedPmtDataReadout();
-	void FillEmulatedPMTData();
+	bool FillEmulatedPMTData();
 	void AddNoiseToWaveforms();
 	void RiffleShuffle(bool do_shuffle);
 	void LoadOutputFiles();
 	void FillInitialFileInfo();
 	void FillEmulatedRunInformation();
 	void FillEmulatedTrigData();
-	void AddCCDataEntry(Hit* digihit);
+	void AddCCDataEntry(MCHit* digihit);
 	void FillEmulatedCCData();
 	std::vector<std::string>* GetTemplateRunInfo();
 	
+	// File format members
+	// -------------------
+	int FILE_VERSION;                        // simulation file version
 	int num_adc_cards;                       // 
+	int num_tdc_cards;                       // not strictly used anywhere
 	int pre_trigger_window_ns;               // for converting trigger-relative time to minibuffer index
 	int post_trigger_window_ns;              // for calculating buffer size
 	int full_buffer_size;                    // for positioning this pulse in the full buffer *
@@ -108,30 +125,45 @@ class PulseSimulation: public Tool {
 	int minibuffer_id;                       // the current minibuffer we're filling
 	int minibuffer_datapoints_per_channel;   // num datapoints per channel per minibuffer *
 	int minibuffers_per_fullbuffer;          // 
-	int emulated_event_size;                 // * 
+	int emulated_event_size;                 // just (minibuffer_datapoints_per_channel / 4) *
+	bool DoPhaseOneRiffle;                   // whether or not to shuffle data in vectors
 	// * = member of CardData
 	
-	// variables to generate/store just one temporary pulse trace
+	// Members used in waveform generation
+	// ------------------------------------
 	TF1* fLandau{nullptr};
 	std::vector<uint16_t> pulsevector;
-	double PMT_gain;                         // an average
 	double PULSE_HEIGHT_FUDGE_FACTOR;        // because we always need to fudge it
 	
 	// variables for connecting events into a run and filling the other file variables
+	// -------------------------------------------------------------------------------
 	TRandom3 R;
-	std::string runStartDateTime;            // read from config, used to generate fileout_StartTimeSec
+	std::string runStartDateTime;            // read from config, used to generate RunStartTimeSec
+	Int_t RunStartTimeSec;                   // passed to fileout_StartTimeSec
 	uint64_t runningeventtime;               // beam timing, ns from the start of the run to the beam spill
 	double currenteventtime;                 // time from start of the beam spill to first trigger of this event
-	int triggertime;                         // time from the simulation event to the trigger
-	uint16_t triggernum;
-	int sequence_id;
+	TimeClass* EventTime=nullptr;            // time from the simulation event to the trigger
+	int triggertime;                         // unixns from above
+	uint16_t triggernum;                     // MCTriggernum
+	int sequence_id;                         // ADC readout number
 	bool skippingremainders;                 // if we're passed more sub-events with a full buffer, do nothing
 	
 	// variables to go into the fake raw files
+	// ---------------------------------------
 	std::vector<CardData> emulated_pmtdata_readout;
 	std::vector<std::vector<uint16_t>> temporary_databuffers; // temp buffers while creating waveforms
 	std::vector<int64_t> StartCountVals;
 	std::vector<uint64_t> StartTimeNSecVals;
+	
+	// variables used when putting stuff into Stores
+	// ---------------------------------------------
+	bool GenerateFakeRootFiles;      // turn on/off by config file
+	bool PutOutputsIntoStore;        // put into store as well / instead
+	BoostStore* pmtDataStore;        // equivalent of tPMTData
+	BoostStore* heftydbStore;        // equivalant of theftydb
+	BoostStore* CCDataStore;         // equivalant of tCCData
+	std::vector<intptr_t> pmtDataVector;
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawADCData;
 	
 	// timing heftydb tree
 	// ~~~~~~~~~~~~~~~~~~~
@@ -170,6 +202,9 @@ class PulseSimulation: public Tool {
 	ULong64_t fileout_TimeStamp;
 	std::vector<string> fileout_Type;
 	std::vector<unsigned int> fileout_Value, fileout_Slot, fileout_Channel;
+	// for TTree branches
+	std::vector<unsigned int>* pfileout_Value, *pfileout_Slot, *pfileout_Channel;
+	std::vector<string>* pfileout_Type;
 	
 	// run info tree
 	// ~~~~~~~~~~~~~

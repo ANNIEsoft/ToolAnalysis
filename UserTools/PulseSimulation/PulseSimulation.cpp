@@ -16,26 +16,87 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 		
 	// Read ADC constants from file
 	m_variables.Get("MinibuffersPerFullbuffer",minibuffers_per_fullbuffer);
-	m_variables.Get("PMTGain",PMT_gain);
 	m_variables.Get("PulseHeightFudgeFactor",PULSE_HEIGHT_FUDGE_FACTOR);
 	m_variables.Get("DrawDebugPlots",DRAW_DEBUG_PLOTS);
-	m_variables.Get("WCSimVersion",FILE_VERSION);
-	m_variables.Get("HistoricTriggeroffset",HistoricTriggeroffset);
 	m_variables.Get("RunStartDate",runStartDateTime);
+	m_variables.Get("PhaseOneRiffleShuffle",DoPhaseOneRiffle);
+	m_variables.Get("GenerateFakeRootFiles",GenerateFakeRootFiles);
+	m_variables.Get("PutOutputsIntoStore",PutOutputsIntoStore);
+	if((!GenerateFakeRootFiles)&&(!PutOutputsIntoStore)){
+		logmessage = "PulseSimulation Tool: Both GenerateFakeRootFiles and PutOutputsIntoStore"
+			" were false! Nowhere to put outputs!";
+		Log(logmessage,v_error,verbosity);
+		return false;
+	}
+	
+	int get_ok = m_data->CStore.Get("WCSimVersion",FILE_VERSION);  // saved into simulated file "firmware version"
 	
 	/////////////////////////////////////////////////////////////////
 	
 	Log("PulseSimulation Tool: Initializing",v_message,verbosity);
-	Geometry* anniegeom=nullptr;
 	get_ok = m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
 	int numtankpmts = anniegeom->GetNumDetectorsInSet("Tank");
 	Log("PulseSimulation Tool: constructing cards for "+to_string(numtankpmts)+"PMTs",v_debug,verbosity);
-	cout<<"channels_per_adc_card="<<channels_per_adc_card<<endl;
 	num_adc_cards = (numtankpmts-1)/channels_per_adc_card + 1; // rounded up
 	Log("PulseSimulation Tool: Constructed "+to_string(num_adc_cards)+" ADC cards",v_debug,verbosity);
+	// we only have as many "ADC channels" as needed to supply tank PMTs, and our IDs must
+	// span this range. So, channelkey isn't suitable: Use WCSim TubeId.
+	m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
+	// same for num tdc cards, but we need to combine MRD + FACC channels and offset MRD IDs
+	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	m_data->CStore.Get("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
+	int nummrdpmts = anniegeom->GetNumDetectorsInSet("MRD");
+	NumFaccPMTs = anniegeom->GetNumDetectorsInSet("Veto");
+	num_tdc_cards = (nummrdpmts+NumFaccPMTs-1)/channels_per_tdc_card +1;  // don't actually need to know this
+	// for converting back when filling RawADCData
+	m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
 	
 	Log("Creating Output Files",v_debug,verbosity);
 	LoadOutputFiles();
+	Log("Files made",v_debug,verbosity);
+	
+	// if we're putting stuff into BoostStores, make those
+	if(PutOutputsIntoStore){
+		Log("Creating Output Stores",v_debug,verbosity);
+		pmtDataStore = new BoostStore(true,0);
+		heftydbStore = new BoostStore(true,0);
+		CCDataStore = new BoostStore(true,0);
+		// and make a Store within the Stores map to encapsulate them
+		m_data->Stores.emplace("SimulatedFileStore",new BoostStore(true,0));
+		m_data->Stores.at("SimulatedFileStore")->Set("pmtDataStore",pmtDataStore,false);
+		m_data->Stores.at("SimulatedFileStore")->Set("heftydbStore",heftydbStore,false);
+		m_data->Stores.at("SimulatedFileStore")->Set("CCDataStore",CCDataStore,false);
+		
+		// populate the static members of the pmtDataStore
+		Log("Populating pmtDataStore header",v_debug,verbosity);
+		pmtDataStore->Set("RunStartTimeSec",RunStartTimeSec);                     // fileout_StartTimeSec
+		pmtDataStore->Set("MiniBuffersPerFullBuffer",minibuffers_per_fullbuffer); // fileout_TriggerNumber
+		pmtDataStore->Set("ChannelsPerAdcCard",channels_per_adc_card);            // fileout_Channels
+		pmtDataStore->Set("BufferSize",buffer_size);                              // fileout_BufferSize
+		pmtDataStore->Set("Eventsize",emulated_event_size);                       // fileout_Eventsize
+		pmtDataStore->Set("FullBufferSize",full_buffer_size);                     // fileout_FullBufferSize
+		// Cards have already been constructed at this point so we can store the vector of pointers
+		// to their data waveforms.
+		for(auto& acard : emulated_pmtdata_readout){
+			// for some reason storing a vector of pointers in the store doesn't work: use intptr_t
+			const std::vector<uint16_t>* datap = &(acard.Data);
+			intptr_t datapi = reinterpret_cast<intptr_t>(datap);
+			pmtDataVector.push_back(datapi);
+		}
+		pmtDataStore->Set("AllData",pmtDataVector);
+		
+		// we can also store the heftydb pointers, since these do not change
+		heftydbStore->Set("minibuffer_starts_unixns",timefileout_Time,false);
+		heftydbStore->Set("minibuffer_label",timefileout_Label,false);
+		heftydbStore->Set("minibuffer_tsincebeam",timefileout_TSinceBeam,false);
+		heftydbStore->Set("dropped_delayed_triggers",timefileout_More,false);
+		
+		// and CCData vectors, which we reserve, so they're unlikely to re-allocate
+		CCDataStore->Set("CardType",pfileout_Type,false);
+		CCDataStore->Set("Slot",pfileout_Slot,false);
+		CCDataStore->Set("Channel",pfileout_Channel,false);
+		CCDataStore->Set("TDCTickValue",pfileout_Value,false);
+	}
 	
 	minibuffer_id=0;
 	sequence_id=0;
@@ -43,14 +104,37 @@ bool PulseSimulation::Initialise(std::string configfile, DataModel &data){
 	// TODO: add RWM
 	
 	// create the ROOT application to show debug plots
+	// ===============================================
+	// If we wish to show the histograms during running, we need a TApplication
+	// There may only be one TApplication, so if another tool has already made one
+	// register ourself as a user. Otherwise, make one and put a pointer in the CStore for other Tools
 	if(DRAW_DEBUG_PLOTS){
+		Log("Acquiring ROOT TApplication",v_debug,verbosity);
+		// create the ROOT application to show histograms
 		int myargc=0;
-		//char *myargv[] = {(const char*)"somestring"};
-		pulseRootDrawApp = new TApplication("PulseRootDrawApp",&myargc,0);
+		//char *myargv[] = {(const char*)"pulsesim"};
+		// get or make the TApplication
+		intptr_t tapp_ptr=0;
+		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+		if(not get_ok){
+			Log("PulseSimulation Tool: Making global TApplication",v_error,verbosity);
+			rootTApp = new TApplication("rootTApp",&myargc,0);
+			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+			m_data->CStore.Set("RootTApplication",tapp_ptr);
+		} else {
+			Log("PulseSimulation Tool: Retrieving global TApplication",v_error,verbosity);
+			rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+		}
+		int tapplicationusers;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok) tapplicationusers=1;
+		else tapplicationusers++;
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 		canvwidth = 700;
 		canvheight = 600;
 	}
 	
+	Log("PulseSimulation Tool: Initialised",v_debug,verbosity);
 	return true;
 }
 
@@ -66,7 +150,7 @@ bool PulseSimulation::Execute(){
 		Log("PulseSimulation Tool: Failed to get MCTriggernum from ANNIEEvent",v_error,verbosity);
 		return false;
 	}
-	cout<<"checking if skipping this minibuffer"<<endl;
+	Log("PulseSimulation Tool: checking if skipping this minibuffer",v_debug,verbosity);
 	if(skippingremainders && triggernum!=0){
 		// we've got a full buffer, can't process this readout
 		Log("PulseSimulation Tool: Skipping readout as we have a full buffer",v_debug,verbosity);
@@ -76,15 +160,15 @@ bool PulseSimulation::Execute(){
 	}
 	
 	// Get the Hits
-	std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
-	std::cout<<"getting MCHits"<<endl;
+	std::map<unsigned long,std::vector<MCHit>>* MCHits=nullptr;
+	Log("PulseSimulation Tool: getting MCHits",v_debug,verbosity);
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCHits",MCHits);
 	if(not get_ok){
 		Log("PulseSimulation Tool: Failed to get hits from ANNIEEvent!",v_error,verbosity);
 		return false;
 	}
-	std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
-	std::cout<<"getting TDCData"<<endl;
+	std::map<unsigned long,std::vector<MCHit>>* TDCData=nullptr;
+	Log("PulseSimulation Tool: getting TDCData",v_debug,verbosity);
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
 	if(not get_ok){
 		Log("PulseSimulation Tool: Failed to get mrd hits from ANNIEEvent!",v_error,verbosity);
@@ -93,12 +177,17 @@ bool PulseSimulation::Execute(){
 	
 	// get other info from ANNIEEvent
 	int numMCtriggersthisevt;
-	std::cout<<"getting numtriggersthisevt"<<std::endl;
+	Log("PulseSimulation Tool: getting numtriggersthisevt",v_debug,verbosity);
 	get_ok = m_data->CStore.Get("NumTriggersThisMCEvt",numMCtriggersthisevt);
 	if(not get_ok){
 		Log("PulseSimulation Tool: Failed to get NumTriggersThisMCEvt from ANNIEEvent",v_error,verbosity);
 		return false;
 	}
+	
+	// Get the trigger time relative to the event. For prompt triggers this is 0,
+	// for delayed triggers, it is not
+	m_data->Stores.at("ANNIEEvent")->Get("EventTime",EventTime);
+	triggertime = EventTime->GetNs();
 	
 	// if this is the last minibuffer and we have remaining sub-events, they must be dropped
 	bool droppingremainingsubtriggers = 
@@ -119,18 +208,23 @@ bool PulseSimulation::Execute(){
 	// convert hits into pulses
 	logmessage="PulseSimulation Tool: Looping over Digits on "+to_string(MCHits->size())+" hit PMTs";
 	Log(logmessage,v_debug,verbosity);
-	for(std::pair<unsigned long,std::vector<Hit>>&& hitsonapmt : (*MCHits)){
-		std::vector<Hit>* hitsonthistube = &(hitsonapmt.second);
+	for(std::pair<unsigned long,std::vector<MCHit>>&& hitsonapmt : (*MCHits)){
+		Log("PulseSimulation Tool: Getting hits on next tube",v_debug,verbosity);
+		std::vector<MCHit>* hitsonthistube = &(hitsonapmt.second);
 		if(verbosity>v_debug){
-			int thetubeid=hitsonthistube->front().GetTubeId();
-			int thechannelid=(thetubeid)%channels_per_adc_card;
+			unsigned long channelkey=hitsonthistube->front().GetTubeId();
+			Detector* thedet = anniegeom->ChannelToDetector(channelkey);
+			if(thedet->GetDetectorElement()!="Tank") continue; // all MCHits should be Tank hits
+			int thetubeid=channelkey_to_pmtid.at(channelkey)-1;
+			int thechannelid=thetubeid%channels_per_adc_card;
 			int thecardid=(thetubeid-thechannelid)/channels_per_adc_card;
-//			cout<<"next PMT is tube "<<thetubeid
-//				<<", corresponding to card "<<thecardid
-//				<<", channel "<<thechannelid
-//				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
+			cout<<"next PMT is tube "<<thetubeid
+				<<", corresponding to card "<<thecardid
+				<<", channel "<<thechannelid
+				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
 		}
-		for(Hit apmthit : (*hitsonthistube)){
+		for(MCHit apmthit : (*hitsonthistube)){
+			// adding pmt data entry
 			AddPMTDataEntry(&apmthit);
 		}
 	}
@@ -139,7 +233,8 @@ bool PulseSimulation::Execute(){
 	minibuffer_id++;
 	if(minibuffer_id==minibuffers_per_fullbuffer){
 		Log("PulseSimulation Tool: Filling Emulated PMTData and TrigData Trees",v_debug,verbosity);
-		FillEmulatedPMTData();
+		get_ok = FillEmulatedPMTData();
+		if(not get_ok) return false; // ... won't do us much good?
 		FillEmulatedTrigData();
 		sequence_id++;
 		minibuffer_id=0;
@@ -149,18 +244,30 @@ bool PulseSimulation::Execute(){
 	logmessage="PulseSimulation Tool: Looping over TDC Digits on "
 		+to_string(TDCData->size())+" hit paddles";
 	Log(logmessage,v_debug,verbosity);
-	for(std::pair<unsigned long,std::vector<Hit>>&& hitsonapmt : (*TDCData)){
-		std::vector<Hit>* hitsonthistube = &(hitsonapmt.second);
+	for(std::pair<unsigned long,std::vector<MCHit>>&& hitsonapmt : (*TDCData)){
+		std::vector<MCHit>* hitsonthistube = &(hitsonapmt.second);
 		if(verbosity>v_debug){
-			int thetubeid=hitsonthistube->front().GetTubeId();
-			int thechannelid=(thetubeid)%channels_per_adc_card;
-			int thecardid=(thetubeid-thechannelid)/channels_per_adc_card;
-//			cout<<"next PMT is tube "<<thetubeid
-//				<<", corresponding to card "<<thecardid
-//				<<", channel "<<thechannelid
-//				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
+			unsigned long channelkey=hitsonthistube->front().GetTubeId();
+			Detector* thedet = anniegeom->ChannelToDetector(channelkey);
+			std::string detel = thedet->GetDetectorElement();
+			int thetubeid;
+			if(detel=="MRD"){
+				thetubeid=channelkey_to_mrdpmtid.at(channelkey)-1;
+				thetubeid+=NumFaccPMTs; // combine tubeid range of FACC and MRD PMTs
+			} else if(detel=="Veto"){
+				thetubeid=channelkey_to_faccpmtid.at(channelkey)-1;
+			} else {
+				cerr<<"Unknown detel "<<detel<<" in TDCData!"<<std::endl;
+				return false;
+			}
+			int thechannelid=thetubeid%channels_per_tdc_card;
+			int thecardid=(thetubeid-thechannelid)/channels_per_tdc_card;
+			cout<<"next PMT is "<<detel<<" tube "<<thetubeid
+				<<", corresponding to card "<<thecardid
+				<<", channel "<<thechannelid
+				<<"; this PMT had "<<hitsonthistube->size()<<" hits"<<endl;
 		}
-		for(Hit apmthit : (*hitsonthistube)){
+		for(MCHit apmthit : (*hitsonthistube)){
 			AddCCDataEntry(&apmthit);
 		}
 	}
@@ -169,7 +276,7 @@ bool PulseSimulation::Execute(){
 	FillEmulatedCCData();
 	
 	// raw file emulation: remaining sub-triggers after the last minibuffer fall in DAQ deadtime
-	if(minibuffer_id==0){
+	if((minibuffer_id==0)&&(minibuffers_per_fullbuffer>1)){
 		Log("PulseSimulation Tool: Filled buffer: will skip any remaining delayed triggers",v_debug,verbosity);
 		skippingremainders=true;
 	}
@@ -188,36 +295,50 @@ bool PulseSimulation::Finalise(){
 	if(minibuffer_id!=0){
 		// since we only write out full buffers, write out one last time any partial buffers
 		Log("PulseSimulation Tool: Filling Final Partial Readout",v_debug,verbosity);
-		FillEmulatedPMTData();
+		get_ok = FillEmulatedPMTData();
+		//if(not get_ok) return false; ... won't do us much good?
 		FillEmulatedTrigData();
 	}
 	
-	Log("PulseSimulation Tool: Writing events to file",v_debug,verbosity);
-	
-	timingfileout->cd();
-	theftydb->Write("heftydb",TObject::kOverwrite);
-	timingfileout->Close();
-	delete timingfileout;
-	timingfileout=nullptr;
-	
-	rawfileout->cd();
-	tPMTData->Write("PMTData",TObject::kOverwrite);
-	tRunInformation->Write("RunInformation",TObject::kOverwrite);
-	tTrigData->Write("TrigData",TObject::kOverwrite);
-	tCCData->Write("CCData",TObject::kOverwrite);
-	
-	rawfileout->Close();
-	delete rawfileout;
-	rawfileout=nullptr;
+	if(GenerateFakeRootFiles){
+		Log("PulseSimulation Tool: Writing events to file",v_debug,verbosity);
+		timingfileout->cd();
+		theftydb->Write("heftydb",TObject::kOverwrite);
+		timingfileout->Close();
+		delete timingfileout;
+		timingfileout=nullptr;
+		
+		rawfileout->cd();
+		tPMTData->Write("PMTData",TObject::kOverwrite);
+		tRunInformation->Write("RunInformation",TObject::kOverwrite);
+		tTrigData->Write("TrigData",TObject::kOverwrite);
+		tCCData->Write("CCData",TObject::kOverwrite);
+		
+		rawfileout->Close();
+		delete rawfileout;
+		rawfileout=nullptr;
+	}
 	
 	if(DRAW_DEBUG_PLOTS){
-		if(pulseRootDrawApp){ delete pulseRootDrawApp; pulseRootDrawApp=nullptr; }
 		if(gROOT->FindObject("landaucanvas"))    { delete landaucanvas; landaucanvas=nullptr; }
 		if(gROOT->FindObject("buffercanvas"))    { delete buffercanvas; buffercanvas=nullptr; }
 		if(gROOT->FindObject("buffergraph"))     { delete buffergraph; buffergraph=nullptr; }
 		if(gROOT->FindObject("pulsecanvas"))     { delete pulsecanvas; pulsecanvas=nullptr; }
 		if(gROOT->FindObject("pulsegraph"))      { delete pulsegraph; pulsegraph=nullptr; }
 		if(gROOT->FindObject("fullbuffergraph")) { delete fullbuffergraph; fullbuffergraph=nullptr; }
+		// see if we're the last user of the TApplication and release it if so,
+		// otherwise de-register us as a user since we're done
+		int tapplicationusers=0;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok || tapplicationusers==1){
+			if(rootTApp){
+				std::cout<<"PulseSimulation Tool: Deleting global TApplication"<<std::endl;
+				delete rootTApp;
+				rootTApp=nullptr;
+			}
+		} else if(tapplicationusers>1){
+			m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+		}
 	}
 	
 	return true;
@@ -225,14 +346,16 @@ bool PulseSimulation::Finalise(){
 
 // #######################################################################
 
-void PulseSimulation::AddPMTDataEntry(Hit* digihit){
+void PulseSimulation::AddPMTDataEntry(MCHit* digihit){
 	// Construct and add the waveform from a PMT digit to the appropriate ADC trace
 	// ============================================================================
-	//Log("PulseSimulation Tool: adding digit",v_debug,verbosity);
+	Log("PulseSimulation Tool: adding digit",v_debug,verbosity);
 	
 	//Hit has methods GetTubeId(), GetTime(), GetCharge()
-	int channelnum = (digihit->GetTubeId())%channels_per_adc_card;
-	int cardid = ((digihit->GetTubeId())-channelnum)/channels_per_adc_card;
+	unsigned long channelkey = digihit->GetTubeId();
+	int wcsimtubeid = channelkey_to_pmtid.at(channelkey)-1;
+	int channelnum = wcsimtubeid%channels_per_adc_card;
+	int cardid = (wcsimtubeid-channelnum)/channels_per_adc_card;
 	
 	/* digit time is relative to the trigger time (ndigits threshold crossing).
 		 we need to convert this to position of the digit within the minibuffer data array 
@@ -261,12 +384,12 @@ void PulseSimulation::AddPMTDataEntry(Hit* digihit){
 		* (ADC_INPUT_RESISTANCE/ADC_TO_VOLT) * PULSE_HEIGHT_FUDGE_FACTOR;
 	logmessage = "PulseSimulation Tool: Digit Charge is: " + to_string(digihit->GetCharge())
 		+ ", area calculated to be: " + to_string(adjusted_digit_q);
-	//Log(logmessage,v_debug,verbosity);
+	Log(logmessage,v_debug,verbosity);
 	
 	// construct a suitable pulse waveform using the position and charge of the digit
 	pulsevector.assign(minibuffer_datapoints_per_channel,0);  // clear the temporary pulse vector
 	// fill it with a pulse waveform with suitable form and size
-	//Log("PulseSimulation Tool: Generating Waveform for this pulse",v_debug,verbosity);
+	Log("PulseSimulation Tool: Generating Waveform for this pulse",v_debug,verbosity);
 	GenerateMinibufferPulse(digits_time_index, adjusted_digit_q, pulsevector);
 	
 	// calculate the offset of the minibuffer, for this channel, within the full buffer for the readout
@@ -281,7 +404,7 @@ void PulseSimulation::AddPMTDataEntry(Hit* digihit){
 	std::vector<uint16_t>::iterator minibuffer_start = thiscards_fullbuffer->begin() + channeloffset + minibufferoffset;
 	
 	// add the generated pulse to the minibuffer at the appropriate location
-	//Log("PulseSimulation Tool: Adding pulse to full trace",v_debug,verbosity);
+	Log("PulseSimulation Tool: Adding pulse to full trace",v_debug,verbosity);
 	std::transform(minibuffer_start, minibuffer_start+minibuffer_datapoints_per_channel, pulsevector.begin(),
 		minibuffer_start, std::plus<uint16_t>() );
 	
@@ -445,16 +568,6 @@ void PulseSimulation::AddMinibufferStartTime(bool droppingremainingsubtriggers){
 }
 
 void PulseSimulation::ConstructEmulatedPmtDataReadout(){
-	// construct the empty data structures (vectors, arrays) needed to hold an ADC readout
-	// ===================================================================================
-	Log("PulseSimulation Tool: Constructing CardData entries",v_debug,verbosity);
-	// fill all the non-minibuffer info and reset the minibuffers
-	if(emulated_pmtdata_readout.size()<num_adc_cards){
-		cout<<"constructing vector of "<<num_adc_cards<<" CardData objects"
-			<<" and temp databuffer vector with "<<full_buffer_size<<" element data arrays"<<endl;
-		emulated_pmtdata_readout= std::vector<CardData>(num_adc_cards);
-		temporary_databuffers = std::vector< std::vector<uint16_t> >(num_adc_cards);
-	}
 	// Calculate the timing values
 	///////////////////////////////////
 	// TriggerCounts has 40 entries per readout (one per minibuffer).
@@ -468,20 +581,20 @@ void PulseSimulation::ConstructEmulatedPmtDataReadout(){
 		//Log("PulseSimulation Tool: Getting emulated traces",v_debug,verbosity);
 		auto&& acard = emulated_pmtdata_readout.at(cardi);
 		
-		// fixed values
+		// fixed values - these are static, why do we keep re-setting them??? TODO
 		// these need to be set first as they're used by CardData::Reset
 		//Log("PulseSimulation Tool: Getting trace characteristics",v_debug,verbosity);
 		acard.Channels = channels_per_adc_card;
 		acard.TriggerNumber = minibuffers_per_fullbuffer;
 		acard.FullBufferSize = full_buffer_size;                  // trigger window sizes and sampling rate
 		acard.Eventsize = emulated_event_size;                    // PulseSimulation::emulated_event_size etc.
-		acard.BufferSize = buffer_size;                           // calculated in utilityfuncs based on
+		acard.BufferSize = buffer_size;                           // minibuf_samples_per_ch * minibufs_per_fullbuf
 		
 		acard.Reset();                                            // set members to default (bogus) values
 		acard.CardID = cardi;
 		
 		// mostly randomly generated timing references
-		acard.StartTimeSec = fileout_StartTimeSec;                // start time of run (read from config file)
+		acard.StartTimeSec = RunStartTimeSec;                     // start time of run (read from config file)
 		acard.StartTimeNSec = StartTimeNSecVals.at(cardi);        // steady decreases
 		acard.StartCount = StartCountVals.at(cardi);              // periodic spikes
 		acard.LastSync = 0;                                       // always a mutiple of 4
@@ -508,22 +621,22 @@ void PulseSimulation::ConstructEmulatedPmtDataReadout(){
 	
 }
 
-void PulseSimulation::FillEmulatedPMTData(){
+bool PulseSimulation::FillEmulatedPMTData(){
 	
 	// PMTData tree has: one entry per VME card, 16 entries (cards) per readout, 40 minibuffers per readout.
-	// A single trigger may span multiple minibuffers, but there's nothing to indicate it - just the 
-	// timestamps of the starts of each minibuffer will be separated by 2us. 
+	// A single trigger may span multiple minibuffers, but there's nothing to indicate it - just the
+	// timestamps of the starts of each minibuffer will be separated by 2us.
 	// The Data[] array in each entry concatenates all channels on that card:
 	// ([Card 0: {minibuffer 0}{minibuffer 1}...{minibuffer 39}][Card 1: {minibuffer 0}...]...)
-	// Entries are ordered according to the card position in the vme crate, so are consistent but not 
-	// 0,1,2...	(there are 16 cards, numbered up to 21). Each readout has a unique SequenceID.
+	// Entries are ordered according to the card position in the vme crate, so are consistent but not
+	// 0,1,2... (there are 16 cards, numbered up to 21). Each readout has a unique SequenceID.
 	// Data[] arrays are waveforms of 40,000 datapoints per minibuffer
 	
 	// first, add noise to the temporary waveforms
 	AddNoiseToWaveforms();
 	
 	// next, shuffle your library. this also copies temporary_databuffers into emulated_pmtdata_readout
-	RiffleShuffle(true); // pass true for phase 1 shuffle, needed for either
+	RiffleShuffle(DoPhaseOneRiffle); // pass true for phase 1 shuffle, needed for either
 	
 	//cout<<"Filling PMTData tree"<<endl;
 	// loop over all cards and fill the PMTData tree with the constructed data
@@ -543,8 +656,6 @@ void PulseSimulation::FillEmulatedPMTData(){
 		fileout_TriggerCounts		= acard.TriggerCounts.data();
 		fileout_Rates				= acard.Rates.data();
 		fileout_Data				= acard.Data.data();
-		tPMTData->SetBranchAddress("Data",fileout_Data);
-		// ^ without this first set of full buffers all read garbage... 
 		
 		// =================
 		if(DRAW_DEBUG_PLOTS){
@@ -574,8 +685,69 @@ void PulseSimulation::FillEmulatedPMTData(){
 		}
 		// ================
 		
-		//Log("PulseSimulation Tool: Adding entry to the fake file TTree",v_debug,verbosity);
-		tPMTData->Fill();
+		Log("PulseSimulation Tool: Filling PMTData file",v_debug,verbosity);
+		if(GenerateFakeRootFiles){
+			tPMTData->SetBranchAddress("Data",fileout_Data);
+			// ^ without this first set of full buffers all read garbage...
+			tPMTData->Fill();
+		}
+		if(PutOutputsIntoStore){
+			// Multi-Entry BoostStores write entries to disk as they're filled
+			// (rather than retaining in memory like a TTree), so saving each card
+			// as it's own entry would mean lots of disk io for write/read between tools.
+			// Instead, flatten the TTree entries into a vector, so we can store the readout
+			// as a single entry BoostStore
+			// pmtDataVector.push_back(reinterpret_cast<intptr_t>(&acard.Data));
+			// &acard.Data is actually a pointer to the Data member of the Card object,
+			// and both the Card objects and their member vectors are re-used between readouts.
+			// So we really only need to set pmtDataVector once...
+			// Literally nothing needs re-setting in this BoostStore between readouts!
+		}
+	} // loop over simulated cards
+	if(PutOutputsIntoStore){
+		// arbitrary - currently 0. Worth saving for future-proofing?
+		pmtDataStore->Set("LastSync",fileout_LastSync);                 // arbitrary
+		pmtDataStore->Set("StartTimeNSec",fileout_StartTimeNSec);       // arbitrary
+		pmtDataStore->Set("StartCount",fileout_StartCount);             // arbitrary
+		pmtDataStore->Set("TriggerCounts",fileout_TriggerCounts[0]);    // arbitrary
+		pmtDataStore->Set("ChannelHitRates",fileout_Rates,false);       // arbitrary
+		// actually useful elements (mostly)
+		pmtDataStore->Set("SequenceID",fileout_SequenceID);
+		//pmtDataStore->Set("CardID",fileout_CardID);    // meaningless if we save all cards in one entry
+		//pmtDataStore->Set("AllData",pmtDataVector);    // does not need to be re-set every time...
+		// funny thing: rather than having a waveform for each card and channel, the BoostStores
+		// want a map of channelkey to waveform ... convert things back again
+		int unusedchannelcount=0;  // sanity check
+		for(auto& acard : emulated_pmtdata_readout){
+			std::vector<uint16_t>::iterator startit = acard.Data.begin();
+			std::vector<uint16_t>::iterator stopit = startit+minibuffer_datapoints_per_channel;
+			for(int channeli=0; channeli<channels_per_adc_card; channeli++){
+				int wcsimtubeid = (acard.CardID*channels_per_adc_card)+channeli;
+				if(pmt_tubeid_to_channelkey.count(wcsimtubeid)==0){
+					unusedchannelcount++;
+					if(unusedchannelcount>3){
+						Log("PulseSimulation Tool: bad ADC channel:channelkey mapping!",v_error,verbosity);
+						return false;
+					}
+					continue; // since # channels on cards is a multiple of 4, we may have up to 3 unused.
+				}
+				unsigned long channelkey = pmt_tubeid_to_channelkey.at(wcsimtubeid);
+				for(int minibufferi=0; minibufferi<minibuffers_per_fullbuffer; minibufferi++){
+					// copy data from the card buffer to the RawWaveform map
+					if(RawADCData.count(channelkey)==0){
+						RawADCData.emplace(channelkey,std::vector<Waveform<uint16_t>>(minibuffers_per_fullbuffer));
+					}
+					std::vector<uint16_t>* wfrmsamples = RawADCData.at(channelkey).at(minibufferi).GetSamples();
+					wfrmsamples->assign(startit,stopit);  // copies including *startit but not stopit
+					// time relative to beam: timefileout_TSinceBeam[minibufferi]
+					// absolute minibuffer time: timefileout_Time[minibufferi]
+					RawADCData.at(channelkey).at(minibufferi).SetStartTime(timefileout_TSinceBeam[minibufferi]);
+					startit=stopit;
+					std::advance(stopit,minibuffer_datapoints_per_channel);
+				}
+			}
+		}
+		m_data->Stores.at("ANNIEEvent")->Set("RawADCData",RawADCData);
 	}
 	
 	// Fill the hefty timing file. 
@@ -588,13 +760,25 @@ void PulseSimulation::FillEmulatedPMTData(){
 	}
 	
 	// debug print
-	cout<<"Filling heftdb tree: More branch has values: ";
-	for(int i=0; i<minibuffers_per_fullbuffer; i++){
-		cout<<timefileout_More[i]<<", ";
+	if(verbosity>10){
+		cout<<"Filling heftdb tree: More branch has values: ";
+		for(int i=0; i<minibuffers_per_fullbuffer; i++){
+			cout<<timefileout_More[i]<<", ";
+		}
+		cout<<endl;
 	}
-	cout<<endl;
 	Log("PulseSimulation Tool: Filling heftydb file",v_debug,verbosity);
-	theftydb->Fill();
+	if(GenerateFakeRootFiles){
+		theftydb->Fill();
+	}
+	if(PutOutputsIntoStore){
+		// put everything that would be in theftydb tree into a BoostStore instead
+		heftydbStore->Set("SequenceID",fileout_SequenceID);
+		heftydbStore->Set("minibuffer_starts_unixns",timefileout_Time,false);
+		heftydbStore->Set("minibuffer_label",timefileout_Label,false);
+		heftydbStore->Set("minibuffer_tsincebeam",timefileout_TSinceBeam,false);
+		heftydbStore->Set("dropped_delayed_triggers",timefileout_More,false);
+	}
 	
 //	// draw for debug *** NEEDS UPDATING ***s
 //	int samples_per_channel = full_buffer_size/channels_per_adc_card;
@@ -625,6 +809,7 @@ void PulseSimulation::FillEmulatedPMTData(){
 //	tPMTData->SetBranchAddress("Data",fileout_Data);
 //	z.clear();
 	
+	return true;
 }
 
 void PulseSimulation::AddNoiseToWaveforms(){
