@@ -16,6 +16,7 @@ class GenerateHits: public Tool {
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
+  double fRand(double fMin, double fMax);
 
 
  private:

@@ -16,7 +16,7 @@ class LAPPDresponse {
 
  public:
 
-  LAPPDresponse();
+  LAPPDresponse(TString input);
 
   ~LAPPDresponse();
 

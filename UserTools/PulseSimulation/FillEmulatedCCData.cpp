@@ -4,17 +4,30 @@
 // #######################################################################
 
 // called in DoMRDdigitHits() loop over MRD digits.
-void PulseSimulation::AddCCDataEntry(Hit* digihit){
+void PulseSimulation::AddCCDataEntry(MCHit* digihit){
 	//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ()
 	
-	int digits_time_ns = digihit->GetTime() + pre_trigger_window_ns - HistoricTriggeroffset;
+	int digits_time_ns = digihit->GetTime() + abs(pre_trigger_window_ns);
 	// MRD TDC common stop timout: 85 x 50ns 
 	if(digits_time_ns>MRD_TIMEOUT_NS) return;
 	
 	// TODO read this mapping from a file
 	// remember tubeids start from 1
-	int channelnum = (digihit->GetTubeId()-1)%channels_per_tdc_card;
-	int cardid = ((digihit->GetTubeId()-1)-channelnum)/channels_per_tdc_card;
+	unsigned long channelkey=digihit->GetTubeId();
+	Detector* thedet = anniegeom->ChannelToDetector(channelkey);
+	std::string detel = thedet->GetDetectorElement();
+	int thetubeid;
+	if(detel=="Veto"){
+		thetubeid=channelkey_to_faccpmtid.at(channelkey)-1;
+	} else if(detel=="MRD"){
+		thetubeid=channelkey_to_mrdpmtid.at(channelkey)-1;
+		thetubeid+=NumFaccPMTs;
+	} else {
+		Log("PulseSimulation Tool: Unknown detel "+detel+" in TDCData!",v_error,verbosity);
+		return;
+	}
+	int channelnum = thetubeid%channels_per_tdc_card;
+	int cardid = (thetubeid-channelnum)/channels_per_tdc_card;
 	
 	// convert to 'value' = number of TDC ticks
 	int digits_time_ticks = digits_time_ns / TDC_NS_PER_SAMPLE;
@@ -28,7 +41,7 @@ void PulseSimulation::FillEmulatedCCData(){
 	// the following are all per-readout (per trigger).
 	if(fileout_Value.size()==0){
 		Log("PulseSimulation Tool: No CCData to fill, skipping",v_debug,verbosity);
-		return; // no hits, no entries.
+		if(PutOutputsIntoStore==false) return; // no hits, no entries.
 	} else {
 		Log("PulseSimulation Tool: Filling CCData tree with "+to_string(fileout_Value.size())
 				+" MRD hits",v_debug,verbosity);
@@ -53,6 +66,18 @@ void PulseSimulation::FillEmulatedCCData(){
 	fileout_TimeStamp = timestamp_ms;                        // UTC MS since unix epoch
 	fileout_OutNumber = fileout_Value.size();                // number of hits in this event
 	fileout_Type.assign(fileout_OutNumber,"TDC");            // all cards are TDC cards for now.
-	tCCData->Fill();
+	
+	if(GenerateFakeRootFiles&&fileout_OutNumber){
+		tCCData->Fill();
+	}
+	if(PutOutputsIntoStore){
+		CCDataStore->Set("CCDataReadout",fileout_Trigger);
+		CCDataStore->Set("CCHitsThisReadout",fileout_OutNumber);
+		CCDataStore->Set("ReadoutTimeUnixMs",fileout_TimeStamp);
+		CCDataStore->Set("CardType",pfileout_Type,false);
+		CCDataStore->Set("Slot",pfileout_Slot,false);
+		CCDataStore->Set("Channel",pfileout_Channel,false);
+		CCDataStore->Set("TDCTickValue",pfileout_Value,false);
+	}
 }
 

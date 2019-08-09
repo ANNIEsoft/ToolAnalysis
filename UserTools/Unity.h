@@ -91,10 +91,10 @@
 #include "MCRecoEventLoader.h"
 #include "MonitorMRDEventDisplay.h"
 #include "LoadGeometry.h"
+#include "WaveformNNLS.h"
 #include "TimeClustering.h"
 #include "GracefulStop.h"
 #include "PhaseIIADCHitFinder.h"
 #include "TrackCombiner.h"
-
-
 #include "PMTPulseGenerator.h"
+#include "SimulatedWaveformDemo.h"

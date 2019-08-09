@@ -61,6 +61,7 @@ if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
 if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
+if (tool=="WaveformNNLS") ret=new WaveformNNLS;
 if (tool=="HitCleaner") ret=new HitCleaner;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
@@ -86,5 +87,8 @@ if (tool=="LoadGeometry") ret=new LoadGeometry;
 if (tool=="TimeClustering") ret=new TimeClustering;
 if (tool=="GracefulStop") ret=new GracefulStop;
 if (tool=="PMTPulseGenerator") ret=new PMTPulseGenerator;
+if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
+if (tool=="TrackCombiner") ret=new TrackCombiner;
+if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
 return ret;
 }

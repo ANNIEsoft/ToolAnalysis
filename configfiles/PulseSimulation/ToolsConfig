@@ -2,3 +2,4 @@ myLoadWCSim LoadWCSim ./configfiles/PulseSimulation/LoadWCSimConfig
 #myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/PulseSimulation/LoadWCSimLAPPDConfig
 #myPrintANNIEEvent PrintANNIEEvent ./configfiles/PulseSimulation/PrintANNIEEventConfig
 myPulseSimulation PulseSimulation ./configfiles/PulseSimulation/PulseSimulationConfig
+mySimulatedWaveformDemo SimulatedWaveformDemo ./configfiles/PulseSimulation/SimulatedWaveformDemoConfig
