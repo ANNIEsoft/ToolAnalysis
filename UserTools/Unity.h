@@ -97,3 +97,4 @@
 #include "PhaseIIADCHitFinder.h"
 #include "TrackCombiner.h"
 #include "SimulatedWaveformDemo.h"
+#include "CNNImage.h"

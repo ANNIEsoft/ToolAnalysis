@@ -90,5 +90,6 @@ if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
 if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
 
+if (tool=="CNNImage") ret=new CNNImage;
 return ret;
 }
