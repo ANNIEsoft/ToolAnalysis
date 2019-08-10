@@ -66,6 +66,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   //define root file to save histograms (temporarily)
 
   file = new TFile("cnn.root","RECREATE");
+  outfile.open(cnn_outpath.c_str());
 
 
   return true;
@@ -214,6 +215,11 @@ bool CNNImage::Execute(){
 
   if (bool_primary && bool_geometry && bool_nhits)   hist_cnn->Write();
 
+  for (int i_bin=0; i_bin < hist_cnn->GetNbinsX()*hist_cnn->GetNbinsY(); i_bin++){
+        outfile << hist_cnn->GetBinContent(i_bin+1)<<" ";
+  }
+  outfile << std::endl;
+
 
   return true;
 }
@@ -223,6 +229,7 @@ bool CNNImage::Finalise(){
   
   if (verbosity >=2 ) std::cout <<"Finalising tool: CNNImage..."<<std::endl;
   file->Close();
+  outfile.close();
 
   return true;
 }

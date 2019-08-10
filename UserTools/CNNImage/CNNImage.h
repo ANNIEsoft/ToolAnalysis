@@ -3,6 +3,7 @@
 #define CNNImage_H
 
 #include <string>
+#include <fstream>
 
 #include "TH2F.h"
 #include "TMath.h"
@@ -59,6 +60,8 @@ class CNNImage: public Tool {
   double max_y;
   int n_tank_pmts;
   double size_top_drawing = 0.1;
+
+  ofstream outfile;
 
   Position truevtx;
   double truevtx_x, truevtx_y, truevtx_z;
