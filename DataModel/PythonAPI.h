@@ -2,6 +2,7 @@
 #define PYTHON_API
 
 #include "BoostStore.h"
+#include <Python.h>
 
 static BoostStore* gstore;
 
@@ -75,6 +76,15 @@ static PyMethodDef StoreMethods[] = {
   {"SetString", SetStoreString, METH_VARARGS,
    "Return the value of an int in the store"},
   {NULL, NULL, 0, NULL}
+};
+
+static struct PyModuleDef StoreModule = {
+  PyModuleDef_HEAD_INIT,
+  "Store",   /* name of module */
+  "Module for accessing BoostStores from python tools", /* module documentation, may be NULL */
+  -1,       /* size of per-interpreter state of the module,
+	       or -1 if the module keeps state in global variables. */
+    StoreMethods
 };
 
 
