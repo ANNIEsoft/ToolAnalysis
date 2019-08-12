@@ -4,9 +4,9 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 #include "Tool.h"
-#include "zmq.h"
 
 #include "TObjectTable.h"
 
@@ -20,14 +20,12 @@
 #include "TPaletteAxis.h"
 #include "TGraph.h"
 #include "TMultiGraph.h"
-#include "TCanvas.h"
 #include "TDatime.h"  //for labeling the x-axis with time labels
 #include "TPaveText.h"
 #include "TFile.h"
 #include "TPad.h"
 #include "TAxis.h"
 #include "TROOT.h"
-#include <vector>
 #include "TH2F.h"
 #include "TH1I.h"
 
