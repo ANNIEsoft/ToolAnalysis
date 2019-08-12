@@ -1,0 +1,6 @@
+# MonitorTankLive config file
+
+verbose 3
+OutputPath /ANNIECode/TankMonitorTest/
+#OutputPath fromStore
+ActiveSlots configfiles/Monitoring/PMT_activech.txt #define which channels of the crate are connected
