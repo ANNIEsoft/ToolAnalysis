@@ -89,6 +89,8 @@ if (tool=="GracefulStop") ret=new GracefulStop;
 if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
 if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
+if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 
+if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 return ret;
 }
