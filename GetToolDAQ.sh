@@ -72,7 +72,8 @@ do
 	    boostflag=0
 	    final=0
 	    MrdTrackLib=0
-	    WCSimlib=0   
+	    WCSimlib=0
+	    root6flag=0   
 	    Python=0
 	    Python3=0
 	    Pythia=0
@@ -89,6 +90,7 @@ do
 	    final=0
 	    MrdTrackLib=0
 	    WCSimlib=0
+	    root6flag=0
 	    Python=0
 	    Python3=0
 	    Pythia=0
@@ -103,6 +105,7 @@ do
 	    boostflag=0
 	    zmq=0
 	    final=0
+	    root6flag=0
 	    MrdTrackLib=0
 	    WCSimlib=0
 	    Python=0
@@ -135,6 +138,7 @@ do
 	    init=0
 	    tooldaq=0
 	    rootflag=0
+	    root6flag=0
 	    boostflag=0
 	    zmq=0
 	    final=0
@@ -150,6 +154,7 @@ do
             init=0
             tooldaq=0
             rootflag=0
+	    root6flag=0
             boostflag=0
             zmq=0
             MrdTrackLib=0
@@ -167,6 +172,7 @@ do
             init=0
             tooldaq=0
             rootflag=0
+	    root6flag=0
             boostflag=0
             zmq=0
             MrdTrackLib=0
@@ -184,6 +190,7 @@ do
             init=0
             tooldaq=0
             rootflag=0
+	    root6flag=0
             boostflag=0
             zmq=0
             MrdTrackLib=0
@@ -201,6 +208,7 @@ do
             init=0
             tooldaq=0
             rootflag=0
+	    root6flag=0
             boostflag=0
             zmq=0
             MrdTrackLib=0
@@ -218,6 +226,7 @@ do
             init=0
             tooldaq=0
             rootflag=0
+	    root6flag=0
             boostflag=0
             zmq=0
             MrdTrackLib=0
@@ -237,6 +246,7 @@ do
 	    init=0
 	    tooldaq=0
 	    rootflag=0
+	    root6flag=0
 	    boostflag=0
 	    zmq=0
 	    MrdTrackLib=0
