@@ -403,9 +403,9 @@ then
     cd -
     git clone https://github.com/ANNIEsoft/MrdTrackLib.git
     cd MrdTrackLib
-    if [ $fnalflag -eq 1 ]; then
+    #if [ $fnalflag -eq 1 ]; then
       cp Makefile.FNAL Makefile
-    fi
+    #fi
     make
     cd ../
 
