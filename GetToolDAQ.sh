@@ -417,11 +417,13 @@ fi
 
 if [ $Python3 -eq 1 ]
 then
+    cd ../
     if [ $fnalflag -eq 0 ]; then
-      source Setup.sh
-      pip36 install numpy pandas tensorflow matplotlib sklearn root_numpy
+	source Setup.sh
+	pip3.6 install numpy pandas tensorflow matplotlib sklearn root_numpy
     fi
-
+    cd -
+    
 fi
 
 if [ $Pythia -eq 1 ]
