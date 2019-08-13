@@ -380,11 +380,11 @@ then
     cd -
     git clone https://github.com/ANNIEsoft/WCSimLib.git
     cd WCSimLib
-    if [ $fnalflag -eq 1 ]; then
-      make -f Makefile.FNAL
-    else
-      make
-      make # run twice, some sort of circular dependancy, works with ROOT 5.34
+    #if [ $fnalflag -eq 1 ]; then
+    #  make -f Makefile.FNAL
+    #else
+      make -f Makefile_ROOT6
+     # make  # run twice, some sort of circular dependancy, works with ROOT 5.34
     fi
 
     cd ../
