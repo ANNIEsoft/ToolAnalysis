@@ -106,7 +106,7 @@ update:
 	@echo -e "\n*************** Updating ****************"
 	cd $(ToolDAQPath)/ToolDAQFramework; git pull
 	cd $(ToolDAQPath)/zeromq-4.0.7; git pull
-	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make
+	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make -f Makefile.FNAL
 	cd $(ToolDAQPath)/WCSimLib; git checkout . ; git pull; make
 	git pull
 

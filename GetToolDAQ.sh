@@ -5,14 +5,18 @@
 
 init=1
 tooldaq=1
-rootflag=1
-root6flag=0
+rootflag=0
+root6flag=1
 boostflag=1
 zmq=1
 final=1
 MrdTrackLib=1
 WCSimlib=1
-Python=1
+Python=0
+Python3=1
+Pythia=1
+Genie=1
+RATEvent=1
 fnalflag=0
 
 while [ ! $# -eq 0 ]
@@ -70,6 +74,10 @@ do
 	    MrdTrackLib=0
 	    WCSimlib=0   
 	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
             ;;
 
 	--Boost )
@@ -82,6 +90,10 @@ do
 	    MrdTrackLib=0
 	    WCSimlib=0
 	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
             ;;
 	
 	--Root )
@@ -94,6 +106,10 @@ do
 	    MrdTrackLib=0
 	    WCSimlib=0
 	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
             ;;
 
         --Root6 )
@@ -108,6 +124,10 @@ do
 	    rootflag=0
 	    root6flag=1
 	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
             ;;
 	
 	--WCSim )
@@ -119,6 +139,10 @@ do
 	    zmq=0
 	    final=0
 	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
 	    ;;
 
 	--Python )
@@ -131,7 +155,82 @@ do
             MrdTrackLib=0
             WCSimlib=0
             final=0
+	    Python=1
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
             ;;
+
+	--Python3 )
+            echo "Compiling ToolDAQ"
+            init=0
+            tooldaq=0
+            rootflag=0
+            boostflag=0
+            zmq=0
+            MrdTrackLib=0
+            WCSimlib=0
+            final=0
+	    Python=0
+	    Python3=1
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
+            ;;
+
+	--Pythia )
+            echo "Compiling ToolDAQ"
+            init=0
+            tooldaq=0
+            rootflag=0
+            boostflag=0
+            zmq=0
+            MrdTrackLib=0
+            WCSimlib=0
+            final=0
+            Python=0
+	    Python3=0
+	    Pythia=1
+	    Genie=0
+	    RATEvent=0
+            ;;
+
+	--Genie )
+            echo "Compiling ToolDAQ"
+            init=0
+            tooldaq=0
+            rootflag=0
+            boostflag=0
+            zmq=0
+            MrdTrackLib=0
+            WCSimlib=0
+            final=0
+	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=1
+	    RATEvent=0
+            ;;
+
+	--RATEvent )
+            echo "Compiling ToolDAQ"
+            init=0
+            tooldaq=0
+            rootflag=0
+            boostflag=0
+            zmq=0
+            MrdTrackLib=0
+            WCSimlib=0
+            final=0
+	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=1
+            ;;
+
+
 
 	--Final )
             echo "Compiling ToolDAQ"
@@ -143,6 +242,12 @@ do
 	    MrdTrackLib=0
 	    WCSimlib=0
 	    Python=0
+	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEvent=0
+            
             ;;
 
     esac
@@ -217,17 +322,29 @@ fi
 if [ $root6flag -eq 1 ]
 then
 
-    wget https://root.cern.ch/download/root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
-    tar zxvf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
-    rm -rf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
-    cd root
+  #  wget https://root.cern.ch/download/root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
+   # tar zxvf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
+    #rm -rf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
+   # cd root
 
-    ./configure --enable-rpath
+    #./configure --enable-rpath
+    #make -j8
+
+    #source ./bin/thisroot.sh
+
+    wget https://root.cern.ch/download/root_v6.06.08.source.tar.gz
+    tar zxf root_v6.06.08.source.tar.gz
+    rm -rf root_v6.06.08.source.tar.gz 
+    cd root-6.06.08
+    mkdir install 
+    cd install
+    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON
     make -j8
+    make install
+    source bin/thisroot.sh
 
-    source ./bin/thisroot.sh
 
-    cd ../
+    cd ../../
 
 fi
 
@@ -287,6 +404,83 @@ then
     fi
 
 fi
+
+if [ $Python3 -eq 1 ]
+then
+    if [ $fnalflag -eq 0 ]; then
+      source Setup.sh
+      pip36 install numpy pandas tensorflow matplotlib sklearn root_numpy
+    fi
+
+fi
+
+if [ $Pythia -eq 1 ]
+then
+    
+    cd ../
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    cd -
+    cvs -d :pserver:anonymous@log4cpp.cvs.sourceforge.net:/cvsroot/log4cpp -z3 co log4cpp
+    cd log4cpp/
+    ./autogen.sh
+    ./configure --prefix=`pwd`
+    make
+    make install
+    cd ../
+    git clone https://github.com/GENIE-MC-Community/Pythia6Support.git
+    cd Pythia6Support
+    ./build_pythia6.sh 
+    export PYTHIA6_DIR=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/
+    cd ..
+
+fi
+
+if [ $Genie -eq 1 ]
+then
+    
+    cd ../
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    cd -
+    wget https://github.com/GENIE-MC/Generator/archive/R-3_00_04.tar.gz
+    tar zxf R-3_00_04.tar.gz
+    rm -rf R-3_00_04.tar.gz
+    cd Generator-R-3_00_04/
+    mkdir install
+    export GENIE=`pwd`
+    ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/install/ --disable-lhapdf5 --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
+    make -j8
+    
+    cd ../
+    
+fi
+
+
+if [ $RATEvent -eq 1 ]
+then
+    
+    cd ../
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    cd -
+    git clone https://github.com/ANNIEsoft/RATEventLib.git
+    cd RATEventLib/
+    make
+    cd ../
+
+fi
+
+
 
 
 if [ $final -eq 1 ]

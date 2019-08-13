@@ -32,19 +32,22 @@ RUN yum install -y \
     file \
     git \
     bzip2-devel \
-    python-devel \
-    libcurl-devel \
-    python-matplotlib
-    python-pip \
+    python36-pip \
+    emacs \
+    curl \
+    curl-devel \
     && yum clean all \
     && rm -rf /var/cache/yum
 
     
 Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root6;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEvent;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
 
 ### Open terminal
