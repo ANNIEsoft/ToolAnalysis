@@ -52,7 +52,7 @@ RUN yum install -y \
 
 
     
-Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
+Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git -b root6; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;

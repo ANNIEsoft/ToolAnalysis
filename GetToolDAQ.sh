@@ -385,7 +385,7 @@ then
     #else
       make -f Makefile_ROOT6
      # make  # run twice, some sort of circular dependancy, works with ROOT 5.34
-    fi
+    
 
     cd ../
 
