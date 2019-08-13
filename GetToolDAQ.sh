@@ -332,6 +332,14 @@ fi
 if [ $root6flag -eq 1 ]
 then
 
+ cd ../
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    cd -
+
   #  wget https://root.cern.ch/download/root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
    # tar zxvf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
     #rm -rf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
@@ -373,7 +381,7 @@ then
     git clone https://github.com/ANNIEsoft/WCSimLib.git
     cd WCSimLib
     if [ $fnalflag -eq 1 ]; then
-      make -f GNUmakefile.FNAL
+      make -f Makefile.FNAL
     else
       make
       make # run twice, some sort of circular dependancy, works with ROOT 5.34
