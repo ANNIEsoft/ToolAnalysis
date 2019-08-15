@@ -1,6 +1,7 @@
 # LoadWCSim Config File
 
 InputFile /ANNIECode/simulations/LaserCalibrationFiles/FakeRun_1000photons_5000events_timeshift_10.root
+#InputFile /ANNIECode/simulations/LaserCalibrationFiles/wcsim_photonbomb_1000_5000events_ANNIEp2v6.root
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
 UseDigitSmearedTime 1        ## whether to use smeared digit time (T), or true time of first photon (F)

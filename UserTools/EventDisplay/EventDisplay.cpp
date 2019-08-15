@@ -120,12 +120,9 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
     ifstream file_lappd(filename_lappd);
     while (!file_lappd.eof()){
       file_lappd>>temp_lappd;
-      active_lappds.push_back(temp_lappd);
+      active_lappds_user.emplace(temp_lappd,1);
     }
     file_lappd.close();
-    for (int i_lappd=0;i_lappd<max_num_lappds;i_lappd++){
-      if (std::find(active_lappds.begin(), active_lappds.end(), i_lappd) != active_lappds.end()) act_lappds[i_lappd]=1;
-    }
   }
 
   //----------------------------------------------------
@@ -153,19 +150,45 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
 
-
-  n_lappds = 0;
-
   n_tank_pmts = geom->GetNumDetectorsInSet("Tank");
   n_lappds = geom->GetNumDetectorsInSet("LAPPD");
   n_mrd_pmts = geom->GetNumDetectorsInSet("MRD");
   n_veto_pmts = geom->GetNumDetectorsInSet("Veto");
-  m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
+  m_data->CStore.Get("lappdid_to_detectorkey",lappdid_to_detectorkey);
   m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
   m_data->CStore.Get("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
-  std::cout <<"PID: Num Tank PMTs: "<<n_tank_pmts<<", num MRD PMTs: "<<n_mrd_pmts<<", num Veto PMTs: "<<n_veto_pmts<<", num LAPPDs: "<<n_lappds<<std::endl;
+  std::cout <<"EventDisplay: Num Tank PMTs: "<<n_tank_pmts<<", num MRD PMTs: "<<n_mrd_pmts<<", num Veto PMTs: "<<n_veto_pmts<<", num LAPPDs: "<<n_lappds<<std::endl;
   std::map<std::string,std::map<unsigned long,Detector*> >* Detectors = geom->GetDetectors();
   std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;
+  
+  //----------------------------------------------------------------------
+  //-----------read in the LAPPD detkeys into a vector--------------------
+  //----------------------------------------------------------------------
+
+  for (std::map<unsigned long,Detector*>::iterator it = Detectors->at("LAPPD").begin();
+							it != Detectors->at("LAPPD").end();
+							++it){
+	Detector *alappd = it->second;
+	std::cout <<"LAPPD detector key: "<<alappd->GetDetectorID()<<std::endl;
+	lappd_detkeys.push_back(alappd->GetDetectorID());
+   }
+   max_num_lappds = lappd_detkeys.size();
+   std::cout <<"Number of LAPPDs: "<<max_num_lappds<<std::endl;  
+
+
+  //----------------------------------------------------------------------
+  //-----------convert user's provided LAPPD indexes to detectorkey-------
+  //----------------------------------------------------------------------
+  if(lappds_selected){
+    
+    for(auto&& auserid : active_lappds_user){
+      if(lappdid_to_detectorkey.count(auserid.first)==0){
+        std::cerr<<"No detectorkey found for user-provided LAPPDID "<<auserid.first<<"!"<<std::endl;
+      } else {
+        active_lappds.emplace(lappdid_to_detectorkey.at(auserid.first),1);
+      }
+    }
+  }
 
   //----------------------------------------------------------------------
   //-----------read in PMT x/y/z positions into vectors-------------------
@@ -179,6 +202,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
                                                   ++it){
     Detector* apmt = it->second;
     unsigned long detkey = it->first;
+    pmt_detkeys.push_back(detkey);
     unsigned long chankey = apmt->GetChannels()->begin()->first;
     Position position_PMT = apmt->GetDetectorPosition();
     if (verbose > 2) std::cout <<"detkey: "<<detkey<<std::endl;
@@ -195,10 +219,6 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
 
   if (verbose > 0) std::cout <<"Properties of the detector configuration: "<<n_veto_pmts<<" veto PMTs, "<<n_mrd_pmts<<" MRD PMTs, "<<n_tank_pmts<<" Tank PMTs, and "<<n_lappds<<" LAPPDs."<<std::endl;
   if (verbose > 0) std::cout <<"Max y of Tank PMTs: "<<max_y<<", min y of tank PMTs: "<<min_y<<std::endl;
-  std::vector<Position> vec_zero;
-  Position zero_position(0.,0.,0.);
-  vec_zero.push_back(zero_position);
-  hits_LAPPDs.assign(n_lappds,vec_zero);
 
   //---------------------------------------------------------------
   //----initialize TApplication in case of displayed graphics------
@@ -222,17 +242,16 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   //---------------------------------------------------------------
 
   if (draw_histograms){
-  canvas_pmt = new TCanvas("canvas_pmt","Tank PMT histograms",900,600);
-  canvas_pmt_supplementary = new TCanvas("canvas_pmt_supplementary","PMT combined",900,600);
-  canvas_lappd = new TCanvas("canvas_lappd","LAPPD histograms",900,600);
+    canvas_pmt = new TCanvas("canvas_pmt","Tank PMT histograms",900,600);
+    canvas_pmt_supplementary = new TCanvas("canvas_pmt_supplementary","PMT combined",900,600);
+    canvas_lappd = new TCanvas("canvas_lappd","LAPPD histograms",900,600);
   }
   canvas_ev_display=new TCanvas("canvas_ev_display","Event Display",900,900);
 
   for (int i_lappd=0; i_lappd < max_num_lappds; i_lappd++){
-   time_LAPPDs[i_lappd] = nullptr;
-   charge_LAPPDs[i_lappd] = nullptr;
+    time_LAPPDs[i_lappd] = nullptr;
+    charge_LAPPDs[i_lappd] = nullptr;
   }
-
 
   return true;
 }
@@ -325,24 +344,14 @@ bool EventDisplay::Execute(){
   mrddigitpmtsthisevent.clear();
   mrddigitchargesthisevent.clear();
 
-  for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
-    charge[i_pmt]=0;
-    time[i_pmt]=0;
-  }
+  charge.clear();
+  time.clear();
+  hitpmt_detkeys.clear();
 
   time_lappd.clear();
-  std::vector<double> temp_vec;
-  time_lappd.assign(n_lappds,temp_vec);
   hits_LAPPDs.clear();
-  std::vector<Position> vec_zero;
-  Position zero_position(0.,0.,0.);
-  vec_zero.push_back(zero_position);
-  hits_LAPPDs.assign(n_lappds,vec_zero);
-
-  for (int i_lappd=0;i_lappd<n_lappds;i_lappd++){
-    charge_lappd[i_lappd]=0;
-  }
-
+  charge_lappd.clear();
+  
   //---------------------------------------------------------------
   //-------------clear charge & time histograms -------------------
   //---------------------------------------------------------------
@@ -357,7 +366,7 @@ bool EventDisplay::Execute(){
   if (charge_PMTs) charge_PMTs->Delete();
   if (time_PMTs) time_PMTs->Delete();
   if (charge_time_PMTs) charge_time_PMTs->Delete();
-  for (int i=0;i<n_lappds;i++){
+  for (int i=0;i<max_num_lappds;i++){
     if (charge_LAPPDs[i]) charge_LAPPDs[i]->Delete();
     if (time_LAPPDs[i]) time_LAPPDs[i]->Delete();
   }
@@ -372,10 +381,11 @@ bool EventDisplay::Execute(){
   charge_time_PMTs->GetXaxis()->SetTitle("time [ns]");
   charge_time_PMTs->GetYaxis()->SetTitle("charge [p.e.]");
 
-  for (int i=0;i<n_lappds;i++){
-    std::string str_time_lappds = "time_lappds_";
-    std::string str_charge_lappds = "charge_lappds_";
-    std::string lappd_nr = std::to_string(i+1);
+  for (int i=0;i<max_num_lappds;i++){
+    std::string str_time_lappds = "time_lappds_det";
+    std::string str_charge_lappds = "charge_lappds_det";
+    int detkey = lappd_detkeys.at(i);
+    std::string lappd_nr = std::to_string(detkey);
     std::string hist_time_lappds = str_time_lappds+lappd_nr;
     std::string hist_charge_lappds = str_charge_lappds+lappd_nr;
     time_LAPPDs[i] = new TH1F(hist_time_lappds.c_str(),"Time of LAPPDs",100,0,50);
@@ -391,7 +401,7 @@ bool EventDisplay::Execute(){
   //---------------------------------------------------------------
   //------------Get truth information (MCParticles) ---------------
   //---------------------------------------------------------------
-
+  int n_flag0=0;
   if (verbose > 1) std::cout <<"Loop through MCParticles..."<<std::endl;
   for(int particlei=0; particlei<mcparticles->size(); particlei++){
     MCParticle aparticle = mcparticles->at(particlei);
@@ -402,6 +412,7 @@ bool EventDisplay::Execute(){
     if (aparticle.GetParentPdg() !=0 ) continue;
     if (aparticle.GetFlag() !=0 ) continue;
     if ((aparticle.GetPdgCode() == 11 || aparticle.GetPdgCode() == 13)){    //primary particle for Cherenkov tracking should be muon or electron
+      n_flag0++;
       draw_vertex_temp = draw_vertex;
       draw_ring_temp = draw_ring;
       truevtx = aparticle.GetStartVertex();
@@ -423,6 +434,12 @@ bool EventDisplay::Execute(){
     }
     else continue;
   }
+ 
+  //in case there are no primary particles, don't plot vertex and ring
+  if (n_flag0==0) {
+    draw_vertex_temp=false;
+    draw_ring_temp=false;
+  }
 
   //---------------------------------------------------------------
   //-------------------Iterate over MCHits ------------------------
@@ -436,9 +453,10 @@ bool EventDisplay::Execute(){
     unsigned long chankey = apair.first;
     if (verbose > 3) std::cout <<"chankey: "<<chankey<<std::endl;
     Detector* thistube = geom->ChannelToDetector(chankey);
-    int detkey = thistube->GetDetectorID();
+    unsigned long detkey = thistube->GetDetectorID();
     if (verbose > 3) std::cout <<"detkey: "<<detkey<<std::endl;
     if (thistube->GetDetectorElement()=="Tank"){
+      hitpmt_detkeys.push_back(detkey);
       std::vector<MCHit>& Hits = apair.second;
       int hits_pmt = 0;
       int wcsim_id;
@@ -446,39 +464,41 @@ bool EventDisplay::Execute(){
         charge[detkey] += ahit.GetCharge();
         time[detkey] += ahit.GetTime();
         hits_pmt++;
-		  }
+      }
       time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
-		  total_hits_pmts++;
+      total_hits_pmts++;
     }
-	}
+  }
 
   //---------------------------------------------------------------
   //-------------------Fill time hists ----------------------------
   //---------------------------------------------------------------
 
-	for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
-    if (charge[i_pmt]!=0) charge_PMTs->Fill(charge[i_pmt]);
-    if (time[i_pmt]!=0) time_PMTs->Fill(time[i_pmt]);
-    if (charge[i_pmt]!=0) charge_time_PMTs->Fill(time[i_pmt],charge[i_pmt]);
-	}
+  for (int i_pmt=0;i_pmt<hitpmt_detkeys.size();i_pmt++){
+    unsigned long detkey = hitpmt_detkeys[i_pmt];
+    if (charge[detkey]!=0) charge_PMTs->Fill(charge[detkey]);
+    if (time[detkey]!=0) time_PMTs->Fill(time[detkey]);
+    if (charge[detkey]!=0) charge_time_PMTs->Fill(time[detkey],charge[detkey]);
+  }
 
   //---------------------------------------------------------------
   //------------- Determine max+min values ------------------------
   //---------------------------------------------------------------
 
-	maximum_pmts = 0;
+  maximum_pmts = 0;
   maximum_lappds = 0;
   maximum_time_pmts = 0;
   maximum_time_lappds = 0;
   min_time_pmts = 999.;
   min_time_lappds = 999.;
-	total_charge_pmts = 0;
-	for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
-		if (charge[i_pmt]>maximum_pmts) maximum_pmts = charge[i_pmt];
-		total_charge_pmts+=charge[i_pmt];
-    if (time[i_pmt]>maximum_time_pmts) maximum_time_pmts = time[i_pmt];
-    if (time[i_pmt]<min_time_pmts) min_time_pmts = time[i_pmt];
-	}
+  total_charge_pmts = 0;
+  for (int i_pmt=0;i_pmt<hitpmt_detkeys.size();i_pmt++){
+    unsigned long detkey = hitpmt_detkeys[i_pmt];
+    if (charge[detkey]>maximum_pmts) maximum_pmts = charge[detkey];
+    total_charge_pmts+=charge[detkey];
+    if (time[detkey]>maximum_time_pmts) maximum_time_pmts = time[detkey];
+    if (time[detkey]<min_time_pmts) min_time_pmts = time[detkey];
+  }
 
   //---------------------------------------------------------------
   //-------------------Iterate over LAPPD hits --------------------
@@ -496,9 +516,8 @@ bool EventDisplay::Execute(){
         continue;
       }
       int detkey = det->GetDetectorID();
-      int LAPPDId = detectorkey_to_lappdid.at(detkey);
       std::vector<MCLAPPDHit>& hits = apair.second;
-      if (verbose > 2) std::cout <<"detector key: "<<detkey<<", LAPPD ID: "<<LAPPDId<<std::endl;
+      if (verbose > 2) std::cout <<"detector key: "<<detkey<<std::endl;
       for (MCLAPPDHit& ahit : hits){
         std::vector<double> temp_pos = ahit.GetPosition();
         double x_lappd = temp_pos.at(0)-tank_center_x;
@@ -506,16 +525,18 @@ bool EventDisplay::Execute(){
         double z_lappd = temp_pos.at(2)-tank_center_z;
         double lappd_charge = 1.0;
         double t_lappd = ahit.GetTime();
-        if ((lappds_selected && act_lappds[LAPPDId-1]==1) || !lappds_selected){
-          if (verbose > 2) std::cout <<"Tube ID LAPPD: "<<LAPPDId-1<<std::endl;
+        if ((lappds_selected && active_lappds.count(detkey)) || !lappds_selected){
+          if (verbose > 2) std::cout <<"Detector Key LAPPD: "<<detkey<<std::endl;
           if (verbose > 2) std::cout <<"LAPPD hit at x="<<x_lappd<<", y="<<y_lappd<<", z="<<z_lappd<<std::endl;
           Position lappd_hit(x_lappd,y_lappd,z_lappd);
-          hits_LAPPDs.at(LAPPDId-1).push_back(lappd_hit);
+          if(hits_LAPPDs.count(detkey)==0) hits_LAPPDs.emplace(detkey,std::vector<Position>{});
+          hits_LAPPDs.at(detkey).push_back(lappd_hit);
           //std::cout <<"Charge of LAPPD hit: "<<ahit.GetCharge()<<std::endl;         //not implemented yet
-          charge_lappd[LAPPDId-1]+=1;
+          charge_lappd[detkey]+=1;
           maximum_lappds++;
           total_hits_lappds++;
-          time_lappd[LAPPDId-1].push_back(t_lappd);
+          if(time_lappd.count(detkey)==0){ time_lappd.emplace(detkey,std::vector<double>{}); }
+          time_lappd[detkey].push_back(t_lappd);
           if (t_lappd > maximum_time_lappds) maximum_time_lappds = t_lappd;
           if (t_lappd < min_time_lappds) min_time_lappds = t_lappd;
         }
@@ -532,11 +553,19 @@ bool EventDisplay::Execute(){
   //-------------------Fill LAPPD hists ---------------------------
   //---------------------------------------------------------------
 
-  for (int i_lappd=0;i_lappd<n_lappds;i_lappd++){
-    if ((lappds_selected && act_lappds[i_lappd]==1) || !lappds_selected){
-      charge_LAPPDs[i_lappd]->Fill(charge_lappd[i_lappd]);
-      for (int i_time=0;i_time<time_lappd[i_lappd].size();i_time++){
-        if (time_lappd[i_lappd].at(i_time)) time_LAPPDs[i_lappd]->Fill(time_lappd[i_lappd].at(i_time));
+  for (auto&& ahisto : charge_LAPPDs){
+    unsigned long detkey = ahisto.first;
+    int histkey;
+    std::vector<unsigned long>::iterator it = std::find(lappd_detkeys.begin(), lappd_detkeys.end(), detkey);
+    if (it != lappd_detkeys.end()) histkey = std::distance(lappd_detkeys.begin(), it);
+    else {
+	std::cout << "Detkey " << detkey <<" Not Found in Geometry class for LAPPDs!" << std::endl;
+	continue;
+    }
+    if ((lappds_selected && active_lappds_user.count(detkey)==1) || !lappds_selected){
+      charge_LAPPDs[histkey]->Fill(charge_lappd[detkey]);
+      for (int i_time=0;i_time<time_lappd[detkey].size();i_time++){
+        if (time_lappd[detkey].at(i_time)) time_LAPPDs[histkey]->Fill(time_lappd[detkey].at(i_time));
       }
     }
   }
@@ -572,14 +601,14 @@ bool EventDisplay::Execute(){
     leg_charge = new TLegend(0.6,0.6,0.9,0.9);
     leg_charge->SetLineColor(0);
     std::string lappd_str = "LAPPD ";
-    std::string lappd_nr = std::to_string(max_lappd_charge+1);
+    std::string lappd_nr = std::to_string(lappd_detkeys[max_lappd_charge]);
     std::string lappd_label = lappd_str+lappd_nr;
     leg_charge->AddEntry(charge_LAPPDs[max_lappd_charge],lappd_label.c_str());
     for (int i_lappd=0;i_lappd<n_lappds;i_lappd++){
       if (i_lappd==max_lappd_charge) continue;
-      if ((lappds_selected && act_lappds[i_lappd]==1) || !lappds_selected){
+      if ((lappds_selected && active_lappds_user.count(i_lappd)==1) || !lappds_selected){
         charge_LAPPDs[i_lappd]->Draw("same");
-        std::string lappd_nr = std::to_string(i_lappd+1);
+        std::string lappd_nr = std::to_string(lappd_detkeys[i_lappd]);
         std::string lappd_label = lappd_str+lappd_nr;
         leg_charge->AddEntry(time_LAPPDs[i_lappd],lappd_label.c_str());
       }
@@ -591,14 +620,14 @@ bool EventDisplay::Execute(){
     leg_time = new TLegend(0.6,0.6,0.9,0.9);
     //leg_time->SetNColumns(5);
     leg_time->SetLineColor(0);
-    lappd_nr = std::to_string(max_lappd_time+1);
+    lappd_nr = std::to_string(lappd_detkeys[max_lappd_time]);
     lappd_label = lappd_str+lappd_nr;
     leg_time->AddEntry(time_LAPPDs[max_lappd_time],lappd_label.c_str());
     for (int i_lappd=1;i_lappd<n_lappds;i_lappd++){
       if (i_lappd == max_lappd_time) continue;
-      if ((lappds_selected && act_lappds[i_lappd]==1)|| !lappds_selected){
+      if ((lappds_selected && active_lappds_user.count(i_lappd)==1)|| !lappds_selected){
         time_LAPPDs[i_lappd]->Draw("same");
-        std::string lappd_nr = std::to_string(i_lappd+1);
+        std::string lappd_nr = std::to_string(lappd_detkeys[i_lappd]);
         std::string lappd_label = lappd_str+lappd_nr;
         leg_time->AddEntry(time_LAPPDs[i_lappd],lappd_label.c_str());
       }
@@ -1010,35 +1039,36 @@ void EventDisplay::draw_event_box(){
     //calculate marker coordinates
     for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
 
+      unsigned long detkey = pmt_detkeys[i_pmt];
       double x[1];
       double y[1];
-      if (charge[i_pmt]<threshold || ( threshold_time_high!=-999 && time[i_pmt]>threshold_time_high) || (threshold_time_low!=-999 && time[i_pmt]<threshold_time_low))  continue;       // if PMT does not have the charge required by threhold, discard
-      if (fabs(y_pmt[i_pmt]-max_y)<0.01){
+      if (charge[detkey]<threshold || ( threshold_time_high!=-999 && time[detkey]>threshold_time_high) || (threshold_time_low!=-999 && time[detkey]<threshold_time_low))  continue;       // if PMT does not have the charge required by threhold, discard
+      if (fabs(y_pmt[detkey]-max_y)<0.01){
 
         //draw PMTs on the top of tank
-        x[0]=0.5-size_top_drawing*x_pmt[i_pmt]/tank_radius;
-        y[0]=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*z_pmt[i_pmt]/tank_radius;
+        x[0]=0.5-size_top_drawing*x_pmt[detkey]/tank_radius;
+        y[0]=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*z_pmt[detkey]/tank_radius;
         TPolyMarker *marker_top = new TPolyMarker(1,x,y,"");
-        if (mode == "Charge") color_marker = Bird_Idx+int((charge[i_pmt]-threshold)/(maximum_pmts-threshold)*254);
-        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
-        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(threshold_time_high-min_time_overall)*254);
-        else if (mode == "Time" && threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(maximum_time_overall-threshold_time_low)*254);
-        else if (mode == "Time") color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+        if (mode == "Charge") color_marker = Bird_Idx+int((charge[detkey]-threshold)/(maximum_pmts-threshold)*254);
+        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[detkey]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
+        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((time[detkey]-min_time_overall)/(threshold_time_high-min_time_overall)*254);
+        else if (mode == "Time" && threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[detkey]-threshold_time_low)/(maximum_time_overall-threshold_time_low)*254);
+        else if (mode == "Time") color_marker = Bird_Idx+int((time[detkey]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
         marker_top->SetMarkerColor(color_marker);
         marker_top->SetMarkerStyle(8);
         marker_top->SetMarkerSize(1);
         marker_pmts_top.push_back(marker_top);
-      }  else if (fabs(y_pmt[i_pmt]-min_y)<0.01 || fabs(y_pmt[i_pmt]+1.30912)<0.01){
+      }  else if (fabs(y_pmt[detkey]-min_y)<0.01 || fabs(y_pmt[detkey]+1.30912)<0.01){
 
         //draw PMTs on the bottom of tank
-        x[0]=0.5-size_top_drawing*x_pmt[i_pmt]/tank_radius;
-        y[0]=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*z_pmt[i_pmt]/tank_radius;
+        x[0]=0.5-size_top_drawing*x_pmt[detkey]/tank_radius;
+        y[0]=0.5-(tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*z_pmt[detkey]/tank_radius;
         TPolyMarker *marker_bottom = new TPolyMarker(1,x,y,"");
-        if (mode == "Charge") color_marker = Bird_Idx+int((charge[i_pmt]-threshold)/(maximum_pmts-threshold)*254);
-        else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254); 
-        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(threshold_time_high-min_time_overall)*254);
-        else if (mode == "Time" && threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(maximum_time_overall-threshold_time_low)*254);
-        else if (mode == "Time") color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+        if (mode == "Charge") color_marker = Bird_Idx+int((charge[detkey]-threshold)/(maximum_pmts-threshold)*254);
+        else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((time[detkey]-min_time_overall)/(maximum_time_overall-min_time_overall)*254); 
+        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((time[detkey]-min_time_overall)/(threshold_time_high-min_time_overall)*254);
+        else if (mode == "Time" && threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[detkey]-threshold_time_low)/(maximum_time_overall-threshold_time_low)*254);
+        else if (mode == "Time") color_marker = Bird_Idx+int((time[detkey]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
         //std::cout <<"time: "<<time[i_pmt]<<", color: "<<color_marker<<std::endl;
         marker_bottom->SetMarkerColor(color_marker);
         marker_bottom->SetMarkerStyle(8);
@@ -1048,23 +1078,23 @@ void EventDisplay::draw_event_box(){
 
         //draw PMTs on the tank bulk
         double phi;
-        if (x_pmt[i_pmt]>0 && z_pmt[i_pmt]>0) phi = atan(z_pmt[i_pmt]/x_pmt[i_pmt])+TMath::Pi()/2;
-        else if (x_pmt[i_pmt]>0 && z_pmt[i_pmt]<0) phi = atan(x_pmt[i_pmt]/-z_pmt[i_pmt]);
-        else if (x_pmt[i_pmt]<0 && z_pmt[i_pmt]<0) phi = 3*TMath::Pi()/2+atan(z_pmt[i_pmt]/x_pmt[i_pmt]);
-        else if (x_pmt[i_pmt]<0 && z_pmt[i_pmt]>0) phi = TMath::Pi()+atan(-x_pmt[i_pmt]/z_pmt[i_pmt]);
+        if (x_pmt[detkey]>0 && z_pmt[detkey]>0) phi = atan(z_pmt[detkey]/x_pmt[detkey])+TMath::Pi()/2;
+        else if (x_pmt[detkey]>0 && z_pmt[detkey]<0) phi = atan(x_pmt[detkey]/-z_pmt[detkey]);
+        else if (x_pmt[detkey]<0 && z_pmt[detkey]<0) phi = 3*TMath::Pi()/2+atan(z_pmt[detkey]/x_pmt[detkey]);
+        else if (x_pmt[detkey]<0 && z_pmt[detkey]>0) phi = TMath::Pi()+atan(-x_pmt[detkey]/z_pmt[detkey]);
         else phi = 0.;
         if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
         phi-=TMath::Pi();
         if (phi < - TMath::Pi()) phi = -TMath::Pi();
-        if (phi<-TMath::Pi() || phi>TMath::Pi())  std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<x_pmt[i_pmt]<<", y="<<y_pmt[i_pmt]<<", z="<<z_pmt[i_pmt]<<std::endl;
+        if (phi<-TMath::Pi() || phi>TMath::Pi())  std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<x_pmt[detkey]<<", y="<<y_pmt[detkey]<<", z="<<z_pmt[detkey]<<std::endl;
         x[0]=0.5+phi*size_top_drawing;
-        y[0]=0.5+y_pmt[i_pmt]/tank_height*tank_height/tank_radius*size_top_drawing;
+        y[0]=0.5+y_pmt[detkey]/tank_height*tank_height/tank_radius*size_top_drawing;
         TPolyMarker *marker_bulk = new TPolyMarker(1,x,y,"");
-        if (mode == "Charge") color_marker = Bird_Idx+int((charge[i_pmt]-threshold)/(maximum_pmts-threshold)*254);
-        else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
-        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((time[i_pmt]-min_time_overall)/(threshold_time_high-min_time_overall)*254);
-        else if (mode == "Time" && threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(maximum_time_overall-threshold_time_low)*254);
-        else if (mode == "Time") color_marker = Bird_Idx+int((time[i_pmt]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+        if (mode == "Charge") color_marker = Bird_Idx+int((charge[detkey]-threshold)/(maximum_pmts-threshold)*254);
+        else if (mode == "Time" && threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((time[detkey]-min_time_overall)/(maximum_time_overall-min_time_overall)*254);
+        else if (mode == "Time" && threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((time[detkey]-min_time_overall)/(threshold_time_high-min_time_overall)*254);
+        else if (mode == "Time" && threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((time[detkey]-threshold_time_low)/(maximum_time_overall-threshold_time_low)*254);
+        else if (mode == "Time") color_marker = Bird_Idx+int((time[detkey]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
         marker_bulk->SetMarkerColor(color_marker);
         marker_bulk->SetMarkerStyle(8);
         marker_bulk->SetMarkerSize(1);
@@ -1095,14 +1125,17 @@ void EventDisplay::draw_event_box(){
       double y[1];
       double charge_single=1.;        //FIXME when charge is implemented in LoadWCSimLAPPD
       bool draw_lappd_markers=false;
-      for (int i_lappd_hits=0;i_lappd_hits<hits_LAPPDs.size();i_lappd_hits++){
-        for (int i_single_lappd=1;i_single_lappd<hits_LAPPDs.at(i_lappd_hits).size();i_single_lappd++){     //start at 1 to avoid the default fill of the first entry with zero vector
-          double time_lappd_single = time_lappd.at(i_lappd_hits).at(i_single_lappd-1);
+      std::map<unsigned long,std::vector<Position>>::iterator lappd_hit_pos_it = hits_LAPPDs.begin();
+      for(auto&& these_lappd_hit_positions : hits_LAPPDs){
+        unsigned long detkey = these_lappd_hit_positions.first;
+        for (int i_single_lappd=0; i_single_lappd<these_lappd_hit_positions.second.size(); i_single_lappd++){
+          double time_lappd_single = time_lappd.at(detkey).at(i_single_lappd);
           if (charge_single<threshold_lappd || (threshold_time_high!=-999 && time_lappd_single>threshold_time_high) || (threshold_time_low!=-999 && time_lappd_single<threshold_time_low)) continue; 
           draw_lappd_markers=true;
-          double x_lappd = hits_LAPPDs.at(i_lappd_hits).at(i_single_lappd).X();
-          double y_lappd = hits_LAPPDs.at(i_lappd_hits).at(i_single_lappd).Y();
-          double z_lappd = hits_LAPPDs.at(i_lappd_hits).at(i_single_lappd).Z();
+          
+          double x_lappd = hits_LAPPDs.at(detkey).at(i_single_lappd).X();
+          double y_lappd = hits_LAPPDs.at(detkey).at(i_single_lappd).Y();
+          double z_lappd = hits_LAPPDs.at(detkey).at(i_single_lappd).Z();
           if (x_lappd>0 && z_lappd>0) phi = atan(z_lappd/x_lappd)+TMath::Pi()/2;
           else if (x_lappd>0 && z_lappd<0) phi = atan(x_lappd/-z_lappd);
           else if (x_lappd<0 && z_lappd<0) phi = 3*TMath::Pi()/2+atan(z_lappd/x_lappd);
