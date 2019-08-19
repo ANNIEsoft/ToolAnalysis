@@ -1,3 +1,2 @@
 # Dummy config file
-
-verbose 2
+verbosity 2

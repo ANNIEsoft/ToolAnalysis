@@ -1,7 +1,0 @@
-#Thresholds are given in absolute ADC units for now.
-331,10
-332,12
-333,10
-334,9
-335,13
-336,10
