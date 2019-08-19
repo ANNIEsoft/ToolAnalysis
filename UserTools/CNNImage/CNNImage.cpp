@@ -19,13 +19,17 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OutputFile",cnn_outpath);
   m_variables.Get("DetectorConf",detector_config);
 
+
   if (mode != "Charge" && mode != "Time") mode = "Charge";
+  std::cout <<"Mode: "<<mode<<std::endl;
 
   //get geometry		
 
-  m_data->Stores["ANNIEEvent"]->Header->Get("ANNIEGeometry",geom);
+  std::cout <<"Getting geom"<<std::endl;
+  m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
   tank_radius = geom->GetTankRadius();
   tank_height = geom->GetTankHalfheight();
+  std::cout <<"tank radius: "<<tank_radius<<", tank height: "<<tank_height<<std::endl;
   double barrel_compression = 0.82;
   if (detector_config == "ANNIEp2v6") tank_height*=barrel_compression;
   if (tank_radius < 1.) tank_radius = 1.37504;
@@ -33,6 +37,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   tank_center_x = detector_center.X();
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
+  std::cout <<"tank center x: "<<tank_center_x<<"< tank center y: "<<tank_center_y<<", tank center z: "<<tank_center_z<<std::endl;
   n_tank_pmts = geom->GetNumDetectorsInSet("Tank");
   m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
   std::map<std::string,std::map<unsigned long,Detector*> >* Detectors = geom->GetDetectors();
@@ -78,7 +83,7 @@ bool CNNImage::Execute(){
   if (verbosity >=2) std::cout <<"Executing tool: CNNImage..."<<std::endl;
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
-  if(!annieeventexists){ cerr<<"no ANNIEEvent store!"<<endl; /*return false;*/};
+  if(!annieeventexists){ cerr<<"no ANNIEEvent store!"<<endl;}/*return false;*/
 
   m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles); //needed to retrieve true vertex and direction
   m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
