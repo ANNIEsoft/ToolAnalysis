@@ -50,6 +50,19 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   file.close();
   num_active_slots = n_active_slots_cr1+n_active_slots_cr2;
 
+  //-------------------------------------------------------
+  //----------Initialize storing containers----------------
+  //-------------------------------------------------------
+
+  MonitorMRDLive::InitializeVectors();
+
+  //-------------------------------------------------------
+  //------Setup time variables for periodic updates--------
+  //-------------------------------------------------------
+
+  period_update = boost::posix_time::time_duration(0,0,30,0); //set update frequency for this tool to be higher than MonitorMRDTime (5mins->30sec)
+  last = boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
+
   //omit warning messages from ROOT: info messages - 1001, warning messages - 2001, error messages - 3001
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
 
@@ -61,6 +74,17 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
 bool MonitorMRDLive::Execute(){
 
   if (verbosity > 2) std::cout <<"Tool MonitorMRDLive: Executing...."<<std::endl;
+
+  //-------------------------------------------------------
+  //---------------How much time passed?-------------------
+  //-------------------------------------------------------
+
+  current = (boost::posix_time::second_clock::local_time());
+  duration = boost::posix_time::time_duration(current - last); 
+
+  //-------------------------------------------------------
+  //---------------Get live event info---------------------
+  //-------------------------------------------------------
 
   std::string State;
   m_data->CStore.Get("State",State);
@@ -80,11 +104,36 @@ bool MonitorMRDLive::Execute(){
     TimeStamp = MRDout.TimeStamp;
 
     if (verbosity > 2){
-    std::cout <<"OutN: "<<OutN<<std::endl;
-    std::cout <<"Trigger: "<<Trigger<<std::endl;
-    std::cout <<"MRD data size: "<<Value.size()<<std::endl;
-    std::cout <<"TimeStamp: "<<TimeStamp<<std::endl;
+      std::cout <<"OutN: "<<OutN<<std::endl;
+      std::cout <<"Trigger: "<<Trigger<<std::endl;
+      std::cout <<"MRD data size: "<<Value.size()<<std::endl;
+      std::cout <<"TimeStamp: "<<TimeStamp<<std::endl;
     }
+
+
+    if (verbosity > 2) std::cout <<"MonitorMRDLive: Read in Data: >>>>>>>>>>>>>>>>>>> "<<std::endl;
+    for (int i_entry = 0; i_entry < Channel.size(); i_entry++){
+      if (verbosity > 2) std::cout <<"Crate "<<Crate.at(i_entry)<<", Slot "<<Slot.at(i_entry)<<", Channel "<<Channel.at(i_entry)<<std::endl;
+      std::vector<int>::iterator it = std::find(nr_slot.begin(), nr_slot.end(), (Slot.at(i_entry))+(Crate.at(i_entry)-min_crate)*100);
+      if (it == nr_slot.end()){
+        std::cout <<"ERROR (MonitorMRDLive): Read-out Crate/Slot/Channel number not active according to configuration file. Check the configfile to process the data..."<<std::endl;
+        std::cout <<"Crate: "<<Crate.at(i_entry)<<", Slot: "<<Slot.at(i_entry)<<std::endl;
+        continue;
+      }
+      int active_slot_nr = std::distance(nr_slot.begin(),it);
+      int ch = active_slot_nr*num_channels+Channel.at(i_entry);
+      if (verbosity > 2) std::cout <<", ch nr: "<<ch<<", TDC: "<<Value.at(i_entry)<<", timestamp: "<<TimeStamp<<std::endl;
+      
+      live_tdc.at(ch).push_back(Value.at(i_entry));
+      live_timestamp.at(ch).push_back(TimeStamp);
+      live_tdc_hour.at(ch).push_back(Value.at(i_entry));
+      live_timestamp_hour.at(ch).push_back(TimeStamp);
+
+    }
+
+    vector_timestamp.push_back(TimeStamp);
+    vector_nchannels.push_back(Channel.size());
+    current_stamp = TimeStamp;
 
     t = time(0);
     struct tm *now = localtime( & t );
@@ -111,19 +160,28 @@ bool MonitorMRDLive::Execute(){
     /*std::cout <<"List of Objects (after execute step)"<<std::endl;
     gObjectTable->Print();*/
 
-    return true;
 
   } else if (State == "DataFile" || State == "Wait"){
 
       if (verbosity > 3) std::cout <<"Status File (Data File or Wait): MonitorMRDLive not executed..."<<std::endl;        
-      return true;
 
   } else {
 
     if (verbosity > 1) std::cout <<"State not recognized: "<<State<<std::endl;
-    return true;
 
   }
+
+  if(duration>=period_update){
+
+    if (verbosity > 0) std::cout <<"MRDMonitorLive: 30sec passed... Updating rate plots!"<<std::endl;
+    update_plots=true;
+    last=current;
+    MonitorMRDLive::EraseOldData();
+    MonitorMRDLive::UpdateRatePlots();
+
+  }
+
+  return true;
   
 }
 
@@ -595,6 +653,302 @@ void MonitorMRDLive::MRDTDCPlots(){
     delete c_Freq2D;
     delete c_Times;
 
+}
 
+void MonitorMRDLive::InitializeVectors(){
+
+  if (verbosity > 2) std::cout <<"MonitorMRDLive: InitializeVectors"<<std::endl;
+
+  std::vector<unsigned int> vec_tdc, vec_tdc_hour;
+  std::vector<ULong64_t> vec_timestamp, vec_timestamp_hour;
+  for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
+    live_tdc.push_back(vec_tdc);
+    live_timestamp.push_back(vec_timestamp);
+    live_tdc_hour.push_back(vec_tdc_hour);
+    live_timestamp_hour.push_back(vec_timestamp_hour);
+  }
+
+
+
+}
+
+void MonitorMRDLive::EraseOldData(){
+
+  if (verbosity > 2) std::cout <<"MonitorMRDLive: EraseOldData"<<std::endl;
+
+  for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
+    for (int i=0; i<live_tdc.at(i_ch).size();i++){
+      if (current_stamp - live_timestamp.at(i_ch).at(i) > integration_period*60*1000){
+      live_tdc.at(i_ch).erase(live_tdc.at(i_ch).begin()+i);
+      live_timestamp.at(i_ch).erase(live_timestamp.at(i_ch).begin()+i);
+      }
+    }
+    for (int i=0; i<live_tdc_hour.at(i_ch).size();i++){
+      if (current_stamp - live_timestamp_hour.at(i_ch).at(i) > integration_period_hour*60*1000){
+        live_tdc_hour.at(i_ch).erase(live_tdc_hour.at(i_ch).begin()+i);
+        live_timestamp_hour.at(i_ch).erase(live_timestamp_hour.at(i_ch).begin()+i);
+      }
+    }
+  }
+
+  for (int i_entry = 0; i_entry < vector_timestamp.size(); i_entry++){
+    if (current_stamp - vector_timestamp.at(i_entry) > integration_period*60*1000){
+      vector_timestamp.erase(vector_timestamp.begin()+i_entry);
+      vector_nchannels.erase(vector_nchannels.begin()+i_entry);
+    }
+  }
+
+  for (int i_entry = 0; i_entry < vector_timestamp_hour.size(); i_entry++){
+    if (current_stamp - vector_timestamp_hour.at(i_entry) > integration_period_hour*60*1000){
+      vector_timestamp_hour.erase(vector_timestamp_hour.begin()+i_entry);
+      vector_nchannels_hour.erase(vector_nchannels_hour.begin()+i_entry);
+    }
+  }
+
+}
+
+void MonitorMRDLive::UpdateRatePlots(){
+
+  if (verbosity > 2) std::cout <<"MonitorMRDLive: UpdateMonitorPlots"<<std::endl;
+
+  t = time(0);
+  struct tm *now = localtime( & t );
+  title_time.str("");
+  title_time<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday<<','<<now->tm_hour<<':'<<now->tm_min<<':'<<now->tm_sec;
+
+  min_ch = 99999999;
+  max_ch = 0;
+
+  rate_crate1 = new TH2F("rate_crate1","Rates Crate 7",num_slots,0,num_slots,num_channels,0,num_channels);
+  rate_crate2 = new TH2F("rate_crate2","Rates Crate 8",num_slots,0,num_slots,num_channels,0,num_channels);
+  TDC_hist = new TH1F("TDC_hist","TDC",180,0,180);
+  TDC_hist_coincidence = new TH1F("TDC_hist_coincidence","TDC (coincident)",180,0,180);
+  n_paddles_hit = new TH1F("n_paddles_hit","N Paddles",100,1,0);
+  n_paddles_hit_coincidence = new TH1F("n_paddles_hit_coincidence","N Paddles (coincident)",15,0,15);
+
+  rate_crate1->SetStats(0);
+  rate_crate1->GetXaxis()->SetNdivisions(num_slots);
+  rate_crate1->GetYaxis()->SetNdivisions(num_channels);
+  for (int i_label=0;i_label<int(num_channels);i_label++){
+    std::stringstream ss_slot, ss_ch;
+    ss_slot<<(i_label+1);
+    ss_ch<<(i_label);
+    std::string str_ch = "ch "+ss_ch.str();
+    rate_crate1->GetYaxis()->SetBinLabel(i_label+1,str_ch.c_str());
+    if (i_label<num_slots){
+      std::string str_slot = "slot "+ss_slot.str();
+      rate_crate1->GetXaxis()->SetBinLabel(i_label+1,str_slot.c_str());
+    }
+  }
+  rate_crate1->LabelsOption("v");
+
+  rate_crate2->SetStats(0);
+  rate_crate2->GetXaxis()->SetNdivisions(num_slots);
+  rate_crate2->GetYaxis()->SetNdivisions(num_channels);
+  for (int i_label=0;i_label<int(num_channels);i_label++){
+    std::stringstream ss_slot, ss_ch;
+    ss_slot<<(i_label+1);
+    ss_ch<<(i_label);
+    std::string str_ch = "ch "+ss_ch.str();
+    rate_crate2->GetYaxis()->SetBinLabel(i_label+1,str_ch.c_str());
+    if (i_label<num_slots){
+      std::string str_slot = "slot "+ss_slot.str();
+      rate_crate2->GetXaxis()->SetBinLabel(i_label+1,str_slot.c_str());
+    }
+  }
+  rate_crate2->LabelsOption("v");
+
+
+  TDC_hist->GetXaxis()->SetTitle("TDC");
+  TDC_hist->GetYaxis()->SetTitle("#");
+  TDC_hist_coincidence->GetXaxis()->SetTitle("TDC");
+  TDC_hist_coincidence->GetYaxis()->SetTitle("#");
+  n_paddles_hit->GetXaxis()->SetTitle("# paddles hit");
+  n_paddles_hit->GetYaxis()->SetTitle("#");
+  n_paddles_hit_coincidence->GetXaxis()->SetTitle("# paddles hit");
+  n_paddles_hit_coincidence->GetYaxis()->SetTitle("#");
+
+  std::string tdc_title = "TDC ";
+  std::string tdc_title_coincident = "TDC (coincident) ";
+  std::string n_paddles_title = "N Paddles ";
+  std::string n_paddles_coincidence_title = "N Paddles (coincident) ";
+  std::string tdc_Title = tdc_title+title_time.str();
+  std::string tdc_Title_coincident = tdc_title_coincident+title_time.str();
+  std::string n_paddles_Title = n_paddles_title+title_time.str();
+  std::string n_paddles_coincidence_Title = n_paddles_coincidence_title+title_time.str();
+
+  TDC_hist->SetTitle(tdc_Title.c_str());
+  TDC_hist_coincidence->SetTitle(tdc_Title_coincident.c_str());
+  n_paddles_hit->SetTitle(n_paddles_Title.c_str());
+  n_paddles_hit_coincidence->SetTitle(n_paddles_coincidence_Title.c_str());
+
+  for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
+  
+    int crate_id = (i_ch < n_active_slots_cr1*num_channels)? min_crate : min_crate+1;
+    int slot_id;
+    if (i_ch < n_active_slots_cr1*num_channels) slot_id = nr_slot.at(i_ch / num_channels);
+    else slot_id = nr_slot.at(i_ch / num_channels) - 100.;
+    int channel_id = i_ch % num_channels;
+
+    if (verbosity > 2){
+      std::cout <<"Crate: "<<crate_id<<", Slot: "<<slot_id<<", Channel: "<<channel_id<<std::endl;
+      std::cout <<"live_tdc.size: "<<live_tdc.at(i_ch).size()<<", rate: "<<live_tdc.at(i_ch).size()/(integration_period*60)<<std::endl;
+    }
+
+    for (int i_entry= 0; i_entry < live_tdc.at(i_ch).size(); i_entry++){
+      if (crate_id == min_crate) rate_crate1->SetBinContent(slot_id,channel_id+1,live_tdc.at(i_ch).size()/(integration_period*60));   //display in Hz
+      else if (crate_id == min_crate+1) rate_crate2->SetBinContent(slot_id,channel_id+1,live_tdc.at(i_ch).size()/(integration_period*60));
+      TDC_hist->Fill(live_tdc.at(i_ch).at(i_entry));
+      if (live_tdc.at(i_ch).size()/(integration_period*60) > max_ch) max_ch = live_tdc.at(i_ch).size()/(integration_period*60); 
+      if (live_tdc.at(i_ch).size()/(integration_period*60) < min_ch) min_ch = live_tdc.at(i_ch).size()/(integration_period*60); 
+    }
+
+  }
+
+  for (int i_entry = 0; i_entry < vector_nchannels.size(); i_entry++){
+
+    n_paddles_hit->Fill(vector_nchannels.at(i_entry));
+    //fill coincident hits here afterwards
+  }
+
+
+  //first plot the rate 2D histograms (most work)
+
+  TCanvas *canvas_rates = new TCanvas("canvas_rates","Rates electronics space",1000,600);
+  canvas_rates->SetTitle(title_time.str().c_str());
+  canvas_rates->Divide(2,1);
+
+
+  TPad *p1 = (TPad*) canvas_rates->cd(1);
+  p1->SetGrid();
+  rate_crate1->Draw("colz");
+
+  //color inactive channels in grey
+  std::vector<TBox*> vector_box_inactive;
+  for (int i_slot=0;i_slot<num_slots;i_slot++){
+    if (active_channel[0][i_slot]==0){
+      TBox *box_inactive = new TBox(i_slot,0,i_slot+1,num_channels);
+      vector_box_inactive.push_back(box_inactive);
+      box_inactive->SetFillStyle(3004);
+      box_inactive->SetFillColor(1);
+      box_inactive->Draw("same");  
+    }
+  }
+  for (int i_ch = 0; i_ch < inactive_ch_crate1.size(); i_ch++){
+    if (verbosity > 2) std::cout <<"inactive ch crate1, entry "<<i_ch<<std::endl;
+    TBox *box_inactive = new TBox(inactive_slot_crate1.at(i_ch)-1,inactive_ch_crate1.at(i_ch),inactive_slot_crate1.at(i_ch),inactive_ch_crate1.at(i_ch)+1);
+    vector_box_inactive.push_back(box_inactive);
+    box_inactive->SetFillStyle(3004);
+    box_inactive->SetFillColor(1);
+    box_inactive->Draw("same");  
+  }
+  p1->Update();
+
+  if (rate_crate1->GetMaximum()>0.){
+    if (min_ch == max_ch) rate_crate1->GetZaxis()->SetRangeUser(min_ch-0.5,max_ch+0.5);
+    else rate_crate1->GetZaxis()->SetRangeUser(min_ch,max_ch);
+    TPaletteAxis *palette = 
+    (TPaletteAxis*) rate_crate1->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
+  }
+
+  rate_crate2->SetTitle("Rates Rack 8");
+  TPad *p2 = (TPad*) canvas_rates->cd(2);
+  p2->SetGrid();
+
+  rate_crate2->Draw("colz");
+  for (int i_slot=0;i_slot<num_slots;i_slot++){
+    if (active_channel[1][i_slot]==0){
+      TBox *box_inactive = new TBox(i_slot,0,i_slot+1,num_channels);
+      vector_box_inactive.push_back(box_inactive);
+      box_inactive->SetFillColor(1);
+      box_inactive->SetFillStyle(3004);
+      box_inactive->Draw("same");  
+    }
+  }
+  for (int i_ch = 0; i_ch < inactive_ch_crate2.size(); i_ch++){
+    if (verbosity > 2) std::cout <<"inactive ch crate2, entry "<<i_ch<<std::endl;
+    TBox *box_inactive = new TBox(inactive_slot_crate2.at(i_ch)-1,inactive_ch_crate2.at(i_ch),inactive_slot_crate2.at(i_ch),inactive_ch_crate2.at(i_ch)+1);
+    vector_box_inactive.push_back(box_inactive);
+    box_inactive->SetFillStyle(3004);
+    box_inactive->SetFillColor(1);
+    box_inactive->Draw("same");  
+  }
+  p2->Update();
+
+  if (rate_crate2->GetMaximum()>0.){
+    if (min_ch == max_ch) rate_crate2->GetZaxis()->SetRangeUser(min_ch-0.5,max_ch+0.5);
+    else rate_crate2->GetZaxis()->SetRangeUser(min_ch,max_ch);
+
+    TPaletteAxis *palette = 
+    (TPaletteAxis*)rate_crate2->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
+  }
+
+  //p2->Modified();
+  std::stringstream ss_rate_electronics;
+  ss_rate_electronics<<outpath<<"MRD_Rates_Electronics.jpg";
+  canvas_rates->SaveAs(ss_rate_electronics.str().c_str());
+
+  //plot the other histograms as well
+
+  TCanvas *canvas_tdc = new TCanvas("canvas_tdc","Canvas TDC",900,600);
+  TCanvas *canvas_tdc_coincidence = new TCanvas("canvas_tdc_coincidence","Canvas TDC (coinc)",900,600);
+  TCanvas *canvas_npaddles = new TCanvas("canvas_npaddles","Canvas NPaddles",900,600);
+  TCanvas *canvas_npaddles_coincidence = new TCanvas("canvas_npaddles_coincidence","Canvas NPaddles (coinc)",900,600);
+
+  canvas_tdc->cd();
+  TDC_hist->Draw();
+  canvas_tdc_coincidence->cd();
+  TDC_hist_coincidence->Draw();
+  canvas_npaddles->cd();
+  n_paddles_hit->Draw();
+  canvas_npaddles_coincidence->cd();
+  n_paddles_hit_coincidence->Draw();
+
+  std::stringstream ss_tdc;
+  ss_tdc<<outpath<<"MRD_TDC.jpg";
+  canvas_tdc->SaveAs(ss_tdc.str().c_str());
+  //std::stringstream ss_tdc_coincidence;
+  //ss_tdc_coincidence<<outpath<<"MRD_TDC_Event.jpg";
+  //canvas_tdc_coincidence->SaveAs(ss_tdc_coincidence.str().c_str());
+  std::stringstream ss_npaddles;
+  ss_npaddles<<outpath<<"MRD_NPaddles.jpg";
+  canvas_npaddles->SaveAs(ss_npaddles.str().c_str());
+  //std::stringstream ss_npaddles_coincidence;
+  //ss_npaddles_coincidence<<outpath<<"MRD_NPaddles_Event.jpg";
+  //canvas_npaddles_coincidence->SaveAs(ss_npaddles_coincidence.str().c_str());
+
+
+  for (int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
+    delete vector_box_inactive.at(i_box);
+  }
+
+  delete rate_crate1;
+  delete rate_crate2;
+  delete rate_crate1_hour;
+  delete rate_crate2_hour;
+  delete TDC_hist;
+  delete TDC_hist_hour;
+  delete TDC_hist_coincidence;
+  delete n_paddles_hit;
+  delete n_paddles_hit_hour;
+  delete n_paddles_hit_coincidence;
+
+  delete canvas_tdc;
+  delete canvas_tdc_coincidence;
+  delete canvas_npaddles;
+  delete canvas_npaddles_coincidence;
+  delete canvas_rates;
+
+  //get list of allocated objects (ROOT)
+  //std::cout <<"List of Objects (End of UpdateMonitorPlots)"<<std::endl;
+  //gObjectTable->Print();
 
 }
