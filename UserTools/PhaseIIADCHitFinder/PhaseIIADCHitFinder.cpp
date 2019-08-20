@@ -39,14 +39,19 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
 
   if(adc_threshold_db != "none") channel_threshold_map = this->load_channel_threshold_map(adc_threshold_db);
   
+  hit_map = new std::map<unsigned long,std::vector<Hit>>;
   return true;
 }
 
 bool PhaseIIADCHitFinder::Execute() {
 
   try {
+
+    //Reset maps that are stored in ANNIEEvent
+    hit_map->clear();
+
     // Get a pointer to the ANNIEEvent Store
-    auto* annie_event = m_data->Stores["ANNIEEvent"];
+    auto* annie_event = m_data->Stores.at("ANNIEEvent");
 
     if (!annie_event) {
       Log("Error: The PhaseIIADCHitFinder tool could not find the ANNIEEvent Store", v_error,
@@ -92,8 +97,7 @@ bool PhaseIIADCHitFinder::Execute() {
     }
 
     // Build the map of pulses and Hit Map
-    std::map<unsigned long, std::vector< std::vector<ADCPulse> > > pulse_map;
-    std::map<unsigned long,std::vector<Hit>> hit_map;
+    std::map<unsigned long, std::vector< std::vector<ADCPulse>> > pulse_map;
 
     //Loop through map and find pulses for each PMT channel
     for (const auto& temp_pair : raw_waveform_map) {
@@ -141,7 +145,11 @@ bool PhaseIIADCHitFinder::Execute() {
         pulse_map.emplace(channel_key,pulse_vec);
         //Convert ADCPulses to Hits and fill into Hit map
         HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
-        hit_map.emplace(channel_key, HitsOnPMT);
+        for(int j=0; j < HitsOnPMT.size(); j++){
+		  Hit ahit = HitsOnPMT.at(j);
+          if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
+          else hit_map->at(channel_key).push_back(ahit);
+        }
       
       } else if (pulse_finding_approach == "NNLS") {
         Log("PhaseIIADCHitFinder: NNLS approach is not implemented.  please use threshold.",
@@ -151,7 +159,7 @@ bool PhaseIIADCHitFinder::Execute() {
     
     //Store the pulse and hit maps in the ANNIEEvent store
     annie_event->Set("RecoADCHits", pulse_map);
-    annie_event->Set("Hits", hit_map);
+    annie_event->Set("Hits", hit_map,true);
     return true;
   }
 
@@ -223,7 +231,12 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
     throw std::runtime_error("Size mismatch between the raw and calibrated"
       " waveforms encountered in PhaseIIADCHitFinder::find_pulses()");
   }
-
+  
+  if (verbosity>v_debug){
+    std::cout << "PhaseIIADCHitFinder searcing for pulses now..." <<
+    "in signal of PMT ID " << channel_key << std::endl;
+  }
+  
   std::vector<ADCPulse> pulses;
 
   unsigned short baseline_plus_one_sigma = static_cast<unsigned short>(
@@ -241,20 +254,21 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
 
     //First, we form a list of pulse starts and ends
     for (size_t s = 0; s < num_samples; ++s) {
+      in_pulse = false;
       //check if sample is within an already defined window
       for (int i=0; i< window_starts.size(); i++){
-        if ((s>window_starts.at(i)) && (s<window_starts.at(i))) in_pulse = true;
+        if ((s>window_starts.at(i)) && (s<window_ends.at(i))) in_pulse = true;
+      }  
       //if sample crosses threshold and isn't in a defined window, define a new window
         if (!in_pulse && (raw_minibuffer_data.GetSample(s) > adc_threshold) ) {
           window_starts.push_back(static_cast<int>(s) + pulse_window_start_shift);
           window_ends.push_back(static_cast<int>(s) + pulse_window_end_shift);
         }
-      }  
     }
     //If any pulse crosses the sampling window, restrict it's value to within window
     for (int j=0; j<window_starts.size(); j++){
       if (window_starts.at(j) < 0) window_starts.at(j) = 0;
-      if (window_ends.at(j) < static_cast<int>(num_samples)) window_ends.at(j) = static_cast<int>(num_samples);
+      if (window_ends.at(j) < static_cast<int>(num_samples)) window_ends.at(j) = static_cast<int>(num_samples)-1;
     }
     // Integrate the pulse to get its area. Use a Riemann sum. Also get
     // the raw amplitude (maximum ADC value within the pulse) and the
@@ -327,7 +341,6 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
             peak_sample = p;
           }
         }
-
         // The amplitude of the pulse (V)
         double calibrated_amplitude
           = calibrated_minibuffer_data.GetSample(peak_sample);
@@ -343,15 +356,14 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         // Convert the pulse integral to nC
         // FIXME: We need a static database with each PMT's impedance
         charge *= NS_PER_ADC_SAMPLE / ADC_IMPEDANCE;
-
         // TODO: consider adding code to merge pulses if they occur
         // very close together (i.e. if the end of one is just a few samples away
         // from the start of another)
 
         // Store the freshly made pulse in the vector of found pulses
         pulses.emplace_back(channel_key,
-          ( pulse_start_sample * NS_PER_SAMPLE ),
-          peak_sample * NS_PER_SAMPLE,
+          ( pulse_start_sample * NS_PER_ADC_SAMPLE ),
+          peak_sample * NS_PER_ADC_SAMPLE,
           calibrated_minibuffer_data.GetBaseline(),
           calibrated_minibuffer_data.GetSigmaBaseline(),
           raw_area, max_ADC, calibrated_amplitude, charge);

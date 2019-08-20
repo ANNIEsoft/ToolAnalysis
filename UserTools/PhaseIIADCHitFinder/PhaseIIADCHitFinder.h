@@ -1,4 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
+
+// This tool finds PMT pulses using both raw and calibrated ADC waveforms
+// Modified for Phase II by Teal Pershing <tjpershing@ucdavis.edu>
 #ifndef PhaseIIADCHitFinder_H
 #define PhaseIIADCHitFinder_H
 
@@ -46,8 +49,8 @@ class PhaseIIADCHitFinder : public Tool {
     std::string threshold_type;
     std::string adc_threshold_db;
     std::string pulse_window_type;
-    size_t pulse_window_start_shift;
-    size_t pulse_window_end_shift;
+    int pulse_window_start_shift;
+    int pulse_window_end_shift;
     std::map<unsigned long, unsigned short> channel_threshold_map;
     
     // Load a PMT's threshold from the channel_threshold_map. If none, returns default ADC threshold
@@ -68,6 +71,7 @@ class PhaseIIADCHitFinder : public Tool {
     //Takes the ADC pulse vectors (one per minibuffer) and converts them to a vector of hits
     std::vector<Hit> convert_adcpulses_to_hits(unsigned long channel_key,std::vector<std::vector<ADCPulse>> pulses);
 
+    std::map<unsigned long,std::vector<Hit>>* hit_map;
 };
 
 #endif
