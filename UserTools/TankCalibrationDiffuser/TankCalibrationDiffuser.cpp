@@ -23,12 +23,41 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   //----------------------------------------------------------------------------
 
   m_variables.Get("OutputFile",outputfile);
+  m_variables.Get("NBinsTimeTotal",nBinsTimeTotal);
+  m_variables.Get("TimeTotalMin",timeTotalMin);
+  m_variables.Get("TimeTotalMax",timeTotalMax);
+  m_variables.Get("NBinsChargeTotal",nBinsChargeTotal);
+  m_variables.Get("ChargeTotalMin",chargeTotalMin);
+  m_variables.Get("ChargeTotalMax",chargeTotalMax);
+  m_variables.Get("NBinsTime",nBinsTime);
+  m_variables.Get("TimeMin",timeMin);
+  m_variables.Get("TimeMax",timeMax);
+  m_variables.Get("NBinsCharge",nBinsCharge);
+  m_variables.Get("ChargeMin",chargeMin);
+  m_variables.Get("ChargeMax",chargeMax);
+  m_variables.Get("NBinsTimeFit",nBinsTimeFit);
+  m_variables.Get("TimeFitMin",timeFitMin);
+  m_variables.Get("TimeFitMax",timeFitMax);
+  m_variables.Get("NBinsTimeDev",nBinsTimeDev);
+  m_variables.Get("TimeDevMin",timeDevMin);
+  m_variables.Get("TimeDevMax",timeDevMax);
+  m_variables.Get("NBinsChargeFit",nBinsChargeFit);
+  m_variables.Get("ChargeFitMin",chargeFitMin);
+  m_variables.Get("ChargeFitMax",chargeFitMax);
   m_variables.Get("DiffuserX",diffuser_x);
   m_variables.Get("DiffuserY",diffuser_y);
   m_variables.Get("DiffuserZ",diffuser_z);
   m_variables.Get("ToleranceCharge",tolerance_charge);
   m_variables.Get("ToleranceTime",tolerance_time);
   m_variables.Get("FitMethod",FitMethod);
+  m_variables.Get("Gaus1Constant",gaus1Constant);
+  m_variables.Get("Gaus1Mean",gaus1Mean);
+  m_variables.Get("Gaus1Sigma",gaus1Sigma);
+  m_variables.Get("Gaus2Constant",gaus2Constant);
+  m_variables.Get("Gaus2Mean",gaus2Mean);
+  m_variables.Get("Gaus2Sigma",gaus2Sigma);
+  m_variables.Get("ExpConstant",expConstant);
+  m_variables.Get("ExpDecay",expDecay);
   m_variables.Get("TApplication",use_tapplication);
   m_variables.Get("verbose",verbose);
 
@@ -124,8 +153,8 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   //----------------------------------------------------------------------------
 
   std::vector<TH1F> charge_hist;
-  hist_charge = new TH1F("hist_charge","Overall charge distribution (all PMTs)",500,1,0);
-  hist_time = new TH1F("hist_time","Overall time distribution (all PMTs)",500,1,0);
+  hist_charge = new TH1F("hist_charge","Overall charge distribution (all PMTs)",nBinsChargeTotal,chargeTotalMin,chargeTotalMax);
+  hist_time = new TH1F("hist_time","Overall time distribution (all PMTs)",nBinsTimeTotal,timeTotalMin,timeTotalMax);
   hist_tubeid = new TH1F("hist_tubeid","Overall Tube ID distribution",500,1,0);
   hist_charge_2D_y_phi = new TH2F("hist_charge_2D_y_phi","Spatial distribution of charge (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_time_2D_y_phi = new TH2F("hist_time_2D_y_phi","Spatial distribution of time deviations (all PMTs)",100,0,360,25,-2.5,2.5);
@@ -141,19 +170,19 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
     string description_general_charge="Hit charges for detkey ";
     string name_hist_charge=name_general_charge+detKey;
     string description_hist_charge=description_general_charge+detKey;
-    hist_charge_singletube[detkey] = new TH1F(name_hist_charge.c_str(),description_hist_charge.c_str(),100,0,10);
+    hist_charge_singletube[detkey] = new TH1F(name_hist_charge.c_str(),description_hist_charge.c_str(),nBinsCharge,chargeMin,chargeMax);
 
     string name_general_time="hist_time_";
     string description_general_time="Hit times for detkey ";
     string name_hist_time=name_general_time+detKey;
     string description_hist_time=description_general_time+detKey;
-    hist_time_singletube[detkey] = new TH1F(name_hist_time.c_str(),description_hist_time.c_str(),200,-20,20);
+    hist_time_singletube[detkey] = new TH1F(name_hist_time.c_str(),description_hist_time.c_str(),nBinsTime,timeMin,timeMax);
 
   }
 
-  hist_charge_mean = new TH1F("hist_charge_mean","Mean values of detected charges",100,0,5);
-  hist_time_mean = new TH1F("hist_time_mean","Mean values of detected hit times",100,-20,20);
-  hist_time_dev = new TH1F("hist_time_dev","Deviation of detected hit times",100,-10,10);
+  hist_charge_mean = new TH1F("hist_charge_mean","Mean values of detected charges",nBinsChargeFit,chargeFitMin,chargeFitMax);
+  hist_time_mean = new TH1F("hist_time_mean","Mean values of detected hit times",nBinsTimeFit,timeFitMin,timeFitMax);
+  hist_time_dev = new TH1F("hist_time_dev","Deviation of detected hit times",nBinsTimeDev,timeDevMin,timeDevMax);
 
   //---------------------------------------------------------------------------------
   //create root-file that will contain all analysis graphs for this calibration run--
@@ -278,17 +307,17 @@ bool TankCalibrationDiffuser::Finalise(){
     unsigned long detkey = pmt_detkeys[i_tube];
     double mean_charge=hist_charge_singletube[detkey]->GetMean();
 
-    Double_t par_gaus2exp[8] = {10,0.3,0.1,10,1.0,0.5,1,-1};
-    Double_t par_gaus2[6] = {10,0.3,0.1,10,1.0,0.5};
-    Double_t par_gaus[3] = {10,1.0,0.5};
+    Double_t par_gaus2exp[8] = {gaus1Constant,gaus1Mean,gaus1Sigma,gaus2Constant,gaus2Mean,gaus2Sigma,expConstant,expDecay};    //old default: {10,0.3,0.1,10,1.0,0.5,1,-1}
+    Double_t par_gaus2[6] = {gaus1Constant,gaus1Mean,gaus1Sigma,gaus2Constant,gaus2Mean,gaus2Sigma};  //old default: {10,0.3,0.1,10,1.0,0.5}
+    Double_t par_gaus[3] = {gaus1Constant,gaus1Mean,gaus1Sigma};    //old default: {10,1.0,0.5}
 
     TF1 *total;
-    if (FitMethod == "Gaus2Exp") total = new TF1("total","gaus(0)+gaus(3)+expo(6)",0,10);
-    else if (FitMethod == "Gaus2") total = new TF1("total","gaus(0)+gaus(3)",0,10);
-    else if (FitMethod == "Gaus") total = new TF1("total","gaus",0,10);
+    if (FitMethod == "Gaus2Exp") total = new TF1("total","gaus(0)+gaus(3)+expo(6)",chargeMin,chargeMax);
+    else if (FitMethod == "Gaus2") total = new TF1("total","gaus(0)+gaus(3)",chargeMin,chargeMax);
+    else if (FitMethod == "Gaus") total = new TF1("total","gaus",chargeMin,chargeMax);
     else {
       std::cout <<"ERROR (TankCalibrationDiffuser): FitFunction is not part of the options, please extend the options Using standard Gaus."<<std::endl;
-      total = new TF1("total","gaus",0,10);
+      total = new TF1("total","gaus",chargeMin,chargeMax);
     }
     total->SetLineColor(2);
     if (FitMethod == "Gaus2Exp") total->SetParameters(par_gaus2exp);

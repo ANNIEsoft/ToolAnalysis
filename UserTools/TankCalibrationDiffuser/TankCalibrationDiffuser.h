@@ -51,14 +51,41 @@ class TankCalibrationDiffuser: public Tool {
 
       //define input variables
       std::string outputfile;
-      std::string stabilityfile;
-      std::string geometryfile;
+      int nBinsTimeTotal;
+      double timeTotalMin;
+      double timeTotalMax;
+      int nBinsChargeTotal;
+      double chargeTotalMin;
+      double chargeTotalMax;
+      int nBinsTime;
+      double timeMin;
+      double timeMax;
+      int nBinsCharge;
+      double chargeMin;
+      double chargeMax;
+      int nBinsTimeFit;
+      double timeFitMin;
+      double timeFitMax;
+      int nBinsTimeDev;
+      double timeDevMin;
+      double timeDevMax;
+      int nBinsChargeFit;
+      double chargeFitMin;
+      double chargeFitMax;
       double diffuser_x;
       double diffuser_y;
       double diffuser_z;
       double tolerance_charge;
       double tolerance_time;
       std::string FitMethod;
+      double gaus1Constant;
+      double gaus1Mean;
+      double gaus1Sigma;
+      double gaus2Constant;
+      double gaus2Mean;
+      double gaus2Sigma;
+      double expConstant;
+      double expDecay;
       bool use_tapplication;
       int verbose;
 
