@@ -21,15 +21,13 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
 
 
   if (mode != "Charge" && mode != "Time") mode = "Charge";
-  std::cout <<"Mode: "<<mode<<std::endl;
+  if (verbosity > 2) std::cout <<"Mode: "<<mode<<std::endl;
 
   //get geometry		
 
-  std::cout <<"Getting geom"<<std::endl;
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
   tank_radius = geom->GetTankRadius();
   tank_height = geom->GetTankHalfheight();
-  std::cout <<"tank radius: "<<tank_radius<<", tank height: "<<tank_height<<std::endl;
   double barrel_compression = 0.82;
   if (detector_config == "ANNIEp2v6") tank_height*=barrel_compression;
   if (tank_radius < 1.) tank_radius = 1.37504;
@@ -37,11 +35,9 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   tank_center_x = detector_center.X();
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
-  std::cout <<"tank center x: "<<tank_center_x<<"< tank center y: "<<tank_center_y<<", tank center z: "<<tank_center_z<<std::endl;
   n_tank_pmts = geom->GetNumDetectorsInSet("Tank");
   m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
   std::map<std::string,std::map<unsigned long,Detector*> >* Detectors = geom->GetDetectors();
-  std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;
 
   //read in PMT positions
 
@@ -70,8 +66,13 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
 
   //define root file to save histograms (temporarily)
 
-  file = new TFile("cnn.root","RECREATE");
-  outfile.open(cnn_outpath.c_str());
+  std::string str_root = ".root";
+  std::string str_csv = ".csv";
+  std::string rootfile_name = cnn_outpath + str_root;
+  std::string csvfile_name = cnn_outpath + str_csv;
+
+  file = new TFile(rootfile_name.c_str(),"RECREATE");
+  outfile.open(csvfile_name.c_str());
 
 
   return true;
@@ -96,6 +97,12 @@ bool CNNImage::Execute(){
   charge.clear();
   time.clear();
   hitpmt_detkeys.clear();
+
+  for (int i_pmt=0; i_pmt<n_tank_pmts;i_pmt++){
+    unsigned long detkey = pmt_detkeys[i_pmt];
+    charge.emplace(detkey,0.);
+    time.emplace(detkey,0.);
+  }
 
   //make basic selection cut to only look at clearer event signatures
 
@@ -137,7 +144,7 @@ bool CNNImage::Execute(){
   //---------------------------------------------------------------
 
   int vectsize = MCHits->size();
-  if (verbosity > 0) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
+  if (verbosity > 1) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
   total_hits_pmts=0;
   for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
     unsigned long chankey = apair.first;
@@ -205,26 +212,33 @@ bool CNNImage::Execute(){
         y=0.5+y_pmt[detkey]/tank_height*tank_height/tank_radius*size_top_drawing;
 	int binx = hist_cnn->GetXaxis()->FindBin(x);
 	int biny = hist_cnn->GetYaxis()->FindBin(y);
-	std::cout <<"binx: "<<binx<<", biny: "<<biny<<std::endl;
+	//std::cout <<"binx: "<<binx<<", biny: "<<biny<<", charge fill: "<<charge[detkey]<<", time fill: "<<time[detkey]<<std::endl;
+
+  if (maximum_pmts < 0.001) maximum_pmts = 1.;
+  if (fabs(max_time_pmts) < 0.001) max_time_pmts = 1.;
 
 	if (mode == "Charge"){
 		double charge_fill = charge[detkey]/maximum_pmts;
-		hist_cnn->SetBinContent(binx,biny,charge_fill);
+		hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
 	}
 	if (mode == "Time"){
 		double time_fill = time[detkey]/max_time_pmts;
-		hist_cnn->SetBinContent(binx,biny,time_fill);
+		hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+time_fill);
 	}
     }
   }
 
-  if (bool_primary && bool_geometry && bool_nhits)   hist_cnn->Write();
+  if (bool_primary && bool_geometry && bool_nhits) {
 
-  for (int i_bin=0; i_bin < hist_cnn->GetNbinsX()*hist_cnn->GetNbinsY(); i_bin++){
-        outfile << hist_cnn->GetBinContent(i_bin+1)<<" ";
+    hist_cnn->Write();
+    for (int i_binY=0; i_binY < hist_cnn->GetNbinsY();i_binY++){
+      for (int i_binX=0; i_binX < hist_cnn->GetNbinsX();i_binX++){
+        outfile << hist_cnn->GetBinContent(i_binX+1,i_binY+1);
+        if (i_binX != hist_cnn->GetNbinsX()-1 || i_binY!=hist_cnn->GetNbinsY()-1) outfile<<",";
+      }
+    }
+    outfile << std::endl;
   }
-  outfile << std::endl;
-
 
   return true;
 }
