@@ -133,9 +133,13 @@ class TankCalibrationDiffuser: public Tool {
       TH1F *hist_charge_mean = nullptr;
       TH1F *hist_time_mean = nullptr;
       TH1F *hist_time_dev = nullptr;
+      TH1F *hist_detkey_charge = nullptr;
+      TH1F *hist_detkey_time_mean = nullptr;
+      TH1F *hist_detkey_time_dev = nullptr;
       TH2F *hist_charge_2D_y_phi = nullptr;
       TH2F *hist_time_2D_y_phi = nullptr;
       TH2F *hist_time_2D_y_phi_mean = nullptr;
+      TH2F *hist_detkey_2D_y_phi = nullptr;
 
       //container for red boxes surrounding badly calibrated PMTs
       std::vector<TBox*> vector_tbox;

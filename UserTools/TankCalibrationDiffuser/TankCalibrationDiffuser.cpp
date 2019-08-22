@@ -148,6 +148,13 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
     if (verbose > 1) std::cout <<"Detkey: "<<detkey<<", Radius PMT "<<i_pmt<<": "<<radius_PMT[detkey]<<", expectedT: "<<expected_time[detkey]<<std::endl;
   }
 
+  std::vector<unsigned long>::iterator it_minkey = std::min_element(pmt_detkeys.begin(),pmt_detkeys.end());
+  std::vector<unsigned long>::iterator it_maxkey = std::max_element(pmt_detkeys.begin(),pmt_detkeys.end());
+
+  int min_detkey = std::distance(pmt_detkeys.begin(),it_minkey);
+  int max_detkey = std::distance(pmt_detkeys.begin(),it_maxkey);
+  int n_detkey_bins = max_detkey-min_detkey;
+
   //----------------------------------------------------------------------------
   //---------------Initialize Stability histograms -----------------------------
   //----------------------------------------------------------------------------
@@ -159,6 +166,11 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   hist_charge_2D_y_phi = new TH2F("hist_charge_2D_y_phi","Spatial distribution of charge (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_time_2D_y_phi = new TH2F("hist_time_2D_y_phi","Spatial distribution of time deviations (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_time_2D_y_phi_mean = new TH2F("hist_time_2D_y_phi_mean","Spatial distribution of time (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_detkey_2D_y_phi = new TH2F("hist_detkey_2D_y_phi","Spatial distribution of detkeys",100,0,360,25,-2.5,2.5);
+  hist_detkey_charge = new TH1F("hist_detkey_charge","Fit mean charges vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_time_mean = new TH1F("hist_detkey_time_mean","Fit mean times vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_time_dev = new TH1F("hist_detkey_time_dev","Fit time deviations vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+
 
   for (int i_tube=0;i_tube<n_tank_pmts;i_tube++){
 
@@ -386,13 +398,24 @@ bool TankCalibrationDiffuser::Finalise(){
       hist_time_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,fabs(mean_time_fit[detkey]-expected_time[detkey]));  
       hist_time_2D_y_phi_mean->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,mean_time_fit[detkey]);  
       hist_charge_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,mean_charge_fit[detkey]);
+      hist_detkey_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,detkey);    
     }
     else {
       hist_time_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,fabs(mean_time_fit[detkey]-expected_time[detkey]));
       hist_time_2D_y_phi_mean->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,mean_time_fit[detkey]);
       hist_charge_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,mean_charge_fit[detkey]);
+      hist_detkey_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,detkey);
     }
     result_file<<detkey<<"  "<<mean_charge_fit[detkey]<<"  "<<rms_charge_fit[detkey]<<"  "<<mean_time_fit[detkey]<<"  "<<rms_time_fit[detkey]<<"  "<<mean_time_fit[detkey]-expected_time[detkey]<<endl;
+
+    //
+    //fill detkey 1D histograms as well
+    //
+
+    int bin_nr = hist_detkey_charge->FindBin(detkey);
+    hist_detkey_charge->SetBinContent(bin_nr,mean_charge_fit[detkey]);
+    hist_detkey_time_mean->SetBinContent(bin_nr,mean_time_fit[detkey]);
+    hist_detkey_time_dev->SetBinContent(bin_nr,mean_time_fit[detkey]-expected_time[detkey]);
 
     vector_tf1.push_back(total);
   }
@@ -406,12 +429,26 @@ bool TankCalibrationDiffuser::Finalise(){
   hist_charge_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
   hist_charge_2D_y_phi->GetYaxis()->SetTitle("y [m]");
   hist_charge_2D_y_phi->SetStats(0);
+  hist_detkey_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_detkey_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_detkey_2D_y_phi->SetStats(0);
+  hist_detkey_2D_y_phi->SetDrawOption("colz text");
   hist_time_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
   hist_time_2D_y_phi->GetYaxis()->SetTitle("y [m]");
   hist_time_2D_y_phi->SetStats(0);
   hist_time_2D_y_phi_mean->GetXaxis()->SetTitle("#phi [deg]");
   hist_time_2D_y_phi_mean->GetYaxis()->SetTitle("y [m]");
   hist_time_2D_y_phi_mean->SetStats(0);
+
+  hist_detkey_charge->GetXaxis()->SetTitle("detkey");
+  hist_detkey_charge->GetYaxis()->SetTitle("Fit mean charge");
+  hist_detkey_charge->SetStats(0);
+  hist_detkey_time_mean->GetXaxis()->SetTitle("detkey");
+  hist_detkey_time_mean->GetYaxis()->SetTitle("Fit mean time");
+  hist_detkey_time_mean->SetStats(0);
+  hist_detkey_time_dev->GetXaxis()->SetTitle("detkey");
+  hist_detkey_time_dev->GetYaxis()->SetTitle("Fit time deviation");
+  hist_detkey_time_dev->SetStats(0);
 
   hist_time_mean->Write();
   hist_time_dev->Write();
@@ -420,6 +457,11 @@ bool TankCalibrationDiffuser::Finalise(){
   hist_time_2D_y_phi->Write();
   hist_time_2D_y_phi_mean->Write();
   hist_charge_2D_y_phi->Write();
+  hist_detkey_2D_y_phi->Write();
+
+  hist_detkey_charge->Write();
+  hist_detkey_time_mean->Write();
+  hist_detkey_time_dev->Write();
 
   //----------------------------------------------------------------------------
   //---------------Create and write stability plots------------------------
