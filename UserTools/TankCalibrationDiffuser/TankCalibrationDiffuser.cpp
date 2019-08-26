@@ -35,6 +35,34 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   m_variables.Get("NBinsCharge",nBinsCharge);
   m_variables.Get("ChargeMin",chargeMin);
   m_variables.Get("ChargeMax",chargeMax);
+  m_variables.Get("NBinsStartTimeTotal",nBinsStartTimeTotal);
+  m_variables.Get("NBinsStartTime",nBinsStartTime);
+  m_variables.Get("StartTimeMin",startTimeMin);
+  m_variables.Get("StartTimeMax",startTimeMax);
+  m_variables.Get("NBinsPeakTimeTotal",nBinsPeakTimeTotal);
+  m_variables.Get("NBinsPeakTime",nBinsPeakTime);
+  m_variables.Get("PeakTimeMin",peakTimeMin);
+  m_variables.Get("PeakTimeMax",peakTimeMax);
+  m_variables.Get("NBinsBaselineTotal",nBinsBaselineTotal);
+  m_variables.Get("NBinsBaseline",nBinsBaseline);
+  m_variables.Get("BaselineMin",baselineMin);
+  m_variables.Get("BaselineMax",baselineMax);
+  m_variables.Get("NBinsSigmaBaselineTotal",nBinsSigmaBaselineTotal);
+  m_variables.Get("NBinsSigmaBaseline",nBinsSigmaBaseline);
+  m_variables.Get("SigmaBaselineMin",sigmaBaselineMin);
+  m_variables.Get("SigmaBaselineMax",sigmaBaselineMax); 
+  m_variables.Get("NBinsRawAmplitudeTotal",nBinsRawAmplitudeTotal);
+  m_variables.Get("NBinsRawAmplitude",nBinsRawAmplitude);
+  m_variables.Get("RawAmplitudeMin",rawAmplitudeMin);
+  m_variables.Get("RawAmplitudeMax",rawAmplitudeMax);
+  m_variables.Get("NBinsAmplitudeTotal",nBinsAmplitudeTotal);
+  m_variables.Get("NBinsAmplitude",nBinsAmplitude);
+  m_variables.Get("AmplitudeMin",amplitudeMin);
+  m_variables.Get("AmplitudeMax",amplitudeMax);
+  m_variables.Get("NBinsRawAreaTotal",nBinsRawAreaTotal);
+  m_variables.Get("NBinsRawArea",nBinsRawArea);
+  m_variables.Get("RawAreaMin",rawAreaMin);
+  m_variables.Get("RawAreaMax",rawAreaMax);
   m_variables.Get("NBinsTimeFit",nBinsTimeFit);
   m_variables.Get("TimeFitMin",timeFitMin);
   m_variables.Get("TimeFitMax",timeFitMax);
@@ -162,14 +190,48 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   std::vector<TH1F> charge_hist;
   hist_charge = new TH1F("hist_charge","Overall charge distribution (all PMTs)",nBinsChargeTotal,chargeTotalMin,chargeTotalMax);
   hist_time = new TH1F("hist_time","Overall time distribution (all PMTs)",nBinsTimeTotal,timeTotalMin,timeTotalMax);
-  hist_tubeid = new TH1F("hist_tubeid","Overall Tube ID distribution",500,1,0);
+  hist_tubeid = new TH1F("hist_tubeid","Overall Tube ID distribution",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_tubeid_adc = new TH1F("hist_tubeid_adc","Overall Tube ID distribution (ADCReco Store)",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_starttime = new TH1F("hist_starttime","Overall start time distribution (all PMTs)",nBinsStartTimeTotal,startTimeMin,startTimeMax);
+  hist_peaktime = new TH1F("hist_peaktime","Overall peak time distribution (all PMTs)",nBinsPeakTimeTotal,peakTimeMin,peakTimeMax);
+  hist_baseline = new TH1F("hist_baseline","Overall baseline distribution (all PMTs)",nBinsBaselineTotal,baselineMin,baselineMax);
+  hist_sigmabaseline = new TH1F("hist_sigmabaseline","Overall sigma baseline distribution (all PMTs)",nBinsSigmaBaselineTotal,sigmaBaselineMin,sigmaBaselineMax);
+  hist_rawamplitude = new TH1F("hist_rawamplitude","Overall raw amplitude distribution (all PMTs)",nBinsRawAmplitudeTotal,rawAmplitudeMin,rawAmplitudeMax);
+  hist_amplitude = new TH1F("hist_amplitude","Overall amplitude distribution (all PMTs)",nBinsAmplitudeTotal,amplitudeMin,amplitudeMax);
+  hist_rawarea = new TH1F("hist_rawarea","Overall raw area distribution (all PMTs)",nBinsRawAreaTotal,rawAreaMin,rawAreaMax);
   hist_charge_2D_y_phi = new TH2F("hist_charge_2D_y_phi","Spatial distribution of charge (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_time_2D_y_phi = new TH2F("hist_time_2D_y_phi","Spatial distribution of time deviations (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_time_2D_y_phi_mean = new TH2F("hist_time_2D_y_phi_mean","Spatial distribution of time (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_starttime_2D_y_phi = new TH2F("hist_starttime_2D_y_phi","Spatial distribution of start time (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_peaktime_2D_y_phi = new TH2F("hist_peaktime_2D_y_phi","Spatial distribution of peak time (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_baseline_2D_y_phi = new TH2F("hist_baseline_2D_y_phi","Spatial distribution of baseline (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_sigmabaseline_2D_y_phi = new TH2F("hist_sigmabaseline_2D_y_phi","Spatial distribution of sigma baseline (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_rawamplitude_2D_y_phi = new TH2F("hist_rawamplitude_2D_y_phi","Spatial distribution of raw amplitude (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_amplitude_2D_y_phi = new TH2F("hist_amplitude_2D_y_phi","Spatial distribution of amplitude (all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_rawarea_2D_y_phi = new TH2F("hist_rawarea_2D_y_phi","Spatial distribution of raw area (all PMTs)",100,0,360,25,-2.5,2.5);
   hist_detkey_2D_y_phi = new TH2F("hist_detkey_2D_y_phi","Spatial distribution of detkeys",100,0,360,25,-2.5,2.5);
   hist_detkey_charge = new TH1F("hist_detkey_charge","Fit mean charges vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
   hist_detkey_time_mean = new TH1F("hist_detkey_time_mean","Fit mean times vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
   hist_detkey_time_dev = new TH1F("hist_detkey_time_dev","Fit time deviations vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_starttime = new TH1F("hist_detkey_starttime","Mean start times vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_peaktime = new TH1F("hist_detkey_peaktime","Mean peak times vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_baseline = new TH1F("hist_detkey_baseline","Mean baseline vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_sigmabaseline = new TH1F("hist_detkey_sigmabaseline","Mean sigma baseline vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_rawamplitude = new TH1F("hist_detkey_rawamplitude","Mean raw amplitudes vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_amplitude = new TH1F("hist_detkey_amplitude","Mean amplitudes vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+  hist_detkey_rawarea = new TH1F("hist_detkey_rawarea","Mean raw areas vs. detkey",n_detkey_bins,pmt_detkeys[min_detkey],pmt_detkeys[max_detkey]);
+
+  hist_charge->GetXaxis()->SetTitle("charge");
+  hist_time->GetXaxis()->SetTitle("time [ns]");
+  hist_tubeid->GetXaxis()->SetTitle("detectorkey");
+  hist_tubeid_adc->GetXaxis()->SetTitle("detectorkey");
+  hist_starttime->GetXaxis()->SetTitle("start time [ns]");
+  hist_peaktime->GetXaxis()->SetTitle("peak time [ns]");
+  hist_baseline->GetXaxis()->SetTitle("baseline [ADC]");
+  hist_sigmabaseline->GetXaxis()->SetTitle("sigma baseline [ADC]");
+  hist_rawamplitude->GetXaxis()->SetTitle("raw amplitude [ADC]");
+  hist_amplitude->GetXaxis()->SetTitle("amplitude [V]");
+  hist_rawarea->GetXaxis()->SetTitle("raw area [ADC x samples]");
 
 
   for (int i_tube=0;i_tube<n_tank_pmts;i_tube++){
@@ -190,11 +252,71 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
     string description_hist_time=description_general_time+detKey;
     hist_time_singletube[detkey] = new TH1F(name_hist_time.c_str(),description_hist_time.c_str(),nBinsTime,timeMin,timeMax);
 
+    string name_general_starttime="hist_starttime_";
+    string description_general_starttime="Start times for detkey ";
+    string name_hist_starttime=name_general_starttime+detKey;
+    string description_hist_starttime=description_general_starttime+detKey;
+    hist_starttime_singletube[detkey] = new TH1F(name_hist_starttime.c_str(),description_hist_starttime.c_str(),nBinsStartTime,startTimeMin,startTimeMax);  
+
+    string name_general_peaktime="hist_peaktime_";
+    string description_general_peaktime="Peak times for detkey ";
+    string name_hist_peaktime=name_general_peaktime+detKey;
+    string description_hist_peaktime=description_general_peaktime+detKey;
+    hist_peaktime_singletube[detkey] = new TH1F(name_hist_peaktime.c_str(),description_hist_peaktime.c_str(),nBinsPeakTime,peakTimeMin,peakTimeMax);  
+
+    string name_general_baseline="hist_baseline_";
+    string description_general_baseline="Baselines for detkey ";
+    string name_hist_baseline=name_general_baseline+detKey;
+    string description_hist_baseline=description_general_baseline+detKey;
+    hist_baseline_singletube[detkey] = new TH1F(name_hist_baseline.c_str(),description_hist_baseline.c_str(),nBinsBaseline,baselineMin,baselineMax);  
+
+    string name_general_sigmabaseline="hist_sigmabaseline_";
+    string description_general_sigmabaseline="Sigma baselines for detkey ";
+    string name_hist_sigmabaseline=name_general_sigmabaseline+detKey;
+    string description_hist_sigmabaseline=description_general_sigmabaseline+detKey;
+    hist_sigmabaseline_singletube[detkey] = new TH1F(name_hist_sigmabaseline.c_str(),description_hist_sigmabaseline.c_str(),nBinsSigmaBaseline,sigmaBaselineMin,sigmaBaselineMax); 
+
+    string name_general_rawamplitude="hist_rawamplitude_";
+    string description_general_rawamplitude="Raw amplitudes for detkey ";
+    string name_hist_rawamplitude=name_general_rawamplitude+detKey;
+    string description_hist_rawamplitude=description_general_rawamplitude+detKey;
+    hist_rawamplitude_singletube[detkey] = new TH1F(name_hist_rawamplitude.c_str(),description_hist_rawamplitude.c_str(),nBinsRawAmplitude,rawAmplitudeMin,rawAmplitudeMax); 
+
+    string name_general_amplitude="hist_amplitude_";
+    string description_general_amplitude="Amplitudes for detkey ";
+    string name_hist_amplitude=name_general_amplitude+detKey;
+    string description_hist_amplitude=description_general_amplitude+detKey;
+    hist_amplitude_singletube[detkey] = new TH1F(name_hist_amplitude.c_str(),description_hist_amplitude.c_str(),nBinsAmplitude,amplitudeMin,amplitudeMax);  
+
+    string name_general_rawarea="hist_rawarea_";
+    string description_general_rawarea="Raw areas for detkey ";
+    string name_hist_rawarea=name_general_rawarea+detKey;
+    string description_hist_rawarea=description_general_rawarea+detKey;
+    hist_rawarea_singletube[detkey] = new TH1F(name_hist_rawarea.c_str(),description_hist_rawarea.c_str(),nBinsRawArea,rawAreaMin,rawAreaMax);    
+
+    hist_charge_singletube[detkey]->GetXaxis()->SetTitle("charge");
+    hist_time_singletube[detkey]->GetXaxis()->SetTitle("time [ns]");
+    hist_starttime_singletube[detkey]->GetXaxis()->SetTitle("start time [ns]");
+    hist_peaktime_singletube[detkey]->GetXaxis()->SetTitle("peak time [ns]");
+    hist_baseline_singletube[detkey]->GetXaxis()->SetTitle("baseline [ADC]");
+    hist_sigmabaseline_singletube[detkey]->GetXaxis()->SetTitle("sigma baseline [ADC]");
+    hist_rawamplitude_singletube[detkey]->GetXaxis()->SetTitle("raw amplitude [ADC]");
+    hist_amplitude_singletube[detkey]->GetXaxis()->SetTitle("amplitude [V]");
+    hist_rawarea_singletube[detkey]->GetXaxis()->SetTitle("raw area [ADC x samples]");
+
   }
+
 
   hist_charge_mean = new TH1F("hist_charge_mean","Mean values of detected charges",nBinsChargeFit,chargeFitMin,chargeFitMax);
   hist_time_mean = new TH1F("hist_time_mean","Mean values of detected hit times",nBinsTimeFit,timeFitMin,timeFitMax);
   hist_time_dev = new TH1F("hist_time_dev","Deviation of detected hit times",nBinsTimeDev,timeDevMin,timeDevMax);
+  hist_starttime_mean = new TH1F("hist_starttime_mean","Mean values of detected start times",100,startTimeMin,startTimeMax);
+  hist_peaktime_mean = new TH1F("hist_peaktime_mean","Mean values of detected peak times",100,peakTimeMin,peakTimeMax);
+  hist_baseline_mean = new TH1F("hist_baseline_mean","Mean values of detected baselines",100,baselineMin,baselineMax);
+  hist_sigmabaseline_mean = new TH1F("hist_sigmabaseline_mean","Mean values of detected sigma baselines",100,sigmaBaselineMin,sigmaBaselineMax);
+  hist_rawamplitude_mean = new TH1F("hist_rawamplitude_mean","Mean values of detected raw amplitudes",100,rawAmplitudeMin,rawAmplitudeMax);
+  hist_amplitude_mean = new TH1F("hist_amplitude_mean","Mean values of detected amplitudes",100,amplitudeMin,amplitudeMax);
+  hist_rawarea_mean = new TH1F("hist_rawarea_mean","Mean values of detected raw areas",100,rawAreaMin,rawAreaMax);
 
   //---------------------------------------------------------------------------------
   //create root-file that will contain all analysis graphs for this calibration run--
@@ -237,13 +359,16 @@ bool TankCalibrationDiffuser::Execute(){
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   if(!annieeventexists){ std::cerr<<"Error: No ANNIEEvent store!"<<endl; /*return false;*/};
 
+      std::map<unsigned long, std::vector<std::vector<ADCPulse>>> RecoADCHits; 
+
   //----------------------------------------------------------------------------
   //---------------get the members of the ANNIEEvent----------------------------
   //----------------------------------------------------------------------------
 
   m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
-  m_data->Stores["ANNIEEvent"]->Get("BeamStatus",BeamStatus);
+  m_data->Stores["ANNIEEvent"]->Get("BeamStatus", BeamStatus);
+  bool got_recoadc = m_data->Stores["ANNIEEvent"]->Get("RecoADCHits",RecoADCHits);
 
   //----------------------------------------------------------------------------
   //---------------Read out charge and hit values of PMTs-----------------------
@@ -280,6 +405,63 @@ bool TankCalibrationDiffuser::Execute(){
     if (verbose > 2) std::cout <<"PMT "<<i_pmt<<" is hit: "<<PMT_ishit[detkey]<<std::endl;
   }
 
+  //----------------------------------------------------------------------------
+  //---------------Read out RecoADCHits properties of PMTs----------------------
+  //---------------------------------------------------------------------------- 
+
+  if (got_recoadc){
+
+    int recoadcsize = RecoADCHits.size();
+    int adc_loop = 0;
+    if (verbose > 0) std::cout <<"RecoADCHits size: "<<recoadcsize<<std::endl;
+    for (std::pair<unsigned long, std::vector<std::vector<ADCPulse>>> apair : RecoADCHits){
+      unsigned long chankey = apair.first;
+      Detector *thistube = geom->ChannelToDetector(chankey);
+      int detectorkey = thistube->GetDetectorID();
+      if (thistube->GetDetectorElement()=="Tank"){
+        std::vector<std::vector<ADCPulse>> pulses = apair.second;
+        for (int i_minibuffer = 0; i_minibuffer < pulses.size(); i_minibuffer++){
+          std::vector<ADCPulse> apulsevector = pulses.at(i_minibuffer);
+          for (int i_pulse=0; i_pulse < apulsevector.size(); i_pulse++){
+            ADCPulse apulse = apulsevector.at(i_pulse);
+            double start_time = apulse.start_time();
+            double peak_time = apulse.peak_time();
+            double baseline = apulse.baseline();
+            double sigma_baseline = apulse.sigma_baseline();
+            double raw_amplitude = apulse.raw_amplitude();
+            double amplitude = apulse.amplitude();
+            double raw_area = apulse.raw_area();
+            hist_starttime->Fill(start_time);
+            hist_peaktime->Fill(peak_time);
+            hist_baseline->Fill(baseline);
+            hist_sigmabaseline->Fill(sigma_baseline);
+            hist_rawamplitude->Fill(raw_amplitude);
+            hist_amplitude->Fill(amplitude);
+            hist_rawarea->Fill(raw_area);
+            hist_tubeid_adc->Fill(detectorkey);
+            hist_starttime_singletube[detectorkey]->Fill(start_time);
+            hist_peaktime_singletube[detectorkey]->Fill(peak_time);
+            hist_baseline_singletube[detectorkey]->Fill(baseline);
+            hist_sigmabaseline_singletube[detectorkey]->Fill(sigma_baseline);
+            hist_rawamplitude_singletube[detectorkey]->Fill(raw_amplitude);
+            hist_amplitude_singletube[detectorkey]->Fill(amplitude);
+            hist_rawarea_singletube[detectorkey]->Fill(raw_area);
+          }
+        }
+      }else {
+        if (verbose > 0) std::cout <<"TankCalibrationDiffuser: RecoADCHit does not belong to a tank PMT and is ommited. Detector key/element = "<<detectorkey<<" / "<<thistube->GetDetectorElement()<<std::endl;
+      }
+      adc_loop++;
+
+    }
+
+
+
+  } else {
+
+    std::cout <<"TankCalibrationDiffuser: RecoADCHits Store does not exist and is not read out"<<std::endl;
+  }
+
   return true;
 }
 
@@ -302,6 +484,14 @@ bool TankCalibrationDiffuser::Finalise(){
   hist_charge->Write();
   hist_time->Write();
   hist_tubeid->Write();
+  hist_tubeid_adc->Write();
+  hist_starttime->Write();
+  hist_peaktime->Write();
+  hist_baseline->Write();
+  hist_sigmabaseline->Write();
+  hist_rawamplitude->Write();
+  hist_amplitude->Write();
+  hist_rawarea->Write();
 
   // create txt file to store calibration data for the specific run
   std::string filename_pre = "_Run";
@@ -391,6 +581,35 @@ bool TankCalibrationDiffuser::Finalise(){
     }
 
     //
+    //write ADCRecoPulse histograms to file as well
+    //
+
+
+    hist_starttime_singletube[detkey]->Write();
+    hist_peaktime_singletube[detkey]->Write();
+    hist_baseline_singletube[detkey]->Write();
+    hist_sigmabaseline_singletube[detkey]->Write();
+    hist_rawamplitude_singletube[detkey]->Write();
+    hist_amplitude_singletube[detkey]->Write();
+    hist_rawarea_singletube[detkey]->Write();
+
+    starttime_mean[detkey] = hist_starttime_singletube[detkey]->GetMean();
+    peaktime_mean[detkey] = hist_peaktime_singletube[detkey]->GetMean();
+    baseline_mean[detkey] = hist_baseline_singletube[detkey]->GetMean();
+    sigmabaseline_mean[detkey] = hist_sigmabaseline_singletube[detkey]->GetMean();
+    rawamplitude_mean[detkey] = hist_rawamplitude_singletube[detkey]->GetMean();
+    amplitude_mean[detkey] = hist_amplitude_singletube[detkey]->GetMean();
+    rawarea_mean[detkey] = hist_rawarea_singletube[detkey]->GetMean();
+	
+    hist_starttime_mean->Fill(starttime_mean[detkey]);
+    hist_peaktime_mean->Fill(peaktime_mean[detkey]);
+    hist_baseline_mean->Fill(baseline_mean[detkey]);
+    hist_sigmabaseline_mean->Fill(sigmabaseline_mean[detkey]);
+    hist_rawamplitude_mean->Fill(rawamplitude_mean[detkey]);
+    hist_amplitude_mean->Fill(amplitude_mean[detkey]);
+    hist_rawarea_mean->Fill(rawarea_mean[detkey]);
+	
+    //
     //fill spatial detector plots as well
     //
 
@@ -398,12 +617,26 @@ bool TankCalibrationDiffuser::Finalise(){
       hist_time_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,fabs(mean_time_fit[detkey]-expected_time[detkey]));  
       hist_time_2D_y_phi_mean->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,mean_time_fit[detkey]);  
       hist_charge_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,mean_charge_fit[detkey]);
+      hist_starttime_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,starttime_mean[detkey]);
+      hist_peaktime_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,peaktime_mean[detkey]);
+      hist_baseline_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,baseline_mean[detkey]);
+      hist_sigmabaseline_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,sigmabaseline_mean[detkey]);
+      hist_rawamplitude_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,rawamplitude_mean[detkey]);
+      hist_amplitude_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,amplitude_mean[detkey]);
+      hist_rawarea_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,rawarea_mean[detkey]);
       hist_detkey_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+1,detkey);    
     }
     else {
       hist_time_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,fabs(mean_time_fit[detkey]-expected_time[detkey]));
       hist_time_2D_y_phi_mean->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,mean_time_fit[detkey]);
       hist_charge_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,mean_charge_fit[detkey]);
+      hist_starttime_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,starttime_mean[detkey]);
+      hist_peaktime_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,peaktime_mean[detkey]);
+      hist_baseline_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,baseline_mean[detkey]);
+      hist_sigmabaseline_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,sigmabaseline_mean[detkey]);
+      hist_rawamplitude_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,rawamplitude_mean[detkey]);
+      hist_amplitude_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,amplitude_mean[detkey]);
+      hist_rawarea_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,rawarea_mean[detkey]);
       hist_detkey_2D_y_phi->SetBinContent(int(phi_PMT[detkey]/2/TMath::Pi()*100)+1,int((y_PMT[detkey]+2.5)/5.*25)+2,detkey);
     }
     result_file<<detkey<<"  "<<mean_charge_fit[detkey]<<"  "<<rms_charge_fit[detkey]<<"  "<<mean_time_fit[detkey]<<"  "<<rms_time_fit[detkey]<<"  "<<mean_time_fit[detkey]-expected_time[detkey]<<endl;
@@ -416,6 +649,13 @@ bool TankCalibrationDiffuser::Finalise(){
     hist_detkey_charge->SetBinContent(bin_nr,mean_charge_fit[detkey]);
     hist_detkey_time_mean->SetBinContent(bin_nr,mean_time_fit[detkey]);
     hist_detkey_time_dev->SetBinContent(bin_nr,mean_time_fit[detkey]-expected_time[detkey]);
+    hist_detkey_starttime->SetBinContent(bin_nr,starttime_mean[detkey]);
+    hist_detkey_peaktime->SetBinContent(bin_nr,peaktime_mean[detkey]);
+    hist_detkey_baseline->SetBinContent(bin_nr,baseline_mean[detkey]);
+    hist_detkey_sigmabaseline->SetBinContent(bin_nr,sigmabaseline_mean[detkey]);
+    hist_detkey_rawamplitude->SetBinContent(bin_nr,rawamplitude_mean[detkey]);
+    hist_detkey_amplitude->SetBinContent(bin_nr,amplitude_mean[detkey]);
+    hist_detkey_rawarea->SetBinContent(bin_nr,rawarea_mean[detkey]);
 
     vector_tf1.push_back(total);
   }
@@ -425,6 +665,13 @@ bool TankCalibrationDiffuser::Finalise(){
   hist_time_mean->GetXaxis()->SetTitle("t_{arrival} [ns]");
   hist_time_dev->GetXaxis()->SetTitle("t_{arrival} - t_{expected} [ns]");
   hist_charge_mean->GetXaxis()->SetTitle("charge [p.e.]");
+  hist_starttime_mean->GetXaxis()->SetTitle("start time [ns]");
+  hist_peaktime_mean->GetXaxis()->SetTitle("peak time [ns]");
+  hist_baseline_mean->GetXaxis()->SetTitle("baseline [ADC]");
+  hist_sigmabaseline_mean->GetXaxis()->SetTitle("sigma baseline [ADC]");
+  hist_rawamplitude_mean->GetXaxis()->SetTitle("raw amplitude [ADC]");
+  hist_amplitude_mean->GetXaxis()->SetTitle("amplitude [V]");
+  hist_rawarea_mean->GetXaxis()->SetTitle("raw area [ADC x pulses]");
 
   hist_charge_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
   hist_charge_2D_y_phi->GetYaxis()->SetTitle("y [m]");
@@ -439,29 +686,94 @@ bool TankCalibrationDiffuser::Finalise(){
   hist_time_2D_y_phi_mean->GetXaxis()->SetTitle("#phi [deg]");
   hist_time_2D_y_phi_mean->GetYaxis()->SetTitle("y [m]");
   hist_time_2D_y_phi_mean->SetStats(0);
+  hist_starttime_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_starttime_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_starttime_2D_y_phi->SetStats(0);
+  hist_peaktime_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_peaktime_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_peaktime_2D_y_phi->SetStats(0);
+  hist_baseline_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_baseline_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_baseline_2D_y_phi->SetStats(0);
+  hist_sigmabaseline_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_sigmabaseline_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_sigmabaseline_2D_y_phi->SetStats(0);
+  hist_rawamplitude_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_rawamplitude_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_rawamplitude_2D_y_phi->SetStats(0);
+  hist_amplitude_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_amplitude_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_amplitude_2D_y_phi->SetStats(0);
+  hist_rawarea_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
+  hist_rawarea_2D_y_phi->GetYaxis()->SetTitle("y [m]");
+  hist_rawarea_2D_y_phi->SetStats(0);
 
   hist_detkey_charge->GetXaxis()->SetTitle("detkey");
   hist_detkey_charge->GetYaxis()->SetTitle("Fit mean charge");
   hist_detkey_charge->SetStats(0);
   hist_detkey_time_mean->GetXaxis()->SetTitle("detkey");
-  hist_detkey_time_mean->GetYaxis()->SetTitle("Fit mean time");
+  hist_detkey_time_mean->GetYaxis()->SetTitle("Fit mean time [ns]");
   hist_detkey_time_mean->SetStats(0);
   hist_detkey_time_dev->GetXaxis()->SetTitle("detkey");
-  hist_detkey_time_dev->GetYaxis()->SetTitle("Fit time deviation");
+  hist_detkey_time_dev->GetYaxis()->SetTitle("Fit time deviation [ns]");
   hist_detkey_time_dev->SetStats(0);
+  hist_detkey_starttime->GetXaxis()->SetTitle("detkey");
+  hist_detkey_starttime->GetYaxis()->SetTitle("Mean start time [ns]");
+  hist_detkey_starttime->SetStats(0);
+  hist_detkey_peaktime->GetXaxis()->SetTitle("detkey");
+  hist_detkey_peaktime->GetYaxis()->SetTitle("Mean peak time [ns]");
+  hist_detkey_peaktime->SetStats(0);
+  hist_detkey_baseline->GetXaxis()->SetTitle("detkey");
+  hist_detkey_baseline->GetYaxis()->SetTitle("Mean baseline [ADC]");
+  hist_detkey_baseline->SetStats(0);
+  hist_detkey_sigmabaseline->GetXaxis()->SetTitle("detkey");
+  hist_detkey_sigmabaseline->GetYaxis()->SetTitle("Mean sigma baseline [ADC]");
+  hist_detkey_sigmabaseline->SetStats(0);
+  hist_detkey_rawamplitude->GetXaxis()->SetTitle("detkey");
+  hist_detkey_rawamplitude->GetYaxis()->SetTitle("Mean raw amplitude [ADC]");
+  hist_detkey_rawamplitude->SetStats(0);
+  hist_detkey_amplitude->GetXaxis()->SetTitle("detkey");
+  hist_detkey_amplitude->GetYaxis()->SetTitle("Mean amplitude [V]");
+  hist_detkey_amplitude->SetStats(0);
+  hist_detkey_rawarea->GetXaxis()->SetTitle("detkey");
+  hist_detkey_rawarea->GetYaxis()->SetTitle("Mean raw area [ADC x samples]");
+  hist_detkey_rawarea->SetStats(0);
 
   hist_time_mean->Write();
   hist_time_dev->Write();
   hist_charge_mean->Write();
+  hist_starttime_mean->Write();
+  hist_peaktime_mean->Write();
+  hist_baseline_mean->Write();
+  hist_sigmabaseline_mean->Write();
+  hist_rawamplitude_mean->Write();
+  hist_amplitude_mean->Write();
+  hist_rawarea_mean->Write();
 
   hist_time_2D_y_phi->Write();
   hist_time_2D_y_phi_mean->Write();
   hist_charge_2D_y_phi->Write();
+  hist_starttime_2D_y_phi->Write();
+  hist_peaktime_2D_y_phi->Write();
+  hist_baseline_2D_y_phi->Write();
+  hist_sigmabaseline_2D_y_phi->Write();
+  hist_rawamplitude_2D_y_phi->Write();
+  hist_amplitude_2D_y_phi->Write();
+  hist_rawarea_2D_y_phi->Write();
   hist_detkey_2D_y_phi->Write();
 
   hist_detkey_charge->Write();
   hist_detkey_time_mean->Write();
   hist_detkey_time_dev->Write();
+  hist_detkey_starttime->Write();
+  hist_detkey_peaktime->Write();
+  hist_detkey_baseline->Write();
+  hist_detkey_sigmabaseline->Write();
+  hist_detkey_rawamplitude->Write();
+  hist_detkey_amplitude->Write();
+  hist_detkey_rawarea->Write();
+
+
 
   //----------------------------------------------------------------------------
   //---------------Create and write stability plots------------------------
@@ -586,10 +898,10 @@ bool TankCalibrationDiffuser::Finalise(){
   }
 
   //----------------------------------------------------------------------------
-  //---------------Save stability root plots------------------------------------
+  //---------------Save summary root plots--------------------------------------
   //----------------------------------------------------------------------------
 
-  canvas_overview = new TCanvas("canvas_overview","Stability PMTs (Deviations)",900,600);
+  canvas_overview = new TCanvas("canvas_overview_QTdev","Stability PMTs (Deviations)",900,600);
   canvas_overview->Divide(3,2);
   canvas_overview->cd(1);
   hist_charge_2D_y_phi->Draw("colz");
@@ -627,10 +939,10 @@ bool TankCalibrationDiffuser::Finalise(){
   canvas_overview->Write();
 
   //----------------------------------------------------------------------------
-  //---------------Save stability root plots v2 (no deviations)-----------------
+  //---------------Save summary root plots v2 (no deviations)-----------------
   //----------------------------------------------------------------------------
 
-  canvas_overview2 = new TCanvas("canvas_overview2","Stability PMTs (Mean)",900,600);
+  canvas_overview2 = new TCanvas("canvas_overview_QT","Stability PMTs (Mean)",900,600);
   canvas_overview2->Divide(3,2);
   canvas_overview2->cd(1);
   hist_charge_2D_y_phi->Draw("colz");
@@ -647,6 +959,56 @@ bool TankCalibrationDiffuser::Finalise(){
   canvas_overview2->Modified();
   canvas_overview2->Update();
   canvas_overview2->Write();
+
+  //----------------------------------------------------------------------------
+  //---------------Save summary root plots v3 (RecoADC Values)----------------
+  //----------------------------------------------------------------------------
+
+  canvas_overview3 = new TCanvas("canvas_overview_recoadc","Stability PMTs (RecoADC)",900,1000);
+  canvas_overview3->Divide(4,2);
+  canvas_overview3->cd(1);
+  hist_starttime_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(2);
+  hist_peaktime_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(3);
+  hist_baseline_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(4);
+  hist_sigmabaseline_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(5);
+  hist_rawamplitude_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(6);
+  hist_amplitude_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(7);
+  hist_rawarea_2D_y_phi->Draw("colz");
+  canvas_overview3->cd(8);
+  hist_detkey_2D_y_phi->Draw("colz text");
+  canvas_overview3->Modified();
+  canvas_overview3->Update();
+  canvas_overview3->Write();
+  
+  //----------------------------------------------------------------------------
+  //---------------Save summary root plots v4 (RecoADC Values,1D)---------------
+  //----------------------------------------------------------------------------
+
+  canvas_overview4 = new TCanvas("canvas_overview_recoadc_1D","Stability PMTs (RecoADC)",900,1000);
+  canvas_overview4->Divide(4,2);
+  canvas_overview4->cd(1);
+  hist_detkey_starttime->Draw();
+  canvas_overview4->cd(2);
+  hist_detkey_peaktime->Draw();
+  canvas_overview4->cd(3);
+  hist_detkey_baseline->Draw();
+  canvas_overview4->cd(4);
+  hist_detkey_sigmabaseline->Draw();
+  canvas_overview4->cd(5);
+  hist_detkey_rawamplitude->Draw();
+  canvas_overview4->cd(6);
+  hist_detkey_amplitude->Draw();
+  canvas_overview4->cd(7);
+  hist_detkey_rawarea->Draw();
+  canvas_overview4->Modified();
+  canvas_overview4->Update();
+  canvas_overview4->Write();
 
   file_out->Close();
 

@@ -10,6 +10,7 @@
 
 #include "Tool.h"
 #include "Hit.h"
+#include "ADCPulse.h"
 #include "BeamStatus.h"
 #include "TriggerClass.h"
 #include "Detector.h"
@@ -63,6 +64,34 @@ class TankCalibrationDiffuser: public Tool {
       int nBinsCharge;
       double chargeMin;
       double chargeMax;
+      int nBinsStartTime;
+      int nBinsStartTimeTotal;
+      double startTimeMin;
+      double startTimeMax;
+      int nBinsPeakTime;
+      int nBinsPeakTimeTotal;
+      double peakTimeMin;
+      double peakTimeMax;
+      int nBinsBaseline;
+      int nBinsBaselineTotal;
+      double baselineMin;
+      double baselineMax;
+      int nBinsSigmaBaseline;
+      int nBinsSigmaBaselineTotal;
+      double sigmaBaselineMin;
+      double sigmaBaselineMax;
+      int nBinsRawAmplitude;
+      int nBinsRawAmplitudeTotal;
+      double rawAmplitudeMin;
+      double rawAmplitudeMax;
+      int nBinsAmplitude;
+      int nBinsAmplitudeTotal;
+      double amplitudeMin;
+      double amplitudeMax;
+      int nBinsRawArea;
+      int nBinsRawAreaTotal;
+      double rawAreaMin;
+      double rawAreaMax;
       int nBinsTimeFit;
       double timeFitMin;
       double timeFitMax;
@@ -123,22 +152,68 @@ class TankCalibrationDiffuser: public Tool {
       std::map<unsigned long, double> rms_charge_fit;
       std::map<unsigned long, double> rms_time_fit;
       std::map<unsigned long, double> expected_time;
+      std::map<unsigned long, double> starttime_mean;
+      std::map<unsigned long, double> peaktime_mean;
+      std::map<unsigned long, double> baseline_mean;
+      std::map<unsigned long, double> sigmabaseline_mean;
+      std::map<unsigned long, double> rawamplitude_mean;
+      std::map<unsigned long, double> amplitude_mean;
+      std::map<unsigned long, double> rawarea_mean;
 
       //define histograms for stability plots
       TH1F *hist_tubeid = nullptr;
       TH1F *hist_charge = nullptr;
       TH1F *hist_time = nullptr;
+      TH1F *hist_starttime = nullptr;
+      TH1F *hist_peaktime = nullptr;
+      TH1F *hist_baseline = nullptr;
+      TH1F *hist_sigmabaseline = nullptr;
+      TH1F *hist_rawamplitude = nullptr;
+      TH1F *hist_amplitude = nullptr;
+      TH1F *hist_rawarea = nullptr;
+      TH1F *hist_tubeid_adc = nullptr;
+
       std::map<unsigned long, TH1F*> hist_charge_singletube;
       std::map<unsigned long, TH1F*> hist_time_singletube;
+      std::map<unsigned long, TH1F*> hist_starttime_singletube;
+      std::map<unsigned long, TH1F*> hist_peaktime_singletube;
+      std::map<unsigned long, TH1F*> hist_baseline_singletube;
+      std::map<unsigned long, TH1F*> hist_sigmabaseline_singletube;
+      std::map<unsigned long, TH1F*> hist_rawamplitude_singletube;
+      std::map<unsigned long, TH1F*> hist_amplitude_singletube;
+      std::map<unsigned long, TH1F*> hist_rawarea_singletube;
+
+
       TH1F *hist_charge_mean = nullptr;
       TH1F *hist_time_mean = nullptr;
       TH1F *hist_time_dev = nullptr;
+      TH1F *hist_starttime_mean = nullptr;
+      TH1F *hist_peaktime_mean = nullptr;
+      TH1F *hist_baseline_mean = nullptr;
+      TH1F *hist_sigmabaseline_mean = nullptr;
+      TH1F *hist_rawamplitude_mean = nullptr;
+      TH1F *hist_amplitude_mean = nullptr;
+      TH1F *hist_rawarea_mean = nullptr;
       TH1F *hist_detkey_charge = nullptr;
       TH1F *hist_detkey_time_mean = nullptr;
       TH1F *hist_detkey_time_dev = nullptr;
+      TH1F *hist_detkey_starttime = nullptr;
+      TH1F *hist_detkey_peaktime = nullptr;
+      TH1F *hist_detkey_baseline = nullptr;
+      TH1F *hist_detkey_sigmabaseline = nullptr;
+      TH1F *hist_detkey_rawamplitude = nullptr;
+      TH1F *hist_detkey_amplitude = nullptr;
+      TH1F *hist_detkey_rawarea = nullptr;
       TH2F *hist_charge_2D_y_phi = nullptr;
       TH2F *hist_time_2D_y_phi = nullptr;
       TH2F *hist_time_2D_y_phi_mean = nullptr;
+      TH2F *hist_starttime_2D_y_phi = nullptr;
+      TH2F *hist_peaktime_2D_y_phi = nullptr;
+      TH2F *hist_baseline_2D_y_phi = nullptr;
+      TH2F *hist_sigmabaseline_2D_y_phi = nullptr;
+      TH2F *hist_rawamplitude_2D_y_phi = nullptr;
+      TH2F *hist_amplitude_2D_y_phi = nullptr;
+      TH2F *hist_rawarea_2D_y_phi = nullptr;
       TH2F *hist_detkey_2D_y_phi = nullptr;
 
       //container for red boxes surrounding badly calibrated PMTs
@@ -159,6 +234,8 @@ class TankCalibrationDiffuser: public Tool {
       //define overview canvas
       TCanvas *canvas_overview = nullptr;
       TCanvas *canvas_overview2 = nullptr;
+      TCanvas *canvas_overview3 = nullptr;
+      TCanvas *canvas_overview4 = nullptr;
 
       //define TApplication for possibility of interactive plotting
       TApplication *app_stability = nullptr;
