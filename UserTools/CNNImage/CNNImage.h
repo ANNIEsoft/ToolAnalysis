@@ -1,3 +1,4 @@
+ 
 #ifndef CNNImage_H
 #define CNNImage_H
 
@@ -36,6 +37,7 @@ class CNNImage: public Tool {
  private:
 
   std::string cnn_outpath; //path where to save the CNN image information
+  std::string detector_config;
   int verbosity;
   std::string mode;     //Charge, Time
   int dimension;        //dimension of the CNN image (e.g. 32, 64)
@@ -49,7 +51,6 @@ class CNNImage: public Tool {
   std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits = nullptr;
   Geometry *geom = nullptr;
 
-  std::string detector_config;
   double tank_radius;
   double tank_height;
   double tank_center_x;
