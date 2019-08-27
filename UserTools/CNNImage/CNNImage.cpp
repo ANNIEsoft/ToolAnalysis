@@ -13,7 +13,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
 
   //read in configuration file
 
-  m_variables.Get("verbosity",verbosity);
+  m_variables.Get("verbose",verbosity);
   m_variables.Get("Mode",mode);
   m_variables.Get("Dimension",dimension);
   m_variables.Get("OutputFile",cnn_outpath);

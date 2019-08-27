@@ -2,7 +2,8 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 verbose 1
 
-InputFile /ToolAnalysisLink/Simulations/e_plus_tausend_0.root
+#InputFile /ToolAnalysisLink/Simulations/e_plus_tausend_0.root
+InputFile /ToolAnalysisLink/Simulations/anti_nu_e_tausend_0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
