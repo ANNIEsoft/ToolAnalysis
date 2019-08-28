@@ -1,118 +1,175 @@
-\hypertarget{classRecoDigit}{\section{Reco\-Digit Class Reference}
-\label{classRecoDigit}\index{Reco\-Digit@{Reco\-Digit}}
+\hypertarget{classRecoDigit}{
+\section{RecoDigit Class Reference}
+\label{classRecoDigit}\index{RecoDigit@{RecoDigit}}
 }
-Inheritance diagram for Reco\-Digit\-:\begin{figure}[H]
+Inheritance diagram for RecoDigit::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=2.000000cm]{classRecoDigit}
+\includegraphics[height=2cm]{classRecoDigit}
 \end{center}
 \end{figure}
 \subsection*{Public Types}
 \begin{DoxyCompactItemize}
 \item 
-enum {\bfseries E\-Digit\-Type} \{ {\bfseries P\-M\-T8inch} = 0, 
-{\bfseries lappd\-\_\-v0} = 1, 
-{\bfseries All} = 999
+enum {\bfseries EDigitType} \{ {\bfseries PMT8inch} =  0, 
+{\bfseries lappd\_\-v0} =  1, 
+{\bfseries All} =  999
  \}
 \item 
-\hypertarget{classRecoDigit_a956555c09334bd9113b3928a64a24e78}{typedef enum Reco\-Digit\-::\-E\-Digit\-Type {\bfseries Digit\-Type}}\label{classRecoDigit_a956555c09334bd9113b3928a64a24e78}
+\hypertarget{classRecoDigit_a956555c09334bd9113b3928a64a24e78}{
+typedef enum RecoDigit::EDigitType {\bfseries DigitType}}
+\label{classRecoDigit_a956555c09334bd9113b3928a64a24e78}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoDigit_a101154b65ec76df7cc97c14f6d1dc6c6}{{\bfseries Reco\-Digit} (int region, \hyperlink{classPosition}{Position} position, double cal\-T, double cal\-Q, int digit\-Type, int detector\-Id)}\label{classRecoDigit_a101154b65ec76df7cc97c14f6d1dc6c6}
+\hypertarget{classRecoDigit_a101154b65ec76df7cc97c14f6d1dc6c6}{
+{\bfseries RecoDigit} (int region, \hyperlink{classPosition}{Position} position, double calT, double calQ, int digitType, int detectorId)}
+\label{classRecoDigit_a101154b65ec76df7cc97c14f6d1dc6c6}
 
 \item 
-\hypertarget{classRecoDigit_a232afcbdf7e4d02806ad45c16d66f471}{int {\bfseries Get\-Region} () const }\label{classRecoDigit_a232afcbdf7e4d02806ad45c16d66f471}
+\hypertarget{classRecoDigit_a232afcbdf7e4d02806ad45c16d66f471}{
+int {\bfseries GetRegion} () const }
+\label{classRecoDigit_a232afcbdf7e4d02806ad45c16d66f471}
 
 \item 
-\hypertarget{classRecoDigit_ac0b01228a2338ce349faf7f155a53409}{\hyperlink{classPosition}{Position} {\bfseries Get\-Position} () const }\label{classRecoDigit_ac0b01228a2338ce349faf7f155a53409}
+\hypertarget{classRecoDigit_ac0b01228a2338ce349faf7f155a53409}{
+\hyperlink{classPosition}{Position} {\bfseries GetPosition} () const }
+\label{classRecoDigit_ac0b01228a2338ce349faf7f155a53409}
 
 \item 
-\hypertarget{classRecoDigit_a0233d80913069093a4c280cd1bc9ffa6}{double {\bfseries Get\-Cal\-Time} () const }\label{classRecoDigit_a0233d80913069093a4c280cd1bc9ffa6}
+\hypertarget{classRecoDigit_a0233d80913069093a4c280cd1bc9ffa6}{
+double {\bfseries GetCalTime} () const }
+\label{classRecoDigit_a0233d80913069093a4c280cd1bc9ffa6}
 
 \item 
-\hypertarget{classRecoDigit_a5b6de9e5c454aba68e9adae03608b37d}{double {\bfseries Get\-Cal\-Charge} () const }\label{classRecoDigit_a5b6de9e5c454aba68e9adae03608b37d}
+\hypertarget{classRecoDigit_a5b6de9e5c454aba68e9adae03608b37d}{
+double {\bfseries GetCalCharge} () const }
+\label{classRecoDigit_a5b6de9e5c454aba68e9adae03608b37d}
 
 \item 
-\hypertarget{classRecoDigit_a4afdb96357a5f77b51bc3505001406b1}{bool {\bfseries Get\-Filter\-Status} () const }\label{classRecoDigit_a4afdb96357a5f77b51bc3505001406b1}
+\hypertarget{classRecoDigit_a4afdb96357a5f77b51bc3505001406b1}{
+bool {\bfseries GetFilterStatus} () const }
+\label{classRecoDigit_a4afdb96357a5f77b51bc3505001406b1}
 
 \item 
-\hypertarget{classRecoDigit_a2802e24aaeba074aefc4d8c61a779888}{int {\bfseries Get\-Digit\-Type} () const }\label{classRecoDigit_a2802e24aaeba074aefc4d8c61a779888}
+\hypertarget{classRecoDigit_a2802e24aaeba074aefc4d8c61a779888}{
+int {\bfseries GetDigitType} () const }
+\label{classRecoDigit_a2802e24aaeba074aefc4d8c61a779888}
 
 \item 
-\hypertarget{classRecoDigit_aa8f0ef1d80bdfa8cb97913d339b015be}{int {\bfseries Get\-Detector\-I\-D} () const }\label{classRecoDigit_aa8f0ef1d80bdfa8cb97913d339b015be}
+\hypertarget{classRecoDigit_aa8f0ef1d80bdfa8cb97913d339b015be}{
+int {\bfseries GetDetectorID} () const }
+\label{classRecoDigit_aa8f0ef1d80bdfa8cb97913d339b015be}
 
 \item 
-\hypertarget{classRecoDigit_a9ca1c7f5a86fca02e7a95337f8f6e0a1}{void {\bfseries Set\-Region} (int reg)}\label{classRecoDigit_a9ca1c7f5a86fca02e7a95337f8f6e0a1}
+\hypertarget{classRecoDigit_a9ca1c7f5a86fca02e7a95337f8f6e0a1}{
+void {\bfseries SetRegion} (int reg)}
+\label{classRecoDigit_a9ca1c7f5a86fca02e7a95337f8f6e0a1}
 
 \item 
-\hypertarget{classRecoDigit_a39a5aee7c3779a79cb6e265b8ff9b17f}{void {\bfseries Set\-Position} (\hyperlink{classPosition}{Position} pos)}\label{classRecoDigit_a39a5aee7c3779a79cb6e265b8ff9b17f}
+\hypertarget{classRecoDigit_a39a5aee7c3779a79cb6e265b8ff9b17f}{
+void {\bfseries SetPosition} (\hyperlink{classPosition}{Position} pos)}
+\label{classRecoDigit_a39a5aee7c3779a79cb6e265b8ff9b17f}
 
 \item 
-\hypertarget{classRecoDigit_a90c087145b6e2c98604984e77e516097}{void {\bfseries Set\-Cal\-Time} (double calt)}\label{classRecoDigit_a90c087145b6e2c98604984e77e516097}
+\hypertarget{classRecoDigit_a90c087145b6e2c98604984e77e516097}{
+void {\bfseries SetCalTime} (double calt)}
+\label{classRecoDigit_a90c087145b6e2c98604984e77e516097}
 
 \item 
-\hypertarget{classRecoDigit_a4d99c1fe4f0c12009fe03d2001fbc34a}{void {\bfseries Set\-Cal\-Charge} (double calq)}\label{classRecoDigit_a4d99c1fe4f0c12009fe03d2001fbc34a}
+\hypertarget{classRecoDigit_a4d99c1fe4f0c12009fe03d2001fbc34a}{
+void {\bfseries SetCalCharge} (double calq)}
+\label{classRecoDigit_a4d99c1fe4f0c12009fe03d2001fbc34a}
 
 \item 
-\hypertarget{classRecoDigit_ae3d6e5e550ee6dc600c5c4fb3d2cc9b8}{void {\bfseries Set\-Digit\-Type} (int type)}\label{classRecoDigit_ae3d6e5e550ee6dc600c5c4fb3d2cc9b8}
+\hypertarget{classRecoDigit_ae3d6e5e550ee6dc600c5c4fb3d2cc9b8}{
+void {\bfseries SetDigitType} (int type)}
+\label{classRecoDigit_ae3d6e5e550ee6dc600c5c4fb3d2cc9b8}
 
 \item 
-\hypertarget{classRecoDigit_a0b9aff43d262a25049d48e24128ba134}{void {\bfseries Set\-Detector\-I\-D} (int I\-D)}\label{classRecoDigit_a0b9aff43d262a25049d48e24128ba134}
+\hypertarget{classRecoDigit_a0b9aff43d262a25049d48e24128ba134}{
+void {\bfseries SetDetectorID} (int ID)}
+\label{classRecoDigit_a0b9aff43d262a25049d48e24128ba134}
 
 \item 
-\hypertarget{classRecoDigit_af041c9a65186701246312d4f619fb0d7}{void {\bfseries Set\-Filter} (bool pass=1)}\label{classRecoDigit_af041c9a65186701246312d4f619fb0d7}
+\hypertarget{classRecoDigit_af041c9a65186701246312d4f619fb0d7}{
+void {\bfseries SetFilter} (bool pass=1)}
+\label{classRecoDigit_af041c9a65186701246312d4f619fb0d7}
 
 \item 
-\hypertarget{classRecoDigit_a5485213b310d7ad62868ac7b63b36164}{void {\bfseries Reset\-Filter} ()}\label{classRecoDigit_a5485213b310d7ad62868ac7b63b36164}
+\hypertarget{classRecoDigit_a5485213b310d7ad62868ac7b63b36164}{
+void {\bfseries ResetFilter} ()}
+\label{classRecoDigit_a5485213b310d7ad62868ac7b63b36164}
 
 \item 
-\hypertarget{classRecoDigit_a1ef3383052ca57bde6f998a31cf597a4}{void {\bfseries Pass\-Filter} ()}\label{classRecoDigit_a1ef3383052ca57bde6f998a31cf597a4}
+\hypertarget{classRecoDigit_a1ef3383052ca57bde6f998a31cf597a4}{
+void {\bfseries PassFilter} ()}
+\label{classRecoDigit_a1ef3383052ca57bde6f998a31cf597a4}
 
 \item 
-\hypertarget{classRecoDigit_a85dc77b6895110b7fe560ec368edc95b}{bool {\bfseries Print} ()}\label{classRecoDigit_a85dc77b6895110b7fe560ec368edc95b}
+\hypertarget{classRecoDigit_a85dc77b6895110b7fe560ec368edc95b}{
+bool {\bfseries Print} ()}
+\label{classRecoDigit_a85dc77b6895110b7fe560ec368edc95b}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoDigit_a9d0cec7fc8c9b422a07a8c829086dfb4}{{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}\label{classRecoDigit_a9d0cec7fc8c9b422a07a8c829086dfb4}
+\hypertarget{classRecoDigit_af26a99673aa4b79f571e7824bead50e8}{
+{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}
+\label{classRecoDigit_af26a99673aa4b79f571e7824bead50e8}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoDigit_ae74b120795ec48de1d5cea5e4a98adbf}{int {\bfseries f\-Region}}\label{classRecoDigit_ae74b120795ec48de1d5cea5e4a98adbf}
+\hypertarget{classRecoDigit_ae74b120795ec48de1d5cea5e4a98adbf}{
+int {\bfseries fRegion}}
+\label{classRecoDigit_ae74b120795ec48de1d5cea5e4a98adbf}
 
 \item 
-\hypertarget{classRecoDigit_ab71e3023b350a15c2c38e8e30ced2d1c}{\hyperlink{classPosition}{Position} {\bfseries f\-Position}}\label{classRecoDigit_ab71e3023b350a15c2c38e8e30ced2d1c}
+\hypertarget{classRecoDigit_ab71e3023b350a15c2c38e8e30ced2d1c}{
+\hyperlink{classPosition}{Position} {\bfseries fPosition}}
+\label{classRecoDigit_ab71e3023b350a15c2c38e8e30ced2d1c}
 
 \item 
-\hypertarget{classRecoDigit_a776c1d20c30b00592084694d4b83a1b2}{double {\bfseries f\-Cal\-Time}}\label{classRecoDigit_a776c1d20c30b00592084694d4b83a1b2}
+\hypertarget{classRecoDigit_a776c1d20c30b00592084694d4b83a1b2}{
+double {\bfseries fCalTime}}
+\label{classRecoDigit_a776c1d20c30b00592084694d4b83a1b2}
 
 \item 
-\hypertarget{classRecoDigit_abd1954b7a04f5f13cadb9632aae55a88}{double {\bfseries f\-Cal\-Charge}}\label{classRecoDigit_abd1954b7a04f5f13cadb9632aae55a88}
+\hypertarget{classRecoDigit_abd1954b7a04f5f13cadb9632aae55a88}{
+double {\bfseries fCalCharge}}
+\label{classRecoDigit_abd1954b7a04f5f13cadb9632aae55a88}
 
 \item 
-\hypertarget{classRecoDigit_a495d492b0bd93ececf36e67640bb18ff}{bool {\bfseries f\-Is\-Filtered}}\label{classRecoDigit_a495d492b0bd93ececf36e67640bb18ff}
+\hypertarget{classRecoDigit_a495d492b0bd93ececf36e67640bb18ff}{
+bool {\bfseries fIsFiltered}}
+\label{classRecoDigit_a495d492b0bd93ececf36e67640bb18ff}
 
 \item 
-\hypertarget{classRecoDigit_a705e426d69c0160f0529b999f76c36af}{int {\bfseries f\-Digit\-Type}}\label{classRecoDigit_a705e426d69c0160f0529b999f76c36af}
+\hypertarget{classRecoDigit_a705e426d69c0160f0529b999f76c36af}{
+int {\bfseries fDigitType}}
+\label{classRecoDigit_a705e426d69c0160f0529b999f76c36af}
 
 \item 
-\hypertarget{classRecoDigit_aa3fb00f02b02329aad2cb1634da5e3e8}{int {\bfseries f\-Detector\-I\-D}}\label{classRecoDigit_aa3fb00f02b02329aad2cb1634da5e3e8}
+\hypertarget{classRecoDigit_aa3fb00f02b02329aad2cb1634da5e3e8}{
+int {\bfseries fDetectorID}}
+\label{classRecoDigit_aa3fb00f02b02329aad2cb1634da5e3e8}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoDigit_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classRecoDigit_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classRecoDigit_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classRecoDigit_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following file\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following file:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Reco\-Digit.\-h\end{DoxyCompactItemize}
+DataModel/RecoDigit.h\end{DoxyCompactItemize}
