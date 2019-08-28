@@ -1,66 +1,62 @@
-\hypertarget{classDigitBuilder}{\section{Digit\-Builder Class Reference}
-\label{classDigitBuilder}\index{Digit\-Builder@{Digit\-Builder}}
+\hypertarget{classDigitBuilder}{
+\section{DigitBuilder Class Reference}
+\label{classDigitBuilder}\index{DigitBuilder@{DigitBuilder}}
 }
 
 
-{\ttfamily \#include $<$Digit\-Builder.\-h$>$}
-
-Inheritance diagram for Digit\-Builder\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classDigitBuilder}
-\end{center}
-\end{figure}
-\subsection*{Public Member Functions}
+{\ttfamily \#include $<$DigitBuilder.h$>$}\subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-bool \hyperlink{classDigitBuilder_aacb1cb36e5063ba4774381012ac148d6}{Initialise} (std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data)
+bool \hyperlink{classDigitBuilder_aacb1cb36e5063ba4774381012ac148d6}{Initialise} (std::string configfile, \hyperlink{classDataModel}{DataModel} \&data)
 \item 
 bool \hyperlink{classDigitBuilder_a77c2d2d5208563e7a9d8f1a2c8a4777c}{Execute} ()
 \item 
-\hypertarget{classDigitBuilder_adfbdd3e33b7ac69a7be4bf54fd264066}{bool {\bfseries Finalise} ()}\label{classDigitBuilder_adfbdd3e33b7ac69a7be4bf54fd264066}
+\hypertarget{classDigitBuilder_adfbdd3e33b7ac69a7be4bf54fd264066}{
+bool {\bfseries Finalise} ()}
+\label{classDigitBuilder_adfbdd3e33b7ac69a7be4bf54fd264066}
 
 \end{DoxyCompactItemize}
 \subsection*{Static Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classDigitBuilder_a3bffe9fa6444a64595122c859d00513d}{static \hyperlink{classDigitBuilder}{Digit\-Builder} $\ast$ {\bfseries Instance} ()}\label{classDigitBuilder_a3bffe9fa6444a64595122c859d00513d}
+\hypertarget{classDigitBuilder_a3bffe9fa6444a64595122c859d00513d}{
+static \hyperlink{classDigitBuilder}{DigitBuilder} $\ast$ {\bfseries Instance} ()}
+\label{classDigitBuilder_a3bffe9fa6444a64595122c859d00513d}
 
 \end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
-This tool reads the raw data from the file and creates a \hyperlink{classDigitBuilder}{Digit\-Builder} object Jingbo Wang \href{mailto:jiowang@ucdavis.edu}{\tt jiowang@ucdavis.\-edu} 
+This tool reads the raw data from the file and creates a \hyperlink{classDigitBuilder}{DigitBuilder} object Jingbo Wang $<$\href{mailto:jiowang@ucdavis.edu}{\tt jiowang@ucdavis.edu}$>$ 
 
 \subsection{Member Function Documentation}
-\hypertarget{classDigitBuilder_a77c2d2d5208563e7a9d8f1a2c8a4777c}{\index{Digit\-Builder@{Digit\-Builder}!Execute@{Execute}}
-\index{Execute@{Execute}!DigitBuilder@{Digit\-Builder}}
-\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool Digit\-Builder\-::\-Execute (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classDigitBuilder_a77c2d2d5208563e7a9d8f1a2c8a4777c}
+\hypertarget{classDigitBuilder_a77c2d2d5208563e7a9d8f1a2c8a4777c}{
+\index{DigitBuilder@{DigitBuilder}!Execute@{Execute}}
+\index{Execute@{Execute}!DigitBuilder@{DigitBuilder}}
+\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool DigitBuilder::Execute ()}}
+\label{classDigitBuilder_a77c2d2d5208563e7a9d8f1a2c8a4777c}
+
+
 Reset everything
 
-see if \char`\"{}\-Reco\-Event\char`\"{} exists. If not, make it
+see if \char`\"{}RecoEvent\char`\"{} exists. If not, make it
 
-Retrieve necessary info from A\-N\-N\-I\-E\-Event
+Retrieve necessary info from ANNIEEvent
 
-Build \hyperlink{classRecoDigit}{Reco\-Digit}
+Build \hyperlink{classRecoDigit}{RecoDigit}
 
-\hyperlink{classHit}{Hit} info. to Reco\-Event \hypertarget{classDigitBuilder_aacb1cb36e5063ba4774381012ac148d6}{\index{Digit\-Builder@{Digit\-Builder}!Initialise@{Initialise}}
-\index{Initialise@{Initialise}!DigitBuilder@{Digit\-Builder}}
-\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool Digit\-Builder\-::\-Initialise (
-\begin{DoxyParamCaption}
-\item[{std\-::string}]{configfile, }
-\item[{{\bf Data\-Model} \&}]{data}
-\end{DoxyParamCaption}
-)}}\label{classDigitBuilder_aacb1cb36e5063ba4774381012ac148d6}
+\hyperlink{classHit}{Hit} info. to RecoEvent \hypertarget{classDigitBuilder_aacb1cb36e5063ba4774381012ac148d6}{
+\index{DigitBuilder@{DigitBuilder}!Initialise@{Initialise}}
+\index{Initialise@{Initialise}!DigitBuilder@{DigitBuilder}}
+\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool DigitBuilder::Initialise (std::string {\em configfile}, \/  {\bf DataModel} \& {\em data})}}
+\label{classDigitBuilder_aacb1cb36e5063ba4774381012ac148d6}
+
+
 Get the Tool configuration variables
 
 Construct the other objects we'll be setting at event level, 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-Digit\-Builder/Digit\-Builder.\-h\item 
-User\-Tools/\-Digit\-Builder/Digit\-Builder.\-cpp\end{DoxyCompactItemize}
+UserTools/DigitBuilder/DigitBuilder.h\item 
+UserTools/DigitBuilder/DigitBuilder.cpp\end{DoxyCompactItemize}

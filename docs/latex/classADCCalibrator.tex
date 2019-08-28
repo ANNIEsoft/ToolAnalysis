@@ -1,54 +1,48 @@
-\hypertarget{classADCCalibrator}{\section{A\-D\-C\-Calibrator Class Reference}
-\label{classADCCalibrator}\index{A\-D\-C\-Calibrator@{A\-D\-C\-Calibrator}}
+\hypertarget{classADCCalibrator}{
+\section{ADCCalibrator Class Reference}
+\label{classADCCalibrator}\index{ADCCalibrator@{ADCCalibrator}}
 }
-Inheritance diagram for A\-D\-C\-Calibrator\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classADCCalibrator}
-\end{center}
-\end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classADCCalibrator_af376d025b37e060119268c1e97eae714}{bool {\bfseries Initialise} (const std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data) override}\label{classADCCalibrator_af376d025b37e060119268c1e97eae714}
+\hypertarget{classADCCalibrator_af376d025b37e060119268c1e97eae714}{
+bool {\bfseries Initialise} (const std::string configfile, \hyperlink{classDataModel}{DataModel} \&data) override}
+\label{classADCCalibrator_af376d025b37e060119268c1e97eae714}
 
 \item 
-\hypertarget{classADCCalibrator_ac934901bc4c27eeffe0321bc0d2bf7bb}{bool {\bfseries Execute} () override}\label{classADCCalibrator_ac934901bc4c27eeffe0321bc0d2bf7bb}
+\hypertarget{classADCCalibrator_ac934901bc4c27eeffe0321bc0d2bf7bb}{
+bool {\bfseries Execute} () override}
+\label{classADCCalibrator_ac934901bc4c27eeffe0321bc0d2bf7bb}
 
 \item 
-\hypertarget{classADCCalibrator_a91ebec325155989f4116e1097cce95f8}{bool {\bfseries Finalise} () override}\label{classADCCalibrator_a91ebec325155989f4116e1097cce95f8}
+\hypertarget{classADCCalibrator_a91ebec325155989f4116e1097cce95f8}{
+bool {\bfseries Finalise} () override}
+\label{classADCCalibrator_a91ebec325155989f4116e1097cce95f8}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-void \hyperlink{classADCCalibrator_a94399155c9abcf28b5294b8a6e936ee4}{ze3ra\-\_\-baseline} (const std\-::vector$<$ \hyperlink{classWaveform}{Waveform}$<$ unsigned short $>$ $>$ \&raw\-\_\-data, double \&baseline, double \&sigma\-\_\-baseline, size\-\_\-t num\-\_\-baseline\-\_\-samples)
-\begin{DoxyCompactList}\small\item\em Compute the baseline for a particular Raw\-Channel object using a technique taken from the Z\-E3\-R\-A code. \end{DoxyCompactList}\item 
-\hypertarget{classADCCalibrator_a0b32ca00704d4c1100139ec26584bc56}{std\-::vector\\*
-$<$ \hyperlink{classCalibratedADCWaveform}{Calibrated\-A\-D\-C\-Waveform}\\*
-$<$ double $>$ $>$ {\bfseries make\-\_\-calibrated\-\_\-waveforms} (const std\-::vector$<$ \hyperlink{classWaveform}{Waveform}$<$ unsigned short $>$ $>$ \&raw\-\_\-waveforms)}\label{classADCCalibrator_a0b32ca00704d4c1100139ec26584bc56}
+void \hyperlink{classADCCalibrator_a94399155c9abcf28b5294b8a6e936ee4}{ze3ra\_\-baseline} (const std::vector$<$ \hyperlink{classWaveform}{Waveform}$<$ unsigned short $>$ $>$ \&raw\_\-data, double \&baseline, double \&sigma\_\-baseline, size\_\-t num\_\-baseline\_\-samples)
+\begin{DoxyCompactList}\small\item\em Compute the baseline for a particular RawChannel object using a technique taken from the ZE3RA code. \item\end{DoxyCompactList}\item 
+\hypertarget{classADCCalibrator_a0b32ca00704d4c1100139ec26584bc56}{
+std::vector$<$ \hyperlink{classCalibratedADCWaveform}{CalibratedADCWaveform}$<$ double $>$ $>$ {\bfseries make\_\-calibrated\_\-waveforms} (const std::vector$<$ \hyperlink{classWaveform}{Waveform}$<$ unsigned short $>$ $>$ \&raw\_\-waveforms)}
+\label{classADCCalibrator_a0b32ca00704d4c1100139ec26584bc56}
 
 \end{DoxyCompactItemize}
 
 
 \subsection{Member Function Documentation}
-\hypertarget{classADCCalibrator_a94399155c9abcf28b5294b8a6e936ee4}{\index{A\-D\-C\-Calibrator@{A\-D\-C\-Calibrator}!ze3ra\-\_\-baseline@{ze3ra\-\_\-baseline}}
-\index{ze3ra\-\_\-baseline@{ze3ra\-\_\-baseline}!ADCCalibrator@{A\-D\-C\-Calibrator}}
-\subsubsection[{ze3ra\-\_\-baseline}]{\setlength{\rightskip}{0pt plus 5cm}void A\-D\-C\-Calibrator\-::ze3ra\-\_\-baseline (
-\begin{DoxyParamCaption}
-\item[{const std\-::vector$<$ {\bf Waveform}$<$ unsigned short $>$ $>$ \&}]{raw\-\_\-data, }
-\item[{double \&}]{baseline, }
-\item[{double \&}]{sigma\-\_\-baseline, }
-\item[{size\-\_\-t}]{num\-\_\-baseline\-\_\-samples}
-\end{DoxyParamCaption}
-)\hspace{0.3cm}{\ttfamily [protected]}}}\label{classADCCalibrator_a94399155c9abcf28b5294b8a6e936ee4}
+\hypertarget{classADCCalibrator_a94399155c9abcf28b5294b8a6e936ee4}{
+\index{ADCCalibrator@{ADCCalibrator}!ze3ra\_\-baseline@{ze3ra\_\-baseline}}
+\index{ze3ra\_\-baseline@{ze3ra\_\-baseline}!ADCCalibrator@{ADCCalibrator}}
+\subsubsection[{ze3ra\_\-baseline}]{\setlength{\rightskip}{0pt plus 5cm}void ADCCalibrator::ze3ra\_\-baseline (const std::vector$<$ {\bf Waveform}$<$ unsigned short $>$ $>$ \& {\em raw\_\-data}, \/  double \& {\em baseline}, \/  double \& {\em sigma\_\-baseline}, \/  size\_\-t {\em num\_\-baseline\_\-samples})\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classADCCalibrator_a94399155c9abcf28b5294b8a6e936ee4}
 
 
-Compute the baseline for a particular Raw\-Channel object using a technique taken from the Z\-E3\-R\-A code. 
+Compute the baseline for a particular RawChannel object using a technique taken from the ZE3RA code. See section 2.2 of \href{https://arxiv.org/pdf/1106.0808.pdf}{\tt https://arxiv.org/pdf/1106.0808.pdf} for a description of the algorithm. 
 
-See section 2.\-2 of \href{https://arxiv.org/pdf/1106.0808.pdf}{\tt https\-://arxiv.\-org/pdf/1106.\-0808.\-pdf} for a description of the algorithm. 
-
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-A\-D\-C\-Calibrator/A\-D\-C\-Calibrator.\-h\item 
-User\-Tools/\-A\-D\-C\-Calibrator/A\-D\-C\-Calibrator.\-cpp\end{DoxyCompactItemize}
+UserTools/ADCCalibrator/ADCCalibrator.h\item 
+UserTools/ADCCalibrator/ADCCalibrator.cpp\end{DoxyCompactItemize}

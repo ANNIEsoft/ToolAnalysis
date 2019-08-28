@@ -1,82 +1,116 @@
-\hypertarget{classannie_1_1RawCard}{\section{annie\-:\-:Raw\-Card Class Reference}
-\label{classannie_1_1RawCard}\index{annie\-::\-Raw\-Card@{annie\-::\-Raw\-Card}}
+\hypertarget{classannie_1_1RawCard}{
+\section{annie::RawCard Class Reference}
+\label{classannie_1_1RawCard}\index{annie::RawCard@{annie::RawCard}}
 }
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classannie_1_1RawCard_ab60fad3bbc6ac3ef66759f4436a57413}{{\bfseries Raw\-Card} (int Card\-I\-D, unsigned long long Last\-Sync, int Start\-Time\-Sec, int Start\-Time\-N\-Sec, unsigned long long Start\-Count, int Channels, int Buffer\-Size, int Mini\-Buffer\-Size, const std\-::vector$<$ unsigned short $>$ \&Data, const std\-::vector$<$ unsigned long long $>$ \&Trigger\-Counts, const std\-::vector$<$ unsigned int $>$ \&Rates)}\label{classannie_1_1RawCard_ab60fad3bbc6ac3ef66759f4436a57413}
+\hypertarget{classannie_1_1RawCard_ab60fad3bbc6ac3ef66759f4436a57413}{
+{\bfseries RawCard} (int CardID, unsigned long long LastSync, int StartTimeSec, int StartTimeNSec, unsigned long long StartCount, int Channels, int BufferSize, int MiniBufferSize, const std::vector$<$ unsigned short $>$ \&Data, const std::vector$<$ unsigned long long $>$ \&TriggerCounts, const std::vector$<$ unsigned int $>$ \&Rates)}
+\label{classannie_1_1RawCard_ab60fad3bbc6ac3ef66759f4436a57413}
 
 \item 
-\hypertarget{classannie_1_1RawCard_ae80499190a7ce2c3b2b178e9cb2c1aef}{unsigned int {\bfseries card\-\_\-id} () const }\label{classannie_1_1RawCard_ae80499190a7ce2c3b2b178e9cb2c1aef}
+\hypertarget{classannie_1_1RawCard_ae80499190a7ce2c3b2b178e9cb2c1aef}{
+unsigned int {\bfseries card\_\-id} () const }
+\label{classannie_1_1RawCard_ae80499190a7ce2c3b2b178e9cb2c1aef}
 
 \item 
-\hypertarget{classannie_1_1RawCard_a1ce186081972d76fe0f291e824f1a6c2}{const std\-::map$<$ int, \\*
-\hyperlink{classannie_1_1RawChannel}{annie\-::\-Raw\-Channel} $>$ \& {\bfseries channels} () const }\label{classannie_1_1RawCard_a1ce186081972d76fe0f291e824f1a6c2}
+\hypertarget{classannie_1_1RawCard_a1ce186081972d76fe0f291e824f1a6c2}{
+const std::map$<$ int, \hyperlink{classannie_1_1RawChannel}{annie::RawChannel} $>$ \& {\bfseries channels} () const }
+\label{classannie_1_1RawCard_a1ce186081972d76fe0f291e824f1a6c2}
 
 \item 
-\hypertarget{classannie_1_1RawCard_aaf7dd447d1038242ca0651fda2570212}{const \hyperlink{classannie_1_1RawChannel}{annie\-::\-Raw\-Channel} \& {\bfseries channel} (int index) const }\label{classannie_1_1RawCard_aaf7dd447d1038242ca0651fda2570212}
+\hypertarget{classannie_1_1RawCard_aaf7dd447d1038242ca0651fda2570212}{
+const \hyperlink{classannie_1_1RawChannel}{annie::RawChannel} \& {\bfseries channel} (int index) const }
+\label{classannie_1_1RawCard_aaf7dd447d1038242ca0651fda2570212}
 
 \item 
-\hypertarget{classannie_1_1RawCard_a897bdf7938f0336e1227169f8ffc5983}{unsigned long long {\bfseries last\-\_\-sync} () const }\label{classannie_1_1RawCard_a897bdf7938f0336e1227169f8ffc5983}
+\hypertarget{classannie_1_1RawCard_a897bdf7938f0336e1227169f8ffc5983}{
+unsigned long long {\bfseries last\_\-sync} () const }
+\label{classannie_1_1RawCard_a897bdf7938f0336e1227169f8ffc5983}
 
 \item 
-\hypertarget{classannie_1_1RawCard_a35a59e99e1f3f9bad798edf7722844e7}{int {\bfseries start\-\_\-time\-\_\-sec} () const }\label{classannie_1_1RawCard_a35a59e99e1f3f9bad798edf7722844e7}
+\hypertarget{classannie_1_1RawCard_a35a59e99e1f3f9bad798edf7722844e7}{
+int {\bfseries start\_\-time\_\-sec} () const }
+\label{classannie_1_1RawCard_a35a59e99e1f3f9bad798edf7722844e7}
 
 \item 
-\hypertarget{classannie_1_1RawCard_aeea00e9f783264147b2727086579dac2}{int {\bfseries start\-\_\-time\-\_\-nsec} () const }\label{classannie_1_1RawCard_aeea00e9f783264147b2727086579dac2}
+\hypertarget{classannie_1_1RawCard_aeea00e9f783264147b2727086579dac2}{
+int {\bfseries start\_\-time\_\-nsec} () const }
+\label{classannie_1_1RawCard_aeea00e9f783264147b2727086579dac2}
 
 \item 
-\hypertarget{classannie_1_1RawCard_ae1be1b743170e50a80448d4516f0c201}{unsigned long long {\bfseries start\-\_\-count} () const }\label{classannie_1_1RawCard_ae1be1b743170e50a80448d4516f0c201}
+\hypertarget{classannie_1_1RawCard_ae1be1b743170e50a80448d4516f0c201}{
+unsigned long long {\bfseries start\_\-count} () const }
+\label{classannie_1_1RawCard_ae1be1b743170e50a80448d4516f0c201}
 
 \item 
-\hypertarget{classannie_1_1RawCard_a525abf75a5bcff78842437b91d4cd3b1}{unsigned long long \hyperlink{classannie_1_1RawCard_a525abf75a5bcff78842437b91d4cd3b1}{trigger\-\_\-time} (size\-\_\-t minibuffer\-\_\-index) const }\label{classannie_1_1RawCard_a525abf75a5bcff78842437b91d4cd3b1}
+\hypertarget{classannie_1_1RawCard_a525abf75a5bcff78842437b91d4cd3b1}{
+unsigned long long \hyperlink{classannie_1_1RawCard_a525abf75a5bcff78842437b91d4cd3b1}{trigger\_\-time} (size\_\-t minibuffer\_\-index) const }
+\label{classannie_1_1RawCard_a525abf75a5bcff78842437b91d4cd3b1}
 
-\begin{DoxyCompactList}\small\item\em Compute the time (in nanoseconds since the Unix epoch) for the trigger corresponding to the given minibuffer using the timestamps from this card. \end{DoxyCompactList}\item 
-\hypertarget{classannie_1_1RawCard_a9deb5ad2584690c58f41d4e9a5ce030c}{size\-\_\-t \hyperlink{classannie_1_1RawCard_a9deb5ad2584690c58f41d4e9a5ce030c}{num\-\_\-minibuffers} () const }\label{classannie_1_1RawCard_a9deb5ad2584690c58f41d4e9a5ce030c}
+\begin{DoxyCompactList}\small\item\em Compute the time (in nanoseconds since the Unix epoch) for the trigger corresponding to the given minibuffer using the timestamps from this card. \item\end{DoxyCompactList}\item 
+\hypertarget{classannie_1_1RawCard_a9deb5ad2584690c58f41d4e9a5ce030c}{
+size\_\-t \hyperlink{classannie_1_1RawCard_a9deb5ad2584690c58f41d4e9a5ce030c}{num\_\-minibuffers} () const }
+\label{classannie_1_1RawCard_a9deb5ad2584690c58f41d4e9a5ce030c}
 
-\begin{DoxyCompactList}\small\item\em Get the number of minibuffers stored for each channel owned by this card. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Get the number of minibuffers stored for each channel owned by this card. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classannie_1_1RawCard_a9a63a10eabb68630f99a1c45dcfbcfe5}{void {\bfseries add\-\_\-channel} (int channel\-\_\-number, const std\-::vector$<$ unsigned short $>$ \&full\-\_\-buffer\-\_\-data, int channel\-\_\-buffer\-\_\-size, unsigned int rate, bool overwrite\-\_\-ok=false)}\label{classannie_1_1RawCard_a9a63a10eabb68630f99a1c45dcfbcfe5}
+\hypertarget{classannie_1_1RawCard_a9a63a10eabb68630f99a1c45dcfbcfe5}{
+void {\bfseries add\_\-channel} (int channel\_\-number, const std::vector$<$ unsigned short $>$ \&full\_\-buffer\_\-data, int channel\_\-buffer\_\-size, unsigned int rate, bool overwrite\_\-ok=false)}
+\label{classannie_1_1RawCard_a9a63a10eabb68630f99a1c45dcfbcfe5}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classannie_1_1RawCard_acb2955d63f6026b4df217009522ffaff}{unsigned \hyperlink{classannie_1_1RawCard_acb2955d63f6026b4df217009522ffaff}{card\-\_\-id\-\_\-}}\label{classannie_1_1RawCard_acb2955d63f6026b4df217009522ffaff}
+\hypertarget{classannie_1_1RawCard_acb2955d63f6026b4df217009522ffaff}{
+unsigned \hyperlink{classannie_1_1RawCard_acb2955d63f6026b4df217009522ffaff}{card\_\-id\_\-}}
+\label{classannie_1_1RawCard_acb2955d63f6026b4df217009522ffaff}
 
-\begin{DoxyCompactList}\small\item\em The index of this V\-M\-E card. \end{DoxyCompactList}\item 
-\hypertarget{classannie_1_1RawCard_aca184bdded934ced77b3c4fbd4ee79b7}{unsigned long long {\bfseries last\-\_\-sync\-\_\-}}\label{classannie_1_1RawCard_aca184bdded934ced77b3c4fbd4ee79b7}
-
-\item 
-\hypertarget{classannie_1_1RawCard_a7be66f996a0b3ab19d6df08e3f587eb1}{int {\bfseries start\-\_\-time\-\_\-sec\-\_\-}}\label{classannie_1_1RawCard_a7be66f996a0b3ab19d6df08e3f587eb1}
-
-\item 
-\hypertarget{classannie_1_1RawCard_ae69996894abfd9bb7d9d552ceffea985}{int {\bfseries start\-\_\-time\-\_\-nsec\-\_\-}}\label{classannie_1_1RawCard_ae69996894abfd9bb7d9d552ceffea985}
+\begin{DoxyCompactList}\small\item\em The index of this VME card. \item\end{DoxyCompactList}\item 
+\hypertarget{classannie_1_1RawCard_aca184bdded934ced77b3c4fbd4ee79b7}{
+unsigned long long {\bfseries last\_\-sync\_\-}}
+\label{classannie_1_1RawCard_aca184bdded934ced77b3c4fbd4ee79b7}
 
 \item 
-\hypertarget{classannie_1_1RawCard_a52d8ffe7d27dbdcb414e887052ea4c6d}{unsigned long long {\bfseries start\-\_\-count\-\_\-}}\label{classannie_1_1RawCard_a52d8ffe7d27dbdcb414e887052ea4c6d}
+\hypertarget{classannie_1_1RawCard_a7be66f996a0b3ab19d6df08e3f587eb1}{
+int {\bfseries start\_\-time\_\-sec\_\-}}
+\label{classannie_1_1RawCard_a7be66f996a0b3ab19d6df08e3f587eb1}
 
 \item 
-\hypertarget{classannie_1_1RawCard_ad102923abf890841a4d1543048987ef8}{std\-::vector$<$ unsigned long long $>$ {\bfseries trigger\-\_\-counts\-\_\-}}\label{classannie_1_1RawCard_ad102923abf890841a4d1543048987ef8}
+\hypertarget{classannie_1_1RawCard_ae69996894abfd9bb7d9d552ceffea985}{
+int {\bfseries start\_\-time\_\-nsec\_\-}}
+\label{classannie_1_1RawCard_ae69996894abfd9bb7d9d552ceffea985}
 
 \item 
-std\-::map$<$ int, \hyperlink{classannie_1_1RawChannel}{annie\-::\-Raw\-Channel} $>$ \hyperlink{classannie_1_1RawCard_a2511d83c56ea8107a92c27bf4c9d662b}{channels\-\_\-}
-\begin{DoxyCompactList}\small\item\em Raw data for each of the channels read out by this card. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\hypertarget{classannie_1_1RawCard_a52d8ffe7d27dbdcb414e887052ea4c6d}{
+unsigned long long {\bfseries start\_\-count\_\-}}
+\label{classannie_1_1RawCard_a52d8ffe7d27dbdcb414e887052ea4c6d}
+
+\item 
+\hypertarget{classannie_1_1RawCard_ad102923abf890841a4d1543048987ef8}{
+std::vector$<$ unsigned long long $>$ {\bfseries trigger\_\-counts\_\-}}
+\label{classannie_1_1RawCard_ad102923abf890841a4d1543048987ef8}
+
+\item 
+std::map$<$ int, \hyperlink{classannie_1_1RawChannel}{annie::RawChannel} $>$ \hyperlink{classannie_1_1RawCard_a2511d83c56ea8107a92c27bf4c9d662b}{channels\_\-}
+\begin{DoxyCompactList}\small\item\em Raw data for each of the channels read out by this card. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Member Data Documentation}
-\hypertarget{classannie_1_1RawCard_a2511d83c56ea8107a92c27bf4c9d662b}{\index{annie\-::\-Raw\-Card@{annie\-::\-Raw\-Card}!channels\-\_\-@{channels\-\_\-}}
-\index{channels\-\_\-@{channels\-\_\-}!annie::RawCard@{annie\-::\-Raw\-Card}}
-\subsubsection[{channels\-\_\-}]{\setlength{\rightskip}{0pt plus 5cm}std\-::map$<$int, {\bf annie\-::\-Raw\-Channel}$>$ annie\-::\-Raw\-Card\-::channels\-\_\-\hspace{0.3cm}{\ttfamily [protected]}}}\label{classannie_1_1RawCard_a2511d83c56ea8107a92c27bf4c9d662b}
+\hypertarget{classannie_1_1RawCard_a2511d83c56ea8107a92c27bf4c9d662b}{
+\index{annie::RawCard@{annie::RawCard}!channels\_\-@{channels\_\-}}
+\index{channels\_\-@{channels\_\-}!annie::RawCard@{annie::RawCard}}
+\subsubsection[{channels\_\-}]{\setlength{\rightskip}{0pt plus 5cm}std::map$<$int, {\bf annie::RawChannel}$>$ {\bf annie::RawCard::channels\_\-}\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classannie_1_1RawCard_a2511d83c56ea8107a92c27bf4c9d662b}
 
 
-Raw data for each of the channels read out by this card. 
+Raw data for each of the channels read out by this card. Keys are channel IDs, values are \hyperlink{classannie_1_1RawChannel}{RawChannel} objects that store the associated data from the \hyperlink{classPMTData}{PMTData} tree. 
 
-Keys are channel I\-Ds, values are \hyperlink{classannie_1_1RawChannel}{Raw\-Channel} objects that store the associated data from the \hyperlink{classPMTData}{P\-M\-T\-Data} tree. 
-
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/reco\-A\-N\-N\-I\-E/Raw\-Card.\-h\item 
-User\-Tools/reco\-A\-N\-N\-I\-E/Raw\-Card.\-cc\end{DoxyCompactItemize}
+UserTools/recoANNIE/RawCard.h\item 
+UserTools/recoANNIE/RawCard.cc\end{DoxyCompactItemize}
