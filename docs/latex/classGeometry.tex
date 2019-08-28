@@ -1,193 +1,317 @@
-\hypertarget{classGeometry}{\section{Geometry Class Reference}
+\hypertarget{classGeometry}{
+\section{Geometry Class Reference}
 \label{classGeometry}\index{Geometry@{Geometry}}
 }
-Inheritance diagram for Geometry\-:\begin{figure}[H]
+Inheritance diagram for Geometry::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=2.000000cm]{classGeometry}
+\includegraphics[height=2cm]{classGeometry}
 \end{center}
 \end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classGeometry_ab5170692a6cbe471976e851f79e9319a}{Real\-Detectors {\bfseries reserve} (10)}\label{classGeometry_ab5170692a6cbe471976e851f79e9319a}
+\hypertarget{classGeometry_a4928428c8982ec5bbdde2cb3d03adc66}{
+{\bfseries Geometry} (double ver, \hyperlink{classPosition}{Position} tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::map$<$ std::string, std::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $>$dets=std::map$<$ std::string, std::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $>$\{\})}
+\label{classGeometry_a4928428c8982ec5bbdde2cb3d03adc66}
 
 \item 
-\hypertarget{classGeometry_a6f68b0647ccbaf76ba714730451dc3cf}{{\bfseries Geometry} (double ver, \hyperlink{classPosition}{Position} tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std\-::vector$<$ std\-::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $\ast$ $>$dets=std\-::vector$<$ std\-::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $\ast$ $>$\{\})}\label{classGeometry_a6f68b0647ccbaf76ba714730451dc3cf}
+\hypertarget{classGeometry_a17853a4c230bfa8f8dc38d4982311f64}{
+std::map$<$ std::string, std::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $\ast$ $>$ $>$ $\ast$ {\bfseries GetDetectors} ()}
+\label{classGeometry_a17853a4c230bfa8f8dc38d4982311f64}
 
 \item 
-\hypertarget{classGeometry_afbfabb07e8f8cad1496e2b69db8addb8}{std\-::vector$<$ std\-::map\\*
-$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $\ast$ $>$ $\ast$ {\bfseries Get\-Detectors} ()}\label{classGeometry_afbfabb07e8f8cad1496e2b69db8addb8}
+\hypertarget{classGeometry_a94c52a826664f141dd3246fa1478a475}{
+double {\bfseries GetVersion} ()}
+\label{classGeometry_a94c52a826664f141dd3246fa1478a475}
 
 \item 
-\hypertarget{classGeometry_a94c52a826664f141dd3246fa1478a475}{double {\bfseries Get\-Version} ()}\label{classGeometry_a94c52a826664f141dd3246fa1478a475}
+\hypertarget{classGeometry_a21835bb3d23fd54895350c84471dfb02}{
+geostatus {\bfseries GetStatus} ()}
+\label{classGeometry_a21835bb3d23fd54895350c84471dfb02}
 
 \item 
-\hypertarget{classGeometry_a21835bb3d23fd54895350c84471dfb02}{geostatus {\bfseries Get\-Status} ()}\label{classGeometry_a21835bb3d23fd54895350c84471dfb02}
+\hypertarget{classGeometry_a804b7ce9d8f1abe1ce5fffe9da65af51}{
+\hyperlink{classPosition}{Position} {\bfseries GetTankCentre} ()}
+\label{classGeometry_a804b7ce9d8f1abe1ce5fffe9da65af51}
 
 \item 
-\hypertarget{classGeometry_a804b7ce9d8f1abe1ce5fffe9da65af51}{\hyperlink{classPosition}{Position} {\bfseries Get\-Tank\-Centre} ()}\label{classGeometry_a804b7ce9d8f1abe1ce5fffe9da65af51}
+\hypertarget{classGeometry_abc3f55a2c64ec9f83a0ea7e82724fe49}{
+double {\bfseries GetTankRadius} ()}
+\label{classGeometry_abc3f55a2c64ec9f83a0ea7e82724fe49}
 
 \item 
-\hypertarget{classGeometry_abc3f55a2c64ec9f83a0ea7e82724fe49}{double {\bfseries Get\-Tank\-Radius} ()}\label{classGeometry_abc3f55a2c64ec9f83a0ea7e82724fe49}
+\hypertarget{classGeometry_acc0459993448786f92dbdad8c4652176}{
+double {\bfseries GetTankHalfheight} ()}
+\label{classGeometry_acc0459993448786f92dbdad8c4652176}
 
 \item 
-\hypertarget{classGeometry_acc0459993448786f92dbdad8c4652176}{double {\bfseries Get\-Tank\-Halfheight} ()}\label{classGeometry_acc0459993448786f92dbdad8c4652176}
+\hypertarget{classGeometry_abd765c4d73ceba92e39d007b6c3362bd}{
+double {\bfseries GetPMTEnclosedRadius} ()}
+\label{classGeometry_abd765c4d73ceba92e39d007b6c3362bd}
 
 \item 
-\hypertarget{classGeometry_abd765c4d73ceba92e39d007b6c3362bd}{double {\bfseries Get\-P\-M\-T\-Enclosed\-Radius} ()}\label{classGeometry_abd765c4d73ceba92e39d007b6c3362bd}
+\hypertarget{classGeometry_a42b716a80c24a5278099e7ae8515dd69}{
+double {\bfseries GetPMTEnclosedHalfheight} ()}
+\label{classGeometry_a42b716a80c24a5278099e7ae8515dd69}
 
 \item 
-\hypertarget{classGeometry_a42b716a80c24a5278099e7ae8515dd69}{double {\bfseries Get\-P\-M\-T\-Enclosed\-Halfheight} ()}\label{classGeometry_a42b716a80c24a5278099e7ae8515dd69}
+\hypertarget{classGeometry_ad33910b8b84b8956ecbfa4954a7ccfcc}{
+double {\bfseries GetFiducialCutRadius} ()}
+\label{classGeometry_ad33910b8b84b8956ecbfa4954a7ccfcc}
 
 \item 
-\hypertarget{classGeometry_ad33910b8b84b8956ecbfa4954a7ccfcc}{double {\bfseries Get\-Fiducial\-Cut\-Radius} ()}\label{classGeometry_ad33910b8b84b8956ecbfa4954a7ccfcc}
+\hypertarget{classGeometry_a849d59159bc9afef2fb5a5de1b8f920d}{
+double {\bfseries GetFiducialCutY} ()}
+\label{classGeometry_a849d59159bc9afef2fb5a5de1b8f920d}
 
 \item 
-\hypertarget{classGeometry_a849d59159bc9afef2fb5a5de1b8f920d}{double {\bfseries Get\-Fiducial\-Cut\-Y} ()}\label{classGeometry_a849d59159bc9afef2fb5a5de1b8f920d}
+\hypertarget{classGeometry_a858a7eafaa3c0629e596d1abf3e9346b}{
+double {\bfseries GetFiducialCutZ} ()}
+\label{classGeometry_a858a7eafaa3c0629e596d1abf3e9346b}
 
 \item 
-\hypertarget{classGeometry_a858a7eafaa3c0629e596d1abf3e9346b}{double {\bfseries Get\-Fiducial\-Cut\-Z} ()}\label{classGeometry_a858a7eafaa3c0629e596d1abf3e9346b}
+\hypertarget{classGeometry_a7dc78bc77bd7e01df60c513e3c1f3a8d}{
+double {\bfseries GetMrdWidth} ()}
+\label{classGeometry_a7dc78bc77bd7e01df60c513e3c1f3a8d}
 
 \item 
-\hypertarget{classGeometry_a7dc78bc77bd7e01df60c513e3c1f3a8d}{double {\bfseries Get\-Mrd\-Width} ()}\label{classGeometry_a7dc78bc77bd7e01df60c513e3c1f3a8d}
+\hypertarget{classGeometry_ad89709f6efbf3119c90da8e7631e1024}{
+double {\bfseries GetMrdHeight} ()}
+\label{classGeometry_ad89709f6efbf3119c90da8e7631e1024}
 
 \item 
-\hypertarget{classGeometry_ad89709f6efbf3119c90da8e7631e1024}{double {\bfseries Get\-Mrd\-Height} ()}\label{classGeometry_ad89709f6efbf3119c90da8e7631e1024}
+\hypertarget{classGeometry_a867b5607dbd4d3baeed4f03317026af5}{
+double {\bfseries GetMrdDepth} ()}
+\label{classGeometry_a867b5607dbd4d3baeed4f03317026af5}
 
 \item 
-\hypertarget{classGeometry_a867b5607dbd4d3baeed4f03317026af5}{double {\bfseries Get\-Mrd\-Depth} ()}\label{classGeometry_a867b5607dbd4d3baeed4f03317026af5}
+\hypertarget{classGeometry_a43cefba896c4f17a1607b658ae81c47d}{
+double {\bfseries GetMrdStart} ()}
+\label{classGeometry_a43cefba896c4f17a1607b658ae81c47d}
 
 \item 
-\hypertarget{classGeometry_a43cefba896c4f17a1607b658ae81c47d}{double {\bfseries Get\-Mrd\-Start} ()}\label{classGeometry_a43cefba896c4f17a1607b658ae81c47d}
+\hypertarget{classGeometry_a61a5beb5c95207de729dddb94670ad55}{
+double {\bfseries GetMrdEnd} ()}
+\label{classGeometry_a61a5beb5c95207de729dddb94670ad55}
 
 \item 
-\hypertarget{classGeometry_a61a5beb5c95207de729dddb94670ad55}{double {\bfseries Get\-Mrd\-End} ()}\label{classGeometry_a61a5beb5c95207de729dddb94670ad55}
+\hypertarget{classGeometry_afdc0b24374cc8906be35ea93d1c99520}{
+void {\bfseries SetVersion} (double VersionIn)}
+\label{classGeometry_afdc0b24374cc8906be35ea93d1c99520}
 
 \item 
-\hypertarget{classGeometry_afdc0b24374cc8906be35ea93d1c99520}{void {\bfseries Set\-Version} (double Version\-In)}\label{classGeometry_afdc0b24374cc8906be35ea93d1c99520}
+\hypertarget{classGeometry_a2ecdbc2a94b827fa0c372da34138d77f}{
+void {\bfseries SetStatus} (geostatus StatusIn)}
+\label{classGeometry_a2ecdbc2a94b827fa0c372da34138d77f}
 
 \item 
-\hypertarget{classGeometry_a2ecdbc2a94b827fa0c372da34138d77f}{void {\bfseries Set\-Status} (geostatus Status\-In)}\label{classGeometry_a2ecdbc2a94b827fa0c372da34138d77f}
+\hypertarget{classGeometry_ac333cb9fd34843161769b5eaf084219f}{
+void {\bfseries SetTankCentre} (\hyperlink{classPosition}{Position} tank\_\-centrein)}
+\label{classGeometry_ac333cb9fd34843161769b5eaf084219f}
 
 \item 
-\hypertarget{classGeometry_ac333cb9fd34843161769b5eaf084219f}{void {\bfseries Set\-Tank\-Centre} (\hyperlink{classPosition}{Position} tank\-\_\-centrein)}\label{classGeometry_ac333cb9fd34843161769b5eaf084219f}
+\hypertarget{classGeometry_a0f2d050fa42af21e6e0b4914974b45f5}{
+void {\bfseries SetTankRadius} (double tank\_\-radiusIn)}
+\label{classGeometry_a0f2d050fa42af21e6e0b4914974b45f5}
 
 \item 
-\hypertarget{classGeometry_a0f2d050fa42af21e6e0b4914974b45f5}{void {\bfseries Set\-Tank\-Radius} (double tank\-\_\-radius\-In)}\label{classGeometry_a0f2d050fa42af21e6e0b4914974b45f5}
+\hypertarget{classGeometry_aae1817255945967705d105665b2fb248}{
+void {\bfseries SetTankHalfheight} (double tank\_\-halfheightIn)}
+\label{classGeometry_aae1817255945967705d105665b2fb248}
 
 \item 
-\hypertarget{classGeometry_aae1817255945967705d105665b2fb248}{void {\bfseries Set\-Tank\-Halfheight} (double tank\-\_\-halfheight\-In)}\label{classGeometry_aae1817255945967705d105665b2fb248}
+\hypertarget{classGeometry_a220d86cc649f42a16d33c73c1fc9e70e}{
+void {\bfseries SetPMTEnclosedRadius} (double pmt\_\-enclosed\_\-radiusIn)}
+\label{classGeometry_a220d86cc649f42a16d33c73c1fc9e70e}
 
 \item 
-\hypertarget{classGeometry_a220d86cc649f42a16d33c73c1fc9e70e}{void {\bfseries Set\-P\-M\-T\-Enclosed\-Radius} (double pmt\-\_\-enclosed\-\_\-radius\-In)}\label{classGeometry_a220d86cc649f42a16d33c73c1fc9e70e}
+\hypertarget{classGeometry_aca093a4eaad96fa51b4bac6fbe5fc5b6}{
+void {\bfseries SetPMTEnclosedHalfheight} (double pmt\_\-enclosed\_\-halfheightIn)}
+\label{classGeometry_aca093a4eaad96fa51b4bac6fbe5fc5b6}
 
 \item 
-\hypertarget{classGeometry_aca093a4eaad96fa51b4bac6fbe5fc5b6}{void {\bfseries Set\-P\-M\-T\-Enclosed\-Halfheight} (double pmt\-\_\-enclosed\-\_\-halfheight\-In)}\label{classGeometry_aca093a4eaad96fa51b4bac6fbe5fc5b6}
+\hypertarget{classGeometry_a88cbe634b7185c5230f925a182599dd1}{
+void {\bfseries SetFiducialCutRadius} (double fidcutradiusin)}
+\label{classGeometry_a88cbe634b7185c5230f925a182599dd1}
 
 \item 
-\hypertarget{classGeometry_a88cbe634b7185c5230f925a182599dd1}{void {\bfseries Set\-Fiducial\-Cut\-Radius} (double fidcutradiusin)}\label{classGeometry_a88cbe634b7185c5230f925a182599dd1}
+\hypertarget{classGeometry_acddde32956d96095d3deb2d00c90a3ee}{
+void {\bfseries SetFiducialCutZ} (double fidcutzin)}
+\label{classGeometry_acddde32956d96095d3deb2d00c90a3ee}
 
 \item 
-\hypertarget{classGeometry_acddde32956d96095d3deb2d00c90a3ee}{void {\bfseries Set\-Fiducial\-Cut\-Z} (double fidcutzin)}\label{classGeometry_acddde32956d96095d3deb2d00c90a3ee}
+\hypertarget{classGeometry_a808167f759b49e7958abe1598d6b6294}{
+void {\bfseries SetFiducialCutY} (double fidcutyin)}
+\label{classGeometry_a808167f759b49e7958abe1598d6b6294}
 
 \item 
-\hypertarget{classGeometry_a808167f759b49e7958abe1598d6b6294}{void {\bfseries Set\-Fiducial\-Cut\-Y} (double fidcutyin)}\label{classGeometry_a808167f759b49e7958abe1598d6b6294}
+\hypertarget{classGeometry_a120524e0dcd97fdea137b49b976a5183}{
+void {\bfseries SetMrdWidth} (double mrd\_\-widthIn)}
+\label{classGeometry_a120524e0dcd97fdea137b49b976a5183}
 
 \item 
-\hypertarget{classGeometry_a120524e0dcd97fdea137b49b976a5183}{void {\bfseries Set\-Mrd\-Width} (double mrd\-\_\-width\-In)}\label{classGeometry_a120524e0dcd97fdea137b49b976a5183}
+\hypertarget{classGeometry_a42377661ec147b299c500e9aa49aaf54}{
+void {\bfseries SetMrdHeight} (double mrd\_\-heightIn)}
+\label{classGeometry_a42377661ec147b299c500e9aa49aaf54}
 
 \item 
-\hypertarget{classGeometry_a42377661ec147b299c500e9aa49aaf54}{void {\bfseries Set\-Mrd\-Height} (double mrd\-\_\-height\-In)}\label{classGeometry_a42377661ec147b299c500e9aa49aaf54}
+\hypertarget{classGeometry_a44da646292c6c7e83709e8aa47236844}{
+void {\bfseries SetMrdDepth} (double mrd\_\-depthIn)}
+\label{classGeometry_a44da646292c6c7e83709e8aa47236844}
 
 \item 
-\hypertarget{classGeometry_a44da646292c6c7e83709e8aa47236844}{void {\bfseries Set\-Mrd\-Depth} (double mrd\-\_\-depth\-In)}\label{classGeometry_a44da646292c6c7e83709e8aa47236844}
+\hypertarget{classGeometry_a100d585e24c6c52794741e280d4dd4c6}{
+void {\bfseries SetMrdStart} (double mrd\_\-startIn)}
+\label{classGeometry_a100d585e24c6c52794741e280d4dd4c6}
 
 \item 
-\hypertarget{classGeometry_a100d585e24c6c52794741e280d4dd4c6}{void {\bfseries Set\-Mrd\-Start} (double mrd\-\_\-start\-In)}\label{classGeometry_a100d585e24c6c52794741e280d4dd4c6}
+\hypertarget{classGeometry_a56df3f137af58d0cc3e1c6ed4b3eef43}{
+void {\bfseries SetDetectors} (std::map$<$ std::string, std::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $>$DetectorsIn)}
+\label{classGeometry_a56df3f137af58d0cc3e1c6ed4b3eef43}
 
 \item 
-\hypertarget{classGeometry_a2543a2a6d20336cc25a26fba69245955}{void {\bfseries Set\-Detectors} (std\-::vector$<$ std\-::map$<$ unsigned long, \hyperlink{classDetector}{Detector} $>$ $\ast$ $>$Detectors\-In)}\label{classGeometry_a2543a2a6d20336cc25a26fba69245955}
+\hypertarget{classGeometry_a2af717e2ca1bd01e2b1685857a1ef5cd}{
+void {\bfseries SetPaddles} (std::map$<$ unsigned long, \hyperlink{classPaddle}{Paddle} $>$ PaddlesIn)}
+\label{classGeometry_a2af717e2ca1bd01e2b1685857a1ef5cd}
 
 \item 
-\hypertarget{classGeometry_ac5f3c966b7862b10af20fb83c9c45082}{unsigned long {\bfseries Consume\-Next\-Free\-Channel\-Key} ()}\label{classGeometry_ac5f3c966b7862b10af20fb83c9c45082}
+\hypertarget{classGeometry_ac5f3c966b7862b10af20fb83c9c45082}{
+unsigned long {\bfseries ConsumeNextFreeChannelKey} ()}
+\label{classGeometry_ac5f3c966b7862b10af20fb83c9c45082}
 
 \item 
-\hypertarget{classGeometry_aea3868f7e8a725f672a2e488fe95eb5f}{unsigned long {\bfseries Consume\-Next\-Free\-Detector\-Key} ()}\label{classGeometry_aea3868f7e8a725f672a2e488fe95eb5f}
+\hypertarget{classGeometry_aea3868f7e8a725f672a2e488fe95eb5f}{
+unsigned long {\bfseries ConsumeNextFreeDetectorKey} ()}
+\label{classGeometry_aea3868f7e8a725f672a2e488fe95eb5f}
 
 \item 
-\hypertarget{classGeometry_aedc8d0b00db707eb63177b3fbc55e7f7}{bool {\bfseries Add\-Detector} (\hyperlink{classDetector}{Detector} detin)}\label{classGeometry_aedc8d0b00db707eb63177b3fbc55e7f7}
+\hypertarget{classGeometry_a2c49049f0ee7b77f1bd28ca6a95c4d5a}{
+bool {\bfseries SetDetectorPaddle} (unsigned long detectorkey, \hyperlink{classPaddle}{Paddle} paddlein)}
+\label{classGeometry_a2c49049f0ee7b77f1bd28ca6a95c4d5a}
 
 \item 
-\hypertarget{classGeometry_a9c164587d17b71fb8cbcfa0535dca18f}{int {\bfseries Get\-Num\-Detectors} ()}\label{classGeometry_a9c164587d17b71fb8cbcfa0535dca18f}
+\hypertarget{classGeometry_aedc8d0b00db707eb63177b3fbc55e7f7}{
+bool {\bfseries AddDetector} (\hyperlink{classDetector}{Detector} detin)}
+\label{classGeometry_aedc8d0b00db707eb63177b3fbc55e7f7}
 
 \item 
-\hypertarget{classGeometry_a3b4131297b0329603c7700e7eed9cf0b}{\hyperlink{classDetector}{Detector} $\ast$ {\bfseries Get\-Detector} (unsigned long Detector\-Key)}\label{classGeometry_a3b4131297b0329603c7700e7eed9cf0b}
+\hypertarget{classGeometry_a9c164587d17b71fb8cbcfa0535dca18f}{
+int {\bfseries GetNumDetectors} ()}
+\label{classGeometry_a9c164587d17b71fb8cbcfa0535dca18f}
 
 \item 
-\hypertarget{classGeometry_a6091d6b92a17207fdda50a03cc64b381}{\hyperlink{classDetector}{Detector} $\ast$ {\bfseries Channel\-To\-Detector} (unsigned long \hyperlink{classChannelKey}{Channel\-Key})}\label{classGeometry_a6091d6b92a17207fdda50a03cc64b381}
+\hypertarget{classGeometry_a3b4131297b0329603c7700e7eed9cf0b}{
+\hyperlink{classDetector}{Detector} $\ast$ {\bfseries GetDetector} (unsigned long DetectorKey)}
+\label{classGeometry_a3b4131297b0329603c7700e7eed9cf0b}
 
 \item 
-\hypertarget{classGeometry_a68873d502689bb73337c3f8d6e0ef3bf}{\hyperlink{classChannel}{Channel} $\ast$ {\bfseries Get\-Channel} (unsigned long \hyperlink{classChannelKey}{Channel\-Key})}\label{classGeometry_a68873d502689bb73337c3f8d6e0ef3bf}
+\hypertarget{classGeometry_a6091d6b92a17207fdda50a03cc64b381}{
+\hyperlink{classDetector}{Detector} $\ast$ {\bfseries ChannelToDetector} (unsigned long \hyperlink{classChannelKey}{ChannelKey})}
+\label{classGeometry_a6091d6b92a17207fdda50a03cc64b381}
 
 \item 
-\hypertarget{classGeometry_a60e84520417769401492de9e182636fc}{void {\bfseries Init\-Channel\-Map} ()}\label{classGeometry_a60e84520417769401492de9e182636fc}
+\hypertarget{classGeometry_a68873d502689bb73337c3f8d6e0ef3bf}{
+\hyperlink{classChannel}{Channel} $\ast$ {\bfseries GetChannel} (unsigned long \hyperlink{classChannelKey}{ChannelKey})}
+\label{classGeometry_a68873d502689bb73337c3f8d6e0ef3bf}
 
 \item 
-\hypertarget{classGeometry_a4354935089665d2856b9a9a5bb1f181a}{int {\bfseries Get\-Num\-Detectors\-In\-Set} (std\-::string Set\-Name)}\label{classGeometry_a4354935089665d2856b9a9a5bb1f181a}
+\hypertarget{classGeometry_a95975e11106a9f788eff29514e0af2cb}{
+\hyperlink{classPaddle}{Paddle} $\ast$ {\bfseries GetDetectorPaddle} (unsigned long DetectorKey)}
+\label{classGeometry_a95975e11106a9f788eff29514e0af2cb}
 
 \item 
-\hypertarget{classGeometry_a5dd283584b56f19637b114198c810b7d}{int {\bfseries Get\-Num\-Tank\-P\-M\-Ts} ()}\label{classGeometry_a5dd283584b56f19637b114198c810b7d}
+\hypertarget{classGeometry_a60e84520417769401492de9e182636fc}{
+void {\bfseries InitChannelMap} ()}
+\label{classGeometry_a60e84520417769401492de9e182636fc}
 
 \item 
-\hypertarget{classGeometry_adc4f55d81e288f3d9c1c9fdf4a8848fe}{int {\bfseries Get\-Num\-Mrd\-P\-M\-Ts} ()}\label{classGeometry_adc4f55d81e288f3d9c1c9fdf4a8848fe}
+\hypertarget{classGeometry_a4354935089665d2856b9a9a5bb1f181a}{
+int {\bfseries GetNumDetectorsInSet} (std::string SetName)}
+\label{classGeometry_a4354935089665d2856b9a9a5bb1f181a}
 
 \item 
-\hypertarget{classGeometry_a5b927dcf27fd80c85764ae046836fd8c}{int {\bfseries Get\-Num\-Veto\-P\-M\-Ts} ()}\label{classGeometry_a5b927dcf27fd80c85764ae046836fd8c}
+\hypertarget{classGeometry_a5dd283584b56f19637b114198c810b7d}{
+int {\bfseries GetNumTankPMTs} ()}
+\label{classGeometry_a5dd283584b56f19637b114198c810b7d}
 
 \item 
-\hypertarget{classGeometry_a7dbd2d763bd5944732aeb26430ded65b}{int {\bfseries Get\-Num\-L\-A\-P\-P\-Ds} ()}\label{classGeometry_a7dbd2d763bd5944732aeb26430ded65b}
+\hypertarget{classGeometry_adc4f55d81e288f3d9c1c9fdf4a8848fe}{
+int {\bfseries GetNumMrdPMTs} ()}
+\label{classGeometry_adc4f55d81e288f3d9c1c9fdf4a8848fe}
 
 \item 
-\hypertarget{classGeometry_aa53bb4913ece4beff2e7bda1070c19a1}{int {\bfseries Get\-Num\-O\-D\-P\-M\-Ts} ()}\label{classGeometry_aa53bb4913ece4beff2e7bda1070c19a1}
+\hypertarget{classGeometry_a5b927dcf27fd80c85764ae046836fd8c}{
+int {\bfseries GetNumVetoPMTs} ()}
+\label{classGeometry_a5b927dcf27fd80c85764ae046836fd8c}
 
 \item 
-\hypertarget{classGeometry_aca1dd1c2919c14b2d8bdf40db23c5ba9}{bool {\bfseries Get\-Tank\-Contained} (\hyperlink{classParticle}{Particle} part, int startstop=0)}\label{classGeometry_aca1dd1c2919c14b2d8bdf40db23c5ba9}
+\hypertarget{classGeometry_a7dbd2d763bd5944732aeb26430ded65b}{
+int {\bfseries GetNumLAPPDs} ()}
+\label{classGeometry_a7dbd2d763bd5944732aeb26430ded65b}
 
 \item 
-\hypertarget{classGeometry_a2c68539bcaaf45158dbcdc50c3f65ca6}{bool {\bfseries Get\-Tank\-Contained} (\hyperlink{classPosition}{Position} a\-Vertex)}\label{classGeometry_a2c68539bcaaf45158dbcdc50c3f65ca6}
+\hypertarget{classGeometry_aa53bb4913ece4beff2e7bda1070c19a1}{
+int {\bfseries GetNumODPMTs} ()}
+\label{classGeometry_aa53bb4913ece4beff2e7bda1070c19a1}
 
 \item 
-\hypertarget{classGeometry_af4c8b8f5df92cf905e0ea7098ceb52ed}{bool {\bfseries Get\-Mrd\-Contained} (\hyperlink{classParticle}{Particle} part, int startstop=0)}\label{classGeometry_af4c8b8f5df92cf905e0ea7098ceb52ed}
+\hypertarget{classGeometry_aca1dd1c2919c14b2d8bdf40db23c5ba9}{
+bool {\bfseries GetTankContained} (\hyperlink{classParticle}{Particle} part, int startstop=0)}
+\label{classGeometry_aca1dd1c2919c14b2d8bdf40db23c5ba9}
 
 \item 
-\hypertarget{classGeometry_a9da73da227027f3592e9ef10cb06033f}{bool {\bfseries Get\-Mrd\-Contained} (\hyperlink{classPosition}{Position} a\-Vertex)}\label{classGeometry_a9da73da227027f3592e9ef10cb06033f}
+\hypertarget{classGeometry_a2c68539bcaaf45158dbcdc50c3f65ca6}{
+bool {\bfseries GetTankContained} (\hyperlink{classPosition}{Position} aVertex)}
+\label{classGeometry_a2c68539bcaaf45158dbcdc50c3f65ca6}
 
 \item 
-\hypertarget{classGeometry_a5ddd7d7d95f76d8d711c9727824020ca}{bool {\bfseries Print} ()}\label{classGeometry_a5ddd7d7d95f76d8d711c9727824020ca}
+\hypertarget{classGeometry_af4c8b8f5df92cf905e0ea7098ceb52ed}{
+bool {\bfseries GetMrdContained} (\hyperlink{classParticle}{Particle} part, int startstop=0)}
+\label{classGeometry_af4c8b8f5df92cf905e0ea7098ceb52ed}
 
 \item 
-\hypertarget{classGeometry_acf8cf2161abe0c73a4f285f66277f2cd}{bool {\bfseries Print\-Status} (geostatus status)}\label{classGeometry_acf8cf2161abe0c73a4f285f66277f2cd}
+\hypertarget{classGeometry_a9da73da227027f3592e9ef10cb06033f}{
+bool {\bfseries GetMrdContained} (\hyperlink{classPosition}{Position} aVertex)}
+\label{classGeometry_a9da73da227027f3592e9ef10cb06033f}
 
 \item 
-\hypertarget{classGeometry_a12b34f2e75cdee8441008d9de7e2eb1b}{void {\bfseries Print\-Channels} ()}\label{classGeometry_a12b34f2e75cdee8441008d9de7e2eb1b}
+\hypertarget{classGeometry_a5ddd7d7d95f76d8d711c9727824020ca}{
+bool {\bfseries Print} ()}
+\label{classGeometry_a5ddd7d7d95f76d8d711c9727824020ca}
 
 \item 
-\hypertarget{classGeometry_af1ef26f91bb256a2a7d52c37f502acc7}{\hyperlink{classPosition}{Position} {\bfseries Global\-To\-Tank\-Centered} (\hyperlink{classPosition}{Position} posin)}\label{classGeometry_af1ef26f91bb256a2a7d52c37f502acc7}
+\hypertarget{classGeometry_acf8cf2161abe0c73a4f285f66277f2cd}{
+bool {\bfseries PrintStatus} (geostatus status)}
+\label{classGeometry_acf8cf2161abe0c73a4f285f66277f2cd}
 
 \item 
-\hypertarget{classGeometry_a89335cdbf640744d7e4362d8495b6859}{void {\bfseries Cartesian\-To\-Polar} (\hyperlink{classPosition}{Position} posin, double \&R, double \&Phi, double \&Theta, bool tankcentered=false)}\label{classGeometry_a89335cdbf640744d7e4362d8495b6859}
+\hypertarget{classGeometry_a12b34f2e75cdee8441008d9de7e2eb1b}{
+void {\bfseries PrintChannels} ()}
+\label{classGeometry_a12b34f2e75cdee8441008d9de7e2eb1b}
+
+\item 
+\hypertarget{classGeometry_af1ef26f91bb256a2a7d52c37f502acc7}{
+\hyperlink{classPosition}{Position} {\bfseries GlobalToTankCentered} (\hyperlink{classPosition}{Position} posin)}
+\label{classGeometry_af1ef26f91bb256a2a7d52c37f502acc7}
+
+\item 
+\hypertarget{classGeometry_a89335cdbf640744d7e4362d8495b6859}{
+void {\bfseries CartesianToPolar} (\hyperlink{classPosition}{Position} posin, double \&R, double \&Phi, double \&Theta, bool tankcentered=false)}
+\label{classGeometry_a89335cdbf640744d7e4362d8495b6859}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classGeometry_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classGeometry_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classGeometry_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classGeometry_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Geometry.\-h\item 
-Data\-Model/Geometry.\-cpp\end{DoxyCompactItemize}
+DataModel/Geometry.h\item 
+DataModel/Geometry.cpp\end{DoxyCompactItemize}

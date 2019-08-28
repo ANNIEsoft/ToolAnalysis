@@ -1,70 +1,80 @@
-\hypertarget{classBeamChecker}{\section{Beam\-Checker Class Reference}
-\label{classBeamChecker}\index{Beam\-Checker@{Beam\-Checker}}
+\hypertarget{classBeamChecker}{
+\section{BeamChecker Class Reference}
+\label{classBeamChecker}\index{BeamChecker@{BeamChecker}}
 }
-Inheritance diagram for Beam\-Checker\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classBeamChecker}
-\end{center}
-\end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classBeamChecker_a8025fea06b24c363f17764b3cc049ebd}{bool {\bfseries Initialise} (std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data)}\label{classBeamChecker_a8025fea06b24c363f17764b3cc049ebd}
+\hypertarget{classBeamChecker_a8025fea06b24c363f17764b3cc049ebd}{
+bool {\bfseries Initialise} (std::string configfile, \hyperlink{classDataModel}{DataModel} \&data)}
+\label{classBeamChecker_a8025fea06b24c363f17764b3cc049ebd}
 
 \item 
-\hypertarget{classBeamChecker_a9fd96575f736c2a0a90e9b18fca3bdf7}{bool {\bfseries Execute} ()}\label{classBeamChecker_a9fd96575f736c2a0a90e9b18fca3bdf7}
+\hypertarget{classBeamChecker_a9fd96575f736c2a0a90e9b18fca3bdf7}{
+bool {\bfseries Execute} ()}
+\label{classBeamChecker_a9fd96575f736c2a0a90e9b18fca3bdf7}
 
 \item 
-\hypertarget{classBeamChecker_a1f9078a610f387f97dc6d17a6b98f493}{bool {\bfseries Finalise} ()}\label{classBeamChecker_a1f9078a610f387f97dc6d17a6b98f493}
+\hypertarget{classBeamChecker_a1f9078a610f387f97dc6d17a6b98f493}{
+bool {\bfseries Finalise} ()}
+\label{classBeamChecker_a1f9078a610f387f97dc6d17a6b98f493}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classBeamChecker_a85643380e26692a3fad55cc4e7d4ea1b}{bool \hyperlink{classBeamChecker_a85643380e26692a3fad55cc4e7d4ea1b}{initialise\-\_\-beam\-\_\-db} ()}\label{classBeamChecker_a85643380e26692a3fad55cc4e7d4ea1b}
+\hypertarget{classBeamChecker_a85643380e26692a3fad55cc4e7d4ea1b}{
+bool \hyperlink{classBeamChecker_a85643380e26692a3fad55cc4e7d4ea1b}{initialise\_\-beam\_\-db} ()}
+\label{classBeamChecker_a85643380e26692a3fad55cc4e7d4ea1b}
 
-\begin{DoxyCompactList}\small\item\em Helper function that opens the beam database data file and loads the Beam\-D\-B Boost\-Store. \end{DoxyCompactList}\item 
-\hypertarget{classBeamChecker_a40e731049d58aa141a15f3431b00a764}{\hyperlink{classBeamStatus}{Beam\-Status} {\bfseries get\-\_\-beam\-\_\-status} (uint64\-\_\-t ns\-\_\-since\-\_\-epoch, Minibuffer\-Label mb\-\_\-label)}\label{classBeamChecker_a40e731049d58aa141a15f3431b00a764}
+\begin{DoxyCompactList}\small\item\em Helper function that opens the beam database data file and loads the BeamDB BoostStore. \item\end{DoxyCompactList}\item 
+\hypertarget{classBeamChecker_a40e731049d58aa141a15f3431b00a764}{
+\hyperlink{classBeamStatus}{BeamStatus} {\bfseries get\_\-beam\_\-status} (uint64\_\-t ns\_\-since\_\-epoch, MinibufferLabel mb\_\-label)}
+\label{classBeamChecker_a40e731049d58aa141a15f3431b00a764}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classBeamChecker_a2b910738f1f07819ce8cf564bff685d0}{Boost\-Store \hyperlink{classBeamChecker_a2b910738f1f07819ce8cf564bff685d0}{beam\-\_\-db\-\_\-store\-\_\-}}\label{classBeamChecker_a2b910738f1f07819ce8cf564bff685d0}
+\hypertarget{classBeamChecker_a2b910738f1f07819ce8cf564bff685d0}{
+BoostStore \hyperlink{classBeamChecker_a2b910738f1f07819ce8cf564bff685d0}{beam\_\-db\_\-store\_\-}}
+\label{classBeamChecker_a2b910738f1f07819ce8cf564bff685d0}
 
-\begin{DoxyCompactList}\small\item\em Transient Boost\-Store used to read previously-\/saved information from the beam database. \end{DoxyCompactList}\item 
-std\-::map$<$ int, std\-::pair\\*
-$<$ uint64\-\_\-t, uint64\-\_\-t $>$ $>$ \hyperlink{classBeamChecker_aab9b16fbdd8cdea6aa1a77fc2f0ea842}{beam\-\_\-db\-\_\-index\-\_\-}
-\begin{DoxyCompactList}\small\item\em Map that enables quick searches of the beam database Boost\-Store. \end{DoxyCompactList}\item 
-int \hyperlink{classBeamChecker_aceafb01556c2541a737d4feaab2f757e}{verbosity\-\_\-}
-\begin{DoxyCompactList}\small\item\em The verbosity to use when printing logging messages. \end{DoxyCompactList}\item 
-\hypertarget{classBeamChecker_acd0db6480aaf42ee431b182a68496c32}{uint64\-\_\-t \hyperlink{classBeamChecker_acd0db6480aaf42ee431b182a68496c32}{start\-\_\-ms\-\_\-since\-\_\-epoch\-\_\-}}\label{classBeamChecker_acd0db6480aaf42ee431b182a68496c32}
+\begin{DoxyCompactList}\small\item\em Transient BoostStore used to read previously-\/saved information from the beam database. \item\end{DoxyCompactList}\item 
+std::map$<$ int, std::pair$<$ uint64\_\-t, uint64\_\-t $>$ $>$ \hyperlink{classBeamChecker_aab9b16fbdd8cdea6aa1a77fc2f0ea842}{beam\_\-db\_\-index\_\-}
+\begin{DoxyCompactList}\small\item\em Map that enables quick searches of the beam database BoostStore. \item\end{DoxyCompactList}\item 
+int \hyperlink{classBeamChecker_aceafb01556c2541a737d4feaab2f757e}{verbosity\_\-}
+\begin{DoxyCompactList}\small\item\em The verbosity to use when printing logging messages. \item\end{DoxyCompactList}\item 
+\hypertarget{classBeamChecker_acd0db6480aaf42ee431b182a68496c32}{
+uint64\_\-t \hyperlink{classBeamChecker_acd0db6480aaf42ee431b182a68496c32}{start\_\-ms\_\-since\_\-epoch\_\-}}
+\label{classBeamChecker_acd0db6480aaf42ee431b182a68496c32}
 
-\begin{DoxyCompactList}\small\item\em The timestamp (ms since the Unix epoch) of the earliest P\-O\-T information available in the current beam database file. \end{DoxyCompactList}\item 
-\hypertarget{classBeamChecker_abb2801b7c15da8c7ae56f96786d6cb54}{uint64\-\_\-t \hyperlink{classBeamChecker_abb2801b7c15da8c7ae56f96786d6cb54}{end\-\_\-ms\-\_\-since\-\_\-epoch\-\_\-}}\label{classBeamChecker_abb2801b7c15da8c7ae56f96786d6cb54}
+\begin{DoxyCompactList}\small\item\em The timestamp (ms since the Unix epoch) of the earliest POT information available in the current beam database file. \item\end{DoxyCompactList}\item 
+\hypertarget{classBeamChecker_abb2801b7c15da8c7ae56f96786d6cb54}{
+uint64\_\-t \hyperlink{classBeamChecker_abb2801b7c15da8c7ae56f96786d6cb54}{end\_\-ms\_\-since\_\-epoch\_\-}}
+\label{classBeamChecker_abb2801b7c15da8c7ae56f96786d6cb54}
 
-\begin{DoxyCompactList}\small\item\em The timestamp (ms since the Unix epoch) of the latest P\-O\-T information available in the current beam database file. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em The timestamp (ms since the Unix epoch) of the latest POT information available in the current beam database file. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Member Data Documentation}
-\hypertarget{classBeamChecker_aab9b16fbdd8cdea6aa1a77fc2f0ea842}{\index{Beam\-Checker@{Beam\-Checker}!beam\-\_\-db\-\_\-index\-\_\-@{beam\-\_\-db\-\_\-index\-\_\-}}
-\index{beam\-\_\-db\-\_\-index\-\_\-@{beam\-\_\-db\-\_\-index\-\_\-}!BeamChecker@{Beam\-Checker}}
-\subsubsection[{beam\-\_\-db\-\_\-index\-\_\-}]{\setlength{\rightskip}{0pt plus 5cm}std\-::map$<$int, std\-::pair$<$uint64\-\_\-t, uint64\-\_\-t$>$ $>$ Beam\-Checker\-::beam\-\_\-db\-\_\-index\-\_\-\hspace{0.3cm}{\ttfamily [protected]}}}\label{classBeamChecker_aab9b16fbdd8cdea6aa1a77fc2f0ea842}
+\hypertarget{classBeamChecker_aab9b16fbdd8cdea6aa1a77fc2f0ea842}{
+\index{BeamChecker@{BeamChecker}!beam\_\-db\_\-index\_\-@{beam\_\-db\_\-index\_\-}}
+\index{beam\_\-db\_\-index\_\-@{beam\_\-db\_\-index\_\-}!BeamChecker@{BeamChecker}}
+\subsubsection[{beam\_\-db\_\-index\_\-}]{\setlength{\rightskip}{0pt plus 5cm}std::map$<$int, std::pair$<$uint64\_\-t, uint64\_\-t$>$ $>$ {\bf BeamChecker::beam\_\-db\_\-index\_\-}\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classBeamChecker_aab9b16fbdd8cdea6aa1a77fc2f0ea842}
 
 
-Map that enables quick searches of the beam database Boost\-Store. 
+Map that enables quick searches of the beam database BoostStore. Keys are entry numbers in the BeamData TTree, values are (start time, end time) pairs giving the range of times (in ms since the Unix epoch) recorded for the E:TOR875 device (used to determine POT values) in each entry \hypertarget{classBeamChecker_aceafb01556c2541a737d4feaab2f757e}{
+\index{BeamChecker@{BeamChecker}!verbosity\_\-@{verbosity\_\-}}
+\index{verbosity\_\-@{verbosity\_\-}!BeamChecker@{BeamChecker}}
+\subsubsection[{verbosity\_\-}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf BeamChecker::verbosity\_\-}\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classBeamChecker_aceafb01556c2541a737d4feaab2f757e}
 
-Keys are entry numbers in the Beam\-Data T\-Tree, values are (start time, end time) pairs giving the range of times (in ms since the Unix epoch) recorded for the E\-:T\-O\-R875 device (used to determine P\-O\-T values) in each entry \hypertarget{classBeamChecker_aceafb01556c2541a737d4feaab2f757e}{\index{Beam\-Checker@{Beam\-Checker}!verbosity\-\_\-@{verbosity\-\_\-}}
-\index{verbosity\-\_\-@{verbosity\-\_\-}!BeamChecker@{Beam\-Checker}}
-\subsubsection[{verbosity\-\_\-}]{\setlength{\rightskip}{0pt plus 5cm}int Beam\-Checker\-::verbosity\-\_\-\hspace{0.3cm}{\ttfamily [protected]}}}\label{classBeamChecker_aceafb01556c2541a737d4feaab2f757e}
 
+The verbosity to use when printing logging messages. A larger value corresponds to more verbose output 
 
-The verbosity to use when printing logging messages. 
-
-A larger value corresponds to more verbose output 
-
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-Beam\-Checker/Beam\-Checker.\-h\item 
-User\-Tools/\-Beam\-Checker/Beam\-Checker.\-cpp\end{DoxyCompactItemize}
+UserTools/BeamChecker/BeamChecker.h\item 
+UserTools/BeamChecker/BeamChecker.cpp\end{DoxyCompactItemize}
