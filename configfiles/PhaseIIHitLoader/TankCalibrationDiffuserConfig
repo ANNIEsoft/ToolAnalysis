@@ -1,0 +1,13 @@
+# TankCalibrationDiffuser Config File
+
+HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
+OutputFile PhaseIIHitLoaderTestHitStore #Output root prefix name for the current run
+DiffuserX 0.      	#x-position of the diffuser ball
+DiffuserY 0.      	#y-position of the diffuser ball
+DiffuserZ 0.      	#z-position of the diffuser ball
+ToleranceCharge 0.5	#tolerance of fit single p.e. value for being classified as a bad PMT
+ToleranceTime 0.5	#tolerance of mean time value [ns] for being classified as a bad PMT
+FitMethod Gaus2Exp	#fit function for charge, options: Gaus2Exp (2 times gaus + exp), Gaus2 (2 times gaus), Gaus (single gaus)
+TApplication 0		#0/1, depending on whether plots should be shown interactively or not
+
+verbose 1         #verbosity of the application

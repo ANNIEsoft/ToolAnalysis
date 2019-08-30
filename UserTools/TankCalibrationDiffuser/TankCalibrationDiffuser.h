@@ -50,6 +50,7 @@ class TankCalibrationDiffuser: public Tool {
    private:
 
       //define input variables
+      std::string HitStoreName = "MCHits";
       std::string outputfile;
       std::string stabilityfile;
       std::string geometryfile;
@@ -69,6 +70,7 @@ class TankCalibrationDiffuser: public Tool {
       std::vector<TriggerClass>* TriggerData;
       BeamStatusClass* BeamStatus=nullptr;
       std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
+      std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
       Geometry *geom = nullptr;
       std::vector<unsigned long> pmt_detkeys;
 
