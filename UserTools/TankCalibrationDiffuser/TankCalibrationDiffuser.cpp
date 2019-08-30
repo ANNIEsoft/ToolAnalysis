@@ -22,6 +22,7 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
   //---------------Get configuration variables for this tool--------------------
   //----------------------------------------------------------------------------
 
+  m_variables.Get("HitStore",HitStoreName);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("DiffuserX",diffuser_x);
   m_variables.Get("DiffuserY",diffuser_y);
@@ -199,36 +200,76 @@ bool TankCalibrationDiffuser::Execute(){
   //----------------------------------------------------------------------------
   //---------------get the members of the ANNIEEvent----------------------------
   //----------------------------------------------------------------------------
-
-  m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
   m_data->Stores["ANNIEEvent"]->Get("BeamStatus",BeamStatus);
+
+  if (HitStoreName == "MCHits"){
+    bool got_mchits = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
+    if (!got_mchits){
+      std::cout << "No MCHits store in ANNIEEvent!" <<  std::endl;
+      return false;
+    }
+  } else if (HitStoreName == "Hits"){
+    bool got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
+    if (!got_hits){
+      std::cout << "No Hits store in ANNIEEvent! " << std::endl;
+      return false;
+    }
+  } else {
+    std::cout << "Selected Hits store invalid.  Must be Hits or MCHits" << std::endl;
+    return false;
+  }
+  // Also load hits from the Hits Store, if available
 
   //----------------------------------------------------------------------------
   //---------------Read out charge and hit values of PMTs-----------------------
   //----------------------------------------------------------------------------
-
+  
   for (int i_pmt = 0; i_pmt < n_tank_pmts; i_pmt++){
     unsigned long detkey = pmt_detkeys[i_pmt];
     PMT_ishit[detkey] = 0;
   }
 
-  int vectsize = MCHits->size();
-  if (verbose > 0) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
-  for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
-    unsigned long chankey = apair.first;
-    Detector* thistube = geom->ChannelToDetector(chankey);
-    int detectorkey = thistube->GetDetectorID();
-    if (thistube->GetDetectorElement()=="Tank"){
-      std::vector<MCHit>& Hits = apair.second;
-      PMT_ishit[detectorkey] = 1;
-      for (MCHit &ahit : Hits){
-        if (verbose > 2) std::cout <<"Charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
-        hist_charge->Fill(ahit.GetCharge());
-        hist_time->Fill(ahit.GetTime());
-        hist_tubeid->Fill(detectorkey);
-        hist_charge_singletube[detectorkey]->Fill(ahit.GetCharge());
-        hist_time_singletube[detectorkey]->Fill(ahit.GetTime());
+  if(HitStoreName=="MCHits"){
+    int vectsize = MCHits->size();
+    if (verbose > 0) std::cout <<"MCHits size: "<<vectsize<<std::endl; 
+    for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
+      unsigned long chankey = apair.first;
+      Detector* thistube = geom->ChannelToDetector(chankey);
+      int detectorkey = thistube->GetDetectorID();
+      if (thistube->GetDetectorElement()=="Tank"){
+        std::vector<MCHit>& ThisPMTHits = apair.second;
+        PMT_ishit[detectorkey] = 1;
+        for (MCHit &ahit : ThisPMTHits){
+          if (verbose > 2) std::cout <<"Charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
+          hist_charge->Fill(ahit.GetCharge());
+          hist_time->Fill(ahit.GetTime());
+          hist_tubeid->Fill(detectorkey);
+          hist_charge_singletube[detectorkey]->Fill(ahit.GetCharge());
+          hist_time_singletube[detectorkey]->Fill(ahit.GetTime());
+        }
+      }
+    }
+  }
+  
+  if(HitStoreName=="Hits"){
+    int vectsize = Hits->size();
+    if (verbose > 0) std::cout <<"Hits size: "<<vectsize<<std::endl; 
+    for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits){
+      unsigned long chankey = apair.first;
+      Detector* thistube = geom->ChannelToDetector(chankey);
+      int detectorkey = thistube->GetDetectorID();
+      if (thistube->GetDetectorElement()=="Tank"){
+        std::vector<Hit>& ThisPMTHits = apair.second;
+        PMT_ishit[detectorkey] = 1;
+        for (Hit &ahit : ThisPMTHits){
+          if (verbose > 2) std::cout <<"Charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
+          hist_charge->Fill(ahit.GetCharge());
+          hist_time->Fill(ahit.GetTime());
+          hist_tubeid->Fill(detectorkey);
+          hist_charge_singletube[detectorkey]->Fill(ahit.GetCharge());
+          hist_time_singletube[detectorkey]->Fill(ahit.GetTime());
+        }
       }
     }
   }
