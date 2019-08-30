@@ -22,21 +22,31 @@ class LoadGeometry: public Tool {
   std::string GetLegendLine(std::string name);
   void InitializeGeometry();
   void LoadFACCMRDDetectors();
+  void LoadLAPPDs();
   bool  ParseMRDDataEntry(std::vector<std::string> SpecLine,
                                std::vector<std::string> MRDLegendEntries);
-  
+
+  bool  ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
+                              std::vector<std::string> LAPPDLegendEntries);
+
   void LoadTankPMTDetectors();
   bool ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                                std::vector<std::string> PMTLegendEntries);
 
   Geometry* AnnieGeometry;
 
+
  private:
+
+  int detector_num_store = 0;
+  int counter = 0;
+  Detector* adet;
+  int LAPPD_channel_count;
   std::string fFACCMRDGeoFile;
   std::string fTankPMTGeoFile;
   std::string fLAPPDGeoFile;
   std::string fDetectorGeoFile;
-  
+
   //Labels used in Geometry files to mark the legend and data entries
   std::string LegendLineLabel = "LEGEND_LINE";
   std::string DataStartLineLabel = "DATA_START";
@@ -44,7 +54,7 @@ class LoadGeometry: public Tool {
 
   //Map of channel number to electronics map entry
   std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap;
-  
+
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
   std::vector<std::string> MRDIntegerValues{"detector_num","channel_num","detector_system","orientation","layer","side","num",
@@ -56,16 +66,26 @@ class LoadGeometry: public Tool {
 
 
   //Vector of strings indicating variables of interest and their data types in
+  //The LAPPD file.  Used in the LoadLAPPDs() method
+  std::vector<std::string> LAPPDIntegerValues{"detector_num","channel_strip_side","channel_strip_num"};
+  std::vector<std::string> LAPPDDoubleValues{"detector_position_x","detector_position_y","detector_position_z",
+                                             "detector_direction_x","detector_direction_y","detector_direction_z",
+                                             "channel_position_x","channel_position_y","channel_position_z"};
+  std::vector<std::string> LAPPDStringValues{"detector_type","detector_status","channel_status"};
+  std::vector<std::string> LAPPDUnIntValues{"channel_signal_crate","channel_signal_card","channel_signal_channel",
+                                            "channel_level2_crate","channel_level2_card","channel_level2_channel",
+                                            "channel_hv_crate","channel_hv_card","channel_hv_channel","channel_num"};
+
+  //Vector of strings indicating variables of interest and their data types in
   //The TankPMT file.  Used in the LoadTankPMTDetectors() method
   std::vector<std::string> TankPMTIntegerValues{"detector_num","channel_num","panel_number"
                                    "signal_crate","signal_slot","signal_channel",
                                    "mt_crate","mt_slot","mt_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV"};
   std::vector<std::string> TankPMTDoubleValues{"x_pos","y_pos","z_pos","x_dir","y_dir","z_dir"};
-  std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","notes"};
+  std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","detector_status","notes"};
 
   //verbosity levels: if 'verbosity' < this level, the message type will be logged.
-
   int verbosity=1;
   int v_error=0;
   int v_warning=1;

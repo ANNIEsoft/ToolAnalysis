@@ -1,5 +1,5 @@
-#ifndef LAPPDRESPONSE_HH
-#define LAPPDRESPONSE_HH
+#ifndef LAPPDRESPONSE_H
+#define LAPPDRESPONSE_H
 
 //#include "LAPPDpulse.hh"
 //#include "LAPPDpulseCluster.hh"
@@ -10,14 +10,17 @@
 #include "Tool.h"
 #include "LAPPDPulse.h"
 #include "Waveform.h"
+#include "TFile.h"
 //class LAPPDresponse : public TObject {
 class LAPPDresponse {
 
  public:
 
-  LAPPDresponse(TString input);
+  LAPPDresponse();
 
   ~LAPPDresponse();
+
+  void Initialise(TFile* tf);
 
   void AddSinglePhotonTrace(double trans, double para, double time);
 
