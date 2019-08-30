@@ -132,33 +132,6 @@ bool TotalLightMap::Initialise(std::string configfile, DataModel &data){
 	tank_radius = MRDSpecs::tank_radius/100.;
 	tank_height = yscale*MRDSpecs::tank_halfheight/100.;
 	
-	// Get the Detectors
-	// =================
-	Log("TotalLightMap Tool: Getting tank Detectors",v_debug,verbosity);
-	// first the PMTs
-	// FIXME better way of finding a collection
-	int detectorcollection=0;
-	do {
-		if(detectorcollection>=anniegeom->GetDetectors()->size()) break;
-		TankDetectors = anniegeom->GetDetectors()->at(detectorcollection);
-		if(TankDetectors->size()>0){
-			if(TankDetectors->begin()->second.GetDetectorElement()=="Tank"){ break; }
-		}
-		detectorcollection++;
-	} while (detectorcollection<anniegeom->GetDetectors()->size());
-	Log("TotalLightMap Tool: We have "+to_string(TankDetectors->size())+" PMTs",v_debug,verbosity);
-	// then the LAPPDs
-	detectorcollection=0;
-	do {
-		if(detectorcollection>=anniegeom->GetDetectors()->size()) break;
-		LAPPDDetectors = anniegeom->GetDetectors()->at(detectorcollection);
-		if(LAPPDDetectors->size()>0){
-			if(LAPPDDetectors->begin()->second.GetDetectorElement()=="LAPPD"){ break; }
-		}
-		detectorcollection++;
-	} while (detectorcollection<anniegeom->GetDetectors()->size());
-	Log("TotalLightMap Tool: We have "+to_string(LAPPDDetectors->size())+" LAPPDs",v_debug,verbosity);
-	
 	// Make the event gui
 	// ==================
 	Log("TotalLightMap Tool: Making GUI",v_debug,verbosity);
@@ -456,6 +429,20 @@ bool TotalLightMap::Finalise(){
 //	delete phicanv;
 //	delete thetacanv;
 //	delete ycanv;
+	
+	// see if we're the last user of the TApplication and release it if so,
+	// otherwise de-register us as a user since we're done
+	int tapplicationusers=0;
+	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+	if(not get_ok || tapplicationusers==1){
+		if(rootTApp){
+			std::cout<<"PulseSimulation Tool: Deleting global TApplication"<<std::endl;
+			delete rootTApp;
+			rootTApp=nullptr;
+		}
+	} else if(tapplicationusers>1){
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+	}
 	
 	return true;
 }

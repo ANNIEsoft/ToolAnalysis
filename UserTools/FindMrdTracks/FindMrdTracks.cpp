@@ -29,6 +29,7 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("MinDigitsForTrack",minimumdigits);
 	m_variables.Get("MaxMrdSubEventDuration",maxsubeventduration);
+	m_variables.Get("MinSubeventTimeSep",minimum_subevent_timeseparation);
 	m_variables.Get("WriteTracksToFile",writefile);
 	m_variables.Get("DrawTruthTracks",DrawTruthTracks);
 	m_variables.Get("MakeMrdDigitTimePlot",MakeMrdDigitTimePlot);
@@ -48,12 +49,35 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
 	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	// pass this to TrackCombiner
+	m_data->CStore.Set("DrawMrdTruthTracks",DrawTruthTracks);
 	
 	if(MakeMrdDigitTimePlot){
+		// Make the TApplication
+		// ======================
+		// If we wish to show the histograms during running, we need a TApplication
+		// There may only be one TApplication, so if another tool has already made one
+		// register ourself as a user. Otherwise, make one and put a pointer in the CStore for other Tools
 		// create the ROOT application to show histograms
 		int myargc=0;
 		//char *myargv[] = {(const char*)"Ahh shark!"};
-		findMrdRootApp = new TApplication("findMrdRootApp",&myargc,0);
+		intptr_t tapp_ptr=0;
+		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+		if(not get_ok){
+			Log("TotalLightMap Tool: Making global TApplication",v_error,verbosity);
+			rootTApp = new TApplication("rootTApp",&myargc,0);
+			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+			m_data->CStore.Set("RootTApplication",tapp_ptr);
+		} else {
+			Log("TotalLightMap Tool: Retrieving global TApplication",v_error,verbosity);
+			rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+		}
+		int tapplicationusers;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok) tapplicationusers=1;
+		else tapplicationusers++;
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
+		
 		mrddigitts = new TH1D("mrddigitts","mrd digit times",500,-50,2000);
 		canvwidth = 900;
 		canvheight = 600;
@@ -173,6 +197,9 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 		}
 		if(verbosity) cout<<"No MRD digits in this event; FindMrdTracks tool returning"<<endl;
 		return true;
+		// XXX Note for other tools: we've written files and updated BoostStore SubEvent/Track counts to 0.
+		// XXX Other tools should check these before processing the MrdTracks BoostStore or MrdSubEventTClonesArray
+		// XXX since those are not necessarily cleared!
 		// skip remainder
 		// ======================================================================================
 	}
@@ -285,7 +312,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 		subeventhittimesv.push_back(sorteddigittimes.at(0));
 		for(int i=0;i<sorteddigittimes.size()-1;i++){
 			float timetonextdigit = sorteddigittimes.at(i+1)-sorteddigittimes.at(i);
-			if(timetonextdigit>maxsubeventduration){
+			if(timetonextdigit>minimum_subevent_timeseparation){
 				subeventhittimesv.push_back(sorteddigittimes.at(i+1));
 				if(verbosity>2){
 					cout<<"Setting subevent time threshold at "<<subeventhittimesv.back()<<endl;
@@ -311,7 +338,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			findMrdRootCanvas->Modified();
 			findMrdRootCanvas->Update();
 			gSystem->ProcessEvents();
-			//findMrdRootApp->Run();
+			//rootTApp->Run();
 			//std::this_thread::sleep_for (std::chrono::seconds(5));
 			while(gROOT->FindObject("findMrdRootCanvas")!=nullptr){
 				gSystem->ProcessEvents();
@@ -490,6 +517,16 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			
 			// get the BoostStore to hold this track
 			BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(subevi+tracki));
+			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// If no tracks are found to match the reconstructed event vertex, the TrackCombiner Tool
+			// may perform a cruder reconstruction and append an Mrd Track to this vector.
+			// Since we don't remove and re-create the BoostStores each Execute, any members that are
+			// not updated by both tools could result in spurious track properties being propagated!
+			// !!!!!!!!!!!!! It is therefore crucial to keep these two Tools in sync! !!!!!!!!!!!!!!!
+			// XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+			// IF ADDING MEMBERS TO THE MRDTRACK BOOSTSTORE HERE, ADD THEM TO THE TRACKCOMBINER TOO!
+			// XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			
 			// fill with this track's data
 			thisTrackAsBoostStore->Set("MrdTrackID",atrack->GetTrackID());
@@ -535,7 +572,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			Position TankExitPoint( atrack->GetTankExitPoint().X() / 100.,
 									atrack->GetTankExitPoint().Y() / 100.,
 									atrack->GetTankExitPoint().Z() / 100.);
-			Position MrdEntryPoint( atrack->GetMrdEntryPoint().X() / 100.,  // not implemented
+			Position MrdEntryPoint( atrack->GetMrdEntryPoint().X() / 100.,
 									atrack->GetMrdEntryPoint().Y() / 100.,
 									atrack->GetMrdEntryPoint().Z() / 100.);
 			thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
@@ -609,7 +646,20 @@ bool FindMrdTracks::Finalise(){
 	if(MakeMrdDigitTimePlot){
 		if(mrddigitts) delete mrddigitts;
 		if(gROOT->FindObject("findMrdRootCanvas")) delete findMrdRootCanvas;
-		if(findMrdRootApp) delete findMrdRootApp;
+		
+		// see if we're the last user of the TApplication and release it if so,
+		// otherwise de-register us as a user since we're done
+		int tapplicationusers=0;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok || tapplicationusers==1){
+			if(rootTApp){
+				std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
+				delete rootTApp;
+				rootTApp=nullptr;
+			}
+		} else if(tapplicationusers>1){
+			m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+		}
 	}
 	
 	if(verbosity>0) cout<<"FindMrdTracks exiting"<<endl;

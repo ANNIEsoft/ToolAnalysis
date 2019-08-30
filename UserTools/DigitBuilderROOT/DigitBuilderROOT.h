@@ -27,28 +27,31 @@ class DigitBuilderROOT: public Tool {
   bool Execute();
   bool Finalise();
 
- 	void PushTrueVertex(bool savetodisk);
- 	void PushRecoDigits(bool savetodisk);
+  void PushTrueVertex(bool savetodisk);
+  void PushRecoDigits(bool savetodisk);
+  void PushTrueWaterTrackLength(double WaterT);
+  void PushTrueMRDTrackLength(double MRDT);
+  
   void Reset();
 
  private:
   
   int verbosity=1;
-	/// \brief verbosity levels: if 'verbosity' > this level, the message type will be logged.
-	int v_error=0;
-	int v_warning=1;
-	int v_message=2;
-	int v_debug=3;
-	std::string logmessage;
-
-	std::string NtupleFile;
-	TChain* P2Chain;
+  /// \brief verbosity levels: if 'verbosity' > this level, the message type will be logged.
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  std::string logmessage;
+  
+  std::string NtupleFile;
+  TChain* P2Chain;
   int TotalEntries;
   int EntryNum = 0;
 
-	std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
- 
-	RecoVertex* fMuonVertex = nullptr; 	 ///< true muon start vertex
+  std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
+  
+  RecoVertex* fMuonVertex = nullptr; 	 ///< true muon start vertex
 
   // Digits
   int fNhits = 0;
@@ -68,14 +71,26 @@ class DigitBuilderROOT: public Tool {
   double fTrueDirX;
   double fTrueDirY;
   double fTrueDirZ;
-  double fTrueEnergy; 
+  double fTrueMuonEnergy; 
+  double fTrueTrackLengthInWater;
+  double fTrueTrackLengthInMRD;
 
-  // Event Cut Status from previous run
+  int fPi0Count;
+  int fPiPlusCount;
+  int fPiMinusCount;
+  int fK0Count;
+  int fKPlusCount;
+  int fKMinusCount;
+
   bool fEventCutStatus;
+  int fEventStatusApplied;
+  int fEventStatusFlagged;
 
-	uint64_t fMCEventNum;
-	uint16_t fMCTriggerNum;
-	uint32_t fEventNumber; // will need to be tracked separately, since we flatten triggers
+  uint64_t fMCEventNum;
+  uint16_t fMCTriggerNum;
+  uint32_t fEventNumber; // will need to be tracked separately, since we flatten triggers
+  uint32_t fRunNumber; 
+  uint32_t fSubRunNumber; 
 };
 
 

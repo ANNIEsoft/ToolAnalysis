@@ -1,0 +1,8 @@
+#LoadWCSim and pulse finding tools
+#myLoadGeometry LoadGeometry ./configfiles/PhaseIIHitLoader/LoadGeometryConfig
+myLoadWCSim LoadWCSim ./configfiles/PhaseIIHitLoader/LoadWCSimConfig
+myPulseSimulation PulseSimulation ./configfiles/PhaseIIHitLoader/PulseSimulationConfig
+myPhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/PhaseIIHitLoader/PhaseIIADCCalibratorConfig
+myPhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/PhaseIIHitLoader/PhaseIIADCHitFinderConfig
+myMCHitToHitComparer MCHitToHitComparer ./configfiles/PhaseIIHitLoader/MCHitToHitComparerConfig
+myTankCalibrationDiffuser TankCalibrationDiffuser ./configfiles/PhaseIIHitLoader/TankCalibrationDiffuserConfig

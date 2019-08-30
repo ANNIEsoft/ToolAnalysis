@@ -23,8 +23,9 @@ bool LAPPDAnalysis::Execute(){
   //BaselineSubtract
     Waveform<double> bwav;
     // get raw lappd data
-    std::map<int,vector<Waveform<double>>> rawlappddata;
+    map<int,vector<Waveform<double>>> rawlappddata;
     m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
+    
 
     // the filtered Waveform
     std::map<int,vector<Waveform<double>>> blsublappddata;

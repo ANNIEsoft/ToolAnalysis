@@ -12,7 +12,7 @@ ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/
 BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
-RootInclude=  -I $(ToolDAQPath)/root/include
+RootInclude=  -I $(ToolDAQPath)/root-6.06.08/install/include
  
 WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
 WCSimInclude= -I ToolDAQ/WCSimLib/include
@@ -28,8 +28,8 @@ RootLib=   -L $(ToolDAQPath)/root-6.06.08/install/lib  -lCore -lRIO -lNet -lHist
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
-MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib)
+MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude)
+MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse RemoteControl NodeDaemon
 
@@ -109,7 +109,7 @@ update:
 	@echo -e "\n*************** Updating ****************"
 	cd $(ToolDAQPath)/ToolDAQFramework; git pull
 	cd $(ToolDAQPath)/zeromq-4.0.7; git pull
-	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make
+	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make -f Makefile.FNAL
 	cd $(ToolDAQPath)/WCSimLib; git checkout . ; git pull; make
 	cd $(ToolDAQPath)/RATEventLib; git checkout . ; git pull; make
 	git pull

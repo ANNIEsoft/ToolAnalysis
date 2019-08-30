@@ -67,6 +67,7 @@ bool MCRecoEventLoader::Execute(){
 
   this->PushTrueVertex(true);
   this->PushTrueStopVertex(true);
+  this->PushTrueMuonEnergy(TrueMuonEnergy);
   this->PushTrueWaterTrackLength(WaterTrackLength);
   this->PushTrueMRDTrackLength(MRDTrackLength);
 
@@ -85,6 +86,10 @@ void MCRecoEventLoader::Reset() {
   // Reset 
   fMuonStartVertex->Reset();
   fMuonStopVertex->Reset();
+  TrueMuonEnergy = -9999.;
+  WaterTrackLength = -9999.;
+  MRDTrackLength = -9999.;
+  
 }
 
 void MCRecoEventLoader::FindTrueVertexFromMC() {
@@ -119,8 +124,7 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
   double muonstoptime = primarymuon.GetStopTime();
   Direction muondirection = primarymuon.GetStartDirection();
   
-  double muonenergy = primarymuon.GetStartEnergy();
-  m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", muonenergy);
+  TrueMuonEnergy = primarymuon.GetStartEnergy();
 
   // MCParticleProperties tool fills in MRD track in m, but
   // Water track in cm...
@@ -222,6 +226,11 @@ void MCRecoEventLoader::PushTrueVertex(bool savetodisk) {
 void MCRecoEventLoader::PushTrueStopVertex(bool savetodisk) {
   Log("MCRecoEventLoader Tool: Push true stop vertex to the RecoEvent store",v_message,verbosity);
   m_data->Stores.at("RecoEvent")->Set("TrueStopVertex", fMuonStopVertex, savetodisk); 
+}
+
+void MCRecoEventLoader::PushTrueMuonEnergy(double MuE) {
+	Log("MCRecoEventLoader Tool: Push true muon energy to the RecoEvent store",v_message,verbosity);
+	m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy", MuE);  ///> Add digits to RecoEvent
 }
 
 void MCRecoEventLoader::PushTrueWaterTrackLength(double WaterT) {

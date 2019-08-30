@@ -1,222 +1,361 @@
-\hypertarget{classMinuitOptimizer}{\section{Minuit\-Optimizer Class Reference}
-\label{classMinuitOptimizer}\index{Minuit\-Optimizer@{Minuit\-Optimizer}}
+\hypertarget{classMinuitOptimizer}{
+\section{MinuitOptimizer Class Reference}
+\label{classMinuitOptimizer}\index{MinuitOptimizer@{MinuitOptimizer}}
 }
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMinuitOptimizer_af957656cb1d0339c7cf0ad0199817786}{void {\bfseries Set\-Print\-Level} (int printlevel)}\label{classMinuitOptimizer_af957656cb1d0339c7cf0ad0199817786}
+\hypertarget{classMinuitOptimizer_af957656cb1d0339c7cf0ad0199817786}{
+void {\bfseries SetPrintLevel} (int printlevel)}
+\label{classMinuitOptimizer_af957656cb1d0339c7cf0ad0199817786}
 
 \item 
-\hypertarget{classMinuitOptimizer_ab93bdadeff0f40951fc1ae38e637d1cd}{void {\bfseries Set\-Time\-Fit\-Weight} (double tweight)}\label{classMinuitOptimizer_ab93bdadeff0f40951fc1ae38e637d1cd}
+\hypertarget{classMinuitOptimizer_ab93bdadeff0f40951fc1ae38e637d1cd}{
+void {\bfseries SetTimeFitWeight} (double tweight)}
+\label{classMinuitOptimizer_ab93bdadeff0f40951fc1ae38e637d1cd}
 
 \item 
-\hypertarget{classMinuitOptimizer_ac386f4829b2838ecdf43f83071b9211d}{void {\bfseries Set\-Cone\-Fit\-Weight} (double cweight)}\label{classMinuitOptimizer_ac386f4829b2838ecdf43f83071b9211d}
+\hypertarget{classMinuitOptimizer_ac386f4829b2838ecdf43f83071b9211d}{
+void {\bfseries SetConeFitWeight} (double cweight)}
+\label{classMinuitOptimizer_ac386f4829b2838ecdf43f83071b9211d}
 
 \item 
-\hypertarget{classMinuitOptimizer_abee6c05c3be56f9f91e5a2bf5425c6f9}{void {\bfseries Set\-Mean\-Time\-Calculator\-Type} (int type)}\label{classMinuitOptimizer_abee6c05c3be56f9f91e5a2bf5425c6f9}
+\hypertarget{classMinuitOptimizer_abee6c05c3be56f9f91e5a2bf5425c6f9}{
+void {\bfseries SetMeanTimeCalculatorType} (int type)}
+\label{classMinuitOptimizer_abee6c05c3be56f9f91e5a2bf5425c6f9}
 
 \item 
-\hypertarget{classMinuitOptimizer_ad7a963c1aa7f84ba2312a432149dbf0e}{void {\bfseries Set\-Number\-Of\-Iterations} (int iterations)}\label{classMinuitOptimizer_ad7a963c1aa7f84ba2312a432149dbf0e}
+\hypertarget{classMinuitOptimizer_ad7a963c1aa7f84ba2312a432149dbf0e}{
+void {\bfseries SetNumberOfIterations} (int iterations)}
+\label{classMinuitOptimizer_ad7a963c1aa7f84ba2312a432149dbf0e}
 
 \item 
-\hypertarget{classMinuitOptimizer_ae30cc5de352fbd8df809926d56365bc8}{void {\bfseries Set\-Cone\-Angle} (double cangle)}\label{classMinuitOptimizer_ae30cc5de352fbd8df809926d56365bc8}
+\hypertarget{classMinuitOptimizer_ae30cc5de352fbd8df809926d56365bc8}{
+void {\bfseries SetConeAngle} (double cangle)}
+\label{classMinuitOptimizer_ae30cc5de352fbd8df809926d56365bc8}
 
 \item 
-\hypertarget{classMinuitOptimizer_a9f48b624230650920feff32180370fa2}{void {\bfseries Load\-Vertex\-Geometry} (\hyperlink{classVertexGeometry}{Vertex\-Geometry} $\ast$vtxgeo)}\label{classMinuitOptimizer_a9f48b624230650920feff32180370fa2}
+\hypertarget{classMinuitOptimizer_a9f48b624230650920feff32180370fa2}{
+void {\bfseries LoadVertexGeometry} (\hyperlink{classVertexGeometry}{VertexGeometry} $\ast$vtxgeo)}
+\label{classMinuitOptimizer_a9f48b624230650920feff32180370fa2}
 
 \item 
-\hypertarget{classMinuitOptimizer_ab58594047959a1e05fdfd970667b1e04}{void {\bfseries Load\-Vertex} (\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$vtx)}\label{classMinuitOptimizer_ab58594047959a1e05fdfd970667b1e04}
+\hypertarget{classMinuitOptimizer_ab58594047959a1e05fdfd970667b1e04}{
+void {\bfseries LoadVertex} (\hyperlink{classRecoVertex}{RecoVertex} $\ast$vtx)}
+\label{classMinuitOptimizer_ab58594047959a1e05fdfd970667b1e04}
 
 \item 
-\hypertarget{classMinuitOptimizer_ad3c187d2afcc6e1ee7e82962d162aae8}{void {\bfseries Load\-Vertex} (double vtx\-X, double vtx\-Y, double vtx\-Z, double vtx\-Time, double vtx\-Dir\-X, double vtx\-Dir\-Y, double vtx\-Dir\-Z)}\label{classMinuitOptimizer_ad3c187d2afcc6e1ee7e82962d162aae8}
+\hypertarget{classMinuitOptimizer_ad3c187d2afcc6e1ee7e82962d162aae8}{
+void {\bfseries LoadVertex} (double vtxX, double vtxY, double vtxZ, double vtxTime, double vtxDirX, double vtxDirY, double vtxDirZ)}
+\label{classMinuitOptimizer_ad3c187d2afcc6e1ee7e82962d162aae8}
 
 \item 
-\hypertarget{classMinuitOptimizer_ae07d1d7eb8e694627fe0d3310a47ea23}{void {\bfseries Fit\-Point\-Time\-With\-Minuit} ()}\label{classMinuitOptimizer_ae07d1d7eb8e694627fe0d3310a47ea23}
+\hypertarget{classMinuitOptimizer_ae07d1d7eb8e694627fe0d3310a47ea23}{
+void {\bfseries FitPointTimeWithMinuit} ()}
+\label{classMinuitOptimizer_ae07d1d7eb8e694627fe0d3310a47ea23}
 
 \item 
-\hypertarget{classMinuitOptimizer_a3b3a75c840dd6f2c97d5a58da7d5db29}{void {\bfseries Fit\-Point\-Position\-With\-Minuit} ()}\label{classMinuitOptimizer_a3b3a75c840dd6f2c97d5a58da7d5db29}
+\hypertarget{classMinuitOptimizer_a3b3a75c840dd6f2c97d5a58da7d5db29}{
+void {\bfseries FitPointPositionWithMinuit} ()}
+\label{classMinuitOptimizer_a3b3a75c840dd6f2c97d5a58da7d5db29}
 
 \item 
-\hypertarget{classMinuitOptimizer_a247cd4ed76564b3639f45f5c448f34c4}{void {\bfseries Fit\-Point\-Direction\-With\-Minuit} ()}\label{classMinuitOptimizer_a247cd4ed76564b3639f45f5c448f34c4}
+\hypertarget{classMinuitOptimizer_a247cd4ed76564b3639f45f5c448f34c4}{
+void {\bfseries FitPointDirectionWithMinuit} ()}
+\label{classMinuitOptimizer_a247cd4ed76564b3639f45f5c448f34c4}
 
 \item 
-\hypertarget{classMinuitOptimizer_a655d9ff06d5dce21e2f3506034a1c9a2}{void {\bfseries Fit\-Point\-Vertex\-With\-Minuit} ()}\label{classMinuitOptimizer_a655d9ff06d5dce21e2f3506034a1c9a2}
+\hypertarget{classMinuitOptimizer_a655d9ff06d5dce21e2f3506034a1c9a2}{
+void {\bfseries FitPointVertexWithMinuit} ()}
+\label{classMinuitOptimizer_a655d9ff06d5dce21e2f3506034a1c9a2}
 
 \item 
-\hypertarget{classMinuitOptimizer_a298f53de3f402874b73c2e742b3c16f5}{void {\bfseries Fit\-Extended\-Vertex\-With\-Minuit} ()}\label{classMinuitOptimizer_a298f53de3f402874b73c2e742b3c16f5}
+\hypertarget{classMinuitOptimizer_a298f53de3f402874b73c2e742b3c16f5}{
+void {\bfseries FitExtendedVertexWithMinuit} ()}
+\label{classMinuitOptimizer_a298f53de3f402874b73c2e742b3c16f5}
 
 \item 
-\hypertarget{classMinuitOptimizer_a067c18d943608f5780dc7313b7978e2a}{double {\bfseries Get\-Time} ()}\label{classMinuitOptimizer_a067c18d943608f5780dc7313b7978e2a}
+\hypertarget{classMinuitOptimizer_a067c18d943608f5780dc7313b7978e2a}{
+double {\bfseries GetTime} ()}
+\label{classMinuitOptimizer_a067c18d943608f5780dc7313b7978e2a}
 
 \item 
-\hypertarget{classMinuitOptimizer_a5a764ad18fa653b67d1840d101f76c1e}{double {\bfseries Get\-F\-O\-M} ()}\label{classMinuitOptimizer_a5a764ad18fa653b67d1840d101f76c1e}
+\hypertarget{classMinuitOptimizer_a5a764ad18fa653b67d1840d101f76c1e}{
+double {\bfseries GetFOM} ()}
+\label{classMinuitOptimizer_a5a764ad18fa653b67d1840d101f76c1e}
 
 \item 
-\hypertarget{classMinuitOptimizer_af3094089b0ee9093735d6ed66de01192}{\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$ {\bfseries Get\-Fitted\-Vertex} ()}\label{classMinuitOptimizer_af3094089b0ee9093735d6ed66de01192}
+\hypertarget{classMinuitOptimizer_af3094089b0ee9093735d6ed66de01192}{
+\hyperlink{classRecoVertex}{RecoVertex} $\ast$ {\bfseries GetFittedVertex} ()}
+\label{classMinuitOptimizer_af3094089b0ee9093735d6ed66de01192}
 
 \item 
-\hypertarget{classMinuitOptimizer_a684c745cd0e3150ae223276c3017d150}{void {\bfseries time\-\_\-fit\-\_\-itr} ()}\label{classMinuitOptimizer_a684c745cd0e3150ae223276c3017d150}
+\hypertarget{classMinuitOptimizer_a684c745cd0e3150ae223276c3017d150}{
+void {\bfseries time\_\-fit\_\-itr} ()}
+\label{classMinuitOptimizer_a684c745cd0e3150ae223276c3017d150}
 
 \item 
-\hypertarget{classMinuitOptimizer_aa8193a31d7f8bf0a4f64cf1d2052da6b}{void {\bfseries point\-\_\-position\-\_\-itr} ()}\label{classMinuitOptimizer_aa8193a31d7f8bf0a4f64cf1d2052da6b}
+\hypertarget{classMinuitOptimizer_aa8193a31d7f8bf0a4f64cf1d2052da6b}{
+void {\bfseries point\_\-position\_\-itr} ()}
+\label{classMinuitOptimizer_aa8193a31d7f8bf0a4f64cf1d2052da6b}
 
 \item 
-\hypertarget{classMinuitOptimizer_a6b039184ddaa12ff6c9368dab460bd97}{void {\bfseries point\-\_\-direction\-\_\-itr} ()}\label{classMinuitOptimizer_a6b039184ddaa12ff6c9368dab460bd97}
+\hypertarget{classMinuitOptimizer_a6b039184ddaa12ff6c9368dab460bd97}{
+void {\bfseries point\_\-direction\_\-itr} ()}
+\label{classMinuitOptimizer_a6b039184ddaa12ff6c9368dab460bd97}
 
 \item 
-\hypertarget{classMinuitOptimizer_a3a15bf67cb3f383287ab0d11a7775971}{void {\bfseries point\-\_\-vertex\-\_\-itr} ()}\label{classMinuitOptimizer_a3a15bf67cb3f383287ab0d11a7775971}
+\hypertarget{classMinuitOptimizer_a3a15bf67cb3f383287ab0d11a7775971}{
+void {\bfseries point\_\-vertex\_\-itr} ()}
+\label{classMinuitOptimizer_a3a15bf67cb3f383287ab0d11a7775971}
 
 \item 
-\hypertarget{classMinuitOptimizer_a1be4f926fcfd68deb01c8d99655f7022}{void {\bfseries extended\-\_\-vertex\-\_\-itr} ()}\label{classMinuitOptimizer_a1be4f926fcfd68deb01c8d99655f7022}
+\hypertarget{classMinuitOptimizer_a1be4f926fcfd68deb01c8d99655f7022}{
+void {\bfseries extended\_\-vertex\_\-itr} ()}
+\label{classMinuitOptimizer_a1be4f926fcfd68deb01c8d99655f7022}
 
 \item 
-\hypertarget{classMinuitOptimizer_a7ccac48dc3a5bae681697ed7ae160bc5}{void {\bfseries time\-\_\-fit\-\_\-reset\-\_\-itr} ()}\label{classMinuitOptimizer_a7ccac48dc3a5bae681697ed7ae160bc5}
+\hypertarget{classMinuitOptimizer_a7ccac48dc3a5bae681697ed7ae160bc5}{
+void {\bfseries time\_\-fit\_\-reset\_\-itr} ()}
+\label{classMinuitOptimizer_a7ccac48dc3a5bae681697ed7ae160bc5}
 
 \item 
-\hypertarget{classMinuitOptimizer_aa0d9baa6b60c08dd4a7266242b42b98c}{void {\bfseries point\-\_\-position\-\_\-reset\-\_\-itr} ()}\label{classMinuitOptimizer_aa0d9baa6b60c08dd4a7266242b42b98c}
+\hypertarget{classMinuitOptimizer_aa0d9baa6b60c08dd4a7266242b42b98c}{
+void {\bfseries point\_\-position\_\-reset\_\-itr} ()}
+\label{classMinuitOptimizer_aa0d9baa6b60c08dd4a7266242b42b98c}
 
 \item 
-\hypertarget{classMinuitOptimizer_aa78714c14cad081d003831a9f8217ef8}{void {\bfseries point\-\_\-direction\-\_\-reset\-\_\-itr} ()}\label{classMinuitOptimizer_aa78714c14cad081d003831a9f8217ef8}
+\hypertarget{classMinuitOptimizer_aa78714c14cad081d003831a9f8217ef8}{
+void {\bfseries point\_\-direction\_\-reset\_\-itr} ()}
+\label{classMinuitOptimizer_aa78714c14cad081d003831a9f8217ef8}
 
 \item 
-\hypertarget{classMinuitOptimizer_a6158e58eb44aae48593f966c6dcd772b}{void {\bfseries point\-\_\-vertex\-\_\-reset\-\_\-itr} ()}\label{classMinuitOptimizer_a6158e58eb44aae48593f966c6dcd772b}
+\hypertarget{classMinuitOptimizer_a6158e58eb44aae48593f966c6dcd772b}{
+void {\bfseries point\_\-vertex\_\-reset\_\-itr} ()}
+\label{classMinuitOptimizer_a6158e58eb44aae48593f966c6dcd772b}
 
 \item 
-\hypertarget{classMinuitOptimizer_a18ed8fa1efe275bd0affefd030df8375}{void {\bfseries extended\-\_\-vertex\-\_\-reset\-\_\-itr} ()}\label{classMinuitOptimizer_a18ed8fa1efe275bd0affefd030df8375}
+\hypertarget{classMinuitOptimizer_a18ed8fa1efe275bd0affefd030df8375}{
+void {\bfseries extended\_\-vertex\_\-reset\_\-itr} ()}
+\label{classMinuitOptimizer_a18ed8fa1efe275bd0affefd030df8375}
 
 \item 
-\hypertarget{classMinuitOptimizer_a7da88f3b63c5a212a2f75684a429c6ba}{int {\bfseries time\-\_\-fit\-\_\-iterations} ()}\label{classMinuitOptimizer_a7da88f3b63c5a212a2f75684a429c6ba}
+\hypertarget{classMinuitOptimizer_a7da88f3b63c5a212a2f75684a429c6ba}{
+int {\bfseries time\_\-fit\_\-iterations} ()}
+\label{classMinuitOptimizer_a7da88f3b63c5a212a2f75684a429c6ba}
 
 \item 
-\hypertarget{classMinuitOptimizer_a29c518bcc3e79f33c7ac7060911318d6}{int {\bfseries point\-\_\-position\-\_\-iterations} ()}\label{classMinuitOptimizer_a29c518bcc3e79f33c7ac7060911318d6}
+\hypertarget{classMinuitOptimizer_a29c518bcc3e79f33c7ac7060911318d6}{
+int {\bfseries point\_\-position\_\-iterations} ()}
+\label{classMinuitOptimizer_a29c518bcc3e79f33c7ac7060911318d6}
 
 \item 
-\hypertarget{classMinuitOptimizer_a9f63624b97c4e32a52c003ad86bd01f6}{int {\bfseries point\-\_\-direction\-\_\-iterations} ()}\label{classMinuitOptimizer_a9f63624b97c4e32a52c003ad86bd01f6}
+\hypertarget{classMinuitOptimizer_a9f63624b97c4e32a52c003ad86bd01f6}{
+int {\bfseries point\_\-direction\_\-iterations} ()}
+\label{classMinuitOptimizer_a9f63624b97c4e32a52c003ad86bd01f6}
 
 \item 
-\hypertarget{classMinuitOptimizer_a6f4b2d0caeb8a76dce009f18fadde44f}{int {\bfseries point\-\_\-vertex\-\_\-iterations} ()}\label{classMinuitOptimizer_a6f4b2d0caeb8a76dce009f18fadde44f}
+\hypertarget{classMinuitOptimizer_a6f4b2d0caeb8a76dce009f18fadde44f}{
+int {\bfseries point\_\-vertex\_\-iterations} ()}
+\label{classMinuitOptimizer_a6f4b2d0caeb8a76dce009f18fadde44f}
 
 \item 
-\hypertarget{classMinuitOptimizer_a9e2fb7b05fb5dca441a66d6c378e9487}{int {\bfseries extended\-\_\-vertex\-\_\-iterations} ()}\label{classMinuitOptimizer_a9e2fb7b05fb5dca441a66d6c378e9487}
+\hypertarget{classMinuitOptimizer_a9e2fb7b05fb5dca441a66d6c378e9487}{
+int {\bfseries extended\_\-vertex\_\-iterations} ()}
+\label{classMinuitOptimizer_a9e2fb7b05fb5dca441a66d6c378e9487}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMinuitOptimizer_aca940e21e9749fd9778c40ce735f8f44}{double {\bfseries f\-Vtx\-X}}\label{classMinuitOptimizer_aca940e21e9749fd9778c40ce735f8f44}
+\hypertarget{classMinuitOptimizer_aca940e21e9749fd9778c40ce735f8f44}{
+double {\bfseries fVtxX}}
+\label{classMinuitOptimizer_aca940e21e9749fd9778c40ce735f8f44}
 
 \item 
-\hypertarget{classMinuitOptimizer_a54a50a45a4edbe46fce320d0064a2666}{double {\bfseries f\-Vtx\-Y}}\label{classMinuitOptimizer_a54a50a45a4edbe46fce320d0064a2666}
+\hypertarget{classMinuitOptimizer_a54a50a45a4edbe46fce320d0064a2666}{
+double {\bfseries fVtxY}}
+\label{classMinuitOptimizer_a54a50a45a4edbe46fce320d0064a2666}
 
 \item 
-\hypertarget{classMinuitOptimizer_aac8822931fdc2d883049732b8301b36a}{double {\bfseries f\-Vtx\-Z}}\label{classMinuitOptimizer_aac8822931fdc2d883049732b8301b36a}
+\hypertarget{classMinuitOptimizer_aac8822931fdc2d883049732b8301b36a}{
+double {\bfseries fVtxZ}}
+\label{classMinuitOptimizer_aac8822931fdc2d883049732b8301b36a}
 
 \item 
-\hypertarget{classMinuitOptimizer_ad43e7f8a2a6c2de09f56d60dc562c219}{double {\bfseries f\-Vtx\-Time}}\label{classMinuitOptimizer_ad43e7f8a2a6c2de09f56d60dc562c219}
+\hypertarget{classMinuitOptimizer_ad43e7f8a2a6c2de09f56d60dc562c219}{
+double {\bfseries fVtxTime}}
+\label{classMinuitOptimizer_ad43e7f8a2a6c2de09f56d60dc562c219}
 
 \item 
-\hypertarget{classMinuitOptimizer_a5f17dfae78228a476a3bf51e96dff249}{double {\bfseries f\-Dir\-X}}\label{classMinuitOptimizer_a5f17dfae78228a476a3bf51e96dff249}
+\hypertarget{classMinuitOptimizer_a5f17dfae78228a476a3bf51e96dff249}{
+double {\bfseries fDirX}}
+\label{classMinuitOptimizer_a5f17dfae78228a476a3bf51e96dff249}
 
 \item 
-\hypertarget{classMinuitOptimizer_a8211963a4f7fe2dbb333dee654ec0945}{double {\bfseries f\-Dir\-Y}}\label{classMinuitOptimizer_a8211963a4f7fe2dbb333dee654ec0945}
+\hypertarget{classMinuitOptimizer_a8211963a4f7fe2dbb333dee654ec0945}{
+double {\bfseries fDirY}}
+\label{classMinuitOptimizer_a8211963a4f7fe2dbb333dee654ec0945}
 
 \item 
-\hypertarget{classMinuitOptimizer_a1f4bb8150f3aa44e3e89d1958bb48705}{double {\bfseries f\-Dir\-Z}}\label{classMinuitOptimizer_a1f4bb8150f3aa44e3e89d1958bb48705}
+\hypertarget{classMinuitOptimizer_a1f4bb8150f3aa44e3e89d1958bb48705}{
+double {\bfseries fDirZ}}
+\label{classMinuitOptimizer_a1f4bb8150f3aa44e3e89d1958bb48705}
 
 \item 
-\hypertarget{classMinuitOptimizer_a9a84197331b42007985f4be698454881}{double {\bfseries f\-Vtx\-F\-O\-M}}\label{classMinuitOptimizer_a9a84197331b42007985f4be698454881}
+\hypertarget{classMinuitOptimizer_a9a84197331b42007985f4be698454881}{
+double {\bfseries fVtxFOM}}
+\label{classMinuitOptimizer_a9a84197331b42007985f4be698454881}
 
 \item 
-\hypertarget{classMinuitOptimizer_a35740b29d780c8973c36f30006c45e86}{double {\bfseries f\-Cone\-Angle}}\label{classMinuitOptimizer_a35740b29d780c8973c36f30006c45e86}
+\hypertarget{classMinuitOptimizer_a35740b29d780c8973c36f30006c45e86}{
+double {\bfseries fConeAngle}}
+\label{classMinuitOptimizer_a35740b29d780c8973c36f30006c45e86}
 
 \item 
-\hypertarget{classMinuitOptimizer_a616aff9ced7ceab201c263d4a9a54ef0}{double {\bfseries f\-Cone\-F\-O\-M}}\label{classMinuitOptimizer_a616aff9ced7ceab201c263d4a9a54ef0}
+\hypertarget{classMinuitOptimizer_a616aff9ced7ceab201c263d4a9a54ef0}{
+double {\bfseries fConeFOM}}
+\label{classMinuitOptimizer_a616aff9ced7ceab201c263d4a9a54ef0}
 
 \item 
-\hypertarget{classMinuitOptimizer_a666b2710b6f632b7e20cb7169f6ba290}{double {\bfseries f\-Base\-F\-O\-M}}\label{classMinuitOptimizer_a666b2710b6f632b7e20cb7169f6ba290}
+\hypertarget{classMinuitOptimizer_a666b2710b6f632b7e20cb7169f6ba290}{
+double {\bfseries fBaseFOM}}
+\label{classMinuitOptimizer_a666b2710b6f632b7e20cb7169f6ba290}
 
 \item 
-\hypertarget{classMinuitOptimizer_aa73d5b18f4895a866289a75a9f8db56d}{double {\bfseries f\-Found\-Vertex}}\label{classMinuitOptimizer_aa73d5b18f4895a866289a75a9f8db56d}
+\hypertarget{classMinuitOptimizer_aa73d5b18f4895a866289a75a9f8db56d}{
+double {\bfseries fFoundVertex}}
+\label{classMinuitOptimizer_aa73d5b18f4895a866289a75a9f8db56d}
 
 \item 
-\hypertarget{classMinuitOptimizer_a02c93cba75622942a33d016c43b5aa21}{int {\bfseries f\-Print\-Level}}\label{classMinuitOptimizer_a02c93cba75622942a33d016c43b5aa21}
+\hypertarget{classMinuitOptimizer_a02c93cba75622942a33d016c43b5aa21}{
+int {\bfseries fPrintLevel}}
+\label{classMinuitOptimizer_a02c93cba75622942a33d016c43b5aa21}
 
 \item 
-\hypertarget{classMinuitOptimizer_afdb93812b5501c3f93cdb6f6bf47c24c}{int {\bfseries f\-Pass} = 0}\label{classMinuitOptimizer_afdb93812b5501c3f93cdb6f6bf47c24c}
+\hypertarget{classMinuitOptimizer_afdb93812b5501c3f93cdb6f6bf47c24c}{
+int {\bfseries fPass} = 0}
+\label{classMinuitOptimizer_afdb93812b5501c3f93cdb6f6bf47c24c}
 
 \item 
-\hypertarget{classMinuitOptimizer_add4d78e93990f95d5980ce4d3c760b07}{int {\bfseries f\-Itr} = 0}\label{classMinuitOptimizer_add4d78e93990f95d5980ce4d3c760b07}
+\hypertarget{classMinuitOptimizer_add4d78e93990f95d5980ce4d3c760b07}{
+int {\bfseries fItr} = 0}
+\label{classMinuitOptimizer_add4d78e93990f95d5980ce4d3c760b07}
 
 \item 
-\hypertarget{classMinuitOptimizer_a9504878727ea4a33cd05f31a3516f99f}{int {\bfseries f\-Time\-Fit\-Itr}}\label{classMinuitOptimizer_a9504878727ea4a33cd05f31a3516f99f}
+\hypertarget{classMinuitOptimizer_a9504878727ea4a33cd05f31a3516f99f}{
+int {\bfseries fTimeFitItr}}
+\label{classMinuitOptimizer_a9504878727ea4a33cd05f31a3516f99f}
 
 \item 
-\hypertarget{classMinuitOptimizer_a0cb30ac9a0cf39a92061a4f50f71c6e6}{int {\bfseries f\-Point\-Pos\-Itr}}\label{classMinuitOptimizer_a0cb30ac9a0cf39a92061a4f50f71c6e6}
+\hypertarget{classMinuitOptimizer_a0cb30ac9a0cf39a92061a4f50f71c6e6}{
+int {\bfseries fPointPosItr}}
+\label{classMinuitOptimizer_a0cb30ac9a0cf39a92061a4f50f71c6e6}
 
 \item 
-\hypertarget{classMinuitOptimizer_a6052912ba7aad1b01216c139a26b8dd5}{int {\bfseries f\-Point\-Dir\-Itr}}\label{classMinuitOptimizer_a6052912ba7aad1b01216c139a26b8dd5}
+\hypertarget{classMinuitOptimizer_a6052912ba7aad1b01216c139a26b8dd5}{
+int {\bfseries fPointDirItr}}
+\label{classMinuitOptimizer_a6052912ba7aad1b01216c139a26b8dd5}
 
 \item 
-\hypertarget{classMinuitOptimizer_a21609e158204de771d8832773298631c}{int {\bfseries f\-Point\-Vtx\-Itr}}\label{classMinuitOptimizer_a21609e158204de771d8832773298631c}
+\hypertarget{classMinuitOptimizer_a21609e158204de771d8832773298631c}{
+int {\bfseries fPointVtxItr}}
+\label{classMinuitOptimizer_a21609e158204de771d8832773298631c}
 
 \item 
-\hypertarget{classMinuitOptimizer_af4e6a51d4dc1969407bc5f67d388666f}{int {\bfseries f\-Extended\-Vtx\-Itr}}\label{classMinuitOptimizer_af4e6a51d4dc1969407bc5f67d388666f}
+\hypertarget{classMinuitOptimizer_af4e6a51d4dc1969407bc5f67d388666f}{
+int {\bfseries fExtendedVtxItr}}
+\label{classMinuitOptimizer_af4e6a51d4dc1969407bc5f67d388666f}
 
 \item 
-\hypertarget{classMinuitOptimizer_af808fffbe2825ed344da5a8e43e581b0}{bool {\bfseries f\-Fit\-Time\-Params}}\label{classMinuitOptimizer_af808fffbe2825ed344da5a8e43e581b0}
+\hypertarget{classMinuitOptimizer_af808fffbe2825ed344da5a8e43e581b0}{
+bool {\bfseries fFitTimeParams}}
+\label{classMinuitOptimizer_af808fffbe2825ed344da5a8e43e581b0}
 
 \item 
-\hypertarget{classMinuitOptimizer_ac77d1d1dbe7031382733ac767a128f4c}{double {\bfseries f\-Fix\-Time\-Param0}}\label{classMinuitOptimizer_ac77d1d1dbe7031382733ac767a128f4c}
+\hypertarget{classMinuitOptimizer_ac77d1d1dbe7031382733ac767a128f4c}{
+double {\bfseries fFixTimeParam0}}
+\label{classMinuitOptimizer_ac77d1d1dbe7031382733ac767a128f4c}
 
 \item 
-\hypertarget{classMinuitOptimizer_aa59dde6a7e1621d26e936bfce7318669}{double {\bfseries f\-Xmin}}\label{classMinuitOptimizer_aa59dde6a7e1621d26e936bfce7318669}
+\hypertarget{classMinuitOptimizer_aa59dde6a7e1621d26e936bfce7318669}{
+double {\bfseries fXmin}}
+\label{classMinuitOptimizer_aa59dde6a7e1621d26e936bfce7318669}
 
 \item 
-\hypertarget{classMinuitOptimizer_aaefee4dc5a4797cbbb2e094bd5d26869}{double {\bfseries f\-Xmax}}\label{classMinuitOptimizer_aaefee4dc5a4797cbbb2e094bd5d26869}
+\hypertarget{classMinuitOptimizer_aaefee4dc5a4797cbbb2e094bd5d26869}{
+double {\bfseries fXmax}}
+\label{classMinuitOptimizer_aaefee4dc5a4797cbbb2e094bd5d26869}
 
 \item 
-\hypertarget{classMinuitOptimizer_a5889316ee609ce5708ee7778ffd040bd}{double {\bfseries f\-Ymin}}\label{classMinuitOptimizer_a5889316ee609ce5708ee7778ffd040bd}
+\hypertarget{classMinuitOptimizer_a5889316ee609ce5708ee7778ffd040bd}{
+double {\bfseries fYmin}}
+\label{classMinuitOptimizer_a5889316ee609ce5708ee7778ffd040bd}
 
 \item 
-\hypertarget{classMinuitOptimizer_a0d99891b53bec1a1a8bab2d63286faa8}{double {\bfseries f\-Ymax}}\label{classMinuitOptimizer_a0d99891b53bec1a1a8bab2d63286faa8}
+\hypertarget{classMinuitOptimizer_a0d99891b53bec1a1a8bab2d63286faa8}{
+double {\bfseries fYmax}}
+\label{classMinuitOptimizer_a0d99891b53bec1a1a8bab2d63286faa8}
 
 \item 
-\hypertarget{classMinuitOptimizer_af9f16d7c6003600eeb8f95dfd6a208b5}{double {\bfseries f\-Zmin}}\label{classMinuitOptimizer_af9f16d7c6003600eeb8f95dfd6a208b5}
+\hypertarget{classMinuitOptimizer_af9f16d7c6003600eeb8f95dfd6a208b5}{
+double {\bfseries fZmin}}
+\label{classMinuitOptimizer_af9f16d7c6003600eeb8f95dfd6a208b5}
 
 \item 
-\hypertarget{classMinuitOptimizer_af176612fcf0eeca47f8c97e89a318b83}{double {\bfseries f\-Zmax}}\label{classMinuitOptimizer_af176612fcf0eeca47f8c97e89a318b83}
+\hypertarget{classMinuitOptimizer_af176612fcf0eeca47f8c97e89a318b83}{
+double {\bfseries fZmax}}
+\label{classMinuitOptimizer_af176612fcf0eeca47f8c97e89a318b83}
 
 \item 
-\hypertarget{classMinuitOptimizer_a9b87c9982acf9f1d742fedb40b5c762c}{double {\bfseries f\-Tmin}}\label{classMinuitOptimizer_a9b87c9982acf9f1d742fedb40b5c762c}
+\hypertarget{classMinuitOptimizer_a9b87c9982acf9f1d742fedb40b5c762c}{
+double {\bfseries fTmin}}
+\label{classMinuitOptimizer_a9b87c9982acf9f1d742fedb40b5c762c}
 
 \item 
-\hypertarget{classMinuitOptimizer_a329a2dba6ad0d9203a643a6cd8c0e75f}{double {\bfseries f\-Tmax}}\label{classMinuitOptimizer_a329a2dba6ad0d9203a643a6cd8c0e75f}
+\hypertarget{classMinuitOptimizer_a329a2dba6ad0d9203a643a6cd8c0e75f}{
+double {\bfseries fTmax}}
+\label{classMinuitOptimizer_a329a2dba6ad0d9203a643a6cd8c0e75f}
 
 \item 
-\hypertarget{classMinuitOptimizer_abe293c20f6c96eed85d809186c95c6db}{\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$ {\bfseries f\-Seed\-Vtx}}\label{classMinuitOptimizer_abe293c20f6c96eed85d809186c95c6db}
+\hypertarget{classMinuitOptimizer_abe293c20f6c96eed85d809186c95c6db}{
+\hyperlink{classRecoVertex}{RecoVertex} $\ast$ {\bfseries fSeedVtx}}
+\label{classMinuitOptimizer_abe293c20f6c96eed85d809186c95c6db}
 
 \item 
-\hypertarget{classMinuitOptimizer_ab1943c6290d8d8798d1c19401db22065}{\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$ {\bfseries f\-Fitted\-Vtx}}\label{classMinuitOptimizer_ab1943c6290d8d8798d1c19401db22065}
+\hypertarget{classMinuitOptimizer_ab1943c6290d8d8798d1c19401db22065}{
+\hyperlink{classRecoVertex}{RecoVertex} $\ast$ {\bfseries fFittedVtx}}
+\label{classMinuitOptimizer_ab1943c6290d8d8798d1c19401db22065}
 
 \item 
-\hypertarget{classMinuitOptimizer_ae9c9ea28e6e734256038f638a316dce2}{T\-Minuit $\ast$ {\bfseries f\-Minuit\-Point\-Position}}\label{classMinuitOptimizer_ae9c9ea28e6e734256038f638a316dce2}
+\hypertarget{classMinuitOptimizer_ae9c9ea28e6e734256038f638a316dce2}{
+TMinuit $\ast$ {\bfseries fMinuitPointPosition}}
+\label{classMinuitOptimizer_ae9c9ea28e6e734256038f638a316dce2}
 
 \item 
-\hypertarget{classMinuitOptimizer_aaef0452e7c4311746d61a9576cdc8150}{T\-Minuit $\ast$ {\bfseries f\-Minuit\-Point\-Direction}}\label{classMinuitOptimizer_aaef0452e7c4311746d61a9576cdc8150}
+\hypertarget{classMinuitOptimizer_aaef0452e7c4311746d61a9576cdc8150}{
+TMinuit $\ast$ {\bfseries fMinuitPointDirection}}
+\label{classMinuitOptimizer_aaef0452e7c4311746d61a9576cdc8150}
 
 \item 
-\hypertarget{classMinuitOptimizer_a0b125bfd1ad8d29f7d54f5e2e260ed07}{T\-Minuit $\ast$ {\bfseries f\-Minuit\-Point\-Vertex}}\label{classMinuitOptimizer_a0b125bfd1ad8d29f7d54f5e2e260ed07}
+\hypertarget{classMinuitOptimizer_a0b125bfd1ad8d29f7d54f5e2e260ed07}{
+TMinuit $\ast$ {\bfseries fMinuitPointVertex}}
+\label{classMinuitOptimizer_a0b125bfd1ad8d29f7d54f5e2e260ed07}
 
 \item 
-\hypertarget{classMinuitOptimizer_a89ca28d4d41d55eeeb71f3f34409d1aa}{T\-Minuit $\ast$ {\bfseries f\-Minuit\-Extended\-Vertex}}\label{classMinuitOptimizer_a89ca28d4d41d55eeeb71f3f34409d1aa}
+\hypertarget{classMinuitOptimizer_a89ca28d4d41d55eeeb71f3f34409d1aa}{
+TMinuit $\ast$ {\bfseries fMinuitExtendedVertex}}
+\label{classMinuitOptimizer_a89ca28d4d41d55eeeb71f3f34409d1aa}
 
 \item 
-\hypertarget{classMinuitOptimizer_a3c66ea05f5c285f977cefa51d872b2b8}{T\-Minuit $\ast$ {\bfseries f\-Minuit\-Time\-Fit}}\label{classMinuitOptimizer_a3c66ea05f5c285f977cefa51d872b2b8}
+\hypertarget{classMinuitOptimizer_a3c66ea05f5c285f977cefa51d872b2b8}{
+TMinuit $\ast$ {\bfseries fMinuitTimeFit}}
+\label{classMinuitOptimizer_a3c66ea05f5c285f977cefa51d872b2b8}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Minuit\-Optimizer.\-h\item 
-Data\-Model/Minuit\-Optimizer.\-cpp\end{DoxyCompactItemize}
+DataModel/MinuitOptimizer.h\item 
+DataModel/MinuitOptimizer.cpp\end{DoxyCompactItemize}

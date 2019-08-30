@@ -1,199 +1,211 @@
-\hypertarget{classMCRecoEventLoader}{\section{M\-C\-Reco\-Event\-Loader Class Reference}
-\label{classMCRecoEventLoader}\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}}
+\hypertarget{classMCRecoEventLoader}{
+\section{MCRecoEventLoader Class Reference}
+\label{classMCRecoEventLoader}\index{MCRecoEventLoader@{MCRecoEventLoader}}
 }
-Inheritance diagram for M\-C\-Reco\-Event\-Loader\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classMCRecoEventLoader}
-\end{center}
-\end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-bool \hyperlink{classMCRecoEventLoader_a3c57d089982246d613d553092ab8f141}{Initialise} (std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data)
+bool \hyperlink{classMCRecoEventLoader_a3c57d089982246d613d553092ab8f141}{Initialise} (std::string configfile, \hyperlink{classDataModel}{DataModel} \&data)
 \item 
 bool \hyperlink{classMCRecoEventLoader_a17027f8a3689b459fa54a4a3c84b5a0c}{Execute} ()
 \item 
-\hypertarget{classMCRecoEventLoader_ac4b21a91ed4795b7ffc9695ec38438e2}{bool {\bfseries Finalise} ()}\label{classMCRecoEventLoader_ac4b21a91ed4795b7ffc9695ec38438e2}
+\hypertarget{classMCRecoEventLoader_ac4b21a91ed4795b7ffc9695ec38438e2}{
+bool {\bfseries Finalise} ()}
+\label{classMCRecoEventLoader_ac4b21a91ed4795b7ffc9695ec38438e2}
 
 \item 
-void \hyperlink{classMCRecoEventLoader_a981fbf41206f4be37c40ec5fbaeb9c9d}{Find\-True\-Vertex\-From\-M\-C} ()
-\begin{DoxyCompactList}\small\item\em Find true neutrino vertex. \end{DoxyCompactList}\item 
-void \hyperlink{classMCRecoEventLoader_ade2e70b075295f19384e6862dda123ec}{Find\-Pion\-Kaon\-Count\-From\-M\-C} ()
-\begin{DoxyCompactList}\small\item\em Find Pion\-Kaon Count. \end{DoxyCompactList}\item 
-void \hyperlink{classMCRecoEventLoader_a4d3d3f6e9b15bd07420b0b10f04eed11}{Push\-True\-Vertex} (bool savetodisk)
-\begin{DoxyCompactList}\small\item\em Save true neutrino vertex. \end{DoxyCompactList}\item 
-void \hyperlink{classMCRecoEventLoader_a57ec5fa238eed8885465bf6d3e03078c}{Push\-True\-Stop\-Vertex} (bool savetodisk)
-\begin{DoxyCompactList}\small\item\em Save true neutrino vertex. \end{DoxyCompactList}\item 
-void \hyperlink{classMCRecoEventLoader_a79a348512d9c7fb13aa86e96d5f1d39b}{Push\-True\-Water\-Track\-Length} (double Water\-T)
-\begin{DoxyCompactList}\small\item\em Push muon track lengths to Reco\-Event Store. \end{DoxyCompactList}\item 
-void \hyperlink{classMCRecoEventLoader_a258d351d5afce9a2be153db10a80ae3a}{Push\-True\-M\-R\-D\-Track\-Length} (double M\-R\-D\-T)
+void \hyperlink{classMCRecoEventLoader_a981fbf41206f4be37c40ec5fbaeb9c9d}{FindTrueVertexFromMC} ()
+\begin{DoxyCompactList}\small\item\em Find true neutrino vertex. \item\end{DoxyCompactList}\item 
+void \hyperlink{classMCRecoEventLoader_ade2e70b075295f19384e6862dda123ec}{FindPionKaonCountFromMC} ()
+\begin{DoxyCompactList}\small\item\em Find PionKaon Count. \item\end{DoxyCompactList}\item 
+void \hyperlink{classMCRecoEventLoader_a4d3d3f6e9b15bd07420b0b10f04eed11}{PushTrueVertex} (bool savetodisk)
+\begin{DoxyCompactList}\small\item\em Save true neutrino vertex. \item\end{DoxyCompactList}\item 
+void \hyperlink{classMCRecoEventLoader_a57ec5fa238eed8885465bf6d3e03078c}{PushTrueStopVertex} (bool savetodisk)
+\begin{DoxyCompactList}\small\item\em Save true neutrino vertex. \item\end{DoxyCompactList}\item 
+void \hyperlink{classMCRecoEventLoader_a253c2747d42e4112c039ecafc93ee05e}{PushTrueMuonEnergy} (double MuE)
+\begin{DoxyCompactList}\small\item\em Push muon track lengths to RecoEvent Store. \item\end{DoxyCompactList}\item 
+void \hyperlink{classMCRecoEventLoader_a79a348512d9c7fb13aa86e96d5f1d39b}{PushTrueWaterTrackLength} (double WaterT)
+\item 
+void \hyperlink{classMCRecoEventLoader_a258d351d5afce9a2be153db10a80ae3a}{PushTrueMRDTrackLength} (double MRDT)
 \item 
 void \hyperlink{classMCRecoEventLoader_a1c01acb2c109e46de4e1dc27911843c3}{Reset} ()
-\begin{DoxyCompactList}\small\item\em Reset initialized classes. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Reset initialized classes. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMCRecoEventLoader_a42b09a53c17f03a6e4fcce20cd4c56b1}{int {\bfseries verbosity} =1}\label{classMCRecoEventLoader_a42b09a53c17f03a6e4fcce20cd4c56b1}
+\hypertarget{classMCRecoEventLoader_a42b09a53c17f03a6e4fcce20cd4c56b1}{
+int {\bfseries verbosity} = 1}
+\label{classMCRecoEventLoader_a42b09a53c17f03a6e4fcce20cd4c56b1}
 
 \item 
-\hypertarget{classMCRecoEventLoader_a0d3eb072ae7301282ba510bbd11ffb0d}{bool {\bfseries f\-Get\-Pi\-K\-Info}}\label{classMCRecoEventLoader_a0d3eb072ae7301282ba510bbd11ffb0d}
+\hypertarget{classMCRecoEventLoader_a0d3eb072ae7301282ba510bbd11ffb0d}{
+bool {\bfseries fGetPiKInfo}}
+\label{classMCRecoEventLoader_a0d3eb072ae7301282ba510bbd11ffb0d}
 
 \item 
-\hypertarget{classMCRecoEventLoader_ab936432f202a835b7877dbc63303a57c}{int {\bfseries f\-Particle\-I\-D}}\label{classMCRecoEventLoader_ab936432f202a835b7877dbc63303a57c}
+\hypertarget{classMCRecoEventLoader_ab936432f202a835b7877dbc63303a57c}{
+int {\bfseries fParticleID}}
+\label{classMCRecoEventLoader_ab936432f202a835b7877dbc63303a57c}
 
 \item 
-\hypertarget{classMCRecoEventLoader_aefded74813d943854628aa0da13953ff}{double {\bfseries xshift}}\label{classMCRecoEventLoader_aefded74813d943854628aa0da13953ff}
+\hypertarget{classMCRecoEventLoader_aefded74813d943854628aa0da13953ff}{
+double {\bfseries xshift}}
+\label{classMCRecoEventLoader_aefded74813d943854628aa0da13953ff}
 
 \item 
-\hypertarget{classMCRecoEventLoader_a008cd13186e5458c4232376980ff8430}{double {\bfseries yshift}}\label{classMCRecoEventLoader_a008cd13186e5458c4232376980ff8430}
+\hypertarget{classMCRecoEventLoader_a008cd13186e5458c4232376980ff8430}{
+double {\bfseries yshift}}
+\label{classMCRecoEventLoader_a008cd13186e5458c4232376980ff8430}
 
 \item 
-\hypertarget{classMCRecoEventLoader_a5320937dd08d67c172b0f90956615e11}{double {\bfseries zshift}}\label{classMCRecoEventLoader_a5320937dd08d67c172b0f90956615e11}
+\hypertarget{classMCRecoEventLoader_a5320937dd08d67c172b0f90956615e11}{
+double {\bfseries zshift}}
+\label{classMCRecoEventLoader_a5320937dd08d67c172b0f90956615e11}
 
 \item 
-\hypertarget{classMCRecoEventLoader_a06c8c257c06cca00a6b34c51365e6d69}{\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$ \hyperlink{classMCRecoEventLoader_a06c8c257c06cca00a6b34c51365e6d69}{f\-Muon\-Start\-Vertex} = nullptr}\label{classMCRecoEventLoader_a06c8c257c06cca00a6b34c51365e6d69}
+\hypertarget{classMCRecoEventLoader_a06c8c257c06cca00a6b34c51365e6d69}{
+\hyperlink{classRecoVertex}{RecoVertex} $\ast$ \hyperlink{classMCRecoEventLoader_a06c8c257c06cca00a6b34c51365e6d69}{fMuonStartVertex} = nullptr}
+\label{classMCRecoEventLoader_a06c8c257c06cca00a6b34c51365e6d69}
 
-\begin{DoxyCompactList}\small\item\em true muon start vertex \end{DoxyCompactList}\item 
-\hypertarget{classMCRecoEventLoader_ab4eb6938d73f33b4d4fbcaccd28f9c65}{\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$ \hyperlink{classMCRecoEventLoader_ab4eb6938d73f33b4d4fbcaccd28f9c65}{f\-Muon\-Stop\-Vertex} = nullptr}\label{classMCRecoEventLoader_ab4eb6938d73f33b4d4fbcaccd28f9c65}
+\begin{DoxyCompactList}\small\item\em true muon start vertex \item\end{DoxyCompactList}\item 
+\hypertarget{classMCRecoEventLoader_ab4eb6938d73f33b4d4fbcaccd28f9c65}{
+\hyperlink{classRecoVertex}{RecoVertex} $\ast$ \hyperlink{classMCRecoEventLoader_ab4eb6938d73f33b4d4fbcaccd28f9c65}{fMuonStopVertex} = nullptr}
+\label{classMCRecoEventLoader_ab4eb6938d73f33b4d4fbcaccd28f9c65}
 
-\begin{DoxyCompactList}\small\item\em true muon stop vertex \end{DoxyCompactList}\item 
-\hypertarget{classMCRecoEventLoader_a92922e07f398c491b9fd9e13ef012689}{std\-::vector$<$ \hyperlink{classMCParticle}{M\-C\-Particle} $>$ $\ast$ \hyperlink{classMCRecoEventLoader_a92922e07f398c491b9fd9e13ef012689}{f\-M\-C\-Particles} =nullptr}\label{classMCRecoEventLoader_a92922e07f398c491b9fd9e13ef012689}
+\begin{DoxyCompactList}\small\item\em true muon stop vertex \item\end{DoxyCompactList}\item 
+\hypertarget{classMCRecoEventLoader_a92922e07f398c491b9fd9e13ef012689}{
+std::vector$<$ \hyperlink{classMCParticle}{MCParticle} $>$ $\ast$ \hyperlink{classMCRecoEventLoader_a92922e07f398c491b9fd9e13ef012689}{fMCParticles} = nullptr}
+\label{classMCRecoEventLoader_a92922e07f398c491b9fd9e13ef012689}
 
-\begin{DoxyCompactList}\small\item\em truth tracks \end{DoxyCompactList}\item 
-\hypertarget{classMCRecoEventLoader_aca4904cc6f45b2dd128ac58faa6c060d}{double {\bfseries Water\-Track\-Length} = -\/999.}\label{classMCRecoEventLoader_aca4904cc6f45b2dd128ac58faa6c060d}
-
-\item 
-\hypertarget{classMCRecoEventLoader_a9460d1064fa3c64c723dec37c834b75b}{double {\bfseries M\-R\-D\-Track\-Length} = -\/999.}\label{classMCRecoEventLoader_a9460d1064fa3c64c723dec37c834b75b}
-
-\item 
-\hypertarget{classMCRecoEventLoader_a402d61b93cd42d10500aedeb6e534b5d}{int \hyperlink{classMCRecoEventLoader_a402d61b93cd42d10500aedeb6e534b5d}{v\-\_\-error} =0}\label{classMCRecoEventLoader_a402d61b93cd42d10500aedeb6e534b5d}
-
-\begin{DoxyCompactList}\small\item\em verbosity levels\-: if 'verbosity' $<$ this level, the message type will be logged. \end{DoxyCompactList}\item 
-\hypertarget{classMCRecoEventLoader_a4693e8478a38f832b1ea3daff98353a9}{int {\bfseries v\-\_\-warning} =1}\label{classMCRecoEventLoader_a4693e8478a38f832b1ea3daff98353a9}
-
-\item 
-\hypertarget{classMCRecoEventLoader_a2e5d293cda46249cbab52275bd52c508}{int {\bfseries v\-\_\-message} =2}\label{classMCRecoEventLoader_a2e5d293cda46249cbab52275bd52c508}
+\begin{DoxyCompactList}\small\item\em truth tracks \item\end{DoxyCompactList}\item 
+\hypertarget{classMCRecoEventLoader_a6f1746151a4cc1c80204de806e6d3086}{
+double {\bfseries TrueMuonEnergy} = -\/9999.}
+\label{classMCRecoEventLoader_a6f1746151a4cc1c80204de806e6d3086}
 
 \item 
-\hypertarget{classMCRecoEventLoader_a1dd2e7e0076fafe88a4baa4218f772a0}{int {\bfseries v\-\_\-debug} =3}\label{classMCRecoEventLoader_a1dd2e7e0076fafe88a4baa4218f772a0}
+\hypertarget{classMCRecoEventLoader_aca4904cc6f45b2dd128ac58faa6c060d}{
+double {\bfseries WaterTrackLength} = -\/9999.}
+\label{classMCRecoEventLoader_aca4904cc6f45b2dd128ac58faa6c060d}
 
 \item 
-\hypertarget{classMCRecoEventLoader_a1c2cc6580cbfcad49ea1cd17e7ce08f3}{std\-::string {\bfseries logmessage}}\label{classMCRecoEventLoader_a1c2cc6580cbfcad49ea1cd17e7ce08f3}
+\hypertarget{classMCRecoEventLoader_a9460d1064fa3c64c723dec37c834b75b}{
+double {\bfseries MRDTrackLength} = -\/9999.}
+\label{classMCRecoEventLoader_a9460d1064fa3c64c723dec37c834b75b}
+
+\item 
+\hypertarget{classMCRecoEventLoader_a402d61b93cd42d10500aedeb6e534b5d}{
+int \hyperlink{classMCRecoEventLoader_a402d61b93cd42d10500aedeb6e534b5d}{v\_\-error} = 0}
+\label{classMCRecoEventLoader_a402d61b93cd42d10500aedeb6e534b5d}
+
+\begin{DoxyCompactList}\small\item\em verbosity levels: if 'verbosity' $<$ this level, the message type will be logged. \item\end{DoxyCompactList}\item 
+\hypertarget{classMCRecoEventLoader_a4693e8478a38f832b1ea3daff98353a9}{
+int {\bfseries v\_\-warning} = 1}
+\label{classMCRecoEventLoader_a4693e8478a38f832b1ea3daff98353a9}
+
+\item 
+\hypertarget{classMCRecoEventLoader_a2e5d293cda46249cbab52275bd52c508}{
+int {\bfseries v\_\-message} = 2}
+\label{classMCRecoEventLoader_a2e5d293cda46249cbab52275bd52c508}
+
+\item 
+\hypertarget{classMCRecoEventLoader_a1dd2e7e0076fafe88a4baa4218f772a0}{
+int {\bfseries v\_\-debug} = 3}
+\label{classMCRecoEventLoader_a1dd2e7e0076fafe88a4baa4218f772a0}
+
+\item 
+\hypertarget{classMCRecoEventLoader_a1c2cc6580cbfcad49ea1cd17e7ce08f3}{
+std::string {\bfseries logmessage}}
+\label{classMCRecoEventLoader_a1c2cc6580cbfcad49ea1cd17e7ce08f3}
 
 \end{DoxyCompactItemize}
 
 
 \subsection{Member Function Documentation}
-\hypertarget{classMCRecoEventLoader_a17027f8a3689b459fa54a4a3c84b5a0c}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Execute@{Execute}}
-\index{Execute@{Execute}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool M\-C\-Reco\-Event\-Loader\-::\-Execute (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a17027f8a3689b459fa54a4a3c84b5a0c}
+\hypertarget{classMCRecoEventLoader_a17027f8a3689b459fa54a4a3c84b5a0c}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!Execute@{Execute}}
+\index{Execute@{Execute}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool MCRecoEventLoader::Execute ()}}
+\label{classMCRecoEventLoader_a17027f8a3689b459fa54a4a3c84b5a0c}
+
+
 Reset everything
 
-Get M\-C \hyperlink{classParticle}{Particle} information \hypertarget{classMCRecoEventLoader_ade2e70b075295f19384e6862dda123ec}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Find\-Pion\-Kaon\-Count\-From\-M\-C@{Find\-Pion\-Kaon\-Count\-From\-M\-C}}
-\index{Find\-Pion\-Kaon\-Count\-From\-M\-C@{Find\-Pion\-Kaon\-Count\-From\-M\-C}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Find\-Pion\-Kaon\-Count\-From\-M\-C}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Find\-Pion\-Kaon\-Count\-From\-M\-C (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_ade2e70b075295f19384e6862dda123ec}
+Get MC \hyperlink{classParticle}{Particle} information \hypertarget{classMCRecoEventLoader_ade2e70b075295f19384e6862dda123ec}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!FindPionKaonCountFromMC@{FindPionKaonCountFromMC}}
+\index{FindPionKaonCountFromMC@{FindPionKaonCountFromMC}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{FindPionKaonCountFromMC}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::FindPionKaonCountFromMC ()}}
+\label{classMCRecoEventLoader_ade2e70b075295f19384e6862dda123ec}
 
 
-Find Pion\-Kaon Count. 
-
-Loop over all M\-C particles and find any particles with P\-D\-G codes Consistent with Pions or Kaons of any charges. Racks up a count of the number of each type of particle \hypertarget{classMCRecoEventLoader_a981fbf41206f4be37c40ec5fbaeb9c9d}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Find\-True\-Vertex\-From\-M\-C@{Find\-True\-Vertex\-From\-M\-C}}
-\index{Find\-True\-Vertex\-From\-M\-C@{Find\-True\-Vertex\-From\-M\-C}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Find\-True\-Vertex\-From\-M\-C}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Find\-True\-Vertex\-From\-M\-C (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a981fbf41206f4be37c40ec5fbaeb9c9d}
+Find PionKaon Count. Loop over all MC particles and find any particles with PDG codes Consistent with Pions or Kaons of any charges. Racks up a count of the number of each type of particle \hypertarget{classMCRecoEventLoader_a981fbf41206f4be37c40ec5fbaeb9c9d}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!FindTrueVertexFromMC@{FindTrueVertexFromMC}}
+\index{FindTrueVertexFromMC@{FindTrueVertexFromMC}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{FindTrueVertexFromMC}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::FindTrueVertexFromMC ()}}
+\label{classMCRecoEventLoader_a981fbf41206f4be37c40ec5fbaeb9c9d}
 
 
-Find true neutrino vertex. 
+Find true neutrino vertex. Loop over all MC particles and find the particle with highest energy. This particle is the primary muon. The muon start position, time and the muon direction are used to initise the true neutrino vertex \hypertarget{classMCRecoEventLoader_a3c57d089982246d613d553092ab8f141}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!Initialise@{Initialise}}
+\index{Initialise@{Initialise}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool MCRecoEventLoader::Initialise (std::string {\em configfile}, \/  {\bf DataModel} \& {\em data})}}
+\label{classMCRecoEventLoader_a3c57d089982246d613d553092ab8f141}
 
-Loop over all M\-C particles and find the particle with highest energy. This particle is the primary muon. The muon start position, time and the muon direction are used to initise the true neutrino vertex \hypertarget{classMCRecoEventLoader_a3c57d089982246d613d553092ab8f141}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Initialise@{Initialise}}
-\index{Initialise@{Initialise}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool M\-C\-Reco\-Event\-Loader\-::\-Initialise (
-\begin{DoxyParamCaption}
-\item[{std\-::string}]{configfile, }
-\item[{{\bf Data\-Model} \&}]{data}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a3c57d089982246d613d553092ab8f141}
+
 Get the Tool configuration variables
 
-Construct the other objects we'll be setting at event level, \hypertarget{classMCRecoEventLoader_a258d351d5afce9a2be153db10a80ae3a}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Push\-True\-M\-R\-D\-Track\-Length@{Push\-True\-M\-R\-D\-Track\-Length}}
-\index{Push\-True\-M\-R\-D\-Track\-Length@{Push\-True\-M\-R\-D\-Track\-Length}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Push\-True\-M\-R\-D\-Track\-Length}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Push\-True\-M\-R\-D\-Track\-Length (
-\begin{DoxyParamCaption}
-\item[{double}]{M\-R\-D\-T}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a258d351d5afce9a2be153db10a80ae3a}
-\begin{quotation}
-Add digits to Reco\-Event \end{quotation}
-\hypertarget{classMCRecoEventLoader_a57ec5fa238eed8885465bf6d3e03078c}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Push\-True\-Stop\-Vertex@{Push\-True\-Stop\-Vertex}}
-\index{Push\-True\-Stop\-Vertex@{Push\-True\-Stop\-Vertex}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Push\-True\-Stop\-Vertex}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Push\-True\-Stop\-Vertex (
-\begin{DoxyParamCaption}
-\item[{bool}]{savetodisk}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a57ec5fa238eed8885465bf6d3e03078c}
+Construct the other objects we'll be setting at event level, \hypertarget{classMCRecoEventLoader_a258d351d5afce9a2be153db10a80ae3a}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!PushTrueMRDTrackLength@{PushTrueMRDTrackLength}}
+\index{PushTrueMRDTrackLength@{PushTrueMRDTrackLength}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{PushTrueMRDTrackLength}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::PushTrueMRDTrackLength (double {\em MRDT})}}
+\label{classMCRecoEventLoader_a258d351d5afce9a2be153db10a80ae3a}
 
 
-Save true neutrino vertex. 
-
-Push true muon stop vertex to \char`\"{}\-Reco\-Vertex\char`\"{} 
-\begin{DoxyParams}[1]{Parameters}
-\mbox{\tt in}  & {\em bool} & savetodisk\-: save object to disk if savetodisk=true \\
-\hline
-\end{DoxyParams}
-\hypertarget{classMCRecoEventLoader_a4d3d3f6e9b15bd07420b0b10f04eed11}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Push\-True\-Vertex@{Push\-True\-Vertex}}
-\index{Push\-True\-Vertex@{Push\-True\-Vertex}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Push\-True\-Vertex}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Push\-True\-Vertex (
-\begin{DoxyParamCaption}
-\item[{bool}]{savetodisk}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a4d3d3f6e9b15bd07420b0b10f04eed11}
+$>$ Add digits to RecoEvent \hypertarget{classMCRecoEventLoader_a253c2747d42e4112c039ecafc93ee05e}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!PushTrueMuonEnergy@{PushTrueMuonEnergy}}
+\index{PushTrueMuonEnergy@{PushTrueMuonEnergy}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{PushTrueMuonEnergy}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::PushTrueMuonEnergy (double {\em MuE})}}
+\label{classMCRecoEventLoader_a253c2747d42e4112c039ecafc93ee05e}
 
 
-Save true neutrino vertex. 
+Push muon track lengths to RecoEvent Store. 
 
-Push true muon vertex to \char`\"{}\-Reco\-Vertex\char`\"{} 
-\begin{DoxyParams}[1]{Parameters}
-\mbox{\tt in}  & {\em bool} & savetodisk\-: save object to disk if savetodisk=true \\
-\hline
-\end{DoxyParams}
-\hypertarget{classMCRecoEventLoader_a79a348512d9c7fb13aa86e96d5f1d39b}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Push\-True\-Water\-Track\-Length@{Push\-True\-Water\-Track\-Length}}
-\index{Push\-True\-Water\-Track\-Length@{Push\-True\-Water\-Track\-Length}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Push\-True\-Water\-Track\-Length}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Push\-True\-Water\-Track\-Length (
-\begin{DoxyParamCaption}
-\item[{double}]{Water\-T}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a79a348512d9c7fb13aa86e96d5f1d39b}
+$>$ Add digits to RecoEvent \hypertarget{classMCRecoEventLoader_a57ec5fa238eed8885465bf6d3e03078c}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!PushTrueStopVertex@{PushTrueStopVertex}}
+\index{PushTrueStopVertex@{PushTrueStopVertex}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{PushTrueStopVertex}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::PushTrueStopVertex (bool {\em savetodisk})}}
+\label{classMCRecoEventLoader_a57ec5fa238eed8885465bf6d3e03078c}
 
 
-Push muon track lengths to Reco\-Event Store. 
-
-\begin{quotation}
-Add digits to Reco\-Event \end{quotation}
-\hypertarget{classMCRecoEventLoader_a1c01acb2c109e46de4e1dc27911843c3}{\index{M\-C\-Reco\-Event\-Loader@{M\-C\-Reco\-Event\-Loader}!Reset@{Reset}}
-\index{Reset@{Reset}!MCRecoEventLoader@{M\-C\-Reco\-Event\-Loader}}
-\subsubsection[{Reset}]{\setlength{\rightskip}{0pt plus 5cm}void M\-C\-Reco\-Event\-Loader\-::\-Reset (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classMCRecoEventLoader_a1c01acb2c109e46de4e1dc27911843c3}
+Save true neutrino vertex. Push true muon stop vertex to \char`\"{}RecoVertex\char`\"{} 
+\begin{DoxyParams}{Parameters}
+\item[\mbox{$\leftarrow$} {\em bool}]savetodisk: save object to disk if savetodisk=true \end{DoxyParams}
+\hypertarget{classMCRecoEventLoader_a4d3d3f6e9b15bd07420b0b10f04eed11}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!PushTrueVertex@{PushTrueVertex}}
+\index{PushTrueVertex@{PushTrueVertex}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{PushTrueVertex}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::PushTrueVertex (bool {\em savetodisk})}}
+\label{classMCRecoEventLoader_a4d3d3f6e9b15bd07420b0b10f04eed11}
 
 
-Reset initialized classes. 
+Save true neutrino vertex. Push true muon vertex to \char`\"{}RecoVertex\char`\"{} 
+\begin{DoxyParams}{Parameters}
+\item[\mbox{$\leftarrow$} {\em bool}]savetodisk: save object to disk if savetodisk=true \end{DoxyParams}
+\hypertarget{classMCRecoEventLoader_a79a348512d9c7fb13aa86e96d5f1d39b}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!PushTrueWaterTrackLength@{PushTrueWaterTrackLength}}
+\index{PushTrueWaterTrackLength@{PushTrueWaterTrackLength}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{PushTrueWaterTrackLength}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::PushTrueWaterTrackLength (double {\em WaterT})}}
+\label{classMCRecoEventLoader_a79a348512d9c7fb13aa86e96d5f1d39b}
 
-Clear True Vertices 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+$>$ Add digits to RecoEvent \hypertarget{classMCRecoEventLoader_a1c01acb2c109e46de4e1dc27911843c3}{
+\index{MCRecoEventLoader@{MCRecoEventLoader}!Reset@{Reset}}
+\index{Reset@{Reset}!MCRecoEventLoader@{MCRecoEventLoader}}
+\subsubsection[{Reset}]{\setlength{\rightskip}{0pt plus 5cm}void MCRecoEventLoader::Reset ()}}
+\label{classMCRecoEventLoader_a1c01acb2c109e46de4e1dc27911843c3}
+
+
+Reset initialized classes. Clear True Vertices 
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-M\-C\-Reco\-Event\-Loader/M\-C\-Reco\-Event\-Loader.\-h\item 
-User\-Tools/\-M\-C\-Reco\-Event\-Loader/M\-C\-Reco\-Event\-Loader.\-cpp\end{DoxyCompactItemize}
+UserTools/MCRecoEventLoader/MCRecoEventLoader.h\item 
+UserTools/MCRecoEventLoader/MCRecoEventLoader.cpp\end{DoxyCompactItemize}

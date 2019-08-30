@@ -53,6 +53,11 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: Assuming LAPPD stripline separation of 7.14mm",v_warning,verbosity);
 		LappdStripSeparation = 7.14;
 	}
+	get_ok = m_variables.Get("RunStartDate", RunStartUser);
+	if(not get_ok){
+		Log("LoadWCSim Tool: Assuming RunStartDate of 0ns, i.e. unix epoch",v_warning,verbosity);
+		RunStartUser = 0;
+	}
 	// put version in the CStore for downstream tools
 	m_data->CStore.Set("WCSimVersion", WCSimVersion);
 	
@@ -131,7 +136,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
 	
 	// Convert WCSimRootGeom into ToolChain Geometry class
-	ConstructToolChainGeometry();
+	Geometry* anniegeom = ConstructToolChainGeometry();
 	
 	// Set run-level information in the ANNIEEvent
 	// ===========================================
@@ -157,23 +162,17 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	*/
 	
 	EventNumber=0;
-	MCEventNum=-1;
 	MCTriggernum=0;
-	// pull the first entry with a trigger and use it's Date for the BeamStatus last recorded time. TODO
-	if(verbosity>1) cout<<"getting Run start time"<<endl;
-	do{
-		MCEventNum++;
-		WCSimEntry->GetEntry(MCEventNum);
-	} while(WCSimEntry->wcsimrootevent->GetNumberOfEvents()==0);
-	atrigt = WCSimEntry->wcsimrootevent->GetTrigger(0);
-	TimeClass RunStartTime(atrigt->GetHeader()->GetDate());
 	MCEventNum=0;
+	// pull the first entry to get the MCFile
+	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
 	double beampow=3.2545e+16;
+	RunStartTime.SetNs(RunStartUser);
 	BeamStatus = new BeamStatusClass(RunStartTime, beaminten, beampow, "stable");
 	
 	// Construct the other objects we'll be setting at event level,
@@ -205,6 +204,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		}
 		Log(logmessage,v_error,verbosity);
 	}
+	
+	//anniegeom->GetChannel(0); // trigger InitChannelMap
 	
 	return true;
 }
@@ -564,8 +565,19 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
 	if(verbosity>2) cout<<"tdcdata"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
+	// TODO?
+	// right now we have three Time variables:
+	// 1. "RunStartTime" which stores just a user passed start time.
+	// 2. "TriggerData", a one-element vector of TriggerClass objects, each of which has a time member.
+	//    The one used entry has its time member set to the time between MC event start (always 0)
+	//     and the MC trigger time.
+	// 3. "EventTime" which stores this same time difference between MC Trigger and MC event start
+	// This means we simulate many events all happening ~ the unix epoch (time 0).
+	// If we want to simulate a 'run' of events, we need to throw some cumulative running time and
+	// add this to RunStartTime, and store the Event and Trigger times separately.
+	// This is done by PulseSimulation tool (timefileout_Time), but maybe should be here...
 	if(verbosity>2) cout<<"triggerdata"<<endl;
-	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);  // FIXME
+	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);
 	if(verbosity>2) cout<<"eventtime"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
@@ -643,7 +655,7 @@ bool LoadWCSim::Finalise(){
 	return true;
 }
 
-void LoadWCSim::ConstructToolChainGeometry(){
+Geometry* LoadWCSim::ConstructToolChainGeometry(){
 	// Pull details from the WCSimRootGeom
 	// ===================================
 	double WCSimGeometryVer = 1;                      // TODO: pull this from some suitable variable
@@ -935,6 +947,43 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		// Add this detector to the geometry
 		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
+		
+		// Create a paddle
+		// FIXME remove dependency on MRDSpecs
+		if(mrdpmti!=(apmt.GetTubeNo()-1)){
+			cerr<<"LoadWCSim: mrdpmti!=pmt.GetTubeNo-1!"<<std::endl;
+			cerr<<"mrdpmti="<<mrdpmti<<", pmt.GetTubeNo="<<apmt.GetTubeNo()<<endl;
+			assert(false);
+		}
+		// calculate MRD_x_y_z ... MRDSpecs doesn't provide a nice way to do this
+		int layernum=0;
+		while ((mrdpmti+1) > MRDSpecs::layeroffsets.at(layernum+1)){ layernum++; }
+		int in_layer_pmtnum = mrdpmti - MRDSpecs::layeroffsets.at(layernum);
+		// paddles in each layer alternate on sides; i.e. paddles 0 and 1 are on opposite sides
+		int side = in_layer_pmtnum%2;
+		in_layer_pmtnum = std::floor(in_layer_pmtnum/2);
+		int orientation = MRDSpecs::paddle_orientations.at(mrdpmti);
+		int MRD_x = (orientation) ? in_layer_pmtnum  : side;
+		int MRD_y = (orientation) ? side : in_layer_pmtnum;
+		int MRD_z = layernum+2;  // first MRD z layer num is 2 (veto are 0,1)
+		
+		Paddle apaddle( uniquedetectorkey,
+						MRD_x,
+						MRD_y,
+						MRD_z,
+						orientation,
+						Position( MRDSpecs::paddle_originx.at(mrdpmti)/1000.,
+								  MRDSpecs::paddle_originy.at(mrdpmti)/1000.,
+								  MRDSpecs::paddle_originz.at(mrdpmti)/1000.),
+		std::pair<double,double>{MRDSpecs::paddle_extentsx.at(mrdpmti).first/1000.,
+								 MRDSpecs::paddle_extentsx.at(mrdpmti).second/1000.},
+		std::pair<double,double>{MRDSpecs::paddle_extentsy.at(mrdpmti).first/1000.,
+								 MRDSpecs::paddle_extentsy.at(mrdpmti).second/1000.},
+		std::pair<double,double>{MRDSpecs::paddle_extentsz.at(mrdpmti).first/1000.,
+								 MRDSpecs::paddle_extentsz.at(mrdpmti).second/1000.});
+		if(verbosity>4) cout<<"Setting paddle for detector "<<uniquedetectorkey<<endl;
+		anniegeom->SetDetectorPaddle(uniquedetectorkey,apaddle);
+		
 		if(verbosity>4) cout<<"printing geometry"<<endl;
 		if(verbosity>4) anniegeom->PrintChannels();
 	}
@@ -1003,6 +1052,29 @@ void LoadWCSim::ConstructToolChainGeometry(){
 		// Add this detector to the geometry
 		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
 		anniegeom->AddDetector(adet);
+		
+		// Create a paddle
+		// FIXME even MRDSpecs can't save us here; instead hard-code the values for now,
+		// this will all be replaced eventually anyway
+		int MRD_z = (faccpmti>12); // 13 paddles per layer
+		int MRD_x = MRD_z;         // i believe PMTs are on LHS for layer 0, RHS for layer 1
+		int MRD_y = faccpmti - (13*MRD_z);
+		double paddle_zorigin = (MRD_z) ? 0.0728 : 0.0508;  // numbers from geofile.txt
+		double paddle_yorigin = facc_paddle_yorigins.at(faccpmti)/100.;
+		
+		Paddle apaddle( uniquedetectorkey,
+						MRD_x,
+						MRD_y,
+						MRD_z,
+						0,  // orientation 0=horizontal, 1=vertical
+						Position(0,paddle_yorigin,paddle_zorigin),
+		std::pair<double,double>{-1.6,1.6},  // numbers from WCSim source files / measurements
+		std::pair<double,double>{paddle_yorigin-0.1525,paddle_yorigin+0.1525},
+		std::pair<double,double>{paddle_zorigin-0.01,paddle_zorigin+0.01});
+		
+		if(verbosity>4) cout<<"Setting paddle for detector "<<uniquedetectorkey<<endl;
+		anniegeom->SetDetectorPaddle(uniquedetectorkey,apaddle);
+		
 		if(verbosity>4) cout<<"printing geometry"<<endl;
 		if(verbosity>4) anniegeom->PrintChannels();
 	}
@@ -1018,6 +1090,7 @@ void LoadWCSim::ConstructToolChainGeometry(){
 	m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
 	m_data->CStore.Set("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
 	
+	return anniegeom;
 }
 
 void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_TubeIds, std::map<int,double>* ParticleId_to_Charge, std::map<int,unsigned long> tubeid_to_channelkey){

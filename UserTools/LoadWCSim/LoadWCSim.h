@@ -84,7 +84,7 @@ class LoadWCSim: public Tool {
 	
 	// For constructing ToolChain Geometry
 	//////////////////////////////////////
-	void ConstructToolChainGeometry();
+	Geometry* ConstructToolChainGeometry();
 	std::map<int,unsigned long> lappd_tubeid_to_detectorkey;
 	std::map<int,unsigned long> pmt_tubeid_to_channelkey;
 	std::map<int,unsigned long> mrd_tubeid_to_channelkey;
@@ -101,6 +101,9 @@ class LoadWCSim: public Tool {
 	std::map<int,int> timeArrayOffsetMap;
 	void BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig);
 	
+	// FIXME temporary!! remove me when we have a better way to get FACC paddle origins
+	std::vector<double> facc_paddle_yorigins{-198.699875000, -167.999875000, -137.299875000, -106.599875000, -75.899875000, -45.199875000, -14.499875000, 16.200125000, 46.900125000, 77.600125000, 108.300125000, 139.000125000, 169.700125000, -198.064875000, -167.364875000, -136.664875000, -105.964875000, -75.264875000, -44.564875000, -13.864875000, 16.835125000, 47.535125000, 78.235125000, 108.935125000, 139.635125000, 170.335125000}; // taken from geofile.txt
+	
 	////////////////
 	// things that will be filled into the store from this WCSim file.
 	// note: filling everything in the right format is a complex process;
@@ -112,8 +115,10 @@ class LoadWCSim: public Tool {
 	uint16_t MCTriggernum;
 	uint32_t RunNumber;
 	uint32_t SubrunNumber;
-	uint32_t EventNumber; // will need to be tracked separately, since we flatten triggers
+	uint32_t EventNumber;    // will need to be tracked separately, since we flatten triggers
 	TimeClass* EventTime;
+	uint64_t RunStartUser;   // sets the run start time, since WCSim doesn't have one
+	TimeClass RunStartTime;  // as set from user
 	uint64_t EventTimeNs;
 	std::vector<MCParticle>* MCParticles;
 	std::map<unsigned long,std::vector<MCHit>>* TDCData;

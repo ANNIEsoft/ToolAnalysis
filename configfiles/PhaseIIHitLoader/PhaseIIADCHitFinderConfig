@@ -1,0 +1,10 @@
+verbosity 5
+
+PulseFindingApproach threshold
+#ADCThresholdDB ./configfiles/PhaseIIHitLoader/TankPMTTresholds.txt
+DefaultADCThreshold 12
+DefaultThresholdType relative
+PulseWindowType dynamic 
+#Units are in samples, centered on threshold crossing
+PulseWindowStart -10
+PulseWindowEnd 90

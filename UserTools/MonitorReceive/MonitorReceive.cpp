@@ -28,9 +28,12 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
   sources=UpdateMonitorSources();
  
  last= boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
-  period =boost::posix_time::time_duration(0,0,5,0);
+  period =boost::posix_time::time_duration(0,0,1,0);
 
   m_data->Stores["CCData"]=new BoostStore(false,0);
+
+  indata=0;
+  MRDData=0; 
 
 
   return true;
@@ -76,9 +79,20 @@ bool MonitorReceive::Execute(){
 
 	std::istringstream iss(static_cast<char*>(filepath.data()));
 
-	std::cout<<"received data file="<<iss.str()<<std::endl;
+	//std::cout<<"received data file="<<iss.str()<<std::endl;
 
+	if(MRDData!=0){
+	  MRDData->Close();
+	  delete MRDData;
+	  MRDData=0;	  
+	}
 
+	if(indata!=0){
+	  indata->Close();
+	  delete indata;
+	  indata=0;
+	}
+	
 	BoostStore* indata=new BoostStore(false,0); 
 	indata->Initialise(iss.str());
 
@@ -180,7 +194,11 @@ int MonitorReceive::UpdateMonitorSources(){
       //      MonitorReceiver->setsockopt(ZMQ_SUBSCRIBE, "", 0);
       //std::cout<<type<<" = "<<tmp<<std::endl;
     }  
-    
+    else{
+
+      delete service;
+      service=0;
+    }
     
     
   }
