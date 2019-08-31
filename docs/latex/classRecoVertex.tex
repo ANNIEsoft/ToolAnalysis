@@ -1,129 +1,192 @@
-\hypertarget{classRecoVertex}{\section{Reco\-Vertex Class Reference}
-\label{classRecoVertex}\index{Reco\-Vertex@{Reco\-Vertex}}
+\hypertarget{classRecoVertex}{
+\section{RecoVertex Class Reference}
+\label{classRecoVertex}\index{RecoVertex@{RecoVertex}}
 }
-Inheritance diagram for Reco\-Vertex\-:\begin{figure}[H]
+Inheritance diagram for RecoVertex::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=2.000000cm]{classRecoVertex}
+\includegraphics[height=2cm]{classRecoVertex}
 \end{center}
 \end{figure}
 \subsection*{Public Types}
 \begin{DoxyCompactItemize}
 \item 
-enum {\bfseries E\-Fit\-Status} \{ \\*
-{\bfseries k\-O\-K} = 0x00, 
-{\bfseries k\-Fail\-Simple\-Vertex} = 0x01, 
-{\bfseries k\-Fail\-Simple\-Direction} = 0x02, 
-{\bfseries k\-Fail\-Point\-Position} = 0x04, 
-\\*
-{\bfseries k\-Fail\-Point\-Direction} = 0x08, 
-{\bfseries k\-Fail\-Point\-Vertex} = 0x10, 
-{\bfseries k\-Fail\-Extended\-Vertex} = 0x20, 
-{\bfseries k\-Fail\-Corrected\-Vertex} = 0x40
+enum {\bfseries EFitStatus} \{ \par
+{\bfseries kOK} =  0x00, 
+{\bfseries kFailSimpleVertex} =  0x01, 
+{\bfseries kFailSimpleDirection} =  0x02, 
+{\bfseries kFailPointPosition} =  0x04, 
+\par
+{\bfseries kFailPointDirection} =  0x08, 
+{\bfseries kFailPointVertex} =  0x10, 
+{\bfseries kFailExtendedVertex} =  0x20, 
+{\bfseries kFailCorrectedVertex} =  0x40
  \}
 \item 
-\hypertarget{classRecoVertex_aa3fab4b6250c285ce2d82b3f80ceaf27}{typedef enum Reco\-Vertex\-::\-E\-Fit\-Status {\bfseries Fit\-Status\-\_\-t}}\label{classRecoVertex_aa3fab4b6250c285ce2d82b3f80ceaf27}
+\hypertarget{classRecoVertex_aa3fab4b6250c285ce2d82b3f80ceaf27}{
+typedef enum RecoVertex::EFitStatus {\bfseries FitStatus\_\-t}}
+\label{classRecoVertex_aa3fab4b6250c285ce2d82b3f80ceaf27}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoVertex_a1b63b5a9f58bf69aa12da2b965398dbc}{{\bfseries Reco\-Vertex} (\hyperlink{classPosition}{Position} pos)}\label{classRecoVertex_a1b63b5a9f58bf69aa12da2b965398dbc}
+\hypertarget{classRecoVertex_a1b63b5a9f58bf69aa12da2b965398dbc}{
+{\bfseries RecoVertex} (\hyperlink{classPosition}{Position} pos)}
+\label{classRecoVertex_a1b63b5a9f58bf69aa12da2b965398dbc}
 
 \item 
-\hypertarget{classRecoVertex_aafab78d69771317ec57e0c1ac23b42e0}{{\bfseries Reco\-Vertex} (\hyperlink{classPosition}{Position} pos, \hyperlink{classDirection}{Direction} dir)}\label{classRecoVertex_aafab78d69771317ec57e0c1ac23b42e0}
+\hypertarget{classRecoVertex_aafab78d69771317ec57e0c1ac23b42e0}{
+{\bfseries RecoVertex} (\hyperlink{classPosition}{Position} pos, \hyperlink{classDirection}{Direction} dir)}
+\label{classRecoVertex_aafab78d69771317ec57e0c1ac23b42e0}
 
 \item 
-\hypertarget{classRecoVertex_aa085ca8edaac50177f2c82696ca1bb50}{{\bfseries Reco\-Vertex} (\hyperlink{classPosition}{Position} pos, double t, \hyperlink{classDirection}{Direction} dir, double fom, int nsteps, bool pass, int status)}\label{classRecoVertex_aa085ca8edaac50177f2c82696ca1bb50}
+\hypertarget{classRecoVertex_aa085ca8edaac50177f2c82696ca1bb50}{
+{\bfseries RecoVertex} (\hyperlink{classPosition}{Position} pos, double t, \hyperlink{classDirection}{Direction} dir, double fom, int nsteps, bool pass, int status)}
+\label{classRecoVertex_aa085ca8edaac50177f2c82696ca1bb50}
 
 \item 
-\hypertarget{classRecoVertex_a3a85d3d51b10cd64c5540c518022a641}{{\bfseries Reco\-Vertex} (\hyperlink{classPosition}{Position} pos, double t, \hyperlink{classDirection}{Direction} dir, double angle, double length, double fom, int nsteps, bool pass, int status)}\label{classRecoVertex_a3a85d3d51b10cd64c5540c518022a641}
+\hypertarget{classRecoVertex_a3a85d3d51b10cd64c5540c518022a641}{
+{\bfseries RecoVertex} (\hyperlink{classPosition}{Position} pos, double t, \hyperlink{classDirection}{Direction} dir, double angle, double length, double fom, int nsteps, bool pass, int status)}
+\label{classRecoVertex_a3a85d3d51b10cd64c5540c518022a641}
 
 \item 
-\hypertarget{classRecoVertex_a9ab6116a0def24036d555e944e44d0c8}{void {\bfseries Set\-Vertex} (\hyperlink{classPosition}{Position} pos, double t)}\label{classRecoVertex_a9ab6116a0def24036d555e944e44d0c8}
+\hypertarget{classRecoVertex_a9ab6116a0def24036d555e944e44d0c8}{
+void {\bfseries SetVertex} (\hyperlink{classPosition}{Position} pos, double t)}
+\label{classRecoVertex_a9ab6116a0def24036d555e944e44d0c8}
 
 \item 
-\hypertarget{classRecoVertex_af90c55e1af692ab5c96b27f27daddd2b}{void {\bfseries Set\-Vertex} (\hyperlink{classPosition}{Position} pos)}\label{classRecoVertex_af90c55e1af692ab5c96b27f27daddd2b}
+\hypertarget{classRecoVertex_af90c55e1af692ab5c96b27f27daddd2b}{
+void {\bfseries SetVertex} (\hyperlink{classPosition}{Position} pos)}
+\label{classRecoVertex_af90c55e1af692ab5c96b27f27daddd2b}
 
 \item 
-\hypertarget{classRecoVertex_afcff3ea42291b1b73dfb64aea3436ebe}{void {\bfseries Set\-Vertex} (double vtx\-X, double vtx\-Y, double vtx\-Z)}\label{classRecoVertex_afcff3ea42291b1b73dfb64aea3436ebe}
+\hypertarget{classRecoVertex_afcff3ea42291b1b73dfb64aea3436ebe}{
+void {\bfseries SetVertex} (double vtxX, double vtxY, double vtxZ)}
+\label{classRecoVertex_afcff3ea42291b1b73dfb64aea3436ebe}
 
 \item 
-\hypertarget{classRecoVertex_a249a154ad1b80f739dde431c3b8e68d1}{void {\bfseries Set\-Vertex} (double vtx\-X, double vtx\-Y, double vtx\-Z, double vtx\-T)}\label{classRecoVertex_a249a154ad1b80f739dde431c3b8e68d1}
+\hypertarget{classRecoVertex_a249a154ad1b80f739dde431c3b8e68d1}{
+void {\bfseries SetVertex} (double vtxX, double vtxY, double vtxZ, double vtxT)}
+\label{classRecoVertex_a249a154ad1b80f739dde431c3b8e68d1}
 
 \item 
-\hypertarget{classRecoVertex_a297cc2a448a138af57a9698e7979fdc3}{void {\bfseries Set\-Direction} (\hyperlink{classDirection}{Direction} dir)}\label{classRecoVertex_a297cc2a448a138af57a9698e7979fdc3}
+\hypertarget{classRecoVertex_a297cc2a448a138af57a9698e7979fdc3}{
+void {\bfseries SetDirection} (\hyperlink{classDirection}{Direction} dir)}
+\label{classRecoVertex_a297cc2a448a138af57a9698e7979fdc3}
 
 \item 
-\hypertarget{classRecoVertex_abdebdcee7b218ddcf0cc2376f4374c6a}{void {\bfseries Set\-Direction} (double dir\-X, double dir\-Y, double dir\-Z)}\label{classRecoVertex_abdebdcee7b218ddcf0cc2376f4374c6a}
+\hypertarget{classRecoVertex_abdebdcee7b218ddcf0cc2376f4374c6a}{
+void {\bfseries SetDirection} (double dirX, double dirY, double dirZ)}
+\label{classRecoVertex_abdebdcee7b218ddcf0cc2376f4374c6a}
 
 \item 
-\hypertarget{classRecoVertex_ab5915f773f79307ecbff0d33b909428a}{void {\bfseries Set\-Cone\-Angle} (double angle)}\label{classRecoVertex_ab5915f773f79307ecbff0d33b909428a}
+\hypertarget{classRecoVertex_ab5915f773f79307ecbff0d33b909428a}{
+void {\bfseries SetConeAngle} (double angle)}
+\label{classRecoVertex_ab5915f773f79307ecbff0d33b909428a}
 
 \item 
-\hypertarget{classRecoVertex_a77b91d56b5561e736877b48b0d12d0b7}{void {\bfseries Set\-Track\-Length} (double length)}\label{classRecoVertex_a77b91d56b5561e736877b48b0d12d0b7}
+\hypertarget{classRecoVertex_a77b91d56b5561e736877b48b0d12d0b7}{
+void {\bfseries SetTrackLength} (double length)}
+\label{classRecoVertex_a77b91d56b5561e736877b48b0d12d0b7}
 
 \item 
-\hypertarget{classRecoVertex_a49dccbc57793bb7db34e345377802283}{void {\bfseries Set\-F\-O\-M} (double fom, int nsteps, bool pass)}\label{classRecoVertex_a49dccbc57793bb7db34e345377802283}
+\hypertarget{classRecoVertex_a49dccbc57793bb7db34e345377802283}{
+void {\bfseries SetFOM} (double fom, int nsteps, bool pass)}
+\label{classRecoVertex_a49dccbc57793bb7db34e345377802283}
 
 \item 
-\hypertarget{classRecoVertex_aa2d7a563db1be14ae5538dcc678a80d0}{void {\bfseries Set\-Time} (double vtxtime)}\label{classRecoVertex_aa2d7a563db1be14ae5538dcc678a80d0}
+\hypertarget{classRecoVertex_aa2d7a563db1be14ae5538dcc678a80d0}{
+void {\bfseries SetTime} (double vtxtime)}
+\label{classRecoVertex_aa2d7a563db1be14ae5538dcc678a80d0}
 
 \item 
-\hypertarget{classRecoVertex_af0040136fde1055f38e6c735daeab3a6}{void {\bfseries Set\-Status} (int status)}\label{classRecoVertex_af0040136fde1055f38e6c735daeab3a6}
+\hypertarget{classRecoVertex_af0040136fde1055f38e6c735daeab3a6}{
+void {\bfseries SetStatus} (int status)}
+\label{classRecoVertex_af0040136fde1055f38e6c735daeab3a6}
 
 \item 
-\hypertarget{classRecoVertex_a99b74138ad6c4bf38f0a9ad57cac005a}{\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$ {\bfseries Clone\-Vertex} (\hyperlink{classRecoVertex}{Reco\-Vertex} $\ast$b)}\label{classRecoVertex_a99b74138ad6c4bf38f0a9ad57cac005a}
+\hypertarget{classRecoVertex_a99b74138ad6c4bf38f0a9ad57cac005a}{
+\hyperlink{classRecoVertex}{RecoVertex} $\ast$ {\bfseries CloneVertex} (\hyperlink{classRecoVertex}{RecoVertex} $\ast$b)}
+\label{classRecoVertex_a99b74138ad6c4bf38f0a9ad57cac005a}
 
 \item 
-\hypertarget{classRecoVertex_a6963afc449afb852e849b6886b276c74}{\hyperlink{classPosition}{Position} {\bfseries Get\-Position} ()}\label{classRecoVertex_a6963afc449afb852e849b6886b276c74}
+\hypertarget{classRecoVertex_a6963afc449afb852e849b6886b276c74}{
+\hyperlink{classPosition}{Position} {\bfseries GetPosition} ()}
+\label{classRecoVertex_a6963afc449afb852e849b6886b276c74}
 
 \item 
-\hypertarget{classRecoVertex_a6d78ff11288221dc2e4b43d3863113a9}{double {\bfseries Get\-Time} ()}\label{classRecoVertex_a6d78ff11288221dc2e4b43d3863113a9}
+\hypertarget{classRecoVertex_a6d78ff11288221dc2e4b43d3863113a9}{
+double {\bfseries GetTime} ()}
+\label{classRecoVertex_a6d78ff11288221dc2e4b43d3863113a9}
 
 \item 
-\hypertarget{classRecoVertex_a3c01529852226bc9c1fc09fb41209942}{bool {\bfseries Found\-Vertex} ()}\label{classRecoVertex_a3c01529852226bc9c1fc09fb41209942}
+\hypertarget{classRecoVertex_a3c01529852226bc9c1fc09fb41209942}{
+bool {\bfseries FoundVertex} ()}
+\label{classRecoVertex_a3c01529852226bc9c1fc09fb41209942}
 
 \item 
-\hypertarget{classRecoVertex_acc10dab9c06c748f7bac6868005316a0}{\hyperlink{classDirection}{Direction} {\bfseries Get\-Direction} ()}\label{classRecoVertex_acc10dab9c06c748f7bac6868005316a0}
+\hypertarget{classRecoVertex_acc10dab9c06c748f7bac6868005316a0}{
+\hyperlink{classDirection}{Direction} {\bfseries GetDirection} ()}
+\label{classRecoVertex_acc10dab9c06c748f7bac6868005316a0}
 
 \item 
-\hypertarget{classRecoVertex_a1e26c5bef02ce555e1efc17d81aab798}{bool {\bfseries Found\-Direction} ()}\label{classRecoVertex_a1e26c5bef02ce555e1efc17d81aab798}
+\hypertarget{classRecoVertex_a1e26c5bef02ce555e1efc17d81aab798}{
+bool {\bfseries FoundDirection} ()}
+\label{classRecoVertex_a1e26c5bef02ce555e1efc17d81aab798}
 
 \item 
-\hypertarget{classRecoVertex_af60262a526c2e8a7b386d6eb8a2f97e1}{double {\bfseries Get\-Cone\-Angle} ()}\label{classRecoVertex_af60262a526c2e8a7b386d6eb8a2f97e1}
+\hypertarget{classRecoVertex_af60262a526c2e8a7b386d6eb8a2f97e1}{
+double {\bfseries GetConeAngle} ()}
+\label{classRecoVertex_af60262a526c2e8a7b386d6eb8a2f97e1}
 
 \item 
-\hypertarget{classRecoVertex_aa6630e874f179e30f2a86dd5b6ddf1cd}{double {\bfseries Get\-Track\-Length} ()}\label{classRecoVertex_aa6630e874f179e30f2a86dd5b6ddf1cd}
+\hypertarget{classRecoVertex_aa6630e874f179e30f2a86dd5b6ddf1cd}{
+double {\bfseries GetTrackLength} ()}
+\label{classRecoVertex_aa6630e874f179e30f2a86dd5b6ddf1cd}
 
 \item 
-\hypertarget{classRecoVertex_a3ce73d8de5c2242ee82117ef8923b284}{double {\bfseries Get\-F\-O\-M} ()}\label{classRecoVertex_a3ce73d8de5c2242ee82117ef8923b284}
+\hypertarget{classRecoVertex_a3ce73d8de5c2242ee82117ef8923b284}{
+double {\bfseries GetFOM} ()}
+\label{classRecoVertex_a3ce73d8de5c2242ee82117ef8923b284}
 
 \item 
-\hypertarget{classRecoVertex_a4c241cffceef1b607c855766336bcabf}{int {\bfseries Get\-Iterations} ()}\label{classRecoVertex_a4c241cffceef1b607c855766336bcabf}
+\hypertarget{classRecoVertex_a4c241cffceef1b607c855766336bcabf}{
+int {\bfseries GetIterations} ()}
+\label{classRecoVertex_a4c241cffceef1b607c855766336bcabf}
 
 \item 
-\hypertarget{classRecoVertex_ae63897a68d0e5b151d2162b8eed22dba}{bool {\bfseries Get\-Pass} ()}\label{classRecoVertex_ae63897a68d0e5b151d2162b8eed22dba}
+\hypertarget{classRecoVertex_ae63897a68d0e5b151d2162b8eed22dba}{
+bool {\bfseries GetPass} ()}
+\label{classRecoVertex_ae63897a68d0e5b151d2162b8eed22dba}
 
 \item 
-\hypertarget{classRecoVertex_a8eefb58867f1105cc2688855a7443916}{int {\bfseries Get\-Status} ()}\label{classRecoVertex_a8eefb58867f1105cc2688855a7443916}
+\hypertarget{classRecoVertex_a8eefb58867f1105cc2688855a7443916}{
+int {\bfseries GetStatus} ()}
+\label{classRecoVertex_a8eefb58867f1105cc2688855a7443916}
 
 \item 
-\hypertarget{classRecoVertex_aea4731c0af67640548772235ed864aca}{void {\bfseries Reset} ()}\label{classRecoVertex_aea4731c0af67640548772235ed864aca}
+\hypertarget{classRecoVertex_aea4731c0af67640548772235ed864aca}{
+void {\bfseries Reset} ()}
+\label{classRecoVertex_aea4731c0af67640548772235ed864aca}
 
 \item 
-\hypertarget{classRecoVertex_a7013d8bd353e8d0fd4020408e26c970c}{bool {\bfseries Print} ()}\label{classRecoVertex_a7013d8bd353e8d0fd4020408e26c970c}
+\hypertarget{classRecoVertex_a7013d8bd353e8d0fd4020408e26c970c}{
+bool {\bfseries Print} ()}
+\label{classRecoVertex_a7013d8bd353e8d0fd4020408e26c970c}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoVertex_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classRecoVertex_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classRecoVertex_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classRecoVertex_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Reco\-Vertex.\-h\item 
-Data\-Model/Reco\-Vertex.\-cpp\end{DoxyCompactItemize}
+DataModel/RecoVertex.h\item 
+DataModel/RecoVertex.cpp\end{DoxyCompactItemize}

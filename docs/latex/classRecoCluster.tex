@@ -1,55 +1,70 @@
-\hypertarget{classRecoCluster}{\section{Reco\-Cluster Class Reference}
-\label{classRecoCluster}\index{Reco\-Cluster@{Reco\-Cluster}}
+\hypertarget{classRecoCluster}{
+\section{RecoCluster Class Reference}
+\label{classRecoCluster}\index{RecoCluster@{RecoCluster}}
 }
 
 
-{\ttfamily \#include $<$Reco\-Cluster.\-h$>$}
-
-Inheritance diagram for Reco\-Cluster\-:\begin{figure}[H]
+{\ttfamily \#include $<$RecoCluster.h$>$}Inheritance diagram for RecoCluster::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=2.000000cm]{classRecoCluster}
+\includegraphics[height=2cm]{classRecoCluster}
 \end{center}
 \end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoCluster_a615607869a350cf1997517b327301ec7}{void {\bfseries Reset} ()}\label{classRecoCluster_a615607869a350cf1997517b327301ec7}
+\hypertarget{classRecoCluster_a615607869a350cf1997517b327301ec7}{
+void {\bfseries Reset} ()}
+\label{classRecoCluster_a615607869a350cf1997517b327301ec7}
 
 \item 
-\hypertarget{classRecoCluster_a51c5dfdb4b5555485ea67c678002d5d5}{void {\bfseries Sort\-Cluster} ()}\label{classRecoCluster_a51c5dfdb4b5555485ea67c678002d5d5}
+\hypertarget{classRecoCluster_a51c5dfdb4b5555485ea67c678002d5d5}{
+void {\bfseries SortCluster} ()}
+\label{classRecoCluster_a51c5dfdb4b5555485ea67c678002d5d5}
 
 \item 
-\hypertarget{classRecoCluster_aa8ce1a0622570b319cf47662d9cf4209}{void {\bfseries Add\-Digit} (\hyperlink{classRecoDigit}{Reco\-Digit} $\ast$digit)}\label{classRecoCluster_aa8ce1a0622570b319cf47662d9cf4209}
+\hypertarget{classRecoCluster_aa8ce1a0622570b319cf47662d9cf4209}{
+void {\bfseries AddDigit} (\hyperlink{classRecoDigit}{RecoDigit} $\ast$digit)}
+\label{classRecoCluster_aa8ce1a0622570b319cf47662d9cf4209}
 
 \item 
-\hypertarget{classRecoCluster_af9e9403e3b26e05d57b5b35c79f355f9}{\hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ {\bfseries Get\-Digit} (int n)}\label{classRecoCluster_af9e9403e3b26e05d57b5b35c79f355f9}
+\hypertarget{classRecoCluster_af9e9403e3b26e05d57b5b35c79f355f9}{
+\hyperlink{classRecoDigit}{RecoDigit} $\ast$ {\bfseries GetDigit} (int n)}
+\label{classRecoCluster_af9e9403e3b26e05d57b5b35c79f355f9}
 
 \item 
-\hypertarget{classRecoCluster_a4c1377575f643fb8214735f8d90570dd}{int {\bfseries Get\-N\-Digits} ()}\label{classRecoCluster_a4c1377575f643fb8214735f8d90570dd}
+\hypertarget{classRecoCluster_a4c1377575f643fb8214735f8d90570dd}{
+int {\bfseries GetNDigits} ()}
+\label{classRecoCluster_a4c1377575f643fb8214735f8d90570dd}
 
 \item 
-\hypertarget{classRecoCluster_aad8d0d73814c3a4f487239050d68fc0a}{bool {\bfseries Print} ()}\label{classRecoCluster_aad8d0d73814c3a4f487239050d68fc0a}
+\hypertarget{classRecoCluster_aad8d0d73814c3a4f487239050d68fc0a}{
+bool {\bfseries Print} ()}
+\label{classRecoCluster_aad8d0d73814c3a4f487239050d68fc0a}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoCluster_acec2d2b252bbb6dc1996b8531e3b8d16}{{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}\label{classRecoCluster_acec2d2b252bbb6dc1996b8531e3b8d16}
+\hypertarget{classRecoCluster_ac56a6f1f88368e00e163caf1df7bda52}{
+{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}
+\label{classRecoCluster_ac56a6f1f88368e00e163caf1df7bda52}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classRecoCluster_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classRecoCluster_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classRecoCluster_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classRecoCluster_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
-This class is used to store the reconstructed hit clusters Jingbo Wang \href{mailto:jiowang@ucdavis.edu}{\tt jiowang@ucdavis.\-edu} 
+This class is used to store the reconstructed hit clusters Jingbo Wang $<$\href{mailto:jiowang@ucdavis.edu}{\tt jiowang@ucdavis.edu}$>$ 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Reco\-Cluster.\-h\item 
-Data\-Model/Reco\-Cluster.\-cpp\end{DoxyCompactItemize}
+DataModel/RecoCluster.h\item 
+DataModel/RecoCluster.cpp\end{DoxyCompactItemize}

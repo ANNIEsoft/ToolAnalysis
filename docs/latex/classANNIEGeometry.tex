@@ -1,180 +1,275 @@
-\hypertarget{classANNIEGeometry}{\section{A\-N\-N\-I\-E\-Geometry Class Reference}
-\label{classANNIEGeometry}\index{A\-N\-N\-I\-E\-Geometry@{A\-N\-N\-I\-E\-Geometry}}
+\hypertarget{classANNIEGeometry}{
+\section{ANNIEGeometry Class Reference}
+\label{classANNIEGeometry}\index{ANNIEGeometry@{ANNIEGeometry}}
 }
 \subsection*{Public Types}
 \begin{DoxyCompactItemize}
 \item 
-enum {\bfseries E\-Geo\-Type} \{ {\bfseries k\-Unknown} = -\/1, 
-{\bfseries k\-Cylinder} = 0, 
-{\bfseries k\-Mail\-Box} = 1
+enum {\bfseries EGeoType} \{ {\bfseries kUnknown} =  -\/1, 
+{\bfseries kCylinder} =  0, 
+{\bfseries kMailBox} =  1
  \}
 \item 
-enum {\bfseries E\-Geo\-Region} \{ \\*
-{\bfseries k\-Top} = 0, 
-{\bfseries k\-Side} = 1, 
-{\bfseries k\-Bottom} = 2, 
-{\bfseries k\-Front} = 10, 
-\\*
-{\bfseries k\-Back} = 12, 
-{\bfseries k\-Left} = 20, 
-{\bfseries k\-Right} = 22
+enum {\bfseries EGeoRegion} \{ \par
+{\bfseries kTop} =  0, 
+{\bfseries kSide} =  1, 
+{\bfseries kBottom} =  2, 
+{\bfseries kFront} =  10, 
+\par
+{\bfseries kBack} =  12, 
+{\bfseries kLeft} =  20, 
+{\bfseries kRight} =  22
  \}
 \item 
-\hypertarget{classANNIEGeometry_ab5d29d11590e8129e6690899d0f84584}{typedef enum \\*
-A\-N\-N\-I\-E\-Geometry\-::\-E\-Geo\-Type {\bfseries Geo\-Type\-\_\-t}}\label{classANNIEGeometry_ab5d29d11590e8129e6690899d0f84584}
+\hypertarget{classANNIEGeometry_ab5d29d11590e8129e6690899d0f84584}{
+typedef enum ANNIEGeometry::EGeoType {\bfseries GeoType\_\-t}}
+\label{classANNIEGeometry_ab5d29d11590e8129e6690899d0f84584}
 
 \item 
-\hypertarget{classANNIEGeometry_acf5083108f2f5a2d8ee98fe5aaa6e596}{typedef enum \\*
-A\-N\-N\-I\-E\-Geometry\-::\-E\-Geo\-Region {\bfseries Geo\-Region\-\_\-t}}\label{classANNIEGeometry_acf5083108f2f5a2d8ee98fe5aaa6e596}
+\hypertarget{classANNIEGeometry_acf5083108f2f5a2d8ee98fe5aaa6e596}{
+typedef enum ANNIEGeometry::EGeoRegion {\bfseries GeoRegion\_\-t}}
+\label{classANNIEGeometry_acf5083108f2f5a2d8ee98fe5aaa6e596}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classANNIEGeometry_a143bd07247da431b54d152fa7cb5c7cf}{void {\bfseries Set\-Geometry} ()}\label{classANNIEGeometry_a143bd07247da431b54d152fa7cb5c7cf}
+\hypertarget{classANNIEGeometry_a143bd07247da431b54d152fa7cb5c7cf}{
+void {\bfseries SetGeometry} ()}
+\label{classANNIEGeometry_a143bd07247da431b54d152fa7cb5c7cf}
 
 \item 
-\hypertarget{classANNIEGeometry_ab765a9957be6e19208c25fa0e6603ab7}{void {\bfseries Write\-To\-File} (const char $\ast$filename=\char`\"{}annie.\-geometry.\-root\char`\"{})}\label{classANNIEGeometry_ab765a9957be6e19208c25fa0e6603ab7}
+\hypertarget{classANNIEGeometry_ab765a9957be6e19208c25fa0e6603ab7}{
+void {\bfseries WriteToFile} (const char $\ast$filename=\char`\"{}annie.geometry.root\char`\"{})}
+\label{classANNIEGeometry_ab765a9957be6e19208c25fa0e6603ab7}
 
 \item 
-\hypertarget{classANNIEGeometry_a4a2b51837cbc2b52159fde213624f07b}{int {\bfseries Get\-Geo\-Config} ()}\label{classANNIEGeometry_a4a2b51837cbc2b52159fde213624f07b}
+\hypertarget{classANNIEGeometry_a4a2b51837cbc2b52159fde213624f07b}{
+int {\bfseries GetGeoConfig} ()}
+\label{classANNIEGeometry_a4a2b51837cbc2b52159fde213624f07b}
 
 \item 
-\hypertarget{classANNIEGeometry_a181399c8d8d8e1e7deaf5e26fc19f6a2}{int {\bfseries Get\-Geo\-Type} ()}\label{classANNIEGeometry_a181399c8d8d8e1e7deaf5e26fc19f6a2}
+\hypertarget{classANNIEGeometry_a181399c8d8d8e1e7deaf5e26fc19f6a2}{
+int {\bfseries GetGeoType} ()}
+\label{classANNIEGeometry_a181399c8d8d8e1e7deaf5e26fc19f6a2}
 
 \item 
-\hypertarget{classANNIEGeometry_af52285d65bb359e199d5516215e9d4b2}{bool {\bfseries Is\-Cylinder} ()}\label{classANNIEGeometry_af52285d65bb359e199d5516215e9d4b2}
+\hypertarget{classANNIEGeometry_af52285d65bb359e199d5516215e9d4b2}{
+bool {\bfseries IsCylinder} ()}
+\label{classANNIEGeometry_af52285d65bb359e199d5516215e9d4b2}
 
 \item 
-\hypertarget{classANNIEGeometry_af4067a89f27815d2be201734cf88ef66}{double {\bfseries Get\-Cyl\-Radius} ()}\label{classANNIEGeometry_af4067a89f27815d2be201734cf88ef66}
+\hypertarget{classANNIEGeometry_af4067a89f27815d2be201734cf88ef66}{
+double {\bfseries GetCylRadius} ()}
+\label{classANNIEGeometry_af4067a89f27815d2be201734cf88ef66}
 
 \item 
-\hypertarget{classANNIEGeometry_aeb5d59529df45997aa9e88d439fefbba}{double {\bfseries Get\-Cyl\-Length} ()}\label{classANNIEGeometry_aeb5d59529df45997aa9e88d439fefbba}
+\hypertarget{classANNIEGeometry_aeb5d59529df45997aa9e88d439fefbba}{
+double {\bfseries GetCylLength} ()}
+\label{classANNIEGeometry_aeb5d59529df45997aa9e88d439fefbba}
 
 \item 
-\hypertarget{classANNIEGeometry_a3dce208ec7515a6db41b29a222ef7a4c}{double {\bfseries Get\-Cyl\-Fiducial\-Radius} ()}\label{classANNIEGeometry_a3dce208ec7515a6db41b29a222ef7a4c}
+\hypertarget{classANNIEGeometry_a3dce208ec7515a6db41b29a222ef7a4c}{
+double {\bfseries GetCylFiducialRadius} ()}
+\label{classANNIEGeometry_a3dce208ec7515a6db41b29a222ef7a4c}
 
 \item 
-\hypertarget{classANNIEGeometry_adda169892f173736e7873a0994fa37b6}{double {\bfseries Get\-Cyl\-Fiducial\-Length} ()}\label{classANNIEGeometry_adda169892f173736e7873a0994fa37b6}
+\hypertarget{classANNIEGeometry_adda169892f173736e7873a0994fa37b6}{
+double {\bfseries GetCylFiducialLength} ()}
+\label{classANNIEGeometry_adda169892f173736e7873a0994fa37b6}
 
 \item 
-\hypertarget{classANNIEGeometry_a7675f55a9fc15b8b6e2165d641e79df9}{double {\bfseries Get\-Area} ()}\label{classANNIEGeometry_a7675f55a9fc15b8b6e2165d641e79df9}
+\hypertarget{classANNIEGeometry_a7675f55a9fc15b8b6e2165d641e79df9}{
+double {\bfseries GetArea} ()}
+\label{classANNIEGeometry_a7675f55a9fc15b8b6e2165d641e79df9}
 
 \item 
-\hypertarget{classANNIEGeometry_af0bc51ada0af21236895d9f94f2f84a7}{double {\bfseries Get\-Volume} ()}\label{classANNIEGeometry_af0bc51ada0af21236895d9f94f2f84a7}
+\hypertarget{classANNIEGeometry_af0bc51ada0af21236895d9f94f2f84a7}{
+double {\bfseries GetVolume} ()}
+\label{classANNIEGeometry_af0bc51ada0af21236895d9f94f2f84a7}
 
 \item 
-\hypertarget{classANNIEGeometry_aa499d80e72d8d23ea302dac47c47c3ac}{double {\bfseries Get\-Fiducial\-Volume} ()}\label{classANNIEGeometry_aa499d80e72d8d23ea302dac47c47c3ac}
+\hypertarget{classANNIEGeometry_aa499d80e72d8d23ea302dac47c47c3ac}{
+double {\bfseries GetFiducialVolume} ()}
+\label{classANNIEGeometry_aa499d80e72d8d23ea302dac47c47c3ac}
 
 \item 
-\hypertarget{classANNIEGeometry_a35e0bbb160a9d8aaf3a343c65d1b3e5b}{int {\bfseries Get\-Num\-P\-M\-Ts} ()}\label{classANNIEGeometry_a35e0bbb160a9d8aaf3a343c65d1b3e5b}
+\hypertarget{classANNIEGeometry_a35e0bbb160a9d8aaf3a343c65d1b3e5b}{
+int {\bfseries GetNumPMTs} ()}
+\label{classANNIEGeometry_a35e0bbb160a9d8aaf3a343c65d1b3e5b}
 
 \item 
-\hypertarget{classANNIEGeometry_ab271fef7650f1f85053e5c332923f1b2}{double {\bfseries Get\-P\-M\-T\-Radius} ()}\label{classANNIEGeometry_ab271fef7650f1f85053e5c332923f1b2}
+\hypertarget{classANNIEGeometry_ab271fef7650f1f85053e5c332923f1b2}{
+double {\bfseries GetPMTRadius} ()}
+\label{classANNIEGeometry_ab271fef7650f1f85053e5c332923f1b2}
 
 \item 
-\hypertarget{classANNIEGeometry_a6a3acf1871f9114c0a174aa776d4d568}{double {\bfseries Get\-P\-M\-T\-Coverage} ()}\label{classANNIEGeometry_a6a3acf1871f9114c0a174aa776d4d568}
+\hypertarget{classANNIEGeometry_a6a3acf1871f9114c0a174aa776d4d568}{
+double {\bfseries GetPMTCoverage} ()}
+\label{classANNIEGeometry_a6a3acf1871f9114c0a174aa776d4d568}
 
 \item 
-\hypertarget{classANNIEGeometry_a55663b9489c6c3f8be1d8c8d50ea8ecd}{double {\bfseries Get\-P\-M\-T\-Separation} ()}\label{classANNIEGeometry_a55663b9489c6c3f8be1d8c8d50ea8ecd}
+\hypertarget{classANNIEGeometry_a55663b9489c6c3f8be1d8c8d50ea8ecd}{
+double {\bfseries GetPMTSeparation} ()}
+\label{classANNIEGeometry_a55663b9489c6c3f8be1d8c8d50ea8ecd}
 
 \item 
-\hypertarget{classANNIEGeometry_a6186795a8e0c991456198d976987a60d}{int {\bfseries Get\-Region} (int tube)}\label{classANNIEGeometry_a6186795a8e0c991456198d976987a60d}
+\hypertarget{classANNIEGeometry_a7b2de9e107a495f3910d24da60987f67}{
+int {\bfseries GetRegion} (int tube)}
+\label{classANNIEGeometry_a7b2de9e107a495f3910d24da60987f67}
 
 \item 
-\hypertarget{classANNIEGeometry_a401b4205253afe89d87c9e86617fae0f}{double {\bfseries Get\-X} (int tube)}\label{classANNIEGeometry_a401b4205253afe89d87c9e86617fae0f}
+\hypertarget{classANNIEGeometry_a401b4205253afe89d87c9e86617fae0f}{
+double {\bfseries GetX} (int tube)}
+\label{classANNIEGeometry_a401b4205253afe89d87c9e86617fae0f}
 
 \item 
-\hypertarget{classANNIEGeometry_afdb90742ba6140a78d022658df6e69fc}{double {\bfseries Get\-Y} (int tube)}\label{classANNIEGeometry_afdb90742ba6140a78d022658df6e69fc}
+\hypertarget{classANNIEGeometry_afdb90742ba6140a78d022658df6e69fc}{
+double {\bfseries GetY} (int tube)}
+\label{classANNIEGeometry_afdb90742ba6140a78d022658df6e69fc}
 
 \item 
-\hypertarget{classANNIEGeometry_ae4563d14f0b5207fff374b03df026410}{double {\bfseries Get\-Z} (int tube)}\label{classANNIEGeometry_ae4563d14f0b5207fff374b03df026410}
+\hypertarget{classANNIEGeometry_ae4563d14f0b5207fff374b03df026410}{
+double {\bfseries GetZ} (int tube)}
+\label{classANNIEGeometry_ae4563d14f0b5207fff374b03df026410}
 
 \item 
-\hypertarget{classANNIEGeometry_ab645d95b1115f411d24baa5dc868b6fb}{double {\bfseries Get\-Norm\-X} (int tube)}\label{classANNIEGeometry_ab645d95b1115f411d24baa5dc868b6fb}
+\hypertarget{classANNIEGeometry_ab645d95b1115f411d24baa5dc868b6fb}{
+double {\bfseries GetNormX} (int tube)}
+\label{classANNIEGeometry_ab645d95b1115f411d24baa5dc868b6fb}
 
 \item 
-\hypertarget{classANNIEGeometry_ab674db08c6e04f3f85d82f9135dbe33d}{double {\bfseries Get\-Norm\-Y} (int tube)}\label{classANNIEGeometry_ab674db08c6e04f3f85d82f9135dbe33d}
+\hypertarget{classANNIEGeometry_ab674db08c6e04f3f85d82f9135dbe33d}{
+double {\bfseries GetNormY} (int tube)}
+\label{classANNIEGeometry_ab674db08c6e04f3f85d82f9135dbe33d}
 
 \item 
-\hypertarget{classANNIEGeometry_a8dd59a80f126b58e88ab7d3008cb7001}{double {\bfseries Get\-Norm\-Z} (int tube)}\label{classANNIEGeometry_a8dd59a80f126b58e88ab7d3008cb7001}
+\hypertarget{classANNIEGeometry_a8dd59a80f126b58e88ab7d3008cb7001}{
+double {\bfseries GetNormZ} (int tube)}
+\label{classANNIEGeometry_a8dd59a80f126b58e88ab7d3008cb7001}
 
 \item 
-\hypertarget{classANNIEGeometry_a8f607acd58c33b95be136fccd285588d}{bool {\bfseries Inside\-Detector} (double x, double y, double z)}\label{classANNIEGeometry_a8f607acd58c33b95be136fccd285588d}
+\hypertarget{classANNIEGeometry_a8f607acd58c33b95be136fccd285588d}{
+bool {\bfseries InsideDetector} (double x, double y, double z)}
+\label{classANNIEGeometry_a8f607acd58c33b95be136fccd285588d}
 
 \item 
-\hypertarget{classANNIEGeometry_aad46926236afbfb92498aa1642f21180}{bool {\bfseries Inside\-Fiducial\-Volume} (double x, double y, double z)}\label{classANNIEGeometry_aad46926236afbfb92498aa1642f21180}
+\hypertarget{classANNIEGeometry_aad46926236afbfb92498aa1642f21180}{
+bool {\bfseries InsideFiducialVolume} (double x, double y, double z)}
+\label{classANNIEGeometry_aad46926236afbfb92498aa1642f21180}
 
 \item 
-\hypertarget{classANNIEGeometry_a971e6acb3ee5883a3aed577831b053cf}{bool {\bfseries Inside\-Detector} (double vx, double vy, double vz, double ex, double ey, double ez)}\label{classANNIEGeometry_a971e6acb3ee5883a3aed577831b053cf}
+\hypertarget{classANNIEGeometry_a971e6acb3ee5883a3aed577831b053cf}{
+bool {\bfseries InsideDetector} (double vx, double vy, double vz, double ex, double ey, double ez)}
+\label{classANNIEGeometry_a971e6acb3ee5883a3aed577831b053cf}
 
 \item 
-\hypertarget{classANNIEGeometry_a9650b8008ba94cc4b53c59f67406db20}{double {\bfseries Distance\-To\-Edge} (double x, double y, double z)}\label{classANNIEGeometry_a9650b8008ba94cc4b53c59f67406db20}
+\hypertarget{classANNIEGeometry_a9650b8008ba94cc4b53c59f67406db20}{
+double {\bfseries DistanceToEdge} (double x, double y, double z)}
+\label{classANNIEGeometry_a9650b8008ba94cc4b53c59f67406db20}
 
 \item 
-\hypertarget{classANNIEGeometry_a3febbe7fd335e9618a02522d8d55a944}{void {\bfseries Project\-To\-Near\-Edge} (double x0, double y0, double z0, double px, double py, double pz, double \&x, double \&y, double \&z, int \&region)}\label{classANNIEGeometry_a3febbe7fd335e9618a02522d8d55a944}
+\hypertarget{classANNIEGeometry_a3febbe7fd335e9618a02522d8d55a944}{
+void {\bfseries ProjectToNearEdge} (double x0, double y0, double z0, double px, double py, double pz, double \&x, double \&y, double \&z, int \&region)}
+\label{classANNIEGeometry_a3febbe7fd335e9618a02522d8d55a944}
 
 \item 
-\hypertarget{classANNIEGeometry_ac3c306909b0de82f5ddcc58de6345b16}{void {\bfseries Project\-To\-Far\-Edge} (double x0, double y0, double z0, double px, double py, double pz, double \&x, double \&y, double \&z, int \&region)}\label{classANNIEGeometry_ac3c306909b0de82f5ddcc58de6345b16}
+\hypertarget{classANNIEGeometry_ac3c306909b0de82f5ddcc58de6345b16}{
+void {\bfseries ProjectToFarEdge} (double x0, double y0, double z0, double px, double py, double pz, double \&x, double \&y, double \&z, int \&region)}
+\label{classANNIEGeometry_ac3c306909b0de82f5ddcc58de6345b16}
 
 \item 
-\hypertarget{classANNIEGeometry_a88ff7bd1fcd9ed044c177ebbc875e4af}{double {\bfseries Forward\-Projection\-To\-Edge} (double x, double y, double z, double px, double py, double pz)}\label{classANNIEGeometry_a88ff7bd1fcd9ed044c177ebbc875e4af}
+\hypertarget{classANNIEGeometry_a88ff7bd1fcd9ed044c177ebbc875e4af}{
+double {\bfseries ForwardProjectionToEdge} (double x, double y, double z, double px, double py, double pz)}
+\label{classANNIEGeometry_a88ff7bd1fcd9ed044c177ebbc875e4af}
 
 \item 
-\hypertarget{classANNIEGeometry_adcc43a523767429765600b7c103dd5e9}{double {\bfseries Backward\-Projection\-To\-Edge} (double x, double y, double z, double px, double py, double pz)}\label{classANNIEGeometry_adcc43a523767429765600b7c103dd5e9}
+\hypertarget{classANNIEGeometry_adcc43a523767429765600b7c103dd5e9}{
+double {\bfseries BackwardProjectionToEdge} (double x, double y, double z, double px, double py, double pz)}
+\label{classANNIEGeometry_adcc43a523767429765600b7c103dd5e9}
 
 \item 
-\hypertarget{classANNIEGeometry_a8b4c2a1c960041a8c36c29c40bde9cb1}{void {\bfseries Project\-To\-Edge} (bool use\-Far\-Edge, double x0, double y0, double z0, double px, double py, double pz, double \&x, double \&y, double \&z, int \&region)}\label{classANNIEGeometry_a8b4c2a1c960041a8c36c29c40bde9cb1}
+\hypertarget{classANNIEGeometry_a8b4c2a1c960041a8c36c29c40bde9cb1}{
+void {\bfseries ProjectToEdge} (bool useFarEdge, double x0, double y0, double z0, double px, double py, double pz, double \&x, double \&y, double \&z, int \&region)}
+\label{classANNIEGeometry_a8b4c2a1c960041a8c36c29c40bde9cb1}
 
 \item 
-\hypertarget{classANNIEGeometry_a8b839b45c5eace4880b79d451b6e6f29}{void {\bfseries X\-Y\-Zto\-U\-V} (int region, double x, double y, double z, double \&u, double \&v)}\label{classANNIEGeometry_a8b839b45c5eace4880b79d451b6e6f29}
+\hypertarget{classANNIEGeometry_a8b839b45c5eace4880b79d451b6e6f29}{
+void {\bfseries XYZtoUV} (int region, double x, double y, double z, double \&u, double \&v)}
+\label{classANNIEGeometry_a8b839b45c5eace4880b79d451b6e6f29}
 
 \end{DoxyCompactItemize}
 \subsection*{Static Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classANNIEGeometry_ac5019e6c5628d0381760a43169b1f69c}{static \hyperlink{classANNIEGeometry}{A\-N\-N\-I\-E\-Geometry} $\ast$ {\bfseries Instance} ()}\label{classANNIEGeometry_ac5019e6c5628d0381760a43169b1f69c}
+\hypertarget{classANNIEGeometry_ac5019e6c5628d0381760a43169b1f69c}{
+static \hyperlink{classANNIEGeometry}{ANNIEGeometry} $\ast$ {\bfseries Instance} ()}
+\label{classANNIEGeometry_ac5019e6c5628d0381760a43169b1f69c}
 
 \item 
-\hypertarget{classANNIEGeometry_ad5cc6f1a59adcc81ed32baf70fffe80a}{static void {\bfseries Build\-Geometry} ()}\label{classANNIEGeometry_ad5cc6f1a59adcc81ed32baf70fffe80a}
+\hypertarget{classANNIEGeometry_ad5cc6f1a59adcc81ed32baf70fffe80a}{
+static void {\bfseries BuildGeometry} ()}
+\label{classANNIEGeometry_ad5cc6f1a59adcc81ed32baf70fffe80a}
 
 \item 
-\hypertarget{classANNIEGeometry_a263767eee59a5cf354f3f78ff11efe15}{static void {\bfseries Print\-Geometry} ()}\label{classANNIEGeometry_a263767eee59a5cf354f3f78ff11efe15}
+\hypertarget{classANNIEGeometry_a263767eee59a5cf354f3f78ff11efe15}{
+static void {\bfseries PrintGeometry} ()}
+\label{classANNIEGeometry_a263767eee59a5cf354f3f78ff11efe15}
 
 \item 
-\hypertarget{classANNIEGeometry_ae6ac4bbd93009837fb6dd876eec7a558}{static void {\bfseries Write\-Geometry} (const char $\ast$filename=\char`\"{}annie.\-geometry.\-root\char`\"{})}\label{classANNIEGeometry_ae6ac4bbd93009837fb6dd876eec7a558}
+\hypertarget{classANNIEGeometry_ae6ac4bbd93009837fb6dd876eec7a558}{
+static void {\bfseries WriteGeometry} (const char $\ast$filename=\char`\"{}annie.geometry.root\char`\"{})}
+\label{classANNIEGeometry_ae6ac4bbd93009837fb6dd876eec7a558}
 
 \item 
-\hypertarget{classANNIEGeometry_a1bb496b1b3f0f3ef86a76dc59571beb7}{static bool {\bfseries Touch\-Geometry} ()}\label{classANNIEGeometry_a1bb496b1b3f0f3ef86a76dc59571beb7}
+\hypertarget{classANNIEGeometry_a1bb496b1b3f0f3ef86a76dc59571beb7}{
+static bool {\bfseries TouchGeometry} ()}
+\label{classANNIEGeometry_a1bb496b1b3f0f3ef86a76dc59571beb7}
 
 \item 
-\hypertarget{classANNIEGeometry_a8d2c6faa5bdc504fb70967551ad59068}{static void {\bfseries Reset} ()}\label{classANNIEGeometry_a8d2c6faa5bdc504fb70967551ad59068}
+\hypertarget{classANNIEGeometry_a8d2c6faa5bdc504fb70967551ad59068}{
+static void {\bfseries Reset} ()}
+\label{classANNIEGeometry_a8d2c6faa5bdc504fb70967551ad59068}
 
 \item 
-\hypertarget{classANNIEGeometry_a6de654c497e0f352fc293cfc87246a0f}{static void {\bfseries Find\-Circle} (double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2, double \&rx, double \&ry, double \&rz, double \&nx, double \&ny, double \&nz, double \&r)}\label{classANNIEGeometry_a6de654c497e0f352fc293cfc87246a0f}
+\hypertarget{classANNIEGeometry_a6de654c497e0f352fc293cfc87246a0f}{
+static void {\bfseries FindCircle} (double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2, double \&rx, double \&ry, double \&rz, double \&nx, double \&ny, double \&nz, double \&r)}
+\label{classANNIEGeometry_a6de654c497e0f352fc293cfc87246a0f}
 
 \item 
-\hypertarget{classANNIEGeometry_ab8f9b0fa3e34b1524146e536cb0d61b8}{static void {\bfseries Find\-Circle} (double xp, double yp, double zp, double x0, double y0, double z0, double angle\-\_\-degrees, double omega\-\_\-degrees, double \&rx, double \&ry, double \&rz, double \&nx, double \&ny, double \&nz, double \&r)}\label{classANNIEGeometry_ab8f9b0fa3e34b1524146e536cb0d61b8}
+\hypertarget{classANNIEGeometry_ab8f9b0fa3e34b1524146e536cb0d61b8}{
+static void {\bfseries FindCircle} (double xp, double yp, double zp, double x0, double y0, double z0, double angle\_\-degrees, double omega\_\-degrees, double \&rx, double \&ry, double \&rz, double \&nx, double \&ny, double \&nz, double \&r)}
+\label{classANNIEGeometry_ab8f9b0fa3e34b1524146e536cb0d61b8}
 
 \item 
-\hypertarget{classANNIEGeometry_a9b64b97c795a3ff52ff8473b844949ab}{static void {\bfseries Find\-Circle\-Old} (double xp, double yp, double zp, double x0, double y0, double z0, double angle\-\_\-degrees, double omega\-\_\-degrees, double \&rx, double \&ry, double \&rz, double \&nx, double \&ny, double \&nz, double \&r)}\label{classANNIEGeometry_a9b64b97c795a3ff52ff8473b844949ab}
+\hypertarget{classANNIEGeometry_a9b64b97c795a3ff52ff8473b844949ab}{
+static void {\bfseries FindCircleOld} (double xp, double yp, double zp, double x0, double y0, double z0, double angle\_\-degrees, double omega\_\-degrees, double \&rx, double \&ry, double \&rz, double \&nx, double \&ny, double \&nz, double \&r)}
+\label{classANNIEGeometry_a9b64b97c795a3ff52ff8473b844949ab}
 
 \item 
-\hypertarget{classANNIEGeometry_a84d4314f64f749a0a7c9a771805226dc}{static void {\bfseries Find\-Vertex} (double x0, double y0, double z0, double t0, double x1, double y1, double z1, double t1, double x2, double y2, double z2, double t2, double x3, double y3, double z3, double t3, double \&vxm, double \&vym, double \&vzm, double \&vtm, double \&vxp, double \&vyp, double \&vzp, double \&vtp)}\label{classANNIEGeometry_a84d4314f64f749a0a7c9a771805226dc}
+\hypertarget{classANNIEGeometry_a84d4314f64f749a0a7c9a771805226dc}{
+static void {\bfseries FindVertex} (double x0, double y0, double z0, double t0, double x1, double y1, double z1, double t1, double x2, double y2, double z2, double t2, double x3, double y3, double z3, double t3, double \&vxm, double \&vym, double \&vzm, double \&vtm, double \&vxp, double \&vyp, double \&vzp, double \&vtp)}
+\label{classANNIEGeometry_a84d4314f64f749a0a7c9a771805226dc}
 
 \item 
-\hypertarget{classANNIEGeometry_a3ad5ab10afc05105f6be10e87fb69227}{static void {\bfseries Distance\-To\-Intersect\-Line} (double x0, double y0, double z0, double vx, double vy, double vz, double ex, double ey, double ez, double \&x, double \&y, double \&z, double \&L)}\label{classANNIEGeometry_a3ad5ab10afc05105f6be10e87fb69227}
+\hypertarget{classANNIEGeometry_a3ad5ab10afc05105f6be10e87fb69227}{
+static void {\bfseries DistanceToIntersectLine} (double x0, double y0, double z0, double vx, double vy, double vz, double ex, double ey, double ez, double \&x, double \&y, double \&z, double \&L)}
+\label{classANNIEGeometry_a3ad5ab10afc05105f6be10e87fb69227}
 
 \item 
-\hypertarget{classANNIEGeometry_a7564706390f93705700a15d4cf4f43a6}{static double {\bfseries Distance\-To\-Intersect\-Line} (double x0, double y0, double z0, double sx, double sy, double sz, double ex, double ey, double ez, double \&x, double \&y, double \&z)}\label{classANNIEGeometry_a7564706390f93705700a15d4cf4f43a6}
+\hypertarget{classANNIEGeometry_a7564706390f93705700a15d4cf4f43a6}{
+static double {\bfseries DistanceToIntersectLine} (double x0, double y0, double z0, double sx, double sy, double sz, double ex, double ey, double ez, double \&x, double \&y, double \&z)}
+\label{classANNIEGeometry_a7564706390f93705700a15d4cf4f43a6}
 
 \item 
-\hypertarget{classANNIEGeometry_ac39690635de68c00b8c806fcca9ff597}{static double {\bfseries Distance\-To\-Intersect\-Line} (double $\ast$pos, double $\ast$start, double $\ast$end, double $\ast$intersection)}\label{classANNIEGeometry_ac39690635de68c00b8c806fcca9ff597}
+\hypertarget{classANNIEGeometry_ac39690635de68c00b8c806fcca9ff597}{
+static double {\bfseries DistanceToIntersectLine} (double $\ast$pos, double $\ast$start, double $\ast$end, double $\ast$intersection)}
+\label{classANNIEGeometry_ac39690635de68c00b8c806fcca9ff597}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/A\-N\-N\-I\-E\-Geometry.\-h\item 
-Data\-Model/A\-N\-N\-I\-E\-Geometry.\-cpp\end{DoxyCompactItemize}
+DataModel/ANNIEGeometry.h\item 
+DataModel/ANNIEGeometry.cpp\end{DoxyCompactItemize}

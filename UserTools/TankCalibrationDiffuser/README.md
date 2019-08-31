@@ -16,6 +16,7 @@ The following variables can be configured for the TankCalibrationDiffuser tool:
 ```
 # TankCalibrationDiffuser Config File
 
+HitStore MCHits #Specify whether to make plots wit hits in Hits or MCHits store in ANNIEEvent
 OutputFile SimulationCalibrationTest #Output root prefix name for the current run
 DiffuserX 0.      	#x-position of the diffuser ball
 DiffuserY 0.      	#y-position of the diffuser ball

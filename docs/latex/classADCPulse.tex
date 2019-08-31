@@ -1,79 +1,115 @@
-\hypertarget{classADCPulse}{\section{A\-D\-C\-Pulse Class Reference}
-\label{classADCPulse}\index{A\-D\-C\-Pulse@{A\-D\-C\-Pulse}}
+\hypertarget{classADCPulse}{
+\section{ADCPulse Class Reference}
+\label{classADCPulse}\index{ADCPulse@{ADCPulse}}
 }
-Inheritance diagram for A\-D\-C\-Pulse\-:\begin{figure}[H]
+Inheritance diagram for ADCPulse::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=3.000000cm]{classADCPulse}
+\includegraphics[height=3cm]{classADCPulse}
 \end{center}
 \end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classADCPulse_a98b82ea9459a5fca7947a855fb8c7405}{{\bfseries A\-D\-C\-Pulse} (int Tube\-Id, double start\-\_\-time, double peak\-\_\-time, double baseline, double sigma\-\_\-baseline, unsigned long raw\-\_\-area, unsigned short raw\-\_\-amplitude, double calibrated\-\_\-amplitude, double charge)}\label{classADCPulse_a98b82ea9459a5fca7947a855fb8c7405}
+\hypertarget{classADCPulse_a98b82ea9459a5fca7947a855fb8c7405}{
+{\bfseries ADCPulse} (int TubeId, double start\_\-time, double peak\_\-time, double baseline, double sigma\_\-baseline, unsigned long raw\_\-area, unsigned short raw\_\-amplitude, double calibrated\_\-amplitude, double charge)}
+\label{classADCPulse_a98b82ea9459a5fca7947a855fb8c7405}
 
 \item 
-\hypertarget{classADCPulse_aba2eb2e6400677d592ef1685ba2ae5a9}{double {\bfseries start\-\_\-time} () const }\label{classADCPulse_aba2eb2e6400677d592ef1685ba2ae5a9}
+\hypertarget{classADCPulse_aba2eb2e6400677d592ef1685ba2ae5a9}{
+double {\bfseries start\_\-time} () const }
+\label{classADCPulse_aba2eb2e6400677d592ef1685ba2ae5a9}
 
 \item 
-\hypertarget{classADCPulse_ac55a1faf2cf205fbdc859daece64a021}{double {\bfseries peak\-\_\-time} () const }\label{classADCPulse_ac55a1faf2cf205fbdc859daece64a021}
+\hypertarget{classADCPulse_ac55a1faf2cf205fbdc859daece64a021}{
+double {\bfseries peak\_\-time} () const }
+\label{classADCPulse_ac55a1faf2cf205fbdc859daece64a021}
 
 \item 
-\hypertarget{classADCPulse_a4900e0a75c4981491f8609428888a6bc}{double {\bfseries baseline} () const }\label{classADCPulse_a4900e0a75c4981491f8609428888a6bc}
+\hypertarget{classADCPulse_a4900e0a75c4981491f8609428888a6bc}{
+double {\bfseries baseline} () const }
+\label{classADCPulse_a4900e0a75c4981491f8609428888a6bc}
 
 \item 
-\hypertarget{classADCPulse_a824ed4ba627f7641ff70adf2fe3b026f}{double {\bfseries sigma\-\_\-baseline} () const }\label{classADCPulse_a824ed4ba627f7641ff70adf2fe3b026f}
+\hypertarget{classADCPulse_a824ed4ba627f7641ff70adf2fe3b026f}{
+double {\bfseries sigma\_\-baseline} () const }
+\label{classADCPulse_a824ed4ba627f7641ff70adf2fe3b026f}
 
 \item 
-\hypertarget{classADCPulse_a692780da124b59770356393f16299c49}{unsigned long {\bfseries raw\-\_\-area} () const }\label{classADCPulse_a692780da124b59770356393f16299c49}
+\hypertarget{classADCPulse_a692780da124b59770356393f16299c49}{
+unsigned long {\bfseries raw\_\-area} () const }
+\label{classADCPulse_a692780da124b59770356393f16299c49}
 
 \item 
-\hypertarget{classADCPulse_a7a09c65e5b638c6a2df3e437219f04f8}{unsigned short {\bfseries raw\-\_\-amplitude} () const }\label{classADCPulse_a7a09c65e5b638c6a2df3e437219f04f8}
+\hypertarget{classADCPulse_a7a09c65e5b638c6a2df3e437219f04f8}{
+unsigned short {\bfseries raw\_\-amplitude} () const }
+\label{classADCPulse_a7a09c65e5b638c6a2df3e437219f04f8}
 
 \item 
-\hypertarget{classADCPulse_aad38764b5eabe9d858309bc06cf73424}{double {\bfseries charge} () const }\label{classADCPulse_aad38764b5eabe9d858309bc06cf73424}
+\hypertarget{classADCPulse_aad38764b5eabe9d858309bc06cf73424}{
+double {\bfseries charge} () const }
+\label{classADCPulse_aad38764b5eabe9d858309bc06cf73424}
 
 \item 
-\hypertarget{classADCPulse_adf6f2ab6b4c28e425dd7567a70099826}{double {\bfseries amplitude} () const }\label{classADCPulse_adf6f2ab6b4c28e425dd7567a70099826}
+\hypertarget{classADCPulse_adf6f2ab6b4c28e425dd7567a70099826}{
+double {\bfseries amplitude} () const }
+\label{classADCPulse_adf6f2ab6b4c28e425dd7567a70099826}
 
 \item 
-\hypertarget{classADCPulse_ae2b9e749cbd984bd1aa24dc41e4fbb73}{{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}\label{classADCPulse_ae2b9e749cbd984bd1aa24dc41e4fbb73}
+\hypertarget{classADCPulse_a454d731a107182274df51d3ccf116e52}{
+{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}
+\label{classADCPulse_a454d731a107182274df51d3ccf116e52}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classADCPulse_af93ef20fa02d9ea44a7b84d32c8b029f}{double {\bfseries start\-\_\-time\-\_\-}}\label{classADCPulse_af93ef20fa02d9ea44a7b84d32c8b029f}
+\hypertarget{classADCPulse_af93ef20fa02d9ea44a7b84d32c8b029f}{
+double {\bfseries start\_\-time\_\-}}
+\label{classADCPulse_af93ef20fa02d9ea44a7b84d32c8b029f}
 
 \item 
-\hypertarget{classADCPulse_a4e87f35bcc0f597f6e3c3e73d0b4312b}{double {\bfseries peak\-\_\-time\-\_\-}}\label{classADCPulse_a4e87f35bcc0f597f6e3c3e73d0b4312b}
+\hypertarget{classADCPulse_a4e87f35bcc0f597f6e3c3e73d0b4312b}{
+double {\bfseries peak\_\-time\_\-}}
+\label{classADCPulse_a4e87f35bcc0f597f6e3c3e73d0b4312b}
 
 \item 
-\hypertarget{classADCPulse_ab355ff3d438597f659f899e14e9ce37a}{double {\bfseries baseline\-\_\-}}\label{classADCPulse_ab355ff3d438597f659f899e14e9ce37a}
+\hypertarget{classADCPulse_ab355ff3d438597f659f899e14e9ce37a}{
+double {\bfseries baseline\_\-}}
+\label{classADCPulse_ab355ff3d438597f659f899e14e9ce37a}
 
 \item 
-\hypertarget{classADCPulse_a97eddbc21ba72324520405c64288693e}{double {\bfseries sigma\-\_\-baseline\-\_\-}}\label{classADCPulse_a97eddbc21ba72324520405c64288693e}
+\hypertarget{classADCPulse_a97eddbc21ba72324520405c64288693e}{
+double {\bfseries sigma\_\-baseline\_\-}}
+\label{classADCPulse_a97eddbc21ba72324520405c64288693e}
 
 \item 
-\hypertarget{classADCPulse_ae665395493e477287e366b9d8772996d}{unsigned long {\bfseries raw\-\_\-area\-\_\-}}\label{classADCPulse_ae665395493e477287e366b9d8772996d}
+\hypertarget{classADCPulse_ae665395493e477287e366b9d8772996d}{
+unsigned long {\bfseries raw\_\-area\_\-}}
+\label{classADCPulse_ae665395493e477287e366b9d8772996d}
 
 \item 
-\hypertarget{classADCPulse_ad77ade03d815b418fe138fd599f3db57}{unsigned short {\bfseries raw\-\_\-amplitude\-\_\-}}\label{classADCPulse_ad77ade03d815b418fe138fd599f3db57}
+\hypertarget{classADCPulse_ad77ade03d815b418fe138fd599f3db57}{
+unsigned short {\bfseries raw\_\-amplitude\_\-}}
+\label{classADCPulse_ad77ade03d815b418fe138fd599f3db57}
 
 \item 
-\hypertarget{classADCPulse_ae68ae047968f1257b4aa0ad9bfd08847}{double {\bfseries calibrated\-\_\-amplitude\-\_\-}}\label{classADCPulse_ae68ae047968f1257b4aa0ad9bfd08847}
+\hypertarget{classADCPulse_ae68ae047968f1257b4aa0ad9bfd08847}{
+double {\bfseries calibrated\_\-amplitude\_\-}}
+\label{classADCPulse_ae68ae047968f1257b4aa0ad9bfd08847}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classADCPulse_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classADCPulse_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classADCPulse_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classADCPulse_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
-\subsection*{Additional Inherited Members}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/A\-D\-C\-Pulse.\-h\item 
-Data\-Model/A\-D\-C\-Pulse.\-cpp\end{DoxyCompactItemize}
+DataModel/ADCPulse.h\item 
+DataModel/ADCPulse.cpp\end{DoxyCompactItemize}
