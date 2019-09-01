@@ -398,6 +398,12 @@ bool EventDisplay::Execute(){
     charge_LAPPDs[i]->SetLineColor(i+1);
   }
 
+  for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
+    unsigned long detkey = pmt_detkeys[i_pmt];
+    charge.emplace(detkey,0.);
+    time.emplace(detkey,0.);
+  }
+
   //---------------------------------------------------------------
   //------------Get truth information (MCParticles) ---------------
   //---------------------------------------------------------------
