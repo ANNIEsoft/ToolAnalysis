@@ -93,5 +93,6 @@ if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
+if (tool=="MonitorSimReceive2") ret=new MonitorSimReceive2;
 return ret;
 }

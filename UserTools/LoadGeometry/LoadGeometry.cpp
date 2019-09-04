@@ -296,9 +296,9 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
                Position( x_center/100.,
                          y_center/100.,
                          z_center/100.),
-               std::pair<double,double>{x_center-(x_width/200.), x_center+(x_width/200.)},
-               std::pair<double,double>{y_center-(y_width/200.), y_center+(y_width/200.)},
-               std::pair<double,double>{z_center-(z_width/200.), z_center+(z_width/200.)});
+               std::pair<double,double>{x_center/100.-(x_width/200.), x_center/100.+(x_width/200.)},
+               std::pair<double,double>{y_center/100.-(y_width/200.), y_center/100.+(y_width/200.)},
+               std::pair<double,double>{z_center/100.-(z_width/200.), z_center/100.+(z_width/200.)});
   
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),

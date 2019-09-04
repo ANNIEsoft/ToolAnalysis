@@ -45,24 +45,12 @@ class MonitorMRDEventDisplay: public Tool {
 
 		BoostStore *CCData;
 		std::string outpath;
-		std::string active_slots;
-		std::string inactive_channels;
+		int custom_range;
+		int custom_tdc_min;
+		int custom_tdc_max;
 		BoostStore* MRDdata;
 		MRDOut MRDout;
 		int verbosity;
-
-		static const int num_crates = 2;
-		static const int num_slots = 24;
-		static const int num_channels = 32;
-		static const int min_crate = 7;
-		int num_active_slots;
-		int num_active_slots_cr1, num_active_slots_cr2;
-		int active_channel[2][24]={{0}};
-		std::vector<int> active_slots_cr1;
-		std::vector<int> active_slots_cr2;
-		std::vector<int> nr_slot;
-		std::vector<int> inactive_ch_crate1, inactive_slot_crate1;
-		std::vector<int> inactive_ch_crate2, inactive_slot_crate2;
 
 		//MRD store includes the following variables
 		unsigned int OutN, Trigger;
@@ -81,9 +69,9 @@ class MonitorMRDEventDisplay: public Tool {
 		TH2Poly *hist_mrd_top = nullptr;
 		TH2Poly *hist_mrd_side = nullptr;
 		double enlargeBoxes = 0.01;
-		double shiftSecRow = 0.05;
+		double shiftSecRow = 0.04;
 		double tank_center_x, tank_center_y, tank_center_z;
-
+		TCanvas *canvas_mrd_evdisplay = nullptr;
 
 		//set color palette
 		const int n_colors=255;

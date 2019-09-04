@@ -18,89 +18,22 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
 
   m_variables.Get("verbose",verbosity);
   m_variables.Get("OutputPath",outpath);
-  m_variables.Get("ActiveSlots",active_slots);
-  m_variables.Get("InActiveChannels",inactive_channels);
+  m_variables.Get("CustomRange",custom_range);
+  m_variables.Get("RangeMin",custom_tdc_min);
+  m_variables.Get("RangeMax",custom_tdc_max);
 
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Initialising"<<std::endl;
 
   if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
-  if (verbosity > 1) std::cout <<"Output path for plots is "<<outpath<<std::endl;
+  if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Output path for plots is "<<outpath<<std::endl;
 
+  if (custom_range !=0 && custom_range != 1) custom_range=0;
+
+  if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Custom_range: "<<custom_range<<", RangeMin: "<<custom_tdc_min<<", RangeMax: "<<custom_tdc_max<<std::endl;
 
   //get objects with allocated memory in ROOT
   //std::cout <<"List of Objects (Start of Initialise)"<<std::endl;
   //gObjectTable->Print();
-
-  //-------------------------------------------------------
-  //-----------------Get active channels-------------------
-  //-------------------------------------------------------
-
-  ifstream file(active_slots.c_str());
-  int temp_crate, temp_slot;
-  int loopnum=0;
-  num_active_slots=0;
-  num_active_slots_cr1=0;
-  num_active_slots_cr2=0;
-
-  while (!file.eof()){
-    file>>temp_crate>>temp_slot;
-    loopnum++;
-    if (verbosity > 2) std::cout<<loopnum<<" , "<<temp_crate<<" , "<<temp_slot<<std::endl;
-    if (file.eof()) break;
-    //if (loopnum!=13){
-    if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
-      std::cout <<"ERROR (MonitorMRDEventDisplay): Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
-      continue;
-    }
-    if (temp_slot<1 || temp_slot>num_slots){
-      std::cout <<"ERROR (MonitorMRDEventDisplay): Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
-      continue;
-    }
-    active_channel[temp_crate-min_crate][temp_slot-1]=1;		//slot start with number 1 instead of 0, crates with 7
-    nr_slot.push_back((temp_crate-min_crate)*100+(temp_slot)); 
-    num_active_slots++;
-    if (temp_crate-min_crate==0) {num_active_slots_cr1++;active_slots_cr1.push_back(temp_slot);}
-    if (temp_crate-min_crate==1) {num_active_slots_cr2++;active_slots_cr2.push_back(temp_slot);}
-    //}
-  }
-  file.close();
-
-  //-------------------------------------------------------
-  //-------------Get inactive channels---------------------
-  //-------------------------------------------------------
-
-  ifstream file_inactive(inactive_channels.c_str());
-  int temp_channel;
-
-  while (!file_inactive.eof()){
-    file_inactive>>temp_crate>>temp_slot>>temp_channel;
-    if (verbosity > 2) std::cout<<temp_crate<<" , "<<temp_slot<<" , "<<temp_channel<<std::endl;
-    if (file_inactive.eof()) break;
-
-    if (temp_crate-min_crate<0 || temp_crate-min_crate>=num_crates) {
-      std::cout <<"ERROR (MonitorMRDEventDisplay): Specified crate out of range [7...8]. Continue with next entry."<<std::endl;
-      continue;
-    }
-    if (temp_slot<1 || temp_slot>num_slots){
-      std::cout <<"ERROR (MonitorMRDEventDisplay): Specified slot out of range [1...24]. Continue with next entry."<<std::endl;
-      continue;
-    }
-    if (temp_channel<0 || temp_channel > num_channels){
-      std::cout <<"ERROR (MonitorMRDEventDisplay): Specified channel out of range [0...31]. Continue with next entry."<<std::endl;
-      continue;
-    }
-
-    if (temp_crate == min_crate){
-      inactive_ch_crate1.push_back(temp_channel);
-      inactive_slot_crate1.push_back(temp_slot);
-    } else if (temp_crate == min_crate+1){
-      inactive_ch_crate2.push_back(temp_channel);
-      inactive_slot_crate2.push_back(temp_slot);
-    } else {
-      std::cout <<"ERROR (MonitorMRDEventDisplay): Crate # out of range, entry ("<<temp_crate<<"/"<<temp_slot<<"/"<<temp_channel<<") not added to inactive channel configuration." <<std::endl;
-    }
-  }
-  file_inactive.close();
 
   //-------------------------------------------------------
   //-----------------Load ANNIE geometry-------------------
@@ -123,22 +56,24 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
   hist_mrd_top->GetYaxis()->SetTitle("x [m]");
   hist_mrd_side->GetXaxis()->SetTitle("z [m]");
   hist_mrd_side->GetYaxis()->SetTitle("y [m]");
-  hist_mrd_top->GetZaxis()->SetTitle("PMT # (vert)");
-  hist_mrd_side->GetZaxis()->SetTitle("PMT # (hor)");
+  hist_mrd_top->GetZaxis()->SetTitle("TDC");
+  hist_mrd_side->GetZaxis()->SetTitle("TDC");
   hist_mrd_top->SetStats(0);
   hist_mrd_side->SetStats(0);
 
+  canvas_mrd_evdisplay = new TCanvas("canvas_mrd_evdisplay","Canvas EventDisplay",1400,600);
+
   // Set custom bin shapes for the histograms
+
+  std::map<std::string,std::map<unsigned long,Detector*> >* Detectors = geom->GetDetectors();
 
   for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("MRD").begin();
                                                     it != Detectors->at("MRD").end();
                                                   ++it){
     Detector* amrdpmt = it->second;
     unsigned long detkey = it->first;
-    unsigned long chankey = apmt->GetChannels()->begin()->first;
-    std::cout <<"Setting up MRD paddles... Detkey: "<<detkey<<", chankey: "<<chankey<<std::endl;
+    unsigned long chankey = amrdpmt->GetChannels()->begin()->first;
     Paddle *mrdpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
-    std::cout <<"mrdpaddle pointer address: "<<mrdpaddle<<std::endl;
 
     double xmin = mrdpaddle->GetXmin();
     double xmax = mrdpaddle->GetXmax();
@@ -148,8 +83,7 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
     double zmax = mrdpaddle->GetZmax();
     int orientation = mrdpaddle->GetOrientation();    //0 is horizontal, 1 is vertical
     int half = mrdpaddle->GetHalf();                  //0 or 1
-
-    std::cout <<"xmin: "<<xmin<<", xmax: "<<xmax<<", ymin: "<<ymin<<", zmin: "<<zmin<<", zmax: "<<zmax<<", orientation: "<<orientation<<", half: "<<half<<std::endl;
+    int side = mrdpaddle->GetSide();
 
     if (orientation == 0){
       //horizontal layers --> side representation
@@ -162,6 +96,7 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
     }
   }
 
+  Bird_Idx = TColor::CreateGradientColorTable(9, stops, red, green, blue, 255, alpha);
 
   //omit warning messages from ROOT: info messages - 1001, warning messages - 2001, error messages - 3001
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
@@ -211,7 +146,7 @@ bool MonitorMRDEventDisplay::Execute(){
     //do nothing
     if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: State is "<<State<<", do nothing"<<std::endl;
   }else {
-    std::cout <<"ERROR (MonitorMRDEventDisplay): State not recognized! Please check data format of MRD file."<<std::endl;
+    if (verbosity > 0) std::cout <<"ERROR (MonitorMRDEventDisplay): State not recognized! Please check data format of MRD file."<<std::endl;
   }
 
   return true;
@@ -222,11 +157,12 @@ bool MonitorMRDEventDisplay::Finalise(){
 
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Finalising"<<std::endl;
 
-  MRDdata->Delete();
+  if (MRDdata) MRDdata->Delete();
 
   //delete all the pointer to objects that are still active (should all be deleted already, but just in case)
-  if (hist_mrd_top) delete hist_mrd_top;
-  if (hist_mrd_side) delete hist_mrd_side;
+  delete hist_mrd_top;
+  delete hist_mrd_side;
+  delete canvas_mrd_evdisplay;
 
   return true;
 }
@@ -235,6 +171,9 @@ bool MonitorMRDEventDisplay::Finalise(){
 void MonitorMRDEventDisplay::PlotMRDEvent(){
 
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: PlotMRDEvent"<<std::endl;
+
+  int min_tdc = 999999;
+  int max_tdc = 0;
 
   t = time(0);
   struct tm *now = localtime( & t );
@@ -249,69 +188,109 @@ void MonitorMRDEventDisplay::PlotMRDEvent(){
   hist_mrd_side->SetTitle(side_Title.c_str());
   hist_mrd_top->SetTitle(top_Title.c_str());
 
+
   //fill the Event Display
 
-  for (int i_data = 0; i_data < Values.size(); i_data++){
+  for (int i_data = 0; i_data < Value.size(); i_data++){
   
     int crate_id = Crate.at(i_data);
     int slot_id = Slot.at(i_data);
     int channel_id = Channel.at(i_data);
     int tdc_value = Value.at(i_data);
 
+    if (tdc_value > max_tdc) max_tdc = tdc_value;
+    if (tdc_value < min_tdc) min_tdc = tdc_value;
+
     //fill EventDisplay plots
     std::vector<int> crate_slot_channel{crate_id,slot_id,channel_id};
-    int chankey = CrateSpaceToChannelNumMap->at(crate_slot_channel);
-    std::cout <<"Converted Rack "<<crate_id<<", Slot "<<slot_id<<"Channel "<<channel_id<<" to channelkey: "<<chankey<<std::endl;
+    if (CrateSpaceToChannelNumMap->find(crate_slot_channel)!=CrateSpaceToChannelNumMap->end()){
+      int chankey = CrateSpaceToChannelNumMap->at(crate_slot_channel);
+      //std::cout <<"Converted Rack "<<crate_id<<", Slot "<<slot_id<<"Channel "<<channel_id<<" to channelkey: "<<chankey<<std::endl;
 
-    Detector *det = (Detector*) geom->GetDetector(chankey);
-    std::cout <<"det pointer address: "<<det<<std::endl;
-    int detkey = det->GetDetectorID();
-    std::cout <<"detkey: "<<detkey<<std::endl;
-    Paddle *mrdpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
-    std::cout <<"mrdpaddle pointer address: "<<mrdpaddle<<std::endl;
-    
-    double xmin = mrdpaddle->GetXmin();
-    
-    double xmax = mrdpaddle->GetXmax();
-    double ymin = mrdpaddle->GetYmin();
-    double ymax = mrdpaddle->GetYmax();
-    double zmin = mrdpaddle->GetZmin();
-    double zmax = mrdpaddle->GetZmax();
-    int orientation = mrdpaddle->GetOrientation();    //0 is horizontal, 1 is vertical
-    int half = mrdpaddle->GetHalf();                  //0 or 1
+      Detector *det = (Detector*) geom->GetDetector(chankey);
+      int detkey = det->GetDetectorID();
+      Paddle *mrdpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
+      
+      int orientation = mrdpaddle->GetOrientation();    //0 is horizontal, 1 is vertical
+      int half = mrdpaddle->GetHalf();                  //0 or 1
+      Position paddle_pos = mrdpaddle->GetOrigin();
+      double x_value = paddle_pos.X()-tank_center_x;
+      double y_value = paddle_pos.Y()-tank_center_y;
+      double z_value = paddle_pos.Z()-tank_center_z;
 
-    //fill histogram
+      if (half == 1) z_value+=shiftSecRow;
 
-    /*delete det;
-    delete mrdpaddle;
-    det=0;
-    mrdpaddle=0;*/
+
+      if (orientation == 0) {
+        //int bin_nr = hist_mrd_side->FindBin(z_value,y_value);
+        if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Filled "<<tdc_value<<" to hist_mrd_side"<<std::endl;
+        hist_mrd_side->Fill(z_value,y_value,tdc_value);
+      }
+      else{
+        //int bin_nr = hist_mrd_top->FindBin(z_value,x_value);
+        hist_mrd_top->Fill(z_value,x_value,tdc_value);
+        if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Filled "<<tdc_value<<" to hist_mrd_top"<<std::endl;
+      } 
+
+    } else {
+
+      //
+      //Crate / Slot / Channel configuration is not included in the geometry class --> error
+      //
+      if (verbosity > 0) std::cout <<"WARNING (MonitorMRDEventDisplay): Read out channel [ Crate "<<crate_id<<" / Slot "<<slot_id<<" / Channel "<<channel_id<<"] does not exist according to Geometry class. Check geometry class / hardware setup for inconsistencies!"<<std::endl;
+    }
 
   }
 
   //plot the Event Display
 
-  TCanvas *canvas_mrd_evdisplay = new TCanvas("canvas_mrd_evdisplay","Canvas EventDisplay",1400,600);
+  if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Plotting MRD EventDisplay..."<<std::endl;
+
+  //Setting up Bird_Idx for nicer color palette
+
   canvas_mrd_evdisplay->Divide(2,1);
-
-  Bird_Idx = TColor::CreateGradientColorTable(9, stops, red, green, blue, 255, alpha);
-
   canvas_mrd_evdisplay->cd(1);
-  hist_mrd_side->Draw("colz");
+  if (custom_range == 0) hist_mrd_side->GetZaxis()->SetRangeUser(0.1,max_tdc);    //make empty bins look empty (white) --> minimum range 0.1
+  else hist_mrd_side->GetZaxis()->SetRangeUser(custom_tdc_min,custom_tdc_max);
+  hist_mrd_side->GetZaxis()->SetTitleOffset(1.3);
+  hist_mrd_side->GetZaxis()->SetTitleSize(0.03);
+  hist_mrd_side->Draw("colz L");                           //option L to show contours around bins (indicating where MRD paddles are)
+  canvas_mrd_evdisplay->Update();
+  TPaletteAxis *palette = 
+  (TPaletteAxis*) hist_mrd_side->GetListOfFunctions()->FindObject("palette");
+  palette->SetX1NDC(0.9);
+  palette->SetX2NDC(0.92);
+  palette->SetY1NDC(0.1);
+  palette->SetY2NDC(0.9);
+
   canvas_mrd_evdisplay->cd(2);
-  hist_mrd_top->Draw("colz");
+  if (custom_range == 0) hist_mrd_top->GetZaxis()->SetRangeUser(0.1,max_tdc);
+  else hist_mrd_top->GetZaxis()->SetRangeUser(custom_tdc_min,custom_tdc_max);
+  hist_mrd_top->GetZaxis()->SetTitleOffset(1.3);
+  hist_mrd_top->GetZaxis()->SetTitleSize(0.03);
+  hist_mrd_top->Draw("colz L");
+  canvas_mrd_evdisplay->Update();
+  TPaletteAxis *palette2 = 
+  (TPaletteAxis*) hist_mrd_top->GetListOfFunctions()->FindObject("palette");
+  palette2->SetX1NDC(0.9);
+  palette2->SetX2NDC(0.92);
+  palette2->SetY1NDC(0.1);
+  palette2->SetY2NDC(0.9);
 
-  std::stringstream ss_evdisplay;
+  std::stringstream ss_evdisplay, ss_evdisplay_pdf;
   ss_evdisplay<<outpath<<"MRD_EventDisplay.jpg";
+  //ss_evdisplay_pdf<<outpath<<"MRD_EventDisplay.pdf";
   canvas_mrd_evdisplay->SaveAs(ss_evdisplay.str().c_str());
+  //canvas_mrd_evdisplay->SaveAs(ss_evdisplay_pdf.str().c_str());
 
-  hist_mrd_side->Reset();
-  hist_mrd_top->Reset();
+  if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Resetting histograms..."<<std::endl;
+  hist_mrd_side->Reset("M");
+  hist_mrd_top->Reset("M");
 
-  delete canvas_mrd_evdisplay;
+  canvas_mrd_evdisplay->Clear();
 
   //get list of allocated objects (ROOT)
-  //std::cout <<"List of Objects (End of UpdateMonitorPlots)"<<std::endl;
+  //std::cout <<"MonitorMRDEventDisplay: List of Objects (End of UpdateMonitorPlots)"<<std::endl;
   //gObjectTable->Print();
 
 }
