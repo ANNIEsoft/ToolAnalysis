@@ -199,6 +199,15 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   InitializeVectors();
 
   //-------------------------------------------------------
+  //----------Read in configuration option for plots-------
+  //-------------------------------------------------------
+
+  ReadInConfiguration();
+  for (int i_long =0; i_long < config_endtime_long.size(); i_long++){
+    std::cout << config_endtime_long.at(i_long) << std::endl;
+  }
+
+  //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
   //-------------------------------------------------------
 
@@ -279,8 +288,8 @@ bool MonitorMRDTime::Execute(){
 
   
   //gObjectTable only for debugging memory leaks, otherwise comment out
-  //std::cout <<"List of Objects (after execute step): "<<std::endl;
-  //gObjectTable->Print();
+  std::cout <<"List of Objects (after execute step): "<<std::endl;
+  gObjectTable->Print();
 
   return true;
 
@@ -375,6 +384,80 @@ bool MonitorMRDTime::Finalise(){
 
 
   return true;
+}
+
+void MonitorMRDTime::ReadInConfiguration(){
+
+  //-------------------------------------------------------
+  //----------------ReadInConfiguration -------------------
+  //-------------------------------------------------------
+
+  ifstream file(plot_configuration.c_str());
+
+  std::string line;
+  if (file.is_open()){
+    while(std::getline(file,line)){
+      std::cout << line << std::endl;
+      if (line.find("#") != std::string::npos) continue;
+      std::vector<std::string> values;
+      std::stringstream ss;
+        ss.str(line);
+        std::string item;
+        while (std::getline(ss, item, '\t')) {
+            values.push_back(item);
+        }
+      for (int i_value = 0; i_value < values.size(); i_value++){
+        std::cout << values.at(i_value)<<", ";
+      }
+      std::cout << std::endl;
+      if (values.size() < 4 ) {
+        if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): ReadInConfiguration: Need at least 4 arguments in one line: TimeFrame - TimeEnd - FileLabel - PlotType1. Please look over the configuration file and adjust it accordingly."<<std::endl;
+        continue;
+      }
+      double double_value = std::stod(values.at(0));
+      config_timeframes.push_back(double_value);
+      config_endtime.push_back(values.at(1));
+      config_label.push_back(values.at(2));
+      std::vector<std::string> plottypes;
+      for (int i=3; i < values.size(); i++){
+        plottypes.push_back(values.at(i));
+      }
+      config_plottypes.push_back(plottypes);
+    }
+  } else {
+    if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): ReadInConfiguration: Could not open file "<<plot_configuration<<"! Check if path is valid..."<<std::endl;
+  }
+
+  if (verbosity > 2){
+    std::cout <<"---------------------------------------------------------------------"<<std::endl;
+    std::cout <<"MonitorMRDTime: ReadInConfiguration: Read in the following data into configuration variables: "<<std::endl;
+    for (int i_t=0; i_t < config_timeframes.size(); i_t++){
+      std::cout <<config_timeframes.at(i_t)<<", "<<config_endtime.at(i_t)<<", "<<config_label.at(i_t);
+      for (int i_plot = 0; i_plot < config_plottypes.at(i_t).size(); i_plot++){
+        std::cout <<config_plottypes.at(i_t).at(i_plot)<<", ";
+      }
+      std::cout<<std::endl;
+    }
+    std::cout <<"-----------------------------------------------------------------------"<<std::endl;
+  }
+
+  if (verbosity > 2) std::cout <<"MonitorMRDTime: ReadInConfiguration: Parsing dates: "<<std::endl;
+  for (int i_date = 0; i_date < config_endtime.size(); i_date++){
+    if (config_endtime.at(i_date) == "TEND_LASTFILE") {
+      std::cout <<"TEND_LASTFILE: Starting from end of last read-in file"<<std::endl; 
+      config_endtime_long.push_back(t_file_end);
+    } else if (config_endtime.at(i_date).size()==15){
+        boost::posix_time::ptime spec_endtime(boost::posix_time::from_iso_string(config_endtime.at(i_date)));
+        boost::posix_time::time_duration spec_endtime_duration = boost::posix_time::time_duration(spec_endtime - *Epoch);
+        ULong64_t spec_endtime_long = spec_endtime_duration.total_milliseconds();
+        config_endtime_long.push_back(spec_endtime_long);
+    } else {
+      std::cout <<"Specified end date "<<config_endtime.at(i_date)<<" does not have the desired format YYYYMMDDTHHMMSS. Please change the format in the config file in order to use this tool. Starting from end of last file"<<std::endl;
+      config_endtime_long.push_back(t_file_end);
+    }
+  }
+
+
 }
 
 void MonitorMRDTime::ReadInData(){

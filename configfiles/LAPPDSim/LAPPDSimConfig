@@ -1,0 +1,5 @@
+# LAPPDSim config file
+
+verbose 1
+EventDisplay 2 #0 = no event display; 1 = histos will be written, but not displayed; 2 histos will be displayed and written
+OutputFile /nashome/m/mstender/ToolAnalysis-MrdEfficiency2/LAPPDHistograms.root

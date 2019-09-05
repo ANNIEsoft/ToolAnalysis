@@ -50,6 +50,7 @@ class MonitorMRDTime: public Tool {
   bool Finalise();
 
   //main functions for organizing the monitoring
+  void ReadInConfiguration();
   void InitializeVectors();
   void ReadInData();
   void WriteToFile();
@@ -99,7 +100,13 @@ class MonitorMRDTime: public Tool {
   bool draw_single;
   std::string plot_configuration;
   int verbosity;
-  std::vector<std::pair<std::string,double>> plot_configuration_vector;
+
+  //define variables that contain the configuration option for the plots
+  std::vector<double> config_timeframes;
+  std::vector<std::string> config_endtime;
+  std::vector<std::string> config_label;
+  std::vector<std::vector<std::string>> config_plottypes;
+  std::vector<ULong64_t> config_endtime_long;
 
   //define variables for keeping track of time
   boost::posix_time::ptime *Epoch;

@@ -4,9 +4,21 @@
 #include <string>
 #include <iostream>
 
+#include "Geometry.h"
+#include "Detector.h"
 #include "Tool.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TH1D.h"
+#include "TH2D.h"
+#include "wcsimT.h"
 #include "LAPPDresponse.h"
-#include "TF1.h"
+#include "TBox.h"
+#include "TApplication.h"
+#include "LAPPDDisplay.h"
+#include "TRint.h"
+// #include "Hit.h"
+// #include "LAPPDHit.h"
 
 class LAPPDSim: public Tool {
 
@@ -20,12 +32,15 @@ class LAPPDSim: public Tool {
   Waveform<double> SimpleGenPulse(vector<double> pulsetimes);
 
  private:
-
-   //ROOT random number generator
    TRandom3* myTR;
-   TString SimInput;
-
-   int iter=0;
+   TFile* _tf;
+   int _event_counter;
+   int _file_number;
+   int _display_config;
+   bool _is_artificial;
+   LAPPDDisplay* _display;
+   Geometry* _geom;
+   std::map<unsigned long, Waveform<double> >* LAPPDWaveforms;
 
 };
 

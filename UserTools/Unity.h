@@ -97,6 +97,7 @@
 #include "PhaseIIADCHitFinder.h"
 #include "TrackCombiner.h"
 #include "SimulatedWaveformDemo.h"
+#include "CNNImage.h"
 #include "MonitorTankLive.h"
 #include "MonitorTankTime.h"
 #include "PhaseIIADCCalibrator.h"

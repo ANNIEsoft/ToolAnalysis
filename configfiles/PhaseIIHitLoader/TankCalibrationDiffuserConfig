@@ -1,0 +1,71 @@
+# TankCalibrationDiffuser Config File
+
+HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
+OutputFile PhaseIIHitLoaderTestHitStore #Output root prefix name for the current run
+NBinsTimeTotal 500		#number of bins for summary time histogram
+TimeTotalMin -10		#left limit of range for summary time histogram
+TimeTotalMax 100		#right limit of range for summary time histogram
+NBinsChargeTotal 500		#number of bins for summary charge histogram
+ChargeTotalMin 1		#left limit of range for summary charge histogram
+ChargeTotalMax 0		#right limit of range for summary charge histogram
+NBinsTime 200			#number of bins for single time histograms
+TimeMin -10.			#left limit of range for single time histograms
+TimeMax 30.			#right limit of range for single time histograms
+NBinsCharge 200			#number of bins for single charge histograms
+ChargeMin 0.			#left limit of range for single charge histograms
+ChargeMax 40.			#right limit of range for single charge histograms
+NBinsStartTimeTotal 500         #number of bins for summary start time histograms
+NBinsStartTime 200              #number of bins for start time histograms
+StartTimeMin 350.               #left limit of range for start time histograms
+StartTimeMax 500.               #right limit of range for start time histograms
+NBinsPeakTimeTotal 500          #number of bins for summary peak time histograms
+NBinsPeakTime 200               #number of bins for peak time histograms
+PeakTimeMin 350.                #left limit of range for peak time histograms
+PeakTimeMax 500.                #right limit of range for peak time histograms
+NBinsBaselineTotal 500          #number of bins for summary baseline histograms
+NBinsBaseline 200               #number of bins for baseline histograms
+BaselineMin 308.                #left limit of range for basleine histograms
+BaselineMax 350.                #right limit of range for baseline histograms
+NBinsSigmaBaselineTotal 500     #number of bins for summary sigma baseline histograms
+NBinsSigmaBaseline 200          #number of bins for sigma baseline histograms
+SigmaBaselineMin 0.5            #left limit of range for sigma baseline histograms
+SigmaBaselineMax 3.             #right limit of range for sigma baseline histograms
+NBinsRawAmplitudeTotal 500      #number of bins for summary raw amplitude histograms
+NBinsRawAmplitude 200           #number of bins for raw amplitude histograms
+RawAmplitudeMin 300.            #left limit of range for raw amplitude histograms
+RawAmplitudeMax 500.            #right limit of range for raw amplitude histograms
+NBinsAmplitudeTotal 500         #number of bins for summary amplitude histograms
+NBinsAmplitude 200              #number of bins for amplitude histograms
+AmplitudeMin 0.                 #left limit of range for amplitude histograms
+AmplitudeMax 0.1                #right limit of range for amplitude histograms
+NBinsRawAreaTotal 500           #number of bins for summary raw area histograms
+NBinsRawArea 200                #number of bins for raw area histograms
+RawAreaMin 1000.                #left limit of range for raw area histograms
+RawAreaMax 18000.               #right limit of range for raw area histograms
+NBinsTimeFit 100		#number of bins for fitted mean times
+TimeFitMin -20			#left limit of range for fitted mean times
+TimeFitMax 20			#right limit of range for fitted mean times
+NBinsTimeDev 100		#number of bins for fitted time deviations
+TimeDevMin -10			#left limit of range for fitted time deviations
+TimeDevMax 10			#right limit of range for fitted time deviations
+NBinsChargeFit 100		#number of bins for fitted mean charges
+ChargeFitMin 0.			#left limit or range for fitted mean charges
+ChargeFitMax 10.		#right limit of range for fitted mean charges
+DiffuserX 0.      		#x-position of the diffuser ball
+DiffuserY 0.      		#y-position of the diffuser ball
+DiffuserZ 0.      		#z-position of the diffuser ball
+ToleranceCharge 0.5		#tolerance of fit single p.e. value for being classified as a bad PMT
+ToleranceTime 0.5		#tolerance of mean time value [ns] for being classified as a bad PMT
+FitMethod Gaus			#fit function for charge, options: Gaus2Exp (2 times gaus + exp), Gaus2 (2 times gaus), Gaus (single gaus)
+Gaus1Constant 10		#set start value for fit of first gaus (constant)
+Gaus1Mean 1.			#set start value for fit of first gaus (mean)
+Gaus1Sigma 0.5			#set start value for fit of first gaus (sigma)
+Gaus2Constant 10.		#set start value for fit of second gaus (constant), if applicable
+Gaus2Mean 1.			#set start value for fit of second gaus (mean), if applicable
+Gaus2Sigma 0.5			#set start value for fit of second gaus (sigma), if applicable
+ExpConstant 1			#set start value for fit of exponential (constant), if applicable
+ExpDecay -1			#set start value for fit of exponential (decay), if applicable
+
+TApplication 0			#0/1, depending on whether plots should be shown interactively or not
+
+verbose 1         		#verbosity of the application

@@ -1,231 +1,367 @@
-\hypertarget{classMCParticle}{\section{M\-C\-Particle Class Reference}
-\label{classMCParticle}\index{M\-C\-Particle@{M\-C\-Particle}}
+\hypertarget{classMCParticle}{
+\section{MCParticle Class Reference}
+\label{classMCParticle}\index{MCParticle@{MCParticle}}
 }
-Inheritance diagram for M\-C\-Particle\-:\begin{figure}[H]
+Inheritance diagram for MCParticle::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=3.000000cm]{classMCParticle}
+\includegraphics[height=3cm]{classMCParticle}
 \end{center}
 \end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMCParticle_a1e2054a5aa6978bec68fa15133e9aae9}{{\bfseries M\-C\-Particle} (int pdg, double stt\-E, double stp\-E, \hyperlink{classPosition}{Position} sttpos, \hyperlink{classPosition}{Position} stppos, double sttt, double stpt, \hyperlink{classDirection}{Direction} startdir, double len, tracktype tracktypein, int partid, int parentpdg, int flagid)}\label{classMCParticle_a1e2054a5aa6978bec68fa15133e9aae9}
+\hypertarget{classMCParticle_a1e2054a5aa6978bec68fa15133e9aae9}{
+{\bfseries MCParticle} (int pdg, double sttE, double stpE, \hyperlink{classPosition}{Position} sttpos, \hyperlink{classPosition}{Position} stppos, double sttt, double stpt, \hyperlink{classDirection}{Direction} startdir, double len, tracktype tracktypein, int partid, int parentpdg, int flagid)}
+\label{classMCParticle_a1e2054a5aa6978bec68fa15133e9aae9}
 
 \item 
-\hypertarget{classMCParticle_a351d384bc2af0918ece85ba38c9551b2}{int {\bfseries Get\-Particle\-I\-D} ()}\label{classMCParticle_a351d384bc2af0918ece85ba38c9551b2}
+\hypertarget{classMCParticle_a351d384bc2af0918ece85ba38c9551b2}{
+int {\bfseries GetParticleID} ()}
+\label{classMCParticle_a351d384bc2af0918ece85ba38c9551b2}
 
 \item 
-\hypertarget{classMCParticle_a05c2ded23b19858448647ce9d2ba36fd}{int {\bfseries Get\-Parent\-Pdg} ()}\label{classMCParticle_a05c2ded23b19858448647ce9d2ba36fd}
+\hypertarget{classMCParticle_a05c2ded23b19858448647ce9d2ba36fd}{
+int {\bfseries GetParentPdg} ()}
+\label{classMCParticle_a05c2ded23b19858448647ce9d2ba36fd}
 
 \item 
-\hypertarget{classMCParticle_a3240caaaac37a2d4ab3ef5d57aa53e74}{int {\bfseries Get\-Flag} ()}\label{classMCParticle_a3240caaaac37a2d4ab3ef5d57aa53e74}
+\hypertarget{classMCParticle_a3240caaaac37a2d4ab3ef5d57aa53e74}{
+int {\bfseries GetFlag} ()}
+\label{classMCParticle_a3240caaaac37a2d4ab3ef5d57aa53e74}
 
 \item 
-\hypertarget{classMCParticle_a1829807b49dda47903441234983df064}{bool {\bfseries Get\-Starts\-In\-Fiducial\-Volume} ()}\label{classMCParticle_a1829807b49dda47903441234983df064}
+\hypertarget{classMCParticle_a1829807b49dda47903441234983df064}{
+bool {\bfseries GetStartsInFiducialVolume} ()}
+\label{classMCParticle_a1829807b49dda47903441234983df064}
 
 \item 
-\hypertarget{classMCParticle_a99c79b20440359ee841296eff1a4ab61}{double {\bfseries Get\-Track\-Angle\-X} ()}\label{classMCParticle_a99c79b20440359ee841296eff1a4ab61}
+\hypertarget{classMCParticle_a99c79b20440359ee841296eff1a4ab61}{
+double {\bfseries GetTrackAngleX} ()}
+\label{classMCParticle_a99c79b20440359ee841296eff1a4ab61}
 
 \item 
-\hypertarget{classMCParticle_a98e706fd77669b0461e739b5a8e46998}{double {\bfseries Get\-Track\-Angle\-Y} ()}\label{classMCParticle_a98e706fd77669b0461e739b5a8e46998}
+\hypertarget{classMCParticle_a98e706fd77669b0461e739b5a8e46998}{
+double {\bfseries GetTrackAngleY} ()}
+\label{classMCParticle_a98e706fd77669b0461e739b5a8e46998}
 
 \item 
-\hypertarget{classMCParticle_ae5bbdd4456fb3131ec6eb7213cab54cb}{double {\bfseries Get\-Track\-Angle\-From\-Beam} ()}\label{classMCParticle_ae5bbdd4456fb3131ec6eb7213cab54cb}
+\hypertarget{classMCParticle_ae5bbdd4456fb3131ec6eb7213cab54cb}{
+double {\bfseries GetTrackAngleFromBeam} ()}
+\label{classMCParticle_ae5bbdd4456fb3131ec6eb7213cab54cb}
 
 \item 
-\hypertarget{classMCParticle_aa9626a1846b63292b5356fe2be097fe9}{bool {\bfseries Get\-Enters\-Tank} ()}\label{classMCParticle_aa9626a1846b63292b5356fe2be097fe9}
+\hypertarget{classMCParticle_aa9626a1846b63292b5356fe2be097fe9}{
+bool {\bfseries GetEntersTank} ()}
+\label{classMCParticle_aa9626a1846b63292b5356fe2be097fe9}
 
 \item 
-\hypertarget{classMCParticle_a112df02772c9bc084298a54b86212133}{\hyperlink{classPosition}{Position} {\bfseries Get\-Tank\-Entry\-Point} ()}\label{classMCParticle_a112df02772c9bc084298a54b86212133}
+\hypertarget{classMCParticle_a112df02772c9bc084298a54b86212133}{
+\hyperlink{classPosition}{Position} {\bfseries GetTankEntryPoint} ()}
+\label{classMCParticle_a112df02772c9bc084298a54b86212133}
 
 \item 
-\hypertarget{classMCParticle_a6a7562aabf349e90c0e1e3751189e5eb}{bool {\bfseries Get\-Exits\-Tank} ()}\label{classMCParticle_a6a7562aabf349e90c0e1e3751189e5eb}
+\hypertarget{classMCParticle_a6a7562aabf349e90c0e1e3751189e5eb}{
+bool {\bfseries GetExitsTank} ()}
+\label{classMCParticle_a6a7562aabf349e90c0e1e3751189e5eb}
 
 \item 
-\hypertarget{classMCParticle_a6693f8f91b1ecab9309ffb752f5fcd66}{\hyperlink{classPosition}{Position} {\bfseries Get\-Tank\-Exit\-Point} ()}\label{classMCParticle_a6693f8f91b1ecab9309ffb752f5fcd66}
+\hypertarget{classMCParticle_a6693f8f91b1ecab9309ffb752f5fcd66}{
+\hyperlink{classPosition}{Position} {\bfseries GetTankExitPoint} ()}
+\label{classMCParticle_a6693f8f91b1ecab9309ffb752f5fcd66}
 
 \item 
-\hypertarget{classMCParticle_a9137f3783a143643ef16b3b63fdabef8}{double {\bfseries Get\-Track\-Length\-In\-Tank} ()}\label{classMCParticle_a9137f3783a143643ef16b3b63fdabef8}
+\hypertarget{classMCParticle_a9137f3783a143643ef16b3b63fdabef8}{
+double {\bfseries GetTrackLengthInTank} ()}
+\label{classMCParticle_a9137f3783a143643ef16b3b63fdabef8}
 
 \item 
-\hypertarget{classMCParticle_a6b69dd58bc549a57cc780a9621c8fcad}{bool {\bfseries Get\-Enters\-Mrd} ()}\label{classMCParticle_a6b69dd58bc549a57cc780a9621c8fcad}
+\hypertarget{classMCParticle_a6b69dd58bc549a57cc780a9621c8fcad}{
+bool {\bfseries GetEntersMrd} ()}
+\label{classMCParticle_a6b69dd58bc549a57cc780a9621c8fcad}
 
 \item 
-\hypertarget{classMCParticle_a4fc1d825ca0b6898323718e382574df0}{\hyperlink{classPosition}{Position} {\bfseries Get\-Mrd\-Entry\-Point} ()}\label{classMCParticle_a4fc1d825ca0b6898323718e382574df0}
+\hypertarget{classMCParticle_a4fc1d825ca0b6898323718e382574df0}{
+\hyperlink{classPosition}{Position} {\bfseries GetMrdEntryPoint} ()}
+\label{classMCParticle_a4fc1d825ca0b6898323718e382574df0}
 
 \item 
-\hypertarget{classMCParticle_a5f529c1629fdaf94d6061d1bde2013bc}{bool {\bfseries Get\-Exits\-Mrd} ()}\label{classMCParticle_a5f529c1629fdaf94d6061d1bde2013bc}
+\hypertarget{classMCParticle_a5f529c1629fdaf94d6061d1bde2013bc}{
+bool {\bfseries GetExitsMrd} ()}
+\label{classMCParticle_a5f529c1629fdaf94d6061d1bde2013bc}
 
 \item 
-\hypertarget{classMCParticle_a33f74539498e327f17345f5801b9ce60}{\hyperlink{classPosition}{Position} {\bfseries Get\-Mrd\-Exit\-Point} ()}\label{classMCParticle_a33f74539498e327f17345f5801b9ce60}
+\hypertarget{classMCParticle_a33f74539498e327f17345f5801b9ce60}{
+\hyperlink{classPosition}{Position} {\bfseries GetMrdExitPoint} ()}
+\label{classMCParticle_a33f74539498e327f17345f5801b9ce60}
 
 \item 
-\hypertarget{classMCParticle_ab4172cbc5024701f1286ec9b3cdae9a7}{bool {\bfseries Get\-Penetrates\-Mrd} ()}\label{classMCParticle_ab4172cbc5024701f1286ec9b3cdae9a7}
+\hypertarget{classMCParticle_ab4172cbc5024701f1286ec9b3cdae9a7}{
+bool {\bfseries GetPenetratesMrd} ()}
+\label{classMCParticle_ab4172cbc5024701f1286ec9b3cdae9a7}
 
 \item 
-\hypertarget{classMCParticle_a46bf3f4fb48252b4f459b77b108a8e67}{double {\bfseries Get\-Track\-Length\-In\-Mrd} ()}\label{classMCParticle_a46bf3f4fb48252b4f459b77b108a8e67}
+\hypertarget{classMCParticle_a46bf3f4fb48252b4f459b77b108a8e67}{
+double {\bfseries GetTrackLengthInMrd} ()}
+\label{classMCParticle_a46bf3f4fb48252b4f459b77b108a8e67}
 
 \item 
-\hypertarget{classMCParticle_a3d260af122ff90824de2e2be7f672f07}{double {\bfseries Get\-Mrd\-Penetration} ()}\label{classMCParticle_a3d260af122ff90824de2e2be7f672f07}
+\hypertarget{classMCParticle_a3d260af122ff90824de2e2be7f672f07}{
+double {\bfseries GetMrdPenetration} ()}
+\label{classMCParticle_a3d260af122ff90824de2e2be7f672f07}
 
 \item 
-\hypertarget{classMCParticle_afa08a1cb74a4b0b642f0b62c04114976}{int {\bfseries Get\-Num\-Mrd\-Layers\-Penetrated} ()}\label{classMCParticle_afa08a1cb74a4b0b642f0b62c04114976}
+\hypertarget{classMCParticle_afa08a1cb74a4b0b642f0b62c04114976}{
+int {\bfseries GetNumMrdLayersPenetrated} ()}
+\label{classMCParticle_afa08a1cb74a4b0b642f0b62c04114976}
 
 \item 
-\hypertarget{classMCParticle_ac8325eb8dd7e2d10b6b406dfcd6b31af}{double {\bfseries Get\-Mrd\-Energy\-Loss} ()}\label{classMCParticle_ac8325eb8dd7e2d10b6b406dfcd6b31af}
+\hypertarget{classMCParticle_ac8325eb8dd7e2d10b6b406dfcd6b31af}{
+double {\bfseries GetMrdEnergyLoss} ()}
+\label{classMCParticle_ac8325eb8dd7e2d10b6b406dfcd6b31af}
 
 \item 
-\hypertarget{classMCParticle_ab3f8776c846fcc1c82f2d9083beaf07f}{void {\bfseries Set\-Particle\-I\-D} (int partidin)}\label{classMCParticle_ab3f8776c846fcc1c82f2d9083beaf07f}
+\hypertarget{classMCParticle_ab3f8776c846fcc1c82f2d9083beaf07f}{
+void {\bfseries SetParticleID} (int partidin)}
+\label{classMCParticle_ab3f8776c846fcc1c82f2d9083beaf07f}
 
 \item 
-\hypertarget{classMCParticle_a835ce089d630c4624a3060980450ca2c}{void {\bfseries Set\-Parent\-Pdg} (int parentpdgin)}\label{classMCParticle_a835ce089d630c4624a3060980450ca2c}
+\hypertarget{classMCParticle_a835ce089d630c4624a3060980450ca2c}{
+void {\bfseries SetParentPdg} (int parentpdgin)}
+\label{classMCParticle_a835ce089d630c4624a3060980450ca2c}
 
 \item 
-\hypertarget{classMCParticle_ace8eaad4c1fd7398fb5bda3316b5395b}{void {\bfseries Set\-Flag} (int flagidin)}\label{classMCParticle_ace8eaad4c1fd7398fb5bda3316b5395b}
+\hypertarget{classMCParticle_ace8eaad4c1fd7398fb5bda3316b5395b}{
+void {\bfseries SetFlag} (int flagidin)}
+\label{classMCParticle_ace8eaad4c1fd7398fb5bda3316b5395b}
 
 \item 
-\hypertarget{classMCParticle_a2a42a4f6ef9af8a6158e422680a57b47}{void {\bfseries Set\-Starts\-In\-Fiducial\-Volume} (bool i\-Starts\-In\-Fiducial\-Volume)}\label{classMCParticle_a2a42a4f6ef9af8a6158e422680a57b47}
+\hypertarget{classMCParticle_a2a42a4f6ef9af8a6158e422680a57b47}{
+void {\bfseries SetStartsInFiducialVolume} (bool iStartsInFiducialVolume)}
+\label{classMCParticle_a2a42a4f6ef9af8a6158e422680a57b47}
 
 \item 
-\hypertarget{classMCParticle_a1fb1b9c4206de10c602b1095e6428578}{void {\bfseries Set\-Enters\-Tank} (bool i\-Enters\-Tank)}\label{classMCParticle_a1fb1b9c4206de10c602b1095e6428578}
+\hypertarget{classMCParticle_a1fb1b9c4206de10c602b1095e6428578}{
+void {\bfseries SetEntersTank} (bool iEntersTank)}
+\label{classMCParticle_a1fb1b9c4206de10c602b1095e6428578}
 
 \item 
-\hypertarget{classMCParticle_a2cfded14729766192df1b9770edba92a}{void {\bfseries Set\-Tank\-Entry\-Point} (\hyperlink{classPosition}{Position} i\-Tank\-Entry\-Point)}\label{classMCParticle_a2cfded14729766192df1b9770edba92a}
+\hypertarget{classMCParticle_a2cfded14729766192df1b9770edba92a}{
+void {\bfseries SetTankEntryPoint} (\hyperlink{classPosition}{Position} iTankEntryPoint)}
+\label{classMCParticle_a2cfded14729766192df1b9770edba92a}
 
 \item 
-\hypertarget{classMCParticle_a702069712afdc032362de66c133c0165}{void {\bfseries Set\-Exits\-Tank} (bool i\-Exits\-Tank)}\label{classMCParticle_a702069712afdc032362de66c133c0165}
+\hypertarget{classMCParticle_a702069712afdc032362de66c133c0165}{
+void {\bfseries SetExitsTank} (bool iExitsTank)}
+\label{classMCParticle_a702069712afdc032362de66c133c0165}
 
 \item 
-\hypertarget{classMCParticle_a1cbf3a6c05ac82ec5e9c8b90a70c2940}{void {\bfseries Set\-Tank\-Exit\-Point} (\hyperlink{classPosition}{Position} i\-Tank\-Exit\-Point)}\label{classMCParticle_a1cbf3a6c05ac82ec5e9c8b90a70c2940}
+\hypertarget{classMCParticle_a1cbf3a6c05ac82ec5e9c8b90a70c2940}{
+void {\bfseries SetTankExitPoint} (\hyperlink{classPosition}{Position} iTankExitPoint)}
+\label{classMCParticle_a1cbf3a6c05ac82ec5e9c8b90a70c2940}
 
 \item 
-\hypertarget{classMCParticle_a7ca9800559d1e4fddd3fc98c0deb2c99}{void {\bfseries Set\-Track\-Length\-In\-Tank} (double i\-Track\-Length\-In\-Tank)}\label{classMCParticle_a7ca9800559d1e4fddd3fc98c0deb2c99}
+\hypertarget{classMCParticle_a7ca9800559d1e4fddd3fc98c0deb2c99}{
+void {\bfseries SetTrackLengthInTank} (double iTrackLengthInTank)}
+\label{classMCParticle_a7ca9800559d1e4fddd3fc98c0deb2c99}
 
 \item 
-\hypertarget{classMCParticle_a0538d9cb8cf49a824f3fd77d0531e935}{void {\bfseries Set\-Enters\-Mrd} (bool i\-Enters\-Mrd)}\label{classMCParticle_a0538d9cb8cf49a824f3fd77d0531e935}
+\hypertarget{classMCParticle_a0538d9cb8cf49a824f3fd77d0531e935}{
+void {\bfseries SetEntersMrd} (bool iEntersMrd)}
+\label{classMCParticle_a0538d9cb8cf49a824f3fd77d0531e935}
 
 \item 
-\hypertarget{classMCParticle_a5ac43b6d4e343123b0308aeff287a1ec}{void {\bfseries Set\-Mrd\-Entry\-Point} (\hyperlink{classPosition}{Position} i\-Mrd\-Entry\-Point)}\label{classMCParticle_a5ac43b6d4e343123b0308aeff287a1ec}
+\hypertarget{classMCParticle_a5ac43b6d4e343123b0308aeff287a1ec}{
+void {\bfseries SetMrdEntryPoint} (\hyperlink{classPosition}{Position} iMrdEntryPoint)}
+\label{classMCParticle_a5ac43b6d4e343123b0308aeff287a1ec}
 
 \item 
-\hypertarget{classMCParticle_ad11395d2bd739fc1ad5d473f6313a34a}{void {\bfseries Set\-Exits\-Mrd} (bool i\-Exits\-Mrd)}\label{classMCParticle_ad11395d2bd739fc1ad5d473f6313a34a}
+\hypertarget{classMCParticle_ad11395d2bd739fc1ad5d473f6313a34a}{
+void {\bfseries SetExitsMrd} (bool iExitsMrd)}
+\label{classMCParticle_ad11395d2bd739fc1ad5d473f6313a34a}
 
 \item 
-\hypertarget{classMCParticle_a775d17a50fd84cd07f9049aff86f0ead}{void {\bfseries Set\-Mrd\-Exit\-Point} (\hyperlink{classPosition}{Position} i\-Mrd\-Exit\-Point)}\label{classMCParticle_a775d17a50fd84cd07f9049aff86f0ead}
+\hypertarget{classMCParticle_a775d17a50fd84cd07f9049aff86f0ead}{
+void {\bfseries SetMrdExitPoint} (\hyperlink{classPosition}{Position} iMrdExitPoint)}
+\label{classMCParticle_a775d17a50fd84cd07f9049aff86f0ead}
 
 \item 
-\hypertarget{classMCParticle_ab112ca1f301435bb933ba813d7a4da3e}{void {\bfseries Set\-Penetrates\-Mrd} (bool i\-Penetrates\-Mrd)}\label{classMCParticle_ab112ca1f301435bb933ba813d7a4da3e}
+\hypertarget{classMCParticle_ab112ca1f301435bb933ba813d7a4da3e}{
+void {\bfseries SetPenetratesMrd} (bool iPenetratesMrd)}
+\label{classMCParticle_ab112ca1f301435bb933ba813d7a4da3e}
 
 \item 
-\hypertarget{classMCParticle_af85b13f2164e52e752d6e14534d4b31c}{void {\bfseries Set\-Track\-Length\-In\-Mrd} (double i\-Track\-Length\-In\-Mrd)}\label{classMCParticle_af85b13f2164e52e752d6e14534d4b31c}
+\hypertarget{classMCParticle_af85b13f2164e52e752d6e14534d4b31c}{
+void {\bfseries SetTrackLengthInMrd} (double iTrackLengthInMrd)}
+\label{classMCParticle_af85b13f2164e52e752d6e14534d4b31c}
 
 \item 
-\hypertarget{classMCParticle_a1bd0d632655c48ee8bc311b7ab9c3996}{void {\bfseries Set\-Mrd\-Penetration} (double i\-Mrd\-Penetration)}\label{classMCParticle_a1bd0d632655c48ee8bc311b7ab9c3996}
+\hypertarget{classMCParticle_a1bd0d632655c48ee8bc311b7ab9c3996}{
+void {\bfseries SetMrdPenetration} (double iMrdPenetration)}
+\label{classMCParticle_a1bd0d632655c48ee8bc311b7ab9c3996}
 
 \item 
-\hypertarget{classMCParticle_abc4ac222c79d03dd421dccf1c27aa461}{void {\bfseries Set\-Num\-Mrd\-Layers\-Penetrated} (int i\-Mrd\-Layers\-Penetrated)}\label{classMCParticle_abc4ac222c79d03dd421dccf1c27aa461}
+\hypertarget{classMCParticle_abc4ac222c79d03dd421dccf1c27aa461}{
+void {\bfseries SetNumMrdLayersPenetrated} (int iMrdLayersPenetrated)}
+\label{classMCParticle_abc4ac222c79d03dd421dccf1c27aa461}
 
 \item 
-\hypertarget{classMCParticle_a3db0d00c918e435c4cacc51e80fad7db}{void {\bfseries Set\-Mrd\-Energy\-Loss} (double i\-Mrd\-Energy\-Loss)}\label{classMCParticle_a3db0d00c918e435c4cacc51e80fad7db}
+\hypertarget{classMCParticle_a3db0d00c918e435c4cacc51e80fad7db}{
+void {\bfseries SetMrdEnergyLoss} (double iMrdEnergyLoss)}
+\label{classMCParticle_a3db0d00c918e435c4cacc51e80fad7db}
 
 \item 
-\hypertarget{classMCParticle_abc9a006d2fb4c95ca7f08fa218867c21}{void {\bfseries Set\-Track\-Angle\-X} (double i\-Track\-Angle\-X)}\label{classMCParticle_abc9a006d2fb4c95ca7f08fa218867c21}
+\hypertarget{classMCParticle_abc9a006d2fb4c95ca7f08fa218867c21}{
+void {\bfseries SetTrackAngleX} (double iTrackAngleX)}
+\label{classMCParticle_abc9a006d2fb4c95ca7f08fa218867c21}
 
 \item 
-\hypertarget{classMCParticle_af39b59b0cde215f2a6fe2183d8c580b9}{void {\bfseries Set\-Track\-Angle\-Y} (double i\-Track\-Angle\-Y)}\label{classMCParticle_af39b59b0cde215f2a6fe2183d8c580b9}
+\hypertarget{classMCParticle_af39b59b0cde215f2a6fe2183d8c580b9}{
+void {\bfseries SetTrackAngleY} (double iTrackAngleY)}
+\label{classMCParticle_af39b59b0cde215f2a6fe2183d8c580b9}
 
 \item 
-\hypertarget{classMCParticle_af278f6d766d7a4cc4818ae0b3e64f73f}{void {\bfseries Set\-Track\-Angle\-From\-Beam} (double i\-Track\-Angle\-From\-Beam)}\label{classMCParticle_af278f6d766d7a4cc4818ae0b3e64f73f}
+\hypertarget{classMCParticle_af278f6d766d7a4cc4818ae0b3e64f73f}{
+void {\bfseries SetTrackAngleFromBeam} (double iTrackAngleFromBeam)}
+\label{classMCParticle_af278f6d766d7a4cc4818ae0b3e64f73f}
 
 \item 
-\hypertarget{classMCParticle_a1691c5d5d847e0a2419cdad793ff2ddb}{bool {\bfseries Get\-World\-Contained} (int startstop, \hyperlink{classPosition}{Position} a\-Vertex=\hyperlink{classPosition}{Position}(0, 0, 0))}\label{classMCParticle_a1691c5d5d847e0a2419cdad793ff2ddb}
+\hypertarget{classMCParticle_a1691c5d5d847e0a2419cdad793ff2ddb}{
+bool {\bfseries GetWorldContained} (int startstop, \hyperlink{classPosition}{Position} aVertex=\hyperlink{classPosition}{Position}(0, 0, 0))}
+\label{classMCParticle_a1691c5d5d847e0a2419cdad793ff2ddb}
 
 \item 
-\hypertarget{classMCParticle_a602114887228de2afbfcd0a31ddba66c}{bool {\bfseries Print} ()}\label{classMCParticle_a602114887228de2afbfcd0a31ddba66c}
+\hypertarget{classMCParticle_a602114887228de2afbfcd0a31ddba66c}{
+bool {\bfseries Print} ()}
+\label{classMCParticle_a602114887228de2afbfcd0a31ddba66c}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMCParticle_ac28878d706363533ac74f18faf272fb4}{{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}\label{classMCParticle_ac28878d706363533ac74f18faf272fb4}
+\hypertarget{classMCParticle_aa446838baf0a069b6ce6275d90f7ff26}{
+{\footnotesize template$<$class Archive $>$ }\\void {\bfseries serialize} (Archive \&ar, const unsigned int version)}
+\label{classMCParticle_aa446838baf0a069b6ce6275d90f7ff26}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMCParticle_a52ca5b486dd9ded3b7da2b77c2704f85}{int {\bfseries Particle\-I\-D}}\label{classMCParticle_a52ca5b486dd9ded3b7da2b77c2704f85}
+\hypertarget{classMCParticle_a52ca5b486dd9ded3b7da2b77c2704f85}{
+int {\bfseries ParticleID}}
+\label{classMCParticle_a52ca5b486dd9ded3b7da2b77c2704f85}
 
 \item 
-\hypertarget{classMCParticle_aa60d9c88e4c168be89a8075414078e82}{int {\bfseries Parent\-Pdg}}\label{classMCParticle_aa60d9c88e4c168be89a8075414078e82}
+\hypertarget{classMCParticle_aa60d9c88e4c168be89a8075414078e82}{
+int {\bfseries ParentPdg}}
+\label{classMCParticle_aa60d9c88e4c168be89a8075414078e82}
 
 \item 
-\hypertarget{classMCParticle_a74ff96a2e3f2c92d991a631dc320b343}{int {\bfseries Flag}}\label{classMCParticle_a74ff96a2e3f2c92d991a631dc320b343}
+\hypertarget{classMCParticle_a74ff96a2e3f2c92d991a631dc320b343}{
+int {\bfseries Flag}}
+\label{classMCParticle_a74ff96a2e3f2c92d991a631dc320b343}
 
 \item 
-\hypertarget{classMCParticle_a9328c826d1ee1d615e312d25235d04a0}{bool {\bfseries Starts\-In\-Fiducial\-Volume}}\label{classMCParticle_a9328c826d1ee1d615e312d25235d04a0}
+\hypertarget{classMCParticle_a9328c826d1ee1d615e312d25235d04a0}{
+bool {\bfseries StartsInFiducialVolume}}
+\label{classMCParticle_a9328c826d1ee1d615e312d25235d04a0}
 
 \item 
-\hypertarget{classMCParticle_aafb0416bfa7dfcaa14f4243d76930239}{double {\bfseries Track\-Angle\-X}}\label{classMCParticle_aafb0416bfa7dfcaa14f4243d76930239}
+\hypertarget{classMCParticle_aafb0416bfa7dfcaa14f4243d76930239}{
+double {\bfseries TrackAngleX}}
+\label{classMCParticle_aafb0416bfa7dfcaa14f4243d76930239}
 
 \item 
-\hypertarget{classMCParticle_aaf4a5cd3469f3d527c0ac8f4e3713c4b}{double {\bfseries Track\-Angle\-Y}}\label{classMCParticle_aaf4a5cd3469f3d527c0ac8f4e3713c4b}
+\hypertarget{classMCParticle_aaf4a5cd3469f3d527c0ac8f4e3713c4b}{
+double {\bfseries TrackAngleY}}
+\label{classMCParticle_aaf4a5cd3469f3d527c0ac8f4e3713c4b}
 
 \item 
-\hypertarget{classMCParticle_af4cdfb96769ec1a40e45c4f40b9eb520}{double {\bfseries Track\-Angle\-From\-Beam}}\label{classMCParticle_af4cdfb96769ec1a40e45c4f40b9eb520}
+\hypertarget{classMCParticle_af4cdfb96769ec1a40e45c4f40b9eb520}{
+double {\bfseries TrackAngleFromBeam}}
+\label{classMCParticle_af4cdfb96769ec1a40e45c4f40b9eb520}
 
 \item 
-\hypertarget{classMCParticle_afc38d81f454f0011d513db8dedc39d37}{bool {\bfseries Enters\-Tank}}\label{classMCParticle_afc38d81f454f0011d513db8dedc39d37}
+\hypertarget{classMCParticle_afc38d81f454f0011d513db8dedc39d37}{
+bool {\bfseries EntersTank}}
+\label{classMCParticle_afc38d81f454f0011d513db8dedc39d37}
 
 \item 
-\hypertarget{classMCParticle_ad1c64ca6b80955ea88cc1014360c53fa}{\hyperlink{classPosition}{Position} {\bfseries Tank\-Entry\-Point}}\label{classMCParticle_ad1c64ca6b80955ea88cc1014360c53fa}
+\hypertarget{classMCParticle_ad1c64ca6b80955ea88cc1014360c53fa}{
+\hyperlink{classPosition}{Position} {\bfseries TankEntryPoint}}
+\label{classMCParticle_ad1c64ca6b80955ea88cc1014360c53fa}
 
 \item 
-\hypertarget{classMCParticle_aa33826267b580a0e0083df6deaeb26ce}{bool {\bfseries Exits\-Tank}}\label{classMCParticle_aa33826267b580a0e0083df6deaeb26ce}
+\hypertarget{classMCParticle_aa33826267b580a0e0083df6deaeb26ce}{
+bool {\bfseries ExitsTank}}
+\label{classMCParticle_aa33826267b580a0e0083df6deaeb26ce}
 
 \item 
-\hypertarget{classMCParticle_a9d57e7bfd963f6ee5cdf4de16b15652f}{\hyperlink{classPosition}{Position} {\bfseries Tank\-Exit\-Point}}\label{classMCParticle_a9d57e7bfd963f6ee5cdf4de16b15652f}
+\hypertarget{classMCParticle_a9d57e7bfd963f6ee5cdf4de16b15652f}{
+\hyperlink{classPosition}{Position} {\bfseries TankExitPoint}}
+\label{classMCParticle_a9d57e7bfd963f6ee5cdf4de16b15652f}
 
 \item 
-\hypertarget{classMCParticle_a3a178c1eab5c3e1baca3d7416066cff5}{double {\bfseries Track\-Length\-In\-Tank}}\label{classMCParticle_a3a178c1eab5c3e1baca3d7416066cff5}
+\hypertarget{classMCParticle_a3a178c1eab5c3e1baca3d7416066cff5}{
+double {\bfseries TrackLengthInTank}}
+\label{classMCParticle_a3a178c1eab5c3e1baca3d7416066cff5}
 
 \item 
-\hypertarget{classMCParticle_aca01ce3d68f3eb4fa1aea0e052da2322}{double {\bfseries Enters\-Mrd}}\label{classMCParticle_aca01ce3d68f3eb4fa1aea0e052da2322}
+\hypertarget{classMCParticle_aca01ce3d68f3eb4fa1aea0e052da2322}{
+double {\bfseries EntersMrd}}
+\label{classMCParticle_aca01ce3d68f3eb4fa1aea0e052da2322}
 
 \item 
-\hypertarget{classMCParticle_a06f90a30827626e16ce036b725032424}{\hyperlink{classPosition}{Position} {\bfseries Mrd\-Entry\-Point}}\label{classMCParticle_a06f90a30827626e16ce036b725032424}
+\hypertarget{classMCParticle_a06f90a30827626e16ce036b725032424}{
+\hyperlink{classPosition}{Position} {\bfseries MrdEntryPoint}}
+\label{classMCParticle_a06f90a30827626e16ce036b725032424}
 
 \item 
-\hypertarget{classMCParticle_ac2690fd0362dcad58682cda54179035c}{bool {\bfseries Exits\-Mrd}}\label{classMCParticle_ac2690fd0362dcad58682cda54179035c}
+\hypertarget{classMCParticle_ac2690fd0362dcad58682cda54179035c}{
+bool {\bfseries ExitsMrd}}
+\label{classMCParticle_ac2690fd0362dcad58682cda54179035c}
 
 \item 
-\hypertarget{classMCParticle_a79fe95c4ab5a161f31f42809dda35d8e}{\hyperlink{classPosition}{Position} {\bfseries Mrd\-Exit\-Point}}\label{classMCParticle_a79fe95c4ab5a161f31f42809dda35d8e}
+\hypertarget{classMCParticle_a79fe95c4ab5a161f31f42809dda35d8e}{
+\hyperlink{classPosition}{Position} {\bfseries MrdExitPoint}}
+\label{classMCParticle_a79fe95c4ab5a161f31f42809dda35d8e}
 
 \item 
-\hypertarget{classMCParticle_ad82f8f04628606c79b789cdaad72c73d}{bool {\bfseries Penetrates\-Mrd}}\label{classMCParticle_ad82f8f04628606c79b789cdaad72c73d}
+\hypertarget{classMCParticle_ad82f8f04628606c79b789cdaad72c73d}{
+bool {\bfseries PenetratesMrd}}
+\label{classMCParticle_ad82f8f04628606c79b789cdaad72c73d}
 
 \item 
-\hypertarget{classMCParticle_affee0c98fd66da0ce6c704fee413b120}{double {\bfseries Track\-Length\-In\-Mrd}}\label{classMCParticle_affee0c98fd66da0ce6c704fee413b120}
+\hypertarget{classMCParticle_affee0c98fd66da0ce6c704fee413b120}{
+double {\bfseries TrackLengthInMrd}}
+\label{classMCParticle_affee0c98fd66da0ce6c704fee413b120}
 
 \item 
-\hypertarget{classMCParticle_aae98f51a041e389e7439cfe2229e1936}{double {\bfseries Mrd\-Penetration}}\label{classMCParticle_aae98f51a041e389e7439cfe2229e1936}
+\hypertarget{classMCParticle_aae98f51a041e389e7439cfe2229e1936}{
+double {\bfseries MrdPenetration}}
+\label{classMCParticle_aae98f51a041e389e7439cfe2229e1936}
 
 \item 
-\hypertarget{classMCParticle_ae3e7da6821154bc8a5817e87ec10b6ea}{int {\bfseries Mrd\-Layers\-Penetrated}}\label{classMCParticle_ae3e7da6821154bc8a5817e87ec10b6ea}
+\hypertarget{classMCParticle_ae3e7da6821154bc8a5817e87ec10b6ea}{
+int {\bfseries MrdLayersPenetrated}}
+\label{classMCParticle_ae3e7da6821154bc8a5817e87ec10b6ea}
 
 \item 
-\hypertarget{classMCParticle_a4c8a5b9e7d2f4268fa4a60e5d80dcc22}{double {\bfseries Mrd\-Energy\-Loss}}\label{classMCParticle_a4c8a5b9e7d2f4268fa4a60e5d80dcc22}
+\hypertarget{classMCParticle_a4c8a5b9e7d2f4268fa4a60e5d80dcc22}{
+double {\bfseries MrdEnergyLoss}}
+\label{classMCParticle_a4c8a5b9e7d2f4268fa4a60e5d80dcc22}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classMCParticle_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classMCParticle_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classMCParticle_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classMCParticle_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
-\subsection*{Additional Inherited Members}
 
 
-The documentation for this class was generated from the following file\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following file:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Particle.\-h\end{DoxyCompactItemize}
+DataModel/Particle.h\end{DoxyCompactItemize}
