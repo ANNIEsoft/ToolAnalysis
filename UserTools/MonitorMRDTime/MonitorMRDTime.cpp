@@ -31,6 +31,7 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Mode",mode);
   m_variables.Get("PlotConfiguration",plot_configuration);
   m_variables.Get("UpdateFrequency",update_frequency);
+  m_variables.Get("ForceUpdate",force_update);
   m_variables.Get("DrawMarker",draw_marker);
   m_variables.Get("DrawSingle",draw_single);
   m_variables.Get("verbose",verbosity);
@@ -50,6 +51,10 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   //Don't enable the drawing of single channel histograms/graphs by default --> too many plots!
   if (draw_single != 0 && draw_single !=1) {
     draw_single = 0;
+  }
+  //default should be no forced update of the monitoring plots every execute step
+  if (force_update !=0 && force_update !=1) {
+    force_update = 0;
   }
 
   //-------------------------------------------------------
@@ -203,9 +208,6 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   //-------------------------------------------------------
 
   ReadInConfiguration();
-  for (int i_long =0; i_long < config_endtime_long.size(); i_long++){
-    std::cout << config_endtime_long.at(i_long) << std::endl;
-  }
 
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
@@ -264,17 +266,21 @@ bool MonitorMRDTime::Execute(){
     //Plot plots only associated to current file
     DrawLastFilePlots();
 
-    //Update the other (customly defined) monitoring plots
-    DrawHitMap(t_file_end,24.,"24h");
-    DrawTimeEvolution(t_file_end,24.,"24h");
-    DrawTriggerEvolution(t_file_end,24.,"24h");
-    //UpdateMonitorPlots(current_stamp,24.);
+    //Draw customly defined plots
+    UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
    }else {
 
    	if (verbosity > 1) std::cout <<"MRDMonitorTime: State not recognized: "<<State<<std::endl;
 
    }
+  //-------------------------------------------------------------
+  //---------------Draw customly defined plots-------------------
+  //-------------------------------------------------------------
+
+   // if force_update is specified, the plots will be updated no matter whether there has been a new file or not
+
+   if (force_update) UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
   //-------------------------------------------------------------
   //---Has enough time passed for updating File history plot?----
@@ -282,14 +288,13 @@ bool MonitorMRDTime::Execute(){
 
   if(duration>=period_update){
     last=current;
-    DrawFileHistory(t_file_end,24.,"day");
-    //DrawFileHistory(current_stamp,24.,"day");     //show 24h history of MRD files
+    DrawFileHistory(current_stamp,24.,"day");     //show 24h history of MRD files
 	}
 
   
   //gObjectTable only for debugging memory leaks, otherwise comment out
-  std::cout <<"List of Objects (after execute step): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"List of Objects (after execute step): "<<std::endl;
+  //gObjectTable->Print();
 
   return true;
 
@@ -321,8 +326,7 @@ bool MonitorMRDTime::Finalise(){
       delete vector_box_inactive_hitmap[i_slot].at(i_box);
     }
   }
-  delete leg_triggertype;
-  delete leg_weirdevents;
+
   delete leg_trigger;
   delete leg_noloopback;
   delete leg_eventtypes;
@@ -332,6 +336,7 @@ bool MonitorMRDTime::Finalise(){
   //delete pie charts
   delete pie_triggertype;
   delete pie_weirdevents;
+
 
   //histograms
   delete hist_hitmap_cr1;
@@ -397,7 +402,6 @@ void MonitorMRDTime::ReadInConfiguration(){
   std::string line;
   if (file.is_open()){
     while(std::getline(file,line)){
-      std::cout << line << std::endl;
       if (line.find("#") != std::string::npos) continue;
       std::vector<std::string> values;
       std::stringstream ss;
@@ -406,10 +410,6 @@ void MonitorMRDTime::ReadInConfiguration(){
         while (std::getline(ss, item, '\t')) {
             values.push_back(item);
         }
-      for (int i_value = 0; i_value < values.size(); i_value++){
-        std::cout << values.at(i_value)<<", ";
-      }
-      std::cout << std::endl;
       if (values.size() < 4 ) {
         if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): ReadInConfiguration: Need at least 4 arguments in one line: TimeFrame - TimeEnd - FileLabel - PlotType1. Please look over the configuration file and adjust it accordingly."<<std::endl;
         continue;
@@ -427,12 +427,14 @@ void MonitorMRDTime::ReadInConfiguration(){
   } else {
     if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): ReadInConfiguration: Could not open file "<<plot_configuration<<"! Check if path is valid..."<<std::endl;
   }
+  file.close();
+
 
   if (verbosity > 2){
     std::cout <<"---------------------------------------------------------------------"<<std::endl;
     std::cout <<"MonitorMRDTime: ReadInConfiguration: Read in the following data into configuration variables: "<<std::endl;
     for (int i_t=0; i_t < config_timeframes.size(); i_t++){
-      std::cout <<config_timeframes.at(i_t)<<", "<<config_endtime.at(i_t)<<", "<<config_label.at(i_t);
+      std::cout <<config_timeframes.at(i_t)<<", "<<config_endtime.at(i_t)<<", "<<config_label.at(i_t)<<", ";
       for (int i_plot = 0; i_plot < config_plottypes.at(i_t).size(); i_plot++){
         std::cout <<config_plottypes.at(i_t).at(i_plot)<<", ";
       }
@@ -444,16 +446,18 @@ void MonitorMRDTime::ReadInConfiguration(){
   if (verbosity > 2) std::cout <<"MonitorMRDTime: ReadInConfiguration: Parsing dates: "<<std::endl;
   for (int i_date = 0; i_date < config_endtime.size(); i_date++){
     if (config_endtime.at(i_date) == "TEND_LASTFILE") {
-      std::cout <<"TEND_LASTFILE: Starting from end of last read-in file"<<std::endl; 
-      config_endtime_long.push_back(t_file_end);
+      if (verbosity > 2) std::cout <<"TEND_LASTFILE: Starting from end of last read-in file"<<std::endl;
+      ULong64_t zero = 0; 
+      config_endtime_long.push_back(zero);
     } else if (config_endtime.at(i_date).size()==15){
         boost::posix_time::ptime spec_endtime(boost::posix_time::from_iso_string(config_endtime.at(i_date)));
         boost::posix_time::time_duration spec_endtime_duration = boost::posix_time::time_duration(spec_endtime - *Epoch);
         ULong64_t spec_endtime_long = spec_endtime_duration.total_milliseconds();
         config_endtime_long.push_back(spec_endtime_long);
     } else {
-      std::cout <<"Specified end date "<<config_endtime.at(i_date)<<" does not have the desired format YYYYMMDDTHHMMSS. Please change the format in the config file in order to use this tool. Starting from end of last file"<<std::endl;
-      config_endtime_long.push_back(t_file_end);
+      if (verbosity > 2) std::cout <<"Specified end date "<<config_endtime.at(i_date)<<" does not have the desired format YYYYMMDDTHHMMSS. Please change the format in the config file in order to use this tool. Starting from end of last file"<<std::endl;
+      ULong64_t zero = 0;
+      config_endtime_long.push_back(zero);
     }
   }
 
@@ -507,7 +511,7 @@ void MonitorMRDTime::ReadInData(){
     else if (i_event == total_number_entries-1) t_file_end = MRDout.TimeStamp;
 
     //printing intormation about the event
-    if (verbosity > 2){
+    if (verbosity > 3){
       std::cout <<"------------------------------------------------------------------------------------------------------------------------"<<std::endl;
       std::cout <<"Entry: "<<i_event<<", TimeStamp: "<<timestamp<<std::endl;
       std::cout <<"Slot size: "<<MRDout.Slot.size()<<", Crate size: "<<MRDout.Crate.size()<<", Channel size: "<<MRDout.Channel.size()<<std::endl;
@@ -523,7 +527,7 @@ void MonitorMRDTime::ReadInData(){
     for (int i_entry = 0; i_entry < MRDout.Slot.size(); i_entry++){
 
       //print out information if needed for debugging hardware
-      if (verbosity > 2) std::cout <<"MonitorMRDTime: Channel entry: Crate "<<MRDout.Crate.at(i_entry)<<", Slot "<<MRDout.Slot.at(i_entry)<<", Channel "<<MRDout.Channel.at(i_entry)<<", TDC value: "<<MRDout.Value.at(i_entry)<<std::endl;
+      if (verbosity > 3) std::cout <<"MonitorMRDTime: Channel entry: Crate "<<MRDout.Crate.at(i_entry)<<", Slot "<<MRDout.Slot.at(i_entry)<<", Channel "<<MRDout.Channel.at(i_entry)<<", TDC value: "<<MRDout.Value.at(i_entry)<<std::endl;
 
       int active_slot_nr;
       std::vector<int>::iterator it = std::find(nr_slot.begin(), nr_slot.end(), (MRDout.Slot.at(i_entry))+(MRDout.Crate.at(i_entry)-min_crate)*100);
@@ -620,7 +624,7 @@ void MonitorMRDTime::WriteToFile(){
     t->SetBranchAddress("nevents",&nevents);
   } else {
     t = new TTree("mrdmonitor_tree","MRD Monitoring tree");
-    std::cout <<"Tree is created from scratch"<<std::endl;
+    if (verbosity > 2) std::cout <<"MonitorMRDTime: WriteToFile: Tree is created from scratch"<<std::endl;
     t->Branch("t_start",&t_start);
     t->Branch("t_end",&t_end);
     t->Branch("crate",&crate);
@@ -644,12 +648,19 @@ void MonitorMRDTime::WriteToFile(){
   for (int i_entry = 0; i_entry < n_entries; i_entry++){
     t->GetEntry(i_entry);
     if (t_start == t_file_start) {
-      if (verbosity > 0) std::cout <<"WARNING (MonitorMRDTime): Wanted to write data from file that is already written to DB. Omit entries"<<std::endl;
+      if (verbosity > 0) std::cout <<"WARNING (MonitorMRDTime): WriteToFile: Wanted to write data from file that is already written to DB. Omit entries"<<std::endl;
       omit_entries = true;
     }
   }
   //if data is already written to DB/File, do not write it again
-  if (omit_entries) return; 
+  if (omit_entries) {
+
+    //don't write file again, but still delete TFile and TTree object!!!
+    f->Close();
+    delete f;
+    return;
+
+  } 
 
   crate->clear();
   slot->clear();
@@ -670,8 +681,8 @@ void MonitorMRDTime::WriteToFile(){
   struct tm starttime_tm = boost::posix_time::to_tm(starttime);
   boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(t_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_end/MSEC_to_SEC/1000.)%60,t_end%1000);
   struct tm endtime_tm = boost::posix_time::to_tm(endtime);
-  if (verbosity > 2) std::cout <<"Writing data to file: "<<starttime_tm.tm_year+1900<<"/"<<starttime_tm.tm_mon+1<<"/"<<starttime_tm.tm_mday<<"-"<<starttime_tm.tm_hour<<":"<<starttime_tm.tm_min<<":"<<starttime_tm.tm_sec;
-  if (verbosity > 1) std::cout <<"..."<<endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec<<std::endl;
+  if (verbosity > 2) std::cout <<"MonitorMRDTime: WriteToFile: Writing data to file: "<<starttime_tm.tm_year+1900<<"/"<<starttime_tm.tm_mon+1<<"/"<<starttime_tm.tm_mday<<"-"<<starttime_tm.tm_hour<<":"<<starttime_tm.tm_min<<":"<<starttime_tm.tm_sec;
+  if (verbosity > 2) std::cout <<"..."<<endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec<<std::endl;
   nevents=0;
   long n_beam=0;
   long n_cosmic=0;
@@ -699,7 +710,6 @@ void MonitorMRDTime::WriteToFile(){
 
     for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
       if (crate_temp == loopback_crate.at(i_trigger) && slot_temp == loopback_slot.at(i_trigger) && channel_temp == loopback_channel.at(i_trigger)){
-        std::cout <<"Loopback name is "<<loopback_name.at(i_trigger)<<std::endl;
         if (loopback_name.at(i_trigger) == "Cosmic") n_cosmic+=tdc_file.at(i_channel).size();
         else if (loopback_name.at(i_trigger) == "Beam") n_beam+=tdc_file.at(i_channel).size();
       }
@@ -716,7 +726,6 @@ void MonitorMRDTime::WriteToFile(){
     channelcount->push_back(tdc_file.at(i_channel).size());
     nevents+=tdc_file.at(i_channel).size();
   }
-  std::cout <<"nevents: "<<nevents;
 
   if (fabs(t_frame) > 0.1) {
     rate_beam = n_beam/(t_frame/MSEC_to_SEC);
@@ -725,7 +734,6 @@ void MonitorMRDTime::WriteToFile(){
     rate_beam = 0.;
     rate_cosmic = 0.;
   }
-  std::cout <<", rate_beam: "<<rate_beam<<", rate cosmic: "<<rate_cosmic<<std::endl;
 
   t->Fill();
   t->Write("",TObject::kOverwrite);           //prevent ROOT from making endless keys for the same tree when updating the tree
@@ -774,7 +782,7 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
   struct tm endtime_tm = boost::posix_time::to_tm(endtime);
 
   if (verbosity > 2) {
-    std::cout <<"Reading in data for time frame "<<starttime_tm.tm_year+1900<<"/"<<starttime_tm.tm_mon+1<<"/"<<starttime_tm.tm_mday<<"-"<<starttime_tm.tm_hour<<":"<<starttime_tm.tm_min<<":"<<starttime_tm.tm_sec;
+    std::cout <<"MonitorMRDTime: ReadFromFile: Reading in data for time frame "<<starttime_tm.tm_year+1900<<"/"<<starttime_tm.tm_mon+1<<"/"<<starttime_tm.tm_mday<<"-"<<starttime_tm.tm_hour<<":"<<starttime_tm.tm_min<<":"<<starttime_tm.tm_sec;
     std::cout <<" ... "<<endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec<<std::endl;
   }
 
@@ -863,11 +871,11 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
             boost::posix_time::ptime boost_tend = *Epoch+boost::posix_time::time_duration(int(t_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_end/MSEC_to_SEC/1000.)%60,t_end%1000);
             struct tm label_timestamp = boost::posix_time::to_tm(boost_tend);
             
-            TDatime datime_timestamp2(1900+label_timestamp.tm_year,label_timestamp.tm_mon+1,label_timestamp.tm_mday,label_timestamp.tm_hour,label_timestamp.tm_min,label_timestamp.tm_sec);
-            TDatime datime_timestamp(t_end/MSEC_to_SEC);
+            TDatime datime_timestamp(1900+label_timestamp.tm_year,label_timestamp.tm_mon+1,label_timestamp.tm_mday,label_timestamp.tm_hour,label_timestamp.tm_min,label_timestamp.tm_sec);
+            //TDatime datime_timestamp2(t_end/MSEC_to_SEC);
             //std::cout <<"Writing date "<<label_timestamp.tm_year<<"/"<<label_timestamp.tm_mon+1<<"/"<<label_timestamp.tm_mday<<"-"<<label_timestamp.tm_hour<<":"<<label_timestamp.tm_min<<std::endl;
             //std::cout <<"Converted datime is "<<datime_timestamp.GetHour()<<":"<<datime_timestamp.GetMinute()<<", converted datime2 is "<<datime_timestamp2.GetHour()<<":"<<datime_timestamp2.GetMinute()<<std::endl;
-            labels_timeaxis.push_back(datime_timestamp2);
+            labels_timeaxis.push_back(datime_timestamp);
           }
 
         }
@@ -888,7 +896,7 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
       delete f;
 
     } else {
-      std::cout <<"MonitorMRDTime: File "<<root_filename_i.str()<<" does not exist. Omit file."<<std::endl;
+      if (verbosity > 0) std::cout <<"MonitorMRDTime: ReadFromFile: File "<<root_filename_i.str()<<" does not exist. Omit file."<<std::endl;
     }
 
   }
@@ -918,7 +926,9 @@ std::string MonitorMRDTime::convertTimeStamp_to_Date(ULong64_t timestamp){
 bool MonitorMRDTime::does_file_exist(std::string filename){
 
   std::ifstream infile(filename.c_str());
-  return infile.good();
+  bool file_good = infile.good();
+  infile.close();
+  return file_good;
 
 }
 
@@ -1461,7 +1471,7 @@ void MonitorMRDTime::InitializeVectors(){
 
 void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending){
 
-  std::cout <<"Drawing File History plot"<<std::endl;
+  if (verbosity > 2) std::cout <<"MonitorMRDTime: Drawing File History plot"<<std::endl;
 
   //-------------------------------------------------------
   //------------------DrawFileHistory----------------------
@@ -1530,6 +1540,39 @@ void MonitorMRDTime::DrawLastFilePlots(){
 
   //Draw pie charts showing the event/trigger type distribution
   DrawPieChart(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
+
+}
+
+void MonitorMRDTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes){
+
+  //-------------------------------------------------------
+  //--------------UpdateMonitorPlots-----------------------
+  //-------------------------------------------------------
+
+  //Draw the monitoring plots according to the specifications in the configfiles
+
+  for (int i_time = 0; i_time < timeFrames.size(); i_time++){
+
+    ULong64_t zero = 0;
+    if (endTimes.at(i_time) == zero) endTimes.at(i_time) = t_file_end;        //set 0 for t_file_end since we did not know what that was at the beginning of initialise
+    std::cout << (endTimes.at(i_time) == zero) << std::endl;
+    std::cout << (endTimes.at(i_time) == 0) << std::endl;
+    std::cout <<t_file_end<<std::endl;
+
+    for (int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
+
+      if (plotTypes.at(i_time).at(i_plot) == "Hitmap") DrawHitMap(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "RateElectronics") DrawRatePlotElectronics(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "RatePhysical") DrawRatePlotPhysical(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "TimeEvolution") DrawTimeEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "PieChartTrigger") DrawPieChart(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "TriggerEvolution") DrawTriggerEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") DrawFileHistory(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else {
+        if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): UpdateMonitorPlots: Specified plot type -"<<plotTypes.at(i_time).at(i_plot)<<"- does not exist! Omit entry."<<std::endl;
+      }
+    }
+  }
 
 }
 
@@ -2101,78 +2144,15 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
 
   for (int i_file=0; i_file<tdc_plot.size(); i_file++){
 
-    //std::cout <<"i_file: "<<i_file<<std::endl;
-
     //Updating channel graphs
 
-    //std::cout <<"Updating channel graphs"<<std::endl;
-
     if (verbosity > 2) std::cout <<"MonitorMRDTime: Stored data (file #"<<i_file+1<<"): "<<std::endl;
-    //std::cout <<"DrawTimeEvolution, file # "<<i_file+1<<": labels_timeaxis.size() = "<<labels_timeaxis.size()<<std::endl;
     for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
-      //std::cout <<"labels_timeaxis[i_file]: "<<std::endl;
-      //std::cout <<labels_timeaxis[i_file].Convert()<<std::endl;
-      //std::cout <<"tdc_plot.at(i_file).at(i_channel):"<<std::endl;
-      //std::cout <<tdc_plot.at(i_file).at(i_channel)<<", "<<rms_plot.at(i_file).at(i_channel)<<", "<<rate_plot.at(i_file).at(i_channel)<<std::endl;
-      //if (i_channel == 0) std::cout << "TimeStamp: "<<labels_timeaxis[i_file].GetHour()<<":"<<labels_timeaxis[i_file].GetMinute()<<std::endl;
       gr_tdc.at(i_channel)->SetPoint(i_file,labels_timeaxis[i_file].Convert(),tdc_plot.at(i_file).at(i_channel));
       gr_rms.at(i_channel)->SetPoint(i_file,labels_timeaxis[i_file].Convert(),rms_plot.at(i_file).at(i_channel));
       gr_rate.at(i_channel)->SetPoint(i_file,labels_timeaxis[i_file].Convert(),rate_plot.at(i_file).at(i_channel));
     }
 
-    // Updating slot graphs
-/*
-    for (int i_slot = 0; i_slot<num_active_slots; i_slot++){
-
-      double slot_tdc = 0.;
-      double slot_rms = 0.;
-      double slot_rate = 0.;
-
-      for (int i_channel = 0; i_channel < num_channels; i_channel++){
-        slot_tdc+=tdc_plot.at(i_file).at(i_slot*num_channels+i_channel);
-        slot_rms+=rms_plot.at(i_file).at(i_slot*num_channels+i_channel);
-        slot_rate+=rate_plot.at(i_file).at(i_slot*num_channels+i_channel);
-      }
-
-      slot_tdc/=num_channels;
-      slot_rms/=num_channels;
-      slot_rate/=num_channels;
-
-      gr_slot_tdc.at(i_slot)->SetPoint(i_file,timestamp_file[i_file].Convert(),slot_tdc);
-      gr_slot_rms.at(i_slot)->SetPoint(i_file,timestamp_file[i_file].Convert(),slot_rms);
-      gr_slot_rate.at(i_slot)->SetPoint(i_file,timestamp_file[i_file].Convert(),slot_rate);
-    }
-
-    // Updating crate graphs
-
-    for (int i_crate = 0; i_crate<num_crates; i_crate++){
-        
-      double crate_tdc = 0.;
-      double crate_rms = 0.;
-      double crate_rate = 0.;
-
-      int slots_in_crate = (i_crate == 0)? num_active_slots_cr1 : num_active_slots_cr2;
-      int offset = (i_crate == 0)? 0 : num_active_slots_cr1;
-
-      for (int i_slot = 0; i_slot < slots_in_crate; i_slot++){
-        for (int i_channel = 0; i_channel < num_channels; i_channel++){
-
-          crate_tdc+=tdc_plot.at(i_file).at(offset*num_channels+i_slot*num_channels+i_channel);
-          crate_rms+=rms_plot.at(i_file).at(offset*num_channels+i_slot*num_channels+i_channel);
-          crate_rate+=rate_plot.at(i_file).at(offset*num_channels+i_slot*num_channels+i_channel);
-
-        }
-      }
-      
-      crate_tdc/=(num_channels*slots_in_crate);
-      crate_rms/=(num_channels*slots_in_crate);
-      crate_rate/=(num_channels*slots_in_crate);
-
-      gr_crate_tdc.at(i_slot)->SetPoint(i_file,timestamp_file[i_file].Convert(),crate_tdc);
-      gr_crate_rms.at(i_slot)->SetPoint(i_file,timestamp_file[i_file].Convert(),crate_rms);
-      gr_crate_rate.at(i_slot)->SetPoint(i_file,timestamp_file[i_file].Convert(),crate_rate);
-    }
-*/
   }
 
   // Drawing time evolution plots
@@ -2187,15 +2167,11 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
   int CH_per_CANVAS = 16;   //channels per canvas
   int CANVAS_NR=0;
 
-  //std::cout <<"Plotting channel graphs"<<std::endl;
-
   for (int i_channel = 0; i_channel<num_active_slots*num_channels; i_channel++){
 
     unsigned int crate = TotalChannel_to_Crate[i_channel];
     unsigned int slot = TotalChannel_to_Slot[i_channel];
     unsigned int channel = TotalChannel_to_Channel[i_channel];
-
-    //std::cout << "i_channel "<<i_channel<<", crate "<<crate<<", slot "<<slot<<", channel "<<channel<<std::endl;
 
     std::stringstream ss_ch_tdc, ss_ch_rms, ss_ch_rate, ss_leg_time;
   
@@ -2473,13 +2449,10 @@ void MonitorMRDTime::DrawPieChart(ULong64_t timestamp_end, double time_frame, st
     nevents_beam += beamrate_plot.at(i_file)*current_timeframe;
     nevents_noloopback += noloopbackrate_plot.at(i_file)*current_timeframe;
     nevents_normal += normalhitrate_plot.at(i_file)*current_timeframe;
-    nevents_zerohits = zerohitsrate_plot.at(i_file)*current_timeframe;
-    nevents_doublehits = doublehitrate_plot.at(i_file)*current_timeframe;
+    nevents_zerohits += zerohitsrate_plot.at(i_file)*current_timeframe;
+    nevents_doublehits += doublehitrate_plot.at(i_file)*current_timeframe;
 
   }
-
-  //std::cout <<"MonitorMRDTime::DrawPieChart. Cosmic Events: "<<nevents_cosmic<<", beam events: "<<nevents_beam<<", no loopback events: "<<nevents_noloopback<<std::endl;
-  //std::cout <<"Normal events: "<<nevents_normal<<", zerohits events: "<<nevents_zerohits<<", doublehits events: "<<nevents_doublehits<<std::endl;
 
   canvas_pie->cd();
   pie_triggertype->GetSlice(0)->SetValue(nevents_beam);

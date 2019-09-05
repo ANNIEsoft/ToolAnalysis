@@ -57,7 +57,7 @@ class MonitorMRDTime: public Tool {
   void ReadFromFile(ULong64_t timestamp_end, double time_frame);
   
   void DrawLastFilePlots();
-  void UpdateMonitorPlots(std::vector<std::pair<std::string,double>> configuration_vector);
+  void UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
   void DrawScatterPlots();
   void DrawScatterPlotsTrigger();
   void DrawTDCHistogram();
@@ -96,6 +96,7 @@ class MonitorMRDTime: public Tool {
   std::string StartTime;
   std::string mode;
   double update_frequency;
+  bool force_update;
   bool draw_marker;
   bool draw_single;
   std::string plot_configuration;

@@ -192,7 +192,6 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
       }
     }
   }
->>>>>>> efd27740c32507d51c6731f618af146d81b6d945
 
   //----------------------------------------------------------------------
   //-----------read in PMT x/y/z positions into vectors-------------------
