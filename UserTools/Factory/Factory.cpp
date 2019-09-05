@@ -90,6 +90,7 @@ if (tool=="GracefulStop") ret=new GracefulStop;
 if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
 if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
+if (tool=="CNNImage") ret=new CNNImage;
 if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
