@@ -38,6 +38,8 @@
 #include "TPieSlice.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/filesystem.hpp>
 
 
 class MonitorMRDTime: public Tool {
@@ -78,6 +80,7 @@ class MonitorMRDTime: public Tool {
   //define MRD stores that contain the data
   BoostStore* MRDdata;
   MRDOut MRDout;
+  bool bool_mrddata;
 
   //MRD store includes the following variables
   unsigned int OutN, Trigger;
@@ -95,6 +98,8 @@ class MonitorMRDTime: public Tool {
   std::string loopback_channels;
   std::string StartTime;
   std::string mode;
+  std::string path_monitoring;
+  std::string img_extension;
   double update_frequency;
   bool force_update;
   bool draw_marker;
