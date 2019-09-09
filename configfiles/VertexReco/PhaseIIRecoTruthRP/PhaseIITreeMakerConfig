@@ -1,0 +1,11 @@
+verbose 3
+
+fillCleanEventsOnly 1
+muonRecoDebug_fill 0
+muonMCTruth_fill 1
+muonTruthRecoDiff_fill 1
+pionKaonCount_fill 1
+
+OutputFile outputrp.root
+NumEventsWritten 100
+
