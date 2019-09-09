@@ -35,6 +35,9 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("isMC",fIsMC);
   m_variables.Get("ParametricModel", fParametricModel);
   m_variables.Get("PhotoDetectorConfiguration", fPhotodetectorConfiguration);
+  m_variables.Get("xshift", xshift);
+  m_variables.Get("yshift", yshift);
+  m_variables.Get("zshift", zshift);
   m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
 
 
@@ -173,13 +176,14 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
 			// convert the unit from m to cm
 			pos_sim = det->GetDetectorPosition();
 			pos_sim.UnitToCentimeter();
-			pos_reco.SetX(pos_sim.X());
-			pos_reco.SetY(pos_sim.Y()+14.46469);
-			pos_reco.SetZ(pos_sim.Z()-168.1);
+			pos_reco.SetX(pos_sim.X()+xshift);
+			pos_reco.SetY(pos_sim.Y()+yshift);
+			pos_reco.SetZ(pos_sim.Z()+zshift);
 	
 			if(det->GetDetectorElement()=="Tank"){
 				std::vector<MCHit>& hits = apair.second;
         if(fParametricModel){
+          if(verbosity>2) std::cout << "Using parametric model to build PMT hits" << std::endl;
           //We'll get all hit info and then define a time/charge for each digit
           std::vector<double> hitTimes;
           std::vector<double> hitCharges;
@@ -207,9 +211,12 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
           for(std::vector<double>::iterator it = hitCharges.begin(); it != hitCharges.end(); ++it){
             calQ += *it;
           }
-          if(verbosity>3){
-            std::cout << "PARAMETRIC MODEL TIME AND CHARGE FOR THIS PMT: " << calT <<
-                "," << calQ << std::endl;
+          if (verbosity>4) { 
+            std::cout << "PMT position (X<Y<Z): " << 
+                    to_string(pos_reco.X()) << "," << to_string(pos_reco.Y()) <<
+                    "," << to_string(pos_reco.Z()) << std::endl;
+            std::cout << "PMT Charge,Time: " << to_string(calQ) << "," <<
+                    to_string(calT) << std::endl;
           }
           if(calQ>10) {
 				    digitType = RecoDigit::PMT8inch;
@@ -222,6 +229,13 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
 				  	// get calibrated PMT time (Use the MC time for now)
 				  	calT = ahit.GetTime()*1.0; 
             calQ = ahit.GetCharge();
+            if (verbosity>4) { 
+              std::cout << "PMT position (X<Y<Z): " << 
+                      to_string(pos_reco.X()) << "," << to_string(pos_reco.Y()) <<
+                      "," << to_string(pos_reco.Z()) << std::endl;
+              std::cout << "PMT Charge,Time: " << to_string(calQ) << "," <<
+                      to_string(calT) << std::endl;
+            }
 				  	digitType = RecoDigit::PMT8inch;
 				  	RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
 				    //recoDigit.Print();
@@ -278,12 +292,19 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
 					// and time psecs
 					// convert the WCSim coordinates to the ANNIEreco coordinates
 					// convert the unit from m to cm
-					pos_reco.SetX(ahit.GetPosition().at(0)*100.); //cm
-					pos_reco.SetY(ahit.GetPosition().at(1)*100.+14.4649); //cm
-					pos_reco.SetZ(ahit.GetPosition().at(2)*100.-168.1); //cm
+					pos_reco.SetX(ahit.GetPosition().at(0)*100.+xshift); //cm
+					pos_reco.SetY(ahit.GetPosition().at(1)*100.+yshift); //cm
+					pos_reco.SetZ(ahit.GetPosition().at(2)*100.+zshift); //cm
 					calT = ahit.GetTime();  // 
 					calT = frand.Gaus(calT, 0.1); // time is smeared with 100 ps time resolution. Harded-coded for now.
 					calQ = ahit.GetCharge();
+          if (verbosity>4) { 
+            std::cout << "LAPPD position (X<Y<Z): " << 
+                    to_string(pos_reco.X()) << "," << to_string(pos_reco.Y()) <<
+                    "," << to_string(pos_reco.Z()) << std::endl;
+            std::cout << "LAPPD Charge,Time: " << to_string(calQ) << "," <<
+                    to_string(calT) << std::endl;
+          }
 					// I found the charge is 0 for all the hits. In order to test the code, 
 					// here I just set the charge to 1. We should come back to this later. (Jingbo Wang)
 					calQ = 1.;
@@ -291,7 +312,7 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType,LAPPDId);
 					//if(v_message<verbosity) recoDigit.Print();
 				  //make some cuts here. It will be moved to the Hitcleaning tool
-				  //if(calT>5) continue; // cut off delayed hits
+				  if(calT>40 || calT<-10) continue; // cut off delayed hits
 				  fDigitList->push_back(recoDigit);
 				}
 			}
@@ -302,7 +323,6 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
 	}
 	return true;
 }
-
 
 void DigitBuilder::PushRecoDigits(bool savetodisk) {
 	Log("DigitBuilder Tool: Push reconstructed digits to the RecoEvent store",v_message,verbosity);

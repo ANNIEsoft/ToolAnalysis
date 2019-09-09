@@ -25,9 +25,11 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
+RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
+RATEventInclude= -I ToolDAQ/RATEventLib/include
 
-MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude)
-MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib)
+MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
+MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib)
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse

@@ -1,0 +1,12 @@
+#LoadRATPAC Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbosity 4
+InputFile /AnnieShare/p2r_data/Muons_Gun2_30deg_400to1000MeV_config12LongLAPPDs_100kevts_10jobs_18-06-2019.10.root
+LappdNumStrips 60        ## num channels to construct from each LAPPD
+LappdStripLength 100     ## relative x position of each LAPPD strip, for dual-sided readout [mm]
+LappdStripSeparation 10  ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
+#Shifts loaded into the Geometry to move to tank coordinates
+xtankcenter 0.0
+ytankcenter 133.3
+ztankcenter -1724.0
