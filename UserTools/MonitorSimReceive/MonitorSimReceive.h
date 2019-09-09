@@ -6,6 +6,7 @@
 #include <stdlib.h>     
 #include <time.h>   
 
+#include "MRDOut.h"
 #include "Tool.h"
 
 class MonitorSimReceive: public Tool {
@@ -26,8 +27,8 @@ class MonitorSimReceive: public Tool {
   std::string mode;
   int verbosity;
   
-  BoostStore* MRDData;
-  BoostStore* MRDData2;
+  BoostStore* MRDData = nullptr;
+  BoostStore* MRDData2 = nullptr;
 
   std::vector<std::string> vec_filename;
   int i_loop;

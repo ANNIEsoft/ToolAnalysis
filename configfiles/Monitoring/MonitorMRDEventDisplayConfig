@@ -1,8 +1,8 @@
 # MonitorMRDEventDisplay config file
 
 verbose 0
-OutputPath /ANNIECode/MRDMonitorOutputTest/
-#OutputPath fromStore
+#OutputPath /ANNIECode/MRDMonitorOutputTest/
+OutputPath fromStore
 CustomRange 1		#TDC range with user-defined values?
 RangeMin 1		#minimum TDC value
 RangeMax 100		#maximum TDC value

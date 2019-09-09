@@ -64,10 +64,10 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
     img_extension = "jpg";
   }
   //check if the path for the monitoring files exists
-  if (!boost::filesystem::exists(path_monitoring)){
+  /*if (!boost::filesystem::exists(boost::filesystem::path(path_monitoring.c_str()))){
     if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): Specified path for the monitoring files -"<<path_monitoring<<"- does not seem to exist. Using default directory -/monitoringfiles/-"<<std::endl;
     path_monitoring = "/monitoringfiles/";
-  }
+  }*/
   std::cout <<"PathMonitoring: "<<path_monitoring<<std::endl;
 
   //-------------------------------------------------------
@@ -305,7 +305,7 @@ bool MonitorMRDTime::Execute(){
 
   if(duration>=period_update){
     last=current;
-    DrawFileHistory(current_stamp,24.,"day");     //show 24h history of MRD files
+    DrawFileHistory(current_stamp,24.,"current");     //show 24h history of MRD files
 	}
 
   
@@ -879,7 +879,6 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
 
         for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
 
-
           t->GetEntry(i_entry);
           if (t_start >= timestamp_start && t_end <= timestamp_end){
             tdc_plot.push_back(*tdc);
@@ -1405,7 +1404,7 @@ void MonitorMRDTime::InitializeVectors(){
   leg_rms->SetNColumns(4);
   leg_rate->SetNColumns(4);
   leg_tdc->SetLineColor(0);
-  leg_rate->SetLineColor(0);
+  leg_rms->SetLineColor(0);
   leg_rate->SetLineColor(0);
 
   //define graphs for trigger time evolution plots
@@ -1499,7 +1498,7 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
   //Creates a plot showing the time stamps for all the files within the last time_frame mins
   //The plot is updated with the update_frequency specified in the configuration file (default: 5 mins)
 
-  ReadFromFile(timestamp_end, time_frame);
+  if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
 
   ULong64_t timestamp_start = timestamp_end - time_frame*MSEC_to_SEC*SEC_to_MIN*MIN_to_HOUR;
 
@@ -1742,7 +1741,7 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
   }
   leg_scatter_trigger->Draw();
   std::stringstream ss_scatter_trigger;
-  ss_scatter_trigger<<outpath<<"MRDScatter_lastFile_Triggers."<<img_extension;
+  ss_scatter_trigger<<outpath<<"MRDScatter_Triggers_lastFile."<<img_extension;
   canvas_scatter->SaveAs(ss_scatter_trigger.str().c_str());
 
   leg_scatter_trigger->Clear();
@@ -1880,7 +1879,7 @@ void MonitorMRDTime::DrawHitMap(ULong64_t timestamp_end, double time_frame, std:
     std::stringstream ss_slot;
     ss_slot << i_slot;
     std::stringstream save_path_singlehitmap, ss_hitmap_title_slot;
-    save_path_singlehitmap << outpath <<"MRDHitmap_Cr"<<crate<<"_Sl"<<slot<<file_ending<<"."<<img_extension;
+    save_path_singlehitmap << outpath <<"MRDHitmap_Cr"<<crate<<"_Sl"<<slot<<"_"<<file_ending<<"."<<img_extension;
     ss_hitmap_title_slot << "Hitmap "<<end_time.str()<<" Cr "<<crate <<" Sl "<<slot<<" (last "<<ss_timeframe.str()<<"h)";
     hist_hitmap_slot.at(i_slot)->GetYaxis()->SetRangeUser(0.8,max_hitmap_slot.at(i_slot)+10);
     hist_hitmap_slot.at(i_slot)->SetTitle(ss_hitmap_title_slot.str().c_str());
@@ -2140,6 +2139,12 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
   std::stringstream ss_timeframe;
   ss_timeframe << round(time_frame*100.)/100.;
 
+  for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
+    gr_tdc.at(i_channel)->Set(0);
+    gr_rms.at(i_channel)->Set(0);
+    gr_rate.at(i_channel)->Set(0);
+  }
+
   for (int i_file=0; i_file<tdc_plot.size(); i_file++){
 
     //Updating channel graphs
@@ -2269,7 +2274,7 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
     if (i_channel != num_active_slots*num_channels-1){
 
       ss_leg_time.str("");
-      ss_leg_time<<"ch "<<i_channel%CH_per_CANVAS;
+      ss_leg_time<<"ch "<<i_channel%(2*CH_per_CANVAS);
       multi_ch_tdc->Add(gr_tdc.at(i_channel));
       if (gr_tdc.at(i_channel)->GetMaximum()>max_canvas) max_canvas = gr_tdc.at(i_channel)->GetMaximum();
       if (gr_tdc.at(i_channel)->GetMinimum()<min_canvas) min_canvas = gr_tdc.at(i_channel)->GetMinimum();
@@ -2351,6 +2356,10 @@ void MonitorMRDTime::DrawTriggerEvolution(ULong64_t timestamp_end, double time_f
   ss_eventtypes << "Event Types Trigger Rate (last "<<ss_timeframe.str()<<" h)";
   ss_filename_eventtypes << outpath << "MRDTrigger_eventtypes_"<<file_ending<<"."<<img_extension;
 
+  for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+    gr_trigger.at(i_trigger)->Set(0);
+  }
+
   for (int i_file=0; i_file<cosmicrate_plot.size(); i_file++){
 
     for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
@@ -2385,6 +2394,11 @@ void MonitorMRDTime::DrawTriggerEvolution(ULong64_t timestamp_end, double time_f
   }
 
   canvas_trigger_time->Clear();
+
+  gr_noloopback->Set(0);
+  gr_zerohits->Set(0);
+  gr_doublehits->Set(0);
+
   for (int i_file=0; i_file<noloopbackrate_plot.size(); i_file++){
     gr_noloopback->SetPoint(i_file,labels_timeaxis[i_file].Convert(),noloopbackrate_plot.at(i_file));
     gr_zerohits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),zerohitsrate_plot.at(i_file));
