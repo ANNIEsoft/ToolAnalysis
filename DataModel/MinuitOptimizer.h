@@ -72,6 +72,7 @@ public:
  	
  	MinuitOptimizer();
   ~MinuitOptimizer();
+  void SetFitterTimeRange(double tmin, double tmax);
   void SetPrintLevel(int printlevel) {fPrintLevel = printlevel;}
   void SetTimeFitWeight(double tweight);
   void SetConeFitWeight(double cweight);
