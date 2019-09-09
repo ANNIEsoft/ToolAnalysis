@@ -259,6 +259,11 @@ MinuitOptimizer::~MinuitOptimizer() {
 }
 	
 
+void MinuitOptimizer::SetFitterTimeRange(double tmin, double tmax) {
+  fTmin = tmin;
+  fTmax = tmax;
+}
+
 void MinuitOptimizer::LoadVertexGeometry(VertexGeometry* vtxgeo) {
   fgFoMCalculator->fVtxGeo = vtxgeo;	
 }

@@ -16,7 +16,7 @@ Python=0
 Python3=1
 Pythia=1
 Genie=1
-RATEvent=1
+RATEventlib=1
 fnalflag=0
 
 while [ ! $# -eq 0 ]
@@ -78,7 +78,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 
 	--Boost )
@@ -95,7 +95,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 	
 	--Root )
@@ -112,7 +112,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 
         --Root6 )
@@ -130,7 +130,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 	
 	--WCSim )
@@ -146,7 +146,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
 	    ;;
 
 	--Python )
@@ -164,7 +164,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 
 	--Python3 )
@@ -182,7 +182,7 @@ do
 	    Python3=1
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 
 	--Pythia )
@@ -200,7 +200,7 @@ do
 	    Python3=0
 	    Pythia=1
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 
 	--Genie )
@@ -218,10 +218,10 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=1
-	    RATEvent=0
+	    RATEventlib=0
             ;;
 
-	--RATEvent )
+	--RATEventlib )
             echo "Compiling ToolDAQ"
             init=0
             tooldaq=0
@@ -236,7 +236,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=1
+	    RATEventlib=1
             ;;
 
 
@@ -256,7 +256,7 @@ do
 	    Python3=0
 	    Pythia=0
 	    Genie=0
-	    RATEvent=0
+	    RATEventlib=0
             
             ;;
 
@@ -391,6 +391,7 @@ then
 
 fi
 
+
 if [ $MrdTrackLib -eq 1 ]
 then
     
@@ -483,7 +484,7 @@ then
 fi
 
 
-if [ $RATEvent -eq 1 ]
+if [ $RATEventlib -eq 1 ]
 then
     
     cd ../
