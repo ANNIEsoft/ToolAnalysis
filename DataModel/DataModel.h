@@ -36,7 +36,8 @@
 #include "MRDOut.h"
 #include "Channel.h"
 #include "LAPPDPulse.h"
-
+#include "CardData.h"
+#include "TriggerData.h"
 
 #include <zmq.hpp>
 
