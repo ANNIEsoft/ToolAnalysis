@@ -78,7 +78,7 @@ class LoadGeometry: public Tool {
 
   //Vector of strings indicating variables of interest and their data types in
   //The TankPMT file.  Used in the LoadTankPMTDetectors() method
-  std::vector<std::string> TankPMTIntegerValues{"detector_num","channel_num","panel_number"
+  std::vector<std::string> TankPMTIntegerValues{"detector_num","channel_num","panel_number","sb_num","sb_channel",
                                    "signal_crate","signal_slot","signal_channel",
                                    "mt_crate","mt_slot","mt_channel",
                                    "hv_crate","hv_slot","hv_channel","nominal_HV"};
