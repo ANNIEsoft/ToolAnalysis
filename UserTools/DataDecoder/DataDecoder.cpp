@@ -30,7 +30,7 @@ bool DataDecoder::Execute(){
 
   BoostStore in(false,0);
 
-  in.Initialise(argv[1]);
+  in.Initialise(InputFile.c_str());
   in.Print(false);
 
   /////////////////// getting PMT Data ////////////////////
@@ -76,12 +76,12 @@ bool DataDecoder::Execute(){
     int EventSize=Tdata.EventSize;
     std::cout<<"EventSize="<<EventSize<<std::endl;
     std::cout<<"SequenceID="<<Tdata.SequenceID<<std::endl;
-    std::cout<<"EventTimes: " << std:;endl;
+    std::cout<<"EventTimes: " << std::endl;
     for(int j=0;j<Tdata.EventTimes.size();j++){
 
      std::cout<< Tdata.EventTimes.at(j)<<" , ";
     }
-    std::cout<<"EventIDs: " << std:;endl;
+    std::cout<<"EventIDs: " << std::endl;
     for(int j=0;j<Tdata.EventIDs.size();j++){
 
      std::cout<< Tdata.EventIDs.at(j)<<" , ";
@@ -97,3 +97,38 @@ bool DataDecoder::Finalise(){
   std::cout << "DataDecoder tool exitting" << std::endl;
   return true;
 }
+
+std::vector<DecodedFrame> DataDecoder::UnpackFrames(std::vector<uint32_t> bank) {
+  uint64_t tempword;
+  std::vector<DecodedFrame> frames;  //What we will return
+  std::vector<uint16_t> samples;
+  samples.resize(40); //Well, if there's 480 bits per frame of samples max, this fits it
+  for (unsigned int frame = 0; frame<bank.size()/16; ++frame) {  // if each frame has 16 32-bit ints, nframes = bank_size/16
+    bool hasheader = false;
+    int sampleindex = 0;
+    int wordindex = 16*frame;  //Index of first 32-bit int in this frame
+    int bitsleft = 0;  //# bits to shift to the left in the temp word
+    while (sampleindex < 40) {  //Parse out this whole frame
+      if (bitsleft < 12) {
+        tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;  //TODO: I'm worried this isn't the right shift.  We should do some before/after prints here with real data.
+        bitsleft += 32;
+        wordindex += 1;
+      }
+      samples[sampleindex] = tempword&0xfff;  //You're only taking the first 12 bits of the tempword
+      if((tempword&0xfff)==0xfff) first_headword = true;
+      else if (first_headword && (tempword&0xfff)==0x000) has_header=true;
+      else first_headword = false;
+      tempword = tempword>>12;  //TODO: also check this shift is the right direction
+      bitsleft -= 12;
+      sampleindex += 1;
+    } //END parse out this frame
+    struct DecodedFrame tempframe;
+    tempframe.frameid = be32toh(bank[16*frame+15]);  //Frameid is held in the frame's last 32-bit word
+    tempframe.samples = samples;
+    tempframe.has_recordheader = has_header;
+    frames.push_back(tempframe);
+  }
+  return frames;
+}
+
+
