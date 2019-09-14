@@ -2,19 +2,51 @@
 
 DataDecoder
 
+The DataEncoder is a tool used to process Raw data files and ultimately convert them to
+ANNIEEvent stores.
+
+
+The philosophy behind the first implementation of the Event Builder is to use maps at 
+several levels in the event building to hold information as the raw binary is parsed.  
+Once a full event's PMT information has been parsed, it's moved to a second level of
+maps that hold the "completed" hit information.  Once this map has the information 
+related to a full event, The CardData is matched to the TriggerData to build an 
+ANNIEEvent.
+
+
+Maps for keeping track of what CardData classes have been, or need to, be processed
+std::map<int, int> SequenceMap;  //Key is CardID, Value is what sequence # is next
+std::map<int, std::vector<int>> UnprocessedEntries; //Key is CardID, Value is vector of boost entry #s with an unprocessed entry
+
+Maps used in decoding frames; specifically, holds record header and record waveform info
+std::map<std::vector<int>, int> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
+std::map<std::vector<int>, std::vector<uint16_t>> WaveBank;  //Key: {cardID, channelID}.  If you're in sequence, the MTCTime doesn't matter for mapping
+
+Maps that store completed waveforms from cards
+std::map<int, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+
 ## Data
 
-Describe any data formats DataDecoder creates, destroys, changes, or analyzes. E.G.
+  Input: Raw data files.
 
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+  Appends values to the ANNIEEvent store.  Ooh... Maybe an execute loop be written in a way where there's one execution per filling of ANNIEEvent.
 
 ## Configuration
 
 Describe any configuration variables for DataDecoder.
 
+verbosity (int)
+    Integer that controls the level of log output shown when running.
+
+InputFile (string)
+    String defining the path to a raw data file to process.
+
+LockStep (bool)
+    Indicates whether events are processed assuming the detector was being run
+    in lock-step or not.  For single file processing, this will be set to false. 
+
 ```
-param1 value1
-param2 value2
+  verbosity 2
+  InputFile /path/to/VMEDataFile 
+  LockStep 0
 ```

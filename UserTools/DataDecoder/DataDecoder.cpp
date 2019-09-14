@@ -16,6 +16,7 @@ bool DataDecoder::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("InputFile",InputFile);
+  m_variables.Get("LockStep",LockStepRunning);
 
   // Initialize BoostStores
   BoostStore VMEData(false,0);
@@ -49,11 +50,17 @@ bool DataDecoder::Execute(){
     std::vector<CardData> Cdata;
     PMTData.Get("CardData",Cdata);
     std::cout<<"Cdata size="<<Cdata.size()<<std::endl;
-    std::cout<<"Cdata entry 0 CardID="<<Cdata.at(0).CardID<<std::endl;
-    std::cout<<"Cdata entry 0 Data vector of size="<<Cdata.at(0).Data.size()<<std::endl;
+    std::cout<<"Cdata entry 0 CardID="<<Cdata.at(i).CardID<<std::endl;
+    std::cout<<"Cdata entry 0 Data vector of size="<<Cdata.at(i).Data.size()<<std::endl;
     for (int j=0;j<Cdata.at(0).Data.size();j++){
       std::cout<<Cdata.at(0).Data.at(j)<<" , ";
     }
+    //For this CardData entry, decode raw binary frames
+    std::vector<DecodedFrame> ThisCardDFs;
+    ThisCardDFs = this->DecodeFrames(Cdata.at(i).Data);
+    //Now, loop through each frame and Parse their information
+    for (int i=0; i < ThisCardDFs.size(); i++){
+      this->ParseFrame(Cdata.at(i).CardID,ThisCardDFs.at(i)); 
     std::cout<<std::endl;
 
   }
@@ -98,16 +105,18 @@ bool DataDecoder::Finalise(){
   return true;
 }
 
-std::vector<DecodedFrame> DataDecoder::UnpackFrames(std::vector<uint32_t> bank) {
+std::vector<DecodedFrame> DataDecoder::UnpackFrames(std::vector<uint32_t> bank)
+{
   uint64_t tempword;
   std::vector<DecodedFrame> frames;  //What we will return
   std::vector<uint16_t> samples;
   samples.resize(40); //Well, if there's 480 bits per frame of samples max, this fits it
   for (unsigned int frame = 0; frame<bank.size()/16; ++frame) {  // if each frame has 16 32-bit ints, nframes = bank_size/16
-    bool hasheader = false;
+    struct DecodedFrame thisframe;
     int sampleindex = 0;
     int wordindex = 16*frame;  //Index of first 32-bit int in this frame
     int bitsleft = 0;  //# bits to shift to the left in the temp word
+    bool haverecheader_part2 = false;
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;  //TODO: I'm worried this isn't the right shift.  We should do some before/after prints here with real data.
@@ -115,20 +124,85 @@ std::vector<DecodedFrame> DataDecoder::UnpackFrames(std::vector<uint32_t> bank) 
         wordindex += 1;
       }
       samples[sampleindex] = tempword&0xfff;  //You're only taking the first 12 bits of the tempword
-      if((tempword&0xfff)==0xfff) first_headword = true;
-      else if (first_headword && (tempword&0xfff)==0x000) has_header=true;
-      else first_headword = false;
+      if((tempword&0xfff)==RECORD_LABEL_HEADERPART2) haverecheader_part2 = true;
+      else if (haverecheader_part2 && (tempword&0xfff)==RECORD_LABEL_HEADERPART1){
+        thisframe.has_recordheader=true;
+        thisframe.recordheader_indices.push_back(sampleindex-1);
+      }
+      else haverecheader_part2 = false;
       tempword = tempword>>12;  //TODO: also check this shift is the right direction
       bitsleft -= 12;
       sampleindex += 1;
     } //END parse out this frame
-    struct DecodedFrame tempframe;
-    tempframe.frameid = be32toh(bank[16*frame+15]);  //Frameid is held in the frame's last 32-bit word
-    tempframe.samples = samples;
-    tempframe.has_recordheader = has_header;
-    frames.push_back(tempframe);
+    thisframe.frameheader = be32toh(bank[16*frame+15]);  //Frameid is held in the frame's last 32-bit word
+    thisframe.samples = samples;
+    frames.push_back(thisframe);
   }
   return frames;
 }
 
+void DataDecoder::ParseFrame(int CardID, DecodedFrame DF)
+{
+  int ChannelID = DF.frameheader; //FIXME: We probably need a function that gets the
+                                  //Bitrange defined by Jonathan (511 downto 504)
+  if(!DF.has_recordheader){
+    //All samples are waveforms for channel record that already exists in the WaveBank.
+    this->AddSamplesToWaveBank(CardID, ChannelID, DF.samples);
+  } else {
+    int WaveSecBegin = 0;
+    //We need to get the rest of a wave from WaveSecBegin to where the next frame starts
+    for (int j = 0; j<DF.recordheader_indices.size; j++){
+      std::vector<uint16_t> WaveSlice(DF.samples.begin()+WaveSecBegin, 
+              DF.samples.begin()+DF.recordheader_indices.at(j)-1);
+      //All samples are waveforms for channel record that already exists in the WaveBank.
+      this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
+      this->StoreWaveform(CardID, ChannelID);
+      //Now, we have a header coming next.  Get it and parse it, starting whatever
+      //Entries in maps are needed.  
+      std::vector<uint16_t> RecordHeader(DF.samples.begin()+
+              DF.recordheader_indices.at(j), DF.samples.begin()+
+              DF.recordheader_indices.at(j)+ RECORD_HEADER_SAMPLENUMS - 1);
+      this->ParseRecordHeader(CardID, ChannelID, RecordHeader);
+      WaveSecBegin = DF.recordheader_indices.at(j)+RECORD_HEADER_SAMPLENUMS;
+    }
+    // No more record headers from here; just parse the rest of whatever 
+    // waveform is being looked at
+    WaveSecEnd = DF.samples.size()-1;
+    std::vector<uint16_t> WaveSlice(WaveSecBegin, WaveSecEnd);
+    this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
+  }
+  return;
+}
+ 
+void DataDecoder::StoreWaveform(int CardID, int ChannelID)
+{
+  //Get the waveform
+  std::vector<int> wave_key{CardID,ChannelID};
+  std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
+  int FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);
 
+  std::map<std::vector<int>, std::vector<uint16_t> > TriggerTimeWaves;
+
+  if(FinishedWaves.count(FinishedWaveTrigTime) == 0) {
+    TriggerTimeWaves.emplace(wave_key,FinishedWave);
+    FinishedWaves.emplace(FinishedWaveTrigTime,TriggerTimeWave);
+  } else {
+    FinishedWaves.at(FinishedWaveTrigTime).at(wave_key) = TriggerTimeWave;
+  }
+
+  //Clear the wave from WaveBank and TriggerTimeBank
+  WaveBank.erase(wave_key);
+  TriggerTimeBank.at(wave_key);
+  return;
+}
+  
+void DataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID, 
+        std::vector<uint16_t> WaveSlice)
+{
+  //Add the WaveSlice to the proper vector in the WaveBank.
+  std::vector<int> wave_key{CardID,ChannelID};
+  WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),
+                               WaveSlice.begin(),
+                               WaveSlice.end());
+  return;
+}
