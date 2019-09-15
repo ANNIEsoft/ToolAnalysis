@@ -50,6 +50,8 @@ class DataDecoder: public Tool {
 
  private:
 
+
+  int CDEntryNum = 0;
   int RECORD_HEADER_SAMPLENUMS = 8;
 
 
@@ -86,6 +88,8 @@ class DataDecoder: public Tool {
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
 
 
+  // Number of PMTData entries to process per loop
+  int ParsesPerExecute = 1;
   // Number of PMTs that must be found in a WaveSet to build the event
   int NumWavesInSet = 131;  
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

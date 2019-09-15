@@ -104,3 +104,4 @@
 #include "PhaseIIADCCalibrator.h"
 #include "MCHitToHitComparer.h"
 #include "DataDecoder.h"
+#include "ANNIEEventBuilder.h"

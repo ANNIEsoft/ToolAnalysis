@@ -17,18 +17,9 @@ bool DataDecoder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("InputFile",InputFile);
   m_variables.Get("LockStep",LockStepRunning);
+  m_variables.Get("ParsesPerExecute",ParsesPerExecute);
 
-  // Initialize BoostStores
-  BoostStore VMEData(false,0);
-  //PMTData = new BoostStore(false,2);
-  //TriggerData = new BoostStore(false,2);
-
-  return true;
-}
-
-
-bool DataDecoder::Execute(){
-
+  // Initialize RawData
   RawData.Initialise(InputFile.c_str());
   RawData.Print(false);
 
@@ -39,11 +30,17 @@ bool DataDecoder::Execute(){
   
   long entries=0;
   PMTData.Header->Get("TotalEntries",entries);
-  std::cout<<"entries = "<<entries<<std::endl;
+  std::cout<<"Total entries in PMTData store: "<<entries<<std::endl;
+  
+  return true;
+}
 
-  for( int i=0;i<5;i++){
-    std::cout<<"entry "<<i<<" of "<<entries<<std::endl;
-    PMTData.GetEntry(i);
+
+bool DataDecoder::Execute(){
+  int NumPMTDataProcessed = 0;
+  while(NumPMTDataProcessed<ParsesPerLoop){
+    std::cout<<"entry "<<CDEntryNum<<" of "<<entries<<std::endl;
+    PMTData.GetEntry(CDEntryNum);
     PMTData.Get("CardData",Cdata);
     std::cout<<"Cdata size="<<Cdata.size()<<std::endl;
     std::cout<<"CardData in Cdata's 0th index CardID="<<Cdata.at(0).CardID<<std::endl;
@@ -59,47 +56,24 @@ bool DataDecoder::Execute(){
         this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
       }
     }
-    //Great; this card data's package is parsed.  Let's check if
-    //Any of the MTCCounters have all their PMT data.
-    this->BuildReadyEvents();
-    //###### END MOCK-UP ######
-    //
-    //Check the size of the WaveBank to see if things are bloating
-    std::cout << "Size of WaveBank (# events in building progress): " << WaveBank.size() << std::endl;
-    std::cout << "Size of FinishedWaves (# triggers with at least one wave built): " << FinishedWaves.size() << std::endl;
-    //TODO: Print out, if debugging, the size of each entry in FinishedWaves
-
+    CDEntryNum+=1;
+    NumPMTDataProcessed+=1;
   }
+  //PMT Data done being processed this loop.  Push pointer to the
+  //CStore and use it in the TriggerData Parser tool.
+  //Any of the MTCCounters have all their PMT data.
+  m_data->CStore.Set("FinishedWaves",*FinishedWaves);
+  this->BuildReadyEvents();
+  //###### END MOCK-UP ######
+  //
+  //Check the size of the WaveBank to see if things are bloating
+  std::cout << "Size of WaveBank (# events in building progress): " << WaveBank.size() << std::endl;
+  std::cout << "Size of FinishedWaves (# triggers with at least one wave built): " << FinishedWaves.size() << std::endl;
+  //TODO: Print out, if debugging, the size of each entry in FinishedWaves
+
+  
   ///////////////////////////////////////////
 
-  ////////////////////////getting trigger data ////////////////
-  RawData.Get("TrigData",TrigData);
-
-  TrigData.Print(false);
-  long trigentries=0;
-  TrigData.Header->Get("TotalEntries",trigentries);
-  std::cout<<"entries = "<<entries<<std::endl;
-
-  for( int i=0;i<5;i++){
-    std::cout<<"entry "<<i<<" of "<<trigentries<<std::endl;
-    TrigData.GetEntry(i);
-    TriggerData Tdata;
-    TrigData.Get("TrigData",Tdata);
-    int EventSize=Tdata.EventSize;
-    std::cout<<"EventSize="<<EventSize<<std::endl;
-    std::cout<<"SequenceID="<<Tdata.SequenceID<<std::endl;
-    std::cout<<"EventTimes: " << std::endl;
-    for(int j=0;j<Tdata.EventTimes.size();j++){
-
-     std::cout<< Tdata.EventTimes.at(j)<<" , ";
-    }
-    std::cout<<"EventIDs: " << std::endl;
-    for(int j=0;j<Tdata.EventIDs.size();j++){
-
-     std::cout<< Tdata.EventIDs.at(j)<<" , ";
-    }
-    std::cout<<std::endl;
-  }
   return true;
 }
 
