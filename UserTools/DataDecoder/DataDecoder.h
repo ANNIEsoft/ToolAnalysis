@@ -25,7 +25,7 @@ struct DecodedFrame{
   bool has_recordheader;
   uint32_t frameheader;
   std::vector<uint16_t> samples;
-  std::vector<int> recordheader_indices; //Holds indices where a record header starts in samples
+  std::vector<int> recordheader_000indices; //Holds indices where a record header starts in samples
   ~DecodedFrame(){
   }
 };
@@ -41,20 +41,35 @@ class DataDecoder: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
   std::vector<DecodedFrame> UnpackFrames(std::vector<uint32_t> bank);
 
+  void ParseFrame(int CardID, DecodedFrame DF);
+  void ParseRecordHeader(int CardID, int ChannelID, std::vector<uint16_t> RH);
+  void StoreWaveform(int CardID, int ChannelID);
+  void AddSamplesToWaveBank(int CardID, int ChannelID, std::vector<uint16_t> WaveSlice);
+  void BuildReadyEvents()
+  void BuildANNIEEvent(std::map<std::vector<int>, std::vector<uint16_t> > WaveMap)
+
  private:
 
-  //A header is 96 bits long in the data stream, but it's parsed into 
-  //12-bit chunks in a vector  of uint16_t samples.  So, 8 samples make a record header.  
   int RECORD_HEADER_SAMPLENUMS = 8;
-  
-  //A Record header leads with 0x000FFF.  So, check for this structure within the
-  //12-bit samples being parsed.
+
+
+  //A Record header's first 48-bit word has least significant bits of 0xFFF000.  
+  //So, check for this structure within the 12-bit samples being parsed.
   int RECORD_HEADER_LABELPART1 = 0x000;
   int RECORD_HEADER_LABELPART2 = 0xFFF;
 
-  BoostStore* VMEData;
-  //BoostStore* PMTData;
-  //BoostStore* TriggerData;
+  //A record header is made of two 48-bit words, each word in little endian order.  The
+  //end of the first 48-bit word has the 0x000 of the Record Header.  Given each 12-bit
+  //chunk is stored in a 16-bit word, you want to grab the 3 samples  left of 0x000 and
+  //4 samples right of the 0x000.
+  int SAMPLES_LEFTOF_000 = 3;
+  int SAMPLES_RIGHTOF_000 = 4;
+
+  BoostStore RawData(false,0);
+  BoostStore PMTData(false,2);
+  BoostStore TrigData(false,2);
+  std::vector<CardData> Cdata;
+  TriggerData Tdata;
 
   std::string InputFile;
 
@@ -64,12 +79,15 @@ class DataDecoder: public Tool {
   std::map<int, std::vector<int>> UnprocessedEntries; //Key is CardID, Value is vector of boost entry #s with an unprocessed entry
 
   //Maps used in decoding frames; specifically, holds record header and record waveform info
-  std::map<std::vector<int>, int> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
+  std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
   std::map<std::vector<int>, std::vector<uint16_t>> WaveBank;  //Key: {cardID, channelID}.  If you're in sequence, the MTCTime doesn't matter for mapping
 
   //Maps that store completed waveforms from cards
-  std::map<int, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
-   
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+
+
+  // Number of PMTs that must be found in a WaveSet to build the event
+  int NumWavesInSet = 131;  
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;
   int v_error=0;

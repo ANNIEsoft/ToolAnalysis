@@ -29,17 +29,14 @@ bool DataDecoder::Initialise(std::string configfile, DataModel &data){
 
 bool DataDecoder::Execute(){
 
-  BoostStore in(false,0);
-
-  in.Initialise(InputFile.c_str());
-  in.Print(false);
+  RawData.Initialise(InputFile.c_str());
+  RawData.Print(false);
 
   /////////////////// getting PMT Data ////////////////////
-  BoostStore PMTData(false,2);
-  in.Get("PMTData",PMTData);
+  RawData.Get("PMTData",PMTData);
 
   PMTData.Print(false);
-
+  
   long entries=0;
   PMTData.Header->Get("TotalEntries",entries);
   std::cout<<"entries = "<<entries<<std::endl;
@@ -47,28 +44,36 @@ bool DataDecoder::Execute(){
   for( int i=0;i<5;i++){
     std::cout<<"entry "<<i<<" of "<<entries<<std::endl;
     PMTData.GetEntry(i);
-    std::vector<CardData> Cdata;
     PMTData.Get("CardData",Cdata);
     std::cout<<"Cdata size="<<Cdata.size()<<std::endl;
-    std::cout<<"Cdata entry 0 CardID="<<Cdata.at(i).CardID<<std::endl;
-    std::cout<<"Cdata entry 0 Data vector of size="<<Cdata.at(i).Data.size()<<std::endl;
-    for (int j=0;j<Cdata.at(0).Data.size();j++){
-      std::cout<<Cdata.at(0).Data.at(j)<<" , ";
+    std::cout<<"CardData in Cdata's 0th index CardID="<<Cdata.at(0).CardID<<std::endl;
+    std::cout<<"CardData in Cdata's 0th index data size="<<Cdata.at(0).Data.size()<<std::endl;
+    //###### MOCK-UP FOR HOW TO LOOP THROUGH AN ENTRY's VECTOR OF CARD DATA
+    for (int k=0; k<Cdata.size(); k++){
+      aCardData = Cdata.at(k);
+      //For this CardData entry, decode raw binary frames
+      std::vector<DecodedFrame> ThisCardDFs;
+      ThisCardDFs = this->DecodeFrames(aCardData.Data);
+      //Now, loop through each frame and Parse their information
+      for (int i=0; i < ThisCardDFs.size(); i++){
+        this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+      }
     }
-    //For this CardData entry, decode raw binary frames
-    std::vector<DecodedFrame> ThisCardDFs;
-    ThisCardDFs = this->DecodeFrames(Cdata.at(i).Data);
-    //Now, loop through each frame and Parse their information
-    for (int i=0; i < ThisCardDFs.size(); i++){
-      this->ParseFrame(Cdata.at(i).CardID,ThisCardDFs.at(i)); 
-    std::cout<<std::endl;
+    //Great; this card data's package is parsed.  Let's check if
+    //Any of the MTCCounters have all their PMT data.
+    this->BuildReadyEvents();
+    //###### END MOCK-UP ######
+    //
+    //Check the size of the WaveBank to see if things are bloating
+    std::cout << "Size of WaveBank (# events in building progress): " << WaveBank.size() << std::endl;
+    std::cout << "Size of FinishedWaves (# triggers with at least one wave built): " << FinishedWaves.size() << std::endl;
+    //TODO: Print out, if debugging, the size of each entry in FinishedWaves
 
   }
   ///////////////////////////////////////////
 
   ////////////////////////getting trigger data ////////////////
- BoostStore TrigData(false,2);
-  in.Get("TrigData",TrigData);
+  RawData.Get("TrigData",TrigData);
 
   TrigData.Print(false);
   long trigentries=0;
@@ -79,7 +84,7 @@ bool DataDecoder::Execute(){
     std::cout<<"entry "<<i<<" of "<<trigentries<<std::endl;
     TrigData.GetEntry(i);
     TriggerData Tdata;
-    PMTData.Get("TrigData",Tdata);
+    TrigData.Get("TrigData",Tdata);
     int EventSize=Tdata.EventSize;
     std::cout<<"EventSize="<<EventSize<<std::endl;
     std::cout<<"SequenceID="<<Tdata.SequenceID<<std::endl;
@@ -93,9 +98,8 @@ bool DataDecoder::Execute(){
 
      std::cout<< Tdata.EventIDs.at(j)<<" , ";
     }
-
     std::cout<<std::endl;
- }
+  }
   return true;
 }
 
@@ -119,7 +123,13 @@ std::vector<DecodedFrame> DataDecoder::UnpackFrames(std::vector<uint32_t> bank)
     bool haverecheader_part2 = false;
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
+        std::cout << "TEMP WORD BEFORE be32toh AN LEFT SHIFT: " << std::hex << "0x" << tempword << std::endl;
+        std::bitset<64> tempbin(tempword);
+        std::cout << "TEMP WORD BEFORE be32toh AN LEFT SHIFT: " << tempbin << std::endl;
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;  //TODO: I'm worried this isn't the right shift.  We should do some before/after prints here with real data.
+        std::cout << "TEMP WORD AFTER be32toh AND LEFT SHIFT: " << std::hex << "0x" << tempword << std::endl;
+        std::bitset<64> tempbin(tempword);
+        std::cout << "TEMP WORD BEFORE be32toh AN LEFT SHIFT: " << tempbin << std::endl;
         bitsleft += 32;
         wordindex += 1;
       }
@@ -127,7 +137,7 @@ std::vector<DecodedFrame> DataDecoder::UnpackFrames(std::vector<uint32_t> bank)
       if((tempword&0xfff)==RECORD_LABEL_HEADERPART2) haverecheader_part2 = true;
       else if (haverecheader_part2 && (tempword&0xfff)==RECORD_LABEL_HEADERPART1){
         thisframe.has_recordheader=true;
-        thisframe.recordheader_indices.push_back(sampleindex-1);
+        thisframe.recordheader_000indices.push_back(sampleindex);
       }
       else haverecheader_part2 = false;
       tempword = tempword>>12;  //TODO: also check this shift is the right direction
@@ -150,20 +160,20 @@ void DataDecoder::ParseFrame(int CardID, DecodedFrame DF)
     this->AddSamplesToWaveBank(CardID, ChannelID, DF.samples);
   } else {
     int WaveSecBegin = 0;
-    //We need to get the rest of a wave from WaveSecBegin to where the next frame starts
-    for (int j = 0; j<DF.recordheader_indices.size; j++){
+    //We need to get the rest of a wave from WaveSecBegin to where the header starts
+    for (int j = 0; j<DF.recordheader_000indices.size; j++){
       std::vector<uint16_t> WaveSlice(DF.samples.begin()+WaveSecBegin, 
-              DF.samples.begin()+DF.recordheader_indices.at(j)-1);
+              DF.samples.begin()+DF.recordheader_000indices.at(j)- SAMPLES_LEFTOF_000-1);
       //All samples are waveforms for channel record that already exists in the WaveBank.
       this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
       this->StoreWaveform(CardID, ChannelID);
-      //Now, we have a header coming next.  Get it and parse it, starting whatever
+      //Now, we have the header coming next.  Get it and parse it, starting whatever
       //Entries in maps are needed.  
       std::vector<uint16_t> RecordHeader(DF.samples.begin()+
-              DF.recordheader_indices.at(j), DF.samples.begin()+
-              DF.recordheader_indices.at(j)+ RECORD_HEADER_SAMPLENUMS - 1);
+              DF.recordheader_000indices.at(j) - SAMPLES_LEFTOF_000, DF.samples.begin()+
+              DF.recordheader_000indices.at(j)+SAMPLES_RIGHTOF_000);
       this->ParseRecordHeader(CardID, ChannelID, RecordHeader);
-      WaveSecBegin = DF.recordheader_indices.at(j)+RECORD_HEADER_SAMPLENUMS;
+      WaveSecBegin = DF.recordheader_000indices.at(j)+SAMPLES_RIGHTOF_000+1;
     }
     // No more record headers from here; just parse the rest of whatever 
     // waveform is being looked at
@@ -173,13 +183,39 @@ void DataDecoder::ParseFrame(int CardID, DecodedFrame DF)
   }
   return;
 }
- 
+
+void DataDecoder::ParseRecordHeader(int CardID, int ChannelID, std::vector<uint16_t> RH)
+{
+  //We need to get the MTC count and make a new entry in TriggerTimeBank and WaveBank
+  //First 4 samples; Just get the bits from 24 to 37 (is counter (61 downto 48)
+  //Last 4 samples; All the first 48 bits of the MTC count.
+  std::vector<uint16_t> CounterEnd(RH.begin(), RH.begin()+2);
+  std::vector<uint16_t> CounterBegin(RH.begin()+4, RH.begin()+7);
+  std::vector<uint64_t> MTCCounter;
+  int samplewidth=12;  //each uint16 really only holds 12 bits of info. (see DecodeFrame)
+  for (int j=0; j<CounterBegin.size(); j++){
+    MTCCounter += CounterBegin.at(j) << j*samplewidth;
+  }
+  for (int j=0; j<CounterEnd.size(); j++){
+    MTCCounter += CounterEnd.at(j) << (CounterBegin.size() + j*samplewidth);
+  }
+  std::vector<int> wave_key{CardID,ChannelID};
+  std::vector<uint16_t> Waveform;
+  //FIXME: So the Counter is still little endian here; is that what we want?  I think so..
+  //Update the TriggerTimeBank and WaveBank with new entries, since this channel's
+  //Wave data is coming up next
+  TriggerTimeBank.emplace(wave_key,MTCCounter);
+  WaveBank.emplace(wave_key,Waveform);
+  return;
+}
+
+
 void DataDecoder::StoreWaveform(int CardID, int ChannelID)
 {
   //Get the waveform
   std::vector<int> wave_key{CardID,ChannelID};
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
-  int FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);
+  uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);
 
   std::map<std::vector<int>, std::vector<uint16_t> > TriggerTimeWaves;
 
@@ -204,5 +240,27 @@ void DataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),
                                WaveSlice.begin(),
                                WaveSlice.end());
+  return;
+}
+
+void DataDecoder::BuildReadyEvents()
+{
+  //Well, I would say that we're ready to build an event if we have all the
+  //expected PMT waves for a clock count.
+  std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
+  for(int i=0;i<FinishedWaves.size();i++){
+    WaveMap = FinishedWaves.at(i);
+    if (WaveMap.size() == NumWavesInSet){
+      this->BuildANNIEEvent(WaveMap);
+    }
+  }
+}
+
+//FIXME: Maybe we should have a vector of these WaveMaps, then have another tool
+//Downstream Named BuildANNIEEvent that actually uses the TriggerData paired with
+//the WaveMap to build the event?
+void DataDecoder::BuildANNIEEvent(std::map<std::vector<int>, std::vector<uint16_t> > WaveMap)
+{
+  std::cout << "We still need to actually write the ANNIEEvent builder..." << std::endl;
   return;
 }
