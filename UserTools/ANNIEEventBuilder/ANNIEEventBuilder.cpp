@@ -68,8 +68,13 @@ bool ANNIEEventBuilder::Execute(){
       //}
       //If here, a match was found.  Start to build the ANNIEEvent.
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap);
+      //Erase this entry from the FinishedPMTWavesMap
+      FinishedPMTWaves.erase(PMTCounterTime);
     }
   }
+
+  //Update the current FinishedPMTWaves map
+  m_data->CStore.Set("FinishedPMTWaves",FinishedPMTWaves);
 
   return true;
 }
