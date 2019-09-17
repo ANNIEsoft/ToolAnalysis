@@ -288,6 +288,7 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
   uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);
 
+  //TODO: Should we have a check the waveform is the length expected? 
   std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
 
   if(FinishedPMTWaves.count(FinishedWaveTrigTime) == 0) {

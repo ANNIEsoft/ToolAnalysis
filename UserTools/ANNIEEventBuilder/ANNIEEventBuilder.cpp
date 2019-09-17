@@ -18,6 +18,8 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("InputFile",InputFile);
+  //FIXME: Eventually, RunNumber should be loaded from
+  //A run database
   m_variables.Get("RunNumber",RunNum);
   m_variables.Get("PassNumber",PassNum);
   m_variables.Get("EntriesPerSubrun",EntriesPerSubrun);
@@ -59,13 +61,10 @@ bool ANNIEEventBuilder::Execute(){
     if(aWaveMap.size()>NumWavesInSet){
       std::cout << "PMTCounterTime " << PMTCounterTime << " has more than " << NumWavesInSet << ". " <<
           "beginning to build ANNIEEvent." << std::endl;
-      //TODO: Eventually, we'll need to sync the TriggerData with the PMT
-      //Times (and LAPPD times when an LAPPDDataDecoder tool comes along).
-      //int MatchingEntryNum=-1;
-      //int MatchingIndexNum=-1;
-      //this->SearchTriggerData(aTrigTime,MatchingEntryNum, MatchingIndexNum);
-      //if(MatchingEntryNum == -1 || MatchingIndexNum == -1){
-      //  std::cout << "ANNIEEventBuilder TODO: How do we handle wave maps with no matching trigger time?" << std::endl;
+      //TODO: 
+      //  - Sync the TriggerData with the PMT Times 
+      //  - Check LAPPDData and TDCData for addition to ANNIEEvent 
+      //  - Additional sanity checks on data prior to entry addition? 
       //}
       //If here, a match was found.  Start to build the ANNIEEvent.
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap);
@@ -88,7 +87,11 @@ bool ANNIEEventBuilder::Finalise(){
 
 void ANNIEEventBuilder::SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, int &MatchIndex)
 {
-  // Search the TriggerData for a matching trigger time
+  // Right now, this method just prints stuff for debugging.
+  //TODO: Eventually, as trigger data is matched with the correct electronics
+  //      data, start a map that tracks what TriggerData entries are finished?
+  //      Could save time avoiding looping through the TriggerData over and
+  //      over again when most entries are already paired with an ANNIEEvent. 
   for( int i=0;i<trigentries;i++){
     std::cout<<"Checking entry "<<i<<" of "<<trigentries<<std::endl;
     TrigData->GetEntry(i);
@@ -100,21 +103,21 @@ void ANNIEEventBuilder::SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, i
     std::cout<<"EventTimes: " << std::endl;
     for(unsigned int j=0;j<Tdata.EventTimes.size();j++){
       std::cout<< Tdata.EventTimes.at(j)<<" , ";
-      if(Tdata.EventTimes.at(j) == aTrigTime){
-        std::cout << "Trigger Match found!" << std::endl;
-        MatchEntry = i;
-        MatchIndex = j;
-        return;
-      }
     }
     std::cout<<"EventIDs: " << std::endl;
     for(unsigned int j=0;j<Tdata.EventIDs.size();j++){
      std::cout<< Tdata.EventIDs.at(j)<<" , ";
     }
+    std::cout<<"TriggerMasks: " << std::endl;
+    for(unsigned int j=0;j<Tdata.TriggerMasks.size();j++){
+     std::cout<< Tdata.TriggerMasks.at(j)<<" , ";
+    }
+    std::cout<<"TriggerCounters: " << std::endl;
+    for(unsigned int j=0;j<Tdata.TriggerCounters.size();j++){
+     std::cout<< Tdata.TriggerCounters.at(j)<<" , ";
+    }
     std::cout<<std::endl;
   }
-  std::cout << "ANNIEEventBuilder: Reached end of trigger data.  No match for trigger time " << aTrigTime << std::endl;
-  //TODO: What do we do here?  Delete the elements in the CStore?
   return;
 }
 
@@ -141,23 +144,14 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RunNumber",RunNum);
   ANNIEEvent->Set("SubrunNumber",RunNum);
-  //FIXME: add other obvious ones here too...
+  //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
+  //  - EventTime
+  //  - TriggerData
+  //  - BeamStatus?  
+  //  - TDCData
+  //  - RawLAPPDData
 
 
-  //TODO: Trigger information needs to be identified with the PMT Clock Time and
-  //also added to the ANNIEEvent.  For now, just push the Clock Time as the
-  //Trigger Time.
-  
-  ////////////////////// LOAD TRIGGER DATA INTO ANNIEEVENT  /////////////////////// 
-  //TrigData->GetEntry(MatchEntry);
-  //TriggerData Tdata;
-  //TrigData->Get("TrigData",Tdata);
-  //uint16_t EventID = Tdata.EventIDs.at(MatchIndex);
-  //uint64_t EventTime = Tdata.EventTimes.at(MatchIndex);
-  //TimeClass TrigTime(EventTime);
-  //uint32_t TriggerMask = Tdata.TriggerMasks.at(MatchIndex);
-  //uint32_t TriggerCounter = Tdata.TriggerCounters.at(MatchIndex);
-  
   ANNIEEventNum+=1;
   //Check if we have enough ANNIEEvents to constitute a subrun
   if((ANNIEEventNum/EntriesPerSubrun - 1) == SubrunNum){
@@ -181,9 +175,9 @@ void ANNIEEventBuilder::SaveSubrun()
 void ANNIEEventBuilder::CardIDToElectronicsSpace(int CardID, 
         int &CrateNum, int &SlotNum)
 {
-  std::cout << "FIXME: We need to build the map of VME CardIDs to the electronics space position." << std::endl;
-  std::cout << "In the meantime, the answer is 42." << std::endl;
-  CrateNum = 42;
-  SlotNum = 42;
+  //CardID = CrateNum * 1000 + SlotNum.  This logic works if we have less than
+  // 10 crates and less than 100 Slots (which we do).
+  SlotNum = CardID % 100;
+  CrateNum = CardID / 1000;
   return;
 }
