@@ -29,14 +29,19 @@ class ANNIEEventBuilder: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
 
   void SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, int &MatchIndex);
-  void BuildANNIEEvent(std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap, int MatchEntry, int MatchIndex);
- 
+  void BuildANNIEEvent(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
+  void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
+  void SaveSubrun();
 
  private:
 
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+
+   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
   BoostStore *RawData;
   BoostStore *TrigData;
+
+  BoostStore *ANNIEEvent;
 
   std::string InputFile;
 
@@ -51,7 +56,12 @@ class ANNIEEventBuilder: public Tool {
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   uint32_t RunNum;
   uint32_t SubrunNum;
+  uint32_t PassNum;
   uint32_t ANNIEEventNum;
+  
+  std::string SavePath;
+  std::string ProcessedFilesBasename;
+
 
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;

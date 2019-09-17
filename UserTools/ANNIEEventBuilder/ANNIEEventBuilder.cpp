@@ -10,11 +10,19 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
 
   m_data= &data; //assigning transient data pointer
+
+  RunNum = 0;
+  PassNum = 0;
+  SavePath = "./";
+  ProcessedFilesBasename = "ProcessedRawData";
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("InputFile",InputFile);
   m_variables.Get("RunNumber",RunNum);
+  m_variables.Get("PassNumber",PassNum);
   m_variables.Get("EntriesPerSubrun",EntriesPerSubrun);
+  m_variables.Get("SavePath",SavePath);
+  m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
 
   // Initialize RawData
   RawData = new BoostStore(false,0);
@@ -28,7 +36,11 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   TrigData->Header->Get("TotalEntries",trigentries);
   std::cout<<"Total entries in TriggerData store: "<<trigentries<<std::endl;
 
-  //////////////////////initialize subrun index///////////////
+  m_data->CStore.Get("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  ///////////////////////Initialise ANNIEEvent BoostStore////
+  ANNIEEvent = new BoostStore(false,2);
+
+  //////////////////////initialize subrun index//////////////
   SubrunNum = 0;
   ANNIEEventNum = 0;
 
@@ -37,16 +49,15 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
 
 
 bool ANNIEEventBuilder::Execute(){
-  if((ANNIEEventNum/EntriesPerSubrun - 1) == SubrunNum) SubrunNum+=1;
 
   //Get the current FinishedPMTWaves map
   m_data->CStore.Get("FinishedPMTWaves",FinishedPMTWaves);
   //Check to see if any trigger times have all their PMTs
   for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : FinishedPMTWaves){
-    uint64_t PMTClockTime = apair.first;
+    uint64_t PMTCounterTime = apair.first;
     std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
     if(aWaveMap.size()>NumWavesInSet){
-      std::cout << "PMTClockTime " << PMTClockTime << " has more than " << NumWavesInSet << ". " <<
+      std::cout << "PMTCounterTime " << PMTCounterTime << " has more than " << NumWavesInSet << ". " <<
           "beginning to build ANNIEEvent." << std::endl;
       //TODO: Eventually, we'll need to sync the TriggerData with the PMT
       //Times (and LAPPD times when an LAPPDDataDecoder tool comes along).
@@ -57,7 +68,7 @@ bool ANNIEEventBuilder::Execute(){
       //  std::cout << "ANNIEEventBuilder TODO: How do we handle wave maps with no matching trigger time?" << std::endl;
       //}
       //If here, a match was found.  Start to build the ANNIEEvent.
-      this->BuildANNIEEvent(PMTClockTime, aWaveMap);
+      this->BuildANNIEEvent(PMTCounterTime, aWaveMap);
     }
   }
 
@@ -66,12 +77,12 @@ bool ANNIEEventBuilder::Execute(){
 
 
 bool ANNIEEventBuilder::Finalise(){
-  // Make the ANNIEEvent Store if it doesn't exist
-  // =============================================
-  int annieeventexists = m_data->Stores.count("ANNIEEvent");
-  if(annieeventexists==0) m_data->Stores["ANNIEEvent"] = new BoostStore(false,2);
-
-  //FIXME: Have the ANNIEEvent booststore we made be saved in "The Store"
+  delete RawData;
+  //Save the current subrun and delete ANNIEEvent
+  this->SaveSubrun();
+  delete ANNIEEvent;
+  delete TrigData;
+  std::cout << "ANNIEEventBuilder Exitting" << std::endl;
   return true;
 }
 
@@ -107,25 +118,37 @@ void ANNIEEventBuilder::SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, i
   return;
 }
 
-void ANNIEEventBuilder::BuildANNIEEvent(uint64_t PMTClockTime, 
+void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime, 
         std::map<std::vector<int>, std::vector<uint16_t>> WaveMap)
 {
   std::cout << "Building an ANNIE Event" << std::endl;
+  ANNIEEvent->GetEntry(ANNIEEventNum);
+
+  ///////////////LOAD RAW PMT DATA INTO ANNIEEVENT///////////////
+  std::map<unsigned long, Waveform<uint16_t> > RawADCData;
   for(std::pair<std::vector<int>, std::vector<uint16_t>> apair : WaveMap){
     int CardID = apair.first.at(0);
     int ChannelID = apair.first.at(1);
+    int CrateNum, SlotNum;
+    this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
     std::vector<uint16_t> TheWaveform = apair.second;
-    unsigned long ChannelKey = this->GetWavesChannelKey(CardID,ChannelID);
-    //Then, convert the wave into a RawWaveform class.
-    //FIXME: Waveform class expects a double, not a uint64_t
-    Waveform TheWave(PMTClockTime, TheWaveform);
-    //Lastly, we need to put these into an ANNIEEvent BoostStore!
+    std::vector<int> CrateSpace{CrateNum,SlotNum,ChannelID};
+    unsigned long ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
+    //FIXME: We're feeding Waveform class expects a double, not a uint64_t
+    Waveform<uint16_t> TheWave(ClockTime, TheWaveform);
+    RawADCData.emplace(ChannelKey,TheWave);
   }
+  ANNIEEvent->Set("RawADCData",RawADCData);
+  ANNIEEvent->Set("RunNumber",RunNum);
+  ANNIEEvent->Set("SubrunNumber",RunNum);
+  //FIXME: add other obvious ones here too...
+
+
   //TODO: Trigger information needs to be identified with the PMT Clock Time and
   //also added to the ANNIEEvent.  For now, just push the Clock Time as the
   //Trigger Time.
   
-  ////////////////////// TRIGGER DATA ACCESSING EXAMPLE  /////////////////////// 
+  ////////////////////// LOAD TRIGGER DATA INTO ANNIEEVENT  /////////////////////// 
   //TrigData->GetEntry(MatchEntry);
   //TriggerData Tdata;
   //TrigData->Get("TrigData",Tdata);
@@ -134,17 +157,33 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t PMTClockTime,
   //TimeClass TrigTime(EventTime);
   //uint32_t TriggerMask = Tdata.TriggerMasks.at(MatchIndex);
   //uint32_t TriggerCounter = Tdata.TriggerCounters.at(MatchIndex);
+  
+  ANNIEEventNum+=1;
+  //Check if we have enough ANNIEEvents to constitute a subrun
+  if((ANNIEEventNum/EntriesPerSubrun - 1) == SubrunNum){
+    this->SaveSubrun();
+    SubrunNum+=1;
+  }
   return;
 }
 
-unsigned long ANNIEEventBuilder::GetWavesChannelKey(int CardID, int ChannelID)
+void ANNIEEventBuilder::SaveSubrun()
 {
-  std::cout << "Getting channel key for given CardID and ChannelID" << std::endl;
-  //TODO: We need a function that converts CardID and ChannelID into
-  //our ChannelKey.
-  //Use Geometry information to get the right ChannelKey given this info.
-  unsigned long ChannelKey = 42;
-  return ChannelKey;
+  //TODO: Build the Filename out of SavePath_ProcessedFileBasename_Runnum_Subrun_Passnum
+  std::string Filename = "/ToolAnalysis/TheTestBoost";
+  ANNIEEvent->Save(Filename);
+  ANNIEEvent->Close();
+  delete ANNIEEvent;
+  ANNIEEvent = new BoostStore(false,2);
+  SubrunNum +=1;
 }
 
-
+void ANNIEEventBuilder::CardIDToElectronicsSpace(int CardID, 
+        int &CrateNum, int &SlotNum)
+{
+  std::cout << "FIXME: We need to build the map of VME CardIDs to the electronics space position." << std::endl;
+  std::cout << "In the meantime, the answer is 42." << std::endl;
+  CrateNum = 42;
+  SlotNum = 42;
+  return;
+}

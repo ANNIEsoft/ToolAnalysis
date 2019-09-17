@@ -48,7 +48,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   }
 
   //Make the map of channel key to crate space info
-  CrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
 
   //Initialize the geometry using the geometry CSV file entries
   this->InitializeGeometry();
@@ -64,7 +66,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
 
-  m_data->CStore.Set("CrateSpaceToChannelNumMap",CrateSpaceToChannelNumMap);
+  m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
    //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
 
   return true;
@@ -78,6 +82,9 @@ bool LoadGeometry::Execute(){
 
 bool LoadGeometry::Finalise(){
   std::cout << "LoadGeometry tool exitting" << std::endl;
+  delete MRDCrateSpaceToChannelNumMap;
+  delete TankPMTCrateSpaceToChannelNumMap;
+  delete LAPPDCrateSpaceToChannelNumMap;
   return true;
 }
 
@@ -331,10 +338,10 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
 
   // Also add this channel to the electronics map
   std::vector<int> crate_map{rack,TDC_slot,TDC_channel};
-  if(CrateSpaceToChannelNumMap->count(crate_map)==0){
-    CrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  if(MRDCrateSpaceToChannelNumMap->count(crate_map)==0){
+    MRDCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
-    Log("LoadGeometry Tool: ERROR: Tried assigning a channel_num to a crate space already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR: Tried assigning an MRD channel_num to a crate space already defined!!! ",v_error, verbosity);
   }
 
   if(verbosity>5) cout<<"Adding detector to Geometry"<<endl;
@@ -494,6 +501,14 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                       hv_slot,
                       hv_channel,
                       chanstatus); //channel status same as detector status here
+
+  // Also add this channel to the Tank PMT electronics map
+  std::vector<int> crate_map{signal_crate,signal_slot,signal_channel};
+  if(TankPMTCrateSpaceToChannelNumMap->count(crate_map)==0){
+    TankPMTCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning a Tank PMT channel_num to a crate space already defined!!! ",v_error, verbosity);
+  }
 
   // Add this channel to the geometry
   if(verbosity>4) cout<<"Adding channel "<<channel_num<<" to detector "<<detector_num<<endl;
@@ -678,6 +693,14 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
                       channel_hv_card,
                       channel_hv_channel,
                       channelstat);
+
+  // Also add this channel to the Tank PMT electronics map
+  std::vector<unsigned int> crate_map{channel_signal_crate,channel_signal_card,channel_signal_channel};
+  if(LAPPDCrateSpaceToChannelNumMap->count(crate_map)==0){
+    LAPPDCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning a Tank PMT channel_num to a crate space already defined!!! ",v_error, verbosity);
+  }
 
   // Add this channel to the detector
   if(adet != nullptr){
