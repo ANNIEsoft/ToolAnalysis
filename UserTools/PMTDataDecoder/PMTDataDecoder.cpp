@@ -54,7 +54,6 @@ bool PMTDataDecoder::Execute(){
     std::cout<<"CardData in Cdata's 0th index CardID="<<Cdata.at(0).CardID<<std::endl;
     std::cout<<"CardData in Cdata's 0th index data size="<<Cdata.at(0).Data.size()<<std::endl;
     
-    //###### MOCK-UP FOR HOW TO LOOP THROUGH AN ENTRY's VECTOR OF CARD DATA
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
       CardData aCardData = Cdata.at(CardDataIndex);
       bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
@@ -62,10 +61,14 @@ bool PMTDataDecoder::Execute(){
         std::cout << "CardData is next in it's sequence!  Decoding..." << std::endl;
         std::cout << "Decoding CardID " << aCardData.CardID << ", SequenceID " <<
             aCardData.SequenceID << std::endl;
-        //For this CardData entry, decode raw binary frames
+        //For this CardData entry, decode raw binary frames.  Locates header markers
+        //And separates the Frame Header from the data stream bits.
         std::vector<DecodedFrame> ThisCardDFs;
         ThisCardDFs = this->DecodeFrames(aCardData.Data);
-        //Now, loop through each frame and Parse their information
+        //Loop through each decoded frame and Parse their data stream and 
+        //frame header.  Data stream infomration is moved to the
+        //TriggerTimeBank and WaveBank, and any finished waveform is moved from 
+        //the TriggerTimeBank/WaveBank to the FinishedPMTWaves
         for (unsigned int i=0; i < ThisCardDFs.size(); i++){
           this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
         }
@@ -97,15 +100,14 @@ bool PMTDataDecoder::Execute(){
   ///////////////See if they are in order now ///////////////// 
   this->ParseOOOsNowInOrder();
    
-  //PMT Data done being processed this loop.  Push pointer to the
-  //CStore and use it in the ANNIEEventBuilder tool.
-  //Any of the MTCCounters have all their PMT data.
+  //PMT Data done being processed this execute loop.  
+  //Push the map of FinishedWaves to the CStore for ANNIEEvent to start 
+  //Building ANNIEEvents. 
   m_data->CStore.Set("FinishedPMTWaves",FinishedPMTWaves);
-  //###### END MOCK-UP ######
-  //
+  
   //Check the size of the WaveBank to see if things are bloating
   std::cout << "Size of WaveBank (# events in building progress): " << WaveBank.size() << std::endl;
-  std::cout << "Size of FinishedPMTWaves (# triggers with at least one wave built): " << FinishedPMTWaves.size() << std::endl;
+  std::cout << "Size of FinishedPMTWaves (# triggers with at least one wave fully): " << FinishedPMTWaves.size() << std::endl;
   //TODO: Print out, if debugging, the size of each entry in FinishedPMTWaves
 
   

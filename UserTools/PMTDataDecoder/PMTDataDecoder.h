@@ -84,15 +84,14 @@ class PMTDataDecoder: public Tool {
   std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
 
 
-  std::map<int, std::vector<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector  of vectors {SequenceID, BoostEntry, CdataVectorIndex}
+  std::map<int, std::vector<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
   //Maps used in decoding frames; specifically, holds record header and record waveform info
   std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
-  std::map<std::vector<int>, std::vector<uint16_t>> WaveBank;  //Key: {cardID, channelID}.  If you're in sequence, the MTCTime doesn't matter for mapping
-                                                               //NOTE: Samples are time-ordered before addition to the WaveBank
+  std::map<std::vector<int>, std::vector<uint16_t>> WaveBank;  //Key: {cardID, channelID}. Value: Waveform being built for this Card and ADC Channel. 
 
   //Maps that store completed waveforms from cards
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: Map referred to as a WaveMap.
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
 
 
   // Number of PMTData entries to process per loop
