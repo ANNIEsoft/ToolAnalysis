@@ -1,6 +1,6 @@
-# DataDecoder
+# PMTDataDecoder
 
-DataDecoder
+PMTDataDecoder
 
 The DataEncoder is a tool used to process Raw data files and ultimately convert them to
 ANNIEEvent stores.
@@ -33,7 +33,7 @@ std::map<int, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedWaves
 
 ## Configuration
 
-Describe any configuration variables for DataDecoder.
+Describe any configuration variables for PMTDataDecoder.
 
 verbosity (int)
     Integer that controls the level of log output shown when running.
@@ -44,6 +44,14 @@ InputFile (string)
 LockStep (bool)
     Indicates whether events are processed assuming the detector was being run
     in lock-step or not.  For single file processing, this will be set to false. 
+
+CardDataEntriesPerExecute (int)
+    Controls how many entries in the PMTData BoostStore are searched and 
+    decoded per Execute loop.  The idea behind this configurable is to adjust
+    how often the downstream Builder tools are accessed.  For example, 
+    ANNIEEventBuilder checks if any clock times have all the PMT waveforms and
+    builds an ANNIEEvent boost store if so.  Going to this tool after every
+    PMTData entry parsing may be a waste of resources.
 
 ```
   verbosity 2

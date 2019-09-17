@@ -7,6 +7,7 @@
 #include "Tool.h"
 #include "TimeClass.h"
 #include "TriggerClass.h"
+#include "Waveform.h"
 
 /**
  * \class ANNIEEventBuilder
@@ -27,19 +28,38 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
+  void SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, int &MatchIndex);
+  void BuildANNIEEvent(std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap, int MatchEntry, int MatchIndex);
+ 
 
  private:
 
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* FinishedWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
-  BoostStore TrigData(false,2);
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  BoostStore *RawData;
+  BoostStore *TrigData;
 
   std::string InputFile;
 
+  // Number of trigger entries from TriggerData loaded here
+  long trigentries=0;
+
   // Number of PMTs that must be found in a WaveSet to build the event
   //
-  int NumWavesInSet = 131;  
-  int RunNum;
-  int SubRunNum;
+  unsigned int NumWavesInSet = 131;  
+  int EntriesPerSubrun;
+
+  //Run Number defined in config, others iterated over as ANNIEEvent filled
+  uint32_t RunNum;
+  uint32_t SubrunNum;
+  uint32_t ANNIEEventNum;
+
+  /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
+  int verbosity;
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  std::string logmessage;
 };
 
 

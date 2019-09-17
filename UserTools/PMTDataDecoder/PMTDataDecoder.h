@@ -1,15 +1,18 @@
-#ifndef DataDecoder_H
-#define DataDecoder_H
+#ifndef PMTDataDecoder_H
+#define PMTDataDecoder_H
 
 #include <string>
 #include <iostream>
+#include <bitset>
 
 #include "Tool.h"
 #include "CardData.h"
 #include "TriggerData.h"
+#include "BoostStore.h"
+#include "Store.h"
 
 /**
- * \class DataDecoder
+ * \class PMTDataDecoder
  *
  This tool is used to decode the binary raw data and construct the ANNIEEvent
  boost stores.
@@ -30,23 +33,25 @@ struct DecodedFrame{
   }
 };
 
-class DataDecoder: public Tool {
+class PMTDataDecoder: public Tool {
 
 
  public:
 
-  DataDecoder(); ///< Simple constructor
+  PMTDataDecoder(); ///< Simple constructor
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
-  std::vector<DecodedFrame> UnpackFrames(std::vector<uint32_t> bank);
+  std::vector<DecodedFrame> DecodeFrames(std::vector<uint32_t> bank);
 
   void ParseFrame(int CardID, DecodedFrame DF);
   void ParseRecordHeader(int CardID, int ChannelID, std::vector<uint16_t> RH);
-  void StoreWaveform(int CardID, int ChannelID);
+  void StoreFinishedWaveform(int CardID, int ChannelID);
   void AddSamplesToWaveBank(int CardID, int ChannelID, std::vector<uint16_t> WaveSlice);
-  void BuildReadyEvents()
-  void BuildANNIEEvent(std::map<std::vector<int>, std::vector<uint16_t> > WaveMap)
+  bool CheckIfCardNextInSequence(CardData aCardData);
+  void BuildReadyEvents();
+  void ParseOOOsNowInOrder(); // Checks if any Out-Of-Order Sequence data is now in order.
+                              // If any is in order, it's data frames are decoded and parsed.
 
  private:
 
@@ -64,32 +69,36 @@ class DataDecoder: public Tool {
   //end of the first 48-bit word has the 0x000 of the Record Header.  Given each 12-bit
   //chunk is stored in a 16-bit word, you want to grab the 3 samples  left of 0x000 and
   //4 samples right of the 0x000.
-  int SAMPLES_LEFTOF_000 = 3;
-  int SAMPLES_RIGHTOF_000 = 4;
+  unsigned int SAMPLES_LEFTOF_000 = 3;
+  unsigned int SAMPLES_RIGHTOF_000 = 4;
 
-  BoostStore RawData(false,0);
-  BoostStore PMTData(false,2);
-  BoostStore TrigData(false,2);
+  BoostStore *RawData;
+  BoostStore *PMTData;
   std::vector<CardData> Cdata;
   TriggerData Tdata;
 
   std::string InputFile;
 
 
-  //Maps for keeping track of what CardData classes have been and need to be processed
-  std::map<int, int> SequenceMap;  //Key is CardID, Value is what sequence # is next
-  std::map<int, std::vector<int>> UnprocessedEntries; //Key is CardID, Value is vector of boost entry #s with an unprocessed entry
+  //Maps for keeping track of what SequenceID is next for each Card
+  std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
+
+
+  std::map<int, std::vector<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector  of vectors {SequenceID, BoostEntry, CdataVectorIndex}
 
   //Maps used in decoding frames; specifically, holds record header and record waveform info
   std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
   std::map<std::vector<int>, std::vector<uint16_t>> WaveBank;  //Key: {cardID, channelID}.  If you're in sequence, the MTCTime doesn't matter for mapping
+                                                               //NOTE: Samples are time-ordered before addition to the WaveBank
 
   //Maps that store completed waveforms from cards
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: Map referred to as a WaveMap.
 
 
   // Number of PMTData entries to process per loop
-  int ParsesPerExecute = 1;
+  int CardDataEntriesPerExecute;
+  // Notes whether DAQ is in lock step running
+  int LockStep;
   // Number of PMTs that must be found in a WaveSet to build the event
   int NumWavesInSet = 131;  
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

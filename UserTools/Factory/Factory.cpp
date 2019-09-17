@@ -95,7 +95,7 @@ if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
-if (tool=="DataDecoder") ret=new DataDecoder;
+if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 return ret;
 }
