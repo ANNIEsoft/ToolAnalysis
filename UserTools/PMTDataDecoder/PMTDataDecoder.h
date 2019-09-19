@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <bitset>
+#include <deque>
 
 #include "Tool.h"
 #include "CardData.h"
@@ -50,6 +51,10 @@ class PMTDataDecoder: public Tool {
   void AddSamplesToWaveBank(int CardID, int ChannelID, std::vector<uint16_t> WaveSlice);
   bool CheckIfCardNextInSequence(CardData aCardData);
   void BuildReadyEvents();
+
+  bool ParseOneCardOOOs(int CardID); // Gets a single CardID's UnprocessedEntries vector and
+                                     // Parses any cards that are now in order 
+                              // If any is in order, it's data frames are decoded and parsed.
   void ParseOOOsNowInOrder(); // Checks if any Out-Of-Order Sequence data is now in order.
                               // If any is in order, it's data frames are decoded and parsed.
 
@@ -84,7 +89,7 @@ class PMTDataDecoder: public Tool {
   std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
 
 
-  std::map<int, std::vector<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
+  std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
   //Maps used in decoding frames; specifically, holds record header and record waveform info
   std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
