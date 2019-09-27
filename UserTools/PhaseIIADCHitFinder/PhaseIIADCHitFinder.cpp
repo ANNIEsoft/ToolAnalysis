@@ -110,7 +110,7 @@ bool PhaseIIADCHitFinder::Execute() {
       // sets of raw and calibrated waveforms for the current channel
       if ( raw_waveforms.size() != calibrated_waveforms.size() ) {
         Log("Error: The PhaseIIPhaseIIADCHitFinder tool found a set of raw waveforms produced"
-          " using a different number of minibuffers than the matching calibrated"
+          " using a different number of waveforms than the matching calibrated"
           " waveforms.", v_error, verbosity);
         return false;
       }
@@ -132,7 +132,7 @@ bool PhaseIIADCHitFinder::Execute() {
               + std::round( calibrated_waveforms.at(mb).GetBaseline() );
           }
 
-          if (mb == 0) Log("PhaseIIADCHitFinder: First minibuffer will use ADC threshold = "
+          if (mb == 0) Log("PhaseIIADCHitFinder: Waveform will use ADC threshold = "
             + std::to_string(thispmt_adc_threshold) + " for channel "
             + std::to_string( channel_key ),
             2, verbosity);
