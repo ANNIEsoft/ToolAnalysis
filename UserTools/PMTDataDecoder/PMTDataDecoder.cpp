@@ -34,10 +34,9 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
   PMTData->Print(false);
   
-  long entries=0;
-  PMTData->Header->Get("TotalEntries",entries);
+  PMTData->Header->Get("TotalEntries",totalentries);
 
-  if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<entries<<std::endl;
+  if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
   
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
@@ -48,9 +47,9 @@ bool PMTDataDecoder::Execute(){
   int NumPMTDataProcessed = 0;
   if (CardDataEntriesPerExecute == -1){
     Log("PMTDataDecoder Tool: Parsing entire PMTData booststore this loop",v_message,verbosity); 
-    CardDataEntriesPerExecute = entries;
+    CardDataEntriesPerExecute = totalentries;
   }
-  while(NumPMTDataProcessed<CardDataEntriesPerExecute){
+  while((NumPMTDataProcessed<CardDataEntriesPerExecute) && (CDEntryNum < totalentries)){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     PMTData->GetEntry(CDEntryNum);
     PMTData->Get("CardData",Cdata);

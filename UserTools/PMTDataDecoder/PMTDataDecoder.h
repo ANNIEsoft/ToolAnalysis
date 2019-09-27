@@ -60,7 +60,7 @@ class PMTDataDecoder: public Tool {
 
  private:
 
-
+  long totalentries=0;
   int CDEntryNum = 0;
   int RECORD_HEADER_SAMPLENUMS = 8;
 
