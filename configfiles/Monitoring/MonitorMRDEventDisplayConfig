@@ -3,5 +3,6 @@
 verbose 0
 #OutputPath /ANNIECode/MRDMonitorOutputTest/
 OutputPath fromStore
-ActiveSlots configfiles/Monitoring/MRD_activech.txt #define which slots of the crate are connected
-InActiveChannels configfiles/Monitoring/MRD_inactivech.txt  #define which channels of the active slots are not connected
+CustomRange 1		#TDC range with user-defined values?
+RangeMin 1		#minimum TDC value
+RangeMax 100		#maximum TDC value

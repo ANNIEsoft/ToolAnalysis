@@ -18,6 +18,8 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     m_variables.Get("verbose",verbosity);
     //m_variables.Print();
 
+    if (verbosity > 2) std::cout <<"MonitorSimReceive: Initialising"<<std::endl;
+
     if (verbosity > 2) {
         std::cout <<"MRDDataPath: "<<MRDDataPathSingle<<std::endl;
         std::cout <<"MRDTxtFile: "<<MRD_path_to_file<<std::endl;
@@ -52,6 +54,8 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
 
 
 bool MonitorSimReceive::Execute(){
+
+    if (verbosity > 2) std::cout <<"MonitorSimReceive: Executing"<<std::endl;
 
     if (mode == "FileList"){
 
@@ -139,6 +143,8 @@ bool MonitorSimReceive::Execute(){
 
 
 bool MonitorSimReceive::Finalise(){
+
+    if (verbosity > 2) std::cout <<"MonitorSimReceive: Finalising"<<std::endl;
 
     MRDData=0;
     m_data->CStore.Remove("State");

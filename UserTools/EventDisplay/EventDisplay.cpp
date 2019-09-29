@@ -150,6 +150,8 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
 
+  n_lappds = 0;
+
   n_tank_pmts = geom->GetNumDetectorsInSet("Tank");
   n_lappds = geom->GetNumDetectorsInSet("LAPPD");
   n_mrd_pmts = geom->GetNumDetectorsInSet("MRD");
@@ -157,9 +159,10 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Get("lappdid_to_detectorkey",lappdid_to_detectorkey);
   m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
   m_data->CStore.Get("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
-  std::cout <<"EventDisplay: Num Tank PMTs: "<<n_tank_pmts<<", num MRD PMTs: "<<n_mrd_pmts<<", num Veto PMTs: "<<n_veto_pmts<<", num LAPPDs: "<<n_lappds<<std::endl;
+  
+  if (verbose > 0) std::cout <<"EventDisplay: Num Tank PMTs: "<<n_tank_pmts<<", num MRD PMTs: "<<n_mrd_pmts<<", num Veto PMTs: "<<n_veto_pmts<<", num LAPPDs: "<<n_lappds<<std::endl;
   std::map<std::string,std::map<unsigned long,Detector*> >* Detectors = geom->GetDetectors();
-  std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;
+  if (verbose > 0) std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;
   
   //----------------------------------------------------------------------
   //-----------read in the LAPPD detkeys into a vector--------------------

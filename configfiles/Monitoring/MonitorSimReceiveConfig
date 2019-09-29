@@ -1,4 +1,4 @@
-MRDDataPath /ANNIECode/data/MRDTest/MRDTest26commonstopp207
+MRDDataPath /ANNIECode/data/MRDTest/MRDTest28commonstopp0
 MRDTxtFile ./configfiles/Monitoring/MRDfiles.txt
 Mode FileList
 verbose 0

@@ -1,3 +1,4 @@
+myLoadGeometry LoadGeometry configfiles/Monitoring/LoadGeometryConfig
 myMonitorReceive MonitorReceive configfiles/Monitoring/MonitorReceiveConfig
 #myMonitorSimReceive MonitorSimReceive configfiles/Monitoring/MonitorSimReceiveConfig
 myMonitorMRDLive MonitorMRDLive configfiles/Monitoring/MonitorMRDLiveConfig
