@@ -1,0 +1,7 @@
+LoadRATPAC LoadRATPAC ./configfiles/VertexReco/PhaseIIRecoTruthRP/LoadRATPACConfig
+MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIRecoTruthRP/MCParticlePropertiesConfig
+MCRecoEventLoader MCRecoEventLoader ./configfiles/VertexReco/PhaseIIRecoTruthRP/MCRecoEventLoaderConfig
+DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIRecoTruthRP/DigitBuilderConfig
+EventSelector EventSelector ./configfiles/VertexReco/PhaseIIRecoTruthRP/EventSelectorConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder ./configfiles/VertexReco/PhaseIIRecoTruthRP/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker ./configfiles/VertexReco/PhaseIIRecoTruthRP/PhaseIITreeMakerConfig

@@ -1,94 +1,142 @@
-\hypertarget{classDetector}{\section{Detector Class Reference}
+\hypertarget{classDetector}{
+\section{Detector Class Reference}
 \label{classDetector}\index{Detector@{Detector}}
 }
-Inheritance diagram for Detector\-:\begin{figure}[H]
+Inheritance diagram for Detector::\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=2.000000cm]{classDetector}
+\includegraphics[height=2cm]{classDetector}
 \end{center}
 \end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classDetector_acc63b0828ae0a8fecca2f71b26f14531}{{\bfseries Detector} (int detid, std\-::string Det\-Ele, std\-::string Cyl\-Loc, \hyperlink{classPosition}{Position} posin, \hyperlink{classDirection}{Direction} dirin, std\-::string detype, detectorstatus stat, double avgrate, map$<$ unsigned long, \hyperlink{classChannel}{Channel} $>$ channelsin=\{\})}\label{classDetector_acc63b0828ae0a8fecca2f71b26f14531}
+\hypertarget{classDetector_acc63b0828ae0a8fecca2f71b26f14531}{
+{\bfseries Detector} (int detid, std::string DetEle, std::string CylLoc, \hyperlink{classPosition}{Position} posin, \hyperlink{classDirection}{Direction} dirin, std::string detype, detectorstatus stat, double avgrate, map$<$ unsigned long, \hyperlink{classChannel}{Channel} $>$ channelsin=\{\})}
+\label{classDetector_acc63b0828ae0a8fecca2f71b26f14531}
 
 \item 
-\hypertarget{classDetector_a7622dcc0d32a77b2d81f3346f9d486a6}{std\-::string {\bfseries Get\-Detector\-Element} ()}\label{classDetector_a7622dcc0d32a77b2d81f3346f9d486a6}
+\hypertarget{classDetector_a7622dcc0d32a77b2d81f3346f9d486a6}{
+std::string {\bfseries GetDetectorElement} ()}
+\label{classDetector_a7622dcc0d32a77b2d81f3346f9d486a6}
 
 \item 
-\hypertarget{classDetector_ae706947ab25223c2707b0b04fa1cf999}{\hyperlink{classPosition}{Position} {\bfseries Get\-Detector\-Position} ()}\label{classDetector_ae706947ab25223c2707b0b04fa1cf999}
+\hypertarget{classDetector_ae706947ab25223c2707b0b04fa1cf999}{
+\hyperlink{classPosition}{Position} {\bfseries GetDetectorPosition} ()}
+\label{classDetector_ae706947ab25223c2707b0b04fa1cf999}
 
 \item 
-\hypertarget{classDetector_ace3843de946676dac6a031ab21ab2537}{\hyperlink{classPosition}{Position} {\bfseries Get\-Position\-In\-Tank} ()}\label{classDetector_ace3843de946676dac6a031ab21ab2537}
+\hypertarget{classDetector_ace3843de946676dac6a031ab21ab2537}{
+\hyperlink{classPosition}{Position} {\bfseries GetPositionInTank} ()}
+\label{classDetector_ace3843de946676dac6a031ab21ab2537}
 
 \item 
-\hypertarget{classDetector_a80cbd9a7402579d601953a91d6883a94}{\hyperlink{classDirection}{Direction} {\bfseries Get\-Detector\-Direction} ()}\label{classDetector_a80cbd9a7402579d601953a91d6883a94}
+\hypertarget{classDetector_a80cbd9a7402579d601953a91d6883a94}{
+\hyperlink{classDirection}{Direction} {\bfseries GetDetectorDirection} ()}
+\label{classDetector_a80cbd9a7402579d601953a91d6883a94}
 
 \item 
-\hypertarget{classDetector_a85412b023bb48b28e27c9b308857653f}{int {\bfseries Get\-Detector\-I\-D} ()}\label{classDetector_a85412b023bb48b28e27c9b308857653f}
+\hypertarget{classDetector_a85412b023bb48b28e27c9b308857653f}{
+int {\bfseries GetDetectorID} ()}
+\label{classDetector_a85412b023bb48b28e27c9b308857653f}
 
 \item 
-\hypertarget{classDetector_a0f5e4f78e6e64903f46679577609a320}{std\-::string {\bfseries Get\-Detector\-Type} ()}\label{classDetector_a0f5e4f78e6e64903f46679577609a320}
+\hypertarget{classDetector_a0f5e4f78e6e64903f46679577609a320}{
+std::string {\bfseries GetDetectorType} ()}
+\label{classDetector_a0f5e4f78e6e64903f46679577609a320}
 
 \item 
-\hypertarget{classDetector_adf81db079151a065407d44558a6240b3}{detectorstatus {\bfseries Get\-Status} ()}\label{classDetector_adf81db079151a065407d44558a6240b3}
+\hypertarget{classDetector_adf81db079151a065407d44558a6240b3}{
+detectorstatus {\bfseries GetStatus} ()}
+\label{classDetector_adf81db079151a065407d44558a6240b3}
 
 \item 
-\hypertarget{classDetector_a1aa42e2f99fd99f2b09d2ab0a1ff4405}{std\-::map$<$ unsigned long, \\*
-\hyperlink{classChannel}{Channel} $>$ $\ast$ {\bfseries Get\-Channels} ()}\label{classDetector_a1aa42e2f99fd99f2b09d2ab0a1ff4405}
+\hypertarget{classDetector_a1aa42e2f99fd99f2b09d2ab0a1ff4405}{
+std::map$<$ unsigned long, \hyperlink{classChannel}{Channel} $>$ $\ast$ {\bfseries GetChannels} ()}
+\label{classDetector_a1aa42e2f99fd99f2b09d2ab0a1ff4405}
 
 \item 
-\hypertarget{classDetector_adc95528c7b20269f2f30a6d5330a7fd7}{void {\bfseries Add\-Channel} (\hyperlink{classChannel}{Channel} chanin)}\label{classDetector_adc95528c7b20269f2f30a6d5330a7fd7}
+\hypertarget{classDetector_adc95528c7b20269f2f30a6d5330a7fd7}{
+void {\bfseries AddChannel} (\hyperlink{classChannel}{Channel} chanin)}
+\label{classDetector_adc95528c7b20269f2f30a6d5330a7fd7}
 
 \item 
-\hypertarget{classDetector_aa87b945be097376ed4d9e7ad11da60f5}{std\-::string {\bfseries Get\-Tank\-Location} ()}\label{classDetector_aa87b945be097376ed4d9e7ad11da60f5}
+\hypertarget{classDetector_aa87b945be097376ed4d9e7ad11da60f5}{
+std::string {\bfseries GetTankLocation} ()}
+\label{classDetector_aa87b945be097376ed4d9e7ad11da60f5}
 
 \item 
-\hypertarget{classDetector_ac0b5f82030923f555f4420c110de97b0}{\hyperlink{classGeometry}{Geometry} $\ast$ {\bfseries Get\-Geometry\-Ptr} ()}\label{classDetector_ac0b5f82030923f555f4420c110de97b0}
+\hypertarget{classDetector_ac0b5f82030923f555f4420c110de97b0}{
+\hyperlink{classGeometry}{Geometry} $\ast$ {\bfseries GetGeometryPtr} ()}
+\label{classDetector_ac0b5f82030923f555f4420c110de97b0}
 
 \item 
-\hypertarget{classDetector_a5a447c98e1cda4bcb669d6f0cf7f372e}{void {\bfseries Set\-Detector\-Element} (std\-::string Det\-Ele\-In)}\label{classDetector_a5a447c98e1cda4bcb669d6f0cf7f372e}
+\hypertarget{classDetector_a5a447c98e1cda4bcb669d6f0cf7f372e}{
+void {\bfseries SetDetectorElement} (std::string DetEleIn)}
+\label{classDetector_a5a447c98e1cda4bcb669d6f0cf7f372e}
 
 \item 
-\hypertarget{classDetector_a388c07e8a741d22a5dcec27ae0718223}{void {\bfseries Set\-Detector\-Position} (\hyperlink{classPosition}{Position} Detector\-Position\-In)}\label{classDetector_a388c07e8a741d22a5dcec27ae0718223}
+\hypertarget{classDetector_a388c07e8a741d22a5dcec27ae0718223}{
+void {\bfseries SetDetectorPosition} (\hyperlink{classPosition}{Position} DetectorPositionIn)}
+\label{classDetector_a388c07e8a741d22a5dcec27ae0718223}
 
 \item 
-\hypertarget{classDetector_a349a08c4b6eb90415971d798f6c35466}{void {\bfseries Set\-Detector\-Direction} (\hyperlink{classDirection}{Direction} Detector\-Direction\-In)}\label{classDetector_a349a08c4b6eb90415971d798f6c35466}
+\hypertarget{classDetector_a349a08c4b6eb90415971d798f6c35466}{
+void {\bfseries SetDetectorDirection} (\hyperlink{classDirection}{Direction} DetectorDirectionIn)}
+\label{classDetector_a349a08c4b6eb90415971d798f6c35466}
 
 \item 
-\hypertarget{classDetector_ac6b4e26f7391b0e96cddf047aec6baf3}{void {\bfseries Set\-Detector\-I\-D} (int Detector\-I\-D\-In)}\label{classDetector_ac6b4e26f7391b0e96cddf047aec6baf3}
+\hypertarget{classDetector_ac6b4e26f7391b0e96cddf047aec6baf3}{
+void {\bfseries SetDetectorID} (int DetectorIDIn)}
+\label{classDetector_ac6b4e26f7391b0e96cddf047aec6baf3}
 
 \item 
-\hypertarget{classDetector_ac903797b8948e0107de513de60757b2e}{void {\bfseries Set\-Detector\-Type} (std\-::string Detector\-Type\-In)}\label{classDetector_ac903797b8948e0107de513de60757b2e}
+\hypertarget{classDetector_ac903797b8948e0107de513de60757b2e}{
+void {\bfseries SetDetectorType} (std::string DetectorTypeIn)}
+\label{classDetector_ac903797b8948e0107de513de60757b2e}
 
 \item 
-\hypertarget{classDetector_a912c695a5b4c7bdac1fd6d408cb4e943}{void {\bfseries Set\-Status} (detectorstatus Status\-In)}\label{classDetector_a912c695a5b4c7bdac1fd6d408cb4e943}
+\hypertarget{classDetector_a912c695a5b4c7bdac1fd6d408cb4e943}{
+void {\bfseries SetStatus} (detectorstatus StatusIn)}
+\label{classDetector_a912c695a5b4c7bdac1fd6d408cb4e943}
 
 \item 
-\hypertarget{classDetector_acc18123ffd61248f94f86eae4a54a0af}{void {\bfseries Set\-Tank\-Location} (std\-::string locin)}\label{classDetector_acc18123ffd61248f94f86eae4a54a0af}
+\hypertarget{classDetector_acc18123ffd61248f94f86eae4a54a0af}{
+void {\bfseries SetTankLocation} (std::string locin)}
+\label{classDetector_acc18123ffd61248f94f86eae4a54a0af}
 
 \item 
-\hypertarget{classDetector_a314120e55ef11500f7e0463e94ae37bb}{void {\bfseries Set\-Geometry\-Ptr} (\hyperlink{classGeometry}{Geometry} $\ast$geomin)}\label{classDetector_a314120e55ef11500f7e0463e94ae37bb}
+\hypertarget{classDetector_a314120e55ef11500f7e0463e94ae37bb}{
+void {\bfseries SetGeometryPtr} (\hyperlink{classGeometry}{Geometry} $\ast$geomin)}
+\label{classDetector_a314120e55ef11500f7e0463e94ae37bb}
 
 \item 
-\hypertarget{classDetector_a89a77c0af830a448ab599e9cfce4a2d8}{bool {\bfseries Print} ()}\label{classDetector_a89a77c0af830a448ab599e9cfce4a2d8}
+\hypertarget{classDetector_a89a77c0af830a448ab599e9cfce4a2d8}{
+bool {\bfseries Print} ()}
+\label{classDetector_a89a77c0af830a448ab599e9cfce4a2d8}
 
 \item 
-\hypertarget{classDetector_a4fced6fd118fe1371ee7e7193c666710}{bool {\bfseries Print\-Status} (detectorstatus status)}\label{classDetector_a4fced6fd118fe1371ee7e7193c666710}
+\hypertarget{classDetector_a4fced6fd118fe1371ee7e7193c666710}{
+bool {\bfseries PrintStatus} (detectorstatus status)}
+\label{classDetector_a4fced6fd118fe1371ee7e7193c666710}
 
 \item 
-\hypertarget{classDetector_af25e30e52b653b1380743676322f88ea}{void {\bfseries Print\-Channels} ()}\label{classDetector_af25e30e52b653b1380743676322f88ea}
+\hypertarget{classDetector_af25e30e52b653b1380743676322f88ea}{
+void {\bfseries PrintChannels} ()}
+\label{classDetector_af25e30e52b653b1380743676322f88ea}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classDetector_ac98d07dd8f7b70e16ccb9a01abf56b9c}{class {\bfseries boost\-::serialization\-::access}}\label{classDetector_ac98d07dd8f7b70e16ccb9a01abf56b9c}
+\hypertarget{classDetector_ac98d07dd8f7b70e16ccb9a01abf56b9c}{
+class {\bfseries boost::serialization::access}}
+\label{classDetector_ac98d07dd8f7b70e16ccb9a01abf56b9c}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-Data\-Model/Detector.\-h\item 
-Data\-Model/Detector.\-cpp\end{DoxyCompactItemize}
+DataModel/Detector.h\item 
+DataModel/Detector.cpp\end{DoxyCompactItemize}

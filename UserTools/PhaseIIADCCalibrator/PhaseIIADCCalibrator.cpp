@@ -19,11 +19,17 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
 bool PhaseIIADCCalibrator::Execute() {
   
   if(verbosity) std::cout<<"Initializing Tool PhaseIIADCCalibrator"<<std::endl;
-  
+
+  //Set defaults in case config file has no entries
+  p_critical = 0.01;
+  num_sub_waveforms = 6;
+  num_baseline_samples = 5;
+
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("PCritical", p_critical);
   m_variables.Get("NumBaselineSamples", num_baseline_samples);
-  
+  m_variables.Get("NumSubWaveforms", num_sub_waveforms);
+
   // Get a pointer to the ANNIEEvent Store
   auto* annie_event = m_data->Stores["ANNIEEvent"];
 
@@ -57,6 +63,8 @@ bool PhaseIIADCCalibrator::Execute() {
 
   for (const auto& temp_pair : raw_waveform_map) {
     const auto& channel_key = temp_pair.first;
+    //Default running: raw_waveforms only has one entry.  If we go to a
+    //hefty-mode style of running though, this could have multiple minibuffers
     const auto& raw_waveforms = temp_pair.second;
 
     Log("Making calibrated waveforms for ADC channel " +
@@ -88,18 +96,22 @@ void PhaseIIADCCalibrator::ze3ra_baseline(
   std::vector<double> variances;
   std::vector<double> Ps;
 
-  // Compute the signal ADC mean and variance for each raw data minibuffer
-  for (size_t mb = 0; mb < raw_data.size(); ++mb) {
-    const auto& mb_data = raw_data.at(mb).Samples();
+  // Using the Phase I non-hefty algorithm. Split the early part of the waveform 
+  // into sub-minibuffers and compute the mean and variance of each one.
+  const auto& data = raw_data.front().Samples();
+  for (size_t sub_mb = 0u; sub_mb < num_sub_waveforms; ++sub_mb) {
+    std::vector<unsigned short> sub_mb_data(
+      data.cbegin() + sub_mb * num_baseline_samples,
+      data.cbegin() + (1u + sub_mb) * num_baseline_samples);
 
     double mean, var;
-    ComputeMeanAndVariance(mb_data, mean, var, num_baseline_samples);
+    ComputeMeanAndVariance(sub_mb_data, mean, var, num_baseline_samples);
 
     means.push_back(mean);
     variances.push_back(var);
   }
 
-  // Compute probabilities for the F-distribution test for each minibuffer
+  // Compute probabilities for the F-distribution test for each waveform chunk
   for (size_t j = 0; j < variances.size() - 1; ++j) {
     double sigma2_j = variances.at(j);
     double sigma2_jp1 = variances.at(j + 1);

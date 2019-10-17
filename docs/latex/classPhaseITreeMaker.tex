@@ -1,162 +1,249 @@
-\hypertarget{classPhaseITreeMaker}{\section{Phase\-I\-Tree\-Maker Class Reference}
-\label{classPhaseITreeMaker}\index{Phase\-I\-Tree\-Maker@{Phase\-I\-Tree\-Maker}}
+\hypertarget{classPhaseITreeMaker}{
+\section{PhaseITreeMaker Class Reference}
+\label{classPhaseITreeMaker}\index{PhaseITreeMaker@{PhaseITreeMaker}}
 }
-Inheritance diagram for Phase\-I\-Tree\-Maker\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classPhaseITreeMaker}
-\end{center}
-\end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classPhaseITreeMaker_aa12e20838522941f6a22633bab68f670}{bool {\bfseries Initialise} (const std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data) override}\label{classPhaseITreeMaker_aa12e20838522941f6a22633bab68f670}
+\hypertarget{classPhaseITreeMaker_aa12e20838522941f6a22633bab68f670}{
+bool {\bfseries Initialise} (const std::string configfile, \hyperlink{classDataModel}{DataModel} \&data) override}
+\label{classPhaseITreeMaker_aa12e20838522941f6a22633bab68f670}
 
 \item 
-\hypertarget{classPhaseITreeMaker_ad5fc39011665bc920d1f87fdf3315b0c}{bool {\bfseries Execute} () override}\label{classPhaseITreeMaker_ad5fc39011665bc920d1f87fdf3315b0c}
+\hypertarget{classPhaseITreeMaker_ad5fc39011665bc920d1f87fdf3315b0c}{
+bool {\bfseries Execute} () override}
+\label{classPhaseITreeMaker_ad5fc39011665bc920d1f87fdf3315b0c}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a1e910bcd77869d96213501d25a5074ca}{bool {\bfseries Finalise} () override}\label{classPhaseITreeMaker_a1e910bcd77869d96213501d25a5074ca}
+\hypertarget{classPhaseITreeMaker_a1e910bcd77869d96213501d25a5074ca}{
+bool {\bfseries Finalise} () override}
+\label{classPhaseITreeMaker_a1e910bcd77869d96213501d25a5074ca}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classPhaseITreeMaker_a2353d84241001bec77f48242e0d6545d}{{\footnotesize template$<$typename T , typename A\-Store $>$ }\\bool {\bfseries get\-\_\-object\-\_\-from\-\_\-store} (const std\-::string \&object\-\_\-label, T \&obj, A\-Store \&s)}\label{classPhaseITreeMaker_a2353d84241001bec77f48242e0d6545d}
+\hypertarget{classPhaseITreeMaker_a286cdf9bbb6bb90477aa0342250b24c5}{
+{\footnotesize template$<$typename T , typename AStore $>$ }\\bool {\bfseries get\_\-object\_\-from\_\-store} (const std::string \&object\_\-label, T \&obj, AStore \&s)}
+\label{classPhaseITreeMaker_a286cdf9bbb6bb90477aa0342250b24c5}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a0cec12d12944459177035800d5206d45}{{\footnotesize template$<$typename T $>$ }\\auto {\bfseries check\-\_\-that\-\_\-not\-\_\-empty} (const std\-::string \&object\-\_\-label, T \&obj) -\/$>$ decltype(std\-::declval$<$ T \& $>$().empty())}\label{classPhaseITreeMaker_a0cec12d12944459177035800d5206d45}
+\hypertarget{classPhaseITreeMaker_a66d4fe93f1d5c8d6d939be653b2c91ce}{
+{\footnotesize template$<$typename T $>$ }\\auto {\bfseries check\_\-that\_\-not\_\-empty} (const std::string \&object\_\-label, T \&obj)-\/$>$ decltype(std}
+\label{classPhaseITreeMaker_a66d4fe93f1d5c8d6d939be653b2c91ce}
 
 \item 
-\hypertarget{classPhaseITreeMaker_af70785f235c6dfc44acd219acc49d2ba}{int {\bfseries get\-\_\-\-N\-C\-V\-\_\-position} (uint32\-\_\-t run\-\_\-number) const }\label{classPhaseITreeMaker_af70785f235c6dfc44acd219acc49d2ba}
+\hypertarget{classPhaseITreeMaker_af70785f235c6dfc44acd219acc49d2ba}{
+int {\bfseries get\_\-NCV\_\-position} (uint32\_\-t run\_\-number) const }
+\label{classPhaseITreeMaker_af70785f235c6dfc44acd219acc49d2ba}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a4d51e9c4ce60a8f932d3719a24c62494}{bool {\bfseries approve\-\_\-event} (int64\-\_\-t event\-\_\-time, int64\-\_\-t old\-\_\-time, const \hyperlink{classADCPulse}{A\-D\-C\-Pulse} \&first\-\_\-ncv1\-\_\-pulse, const std\-::map$<$ unsigned long, std\-::vector$<$ std\-::vector$<$ \hyperlink{classADCPulse}{A\-D\-C\-Pulse} $>$ $>$ $>$ \&adc\-\_\-hits, int minibuffer\-\_\-index)}\label{classPhaseITreeMaker_a4d51e9c4ce60a8f932d3719a24c62494}
+\hypertarget{classPhaseITreeMaker_a4d51e9c4ce60a8f932d3719a24c62494}{
+bool {\bfseries approve\_\-event} (int64\_\-t event\_\-time, int64\_\-t old\_\-time, const \hyperlink{classADCPulse}{ADCPulse} \&first\_\-ncv1\_\-pulse, const std::map$<$ unsigned long, std::vector$<$ std::vector$<$ \hyperlink{classADCPulse}{ADCPulse} $>$ $>$ $>$ \&adc\_\-hits, int minibuffer\_\-index)}
+\label{classPhaseITreeMaker_a4d51e9c4ce60a8f932d3719a24c62494}
 
 \item 
-\hypertarget{classPhaseITreeMaker_aa52d9d62bd39a9883fe2d49b8d92de1b}{double {\bfseries compute\-\_\-tank\-\_\-charge} (size\-\_\-t minibuffer\-\_\-number, const std\-::map$<$ unsigned long, std\-::vector$<$ std\-::vector$<$ \hyperlink{classADCPulse}{A\-D\-C\-Pulse} $>$ $>$ $>$ \&adc\-\_\-hits, uint64\-\_\-t start\-\_\-time, uint64\-\_\-t end\-\_\-time, int \&num\-\_\-unique\-\_\-water\-\_\-pmts)}\label{classPhaseITreeMaker_aa52d9d62bd39a9883fe2d49b8d92de1b}
+\hypertarget{classPhaseITreeMaker_aa52d9d62bd39a9883fe2d49b8d92de1b}{
+double {\bfseries compute\_\-tank\_\-charge} (size\_\-t minibuffer\_\-number, const std::map$<$ unsigned long, std::vector$<$ std::vector$<$ \hyperlink{classADCPulse}{ADCPulse} $>$ $>$ $>$ \&adc\_\-hits, uint64\_\-t start\_\-time, uint64\_\-t end\_\-time, int \&num\_\-unique\_\-water\_\-pmts)}
+\label{classPhaseITreeMaker_aa52d9d62bd39a9883fe2d49b8d92de1b}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classPhaseITreeMaker_a75f89b2e33d97896b1d9364a20e542dd}{int \hyperlink{classPhaseITreeMaker_a75f89b2e33d97896b1d9364a20e542dd}{verbosity\-\_\-} = 0}\label{classPhaseITreeMaker_a75f89b2e33d97896b1d9364a20e542dd}
+\hypertarget{classPhaseITreeMaker_a75f89b2e33d97896b1d9364a20e542dd}{
+int \hyperlink{classPhaseITreeMaker_a75f89b2e33d97896b1d9364a20e542dd}{verbosity\_\-} = 0}
+\label{classPhaseITreeMaker_a75f89b2e33d97896b1d9364a20e542dd}
 
-\begin{DoxyCompactList}\small\item\em Integer that determines the level of logging to perform. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_ab43b43c6e78f17bc649edc8b86b0d245}{int \hyperlink{classPhaseITreeMaker_ab43b43c6e78f17bc649edc8b86b0d245}{afterpulsing\-\_\-veto\-\_\-time\-\_\-} = 0}\label{classPhaseITreeMaker_ab43b43c6e78f17bc649edc8b86b0d245}
+\begin{DoxyCompactList}\small\item\em Integer that determines the level of logging to perform. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_ab43b43c6e78f17bc649edc8b86b0d245}{
+int \hyperlink{classPhaseITreeMaker_ab43b43c6e78f17bc649edc8b86b0d245}{afterpulsing\_\-veto\_\-time\_\-} = 0}
+\label{classPhaseITreeMaker_ab43b43c6e78f17bc649edc8b86b0d245}
 
-\begin{DoxyCompactList}\small\item\em The time (in ns) to use when applying the afterpulsing veto. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_a7cfb0cb750c6c6bb5c7d0ece1b837dbb}{int \hyperlink{classPhaseITreeMaker_a7cfb0cb750c6c6bb5c7d0ece1b837dbb}{tank\-\_\-charge\-\_\-window\-\_\-length\-\_\-} = 0}\label{classPhaseITreeMaker_a7cfb0cb750c6c6bb5c7d0ece1b837dbb}
+\begin{DoxyCompactList}\small\item\em The time (in ns) to use when applying the afterpulsing veto. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_a7cfb0cb750c6c6bb5c7d0ece1b837dbb}{
+int \hyperlink{classPhaseITreeMaker_a7cfb0cb750c6c6bb5c7d0ece1b837dbb}{tank\_\-charge\_\-window\_\-length\_\-} = 0}
+\label{classPhaseITreeMaker_a7cfb0cb750c6c6bb5c7d0ece1b837dbb}
 
-\begin{DoxyCompactList}\small\item\em The time interval over which to compute the tank charge for each N\-C\-V coincidence event. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_a4cf3023fb082c58b2ce75ee63cb60372}{int \hyperlink{classPhaseITreeMaker_a4cf3023fb082c58b2ce75ee63cb60372}{max\-\_\-unique\-\_\-water\-\_\-pmts\-\_\-} = 0}\label{classPhaseITreeMaker_a4cf3023fb082c58b2ce75ee63cb60372}
+\begin{DoxyCompactList}\small\item\em The time interval over which to compute the tank charge for each NCV coincidence event. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_a4cf3023fb082c58b2ce75ee63cb60372}{
+int \hyperlink{classPhaseITreeMaker_a4cf3023fb082c58b2ce75ee63cb60372}{max\_\-unique\_\-water\_\-pmts\_\-} = 0}
+\label{classPhaseITreeMaker_a4cf3023fb082c58b2ce75ee63cb60372}
 
-\begin{DoxyCompactList}\small\item\em The maximum number of unique water P\-M\-Ts to allow for a neutron candidate event. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_a987ef63235bef3d80f1b212ecd6bc5f5}{double \hyperlink{classPhaseITreeMaker_a987ef63235bef3d80f1b212ecd6bc5f5}{max\-\_\-tank\-\_\-charge\-\_\-} = 0.}\label{classPhaseITreeMaker_a987ef63235bef3d80f1b212ecd6bc5f5}
+\begin{DoxyCompactList}\small\item\em The maximum number of unique water PMTs to allow for a neutron candidate event. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_a987ef63235bef3d80f1b212ecd6bc5f5}{
+double \hyperlink{classPhaseITreeMaker_a987ef63235bef3d80f1b212ecd6bc5f5}{max\_\-tank\_\-charge\_\-} = 0.}
+\label{classPhaseITreeMaker_a987ef63235bef3d80f1b212ecd6bc5f5}
 
-\begin{DoxyCompactList}\small\item\em The maximum tank charge (in n\-C) to allow for a neutron candidate event. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_a5487981246c33caa49c30aa09d6f9d98}{int \hyperlink{classPhaseITreeMaker_a5487981246c33caa49c30aa09d6f9d98}{ncv\-\_\-coincidence\-\_\-tolerance\-\_\-} = 0}\label{classPhaseITreeMaker_a5487981246c33caa49c30aa09d6f9d98}
+\begin{DoxyCompactList}\small\item\em The maximum tank charge (in nC) to allow for a neutron candidate event. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_a5487981246c33caa49c30aa09d6f9d98}{
+int \hyperlink{classPhaseITreeMaker_a5487981246c33caa49c30aa09d6f9d98}{ncv\_\-coincidence\_\-tolerance\_\-} = 0}
+\label{classPhaseITreeMaker_a5487981246c33caa49c30aa09d6f9d98}
 
-\begin{DoxyCompactList}\small\item\em The maximum allowed time between N\-C\-V P\-M\-T pulses for them to count as a \char`\"{}coincidence\char`\"{}. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_a67db041338ed358586fb935775b504aa}{std\-::unique\-\_\-ptr$<$ T\-File $>$ \hyperlink{classPhaseITreeMaker_a67db041338ed358586fb935775b504aa}{output\-\_\-tfile\-\_\-} = nullptr}\label{classPhaseITreeMaker_a67db041338ed358586fb935775b504aa}
+\begin{DoxyCompactList}\small\item\em The maximum allowed time between NCV PMT pulses for them to count as a \char`\"{}coincidence\char`\"{}. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_a67db041338ed358586fb935775b504aa}{
+std::unique\_\-ptr$<$ TFile $>$ \hyperlink{classPhaseITreeMaker_a67db041338ed358586fb935775b504aa}{output\_\-tfile\_\-} = nullptr}
+\label{classPhaseITreeMaker_a67db041338ed358586fb935775b504aa}
 
-\begin{DoxyCompactList}\small\item\em R\-O\-O\-T T\-File that will be used to store the output from this tool. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_ac35cd1936f5733ef3c133058727875f4}{T\-Tree $\ast$ \hyperlink{classPhaseITreeMaker_ac35cd1936f5733ef3c133058727875f4}{output\-\_\-tree\-\_\-} = nullptr}\label{classPhaseITreeMaker_ac35cd1936f5733ef3c133058727875f4}
+\begin{DoxyCompactList}\small\item\em ROOT TFile that will be used to store the output from this tool. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_ac35cd1936f5733ef3c133058727875f4}{
+TTree $\ast$ \hyperlink{classPhaseITreeMaker_ac35cd1936f5733ef3c133058727875f4}{output\_\-tree\_\-} = nullptr}
+\label{classPhaseITreeMaker_ac35cd1936f5733ef3c133058727875f4}
 
-\begin{DoxyCompactList}\small\item\em T\-Tree that will be used to store output. \end{DoxyCompactList}\item 
-\hypertarget{classPhaseITreeMaker_ad73a1ddf206e49fbca71fe62d495c69f}{uint32\-\_\-t {\bfseries run\-\_\-number\-\_\-} = 0u}\label{classPhaseITreeMaker_ad73a1ddf206e49fbca71fe62d495c69f}
-
-\item 
-\hypertarget{classPhaseITreeMaker_aec7329027d1c43d9ee16a7fcb96bdf17}{uint32\-\_\-t {\bfseries subrun\-\_\-number\-\_\-} = 0u}\label{classPhaseITreeMaker_aec7329027d1c43d9ee16a7fcb96bdf17}
-
-\item 
-\hypertarget{classPhaseITreeMaker_a9c8c0cef2793e9059895effb38560991}{uint32\-\_\-t {\bfseries event\-\_\-number\-\_\-} = 0u}\label{classPhaseITreeMaker_a9c8c0cef2793e9059895effb38560991}
-
-\item 
-\hypertarget{classPhaseITreeMaker_a841c48bc0851c7aa6ae227964290b9dc}{int {\bfseries ncv\-\_\-position\-\_\-} = 0}\label{classPhaseITreeMaker_a841c48bc0851c7aa6ae227964290b9dc}
-
-\item 
-\hypertarget{classPhaseITreeMaker_a0d64443fb0a8c8dcc537f9786e7b295c}{int64\-\_\-t {\bfseries event\-\_\-time\-\_\-ns\-\_\-} = 0}\label{classPhaseITreeMaker_a0d64443fb0a8c8dcc537f9786e7b295c}
-
-\item 
-\hypertarget{classPhaseITreeMaker_a0665ba67fb7c02ca95053d4eff0f4976}{uint8\-\_\-t {\bfseries event\-\_\-label\-\_\-} = 0u}\label{classPhaseITreeMaker_a0665ba67fb7c02ca95053d4eff0f4976}
-
-\item 
-\hypertarget{classPhaseITreeMaker_a1a94b0cfc66718ea806e5885f08164e2}{bool {\bfseries hefty\-\_\-mode\-\_\-} = false}\label{classPhaseITreeMaker_a1a94b0cfc66718ea806e5885f08164e2}
-
-\item 
-\hypertarget{classPhaseITreeMaker_add3f0ad690d2e71cae9b7e299cf91091}{int {\bfseries hefty\-\_\-trigger\-\_\-mask\-\_\-} = 0}\label{classPhaseITreeMaker_add3f0ad690d2e71cae9b7e299cf91091}
+\begin{DoxyCompactList}\small\item\em TTree that will be used to store output. \item\end{DoxyCompactList}\item 
+\hypertarget{classPhaseITreeMaker_ad73a1ddf206e49fbca71fe62d495c69f}{
+uint32\_\-t {\bfseries run\_\-number\_\-} = 0u}
+\label{classPhaseITreeMaker_ad73a1ddf206e49fbca71fe62d495c69f}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a9d9ab445ffa95f01f0283864695f44ac}{double {\bfseries amplitude\-\_\-ncv1\-\_\-} = 0.}\label{classPhaseITreeMaker_a9d9ab445ffa95f01f0283864695f44ac}
+\hypertarget{classPhaseITreeMaker_aec7329027d1c43d9ee16a7fcb96bdf17}{
+uint32\_\-t {\bfseries subrun\_\-number\_\-} = 0u}
+\label{classPhaseITreeMaker_aec7329027d1c43d9ee16a7fcb96bdf17}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a5b287952c6d649c33e164ee494cf9b52}{double {\bfseries amplitude\-\_\-ncv2\-\_\-} = 0.}\label{classPhaseITreeMaker_a5b287952c6d649c33e164ee494cf9b52}
+\hypertarget{classPhaseITreeMaker_a9c8c0cef2793e9059895effb38560991}{
+uint32\_\-t {\bfseries event\_\-number\_\-} = 0u}
+\label{classPhaseITreeMaker_a9c8c0cef2793e9059895effb38560991}
 
 \item 
-\hypertarget{classPhaseITreeMaker_ac1c44250bdff61e88c41d36e7eb99a9c}{double {\bfseries charge\-\_\-ncv1\-\_\-} = 0.}\label{classPhaseITreeMaker_ac1c44250bdff61e88c41d36e7eb99a9c}
+\hypertarget{classPhaseITreeMaker_a841c48bc0851c7aa6ae227964290b9dc}{
+int {\bfseries ncv\_\-position\_\-} = 0}
+\label{classPhaseITreeMaker_a841c48bc0851c7aa6ae227964290b9dc}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a7655973b514787a2e4d6fcbb16704361}{double {\bfseries charge\-\_\-ncv2\-\_\-} = 0.}\label{classPhaseITreeMaker_a7655973b514787a2e4d6fcbb16704361}
+\hypertarget{classPhaseITreeMaker_a0d64443fb0a8c8dcc537f9786e7b295c}{
+int64\_\-t {\bfseries event\_\-time\_\-ns\_\-} = 0}
+\label{classPhaseITreeMaker_a0d64443fb0a8c8dcc537f9786e7b295c}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a02aa5dec1ed25dbbc69d6d555daa39e8}{unsigned short {\bfseries raw\-\_\-amplitude\-\_\-ncv1\-\_\-} = 0u}\label{classPhaseITreeMaker_a02aa5dec1ed25dbbc69d6d555daa39e8}
+\hypertarget{classPhaseITreeMaker_a0665ba67fb7c02ca95053d4eff0f4976}{
+uint8\_\-t {\bfseries event\_\-label\_\-} = 0u}
+\label{classPhaseITreeMaker_a0665ba67fb7c02ca95053d4eff0f4976}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a3753af4c4913247283fafc4f966f53ce}{unsigned short {\bfseries raw\-\_\-amplitude\-\_\-ncv2\-\_\-} = 0u}\label{classPhaseITreeMaker_a3753af4c4913247283fafc4f966f53ce}
+\hypertarget{classPhaseITreeMaker_a1a94b0cfc66718ea806e5885f08164e2}{
+bool {\bfseries hefty\_\-mode\_\-} = false}
+\label{classPhaseITreeMaker_a1a94b0cfc66718ea806e5885f08164e2}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a874c9efb242b5b92e8f8f90c6fd4f23b}{std\-::map$<$ int, \hyperlink{structNCVPositionInfo}{N\-C\-V\-Position\-Info} $>$ {\bfseries ncv\-\_\-position\-\_\-info\-\_\-}}\label{classPhaseITreeMaker_a874c9efb242b5b92e8f8f90c6fd4f23b}
+\hypertarget{classPhaseITreeMaker_add3f0ad690d2e71cae9b7e299cf91091}{
+int {\bfseries hefty\_\-trigger\_\-mask\_\-} = 0}
+\label{classPhaseITreeMaker_add3f0ad690d2e71cae9b7e299cf91091}
 
 \item 
-\hypertarget{classPhaseITreeMaker_aceed975ee31a653ad428312ffed02f97}{T\-Tree $\ast$ {\bfseries output\-\_\-pulse\-\_\-tree\-\_\-} = nullptr}\label{classPhaseITreeMaker_aceed975ee31a653ad428312ffed02f97}
+\hypertarget{classPhaseITreeMaker_a9d9ab445ffa95f01f0283864695f44ac}{
+double {\bfseries amplitude\_\-ncv1\_\-} = 0.}
+\label{classPhaseITreeMaker_a9d9ab445ffa95f01f0283864695f44ac}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a8cbadc4026164224e74e32de446a8e15}{uint32\-\_\-t {\bfseries minibuffer\-\_\-number\-\_\-} = 0u}\label{classPhaseITreeMaker_a8cbadc4026164224e74e32de446a8e15}
+\hypertarget{classPhaseITreeMaker_a5b287952c6d649c33e164ee494cf9b52}{
+double {\bfseries amplitude\_\-ncv2\_\-} = 0.}
+\label{classPhaseITreeMaker_a5b287952c6d649c33e164ee494cf9b52}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a83562863bc7bce788d917cd40d31dfe7}{int64\-\_\-t {\bfseries pulse\-\_\-start\-\_\-time\-\_\-ns\-\_\-} = 0}\label{classPhaseITreeMaker_a83562863bc7bce788d917cd40d31dfe7}
+\hypertarget{classPhaseITreeMaker_ac1c44250bdff61e88c41d36e7eb99a9c}{
+double {\bfseries charge\_\-ncv1\_\-} = 0.}
+\label{classPhaseITreeMaker_ac1c44250bdff61e88c41d36e7eb99a9c}
 
 \item 
-\hypertarget{classPhaseITreeMaker_aa470eceac054608c14062606d64e6e5f}{double {\bfseries pulse\-\_\-amplitude\-\_\-} = 0.}\label{classPhaseITreeMaker_aa470eceac054608c14062606d64e6e5f}
+\hypertarget{classPhaseITreeMaker_a7655973b514787a2e4d6fcbb16704361}{
+double {\bfseries charge\_\-ncv2\_\-} = 0.}
+\label{classPhaseITreeMaker_a7655973b514787a2e4d6fcbb16704361}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a78af37dbe76387f64abb9a82e12842c3}{double {\bfseries pulse\-\_\-charge\-\_\-} = 0.}\label{classPhaseITreeMaker_a78af37dbe76387f64abb9a82e12842c3}
+\hypertarget{classPhaseITreeMaker_a02aa5dec1ed25dbbc69d6d555daa39e8}{
+unsigned short {\bfseries raw\_\-amplitude\_\-ncv1\_\-} = 0u}
+\label{classPhaseITreeMaker_a02aa5dec1ed25dbbc69d6d555daa39e8}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a13e66292551f2732d9091ac454178848}{int {\bfseries pulse\-\_\-pmt\-\_\-id\-\_\-} = 0.}\label{classPhaseITreeMaker_a13e66292551f2732d9091ac454178848}
+\hypertarget{classPhaseITreeMaker_a3753af4c4913247283fafc4f966f53ce}{
+unsigned short {\bfseries raw\_\-amplitude\_\-ncv2\_\-} = 0u}
+\label{classPhaseITreeMaker_a3753af4c4913247283fafc4f966f53ce}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a23f2da00ca69a52485044a39f2bc9ee0}{unsigned short {\bfseries pulse\-\_\-raw\-\_\-amplitude\-\_\-} = 0u}\label{classPhaseITreeMaker_a23f2da00ca69a52485044a39f2bc9ee0}
+\hypertarget{classPhaseITreeMaker_a874c9efb242b5b92e8f8f90c6fd4f23b}{
+std::map$<$ int, \hyperlink{structNCVPositionInfo}{NCVPositionInfo} $>$ {\bfseries ncv\_\-position\_\-info\_\-}}
+\label{classPhaseITreeMaker_a874c9efb242b5b92e8f8f90c6fd4f23b}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a9363a87ceae0d21c75e01db1df6cdd8a}{uint32\-\_\-t {\bfseries spill\-\_\-number\-\_\-} = 0u}\label{classPhaseITreeMaker_a9363a87ceae0d21c75e01db1df6cdd8a}
+\hypertarget{classPhaseITreeMaker_aceed975ee31a653ad428312ffed02f97}{
+TTree $\ast$ {\bfseries output\_\-pulse\_\-tree\_\-} = nullptr}
+\label{classPhaseITreeMaker_aceed975ee31a653ad428312ffed02f97}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a2abc635b4b7dd1049eb03aea068c727b}{bool {\bfseries in\-\_\-spill\-\_\-} = false}\label{classPhaseITreeMaker_a2abc635b4b7dd1049eb03aea068c727b}
+\hypertarget{classPhaseITreeMaker_a8cbadc4026164224e74e32de446a8e15}{
+uint32\_\-t {\bfseries minibuffer\_\-number\_\-} = 0u}
+\label{classPhaseITreeMaker_a8cbadc4026164224e74e32de446a8e15}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a6ed6473e4b74ba6eff55b1121f4bc3b1}{T\-Tree $\ast$ {\bfseries output\-\_\-beam\-\_\-tree\-\_\-} = nullptr}\label{classPhaseITreeMaker_a6ed6473e4b74ba6eff55b1121f4bc3b1}
+\hypertarget{classPhaseITreeMaker_a83562863bc7bce788d917cd40d31dfe7}{
+int64\_\-t {\bfseries pulse\_\-start\_\-time\_\-ns\_\-} = 0}
+\label{classPhaseITreeMaker_a83562863bc7bce788d917cd40d31dfe7}
 
 \item 
-\hypertarget{classPhaseITreeMaker_adda325293e3d77024523c447761ff3a3}{bool {\bfseries pot\-\_\-ok\-\_\-} = false}\label{classPhaseITreeMaker_adda325293e3d77024523c447761ff3a3}
+\hypertarget{classPhaseITreeMaker_aa470eceac054608c14062606d64e6e5f}{
+double {\bfseries pulse\_\-amplitude\_\-} = 0.}
+\label{classPhaseITreeMaker_aa470eceac054608c14062606d64e6e5f}
 
 \item 
-\hypertarget{classPhaseITreeMaker_ad22c1f1d5f83ed60d6cb8d4b38cd1a93}{bool {\bfseries horn\-\_\-current\-\_\-ok\-\_\-} = false}\label{classPhaseITreeMaker_ad22c1f1d5f83ed60d6cb8d4b38cd1a93}
+\hypertarget{classPhaseITreeMaker_a78af37dbe76387f64abb9a82e12842c3}{
+double {\bfseries pulse\_\-charge\_\-} = 0.}
+\label{classPhaseITreeMaker_a78af37dbe76387f64abb9a82e12842c3}
 
 \item 
-\hypertarget{classPhaseITreeMaker_ae63bf72fba04f5334a75801b207b76a5}{bool {\bfseries timestamps\-\_\-ok\-\_\-} = false}\label{classPhaseITreeMaker_ae63bf72fba04f5334a75801b207b76a5}
+\hypertarget{classPhaseITreeMaker_a13e66292551f2732d9091ac454178848}{
+int {\bfseries pulse\_\-pmt\_\-id\_\-} = 0.}
+\label{classPhaseITreeMaker_a13e66292551f2732d9091ac454178848}
 
 \item 
-\hypertarget{classPhaseITreeMaker_aaefb2a68be7c1f78577db8631680304a}{bool {\bfseries toroids\-\_\-agree\-\_\-} = false}\label{classPhaseITreeMaker_aaefb2a68be7c1f78577db8631680304a}
+\hypertarget{classPhaseITreeMaker_a23f2da00ca69a52485044a39f2bc9ee0}{
+unsigned short {\bfseries pulse\_\-raw\_\-amplitude\_\-} = 0u}
+\label{classPhaseITreeMaker_a23f2da00ca69a52485044a39f2bc9ee0}
 
 \item 
-\hypertarget{classPhaseITreeMaker_a9f95ccc126493c05a7f4ee7a3da86fe2}{\hyperlink{classGeometry}{Geometry} $\ast$ {\bfseries anniegeom} =nullptr}\label{classPhaseITreeMaker_a9f95ccc126493c05a7f4ee7a3da86fe2}
+\hypertarget{classPhaseITreeMaker_a9363a87ceae0d21c75e01db1df6cdd8a}{
+uint32\_\-t {\bfseries spill\_\-number\_\-} = 0u}
+\label{classPhaseITreeMaker_a9363a87ceae0d21c75e01db1df6cdd8a}
+
+\item 
+\hypertarget{classPhaseITreeMaker_a2abc635b4b7dd1049eb03aea068c727b}{
+bool {\bfseries in\_\-spill\_\-} = false}
+\label{classPhaseITreeMaker_a2abc635b4b7dd1049eb03aea068c727b}
+
+\item 
+\hypertarget{classPhaseITreeMaker_a6ed6473e4b74ba6eff55b1121f4bc3b1}{
+TTree $\ast$ {\bfseries output\_\-beam\_\-tree\_\-} = nullptr}
+\label{classPhaseITreeMaker_a6ed6473e4b74ba6eff55b1121f4bc3b1}
+
+\item 
+\hypertarget{classPhaseITreeMaker_adda325293e3d77024523c447761ff3a3}{
+bool {\bfseries pot\_\-ok\_\-} = false}
+\label{classPhaseITreeMaker_adda325293e3d77024523c447761ff3a3}
+
+\item 
+\hypertarget{classPhaseITreeMaker_ad22c1f1d5f83ed60d6cb8d4b38cd1a93}{
+bool {\bfseries horn\_\-current\_\-ok\_\-} = false}
+\label{classPhaseITreeMaker_ad22c1f1d5f83ed60d6cb8d4b38cd1a93}
+
+\item 
+\hypertarget{classPhaseITreeMaker_ae63bf72fba04f5334a75801b207b76a5}{
+bool {\bfseries timestamps\_\-ok\_\-} = false}
+\label{classPhaseITreeMaker_ae63bf72fba04f5334a75801b207b76a5}
+
+\item 
+\hypertarget{classPhaseITreeMaker_aaefb2a68be7c1f78577db8631680304a}{
+bool {\bfseries toroids\_\-agree\_\-} = false}
+\label{classPhaseITreeMaker_aaefb2a68be7c1f78577db8631680304a}
+
+\item 
+\hypertarget{classPhaseITreeMaker_a9f95ccc126493c05a7f4ee7a3da86fe2}{
+\hyperlink{classGeometry}{Geometry} $\ast$ {\bfseries anniegeom} = nullptr}
+\label{classPhaseITreeMaker_a9f95ccc126493c05a7f4ee7a3da86fe2}
 
 \end{DoxyCompactItemize}
 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-Phase\-I\-Tree\-Maker/Phase\-I\-Tree\-Maker.\-h\item 
-User\-Tools/\-Phase\-I\-Tree\-Maker/Phase\-I\-Tree\-Maker.\-cpp\end{DoxyCompactItemize}
+UserTools/PhaseITreeMaker/PhaseITreeMaker.h\item 
+UserTools/PhaseITreeMaker/PhaseITreeMaker.cpp\end{DoxyCompactItemize}

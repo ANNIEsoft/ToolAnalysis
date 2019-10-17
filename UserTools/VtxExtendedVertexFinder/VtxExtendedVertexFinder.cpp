@@ -12,12 +12,16 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
+  fTmin = -10.0;
+  fTmax = 10.0;
   fUseTrueVertexAsSeed = false;
   fSeedGridFits = false;
   /// Get the Tool configuration variables
   m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
   m_variables.Get("FitAllOnSeedGrid",fSeedGridFits);
   m_variables.Get("verbosity", verbosity);
+  m_variables.Get("FitTimeWindowMin", fTmin);
+  m_variables.Get("FitTimeWindowMax", fTmax);
   
   /// Create extended vertex
   /// Note that the objects created by "new" must be added to the "RecoEvent" store. 
@@ -79,6 +83,16 @@ bool VtxExtendedVertexFinder::Execute(){
     Log("VtxExtendedVertexFinder Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
     return false; 
   }
+  if(verbosity>3){
+    Position muonstartpos = fTrueVertex->GetPosition();
+    double muonstarttime = fTrueVertex->GetTime();
+    Direction muondirection = fTrueVertex->GetDirection();
+    std::cout << "VtxExtendedVertexFinder Tool: Printing muon info going into Minuit" << std::endl;
+    logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"
+              + "           " +to_string(muondirection.X()) + ", " + to_string(muondirection.Y()) + ", " + to_string(muondirection.Z()) + ") " + "\n";
+    
+    Log(logmessage,v_debug,verbosity);
+  }
   // return vertex
   fExtendedVertex  = (RecoVertex*)(this->FitExtendedVertex(fTrueVertex));
   // Push fitted vertex to RecoEvent store
@@ -133,6 +147,7 @@ RecoVertex* VtxExtendedVertexFinder::FitExtendedVertex(RecoVertex* myVertex) {
   myOptimizer->SetMeanTimeCalculatorType(1); //Type 1: most probable time
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myOptimizer->LoadVertex(myVertex); //Load vertex seed
+  myOptimizer->SetFitterTimeRange(fTmin, fTmax); //Set time range to fit over 
   myOptimizer->FitExtendedVertexWithMinuit(); //scan the point position in 4D space
   // Fitted vertex must be copied to a new vertex pointer that is created in this class 
   // Once the optimizer is deleted, the fitted vertex is lost. 
@@ -168,6 +183,7 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
     myOptimizer->SetPrintLevel(0);
     myOptimizer->SetMeanTimeCalculatorType(1);
     myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+    myOptimizer->SetFitterTimeRange(fTmin, fTmax); //Set time range to fit over 
     fSeedPos = &(vSeedVtxList->at(n));
   	fSimpleVertex= this->FindSimpleDirection(fSeedPos);
     myOptimizer->LoadVertex(fSimpleVertex); //Load vertex seed

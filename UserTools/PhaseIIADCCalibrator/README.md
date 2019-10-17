@@ -3,19 +3,27 @@
 The PhaseIIADCCalibrator tool is used to convert raw PMT waveforms into calibrated
 waveforms.  The process for producing a calibrated waveform can be summed up to:
 
-  - A single raw PMT waveform is first loaded.  A single waveform can be made of
-    several minibuffers, that each have an array of ADC samples.
-  - For each minibuffer, the first NumBaselineSamples is taken, and the mean and
-    varianceare calculated.
-  - An F-distribution test is computed for the variances of all minibuffers, comparing
-    each neighboring minibuffer.  This test has a null hypothesis of the minibuffers
-    having equal variance. The details are in Steven Gardiner's thesis, section
-    9.1. 
+  - A single raw PMT waveform is first loaded. The beginning of the raw waveform
+    is split into several sub-waveforms of a configurable amount of ADC samples. 
+  - For each sub-waveform, the mean and variance are calculated.
+  - An F-distribution test is computed for the variances of all sub-waveforms, comparing
+    each neighboring sub-waveform.  This test has a null hypothesis of the 
+    sub-waveforms having equal variance. 
+    The details are in Steven Gardiner's thesis, section 9.1. 
   - The baseline mean and variance are calculated from the means and variances
     passing the F-test.
   - The raw waveform then has the baseline mean subtracted, and is converted
     to volts using the ADC_TO_VOLT variable in ANNIEconstants.h.  This voltage
     waveform is saved as the calibrated waveform.
+
+Eventually, if data acquisition is moved to a "hefty mode" style acquisition, then
+the first two points are replaced with the following:
+  - A single PMT's set of minibuffers is loaded.  The beginning of each minibuffer
+    is collected (number of samples is configurable with NumBaselineSamples).
+  - For each minibuffer start, the mean and variance are calculated.
+
+This option is not currently implemented, but could quickly be using the
+approach taken in the ADCCalibrator tool (written for Phase I).
 
 ## Data
 
@@ -35,5 +43,9 @@ verbosity int
   An integer code representing the level of logging to perform
 
 NumBaselineSamples int
-  The number of samples to use for each measurement of the ADC baseline
+  The number of samples to split each sub-waveform into
+
+NumSubWaveforms int
+  Number of sub-waveforms to grab from the beginning of raw waveforms
+
 ```

@@ -1,54 +1,61 @@
-\hypertarget{classBeamFetcher}{\section{Beam\-Fetcher Class Reference}
-\label{classBeamFetcher}\index{Beam\-Fetcher@{Beam\-Fetcher}}
+\hypertarget{classBeamFetcher}{
+\section{BeamFetcher Class Reference}
+\label{classBeamFetcher}\index{BeamFetcher@{BeamFetcher}}
 }
-Inheritance diagram for Beam\-Fetcher\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classBeamFetcher}
-\end{center}
-\end{figure}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classBeamFetcher_a575275aab7b03eb11cafd132fcce3015}{bool {\bfseries Initialise} (std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data)}\label{classBeamFetcher_a575275aab7b03eb11cafd132fcce3015}
+\hypertarget{classBeamFetcher_a575275aab7b03eb11cafd132fcce3015}{
+bool {\bfseries Initialise} (std::string configfile, \hyperlink{classDataModel}{DataModel} \&data)}
+\label{classBeamFetcher_a575275aab7b03eb11cafd132fcce3015}
 
 \item 
-\hypertarget{classBeamFetcher_afb3681ee1fbe9ea81c6268af05b90a5f}{bool {\bfseries Execute} ()}\label{classBeamFetcher_afb3681ee1fbe9ea81c6268af05b90a5f}
+\hypertarget{classBeamFetcher_afb3681ee1fbe9ea81c6268af05b90a5f}{
+bool {\bfseries Execute} ()}
+\label{classBeamFetcher_afb3681ee1fbe9ea81c6268af05b90a5f}
 
 \item 
-\hypertarget{classBeamFetcher_ae69fe473f0e6d24685eb9e234d97d172}{bool {\bfseries Finalise} ()}\label{classBeamFetcher_ae69fe473f0e6d24685eb9e234d97d172}
+\hypertarget{classBeamFetcher_ae69fe473f0e6d24685eb9e234d97d172}{
+bool {\bfseries Finalise} ()}
+\label{classBeamFetcher_ae69fe473f0e6d24685eb9e234d97d172}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classBeamFetcher_a60c8d28364654bc042de262cacc94dcb}{bool \hyperlink{classBeamFetcher_a60c8d28364654bc042de262cacc94dcb}{fetch\-\_\-beam\-\_\-data} (uint64\-\_\-t start\-\_\-ms\-\_\-since\-\_\-epoch, uint64\-\_\-t end\-\_\-ms\-\_\-since\-\_\-epoch, uint64\-\_\-t chunk\-\_\-step\-\_\-ms)}\label{classBeamFetcher_a60c8d28364654bc042de262cacc94dcb}
+\hypertarget{classBeamFetcher_a60c8d28364654bc042de262cacc94dcb}{
+bool \hyperlink{classBeamFetcher_a60c8d28364654bc042de262cacc94dcb}{fetch\_\-beam\_\-data} (uint64\_\-t start\_\-ms\_\-since\_\-epoch, uint64\_\-t end\_\-ms\_\-since\_\-epoch, uint64\_\-t chunk\_\-step\_\-ms)}
+\label{classBeamFetcher_a60c8d28364654bc042de262cacc94dcb}
 
-\begin{DoxyCompactList}\small\item\em Helper function that downloads and processes the beam information. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Helper function that downloads and processes the beam information. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-int \hyperlink{classBeamFetcher_ab78e5092f1cd5b0544fe6b587282c968}{verbosity\-\_\-}
-\begin{DoxyCompactList}\small\item\em The verbosity to use when printing logging messages. \end{DoxyCompactList}\item 
-\hypertarget{classBeamFetcher_ac9e8e1c53a2f06c00be83258be22400d}{Boost\-Store \hyperlink{classBeamFetcher_ac9e8e1c53a2f06c00be83258be22400d}{beam\-\_\-db\-\_\-store\-\_\-}}\label{classBeamFetcher_ac9e8e1c53a2f06c00be83258be22400d}
+int \hyperlink{classBeamFetcher_ab78e5092f1cd5b0544fe6b587282c968}{verbosity\_\-}
+\begin{DoxyCompactList}\small\item\em The verbosity to use when printing logging messages. \item\end{DoxyCompactList}\item 
+\hypertarget{classBeamFetcher_ac9e8e1c53a2f06c00be83258be22400d}{
+BoostStore \hyperlink{classBeamFetcher_ac9e8e1c53a2f06c00be83258be22400d}{beam\_\-db\_\-store\_\-}}
+\label{classBeamFetcher_ac9e8e1c53a2f06c00be83258be22400d}
 
-\begin{DoxyCompactList}\small\item\em Transient Boost\-Store used to save downloaded information from the Intensity Frontier beam database to disk. \end{DoxyCompactList}\item 
-\hypertarget{classBeamFetcher_a6e37759beec5bc578d7d4de539329bce}{std\-::string \hyperlink{classBeamFetcher_a6e37759beec5bc578d7d4de539329bce}{db\-\_\-filename\-\_\-}}\label{classBeamFetcher_a6e37759beec5bc578d7d4de539329bce}
+\begin{DoxyCompactList}\small\item\em Transient BoostStore used to save downloaded information from the Intensity Frontier beam database to disk. \item\end{DoxyCompactList}\item 
+\hypertarget{classBeamFetcher_a6e37759beec5bc578d7d4de539329bce}{
+std::string \hyperlink{classBeamFetcher_a6e37759beec5bc578d7d4de539329bce}{db\_\-filename\_\-}}
+\label{classBeamFetcher_a6e37759beec5bc578d7d4de539329bce}
 
-\begin{DoxyCompactList}\small\item\em Name of the output file in which the beam database information will be saved. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Name of the output file in which the beam database information will be saved. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Member Data Documentation}
-\hypertarget{classBeamFetcher_ab78e5092f1cd5b0544fe6b587282c968}{\index{Beam\-Fetcher@{Beam\-Fetcher}!verbosity\-\_\-@{verbosity\-\_\-}}
-\index{verbosity\-\_\-@{verbosity\-\_\-}!BeamFetcher@{Beam\-Fetcher}}
-\subsubsection[{verbosity\-\_\-}]{\setlength{\rightskip}{0pt plus 5cm}int Beam\-Fetcher\-::verbosity\-\_\-\hspace{0.3cm}{\ttfamily [protected]}}}\label{classBeamFetcher_ab78e5092f1cd5b0544fe6b587282c968}
+\hypertarget{classBeamFetcher_ab78e5092f1cd5b0544fe6b587282c968}{
+\index{BeamFetcher@{BeamFetcher}!verbosity\_\-@{verbosity\_\-}}
+\index{verbosity\_\-@{verbosity\_\-}!BeamFetcher@{BeamFetcher}}
+\subsubsection[{verbosity\_\-}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf BeamFetcher::verbosity\_\-}\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classBeamFetcher_ab78e5092f1cd5b0544fe6b587282c968}
 
 
-The verbosity to use when printing logging messages. 
+The verbosity to use when printing logging messages. A larger value corresponds to more verbose output 
 
-A larger value corresponds to more verbose output 
-
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-Beam\-Fetcher/Beam\-Fetcher.\-h\item 
-User\-Tools/\-Beam\-Fetcher/Beam\-Fetcher.\-cpp\end{DoxyCompactItemize}
+UserTools/BeamFetcher/BeamFetcher.h\item 
+UserTools/BeamFetcher/BeamFetcher.cpp\end{DoxyCompactItemize}
