@@ -78,11 +78,12 @@ class CNNImage: public Tool {
 
   //PMT information
   std::map<int, double> x_pmt, y_pmt, z_pmt, x_lappd, y_lappd, z_lappd;
-  std::map<unsigned long,double> charge;
-  std::map<unsigned long, double> time;
+  std::map<unsigned long,double> charge, time;
+  std::map<unsigned long, std::vector<std::vector<double>>> charge_lappd, time_lappd;
+  std::map<unsigned long, std::vector<std::vector<int>>> hits_lappd;
   double maximum_pmts;
   double total_charge_pmts;
-  int total_hits_pmts, hits_lappds;
+  int total_hits_pmts, total_hits_lappds;
   double min_time_pmts, max_time_pmts, min_time_lappds, max_time_lappds;
 
   //detectorkey layout organization
