@@ -28,8 +28,9 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
-  void SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, int &MatchIndex);
   void BuildANNIEEvent(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
+  void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
+        unsigned long MRDTimeStamp, std::string MRDTriggerType);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveSubrun();
 
@@ -40,14 +41,17 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
 
-   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
   BoostStore *RawData;
   BoostStore *TrigData;
 
-  bool BuildPMTData;
-  bool BuildTankData;
+  bool isMRDData;
+  bool isTankData;
 
   BoostStore *ANNIEEvent;
+
+  std::map<unsigned long, std::vector<Hit>> *TDCData = nullptr;
 
   std::string InputFile;
 

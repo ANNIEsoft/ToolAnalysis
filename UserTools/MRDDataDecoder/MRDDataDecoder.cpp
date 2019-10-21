@@ -77,7 +77,7 @@ bool MRDDataDecoder::Execute(){
   Log("MRDDataDecoder Tool: Parsing entire MRDData booststore this loop",v_message,verbosity);
   EntryNum = 0;
   while(EntryNum < totalentries){
-	Log("MRDDataDecoder Tool: Procesing MRDData Entry "+to_string(CDEntryNum),v_debug, verbosity);
+	Log("MRDDataDecoder Tool: Procesing MRDData Entry "+to_string(EntryNum),v_debug, verbosity);
     MRDOut mrddata;
     MRDData->GetEntry(EntryNum);
     MRDData->Get("Data",mrddata);
@@ -86,7 +86,7 @@ bool MRDDataDecoder::Execute(){
     std::vector<unsigned long> chankeys;
     unsigned long timestamp = mrddata.TimeStamp;    //in ms since 1970/1/1
     std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
-    MRDEvents.emplace(timestamp,ChankeyTimePairs)
+    MRDEvents.emplace(timestamp,ChankeyTimePairs);
     
     //For each entry, loop over all crates and get data
     for (int i_data = 0; i_data < mrddata.Crate.size(); i_data++){
@@ -105,7 +105,7 @@ bool MRDDataDecoder::Execute(){
     //Entry processing done.  Label the trigger type and increment index
     TriggerTypeMap.emplace(timestamp,mrdTriggertype);
     NumMRDDataProcessed += 1;
-    EntryNum+=1
+    EntryNum+=1;
   }
 
   //MRD Data file fully processed.   
@@ -114,7 +114,7 @@ bool MRDDataDecoder::Execute(){
   Log("MRDDataDecoder Tool: Saving Finished MRD Data into CStore.",v_debug, verbosity);
   //FIXME: add a check for if there is or is not an entry in the CStore
   m_data->CStore.Get("MRDEvents",CStoreMRDEvents);
-  CStorePMTWaves.insert(MRDEvents.begin(),MRDEvents.end());
+  CStoreMRDEvents.insert(MRDEvents.begin(),MRDEvents.end());
   m_data->CStore.Set("MRDEvents",CStoreMRDEvents);
 
   m_data->CStore.Get("MRDEventTriggerTypes",CStoreTriggerTypeMap);

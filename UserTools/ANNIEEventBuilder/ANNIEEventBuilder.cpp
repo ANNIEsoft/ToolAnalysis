@@ -17,7 +17,6 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   ProcessedFilesBasename = "ProcessedRawData";
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
-  m_variables.Get("InputFile",InputFile);
   //FIXME: Eventually, RunNumber should be loaded from
   //A run database
   m_variables.Get("RunNumber",RunNum);
@@ -25,31 +24,13 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("EntriesPerSubrun",EntriesPerSubrun);
   m_variables.Get("SavePath",SavePath);
   m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
-  m_variables.Get("BuildTankData",isTankData);
-  m_variables.Get("BuildMRDData",isMRDData);
+  m_variables.Get("IsTankData",isTankData);
+  m_variables.Get("IsMRDData",isMRDData);
 
   if(isTankData && isMRDData){
-    std::cout << "BuildANNIEEvent ERROR: No data stream combining " <<
-        "implemented yet.  Please select either Tank or MRD Data" << std::endl;
+    std::cout << "BuildANNIEEvent ERROR: No data stream matching " <<
+        "implemented yet.  Please select either Tank or MRD Data only" << std::endl;
     return false;
-  }
-
-  // Initialize RawData
-  RawData = new BoostStore(false,0);
-  RawData->Initialise(InputFile.c_str());
-  RawData->Print(false);
- 
-  ////////////////////////getting trigger data ////////////////
-  TrigData = new BoostStore(false,2);
-  ////////////////////////getting trigger data ////////////////
-  if (isTankData){
-    TrigData = new BoostStore(false,2);
-    std::cout <<"defined TrigData = new BoostStore(false,2)"<<std::endl;
-    RawData->Get("TrigData",*TrigData);
-    std::cout <<"got triggerData"<<std::endl;
-    TrigData->Print(false);
-    TrigData->Header->Get("TotalEntries",trigentries);
-    std::cout<<"Total entries in TriggerData store: "<<trigentries<<std::endl;
   }
 
   m_data->CStore.Get("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
@@ -78,9 +59,7 @@ bool ANNIEEventBuilder::Execute(){
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap);
       //Erase this entry from the FinishedPMTWavesMap
       FinishedPMTWaves.erase(PMTCounterTime);
-      }
     }
-
     //Update the current FinishedPMTWaves map
     m_data->CStore.Set("FinishedPMTWaves",FinishedPMTWaves);
 
@@ -88,7 +67,7 @@ bool ANNIEEventBuilder::Execute(){
     m_data->CStore.Get("MRDEvents",MRDEvents);
     m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
     //Loop through MRDEvents and process each into ANNIEEvent.
-    for(std::pair<unsigned long,std::map<std::vector<int>, std::vector<uint16_t>>> apair : MRDEvents){
+    for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
       unsigned long MRDTimeStamp = apair.first;
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
@@ -97,8 +76,8 @@ bool ANNIEEventBuilder::Execute(){
       //FIXME: Check that the erase doesn't mess up looping through all entries somehow
       MRDEvents.erase(MRDTimeStamp);
       TriggerTypeMap.erase(MRDTimeStamp);
-      }
     }
+  }
 
   return true;
 }
@@ -115,7 +94,7 @@ bool ANNIEEventBuilder::Finalise(){
 }
 
 
-void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int> MRDHits, 
+void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType)
 {
   std::cout << "Building an ANNIE Event (MRD), ANNIEEventNum = "<<ANNIEEventNum << std::endl;
@@ -129,8 +108,8 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
 
   //TODO: Loop through MRDHits at this timestamp and form the Hit vector.
   for (int i_value=0; i_value< MRDHits.size(); i_value++){
-    unsigned long channelkey = MRDHits.first;
-    int hitTimeADC = MRDHits.second;
+    unsigned long channelkey = MRDHits.at(i_value).first;
+    int hitTimeADC = MRDHits.at(i_value).second;
     if (TDCData->count(channelkey)==0){
       std::vector<Hit> newhitvector;
       if (verbosity > 3) std::cout <<"creating hit with time value "<<hitTimeADC*4<<"and chankey "<<channelkey<<std::endl;
@@ -157,44 +136,6 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   return;
 }
 
-
-
-void ANNIEEventBuilder::SearchTriggerData(uint64_t aTrigTime, int &MatchEntry, int &MatchIndex)
-{
-  // Right now, this method just prints stuff for debugging.
-  //TODO: Eventually, as trigger data is matched with the correct electronics
-  //      data, start a map that tracks what TriggerData entries are finished?
-  //      Could save time avoiding looping through the TriggerData over and
-  //      over again when most entries are already paired with an ANNIEEvent. 
-  for( int i=0;i<trigentries;i++){
-    std::cout<<"Checking entry "<<i<<" of "<<trigentries<<std::endl;
-    TrigData->GetEntry(i);
-    TriggerData Tdata;
-    TrigData->Get("TrigData",Tdata);
-    int EventSize=Tdata.EventSize;
-    std::cout<<"EventSize="<<EventSize<<std::endl;
-    std::cout<<"SequenceID="<<Tdata.SequenceID<<std::endl;
-    std::cout<<"EventTimes: " << std::endl;
-    for(unsigned int j=0;j<Tdata.EventTimes.size();j++){
-      std::cout<< Tdata.EventTimes.at(j)<<" , ";
-    }
-    std::cout<<"EventIDs: " << std::endl;
-    for(unsigned int j=0;j<Tdata.EventIDs.size();j++){
-     std::cout<< Tdata.EventIDs.at(j)<<" , ";
-    }
-    std::cout<<"TriggerMasks: " << std::endl;
-    for(unsigned int j=0;j<Tdata.TriggerMasks.size();j++){
-     std::cout<< Tdata.TriggerMasks.at(j)<<" , ";
-    }
-    std::cout<<"TriggerCounters: " << std::endl;
-    for(unsigned int j=0;j<Tdata.TriggerCounters.size();j++){
-     std::cout<< Tdata.TriggerCounters.at(j)<<" , ";
-    }
-    std::cout<<std::endl;
-  }
-  return;
-}
-
 void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime, 
         std::map<std::vector<int>, std::vector<uint16_t>> WaveMap)
 {
@@ -217,7 +158,7 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   }
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RunNumber",RunNum);
-  ANNIEEvent->Set("SubrunNumber",RunNum);
+  ANNIEEvent->Set("SubrunNumber",SubrunNum);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
   //  - EventTime
   //  - TriggerData

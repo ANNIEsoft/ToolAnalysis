@@ -25,15 +25,6 @@
 */
 
 
-struct DecodedFrame{
-  bool has_recordheader;
-  uint32_t frameheader;
-  std::vector<uint16_t> samples;
-  std::vector<int> recordheader_000indices; //Holds indices where a record header starts in samples
-  ~DecodedFrame(){
-  }
-};
-
 class MRDDataDecoder: public Tool {
 
 
@@ -62,7 +53,8 @@ class MRDDataDecoder: public Tool {
 
   std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
-  //Maps used in decoding frames; specifically, holds record header and record waveform info
+  //Map used to relate MRD Crate Space value to channel key
+  std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
