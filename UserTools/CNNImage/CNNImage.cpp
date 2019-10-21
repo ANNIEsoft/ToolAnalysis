@@ -60,6 +60,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     unsigned long detkey = it->first;
     pmt_detkeys.push_back(detkey);
     unsigned long chankey = apmt->GetChannels()->begin()->first;
+    pmt_chankeys.push_back(chankey);
     Position position_PMT = apmt->GetDetectorPosition();
     if (verbosity > 2) std::cout <<"detkey: "<<detkey<<std::endl;
     if (verbosity > 2) std::cout <<"chankey: "<<chankey<<std::endl;
@@ -69,10 +70,14 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 2) std::cout <<"Detector ID: "<<detkey<<", position: ("<<position_PMT.X()<<","<<position_PMT.Y()<<","<<position_PMT.Z()<<")"<<std::endl;
     if (verbosity > 2) std::cout <<"Rho PMT "<<detkey<<": "<<sqrt(x_pmt.at(detkey)*x_pmt.at(detkey)+z_pmt.at(detkey)*z_pmt.at(detkey))<<std::endl;
     if (verbosity > 2) std::cout <<"Y PMT: "<<y_pmt.at(detkey)<<std::endl;
+    std::cout <<"tank location: "<<apmt->GetTankLocation()<<", y: "<<y_pmt.at(detkey)<<std::endl;
     if (y_pmt[detkey]>max_y && apmt->GetTankLocation()!="OD") max_y = y_pmt.at(detkey);
     if (y_pmt[detkey]<min_y && apmt->GetTankLocation()!="OD") min_y = y_pmt.at(detkey);
 
   }
+
+  std::cout <<"max_y = "<<max_y<<std::endl;
+  std::cout <<"min_y = "<<min_y<<std::endl;
 
   //order the PMT 2D positions 
   for (unsigned int i_pmt = 0; i_pmt < y_pmt.size(); i_pmt++){
@@ -80,7 +85,9 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     double x,y;
     unsigned long detkey = pmt_detkeys[i_pmt];
     Position pmt_pos(x_pmt[detkey],y_pmt[detkey],z_pmt[detkey]);
-    if (y_pmt[detkey] >= max_y || y_pmt[detkey] <= min_y) continue;     //don't include top/bottom/OD PMTs for now
+    unsigned long chankey = pmt_chankeys[i_pmt];
+    Detector *apmt = geom->ChannelToDetector(chankey);
+    if (y_pmt[detkey] >= max_y-0.001 || y_pmt[detkey] <= min_y+0.001 || apmt->GetTankLocation()=="OD") continue;     //don't include top/bottom/OD PMTs for now
     ConvertPositionTo2D(pmt_pos, x, y);
     std::cout << "CNNImage: Converting Position ("<<x_pmt[detkey]<<", "<<y_pmt[detkey]<<", "<<z_pmt[detkey]<<") for detkey "<<detkey<<" to 2D yields "<<x<<", "<<y<<std::endl;
     vec_pmt2D_x.push_back(x);

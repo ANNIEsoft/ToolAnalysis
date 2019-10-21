@@ -88,7 +88,7 @@ class CNNImage: public Tool {
   //detectorkey layout organization
   std::map<unsigned long, int> channelkey_to_pmtid;
   std::map<int,unsigned long> pmt_tubeid_to_channelkey;
-  std::vector<unsigned long> pmt_detkeys, lappd_detkeys;
+  std::vector<unsigned long> pmt_detkeys, lappd_detkeys, pmt_chankeys;
   std::vector<unsigned long> hitpmt_detkeys;
 
 };
