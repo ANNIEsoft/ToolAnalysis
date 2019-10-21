@@ -83,7 +83,11 @@ class PMTDataDecoder: public Tool {
   TriggerData Tdata;
 
   std::string InputFile;
-
+  std::string Mode;
+  bool SingleFileLoaded = false;
+ 
+  //Counter used to track the number of entries processed in a PMT file
+  int NumPMTDataProcessed = 0;
 
   //Maps for keeping track of what SequenceID is next for each Card
   std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
@@ -97,14 +101,10 @@ class PMTDataDecoder: public Tool {
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStorePMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
 
-
-  // Number of PMTData entries to process per loop
-  int CardDataEntriesPerExecute;
   // Notes whether DAQ is in lock step running
-  int LockStep;
   // Number of PMTs that must be found in a WaveSet to build the event
-  int NumWavesInSet = 131;  
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;
   int v_error=0;

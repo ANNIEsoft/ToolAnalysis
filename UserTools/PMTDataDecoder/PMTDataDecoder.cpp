@@ -13,43 +13,71 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   verbosity = 0;
-  CardDataEntriesPerExecute = 5;
-  LockStep = 0;
+
 
   m_variables.Get("verbosity",verbosity);
+  m_variables.Get("Mode",Mode);
   m_variables.Get("InputFile",InputFile);
-  m_variables.Get("LockStep",LockStep);
-  m_variables.Get("CardDataEntriesPerExecute",CardDataEntriesPerExecute);
 
-  Log("PMTDataDecoder Tool: Raw Data file as BoostStore",v_message,verbosity); 
-  // Initialize RawData
-  RawData = new BoostStore(false,0);
-  RawData->Initialise(InputFile.c_str());
-  RawData->Print(false);
+  //Default mode of operation is the continuous flow of data for the live monitoring
+  //The other possibility is reading in data from a specified list of files
+  if (Mode != "Continuous" && Mode != "SingleFile") {
+    if (verbosity > 0) std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile]. Setting default Continuous mode"<<std::endl;
+    Mode = "Continuous";
+  }
 
-  /////////////////// getting PMT Data ////////////////////
-  Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
-  PMTData = new BoostStore(false,2);
-  RawData->Get("PMTData",*PMTData);
 
-  PMTData->Print(false);
-  
-  PMTData->Header->Get("TotalEntries",totalentries);
-
-  if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
-  
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
 }
 
 
 bool PMTDataDecoder::Execute(){
-  int NumPMTDataProcessed = 0;
-  if (CardDataEntriesPerExecute == -1){
-    Log("PMTDataDecoder Tool: Parsing entire PMTData booststore this loop",v_message,verbosity); 
-    CardDataEntriesPerExecute = totalentries;
+  // Load 
+  if(Mode=="SingleFile"){
+    if(SingleFileLoaded){
+      std::cout << "PMTDataDecoder tool: Single file has already been loaded" << std::endl;
+      return true;
+    } else {
+      Log("PMTDataDecoder Tool: Raw Data file as BoostStore",v_message,verbosity); 
+      // Initialize RawData
+      RawData = new BoostStore(false,0);
+      RawData->Initialise(InputFile.c_str());
+      RawData->Print(false);
+
+    }
   }
-  while((NumPMTDataProcessed<CardDataEntriesPerExecute) && (CDEntryNum < totalentries)){
+
+  else if (Mode == "Continuous"){
+    std::string State;
+    m_data->CStore.Get("State",State);
+    std::cout << "PMTDataDecoder tool: checking CStore for status of data stream" << std::endl;
+    if (State == "PMTSingle" || State == "Wait"){
+      //Single event file available for monitoring; not relevant for this tool
+      if (verbosity > 2) std::cout <<"PMTDataDecoder: State is "<<State<< ". No data file available" << std::endl;
+      return true; 
+    } else if (State == "DataFile"){
+      // Full PMTData file ready to parse
+      // FIXME: Not sure if the booststore or key are right, or even the DataFile State
+      if (verbosity > 1) std::cout<<"PMTDataDecoder: New data file available."<<std::endl;
+      m_data->Stores["CCData"]->Get("FileData",RawData);
+      RawData->Print(false);
+      
+    }
+  }
+  /////////////////// getting PMT Data ////////////////////
+  Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
+  PMTData = new BoostStore(false,2);
+  RawData->Get("PMTData",*PMTData);
+  PMTData->Print(false);
+  
+  // Show the total entries in this file  
+  PMTData->Header->Get("TotalEntries",totalentries);
+  if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
+
+  NumPMTDataProcessed = 0;
+  Log("PMTDataDecoder Tool: Parsing entire PMTData booststore this loop",v_message,verbosity); 
+  while(CDEntryNum < totalentries){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     PMTData->GetEntry(CDEntryNum);
     PMTData->Get("CardData",Cdata);
@@ -75,6 +103,7 @@ bool PMTDataDecoder::Execute(){
         for (unsigned int i=0; i < ThisCardDFs.size(); i++){
           this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
         }
+        NumPMTDataProcessed+=1;
       } else {
 	    Log("PMTDataDecoder Tool WARNING: CardData OUT OF SEQUENCE!!!",v_warning, verbosity);
         //This CardData will be needed later when it's next in sequence.  
@@ -106,32 +135,36 @@ bool PMTDataDecoder::Execute(){
     }
 	Log("PMTDataDecoder Tool: Decoding or Unprocessed logging complete",v_debug, verbosity);
     CDEntryNum+=1;
-    NumPMTDataProcessed+=1;
+    ///////////////Search through All Out-Of-Order Cards;/////////////
+    ///////////////See if they are in order now ///////////////// 
+    this->ParseOOOsNowInOrder();
   }
 
-  ///////////////Search through All Out-Of-Order Cards;/////////////
-  ///////////////See if they are in order now ///////////////// 
-  this->ParseOOOsNowInOrder();
    
-  //PMT Data done being processed this execute loop.  
+  //PMT Data file fully processed.   
   //Push the map of FinishedWaves to the CStore for ANNIEEvent to start 
   //Building ANNIEEvents. 
   std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
   if(FinishedPMTWaves.empty()){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
   } else {
-	Log("PMTDataDecoder Tool: Saving Finished PMT waves to  CStore.",v_debug, verbosity);
-    m_data->CStore.Set("FinishedPMTWaves",FinishedPMTWaves);
+	Log("PMTDataDecoder Tool: Saving Finished PMT waves into CStore.",v_debug, verbosity);
+    m_data->CStore.Get("FinishedPMTWaves",CStorePMTWaves);
+    CStorePMTWaves.insert(FinishedPMTWaves.begin(),FinishedPMTWaves.end());
+    m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
+    //FIXME: Should we now clear CStorePMTWaves to free up memory?
   }
-  std::cout << "CSTORE SET" << std::endl;
+  std::cout << "PMT WAVE CSTORE SET SUCCESSFULLY.  Clearing FinishedPMTWaves map from this file." << std::endl;
+  FinishedPMTWaves.clear();
   //Check the size of the WaveBank to see if things are bloating
-  Log("PMTDataDecoder Tool: Size of WaveBank (# events in building progress): " + 
+  Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
           to_string(WaveBank.size()),v_debug, verbosity);
-  std::cout << "Size of WaveBank (# events in building progress): " << WaveBank.size() << std::endl;
-  Log("PMTDataDecoder Tool: Size of FinishedPMTWaves (# triggers with at least one wave fully):" + 
+  Log("PMTDataDecoder Tool: Size of FinishedPMTWaves from this execution (# triggers with at least one wave fully):" + 
           to_string(FinishedPMTWaves.size()),v_debug, verbosity);
-  ///////////////////////////////////////////
+  Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
+          to_string(CStorePMTWaves.size()),v_debug, verbosity);
 
+  ////////////// END EXECUTE LOOP ///////////////
   return true;
 }
 
@@ -195,6 +228,7 @@ bool PMTDataDecoder::ParseOneCardOOOs(int CardID)
       }
       NowInOrderInds.push_back(i);
       ProcessedAnOOO = true;
+      NumPMTDataProcessed+=1;
     }
   }
   //Delete all OOOProperties that are now in order.  Start from the

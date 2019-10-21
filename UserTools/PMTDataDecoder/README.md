@@ -42,8 +42,13 @@ Describe any configuration variables for PMTDataDecoder.
 verbosity (int)
     Integer that controls the level of log output shown when running.
 
+Mode (string)
+    Controls whether tool runs assuming a single file is input or if the tool
+    will be run continously and searching for files in the data stream.
+
 InputFile (string)
-    String defining the path to a raw data file to process.
+    String defining the path to a raw data file to process.  Only used if 
+    Mode is set to FileList.
 
 LockStep (bool)
     Indicates whether events are processed assuming the detector was being run
