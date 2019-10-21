@@ -29,7 +29,13 @@ class VtxExtendedVertexFinder: public Tool {
   
   /// \brief ANNIE event number
   uint32_t fEventNumber;
- 	
+
+  // \brief minimum of fit time window
+  double fTmin;
+  
+  // \brief maximum of fit time window
+  double fTmax;
+
   /// \brief 
   RecoVertex* FitExtendedVertex(RecoVertex* myvertex);
   

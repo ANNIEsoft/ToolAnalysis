@@ -44,4 +44,5 @@ class PhaseIIADCCalibrator : public Tool {
     double p_critical;
     
     size_t num_baseline_samples;
+    size_t num_sub_waveforms;
 };

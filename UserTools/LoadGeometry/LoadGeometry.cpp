@@ -306,10 +306,10 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
                Position( x_center/100.,
                          y_center/100.,
                          z_center/100.),
-               std::pair<double,double>{x_center-(x_width/200.), x_center+(x_width/200.)},
-               std::pair<double,double>{y_center-(y_width/200.), y_center+(y_width/200.)},
-               std::pair<double,double>{z_center-(z_width/200.), z_center+(z_width/200.)});
-
+               std::pair<double,double>{x_center/100.-(x_width/200.), x_center/100.+(x_width/200.)},
+               std::pair<double,double>{y_center/100.-(y_width/200.), y_center/100.+(y_width/200.)},
+               std::pair<double,double>{z_center/100.-(z_width/200.), z_center/100.+(z_width/200.)});
+  
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),
                       -1, // stripside
@@ -386,7 +386,8 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
 
   //Parse the line for information needed to fill the Tdetector & channel classes
   int detector_num = 0,channel_num = 0,panel_number = 0,signal_crate = 0,signal_slot = 0,signal_channel = 0,
-      mt_crate = 0, mt_slot = 0, mt_channel = 0, hv_crate = 0,hv_slot = 0,hv_channel = 0,nominal_HV = 0,polarity = 0;
+      mt_crate = 0, mt_slot = 0, mt_channel = 0, hv_crate = 0,hv_slot = 0,hv_channel = 0,nominal_HV = 0,
+      sb_num = 0, sb_channel = 0;
   double x_pos = 0.0,y_pos = 0.0,z_pos = 0.0,x_dir = 0.0,y_dir = 0.0,z_dir = 0.0;
   std::string detector_tank_location = "default",PMT_type = "default",cable_label = "default",detector_status = "default";
 
@@ -419,6 +420,8 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
     if (TankPMTLegendEntries.at(i) == "detector_num") detector_num = ivalue;
     if (TankPMTLegendEntries.at(i) == "channel_num") channel_num = ivalue;
     if (TankPMTLegendEntries.at(i) == "panel_number") panel_number = ivalue;
+    if (TankPMTLegendEntries.at(i) == "sb_num") sb_num = ivalue;
+    if (TankPMTLegendEntries.at(i) == "sb_channel") sb_channel = ivalue;
     if (TankPMTLegendEntries.at(i) == "signal_crate") signal_crate = ivalue;
     if (TankPMTLegendEntries.at(i) == "signal_slot") signal_slot = ivalue;
     if (TankPMTLegendEntries.at(i) == "signal_channel") signal_channel = ivalue;

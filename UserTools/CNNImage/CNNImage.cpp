@@ -176,7 +176,6 @@ bool CNNImage::Execute(){
   if (verbosity >=2) std::cout <<"Executing tool: CNNImage..."<<std::endl;
 
   //get ANNIEEvent store information
-
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   if(!annieeventexists){ cerr<<"no ANNIEEvent store!"<<endl;}/*return false;*/
 
@@ -197,6 +196,7 @@ bool CNNImage::Execute(){
   hits_lappd.clear();
 
   for (unsigned int i_pmt=0; i_pmt<pmt_detkeys.size();i_pmt++){
+
     unsigned long detkey = pmt_detkeys[i_pmt];
     charge.emplace(detkey,0.);
     time.emplace(detkey,0.);

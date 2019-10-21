@@ -4,17 +4,17 @@ MonitorMRDEventDisplay
 
 ## Data
 
-Describe any data formats MonitorMRDEventDisplay creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+Creates live Event Displays for raw data from the MRD DAQ, to be shown on the monitoring webpage. 
 
 ## Configuration
 
-Describe any configuration variables for MonitorMRDEventDisplay.
+MonitorMRDEventDisplay has the following configuration variables:
 
 ```
-param1 value1
-param2 value2
+verbose 0
+#OutputPath /ANNIECode/MRDMonitorOutputTest/  #output path for live event display plots
+OutputPath fromStore    #output path for live event display plots to be taken from m_data
+CustomRange 1           #TDC range with user-defined values?
+RangeMin 1              #minimum TDC value
+RangeMax 100            #maximum TDC value
 ```

@@ -1,4 +1,3 @@
-
 #ifndef CNNImage_H
 #define CNNImage_H
 
