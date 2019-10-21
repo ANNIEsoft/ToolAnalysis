@@ -15,7 +15,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("Mode",mode);
-  m_variables.Get("Dimension",dimension);
+  m_variables.Get("DimensionX",dimensionX);
+  m_variables.Get("DimensionY",dimensionY);
   m_variables.Get("OutputFile",cnn_outpath);
   m_variables.Get("DetectorConf",detector_config);
 
@@ -23,7 +24,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   if (mode != "Charge" && mode != "Time") mode = "Charge";
   if (verbosity > 2) std::cout <<"Mode: "<<mode<<std::endl;
 
-  //get geometry		
+  //get geometry
 
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
   tank_radius = geom->GetTankRadius();
@@ -62,7 +63,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 2) std::cout <<"y PMT: "<<y_pmt.at(detkey)<<std::endl;
     if (y_pmt[detkey]>max_y) max_y = y_pmt.at(detkey);
     if (y_pmt[detkey]<min_y) min_y = y_pmt.at(detkey);
-	  
+
   }
 
   //define root and csv files to save histograms (root-files temporarily, for cross-checks)
@@ -84,7 +85,7 @@ bool CNNImage::Execute(){
   if (verbosity >=2) std::cout <<"Executing tool: CNNImage..."<<std::endl;
 
   //get ANNIEEvent store information
-	
+
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   if(!annieeventexists){ cerr<<"no ANNIEEvent store!"<<endl;}/*return false;*/
 
@@ -121,8 +122,8 @@ bool CNNImage::Execute(){
     if (verbosity > 1) std::cout <<"Flag: "<<aparticle.GetFlag()<<std::endl;
     if (aparticle.GetParentPdg() !=0 ) continue;
     if (aparticle.GetFlag() !=0 ) continue;
-    if (!(aparticle.GetPdgCode() == 11 || aparticle.GetPdgCode() == 13)) continue;    //primary particle for Cherenkov tracking should be muon or electron
-    else {
+//    if (!(aparticle.GetPdgCode() == 11 || aparticle.GetPdgCode() == 13)) continue;    //primary particle for Cherenkov tracking should be muon or electron
+//    else {
       truevtx = aparticle.GetStartVertex();
       truevtx_x = truevtx.X()-tank_center_x;
       truevtx_y = truevtx.Y()-tank_center_y;
@@ -138,7 +139,7 @@ bool CNNImage::Execute(){
       else distInnerStr_Vert=distInnerStr_Vert1;
       bool_geometry = (distInnerStr_Vert>0.2 && distInnerStr_Hor>0.2);
       bool_primary = true;
-    }
+//    }
   }
 
   //---------------------------------------------------------------
@@ -146,7 +147,7 @@ bool CNNImage::Execute(){
   //---------------------------------------------------------------
 
   int vectsize = MCHits->size();
-  if (verbosity > 1) std::cout <<"Tool CNNImage: MCHits size: "<<vectsize<<std::endl; 
+  if (verbosity > 1) std::cout <<"Tool CNNImage: MCHits size: "<<vectsize<<std::endl;
   total_hits_pmts=0;
   for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
     unsigned long chankey = apair.first;
@@ -190,20 +191,28 @@ bool CNNImage::Execute(){
   //---------------------------------------------------------------
   //-------------- Create CNN images ------------------------------
   //---------------------------------------------------------------
-	
+
   //define histogram as an intermediate step to the CNN
   std::stringstream ss_cnn, ss_title_cnn;
   ss_cnn<<"hist_cnn"<<evnum;
   ss_title_cnn<<"EventDisplay (CNN), Event "<<evnum;
-  TH2F *hist_cnn = new TH2F(ss_cnn.str().c_str(),ss_title_cnn.str().c_str(),dimension,0.5-TMath::Pi()*size_top_drawing,0.5+TMath::Pi()*size_top_drawing,dimension,0.5+min_y/tank_radius*size_top_drawing, 0.5+max_y/tank_radius*size_top_drawing);
+  TH2F *hist_cnn = new TH2F(ss_cnn.str().c_str(),ss_title_cnn.str().c_str(),dimensionX,0.5-TMath::Pi()*size_top_drawing,0.5+TMath::Pi()*size_top_drawing,dimensionY,0.5-(0.45*tank_height/tank_radius+2)*size_top_drawing, 0.5+(0.45*tank_height/tank_radius+2)*size_top_drawing);
 
   //fill the events into the histogram
 
   for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
     unsigned long detkey = pmt_detkeys[i_pmt];
     double x,y;
-    if ((fabs(y_pmt[detkey]-max_y)<0.01) || fabs(y_pmt[detkey]-min_y)<0.01 || fabs(y_pmt[detkey]+1.30912)<0.01) continue; //top/bottom PMTs
-    else {
+    if (fabs(y_pmt[detkey]-max_y)<0.01){
+
+      x=0.5-size_top_drawing*x_pmt[detkey]/tank_radius;
+      y=0.5+((0.45*tank_height)/tank_radius+1)*size_top_drawing-size_top_drawing*z_pmt[detkey]/tank_radius;
+
+
+    } else if (fabs(y_pmt[detkey]-min_y)<0.01 || fabs(y_pmt[detkey]+1.30912)<0.01 ){
+      x=0.5-size_top_drawing*x_pmt[detkey]/tank_radius;
+      y=0.5-(0.45*tank_height/tank_radius+1)*size_top_drawing+size_top_drawing*z_pmt[detkey]/tank_radius;
+    } else {
       double phi;
       if (x_pmt[detkey]>0 && z_pmt[detkey]>0) phi = atan(z_pmt[detkey]/x_pmt[detkey])+TMath::Pi()/2;
       else if (x_pmt[detkey]>0 && z_pmt[detkey]<0) phi = atan(x_pmt[detkey]/-z_pmt[detkey]);
@@ -216,22 +225,23 @@ bool CNNImage::Execute(){
       if (phi<-TMath::Pi() || phi>TMath::Pi())  std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<x_pmt[detkey]<<", y="<<y_pmt[detkey]<<", z="<<z_pmt[detkey]<<std::endl;
       x=0.5+phi*size_top_drawing;
       y=0.5+y_pmt[detkey]/tank_height*tank_height/tank_radius*size_top_drawing;
-      int binx = hist_cnn->GetXaxis()->FindBin(x);
-      int biny = hist_cnn->GetYaxis()->FindBin(y);
-      if (verbosity > 2) std::cout <<"binx: "<<binx<<", biny: "<<biny<<", charge fill: "<<charge[detkey]<<", time fill: "<<time[detkey]<<std::endl;
-
-      if (maximum_pmts < 0.001) maximum_pmts = 1.;
-      if (fabs(max_time_pmts) < 0.001) max_time_pmts = 1.;
-
-      if (mode == "Charge"){
-        double charge_fill = charge[detkey]/maximum_pmts;
-	hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
       }
-      if (mode == "Time"){
-	double time_fill = time[detkey]/max_time_pmts;
-	hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+time_fill);
-      }
+    int binx = hist_cnn->GetXaxis()->FindBin(x);
+    int biny = hist_cnn->GetYaxis()->FindBin(y);
+    if (verbosity > 2) std::cout <<"binx: "<<binx<<", biny: "<<biny<<", charge fill: "<<charge[detkey]<<", time fill: "<<time[detkey]<<std::endl;
+
+    if (maximum_pmts < 0.001) maximum_pmts = 1.;
+    if (fabs(max_time_pmts) < 0.001) max_time_pmts = 1.;
+
+    if (mode == "Charge"){
+      double charge_fill = charge[detkey]/maximum_pmts;
+	    hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
     }
+    if (mode == "Time"){
+      double time_fill = time[detkey]/max_time_pmts;
+      hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+time_fill);
+    }
+
   }
 
   //save information from histogram to csv file
@@ -254,7 +264,7 @@ bool CNNImage::Execute(){
 
 
 bool CNNImage::Finalise(){
-  
+
   if (verbosity >=2 ) std::cout <<"Finalising tool: CNNImage..."<<std::endl;
   file->Close();
   outfile.close();

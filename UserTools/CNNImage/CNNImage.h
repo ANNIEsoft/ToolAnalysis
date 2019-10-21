@@ -1,4 +1,4 @@
- 
+
 #ifndef CNNImage_H
 #define CNNImage_H
 
@@ -40,7 +40,8 @@ class CNNImage: public Tool {
   std::string detector_config;
   int verbosity;
   std::string mode;     //Charge, Time
-  int dimension;        //dimension of the CNN image (e.g. 32, 64)
+  int dimensionX;        //dimension of the CNN image (e.g. 32, 64)
+  int dimensionY;
   int runnumber;
   int subrunnumber;
   int evnum;
