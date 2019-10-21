@@ -76,6 +76,7 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
 
   NumPMTDataProcessed = 0;
+  CDEntryNum = 0;
   Log("PMTDataDecoder Tool: Parsing entire PMTData booststore this loop",v_message,verbosity); 
   while(CDEntryNum < totalentries){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
@@ -154,8 +155,6 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
     //FIXME: Should we now clear CStorePMTWaves to free up memory?
   }
-  std::cout << "PMT WAVE CSTORE SET SUCCESSFULLY.  Clearing FinishedPMTWaves map from this file." << std::endl;
-  FinishedPMTWaves.clear();
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
           to_string(WaveBank.size()),v_debug, verbosity);
@@ -163,6 +162,9 @@ bool PMTDataDecoder::Execute(){
           to_string(FinishedPMTWaves.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
           to_string(CStorePMTWaves.size()),v_debug, verbosity);
+
+  std::cout << "PMT WAVE CSTORE SET SUCCESSFULLY.  Clearing FinishedPMTWaves map from this file." << std::endl;
+  FinishedPMTWaves.clear();
 
   ////////////// END EXECUTE LOOP ///////////////
   return true;

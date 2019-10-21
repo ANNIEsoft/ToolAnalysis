@@ -97,5 +97,6 @@ if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
+if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 return ret;
 }

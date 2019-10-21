@@ -80,7 +80,6 @@ class PMTDataDecoder: public Tool {
   BoostStore *RawData;
   BoostStore *PMTData;
   std::vector<CardData> Cdata;
-  TriggerData Tdata;
 
   std::string InputFile;
   std::string Mode;
