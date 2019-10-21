@@ -1,7 +1,8 @@
 # CNNImage config file
 
 verbosity 1
-Mode Charge		#options: Charge/Time
+DataMode Charge			#options: Charge/Time
+SaveMode Geometric		#options: Geometric / PMT-wise
 DimensionX 16			#choose something suitable (32/64/...)
 DimensionY 20			#choose something suitable (32/64/...)
 OutputFile mu_testsample_allPMTs_Charge_1	#csv file name

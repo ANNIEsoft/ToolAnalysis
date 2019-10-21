@@ -33,54 +33,62 @@ class CNNImage: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
 
   void draw_cnn_image(); ///< Fill the hit pattern information in a TH2
+  void ConvertPositionTo2D(Position xyz_pos, double &x, double &y); ///<Convert 3D position into 2D rolled up coordinates
 
  private:
 
+  //configuration variables
   std::string cnn_outpath; //path where to save the CNN image information
   std::string detector_config;
+  std::string data_mode;  //Charge, Time
+  std::string save_mode;  //How is the PMT information supposed to be written out? Geometric/PMT-wise
+  int dimensionX;        //dimension of the CNN image in x-direction
+  int dimensionY;        //dimension of the CNN image in y-direction
   int verbosity;
-  std::string mode;     //Charge, Time
-  int dimensionX;        //dimension of the CNN image (e.g. 32, 64)
-  int dimensionY;
+
+  //ANNIEEvent variables
   int runnumber;
   int subrunnumber;
   int evnum;
   TimeClass* EventTime=nullptr;
-
   std::vector<MCParticle>* mcparticles = nullptr;
   std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
   std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits = nullptr;
   Geometry *geom = nullptr;
 
+  //geometry variables
   double tank_radius;
   double tank_height;
   double tank_center_x;
   double tank_center_y;
   double tank_center_z;
-  double min_y;
-  double max_y;
+  double min_y, max_y, min_y_lappd, max_y_lappd;
   int n_tank_pmts;
   double size_top_drawing = 0.1;
+  std::vector<double> vec_pmt2D_x, vec_pmt2D_y, vec_lappd2D_x, vec_lappd2D_y;
+  int npmtsX, npmtsY, nlappdX, nlappdY;
 
-  ofstream outfile;
+  //I/O variables
+  ofstream outfile, outfile_time;
+  TFile *file = nullptr;
 
+  //mctruth information
   Position truevtx;
   double truevtx_x, truevtx_y, truevtx_z;
 
-  std::map<int, double> x_pmt, y_pmt, z_pmt;
+  //PMT information
+  std::map<int, double> x_pmt, y_pmt, z_pmt, x_lappd, y_lappd, z_lappd;
   std::map<unsigned long,double> charge;
   std::map<unsigned long, double> time;
-  TFile *file = nullptr;
-
   double maximum_pmts;
   double total_charge_pmts;
-  int total_hits_pmts;
-  double min_time_pmts;
-  double max_time_pmts;
+  int total_hits_pmts, hits_lappds;
+  double min_time_pmts, max_time_pmts, min_time_lappds, max_time_lappds;
 
+  //detectorkey layout organization
   std::map<unsigned long, int> channelkey_to_pmtid;
   std::map<int,unsigned long> pmt_tubeid_to_channelkey;
-  std::vector<unsigned long> pmt_detkeys;
+  std::vector<unsigned long> pmt_detkeys, lappd_detkeys;
   std::vector<unsigned long> hitpmt_detkeys;
 
 };

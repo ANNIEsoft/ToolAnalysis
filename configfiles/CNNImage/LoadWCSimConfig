@@ -2,8 +2,8 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 verbose 1
 
-InputFile /ToolAnalysisLink/Simulations/mnieslon/myon/wcsim_muons_21.root
-
+#InputFile /ToolAnalysisLink/Simulations/mnieslon/myon/wcsim_muons_21.root
+InputFile /ANNIE/simulations/wcsim_marcus_beam_0.root
 #InputFile /ToolAnalysisLink/Simulations/e+_energietest_spectrum_0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
