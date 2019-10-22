@@ -482,7 +482,7 @@ bool CNNImage::Execute(){
       hists_lappd.at(i_lappd)->Write();
       hists_time_lappd.at(i_lappd)->Write();
     }
-    if (mode == "Geometric"){
+    if (save_mode == "Geometric"){
       for (int i_binY=0; i_binY < hist_cnn->GetNbinsY();i_binY++){
         for (int i_binX=0; i_binX < hist_cnn->GetNbinsX();i_binX++){
           outfile << hist_cnn->GetBinContent(i_binX+1,i_binY+1);
@@ -491,7 +491,7 @@ bool CNNImage::Execute(){
           if (i_binX != hist_cnn_time->GetNbinsX()-1 || i_binY!=hist_cnn_time->GetNbinsY()-1) outfile_time<<",";    
         }
       }
-    } else if (mode == "PMT-wise"){
+    } else if (save_mode == "PMT-wise"){
       for (int i_binY=0; i_binY < hist_cnn_pmtwise->GetNbinsY();i_binY++){
         for (int i_binX=0; i_binX < hist_cnn_pmtwise->GetNbinsX();i_binX++){
           outfile << hist_cnn_pmtwise->GetBinContent(i_binX+1,i_binY+1);
