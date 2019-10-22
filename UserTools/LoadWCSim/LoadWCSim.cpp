@@ -229,7 +229,6 @@ bool LoadWCSim::Execute(){
 		firsttrigm=WCSimEntry->wcsimrootevent_mrd->GetTrigger(0);
 		firsttrigv=WCSimEntry->wcsimrootevent_facc->GetTrigger(0);
 		atrigt = WCSimEntry->wcsimrootevent->GetTrigger(MCTriggernum);
-		WCSimRootTrigger* firsttrig=WCSimEntry->wcsimrootevent->GetTrigger(0);  // photons are all in first trig
 		if(MCTriggernum<(WCSimEntry->wcsimrootevent_mrd->GetNumberOfEvents())){
 			atrigm = WCSimEntry->wcsimrootevent_mrd->GetTrigger(MCTriggernum);
 		} else { atrigm=nullptr; }
@@ -259,8 +258,8 @@ bool LoadWCSim::Execute(){
 			ParticleId_to_MrdCharge->clear();
 			ParticleId_to_VetoCharge->clear();
 			
-			TString geniefilename = atrigt->GetHeader()->GetGenieFileName().Data();
-			Int_t genieentry = atrigt->GetHeader()->GetGenieEntryNum();
+			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
+			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
 			if(verbose>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
 			m_data->CStore.Set("GenieEntry",genieentry);

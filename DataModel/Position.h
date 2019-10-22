@@ -55,15 +55,6 @@ class Position : public SerialisableObject{
 	inline double M() const { return Mag(); }
 	inline double M2() const { return Mag2(); }
 	
-	inline double Mag() const {
-		return sqrt(Mag2());
-	}
-	inline double M() const { return Mag(); }
-	inline double Mag2() const{
-		return (pow(x,2.)+pow(y,2.)+pow(z,2.));
-	}
-	inline double M2() const { return Mag2(); }
-	
 	bool Print(bool withendline) const {
 		std::cout<<"("<<x<<", "<<y<<", "<<z<<")";
 		if(withendline) cout<<std::endl;
