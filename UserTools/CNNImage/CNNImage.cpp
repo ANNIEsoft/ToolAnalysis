@@ -27,8 +27,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     std::cout <<"data_mode: "<<data_mode<<std::endl;
     std::cout <<"save_mode: "<<save_mode<<std::endl;
   }
-  npmtsX = 10;
-  npmtsY = 10;
+  npmtsX = 16;    //in every row, we have 16 PMTs (8 sides, 2 PMTs per side per row)
+  npmtsY = 6;     //we have 6 rows of PMTs (excluding top and bottom PMTs)
   nlappdX = 20;
   nlappdY = 20;
 
@@ -70,7 +70,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 2) std::cout <<"Detector ID: "<<detkey<<", position: ("<<position_PMT.X()<<","<<position_PMT.Y()<<","<<position_PMT.Z()<<")"<<std::endl;
     if (verbosity > 2) std::cout <<"Rho PMT "<<detkey<<": "<<sqrt(x_pmt.at(detkey)*x_pmt.at(detkey)+z_pmt.at(detkey)*z_pmt.at(detkey))<<std::endl;
     if (verbosity > 2) std::cout <<"Y PMT: "<<y_pmt.at(detkey)<<std::endl;
-    std::cout <<"tank location: "<<apmt->GetTankLocation()<<", y: "<<y_pmt.at(detkey)<<std::endl;
+    //std::cout <<"tank location: "<<apmt->GetTankLocation()<<", y: "<<y_pmt.at(detkey)<<std::endl;
     if (y_pmt[detkey]>max_y && apmt->GetTankLocation()!="OD") max_y = y_pmt.at(detkey);
     if (y_pmt[detkey]<min_y && apmt->GetTankLocation()!="OD") min_y = y_pmt.at(detkey);
 
@@ -89,7 +89,11 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     Detector *apmt = geom->ChannelToDetector(chankey);
     if (y_pmt[detkey] >= max_y-0.001 || y_pmt[detkey] <= min_y+0.001 || apmt->GetTankLocation()=="OD") continue;     //don't include top/bottom/OD PMTs for now
     ConvertPositionTo2D(pmt_pos, x, y);
-    std::cout << "CNNImage: Converting Position ("<<x_pmt[detkey]<<", "<<y_pmt[detkey]<<", "<<z_pmt[detkey]<<") for detkey "<<detkey<<" to 2D yields "<<x<<", "<<y<<std::endl;
+    //std::cout << "CNNImage: Converting Position ("<<x_pmt[detkey]<<", "<<y_pmt[detkey]<<", "<<z_pmt[detkey]<<") for detkey "<<detkey<<" to 2D yields "<<x<<", "<<y<<std::endl;
+    x = (round(100*x)/100.);
+    y = (round(100*y)/100.);
+    if (fabs(x-0.52)<0.001) x = 0.53;
+    if (fabs(x-0.47)<0.001) x = 0.48;
     vec_pmt2D_x.push_back(x);
     vec_pmt2D_y.push_back(y);
 
@@ -128,7 +132,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     z_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.Z()-tank_center_z));
     if (verbosity > 2) std::cout <<"Detector ID: "<<detkey<<", position: ("<<position_LAPPD.X()<<","<<position_LAPPD.Y()<<","<<position_LAPPD.Z()<<")"<<std::endl;
     if (verbosity > 2) std::cout <<"Rho LAPPD "<<detkey<<": "<<sqrt(x_lappd.at(detkey)*x_lappd.at(detkey)+z_lappd.at(detkey)*z_lappd.at(detkey))<<std::endl;
-    if (verbosity > 2) std::cout <<"Y PMT: "<<y_lappd.at(detkey)<<std::endl;
+    if (verbosity > 2) std::cout <<"Y LAPPD: "<<y_lappd.at(detkey)<<std::endl;
     if (y_lappd[detkey]>max_y_lappd) max_y_lappd = y_lappd.at(detkey);
     if (y_lappd[detkey]<min_y_lappd) min_y_lappd = y_lappd.at(detkey);
 
@@ -142,7 +146,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     Position lappd_pos(x_lappd[detkey],y_lappd[detkey],z_lappd[detkey]);
     if (y_lappd[detkey] >= max_y || y_lappd[detkey] <= min_y) continue;     //don't include top/bottom/OD PMTs for now
     ConvertPositionTo2D(lappd_pos, x, y);
-    std::cout << "CNNImage: Converting Position ("<<x_lappd[detkey]<<", "<<y_lappd[detkey]<<", "<<z_lappd[detkey]<<" for detkey "<<detkey<<" to 2D yields "<<x<<", "<<y<<std::endl;
+    //std::cout << "CNNImage: Converting Position ("<<x_lappd[detkey]<<", "<<y_lappd[detkey]<<", "<<z_lappd[detkey]<<" for detkey "<<detkey<<" to 2D yields "<<x<<", "<<y<<std::endl;
     vec_lappd2D_x.push_back(x);
     vec_lappd2D_y.push_back(y);
   }
@@ -166,13 +170,19 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   std::string str_root = ".root";
   std::string str_csv = ".csv";
   std::string str_time = "_time";
+  std::string str_charge = "_charge";
+  std::string str_lappd = "_lappd";
   std::string rootfile_name = cnn_outpath + str_root;
-  std::string csvfile_name = cnn_outpath + str_csv;
+  std::string csvfile_name = cnn_outpath + str_charge + str_csv;
   std::string csvfile_time_name = cnn_outpath + str_time + str_csv;
+  std::string csvfile_lappd_name = cnn_outpath + str_lappd + str_charge + str_csv;
+  std::string csvfile_lappd_time_name = cnn_outpath + str_lappd + str_time + str_csv;
 
   file = new TFile(rootfile_name.c_str(),"RECREATE");
   outfile.open(csvfile_name.c_str());
   outfile_time.open(csvfile_time_name.c_str());
+  outfile_lappd.open(csvfile_lappd_name.c_str());
+  outfile_lappd_time.open(csvfile_lappd_time_name.c_str());
 
   return true;
 }
@@ -201,6 +211,7 @@ bool CNNImage::Execute(){
   charge_lappd.clear();
   time_lappd.clear();
   hits_lappd.clear();
+  total_charge_lappd.clear();
 
   for (unsigned int i_pmt=0; i_pmt<pmt_detkeys.size();i_pmt++){
 
@@ -208,8 +219,12 @@ bool CNNImage::Execute(){
     charge.emplace(detkey,0.);
     time.emplace(detkey,0.);
   }
-  for (unsigned int i_lappd=0; i_lappd<lappd_detkeys[i_lappd];i_lappd++){
+
+  std::cout <<"lappd_detkeys.size() = "<<lappd_detkeys.size()<<std::endl;
+  for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size(); i_lappd++){
     unsigned long detkey = lappd_detkeys[i_lappd];
+    std::cout <<"Initializing lappd detkey "<<detkey<<std::endl;
+    total_charge_lappd.emplace(detkey,0);
     std::vector<std::vector<double>> temp_lappdXY;
     std::vector<std::vector<int>> temp_int_lappdXY;;
     for (int lappdX=0; lappdX<20; lappdX++){
@@ -234,10 +249,10 @@ bool CNNImage::Execute(){
   if (verbosity > 1) std::cout <<"Loop through MCParticles..."<<std::endl;
   for(unsigned int particlei=0; particlei<mcparticles->size(); particlei++){
     MCParticle aparticle = mcparticles->at(particlei);
-    if (verbosity > 1) std::cout <<"particle "<<particlei<<std::endl;
-    if (verbosity > 1) std::cout <<"Parent ID: "<<aparticle.GetParentPdg()<<std::endl;
-    if (verbosity > 1) std::cout <<"PDG code: "<<aparticle.GetPdgCode()<<std::endl;
-    if (verbosity > 1) std::cout <<"Flag: "<<aparticle.GetFlag()<<std::endl;
+    if (verbosity > 2) std::cout <<"particle "<<particlei<<std::endl;
+    if (verbosity > 2) std::cout <<"Parent ID: "<<aparticle.GetParentPdg()<<std::endl;
+    if (verbosity > 2) std::cout <<"PDG code: "<<aparticle.GetPdgCode()<<std::endl;
+    if (verbosity > 2) std::cout <<"Flag: "<<aparticle.GetFlag()<<std::endl;
     if (aparticle.GetParentPdg() !=0 ) continue;
     if (aparticle.GetFlag() !=0 ) continue;
 //    if (!(aparticle.GetPdgCode() == 11 || aparticle.GetPdgCode() == 13)) continue;    //primary particle for Cherenkov tracking should be muon or electron
@@ -278,21 +293,21 @@ bool CNNImage::Execute(){
       hitpmt_detkeys.push_back(detkey);
       std::vector<MCHit>& Hits = apair.second;
       int hits_pmt = 0;
-      int wcsim_id;
       for (MCHit &ahit : Hits){
-        if (time[detkey]>-10. && time[detkey]<40){
+        if (ahit.GetTime()>-10. && ahit.GetTime()<40.){
           charge[detkey] += ahit.GetCharge();
           if (data_mode == "Normal") time[detkey] += ahit.GetTime();
-          else if (data_mode == "Charge-Weighted") time[detkey] += ahit.GetTime()*ahit.GetCharge();
+          else if (data_mode == "Charge-Weighted") time[detkey] += (ahit.GetTime()*ahit.GetCharge());
           hits_pmt++;
         }
       }
-      if (data_mode == "Normal") time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
-      else if (data_mode == "Charge-Weighted") time[detkey] /= charge[detkey];
+      if (data_mode == "Normal" && hits_pmt>0) time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
+      else if (data_mode == "Charge-Weighted" && charge[detkey]>0.) time[detkey] /= charge[detkey];
       total_hits_pmts++;
     }
   }
 
+  std::cout <<"done with MCHits loop"<<std::endl;
   if (total_hits_pmts>=10) bool_nhits=true;
 
   //---------------------------------------------------------------
@@ -300,6 +315,9 @@ bool CNNImage::Execute(){
   //---------------------------------------------------------------
 
   total_hits_lappds=0;
+  total_charge_lappds=0;
+  min_time_lappds=9999;
+  max_time_lappds=-9999;
   vectsize = MCLAPPDHits->size();
   if (verbosity > 1) std::cout <<"Tool CNNImage: MCLAPPDHits size: "<<vectsize<<std::endl;
   for(std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits){
@@ -320,12 +338,23 @@ bool CNNImage::Execute(){
         std::cout <<"LAPPDHit, local hit : "<<x_local_lappd<<", "<<y_local_lappd<<", global hit: "<<x_lappd<<", "<<y_lappd<<", "<<z_lappd<<std::endl;
         double lappd_charge = 1.0;
         double t_lappd = ahit.GetTime();
-        int binx_lappd = (x_local_lappd+0.1)/0.2;       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
-        int biny_lappd = (y_local_lappd+0.1)/0.2;
+        int binx_lappd = round((x_local_lappd+0.1)/0.2*20);       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
+        int biny_lappd = round((y_local_lappd+0.1)/0.2*20);
+        if (binx_lappd < 0) binx_lappd=0;         //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (biny_lappd < 0) biny_lappd=0;         //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (binx_lappd > 19) binx_lappd = 19;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (biny_lappd > 19) biny_lappd = 19;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        std::cout <<"binx_lappd: "<<binx_lappd<<", biny_lappd: "<<biny_lappd<<std::endl;
+        std::cout <<"charge: "<<std::endl;
+        std::cout <<charge_lappd[detkey].at(binx_lappd).at(biny_lappd)<<std::endl;
         if (t_lappd>-10. && t_lappd<40){
           charge_lappd[detkey].at(binx_lappd).at(biny_lappd) += lappd_charge;
           time_lappd[detkey].at(binx_lappd).at(biny_lappd) += t_lappd;
           hits_lappd[detkey].at(binx_lappd).at(biny_lappd)++;
+          total_charge_lappd[detkey] += lappd_charge;
+          total_charge_lappds += lappd_charge;
+          if (max_time_lappds < t_lappd) max_time_lappds = t_lappd;
+          if (min_time_lappds > t_lappd) min_time_lappds = t_lappd;
         }
         for (int i_lappdX=0; i_lappdX<20; i_lappdX++){
           for (int i_lappdY=0; i_lappdY<20; i_lappdY++){
@@ -358,31 +387,38 @@ bool CNNImage::Execute(){
   //---------------------------------------------------------------
 
   //define histogram as an intermediate step to the CNN
-  std::stringstream ss_cnn, ss_title_cnn, ss_cnn_time, ss_title_cnn_time, ss_cnn_pmtwise, ss_title_cnn_pmtwise;
+  std::stringstream ss_cnn, ss_title_cnn, ss_cnn_time, ss_title_cnn_time, ss_cnn_pmtwise, ss_title_cnn_pmtwise, ss_cnn_time_pmtwise, ss_title_cnn_time_pmtwise;
   ss_cnn<<"hist_cnn"<<evnum;
   ss_title_cnn<<"EventDisplay (CNN), Event "<<evnum;
   ss_cnn_time<<"hist_cnn_time"<<evnum;
   ss_title_cnn_time<<"EventDisplay Time (CNN), Event "<<evnum;
   ss_cnn_pmtwise<<"hist_cnn_pmtwise"<<evnum;
   ss_title_cnn_pmtwise<<"EventDisplay (CNN, pmt wise), Event "<<evnum;
+  ss_cnn_time_pmtwise << "hist_cnn_time_pmtwise"<<evnum;
+  ss_title_cnn_time_pmtwise <<"EventDisplay Time (CNN, pmt wise), Event "<<evnum;
   TH2F *hist_cnn = new TH2F(ss_cnn.str().c_str(),ss_title_cnn.str().c_str(),dimensionX,0.5-TMath::Pi()*size_top_drawing,0.5+TMath::Pi()*size_top_drawing,dimensionY,0.5-(0.45*tank_height/tank_radius+2)*size_top_drawing, 0.5+(0.45*tank_height/tank_radius+2)*size_top_drawing);
   TH2F *hist_cnn_time = new TH2F(ss_cnn_time.str().c_str(),ss_title_cnn_time.str().c_str(),dimensionX,0.5-TMath::Pi()*size_top_drawing,0.5+TMath::Pi()*size_top_drawing,dimensionY,0.5-(0.45*tank_height/tank_radius+2)*size_top_drawing, 0.5+(0.45*tank_height/tank_radius+2)*size_top_drawing);
   TH2F *hist_cnn_pmtwise = new TH2F(ss_cnn_pmtwise.str().c_str(),ss_title_cnn_pmtwise.str().c_str(),npmtsX,0,npmtsX,npmtsY,0,npmtsY);
+  TH2F *hist_cnn_time_pmtwise = new TH2F(ss_cnn_time_pmtwise.str().c_str(),ss_title_cnn_time_pmtwise.str().c_str(),npmtsX,0,npmtsX,npmtsY,0,npmtsY);
   //define LAPPD histograms (1 per LAPPD)
-  std::vector<TH2F*> hists_lappd;
+  std::vector<TH2F*> hists_lappd, hists_time_lappd;
   for (unsigned int i_lappd = 0; i_lappd < lappd_detkeys.size(); i_lappd++){
-    std::stringstream ss_hist_lappd, ss_title_lappd;
+    std::stringstream ss_hist_lappd, ss_title_lappd, ss_hist_time_lappd, ss_title_time_lappd;
     ss_hist_lappd<<"hist_lappd"<<i_lappd<<"_ev"<<evnum;
     ss_title_lappd<<"EventDisplay (CNN), LAPPD "<<i_lappd<<", Event "<<evnum;
+    ss_hist_time_lappd<<"hist_time_lappd"<<i_lappd<<"_ev"<<evnum;
+    ss_title_time_lappd<<"EventDisplay Time (CNN), LAPPD "<<i_lappd<<", Event "<<evnum;
     TH2F *hist_lappd = new TH2F(ss_hist_lappd.str().c_str(),ss_title_lappd.str().c_str(),20,0,20,20,0,20);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
     hists_lappd.push_back(hist_lappd);
+    TH2F *hist_time_lappd = new TH2F(ss_hist_time_lappd.str().c_str(),ss_title_time_lappd.str().c_str(),20,0,20,20,0,20);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
+    hists_time_lappd.push_back(hist_time_lappd);
   }
-
 
   //fill the events into the histogram
 
   for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
     unsigned long detkey = pmt_detkeys[i_pmt];
+
     double x,y;
     Position pmt_pos(x_pmt[detkey],y_pmt[detkey],z_pmt[detkey]);
     ConvertPositionTo2D(pmt_pos, x, y);
@@ -393,12 +429,42 @@ bool CNNImage::Execute(){
 
     if (maximum_pmts < 0.001) maximum_pmts = 1.;
     if (fabs(max_time_pmts) < 0.001) max_time_pmts = 1.;
-
    
     double charge_fill = charge[detkey]/maximum_pmts;
     hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
-    double time_fill = time[detkey]/max_time_pmts;
+    double time_fill = (time[detkey]-min_time_pmts)/(max_time_pmts-min_time_pmts);
     hist_cnn_time->SetBinContent(binx,biny,hist_cnn_time->GetBinContent(binx,biny)+time_fill);
+
+    //fill the pmt-wise histogram
+    if (y_pmt[detkey]>=max_y || y_pmt[detkey]<=min_y) continue;       //don't include endcaps in the pmt-wise histogram for now
+    double xCorr, yCorr;
+    xCorr = (round(100*x)/100.);
+    yCorr = (round(100*y)/100.);
+    if (fabs(xCorr-0.52)<0.001) xCorr = 0.53;
+    if (fabs(xCorr-0.47)<0.001) xCorr = 0.48;
+    //std::cout <<"xCorr: "<<xCorr<<", yCorr: "<<yCorr<<std::endl;
+    std::vector<double>::iterator it_x, it_y;
+    it_x = std::find(vec_pmt2D_x.begin(),vec_pmt2D_x.end(),xCorr);
+    it_y = std::find(vec_pmt2D_y.begin(),vec_pmt2D_y.end(),yCorr);
+    int index_x, index_y;
+    index_x = std::distance(vec_pmt2D_x.begin(),it_x);
+    index_y = std::distance(vec_pmt2D_y.begin(),it_y);
+    //std::cout <<"index_x: "<<index_x<<", index_y: "<<index_y<<std::endl;
+    hist_cnn_pmtwise->SetBinContent(index_x+1,index_y+1,charge_fill);
+    hist_cnn_time_pmtwise->SetBinContent(index_x+1,index_y+1,time_fill);
+
+    //fill the lappd-wise histograms
+    for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size(); i_lappd++){
+      unsigned long detkey = lappd_detkeys.at(i_lappd);
+      for (int iX=0; iX < nlappdX; iX++){
+        for (int iY=0; iY < nlappdY; iY++){
+          double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/total_charge_lappds;
+          double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-min_time_lappds)/(max_time_lappds-min_time_lappds);
+          hists_lappd.at(i_lappd)->SetBinContent(iX+1,iY+1,lappd_charge_fill);
+          hists_time_lappd.at(i_lappd)->SetBinContent(iX+1,iY+1,lappd_time_fill);
+        }
+      }
+    }
 
   }
 
@@ -407,15 +473,45 @@ bool CNNImage::Execute(){
 
   if (bool_primary && bool_geometry && bool_nhits) {
 
+    //save root histograms
     hist_cnn->Write();
     hist_cnn_time->Write();
-    for (int i_binY=0; i_binY < hist_cnn->GetNbinsY();i_binY++){
-      for (int i_binX=0; i_binX < hist_cnn->GetNbinsX();i_binX++){
-        outfile << hist_cnn->GetBinContent(i_binX+1,i_binY+1);
-        if (i_binX != hist_cnn->GetNbinsX()-1 || i_binY!=hist_cnn->GetNbinsY()-1) outfile<<",";
-        outfile_time << hist_cnn_time->GetBinContent(i_binX+1,i_binY+1);
-        if (i_binX != hist_cnn_time->GetNbinsX()-1 || i_binY!=hist_cnn_time->GetNbinsY()-1) outfile_time<<",";    
+    hist_cnn_pmtwise->Write();
+    hist_cnn_time_pmtwise->Write();
+    for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size();i_lappd++){
+      hists_lappd.at(i_lappd)->Write();
+      hists_time_lappd.at(i_lappd)->Write();
+    }
+    if (mode == "Geometric"){
+      for (int i_binY=0; i_binY < hist_cnn->GetNbinsY();i_binY++){
+        for (int i_binX=0; i_binX < hist_cnn->GetNbinsX();i_binX++){
+          outfile << hist_cnn->GetBinContent(i_binX+1,i_binY+1);
+          if (i_binX != hist_cnn->GetNbinsX()-1 || i_binY!=hist_cnn->GetNbinsY()-1) outfile<<",";
+          outfile_time << hist_cnn_time->GetBinContent(i_binX+1,i_binY+1);
+          if (i_binX != hist_cnn_time->GetNbinsX()-1 || i_binY!=hist_cnn_time->GetNbinsY()-1) outfile_time<<",";    
+        }
       }
+    } else if (mode == "PMT-wise"){
+      for (int i_binY=0; i_binY < hist_cnn_pmtwise->GetNbinsY();i_binY++){
+        for (int i_binX=0; i_binX < hist_cnn_pmtwise->GetNbinsX();i_binX++){
+          outfile << hist_cnn_pmtwise->GetBinContent(i_binX+1,i_binY+1);
+          if (i_binX != hist_cnn_pmtwise->GetNbinsX()-1 || i_binY!=hist_cnn_pmtwise->GetNbinsY()-1) outfile<<",";
+          outfile_time << hist_cnn_time_pmtwise->GetBinContent(i_binX+1,i_binY+1);
+          if (i_binX != hist_cnn_time_pmtwise->GetNbinsX()-1 || i_binY!=hist_cnn_time_pmtwise->GetNbinsY()-1) outfile_time<<",";    
+        }
+      }
+      for (unsigned int i_lappd=0;i_lappd<lappd_detkeys.size();i_lappd++){
+        for (int i_binY=0; i_binY < hists_lappd.at(i_lappd)->GetNbinsY();i_binY++){
+          for (int i_binX=0; i_binX < hists_lappd.at(i_lappd)->GetNbinsX();i_binX++){
+            outfile_lappd << hists_lappd.at(i_lappd)->GetBinContent(i_binX+1,i_binY+1);
+            if (i_binX != hists_lappd.at(i_lappd)->GetNbinsX()-1 || i_binY!=hists_lappd.at(i_lappd)->GetNbinsY()-1) outfile_lappd<<",";
+            outfile_lappd_time << hists_time_lappd.at(i_lappd)->GetBinContent(i_binX+1,i_binY+1);
+            if (i_binX != hists_time_lappd.at(i_lappd)->GetNbinsX()-1 || i_binY!=hists_time_lappd.at(i_lappd)->GetNbinsY()-1) outfile_lappd_time<<","; 
+          }
+        }
+      }
+      outfile_lappd << std::endl;
+      outfile_lappd_time << std::endl;
     }
     outfile << std::endl;
     outfile_time << std::endl;
@@ -431,6 +527,8 @@ bool CNNImage::Finalise(){
   file->Close();
   outfile.close();
   outfile_time.close();
+  outfile_lappd.close();
+  outfile_lappd_time.close();
 
   return true;
 }
