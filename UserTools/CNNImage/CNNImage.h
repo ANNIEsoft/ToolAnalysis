@@ -80,7 +80,7 @@ class CNNImage: public Tool {
   std::map<unsigned long,double> charge, time, total_charge_lappd;
   std::map<unsigned long, std::vector<std::vector<double>>> charge_lappd, time_lappd;
   std::map<unsigned long, std::vector<std::vector<int>>> hits_lappd;
-  double maximum_pmts;
+  double maximum_pmts, maximum_lappds;
   double total_charge_pmts, total_charge_lappds;
   int total_hits_pmts, total_hits_lappds;
   double min_time_pmts, max_time_pmts, min_time_lappds, max_time_lappds;
