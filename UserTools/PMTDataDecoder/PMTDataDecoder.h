@@ -46,6 +46,7 @@ class PMTDataDecoder: public Tool {
   std::vector<DecodedFrame> DecodeFrames(std::vector<uint32_t> bank);
 
   void ParseFrame(int CardID, DecodedFrame DF);
+  void ParseSyncFrame(int CardID, DecodedFrame DF);
   void ParseRecordHeader(int CardID, int ChannelID, std::vector<uint16_t> RH);
   void StoreFinishedWaveform(int CardID, int ChannelID);
   void AddSamplesToWaveBank(int CardID, int ChannelID, std::vector<uint16_t> WaveSlice);
@@ -69,7 +70,7 @@ class PMTDataDecoder: public Tool {
   //So, check for this structure within the 12-bit samples being parsed.
   int RECORD_HEADER_LABELPART1 = 0x000;
   int RECORD_HEADER_LABELPART2 = 0xFFF;
-
+  int SYNCFRAME_HEADERID = 10;
   //A record header is made of two 48-bit words, each word in little endian order.  The
   //end of the first 48-bit word has the 0x000 of the Record Header.  Given each 12-bit
   //chunk is stored in a 16-bit word, you want to grab the 3 samples  left of 0x000 and
@@ -97,6 +98,7 @@ class PMTDataDecoder: public Tool {
   //Maps used in decoding frames; specifically, holds record header and record waveform info
   std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
   std::map<std::vector<int>, std::vector<uint16_t>> WaveBank;  //Key: {cardID, channelID}. Value: Waveform being built for this Card and ADC Channel. 
+  std::map<int,std::vector<uint64_t>> SyncCounters; //Key: cardID.  Value: vector of sync counters filled in the order they arrive.
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform

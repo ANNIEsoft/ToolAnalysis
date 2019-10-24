@@ -32,7 +32,7 @@ class ANNIEEventBuilder: public Tool {
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
-  void SaveSubrun();
+  void SaveFile();
 
  private:
 
@@ -66,7 +66,6 @@ class ANNIEEventBuilder: public Tool {
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   uint32_t RunNum;
   uint32_t SubrunNum;
-  uint32_t PassNum;
   uint32_t ANNIEEventNum;
   
   std::string SavePath;

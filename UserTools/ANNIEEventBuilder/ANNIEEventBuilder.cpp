@@ -12,15 +12,14 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
 
   RunNum = 0;
-  PassNum = 0;
   SavePath = "./";
   ProcessedFilesBasename = "ProcessedRawData";
+  isTankData = 0;
+  isMRDData = 0;
   /////////////////////////////////////////////////////////////////
+  //FIXME: Eventually, RunNumber should be loaded from A run database
   m_variables.Get("verbosity",verbosity);
-  //FIXME: Eventually, RunNumber should be loaded from
-  //A run database
   m_variables.Get("RunNumber",RunNum);
-  m_variables.Get("PassNumber",PassNum);
   m_variables.Get("EntriesPerSubrun",EntriesPerSubrun);
   m_variables.Get("SavePath",SavePath);
   m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
@@ -30,6 +29,12 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   if(isTankData && isMRDData){
     std::cout << "BuildANNIEEvent ERROR: No data stream matching " <<
         "implemented yet.  Please select either Tank or MRD Data only" << std::endl;
+    return false;
+  }
+
+  if((isTankData || isMRDData) == 0){
+    std::cout << "BuildANNIEEvent ERROR: No data file type chosen. " <<
+        "Please select either Tank or MRD Data only" << std::endl;
     return false;
   }
 
@@ -84,11 +89,9 @@ bool ANNIEEventBuilder::Execute(){
 
 
 bool ANNIEEventBuilder::Finalise(){
-  delete RawData;
   //Save the current subrun and delete ANNIEEvent
-  this->SaveSubrun();
+  this->SaveFile();
   delete ANNIEEvent;
-  delete TrigData;
   std::cout << "ANNIEEventBuilder Exitting" << std::endl;
   return true;
 }
@@ -168,7 +171,7 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   return;
 }
 
-void ANNIEEventBuilder::SaveSubrun()
+void ANNIEEventBuilder::SaveFile()
 {
   //TODO: Build the Filename out of SavePath_ProcessedFileBasename_Runnum_Subrun_Passnum
   std::string Filename = "/ToolAnalysis/TheTestBoost";
@@ -176,7 +179,7 @@ void ANNIEEventBuilder::SaveSubrun()
   ANNIEEvent->Close();
   delete ANNIEEvent;
   ANNIEEvent = new BoostStore(false,2);
-  SubrunNum +=1;
+  return;
 }
 
 void ANNIEEventBuilder::CardIDToElectronicsSpace(int CardID, 

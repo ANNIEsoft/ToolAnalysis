@@ -83,10 +83,12 @@ bool PMTDataDecoder::Execute(){
     PMTData->GetEntry(CDEntryNum);
     PMTData->Get("CardData",Cdata);
 	Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
-    std::cout<<"CardData in Cdata's 0th index CardID="<<Cdata.at(0).CardID<<std::endl;
-    std::cout<<"CardData in Cdata's 0th index data size="<<Cdata.at(0).Data.size()<<std::endl;
     
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
+      if(CardDataIndex==0){
+        std::cout<<"CardData in Cdata's 0th index CardID="<<Cdata.at(0).CardID<<std::endl;
+        std::cout<<"CardData in Cdata's 0th index data size="<<Cdata.at(0).Data.size()<<std::endl;
+      }
       CardData aCardData = Cdata.at(CardDataIndex);
       bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
       if (IsNextInSequence) {
@@ -118,7 +120,7 @@ bool PMTDataDecoder::Execute(){
                 to_string(aCardData.CardID),v_warning, verbosity);
 	    Log("PMTDataDecoder Tool:  Storing Of SequenceID... " + 
                 to_string(aCardData.SequenceID),v_warning, verbosity);
-	    Log("PMTDataDecoder Tool:  Into UnprocessedEntries Map ",v_warning, verbosity);
+	    Log("PMTDataDecoder Tool:  Into UnprocessedEntries. Map ",v_warning, verbosity);
         if(UnprocessedEntries.count(OOOCardID)==0){
           deque<std::vector<int>> OOOqueue;
           OOOqueue.push_back(OOOProperties);
@@ -166,6 +168,7 @@ bool PMTDataDecoder::Execute(){
   std::cout << "PMT WAVE CSTORE SET SUCCESSFULLY.  Clearing FinishedPMTWaves map from this file." << std::endl;
   FinishedPMTWaves.clear();
 
+  SingleFileLoaded = true;
   ////////////// END EXECUTE LOOP ///////////////
   return true;
 }
@@ -188,12 +191,10 @@ bool PMTDataDecoder::CheckIfCardNextInSequence(CardData aCardData)
       IsNextInSequence = true;
       it->second+=1;
     }
-  } else if ((it == SequenceMap.end()) && (aCardData.SequenceID==0)){  //This is the first CardData seen by this CardID
-    SequenceMap.emplace(aCardData.CardID, 1); //Next in sequence is SequenceID == 1
+  } else if ((it == SequenceMap.end())){  //This is the first CardData seen by this CardID
+    if (aCardData.SequenceID!=0) Log("PMTDataDecoder Tool: WARNING! First data seen for this card is not SequenceID=0",v_warning,verbosity);
+    SequenceMap.emplace(aCardData.CardID, aCardData.SequenceID+1); //Assume this is the first sequenceID even if not zero
     IsNextInSequence = true;
-  } else if ((it == SequenceMap.end()) && (aCardData.SequenceID!=0)){  //This is the first CardData seen by this CardID, but is OOO
-    Log("PMTDataDecoder Tool: WARNING! First data seen for this card is not SequenceID=0",v_warning,verbosity);
-    SequenceMap.emplace(aCardData.CardID, 0);
   }
   return IsNextInSequence;
 }
@@ -276,37 +277,45 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
   std::vector<DecodedFrame> frames;  //What we will return
   std::vector<uint16_t> samples;
   samples.resize(40); //Well, if there's 480 bits per frame of samples max, this fits it
+  if(verbosity>2) std::cout << "DECODING A CARDDATA'S DATA BANK.  SIZE OF BANK: " << bank.size() << std::endl;
+  if(verbosity>2) std::cout << "THIS SHOULD HOLD AN INTEGER NUMBER OF FRAMES.  EACH FRAME HAS" << std::endl;
+  if(verbosity>2) std::cout << "512 BITs, split into 16 32-bit INTEGERS.  THIS SHOUDL BE DIVISIBLE BY 16" << std::endl;
   for (unsigned int frame = 0; frame<bank.size()/16; ++frame) {  // if each frame has 16 32-bit ints, nframes = bank_size/16
     struct DecodedFrame thisframe;
     int sampleindex = 0;
-    int wordindex = 16*frame;  //Index of first 32-bit int in this frame
+    int wordindex = 16*frame;  //Index of first 32-bit int for this frame
     int bitsleft = 0;  //# bits to shift to the left in the temp word
     bool haverecheader_part2 = false;
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
-        std::cout << "TEMP WORD BEFORE be32toh AND LEFT SHIFT: " << std::hex << "0x" << tempword << std::endl;
-        std::bitset<64> tempbin(tempword);
-        std::cout << "TEMP WORD BEFORE be32toh AND LEFT SHIFT: " << tempbin << std::endl;
+        if(verbosity>3) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
+        if(verbosity>3) std::cout << "DATA STREAM SNAPSHOT: " << std::bitset<64>(tempword) << std::endl;
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;
-        std::cout << "TEMP WORD AFTER be32toh AND LEFT SHIFT: " << std::hex << "0x" << tempword << std::endl;
-        std::bitset<64> tempbin2(tempword);
-        std::cout << "TEMP WORD BEFORE be32toh AND LEFT SHIFT: " << tempbin2 << std::endl;
+        if(verbosity>3) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
         bitsleft += 32;
         wordindex += 1;
       }
-      samples[sampleindex] = tempword&0xfff;  //You're only taking the first 12 bits of the tempword
+      //Logic to search for record headers
       if((tempword&0xfff)==RECORD_HEADER_LABELPART2) haverecheader_part2 = true;
       else if (haverecheader_part2 && ((tempword&0xfff)==RECORD_HEADER_LABELPART1)){
+        if(verbosity>3) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
         thisframe.has_recordheader=true;
         thisframe.recordheader_000indices.push_back(sampleindex);
       }
       else haverecheader_part2 = false;
+     
+      //Takie the first 12 bits of the tempword at each loop, and shift tempword
+      samples[sampleindex] = tempword&0xfff;        
+      if(verbosity>3) std::cout << "TEMP WORD PRIOR TO BIT SHIFT (FIRST 12 BITS IN SNAPSHOT): " << hex << (tempword&0xfff) << std::endl;
       tempword = tempword>>12;
+      if(verbosity>3) std::cout << "TEMP WORD AFTER TO BIT SHIFT (FIRST 12 BITS IN SNAPSHOT): " << hex << (tempword&0xfff) << std::endl;
       bitsleft -= 12;
       sampleindex += 1;
     } //END parse out this frame
     thisframe.frameheader = be32toh(bank[16*frame+15]);  //Frameid is held in the frame's last 32-bit word
+    if(verbosity>3) std::cout << "FRAMEHEADER last 8 bits: " << std::bitset<32>(thisframe.frameheader>>24) << std::endl;
     thisframe.samples = samples;
+    if(verbosity>3) std::cout << "LENGTH OF SAMPLES AFTER DECODING A FRAME: " << dec << thisframe.samples.size() << std::endl;
     frames.push_back(thisframe);
   }
   Log("PMTDataDecoder Tool: Decoding frames complete ",v_debug, verbosity);
@@ -315,12 +324,14 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
 
 void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
 {
-  int ChannelID = DF.frameheader; //FIXME: We probably need a function that gets the
+  //Get the ID in the frame header.  Need to know if a channel, or sync signal
+  unsigned channel_mask; 
+  int ChannelID = DF.frameheader >> 24; //TODO: Use something more intricate?
                                   //Bitrange defined by Jonathan (511 downto 504)
   if(!DF.has_recordheader){
     //All samples are waveforms for channel record that already exists in the WaveBank.
     this->AddSamplesToWaveBank(CardID, ChannelID, DF.samples);
-  } else {
+  } else if (ChannelID != SYNCFRAME_HEADERID){
     int WaveSecBegin = 0;
     //We need to get the rest of a wave from WaveSecBegin to where the header starts
     for (unsigned int j = 0; j<DF.recordheader_000indices.size(); j++){
@@ -344,6 +355,28 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
     int WaveSecEnd = DF.samples.size()-1;
     std::vector<uint16_t> WaveSlice(WaveSecBegin, WaveSecEnd);
     this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
+  }
+  else {
+    if(verbosity>3) std::cout << "SYNC FRAME FOUND." << std::endl;
+    this->ParseSyncFrame(CardID, DF);
+  }
+  return;
+}
+
+void PMTDataDecoder::ParseSyncFrame(int CardID, DecodedFrame DF)
+{
+  std::cout << "PRINTING ALL DATA IN A SYNC FRAME FOR CARD" << CardID << std::endl;
+  uint64_t SyncCounter = 0;
+  for (int i=0; i < 6; i++){
+    std::cout << "SYNC FRAME DATA AT INDEX " << i << ": " << DF.samples.at(i) << std::endl;
+    SyncCounter += ((uint64_t)DF.samples.at(i)) << (12*i);
+    std::cout << "SYNC COUNTER WITH CURRENT SAMPLE PUT AT LEFT: " << SyncCounter << std::endl;
+  }
+  std::map<int, std::vector<uint64_t>>::iterator it = SyncCounters.find(CardID);
+  if(it != SyncCounters.end()) SyncCounters.at(CardID).push_back(SyncCounter);
+  else {
+    std::vector<uint64_t> SyncVec{SyncCounter};
+    SyncCounters.emplace(CardID,SyncVec);
   }
   return;
 }
@@ -406,9 +439,14 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   //TODO: Make sure the above is always divisible by 4!
   //Add the WaveSlice to the proper vector in the WaveBank.
   std::vector<int> wave_key{CardID,ChannelID};
+  if(WaveBank.count(wave_key)==0){
+    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_error, verbosity);
+    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_error, verbosity);
+  } else {
   WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),
                                WaveSlice.begin(),
                                WaveSlice.end());
+  }
   return;
 }
 

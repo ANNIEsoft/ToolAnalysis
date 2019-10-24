@@ -1,3 +1,3 @@
 verbosity 5
-InputFile /AnnieShare/EventBuilder/VMETest3p0
-CardDataEntriesPerExecute 2
+IsTankData 1
+IsMRDData 0
