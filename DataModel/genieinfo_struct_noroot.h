@@ -1,6 +1,12 @@
 #ifndef GenieInfoStruct_cpp
 #define GenieInfoStruct_cpp
 /* vim:set noexpandtab tabstop=2 wrap */
+
+#include <SerialisableObject.h>
+#include <Position.h>
+#include <Direction.h>
+#include <map>
+
 class GenieInfo {
 	
 	friend class boost::serialization::access;

@@ -1,6 +1,10 @@
 /* vim:set noexpandtab tabstop=2 wrap */
 #include "LoadGenieEvent.h"
 
+#include "TVector3.h"
+#include "TLorentzVector.h"
+
+
 //using namespace genie;
 //using namespace genie::constants;
 //using namespace genie::flux;

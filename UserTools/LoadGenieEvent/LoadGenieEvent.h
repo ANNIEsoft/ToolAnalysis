@@ -21,7 +21,7 @@
 // other
 #endif  // LOADED_GENIE==1
 
-#include "genieinfo_struct_noroot.cpp"
+#include "genieinfo_struct_noroot.h"
 
 class LoadGenieEvent: public Tool {
 	

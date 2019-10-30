@@ -1,1 +1,0 @@
-src/genieinfo_struct_noroot.cpp

@@ -103,3 +103,5 @@
 #include "MonitorTankTime.h"
 #include "PhaseIIADCCalibrator.h"
 #include "MCHitToHitComparer.h"
+#include "LoadGenieEvent.h"
+#include "PrintGenieEvent.h"

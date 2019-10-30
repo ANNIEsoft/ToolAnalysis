@@ -260,7 +260,7 @@ bool LoadWCSim::Execute(){
 			
 			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
-			if(verbose>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+			if(verbosity>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
 			m_data->CStore.Set("GenieEntry",genieentry);
 			
