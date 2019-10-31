@@ -1,4 +1,8 @@
 #include "PrintGenieEvent.h"
+#include "GenieInfo.h"
+
+/// legacy
+#define LOADED_GENIE 1
 
 PrintGenieEvent::PrintGenieEvent():Tool(){}
 

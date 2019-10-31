@@ -1,10 +1,12 @@
 /* vim:set noexpandtab tabstop=2 wrap */
 #include "LoadGenieEvent.h"
 
+#include "TChain.h"
+#include "TFile.h"
 #include "TVector3.h"
 #include "TLorentzVector.h"
 
-
+#include "MRDspecs.hh"
 //using namespace genie;
 //using namespace genie::constants;
 //using namespace genie::flux;

@@ -17,8 +17,10 @@ RootInclude=  -I $(ToolDAQPath)/root-6.06.08/install/include
 WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
 WCSimInclude= -I ToolDAQ/WCSimLib/include
 
-GenieInclude= -I$(`genie-config --topsrcdir`)
-GenieLibs= `genie-config --libs` -lxml2 -llog4cpp
+GenieIncludeDir := $(shell genie-config --topsrcdir)
+GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
+GenieLibs= `genie-config --libs` -lxml2 #-llog4cpp
+PythiaLibs= -L ToolDAQ/Pythia6Support/v6_424/lib -lPythia6
 
 RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
 RATEventInclude= -I ToolDAQ/RATEventLib/include
@@ -26,13 +28,13 @@ RATEventInclude= -I ToolDAQ/RATEventLib/include
 MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
-RootLib=   -L $(ToolDAQPath)/root-6.06.08/install/lib  -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -lGeom -lEG
+RootLib=   -L $(ToolDAQPath)/root-6.06.08/install/lib  -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -lGeom -lEG -lEGPythia6
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(Genieinclude)
-MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(GenieLibs)
+MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude)
+MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(GenieLibs) $(PythiaLibs)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse RemoteControl NodeDaemon
 

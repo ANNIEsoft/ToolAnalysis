@@ -5,23 +5,25 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "GenieInfo.h"
+
+// legacy
+#define LOADED_GENIE 1
 
 #if LOADED_GENIE==1                       // disable this tool unless Genie is loaded (FNAL)
 //GENIE
-#include <FluxDrivers/GSimpleNtpFlux.h>
-#include <FluxDrivers/GNuMIFlux.h>
+#include <Tools/Flux/GSimpleNtpFlux.h>
+#include <Tools/Flux/GNuMIFlux.h>
 #include <GHEP/GHepUtils.h>               // neut reaction codes
-#include <PDG/PDGLibrary.h>
+#include <ParticleData/PDGLibrary.h>
 #include <Ntuple/NtpMCEventRecord.h>
 #include <Conventions/Constants.h>
 #include <GHEP/GHepParticle.h>
-#include <EVGCore/EventRecord.h>
+#include <EventGen/EventRecord.h>
 #include <TParticlePDG.h>
 #include <Interaction/Interaction.h>
 // other
 #endif  // LOADED_GENIE==1
-
-#include "genieinfo_struct_noroot.h"
 
 class LoadGenieEvent: public Tool {
 	
