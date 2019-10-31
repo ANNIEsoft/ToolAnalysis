@@ -88,7 +88,12 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		while(TGeoMixture* amaterial=(TGeoMixture*)nextmaterial()) amaterial->SetTransparency(90);
 		gdmlcanv = new TCanvas("gdmlcanv","gdmlcanv",canvwidth,canvheight);
 		gdmlcanv->cd();
-		gGeoManager->GetVolume("WORLD2_LV")->Draw("ogl");
+		//gGeoManager->GetVolume("WORLD_LV")->Draw("ogl");     // hall + surrounding dirt
+		//gGeoManager->GetVolume("BLDG_LV")->Draw("ogl");      // hall
+		//gGeoManager->GetVolume("EXP_HALL_LV")->Draw("ogl");  // detector
+		gGeoManager->GetVolume("WORLD2_LV")->Draw("ogl");      // detector, coordinates aligned <- must use this
+		// use TGeoManager commands to manipulate viewpoint etc
+		// https://root.cern.ch/doc/v614/classTGeoManager.html#a4bf097b4cedad5f03ecce942e2c077a9
 	}
 #endif
 	
@@ -346,8 +351,8 @@ bool MrdPaddlePlot::Execute(){
 		}
 		
 		//gSystem->ProcessEvents();
-		//if(enableTApplication) gPad->WaitPrimitive();
-		if(enableTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
+		//gPad->WaitPrimitive();
+		std::this_thread::sleep_for (std::chrono::seconds(2));
 		
 		//if(earlyexit) break;
 	} // end loop over subevents

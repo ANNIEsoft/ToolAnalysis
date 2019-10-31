@@ -47,7 +47,7 @@ private:
 	uint32_t EventNumber;   // -> eventnum   ( " " )
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass 
-	std::map<unsigned long,vector<Hit>>* TDCData;
+	std::map<unsigned long,vector<MCHit>>* TDCData;
 	Geometry* geo=nullptr;  // for num MRD PMTs
 	int numvetopmts=0;      // current method for separating veto / mrd pmts in TDCData
 	
