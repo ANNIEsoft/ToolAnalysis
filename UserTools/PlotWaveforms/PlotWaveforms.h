@@ -21,7 +21,7 @@ public:
 private:
 	
 	annie::RawViewer* theviewer;
-	TApplication* annieviewerRootDrawApp;
+	TApplication* rootTApp=nullptr;
 	bool viewer_closed;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.

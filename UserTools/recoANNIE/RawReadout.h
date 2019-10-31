@@ -16,9 +16,6 @@
 #include "RawTrigData.h"
 #include "ANNIEconstants.h"
 
-
-#include "ANNIEconstants.h"
-
 namespace annie {
 
   class RawReadout {

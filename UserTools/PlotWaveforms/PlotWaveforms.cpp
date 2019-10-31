@@ -27,10 +27,25 @@ bool PlotWaveforms::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbose", verbosity);
 	Log("PlotWaveforms Tool: Initializing",v_message,verbosity);
 	
-	// construct the TApplication to show it
-	int myargc=0;
-	char *myargv[] = {(const char*)"spudleymunchkin"};
-	annieviewerRootDrawApp = new TApplication("annieviewerRootDrawApp",&myargc,myargv);
+	// get or construct the TApplication to show it
+        int myargc=0;
+        //char *myargv[] = {(const char*)"somestring"};
+        intptr_t tapp_ptr=0;
+        get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+        if(not get_ok){
+                if(verbosity>2) cout<<"PlotWaveforms Tool: making global TApplication"<<endl;
+                rootTApp = new TApplication("rootTApp",&myargc,0);
+                tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+                m_data->CStore.Set("RootTApplication",tapp_ptr);
+        } else {
+                if(verbosity>2) cout<<"PlotWaveforms Tool: Retrieving global TApplication"<<std::endl;
+                rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+        }
+        int tapplicationusers;
+        get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+        if(not get_ok) tapplicationusers=1;
+        else tapplicationusers++;
+        m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 	
 	// construct a RawViewer
 	theviewer = new annie::RawViewer();
@@ -74,8 +89,20 @@ bool PlotWaveforms::Execute(){
 
 
 bool PlotWaveforms::Finalise(){
-	annieviewerRootDrawApp->Terminate();
-	delete annieviewerRootDrawApp;
+	
+        int tapplicationusers=0;
+        get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+        if(not get_ok || tapplicationusers==1){
+                if(rootTApp){
+                        std::cout<<"PlotWaveforms Tool: Deleting global TApplication"<<std::endl;
+			rootTApp->Terminate();
+                        delete rootTApp;
+                        rootTApp=nullptr;
+                }
+        } else if(tapplicationusers>1){
+                m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+        }
+	
 	if(theviewer) delete theviewer;
 	return true;
 }
