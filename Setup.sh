@@ -12,6 +12,7 @@ export ROOT_INCLUDE_PATH=${ToolDAQapp}/ToolDAQ/WCSimLib/include/:${ToolDAQapp}/T
 export PYTHIA6_DIR=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/
 export GENIE=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/
 export PATH=$GENIE/bin:$PATH
+export LD_LIBRARY_PATH=ToolDAQ/log4cpp/lib:$LD_LIBRARY_PATH
 
 for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
 do

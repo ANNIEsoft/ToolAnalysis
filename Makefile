@@ -19,8 +19,10 @@ WCSimInclude= -I ToolDAQ/WCSimLib/include
 
 GenieIncludeDir := $(shell genie-config --topsrcdir)
 GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
-GenieLibs= `genie-config --libs` -lxml2 #-llog4cpp
+GenieLibs= `genie-config --libs` -lxml2
 PythiaLibs= -L ToolDAQ/Pythia6Support/v6_424/lib -lPythia6
+Log4CppLibs= -L ToolDAQ/log4cpp/lib -llog4cpp
+Log4CppInclude= -I ToolDAQ/log4cpp/include/log4cpp
 
 RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
 RATEventInclude= -I ToolDAQ/RATEventLib/include
@@ -33,8 +35,8 @@ RootLib=   -L $(ToolDAQPath)/root-6.06.08/install/lib  -lCore -lRIO -lNet -lHist
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
-MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude)
-MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(GenieLibs) $(PythiaLibs)
+MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
+MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse RemoteControl NodeDaemon
 
