@@ -8,6 +8,7 @@
 
 #include "Tool.h"
 #include "RawViewer.h"
+class TApplication;
 
 class PlotWaveforms: public Tool {
 
