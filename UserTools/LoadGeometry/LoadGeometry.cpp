@@ -118,7 +118,7 @@ void LoadGeometry::InitializeGeometry(){
     }
     //Loop over lines, collect all detector data (should only be one line here)
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity>3) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> DataEntries;
@@ -183,12 +183,11 @@ void LoadGeometry::LoadFACCMRDDetectors(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity > 4) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
-      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseMRDDataEntry(SpecLine,MRDLegendEntries);
       if(not add_ok){
@@ -369,12 +368,11 @@ void LoadGeometry::LoadTankPMTDetectors(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity > 3)std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
-      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseTankPMTDataEntry(SpecLine,TankPMTLegendEntries);
       if(not add_ok){
@@ -542,12 +540,11 @@ void LoadGeometry::LoadLAPPDs(){
     detector_num_store = 100000;
     counter = 0;
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity>4) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
-      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseLAPPDDataEntry(SpecLine,LAPPDLegendEntries);
       if(not add_ok){
