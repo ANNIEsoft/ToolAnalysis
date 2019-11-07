@@ -29,7 +29,7 @@ struct DecodedFrame{
   bool has_recordheader;
   uint32_t frameheader;
   std::vector<uint16_t> samples;
-  std::vector<int> recordheader_000indices; //Holds indices where a record header starts in samples
+  std::vector<int> recordheader_starts; //Holds indices where a record header starts in samples
   ~DecodedFrame(){
   }
 };
@@ -72,11 +72,10 @@ class PMTDataDecoder: public Tool {
   int RECORD_HEADER_LABELPART2 = 0xFFF;
   int SYNCFRAME_HEADERID = 10;
   //A record header is made of two 48-bit words, each word in little endian order.  The
-  //end of the first 48-bit word has the 0x000 of the Record Header.  Given each 12-bit
-  //chunk is stored in a 16-bit word, you want to grab the 3 samples  left of 0x000 and
-  //4 samples right of the 0x000.
-  unsigned int SAMPLES_LEFTOF_000 = 3;
-  unsigned int SAMPLES_RIGHTOF_000 = 4;
+  //beginning of the first word has the 0x000 of the Record Header.  Given each 12-bit
+  //chunk is stored in a 16-bit word, you want to grab the 7 samples right of 0x000 to
+  //get the entire header.
+  unsigned int SAMPLES_RIGHTOF_000 = 7;
 
   BoostStore *RawData;
   BoostStore *PMTData;

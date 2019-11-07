@@ -85,24 +85,22 @@ bool PMTDataDecoder::Execute(){
 	Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
     
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
-      if(CardDataIndex==0){
-        std::cout<<"CardData in Cdata's 0th index CardID="<<Cdata.at(0).CardID<<std::endl;
-        std::cout<<"CardData in Cdata's 0th index data size="<<Cdata.at(0).Data.size()<<std::endl;
+      if(verbosity>3){
+        std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
+        std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata.at(CardDataIndex).CardID<<std::endl;
+        std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata.at(CardDataIndex).Data.size()<<std::endl;
       }
       CardData aCardData = Cdata.at(CardDataIndex);
       bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
       if (IsNextInSequence) {
 	    Log("PMTDataDecoder Tool: CardData is next in sequence. Decoding... ",v_debug, verbosity);
-	    Log("PMTDataDecoder Tool:  Decoding CardID... "+to_string(aCardData.CardID),v_debug, verbosity);
 	    Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
         //For this CardData entry, decode raw binary frames.  Locates header markers
         //And separates the Frame Header from the data stream bits.
         std::vector<DecodedFrame> ThisCardDFs;
         ThisCardDFs = this->DecodeFrames(aCardData.Data);
         //Loop through each decoded frame and Parse their data stream and 
-        //frame header.  Data stream infomration is moved to the
-        //TriggerTimeBank and WaveBank, and any finished waveform is moved from 
-        //the TriggerTimeBank/WaveBank to the FinishedPMTWaves
+        //frame header.  
         for (unsigned int i=0; i < ThisCardDFs.size(); i++){
           this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
         }
@@ -285,37 +283,36 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
     int sampleindex = 0;
     int wordindex = 16*frame;  //Index of first 32-bit int for this frame
     int bitsleft = 0;  //# bits to shift to the left in the temp word
-    bool haverecheader_part2 = false;
+    bool haverecheader_part1 = false;
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
-        if(verbosity>3) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
-        if(verbosity>3) std::cout << "DATA STREAM SNAPSHOT: " << std::bitset<64>(tempword) << std::endl;
+        if(verbosity>4) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;
-        if(verbosity>3) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
+        if(verbosity>4) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
         bitsleft += 32;
         wordindex += 1;
       }
       //Logic to search for record headers
-      if((tempword&0xfff)==RECORD_HEADER_LABELPART2) haverecheader_part2 = true;
-      else if (haverecheader_part2 && ((tempword&0xfff)==RECORD_HEADER_LABELPART1)){
-        if(verbosity>3) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
+      if((tempword&0xfff)==RECORD_HEADER_LABELPART1) haverecheader_part1 = true;
+      else if (haverecheader_part1 && ((tempword&0xfff)==RECORD_HEADER_LABELPART2)){
+        if(verbosity>4) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
         thisframe.has_recordheader=true;
-        thisframe.recordheader_000indices.push_back(sampleindex);
+        thisframe.recordheader_starts.push_back(sampleindex-1);
+        haverecheader_part1 = false;
       }
-      else haverecheader_part2 = false;
+      else haverecheader_part1 = false;
      
       //Takie the first 12 bits of the tempword at each loop, and shift tempword
-      samples[sampleindex] = tempword&0xfff;        
-      if(verbosity>3) std::cout << "TEMP WORD PRIOR TO BIT SHIFT (FIRST 12 BITS IN SNAPSHOT): " << hex << (tempword&0xfff) << std::endl;
+      samples[sampleindex] = tempword&0xfff;
+      if(verbosity>4) std::cout << "FIRST 12 BITS IN THIS SNAPSHOT: " << std::bitset<16>(tempword&0xfff) << dec << std::endl;
       tempword = tempword>>12;
-      if(verbosity>3) std::cout << "TEMP WORD AFTER TO BIT SHIFT (FIRST 12 BITS IN SNAPSHOT): " << hex << (tempword&0xfff) << std::endl;
       bitsleft -= 12;
       sampleindex += 1;
     } //END parse out this frame
     thisframe.frameheader = be32toh(bank[16*frame+15]);  //Frameid is held in the frame's last 32-bit word
-    if(verbosity>3) std::cout << "FRAMEHEADER last 8 bits: " << std::bitset<32>(thisframe.frameheader>>24) << std::endl;
+    if(verbosity>4) std::cout << "FRAMEHEADER last 8 bits: " << std::bitset<32>(thisframe.frameheader>>24) << std::endl;
     thisframe.samples = samples;
-    if(verbosity>3) std::cout << "LENGTH OF SAMPLES AFTER DECODING A FRAME: " << dec << thisframe.samples.size() << std::endl;
+    if(verbosity>4) std::cout << "LENGTH OF SAMPLES AFTER DECODING A FRAME: " << dec << thisframe.samples.size() << std::endl;
     frames.push_back(thisframe);
   }
   Log("PMTDataDecoder Tool: Decoding frames complete ",v_debug, verbosity);
@@ -323,41 +320,64 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
 }
 
 void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
-{
+{ 
+  //Decoded frame infomration is moved to the
+  //TriggerTimeBank and WaveBank.  
   //Get the ID in the frame header.  Need to know if a channel, or sync signal
   unsigned channel_mask; 
   int ChannelID = DF.frameheader >> 24; //TODO: Use something more intricate?
                                   //Bitrange defined by Jonathan (511 downto 504)
-  if(!DF.has_recordheader){
+  if(verbosity>3) std::cout << "Parsing frame with CardID and ChannelID-" << 
+      CardID << "," << ChannelID << std::endl;
+  if(!DF.has_recordheader && (ChannelID != SYNCFRAME_HEADERID)){
     //All samples are waveforms for channel record that already exists in the WaveBank.
     this->AddSamplesToWaveBank(CardID, ChannelID, DF.samples);
   } else if (ChannelID != SYNCFRAME_HEADERID){
     int WaveSecBegin = 0;
     //We need to get the rest of a wave from WaveSecBegin to where the header starts
-    for (unsigned int j = 0; j<DF.recordheader_000indices.size(); j++){
+    //FIXME: this works if there's already a wave being built.  You need to parse 
+    //a record header in the wavebank first if it's the first thing in the frame though
+    if(verbosity>3) {
+      std::cout << "This decoded frame has headers at... " << std::endl;
+      for (unsigned int j = 0; j<DF.recordheader_starts.size(); j++){
+          std::cout << DF.recordheader_starts.at(j) << std::endl;
+      }
+    }
+    for (unsigned int j = 0; j<DF.recordheader_starts.size(); j++){
+      //TODO: More graceful way to handle this?  It's already happened once
+      if(WaveSecBegin>DF.recordheader_starts.at(j)){
+        std::cout << "WARNING: Record header label found inside another record header." << 
+            "This is likely due to the counter.  Skipping record header and " <<
+            "continuing" << std::endl;
+        continue;
+      }
+      std::cout << "WE IN LOOP" << std::endl;
+      std::cout << "RECORD HEADER INDEX" << DF.recordheader_starts.at(j) << std::endl;
+      std::cout << "WAVESECBEGIN IS " << WaveSecBegin << std::endl;
       std::vector<uint16_t> WaveSlice(DF.samples.begin()+WaveSecBegin, 
-              DF.samples.begin()+DF.recordheader_000indices.at(j)- SAMPLES_LEFTOF_000-1);
+              DF.samples.begin()+DF.recordheader_starts.at(j));
+      Log("PMTDataDecoder Tool: Length of waveslice: "+to_string(WaveSlice.size()),v_debug, verbosity);
       //Add this WaveSlice to the wave bank
       this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
       //Since we have acquired the wave up to the next record header, the wave is done.
       //Store it in the FinishedWaves map.
       this->StoreFinishedWaveform(CardID, ChannelID);
       //Now, we have the header coming next.  Get it and parse it, starting whatever
-      //Entries in maps are needed.  
+      //Entries in maps are needed. 
       std::vector<uint16_t> RecordHeader(DF.samples.begin()+
-              DF.recordheader_000indices.at(j) - SAMPLES_LEFTOF_000, DF.samples.begin()+
-              DF.recordheader_000indices.at(j)+SAMPLES_RIGHTOF_000);
+              DF.recordheader_starts.at(j), DF.samples.begin()+
+              DF.recordheader_starts.at(j)+SAMPLES_RIGHTOF_000+1);
       this->ParseRecordHeader(CardID, ChannelID, RecordHeader);
-      WaveSecBegin = DF.recordheader_000indices.at(j)+SAMPLES_RIGHTOF_000+1;
+      WaveSecBegin = DF.recordheader_starts.at(j)+SAMPLES_RIGHTOF_000+1;
     }
     // No more record headers from here; just parse the rest of whatever 
     // waveform is being looked at
     int WaveSecEnd = DF.samples.size()-1;
-    std::vector<uint16_t> WaveSlice(WaveSecBegin, WaveSecEnd);
+    std::vector<uint16_t> WaveSlice(DF.samples.begin()+WaveSecBegin, 
+            DF.samples.end());
     this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
   }
   else {
-    if(verbosity>3) std::cout << "SYNC FRAME FOUND." << std::endl;
     this->ParseSyncFrame(CardID, DF);
   }
   return;
@@ -365,12 +385,12 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
 
 void PMTDataDecoder::ParseSyncFrame(int CardID, DecodedFrame DF)
 {
-  std::cout << "PRINTING ALL DATA IN A SYNC FRAME FOR CARD" << CardID << std::endl;
+  if(verbosity>4) std::cout << "PRINTING ALL DATA IN A SYNC FRAME FOR CARD" << CardID << std::endl;
   uint64_t SyncCounter = 0;
   for (int i=0; i < 6; i++){
-    std::cout << "SYNC FRAME DATA AT INDEX " << i << ": " << DF.samples.at(i) << std::endl;
+    if(verbosity>4) std::cout << "SYNC FRAME DATA AT INDEX " << i << ": " << DF.samples.at(i) << std::endl;
     SyncCounter += ((uint64_t)DF.samples.at(i)) << (12*i);
-    std::cout << "SYNC COUNTER WITH CURRENT SAMPLE PUT AT LEFT: " << SyncCounter << std::endl;
+    if(verbosity>4) std::cout << "SYNC COUNTER WITH CURRENT SAMPLE PUT AT LEFT: " << SyncCounter << std::endl;
   }
   std::map<int, std::vector<uint64_t>>::iterator it = SyncCounters.find(CardID);
   if(it != SyncCounters.end()) SyncCounters.at(CardID).push_back(SyncCounter);
@@ -387,15 +407,22 @@ void PMTDataDecoder::ParseRecordHeader(int CardID, int ChannelID, std::vector<ui
   //First 4 samples; Just get the bits from 24 to 37 (is counter (61 downto 48)
   //Last 4 samples; All the first 48 bits of the MTC count.
   Log("PMTDataDecoder Tool: Parsing an encountered header ",v_debug, verbosity);
-  std::vector<uint16_t> CounterEnd(RH.begin(), RH.begin()+2);
-  std::vector<uint16_t> CounterBegin(RH.begin()+4, RH.begin()+7);
-  uint64_t ClockCount;
+  if(verbosity>4){
+    std::cout << "BIT WORDS IN RECORD HEADER: " << std::endl;
+    for (unsigned int j=0; j<RH.size(); j++){
+      std::cout << std::bitset<16>(RH.at(j)) << dec << std::endl;
+    }
+  }
+  std::vector<uint16_t> CounterEnd(RH.begin()+2, RH.begin()+4);
+  std::vector<uint16_t> CounterBegin(RH.begin()+4, RH.begin()+8);
+  uint64_t ClockCount=0;
   int samplewidth=12;  //each uint16 really only holds 12 bits of info. (see DecodeFrame)
+  //std::reverse(CounterBegin.begin(),CounterBegin.end());
   for (unsigned int j=0; j<CounterBegin.size(); j++){
-    ClockCount += (CounterBegin.at(j) << j*samplewidth);
+    ClockCount += ((uint64_t)CounterBegin.at(j) << j*samplewidth);
   }
   for (unsigned int j=0; j<CounterEnd.size(); j++){
-    ClockCount += (CounterEnd.at(j) << (CounterBegin.size() + j*samplewidth));
+    ClockCount += ((uint64_t)CounterEnd.at(j) << ((CounterBegin.size() + j)*samplewidth));
   }
   std::vector<int> wave_key{CardID,ChannelID};
   std::vector<uint16_t> Waveform;
@@ -404,6 +431,7 @@ void PMTDataDecoder::ParseRecordHeader(int CardID, int ChannelID, std::vector<ui
   //Wave data is coming up next
   Log("PMTDataDecoder Tool: Parsed Clock time for header is "+to_string(ClockCount),v_debug, verbosity);
   TriggerTimeBank.emplace(wave_key,ClockCount);
+  Log("PMTDataDecoder Tool: Placing empty waveform in WaveBank ",v_debug, verbosity);
   WaveBank.emplace(wave_key,Waveform);
   return;
 }
@@ -413,6 +441,12 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
 {
   //Get the full waveform from the Wave Bank
   std::vector<int> wave_key{CardID,ChannelID};
+  //Check there's a wave in the map
+  if(WaveBank.count(wave_key)==0){
+    Log("PMTDataDecoder::StoreFinishedWaveform: No waveform at wave key. ",v_message, verbosity);
+    Log("PMTDataDecoder::StoreFinishedWaveForm: Continuing without saving any waves",v_message, verbosity);
+    return;
+  }
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
   uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);
@@ -428,7 +462,7 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   //Clear the finished wave from WaveBank and TriggerTimeBank for the new wave
   //to start being put together
   WaveBank.erase(wave_key);
-  TriggerTimeBank.at(wave_key);
+  TriggerTimeBank.erase(wave_key);
   return;
 }
   
@@ -442,6 +476,7 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   if(WaveBank.count(wave_key)==0){
     Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_error, verbosity);
     Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_error, verbosity);
+    return;
   } else {
   WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),
                                WaveSlice.begin(),
