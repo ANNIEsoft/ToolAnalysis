@@ -26,7 +26,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
     Mode = "Continuous";
   }
 
-
+  m_data->CStore.Set("NewTankPMTDataAvailable",false);
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
 }
@@ -153,7 +153,7 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Get("FinishedPMTWaves",CStorePMTWaves);
     CStorePMTWaves.insert(FinishedPMTWaves.begin(),FinishedPMTWaves.end());
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
-    //FIXME: Should we now clear CStorePMTWaves to free up memory?
+    m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 

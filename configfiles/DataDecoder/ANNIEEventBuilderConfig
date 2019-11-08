@@ -1,3 +1,5 @@
 verbosity 5
+
+SaveToFile 0
 IsTankData 1
 IsMRDData 0
