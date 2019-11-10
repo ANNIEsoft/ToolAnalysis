@@ -8,6 +8,7 @@
 #include "Tool.h"
 
 #include "TApplication.h"
+#include "TFile.h"
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TCanvas.h"
@@ -37,6 +38,8 @@ class PrintADCData: public Tool {
  private:
 
   bool visualize;
+  std::string outputfile;
+  TFile *file_out = nullptr;
 
   long totalentries=0;
 

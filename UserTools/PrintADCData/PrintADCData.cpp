@@ -17,11 +17,19 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
+  m_variables.Get("OutputFile",outputfile);
   m_variables.Get("VisualizeADCData",visualize);
   if(annieeventexists==0) {
     std::cout << "PrintADCData: No ANNIE Event in store to print!" << std::endl;
     return false;
   }
+
+  std::string file_out_prefix="_PrintADCDataWaves";
+  std::string file_out_root=".root";
+  std::string file_out_name=outputfile+file_out_prefix+file_out_root;
+
+  file_out=new TFile(file_out_name.c_str(),"RECREATE"); //create one root file for each run to save the detailed plots and fits for all PMTs 
+  file_out->cd();
 
   EntryNum = 0;
   std::cout << "PrintADCData: tool initialized" << std::endl;
@@ -71,55 +79,48 @@ bool PrintADCData::Execute(){
           }
         }
       }
-    }
-    // Method directly taken from Marcus' SimulatedWaveformDemo 
-	// make a numberline to act as the x-axis of the plotting TGraph
-    if(visualize){
-      Log("SimulatedWaveformDemo Tool: Looping over "+to_string(RawADCData.size())
-      	 +" Tank PMT channels",v_debug,verbosity);
+      // Method directly taken from Marcus' PrintADCData 
+	  // make a numberline to act as the x-axis of the plotting TGraph
+      Log("PrintADCData Tool: Looping over "+to_string(RawADCData.size())
+           +" Tank PMT channels",v_debug,verbosity);
       for(std::pair<const unsigned long,std::vector<Waveform<uint16_t>>>& achannel : RawADCData){
-        const unsigned long channelkey = achannel.first;
-        
+        const unsigned long channel_key = achannel.first;
         // Each Waveform represents one minibuffer on this channel
-        Log("SimulatedWaveformDemo Tool: Looping over "+to_string(achannel.second.size())
+        Log("PrintADCData Tool: Looping over "+to_string(achannel.second.size())
              +" minibuffers",v_debug,verbosity);
         for(Waveform<uint16_t>& wfrm : achannel.second){
           std::vector<uint16_t>* samples = wfrm.GetSamples();
+          double StartTime = wfrm.GetStartTime();
           int SampleLength = samples->size();
           numberline.resize(SampleLength);
           std::iota(numberline.begin(),numberline.end(),0);
           upcastdata.resize(SampleLength);
-          // Note that because these are built directly from the simulated minibuffers,
-          // samples will have the Phase 1 interleaving unless it is disabled in the
-          // PulseSimulation tool by passing config variable DoPhaseOneRiffle=0
-          
-          // As a demonstration, let's just plot the waveform on a TGraph
-          const uint16_t thismax = *std::max_element(samples->begin(), samples->end());
-          Log("SimulatedWaveformDemo Tool: checking max "+to_string(thismax)+" against "
-            +to_string(maxwfrmamp),v_debug,verbosity);
-          if(thismax<maxwfrmamp){ continue; }
-          maxwfrmamp = thismax;
           
           // for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
-          Log("SimulatedWaveformDemo Tool: Making TGraph",v_debug,verbosity);
+          Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
           for(int samplei=0; samplei<SampleLength; samplei++){
               upcastdata.at(samplei) = samples->at(samplei);
           }
           if(mb_graph){ delete mb_graph; }
           mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
-          mb_graph->SetName("mb_graph");
-          if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
-          mb_canv->cd();
-          mb_canv->Clear();
-          mb_graph->Draw("alp");
-          mb_canv->Modified();
-          mb_canv->Update();
-          gSystem->ProcessEvents();
-          do{
+          std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
+          mb_graph->SetName(graph_name.c_str());
+          mb_graph->Write();
+          if(visualize){
+            if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
+            mb_canv->cd();
+            mb_canv->Clear();
+            mb_graph->Draw("alp");
+          //else mb_graph->Draw("alp","goff");
+            mb_canv->Modified();
+            mb_canv->Update();
             gSystem->ProcessEvents();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          } while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
-          Log("SimulatedWaveformDemo Tool: graph closed, looping",v_debug,verbosity);
+            do{
+              gSystem->ProcessEvents();
+              std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            } while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
+            Log("PrintADCData Tool: graph closed, looping",v_debug,verbosity);
+          }
         } // end loop over minibuffers
       } // end loop over channelkeys
     }
@@ -130,6 +131,7 @@ bool PrintADCData::Execute(){
 
 
 bool PrintADCData::Finalise(){
+  file_out->Close();
   std::cout << "PrintADCData exitting" << std::endl;
   return true;
 }

@@ -1,2 +1,3 @@
 verbosity 5
-VisualizeADCData 1
+VisualizeADCData 0
+OutputFile TestingStuff
