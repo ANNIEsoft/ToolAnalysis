@@ -81,48 +81,43 @@ bool PrintADCData::Execute(){
       }
       // Method directly taken from Marcus' PrintADCData 
 	  // make a numberline to act as the x-axis of the plotting TGraph
-      Log("PrintADCData Tool: Looping over "+to_string(RawADCData.size())
-           +" Tank PMT channels",v_debug,verbosity);
-      for(std::pair<const unsigned long,std::vector<Waveform<uint16_t>>>& achannel : RawADCData){
-        const unsigned long channel_key = achannel.first;
-        // Each Waveform represents one minibuffer on this channel
-        Log("PrintADCData Tool: Looping over "+to_string(achannel.second.size())
-             +" minibuffers",v_debug,verbosity);
-        for(Waveform<uint16_t>& wfrm : achannel.second){
-          std::vector<uint16_t>* samples = wfrm.GetSamples();
-          double StartTime = wfrm.GetStartTime();
-          int SampleLength = samples->size();
-          numberline.resize(SampleLength);
-          std::iota(numberline.begin(),numberline.end(),0);
-          upcastdata.resize(SampleLength);
-          
-          // for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
-          Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
-          for(int samplei=0; samplei<SampleLength; samplei++){
-              upcastdata.at(samplei) = samples->at(samplei);
-          }
-          if(mb_graph){ delete mb_graph; }
-          mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
-          std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
-          mb_graph->SetName(graph_name.c_str());
-          mb_graph->Write();
-          if(visualize){
-            if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
-            mb_canv->cd();
-            mb_canv->Clear();
-            mb_graph->Draw("alp");
-          //else mb_graph->Draw("alp","goff");
-            mb_canv->Modified();
-            mb_canv->Update();
+      // Each Waveform represents one minibuffer on this channel
+      Log("PrintADCData Tool: Looping over "+to_string(raw_waveforms.size())
+           +" minibuffers",v_debug,verbosity);
+      for(Waveform<uint16_t> wfrm : raw_waveforms){
+        std::vector<uint16_t>* samples = wfrm.GetSamples();
+        double StartTime = wfrm.GetStartTime();
+        int SampleLength = samples->size();
+        numberline.resize(SampleLength);
+        std::iota(numberline.begin(),numberline.end(),0);
+        upcastdata.resize(SampleLength);
+        
+        // for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
+        Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
+        for(int samplei=0; samplei<SampleLength; samplei++){
+            upcastdata.at(samplei) = samples->at(samplei);
+        }
+        if(mb_graph){ delete mb_graph; }
+        mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
+        std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
+        mb_graph->SetName(graph_name.c_str());
+        mb_graph->Write();
+        if(visualize){
+          if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
+          mb_canv->cd();
+          mb_canv->Clear();
+          mb_graph->Draw("alp");
+        //else mb_graph->Draw("alp","goff");
+          mb_canv->Modified();
+          mb_canv->Update();
+          gSystem->ProcessEvents();
+          do{
             gSystem->ProcessEvents();
-            do{
-              gSystem->ProcessEvents();
-              std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            } while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
-            Log("PrintADCData Tool: graph closed, looping",v_debug,verbosity);
-          }
-        } // end loop over minibuffers
-      } // end loop over channelkeys
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          } while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
+          Log("PrintADCData Tool: graph closed, looping",v_debug,verbosity);
+        }
+      } // end loop over minibuffers
     }
   }
   
