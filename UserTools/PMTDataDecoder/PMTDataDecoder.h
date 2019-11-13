@@ -65,7 +65,6 @@ class PMTDataDecoder: public Tool {
   int CDEntryNum = 0;
   int RECORD_HEADER_SAMPLENUMS = 8;
 
-
   //A Record header's first 48-bit word has least significant bits of 0xFFF000.  
   //So, check for this structure within the 12-bit samples being parsed.
   int RECORD_HEADER_LABELPART1 = 0x000;

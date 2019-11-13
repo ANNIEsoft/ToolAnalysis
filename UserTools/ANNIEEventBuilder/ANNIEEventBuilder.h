@@ -28,11 +28,11 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
-  void BuildANNIEEvent(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
+  void BuildANNIEEvent(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, int RunNum, int SubrunNum, int RunType, uint64_t EventStartTime);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType);
+        unsigned long MRDTimeStamp, std::string MRDTriggerType, int RunNum, int SubrunNum, int RunType);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
-  void SaveEntryToFile();
+  void SaveEntryToFile(int RunNum, int SubrunNum);
 
  private:
 
@@ -40,6 +40,7 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  Store RunInfoPostgress;   //Has Run number, subrun number, etc...
 
   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
@@ -61,14 +62,11 @@ class ANNIEEventBuilder: public Tool {
   // Number of PMTs that must be found in a WaveSet to build the event
   //
   unsigned int NumWavesInSet = 131;  
-  int EntriesPerSubrun;
   
   bool IsNewMRDData;
   bool IsNewTankData;
 
   //Run Number defined in config, others iterated over as ANNIEEvent filled
-  uint32_t RunNum;
-  uint32_t SubrunNum;
   uint32_t ANNIEEventNum;
  
   bool SaveToFile; 

@@ -11,8 +11,6 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data; //assigning transient data pointer
 
-  RunNum = 0;
-  SubrunNum = 0;
   SavePath = "/ToolAnalysis/";
   ProcessedFilesBasename = "ProcessedRawData";
   isTankData = 0;
@@ -21,9 +19,6 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   //FIXME: Eventually, RunNumber should be loaded from A run database
   m_variables.Get("verbosity",verbosity);
-  m_variables.Get("RunNumber",RunNum);
-  m_variables.Get("RunNumber",SubrunNum);
-  m_variables.Get("EntriesPerSubrun",EntriesPerSubrun);
   m_variables.Get("SavePath",SavePath);
   m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
   m_variables.Get("IsTankData",isTankData);
@@ -47,7 +42,6 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //////////////////////initialize subrun index//////////////
   ANNIEEvent = new BoostStore(false,2);
   ANNIEEventNum = 0;
-  SubrunNum = 0;
 
   return true;
 }
@@ -64,15 +58,24 @@ bool ANNIEEventBuilder::Execute(){
     }
     //Get the current FinishedPMTWaves map
     m_data->CStore.Get("FinishedPMTWaves",FinishedPMTWaves);
+    m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
+    int RunNumber;
+    int SubRunNumber;
+    uint64_t StarTime;
+    int RunType;
+    RunInfoPostgress.Get("RunNumber",RunNumber);
+    RunInfoPostgress.Get("SubRunNumber",SubRunNumber);
+    RunInfoPostgress.Get("RunType",RunType);
+    RunInfoPostgress.Get("StarTime",StarTime);
     //Assume a whole processed file will have all it's PMT data finished
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : FinishedPMTWaves){
       uint64_t PMTCounterTime = apair.first;
       if(verbosity>4) std::cout << "Finished waveset with time " << PMTCounterTime << std::endl;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
       if(verbosity>4) std::cout << "Number of waves for timestamp: " << aWaveMap.size() << std::endl;
-      this->BuildANNIEEvent(PMTCounterTime, aWaveMap);
+      this->BuildANNIEEvent(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
       if(verbosity>4) std::cout << "Built event, saving to ANNIEEvent booststore" << std::endl;
-      this->SaveEntryToFile();
+      this->SaveEntryToFile(RunNumber,SubRunNumber);
       //Erase this entry from the FinishedPMTWavesMap
       FinishedPMTWaves.erase(PMTCounterTime);
     }
@@ -92,8 +95,10 @@ bool ANNIEEventBuilder::Execute(){
       unsigned long MRDTimeStamp = apair.first;
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
-      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
-      this->SaveEntryToFile();
+      //FIXME: Once we fuse PMT data and MRD data streams, need to put in 
+      //run number, subrun number, run type, etc. from Postgress DB
+      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, 0, 0, 0);
+      this->SaveEntryToFile(0,0);
       //Erase this entry from the FinishedPMTWavesMap
       //FIXME: Check that the erase doesn't mess up looping through all entries somehow
       MRDEvents.erase(MRDTimeStamp);
@@ -107,7 +112,6 @@ bool ANNIEEventBuilder::Execute(){
   ANNIEEvent->Close();
   ANNIEEvent->Delete();
   delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
-  SubrunNum+=1;
 
   return true;
 }
@@ -121,7 +125,8 @@ bool ANNIEEventBuilder::Finalise(){
 
 
 void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType)
+        unsigned long MRDTimeStamp, std::string MRDTriggerType, int RunNum, int SubrunNum, int
+        RunType)
 {
   std::cout << "Building an ANNIE Event (MRD), ANNIEEventNum = "<<ANNIEEventNum << std::endl;
   ANNIEEvent->GetEntry(ANNIEEventNum);
@@ -154,6 +159,7 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   ANNIEEvent->Set("TDCData",TDCData,true);
   ANNIEEvent->Set("RunNumber",RunNum);
   ANNIEEvent->Set("SubrunNumber",SubrunNum);
+  ANNIEEvent->Set("RunType",RunType);
   ANNIEEvent->Set("EventNumber",ANNIEEventNum);
   TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in ns
   ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
@@ -163,7 +169,8 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
 }
 
 void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime, 
-        std::map<std::vector<int>, std::vector<uint16_t>> WaveMap)
+        std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, int RunNum, int SubrunNum,
+        int RunType, uint64_t StartTime)
 {
   std::cout << "Building an ANNIE Event" << std::endl;
   ANNIEEvent->GetEntry(ANNIEEventNum);
@@ -201,6 +208,8 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RunNumber",RunNum);
   ANNIEEvent->Set("SubrunNumber",SubrunNum);
+  ANNIEEvent->Set("RunType",SubrunNum);
+  ANNIEEvent->Set("RunStartTime",StartTime);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
   //  - EventTime
   //  - TriggerData
@@ -210,7 +219,7 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   return;
 }
 
-void ANNIEEventBuilder::SaveEntryToFile()
+void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubrunNum)
 {
   //TODO: Build the Filename out of SavePath_ProcessedFileBasename_Runnum_Subrun_Passnum
   std::string Filename = SavePath + ProcessedFilesBasename + "_" + to_string(RunNum) + 

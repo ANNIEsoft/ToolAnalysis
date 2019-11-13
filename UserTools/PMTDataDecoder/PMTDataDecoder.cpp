@@ -70,7 +70,31 @@ bool PMTDataDecoder::Execute(){
   PMTData = new BoostStore(false,2);
   RawData->Get("PMTData",*PMTData);
   PMTData->Print(false);
-  
+
+  Log("PMTDataDecoder Tool: Accessing run information data",v_message,verbosity); 
+  BoostStore RunInfo(false,0);
+  RawData->Get("RunInformation",RunInfo);
+  RunInfo.Print(false);
+
+  Store Postgress;
+  RunInfo.Get("Postgress",Postgress);
+  Postgress.Print();
+
+  int RunNumber;
+  int SubRunNumber;
+  uint64_t StarTime;
+  int RunType;
+
+  Postgress.Get("RunNumber",RunNumber);
+  Postgress.Get("SubRunNumber",SubRunNumber);
+  Postgress.Get("RunType",RunType);
+  Postgress.Get("StarTime",StarTime);
+
+  if(verbosity>v_message) std::cout<<"Processing RunNumber: "<<RunNumber<<std::endl;
+  if(verbosity>v_message) std::cout<<"Processing SubRunNumber: "<<SubRunNumber<<std::endl;
+  if(verbosity>v_message) std::cout<<"Run is of run type: "<<RunType<<std::endl;
+  if(verbosity>v_message) std::cout<<"StartTime of Run: "<<StarTime<<std::endl;
+
   // Show the total entries in this file  
   PMTData->Header->Get("TotalEntries",totalentries);
   if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
@@ -153,6 +177,7 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Get("FinishedPMTWaves",CStorePMTWaves);
     CStorePMTWaves.insert(FinishedPMTWaves.begin(),FinishedPMTWaves.end());
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
+    m_data->CStore.Set("RunInfoPostgress",Postgress);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
   //Check the size of the WaveBank to see if things are bloating
