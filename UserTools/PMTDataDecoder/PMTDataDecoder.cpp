@@ -14,10 +14,12 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
   verbosity = 0;
 
+  EntriesPerExecute = 0;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("Mode",Mode);
   m_variables.Get("InputFile",InputFile);
+  m_variables.Get("EntriesPerExecute",EntriesPerExecute);
 
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
@@ -26,6 +28,11 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
     Mode = "Continuous";
   }
 
+  CDEntryNum = 0;
+
+  // Initialize RawData
+  RawData = new BoostStore(false,0);
+  PMTData = new BoostStore(false,2);
   m_data->CStore.Set("NewTankPMTDataAvailable",false);
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
@@ -33,6 +40,10 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
 
 bool PMTDataDecoder::Execute(){
+
+  //Check if we just finished a file and are moving to a new one
+  if (CDEntryNum==0) m_data->CStore.Set("TankPMTFileComplete",false);
+ 
   // Load 
   if(Mode=="SingleFile"){
     if(SingleFileLoaded){
@@ -40,8 +51,6 @@ bool PMTDataDecoder::Execute(){
       return true;
     } else {
       Log("PMTDataDecoder Tool: Raw Data file as BoostStore",v_message,verbosity); 
-      // Initialize RawData
-      RawData = new BoostStore(false,0);
       RawData->Initialise(InputFile.c_str());
       RawData->Print(false);
 
@@ -67,7 +76,6 @@ bool PMTDataDecoder::Execute(){
   }
   /////////////////// getting PMT Data ////////////////////
   Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
-  PMTData = new BoostStore(false,2);
   RawData->Get("PMTData",*PMTData);
   PMTData->Print(false);
 
@@ -100,9 +108,11 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
 
   NumPMTDataProcessed = 0;
-  CDEntryNum = 0;
-  Log("PMTDataDecoder Tool: Parsing entire PMTData booststore this loop",v_message,verbosity); 
-  while(CDEntryNum < totalentries){
+  int ExecuteEntryNum = 0;
+  int EntriesToDo;
+  if(EntriesPerExecute<=0) EntriesToDo = totalentries;
+  else EntriesToDo = EntriesPerExecute;
+  while((ExecuteEntryNum < EntriesPerExecute) && (CDEntryNum<totalentries)){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     PMTData->GetEntry(CDEntryNum);
     PMTData->Get("CardData",Cdata);
@@ -156,17 +166,18 @@ bool PMTDataDecoder::Execute(){
             UnprocessedEntries.at(OOOCardID).push_back(OOOProperties);
           }
         }
-      } 
+      }
     }
-	Log("PMTDataDecoder Tool: Decoding or Unprocessed logging complete",v_debug, verbosity);
+	Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
+    ExecuteEntryNum += 1; 
     CDEntryNum+=1;
     ///////////////Search through All Out-Of-Order Cards;/////////////
     ///////////////See if they are in order now ///////////////// 
     this->ParseOOOsNowInOrder();
   }
-
-   
-  //PMT Data file fully processed.   
+  std::cout << "Number of entries read for execute loop: " << ExecuteEntryNum << std::endl;
+  std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
+  //PMT Data file processed to limit for this execute loop, or file ended.
   //Push the map of FinishedWaves to the CStore for ANNIEEvent to start 
   //Building ANNIEEvents. 
   std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
@@ -191,8 +202,16 @@ bool PMTDataDecoder::Execute(){
   std::cout << "PMT WAVE CSTORE SET SUCCESSFULLY.  Clearing FinishedPMTWaves map from this file." << std::endl;
   FinishedPMTWaves.clear();
 
-  SingleFileLoaded = true;
+  if(CDEntryNum == totalentries){
+    Log("PMTDataDecoder Tool: RUN PART COMPLETED.  INDICATING FILE IS DONE.",v_debug, verbosity);
+    m_data->CStore.Set("TankPMTFileComplete",true);
+    SingleFileLoaded = true;
+    CDEntryNum = 0;
+  }
+
   ////////////// END EXECUTE LOOP ///////////////
+  delete RawData; RawData = new BoostStore(false,0);
+  delete PMTData; PMTData = new BoostStore(false,2);
   return true;
 }
 

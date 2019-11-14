@@ -49,6 +49,7 @@ class ANNIEEventBuilder: public Tool {
 
   bool isMRDData;
   bool isTankData;
+  bool TankFileComplete;
 
   BoostStore *ANNIEEvent = nullptr;
 
@@ -68,7 +69,8 @@ class ANNIEEventBuilder: public Tool {
 
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   uint32_t ANNIEEventNum;
- 
+  int PartNum;
+
   bool SaveToFile; 
   std::string SavePath;
   std::string ProcessedFilesBasename;

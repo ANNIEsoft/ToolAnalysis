@@ -60,7 +60,7 @@ class PMTDataDecoder: public Tool {
                               // If any is in order, it's data frames are decoded and parsed.
 
  private:
-
+  int EntriesPerExecute;
   long totalentries=0;
   int CDEntryNum = 0;
   int RECORD_HEADER_SAMPLENUMS = 8;

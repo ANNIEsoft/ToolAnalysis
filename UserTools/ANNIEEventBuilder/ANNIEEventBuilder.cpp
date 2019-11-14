@@ -42,6 +42,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //////////////////////initialize subrun index//////////////
   ANNIEEvent = new BoostStore(false,2);
   ANNIEEventNum = 0;
+  PartNum = 0;
 
   return true;
 }
@@ -58,6 +59,7 @@ bool ANNIEEventBuilder::Execute(){
     }
     //Get the current FinishedPMTWaves map
     m_data->CStore.Get("FinishedPMTWaves",FinishedPMTWaves);
+    m_data->CStore.Get("TankPMTFileComplete",TankFileComplete);
     m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
     int RunNumber;
     int SubRunNumber;
@@ -105,19 +107,26 @@ bool ANNIEEventBuilder::Execute(){
       TriggerTypeMap.erase(MRDTimeStamp);
     }
   }
-
-  if(verbosity>4) std::cout << "All ANNIEEvents built.  Set total entries" << std::endl;
-  ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
-  if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
-  ANNIEEvent->Close();
-  ANNIEEvent->Delete();
-  delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
-
+  if(TankFileComplete){
+    if(verbosity>4) std::cout << "All ANNIEEvents built.  Set total entries" << std::endl;
+    ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
+    if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
+    ANNIEEvent->Close();
+    ANNIEEvent->Delete();
+    delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
+    PartNum += 1;
+  }
   return true;
 }
 
 
 bool ANNIEEventBuilder::Finalise(){
+  if(verbosity>4) std::cout << "ANNIEEvent Finalising.  Closing any open ANNIEEvent Boosstore" << std::endl;
+  ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
+  if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
+  ANNIEEvent->Close();
+  ANNIEEvent->Delete();
+  delete ANNIEEvent;
   //Save the current subrun and delete ANNIEEvent
   std::cout << "ANNIEEventBuilder Exitting" << std::endl;
   return true;
@@ -223,7 +232,7 @@ void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubrunNum)
 {
   //TODO: Build the Filename out of SavePath_ProcessedFileBasename_Runnum_Subrun_Passnum
   std::string Filename = SavePath + ProcessedFilesBasename + "_" + to_string(RunNum) + 
-      "_" + to_string(SubrunNum);
+      "_" + to_string(SubrunNum) + to_string(PartNum);
   ANNIEEvent->Save(Filename);
   return;
 }

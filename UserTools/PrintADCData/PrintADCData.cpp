@@ -13,12 +13,10 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  visualize = false;
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
-  m_variables.Get("VisualizeADCData",visualize);
   if(annieeventexists==0) {
     std::cout << "PrintADCData: No ANNIE Event in store to print!" << std::endl;
     return false;
@@ -59,6 +57,7 @@ bool PrintADCData::Execute(){
     for (const auto& temp_pair : RawADCData) {
       const auto& channel_key = temp_pair.first;
       std::cout << "Waveform info for channel " << channel_key << std::endl;
+      if((channel_key != 438) && (channel_key != 439) && (channel_key != 440)) continue;
       //Default running: raw_waveforms only has one entry.  If we go to a
       //hefty-mode style of running though, this could have multiple minibuffers
       //const std::vector< Waveform<unsigned short> > raw_waveforms;
@@ -97,26 +96,24 @@ bool PrintADCData::Execute(){
         for(int samplei=0; samplei<SampleLength; samplei++){
             upcastdata.at(samplei) = samples->at(samplei);
         }
+        //I hate my life
+        std::string ckey = to_string(channel_key);
         if(mb_graph){ delete mb_graph; }
         mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
         std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
+        //Place graph into correct channel_key tree
         mb_graph->SetName(graph_name.c_str());
-        mb_graph->Write();
-        if(visualize){
-          if(gROOT->FindObject("mb_canv")==nullptr) mb_canv = new TCanvas("mb_canv");
-          mb_canv->cd();
-          mb_canv->Clear();
-          mb_graph->Draw("alp");
-        //else mb_graph->Draw("alp","goff");
-          mb_canv->Modified();
-          mb_canv->Update();
-          gSystem->ProcessEvents();
-          do{
-            gSystem->ProcessEvents();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          } while (gROOT->FindObject("mb_canv")!=nullptr); // wait until user closes canvas
-          Log("PrintADCData Tool: graph closed, looping",v_debug,verbosity);
+        std::map<std::string, TDirectory * >::iterator it = ChanKeyToDirectory.find(ckey);
+        if(it == ChanKeyToDirectory.end()){ //No Tree made yet for this channel key.  make it
+          std::cout << "MAKING NEW DIRECTORY, CHANKEY " << ckey << std::endl;
+          ChanKeyToDirectory.emplace(ckey, file_out->mkdir(ckey.c_str()));
         }
+        else std::cout << "DIRECTORY EXISTS FOR CHANKEY " << ckey << std::endl;
+ 
+        std::cout << "GOING TO NEW DIRECTORY" << std::endl;
+        ChanKeyToDirectory.at(ckey)->cd();
+        std::cout << "WRITING TO NEW DIRECTORY" << std::endl;
+        mb_graph->Write();
       } // end loop over minibuffers
     }
   }

@@ -9,6 +9,7 @@
 
 #include "TApplication.h"
 #include "TFile.h"
+#include "TTree.h"
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TCanvas.h"
@@ -37,7 +38,6 @@ class PrintADCData: public Tool {
 
  private:
 
-  bool visualize;
   std::string outputfile;
   TFile *file_out = nullptr;
 
@@ -62,7 +62,9 @@ class PrintADCData: public Tool {
   std::vector<int> upcastdata;
   int maxwfrmamp=0;
   int WaveformSource;
-  
+  std::map<std::string, TDirectory *> ChanKeyToDirectory;
+
+
   // ROOT TApplication variables
   // ---------------------------
   TApplication* rootTApp=nullptr;

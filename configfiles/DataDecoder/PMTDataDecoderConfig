@@ -1,3 +1,4 @@
-verbosity 1
+verbosity 3
 Mode SingleFile
-InputFile /AnnieShare/EventBuilder/VMEData05112019p0
+EntriesPerExecute 1000
+InputFile /AnnieShare/EventBuilder/RAWDataR1013S0p0

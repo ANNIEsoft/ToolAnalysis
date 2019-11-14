@@ -1,3 +1,2 @@
-verbosity 5
-VisualizeADCData 0
+verbosity 3
 OutputFile TestingStuff

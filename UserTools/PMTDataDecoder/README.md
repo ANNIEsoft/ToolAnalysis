@@ -45,16 +45,13 @@ verbosity (int)
 Mode (string)
     Controls whether tool runs assuming a single file is input or if the tool
     will be run continously and searching for files in the data stream.
+    Currently either "Continuous" or "SingleFile" are available.
 
 InputFile (string)
     String defining the path to a raw data file to process.  Only used if 
     Mode is set to FileList.
 
-LockStep (bool)
-    Indicates whether events are processed assuming the detector was being run
-    in lock-step or not.  For single file processing, this should be set to false. 
-
-CardDataEntriesPerExecute (int)
+EntriesPerExecute (int)
     Controls how many entries in the PMTData BoostStore are searched and 
     decoded per Execute loop.  The idea behind this configurable is to adjust
     how often the downstream Builder tools are accessed.  For example, 
@@ -62,7 +59,7 @@ CardDataEntriesPerExecute (int)
     builds an ANNIEEvent boost store if so.  Going to this tool after every
     PMTData entry parsing may be a waste of resources.
 
-    if set to -1, the entire PMTData BoostStore will be processed in a single 
+    if set to <=0, the entire PMTData BoostStore will be processed in a single 
     execution of the tool.
 
 ```
