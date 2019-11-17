@@ -127,7 +127,7 @@ bool PMTDataDecoder::Execute(){
       CardData aCardData = Cdata.at(CardDataIndex);
       bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
       if (IsNextInSequence) {
-	    Log("PMTDataDecoder Tool: CardData is next in sequence. Decoding... ",v_debug, verbosity);
+	    Log("PMTDataDecoder Tool: CardData"+to_string(aCardData.CardID)+" is next in sequence. Decoding... ",v_debug, verbosity);
 	    Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
         //For this CardData entry, decode raw binary frames.  Locates header markers
         //And separates the Frame Header from the data stream bits.
@@ -207,8 +207,11 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Set("TankPMTFileComplete",true);
     SingleFileLoaded = true;
     CDEntryNum = 0;
+    if(Mode == "SingleFile"){
+      Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
+	  m_data->vars.Set("StopLoop",1);
+    }
   }
-
   ////////////// END EXECUTE LOOP ///////////////
   delete RawData; RawData = new BoostStore(false,0);
   delete PMTData; PMTData = new BoostStore(false,2);

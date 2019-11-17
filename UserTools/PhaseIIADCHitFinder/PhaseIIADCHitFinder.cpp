@@ -257,7 +257,10 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       in_pulse = false;
       //check if sample is within an already defined window
       for (int i=0; i< window_starts.size(); i++){
-        if ((s>window_starts.at(i)) && (s<window_ends.at(i))) in_pulse = true;
+        if ((s>window_starts.at(i)) && (s<window_ends.at(i))){
+          in_pulse = true;
+          if(verbosity>4) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
+        }
       }  
       //if sample crosses threshold and isn't in a defined window, define a new window
         if (!in_pulse && (raw_minibuffer_data.GetSample(s) > adc_threshold) ) {
@@ -318,6 +321,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
     for (size_t s = 0; s < num_samples; ++s) {
       if ( !in_pulse && raw_minibuffer_data.GetSample(s) > adc_threshold ) {
         in_pulse = true;
+        if(verbosity>4) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
         pulse_start_sample = s;
       }
       // In the second test below, we force a pulse to end if we reach the end of

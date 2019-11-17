@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "Tool.h"
+#include "ADCPulse.h"
 
 #include "TApplication.h"
 #include "TFile.h"
@@ -41,13 +42,16 @@ class PrintADCData: public Tool {
   std::string outputfile;
   TFile *file_out = nullptr;
 
+  bool PulsesOnly;
+
   long totalentries=0;
 
   uint32_t RunNum;
   uint32_t SubrunNum;
   long EntryNum;
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
-  
+  std::map<unsigned long, std::vector< std::vector<ADCPulse>> > RecoADCHits;
+
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;
   int v_error=0;

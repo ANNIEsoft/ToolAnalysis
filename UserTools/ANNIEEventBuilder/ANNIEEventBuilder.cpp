@@ -58,6 +58,7 @@ bool ANNIEEventBuilder::Execute(){
       return true;
     }
     //Get the current FinishedPMTWaves map
+    if(verbosity>4) std::cout << "ANNIEEventBuilder: Getting waves and run info from CStore" << std::endl;
     m_data->CStore.Get("FinishedPMTWaves",FinishedPMTWaves);
     m_data->CStore.Get("TankPMTFileComplete",TankFileComplete);
     m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
@@ -70,17 +71,21 @@ bool ANNIEEventBuilder::Execute(){
     RunInfoPostgress.Get("RunType",RunType);
     RunInfoPostgress.Get("StarTime",StarTime);
     //Assume a whole processed file will have all it's PMT data finished
+    std::vector<uint64_t> PMTEventsToDelete;
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : FinishedPMTWaves){
+      if(verbosity>4) std::cout << "Accessing next PMT counter?" << std::endl;
       uint64_t PMTCounterTime = apair.first;
-      if(verbosity>4) std::cout << "Finished waveset with time " << PMTCounterTime << std::endl;
+      if(verbosity>4) std::cout << "Finished waveset has clock counter: " << PMTCounterTime << std::endl;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
-      if(verbosity>4) std::cout << "Number of waves for timestamp: " << aWaveMap.size() << std::endl;
+      if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
-      if(verbosity>4) std::cout << "Built event, saving to ANNIEEvent booststore" << std::endl;
       this->SaveEntryToFile(RunNumber,SubRunNumber);
       //Erase this entry from the FinishedPMTWavesMap
-      FinishedPMTWaves.erase(PMTCounterTime);
+      if(verbosity>4) std::cout << "Counter time will be erased from FinishedPMTWaves: " << PMTCounterTime << std::endl;
+      PMTEventsToDelete.push_back(PMTCounterTime);
     }
+
+    for(int i=0; i< PMTEventsToDelete.size(); i++) FinishedPMTWaves.erase(PMTEventsToDelete.at(i));
     //Update the current FinishedPMTWaves map
     m_data->CStore.Set("FinishedPMTWaves",FinishedPMTWaves);
 
@@ -121,7 +126,7 @@ bool ANNIEEventBuilder::Execute(){
 
 
 bool ANNIEEventBuilder::Finalise(){
-  if(verbosity>4) std::cout << "ANNIEEvent Finalising.  Closing any open ANNIEEvent Boosstore" << std::endl;
+  if(verbosity>4) std::cout << "ANNIEEvent Finalising.  Closing any open ANNIEEvent Boostore" << std::endl;
   ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
   if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
   ANNIEEvent->Close();
@@ -172,8 +177,6 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   ANNIEEvent->Set("EventNumber",ANNIEEventNum);
   TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in ns
   ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
-
-  ANNIEEventNum+=1;
   return;
 }
 
@@ -186,12 +189,12 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
 
   ///////////////LOAD RAW PMT DATA INTO ANNIEEVENT///////////////
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
-  std::cout << "Looping through wavemap" << std::endl;
   for(std::pair<std::vector<int>, std::vector<uint16_t>> apair : WaveMap){
     int CardID = apair.first.at(0);
     int ChannelID = apair.first.at(1);
     int CrateNum=-1;
     int SlotNum=-1;
+    if(verbosity>4) std::cout << "Converting " << CardID << " to electronics space" << std::endl;
     this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
     std::vector<uint16_t> TheWaveform = apair.second;
     std::vector<int> CrateSpace{CrateNum,SlotNum,ChannelID};
@@ -205,15 +208,18 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
       Log("ANNIEEventBuilder:: Passing over the wave; PMT DATA LOST",v_error, verbosity);
       continue;
     }
+    std::cout << "Converting crate space vector to electronics space" << std::endl;
     unsigned long ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
     //FIXME: We're feeding Waveform class expects a double, not a uint64_t (?)
-    std::cout << "Initializing waveform for channel_key" <<ChannelKey << std::endl;
     Waveform<uint16_t> TheWave(ClockTime, TheWaveform);
     //Placing waveform in a vector in case we want a hefty-mode minibuffer storage eventually
     std::vector<Waveform<uint16_t>> WaveVec{TheWave}; 
-    std::cout << "Emplacing waveform in the Raw ADC Data map" << std::endl;
     RawADCData.emplace(ChannelKey,WaveVec);
   }
+  if(RawADCData.size() == 0){
+    std::cout << "No Raw ADC Data in entry.  Not putting to ANNIEEvent." << std::endl;
+  }
+  std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RunNumber",RunNum);
   ANNIEEvent->Set("SubrunNumber",SubrunNum);
@@ -224,16 +230,18 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   //  - TriggerData
   //  - BeamStatus?  
   //  - RawLAPPDData
-  ANNIEEventNum+=1;
+  if(verbosity>3) std::cout << "ANNIEEventBuilder: ANNIE Event "+
+      to_string(ANNIEEventNum)+" built." << std::endl;
   return;
 }
 
 void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubrunNum)
 {
-  //TODO: Build the Filename out of SavePath_ProcessedFileBasename_Runnum_Subrun_Passnum
+  if(verbosity>4) std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
   std::string Filename = SavePath + ProcessedFilesBasename + "_" + to_string(RunNum) + 
       "_" + to_string(SubrunNum) + to_string(PartNum);
   ANNIEEvent->Save(Filename);
+  ANNIEEventNum+=1;
   return;
 }
 

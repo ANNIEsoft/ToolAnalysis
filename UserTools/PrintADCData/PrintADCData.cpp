@@ -12,11 +12,12 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
-
+  PulsesOnly = false;
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
+  m_variables.Get("WavesWithPulsesOnly",PulsesOnly);
   if(annieeventexists==0) {
     std::cout << "PrintADCData: No ANNIE Event in store to print!" << std::endl;
     return false;
@@ -29,6 +30,7 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   file_out=new TFile(file_out_name.c_str(),"RECREATE"); //create one root file for each run to save the detailed plots and fits for all PMTs 
   file_out->cd();
 
+
   EntryNum = 0;
   std::cout << "PrintADCData: tool initialized" << std::endl;
   return true;
@@ -36,6 +38,7 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
 
 
 bool PrintADCData::Execute(){
+
   //Just print the whole dang thing
   if(verbosity>2) std::cout << "PrintADCData: getting total entries from header" << std::endl;
   m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",totalentries);
@@ -48,7 +51,14 @@ bool PrintADCData::Execute(){
   //std::cout << "Run number for entry is " << RunNum << std::endl;
   //std::cout << "Subrun number for entry is " << SubrunNum << std::endl;
   std::cout << "Num. of PMT signals for entry: " << RawADCData.size() << std::endl;
-
+  if(PulsesOnly){
+    if(verbosity>2) std::cout << "PrintADCData: only getting waveforms that crossed ADC threshold" << std::endl;
+    auto get_pulses = m_data->Stores["ANNIEEvent"]->Get("RecoADCHits",RecoADCHits);
+	if(!get_pulses){
+		Log("PrintADCData Tool: No reconstructed pulses! Did you run the ADCHitFinder first?",v_error,verbosity); 
+		return false;
+	};
+  }
   if ( RawADCData.empty() ) {
     Log("PrintADCData Error: Found an empty RawADCData entry in event", 0,
       verbosity);
@@ -56,8 +66,18 @@ bool PrintADCData::Execute(){
   else { 
     for (const auto& temp_pair : RawADCData) {
       const auto& channel_key = temp_pair.first;
+      if((channel_key != 388) && (channel_key != 391) && (channel_key != 393) && 
+              (channel_key != 435) && (channel_key != 440)) continue;
+      if(PulsesOnly){
+        std::vector<std::vector<ADCPulse>> buffer_pulses = RecoADCHits.at(channel_key);
+        int num_pulses = 0;
+        for (int i = 0; i < buffer_pulses.size(); i++){
+          int pulses_this_buffer = buffer_pulses.at(i).size();
+          num_pulses += pulses_this_buffer;
+        }
+        if (num_pulses==0) continue;
+      }
       std::cout << "Waveform info for channel " << channel_key << std::endl;
-      if((channel_key != 438) && (channel_key != 439) && (channel_key != 440)) continue;
       //Default running: raw_waveforms only has one entry.  If we go to a
       //hefty-mode style of running though, this could have multiple minibuffers
       //const std::vector< Waveform<unsigned short> > raw_waveforms;
