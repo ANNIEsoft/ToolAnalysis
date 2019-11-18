@@ -69,7 +69,8 @@ class ANNIEEventBuilder: public Tool {
 
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   uint32_t ANNIEEventNum;
-  int PartNum;
+  int CurrentRunNum;
+  int CurrentSubrunNum;
 
   bool SaveToFile; 
   std::string SavePath;

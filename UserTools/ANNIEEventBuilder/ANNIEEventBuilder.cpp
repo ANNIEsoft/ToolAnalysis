@@ -42,7 +42,8 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //////////////////////initialize subrun index//////////////
   ANNIEEvent = new BoostStore(false,2);
   ANNIEEventNum = 0;
-  PartNum = 0;
+  CurrentRunNum = -1;
+  CurrentSubrunNum = -1;
 
   return true;
 }
@@ -60,7 +61,6 @@ bool ANNIEEventBuilder::Execute(){
     //Get the current FinishedPMTWaves map
     if(verbosity>4) std::cout << "ANNIEEventBuilder: Getting waves and run info from CStore" << std::endl;
     m_data->CStore.Get("FinishedPMTWaves",FinishedPMTWaves);
-    m_data->CStore.Get("TankPMTFileComplete",TankFileComplete);
     m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
     int RunNumber;
     int SubRunNumber;
@@ -70,6 +70,22 @@ bool ANNIEEventBuilder::Execute(){
     RunInfoPostgress.Get("SubRunNumber",SubRunNumber);
     RunInfoPostgress.Get("RunType",RunType);
     RunInfoPostgress.Get("StarTime",StarTime);
+
+    //Initialize Current RunNum and SubrunNum. New ANNIEEvent for any New Run or Subrun
+    if(CurrentRunNum == -1) CurrentRunNum = RunNumber;
+    if(CurrentSubrunNum == -1) CurrentSubrunNum = SubRunNumber;
+    //If we're in a new run or subrun, make a new ANNIEEvent file. 
+    if(isTankData && ((CurrentRunNum != RunNumber) || (CurrentSubrunNum != SubRunNumber))){
+      if(verbosity>2) std::cout << "New run or subrun encountered. Opening new BoostStore" << std::endl;
+      ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
+      if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
+      ANNIEEvent->Close();
+      ANNIEEvent->Delete();
+      delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
+      CurrentRunNum = RunNumber;
+      CurrentSubrunNum = SubRunNumber;
+    }
+
     //Assume a whole processed file will have all it's PMT data finished
     std::vector<uint64_t> PMTEventsToDelete;
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : FinishedPMTWaves){
@@ -112,15 +128,7 @@ bool ANNIEEventBuilder::Execute(){
       TriggerTypeMap.erase(MRDTimeStamp);
     }
   }
-  if(TankFileComplete){
-    if(verbosity>4) std::cout << "All ANNIEEvents built.  Set total entries" << std::endl;
-    ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
-    if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
-    ANNIEEvent->Close();
-    ANNIEEvent->Delete();
-    delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
-    PartNum += 1;
-  }
+
   return true;
 }
 
@@ -238,8 +246,8 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
 void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubrunNum)
 {
   if(verbosity>4) std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
-  std::string Filename = SavePath + ProcessedFilesBasename + "_" + to_string(RunNum) + 
-      "_" + to_string(SubrunNum) + to_string(PartNum);
+  std::string Filename = SavePath + ProcessedFilesBasename + "R" + to_string(RunNum) + 
+      "S" + to_string(SubrunNum);
   ANNIEEvent->Save(Filename);
   ANNIEEventNum+=1;
   return;

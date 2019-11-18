@@ -66,8 +66,8 @@ bool PrintADCData::Execute(){
   else { 
     for (const auto& temp_pair : RawADCData) {
       const auto& channel_key = temp_pair.first;
-      if((channel_key != 388) && (channel_key != 391) && (channel_key != 393) && 
-              (channel_key != 435) && (channel_key != 440)) continue;
+      //if((channel_key != 388) && (channel_key != 391) && (channel_key != 393) && 
+      //        (channel_key != 435) && (channel_key != 440)) continue;
       if(PulsesOnly){
         std::vector<std::vector<ADCPulse>> buffer_pulses = RecoADCHits.at(channel_key);
         int num_pulses = 0;
@@ -123,6 +123,8 @@ bool PrintADCData::Execute(){
         std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
         //Place graph into correct channel_key tree
         mb_graph->SetName(graph_name.c_str());
+        std::string title = graph_name+";Time since acquisition start (ADC);Sample value (ADC)";
+        mb_graph->SetTitle(title.c_str());
         std::map<std::string, TDirectory * >::iterator it = ChanKeyToDirectory.find(ckey);
         if(it == ChanKeyToDirectory.end()){ //No Tree made yet for this channel key.  make it
           std::cout << "MAKING NEW DIRECTORY, CHANKEY " << ckey << std::endl;

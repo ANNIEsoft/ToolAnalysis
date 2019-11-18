@@ -23,41 +23,67 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
-  if (Mode != "Continuous" && Mode != "SingleFile") {
+  if (Mode != "Continuous" && Mode != "SingleFile" && Mode != "FileList") {
     if (verbosity > 0) std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile]. Setting default Continuous mode"<<std::endl;
     Mode = "Continuous";
   }
 
   CDEntryNum = 0;
-
+  FileNum = 0;
   // Initialize RawData
   RawData = new BoostStore(false,0);
   PMTData = new BoostStore(false,2);
   m_data->CStore.Set("NewTankPMTDataAvailable",false);
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
+
+  if(Mode=="FileList"){
+    if(verbosity>1){
+      std::cout << "PMTDataDecoder tool: Running in file list mode. " << 
+          "Files must be from same run and have sequential parts." << std::endl;
+      std::cout << "PMTDataDecoder tool: Organizing file list by part." << std::endl;
+    }
+    OrganizedFileList = this->OrganizeRunParts(InputFile);
+    Log("PMTDataDecoder tool: files to load has been organized.",v_message,verbosity);
+  }
   return true;
 }
 
 
 bool PMTDataDecoder::Execute(){
 
-  //Check if we just finished a file and are moving to a new one
-  if (CDEntryNum==0) m_data->CStore.Set("TankPMTFileComplete",false);
+  //Check if we are starting a new file 
+  if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
  
-  // Load 
+  // Load RawData BoostStore to use in execute loop
   if(Mode=="SingleFile"){
-    if(SingleFileLoaded){
+    if(FileNum>0){
       std::cout << "PMTDataDecoder tool: Single file has already been loaded" << std::endl;
       return true;
     } else {
-      Log("PMTDataDecoder Tool: Raw Data file as BoostStore",v_message,verbosity); 
+      Log("PMTDataDecoder Tool: Loading Raw Data file as BoostStore",v_message,verbosity); 
       RawData->Initialise(InputFile.c_str());
       RawData->Print(false);
 
     }
-  }
-
-  else if (Mode == "Continuous"){
+  } 
+  
+  else if (Mode=="FileList"){
+    if(OrganizedFileList.size()==0){
+      std::cout << "PMTDataDecoder tool ERROR: no files in file list to parse!" << std::endl;
+      return false;
+    }
+    if(FileCompleted || CurrentFile=="NONE"){
+      std::cout << "PMTDataDecoder tool: File in list completed.  Moving to next part." << std::endl;
+      std::cout << "PMTDataDecoder tool: Next file to load: "+OrganizedFileList.at(FileNum) << std::endl;
+      CurrentFile = OrganizedFileList.at(FileNum);
+    } else {
+     std::cout << "PMTDataDecoderTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
+    }
+    Log("PMTDataDecoder Tool: LoadingRaw Data file as BoostStore",v_message,verbosity); 
+    RawData->Initialise(CurrentFile.c_str());
+    RawData->Print(false);
+    FileCompleted = false;
+  } else if (Mode == "Continuous"){
     std::string State;
     m_data->CStore.Get("State",State);
     std::cout << "PMTDataDecoder tool: checking CStore for status of data stream" << std::endl;
@@ -65,7 +91,9 @@ bool PMTDataDecoder::Execute(){
       //Single event file available for monitoring; not relevant for this tool
       if (verbosity > 2) std::cout <<"PMTDataDecoder: State is "<<State<< ". No data file available" << std::endl;
       return true; 
-    } else if (State == "DataFile"){
+    } 
+    
+    else if (State == "DataFile"){
       // Full PMTData file ready to parse
       // FIXME: Not sure if the booststore or key are right, or even the DataFile State
       if (verbosity > 1) std::cout<<"PMTDataDecoder: New data file available."<<std::endl;
@@ -74,7 +102,9 @@ bool PMTDataDecoder::Execute(){
       
     }
   }
-  /////////////////// getting PMT Data ////////////////////
+
+
+  /////////////////// getting PMT Data From booststore////////////////////
   Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
   RawData->Get("PMTData",*PMTData);
   PMTData->Print(false);
@@ -119,7 +149,7 @@ bool PMTDataDecoder::Execute(){
 	Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
     
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
-      if(verbosity>3){
+      if(verbosity>v_debug){
         std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
         std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata.at(CardDataIndex).CardID<<std::endl;
         std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata.at(CardDataIndex).Data.size()<<std::endl;
@@ -133,12 +163,14 @@ bool PMTDataDecoder::Execute(){
         //And separates the Frame Header from the data stream bits.
         std::vector<DecodedFrame> ThisCardDFs;
         ThisCardDFs = this->DecodeFrames(aCardData.Data);
-        //Loop through each decoded frame and Parse their data stream and 
-        //frame header.  
-        for (unsigned int i=0; i < ThisCardDFs.size(); i++){
-          this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+        if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
+        else{
+          // Parse each decoded frame's data stream and frame header 
+          for (unsigned int i=0; i < ThisCardDFs.size(); i++){
+            this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+          }
+          NumPMTDataProcessed+=1;
         }
-        NumPMTDataProcessed+=1;
       } else {
 	    Log("PMTDataDecoder Tool WARNING: CardData OUT OF SEQUENCE!!!",v_warning, verbosity);
         //This CardData will be needed later when it's next in sequence.  
@@ -171,16 +203,19 @@ bool PMTDataDecoder::Execute(){
 	Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
     ExecuteEntryNum += 1; 
     CDEntryNum+=1;
-    ///////////////Search through All Out-Of-Order Cards;/////////////
-    ///////////////See if they are in order now ///////////////// 
-    this->ParseOOOsNowInOrder();
   }
-  std::cout << "Number of entries read for execute loop: " << ExecuteEntryNum << std::endl;
-  std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
-  //PMT Data file processed to limit for this execute loop, or file ended.
-  //Push the map of FinishedWaves to the CStore for ANNIEEvent to start 
-  //Building ANNIEEvents. 
-  std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
+ 
+  ///////////////Search through All Out-Of-Order Cards;/////////////
+  ///////////////Parse any in OOO vectors that are now in order ///////////////// 
+  this->ParseOOOsNowInOrder();
+
+  //PARSING COMPLETE THIS LOOP: PRINT SOME DIAGNOSTICS 
+  if(verbosity>v_error) std::cout << "Number of entries read for execute loop: " << ExecuteEntryNum << std::endl;
+  if(verbosity>v_error) std::cout << "Number of unprocessed entries right now: " << 
+     UnprocessedEntries.size() << std::endl;
+  if(verbosity>v_error) std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
+  if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
+
   if(FinishedPMTWaves.empty()){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
   } else {
@@ -204,13 +239,20 @@ bool PMTDataDecoder::Execute(){
 
   if(CDEntryNum == totalentries){
     Log("PMTDataDecoder Tool: RUN PART COMPLETED.  INDICATING FILE IS DONE.",v_debug, verbosity);
-    m_data->CStore.Set("TankPMTFileComplete",true);
-    SingleFileLoaded = true;
+    FileCompleted = true;
     CDEntryNum = 0;
+    FileNum += 1;
     if(Mode == "SingleFile"){
       Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
+      m_data->CStore.Set("TankPMTParsingComplete",true);
 	  m_data->vars.Set("StopLoop",1);
     }
+    if(Mode == "FileList" && FileNum == OrganizedFileList.size()){
+      Log("PMTDataDecoder Tool: Full file list parsed.  Ending toolchain after this loop.",v_message, verbosity);
+      m_data->CStore.Set("TankPMTParsingComplete",true);
+	  m_data->vars.Set("StopLoop",1);
+    }
+    //TODO: Add logic here for Continuous mode.  Need to know when to close the run's ANNIEEvent.
   }
   ////////////// END EXECUTE LOOP ///////////////
   delete RawData; RawData = new BoostStore(false,0);
@@ -228,16 +270,19 @@ bool PMTDataDecoder::Finalise(){
 
 bool PMTDataDecoder::CheckIfCardNextInSequence(CardData aCardData)
 {
+  if(verbosity>vv_debug) std::cout << "CHECKING IF CARD ID " << aCardData.CardID << "NEXT IN SEQUENCE: HAS SID  " << aCardData.SequenceID << std::endl;
   bool IsNextInSequence = false;
   //Check if this CardData is next in it's sequence for processing
   std::map<int, int>::iterator it = SequenceMap.find(aCardData.CardID);
   if(it != SequenceMap.end()){ //Data from this Card has been seen before
+    std::cout << "THE NEXT SEQUENCE ID EXPECTED IS : " << it->second << std::endl;
     if (it->second == aCardData.SequenceID){ //This CardData is expected next
       IsNextInSequence = true;
       it->second+=1;
     }
   } else if ((it == SequenceMap.end())){  //This is the first CardData seen by this CardID
     if (aCardData.SequenceID!=0) Log("PMTDataDecoder Tool: WARNING! First data seen for this card is not SequenceID=0",v_warning,verbosity);
+    std::cout << "CARD ID " << aCardData.CardID << "NEXT IN SEQUENCE SHOULD BE " << aCardData.SequenceID+1 << std::endl;
     SequenceMap.emplace(aCardData.CardID, aCardData.SequenceID+1); //Assume this is the first sequenceID even if not zero
     IsNextInSequence = true;
   }
@@ -306,6 +351,7 @@ void PMTDataDecoder::ParseOOOsNowInOrder()
   }
   for(int i=0;i<UnprocCardIDs.size(); i++){
     int UnprocCardID = UnprocCardIDs.at(i);
+    std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
     bool OOOResolved = true;
     while(OOOResolved){ //Keep re-parsing out-of-order card data as long as one is found in order
       OOOResolved = this->ParseOneCardOOOs(UnprocCardID);
@@ -322,9 +368,9 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
   std::vector<DecodedFrame> frames;  //What we will return
   std::vector<uint16_t> samples;
   samples.resize(40); //Well, if there's 480 bits per frame of samples max, this fits it
-  if(verbosity>2) std::cout << "DECODING A CARDDATA'S DATA BANK.  SIZE OF BANK: " << bank.size() << std::endl;
-  if(verbosity>2) std::cout << "THIS SHOULD HOLD AN INTEGER NUMBER OF FRAMES.  EACH FRAME HAS" << std::endl;
-  if(verbosity>2) std::cout << "512 BITs, split into 16 32-bit INTEGERS.  THIS SHOUDL BE DIVISIBLE BY 16" << std::endl;
+  if(verbosity>v_message) std::cout << "DECODING A CARDDATA'S DATA BANK.  SIZE OF BANK: " << bank.size() << std::endl;
+  if(verbosity>v_message) std::cout << "THIS SHOULD HOLD AN INTEGER NUMBER OF FRAMES.  EACH FRAME HAS" << std::endl;
+  if(verbosity>v_message) std::cout << "512 BITs, split into 16 32-bit INTEGERS.  THIS SHOUDL BE DIVISIBLE BY 16" << std::endl;
   for (unsigned int frame = 0; frame<bank.size()/16; ++frame) {  // if each frame has 16 32-bit ints, nframes = bank_size/16
     struct DecodedFrame thisframe;
     int sampleindex = 0;
@@ -333,16 +379,16 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
     bool haverecheader_part1 = false;
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
-        if(verbosity>4) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
+        if(verbosity>vv_debug) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;
-        if(verbosity>4) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
+        if(verbosity>vv_debug) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
         bitsleft += 32;
         wordindex += 1;
       }
       //Logic to search for record headers
       if((tempword&0xfff)==RECORD_HEADER_LABELPART1) haverecheader_part1 = true;
       else if (haverecheader_part1 && ((tempword&0xfff)==RECORD_HEADER_LABELPART2)){
-        if(verbosity>4) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
+        if(verbosity>vv_debug) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
         thisframe.has_recordheader=true;
         thisframe.recordheader_starts.push_back(sampleindex-1);
         haverecheader_part1 = false;
@@ -351,15 +397,15 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
      
       //Takie the first 12 bits of the tempword at each loop, and shift tempword
       samples[sampleindex] = tempword&0xfff;
-      if(verbosity>4) std::cout << "FIRST 12 BITS IN THIS SNAPSHOT: " << std::bitset<16>(tempword&0xfff) << dec << std::endl;
+      if(verbosity>vv_debug) std::cout << "FIRST 12 BITS IN THIS SNAPSHOT: " << std::bitset<16>(tempword&0xfff) << dec << std::endl;
       tempword = tempword>>12;
       bitsleft -= 12;
       sampleindex += 1;
     } //END parse out this frame
     thisframe.frameheader = be32toh(bank[16*frame+15]);  //Frameid is held in the frame's last 32-bit word
-    if(verbosity>4) std::cout << "FRAMEHEADER last 8 bits: " << std::bitset<32>(thisframe.frameheader>>24) << std::endl;
+    if(verbosity>vv_debug) std::cout << "FRAMEHEADER last 8 bits: " << std::bitset<32>(thisframe.frameheader>>24) << std::endl;
     thisframe.samples = samples;
-    if(verbosity>4) std::cout << "LENGTH OF SAMPLES AFTER DECODING A FRAME: " << dec << thisframe.samples.size() << std::endl;
+    if(verbosity>vv_debug) std::cout << "LENGTH OF SAMPLES AFTER DECODING A FRAME: " << dec << thisframe.samples.size() << std::endl;
     frames.push_back(thisframe);
   }
   Log("PMTDataDecoder Tool: Decoding frames complete ",v_debug, verbosity);
@@ -432,12 +478,12 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
 
 void PMTDataDecoder::ParseSyncFrame(int CardID, DecodedFrame DF)
 {
-  if(verbosity>4) std::cout << "PRINTING ALL DATA IN A SYNC FRAME FOR CARD" << CardID << std::endl;
+  if(verbosity>vv_debug) std::cout << "PRINTING ALL DATA IN A SYNC FRAME FOR CARD" << CardID << std::endl;
   uint64_t SyncCounter = 0;
   for (int i=0; i < 6; i++){
-    if(verbosity>4) std::cout << "SYNC FRAME DATA AT INDEX " << i << ": " << DF.samples.at(i) << std::endl;
+    if(verbosity>vv_debug) std::cout << "SYNC FRAME DATA AT INDEX " << i << ": " << DF.samples.at(i) << std::endl;
     SyncCounter += ((uint64_t)DF.samples.at(i)) << (12*i);
-    if(verbosity>4) std::cout << "SYNC COUNTER WITH CURRENT SAMPLE PUT AT LEFT: " << SyncCounter << std::endl;
+    if(verbosity>vv_debug) std::cout << "SYNC COUNTER WITH CURRENT SAMPLE PUT AT LEFT: " << SyncCounter << std::endl;
   }
   std::map<int, std::vector<uint64_t>>::iterator it = SyncCounters.find(CardID);
   if(it != SyncCounters.end()) SyncCounters.at(CardID).push_back(SyncCounter);
@@ -454,7 +500,7 @@ void PMTDataDecoder::ParseRecordHeader(int CardID, int ChannelID, std::vector<ui
   //First 4 samples; Just get the bits from 24 to 37 (is counter (61 downto 48)
   //Last 4 samples; All the first 48 bits of the MTC count.
   Log("PMTDataDecoder Tool: Parsing an encountered header ",v_debug, verbosity);
-  if(verbosity>4){
+  if(verbosity>vv_debug){
     std::cout << "BIT WORDS IN RECORD HEADER: " << std::endl;
     for (unsigned int j=0; j<RH.size(); j++){
       std::cout << std::bitset<16>(RH.at(j)) << dec << std::endl;
@@ -532,3 +578,80 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   return;
 }
 
+std::vector<std::string> PMTDataDecoder::OrganizeRunParts(std::string FileList)
+{
+  std::vector<std::string> OrganizedFiles;
+  std::vector<std::string> UnorganizedFileList;
+  std::vector<int> PartNum;
+  int FirstRunNum = -9999;
+  //First, parse the lines and get all files.
+  std::string line;
+  ifstream myfile(FileList.c_str());
+  if (myfile.is_open()){
+    if(verbosity>v_debug) std::cout << "Lines in FileList being printed"  << std::endl; //has our stuff;
+    while(getline(myfile,line)){
+      if(verbosity>vv_debug) std::cout << "Parsing next line " << std::endl;
+      if(line.find("#")!=std::string::npos) continue;
+      if(verbosity>v_debug) std::cout << line << std::endl; //has our stuff;
+      //std::vector<std::string> splitline;
+      //boost::split(splitline,line, boost::is_any_of(","), boost::token_compress_on);
+      //for(int i = 0;i<splitline.size(); i ++){
+        //std::string filename = splitline.at(i);
+        std::string filename = line;
+	    int rawfilerun, rawfilesubrun, rawfilepart;
+        int numargs = 0;
+	    try{
+	    	std::reverse(line.begin(),line.end());
+            //Part number is the first character now.
+            size_t pplace = line.find("p");
+            std::string part = line.substr(0,pplace);
+            std::reverse(part.begin(),part.end());
+            rawfilepart = std::stoi(part);
+	    	// Get the address
+	    	char * p = std::strtok(const_cast<char*>(line.c_str()),"RSp");
+	    	while(numargs <2){
+	    		p = std::strtok(NULL,"RSp");
+	    		std::string capturedstring(p);
+                if(verbosity>vv_debug) std::cout << "Caotured string is " << capturedstring << std::endl;
+	    		std::reverse(capturedstring.begin(),capturedstring.end());
+	    		if (numargs == 0) rawfilesubrun = std::stoi(capturedstring.c_str());
+	    		else if (numargs == 1) rawfilerun = std::stoi(capturedstring.c_str());
+	    		numargs++;
+	    	}
+	    } catch (int e){
+            std::cout <<"unrecognised input file pattern!: "<<filename
+	    		<<"File will be ignored,"<<endl;
+	    	//return;
+	    	rawfilerun=-1;
+	    	rawfilesubrun=-1;
+	    	rawfilepart = -1;
+	    }
+        if (FirstRunNum == -9999 && rawfilerun!=-1){
+          FirstRunNum == rawfilepart;
+          UnorganizedFileList.push_back(filename);
+          PartNum.push_back(rawfilepart);
+        } else if (rawfilepart!=-1 && rawfilerun==FirstRunNum){
+          UnorganizedFileList.push_back(filename);
+          PartNum.push_back(rawfilepart);
+        } else {
+          if(verbosity>v_error) std::cout << "PMTDataDecoder Tool: Problem parsing this file name: " << filename << std::endl;
+        }
+      //} // End parse filename in data line 
+    } // End parsing each line in file
+    if(verbosity>v_debug) std::cout << "PMTDataDecoder Tool: Organizing filenames: " << std::endl;
+    //Now, organize files based on the part number array
+    std::vector < std::pair<int,std::string>> SortingVector;
+    for (int i = 0; i < UnorganizedFileList.size(); i++){
+      SortingVector.push_back( std::make_pair(PartNum.at(i),UnorganizedFileList.at(i)));
+    }
+    std::sort(SortingVector.begin(),SortingVector.end());
+    for (int j = 0; j<SortingVector.size();j ++) {
+      OrganizedFiles.push_back(SortingVector.at(j).second);
+    }
+  } else {
+    Log("PMTDataDecoder Tool: FIle not found at nput file list path. "
+        "no Organized Run List will be returned ",
+        v_error, verbosity);
+  }
+  return OrganizedFiles;
+}
