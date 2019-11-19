@@ -171,6 +171,14 @@ bool PMTDataDecoder::Execute(){
         std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata.at(CardDataIndex).Data.size()<<std::endl;
       }
       CardData aCardData = Cdata.at(CardDataIndex);
+      //Check if card experienced any data loss
+      int FIFOstate = aCardData.FIFOstate;
+      if(FIFOstate == 1){  //FIFO overflow
+        Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_error,verbosity);
+      }
+      if(FIFOstate == 2){  //FIFO overflow and error clearing overvlow
+        Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_error,verbosity);
+      }
       bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
       if (IsNextInSequence) {
 	    Log("PMTDataDecoder Tool: CardData"+to_string(aCardData.CardID)+" is next in sequence. Decoding... ",v_debug, verbosity);

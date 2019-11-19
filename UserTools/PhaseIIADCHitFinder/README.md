@@ -14,11 +14,17 @@ Describe any data formats PhaseIIADCHitFinder creates, destroys, changes, or ana
 ***Describe any configuration variables for PhaseIIADCHitFinder.***
 
 PulseFindingApproach: string that defines whether pulses are searched for via
-a threshold approach ("threshold") or with the NNLS algorithm ("NNLS").
+a threshold approach ("threshold"), fixed window approach ("fixed_window"), 
+or with the NNLS algorithm ("NNLS").
 
 ADCThresholdDB: Absolute path to a CSV file where each line is the pair:
 channel_key, threshold.  Thresholds define the ADC threshold for each PMT used
 when pulse-finding.
+
+WindowIntegrationDB: Absolute path to a CSV file where each line has the format:
+  channel_key,window_min,window_max
+A channel can be given multiple integration windows.  Windows are in ADC samples.
+A single pulse will be calculated for each integration window defined.
 
 DefaultADCThreshold: Defines the default threshold to be used for any PMT
 that does not have a channel_key, threshold value defined in the ADCThresholdDB
