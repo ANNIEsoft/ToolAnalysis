@@ -1,4 +1,7 @@
-verbosity 3
+verbosity 2
 Mode SingleFile
-EntriesPerExecute 1000
-InputFile /AnnieShare/EventBuilder/RAWDataR1013S0p0
+EntriesPerExecute 10
+InputFile /AnnieShare/EventBuilder/RAWDataR1108S0p0
+#InputFile /ToolAnalysis/configfiles/DataDecoder/my_files.txt 
+
+

@@ -24,7 +24,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
   if (Mode != "Continuous" && Mode != "SingleFile" && Mode != "FileList") {
-    if (verbosity > 0) std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile]. Setting default Continuous mode"<<std::endl;
+    std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile]. Setting default Continuous mode"<<std::endl;
     Mode = "Continuous";
   }
 
@@ -37,7 +37,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
 
   if(Mode=="FileList"){
-    if(verbosity>1){
+    if(verbosity>v_warning){
       std::cout << "PMTDataDecoder tool: Running in file list mode. " << 
           "Files must be from same run and have sequential parts." << std::endl;
       std::cout << "PMTDataDecoder tool: Organizing file list by part." << std::endl;
@@ -57,13 +57,19 @@ bool PMTDataDecoder::Execute(){
   // Load RawData BoostStore to use in execute loop
   if(Mode=="SingleFile"){
     if(FileNum>0){
-      std::cout << "PMTDataDecoder tool: Single file has already been loaded" << std::endl;
+      if(verbosity>v_message) std::cout << "PMTDataDecoder tool: Single file has already been loaded" << std::endl;
       return true;
-    } else {
+    } else if (CDEntryNum==0){
       Log("PMTDataDecoder Tool: Loading Raw Data file as BoostStore",v_message,verbosity); 
       RawData->Initialise(InputFile.c_str());
       RawData->Print(false);
-
+      /////////////////// getting PMT Data From booststore////////////////////
+      //TODO: Have this be a method that's called by all the modes
+      Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
+      RawData->Get("PMTData",*PMTData);
+      PMTData->Print(false);
+    } else {
+      Log("PMTDataDecoder Tool: Continuing Raw Data file processing",v_message,verbosity); 
     }
   } 
   
@@ -73,41 +79,46 @@ bool PMTDataDecoder::Execute(){
       return false;
     }
     if(FileCompleted || CurrentFile=="NONE"){
-      std::cout << "PMTDataDecoder tool: File in list completed.  Moving to next part." << std::endl;
-      std::cout << "PMTDataDecoder tool: Next file to load: "+OrganizedFileList.at(FileNum) << std::endl;
+      Log("PMTDataDecoder tool: File in list completed.  Moving to next part.",v_message,verbosity);
+      if(verbosity>v_warning) std::cout << "PMTDataDecoder tool: Next file to load: "+OrganizedFileList.at(FileNum) << std::endl;
       CurrentFile = OrganizedFileList.at(FileNum);
+      Log("PMTDataDecoder Tool: LoadingRaw Data file as BoostStore",v_debug,verbosity); 
+      RawData->Initialise(CurrentFile.c_str());
+      RawData->Print(false);
+      /////////////////// getting PMT Data From booststore////////////////////
+      Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
+      RawData->Get("PMTData",*PMTData);
+      PMTData->Print(false);
     } else {
-     std::cout << "PMTDataDecoderTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
+     if(verbosity>v_message) std::cout << "PMTDataDecoderTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
     }
-    Log("PMTDataDecoder Tool: LoadingRaw Data file as BoostStore",v_message,verbosity); 
-    RawData->Initialise(CurrentFile.c_str());
-    RawData->Print(false);
     FileCompleted = false;
-  } else if (Mode == "Continuous"){
+  } 
+  
+  else if (Mode == "Continuous"){
     std::string State;
     m_data->CStore.Get("State",State);
-    std::cout << "PMTDataDecoder tool: checking CStore for status of data stream" << std::endl;
+    Log("PMTDataDecoder tool: checking CStore for status of data stream",v_debug,verbosity);
     if (State == "PMTSingle" || State == "Wait"){
       //Single event file available for monitoring; not relevant for this tool
-      if (verbosity > 2) std::cout <<"PMTDataDecoder: State is "<<State<< ". No data file available" << std::endl;
+      if (verbosity > v_message) std::cout <<"PMTDataDecoder: State is "<<State<< ". No new full data file available" << std::endl;
       return true; 
     } 
     
     else if (State == "DataFile"){
       // Full PMTData file ready to parse
       // FIXME: Not sure if the booststore or key are right, or even the DataFile State
-      if (verbosity > 1) std::cout<<"PMTDataDecoder: New data file available."<<std::endl;
+      if (verbosity > v_warning) std::cout<<"PMTDataDecoder: New raw data file available."<<std::endl;
       m_data->Stores["CCData"]->Get("FileData",RawData);
       RawData->Print(false);
-      
+      /////////////////// getting PMT Data From booststore////////////////////
+      Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
+      RawData->Get("PMTData",*PMTData);
+      PMTData->Print(false);
     }
   }
 
 
-  /////////////////// getting PMT Data From booststore////////////////////
-  Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
-  RawData->Get("PMTData",*PMTData);
-  PMTData->Print(false);
 
   Log("PMTDataDecoder Tool: Accessing run information data",v_message,verbosity); 
   BoostStore RunInfo(false,0);
@@ -135,13 +146,18 @@ bool PMTDataDecoder::Execute(){
 
   // Show the total entries in this file  
   PMTData->Header->Get("TotalEntries",totalentries);
-  if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
+  if(verbosity>v_warning) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
 
   NumPMTDataProcessed = 0;
   int ExecuteEntryNum = 0;
   int EntriesToDo;
   if(EntriesPerExecute<=0) EntriesToDo = totalentries;
   else EntriesToDo = EntriesPerExecute;
+  if(verbosity>v_warning){
+    double CDDouble = (double)CDEntryNum;
+    double ETDDouble = (double)EntriesToDo;
+    std::cout << "PMTDataDecoder Tool: Current progress in file processing: " << (CDDouble/ETDDouble)*100 << std::endl;
+  }
   while((ExecuteEntryNum < EntriesPerExecute) && (CDEntryNum<totalentries)){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     PMTData->GetEntry(CDEntryNum);
@@ -242,6 +258,9 @@ bool PMTDataDecoder::Execute(){
     FileCompleted = true;
     CDEntryNum = 0;
     FileNum += 1;
+    ////////////// END EXECUTE LOOP ///////////////
+    delete RawData; RawData = new BoostStore(false,0);
+    delete PMTData; PMTData = new BoostStore(false,2);
     if(Mode == "SingleFile"){
       Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
       m_data->CStore.Set("TankPMTParsingComplete",true);
@@ -254,9 +273,6 @@ bool PMTDataDecoder::Execute(){
     }
     //TODO: Add logic here for Continuous mode.  Need to know when to close the run's ANNIEEvent.
   }
-  ////////////// END EXECUTE LOOP ///////////////
-  delete RawData; RawData = new BoostStore(false,0);
-  delete PMTData; PMTData = new BoostStore(false,2);
   return true;
 }
 
@@ -275,14 +291,14 @@ bool PMTDataDecoder::CheckIfCardNextInSequence(CardData aCardData)
   //Check if this CardData is next in it's sequence for processing
   std::map<int, int>::iterator it = SequenceMap.find(aCardData.CardID);
   if(it != SequenceMap.end()){ //Data from this Card has been seen before
-    std::cout << "THE NEXT SEQUENCE ID EXPECTED IS : " << it->second << std::endl;
+    if(verbosity>v_debug)std::cout << "THE NEXT SEQUENCE ID EXPECTED IS : " << it->second << std::endl;
     if (it->second == aCardData.SequenceID){ //This CardData is expected next
       IsNextInSequence = true;
       it->second+=1;
     }
   } else if ((it == SequenceMap.end())){  //This is the first CardData seen by this CardID
     if (aCardData.SequenceID!=0) Log("PMTDataDecoder Tool: WARNING! First data seen for this card is not SequenceID=0",v_warning,verbosity);
-    std::cout << "CARD ID " << aCardData.CardID << "NEXT IN SEQUENCE SHOULD BE " << aCardData.SequenceID+1 << std::endl;
+    if(verbosity>v_debug) std::cout << "CARD ID " << aCardData.CardID << "NEXT IN SEQUENCE SHOULD BE " << aCardData.SequenceID+1 << std::endl;
     SequenceMap.emplace(aCardData.CardID, aCardData.SequenceID+1); //Assume this is the first sequenceID even if not zero
     IsNextInSequence = true;
   }
@@ -430,7 +446,7 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
     //We need to get the rest of a wave from WaveSecBegin to where the header starts
     //FIXME: this works if there's already a wave being built.  You need to parse 
     //a record header in the wavebank first if it's the first thing in the frame though
-    if(verbosity>3) {
+    if(verbosity>v_debug) {
       std::cout << "This decoded frame has headers at... " << std::endl;
       for (unsigned int j = 0; j<DF.recordheader_starts.size(); j++){
           std::cout << DF.recordheader_starts.at(j) << std::endl;
@@ -440,13 +456,12 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
       //TODO: More graceful way to handle this?  It's already happened once
       if(WaveSecBegin>DF.recordheader_starts.at(j)){
         std::cout << "WARNING: Record header label found inside another record header." << 
-            "This is likely due to the counter.  Skipping record header and " <<
+            "This is likely due a 000FFF in the counter.  Skipping record header and " <<
             "continuing" << std::endl;
         continue;
       }
-      std::cout << "WE IN LOOP" << std::endl;
-      std::cout << "RECORD HEADER INDEX" << DF.recordheader_starts.at(j) << std::endl;
-      std::cout << "WAVESECBEGIN IS " << WaveSecBegin << std::endl;
+      if(verbosity>v_debug)std::cout << "RECORD HEADER INDEX" << DF.recordheader_starts.at(j) << std::endl;
+      if(verbosity>v_debug)std::cout << "WAVESECBEGIN IS " << WaveSecBegin << std::endl;
       std::vector<uint16_t> WaveSlice(DF.samples.begin()+WaveSecBegin, 
               DF.samples.begin()+DF.recordheader_starts.at(j));
       Log("PMTDataDecoder Tool: Length of waveslice: "+to_string(WaveSlice.size()),v_debug, verbosity);

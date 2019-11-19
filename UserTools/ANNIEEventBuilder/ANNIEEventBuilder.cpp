@@ -76,9 +76,9 @@ bool ANNIEEventBuilder::Execute(){
     if(CurrentSubrunNum == -1) CurrentSubrunNum = SubRunNumber;
     //If we're in a new run or subrun, make a new ANNIEEvent file. 
     if(isTankData && ((CurrentRunNum != RunNumber) || (CurrentSubrunNum != SubRunNumber))){
-      if(verbosity>2) std::cout << "New run or subrun encountered. Opening new BoostStore" << std::endl;
+      if(verbosity>v_warning) std::cout << "New run or subrun encountered. Opening new BoostStore" << std::endl;
       ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
-      if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
+      if(verbosity>v_warning) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
       ANNIEEvent->Close();
       ANNIEEvent->Delete();
       delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
@@ -192,7 +192,7 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
         std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, int RunNum, int SubrunNum,
         int RunType, uint64_t StartTime)
 {
-  std::cout << "Building an ANNIE Event" << std::endl;
+  if(verbosity>v_message)std::cout << "Building an ANNIE Event" << std::endl;
   ANNIEEvent->GetEntry(ANNIEEventNum);
 
   ///////////////LOAD RAW PMT DATA INTO ANNIEEVENT///////////////
@@ -202,11 +202,10 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
     int ChannelID = apair.first.at(1);
     int CrateNum=-1;
     int SlotNum=-1;
-    if(verbosity>4) std::cout << "Converting " << CardID << " to electronics space" << std::endl;
+    if(verbosity>v_debug) std::cout << "Converting " << CardID << " to electronics space" << std::endl;
     this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
     std::vector<uint16_t> TheWaveform = apair.second;
     std::vector<int> CrateSpace{CrateNum,SlotNum,ChannelID};
-    std::cout << "Getting Channel Key" << std::endl;
     if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)==0){
       Log("ANNIEEventBuilder:: Cannot find channel key for crate space entry: ",v_error, verbosity);
       Log("ANNIEEventBuilder::CrateNum "+to_string(CrateNum),v_error, verbosity);
@@ -216,7 +215,6 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
       Log("ANNIEEventBuilder:: Passing over the wave; PMT DATA LOST",v_error, verbosity);
       continue;
     }
-    std::cout << "Converting crate space vector to electronics space" << std::endl;
     unsigned long ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
     //FIXME: We're feeding Waveform class expects a double, not a uint64_t (?)
     Waveform<uint16_t> TheWave(ClockTime, TheWaveform);
@@ -238,7 +236,7 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   //  - TriggerData
   //  - BeamStatus?  
   //  - RawLAPPDData
-  if(verbosity>3) std::cout << "ANNIEEventBuilder: ANNIE Event "+
+  if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: ANNIE Event "+
       to_string(ANNIEEventNum)+" built." << std::endl;
   return;
 }
