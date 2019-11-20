@@ -43,7 +43,8 @@ class PrintADCData: public Tool {
   TFile *file_out = nullptr;
 
   bool PulsesOnly;
-
+  int MaxWaveforms;
+  int WaveformNum;
   long totalentries=0;
 
   uint32_t RunNum;

@@ -130,6 +130,19 @@ bool PhaseIIADCHitFinder::Execute() {
       std::vector< std::vector<ADCPulse> > pulse_vec;
       std::vector<Hit> HitsOnPMT;
 
+      if (pulse_finding_approach == "full_window"){
+          // Integrate each whole dang minibuffer and background subtract 
+        size_t num_minibuffers = raw_waveforms.size();
+        for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+            Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
+            int window_end = buffer_wave.GetSamples()->size()-1;
+            std::vector<int> fullwindow{0,window_end};
+            std::vector<std::vector<int>> onewindowvec{fullwindow};
+            pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
+              calibrated_waveforms.at(mb), onewindowvec, channel_key));
+        }
+      }
+
       if (pulse_finding_approach == "fixed_windows"){
         // Integrate pulse over a fixed windows defined for channel 
         std::vector<std::vector<int>> thispmt_adc_windows;
@@ -140,16 +153,6 @@ bool PhaseIIADCHitFinder::Execute() {
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
             pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
               calibrated_waveforms.at(mb), thispmt_adc_windows, channel_key));
-        }
-        
-        //Fill pulse map with all ADCPulses found
-        pulse_map.emplace(channel_key,pulse_vec);
-        //Convert ADCPulses to Hits and fill into Hit map
-        HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
-        for(int j=0; j < HitsOnPMT.size(); j++){
-		  Hit ahit = HitsOnPMT.at(j);
-          if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
-          else hit_map->at(channel_key).push_back(ahit);
         }
       }
 
@@ -174,21 +177,22 @@ bool PhaseIIADCHitFinder::Execute() {
             pulse_vec.push_back(this->find_pulses_bythreshold(raw_waveforms.at(mb),
               calibrated_waveforms.at(mb), thispmt_adc_threshold, channel_key));
         }
-        
-        //Fill pulse map with all ADCPulses found
-        pulse_map.emplace(channel_key,pulse_vec);
-        //Convert ADCPulses to Hits and fill into Hit map
-        HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
-        for(int j=0; j < HitsOnPMT.size(); j++){
-		  Hit ahit = HitsOnPMT.at(j);
-          if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
-          else hit_map->at(channel_key).push_back(ahit);
-        }
+      } 
       
-      } else if (pulse_finding_approach == "NNLS") {
+      else if (pulse_finding_approach == "NNLS") {
         Log("PhaseIIADCHitFinder: NNLS approach is not implemented.  please use threshold.",
             0, verbosity);
-      } 
+      }
+
+      //Fill pulse map with all ADCPulses found
+      pulse_map.emplace(channel_key,pulse_vec);
+      //Convert ADCPulses to Hits and fill into Hit map
+      HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
+      for(int j=0; j < HitsOnPMT.size(); j++){
+	    Hit ahit = HitsOnPMT.at(j);
+        if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
+        else hit_map->at(channel_key).push_back(ahit);
+      }
     }
     
     //Store the pulse and hit maps in the ANNIEEvent store

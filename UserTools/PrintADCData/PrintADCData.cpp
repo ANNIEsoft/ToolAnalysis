@@ -13,11 +13,13 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
   PulsesOnly = false;
+  MaxWaveforms = 5000;
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("WavesWithPulsesOnly",PulsesOnly);
+  m_variables.Get("MaxWaveforms",MaxWaveforms);
   if(annieeventexists==0) {
     std::cout << "PrintADCData: No ANNIE Event in store to print!" << std::endl;
     return false;
@@ -30,8 +32,7 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   file_out=new TFile(file_out_name.c_str(),"RECREATE"); //create one root file for each run to save the detailed plots and fits for all PMTs 
   file_out->cd();
 
-
-  EntryNum = 0;
+  WaveformNum = 0;
   std::cout << "PrintADCData: tool initialized" << std::endl;
   return true;
 }
@@ -136,10 +137,16 @@ bool PrintADCData::Execute(){
         ChanKeyToDirectory.at(ckey)->cd();
         std::cout << "WRITING TO NEW DIRECTORY" << std::endl;
         mb_graph->Write();
+        WaveformNum+=1;
+        if(WaveformNum>MaxWaveforms) break;
       } // end loop over minibuffers
+    if (WaveformNum> MaxWaveforms) break; 
     }
   }
-  
+  if(WaveformNum>MaxWaveforms){
+    Log("PrintADCData Tool: Max waveforms acquired.  Ending toolchain after this loop.",v_message, verbosity);
+    m_data->vars.Set("StopLoop",1);
+  }
   return true;
 }
 
