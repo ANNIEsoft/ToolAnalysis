@@ -33,7 +33,6 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   // Initialize RawData
   RawData = new BoostStore(false,0);
   PMTData = new BoostStore(false,2);
-  m_data->CStore.Set("NewTankPMTDataAvailable",false);
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
 
   if(Mode=="FileList"){
@@ -50,6 +49,9 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
 
 bool PMTDataDecoder::Execute(){
+
+  //Set in CStore that there's currently no new tank data available
+  m_data->CStore.Set("NewTankPMTDataAvailable",false);
 
   //Check if we are starting a new file 
   if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
@@ -247,9 +249,9 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Get("FinishedPMTWaves",CStorePMTWaves);
     CStorePMTWaves.insert(FinishedPMTWaves.begin(),FinishedPMTWaves.end());
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
-    m_data->CStore.Set("RunInfoPostgress",Postgress);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
+  m_data->CStore.Set("RunInfoPostgress",Postgress);
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
           to_string(WaveBank.size()),v_debug, verbosity);

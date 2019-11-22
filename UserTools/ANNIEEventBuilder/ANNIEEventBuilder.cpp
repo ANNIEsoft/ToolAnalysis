@@ -95,7 +95,7 @@ bool ANNIEEventBuilder::Execute(){
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
       if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
-      this->SaveEntryToFile(RunNumber,SubRunNumber);
+      this->SaveEntryToFile(CurrentRunNum,CurrentSubrunNum);
       //Erase this entry from the FinishedPMTWavesMap
       if(verbosity>4) std::cout << "Counter time will be erased from FinishedPMTWaves: " << PMTCounterTime << std::endl;
       PMTEventsToDelete.push_back(PMTCounterTime);
