@@ -23,18 +23,15 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
-  if (Mode != "Continuous" && Mode != "SingleFile" && Mode != "FileList") {
-    std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile/FileList]. Setting default Continuous mode"<<std::endl;
-    Mode = "Continuous";
-  }
-
-  //When operating in Continuous mode, always scan the whole file in one Execute step
-  if (Mode == "Continuous"){
-    EntriesPerExecute = -1;
+  if (Mode != "Processing" && Mode != "Monitoring" && Mode != "SingleFile" && Mode != "FileList") {
+    std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Processing/Monitoring/SingleFile/FileList]. Setting default Processing mode"<<std::endl;
+    Mode = "Processing";
   }
 
   CDEntryNum = 0;
   FileNum = 0;
+  CurrentRunNum = -1;
+  CurrentSubrunNum = -1;
   // Initialize RawData
   RawData = new BoostStore(false,0);
   PMTData = new BoostStore(false,2);
@@ -49,6 +46,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
     OrganizedFileList = this->OrganizeRunParts(InputFile);
     Log("PMTDataDecoder tool: files to load has been organized.",v_message,verbosity);
   }
+
   return true;
 }
 
@@ -75,7 +73,6 @@ bool PMTDataDecoder::Execute(){
       Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
       RawData->Get("PMTData",*PMTData);
       PMTData->Print(false);
-      std::cout <<"Accessed, set Print Status to false"<<std::endl;
     } else {
       Log("PMTDataDecoder Tool: Continuing Raw Data file processing",v_message,verbosity); 
     }
@@ -103,15 +100,16 @@ bool PMTDataDecoder::Execute(){
     FileCompleted = false;
   } 
   
-  else if (Mode == "Continuous"){
+  else if (Mode == "Processing"){
     std::string State;
     m_data->CStore.Get("State",State);
     Log("PMTDataDecoder tool: checking CStore for status of data stream",v_debug,verbosity);
-    if (State == "MRDSingle" || State == "Wait"){
-      //MRD single events not relevant for this tool, do nothing on Wait
+    if (State == "PMTSingle" || State == "Wait"){
+      //Single event file available for monitoring; not relevant for this tool
       if (verbosity > v_message) std::cout <<"PMTDataDecoder: State is "<<State<< ". No new full data file available" << std::endl;
       return true; 
     } 
+    
     else if (State == "DataFile"){
       // Full PMTData file ready to parse
       // FIXME: Not sure if the booststore m_data->Stores["PMTData"] is the right one.
@@ -131,8 +129,10 @@ bool PMTDataDecoder::Execute(){
     }
   }
 
-
-
+  else if (Mode == "Monitoring"){
+    Log("PMTDataDecoder tool: Monitoring mode not implemented!",v_warning,verbosity);
+    return false;
+  }
   Log("PMTDataDecoder Tool: Accessing run information data",v_message,verbosity); 
   BoostStore RunInfo(false,0);
   RawData->Get("RunInformation",RunInfo);
@@ -157,6 +157,18 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_message) std::cout<<"Run is of run type: "<<RunType<<std::endl;
   if(verbosity>v_message) std::cout<<"StartTime of Run: "<<StarTime<<std::endl;
 
+  //If we have moved onto a new run number, we should clear the event building maps 
+  if (CurrentRunNum == -1){
+    CurrentRunNum = RunNumber;
+    CurrentSubrunNum == SubRunNumber;
+  }
+  else if (RunNumber != CurrentRunNum){ //New run has been encountered
+    Log("PMTDataDecoder Tool: New run encountered.  Clearing event building maps",v_message,verbosity); 
+    SequenceMap.clear();
+    TriggerTimeBank.clear();
+    WaveBank.clear(); 
+  }
+
   // Show the total entries in this file  
   PMTData->Header->Get("TotalEntries",totalentries);
   if(verbosity>v_warning) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
@@ -166,13 +178,13 @@ bool PMTDataDecoder::Execute(){
   int EntriesToDo;
   if(EntriesPerExecute<=0) EntriesToDo = totalentries;
   else EntriesToDo = EntriesPerExecute;
-  double CDDouble = (double)CDEntryNum;
-  double ETDDouble = (double)EntriesToDo;
-  std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
   if(verbosity>v_warning){
+    double CDDouble = (double)CDEntryNum;
+    double ETDDouble = (double)EntriesToDo;
     std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
   }
-  while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
+  
+  while((ExecuteEntryNum < EntriesPerExecute) && (CDEntryNum<totalentries)){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     PMTData->GetEntry(CDEntryNum);
     PMTData->Get("CardData",Cdata);
@@ -276,7 +288,7 @@ bool PMTDataDecoder::Execute(){
   FinishedPMTWaves.clear();
 
   if(CDEntryNum == totalentries){
-    Log("PMTDataDecoder Tool: RUN PART COMPLETED.  INDICATING FILE IS DONE.",v_debug, verbosity);
+    Log("PMTDataDecoder Tool: Run part completed.",v_warning, verbosity);
     FileCompleted = true;
     CDEntryNum = 0;
     FileNum += 1;
@@ -285,18 +297,16 @@ bool PMTDataDecoder::Execute(){
     PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
     if(Mode == "SingleFile"){
       Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
-      m_data->CStore.Set("TankPMTParsingComplete",true);
 	  m_data->vars.Set("StopLoop",1);
     }
     if(Mode == "FileList" && FileNum == OrganizedFileList.size()){
       Log("PMTDataDecoder Tool: Full file list parsed.  Ending toolchain after this loop.",v_message, verbosity);
-      m_data->CStore.Set("TankPMTParsingComplete",true);
 	  m_data->vars.Set("StopLoop",1);
     }
-    //TODO: Add logic here for Continuous mode.  Need to know when to close the run's ANNIEEvent.
-    //Note: Continuous mode should not be used with ANNIEEventBuilder
+    //TODO: Add logic here for Processing and Monitoring mode.  
+    //Note: Monitoring mode should not be used with ANNIEEventBuilder
     //The important object will be the stored PMT waves in the CStore
-    if (Mode == "Continous"){
+    if (Mode == "Processing" || Mode == "Monitoring"){
       Log("PMTDataDecoder Tool: Current raw data file parsed. Waiting until next file is produced",v_message,verbosity);
     }
   }
@@ -311,7 +321,7 @@ bool PMTDataDecoder::Finalise(){
   PMTData->Close();
   PMTData->Delete();
   delete PMTData;
-  Log("PMTDataDecoder tool exitting",v_message,verbosity);
+  Log("PMTDataDecoder tool exitting",v_warning,verbosity);
   return true;
 }
 
@@ -628,8 +638,8 @@ std::vector<std::string> PMTDataDecoder::OrganizeRunParts(std::string FileList)
 {
   std::vector<std::string> OrganizedFiles;
   std::vector<std::string> UnorganizedFileList;
-  std::vector<int> PartNum;
-  int FirstRunNum = -9999;
+  std::vector<int> RunCodes;
+  int ThisRunCode;
   //First, parse the lines and get all files.
   std::string line;
   ifstream myfile(FileList.c_str());
@@ -672,13 +682,11 @@ std::vector<std::string> PMTDataDecoder::OrganizeRunParts(std::string FileList)
 	    	rawfilesubrun=-1;
 	    	rawfilepart = -1;
 	    }
-        if (FirstRunNum == -9999 && rawfilerun!=-1){
-          FirstRunNum = rawfilepart;
+        ThisRunCode = rawfilerun*1000000 + ((rawfilesubrun+1)*1000) + rawfilepart;
+        if (rawfilerun!=-1){
+          if(verbosity>v_warning) std::cout << "PMTDataDecoder Tool: will parse file : " << filename << std::endl;
           UnorganizedFileList.push_back(filename);
-          PartNum.push_back(rawfilepart);
-        } else if (rawfilepart!=-1 && rawfilerun==FirstRunNum){
-          UnorganizedFileList.push_back(filename);
-          PartNum.push_back(rawfilepart);
+          RunCodes.push_back(ThisRunCode);
         } else {
           if(verbosity>v_error) std::cout << "PMTDataDecoder Tool: Problem parsing this file name: " << filename << std::endl;
         }
@@ -687,11 +695,11 @@ std::vector<std::string> PMTDataDecoder::OrganizeRunParts(std::string FileList)
     if(verbosity>v_debug) std::cout << "PMTDataDecoder Tool: Organizing filenames: " << std::endl;
     //Now, organize files based on the part number array
     std::vector < std::pair<int,std::string>> SortingVector;
-    for (unsigned int i = 0; i < UnorganizedFileList.size(); i++){
-      SortingVector.push_back( std::make_pair(PartNum.at(i),UnorganizedFileList.at(i)));
+    for (int i = 0; i < UnorganizedFileList.size(); i++){
+      SortingVector.push_back( std::make_pair(RunCodes.at(i),UnorganizedFileList.at(i)));
     }
     std::sort(SortingVector.begin(),SortingVector.end());
-    for (unsigned int j = 0; j<SortingVector.size();j ++) {
+    for (int j = 0; j<SortingVector.size();j ++) {
       OrganizedFiles.push_back(SortingVector.at(j).second);
     }
   } else {

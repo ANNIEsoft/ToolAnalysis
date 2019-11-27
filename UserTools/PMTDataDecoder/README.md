@@ -45,11 +45,11 @@ verbosity (int)
 Mode (string)
     Controls whether tool runs assuming a single file is input or if the tool
     will be run continously and searching for files in the data stream.
-    Currently either "Continuous" or "SingleFile" are available.
+    Currently either "FileList" or "SingleFile" are available.
 
 InputFile (string)
-    String defining the path to a raw data file to process.  Only used if 
-    Mode is set to FileList.
+    In "FileList" mode, String defining the path to a raw data file to process.  
+    In "SingleFile" mode, points to a single RawData booststore.
 
 EntriesPerExecute (int)
     Controls how many entries in the PMTData BoostStore are searched and 

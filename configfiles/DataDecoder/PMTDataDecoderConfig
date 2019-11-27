@@ -1,7 +1,6 @@
-verbosity 0
+verbosity 2
 Mode SingleFile
 EntriesPerExecute 10
 InputFile /pnfs/annie/persistent/users/mnieslon/RAWDataR1117S0p0
-#InputFile /ToolAnalysis/configfiles/DataDecoder/my_files.txt 
 
 

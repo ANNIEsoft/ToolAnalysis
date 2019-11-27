@@ -1,7 +1,7 @@
 # TankCalibrationDiffuser Config File
 
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
-OutputFile LEDRun1137S0LED6 #Output root prefix name for the current run
+OutputFile LEDRun1140S0LED6 #Output root prefix name for the current run
 NBinsTimeTotal 500		#number of bins for summary time histogram
 TimeTotalMin -10		#left limit of range for summary time histogram
 TimeTotalMax 100		#right limit of range for summary time histogram
