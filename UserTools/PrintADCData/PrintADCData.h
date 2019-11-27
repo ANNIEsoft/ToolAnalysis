@@ -7,10 +7,14 @@
 
 #include "Tool.h"
 #include "ADCPulse.h"
+#include "Position.h"
+#include "Detector.h"
 
 #include "TApplication.h"
+#include "TMath.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TH2F.h"
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TCanvas.h"
@@ -35,14 +39,29 @@ class PrintADCData: public Tool {
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
-
+  void MakeYPhiHists();
 
  private:
+
+  //Variables needed to fill occupancy plots; code modified from Michael
+  TH2F *hist_pulseocc_2D_y_phi = nullptr;
+  TH2F *hist_frachit_2D_y_phi = nullptr;
+  std::map<unsigned long,unsigned long> detkey_to_chankey;
+  std::vector<unsigned long> pmt_detkeys;
+  Geometry *geom = nullptr;
+  std::map<unsigned long, double> x_PMT;
+  std::map<unsigned long, double> y_PMT;
+  std::map<unsigned long, double> z_PMT;
+  std::map<unsigned long, double> rho_PMT;
+  std::map<unsigned long, double> phi_PMT;
+  int n_tank_pmts;
+  double tank_center_x, tank_center_y, tank_center_z;
 
   std::string outputfile;
   TFile *file_out = nullptr;
 
   bool PulsesOnly;
+  bool SaveWaves;
   int MaxWaveforms;
   int WaveformNum;
   long totalentries=0;
@@ -50,8 +69,15 @@ class PrintADCData: public Tool {
   uint32_t RunNum;
   uint32_t SubrunNum;
   long EntryNum;
+
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
   std::map<unsigned long, std::vector< std::vector<ADCPulse>> > RecoADCHits;
+
+  //Used to print information on how many pulses are found and % of events with a pulse
+  std::map<unsigned long, int> NumPulses;
+  std::map<unsigned long, int> NumWavesWithAPulse;
+  std::map<unsigned long, int> NumWaves;
+
 
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;

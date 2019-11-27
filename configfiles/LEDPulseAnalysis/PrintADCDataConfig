@@ -1,3 +1,5 @@
 verbosity 3
 OutputFile PrintPulsesOnly
-WavesWithPulsesOnly 1 
+WavesWithPulsesOnly 0
+SaveWaveforms 1
+MaxWaveforms 10000

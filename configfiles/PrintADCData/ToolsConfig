@@ -1,3 +1,0 @@
-LoadGeometry LoadGeometry ./configfiles/PrintADCData/LoadGeometryConfig
-LoadANNIEEvent LoadANNIEEvent ./configfiles/PrintADCData/LoadANNIEEventConfig
-PrintADCData PrintADCData ./configfiles/PrintADCData/PrintADCDataConfig
