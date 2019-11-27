@@ -88,8 +88,8 @@ class PMTDataDecoder: public Tool {
   //get the entire header.
   unsigned int SAMPLES_RIGHTOF_000 = 7;
 
-  BoostStore *RawData;
-  BoostStore *PMTData;
+  BoostStore *RawData = nullptr;
+  BoostStore *PMTData = nullptr;
   std::vector<CardData> Cdata;
 
   bool FileCompleted = false;

@@ -1,4 +1,4 @@
 # Dummy config file
-verbosity 2
+verbosity 5
 NumBaselineSamples 25
 PCritical 0.01

@@ -58,8 +58,8 @@ bool PhaseIIADCHitFinder::Execute() {
 
   try {
 
-    //Reset maps that are stored in ANNIEEvent
-    hit_map->clear();
+    //Recreate maps that were deleted with ANNIEEvent->Delete() ANNIEEventBuilder tool
+    hit_map = new std::map<unsigned long,std::vector<Hit>>;
 
     // Get a pointer to the ANNIEEvent Store
     auto* annie_event = m_data->Stores.at("ANNIEEvent");

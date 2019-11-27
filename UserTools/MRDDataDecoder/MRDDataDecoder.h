@@ -35,21 +35,27 @@ class MRDDataDecoder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
+  std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
+
  private:
+  int EntriesPerExecute;
   long totalentries=0;
   int EntryNum = 0;
+  int FileNum = 0;
+  std::string CurrentFile = "NONE";
+  bool DummyRunNumber;
 
-
+  BoostStore *RawData;
   BoostStore *MRDData;
 
   std::string InputFile;
+  std::vector<std::string> OrganizedFileList;
   std::string Mode;
   bool SingleFileLoaded = false;
  
   //Counter used to track the number of entries processed in a PMT file
   int NumMRDDataProcessed = 0;
-
-
+  bool FileCompleted = false;
 
   std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
@@ -58,9 +64,7 @@ class MRDDataDecoder: public Tool {
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
-  std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > CStoreMRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
-  std::map<uint64_t, std::string>  CStoreTriggerTypeMap;  //Same as TriggerTypeMap, but loaded from CStore for appending new data to
 
   // Notes whether DAQ is in lock step running
   // Number of PMTs that must be found in a WaveSet to build the event
@@ -70,6 +74,7 @@ class MRDDataDecoder: public Tool {
   int v_warning=1;
   int v_message=2;
   int v_debug=3;
+  int vv_debug=4;
   std::string logmessage;
 
 };

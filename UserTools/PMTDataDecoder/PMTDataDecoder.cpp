@@ -24,8 +24,13 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
   if (Mode != "Continuous" && Mode != "SingleFile" && Mode != "FileList") {
-    std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile]. Setting default Continuous mode"<<std::endl;
+    std::cout <<"ERROR (PMTDataDecoder): Specified mode of operation ("<<Mode<<") is not an option [Continuous/SingleFile/FileList]. Setting default Continuous mode"<<std::endl;
     Mode = "Continuous";
+  }
+
+  //When operating in Continuous mode, always scan the whole file in one Execute step
+  if (Mode == "Continuous"){
+    EntriesPerExecute = -1;
   }
 
   CDEntryNum = 0;
@@ -70,6 +75,7 @@ bool PMTDataDecoder::Execute(){
       Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
       RawData->Get("PMTData",*PMTData);
       PMTData->Print(false);
+      std::cout <<"Accessed, set Print Status to false"<<std::endl;
     } else {
       Log("PMTDataDecoder Tool: Continuing Raw Data file processing",v_message,verbosity); 
     }
@@ -101,22 +107,27 @@ bool PMTDataDecoder::Execute(){
     std::string State;
     m_data->CStore.Get("State",State);
     Log("PMTDataDecoder tool: checking CStore for status of data stream",v_debug,verbosity);
-    if (State == "PMTSingle" || State == "Wait"){
-      //Single event file available for monitoring; not relevant for this tool
+    if (State == "MRDSingle" || State == "Wait"){
+      //MRD single events not relevant for this tool, do nothing on Wait
       if (verbosity > v_message) std::cout <<"PMTDataDecoder: State is "<<State<< ". No new full data file available" << std::endl;
       return true; 
     } 
-    
     else if (State == "DataFile"){
       // Full PMTData file ready to parse
-      // FIXME: Not sure if the booststore or key are right, or even the DataFile State
+      // FIXME: Not sure if the booststore m_data->Stores["PMTData"] is the right one.
+      // It was m_data->Stores["MRDData"] for the MRD monitoring, but it might be different for the tank monitoring
+      // The two might actually be also merged to something like m_data->Stores["RawData"] 
       if (verbosity > v_warning) std::cout<<"PMTDataDecoder: New raw data file available."<<std::endl;
-      m_data->Stores["CCData"]->Get("FileData",RawData);
+      m_data->Stores["PMTData"]->Get("FileData",RawData);
       RawData->Print(false);
       /////////////////// getting PMT Data From booststore////////////////////
       Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
       RawData->Get("PMTData",*PMTData);
       PMTData->Print(false);
+    } 
+    else {
+      Log("PMTDataDecoder Tool: The State >>> "+State+" <<< was not recognized. Please make sure you execute the MonitorReceive tool before the PMTDataDecoder tool when operating in continuous mode",v_error,verbosity);
+      return true;   
     }
   }
 
@@ -155,12 +166,13 @@ bool PMTDataDecoder::Execute(){
   int EntriesToDo;
   if(EntriesPerExecute<=0) EntriesToDo = totalentries;
   else EntriesToDo = EntriesPerExecute;
+  double CDDouble = (double)CDEntryNum;
+  double ETDDouble = (double)EntriesToDo;
+  std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
   if(verbosity>v_warning){
-    double CDDouble = (double)CDEntryNum;
-    double ETDDouble = (double)EntriesToDo;
-    std::cout << "PMTDataDecoder Tool: Current progress in file processing: " << (CDDouble/ETDDouble)*100 << std::endl;
+    std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
   }
-  while((ExecuteEntryNum < EntriesPerExecute) && (CDEntryNum<totalentries)){
+  while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     PMTData->GetEntry(CDEntryNum);
     PMTData->Get("CardData",Cdata);
@@ -269,8 +281,8 @@ bool PMTDataDecoder::Execute(){
     CDEntryNum = 0;
     FileNum += 1;
     ////////////// END EXECUTE LOOP ///////////////
-    delete RawData; RawData = new BoostStore(false,0);
-    delete PMTData; PMTData = new BoostStore(false,2);
+    RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
+    PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
     if(Mode == "SingleFile"){
       Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
       m_data->CStore.Set("TankPMTParsingComplete",true);
@@ -282,15 +294,24 @@ bool PMTDataDecoder::Execute(){
 	  m_data->vars.Set("StopLoop",1);
     }
     //TODO: Add logic here for Continuous mode.  Need to know when to close the run's ANNIEEvent.
+    //Note: Continuous mode should not be used with ANNIEEventBuilder
+    //The important object will be the stored PMT waves in the CStore
+    if (Mode == "Continous"){
+      Log("PMTDataDecoder Tool: Current raw data file parsed. Waiting until next file is produced",v_message,verbosity);
+    }
   }
   return true;
 }
 
 
 bool PMTDataDecoder::Finalise(){
+  RawData->Close();
+  RawData->Delete();
   delete RawData;
+  PMTData->Close();
+  PMTData->Delete();
   delete PMTData;
-  std::cout << "PMTDataDecoder tool exitting" << std::endl;
+  Log("PMTDataDecoder tool exitting",v_message,verbosity);
   return true;
 }
 
@@ -375,7 +396,7 @@ void PMTDataDecoder::ParseOOOsNowInOrder()
           it!=UnprocessedEntries.end(); ++it) {
     UnprocCardIDs.push_back(it->first);
   }
-  for(int i=0;i<UnprocCardIDs.size(); i++){
+  for(unsigned int i=0;i<UnprocCardIDs.size(); i++){
     int UnprocCardID = UnprocCardIDs.at(i);
     std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
     bool OOOResolved = true;
@@ -652,7 +673,7 @@ std::vector<std::string> PMTDataDecoder::OrganizeRunParts(std::string FileList)
 	    	rawfilepart = -1;
 	    }
         if (FirstRunNum == -9999 && rawfilerun!=-1){
-          FirstRunNum == rawfilepart;
+          FirstRunNum = rawfilepart;
           UnorganizedFileList.push_back(filename);
           PartNum.push_back(rawfilepart);
         } else if (rawfilepart!=-1 && rawfilerun==FirstRunNum){
@@ -666,11 +687,11 @@ std::vector<std::string> PMTDataDecoder::OrganizeRunParts(std::string FileList)
     if(verbosity>v_debug) std::cout << "PMTDataDecoder Tool: Organizing filenames: " << std::endl;
     //Now, organize files based on the part number array
     std::vector < std::pair<int,std::string>> SortingVector;
-    for (int i = 0; i < UnorganizedFileList.size(); i++){
+    for (unsigned int i = 0; i < UnorganizedFileList.size(); i++){
       SortingVector.push_back( std::make_pair(PartNum.at(i),UnorganizedFileList.at(i)));
     }
     std::sort(SortingVector.begin(),SortingVector.end());
-    for (int j = 0; j<SortingVector.size();j ++) {
+    for (unsigned int j = 0; j<SortingVector.size();j ++) {
       OrganizedFiles.push_back(SortingVector.at(j).second);
     }
   } else {

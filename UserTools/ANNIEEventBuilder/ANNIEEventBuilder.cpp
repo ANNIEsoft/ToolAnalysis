@@ -11,7 +11,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data; //assigning transient data pointer
 
-  SavePath = "/ToolAnalysis/";
+  SavePath = "./";
   ProcessedFilesBasename = "ProcessedRawData";
   isTankData = 0;
   isMRDData = 0;
@@ -77,7 +77,6 @@ bool ANNIEEventBuilder::Execute(){
     //If we're in a new run or subrun, make a new ANNIEEvent file. 
     if(isTankData && ((CurrentRunNum != RunNumber) || (CurrentSubrunNum != SubRunNumber))){
       if(verbosity>v_warning) std::cout << "New run or subrun encountered. Opening new BoostStore" << std::endl;
-      ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
       if(verbosity>v_warning) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
       ANNIEEvent->Close();
       ANNIEEvent->Delete();
@@ -101,31 +100,46 @@ bool ANNIEEventBuilder::Execute(){
       PMTEventsToDelete.push_back(PMTCounterTime);
     }
 
-    for(int i=0; i< PMTEventsToDelete.size(); i++) FinishedPMTWaves.erase(PMTEventsToDelete.at(i));
+    for(unsigned int i=0; i< PMTEventsToDelete.size(); i++) FinishedPMTWaves.erase(PMTEventsToDelete.at(i));
     //Update the current FinishedPMTWaves map
     m_data->CStore.Set("FinishedPMTWaves",FinishedPMTWaves);
 
   } else if (isMRDData){
     m_data->CStore.Get("NewMRDDataAvailable",IsNewMRDData);
-    if(!IsNewTankData){
-      Log("ANNIEEventBuilder:: No new Tank Data.  Not building ANNIEEvent: ",v_message, verbosity);
+    std::vector<unsigned long> MRDEventsToDelete;
+    if(!IsNewMRDData){
+      Log("ANNIEEventBuilder:: No new MRD Data.  Not building ANNIEEvent: ",v_message, verbosity);
       return true;
     }
     m_data->CStore.Get("MRDEvents",MRDEvents);
     m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
-    //Loop through MRDEvents and process each into ANNIEEvent.
+    
+    m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
+    int RunNumber;
+    int SubRunNumber;
+    uint64_t StarTime;
+    int RunType;
+    RunInfoPostgress.Get("RunNumber",RunNumber);
+    RunInfoPostgress.Get("SubRunNumber",SubRunNumber);
+    RunInfoPostgress.Get("RunType",RunType);
+    RunInfoPostgress.Get("StarTime",StarTime);
+
+   //Loop through MRDEvents and process each into ANNIEEvent.
     for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
       unsigned long MRDTimeStamp = apair.first;
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
       //FIXME: Once we fuse PMT data and MRD data streams, need to put in 
       //run number, subrun number, run type, etc. from Postgress DB
-      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, 0, 0, 0);
-      this->SaveEntryToFile(0,0);
+      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, RunNumber, SubRunNumber, RunType);
+      this->SaveEntryToFile(RunNumber,SubRunNumber);
       //Erase this entry from the FinishedPMTWavesMap
       //FIXME: Check that the erase doesn't mess up looping through all entries somehow
-      MRDEvents.erase(MRDTimeStamp);
-      TriggerTypeMap.erase(MRDTimeStamp);
+      MRDEventsToDelete.push_back(MRDTimeStamp);
+    }
+    for (unsigned int i=0; i< MRDEventsToDelete.size(); i++){
+      MRDEvents.erase(MRDEventsToDelete.at(i));
+      TriggerTypeMap.erase(MRDEventsToDelete.at(i));
     }
   }
 
@@ -135,7 +149,6 @@ bool ANNIEEventBuilder::Execute(){
 
 bool ANNIEEventBuilder::Finalise(){
   if(verbosity>4) std::cout << "ANNIEEvent Finalising.  Closing any open ANNIEEvent Boostore" << std::endl;
-  ANNIEEvent->Header->Set("TotalEntries",(long)ANNIEEventNum);
   if(verbosity>2) std::cout << "ANNIEEventBuilder: Saving and closing file." << std::endl;
   ANNIEEvent->Close();
   ANNIEEvent->Delete();
@@ -151,16 +164,11 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
         RunType)
 {
   std::cout << "Building an ANNIE Event (MRD), ANNIEEventNum = "<<ANNIEEventNum << std::endl;
-  ANNIEEvent->GetEntry(ANNIEEventNum);
 
-  if (ANNIEEventNum==0) TDCData = new std::map<unsigned long, std::vector<Hit>>;
-  if (TDCData->size()>0){
-    TDCData->clear();
-  }
-
+  TDCData = new std::map<unsigned long, std::vector<Hit>>;
 
   //TODO: Loop through MRDHits at this timestamp and form the Hit vector.
-  for (int i_value=0; i_value< MRDHits.size(); i_value++){
+  for (unsigned int i_value=0; i_value< MRDHits.size(); i_value++){
     unsigned long channelkey = MRDHits.at(i_value).first;
     int hitTimeADC = MRDHits.at(i_value).second;
     if (TDCData->count(channelkey)==0){
@@ -172,11 +180,9 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
       if (verbosity > 3) std::cout <<"creating hit with time value "<<hitTimeADC*4<<"and chankey "<<channelkey<<std::endl;
       TDCData->at(channelkey).push_back(Hit(0,hitTimeADC*4.,1.));
     }
-
   }
 
-
-  std::cout <<"TDCData size: "<<TDCData->size()<<std::endl;
+  Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
   ANNIEEvent->Set("RunNumber",RunNum);
@@ -185,6 +191,7 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   ANNIEEvent->Set("EventNumber",ANNIEEventNum);
   TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in ns
   ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
+  ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
   return;
 }
 
@@ -193,7 +200,6 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
         int RunType, uint64_t StartTime)
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event" << std::endl;
-  ANNIEEvent->GetEntry(ANNIEEventNum);
 
   ///////////////LOAD RAW PMT DATA INTO ANNIEEVENT///////////////
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
@@ -209,7 +215,6 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
     if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)==0){
       Log("ANNIEEventBuilder:: Cannot find channel key for crate space entry: ",v_error, verbosity);
       Log("ANNIEEventBuilder::CrateNum "+to_string(CrateNum),v_error, verbosity);
-      Log("ANNIEEventBuilder::SlotNum "+to_string(SlotNum),v_error, verbosity);
       Log("ANNIEEventBuilder::SlotNum "+to_string(SlotNum),v_error, verbosity);
       Log("ANNIEEventBuilder::ChannelID "+to_string(ChannelID),v_error, verbosity);
       Log("ANNIEEventBuilder:: Passing over the wave; PMT DATA LOST",v_error, verbosity);
@@ -229,7 +234,7 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RunNumber",RunNum);
   ANNIEEvent->Set("SubrunNumber",SubrunNum);
-  ANNIEEvent->Set("RunType",SubrunNum);
+  ANNIEEvent->Set("RunType",RunType);
   ANNIEEvent->Set("RunStartTime",StartTime);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
   //  - EventTime
@@ -243,10 +248,13 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
 
 void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubrunNum)
 {
-  if(verbosity>4) std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
+  /*if(verbosity>4)*/ std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
   std::string Filename = SavePath + ProcessedFilesBasename + "R" + to_string(RunNum) + 
       "S" + to_string(SubrunNum);
   ANNIEEvent->Save(Filename);
+  //std::cout <<"ANNIEEvent saved, now delete"<<std::endl;
+  ANNIEEvent->Delete();		//Delete() will delete the last entry in the store from memory and enable us to set a new pointer (won't erase the entry from saved file)
+  //std::cout <<"ANNIEEvent deleted"<<std::endl;
   ANNIEEventNum+=1;
   return;
 }

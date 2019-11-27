@@ -1,4 +1,4 @@
-verbosity 0
+verbosity 5
 
 PulseFindingApproach fixed_windows
 WindowIntegrationDB ./configfiles/LEDPulseAnalysis/TankPMTWindows.txt
