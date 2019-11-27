@@ -26,24 +26,24 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   //Check files exist
   if(!this->FileExists(fDetectorGeoFile)){
      Log("LoadGeometry Tool: File for Detector Geometry does not exist!",v_error,verbosity);
-     std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+     if (verbosity > 0) std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
      return false;
   }
   if(!this->FileExists(fFACCMRDGeoFile)){
     Log("LoadGeometry Tool: File for FACC/MRD Geometry does not exist!",v_error,verbosity);
-    std::cout << "Filepath was... " << fFACCMRDGeoFile << std::endl;
+    if (verbosity > 0) std::cout << "Filepath was... " << fFACCMRDGeoFile << std::endl;
     return false;
   }
 
   if(!this->FileExists(fLAPPDGeoFile)){
     Log("LoadGeometry Tool: File for the LAPPDs does not exist!",v_error,verbosity);
-        std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+    if (verbosity > 0) std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
     return false;
   }
 
   if(!this->FileExists(fTankPMTGeoFile)){
     Log("LoadGeometry Tool: File for Tank PMT Geometry does not exist!",v_error,verbosity);
-    std::cout << "Filepath was... " << fTankPMTGeoFile << std::endl;
+    if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGeoFile << std::endl;
     return false;
   }
 
@@ -478,9 +478,9 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
   Detector adet(detector_num,
                 "Tank",
                 detector_tank_location,
-                Position( x_pos/1000.,
-                          y_pos/1000.,
-                          z_pos/1000.),
+                Position( x_pos,
+                          y_pos,
+                          z_pos),
                 Direction(x_dir,
                           y_dir,
                           z_dir),
