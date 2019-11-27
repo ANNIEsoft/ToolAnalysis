@@ -82,9 +82,9 @@ bool LoadGeometry::Execute(){
 
 bool LoadGeometry::Finalise(){
   std::cout << "LoadGeometry tool exitting" << std::endl;
-  delete MRDCrateSpaceToChannelNumMap;
-  delete TankPMTCrateSpaceToChannelNumMap;
-  delete LAPPDCrateSpaceToChannelNumMap;
+  //delete MRDCrateSpaceToChannelNumMap;
+  //delete TankPMTCrateSpaceToChannelNumMap;
+  //delete LAPPDCrateSpaceToChannelNumMap;
   return true;
 }
 
@@ -123,7 +123,7 @@ void LoadGeometry::InitializeGeometry(){
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> DataEntries;
       boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
-      for (int i=0; i<DataEntries.size(); i++){
+      for (unsigned int i=0; i<DataEntries.size(); i++){
         //Check Legend at i, load correct data type
         int ivalue = 0;
         double dvalue = 0.0;
@@ -213,23 +213,23 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
 
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
-  for (int i=0; i<SpecLine.size(); i++){
+  for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
     double dvalue = 0.0;
     std::string svalue = "default";
-    for (int j=0; j<MRDIntegerValues.size(); j++){
+    for (unsigned int j=0; j<MRDIntegerValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<MRDStringValues.size(); j++){
+    for (unsigned int j=0; j<MRDStringValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDStringValues.at(j)){
         svalue = SpecLine.at(i);
         break;
       }
     }
-    for (int j=0; j<MRDDoubleValues.size(); j++){
+    for (unsigned int j=0; j<MRDDoubleValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDDoubleValues.at(j)){
         dvalue = std::stod(SpecLine.at(i));
         break;
@@ -398,23 +398,23 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
 
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
-  for (int i=0; i<SpecLine.size(); i++){
+  for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
     double dvalue = 0.0;
     std::string svalue = "default";
-    for (int j=0; j<TankPMTIntegerValues.size(); j++){
+    for (unsigned int j=0; j<TankPMTIntegerValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<TankPMTStringValues.size(); j++){
+    for (unsigned int j=0; j<TankPMTStringValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTStringValues.at(j)){
         svalue = SpecLine.at(i);
         break;
       }
     }
-    for (int j=0; j<TankPMTDoubleValues.size(); j++){
+    for (unsigned int j=0; j<TankPMTDoubleValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTDoubleValues.at(j)){
         dvalue = std::stod(SpecLine.at(i));
         break;
@@ -509,6 +509,7 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
     TankPMTCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
     Log("LoadGeometry Tool: ERROR: Tried assigning a Tank PMT channel_num to a crate space already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
   }
 
   // Add this channel to the geometry
@@ -570,30 +571,30 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
    std::string detector_type = "default",detector_status = "default",channel_status = "default";
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
-  for (int i=0; i<SpecLine.size(); i++){
+  for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
     unsigned int uivalue =0;
     double dvalue = 0.0;
     std::string svalue = "default";
-    for (int j=0; j<LAPPDIntegerValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDIntegerValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<LAPPDStringValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDStringValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDStringValues.at(j)){
         svalue = SpecLine.at(i);
         break;
       }
     }
-    for (int j=0; j<LAPPDDoubleValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDDoubleValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDDoubleValues.at(j)){
         dvalue = std::stod(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<LAPPDUnIntValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDUnIntValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDUnIntValues.at(j)){
         uivalue = std::stoul(SpecLine.at(i));
         break;
