@@ -74,6 +74,8 @@ class PMTDataDecoder: public Tool {
   long totalentries=0;
   int CDEntryNum = 0;
   int FileNum = 0;
+  int CurrentRunNum;
+  int CurrentSubrunNum;
   std::string CurrentFile = "NONE";
   int RECORD_HEADER_SAMPLENUMS = 8;
 
