@@ -1,7 +1,8 @@
 # TankCalibrationDiffuser Config File
 
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
-OutputFile LEDRun1140S0LED6 #Output root prefix name for the current run
+OutputDir ./LEDCalibrationFiles/
+OutputFile LEDCalibration #Output root prefix name for the current run
 NBinsTimeTotal 500		#number of bins for summary time histogram
 TimeTotalMin -10		#left limit of range for summary time histogram
 TimeTotalMax 100		#right limit of range for summary time histogram
@@ -50,12 +51,12 @@ TimeDevMin -10			#left limit of range for fitted time deviations
 TimeDevMax 10			#right limit of range for fitted time deviations
 NBinsChargeFit 100		#number of bins for fitted mean charges
 ChargeFitMin 0.			#left limit or range for fitted mean charges
-ChargeFitMax 10.		#right limit of range for fitted mean charges
+ChargeFitMax 0.01		#right limit of range for fitted mean charges
 DiffuserX 0.      		#x-position of the diffuser ball
 DiffuserY 0.      		#y-position of the diffuser ball
 DiffuserZ 0.      		#z-position of the diffuser ball
-ToleranceCharge 0.5		#tolerance of fit single p.e. value for being classified as a bad PMT
-ToleranceTime 0.5		#tolerance of mean time value [ns] for being classified as a bad PMT
+ToleranceCharge 100000		#tolerance of fit single p.e. value for being classified as a bad PMT
+ToleranceTime 100000		#tolerance of mean time value [ns] for being classified as a bad PMT
 FitMethod Gaus2			#fit function for charge, options: Gaus2Exp (2 times gaus + exp), Gaus2 (2 times gaus), Gaus (single gaus)
 Gaus1Constant 18.		#set start value for fit of first gaus (constant)
 Gaus1Mean 0.0005			#set start value for fit of first gaus (mean)
