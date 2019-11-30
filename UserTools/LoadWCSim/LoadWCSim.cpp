@@ -58,6 +58,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: Assuming RunStartDate of 0ns, i.e. unix epoch",v_warning,verbosity);
 		RunStartUser = 0;
 	}
+	MCEventNum=0;
+	get_ok = m_variables.Get("FileStartOffset",MCEventNum);
+	
 	// put version in the CStore for downstream tools
 	m_data->CStore.Set("WCSimVersion", WCSimVersion);
 	
@@ -163,7 +166,6 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	EventNumber=0;
 	MCTriggernum=0;
-	MCEventNum=0;
 	// pull the first entry to get the MCFile
 	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();

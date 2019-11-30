@@ -7,6 +7,7 @@
 
 #include<SerialisableObject.h>
 #include <iostream>
+#include <sstream>
 #include <cmath>
 
 using namespace std;
@@ -62,6 +63,12 @@ class Position : public SerialisableObject{
 	
 	bool Print(){
 		return Print(true);
+	}
+	
+	std::string AsString(){
+		std::stringstream buf;
+		buf <<"("<<x<<", "<<y<<", "<<z<<")";
+		return buf.str();
 	}
 	
 	bool operator==(const Position &a) const {

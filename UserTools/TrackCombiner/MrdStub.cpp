@@ -21,10 +21,23 @@ bool MrdStub::AddCluster(StubCluster& acluster){
 	
 	// first consider the case where this is the first candidate cluster in the next layer
 	if(acluster.GetLayer()==(current_layer+2)){
+//		std::cout<<"first proposed cluster in this layer"<<std::endl;
+		
 		// check if the forward projection is within the accepted span
 		double projected_pos = (current_pos + current_dxdz*(acluster.GetOrigin().Z()-current_z));
 		std::pair<double,double> candidate_span = acluster.GetExtentsPlusTwo();
+		
+//		double proposed_centre = (orientation) ? acluster.GetOrigin().X() : acluster.GetOrigin().Y();
+//		std::cout<<"dxdz = "<<current_dxdz<<", current_x="<<current_pos<<", current_z="<<current_z
+//				 <<", new cluster z ="<<acluster.GetOrigin().Z()
+//				 <<", z disance to new cluster is "<<(acluster.GetOrigin().Z()-current_z)
+//				 <<", projected_pos="<<projected_pos
+//				 <<"; new cluster has centre ("<<acluster.GetOrigin().X()<<", "<<acluster.GetOrigin().Y()
+//				 <<") of which we would take "<<proposed_centre<<std::endl;
+//		std::cout<<"canidate span = "<<candidate_span.first<<" -> "<<candidate_span.second<<std::endl;
+		
 		if( (candidate_span.first<projected_pos) && (projected_pos<candidate_span.second) ){
+//			std::cout<<"successful match"<<std::endl;
 			// candidate success! update our properties
 			
 			// make a note of our properties from the last layer, in case we need to
@@ -42,9 +55,11 @@ bool MrdStub::AddCluster(StubCluster& acluster){
 			clusters.push_back(acluster);
 			return true;
 		}
+//		else std::cout<<"projected point is outside candidate span"<<std::endl;
 	// next consider the case where we have a fitting candidate in this layer,
 	// but we want to check if this alternative candidate is a better fit
 	} else if(acluster.GetLayer()==current_layer){
+//		std::cout<<"we have an existing cluster in this layer"<<std::endl;
 		// check if forward projection is within the accepted span
 		double projected_pos = (last_pos + last_dxdz*(acluster.GetOrigin().Z()-last_z));
 		std::pair<double,double> candidate_span = acluster.GetExtentsPlusTwo();
@@ -86,6 +101,10 @@ bool MrdStub::Init(StubCluster& acluster){
 	orientation = acluster.GetOrientation();
 	current_pos = (orientation) ? acluster.GetOrigin().X() : acluster.GetOrigin().Y();
 	current_z   = acluster.GetOrigin().Z();
+//	std::cout<<"constructing stub from first cluster in layaer "<<current_layer
+//			 <<" which has orientation "<<orientation<<", with centre ("
+//			 <<acluster.GetOrigin().X()<<", "<<acluster.GetOrigin().Y()<<") of which we are taking "
+//			 <<current_pos<<" and current zpos "<<current_z<<std::endl;
 	
 	clusters.push_back(acluster);
 	return true;

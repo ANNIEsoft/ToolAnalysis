@@ -17,5 +17,6 @@ drawPaddlePlot 1        # draw the top/side view paddle plot of tracks
 drawGdmlOverlay 0       # draw a 3D representation of the ANNIE detector overlaid with MRD tracks
 drawStatistics 0        # histograms plotting some debug statistics about the track reconstruction
 saveimages 0            # save the paddle plots as images.
-plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
+#plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
+plotDirectory ./MrdPaddlePlots
 printTClonesTracks 0    # verbose printout of track information from TClonesArray

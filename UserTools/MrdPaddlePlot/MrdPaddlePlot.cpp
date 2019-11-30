@@ -29,9 +29,8 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("gdmlpath",gdmlpath);
 	m_variables.Get("saveimages",saveimages);
-	std::string plotDirectoryString;
-	m_variables.Get("plotDirectory",plotDirectoryString);
-	plotDirectory = plotDirectoryString.c_str();
+	get_ok = m_variables.Get("plotDirectory",plotDirectory);
+	if(not get_ok){ plotDirectory = "."; }
 	m_variables.Get("drawPaddlePlot",drawPaddlePlot);
 	m_variables.Get("drawGdmlOverlay",drawGdmlOverlay);
 	m_variables.Get("drawStatistics",drawStatistics);
@@ -346,7 +345,7 @@ bool MrdPaddlePlot::Execute(){
 			
 			if(saveimages){
 				thesubevent->imgcanvas->SaveAs(TString::Format("%s/checkmrdtracks_%d_%d.png",
-												plotDirectory,EventNumber,subevi));
+												plotDirectory.c_str(),EventNumber,subevi));
 			}
 		}
 		
@@ -377,27 +376,27 @@ bool MrdPaddlePlot::Finalise(){
 		hnumhclusters->Draw();
 		imgname=hnumhclusters->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 		hnumvclusters->Draw();
 		imgname=hnumvclusters->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 		hnumhcells->Draw();
 		imgname=hnumhcells->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 		hnumvcells->Draw();
 		imgname=hnumvcells->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 		hpaddleids->Draw();
 		imgname=hpaddleids->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 		hdigittimes->Draw();
 		imgname=hdigittimes->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 	}
 	
 	// cleanup

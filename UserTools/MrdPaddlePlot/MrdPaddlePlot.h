@@ -33,7 +33,7 @@ class MrdPaddlePlot: public Tool {
 	int verbosity=1;
 	std::string gdmlpath;
 	bool saveimages;
-	const char* plotDirectory;  // where to save images and plots
+	std::string plotDirectory;  // where to save images and plots
 	
 	// Variables from ANNIEEVENT
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~
