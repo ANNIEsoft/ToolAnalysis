@@ -15,6 +15,8 @@
 #include "ANNIEalgorithms.h"
 #include "ANNIEconstants.h"
 
+#include <sstream>
+
 class TApplication;
 class TCanvas;
 class TGraph;
@@ -63,7 +65,7 @@ class PhaseIIADCCalibrator : public Tool {
     
     int baseline_fit_order;
     bool redo_fit_without_outliers;
-    int refit_threshold; // mV range of the initial baseline subtracted waveform must be > this to trigger refit
+    double refit_threshold; // V range of the initial baseline subtracted waveform must be > this to trigger refit
     
     // ROOT stuff for drawing the fit of the baseline
     bool draw_baseline_fit=false;
@@ -72,6 +74,7 @@ class PhaseIIADCCalibrator : public Tool {
     TGraph* calibrated_waveform_tgraph=nullptr;
     TF1* calibrated_waveform_fit=nullptr;
     TH1D* raw_datapoint_hist=nullptr;
+    int drawcount=0;
     
     // verbosity levels: if 'verbosity' < this level, the message type will be logged.
     int v_error=0;
