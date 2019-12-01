@@ -9,6 +9,9 @@
 #include "TF1.h"
 #include "TFitResult.h"
 
+// for checking for memory leaks only. Also in $HOME/.rootrc set `Root.ObjectStat` to 1
+//#include "TObjectTable.h"
+
 #include <thread>
 #include <chrono>
 
@@ -25,20 +28,44 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
   // Assign a transient data pointer
   m_data = &data;
   
-  // get config variables
-  m_variables.Get("drawBaselineRootFit",draw_baseline_fit);
-  m_variables.Get("BaselineFitStartSample",baseline_start_sample);
-  get_ok = m_variables.Get("BaselineFitOrder",baseline_fit_order);
-  if(not get_ok) baseline_fit_order = 1; // default to linear fit
-  get_ok = m_variables.Get("RedoFitWithoutOutliers",redo_fit_without_outliers);
-  if(not get_ok) redo_fit_without_outliers = false; // whether to redo the fit after removing outliers
-  get_ok = m_variables.Get("RefitThresholdMillivolts", refit_threshold); // but only if wfrm range exceeds this
-  if(not get_ok) refit_threshold = 50; // something suitable: TODO tune me.
+  std::cout<<"PhaseIIADCCalibrator Tool: Initializing"<<std::endl;
+  
+  // get config variables: general
+  m_variables.Get("verbosity", verbosity);
+  
+  // algorithm selection
   use_ze3ra_algorithm = true; // default
-  get_ok = m_variables.Get("UseZe3raAlgorithm", use_ze3ra_algorithm);
   use_root_algorithm = false; // default
+  get_ok = m_variables.Get("UseZe3raAlgorithm", use_ze3ra_algorithm);
   get_ok = m_variables.Get("UseRootFitAlgorithm",use_root_algorithm);
   if((!use_ze3ra_algorithm)&&(!use_root_algorithm)) use_ze3ra_algorithm=true;
+  std::string method = (use_ze3ra_algorithm) ? "ze3ra" : "root fit";
+  Log("PhaseIIADCCalibrator Tool: Configured to use "+method+" baseline subtraction method", v_message, verbosity);
+  
+  //Set defaults in case config file has no entries
+  p_critical = 0.01;
+  num_sub_waveforms = 6;
+  num_baseline_samples = (use_ze3ra_algorithm) ? 5 : 980;
+  
+  // get ze3ra variables
+  m_variables.Get("PCritical", p_critical);
+  m_variables.Get("NumBaselineSamples", num_baseline_samples);
+  m_variables.Get("NumSubWaveforms", num_sub_waveforms);
+  
+  // get ROOT fitting variables
+  if(use_root_algorithm){
+    m_variables.Get("drawBaselineRootFit",draw_baseline_fit);
+    if(not get_ok) draw_baseline_fit=false;
+    m_variables.Get("BaselineFitStartSample",baseline_start_sample);
+    if(not get_ok) baseline_start_sample=0;
+    get_ok = m_variables.Get("BaselineFitOrder",baseline_fit_order);
+    if(not get_ok) baseline_fit_order = 1; // default to linear fit
+    get_ok = m_variables.Get("RedoFitWithoutOutliers",redo_fit_without_outliers);
+    if(not get_ok) redo_fit_without_outliers = false; // whether to redo the fit after removing outliers
+    get_ok = m_variables.Get("RefitThresholdAdcCounts", refit_threshold); // but only if wfrm range exceeds this
+    if(not get_ok) refit_threshold = 5.; // something suitable
+    refit_threshold*=ADC_TO_VOLT;
+  }
   
   // get or make the ROOT TApplication to show the fit, debug only
   if(draw_baseline_fit){
@@ -86,7 +113,7 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
 
 bool PhaseIIADCCalibrator::Execute() {
   
-  if(verbosity) std::cout<<"Initializing Tool PhaseIIADCCalibrator"<<std::endl;
+  Log("PhaseIIADCCalibrator Tool: Executing", v_message, verbosity);
 
   // Get a pointer to the ANNIEEvent Store
   auto* annie_event = m_data->Stores["ANNIEEvent"];
@@ -161,7 +188,7 @@ bool PhaseIIADCCalibrator::Execute() {
     }
   }
 
-  std::cout <<"Setting CalibratedADCData"<<std::endl;
+  Log("PhaseIIADCCalibrator Tool: Setting CalibratedADCData",v_debug,verbosity);
   annie_event->Set("CalibratedADCData", calibrated_waveform_map);
   if(make_led_waveforms){
     std::cout <<"Setting LEDADCData"<<std::endl;
@@ -175,6 +202,33 @@ bool PhaseIIADCCalibrator::Execute() {
 
 
 bool PhaseIIADCCalibrator::Finalise() {
+  
+  if(use_root_algorithm){
+    Log("PhaseIIADCCalibrator Tool: Cleaning up ROOT fitting objects",v_message,verbosity);
+    //std::cout<<"dumping gObjecTable:"<<std::endl;
+    //gObjectTable->Print();
+    
+    if(calibrated_waveform_tgraph) delete calibrated_waveform_tgraph; calibrated_waveform_tgraph=nullptr;
+    if(calibrated_waveform_fit) delete calibrated_waveform_fit; calibrated_waveform_fit=nullptr;
+    if(gROOT->FindObject("raw_datapoint_hist")!=nullptr) delete raw_datapoint_hist; raw_datapoint_hist=nullptr;
+    
+    if(draw_baseline_fit || (drawcount>0)){
+      if(gROOT->FindObject("baselineFitCanvas")!=nullptr) delete baselineFitCanvas; baselineFitCanvas=nullptr;
+      
+      int tapplicationusers=0;
+      get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+      if(not get_ok || tapplicationusers==1){
+        if(rootTApp){
+          Log("PhaseIIADCCalibrator Tool: Deleting global TApplication",v_message,verbosity);
+          delete rootTApp;
+          rootTApp=nullptr;
+        }
+      } else if(tapplicationusers>1){
+        m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+      }
+    }
+  }
+  
   return true;
 }
 
@@ -409,21 +463,33 @@ std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCCalibrator::loa
 std::vector< CalibratedADCWaveform<double> >
 PhaseIIADCCalibrator::make_calibrated_waveforms_rootfit(
   const std::vector< Waveform<unsigned short> >& raw_waveforms){
+  Log("PhaseIIADCCalibrator Tool: Doing ROOT based baseline subtraction", v_debug, verbosity);
+  std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
   
   // Apparently the input waveforms given to us represent all the minibuffers for one channel,
   // obtained in one particular ADC readout. But I don't expect that matters much to us.
   
   // create a TGraph if we don't have one
-  if(gROOT->FindObject("calibrated_waveform_tgraph")==nullptr){
+  //if(gROOT->FindObject("calibrated_waveform_tgraph")==nullptr){  << never finds it.
+  if(calibrated_waveform_tgraph==nullptr){
     // we need to know how many points the tgraph will hold
     num_waveform_points = raw_waveforms.front().Samples().size();
+    Log("PhaseIIADCCalibrator Tool: Making TGraph with " + to_string(num_waveform_points)
+        +" data points", v_debug, verbosity);
+    //Log("PhaseIIADCCalibrator Tool: Making new Graph",v_error,verbosity);
     calibrated_waveform_tgraph = new TGraph(num_waveform_points);
     // honestly i have no idea how to stop ROOT interfering with object deletion after drawing
     // see https://root.cern.ch/root/htmldoc/guides/users-guide/ObjectOwnership.html
     // and https://root.cern.ch/root/roottalk/roottalk01/2060.html
+    if(not calibrated_waveform_tgraph){
+      Log("PhaseIIADCCalibrator Tool: ERROR making TGraph!", v_error, verbosity);
+      return calibrated_waveforms;
+    }
     calibrated_waveform_tgraph->SetName("calibrated_waveform_tgraph");
-    gROOT->Add(calibrated_waveform_tgraph); // make gROOT know about it
-    //calibrated_waveform_tgraph->GetHistogram()->SetName("calibrated_waveform_tgraph_histo"); better to use this?
+    gROOT->Add(calibrated_waveform_tgraph); // make gROOT know about it - doesn't work??
+    calibrated_waveform_tgraph->ResetBit(kCanDelete);
+    //calibrated_waveform_tgraph->GetHistogram()->SetName("calibrated_waveform_tgraph_histo"); // doesn't help
+    //gROOT->Add(calibrated_waveform_tgraph->GetHistogram());
   }
   
   // create a TF1 if we don't have one
@@ -432,70 +498,141 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_rootfit(
     if((num_baseline_samples<=0) || (num_baseline_samples>(num_waveform_points-baseline_start_sample)))
         num_baseline_samples = num_waveform_points;
     if(baseline_start_sample<0) baseline_start_sample = 0;
+    Log("PhaseIIADCCalibrator Tool: Making fit function of type pol"+to_string(baseline_fit_order)
+         + " to fit waveform samples " + to_string(baseline_start_sample) + " to " 
+         + to_string(baseline_start_sample+num_waveform_points), v_debug, verbosity);
+    //Log("PhaseIIADCCalibrator Tool: Making new Function",v_error,verbosity);
     calibrated_waveform_fit = new TF1("calibrated_waveform_fit",TString::Format("pol%d",baseline_fit_order),
       baseline_start_sample,num_baseline_samples);
+    if(not calibrated_waveform_fit){
+      Log("PhaseIIADCCalibrator Tool: ERROR making root TF1!", v_error, verbosity);
+      return calibrated_waveforms;
+    }
   }
   
   // Loop over raw waveforms
-  std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
+  Log("PhaseIIADCCalibrator Tool: Looping over "+to_string(raw_waveforms.size()) + " raw waveforms",
+      v_debug, verbosity);
   for (const auto& raw_waveform : raw_waveforms){
     
     // retrieve the raw samples
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
     
     // update our TGraph's datapoints with the new datapoints
+    Log("PhaseIIADCCalibrator Tool: Setting TGraph datapoints", v_debug, verbosity);
     for(int samplei=0; samplei<raw_data.size(); ++samplei){
       calibrated_waveform_tgraph->SetPoint(samplei,samplei,raw_data.at(samplei));
     }
     
-    
     // fit the graph
-    TFitResultPtr fit_result = calibrated_waveform_tgraph->Fit(calibrated_waveform_fit,"RCFS");
+    Log("PhaseIIADCCalibrator Tool: Fitting the baseline", v_debug, verbosity);
+    TFitResultPtr fit_result = calibrated_waveform_tgraph->Fit(calibrated_waveform_fit,"RCFSQ"); // F
     // R to use range of TF1
     // F option uses minuit fitter for polN... better?
     // C skips calculation of chi2 to save time
     // S prevents conversion of the TFitResultPtr to a plain integer, which can only be used to check status
     // in this case we need to check the status of the fit manually: just by converting the pointer
+    // Q prevents Minuit spewing all it's internals
     
-    if(draw_baseline_fit){
-      Log("PhaseIIADCCalibrator Tool: Drawing initial baseline fit",v_message,verbosity);
-      if(gROOT->FindObject("baselineFitCanvas")==nullptr){
-        baselineFitCanvas = new TCanvas("baselineFitCanvas");
-      } else {
-        baselineFitCanvas->cd();
-      }
-      calibrated_waveform_tgraph->Draw("AP");
-      calibrated_waveform_tgraph->GetHistogram()->SetDirectory(0); // canvas should not take ownership
-      baselineFitCanvas->Modified();
-      baselineFitCanvas->Update();
-      gSystem->ProcessEvents();
-      while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-    }
-    
-    Int_t fit_succeeded = fit_result;
+    bool fit_succeeded = ((static_cast<Int_t>(fit_result))==0);  // successful fit is 0
+    std::vector<double> fitpars(baseline_fit_order+1);
     double baseline=0;
     if(not fit_succeeded){
       Log("PhaseIIADCCalibrator Tool: polynomial fit of baseline failed!",v_warning,verbosity);
     } else {
-      baseline = fit_result->Value(0); // DC offset. FIXME this doesn't fully capture the correction applied
+      Log("PhaseIIADCCalibrator Tool: polynomial fit of baseline succeeded, noting parameters",v_debug,verbosity);
+      // make a note of the current fit parameters, in case we re-do the fit later
+      for(uint orderi=0; orderi<(baseline_fit_order+1); ++orderi){
+        fitpars.at(orderi) = fit_result->Value(orderi);
+      }
+      logmessage="PhaseIIADCCalibrator Tool: Baseline fit success: fit function was: ";
+      for(uint orderi=0; orderi<(baseline_fit_order+1); ++orderi){
+        logmessage+= to_string(fitpars.at(orderi))+"*x^"+to_string(orderi);
+        if(orderi<baseline_fit_order) logmessage+=" + ";
+      }
+      Log(logmessage, v_debug, verbosity);
+      baseline = fitpars.at(0); // DC offset. FIXME this doesn't fully capture the correction applied
     }
     
-    // convert samples from ADC count to volts, and subtract the baseline fit if fit succeeded
-    std::vector<double> cal_data;
+    // in either case, draw the data and fit result
+    if(draw_baseline_fit){
+      Log("PhaseIIADCCalibrator Tool: Drawing initial baseline fit",v_message,verbosity);
+      if(gROOT->FindObject("baselineFitCanvas")==nullptr){
+        Log("PhaseIIADCCalibrator Tool: Constructing canvas for drawing fit", v_debug, verbosity);
+        //Log("PhaseIIADCCalibrator Tool: Making new Canvas",v_error,verbosity);
+        baselineFitCanvas = new TCanvas("baselineFitCanvas");
+      } else {
+        baselineFitCanvas->cd();
+      }
+      calibrated_waveform_tgraph->Draw("ALP");
+      calibrated_waveform_tgraph->GetHistogram()->SetDirectory(0); // canvas should not take ownership
+      calibrated_waveform_tgraph->ResetBit(kCanDelete);
+      baselineFitCanvas->Modified();
+      baselineFitCanvas->Update();
+      gSystem->ProcessEvents();
+      Log("PhaseIIADCCalibrator Tool: Sleeping while waiting for user to close canvas",v_debug,verbosity);
+      while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        gSystem->ProcessEvents();
+      }
+      drawcount++; if(drawcount>10) draw_baseline_fit=false;
+    }
+    
+    // convert samples from ADC count to volts, and subtract the baseline, if fit succeeded
+    std::vector<double> cal_data(raw_data.size());
     // keep track of the max and min
-    double cal_data_min=std::numeric_limits<double>::min();
-    double cal_data_max=std::numeric_limits<double>::max();
+    double cal_data_min=std::numeric_limits<double>::max();
+    double cal_data_max=std::numeric_limits<double>::min();
     // loop over samples
+    Log("PhaseIIADCCalibrator Tool: Subtracting baseline and converting to ADC counts", v_debug, verbosity);
     for(uint samplei=0; samplei<raw_data.size(); ++samplei){
       const unsigned short& sample = raw_data.at(samplei);
+      if(gROOT->FindObject("calibrated_waveform_fit")==nullptr){
+        Log("PhaseIIADCCalibrator Tool: ERROR! Could not find TF1!", v_error, verbosity);
+        return calibrated_waveforms;
+      }
+      //std::cout<<"Evaluating baseline fit"<<std::endl;
       double baseline_val = (fit_succeeded) ? calibrated_waveform_fit->Eval(samplei) : 0;
+      //std::cout<<"Estimated baseline was "<<baseline_val<<std::endl;
       double cal_val = (static_cast<double>(sample) - baseline_val)*ADC_TO_VOLT;
-      cal_data.push_back(cal_val);
+      //std::cout<<"Baseline subtracted val was "<<cal_val<<std::endl;
+      cal_data.at(samplei)=cal_val;
       
       if(cal_val<cal_data_min) cal_data_min = cal_val;
       if(cal_val>cal_data_max) cal_data_max = cal_val;
+    }
+    
+    if(draw_baseline_fit){
+      Log("PhaseIIADCCalibrator Tool: Drawing baseline subtracted fit",v_message,verbosity);
+      
+      // update our TGraph's datapoints with the new datapoints
+      Log("PhaseIIADCCalibrator Tool: Setting TGraph datapoints", v_debug, verbosity);
+      for(int samplei=0; samplei<cal_data.size(); ++samplei){
+        calibrated_waveform_tgraph->SetPoint(samplei,samplei,cal_data.at(samplei));
+      }
+      
+      // Redo the fit to guide the eye. Not used.
+      TFitResultPtr fit_result = calibrated_waveform_tgraph->Fit(calibrated_waveform_fit,"RCFSQ"); // F
+      
+      if(gROOT->FindObject("baselineFitCanvas")==nullptr){
+        Log("PhaseIIADCCalibrator Tool: Constructing canvas for drawing fit", v_debug, verbosity);
+        //Log("PhaseIIADCCalibrator Tool: Making new Canvas",v_error,verbosity);
+        baselineFitCanvas = new TCanvas("baselineFitCanvas");
+      } else {
+        baselineFitCanvas->cd();
+      }
+      
+      calibrated_waveform_tgraph->Draw("ALP");
+      calibrated_waveform_tgraph->GetHistogram()->SetDirectory(0); // canvas should not take ownership
+      calibrated_waveform_tgraph->ResetBit(kCanDelete);
+      baselineFitCanvas->Modified();
+      baselineFitCanvas->Update();
+      gSystem->ProcessEvents();
+      Log("PhaseIIADCCalibrator Tool: Sleeping while waiting for user to close canvas",v_debug,verbosity);
+      while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        gSystem->ProcessEvents();
+      }
     }
     
     // do we need to calculate sigma_baseline? Does anyone use it? TODO
@@ -505,36 +642,79 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_rootfit(
     // remove outliers and do the baseline fit again. We can skip this step if the range is sufficiently
     // small that we know there aren't any pulses to skew the data
     double cal_data_range = cal_data_max - cal_data_min;
-    if((redo_fit_without_outliers) && (cal_data_range>refit_threshold) && (fit_succeeded)){
-      // first make a note of the current fit parameters
-      std::vector<double> fitpars(baseline_fit_order+1);
-      for(uint orderi=0; orderi<(baseline_fit_order+1); ++orderi){
-        fitpars.at(orderi) = fit_result->Value(orderi);
-        //calibrated_waveform_fit->SetParameter(orderi,0); // clear initial vals...? maybe not necessary?
+    logmessage = "PhaseIIADCCalibrator Tool: calibrated wfrm range was " +to_string(cal_data_range);
+    if(redo_fit_without_outliers){
+      if(cal_data_range>refit_threshold){
+        logmessage+= " which will invoke outlier removal and refit if initial fit succeeded";
+      } else {
+        logmessage+= " which will not invoke outlier removal and refit";
       }
+    }
+    Log(logmessage, v_debug, verbosity);
+    if((redo_fit_without_outliers) && (cal_data_range>refit_threshold) && (fit_succeeded)){
+      Log("PhaseIIADCCalibrator Tool: Removing outliers", v_debug, verbosity);
       
       // find and remove outliers
       std::vector<double> non_outlier_points(cal_data);
       // We'll use interquartile range as a definition of data excluding outliers.
       // First we need to find the interquartile range. Do it the lazy way: with ROOT.
+      Log("PhaseIIADCCalibrator Tool: Getting histogram for quantiles", v_debug, verbosity);
       if(gROOT->FindObject("raw_datapoint_hist")==nullptr){
+        Log("PhaseIIADCCalibrator Tool: Making histogram for quantile measurement", v_debug, verbosity);
+        //Log("PhaseIIADCCalibrator Tool: Making new Histogram",v_error,verbosity);
         raw_datapoint_hist = new TH1D("raw_datapoint_hist","Raw Data Histogram",200,cal_data_min,cal_data_max);
+        if(not raw_datapoint_hist){
+          Log("PhaseIIADCCalibrator Tool: ERROR! Failed to making raw datapoint histogram!", v_error, verbosity);
+          return calibrated_waveforms;
+        }
       } else {
+        Log("PhaseIIADCCalibrator Tool: Resetting raw data histogram", v_debug, verbosity);
         raw_datapoint_hist->Reset(); raw_datapoint_hist->SetBins(200, cal_data_min, cal_data_max);
       }
       for(double& cal_sample : cal_data){ raw_datapoint_hist->Fill(cal_sample); }
+      
       // get the quantile thresholds. We'll take the interquartile range,
       // although we could take arbitrary thresholds
-      std::vector<double> threshold_probabilities{0.25,0.75};
+      std::vector<double> threshold_probabilities{0.00,0.95}; // graphs are inverted; only clip top (pulses)
       std::vector<double> threshold_values(threshold_probabilities.size());
       // get the quantile thresholds. Note GetQuantiles asks for it's input arrays backwards...
+      Log("PhaseIIADCCalibrator Tool: Getting Quantiles", v_debug, verbosity);
       raw_datapoint_hist->GetQuantiles(threshold_probabilities.size(),
           threshold_values.data(),threshold_probabilities.data());
       
-      // since we know it:
+      Log("PhaseIIADCCalibrator Tool: Quantiles were: " + to_string(threshold_values.at(0))
+            +" and "+to_string(threshold_values.at(1)),v_debug,verbosity);
+      
+      // since we know it: XXX note this is before second baseline subtraction!... not really accurate
+      Log("PhaseIIADCCalibrator Tool: Getting baseline sigma", v_debug, verbosity);
       sigma_baseline = raw_datapoint_hist->GetStdDev();
       
+      // draw the histogram for check
+      if(draw_baseline_fit){
+        Log("PhaseIIADCCalibrator Tool: Drawing histogrammed data for quantile determination",v_message,verbosity);
+        
+        if(gROOT->FindObject("baselineFitCanvas")==nullptr){
+          Log("PhaseIIADCCalibrator Tool: Constructing canvas for drawing fit", v_debug, verbosity);
+          //Log("PhaseIIADCCalibrator Tool: Making new Canvas",v_error,verbosity);
+          baselineFitCanvas = new TCanvas("baselineFitCanvas");
+        } else {
+          baselineFitCanvas->cd();
+        }
+        
+        raw_datapoint_hist->Draw();
+        raw_datapoint_hist->SetDirectory(0); // canvas should not take ownership
+        baselineFitCanvas->Modified();
+        baselineFitCanvas->Update();
+        gSystem->ProcessEvents();
+        Log("PhaseIIADCCalibrator Tool: Sleeping while waiting for user to close canvas",v_debug,verbosity);
+        while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          gSystem->ProcessEvents();
+        }
+      }
+      
       // now we can remove any outliers
+      Log("PhaseIIADCCalibrator Tool: Erasing outliers", v_debug, verbosity);
       auto newend = std::remove_if(non_outlier_points.begin(), non_outlier_points.end(),
          [&threshold_values](double& dataval){
            return ( (dataval<threshold_values.front()) || (dataval>threshold_values.back()) );
@@ -542,63 +722,130 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_rootfit(
       );
       non_outlier_points.erase(newend, non_outlier_points.end());
       
-      // update the contents of the TGraph
+      // update the contents of the TGraph with the outliers removed
+      Log("PhaseIIADCCalibrator Tool: Updating TGraph", v_debug, verbosity);
       for(uint samplei=0; samplei<non_outlier_points.size(); ++samplei){
         calibrated_waveform_tgraph->SetPoint(samplei,samplei,non_outlier_points.at(samplei));
       }
-      
-      if(draw_baseline_fit){
-        Log("PhaseIIADCCalibrator Tool: Drawing outlier-subtracted baseline fit",v_message,verbosity);
-        if(gROOT->FindObject("baselineFitCanvas")==nullptr){
-          baselineFitCanvas = new TCanvas("baselineFitCanvas");
-        } else {
-          baselineFitCanvas->cd();
-        }
-        calibrated_waveform_tgraph->Draw("AP");
-        calibrated_waveform_tgraph->GetHistogram()->SetDirectory(0); // canvas should not take ownership
-        baselineFitCanvas->Modified();
-        baselineFitCanvas->Update();
-        gSystem->ProcessEvents();
-        while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
+      for(uint samplei=non_outlier_points.size(); samplei<raw_data.size(); ++samplei){
+        calibrated_waveform_tgraph->RemovePoint(samplei);
       }
+      calibrated_waveform_tgraph->Set(non_outlier_points.size()); // resize, doesn't seem to work, hence remove
       
       // note that this time we have fewer datapoints than before,
       // so we will need to restrict the range of our fit
+      Log("PhaseIIADCCalibrator Tool: Setting TF1 range for outlier removed data", v_debug, verbosity);
       calibrated_waveform_fit->SetRange(0, non_outlier_points.size());
       calibrated_waveform_fit->SetMinimum(0);
       calibrated_waveform_fit->SetMaximum(non_outlier_points.size());
       
       // now redo the fit as we did before but with the remaining data
-      fit_result = calibrated_waveform_tgraph->Fit(calibrated_waveform_fit,"RCFS");
-      fit_succeeded = fit_result;
+      Log("PhaseIIADCCalibrator Tool: Redoing fit", v_debug, verbosity);
+      fit_result = calibrated_waveform_tgraph->Fit(calibrated_waveform_fit,"RCFSQ");
+      fit_succeeded = ((static_cast<Int_t>(fit_result))==0);  // successful fit is 0
+      
+      // Draw the result of the re-fit
+      if(draw_baseline_fit){
+        Log("PhaseIIADCCalibrator Tool: Drawing outlier-subtracted baseline fit",v_message,verbosity);
+        if(gROOT->FindObject("baselineFitCanvas")==nullptr){
+          Log("PhaseIIADCCalibrator Tool: Constructing canvas for drawing fit", v_debug, verbosity);
+          //Log("PhaseIIADCCalibrator Tool: Making new Canvas",v_error,verbosity);
+          baselineFitCanvas = new TCanvas("baselineFitCanvas");
+        } else {
+          baselineFitCanvas->cd();
+        }
+        calibrated_waveform_tgraph->Draw("ALP");
+        calibrated_waveform_tgraph->GetHistogram()->SetDirectory(0); // canvas should not take ownership
+        calibrated_waveform_tgraph->ResetBit(kCanDelete);
+        baselineFitCanvas->Modified();
+        baselineFitCanvas->Update();
+        gSystem->ProcessEvents();
+        Log("PhaseIIADCCalibrator Tool: Sleeping while waiting for user to close canvas",v_debug,verbosity);
+        while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          gSystem->ProcessEvents();
+        }
+      }
+      
       if(not fit_succeeded){
         Log("PhaseIIADCCalibrator Tool: polynomial re-fit of baseline failed!",v_warning,verbosity);
       } else {
+        logmessage="PhaseIIADCCalibrator Tool: Baseline re-fit success: fit function was: ";
+        for(uint orderi=0; orderi<(baseline_fit_order+1); ++orderi){
+          logmessage+= to_string(fit_result->Value(orderi))+"*x^"+to_string(orderi);
+          if(orderi<baseline_fit_order) logmessage+=" + ";
+        }
+        Log(logmessage, v_debug, verbosity);
+        
+        Log("PhaseIIADCCalibrator Tool: Combining with previous fit for final fit parameters", v_debug, verbosity);
         // get the new fit parameters and add them to the previous ones.
         for(uint orderi=0; orderi<(baseline_fit_order+1); ++orderi){
           double new_parameter_val = fit_result->Value(orderi) + fitpars.at(orderi);
           calibrated_waveform_fit->SetParameter(orderi, new_parameter_val);
         }
+        logmessage="PhaseIIADCCalibrator Tool: Final fit function was: ";
+        for(uint orderi=0; orderi<(baseline_fit_order+1); ++orderi){
+          logmessage+= to_string(fit_result->Value(orderi))+"*x^"+to_string(orderi);
+          if(orderi<baseline_fit_order) logmessage+=" + ";
+        }
+        Log(logmessage,v_debug,verbosity);
+        
         baseline = calibrated_waveform_fit->GetParameter(0); // DC offset. FIXME doesn't fully capture correction
         
         // update our calibrated values
+        Log("PhaseIIADCCalibrator Tool: Updating calibrated data based on new fit", v_debug, verbosity);
         for(uint samplei=0; samplei<raw_data.size(); ++samplei){
           const unsigned short& sample = raw_data.at(samplei);
           double baseline_val = calibrated_waveform_fit->Eval(samplei);
           double cal_val = (static_cast<double>(sample) - baseline_val)*ADC_TO_VOLT;
-          cal_data.push_back(cal_val);
+          cal_data.at(samplei)=cal_val;
         }
       }
       
       // revert our fit range for the next one before we forget
+      Log("PhaseIIADCCalibrator Tool: Resetting TF1 range to default", v_debug, verbosity);
       calibrated_waveform_fit->SetRange(baseline_start_sample,num_baseline_samples);
       calibrated_waveform_fit->SetMinimum(baseline_start_sample);
       calibrated_waveform_fit->SetMaximum(num_baseline_samples);
+      
+      // Draw the final baseline subtracted data, and a fit, which by defn should be a straight line through 0
+      if(draw_baseline_fit){
+        // update the contents of the TGraph with the final datapoints
+        Log("PhaseIIADCCalibrator Tool: Updating TGraph", v_debug, verbosity);
+        calibrated_waveform_tgraph->Set(cal_data.size()); // resize
+        for(uint samplei=0; samplei<cal_data.size(); ++samplei){
+          calibrated_waveform_tgraph->SetPoint(samplei,samplei,cal_data.at(samplei));
+        }
+        
+        // redo the fit; this time just for check
+        Log("PhaseIIADCCalibrator Tool: Redoing fit once more just to check", v_debug, verbosity);
+        fit_result = calibrated_waveform_tgraph->Fit(calibrated_waveform_fit,"RCFSQ");
+        fit_succeeded = ((static_cast<Int_t>(fit_result))==0);  // successful fit is 0
+        
+        Log("PhaseIIADCCalibrator Tool: Drawing fit to final baseline-subtracted data",v_message,verbosity);
+        if(gROOT->FindObject("baselineFitCanvas")==nullptr){
+          Log("PhaseIIADCCalibrator Tool: Constructing canvas for drawing fit", v_debug, verbosity);
+          //Log("PhaseIIADCCalibrator Tool: Making new Canvas",v_error,verbosity);
+          baselineFitCanvas = new TCanvas("baselineFitCanvas");
+        } else {
+          baselineFitCanvas->cd();
+        }
+        calibrated_waveform_tgraph->Draw("ALP");
+        calibrated_waveform_tgraph->GetHistogram()->SetDirectory(0); // canvas should not take ownership
+        calibrated_waveform_tgraph->ResetBit(kCanDelete);
+        baselineFitCanvas->Modified();
+        baselineFitCanvas->Update();
+        gSystem->ProcessEvents();
+        Log("PhaseIIADCCalibrator Tool: Sleeping while waiting for user to close canvas",v_debug,verbosity);
+        while(gROOT->FindObject("baselineFitCanvas")!=nullptr){
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          gSystem->ProcessEvents();
+        }
+      }
     }
     
     // construct the calibrated waveform
+    Log("PhaseIIADCCalibrator Tool: Constructing calibrated waveform", v_debug, verbosity);
     calibrated_waveforms.emplace_back(raw_waveform.GetStartTime(), cal_data, baseline, sigma_baseline);
   }
   
