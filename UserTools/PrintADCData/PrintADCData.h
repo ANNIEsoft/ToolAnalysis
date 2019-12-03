@@ -40,6 +40,9 @@ class PrintADCData: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   void MakeYPhiHists();
+  void SaveOccupancyInfo(uint32_t Run, uint32_t Subrun);
+  void ClearOccupancyInfo();
+  ofstream result_file;
 
  private:
 
@@ -63,11 +66,15 @@ class PrintADCData: public Tool {
   bool PulsesOnly;
   bool SaveWaves;
   int MaxWaveforms;
+  std::string LEDsUsed;
+  std::string LEDSetpoints;
   int WaveformNum;
   long totalentries=0;
 
   uint32_t RunNum;
   uint32_t SubrunNum;
+  uint32_t CurrentRun;
+  uint32_t CurrentSubrun;
   long EntryNum;
 
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;

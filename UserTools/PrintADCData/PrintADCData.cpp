@@ -14,6 +14,8 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   PulsesOnly = false;
   MaxWaveforms = 5000;
+  LEDsUsed = "unknown";
+  LEDSetpoints = "unknown";
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
@@ -21,11 +23,17 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SaveWaveforms",SaveWaves);
   m_variables.Get("WavesWithPulsesOnly",PulsesOnly);
   m_variables.Get("MaxWaveforms",MaxWaveforms);
+  m_variables.Get("LEDsUsed",LEDsUsed);
+  m_variables.Get("LEDSetpoints",LEDSetpoints);
   if(annieeventexists==0) {
     std::cout << "PrintADCData: No ANNIE Event in store to print!" << std::endl;
     return false;
   }
 
+  CurrentRun = -1;
+  CurrentSubrun = -1;
+
+  //Initialize ROOT file that holds pulse examples
   std::string rootfile_out_prefix="_PrintADCDataWaves";
   std::string rootfile_out_root=".root";
   std::string rootfile_out_name=outputfile+rootfile_out_prefix+rootfile_out_root;
@@ -36,6 +44,12 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   }
   hist_pulseocc_2D_y_phi = new TH2F("hist_pulseocc_2D_y_phi","Spatial distribution(mean pulses per acquisition, all PMTs)",100,0,360,25,-2.5,2.5);
   hist_frachit_2D_y_phi = new TH2F("hist_frachit_2D_y_phi","Spatial distribution (% of waveforms with a pulse, all PMTs)",100,0,360,25,-2.5,2.5);
+
+  //Initialize text file saving pulse occupancy info
+  std::string pulsefile_out_prefix="_PulseInfo.txt";
+  std::string pulseinfo_file = outputfile+pulsefile_out_prefix;
+  result_file.open(pulseinfo_file);
+
   //Initialize needed information for occupancy plots; taken from Michael's code 
   auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",geom);
   if(!get_geometry){
@@ -58,17 +72,24 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
 bool PrintADCData::Execute(){
 
   //Just print the whole dang thing
-  if(verbosity>2) std::cout << "PrintADCData: getting total entries from header" << std::endl;
+  if(verbosity>3) std::cout << "PrintADCData: getting total entries from header" << std::endl;
   m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",totalentries);
-  if(verbosity>2) std::cout << "PrintADCData: Number of ANNIEEvent entries: " << totalentries << std::endl;
-  if(verbosity>2) std::cout << "PrintADCData: looping through entries" << std::endl;
+  if(verbosity>3) std::cout << "PrintADCData: Number of ANNIEEvent entries: " << totalentries << std::endl;
+  if(verbosity>3) std::cout << "PrintADCData: looping through entries" << std::endl;
   m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
-  //m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNum);
-  //m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNum);
-  //
-  //std::cout << "Run number for entry is " << RunNum << std::endl;
-  //std::cout << "Subrun number for entry is " << SubrunNum << std::endl;
-  std::cout << "Num. of PMT signals for entry: " << RawADCData.size() << std::endl;
+  m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNum);
+  m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNum);
+  if (CurrentRun == -1){
+    CurrentRun = RunNum;
+    CurrentSubrun = SubrunNum;
+  }
+  else if (RunNum != CurrentRun || SubrunNum != CurrentSubrun){
+  	Log("PrintADCData Tool: New run/subrun encountered.  Clearing occupancy info",v_message,verbosity);
+    this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);
+    this->ClearOccupancyInfo();
+  }
+  
+  if(verbosity>2) std::cout << "Num. of PMT signals for entry: " << RawADCData.size() << std::endl;
   auto get_pulses = m_data->Stores["ANNIEEvent"]->Get("RecoADCHits",RecoADCHits);
   if(!get_pulses){
   	Log("PrintADCData Tool: No reconstructed pulses! Did you run the ADCHitFinder first?",v_error,verbosity); 
@@ -107,7 +128,7 @@ bool PrintADCData::Execute(){
       if(PulsesOnly){
         if (num_pulses==0) continue;
       }
-      std::cout << "Waveform info for channel " << channel_key << std::endl;
+      if(verbosity>3) std::cout << "Waveform info for channel " << channel_key << std::endl;
       //Default running: raw_waveforms only has one entry.  If we go to a
       //hefty-mode style of running though, this could have multiple minibuffers
       //const std::vector< Waveform<unsigned short> > raw_waveforms;
@@ -158,14 +179,9 @@ bool PrintADCData::Execute(){
           mb_graph->SetTitle(title.c_str());
           std::map<std::string, TDirectory * >::iterator it = ChanKeyToDirectory.find(ckey);
           if(it == ChanKeyToDirectory.end()){ //No Tree made yet for this channel key.  make it
-            std::cout << "MAKING NEW DIRECTORY, CHANKEY " << ckey << std::endl;
             ChanKeyToDirectory.emplace(ckey, file_out->mkdir(ckey.c_str()));
           }
-          else std::cout << "DIRECTORY EXISTS FOR CHANKEY " << ckey << std::endl;
- 
-          std::cout << "GOING TO NEW DIRECTORY" << std::endl;
           ChanKeyToDirectory.at(ckey)->cd();
-          std::cout << "WRITING TO NEW DIRECTORY" << std::endl;
           mb_graph->Write();
           WaveformNum+=1;
         } // end loop over minibuffers
@@ -183,20 +199,25 @@ bool PrintADCData::Execute(){
 bool PrintADCData::Finalise(){
   this->MakeYPhiHists();
   if(SaveWaves) file_out->Close();
-  //TODO: this approach only works if using a single run; just grabbing last run number
-  auto get_runnum = m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
-  if(!get_runnum){
-  	Log("PrintADCData Tool: No run number found in ANNIEEvent",v_error,verbosity); 
-  	return false;
-  };
+  this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);
+  result_file.close();
+  std::cout << "PrintADCData exitting" << std::endl;
+  return true;
+}
+
+void PrintADCData::SaveOccupancyInfo(uint32_t Run, uint32_t Subrun)
+{
   unsigned short adc_threshold;
+  //TODO: eventually, also load individual channel thresholds
   m_data->CStore.Get("ADCThreshold",adc_threshold);
-  std::string pulsefile_out_prefix="_PulseInfo.txt";
-  std::string pulseinfo_file = outputfile+pulsefile_out_prefix;
-  ofstream result_file(pulseinfo_file.c_str());
-  result_file << "run_number," << RunNumber << std::endl;
+  result_file << "run_number," << Run << std::endl;
+  result_file << "subrun_number," << Subrun << std::endl;
+  result_file << "LEDs_used," << LEDsUsed << std::endl;
+  result_file << "LED_setpoints," << LEDSetpoints << std::endl;
   result_file << "adc_threshold," << adc_threshold << std::endl;
   result_file << "channel_key,numwaves,numpulses,numwaveswithapulse" << std::endl;
+  m_variables.Get("LEDsUsed",LEDsUsed);
+  m_variables.Get("LEDSetpoints",LEDSetpoints);
   for (const auto& temp_pair : NumWaves) {
     const auto& channel_key = temp_pair.first;
     if(verbosity>2){
@@ -210,8 +231,15 @@ bool PrintADCData::Finalise(){
         "," << NumPulses.at(channel_key) << "," << NumWavesWithAPulse.at(channel_key) << 
         std::endl;
   }
-  std::cout << "PrintADCData exitting" << std::endl;
-  return true;
+  return;
+}
+
+void PrintADCData::ClearOccupancyInfo()
+{
+  NumWaves.clear();
+  NumPulses.clear();
+  NumWavesWithAPulse.clear();
+  return;
 }
 
 void PrintADCData::MakeYPhiHists(){
