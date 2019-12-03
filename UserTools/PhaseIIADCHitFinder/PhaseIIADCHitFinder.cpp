@@ -51,6 +51,8 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   if(adc_window_db != "none") channel_window_map = this->load_integration_window_map(adc_window_db);
   
   hit_map = new std::map<unsigned long,std::vector<Hit>>;
+  
+  m_data->CStore.Set("ADCThreshold",default_adc_threshold);
   return true;
 }
 
@@ -209,7 +211,6 @@ bool PhaseIIADCHitFinder::Execute() {
 
 
 bool PhaseIIADCHitFinder::Finalise() {
-
   return true;
 }
 

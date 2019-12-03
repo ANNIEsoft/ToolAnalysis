@@ -183,15 +183,32 @@ bool PrintADCData::Execute(){
 bool PrintADCData::Finalise(){
   this->MakeYPhiHists();
   if(SaveWaves) file_out->Close();
-  std::cout << "Pulse and waveform information for all channels found:" << std::endl;
+  //TODO: this approach only works if using a single run; just grabbing last run number
+  auto get_runnum = m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
+  if(!get_runnum){
+  	Log("PrintADCData Tool: No run number found in ANNIEEvent",v_error,verbosity); 
+  	return false;
+  };
+  unsigned short adc_threshold;
+  m_data->CStore.Get("ADCThreshold",adc_threshold);
+  std::string pulsefile_out_prefix="_PulseInfo.txt";
+  std::string pulseinfo_file = outputfile+pulsefile_out_prefix;
+  ofstream result_file(pulseinfo_file.c_str());
+  result_file << "run_number," << RunNumber << std::endl;
+  result_file << "adc_threshold," << adc_threshold << std::endl;
+  result_file << "channel_key,numwaves,numpulses,numwaveswithapulse" << std::endl;
   for (const auto& temp_pair : NumWaves) {
     const auto& channel_key = temp_pair.first;
-    std::cout << "Printing information for channel_key "<<channel_key << std::endl;
-    std::cout << "channel_key,"<<channel_key<<std::endl;
-    //Total number of waves
-    std::cout << "numwaves,"<<NumWaves.at(channel_key)<<std::endl;
-    std::cout << "numpulses,"<<NumPulses.at(channel_key)<<std::endl;
-    std::cout << "numwaveswithpulse,"<<NumWavesWithAPulse.at(channel_key)<<std::endl;
+    if(verbosity>2){
+      std::cout << "Printing information for channel_key "<<channel_key << std::endl;
+      std::cout << "channel_key,"<<channel_key<<std::endl;
+      std::cout << "numwaves,"<<NumWaves.at(channel_key)<<std::endl;
+      std::cout << "numpulses,"<<NumPulses.at(channel_key)<<std::endl;
+      std::cout << "numwaveswithpulse,"<<NumWavesWithAPulse.at(channel_key)<<std::endl;
+    }
+    result_file << channel_key << "," << NumWaves.at(channel_key) << 
+        "," << NumPulses.at(channel_key) << "," << NumWavesWithAPulse.at(channel_key) << 
+        std::endl;
   }
   std::cout << "PrintADCData exitting" << std::endl;
   return true;

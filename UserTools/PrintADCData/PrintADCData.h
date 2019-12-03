@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <thread>
 
 #include "Tool.h"
@@ -19,7 +20,6 @@
 #include "TROOT.h"
 #include "TCanvas.h"
 #include "TGraph.h"
-
 
 /**
  * \class PrintADCData
@@ -72,6 +72,7 @@ class PrintADCData: public Tool {
 
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
   std::map<unsigned long, std::vector< std::vector<ADCPulse>> > RecoADCHits;
+  int RunNumber;
 
   //Used to print information on how many pulses are found and % of events with a pulse
   std::map<unsigned long, int> NumPulses;
