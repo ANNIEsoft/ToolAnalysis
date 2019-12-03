@@ -83,22 +83,34 @@ bool TrackCombiner::Execute(){
 	//	logmessage = "recoVtx Status ("<<theExtendedVertex->GetStatus()<<") <= 0"; }
 	else {
 		Log("TrackCombiner Tool: reconstructed event Vertex found",v_debug,verbosity);
-		tank_reco_success = true;
 		
 		// Get the reconstructed event details
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		recoEventStartTime = theExtendedVertex->GetTime();
-		Log("TrackCombiner Tool: Tank event occurred at "+to_string(recoEventStartTime),v_message,verbosity);
+		Log("TrackCombiner Tool: Tank event occurred at "+to_string(recoEventStartTime)+"ns",v_message,verbosity);
 		// project forward to the MRD start as a reference plane
 		if(max_allowed_entrypoint_discrepancy>0){
 			Position recoVtxOrigin = theExtendedVertex->GetPosition();
 			recoVtxOrigin*=0.01;  // [cm] to [m] XXX ???
 			Direction recoVtxDir = theExtendedVertex->GetDirection();
-			// hack because we haven't yet defined operator* for direction
-			Position thedir(recoVtxDir.X(),recoVtxDir.Y(),recoVtxDir.Z());
-			recoEventMrdEntryPoint = recoVtxOrigin + thedir*(anniegeom->GetMrdStart() - recoVtxOrigin.Z());
-			Log("TrackCombiner Tool: projected MRD entry point is "+recoEventMrdEntryPoint.AsString(),
-				v_message,verbosity);
+			// check if it is downstream-going, so that we have some chance of matching with the MRD
+			// TODO a better test would be to require that it intercepts the MRD front face.
+			if(recoVtxDir.Z()>0){
+				// project forward to the plane of the start of the MRD
+				double z_distance_to_cover = anniegeom->GetMrdStart() - recoVtxOrigin.Z();
+				double distance_to_project = z_distance_to_cover / recoVtxDir.Z(); // gradient in z
+				// hack: convert to Position because we haven't yet defined operator* for Direction
+				Position thedir(recoVtxDir.X(),recoVtxDir.Y(),recoVtxDir.Z());
+				recoEventMrdEntryPoint = recoVtxOrigin + thedir*distance_to_project;
+				Log("TrackCombiner Tool: projected MRD entry point is "+recoEventMrdEntryPoint.AsString(),
+					v_message,verbosity);
+				tank_reco_success = true;
+			} else {
+				Log("TrackCombiner Tool: track isn't downstream going: cannot project MRD entry point",
+					v_message,verbosity);
+				recoEventMrdEntryPoint=Position(0,0,0);
+				tank_reco_success=false; // for our purposes here, we have no suitable tank event
+			}
 		}
 	}
 	
@@ -144,31 +156,44 @@ bool TrackCombiner::Execute(){
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	int best_match_index=-1;
 	if(tank_reco_success && (numtracksinev>0)){
-		double mintimediff=99999999999;   // closest in time will be used as a tie-break as it is more precise.
-		double mrdTrackStartTime=99999999999;
-		Position mrdTrackMrdEntryVtx;
-		double EntryPointDiscrepancy;
+		
+		// debug only
+		double bestintime=std::numeric_limits<double>::max();        // closest in time igoring entry point
+		Position mintimeentrypoint;                                  // entry point discrep for this track
+		
+		double mrdTrackStartTime=std::numeric_limits<double>::max(); // start time of best passing match
+		Position mrdTrackMrdEntryVtx;                                // entry point of best passing match
+		double mintimediff=std::numeric_limits<double>::max();       // use as a tie-break if >1 candidate
+		
 		// what criteria do we want to use to choose our best match?
 		// closest in time seems sensible, but do we want to prefer longer MRD tracks than stubs?
 		for(int tracki=0; tracki<numtracksinev; tracki++){
 			BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
 			// Get the track details from the BoostStore
-			get_ok = thisTrackAsBoostStore->Get("StartTime",mrdTrackStartTime);
+			double thistrackstarttime;
+			get_ok = thisTrackAsBoostStore->Get("StartTime",thistrackstarttime);
 			if(not get_ok){
 				Log("TrackCombiner Tool: Failed to get StartTime from reco MRD Track BoostStore!",
 					v_error,verbosity);
 				return false;
 			}
-			double timediff = abs(mrdTrackStartTime - recoEventStartTime);
-			get_ok = thisTrackAsBoostStore->Get("MrdEntryPoint",mrdTrackMrdEntryVtx);
+			Position thistracksentrypoint;
+			get_ok = thisTrackAsBoostStore->Get("MrdEntryPoint",thistracksentrypoint);
 			if(not get_ok){
 				Log("TrackCombiner Tool: Failed to get MrdEntryPoint from reco MRD Track BoostStore!",
 					v_error,verbosity);
 				return false;
 			}
-			double entrypointdisc = (recoEventMrdEntryPoint-mrdTrackMrdEntryVtx).Mag();
+			// matching criteria
+			double timediff = abs(thistrackstarttime - recoEventStartTime);
+			double entrypointdisc = (recoEventMrdEntryPoint-thistracksentrypoint).Mag();
+			// debug...?
+			if(timediff<(bestintime-recoEventStartTime)){ // could be interesting to see how
+				bestintime = thistrackstarttime;          // much our entrypoint match requirement
+				mintimeentrypoint = thistracksentrypoint; // is affecting us
+			}
 			if(timediff<max_allowed_tdiff){
-				Log("TrackCombiner Tool: in-time MRD track found with entrypoint discrepancy of"
+				Log("TrackCombiner Tool: in-time MRD track found with entrypoint discrepancy of "
 					+to_string(entrypointdisc)+" vs tolerance of "+to_string(max_allowed_entrypoint_discrepancy),
 					v_debug,verbosity);
 			}
@@ -182,18 +207,36 @@ bool TrackCombiner::Execute(){
 					// unassigned MRD hits to the vertex.
 					mintimediff = timediff;
 					best_match_index=tracki;
-					EntryPointDiscrepancy = entrypointdisc;
+					mrdTrackStartTime=thistrackstarttime;
+					mrdTrackMrdEntryVtx = thistracksentrypoint;
 			}
 		}
 		
-		Log("Closest MRD Track occurs at "+to_string(mrdTrackStartTime)
-			+", giving a time difference of "+to_string(mintimediff)
-			+" compared to a matching tolerance of "+to_string(max_allowed_tdiff),v_message,verbosity);
-		Log("Matched track MRD entry point was "+mrdTrackMrdEntryVtx.AsString()
-			+" while projected tank track entry point was "+recoEventMrdEntryPoint.AsString()
-			+", corresponding to a discrepancy of "+to_string(EntryPointDiscrepancy)
-			+" m in the MRD start plane, compared to a tolerance of "
-			+to_string(max_allowed_entrypoint_discrepancy),v_message,verbosity);
+		if(best_match_index>=0){
+			Log("Closest MRD Track in time occurs at "+to_string(mrdTrackStartTime)
+				+"ns, giving a time difference of "+to_string(mintimediff)
+				+"ns compared to a matching tolerance of "+to_string(max_allowed_tdiff)
+				+"ns",v_debug,verbosity);
+			Log("Matched track MRD entry point was "+mrdTrackMrdEntryVtx.AsString()
+				+" while projected tank track entry point was "+recoEventMrdEntryPoint.AsString()
+				+", corresponding to a discrepancy of "
+				+to_string((recoEventMrdEntryPoint-mrdTrackMrdEntryVtx).Mag())
+				+" m in the MRD start plane, compared to a tolerance of "
+				+to_string(max_allowed_entrypoint_discrepancy),v_debug,verbosity);
+		} else {
+			Log("Did not find a suitable MrdTrack",v_debug,verbosity);
+			if(bestintime!=std::numeric_limits<double>::max()){  // indicates we found an in-time track
+				Log("Closest MRD Track in time occurs at "+to_string(bestintime)
+					+"ns, giving a time difference of "+to_string(abs(bestintime-recoEventStartTime))
+					+"ns compared to a matching tolerance of "+to_string(max_allowed_tdiff)
+					+"ns and a projected entry point of "+mintimeentrypoint.AsString()
+					+"m compared to a projected tank track entry point of "+recoEventMrdEntryPoint.AsString()
+					+"m, corresponding to a discrepancy of "
+					+to_string((recoEventMrdEntryPoint-mintimeentrypoint).Mag())
+					+"m in the MRD start plane, compared to a tolerance of "
+					+to_string(max_allowed_entrypoint_discrepancy)+"m",v_debug,verbosity);
+			}
+		}
 	}
 	
 	if(best_match_index>=0){
@@ -781,8 +824,6 @@ BoostStore* TrackCombiner::FindShortMrdTracks(std::map<unsigned long,vector<doub
 	// =================
 	if(override_findmrdtracks){
 		numtracksinev=0; // overwrite (remove, effectively) findmrdtracks tool tracks, debug only
-		// XXX potentially dangerous; if we get the num tracks from the subev directly
-		// we could end up not drawing all stubs, or drawing FindMrdTracks tracks as well as stubs
 	}
 	
 	int num_loops = (show_all_stubs) ? std::max(mrd_stubs_h.size(),mrd_stubs_v.size()) : 1;
