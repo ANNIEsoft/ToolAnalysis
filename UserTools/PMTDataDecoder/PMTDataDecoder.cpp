@@ -40,7 +40,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   if(Mode=="FileList"){
     if(verbosity>v_warning){
       std::cout << "PMTDataDecoder tool: Running in file list mode. " << 
-          "Files must be from same run and have sequential parts." << std::endl;
+          "Files associated with each run must have sequential parts." << std::endl;
       std::cout << "PMTDataDecoder tool: Organizing file list by part." << std::endl;
     }
     OrganizedFileList = this->OrganizeRunParts(InputFile);
