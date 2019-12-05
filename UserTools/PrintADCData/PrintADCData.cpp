@@ -16,11 +16,13 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   MaxWaveforms = 5000;
   LEDsUsed = "unknown";
   LEDSetpoints = "unknown";
+  use_led_waveforms = false;
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("SaveWaveforms",SaveWaves);
+  m_variables.Get("UseLEDWaveforms", use_led_waveforms); 
   m_variables.Get("WavesWithPulsesOnly",PulsesOnly);
   m_variables.Get("MaxWaveforms",MaxWaveforms);
   m_variables.Get("LEDsUsed",LEDsUsed);
@@ -70,13 +72,15 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
 
 
 bool PrintADCData::Execute(){
-
+  //Make sure we're in the right ROOT file
+  file_out->cd();
   //Just print the whole dang thing
   if(verbosity>3) std::cout << "PrintADCData: getting total entries from header" << std::endl;
   m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",totalentries);
   if(verbosity>3) std::cout << "PrintADCData: Number of ANNIEEvent entries: " << totalentries << std::endl;
   if(verbosity>3) std::cout << "PrintADCData: looping through entries" << std::endl;
-  m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
+  if(use_led_waveforms) m_data->Stores["ANNIEEvent"]->Get("RawLEDADCData",RawADCData);
+  else m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNum);
   m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNum);
   if (CurrentRun == -1){
@@ -188,15 +192,12 @@ bool PrintADCData::Execute(){
       }
     }
   }
-  if(WaveformNum>MaxWaveforms){
-    Log("PrintADCData Tool: Max waveforms acquired.  Ending toolchain after this loop.",v_message, verbosity);
-    m_data->vars.Set("StopLoop",1);
-  }
   return true;
 }
 
 
 bool PrintADCData::Finalise(){
+  file_out->cd();
   this->MakeYPhiHists();
   if(SaveWaves) file_out->Close();
   this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);

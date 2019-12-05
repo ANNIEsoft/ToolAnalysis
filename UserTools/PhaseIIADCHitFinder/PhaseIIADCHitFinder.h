@@ -50,6 +50,7 @@ class PhaseIIADCHitFinder : public Tool {
     std::string adc_threshold_db;
     std::string adc_window_db;
     std::string pulse_window_type;
+    bool use_led_waveforms;
     int pulse_window_start_shift;
     int pulse_window_end_shift;
     std::map<unsigned long, unsigned short> channel_threshold_map;

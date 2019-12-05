@@ -17,6 +17,7 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   adc_window_db = "none";
   default_adc_threshold = BOGUS_INT;
   pulse_finding_approach = "threshold";
+  use_led_waveforms = false;
   threshold_type = "relative";
   pulse_window_type = "fixed";
   pulse_window_start_shift = -3;
@@ -24,6 +25,7 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
 
   //Load any configurables set in the config file
   m_variables.Get("verbosity",verbosity); 
+  m_variables.Get("UseLEDWaveforms", use_led_waveforms); 
   m_variables.Get("PulseFindingApproach", pulse_finding_approach); 
   m_variables.Get("ADCThresholdDB", adc_threshold_db); 
   m_variables.Get("WindowIntegrationDB", adc_window_db); 
@@ -73,11 +75,14 @@ bool PhaseIIADCHitFinder::Execute() {
     }
 
     // Load the map containing the ADC raw waveform data
+    bool got_raw_data = false;
     std::map<unsigned long, std::vector<Waveform<unsigned short> > >
       raw_waveform_map;
-
-    bool got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
-
+    if(use_led_waveforms){
+      got_raw_data = annie_event->Get("RawLEDADCData", raw_waveform_map);
+    } else {
+      got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
+    }
     // Check for problems
     if ( !got_raw_data ) {
       Log("Error: The PhaseIIADCHitFinder tool could not find the RawADCData entry", v_error,
@@ -93,10 +98,14 @@ bool PhaseIIADCHitFinder::Execute() {
     // Load the map containing the ADC calibrated waveform data
     std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
       calibrated_waveform_map;
-
-    bool got_calibrated_data = annie_event->Get("CalibratedADCData",
-      calibrated_waveform_map);
-
+    bool got_calibrated_data = false;
+    if(use_led_waveforms){
+      got_calibrated_data = annie_event->Get("CalibratedLEDADCData",
+        calibrated_waveform_map);
+    } else {
+      got_calibrated_data = annie_event->Get("CalibratedADCData",
+        calibrated_waveform_map);
+    }
     // Check for problems
     if ( !got_calibrated_data ) {
       Log("Error: The PhaseIIADCHitFinder tool could not find the CalibratedADCData"
@@ -133,7 +142,7 @@ bool PhaseIIADCHitFinder::Execute() {
       std::vector<Hit> HitsOnPMT;
 
       if (pulse_finding_approach == "full_window"){
-          // Integrate each whole dang minibuffer and background subtract 
+        // Integrate each whole dang minibuffer and background subtract 
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
             Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);

@@ -60,6 +60,7 @@ class PrintADCData: public Tool {
   int n_tank_pmts;
   double tank_center_x, tank_center_y, tank_center_z;
 
+  bool use_led_waveforms;
   std::string outputfile;
   TFile *file_out = nullptr;
 
