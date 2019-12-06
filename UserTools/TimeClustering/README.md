@@ -2,7 +2,7 @@
 
 The TimeClustering tool separates MRD paddle hit times into clusters. The clusters will then be passed on to further tools downstream that can search for tracks (`FindMrdTracks`) or plot the MRD Event Display (`MrdPaddlePlot`) or determine paddle efficiencies (`MrdPaddleEfficiency` [to be added]).
 
-`TimeClustering` can deal with both MC and data input. The channelkeys are converted into WCSim IDs that are needed by the `MrdTrackLib` libraries that actually incorporate all the machinery to do the track fitting and plotting. Conversion of channelkeys to WCSim IDs happens via a text file for data and via a passed on map by the `LoadWCSim` tool for MC.
+`TimeClustering` can deal with both MC and data input. The channelkeys are converted into WCSim IDs that are needed by the `MrdTrackLib` libraries that actually incorporate all the machinery to do the track fitting and plotting. Conversion of channelkeys to WCSim IDs happens via a text file for data and via a passed-on-map by the `LoadWCSim` tool for MC.
 
 The found clusters are loaded into the `CStore` for the subsequent tools. The following section describes more in detail what objects are passed on by the `TimeClustering` tool. 
 
@@ -20,7 +20,7 @@ The following output objects that were created by `TimeClustering` are stored in
 
 **ClusterStartTimes** `vector<float>` Vector containing the start times of all subevents
 
-**MrdTimeClusters** `vector<vector<int>>` One vector for each subevent containing the event IDs of digit IDs for each subevent
+**MrdTimeClusters** `vector<vector<int>>` One vector for each subevent containing the digit IDs for clustered hits in each subevent
 
 **NumMrdTimeClusters** `int` Number of time clusters within this event
 
