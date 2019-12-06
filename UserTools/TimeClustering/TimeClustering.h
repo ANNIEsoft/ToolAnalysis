@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TFile.h"
+#include "TObjectTable.h"
 
 class TH1D;
 class TApplication;
@@ -19,6 +21,7 @@ class TCanvas;
 * $Date: 2019/05/28 10:44:00 $
 * Contact: b.richards@qmul.ac.uk
 */
+
 class TimeClustering: public Tool {
 	
 	public:
@@ -28,21 +31,49 @@ class TimeClustering: public Tool {
 	bool Finalise(); ///< Finalise funciton used to clean up resorces.
 	
 	private:
+	//Configuration variables
 	int minimumdigits=4;                        // a cluster must have at least 4 hits
 	double maxsubeventduration=30;              // if all hits within this time, just one subevent
 	double minimum_subevent_timeseparation=30;  // minimum empty time to delimit subevents
-	
+	bool MakeMrdDigitTimePlot=false;
+	bool LaunchTApplication;
+	bool isData;	
+	std::string output_rootfile;
+	std::string file_chankeymap;
+	int evnum;
+
+	//ANNIEEvent data
+	std::map<unsigned long,vector<Hit>>* TDCData;
+	std::map<unsigned long,vector<MCHit>>* TDCData_MC;
+	Geometry *geom = nullptr;	
+
+	// From the CStore, for converting WCSim TubeId t channelkey
+        std::map<unsigned long,int> channelkey_to_mrdpmtid;
+
+	// Cluster properties
 	std::vector<double> mrddigittimesthisevent;
 	std::vector<int> mrddigitpmtsthisevent;
 	std::vector<double> mrddigitchargesthisevent;
-	
 	std::vector<std::vector<int>> MrdTimeClusters;
+	std::vector<std::vector<double>> MrdTimeClusters_Times;
+	std::vector<std::vector<double>> MrdTimeClusters_Charges;
 	
-	std::map<unsigned long,vector<MCHit>>* TDCData;
-	std::map<unsigned long,vector<MCHit>>* MCHits;
-	
-	bool MakeMrdDigitTimePlot=false;
-	TH1D* mrddigitts=nullptr;
+        // Histograms storing information about the MRD cluster times
+	TH1D* mrddigitts_cosmic_cluster = nullptr;
+        TH1D* mrddigitts_beam_cluster = nullptr;
+        TH1D* mrddigitts_noloopback_cluster = nullptr;
+        TH1D* mrddigitts_cluster = nullptr;
+        TH1D* mrddigitts_cosmic = nullptr;
+        TH1D* mrddigitts_beam = nullptr;
+        TH1D* mrddigitts_noloopback = nullptr;
+        TH1D* mrddigitts = nullptr;
+	TH1D *mrddigitts_cluster_single = nullptr;
+	TH1D *mrddigitts_single = nullptr;
+	TH1D *mrddigitts_horizontal = nullptr;
+	TH1D *mrddigitts_vertical = nullptr;
+        TFile* mrddigitts_file = nullptr;
+
+	//TApplication-related variables
 	TCanvas* timeClusterCanvas=nullptr;
 	TApplication* rootTApp=nullptr;
 	double canvwidth;

@@ -65,19 +65,25 @@ bool LoadANNIEEvent::Execute() {
 
     // Load it from the new input file
     std::string input_filename = input_filenames_.at(current_file_);
+    std::cout <<"Reading in current file "<<current_file_<<std::endl;
     m_data->Stores["ANNIEEvent"]->Initialise(input_filename);
     m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",
       total_entries_in_file_);
   }
 
-
+  Log("ANNIEEvent store has "+std::to_string(total_entries_in_file_)+" entries",v_debug,verbosity_);
   Log("Loading entry " + std::to_string(current_entry_) + " from the"
     " ANNIEEvent input file \"" + input_filenames_.at(current_file_)
     + '\"', 1, verbosity_);
  
+  if (current_entry_ != 0) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   
+/*  std::map<unsigned long,std::vector<Hit>> *TDCHit = nullptr;
+  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCHit);
+  std::cout <<"LoadANNIEEvent tool: TDCHit size = "<<TDCHit->size()<<std::endl;
+*/
   if ( current_entry_ >= total_entries_in_file_ ) {
     ++current_file_;
     if ( current_file_ >= input_filenames_.size() ) {
@@ -88,6 +94,7 @@ bool LoadANNIEEvent::Execute() {
       need_new_file_ = true;
     }
   }
+
 
   return true;
 }
