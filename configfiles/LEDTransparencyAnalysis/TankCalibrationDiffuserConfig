@@ -1,7 +1,7 @@
 # TankCalibrationDiffuser Config File
 
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
-OutputFile LEDRun1140S0LED6 #Output root prefix name for the current run
+OutputFile LEDRun1166S0LED6_AllPMTs #Output root prefix name for the current run
 NBinsTimeTotal 500		#number of bins for summary time histogram
 TimeTotalMin -10		#left limit of range for summary time histogram
 TimeTotalMax 100		#right limit of range for summary time histogram
@@ -12,8 +12,8 @@ NBinsTime 200			#number of bins for single time histograms
 TimeMin -10.			#left limit of range for single time histograms
 TimeMax 30.			#right limit of range for single time histograms
 NBinsCharge 200			#number of bins for single charge histograms
-ChargeMin 0.			#left limit of range for single charge histograms
-ChargeMax 0.004			#right limit of range for single charge histograms
+ChargeMin -0.004	#left limit of range for single charge histograms
+ChargeMax 0.016		#right limit of range for single charge histograms
 NBinsStartTimeTotal 500         #number of bins for summary start time histograms
 NBinsStartTime 200              #number of bins for start time histograms
 StartTimeMin 350.               #left limit of range for start time histograms
@@ -57,12 +57,12 @@ DiffuserZ 0.      		#z-position of the diffuser ball
 ToleranceCharge 0.5		#tolerance of fit single p.e. value for being classified as a bad PMT
 ToleranceTime 0.5		#tolerance of mean time value [ns] for being classified as a bad PMT
 FitMethod Gaus2			#fit function for charge, options: Gaus2Exp (2 times gaus + exp), Gaus2 (2 times gaus), Gaus (single gaus)
-Gaus1Constant 18.		#set start value for fit of first gaus (constant)
-Gaus1Mean 0.0005			#set start value for fit of first gaus (mean)
+Gaus1Constant 1000.		#set start value for fit of first gaus (constant)
+Gaus1Mean 0.			#set start value for fit of first gaus (mean)
 Gaus1Sigma 0.0005			#set start value for fit of first gaus (sigma)
 Gaus2Constant 10.		#set start value for fit of second gaus (constant), if applicable
-Gaus2Mean 0.002			#set start value for fit of second gaus (mean), if applicable
-Gaus2Sigma 0.002			#set start value for fit of second gaus (sigma), if applicable
+Gaus2Mean 0.0005			#set start value for fit of second gaus (mean), if applicable
+Gaus2Sigma 0.001			#set start value for fit of second gaus (sigma), if applicable
 ExpConstant 1			#set start value for fit of exponential (constant), if applicable
 ExpDecay -1			#set start value for fit of exponential (decay), if applicable
 

@@ -80,7 +80,8 @@ class PhaseIIADCHitFinder : public Tool {
     std::vector<ADCPulse> find_pulses_bywindow(
       const Waveform<unsigned short>& raw_minibuffer_data,
       const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
-      std::vector<std::vector<int>> adc_windows, const unsigned long& channel_key) const;
+      std::vector<std::vector<int>> adc_windows, const unsigned long& channel_key,
+      bool MaxHeightPulseOnly) const;
 
     //Takes the ADC pulse vectors (one per minibuffer) and converts them to a vector of hits
     std::vector<Hit> convert_adcpulses_to_hits(unsigned long channel_key,std::vector<std::vector<ADCPulse>> pulses);

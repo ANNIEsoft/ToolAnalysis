@@ -1,6 +1,8 @@
 verbosity 0
 
-PulseFindingApproach full_window
+UseLEDWaveforms 1
+PulseFindingApproach full_window_maxpeak
+#PulseFindingApproach fixed_window
 #WindowIntegrationDB ./configfiles/LEDPulseAnalysis/TankPMTWindows.txt
 
 #PulseFindingApproach threshold

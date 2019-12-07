@@ -1,0 +1,7 @@
+# Dummy config file
+verbosity 2
+NumBaselineSamples 6
+NumSubWaveforms 5
+PCritical 0.01
+WindowIntegrationDB ./configfiles/LEDSPEAnalysis/TankPMTWindows.txt
+MakeCalLEDWaveforms 1
