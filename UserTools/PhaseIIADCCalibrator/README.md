@@ -48,4 +48,17 @@ NumBaselineSamples int
 NumSubWaveforms int
   Number of sub-waveforms to grab from the beginning of raw waveforms
 
+MakeCalLEDWaveforms int
+  If true, PhaseIIADCCalibrator takes raw waveforms and produces smaller 
+  raw and calibrated waveforms using the ADC windows defined in the 
+  WindowIntegrationDB file.  These are stored into the ANNIEEvent booststore
+  in "CalibratedLEDADCData" and "RAWLEDADCData".
+
+WindowIntegrationDB string
+  File path to a text file with lines all of the line structure:
+  channel_key,window_min,window_max.  A raw and calibrated waveform will
+  be produced for each window range specified for each channel_key.  Multiple
+  windows can be specified for each channel.
+
+```
 ```

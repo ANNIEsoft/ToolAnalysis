@@ -24,6 +24,14 @@ Two files are produced after running this tool:
 Describe any configuration variables for PrintADCData.
 
 ```
+
+UseLEDWaveforms [int]
+Specifies whether to show and save full waveforms from the DAQ, or 
+the LED waveform windows produced from running 
+PhaseIIADCCalibrator with MakeLEDWaveforms set at 1.  
+1=Show/save LED waveforms, 
+0= Show/save raw waveforms.
+
 verbosity [int]
 controls the amount of print output (0- lowest, 5-highest)
 

@@ -13,27 +13,27 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
 
   // Load the default threshold settings for finding pulses
   verbosity = 3;
-  adc_threshold_db = "none";
-  adc_window_db = "none";
-  default_adc_threshold = BOGUS_INT;
-  pulse_finding_approach = "threshold";
   use_led_waveforms = false;
+  pulse_finding_approach = "threshold";
+  adc_threshold_db = "none";
+  default_adc_threshold = 5;
   threshold_type = "relative";
   pulse_window_type = "fixed";
   pulse_window_start_shift = -3;
   pulse_window_end_shift = 25;
+  adc_window_db = "none"; //Used when pulse_finding_approach="fixed_windows"
 
   //Load any configurables set in the config file
   m_variables.Get("verbosity",verbosity); 
   m_variables.Get("UseLEDWaveforms", use_led_waveforms); 
   m_variables.Get("PulseFindingApproach", pulse_finding_approach); 
-  m_variables.Get("ADCThresholdDB", adc_threshold_db); 
-  m_variables.Get("WindowIntegrationDB", adc_window_db); 
+  m_variables.Get("ADCThresholdDB", adc_threshold_db);
   m_variables.Get("DefaultADCThreshold", default_adc_threshold);
   m_variables.Get("DefaultThresholdType", threshold_type);
   m_variables.Get("PulseWindowType", pulse_window_type);
   m_variables.Get("PulseWindowStart", pulse_window_start_shift);
   m_variables.Get("PulseWindowEnd", pulse_window_end_shift);
+  m_variables.Get("WindowIntegrationDB", adc_window_db); 
 
   if ((pulse_window_start_shift > 0) || (pulse_window_end_shift) < 0){
     Log("PhaseIIADCHitFinder Tool: WARNING... trigger threshold crossing will not be inside pulse window.  Threshold" 
@@ -53,7 +53,8 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   if(adc_window_db != "none") channel_window_map = this->load_integration_window_map(adc_window_db);
   
   hit_map = new std::map<unsigned long,std::vector<Hit>>;
-  
+
+  //Set in CStore for tools to know and log this later 
   m_data->CStore.Set("ADCThreshold",default_adc_threshold);
   return true;
 }

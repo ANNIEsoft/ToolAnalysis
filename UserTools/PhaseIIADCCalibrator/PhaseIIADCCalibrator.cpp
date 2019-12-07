@@ -12,11 +12,13 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
 
   // Assign a transient data pointer
   m_data = &data;
+
   //Set defaults in case config file has no entries
   p_critical = 0.01;
   num_sub_waveforms = 6;
   num_baseline_samples = 5;
   adc_window_db = "none";
+  make_led_waveforms = false;
 
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("PCritical", p_critical);
