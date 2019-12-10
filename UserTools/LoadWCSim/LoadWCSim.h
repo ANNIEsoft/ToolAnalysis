@@ -19,6 +19,8 @@
 #include "Detector.h"
 #include "BeamStatus.h"
 
+#include "TObjectTable.h"
+
 namespace{
 	//PMTs
 	constexpr int ADC_CHANNELS_PER_CARD=4;

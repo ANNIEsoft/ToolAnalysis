@@ -206,6 +206,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	}
 	
 	//anniegeom->GetChannel(0); // trigger InitChannelMap
+
+	m_data->CStore.Set("UserEvent",false);			//enables the ability for other tools to select a specific event number
+
 	
 	return true;
 }
@@ -215,6 +218,30 @@ bool LoadWCSim::Execute(){
 	
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
+
+	//check if another tool has specified a specific evnumber to load (currently e.g. the EventDisplay has the ability to do that)
+	bool user_event;
+	m_data->CStore.Get("UserEvent",user_event);
+	if (user_event){
+		m_data->CStore.Set("UserEvent",false);
+		MCTriggernum = 0;			//look at first trigger for user-specified event numbers
+		int user_evnum;
+		m_data->CStore.Get("LoadEvNr",user_evnum);
+		MCEventNum = user_evnum;
+		// Pre-load entry so we can stop the loop if it this was the last one in the chain
+		if(MCEventNum>=MaxEntries && MaxEntries>0){
+			cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
+			m_data->vars.Set("StopLoop",1);
+		} else {
+			int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+			std::cout <<"Trying to get next event, MCEventNum: "<<MCEventNum<<", nbytesread: "<<nbytesread<<std::endl;
+			if(nbytesread<=0){
+				Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
+				m_data->vars.Set("StopLoop",1);
+				return true;
+			}
+		}
+	}
 	
 	if(verbosity) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
@@ -311,7 +338,8 @@ bool LoadWCSim::Execute(){
 					if((abs(nextrack->GetIpnu())==13)||
 					   (abs(nextrack->GetIpnu())==211)||
 					   (nextrack->GetIpnu()==111)){
-						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+							if (verbosity > 0) {
+								std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
 								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
 								<<" track id "<<nextrack->GetId()
 								<< ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
@@ -322,12 +350,13 @@ bool LoadWCSim::Execute(){
 								<< ", " + to_string(nextrack->GetStop(2)/100.)
 								<< ")"
 								<<std::endl;
+							}
 					}
 /*
 					// Print primary muons or the first track
 					if(((nextrack->GetIpnu()==13) && (nextrack->GetParenttype()==0))||
 					   (MCParticles->size()==0)){
-						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+						if (verbosity) std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
 								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
 								<<" track id "<<nextrack->GetId()
 								<<" at position "<<MCParticles->size()<<std::endl;
@@ -335,7 +364,7 @@ bool LoadWCSim::Execute(){
 					// print pions
 					if((abs(nextrack->GetIpnu())==211)||
 					   (nextrack->GetIpnu()==111)){
-						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+						if (verbosity) std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
 								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
 								<<" track id "<<nextrack->GetId()
 								<< ", start vertex (" + to_string(nextrack->GetStart(0)/100.)
@@ -350,7 +379,7 @@ bool LoadWCSim::Execute(){
 					// print muons or gammas from pion decays
 					if(((abs(nextrack->GetIpnu())==13)||(nextrack->GetIpnu()==22)) &&
 					   ((abs(nextrack->GetParenttype())==211)||(nextrack->GetParenttype()==111))){
-						std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
+						if (verbosity) std::cout<<"Found "<<nextrack->GetIpnu()<<" with parent pdg "
 								<<nextrack->GetParenttype()<<", flag "<<nextrack->GetFlag()
 								<<" track id "<<nextrack->GetId()
 								<<" at position "<<MCParticles->size()<<std::endl;
@@ -622,12 +651,15 @@ bool LoadWCSim::Execute(){
 			m_data->vars.Set("StopLoop",1);
 		} else {
 			int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+			std::cout <<"Trying to get next event, MCEventNum: "<<MCEventNum<<", nbytesread: "<<nbytesread<<std::endl;
 			if(nbytesread<=0){
 				Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
 				m_data->vars.Set("StopLoop",1);
 			}
 		}
 	}
+
+	//gObjectTable->Print();
 	return true;
 }
 
@@ -841,6 +873,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 					  detectorstatus::ON,
 					  0.);
 		
+
 		// construct the channel associated with this PMT
 		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
 		pmt_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
