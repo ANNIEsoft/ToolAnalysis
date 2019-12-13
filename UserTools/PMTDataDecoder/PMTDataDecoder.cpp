@@ -166,7 +166,18 @@ bool PMTDataDecoder::Execute(){
     Log("PMTDataDecoder Tool: New run encountered.  Clearing event building maps",v_message,verbosity); 
     SequenceMap.clear();
     TriggerTimeBank.clear();
-    WaveBank.clear(); 
+    WaveBank.clear();
+    CurrentRunNum = RunNumber;
+  }
+  else if (SubRunNumber != CurrentSubrunNum){ //New run has been encountered
+    Log("PMTDataDecoder Tool: New subrun encountered.",v_message,verbosity); 
+    //TODO: Even though sequence IDs continue in a subrun, they haven't been
+    // EXACTLY in sequence with the end of the prev. run.  Will they be eventually?
+    // This prevents freezing up on OUT OF SEQUENCE!! errors
+    SequenceMap.clear();
+    TriggerTimeBank.clear();
+    WaveBank.clear();
+    CurrentSubrunNum = SubRunNumber;
   }
 
   // Show the total entries in this file  
