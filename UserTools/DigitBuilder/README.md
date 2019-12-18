@@ -12,11 +12,16 @@ By default, all individual PMT true hit times and charges (with time smeared in 
 are loaded into a RecoDigit.  True LAPPD hit times, with a 100 ps time smearing, are
 loaded.
 
+The threshold in charge for creating 1 digit can be configured with the `DigitChargeThr` 
+variable in the config file.
+
 ## Configuration
 
 Describe any configuration variables for Interface.
 
 ```
+isMC bool
+
 ParametricModel bool
 
 If this bool is set to 1, the PMT parametric model of hits is used to fill RecoDigits.
@@ -28,5 +33,9 @@ To form a PMT parametric model hit, the following process is performed for a PMT
 PhotoDetectorConfiguration string
 This configuration is used to decide what digit types are loaded into RecoDigits and
 used for reconstruction.  Options are (LAPPD_only, PMT_only, or All)
+
+LAPPDIDFile string         
+
+DigitChargeThr double
 
 ```
