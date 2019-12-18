@@ -24,7 +24,6 @@ class MCRecoEventLoader: public Tool {
   bool fGetPiKInfo;
   bool fGetNRings;
   int fParticleID;
-  bool fParticleSelection;
   double xshift;
   double yshift;
   double zshift;

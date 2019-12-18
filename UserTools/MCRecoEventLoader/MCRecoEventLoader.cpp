@@ -14,7 +14,6 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   
   ///////////////////// Defaults for Config ///////////////
   fGetPiKInfo = 1;
-  fParticleSelection = 1;
   fGetNRings = 1;
   fParticleID = 13;
   xshift = 0.;
@@ -25,7 +24,6 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
   m_variables.Get("GetNRings",fGetNRings);
-  m_variables.Get("ParticleSelection",fParticleSelection);
   m_variables.Get("ParticleID", fParticleID);
   m_variables.Get("xshift", xshift);
   m_variables.Get("yshift", yshift);
@@ -112,14 +110,12 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
     for(unsigned int particlei=0; particlei<fMCParticles->size(); particlei++){
       MCParticle aparticle = fMCParticles->at(particlei);
       //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-      if(fParticleSelection){
       if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
       if(aparticle.GetPdgCode()!=fParticleID) continue;       // not a muon
       primarymuon = aparticle;                       // note the particle
       mufound=true;                                  // note that we found it
       m_data->Stores.at("RecoEvent")->Set("PdgPrimary",fParticleID);  //save the primary particle pdg code to the RecoEvent store
       break;                                         // won't have more than one primary muon
-      }
     }
   } else {
     Log("MCRecoEventLoader::  Tool: No MCParticles in the event!",v_error,verbosity);
