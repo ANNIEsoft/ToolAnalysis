@@ -90,21 +90,27 @@ class EventDisplay: public Tool {
     bool use_tapplication;
     double marker_size;
     std::string output_format;
-
+    bool isData;
+    std::string user_trigger_label;
+    std::string histogram_config;
 
     //define event variables
-    int evnum;
+    uint32_t evnum;
     int mcevnum;
     int runnumber;
     int subrunnumber;
     int terminate_execution;  //for continuous execution of multiple events, prompt user input
-    std::map<unsigned long,vector<MCHit>>* TDCData;
+    uint16_t MCTriggernum;
+    std::map<unsigned long,vector<MCHit>>* TDCData=nullptr;
+    std::map<unsigned long,vector<Hit>>* TDCData_Data=nullptr;
     TimeClass* EventTime=nullptr;
     BeamStatusClass* BeamStatus=nullptr;
     std::vector<TriggerClass>* TriggerData;
     std::vector<MCParticle>* mcparticles=nullptr;
     std::map<unsigned long, std::vector<MCHit>>* MCHits=nullptr;
+    std::map<unsigned long, std::vector<Hit>>* Hits=nullptr;
     std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits=nullptr;
+    std::map<unsigned long, std::vector<LAPPDHit>>* LAPPDHits=nullptr;
     RecoVertex *TrueVertex = nullptr;
     RecoVertex *TrueStopVertex = nullptr;
     bool EventCutStatus;
@@ -138,6 +144,8 @@ class EventDisplay: public Tool {
     double min_y;
     double min_mrd_y, max_mrd_y, min_mrd_x, max_mrd_x, min_mrd_z, max_mrd_z;
     double mrd_diffz, mrd_diffy, mrd_diffx;
+    std::vector<int> n_particles_ring;
+
 
     //bool variables for schematic hit plot
     bool facc_hit;
@@ -256,6 +264,8 @@ class EventDisplay: public Tool {
     TH1F *charge_PMTs = nullptr;
     TH2F *charge_time_PMTs = nullptr;
     std::map<int,TH1F*> charge_LAPPDs;
+    double pmt_Qmax, pmt_Qmin, pmt_Tmax, pmt_Tmin, lappd_Qmax, lappd_Qmin, lappd_Tmax, lappd_Tmin;
+    int pmt_Qbins, pmt_Tbins, lappd_Qbins, lappd_Tbins;
 
     //legends
     TLegend *leg_charge = nullptr;

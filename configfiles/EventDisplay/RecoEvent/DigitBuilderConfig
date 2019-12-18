@@ -8,4 +8,4 @@ IsMC 1
 PhotoDetectorConfiguration All
 #File must be in /pnfs/ space when loading on Fermilab cluster
 LAPPDIDFile ./configfiles/VertexReco/PhaseIIRecoTruth/LAPPDIDs.txt
-DigitChargeThr 1
+DigitChargeThr 10

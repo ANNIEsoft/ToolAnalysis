@@ -40,6 +40,8 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
   current_file_ = 0u;
   need_new_file_ = true;
  
+  m_data->CStore.Set("UserEvent",false);                  //enables the ability for other tools to select a specific event number
+
   return true;
 }
 
@@ -70,11 +72,19 @@ bool LoadANNIEEvent::Execute() {
       total_entries_in_file_);
   }
 
-
+  bool user_event;
+  m_data->CStore.Get("UserEvent",user_event);
+  if (user_event){
+    m_data->CStore.Set("UserEvent",false);
+    int user_evnum;
+    m_data->CStore.Get("LoadEvNr",user_evnum);
+    if (user_evnum < total_entries_in_file_ && user_evnum >=0) current_entry_ = user_evnum;
+  }
+  
   Log("Loading entry " + std::to_string(current_entry_) + " from the"
     " ANNIEEvent input file \"" + input_filenames_.at(current_file_)
     + '\"', 1, verbosity_);
- 
+  
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   

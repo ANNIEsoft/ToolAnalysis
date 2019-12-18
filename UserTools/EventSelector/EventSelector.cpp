@@ -75,8 +75,8 @@ bool EventSelector::Execute(){
     return false; 
   }
 
-	// Retrive digits from RecoEvent
-	auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
+  // Retrive digits from RecoEvent
+  auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
   if(not get_ok){
   	Log("EventSelector  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
   	return false;
@@ -84,44 +84,19 @@ bool EventSelector::Execute(){
 
   // BEGIN CUTS USING TRUTH INFORMATION //
 
-  // Write the results of all cuts to RecoEvent store, independent of whether they were issued or not
-  bool passNoPiK = this->EventSelectionNoPiK();
-  m_data->Stores["RecoEvent"]->Set("NoPiK",passNoPiK);
-
   // get truth vertex information 
   auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
   if(!get_truevtx){ 
       Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
       return false; 
   }
-  bool passMCFVCut= this->EventSelectionByFV(true);
-  m_data->Stores["RecoEvent"]->Set("EventFV",passMCFVCut);
-  bool passMCPMTCut= this->EventSelectionByPMTVol(true);
-  m_data->Stores["RecoEvent"]->Set("EventPMTVol",passMCPMTCut);
   
   auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
   if(!get_truestopvtx){ 
       Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
       return false; 
   }
-  bool passMCMRDCut= this->EventSelectionByMCTruthMRD();
-  m_data->Stores.at("RecoEvent")->Set("MRDStop",passMCMRDCut);
-
-  bool isPromptTrigger= this->PromptTriggerCheck();
-  m_data->Stores.at("RecoEvent")->Set("PromptTrigger",isPromptTrigger);
-
-  bool HasEnoughHits = this->NHitCountCheck(fNHitmin);
-  m_data->Stores.at("RecoEvent")->Set("NHitCutPassed",HasEnoughHits);
  
-  bool IsInsideEnergyWindow = this->EnergyCutCheck(Emin,Emax);
-  m_data->Stores.at("RecoEvent")->Set("InEnergyWindow",IsInsideEnergyWindow);
-
-  bool IsMuon = this->ParticleCheck(13);
-  m_data->Stores.at("RecoEvent")->Set("IsMuon",IsMuon);
-
-  bool IsElectron = this->ParticleCheck(11);
-  m_data->Stores.at("RecoEvent")->Set("IsElectron",IsElectron);
-  
   bool IsSingleRing = this->EventSelectionByMCSingleRing();
   m_data->Stores.at("RecoEvent")->Set("SingleRingEvent",IsSingleRing);
 
@@ -133,47 +108,56 @@ bool EventSelector::Execute(){
 
   // Fill the EventSelection mask for the cuts that are supposed to be applied
   if (fMCPiKCut){
+    bool passNoPiK = this->EventSelectionNoPiK();
     fEventApplied |= EventSelector::kFlagMCPiK; 
     if(!passNoPiK) fEventFlagged |= EventSelector::kFlagMCPiK;
   }  
 
   if(fMCFVCut || fMCPMTVolCut){
     if (fMCFVCut){
+      bool passMCFVCut= this->EventSelectionByFV(true);
       fEventApplied |= EventSelector::kFlagMCFV; 
       if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
     }
     if (fMCPMTVolCut){
+      bool passMCPMTCut= this->EventSelectionByPMTVol(true);
       fEventApplied |= EventSelector::kFlagMCPMTVol; 
       if(!passMCPMTCut) fEventFlagged |= EventSelector::kFlagMCPMTVol;
     }
   }
 
   if(fMCMRDCut){
+    bool passMCMRDCut= this->EventSelectionByMCTruthMRD();
     fEventApplied |= EventSelector::kFlagMCMRD; 
     if(!passMCMRDCut) fEventFlagged |= EventSelector::kFlagMCMRD;
   }
 
   if(fPromptTrigOnly){
+    bool isPromptTrigger= this->PromptTriggerCheck();
     fEventApplied |= EventSelector::kFlagPromptTrig; 
     if(!isPromptTrigger) fEventFlagged |= EventSelector::kFlagPromptTrig;
   }
 
   if(fNHitCut){
+    bool HasEnoughHits = this->NHitCountCheck(fNHitmin);
     fEventApplied |= EventSelector::kFlagNHit;
     if(!HasEnoughHits) fEventFlagged |= EventSelector::kFlagNHit;
   }
 
   if (fMCEnergyCut){
+    bool IsInsideEnergyWindow = this->EnergyCutCheck(Emin,Emax);
     fEventApplied |= EventSelector::kFlagMCEnergyCut;
     if (!IsInsideEnergyWindow) fEventFlagged |= EventSelector::kFlagMCEnergyCut;
   }
 
   if (fMCIsMuonCut){
+    bool IsMuon = this->ParticleCheck(13);
     fEventApplied |= EventSelector::kFlagMCIsMuon;
     if (!IsMuon) fEventFlagged |= EventSelector::kFlagMCIsMuon;
   }
 
   if (fMCIsElectronCut){
+    bool IsElectron = this->ParticleCheck(11);
     fEventApplied |= EventSelector::kFlagMCIsElectron;
     if (!IsElectron) fEventFlagged |= EventSelector::kFlagMCIsElectron;
   }
@@ -411,10 +395,7 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
   double mrdEndZ = fGeometry.GetMrdEnd()*100-168.1;
   double mrdHeightY = fGeometry.GetMrdHeight()*100;                                                                                     
   double mrdWidthX = fGeometry.GetMrdWidth()*100;
-  cout<<"muonStopX, Y, Z = "<<muonStopX<<", "<<muonStopY<<", "<<muonStopZ<<endl;
-  cout<<"mrdStartZ, mrdStopZ = "<<mrdStartZ<<", "<<mrdEndZ<<endl;
-  cout<<"mrdWidthX = "<<mrdWidthX<<endl;
-  cout<<"mrdHeightY = "<<mrdHeightY<<endl;
+  Log("EventSelector tool: Read in MuonStop (X,Y,Z) = ("+std::to_string(muonStopX)+","+std::to_string(muonStopY)+","+std::to_string(muonStopZ)+")");
   if(muonStopZ<mrdStartZ || muonStopZ>mrdEndZ
   	|| muonStopX<-1.0*mrdWidthX || muonStopX>mrdWidthX
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {

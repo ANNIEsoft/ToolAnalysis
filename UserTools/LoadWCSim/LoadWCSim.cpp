@@ -208,7 +208,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	//anniegeom->GetChannel(0); // trigger InitChannelMap
 
 	m_data->CStore.Set("UserEvent",false);			//enables the ability for other tools to select a specific event number
-
+	triggers_event = 0;
 	
 	return true;
 }
@@ -225,16 +225,30 @@ bool LoadWCSim::Execute(){
 	if (user_event){
 		m_data->CStore.Set("UserEvent",false);
 		MCTriggernum = 0;			//look at first trigger for user-specified event numbers
-		int user_evnum;
+		int user_evnum; 
+		uint16_t currentTriggernum;
+		bool check_further_triggers=false;
 		m_data->CStore.Get("LoadEvNr",user_evnum);
+		m_data->CStore.Get("CheckFurtherTriggers",check_further_triggers);
+		m_data->CStore.Get("CurrentTriggernum",currentTriggernum);
 		MCEventNum = user_evnum;
+		currentTriggernum++;
+		std::cout <<"check_further_triggers = "<<check_further_triggers<<", currentTriggernum = "<<currentTriggernum<<std::endl;
+		std::cout <<"Number of Events: "<<triggers_event<<std::endl;
+		if (check_further_triggers){
+			if (currentTriggernum!=triggers_event){
+				//there is a further trigger in the previous event, load the entry
+				MCEventNum = user_evnum - 1;
+				MCTriggernum=currentTriggernum;
+			}		
+		}
 		// Pre-load entry so we can stop the loop if it this was the last one in the chain
 		if(MCEventNum>=MaxEntries && MaxEntries>0){
-			cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
+			std::cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
 			m_data->vars.Set("StopLoop",1);
 		} else {
 			int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
-			std::cout <<"Trying to get next event, MCEventNum: "<<MCEventNum<<", nbytesread: "<<nbytesread<<std::endl;
+			if (verbosity > v_debug) std::cout <<"LoadWCSim tool: Trying to get next event, MCEventNum: "<<MCEventNum<<", nbytesread: "<<nbytesread<<std::endl;
 			if(nbytesread<=0){
 				Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
 				m_data->vars.Set("StopLoop",1);
@@ -242,12 +256,13 @@ bool LoadWCSim::Execute(){
 			}
 		}
 	}
-	
 	if(verbosity) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
 	MCHits->clear();
 	TDCData->clear();
+
+	triggers_event = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
 	
 	//for(int MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
 		if(verbosity>1) cout<<"getting triggers"<<endl;
