@@ -14,13 +14,25 @@ It is possible to produce additional 1D time and charge histograms if `Histogram
 
 ## Data
 
-EventDisplay needs access to the hit PMT information in ANNIEEvent. So far, it is only used on simulation therefore needing access to
+EventDisplay needs access to the hit PMT information in `ANNIEEvent`/`RecoEvent`. It is possible to use the `EventDisplay` tool both on simulation and on real data, the read-in objects will then be either `Hit` or `MCHit` object derivatives. The variable `IsData` should be set in the configuration file to signalize whether we are looking at a data or MC file. 
 
-**MCHits** `map<unsigned long, std::vector<Hit>>`
+**MCHits** `map<unsigned long, std::vector<MCHit>>`
 * Takes this data from the `ANNIEEvent` store and loops over the hit times / charges for all PMTs
 
-**MCLAPPDHits** `map<unsigned long, std::vector<LAPPDHit>>`
+**MCLAPPDHits** `map<unsigned long, std::vector<MCLAPPDHit>>`
 * Takes this data from the `ANNIEEvent` store and loops over the hit times / charges for all LAPPDs
+
+**TDCData** `map<unsigned long, std::vector<MCHit>>`
+* Takes this data from the `ANNIEEvent` store and loops over the hit times for the MRD PMTs
+
+**Hits** `map<unsigned long, std::vector<Hit>>`
+* Equivalent of `MCHits` for data
+
+**LAPPDHits** `map<unsigned long, std::vector<LAPPDHit>>`
+* Equivalent of `MCLAPPDHits` for data
+
+**TDCData_Data** `map<unsigned long, std::vector<Hit>>`
+* Equivalent of `TDCData` for data
 
 **RecoDigits** `std::vector<RecoDigit>`
 * Takes this data from the `RecoEvent` store and loops over all digits (times/charges for all PMTs + LAPPDs)
@@ -52,8 +64,10 @@ HistogramPlots 0	#decide whether histogram plots (charge/time) are shown in addi
 MarkerSize 2		#size of PMT circles (default: 2)
 UserInput 0		#If true, manually decide if next event shown
 Graphics 0		#should a TApplication be launched?
-OutputFile evdisplay_annieevent_beam_muon_FV_PMTVol_MRDStop_DigitChargeThr1_HitCleaner_9
+OutputFile evdisplay_annieevent_beam_muon
 DetectorConfiguration ANNIEp2v6	#specify the detector configuration used in the simulation (options e.g. ANNIEp2v2, ANNIEp2v4, ANNIEp2v6)
+IsData 0    # Are we looking at a MC file (0) or a data file (1)?
+HistogramConfig ./configfiles/EventDisplay/Data/histogram_config_calibration.txt # Configuration file for the histograms to be plotted (optional, otherwise default values are taken)
 
 verbose 1
 ```
