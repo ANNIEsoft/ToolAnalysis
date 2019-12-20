@@ -105,3 +105,4 @@
 #include "MCHitToHitComparer.h"
 #include "MCPropertiesToTree.h"
 #include "CalcClassificationVars.h"
+#include "StoreClassificationVars.h"

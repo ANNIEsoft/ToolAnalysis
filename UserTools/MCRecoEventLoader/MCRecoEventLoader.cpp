@@ -107,6 +107,7 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
       if(aparticle.GetPdgCode()!=fParticleID) continue;       // not a muon
       primarymuon = aparticle;                       // note the particle
       mufound=true;                                  // note that we found it
+      m_data->Stores.at("RecoEvent")->Set("PdgPrimary",fParticleID); //save the primary particle pdg to the RecoEvent store
       break;                                         // won't have more than one primary muon
     }
   } else {
