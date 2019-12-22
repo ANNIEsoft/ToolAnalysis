@@ -173,17 +173,26 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   std::string str_time = "_time";
   std::string str_charge = "_charge";
   std::string str_lappd = "_lappd";
+  std::string str_Rings = "_Rings";
+  std::string str_MRD = "_MRD";
   std::string rootfile_name = cnn_outpath + str_root;
   std::string csvfile_name = cnn_outpath + str_charge + str_csv;
   std::string csvfile_time_name = cnn_outpath + str_time + str_csv;
   std::string csvfile_lappd_name = cnn_outpath + str_lappd + str_charge + str_csv;
   std::string csvfile_lappd_time_name = cnn_outpath + str_lappd + str_time + str_csv;
+  std::string csvfile_MRD = cnn_outpath + str_MRD + str_csv;
+  std::string csvfile_Rings = cnn_outpath + str_Rings + str_csv;
+
+
 
   file = new TFile(rootfile_name.c_str(),"RECREATE");
   outfile.open(csvfile_name.c_str());
   outfile_time.open(csvfile_time_name.c_str());
   outfile_lappd.open(csvfile_lappd_name.c_str());
   outfile_lappd_time.open(csvfile_lappd_time_name.c_str());
+  outfile_Rings.open(csvfile_Rings.c_str());
+  outfile_MRD.open(csvfile_MRD.c_str());
+
 
   return true;
 }
@@ -200,10 +209,16 @@ bool CNNImage::Execute(){
   m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles); //needed to retrieve true vertex and direction
   m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
   m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits", MCLAPPDHits);
+  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
   m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
   m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
+  m_data->Stores.at("ANNIEEvent")->Get("NumMrdTimeClusters",mrdeventcounter);
+  m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
+  
+  std::cout << "Rings: " << nrings<< endl ;
+  std::cout << "TDCdata" << mrdeventcounter<< endl;
 
   //clear variables & containers
   charge.clear();
@@ -400,6 +415,72 @@ bool CNNImage::Execute(){
     }
   }
 
+
+  //---------------------------------------------------------------
+  //-------------- Readout MRD ------------------------------------
+  //---------------------------------------------------------------
+  int num_mrd_paddles=0;
+  int num_mrd_layers=0;
+  int num_mrd_conslayers=0;
+  int num_mrd_adjacent=0;
+  double mrd_padperlayer = 0.;
+  bool layer_occupied[11] = {0};
+  double mrd_paddlesize[11];
+  std::vector<std::vector<double>> mrd_hits;
+  for (int i_layer=0; i_layer<11; i_layer++){
+    std::vector<double> empty_hits;
+    mrd_hits.push_back(empty_hits);
+  }
+  std::vector<int> temp_cons_layers;
+  if(TDCData->size()==0){
+      std::cout <<"No TDC hits"<<std::endl;
+  } else {
+      std::vector<int> temp_cons_layers;
+      for(auto&& anmrdpmt : (*TDCData)){
+          unsigned long chankey = anmrdpmt.first;
+          Detector *thedetector = geom->ChannelToDetector(chankey);
+          if(thedetector->GetDetectorElement()!="MRD") {
+              continue;                 // this is a veto hit, not an MRD hit.
+          }
+          num_mrd_paddles++;
+          int detkey = thedetector->GetDetectorID();
+          Paddle *apaddle = geom->GetDetectorPaddle(detkey);
+          int layer = apaddle->GetLayer();
+          layer_occupied[layer-1]=true;
+          if (apaddle->GetOrientation()==1) {
+              mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+              mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+          }
+          else if (apaddle->GetOrientation()==0) {
+              mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+              mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+          }
+      }
+      if (num_mrd_paddles > 0) {
+          for (int i_layer=0;i_layer<11;i_layer++){
+              if (layer_occupied[i_layer]==true) {
+                  num_mrd_layers++;
+                  if (num_mrd_conslayers==0) num_mrd_conslayers++;
+                  else {
+                      if (layer_occupied[i_layer-1]==true) num_mrd_conslayers++;
+                      else {
+                          temp_cons_layers.push_back(num_mrd_conslayers);
+                          num_mrd_conslayers=0;
+                      }
+                  }
+              }
+              for (unsigned int i_hitpaddle=0; i_hitpaddle<mrd_hits.at(i_layer).size(); i_hitpaddle++){
+                  for (unsigned int j_hitpaddle= i_hitpaddle+1; j_hitpaddle < mrd_hits.at(i_layer).size(); j_hitpaddle++){
+                      if (fabs(mrd_hits.at(i_layer).at(i_hitpaddle)-mrd_hits.at(i_layer).at(j_hitpaddle))-mrd_paddlesize[i_layer] < 0.001) num_mrd_adjacent++;
+                  }
+              }       
+          }
+      } 
+      std::vector<int>::iterator it = std::max_element(temp_cons_layers.begin(),temp_cons_layers.end());
+      if (it != temp_cons_layers.end()) num_mrd_conslayers = *it;
+      else num_mrd_conslayers=0;
+      mrd_padperlayer = double(num_mrd_paddles)/num_mrd_layers;
+  }
   //---------------------------------------------------------------
   //-------------- Create CNN images ------------------------------
   //---------------------------------------------------------------
@@ -489,8 +570,15 @@ bool CNNImage::Execute(){
 
   //save information from histogram to csv file
   //(1 line corresponds to 1 event, histogram entries flattened out to a 1D array)
+ 
+
+
+
 
   if (bool_primary && bool_geometry && bool_nhits) {
+    // safe Rings and MRD information
+    outfile_Rings << nrings << endl;
+    outfile_MRD << mrdeventcounter<< ","<< num_mrd_paddles <<","<< num_mrd_layers<<","<<num_mrd_conslayers<<","<<num_mrd_adjacent<<","<<mrd_padperlayer<< endl;
 
     //save root histograms
     hist_cnn->Write();
@@ -556,7 +644,8 @@ bool CNNImage::Finalise(){
   outfile_time.close();
   outfile_lappd.close();
   outfile_lappd_time.close();
-
+  outfile_Rings.close();
+  outfile_MRD.close();
   return true;
 }
 

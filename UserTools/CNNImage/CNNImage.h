@@ -54,6 +54,15 @@ class CNNImage: public Tool {
   std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
   std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits = nullptr;
   Geometry *geom = nullptr;
+  int mrdeventcounter;
+  std::map<unsigned long, std::vector<MCHit>>* TDCData = nullptr;
+ 
+
+  // RecoEvent
+  int nrings;
+
+
+
 
   //geometry variables
   double tank_radius;
@@ -68,7 +77,7 @@ class CNNImage: public Tool {
   int npmtsX, npmtsY, nlappdX, nlappdY;
 
   //I/O variables
-  ofstream outfile, outfile_time, outfile_lappd, outfile_lappd_time;
+  ofstream outfile, outfile_time, outfile_lappd, outfile_lappd_time, outfile_Rings, outfile_MRD;
   TFile *file = nullptr;
 
   //mctruth information

@@ -5,5 +5,5 @@ DataMode Normal			#options: Charge/Time
 SaveMode PMT-wise		#options: Geometric / PMT-wise
 DimensionX 16			#choose something suitable (32/64/...)
 DimensionY 20			#choose something suitable (32/64/...)
-OutputFile beam_test0		#csv file name
+OutputFile beam_muon_FV_PMTVol_1
 DetectorConf ANNIEp2v6		#specify the detector version used in simulation
