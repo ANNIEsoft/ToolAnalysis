@@ -571,11 +571,14 @@ bool CNNImage::Execute(){
   //save information from histogram to csv file
   //(1 line corresponds to 1 event, histogram entries flattened out to a 1D array)
  
+  bool passed_eventselection;
+  m_data->Stores["RecoEvent"]->Get("EventCutStatus",passed_eventselection);
+  std::cout <<"passed_eventselection: "<<passed_eventselection<<std::endl;
 
 
 
-
-  if (bool_primary && bool_geometry && bool_nhits) {
+  //if (bool_primary && bool_geometry && bool_nhits) {
+  if (passed_eventselection) {
     // safe Rings and MRD information
     outfile_Rings << nrings << endl;
     outfile_MRD << mrdeventcounter<< ","<< num_mrd_paddles <<","<< num_mrd_layers<<","<<num_mrd_conslayers<<","<<num_mrd_adjacent<<","<<mrd_padperlayer<< endl;
