@@ -37,6 +37,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   }
 
   m_data->CStore.Get("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  m_data->CStore.Get("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
 
   //////////////////////initialize subrun index//////////////
@@ -212,7 +213,13 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
     this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
     std::vector<uint16_t> TheWaveform = apair.second;
     std::vector<int> CrateSpace{CrateNum,SlotNum,ChannelID};
-    if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)==0){
+    unsigned long ChannelKey;
+    if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)>0){
+      ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
+    }
+    else if (AuxCrateSpaceToChannelNumMap.count(CrateSpace)>0){
+      ChannelKey = AuxCrateSpaceToChannelNumMap.at(CrateSpace);
+    } else{
       Log("ANNIEEventBuilder:: Cannot find channel key for crate space entry: ",v_error, verbosity);
       Log("ANNIEEventBuilder::CrateNum "+to_string(CrateNum),v_error, verbosity);
       Log("ANNIEEventBuilder::SlotNum "+to_string(SlotNum),v_error, verbosity);
@@ -220,7 +227,6 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
       Log("ANNIEEventBuilder:: Passing over the wave; PMT DATA LOST",v_error, verbosity);
       continue;
     }
-    unsigned long ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
     //FIXME: We're feeding Waveform class expects a double, not a uint64_t (?)
     Waveform<uint16_t> TheWave(ClockTime, TheWaveform);
     //Placing waveform in a vector in case we want a hefty-mode minibuffer storage eventually
