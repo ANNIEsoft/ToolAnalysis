@@ -53,6 +53,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
 bool PMTDataDecoder::Execute(){
 
+
   //Set in CStore that there's currently no new tank data available
   m_data->CStore.Set("NewTankPMTDataAvailable",false);
 
@@ -277,15 +278,32 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_error) std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
+  //Transfer finished waves from this execute loop to the CStore
   if(FinishedPMTWaves.empty()){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
   } else {
 	Log("PMTDataDecoder Tool: Saving Finished PMT waves into CStore.",v_debug, verbosity);
     m_data->CStore.Get("FinishedPMTWaves",CStorePMTWaves);
-    CStorePMTWaves.insert(FinishedPMTWaves.begin(),FinishedPMTWaves.end());
+    //Iterate over FinishedPMTWaves and populate the CStore's copy 
+    std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it;
+    for ( it = FinishedPMTWaves.begin(); it != FinishedPMTWaves.end(); it++){
+      uint64_t this_counter = it->first;
+      std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it = 
+          CStorePMTWaves.find(this_counter);
+      if(it != CStorePMTWaves.end()){ //This timestamp already has some finished waves
+        CStorePMTWaves.at(this_counter).insert(FinishedPMTWaves.at(this_counter).begin(),
+                FinishedPMTWaves.at(this_counter).end());
+      } else {
+        CStorePMTWaves.emplace(this_counter,FinishedPMTWaves.at(this_counter));
+      }
+    }
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
+
+  //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
+  FinishedPMTWaves.clear();
+  
   m_data->CStore.Set("RunInfoPostgress",Postgress);
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
@@ -295,8 +313,6 @@ bool PMTDataDecoder::Execute(){
   Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
           to_string(CStorePMTWaves.size()),v_debug, verbosity);
 
-  std::cout << "PMT WAVE CSTORE SET SUCCESSFULLY.  Clearing FinishedPMTWaves map from this file." << std::endl;
-  FinishedPMTWaves.clear();
 
   if(CDEntryNum == totalentries){
     Log("PMTDataDecoder Tool: Run part completed.",v_warning, verbosity);
