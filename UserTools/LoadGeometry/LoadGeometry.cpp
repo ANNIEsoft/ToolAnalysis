@@ -423,6 +423,7 @@ bool LoadGeometry::ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
     }
 
     //Integers
+    if (AuxChannelLegendEntries.at(i) == "channel_num") channel_num = ivalue;
     if (AuxChannelLegendEntries.at(i) == "signal_crate") signal_crate = ivalue;
     if (AuxChannelLegendEntries.at(i) == "signal_slot") signal_slot = ivalue;
     if (AuxChannelLegendEntries.at(i) == "signal_channel") signal_channel = ivalue;

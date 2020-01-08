@@ -94,7 +94,7 @@ class LoadGeometry: public Tool {
 
   //Vector of strings indicating variables of interest and their data types in
   //The AuxChannel file.  Used in the LoadAuxiliaryChannels() method
-  std::vector<std::string> AuxChannelIntegerValues{"signal_crate","signal_slot","signal_channel"};
+  std::vector<std::string> AuxChannelIntegerValues{"channel_num","signal_crate","signal_slot","signal_channel"};
   std::vector<std::string> AuxChannelStringValues{"channel_type","notes"};
 
   //verbosity levels: if 'verbosity' < this level, the message type will be logged.
