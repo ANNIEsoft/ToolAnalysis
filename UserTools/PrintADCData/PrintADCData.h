@@ -40,6 +40,9 @@ class PrintADCData: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   void MakeYPhiHists();
+  void PrintInfoInData(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData,
+        bool isAuxData); // Fill ROOT file with histograms from either PMT ADC data or auxiliary channel data.
+                         // For now, all Aux Data will be output to the file regardless of any pulse activity
   void SaveOccupancyInfo(uint32_t Run, uint32_t Subrun);
   void ClearOccupancyInfo();
   ofstream result_file;
@@ -61,6 +64,7 @@ class PrintADCData: public Tool {
   double tank_center_x, tank_center_y, tank_center_z;
 
   bool use_led_waveforms;
+  int pulse_threshold;
   std::string outputfile;
   TFile *file_out = nullptr;
 
@@ -79,6 +83,7 @@ class PrintADCData: public Tool {
   long EntryNum;
 
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
+  std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCAuxData;
   std::map<unsigned long, std::vector< std::vector<ADCPulse>> > RecoADCHits;
   int RunNumber;
 

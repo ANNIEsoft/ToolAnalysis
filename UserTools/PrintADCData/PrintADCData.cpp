@@ -17,11 +17,13 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   LEDsUsed = "unknown";
   LEDSetpoints = "unknown";
   use_led_waveforms = false;
+  pulse_threshold = 5;
 
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("SaveWaveforms",SaveWaves);
+  m_variables.Get("PulseThreshold", pulse_threshold); 
   m_variables.Get("UseLEDWaveforms", use_led_waveforms); 
   m_variables.Get("WavesWithPulsesOnly",PulsesOnly);
   m_variables.Get("MaxWaveforms",MaxWaveforms);
@@ -81,6 +83,7 @@ bool PrintADCData::Execute(){
   if(verbosity>3) std::cout << "PrintADCData: looping through entries" << std::endl;
   if(use_led_waveforms) m_data->Stores["ANNIEEvent"]->Get("RawLEDADCData",RawADCData);
   else m_data->Stores["ANNIEEvent"]->Get("RawADCData",RawADCData);
+  m_data->Stores["ANNIEEvent"]->Get("RawADCAuxData",RawADCAuxData);
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNum);
   m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNum);
   if (CurrentRun == -1){
@@ -99,20 +102,54 @@ bool PrintADCData::Execute(){
   	Log("PrintADCData Tool: No reconstructed pulses! Did you run the ADCHitFinder first?",v_error,verbosity); 
   	return false;
   };
+
+  //Print out the raw ADC waveforms to the opened ROOT file
   if ( RawADCData.empty() ) {
     Log("PrintADCData Error: Found an empty RawADCData entry in event", 0,
       verbosity);
   }
-  else { 
-    for (const auto& temp_pair : RawADCData) {
-      const auto& channel_key = temp_pair.first;
-      
-      //Get the number of pulses in this PMT's waveform
+  else {
+    this->PrintInfoInData(RawADCData,false);
+  }
+  if ( RawADCAuxData.empty() ) {
+    Log("PrintADCData Error: Found an empty RawADCData entry in event", 0,
+      verbosity);
+  }
+  else {
+    this->PrintInfoInData(RawADCAuxData,true);
+  }
+  return true;
+}
+
+
+bool PrintADCData::Finalise(){
+  file_out->cd();
+  this->MakeYPhiHists();
+  if(SaveWaves) file_out->Close();
+  this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);
+  result_file.close();
+  std::cout << "PrintADCData exitting" << std::endl;
+  return true;
+}
+
+
+void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData,
+        bool isAuxData)
+{
+  for (const auto& temp_pair : RawADCData) {
+    const auto& channel_key = temp_pair.first;
+    
+    //If working with PMT ADC data, fill out pulse occupancy information
+    if(!isAuxData){
       std::vector<std::vector<ADCPulse>> buffer_pulses = RecoADCHits.at(channel_key);
       int num_pulses = 0;
       for (int i = 0; i < buffer_pulses.size(); i++){
-        int pulses_this_buffer = buffer_pulses.at(i).size();
-        num_pulses += pulses_this_buffer;
+          std::vector<ADCPulse> onebuffer_pulses = buffer_pulses.at(i);
+          for (int j = 0; j < onebuffer_pulses.size(); j++){
+            ADCPulse apulse = onebuffer_pulses.at(j);
+            int pulse_height = apulse.raw_amplitude() - apulse.baseline();
+            if (pulse_height >= pulse_threshold) num_pulses +=1;
+          }
       }
 
       //Fill in pulse log information
@@ -132,90 +169,77 @@ bool PrintADCData::Execute(){
       if(PulsesOnly){
         if (num_pulses==0) continue;
       }
-      if(verbosity>3) std::cout << "Waveform info for channel " << channel_key << std::endl;
-      //Default running: raw_waveforms only has one entry.  If we go to a
-      //hefty-mode style of running though, this could have multiple minibuffers
-      //const std::vector< Waveform<unsigned short> > raw_waveforms;
-      //raw_waveforms = temp_pair.second;
-      const auto& raw_waveforms = temp_pair.second;
-      //Length of waveform vector should be 1 in normal mode, but greater than
-      //1 in a hefty-like format (multiple waveform buffers)
-      if(verbosity>3)std::cout << "Waveform size: " << raw_waveforms.size() << std::endl;
-      for (int j=0; j < raw_waveforms.size(); j++){
-        if(verbosity>4)std::cout << "Printing waveform info for buffer at index " << j << std::endl;
-        Waveform<unsigned short> awaveform = raw_waveforms.at(j);
-        if(verbosity>4)std::cout << "Waveform start time: " << std::setprecision(16) << awaveform.GetStartTime() << std::endl;
-        std::vector<unsigned short>* thewave=awaveform.GetSamples();
-        if(verbosity>4){
-          std::cout << "BEGIN SAMPLES" << std::endl;
-          for (int i=0; i < thewave->size(); i++){
-            std::cout << thewave->at(i) << std::endl;
-          }
+    }
+
+    if(verbosity>3) std::cout << "Waveform info for channel " << channel_key << std::endl;
+    //Default running: raw_waveforms only has one entry.  If we go to a
+    //hefty-mode style of running though, this could have multiple minibuffers
+    //const std::vector< Waveform<unsigned short> > raw_waveforms;
+    //raw_waveforms = temp_pair.second;
+    const auto& raw_waveforms = temp_pair.second;
+    //Length of waveform vector should be 1 in normal mode, but greater than
+    //1 in a hefty-like format (multiple waveform buffers)
+    if(verbosity>3)std::cout << "Waveform size: " << raw_waveforms.size() << std::endl;
+    for (int j=0; j < raw_waveforms.size(); j++){
+      if(verbosity>4)std::cout << "Printing waveform info for buffer at index " << j << std::endl;
+      Waveform<unsigned short> awaveform = raw_waveforms.at(j);
+      if(verbosity>4)std::cout << "Waveform start time: " << std::setprecision(16) << awaveform.GetStartTime() << std::endl;
+      std::vector<unsigned short>* thewave=awaveform.GetSamples();
+      if(verbosity>4){
+        std::cout << "BEGIN SAMPLES" << std::endl;
+        for (int i=0; i < thewave->size(); i++){
+          std::cout << thewave->at(i) << std::endl;
         }
       }
-      // Method directly taken from Marcus' PrintADCData 
-	  // make a numberline to act as the x-axis of the plotting TGraph
-      // Each Waveform represents one minibuffer on this channel
-      if(SaveWaves && (WaveformNum < MaxWaveforms)){
-        Log("PrintADCData Tool: Looping over "+to_string(raw_waveforms.size())
-             +" minibuffers",v_debug,verbosity);
-        for(Waveform<uint16_t> wfrm : raw_waveforms){
-          std::vector<uint16_t>* samples = wfrm.GetSamples();
-          double StartTime = wfrm.GetStartTime();
-          int SampleLength = samples->size();
-          numberline.resize(SampleLength);
-          std::iota(numberline.begin(),numberline.end(),0);
-          upcastdata.resize(SampleLength);
-          
-          // for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
-          Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
-          for(int samplei=0; samplei<SampleLength; samplei++){
-              upcastdata.at(samplei) = samples->at(samplei);
-          }
-          //I hate my life
-          std::string ckey = to_string(channel_key);
-          if(mb_graph){ delete mb_graph; }
-          mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
-          std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
-          //Place graph into correct channel_key tree
-          mb_graph->SetName(graph_name.c_str());
-          std::string title = graph_name+";Time since acquisition start (ADC);Sample value (ADC)";
-          mb_graph->SetTitle(title.c_str());
-          std::map<std::string, TDirectory * >::iterator it = ChanKeyToDirectory.find(ckey);
-          if(it == ChanKeyToDirectory.end()){ //No Tree made yet for this channel key.  make it
-            ChanKeyToDirectory.emplace(ckey, file_out->mkdir(ckey.c_str()));
-          }
-          ChanKeyToDirectory.at(ckey)->cd();
-          mb_graph->Write();
-          WaveformNum+=1;
-        } // end loop over minibuffers
-      }
+    }
+    // Method directly taken from Marcus' PrintADCData 
+    // make a numberline to act as the x-axis of the plotting TGraph
+    // Each Waveform represents one minibuffer on this channel
+    if(SaveWaves && (WaveformNum < MaxWaveforms)){
+      Log("PrintADCData Tool: Looping over "+to_string(raw_waveforms.size())
+           +" minibuffers",v_debug,verbosity);
+      for(Waveform<uint16_t> wfrm : raw_waveforms){
+        std::vector<uint16_t>* samples = wfrm.GetSamples();
+        double StartTime = wfrm.GetStartTime();
+        int SampleLength = samples->size();
+        numberline.resize(SampleLength);
+        std::iota(numberline.begin(),numberline.end(),0);
+        upcastdata.resize(SampleLength);
+        
+        // for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
+        Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
+        for(int samplei=0; samplei<SampleLength; samplei++){
+            upcastdata.at(samplei) = samples->at(samplei);
+        }
+        //I hate my life
+        std::string ckey = to_string(channel_key);
+        if(mb_graph){ delete mb_graph; }
+        mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
+        std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
+        //Place graph into correct channel_key tree
+        mb_graph->SetName(graph_name.c_str());
+        std::string title = graph_name+";Time since acquisition start (ADC);Sample value (ADC)";
+        mb_graph->SetTitle(title.c_str());
+        std::map<std::string, TDirectory * >::iterator it = ChanKeyToDirectory.find(ckey);
+        if(it == ChanKeyToDirectory.end()){ //No Tree made yet for this channel key.  make it
+          ChanKeyToDirectory.emplace(ckey, file_out->mkdir(ckey.c_str()));
+        }
+        ChanKeyToDirectory.at(ckey)->cd();
+        mb_graph->Write();
+        WaveformNum+=1;
+      } // end loop over minibuffers
     }
   }
-  return true;
-}
-
-
-bool PrintADCData::Finalise(){
-  file_out->cd();
-  this->MakeYPhiHists();
-  if(SaveWaves) file_out->Close();
-  this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);
-  result_file.close();
-  std::cout << "PrintADCData exitting" << std::endl;
-  return true;
 }
 
 void PrintADCData::SaveOccupancyInfo(uint32_t Run, uint32_t Subrun)
 {
-  unsigned short adc_threshold;
   //TODO: eventually, also load individual channel thresholds
-  m_data->CStore.Get("ADCThreshold",adc_threshold);
   result_file << "run_number," << Run << std::endl;
   result_file << "subrun_number," << Subrun << std::endl;
   result_file << "LEDs_used," << LEDsUsed << std::endl;
   result_file << "LED_setpoints," << LEDSetpoints << std::endl;
-  result_file << "adc_threshold," << adc_threshold << std::endl;
+  result_file << "pulse_threshold," << pulse_threshold << std::endl;
   result_file << "channel_key,numwaves,numpulses,numwaveswithapulse" << std::endl;
   m_variables.Get("LEDsUsed",LEDsUsed);
   m_variables.Get("LEDSetpoints",LEDSetpoints);
