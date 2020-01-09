@@ -11,7 +11,11 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
   m_data= &data; //assigning transient data pointer
 
+
+
+  dimensionLAPPD = 1;
   //read in configuration file
+
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("DetectorConf",detector_config);
@@ -20,6 +24,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DimensionX",dimensionX);
   m_variables.Get("DimensionY",dimensionY);
   m_variables.Get("OutputFile",cnn_outpath);
+  m_variables.Get("DimensionLAPPD",dimensionLAPPD);
+
 
   if (data_mode != "Normal" && data_mode != "Charge-Weighted" && data_mode != "TimeEvolution") data_mode = "Normal";
   if (save_mode != "Geometric" && save_mode != "PMT-wise") save_mode = "Geometric";
@@ -29,8 +35,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   }
   npmtsX = 16;    //in every row, we have 16 PMTs (8 sides, 2 PMTs per side per row)
   npmtsY = 6;     //we have 6 rows of PMTs (excluding top and bottom PMTs)
-  nlappdX = 20;
-  nlappdY = 20;
+  nlappdX = dimensionLAPPD;
+  nlappdY = dimensionLAPPD;
 
   //get geometry
 
@@ -243,11 +249,11 @@ bool CNNImage::Execute(){
     total_charge_lappd.emplace(detkey,0);
     std::vector<std::vector<double>> temp_lappdXY;
     std::vector<std::vector<int>> temp_int_lappdXY;;
-    for (int lappdX=0; lappdX<20; lappdX++){
+    for (int lappdX=0; lappdX<dimensionLAPPD; lappdX++){
       std::vector<double> temp_lappdY;
       std::vector<int> temp_int_lappdY;
-      temp_lappdY.assign(20,0.);
-      temp_int_lappdY.assign(20,0);
+      temp_lappdY.assign(dimensionLAPPD,0.);
+      temp_int_lappdY.assign(dimensionLAPPD,0);
       temp_lappdXY.push_back(temp_lappdY);
       temp_int_lappdXY.push_back(temp_int_lappdY);
     }
@@ -359,12 +365,12 @@ bool CNNImage::Execute(){
         //std::cout <<"LAPPDHit, local hit : "<<x_local_lappd<<", "<<y_local_lappd<<", global hit: "<<x_lappd<<", "<<y_lappd<<", "<<z_lappd<<std::endl;
         double lappd_charge = 1.0;
         double t_lappd = ahit.GetTime();
-        int binx_lappd = round((x_local_lappd+0.1)/0.2*20);       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
-        int biny_lappd = round((y_local_lappd+0.1)/0.2*20);
+        int binx_lappd = round((x_local_lappd+0.1)/0.2*dimensionLAPPD);       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
+        int biny_lappd = round((y_local_lappd+0.1)/0.2*dimensionLAPPD);
         if (binx_lappd < 0) binx_lappd=0;         //FIXME: hits outside of -10cm...10cm should probably be just discarded
         if (biny_lappd < 0) biny_lappd=0;         //FIXME: hits outside of -10cm...10cm should probably be just discarded
-        if (binx_lappd > 19) binx_lappd = 19;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
-        if (biny_lappd > 19) biny_lappd = 19;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (binx_lappd > dimensionLAPPD-1) binx_lappd = dimensionLAPPD-1;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (biny_lappd > dimensionLAPPD-1) biny_lappd = dimensionLAPPD-1;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
         //std::cout <<"binx_lappd: "<<binx_lappd<<", biny_lappd: "<<biny_lappd<<std::endl;
         //std::cout <<"charge: "<<std::endl;
         //std::cout <<charge_lappd[detkey].at(binx_lappd).at(biny_lappd)<<std::endl;
@@ -377,8 +383,8 @@ bool CNNImage::Execute(){
           if (max_time_lappds < t_lappd) max_time_lappds = t_lappd;
           if (min_time_lappds > t_lappd) min_time_lappds = t_lappd;
         }
-        for (int i_lappdX=0; i_lappdX<20; i_lappdX++){
-          for (int i_lappdY=0; i_lappdY<20; i_lappdY++){
+        for (int i_lappdX=0; i_lappdX<dimensionLAPPD; i_lappdX++){
+          for (int i_lappdY=0; i_lappdY<dimensionLAPPD; i_lappdY++){
             if (hits_lappd[detkey].at(i_lappdX).at(i_lappdY)>0) time_lappd[detkey].at(i_lappdX).at(i_lappdY)/=hits_lappd[detkey].at(i_lappdX).at(i_lappdY); 
           }
         }
@@ -507,9 +513,9 @@ bool CNNImage::Execute(){
     ss_title_lappd<<"EventDisplay (CNN), LAPPD "<<i_lappd<<", Event "<<evnum;
     ss_hist_time_lappd<<"hist_time_lappd"<<i_lappd<<"_ev"<<evnum;
     ss_title_time_lappd<<"EventDisplay Time (CNN), LAPPD "<<i_lappd<<", Event "<<evnum;
-    TH2F *hist_lappd = new TH2F(ss_hist_lappd.str().c_str(),ss_title_lappd.str().c_str(),20,0,20,20,0,20);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
+    TH2F *hist_lappd = new TH2F(ss_hist_lappd.str().c_str(),ss_title_lappd.str().c_str(),dimensionLAPPD,0,dimensionLAPPD,dimensionLAPPD,0,dimensionLAPPD);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
     hists_lappd.push_back(hist_lappd);
-    TH2F *hist_time_lappd = new TH2F(ss_hist_time_lappd.str().c_str(),ss_title_time_lappd.str().c_str(),20,0,20,20,0,20);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
+    TH2F *hist_time_lappd = new TH2F(ss_hist_time_lappd.str().c_str(),ss_title_time_lappd.str().c_str(),dimensionLAPPD,0,dimensionLAPPD,dimensionLAPPD,0,dimensionLAPPD);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
     hists_time_lappd.push_back(hist_time_lappd);
   }
 

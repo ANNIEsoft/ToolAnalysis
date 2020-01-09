@@ -44,7 +44,7 @@ class CNNImage: public Tool {
   int dimensionX;        //dimension of the CNN image in x-direction
   int dimensionY;        //dimension of the CNN image in y-direction
   int verbosity;
-
+  int dimensionLAPPD;
   //ANNIEEvent variables
   int runnumber;
   int subrunnumber;

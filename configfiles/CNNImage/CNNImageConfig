@@ -5,5 +5,6 @@ DataMode Normal			#options: Charge/Time
 SaveMode PMT-wise		#options: Geometric / PMT-wise
 DimensionX 16			#choose something suitable (32/64/...)
 DimensionY 20			#choose something suitable (32/64/...)
-OutputFile beam_muon_FV_PMTVol_1
+DimensionLAPPD 1                # Size of the LAPPD pannal 
+OutputFile beam_muon_FV_PMTVol_4996
 DetectorConf ANNIEp2v6		#specify the detector version used in simulation
