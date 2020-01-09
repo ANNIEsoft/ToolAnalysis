@@ -33,6 +33,9 @@ class CNNImage: public Tool {
 
   void draw_cnn_image(); ///< Fill the hit pattern information in a TH2
   void ConvertPositionTo2D(Position xyz_pos, double &x, double &y); ///<Convert 3D position into 2D rolled up coordinates
+  void ConvertPositionTo2D_Top(Position xyz_pos, double &x, double &y); ///<Convert 3D position into 2D rolled up coordinates (top PMTs only)
+  void ConvertPositionTo2D_Bottom(Position xyz_pos, double &x, double &y); ///<Convert 3D position into 2D rolled up coordinates (bottom PMTs only)
+
 
  private:
 
@@ -43,6 +46,8 @@ class CNNImage: public Tool {
   std::string save_mode;  //How is the PMT information supposed to be written out? Geometric/PMT-wise
   int dimensionX;        //dimension of the CNN image in x-direction
   int dimensionY;        //dimension of the CNN image in y-direction
+  int dimensionLAPPD;    //dimension of LAPPD CNN images (both directions, square)
+  bool includeTopBottom;
   int verbosity;
 
   //ANNIEEvent variables
@@ -56,13 +61,9 @@ class CNNImage: public Tool {
   Geometry *geom = nullptr;
   int mrdeventcounter;
   std::map<unsigned long, std::vector<MCHit>>* TDCData = nullptr;
- 
 
   // RecoEvent
   int nrings;
-
-
-
 
   //geometry variables
   double tank_radius;
@@ -73,7 +74,7 @@ class CNNImage: public Tool {
   double min_y, max_y, min_y_lappd, max_y_lappd;
   int n_tank_pmts;
   double size_top_drawing = 0.1;
-  std::vector<double> vec_pmt2D_x, vec_pmt2D_y, vec_lappd2D_x, vec_lappd2D_y;
+  std::vector<double> vec_pmt2D_x, vec_pmt2D_x_Top, vec_pmt2D_y_Top, vec_pmt2D_x_Bottom, vec_pmt2D_y_Bottom, vec_pmt2D_y, vec_lappd2D_x, vec_lappd2D_y;
   int npmtsX, npmtsY, nlappdX, nlappdY;
 
   //I/O variables
