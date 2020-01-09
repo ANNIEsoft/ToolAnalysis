@@ -1,3 +1,4 @@
 #MRDPaddleEfficiency Config file
 
-verbosity 3
+OutputFile MRDTest28commonstopp0_6000
+verbosity 1

@@ -17,6 +17,7 @@
 
 #include "TH1D.h"
 #include "TFile.h"
+#include "TTree.h"
 
 
 /**
@@ -24,9 +25,9 @@
  *
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
-* $Author: B.Richards $
-* $Date: 2019/05/28 10:44:00 $
-* Contact: b.richards@qmul.ac.uk
+* $Author: M.Nieslony $
+* $Date: 2020/01/07 18:16:00 $
+* Contact: mnieslon@uni-mainz.de
 */
 
 class MrdPaddleEfficiency: public Tool {
@@ -38,7 +39,7 @@ class MrdPaddleEfficiency: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   bool FindPaddleIntersection(Position startpos, Position endpos, double &x, double &y, double z);
-
+  bool FindPaddleChankey(double x, double y, int layer, unsigned long &chankey);
 
 
  private:
@@ -46,7 +47,10 @@ class MrdPaddleEfficiency: public Tool {
  	int verbosity;
  	std::vector<BoostStore>* theMrdTracks;                        // the reconstructed tracks
  	std::string MRDTriggertype;
- 	Geometry *geom = nullptr;
+	std::string outputfile; 
+	Geometry *geom = nullptr;
+
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 
  	int numsubevs;
  	int numtracksinev;
@@ -54,11 +58,14 @@ class MrdPaddleEfficiency: public Tool {
  	Position StartVertex;
  	Position StopVertex;
  	std::vector<int> PMTsHit;
+	int numpmtshit;
  	int MrdTrackID;
  	double HtrackFitChi2;
  	double VtrackFitChi2;
  	std::vector<int> LayersHit;
- 	std::map<int,std::vector<int>> paddlesInTrackReco;
+ 	int numlayershit;
+	std::map<int,std::vector<int>> paddlesInTrackReco;
+	double tracklength;
 
  	ofstream property_file;
 
@@ -68,12 +75,14 @@ class MrdPaddleEfficiency: public Tool {
  	TH1D *hist_vtrackfitchi2 = nullptr;
  	TH1D *hist_layershit = nullptr;
  	TH1D *hist_tracklength = nullptr;
+	TTree *trackfit_tree = nullptr;
  	TFile *hist_file = nullptr;
 
  	std::map<int,std::map<unsigned long,TH1D*>> observed_MRDHits;
- 	std::map<int,TH1D*> expected_MRDHits;
+ 	std::map<int,std::map<unsigned long,TH1D*>> expected_MRDHits;
  	std::map<int,double> zLayers;
  	std::map<int,int> orientationLayers;
+	std::map<int,std::vector<unsigned long>> channelsLayers;
 
  	int v_error = 0;
  	int v_warning = 1;

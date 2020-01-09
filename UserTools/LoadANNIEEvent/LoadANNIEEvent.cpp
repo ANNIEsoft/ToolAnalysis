@@ -13,8 +13,10 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
 
   // Assign transient data pointer
   m_data= &data;
+  offset_evnum = 0;
 
   m_variables.Get("verbose", verbosity_);
+  m_variables.Get("EventOffset", offset_evnum);
 
   std::string input_list_filename;
   bool got_input_file_list = m_variables.Get("FileForListOfInputs",
@@ -39,6 +41,8 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
   current_entry_ = 0u;
   current_file_ = 0u;
   need_new_file_ = true;
+
+  current_entry_ += offset_evnum;
  
   return true;
 }
@@ -76,7 +80,7 @@ bool LoadANNIEEvent::Execute() {
     " ANNIEEvent input file \"" + input_filenames_.at(current_file_)
     + '\"', 1, verbosity_);
  
-  if (current_entry_ != 0) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
+  if (current_entry_ != offset_evnum) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   
