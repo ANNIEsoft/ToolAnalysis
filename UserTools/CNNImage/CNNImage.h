@@ -49,7 +49,6 @@ class CNNImage: public Tool {
   int dimensionLAPPD;    //dimension of LAPPD CNN images (both directions, square)
   bool includeTopBottom;
   int verbosity;
-  int dimensionLAPPD;
   //ANNIEEvent variables
   int runnumber;
   int subrunnumber;

@@ -450,8 +450,8 @@ bool CNNImage::Execute(){
   maximum_lappds = 0;
   for (unsigned int i_lappd = 0; i_lappd < lappd_detkeys.size();i_lappd++){
     unsigned long detkey = lappd_detkeys[i_lappd];
-    for (int iX=0; iX<20; iX++){
-      for (int iY=0; iY<20; iY++){
+    for (int iX=0; iX<dimensionLAPPD; iX++){
+      for (int iY=0; iY<dimensionLAPPD; iY++){
         if (charge_lappd[detkey].at(iX).at(iY) > maximum_lappds) maximum_lappds = charge_lappd[detkey].at(iX).at(iY);
       }
     }
@@ -614,8 +614,8 @@ bool CNNImage::Execute(){
     //fill the lappd-wise histograms
     for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size(); i_lappd++){
       unsigned long detkey = lappd_detkeys.at(i_lappd);
-      for (int iX=0; iX < 20; iX++){
-        for (int iY=0; iY < 20; iY++){
+      for (int iX=0; iX < dimensionLAPPD; iX++){
+        for (int iY=0; iY < dimensionLAPPD; iY++){
           double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/maximum_lappds;
           double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-min_time_lappds)/(max_time_lappds-min_time_lappds);
           if (lappd_time_fill < 0)  std::cout <<"Min LAPPD time: "<<min_time_lappds<<", Max LAPPD time: "<<max_time_lappds<<", time_lappd: "<<time_lappd[detkey].at(iX).at(iY)<<", fill time: "<<lappd_time_fill<<std::endl;
