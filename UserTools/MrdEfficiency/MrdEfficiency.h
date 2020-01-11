@@ -43,6 +43,7 @@ class MrdEfficiency: public Tool {
 	TCanvas* mrdEffCanv=nullptr;
 	double canvwidth, canvheight;
 	std::string plotDirectory;
+	TFile* fileout=nullptr; // save histograms/TGraphs to file
 	
 	// histograms
 	///////////////////
@@ -89,6 +90,9 @@ class MrdEfficiency: public Tool {
 	int num_primary_muons_that_missed_MRD = 0;
 	int num_primary_muons_reconstructed = 0;
 	int num_primary_muons_not_reconstructed = 0;
+	
+	// small function to calculate the error on an efficiency bin
+	double Efficiency_Error(int recod_events, int nrecod_events);
 	
 	// verbosity level
 	// if 'verbosity' < this level, the message type will be logged.

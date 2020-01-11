@@ -181,6 +181,10 @@ void wcsimT::Init(TTree *tree, TTree* geotree=0, TTree* optstree=0)
    if(branchok<0) cerr<<"Failed to set branch address for wcsimrootevent_mrd"<<endl;
    branchok = fChain->SetBranchAddress("wcsimrootevent_facc",&wcsimrootevent_facc, &b_wcsimrootevent_facc);
    if(branchok<0) cerr<<"Failed to set branch address for wcsimrootevent_facc"<<endl;
+   
+   // to prevent memory leaks we MUST call this:
+   fChain->SetAutoDelete(kTrue);
+   
    // XXX need to figure out how to uniquely identify fUniqueID and fBits branches to do this  XXX
 //   branchok = fChain->SetBranchAddress("fUniqueID", &fUniqueID, &b_wcsimrootevent_fUniqueID);
 //   if(branchok<0) cerr<<"Failed to set branch address for fUniqueID"<<endl;

@@ -102,7 +102,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 //	NumEvents=wcsimtree->GetEntries();
 //	WCSimEntry= new wcsimT(wcsimtree);
 	WCSimEntry= new wcsimT(MCFile.c_str(),verbosity);
-	NumEvents=WCSimEntry->GetEntries();
+//	NumEvents=WCSimEntry->GetEntries();
 	
 	gROOT->cd();
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
