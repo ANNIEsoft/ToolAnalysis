@@ -48,6 +48,11 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	m_data->Stores["MRDTracks"] = new BoostStore(true,0);
 	// the vector of MRD tracks found in the current event
 	theMrdTracks = new std::vector<BoostStore>(5);
+	// in case we don't find any tracks in the first event, we should populate the entry in the MRDTracks
+	// boost store so that other downstream tools that expect it will indeed find it.
+	m_data->Stores["MRDTracks"]->Set("MRDTracks",theMrdTracks,false);
+	m_data->Stores["MRDTracks"]->Set("NumMrdSubEvents",0);
+	m_data->Stores["MRDTracks"]->Set("NumMrdTracks",0);
 	
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geo);
 	//numvetopmts = geo->GetNumVetoPMTs();

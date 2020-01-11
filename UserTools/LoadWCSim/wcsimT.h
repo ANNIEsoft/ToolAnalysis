@@ -10,6 +10,8 @@
 #ifndef wcsimT_h
 #define wcsimT_h
 
+#include <limits>
+
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
@@ -131,7 +133,7 @@ Int_t wcsimT::GetEntry(Long64_t entry)
    if (ientry < 0) return -4;
 // Read contents of entry.
    if(verbose>3) cout<<" from fChain "<<fChain;
-   if (!fChain) return 0;
+   if (!fChain) return -1;
    if(verbose>3) cout<<" (which isn't 0)"<<endl;
    return fChain->GetEntry(entry);    // FIXME ientry or entry???
 }
@@ -227,7 +229,8 @@ TFile* wcsimT::GetCurrentFile(){
 }
 
 ULong64_t wcsimT::GetEntries(){
-   return fChain->GetEntries();
+//   return fChain->GetEntries();
+   return std::numeric_limits<ULong64_t>::max(); // THIS CRASHES WITH TCHAINS ON PNFS!
 }
 
 Bool_t wcsimT::Notify()
