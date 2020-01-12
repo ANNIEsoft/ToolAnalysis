@@ -12,6 +12,7 @@ TrackCombiner::TrackCombiner():Tool(){}
 bool TrackCombiner::Initialise(std::string configfile, DataModel &data){
 	
 	/////////////////// Useful header ///////////////////////
+	std::cout<<"Initializing TrackCombiner"<<std::endl;
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
 	
@@ -64,6 +65,7 @@ bool TrackCombiner::Execute(){
 	
 	// Get the reconstructed event vertex from the RecoEvent store
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Log("TrackCombiner Tool Executing",v_debug,verbosity);
 	if((m_data->Stores.count("RecoEvent")==0) && require_tank_event){
 		Log("TrackCombiner Tool: No RecoEvent booststore! Need to run vertex reconstruction tools first!",v_error,verbosity);
 		return false;

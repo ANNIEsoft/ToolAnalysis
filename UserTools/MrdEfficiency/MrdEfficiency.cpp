@@ -427,6 +427,7 @@ bool MrdEfficiency::Execute(){
 	
 	// put the matching map into the store
 	m_data->CStore.Set("Reco_to_True_Id_Map",Reco_to_True_Id_Map);
+	m_data->CStore.Set("True_to_Reco_Id_Map",True_to_Reco_Id_Map);
 	
 	// now measure the efficiency by comparing how many tracks were correctly matched,
 	// how many true tracks were not reconstructed, and how many reconstructed tracks had

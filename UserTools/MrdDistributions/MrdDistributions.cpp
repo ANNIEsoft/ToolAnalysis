@@ -31,6 +31,8 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("printTracks",printTracks);  // from the BoostStore
 	m_variables.Get("drawHistos",drawHistos);
 	m_variables.Get("plotDirectory",plotDirectory);
+	outfilename="NA"; # disables writing to ROOT file unless a name is specified
+	m_variables.Get("RootFileOutput",outfilename);
 	
 	bool isdir=false, plotDirectoryExists=false;
 	struct stat s;
@@ -53,6 +55,11 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	if(drawHistos && (!plotDirectoryExists || !isdir)){
 		Log("MrdDistributions Tool: output directory "+plotDirectory+" does not exist or is not a writable directory; please check and re-run.",v_error,verbosity);
 		return false;
+	}
+	
+	// make the ROOT file if requested
+	if(outfilename!="NA"){
+		outfile = new TFile::Open(outfilename.c_str(),"RECREATE","MRD Track Distributions");
 	}
 	
 	// scaler counters
@@ -90,91 +97,92 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 		if(not get_ok) tapplicationusers=1;
 		else tapplicationusers++;
 		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
-		
-		// TODO fix ranges
-		hnumsubevs = new TH1F("hnumsubevs","Number of MRD SubEvents",20,0,10);
-		hnumtracks = new TH1F("hnumtracks","Number of MRD Tracks",10,0,10);
-		hrun = new TH1F("hrun","Run Number Histogram",20,0,9);
-		hevent = new TH1F("hevent","Event Number Histogram",100,0,2000);
-		hmrdsubev = new TH1F("hsubevent","MRD SubEvent Number Histogram",20,0,19);
-		htrigger = new TH1F("htrigg","Trigger Number Histogram",10,0,9);
-		hhangle = new TH1F("hhangle","Track Angle in Top View",100,-TMath::Pi(),TMath::Pi());
-		hhangleerr = new TH1F("hhangleerr","Error in Track Angle in Top View",100,0,TMath::Pi());
-		hvangle = new TH1F("hvangle","Track Angle in Side View",100,-TMath::Pi(),TMath::Pi());
-		hvangleerr = new TH1F("hvangleerr","Error in Track Angle in Side View",100,0,TMath::Pi());
-		htotangle = new TH1F("htotangle","Track Angle from Beam Axis",100,0,TMath::Pi());
-		htotangleerr = new TH1F("htotangleerr","Error in Track Angle from Beam Axis",100,0,TMath::Pi());
-		henergyloss = new TH1F("henergyloss","Track Energy Loss in MRD",100,0,2200);
-		henergylosserr = new TH1F("henergylosserr","Error in Track Energy Loss in MRD",100,0,2200);
-		htracklength = new TH1F("htracklength","Total Track Length in MRD",100,0,220);
-		htrackpen = new TH1F("htrackpen","Track Penetration in MRD",100,0,200);
-		htrackpenvseloss = new TH2F("htrackpenvseloss","Track Penetration vs E Loss",100,0,220,100,0,2200);
-		htracklenvseloss = new TH2F("htracklenvseloss","Track Length vs E Loss",100,0,220,100,0,2200);
-		// htrackstart: this is the start of the reconstructed track. We know the particle got
-		// into the MRD, so we also have a back-projected entry point which is likely to be similar,
-		// and we have no true equivalent. If done right, it probably isn't much use, but for debug,
-		// it might highlight if we have tracks which missed the front few layers and still got reconstructed.
-		htrackstart = new TH3D("htrackstart","Reco MRD Track Start Vertices",100,-170,170,100,300,480,100,-230,220);
-		htrackstop = new TH3D("htrackstop","Reco MRD Track Stop Vertices",100,-170,170,100,300,480,100,-230,220);
-		hpep = new TH3D("hpep","Back Projected Tank Exit",100,-500,500,100,0,480,100,-330,320);
-		hmpep = new TH3D("hmpep","Back Projected MRD Entry",100,-500,500,100,0,480,100,-330,320);
-		
-		// truth versions for comparisons
-		hnumsubevstrue = new TH1F("hnumsubevstrue","Number of MRD SubEvents",20,0,10);
-		hnumtrackstrue = new TH1F("hnumtrackstrue","Number of MRD Tracks",10,0,10);
-		hhangletrue = new TH1F("hangle","Track Angle in Top View",100,-TMath::Pi(),TMath::Pi());
-		hvangletrue = new TH1F("vangle","Track Angle in Side View",100,-TMath::Pi(),TMath::Pi());
-		htotangletrue = new TH1F("htotangletrue","Track Angle from Beam Axis",100,0,TMath::Pi());
-		henergylosstrue = new TH1F("henergylosstrue","Track Energy Loss in MRD",100,0,2200);
-		htracklengthtrue = new TH1F("htracklengthtrue","Total Track Length in MRD",100,0,220);
-		htrackpentrue = new TH1F("htrackpentrue","Track Penetration in MRD",100,0,200);
-		htrackpenvselosstrue = new TH2F("htrackpenvselosstrue","Track Penetration vs E Loss",100,0,220,100,0,2200);
-		htracklenvselosstrue = new TH2F("htracklenvselosstrue","Track Length vs E Loss",100,0,220,100,0,2200);
-		htrackstoptrue = new TH3D("htrackstoptrue","MRD Track Stop Vertices",100,-170,170,100,300,480,100,-230,220);
-		hpeptrue = new TH3D("hpeptrue","Back Projected Tank Exit",100,-500,500,100,0,480,100,-330,320);
-		hmpeptrue = new TH3D("hmpeptrue","Back Projected MRD Entry",100,-500,500,100,0,480,100,-330,320);
-		
-		hnumsubevs->SetLineColor(kBlue);
-		hnumsubevstrue->SetLineColor(kRed);
-		hnumtracks->SetLineColor(kBlue);
-		hnumtrackstrue->SetLineColor(kRed);
-		hhangle->SetLineColor(kBlue);
-		hhangletrue->SetLineColor(kRed);
-		hvangle->SetLineColor(kBlue);
-		hvangletrue->SetLineColor(kRed);
-		htotangle->SetLineColor(kBlue);
-		htotangletrue->SetLineColor(kRed);
-		henergyloss->SetLineColor(kBlue);
-		henergylosstrue->SetLineColor(kRed);
-		htracklength->SetLineColor(kBlue);
-		htracklengthtrue->SetLineColor(kRed);
-		htrackpen->SetLineColor(kBlue);
-		htrackpentrue->SetLineColor(kRed);
-		
-		htrackpenvseloss->SetMarkerColor(kBlue);
-		htrackpenvselosstrue->SetMarkerColor(kRed);
-		htracklenvseloss->SetMarkerColor(kBlue);
-		htracklenvselosstrue->SetMarkerColor(kRed);
-		htrackstart->SetMarkerColor(kBlue);
-		htrackstop->SetMarkerColor(kBlue);
-		htrackstoptrue->SetMarkerColor(kRed);
-		hpep->SetMarkerColor(kBlue);
-		hpeptrue->SetMarkerColor(kRed);
-		hmpep->SetMarkerColor(kBlue);
-		hmpeptrue->SetMarkerColor(kRed);
-		
-		htrackpenvseloss->SetMarkerStyle(20);
-		htrackpenvselosstrue->SetMarkerStyle(20);
-		htracklenvseloss->SetMarkerStyle(20);
-		htracklenvselosstrue->SetMarkerStyle(20);
-		htrackstart->SetMarkerStyle(20);
-		htrackstop->SetMarkerStyle(20);
-		htrackstoptrue->SetMarkerStyle(20);
-		hpep->SetMarkerStyle(20);
-		hpeptrue->SetMarkerStyle(20);
-		hmpep->SetMarkerStyle(20);
-		hmpeptrue->SetMarkerStyle(20);
 	}
+	
+	// TODO fix ranges
+	gROOT->cd();
+	hnumsubevs = new TH1F("hnumsubevs","Number of MRD SubEvents",20,0,10);
+	hnumtracks = new TH1F("hnumtracks","Number of MRD Tracks",10,0,10);
+	hrun = new TH1F("hrun","Run Number Histogram",20,0,9);
+	hevent = new TH1F("hevent","Event Number Histogram",100,0,2000);
+	hmrdsubev = new TH1F("hsubevent","MRD SubEvent Number Histogram",20,0,19);
+	htrigger = new TH1F("htrigg","Trigger Number Histogram",10,0,9);
+	hhangle = new TH1F("hhangle","Track Angle in Top View",100,-TMath::Pi(),TMath::Pi());
+	hhangleerr = new TH1F("hhangleerr","Error in Track Angle in Top View",100,0,TMath::Pi());
+	hvangle = new TH1F("hvangle","Track Angle in Side View",100,-TMath::Pi(),TMath::Pi());
+	hvangleerr = new TH1F("hvangleerr","Error in Track Angle in Side View",100,0,TMath::Pi());
+	htotangle = new TH1F("htotangle","Track Angle from Beam Axis",100,0,TMath::Pi());
+	htotangleerr = new TH1F("htotangleerr","Error in Track Angle from Beam Axis",100,0,TMath::Pi());
+	henergyloss = new TH1F("henergyloss","Track Energy Loss in MRD",100,0,2200);
+	henergylosserr = new TH1F("henergylosserr","Error in Track Energy Loss in MRD",100,0,2200);
+	htracklength = new TH1F("htracklength","Total Track Length in MRD",100,0,220);
+	htrackpen = new TH1F("htrackpen","Track Penetration in MRD",100,0,200);
+	htrackpenvseloss = new TH2F("htrackpenvseloss","Track Penetration vs E Loss",100,0,220,100,0,2200);
+	htracklenvseloss = new TH2F("htracklenvseloss","Track Length vs E Loss",100,0,220,100,0,2200);
+	// htrackstart: this is the start of the reconstructed track. We know the particle got
+	// into the MRD, so we also have a back-projected entry point which is likely to be similar,
+	// and we have no true equivalent. If done right, it probably isn't much use, but for debug,
+	// it might highlight if we have tracks which missed the front few layers and still got reconstructed.
+	htrackstart = new TH3D("htrackstart","Reco MRD Track Start Vertices",100,-170,170,100,300,480,100,-230,220);
+	htrackstop = new TH3D("htrackstop","Reco MRD Track Stop Vertices",100,-170,170,100,300,480,100,-230,220);
+	hpep = new TH3D("hpep","Back Projected Tank Exit",100,-500,500,100,0,480,100,-330,320);
+	hmpep = new TH3D("hmpep","Back Projected MRD Entry",100,-500,500,100,0,480,100,-330,320);
+	
+	// truth versions for comparisons
+	hnumsubevstrue = new TH1F("hnumsubevstrue","Number of MRD SubEvents",20,0,10);
+	hnumtrackstrue = new TH1F("hnumtrackstrue","Number of MRD Tracks",10,0,10);
+	hhangletrue = new TH1F("hangle","Track Angle in Top View",100,-TMath::Pi(),TMath::Pi());
+	hvangletrue = new TH1F("vangle","Track Angle in Side View",100,-TMath::Pi(),TMath::Pi());
+	htotangletrue = new TH1F("htotangletrue","Track Angle from Beam Axis",100,0,TMath::Pi());
+	henergylosstrue = new TH1F("henergylosstrue","Track Energy Loss in MRD",100,0,2200);
+	htracklengthtrue = new TH1F("htracklengthtrue","Total Track Length in MRD",100,0,220);
+	htrackpentrue = new TH1F("htrackpentrue","Track Penetration in MRD",100,0,200);
+	htrackpenvselosstrue = new TH2F("htrackpenvselosstrue","Track Penetration vs E Loss",100,0,220,100,0,2200);
+	htracklenvselosstrue = new TH2F("htracklenvselosstrue","Track Length vs E Loss",100,0,220,100,0,2200);
+	htrackstoptrue = new TH3D("htrackstoptrue","MRD Track Stop Vertices",100,-170,170,100,300,480,100,-230,220);
+	hpeptrue = new TH3D("hpeptrue","Back Projected Tank Exit",100,-500,500,100,0,480,100,-330,320);
+	hmpeptrue = new TH3D("hmpeptrue","Back Projected MRD Entry",100,-500,500,100,0,480,100,-330,320);
+	
+	hnumsubevs->SetLineColor(kBlue);
+	hnumsubevstrue->SetLineColor(kRed);
+	hnumtracks->SetLineColor(kBlue);
+	hnumtrackstrue->SetLineColor(kRed);
+	hhangle->SetLineColor(kBlue);
+	hhangletrue->SetLineColor(kRed);
+	hvangle->SetLineColor(kBlue);
+	hvangletrue->SetLineColor(kRed);
+	htotangle->SetLineColor(kBlue);
+	htotangletrue->SetLineColor(kRed);
+	henergyloss->SetLineColor(kBlue);
+	henergylosstrue->SetLineColor(kRed);
+	htracklength->SetLineColor(kBlue);
+	htracklengthtrue->SetLineColor(kRed);
+	htrackpen->SetLineColor(kBlue);
+	htrackpentrue->SetLineColor(kRed);
+	
+	htrackpenvseloss->SetMarkerColor(kBlue);
+	htrackpenvselosstrue->SetMarkerColor(kRed);
+	htracklenvseloss->SetMarkerColor(kBlue);
+	htracklenvselosstrue->SetMarkerColor(kRed);
+	htrackstart->SetMarkerColor(kBlue);
+	htrackstop->SetMarkerColor(kBlue);
+	htrackstoptrue->SetMarkerColor(kRed);
+	hpep->SetMarkerColor(kBlue);
+	hpeptrue->SetMarkerColor(kRed);
+	hmpep->SetMarkerColor(kBlue);
+	hmpeptrue->SetMarkerColor(kRed);
+	
+	htrackpenvseloss->SetMarkerStyle(20);
+	htrackpenvselosstrue->SetMarkerStyle(20);
+	htracklenvseloss->SetMarkerStyle(20);
+	htracklenvselosstrue->SetMarkerStyle(20);
+	htrackstart->SetMarkerStyle(20);
+	htrackstop->SetMarkerStyle(20);
+	htrackstoptrue->SetMarkerStyle(20);
+	hpep->SetMarkerStyle(20);
+	hpeptrue->SetMarkerStyle(20);
+	hmpep->SetMarkerStyle(20);
+	hmpeptrue->SetMarkerStyle(20);
 	
 	return true;
 }
@@ -184,6 +192,7 @@ bool MrdDistributions::Execute(){
 	
 	// Get the ANNIE event and extract general event information
 	// Maybe this information could be added to plots for reference
+std::cout<<"getting annieevent stuff"<<std::endl;
 	m_data->Stores["ANNIEEvent"]->Get("MCFile",MCFile);
 	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
 	m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNumber);
@@ -197,6 +206,7 @@ bool MrdDistributions::Execute(){
 	
 	// retrieving reconstructed tracks from the BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+std::cout<<"Getting further stuff"<<std::endl;
 	get_ok = m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
 	if(not get_ok){
 		Log("MrdDistributions Tool: No NumMrdSubEvents in ANNIEEvent!",v_error,verbosity);
@@ -223,15 +233,19 @@ bool MrdDistributions::Execute(){
 		cerr<<"Too few entries in MRDTracks vector relative to NumMrdTracks!"<<endl;
 		// more is fine as we don't shrink for efficiency
 	}
+std::cout<<"filling histos"<<std::endl;
 	
 	// Fill counter histograms
 	// ~~~~~~~~~~~~~~~~~~~~~~~
 	hnumsubevs->Fill(numsubevs);
+        // TODO CALCULATE THE NUMBER OF TRUE SUBEVENTS?
+        hnumsubevstrue->Fill(0);
 	hnumtracks->Fill(numtracksinev);     // num tracks in a given MRD subevent - (a short time window)
 	totnumtracks+=numtracksinev;         // total number of tracks analysed in this ToolChain run
 	
 	// Loop over reconstructed tracks and record their properties
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+std::cout<<"looping over mrd tracks"<<std::endl;
 	Log("MrdDistributions Tool: Looping over theMrdTracks",v_debug,verbosity);
 	for(int tracki=0; tracki<numtracksinev; tracki++){
 		BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
@@ -345,8 +359,6 @@ bool MrdDistributions::Execute(){
 	
 	// Fill counter histograms
 	// ~~~~~~~~~~~~~~~~~~~~~~~
-	// TODO CALCULATE THE NUMBER OF TRUE SUBEVENTS?
-	hnumsubevstrue->Fill(0);
 	int nummrdtracksthisevent=0;
 	
 	// Loop over reconstructed tracks and record their properties
@@ -446,140 +458,173 @@ bool MrdDistributions::Execute(){
 
 bool MrdDistributions::Finalise(){
 	
-	
+	gROOT->cd();
 	cout<<"Analysed "<<numents<<" events, found "<<totnumtracks<<" MRD tracks, of which "
 		<<numstopped<<" stopped in the MRD, "<<numpenetrated<<" fully penetrated and the remaining "
 		<<numsideexit<<" exited the side."<<endl
 		<<"Back projection suggests "<<numtankintercepts<<" tracks would have originated in the tank, while "
 		<<numtankmisses<<" would not intercept the tank through back projection."<<endl;
 	
-	if(drawHistos){
-		canvwidth = 700;
-		canvheight = 600;
-		mrdDistCanv = new TCanvas("mrdDistCanv","",canvwidth,canvheight);
-		
-		mrdDistCanv->cd();
-		std::string imgname;
-		
-		hnumsubevs->Draw();
-		imgname=hnumsubevs->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hnumtracks->Draw();
-		hnumtrackstrue->Draw("same");
-		imgname=hnumtracks->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hrun->Draw();
-		imgname=hrun->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hevent->Draw();
-		imgname=hevent->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hmrdsubev->Draw();
-		imgname=hmrdsubev->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htrigger->Draw();
-		imgname=htrigger->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hhangle->Draw();
-		hhangletrue->Draw("same");
-		imgname=hhangle->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-//		hhangleerr->Draw();
-//		imgname=hhangleerr->GetTitle();
-//		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-//		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hvangle->Draw();
-		hvangletrue->Draw("same");
-		imgname=hvangle->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-//		hvangleerr->Draw();
-//		imgname=hvangleerr->GetTitle();
-//		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-//		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htotangle->Draw();
-		htotangletrue->Draw("same");
-		imgname=htotangle->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-//		htotangleerr->Draw();
-//		imgname=htotangleerr->GetTitle();
-//		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-//		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		henergyloss->Draw();
-		henergylosstrue->Draw("same");
-		imgname=henergyloss->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-//		henergylosserr->Draw();
-//		imgname=henergylosserr->GetTitle();
-//		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-//		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htracklength->Draw();
-		imgname=htracklength->GetTitle();
-		htracklengthtrue->Draw("same");
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htrackpen->Draw();
-		htrackpentrue->Draw("same");
-		imgname=htrackpen->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htrackpenvseloss->Draw();
-		htrackpenvselosstrue->Draw("same");
-		imgname=htrackpenvseloss->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htracklenvseloss->Draw();
-		htracklenvselosstrue->Draw("same");
-		imgname=htracklenvseloss->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htrackstart->Draw(); // has no true equivalent: this is where the reco track starts.
-		// we plot where the particle actually enters the MRD separately, and only really
-		// have truth information for the latter.
-		imgname=htrackstart->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		htrackstop->Draw();
-		htrackstoptrue->Draw("same");
-		imgname=htrackstop->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hpep->Draw();
-		hpeptrue->Draw("same");
-		imgname=hpep->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		hmpep->Draw();
-		hmpeptrue->Draw("same");
-		imgname=hmpep->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
-		//gPad->WaitPrimitive();
-		
-		// cleanup
-		// ~~~~~~~
-		std::vector<TH1*> histos {hnumsubevs, hnumtracks, hrun, hevent, hmrdsubev, htrigger, hhangle, hhangleerr, hvangle, hvangleerr, htotangle, htotangleerr, henergyloss, henergylosserr, htracklength, htrackpen, htrackpenvseloss, htracklenvseloss, htrackstart, htrackstop, hpep, hmpep};
-		Log("MrdDistributions Tool: deleting reco histograms",v_debug,verbosity);
-		for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=nullptr; }
-		
-		histos = std::vector<TH1*>{hnumsubevstrue, hnumtrackstrue, hhangletrue, hvangletrue, htotangletrue, henergylosstrue, htracklengthtrue, htrackpentrue, htrackpenvselosstrue, htracklenvselosstrue, htrackstoptrue, hpeptrue, hmpeptrue};
-		Log("MrdDistributions Tool: deleting truth histograms",v_debug,verbosity);
-		for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=nullptr; }
-		
-		Log("MrdDistributions Tool: deleting canvas",v_debug,verbosity);
-		if(gROOT->FindObject("mrdDistCanv")){ 
-			delete mrdDistCanv; mrdDistCanv=nullptr;
-		}
-		
+	canvwidth = 700;
+	canvheight = 600;
+	mrdDistCanv = new TCanvas("mrdDistCanv","",canvwidth,canvheight);
+	
+	mrdDistCanv->cd();
+	std::string imgname;
+	
+	hnumsubevs->Draw();
+	imgname=hnumsubevs->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hnumsubevs->Write();
+	hnumtracks->Draw();
+	hnumtrackstrue->Draw("same");
+	imgname=hnumtracks->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hnumtracks->Write();
+	hrun->Draw();
+	imgname=hrun->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hrun->Write();
+	hevent->Draw();
+	imgname=hevent->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hevent->Write();
+	hmrdsubev->Draw();
+	imgname=hmrdsubev->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hmrdsubev->Write();
+	htrigger->Draw();
+	imgname=htrigger->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htrigger->Write();
+	hhangle->Draw();
+	hhangletrue->Draw("same");
+	imgname=hhangle->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hhangle->Write();
+	if(outfile) hhangletrue->Write();
+//	hhangleerr->Draw();
+//	imgname=hhangleerr->GetTitle();
+//	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+//	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+//	if(outfile) hhangleerr->Write();
+	hvangle->Draw();
+	hvangletrue->Draw("same");
+	imgname=hvangle->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hvangle->Write();
+	if(outfile) hvangletrue->Write();
+//	hvangleerr->Draw();
+//	imgname=hvangleerr->GetTitle();
+//	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+//	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	htotangle->Draw();
+	htotangletrue->Draw("same");
+	imgname=htotangle->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htotangle->Write();
+	if(outfile) htotangletrue->Writr();
+//	htotangleerr->Draw();
+//	imgname=htotangleerr->GetTitle();
+//	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+//	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+//	if(outfile) htotangleerr->Write();
+	henergyloss->Draw();
+	henergylosstrue->Draw("same");
+	imgname=henergyloss->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) henergyloss->Write();
+	if(outfile) henergylosstrue->Write();
+//	henergylosserr->Draw();
+//	imgname=henergylosserr->GetTitle();
+//	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+//	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+//	if(outfile) henergylosserr->Write();
+	htracklength->Draw();
+	imgname=htracklength->GetTitle();
+	htracklengthtrue->Draw("same");
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htracklength->Write();
+	if(outfile) htracklengthtrue->Write();
+	htrackpen->Draw();
+	htrackpentrue->Draw("same");
+	imgname=htrackpen->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htrackpen->Write();
+	if(outfile) htrackpentrue->Write();
+	htrackpenvseloss->Draw();
+	htrackpenvselosstrue->Draw("same");
+	imgname=htrackpenvseloss->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htrackpenvseloss->Write();
+	if(outfile) htrackpenvselosstrue->Write();
+	htracklenvseloss->Draw();
+	htracklenvselosstrue->Draw("same");
+	imgname=htracklenvseloss->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htracklenvseloss->Write();
+	if(outfile) htracklenvselosstrue->Write();
+	htrackstart->Draw(); // has no true equivalent: this is where the reco track starts.
+	// we plot where the particle actually enters the MRD separately, and only really
+	// have truth information for the latter.
+	imgname=htrackstart->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htrackstart->Write();
+	htrackstop->Draw();
+	htrackstoptrue->Draw("same");
+	imgname=htrackstop->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) htrackstop->Write();
+	if(outfile) htrackstoptrue->Write();
+	hpep->Draw();
+	hpeptrue->Draw("same");
+	imgname=hpep->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hpep->Write();
+	if(outfile) hpeptrue->Write();
+	hmpep->Draw();
+	hmpeptrue->Draw("same");
+	imgname=hmpep->GetTitle();
+	std::replace(imgname.begin(), imgname.end(), ' ', '_');
+	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+	if(outfile) hmpep->Write();
+	if(outfile) hmpeptrue->Write();
+	
+//	if(drawHistos){ gPad->WaitPrimitive(); }
+	
+	// cleanup
+	// ~~~~~~~
+	std::vector<TH1*> histos {hnumsubevs, hnumtracks, hrun, hevent, hmrdsubev, htrigger, hhangle, hhangleerr, hvangle, hvangleerr, htotangle, htotangleerr, henergyloss, henergylosserr, htracklength, htrackpen, htrackpenvseloss, htracklenvseloss, htrackstart, htrackstop, hpep, hmpep};
+	Log("MrdDistributions Tool: deleting reco histograms",v_debug,verbosity);
+	for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=nullptr; }
+	
+	histos = std::vector<TH1*>{hnumsubevstrue, hnumtrackstrue, hhangletrue, hvangletrue, htotangletrue, henergylosstrue, htracklengthtrue, htrackpentrue, htrackpenvselosstrue, htracklenvselosstrue, htrackstoptrue, hpeptrue, hmpeptrue};
+	Log("MrdDistributions Tool: deleting truth histograms",v_debug,verbosity);
+	for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=nullptr; }
+	
+	Log("MrdDistributions Tool: deleting canvas",v_debug,verbosity);
+	if(gROOT->FindObject("mrdDistCanv")){ 
+		delete mrdDistCanv; mrdDistCanv=nullptr;
+	}
+	
+	if(drawHistos){	
 		int tapplicationusers=0;
 		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
 		if(not get_ok || tapplicationusers==1){

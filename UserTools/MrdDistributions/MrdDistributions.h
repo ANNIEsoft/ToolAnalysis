@@ -45,6 +45,7 @@ class MrdDistributions: public Tool {
 	// Retrieved from ANNIEvent
 	//std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
 	//std::vector<double>* ParticleId_to_MrdCharge;
+	std::map<int,int> Reco_to_True_Id_Map;
 	
 	// Variables from MRDTracks BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
