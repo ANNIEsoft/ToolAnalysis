@@ -1,6 +1,9 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "MrdDistributions.h"
 
+#include "TFile.h"
+#include "TTree.h"
+#include "TVector3.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
@@ -14,6 +17,8 @@
 
 MrdDistributions::MrdDistributions():Tool(){}
 
+// misc function
+TVector3 PositionToTVector3(Position posin);
 
 bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	
@@ -31,7 +36,7 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("printTracks",printTracks);  // from the BoostStore
 	m_variables.Get("drawHistos",drawHistos);
 	m_variables.Get("plotDirectory",plotDirectory);
-	outfilename="NA"; # disables writing to ROOT file unless a name is specified
+	outfilename="MrdDistributions.root";
 	m_variables.Get("RootFileOutput",outfilename);
 	
 	bool isdir=false, plotDirectoryExists=false;
@@ -57,10 +62,8 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 		return false;
 	}
 	
-	// make the ROOT file if requested
-	if(outfilename!="NA"){
-		outfile = new TFile::Open(outfilename.c_str(),"RECREATE","MRD Track Distributions");
-	}
+	// make the ROOT file
+	MakeRootFile();
 	
 	// scaler counters
 	// ~~~~~~~~~~~~~~~
@@ -200,13 +203,17 @@ std::cout<<"getting annieevent stuff"<<std::endl;
 	m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
 	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
 	
-	/////////////////////////////////////
-	// RECONSTRUCTED TRACK DISTRIBUTIONS
-	/////////////////////////////////////
+	// retrieving true tracks from the BoostStore
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
+	if(not get_ok){
+		Log("MrdDistributions Tool: No MCParticles in ANNIEEvent!",v_error,verbosity);
+		return false;
+	}
 	
 	// retrieving reconstructed tracks from the BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-std::cout<<"Getting further stuff"<<std::endl;
+	// first the counts of subevents and tracks - do not use tracks beyond these
 	get_ok = m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
 	if(not get_ok){
 		Log("MrdDistributions Tool: No NumMrdSubEvents in ANNIEEvent!",v_error,verbosity);
@@ -222,6 +229,7 @@ std::cout<<"Getting further stuff"<<std::endl;
 	              +to_string(numtracksinev)+" MRD tracks in "+to_string(numsubevs)+" subevents";
 	Log(logmessage,v_debug,verbosity);
 	
+	// then the actual tracks
 	get_ok = m_data->Stores["MRDTracks"]->Get("MRDTracks", theMrdTracks);
 	if(not get_ok){
 		Log("MrdDistributions Tool: No MRDTracks member of the MRDTracks BoostStore!",v_error,verbosity);
@@ -229,23 +237,48 @@ std::cout<<"Getting further stuff"<<std::endl;
 		m_data->Stores["MRDTracks"]->Print(false);
 		return false;
 	}
+	// sanity check
 	if(theMrdTracks->size()<numtracksinev){
 		cerr<<"Too few entries in MRDTracks vector relative to NumMrdTracks!"<<endl;
 		// more is fine as we don't shrink for efficiency
 	}
+	
+	// Try to retrieve matching done by MrdEfficiency Tool
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// TODO These are of course only relevant if analysing MC
+	Reco_to_True_Id_Map.clear(); // maps MRD Reco Track ID to MCParticle ID
+	get_ok = m_data->CStore.Get("Reco_to_True_Id_Map",Reco_to_True_Id_Map);
+	if(not get_ok){
+		logmessage  = "MrdDistributions Tool: No Reco_to_True_Id_Map Store in CStore!\n";
+		logmessage += "Without running MrdEfficiency tool first, there will be no matching ";
+		logmessage += "between MC and true particles, so truth data will be empty!";
+		Log(logmessage,v_warning,verbosity);
+	}
+	// map stores IDs, we need to convert ID to index to access the corresponding MCParticle
+	trackid_to_mcparticleindex.clear(); // maps MCParticle ID to index in MCParticles vector
+	get_ok = m_data->Stores.at("ANNIEEvent")->Get("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex);
+	if(not get_ok){
+		logmessage  = "MrdDistributions Tool: No TrackId_to_MCParticleIndex in ANNIEEvent!\n";
+		logmessage += "Will not be able to retrieve truth information for successfully reconstructed particles!";
+		Log(logmessage,v_warning,verbosity);
+	}
+	
+	/////////////////////////////////////
+	// RECONSTRUCTED TRACK DISTRIBUTIONS
+	/////////////////////////////////////
 std::cout<<"filling histos"<<std::endl;
 	
 	// Fill counter histograms
 	// ~~~~~~~~~~~~~~~~~~~~~~~
 	hnumsubevs->Fill(numsubevs);
-        // TODO CALCULATE THE NUMBER OF TRUE SUBEVENTS?
-        hnumsubevstrue->Fill(0);
+	hnumsubevstrue->Fill(0);             // TODO calculate the number of true subevents?
 	hnumtracks->Fill(numtracksinev);     // num tracks in a given MRD subevent - (a short time window)
 	totnumtracks+=numtracksinev;         // total number of tracks analysed in this ToolChain run
 	
 	// Loop over reconstructed tracks and record their properties
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 std::cout<<"looping over mrd tracks"<<std::endl;
+	ClearBranchVectors();
 	Log("MrdDistributions Tool: Looping over theMrdTracks",v_debug,verbosity);
 	for(int tracki=0; tracki<numtracksinev; tracki++){
 		BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
@@ -309,7 +342,7 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		htotangleerr->Fill(TrackAngleError);
 		
 		henergyloss->Fill(EnergyLoss);
-		std::cout<<"Reconstructed energy loss is "<<EnergyLoss<<std::endl;
+		//std::cout<<"Reconstructed energy loss is "<<EnergyLoss<<std::endl;
 		henergylosserr->Fill(EnergyLossError);
 		htracklength->Fill(TrackLength*100.);
 		htrackpen->Fill(PenetrationDepth*100.);
@@ -320,8 +353,8 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		htrackstop->Fill(StopVertex.X()*100.,StopVertex.Z()*100.,StopVertex.Y()*100.);
 		hpep->Fill(TankExitPoint.X()*100., TankExitPoint.Z()*100.,TankExitPoint.Y()*100.);
 		hmpep->Fill(MrdEntryPoint.X()*100., MrdEntryPoint.Z()*100., MrdEntryPoint.Y()*100.);
-		std::cout<<"Reco MrdEntryPoint("<<MrdEntryPoint.X()*100.<<", "<<MrdEntryPoint.Y()*100.
-				 <<", "<<MrdEntryPoint.Z()*100.<<")"<<std::endl;
+		//std::cout<<"Reco MrdEntryPoint("<<MrdEntryPoint.X()*100.<<", "<<MrdEntryPoint.Y()*100.
+		//		 <<", "<<MrdEntryPoint.Z()*100.<<")"<<std::endl;
 		
 		// Print the reconstructed track info
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -343,23 +376,95 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 			if(InterceptsTank) cout<<"intercepted"; else cout<<"did not intercept";
 			cout<<" the tank."<<endl;
 		}
+		
+		// append reco values into the output file vector
+		fileout_MrdSubEventID.push_back(MrdSubEventID);
+		fileout_HtrackAngle.push_back(atan(HtrackGradient));
+		fileout_HtrackAngleError.push_back(atan(HtrackGradientError));
+		fileout_VtrackAngle.push_back(atan(VtrackGradient));
+		fileout_VtrackAngleError.push_back(atan(VtrackGradientError));
+		fileout_TrackAngle.push_back(TrackAngle);
+		fileout_TrackAngleError.push_back(TrackAngleError);
+		fileout_EnergyLoss.push_back(EnergyLoss);
+		fileout_EnergyLossError.push_back(EnergyLossError);
+		fileout_TrackLength.push_back(TrackLength*100.);
+		fileout_PenetrationDepth.push_back(PenetrationDepth*100.);
+		fileout_StartVertex.push_back(PositionToTVector3(100.*StartVertex));
+		fileout_StopVertex.push_back(PositionToTVector3(100.*StopVertex));
+		fileout_TankExitPoint.push_back(PositionToTVector3(100.*TankExitPoint));
+		fileout_MrdEntryPoint.push_back(PositionToTVector3(100.*MrdEntryPoint));
+		
+		// See if we had a matching truth track (if MC) and record true details if so
+		if(Reco_to_True_Id_Map.count(MrdTrackID)){
+			int true_track_id = Reco_to_True_Id_Map.at(MrdTrackID);
+			MCParticle* nextparticle = &MCParticles->at(true_track_id);
+			// Get the track details
+			MCTruthParticleID = nextparticle->GetParticleID();
+			InterceptsTank = nextparticle->GetEntersTank();
+			StartTime = nextparticle->GetStartTime();
+			TrackAngleX = nextparticle->GetTrackAngleX();
+			TrackAngleY = nextparticle->GetTrackAngleY();
+			TrackAngle = nextparticle->GetTrackAngleFromBeam();
+			NumLayersHit = nextparticle->GetNumMrdLayersPenetrated();
+			TrackLength = nextparticle->GetTrackLengthInMrd();
+			EnergyLoss = nextparticle->GetMrdEnergyLoss();
+			StartVertex = nextparticle->GetMrdEntryPoint();
+			StopVertex = nextparticle->GetMrdExitPoint();
+			TankExitPoint = nextparticle->GetTankExitPoint();
+			MrdEntryPoint = nextparticle->GetMrdEntryPoint();
+			IsMrdStopped = ((nextparticle->GetEntersMrd())&&(!nextparticle->GetExitsMrd()));
+			IsMrdPenetrating = nextparticle->GetPenetratesMrd();
+			IsMrdSideExit = ((nextparticle->GetExitsMrd())&&(!IsMrdPenetrating));
+			PenetrationDepth = nextparticle->GetMrdPenetration();
+		} else {
+			// no matching track, set truth variables to default
+			MCTruthParticleID = -1;
+			InterceptsTank = 0;
+			StartTime = 0;
+			TrackAngleX = 0;
+			TrackAngleY = 0;
+			TrackAngle = 0;
+			NumLayersHit = 0;
+			TrackLength = 0;
+			EnergyLoss = 0;
+			PenetrationDepth = 0;
+			StartVertex = Position(0,0,0);
+			StopVertex = Position(0,0,0);
+			TankExitPoint = Position(0,0,0);
+			MrdEntryPoint = Position(0,0,0);
+			IsMrdStopped = 0;
+			IsMrdPenetrating = 0;
+			IsMrdSideExit = 0;
+		}
+		
+		// append true values into the output file vector
+		fileout_TrackAngleX.push_back(TrackAngleX);
+		fileout_TrackAngleY.push_back(TrackAngleY);
+		fileout_TrueTrackAngle.push_back(TrackAngle);
+		fileout_TrueEnergyLoss.push_back(EnergyLoss);
+		fileout_TrueTrackLength.push_back(TrackLength*100.);
+		fileout_TruePenetrationDepth.push_back(PenetrationDepth*100.);
+		fileout_TrueStopVertex.push_back(PositionToTVector3(100.*StopVertex));
+		fileout_TrueTankExitPoint.push_back(PositionToTVector3(100.*TankExitPoint));
+		fileout_TrueMrdEntryPoint.push_back(PositionToTVector3(100.*MrdEntryPoint));
+		fileout_InterceptsTank.push_back(InterceptsTank);
+		fileout_StartTime.push_back(StartTime);
+		fileout_NumLayersHit.push_back(NumLayersHit);
+		fileout_IsMrdStopped.push_back(IsMrdStopped);
+		fileout_IsMrdPenetrating.push_back(IsMrdPenetrating);
+		fileout_IsMrdSideExit.push_back(IsMrdSideExit);
 	}
+	
+	recotree->Fill();
+	ClearBranchVectors();
 	
 	/////////////////////////////////////
 	// TRUE TRACK DISTRIBUTIONS
 	/////////////////////////////////////
 	
-	// retrieving true tracks from the BoostStore
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
-	if(not get_ok){
-		Log("MrdDistributions Tool: No MCParticles in ANNIEEvent!",v_error,verbosity);
-		return false;
-	}
-	
 	// Fill counter histograms
 	// ~~~~~~~~~~~~~~~~~~~~~~~
-	int nummrdtracksthisevent=0;
+	nummrdtracksthisevent=0;
 	
 	// Loop over reconstructed tracks and record their properties
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -375,14 +480,13 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		StartTime = nextparticle->GetStartTime();                         // [ns]
 		StartVertex = nextparticle->GetMrdEntryPoint();                   // [m] MRD entry vertex!
 		StopVertex = nextparticle->GetMrdExitPoint();                     // [m] MRD stop/exit vertex!
-		cout<<"Truth Track goes = ("<<StartVertex.X()<<", "<<StartVertex.Y()<<", "
-			<<StartVertex.Z()<<") -> ("<<StopVertex.X()<<", "<<StopVertex.Y()<<", "
-			<<StopVertex.Z()<<")"<<endl;
+		//cout<<"Truth Track goes = ("<<StartVertex.X()<<", "<<StartVertex.Y()<<", "
+		//	<<StartVertex.Z()<<") -> ("<<StopVertex.X()<<", "<<StopVertex.Y()<<", "
+		//	<<StopVertex.Z()<<")"<<endl;
 		TrackAngleX = nextparticle->GetTrackAngleX();                     // [rad]
 		TrackAngleY = nextparticle->GetTrackAngleY();                     // [rad]
-		std::cout<<"TrackAngleX="<<TrackAngleX<<", TrackAngleY="<<TrackAngleY<<std::endl;
+		//std::cout<<"TrackAngleX="<<TrackAngleX<<", TrackAngleY="<<TrackAngleY<<std::endl;
 		TrackAngle = nextparticle->GetTrackAngleFromBeam();               // [rad]
-		// skip truth dist of trackgrad, track origin etc.
 		NumLayersHit = nextparticle->GetNumMrdLayersPenetrated();         // 
 		TrackLength = nextparticle->GetTrackLengthInMrd();                // [m]
 		EnergyLoss = nextparticle->GetMrdEnergyLoss();                    // [MeV]
@@ -390,13 +494,12 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		IsMrdPenetrating = nextparticle->GetPenetratesMrd();              // bool: fully penetrating
 		IsMrdSideExit = ((nextparticle->GetExitsMrd())&&(!IsMrdPenetrating));              // bool
 		PenetrationDepth = nextparticle->GetMrdPenetration();             // [m]
-		// skip fit chi2
 		
 		// TODO PMTsHit = std::vector<int> Mrd PMT Tube IDs Hit
 		// we can get this from ParticleId_to_MrdTubeIds: std::map<ParticleId,std::map<ChannelKey,Charge>>
 		
 		TankExitPoint = nextparticle->GetTankExitPoint();                 // [m]
-		cout<<"TankExitPoint: ("<<TankExitPoint.X()<<", "<<TankExitPoint.Y()<<", "<<TankExitPoint.Z()<<")"<<endl;
+		//cout<<"TankExitPoint: ("<<TankExitPoint.X()<<", "<<TankExitPoint.Y()<<", "<<TankExitPoint.Z()<<")"<<endl;
 		MrdEntryPoint = nextparticle->GetMrdEntryPoint();                 // [m]
 		
 		// Fill histograms of reconstructed track property distributions
@@ -410,9 +513,9 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		hvangletrue->Fill(TrackAngleX);
 		hhangletrue->Fill(TrackAngleY);
 		htotangletrue->Fill(TrackAngle);
-		std::cout<<"\"True\" Energy loss: "<<EnergyLoss<<std::endl;
+		//std::cout<<"\"True\" Energy loss: "<<EnergyLoss<<std::endl;
 		henergylosstrue->Fill(EnergyLoss); // Pull from WCSim
-		cout<<"true track length in MRD: "<<TrackLength*100.<<endl;
+		//cout<<"true track length in MRD: "<<TrackLength*100.<<endl;
 		htracklengthtrue->Fill(TrackLength*100.);
 		htrackpentrue->Fill(PenetrationDepth*100.);
 		htrackpenvselosstrue->Fill(PenetrationDepth*100.,EnergyLoss);
@@ -421,8 +524,8 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		htrackstoptrue->Fill(StopVertex.X()*100.,StopVertex.Z()*100.,StopVertex.Y()*100.);
 		hpeptrue->Fill(TankExitPoint.X()*100., TankExitPoint.Z()*100.,TankExitPoint.Y()*100.);
 		hmpeptrue->Fill(MrdEntryPoint.X()*100., MrdEntryPoint.Z()*100., MrdEntryPoint.Y()*100.);
-		std::cout<<"True MrdEntryPoint ("<<MrdEntryPoint.X()*100.<<", "<<MrdEntryPoint.Y()*100.
-				 <<", "<<MrdEntryPoint.Z()*100.<<")"<<std::endl;
+		//std::cout<<"True MrdEntryPoint ("<<MrdEntryPoint.X()*100.<<", "<<MrdEntryPoint.Y()*100.
+		//		 <<", "<<MrdEntryPoint.Z()*100.<<")"<<std::endl;
 		
 		// Print the reconstructed track info
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -444,7 +547,28 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 			if(InterceptsTank) cout<<"intercepted"; else cout<<"did not intercept";
 			cout<<" the tank."<<endl;
 		}
+		
+		// append values into the output file vector
+		fileout_TrackAngleX.push_back(TrackAngleX);
+		fileout_TrackAngleY.push_back(TrackAngleY);
+		fileout_TrueTrackAngle.push_back(TrackAngle);
+		fileout_TrueEnergyLoss.push_back(EnergyLoss);
+		fileout_TrueTrackLength.push_back(TrackLength*100.);
+		fileout_TruePenetrationDepth.push_back(PenetrationDepth*100.);
+		fileout_TrueStopVertex.push_back(PositionToTVector3(100.*StopVertex));
+		fileout_TrueTankExitPoint.push_back(PositionToTVector3(100.*TankExitPoint));
+		fileout_TrueMrdEntryPoint.push_back(PositionToTVector3(100.*MrdEntryPoint));
+		fileout_InterceptsTank.push_back(InterceptsTank);
+		fileout_StartTime.push_back(StartTime);
+		fileout_NumLayersHit.push_back(NumLayersHit);
+		fileout_IsMrdStopped.push_back(IsMrdStopped);
+		fileout_IsMrdPenetrating.push_back(IsMrdPenetrating);
+		fileout_IsMrdSideExit.push_back(IsMrdSideExit);
+		
 	}
+	
+	truthtree->Fill();
+	ClearBranchVectors();
 	
 	cout<<"num true particles intercepting MRD this event:" <<nummrdtracksthisevent<<endl;
 	hnumtrackstrue->Fill(nummrdtracksthisevent);
@@ -532,7 +656,7 @@ bool MrdDistributions::Finalise(){
 	std::replace(imgname.begin(), imgname.end(), ' ', '_');
 	mrdDistCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
 	if(outfile) htotangle->Write();
-	if(outfile) htotangletrue->Writr();
+	if(outfile) htotangletrue->Write();
 //	htotangleerr->Draw();
 //	imgname=htotangleerr->GetTitle();
 //	std::replace(imgname.begin(), imgname.end(), ' ', '_');
@@ -624,7 +748,7 @@ bool MrdDistributions::Finalise(){
 		delete mrdDistCanv; mrdDistCanv=nullptr;
 	}
 	
-	if(drawHistos){	
+	if(drawHistos){
 		int tapplicationusers=0;
 		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
 		if(not get_ok || tapplicationusers==1){
@@ -639,4 +763,126 @@ bool MrdDistributions::Finalise(){
 	}
 	
 	return true;
+}
+
+TFile* MrdDistributions::MakeRootFile(){
+	outfile = new TFile(outfilename.c_str(),"RECREATE","MRD Track Distributions");
+	outfile->cd();
+	recotree = new TTree("RecoTree","Summary of Reconstructed Tracks, with their Truth Values if Matched");
+	// event-wise information
+	recotree->Branch("MCFile",&MCFile);
+	recotree->Branch("RunNumber",&RunNumber);
+	recotree->Branch("SubrunNumber",&SubrunNumber);
+	recotree->Branch("EventNumber",&EventNumber);
+	recotree->Branch("MCEventNum",&MCEventNum);
+	recotree->Branch("MCTriggernum",&MCTriggernum);
+	recotree->Branch("NumSubEvs",&numsubevs);
+	recotree->Branch("NumTracksInSubEv",&numtracksinev);
+	recotree->Branch("NumTrueTracksInSubEv",&nummrdtracksthisevent);
+	
+	// track-wise information vectors
+	recotree->Branch("MrdSubEventID", &pfileout_MrdSubEventID);
+	recotree->Branch("TrackAngleX", &pfileout_HtrackAngle);
+	recotree->Branch("TrackAngleXError", &pfileout_HtrackAngleError);
+	recotree->Branch("TrackAngleY", &pfileout_VtrackAngle);
+	recotree->Branch("TrackAngleYError", &pfileout_VtrackAngleError);
+	recotree->Branch("TrackAngle", &pfileout_TrackAngle);
+	recotree->Branch("TrackAngleError", &pfileout_TrackAngleError);
+	recotree->Branch("EnergyLoss", &pfileout_EnergyLoss);
+	recotree->Branch("EnergyLossError", &pfileout_EnergyLossError);
+	recotree->Branch("TrackLength", &pfileout_TrackLength);
+	recotree->Branch("PenetrationDepth", &pfileout_PenetrationDepth);
+	recotree->Branch("StartVertex", &pfileout_StartVertex);
+	recotree->Branch("StopVertex", &pfileout_StopVertex);
+	recotree->Branch("TankExitPoint", &pfileout_TankExitPoint);
+	recotree->Branch("MrdEntryPoint", &pfileout_MrdEntryPoint);
+	
+	// true tracks
+	recotree->Branch("MCTruthParticleID", &pfileout_MCTruthParticleID);
+	recotree->Branch("TrueTrackAngleX", &pfileout_TrackAngleX);
+	recotree->Branch("TrueTrackAngleY", &pfileout_TrackAngleY);
+	recotree->Branch("TrueTrackAngle", &pfileout_TrueTrackAngle);
+	recotree->Branch("TrueEnergyLoss", &pfileout_TrueEnergyLoss);
+	recotree->Branch("TrueTrackLength", &pfileout_TrueTrackLength);
+	recotree->Branch("TruePenetrationDepth", &pfileout_TruePenetrationDepth);
+	// no true (MRD reconstruction) start vertex by definition
+	recotree->Branch("TrueStopVertex", &pfileout_TrueStopVertex);
+	recotree->Branch("TrueTankExitPoint", &pfileout_TrueTankExitPoint);
+	recotree->Branch("TrueMrdEntryPoint", &pfileout_TrueMrdEntryPoint);
+	recotree->Branch("InterceptsTank", &pfileout_InterceptsTank);
+	recotree->Branch("StartTime", &pfileout_StartTime);
+	recotree->Branch("NumLayersHit", &pfileout_NumLayersHit);
+	recotree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
+	recotree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
+	recotree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
+	
+	// we'll have a second tree that will record all the true tracks
+	// this ensures we have an un-cut version of the distributions of tracks that went into the MRD,
+	// without any selection on whether there was a reco track associated with it
+	truthtree = new TTree("TruthTree","Summary of all True Tracks in the Mrd");
+	// event-wise information
+	truthtree->Branch("MCFile",&MCFile);
+	truthtree->Branch("RunNumber",&RunNumber);
+	truthtree->Branch("SubrunNumber",&SubrunNumber);
+	truthtree->Branch("EventNumber",&EventNumber);
+	truthtree->Branch("MCEventNum",&MCEventNum);
+	truthtree->Branch("MCTriggernum",&MCTriggernum);
+	truthtree->Branch("NumSubEvs",&numsubevs);
+	truthtree->Branch("NumTracksInSubEv",&numtracksinev);
+	truthtree->Branch("NumTrueTracksInSubEv",&nummrdtracksthisevent);
+	// track-wise information
+	truthtree->Branch("MCTruthParticleID", &pfileout_MCTruthParticleID);
+	truthtree->Branch("TrueTrackAngleX", &pfileout_TrackAngleX);
+	truthtree->Branch("TrueTrackAngleY", &pfileout_TrackAngleY);
+	truthtree->Branch("TrueTrackAngle", &pfileout_TrueTrackAngle);
+	truthtree->Branch("TrueEnergyLoss", &pfileout_TrueEnergyLoss);
+	truthtree->Branch("TrueTrackLength", &pfileout_TrueTrackLength);
+	truthtree->Branch("TruePenetrationDepth", &pfileout_TruePenetrationDepth);
+	truthtree->Branch("TrueStopVertex", &pfileout_TrueStopVertex);
+	truthtree->Branch("TrueTankExitPoint", &pfileout_TrueTankExitPoint);
+	truthtree->Branch("TrueMrdEntryPoint", &pfileout_TrueMrdEntryPoint);
+	truthtree->Branch("InterceptsTank", &pfileout_InterceptsTank);
+	truthtree->Branch("StartTime", &pfileout_StartTime);
+	truthtree->Branch("NumLayersHit", &pfileout_NumLayersHit);
+	truthtree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
+	truthtree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
+	truthtree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
+}
+
+void MrdDistributions::ClearBranchVectors(){
+	fileout_MrdSubEventID.clear();
+	fileout_HtrackAngle.clear();
+	fileout_HtrackAngleError.clear();
+	fileout_VtrackAngle.clear();
+	fileout_VtrackAngleError.clear();
+	fileout_TrackAngle.clear();
+	fileout_TrackAngleError.clear();
+	fileout_EnergyLoss.clear();
+	fileout_EnergyLossError.clear();
+	fileout_TrackLength.clear();
+	fileout_PenetrationDepth.clear();
+	fileout_StartVertex.clear();
+	fileout_StopVertex.clear();
+	fileout_TankExitPoint.clear();
+	fileout_MrdEntryPoint.clear();
+	fileout_MCTruthParticleID.clear();
+	fileout_TrackAngleX.clear();
+	fileout_TrackAngleY.clear();
+	fileout_TrueTrackAngle.clear();
+	fileout_TrueEnergyLoss.clear();
+	fileout_TrueTrackLength.clear();
+	fileout_TruePenetrationDepth.clear();
+	fileout_TrueStopVertex.clear();
+	fileout_TrueTankExitPoint.clear();
+	fileout_TrueMrdEntryPoint.clear();
+	fileout_StartTime.clear();
+	fileout_InterceptsTank.clear();
+	fileout_NumLayersHit.clear();
+	fileout_IsMrdStopped.clear();
+	fileout_IsMrdPenetrating.clear();
+	fileout_IsMrdSideExit.clear();
+}
+
+TVector3 PositionToTVector3(Position posin){
+	return TVector3(posin.X(),posin.Y(),posin.Z());
 }

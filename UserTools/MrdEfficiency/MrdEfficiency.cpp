@@ -217,7 +217,7 @@ bool MrdEfficiency::Execute(){
 			if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
 			if(aparticle.GetPdgCode()!=13) continue;       // not a muon
 			primarymuon = aparticle;                       // note the particle
-			primarymuonid = primarymuon.GetParticleID();  // note the ID
+			primarymuonid = primarymuon.GetParticleID();   // note the ID
 			mufound=true;                                  // note that we found it
 			break;                                         // XXX assume we don't have more than one primary muon
 		}
@@ -234,6 +234,7 @@ bool MrdEfficiency::Execute(){
 	// Get the true particles and which PMTs they hit
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::map<int,std::vector<int>> paddlesInTrackTrue;
+	std::vector<int> trueIds;
 	int npaddleshitbyprimarymuon=0;
 	for(std::pair<const int,std::map<unsigned long,double>>& aparticle : *ParticleId_to_MrdTubeIds){
 		//if(aparticle.first==theprimarymuonid){
@@ -250,7 +251,10 @@ bool MrdEfficiency::Execute(){
 			//	std::cout<<(pmtsid-1)<<", ";
 			//}
 		}
-		if(tempvector.size()) paddlesInTrackTrue.emplace(aparticle.first, tempvector);
+		if(tempvector.size()){
+			paddlesInTrackTrue.emplace(aparticle.first, tempvector);
+			trueIds.push_back(aparticle.first);
+		}
 		if(aparticle.first==primarymuonid) npaddleshitbyprimarymuon = tempvector.size();
 	}
 	//std::cout<<"}"<<std::endl;
@@ -285,6 +289,7 @@ bool MrdEfficiency::Execute(){
 	// Loop over reconstructed tracks and which PMTs they hit
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::map<int,std::vector<int>> paddlesInTrackReco;
+	std::vector<int> recoIds;
 	for(int tracki=0; tracki<numtracksinev; tracki++){
 		BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
 		// Get the track details from the BoostStore
@@ -292,6 +297,7 @@ bool MrdEfficiency::Execute(){
 		thisTrackAsBoostStore->Get("PMTsHit",PMTsHit);
 		thisTrackAsBoostStore->Get("MrdTrackID",MrdTrackID);
 		if(PMTsHit.size()) paddlesInTrackReco.emplace(MrdTrackID,PMTsHit);
+		recoIds.push_back(MrdTrackID);
 	}
 	
 	logmessage = "MrdEfficiency Tool: Event had "+to_string(paddlesInTrackReco.size()) 
@@ -368,8 +374,7 @@ bool MrdEfficiency::Execute(){
 	
 	// start of track pairing
 	//~~~~~~~~~~~~~~~~~~~~~~~
-	std::map<int,int> Reco_to_True_Id_Map;
-	std::map<int,int> True_to_Reco_Id_Map;
+	std::map<int,int> Reco_to_True_Index_Map;
 	while(true){
 		double currentmax=0.;
 		int maxrow=-1, maxcolumn=-1;
@@ -396,7 +401,7 @@ bool MrdEfficiency::Execute(){
 			std::vector<int>* truetrackpmts = &(aparticle->second);
 			
 			// print the matching
-			logmessage = "MrdEfficiency Tool: Candidate track "+to_string(Reco_to_True_Id_Map.size())
+			logmessage = "MrdEfficiency Tool: Candidate track "+to_string(Reco_to_True_Index_Map.size())
 				+" reco has "+to_string(recotrackpmts->size())+" PMTs; {";
 			for(auto&& apmt : (*recotrackpmts)){ logmessage+=to_string(apmt)+", "; }
 			logmessage += 
@@ -411,8 +416,7 @@ bool MrdEfficiency::Execute(){
 					+ to_string(maxrow) +" to true track "+to_string(maxcolumn)
 					+ ", match FOM "+to_string(currentmax)+"\n";
 				Log(logmessage,v_debug,verbosity);
-				Reco_to_True_Id_Map.emplace(std::make_pair(maxrow, maxcolumn));  // TODO needs to get Ids
-				True_to_Reco_Id_Map.emplace(std::make_pair(maxcolumn,maxrow));   // TODO needs to get Ids
+				Reco_to_True_Index_Map.emplace(std::make_pair(maxrow, maxcolumn));  // TODO needs to get Ids
 			}
 			// remove the matched tracks from the matchmerits matrix
 			matchmerits.at(maxrow).assign(matchmerits.at(maxrow).size(),-1);
@@ -425,7 +429,18 @@ bool MrdEfficiency::Execute(){
 	// end of track pairing
 	//~~~~~~~~~~~~~~~~~~~~~
 	
+	// the map generated matches *indices* of tracks in the vectors of reco or true tracks
+	// we need to convert these indices to IDs
+	std::map<int,int> Reco_to_True_Id_Map;
+	std::map<int,int> True_to_Reco_Id_Map;
+	for(const std::pair<int,int>& amapping : Reco_to_True_Index_Map){
+		Reco_to_True_Id_Map.emplace(recoIds.at(amapping.first),trueIds.at(amapping.second));
+		True_to_Reco_Id_Map.emplace(trueIds.at(amapping.second),recoIds.at(amapping.first));
+	}
+	
 	// put the matching map into the store
+	// maps MC particle ids, from MCParticle::GetParticleID(),
+	// to MRD track ids, from thisTrackAsBoostStore->Get("MrdTrackID",MrdTrackID);
 	m_data->CStore.Set("Reco_to_True_Id_Map",Reco_to_True_Id_Map);
 	m_data->CStore.Set("True_to_Reco_Id_Map",True_to_Reco_Id_Map);
 	
