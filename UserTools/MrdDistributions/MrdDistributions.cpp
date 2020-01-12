@@ -3,7 +3,7 @@
 
 #include "TFile.h"
 #include "TTree.h"
-#include "TVector3.h"
+#include "Math/Vector3D.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
@@ -18,7 +18,7 @@
 MrdDistributions::MrdDistributions():Tool(){}
 
 // misc function
-TVector3 PositionToTVector3(Position posin);
+ROOT::Math::XYZVector PositionToXYZVector(Position posin);
 
 bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	
@@ -195,7 +195,6 @@ bool MrdDistributions::Execute(){
 	
 	// Get the ANNIE event and extract general event information
 	// Maybe this information could be added to plots for reference
-std::cout<<"getting annieevent stuff"<<std::endl;
 	m_data->Stores["ANNIEEvent"]->Get("MCFile",MCFile);
 	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
 	m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNumber);
@@ -266,7 +265,6 @@ std::cout<<"getting annieevent stuff"<<std::endl;
 	/////////////////////////////////////
 	// RECONSTRUCTED TRACK DISTRIBUTIONS
 	/////////////////////////////////////
-std::cout<<"filling histos"<<std::endl;
 	
 	// Fill counter histograms
 	// ~~~~~~~~~~~~~~~~~~~~~~~
@@ -277,7 +275,6 @@ std::cout<<"filling histos"<<std::endl;
 	
 	// Loop over reconstructed tracks and record their properties
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-std::cout<<"looping over mrd tracks"<<std::endl;
 	ClearBranchVectors();
 	Log("MrdDistributions Tool: Looping over theMrdTracks",v_debug,verbosity);
 	for(int tracki=0; tracki<numtracksinev; tracki++){
@@ -389,10 +386,10 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		fileout_EnergyLossError.push_back(EnergyLossError);
 		fileout_TrackLength.push_back(TrackLength*100.);
 		fileout_PenetrationDepth.push_back(PenetrationDepth*100.);
-		fileout_StartVertex.push_back(PositionToTVector3(100.*StartVertex));
-		fileout_StopVertex.push_back(PositionToTVector3(100.*StopVertex));
-		fileout_TankExitPoint.push_back(PositionToTVector3(100.*TankExitPoint));
-		fileout_MrdEntryPoint.push_back(PositionToTVector3(100.*MrdEntryPoint));
+		fileout_StartVertex.push_back(PositionToXYZVector(100.*StartVertex));
+		fileout_StopVertex.push_back(PositionToXYZVector(100.*StopVertex));
+		fileout_TankExitPoint.push_back(PositionToXYZVector(100.*TankExitPoint));
+		fileout_MrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
 		
 		// See if we had a matching truth track (if MC) and record true details if so
 		if(Reco_to_True_Id_Map.count(MrdTrackID)){
@@ -444,9 +441,9 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		fileout_TrueEnergyLoss.push_back(EnergyLoss);
 		fileout_TrueTrackLength.push_back(TrackLength*100.);
 		fileout_TruePenetrationDepth.push_back(PenetrationDepth*100.);
-		fileout_TrueStopVertex.push_back(PositionToTVector3(100.*StopVertex));
-		fileout_TrueTankExitPoint.push_back(PositionToTVector3(100.*TankExitPoint));
-		fileout_TrueMrdEntryPoint.push_back(PositionToTVector3(100.*MrdEntryPoint));
+		fileout_TrueStopVertex.push_back(PositionToXYZVector(100.*StopVertex));
+		fileout_TrueTankExitPoint.push_back(PositionToXYZVector(100.*TankExitPoint));
+		fileout_TrueMrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
 		fileout_InterceptsTank.push_back(InterceptsTank);
 		fileout_StartTime.push_back(StartTime);
 		fileout_NumLayersHit.push_back(NumLayersHit);
@@ -555,9 +552,9 @@ std::cout<<"looping over mrd tracks"<<std::endl;
 		fileout_TrueEnergyLoss.push_back(EnergyLoss);
 		fileout_TrueTrackLength.push_back(TrackLength*100.);
 		fileout_TruePenetrationDepth.push_back(PenetrationDepth*100.);
-		fileout_TrueStopVertex.push_back(PositionToTVector3(100.*StopVertex));
-		fileout_TrueTankExitPoint.push_back(PositionToTVector3(100.*TankExitPoint));
-		fileout_TrueMrdEntryPoint.push_back(PositionToTVector3(100.*MrdEntryPoint));
+		fileout_TrueStopVertex.push_back(PositionToXYZVector(100.*StopVertex));
+		fileout_TrueTankExitPoint.push_back(PositionToXYZVector(100.*TankExitPoint));
+		fileout_TrueMrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
 		fileout_InterceptsTank.push_back(InterceptsTank);
 		fileout_StartTime.push_back(StartTime);
 		fileout_NumLayersHit.push_back(NumLayersHit);
@@ -595,7 +592,8 @@ bool MrdDistributions::Finalise(){
 	
 	mrdDistCanv->cd();
 	std::string imgname;
-	
+
+	if(outfile) outfile->cd();
 	hnumsubevs->Draw();
 	imgname=hnumsubevs->GetTitle();
 	std::replace(imgname.begin(), imgname.end(), ' ', '_');
@@ -766,6 +764,39 @@ bool MrdDistributions::Finalise(){
 }
 
 TFile* MrdDistributions::MakeRootFile(){
+	// set the pointers to the vectors first
+	pfileout_MrdSubEventID = &fileout_MrdSubEventID;
+	pfileout_HtrackAngle = &fileout_HtrackAngle;
+	pfileout_HtrackAngleError = &fileout_HtrackAngleError;
+	pfileout_VtrackAngle = &fileout_VtrackAngle;
+	pfileout_VtrackAngleError = &fileout_VtrackAngleError;
+	pfileout_TrackAngle = &fileout_TrackAngle;
+	pfileout_TrackAngleError = &fileout_TrackAngleError;
+	pfileout_EnergyLoss = &fileout_EnergyLoss;
+	pfileout_EnergyLossError = &fileout_EnergyLossError;
+	pfileout_TrackLength = &fileout_TrackLength;
+	pfileout_PenetrationDepth = &fileout_PenetrationDepth;
+	pfileout_StartVertex = &fileout_StartVertex;
+	pfileout_StopVertex = &fileout_StopVertex;
+	pfileout_TankExitPoint = &fileout_TankExitPoint;
+	pfileout_MrdEntryPoint = &fileout_MrdEntryPoint;
+	pfileout_MCTruthParticleID = &fileout_MCTruthParticleID;
+	pfileout_TrackAngleX = &fileout_TrackAngleX;
+	pfileout_TrackAngleY = &fileout_TrackAngleY;
+	pfileout_TrueTrackAngle = &fileout_TrueTrackAngle;
+	pfileout_TrueEnergyLoss = &fileout_TrueEnergyLoss;
+	pfileout_TrueTrackLength = &fileout_TrueTrackLength;
+	pfileout_TruePenetrationDepth = &fileout_TruePenetrationDepth;
+	pfileout_TrueStopVertex = &fileout_TrueStopVertex;
+	pfileout_TrueTankExitPoint = &fileout_TrueTankExitPoint;
+	pfileout_TrueMrdEntryPoint = &fileout_TrueMrdEntryPoint;
+	pfileout_StartTime = &fileout_StartTime;
+	pfileout_InterceptsTank = &fileout_InterceptsTank;
+	pfileout_NumLayersHit = &fileout_NumLayersHit;
+	pfileout_IsMrdStopped = &fileout_IsMrdStopped;
+	pfileout_IsMrdPenetrating = &fileout_IsMrdPenetrating;
+	pfileout_IsMrdSideExit = &fileout_IsMrdSideExit;
+	
 	outfile = new TFile(outfilename.c_str(),"RECREATE","MRD Track Distributions");
 	outfile->cd();
 	recotree = new TTree("RecoTree","Summary of Reconstructed Tracks, with their Truth Values if Matched");
@@ -774,7 +805,7 @@ TFile* MrdDistributions::MakeRootFile(){
 	recotree->Branch("RunNumber",&RunNumber);
 	recotree->Branch("SubrunNumber",&SubrunNumber);
 	recotree->Branch("EventNumber",&EventNumber);
-	recotree->Branch("MCEventNum",&MCEventNum);
+	recotree->Branch("MCEventNum",&MCEventNum,"l");
 	recotree->Branch("MCTriggernum",&MCTriggernum);
 	recotree->Branch("NumSubEvs",&numsubevs);
 	recotree->Branch("NumTracksInSubEv",&numtracksinev);
@@ -825,7 +856,7 @@ TFile* MrdDistributions::MakeRootFile(){
 	truthtree->Branch("RunNumber",&RunNumber);
 	truthtree->Branch("SubrunNumber",&SubrunNumber);
 	truthtree->Branch("EventNumber",&EventNumber);
-	truthtree->Branch("MCEventNum",&MCEventNum);
+	truthtree->Branch("MCEventNum",&MCEventNum,"l");
 	truthtree->Branch("MCTriggernum",&MCTriggernum);
 	truthtree->Branch("NumSubEvs",&numsubevs);
 	truthtree->Branch("NumTracksInSubEv",&numtracksinev);
@@ -847,6 +878,9 @@ TFile* MrdDistributions::MakeRootFile(){
 	truthtree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
 	truthtree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
 	truthtree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
+
+	gROOT->cd();
+	return outfile;
 }
 
 void MrdDistributions::ClearBranchVectors(){
@@ -862,7 +896,6 @@ void MrdDistributions::ClearBranchVectors(){
 	fileout_TrackLength.clear();
 	fileout_PenetrationDepth.clear();
 	fileout_StartVertex.clear();
-	fileout_StopVertex.clear();
 	fileout_TankExitPoint.clear();
 	fileout_MrdEntryPoint.clear();
 	fileout_MCTruthParticleID.clear();
@@ -883,6 +916,6 @@ void MrdDistributions::ClearBranchVectors(){
 	fileout_IsMrdSideExit.clear();
 }
 
-TVector3 PositionToTVector3(Position posin){
-	return TVector3(posin.X(),posin.Y(),posin.Z());
+ROOT::Math::XYZVector PositionToXYZVector(Position posin){
+	return ROOT::Math::XYZVector(posin.X(),posin.Y(),posin.Z());
 }

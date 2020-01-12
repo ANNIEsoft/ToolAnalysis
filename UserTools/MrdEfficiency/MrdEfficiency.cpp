@@ -168,6 +168,10 @@ bool MrdEfficiency::Initialise(std::string configfile, DataModel &data){
 	// XXX Remove me, make less global
 	gStyle->SetOptStat(0);
 	
+        // for later tools, in case we don't find any, put an empty pair of maps in now
+	m_data->CStore.Set("Reco_to_True_Id_Map",Reco_to_True_Id_Map);
+	m_data->CStore.Set("True_to_Reco_Id_Map",True_to_Reco_Id_Map);
+	
 	return true;
 }
 
@@ -431,8 +435,8 @@ bool MrdEfficiency::Execute(){
 	
 	// the map generated matches *indices* of tracks in the vectors of reco or true tracks
 	// we need to convert these indices to IDs
-	std::map<int,int> Reco_to_True_Id_Map;
-	std::map<int,int> True_to_Reco_Id_Map;
+	Reco_to_True_Id_Map.clear();
+	True_to_Reco_Id_Map.clear();
 	for(const std::pair<int,int>& amapping : Reco_to_True_Index_Map){
 		Reco_to_True_Id_Map.emplace(recoIds.at(amapping.first),trueIds.at(amapping.second));
 		True_to_Reco_Id_Map.emplace(trueIds.at(amapping.second),recoIds.at(amapping.first));

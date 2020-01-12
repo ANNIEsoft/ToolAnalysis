@@ -19,4 +19,4 @@ myTrackCombiner TrackCombiner ./configfiles/FindMrdTracks/MC/TrackCombinerConfig
 myMrdTrackPlotter MrdPaddlePlot ./configfiles/FindMrdTracks/MC/PlotMrdTracksConfig
 myMrdEfficiency MrdEfficiency ./configfiles/FindMrdTracks/MC/MrdEfficiencyConfig
 myMrdDistributions MrdDistributions ./configfiles/FindMrdTracks/MC/MrdDistributionsConfig
-
+myGracefulStop GracefulStop ./configfiles/FindMrdTracks/MC/GracefulStopConfig

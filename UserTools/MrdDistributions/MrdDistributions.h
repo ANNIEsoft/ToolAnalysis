@@ -10,13 +10,13 @@
 #include "TStyle.h"
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "Math/Vector3D.h"
 
 class TH1F;
 class TH2F;
 class TH3D;
 class TFile;
 class TTree;
-class TVector3;
 
 class MrdDistributions: public Tool {
 	
@@ -175,10 +175,10 @@ class MrdDistributions: public Tool {
 	std::vector<double> fileout_EnergyLossError;
 	std::vector<double> fileout_TrackLength;
 	std::vector<double> fileout_PenetrationDepth;
-	std::vector<TVector3> fileout_StartVertex;
-	std::vector<TVector3> fileout_StopVertex;
-	std::vector<TVector3> fileout_TankExitPoint;
-	std::vector<TVector3> fileout_MrdEntryPoint;
+	std::vector<ROOT::Math::XYZVector> fileout_StartVertex;
+	std::vector<ROOT::Math::XYZVector> fileout_StopVertex;
+	std::vector<ROOT::Math::XYZVector> fileout_TankExitPoint;
+	std::vector<ROOT::Math::XYZVector> fileout_MrdEntryPoint;
 	// truth variables
 	std::vector<int> fileout_MCTruthParticleID;
 	std::vector<double> fileout_TrackAngleX;
@@ -187,9 +187,9 @@ class MrdDistributions: public Tool {
 	std::vector<double> fileout_TrueEnergyLoss;
 	std::vector<double> fileout_TrueTrackLength;
 	std::vector<double> fileout_TruePenetrationDepth;
-	std::vector<TVector3> fileout_TrueStopVertex;
-	std::vector<TVector3> fileout_TrueTankExitPoint;
-	std::vector<TVector3> fileout_TrueMrdEntryPoint;
+	std::vector<ROOT::Math::XYZVector> fileout_TrueStopVertex;
+	std::vector<ROOT::Math::XYZVector> fileout_TrueTankExitPoint;
+	std::vector<ROOT::Math::XYZVector> fileout_TrueMrdEntryPoint;
 	std::vector<uint64_t> fileout_StartTime;
 	std::vector<int> fileout_InterceptsTank;
 	std::vector<int> fileout_NumLayersHit;
@@ -209,10 +209,10 @@ class MrdDistributions: public Tool {
 	std::vector<double>* pfileout_EnergyLossError;
 	std::vector<double>* pfileout_TrackLength;
 	std::vector<double>* pfileout_PenetrationDepth;
-	std::vector<TVector3>* pfileout_StartVertex;
-	std::vector<TVector3>* pfileout_StopVertex;
-	std::vector<TVector3>* pfileout_TankExitPoint;
-	std::vector<TVector3>* pfileout_MrdEntryPoint;
+	std::vector<ROOT::Math::XYZVector>* pfileout_StartVertex;
+	std::vector<ROOT::Math::XYZVector>* pfileout_StopVertex;
+	std::vector<ROOT::Math::XYZVector>* pfileout_TankExitPoint;
+	std::vector<ROOT::Math::XYZVector>* pfileout_MrdEntryPoint;
 	// truth variables
 	std::vector<int>* pfileout_MCTruthParticleID;
 	std::vector<double>* pfileout_TrackAngleX;
@@ -221,9 +221,9 @@ class MrdDistributions: public Tool {
 	std::vector<double>* pfileout_TrueEnergyLoss;
 	std::vector<double>* pfileout_TrueTrackLength;
 	std::vector<double>* pfileout_TruePenetrationDepth;
-	std::vector<TVector3>* pfileout_TrueStopVertex;
-	std::vector<TVector3>* pfileout_TrueTankExitPoint;
-	std::vector<TVector3>* pfileout_TrueMrdEntryPoint;
+	std::vector<ROOT::Math::XYZVector>* pfileout_TrueStopVertex;
+	std::vector<ROOT::Math::XYZVector>* pfileout_TrueTankExitPoint;
+	std::vector<ROOT::Math::XYZVector>* pfileout_TrueMrdEntryPoint;
 	std::vector<uint64_t>* pfileout_StartTime;
 	std::vector<int>* pfileout_InterceptsTank;
 	std::vector<int>* pfileout_NumLayersHit;
