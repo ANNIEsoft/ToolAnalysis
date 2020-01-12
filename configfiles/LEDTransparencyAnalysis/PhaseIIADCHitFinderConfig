@@ -3,7 +3,7 @@ verbosity 0
 UseLEDWaveforms 0
 #PulseFindingApproach full_window
 PulseFindingApproach fixed_windows
-WindowIntegrationDB ./configfiles/LEDTransparencyAnalysis/TankPMTWindows.txt
+WindowIntegrationDB ./configfiles/LEDTransparencyAnalysis/TankPMTWindows_V2.txt
 
 #PulseFindingApproach threshold
 #ADCThresholdDB ./configfiles/PhaseIIHitLoader/TankPMTTresholds.txt

@@ -3,4 +3,4 @@ verbosity 2
 NumSubWaveforms 25
 PCritical 0.01
 MakeCalLEDWaveforms 0
-WindowIntegrationDB ./configfiles/LEDTransparencyAnalysis/TankPMTWindows.txt
+WindowIntegrationDB ./configfiles/LEDTransparencyAnalysis/TankPMTWindows_V2.txt

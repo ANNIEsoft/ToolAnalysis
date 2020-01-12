@@ -19,9 +19,11 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
   num_baseline_samples = 5;
   adc_window_db = "none";
   make_led_waveforms = false;
+  BEType = "ze3ra";
 
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("PCritical", p_critical);
+  m_variables.Get("BaselineEstimationType", BEType);
   m_variables.Get("NumBaselineSamples", num_baseline_samples);
   m_variables.Get("NumSubWaveforms", num_sub_waveforms);
   m_variables.Get("MakeCalLEDWaveforms",make_led_waveforms);
@@ -245,11 +247,15 @@ PhaseIIADCCalibrator::make_calibrated_waveforms(
   std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
   for (const auto& raw_waveform : raw_waveforms) {
     double baseline, sigma_baseline;
-    ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
-      num_baseline_samples);
-      
+    if(BEType == "ze3ra"){
+      ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
+        num_baseline_samples);
+    }
     std::vector<double> cal_data;
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
+    if(BEType == "simple"){
+      ComputeMeanAndVariance(raw_data, baseline, sigma_baseline, num_baseline_samples);
+    } 
   
     for (const auto& sample : raw_data) {
       cal_data.push_back((static_cast<double>(sample) - baseline)
