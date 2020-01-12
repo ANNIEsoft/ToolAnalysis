@@ -39,8 +39,8 @@ class MrdEfficiency: public Tool {
 	uint32_t EventNumber;
 	
 	// maps between true and reco particles
-        std::map<int,int> Reco_to_True_Id_Map;
-        std::map<int,int> True_to_Reco_Id_Map;
+	std::map<int,int> Reco_to_True_Id_Map;
+	std::map<int,int> True_to_Reco_Id_Map;
 	
 	// TApplication for making histograms
 	TApplication* rootTApp=nullptr;

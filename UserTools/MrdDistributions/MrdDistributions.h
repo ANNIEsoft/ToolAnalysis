@@ -49,7 +49,7 @@ class MrdDistributions: public Tool {
 	//std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
 	//std::vector<double>* ParticleId_to_MrdCharge;
 	std::map<int,int> Reco_to_True_Id_Map;
-	std::map<int,int> trackid_to_mcparticleindex;
+	std::map<int,int>* trackid_to_mcparticleindex=nullptr;
 	
 	// Variables from MRDTracks BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

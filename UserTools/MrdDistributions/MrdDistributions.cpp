@@ -253,8 +253,10 @@ bool MrdDistributions::Execute(){
 		logmessage += "between MC and true particles, so truth data will be empty!";
 		Log(logmessage,v_warning,verbosity);
 	}
-	// map stores IDs, we need to convert ID to index to access the corresponding MCParticle
-	trackid_to_mcparticleindex.clear(); // maps MCParticle ID to index in MCParticles vector
+	// get the map that converts MCParticle ID to index in MCParticles vector,
+	// so that we can retrieve the corresponding MCParticle
+	// pointers in stores are confusing, best to consider them read-only:
+	// XXX do NOT clear the map before hand XXX
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex);
 	if(not get_ok){
 		logmessage  = "MrdDistributions Tool: No TrackId_to_MCParticleIndex in ANNIEEvent!\n";
@@ -392,8 +394,26 @@ bool MrdDistributions::Execute(){
 		fileout_MrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
 		
 		// See if we had a matching truth track (if MC) and record true details if so
+		int mc_particles_index=-1;
+		// check if MrdEfficiency tool found a matching true particle
 		if(Reco_to_True_Id_Map.count(MrdTrackID)){
+			// get its ID
 			int true_track_id = Reco_to_True_Id_Map.at(MrdTrackID);
+			// confirm LoadWCSim mapped this to an MCParticles index
+			if(trackid_to_mcparticleindex.count(true_track_id)>0){
+				// retrieve the index
+				mc_particles_index = trackid_to_mcparticleindex.at(true_track_id);
+			} else {
+				// we could scan the MCParticles to find it, but something, somewhere went wrong...
+				Log("MrdDistributions Tool: TrackId_to_MCParticleIndex map does not contain Particle ID "
+					+ to_string(true_track_id) + " suggested by Reco_to_True_Id_Map",v_error,verbosity);
+			}
+		} else {
+			Log("No MCParticle ID for this track; presumably it was a fake track from noise?",v_debug,verbosity);
+		}
+		// if we had a true particle, record it's details
+		if(mc_particles_index>=0){
+			int true_track_index = trackid_to_mcparticleindex.at(true_track_id);
 			MCParticle* nextparticle = &MCParticles->at(true_track_id);
 			// Get the track details
 			MCTruthParticleID = nextparticle->GetParticleID();
