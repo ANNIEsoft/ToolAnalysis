@@ -491,8 +491,12 @@ bool MrdPaddlePlot::Finalise(){
 	
 	if(drawGdmlOverlay && gdmlcanv) delete gdmlcanv;
 	
-	if (saverootfile) delete mrdvis_file;
-
+	if (saverootfile) {
+		int rootfileusers=0;
+		get_ok = m_data->CStore.Get("RootFileUsers",rootfileusers);
+		if (get_ok && rootfileusers >=1) m_data->CStore.Set("RootFileUsers",rootfileusers-1);
+		delete mrdvis_file;
+	}
 	if (useTApplication){
 		int tapplicationusers=0;
 		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
