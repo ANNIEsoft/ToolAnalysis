@@ -499,8 +499,8 @@ bool MrdPaddlePlot::Finalise(){
 		if(not get_ok || tapplicationusers==1){
 			if(rootTApp){
 				std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
-				//delete rootTApp;
-				//rootTApp=nullptr;
+				delete rootTApp;
+				rootTApp=nullptr;
 			}
 		} else if(tapplicationusers>1){
 			m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
