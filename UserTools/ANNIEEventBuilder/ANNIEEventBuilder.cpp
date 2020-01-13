@@ -98,7 +98,8 @@ bool ANNIEEventBuilder::Execute(){
       int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
       int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
       if(aWaveMap.size() >= (NumTankPMTChannels + NumAuxChannels)){
-        this->BuildANNIEEventTank(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
+        this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,RunType,StarTime);
+        this->BuildANNIEEventTank(PMTCounterTime, aWaveMap);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubrunNum);
         //Erase this entry from the InProgressTankEventsMap
         if(verbosity>4) std::cout << "Counter time will be erased from InProgressTankEvents: " << PMTCounterTime << std::endl;
@@ -135,7 +136,8 @@ bool ANNIEEventBuilder::Execute(){
       unsigned long MRDTimeStamp = apair.first;
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
-      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, RunNumber, SubRunNumber, RunType);
+      this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,RunType,StarTime);
+      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
       this->SaveEntryToFile(RunNumber,SubRunNumber);
       //Erase this entry from the InProgressTankEventsMap
       MRDEventsToDelete.push_back(MRDTimeStamp);
@@ -165,10 +167,10 @@ bool ANNIEEventBuilder::Execute(){
     int MRDRunType;
     RunInfoPostgress.Get("RunNumber",MRDRunNumber);
     RunInfoPostgress.Get("SubRunNumber",MRDSubRunNumber);
-    RunInfoPostgress.Get("RunType",TankRunType);
-    RunInfoPostgress.Get("StarTime",TankStarTime);
+    RunInfoPostgress.Get("RunType",MRDRunType);
+    RunInfoPostgress.Get("StarTime",MRDStarTime);
     
-    //Initialize Current RunNum and SubrunNum. New ANNIEEvent for any New Run or Subrun
+    //If our first execute loop, Initialize Current run information with Tank decoding progress
     if(CurrentRunNum == -1 || CurrentSubrunNum == -1){
       CurrentRunNum = TankRunNumber;
       CurrentSubrunNum = TankSubRunNumber;
@@ -179,15 +181,19 @@ bool ANNIEEventBuilder::Execute(){
     }
   
     // Check that Tank and MRD decoding are on the same run/subrun.  If not, take the
-    // lowest Run Number and Subrun number to keep building 
+    // lowest Run Number and Subrun number to keep building events
     if (TankRunNumber != MRDRunNumber || TankSubRunNumber != MRDSubRunNumber){
       if((TankRunNumber*10000 + TankSubRunNumber) > (MRDRunNumber*10000 + MRDSubRunNumber)){
         LowestRunNumber = TankRunNumber;
         LowestSubRunNumber = TankSubRunNumber;
+        LowestRunType = TankRunType;
+        LowestStarTime = TankStarTime;
         m_data->CStore.Set("PauseMRDDecoding",true);
       } else {
         LowestRunNumber = MRDRunNumber;
         LowestSubRunNumber = MRDSubRunNumber;
+        LowestRunType = MRDRunType;
+        LowestStarTime = MRDStarTime;
         m_data->CStore.Set("PauseTankDecoding",true);
       }
     } else {
@@ -205,6 +211,8 @@ bool ANNIEEventBuilder::Execute(){
       delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
       CurrentRunNum = LowestRunNumber;
       CurrentSubrunNum = LowestSubRunNumber;
+      CurrentRunType = LowestRunType;
+      CurrentStarTime = LowestStarTime;
     }
 
     //First, see if any In-progress tank events now have all waveforms
@@ -255,6 +263,7 @@ bool ANNIEEventBuilder::Execute(){
     }
 
     //Now, come up with an algorithm to pair up PMT and MRD events...
+    this->PairPMTAndMRDTriggers();
 
     //Finally, Build the ANNIEEvent of any PMT/MRD data that is done/has been paired
     m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
@@ -264,6 +273,8 @@ bool ANNIEEventBuilder::Execute(){
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap, MRDHits, MRDTimeStamp, MRDTriggerType, CurrentRunNumber, CurrentSubRunNumber, CurrentRunType,CurrentStarTime);
+      this->BuildANNIEEventTank(PMTCounterTime, aWaveMap); MRDHits, MRDTimeStamp, MRDTriggerType, CurrentRunNumber, CurrentSubRunNumber, CurrentRunType,CurrentStarTime);
+      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
       this->SaveEntryToFile(RunNumber,SubRunNumber);
       //Erase this entry from the InProgressTankEventsMap
       MRDEventsToDelete.push_back(MRDTimeStamp);
@@ -294,10 +305,15 @@ bool ANNIEEventBuilder::Finalise(){
   return true;
 }
 
+void ANNIEEventBuilder::PairPMTAndMRDTriggers(){
+  //Couple things to do:
+  // First, check the lengths of each; don't start pairing until we have at least 10 timestamps from the PMT and MRD
+  // Once we have ten of them, organize them from earliest to latest.  Pair up the timestamps
+  // Take the mean of these 10 as the baseline that other timestamp spreads should be close to in the run
+  // If the deviation is large, or there's a jump anywhere in the run, print huge WARNINGS.
 
 void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType, int RunNum, int SubrunNum, int
-        RunType)
+        unsigned long MRDTimeStamp, std::string MRDTriggerType)
 {
   std::cout << "Building an ANNIE Event (MRD), ANNIEEventNum = "<<ANNIEEventNum << std::endl;
 
@@ -321,19 +337,28 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
-  ANNIEEvent->Set("RunNumber",RunNum);
-  ANNIEEvent->Set("SubrunNumber",SubrunNum);
-  ANNIEEvent->Set("RunType",RunType);
-  ANNIEEvent->Set("EventNumber",ANNIEEventNum);
   TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in ns
   ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
   ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
   return;
 }
 
-void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime, 
-        std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, int RunNum, int SubrunNum,
+void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNum, int SubrunNum,
         int RunType, uint64_t StartTime)
+{
+  if(verbosity>v_message)std::cout << "Building an ANNIE Event Run Info" << std::endl;
+  ANNIEEvent->Set("EventNumber",ANNIEEventNum);
+  ANNIEEvent->Set("RunNumber",RunNum);
+  ANNIEEvent->Set("SubrunNumber",SubrunNum);
+  ANNIEEvent->Set("RunType",RunType);
+  ANNIEEvent->Set("RunStartTime",StartTime);
+  //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
+  //  - BeamStatus?  
+  return;
+}
+
+void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime, 
+        std::map<std::vector<int>, std::vector<uint16_t>> WaveMap)
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event" << std::endl;
 
@@ -378,107 +403,15 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
   std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
-  ANNIEEvent->Set("RunNumber",RunNum);
-  ANNIEEvent->Set("SubrunNumber",SubrunNum);
-  ANNIEEvent->Set("RunType",RunType);
-  ANNIEEvent->Set("RunStartTime",StartTime);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
   //  - EventTime
   //  - TriggerData
-  //  - BeamStatus?  
   //  - RawLAPPDData
   if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: ANNIE Event "+
       to_string(ANNIEEventNum)+" built." << std::endl;
   return;
 }
 
-
-void ANNIEEventBuilder::BuildANNIEEvent( uint64_t TankClockTime, 
-        std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType, int RunNum, int SubrunNum, int
-        RunType, uint64_t RunStartTime)
-{
-  if(verbosity>v_message)std::cout << "Building an ANNIE Event" << std::endl;
-
-  ///////////////LOAD RAW PMT DATA INTO ANNIEEVENT///////////////
-  std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
-  std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCAuxData;
-  for(std::pair<std::vector<int>, std::vector<uint16_t>> apair : WaveMap){
-    int CardID = apair.first.at(0);
-    int ChannelID = apair.first.at(1);
-    int CrateNum=-1;
-    int SlotNum=-1;
-    if(verbosity>v_debug) std::cout << "Converting card ID " << CardID << ", channel ID " <<
-          ChannelID << " to electronics space" << std::endl;
-    this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
-    std::vector<uint16_t> TheWaveform = apair.second;
-    //FIXME: We're feeding Waveform class expects a double, not a uint64_t (?)
-    Waveform<uint16_t> TheWave(TankClockTime, TheWaveform);
-    //Placing waveform in a vector in case we want a hefty-mode minibuffer storage eventually
-    std::vector<Waveform<uint16_t>> WaveVec{TheWave};
-    
-    std::vector<int> CrateSpace{CrateNum,SlotNum,ChannelID};
-    unsigned long ChannelKey;
-    if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)>0){
-      ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
-      RawADCData.emplace(ChannelKey,WaveVec);
-    }
-    else if (AuxCrateSpaceToChannelNumMap.count(CrateSpace)>0){
-      ChannelKey = AuxCrateSpaceToChannelNumMap.at(CrateSpace);
-      RawADCAuxData.emplace(ChannelKey,WaveVec);
-    } else{
-      Log("ANNIEEventBuilder:: Cannot find channel key for crate space entry: ",v_error, verbosity);
-      Log("ANNIEEventBuilder::CrateNum "+to_string(CrateNum),v_error, verbosity);
-      Log("ANNIEEventBuilder::SlotNum "+to_string(SlotNum),v_error, verbosity);
-      Log("ANNIEEventBuilder::ChannelID "+to_string(ChannelID),v_error, verbosity);
-      Log("ANNIEEventBuilder:: Passing over the wave; PMT DATA LOST",v_error, verbosity);
-      continue;
-    }
-  }
-  ANNIEEvent->Set("RawADCData",RawADCData);
-  ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
-  ANNIEEvent->Set("RunNumber",RunNum);
-  ANNIEEvent->Set("SubrunNumber",SubrunNum);
-  ANNIEEvent->Set("RunType",RunType);
-  ANNIEEvent->Set("RunStartTime",StartTime);
-
-  ///////////////LOAD RAW MRD DATA INTO ANNIEEVENT///////////////
-  TDCData = new std::map<unsigned long, std::vector<Hit>>;
-  //TODO: Loop through MRDHits at this timestamp and form the Hit vector.
-  for (unsigned int i_value=0; i_value< MRDHits.size(); i_value++){
-    unsigned long channelkey = MRDHits.at(i_value).first;
-    int hitTimeADC = MRDHits.at(i_value).second;
-    if (TDCData->count(channelkey)==0){
-      std::vector<Hit> newhitvector;
-      if (verbosity > 3) std::cout <<"creating hit with time value "<<hitTimeADC*4<<"and chankey "<<channelkey<<std::endl;
-      newhitvector.push_back(Hit(0,hitTimeADC*4.,1.));    //Hit(tubeid, time, charge). 1 TDC tick corresponds to 4ns, no charge information (set to 1)
-      TDCData->emplace(channelkey,newhitvector);
-    } else {
-      if (verbosity > 3) std::cout <<"creating hit with time value "<<hitTimeADC*4<<"and chankey "<<channelkey<<std::endl;
-      TDCData->at(channelkey).push_back(Hit(0,hitTimeADC*4.,1.));
-    }
-  }
-
-  Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
-
-  ANNIEEvent->Set("TDCData",TDCData,true);
-  TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in ns
-  ANNIEEvent->Set("MRDEventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
-  ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
-
-  //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
-  //  - EventTime
-  //  - TriggerData
-  //  - BeamStatus?  
-  //  - RawLAPPDData
-  return;
-}
-
-void ANNIEEventBuilder::BuildANNIEEventTank( int RunNum, int SubrunNum,
-        int RunType, uint64_t StartTime)
-{
-  return;
-}
 
 
 
