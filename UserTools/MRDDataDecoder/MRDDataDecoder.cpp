@@ -50,14 +50,22 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
     OrganizedFileList = this->OrganizeRunParts(InputFile);
     Log("MRDDataDecoder tool: files to load have been organized.",v_message,verbosity);
   }
-
+  
+  m_data->CStore.Set("PauseMRDDecoding",false);
   Log("MRDDataDecoder Tool: Initialized successfully",v_message,verbosity);
   return true;
 }
 
 
 bool MRDDataDecoder::Execute(){
- 
+
+  bool PauseMRDDecoding = false;
+  m_data->CStore.Get("PauseMRDDecoding",PauseMRDDecoding);
+  if (PauseMRDDecoding){
+    std::cout << "PMTDataDecoder tool: Pausing tank decoding to let Tank data catch up..." << std::endl;
+    return true;
+  }
+
   //Check if we are starting a new file
   if (FileCompleted) m_data->CStore.Set("MRDFileComplete",false);
 
@@ -225,7 +233,7 @@ bool MRDDataDecoder::Execute(){
   //FIXME: Should we now clear CStoreMRDEvents and CStoreTriggerTypesto free up memory?
   
   m_data->CStore.Set("NewMRDDataAvailable",true);
-  m_data->CStore.Set("RunInfoPostgress",Postgress);
+  m_data->CStore.Set("MRDRunInfoPostgress",Postgress);
 
   //Check the size of the WaveBank to see if things are bloating
   Log("MRDDataDecoder Tool: Size of MRDEvents (# MRD Triggers processed):" + 

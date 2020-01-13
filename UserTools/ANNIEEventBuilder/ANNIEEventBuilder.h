@@ -28,19 +28,20 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
-  void BuildANNIEEvent(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, int RunNum, int SubrunNum, int RunType, uint64_t EventStartTime);
+  void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, int RunNum, int SubrunNum, int RunType, uint64_t RunStartTime);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType, int RunNum, int SubrunNum, int RunType);
+  void BuildANNIEEvent(uint64_t PMTCounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap, std::vector<std::pair<unsigned long,int>> MRDHits, 
+        unsigned long MRDTimeStamp, std::string MRDTriggerType, int RunNum, int SubrunNum, int RunType,uint64_t RunStartTime);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveEntryToFile(int RunNum, int SubrunNum);
 
  private:
 
-  std::vector<int> DAQ_SIGNAL_SLOTS{1015,2019};
-
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > InProgressTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
 
   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
@@ -49,8 +50,13 @@ class ANNIEEventBuilder: public Tool {
   BoostStore *RawData;
   BoostStore *TrigData;
 
-  bool isMRDData;
-  bool isTankData;
+
+  std::vector<uint64_t> RunTankTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
+  std::vector<uint64_t> RunMRDTimestamps;  //Contains timestamps for all MRD events encountered so far
+  std::vector<uint64_t> FinishedTankTimestamps;  //Contains timestamps for PMT Events that are fully built
+  std::map<uint64_t,uint64_t> FinishedTankMRDPairs; //Pairs of Tank PMT/MRD counters signifying these events are ready to be built
+  
+  std::string BuildType;
   bool TankFileComplete;
 
   BoostStore *ANNIEEvent = nullptr;

@@ -112,7 +112,7 @@ class PMTDataDecoder: public Tool {
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStorePMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStoreTankEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
 
   // Notes whether DAQ is in lock step running
   // Number of PMTs that must be found in a WaveSet to build the event

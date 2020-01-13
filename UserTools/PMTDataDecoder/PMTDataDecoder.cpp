@@ -47,15 +47,21 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
     Log("PMTDataDecoder tool: files to load has been organized.",v_message,verbosity);
   }
 
+  m_data->CStore.Set("PauseTankDecoding",false);
   return true;
 }
 
 
 bool PMTDataDecoder::Execute(){
-
-
   //Set in CStore that there's currently no new tank data available
   m_data->CStore.Set("NewTankPMTDataAvailable",false);
+
+  bool PauseTankDecoding = false;
+  m_data->CStore.Get("PauseTankDecoding",PauseTankDecoding);
+  if (PauseTankDecoding){
+    std::cout << "PMTDataDecoder tool: Pausing tank decoding to let MRD data catch up..." << std::endl;
+    return true;
+  }
 
   //Check if we are starting a new file 
   if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
@@ -283,35 +289,35 @@ bool PMTDataDecoder::Execute(){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
   } else {
 	Log("PMTDataDecoder Tool: Saving Finished PMT waves into CStore.",v_debug, verbosity);
-    m_data->CStore.Get("FinishedPMTWaves",CStorePMTWaves);
+    m_data->CStore.Get("InProgressTankEvents",CStoreTankEvents);
     //Iterate over FinishedPMTWaves and populate the CStore's copy 
     std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it;
     for ( it = FinishedPMTWaves.begin(); it != FinishedPMTWaves.end(); it++){
       uint64_t this_counter = it->first;
       std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it = 
-          CStorePMTWaves.find(this_counter);
-      if(it != CStorePMTWaves.end()){ //This timestamp already has some finished waves
-        CStorePMTWaves.at(this_counter).insert(FinishedPMTWaves.at(this_counter).begin(),
+          CStoreTankEvents.find(this_counter);
+      if(it != CStoreTankEvents.end()){ //This timestamp already has some finished waves
+        CStoreTankEvents.at(this_counter).insert(FinishedPMTWaves.at(this_counter).begin(),
                 FinishedPMTWaves.at(this_counter).end());
       } else {
-        CStorePMTWaves.emplace(this_counter,FinishedPMTWaves.at(this_counter));
+        CStoreTankEvents.emplace(this_counter,FinishedPMTWaves.at(this_counter));
       }
     }
-    m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
+    m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
 
   //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
   FinishedPMTWaves.clear();
   
-  m_data->CStore.Set("RunInfoPostgress",Postgress);
+  m_data->CStore.Set("TankRunInfoPostgress",Postgress);
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
           to_string(WaveBank.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Size of FinishedPMTWaves from this execution (# triggers with at least one wave fully):" + 
           to_string(FinishedPMTWaves.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
-          to_string(CStorePMTWaves.size()),v_debug, verbosity);
+          to_string(CStoreTankEvents.size()),v_debug, verbosity);
 
 
   if(CDEntryNum == totalentries){
