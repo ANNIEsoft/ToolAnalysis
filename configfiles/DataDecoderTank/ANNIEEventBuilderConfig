@@ -1,4 +1,4 @@
-verbosity 5
+verbosity 2
 
 BuildType TankAndMRD
 ProcessedFilesBasename ProcessedRawData

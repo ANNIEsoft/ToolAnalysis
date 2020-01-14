@@ -1,0 +1,3 @@
+LoadGeometry LoadGeometry ./configfiles/DataDecoderTank/LoadGeometryConfig
+PMTDataDecoder PMTDataDecoder ./configfiles/DataDecoderTank/PMTDataDecoderConfig
+ANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoderTank/ANNIEEventBuilderConfig

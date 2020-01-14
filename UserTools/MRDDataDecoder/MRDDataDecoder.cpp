@@ -62,7 +62,7 @@ bool MRDDataDecoder::Execute(){
   bool PauseMRDDecoding = false;
   m_data->CStore.Get("PauseMRDDecoding",PauseMRDDecoding);
   if (PauseMRDDecoding){
-    std::cout << "PMTDataDecoder tool: Pausing tank decoding to let Tank data catch up..." << std::endl;
+    std::cout << "MRDDataDecoder tool: Pausing tank decoding to let Tank data catch up..." << std::endl;
     return true;
   }
 
@@ -286,8 +286,8 @@ std::vector<std::string> MRDDataDecoder::OrganizeRunParts(std::string FileList)
 {
   std::vector<std::string> OrganizedFiles;
   std::vector<std::string> UnorganizedFileList;
-  std::vector<int> PartNum;
-  int FirstRunNum = -9999;
+  std::vector<int> RunCodes;
+  int ThisRunCode;
   //First, parse the lines and get all files.
   std::string line;
   ifstream myfile(FileList.c_str());
@@ -297,64 +297,63 @@ std::vector<std::string> MRDDataDecoder::OrganizeRunParts(std::string FileList)
       if(verbosity>vv_debug) std::cout << "Parsing next line " << std::endl;
       if(line.find("#")!=std::string::npos) continue;
       if(verbosity>v_debug) std::cout << line << std::endl; //has our stuff;
-      // std::vector<std::string> splitline;
-      // boost::split(splitline,line, boost::is_any_of(","), boost::token_compress_on);
-      // for(int i = 0;i<splitline.size(); i ++){
-      // std::string filename = splitline.at(i);
-      std::string filename = line;
-      int rawfilerun, rawfilesubrun, rawfilepart;
-      int numargs = 0;
-      try{
-        std::reverse(line.begin(),line.end());
-        //Part number is the first character now.
-        size_t pplace = line.find("p");
-        std::string part = line.substr(0,pplace);
-        std::reverse(part.begin(),part.end());
-        rawfilepart = std::stoi(part);
-        // Get the address
-        char * p = std::strtok(const_cast<char*>(line.c_str()),"RSp");
-        while(numargs <2){
-          p = std::strtok(NULL,"RSp");
-          std::string capturedstring(p);
-          if(verbosity>vv_debug) std::cout << "Caotured string is " << capturedstring << std::endl;
-          std::reverse(capturedstring.begin(),capturedstring.end());
-          if (numargs == 0) rawfilesubrun = std::stoi(capturedstring.c_str());
-          else if (numargs == 1) rawfilerun = std::stoi(capturedstring.c_str());
-          numargs++;
-        }
-      } catch (int e){
-        std::cout <<"unrecognised input file pattern!: "<<filename
-                        <<"File will be ignored,"<<endl;
-        //return;
-        rawfilerun = -1;
-        rawfilesubrun = -1;
-        rawfilepart = -1;
-      }
-      if (FirstRunNum == -9999 && rawfilerun!=-1){
-          FirstRunNum = rawfilepart;
+      //std::vector<std::string> splitline;
+      //boost::split(splitline,line, boost::is_any_of(","), boost::token_compress_on);
+      //for(int i = 0;i<splitline.size(); i ++){
+        //std::string filename = splitline.at(i);
+        std::string filename = line;
+	    int rawfilerun, rawfilesubrun, rawfilepart;
+        int numargs = 0;
+	    try{
+	    	std::reverse(line.begin(),line.end());
+            //Part number is the first character now.
+            size_t pplace = line.find("p");
+            std::string part = line.substr(0,pplace);
+            std::reverse(part.begin(),part.end());
+            rawfilepart = std::stoi(part);
+	    	// Get the address
+	    	char * p = std::strtok(const_cast<char*>(line.c_str()),"RSp");
+	    	while(numargs <2){
+	    		p = std::strtok(NULL,"RSp");
+	    		std::string capturedstring(p);
+                if(verbosity>vv_debug) std::cout << "Caotured string is " << capturedstring << std::endl;
+	    		std::reverse(capturedstring.begin(),capturedstring.end());
+	    		if (numargs == 0) rawfilesubrun = std::stoi(capturedstring.c_str());
+	    		else if (numargs == 1) rawfilerun = std::stoi(capturedstring.c_str());
+	    		numargs++;
+	    	}
+	    } catch (int e){
+            std::cout <<"unrecognised input file pattern!: "<<filename
+	    		<<"File will be ignored,"<<endl;
+	    	//return;
+	    	rawfilerun=-1;
+	    	rawfilesubrun=-1;
+	    	rawfilepart = -1;
+	    }
+        ThisRunCode = rawfilerun*1000000 + ((rawfilesubrun+1)*1000) + rawfilepart;
+        if (rawfilerun!=-1){
+          if(verbosity>v_warning) std::cout << "MRDDataDecoder Tool: will parse file : " << filename << std::endl;
           UnorganizedFileList.push_back(filename);
-          PartNum.push_back(rawfilepart);
-        } else if (rawfilepart!=-1 && rawfilerun==FirstRunNum){
-          UnorganizedFileList.push_back(filename);
-          PartNum.push_back(rawfilepart);
+          RunCodes.push_back(ThisRunCode);
         } else {
           if(verbosity>v_error) std::cout << "MRDDataDecoder Tool: Problem parsing this file name: " << filename << std::endl;
         }
+      //} // End parse filename in data line 
     } // End parsing each line in file
     if(verbosity>v_debug) std::cout << "MRDDataDecoder Tool: Organizing filenames: " << std::endl;
     //Now, organize files based on the part number array
     std::vector < std::pair<int,std::string>> SortingVector;
-    for (unsigned int i = 0; i < UnorganizedFileList.size(); i++){
-      SortingVector.push_back( std::make_pair(PartNum.at(i),UnorganizedFileList.at(i)));
+    for (int i = 0; i < UnorganizedFileList.size(); i++){
+      SortingVector.push_back( std::make_pair(RunCodes.at(i),UnorganizedFileList.at(i)));
     }
     std::sort(SortingVector.begin(),SortingVector.end());
-    for (unsigned int j = 0; j<SortingVector.size();j ++) {
+    for (int j = 0; j<SortingVector.size();j ++) {
       OrganizedFiles.push_back(SortingVector.at(j).second);
     }
-    } else {
-      Log("MRDDataDecoder Tool: FIle not found at nput file list path. "
+  } else {
+    Log("MRDDataDecoder Tool: FIle not found at nput file list path. "
         "no Organized Run List will be returned ",
         v_error, verbosity);
-    }
+  }
   return OrganizedFiles;
 }

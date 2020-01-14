@@ -28,12 +28,13 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
-  void BuildANNIEEventRunInfo(int RunNum, int SubrunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
+  void PairTankPMTAndMRDTriggers();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
+  void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
-  void SaveEntryToFile(int RunNum, int SubrunNum);
+  void SaveEntryToFile(int RunNum, int SubRunNum);
 
  private:
 
@@ -77,7 +78,13 @@ class ANNIEEventBuilder: public Tool {
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   uint32_t ANNIEEventNum;
   int CurrentRunNum;
-  int CurrentSubrunNum;
+  int CurrentSubRunNum;
+  int CurrentRunType;
+  int CurrentStarTime;
+  int LowestRunNum;
+  int LowestSubRunNum;
+  int LowestRunType;
+  int LowestStarTime;
 
   bool SaveToFile; 
   std::string SavePath;
