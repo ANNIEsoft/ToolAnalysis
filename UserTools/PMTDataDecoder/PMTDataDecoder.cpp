@@ -167,7 +167,7 @@ bool PMTDataDecoder::Execute(){
   //If we have moved onto a new run number, we should clear the event building maps 
   if (CurrentRunNum == -1){
     CurrentRunNum = RunNumber;
-    CurrentSubrunNum == SubRunNumber;
+    CurrentSubrunNum = SubRunNumber;
   }
   else if (RunNumber != CurrentRunNum){ //New run has been encountered
     Log("PMTDataDecoder Tool: New run encountered.  Clearing event building maps",v_message,verbosity); 
@@ -199,7 +199,7 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_warning){
     double CDDouble = (double)CDEntryNum;
     double ETDDouble = (double)EntriesToDo;
-    std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
+    std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<"fraction = "<<(CDDouble/totalentries)*100 << std::endl;
   }
   
   while((ExecuteEntryNum < EntriesPerExecute) && (CDEntryNum<totalentries)){
@@ -290,25 +290,23 @@ bool PMTDataDecoder::Execute(){
   } else {
 	Log("PMTDataDecoder Tool: Saving Finished PMT waves into CStore.",v_debug, verbosity);
     m_data->CStore.Get("InProgressTankEvents",CStoreTankEvents);
-    //Iterate over FinishedPMTWaves and populate the CStore's copy 
+    //Iterate over FinishedPMTWaves and populate the CStore copy; timestamps in ns
     std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it;
     for ( it = FinishedPMTWaves.begin(); it != FinishedPMTWaves.end(); it++){
-      uint64_t this_counter = it->first;
+      uint64_t this_counter_ns = it->first;
       std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it = 
-          CStoreTankEvents.find(this_counter);
+          CStoreTankEvents.find(this_counter_ns);
       if(it != CStoreTankEvents.end()){ //This timestamp already has some finished waves
-        CStoreTankEvents.at(this_counter).insert(FinishedPMTWaves.at(this_counter).begin(),
-                FinishedPMTWaves.at(this_counter).end());
+        CStoreTankEvents.at(this_counter_ns).insert(FinishedPMTWaves.at(this_counter_ns).begin(),
+                FinishedPMTWaves.at(this_counter_ns).end());
       } else {
-        CStoreTankEvents.emplace(this_counter,FinishedPMTWaves.at(this_counter));
+        CStoreTankEvents.emplace(this_counter_ns,FinishedPMTWaves.at(this_counter_ns));
       }
     }
     m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
 
-  //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
-  FinishedPMTWaves.clear();
   
   m_data->CStore.Set("TankRunInfoPostgress",Postgress);
   //Check the size of the WaveBank to see if things are bloating
@@ -318,7 +316,9 @@ bool PMTDataDecoder::Execute(){
           to_string(FinishedPMTWaves.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
           to_string(CStoreTankEvents.size()),v_debug, verbosity);
-
+  
+  //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
+  FinishedPMTWaves.clear();
 
   if(CDEntryNum == totalentries){
     Log("PMTDataDecoder Tool: Run part completed.",v_warning, verbosity);
@@ -510,7 +510,7 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
   unsigned channel_mask; 
   int ChannelID = DF.frameheader >> 24; //TODO: Use something more intricate?
                                   //Bitrange defined by Jonathan (511 downto 504)
-  if(verbosity>3) std::cout << "Parsing frame with CardID and ChannelID-" << 
+  if(verbosity>4) std::cout << "Parsing frame with CardID and ChannelID-" << 
       CardID << "," << ChannelID << std::endl;
   if(!DF.has_recordheader && (ChannelID != SYNCFRAME_HEADERID)){
     //All samples are waveforms for channel record that already exists in the WaveBank.
@@ -521,7 +521,6 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
     //FIXME: this works if there's already a wave being built.  You need to parse 
     //a record header in the wavebank first if it's the first thing in the frame though
     if(verbosity>v_debug) {
-      std::cout << "This decoded frame has headers at... " << std::endl;
       for (unsigned int j = 0; j<DF.recordheader_starts.size(); j++){
           std::cout << DF.recordheader_starts.at(j) << std::endl;
       }
@@ -534,11 +533,11 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
             "continuing" << std::endl;
         continue;
       }
-      if(verbosity>v_debug)std::cout << "RECORD HEADER INDEX" << DF.recordheader_starts.at(j) << std::endl;
-      if(verbosity>v_debug)std::cout << "WAVESECBEGIN IS " << WaveSecBegin << std::endl;
+      if(verbosity>vv_debug)std::cout << "RECORD HEADER INDEX" << DF.recordheader_starts.at(j) << std::endl;
+      if(verbosity>vv_debug)std::cout << "WAVESECBEGIN IS " << WaveSecBegin << std::endl;
       std::vector<uint16_t> WaveSlice(DF.samples.begin()+WaveSecBegin, 
               DF.samples.begin()+DF.recordheader_starts.at(j));
-      Log("PMTDataDecoder Tool: Length of waveslice: "+to_string(WaveSlice.size()),v_debug, verbosity);
+      Log("PMTDataDecoder Tool: Length of waveslice: "+to_string(WaveSlice.size()),vv_debug, verbosity);
       //Add this WaveSlice to the wave bank
       this->AddSamplesToWaveBank(CardID, ChannelID, WaveSlice);
       //Since we have acquired the wave up to the next record header, the wave is done.
@@ -611,8 +610,9 @@ void PMTDataDecoder::ParseRecordHeader(int CardID, int ChannelID, std::vector<ui
   
   //Update the TriggerTimeBank and WaveBank with new entries, since this channel's
   //Wave data is coming up next
-  Log("PMTDataDecoder Tool: Parsed Clock time for header is "+to_string(ClockCount),v_debug, verbosity);
-  TriggerTimeBank.emplace(wave_key,ClockCount);
+  Log("PMTDataDecoder Tool: Parsed Clock counter for header is "+to_string(ClockCount),v_debug, verbosity);
+  Log("PMTDataDecoder Tool: Parsed Clock time for header is "+to_string(ClockCount*8),v_debug, verbosity);
+  TriggerTimeBank.emplace(wave_key,ClockCount*8);
   Log("PMTDataDecoder Tool: Placing empty waveform in WaveBank ",v_debug, verbosity);
   WaveBank.emplace(wave_key,Waveform);
   return;
@@ -630,9 +630,9 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
     return;
   }
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
-  uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);
+  uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);  //Conversion from counter ticks to ns
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);
-  Log("PMTDataDecoder Tool: Finished Wave Clock time"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
+  Log("PMTDataDecoder Tool: Finished Wave Clock time (ns)"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
 
   if(FinishedPMTWaves.count(FinishedWaveTrigTime) == 0) {
     std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
@@ -651,7 +651,7 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
 void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID, 
         std::vector<uint16_t> WaveSlice)
 {
-  Log("PMTDataDecoder Tool: Adding Waveslice to waveform.  Num. Samples: "+to_string(WaveSlice.size()),v_debug, verbosity);
+  Log("PMTDataDecoder Tool: Adding Waveslice to waveform.  Num. Samples: "+to_string(WaveSlice.size()),vv_debug, verbosity);
   //TODO: Make sure the above is always divisible by 4!
   //Add the WaveSlice to the proper vector in the WaveBank.
   std::vector<int> wave_key{CardID,ChannelID};

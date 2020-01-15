@@ -28,6 +28,7 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
+  void PauseDecodingOnAheadStream();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void PairTankPMTAndMRDTriggers();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
@@ -52,8 +53,9 @@ class ANNIEEventBuilder: public Tool {
   BoostStore *TrigData;
 
   //######### INFORMATION USED FOR PAIRING UP TANK AND MRD DATA TRIGGERS ########
-  std::vector<uint64_t> RunTankTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
-  std::vector<uint64_t> RunMRDTimestamps;  //Contains timestamps for all MRD events encountered so far
+  int EventsPerPairing;  //Determines how many Tank and MRD events are needed before starting to pair up for event building
+  std::vector<uint64_t> IPTankTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
+  std::vector<uint64_t> FinishedMRDTimestamps;  //Contains timestamps for all MRD events encountered so far
   std::vector<uint64_t> FinishedTankTimestamps;  //Contains timestamps for PMT Events that are fully built
   std::map<uint64_t,uint64_t> FinishedTankMRDPairs; //Pairs of Tank PMT/MRD counters signifying these events are ready to be built
   

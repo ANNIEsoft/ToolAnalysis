@@ -14,6 +14,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   SavePath = "./";
   ProcessedFilesBasename = "ProcessedRawData";
   BuildType = "TankAndMRD";
+  EventsPerPairing = 100;
 
   /////////////////////////////////////////////////////////////////
   //FIXME: Eventually, RunNumber should be loaded from A run database
@@ -21,6 +22,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SavePath",SavePath);
   m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
   m_variables.Get("BuildType",BuildType);
+  m_variables.Get("NumEventsPerPairing",EventsPerPairing);
 
   if(BuildType == "TankAndMRD"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
@@ -146,9 +148,12 @@ bool ANNIEEventBuilder::Execute(){
       MRDEvents.erase(MRDEventsToDelete.at(i));
       TriggerTypeMap.erase(MRDEventsToDelete.at(i));
     }
+    m_data->CStore.Set("MRDEvents",MRDEvents);
+    m_data->CStore.Set("MRDEventTriggerTypes",TriggerTypeMap);
   }
 
   else if (BuildType == "TankAndMRD"){
+
     //See if the MRD and Tank are at the same run/subrun for building
     m_data->CStore.Get("TankRunInfoPostgress",RunInfoPostgress);
     int TankRunNumber;
@@ -182,24 +187,33 @@ bool ANNIEEventBuilder::Execute(){
   
     // Check that Tank and MRD decoding are on the same run/subrun.  If not, take the
     // lowest Run Number and Subrun number to keep building events
+    std::cout << "TANK RUN,SUBRUN: " << TankRunNumber << "," << TankSubRunNumber << std::endl;
+    std::cout << "MRD RUN,SUBRUN: " << MRDRunNumber << "," << MRDSubRunNumber << std::endl;
     if (TankRunNumber != MRDRunNumber || TankSubRunNumber != MRDSubRunNumber){
-      if((TankRunNumber*10000 + TankSubRunNumber) > (MRDRunNumber*10000 + MRDSubRunNumber)){
+      if((TankRunNumber*10000 + TankSubRunNumber) < (MRDRunNumber*10000 + MRDSubRunNumber)){
         LowestRunNum = TankRunNumber;
         LowestSubRunNum = TankSubRunNumber;
         LowestRunType = TankRunType;
         LowestStarTime = TankStarTime;
         m_data->CStore.Set("PauseMRDDecoding",true);
+        m_data->CStore.Set("PauseTankDecoding",false);
       } else {
         LowestRunNum = MRDRunNumber;
         LowestSubRunNum = MRDSubRunNumber;
         LowestRunType = MRDRunType;
         LowestStarTime = MRDStarTime;
         m_data->CStore.Set("PauseTankDecoding",true);
+        m_data->CStore.Set("PauseMRDDecoding",false);
       }
     } else {
       m_data->CStore.Set("PauseMRDDecoding",false);
       m_data->CStore.Set("PauseTankDecoding",false);
     }
+
+    //If there's too many completed timestamps in either data type, pause it's decoding
+    //FIXME: I think you could get into a state where the above logic and this method
+    //Pause both streams indefinitely...
+    this->PauseDecodingOnAheadStream();
 
     //If the Lowest Run/Subrun is new,  make a new ANNIEEvent file. 
     if((CurrentRunNum != LowestRunNum) || (CurrentSubRunNum != LowestSubRunNum)){
@@ -215,38 +229,37 @@ bool ANNIEEventBuilder::Execute(){
       CurrentStarTime = LowestStarTime;
     }
 
+
     //Check if any In-progress tank events now have all waveforms
     m_data->CStore.Get("InProgressTankEvents",InProgressTankEvents);
     std::vector<uint64_t> InProgressEventsToDelete;
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
-    if(!IsNewTankData){
+    if(IsNewTankData){
       for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : InProgressTankEvents){
-        uint64_t PMTCounterTime = apair.first;
+        if(verbosity>4) std::cout << "Accessing next PMT counter" << std::endl;
+        uint64_t PMTCounterTimeNs = apair.first;
+        if(verbosity>4) std::cout << "Finished waveset has clock counter (in ns): " << PMTCounterTimeNs << std::endl;
         std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
+        if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
         
         //See if this timestamp has been encountered before; if not,
         //add it to our Tank timestamp record
-        if(std::find(RunTankTimestamps.begin(),RunTankTimestamps.end(), PMTCounterTime) == 
-                     RunTankTimestamps.end()){
-          RunTankTimestamps.push_back(PMTCounterTime);
+        if(std::find(IPTankTimestamps.begin(),IPTankTimestamps.end(), PMTCounterTimeNs) == 
+                     IPTankTimestamps.end()){
+          IPTankTimestamps.push_back(PMTCounterTimeNs);  //Units in ns
         }
 
         //If this trigger has all of it's waveforms, add it to the finished
         //Events and delete it from the in-progress events
         int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
         int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
-        if(aWaveMap.size() >= (NumTankPMTChannels + NumAuxChannels)){
-          FinishedTankEvents.emplace(PMTCounterTime,aWaveMap);
-          FinishedTankTimestamps.push_back(PMTCounterTime);
+        if(aWaveMap.size() >= (92)){
+          FinishedTankEvents.emplace(PMTCounterTimeNs,aWaveMap);
+          FinishedTankTimestamps.push_back(PMTCounterTimeNs);
           //Put PMT timestamp into the timestamp set for this run.
-          if(verbosity>4) std::cout << "Finished waveset has clock counter: " << PMTCounterTime << std::endl;
+          if(verbosity>4) std::cout << "Finished waveset has clock counter: " << PMTCounterTimeNs << std::endl;
           if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
-          InProgressEventsToDelete.push_back(PMTCounterTime);
-        }
-        //Erase this entry from the InProgressTankEventsMap
-        if(verbosity>4) std::cout << "Counter time will be erased from InProgressTankEvents: " << PMTCounterTime << std::endl;
-        for (unsigned int i=0; i< InProgressEventsToDelete.size(); i++){
-          InProgressTankEvents.erase(InProgressEventsToDelete.at(i));
+          InProgressEventsToDelete.push_back(PMTCounterTimeNs);
         }
       }
     }
@@ -254,49 +267,63 @@ bool ANNIEEventBuilder::Execute(){
     //Look through our MRD data for any new timestamps
     m_data->CStore.Get("NewMRDDataAvailable",IsNewMRDData);
     m_data->CStore.Get("MRDEvents",MRDEvents);
-    std::vector<unsigned long> MRDEventsToDelete;
     if(IsNewMRDData){
       for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
         unsigned long MRDTimeStamp = apair.first;
         std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
         //See if this MRD timestamp has been encountered before; if not,
         //add it to our MRD timestamp record
-        if(std::find(RunMRDTimestamps.begin(),RunMRDTimestamps.end(), MRDTimeStamp) == 
-                     RunMRDTimestamps.end()){
-          RunMRDTimestamps.push_back(MRDTimeStamp);
+        if(std::find(FinishedMRDTimestamps.begin(),FinishedMRDTimestamps.end(), MRDTimeStamp) == 
+                     FinishedMRDTimestamps.end()){
+          FinishedMRDTimestamps.push_back(MRDTimeStamp);
         }
       }
     }
 
-    //Now, come up with an algorithm to pair up PMT and MRD events...
+    //Now, pair up PMT and MRD events...
+    std::cout << "WE ARE GONNA PAIR STUFF NOW" << std::endl;
     this->PairTankPMTAndMRDTriggers();
-    
+  
+    //Since timestamp pairing has been done for finished Tank Events,
+    //Erase the finished Tank Events from the InProgressTankEventsMap
+    for (unsigned int j=0; j< InProgressEventsToDelete.size(); j++){
+      IPTankTimestamps.erase(std::remove(IPTankTimestamps.begin(),IPTankTimestamps.end(),InProgressEventsToDelete.at(j)), 
+                 IPTankTimestamps.end());
+      InProgressTankEvents.erase(InProgressEventsToDelete.at(j));
+    }
+
     //Finally, Build the ANNIEEvent of any PMT/MRD data that is fully decoded 
     //and has been paired
-    std::vector<unsigned long> CompleteEventsToDelete;
     m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
     for(std::pair<uint64_t,uint64_t> cpair : FinishedTankMRDPairs){
       uint64_t TankCounterTime = cpair.first;
+      std::cout << "TANK TIMESTMP: " << TankCounterTime << std::endl;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = FinishedTankEvents.at(TankCounterTime);
-      
       uint64_t MRDTimeStamp = cpair.second;
+      std::cout << "MRD TIMESTAMP: " << MRDTimeStamp << std::endl;
       std::vector<std::pair<unsigned long,int>> MRDHits = MRDEvents.at(MRDTimeStamp);
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
-      
-
+      std::cout << "BUILD THE ANNIE EVENT" << std::endl;
       this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
       this->BuildANNIEEventTank(TankCounterTime, aWaveMap);
       this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
       this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
-      //Erase this entry from the InProgressTankEventsMap
-      CompleteEventsToDelete.push_back(TankCounterTime);
+      std::cout << "BUILT AN ANNIE EVENT" << std::endl;
+      //Erase this entry from maps/vectors used when pairing completed events 
+      FinishedTankEvents.erase(TankCounterTime);
+      MRDEvents.erase(MRDTimeStamp);
+      TriggerTypeMap.erase(MRDTimeStamp);
     }
-    for (unsigned int i=0; i< CompleteEventsToDelete.size(); i++){
-      //FIXME: Erase timestamps from RunTankTimestamp, FinishedTankTimestamps, and RunMRDTimestamp
-      FinishedTankMRDPairs.erase(CompleteEventsToDelete.at(i));
-    }
+    FinishedTankMRDPairs.clear();
+  
   }
   
+  m_data->CStore.Set("InProgressTankEvents",InProgressTankEvents);
+  m_data->CStore.Set("MRDEvents",MRDEvents);
+  m_data->CStore.Set("MRDEventTriggerTypes",TriggerTypeMap);
+  InProgressTankEvents.clear();
+  MRDEvents.clear();
+  TriggerTypeMap.clear();
   return true;
 }
 
@@ -312,32 +339,56 @@ bool ANNIEEventBuilder::Finalise(){
   return true;
 }
 
+void ANNIEEventBuilder::PauseDecodingOnAheadStream(){
+  int NumTankTimestamps = FinishedTankTimestamps.size();
+  int NumMRDTimestamps = FinishedMRDTimestamps.size();
+  if((NumTankTimestamps - NumMRDTimestamps) > 10) m_data->CStore.Set("PauseTankDecoding",true);
+  else if((NumMRDTimestamps - NumTankTimestamps) > 10) m_data->CStore.Set("PauseMRDDecoding",true);
+  else {
+    m_data->CStore.Set("PauseTankDecoding",false);
+    m_data->CStore.Set("PauseMRDDecoding",false);
+  }
+  return;
+}
+
 void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   //Couple things to do:
   // First, check the lengths of each; don't start pairing until we have at least 10 timestamps from the PMT and MRD
   // Once we have ten of them, organize them from earliest to latest.  Pair up the timestamps
   // Take the mean of these 10 as the baseline that other timestamp spreads should be close to in the run
   // If the deviation is large, or there's a jump anywhere in the run, print huge WARNINGS.
-  std::cout << "WE SHALL PAIR" << std::endl;
-  int NumTankTimestamps = RunTankTimestamps.size();
-  int NumMRDTimestamps = RunMRDTimestamps.size();
+  int NumTankTimestamps = FinishedTankTimestamps.size();
+  int NumMRDTimestamps = FinishedMRDTimestamps.size();
   int MinStamps = std::min(NumTankTimestamps,NumMRDTimestamps);
-  if(MinStamps > 10){
-    std::cout << "We've got enough timestamps to start matching up" << std::endl;
-    //Organize RunTankTimestamps and RunMRDTimestamps
-    std::sort(RunTankTimestamps.begin(),RunTankTimestamps.end());
-    std::sort(RunMRDTimestamps.begin(),RunMRDTimestamps.end());
-    for (int i=0;i<MinStamps; i++){
-      if (std::find(FinishedTankTimestamps.begin(),FinishedTankTimestamps.end(),RunTankTimestamps.at(i)) != FinishedTankTimestamps.end()){
-        //This tank timestamp is finished decoding.  Pair up the Tank and MRD timestamp
-        FinishedTankMRDPairs.emplace(RunTankTimestamps.at(i),RunMRDTimestamps.at(i));
-      }
+  if(MinStamps > EventsPerPairing){
+    if(verbosity>4) std::cout << "ANNIEEventBuilder Tool: Beginning to pair events" << std::endl;
+    //Organize IPTankTimestamps and FinishedMRDTimestamps
+    std::sort(IPTankTimestamps.begin(),IPTankTimestamps.end());
+    std::sort(FinishedMRDTimestamps.begin(),FinishedMRDTimestamps.end());
+    std::sort(FinishedTankTimestamps.begin(),FinishedTankTimestamps.end());
+    std::vector<uint64_t> TankStampsToDelete;
+    std::vector<uint64_t> MRDStampsToDelete;
+    for (int i=0;i<MinStamps; i++) {
+      FinishedTankMRDPairs.emplace(FinishedTankTimestamps.at(i),FinishedMRDTimestamps.at(i));
+      TankStampsToDelete.push_back(FinishedTankTimestamps.at(i));
+      MRDStampsToDelete.push_back(FinishedMRDTimestamps.at(i));
     }
-  }
-  //FIXME: Right now, the same timestamps would keep getting put in FinishedTankMRDPairs.  
-  //Need to delete them from RunTankTimestamps...
-  for (int i=0; i<MinStamps; i++){
-    std::cout << "TANK TIMESTAMP: " << RunTankTimestamps.at(i) << ",MRD TIMESTAMP: " << RunMRDTimestamps.at(i) << std::endl;
+    //for (int i=0;i<MinStamps; i++){
+    //  if (std::find(FinishedTankTimestamps.begin(),FinishedTankTimestamps.end(),IPTankTimestamps.at(i)) != FinishedTankTimestamps.end()){
+    //    //This tank timestamp is finished decoding.  Pair up the Tank and MRD timestamp
+    //    std::cout << "FOUND A FINISHED TANK TIMESTAMP.  WE SHALL PAIR" << std::endl;
+    //    FinishedTankMRDPairs.emplace(IPTankTimestamps.at(i),FinishedMRDTimestamps.at(i));
+    //  }
+    //}
+    //Delete all timestamps added to the Pairs map from the Timestamps vectors
+    for (int i=0; i<MinStamps; i++){
+      uint64_t BuiltTankTime = TankStampsToDelete.at(i);
+      uint64_t BuiltMRDTime = MRDStampsToDelete.at(i);
+      FinishedTankTimestamps.erase(std::remove(FinishedTankTimestamps.begin(),FinishedTankTimestamps.end(),BuiltTankTime), 
+                 FinishedTankTimestamps.end());
+      FinishedMRDTimestamps.erase(std::remove(FinishedMRDTimestamps.begin(),FinishedMRDTimestamps.end(),BuiltMRDTime), 
+                 FinishedMRDTimestamps.end());
+    }
   }
   return;
 }

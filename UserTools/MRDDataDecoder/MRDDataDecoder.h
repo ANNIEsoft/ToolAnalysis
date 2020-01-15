@@ -64,7 +64,9 @@ class MRDDataDecoder: public Tool {
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > CStoreMRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
+  std::map<uint64_t, std::string>  CStoreTriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
 
   // Notes whether DAQ is in lock step running
   // Number of PMTs that must be found in a WaveSet to build the event

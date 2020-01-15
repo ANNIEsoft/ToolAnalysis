@@ -14,7 +14,7 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
 
   verbosity = 0;
   EntriesPerExecute = 0;
-  DummyRunNumber = 1;
+  DummyRunNumber = 0;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("Mode",Mode);
@@ -59,10 +59,11 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
 
 bool MRDDataDecoder::Execute(){
 
+  m_data->CStore.Set("NewMRDDataAvailable",false);
   bool PauseMRDDecoding = false;
   m_data->CStore.Get("PauseMRDDecoding",PauseMRDDecoding);
   if (PauseMRDDecoding){
-    std::cout << "MRDDataDecoder tool: Pausing tank decoding to let Tank data catch up..." << std::endl;
+    std::cout << "MRDDataDecoder tool: Pausing MRD decoding to let Tank data catch up..." << std::endl;
     return true;
   }
 
@@ -223,12 +224,12 @@ bool MRDDataDecoder::Execute(){
   //to the CStore for ANNIEEvent to start Building ANNIEEvents. 
   Log("MRDDataDecoder Tool: Saving Finished MRD Data into CStore.",v_debug, verbosity);
   //FIXME: add a check for if there is or is not an entry in the CStore
-  //m_data->CStore.Get("MRDEvents",CStoreMRDEvents);
-  //CStoreMRDEvents.insert(MRDEvents.begin(),MRDEvents.end());
-  m_data->CStore.Set("MRDEvents",MRDEvents);
+  m_data->CStore.Get("MRDEvents",CStoreMRDEvents);
+  CStoreMRDEvents.insert(MRDEvents.begin(),MRDEvents.end());
+  m_data->CStore.Set("MRDEvents",CStoreMRDEvents);
 
-  //m_data->CStore.Get("MRDEventTriggerTypes",CStoreTriggerTypeMap);
-  //CStoreTriggerTypeMap.insert(TriggerTypeMap.begin(),TriggerTypeMap.end());
+  m_data->CStore.Get("MRDEventTriggerTypes",CStoreTriggerTypeMap);
+  CStoreTriggerTypeMap.insert(TriggerTypeMap.begin(),TriggerTypeMap.end());
   m_data->CStore.Set("MRDEventTriggerTypes",TriggerTypeMap);
   //FIXME: Should we now clear CStoreMRDEvents and CStoreTriggerTypesto free up memory?
   
