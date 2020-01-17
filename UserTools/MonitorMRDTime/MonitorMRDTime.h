@@ -95,7 +95,6 @@ class MonitorMRDTime: public Tool {
   std::string inactive_channels;
   std::string loopback_channels;
   std::string StartTime;
-  std::string mode;
   std::string path_monitoring;
   std::string img_extension;
   double update_frequency;
@@ -167,7 +166,7 @@ class MonitorMRDTime: public Tool {
   //define live storing variables (for data of current file)
   std::vector<std::vector<int>> tdc_file;
   std::vector<std::vector<ULong64_t>> timestamp_file;
-  long t_file_start, t_file_end;
+  ULong64_t t_file_start, t_file_end;
   long n_doublehits;
   long n_zerohits;
   long n_noloopback;
@@ -233,6 +232,7 @@ class MonitorMRDTime: public Tool {
   TH2F *rate_crate2=nullptr;
   TLatex *label_rate_cr1 = nullptr;
   TLatex *label_rate_cr2 = nullptr; 
+  TLatex *label_rate_facc = nullptr;
   std::vector<TBox*> vector_box_inactive;
 
   //geometry conversion table
@@ -241,13 +241,12 @@ class MonitorMRDTime: public Tool {
   std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap = nullptr;
   TH2Poly *rate_top = nullptr;
   TH2Poly *rate_side = nullptr;
+  TH2Poly *rate_facc = nullptr;
   double enlargeBoxes = 0.01;
   double shiftSecRow = 0.04;
 
   //define histogram showing the history (log) of files 
   TH1F *log_files=nullptr;
-  std::vector<TLine*> file_markers;
-  int n_bins_logfiles;
   int num_files_history;
 
   //define TPie objects showing pie charts of the event type composition
@@ -262,6 +261,7 @@ class MonitorMRDTime: public Tool {
   TCanvas *canvas_tdc = nullptr;
   TCanvas *canvas_rate_electronics = nullptr;
   TCanvas *canvas_rate_physical = nullptr;
+  TCanvas *canvas_rate_physical_facc = nullptr;
   TCanvas *canvas_logfile = nullptr;
   TCanvas *canvas_ch_tdc = nullptr;
   TCanvas *canvas_ch_rms = nullptr;
