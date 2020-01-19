@@ -2,9 +2,11 @@
 
 ANNIEEventBuilder
 
-The ANNIEEventBuilder takes parsed PMT data from the DataDecoder tool,
-matches it to trigger information in the RawData TriggerData store, and
+The ANNIEEventBuilder takes parsed PMT data from the PMTDataDecoder tool and/or
+MRD data from the MRDDataDecoder tool and
 constructs an ANNIEEvent BoostStore.
+
+
 
 ## Data
 

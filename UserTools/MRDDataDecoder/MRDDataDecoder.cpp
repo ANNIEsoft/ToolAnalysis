@@ -230,7 +230,7 @@ bool MRDDataDecoder::Execute(){
 
   m_data->CStore.Get("MRDEventTriggerTypes",CStoreTriggerTypeMap);
   CStoreTriggerTypeMap.insert(TriggerTypeMap.begin(),TriggerTypeMap.end());
-  m_data->CStore.Set("MRDEventTriggerTypes",TriggerTypeMap);
+  m_data->CStore.Set("MRDEventTriggerTypes",CStoreTriggerTypeMap);
   //FIXME: Should we now clear CStoreMRDEvents and CStoreTriggerTypesto free up memory?
   
   m_data->CStore.Set("NewMRDDataAvailable",true);
