@@ -167,6 +167,7 @@ class MonitorMRDTime: public Tool {
   std::vector<std::vector<int>> tdc_file;
   std::vector<std::vector<ULong64_t>> timestamp_file;
   ULong64_t t_file_start, t_file_end;
+  ULong64_t utc_to_t=21600000;	//6h clock delay (MRD timestamped in UTC time)
   long n_doublehits;
   long n_zerohits;
   long n_noloopback;

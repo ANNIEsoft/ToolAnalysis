@@ -46,6 +46,7 @@ class MonitorMRDEventDisplay: public Tool {
 
 		BoostStore *CCData;
 		std::string outpath;
+		std::string outpath_temp;
 		int custom_range;
 		int custom_tdc_min;
 		int custom_tdc_max;

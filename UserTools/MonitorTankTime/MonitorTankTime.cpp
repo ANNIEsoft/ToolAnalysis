@@ -216,7 +216,7 @@ bool MonitorTankTime::Execute(){
     last=current;
     DrawFileHistory(current_stamp,24.,"current");     //show 24h history of MRD files
 
-	}
+  }
   
   //only for debugging memory leaks, otherwise comment out
   //std::cout <<"List of Objects (after execute step): "<<std::endl;

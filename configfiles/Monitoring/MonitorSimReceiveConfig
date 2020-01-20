@@ -1,4 +1,4 @@
-MRDDataPath /ANNIECode/data/MRDTest/MRDTest28commonstopp0
+MRDDataPath /pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1347S0p0
 MRDTxtFile ./configfiles/Monitoring/MRDfiles.txt
 Mode FileList
 verbose 0

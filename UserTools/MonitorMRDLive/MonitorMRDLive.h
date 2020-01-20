@@ -48,6 +48,7 @@ class MonitorMRDLive: public Tool {
 
   //config input variables
   BoostStore *CCData;
+  std::string outpath_temp;
   std::string outpath;
   MRDOut MRDout;      //the class that has all the information about the mrd data format
   std::string active_slots;
@@ -70,7 +71,7 @@ class MonitorMRDLive: public Tool {
   std::vector<int> nr_slot;
   std::vector<int> inactive_ch_crate1, inactive_slot_crate1;
   std::vector<int> inactive_ch_crate2, inactive_slot_crate2;
-  std::vector<int> loopback_crate, loopback_slot, loopback_channel;
+  std::vector<unsigned int> loopback_crate, loopback_slot, loopback_channel;
   std::vector<std::string> loopback_name;
 
   //MRD store includes the following variables

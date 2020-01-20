@@ -15,7 +15,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   //std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
   //gObjectTable->Print();
 
-  m_variables.Get("OutputPath",outpath);
+  m_variables.Get("OutputPath",outpath_temp);
   m_variables.Get("ActiveSlots",active_slots);
   m_variables.Get("InActiveChannels",inactive_channels);
   m_variables.Get("LoopbackChannels",loopback_channels);
@@ -25,7 +25,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   if (verbosity > 2) std::cout <<"Tool MonitorMRDLive: Initialising...."<<std::endl;
 
 
-  if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
+  if (outpath_temp == "fromStore") m_data->CStore.Get("OutPath",outpath);
   if (verbosity > 1) std::cout <<"Output path for plots is "<<outpath<<std::endl;
 
   //-------------------------------------------------------
@@ -147,7 +147,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   trigger_label->SetTextColor(2);
   trigger_labels.push_back(trigger_label);
 
-  for (int i_vector = 0; i_vector < loopback_channel.size(); i_vector++){
+  for (unsigned int i_vector = 0; i_vector < loopback_channel.size(); i_vector++){
     if (verbosity > 1) std::cout <<"Loopback "<<loopback_name.at(i_vector)<<": Cr "<<loopback_crate.at(i_vector)<<", Sl "<<loopback_slot.at(i_vector)<<", Ch "<<loopback_channel.at(i_vector)<<std::endl;
   }
 
@@ -399,7 +399,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
       inactive_crate1++;
     }
   }
-  for (int i_ch = 0; i_ch < inactive_ch_crate1.size(); i_ch++){
+  for (unsigned int i_ch = 0; i_ch < inactive_ch_crate1.size(); i_ch++){
     if (verbosity > 2) std::cout <<"inactive ch crate1, entry "<<i_ch<<std::endl;
     TBox *box_inactive = new TBox(inactive_slot_crate1.at(i_ch)-1,inactive_ch_crate1.at(i_ch),inactive_slot_crate1.at(i_ch),inactive_ch_crate1.at(i_ch)+1);
     vector_box_inactive.push_back(box_inactive);
@@ -408,7 +408,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
     inactive_crate1++;
   }
 
-  for (int i_slot=0;i_slot<num_slots;i_slot++){
+  for (unsigned int i_slot=0;i_slot<num_slots;i_slot++){
     if (active_channel[1][i_slot]==0){
       TBox *box_inactive = new TBox(i_slot,0,i_slot+1,num_channels);
       vector_box_inactive.push_back(box_inactive);
@@ -417,7 +417,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
       inactive_crate2++;
     }
   }
-  for (int i_ch = 0; i_ch < inactive_ch_crate2.size(); i_ch++){
+  for (unsigned int i_ch = 0; i_ch < inactive_ch_crate2.size(); i_ch++){
     if (verbosity > 2) std::cout <<"inactive ch crate2, entry "<<i_ch<<std::endl;
     TBox *box_inactive = new TBox(inactive_slot_crate2.at(i_ch)-1,inactive_ch_crate2.at(i_ch),inactive_slot_crate2.at(i_ch),inactive_ch_crate2.at(i_ch)+1);
     vector_box_inactive.push_back(box_inactive);
@@ -502,7 +502,7 @@ bool MonitorMRDLive::Execute(){
 
     std::string trigger_type = "no loopback";
     if (verbosity > 2) std::cout <<"MonitorMRDLive: Read in Data: >>>>>>>>>>>>>>>>>>> "<<std::endl;
-    for (int i_entry = 0; i_entry < Channel.size(); i_entry++){
+    for (unsigned int i_entry = 0; i_entry < Channel.size(); i_entry++){
       if (verbosity > 2) std::cout <<"Crate "<<Crate.at(i_entry)<<", Slot "<<Slot.at(i_entry)<<", Channel "<<Channel.at(i_entry)<<std::endl;
       std::vector<int>::iterator it = std::find(nr_slot.begin(), nr_slot.end(), (Slot.at(i_entry))+(Crate.at(i_entry)-min_crate)*100);
       if (it == nr_slot.end()){
@@ -517,7 +517,7 @@ bool MonitorMRDLive::Execute(){
       live_timestamp.at(ch).push_back(TimeStamp);
       live_tdc_hour.at(ch).push_back(Value.at(i_entry));
       live_timestamp_hour.at(ch).push_back(TimeStamp);
-      for (int i_loopback=0; i_loopback< loopback_crate.size(); i_loopback++){
+      for (unsigned int i_loopback=0; i_loopback< loopback_crate.size(); i_loopback++){
         if (Crate.at(i_entry) == loopback_crate.at(i_loopback) && Slot.at(i_entry) == loopback_slot.at(i_loopback) && Channel.at(i_entry) == loopback_channel.at(i_loopback)) trigger_type = loopback_name.at(i_loopback);
       }
     }
@@ -591,7 +591,7 @@ bool MonitorMRDLive::Finalise(){
 
   //delete all pointers that are still active
 
-  for (int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
+  for (unsigned int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
     delete vector_box_inactive.at(i_box);
   }
   delete label_cr1;
@@ -599,10 +599,10 @@ bool MonitorMRDLive::Finalise(){
   delete label_rate_cr1;
   delete label_rate_cr2;
   delete label_tdc;
-  for (int i_line = 0; i_line < vector_lines.size(); i_line++){
+  for (unsigned int i_line = 0; i_line < vector_lines.size(); i_line++){
     delete vector_lines.at(i_line);
   }
-  for (int i_trigger =0; i_trigger < trigger_labels.size(); i_trigger++){
+  for (unsigned int i_trigger =0; i_trigger < trigger_labels.size(); i_trigger++){
     delete trigger_labels.at(i_trigger);
   }
 
@@ -651,7 +651,7 @@ void MonitorMRDLive::MRDTDCPlots(){
   double times_slots[num_crates][num_slots] = {0};
   double n_times_slots[num_crates][num_slots] = {0};
 
-  for (int i=0;i<Value.size();i++){
+  for (unsigned int i=0;i<Value.size();i++){
 
     hTimes->Fill(Value.at(i));
     times_slots[Crate.at(i)-min_crate][Slot.at(i)-1] += Value.at(i);    //slot numbers start at 1
@@ -860,7 +860,7 @@ void MonitorMRDLive::MRDTDCPlots(){
 
   //create histogram showing the time stamps of the last live events
 
-  int min_bin = (vector_triggertype.size()>n_bins_loglive)? vector_triggertype.size()-n_bins_loglive : 0;
+  int min_bin = (int(vector_triggertype.size())>n_bins_loglive)? vector_triggertype.size()-n_bins_loglive : 0;
   unsigned long time_diff = vector_timestamp.at(vector_triggertype.size()-1)-vector_timestamp.at(min_bin);
 
   for (int i_trigger = vector_triggertype.size(); i_trigger > min_bin; i_trigger--){
@@ -877,10 +877,10 @@ void MonitorMRDLive::MRDTDCPlots(){
 
   c_loglive->cd();
   log_live_events->Draw();
-  for (int i_l = 0; i_l < vector_lines.size(); i_l++){
+  for (unsigned int i_l = 0; i_l < vector_lines.size(); i_l++){
     vector_lines.at(i_l)->Draw("same");
   }
-  for (int i_triglabel =0; i_triglabel < trigger_labels.size(); i_triglabel++){
+  for (unsigned int i_triglabel =0; i_triglabel < trigger_labels.size(); i_triglabel++){
     trigger_labels.at(i_triglabel)->Draw();
   }
   std::stringstream ss_loglive;
@@ -940,27 +940,27 @@ void MonitorMRDLive::EraseOldData(){
   if (verbosity > 2) std::cout <<"MonitorMRDLive: EraseOldData"<<std::endl;
 
   for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
-    for (int i=0; i<live_tdc.at(i_ch).size();i++){
+    for (unsigned int i=0; i<live_tdc.at(i_ch).size();i++){
       if (current_stamp - live_timestamp.at(i_ch).at(i) > integration_period*60*1000){
       live_tdc.at(i_ch).erase(live_tdc.at(i_ch).begin()+i);
       live_timestamp.at(i_ch).erase(live_timestamp.at(i_ch).begin()+i);
       }
     }
-    for (int i=0; i<live_tdc_hour.at(i_ch).size();i++){
+    for (unsigned int i=0; i<live_tdc_hour.at(i_ch).size();i++){
       if (current_stamp - live_timestamp_hour.at(i_ch).at(i) > integration_period_hour*60*1000){
         live_tdc_hour.at(i_ch).erase(live_tdc_hour.at(i_ch).begin()+i);
         live_timestamp_hour.at(i_ch).erase(live_timestamp_hour.at(i_ch).begin()+i);
       }
     }
   }
-  for (int i_entry = 0; i_entry < vector_timestamp.size(); i_entry++){
+  for (unsigned int i_entry = 0; i_entry < vector_timestamp.size(); i_entry++){
     if (current_stamp - vector_timestamp.at(i_entry) > integration_period*60*1000){
       vector_timestamp.erase(vector_timestamp.begin()+i_entry);
       vector_nchannels.erase(vector_nchannels.begin()+i_entry);
       vector_triggertype.erase(vector_triggertype.begin()+i_entry);
     }
   }
-  for (int i_entry = 0; i_entry < vector_timestamp_hour.size(); i_entry++){
+  for (unsigned int i_entry = 0; i_entry < vector_timestamp_hour.size(); i_entry++){
     if (current_stamp - vector_timestamp_hour.at(i_entry) > integration_period_hour*60*1000){
       vector_timestamp_hour.erase(vector_timestamp_hour.begin()+i_entry);
       vector_nchannels_hour.erase(vector_nchannels_hour.begin()+i_entry);
@@ -1007,14 +1007,14 @@ void MonitorMRDLive::UpdateRatePlots(){
       std::cout <<"Crate: "<<crate_id<<", Slot: "<<slot_id<<", Channel: "<<channel_id<<std::endl;
       std::cout <<"live_tdc.size: "<<live_tdc.at(i_ch).size()<<", rate: "<<live_tdc.at(i_ch).size()/(integration_period*60)<<std::endl;
     }
-    for (int i_entry= 0; i_entry < live_tdc.at(i_ch).size(); i_entry++){
+    for (unsigned int i_entry= 0; i_entry < live_tdc.at(i_ch).size(); i_entry++){
       if (crate_id == min_crate) rate_crate1->SetBinContent(slot_id,channel_id+1,live_tdc.at(i_ch).size()/(integration_period*60));   //display in Hz
       else if (crate_id == min_crate+1) rate_crate2->SetBinContent(slot_id,channel_id+1,live_tdc.at(i_ch).size()/(integration_period*60));
       TDC_hist->Fill(live_tdc.at(i_ch).at(i_entry));
       if (live_tdc.at(i_ch).size()/(integration_period*60) > max_ch) max_ch = live_tdc.at(i_ch).size()/(integration_period*60); 
       if (live_tdc.at(i_ch).size()/(integration_period*60) < min_ch) min_ch = live_tdc.at(i_ch).size()/(integration_period*60); 
     }
-    for (int i_entry = 0; i_entry < live_tdc_hour.at(i_ch).size(); i_entry++){
+    for (unsigned int i_entry = 0; i_entry < live_tdc_hour.at(i_ch).size(); i_entry++){
       if (crate_id == min_crate) rate_crate1_hour->SetBinContent(slot_id,channel_id+1,live_tdc_hour.at(i_ch).size()/(integration_period_hour*60));
       else if (crate_id == min_crate+1) rate_crate2_hour->SetBinContent(slot_id,channel_id+1,live_tdc_hour.at(i_ch).size()/(integration_period_hour*60));
       TDC_hist_hour->Fill(live_tdc_hour.at(i_ch).at(i_entry));
@@ -1023,11 +1023,11 @@ void MonitorMRDLive::UpdateRatePlots(){
     }
   }
 
-  for (int i_entry = 0; i_entry < vector_nchannels.size(); i_entry++){
+  for (unsigned int i_entry = 0; i_entry < vector_nchannels.size(); i_entry++){
     n_paddles_hit->Fill(vector_nchannels.at(i_entry));
   }
 
-  for (int i_entry = 0; i_entry < vector_nchannels_hour.size(); i_entry++){
+  for (unsigned int i_entry = 0; i_entry < vector_nchannels_hour.size(); i_entry++){
     n_paddles_hit_hour->Fill(vector_nchannels_hour.at(i_entry));
   }
 

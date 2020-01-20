@@ -19,7 +19,7 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
   //-------------------------------------------------------
 
   m_variables.Get("verbose",verbosity);
-  m_variables.Get("OutputPath",outpath);
+  m_variables.Get("OutputPath",outpath_temp);
   m_variables.Get("CustomRange",custom_range);
   m_variables.Get("RangeMin",custom_tdc_min);
   m_variables.Get("RangeMax",custom_tdc_max);
@@ -29,7 +29,7 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
 
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Initialising"<<std::endl;
 
-  if (outpath == "fromStore") m_data->CStore.Get("OutPath",outpath);
+  if (outpath_temp == "fromStore") m_data->CStore.Get("OutPath",outpath);
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Output path for plots is "<<outpath<<std::endl;
 
   if (custom_range !=0 && custom_range != 1) custom_range=0;
@@ -61,12 +61,12 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
 
   hist_mrd_top = new TH2Poly("hist_mrd_top","Top View MRD paddles",1.6,3.,-2.,2);
   hist_mrd_side = new TH2Poly("hist_mrd_side","Side View MRD paddles",1.6,3.,-2.,2);
-  hist_facc = new TH2Poly("hist_facc","FACC paddles",-2.,2.,-2.5,2.5);
+  hist_facc = new TH2Poly("hist_facc","FACC paddles",-1.66,-1.58,-2.5,2.5);
   hist_mrd_top->GetXaxis()->SetTitle("z [m]");
   hist_mrd_top->GetYaxis()->SetTitle("x [m]");
   hist_mrd_side->GetXaxis()->SetTitle("z [m]");
   hist_mrd_side->GetXaxis()->SetTitle("y [m]");
-  hist_facc->GetXaxis()->SetTitle("x [m]");
+  hist_facc->GetXaxis()->SetTitle("z [m]");
   hist_facc->GetYaxis()->SetTitle("y [m]");
   hist_mrd_top->GetZaxis()->SetTitle("TDC");
   hist_mrd_side->GetZaxis()->SetTitle("TDC");
@@ -110,8 +110,8 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
       else  hist_mrd_top->AddBin(zmin+shiftSecRow-tank_center_z-enlargeBoxes,xmin-tank_center_x,zmax+shiftSecRow-tank_center_z+enlargeBoxes,xmax-tank_center_x);
     }
   }
-  std::cout <<"Setting veto th2poly bins"<<std::endl;
-  for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("Veto").begin();
+  
+ for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("Veto").begin();
                                                     it != Detectors->at("Veto").end();
                                                   ++it){
     Detector* afaccpmt = it->second;
@@ -123,13 +123,15 @@ bool MonitorMRDEventDisplay::Initialise(std::string configfile, DataModel &data)
     double xmax = faccpaddle->GetXmax();
     double ymin = faccpaddle->GetYmin();
     double ymax = faccpaddle->GetYmax();
+    double zmin = faccpaddle->GetZmin();
+    double zmax = faccpaddle->GetZmax();
     int orientation = faccpaddle->GetOrientation();    //0 is horizontal, 1 is vertical
     int half = faccpaddle->GetHalf();                  //0 or 1
     int side = faccpaddle->GetSide();
 
-    std::cout <<"chankey "<<chankey<<", xmin = "<<xmin<<", xmax = "<<xmax<<", ymin = "<<ymin<<", ymax = "<<ymax<<std::endl;
+    //std::cout <<"chankey "<<chankey<<", xmin = "<<xmin<<", xmax = "<<xmax<<", ymin = "<<ymin<<", ymax = "<<ymax<<std::endl;
 
-    hist_facc->AddBin(xmin-tank_center_x,ymin-tank_center_y,xmax-tank_center_x,ymax-tank_center_y);
+    hist_facc->AddBin(zmin-tank_center_z,ymin-tank_center_y,zmax-tank_center_z,ymax-tank_center_y);
 
   }
 
@@ -225,7 +227,6 @@ void MonitorMRDEventDisplay::PlotMRDEvent(){
   title_time.str("");
   title_time<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday<<','<<now->tm_hour<<':'<<now->tm_min<<':'<<now->tm_sec;
 
-  std::cout <<"Setting titles for hists"<<std::endl;
   std::string top_title = "Top View ";
   std::string side_title = "Side View ";
   std::string facc_title = "FACC ";
@@ -239,8 +240,8 @@ void MonitorMRDEventDisplay::PlotMRDEvent(){
 
   //fill the Event Display
 
-  std::cout <<"Filling MRD EventDisplay"<<std::endl;
-  for (int i_data = 0; i_data < Value.size(); i_data++){
+  if (verbosity > 1)  std::cout <<"MonitorMRDEventDisplay: Filling MRD EventDisplay"<<std::endl;
+  for (unsigned int i_data = 0; i_data < Value.size(); i_data++){
   
     int crate_id = Crate.at(i_data);
     int slot_id = Slot.at(i_data);
@@ -268,7 +269,7 @@ void MonitorMRDEventDisplay::PlotMRDEvent(){
       double z_value = paddle_pos.Z()-tank_center_z;
 
       std::string detector_element = det->GetDetectorElement();
-      std::cout <<"DetectorElement: "<<detector_element<<std::endl;
+      //std::cout <<"DetectorElement: "<<detector_element<<std::endl;
 
       if (detector_element == "MRD"){
         if (half == 1) z_value+=shiftSecRow;
@@ -285,7 +286,7 @@ void MonitorMRDEventDisplay::PlotMRDEvent(){
         } 
       } else if (detector_element == "Veto"){
           if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Filled "<<tdc_value<<" to hist_facc"<<std::endl;
-          hist_facc->Fill(x_value,y_value,tdc_value);
+          hist_facc->Fill(z_value,y_value,tdc_value);
       }
 
     } else {
