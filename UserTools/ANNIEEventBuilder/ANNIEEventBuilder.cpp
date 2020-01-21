@@ -261,6 +261,7 @@ bool ANNIEEventBuilder::Execute(){
         }
         if(std::find(AllTankTimestamps.begin(),AllTankTimestamps.end(), PMTCounterTimeNs) == 
                      AllTankTimestamps.end()){
+          if(verbosity>3)std::cout << "TANKTIMESTAMP," << PMTCounterTimeNs << std::endl;
           AllTankTimestamps.push_back(PMTCounterTimeNs);  //Units in ns
           UnpairedTankTimestamps.push_back(PMTCounterTimeNs);  //Units in ns
         }
@@ -278,8 +279,9 @@ bool ANNIEEventBuilder::Execute(){
         }
       }
     }
-
+    
     //Look through our MRD data for any new timestamps
+    m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
     m_data->CStore.Get("NewMRDDataAvailable",IsNewMRDData);
     m_data->CStore.Get("MRDEvents",MRDEvents);
     if(IsNewMRDData){
@@ -292,6 +294,7 @@ bool ANNIEEventBuilder::Execute(){
                      AllMRDTimestamps.end()){
           AllMRDTimestamps.push_back(MRDTimeStamp);
           UnpairedMRDTimestamps.push_back(MRDTimeStamp);
+          if(verbosity>3)std::cout << "MRDTIMESTAMPTRIGTYPE," << MRDTimeStamp << "," << TriggerTypeMap.at(MRDTimeStamp) << std::endl;
         }
       }
     }
@@ -304,9 +307,6 @@ bool ANNIEEventBuilder::Execute(){
     }
     if(verbosity>3) std::cout << "Current number of unfinished PMT Waveforms: " << InProgressTankEvents.size() << std::endl;
 
-    //Finally, Build the ANNIEEvent of any PMT/MRD data that is fully decoded 
-    //and has been paired
-    m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
     
     //Now, pair up PMT and MRD events...
     int NumTankTimestamps = UnpairedTankTimestamps.size();
@@ -492,6 +492,8 @@ void ANNIEEventBuilder::SyncDataStreams(){
   if(BestVar < RoughScanVariance && BestMean < RoughScanMean){
     if(verbosity>3) std::cout << "VARIANCE AND MEAN MEET ROUGH SCAN CRITERIA.  CONSIDERED SYNCED" << std::endl;
     UnpairedMRDTimestamps.erase(UnpairedMRDTimestamps.begin(),(UnpairedMRDTimestamps.begin()+BestIndex));
+    CurrentDriftMean = BestMean;
+    CurrentDriftVariance = BestVar;
     DataStreamsSynced = true;
   }
   else {
@@ -558,7 +560,9 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   std::vector<uint64_t> TankStampsToDelete;
   std::vector<uint64_t> MRDStampsToDelete;
   int NumPairsToMake = EventsPerPairing;
-  std::vector<double> TSDiffs;
+  std::vector<double> ThisPairingTSDiffs;
+
+  if(verbosity>4) std::cout << "MEAN OF PMT-MRD TIME DIFFERENCE LAST LOOP: " << CurrentDriftMean << std::endl;
   for (int i=0;i<(NumPairsToMake); i++) {
     double TSDiff = (static_cast<double>(UnpairedTankTimestamps.at(i)/1E6) - 21600000.0) - static_cast<double>(UnpairedMRDTimestamps.at(i));
     if(verbosity>4){
@@ -567,10 +571,8 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
       std::cout << "DIFFERENCE BETWEEN PMT AND MRD TIMESTAMP (ms): " << 
       (((UnpairedTankTimestamps.at(i)/1E6) - 21600000) - UnpairedMRDTimestamps.at(i)) << std::endl;
     }
-    std::cout << "INDEX IN PAIR CHECKING LOOP IS: " << std::endl;
     if(std::abs(TSDiff-CurrentDriftMean) > MRDPMTTimeDiffTolerance){
       if(verbosity>3) std::cout << "DEVIATION OF " << MRDPMTTimeDiffTolerance << " ms DETECTED IN STREAMS!" << std::endl;
-      //FIXME: Don't just delete the timestamp; move it to an orphanage
       if(TSDiff > 0) {
         if(verbosity>3) std::cout << "MOVING MRD TIMESTAMP TO ORPHANAGE" << std::endl;
         OrphanMRDTimestamps.push_back(UnpairedMRDTimestamps.at(i));
@@ -582,13 +584,15 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
         UnpairedTankTimestamps.erase(std::remove(UnpairedTankTimestamps.begin(),UnpairedTankTimestamps.end(),UnpairedTankTimestamps.at(i)), 
              UnpairedTankTimestamps.end());
       }
-      i=0;
+      i-=1;
       NumPairsToMake-=1;
+    } else {
+      ThisPairingTSDiffs.push_back(TSDiff);
     }
   }
 
   //With the last set of pairs calculate what the mean drift is
-  CalculateMeanAndVariance(TSDiffs,CurrentDriftMean,CurrentDriftVariance);
+  ComputeMeanAndVariance(ThisPairingTSDiffs,CurrentDriftMean,CurrentDriftVariance);
 
   if(verbosity>4) std::cout << "DOING OUR PAIR UP: " << std::endl;
   for (int i=0;i<(NumPairsToMake); i++) {
