@@ -1,4 +1,5 @@
 MRDDataPath /pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1347S0p0
-MRDTxtFile ./configfiles/Monitoring/MRDfiles.txt
+MRDTxtFile ./configfiles/Monitoring/MRDfiles_subset.txt
+OutPath ./monitoringplots/
 Mode FileList
 verbose 0

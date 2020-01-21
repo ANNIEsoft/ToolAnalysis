@@ -35,9 +35,9 @@ class MonitorSimReceiveSingleFile: public Tool {
   std::string mode;
   int verbosity;
   
-  BoostStore* MRDData;
-  BoostStore* MRDData2;
-
+  BoostStore* MRDData=nullptr;
+  BoostStore* MRDData2=nullptr;
+  BoostStore* PMTData=nullptr;
 
 
 };

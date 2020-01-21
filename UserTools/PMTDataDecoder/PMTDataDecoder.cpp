@@ -101,27 +101,18 @@ bool PMTDataDecoder::Execute(){
     FileCompleted = false;
   } 
   
-  else if (Mode == "Processing"){
+  else if (Mode == "Processing" || Mode == "Monitoring"){
     std::string State;
     m_data->CStore.Get("State",State);
     Log("PMTDataDecoder tool: checking CStore for status of data stream",v_debug,verbosity);
-    if (State == "PMTSingle" || State == "Wait"){
-      //Single event file available for monitoring; not relevant for this tool
+    if (State == "Wait"){
       if (verbosity > v_message) std::cout <<"PMTDataDecoder: State is "<<State<< ". No new full data file available" << std::endl;
       return true; 
     } 
-    
     else if (State == "DataFile"){
       // Full PMTData file ready to parse
-      // FIXME: Not sure if the booststore m_data->Stores["PMTData"] is the right one.
-      // It was m_data->Stores["MRDData"] for the MRD monitoring, but it might be different for the tank monitoring
-      // The two might actually be also merged to something like m_data->Stores["RawData"] 
       if (verbosity > v_warning) std::cout<<"PMTDataDecoder: New raw data file available."<<std::endl;
-      m_data->Stores["PMTData"]->Get("FileData",RawData);
-      RawData->Print(false);
-      /////////////////// getting PMT Data From booststore////////////////////
-      Log("PMTDataDecoder Tool: Accessing PMT Data in raw data",v_message,verbosity); 
-      RawData->Get("PMTData",*PMTData);
+      m_data->Stores["PMTData"]->Get("FileData",PMTData);
       PMTData->Print(false);
     } 
     else {
@@ -129,17 +120,15 @@ bool PMTDataDecoder::Execute(){
       return true;   
     }
   }
+  
+  Store Postgress;
 
-  else if (Mode == "Monitoring"){
-    Log("PMTDataDecoder tool: Monitoring mode not implemented!",v_warning,verbosity);
-    return false;
-  }
+  if (Mode != "Monitoring" && Mode != "Processing"){
   Log("PMTDataDecoder Tool: Accessing run information data",v_message,verbosity); 
   BoostStore RunInfo(false,0);
   RawData->Get("RunInformation",RunInfo);
   RunInfo.Print(false);
 
-  Store Postgress;
   RunInfo.Get("Postgress",Postgress);
   Postgress.Print();
 
@@ -180,6 +169,12 @@ bool PMTDataDecoder::Execute(){
     WaveBank.clear();
     CurrentSubrunNum = SubRunNumber;
   }
+  }
+  if (Mode == "Monitoring"){
+    SequenceMap.clear();
+    TriggerTimeBank.clear();
+    WaveBank.clear();
+  }
 
   // Show the total entries in this file  
   PMTData->Header->Get("TotalEntries",totalentries);
@@ -196,10 +191,10 @@ bool PMTDataDecoder::Execute(){
     std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
   }
   
-  while((ExecuteEntryNum < EntriesPerExecute) && (CDEntryNum<totalentries)){
+  while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
 	Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
-    PMTData->GetEntry(CDEntryNum);
-    PMTData->Get("CardData",Cdata);
+    	PMTData->GetEntry(CDEntryNum);
+    	PMTData->Get("CardData",Cdata);
 	Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
     
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
@@ -278,7 +273,10 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_error) std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
+  std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<std::endl;
+
   //Transfer finished waves from this execute loop to the CStore
+  if (Mode !="Monitoring"){
   if(FinishedPMTWaves.empty()){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
   } else {
@@ -300,11 +298,18 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
   }
+  } else {
+    CStorePMTWaves = FinishedPMTWaves;
+    m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
+    m_data->CStore.Set("NewTankPMTDataAvailable",true);
+  }
 
   //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
   FinishedPMTWaves.clear();
-  
-  m_data->CStore.Set("RunInfoPostgress",Postgress);
+ 
+  std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<", CStorePMTWaves.size(): "<<CStorePMTWaves.size()<<std::endl;
+ 
+  if (Mode != "Monitoring" && Mode != "Processing") m_data->CStore.Set("RunInfoPostgress",Postgress);
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
           to_string(WaveBank.size()),v_debug, verbosity);
@@ -314,14 +319,14 @@ bool PMTDataDecoder::Execute(){
           to_string(CStorePMTWaves.size()),v_debug, verbosity);
 
 
-  if(CDEntryNum == totalentries){
+  if(CDEntryNum == totalentries || Mode == "Monitoring"){
     Log("PMTDataDecoder Tool: Run part completed.",v_warning, verbosity);
     FileCompleted = true;
     CDEntryNum = 0;
     FileNum += 1;
     ////////////// END EXECUTE LOOP ///////////////
-    RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
-    PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+    if (Mode != "Monitoring" && Mode != "Processing") RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
+    if (Mode != "Monitoring") PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
     if(Mode == "SingleFile"){
       Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
 	  m_data->vars.Set("StopLoop",1);
@@ -650,8 +655,8 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   //Add the WaveSlice to the proper vector in the WaveBank.
   std::vector<int> wave_key{CardID,ChannelID};
   if(WaveBank.count(wave_key)==0){
-    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_error, verbosity);
-    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_error, verbosity);
+    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_warning, verbosity);
+    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_warning, verbosity);
     return;
   } else {
   WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),
