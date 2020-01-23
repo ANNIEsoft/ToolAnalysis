@@ -4,6 +4,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "Math/Vector3D.h"
+#include "TVector3.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
@@ -19,6 +20,8 @@ MrdDistributions::MrdDistributions():Tool(){}
 
 // misc function
 ROOT::Math::XYZVector PositionToXYZVector(Position posin);
+TVector3 PositionToTVector3(Position posin);
+double GetClosestApproach(TVector3 start, TVector3 stop, TVector3 point, TVector3* closestapp=nullptr);
 
 bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	
@@ -242,6 +245,15 @@ bool MrdDistributions::Execute(){
 		// more is fine as we don't shrink for efficiency
 	}
 	
+//	// also get the TClonesArray store, because the objects have some useful functions
+//	intptr_t subevptr = nullptr;
+//	get_ok = m_data->CStore.Get("MrdSubEventTClonesArray",subevptr);
+//	if(not get_ok){
+//		Log("MrdDistributions Tool: Failed to get MrdSubEventTClonesArray from CStore! Can't access track objects!",v_warning,verbosity);
+//	} else {
+//		thesubevptr = reinterpret_cast<TClonesArray*>(subevptr);
+//	}
+	
 	// Try to retrieve matching done by MrdEfficiency Tool
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// TODO These are of course only relevant if analysing MC
@@ -378,7 +390,7 @@ bool MrdDistributions::Execute(){
 		
 		// append reco values into the output file vector
 		fileout_MrdSubEventID.push_back(MrdSubEventID);
-		fileout_HtrackAngle.push_back(atan(HtrackGradient));
+		fileout_HtrackAngle.push_back(atan(HtrackGradient));  // TODO check me, plots looks suspect
 		fileout_HtrackAngleError.push_back(atan(HtrackGradientError));
 		fileout_VtrackAngle.push_back(atan(VtrackGradient));
 		fileout_VtrackAngleError.push_back(atan(VtrackGradientError));
@@ -432,6 +444,24 @@ bool MrdDistributions::Execute(){
 			IsMrdPenetrating = nextparticle->GetPenetratesMrd();
 			IsMrdSideExit = ((nextparticle->GetExitsMrd())&&(!IsMrdPenetrating));
 			PenetrationDepth = nextparticle->GetMrdPenetration();
+			TrueTrackOrigin = nextparticle->GetStartVertex();
+			//RecoTrackOrigin = Position(0,0,0); // FIXME get tank reco vertex here
+			
+			// generate some back-projected point far enough back in the z-plane
+			// - e.g 1m before the true track starts
+			double zplane = (TrueTrackOrigin.Z() - 1.0)*100.;
+			double yval = HtrackOrigin + HtrackGradient*zplane;
+			double xval = VtrackOrigin + VtrackGradient*zplane;
+			TVector3 pointa(xval, yval, zplane);
+			// assume we can use the track endpoint and the corresponding line segment
+			// will encompass the point of closest approach
+			TVector3 pointb = PositionToTVector3(StopVertex)*100.;
+			// find the point and distance of closest approach
+			TVector3 trueorigincm = PositionToTVector3(TrueTrackOrigin)*100.;
+			TVector3 closestapp(0,0,0);
+			ClosestAppDist = GetClosestApproach(pointa, pointb, trueorigincm, &closestapp);
+			ClosestAppPoint = Position(closestapp.X(),closestapp.Y(),closestapp.Z());
+			
 		} else {
 			// no matching track, set truth variables to default
 			MCTruthParticleID = -1;
@@ -451,6 +481,10 @@ bool MrdDistributions::Execute(){
 			IsMrdStopped = 0;
 			IsMrdPenetrating = 0;
 			IsMrdSideExit = 0;
+			TrueTrackOrigin = Position(0,0,0);
+			//RecoTrackOrigin = Position(0,0,0);
+			ClosestAppDist = 0;
+			ClosestAppPoint = Position(0,0,0);
 		}
 		
 		// append true values into the output file vector
@@ -469,9 +503,17 @@ bool MrdDistributions::Execute(){
 		fileout_IsMrdStopped.push_back(IsMrdStopped);
 		fileout_IsMrdPenetrating.push_back(IsMrdPenetrating);
 		fileout_IsMrdSideExit.push_back(IsMrdSideExit);
+		fileout_TrueOriginVertex.push_back(PositionToXYZVector(100.*TrueTrackOrigin));
+		//fileout_RecoOriginVertex.push_back(PositionToXYZVector(100.*RecoTrackOrigin));
+		fileout_ClosestApproachPoint.push_back(PositionToXYZVector(ClosestAppPoint));
+		fileout_ClosestApproachDist.push_back(ClosestAppDist);
+		
 	}
 	
 	recotree->Fill();
+	outfile->cd();
+	recotree->Write("RecoTree",TObject::kOverwrite);
+	gROOT->cd();
 	ClearBranchVectors();
 	
 	/////////////////////////////////////
@@ -584,6 +626,9 @@ bool MrdDistributions::Execute(){
 	}
 	
 	truthtree->Fill();
+	outfile->cd();
+	truthtree->Write("TruthTree",TObject::kOverwrite);
+	gROOT->cd();
 	ClearBranchVectors();
 	
 	cout<<"num true particles intercepting MRD this event:" <<nummrdtracksthisevent<<endl;
@@ -815,8 +860,12 @@ TFile* MrdDistributions::MakeRootFile(){
 	pfileout_IsMrdStopped = &fileout_IsMrdStopped;
 	pfileout_IsMrdPenetrating = &fileout_IsMrdPenetrating;
 	pfileout_IsMrdSideExit = &fileout_IsMrdSideExit;
+	pfileout_TrueOriginVertex = &fileout_TrueOriginVertex;
+	//pfileout_RecoOriginVertex = &fileout_RecoOriginVertex;
+	pfileout_ClosestApproachPoint = &fileout_ClosestApproachPoint;
+	pfileout_ClosestApproachDist = &fileout_ClosestApproachDist;
 	
-	outfile = new TFile(outfilename.c_str(),"RECREATE","MRD Track Distributions");
+	outfile = new TFile((plotDirectory+"/"+outfilename).c_str(),"RECREATE","MRD Track Distributions");
 	outfile->cd();
 	recotree = new TTree("RecoTree","Summary of Reconstructed Tracks, with their Truth Values if Matched");
 	// event-wise information
@@ -865,6 +914,10 @@ TFile* MrdDistributions::MakeRootFile(){
 	recotree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
 	recotree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
 	recotree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
+	recotree->Branch("TrueOriginVertex", &pfileout_TrueOriginVertex);
+	//recotree->Branch("RecoOriginVertex", &pfileout_RecoOriginVertex);
+	recotree->Branch("ClosestApproachPoint", &pfileout_ClosestApproachPoint);
+	recotree->Branch("ClosestApproachDist", &fileout_ClosestApproachDist);
 	
 	// we'll have a second tree that will record all the true tracks
 	// this ensures we have an un-cut version of the distributions of tracks that went into the MRD,
@@ -897,7 +950,7 @@ TFile* MrdDistributions::MakeRootFile(){
 	truthtree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
 	truthtree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
 	truthtree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
-
+	
 	gROOT->cd();
 	return outfile;
 }
@@ -937,4 +990,43 @@ void MrdDistributions::ClearBranchVectors(){
 
 ROOT::Math::XYZVector PositionToXYZVector(Position posin){
 	return ROOT::Math::XYZVector(posin.X(),posin.Y(),posin.Z());
+}
+
+TVector3 PositionToTVector3(Position posin){
+	return TVector3(posin.X(),posin.Y(),posin.Z());
+}
+
+double GetClosestApproach(TVector3 start, TVector3 stop, TVector3 point, TVector3* closestapp){
+	/*
+	READ CODE FIRST
+	(reinterpret based on using dot product to determine if moving away from point,
+	and if directional distance to point is greater than distance to end)
+	
+	The closest distance to the point may either be the segment perpendicular to the point,
+	if the line segment passes through it, or the distance from a segment end to the point,
+	if it does not.
+	We can determine which we want using the dot product of the line segment and the vector
+	from the line end to the point:
+	If the dot product is <0 the angle between the vectors is obtuse and the line
+	segment does not pass through the perpendicular. Otherwise, it does.
+	If we call the vectors from the segment endpoints to the point P, v0 and v1,
+	and the vector of the line segment s, then the two values we need are (v0.s) and (v1.s).
+	Writing v1 = (v0+s), we have (v1.s) = (v0.s) + (s.s), so we can determine which
+	distance to use after calculating just (v0.s) and (s.s).
+	*/
+	
+	TVector3 segment = stop - start;
+	TVector3 start_to_point = point - start;
+	
+	double c1 = start_to_point.Dot(segment);  // angle between (directional) segment and from start to P
+	if(c1<=0) return start_to_point.Mag();    // track moves away from point, closest approach is start
+	
+	double c2 = segment.Mag2();
+	if(c2<=c1) return (point-stop).Mag();     // distance from start to point > distance from start to
+	                                          // end of segment - closest approach is end
+	
+	double b = c1/c2;                         // neither above condition is met: the point must lie
+	TVector3 Pb = start + b*segment;          // between endpoints, along the segment.
+	if(closestapp!=nullptr) (*closestapp)=Pb;
+	return (point-Pb).Mag();                  // Project from start to perpendicular (parametric base)
 }

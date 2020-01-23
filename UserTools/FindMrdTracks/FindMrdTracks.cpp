@@ -384,6 +384,9 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			
 			// fill with this track's data
 			thisTrackAsBoostStore->Set("MrdTrackID",atrack->GetTrackID());
+			if(subevi!=atrack->GetMrdSubEventID()){
+				Log("FindMrdTracks Tool Error: cMRDTrack::GetMrdSubEventID in wrong subevi!",v_error,verbosity);
+			}
 			thisTrackAsBoostStore->Set("MrdSubEventID",atrack->GetMrdSubEventID());
 			thisTrackAsBoostStore->Set("InterceptsTank",atrack->GetInterceptsTank());
 			thisTrackAsBoostStore->Set("StartTime",atrack->GetStartTime());
@@ -431,6 +434,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 									atrack->GetMrdEntryPoint().Z() / 100.);
 			thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
 			thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+			thisTrackAsBoostStore->Set("TrackIndex",tracki);
 			
 			// this stuff either isn't important or isn't yet implemented, don't store:
 //			thisTrackAsBoostStore->Set("NumPMTsHit",atrack->GetNumPMTsHit());

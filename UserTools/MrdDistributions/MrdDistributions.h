@@ -77,6 +77,10 @@ class MrdDistributions: public Tool {
 	std::vector<int> PMTsHit;
 	Position TankExitPoint;
 	Position MrdEntryPoint;
+	Position TrueTrackOrigin;
+	Position RecoTrackOrigin;
+	Position ClosestAppPoint;
+	double ClosestAppDist;
 	
 	double HtrackOrigin;
 	double HtrackOriginError;
@@ -196,6 +200,11 @@ class MrdDistributions: public Tool {
 	std::vector<int> fileout_IsMrdStopped;
 	std::vector<int> fileout_IsMrdPenetrating;
 	std::vector<int> fileout_IsMrdSideExit;
+	//
+	std::vector<ROOT::Math::XYZVector> fileout_TrueOriginVertex;
+	std::vector<ROOT::Math::XYZVector> fileout_RecoOriginVertex;
+	std::vector<ROOT::Math::XYZVector> fileout_ClosestApproachPoint;
+	std::vector<double> fileout_ClosestApproachDist;
 	
 	// addresses for ROOT file
 	std::vector<int>* pfileout_MrdSubEventID;
@@ -230,6 +239,11 @@ class MrdDistributions: public Tool {
 	std::vector<int>* pfileout_IsMrdStopped;
 	std::vector<int>* pfileout_IsMrdPenetrating;
 	std::vector<int>* pfileout_IsMrdSideExit;
+	//
+	std::vector<ROOT::Math::XYZVector>* pfileout_TrueOriginVertex;
+	std::vector<ROOT::Math::XYZVector>* pfileout_RecoOriginVertex;
+	std::vector<ROOT::Math::XYZVector>* pfileout_ClosestApproachPoint;
+	std::vector<double>* pfileout_ClosestApproachDist;
 	
 	// TApplication for making histograms
 	bool drawHistos;
