@@ -400,9 +400,9 @@ bool MrdDistributions::Execute(){
 			// get its ID
 			int true_track_id = Reco_to_True_Id_Map.at(MrdTrackID);
 			// confirm LoadWCSim mapped this to an MCParticles index
-			if(trackid_to_mcparticleindex.count(true_track_id)>0){
+			if(trackid_to_mcparticleindex->count(true_track_id)>0){
 				// retrieve the index
-				mc_particles_index = trackid_to_mcparticleindex.at(true_track_id);
+				mc_particles_index = trackid_to_mcparticleindex->at(true_track_id);
 			} else {
 				// we could scan the MCParticles to find it, but something, somewhere went wrong...
 				Log("MrdDistributions Tool: TrackId_to_MCParticleIndex map does not contain Particle ID "
@@ -413,8 +413,7 @@ bool MrdDistributions::Execute(){
 		}
 		// if we had a true particle, record it's details
 		if(mc_particles_index>=0){
-			int true_track_index = trackid_to_mcparticleindex.at(true_track_id);
-			MCParticle* nextparticle = &MCParticles->at(true_track_id);
+			MCParticle* nextparticle = &MCParticles->at(mc_particles_index);
 			// Get the track details
 			MCTruthParticleID = nextparticle->GetParticleID();
 			InterceptsTank = nextparticle->GetEntersTank();
