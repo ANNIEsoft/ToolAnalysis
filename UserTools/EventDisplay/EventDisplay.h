@@ -92,7 +92,9 @@ class EventDisplay: public Tool {
     std::string output_format;
     bool isData;
     std::string user_trigger_label;
+    std::string string_date_label;
     std::string histogram_config;
+    int npmtcut;
 
     //define event variables
     uint32_t evnum;

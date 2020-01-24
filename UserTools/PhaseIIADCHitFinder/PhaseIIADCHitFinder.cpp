@@ -14,6 +14,7 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   // Load the default threshold settings for finding pulses
   verbosity = 3;
   adc_threshold_db = "none";
+  adc_window_db = "none";
   default_adc_threshold = BOGUS_INT;
   pulse_finding_approach = "threshold";
   threshold_type = "relative";
@@ -25,6 +26,7 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   m_variables.Get("verbosity",verbosity); 
   m_variables.Get("PulseFindingApproach", pulse_finding_approach); 
   m_variables.Get("ADCThresholdDB", adc_threshold_db); 
+  m_variables.Get("WindowIntegrationDB", adc_window_db); 
   m_variables.Get("DefaultADCThreshold", default_adc_threshold);
   m_variables.Get("DefaultThresholdType", threshold_type);
   m_variables.Get("PulseWindowType", pulse_window_type);
@@ -37,7 +39,16 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
       verbosity);
   }
 
+  if(adc_window_db=="none" && pulse_finding_approach=="fixed_windows"){
+    Log("PhaseIIADCHitFinder Tool ERROR: Fixed integration window approach specified, but no CSV file with" 
+      " windows for any channels defined.", v_error,
+      verbosity);
+    return false;
+  }
+
+  //Load window and threshold CSV files if defined
   if(adc_threshold_db != "none") channel_threshold_map = this->load_channel_threshold_map(adc_threshold_db);
+  if(adc_window_db != "none") channel_window_map = this->load_integration_window_map(adc_window_db);
   
   hit_map = new std::map<unsigned long,std::vector<Hit>>;
   return true;
@@ -47,8 +58,8 @@ bool PhaseIIADCHitFinder::Execute() {
 
   try {
 
-    //Reset maps that are stored in ANNIEEvent
-    hit_map->clear();
+    //Recreate maps that were deleted with ANNIEEvent->Delete() ANNIEEventBuilder tool
+    hit_map = new std::map<unsigned long,std::vector<Hit>>;
 
     // Get a pointer to the ANNIEEvent Store
     auto* annie_event = m_data->Stores.at("ANNIEEvent");
@@ -119,7 +130,33 @@ bool PhaseIIADCHitFinder::Execute() {
       std::vector< std::vector<ADCPulse> > pulse_vec;
       std::vector<Hit> HitsOnPMT;
 
-      if (pulse_finding_approach == "threshold"){
+      if (pulse_finding_approach == "full_window"){
+          // Integrate each whole dang minibuffer and background subtract 
+        size_t num_minibuffers = raw_waveforms.size();
+        for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+            Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
+            int window_end = buffer_wave.GetSamples()->size()-1;
+            std::vector<int> fullwindow{0,window_end};
+            std::vector<std::vector<int>> onewindowvec{fullwindow};
+            pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
+              calibrated_waveforms.at(mb), onewindowvec, channel_key));
+        }
+      }
+
+      if (pulse_finding_approach == "fixed_windows"){
+        // Integrate pulse over a fixed windows defined for channel 
+        std::vector<std::vector<int>> thispmt_adc_windows;
+        thispmt_adc_windows = this->get_db_windows(channel_key);
+
+        //For each minibuffer, integrate window to get pulses
+        size_t num_minibuffers = raw_waveforms.size();
+        for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+            pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
+              calibrated_waveforms.at(mb), thispmt_adc_windows, channel_key));
+        }
+      }
+
+      else if (pulse_finding_approach == "threshold"){
         // Determine the ADC threshold to use for the current channel
         unsigned short thispmt_adc_threshold = BOGUS_INT;
         thispmt_adc_threshold = this->get_db_threshold(channel_key);
@@ -140,21 +177,22 @@ bool PhaseIIADCHitFinder::Execute() {
             pulse_vec.push_back(this->find_pulses_bythreshold(raw_waveforms.at(mb),
               calibrated_waveforms.at(mb), thispmt_adc_threshold, channel_key));
         }
-        
-        //Fill pulse map with all ADCPulses found
-        pulse_map.emplace(channel_key,pulse_vec);
-        //Convert ADCPulses to Hits and fill into Hit map
-        HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
-        for(int j=0; j < HitsOnPMT.size(); j++){
-		  Hit ahit = HitsOnPMT.at(j);
-          if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
-          else hit_map->at(channel_key).push_back(ahit);
-        }
+      } 
       
-      } else if (pulse_finding_approach == "NNLS") {
+      else if (pulse_finding_approach == "NNLS") {
         Log("PhaseIIADCHitFinder: NNLS approach is not implemented.  please use threshold.",
             0, verbosity);
-      } 
+      }
+
+      //Fill pulse map with all ADCPulses found
+      pulse_map.emplace(channel_key,pulse_vec);
+      //Convert ADCPulses to Hits and fill into Hit map
+      HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
+      for(int j=0; j < HitsOnPMT.size(); j++){
+	    Hit ahit = HitsOnPMT.at(j);
+        if(hit_map->count(channel_key)==0) hit_map->emplace(channel_key, std::vector<Hit>{ahit});
+        else hit_map->at(channel_key).push_back(ahit);
+      }
     }
     
     //Store the pulse and hit maps in the ANNIEEvent store
@@ -192,6 +230,21 @@ unsigned short PhaseIIADCHitFinder::get_db_threshold(unsigned long channelkey){
   return this_pmt_threshold;
 }
 
+std::vector<std::vector<int>> PhaseIIADCHitFinder::get_db_windows(unsigned long channelkey){
+    std::vector<std::vector<int>> this_pmt_windows;
+  //Look in the map and check if channelkey exists.
+  if (channel_window_map.find(channelkey) == channel_window_map.end() ) {
+     if (verbosity>v_debug){
+       std::cout << "PhaseIIADCHitFinder Warning: no integration windows found" <<
+       "for channel_key" << channelkey <<". Not finding pulses." << std::endl;
+       }
+  } else {
+    // gottem
+    this_pmt_windows = channel_window_map.at(channelkey);
+  }
+  return this_pmt_windows;
+}
+
 std::map<unsigned long, unsigned short> PhaseIIADCHitFinder::load_channel_threshold_map(std::string threshold_db){
   std::map<unsigned long, unsigned short> chanthreshmap;
   std::string fileline;
@@ -219,6 +272,102 @@ std::map<unsigned long, unsigned short> PhaseIIADCHitFinder::load_channel_thresh
   return chanthreshmap;
 }
 
+std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCHitFinder::load_integration_window_map(std::string window_db)
+{
+  std::map<unsigned long, std::vector<std::vector<int>>> chanwindowmap;
+  std::string fileline;
+  ifstream myfile(window_db.c_str());
+  if (myfile.is_open()){
+    while(getline(myfile,fileline)){
+      if(fileline.find("#")!=std::string::npos) continue;
+      std::cout << fileline << std::endl; //has our stuff;
+      std::vector<std::string> dataline;
+      boost::split(dataline,fileline, boost::is_any_of(","), boost::token_compress_on);
+      unsigned long chanvalue = std::stoul(dataline.at(0));
+      int windowminvalue = std::stoi(dataline.at(1));
+      int windowmaxvalue = std::stoi(dataline.at(2));
+      std::vector<int> window{windowminvalue,windowmaxvalue};
+      if(chanwindowmap.count(chanvalue)==0){ // Place window range into integral windows
+        std::vector<std::vector<int>> window_vector{window};
+        chanwindowmap.emplace(chanvalue,window_vector);
+      }
+      else { // Add this window to the windows to integrate in
+        chanwindowmap.at(chanvalue).push_back(window);
+      }
+    }
+  } else {
+    Log("PhaseIIADCHitFinder Tool: Input integration window DB file not found. "
+        " no integration will occur. ",
+        v_warning, verbosity);
+  }
+  return chanwindowmap;
+}
+
+std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
+  const Waveform<unsigned short>& raw_minibuffer_data,
+  const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
+  std::vector<std::vector<int>> adc_windows, const unsigned long& channel_key) const
+{
+  //Sanity check that raw/calibrated minibuffers are same size
+  if ( raw_minibuffer_data.Samples().size()
+    != calibrated_minibuffer_data.Samples().size() )
+  {
+    throw std::runtime_error("Size mismatch between the raw and calibrated"
+      " waveforms encountered in PhaseIIADCHitFinder::find_pulses()");
+  }
+  
+  if (verbosity>v_debug){
+    std::cout << "PhaseIIADCHitFinder integrating windows now..." <<
+    "in signal of PMT ID " << channel_key << std::endl;
+  }
+  
+  std::vector<ADCPulse> pulses;
+
+  for(int i = 0; i<adc_windows.size();i++){
+    // Integrate the pulse to get its area. Use a Riemann sum. Also get
+    // the raw amplitude (maximum ADC value within the pulse) and the
+    // sample at which the peak occurs.
+    std::vector<int> awindow = adc_windows.at(i);
+    size_t wmin = static_cast<size_t>(awindow.at(0));
+    size_t wmax = static_cast<size_t>(awindow.at(1));
+    unsigned long raw_area = 0; // ADC * samples
+    unsigned short max_ADC = std::numeric_limits<unsigned short>::lowest();
+    size_t peak_sample = BOGUS_INT;
+    for (size_t p = wmin; p <= wmax; ++p) {
+      raw_area += raw_minibuffer_data.GetSample(p);
+      if (max_ADC < raw_minibuffer_data.GetSample(p)) {
+        max_ADC = raw_minibuffer_data.GetSample(p);
+        peak_sample = p;
+      }
+    }
+
+    // The amplitude of the pulse (V)
+    double calibrated_amplitude
+      = calibrated_minibuffer_data.GetSample(peak_sample);
+
+    // Calculated the charge detected in this pulse (nC)
+    // using the calibrated waveform
+    double charge = 0.;
+    // Integrate the calibrated pulse (to get a quantity in V * samples)
+    for (size_t p = wmin; p <= wmax; ++p) {
+      charge += calibrated_minibuffer_data.GetSample(p);
+    }
+
+    // Convert the pulse integral to nC
+    charge *= NS_PER_ADC_SAMPLE / ADC_IMPEDANCE;
+
+    // Store the freshly made pulse in the vector of found pulses
+    pulses.emplace_back(channel_key,
+      ( wmin * NS_PER_SAMPLE ),
+      peak_sample * NS_PER_SAMPLE,
+      calibrated_minibuffer_data.GetBaseline(),
+      calibrated_minibuffer_data.GetSigmaBaseline(),
+      raw_area, max_ADC, calibrated_amplitude, charge);
+  }
+  return pulses;
+}
+
+
 std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
   const Waveform<unsigned short>& raw_minibuffer_data,
   const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
@@ -244,7 +393,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       + calibrated_minibuffer_data.GetSigmaBaseline() ));
 
   bool in_pulse = false;
-  size_t num_samples = raw_minibuffer_data.Samples().size();
+  size_t num_samples = raw_minibuffer_data.Samples().size()-50;
 
   //Fixed integration window defined relative to ADC threshold crossings
   if(pulse_window_type == "fixed"){
@@ -257,7 +406,10 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       in_pulse = false;
       //check if sample is within an already defined window
       for (int i=0; i< window_starts.size(); i++){
-        if ((s>window_starts.at(i)) && (s<window_ends.at(i))) in_pulse = true;
+        if ((s>window_starts.at(i)) && (s<window_ends.at(i))){
+          in_pulse = true;
+          if(verbosity>4) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
+        }
       }  
       //if sample crosses threshold and isn't in a defined window, define a new window
         if (!in_pulse && (raw_minibuffer_data.GetSample(s) > adc_threshold) ) {
@@ -318,6 +470,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
     for (size_t s = 0; s < num_samples; ++s) {
       if ( !in_pulse && raw_minibuffer_data.GetSample(s) > adc_threshold ) {
         in_pulse = true;
+        if(verbosity>4) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
         pulse_start_sample = s;
       }
       // In the second test below, we force a pulse to end if we reach the end of

@@ -74,7 +74,9 @@ bool PhaseIIADCCalibrator::Execute() {
       raw_waveforms);
   }
 
+  std::cout <<"Setting CalibratedADCData"<<std::endl;
   annie_event->Set("CalibratedADCData", calibrated_waveform_map);
+  std::cout <<"Set CalibratedADCData"<<std::endl;
 
   return true;
 }

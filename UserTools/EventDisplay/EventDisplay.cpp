@@ -38,7 +38,9 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   lappd_Tmin = -10.;
   lappd_Tmax = 40.;
   lappd_Tbins = 50;
+  npmtcut = 10;
   histogram_config = "None";
+  string_date_label = "01/13/2020";
 
   //--------------------------------------------
   //-------get configuration variables----------
@@ -69,7 +71,9 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DetectorConfiguration",detector_config);
   m_variables.Get("IsData",isData);
   m_variables.Get("UserTriggerLabel",user_trigger_label);
+  m_variables.Get("UserDateLabel",string_date_label);
   m_variables.Get("HistogramConfig",histogram_config);
+  m_variables.Get("NPMTCut",npmtcut);
 
   Log("EventDisplay tool: Initialising",v_message,verbose);
 
@@ -429,7 +433,7 @@ bool EventDisplay::Execute(){
     if(not get_ok){ Log("EventDisplay tool: Error retrieving MCLAPPDHits, true from ANNIEEvent!",v_error,verbose); return false;} 
  } else {
     get_ok = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
-    if(not get_ok){ Log("EventDisplay tool: Error retrieving Hits, true from ANNIEEvent!",v_error,verbose); return false;}
+    if(not get_ok){ Log("EventDisplay tool: Error retrieving Hits, true from ANNIEEvent!",v_error,verbose);}
     //For data, it is currently still possible that there does not exist the TDCData or LAPPDHits object. Don't return false in these cases
     get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_Data);  // a std::map<ChannelKey,vector<TDCHit>>
     if(not get_ok){ Log("EventDisplay tool: Error retrieving TDCData (Data), true from ANNIEEvent!",v_error,verbose);}
@@ -733,7 +737,7 @@ bool EventDisplay::Execute(){
       total_hits_lappds=0;
       num_lappds_hit=0;
       maximum_lappds = 0;
-      min_time_lappds = 999.;
+      min_time_lappds = 99999.;
       maximum_time_lappds = 0;
       std::vector<unsigned long> temp_lappd_detkeys;
 
@@ -811,6 +815,30 @@ bool EventDisplay::Execute(){
       vectsize = 0;
     }
   }
+  /*double mean_time=0.;
+  std::vector<unsigned long> pmt_to_delete;
+  for (unsigned int i_pmt = 0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+        std::cout <<"i_pmt: "<<i_pmt<<", time: "<<time[hitpmt_detkeys.at(i_pmt)]<<", charge: "<<charge[hitpmt_detkeys.at(i_pmt)]<<std::endl;
+	mean_time+=time[hitpmt_detkeys.at(i_pmt)];
+  }
+  if (hitpmt_detkeys.size()>0) mean_time /= hitpmt_detkeys.size();
+  for (unsigned int i_pmt = 0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+    if (time[hitpmt_detkeys.at(i_pmt)] <= mean_time - 50 || time[hitpmt_detkeys.at(i_pmt)] >= mean_time + 50){
+      time[hitpmt_detkeys.at(i_pmt)] = 0;
+      charge[hitpmt_detkeys.at(i_pmt)] = 0;
+      total_hits_pmts--;
+      pmt_to_delete.push_back(hitpmt_detkeys.at(i_pmt));
+    }
+  }
+  for (int i_del = 0; i_del < pmt_to_delete.size(); i_del++){
+    std::vector<unsigned long>::iterator it = std::find(hitpmt_detkeys.begin(),hitpmt_detkeys.end(),pmt_to_delete.at(i_del));
+    hitpmt_detkeys.erase(it);
+  }*/
+
+  if (total_hits_pmts < npmtcut) {
+    Log("EventDisplay tool: Only "+std::to_string(total_hits_pmts)+" PMTs hit. Required: "+std::to_string(npmtcut)+". Terminate this execute step.");
+    return true;
+   }
 
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
 
@@ -831,7 +859,7 @@ bool EventDisplay::Execute(){
 
   maximum_pmts = 0;
   maximum_time_pmts = 0;
-  min_time_pmts = 999.;
+  min_time_pmts = 99999.;
 
   total_charge_pmts = 0;
   for (unsigned int i_pmt=0;i_pmt<hitpmt_detkeys.size();i_pmt++){
@@ -853,7 +881,7 @@ bool EventDisplay::Execute(){
       total_hits_lappds=0;
       num_lappds_hit=0;
       maximum_lappds = 0;
-      min_time_lappds = 999.;
+      min_time_lappds = 99999.;
       maximum_time_lappds = 0;
 
       if(MCLAPPDHits){
@@ -904,7 +932,7 @@ bool EventDisplay::Execute(){
     total_hits_lappds=0;
     num_lappds_hit=0;
     maximum_lappds = 0;
-    min_time_lappds = 999.;
+    min_time_lappds = 99999.;
     maximum_time_lappds = 0;
 
     if(LAPPDHits){
@@ -1416,7 +1444,7 @@ void EventDisplay::draw_event(){
     draw_pmt_legend();
     Log("EventDisplay tool: Drawing PMT legend finished.",v_message,verbose);
 
-    draw_lappd_legend();
+    //draw_lappd_legend();
     Log("EventDisplay tool: Drawing lappd legend finished.",v_message,verbose);
 
     draw_mrd_legend();
@@ -1425,7 +1453,7 @@ void EventDisplay::draw_event(){
     draw_schematic_detector();
     Log("EventDisplay tool: Drawing schematic detector finished.",v_message,verbose);
 
-    draw_particle_legend();
+    //draw_particle_legend();
     Log("EventDisplay tool: Drawing particle legend finished.",v_message,verbose);
 
     if (draw_vertex_temp) {
@@ -1471,7 +1499,8 @@ void EventDisplay::draw_event_box(){
     std::string modules_str = " module(s) / ";
     std::string hits2_str = " hits";
     std::string hits_str = " hits / ";
-    std::string charge_str = " p.e.";
+//    std::string charge_str = " p.e.";     //TEMP
+    std::string charge_str = " nC";
     //std::string annie_subrun = "ANNIE Subrun: ";
     std::string annie_time = "Trigger Time: ";
     std::string annie_time_unit = " [ns]";
@@ -1479,7 +1508,8 @@ void EventDisplay::draw_event_box(){
     std::string trigger_str = "Trigger: ";
     std::string annie_run_number = std::to_string(runnumber);
     std::string annie_event_number = std::to_string(evnum);
-    std::string total_charge_str = std::to_string(int(total_charge_pmts));
+    //std::string total_charge_str = std::to_string(int(total_charge_pmts));
+    std::string total_charge_str = std::to_string(round(total_charge_pmts*10000.)/10000.);
     std::string total_hits_str = std::to_string(total_hits_pmts);
     //std::string annie_subrun_number = std::to_string(subrunnumber);
     std::string annie_time_number, annie_time_label;
@@ -1493,7 +1523,8 @@ void EventDisplay::draw_event_box(){
     if (!isData) annie_time_label = annie_time+annie_time_number+annie_time_unit;
     std::string lappd_hits_label = lappds_str+lappd_numbers_str+modules_str+lappd_hits_number+hits2_str;
     std::string trigger_text_label = trigger_str+trigger_label;
-    text_event_info->AddText("Date: xx/yy/2019");         //FIXME: get date/time stamp from somewhere
+    std::string date_text_label = annie_date + string_date_label;
+    text_event_info->AddText(date_text_label.c_str());         //FIXME: get date/time stamp from somewhere
     //text_event_info->AddText("Time: ");
     if (!isData) text_event_info->AddText(annie_time_label.c_str());
     text_event_info->AddText(annie_run_label.c_str());
@@ -1534,8 +1565,10 @@ void EventDisplay::draw_event_box(){
         vector_colordot.push_back(colordot);
     }
 
-    std::string max_charge_pre = std::to_string(int(maximum_pmts));
-    std::string pe_string = " p.e.";
+//    std::string max_charge_pre = std::to_string(int(maximum_pmts));  //TEMP
+    std::string max_charge_pre = std::to_string(round(maximum_pmts*10000.)/10000.);
+//    std::string pe_string = " p.e.";
+    std::string pe_string = " nC";
     std::string max_charge = max_charge_pre+pe_string;
     std::string max_time_pre = std::to_string(int(maximum_time_overall));
     std::string time_string = " ns";
@@ -1551,7 +1584,8 @@ void EventDisplay::draw_event_box(){
     max_text->SetTextAlign(11);
     max_text->Draw();
 
-    std::string min_charge_pre = (threshold==-999)? "0" : std::to_string(int(threshold));
+    //std::string min_charge_pre = (threshold==-999)? "0" : std::to_string(int(threshold));
+    std::string min_charge_pre = (threshold==-999)? "0" : std::to_string(round(threshold*10000.)/10000.);
     std::string min_charge = min_charge_pre+pe_string;
     std::string min_time_pre = std::to_string(int(min_time_overall));
     std::string min_time;

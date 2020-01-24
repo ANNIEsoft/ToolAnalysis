@@ -26,29 +26,31 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   //Check files exist
   if(!this->FileExists(fDetectorGeoFile)){
      Log("LoadGeometry Tool: File for Detector Geometry does not exist!",v_error,verbosity);
-     std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+     if (verbosity > 0) std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
      return false;
   }
   if(!this->FileExists(fFACCMRDGeoFile)){
     Log("LoadGeometry Tool: File for FACC/MRD Geometry does not exist!",v_error,verbosity);
-    std::cout << "Filepath was... " << fFACCMRDGeoFile << std::endl;
+    if (verbosity > 0) std::cout << "Filepath was... " << fFACCMRDGeoFile << std::endl;
     return false;
   }
 
   if(!this->FileExists(fLAPPDGeoFile)){
     Log("LoadGeometry Tool: File for the LAPPDs does not exist!",v_error,verbosity);
-        std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+    if (verbosity > 0) std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
     return false;
   }
 
   if(!this->FileExists(fTankPMTGeoFile)){
     Log("LoadGeometry Tool: File for Tank PMT Geometry does not exist!",v_error,verbosity);
-    std::cout << "Filepath was... " << fTankPMTGeoFile << std::endl;
+    if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGeoFile << std::endl;
     return false;
   }
 
   //Make the map of channel key to crate space info
-  CrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
 
   //Initialize the geometry using the geometry CSV file entries
   this->InitializeGeometry();
@@ -64,7 +66,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
 
-  m_data->CStore.Set("CrateSpaceToChannelNumMap",CrateSpaceToChannelNumMap);
+  m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
    //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
 
   return true;
@@ -78,6 +82,9 @@ bool LoadGeometry::Execute(){
 
 bool LoadGeometry::Finalise(){
   std::cout << "LoadGeometry tool exitting" << std::endl;
+  //delete MRDCrateSpaceToChannelNumMap;
+  //delete TankPMTCrateSpaceToChannelNumMap;
+  //delete LAPPDCrateSpaceToChannelNumMap;
   return true;
 }
 
@@ -111,12 +118,12 @@ void LoadGeometry::InitializeGeometry(){
     }
     //Loop over lines, collect all detector data (should only be one line here)
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity>3) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> DataEntries;
       boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
-      for (int i=0; i<DataEntries.size(); i++){
+      for (unsigned int i=0; i<DataEntries.size(); i++){
         //Check Legend at i, load correct data type
         int ivalue = 0;
         double dvalue = 0.0;
@@ -176,12 +183,11 @@ void LoadGeometry::LoadFACCMRDDetectors(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity > 4) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
-      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseMRDDataEntry(SpecLine,MRDLegendEntries);
       if(not add_ok){
@@ -207,23 +213,23 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
 
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
-  for (int i=0; i<SpecLine.size(); i++){
+  for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
     double dvalue = 0.0;
     std::string svalue = "default";
-    for (int j=0; j<MRDIntegerValues.size(); j++){
+    for (unsigned int j=0; j<MRDIntegerValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<MRDStringValues.size(); j++){
+    for (unsigned int j=0; j<MRDStringValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDStringValues.at(j)){
         svalue = SpecLine.at(i);
         break;
       }
     }
-    for (int j=0; j<MRDDoubleValues.size(); j++){
+    for (unsigned int j=0; j<MRDDoubleValues.size(); j++){
       if(MRDLegendEntries.at(i) == MRDDoubleValues.at(j)){
         dvalue = std::stod(SpecLine.at(i));
         break;
@@ -331,10 +337,10 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
 
   // Also add this channel to the electronics map
   std::vector<int> crate_map{rack,TDC_slot,TDC_channel};
-  if(CrateSpaceToChannelNumMap->count(crate_map)==0){
-    CrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  if(MRDCrateSpaceToChannelNumMap->count(crate_map)==0){
+    MRDCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
-    Log("LoadGeometry Tool: ERROR: Tried assigning a channel_num to a crate space already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR: Tried assigning an MRD channel_num to a crate space already defined!!! ",v_error, verbosity);
   }
 
   if(verbosity>5) cout<<"Adding detector to Geometry"<<endl;
@@ -362,12 +368,11 @@ void LoadGeometry::LoadTankPMTDetectors(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity > 3)std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
-      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseTankPMTDataEntry(SpecLine,TankPMTLegendEntries);
       if(not add_ok){
@@ -393,23 +398,23 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
 
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
-  for (int i=0; i<SpecLine.size(); i++){
+  for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
     double dvalue = 0.0;
     std::string svalue = "default";
-    for (int j=0; j<TankPMTIntegerValues.size(); j++){
+    for (unsigned int j=0; j<TankPMTIntegerValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<TankPMTStringValues.size(); j++){
+    for (unsigned int j=0; j<TankPMTStringValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTStringValues.at(j)){
         svalue = SpecLine.at(i);
         break;
       }
     }
-    for (int j=0; j<TankPMTDoubleValues.size(); j++){
+    for (unsigned int j=0; j<TankPMTDoubleValues.size(); j++){
       if(TankPMTLegendEntries.at(i) == TankPMTDoubleValues.at(j)){
         dvalue = std::stod(SpecLine.at(i));
         break;
@@ -473,9 +478,9 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
   Detector adet(detector_num,
                 "Tank",
                 detector_tank_location,
-                Position( x_pos/1000.,
-                          y_pos/1000.,
-                          z_pos/1000.),
+                Position( x_pos,
+                          y_pos,
+                          z_pos),
                 Direction(x_dir,
                           y_dir,
                           z_dir),
@@ -497,6 +502,15 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                       hv_slot,
                       hv_channel,
                       chanstatus); //channel status same as detector status here
+
+  // Also add this channel to the Tank PMT electronics map
+  std::vector<int> crate_map{signal_crate,signal_slot,signal_channel};
+  if(TankPMTCrateSpaceToChannelNumMap->count(crate_map)==0){
+    TankPMTCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning a Tank PMT channel_num to a crate space already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
+  }
 
   // Add this channel to the geometry
   if(verbosity>4) cout<<"Adding channel "<<channel_num<<" to detector "<<detector_num<<endl;
@@ -527,12 +541,11 @@ void LoadGeometry::LoadLAPPDs(){
     detector_num_store = 100000;
     counter = 0;
     while(getline(myfile,line)){
-      std::cout << line << std::endl; //has our stuff;
+      if(verbosity>4) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
       std::vector<std::string> SpecLine;
       boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
-      if(verbosity>4) std::cout << "This line of data: " << line << std::endl;
       //Parse data line, make corresponding detector/channel
       bool add_ok = this->ParseLAPPDDataEntry(SpecLine,LAPPDLegendEntries);
       if(not add_ok){
@@ -558,30 +571,30 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
    std::string detector_type = "default",detector_status = "default",channel_status = "default";
   //Search for Legend entry.  Fill value type if found.
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
-  for (int i=0; i<SpecLine.size(); i++){
+  for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
     unsigned int uivalue =0;
     double dvalue = 0.0;
     std::string svalue = "default";
-    for (int j=0; j<LAPPDIntegerValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDIntegerValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDIntegerValues.at(j)){
         ivalue = std::stoi(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<LAPPDStringValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDStringValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDStringValues.at(j)){
         svalue = SpecLine.at(i);
         break;
       }
     }
-    for (int j=0; j<LAPPDDoubleValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDDoubleValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDDoubleValues.at(j)){
         dvalue = std::stod(SpecLine.at(i));
         break;
       }
     }
-    for (int j=0; j<LAPPDUnIntValues.size(); j++){
+    for (unsigned int j=0; j<LAPPDUnIntValues.size(); j++){
       if(LAPPDLegendEntries.at(i) == LAPPDUnIntValues.at(j)){
         uivalue = std::stoul(SpecLine.at(i));
         break;
@@ -681,6 +694,14 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
                       channel_hv_card,
                       channel_hv_channel,
                       channelstat);
+
+  // Also add this channel to the Tank PMT electronics map
+  std::vector<unsigned int> crate_map{channel_signal_crate,channel_signal_card,channel_signal_channel};
+  if(LAPPDCrateSpaceToChannelNumMap->count(crate_map)==0){
+    LAPPDCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning a Tank PMT channel_num to a crate space already defined!!! ",v_error, verbosity);
+  }
 
   // Add this channel to the detector
   if(adet != nullptr){
