@@ -32,6 +32,8 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
 
   if(adc_window_db != "none") channel_window_map = this->load_window_map(adc_window_db);
 
+  m_data->CStore.Set("NumBaselineSamples",num_baseline_samples);
+
   return true;
 }
 
@@ -280,7 +282,7 @@ void PhaseIIADCCalibrator::make_raw_led_waveforms(unsigned long channel_key,
       // Make a waveform out of this subwindow, plus the number of samples
       // used for background estimation
       std::vector<int> awindow = thispmt_adc_windows.at(i);
-      int windowmin = awindow.at(0) - ((int)num_baseline_samples*(int)num_sub_waveforms);
+      int windowmin = awindow.at(0) - ((int)num_baseline_samples);
       if(windowmin<0){
         std::cout << "PhaseIIADCCalibrator Tool WARNING: when making an " <<
             "LED window, there was not enough room prior to the window to " <<

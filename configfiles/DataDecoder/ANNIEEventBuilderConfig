@@ -2,4 +2,10 @@ verbosity 5
 
 BuildType TankAndMRD
 ProcessedFilesBasename ProcessedRawData
+EventsPerPairing 200
 SavePath ./
+
+MinNumWavesInSet 140 // 1=Just throw any waveforms into ANNIE events if you got em
+
+RoughScanMean 200
+RoughScanVariance 250000

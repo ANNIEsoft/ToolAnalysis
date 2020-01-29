@@ -15,9 +15,12 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   ProcessedFilesBasename = "ProcessedRawData";
   BuildType = "TankAndMRD";
   EventsPerPairing = 200;
+  OrphanWarningValue = 20;
   MRDPMTTimeDiffTolerance = 10;   //ms
-  RoughScanMean = 200;
-  RoughScanVariance = 50000;
+  DriftWarningValue = 5;           //ms
+  RoughScanMean = 200;            //ms
+  RoughScanVariance = 250000;     //ms
+  NumWavesInCompleteSet = 140;
 
   /////////////////////////////////////////////////////////////////
   //FIXME: Need rough scan and tolerances in variable settings
@@ -26,6 +29,9 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
   m_variables.Get("BuildType",BuildType);
   m_variables.Get("NumEventsPerPairing",EventsPerPairing);
+  m_variables.Get("RoughScanMean",RoughScanMean);
+  m_variables.Get("RoughScanVariance",RoughScanVariance);
+  m_variables.Get("MinNumWavesInSet",NumWavesInCompleteSet);
 
   if(BuildType == "TankAndMRD"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
@@ -58,6 +64,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   CurrentRunNum = -1;
   CurrentSubRunNum = -1;
   DataStreamsSynced = false;
+  CurrentDriftMean = 0;
 
   return true;
 }
@@ -97,6 +104,8 @@ bool ANNIEEventBuilder::Execute(){
       delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
       CurrentRunNum = RunNumber;
       CurrentSubRunNum = SubRunNumber;
+      //FIXME: Will the drift reset at the start of every subrun as well?
+      if((CurrentRunNum != RunNumber)) CurrentDriftMean = 0;
     }
 
     //Assume a whole processed file will have all it's PMT data finished
@@ -478,7 +487,7 @@ void ANNIEEventBuilder::SyncDataStreams(){
       std::cout << "MEAN OF OFFSETS: " << omean << std::endl;
       std::cout << "VARIANCE OF OFFSETS: " << ovar << std::endl;
     }
-    if(tvar<BestVar){
+    if((std::abs(tmean)<RoughScanMean) && (tvar<RoughScanVariance) && (tvar<BestVar)){
       BestVar = tvar;
       BestMean = tmean;
       BestIndex = i;
@@ -489,11 +498,11 @@ void ANNIEEventBuilder::SyncDataStreams(){
     std::cout << "BEST VARIANCE OF OFFSETS: " << BestVar << std::endl;
     std::cout << "BEST INDEX OF OFFSETS: " << BestIndex << std::endl;
   }
-  if(BestVar < RoughScanVariance && BestMean < RoughScanMean){
+  if((BestVar < RoughScanVariance) && (BestMean < RoughScanMean)){
     if(verbosity>3) std::cout << "VARIANCE AND MEAN MEET ROUGH SCAN CRITERIA.  CONSIDERED SYNCED" << std::endl;
     UnpairedMRDTimestamps.erase(UnpairedMRDTimestamps.begin(),(UnpairedMRDTimestamps.begin()+BestIndex));
-    CurrentDriftMean = BestMean;
-    CurrentDriftVariance = BestVar;
+    //FIXME: Can we accurately estimate the drift mean in the presence of these
+    //rogue MRD triggers?
     DataStreamsSynced = true;
   }
   else {
@@ -530,15 +539,18 @@ void ANNIEEventBuilder::CheckDataStreamsAreSynced(){
     TSDifferences.push_back(static_cast<double>(PMTTS_copy.at(k)/1E6) - static_cast<double>(MRDTS_copy.at(k)));
   }
   double tmean,tvar;
-  double omean,ovar;
   ComputeMeanAndVariance(TSDifferences,tmean,tvar);
-  std::cout << "MEAN TS SHIFT: " << tmean << std::endl;
-  std::cout << "VARIANCE TS SHIFT: " << tvar << std::endl;
-  if(tvar < RoughScanVariance){
+  if(verbosity>4){
+    std::cout << "MEAN TS SHIFT: " << tmean << std::endl;
+    std::cout << "VARIANCE TS SHIFT: " << tvar << std::endl;
+    std::cout << "DRIFT IN MEAN AS OF LAST PAIRING: " << CurrentDriftMean << std::endl;
+  }
+  if((std::abs(tmean-CurrentDriftMean) < RoughScanMean) && (tvar < RoughScanVariance)){
     DataStreamsSynced = true;
   }
   else {
     if(verbosity>3){
+      std::cout << "MEAN OF TIMESTAMP DIFFERENCES WITH DRIFT CORRECTION HAS GROWN PAST " << RoughScanMean << std::endl;
       std::cout << "VARIANCE OF TIMESTAMP DIFFERENCES HAS GROWN PAST " << RoughScanVariance << std::endl;
       std::cout << "STREAM IS CONSIDERED OUT OF SYNC " << std::endl;
     }
@@ -562,6 +574,7 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   int NumPairsToMake = EventsPerPairing;
   std::vector<double> ThisPairingTSDiffs;
 
+  int NumOrphans = 0;
   if(verbosity>4) std::cout << "MEAN OF PMT-MRD TIME DIFFERENCE LAST LOOP: " << CurrentDriftMean << std::endl;
   for (int i=0;i<(NumPairsToMake); i++) {
     double TSDiff = (static_cast<double>(UnpairedTankTimestamps.at(i)/1E6) - 21600000.0) - static_cast<double>(UnpairedMRDTimestamps.at(i));
@@ -576,11 +589,13 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
       if(TSDiff > 0) {
         if(verbosity>3) std::cout << "MOVING MRD TIMESTAMP TO ORPHANAGE" << std::endl;
         OrphanMRDTimestamps.push_back(UnpairedMRDTimestamps.at(i));
+        NumOrphans +=1;
         UnpairedMRDTimestamps.erase(std::remove(UnpairedMRDTimestamps.begin(),UnpairedMRDTimestamps.end(),UnpairedMRDTimestamps.at(i)), 
              UnpairedMRDTimestamps.end());
       } else {
         if(verbosity>3) std::cout << "MOVING TANK TIMESTAMP TO ORPHANAGE" << std::endl;
         OrphanTankTimestamps.push_back(UnpairedTankTimestamps.at(i));
+        NumOrphans +=1;
         UnpairedTankTimestamps.erase(std::remove(UnpairedTankTimestamps.begin(),UnpairedTankTimestamps.end(),UnpairedTankTimestamps.at(i)), 
              UnpairedTankTimestamps.end());
       }
@@ -592,8 +607,18 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   }
 
   //With the last set of pairs calculate what the mean drift is
+  double ThisPairingMean, ThisPairingVariance;
   ComputeMeanAndVariance(ThisPairingTSDiffs,CurrentDriftMean,CurrentDriftVariance);
+  ComputeMeanAndVariance(ThisPairingTSDiffs,ThisPairingMean,ThisPairingVariance);
+  if(std::abs(CurrentDriftMean-ThisPairingMean)>DriftWarningValue){
+    std::cout << "ANNIEEventBuilder tool: WARNING! Shift in drift greater than " << DriftWarningValue << " since last pairings." << std::endl;
+  }
+  if(NumOrphans > OrphanWarningValue){
+    std::cout << "ANNIEEventBuilder tool: WARNING! High orphan rate detected.  More than " << OrphanWarningValue << " this pairing sequence." << std::endl;
+  }
 
+  CurrentDriftMean = ThisPairingMean;
+  CurrentDriftVariance = ThisPairingVariance;
   if(verbosity>4) std::cout << "DOING OUR PAIR UP: " << std::endl;
   for (int i=0;i<(NumPairsToMake); i++) {
     UnbuiltTankMRDPairs.emplace(UnpairedTankTimestamps.at(i),UnpairedMRDTimestamps.at(i));
@@ -643,7 +668,7 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
-  TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in ns
+  TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in microseconds
   ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
   ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
   return;
@@ -709,6 +734,7 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
   std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
+  ANNIEEvent->Set("EventTimeTank",ClockTime);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
   //  - EventTime
   //  - TriggerData

@@ -85,13 +85,15 @@ class ANNIEEventBuilder: public Tool {
   //
   unsigned int NumWavesInCompleteSet = 140; 
 
-  int MRDPMTTimeDiffTolerance;   //ms
   int RoughScanMean;  // mean of difference in PMT and MRD timestmaps (ms) tolerated when roughly checking stream sync
   int RoughScanVariance;  // mean of differences in PMT and MRD timestamps (ms) tolerated when roughly checking stream sync
 
   double CurrentDriftMean = 0;
   double CurrentDriftVariance = 0;
-  
+
+  int MRDPMTTimeDiffTolerance;   //Threshold relative to current drift mean where an event will be put to the orphanage
+  int DriftWarningValue;
+  int OrphanWarningValue;    //Number of orphanage placements in a pairing event to print a warning
   bool IsNewMRDData;
   bool IsNewTankData;
 

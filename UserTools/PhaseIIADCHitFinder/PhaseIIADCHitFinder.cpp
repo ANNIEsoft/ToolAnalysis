@@ -156,12 +156,27 @@ bool PhaseIIADCHitFinder::Execute() {
       }
 
       if (pulse_finding_approach == "full_window_maxpeak"){
-        // Integrate each whole dang minibuffer and background subtract 
+        // Find the max peak anywhere in the window and subtract baseline
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
             Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
             int window_end = buffer_wave.GetSamples()->size()-1;
             std::vector<int> fullwindow{0,window_end};
+            std::vector<std::vector<int>> onewindowvec{fullwindow};
+            pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
+              calibrated_waveforms.at(mb), onewindowvec, channel_key,true));
+        }
+      }
+      
+      if (pulse_finding_approach == "signal_window_maxpeak"){
+        // Find the max peak anywhere beyond the baseline region and subtract baseline
+        size_t num_minibuffers = raw_waveforms.size();
+        for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+            Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
+            int window_end = buffer_wave.GetSamples()->size()-1;
+            int num_baseline_samples = 0;
+            m_data->CStore.Set("NumBaselineSamples",num_baseline_samples);
+            std::vector<int> fullwindow{num_baseline_samples,window_end};
             std::vector<std::vector<int>> onewindowvec{fullwindow};
             pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
               calibrated_waveforms.at(mb), onewindowvec, channel_key,true));
