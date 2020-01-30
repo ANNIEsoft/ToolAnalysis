@@ -45,7 +45,6 @@ class PMTDataDecoder: public Tool {
 
   PMTDataDecoder(); ///< Simple constructor
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
-  std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   std::vector<DecodedFrame> DecodeFrames(std::vector<uint32_t> bank);
@@ -68,12 +67,8 @@ class PMTDataDecoder: public Tool {
 
   std::string InputFile;
   std::string Mode;
-  std::vector<std::string> OrganizedFileList;
 
-  int EntriesPerExecute;
-  long totalentries=0;
-  int CDEntryNum = 0;
-  int FileNum = 0;
+  int CurrentEntryNum = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
   std::string CurrentFile = "NONE";
@@ -90,7 +85,6 @@ class PMTDataDecoder: public Tool {
   //get the entire header.
   unsigned int SAMPLES_RIGHTOF_000 = 7;
 
-  BoostStore *RawData = nullptr;
   BoostStore *PMTData = nullptr;
   std::vector<CardData> Cdata;
 

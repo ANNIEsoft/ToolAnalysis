@@ -107,3 +107,4 @@
 #include "ANNIEEventBuilder.h"
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
+#include "LoadRawData.h"
