@@ -1,72 +1,98 @@
-\hypertarget{classannie_1_1RawReadout}{\section{annie\-:\-:Raw\-Readout Class Reference}
-\label{classannie_1_1RawReadout}\index{annie\-::\-Raw\-Readout@{annie\-::\-Raw\-Readout}}
+\hypertarget{classannie_1_1RawReadout}{
+\section{annie::RawReadout Class Reference}
+\label{classannie_1_1RawReadout}\index{annie::RawReadout@{annie::RawReadout}}
 }
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classannie_1_1RawReadout_a66f3a9c85b9413f72c19486903cba555}{{\bfseries Raw\-Readout} (int Sequence\-I\-D=B\-O\-G\-U\-S\-\_\-\-I\-N\-T)}\label{classannie_1_1RawReadout_a66f3a9c85b9413f72c19486903cba555}
+\hypertarget{classannie_1_1RawReadout_a66f3a9c85b9413f72c19486903cba555}{
+{\bfseries RawReadout} (int SequenceID=BOGUS\_\-INT)}
+\label{classannie_1_1RawReadout_a66f3a9c85b9413f72c19486903cba555}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_a50f260bfb7e4d0c432068b083bee0ade}{void {\bfseries set\-\_\-sequence\-\_\-id} (int seq\-\_\-id)}\label{classannie_1_1RawReadout_a50f260bfb7e4d0c432068b083bee0ade}
+\hypertarget{classannie_1_1RawReadout_a50f260bfb7e4d0c432068b083bee0ade}{
+void {\bfseries set\_\-sequence\_\-id} (int seq\_\-id)}
+\label{classannie_1_1RawReadout_a50f260bfb7e4d0c432068b083bee0ade}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_a00fa88e705b67adce1287addd44b5c39}{int {\bfseries sequence\-\_\-id} () const }\label{classannie_1_1RawReadout_a00fa88e705b67adce1287addd44b5c39}
+\hypertarget{classannie_1_1RawReadout_a00fa88e705b67adce1287addd44b5c39}{
+int {\bfseries sequence\_\-id} () const }
+\label{classannie_1_1RawReadout_a00fa88e705b67adce1287addd44b5c39}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_a024f428f54d2aa60e3bb362a65fa52db}{void {\bfseries add\-\_\-card} (int Card\-I\-D, unsigned long long Last\-Sync, int Start\-Time\-Sec, int Start\-Time\-N\-Sec, unsigned long long Start\-Count, int Channels, int Buffer\-Size, int Mini\-Buffer\-Size, const std\-::vector$<$ unsigned short $>$ \&Full\-Buffer\-Data, const std\-::vector$<$ unsigned long long $>$ \&Trigger\-Counts, const std\-::vector$<$ unsigned int $>$ \&Rates, bool overwrite\-\_\-ok=false)}\label{classannie_1_1RawReadout_a024f428f54d2aa60e3bb362a65fa52db}
+\hypertarget{classannie_1_1RawReadout_a024f428f54d2aa60e3bb362a65fa52db}{
+void {\bfseries add\_\-card} (int CardID, unsigned long long LastSync, int StartTimeSec, int StartTimeNSec, unsigned long long StartCount, int Channels, int BufferSize, int MiniBufferSize, const std::vector$<$ unsigned short $>$ \&FullBufferData, const std::vector$<$ unsigned long long $>$ \&TriggerCounts, const std::vector$<$ unsigned int $>$ \&Rates, bool overwrite\_\-ok=false)}
+\label{classannie_1_1RawReadout_a024f428f54d2aa60e3bb362a65fa52db}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_af5d43b02fbde95e9811a5dd02cdb259d}{const std\-::map$<$ int, \\*
-\hyperlink{classannie_1_1RawCard}{annie\-::\-Raw\-Card} $>$ \& {\bfseries cards} () const }\label{classannie_1_1RawReadout_af5d43b02fbde95e9811a5dd02cdb259d}
+\hypertarget{classannie_1_1RawReadout_af5d43b02fbde95e9811a5dd02cdb259d}{
+const std::map$<$ int, \hyperlink{classannie_1_1RawCard}{annie::RawCard} $>$ \& {\bfseries cards} () const }
+\label{classannie_1_1RawReadout_af5d43b02fbde95e9811a5dd02cdb259d}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_a83511d054f76dfb88813d9bf6e916b9c}{const \hyperlink{classannie_1_1RawCard}{annie\-::\-Raw\-Card} \& {\bfseries card} (int index) const }\label{classannie_1_1RawReadout_a83511d054f76dfb88813d9bf6e916b9c}
+\hypertarget{classannie_1_1RawReadout_a83511d054f76dfb88813d9bf6e916b9c}{
+const \hyperlink{classannie_1_1RawCard}{annie::RawCard} \& {\bfseries card} (int index) const }
+\label{classannie_1_1RawReadout_a83511d054f76dfb88813d9bf6e916b9c}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_ac37668ed3755818512309f1b83bdf1ae}{const \hyperlink{classannie_1_1RawChannel}{annie\-::\-Raw\-Channel} \& {\bfseries channel} (int card\-\_\-index, int channel\-\_\-index)}\label{classannie_1_1RawReadout_ac37668ed3755818512309f1b83bdf1ae}
+\hypertarget{classannie_1_1RawReadout_ac37668ed3755818512309f1b83bdf1ae}{
+const \hyperlink{classannie_1_1RawChannel}{annie::RawChannel} \& {\bfseries channel} (int card\_\-index, int channel\_\-index)}
+\label{classannie_1_1RawReadout_ac37668ed3755818512309f1b83bdf1ae}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_aefe2a5354731f34444e74255fd5a0cc2}{const \hyperlink{classannie_1_1RawTrigData}{annie\-::\-Raw\-Trig\-Data} \& {\bfseries trig\-\_\-data} () const }\label{classannie_1_1RawReadout_aefe2a5354731f34444e74255fd5a0cc2}
+\hypertarget{classannie_1_1RawReadout_aefe2a5354731f34444e74255fd5a0cc2}{
+const \hyperlink{classannie_1_1RawTrigData}{annie::RawTrigData} \& {\bfseries trig\_\-data} () const }
+\label{classannie_1_1RawReadout_aefe2a5354731f34444e74255fd5a0cc2}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_a4c9c106ed001152f2ba692ffa8bac46f}{void {\bfseries set\-\_\-trig\-\_\-data} (const \hyperlink{classannie_1_1RawTrigData}{annie\-::\-Raw\-Trig\-Data} \&Trig\-Data)}\label{classannie_1_1RawReadout_a4c9c106ed001152f2ba692ffa8bac46f}
+\hypertarget{classannie_1_1RawReadout_a4c9c106ed001152f2ba692ffa8bac46f}{
+void {\bfseries set\_\-trig\_\-data} (const \hyperlink{classannie_1_1RawTrigData}{annie::RawTrigData} \&TrigData)}
+\label{classannie_1_1RawReadout_a4c9c106ed001152f2ba692ffa8bac46f}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_ab21d5580b782f2a7d636dd2686b6fc3f}{void {\bfseries set\-\_\-run\-\_\-information} (const std\-::map$<$ std\-::string, std\-::string $>$ \&Run\-Info)}\label{classannie_1_1RawReadout_ab21d5580b782f2a7d636dd2686b6fc3f}
+\hypertarget{classannie_1_1RawReadout_ab21d5580b782f2a7d636dd2686b6fc3f}{
+void {\bfseries set\_\-run\_\-information} (const std::map$<$ std::string, std::string $>$ \&RunInfo)}
+\label{classannie_1_1RawReadout_ab21d5580b782f2a7d636dd2686b6fc3f}
 
 \item 
-\hypertarget{classannie_1_1RawReadout_a437ecbef57b303fa307e6f19ec26d698}{const std\-::map$<$ std\-::string, \\*
-std\-::string $>$ \& {\bfseries run\-\_\-information} () const }\label{classannie_1_1RawReadout_a437ecbef57b303fa307e6f19ec26d698}
+\hypertarget{classannie_1_1RawReadout_a437ecbef57b303fa307e6f19ec26d698}{
+const std::map$<$ std::string, std::string $>$ \& {\bfseries run\_\-information} () const }
+\label{classannie_1_1RawReadout_a437ecbef57b303fa307e6f19ec26d698}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classannie_1_1RawReadout_a68ba25af6d505d9d7e9d01af34412d56}{int \hyperlink{classannie_1_1RawReadout_a68ba25af6d505d9d7e9d01af34412d56}{sequence\-\_\-id\-\_\-}}\label{classannie_1_1RawReadout_a68ba25af6d505d9d7e9d01af34412d56}
+\hypertarget{classannie_1_1RawReadout_a68ba25af6d505d9d7e9d01af34412d56}{
+int \hyperlink{classannie_1_1RawReadout_a68ba25af6d505d9d7e9d01af34412d56}{sequence\_\-id\_\-}}
+\label{classannie_1_1RawReadout_a68ba25af6d505d9d7e9d01af34412d56}
 
-\begin{DoxyCompactList}\small\item\em Integer index identifying this D\-A\-Q readout (unique within a run) \end{DoxyCompactList}\item 
-std\-::map$<$ int, \hyperlink{classannie_1_1RawCard}{annie\-::\-Raw\-Card} $>$ \hyperlink{classannie_1_1RawReadout_a7326e38c87830bfc38205850fa557d8c}{cards\-\_\-}
-\begin{DoxyCompactList}\small\item\em Raw data for each of the V\-M\-E cards included in the readout. \end{DoxyCompactList}\item 
-\hypertarget{classannie_1_1RawReadout_ab1dd18ba980aa34a73ea07d936381568}{\hyperlink{classannie_1_1RawTrigData}{annie\-::\-Raw\-Trig\-Data} \hyperlink{classannie_1_1RawReadout_ab1dd18ba980aa34a73ea07d936381568}{trig\-\_\-data\-\_\-}}\label{classannie_1_1RawReadout_ab1dd18ba980aa34a73ea07d936381568}
+\begin{DoxyCompactList}\small\item\em Integer index identifying this DAQ readout (unique within a run). \item\end{DoxyCompactList}\item 
+std::map$<$ int, \hyperlink{classannie_1_1RawCard}{annie::RawCard} $>$ \hyperlink{classannie_1_1RawReadout_a7326e38c87830bfc38205850fa557d8c}{cards\_\-}
+\begin{DoxyCompactList}\small\item\em Raw data for each of the VME cards included in the readout. \item\end{DoxyCompactList}\item 
+\hypertarget{classannie_1_1RawReadout_ab1dd18ba980aa34a73ea07d936381568}{
+\hyperlink{classannie_1_1RawTrigData}{annie::RawTrigData} \hyperlink{classannie_1_1RawReadout_ab1dd18ba980aa34a73ea07d936381568}{trig\_\-data\_\-}}
+\label{classannie_1_1RawReadout_ab1dd18ba980aa34a73ea07d936381568}
 
-\begin{DoxyCompactList}\small\item\em Container holding the contents of the Trig\-Data T\-Tree for this readout's Sequence\-I\-D. \end{DoxyCompactList}\item 
-\hypertarget{classannie_1_1RawReadout_a0ee4f30909504cc831781b32ed3c5026}{std\-::map$<$ std\-::string, \\*
-std\-::string $>$ \hyperlink{classannie_1_1RawReadout_a0ee4f30909504cc831781b32ed3c5026}{run\-\_\-info\-\_\-}}\label{classannie_1_1RawReadout_a0ee4f30909504cc831781b32ed3c5026}
+\begin{DoxyCompactList}\small\item\em Container holding the contents of the TrigData TTree for this readout's SequenceID. \item\end{DoxyCompactList}\item 
+\hypertarget{classannie_1_1RawReadout_a0ee4f30909504cc831781b32ed3c5026}{
+std::map$<$ std::string, std::string $>$ \hyperlink{classannie_1_1RawReadout_a0ee4f30909504cc831781b32ed3c5026}{run\_\-info\_\-}}
+\label{classannie_1_1RawReadout_a0ee4f30909504cc831781b32ed3c5026}
 
-\begin{DoxyCompactList}\small\item\em Map representing the Run\-Information T\-Tree. Keys are Info\-Title entries, values are the corresponding J\-S\-O\-N Info\-Message strings. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Map representing the RunInformation TTree. Keys are InfoTitle entries, values are the corresponding JSON InfoMessage strings. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Member Data Documentation}
-\hypertarget{classannie_1_1RawReadout_a7326e38c87830bfc38205850fa557d8c}{\index{annie\-::\-Raw\-Readout@{annie\-::\-Raw\-Readout}!cards\-\_\-@{cards\-\_\-}}
-\index{cards\-\_\-@{cards\-\_\-}!annie::RawReadout@{annie\-::\-Raw\-Readout}}
-\subsubsection[{cards\-\_\-}]{\setlength{\rightskip}{0pt plus 5cm}std\-::map$<$int, {\bf annie\-::\-Raw\-Card}$>$ annie\-::\-Raw\-Readout\-::cards\-\_\-\hspace{0.3cm}{\ttfamily [protected]}}}\label{classannie_1_1RawReadout_a7326e38c87830bfc38205850fa557d8c}
+\hypertarget{classannie_1_1RawReadout_a7326e38c87830bfc38205850fa557d8c}{
+\index{annie::RawReadout@{annie::RawReadout}!cards\_\-@{cards\_\-}}
+\index{cards\_\-@{cards\_\-}!annie::RawReadout@{annie::RawReadout}}
+\subsubsection[{cards\_\-}]{\setlength{\rightskip}{0pt plus 5cm}std::map$<$int, {\bf annie::RawCard}$>$ {\bf annie::RawReadout::cards\_\-}\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classannie_1_1RawReadout_a7326e38c87830bfc38205850fa557d8c}
 
 
-Raw data for each of the V\-M\-E cards included in the readout. 
+Raw data for each of the VME cards included in the readout. Keys are VME card IDs, values are \hyperlink{classannie_1_1RawCard}{RawCard} objects storing the associated data from the \hyperlink{classPMTData}{PMTData} tree. 
 
-Keys are V\-M\-E card I\-Ds, values are \hyperlink{classannie_1_1RawCard}{Raw\-Card} objects storing the associated data from the \hyperlink{classPMTData}{P\-M\-T\-Data} tree. 
-
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/reco\-A\-N\-N\-I\-E/Raw\-Readout.\-h\item 
-User\-Tools/reco\-A\-N\-N\-I\-E/Raw\-Readout.\-cc\end{DoxyCompactItemize}
+UserTools/recoANNIE/RawReadout.h\item 
+UserTools/recoANNIE/RawReadout.cc\end{DoxyCompactItemize}

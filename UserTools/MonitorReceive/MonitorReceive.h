@@ -32,7 +32,8 @@ class MonitorReceive: public Tool {
   boost::posix_time::time_duration period;
   zmq::pollitem_t items[1];
   std::map<std::string,Store*> connections; 
-
+  BoostStore* indata;
+  BoostStore* MRDData;
 };
 
 

@@ -13,8 +13,38 @@
 
 LAPPDresponse::LAPPDresponse()
 {
-  TFile* tf = new TFile("/ANNIECode/ToolAnalysis/UserTools/LAPPDSim/pulsecharacteristics.root","READ");
+/************************************************************************************************************************
+  Had to move this part to an own function because otherwise the constructor opens the TFile for every WCSim event.
+  This means one gets segmentation faults because of too many open instances of the file.
+  @author: Malte Stender
+*************************************************************************************************************************
 
+  TFile* tf = new TFile("/nashome/m/mstender/ToolAnalysis-MrdEfficiency2/UserTools/LAPPDSim/pulsecharacteristics.root","READ");
+
+  the shape of a typical pulse
+ _templatepulse = (TH1D*) tf->Get("templatepulse");
+  variations in the peak signal on the central strip
+ _PHD = (TH1D*) tf->Get("PHD");
+
+  charge spreading of a pulse in the transverse direction (in mm)
+  as a function of nearness to strip center. The charge tends to
+  spread more in the transverse direction if the centroid of the
+  signal is between two striplines
+ _pulsewidth = (TH1D*) tf->Get("pulsewidth");
+
+  structure to store the pulses, count them, and organize them by channel
+  _pulseCluster = new LAPPDpulseCluster()  This is no longer needed, kept for reference for now
+
+  random numbers for generating noise
+  mrand = new TRandom3();
+  */
+}
+LAPPDresponse::~LAPPDresponse()
+{
+
+}
+
+void LAPPDresponse::Initialise(TFile* tf){
   // the shape of a typical pulse
   _templatepulse = (TH1D*) tf->Get("templatepulse");
   // variations in the peak signal on the central strip
@@ -32,12 +62,6 @@ LAPPDresponse::LAPPDresponse()
   // random numbers for generating noise
   mrand = new TRandom3();
 }
-LAPPDresponse::~LAPPDresponse()
-{
-
-}
-
-
 
 void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
 {
@@ -101,7 +125,7 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
       else{
         std::vector<LAPPDPulse> PulseVector ;
         PulseVector.push_back (pulse);
-        LAPPDPulseCluster.insert (std::pair<int,vector<LAPPDPulse>>(wstrip,PulseVector) );   //SD
+        LAPPDPulseCluster.insert (std::pair<int,vector<LAPPDPulse>>(wstrip,PulseVector) );//SD
         //create vector at key and add pulse into that vector SD
       }
 
@@ -157,8 +181,7 @@ Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double 
   else{
 
     //if there are pulses on the strip, loop over the N pulses on that strip
-
-    std::vector<LAPPDPulse> tempoVector = LAPPDPulseCluster.at(CHnumber);   //SD
+	std::vector<LAPPDPulse> tempoVector = LAPPDPulseCluster.at(CHnumber);   //SD
     for(int k=0; k<tempoVector.size(); k++){           //SD
       //  for(int k=0; k<4; k++){
 

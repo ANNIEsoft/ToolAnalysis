@@ -53,6 +53,11 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: Assuming LAPPD stripline separation of 7.14mm",v_warning,verbosity);
 		LappdStripSeparation = 7.14;
 	}
+	get_ok = m_variables.Get("RunStartDate", RunStartUser);
+	if(not get_ok){
+		Log("LoadWCSim Tool: Assuming RunStartDate of 0ns, i.e. unix epoch",v_warning,verbosity);
+		RunStartUser = 0;
+	}
 	// put version in the CStore for downstream tools
 	m_data->CStore.Set("WCSimVersion", WCSimVersion);
 	
@@ -157,23 +162,17 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	*/
 	
 	EventNumber=0;
-	MCEventNum=-1;
 	MCTriggernum=0;
-	// pull the first entry with a trigger and use it's Date for the BeamStatus last recorded time. TODO
-	if(verbosity>1) cout<<"getting Run start time"<<endl;
-	do{
-		MCEventNum++;
-		WCSimEntry->GetEntry(MCEventNum);
-	} while(WCSimEntry->wcsimrootevent->GetNumberOfEvents()==0);
-	atrigt = WCSimEntry->wcsimrootevent->GetTrigger(0);
-	TimeClass RunStartTime(atrigt->GetHeader()->GetDate());
 	MCEventNum=0;
+	// pull the first entry to get the MCFile
+	WCSimEntry->GetEntry(MCEventNum);
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
 	double beampow=3.2545e+16;
+	RunStartTime.SetNs(RunStartUser);
 	BeamStatus = new BeamStatusClass(RunStartTime, beaminten, beampow, "stable");
 	
 	// Construct the other objects we'll be setting at event level,
@@ -566,8 +565,19 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
 	if(verbosity>2) cout<<"tdcdata"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
+	// TODO?
+	// right now we have three Time variables:
+	// 1. "RunStartTime" which stores just a user passed start time.
+	// 2. "TriggerData", a one-element vector of TriggerClass objects, each of which has a time member.
+	//    The one used entry has its time member set to the time between MC event start (always 0)
+	//     and the MC trigger time.
+	// 3. "EventTime" which stores this same time difference between MC Trigger and MC event start
+	// This means we simulate many events all happening ~ the unix epoch (time 0).
+	// If we want to simulate a 'run' of events, we need to throw some cumulative running time and
+	// add this to RunStartTime, and store the Event and Trigger times separately.
+	// This is done by PulseSimulation tool (timefileout_Time), but maybe should be here...
 	if(verbosity>2) cout<<"triggerdata"<<endl;
-	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);  // FIXME
+	m_data->Stores.at("ANNIEEvent")->Set("TriggerData",TriggerData,true);
 	if(verbosity>2) cout<<"eventtime"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
@@ -946,15 +956,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			assert(false);
 		}
 		// calculate MRD_x_y_z ... MRDSpecs doesn't provide a nice way to do this
-		std::vector<int>::const_iterator layerstartit = MRDSpecs::layeroffsets.begin();
-		do{
-			++layerstartit;
-			if(layerstartit==MRDSpecs::layeroffsets.end()){
-				Log("LoadWCSim Error: MRD PMT "+to_string(mrdpmti)+" ran off end of layeroffsets!",v_error,verbosity);
-				break;
-			}
-		} while (mrdpmti>(*layerstartit));
-		int layernum = std::distance(MRDSpecs::layeroffsets.begin(),layerstartit)-1;
+		int layernum=0;
+		while ((mrdpmti+1) > MRDSpecs::layeroffsets.at(layernum+1)){ layernum++; }
 		int in_layer_pmtnum = mrdpmti - MRDSpecs::layeroffsets.at(layernum);
 		// paddles in each layer alternate on sides; i.e. paddles 0 and 1 are on opposite sides
 		int side = in_layer_pmtnum%2;
@@ -964,7 +967,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		int MRD_y = (orientation) ? side : in_layer_pmtnum;
 		int MRD_z = layernum+2;  // first MRD z layer num is 2 (veto are 0,1)
 		
-		Paddle apaddle( MRD_x,
+		Paddle apaddle( uniquedetectorkey,
+						MRD_x,
 						MRD_y,
 						MRD_z,
 						orientation,
@@ -1058,7 +1062,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		double paddle_zorigin = (MRD_z) ? 0.0728 : 0.0508;  // numbers from geofile.txt
 		double paddle_yorigin = facc_paddle_yorigins.at(faccpmti)/100.;
 		
-		Paddle apaddle( MRD_x,
+		Paddle apaddle( uniquedetectorkey,
+						MRD_x,
 						MRD_y,
 						MRD_z,
 						0,  // orientation 0=horizontal, 1=vertical

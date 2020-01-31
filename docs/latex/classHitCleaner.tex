@@ -1,168 +1,231 @@
-\hypertarget{classHitCleaner}{\section{Hit\-Cleaner Class Reference}
-\label{classHitCleaner}\index{Hit\-Cleaner@{Hit\-Cleaner}}
+\hypertarget{classHitCleaner}{
+\section{HitCleaner Class Reference}
+\label{classHitCleaner}\index{HitCleaner@{HitCleaner}}
 }
-Inheritance diagram for Hit\-Cleaner\-:\begin{figure}[H]
-\begin{center}
-\leavevmode
-\includegraphics[height=2.000000cm]{classHitCleaner}
-\end{center}
-\end{figure}
 \subsection*{Public Types}
 \begin{DoxyCompactItemize}
 \item 
-enum {\bfseries E\-Filter\-Config} \{ \\*
-{\bfseries k\-None} = 0, 
-{\bfseries k\-Pulse\-Height} = 1, 
-{\bfseries k\-Pulse\-Height\-And\-Neighbours} = 2, 
-{\bfseries k\-Pulse\-Height\-And\-Clusters} = 3, 
-\\*
-{\bfseries k\-Pulse\-Height\-And\-Truth\-Info} = 3
+enum {\bfseries EFilterConfig} \{ \par
+{\bfseries kNone} =  0, 
+{\bfseries kPulseHeight} =  1, 
+{\bfseries kPulseHeightAndNeighbours} =  2, 
+{\bfseries kPulseHeightAndClusters} =  3, 
+\par
+{\bfseries kPulseHeightAndTruthInfo} =  3
  \}
 \item 
-\hypertarget{classHitCleaner_a417732ebe6c9a62f91a0648522cb5e01}{typedef enum \\*
-Hit\-Cleaner\-::\-E\-Filter\-Config {\bfseries Filter\-Config\-\_\-t}}\label{classHitCleaner_a417732ebe6c9a62f91a0648522cb5e01}
+\hypertarget{classHitCleaner_a417732ebe6c9a62f91a0648522cb5e01}{
+typedef enum HitCleaner::EFilterConfig {\bfseries FilterConfig\_\-t}}
+\label{classHitCleaner_a417732ebe6c9a62f91a0648522cb5e01}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-bool \hyperlink{classHitCleaner_a35bd6ca1401c52439166e51c7e873ace}{Initialise} (std\-::string configfile, \hyperlink{classDataModel}{Data\-Model} \&data)
+bool \hyperlink{classHitCleaner_a35bd6ca1401c52439166e51c7e873ace}{Initialise} (std::string configfile, \hyperlink{classDataModel}{DataModel} \&data)
 \item 
 bool \hyperlink{classHitCleaner_adec5b94400dcbfc710590d7eb387041b}{Execute} ()
 \item 
-\hypertarget{classHitCleaner_a06d16e3d574ec685952c011d2309fa76}{bool {\bfseries Finalise} ()}\label{classHitCleaner_a06d16e3d574ec685952c011d2309fa76}
+\hypertarget{classHitCleaner_a06d16e3d574ec685952c011d2309fa76}{
+bool {\bfseries Finalise} ()}
+\label{classHitCleaner_a06d16e3d574ec685952c011d2309fa76}
 
 \item 
-\hypertarget{classHitCleaner_a2d7f24be0dae3a9aa53771bc0bdb65c6}{void {\bfseries Print\-Parameters} ()}\label{classHitCleaner_a2d7f24be0dae3a9aa53771bc0bdb65c6}
+\hypertarget{classHitCleaner_a2d7f24be0dae3a9aa53771bc0bdb65c6}{
+void {\bfseries PrintParameters} ()}
+\label{classHitCleaner_a2d7f24be0dae3a9aa53771bc0bdb65c6}
 
 \item 
-\hypertarget{classHitCleaner_af75191aadcf2acffcc1c13549d062fc8}{void {\bfseries Set\-Config} (int config)}\label{classHitCleaner_af75191aadcf2acffcc1c13549d062fc8}
+\hypertarget{classHitCleaner_af75191aadcf2acffcc1c13549d062fc8}{
+void {\bfseries SetConfig} (int config)}
+\label{classHitCleaner_af75191aadcf2acffcc1c13549d062fc8}
 
 \item 
-\hypertarget{classHitCleaner_acb667165fb7166a54b5401264c76cf60}{void {\bfseries Set\-Pmt\-Min\-Pulse\-Height} (double min)}\label{classHitCleaner_acb667165fb7166a54b5401264c76cf60}
+\hypertarget{classHitCleaner_acb667165fb7166a54b5401264c76cf60}{
+void {\bfseries SetPmtMinPulseHeight} (double min)}
+\label{classHitCleaner_acb667165fb7166a54b5401264c76cf60}
 
 \item 
-\hypertarget{classHitCleaner_a48ecb1833030a1e53d76f852735b1146}{void {\bfseries Set\-Pmt\-Neighbour\-Radius} (double radius)}\label{classHitCleaner_a48ecb1833030a1e53d76f852735b1146}
+\hypertarget{classHitCleaner_a48ecb1833030a1e53d76f852735b1146}{
+void {\bfseries SetPmtNeighbourRadius} (double radius)}
+\label{classHitCleaner_a48ecb1833030a1e53d76f852735b1146}
 
 \item 
-\hypertarget{classHitCleaner_a05aaf25ef5464e2cc0cbb67a123a4683}{void {\bfseries Set\-Pmt\-Neighbour\-Digits} (int digits)}\label{classHitCleaner_a05aaf25ef5464e2cc0cbb67a123a4683}
+\hypertarget{classHitCleaner_a05aaf25ef5464e2cc0cbb67a123a4683}{
+void {\bfseries SetPmtNeighbourDigits} (int digits)}
+\label{classHitCleaner_a05aaf25ef5464e2cc0cbb67a123a4683}
 
 \item 
-\hypertarget{classHitCleaner_a374f2c25fd741ba89253c1df57c2f711}{void {\bfseries Set\-Pmt\-Cluster\-Radius} (double radius)}\label{classHitCleaner_a374f2c25fd741ba89253c1df57c2f711}
+\hypertarget{classHitCleaner_a374f2c25fd741ba89253c1df57c2f711}{
+void {\bfseries SetPmtClusterRadius} (double radius)}
+\label{classHitCleaner_a374f2c25fd741ba89253c1df57c2f711}
 
 \item 
-\hypertarget{classHitCleaner_a2034dc5fabc9bd6a7f06bfe9be9172f4}{void {\bfseries Set\-Pmt\-Time\-Window\-Neighbours} (double window\-N)}\label{classHitCleaner_a2034dc5fabc9bd6a7f06bfe9be9172f4}
+\hypertarget{classHitCleaner_a2034dc5fabc9bd6a7f06bfe9be9172f4}{
+void {\bfseries SetPmtTimeWindowNeighbours} (double windowN)}
+\label{classHitCleaner_a2034dc5fabc9bd6a7f06bfe9be9172f4}
 
 \item 
-\hypertarget{classHitCleaner_a5d427dd83732333d8918993e2c5a08d2}{void {\bfseries Set\-Pmt\-Time\-Window\-Clusters} (double window\-C)}\label{classHitCleaner_a5d427dd83732333d8918993e2c5a08d2}
+\hypertarget{classHitCleaner_a5d427dd83732333d8918993e2c5a08d2}{
+void {\bfseries SetPmtTimeWindowClusters} (double windowC)}
+\label{classHitCleaner_a5d427dd83732333d8918993e2c5a08d2}
 
 \item 
-\hypertarget{classHitCleaner_abe7877bee548ff2e72db4991ebe8d9b1}{void {\bfseries Set\-Lappd\-Min\-Pulse\-Height} (double min)}\label{classHitCleaner_abe7877bee548ff2e72db4991ebe8d9b1}
+\hypertarget{classHitCleaner_abe7877bee548ff2e72db4991ebe8d9b1}{
+void {\bfseries SetLappdMinPulseHeight} (double min)}
+\label{classHitCleaner_abe7877bee548ff2e72db4991ebe8d9b1}
 
 \item 
-\hypertarget{classHitCleaner_a3deef1a55f3597115b7a1514c23ab2b4}{void {\bfseries Set\-Lappd\-Neighbour\-Radius} (double radius)}\label{classHitCleaner_a3deef1a55f3597115b7a1514c23ab2b4}
+\hypertarget{classHitCleaner_a3deef1a55f3597115b7a1514c23ab2b4}{
+void {\bfseries SetLappdNeighbourRadius} (double radius)}
+\label{classHitCleaner_a3deef1a55f3597115b7a1514c23ab2b4}
 
 \item 
-\hypertarget{classHitCleaner_af872da7d231440f4fa75b2dfe6be5fc8}{void {\bfseries Set\-Lappd\-Neighbour\-Digits} (int digits)}\label{classHitCleaner_af872da7d231440f4fa75b2dfe6be5fc8}
+\hypertarget{classHitCleaner_af872da7d231440f4fa75b2dfe6be5fc8}{
+void {\bfseries SetLappdNeighbourDigits} (int digits)}
+\label{classHitCleaner_af872da7d231440f4fa75b2dfe6be5fc8}
 
 \item 
-\hypertarget{classHitCleaner_aacf88b73ee3bb0bb4afa4648c64add65}{void {\bfseries Set\-Lappd\-Cluster\-Radius} (double radius)}\label{classHitCleaner_aacf88b73ee3bb0bb4afa4648c64add65}
+\hypertarget{classHitCleaner_aacf88b73ee3bb0bb4afa4648c64add65}{
+void {\bfseries SetLappdClusterRadius} (double radius)}
+\label{classHitCleaner_aacf88b73ee3bb0bb4afa4648c64add65}
 
 \item 
-\hypertarget{classHitCleaner_aaa0aca2da3c1a4670e9a4a1361e9b124}{void {\bfseries Set\-Lappd\-Time\-Window\-Neighbours} (double window\-N)}\label{classHitCleaner_aaa0aca2da3c1a4670e9a4a1361e9b124}
+\hypertarget{classHitCleaner_aaa0aca2da3c1a4670e9a4a1361e9b124}{
+void {\bfseries SetLappdTimeWindowNeighbours} (double windowN)}
+\label{classHitCleaner_aaa0aca2da3c1a4670e9a4a1361e9b124}
 
 \item 
-\hypertarget{classHitCleaner_a093989b06deb5743b6c4c81092e69ceb}{void {\bfseries Set\-Lappd\-Time\-Window\-Clusters} (double window\-C)}\label{classHitCleaner_a093989b06deb5743b6c4c81092e69ceb}
+\hypertarget{classHitCleaner_a093989b06deb5743b6c4c81092e69ceb}{
+void {\bfseries SetLappdTimeWindowClusters} (double windowC)}
+\label{classHitCleaner_a093989b06deb5743b6c4c81092e69ceb}
 
 \item 
-\hypertarget{classHitCleaner_a6f25436f395cb868857f7a4b5c418de2}{void {\bfseries Load\-Config\-File} (string configfilename)}\label{classHitCleaner_a6f25436f395cb868857f7a4b5c418de2}
+\hypertarget{classHitCleaner_a6f25436f395cb868857f7a4b5c418de2}{
+void {\bfseries LoadConfigFile} (string configfilename)}
+\label{classHitCleaner_a6f25436f395cb868857f7a4b5c418de2}
 
 \item 
-\hypertarget{classHitCleaner_a1154c24324e11dc8d0d53bcd806d7113}{void {\bfseries Set\-Min\-Cluster\-Digits} (int digits)}\label{classHitCleaner_a1154c24324e11dc8d0d53bcd806d7113}
+\hypertarget{classHitCleaner_a1154c24324e11dc8d0d53bcd806d7113}{
+void {\bfseries SetMinClusterDigits} (int digits)}
+\label{classHitCleaner_a1154c24324e11dc8d0d53bcd806d7113}
 
 \item 
-\hypertarget{classHitCleaner_ae47191a46b30d5345b1e1c422767f816}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Run} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_ae47191a46b30d5345b1e1c422767f816}
+\hypertarget{classHitCleaner_ae47191a46b30d5345b1e1c422767f816}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries Run} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_ae47191a46b30d5345b1e1c422767f816}
 
 \item 
-\hypertarget{classHitCleaner_a3c85370ccb39e1615976fe4acb218fb5}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Reset\-Digits} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_a3c85370ccb39e1615976fe4acb218fb5}
+\hypertarget{classHitCleaner_a3c85370ccb39e1615976fe4acb218fb5}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries ResetDigits} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_a3c85370ccb39e1615976fe4acb218fb5}
 
 \item 
-\hypertarget{classHitCleaner_a16028ae7a55a4cdcfdb116af893d2542}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Filter\-Digits} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_a16028ae7a55a4cdcfdb116af893d2542}
+\hypertarget{classHitCleaner_a16028ae7a55a4cdcfdb116af893d2542}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries FilterDigits} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_a16028ae7a55a4cdcfdb116af893d2542}
 
 \item 
-\hypertarget{classHitCleaner_a7e6188a785adddfcaa3dbe63de387e95}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Filter\-All} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_a7e6188a785adddfcaa3dbe63de387e95}
+\hypertarget{classHitCleaner_a7e6188a785adddfcaa3dbe63de387e95}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries FilterAll} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_a7e6188a785adddfcaa3dbe63de387e95}
 
 \item 
-\hypertarget{classHitCleaner_a537c7f9b371c0dc52df86046f8a90336}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Filter\-By\-Pulse\-Height} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_a537c7f9b371c0dc52df86046f8a90336}
+\hypertarget{classHitCleaner_a537c7f9b371c0dc52df86046f8a90336}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries FilterByPulseHeight} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_a537c7f9b371c0dc52df86046f8a90336}
 
 \item 
-\hypertarget{classHitCleaner_ad574e2c8d1718971cbfce2a284731daa}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Filter\-By\-Neighbours} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_ad574e2c8d1718971cbfce2a284731daa}
+\hypertarget{classHitCleaner_ad574e2c8d1718971cbfce2a284731daa}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries FilterByNeighbours} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_ad574e2c8d1718971cbfce2a284731daa}
 
 \item 
-\hypertarget{classHitCleaner_a32e29edc8c7564e423186efacbea07c5}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Filter\-By\-Clusters} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_a32e29edc8c7564e423186efacbea07c5}
+\hypertarget{classHitCleaner_a32e29edc8c7564e423186efacbea07c5}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries FilterByClusters} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_a32e29edc8c7564e423186efacbea07c5}
 
 \item 
-\hypertarget{classHitCleaner_ad2c117045b0a63c700b0f2a94f3fa0b2}{std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$ {\bfseries Filter\-By\-Truth\-Info} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_ad2c117045b0a63c700b0f2a94f3fa0b2}
+\hypertarget{classHitCleaner_ad2c117045b0a63c700b0f2a94f3fa0b2}{
+std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$ {\bfseries FilterByTruthInfo} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_ad2c117045b0a63c700b0f2a94f3fa0b2}
 
 \item 
-\hypertarget{classHitCleaner_a0e516802fcbaad1e3e61978911991949}{std\-::vector$<$ \hyperlink{classRecoCluster}{Reco\-Cluster} $\ast$ $>$ $\ast$ {\bfseries Reco\-Clusters} (std\-::vector$<$ \hyperlink{classRecoDigit}{Reco\-Digit} $\ast$ $>$ $\ast$digitlist)}\label{classHitCleaner_a0e516802fcbaad1e3e61978911991949}
+\hypertarget{classHitCleaner_a0e516802fcbaad1e3e61978911991949}{
+std::vector$<$ \hyperlink{classRecoCluster}{RecoCluster} $\ast$ $>$ $\ast$ {\bfseries RecoClusters} (std::vector$<$ \hyperlink{classRecoDigit}{RecoDigit} $\ast$ $>$ $\ast$digitlist)}
+\label{classHitCleaner_a0e516802fcbaad1e3e61978911991949}
 
 \end{DoxyCompactItemize}
 \subsection*{Static Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classHitCleaner_a4ac1bde4eec18c427ed249409a6d5d3a}{static \hyperlink{classHitCleaner}{Hit\-Cleaner} $\ast$ {\bfseries Instance} ()}\label{classHitCleaner_a4ac1bde4eec18c427ed249409a6d5d3a}
+\hypertarget{classHitCleaner_a4ac1bde4eec18c427ed249409a6d5d3a}{
+static \hyperlink{classHitCleaner}{HitCleaner} $\ast$ {\bfseries Instance} ()}
+\label{classHitCleaner_a4ac1bde4eec18c427ed249409a6d5d3a}
 
 \item 
-\hypertarget{classHitCleaner_afdf345b322cbef82deb9f35eaddb02d1}{static void {\bfseries Config} (int config)}\label{classHitCleaner_afdf345b322cbef82deb9f35eaddb02d1}
+\hypertarget{classHitCleaner_afdf345b322cbef82deb9f35eaddb02d1}{
+static void {\bfseries Config} (int config)}
+\label{classHitCleaner_afdf345b322cbef82deb9f35eaddb02d1}
 
 \item 
-\hypertarget{classHitCleaner_a94987b09a59d9781277f76eee63994a1}{static void {\bfseries Pmt\-Min\-Pulse\-Height} (double min)}\label{classHitCleaner_a94987b09a59d9781277f76eee63994a1}
+\hypertarget{classHitCleaner_a94987b09a59d9781277f76eee63994a1}{
+static void {\bfseries PmtMinPulseHeight} (double min)}
+\label{classHitCleaner_a94987b09a59d9781277f76eee63994a1}
 
 \item 
-\hypertarget{classHitCleaner_af6d017ac189b0eb6abf064756e78f5ac}{static void {\bfseries Pmt\-Neighbour\-Radius} (double radius)}\label{classHitCleaner_af6d017ac189b0eb6abf064756e78f5ac}
+\hypertarget{classHitCleaner_af6d017ac189b0eb6abf064756e78f5ac}{
+static void {\bfseries PmtNeighbourRadius} (double radius)}
+\label{classHitCleaner_af6d017ac189b0eb6abf064756e78f5ac}
 
 \item 
-\hypertarget{classHitCleaner_a43b5a1ac75e62334a8e9ff539a9b34df}{static void {\bfseries Pmt\-Neighbour\-Digits} (int digits)}\label{classHitCleaner_a43b5a1ac75e62334a8e9ff539a9b34df}
+\hypertarget{classHitCleaner_a43b5a1ac75e62334a8e9ff539a9b34df}{
+static void {\bfseries PmtNeighbourDigits} (int digits)}
+\label{classHitCleaner_a43b5a1ac75e62334a8e9ff539a9b34df}
 
 \item 
-\hypertarget{classHitCleaner_a71881188d23e57c9afb0c8179ff9c5e3}{static void {\bfseries Pmt\-Cluster\-Radius} (double radius)}\label{classHitCleaner_a71881188d23e57c9afb0c8179ff9c5e3}
+\hypertarget{classHitCleaner_a71881188d23e57c9afb0c8179ff9c5e3}{
+static void {\bfseries PmtClusterRadius} (double radius)}
+\label{classHitCleaner_a71881188d23e57c9afb0c8179ff9c5e3}
 
 \item 
-\hypertarget{classHitCleaner_a8074ae3702ee872e8c8b4504f3bf3987}{static void {\bfseries Min\-Cluster\-Digits} (int digits)}\label{classHitCleaner_a8074ae3702ee872e8c8b4504f3bf3987}
+\hypertarget{classHitCleaner_a8074ae3702ee872e8c8b4504f3bf3987}{
+static void {\bfseries MinClusterDigits} (int digits)}
+\label{classHitCleaner_a8074ae3702ee872e8c8b4504f3bf3987}
 
 \item 
-\hypertarget{classHitCleaner_a2efa2634319c4ff56e51ba28415146a9}{static void {\bfseries Pmt\-Time\-Window\-N} (double window\-N)}\label{classHitCleaner_a2efa2634319c4ff56e51ba28415146a9}
+\hypertarget{classHitCleaner_a2efa2634319c4ff56e51ba28415146a9}{
+static void {\bfseries PmtTimeWindowN} (double windowN)}
+\label{classHitCleaner_a2efa2634319c4ff56e51ba28415146a9}
 
 \item 
-\hypertarget{classHitCleaner_a1962dfdb70798529f8f560c1b6f233fc}{static void {\bfseries Pmt\-Time\-Window\-C} (double window\-C)}\label{classHitCleaner_a1962dfdb70798529f8f560c1b6f233fc}
+\hypertarget{classHitCleaner_a1962dfdb70798529f8f560c1b6f233fc}{
+static void {\bfseries PmtTimeWindowC} (double windowC)}
+\label{classHitCleaner_a1962dfdb70798529f8f560c1b6f233fc}
 
 \end{DoxyCompactItemize}
 
 
 \subsection{Member Function Documentation}
-\hypertarget{classHitCleaner_adec5b94400dcbfc710590d7eb387041b}{\index{Hit\-Cleaner@{Hit\-Cleaner}!Execute@{Execute}}
-\index{Execute@{Execute}!HitCleaner@{Hit\-Cleaner}}
-\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool Hit\-Cleaner\-::\-Execute (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classHitCleaner_adec5b94400dcbfc710590d7eb387041b}
-see if \char`\"{}\-Reco\-Event\char`\"{} exists
+\hypertarget{classHitCleaner_adec5b94400dcbfc710590d7eb387041b}{
+\index{HitCleaner@{HitCleaner}!Execute@{Execute}}
+\index{Execute@{Execute}!HitCleaner@{HitCleaner}}
+\subsubsection[{Execute}]{\setlength{\rightskip}{0pt plus 5cm}bool HitCleaner::Execute ()}}
+\label{classHitCleaner_adec5b94400dcbfc710590d7eb387041b}
 
-\begin{quotation}
-Get digits from \char`\"{}\-Reco\-Event\char`\"{} \end{quotation}
-\hypertarget{classHitCleaner_a35bd6ca1401c52439166e51c7e873ace}{\index{Hit\-Cleaner@{Hit\-Cleaner}!Initialise@{Initialise}}
-\index{Initialise@{Initialise}!HitCleaner@{Hit\-Cleaner}}
-\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool Hit\-Cleaner\-::\-Initialise (
-\begin{DoxyParamCaption}
-\item[{std\-::string}]{configfile, }
-\item[{{\bf Data\-Model} \&}]{data}
-\end{DoxyParamCaption}
-)}}\label{classHitCleaner_a35bd6ca1401c52439166e51c7e873ace}
+
+see if \char`\"{}RecoEvent\char`\"{} exists
+
+$>$ Get digits from \char`\"{}RecoEvent\char`\"{} \hypertarget{classHitCleaner_a35bd6ca1401c52439166e51c7e873ace}{
+\index{HitCleaner@{HitCleaner}!Initialise@{Initialise}}
+\index{Initialise@{Initialise}!HitCleaner@{HitCleaner}}
+\subsubsection[{Initialise}]{\setlength{\rightskip}{0pt plus 5cm}bool HitCleaner::Initialise (std::string {\em configfile}, \/  {\bf DataModel} \& {\em data})}}
+\label{classHitCleaner_a35bd6ca1401c52439166e51c7e873ace}
+
+
 Get the Tool configuration variables 
 
-The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
 \item 
-User\-Tools/\-Hit\-Cleaner/Hit\-Cleaner.\-h\item 
-User\-Tools/\-Hit\-Cleaner/Hit\-Cleaner.\-cpp\end{DoxyCompactItemize}
+UserTools/HitCleaner/HitCleaner.h\item 
+UserTools/HitCleaner/HitCleaner.cpp\end{DoxyCompactItemize}

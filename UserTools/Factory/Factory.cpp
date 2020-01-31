@@ -61,6 +61,7 @@ if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
 if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
+if (tool=="WaveformNNLS") ret=new WaveformNNLS;
 if (tool=="HitCleaner") ret=new HitCleaner;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
@@ -83,8 +84,16 @@ if (tool=="MrdDiscriminatorScan") ret=new MrdDiscriminatorScan;
 if (tool=="MCRecoEventLoader") ret=new MCRecoEventLoader;
 if (tool=="MonitorMRDEventDisplay") ret=new MonitorMRDEventDisplay;
 if (tool=="LoadGeometry") ret=new LoadGeometry;
+if (tool=="LoadRATPAC") ret=new LoadRATPAC;
 if (tool=="TimeClustering") ret=new TimeClustering;
 if (tool=="GracefulStop") ret=new GracefulStop;
-
+if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
+if (tool=="TrackCombiner") ret=new TrackCombiner;
+if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
+if (tool=="CNNImage") ret=new CNNImage;
+if (tool=="MonitorTankLive") ret=new MonitorTankLive;
+if (tool=="MonitorTankTime") ret=new MonitorTankTime;
+if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
+if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 return ret;
 }

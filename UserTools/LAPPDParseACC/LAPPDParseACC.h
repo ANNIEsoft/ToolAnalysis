@@ -9,8 +9,7 @@
 
 #include "Tool.h"
 
-#define NUM_CELLS 256
-#define NUM_CHS 30
+
 
 class LAPPDParseACC: public Tool {
 
@@ -23,11 +22,14 @@ class LAPPDParseACC: public Tool {
   bool Finalise();
 
 
+  bool FindChannelKeyFromACDCFile(int acdc_board, int acdc_ch, unsigned long& key, map<unsigned long, Channel>* lappd_channels_from_geom);
+  void GetAllLAPPDChannels(Geometry* geom, map<unsigned long, Channel>* all_lappd_channels);
+
  private:
    ifstream dfs, mfs;
-   vector<int> boards;
-   int event;
    string meta_header;
+   int _event_no;
+   streampos data_stream_pos;
 
 
 
