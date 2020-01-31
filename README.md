@@ -16,7 +16,7 @@ For more information consult the ToolDAQ doc.pdf
 
 https://github.com/ToolDAQ/ToolDAQFramework/blob/master/ToolDAQ%20doc.pdf
 
-Copyright (c) 2018 ANNIE collaboration
+Copyright (c) 2018 ANNIE collaboration 
 
 [1] Benjamin Richards. (2018, November 11). ToolDAQ Application v2.1.2 (Version V2.1.2). Zenodo. http://doi.org/10.5281/zenodo.1482772
 
