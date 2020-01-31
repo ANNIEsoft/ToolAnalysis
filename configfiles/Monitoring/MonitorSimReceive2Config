@@ -1,0 +1,4 @@
+MRDDataPath /pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1415S0p22
+OutPath ./monitoringplots/
+Mode File			#Mode: File/Single
+verbose 0

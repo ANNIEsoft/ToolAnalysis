@@ -34,7 +34,10 @@ class MonitorSimReceiveSingleFile: public Tool {
   std::string MRDDataPath;
   std::string mode;
   int verbosity;
-  
+ 
+  std::string outpath;
+ 
+  BoostStore* indata=nullptr;
   BoostStore* MRDData=nullptr;
   BoostStore* MRDData2=nullptr;
   BoostStore* PMTData=nullptr;

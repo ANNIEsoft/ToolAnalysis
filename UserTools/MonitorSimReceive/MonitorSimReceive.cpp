@@ -73,12 +73,12 @@ bool MonitorSimReceive::Execute(){
         if (verbosity > 2) std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
     } 
 
-    if (MRDData!=0){
+ /*   if (MRDData!=0){
       MRDData->Close();
       MRDData->Delete();
       delete MRDData;
       MRDData = 0;
-    }
+    }*/
       if (MRDData2!=0){
       MRDData2->Close();
       MRDData2->Delete();
@@ -113,19 +113,30 @@ bool MonitorSimReceive::Execute(){
     //if (MRDData) delete MRDData;
     //if (MRDData2) delete MRDData2;
       std::cout <<"defining booststores"<<std::endl;
-    BoostStore *MRDData = new BoostStore(false,2);
+    //BoostStore *MRDData = new BoostStore(false,2);
     BoostStore *MRDData2 = new BoostStore(false,2);
     BoostStore *PMTData = new BoostStore(false,2);
 
-    std::cout <<"Get CCData & PMTData"<<std::endl;
+    //std::cout <<"Get CCData & PMTData"<<std::endl;
     //std::cout <<"Get MRDData from CCData"<<std::endl;
-    std::cout <<"Get MRDData 1"<<std::endl;
-    indata->Get("CCData",*MRDData);
-    std::cout <<"Get MRDData 2"<<std::endl;
+    //std::cout <<"Get MRDData 1"<<std::endl;
+    //indata->Get("CCData",*MRDData);
+   std::cout <<"Print indata:"<<std::endl;
+    indata->Print(false);
+
+   std::cout <<"Get MRDData 2"<<std::endl;
     indata->Get("CCData",*MRDData2);
     std::cout <<"Get PMTData"<<std::endl;
     indata->Get("PMTData",*PMTData);
+    
+    std::string State="DataFile";
+    m_data->CStore.Set("State",State);
+    MRDData2->Save("tmp");
+   // m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
+    PMTData->Save("tmp");
+ //   m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
 
+/*
     int a=rand() % 10;
     int b=rand() % 100;
 
@@ -174,7 +185,7 @@ bool MonitorSimReceive::Execute(){
 
         }
 
-    }
+    }*/
 
     i_loop++;
 
@@ -189,13 +200,14 @@ bool MonitorSimReceive::Finalise(){
 
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Finalising"<<std::endl;
 
-    MRDData=0;
+  //  MRDData=0;
     MRDData2=0;
     PMTData=0;
+    indata = 0;
 
     m_data->CStore.Remove("State");
     m_data->Stores["CCData"]->Remove("FileData");
-    m_data->Stores["CCData"]->Remove("Single");
+ //   m_data->Stores["CCData"]->Remove("Single");
     m_data->Stores["PMTData"]->Remove("FileData");
     //m_data->Stores.clear();
 

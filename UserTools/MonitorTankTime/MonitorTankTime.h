@@ -78,7 +78,7 @@ class MonitorTankTime: public Tool {
   void DrawTimeDifference(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawHitMap(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
-  void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+  void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
 
   //helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
@@ -101,7 +101,8 @@ class MonitorTankTime: public Tool {
   bool draw_single;
   std::string plot_configuration;
   int verbosity;
-
+  std::string signal_channels;
+  std::string disabled_channels;
 
   //define variables that contain the configuration option for the plots
   std::vector<double> config_timeframes;
@@ -133,12 +134,17 @@ class MonitorTankTime: public Tool {
   double SEC_to_MIN = 60.;
   double MIN_to_HOUR = 60.;
   double HOUR_to_DAY = 24.;
+  ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
+  ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
+
 
   //hardware variables
   const int num_crates_tank = 3;
   const int num_slots_tank = 21;
   const int num_channels_tank = 4;
+  unsigned int u_num_channels_tank = 4;
   std::vector<int> crate_numbers;   //vector container to store the numbers of the employed VME crates
+  unsigned int Crate_BRF, Crate_RWM, Slot_BRF, Slot_RWM, Channel_BRF, Channel_RWM;
 
   
   //several containers storing the position of active cards within the VME crates follow
@@ -153,7 +159,9 @@ class MonitorTankTime: public Tool {
   std::map<std::vector<unsigned int>,int> map_crateslot_to_slot;  //map crate & slot id to the position in the data storing vectors
   std::map<int,std::vector<unsigned int>> map_ch_to_crateslotch;
   std::map<int,std::vector<unsigned int>> map_slot_to_crateslot;
-
+  std::vector<std::vector<unsigned int>> vec_disabled_channels;
+  std::vector<int> vec_disabled_global;
+  std::vector<std::vector<int>> inactive_xy;
 
   //geometry variables
   Geometry *geom = nullptr;
@@ -187,6 +195,10 @@ class MonitorTankTime: public Tool {
   TH2F *h2D_ratediff = nullptr;
   std::vector<TH1F*> hChannels_temp;  //temp plots for each channel
   std::vector<TH1I*> hChannels_freq;  //frequency plots for each channel
+  TH1I* hChannels_BRF = nullptr;
+  TH1I* hChannels_RWM = nullptr;
+  TH1F* hChannels_temp_BRF = nullptr;
+  TH1F* hChannels_temp_RWM = nullptr;
   TCanvas *canvas_ped = nullptr;
   TCanvas *canvas_sigma = nullptr;
   TCanvas *canvas_rate = nullptr;

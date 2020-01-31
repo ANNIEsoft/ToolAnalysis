@@ -273,7 +273,7 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_error) std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
-  std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<std::endl;
+  //std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<std::endl;
 
   //Transfer finished waves from this execute loop to the CStore
   if (Mode !="Monitoring"){
@@ -307,7 +307,7 @@ bool PMTDataDecoder::Execute(){
   //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
   FinishedPMTWaves.clear();
  
-  std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<", CStorePMTWaves.size(): "<<CStorePMTWaves.size()<<std::endl;
+  //std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<", CStorePMTWaves.size(): "<<CStorePMTWaves.size()<<std::endl;
  
   if (Mode != "Monitoring" && Mode != "Processing") m_data->CStore.Set("RunInfoPostgress",Postgress);
   //Check the size of the WaveBank to see if things are bloating
@@ -440,7 +440,7 @@ void PMTDataDecoder::ParseOOOsNowInOrder()
   }
   for(unsigned int i=0;i<UnprocCardIDs.size(); i++){
     int UnprocCardID = UnprocCardIDs.at(i);
-    std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
+    if (verbosity > v_message) std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
     bool OOOResolved = true;
     while(OOOResolved){ //Keep re-parsing out-of-order card data as long as one is found in order
       OOOResolved = this->ParseOneCardOOOs(UnprocCardID);
@@ -528,7 +528,7 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
     for (unsigned int j = 0; j<DF.recordheader_starts.size(); j++){
       //TODO: More graceful way to handle this?  It's already happened once
       if(WaveSecBegin>DF.recordheader_starts.at(j)){
-        std::cout << "WARNING: Record header label found inside another record header." << 
+        if (verbosity > v_warning) std::cout << "WARNING: Record header label found inside another record header." << 
             "This is likely due a 000FFF in the counter.  Skipping record header and " <<
             "continuing" << std::endl;
         continue;

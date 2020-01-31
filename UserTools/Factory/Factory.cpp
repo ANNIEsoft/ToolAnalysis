@@ -99,5 +99,6 @@ if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
+if (tool=="MonitorSimReceive2") ret=new MonitorSimReceive2;
 return ret;
 }

@@ -162,6 +162,8 @@ class MonitorMRDTime: public Tool {
   std::vector<std::string> loopback_name;
   std::vector<unsigned int> loopback_crate, loopback_slot, loopback_channel;
   std::vector<int> mapping_vector_ch;
+  int beam_ch=0;
+  int cosmic_ch=0;
 
   //define live storing variables (for data of current file)
   std::vector<std::vector<int>> tdc_file;
@@ -227,6 +229,7 @@ class MonitorMRDTime: public Tool {
 
   //define TDC histogram
   TH1F *hist_tdc = nullptr;
+  TH1F *hist_tdc_beam = nullptr;
 
   //define rate histograms
   TH2F *rate_crate1=nullptr;

@@ -4,6 +4,8 @@ verbose 0
 #OutputPath /ANNIECode/TankMonitorOutputTest/
 OutputPath fromStore
 ActiveSlots configfiles/Monitoring/PMT_activeslots.txt #define which channels of the crate are connected
+SignalChannels configfiles/Monitoring/PMT_signalch.txt #define RWM and BRF channels
+DisabledChannels configfiles/Monitoring/PMT_disabledch.txt #define RWM and BRF channels
 StartTime 1970/1/1 #start time for the conversion of timestamps into dates
 PlotConfiguration configfiles/Monitoring/TankTimePlotConfig.txt #file containing instructions what to plot
 PathMonitoring /annie/app/users/mnieslon/MyToolAnalysis9/monitoringfiles/	#path at which the monitoring plots are going to be saved

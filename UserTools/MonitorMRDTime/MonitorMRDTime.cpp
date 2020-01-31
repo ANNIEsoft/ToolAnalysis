@@ -200,6 +200,16 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
     loopback_crate.push_back(temp_crate);
     loopback_slot.push_back(temp_slot);
     loopback_channel.push_back(temp_channel);
+    std::vector<unsigned int> CrateSlotChannel{temp_crate,temp_slot,temp_channel};
+    int i_active = CrateSlotChannel_to_TotalChannel[CrateSlotChannel];
+    if (temp_loopback_name == "Beam") {
+	std::cout <<"beam_ch: i_active = "<<i_active<<std::endl;
+	beam_ch = i_active;
+    }
+    else if (temp_loopback_name == "Cosmic") {  
+      std::cout <<"cosmic_ch: i_active = "<<i_active<<std::endl;
+      cosmic_ch = i_active;
+    }
   }
   file_loopback.close();
 
@@ -363,6 +373,7 @@ bool MonitorMRDTime::Finalise(){
     delete hist_scatter.at(i_scatter);
   }
   delete hist_tdc;
+  delete hist_tdc_beam;
   delete log_files;
   delete rate_crate1;
   delete rate_crate2;
@@ -678,6 +689,9 @@ void MonitorMRDTime::WriteToFile(){
     //don't write file again, but still delete TFile and TTree object!!!
     f->Close();
     delete f;
+
+    gROOT->cd();
+
     return;
 
   } 
@@ -765,6 +779,8 @@ void MonitorMRDTime::WriteToFile(){
   delete rate;
   delete channelcount;
   delete f;     //tree should get deleted automatically by closing file
+
+  gROOT->cd();
 
 }
 
@@ -908,6 +924,7 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
       }
       f->Close();
       delete f;
+      gROOT->cd();
 
     } else {
       if (verbosity > 0) std::cout <<"MonitorMRDTime: ReadFromFile: File "<<root_filename_i.str()<<" does not exist. Omit file."<<std::endl;
@@ -961,6 +978,7 @@ void MonitorMRDTime::InitializeVectors(){
   //-----------------Initialize canvases-------------------
   //-------------------------------------------------------
 
+  gROOT->cd();
   canvas_ch_tdc = new TCanvas("canvas_ch_tdc","Channel TDC Canvas",900,600);
   canvas_ch_rms = new TCanvas("canvas_ch_rms","Channel RMS Canvas",900,600);
   canvas_ch_rate = new TCanvas("canvas_ch_rate","Channel Freq Canvas",900,600);
@@ -982,6 +1000,8 @@ void MonitorMRDTime::InitializeVectors(){
   canvas_hitmap->SetLogy();
   canvas_hitmap_slot->SetGridx();
   canvas_hitmap_slot->SetLogy();
+
+  std::cout <<"canvas_logfile: "<<canvas_logfile<<std::endl;
 
   //-------------------------------------------------------
   //-----------------Initialize hitmap histograms----------
@@ -1094,6 +1114,9 @@ void MonitorMRDTime::InitializeVectors(){
   hist_tdc = new TH1F("hist_tdc","TDC (last file)",500,0,1000);
   hist_tdc->GetXaxis()->SetTitle("TDC");
   hist_tdc->GetYaxis()->SetTitle("#");
+  hist_tdc_beam = new TH1F("hist_tdc_beam","TDC Beam (last file)",500,0,1000);
+  hist_tdc_beam->GetXaxis()->SetTitle("TDC");
+  hist_tdc_beam->GetYaxis()->SetTitle("#");
 
   //-------------------------------------------------------
   //------------Pie charts---------------------------------
@@ -1527,16 +1550,24 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
 
   timestamp_end += utc_to_t;
   ULong64_t timestamp_start = timestamp_end - time_frame*MSEC_to_SEC*SEC_to_MIN*MIN_to_HOUR;
-  //std::cout <<"DrawFileHistory: TimeStamp_end = "<<timestamp_end<<", timestamp_start = "<<timestamp_start<<std::endl;
+  std::cout <<"DrawFileHistory: TimeStamp_end = "<<timestamp_end<<", timestamp_start = "<<timestamp_start<<std::endl;
 
+  std::cout <<"cd to canvas_logfile"<<std::endl;
+  std::cout <<canvas_logfile<<std::endl;
+  std::cout <<"num_files_history: "<<num_files_history<<std::endl;
   canvas_logfile->cd();
+  std::cout <<"1"<<std::endl;
   log_files->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
+  std::cout <<"2"<<std::endl;
   log_files->GetXaxis()->SetTimeOffset(0.);
+  std::cout <<"3"<<std::endl;
   log_files->Draw();
+  std::cout <<"4"<<std::endl;
 
   std::vector<TLine*> file_markers;
   for (unsigned int i_file = 0; i_file < tend_plot.size(); i_file++){
-    if ((tend_plot.at(i_file)+utc_to_t)>=timestamp_start && (tend_plot.at(i_file)+utc_to_t)<=timestamp_end){
+   std::cout <<"i_file: "<<i_file<<std::endl; 
+   if ((tend_plot.at(i_file)+utc_to_t)>=timestamp_start && (tend_plot.at(i_file)+utc_to_t)<=timestamp_end){
       TLine *line_file = new TLine((tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,0.,(tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,1.);
       line_file->SetLineColor(1);
       line_file->SetLineStyle(1);
@@ -1546,11 +1577,16 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
     }
   }
 
+  std::cout <<"1"<<std::endl;
   std::stringstream ss_logfiles;
+  std::cout <<"2"<<std::endl;
   ss_logfiles << outpath << "MRD_FileHistory_" << file_ending << "." << img_extension;
+  std::cout <<"3"<<std::endl;
   canvas_logfile->SaveAs(ss_logfiles.str().c_str());
 
+  std::cout <<"4"<<std::endl;
   for (unsigned int i_line = 0; i_line < file_markers.size(); i_line++){
+    std::cout <<"delete i_line "<<i_line<<std::endl;
     delete file_markers.at(i_line);
   }
 
@@ -1793,20 +1829,28 @@ void MonitorMRDTime::DrawTDCHistogram(){
       if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(1) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(1) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(1)) continue; //Omit beam loopback signal
     for (unsigned int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
       hist_tdc->Fill(tdc_file.at(i_channel).at(i_tdc));
-    }
+      if (std::find(timestamp_file.at(beam_ch).begin(),timestamp_file.at(beam_ch).end(),timestamp_file.at(i_channel).at(i_tdc))!=timestamp_file.at(beam_ch).end()){
+     hist_tdc_beam->Fill(tdc_file.at(i_channel).at(i_tdc)); 
+     }
+   }
   }
  
-
   std::stringstream ss_tdc_hist_title;
-  ss_tdc_hist_title << "TDC "<<end_time.str()<<"(last file) ";
+  ss_tdc_hist_title << "TDC "<<end_time.str()<<" (last file) ";
   hist_tdc->SetTitle(ss_tdc_hist_title.str().c_str());
-
   hist_tdc->Draw();
   std::stringstream ss_tdc_hist;
   ss_tdc_hist << outpath << "MRDTDCHist_lastFile."<<img_extension;
   canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
-
   hist_tdc->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Beam "<<end_time.str()<<" (last file) ";
+  hist_tdc_beam->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_beam->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_Beam_lastFile."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
 
 }
 
@@ -1992,7 +2036,7 @@ void MonitorMRDTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double tim
   p1->Update();
   if (rate_crate1->GetMaximum()>0.){
     if (min_ch == max_ch) rate_crate1->GetZaxis()->SetRangeUser(min_ch-0.5,max_ch+0.5);
-    else rate_crate1->GetZaxis()->SetRangeUser(min_ch,max_ch);
+    else rate_crate1->GetZaxis()->SetRangeUser(1e-6,1.);
     TPaletteAxis *palette = 
     (TPaletteAxis*) rate_crate1->GetListOfFunctions()->FindObject("palette");
     palette->SetX1NDC(0.9);
@@ -2015,7 +2059,7 @@ void MonitorMRDTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double tim
 
   if (rate_crate2->GetMaximum()>0.){
     if (min_ch == max_ch) rate_crate2->GetZaxis()->SetRangeUser(min_ch-0.5,max_ch+0.5);
-    else rate_crate2->GetZaxis()->SetRangeUser(min_ch,max_ch);
+    else rate_crate2->GetZaxis()->SetRangeUser(1e-6,1.);
     TPaletteAxis *palette = 
     (TPaletteAxis*)rate_crate2->GetListOfFunctions()->FindObject("palette");
     palette->SetX1NDC(0.9);
@@ -2128,7 +2172,8 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
 
   canvas_rate_physical->Divide(2,1);
   canvas_rate_physical->cd(1);
-  rate_side->GetZaxis()->SetRangeUser(0.,max_ch);
+  //rate_side->GetZaxis()->SetRangeUser(1e-6,max_ch);
+  rate_side->GetZaxis()->SetRangeUser(1e-6,1.);
   rate_side->GetZaxis()->SetTitleOffset(1.3);
   rate_side->GetZaxis()->SetTitleSize(0.03);
   rate_side->Draw("colz L");                           //option L to show contours around bins (indicating where MRD paddles are)
@@ -2142,7 +2187,8 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   label_rate_cr1->Draw();
 
   canvas_rate_physical->cd(2);
-  rate_top->GetZaxis()->SetRangeUser(0.,max_ch);
+  //rate_top->GetZaxis()->SetRangeUser(1e-6,max_ch);
+  rate_top->GetZaxis()->SetRangeUser(1e-6,1.);
   rate_top->GetZaxis()->SetTitleOffset(1.3);
   rate_top->GetZaxis()->SetTitleSize(0.03);
   rate_top->Draw("colz L");
@@ -2161,7 +2207,8 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   canvas_rate_physical->SaveAs(ss_ratephysical.str().c_str());
 
   canvas_rate_physical_facc->cd();
-  rate_facc->GetZaxis()->SetRangeUser(0.,max_ch);
+  //rate_facc->GetZaxis()->SetRangeUser(1e-6,max_ch);
+  rate_facc->GetZaxis()->SetRangeUser(1e-6,1.);
   rate_facc->GetZaxis()->SetTitleOffset(1.3);
   rate_facc->GetZaxis()->SetTitleSize(0.03);
   rate_facc->Draw("colz L");                           //option L to show contours around bins (indicating where MRD paddles are)

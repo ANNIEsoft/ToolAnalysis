@@ -14,8 +14,11 @@ bool MonitorSimReceiveSingleFile::Initialise(std::string configfile, DataModel &
 
     m_variables.Get("MRDDataPath", MRDDataPath);
     m_variables.Get("Mode",mode);
+    m_variables.Get("OutPath",outpath);
     m_variables.Get("verbose",verbosity);
     //m_variables.Print();
+
+    m_data->CStore.Set("OutPath",outpath);
 
     if (verbosity > 2) {
         std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
@@ -34,8 +37,8 @@ bool MonitorSimReceiveSingleFile::Initialise(std::string configfile, DataModel &
     indata->Initialise(MRDDataPath);
     indata->Print(false); 
    
-    MRDData = new BoostStore(false,2);
-    MRDData2 = new BoostStore(false,2);
+    BoostStore* MRDData = new BoostStore(false,2);
+    BoostStore* MRDData2 = new BoostStore(false,2);
    
     std::cout <<"Getting CCData (1)"<<std::endl;
     indata->Get("CCData",*MRDData);
@@ -43,17 +46,14 @@ bool MonitorSimReceiveSingleFile::Initialise(std::string configfile, DataModel &
     std::cout <<"Getting CCData (2)"<<std::endl;
     indata->Get("CCData",*MRDData2);
     MRDData2->Print(false);
-    PMTData = new BoostStore(false,2);
-    std::cout <<"Getting PMTData (1)"<<std::endl;
+    BoostStore* PMTData = new BoostStore(false,2);
+    /*std::cout <<"Getting PMTData (1)"<<std::endl;
     indata->Get("PMTData",*PMTData);
     PMTData->Print(false);
     int total_entries;
     PMTData->Header->Get("TotalEntries",total_entries);
     std::cout <<"PMTData total_entries: "<<total_entries<<std::endl;
-    
-    indata->Close();
-    indata->Delete();
-    delete indata;
+    */
 
 
     return true;
@@ -62,16 +62,24 @@ bool MonitorSimReceiveSingleFile::Initialise(std::string configfile, DataModel &
 
 bool MonitorSimReceiveSingleFile::Execute(){
 
+    std::cout <<"Execute step"<<std::endl;
+    std::cout <<"Mode = "<<mode<<std::endl;
+
     if (mode == "File"){
+ 	    std::cout <<"1"<<std::endl;
             std::string State="DataFile";
+	    std::cout <<"2"<<std::endl;
             m_data->CStore.Set("State",State);
+	    std::cout <<"3"<<std::endl;
             MRDData2->Save("tmp");
+	    std::cout <<"Setting MRDData2"<<std::endl;
             m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
             int total_entries;
-            PMTData->Header->Get("TotalEntries",total_entries);
+            /*PMTData->Header->Get("TotalEntries",total_entries);
             std::cout <<"PMTData total_entries: "<<total_entries<<std::endl; 
-            PMTData->Save("tmp");
-            m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+            //PMTData->Save("tmp");
+	    std::cout <<"Setting PMTData"<<std::endl;
+            m_data->Stores["PMTData"]->Set("FileData",PMTData,false);*/
 	    std::cout <<"State is "<<State<<std::endl;
     }
     if (mode == "Single"){
@@ -93,16 +101,28 @@ bool MonitorSimReceiveSingleFile::Execute(){
 bool MonitorSimReceiveSingleFile::Finalise(){
 
     MRDData=0;
-    PMTData=0;
+ //   PMTData=0;
     m_data->CStore.Remove("State");
     m_data->Stores["CCData"]->Remove("FileData");
-    m_data->Stores["PMTData"]->Remove("FileData");
+ //   m_data->Stores["PMTData"]->Remove("FileData");
     m_data->Stores.clear();
 
+    /*MRDData->Close();
+    MRDData->Delete();
     delete MRDData;
-    delete MRDData2;
-    delete PMTData;
 
+    MRDData2->Close();
+    MRDData2->Delete();
+    delete MRDData2;
+
+    PMTData->Close();
+    PMTData->Delete();
+    delete PMTData;
+*/
+    /*indata->Close();
+    indata->Delete();
+    delete indata;
+    */
     return true;
 }
 
