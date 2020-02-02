@@ -96,7 +96,7 @@ class MrdEfficiency: public Tool {
 	int num_primary_muons_not_reconstructed = 0;
 	
 	// small function to calculate the error on an efficiency bin
-	double Efficiency_Error(int recod_events, int nrecod_events);
+	double Efficiency_Error(double recod_events, double nrecod_events);
 	
 	// verbosity level
 	// if 'verbosity' < this level, the message type will be logged.

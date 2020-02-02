@@ -846,7 +846,7 @@ bool MrdEfficiency::Finalise(){
 	return true;
 }
 
-double MrdEfficiency::Efficiency_Error(int n_recod_events,int n_nrecod_events){
+double MrdEfficiency::Efficiency_Error(double n_recod_events,double n_nrecod_events){
 	// variance of efficiency, from Ullrich and Xu: arXiv:physics/0701199v1
 	// via Calculating Efficiency Uncertainties - Louise Heelan;
 	// https://indico.cern.ch/event/66256/contribution/1/attachments/1017176/1447814/EfficiencyErrors.pdf
@@ -857,5 +857,5 @@ double MrdEfficiency::Efficiency_Error(int n_recod_events,int n_nrecod_events){
 	double second_numerator   = pow((n_recod_events+1.),2.);
 	double second_denominator = pow((total_events+2.),2.);
 	double second_term        = second_numerator/second_denominator;
-	return  (first_term - second_term);
+	return  sqrt(first_term - second_term);
 }
