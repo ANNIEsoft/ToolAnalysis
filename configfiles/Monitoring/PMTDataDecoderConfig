@@ -1,0 +1,6 @@
+verbosity 0
+Mode Monitoring
+EntriesPerExecute 1000
+InputFile /pnfs/annie/persistent/users/mnieslon/RAWDataR1117S0p0
+
+
