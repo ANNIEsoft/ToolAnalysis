@@ -4,6 +4,6 @@ UseLEDWaveforms 0
 
 PulseFindingApproach threshold
 PulseWindowType dynamic
-DefaultADCThreshold 5
+DefaultADCThreshold 10
 DefaultThresholdType relative
 

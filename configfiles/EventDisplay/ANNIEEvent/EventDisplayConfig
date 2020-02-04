@@ -10,7 +10,7 @@ Threshold_ChargeLAPPD 1.		#same as threshold, but for LAPPDs
 Threshold_TimeLow -10	#for time, use lower and upper limits, use -999 if min and max values should be taken from data
 Threshold_TimeHigh 40
 TextBox	1		#choose if TextBox with information about run & event should be displayed (0: not shown, 1: shown)
-LAPPDsSelected 1	#if true, only the LAPPDs specified in LAPPDsFile will be used in the analysis. If false, all LAPPD hits will be displayed 
+LAPPDsSelected 0	#if true, only the LAPPDs specified in LAPPDsFile will be used in the analysis. If false, all LAPPD hits will be displayed 
 LAPPDsFile LAPPDIDs.txt	#specify the LAPPD IDs that are active (one ID per line) 
 DrawVertex 1		#true vertex is drawn
 DrawRing 1		#true expected ring distribution is drawn
@@ -20,7 +20,7 @@ HistogramPlots 1	#decide whether histogram plots (charge/time) are shown in addi
 MarkerSize 2		#size of PMT circles (default: 2)
 UserInput 0		#If true, manually decide if next event shown
 Graphics 0		#should a TApplication be launched?
-OutputFile evdisplay_annieevent_beam_muon
+OutputFile evdisplay_electron_beamlike_0
 DetectorConfiguration ANNIEp2v6	#specify the detector configuration used in the simulation (options e.g. ANNIEp2v2, ANNIEp2v4, ANNIEp2v6)
 IsData 0		#Are we evaluating a data file? (0: MC, 1: data)
 

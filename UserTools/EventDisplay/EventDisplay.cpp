@@ -552,9 +552,8 @@ bool EventDisplay::Execute(){
   //---------------------------------------------------------------
   //-------------clear charge & time containers -------------------
   //---------------------------------------------------------------
-
   mrddigittimesthisevent.clear();
-
+  
   charge.clear();
   time.clear();
   hitpmt_detkeys.clear();
@@ -563,49 +562,6 @@ bool EventDisplay::Execute(){
   time_lappd.clear();
   hits_LAPPDs.clear();
   charge_lappd.clear();
-  
-  //---------------------------------------------------------------
-  //-------------clear charge & time histograms -------------------
-  //---------------------------------------------------------------
-
-  if (draw_histograms){
-    canvas_pmt->Clear();
-    canvas_pmt_supplementary->Clear();
-    canvas_lappd->Clear();
-  }
-
-  if (charge_PMTs) charge_PMTs->Delete();
-  if (time_PMTs) time_PMTs->Delete();
-  if (charge_time_PMTs) charge_time_PMTs->Delete();
-  for (int i=0;i<max_num_lappds;i++){
-    if (charge_LAPPDs[i]) charge_LAPPDs[i]->Delete();
-    if (time_LAPPDs[i]) time_LAPPDs[i]->Delete();
-  }
-  if (leg_charge) delete leg_charge;
-  if (leg_time) delete leg_time;
-
-  charge_PMTs = new TH1F("charge_PMTs","Charge of PMTs",pmt_Qbins,pmt_Qmin,pmt_Qmax);
-  charge_PMTs->GetXaxis()->SetTitle("charge [p.e.]");
-  time_PMTs = new TH1F("time_PMTs","PMTs time response",pmt_Tbins,pmt_Tmin,pmt_Tmax);
-  time_PMTs->GetXaxis()->SetTitle("time [ns]");
-  charge_time_PMTs = new TH2F("charge_time_PMTs","Charge vs. time PMTs",pmt_Tbins,pmt_Tmin,pmt_Tmax,pmt_Qbins,pmt_Qmin,pmt_Qmax);
-  charge_time_PMTs->GetXaxis()->SetTitle("time [ns]");
-  charge_time_PMTs->GetYaxis()->SetTitle("charge [p.e.]");
-
-  for (int i=0;i<max_num_lappds;i++){
-    std::string str_time_lappds = "time_lappds_det";
-    std::string str_charge_lappds = "charge_lappds_det";
-    int detkey = lappd_detkeys.at(i);
-    std::string lappd_nr = std::to_string(detkey);
-    std::string hist_time_lappds = str_time_lappds+lappd_nr;
-    std::string hist_charge_lappds = str_charge_lappds+lappd_nr;
-    time_LAPPDs[i] = new TH1F(hist_time_lappds.c_str(),"Time of LAPPDs",lappd_Tbins,lappd_Tmin,lappd_Tmax);
-    time_LAPPDs[i]->GetXaxis()->SetTitle("time [ns]");
-    //time_LAPPDs[i]->GetYaxis()->SetRangeUser(0,200);
-    charge_LAPPDs[i] = new TH1F(hist_charge_lappds.c_str(),"Number of hits on LAPPDs",lappd_Qbins,lappd_Qmin,lappd_Qmax);
-    charge_LAPPDs[i]->GetXaxis()->SetTitle("hits");
-    //charge_LAPPDs[i]->GetYaxis()->SetRangeUser(0,20.);
-  }
 
   for (int i_pmt=0;i_pmt<n_tank_pmts;i_pmt++){
     unsigned long detkey = pmt_detkeys[i_pmt];
@@ -803,6 +759,7 @@ bool EventDisplay::Execute(){
           int wcsim_id;
           for (Hit &ahit : Hits){
             charge[detkey] += ahit.GetCharge();
+            std::cout <<"detkey = "<<detkey<<", time = "<<ahit.GetTime()<<std::endl;
             time[detkey] += ahit.GetTime();
             hits_pmt++;
           }
@@ -815,6 +772,8 @@ bool EventDisplay::Execute(){
       vectsize = 0;
     }
   }
+  
+  //Only select hits in the cluster time window
   /*double mean_time=0.;
   std::vector<unsigned long> pmt_to_delete;
   for (unsigned int i_pmt = 0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
@@ -836,11 +795,54 @@ bool EventDisplay::Execute(){
   }*/
 
   if (total_hits_pmts < npmtcut) {
-    Log("EventDisplay tool: Only "+std::to_string(total_hits_pmts)+" PMTs hit. Required: "+std::to_string(npmtcut)+". Terminate this execute step.");
+    Log("EventDisplay tool: Only "+std::to_string(total_hits_pmts)+" PMTs hit. Required: "+std::to_string(npmtcut)+". Terminate this execute step.",v_message,verbose);
     return true;
    }
 
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
+  
+  //---------------------------------------------------------------
+  //-------------clear charge & time histograms -------------------
+  //---------------------------------------------------------------
+
+  if (draw_histograms){
+    canvas_pmt->Clear();
+    canvas_pmt_supplementary->Clear();
+    canvas_lappd->Clear();
+  }
+
+  if (charge_PMTs) charge_PMTs->Delete();
+  if (time_PMTs) time_PMTs->Delete();
+  if (charge_time_PMTs) charge_time_PMTs->Delete();
+  for (int i=0;i<max_num_lappds;i++){
+    if (charge_LAPPDs[i]) charge_LAPPDs[i]->Delete();
+    if (time_LAPPDs[i]) time_LAPPDs[i]->Delete();
+  }
+  if (leg_charge) delete leg_charge;
+  if (leg_time) delete leg_time;
+
+  charge_PMTs = new TH1F("charge_PMTs","Charge of PMTs",pmt_Qbins,pmt_Qmin,pmt_Qmax);
+  charge_PMTs->GetXaxis()->SetTitle("charge [p.e.]");
+  time_PMTs = new TH1F("time_PMTs","PMTs time response",pmt_Tbins,pmt_Tmin,pmt_Tmax);
+  time_PMTs->GetXaxis()->SetTitle("time [ns]");
+  charge_time_PMTs = new TH2F("charge_time_PMTs","Charge vs. time PMTs",pmt_Tbins,pmt_Tmin,pmt_Tmax,pmt_Qbins,pmt_Qmin,pmt_Qmax);
+  charge_time_PMTs->GetXaxis()->SetTitle("time [ns]");
+  charge_time_PMTs->GetYaxis()->SetTitle("charge [p.e.]");
+
+  for (int i=0;i<max_num_lappds;i++){
+    std::string str_time_lappds = "time_lappds_det";
+    std::string str_charge_lappds = "charge_lappds_det";
+    int detkey = lappd_detkeys.at(i);
+    std::string lappd_nr = std::to_string(detkey);
+    std::string hist_time_lappds = str_time_lappds+lappd_nr;
+    std::string hist_charge_lappds = str_charge_lappds+lappd_nr;
+    time_LAPPDs[i] = new TH1F(hist_time_lappds.c_str(),"Time of LAPPDs",lappd_Tbins,lappd_Tmin,lappd_Tmax);
+    time_LAPPDs[i]->GetXaxis()->SetTitle("time [ns]");
+    //time_LAPPDs[i]->GetYaxis()->SetRangeUser(0,200);
+    charge_LAPPDs[i] = new TH1F(hist_charge_lappds.c_str(),"Number of hits on LAPPDs",lappd_Qbins,lappd_Qmin,lappd_Qmax);
+    charge_LAPPDs[i]->GetXaxis()->SetTitle("hits");
+    //charge_LAPPDs[i]->GetYaxis()->SetRangeUser(0,20.);
+  }  
 
   //---------------------------------------------------------------
   //-------------------Fill time hists ----------------------------
@@ -985,8 +987,7 @@ bool EventDisplay::Execute(){
   int i_color = 1;
   for (auto&& ahisto : charge_LAPPDs){
     unsigned long histkey = ahisto.first;
-    unsigned long detkey = lappd_detkeys.at(histkey);
-    /*int histkey;
+    unsigned long detkey = lappd_detkeys.at(histkey); /*int histkey;
     std::vector<unsigned long>::iterator it = std::find(lappd_detkeys.begin(), lappd_detkeys.end(), detkey);
     if (it != lappd_detkeys.end()) histkey = std::distance(lappd_detkeys.begin(), it);
     else {
@@ -1444,7 +1445,7 @@ void EventDisplay::draw_event(){
     draw_pmt_legend();
     Log("EventDisplay tool: Drawing PMT legend finished.",v_message,verbose);
 
-    //draw_lappd_legend();
+    if (!isData) draw_lappd_legend();
     Log("EventDisplay tool: Drawing lappd legend finished.",v_message,verbose);
 
     draw_mrd_legend();
@@ -1453,7 +1454,7 @@ void EventDisplay::draw_event(){
     draw_schematic_detector();
     Log("EventDisplay tool: Drawing schematic detector finished.",v_message,verbose);
 
-    //draw_particle_legend();
+    if (!isData) draw_particle_legend();
     Log("EventDisplay tool: Drawing particle legend finished.",v_message,verbose);
 
     if (draw_vertex_temp) {

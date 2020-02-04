@@ -1,0 +1,5 @@
+verbosity 3
+OutputFile PulseOcc1143
+WavesWithPulsesOnly 0
+SaveWaveforms 1
+MaxWaveforms 20000
