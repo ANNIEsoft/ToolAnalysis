@@ -77,27 +77,16 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 	}
 	
-	int rootfileusers=0;
-	get_ok = m_data->CStore.Get("RootFileUsers",rootfileusers);
-	if (get_ok){
-		rootfileusers++;
-		saverootfile=true;  //already other ROOT files open, need to associate the histograms in this tool with an own root file
-		m_data->CStore.Set("RootFileUsers",rootfileusers);
-	} else {
-		if (saverootfile) {
-			rootfileusers=1;
-			m_data->CStore.Set("RootFileUsers",rootfileusers);
-		}
-	}
-
 	if (saverootfile){
 		std::stringstream ss_rootfilename;
 		ss_rootfilename << plotDirectoryString << "/" << output_rootfile << ".root";
 		Log("MrdPaddlePlot tool: Creating root file "+ss_rootfilename.str()+" to save paddle plots.",v_message,verbosity);
 		mrdvis_file = new TFile(ss_rootfilename.str().c_str(),"RECREATE");
+		gROOT->cd();
 	}
 
 	if(drawStatistics){
+		if (saverootfile) mrdvis_file->cd();
 		hnumhclusters = new TH1D("hnumhclusters","Num track clusters in H view",10,0,10);
 		hnumvclusters = new TH1D("hnumvclusters","Num track clusters in V view",10,0,10);
 		hnumhcells = new TH1D("hnumhcells","Num track cells in H view",10,0,10);
@@ -106,6 +95,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		hpaddleinlayeridsh = new TH1D("hpaddleinlayeridsh","Hits on Paddle Positions in H Layers",13,0,13);
 		hpaddleinlayeridsv = new TH1D("hpaddleinlayeridsv","Hits on Paddle Positions in V Layers",17,0,17);
 		hdigittimes = new TH1D("hdigittimes","MRD Track Digit Times",100,0,1000);
+		gROOT->cd();
 	}
 	
 #ifdef GOT_GEO
@@ -392,6 +382,7 @@ bool MrdPaddlePlot::Execute(){
 				Log("MrdPaddlePlot tool: Saving EvNumber "+std::to_string(EventNumber)+", subevnumber = "+std::to_string(subevi)+" to ROOT-file",v_message,verbosity);
 				thesubevent->imgcanvas->SetName(TString::Format("mrdpaddles_ev_%d_%d",EventNumber,subevi));
 				thesubevent->imgcanvas->Write();
+				gROOT->cd();
 			}
 		}
 		
@@ -432,6 +423,7 @@ bool MrdPaddlePlot::Finalise(){
 		if (saverootfile) {
 			mrdvis_file->cd();
 			hnumhclusters->Write();
+			gROOT->cd();
 		}
 		hnumvclusters->Draw();
 		imgname=hnumvclusters->GetTitle();
@@ -440,6 +432,7 @@ bool MrdPaddlePlot::Finalise(){
 		if (saverootfile) {
 			mrdvis_file->cd();
 			hnumvclusters->Write();
+			gROOT->cd();
 		}
 		hnumhcells->Draw();
 		imgname=hnumhcells->GetTitle();
@@ -448,6 +441,7 @@ bool MrdPaddlePlot::Finalise(){
 		if (saverootfile) {
 			mrdvis_file->cd();
 			hnumhcells->Write();
+			gROOT->cd();
 		}
 		hnumvcells->Draw();
 		imgname=hnumvcells->GetTitle();
@@ -456,6 +450,7 @@ bool MrdPaddlePlot::Finalise(){
 		if (saverootfile){
 			mrdvis_file->cd();
 			hnumvcells->Write();
+			gROOT->cd();
 		}
 		hpaddleids->Draw();
 		imgname=hpaddleids->GetTitle();
@@ -464,6 +459,7 @@ bool MrdPaddlePlot::Finalise(){
 		if (saverootfile){
 			mrdvis_file->cd();
 			hpaddleids->Write();
+			gROOT->cd();
 		}
 		hdigittimes->Draw();
 		imgname=hdigittimes->GetTitle();
@@ -472,6 +468,7 @@ bool MrdPaddlePlot::Finalise(){
 		if (saverootfile){
 			mrdvis_file->cd();
 			hdigittimes->Write();
+			gROOT->cd();
 		}	
 
 		delete mrdTrackCanv;
@@ -492,9 +489,6 @@ bool MrdPaddlePlot::Finalise(){
 	if(drawGdmlOverlay && gdmlcanv) delete gdmlcanv;
 	
 	if (saverootfile) {
-		int rootfileusers=0;
-		get_ok = m_data->CStore.Get("RootFileUsers",rootfileusers);
-		if (get_ok && rootfileusers >=1) m_data->CStore.Set("RootFileUsers",rootfileusers-1);
 		delete mrdvis_file;
 	}
 	if (useTApplication){

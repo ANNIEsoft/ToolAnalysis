@@ -90,7 +90,8 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		mrddigitts_cluster_single = new TH1D("mrddigitts_cluster_single","MRD Single Times",1000,0,4000);
 		mrddigitts_vertical = new TH1D("mrddigitts_vertical","MRD Times (Vertical Layers)",1000,0,4000);
 		mrddigitts_horizontal = new TH1D("mrddigitts_horizontal","MRD Times (Horizontal Layers)",1000,0,4000); 
-       }
+       		gROOT->cd();
+	}
 
         // Setup mapping from Channelkeys to WCSim IDs (important for track fitting with old MRD classes in FindMrdTracks)
 	if (isData){
@@ -109,17 +110,6 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	else {
 		m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);	//for MC, simply get the sample obtained from the LoadWCSim tool
 	}
-
-	// Associate in the CStore that another TFile has been opened in this toolchain
-	int rootfileusers=0;
-        get_ok = m_data->CStore.Get("RootFileUsers",rootfileusers);
-        if (get_ok){
-                rootfileusers++;
-                m_data->CStore.Set("RootFileUsers",rootfileusers);
-        } else {
-		rootfileusers=1;
-		m_data->CStore.Set("RootFileUsers",rootfileusers);
-        }
 
 	// Get Detectors map to divide in horizontal and vertical layers
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
@@ -427,10 +417,10 @@ bool TimeClustering::Execute(){
 }
 
 	if (MakeMrdDigitTimePlot){
-
 		mrddigitts_file->cd();
 		mrddigitts_cluster_single->Write();
 		mrddigitts_single->Write();
+		gROOT->cd();
 	}
 
 	// pass the found clusters to the ANNIEEvent
@@ -467,6 +457,7 @@ bool TimeClustering::Finalise(){
         	mrddigitts_file->Close();
         	delete mrddigitts_file;     //histograms get deleted by deleting associated TFile
 		mrddigitts_file=0;
+		gROOT->cd();
 	}
 
 
