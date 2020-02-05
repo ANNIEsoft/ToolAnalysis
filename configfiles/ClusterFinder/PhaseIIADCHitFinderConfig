@@ -1,0 +1,23 @@
+verbosity 0
+
+UseLEDWaveforms 0
+#PulseFindingApproach full_window
+#PulseFindingApproach fixed_windows
+#WindowIntegrationDB ./configfiles/LEDTransparencyAnalysis/TankPMTWindows_V2.txt
+
+PulseFindingApproach threshold
+#ADCThresholdDB ./configfiles/PhaseIIHitLoader/TankPMTTresholds.txt
+PulseWindowType dynamic
+DefaultADCThreshold 15
+#PulseWindowStart -10
+#PulseWindowEnd 20
+DefaultThresholdType relative
+
+#PulseFindingApproach threshold
+#ADCThresholdDB ./configfiles/PhaseIIHitLoader/TankPMTTresholds.txt
+#PulseWindowType fixed
+#DefaultADCThreshold 4
+#DefaultThresholdType relative
+##Units are in samples, centered on threshold crossing
+#PulseWindowStart -10
+#PulseWindowEnd 20
