@@ -168,6 +168,7 @@ class MonitorMRDTime: public Tool {
   //define live storing variables (for data of current file)
   std::vector<std::vector<int>> tdc_file;
   std::vector<std::vector<ULong64_t>> timestamp_file;
+  std::vector<std::vector<int>> tdc_file_times;
   ULong64_t t_file_start, t_file_end;
   ULong64_t utc_to_t=21600000;	//6h clock delay (MRD timestamped in UTC time)
   long n_doublehits;
@@ -229,7 +230,7 @@ class MonitorMRDTime: public Tool {
 
   //define TDC histogram
   TH1F *hist_tdc = nullptr;
-  TH1F *hist_tdc_beam = nullptr;
+  TH1F *hist_tdc_cluster = nullptr;
 
   //define rate histograms
   TH2F *rate_crate1=nullptr;
@@ -250,7 +251,7 @@ class MonitorMRDTime: public Tool {
   double shiftSecRow = 0.04;
 
   //define histogram showing the history (log) of files 
-  TH1F *log_files=nullptr;
+  TH1F *log_files_mrd=nullptr;
   int num_files_history;
 
   //define TPie objects showing pie charts of the event type composition
@@ -266,7 +267,7 @@ class MonitorMRDTime: public Tool {
   TCanvas *canvas_rate_electronics = nullptr;
   TCanvas *canvas_rate_physical = nullptr;
   TCanvas *canvas_rate_physical_facc = nullptr;
-  TCanvas *canvas_logfile = nullptr;
+  TCanvas *canvas_logfile_mrd = nullptr;
   TCanvas *canvas_ch_tdc = nullptr;
   TCanvas *canvas_ch_rms = nullptr;
   TCanvas *canvas_ch_rate = nullptr;

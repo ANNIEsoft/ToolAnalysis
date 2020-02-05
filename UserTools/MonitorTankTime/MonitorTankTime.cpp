@@ -2386,12 +2386,14 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
   ss_timeframe << round(time_frame*100.)/100.;
 
   std::cout <<"timestamp_start: "<<timestamp_start<<", timestamp_end: "<<timestamp_end<<std::endl;
-  std::cout <<"DrawFileHistory (Tank): canvas_logfile = "<<canvas_logfile<<std::endl;
+  std::cout <<"DrawFileHistory (Tank): canvas_logfile = "<<canvas_logfile<<", log_files: "<<log_files<<std::endl;
   canvas_logfile->cd();
   std::cout <<"canvas_logfile (Tank): "<<canvas_logfile<<std::endl;
+  std::cout<<"Setting bins"<<std::endl;
   log_files->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
   log_files->GetXaxis()->SetTimeOffset(0.);
   log_files->Draw();
+  std::cout <<"After drawing"<<std::endl;
 
   std::stringstream ss_title_filehistory;
   ss_title_filehistory << "PMT Files History (last "<<ss_timeframe.str()<<"h)";
@@ -2400,6 +2402,7 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
 
   std::vector<TLine*> file_markers;
   for (unsigned int i_file = 0; i_file < tend_plot.size(); i_file++){
+    std::cout <<"i_file (tank): "<<i_file<<std::endl;
     TLine *line_file = new TLine((tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,0.,(tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,1.);
     line_file->SetLineColor(1);
     line_file->SetLineStyle(1);

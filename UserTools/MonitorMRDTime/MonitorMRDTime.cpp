@@ -203,11 +203,9 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
     std::vector<unsigned int> CrateSlotChannel{temp_crate,temp_slot,temp_channel};
     int i_active = CrateSlotChannel_to_TotalChannel[CrateSlotChannel];
     if (temp_loopback_name == "Beam") {
-	std::cout <<"beam_ch: i_active = "<<i_active<<std::endl;
 	beam_ch = i_active;
     }
     else if (temp_loopback_name == "Cosmic") {  
-      std::cout <<"cosmic_ch: i_active = "<<i_active<<std::endl;
       cosmic_ch = i_active;
     }
   }
@@ -373,8 +371,8 @@ bool MonitorMRDTime::Finalise(){
     delete hist_scatter.at(i_scatter);
   }
   delete hist_tdc;
-  delete hist_tdc_beam;
-  delete log_files;
+  delete hist_tdc_cluster;
+  delete log_files_mrd;
   delete rate_crate1;
   delete rate_crate2;
   delete rate_top;
@@ -404,7 +402,7 @@ bool MonitorMRDTime::Finalise(){
   //canvases
   delete canvas_hitmap;
   delete canvas_hitmap_slot;
-  delete canvas_logfile;
+  delete canvas_logfile_mrd;
   delete canvas_ch_tdc;
   delete canvas_ch_rms;
   delete canvas_ch_rate;
@@ -513,6 +511,7 @@ void MonitorMRDTime::ReadInData(){
     tdc_file.at(i_channel).clear();
     timestamp_file.at(i_channel).clear();
   }
+  tdc_file_times.clear();
 
   if (verbosity > 1) std::cout <<"MonitorMRDTime: ReadInData..."<<std::endl;
   t_file_end = 0;
@@ -522,6 +521,9 @@ void MonitorMRDTime::ReadInData(){
   int count=0;
 
   for (int i_event = 0; i_event <  total_number_entries; i_event++){
+
+    //initialize vector for event times
+    std::vector<int> tdc_file_times_single;
 
     //get MRDout data
     MRDdata->GetEntry(i_event);
@@ -580,6 +582,7 @@ void MonitorMRDTime::ReadInData(){
       tdc_file.at(ch).push_back(MRDout.Value.at(i_entry));
       timestamp_file.at(ch).push_back(MRDout.TimeStamp);
       vector_nhits[ch]++;
+      tdc_file_times_single.push_back(MRDout.Value.at(i_entry));
 
       for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
         if (MRDout.Crate.at(i_entry) == loopback_crate.at(i_trigger) && MRDout.Slot.at(i_entry) == loopback_slot.at(i_trigger) && MRDout.Channel.at(i_entry) == loopback_channel.at(i_trigger)) no_loopback = false;
@@ -590,6 +593,8 @@ void MonitorMRDTime::ReadInData(){
     for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
       if (vector_nhits[i_ch] > 1) n_doublehits++;
     }
+
+    tdc_file_times.push_back(tdc_file_times_single);
 
     //clear MRDout member vectors afterwards
     MRDout.Value.clear();
@@ -707,6 +712,8 @@ void MonitorMRDTime::WriteToFile(){
   t_start = t_file_start;
   t_end = t_file_end;
   t_frame = t_end - t_start;
+
+  rate_doublehit = n_doublehits/(t_frame/MSEC_to_SEC);
   rate_zerohits = n_zerohits/(t_frame/MSEC_to_SEC);
   rate_normalhit = n_normalhits/(t_frame/MSEC_to_SEC);
   rate_noloopback = n_noloopback/(t_frame/MSEC_to_SEC);
@@ -985,7 +992,7 @@ void MonitorMRDTime::InitializeVectors(){
   canvas_ch_single = new TCanvas("canvas_ch_single","Channel Canvas Single",900,600);
   canvas_hitmap = new TCanvas("canvas_hitmap","Hitmap MRD",900,600);
   canvas_hitmap_slot = new TCanvas("canvas_hitmap_slot","Hitmap MRD Slot",900,600);
-  canvas_logfile = new TCanvas("canvas_logfile","MRD File History",900,600);
+  canvas_logfile_mrd = new TCanvas("canvas_logfile_mrd","MRD File History",900,600);
   canvas_scatter = new TCanvas("canvas_scatter","Scatter Plot Canvas",900,600);
   canvas_scatter_single = new TCanvas("canvas_scatter_single","Scatter Plot Canvas Single",900,600);
   canvas_tdc = new TCanvas("canvas_tdc","TDC Canvas",900,600);
@@ -1001,7 +1008,7 @@ void MonitorMRDTime::InitializeVectors(){
   canvas_hitmap_slot->SetGridx();
   canvas_hitmap_slot->SetLogy();
 
-  std::cout <<"canvas_logfile: "<<canvas_logfile<<std::endl;
+  std::cout <<"canvas_logfile_mrd: "<<canvas_logfile_mrd<<std::endl;
 
   //-------------------------------------------------------
   //-----------------Initialize hitmap histograms----------
@@ -1098,14 +1105,14 @@ void MonitorMRDTime::InitializeVectors(){
   //-------------------------------------------------------
 
   num_files_history = 10;
-  log_files = new TH1F("log_files","MRD Files History",num_files_history,0,num_files_history);
-  log_files->GetXaxis()->SetTimeDisplay(1);
-  log_files->GetXaxis()->SetLabelSize(0.03);
-  log_files->GetXaxis()->SetLabelOffset(0.03);
-  log_files->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-  log_files->GetYaxis()->SetTickLength(0.);
-  log_files->GetYaxis()->SetLabelOffset(999);
-  log_files->SetStats(0);
+  log_files_mrd = new TH1F("log_files_mrd","MRD Files History",num_files_history,0,num_files_history);
+  log_files_mrd->GetXaxis()->SetTimeDisplay(1);
+  log_files_mrd->GetXaxis()->SetLabelSize(0.03);
+  log_files_mrd->GetXaxis()->SetLabelOffset(0.03);
+  log_files_mrd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  log_files_mrd->GetYaxis()->SetTickLength(0.);
+  log_files_mrd->GetYaxis()->SetLabelOffset(999);
+  log_files_mrd->SetStats(0);
 
   //-------------------------------------------------------
   //------------TDC histogram------------------------------
@@ -1114,9 +1121,9 @@ void MonitorMRDTime::InitializeVectors(){
   hist_tdc = new TH1F("hist_tdc","TDC (last file)",500,0,1000);
   hist_tdc->GetXaxis()->SetTitle("TDC");
   hist_tdc->GetYaxis()->SetTitle("#");
-  hist_tdc_beam = new TH1F("hist_tdc_beam","TDC Beam (last file)",500,0,1000);
-  hist_tdc_beam->GetXaxis()->SetTitle("TDC");
-  hist_tdc_beam->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster = new TH1F("hist_tdc_cluster","TDC Cluster (last file)",20,0,1000);
+  hist_tdc_cluster->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster->GetYaxis()->SetTitle("#");
 
   //-------------------------------------------------------
   //------------Pie charts---------------------------------
@@ -1552,16 +1559,17 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
   ULong64_t timestamp_start = timestamp_end - time_frame*MSEC_to_SEC*SEC_to_MIN*MIN_to_HOUR;
   std::cout <<"DrawFileHistory: TimeStamp_end = "<<timestamp_end<<", timestamp_start = "<<timestamp_start<<std::endl;
 
-  std::cout <<"cd to canvas_logfile"<<std::endl;
-  std::cout <<canvas_logfile<<std::endl;
+  std::cout <<"cd to canvas_logfile_mrd"<<std::endl;
+  std::cout <<canvas_logfile_mrd<<std::endl;
+  std::cout <<log_files_mrd<<std::endl;
   std::cout <<"num_files_history: "<<num_files_history<<std::endl;
-  canvas_logfile->cd();
+  canvas_logfile_mrd->cd();
   std::cout <<"1"<<std::endl;
-  log_files->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
+  log_files_mrd->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
   std::cout <<"2"<<std::endl;
-  log_files->GetXaxis()->SetTimeOffset(0.);
+  log_files_mrd->GetXaxis()->SetTimeOffset(0.);
   std::cout <<"3"<<std::endl;
-  log_files->Draw();
+  log_files_mrd->Draw();
   std::cout <<"4"<<std::endl;
 
   std::vector<TLine*> file_markers;
@@ -1582,7 +1590,7 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
   std::cout <<"2"<<std::endl;
   ss_logfiles << outpath << "MRD_FileHistory_" << file_ending << "." << img_extension;
   std::cout <<"3"<<std::endl;
-  canvas_logfile->SaveAs(ss_logfiles.str().c_str());
+  canvas_logfile_mrd->SaveAs(ss_logfiles.str().c_str());
 
   std::cout <<"4"<<std::endl;
   for (unsigned int i_line = 0; i_line < file_markers.size(); i_line++){
@@ -1590,8 +1598,8 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
     delete file_markers.at(i_line);
   }
 
-  log_files->Reset();
-  canvas_logfile->Clear();
+  log_files_mrd->Reset();
+  canvas_logfile_mrd->Clear();
 
 }
 
@@ -1697,7 +1705,12 @@ void MonitorMRDTime::DrawScatterPlots(){
 
       std::string channel_range;
       if (CANVAS_NR == 0) channel_range = " Ch 0-15";
-      else channel_range = " Ch 16-31";
+      else {
+	//we already switched to the new slot with channel 32, so we need to consider the slot for the channel before
+        slot = TotalChannel_to_Slot[i_channel-1];
+	channel_range = " Ch 16-31";
+      }
+
       ss_ch_scatter << "Crate "<<crate<<" Slot "<<slot<<channel_range<<" (last File)";
 
       if ( i_channel == num_active_slots*num_channels-1){
@@ -1825,16 +1838,56 @@ void MonitorMRDTime::DrawTDCHistogram(){
   canvas_tdc->Clear();
   canvas_tdc->SetLogy();
 
+
   for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
       if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(1) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(1) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(1)) continue; //Omit beam loopback signal
     for (unsigned int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
       hist_tdc->Fill(tdc_file.at(i_channel).at(i_tdc));
-      if (std::find(timestamp_file.at(beam_ch).begin(),timestamp_file.at(beam_ch).end(),timestamp_file.at(i_channel).at(i_tdc))!=timestamp_file.at(beam_ch).end()){
-     hist_tdc_beam->Fill(tdc_file.at(i_channel).at(i_tdc)); 
-     }
-   }
+    }
   }
- 
+
+  
+  for (unsigned int i_entry=0; i_entry < tdc_file_times.size(); i_entry++){
+   std::sort(tdc_file_times.at(i_entry).begin(),tdc_file_times.at(i_entry).end());
+  }
+
+  int tdc_start=0;
+  int min_cluster = 4;
+  int min_tdc_separation = 8;
+  int n_channels = 0;
+  int tdc_current = 0;
+
+  for (unsigned int i_entry = 0; i_entry < tdc_file_times.size(); i_entry++){
+   std::vector<int> tdc_times = tdc_file_times.at(i_entry);
+   for (unsigned int i_tdc=0; i_tdc < tdc_times.size(); i_tdc++){
+     if (i_tdc == 0) {
+	tdc_start = tdc_times.at(0);
+        tdc_current = tdc_times.at(0);
+	n_channels=1;
+        continue;
+      } 
+    if ((tdc_times.at(i_tdc)-tdc_current) <= min_tdc_separation){
+        n_channels++;
+	tdc_current = tdc_times.at(i_tdc);
+	if (i_tdc==tdc_times.size()-1) {
+	  if (n_channels >= min_cluster){
+	    for (int i_ch = 0; i_ch < n_channels; i_ch++){
+	      hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+            }
+          }
+	}
+      } else {
+        if (n_channels >= min_cluster){
+          for (int i_ch = 1; i_ch <= n_channels; i_ch++){
+            hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+	  }
+        }
+        n_channels = 0;
+        tdc_current = tdc_times.at(i_tdc);
+      }
+    }  
+  }
+  
   std::stringstream ss_tdc_hist_title;
   ss_tdc_hist_title << "TDC "<<end_time.str()<<" (last file) ";
   hist_tdc->SetTitle(ss_tdc_hist_title.str().c_str());
@@ -1845,11 +1898,11 @@ void MonitorMRDTime::DrawTDCHistogram(){
   hist_tdc->Reset();
   canvas_tdc->Clear();
   ss_tdc_hist_title.str("");
-  ss_tdc_hist_title << "TDC Beam "<<end_time.str()<<" (last file) ";
-  hist_tdc_beam->SetTitle(ss_tdc_hist_title.str().c_str());
-  hist_tdc_beam->Draw();
+  ss_tdc_hist_title << "TDC Cluster "<<end_time.str()<<" (last file) ";
+  hist_tdc_cluster->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster->Draw();
   ss_tdc_hist.str("");
-  ss_tdc_hist << outpath << "MRDTDCHist_Beam_lastFile."<<img_extension;
+  ss_tdc_hist << outpath << "MRDTDCHist_Cluster_lastFile."<<img_extension;
   canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
 
 }
@@ -2294,7 +2347,11 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
         ss_ch_rate.str("");
         std::string channel_range;
         if (CANVAS_NR == 0) channel_range = " Channel 0-15";
-        else channel_range = " Channel 16-31";
+        else {
+        //we already switched to the new slot with channel 32, so we need to consider the slot for the channel before
+          slot = TotalChannel_to_Slot[i_channel-1];
+          channel_range = " Channel 16-31";
+        }
         ss_ch_tdc<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
         ss_ch_rms<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
         ss_ch_rate<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";

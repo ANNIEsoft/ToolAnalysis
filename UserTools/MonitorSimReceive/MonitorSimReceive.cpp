@@ -84,7 +84,7 @@ bool MonitorSimReceive::Execute(){
       MRDData2->Delete();
       delete MRDData2;
       MRDData2 = 0;
- //     m_data->Stores["CCData"]->Remove("FileData");
+      m_data->Stores["CCData"]->Remove("FileData");
    //   m_data->Stores["CCData"]->Remove("Single");
     }
     if (PMTData!=0){
@@ -92,7 +92,7 @@ bool MonitorSimReceive::Execute(){
       PMTData->Delete();
       delete PMTData;
       PMTData = 0;
-     // m_data->Stores["PMTData"]->Remove("FileData");
+      m_data->Stores["PMTData"]->Remove("FileData");
 
     }
     if (indata!=0){
@@ -132,9 +132,9 @@ bool MonitorSimReceive::Execute(){
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
     MRDData2->Save("tmp");
-   // m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
+    m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
     PMTData->Save("tmp");
- //   m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+    m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
 
 /*
     int a=rand() % 10;
