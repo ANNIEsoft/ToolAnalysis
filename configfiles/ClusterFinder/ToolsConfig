@@ -1,0 +1,6 @@
+LoadANNIEEvent LoadANNIEEvent ./configfiles/ClusterFinder/LoadANNIEEventConfig
+LoadGeometry LoadGeometry ./configfiles/ClusterFinder/LoadGeometryConfig
+PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/ClusterFinder/PhaseIIADCCalibratorConfig
+PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/ClusterFinder/PhaseIIADCHitFinderConfig
+#PrintADCData PrintADCData ./configfiles/ClusterFinder/PrintADCDataConfig
+ClusterFinder ClusterFinder ./configfiles/ClusterFinder/ClusterFinderConfig
