@@ -1,6 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "MrdPaddlePlot.h"
 #include "TCanvas.h"
+#define GOT_EVE 1
 #ifdef GOT_EVE
 #include "TGeoManager.h"
 #include "TEveLine.h"
@@ -77,7 +78,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		hdigittimes = new TH1D("hdigittimes","MRD Track Digit Times",100,0,1000);
 	}
 	
-#ifdef GOT_GEO
+#ifdef GOT_EVE
 	if(drawGdmlOverlay){
 		// Import the gdml geometry for the detector:
 		TGeoManager::Import(gdmlpath.c_str());
@@ -87,7 +88,12 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		while(TGeoMixture* amaterial=(TGeoMixture*)nextmaterial()) amaterial->SetTransparency(90);
 		gdmlcanv = new TCanvas("gdmlcanv","gdmlcanv",canvwidth,canvheight);
 		gdmlcanv->cd();
-		gGeoManager->GetVolume("WORLD2_LV")->Draw("ogl");
+		//gGeoManager->GetVolume("WORLD_LV")->Draw("ogl");     // hall + surrounding dirt
+		//gGeoManager->GetVolume("BLDG_LV")->Draw("ogl");      // hall
+		//gGeoManager->GetVolume("EXP_HALL_LV")->Draw("ogl");  // detector
+		gGeoManager->GetVolume("WORLD2_LV")->Draw("ogl");      // detector, coordinates aligned <- must use this
+		// use TGeoManager commands to manipulate viewpoint etc
+		// https://root.cern.ch/doc/v614/classTGeoManager.html#a4bf097b4cedad5f03ecce942e2c077a9
 	}
 #endif
 	

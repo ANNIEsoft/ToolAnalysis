@@ -14,5 +14,5 @@ myFindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/FindMrdTracksConfig
 # find short tracks
 myTrackCombiner TrackCombiner ./configfiles/FindMrdTracks/TrackCombinerConfig
 # plot tracks found
-myMrdTrackPlotter MrdPaddlePlot ./configfiles/FindMrdTracks/PlotMrdTracksConfig
+#myMrdTrackPlotter MrdPaddlePlot ./configfiles/FindMrdTracks/PlotMrdTracksConfig
 
