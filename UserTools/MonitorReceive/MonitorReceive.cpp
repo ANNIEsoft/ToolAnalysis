@@ -31,9 +31,11 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
   period =boost::posix_time::time_duration(0,0,1,0);
 
   m_data->Stores["CCData"]=new BoostStore(false,0);
-
+  m_data->Stores["PMTData"]=new BoostStore(false,0);
+	
   indata=0;
   MRDData=0; 
+  PMTData=0;
 
 
   return true;
@@ -87,6 +89,12 @@ bool MonitorReceive::Execute(){
 	  MRDData=0;	  
 	}
 
+	if({PMTData!=0){
+	  PMTData->Close();
+	  delete PMTData;
+	  PMTData=0;	  
+	}	      
+	      
 	if(indata!=0){
 	  indata->Close();
 	  delete indata;
@@ -97,15 +105,20 @@ bool MonitorReceive::Execute(){
 	indata->Initialise(iss.str());
 
 	BoostStore* MRDData= new BoostStore(false,2);
+	BoostStore* PMTData= new BoostStore(false,2);
+
 	////MRDData2= new BoostStore(false,2);
 	indata->Get("CCData",*MRDData);
+	indata->Get("PMTData",*PMTData);
 	////	indata->Get("CCData",*MRDData2);
 
 	//m_data->Stores["CCData"]=new BoostStore(false,2);
 	MRDData->Save("tmp");
 	m_data->Stores["CCData"]->Set("FileData",MRDData,false);
 	//	indata->Get("CCData",*(m_data->Stores["CCData"]));
-
+	PMTData->Save("tmp");
+	m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+	    
 	//execute
 
 	//	m_data->Stores["CCData"]->Save("tmp");
@@ -138,6 +151,7 @@ bool MonitorReceive::Finalise(){
 
   m_data->Stores["CCData"]->Remove("FileData");
   m_data->Stores["CCData"]->Remove("Single");
+  m_data->Stores["PMTData"]->Remove("FileData");
   m_data->Stores.clear();
 
   return true;
