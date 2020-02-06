@@ -260,6 +260,12 @@ bool LoadWCSim::Execute(){
 			ParticleId_to_VetoCharge->clear();
 			primarymuonindex=-1;
 			
+			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
+			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
+			if(verbosity>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+			m_data->CStore.Set("GenieFile",geniefilename);
+			m_data->CStore.Set("GenieEntry",genieentry);
+			
 			for(int trigi=0; trigi<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); trigi++){
 				
 				WCSimRootTrigger* atrigtt = WCSimEntry->wcsimrootevent->GetTrigger(trigi);

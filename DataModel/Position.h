@@ -52,6 +52,7 @@ class Position : public SerialisableObject{
 		Position unitvec(x/thismag,y/thismag,z/thismag);
 		return unitvec;
 	}
+	
 	inline double M() const { return Mag(); }
 	inline double M2() const { return Mag2(); }
 	
@@ -173,5 +174,77 @@ Position operator - (const Position & a, const Position & b);
 Position operator * (const Position & p, double a);
 Position operator * (double a, const Position & p);
 double operator * (const Position & a, const Position & b);
+
+class FourVector : public SerialisableObject{
+	
+	friend class boost::serialization::access;
+	
+	public:
+	FourVector() : t(0), x(0), y(0), z(0){serialise=true;}
+	FourVector(double tin, double xin, double yin, double zin) : t(tin), x(xin), y(yin), z(zin){serialise=true;}
+	
+	inline double T() const {return t;}
+	inline double E() const {return t;}
+	inline double X() const {return x;}
+	inline double Y() const {return y;}
+	inline double Z() const {return z;}
+	inline void SetT(double tt){t=tt;}
+	inline void SetE(double ee){t=ee;}
+	inline void SetX(double xx){x=xx;}
+	inline void SetY(double yy){y=yy;}
+	inline void SetZ(double zz){z=zz;}
+	void UnitToCentimeter(){
+		x = x*100.;
+		y = y*100.;
+		z = z*100.;
+	}
+	
+	Position Vect(){ return Position(x,y,z); }
+        inline Position Unit(){
+                double thismag = Mag(); 
+                Position unitvec(x/thismag,y/thismag,z/thismag);
+                return unitvec;
+        }
+        inline double Mag() const {
+                return sqrt(Mag2());
+        }
+        inline double M() const { return Mag(); }
+        inline double Mag2() const{
+                return (pow(x,2.)+pow(y,2.)+pow(z,2.));
+        }
+        inline double M2() const { return Mag2(); }
+	
+        bool Print(bool withendline) {
+                std::cout<<"("<<t<<", "<<x<<", "<<y<<", "<<z<<")";
+                if(withendline) cout<<std::endl;
+                return true;
+        }
+	bool Print(){
+		return Print(true);
+	}
+	
+	bool operator==(const FourVector &a) const {
+		return ((t==a.T()) && (x==a.X()) && (y==a.Y()) && (z==a.Z()));
+	}
+	
+	bool operator!=(const FourVector &a) const {
+		return ((t!=a.T()) || (x!=a.X()) || (y!=a.Y()) || (z!=a.Z()));
+	}
+	
+	private:
+	double t;
+	double x;
+	double y;
+	double z;
+	
+	template<class Archive> void serialize(Archive & ar, const unsigned int version){
+		if(serialise){
+			ar & t;
+			ar & x;
+			ar & y;
+			ar & z;
+		}
+	}
+};
 
 #endif

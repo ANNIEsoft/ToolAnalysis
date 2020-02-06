@@ -1,0 +1,4 @@
+# Dummy config file
+verbose 1
+BadPOTMax 1e11
+BeamDBFile /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/RAWDataR798S0p0_beam_db.data

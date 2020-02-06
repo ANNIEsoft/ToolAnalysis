@@ -103,6 +103,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 //		// we also need to specify a marker style so we can distinguish them TODO add legend
 //		markercolours.emplace("mctruth_start_vertices",kBlue);
 //		// repeat for as many point types as we need
+
 	}
 #endif
 	
