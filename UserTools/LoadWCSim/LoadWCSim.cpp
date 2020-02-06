@@ -58,6 +58,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: Assuming RunStartDate of 0ns, i.e. unix epoch",v_warning,verbosity);
 		RunStartUser = 0;
 	}
+	MCEventNum=0;
+	get_ok = m_variables.Get("FileStartOffset",MCEventNum);
+	
 	// put version in the CStore for downstream tools
 	m_data->CStore.Set("WCSimVersion", WCSimVersion);
 	
@@ -163,9 +166,19 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
 	EventNumber=0;
 	MCTriggernum=0;
-	MCEventNum=0;
 	// pull the first entry to get the MCFile
-	WCSimEntry->GetEntry(MCEventNum);
+	int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
+	if(nbytesread<=0){
+		logmessage = "LoadWCSim Tool had no entry "+to_string(MCEventNum);
+		if(nbytesread==-4){
+			logmessage+=": Overran end of TChain! Have you specified more iterations than are available in ToolChainConfig?";
+		} else if(nbytesread==0){
+			logmessage+=": No TChain loaded! Is your filepath correct?";
+		}
+		Log(logmessage,v_error,verbosity);
+		return false;
+	}
+	
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
@@ -192,18 +205,6 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	ParticleId_to_MrdCharge = new std::map<int,double>;
 	ParticleId_to_VetoCharge = new std::map<int,double>;
 	trackid_to_mcparticleindex = new std::map<int,int>;
-	
-	// Pre-load first entry
-	int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
-	if(nbytesread<=0){
-		logmessage = "LoadWCSim Tool had no entry "+to_string(MCEventNum);
-		if(nbytesread==-4){
-			logmessage+=": Overran end of TChain! Have you specified more iterations than are available in ToolChainConfig?";
-		} else if(nbytesread==0){
-			logmessage+=": No TChain loaded! Is your filepath correct?";
-		}
-		Log(logmessage,v_error,verbosity);
-	}
 	
 	//anniegeom->GetChannel(0); // trigger InitChannelMap
 	
@@ -257,6 +258,7 @@ bool LoadWCSim::Execute(){
 			ParticleId_to_TankCharge->clear();
 			ParticleId_to_MrdCharge->clear();
 			ParticleId_to_VetoCharge->clear();
+			primarymuonindex=-1;
 			
 			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
@@ -314,6 +316,18 @@ bool LoadWCSim::Execute(){
 						nextrack->GetId(),
 						nextrack->GetParenttype(),
 						nextrack->GetFlag());
+					// not currently in constructor call, but we now have it in latest WCSim files
+					// XXX this will fall over with older WCSim files, whose WCSimLib doesn't have this method!
+					thisparticle.SetTankExitPoint(Position(nextrack->GetTankExitPoint(0)/ 100.,
+														   nextrack->GetTankExitPoint(1)/ 100.,
+														   nextrack->GetTankExitPoint(2)/ 100.));
+					if( (nextrack->GetIpnu()==13) &&
+						(nextrack->GetParenttype()==0) &&
+						(nextrack->GetFlag()==0) &&
+						(primarymuonindex<0) ){
+							// call this the primary muon. If we have more than one, use the first
+							primarymuonindex = MCParticles->size();
+					}
 					if((abs(nextrack->GetIpnu())==13)||
 					   (abs(nextrack->GetIpnu())==211)||
 					   (nextrack->GetIpnu()==111)){
@@ -600,6 +614,7 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
 	m_data->Stores.at("ANNIEEvent")->Set("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex,false);
+	m_data->Stores.at("ANNIEEvent")->Set("PrimaryMuonIndex",primarymuonindex);
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
@@ -754,7 +769,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			case 2:  CylLocString = "BottomCap"; break;
 			case 1:  CylLocString = "Barrel";    break;
 			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
-			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
 			default: CylLocString = "NA";        break;  // unknown
 		}
 		Detector adet(uniquedetectorkey,
@@ -830,7 +845,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			case 2:  CylLocString = "BottomCap"; break;
 			case 1:  CylLocString = "Barrel";    break;
 			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
-			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
 			case 6:  CylLocString = "OD";        break;
 			default: CylLocString = "NA";        break;  // unknown
 		}
@@ -901,7 +916,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			case 2:  CylLocString = "BottomCap"; break;
 			case 1:  CylLocString = "Barrel";    break;
 			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
-			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
 			default: CylLocString = "NA";        break;  // unknown
 		}
 		Detector adet(uniquedetectorkey,
@@ -1006,7 +1021,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			case 2:  CylLocString = "BottomCap"; break;
 			case 1:  CylLocString = "Barrel";    break;
 			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
-			case 5:  CylLocString = "FACC";      break;  // TODO set layer?
+			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
 			default: CylLocString = "NA";        break;  // unknown
 		}
 		Detector adet(uniquedetectorkey,
