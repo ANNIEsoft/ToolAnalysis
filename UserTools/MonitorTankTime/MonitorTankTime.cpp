@@ -205,6 +205,8 @@ bool MonitorTankTime::Execute(){
 
   current = (boost::posix_time::second_clock::local_time());
   duration = boost::posix_time::time_duration(current - last); 
+  current_stamp_duration = boost::posix_time::time_duration(current - *Epoch);
+  current_stamp = current_stamp_duration.total_milliseconds();
 
   Log("MonitorTankTime: "+std::to_string(duration.total_milliseconds()/1000./60.)+" mins since last time plot",v_message,verbosity);
 
@@ -260,6 +262,7 @@ bool MonitorTankTime::Execute(){
   //-------------------------------------------------------
   //-----------Has enough time passed for update?----------
   //-------------------------------------------------------
+  std::cout <<"Updated MonitorPlots, duration = "<<duration<<", period_update: "<<period_update<<std::endl;
 
   if(duration >= period_update){
     Log("MonitorTankTime: "+std::to_string(update_frequency)+" mins passed... Updating file history plot.",v_message,verbosity);
@@ -293,6 +296,7 @@ bool MonitorTankTime::Finalise(){
   delete label_sigmadiff;
   delete label_peddiff;
   delete label_ratediff;
+  delete label_fifo;
   delete line1;
   delete line2;
   delete text_crate1;
@@ -327,6 +331,8 @@ bool MonitorTankTime::Finalise(){
   delete h2D_peddiff;
   delete h2D_sigmadiff;
   delete h2D_ratediff;
+  delete h2D_fifo1;
+  delete h2D_fifo2;
   delete log_files;
 
   for (unsigned int i_channel = 0; i_channel < hChannels_temp.size(); i_channel++){
@@ -346,6 +352,7 @@ bool MonitorTankTime::Finalise(){
   delete canvas_peddiff;
   delete canvas_sigmadiff;
   delete canvas_ratediff;
+  delete canvas_fifo;
   delete canvas_logfile;
   delete canvas_ch_ped;
   delete canvas_ch_sigma;
@@ -455,6 +462,8 @@ void MonitorTankTime::InitializeHists(){
   str_peddiff = " Pedestal Difference";
   str_sigmadiff = " Sigma Difference";
   str_ratediff = " Rate Difference";
+  str_fifo1 = " FIFO Overflow Error I";
+  str_fifo2 = " FIFO Overflow Error II";
   crate_str = "cr";
   slot_str = "_slot";
   ch_str = "_ch";
@@ -465,16 +474,19 @@ void MonitorTankTime::InitializeHists(){
   ss_title_peddiff << title_time.str() << str_peddiff;
   ss_title_sigmadiff << title_time.str() << str_sigmadiff;
   ss_title_ratediff << title_time.str() << str_ratediff;
+  ss_title_fifo1 << title_time.str() << str_fifo1;
+  ss_title_fifo2 << title_time.str() << str_fifo2;
 
   gROOT->cd();
   
   h2D_ped = new TH2F("h2D_ped",ss_title_ped.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);                     //Fitted gauss ADC distribution mean in 2D representation of channels, slots
   h2D_sigma = new TH2F("h2D_sigma",ss_title_sigma.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);               //Fitted gauss ADC distribution sigma in 2D representation of channels, slots
   h2D_rate = new TH2F("h2D_rate",ss_title_rate.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);                  //Rate in 2D representation of channels, slots
-  h2D_peddiff = new TH2F("h2D_peddiff",ss_title_peddiff.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);         //Time difference of fitted pedestal mean values of all PMT channels (in percent)
-  h2D_sigmadiff = new TH2F("h2D_sigmadiff",ss_title_sigmadiff.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time difference of fitted sigma values of all PMT channels (in percent)
-  h2D_ratediff = new TH2F("h2D_ratediff",ss_title_ratediff.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);      //Time difference of rate values of all PMT channels (in percent)
-
+  h2D_peddiff = new TH2F("h2D_peddiff",ss_title_peddiff.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);         //Time difference of fitted pedestal mean values of all PMT channels
+  h2D_sigmadiff = new TH2F("h2D_sigmadiff",ss_title_sigmadiff.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);   //Time difference of fitted sigma values of all PMT channels
+  h2D_ratediff = new TH2F("h2D_ratediff",ss_title_ratediff.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);      //Time difference of rate values of all PMT channels
+  h2D_fifo1 = new TH2F("h2D_fifo1",ss_title_fifo1.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);      //Number of FIFO Type I errors for all cards
+  h2D_fifo2 = new TH2F("h2D_fifo2",ss_title_fifo2.str().c_str(),num_slots_tank,0,num_slots_tank,num_crates_tank*num_channels_tank,0,num_crates_tank*num_channels_tank);      //Number of FIFO Type II errors for all cards
 
   canvas_ped = new TCanvas("canvas_ped","Pedestal Mean (VME)",900,600);
   canvas_sigma = new TCanvas("canvas_sigma","Pedestal Sigma (VME)",900,600);
@@ -482,6 +494,7 @@ void MonitorTankTime::InitializeHists(){
   canvas_peddiff = new TCanvas("canvas_peddiff","Pedestal Time Difference (VME)",900,600);
   canvas_sigmadiff = new TCanvas("canvas_sigmadiff","Sigma Time Difference (VME)",900,600);
   canvas_ratediff = new TCanvas("canvas_ratediff","Rate Time Difference (VME)",900,600);
+  canvas_fifo = new TCanvas("canvas_fifo","FIFO Overflow Errors (VME)",900,600);
   canvas_ch_ped = new TCanvas("canvas_ch_ped","Channel Ped Canvas",900,600);
   canvas_ch_sigma = new TCanvas("canvas_ch_sigma","Channel Sigma Canvas",900,600);
   canvas_ch_rate = new TCanvas("canvas_ch_rate","Channel Rate Canvas",900,600);
@@ -665,6 +678,9 @@ void MonitorTankTime::InitializeHists(){
   label_ratediff = new TLatex(0.905,0.92,"#Delta R [Hz]");
   label_ratediff->SetNDC(1);
   label_ratediff->SetTextSize(0.030);
+  label_fifo = new TLatex(0.905,0.92,"#");
+  label_fifo->SetNDC(1);
+  label_fifo->SetTextSize(0.030);
   std::stringstream ss_crate1, ss_crate2, ss_crate3;
   ss_crate1 << "ANNIEVME0"<<crate_numbers.at(0);
   ss_crate2 << "ANNIEVME0"<<crate_numbers.at(1);
@@ -937,6 +953,12 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
     i_timestamp++;   
  
   }
+
+  fifo1.clear();
+  fifo2.clear();
+  m_data->CStore.Get("FIFOError1",fifo1);
+  m_data->CStore.Get("FIFOError2",fifo2);
+
 
   //fill latest mean/sigma/rate value of each PMT into a storing vector
 
@@ -1246,6 +1268,9 @@ void MonitorTankTime::DrawLastFilePlots(){
 
   //draw ADC frequency plots
   DrawADCFreqPlots();
+
+  //draw FIFO error plots
+  DrawFIFOPlots();
 
   //Draw ped plots plots
   DrawPedPlotElectronics(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
@@ -2363,6 +2388,170 @@ void MonitorTankTime::DrawADCFreqPlots(){
 
   hChannels_RWM->Reset();
   hChannels_BRF->Reset();
+
+}
+
+void MonitorTankTime::DrawFIFOPlots(){
+
+  Log("MonitorTankTime: DrawFIFOPlots",v_message,verbosity);
+
+  //-------------------------------------------------------
+  //------------------DrawFIFOPlots -----------------------
+  //-------------------------------------------------------
+
+  boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(t_file_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_file_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_file_end/MSEC_to_SEC/1000.)%60,t_file_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  int max_fifo1 = 0;
+  int max_fifo2 = 0;
+  int min_fifo1 = 99999;
+  int min_fifo2 = 99999;
+
+  std::cout <<"Looping through fifo1, size: "<<fifo1.size()<<std::endl;
+  for (unsigned int i_card = 0; i_card < fifo1.size(); i_card++){
+    std::cout <<"i_card = "<<i_card<<std::endl;
+    int i_crate,i_slot;
+    CardIDToElectronicsSpace(fifo1.at(i_card),i_crate,i_slot);
+    for (int i_ch=0; i_ch < num_channels_tank; i_ch++){
+      int x = i_slot;
+      int y = num_channels_tank + (3-i_crate)*num_channels_tank-i_ch;
+      h2D_fifo1->Fill(x-1,y-1);
+    }
+  }
+
+  for (unsigned int i_card = 0; i_card < fifo2.size(); i_card++){
+    int i_crate,i_slot;
+    CardIDToElectronicsSpace(fifo2.at(i_card),i_crate,i_slot);
+    for (int i_ch=0; i_ch < num_channels_tank; i_ch++){
+      int x = i_slot;
+      int y = num_channels_tank + (3-i_crate)*num_channels_tank-i_ch;
+      h2D_fifo2->Fill(x-1,y-1);
+    } 
+  } 
+
+  for (int i_crate = 0; i_crate < num_crates_tank; i_crate++){
+    for (int i_slot = 0; i_slot < num_slots_tank; i_slot++){
+        std::cout <<"crate "<<i_crate<<", slot "<<i_slot<<std::endl;
+	if (h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) > max_fifo1) max_fifo1 = h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
+	if (h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) < min_fifo1) min_fifo1 = h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
+	if (h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) > max_fifo2) max_fifo2 = h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
+	if (h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) < min_fifo2) min_fifo2 = h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
+    }
+  }
+
+  ss_title_fifo1.str("");
+  ss_title_fifo1 << "FIFO Overflow Error I (last File) "<<end_time.str();
+  h2D_fifo1->SetTitle(ss_title_fifo1.str().c_str());
+
+  TPad *p_fifo1 = (TPad*) canvas_fifo->cd();
+  h2D_fifo1->SetStats(0);
+  h2D_fifo1->GetXaxis()->SetNdivisions(num_slots_tank);
+  h2D_fifo1->GetYaxis()->SetNdivisions(num_crates_tank*num_channels_tank);
+  p_fifo1->SetGrid();
+  for (int i_label = 0; i_label < int(num_slots_tank); i_label++){
+    std::stringstream ss_slot;
+    ss_slot<<(i_label+1);
+    std::string str_slot = "slot "+ss_slot.str();
+    h2D_fifo1->GetXaxis()->SetBinLabel(i_label+1,str_slot.c_str());
+  }
+  for (int i_label=0; i_label < int(num_channels_tank*num_crates_tank); i_label++){
+    std::stringstream ss_ch;
+    if (i_label < 4) ss_ch<<((3-i_label)%4)+1;
+    else if (i_label < 8) ss_ch<<((7-i_label)%4)+1;
+    else ss_ch<<((11-i_label)%4)+1;
+    std::string str_ch = "ch "+ss_ch.str();
+    h2D_fifo1->GetYaxis()->SetBinLabel(i_label+1,str_ch.c_str());
+  }
+  h2D_fifo1->LabelsOption("v");
+  h2D_fifo1->Draw("colz");
+
+  for (unsigned int i_box =0; i_box < vector_box_inactive.size(); i_box++){
+    vector_box_inactive.at(i_box)->Draw("same");
+  }
+
+  text_crate1->Draw();
+  text_crate2->Draw();
+  text_crate3->Draw();
+  line1->Draw("same");
+  line2->Draw("same");
+  label_fifo->Draw();
+  p_fifo1 ->Update();
+   if (h2D_fifo1->GetMaximum()>0.){
+    if (abs(max_fifo1-min_fifo1)==0) h2D_fifo1->GetZaxis()->SetRangeUser(min_fifo1-1,max_fifo1+1);
+    else h2D_fifo1->GetZaxis()->SetRangeUser(1e-6,max_fifo1+0.5);
+    TPaletteAxis *palette =
+    (TPaletteAxis*)h2D_fifo1->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
+  }
+  p_fifo1->Update();
+  std::stringstream ss_fifo1;
+  ss_fifo1<<outpath<<"PMT_FIFO1_Electronics_lastFile.jpg";
+  canvas_fifo->SaveAs(ss_fifo1.str().c_str());
+  Log("MonitorTankTime: Output path FIFO I plot (Electronics Space): "+ss_fifo1.str(),v_message,verbosity);
+
+  h2D_fifo1->Reset();
+  canvas_fifo->Clear();
+
+  ss_title_fifo2.str("");
+  ss_title_fifo2 << "FIFO Overflow Error II (last File) "<<end_time.str();
+  h2D_fifo2->SetTitle(ss_title_fifo2.str().c_str());
+
+  TPad *p_fifo2 = (TPad*) canvas_fifo->cd();
+  h2D_fifo2->SetStats(0);
+  h2D_fifo2->GetXaxis()->SetNdivisions(num_slots_tank);
+  h2D_fifo2->GetYaxis()->SetNdivisions(num_crates_tank*num_channels_tank);
+  p_fifo2->SetGrid();
+  for (int i_label = 0; i_label < int(num_slots_tank); i_label++){
+    std::stringstream ss_slot;
+    ss_slot<<(i_label+1);
+    std::string str_slot = "slot "+ss_slot.str();
+    h2D_fifo2->GetXaxis()->SetBinLabel(i_label+1,str_slot.c_str());
+  }
+  for (int i_label=0; i_label < int(num_channels_tank*num_crates_tank); i_label++){
+    std::stringstream ss_ch;
+    if (i_label < 4) ss_ch<<((3-i_label)%4)+1;
+    else if (i_label < 8) ss_ch<<((7-i_label)%4)+1;
+    else ss_ch<<((11-i_label)%4)+1;
+    std::string str_ch = "ch "+ss_ch.str();
+    h2D_fifo2->GetYaxis()->SetBinLabel(i_label+1,str_ch.c_str());
+  }
+  h2D_fifo2->LabelsOption("v");
+  h2D_fifo2->Draw("colz");
+
+  for (unsigned int i_box =0; i_box < vector_box_inactive.size(); i_box++){
+    vector_box_inactive.at(i_box)->Draw("same");
+  }
+
+  text_crate1->Draw();
+  text_crate2->Draw();
+  text_crate3->Draw();
+  line1->Draw("same");
+  line2->Draw("same");
+  label_fifo->Draw();
+  p_fifo2 ->Update();
+   if (h2D_fifo2->GetMaximum()>0.){
+    if (abs(max_fifo2-min_fifo2)==0) h2D_fifo2->GetZaxis()->SetRangeUser(min_fifo2-1,max_fifo2+1);
+    else h2D_fifo2->GetZaxis()->SetRangeUser(1e-6,max_fifo2+0.5);
+    TPaletteAxis *palette =
+    (TPaletteAxis*)h2D_fifo2->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
+  }
+  p_fifo2->Update();
+  std::stringstream ss_fifo2;
+  ss_fifo2<<outpath<<"PMT_FIFO2_Electronics_lastFile.jpg";
+  canvas_fifo->SaveAs(ss_fifo2.str().c_str());
+  Log("MonitorTankTime: Output path FIFO I plot (Electronics Space): "+ss_fifo2.str(),v_message,verbosity);
+
+  h2D_fifo2->Reset();
+  canvas_fifo->Clear();
 
 }
 

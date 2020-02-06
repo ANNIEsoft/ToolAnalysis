@@ -2349,6 +2349,7 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
         if (CANVAS_NR == 0) channel_range = " Channel 0-15";
         else {
         //we already switched to the new slot with channel 32, so we need to consider the slot for the channel before
+          crate = TotalChannel_to_Crate[i_channel-1];
           slot = TotalChannel_to_Slot[i_channel-1];
           channel_range = " Channel 16-31";
         }

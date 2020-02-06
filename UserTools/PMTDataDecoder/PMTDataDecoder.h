@@ -102,6 +102,10 @@ class PMTDataDecoder: public Tool {
   //Maps for keeping track of what SequenceID is next for each Card
   std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
 
+  //Vector to keep track of fifo errors (type I, type II, for monitoring tools)
+  std::vector<int> fifo1;
+  std::vector<int> fifo2;
+
 
   std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 

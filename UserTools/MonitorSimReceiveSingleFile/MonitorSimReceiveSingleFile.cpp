@@ -80,7 +80,7 @@ bool MonitorSimReceiveSingleFile::Finalise(){
     m_data->CStore.Remove("State");
     m_data->Stores["CCData"]->Remove("FileData");
     m_data->Stores["PMTData"]->Remove("FileData");
-    m_data->Stores.clear();
+ //   m_data->Stores.clear();
 
     return true;
 }

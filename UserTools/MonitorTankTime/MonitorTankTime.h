@@ -67,6 +67,7 @@ class MonitorTankTime: public Tool {
   void DrawLastFilePlots();
   void DrawBufferPlots();         //show the actual traces of PMTs for the data of the last file
   void DrawADCFreqPlots();        //show the ADC frequency histograms for the last file
+  void DrawFIFOPlots();		  //show the number of FIFO errors for the last file
   void UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
   void DrawRatePlotElectronics(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawRatePlotPhysical(ULong64_t timestamp_end, double time_frame, std::string file_ending);
@@ -123,6 +124,7 @@ class MonitorTankTime: public Tool {
   boost::posix_time::time_duration period_update;
   boost::posix_time::time_duration duration;
   boost::posix_time::ptime last;
+  boost::posix_time::time_duration current_stamp_duration;
   time_t t;
   std::stringstream title_time; 
   long current_stamp;
@@ -193,6 +195,8 @@ class MonitorTankTime: public Tool {
   TH2F *h2D_peddiff = nullptr;
   TH2F *h2D_sigmadiff = nullptr;
   TH2F *h2D_ratediff = nullptr;
+  TH2F *h2D_fifo1 = nullptr;
+  TH2F *h2D_fifo2 = nullptr;
   std::vector<TH1F*> hChannels_temp;  //temp plots for each channel
   std::vector<TH1I*> hChannels_freq;  //frequency plots for each channel
   TH1I* hChannels_BRF = nullptr;
@@ -206,6 +210,7 @@ class MonitorTankTime: public Tool {
   TCanvas *canvas_sigmadiff = nullptr;
   TCanvas *canvas_ratediff = nullptr;
   TCanvas *canvas_ch_single = nullptr;
+  TCanvas *canvas_fifo = nullptr;
   std::vector<TCanvas*> canvas_Channels_temp;
   std::vector<TCanvas*> canvas_Channels_freq;
 
@@ -233,15 +238,16 @@ class MonitorTankTime: public Tool {
   TLatex *label_peddiff = nullptr;
   TLatex *label_sigmadiff = nullptr;
   TLatex *label_ratediff = nullptr;
+  TLatex *label_fifo = nullptr;
   std::vector<TDatime> labels_timeaxis;
   TText *text_crate1 = nullptr;
   TText *text_crate2 = nullptr;
   TText *text_crate3 = nullptr;
   TLegend *leg_freq = nullptr;
   TLegend *leg_temp = nullptr;
-  std::string str_ped, str_sigma, str_rate, str_peddiff, str_sigmadiff, str_ratediff;
+  std::string str_ped, str_sigma, str_rate, str_peddiff, str_sigmadiff, str_ratediff, str_fifo1, str_fifo2;
   std::string crate_str, slot_str, ch_str;
-  std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_peddiff, ss_title_sigmadiff, ss_title_ratediff;
+  std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_peddiff, ss_title_sigmadiff, ss_title_ratediff, ss_title_fifo1, ss_title_fifo2;
   std::stringstream ss_title_hist, ss_title_hist_temp;
 
 
@@ -257,6 +263,7 @@ class MonitorTankTime: public Tool {
   std::vector<double> channels_mean;
   std::vector<double> channels_sigma;
   std::vector<TF1*> vector_gaus;
+  std::vector<int> fifo1, fifo2;
 
 
   //verbosity variables

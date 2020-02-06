@@ -41,6 +41,10 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     m_data->Stores["CCData"]=new BoostStore(false,2);  
     m_data->Stores["PMTData"]=new BoostStore(false,2);
 
+    MRDData = 0;
+    PMTData = 0;
+    indata = 0;
+
     i_loop = 0;
     return true;
 }
@@ -83,14 +87,14 @@ bool MonitorSimReceive::Execute(){
       indata = 0;
     }
 
-    //BoostStore* indata=new BoostStore(false,0); //this leaks but its jsut for testing
-    indata=new BoostStore(false,0); //this leaks but its jsut for testing
+    BoostStore* indata=new BoostStore(false,0); //this leaks but its jsut for testing
+    //indata=new BoostStore(false,0); //this leaks but its jsut for testing
     indata->Initialise(datapath);
 
-    //BoostStore *MRDData = new BoostStore(false,2);
-    //BoostStore *PMTData = new BoostStore(false,2);
-    MRDData = new BoostStore(false,2);
-    PMTData = new BoostStore(false,2);
+    BoostStore *MRDData = new BoostStore(false,2);
+    BoostStore *PMTData = new BoostStore(false,2);
+    //MRDData = new BoostStore(false,2);
+    //PMTData = new BoostStore(false,2);
 
     std::cout <<"Print indata:"<<std::endl;
     indata->Print(false);
@@ -101,9 +105,9 @@ bool MonitorSimReceive::Execute(){
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
     MRDData->Save("tmp");
-    //m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+    m_data->Stores["CCData"]->Set("FileData",MRDData,false);
     PMTData->Save("tmp");
-    //m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+    m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
 
     i_loop++;
 

@@ -181,6 +181,8 @@ bool PMTDataDecoder::Execute(){
   PMTData->Header->Get("TotalEntries",totalentries);
   if(verbosity>v_warning) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
 
+  fifo1.clear();
+  fifo2.clear();
   NumPMTDataProcessed = 0;
   int ExecuteEntryNum = 0;
   int EntriesToDo;
@@ -208,10 +210,12 @@ bool PMTDataDecoder::Execute(){
       //Check if card experienced any data loss
       int FIFOstate = aCardData.FIFOstate;
       if(FIFOstate == 1){  //FIFO overflow
-        Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_error,verbosity);
+        Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
+        fifo1.push_back(aCardData.CardID);
       }
       if(FIFOstate == 2){  //FIFO overflow and error clearing overvlow
-        Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_error,verbosity);
+        Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
+        fifo2.push_back(aCardData.CardID);
       }
       bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
       if (IsNextInSequence) {
@@ -301,6 +305,8 @@ bool PMTDataDecoder::Execute(){
     CStorePMTWaves = FinishedPMTWaves;
     m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
     m_data->CStore.Set("NewTankPMTDataAvailable",true);
+    m_data->CStore.Set("FIFOError1",fifo1);
+    m_data->CStore.Set("FIFOError2",fifo2);
   }
 
   //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
