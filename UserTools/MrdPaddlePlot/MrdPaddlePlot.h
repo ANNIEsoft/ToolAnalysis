@@ -12,8 +12,10 @@
 #include "TApplication.h"
 #include "TSystem.h"
 #include "TH1D.h"
+#include "TFile.h"
 #include "MRDspecs.hh"
 #include "TROOT.h"
+#include "TObjectTable.h"
 
 //#include "TEveLine.h"
 class TEveLine;
@@ -34,8 +36,14 @@ class MrdPaddlePlot: public Tool {
 	int verbosity=1;
 	std::string gdmlpath;
 	bool saveimages;
-	std::string plotDirectory;  // where to save images and plots
-	
+	bool saverootfile;
+	const char* plotDirectory;  // where to save images and plots
+	std::string plotDirectoryString;
+	bool useTApplication;
+	std::string output_rootfile;
+	bool plotOnlyTracks;
+
+
 	// Variables from ANNIEEVENT
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::string MCFile;     //-> currentfilestring
@@ -82,6 +90,9 @@ class MrdPaddlePlot: public Tool {
 	TH1D* hpaddleinlayeridsv=nullptr;
 	TH1D* hdigittimes=nullptr;
 	
+	// File for saving root histograms (if wanted)
+	TFile *mrdvis_file=nullptr;
+
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
 	int v_warning=1;

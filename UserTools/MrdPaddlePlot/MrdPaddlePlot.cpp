@@ -27,17 +27,27 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
 	
+	useTApplication = true;
+	plotOnlyTracks = false;
+
 	// get configuration variables for this tool
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("gdmlpath",gdmlpath);
 	m_variables.Get("saveimages",saveimages);
-	get_ok = m_variables.Get("plotDirectory",plotDirectory);
-	if(not get_ok){ plotDirectory = "."; }
+	m_variables.Get("saverootfile",saverootfile);
+	get_ok = m_variables.Get("plotDirectory",plotDirectoryString);
+	if (get_ok) plotDirectory = plotDirectoryString.c_str();
+	else plotDirectory = ".";
 	m_variables.Get("drawPaddlePlot",drawPaddlePlot);
 	m_variables.Get("drawGdmlOverlay",drawGdmlOverlay);
 	m_variables.Get("drawStatistics",drawStatistics);
 	m_variables.Get("printTClonesTracks",printTClonesTracks); // from the FindMrdTracks Tool
-	
+	m_variables.Get("useTApplication",useTApplication);
+	m_variables.Get("OutputROOTFile",output_rootfile);
+	m_variables.Get("PlotOnlyTracks",plotOnlyTracks);
+
+	if (drawGdmlOverlay) useTApplication=true;	// need TApplication to display GDML plots
+
 	// for gdml overlay
 	double buildingoffsetx, buildingoffsety, buildingoffsetz;
 	m_variables.Get("buildingoffsetx",buildingoffsetx);
@@ -47,28 +57,39 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	
 	//////////////////////////////////////////////////////////////////
 	
-	// create the ROOT application to show histograms
-	int myargc=0;
-	//char *myargv[] = {(const char*)"somestring2"};
-	// get or make the TApplication
-	intptr_t tapp_ptr=0;
-	get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
-	if(not get_ok){
-		if(verbosity>2) cout<<"MrdPaddlePlot Tool: making global TApplication"<<endl;
-		rootTApp = new TApplication("rootTApp",&myargc,0);
-		tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
-		m_data->CStore.Set("RootTApplication",tapp_ptr);
-	} else {
-		if(verbosity>2) cout<<"MrdPaddlePlot Tool: Retrieving global TApplication"<<std::endl;
-		rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+	if (useTApplication){
+		// create the ROOT application to show histograms
+		int myargc=0;
+		//char *myargv[] = {(const char*)"somestring2"};
+		// get or make the TApplication
+		intptr_t tapp_ptr=0;
+		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+		if(not get_ok){
+			if(verbosity>2) cout<<"MrdPaddlePlot Tool: making global TApplication"<<endl;
+			rootTApp = new TApplication("rootTApp",&myargc,0);
+			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+			m_data->CStore.Set("RootTApplication",tapp_ptr);
+		} else {
+			if(verbosity>2) cout<<"MrdPaddlePlot Tool: Retrieving global TApplication"<<std::endl;
+			rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+		}
+		int tapplicationusers;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok) tapplicationusers=1;
+		else tapplicationusers++;
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 	}
-	int tapplicationusers;
-	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
-	if(not get_ok) tapplicationusers=1;
-	else tapplicationusers++;
-	m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 	
+	if (saverootfile){
+		std::stringstream ss_rootfilename;
+		ss_rootfilename << plotDirectoryString << "/" << output_rootfile << ".root";
+		Log("MrdPaddlePlot tool: Creating root file "+ss_rootfilename.str()+" to save paddle plots.",v_message,verbosity);
+		mrdvis_file = new TFile(ss_rootfilename.str().c_str(),"RECREATE");
+		gROOT->cd();
+	}
+
 	if(drawStatistics){
+		if (saverootfile) mrdvis_file->cd();
 		hnumhclusters = new TH1D("hnumhclusters","Num track clusters in H view",10,0,10);
 		hnumvclusters = new TH1D("hnumvclusters","Num track clusters in V view",10,0,10);
 		hnumhcells = new TH1D("hnumhcells","Num track cells in H view",10,0,10);
@@ -77,6 +98,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		hpaddleinlayeridsh = new TH1D("hpaddleinlayeridsh","Hits on Paddle Positions in H Layers",13,0,13);
 		hpaddleinlayeridsv = new TH1D("hpaddleinlayeridsv","Hits on Paddle Positions in V Layers",17,0,17);
 		hdigittimes = new TH1D("hdigittimes","MRD Track Digit Times",100,0,1000);
+		gROOT->cd();
 	}
 	
 #ifdef GOT_EVE
@@ -106,6 +128,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 
 	}
 #endif
+	
 	
 	// Get a pointer to the TClonesArray filled by FindMrdTracks
 	//m_data->CStore.Get("MrdSubEventTClonesArray",thesubeventarray);
@@ -144,7 +167,13 @@ bool MrdPaddlePlot::Execute(){
 	m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
 	m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
 	
+	// check which subevents had a track
+	std::vector<int> track_subevs;
+	m_data->CStore.Get("TracksSubEvs",track_subevs);
+
 	if(verbosity>2) cout<<"Event "<<EventNumber<<" had "<<numtracksinev<<" tracks in "<<numsubevs<<" subevents"<<endl;
+
+	std::cout <<"MrdPaddlePlot: Check at start of execute: plotDirectory = "<<plotDirectory<<std::endl;
 	
 	// ##############################################################################
 	// Track drawing and Histogram Filling code
@@ -193,6 +222,10 @@ bool MrdPaddlePlot::Execute(){
 	
 	// loop over subevents (collections of hits on the MRD within a narrow time window)
 	for(int subevi=0; subevi<numsubevs; subevi++){
+		if (std::find(track_subevs.begin(),track_subevs.end(),subevi)==track_subevs.end() && plotOnlyTracks){
+			Log("MrdPaddlePlot: No tracks in subev "+std::to_string(subevi)+", don't plot MRD paddle plot.",v_message,verbosity);
+			continue;
+		}
 		cMRDSubEvent* thesubevent = (cMRDSubEvent*)thesubeventarray->At(subevi);
 		if(printTClonesTracks){
 			if(verbosity>3) cout<<"printing subevent "<<subevi<<endl;
@@ -323,9 +356,12 @@ bool MrdPaddlePlot::Execute(){
 #endif
 		
 		if(drawPaddlePlot){
-			if(verbosity>2) cout<<"Drawing paddle plot"<<endl;
+			Log("MrdPaddlePlot tool: Draw paddle plot",v_message,verbosity);
+			Log("MrdPaddlePlot tool: Drawing MrdCanvases for subevent",v_debug,verbosity);
 			thesubevent->DrawMrdCanvases();  // creates the canvas with the digits TODO optimise this
+			Log("MrdPaddlePlot tool: Drawing Tracks for subevent",v_debug,verbosity);
 			thesubevent->DrawTracks();       // adds the CA tracks and their fit
+			Log("MrdPaddlePlot tool: Drawing True Tracks for subevent",v_debug,verbosity);
 			thesubevent->DrawTrueTracks();   // draws true tracks over the event
 			
 			// if we have the truth information, we can highlight paddles that were hit
@@ -368,18 +404,22 @@ bool MrdPaddlePlot::Execute(){
 //				cout<<"Found "<<numarrows<<" arrows drawn on the subevent canvas"<<endl;
 			
 			if(saveimages){
-				thesubevent->imgcanvas->SaveAs(TString::Format("%s/checkmrdtracks_%d_%d.png",
-												plotDirectory.c_str(),EventNumber,subevi));
+				thesubevent->imgcanvas->SaveAs(TString::Format("%s/%s_%d_%d.png",
+												plotDirectory,output_rootfile.c_str(),EventNumber,subevi));
+			}
+			if (saverootfile){
+				mrdvis_file->cd();
+				Log("MrdPaddlePlot tool: Saving EvNumber "+std::to_string(EventNumber)+", subevnumber = "+std::to_string(subevi)+" to ROOT-file",v_message,verbosity);
+				thesubevent->imgcanvas->SetName(TString::Format("mrdpaddles_ev_%d_%d",EventNumber,subevi));
+				thesubevent->imgcanvas->Write();
+				gROOT->cd();
 			}
 		}
 		
-		if(drawPaddlePlot){
-			// we only need to use sleep or waitprimitive here as there's nothing
-			// we can do to 'inspect' this plot
-			//gSystem->ProcessEvents();
-			//gPad->WaitPrimitive();
-			std::this_thread::sleep_for (std::chrono::seconds(1));
-		}
+		//gSystem->ProcessEvents();
+		//gPad->WaitPrimitive();
+		// only need to sleep when using the interactive process
+		if (useTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
 		
 		if(drawGdmlOverlay){
 			// TODO, we should definitely move this somewhere else
@@ -529,6 +569,10 @@ bool MrdPaddlePlot::Execute(){
 	if(numtracksinev!=numtracksrunningtot){
 		cerr<<"number of tracks in event does not correspond to sum of tracks in subevents!"<<endl;
 	}
+
+        //only for debugging
+        //std::cout <<"MRDPaddlePlot tool: List of objects (End of Execute): "<<std::endl;
+        //gObjectTable->Print();
 	
 	return true;
 }
@@ -550,52 +594,94 @@ bool MrdPaddlePlot::Finalise(){
 		hnumhclusters->Draw();
 		imgname=hnumhclusters->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+		
+		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		if (saverootfile) {
+			mrdvis_file->cd();
+			hnumhclusters->Write();
+			gROOT->cd();
+		}
 		hnumvclusters->Draw();
 		imgname=hnumvclusters->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		if (saverootfile) {
+			mrdvis_file->cd();
+			hnumvclusters->Write();
+			gROOT->cd();
+		}
 		hnumhcells->Draw();
 		imgname=hnumhcells->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		if (saverootfile) {
+			mrdvis_file->cd();
+			hnumhcells->Write();
+			gROOT->cd();
+		}
 		hnumvcells->Draw();
 		imgname=hnumvcells->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		if (saverootfile){
+			mrdvis_file->cd();
+			hnumvcells->Write();
+			gROOT->cd();
+		}
 		hpaddleids->Draw();
 		imgname=hpaddleids->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		if (saverootfile){
+			mrdvis_file->cd();
+			hpaddleids->Write();
+			gROOT->cd();
+		}
 		hdigittimes->Draw();
 		imgname=hdigittimes->GetTitle();
 		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory.c_str(),imgname.c_str()));
+		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
+		if (saverootfile){
+			mrdvis_file->cd();
+			hdigittimes->Write();
+			gROOT->cd();
+		}	
+
+		delete mrdTrackCanv;
+                mrdTrackCanv=nullptr;
 	}
 	
 	// cleanup
-	std::vector<TH1*> histos {hnumhclusters, hnumvclusters, hnumhcells, hnumvcells, hpaddleids, hpaddleinlayeridsh, hpaddleinlayeridsv, hdigittimes};
-	for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=0; }
 	
-	if(gROOT->FindObject("mrdTrackCanv")){
+	std::vector<TH1*> histos {hnumhclusters, hnumvclusters, hnumhcells, hnumvcells, hpaddleids, hpaddleinlayeridsh, hpaddleinlayeridsv, hdigittimes};
+	if (!saverootfile) { 
+		for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=0; }
+	}
+	/*if(gROOT->FindObject("mrdTrackCanv")){
 		delete mrdTrackCanv;
 		mrdTrackCanv=nullptr;
 	}
-	if(gdmlcanv) delete gdmlcanv;
-//	for(auto&& amarkerset : mc_truth_points){
-//		if(amarkerset.second!=nullptr){ delete amarkerset.second; }
-//	}
+	for(auto&& amarkerset : mc_truth_points){
+		if(amarkerset.second!=nullptr){ delete amarkerset.second; }
+ 	}*/
 	
-	int tapplicationusers=0;
-	get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
-	if(not get_ok || tapplicationusers==1){
-		if(rootTApp){
-			std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
-			delete rootTApp;
-			rootTApp=nullptr;
+	if(drawGdmlOverlay && gdmlcanv) delete gdmlcanv;
+	
+	if (saverootfile) {
+		delete mrdvis_file;
+	}
+	if (useTApplication){
+		int tapplicationusers=0;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok || tapplicationusers==1){
+			if(rootTApp){
+				std::cout<<"MrdPaddlePlot Tool: Deleting global TApplication"<<std::endl;
+				delete rootTApp;
+				rootTApp=nullptr;
+			}
+		} else if(tapplicationusers>1){
+			m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
 		}
-	} else if(tapplicationusers>1){
-		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
 	}
 	
 	return true;
