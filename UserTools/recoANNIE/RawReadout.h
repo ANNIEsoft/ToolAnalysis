@@ -16,7 +16,6 @@
 #include "RawTrigData.h"
 #include "ANNIEconstants.h"
 
-
 namespace annie {
 
   class RawReadout {
@@ -79,6 +78,10 @@ namespace annie {
       /// @brief Map representing the RunInformation TTree. Keys are InfoTitle
       /// entries, values are the corresponding JSON InfoMessage strings
       std::map<std::string, std::string> run_info_;
+
+    public:   // just to keep the Store happy, so we can put pointers in the BoostStore.
+    template<class Archive> void serialize(Archive & ar, const unsigned int version){}
+
   };
 }
 

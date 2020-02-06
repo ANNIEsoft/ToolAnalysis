@@ -103,6 +103,7 @@
 #include "MonitorTankTime.h"
 #include "PhaseIIADCCalibrator.h"
 #include "MCHitToHitComparer.h"
+#include "PlotWaveforms.h"
 #include "PMTDataDecoder.h"
 #include "ANNIEEventBuilder.h"
 #include "MRDDataDecoder.h"
