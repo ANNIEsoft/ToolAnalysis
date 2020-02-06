@@ -125,6 +125,7 @@ class LoadWCSim: public Tool {
 	std::map<unsigned long,std::vector<MCHit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;
 	BeamStatusClass* BeamStatus;
+
 	int primarymuonindex;
 	
 	// additional info
@@ -135,6 +136,7 @@ class LoadWCSim: public Tool {
 	std::map<int,double>* ParticleId_to_TankCharge = nullptr;
 	std::map<int,double>* ParticleId_to_MrdCharge = nullptr;
 	std::map<int,double>* ParticleId_to_VetoCharge = nullptr;
+	std::string Triggertype;	
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
