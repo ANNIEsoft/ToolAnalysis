@@ -105,3 +105,8 @@
 #include "MCHitToHitComparer.h"
 #include "LoadGenieEvent.h"
 #include "PrintGenieEvent.h"
+#include "PlotWaveforms.h"
+#include "PMTDataDecoder.h"
+#include "ANNIEEventBuilder.h"
+#include "MRDDataDecoder.h"
+#include "PrintADCData.h"

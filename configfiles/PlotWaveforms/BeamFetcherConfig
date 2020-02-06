@@ -1,0 +1,9 @@
+# BeamFetcher config file
+verbose 1
+OutputFile ./my_beam_db.data
+#date +%s --date='Tue Jun 12 19:00:00 CDT 2018' - THEN PAD WITH 3 TRAILING 0'S to convert to ms
+#Run	Subrun	Start				End
+#798 	0 	2017-05-15 22:25:10.006924 	2017-05-16 21:06:55.098508 
+StartMillisecondsSinceEpoch 1494905100000 # 2017-05-15 22:25:10.006924 (FNAL time)
+EndMillisecondsSinceEpoch   1494986760000 # 2017-05-16 21:06:55.098508   (FNAL time)
+TimeChunkStepInMilliseconds       7200000 # two hours
