@@ -893,6 +893,12 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 //=========================================================================================
 // Find the particle would have left the tank, had it done so
 
+// XXX remove me, hacked these to static so we can make the following function static and usable by other tools
+double MCParticleProperties::tank_radius=MRDSpecs::tank_radius;
+double MCParticleProperties::tank_start=MRDSpecs::tank_start;
+double MCParticleProperties::tank_yoffset=MRDSpecs::tank_yoffset;
+double MCParticleProperties::tank_halfheight=MRDSpecs::tank_halfheight;
+
 bool MCParticleProperties::ProjectTankIntercepts(Position startvertex, Position stopvertex, Position &Hit, int verbose){
 	// this is based on CheckTankIntercepts which estimates the tank entry and exit points,
 	// but only if the track did indeed enter or exit the tank
