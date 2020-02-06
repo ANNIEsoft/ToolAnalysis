@@ -37,12 +37,15 @@ class ANNIEEventBuilder: public Tool {
  private:
 
 
+  std::vector<int> DAQ_SIGNAL_SLOTS{1015,2019};
+
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
 
   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int> AuxCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
   BoostStore *RawData;
   BoostStore *TrigData;

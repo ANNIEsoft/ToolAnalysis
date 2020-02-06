@@ -20,86 +20,6 @@
 
 namespace {
 
-  template <typename L, typename R> boost::bimap<L, R>
-    makeBimap(std::initializer_list<
-      typename boost::bimap<L, R>::value_type> list)
-  {
-    return boost::bimap<L, R>(list.begin(), list.end());
-  }
-
-  // Phase I definitions for the PMT IDs are hard-coded here.
-  //
-  // TODO: use the Geometry class from the header (or something else)
-  // to get these matchups instead
-  const auto pmt_ID_and_card_channel_bimap = makeBimap<int,
-    std::pair<int, int> >
-  ({
-    {1, {3, 0}}, // PMTID 1 corresponds to VME card 3, channel 0
-    {2, {3, 1}},
-    {3, {3, 2}},
-    {4, {3, 3}},
-    {5, {4, 0}},
-    {6, {4, 1}},
-    {7, {4, 2}},
-    {8, {4, 3}},
-    {9, {5, 0}},
-    {10, {5, 1}},
-    {11, {5, 2}},
-    {12, {5, 3}},
-    {13, {6, 0}},
-    {14, {6, 1}},
-    {15, {6, 2}},
-    {16, {6, 3}},
-    {17, {8, 0}},
-    {18, {8, 1}},
-    {19, {8, 2}},
-    {20, {8, 3}},
-    {21, {9, 0}},
-    {22, {9, 1}},
-    {23, {9, 2}},
-    {24, {9, 3}},
-    {25, {10, 0}},
-    {26, {10, 1}},
-    {27, {10, 2}},
-    {28, {10, 3}},
-    {29, {11, 0}},
-    {30, {11, 1}},
-    {31, {11, 2}},
-    {32, {11, 3}},
-    {33, {13, 0}},
-    {34, {13, 1}},
-    {35, {13, 2}},
-    {36, {13, 3}},
-    {37, {14, 0}},
-    {38, {14, 1}},
-    {39, {14, 2}},
-    {40, {14, 3}},
-    {41, {15, 0}},
-    {42, {15, 1}},
-    {43, {15, 2}},
-    {44, {15, 3}},
-    {45, {16, 0}},
-    {46, {16, 1}},
-    {47, {16, 2}},
-    {48, {16, 3}},
-    {49, {18, 0}},
-    {50, {18, 1}},
-    {51, {18, 2}},
-    {52, {18, 3}},
-    {53, {19, 0}},
-    {54, {19, 1}},
-    {55, {19, 2}},
-    {56, {19, 3}},
-    {57, {20, 0}},
-    {58, {20, 1}},
-    {59, {20, 2}},
-    {60, {20, 3}},
-    {61, {21, 0}}, // Non-standard Phase I PMTIDs begin here
-    {62, {21, 1}},
-    {63, {21, 2}},
-    {64, {21, 3}},
-  });
-
   // Parts of the trigger mask to check when assigning minibuffer labels
   // for Hefty mode data
   constexpr int HEFTY_BEAM_TRIGGER_MASK = 0x1 << 4;
@@ -146,6 +66,11 @@ bool RawLoader::Initialise(const std::string config_file, DataModel& data)
 
   int verbosity;
   m_variables.Get("verbose", verbosity);
+  // TODO: use the Geometry class from the header (or something else) instead
+  std::string bimapfile;
+  int get_ok = m_variables.Get("PMTtoCardChannelFile",bimapfile);
+  if(!get_ok) bimapfile = "mapPMTtoDAQCardChannel_phase1";  // provide defaults for people who haven't specified
+  FillBimap(bimapfile);                                     // FIXME ^ probably a bad idea ^
 
   Log("Opening input file " + input_file_name, 1, verbosity);
   // TODO: Switch to using
@@ -194,7 +119,9 @@ bool RawLoader::Execute() {
   m_variables.Get("verbose", verbosity);
 
   // Load the next raw data readout from the input file
-  auto raw_readout = m_reader->next();
+  auto raw_readout_unique = m_reader->next();
+  annie::RawReadout* raw_readout = raw_readout_unique.release(); // so we can put it in the ANNIEEvent
+  m_data->Stores.at("ANNIEEvent")->Set("RawReadout",raw_readout,false);  // for e.g. PlotWaveforms Tool
 
   std::unique_ptr<HeftyInfo> hefty_info = nullptr;
   if (m_using_hefty_mode) hefty_info = m_hefty_tree_reader->next();
@@ -421,4 +348,31 @@ bool RawLoader::Execute() {
 
 bool RawLoader::Finalise() {
   return true;
+}
+
+void RawLoader::FillBimap(std::string bimapfile){
+  // boost::bimap<int, std::pair<int, int> > pmt_ID_and_card_channel_bimap;
+  
+  std::ifstream file(bimapfile.c_str());
+  std::string line;
+  if(file.is_open()){
+    while (getline(file,line)){
+      if (line.size()>0){
+        if (line.at(0)=='#')continue;
+        int pmtid;
+        int card;
+        int channel;
+        std::stringstream stream(line);
+        if(stream>>pmtid>>card>>channel){
+          pmt_ID_and_card_channel_bimap.insert(
+              boost::bimap<int, std::pair<int, int> >::value_type(pmtid, std::pair<int,int>(card,channel))
+          );
+        }
+      }
+    }
+  }
+  //cout<<"map contents";
+  //for(auto anen = pmt_ID_and_card_channel_bimap.left.begin(); anen!=pmt_ID_and_card_channel_bimap.left.end(); anen++ ){ cout<<anen->first<<", ("<<anen->second.first<<", "<<anen->second.second<<")"<<endl; }
+  file.close();
+  
 }

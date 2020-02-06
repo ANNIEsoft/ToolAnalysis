@@ -37,6 +37,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   }
 
   m_data->CStore.Get("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  m_data->CStore.Get("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
 
   //////////////////////initialize subrun index//////////////
@@ -93,6 +94,18 @@ bool ANNIEEventBuilder::Execute(){
       if(verbosity>4) std::cout << "Finished waveset has clock counter: " << PMTCounterTime << std::endl;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
       if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
+
+      //For this counter, need to have the number of TankPMT channels plus number of aux channels
+      int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
+      int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
+      //if(aWaveMap.size() >= (NumTankPMTChannels + NumAuxChannels)){
+      //  this->BuildANNIEEvent(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
+      //  this->SaveEntryToFile(CurrentRunNum,CurrentSubrunNum);
+      //  //Erase this entry from the FinishedPMTWavesMap
+      //  if(verbosity>4) std::cout << "Counter time will be erased from FinishedPMTWaves: " << PMTCounterTime << std::endl;
+      //  PMTEventsToDelete.push_back(PMTCounterTime);
+      //}
+
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
       this->SaveEntryToFile(CurrentRunNum,CurrentSubrunNum);
       //Erase this entry from the FinishedPMTWavesMap
@@ -203,16 +216,31 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
 
   ///////////////LOAD RAW PMT DATA INTO ANNIEEVENT///////////////
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
+  std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCAuxData;
   for(std::pair<std::vector<int>, std::vector<uint16_t>> apair : WaveMap){
     int CardID = apair.first.at(0);
     int ChannelID = apair.first.at(1);
     int CrateNum=-1;
     int SlotNum=-1;
-    if(verbosity>v_debug) std::cout << "Converting " << CardID << " to electronics space" << std::endl;
+    if(verbosity>v_debug) std::cout << "Converting card ID " << CardID << ", channel ID " <<
+          ChannelID << " to electronics space" << std::endl;
     this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
     std::vector<uint16_t> TheWaveform = apair.second;
+    //FIXME: We're feeding Waveform class expects a double, not a uint64_t (?)
+    Waveform<uint16_t> TheWave(ClockTime, TheWaveform);
+    //Placing waveform in a vector in case we want a hefty-mode minibuffer storage eventually
+    std::vector<Waveform<uint16_t>> WaveVec{TheWave};
+    
     std::vector<int> CrateSpace{CrateNum,SlotNum,ChannelID};
-    if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)==0){
+    unsigned long ChannelKey;
+    if(TankPMTCrateSpaceToChannelNumMap.count(CrateSpace)>0){
+      ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
+      RawADCData.emplace(ChannelKey,WaveVec);
+    }
+    else if (AuxCrateSpaceToChannelNumMap.count(CrateSpace)>0){
+      ChannelKey = AuxCrateSpaceToChannelNumMap.at(CrateSpace);
+      RawADCAuxData.emplace(ChannelKey,WaveVec);
+    } else{
       Log("ANNIEEventBuilder:: Cannot find channel key for crate space entry: ",v_error, verbosity);
       Log("ANNIEEventBuilder::CrateNum "+to_string(CrateNum),v_error, verbosity);
       Log("ANNIEEventBuilder::SlotNum "+to_string(SlotNum),v_error, verbosity);
@@ -220,18 +248,13 @@ void ANNIEEventBuilder::BuildANNIEEvent(uint64_t ClockTime,
       Log("ANNIEEventBuilder:: Passing over the wave; PMT DATA LOST",v_error, verbosity);
       continue;
     }
-    unsigned long ChannelKey = TankPMTCrateSpaceToChannelNumMap.at(CrateSpace);
-    //FIXME: We're feeding Waveform class expects a double, not a uint64_t (?)
-    Waveform<uint16_t> TheWave(ClockTime, TheWaveform);
-    //Placing waveform in a vector in case we want a hefty-mode minibuffer storage eventually
-    std::vector<Waveform<uint16_t>> WaveVec{TheWave}; 
-    RawADCData.emplace(ChannelKey,WaveVec);
   }
   if(RawADCData.size() == 0){
     std::cout << "No Raw ADC Data in entry.  Not putting to ANNIEEvent." << std::endl;
   }
   std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("RawADCData",RawADCData);
+  ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
   ANNIEEvent->Set("RunNumber",RunNum);
   ANNIEEvent->Set("SubrunNumber",SubrunNum);
   ANNIEEvent->Set("RunType",RunType);

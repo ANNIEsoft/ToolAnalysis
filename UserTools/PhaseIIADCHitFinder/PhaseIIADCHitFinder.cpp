@@ -13,25 +13,27 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
 
   // Load the default threshold settings for finding pulses
   verbosity = 3;
-  adc_threshold_db = "none";
-  adc_window_db = "none";
-  default_adc_threshold = BOGUS_INT;
+  use_led_waveforms = false;
   pulse_finding_approach = "threshold";
+  adc_threshold_db = "none";
+  default_adc_threshold = 5;
   threshold_type = "relative";
   pulse_window_type = "fixed";
   pulse_window_start_shift = -3;
   pulse_window_end_shift = 25;
+  adc_window_db = "none"; //Used when pulse_finding_approach="fixed_windows"
 
   //Load any configurables set in the config file
   m_variables.Get("verbosity",verbosity); 
+  m_variables.Get("UseLEDWaveforms", use_led_waveforms); 
   m_variables.Get("PulseFindingApproach", pulse_finding_approach); 
-  m_variables.Get("ADCThresholdDB", adc_threshold_db); 
-  m_variables.Get("WindowIntegrationDB", adc_window_db); 
+  m_variables.Get("ADCThresholdDB", adc_threshold_db);
   m_variables.Get("DefaultADCThreshold", default_adc_threshold);
   m_variables.Get("DefaultThresholdType", threshold_type);
   m_variables.Get("PulseWindowType", pulse_window_type);
   m_variables.Get("PulseWindowStart", pulse_window_start_shift);
   m_variables.Get("PulseWindowEnd", pulse_window_end_shift);
+  m_variables.Get("WindowIntegrationDB", adc_window_db); 
 
   if ((pulse_window_start_shift > 0) || (pulse_window_end_shift) < 0){
     Log("PhaseIIADCHitFinder Tool: WARNING... trigger threshold crossing will not be inside pulse window.  Threshold" 
@@ -51,6 +53,9 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   if(adc_window_db != "none") channel_window_map = this->load_integration_window_map(adc_window_db);
   
   hit_map = new std::map<unsigned long,std::vector<Hit>>;
+
+  //Set in CStore for tools to know and log this later 
+  m_data->CStore.Set("ADCThreshold",default_adc_threshold);
   return true;
 }
 
@@ -71,11 +76,14 @@ bool PhaseIIADCHitFinder::Execute() {
     }
 
     // Load the map containing the ADC raw waveform data
+    bool got_raw_data = false;
     std::map<unsigned long, std::vector<Waveform<unsigned short> > >
       raw_waveform_map;
-
-    bool got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
-
+    if(use_led_waveforms){
+      got_raw_data = annie_event->Get("RawLEDADCData", raw_waveform_map);
+    } else {
+      got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
+    }
     // Check for problems
     if ( !got_raw_data ) {
       Log("Error: The PhaseIIADCHitFinder tool could not find the RawADCData entry", v_error,
@@ -91,10 +99,14 @@ bool PhaseIIADCHitFinder::Execute() {
     // Load the map containing the ADC calibrated waveform data
     std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
       calibrated_waveform_map;
-
-    bool got_calibrated_data = annie_event->Get("CalibratedADCData",
-      calibrated_waveform_map);
-
+    bool got_calibrated_data = false;
+    if(use_led_waveforms){
+      got_calibrated_data = annie_event->Get("CalibratedLEDADCData",
+        calibrated_waveform_map);
+    } else {
+      got_calibrated_data = annie_event->Get("CalibratedADCData",
+        calibrated_waveform_map);
+    }
     // Check for problems
     if ( !got_calibrated_data ) {
       Log("Error: The PhaseIIADCHitFinder tool could not find the CalibratedADCData"
@@ -131,7 +143,8 @@ bool PhaseIIADCHitFinder::Execute() {
       std::vector<Hit> HitsOnPMT;
 
       if (pulse_finding_approach == "full_window"){
-          // Integrate each whole dang minibuffer and background subtract 
+
+        // Integrate each whole dang minibuffer and background subtract 
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
             Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
@@ -139,7 +152,20 @@ bool PhaseIIADCHitFinder::Execute() {
             std::vector<int> fullwindow{0,window_end};
             std::vector<std::vector<int>> onewindowvec{fullwindow};
             pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
-              calibrated_waveforms.at(mb), onewindowvec, channel_key));
+              calibrated_waveforms.at(mb), onewindowvec, channel_key,false));
+        }
+      }
+
+      if (pulse_finding_approach == "full_window_maxpeak"){
+        // Integrate each whole dang minibuffer and background subtract 
+        size_t num_minibuffers = raw_waveforms.size();
+        for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+            Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
+            int window_end = buffer_wave.GetSamples()->size()-1;
+            std::vector<int> fullwindow{0,window_end};
+            std::vector<std::vector<int>> onewindowvec{fullwindow};
+            pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
+              calibrated_waveforms.at(mb), onewindowvec, channel_key,true));
         }
       }
 
@@ -152,7 +178,7 @@ bool PhaseIIADCHitFinder::Execute() {
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
             pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
-              calibrated_waveforms.at(mb), thispmt_adc_windows, channel_key));
+              calibrated_waveforms.at(mb), thispmt_adc_windows, channel_key,false));
         }
       }
 
@@ -209,7 +235,6 @@ bool PhaseIIADCHitFinder::Execute() {
 
 
 bool PhaseIIADCHitFinder::Finalise() {
-
   return true;
 }
 
@@ -306,7 +331,8 @@ std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCHitFinder::load
 std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
   const Waveform<unsigned short>& raw_minibuffer_data,
   const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
-  std::vector<std::vector<int>> adc_windows, const unsigned long& channel_key) const
+  std::vector<std::vector<int>> adc_windows, const unsigned long& channel_key,
+  bool MaxHeightPulseOnly) const
 {
   //Sanity check that raw/calibrated minibuffers are same size
   if ( raw_minibuffer_data.Samples().size()
@@ -330,11 +356,9 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
     std::vector<int> awindow = adc_windows.at(i);
     size_t wmin = static_cast<size_t>(awindow.at(0));
     size_t wmax = static_cast<size_t>(awindow.at(1));
-    unsigned long raw_area = 0; // ADC * samples
     unsigned short max_ADC = std::numeric_limits<unsigned short>::lowest();
     size_t peak_sample = BOGUS_INT;
     for (size_t p = wmin; p <= wmax; ++p) {
-      raw_area += raw_minibuffer_data.GetSample(p);
       if (max_ADC < raw_minibuffer_data.GetSample(p)) {
         max_ADC = raw_minibuffer_data.GetSample(p);
         peak_sample = p;
@@ -345,16 +369,51 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
     double calibrated_amplitude
       = calibrated_minibuffer_data.GetSample(peak_sample);
 
-    // Calculated the charge detected in this pulse (nC)
-    // using the calibrated waveform
+    // Calculated the charge (nC) and raw ADC counts
+    // using the raw and calibrated waveform
     double charge = 0.;
-    // Integrate the calibrated pulse (to get a quantity in V * samples)
-    for (size_t p = wmin; p <= wmax; ++p) {
-      charge += calibrated_minibuffer_data.GetSample(p);
+    unsigned long raw_area = 0; // ADC * samples
+
+    if(MaxHeightPulseOnly){
+      // From that peak sample, sum up to either side until finding a
+      // sample that's 10% of the max height
+      charge += calibrated_amplitude;
+      raw_area += max_ADC;
+      size_t pulsewinleft = peak_sample -1;
+      size_t pulsewinright = peak_sample + 1;
+      bool integrated_leftward = false;
+      bool integrated_rightward = false;
+      while (!integrated_leftward && peak_sample!=wmin){
+        double sample_height = calibrated_minibuffer_data.GetSample(pulsewinleft);
+        if (sample_height > (0.1 * calibrated_amplitude) && (pulsewinleft>wmin)){
+          raw_area += raw_minibuffer_data.GetSample(pulsewinleft);
+          charge += sample_height;
+          pulsewinleft-=1;
+        }
+        else integrated_leftward = true;
+      }
+      while (!integrated_rightward && peak_sample!=wmax){
+        double sample_height = calibrated_minibuffer_data.GetSample(pulsewinright);
+        if (sample_height > (0.1 * calibrated_amplitude) && (pulsewinright < wmax)){
+          raw_area += raw_minibuffer_data.GetSample(pulsewinright);
+          charge += sample_height;
+          pulsewinright+=1;
+        }
+        else integrated_rightward = true;
+      }
+      wmin = pulsewinleft;
+      wmax = pulsewinright;
+    } else {
+      // Integrate the calibrated pulse (to get a quantity in V * samples)
+      for (size_t p = wmin; p <= wmax; ++p) {
+        raw_area += raw_minibuffer_data.GetSample(p);
+        charge += calibrated_minibuffer_data.GetSample(p);
+      }
     }
 
     // Convert the pulse integral to nC
     charge *= NS_PER_ADC_SAMPLE / ADC_IMPEDANCE;
+
 
     // Store the freshly made pulse in the vector of found pulses
     pulses.emplace_back(channel_key,
