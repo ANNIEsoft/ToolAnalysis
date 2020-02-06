@@ -27,7 +27,7 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
 
   sources=UpdateMonitorSources();
  
- last= boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
+  last= boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
   period =boost::posix_time::time_duration(0,0,1,0);
 
   m_data->Stores["CCData"]=new BoostStore(false,0);
@@ -89,7 +89,7 @@ bool MonitorReceive::Execute(){
 	  MRDData=0;	  
 	}
 
-	if({PMTData!=0){
+	if(PMTData!=0){
 	  PMTData->Close();
 	  delete PMTData;
 	  PMTData=0;	  

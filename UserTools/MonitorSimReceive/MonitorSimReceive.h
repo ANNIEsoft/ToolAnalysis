@@ -22,15 +22,13 @@ class MonitorSimReceive: public Tool {
 
  private:
 
-  std::string MRDDataPath, MRDDataPathSingle;
-  std::string MRD_path_to_file;
+  std::string file_list;
   std::string mode;
   std::string outpath;
   int verbosity;
   
   BoostStore *indata = nullptr;
   BoostStore* MRDData = nullptr;
-  BoostStore* MRDData2 = nullptr;
   BoostStore* PMTData = nullptr;
 
   std::vector<std::string> vec_filename;

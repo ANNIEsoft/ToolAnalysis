@@ -12,40 +12,30 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     m_data= &data; //assigning transient data pointer
     /////////////////////////////////////////////////////////////////
 
-    m_variables.Get("MRDDataPath", MRDDataPathSingle);
-    m_variables.Get("MRDTxtFile", MRD_path_to_file);
+    m_variables.Get("FileList",file_list);
     m_variables.Get("OutPath",outpath);
-    m_variables.Get("Mode",mode);
     m_variables.Get("verbose",verbosity);
-    //m_variables.Print();
 
     m_data->CStore.Set("OutPath",outpath);
 
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Initialising"<<std::endl;
 
     if (verbosity > 2) {
-        std::cout <<"MRDDataPath: "<<MRDDataPathSingle<<std::endl;
-        std::cout <<"MRDTxtFile: "<<MRD_path_to_file<<std::endl;
-        std::cout <<"Mode: "<<mode<<std::endl;
+        std::cout <<"FileList: "<<file_list<<std::endl;
     }
 
-    if (mode != "Random" && mode != "FileList") mode = "Random";
-
-    if (mode == "FileList"){
-
-        ifstream file_sim(MRD_path_to_file);
-        while(!file_sim.eof()){
-            std::string string_temp;
-            file_sim >> string_temp;
-            if (string_temp!="") vec_filename.push_back(string_temp);
-            std::cout <<string_temp<<std::endl;
-        }
-        file_sim.close();
-
-        std::cout <<"Data Filelist vector size: "<<vec_filename.size()<<std::endl;
+    ifstream file_sim(file_list);
+    while(!file_sim.eof()){
+      std::string string_temp;
+      file_sim >> string_temp;
+      if (string_temp!="") vec_filename.push_back(string_temp);
+      std::cout <<string_temp<<std::endl;
     }
+    file_sim.close();
 
-    if (verbosity > 2) std::cout <<"Define CCData BoostStore"<<std::endl;
+    std::cout <<"Data Filelist vector size: "<<vec_filename.size()<<std::endl;
+
+    if (verbosity > 2) std::cout <<"Define CCData & PMTData BoostStores"<<std::endl;
 
     srand(time(NULL));
     m_data->Stores["CCData"]=new BoostStore(false,2);  
@@ -60,32 +50,21 @@ bool MonitorSimReceive::Execute(){
 
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Executing"<<std::endl;
 
-    if (mode == "FileList"){
-
-        if (i_loop<vec_filename.size()){
-            MRDDataPath = vec_filename.at(i_loop);
-            if (verbosity > 2) std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
-        } else {
-            MRDDataPath = MRDDataPathSingle;
-        }
+    std::string datapath;
+    if (i_loop<vec_filename.size()){
+      datapath = vec_filename.at(i_loop);
+      if (verbosity > 2) std::cout <<"Current file: "<<datapath<<std::endl;
     } else {
-        MRDDataPath = MRDDataPathSingle;
-        if (verbosity > 2) std::cout <<"MRDDataPath: "<<MRDDataPath<<std::endl;
-    } 
+      m_data->vars.Set("StopLoop",true);
+      return true;
+    }
 
- /*   if (MRDData!=0){
+    if (MRDData!=0){
       MRDData->Close();
       MRDData->Delete();
       delete MRDData;
       MRDData = 0;
-    }*/
-      if (MRDData2!=0){
-      MRDData2->Close();
-      MRDData2->Delete();
-      delete MRDData2;
-      MRDData2 = 0;
       m_data->Stores["CCData"]->Remove("FileData");
-   //   m_data->Stores["CCData"]->Remove("Single");
     }
     if (PMTData!=0){
       PMTData->Close();
@@ -93,7 +72,6 @@ bool MonitorSimReceive::Execute(){
       delete PMTData;
       PMTData = 0;
       m_data->Stores["PMTData"]->Remove("FileData");
-
     }
     if (indata!=0){
       indata->Close();
@@ -102,94 +80,29 @@ bool MonitorSimReceive::Execute(){
       indata = 0;
     }
 
+    //BoostStore* indata=new BoostStore(false,0); //this leaks but its jsut for testing
+    indata=new BoostStore(false,0); //this leaks but its jsut for testing
+    indata->Initialise(datapath);
 
-    //std::cout <<"initialise indata"<<std::endl;
-    BoostStore* indata=new BoostStore(false,0); //this leaks but its jsut for testing
-    indata->Initialise(MRDDataPath);
-
-    //std::cout <<"delete MRDData/2"<<std::endl;
-
-    //the following two lines do not work to free up memory
-    //if (MRDData) delete MRDData;
-    //if (MRDData2) delete MRDData2;
-      std::cout <<"defining booststores"<<std::endl;
     //BoostStore *MRDData = new BoostStore(false,2);
-    BoostStore *MRDData2 = new BoostStore(false,2);
-    BoostStore *PMTData = new BoostStore(false,2);
+    //BoostStore *PMTData = new BoostStore(false,2);
+    MRDData = new BoostStore(false,2);
+    PMTData = new BoostStore(false,2);
 
-    //std::cout <<"Get CCData & PMTData"<<std::endl;
-    //std::cout <<"Get MRDData from CCData"<<std::endl;
-    //std::cout <<"Get MRDData 1"<<std::endl;
-    //indata->Get("CCData",*MRDData);
-   std::cout <<"Print indata:"<<std::endl;
+    std::cout <<"Print indata:"<<std::endl;
     indata->Print(false);
 
-   std::cout <<"Get MRDData 2"<<std::endl;
-    indata->Get("CCData",*MRDData2);
-    std::cout <<"Get PMTData"<<std::endl;
+    indata->Get("CCData",*MRDData);
     indata->Get("PMTData",*PMTData);
     
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
-    MRDData2->Save("tmp");
-    m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
+    MRDData->Save("tmp");
+    m_data->Stores["CCData"]->Set("FileData",MRDData,false);
     PMTData->Save("tmp");
     m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
 
-/*
-    int a=rand() % 10;
-    int b=rand() % 100;
-
-    if (mode == "Random"){
-        if(!a){
-            int event=rand() % 1000;
-            std::string State="MRDSingle";
-            m_data->CStore.Set("State",State);
-            MRDOut tmp;
-            long entries;
-            MRDData->Header->Get("TotalEntries",entries);
-            MRDData->GetEntry(event);
-            MRDData->Get("Data", tmp);
-            m_data->Stores["CCData"]->Set("Single",tmp);
-        }
-        else if(!b){    
-            std::string State="DataFile";
-            m_data->CStore.Set("State",State);
-            MRDData2->Save("tmp");
-            m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
-            } else{
-            std::string State="Wait";
-            m_data->CStore.Set("State",State);
-        }
-    } else if (mode == "FileList"){
-        if (i_loop<vec_filename.size()){          //plot all files in Time Plot
-            std::cout <<"Mode: FileList"<<std::endl;
-	    std::string State="DataFile";
-            m_data->CStore.Set("State",State);
-            MRDData2->Save("tmp");
-            m_data->Stores["CCData"]->Set("FileData",MRDData2,false);
-	    PMTData->Save("tmp");
-	    m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
-        }
-        else {                  //then test the Live tool
-            int event=rand() % 1000;
-            std::string State="MRDSingle";
-            m_data->CStore.Set("State",State);
-            MRDOut tmp;
-            long entries;
-            MRDData->Header->Get("TotalEntries",entries);
-
-            MRDData->GetEntry(event);
-            MRDData->Get("Data", tmp);
-            m_data->Stores["CCData"]->Set("Single",tmp);
-
-        }
-
-    }*/
-
     i_loop++;
-
- //   delete indata;
 
 
     return true;
@@ -200,17 +113,14 @@ bool MonitorSimReceive::Finalise(){
 
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Finalising"<<std::endl;
 
-  //  MRDData=0;
-    MRDData2=0;
+    MRDData=0;
     PMTData=0;
     indata = 0;
 
     m_data->CStore.Remove("State");
     m_data->Stores["CCData"]->Remove("FileData");
- //   m_data->Stores["CCData"]->Remove("Single");
     m_data->Stores["PMTData"]->Remove("FileData");
-    //m_data->Stores.clear();
-
+    m_data->Stores.clear();
 
     return true;
 }
