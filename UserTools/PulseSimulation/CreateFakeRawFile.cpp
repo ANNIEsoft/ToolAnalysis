@@ -192,7 +192,7 @@ void PulseSimulation::FillInitialFileInfo(){
 	if(emulated_pmtdata_readout.size()<num_adc_cards){
 //		cout<<"constructing vector of "<<num_adc_cards<<" CardData objects"
 //			<<" and temp databuffer vector with "<<full_buffer_size<<" element data arrays"<<endl;
-		emulated_pmtdata_readout= std::vector<CardData>(num_adc_cards);
+		emulated_pmtdata_readout= std::vector<MCCardData>(num_adc_cards);
 		temporary_databuffers = std::vector< std::vector<uint16_t> >(num_adc_cards);
 	}
 	// In order for downstream tools to be able to retrieve the waveform vector pointers just

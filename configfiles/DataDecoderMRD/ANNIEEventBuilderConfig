@@ -1,0 +1,6 @@
+verbosity 0
+
+IsTankData 0
+IsMRDData 1
+ProcessedFilesBasename ANNIEEvent_MRDTest28commonstopp0
+SavePath ./mrdfiles/

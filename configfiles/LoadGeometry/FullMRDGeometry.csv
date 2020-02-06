@@ -5,7 +5,7 @@
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 LEGEND_LINE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 detector_num,channel_num,detector_system,orientation,layer,side,num,x_center,y_center,z_center,x_width,y_width,z_width,rack,TDC_slot,TDC_channel,discrim_slot,discrim_ch,patch_panel_row,patch_panel_col,amp_slot,amp_channel,hv_crate,hv_slot,hv_channel,nominal_HV,polarity,PMT_type,cable_label,paddle_label,notes
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+########################################
 DATA_START,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0,0,0,0,0,0,0,0,-198.699875,5.08,320,30.5,2,8,2,0,1,1,1,1,-1,-1,2,14,0,-1871,-1,EMI9815,MRD_x00_y00_z00,4SW,None
 1,1,0,0,0,0,1,0,-167.999875,5.08,320,30.5,2,8,2,1,1,2,1,2,-1,-1,2,14,1,-1838,-1,EMI9815,MRD_x00_y01_z00,U39,None

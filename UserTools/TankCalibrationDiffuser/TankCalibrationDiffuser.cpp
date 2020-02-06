@@ -353,6 +353,9 @@ bool TankCalibrationDiffuser::Initialise(std::string configfile, DataModel &data
 
 bool TankCalibrationDiffuser::Execute(){
 
+  //Make sure we're filling histograms to the right ROOT file
+  file_out->cd();
+
   if (verbose > 0) std::cout <<"Executing Tool TankCalibrationDiffuser ..."<<endl;
 
   // get the ANNIEEvent
@@ -508,7 +511,9 @@ bool TankCalibrationDiffuser::Execute(){
 
 
 bool TankCalibrationDiffuser::Finalise(){
-
+  
+  file_out->cd();
+  
   if (verbose > 0) std::cout <<"TankCalibrationDiffuser: Finalise"<<std::endl;
 
   std::stringstream ss_run;
