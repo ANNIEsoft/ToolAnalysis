@@ -1,0 +1,3 @@
+myLoadGeometry LoadGeometry ./configfiles/DataDecoderMRD/LoadGeometryConfig
+myMRDDataDecoder MRDDataDecoder ./configfiles/DataDecoderMRD/MRDDataDecoderConfig
+myANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoderMRD/ANNIEEventBuilderConfig

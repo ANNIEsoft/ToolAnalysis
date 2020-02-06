@@ -1,0 +1,24 @@
+
+# if we have pre-processed data we can re-load the store with
+#load_annieevent LoadANNIEEvent configfiles/PlotWaveforms/LoadANNIEEventConfig
+# this could be useful to re-load PMTData when testing CCData Loading
+
+# steven's tools for PMT, Trigger and Timing Data. Keep the order. 
+raw_loader       RawLoader        configfiles/PlotWaveforms/RawLoaderConfig
+#adc_calibrator   ADCCalibrator    configfiles/PlotWaveforms/ADCCalibratorConfig
+#adc_hit_finder   ADCHitFinder     configfiles/PlotWaveforms/ADCHitFinderConfig
+
+# we only need to run the BeamFetcher once - it downloads the database file
+# it may be best to run the toolchain with just this tool the first time
+#beam_fetcher     BeamFetcher      configfiles/PlotWaveforms/BeamFetcherConfig
+# subsequent runs of the ToolChain can use the BeamChecker
+#beam_checker    BeamChecker       configfiles/PlotWaveforms/BeamCheckerConfig
+
+# the star of the show
+myPlotWaveforms  PlotWaveforms     configfiles/PlotWaveforms/PlotWaveformsConfig
+
+# ff
+myPrintANNIEEvent PrintANNIEEvent ./configfiles/LoadWCSim/PrintANNIEEventConfig
+
+# save the data so we can use LoadANNIEEvent next time
+#mySaveANNIEEvent SaveANNIEEvent   configfiles/PlotWaveforms/SaveANNIEEventConfig

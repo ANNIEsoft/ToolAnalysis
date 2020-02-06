@@ -1,0 +1,6 @@
+LoadANNIEEvent LoadANNIEEvent ./configfiles/LEDSPEAnalysis/LoadANNIEEventConfig
+LoadGeometry LoadGeometry ./configfiles/LEDSPEAnalysis/LoadGeometryConfig
+PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/LEDSPEAnalysis/PhaseIIADCCalibratorConfig
+PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/LEDSPEAnalysis/PhaseIIADCHitFinderConfig
+PrintADCData PrintADCData ./configfiles/LEDSPEAnalysis/PrintADCDataConfig
+TankCalibrationDiffuser TankCalibrationDiffuser ./configfiles/LEDSPEAnalysis/TankCalibrationDiffuserConfig
