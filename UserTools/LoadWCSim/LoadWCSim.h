@@ -125,6 +125,8 @@ class LoadWCSim: public Tool {
 	std::map<unsigned long,std::vector<MCHit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;
 	BeamStatusClass* BeamStatus;
+
+	int primarymuonindex;
 	
 	// additional info
 	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId, std::map<int,unsigned long> tubeid_to_channelkey);
@@ -134,6 +136,7 @@ class LoadWCSim: public Tool {
 	std::map<int,double>* ParticleId_to_TankCharge = nullptr;
 	std::map<int,double>* ParticleId_to_MrdCharge = nullptr;
 	std::map<int,double>* ParticleId_to_VetoCharge = nullptr;
+	std::string Triggertype;	
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;

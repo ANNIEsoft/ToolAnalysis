@@ -65,6 +65,7 @@ bool LoadANNIEEvent::Execute() {
 
     // Load it from the new input file
     std::string input_filename = input_filenames_.at(current_file_);
+    std::cout <<"Reading in current file "<<current_file_<<std::endl;
     m_data->Stores["ANNIEEvent"]->Initialise(input_filename);
     m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",
       total_entries_in_file_);
@@ -79,6 +80,10 @@ bool LoadANNIEEvent::Execute() {
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   
+/*  std::map<unsigned long,std::vector<Hit>> *TDCHit = nullptr;
+  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCHit);
+  std::cout <<"LoadANNIEEvent tool: TDCHit size = "<<TDCHit->size()<<std::endl;
+*/
   if ( current_entry_ >= total_entries_in_file_ ) {
     ++current_file_;
     if ( current_file_ >= input_filenames_.size() ) {
@@ -89,6 +94,7 @@ bool LoadANNIEEvent::Execute() {
       need_new_file_ = true;
     }
   }
+
 
   return true;
 }

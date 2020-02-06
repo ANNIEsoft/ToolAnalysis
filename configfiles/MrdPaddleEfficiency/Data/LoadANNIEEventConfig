@@ -1,0 +1,2 @@
+verbose 4
+FileForListOfInputs ./configfiles/MrdPaddleEfficiency/Data/my_inputs.txt

@@ -124,6 +124,7 @@ bool PMTDataDecoder::Execute(){
   Store Postgress;
 
   if (Mode != "Monitoring" && Mode != "Processing"){
+
   Log("PMTDataDecoder Tool: Accessing run information data",v_message,verbosity); 
   BoostStore RunInfo(false,0);
   RawData->Get("RunInformation",RunInfo);
@@ -272,8 +273,6 @@ bool PMTDataDecoder::Execute(){
      UnprocessedEntries.size() << std::endl;
   if(verbosity>v_error) std::cout << "Number of entries read for file so far: " << CDEntryNum << std::endl;
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
-
-  //std::cout <<"FinishedPMTWaves.size(): "<<FinishedPMTWaves.size()<<std::endl;
 
   //Transfer finished waves from this execute loop to the CStore
   if (Mode !="Monitoring"){
