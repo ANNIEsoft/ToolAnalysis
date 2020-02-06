@@ -1,5 +1,5 @@
-#ifndef CARDDATA_H
-#define CARDDATA_H
+#ifndef MCARDDATA_H
+#define MCCARDDATA_H
 
 #include <vector>
 #include "ANNIEconstants.h"
@@ -14,7 +14,7 @@ namespace{
   constexpr uint16_t BOGUS_UINT16 = std::numeric_limits<uint16_t>::max();
 }
 
-class CardData{
+class MCCardData{
   public:
   uint64_t LastSync;                    // ??? clock ticks of last GPS sync pulse FIXME
   int SequenceID;                       // readout id. incremented once every 40 triggers
@@ -37,7 +37,7 @@ class CardData{
   // and with 40 minibuffers per fullbuffer, that's 1k samples per minibuffer per channel.
   // At 2ns per sample that's 2000ns = 2us per minibuffer.
   
-  CardData(){ /*Reset();*/ }            // cannot reset in constructor: need to set e.g. TriggerNumber first
+  MCCardData(){ /*Reset();*/ }            // cannot reset in constructor: need to set e.g. TriggerNumber first
   void Reset();
   
 };
