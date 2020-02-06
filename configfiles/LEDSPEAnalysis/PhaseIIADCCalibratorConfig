@@ -1,0 +1,6 @@
+# Dummy config file
+verbosity 2
+BaselineEstimationType simple
+NumBaselineSamples 30
+WindowIntegrationDB ./configfiles/LEDSPEAnalysis/TankPMTWindows_6LEDs.txt
+MakeCalLEDWaveforms 1

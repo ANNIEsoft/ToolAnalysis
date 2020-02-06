@@ -96,6 +96,10 @@ if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 if (tool=="PlotWaveforms") ret=new PlotWaveforms;
+if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
+if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
+if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
+if (tool=="PrintADCData") ret=new PrintADCData;
 
 return ret;
 }
