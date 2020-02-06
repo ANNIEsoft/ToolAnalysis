@@ -48,16 +48,25 @@ class PhaseIIADCHitFinder : public Tool {
     unsigned short default_adc_threshold;
     std::string threshold_type;
     std::string adc_threshold_db;
+    std::string adc_window_db;
     std::string pulse_window_type;
+    bool use_led_waveforms;
     int pulse_window_start_shift;
     int pulse_window_end_shift;
     std::map<unsigned long, unsigned short> channel_threshold_map;
+    std::map<unsigned long, std::vector<std::vector<int>>> channel_window_map;
     
     // Load a PMT's threshold from the channel_threshold_map. If none, returns default ADC threshold
     unsigned short get_db_threshold(unsigned long channelkey);
-    
+
+    // Load a PMT's integration windows from the channel_window_map. If none, returns an empty vector.
+    std::vector<std::vector<int>> get_db_windows(unsigned long channelkey);
+
     // load a channel threshold map from the source file given
     std::map<unsigned long, unsigned short> load_channel_threshold_map(std::string threshold_db);
+
+    // load an integration window map (CSV file) from the source file given
+    std::map<unsigned long, std::vector<std::vector<int>>> load_integration_window_map(std::string window_db);
 
     // Create a vector of ADCPulse objects using the raw and calibrated signals
     // from a given minibuffer. Note that the vectors of raw and calibrated
@@ -67,6 +76,12 @@ class PhaseIIADCHitFinder : public Tool {
       const Waveform<unsigned short>& raw_minibuffer_data,
       const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
       unsigned short adc_threshold, const unsigned long& channel_key) const;
+
+    std::vector<ADCPulse> find_pulses_bywindow(
+      const Waveform<unsigned short>& raw_minibuffer_data,
+      const CalibratedADCWaveform<double>& calibrated_minibuffer_data,
+      std::vector<std::vector<int>> adc_windows, const unsigned long& channel_key,
+      bool MaxHeightPulseOnly) const;
 
     //Takes the ADC pulse vectors (one per minibuffer) and converts them to a vector of hits
     std::vector<Hit> convert_adcpulses_to_hits(unsigned long channel_key,std::vector<std::vector<ADCPulse>> pulses);

@@ -1,6 +1,6 @@
-#include "CardData.h"
+#include "MCCardData.h"
 
-void CardData::Reset(){
+void MCCardData::Reset(){
   SequenceID = BOGUS_INT;
   CardID = BOGUS_INT;
   LastSync = BOGUS_UINT64;

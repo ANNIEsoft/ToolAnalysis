@@ -16,6 +16,14 @@ class LoadANNIEEvent: public Tool {
     bool Execute();
     bool Finalise();
 
+  private:
+  
+    int v_error = 0;
+    int v_warning = 1;
+    int v_message = 2;
+    int v_debug = 3;
+    int vv_debug = 4;
+
   protected:
 
     /// @brief Integer code that determines the level of logging to show in

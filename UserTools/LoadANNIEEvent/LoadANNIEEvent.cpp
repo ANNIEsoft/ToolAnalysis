@@ -70,11 +70,12 @@ bool LoadANNIEEvent::Execute() {
       total_entries_in_file_);
   }
 
-
+  Log("ANNIEEvent store has "+std::to_string(total_entries_in_file_)+" entries",v_debug,verbosity_);
   Log("Loading entry " + std::to_string(current_entry_) + " from the"
     " ANNIEEvent input file \"" + input_filenames_.at(current_file_)
     + '\"', 1, verbosity_);
  
+  if (current_entry_ != 0) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   
