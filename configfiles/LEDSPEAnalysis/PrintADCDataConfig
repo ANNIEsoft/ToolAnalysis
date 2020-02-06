@@ -1,0 +1,8 @@
+verbosity 3
+OutputFile PulseOcc1171_LEDWfrms
+UseLEDWaveforms 1
+WavesWithPulsesOnly 0
+SaveWaveforms 1
+MaxWaveforms 20000
+LEDSetpoints 50
+LEDsUsed 5,6
