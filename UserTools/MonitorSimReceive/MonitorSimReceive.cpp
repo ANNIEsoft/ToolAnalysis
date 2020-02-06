@@ -56,6 +56,9 @@ bool MonitorSimReceive::Execute(){
       if (verbosity > 2) std::cout <<"Current file: "<<datapath<<std::endl;
     } else {
       m_data->vars.Set("StopLoop",true);
+      if (MRDData!=0){ MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = 0;}
+      if (PMTData!=0){ PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
+      if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
       return true;
     }
 
@@ -98,9 +101,9 @@ bool MonitorSimReceive::Execute(){
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
     MRDData->Save("tmp");
-    m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+    //m_data->Stores["CCData"]->Set("FileData",MRDData,false);
     PMTData->Save("tmp");
-    m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+    //m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
 
     i_loop++;
 
@@ -113,9 +116,9 @@ bool MonitorSimReceive::Finalise(){
 
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Finalising"<<std::endl;
 
-    MRDData=0;
-    PMTData=0;
-    indata = 0;
+    if (MRDData!=0){ MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = 0;}
+    if (PMTData!=0){ PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
+    if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
 
     m_data->CStore.Remove("State");
     m_data->Stores["CCData"]->Remove("FileData");
