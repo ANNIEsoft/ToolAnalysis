@@ -19,6 +19,7 @@
 
 //#include "TEveLine.h"
 class TEveLine;
+class TPointSet3D;
 
 class MrdPaddlePlot: public Tool {
 	
@@ -42,7 +43,6 @@ class MrdPaddlePlot: public Tool {
 	std::string output_rootfile;
 	bool plotOnlyTracks;
 
-	//std::string plotDirectory;
 
 	// Variables from ANNIEEVENT
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,6 +76,9 @@ class MrdPaddlePlot: public Tool {
 	Double_t canvheight = 600;
 	TClonesArray* thesubeventarray;  // retrieve from track finder
 	std::vector<TEveLine*> thiseventstracks;
+//	std::map<std::string,TPointSet3D*> mc_truth_points;
+//	std::map<std::string,int> numpointsdrawn; // can't seem to access it from the PointSet itself
+//	std::map<std::string,int> markercolours;  // give each a different colour
 	
 	// Summary histograms on tracks found
 	TH1D* hnumhclusters=nullptr;
