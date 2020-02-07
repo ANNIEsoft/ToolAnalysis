@@ -36,6 +36,7 @@ class TimeClustering: public Tool {
 	double maxsubeventduration=30;              // if all hits within this time, just one subevent
 	double minimum_subevent_timeseparation=30;  // minimum empty time to delimit subevents
 	bool MakeMrdDigitTimePlot=false;
+	bool MakeSingleEventPlots;
 	bool LaunchTApplication;
 	bool isData;	
 	std::string output_rootfile;

@@ -85,7 +85,6 @@ class MrdPaddlePlot: public Tool {
 	TH1D* hpaddleids=nullptr;
 	TH1D* hpaddleinlayeridsh=nullptr;
 	TH1D* hpaddleinlayeridsv=nullptr;
-	TH1D* hdigittimes=nullptr;
 	
 	// File for saving root histograms (if wanted)
 	TFile *mrdvis_file=nullptr;
