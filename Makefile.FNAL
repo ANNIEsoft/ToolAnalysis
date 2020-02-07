@@ -2,7 +2,7 @@ ToolDAQPath=ToolDAQ
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 
-CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -fdiagnostics-color=always
+CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -fdiagnostics-color=always -Wl,--no-as-needed
 
 PythonLib= `python-config --libs` -L `python-config --prefix`/lib
 PythonInclude=`python-config --cflags`
@@ -14,7 +14,7 @@ BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostre
 BoostInclude= -I $(BOOST_INC)
 
 RootInclude=  -I $(ROOT_INC)
-RootLib= -L $(ROOT_INC)/../lib `root-config --libs` -lGenVector -lMinuit -lGeom -lEve #-lGL -lGLU -lGLEW
+RootLib= -L $(ROOT_INC)/../lib `root-config --glibs` -lGenVector -lMinuit -lGeom -lEve -lGL -lGLU -lGLEW 
 
 DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
@@ -28,9 +28,10 @@ MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
 RATEventInclude= -I ToolDAQ/RATEventLib/include
 
-MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
-MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib)
+RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
+MyToolsInclude = -lcurl $(RootInclude) $(PythonInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude)
+MyToolsLib = $(RootLib) $(PythonLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib)
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 

@@ -1,0 +1,3 @@
+myLoadWCSim LoadWCSim configfiles/LoadGenieEvents/LoadWCSimConfig
+myLoadGenieEvent LoadGenieEvent configfiles/LoadGenieEvents/LoadGenieEventConfig
+myPrintGenieEvent PrintGenieEvent configfiles/LoadGenieEvents/PrintGenieEventConfig

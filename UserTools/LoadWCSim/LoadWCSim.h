@@ -126,6 +126,8 @@ class LoadWCSim: public Tool {
 	std::vector<TriggerClass>* TriggerData;
 	BeamStatusClass* BeamStatus;
 
+	int primarymuonindex;
+	
 	// additional info
 	void MakeParticleToPmtMap(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig, std::map<int,std::map<unsigned long,double>>* ParticleId_to_DigitIds, std::map<int,double>* ChargeFromParticleId, std::map<int,unsigned long> tubeid_to_channelkey);
 	std::map<int,std::map<unsigned long,double>>* ParticleId_to_TankTubeIds = nullptr;

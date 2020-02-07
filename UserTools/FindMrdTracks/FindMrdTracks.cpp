@@ -40,7 +40,6 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 
 	if (triggertype == "NoLoopback") triggertype = "No Loopback";
 	std::cout <<"User Trigger type: "<<triggertype<<std::endl;
-
 	if (isData) {
 		Log("FindMrdTracks tool: Selected DrawTruthTracks in configfile for a data file! Setting DrawTruthTracks to false",v_error,verbosity);	
 		DrawTruthTracks = false;		//if looking at data, no possiblity to draw truth tracks

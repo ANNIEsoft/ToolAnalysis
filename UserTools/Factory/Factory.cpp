@@ -95,6 +95,14 @@ if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
+if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
+if (tool=="PlotWaveforms") ret=new PlotWaveforms;
+if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
+if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
+if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
+if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="MrdPaddleEfficiency") ret=new MrdPaddleEfficiency;
+
 return ret;
 }
