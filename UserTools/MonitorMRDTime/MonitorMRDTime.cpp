@@ -306,7 +306,8 @@ bool MonitorMRDTime::Execute(){
 
   if(duration>=period_update){
     last=current;
-    DrawFileHistory(current_stamp,24.,"current");     //show 24h history of MRD files
+    DrawFileHistory(current_stamp,24.,"current_24h",1);     //show 24h history of MRD files
+    DrawFileHistory(current_stamp,2.,"current_2h",3);     //show 2h history of MRD files
   }
 
   
@@ -1542,7 +1543,7 @@ void MonitorMRDTime::InitializeVectors(){
 }
 
 
-void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending){
+void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth){
 
   if (verbosity > 2) std::cout <<"MonitorMRDTime: Drawing File History plot"<<std::endl;
 
@@ -1557,44 +1558,29 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
 
   timestamp_end += utc_to_t;
   ULong64_t timestamp_start = timestamp_end - time_frame*MSEC_to_SEC*SEC_to_MIN*MIN_to_HOUR;
-  std::cout <<"DrawFileHistory: TimeStamp_end = "<<timestamp_end<<", timestamp_start = "<<timestamp_start<<std::endl;
 
-  std::cout <<"cd to canvas_logfile_mrd"<<std::endl;
-  std::cout <<canvas_logfile_mrd<<std::endl;
-  std::cout <<log_files_mrd<<std::endl;
-  std::cout <<"num_files_history: "<<num_files_history<<std::endl;
   canvas_logfile_mrd->cd();
-  std::cout <<"1"<<std::endl;
   log_files_mrd->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
-  std::cout <<"2"<<std::endl;
   log_files_mrd->GetXaxis()->SetTimeOffset(0.);
-  std::cout <<"3"<<std::endl;
   log_files_mrd->Draw();
-  std::cout <<"4"<<std::endl;
 
   std::vector<TLine*> file_markers;
   for (unsigned int i_file = 0; i_file < tend_plot.size(); i_file++){
-   std::cout <<"i_file: "<<i_file<<std::endl; 
    if ((tend_plot.at(i_file)+utc_to_t)>=timestamp_start && (tend_plot.at(i_file)+utc_to_t)<=timestamp_end){
       TLine *line_file = new TLine((tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,0.,(tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,1.);
       line_file->SetLineColor(1);
       line_file->SetLineStyle(1);
-      line_file->SetLineWidth(1);
+      line_file->SetLineWidth(_linewidth);
       line_file->Draw("same"); 
       file_markers.push_back(line_file);
     }
   }
 
-  std::cout <<"1"<<std::endl;
   std::stringstream ss_logfiles;
-  std::cout <<"2"<<std::endl;
   ss_logfiles << outpath << "MRD_FileHistory_" << file_ending << "." << img_extension;
-  std::cout <<"3"<<std::endl;
   canvas_logfile_mrd->SaveAs(ss_logfiles.str().c_str());
 
-  std::cout <<"4"<<std::endl;
   for (unsigned int i_line = 0; i_line < file_markers.size(); i_line++){
-    std::cout <<"delete i_line "<<i_line<<std::endl;
     delete file_markers.at(i_line);
   }
 
@@ -1658,7 +1644,7 @@ void MonitorMRDTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
       else if (plotTypes.at(i_time).at(i_plot) == "TimeEvolution") DrawTimeEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "PieChartTrigger") DrawPieChart(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "TriggerEvolution") DrawTriggerEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
-      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") DrawFileHistory(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") DrawFileHistory(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time),1);
       else {
         if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): UpdateMonitorPlots: Specified plot type -"<<plotTypes.at(i_time).at(i_plot)<<"- does not exist! Omit entry."<<std::endl;
       }

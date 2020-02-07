@@ -501,8 +501,6 @@ void MonitorTankTime::InitializeHists(){
   canvas_ch_single = new TCanvas("canvas_ch_single","Channel Canvas Single",900,600);
   canvas_logfile = new TCanvas("canvas_logfile","PMT File History",900,600); 
 
-  std::cout <<"canvas_logfile (Tank): "<<canvas_logfile<<std::endl;
-
   for (int i_active = 0; i_active<num_active_slots; i_active++){
     
     std::vector<unsigned int> crateslot = map_slot_to_crateslot[i_active];
@@ -660,7 +658,7 @@ void MonitorTankTime::InitializeHists(){
   }
 
   //initialize labels/text boxes/etc
-  label_rate = new TLatex(0.905,0.92,"Rate [Hz]");
+  label_rate = new TLatex(0.905,0.92,"Rate [kHz]");
   label_rate->SetNDC(1);
   label_rate->SetTextSize(0.030);
   label_ped = new TLatex(0.905,0.92,"#mu_{Ped}");
@@ -675,7 +673,7 @@ void MonitorTankTime::InitializeHists(){
   label_sigmadiff = new TLatex(0.905,0.92,"#Delta #sigma_{Ped}");
   label_sigmadiff->SetNDC(1);
   label_sigmadiff->SetTextSize(0.030);
-  label_ratediff = new TLatex(0.905,0.92,"#Delta R [Hz]");
+  label_ratediff = new TLatex(0.905,0.92,"#Delta R [kHz]");
   label_ratediff->SetNDC(1);
   label_ratediff->SetTextSize(0.030);
   label_fifo = new TLatex(0.905,0.92,"#");
@@ -778,7 +776,7 @@ void MonitorTankTime::InitializeHists(){
       graph_ch_rate->SetLineColor(line_color_ch);
       graph_ch_rate->SetLineWidth(2);
       graph_ch_rate->SetFillColor(0);
-      graph_ch_rate->GetYaxis()->SetTitle("Rate [Hz]");
+      graph_ch_rate->GetYaxis()->SetTitle("Rate [kHz]");
       graph_ch_rate->GetXaxis()->SetTimeDisplay(1);
       graph_ch_rate->GetXaxis()->SetLabelSize(0.03);
       graph_ch_rate->GetXaxis()->SetLabelOffset(0.03);
@@ -810,6 +808,12 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
   //-------------LoopThroughDecodedEvents -----------------
   //-------------------------------------------------------
 
+  ped_file.clear();
+  sigma_file.clear();
+  rate_file.clear();
+  samples_file.clear();
+  timestamp_file.clear();
+
   int i_timestamp = 0;
   for (std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t>>>::iterator it = finishedPMTWaves.begin(); it != finishedPMTWaves.end(); it++){
 
@@ -817,13 +821,14 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
     uint64_t timestamp_temp = timestamp - utc_to_fermi;			//conversion from UTC time to Fermilab US time
     timestamp_file.push_back(timestamp_temp);
     std::vector<double> ped_file_temp, sigma_file_temp, rate_file_temp;
+    std::vector<int> samples_file_temp;
     ped_file_temp.assign(num_active_slots*num_channels_tank,0.);
     sigma_file_temp.assign(num_active_slots*num_channels_tank,0.);
     rate_file_temp.assign(num_active_slots*num_channels_tank,0.);
+    samples_file_temp.assign(num_active_slots*num_channels_tank,0);
     channels_rate.assign(num_active_slots*num_channels_tank,0.);
     channels_mean.assign(num_active_slots*num_channels_tank,0.);
     channels_sigma.assign(num_active_slots*num_channels_tank,0.);
-
 
     std::map<std::vector<int>, std::vector<uint16_t>> afinishedPMTWaves = finishedPMTWaves.at(timestamp);
     for(std::pair<std::vector<int>, std::vector<uint16_t>> apair : afinishedPMTWaves){
@@ -902,7 +907,6 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
       fgaus->SetParameter(2,hChannels_freq.at(i_channel)->GetRMS());
       TFitResultPtr gaussFitResult = hChannels_freq.at(i_channel)->Fit("fgaus","Q");
       Int_t gaussFitResultInt = gaussFitResult;
-      //std::cout <<"gaussFitResult: "<<gaussFitResult<<std::endl;
       if (gaussFitResultInt == 0){            //status variable 0 means the fit was ok
         //TF1 *gaus = (TF1*) hChannels_freq.at(i_channel)->GetFunction("gaus");
         //std::stringstream ss_gaus;
@@ -934,22 +938,22 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
       for (int i_buffer = 0; i_buffer < num_samples; i_buffer++){
         if (awaveform.at(i_buffer) > channels_mean[i_channel]+5*channels_sigma[i_channel]) {
 		Log("MonitorTankTime tool: Found waveform entry > sigma: waveform = "+std::to_string(awaveform.at(i_buffer))+", mean+5sigma = "+std::to_string(channels_mean[i_channel]+5*channels_sigma[i_channel]),v_debug,verbosity);
-		//sum+= awaveform.at(i_buffer);
 		sum++;
       	}
       }
       channels_rate.at(i_channel) = sum;	//actually this is just the number of signal counts, convert to a rate later on
 
-      //std::cout <<"Setting ped mean = "<<channels_mean.at(i_channel)<<", ped sigma = "<<channels_sigma.at(i_channel)<<", ped rate = "<<channels_rate.at(i_channel)<<std::endl;
       ped_file_temp.at(i_channel) = channels_mean.at(i_channel);
       sigma_file_temp.at(i_channel) = channels_sigma.at(i_channel);
       rate_file_temp.at(i_channel) = channels_rate.at(i_channel);
+      samples_file_temp.at(i_channel) = num_samples;
       }  
     }
 
     ped_file.push_back(ped_file_temp);
     sigma_file.push_back(sigma_file_temp);
     rate_file.push_back(rate_file_temp);
+    samples_file.push_back(samples_file_temp);
     i_timestamp++;   
  
   }
@@ -959,8 +963,6 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
   m_data->CStore.Get("FIFOError1",fifo1);
   m_data->CStore.Get("FIFOError2",fifo2);
 
-
-  //fill latest mean/sigma/rate value of each PMT into a storing vector
 
 }
 
@@ -1061,7 +1063,6 @@ void MonitorTankTime::WriteToFile(){
   Log("MonitorTankTime: WriteToFile: Writing data to file: "+std::to_string(starttime_tm.tm_year+1900)+"/"+std::to_string(starttime_tm.tm_mon+1)+"/"+std::to_string(starttime_tm.tm_mday)+"-"+std::to_string(starttime_tm.tm_hour)+":"+std::to_string(starttime_tm.tm_min)+":"+std::to_string(starttime_tm.tm_sec)
     +"..."+std::to_string(endtime_tm.tm_year+1900)+"/"+std::to_string(endtime_tm.tm_mon+1)+"/"+std::to_string(endtime_tm.tm_mday)+"-"+std::to_string(endtime_tm.tm_hour)+":"+std::to_string(endtime_tm.tm_min)+":"+std::to_string(endtime_tm.tm_sec),v_message,verbosity);
 
- //t_frame = 5*60*1000;	//set delta t to five minutes for testing purposes
   for (int i_channel = 0; i_channel < num_active_slots*num_channels_tank; i_channel++){
     std::vector<unsigned int> crateslotch_temp = map_ch_to_crateslotch[i_channel];
     unsigned int crate_temp = crateslotch_temp.at(0);
@@ -1071,33 +1072,29 @@ void MonitorTankTime::WriteToFile(){
     double mean_temp = 0;
     double sigma_temp = 0.;
     double channelcount_temp = 0.;
-    //std::cout <<"timestamp_file.size() = "<<timestamp_file.size()<<", rate_file.size() = "<<rate_file.size()<<"ped_file.size() = "<<ped_file.size()<<std::endl;
-    //std::cout <<"mean_temp = "<<mean_temp<<", sigma_temp = "<<sigma_temp<<", rate_temp = "<< rate_temp<<", timestamp_file.size(): "<<timestamp_file.size()<<std::endl;
+    double samples_temp=0.;
+    int num_zero_buffers=0;
     for (unsigned int i_t = 0; i_t < timestamp_file.size(); i_t++){
+      //if (i_channel == 0) std::cout <<"ped_file.at i_t = "<<i_t<<": "<<ped_file.at(i_t).at(i_channel)<<", sigma_file = "<<sigma_file.at(i_t).at(i_channel)<<", rate_temp: "<<rate_file.at(i_t).at(i_channel)<<std::endl; 
+      if (rate_file.at(i_t).at(i_channel) < 0.001 && sigma_file.at(i_t).at(i_channel) < 0.001 && ped_file.at(i_t).at(i_channel) < 0.001){
+	num_zero_buffers++;
+	continue;
+}
       rate_temp += rate_file.at(i_t).at(i_channel);
       mean_temp += ped_file.at(i_t).at(i_channel);
       sigma_temp += sigma_file.at(i_t).at(i_channel);
-      //if (crate_temp == 2 && slot_temp == 10 && channel_temp == 3) std::cout <<"i_t: "<<i_t<<", sigma_file: "<<sigma_file.at(i_t).at(i_channel)<<", ped_file: "<<ped_file.at(i_t).at(i_channel)<<", rate_file: "<<rate_file.at(i_t).at(i_channel)<<std::endl;
+      samples_temp += samples_file.at(i_t).at(i_channel);
     }
-    //std::cout <<"mean_temp: "<<mean_temp<<", ped_file.size(): "<<ped_file.size()<<", sigma_temp: "<<sigma_temp<<", rate_temp: "<<rate_temp<<std::endl;
-    if (ped_file.size()>0) {
-    mean_temp/=ped_file.size();
-    sigma_temp/=ped_file.size();
+    int num_buffers = int(ped_file.size()) - num_zero_buffers;
+    if (num_buffers>0) {
+    mean_temp/=num_buffers;
+    sigma_temp/=num_buffers;
+    samples_temp/=num_buffers;
     }
-    /*for (unsigned int i_t = 0; i_t< timestamp_file.size(); i_t++){
-      sigma_temp += pow((ped_file.at(i_t).at(i_channel)-mean_temp),2);
-    }
-    sigma_temp = sqrt(sigma_temp);
-    sigma_temp /= ped_file.size();
-    } else {
-      sigma_temp = 0.;
-    }*/
     channelcount_temp = rate_temp;
-    //std::cout <<"t_start = "<<t_start<<", t_end = "<<t_end<<"t_frame = "<<t_frame/1000.<<", rate_temp (before): "<<rate_temp<<std::endl;
-    if (t_frame>0.) rate_temp /= (t_frame/1000.);  //convert into units of 1/s
-    //std::cout <<"rate_temp (afterwards): "<<rate_temp<<std::endl;
-
-    //std::cout <<"i_ch = "<<i_channel<<", crate = "<<crate_temp<<", slot = "<<slot_temp<<", ped_temp: "<<mean_temp<<", sigma_temp: "<<sigma_temp<<", rate_temp: "<<rate_temp<<std::endl;
+    double t_acquisition = num_buffers*samples_temp*ADC_TO_NS;
+    //if (t_frame>0.) rate_temp /= (t_frame/1000.);  //convert into units of 1/s
+    if (t_acquisition > 0.) rate_temp /= (t_acquisition/1000000.);	//convert from us to seconds
 
     crate->push_back(crate_temp);
     slot->push_back(slot_temp);
@@ -1834,7 +1831,7 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
         canvas_ch_rate->cd();
         multi_ch_rate->Draw("apl");
         multi_ch_rate->SetTitle(ss_ch_rate.str().c_str());
-        multi_ch_rate->GetYaxis()->SetTitle("Rate [Hz]");
+        multi_ch_rate->GetYaxis()->SetTitle("Rate [kHz]");
         multi_ch_rate->GetYaxis()->SetTitleSize(0.035);
         multi_ch_rate->GetYaxis()->SetTitleOffset(1.3);
         multi_ch_rate->GetXaxis()->SetTimeDisplay(1);
@@ -1929,7 +1926,7 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
       canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
 
       canvas_ch_single->Clear();
-      gr_rate.at(i_channel)->GetYaxis()->SetTitle("Rate [Hz]");
+      gr_rate.at(i_channel)->GetYaxis()->SetTitle("Rate [kHz]");
       gr_rate.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
       gr_rate.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
       gr_rate.at(i_channel)->GetXaxis()->SetLabelOffset(0.03);
@@ -2050,6 +2047,14 @@ void MonitorTankTime::DrawTimeDifference(ULong64_t timestamp_end, double time_fr
     palette->SetX2NDC(0.92);
     palette->SetY1NDC(0.1);
     palette->SetY2NDC(0.9);
+  } else if (fabs(h2D_peddiff->GetMaximum())<0.001){
+    h2D_peddiff->GetZaxis()->SetRangeUser(-0.5,0.5);
+    TPaletteAxis *palette = 
+    (TPaletteAxis*)h2D_peddiff->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
   }
   p_peddiff->Update();
 
@@ -2127,10 +2132,18 @@ void MonitorTankTime::DrawTimeDifference(ULong64_t timestamp_end, double time_fr
 
   p_sigmadiff->Update();
 
-  if (h2D_sigmadiff->GetMaximum()>0.){
+  if (h2D_sigmadiff->GetMaximum()>=0.){
     double global_max = (fabs(max_sigmadiff)>fabs(min_sigmadiff))? fabs(max_sigmadiff) : fabs(min_sigmadiff);
     if (abs(max_sigmadiff-min_sigmadiff)==0) h2D_sigmadiff->GetZaxis()->SetRangeUser(min_sigmadiff-1,max_sigmadiff+1);
     else h2D_sigmadiff->GetZaxis()->SetRangeUser(-global_max-0.5,global_max+0.5);
+    TPaletteAxis *palette = 
+    (TPaletteAxis*)h2D_sigmadiff->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
+    } else if (fabs(h2D_sigmadiff->GetMaximum())<0.001){
+    h2D_sigmadiff->GetZaxis()->SetRangeUser(-0.5,0.5);
     TPaletteAxis *palette = 
     (TPaletteAxis*)h2D_sigmadiff->GetListOfFunctions()->FindObject("palette");
     palette->SetX1NDC(0.9);
@@ -2217,6 +2230,14 @@ void MonitorTankTime::DrawTimeDifference(ULong64_t timestamp_end, double time_fr
     double global_max = (fabs(max_ratediff)>fabs(min_ratediff))? fabs(max_ratediff) : fabs(min_ratediff);
     if (abs(max_ratediff-min_ratediff)==0) h2D_ratediff->GetZaxis()->SetRangeUser(min_ratediff-1,max_ratediff+1);
     else h2D_ratediff->GetZaxis()->SetRangeUser(-global_max-0.5,global_max+0.5);
+    TPaletteAxis *palette = 
+    (TPaletteAxis*)h2D_ratediff->GetListOfFunctions()->FindObject("palette");
+    palette->SetX1NDC(0.9);
+    palette->SetX2NDC(0.92);
+    palette->SetY1NDC(0.1);
+    palette->SetY2NDC(0.9);
+  } else if (fabs(h2D_ratediff->GetMaximum())<0.001){
+    h2D_ratediff->GetZaxis()->SetRangeUser(-0.5,0.5);
     TPaletteAxis *palette = 
     (TPaletteAxis*)h2D_ratediff->GetListOfFunctions()->FindObject("palette");
     palette->SetX1NDC(0.9);
@@ -2409,9 +2430,9 @@ void MonitorTankTime::DrawFIFOPlots(){
   int min_fifo1 = 99999;
   int min_fifo2 = 99999;
 
-  std::cout <<"Looping through fifo1, size: "<<fifo1.size()<<std::endl;
+  //std::cout <<"Looping through fifo1, size: "<<fifo1.size()<<std::endl;
   for (unsigned int i_card = 0; i_card < fifo1.size(); i_card++){
-    std::cout <<"i_card = "<<i_card<<std::endl;
+    //std::cout <<"i_card = "<<i_card<<std::endl;
     int i_crate,i_slot;
     CardIDToElectronicsSpace(fifo1.at(i_card),i_crate,i_slot);
     for (int i_ch=0; i_ch < num_channels_tank; i_ch++){
@@ -2433,7 +2454,7 @@ void MonitorTankTime::DrawFIFOPlots(){
 
   for (int i_crate = 0; i_crate < num_crates_tank; i_crate++){
     for (int i_slot = 0; i_slot < num_slots_tank; i_slot++){
-        std::cout <<"crate "<<i_crate<<", slot "<<i_slot<<std::endl;
+        //std::cout <<"crate "<<i_crate<<", slot "<<i_slot<<std::endl;
 	if (h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) > max_fifo1) max_fifo1 = h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
 	if (h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) < min_fifo1) min_fifo1 = h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
 	if (h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) > max_fifo2) max_fifo2 = h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
@@ -2574,15 +2595,10 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
   std::stringstream ss_timeframe;
   ss_timeframe << round(time_frame*100.)/100.;
 
-  std::cout <<"timestamp_start: "<<timestamp_start<<", timestamp_end: "<<timestamp_end<<std::endl;
-  std::cout <<"DrawFileHistory (Tank): canvas_logfile = "<<canvas_logfile<<", log_files: "<<log_files<<std::endl;
   canvas_logfile->cd();
-  std::cout <<"canvas_logfile (Tank): "<<canvas_logfile<<std::endl;
-  std::cout<<"Setting bins"<<std::endl;
   log_files->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
   log_files->GetXaxis()->SetTimeOffset(0.);
   log_files->Draw();
-  std::cout <<"After drawing"<<std::endl;
 
   std::stringstream ss_title_filehistory;
   ss_title_filehistory << "PMT Files History (last "<<ss_timeframe.str()<<"h)";
@@ -2591,7 +2607,6 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
 
   std::vector<TLine*> file_markers;
   for (unsigned int i_file = 0; i_file < tend_plot.size(); i_file++){
-    std::cout <<"i_file (tank): "<<i_file<<std::endl;
     TLine *line_file = new TLine((tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,0.,(tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,1.);
     line_file->SetLineColor(1);
     line_file->SetLineStyle(1);

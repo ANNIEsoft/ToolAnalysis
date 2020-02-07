@@ -66,7 +66,7 @@ class MonitorMRDTime: public Tool {
   void DrawRatePlotPhysical(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTimeEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTriggerEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
-  void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+  void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
   void DrawPieChart(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   //helper functions

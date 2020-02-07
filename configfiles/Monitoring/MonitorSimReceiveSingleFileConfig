@@ -1,4 +1,4 @@
-MRDDataPath /pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1428S0p0
+MRDDataPath /pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1428S0p22
 OutPath ./monitoringplots/
 Mode File	#Options: File/Single
 verbose 0

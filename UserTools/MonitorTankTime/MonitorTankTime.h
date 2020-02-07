@@ -147,6 +147,7 @@ class MonitorTankTime: public Tool {
   unsigned int u_num_channels_tank = 4;
   std::vector<int> crate_numbers;   //vector container to store the numbers of the employed VME crates
   unsigned int Crate_BRF, Crate_RWM, Slot_BRF, Slot_RWM, Channel_BRF, Channel_RWM;
+  int ADC_TO_NS = 2;	//each ADC tick corresponds to 2 ns
 
   
   //several containers storing the position of active cards within the VME crates follow
@@ -172,6 +173,7 @@ class MonitorTankTime: public Tool {
 
   //define live storing variables (for data of current file)
   std::vector<std::vector<double>> ped_file, sigma_file, rate_file;
+  std::vector<std::vector<int>> samples_file;
   std::vector<uint64_t> timestamp_file;
   long t_file_start, t_file_end;
   int minimum_adc = 200;          //define x-borders of ADC histogram plots, does 200 and 400 make sense?

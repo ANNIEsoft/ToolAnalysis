@@ -103,7 +103,6 @@
 #include "PhaseIIADCCalibrator.h"
 #include "MCHitToHitComparer.h"
 #include "MonitorSimReceiveSingleFile.h"
-#include "MonitorSimReceive2.h"
 #include "LoadGenieEvent.h"
 #include "PrintGenieEvent.h"
 #include "PlotWaveforms.h"
