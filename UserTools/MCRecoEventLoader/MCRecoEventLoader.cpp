@@ -14,6 +14,7 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   
   ///////////////////// Defaults for Config ///////////////
   fGetPiKInfo = 1;
+  fGetNRings = 1;
   fParticleID = 13;
   xshift = 0.;
   yshift = 14.46469;
@@ -22,6 +23,7 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   /// Get the Tool configuration variables
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
+  m_variables.Get("GetNRings",fGetNRings);
   m_variables.Get("ParticleID", fParticleID);
   m_variables.Get("xshift", xshift);
   m_variables.Get("yshift", yshift);
@@ -34,6 +36,9 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   // Make the RecoDigit Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
   if(recoeventexists==0) m_data->Stores["RecoEvent"] = new BoostStore(false,2);
+
+  // Get particle masses map from CStore (populated by MCParticleProperties tool)
+  m_data->CStore.Get("PdgMassMap",pdgcodetomass);
   
 
   return true;
@@ -68,8 +73,10 @@ bool MCRecoEventLoader::Execute(){
   this->PushTrueVertex(true);
   this->PushTrueStopVertex(true);
   this->PushTrueMuonEnergy(TrueMuonEnergy);
+  //std::cout <<"MCRecoEventLoader: Pushing true muon energy "<<TrueMuonEnergy<<std::endl;
   this->PushTrueWaterTrackLength(WaterTrackLength);
   this->PushTrueMRDTrackLength(MRDTrackLength);
+  this->PushProjectedMrdHit(projectedmrdhit);
 
   return true;
 }
@@ -100,13 +107,14 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
   bool mufound=false;
   if(fMCParticles){
     Log("MCRecoEventLoader::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
+    for(unsigned int particlei=0; particlei<fMCParticles->size(); particlei++){
       MCParticle aparticle = fMCParticles->at(particlei);
       //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
       if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
       if(aparticle.GetPdgCode()!=fParticleID) continue;       // not a muon
       primarymuon = aparticle;                       // note the particle
       mufound=true;                                  // note that we found it
+      m_data->Stores.at("RecoEvent")->Set("PdgPrimary",fParticleID);  //save the primary particle pdg code to the RecoEvent store
       break;                                         // won't have more than one primary muon
     }
   } else {
@@ -125,12 +133,14 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
   Direction muondirection = primarymuon.GetStartDirection();
   
   TrueMuonEnergy = primarymuon.GetStartEnergy();
+   //std::cout <<"MCRecoEventLoader: FindTrueVertexFromMC: TrueEnergy: "<<TrueMuonEnergy<<std::endl;
 
   // MCParticleProperties tool fills in MRD track in m, but
   // Water track in cm...
   MRDTrackLength = primarymuon.GetTrackLengthInMrd()*100.;
   WaterTrackLength = primarymuon.GetTrackLengthInTank();
 
+  //std::cout <<"MCRecoEventLoader: Muon start position: ("<<muonstartpos.X()<<","<<muonstartpos.Y()<<","<<muonstartpos.Z()<<")"<<std::endl;
   // set true vertex
   // change unit
   muonstartpos.UnitToCentimeter(); // convert unit from meter to centimeter
@@ -138,6 +148,7 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
   // change coordinate for muon start vertex
   muonstartpos.SetY(muonstartpos.Y()+yshift);
   muonstartpos.SetZ(muonstartpos.Z()+zshift);
+  //std::cout <<"MCRecoEventLoader: NEW Muon start position: ("<<muonstartpos.X()<<","<<muonstartpos.Y()<<","<<muonstartpos.Z()<<")"<<std::endl;
   fMuonStartVertex->SetVertex(muonstartpos, muonstarttime);
   fMuonStartVertex->SetDirection(muondirection);
   //  charge coordinate for muon stop vertex
@@ -151,10 +162,16 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
   Log(logmessage,v_debug,verbosity);
 	logmessage = "  muonStop = ("+to_string(muonstoppos.X()) + ", " + to_string(muonstoppos.Y()) + ", " + to_string(muonstoppos.Z()) + ") "+ "\n";
 	Log(logmessage,v_debug,verbosity);
+
+  //get information whether the extended particle trajectory were to hit the MRD
+  projectedmrdhit = primarymuon.GetProjectedHitMrd();
+
 }
 
 
 void MCRecoEventLoader::FindPionKaonCountFromMC() {
+
+  Log("MCRecoEventLoader: Find PionKaonCountFromMC",v_message,verbosity);
   
   // loop over the MCParticles to find the highest enery primary muon
   // MCParticles is a std::vector<MCParticle>
@@ -166,36 +183,59 @@ void MCRecoEventLoader::FindPionKaonCountFromMC() {
   int K0count = 0;
   int Kpcount = 0;
   int Kmcount = 0;
+
+  //set up number of rings to 0 before counting
+  int nprimary = 0;
+  int nsecondary = 0;
+  int nrings = 0;
+  std::vector<unsigned int> index_particles_ring;
+
   if(fMCParticles){
     Log("MCRecoEventLoader::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
-    for(int particlei=0; particlei<fMCParticles->size(); particlei++){
+    for(unsigned int particlei=0; particlei<fMCParticles->size(); particlei++){
       MCParticle aparticle = fMCParticles->at(particlei);
       //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()==111){               // is a primary pi0
-        pionfound = true;
-        pi0count++;
-      }
-      if(aparticle.GetPdgCode()==211){               // is a primary pi+
-        pionfound = true;
-        pipcount++;
-      }
-      if(aparticle.GetPdgCode()==-211){               // is a primary pi-
-        pionfound = true;
-        pimcount++;
-      }
-      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()==311){               // is a primary K0
-        kaonfound = true;
-        K0count++;
-      }
-      if(aparticle.GetPdgCode()==321){               // is a primary K+
-        kaonfound = true;
-        Kpcount++;
-      }
-      if(aparticle.GetPdgCode()==-321){               // is a primary K-
-        kaonfound = true;
-        Kmcount++;
+      if(aparticle.GetParentPdg()==0) {                //primary particle
+        nprimary++;
+        if (TMath::Abs(aparticle.GetPdgCode())==11){
+          if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(11)) {nrings++; index_particles_ring.push_back(particlei);}
+        } 
+        if (TMath::Abs(aparticle.GetPdgCode())==13){
+          if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(13)) {nrings++; index_particles_ring.push_back(particlei);}
+        }
+        if(aparticle.GetPdgCode()==111){               // is a primary pi0
+          pionfound = true;
+          pi0count++;
+          nrings+=2; 
+          index_particles_ring.push_back(particlei);}
+        if(aparticle.GetPdgCode()==211){               // is a primary pi+
+          pionfound = true;
+          pipcount++;
+          if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(211)) {nrings++; index_particles_ring.push_back(particlei);}
+        }
+        if(aparticle.GetPdgCode()==-211){               // is a primary pi-
+          pionfound = true;
+          pimcount++;
+          if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-211)) {nrings++; index_particles_ring.push_back(particlei);}
+        }
+        if(aparticle.GetPdgCode()==311){               // is a primary K0
+          kaonfound = true;
+          K0count++;
+        }
+        if(aparticle.GetPdgCode()==321){               // is a primary K+
+          kaonfound = true;
+          Kpcount++;
+          if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(321)) {nrings++; index_particles_ring.push_back(particlei);}
+        }
+        if(aparticle.GetPdgCode()==-321){               // is a primary K-
+          kaonfound = true;
+          Kmcount++;
+          if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-321)) {nrings++; index_particles_ring.push_back(particlei);}
+        }
+      } else {                                          // not a primary particle
+        nsecondary++;
+        Log("MCRecoEventLoader: Secondary particle with pdg "+std::to_string(aparticle.GetPdgCode()),v_debug,verbosity);
+ 	//don't count rings from secondary particles for now (should we?)
       }
     }
   } else {
@@ -207,6 +247,9 @@ void MCRecoEventLoader::FindPionKaonCountFromMC() {
   if(not kaonfound){
     Log("MCRecoEventLoader::  Tool: No kaons in this event",v_warning,verbosity);
   }
+  if (fGetNRings){
+    Log("MCRecoEventLoader: Found "+std::to_string(nrings)+" rings in this event, from "+std::to_string(nprimary)+" primary particles and "+std::to_string(nsecondary)+" secondary particles.");
+  }
   //Fill in pion counts for this event
   m_data->Stores.at("RecoEvent")->Set("MCPi0Count", pi0count);
   m_data->Stores.at("RecoEvent")->Set("MCPiPlusCount", pipcount);
@@ -214,6 +257,11 @@ void MCRecoEventLoader::FindPionKaonCountFromMC() {
   m_data->Stores.at("RecoEvent")->Set("MCK0Count", K0count);
   m_data->Stores.at("RecoEvent")->Set("MCKPlusCount", Kpcount);
   m_data->Stores.at("RecoEvent")->Set("MCKMinusCount", Kmcount);
+  if (fGetNRings) {
+    m_data->Stores.at("RecoEvent")->Set("NRings",nrings);
+    m_data->Stores.at("RecoEvent")->Set("IndexParticlesRing",index_particles_ring);
+  }
+
 }
 
 
@@ -241,6 +289,17 @@ void MCRecoEventLoader::PushTrueWaterTrackLength(double WaterT) {
 void MCRecoEventLoader::PushTrueMRDTrackLength(double MRDT) {
 	Log("MCRecoEventLoader Tool: Push true track length in MRD to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD", MRDT);  ///> Add digits to RecoEvent
+}
+
+void MCRecoEventLoader::PushProjectedMrdHit(bool projectedmrdhit){
+  Log("MCRecoEventLoader Tool: Push projected Mrd Hit",v_message,verbosity);
+  m_data->Stores.at("RecoEvent")->Set("ProjectedMRDHit", projectedmrdhit);  ///> Add digits to RecoEvent 
+}
+
+double MCRecoEventLoader::GetCherenkovThresholdE(int pdg_code) {
+  Log("MCRecoEventLoader Tool: GetCherenkovThresholdE",v_message,verbosity);            ///> Calculate Cherenkov threshold energies depending on particle pdg
+  double Ethr = pdgcodetomass[pdg_code]*sqrt(1+1./sqrt(n*n-1));
+  return Ethr;
 }
 
 

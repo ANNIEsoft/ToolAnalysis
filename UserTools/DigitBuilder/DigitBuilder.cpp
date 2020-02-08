@@ -28,6 +28,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   fPhotodetectorConfiguration = "All";
   fParametricModel = 0;
   fIsMC = 1;
+  fDigitChargeThr = 10;
 
 
   /// Get the Tool configuration variables
@@ -39,6 +40,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("yshift", yshift);
   m_variables.Get("zshift", zshift);
   m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
+  m_variables.Get("DigitChargeThr",fDigitChargeThr);
 
 
   /// Construct the other objects we'll be setting at event level,
@@ -218,7 +220,7 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
             std::cout << "PMT Charge,Time: " << to_string(calQ) << "," <<
                     to_string(calT) << std::endl;
           }
-          if(calQ>10) {
+          if(calQ>fDigitChargeThr) {					//changed to 0 for cross-checks with other tools, change back later!
 				    digitType = RecoDigit::PMT8inch;
 				    RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
 				    fDigitList->push_back(recoDigit); 

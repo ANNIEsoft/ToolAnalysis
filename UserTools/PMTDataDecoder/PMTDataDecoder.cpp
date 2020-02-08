@@ -313,7 +313,6 @@ bool PMTDataDecoder::Execute(){
   Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
           to_string(CStorePMTWaves.size()),v_debug, verbosity);
 
-
   if(CDEntryNum == totalentries){
     Log("PMTDataDecoder Tool: Run part completed.",v_warning, verbosity);
     FileCompleted = true;

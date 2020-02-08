@@ -36,6 +36,9 @@ class LoadANNIEEvent: public Tool {
     /// @brief The index of the current entry in the ANNIEEvent store
     size_t current_entry_;
 
+    /// @brief Event offset if one wants to ignore the first offset_evnum events
+    int offset_evnum;
+
     /// @brief The index of the current file in this list of input files
     size_t current_file_;
 

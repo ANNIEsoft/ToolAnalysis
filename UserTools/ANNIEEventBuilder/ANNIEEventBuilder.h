@@ -36,6 +36,7 @@ class ANNIEEventBuilder: public Tool {
 
  private:
 
+
   std::vector<int> DAQ_SIGNAL_SLOTS{1015,2019};
 
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform

@@ -19,7 +19,16 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MCPMTVolCut", fMCPMTVolCut);
   m_variables.Get("MCMRDCut", fMCMRDCut);
   m_variables.Get("MCPiKCut", fMCPiKCut);
+  m_variables.Get("MCIsMuonCut", fMCIsMuonCut);
+  m_variables.Get("MCIsElectronCut", fMCIsElectronCut);
+  m_variables.Get("MCIsSingleRingCut", fMCIsSingleRingCut);
+  m_variables.Get("MCIsMultiRingCut", fMCIsMultiRingCut);
+  m_variables.Get("MCProjectedMRDHit", fMCProjectedMRDHit);
+  m_variables.Get("MCEnergyCut", fMCEnergyCut);
+  m_variables.Get("Emin",Emin);
+  m_variables.Get("Emax",Emax);
   m_variables.Get("NHitCut", fNHitCut);
+  m_variables.Get("NHitmin", fNHitmin);
   m_variables.Get("PromptTrigOnly", fPromptTrigOnly);
   m_variables.Get("RecoFVCut", fRecoFVCut);
   m_variables.Get("RecoPMTVolCut", fRecoPMTVolCut);
@@ -66,62 +75,106 @@ bool EventSelector::Execute(){
     return false; 
   }
 
-
-	// Retrive digits from RecoEvent
-	auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
+  // Retrive digits from RecoEvent
+  auto get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
   if(not get_ok){
   	Log("EventSelector  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
   	return false;
   }
 
   // BEGIN CUTS USING TRUTH INFORMATION //
+
+  // get truth vertex information 
+  auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
+  if(!get_truevtx){ 
+      Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
+      return false; 
+  }
+  
+  auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
+  if(!get_truestopvtx){ 
+      Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
+      return false; 
+  }
+ 
+  bool IsSingleRing = this->EventSelectionByMCSingleRing();
+  m_data->Stores.at("RecoEvent")->Set("SingleRingEvent",IsSingleRing);
+
+  bool IsMultiRing = this->EventSelectionByMCMultiRing();
+  m_data->Stores.at("RecoEvent")->Set("MultiRingEvent",IsMultiRing);
+
+  bool HasProjectedMRDHit = this->EventSelectionByMCProjectedMRDHit();
+  //information about projected MRD hit already stored in the RecoEvent store by MCRecoEventLoader
+
+  // Fill the EventSelection mask for the cuts that are supposed to be applied
   if (fMCPiKCut){
-    fEventApplied |= EventSelector::kFlagMCPiK; 
     bool passNoPiK = this->EventSelectionNoPiK();
+    fEventApplied |= EventSelector::kFlagMCPiK; 
     if(!passNoPiK) fEventFlagged |= EventSelector::kFlagMCPiK;
   }  
 
   if(fMCFVCut || fMCPMTVolCut){
-    // get truth vertex information 
-    auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fMuonStartVertex);
-	if(!get_truevtx){ 
-	  Log("EventSelector Tool: Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
-	  return false; 
-	}
     if (fMCFVCut){
-      fEventApplied |= EventSelector::kFlagMCFV; 
       bool passMCFVCut= this->EventSelectionByFV(true);
+      fEventApplied |= EventSelector::kFlagMCFV; 
       if(!passMCFVCut) fEventFlagged |= EventSelector::kFlagMCFV;
     }
     if (fMCPMTVolCut){
-      fEventApplied |= EventSelector::kFlagMCPMTVol; 
       bool passMCPMTCut= this->EventSelectionByPMTVol(true);
+      fEventApplied |= EventSelector::kFlagMCPMTVol; 
       if(!passMCPMTCut) fEventFlagged |= EventSelector::kFlagMCPMTVol;
     }
   }
 
   if(fMCMRDCut){
-    auto get_truestopvtx = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex", fMuonStopVertex);
-    if(!get_truestopvtx){ 
-      Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
-      return false; 
-    }
-    fEventApplied |= EventSelector::kFlagMCMRD; 
     bool passMCMRDCut= this->EventSelectionByMCTruthMRD();
+    fEventApplied |= EventSelector::kFlagMCMRD; 
     if(!passMCMRDCut) fEventFlagged |= EventSelector::kFlagMCMRD;
   }
 
   if(fPromptTrigOnly){
-    fEventApplied |= EventSelector::kFlagPromptTrig; 
     bool isPromptTrigger= this->PromptTriggerCheck();
+    fEventApplied |= EventSelector::kFlagPromptTrig; 
     if(!isPromptTrigger) fEventFlagged |= EventSelector::kFlagPromptTrig;
   }
 
   if(fNHitCut){
+    bool HasEnoughHits = this->NHitCountCheck(fNHitmin);
     fEventApplied |= EventSelector::kFlagNHit;
-    int DefaultCut = 4; //TODO: could add to the config?
-    bool HasEnoughHits = this->NHitCountCheck(DefaultCut);
     if(!HasEnoughHits) fEventFlagged |= EventSelector::kFlagNHit;
+  }
+
+  if (fMCEnergyCut){
+    bool IsInsideEnergyWindow = this->EnergyCutCheck(Emin,Emax);
+    fEventApplied |= EventSelector::kFlagMCEnergyCut;
+    if (!IsInsideEnergyWindow) fEventFlagged |= EventSelector::kFlagMCEnergyCut;
+  }
+
+  if (fMCIsMuonCut){
+    bool IsMuon = this->ParticleCheck(13);
+    fEventApplied |= EventSelector::kFlagMCIsMuon;
+    if (!IsMuon) fEventFlagged |= EventSelector::kFlagMCIsMuon;
+  }
+
+  if (fMCIsElectronCut){
+    bool IsElectron = this->ParticleCheck(11);
+    fEventApplied |= EventSelector::kFlagMCIsElectron;
+    if (!IsElectron) fEventFlagged |= EventSelector::kFlagMCIsElectron;
+  }
+
+  if (fMCIsSingleRingCut){
+    fEventApplied |= EventSelector::kFlagMCIsSingleRing;
+    if (!IsSingleRing) fEventFlagged |= EventSelector::kFlagMCIsSingleRing;
+  }
+
+  if (fMCIsMultiRingCut){
+    fEventApplied |= EventSelector::kFlagMCIsMultiRing;
+    if (!IsMultiRing) fEventFlagged |= EventSelector::kFlagMCIsMultiRing;
+  }
+
+  if (fMCProjectedMRDHit){
+    fEventApplied |= EventSelector::kFlagMCProjectedMRDHit;
+    if (!HasProjectedMRDHit) fEventFlagged |= EventSelector::kFlagMCProjectedMRDHit;
   }
 
   // BEGIN CUTS USING RECONSTRUCTED INFORMATION //
@@ -287,7 +340,7 @@ bool EventSelector::EventSelectionByFV(bool isMC) {
   checkedVtxX = vtxPos.X();
   checkedVtxY = vtxPos.Y();
   checkedVtxZ = vtxPos.Z();
-  std::cout<<"checkedVtxX, Y, Z = "<<checkedVtxX<<", "<<checkedVtxY<<", "<<checkedVtxZ<<std::endl;
+  //std::cout<<"checkedVtxX, Y, Z = "<<checkedVtxX<<", "<<checkedVtxY<<", "<<checkedVtxZ<<std::endl;
   double tankradius = ANNIEGeometry::Instance()->GetCylRadius();
   double fidcutradius = 0.8 * tankradius;
   double fidcuty = 50.;
@@ -342,10 +395,7 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
   double mrdEndZ = fGeometry.GetMrdEnd()*100-168.1;
   double mrdHeightY = fGeometry.GetMrdHeight()*100;                                                                                     
   double mrdWidthX = fGeometry.GetMrdWidth()*100;
-  cout<<"muonStopX, Y, Z = "<<muonStopX<<", "<<muonStopY<<", "<<muonStopZ<<endl;
-  cout<<"mrdStartZ, mrdStopZ = "<<mrdStartZ<<", "<<mrdEndZ<<endl;
-  cout<<"mrdWidthX = "<<mrdWidthX<<endl;
-  cout<<"mrdHeightY = "<<mrdHeightY<<endl;
+  Log("EventSelector tool: Read in MuonStop (X,Y,Z) = ("+std::to_string(muonStopX)+","+std::to_string(muonStopY)+","+std::to_string(muonStopZ)+")");
   if(muonStopZ<mrdStartZ || muonStopZ>mrdEndZ
   	|| muonStopX<-1.0*mrdWidthX || muonStopX>mrdWidthX
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {
@@ -353,6 +403,50 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
     return false;	
   }
   return true;
+}
+
+bool EventSelector::EnergyCutCheck(double Emin, double Emax) {
+
+  double energy;
+  m_data->Stores.at("RecoEvent")->Get("TrueMuonEnergy",energy);
+  if (energy > Emax || energy < Emin) return false;
+  return true;
+
+}
+
+bool EventSelector::ParticleCheck(int pdg_number) {
+
+  int pdg;
+  m_data->Stores.at("RecoEvent")->Get("PdgPrimary",pdg);
+  if (pdg!=pdg_number) return false;
+  return true;
+
+}
+
+bool EventSelector::EventSelectionByMCSingleRing() {
+
+  int nrings;
+  m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
+  if (nrings!=1) return false;
+  return true;
+
+}
+
+bool EventSelector::EventSelectionByMCMultiRing() {
+
+  int nrings;
+  m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
+  if (nrings <=1 ) return false;
+  return true;
+
+}
+
+bool EventSelector::EventSelectionByMCProjectedMRDHit() {
+
+  bool has_projected_mrd_hit;
+  m_data->Stores.at("RecoEvent")->Get("ProjectedMRDHit",has_projected_mrd_hit);
+  return has_projected_mrd_hit;
+
 }
 
 void EventSelector::Reset() {

@@ -39,6 +39,12 @@ bool MCParticleProperties::Initialise(std::string configfile, DataModel &data){
 	tank_start = MRDSpecs::tank_start;
 	tank_yoffset = MRDSpecs::tank_yoffset;
 	tank_halfheight = MRDSpecs::tank_halfheight;
+
+	// generate pdg code to name / mass maps & save them to the CStore for further use by downstream tools
+	this->GeneratePdgMap();
+	this->GeneratePdgMassMap();
+	m_data->CStore.Set("PdgNameMap",pdgcodetoname);
+	m_data->CStore.Set("PdgMassMap",pdgcodetomass);
 	
 	return true;
 }
@@ -139,9 +145,16 @@ bool MCParticleProperties::Execute(){
 		Position MRDentrypoint(0,0,0), MRDexitpoint(0,0,0), MuTrackInMRD(0,0,0);
 		double atracklengthinmrd, mrdpenetrationcm;
 		int mrdpenetrationlayers;
+		bool atrackprojectedhitmrd;
 		bool atrackentersmrd, atrackstopsinmrd, atrackpenetratesmrd;
 		// check for intercept and record entry point
 		bool checkboxlinerror=false;
+
+		//======================================================================================================
+		// Calculate whether the extended (projected) particle trajectory would hit the MRD (first layer)
+		//======================================================================================================
+
+		atrackprojectedhitmrd  =  CheckProjectedMRDHit(startvertex, stopvertex, MRDSpecs::MRD_width, MRDSpecs::MRD_height,MRDSpecs::MRD_start);
 		
 		//new version based on external function calls
 		///////////////////////////////////////////////
@@ -225,6 +238,7 @@ bool MCParticleProperties::Execute(){
 		nextparticle->SetTrackAngleX(avgtrackanglex);
 		nextparticle->SetTrackAngleY(avgtrackangley);
 		nextparticle->SetTrackAngleFromBeam(atrackangle);
+		nextparticle->SetProjectedHitMrd(atrackprojectedhitmrd);
 		nextparticle->SetEntersMrd(atrackentersmrd);
 		MRDentrypoint.UnitToMeter();
 		nextparticle->SetMrdEntryPoint(MRDentrypoint);
@@ -240,6 +254,7 @@ bool MCParticleProperties::Execute(){
 		nextparticle->SetMrdEnergyLoss(energylossinmrd);
 		if(verbosity>3){
 			cout<<"atrackangle: "<<atrackangle<<endl
+				<<"atrackprojectedhitmrd: "<<atrackprojectedhitmrd<<endl
 				<<"atrackentersmrd: "<<atrackentersmrd<<endl
 				<<"atrackstopsinmrd: "<<atrackstopsinmrd<<endl
 				<<"mrdpenetrationcm: "<<mrdpenetrationcm<<endl
@@ -551,6 +566,26 @@ bool MCParticleProperties::CheckLineBox( Position L1, Position L2, Position B1, 
 	} else {
 		return false;
 	}
+}
+
+bool MCParticleProperties::CheckProjectedMRDHit(Position startvertex, Position stopvertex, double mrdwidth, double mrdheight, double mrdstart){
+
+
+	bool projected_mrdhit = true;
+	Position diffvertex = stopvertex - startvertex;
+
+	//calculate projected x and y positions of the extended particle track from the track to the MRD
+	double ProjMRDHit = (mrdstart - startvertex.Z())/(diffvertex.Z());
+	double ProjXMRD = startvertex.X() + ProjMRDHit*diffvertex.X();
+	double ProjYMRD = startvertex.Y() + ProjMRDHit*diffvertex.Y();
+
+	//check if the projected x and y positions at the z-position of the first MRD layer are contained within the first MRD layers
+	if (fabs(ProjXMRD) > mrdwidth) projected_mrdhit = false;
+	if (fabs(ProjYMRD) > mrdheight) projected_mrdhit = false;
+        if (ProjMRDHit < 0.) projected_mrdhit = false;			//particle going in wrong direction
+
+	return projected_mrdhit;
+
 }
 
 //=========================================================================================
@@ -1089,7 +1124,7 @@ bool MCParticleProperties::ProjectTankIntercepts(Position startvertex, Position 
 
 //=========================================================================================
 
-std::map<int,std::string> MCParticleProperties::pdgcodetoname{};
+
 
 std::string MCParticleProperties::PdgToString(int code){
 	if(pdgcodetoname.size()==0) GeneratePdgMap();
@@ -1169,5 +1204,61 @@ std::map<int,std::string>* MCParticleProperties::GeneratePdgMap(){
 	pdgcodetoname.emplace(3338,"Gd157");
 	pdgcodetoname.emplace(3339,"Gd155");
 	return &pdgcodetoname;
+}
+
+
+
+double MCParticleProperties::PdgToMass(int code){
+	if(pdgcodetomass.size()==0) GeneratePdgMassMap();
+	if(pdgcodetomass.count(code)!=0){
+		return pdgcodetomass.at(code);
+	} else {
+		cerr<<"unknown pdg code "<<code<<endl;
+		return double(code);
+	}
+}
+
+std::map<int,double>* MCParticleProperties::GeneratePdgMassMap(){
+	//all masses in MeV
+	if(pdgcodetomass.size()!=0) return &pdgcodetomass;
+	pdgcodetomass.emplace(2212,938.272);
+	pdgcodetomass.emplace(-2212,938.272);
+	pdgcodetomass.emplace(11,0.511);
+	pdgcodetomass.emplace(-11,0.511);
+	pdgcodetomass.emplace(12,0.000);
+	pdgcodetomass.emplace(-12,0.000);
+	pdgcodetomass.emplace(22,0.000);
+	pdgcodetomass.emplace(2112,939.565);
+	pdgcodetomass.emplace(-2112,939.485);
+	pdgcodetomass.emplace(-13,105.658);
+	pdgcodetomass.emplace(13,105.658);
+	pdgcodetomass.emplace(211,139.571);
+	pdgcodetomass.emplace(-211,139.571);
+	pdgcodetomass.emplace(321,493.666);
+	pdgcodetomass.emplace(-321,493.666);
+	pdgcodetomass.emplace(3122,1115.683);
+	pdgcodetomass.emplace(-3122,1115.683);
+	pdgcodetomass.emplace(3112,1197.449);
+	pdgcodetomass.emplace(3222,1189.37);
+	pdgcodetomass.emplace(3212,1192.642);
+	pdgcodetomass.emplace(111,134.977);
+	pdgcodetomass.emplace(311,497.611);
+	pdgcodetomass.emplace(-311,497.611);
+	pdgcodetomass.emplace(14,0.000);
+	pdgcodetomass.emplace(-14,0.000);
+	pdgcodetomass.emplace(-3222,1189.37);
+	pdgcodetomass.emplace(-3212,1192.642);
+	pdgcodetomass.emplace(-3112,1197.449);
+	pdgcodetomass.emplace(3322,1314.86);
+	pdgcodetomass.emplace(-3322,1314.86);
+	pdgcodetomass.emplace(3312,1321.71);
+	pdgcodetomass.emplace(-3312,1321.71);
+	pdgcodetomass.emplace(3334,1672.45);
+	pdgcodetomass.emplace(-3334,1672.45);
+	pdgcodetomass.emplace(-15,1776.86);
+	pdgcodetomass.emplace(15,1776.86);
+	pdgcodetomass.emplace(100,0.000);
+	//masses of nuclei not specified since they won't be able to generate Cherenkov light
+	return &pdgcodetomass;
 }
 

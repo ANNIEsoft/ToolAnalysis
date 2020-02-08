@@ -39,6 +39,12 @@ class EventSelector: public Tool {
    kFlagNHit         = 0x40, //64
    kFlagRecoFV       = 0x80, //128
    kFlagRecoPMTVol   = 0x100, //256
+   kFlagMCIsMuon       = 0x200, //512
+   kFlagMCIsElectron   = 0x400, //1024
+   kFlagMCIsSingleRing = 0x800, //2048
+   kFlagMCIsMultiRing  = 0x1000, //4096
+   kFlagMCProjectedMRDHit = 0x2000, //8192
+   kFlagMCEnergyCut   = 0x4000
   } EventFlags_t;
 
  private:
@@ -85,7 +91,6 @@ class EventSelector: public Tool {
  	/// The selection is based on the true vertex stop position from MC. 
  	/// If the true muon vertex stops inside the MRD, the event 
  	/// is selected. 
- 	/// The 
  	bool EventSelectionByMCTruthMRD();
 
  	/// \brief Event selection by Pion Kaon count
@@ -94,6 +99,41 @@ class EventSelector: public Tool {
  	/// kaons are parent particles in the event.  This will help
   /// Select the CC0Pi events when testing reconstruction.
  	bool EventSelectionNoPiK();
+
+  /// \brief Event selection by requiring the primary to be a certain particle
+  ////
+  /// This event selection criteria selects events with a 
+  /// certain primary particle (to be selected by pdg number)
+  bool ParticleCheck(int pdg_number);
+
+  /// \brief Event selection by Energy cut
+  /////
+  /// This event selection criteria requires that the energy 
+  /// of the primary electron/muon is between Emin and Emax [MeV]
+  /// 
+  bool EnergyCutCheck(double Emin, double Emax);
+
+  /// \brief Event selection by Single Rings
+  ////
+  /// This event selection criteria requires events to have only
+  /// one ring. Number of rings are counted by looping through primary
+  /// particles and selecting charged particles above Cherenkov threshold
+  bool EventSelectionByMCSingleRing();
+
+  /// \brief Event selection by Multi Rings
+  ////
+  /// This event selection criteria requires events to have multiple
+  /// rings. Number of rings are counted by looping through primary
+  /// particles and selecting charged particles above Cherenkov threshold
+  bool EventSelectionByMCMultiRing();
+
+  /// \brief Event selection by Projected MRD Hits
+  ////
+  /// This event selection criteria requires events to have a projected
+  /// hit in the MRD. This event selection includes events that do not actually
+  /// enter the MRD but whose projected trajectory from the tank intersects with
+  /// the MRD.
+  bool EventSelectionByMCProjectedMRDHit();
 
  	/// \brief MC entry number
   uint64_t fMCEventNum;
@@ -123,7 +163,16 @@ class EventSelector: public Tool {
   bool fMCPMTVolCut = false;
   bool fMCMRDCut = false;
   bool fMCPiKCut = false;
+  bool fMCIsMuonCut = false;
+  bool fMCIsElectronCut = false;
+  bool fMCIsSingleRingCut = false;
+  bool fMCIsMultiRingCut = false;
+  bool fMCProjectedMRDHit = false;
+  bool fMCEnergyCut = false;
   bool fNHitCut = true;
+  int  fNHitmin = 4;
+  double Emin = 0.;
+  double Emax = 10000.;
   bool fRecoPMTVolCut = false;
   bool fRecoFVCut = false;
   bool fPromptTrigOnly = true;
