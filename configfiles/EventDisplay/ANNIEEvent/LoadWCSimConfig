@@ -2,8 +2,8 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 verbose 1
-
-InputFile /ANNIECode/simulations/mu_e_rootfiles/wcsim_electrons_isotropic_exemplary.root
+InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.0.17.root
+#InputFile /annie/app/users/mnieslon/MyToolAnalysis/wcsim_beamlike_electrons_FV_0_499.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger

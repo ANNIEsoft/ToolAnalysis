@@ -173,6 +173,7 @@ class MCParticle : public Particle {
 	inline Position GetTankExitPoint(){return TankExitPoint;}
 	inline double GetTrackLengthInTank(){return TrackLengthInTank;}
 	
+	inline bool GetProjectedHitMrd(){return ProjectedHitMrd;}
 	inline bool GetEntersMrd(){return EntersMrd;}
 	inline Position GetMrdEntryPoint(){return MrdEntryPoint;}
 	inline bool GetExitsMrd(){return ExitsMrd;}
@@ -195,6 +196,7 @@ class MCParticle : public Particle {
 	inline void SetTankExitPoint(Position iTankExitPoint){TankExitPoint = iTankExitPoint;}
 	inline void SetTrackLengthInTank(double iTrackLengthInTank){TrackLengthInTank = iTrackLengthInTank;}
 	
+	inline void SetProjectedHitMrd(bool iProjectedHitMrd){ProjectedHitMrd = iProjectedHitMrd;}
 	inline void SetEntersMrd(bool iEntersMrd){EntersMrd = iEntersMrd;}
 	inline void SetMrdEntryPoint(Position iMrdEntryPoint){MrdEntryPoint = iMrdEntryPoint;}
 	inline void SetExitsMrd(bool iExitsMrd){ExitsMrd = iExitsMrd;}
@@ -248,6 +250,7 @@ class MCParticle : public Particle {
 		std::cout <<"ExitsTank = "<<ExitsTank <<std::endl;
 		std::cout <<"TankExitPoint = "; TankExitPoint.Print();
 		std::cout <<"TrackLengthInTank = "<<TrackLengthInTank <<std::endl;
+		std::cout <<"ProjectedHitMrd = "<<ProjectedHitMrd << std::endl;
 		std::cout <<"EntersMrd = "<<EntersMrd <<std::endl;
 		std::cout <<"MrdEntryPoint = "; MrdEntryPoint.Print();
 		std::cout <<"ExitsMrd = "<<ExitsMrd <<std::endl;
@@ -278,6 +281,7 @@ class MCParticle : public Particle {
 	Position TankExitPoint;
 	double TrackLengthInTank;
 	
+	bool ProjectedHitMrd;
 	double EntersMrd;
 	Position MrdEntryPoint;
 	bool ExitsMrd;
@@ -316,6 +320,7 @@ class MCParticle : public Particle {
 			ar & TankExitPoint;
 			ar & TrackLengthInTank;
 			
+			ar & ProjectedHitMrd;
 			ar & EntersMrd;
 			ar & MrdEntryPoint;
 			ar & ExitsMrd;

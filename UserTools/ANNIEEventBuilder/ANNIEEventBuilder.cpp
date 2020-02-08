@@ -94,6 +94,7 @@ bool ANNIEEventBuilder::Execute(){
       if(verbosity>4) std::cout << "Finished waveset has clock counter: " << PMTCounterTime << std::endl;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
       if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
+
       //For this counter, need to have the number of TankPMT channels plus number of aux channels
       int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
       int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
@@ -104,6 +105,7 @@ bool ANNIEEventBuilder::Execute(){
       //  if(verbosity>4) std::cout << "Counter time will be erased from FinishedPMTWaves: " << PMTCounterTime << std::endl;
       //  PMTEventsToDelete.push_back(PMTCounterTime);
       //}
+
       this->BuildANNIEEvent(PMTCounterTime, aWaveMap,RunNumber,SubRunNumber,RunType,StarTime);
       this->SaveEntryToFile(CurrentRunNum,CurrentSubrunNum);
       //Erase this entry from the FinishedPMTWavesMap
