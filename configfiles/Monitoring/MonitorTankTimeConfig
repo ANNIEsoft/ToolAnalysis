@@ -1,7 +1,7 @@
-# MRDMonitoring config file
+# PMTMonitoring config file
 
 verbose 0
-#OutputPath /ANNIECode/TankMonitorOutputTest/
+#OutputPath ./monitoringplots/
 OutputPath fromStore
 ActiveSlots configfiles/Monitoring/PMT_activeslots.txt #define which channels of the crate are connected
 SignalChannels configfiles/Monitoring/PMT_signalch.txt #define RWM and BRF channels

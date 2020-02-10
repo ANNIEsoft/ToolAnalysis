@@ -1009,7 +1009,6 @@ void MonitorMRDTime::InitializeVectors(){
   canvas_hitmap_slot->SetGridx();
   canvas_hitmap_slot->SetLogy();
 
-  std::cout <<"canvas_logfile_mrd: "<<canvas_logfile_mrd<<std::endl;
 
   //-------------------------------------------------------
   //-----------------Initialize hitmap histograms----------

@@ -177,12 +177,6 @@ bool MonitorTankTime::Initialise(std::string configfile, DataModel &data){
   tank_center_y = center_position.Y();
   tank_center_z = center_position.Z();
 
-  //-------------------------------------------------------
-  //----------Initialize configuration/hists---------------
-  //-------------------------------------------------------
-
-  ReadInConfiguration();
-  InitializeHists();
 
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
@@ -192,6 +186,12 @@ bool MonitorTankTime::Initialise(std::string configfile, DataModel &data){
   period_update = boost::posix_time::time_duration(0,update_frequency,0,0);
   last = boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
 
+  //-------------------------------------------------------
+  //----------Initialize configuration/hists---------------
+  //-------------------------------------------------------
+
+  ReadInConfiguration();
+  InitializeHists();
   //omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
   
@@ -262,7 +262,6 @@ bool MonitorTankTime::Execute(){
   //-------------------------------------------------------
   //-----------Has enough time passed for update?----------
   //-------------------------------------------------------
-  std::cout <<"Updated MonitorPlots, duration = "<<duration<<", period_update: "<<period_update<<std::endl;
 
   if(duration >= period_update){
     Log("MonitorTankTime: "+std::to_string(update_frequency)+" mins passed... Updating file history plot.",v_message,verbosity);
@@ -430,16 +429,15 @@ void MonitorTankTime::ReadInConfiguration(){
       config_endtime_long.push_back(zero);
     } else if (config_endtime.at(i_date).size()==15){
         boost::posix_time::ptime spec_endtime(boost::posix_time::from_iso_string(config_endtime.at(i_date)));
-        boost::posix_time::time_duration spec_endtime_duration = boost::posix_time::time_duration(spec_endtime - *Epoch);
-        ULong64_t spec_endtime_long = spec_endtime_duration.total_milliseconds();
-        config_endtime_long.push_back(spec_endtime_long);
+	boost::posix_time::time_duration spec_endtime_duration = boost::posix_time::time_duration(spec_endtime - *Epoch);
+	ULong64_t spec_endtime_long = spec_endtime_duration.total_milliseconds();
+	config_endtime_long.push_back(spec_endtime_long);
     } else {
       Log("MonitorTankTime: Specified end date "+config_endtime.at(i_date)+" does not have the desired format yyyymmddThhmmss. Please change the format in the config file in order to use this tool. Starting from end of last file",v_message,verbosity);
       ULong64_t zero = 0;
       config_endtime_long.push_back(zero);
     }
   }
-
 
 }
 
@@ -1295,7 +1293,7 @@ void MonitorTankTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::ve
 
   
   for (unsigned int i_time = 0; i_time < timeFrames.size(); i_time++){
-    std::cout <<"endTimes: "<<endTimes.at(i_time)<<", timeFrames: "<<timeFrames.at(i_time)<<", label: "<<fileLabels.at(i_time)<<std::endl;
+    //std::cout <<"endTimes: "<<endTimes.at(i_time)<<", timeFrames: "<<timeFrames.at(i_time)<<", label: "<<fileLabels.at(i_time)<<std::endl;
   }
 
   for (unsigned int i_time = 0; i_time < timeFrames.size(); i_time++){

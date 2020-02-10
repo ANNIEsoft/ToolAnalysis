@@ -3,5 +3,4 @@
 ###	Options for PLOTTYPEs are "Hitmap", "RateElectronics", "RatePhysical", "TimeEvolution", "PieChartTrigger", "TriggerEvolution", "FileHistory"
 ###
 24.	TEND_LASTFILE	lastDay	Hitmap	PieChartTrigger	TriggerEvolution	TimeEvolution	RatePhysical	RateElectronics	FileHistory
-#264.	20190709T163000	Jun24_Jul09	Hitmap	PieChartTrigger	FileHistory	TriggerEvolution	RatePhysical	RateElectronics	TimeEvolution
-#200.	20190512T190000	May4_May12	Hitmap	PieChartTrigger	FileHistory	TriggerEvolution	RatePhysical	RateElectronics	TimeEvolution
+#100.	20200207T060000	Feb03_Feb07	Hitmap	PieChartTrigger	FileHistory	TriggerEvolution	RatePhysical	RateElectronics	TimeEvolution
