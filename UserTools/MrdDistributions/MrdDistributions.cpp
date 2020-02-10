@@ -986,6 +986,10 @@ void MrdDistributions::ClearBranchVectors(){
 	fileout_IsMrdStopped.clear();
 	fileout_IsMrdPenetrating.clear();
 	fileout_IsMrdSideExit.clear();
+	fileout_TrueOriginVertex.clear();
+	//fileout_RecoOriginVertex.clear();
+	fileout_ClosestApproachPoint.clear();
+	fileout_ClosestApproachDist.clear();
 }
 
 ROOT::Math::XYZVector PositionToXYZVector(Position posin){
