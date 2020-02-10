@@ -76,6 +76,7 @@ class DigitBuilder: public Tool {
   bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
   bool fIsMC;     ///< Configure whether to load from MCHits or Hits in boost store 
   std::string  fLAPPDIDFile="none";
+  double fDigitChargeThr;
 
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
   TRandom3 frand;  ///< Random number generator

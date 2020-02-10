@@ -1,0 +1,8 @@
+# ClusterFinder Config File
+
+HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
+OutputFile Run1415S0_AllPMTs_ClusterFinder #Output root prefix name for the current run
+ClusterFindingWindow 50 # in ns, size of the window used to "clusterize"
+AcqTimeWindow 4000 # in ns, size of the acquisition window
+ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
+MinHitsPerCluster 10 # group of hits are considered clusters above this amount of hits
