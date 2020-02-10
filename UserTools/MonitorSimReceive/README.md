@@ -9,7 +9,7 @@ used to simulate receiving monitoring data.
 MonitorSimReceive simulates the process of receiving data. It initializes the raw data file as the BoostStore `indata`, obtains the two sub-BoostStores `PMTData` and `MRDData` from `indata` and stores the `PMTData` and `MRDData` BoostStores in respective common BoostStores:
 
 * `m_data->Stores["PMTData"]->Set("FileData",PMTData,false)`
-* `m_data->Stores["MRDData"]->Set("FileData",MRDData,false)`
+* `m_data->Stores["CCData"]->Set("FileData",MRDData,false)`
 
 The keywords for the BoostStores is "FileData" in both cases. The monitoring files can then obtain the BoostStores from there and process the data.
 
