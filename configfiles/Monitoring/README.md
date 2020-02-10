@@ -31,3 +31,15 @@ The Monitoring toolchain is normally running in a way that all the tools are wai
 ************************
 
 Since all time evolution plots are created by accessing monitoring rootfiles that are created by the `MonitorMRDTime` tool, it is possible to create monitoring plots also for time frames that lie in the past and have corresponding monitoring rootfiles. The user therefore has to use the toolchain without `MonitorReceive` and set the number of `Execute` steps to 1 in `ToolChainConfig`. It is also necessary to specify `ForceUpdate 1` in the `MonitorMRDTime` and `MonitorTankTime` config files. 
+
+************************
+## Plot configuration files
+************************
+
+The plots that are to be produced can be customized in the `MRDTimePlotConfig.txt`/`PMTTimePlotConfig.txt` files. Each line in the config file specifies the plots for a custom time frame. The format for specifying the plots is the following:
+
+`TIME_FRAME(hours)	T_END("TEND_LASTFILE" / "YYYYMMDDTHHMMSS")	PLOTS_LABEL	PLOTTYPE_1	PLOTTYPE_2	PLOTTYPE_3	PLOTTYPE_4 	(etc, arbitrary number of plot types may be specified)`
+
+Available plot types are:
+* `MRDTimePlotConfig.txt`: Hitmap, PieChartTrigger, TriggerEvolution, TimeEvolution, RatePhysical, RateElectronics, FileHistory
+* `PMTTimePlotConfig.txt`: RateElectronics, RatePhysical, PedElectronics, PedPhysical, SigmaElectronics, SigmaPhysical, TimeEvolution, TimeDifference, FileHistory
