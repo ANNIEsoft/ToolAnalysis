@@ -56,7 +56,7 @@ lib/libStore.so: $(ToolDAQPath)/ToolDAQFramework/src/Store/*
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Store/*.h include/
 	cp $(ToolDAQPath)/ToolDAQFramework/lib/libStore.so lib/        
-	$(CC)  -I include $(ToolDAQPath)/ToolDAQFramework/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
+	#$(CC)  -I include $(ToolDAQPath)/ToolDAQFramework/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
 
 
 include/Tool.h: $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h
@@ -91,7 +91,7 @@ lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so li
 	@echo -e "\n*************** Making " $@ "****************"
 	cp UserTools/*/*.h include/
 	cp UserTools/*.h include/
-	$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+	#$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 	$(CC) UserTools/*/*.o -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 RemoteControl:
@@ -109,14 +109,14 @@ lib/libServiceDiscovery.so: $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.h include/
 	cp $(ToolDAQPath)/ToolDAQFramework/lib/libServiceDiscovery.so lib/
-	$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.cpp -o lib/libServiceDiscovery.so -L lib/ -lStore  $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
+	#$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.cpp -o lib/libServiceDiscovery.so -L lib/ -lStore  $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
 lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/* | lib/libStore.so
 	cd $(ToolDAQPath)/ToolDAQFramework && make lib/libLogging.so
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.h include/
 	cp $(ToolDAQPath)/ToolDAQFramework/lib/libLogging.so lib/
-	$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
+	#$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
 update:
 	@echo -e "\n*************** Updating ****************"
