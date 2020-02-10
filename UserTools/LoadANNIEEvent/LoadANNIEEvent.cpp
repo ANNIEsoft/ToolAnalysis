@@ -77,7 +77,7 @@ bool LoadANNIEEvent::Execute() {
       total_entries_in_file_);
   }
 
-   bool user_event;
+   bool user_event=false;
    m_data->CStore.Get("UserEvent",user_event);
    if (user_event){
      m_data->CStore.Set("UserEvent",false);
@@ -92,6 +92,7 @@ bool LoadANNIEEvent::Execute() {
     + '\"', 1, verbosity_);
  
   if (current_entry_ != offset_evnum) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
+
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   

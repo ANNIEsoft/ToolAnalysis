@@ -19,6 +19,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("FACCMRDGeoFile", fFACCMRDGeoFile);
   m_variables.Get("TankPMTGeoFile", fTankPMTGeoFile);
+  m_variables.Get("AuxiliaryChannelFile", fAuxChannelFile);
   m_variables.Get("LAPPDGeoFile", fLAPPDGeoFile);
   m_variables.Get("DetectorGeoFile", fDetectorGeoFile);
   m_variables.Get("LAPPDChannelCount", LAPPD_channel_count);
@@ -46,10 +47,17 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGeoFile << std::endl;
     return false;
   }
+  
+  if(!this->FileExists(fAuxChannelFile)){
+    Log("LoadGeometry Tool: File for Auxiliary Channels does not exist!",v_error,verbosity);
+    if (verbosity > 0) std::cout << "Filepath was... " << fAuxChannelFile << std::endl;
+    return false;
+  }
 
   //Make the map of channel key to crate space info
   MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
 
   //Initialize the geometry using the geometry CSV file entries
@@ -61,6 +69,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   //Load TankPMT Geometry Detector/Channel Information
   this->LoadTankPMTDetectors();
 
+  //Load auxiliary and spare channels
+  this->LoadAuxiliaryChannels();
+
   //Load LAPPD Geometry Information
   this->LoadLAPPDs();
 
@@ -68,6 +79,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
    //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
 
@@ -347,6 +359,87 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
   AnnieGeometry->AddDetector(adet);
   if(verbosity>4) cout<<"Adding paddle to Geometry"<<endl;
   AnnieGeometry->SetDetectorPaddle(detector_num, apad);
+  return true;
+}
+
+void LoadGeometry::LoadAuxiliaryChannels(){
+  //First, get the Tank PMT file legend key
+  Log("LoadGeometry tool: Now loading Auxiliary channels",v_message,verbosity);
+  std::string AuxChannelLegend = this->GetLegendLine(fAuxChannelFile);
+  std::vector<std::string> AuxChannelLegendEntries;
+  boost::split(AuxChannelLegendEntries,AuxChannelLegend, boost::is_any_of(","), boost::token_compress_on);
+
+  std::string line = "default";
+  ifstream myfile(fAuxChannelFile.c_str());
+  if (myfile.is_open()){
+    //First, get to where data starts
+    while(getline(myfile,line)){
+      if(line.find("#")!=std::string::npos) continue;
+      if(line.find(DataStartLineLabel)!=std::string::npos) break;
+    }
+    //Loop over lines, collect all detector specs
+    while(getline(myfile,line)){
+      if(verbosity > 3)std::cout << line << std::endl; //has our stuff;
+      if(line.find("#")!=std::string::npos) continue;
+      if(line.find(DataEndLineLabel)!=std::string::npos) break;
+      std::vector<std::string> SpecLine;
+      boost::split(SpecLine,line, boost::is_any_of(","), boost::token_compress_on);
+      //Parse data line, make corresponding detector/channel
+      bool add_ok = this->ParseAuxChannelDataEntry(SpecLine,AuxChannelLegendEntries);
+      if(not add_ok){
+        std::cerr<<"Failed to add Aux Channel to Crate Space/Channel Key Map!"<<std::endl;
+      }
+    }
+  } else {
+    Log("LoadGeometry tool: Something went wrong opening the Auxiliary Channel File!!!",v_error,verbosity);
+  }
+  if(myfile.is_open()) myfile.close();
+    Log("LoadGeometry tool: Auxiliary Channel loading complete",v_message,verbosity);
+}
+
+bool LoadGeometry::ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
+        std::vector<std::string> AuxChannelLegendEntries){
+
+  //Parse the line for information needed to fill the Tdetector & channel classes
+  int channel_num = 0, signal_crate = 0,signal_slot = 0,signal_channel = 0;
+  std::string channel_type = "NA";
+
+  //Search for Legend entry.  Fill value type if found.
+  Log("LoadGeometry tool: parsing Auxiliary channel line into variables",v_debug,verbosity);
+  for (unsigned int i=0; i<SpecLine.size(); i++){
+    int ivalue = 0;
+    std::string svalue = "default";
+    for (unsigned int j=0; j<AuxChannelIntegerValues.size(); j++){
+      if(AuxChannelLegendEntries.at(i) == AuxChannelIntegerValues.at(j)){
+        ivalue = std::stoi(SpecLine.at(i));
+        break;
+      }
+    }
+    for (unsigned int j=0; j<AuxChannelStringValues.size(); j++){
+      if(AuxChannelLegendEntries.at(i) == AuxChannelStringValues.at(j)){
+        svalue = SpecLine.at(i);
+        break;
+      }
+    }
+
+    //Integers
+    if (AuxChannelLegendEntries.at(i) == "channel_num") channel_num = ivalue;
+    if (AuxChannelLegendEntries.at(i) == "signal_crate") signal_crate = ivalue;
+    if (AuxChannelLegendEntries.at(i) == "signal_slot") signal_slot = ivalue;
+    if (AuxChannelLegendEntries.at(i) == "signal_channel") signal_channel = ivalue;
+    //Strings
+    if (AuxChannelLegendEntries.at(i) == "channel_type") channel_type = svalue;
+  }
+
+  // Also add this channel to the Tank PMT crate space electronics map
+  std::vector<int> crate_map{signal_crate,signal_slot,signal_channel};
+  if(AuxCrateSpaceToChannelNumMap->count(crate_map)==0){
+    AuxCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning an Auxiliary Channel channel_num to a crate space already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
+  }
+
   return true;
 }
 
