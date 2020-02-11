@@ -1,0 +1,8 @@
+verbosity 5
+SPEChargeFile ./configfiles/SimpleTankEnergyCalibrator/ChannelSPEGains_BeamRun20192020.csv
+TankBeamWindowStart 700
+TankBeamWindowEnd 2300
+TankNHitThreshold 30
+MinPenetrationDepth 10
+MaxAngle 15
+MaxEntryPointRadius 50

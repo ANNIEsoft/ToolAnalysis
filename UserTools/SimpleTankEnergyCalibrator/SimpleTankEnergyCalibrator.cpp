@@ -15,6 +15,7 @@ bool SimpleTankEnergyCalibrator::Initialise(std::string configfile, DataModel &d
   verbosity = 0;
 
   m_variables.Get("verbosity",verbosity);
+  m_variables.Get("SPEChargeFile",SPEChargeFile);
   m_variables.Get("TankBeamWindowStart",TankBeamWindowStart);
   m_variables.Get("TankBeamWindowEnd",TankBeamWindowEnd);
   m_variables.Get("TankNHitThreshold",TankNHitThreshold);
@@ -23,6 +24,10 @@ bool SimpleTankEnergyCalibrator::Initialise(std::string configfile, DataModel &d
   m_variables.Get("MaxEntryPointRadius",MaxEntryPointRadius);
   
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
+
+  //TODO: Read in a simple CSV file that has channel charge/PE conversions.
+  ChannelKeyToSPEMap = this->LoadChargePEMap(SPEChargeFile);
+
   return true;
 }
 
@@ -51,7 +56,12 @@ bool SimpleTankEnergyCalibrator::Execute(){
     std::cout << "No Hits store in ANNIEEvent! " << std::endl;
     return false;
   }
-  
+  bool get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+  if (!got_hits){
+    std::cout << "No TDCData store in ANNIEEvent! " << std::endl;
+    return false;
+  }
+
   //Get beam window hits 
   std::vector<Hit> BeamHits = this->GetInWindowHits();
   if(BeamHits.size() < TankNHitThreshold){
@@ -60,7 +70,92 @@ bool SimpleTankEnergyCalibrator::Execute(){
   }
 
   //Check muon track
+  m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
+  m_data->Stores["ANNIEEvent"]->Get("MRDTriggerType",MRDTriggertype);
+  
+  // In case of a cosmic event, use the fitted track for an efficiency calculation
+  
+  if (MRDTriggertype != "Beam"){
+    if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: MRD trigger not of type Beam.  Won't be corresponding PMT data." << std::endl;
+    return true;
+  }
+	
+  // Get MRD track information from MRDTracks BoostStore
+  m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
+  m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
+  
+  if(numtracksinev!=1) {
+    if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: Either zero or more than two reconstructed tracks." << std::endl;
+    return true;  
+  }
+  
+  bool facc_hit = false;
+  //Check for FACC activity
+  if(TDCData->size()==0){
+    Log("SimpleTankEnergyCalibrator tool: No TDC hits available!",v_message,verbosity);
+    return true;
+  } else {
+      Log("SimpleTankEnergyCalibrator tool: Looping over FACC/MRD hits... looking for Veto activity",v_message,verbosity);
+    for(auto&& anmrdpmt : (*TDCData)){
+      unsigned long chankey = anmrdpmt.first;
+      Detector* thedetector = geom->ChannelToDetector(chankey);
+      unsigned long detkey = thedetector->GetDetectorID();
+      if(thedetector->GetDetectorElement()=="Veto") facc_hit=true; // this is a veto hit, not an MRD hit.
+    }
+  }
 
+  if(!facc_hit){
+    Log("SimpleTankEnergyCalibrator tool: No Veto hits, so not a through-going muon candidate",v_message,verbosity);
+    return true;
+  }
+
+
+  //Check for valid track criteria
+  m_data->Stores["MRDTracks"]->Get("MRDTracks",theMrdTracks);
+  // Loop over reconstructed tracks
+  
+  paddlesInTrackReco.clear();
+ 
+  double tracklength; 
+  for(int tracki=0; tracki<numtracksinev; tracki++){
+    BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
+    
+    //get track properties that are needed for the through-going muon selection
+    thisTrackAsBoostStore->Get("StartVertex",StartVertex);
+    thisTrackAsBoostStore->Get("StopVertex",StopVertex);
+    thisTrackAsBoostStore->Get("TrackAngle",TrackAngle);
+    thisTrackAsBoostStore->Get("TrackAngleError",TrackAngleError);
+    thisTrackAsBoostStore->Get("PenetrationDepth",PenetrationDepth);
+    thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+    thisTrackAsBoostStore->Get("LayersHit",LayersHit);
+    thisTrackAsBoostStore->Set("EnergyLoss",EnergyLoss);
+    thisTrackAsBoostStore->Set("EnergyLossError",EnergyLossError);
+    tracklength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
+  }
+
+  m_variables.Get("MinPenetrationDepth",MinPenetrationDepth);
+  m_variables.Get("MaxAngle",MaxAngle);
+  m_variables.Get("MaxEntryPointRadius",MaxEntryPointRadius);
+  double EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100; // convert to cm
+  PenetrationDepth = PenetrationDepth*100;
+
+  if(TrackAngle>MaxAngle || EntryPointRadius>MaxEntryPointRadius || PenetrationDepth<MinPenetrationDepth){
+    if(verbosity>3){
+      std::cout << "SimpleTankEnergyCalibrator tool: Reco Track criteria doesn't satisfy requirements." << std::endl;
+      std::cout << "SimpleTankEnergyCalibrator tool: TrackAngle,EntryPointRadius,PenetrationDepth: " << 
+          TrackAngle << "," << EntryPointRadius << "," << PenetrationDepth << std::endl;
+    }
+    return true;
+  }
+
+  //We're in business.  We've got a Minimum-ionizing candidate.  Get the total number of PE and
+  //print it out.
+  //
+  double TotalPE = this->GetTotalPE(BeamHits);
+  double TotalQ = this->GetTotalQ(BeamHits);
+  std::cout << "SimpleTankEnergyCalibrator tool: THROUGH-GOING MUON CANDIDATE FOUND." << std::endl;
+  std::cout << "SimpleTankEnergyCalibrator tool: TOTAL CHARGE IS: " << TotalQ << std::endl;
+  std::cout << "SimpleTankEnergyCalibrator tool: TOTAL PE IS: " << TotalPE << std::endl;
 
 
   return true;
@@ -72,9 +167,6 @@ bool SimpleTankEnergyCalibrator::Finalise(){
   std::cout << "SimpleTankEnergyCalibrator exitting" << std::endl;
   return true;
 }
-
-  m_variables.Get("TankBeamWindowStart",TankBeamWindowStart);
-  m_variables.Get("TankBeamWindowEnd",TankBeamWindowEnd);
 
 std::vector<Hit> SimpleTankEnergyCalibrator::GetInWindowHits(){
   std::vector<Hit> BeamHits;
@@ -89,4 +181,57 @@ std::vector<Hit> SimpleTankEnergyCalibrator::GetInWindowHits(){
     }
   }
   return BeamHits;
+}
+
+std::map<int,double> SimpleTankEnergyCalibrator::LoadChargePEMap(std::string ChargeFile){
+  std::map<int,double> CKeyToSPEMap;
+  ifstream myfile(ChargeFile.c_str());
+  std::string line;
+  if (myfile.is_open()){
+    //Loop over lines, collect all detector data (should only be one line here)
+    while(getline(myfile,line)){
+      if(verbosity>3) std::cout << line << std::endl; //has our stuff;
+      if(line.find("#")!=std::string::npos) continue;
+      std::vector<std::string> DataEntries;
+      boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
+      int channelkey = -9999;
+      double SPECharge = -9999.;
+      channelkey = std::stoi(DataEntries.at(0));
+      SPECharge= std::stod(DataEntries.at(1));
+      CKeyToSPEMap.emplace(channelkey,SPECharge);
+    }
+  }
+  return CKeyToSPEMap;
+}
+
+double SimpleTankEnergyCalibrator::GetTotalQ(std::vector<Hit> AllHits){
+  double TotalCharge = 0;
+  for (int i = 0; i<AllHits.size(); i++){
+    Hit ahit = AllHits.at(i);
+    double ThisHitCharge = ahit.GetCharge();
+    TotalCharge+=ThisHitCharge;
+  }
+  return TotalCharge;
+}
+
+double SimpleTankEnergyCalibrator::GetTotalPE(std::vector<Hit> AllHits){
+  double TotalPE = 0;
+  for (int i = 0; i<AllHits.size(); i++){
+    Hit ahit = AllHits.at(i);
+    double ThisHitCharge = ahit.GetCharge();
+    int ThisHitID = ahit.GetTubeId();
+    //Search SPEMap for channel ID; if not there, ignore it.
+    //Check if this CardData is next in it's sequence for processing
+    std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(ThisHitID);
+    if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
+      double ThisHitPE = ThisHitCharge / ChannelKeyToSPEMap.at(ThisHitID);
+      TotalPE+=ThisHitPE;   
+    } else {
+      if(verbosity>2){
+        std::cout << "FOUND A HIT FOR CHANNELKEY " << ThisHitID << "BUT NO CONVERSION " <<
+            "TO PE AVAILABLE.  SKIPPING." << std::endl;
+      }
+    }
+  }
+  return TotalPE;
 }
