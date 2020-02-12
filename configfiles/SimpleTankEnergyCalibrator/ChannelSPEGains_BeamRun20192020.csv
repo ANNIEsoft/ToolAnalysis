@@ -1,6 +1,6 @@
 #Offline_Tubes: 333,346,349,352,431,444
 #Sinusoidal_Tubes: 
-Channelkey,SPE_Gain
+#Channelkey,SPE_Gain
 332,0.001190
 334,0.001543
 335,0.001306

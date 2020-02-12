@@ -4,7 +4,7 @@ SimpleTankEnergyCalibrator::SimpleTankEnergyCalibrator():Tool(){}
 
 
 bool SimpleTankEnergyCalibrator::Initialise(std::string configfile, DataModel &data){
-
+  std::cout << "SimpleTankEnergyCalibrator Tool: Initializing..." << std::endl;
   /////////////////// Useful header ///////////////////////
   if(configfile!="") m_variables.Initialise(configfile); // loading config file
   //m_variables.Print();
@@ -26,8 +26,11 @@ bool SimpleTankEnergyCalibrator::Initialise(std::string configfile, DataModel &d
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
 
   //TODO: Read in a simple CSV file that has channel charge/PE conversions.
+  
+  std::cout << "SimpleTankEnergyCalibrator Tool: Loading Charge to PE Map" << std::endl;
   ChannelKeyToSPEMap = this->LoadChargePEMap(SPEChargeFile);
 
+  std::cout << "SimpleTankEnergyCalibrator Tool Initialized" << std::endl;
   return true;
 }
 
@@ -61,12 +64,14 @@ bool SimpleTankEnergyCalibrator::Execute(){
     std::cout << "No TDCData store in ANNIEEvent! " << std::endl;
     return false;
   }
+  bool PassesCriteria = true;
 
   //Get beam window hits 
   std::vector<Hit> BeamHits = this->GetInWindowHits();
+  if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: Hit count is " << BeamHits.size() << std::endl;
   if(BeamHits.size() < TankNHitThreshold){
-    if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: Not enough tank hits in defined beam window" << std::endl;
-    return true;
+    if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: Hit count " << BeamHits.size() << " not over threshold" << std::endl;
+    PassesCriteria = false;
   }
 
   //Check muon track
@@ -75,10 +80,10 @@ bool SimpleTankEnergyCalibrator::Execute(){
   
   // In case of a cosmic event, use the fitted track for an efficiency calculation
   
-  if (MRDTriggertype != "Beam"){
-    if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: MRD trigger not of type Beam.  Won't be corresponding PMT data." << std::endl;
-    return true;
-  }
+  //if (MRDTriggertype != "Beam"){
+  //  if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: MRD trigger " << MRDTriggertype << "not Beam.  Won't be corresponding PMT data." << std::endl;
+  //  PassesCriteria = false;
+  //}
 	
   // Get MRD track information from MRDTracks BoostStore
   m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
@@ -86,7 +91,7 @@ bool SimpleTankEnergyCalibrator::Execute(){
   
   if(numtracksinev!=1) {
     if(verbosity>3) std::cout << "SimpleTankEnergyCalculator Tool: Either zero or more than two reconstructed tracks." << std::endl;
-    return true;  
+    PassesCriteria = false;
   }
   
   bool facc_hit = false;
@@ -106,7 +111,7 @@ bool SimpleTankEnergyCalibrator::Execute(){
 
   if(!facc_hit){
     Log("SimpleTankEnergyCalibrator tool: No Veto hits, so not a through-going muon candidate",v_message,verbosity);
-    return true;
+    PassesCriteria = false;
   }
 
 
@@ -116,7 +121,14 @@ bool SimpleTankEnergyCalibrator::Execute(){
   
   paddlesInTrackReco.clear();
  
-  double tracklength; 
+  double tracklength = 0;
+  TrackAngle = -9999;
+  PenetrationDepth = -9999;
+  EnergyLoss = -9999;
+  MrdEntryPoint.SetX(-9999.);
+  MrdEntryPoint.SetY(-9999.);
+  MrdEntryPoint.SetZ(-9999.);
+
   for(int tracki=0; tracki<numtracksinev; tracki++){
     BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
     
@@ -126,37 +138,41 @@ bool SimpleTankEnergyCalibrator::Execute(){
     thisTrackAsBoostStore->Get("TrackAngle",TrackAngle);
     thisTrackAsBoostStore->Get("TrackAngleError",TrackAngleError);
     thisTrackAsBoostStore->Get("PenetrationDepth",PenetrationDepth);
-    thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+    thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);
     thisTrackAsBoostStore->Get("LayersHit",LayersHit);
-    thisTrackAsBoostStore->Set("EnergyLoss",EnergyLoss);
-    thisTrackAsBoostStore->Set("EnergyLossError",EnergyLossError);
+    thisTrackAsBoostStore->Get("EnergyLoss",EnergyLoss);
+    thisTrackAsBoostStore->Get("EnergyLossError",EnergyLossError);
     tracklength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
   }
 
   m_variables.Get("MinPenetrationDepth",MinPenetrationDepth);
   m_variables.Get("MaxAngle",MaxAngle);
   m_variables.Get("MaxEntryPointRadius",MaxEntryPointRadius);
-  double EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100; // convert to cm
-  PenetrationDepth = PenetrationDepth*100;
+  double EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100.0; // convert to cm
+  PenetrationDepth = PenetrationDepth*100.0;
+
+  if(verbosity>3){
+    std::cout << "SimpleTankEnergyCalibrator tool: TrackAngle,EntryPointRadius,PenetrationDepth: " << 
+        TrackAngle << "," << EntryPointRadius << "," << PenetrationDepth << std::endl;
+  }
 
   if(TrackAngle>MaxAngle || EntryPointRadius>MaxEntryPointRadius || PenetrationDepth<MinPenetrationDepth){
     if(verbosity>3){
       std::cout << "SimpleTankEnergyCalibrator tool: Reco Track criteria doesn't satisfy requirements." << std::endl;
-      std::cout << "SimpleTankEnergyCalibrator tool: TrackAngle,EntryPointRadius,PenetrationDepth: " << 
-          TrackAngle << "," << EntryPointRadius << "," << PenetrationDepth << std::endl;
     }
-    return true;
+    PassesCriteria = false;
   }
 
   //We're in business.  We've got a Minimum-ionizing candidate.  Get the total number of PE and
   //print it out.
   //
-  double TotalPE = this->GetTotalPE(BeamHits);
-  double TotalQ = this->GetTotalQ(BeamHits);
-  std::cout << "SimpleTankEnergyCalibrator tool: THROUGH-GOING MUON CANDIDATE FOUND." << std::endl;
-  std::cout << "SimpleTankEnergyCalibrator tool: TOTAL CHARGE IS: " << TotalQ << std::endl;
-  std::cout << "SimpleTankEnergyCalibrator tool: TOTAL PE IS: " << TotalPE << std::endl;
-
+  if(PassesCriteria){
+    double TotalPE = this->GetTotalPE(BeamHits);
+    double TotalQ = this->GetTotalQ(BeamHits);
+    std::cout << "SimpleTankEnergyCalibrator tool: THROUGH-GOING MUON CANDIDATE FOUND." << std::endl;
+    std::cout << "SimpleTankEnergyCalibrator tool: TOTAL CHARGE IS: " << TotalQ << std::endl;
+    std::cout << "SimpleTankEnergyCalibrator tool: TOTAL PE IS: " << TotalPE << std::endl;
+  }
 
   return true;
 }
