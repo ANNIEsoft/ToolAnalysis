@@ -110,4 +110,4 @@
 #include "ANNIEEventBuilder.h"
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
-#include "MrdPaddleEfficiency.h"
+#include "MrdPaddleEfficiencyPreparer.h"
