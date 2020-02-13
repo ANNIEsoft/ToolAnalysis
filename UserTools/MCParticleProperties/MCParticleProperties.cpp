@@ -93,7 +93,8 @@ bool MCParticleProperties::Execute(){
 		
 		Position differencevector = (stopvertex-startvertex);
 		double atracklengthtotal = differencevector.Mag();
-		double atrackangle = differencevector.Angle(Position(0,0,1));
+		// XXX DEBUG THIS, why isn't this returning the correct answer?
+		//double atrackangle = differencevector.Angle(Position(0,0,1));
 		
 		// check if it starts in the fiducial volume
 		bool isinfiducialvol=false;
@@ -125,6 +126,8 @@ bool MCParticleProperties::Execute(){
 		float oppy = stopvertex.Y() - startvertex.Y();
 		double avgtrackgrady = (adj!=0) ? (oppy/adj) : 1000000;
 		float avgtrackangley = atan(avgtrackgrady);
+		// XXX debug override until we fix version above
+		double atrackangle = sqrt(pow(avgtrackanglex,2.)+pow(avgtrackangley,2.));
 		
 		float xatmrd = startvertex.X() + (MRDSpecs::MRD_start-startvertex.Z())*avgtrackgradx;
 		float yatmrd = startvertex.Y() + (MRDSpecs::MRD_start-startvertex.Z())*avgtrackgrady;
@@ -292,7 +295,14 @@ bool MCParticleProperties::Execute(){
 								 ( abs(stopvertex.Y()-tank_yoffset)
 										 < tank_halfheight );
 		
-		if(nextparticle->GetTankExitPoint()!=Position(0,0,0)){
+//		// if TankExitPoint is not close to either the tank caps or tank walls,
+//		// we probably don't have one. So project it instead.
+//		double tankexitradius = sqrt(pow(nextparticle->GetTankExitPoint().X(),2.) +
+//		                             pow(nextparticle->GetTankExitPoint().Z(),2.));
+//		double tankexitheight = abs(nextparticle->GetTankExitPoint().Y());
+//		if((tankexitradius<(tank_radius*0.8))&&(tankexitheight<(tank_height*0.8))){
+//			
+		if(nextparticle->GetTankExitPoint().Mag()>0.2){ // cover rounding errors
 			// Later versions of WCSim record the tank exit point explicitly
 			truetankexitvtx = nextparticle->GetTankExitPoint();
 			truetankexitvtx.UnitToCentimeter();
