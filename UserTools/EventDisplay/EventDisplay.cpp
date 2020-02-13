@@ -57,6 +57,8 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Threshold_ChargeLAPPD",threshold_lappd);
   m_variables.Get("Threshold_TimeLow",threshold_time_low);
   m_variables.Get("Threshold_TimeHigh",threshold_time_high);
+  m_variables.Get("Threshold_TimeLowMRD",threshold_time_low_mrd);
+  m_variables.Get("Threshold_TimeHighMRD",threshold_time_high_mrd);
   m_variables.Get("LAPPDsSelected",lappds_selected);
   m_variables.Get("LAPPDsFile",lappds_file);
   m_variables.Get("DrawRing",draw_ring);
@@ -76,6 +78,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("NPMTCut",npmtcut);
   m_variables.Get("DrawCluster",draw_cluster);
   m_variables.Get("ChargeFormat",charge_format);
+  m_variables.Get("SinglePEGains",singlePEgains);
 
   Log("EventDisplay tool: Initialising",v_message,verbose);
 
@@ -369,7 +372,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   //---------------Read in single p.e. gains-----------------------
   //---------------------------------------------------------------
 
-  ifstream file_singlepe("/annie/app/users/mnieslon/MyToolAnalysis7/ChannelSPEGains_BeamRun20192020.csv");
+  ifstream file_singlepe(singlePEgains.c_str());
   unsigned long temp_chankey;
   double temp_gain;
   while (!file_singlepe.eof()){
@@ -422,6 +425,17 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
     charge_LAPPDs[i_lappd] = nullptr;
   }
 
+  //--------------------------------------------------------------
+  //------------Get first of selected events ---------------------
+  //--------------------------------------------------------------
+  
+  if (ev_list.size()>0){
+      m_data->CStore.Set("UserEvent",true);
+      m_data->CStore.Set("LoadEvNr",ev_list.at(0));
+      m_data->CStore.Set("CheckFurtherTriggers",false);
+      i_loop=1;
+  }
+
   return true;
 }
 
@@ -434,6 +448,16 @@ bool EventDisplay::Execute(){
   if(!annieeventexists){ 
     Log("EventDisplay tool: No ANNIEEvent store!",v_error,verbose); 
     return false;
+  }
+
+  if (ev_list.size() > i_loop){
+    m_data->CStore.Set("UserEvent",true);
+    m_data->CStore.Set("LoadEvNr",ev_list.at(i_loop));
+    m_data->CStore.Set("CheckFurtherTriggers",false);
+    i_loop++;
+  } else {
+    m_data->CStore.Set("UserEvent",false);
+    m_data->vars.Set("StopLoop",1);
   }
 
   int get_ok;
@@ -551,7 +575,6 @@ bool EventDisplay::Execute(){
   Log(logmessage,v_debug,verbose);
 
   if (str_event_list=="None" && (evnum!=single_event && single_event!=-999)) return true;
-  if (str_event_list!="None" && !(std::find(ev_list.begin(),ev_list.end(),evnum) != ev_list.end())) return true;      //if continuous mode not enabled, need specific ev number to proceed
   passed_selection_cuts = EventCutStatus;
   if (selected_event && !passed_selection_cuts) return true;
   Log("EventDisplay tool: Event number check passed.",v_debug,verbose);
@@ -1251,6 +1274,25 @@ bool EventDisplay::Execute(){
          }
        }
       }
+      //Check also in the cluster plot case whether there was a FMV hit
+      if (!isData){
+        if (TDCData){
+	for(auto&& anmrdpmt : (*TDCData)){
+          unsigned long chankey = anmrdpmt.first;
+          Detector* thedetector = geom->ChannelToDetector(chankey);
+          unsigned long detkey = thedetector->GetDetectorID();
+          if(thedetector->GetDetectorElement()!="MRD") facc_hit=true;
+        }
+       }
+      } else {
+        if (TDCData_Data){
+        for(auto&& anmrdpmt : (*TDCData_Data)){
+          unsigned long chankey = anmrdpmt.first;
+          Detector* thedetector = geom->ChannelToDetector(chankey);
+          unsigned long detkey = thedetector->GetDetectorID();
+          if(thedetector->GetDetectorElement()!="MRD") facc_hit=true;
+        }
+      }
      }
     }
   }
@@ -1761,8 +1803,6 @@ void EventDisplay::draw_event_box(){
 
   void EventDisplay::draw_mrd_legend(){
 
-   int threshold_time_high_mrd = 1500;
-   int threshold_time_low_mrd = 0;
 
    //draw MRD legend on the right side of the top view of the MRD
    //
@@ -1961,8 +2001,6 @@ void EventDisplay::draw_event_box(){
 
     //draw MRD hits on Event Display
 
-    int threshold_time_high_mrd = 1500;
-    int threshold_time_low_mrd = 0;
     Log("EventDisplay tool: Drawing MRD hits.",v_message,verbose);
     for (unsigned int i_mrd = 0; i_mrd < hitmrd_detkeys.size(); i_mrd++){
         unsigned long detkey = hitmrd_detkeys[i_mrd];

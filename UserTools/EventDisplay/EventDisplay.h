@@ -78,6 +78,8 @@ class EventDisplay: public Tool {
     double threshold_time_lappd;
     double threshold_time_low;
     double threshold_time_high;
+    double threshold_time_low_mrd;
+    double threshold_time_high_mrd;
     int lappds_selected;  //0-all LAPPDs, 1-only specified LAPPDs
     std::string lappds_file;  //file specifying single PMTs
     bool draw_vertex;
@@ -97,6 +99,7 @@ class EventDisplay: public Tool {
     int npmtcut;
     bool draw_cluster;
     std::string charge_format;
+    std::string singlePEgains;
 
     //define event variables
     uint32_t evnum;
@@ -129,6 +132,7 @@ class EventDisplay: public Tool {
     int nrings;
     bool passed_selection_cuts;
     std::vector<unsigned int> particles_ring;
+    int i_loop;
 
     double detector_version;
     std::string detector_config;
