@@ -53,6 +53,7 @@ class TimeClustering: public Tool {
 	// Cluster properties
 	std::vector<double> mrddigittimesthisevent;
 	std::vector<int> mrddigitpmtsthisevent;
+	std::vector<unsigned long> mrddigitchankeysthisevent;
 	std::vector<double> mrddigitchargesthisevent;
 	std::vector<std::vector<int>> MrdTimeClusters;
 	std::vector<std::vector<double>> MrdTimeClusters_Times;

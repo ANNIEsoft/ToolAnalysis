@@ -24,6 +24,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("AcqTimeWindow",AcqTimeWindow);
   m_variables.Get("ClusterIntegrationWindow",ClusterIntegrationWindow);
   m_variables.Get("MinHitsPerCluster",MinHitsPerCluster);
+  m_variables.Get("verbosity",verbose);
 
   //----------------------------------------------------------------------------
   //---------------Get basic geometry properties -------------------------------
@@ -125,6 +126,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   h_Cluster_deltaT = new TH1D("h_Cluster_deltaT","Time between first and current cluster", AcqTimeWindow,0,AcqTimeWindow);
 
   m_all_clusters = new std::map<double,std::vector<Hit>>;
+  m_all_clusters_detkey = new std::map<double,std::vector<unsigned long>>;
 
   return true;
 }
@@ -149,6 +151,7 @@ bool ClusterFinder::Execute(){
   v_clusters.clear();
   v_local_cluster_times.clear();
   m_all_clusters->clear();
+  m_all_clusters_detkey->clear();
 
   //----------------------------------------------------------------------------
   //---------------get the members of the ANNIEEvent----------------------------
@@ -333,7 +336,7 @@ bool ClusterFinder::Execute(){
     for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits) {   
       unsigned long chankey = apair.first;
       Detector* thistube = geom->ChannelToDetector(chankey);
-      int detectorkey = thistube->GetDetectorID();
+      unsigned long detectorkey = thistube->GetDetectorID();
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<Hit>& ThisPMTHits = apair.second;
         PMT_ishit[detectorkey] = 1;
@@ -341,8 +344,10 @@ bool ClusterFinder::Execute(){
           if (ahit.GetTime() > *it + ClusterFindingWindow/2 - ClusterIntegrationWindow/2 && ahit.GetTime() < *it + ClusterFindingWindow/2 + ClusterIntegrationWindow/2) { 
             if(m_all_clusters->count(local_cluster_charge)==0) {
               m_all_clusters->emplace(local_cluster_charge, std::vector<Hit>{ahit});
+              m_all_clusters_detkey->emplace(local_cluster_charge, std::vector<unsigned long>{detectorkey});
             } else { 
               m_all_clusters->at(local_cluster_charge).push_back(ahit);
+              m_all_clusters_detkey->at(local_cluster_charge).push_back(detectorkey);
             }
           }
         }  
@@ -353,6 +358,7 @@ bool ClusterFinder::Execute(){
 
   // Load the cluster map in a CStore for use by a subsequent tool
   m_data->CStore.Set("ClusterMap",m_all_clusters);
+  m_data->CStore.Set("ClusterMapDetkey",m_all_clusters_detkey);
 
   //check whether PMT_ishit is filled correctly
   for (int i_pmt = 0; i_pmt < n_tank_pmts ; i_pmt++){

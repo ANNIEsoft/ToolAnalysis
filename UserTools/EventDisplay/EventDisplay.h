@@ -95,6 +95,8 @@ class EventDisplay: public Tool {
     std::string string_date_label;
     std::string histogram_config;
     int npmtcut;
+    bool draw_cluster;
+    std::string charge_format;
 
     //define event variables
     uint32_t evnum;
@@ -113,6 +115,11 @@ class EventDisplay: public Tool {
     std::map<unsigned long, std::vector<Hit>>* Hits=nullptr;
     std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits=nullptr;
     std::map<unsigned long, std::vector<LAPPDHit>>* LAPPDHits=nullptr;
+    std::map<double,std::vector<Hit>>* m_all_clusters;  //from ClusterFinder tool
+    std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey;  //from ClusterFinder tool
+    std::vector<std::vector<int>> MrdTimeClusters;  //from TimeClustering tool
+    std::vector<double> MrdDigitTimes;  //from TimeClustering tool
+    std::vector<unsigned long> mrddigitchankeysthisevent;  //from TimeClustering tool
     RecoVertex *TrueVertex = nullptr;
     RecoVertex *TrueStopVertex = nullptr;
     bool EventCutStatus;
@@ -147,7 +154,7 @@ class EventDisplay: public Tool {
     double min_mrd_y, max_mrd_y, min_mrd_x, max_mrd_x, min_mrd_z, max_mrd_z;
     double mrd_diffz, mrd_diffy, mrd_diffx;
     std::vector<int> n_particles_ring;
-
+    std::map<unsigned long,double> pmt_gains;
 
     //bool variables for schematic hit plot
     bool facc_hit;
@@ -204,6 +211,7 @@ class EventDisplay: public Tool {
 
     std::map<unsigned long,double> charge;
     std::map<unsigned long,double> time;
+    std::map<unsigned long,int> hits;
     std::map<unsigned long,double> charge_lappd;
     std::map<unsigned long,std::vector<Position>> hits_LAPPDs;
     std::map<unsigned long,std::vector<double>> time_lappd;
@@ -265,6 +273,7 @@ class EventDisplay: public Tool {
     std::map<int,TH1F*> time_LAPPDs;	//the keys for the LAPPD histogram maps are the indices of the lappd_detkeys vector
     TH1F *charge_PMTs = nullptr;
     TH2F *charge_time_PMTs = nullptr;
+    TH2F *time_alignment_MRD_PMTs = nullptr;
     std::map<int,TH1F*> charge_LAPPDs;
     double pmt_Qmax, pmt_Qmin, pmt_Tmax, pmt_Tmin, lappd_Qmax, lappd_Qmin, lappd_Tmax, lappd_Tmin;
     int pmt_Qbins, pmt_Tbins, lappd_Qbins, lappd_Tbins;

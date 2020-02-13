@@ -74,6 +74,8 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("UserDateLabel",string_date_label);
   m_variables.Get("HistogramConfig",histogram_config);
   m_variables.Get("NPMTCut",npmtcut);
+  m_variables.Get("DrawCluster",draw_cluster);
+  m_variables.Get("ChargeFormat",charge_format);
 
   Log("EventDisplay tool: Initialising",v_message,verbose);
 
@@ -92,6 +94,8 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   if (draw_histograms!=0 && draw_histograms !=1) draw_histograms=1;
   if (user_input!=0 && user_input!=1) user_input = 0;
   if (use_tapplication!= 0 && use_tapplication!= 1) use_tapplication = 0;
+  if (draw_cluster!=0 && draw_cluster!=1) draw_cluster=0;
+  if (charge_format != "nC" && charge_format != "pe") charge_format = "nC";
   if (isData) {
     //Currently only the true vertex and ring can be drawn, so disable this feature for data files
     draw_ring = false;
@@ -360,6 +364,21 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
 
   Log("EventDisplay tool: Read in MRD PMT information: xmin = "+std::to_string(min_mrd_x)+", ymin = "+std::to_string(min_mrd_y)+", zmin = "+std::to_string(min_mrd_z)+", xmax = "+std::to_string(max_mrd_x)+", ymax = "+std::to_string(max_mrd_y)+", zmax = "+std::to_string(max_mrd_z),v_message,verbose);
 
+
+  //---------------------------------------------------------------
+  //---------------Read in single p.e. gains-----------------------
+  //---------------------------------------------------------------
+
+  ifstream file_singlepe("/annie/app/users/mnieslon/MyToolAnalysis7/ChannelSPEGains_BeamRun20192020.csv");
+  unsigned long temp_chankey;
+  double temp_gain;
+  while (!file_singlepe.eof()){
+    file_singlepe >> temp_chankey >> temp_gain;
+    if (file_singlepe.eof()) break;
+    pmt_gains.emplace(temp_chankey,temp_gain);
+  }
+  file_singlepe.close();
+
   //---------------------------------------------------------------
   //----initialize TApplication in case of displayed graphics------
   //---------------------------------------------------------------
@@ -394,6 +413,10 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
   canvas_ev_display=new TCanvas("canvas_ev_display","Event Display",900,900);
 
+  time_alignment_MRD_PMTs = new TH2F("time_alignment_PMTs","Time PMTs vs. Time MRD",pmt_Tbins,0,4000,pmt_Tbins,0,4000); 
+  time_alignment_MRD_PMTs->GetXaxis()->SetTitle("t_{MRD} [ns]");
+  time_alignment_MRD_PMTs->GetYaxis()->SetTitle("t_{PMT} [ns]");
+  
   for (int i_lappd=0; i_lappd < max_num_lappds; i_lappd++){
     time_LAPPDs[i_lappd] = nullptr;
     charge_LAPPDs[i_lappd] = nullptr;
@@ -488,6 +511,25 @@ bool EventDisplay::Execute(){
     if(not get_ok){ Log("EventDisplay Tool: Error retrieving IndexParticlesRing, true from RecoEvent!",v_error,verbose); return false; }
   }
 
+  //Get Clustered Event information (from ClusterFinder tool)
+  if (draw_cluster){
+    get_ok = m_data->CStore.Get("ClusterMap",m_all_clusters);
+    if (not get_ok) { Log("EventDisplay Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbose); return false; }
+    get_ok = m_data->CStore.Get("ClusterMapDetkey",m_all_clusters_detkey);
+    if (not get_ok) { Log("EventDisplay Tool: Error retrieving ClusterMapDetkey from CStore, did you run ClusterFinder beforehand?",v_error,verbose); return false; }
+  }
+  //Get MRD Cluster information (from TimeClustering tool)
+  if (draw_cluster){
+    get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+    if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdTimeClusters map from CStore, did you run TimeClustering beforehand?",v_error,verbose); return false; }
+    if (MrdTimeClusters.size()!=0){
+      get_ok = m_data->CStore.Get("MrdDigitTimes",MrdDigitTimes);
+      if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdDigitTimes map from CStore, did you run TimeClustering beforehand?",v_error,verbose); return false; }
+      get_ok = m_data->CStore.Get("MrdDigitChankeys",mrddigitchankeysthisevent);
+      if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand",v_error,verbose); return false;}
+    }
+  }
+
   std::string logmessage;
 
   if (!isData){
@@ -556,6 +598,7 @@ bool EventDisplay::Execute(){
   
   charge.clear();
   time.clear();
+  hits.clear();
   hitpmt_detkeys.clear();
   hitmrd_detkeys.clear();
 
@@ -567,6 +610,7 @@ bool EventDisplay::Execute(){
     unsigned long detkey = pmt_detkeys[i_pmt];
     charge.emplace(detkey,0.);
     time.emplace(detkey,0.);
+    hits.emplace(detkey,0);
   }
 
   for (int i_mrd=0;i_mrd<n_mrd_pmts;i_mrd++){
@@ -743,7 +787,7 @@ bool EventDisplay::Execute(){
     //data file case
     int vectsize;
     total_hits_pmts=0;
-    if (Hits){
+    if (!draw_cluster && Hits){
       vectsize = Hits->size();
       for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits){
         unsigned long chankey = apair.first;
@@ -767,32 +811,40 @@ bool EventDisplay::Execute(){
           total_hits_pmts++;
         }
       }
-    } else {
+    } else if (draw_cluster && m_all_clusters){
+      int clustersize = m_all_clusters->size();
+      std::cout <<"Clustersize of m_all_clusters: "<<clustersize<<std::endl;
+      bool clusters_available = false;
+      if (clustersize != 0) clusters_available = true;
+      if (clusters_available){
+	//determine the main cluster
+	double max_cluster = 0;
+        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
+	  if (apair.first > max_cluster) max_cluster = apair.first;
+	}
+	std::vector<Hit>& Hits = m_all_clusters->at(max_cluster);
+        std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(max_cluster);
+        int hits_pmt = 0;
+	for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
+	  Hit ahit = Hits.at(i_hit);
+          unsigned long detkey = detkeys.at(i_hit);
+	  charge[detkey] += ahit.GetCharge();
+	  time[detkey] += ahit.GetTime();
+	  hits[detkey]++;
+	  if (std::find(hitpmt_detkeys.begin(),hitpmt_detkeys.end(),detkey)==hitpmt_detkeys.end()) hitpmt_detkeys.push_back(detkey);
+	}
+	for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+	  unsigned long detkey = hitpmt_detkeys.at(i_pmt);
+          time[detkey] /= hits[detkey];
+          total_hits_pmts++;
+	}
+      }
+    }else {
       Log("EventDisplay tool: No Hits!",v_warning,verbose);
       vectsize = 0;
     }
   }
   
-  //Only select hits in the cluster time window
-  /*double mean_time=0.;
-  std::vector<unsigned long> pmt_to_delete;
-  for (unsigned int i_pmt = 0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
-        std::cout <<"i_pmt: "<<i_pmt<<", time: "<<time[hitpmt_detkeys.at(i_pmt)]<<", charge: "<<charge[hitpmt_detkeys.at(i_pmt)]<<std::endl;
-	mean_time+=time[hitpmt_detkeys.at(i_pmt)];
-  }
-  if (hitpmt_detkeys.size()>0) mean_time /= hitpmt_detkeys.size();
-  for (unsigned int i_pmt = 0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
-    if (time[hitpmt_detkeys.at(i_pmt)] <= mean_time - 50 || time[hitpmt_detkeys.at(i_pmt)] >= mean_time + 50){
-      time[hitpmt_detkeys.at(i_pmt)] = 0;
-      charge[hitpmt_detkeys.at(i_pmt)] = 0;
-      total_hits_pmts--;
-      pmt_to_delete.push_back(hitpmt_detkeys.at(i_pmt));
-    }
-  }
-  for (int i_del = 0; i_del < pmt_to_delete.size(); i_del++){
-    std::vector<unsigned long>::iterator it = std::find(hitpmt_detkeys.begin(),hitpmt_detkeys.end(),pmt_to_delete.at(i_del));
-    hitpmt_detkeys.erase(it);
-  }*/
 
   if (total_hits_pmts < npmtcut) {
     Log("EventDisplay tool: Only "+std::to_string(total_hits_pmts)+" PMTs hit. Required: "+std::to_string(npmtcut)+". Terminate this execute step.",v_message,verbose);
@@ -800,6 +852,13 @@ bool EventDisplay::Execute(){
    }
 
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
+  
+   for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+    if (charge_format == "pe"){
+     unsigned long detkey = hitpmt_detkeys.at(i_pmt); 
+     if (pmt_gains[detkey]>0) charge[detkey]/=pmt_gains[detkey];
+    }
+   }
   
   //---------------------------------------------------------------
   //-------------clear charge & time histograms -------------------
@@ -848,12 +907,16 @@ bool EventDisplay::Execute(){
   //-------------------Fill time hists ----------------------------
   //---------------------------------------------------------------
 
+  double mean_pmt_time = 0;
   for (unsigned int i_pmt=0;i_pmt<hitpmt_detkeys.size();i_pmt++){
     unsigned long detkey = hitpmt_detkeys[i_pmt];
     if (charge[detkey]!=0) charge_PMTs->Fill(charge[detkey]);
     if (time[detkey]!=0) time_PMTs->Fill(time[detkey]);
+    mean_pmt_time+=time[detkey];
     if (charge[detkey]!=0) charge_time_PMTs->Fill(time[detkey],charge[detkey]);
   }
+  if (hitpmt_detkeys.size()>0) mean_pmt_time/=hitpmt_detkeys.size();
+
 
   //---------------------------------------------------------------
   //------------- Determine max+min values ------------------------
@@ -1143,7 +1206,7 @@ bool EventDisplay::Execute(){
     } else {
       if(TDCData_Data->size()==0){
         Log("EventDisplay tool: No TDC hits to plot in Event Display!",v_message,verbose);
-      } else {
+      } else if (!draw_cluster) {
           Log("EventDisplay tool: Looping over FACC/MRD hits...Size of TDCData hits (data): "+std::to_string(TDCData_Data->size()),v_message,verbose);
         for(auto&& anmrdpmt : (*TDCData_Data)){
           unsigned long chankey = anmrdpmt.first;
@@ -1165,9 +1228,42 @@ bool EventDisplay::Execute(){
             mrddigittimesthisevent[detkey] = mrdtimes;
           }
         }
+      } else {
+        for(unsigned int thiscluster=0; thiscluster<MrdTimeClusters.size(); thiscluster++){
+
+        std::vector<int> single_mrdcluster = MrdTimeClusters.at(thiscluster);
+        int numdigits = single_mrdcluster.size();
+
+        for(int thisdigit=0;thisdigit<numdigits;thisdigit++){
+
+          int digit_value = single_mrdcluster.at(thisdigit);
+          unsigned long chankey = mrddigitchankeysthisevent.at(digit_value);
+	  Detector *thedetector = geom->ChannelToDetector(chankey);
+	  unsigned long detkey = thedetector->GetDetectorID();
+	  if (thedetector->GetDetectorElement()!="MRD") facc_hit = true;
+	  else {
+            mrd_hit = true;
+            double mrdtimes=MrdDigitTimes.at(digit_value);
+	    hitmrd_detkeys.push_back(detkey);
+	    if (mrdtimes < min_time_mrd) min_time_mrd = mrdtimes;
+            if (mrdtimes > maximum_time_mrd) maximum_time_mrd = mrdtimes;
+            mrddigittimesthisevent[detkey] = mrdtimes;
+         }
+       }
       }
+     }
     }
   }
+
+  double mean_mrd_time = 0;
+  for (unsigned int i = 0; i< hitmrd_detkeys.size(); i++){
+    mean_mrd_time+=mrddigittimesthisevent[hitmrd_detkeys.at(i)];
+  }
+  if (hitmrd_detkeys.size()>0) mean_mrd_time/=hitmrd_detkeys.size();
+  if (hitmrd_detkeys.size()>0 && hitpmt_detkeys.size()>0){
+    time_alignment_MRD_PMTs->Fill(mean_mrd_time,mean_pmt_time);
+  }
+
 
   //---------------------------------------------------------------
   //------------------ Draw Event Display -------------------------
@@ -1277,6 +1373,9 @@ bool EventDisplay::Execute(){
 
 
 bool EventDisplay::Finalise(){
+
+  root_file->cd();
+  time_alignment_MRD_PMTs->Write();
 
   //-----------------------------------------------------------------
   //---------------- Delete remaining objects -----------------------
@@ -1500,8 +1599,9 @@ void EventDisplay::draw_event_box(){
     std::string modules_str = " module(s) / ";
     std::string hits2_str = " hits";
     std::string hits_str = " hits / ";
-//    std::string charge_str = " p.e.";     //TEMP
-    std::string charge_str = " nC";
+    std::string charge_str;
+    if (charge_format == "pe") charge_str = " p.e.";
+    else charge_str = " nC";
     //std::string annie_subrun = "ANNIE Subrun: ";
     std::string annie_time = "Trigger Time: ";
     std::string annie_time_unit = " [ns]";
@@ -1509,8 +1609,9 @@ void EventDisplay::draw_event_box(){
     std::string trigger_str = "Trigger: ";
     std::string annie_run_number = std::to_string(runnumber);
     std::string annie_event_number = std::to_string(evnum);
-    //std::string total_charge_str = std::to_string(int(total_charge_pmts));
-    std::string total_charge_str = std::to_string(round(total_charge_pmts*10000.)/10000.);
+    std::string total_charge_str;
+    if (charge_format == "pe") total_charge_str = std::to_string(int(total_charge_pmts));
+    else total_charge_str = std::to_string(round(total_charge_pmts*10000.)/10000.);
     std::string total_hits_str = std::to_string(total_hits_pmts);
     //std::string annie_subrun_number = std::to_string(subrunnumber);
     std::string annie_time_number, annie_time_label;
@@ -1565,11 +1666,14 @@ void EventDisplay::draw_event_box(){
         colordot->Draw();
         vector_colordot.push_back(colordot);
     }
-
-//    std::string max_charge_pre = std::to_string(int(maximum_pmts));  //TEMP
-    std::string max_charge_pre = std::to_string(round(maximum_pmts*10000.)/10000.);
-//    std::string pe_string = " p.e.";
-    std::string pe_string = " nC";
+    std::string max_charge_pre, pe_string;
+    if (charge_format == "pe"){
+      max_charge_pre = std::to_string(int(maximum_pmts));  //TEMP
+      pe_string = " p.e.";
+    } else {
+      max_charge_pre = std::to_string(round(maximum_pmts*10000.)/10000.);
+      pe_string = " nC";
+    }
     std::string max_charge = max_charge_pre+pe_string;
     std::string max_time_pre = std::to_string(int(maximum_time_overall));
     std::string time_string = " ns";
@@ -1657,6 +1761,9 @@ void EventDisplay::draw_event_box(){
 
   void EventDisplay::draw_mrd_legend(){
 
+   int threshold_time_high_mrd = 1500;
+   int threshold_time_low_mrd = 0;
+
    //draw MRD legend on the right side of the top view of the MRD
    //
     mrd_title = new TPaveLabel(0.90,0.27,0.98,0.30,"time [MRD]","l");
@@ -1681,8 +1788,8 @@ void EventDisplay::draw_event_box(){
     std::string max_time_pre = std::to_string(int(maximum_time_mrd));
     std::string time_string = " ns";
     std::string max_time_mrd;
-    if (threshold_time_high==-999) max_time_mrd = max_time_pre+time_string;
-    else max_time_mrd = std::to_string(int(threshold_time_high))+time_string;
+    if (threshold_time_high_mrd==-999) max_time_mrd = max_time_pre+time_string;
+    else max_time_mrd = std::to_string(int(threshold_time_high_mrd))+time_string;
     max_mrd = new TPaveLabel(0.94,0.235,0.98,0.25,max_time_mrd.c_str(),"L");
     max_mrd->SetFillColor(0);
     max_mrd->SetTextColor(1);
@@ -1693,8 +1800,8 @@ void EventDisplay::draw_event_box(){
 
     std::string minimum_time_mrd;
     std::string min_time_pre = std::to_string(int(min_time_mrd));
-    if (threshold_time_low==-999) minimum_time_mrd = min_time_pre+time_string;
-    else minimum_time_mrd = std::to_string(int(threshold_time_low))+time_string;
+    if (threshold_time_low_mrd==-999) minimum_time_mrd = min_time_pre+time_string;
+    else minimum_time_mrd = std::to_string(int(threshold_time_low_mrd))+time_string;
     min_mrd = new TPaveLabel(0.94,0.10,0.98,0.115,minimum_time_mrd.c_str(),"L");
     min_mrd->SetFillColor(0);
     min_mrd->SetTextColor(1);
@@ -1854,14 +1961,16 @@ void EventDisplay::draw_event_box(){
 
     //draw MRD hits on Event Display
 
+    int threshold_time_high_mrd = 1500;
+    int threshold_time_low_mrd = 0;
     Log("EventDisplay tool: Drawing MRD hits.",v_message,verbose);
     for (unsigned int i_mrd = 0; i_mrd < hitmrd_detkeys.size(); i_mrd++){
         unsigned long detkey = hitmrd_detkeys[i_mrd];
         int color_marker;
-	if (threshold_time_high == -999 && threshold_time_low == -999) color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-min_time_mrd)/(maximum_time_mrd-min_time_mrd)*254);
-        else if (threshold_time_low == -999 && threshold_time_high != -999) color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-min_time_mrd)/(threshold_time_high-min_time_mrd)*254);
-        else if (threshold_time_low != -999 && threshold_time_high == -999) color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-threshold_time_low)/(maximum_time_mrd-threshold_time_low)*254);
-        else color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-threshold_time_low)/(threshold_time_high-threshold_time_low)*254);
+	if (threshold_time_high_mrd == -999 && threshold_time_low_mrd == -999) color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-min_time_mrd)/(maximum_time_mrd-min_time_mrd)*254);
+        else if (threshold_time_low_mrd == -999 && threshold_time_high_mrd != -999) color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-min_time_mrd)/(threshold_time_high_mrd-min_time_mrd)*254);
+        else if (threshold_time_low_mrd != -999 && threshold_time_high_mrd == -999) color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-threshold_time_low_mrd)/(maximum_time_mrd-threshold_time_low_mrd)*254);
+        else color_marker = Bird_Idx+int((mrddigittimesthisevent[detkey]-threshold_time_low_mrd)/(threshold_time_high_mrd-threshold_time_low_mrd)*254);
         mrd_paddles[detkey]->SetFillColor(color_marker);
 	}
   }
