@@ -98,17 +98,29 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		ifstream file_mapping(file_chankeymap);
 		unsigned long temp_chankey;
 		int temp_wcsimid;
+		std::map<int,unsigned long> mrdpmtid_to_channelkey; // for FindMrdTracks tool
 		while (!file_mapping.eof()){
 			file_mapping>>temp_chankey>>temp_wcsimid;
 			if (file_mapping.eof()) break;
 			channelkey_to_mrdpmtid.emplace(temp_chankey,temp_wcsimid);
+			mrdpmtid_to_channelkey.emplace(temp_wcsimid,temp_chankey);
 			Log("FindMrdTracks tool: Emplaced temp_chankey "+std::to_string(temp_chankey)+" with temp_wcsimid "+std::to_string(temp_wcsimid)+"into channelkey_to_mrdpmtid object!",v_debug,verbosity);
 		}
 		file_mapping.close();
 	 	m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	 	m_data->CStore.Set("mrdpmtid_to_channelkey",mrdpmtid_to_channelkey);
        	}
 	else {
-		m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);	//for MC, simply get the sample obtained from the LoadWCSim tool
+		get_ok = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);	//for MC, simply get the sample obtained from the LoadWCSim tool
+		if(not get_ok){
+			Log("TimeClustering Tool: Error! No channelkey_to_mrdpmtid in CStore!",v_error,verbosity);
+			return false;
+		}
+		get_ok = m_data->CStore.Get("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
+		if(not get_ok){
+			Log("TimeClustering Tool: Error! No channelkey_to_faccpmtid in CStore!",v_error,verbosity);
+			return false;
+		}
 	}
 
 	// Get Detectors map to divide in horizontal and vertical layers
@@ -185,7 +197,12 @@ bool TimeClustering::Execute(){
 	if (isData){
 		for(auto&& anmrdpmt : (*TDCData)){
 			unsigned long chankey = anmrdpmt.first;
-			// if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit. XXX keep this cut?
+//			Detector* thedetector = geom->ChannelToDetector(chankey);
+//			if(thedetector==nullptr){
+//				Log("TimeClustering Tool: Null detector in TDCData!",v_error,verbosity);
+//				continue;
+//			}
+//			if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit. XXX keep this cut?
 			for(auto&& hitsonthismrdpmt : anmrdpmt.second){
 				if (channelkey_to_mrdpmtid.find(chankey) != channelkey_to_mrdpmtid.end()){
 					mrddigitpmtsthisevent.push_back(channelkey_to_mrdpmtid[chankey]);
@@ -214,11 +231,40 @@ bool TimeClustering::Execute(){
 	} else {
 		for(auto&& anmrdpmt : (*TDCData_MC)){
 			unsigned long chankey = anmrdpmt.first;
-			// if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit. XXX keep this cut?
+//			// sanity checks
+//			Detector* thedetector = geom->ChannelToDetector(chankey);
+//			if(thedetector==nullptr){
+//				Log("TimeClustering Tool: Null detector in TDCData_MC!",v_error,verbosity);
+//				continue;
+//			}
+//			if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit
+//			if(channelkey_to_mrdpmtid.count(chankey)==0){
+//				Log("TimeClustering Tool: MRD PMT with ID not in channelkey_to_mrdpmtid map!",v_error,verbosity);
+//				if(verbosity>2){
+//					std::cerr<<"We have: "<<channelkey_to_mrdpmtid.size()
+//							 <<" known mappings and they are: {"<<std::endl;
+//					for(auto&& apair : channelkey_to_mrdpmtid){
+//						std::cout<<apair.first<<" : "<<apair.second<<std::endl;
+//					}
+//					std::cout<<"}"<<std::endl;
+//				}
+//				continue;
+//			}
+//			if(wcsimtubeid==0){
+//				Log("TimeClustering Tool: channel with wcsimpmtid 0! IDs should number from 1!",v_error, verbosity);
+//				continue;
+//			}
 			for(auto&& hitsonthismrdpmt : anmrdpmt.second){
+				// checking channelkey_to_mrdpmtid (as opposed to channelkey_to_faccpmtid)
+				// will filter out MRD PMTs only
+				int pmtidwcsim=-1;
 				if (channelkey_to_mrdpmtid.find(chankey) != channelkey_to_mrdpmtid.end()){
-					mrddigitpmtsthisevent.push_back(channelkey_to_mrdpmtid[chankey]-1);
-					mrddigitchankeysthisevent.push_back(chankey);
+					pmtidwcsim = channelkey_to_mrdpmtid.at(chankey)-1;
+				} else if(channelkey_to_faccpmtid.count(chankey)){
+					pmtidwcsim = channelkey_to_faccpmtid.at(chankey)-1;
+				}
+				if(pmtidwcsim>0){
+					mrddigitpmtsthisevent.push_back(pmtidwcsim);
 					mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 					mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
 					if(MakeMrdDigitTimePlot){  // XXX XXX XXX rename
