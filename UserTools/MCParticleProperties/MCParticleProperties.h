@@ -42,6 +42,7 @@ class MCParticleProperties: public Tool {
 	std::vector<MCParticle>* MCParticles=nullptr;
 	
 	// helper functions to find the MRD intersection points
+	bool CheckProjectedMRDHit(Position startvertex, Position stopvertex, double mrdwidth, double mrdheight, double mrdstart);
 	bool CheckLineBox( Position L1, Position L2, Position B1, Position B2, Position &Hit, Position &Hit2, bool &error, int verbose=0);
 	int InBox( Position Hit, Position B1, Position B2, const int Axis);
 	int GetIntersection( float fDst1, float fDst2, Position P1, Position P2, Position &Hit);
@@ -50,7 +51,10 @@ class MCParticleProperties: public Tool {
 	// helper function for finding where the track would have left the tank, if it didn't
 	std::map<int,std::string>* GeneratePdgMap();
 	std::string PdgToString(int code);
-	static std::map<int,std::string> pdgcodetoname;
+	std::map<int,std::string> pdgcodetoname;		//to be saved in CStore for subsequent tools
+	std::map<int,double>* GeneratePdgMassMap();
+	double PdgToMass(int code);
+	std::map<int,double> pdgcodetomass;			//to be saved in CStore for subsequent tools
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;

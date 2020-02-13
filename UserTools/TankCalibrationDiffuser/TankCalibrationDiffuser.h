@@ -53,6 +53,7 @@ class TankCalibrationDiffuser: public Tool {
       //define input variables
       std::string HitStoreName = "MCHits";
       std::string outputfile;
+      std::string outputdir;
       int nBinsTimeTotal;
       double timeTotalMin;
       double timeTotalMax;
@@ -129,7 +130,7 @@ class TankCalibrationDiffuser: public Tool {
       std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
       Geometry *geom = nullptr;
       std::vector<unsigned long> pmt_detkeys;
-
+      std::vector<unsigned long> problematic_channels;
 
       //define useful variables
       const double n_water = 1.33;
@@ -149,10 +150,14 @@ class TankCalibrationDiffuser: public Tool {
       std::map<unsigned long, double> phi_PMT;
       std::map<unsigned long, double> radius_PMT;
       std::map<unsigned long, int> PMT_ishit;
-      std::map<unsigned long, double> mean_charge_fit;
-      std::map<unsigned long, double> mean_time_fit;
-      std::map<unsigned long, double> rms_charge_fit;
-      std::map<unsigned long, double> rms_time_fit;
+      std::map<unsigned long, double> charge_mean_fit;
+      std::map<unsigned long, double> time_mean_fit;
+      std::map<unsigned long, double> charge_rms_fit;
+      std::map<unsigned long, double> time_rms_fit;
+      std::map<unsigned long, double> charge_mean;
+      std::map<unsigned long, double> time_mean;
+      std::map<unsigned long, double> charge_rms;
+      std::map<unsigned long, double> time_rms;
       std::map<unsigned long, double> expected_time;
       std::map<unsigned long, double> starttime_mean;
       std::map<unsigned long, double> peaktime_mean;
@@ -161,6 +166,7 @@ class TankCalibrationDiffuser: public Tool {
       std::map<unsigned long, double> rawamplitude_mean;
       std::map<unsigned long, double> amplitude_mean;
       std::map<unsigned long, double> rawarea_mean;
+      std::map<unsigned long, int> nentries_hist;
 
       //define histograms for stability plots
       TH1F *hist_tubeid = nullptr;
@@ -184,11 +190,15 @@ class TankCalibrationDiffuser: public Tool {
       std::map<unsigned long, TH1F*> hist_rawamplitude_singletube;
       std::map<unsigned long, TH1F*> hist_amplitude_singletube;
       std::map<unsigned long, TH1F*> hist_rawarea_singletube;
+      std::map<unsigned long, TGraphErrors*> gr_stability_charge_fit_singletube;
+      std::map<unsigned long, TGraphErrors*> gr_stability_charge_mean_singletube;
 
-
+      TH1F *hist_charge_fit = nullptr;
+      TH1F *hist_time_fit = nullptr;
+      TH1F *hist_time_dev_fit = nullptr;
       TH1F *hist_charge_mean = nullptr;
       TH1F *hist_time_mean = nullptr;
-      TH1F *hist_time_dev = nullptr;
+      TH1F *hist_time_dev_mean = nullptr;
       TH1F *hist_starttime_mean = nullptr;
       TH1F *hist_peaktime_mean = nullptr;
       TH1F *hist_baseline_mean = nullptr;
@@ -196,27 +206,34 @@ class TankCalibrationDiffuser: public Tool {
       TH1F *hist_rawamplitude_mean = nullptr;
       TH1F *hist_amplitude_mean = nullptr;
       TH1F *hist_rawarea_mean = nullptr;
-      TH1F *hist_detkey_charge = nullptr;
+      TH1F *hist_detkey_charge_fit = nullptr;
+      TH1F *hist_detkey_time_fit = nullptr;
+      TH1F *hist_detkey_time_dev_fit = nullptr;
+      TH1F *hist_detkey_charge_mean = nullptr;
       TH1F *hist_detkey_time_mean = nullptr;
-      TH1F *hist_detkey_time_dev = nullptr;
-      TH1F *hist_detkey_starttime = nullptr;
-      TH1F *hist_detkey_peaktime = nullptr;
-      TH1F *hist_detkey_baseline = nullptr;
-      TH1F *hist_detkey_sigmabaseline = nullptr;
-      TH1F *hist_detkey_rawamplitude = nullptr;
-      TH1F *hist_detkey_amplitude = nullptr;
-      TH1F *hist_detkey_rawarea = nullptr;
-      TH2F *hist_charge_2D_y_phi = nullptr;
-      TH2F *hist_time_2D_y_phi = nullptr;
+      TH1F *hist_detkey_time_dev_mean = nullptr;
+      TH1F *hist_detkey_starttime_mean = nullptr;
+      TH1F *hist_detkey_peaktime_mean = nullptr;
+      TH1F *hist_detkey_baseline_mean = nullptr;
+      TH1F *hist_detkey_sigmabaseline_mean = nullptr;
+      TH1F *hist_detkey_rawamplitude_mean = nullptr;
+      TH1F *hist_detkey_amplitude_mean = nullptr;
+      TH1F *hist_detkey_rawarea_mean = nullptr;
+      TH2F *hist_charge_2D_y_phi_fit = nullptr;
+      TH2F *hist_time_2D_y_phi_fit = nullptr;
+      TH2F *hist_time_2D_y_phi_dev_fit = nullptr;
+      TH2F *hist_charge_2D_y_phi_mean = nullptr;
       TH2F *hist_time_2D_y_phi_mean = nullptr;
-      TH2F *hist_starttime_2D_y_phi = nullptr;
-      TH2F *hist_peaktime_2D_y_phi = nullptr;
-      TH2F *hist_baseline_2D_y_phi = nullptr;
-      TH2F *hist_sigmabaseline_2D_y_phi = nullptr;
-      TH2F *hist_rawamplitude_2D_y_phi = nullptr;
-      TH2F *hist_amplitude_2D_y_phi = nullptr;
-      TH2F *hist_rawarea_2D_y_phi = nullptr;
+      TH2F *hist_time_2D_y_phi_dev_mean = nullptr;
+      TH2F *hist_starttime_2D_y_phi_mean = nullptr;
+      TH2F *hist_peaktime_2D_y_phi_mean = nullptr;
+      TH2F *hist_baseline_2D_y_phi_mean = nullptr;
+      TH2F *hist_sigmabaseline_2D_y_phi_mean = nullptr;
+      TH2F *hist_rawamplitude_2D_y_phi_mean = nullptr;
+      TH2F *hist_amplitude_2D_y_phi_mean = nullptr;
+      TH2F *hist_rawarea_2D_y_phi_mean = nullptr;
       TH2F *hist_detkey_2D_y_phi = nullptr;
+      TH2F *hist_occupied_2D_y_phi = nullptr;
 
       //container for red boxes surrounding badly calibrated PMTs
       std::vector<TBox*> vector_tbox;
@@ -225,19 +242,25 @@ class TankCalibrationDiffuser: public Tool {
       std::vector<TF1*> vector_tf1;
 
       //define graphs for stability plots
-      TGraphErrors *gr_stability = nullptr;
-      TGraphErrors *gr_stability_time = nullptr;
+      TGraphErrors *gr_stability_charge_fit = nullptr;
+      TGraphErrors *gr_stability_time_fit = nullptr;
+      TGraphErrors *gr_stability_time_dev_fit = nullptr;
+      TGraphErrors *gr_stability_charge_mean = nullptr;
       TGraphErrors *gr_stability_time_mean = nullptr;
+      TGraphErrors *gr_stability_time_dev_mean = nullptr;
+  
 
       //define file to save data
       TFile *file_out = nullptr;
       TFile *help_file = nullptr;
 
       //define overview canvas
-      TCanvas *canvas_overview = nullptr;
-      TCanvas *canvas_overview2 = nullptr;
-      TCanvas *canvas_overview3 = nullptr;
-      TCanvas *canvas_overview4 = nullptr;
+      TCanvas *canvas_stability_mean = nullptr;
+      TCanvas *canvas_stability_fit = nullptr;
+      TCanvas *canvas_overview_QT_mean = nullptr;
+      TCanvas *canvas_overview_QT_fit = nullptr;
+      TCanvas *canvas_overview_recoadc_2D = nullptr;
+      TCanvas *canvas_overview_recoadc_1D = nullptr;
 
       //define TApplication for possibility of interactive plotting
       TApplication *app_stability = nullptr;

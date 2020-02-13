@@ -50,6 +50,7 @@ class TimeClustering: public Tool {
 
 	// From the CStore, for converting WCSim TubeId t channelkey
         std::map<unsigned long,int> channelkey_to_mrdpmtid;
+        std::map<unsigned long,int> channelkey_to_faccpmtid;
 
 	// Cluster properties
 	std::vector<double> mrddigittimesthisevent;

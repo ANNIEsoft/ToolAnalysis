@@ -50,6 +50,11 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	m_data->Stores["MRDTracks"] = new BoostStore(true,0);
 	// the vector of MRD tracks found in the current event
 	theMrdTracks = new std::vector<BoostStore>(5);
+	// in case we don't find any tracks in the first event, we should populate the entry in the MRDTracks
+	// boost store so that other downstream tools that expect it will indeed find it.
+	m_data->Stores["MRDTracks"]->Set("MRDTracks",theMrdTracks,false);
+	m_data->Stores["MRDTracks"]->Set("NumMrdSubEvents",0);
+	m_data->Stores["MRDTracks"]->Set("NumMrdTracks",0);
 	
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geo);
 	//numvetopmts = geo->GetNumVetoPMTs();
@@ -59,7 +64,7 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	// put the pointer in the CStore, so it can be retrieved by MrdTrackPlotter tool Init
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
-	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	m_data->CStore.Get("mrdpmtid_to_channelkey",mrdpmtid_to_channelkey);
 	// pass this to TrackCombiner
 	m_data->CStore.Set("DrawMrdTruthTracks",DrawTruthTracks);
 	
@@ -215,8 +220,25 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			int numdigits = single_mrdcluster.size();
 
 			for(int thisdigit=0;thisdigit<numdigits;thisdigit++){
-
-				int digit_value = single_mrdcluster.at(thisdigit);
+				int digit_value = single_mrdcluster.at(thisdigit); // digit value is index of digit in TDC hits
+				// TimeClustering tool builds clusters from both MRD and Veto hits,
+				// but we cannot have veto PMTs in the MrdTrackLib reco algorithms
+				// (they would be out of bounds in the expected maps...)
+				// so convert back to channelkey, get the Detector, and check whether it's MRD or Veto
+				int wcsimid = mrddigitpmtsthisevent.at(digit_value);
+				if(mrdpmtid_to_channelkey.count(wcsimid)==0){
+					Log("FindMrdTracks tool: Error! WCSimID "+to_string(wcsimid)
+						+" was not in the mrdpmtid_to_channelkey map!",v_error,verbosity);
+					continue;
+				} else {
+					unsigned long chankey = mrdpmtid_to_channelkey.at(wcsimid);
+					Detector* thedetector = geo->ChannelToDetector(chankey);
+					if(thedetector==nullptr){
+						Log("FindMrdTracks Tool: Null detector in TDCData!",v_error,verbosity);
+						continue;
+					}
+					if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit
+				}
 				digitidsinasubevent.push_back(digit_value);
 				tubeidsinasubevent.push_back(mrddigitpmtsthisevent.at(digit_value));
 				digittimesinasubevent.push_back(mrddigittimesthisevent.at(digit_value));
@@ -381,6 +403,9 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			
 			// fill with this track's data
 			thisTrackAsBoostStore->Set("MrdTrackID",atrack->GetTrackID());
+			if(subevi!=atrack->GetMrdSubEventID()){
+				Log("FindMrdTracks Tool Error: cMRDTrack::GetMrdSubEventID in wrong subevi!",v_error,verbosity);
+			}
 			thisTrackAsBoostStore->Set("MrdSubEventID",atrack->GetMrdSubEventID());
 			thisTrackAsBoostStore->Set("InterceptsTank",atrack->GetInterceptsTank());
 			thisTrackAsBoostStore->Set("StartTime",atrack->GetStartTime());
@@ -428,6 +453,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 									atrack->GetMrdEntryPoint().Z() / 100.);
 			thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
 			thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+			thisTrackAsBoostStore->Set("TrackIndex",tracki);
 			
 			// this stuff either isn't important or isn't yet implemented, don't store:
 //			thisTrackAsBoostStore->Set("NumPMTsHit",atrack->GetNumPMTsHit());

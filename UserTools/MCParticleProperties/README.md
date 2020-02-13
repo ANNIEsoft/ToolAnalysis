@@ -1,20 +1,36 @@
 # MCParticleProperties
 
-MCParticleProperties
+MCParticleProperties loops through the `MCParticles` object in the `ANNIEEvent` store and calculates different properties of the particles based on MC 
 
 ## Data
 
-Describe any data formats MCParticleProperties creates, destroys, changes, or analyzes. E.G.
+The `MCParticleProperties` tool loops over `MCParticles` and adds the following features for each `MCParticle` object:
 
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+* StartsInFiducialVolume (`bool`)
+* TrackAngleX (`double`)
+* TrackAngleY (`double`)
+* TrackAngleFromBeam (`double`)
+* ProjectedHitMrd (`bool`)
+* EntersMrd (`bool`)
+* MrdEntryPoint (`Position`)
+* ExitsMrd (`bool`)
+* MrdExitPoint (`Position`)
+* PenetratesMrd (`bool`)
+* MrdPenetration (`double`)
+* NumMrdLayersPenetrated (`int`)
+* TrackLengthInMrd (`double`)
+* MrdEnergyLoss (`double`)
+* EntersTank (`bool`)
+* TankEntryPoint (`Position`)
+* ExitsTank (`bool`)
+* TankExitPoint (`Position`)
+* TrackLengthInTank (`double`)
 
 ## Configuration
 
 Describe any configuration variables for MCParticleProperties.
 
 ```
-param1 value1
-param2 value2
+verbosity 1
+
 ```

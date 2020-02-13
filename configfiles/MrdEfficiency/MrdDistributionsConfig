@@ -4,7 +4,6 @@
 verbosity 1
 
 drawHistos 1            # draw the histograms
-saveimages 1            # save the histograms as images
 #plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
 plotDirectory ./MrdDistributionPlots
-printTracks 1           # verbose printout of track information from BoostStore
+printTracks 0           # verbose printout of track information from BoostStore

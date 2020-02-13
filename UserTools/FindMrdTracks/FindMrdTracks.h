@@ -56,8 +56,8 @@ private:
 	std::string file_chankeymap;	
 
 
-	// From the CStore, for converting WCSim TubeId t channelkey
-	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	// From the CStore, for converting WCSim TubeId to channelkey
+	std::map<int,unsigned long> mrdpmtid_to_channelkey;
 	
 	// Store information regarding MRD Time clusters
 	std::vector<std::vector<int>> MrdTimeClusters;
