@@ -29,13 +29,16 @@ class Position : public SerialisableObject{
 	
 	inline double GetPhi(){
 		// Angle from beam axis, measured clockwise while looking down [rads]
-		double Phi = (z==0) ? 0 : atan(x/abs(z));
+		Position thisunit = Unit();
+		// if z=0, the vector is in the X-Y plane, and phi is 0
+		double Phi = (abs(thisunit.Z())<0.0000001) ? 0. : atan(x/abs(z));
+		// z<0 corresponds to the upstream wall, so add Pi as necessary
 		if(z<0.){ (x<0.) ? Phi=(-M_PI-Phi) : Phi=(M_PI-Phi); }
 		return Phi;
 	}
 	inline double GetTheta(){
 		// Angle measured relative to the x-z plane [rads]
-		return (x==0&&z==0) ? 0 : atan(y/sqrt(pow(x,2.)+pow(z,2.)));
+		return (abs(x)<0.0000001&&abs(z)<0.0000001) ? 0 : atan(y/sqrt(pow(x,2.)+pow(z,2.)));
 	}
 	inline double GetR(){ return sqrt(pow(x,2.)+pow(z,2.));}
 	

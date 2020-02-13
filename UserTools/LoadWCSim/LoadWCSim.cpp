@@ -99,10 +99,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	// =============================================================
 //	file= new TFile(MCFile.c_str(),"READ");
 //	wcsimtree= (TTree*) file->Get("wcsimT");
-//	NumEvents=wcsimtree->GetEntries();
 //	WCSimEntry= new wcsimT(wcsimtree);
 	WCSimEntry= new wcsimT(MCFile.c_str(),verbosity);
-	NumEvents=WCSimEntry->GetEntries();
 	
 	gROOT->cd();
 	wcsimrootgeom = WCSimEntry->wcsimrootgeom;
@@ -181,6 +179,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 			logmessage+=": No TChain loaded! Is your filepath correct?";
 		}
 		Log(logmessage,v_error,verbosity);
+		cerr<<"############################"<<endl;
+		m_data->vars.Set("StopLoop",1);
 		return false;
 	}
 	
@@ -263,6 +263,17 @@ bool LoadWCSim::Execute(){
 		}
 	}
 	if(verbosity) cout<<"Executing tool LoadWCSim with MC entry "<<MCEventNum<<", trigger "<<MCTriggernum<<endl;
+	int loopstopped=0;
+	get_ok = m_data->vars.Get("StopLoop",loopstopped);
+	if(get_ok && loopstopped){
+		// setting StopLoop doesn't terminate the ToolChain if the number of iterations
+		// is specified manually in the ToolChainConfig.
+		// This is almost certainly going to result in a segfault somewhere,
+		// (e.g. if this tool set it in the last loop iteration because it ran out of entries)
+		// but let's do what we can
+		Log("WARNING: STOPLOOP HAS BEEN SET. RETURNING",v_error,verbosity);
+		return 0;
+	}
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
 	MCHits->clear();
