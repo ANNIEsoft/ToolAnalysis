@@ -1,4 +1,4 @@
 #MRDPaddleEfficiency Config file
 
-OutputFile ProcessedRawDataR1415S0
+OutputFile RAWDataR1477S0p11R0S0
 verbosity 1

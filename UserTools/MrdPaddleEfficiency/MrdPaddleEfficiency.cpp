@@ -1,7 +1,6 @@
 #include "MrdPaddleEfficiency.h"
 
 
-
 MrdPaddleEfficiency::MrdPaddleEfficiency():Tool(){}
 
 
@@ -12,7 +11,7 @@ bool MrdPaddleEfficiency::Initialise(std::string configfile, DataModel &data){
 	if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	m_data= &data; //assigning transient data pointer
 
-	outputfile = "MRDTestXX";
+	outputfile = "MRDTestFile_observed";
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("OutputFile",outputfile);
 
@@ -20,26 +19,7 @@ bool MrdPaddleEfficiency::Initialise(std::string configfile, DataModel &data){
 
 	std::stringstream rootfilename;
 	rootfilename << outputfile << "_mrdefficiency.root";
-
 	hist_file = new TFile(rootfilename.str().c_str(),"RECREATE");
-	
-	trackfit_tree = new TTree("trackfit_tree","Track fit properties");
-	hist_numtracks = new TH1D("hist_numtracks","Number of Tracks",500,1,0);
-	hist_pmtshit = new TH1D("hist_pmtshit","PMTs hit",500,1,0);
-	hist_htrackfitchi2 = new TH1D("hist_htrackfitchi2","Horizontal Track Fits Chi2",500,1,0);
-	hist_vtrackfitchi2 = new TH1D("hist_vtrackfitchi2","Vertical Track Fits Chi2",500,1,0);
-	hist_layershit = new TH1D("hist_layershit","Layers hit",500,1,0);
-	hist_tracklength = new TH1D("hist_tracklength","Tracklength",500,1,0);
-
-
-	//Setup the tree variables
-	trackfit_tree->Branch("numtracks",&numtracksinev);
-	trackfit_tree->Branch("numpmtshit",&numpmtshit);
-	trackfit_tree->Branch("htrackfitchi2",&HtrackFitChi2);
-	trackfit_tree->Branch("vtrackfitchi2",&VtrackFitChi2);
-	trackfit_tree->Branch("numlayershit",&numlayershit);
-	trackfit_tree->Branch("tracklength",&tracklength);
-
 
 	// Read in the geometry & get the properties (extents, orientations, etc) of the MRD paddles
 
@@ -130,13 +110,6 @@ bool MrdPaddleEfficiency::Initialise(std::string configfile, DataModel &data){
 
 	}
 
-	// Define text file to store MRD track fit variables
-	
-	std::stringstream prop_filename;
-	prop_filename << outputfile << "trackfitproperties.dat";
-	property_file.open(prop_filename.str().c_str());
-	property_file << "EventNumber - NumTracksInEv - PMTsHit - HtrackFitChi2 - VtrackFitChi2 - LayersHit - TrackLength - StartX - StartY - StartZ - EndX - EndY - EndZ"<<std::endl;
-
 	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
 
 	return true;
@@ -161,11 +134,9 @@ bool MrdPaddleEfficiency::Execute(){
 
 		if(verbosity>2) std::cout<<"MrdPaddleEfficiency tool: Event "<<EventNumber<<" had "<<numtracksinev<<" tracks in "<<numsubevs<<" subevents"<<endl;
 			
-		hist_numtracks->Fill(numtracksinev);
-		
-		// Only look at events with a track		
+		// Only look at events with a single track (cut may be relaxed in the future)		
 
-		if (numtracksinev > 0) 	{
+		if (numtracksinev == 1) {
 
 			// Get reconstructed tracks
 
@@ -173,8 +144,6 @@ bool MrdPaddleEfficiency::Execute(){
 
 			// Loop over reconstructed tracks
 			
-			paddlesInTrackReco.clear();
-
 			for(int tracki=0; tracki<numtracksinev; tracki++){
 				
 				BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
@@ -186,37 +155,21 @@ bool MrdPaddleEfficiency::Execute(){
 				thisTrackAsBoostStore->Get("StartVertex",StartVertex);
 				thisTrackAsBoostStore->Get("StopVertex",StopVertex);
 				thisTrackAsBoostStore->Get("PMTsHit",PMTsHit);
-				thisTrackAsBoostStore->Get("HtrackFitChi2",HtrackFitChi2);
-				thisTrackAsBoostStore->Get("VtrackFitChi2",VtrackFitChi2);
 				thisTrackAsBoostStore->Get("LayersHit",LayersHit);
 				thisTrackAsBoostStore->Get("MrdTrackID",MrdTrackID);
 
 				numpmtshit = PMTsHit.size();
 				numlayershit = LayersHit.size();
 				tracklength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
-				if(PMTsHit.size()) paddlesInTrackReco.emplace(MrdTrackID,PMTsHit);
-
-				if(verbosity>2) cout<<"MrdPaddleEfficiency tool: StartVertex: ("<<StartVertex.X()<<", "<<StartVertex.Y()<<", "<<StartVertex.Z()<<"), Stop Vertex: ("<<StopVertex.X()<<", "<<StopVertex.Y()<<", "<<StopVertex.Z()<<"), PMTsHit: "<<PMTsHit.size()<<", HtrackFitChi2: "<<HtrackFitChi2<<"< VtrackFitChi2: "<<VtrackFitChi2<<", LayersHit: "<<LayersHit.size()<<", tracklength: "<<tracklength<<endl;
-				property_file << EventNumber <<", "<<numtracksinev<<", "<<PMTsHit.size()<<", "<<HtrackFitChi2<<", "<<VtrackFitChi2<<", "<<LayersHit.size()<<", "<<tracklength<<","<<StartVertex.X()<<","<<StartVertex.Y()<<","<<StartVertex.Z()<<","<<StopVertex.X()<<","<<StopVertex.Y()<<","<<StopVertex.Z()<<std::endl;
-
-				// Fill properties into histograms
-
-				hist_pmtshit->Fill(PMTsHit.size());
-				hist_htrackfitchi2->Fill(HtrackFitChi2);
-				hist_vtrackfitchi2->Fill(VtrackFitChi2);
-				hist_layershit->Fill(LayersHit.size());
-				hist_tracklength->Fill(tracklength);
-				trackfit_tree->Fill();
 
 				// Minor selection cuts to only select well fit tracks
 
-				//if (PMTsHit.size() < 30 && HtrackFitChi2 > 0.005 && VtrackFitChi2 > 0.005){
 				if (PMTsHit.size() < 50 ){
 
 					for (int i_layer = 0; i_layer < zLayers.size(); i_layer++){
 						
 						// Exclude first and layer from efficiency determination						
-						if (i_layer == 0 || i_layer == zLayers.size() -1) continue;
+						if (i_layer == 0 || i_layer == int(zLayers.size()) -1) continue;
 
 							double x_layer, y_layer;
 							FindPaddleIntersection(StartVertex, StopVertex, x_layer, y_layer, zLayers.at(i_layer));
@@ -249,16 +202,7 @@ bool MrdPaddleEfficiency::Execute(){
 
 bool MrdPaddleEfficiency::Finalise(){
 
-	property_file.close();
-
 	hist_file->cd();
-	hist_numtracks->Write();
-	hist_pmtshit->Write();
-	hist_htrackfitchi2->Write();
-	hist_vtrackfitchi2->Write();
-	hist_layershit->Write();
-	hist_tracklength->Write();
-	trackfit_tree->Write();
 
 	for (unsigned int i_layer = 0; i_layer < zLayers.size(); i_layer++){
 		for (unsigned int i_ch = 0; i_ch < channelsLayers.at(i_layer).size(); i_ch++){

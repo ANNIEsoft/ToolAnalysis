@@ -64,18 +64,8 @@ class MrdPaddleEfficiency: public Tool {
  	double VtrackFitChi2;
  	std::vector<int> LayersHit;
  	int numlayershit;
-	std::map<int,std::vector<int>> paddlesInTrackReco;
 	double tracklength;
 
- 	ofstream property_file;
-
- 	TH1D *hist_numtracks = nullptr;
- 	TH1D *hist_pmtshit = nullptr;
- 	TH1D *hist_htrackfitchi2 = nullptr;
- 	TH1D *hist_vtrackfitchi2 = nullptr;
- 	TH1D *hist_layershit = nullptr;
- 	TH1D *hist_tracklength = nullptr;
-	TTree *trackfit_tree = nullptr;
  	TFile *hist_file = nullptr;
 
  	std::map<int,std::map<unsigned long,TH1D*>> observed_MRDHits;
