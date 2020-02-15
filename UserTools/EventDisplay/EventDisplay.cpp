@@ -450,6 +450,7 @@ bool EventDisplay::Execute(){
     return false;
   }
 
+  if (str_event_list!="None"){
   if (ev_list.size() > i_loop){
     m_data->CStore.Set("UserEvent",true);
     m_data->CStore.Set("LoadEvNr",ev_list.at(i_loop));
@@ -458,6 +459,7 @@ bool EventDisplay::Execute(){
   } else {
     m_data->CStore.Set("UserEvent",false);
     m_data->vars.Set("StopLoop",1);
+  }
   }
 
   int get_ok;
@@ -1292,9 +1294,10 @@ bool EventDisplay::Execute(){
           unsigned long detkey = thedetector->GetDetectorID();
           if(thedetector->GetDetectorElement()!="MRD") facc_hit=true;
         }
-      }
+       }
      }
     }
+   }
   }
 
   double mean_mrd_time = 0;
