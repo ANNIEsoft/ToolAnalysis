@@ -69,6 +69,8 @@ class PMTDataDecoder: public Tool {
   std::string Mode;
 
   int CurrentEntryNum = 0;
+  int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
+  int FileNum = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
   std::string CurrentFile = "NONE";

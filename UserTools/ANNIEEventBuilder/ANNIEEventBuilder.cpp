@@ -18,9 +18,9 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   OrphanWarningValue = 20;
   MRDPMTTimeDiffTolerance = 10;   //ms
   DriftWarningValue = 5;           //ms
-  RoughScanMean = 200;            //ms
-  RoughScanVariance = 250000;     //ms
   NumWavesInCompleteSet = 140;
+  OrphanOldTimestamps = true;
+  OldTimestampThreshold = 30; //seconds
 
   /////////////////////////////////////////////////////////////////
   //FIXME: Need rough scan and tolerances in variable settings
@@ -29,9 +29,9 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ProcessedFilesBasename",ProcessedFilesBasename);
   m_variables.Get("BuildType",BuildType);
   m_variables.Get("NumEventsPerPairing",EventsPerPairing);
-  m_variables.Get("RoughScanMean",RoughScanMean);
-  m_variables.Get("RoughScanVariance",RoughScanVariance);
   m_variables.Get("MinNumWavesInSet",NumWavesInCompleteSet);
+  m_variables.Get("OrphanOldTimestamps",OrphanOldTimestamps);
+  m_variables.Get("OldTimestampThreshold",OldTimestampThreshold);
 
   if(BuildType == "TankAndMRD"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
@@ -63,7 +63,6 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   ANNIEEventNum = 0;
   CurrentRunNum = -1;
   CurrentSubRunNum = -1;
-  DataStreamsSynced = false;
   CurrentDriftMean = 0;
 
   return true;
@@ -247,7 +246,6 @@ bool ANNIEEventBuilder::Execute(){
       CurrentSubRunNum = LowestSubRunNum;
       CurrentRunType = LowestRunType;
       CurrentStarTime = LowestStarTime;
-      DataStreamsSynced = false;
     }
 
 
@@ -262,16 +260,12 @@ bool ANNIEEventBuilder::Execute(){
         std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
         if(verbosity>4) std::cout << "Number of waves for this counter: " << aWaveMap.size() << std::endl;
         
-        //See if this timestamp has been encountered before; if not,
+        //See if this timestamp is already in the queue for pairing; if not,
         //add it to our Tank timestamp record and our in-progress timestamps
-        if(std::find(IPTankTimestamps.begin(),IPTankTimestamps.end(), PMTCounterTimeNs) == 
-                     IPTankTimestamps.end()){
-          IPTankTimestamps.push_back(PMTCounterTimeNs);  //Units in ns
-        }
-        if(std::find(AllTankTimestamps.begin(),AllTankTimestamps.end(), PMTCounterTimeNs) == 
-                     AllTankTimestamps.end()){
+        if(std::find(UnpairedTankTimestamps.begin(),UnpairedTankTimestamps.end(), PMTCounterTimeNs) == 
+                     UnpairedTankTimestamps.end()){
           if(verbosity>3)std::cout << "TANKTIMESTAMP," << PMTCounterTimeNs << std::endl;
-          AllTankTimestamps.push_back(PMTCounterTimeNs);  //Units in ns
+          if(PMTCounterTimeNs>NewestTimestamp) NewestTimestamp = PMTCounterTimeNs;
           UnpairedTankTimestamps.push_back(PMTCounterTimeNs);  //Units in ns
         }
 
@@ -284,6 +278,12 @@ bool ANNIEEventBuilder::Execute(){
           FinishedTankTimestamps.push_back(PMTCounterTimeNs);
           //Put PMT timestamp into the timestamp set for this run.
           if(verbosity>4) std::cout << "Finished waveset has clock counter: " << PMTCounterTimeNs << std::endl;
+          InProgressEventsToDelete.push_back(PMTCounterTimeNs);
+        }
+
+        //If this InProgressTankEvent is too old, clear it
+        //out from all TankTimestamp maps
+        if(OrphanOldTimestamps && ((NewestTimestamp - PMTCounterTimeNs) > OldTimestampThreshold*1E9)){
           InProgressEventsToDelete.push_back(PMTCounterTimeNs);
         }
       }
@@ -310,8 +310,6 @@ bool ANNIEEventBuilder::Execute(){
     //Since timestamp pairing has been done for finished Tank Events,
     //Erase the finished Tank Events from the InProgressTankEventsMap
     for (unsigned int j=0; j< InProgressEventsToDelete.size(); j++){
-      IPTankTimestamps.erase(std::remove(IPTankTimestamps.begin(),IPTankTimestamps.end(),InProgressEventsToDelete.at(j)), 
-                 IPTankTimestamps.end());
       InProgressTankEvents.erase(InProgressEventsToDelete.at(j));
     }
     if(verbosity>3) std::cout << "Current number of unfinished PMT Waveforms: " << InProgressTankEvents.size() << std::endl;
@@ -323,16 +321,9 @@ bool ANNIEEventBuilder::Execute(){
     int MinStamps = std::min(NumTankTimestamps,NumMRDTimestamps);
     std::vector<uint64_t> MRDStampsToDelete;
 
-    if(MinStamps > (EventsPerPairing*5)){
+    if(MinStamps > (EventsPerPairing*10)){
       this->RemoveCosmics();
-      //FIXME: Before we use this, two things are needed:
-      // SyncDataStreams should probably move events to the orphanage rather than just delete
-      // SyncDataStreams needs to be smarter; look at the current mean with no shift to
-      // Predict the way the rough shift should be done
-      //if(DataStreamsSynced)  this->CheckDataStreamsAreSynced();
-      if(!DataStreamsSynced) this->SyncDataStreams();
-      if(DataStreamsSynced)  this->PairTankPMTAndMRDTriggers();
-  
+      this->PairTankPMTAndMRDTriggers();
 
       std::vector<uint64_t> BuiltTankTimes;
       for(std::pair<uint64_t,uint64_t> cpair : UnbuiltTankMRDPairs){
@@ -424,140 +415,58 @@ void ANNIEEventBuilder::RemoveCosmics(){
   return;
 }
 
-void ANNIEEventBuilder::SyncDataStreams(){
-  //The MRD and PMT datastreams can start at different times, and have different offsets.  
-  //Let's try to find the offset needed to put the data streams in sync for building.
-  //We'll write the logic assuming the MRD acquisition started prior to the PMT
-  //acquisition.
-  int SyncIndex = -9999;
-  //int NumTankTimestamps = FinishedTankTimestamps.size();
-  int NumTankTimestamps = UnpairedTankTimestamps.size();
-  int NumMRDTimestamps = UnpairedMRDTimestamps.size();
-  int MinStamps = std::min(NumTankTimestamps,NumMRDTimestamps);
-  
-  if(verbosity>4) std::cout << "ANNIEEventBuilder Tool: Trying to sync data streams" << std::endl;
-  std::sort(UnpairedMRDTimestamps.begin(),UnpairedMRDTimestamps.end());
-  //std::sort(UnpairedTankTimestamps.begin(),UnpairedTankTimestamps.end());
-  std::sort(UnpairedTankTimestamps.begin(),UnpairedTankTimestamps.end());
 
+void ANNIEEventBuilder::CalculateSlidWindows(std::vector<uint64_t> FirstTimestampSet,
+        std::vector<uint64_t> SecondTimestampSet, int shift, double& tmean, double& tvar)
+{
   //Build offsets vectors used to sync streams
-  std::vector<uint64_t> PMTOffsets;
-  std::vector<uint64_t> MRDOffsets;
-  for (int j=1; j<EventsPerPairing*2; j++){
-    PMTOffsets.push_back((UnpairedTankTimestamps.at(j)/1E6) - (UnpairedTankTimestamps.at(j-1)/1E6));
-    MRDOffsets.push_back(UnpairedMRDTimestamps.at(j)- UnpairedMRDTimestamps.at(j-1));
-  }
-  double BestMean = 1E100;
-  double BestVar = 1E100;
-  double BestIndex = -9999;
+  //std::vector<uint64_t> PMTOffsets;
+  //std::vector<uint64_t> MRDOffsets;
+  //for (int j=1; j<EventsPerPairing*2; j++){
+  //  PMTOffsets.push_back((FirstTimestampSet.at(j)/1E6) - (FirstTimestampSet.at(j-1)/1E6));
+  //  MRDOffsets.push_back(SecondTimestampSet.at(j)- SecondTimestampSet.at(j-1));
+  //}
  
   //TO-DO: We should look at the overall mean of the unshifted differnces.
   //Depending on the sign, choose whether to slide the MRD or PMT dataset
-  for (int i=0; i<EventsPerPairing; i++){
-    //slide earliest times in MRD offset off the left
-    std::vector<uint64_t> MRDTS_copy = UnpairedMRDTimestamps;
-    std::vector<uint64_t> PMTTS_copy = UnpairedTankTimestamps;
-    std::vector<uint64_t> SlidMRDOffsets = MRDOffsets;
-    std::vector<uint64_t> SlidPMTOffsets = PMTOffsets;
-    //std::cout << "SLIDING OFFSETS" << std::endl;
-    SlidMRDOffsets.erase(SlidMRDOffsets.begin(),SlidMRDOffsets.begin()+i);
-    SlidPMTOffsets.erase(SlidPMTOffsets.end()-i,SlidPMTOffsets.end());
-    MRDTS_copy.erase(MRDTS_copy.begin(),MRDTS_copy.begin()+i);
-    PMTTS_copy.erase(PMTTS_copy.end()-i,PMTTS_copy.end());
-    std::vector<double> TSDifferences;
-    std::vector<double> OffsetDifferences;
-    for (int k=0; k<SlidPMTOffsets.size(); k++){
-      if(verbosity>4){ 
-        std::cout << "PMT-MRD TIMESTAMP: " << static_cast<double>((PMTTS_copy.at(k)/1E6) - 21600000) - 
-                static_cast<double>(MRDTS_copy.at(k))  << std::endl;
-        std::cout << "OFFSET DIFF: " << static_cast<double>(SlidPMTOffsets.at(k)) - 
-                static_cast<double>(SlidMRDOffsets.at(k))  << std::endl;
-      }
-      OffsetDifferences.push_back(static_cast<double>(SlidPMTOffsets.at(k)) - static_cast<double>(SlidMRDOffsets.at(k)));
-      TSDifferences.push_back(static_cast<double>((PMTTS_copy.at(k)/1E6) - 21600000) - static_cast<double>(MRDTS_copy.at(k)));
-    }
-    double tmean,tvar;
-    double omean,ovar;
-    ComputeMeanAndVariance(TSDifferences,tmean,tvar);
-    ComputeMeanAndVariance(OffsetDifferences,omean,ovar);
-    if(verbosity>4){
-      std::cout << "SHIFTING MRD ARRAY BACK BY " << i << " INDICES..." << std::endl;
-      std::cout << "MEAN TS SHIFT: " << tmean << std::endl;
-      std::cout << "VARIANCE TS SHIFT: " << tvar << std::endl;
-      std::cout << "MEAN OF OFFSETS: " << omean << std::endl;
-      std::cout << "VARIANCE OF OFFSETS: " << ovar << std::endl;
-    }
-    if((std::abs(tmean)<RoughScanMean) && (tvar<RoughScanVariance) && (tvar<BestVar)){
-      BestVar = tvar;
-      BestMean = tmean;
-      BestIndex = i;
-    }
-  }
-  if(verbosity>3){
-    std::cout << "BEST MEAN OF OFFSETS: " << BestMean << std::endl;
-    std::cout << "BEST VARIANCE OF OFFSETS: " << BestVar << std::endl;
-    std::cout << "BEST INDEX OF OFFSETS: " << BestIndex << std::endl;
-  }
-  if((BestVar < RoughScanVariance) && (BestMean < RoughScanMean)){
-    if(verbosity>3) std::cout << "VARIANCE AND MEAN MEET ROUGH SCAN CRITERIA.  CONSIDERED SYNCED" << std::endl;
-    UnpairedMRDTimestamps.erase(UnpairedMRDTimestamps.begin(),(UnpairedMRDTimestamps.begin()+BestIndex));
-    //FIXME: Can we accurately estimate the drift mean in the presence of these
-    //rogue MRD triggers?
-    DataStreamsSynced = true;
-  }
-  else {
-    if(verbosity>3) std::cout << "NO MRD STREAM SHIFT BEATS MEAN/VARIANCE CRITERIA OF  " << RoughScanMean << ","<< RoughScanVariance << std::endl;
-    UnpairedMRDTimestamps.erase(UnpairedMRDTimestamps.begin(),(UnpairedMRDTimestamps.begin()+EventsPerPairing));
-    DataStreamsSynced = false;
-  }
-  return;
-}
-
-void ANNIEEventBuilder::CheckDataStreamsAreSynced(){
-  //The MRD and PMT datastreams can start at different times, and have different offsets.  
-  //Let's try to find the offset needed to put the data streams in sync for building.
-  //We'll write the logic assuming the MRD acquisition started prior to the PMT
-  //acquisition.
-  
-  if(verbosity>4) std::cout << "ANNIEEventBuilder Tool: Checking sync quality of stream" << std::endl;
-  std::sort(UnpairedMRDTimestamps.begin(),UnpairedMRDTimestamps.end());
-  //std::sort(FinishedTankTimestamps.begin(),FinishedTankTimestamps.end());
-  std::sort(UnpairedTankTimestamps.begin(),UnpairedTankTimestamps.end());
-
-  double BestMean = 1E100;
-  double BestVar = 1E100;
-  double BestIndex = -9999;
   //slide earliest times in MRD offset off the left
-  std::vector<uint64_t> MRDTS_copy = UnpairedMRDTimestamps;
-  std::vector<uint64_t> PMTTS_copy = UnpairedTankTimestamps;
+  std::vector<uint64_t> MRDTS_copy = SecondTimestampSet;
+  std::vector<uint64_t> PMTTS_copy = FirstTimestampSet;
+  //std::vector<uint64_t> SlidMRDOffsets = MRDOffsets;
+  //std::vector<uint64_t> SlidPMTOffsets = PMTOffsets;
+  //std::cout << "SLIDING OFFSETS" << std::endl;
+  //SlidMRDOffsets.erase(SlidMRDOffsets.begin(),SlidMRDOffsets.begin()+shift);
+  //SlidPMTOffsets.erase(SlidPMTOffsets.end()-shift,SlidPMTOffsets.end());
+  MRDTS_copy.erase(MRDTS_copy.begin(),MRDTS_copy.begin()+shift);
+  PMTTS_copy.erase(PMTTS_copy.end()-shift,PMTTS_copy.end());
   std::vector<double> TSDifferences;
-  //std::cout << "CALCULATING MEAN AND VARIANCE OFFSETS" << std::endl;
-  for (int k=0; k<(EventsPerPairing/2); k++){
-    std::cout << "PMT-MRD TIMESTAMP: " << static_cast<double>((PMTTS_copy.at(k)/1E6))-21600000.0 - 
-            static_cast<double>(MRDTS_copy.at(k))  << std::endl;
-
-    TSDifferences.push_back(static_cast<double>(PMTTS_copy.at(k)/1E6) - static_cast<double>(MRDTS_copy.at(k)));
-  }
-  double tmean,tvar;
-  ComputeMeanAndVariance(TSDifferences,tmean,tvar);
-  if(verbosity>4){
-    std::cout << "MEAN TS SHIFT: " << tmean << std::endl;
-    std::cout << "VARIANCE TS SHIFT: " << tvar << std::endl;
-    std::cout << "DRIFT IN MEAN AS OF LAST PAIRING: " << CurrentDriftMean << std::endl;
-  }
-  if((std::abs(tmean-CurrentDriftMean) < RoughScanMean) && (tvar < RoughScanVariance)){
-    DataStreamsSynced = true;
-  }
-  else {
-    if(verbosity>3){
-      std::cout << "MEAN OF TIMESTAMP DIFFERENCES WITH DRIFT CORRECTION HAS GROWN PAST " << RoughScanMean << std::endl;
-      std::cout << "VARIANCE OF TIMESTAMP DIFFERENCES HAS GROWN PAST " << RoughScanVariance << std::endl;
-      std::cout << "STREAM IS CONSIDERED OUT OF SYNC " << std::endl;
+  //std::vector<double> OffsetDifferences;
+  for (int k=0; k<EventsPerPairing*2; k++){
+    if(verbosity>4){ 
+      std::cout << "PMT-MRD TIMESTAMP: " << static_cast<double>(PMTTS_copy.at(k)) - 
+              static_cast<double>(MRDTS_copy.at(k))  << std::endl;
+      //std::cout << "OFFSET DIFF: " << static_cast<double>(SlidPMTOffsets.at(k)) - 
+      //        static_cast<double>(SlidMRDOffsets.at(k))  << std::endl;
     }
-    DataStreamsSynced = false;
+    //OffsetDifferences.push_back(static_cast<double>(SlidPMTOffsets.at(k)) - static_cast<double>(SlidMRDOffsets.at(k)));
+    TSDifferences.push_back(static_cast<double>(PMTTS_copy.at(k)) - static_cast<double>(MRDTS_copy.at(k)));
+  }
+  double mean,var;
+  //double omean,ovar;
+  ComputeMeanAndVariance(TSDifferences,mean,var);
+  tmean = mean;
+  tvar = var;
+  //ComputeMeanAndVariance(OffsetDifferences,omean,ovar);
+  if(verbosity>4){
+    std::cout << "SHIFTING MRD ARRAY BACK BY " << shift << " INDICES..." << std::endl;
+    std::cout << "MEAN TS SHIFT: " << mean << std::endl;
+    std::cout << "VARIANCE TS SHIFT: " << var << std::endl;
+    //std::cout << "MEAN OF OFFSETS: " << omean << std::endl;
+    //std::cout << "VARIANCE OF OFFSETS: " << ovar << std::endl;
   }
   return;
 }
+
 
 void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   //FIXME: I'm noticing a ~ms drift in the main sync pattern per 1000 events.  Let's have
@@ -607,18 +516,21 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   }
 
   //With the last set of pairs calculate what the mean drift is
+  //TODO: Error handling for high drift and high orphan rates?
+  //TODO: Try to pair up orphans at some point?
   double ThisPairingMean, ThisPairingVariance;
-  ComputeMeanAndVariance(ThisPairingTSDiffs,CurrentDriftMean,CurrentDriftVariance);
-  ComputeMeanAndVariance(ThisPairingTSDiffs,ThisPairingMean,ThisPairingVariance);
-  if(std::abs(CurrentDriftMean-ThisPairingMean)>DriftWarningValue){
-    std::cout << "ANNIEEventBuilder tool: WARNING! Shift in drift greater than " << DriftWarningValue << " since last pairings." << std::endl;
+  if(ThisPairingTSDiffs.size()>2){
+    ComputeMeanAndVariance(ThisPairingTSDiffs,CurrentDriftMean,CurrentDriftVariance);
+    ComputeMeanAndVariance(ThisPairingTSDiffs,ThisPairingMean,ThisPairingVariance);
+    if(std::abs(CurrentDriftMean-ThisPairingMean)>DriftWarningValue){
+      std::cout << "ANNIEEventBuilder tool: WARNING! Shift in drift greater than " << DriftWarningValue << " since last pairings." << std::endl;
+    }
+    if(NumOrphans > OrphanWarningValue){
+      std::cout << "ANNIEEventBuilder tool: WARNING! High orphan rate detected.  More than " << OrphanWarningValue << " this pairing sequence." << std::endl;
+    }
+    CurrentDriftMean = ThisPairingMean;
+    CurrentDriftVariance = ThisPairingVariance;
   }
-  if(NumOrphans > OrphanWarningValue){
-    std::cout << "ANNIEEventBuilder tool: WARNING! High orphan rate detected.  More than " << OrphanWarningValue << " this pairing sequence." << std::endl;
-  }
-
-  CurrentDriftMean = ThisPairingMean;
-  CurrentDriftVariance = ThisPairingVariance;
   if(verbosity>4) std::cout << "DOING OUR PAIR UP: " << std::endl;
   for (int i=0;i<(NumPairsToMake); i++) {
     UnbuiltTankMRDPairs.emplace(UnpairedTankTimestamps.at(i),UnpairedMRDTimestamps.at(i));
@@ -743,8 +655,6 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
       to_string(ANNIEEventNum)+" built." << std::endl;
   return;
 }
-
-
 
 
 void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum)

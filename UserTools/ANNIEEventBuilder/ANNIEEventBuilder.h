@@ -30,12 +30,12 @@ class ANNIEEventBuilder: public Tool {
   void PauseDecodingOnAheadStream();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void PairTankPMTAndMRDTriggers();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only
-  void SyncDataStreams();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
-  void CheckDataStreamsAreSynced();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType);
+  void CalculateSlidWindows(std::vector<uint64_t> FirstTimestampSet,
+        std::vector<uint64_t> SecondTimestampSet, int shift, double& tmean, double& tvar);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveEntryToFile(int RunNum, int SubRunNum);
 
@@ -59,7 +59,6 @@ class ANNIEEventBuilder: public Tool {
   std::vector<uint64_t> AllTankTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
   std::vector<uint64_t> AllMRDTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
   
-  std::vector<uint64_t> IPTankTimestamps;  //Contains timestamps for PMTs that still have waveforms being put together
   std::vector<uint64_t> FinishedTankTimestamps;  //Contains timestamps for PMT Events that are fully built
 
   std::vector<uint64_t> UnpairedTankTimestamps;  //Contains timestamps for all PMT events that haven't been paired to an MRD TS
@@ -85,8 +84,9 @@ class ANNIEEventBuilder: public Tool {
   //
   unsigned int NumWavesInCompleteSet = 140; 
 
-  int RoughScanMean;  // mean of difference in PMT and MRD timestmaps (ms) tolerated when roughly checking stream sync
-  int RoughScanVariance;  // mean of differences in PMT and MRD timestamps (ms) tolerated when roughly checking stream sync
+  bool OrphanOldTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
+  int OldTimestampThreshold;  // Threshold where a timestamp relative to the newest timestamp crosses before moving to the orphanage
+  uint64_t NewestTimestamp = 0;
 
   double CurrentDriftMean = 0;
   double CurrentDriftVariance = 0;
