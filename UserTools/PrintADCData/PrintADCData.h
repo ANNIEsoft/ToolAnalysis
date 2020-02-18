@@ -110,6 +110,8 @@ class PrintADCData: public Tool {
   std::map<std::string, TDirectory *> ChanKeyToDirectory;
 
 
+  TH1F *wave_lengths = nullptr;
+
   // ROOT TApplication variables
   // ---------------------------
   TApplication* rootTApp=nullptr;

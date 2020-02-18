@@ -145,9 +145,6 @@ bool SimpleTankEnergyCalibrator::Execute(){
     tracklength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
   }
 
-  m_variables.Get("MinPenetrationDepth",MinPenetrationDepth);
-  m_variables.Get("MaxAngle",MaxAngle);
-  m_variables.Get("MaxEntryPointRadius",MaxEntryPointRadius);
   double EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100.0; // convert to cm
   PenetrationDepth = PenetrationDepth*100.0;
 
@@ -170,8 +167,11 @@ bool SimpleTankEnergyCalibrator::Execute(){
     double TotalPE = this->GetTotalPE(BeamHits);
     double TotalQ = this->GetTotalQ(BeamHits);
     std::cout << "SimpleTankEnergyCalibrator tool: THROUGH-GOING MUON CANDIDATE FOUND." << std::endl;
-    std::cout << "SimpleTankEnergyCalibrator tool: TOTAL CHARGE IS: " << TotalQ << std::endl;
-    std::cout << "SimpleTankEnergyCalibrator tool: TOTAL PE IS: " << TotalPE << std::endl;
+    std::cout << "SimpleTankEnergyCalibrator tool: ENTRYX,ENTRYY,ENTRYZ," << MrdEntryPoint.X() << "," <<
+        MrdEntryPoint.Y() << "," << MrdEntryPoint.Z() << std::endl;
+    std::cout << "SimpleTankEnergyCalibrator tool: TRACKANGLE," << TrackAngle << std::endl;
+    std::cout << "SimpleTankEnergyCalibrator tool: PENETRATION," << PenetrationDepth << std::endl;
+    std::cout << "SimpleTankEnergyCalibrator tool: CHARGE,PE," << TotalQ << "," << TotalPE << std::endl;
   }
 
   return true;

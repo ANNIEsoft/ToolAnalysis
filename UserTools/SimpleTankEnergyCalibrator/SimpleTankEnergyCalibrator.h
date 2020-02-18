@@ -56,7 +56,7 @@ class SimpleTankEnergyCalibrator: public Tool {
   int TankBeamWindowEnd;
   int TankNHitThreshold;
   int MinPenetrationDepth;
-  int MaxAngle;
+  double MaxAngle;
   int MaxEntryPointRadius;
 
   int numsubevs;
