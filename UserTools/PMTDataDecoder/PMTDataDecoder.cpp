@@ -15,11 +15,13 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   verbosity = 0;
 
   EntriesPerExecute = 0;
+  ADCCountsToBuild = 0;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("Mode",Mode);
   m_variables.Get("InputFile",InputFile);
   m_variables.Get("EntriesPerExecute",EntriesPerExecute);
+  m_variables.Get("ADCCountsToBuildWaves",ADCCountsToBuild);
 
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
@@ -634,12 +636,14 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Finished Wave Clock time (ns)"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
 
-  if(FinishedPMTWaves.count(FinishedWaveTrigTime) == 0) {
-    std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
-    WaveMap.emplace(wave_key,FinishedWave);
-    FinishedPMTWaves.emplace(FinishedWaveTrigTime,WaveMap);
-  } else {
-    FinishedPMTWaves.at(FinishedWaveTrigTime).emplace(wave_key,FinishedWave);
+  if(FinishedWave.size()>ADCCountsToBuild){
+    if(FinishedPMTWaves.count(FinishedWaveTrigTime) == 0) {
+      std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
+      WaveMap.emplace(wave_key,FinishedWave);
+      FinishedPMTWaves.emplace(FinishedWaveTrigTime,WaveMap);
+    } else {
+      FinishedPMTWaves.at(FinishedWaveTrigTime).emplace(wave_key,FinishedWave);
+    }
   }
   //Clear the finished wave from WaveBank and TriggerTimeBank for the new wave
   //to start being put together

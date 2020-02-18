@@ -70,6 +70,7 @@ class PMTDataDecoder: public Tool {
   std::string Mode;
   std::vector<std::string> OrganizedFileList;
 
+  int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
   int EntriesPerExecute;
   long totalentries=0;
   int CDEntryNum = 0;
