@@ -110,9 +110,9 @@ bool LoadRawData::Execute(){
     if(!TankPaused && !TankEntriesCompleted){
       PMTData->GetEntry(TankEntryNum);
       PMTData->Get("CardData",Cdata);
-      CStore->Set("CardData",Cdata);
-      CStore->Set("PMTData",PMTData);
-      CStore->Set("TankEntryNum",TankEntryNum);
+      m_data->CStore.Set("CardData",Cdata);
+      m_data->CStore.Set("PMTData",PMTData);
+      m_data->CStore.Set("TankEntryNum",TankEntryNum);
       TankEntryNum+=1;
     }
   }
@@ -123,7 +123,7 @@ bool LoadRawData::Execute(){
     if(!MRDPaused && !MRDEntriesCompleted){;
       MRDData->GetEntry(MRDEntryNum);
       MRDData->Get("Data",Mdata);
-      CStore->Set("MRDData",Mdata);
+      m_data->CStore.Set("MRDData",Mdata);
       MRDEntryNum+=1;
     }
   }
@@ -145,7 +145,7 @@ bool LoadRawData::Execute(){
   Postgress.Get("RunType",RunType);
   Postgress.Get("StarTime",StarTime);
 
-  CStore->Set("RunInfoPostgress",Postgress);
+  m_data->CStore.Set("RunInfoPostgress",Postgress);
 
   if(TankEntryNum == tanktotalentries){
     Log("LoadRawData Tool: ALL PMT ENTRIES COLLECTED.",v_debug, verbosity);
@@ -158,7 +158,7 @@ bool LoadRawData::Execute(){
 
   if (TankEntriesCompleted && BuildType == "Tank") FileCompleted = true;
   if (MRDEntriesCompleted && BuildType == "MRD") FileCompleted = true;
-  if ((TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRD") FileCompleted = true;
+  if ((TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRD")) FileCompleted = true;
 
   if(FileCompleted){
     FileNum += 1;

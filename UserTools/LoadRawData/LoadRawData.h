@@ -5,7 +5,10 @@
 #include <iostream>
 
 #include "Tool.h"
-
+#include "CardData.h"
+#include "TriggerData.h"
+#include "BoostStore.h"
+#include "Store.h"
 
 /**
  * \class LoadRawData
@@ -25,10 +28,13 @@ class LoadRawData: public Tool {
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
-
+  void LoadPMTMRDData(); 
 
  private:
 
+
+  std::vector<std::string> OrganizedFileList;
+  std::string CurrentFile = "NONE";
   std::string BuildType;
   std::string Mode;
   std::string InputFile;
@@ -36,8 +42,11 @@ class LoadRawData: public Tool {
 
 
   int FileNum = 0;
+  int tanktotalentries;
+  int mrdtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
+  bool FileCompleted;
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
 
@@ -45,7 +54,7 @@ class LoadRawData: public Tool {
   BoostStore *PMTData;
   BoostStore *MRDData;
   std::vector<CardData> Cdata;
-  std::vector<MRDData> Cdata;
+  MRDOut Mdata;
 
   int verbosity;
   int v_error=0;

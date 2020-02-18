@@ -1,7 +1,1 @@
 verbosity 5
-Mode FileList 
-EntriesPerExecute 10
-#InputFile /annie/app/users/mnieslon/MyToolAnalysis3/MRDTest28commonstopp0
-InputFile ./configfiles/DataDecoder/my_files.txt 
-
-

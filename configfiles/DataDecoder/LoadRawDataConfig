@@ -1,0 +1,4 @@
+ verbosity 5
+ BuildType TankAndMRD
+ Mode FileList
+InputFile /annie/app/users/pershint/ToolAnalysis/configfiles/DataDecoder/my_files.txt

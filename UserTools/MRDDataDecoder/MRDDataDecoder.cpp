@@ -13,11 +13,8 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   verbosity = 0;
-  EntriesPerExecute = 0;
-  DummyRunNumber = 0;
 
   m_variables.Get("verbosity",verbosity);
-  m_variables.Get("UseDummyRunNumber",DummyRunNumber);
 
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("NewMRDDataAvailable",false);
@@ -41,7 +38,7 @@ bool MRDDataDecoder::Execute(){
   
   /////////////////// getting MRD Data ////////////////////
   Log("MRDDataDecoder Tool: Accessing MRDData from CStore",v_message,verbosity); 
-  CStore->Get("MRDData",mrddata);
+  m_data->CStore.Get("MRDData",mrddata);
   std::string mrdTriggertype = "No Loopback";
   std::vector<unsigned long> chankeys;
   unsigned long timestamp = mrddata.TimeStamp;    //in ms since 1970/1/1
@@ -66,9 +63,6 @@ bool MRDDataDecoder::Execute(){
   
   //Entry processing done.  Label the trigger type and increment index
   TriggerTypeMap.emplace(timestamp,mrdTriggertype);
-  NumMRDDataProcessed += 1;
-  ExecuteEntryNum += 1;
-  EntryNum+=1;
 
   //MRD Data file fully processed.   
   //Push the map of TriggerTypeMap and FinishedMRDHits 
@@ -84,7 +78,6 @@ bool MRDDataDecoder::Execute(){
   m_data->CStore.Set("MRDEventTriggerTypes",CStoreTriggerTypeMap);
   
   m_data->CStore.Set("NewMRDDataAvailable",true);
-  m_data->CStore.Set("MRDRunInfoPostgress",Postgress);
 
   //Check the size of the WaveBank to see if things are bloating
   Log("MRDDataDecoder Tool: Size of MRDEvents in CStore (# MRD Triggers processed):" + 

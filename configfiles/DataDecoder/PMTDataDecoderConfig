@@ -1,6 +1,2 @@
 verbosity 2
-Mode FileList
-EntriesPerExecute 10
-InputFile /annie/app/users/pershint/ToolAnalysis/configfiles/DataDecoder/my_files.txt
 ADCCountsToBuildWaves 0
-

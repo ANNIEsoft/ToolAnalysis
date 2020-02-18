@@ -46,11 +46,12 @@ bool PMTDataDecoder::Execute(){
   //Check if we are starting a new file 
   if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
 
-  CStore->Get("PMTData",PMTData);
-  CStore->Get("CurrentTankEntryNum",CurrentEntryNum);
+  m_data->CStore.Get("PMTData",PMTData);
+  m_data->CStore.Get("CurrentTankEntryNum",CurrentEntryNum);
 
   // Load RawData BoostStore to use in execute loop
-  CStore->Get("RunInfoPostgress",RunInfoPostgress);
+  Store RunInfoPostgress;
+  m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
   int RunNumber;
   int SubRunNumber;
   uint64_t StarTime;
@@ -84,7 +85,7 @@ bool PMTDataDecoder::Execute(){
   }
 
   Log("PMTDataDecoder Tool: Procesing PMTData Entry from CStore",v_debug, verbosity);
-  CStore->Get("CardData",Cdata);
+  m_data->CStore.Get("CardData",Cdata);
   Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
   
   for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
