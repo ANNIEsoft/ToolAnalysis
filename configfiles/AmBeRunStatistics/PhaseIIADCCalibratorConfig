@@ -1,0 +1,6 @@
+# Dummy config file
+verbosity 5
+NumBaselineSamples 10
+NumSubWaveforms 10
+PCritical 0.01
+MakeCalLEDWaveforms 0

@@ -56,6 +56,26 @@ class PhaseIIADCHitFinder : public Tool {
     std::map<unsigned long, unsigned short> channel_threshold_map;
     std::map<unsigned long, std::vector<std::vector<int>>> channel_window_map;
     
+   
+    std::map<int,std::string>* AuxChannelNumToTypeMap;
+
+     // Load the map containing the ADC calibrated waveform data
+    std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
+      calibrated_waveform_map;
+    std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
+      calibrated_aux_waveform_map;
+    std::map<unsigned long, std::vector<Waveform<unsigned short> > >
+      raw_waveform_map;
+    std::map<unsigned long, std::vector<Waveform<unsigned short> > >
+      raw_aux_waveform_map;
+    
+    // Build the map of pulses and Hit Map
+    std::map<unsigned long, std::vector< std::vector<ADCPulse>> > pulse_map;
+    std::map<unsigned long,std::vector<Hit>>* hit_map;
+
+    std::map<unsigned long, std::vector< std::vector<ADCPulse>> > aux_pulse_map;
+    std::map<unsigned long,std::vector<Hit>>* aux_hit_map;
+
     // Load a PMT's threshold from the channel_threshold_map. If none, returns default ADC threshold
     unsigned short get_db_threshold(unsigned long channelkey);
 
@@ -68,6 +88,12 @@ class PhaseIIADCHitFinder : public Tool {
     // load an integration window map (CSV file) from the source file given
     std::map<unsigned long, std::vector<std::vector<int>>> load_integration_window_map(std::string window_db);
 
+
+    bool build_pulse_and_hit_map(unsigned long ckey,
+       std::vector<Waveform<unsigned short> > rawmap, 
+      std::vector<CalibratedADCWaveform<double> > calmap,
+      std::map<unsigned long, std::vector< std::vector<ADCPulse>> > & pulse_map,
+      std::map<unsigned long,std::vector<Hit>>& hit_map);
     // Create a vector of ADCPulse objects using the raw and calibrated signals
     // from a given minibuffer. Note that the vectors of raw and calibrated
     // samples are assumed to be the same size. This function will throw an
@@ -86,7 +112,6 @@ class PhaseIIADCHitFinder : public Tool {
     //Takes the ADC pulse vectors (one per minibuffer) and converts them to a vector of hits
     std::vector<Hit> convert_adcpulses_to_hits(unsigned long channel_key,std::vector<std::vector<ADCPulse>> pulses);
 
-    std::map<unsigned long,std::vector<Hit>>* hit_map;
 };
 
 #endif

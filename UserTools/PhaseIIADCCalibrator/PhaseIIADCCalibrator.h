@@ -65,6 +65,9 @@ class PhaseIIADCCalibrator : public Tool {
     std::map<unsigned long, std::vector<std::vector<int>>> channel_window_map;
 
     std::string BEType;
+
+
+    std::map<int,std::string>* AuxChannelNumToTypeMap;
     int verbosity;
     // All F-distribution probabilities above this value will pass the
     // variance consistency test in ze3ra_baseline(). That is, p_critical

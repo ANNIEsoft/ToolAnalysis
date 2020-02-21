@@ -60,6 +60,7 @@ class LoadGeometry: public Tool {
   std::map<std::vector<int>,int>* MRDCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int>* TankPMTCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int>* AuxCrateSpaceToChannelNumMap;
+  std::map<int,std::string>* AuxChannelNumToTypeMap;
   std::map<std::vector<unsigned int>,int>* LAPPDCrateSpaceToChannelNumMap;
 
   //Vector of strings indicating variables of interest and their data types in

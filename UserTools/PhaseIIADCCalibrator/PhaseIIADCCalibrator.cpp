@@ -51,7 +51,10 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
   m_variables.Get("PCritical", p_critical);
   m_variables.Get("NumBaselineSamples", num_baseline_samples);
   m_variables.Get("NumSubWaveforms", num_sub_waveforms);
-  
+
+  // Get the Auxiliary channel types; identifies which channels are SiPM channels
+  m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
+
   // get ROOT fitting variables
   if(use_root_algorithm){
     m_variables.Get("drawBaselineRootFit",draw_baseline_fit);
@@ -127,8 +130,12 @@ bool PhaseIIADCCalibrator::Execute() {
   // Load the map containing the ADC raw waveform data
   std::map<unsigned long, std::vector<Waveform<unsigned short> > >
     raw_waveform_map;
+  // Load the map containing the ADC raw waveform data
+  std::map<unsigned long, std::vector<Waveform<unsigned short> > >
+    raw_auxwaveform_map;
 
   bool got_raw_data = annie_event->Get("RawADCData", raw_waveform_map);
+  bool got_rawaux_data = annie_event->Get("RawADCAuxData", raw_auxwaveform_map);
 
   // Check for problems
   if ( !got_raw_data ) {
@@ -145,6 +152,9 @@ bool PhaseIIADCCalibrator::Execute() {
   // Build the calibrated waveforms
   std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
     calibrated_waveform_map;
+  // Build the calibrated waveforms
+  std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
+    calibrated_auxwaveform_map;
 
   // Load the map containing the ADC raw waveform data
   std::map<unsigned long, std::vector<Waveform<unsigned short> > >
@@ -153,6 +163,7 @@ bool PhaseIIADCCalibrator::Execute() {
   std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
     calibrated_led_waveform_map;
 
+  //Calibrate raw detector waveforms
   for (const auto& temp_pair : raw_waveform_map) {
     const auto& channel_key = temp_pair.first;
     //Default running: raw_waveforms only has one entry.  If we go to a
@@ -170,13 +181,6 @@ bool PhaseIIADCCalibrator::Execute() {
     if(make_led_waveforms){
       Log("Also making LED window waveforms for ADC channel " +
         std::to_string(channel_key), 3, verbosity);
-
-      //To dos:
-      //  - First, create a new vector of raw waveforms that have the 
-      //    pulse window and the earlier window used to estimate background
-      //  - Estimate the baseline and sigma with ze3ra in the beginning of the
-      //    window
-      //  - Make calibrated waveforms for each LED window
       std::vector<Waveform<unsigned short>> LEDWaveforms;
       this->make_raw_led_waveforms(channel_key,raw_waveforms,LEDWaveforms);
       raw_led_waveform_map.emplace(channel_key,LEDWaveforms);
@@ -187,9 +191,34 @@ bool PhaseIIADCCalibrator::Execute() {
       }
     }
   }
+  
+  //Calibrate the SIPM waveforms
+  for (const auto& temp_pair : raw_auxwaveform_map) {
+    const auto& channel_key = temp_pair.first;
+    Log("Channel key for Aux channel is " +
+      std::to_string(channel_key), 3, verbosity);
+    //For now, only calibrate the SiPM waveforms
+    Log("Type for Aux channel is " +
+      AuxChannelNumToTypeMap->at(channel_key), 3, verbosity);
+    if(AuxChannelNumToTypeMap->at(channel_key) != "SiPM1" || 
+       AuxChannelNumToTypeMap->at(channel_key) != "SiPM2") continue; 
+    //Default running: raw_waveforms only has one entry.  If we go to a
+    //hefty-mode style of running though, this could have multiple minibuffers
+    const auto& raw_auxwaveforms = temp_pair.second;
+
+    Log("Making calibrated waveforms for Auxiliary channel " +
+      std::to_string(channel_key), 3, verbosity);
+
+    if(use_ze3ra_algorithm){
+      calibrated_auxwaveform_map[channel_key] = make_calibrated_waveforms_ze3ra(raw_auxwaveforms);
+    } else if(use_root_algorithm){
+      calibrated_auxwaveform_map[channel_key] = make_calibrated_waveforms_rootfit(raw_auxwaveforms);
+    }
+  }
 
   Log("PhaseIIADCCalibrator Tool: Setting CalibratedADCData",v_debug,verbosity);
   annie_event->Set("CalibratedADCData", calibrated_waveform_map);
+  annie_event->Set("CalibratedADCAuxData", calibrated_auxwaveform_map);
   if(make_led_waveforms){
     std::cout <<"Setting LEDADCData"<<std::endl;
     annie_event->Set("CalibratedLEDADCData", calibrated_led_waveform_map);

@@ -1,0 +1,8 @@
+verbosity 3
+OutputFile AmBeStatistics1509
+UseLEDWaveforms 0
+WavesWithPulsesOnly 0
+SaveWaveforms 1
+MaxWaveforms 20000
+LEDSetpoints 0
+LEDsUsed None

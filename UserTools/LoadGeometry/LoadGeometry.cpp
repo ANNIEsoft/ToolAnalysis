@@ -58,6 +58,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  AuxChannelNumToTypeMap = new std::map<int,std::string>;
   LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
 
   //Initialize the geometry using the geometry CSV file entries
@@ -80,6 +81,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
   m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
   m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
    //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
 
@@ -438,6 +440,12 @@ bool LoadGeometry::ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
   } else {
     Log("LoadGeometry Tool: ERROR: Tried assigning an Auxiliary Channel channel_num to a crate space already defined!!! ",v_error, verbosity);
     Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
+  }
+  if(AuxChannelNumToTypeMap->count(channel_num)==0){
+    AuxChannelNumToTypeMap->emplace(channel_num, channel_type);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning an Auxiliary Channel Type to a channel already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR DETAILS: Signal Type = "+ channel_type +", channel key = "+std::to_string(channel_num),v_error,verbosity);
   }
 
   return true;
