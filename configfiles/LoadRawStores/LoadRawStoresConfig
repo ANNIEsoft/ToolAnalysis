@@ -1,0 +1,3 @@
+# LoadRawStores config file
+
+FileList ./configfiles/LoadRawStores/example_filelist.txt
