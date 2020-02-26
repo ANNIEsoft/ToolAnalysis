@@ -1,3 +1,1 @@
-/pnfs/annie/scratch/users/pershint/RawData/RAWDataR1331S0p0
-/pnfs/annie/scratch/users/pershint/RawData/RAWDataR1331S0p1
-/pnfs/annie/scratch/users/pershint/RawData/RAWDataR1331S0p2
+/pnfs/annie/scratch/users/pershint/RawData/RAWDataR1548S0p0

@@ -9,10 +9,14 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   if(configfile!="") m_variables.Initialise(configfile); // loading config file
   //m_variables.Print();
 
+  verbosity = 0;
+  DummyRunInfo = false;
+
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("BuildType",BuildType);
   m_variables.Get("Mode",Mode);
   m_variables.Get("InputFile",InputFile);
+  m_variables.Get("DummyRunInfo",DummyRunInfo);
 
   m_data= &data; //assigning transient data pointer
   
@@ -26,16 +30,31 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
     Log("LoadRawData tool: files to load have been organized.",v_message,verbosity);
   }
 
+  RawData = new BoostStore(false,0);
+  PMTData = new BoostStore(false,2);
+  MRDData = new BoostStore(false,2);
+  Cdata = new std::vector<CardData>;
+  Mdata = new MRDOut;
+
+
   FileNum = 0;
   TankEntryNum = 0;
-  TankEntriesCompleted = false;
   MRDEntryNum = 0;
+  FileCompleted = false;
+  TankEntriesCompleted = false;
   MRDEntriesCompleted = false;
   return true;
 }
 
 
 bool LoadRawData::Execute(){
+  m_data->CStore.Set("NewRawEntryAccessed",false);
+ 
+  //Check if we've reached the end of our file list or single file 
+  bool ProcessingComplete = false;
+  if(FileCompleted) ProcessingComplete = this->InitializeNewFile();
+  if(ProcessingComplete) return true;
+
   bool TankPaused;
   bool MRDPaused;
   m_data->CStore.Get("PauseTankDecoding",TankPaused);
@@ -62,7 +81,7 @@ bool LoadRawData::Execute(){
       return false;
     }
     if(FileCompleted || CurrentFile=="NONE"){
-      Log("LoadRawData tool: File in list completed.  Moving to next part.",v_message,verbosity);
+      Log("LoadRawData tool:   Moving to next file.",v_message,verbosity);
       if(verbosity>v_warning) std::cout << "LoadRawData tool: Next file to load: "+OrganizedFileList.at(FileNum) << std::endl;
       CurrentFile = OrganizedFileList.at(FileNum);
       Log("LoadRawData Tool: LoadingRaw Data file as BoostStore",v_debug,verbosity); 
@@ -103,15 +122,19 @@ bool LoadRawData::Execute(){
 
   //Get next PMTData Entry
   if(BuildType == "Tank" || BuildType == "TankAndMRD"){
-    Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum),v_debug, verbosity);
 
     std::cout << "LoadRawData Tool: Current progress in file processing: TankEntryNum = "<< TankEntryNum <<", fraction = "<<((double)TankEntryNum/(double)tanktotalentries)*100 << std::endl;
-    std::cout << "LoadRawData Tool: Current progress in file processing: MRDEntryNum = "<< MRDEntryNum <<", fraction = "<<((double)MRDEntryNum/(double)tanktotalentries)*100 << std::endl;
+    std::cout << "LoadRawData Tool: Current progress in file processing: MRDEntryNum = "<< MRDEntryNum <<", fraction = "<<((double)MRDEntryNum/(double)mrdtotalentries)*100 << std::endl;
     if(!TankPaused && !TankEntriesCompleted){
+      Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum),v_debug, verbosity);
       PMTData->GetEntry(TankEntryNum);
-      PMTData->Get("CardData",Cdata);
+      Log("LoadRawData Tool: Getting the PMT card data entry",v_debug, verbosity);
+      PMTData->Get("CardData",*Cdata);
+      Log("LoadRawData Tool: Setting PMT card data entry into CStore",v_debug, verbosity);
       m_data->CStore.Set("CardData",Cdata);
-      m_data->CStore.Set("PMTData",PMTData);
+      //Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
+      //m_data->CStore.Set("PMTDataPointer",PMTData);
+      Log("LoadRawData Tool: Setting Tank Entry Num CStore",v_debug, verbosity);
       m_data->CStore.Set("TankEntryNum",TankEntryNum);
       TankEntryNum+=1;
     }
@@ -119,71 +142,53 @@ bool LoadRawData::Execute(){
 
   //Get next MRDData Entry
   if(BuildType == "MRD" || BuildType == "TankAndMRD"){
-    Log("LoadRawData Tool: Procesing CCData Entry "+to_string(MRDEntryNum),v_debug, verbosity);
-    if(!MRDPaused && !MRDEntriesCompleted){;
+    if(!MRDPaused && !MRDEntriesCompleted){
+      Log("LoadRawData Tool: Procesing CCData Entry "+to_string(MRDEntryNum),v_debug, verbosity);
       MRDData->GetEntry(MRDEntryNum);
-      MRDData->Get("Data",Mdata);
-      m_data->CStore.Set("MRDData",Mdata);
+      MRDData->Get("Data",*Mdata);
+      m_data->CStore.Set("MRDData",Mdata,true);
       MRDEntryNum+=1;
     }
   }
 
   Log("LoadRawData Tool: Accessing run information data",v_message,verbosity); 
-  BoostStore RunInfo(false,0);
-  RawData->Get("RunInformation",RunInfo);
-  if(verbosity>4) RunInfo.Print(false);
   Store Postgress;
-  RunInfo.Get("Postgress",Postgress);
-  if(verbosity>4) Postgress.Print();
 
-  int RunNumber;
-  int SubRunNumber;
-  uint64_t StarTime;
-  int RunType;
-  Postgress.Get("RunNumber",RunNumber);
-  Postgress.Get("SubRunNumber",SubRunNumber);
-  Postgress.Get("RunType",RunType);
-  Postgress.Get("StarTime",StarTime);
+  if(DummyRunInfo){
+    Postgress.Set("RunNumber",-1);
+    Postgress.Set("SubRunNumber",-1);
+    Postgress.Set("RunType",-1);
+    Postgress.Set("StarTime",-1);
+  } else{
+    BoostStore RunInfo(false,0);
+    RawData->Get("RunInformation",RunInfo);
+    if(verbosity>3) RunInfo.Print(false);
+    RunInfo.Get("Postgress",Postgress);
+    if(verbosity>3) Postgress.Print();
+  }
 
   m_data->CStore.Set("RunInfoPostgress",Postgress);
 
   if(TankEntryNum == tanktotalentries){
     Log("LoadRawData Tool: ALL PMT ENTRIES COLLECTED.",v_debug, verbosity);
     TankEntriesCompleted = true;
+    m_data->CStore.Set("PauseTankDecoding",true);
+    m_data->CStore.Set("PauseMRDDecoding",false);
   }
   if(MRDEntryNum == mrdtotalentries){
     Log("LoadRawData Tool: ALL MRD ENTRIES COLLECTED.",v_debug, verbosity);
     MRDEntriesCompleted = true;
+    m_data->CStore.Set("PauseMRDDecoding",true);
+    m_data->CStore.Set("PauseTankDecoding",false);
   }
 
   if (TankEntriesCompleted && BuildType == "Tank") FileCompleted = true;
   if (MRDEntriesCompleted && BuildType == "MRD") FileCompleted = true;
   if ((TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRD")) FileCompleted = true;
 
-  if(FileCompleted){
-    FileNum += 1;
-    RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
-    MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = new BoostStore(false,2);
-    PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
-    TankEntryNum = 0;
-    MRDEntryNum = 0;
-    TankEntriesCompleted = false;
-    MRDEntriesCompleted = false;
-
-    if(Mode == "SingleFile"){
-      Log("LoadRawData Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
-      m_data->vars.Set("StopLoop",1);
-    }
-    if(Mode == "FileList" && FileNum == int(OrganizedFileList.size())){
-      Log("LoadRawData Tool: Full file list parsed.  Ending toolchain after this loop.",v_message, verbosity);
-      m_data->vars.Set("StopLoop",1);
-    }
-    //No need to stop the loop in continous mode
-    if (Mode == "Continous"){
-      Log("MRDDataDecoder Tool: Full raw file parsed. Waiting until next raw file is available.",v_message,verbosity);
-    }
-  } 
-
+    
+  m_data->CStore.Set("NewRawDataEntryAccessed",true);
+  Log("LoadRawData tool: execution loop complete.",v_debug,verbosity);
   return true;
 }
 
@@ -198,6 +203,9 @@ bool LoadRawData::Finalise(){
   MRDData->Close();
   MRDData->Delete();
   delete MRDData;
+  delete Cdata;
+  delete Mdata;
+
   std::cout << "LoadRawData Tool Exitting" << std::endl;
   return true;
 }
@@ -207,15 +215,13 @@ void LoadRawData::LoadPMTMRDData(){
     Log("LoadRawData Tool: Accessing PMT Data in raw data",v_message,verbosity);
     RawData->Get("PMTData",*PMTData);
     PMTData->Header->Get("TotalEntries",tanktotalentries);
+    if(verbosity>3) PMTData->Print(false);
   }
   if((BuildType == "TankAndMRD") || (BuildType == "MRD")){
     Log("LoadRawData Tool: Accessing MRD Data in raw data",v_message,verbosity);
     RawData->Get("CCData",*MRDData);
     MRDData->Header->Get("TotalEntries",mrdtotalentries);
-  }
-  if(verbosity>3){
-    PMTData->Print(false);
-    MRDData->Print(false);
+    if(verbosity>3) MRDData->Print(false);
   }
   return;
 }
@@ -295,3 +301,33 @@ std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
   }
   return OrganizedFiles;
 }
+
+bool LoadRawData::InitializeNewFile(){
+  bool EndOfProcessing = false;
+  FileNum += 1;
+  RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
+  MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = new BoostStore(false,2);
+  PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+  TankEntryNum = 0;
+  MRDEntryNum = 0;
+  TankEntriesCompleted = false;
+  MRDEntriesCompleted = false;
+  m_data->CStore.Set("PauseTankDecoding",false);
+  m_data->CStore.Set("PauseMRDDecoding",false);
+
+  if(Mode == "SingleFile"){
+    Log("LoadRawData Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
+    m_data->vars.Set("StopLoop",1);
+    EndOfProcessing = true;
+  }
+  if(Mode == "FileList" && FileNum == int(OrganizedFileList.size())){
+    Log("LoadRawData Tool: Full file list parsed.  Ending toolchain after this loop.",v_message, verbosity);
+    m_data->vars.Set("StopLoop",1);
+    EndOfProcessing = true;
+  }
+  //No need to stop the loop in continous mode
+  if (Mode == "Continous"){
+    Log("MRDDataDecoder Tool: Full raw file parsed. Waiting until next raw file is available.",v_message,verbosity);
+  }
+  return EndOfProcessing;
+} 

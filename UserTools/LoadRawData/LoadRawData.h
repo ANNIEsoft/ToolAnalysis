@@ -29,10 +29,11 @@ class LoadRawData: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   void LoadPMTMRDData(); 
+  bool InitializeNewFile(); 
 
  private:
 
-
+  bool DummyRunInfo;
   std::vector<std::string> OrganizedFileList;
   std::string CurrentFile = "NONE";
   std::string BuildType;
@@ -50,11 +51,11 @@ class LoadRawData: public Tool {
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
 
-  BoostStore *RawData;
-  BoostStore *PMTData;
-  BoostStore *MRDData;
-  std::vector<CardData> Cdata;
-  MRDOut Mdata;
+  BoostStore *RawData = nullptr;
+  BoostStore *PMTData = nullptr;
+  BoostStore *MRDData = nullptr;
+  std::vector<CardData>* Cdata = nullptr;
+  MRDOut* Mdata = nullptr;
 
   int verbosity;
   int v_error=0;

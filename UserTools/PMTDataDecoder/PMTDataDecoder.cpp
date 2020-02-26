@@ -25,16 +25,29 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   CurrentRunNum = -1;
   CurrentSubrunNum = -1;
   // Initialize RawData
-  std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
+
+  FinishedPMTWaves = new std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >; 
 
   m_data->CStore.Set("PauseTankDecoding",false);
+  std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
 }
 
 
 bool PMTDataDecoder::Execute(){
+  Log("PMTDataDecoder Tool: Executing",v_debug, verbosity);
+  NewWavesBuilt = false;
   //Set in CStore that there's currently no new tank data available
   m_data->CStore.Set("NewTankPMTDataAvailable",false);
+
+  bool NewEntryAvailable;
+  m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
+  if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
+    Log("PMTDataDecoder Tool: There's no new PMT data.  stop at next loop.",v_warning,verbosity); 
+    m_data->vars.Set("StopLoop",1);
+    return true;
+  }
+
 
   bool PauseTankDecoding = false;
   m_data->CStore.Get("PauseTankDecoding",PauseTankDecoding);
@@ -46,7 +59,7 @@ bool PMTDataDecoder::Execute(){
   //Check if we are starting a new file 
   if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
 
-  m_data->CStore.Get("PMTData",PMTData);
+  //m_data->CStore.Get("PMTDataPointer",PMTData);
   m_data->CStore.Get("CurrentTankEntryNum",CurrentEntryNum);
 
   // Load RawData BoostStore to use in execute loop
@@ -86,15 +99,15 @@ bool PMTDataDecoder::Execute(){
 
   Log("PMTDataDecoder Tool: Procesing PMTData Entry from CStore",v_debug, verbosity);
   m_data->CStore.Get("CardData",Cdata);
-  Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
+  Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata->size()),v_debug, verbosity);
   
-  for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
+  for (unsigned int CardDataIndex=0; CardDataIndex<Cdata->size(); CardDataIndex++){
+    CardData aCardData = Cdata->at(CardDataIndex);
     if(verbosity>v_debug){
       std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
-      std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata.at(CardDataIndex).CardID<<std::endl;
-      std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata.at(CardDataIndex).Data.size()<<std::endl;
+      std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<aCardData.CardID<<std::endl;
+      std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<aCardData.Data.size()<<std::endl;
     }
-    CardData aCardData = Cdata.at(CardDataIndex);
     //Check if card experienced any data loss
     int FIFOstate = aCardData.FIFOstate;
     if(FIFOstate == 1){  //FIFO overflow
@@ -162,44 +175,47 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
   //Transfer finished waves from this execute loop to the CStore
-  if(FinishedPMTWaves.empty()){
+  if(NewWavesBuilt){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
   } else {
-	Log("PMTDataDecoder Tool: Saving Finished PMT waves into CStore.",v_debug, verbosity);
-    m_data->CStore.Get("InProgressTankEvents",CStoreTankEvents);
-    //Iterate over FinishedPMTWaves and populate the CStore copy; timestamps in ns
-    std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it;
-    for ( it = FinishedPMTWaves.begin(); it != FinishedPMTWaves.end(); it++){
-      uint64_t this_counter_ns = it->first;
-      std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it = 
-          CStoreTankEvents.find(this_counter_ns);
-      if(it != CStoreTankEvents.end()){ //This timestamp already has some finished waves
-        CStoreTankEvents.at(this_counter_ns).insert(FinishedPMTWaves.at(this_counter_ns).begin(),
-                FinishedPMTWaves.at(this_counter_ns).end());
-      } else {
-        CStoreTankEvents.emplace(this_counter_ns,FinishedPMTWaves.at(this_counter_ns));
-      }
-    }
-    m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
-    m_data->CStore.Set("NewTankPMTDataAvailable",true);
+	Log("PMTDataDecoder Tool: New finished waves available.",v_debug, verbosity);
   }
+  m_data->CStore.Set("InProgressTankEvents",FinishedPMTWaves);
+  m_data->CStore.Set("NewTankPMTDataAvailable",NewWavesBuilt);
+
+    //m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
+    //Iterate over FinishedPMTWaves and populate the CStore copy; timestamps in ns
+    //std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it;
+    //for ( it = FinishedPMTWaves.begin(); it != FinishedPMTWaves.end(); it++){
+    //  uint64_t this_counter_ns = it->first;
+    //  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it = 
+    //      CStoreTankEvents.find(this_counter_ns);
+    //  if(it != CStoreTankEvents.end()){ //This timestamp already has some finished waves
+    //    CStoreTankEvents.at(this_counter_ns).insert(FinishedPMTWaves.at(this_counter_ns).begin(),
+    //            FinishedPMTWaves.at(this_counter_ns).end());
+    //  } else {
+    //    CStoreTankEvents.emplace(this_counter_ns,FinishedPMTWaves.at(this_counter_ns));
+    //  }
+    //}
+    //m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
 
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
-          to_string(WaveBank.size()),v_debug, verbosity);
+          to_string(WaveBank.size()),v_message, verbosity);
   Log("PMTDataDecoder Tool: Size of FinishedPMTWaves from this execution (# triggers with at least one wave fully):" + 
-          to_string(FinishedPMTWaves.size()),v_debug, verbosity);
-  Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
-          to_string(CStoreTankEvents.size()),v_debug, verbosity);
+          to_string(FinishedPMTWaves->size()),v_message, verbosity);
+  //Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
+  //        to_string(CStoreTankEvents.size()),v_message, verbosity);
   
   //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
-  FinishedPMTWaves.clear();
+  //FinishedPMTWaves.clear();
   return true;
 }
 
 
 bool PMTDataDecoder::Finalise(){
   Log("PMTDataDecoder tool exitting",v_warning,verbosity);
+  delete FinishedPMTWaves; 
   return true;
 }
 
@@ -246,8 +262,8 @@ bool PMTDataDecoder::ParseOneCardOOOs(int CardID)
       //This OOO CardData is now next in order.  Parse it.
       Log("PMTDataDecoder Tool: Out of order card is next in sequence!",v_debug,verbosity); 
       PMTData->GetEntry(OOOBoostEntry);
-      PMTData->Get("CardData",Cdata);
-      CardData aCardData = Cdata.at(OOOCardVectorInd);
+      PMTData->Get("CardData",*Cdata);
+      CardData aCardData = Cdata->at(OOOCardVectorInd);
       std::vector<DecodedFrame> ThisCardDFs;
       ThisCardDFs = this->DecodeFrames(aCardData.Data);
       //Now, loop through each frame and Parse their information
@@ -480,12 +496,13 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   Log("PMTDataDecoder Tool: Finished Wave Clock time (ns)"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
 
   if(FinishedWave.size()>ADCCountsToBuild){
-    if(FinishedPMTWaves.count(FinishedWaveTrigTime) == 0) {
+    NewWavesBuilt = true;
+    if(FinishedPMTWaves->count(FinishedWaveTrigTime) == 0) {
       std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
       WaveMap.emplace(wave_key,FinishedWave);
-      FinishedPMTWaves.emplace(FinishedWaveTrigTime,WaveMap);
+      FinishedPMTWaves->emplace(FinishedWaveTrigTime,WaveMap);
     } else {
-      FinishedPMTWaves.at(FinishedWaveTrigTime).emplace(wave_key,FinishedWave);
+      FinishedPMTWaves->at(FinishedWaveTrigTime).emplace(wave_key,FinishedWave);
     }
   }
   //Clear the finished wave from WaveBank and TriggerTimeBank for the new wave

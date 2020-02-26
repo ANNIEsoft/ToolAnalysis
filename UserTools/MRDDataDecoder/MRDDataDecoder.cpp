@@ -26,8 +26,16 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
 
 
 bool MRDDataDecoder::Execute(){
-
   m_data->CStore.Set("NewMRDDataAvailable",false);
+
+  bool NewEntryAvailable;
+  m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
+  if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
+    Log("MRDDataDecoder Tool: There's no new MRD data.  stop at next loop.",v_warning,verbosity); 
+    m_data->vars.Set("StopLoop",1);
+    return true;
+  }
+  
   bool PauseMRDDecoding = false;
   m_data->CStore.Get("PauseMRDDecoding",PauseMRDDecoding);
   if (PauseMRDDecoding){
@@ -41,16 +49,16 @@ bool MRDDataDecoder::Execute(){
   m_data->CStore.Get("MRDData",mrddata);
   std::string mrdTriggertype = "No Loopback";
   std::vector<unsigned long> chankeys;
-  unsigned long timestamp = mrddata.TimeStamp;    //in ms since 1970/1/1
+  unsigned long timestamp = mrddata->TimeStamp;    //in ms since 1970/1/1
   std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
   MRDEvents.emplace(timestamp,ChankeyTimePairs);
     
   //For each entry, loop over all crates and get data
-  for (unsigned int i_data = 0; i_data < mrddata.Crate.size(); i_data++){
-    int crate = mrddata.Crate.at(i_data);
-    int slot = mrddata.Slot.at(i_data);
-    int channel = mrddata.Channel.at(i_data);
-    int hittimevalue = mrddata.Value.at(i_data);
+  for (unsigned int i_data = 0; i_data < mrddata->Crate.size(); i_data++){
+    int crate = mrddata->Crate.at(i_data);
+    int slot = mrddata->Slot.at(i_data);
+    int channel = mrddata->Channel.at(i_data);
+    int hittimevalue = mrddata->Value.at(i_data);
     std::vector<int> CrateSlotChannel{crate,slot,channel};
     unsigned long chankey = MRDCrateSpaceToChannelNumMap[CrateSlotChannel];
     if (chankey !=0){

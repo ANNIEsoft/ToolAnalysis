@@ -3,6 +3,8 @@
 
 #include <string>
 #include <iostream>
+#include <set>
+#include <unordered_set>
 
 #include "Tool.h"
 #include "TimeClass.h"
@@ -38,13 +40,26 @@ class ANNIEEventBuilder: public Tool {
         std::vector<uint64_t> SecondTimestampSet, int shift, double& tmean, double& tvar);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveEntryToFile(int RunNum, int SubRunNum);
+  void OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT);
+
+  
+  template<typename T> void RemoveDuplicates(std::vector<T> &v){
+    typename std::vector<T>::iterator itr = v.begin();
+    typename std::unordered_set<T> s;
+
+    for (auto curr = v.begin(); curr != v.end(); ++curr) {
+      if (s.insert(*curr).second) *itr++ = *curr;
+    }
+
+    v.erase(itr, v.end());
+  }
 
  private:
 
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
 
@@ -56,8 +71,6 @@ class ANNIEEventBuilder: public Tool {
 
   //######### INFORMATION USED FOR PAIRING UP TANK AND MRD DATA TRIGGERS ########
   int EventsPerPairing;  //Determines how many Tank and MRD events are needed before starting to pair up for event building
-  std::vector<uint64_t> AllTankTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
-  std::vector<uint64_t> AllMRDTimestamps;  //Contains timestamps for all PMT Events encountered so far, finished or unfinished
   
   std::vector<uint64_t> FinishedTankTimestamps;  //Contains timestamps for PMT Events that are fully built
 
@@ -84,7 +97,11 @@ class ANNIEEventBuilder: public Tool {
   //
   unsigned int NumWavesInCompleteSet = 140; 
 
-  bool OrphanOldTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
+  int ExecutesPerBuild;          // Number of execute loops to pass through before running the execute loop
+  int ExecuteCount = 0;
+
+
+  bool OrphanOldTankTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
   int OldTimestampThreshold;  // Threshold where a timestamp relative to the newest timestamp crosses before moving to the orphanage
   uint64_t NewestTimestamp = 0;
 

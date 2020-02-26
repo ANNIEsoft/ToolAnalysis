@@ -68,6 +68,7 @@ class PMTDataDecoder: public Tool {
   std::string InputFile;
   std::string Mode;
 
+  bool NewWavesBuilt;
   int CurrentEntryNum = 0;
   int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
   int FileNum = 0;
@@ -87,8 +88,8 @@ class PMTDataDecoder: public Tool {
   //get the entire header.
   unsigned int SAMPLES_RIGHTOF_000 = 7;
 
-  BoostStore *PMTData = nullptr;
-  std::vector<CardData> Cdata;
+  BoostStore* PMTData;
+  std::vector<CardData>* Cdata = nullptr;
 
   bool FileCompleted = false;
  
@@ -107,7 +108,8 @@ class PMTDataDecoder: public Tool {
   std::map<int,std::vector<uint64_t>> SyncCounters; //Key: cardID.  Value: vector of sync counters filled in the order they arrive.
 
   //Maps that store completed waveforms from cards
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  bool NewWaveBuilt;
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStoreTankEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
 
   // Notes whether DAQ is in lock step running
