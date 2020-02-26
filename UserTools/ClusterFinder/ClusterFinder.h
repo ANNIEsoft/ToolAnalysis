@@ -65,6 +65,7 @@ class ClusterFinder: public Tool {
   int AcqTimeWindow;
   int ClusterIntegrationWindow;
   int MinHitsPerCluster;
+  std::string singlePEgains;
 
   // define ANNIEEvent variables
   int evnum;
@@ -83,6 +84,7 @@ class ClusterFinder: public Tool {
   int n_tank_pmts, n_mrd_pmts, n_veto_pmts, n_lappds;
   double tank_center_x, tank_center_y, tank_center_z;
   std::map<std::string,double> map_type_radius;  //stores the radius information of the respective PMT as a function of the PMT type
+  std::map<unsigned long, double> pmt_gains;
 
   //define monitoring variables
   std::map<int,double> bad_time, bad_charge;
@@ -128,7 +130,10 @@ class ClusterFinder: public Tool {
   // Histograms and files
   TH1D* h_Cluster_times=nullptr;
   TH1D* h_Cluster_charges=nullptr;
+  TH1D* h_Cluster_charges_pe=nullptr;
   TH1D* h_Cluster_deltaT=nullptr;
+  TH2D* h_Cluster_charge_time=nullptr;
+  TH2D* h_Cluster_charge_deltaT=nullptr;
   TCanvas* canvas_Cluster=nullptr;
   TFile* f_output=nullptr;
 };
