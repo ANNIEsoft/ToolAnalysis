@@ -103,6 +103,7 @@ if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
+if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 
 return ret;
 }

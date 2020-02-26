@@ -111,3 +111,4 @@
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
 #include "MrdPaddleEfficiencyPreparer.h"
+#include "MrdPaddleEfficiencyCalc.h"
