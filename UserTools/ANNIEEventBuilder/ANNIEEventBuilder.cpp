@@ -507,14 +507,15 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   for (unsigned int i_value=0; i_value< MRDHits.size(); i_value++){
     unsigned long channelkey = MRDHits.at(i_value).first;
     int hitTimeADC = MRDHits.at(i_value).second;
+    double hitTime = 4000. - 4.*(double)hitTimeADC;
+    if (verbosity > 4) std::cout <<"creating hit with ADC value "<<hitTimeADC<<"and chankey "<<channelkey<<std::endl;
+    if (verbosity > 3) std::cout <<"creating hit with time vlaue "<<hitTime<<"and chankey "<<channelkey<<std::endl;
     if (TDCData->count(channelkey)==0){
       std::vector<Hit> newhitvector;
-      if (verbosity > 3) std::cout <<"creating hit with time value "<<hitTimeADC*4<<"and chankey "<<channelkey<<std::endl;
-      newhitvector.push_back(Hit(0,hitTimeADC*4.,1.));    //Hit(tubeid, time, charge). 1 TDC tick corresponds to 4ns, no charge information (set to 1)
+      newhitvector.push_back(Hit(0,hitTime,1.));    //Hit(tubeid, time, charge). 1 TDC tick corresponds to 4ns, no charge information (set to 1)
       TDCData->emplace(channelkey,newhitvector);
     } else {
-      if (verbosity > 3) std::cout <<"creating hit with time value "<<hitTimeADC*4<<"and chankey "<<channelkey<<std::endl;
-      TDCData->at(channelkey).push_back(Hit(0,hitTimeADC*4.,1.));
+      TDCData->at(channelkey).push_back(Hit(0,hitTime,1.));
     }
   }
 
