@@ -621,9 +621,9 @@ void TotalLightMap::make_pmt_markers(MCParticle primarymuon){
 		// the primary muon trajectory along (0,0), to align all events
 		// first we need to get the PMT position relative to the primary muon start point
 		Position PMT_pos_rel = PMT_position - (primarymuon.GetStartVertex()-anniegeom->GetTankCentre());
-		std::cout<<"adding PMT marker to winkel tripel plot; PMT_position is"; PMT_position.Print(false);
-		std::cout<<", relative position to primary muon vertex at "; (primarymuon.GetStartVertex()-anniegeom->GetTankCentre()).Print(false);
-		std::cout<<" is "; PMT_pos_rel.Print();
+		//std::cout<<"adding PMT marker to winkel tripel plot; PMT_position is"; PMT_position.Print(false);
+		//std::cout<<", relative position to primary muon vertex at "; (primarymuon.GetStartVertex()-anniegeom->GetTankCentre()).Print(false);
+		//std::cout<<" is "; PMT_pos_rel.Print();
 		double phi = PMT_pos_rel.GetPhi() - primarymuon.GetStartDirection().GetPhi();
 		double theta = PMT_pos_rel.GetTheta() - primarymuon.GetStartDirection().GetTheta();
 		//logmessage="TotalLightMap Tool: Polar position is (Phi="+to_string(phi)+", Theta="+to_string(theta)+")";
@@ -1453,7 +1453,7 @@ void TotalLightMap::translate_xy(double vtxX, double vtxY, double vtxZ, double &
 	double min_y = -tank_height;
 	vtxY*=yscale;
 	//if (cylloc=="TopCap"){                   //draw vtx projection on the top of tank
-	if (fabs(vtxY-max_y)<0.01){     // FIXME find a better way to identify location
+	if (fabs(vtxY-max_y)<0.01){                // FIXME find a better way to identify location
 		//Log("TotalLightMap Tool: translate_xy placing marker on top cap",v_debug,verbosity);
 		xWall=0.5-size_top_drawing*vtxX/tank_radius;
 		yWall=0.5+(tank_height/tank_radius+1)*size_top_drawing-size_top_drawing*vtxZ/tank_radius;

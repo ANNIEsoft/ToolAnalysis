@@ -1,0 +1,8 @@
+verbosity 3
+OutputFile TransparencyRun1331_Waveforms
+UseLEDWaveforms 1
+WavesWithPulsesOnly 0
+SaveWaveforms 1 
+MaxWaveforms 20000
+LEDSetpoints 3500
+LEDsUsed 6

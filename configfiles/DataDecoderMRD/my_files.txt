@@ -1,1 +1,1 @@
-/pnfs/annie/scratch/users/pershint/RawData/RAWDataR1503S0p0
+/annie/app/users/mnieslon/MyToolAnalysis3/MRDTest28commonstopp0

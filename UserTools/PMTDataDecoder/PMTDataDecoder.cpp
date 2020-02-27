@@ -164,7 +164,6 @@ bool PMTDataDecoder::Execute(){
 
   Log("PMTDataDecoder Tool: PMTData Entry processed",v_debug, verbosity);
   
- 
   ///////////////Search through All Out-Of-Order Cards;/////////////
   ///////////////Parse any in OOO vectors that are now in order ///////////////// 
   this->ParseOOOsNowInOrder();
@@ -183,32 +182,12 @@ bool PMTDataDecoder::Execute(){
   m_data->CStore.Set("InProgressTankEvents",FinishedPMTWaves);
   m_data->CStore.Set("NewTankPMTDataAvailable",NewWavesBuilt);
 
-    //m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
-    //Iterate over FinishedPMTWaves and populate the CStore copy; timestamps in ns
-    //std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it;
-    //for ( it = FinishedPMTWaves.begin(); it != FinishedPMTWaves.end(); it++){
-    //  uint64_t this_counter_ns = it->first;
-    //  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >::iterator it = 
-    //      CStoreTankEvents.find(this_counter_ns);
-    //  if(it != CStoreTankEvents.end()){ //This timestamp already has some finished waves
-    //    CStoreTankEvents.at(this_counter_ns).insert(FinishedPMTWaves.at(this_counter_ns).begin(),
-    //            FinishedPMTWaves.at(this_counter_ns).end());
-    //  } else {
-    //    CStoreTankEvents.emplace(this_counter_ns,FinishedPMTWaves.at(this_counter_ns));
-    //  }
-    //}
-    //m_data->CStore.Set("InProgressTankEvents",CStoreTankEvents);
-
   //Check the size of the WaveBank to see if things are bloating
   Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
           to_string(WaveBank.size()),v_message, verbosity);
   Log("PMTDataDecoder Tool: Size of FinishedPMTWaves from this execution (# triggers with at least one wave fully):" + 
           to_string(FinishedPMTWaves->size()),v_message, verbosity);
-  //Log("PMTDataDecoder Tool: Size of Finished waves in CStore:" + 
-  //        to_string(CStoreTankEvents.size()),v_message, verbosity);
   
-  //Clear Finished PMT waves map if it has any waveforms from the previous execute loop 
-  //FinishedPMTWaves.clear();
   return true;
 }
 
@@ -530,4 +509,3 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   }
   return;
 }
-

@@ -636,6 +636,3 @@ void ANNIEEventBuilder::OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t Sta
   CurrentStarTime = StarT;
   if((CurrentRunNum != RunNum)) CurrentDriftMean = 0;
 }
-
-  
-  

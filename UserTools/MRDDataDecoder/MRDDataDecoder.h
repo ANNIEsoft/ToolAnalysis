@@ -38,7 +38,6 @@ class MRDDataDecoder: public Tool {
  private:
 
   MRDOut* mrddata=nullptr;
- 
   //Map used to relate MRD Crate Space value to channel key
   std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
 

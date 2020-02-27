@@ -1,19 +1,16 @@
 # LoadANNIEEvent
 
-LoadANNIEEvent
+LoadANNIEEvent loads the `ANNIEEvent` BoostStore from a stored `ANNIEEvent` file. It loops over all the events in the BoostStore and provides one event for each `Execute` step for the subsequent tools in the toolchain.
 
-## Data
+A list containing all the input ANNIEEvent files should be specified by using the `FileForListOfInputs` command. 
 
-Describe any data formats LoadANNIEEvent creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
+Other tools can influence which event numbers are loaded by setting the variable `UserEvent` in the `CStore` to `true` and setting the desired event number for the respective Execute step via the `LoadEvNr` variable in the `CStore`.
 
 ## Configuration
 
 Describe any configuration variables for LoadANNIEEvent.
 
 ```
-param1 value1
-param2 value2
+verbose int
+FileForListOfInputs string
 ```

@@ -8,6 +8,7 @@ verbose 1
 #InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/build/wcsim_ccnpi_lappd_0.root
 #InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/build/wcsim_lappd_0.root
 InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/build/wcsim_ccpi0_lappd_0.root
+#InputFile ./25_04_19_wcsim_lappd_0.0.0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 InnerStructureRadius 1.3545  ## octagonal inner structure radius in m (from drawings 106.64")

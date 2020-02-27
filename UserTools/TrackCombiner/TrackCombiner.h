@@ -34,10 +34,16 @@ class TrackCombiner: public Tool {
 	int min_layer_v;
 	int min_layer_h;
 	double max_allowed_tdiff;
+	double max_allowed_entrypoint_discrepancy;
+	bool require_tank_event;        // bypass requirement of a tank event; mostly for debug
+	bool show_all_stubs;            // debug: put all stubs into the MrdTracks boost store
+	bool override_findmrdtracks;    // debug: overwrite tracks from FindMrdTracks in the MrdTracks boost store
+	Position recoEventMrdEntryPoint;
 	
 	// things from ANNIEEvent/MrdTracks/RecoEvent
 	std::map<unsigned long,vector<MCHit>>* TDCData;
 	RecoVertex* theExtendedVertex=nullptr;
+	bool tank_reco_success;
 	Geometry* anniegeom=nullptr;
 	TClonesArray* thesubeventarray = nullptr;
 	std::vector<MCParticle>* MCParticles=nullptr;

@@ -2,6 +2,5 @@
 verbosity 2
 BaselineEstimationType simple
 NumBaselineSamples 30
-NumSubWaveforms 1
-WindowIntegrationDB ./configfiles/LEDSPEAnalysis/TankPMTWindows_6LEDsWWidth.txt
+WindowIntegrationDB ./configfiles/LEDSPEAnalysis/TankPMTWindows_6LEDs.txt
 MakeCalLEDWaveforms 1

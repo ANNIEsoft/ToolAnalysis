@@ -1,4 +1,0 @@
-verbosity 1
-Minimum_V_Layer 3       # must have hit this layer number (z, starts from 2)
-Minimum_H_Layer 4       # V layers are odd, H layers are even
-Max_Matching_Tdiff 300   # [ns]

@@ -143,6 +143,7 @@ bool PhaseIIADCHitFinder::Execute() {
       std::vector<Hit> HitsOnPMT;
 
       if (pulse_finding_approach == "full_window"){
+
         // Integrate each whole dang minibuffer and background subtract 
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
@@ -466,7 +467,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       + calibrated_minibuffer_data.GetSigmaBaseline() ));
 
   bool in_pulse = false;
-  size_t num_samples = raw_minibuffer_data.Samples().size();
+  size_t num_samples = raw_minibuffer_data.Samples().size()-50;
 
   //Fixed integration window defined relative to ADC threshold crossings
   if(pulse_window_type == "fixed"){

@@ -1,7 +1,7 @@
 # TankCalibrationDiffuser Config File
 
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
-OutputFile ProposedVoltagesVFinal_NoLEDS_R1379 #Output root prefix name for the current run
+OutputFile LEDRun1171S0LED6And10_PulseWindowOnly_FullHeight #Output root prefix name for the current run
 NBinsTimeTotal 500		#number of bins for summary time histogram
 TimeTotalMin -10		#left limit of range for summary time histogram
 TimeTotalMax 100		#right limit of range for summary time histogram
@@ -15,25 +15,25 @@ NBinsCharge 660			#number of bins for single charge histograms
 ChargeMin 0.0		#left limit of range for single charge histograms
 ChargeMax 0.02		#right limit of range for single charge histograms
 NBinsStartTimeTotal 500         #number of bins for summary start time histograms
-NBinsStartTime 2000              #number of bins for start time histograms
-StartTimeMin 0.               #left limit of range for start time histograms
-StartTimeMax 2000.               #right limit of range for start time histograms
+NBinsStartTime 200              #number of bins for start time histograms
+StartTimeMin 350.               #left limit of range for start time histograms
+StartTimeMax 500.               #right limit of range for start time histograms
 NBinsPeakTimeTotal 500          #number of bins for summary peak time histograms
 NBinsPeakTime 500               #number of bins for peak time histograms
 PeakTimeMin 0.                #left limit of range for peak time histograms
 PeakTimeMax 2000.                #right limit of range for peak time histograms
-NBinsBaselineTotal 100          #number of bins for summary baseline histograms
-NBinsBaseline 500               #number of bins for baseline histograms
-BaselineMin 100.                #left limit of range for basleine histograms
-BaselineMax 600.                #right limit of range for baseline histograms
+NBinsBaselineTotal 500          #number of bins for summary baseline histograms
+NBinsBaseline 200               #number of bins for baseline histograms
+BaselineMin 308.                #left limit of range for basleine histograms
+BaselineMax 350.                #right limit of range for baseline histograms
 NBinsSigmaBaselineTotal 500     #number of bins for summary sigma baseline histograms
 NBinsSigmaBaseline 200          #number of bins for sigma baseline histograms
 SigmaBaselineMin 0.5            #left limit of range for sigma baseline histograms
 SigmaBaselineMax 3.             #right limit of range for sigma baseline histograms
 NBinsRawAmplitudeTotal 500      #number of bins for summary raw amplitude histograms
-NBinsRawAmplitude 500           #number of bins for raw amplitude histograms
-RawAmplitudeMin 100.            #left limit of range for raw amplitude histograms
-RawAmplitudeMax 600.            #right limit of range for raw amplitude histograms
+NBinsRawAmplitude 200           #number of bins for raw amplitude histograms
+RawAmplitudeMin 300.            #left limit of range for raw amplitude histograms
+RawAmplitudeMax 500.            #right limit of range for raw amplitude histograms
 NBinsAmplitudeTotal 500         #number of bins for summary amplitude histograms
 NBinsAmplitude 200              #number of bins for amplitude histograms
 AmplitudeMin 0.                 #left limit of range for amplitude histograms

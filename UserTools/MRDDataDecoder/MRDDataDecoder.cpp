@@ -106,4 +106,3 @@ bool MRDDataDecoder::Finalise(){
   std::cout << "MRDDataDecoder tool exitting" << std::endl;
   return true;
 }
-
