@@ -200,7 +200,7 @@ bool PhaseIIADCCalibrator::Execute() {
     //For now, only calibrate the SiPM waveforms
     Log("Type for Aux channel is " +
       AuxChannelNumToTypeMap->at(channel_key), 3, verbosity);
-    if(AuxChannelNumToTypeMap->at(channel_key) != "SiPM1" || 
+    if(AuxChannelNumToTypeMap->at(channel_key) != "SiPM1" && 
        AuxChannelNumToTypeMap->at(channel_key) != "SiPM2") continue; 
     //Default running: raw_waveforms only has one entry.  If we go to a
     //hefty-mode style of running though, this could have multiple minibuffers

@@ -1,6 +1,6 @@
-verbosity 3
+verbosity 5
 
-OutputFile AmBeStatistics1509
+OutputFile AmBeStatistics1548
 SiPMWindowMin 0
 SiPMWindowMax 4000
 SiPM1TriggerThreshold 10

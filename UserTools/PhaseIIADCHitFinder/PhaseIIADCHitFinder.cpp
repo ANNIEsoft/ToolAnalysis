@@ -58,13 +58,17 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   // Get the Auxiliary channel types; identifies which channels are SiPM channels
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
 
+  //Recreate maps that were deleted with ANNIEEvent->Delete() ANNIEEventBuilder tool
+  hit_map = new std::map<unsigned long,std::vector<Hit>>;
+  aux_hit_map = new std::map<unsigned long,std::vector<Hit>>;
+
   return true;
 }
 
 bool PhaseIIADCHitFinder::Execute() {
+  this->ClearMaps();
 
   try {
-
     //Recreate maps that were deleted with ANNIEEvent->Delete() ANNIEEventBuilder tool
     hit_map = new std::map<unsigned long,std::vector<Hit>>;
     aux_hit_map = new std::map<unsigned long,std::vector<Hit>>;
@@ -153,7 +157,7 @@ bool PhaseIIADCHitFinder::Execute() {
     //Find pulses in the raw auxiliary channel data
     for (const auto& temp_pair : raw_aux_waveform_map) {
       const auto& achannel_key = temp_pair.first;
-      if(AuxChannelNumToTypeMap->at(achannel_key) != "SiPM1" || 
+      if(AuxChannelNumToTypeMap->at(achannel_key) != "SiPM1" &&
         AuxChannelNumToTypeMap->at(achannel_key) != "SiPM2") continue; 
       const auto& araw_waveforms = temp_pair.second;
       std::vector<CalibratedADCWaveform<double> > acalibrated_waveforms = calibrated_aux_waveform_map.at(achannel_key);
@@ -363,6 +367,7 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
   //Fill pulse map with all ADCPulses found
   Log("PhaseIIADCHitFinder: Filling pulse map.",
       v_debug, verbosity);
+  if(verbosity > v_debug) std::cout << "Number of pulses in pulse_vec's first entry: " << pulse_vec.at(0).size() << std::endl;
   pmap.emplace(channel_key,pulse_vec);
   //Convert ADCPulses to Hits and fill into Hit map
   HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
@@ -634,6 +639,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       std::cout << "PhaseIIADCHitFinder Tool error: Pulse window type not recognized. Please pick fixed or dynamic" << std::endl;
     } 
   }
+  if(verbosity > v_debug) std::cout << "Number of pulses in channels pulse vector: " << pulses.size() << std::endl;
   return pulses;
 }
 
@@ -652,4 +658,10 @@ std::vector<Hit> PhaseIIADCHitFinder::convert_adcpulses_to_hits(unsigned long ch
   }
   return thispmt_hits;
 }
- 
+
+void PhaseIIADCHitFinder::ClearMaps(){
+  if(!pulse_map.empty()) pulse_map.clear();
+  if(!aux_pulse_map.empty()) aux_pulse_map.clear();
+  //if(!hit_map->empty()) hit_map->clear();
+  //if(!aux_hit_map->empty()) aux_hit_map->clear();
+}   

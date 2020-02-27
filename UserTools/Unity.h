@@ -111,3 +111,4 @@
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
 #include "AmBeRunStatistics.h"
+#include "ClusterFinder.h"

@@ -2,4 +2,5 @@ myLoadANNIEEvent LoadANNIEEvent ./configfiles/AmBeRunStatistics/LoadANNIEEventCo
 myLoadGeometry LoadGeometry ./configfiles/AmBeRunStatistics/LoadGeometryConfig
 myPhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/AmBeRunStatistics/PhaseIIADCCalibratorConfig
 myPhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/AmBeRunStatistics/PhaseIIADCHitFinderConfig
+myClusterFinder ClusterFinder ./configfiles/AmBeRunStatistics/ClusterFinderConfig
 myAmBeRunStatistics AmBeRunStatistics ./configfiles/AmBeRunStatistics/AmBeRunStatisticsConfig

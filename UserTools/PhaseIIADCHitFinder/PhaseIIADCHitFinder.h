@@ -88,12 +88,12 @@ class PhaseIIADCHitFinder : public Tool {
     // load an integration window map (CSV file) from the source file given
     std::map<unsigned long, std::vector<std::vector<int>>> load_integration_window_map(std::string window_db);
 
-
+    void ClearMaps();
     bool build_pulse_and_hit_map(unsigned long ckey,
        std::vector<Waveform<unsigned short> > rawmap, 
       std::vector<CalibratedADCWaveform<double> > calmap,
-      std::map<unsigned long, std::vector< std::vector<ADCPulse>> > & pulse_map,
-      std::map<unsigned long,std::vector<Hit>>& hit_map);
+      std::map<unsigned long, std::vector< std::vector<ADCPulse>> > & pmap,
+      std::map<unsigned long,std::vector<Hit>>& hmap);
     // Create a vector of ADCPulse objects using the raw and calibrated signals
     // from a given minibuffer. Note that the vectors of raw and calibrated
     // samples are assumed to be the same size. This function will throw an
