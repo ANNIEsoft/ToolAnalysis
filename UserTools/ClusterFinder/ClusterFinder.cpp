@@ -339,10 +339,10 @@ bool ClusterFinder::Execute(){
         PMT_ishit[detectorkey] = 1;
         for (Hit &ahit : ThisPMTHits){
           if (ahit.GetTime() > *it + ClusterFindingWindow/2 - ClusterIntegrationWindow/2 && ahit.GetTime() < *it + ClusterFindingWindow/2 + ClusterIntegrationWindow/2) { 
-            if(m_all_clusters->count(local_cluster_charge)==0) {
-              m_all_clusters->emplace(local_cluster_charge, std::vector<Hit>{ahit});
+            if(m_all_clusters->count(local_cluster_time)==0) {
+              m_all_clusters->emplace(local_cluster_time, std::vector<Hit>{ahit});
             } else { 
-              m_all_clusters->at(local_cluster_charge).push_back(ahit);
+              m_all_clusters->at(local_cluster_time).push_back(ahit);
             }
           }
         }  
