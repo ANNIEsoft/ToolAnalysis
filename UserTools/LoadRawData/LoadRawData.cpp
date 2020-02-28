@@ -48,7 +48,7 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
 
 
 bool LoadRawData::Execute(){
-  m_data->CStore.Set("NewRawEntryAccessed",false);
+  m_data->CStore.Set("NewRawDataEntryAccessed",false);
  
   //Check if we've reached the end of our file list or single file 
   bool ProcessingComplete = false;
