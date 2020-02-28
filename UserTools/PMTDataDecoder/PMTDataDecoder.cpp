@@ -59,7 +59,7 @@ bool PMTDataDecoder::Execute(){
   //Check if we are starting a new file 
   if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
 
-  //m_data->CStore.Get("PMTDataPointer",PMTData);
+  m_data->CStore.Get("PMTDataPointer",PMTData);
   m_data->CStore.Get("CurrentTankEntryNum",CurrentEntryNum);
 
   // Load RawData BoostStore to use in execute loop
@@ -174,8 +174,8 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
   //Transfer finished waves from this execute loop to the CStore
-  if(NewWavesBuilt){
-	Log("PMTDataDecoder Tool: No finished PMT waves available.  Not setting CStore.",v_debug, verbosity);
+  if(!NewWavesBuilt){
+	Log("PMTDataDecoder Tool: No finished PMT waves available.",v_debug, verbosity);
   } else {
 	Log("PMTDataDecoder Tool: New finished waves available.",v_debug, verbosity);
   }

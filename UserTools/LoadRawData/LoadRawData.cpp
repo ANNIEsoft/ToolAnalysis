@@ -132,8 +132,6 @@ bool LoadRawData::Execute(){
       PMTData->Get("CardData",*Cdata);
       Log("LoadRawData Tool: Setting PMT card data entry into CStore",v_debug, verbosity);
       m_data->CStore.Set("CardData",Cdata);
-      //Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
-      //m_data->CStore.Set("PMTDataPointer",PMTData);
       Log("LoadRawData Tool: Setting Tank Entry Num CStore",v_debug, verbosity);
       m_data->CStore.Set("TankEntryNum",TankEntryNum);
       TankEntryNum+=1;
@@ -216,6 +214,9 @@ void LoadRawData::LoadPMTMRDData(){
     RawData->Get("PMTData",*PMTData);
     PMTData->Header->Get("TotalEntries",tanktotalentries);
     if(verbosity>3) PMTData->Print(false);
+    if(verbosity>3) PMTData->Header->Print(false);
+    Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
+    m_data->CStore.Set("PMTDataPointer",PMTData,false);
   }
   if((BuildType == "TankAndMRD") || (BuildType == "MRD")){
     Log("LoadRawData Tool: Accessing MRD Data in raw data",v_message,verbosity);
