@@ -8,6 +8,7 @@ verbose 1
 #InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/build/wcsim_ccnpi_0.root
 #InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/build/wcsim_0.root
 InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/build/wcsim_ccpi0_0.root
+#InputFile ./25_04_19_wcsim_0.0.0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger

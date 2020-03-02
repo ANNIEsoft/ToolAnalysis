@@ -2,9 +2,10 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 
 OutputDirectory .
-verbosity 100
+verbosity 1
 MinDigitsForTrack 4
 MaxMrdSubEventDuration 3000  # [ns]
 WriteTracksToFile 1
 DrawTruthTracks 1 # whether to add MC Truth track info for drawing in MrdPaddlePlot Tool
                   ## note you need to run that tool to actually view the tracks!
+MakeMrdDigitTimePlot 0 # whether to make plots of the time distribution of MRD Hits to check MaxMrdSubEventDuration

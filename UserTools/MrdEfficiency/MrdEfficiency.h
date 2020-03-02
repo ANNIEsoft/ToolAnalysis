@@ -38,11 +38,16 @@ class MrdEfficiency: public Tool {
 	int numtracksinev;
 	uint32_t EventNumber;
 	
+	// maps between true and reco particles
+	std::map<int,int> Reco_to_True_Id_Map;
+	std::map<int,int> True_to_Reco_Id_Map;
+	
 	// TApplication for making histograms
 	TApplication* rootTApp=nullptr;
 	TCanvas* mrdEffCanv=nullptr;
 	double canvwidth, canvheight;
 	std::string plotDirectory;
+	TFile* fileout=nullptr; // save histograms/TGraphs to file
 	
 	// histograms
 	///////////////////
@@ -89,6 +94,9 @@ class MrdEfficiency: public Tool {
 	int num_primary_muons_that_missed_MRD = 0;
 	int num_primary_muons_reconstructed = 0;
 	int num_primary_muons_not_reconstructed = 0;
+	
+	// small function to calculate the error on an efficiency bin
+	double Efficiency_Error(double recod_events, double nrecod_events);
 	
 	// verbosity level
 	// if 'verbosity' < this level, the message type will be logged.
