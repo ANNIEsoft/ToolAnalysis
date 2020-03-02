@@ -71,7 +71,7 @@ bool MonitorReceive::Execute(){
 	MRDOut data;
 	data.Receive(MonitorReceiver);
 	m_data->Stores["CCData"]->Set("Single",data);      
-
+	m_data->CStore.Set("HasCCData",true);
       }
       
       else if(tmp.str()=="DataFile"){
@@ -83,7 +83,7 @@ bool MonitorReceive::Execute(){
 
 	//std::cout<<"received data file="<<iss.str()<<std::endl;
 
-	if(MRDData!=0){
+	/*if(MRDData!=0){
 	  MRDData->Close();
 	  delete MRDData;
 	  MRDData=0;	  
@@ -93,7 +93,7 @@ bool MonitorReceive::Execute(){
 	  PMTData->Close();
 	  delete PMTData;
 	  PMTData=0;	  
-	}	      
+	}*/	      
 	      
 	if(indata!=0){
 	  indata->Close();
@@ -101,29 +101,28 @@ bool MonitorReceive::Execute(){
 	  indata=0;
 	}
 	
-	BoostStore* indata=new BoostStore(false,0); 
+	indata=new BoostStore(false,0); 
 	indata->Initialise(iss.str());
 
-	BoostStore* MRDData= new BoostStore(false,2);
-	BoostStore* PMTData= new BoostStore(false,2);
+	MRDData= new BoostStore(false,2);
+	PMTData= new BoostStore(false,2);
 
-	////MRDData2= new BoostStore(false,2);
-	indata->Get("CCData",*MRDData);
-	indata->Get("PMTData",*PMTData);
-	////	indata->Get("CCData",*MRDData2);
-
-	//m_data->Stores["CCData"]=new BoostStore(false,2);
-	MRDData->Save("tmp");
-	m_data->Stores["CCData"]->Set("FileData",MRDData,false);
-	//	indata->Get("CCData",*(m_data->Stores["CCData"]));
-	PMTData->Save("tmp");
-	m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
-	    
-	//execute
-
-	//	m_data->Stores["CCData"]->Save("tmp");
-	//	m_data->Stores["CCData"]->Set("FileData",MRDData,false);	
-	//do stuff
+	if (indata->Has("CCData")){
+		m_data->CStore.Set("HasCCData",true);	
+		indata->Get("CCData",*MRDData);
+		MRDData->Save("tmp");
+		m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+	} else {
+		m_data->CStore.Set("HasCCData",false);
+	}
+	if (indata->Has("PMTData"){
+		m_data->CStore.Set("HasPMTData",true);
+		indata->Get("PMTData",*PMTData);
+		PMTData->Save("tmp");
+		m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+	} else {
+		m_data->CStore.Set("HasPMTData",false);
+	}
 	
       }
       
@@ -152,6 +151,9 @@ bool MonitorReceive::Finalise(){
   m_data->Stores["CCData"]->Remove("FileData");
   m_data->Stores["CCData"]->Remove("Single");
   m_data->Stores["PMTData"]->Remove("FileData");
+	
+  m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete();
+  m_data->Stores["PMTData"]->Close(); m_data->Stores["PMTData"]->Delete();
   m_data->Stores.clear();
 
   return true;
