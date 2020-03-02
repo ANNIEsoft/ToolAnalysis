@@ -11,7 +11,12 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
   m_data= &data; //assigning transient data pointer
 
+
+
+  dimensionLAPPD = 1;
   //read in configuration file
+
+  includeTopBottom = false;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("DetectorConf",detector_config);
@@ -19,7 +24,10 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SaveMode",save_mode);
   m_variables.Get("DimensionX",dimensionX);
   m_variables.Get("DimensionY",dimensionY);
+  m_variables.Get("IncludeTopBottom",includeTopBottom);
   m_variables.Get("OutputFile",cnn_outpath);
+  m_variables.Get("DimensionLAPPD",dimensionLAPPD);
+
 
   if (data_mode != "Normal" && data_mode != "Charge-Weighted" && data_mode != "TimeEvolution") data_mode = "Normal";
   if (save_mode != "Geometric" && save_mode != "PMT-wise") save_mode = "Geometric";
@@ -28,9 +36,11 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     std::cout <<"save_mode: "<<save_mode<<std::endl;
   }
   npmtsX = 16;    //in every row, we have 16 PMTs (8 sides, 2 PMTs per side per row)
-  npmtsY = 6;     //we have 6 rows of PMTs (excluding top and bottom PMTs)
-  nlappdX = 20;
-  nlappdY = 20;
+  nlappdX = dimensionLAPPD;
+  nlappdY = dimensionLAPPD;
+  if (!includeTopBottom) npmtsY = 6;     //we have 6 rows of PMTs (excluding top and bottom PMTs)
+  else npmtsY = 10;		//for top & bottom PMTs, include 2 extra rows of PMTs at top and at the bottom
+
 
   //get geometry
 
@@ -87,14 +97,35 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     Position pmt_pos(x_pmt[detkey],y_pmt[detkey],z_pmt[detkey]);
     unsigned long chankey = pmt_chankeys[i_pmt];
     Detector *apmt = geom->ChannelToDetector(chankey);
-    if (y_pmt[detkey] >= max_y-0.001 || y_pmt[detkey] <= min_y+0.001 || apmt->GetTankLocation()=="OD") continue;     //don't include top/bottom/OD PMTs for now
-    ConvertPositionTo2D(pmt_pos, x, y);
-    //std::cout << "CNNImage: Converting Position ("<<x_pmt[detkey]<<", "<<y_pmt[detkey]<<", "<<z_pmt[detkey]<<") for detkey "<<detkey<<" to 2D yields "<<x<<", "<<y<<std::endl;
+    if (apmt->GetTankLocation()=="OD") continue;  //don't include OD PMTs
+    if ((y_pmt[detkey] >= max_y-0.001 || y_pmt[detkey] <= min_y+0.001) && !includeTopBottom) continue;     //don't include top/bottom PMTs if specified
+ 
+    if (y_pmt[detkey] >= max_y-0.001) {
+      ConvertPositionTo2D_Top(pmt_pos, x, y);
+    }
+    else if (y_pmt[detkey] <= min_y+0.001) {
+	ConvertPositionTo2D_Bottom(pmt_pos, x, y);
+    }
+    else {
+       ConvertPositionTo2D(pmt_pos, x, y);
+    }
     x = (round(100*x)/100.);
     y = (round(100*y)/100.);
     if (fabs(x-0.52)<0.001) x = 0.53;
     if (fabs(x-0.47)<0.001) x = 0.48;
-    vec_pmt2D_x.push_back(x);
+    if (y_pmt[detkey] <= min_y + 0.001){
+      if (fabs(x-0.23)<0.001) x = 0.22;
+      if (fabs(x-0.77)<0.001) x = 0.78;
+    }
+    if (y_pmt[detkey] >= max_y - 0.001){
+      if (fabs(x-0.19)<0.001) x = 0.21;
+      if (fabs(x-0.34)<0.001) x = 0.32;
+      if (fabs(x-0.48)<0.001) x = 0.50;
+      if (fabs(x-0.66)<0.001) x = 0.68;
+    }
+    if (y_pmt[detkey] >= max_y-0.001) vec_pmt2D_x_Top.push_back(x);
+    else if (y_pmt[detkey] <= min_y+0.001) vec_pmt2D_x_Bottom.push_back(x);
+    else vec_pmt2D_x.push_back(x);
     vec_pmt2D_y.push_back(y);
     if (verbosity > 2) std::cout <<detkey<<"  "<<x<<"  "<<y<<std::endl;
   }
@@ -102,15 +133,26 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   if (verbosity > 2) std::cout <<"vec_pmt2D_* size: "<<vec_pmt2D_x.size()<<std::endl;
   std::sort(vec_pmt2D_x.begin(),vec_pmt2D_x.end());
   std::sort(vec_pmt2D_y.begin(),vec_pmt2D_y.end());
+  std::sort(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end());
+  std::sort(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end());
   vec_pmt2D_x.erase(std::unique(vec_pmt2D_x.begin(),vec_pmt2D_x.end()),vec_pmt2D_x.end());
   vec_pmt2D_y.erase(std::unique(vec_pmt2D_y.begin(),vec_pmt2D_y.end()),vec_pmt2D_y.end());
-  if (verbosity > 2) std::cout <<"Sorted 2D position vectors: "<<std::endl;
+  vec_pmt2D_x_Top.erase(std::unique(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end()),vec_pmt2D_x_Top.end());
+  vec_pmt2D_x_Bottom.erase(std::unique(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end()),vec_pmt2D_x_Bottom.end());
+  if (verbosity > 1) std::cout <<"Sorted 2D position vectors: "<<std::endl;
   for (unsigned int i_x=0;i_x<vec_pmt2D_x.size();i_x++){
-    if (verbosity > 2) std::cout <<"x vector "<<i_x<<": "<<vec_pmt2D_x.at(i_x)<<std::endl;
+    if (verbosity > 1) std::cout <<"x vector "<<i_x<<": "<<vec_pmt2D_x.at(i_x)<<std::endl;
   }
   for (unsigned int i_y=0;i_y<vec_pmt2D_y.size();i_y++){
-    if (verbosity > 2) std::cout <<"y vector "<<i_y<<": "<<vec_pmt2D_y.at(i_y)<<std::endl;
+    if (verbosity > 1) std::cout <<"y vector "<<i_y<<": "<<vec_pmt2D_y.at(i_y)<<std::endl;
   }
+  for (unsigned int i_x=0;i_x<vec_pmt2D_x_Top.size();i_x++){
+    if (verbosity > 1) std::cout <<"x top vector "<<i_x<<": "<<vec_pmt2D_x_Top.at(i_x)<<std::endl;
+  }
+  for (unsigned int i_x=0;i_x<vec_pmt2D_x_Bottom.size();i_x++){
+    if (verbosity > 1) std::cout <<"x bottom vector "<<i_x<<": "<<vec_pmt2D_x_Bottom.at(i_x)<<std::endl;
+  }
+  
 
   //read in lappd positions
 
@@ -173,17 +215,26 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   std::string str_time = "_time";
   std::string str_charge = "_charge";
   std::string str_lappd = "_lappd";
+  std::string str_Rings = "_Rings";
+  std::string str_MRD = "_MRD";
   std::string rootfile_name = cnn_outpath + str_root;
   std::string csvfile_name = cnn_outpath + str_charge + str_csv;
   std::string csvfile_time_name = cnn_outpath + str_time + str_csv;
   std::string csvfile_lappd_name = cnn_outpath + str_lappd + str_charge + str_csv;
   std::string csvfile_lappd_time_name = cnn_outpath + str_lappd + str_time + str_csv;
+  std::string csvfile_MRD = cnn_outpath + str_MRD + str_csv;
+  std::string csvfile_Rings = cnn_outpath + str_Rings + str_csv;
+
+
 
   file = new TFile(rootfile_name.c_str(),"RECREATE");
   outfile.open(csvfile_name.c_str());
   outfile_time.open(csvfile_time_name.c_str());
   outfile_lappd.open(csvfile_lappd_name.c_str());
   outfile_lappd_time.open(csvfile_lappd_time_name.c_str());
+  outfile_Rings.open(csvfile_Rings.c_str());
+  outfile_MRD.open(csvfile_MRD.c_str());
+
 
   return true;
 }
@@ -200,10 +251,16 @@ bool CNNImage::Execute(){
   m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles); //needed to retrieve true vertex and direction
   m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
   m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits", MCLAPPDHits);
+  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
   m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
   m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
+  m_data->Stores.at("ANNIEEvent")->Get("NumMrdTimeClusters",mrdeventcounter);
+  m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
+  
+  std::cout << "Rings: " << nrings<< endl ;
+  std::cout << "TDCdata" << mrdeventcounter<< endl;
 
   //clear variables & containers
   charge.clear();
@@ -228,11 +285,11 @@ bool CNNImage::Execute(){
     total_charge_lappd.emplace(detkey,0);
     std::vector<std::vector<double>> temp_lappdXY;
     std::vector<std::vector<int>> temp_int_lappdXY;;
-    for (int lappdX=0; lappdX<20; lappdX++){
+    for (int lappdX=0; lappdX<dimensionLAPPD; lappdX++){
       std::vector<double> temp_lappdY;
       std::vector<int> temp_int_lappdY;
-      temp_lappdY.assign(20,0.);
-      temp_int_lappdY.assign(20,0);
+      temp_lappdY.assign(dimensionLAPPD,0.);
+      temp_int_lappdY.assign(dimensionLAPPD,0);
       temp_lappdXY.push_back(temp_lappdY);
       temp_int_lappdXY.push_back(temp_int_lappdY);
     }
@@ -344,12 +401,12 @@ bool CNNImage::Execute(){
         //std::cout <<"LAPPDHit, local hit : "<<x_local_lappd<<", "<<y_local_lappd<<", global hit: "<<x_lappd<<", "<<y_lappd<<", "<<z_lappd<<std::endl;
         double lappd_charge = 1.0;
         double t_lappd = ahit.GetTime();
-        int binx_lappd = round((x_local_lappd+0.1)/0.2*20);       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
-        int biny_lappd = round((y_local_lappd+0.1)/0.2*20);
+        int binx_lappd = round((x_local_lappd+0.1)/0.2*dimensionLAPPD);       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
+        int biny_lappd = round((y_local_lappd+0.1)/0.2*dimensionLAPPD);
         if (binx_lappd < 0) binx_lappd=0;         //FIXME: hits outside of -10cm...10cm should probably be just discarded
         if (biny_lappd < 0) biny_lappd=0;         //FIXME: hits outside of -10cm...10cm should probably be just discarded
-        if (binx_lappd > 19) binx_lappd = 19;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
-        if (biny_lappd > 19) biny_lappd = 19;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (binx_lappd > dimensionLAPPD-1) binx_lappd = dimensionLAPPD-1;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
+        if (biny_lappd > dimensionLAPPD-1) biny_lappd = dimensionLAPPD-1;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
         //std::cout <<"binx_lappd: "<<binx_lappd<<", biny_lappd: "<<biny_lappd<<std::endl;
         //std::cout <<"charge: "<<std::endl;
         //std::cout <<charge_lappd[detkey].at(binx_lappd).at(biny_lappd)<<std::endl;
@@ -362,8 +419,8 @@ bool CNNImage::Execute(){
           if (max_time_lappds < t_lappd) max_time_lappds = t_lappd;
           if (min_time_lappds > t_lappd) min_time_lappds = t_lappd;
         }
-        for (int i_lappdX=0; i_lappdX<20; i_lappdX++){
-          for (int i_lappdY=0; i_lappdY<20; i_lappdY++){
+        for (int i_lappdX=0; i_lappdX<dimensionLAPPD; i_lappdX++){
+          for (int i_lappdY=0; i_lappdY<dimensionLAPPD; i_lappdY++){
             if (hits_lappd[detkey].at(i_lappdX).at(i_lappdY)>0) time_lappd[detkey].at(i_lappdX).at(i_lappdY)/=hits_lappd[detkey].at(i_lappdX).at(i_lappdY); 
           }
         }
@@ -393,13 +450,79 @@ bool CNNImage::Execute(){
   maximum_lappds = 0;
   for (unsigned int i_lappd = 0; i_lappd < lappd_detkeys.size();i_lappd++){
     unsigned long detkey = lappd_detkeys[i_lappd];
-    for (int iX=0; iX<nlappdX; iX++){
-      for (int iY=0; iY<nlappdY; iY++){
+    for (int iX=0; iX<20; iX++){
+      for (int iY=0; iY<20; iY++){
         if (charge_lappd[detkey].at(iX).at(iY) > maximum_lappds) maximum_lappds = charge_lappd[detkey].at(iX).at(iY);
       }
     }
   }
 
+
+  //---------------------------------------------------------------
+  //-------------- Readout MRD ------------------------------------
+  //---------------------------------------------------------------
+  int num_mrd_paddles=0;
+  int num_mrd_layers=0;
+  int num_mrd_conslayers=0;
+  int num_mrd_adjacent=0;
+  double mrd_padperlayer = 0.;
+  bool layer_occupied[11] = {0};
+  double mrd_paddlesize[11];
+  std::vector<std::vector<double>> mrd_hits;
+  for (int i_layer=0; i_layer<11; i_layer++){
+    std::vector<double> empty_hits;
+    mrd_hits.push_back(empty_hits);
+  }
+  std::vector<int> temp_cons_layers;
+  if(TDCData->size()==0){
+      std::cout <<"No TDC hits"<<std::endl;
+  } else {
+      std::vector<int> temp_cons_layers;
+      for(auto&& anmrdpmt : (*TDCData)){
+          unsigned long chankey = anmrdpmt.first;
+          Detector *thedetector = geom->ChannelToDetector(chankey);
+          if(thedetector->GetDetectorElement()!="MRD") {
+              continue;                 // this is a veto hit, not an MRD hit.
+          }
+          num_mrd_paddles++;
+          int detkey = thedetector->GetDetectorID();
+          Paddle *apaddle = geom->GetDetectorPaddle(detkey);
+          int layer = apaddle->GetLayer();
+          layer_occupied[layer-1]=true;
+          if (apaddle->GetOrientation()==1) {
+              mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+              mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+          }
+          else if (apaddle->GetOrientation()==0) {
+              mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+              mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+          }
+      }
+      if (num_mrd_paddles > 0) {
+          for (int i_layer=0;i_layer<11;i_layer++){
+              if (layer_occupied[i_layer]==true) {
+                  num_mrd_layers++;
+                  if (num_mrd_conslayers==0) num_mrd_conslayers++;
+                  else {
+                      if (layer_occupied[i_layer-1]==true) num_mrd_conslayers++;
+                      else {
+                          temp_cons_layers.push_back(num_mrd_conslayers);
+                          num_mrd_conslayers=0;
+                      }
+                  }
+              }
+              for (unsigned int i_hitpaddle=0; i_hitpaddle<mrd_hits.at(i_layer).size(); i_hitpaddle++){
+                  for (unsigned int j_hitpaddle= i_hitpaddle+1; j_hitpaddle < mrd_hits.at(i_layer).size(); j_hitpaddle++){
+                      if (fabs(mrd_hits.at(i_layer).at(i_hitpaddle)-mrd_hits.at(i_layer).at(j_hitpaddle))-mrd_paddlesize[i_layer] < 0.001) num_mrd_adjacent++;
+                  }
+              }       
+          }
+      } 
+      std::vector<int>::iterator it = std::max_element(temp_cons_layers.begin(),temp_cons_layers.end());
+      if (it != temp_cons_layers.end()) num_mrd_conslayers = *it;
+      else num_mrd_conslayers=0;
+      mrd_padperlayer = double(num_mrd_paddles)/num_mrd_layers;
+  }
   //---------------------------------------------------------------
   //-------------- Create CNN images ------------------------------
   //---------------------------------------------------------------
@@ -426,9 +549,9 @@ bool CNNImage::Execute(){
     ss_title_lappd<<"EventDisplay (CNN), LAPPD "<<i_lappd<<", Event "<<evnum;
     ss_hist_time_lappd<<"hist_time_lappd"<<i_lappd<<"_ev"<<evnum;
     ss_title_time_lappd<<"EventDisplay Time (CNN), LAPPD "<<i_lappd<<", Event "<<evnum;
-    TH2F *hist_lappd = new TH2F(ss_hist_lappd.str().c_str(),ss_title_lappd.str().c_str(),20,0,20,20,0,20);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
+    TH2F *hist_lappd = new TH2F(ss_hist_lappd.str().c_str(),ss_title_lappd.str().c_str(),dimensionLAPPD,0,dimensionLAPPD,dimensionLAPPD,0,dimensionLAPPD);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
     hists_lappd.push_back(hist_lappd);
-    TH2F *hist_time_lappd = new TH2F(ss_hist_time_lappd.str().c_str(),ss_title_time_lappd.str().c_str(),20,0,20,20,0,20);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
+    TH2F *hist_time_lappd = new TH2F(ss_hist_time_lappd.str().c_str(),ss_title_time_lappd.str().c_str(),dimensionLAPPD,0,dimensionLAPPD,dimensionLAPPD,0,dimensionLAPPD);    //resolution in x/y direction should be 1cm, over a total length of 20cm each
     hists_time_lappd.push_back(hist_time_lappd);
   }
 
@@ -454,18 +577,35 @@ bool CNNImage::Execute(){
     hist_cnn_time->SetBinContent(binx,biny,hist_cnn_time->GetBinContent(binx,biny)+time_fill);
 
     //fill the pmt-wise histogram
-    if (y_pmt[detkey]>=max_y || y_pmt[detkey]<=min_y) continue;       //don't include endcaps in the pmt-wise histogram for now
+    if ((y_pmt[detkey]>=max_y || y_pmt[detkey]<=min_y) && !includeTopBottom) continue;       //don't include endcaps in the pmt-wise histogram for now
+    if (y_pmt[detkey]>=max_y) ConvertPositionTo2D_Top(pmt_pos,x,y);
+    if (y_pmt[detkey]<=min_y) ConvertPositionTo2D_Bottom(pmt_pos,x,y);
     double xCorr, yCorr;
     xCorr = (round(100*x)/100.);
     yCorr = (round(100*y)/100.);
     if (fabs(xCorr-0.52)<0.001) xCorr = 0.53;
     if (fabs(xCorr-0.47)<0.001) xCorr = 0.48;
-    //std::cout <<"xCorr: "<<xCorr<<", yCorr: "<<yCorr<<std::endl;
     std::vector<double>::iterator it_x, it_y;
-    it_x = std::find(vec_pmt2D_x.begin(),vec_pmt2D_x.end(),xCorr);
+    if (y_pmt[detkey]>=max_y){
+      if (fabs(xCorr-0.19)<0.001) xCorr = 0.21;
+      if (fabs(xCorr-0.34)<0.001) xCorr = 0.32;
+      if (fabs(xCorr-0.48)<0.001) xCorr = 0.50;
+      if (fabs(xCorr-0.66)<0.001) xCorr = 0.68;
+      it_x = std::find(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end(),xCorr);
+    }
+    else if (y_pmt[detkey]<=min_y){
+      if (fabs(xCorr-0.23)<0.001) xCorr = 0.22;
+      if (fabs(xCorr-0.77)<0.001) xCorr = 0.78;
+      it_x = std::find(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end(),xCorr);
+    }
+    else {
+      it_x = std::find(vec_pmt2D_x.begin(),vec_pmt2D_x.end(),xCorr);
+    }
     it_y = std::find(vec_pmt2D_y.begin(),vec_pmt2D_y.end(),yCorr);
     int index_x, index_y;
-    index_x = std::distance(vec_pmt2D_x.begin(),it_x);
+    if (y_pmt[detkey]>=max_y) index_x = std::distance(vec_pmt2D_x_Top.begin(),it_x);
+    else if (y_pmt[detkey]<=min_y) index_x = std::distance(vec_pmt2D_x_Bottom.begin(),it_x);
+    else index_x = std::distance(vec_pmt2D_x.begin(),it_x);
     index_y = std::distance(vec_pmt2D_y.begin(),it_y);
     //std::cout <<"index_x: "<<index_x<<", index_y: "<<index_y<<std::endl;
     hist_cnn_pmtwise->SetBinContent(index_x+1,index_y+1,charge_fill);
@@ -474,8 +614,8 @@ bool CNNImage::Execute(){
     //fill the lappd-wise histograms
     for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size(); i_lappd++){
       unsigned long detkey = lappd_detkeys.at(i_lappd);
-      for (int iX=0; iX < nlappdX; iX++){
-        for (int iY=0; iY < nlappdY; iY++){
+      for (int iX=0; iX < 20; iX++){
+        for (int iY=0; iY < 20; iY++){
           double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/maximum_lappds;
           double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-min_time_lappds)/(max_time_lappds-min_time_lappds);
           if (lappd_time_fill < 0)  std::cout <<"Min LAPPD time: "<<min_time_lappds<<", Max LAPPD time: "<<max_time_lappds<<", time_lappd: "<<time_lappd[detkey].at(iX).at(iY)<<", fill time: "<<lappd_time_fill<<std::endl;
@@ -489,8 +629,18 @@ bool CNNImage::Execute(){
 
   //save information from histogram to csv file
   //(1 line corresponds to 1 event, histogram entries flattened out to a 1D array)
+ 
+  bool passed_eventselection;
+  m_data->Stores["RecoEvent"]->Get("EventCutStatus",passed_eventselection);
+  std::cout <<"passed_eventselection: "<<passed_eventselection<<std::endl;
 
-  if (bool_primary && bool_geometry && bool_nhits) {
+
+
+  //if (bool_primary && bool_geometry && bool_nhits) {
+  if (passed_eventselection) {
+    // safe Rings and MRD information
+    outfile_Rings << nrings << endl;
+    outfile_MRD << mrdeventcounter<< ","<< num_mrd_paddles <<","<< num_mrd_layers<<","<<num_mrd_conslayers<<","<<num_mrd_adjacent<<","<<mrd_padperlayer<< endl;
 
     //save root histograms
     hist_cnn->Write();
@@ -556,7 +706,8 @@ bool CNNImage::Finalise(){
   outfile_time.close();
   outfile_lappd.close();
   outfile_lappd_time.close();
-
+  outfile_Rings.close();
+  outfile_MRD.close();
   return true;
 }
 
@@ -593,4 +744,60 @@ void CNNImage::ConvertPositionTo2D(Position xyz_pos, double &x, double &y){
       x=0.5+phi*size_top_drawing;
       y=0.5+xyz_pos.Y()/tank_height*tank_height/tank_radius*size_top_drawing;
       }
+}
+
+void CNNImage::ConvertPositionTo2D_Top(Position xyz_pos, double &x, double &y){
+
+	double rho = sqrt(xyz_pos.X()*xyz_pos.X()+xyz_pos.Z()*xyz_pos.Z());
+	if (rho < 0.8) y = 0.9;
+	else y = 0.8;
+
+	double phi;
+	if (xyz_pos.X()>0 && xyz_pos.Z()>0) phi = atan(xyz_pos.Z()/xyz_pos.X())+TMath::Pi()/2;
+        else if (xyz_pos.X()>0 && xyz_pos.Z()<0) phi = atan(xyz_pos.X()/-xyz_pos.Z());
+        else if (xyz_pos.X()<0 && xyz_pos.Z()<0) phi = 3*TMath::Pi()/2+atan(xyz_pos.Z()/xyz_pos.X());
+        else if (xyz_pos.X()<0 && xyz_pos.Z()>0) phi = TMath::Pi()+atan(-xyz_pos.X()/xyz_pos.Z());
+        else if (fabs(xyz_pos.X())<0.0001){
+          if (xyz_pos.Z()>0) phi = TMath::Pi();
+          else if (xyz_pos.Z()<0) phi = 2*TMath::Pi();
+        }
+        else if (fabs(xyz_pos.Z())<0.0001){
+          if (xyz_pos.X()>0) phi = 0.5*TMath::Pi();
+          else if (xyz_pos.X()<0) phi = 3*TMath::Pi()/2;
+        }
+        else phi = 0.;
+        if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
+        phi-=TMath::Pi();
+        if (phi < - TMath::Pi()) phi = -TMath::Pi();
+        if (phi<-TMath::Pi() || phi>TMath::Pi())  std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<xyz_pos.X()<<", y="<<xyz_pos.Y()<<", z="<<xyz_pos.Z()<<std::endl;
+        x=0.5+phi*size_top_drawing; 
+
+}
+
+void CNNImage::ConvertPositionTo2D_Bottom(Position xyz_pos, double &x, double &y){
+
+        double rho = sqrt(xyz_pos.X()*xyz_pos.X()+xyz_pos.Z()*xyz_pos.Z());
+        if (rho < 0.6) y = -0.9;
+        else y = -0.8;
+ 
+	double phi;  
+        if (xyz_pos.X()>0 && xyz_pos.Z()>0) phi = atan(xyz_pos.Z()/xyz_pos.X())+TMath::Pi()/2;
+        else if (xyz_pos.X()>0 && xyz_pos.Z()<0) phi = atan(xyz_pos.X()/-xyz_pos.Z());
+        else if (xyz_pos.X()<0 && xyz_pos.Z()<0) phi = 3*TMath::Pi()/2+atan(xyz_pos.Z()/xyz_pos.X());
+        else if (xyz_pos.X()<0 && xyz_pos.Z()>0) phi = TMath::Pi()+atan(-xyz_pos.X()/xyz_pos.Z());
+        else if (fabs(xyz_pos.X())<0.0001){
+          if (xyz_pos.Z()>0) phi = TMath::Pi();
+          else if (xyz_pos.Z()<0) phi = 2*TMath::Pi();
+        }
+        else if (fabs(xyz_pos.Z())<0.0001){
+          if (xyz_pos.X()>0) phi = 0.5*TMath::Pi();
+          else if (xyz_pos.X()<0) phi = 3*TMath::Pi()/2;
+        }
+        else phi = 0.;
+        if (phi>2*TMath::Pi()) phi-=(2*TMath::Pi());
+        phi-=TMath::Pi();
+        if (phi < - TMath::Pi()) phi = -TMath::Pi();
+        if (phi<-TMath::Pi() || phi>TMath::Pi())  std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<xyz_pos.X()<<", y="<<xyz_pos.Y()<<", z="<<xyz_pos.Z()<<std::endl;
+        x=0.5+phi*size_top_drawing;
+
 }
