@@ -136,7 +136,7 @@ class MonitorMRDLive: public Tool {
   //canvas (integrated rate histograms)
   TCanvas *canvas_rates = nullptr;
   TCanvas *canvas_rates_hour = nullptr;
-  TCanvas *canvas_tdc = nullptr;
+  TCanvas *canvas_tdc_live = nullptr;
   TCanvas *canvas_tdc_hour = nullptr;
   TCanvas *canvas_npaddles = nullptr;
   TCanvas *canvas_npaddles_hour = nullptr;

@@ -255,9 +255,13 @@ bool MonitorMRDTime::Execute(){
   //---------Checking the state of MRD data stream---------
   //-------------------------------------------------------
 
+  bool has_cc;
+  m_data->CStore.Get("HasCCData",has_cc);
+
   std::string State;
   m_data->CStore.Get("State",State);
 
+  if (has_cc){
    if (State == "MRDSingle" || State == "Wait"){
 
     //MRDMonitorLive is executed
@@ -292,6 +296,7 @@ bool MonitorMRDTime::Execute(){
    	if (verbosity > 1) std::cout <<"MRDMonitorTime: State not recognized: "<<State<<std::endl;
 
    }
+  }
   //-------------------------------------------------------------
   //---------------Draw customly defined plots-------------------
   //-------------------------------------------------------------
@@ -307,6 +312,7 @@ bool MonitorMRDTime::Execute(){
   if(duration>=period_update){
     last=current;
     DrawFileHistory(current_stamp,24.,"current_24h",1);     //show 24h history of MRD files
+    PrintFileTimeStamp(current_stamp,24.,"current_24h");
     DrawFileHistory(current_stamp,2.,"current_2h",3);     //show 2h history of MRD files
   }
 
@@ -324,7 +330,7 @@ bool MonitorMRDTime::Finalise(){
 
   if (verbosity > 1) std::cout <<"Tool MonitorMRDTime: Finalising ...."<<std::endl;
 
-  if (bool_mrddata) MRDdata->Delete();
+  //if (bool_mrddata) MRDdata->Delete();
 
   //delete all the pointer to objects that are still active
 
@@ -413,11 +419,11 @@ bool MonitorMRDTime::Finalise(){
   delete canvas_tdc;
   delete canvas_trigger;
   delete canvas_trigger_time;
-  delete canvas_rate_electronics;
+  //delete canvas_rate_electronics;
   delete canvas_rate_physical;
   delete canvas_rate_physical_facc;
   delete canvas_pie;
-
+  delete canvas_file_timestamp;
 
   return true;
 }
@@ -1003,6 +1009,7 @@ void MonitorMRDTime::InitializeVectors(){
   canvas_trigger = new TCanvas("canvas_trigger","MRD Trigger Rates",900,600);
   canvas_trigger_time = new TCanvas("canvas_trigger_time","MRD Trigger Rates (Time)",900,600);
   canvas_pie = new TCanvas("canvas_pie","MRD Pie Chart Canvas",700,700);
+  canvas_file_timestamp = new TCanvas("canvas_file_timestamp","Timestamp Last File",900,600);
 
   canvas_hitmap->SetGridy();
   canvas_hitmap->SetLogy();
@@ -1588,6 +1595,59 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
 
 }
 
+void MonitorMRDTime::PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending){
+
+  if (verbosity > 2) std::cout <<"MonitorMRDTime: PrintFileTimeStamp"<<std::endl;
+
+  //-------------------------------------------------------
+  //-----------------PrintFileTimeStamp--------------------
+  //-------------------------------------------------------
+
+  if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
+
+  boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(timestamp_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_end/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_end/MSEC_to_SEC/1000.)%60,timestamp_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << "Current time: "<<endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  TText *label_lastfile = nullptr;
+  label_lastfile = new TText(0.04,0.66,end_time.str().c_str());
+  label_lastfile->SetNDC(1);
+  label_lastfile->SetTextSize(0.1);
+  
+  TLatex *label_timediff = nullptr;
+
+  if (tend_plot.size() == 0){
+    std::stringstream time_diff;
+    time_diff << "#Delta t Last MRD File: >"<<time_frame<<"h";
+    label_timediff = new TLatex(0.04,0.33,time_diff.str().c_str());
+    label_timediff->SetNDC(1);
+    label_timediff->SetTextSize(0.1);
+  } else {
+    ULong64_t timestamp_lastfile = tend_plot.at(tend_plot.size()-1);
+    boost::posix_time::ptime filetime = *Epoch + boost::posix_time::time_duration(int(timestamp_lastfile/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_lastfile/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_lastfile/MSEC_to_SEC/1000.)%60,timestamp_lastfile%1000);
+    boost::posix_time::time_duration t_since_file= boost::posix_time::time_duration(endtime - filetime);
+    int t_since_file_min = int(t_since_file.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN);
+    std::stringstream time_diff;
+    time_diff << "#Delta t Last MRD File: "<<t_since_file_min/60<<"h:"<<t_since_file_min%60<<"min";
+    label_timediff = new TLatex(0.04,0.33,time_diff.str().c_str());
+    label_timediff->SetNDC(1);
+    label_timediff->SetTextSize(0.1);
+  }
+
+  canvas_file_timestamp->cd();
+  label_lastfile->Draw();
+  label_timediff->Draw();
+  std::stringstream ss_file_timestamp;
+  ss_file_timestamp << outpath << "MRD_FileTimeStamp_" << file_ending << "." << img_extension;
+  canvas_file_timestamp->SaveAs(ss_file_timestamp.str().c_str());
+  
+  delete label_lastfile;
+  delete label_timediff;
+
+  canvas_file_timestamp->Clear();
+}
+
 
 void MonitorMRDTime::DrawLastFilePlots(){
 
@@ -1774,8 +1834,7 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
     std::vector<unsigned int> CrateSlotChannel{crate,slot,channel};
     int total_ch = CrateSlotChannel_to_TotalChannel[CrateSlotChannel];
     if (hist_scatter.at(total_ch)->GetEntries()>0) hist_scatter.at(total_ch)->Reset();
-    //hist_scatter.at(total_ch)->SetBins(n_bins_scatter,0,t_file_end/MSEC_to_SEC-t_file_start/MSEC_to_SEC,n_bins_scatter,0,50);    //only show the TDC values up to 50, since they should be low for the trigger-associated channels
-    hist_scatter.at(total_ch)->SetBins(n_bins_scatter,0,t_file_end/MSEC_to_SEC-t_file_start/MSEC_to_SEC,n_bins_scatter,0,1000);    //only show the TDC values up to 50, since they should be low for the trigger-associated channels
+    hist_scatter.at(total_ch)->SetBins(n_bins_scatter,0,t_file_end/MSEC_to_SEC-t_file_start/MSEC_to_SEC,n_bins_scatter,0,1000);    //show whole TDC acq window from 0 ... 1000 TDC units
     for (unsigned int i_entry=0; i_entry<tdc_file.at(total_ch).size(); i_entry++){
       hist_scatter.at(total_ch)->Fill((timestamp_file.at(total_ch).at(i_entry)-t_file_start)/MSEC_to_SEC,tdc_file.at(total_ch).at(i_entry));
     }

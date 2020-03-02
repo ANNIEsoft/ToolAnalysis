@@ -1,3 +1,4 @@
 FileList ./configfiles/Monitoring/MRDfiles.txt
 OutPath ./monitoringplots/
-verbose 0
+Mode FileList	#Options: FileList, Single, Wait
+verbose 3

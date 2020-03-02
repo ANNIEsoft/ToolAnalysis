@@ -150,9 +150,13 @@ bool MonitorMRDEventDisplay::Execute(){
 
   if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: Executing"<<std::endl;
 
+  bool has_cc;
+  m_data->CStore.Get("HasCCData",has_cc);
+
   std::string State;
   m_data->CStore.Get("State",State);
 
+  if (has_cc){
   if (State == "MRDSingle"){
     //update live vectors
 
@@ -185,6 +189,7 @@ bool MonitorMRDEventDisplay::Execute(){
     if (verbosity > 2) std::cout <<"MonitorMRDEventDisplay: State is "<<State<<", do nothing"<<std::endl;
   }else {
     if (verbosity > 0) std::cout <<"ERROR (MonitorMRDEventDisplay): State not recognized! Please check data format of MRD file."<<std::endl;
+  }
   }
 
   return true;

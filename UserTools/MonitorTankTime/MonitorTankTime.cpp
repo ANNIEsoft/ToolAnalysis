@@ -213,9 +213,13 @@ bool MonitorTankTime::Execute(){
   //for testing purposes only: execute in every step / set State to DataFile
   //m_data->CStore.Set("State","DataFile");
 
+  bool has_pmt;
+  m_data->CStore.Get("HasPMTData",has_pmt);
+
   std::string State;
   m_data->CStore.Get("State",State);
 
+  if (has_pmt){
   if (State == "Wait"){
 
     //-------------------------------------------------------
@@ -250,6 +254,7 @@ bool MonitorTankTime::Execute(){
   } else {
    	Log("MonitorTankTime: State not recognized: "+State,v_debug,verbosity);
   }
+  }
 
   //-------------------------------------------------------------
   //---------------Draw customly defined plots-------------------
@@ -268,7 +273,7 @@ bool MonitorTankTime::Execute(){
 
     last=current;
     DrawFileHistory(current_stamp,24.,"current_24h",1);     //show 24h history of Tank files
-
+    PrintFileTimeStamp(current_stamp,24.,"current_24h");
     DrawFileHistory(current_stamp,2.,"current_2h",3);
 
   }
@@ -357,6 +362,7 @@ bool MonitorTankTime::Finalise(){
   delete canvas_ch_sigma;
   delete canvas_ch_rate;
   delete canvas_ch_single;
+  delete canvas_file_timestamp_tank;
 
   for (unsigned int i_channel = 0; i_channel < canvas_Channels_temp.size(); i_channel++){
     delete canvas_Channels_temp.at(i_channel);
@@ -498,6 +504,7 @@ void MonitorTankTime::InitializeHists(){
   canvas_ch_rate = new TCanvas("canvas_ch_rate","Channel Rate Canvas",900,600);
   canvas_ch_single = new TCanvas("canvas_ch_single","Channel Canvas Single",900,600);
   canvas_logfile = new TCanvas("canvas_logfile","PMT File History",900,600); 
+  canvas_file_timestamp_tank = new TCanvas("canvas_file_timestamp_tank","Timestamp Last file",900,600);
 
   for (int i_active = 0; i_active<num_active_slots; i_active++){
     
@@ -2061,6 +2068,9 @@ void MonitorTankTime::DrawTimeDifference(ULong64_t timestamp_end, double time_fr
   canvas_peddiff->SaveAs(ss_peddiff.str().c_str());
   Log("MonitorTankTime: Output path Pedestal time difference plot: "+ss_peddiff.str(),v_message,verbosity);
 
+  h2D_peddiff->Reset();
+  canvas_peddiff->Clear();
+
   //sigma time difference plot
 
   std::vector<double> overall_sigmadiffs;
@@ -2154,6 +2164,9 @@ void MonitorTankTime::DrawTimeDifference(ULong64_t timestamp_end, double time_fr
   ss_sigmadiff<<outpath<<"PMT_SigmaDifference_"<<file_ending<<".jpg";
   canvas_sigmadiff->SaveAs(ss_sigmadiff.str().c_str());
   Log("MonitorTankTime: Output path Pedestal Sigma Time Difference plot: "+ss_sigmadiff.str(),v_message,verbosity);
+
+  h2D_sigmadiff->Reset();
+  canvas_sigmadiff->Clear();
 
   //rate time difference plot
 
@@ -2249,6 +2262,9 @@ void MonitorTankTime::DrawTimeDifference(ULong64_t timestamp_end, double time_fr
   canvas_ratediff->SaveAs(ss_ratediff.str().c_str());
   Log("MonitorTankTime: Output path Rate Time Difference plot: "+ss_ratediff.str(),v_message,verbosity);
 
+  h2D_ratediff->Reset();
+  canvas_ratediff->Clear();
+
 }
 
 void MonitorTankTime::DrawBufferPlots(){
@@ -2283,16 +2299,23 @@ void MonitorTankTime::DrawBufferPlots(){
     ss_title_hist_temp << title_time.str() << " Temp Crate " << crate_num << " Slot " << slot_num <<" (last File) "<<end_time.str();
     hChannels_temp.at(i_slot*num_channels_tank)->SetTitle(ss_title_hist_temp.str().c_str());
 
+    bool first_ch = true;
+    int i_first_ch=0;
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
-       if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
+      if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       std::stringstream ss_channel;
       ss_channel << "Cr "<<crate_num<<"/Sl"<<slot_num<<"/Ch"<<i_channel+1;
-      hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Draw("same");
+      if (first_ch) {
+        hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Draw();
+        first_ch=false;
+        i_first_ch=i_channel;
+      }
+      else hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Draw("same");
       if (hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMaximum() > max_temp) max_temp = hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMaximum();
       if (hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMinimum() < min_temp) min_temp = hChannels_temp.at(i_slot*num_channels_tank+i_channel)->GetMinimum();
       leg_temp->AddEntry(hChannels_temp.at(i_slot*num_channels_tank+i_channel),ss_channel.str().c_str(),"l");
     }
-    hChannels_temp.at(i_slot*num_channels_tank)->GetYaxis()->SetRangeUser(min_temp,max_temp);
+    hChannels_temp.at(i_slot*num_channels_tank+i_first_ch)->GetYaxis()->SetRangeUser(min_temp,max_temp);
     leg_temp->Draw();
     ss_canvas_temp.str("");
     ss_canvas_temp << outpath << "PMT_Temp_Cr"<<crate_num<<"_Sl"<<slot_num<<".jpg";
@@ -2322,6 +2345,7 @@ void MonitorTankTime::DrawBufferPlots(){
   //Resetting & Clearing Channel histograms, canvasses
   for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
+      if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Reset();
     }
   }
@@ -2364,15 +2388,22 @@ void MonitorTankTime::DrawADCFreqPlots(){
     ss_title_hist_freq << title_time.str() << " Freq Crate " << crate_num << " Slot " << slot_num <<" (last File) "<<end_time.str();
     hChannels_freq.at(i_slot*num_channels_tank)->SetTitle(ss_title_hist_freq.str().c_str());
 
+    bool first_ch=true;
+    int i_first_ch=0;
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
       if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       std::stringstream ss_channel;
       ss_channel << "Cr "<<crate_num<<"/Sl"<<slot_num<<"/Ch"<<i_channel+1;
-      hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Draw("same");
+      if (first_ch) {
+        hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Draw();
+        first_ch=false;
+	i_first_ch = i_channel;
+      }
+      else hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Draw("same");
       if (hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetMaximum() > max_freq) max_freq = hChannels_freq.at(i_slot*num_channels_tank+i_channel)->GetMaximum();
       leg_freq->AddEntry(hChannels_freq.at(i_slot*num_channels_tank+i_channel),ss_channel.str().c_str());
     }
-    hChannels_freq.at(i_slot*num_channels_tank)->GetYaxis()->SetRangeUser(0.,max_freq);
+    hChannels_freq.at(i_slot*num_channels_tank+i_first_ch)->GetYaxis()->SetRangeUser(0.,max_freq);
     leg_freq->Draw();
     ss_canvas_freq.str("");
     ss_canvas_freq << outpath << "PMT_Freq_Cr"<<crate_num<<"_Sl"<<slot_num<<".jpg";
@@ -2401,6 +2432,7 @@ void MonitorTankTime::DrawADCFreqPlots(){
   
   for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
+      if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Reset();
     }
   }
@@ -2428,9 +2460,7 @@ void MonitorTankTime::DrawFIFOPlots(){
   int min_fifo1 = 99999;
   int min_fifo2 = 99999;
 
-  //std::cout <<"Looping through fifo1, size: "<<fifo1.size()<<std::endl;
   for (unsigned int i_card = 0; i_card < fifo1.size(); i_card++){
-    //std::cout <<"i_card = "<<i_card<<std::endl;
     int i_crate,i_slot;
     CardIDToElectronicsSpace(fifo1.at(i_card),i_crate,i_slot);
     for (int i_ch=0; i_ch < num_channels_tank; i_ch++){
@@ -2452,7 +2482,6 @@ void MonitorTankTime::DrawFIFOPlots(){
 
   for (int i_crate = 0; i_crate < num_crates_tank; i_crate++){
     for (int i_slot = 0; i_slot < num_slots_tank; i_slot++){
-        //std::cout <<"crate "<<i_crate<<", slot "<<i_slot<<std::endl;
 	if (h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) > max_fifo1) max_fifo1 = h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
 	if (h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) < min_fifo1) min_fifo1 = h2D_fifo1->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
 	if (h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank) > max_fifo2) max_fifo2 = h2D_fifo2->GetBinContent(i_slot+1,num_channels_tank+(2-i_crate)*num_channels_tank);
@@ -2497,7 +2526,8 @@ void MonitorTankTime::DrawFIFOPlots(){
   line2->Draw("same");
   label_fifo->Draw();
   p_fifo1 ->Update();
-   if (h2D_fifo1->GetMaximum()>0.){
+
+   if (h2D_fifo1->GetEntries()>0.){
     if (abs(max_fifo1-min_fifo1)==0) h2D_fifo1->GetZaxis()->SetRangeUser(min_fifo1-1,max_fifo1+1);
     else h2D_fifo1->GetZaxis()->SetRangeUser(1e-6,max_fifo1+0.5);
     TPaletteAxis *palette =
@@ -2553,7 +2583,7 @@ void MonitorTankTime::DrawFIFOPlots(){
   line2->Draw("same");
   label_fifo->Draw();
   p_fifo2 ->Update();
-   if (h2D_fifo2->GetMaximum()>0.){
+   if (h2D_fifo2->GetEntries()>0.){
     if (abs(max_fifo2-min_fifo2)==0) h2D_fifo2->GetZaxis()->SetRangeUser(min_fifo2-1,max_fifo2+1);
     else h2D_fifo2->GetZaxis()->SetRangeUser(1e-6,max_fifo2+0.5);
     TPaletteAxis *palette =
@@ -2624,6 +2654,60 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
   log_files->Reset();
   canvas_logfile->Clear();
 
+
+}
+
+void MonitorTankTime::PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending){
+
+  if (verbosity > 2) std::cout <<"MonitorTankTime: PrintFileTimeStamp"<<std::endl;
+
+  //-------------------------------------------------------
+  //-----------------PrintFileTimeStamp--------------------
+  //-------------------------------------------------------
+
+  if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
+
+  boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(timestamp_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_end/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_end/MSEC_to_SEC/1000.)%60,timestamp_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << "Current time: "<<endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  TText *label_lastfile = nullptr;
+  label_lastfile = new TText(0.04,0.66,end_time.str().c_str());
+  label_lastfile->SetNDC(1);
+  label_lastfile->SetTextSize(0.1);
+
+  TLatex *label_timediff = nullptr;
+
+  if (tend_plot.size() == 0){
+    std::stringstream time_diff;
+    time_diff << "#Delta t Last PMT File: >"<<time_frame<<"h";
+    label_timediff = new TLatex(0.04,0.33,time_diff.str().c_str());
+    label_timediff->SetNDC(1);
+    label_timediff->SetTextSize(0.1);
+  } else {
+    ULong64_t timestamp_lastfile = tend_plot.at(tend_plot.size()-1);
+    boost::posix_time::ptime filetime = *Epoch + boost::posix_time::time_duration(int(timestamp_lastfile/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_lastfile/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_lastfile/MSEC_to_SEC/1000.)%60,timestamp_lastfile%1000);
+    boost::posix_time::time_duration t_since_file= boost::posix_time::time_duration(endtime - filetime);
+    int t_since_file_min = int(t_since_file.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN);
+    std::stringstream time_diff;
+    time_diff << "#Delta t Last PMT File: "<<t_since_file_min/60<<"h:"<<t_since_file_min%60<<"min";
+    label_timediff = new TLatex(0.04,0.33,time_diff.str().c_str());
+    label_timediff->SetNDC(1);
+    label_timediff->SetTextSize(0.1);
+  }
+
+  canvas_file_timestamp_tank->cd();
+  label_lastfile->Draw();
+  label_timediff->Draw();
+  std::stringstream ss_file_timestamp;
+  ss_file_timestamp << outpath << "PMT_FileTimeStamp_" << file_ending << "." << img_extension;
+  canvas_file_timestamp_tank->SaveAs(ss_file_timestamp.str().c_str());
+
+  delete label_lastfile;
+  delete label_timediff;
+
+  canvas_file_timestamp_tank->Clear();
 
 }
 

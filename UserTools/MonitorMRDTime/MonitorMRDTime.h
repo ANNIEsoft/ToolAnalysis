@@ -67,6 +67,7 @@ class MonitorMRDTime: public Tool {
   void DrawTimeEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTriggerEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
+  void PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawPieChart(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   //helper functions
@@ -277,6 +278,7 @@ class MonitorMRDTime: public Tool {
   TCanvas *canvas_scatter = nullptr;
   TCanvas *canvas_scatter_single = nullptr;
   TCanvas *canvas_pie = nullptr;
+  TCanvas *canvas_file_timestamp = nullptr;
 
   //define colors for multitude of TGraphs for each channel
   int color_scheme[16] = {1,2,3,4,5,6,7,8,9,13,15,205,94,220,221,225}; 

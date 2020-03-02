@@ -163,6 +163,8 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
 
   n_bins_loglive = 10;
 
+  gROOT->cd();
+
   hChannel_cr1 = new TH1I("hChannel_cr1","TDC Channels Rack 7",num_active_slots*num_channels,0,num_active_slots*num_channels);
   hChannel_cr2 = new TH1I("hChannel_cr2","TDC Channels Rack 8",num_active_slots*num_channels,0,num_active_slots*num_channels);
   hSlot_cr1 = new TH1D("hSlot_cr1","TDC Slots Rack 7",num_active_slots,0,num_active_slots);
@@ -175,8 +177,8 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   rate_crate2 = new TH2F("rate_crate2","Rates Rack 8 (5 mins)",num_slots,0,num_slots,num_channels,0,num_channels);
   rate_crate1_hour = new TH2F("rate_crate1_hour","Rates Rack 7 (1 hour)",num_slots,0,num_slots,num_channels,0,num_channels);
   rate_crate2_hour = new TH2F("rate_crate2_hour","Rates Rack 8 (1 hour)",num_slots,0,num_slots,num_channels,0,num_channels);
-  TDC_hist = new TH1F("TDC_hist","TDC live events (5 mins)",180,0,180);
-  TDC_hist_hour = new TH1F("TDC_hist_hour","TDC live events (1 hour)",180,0,180);
+  TDC_hist = new TH1F("TDC_hist","TDC live events (5 mins)",100,0,1000);
+  TDC_hist_hour = new TH1F("TDC_hist_hour","TDC live events (1 hour)",100,0,1000);
   n_paddles_hit = new TH1F("n_paddles_hit","N Paddles (5 mins)",50,0,50);
   n_paddles_hit_hour = new TH1F("n_paddles_hit_hour","N Paddles (1 hour)",50,0,50);
   log_live_events = new TH1F("log_live_events","Live Event history (last 10 events)",n_bins_loglive,0,n_bins_loglive);       //show the time stamps of the last 10 live events
@@ -438,7 +440,7 @@ bool MonitorMRDLive::Initialise(std::string configfile, DataModel &data){
   c_loglive = new TCanvas("MRD Live Events","MRD Live Events",900,600);
   canvas_rates = new TCanvas("canvas_rates","Rates electronics space",1000,600);
   canvas_rates_hour = new TCanvas("canvas_rates_hour","Rates electronics space",1000,600);
-  canvas_tdc = new TCanvas("canvas_tdc","Canvas TDC",900,600);
+  canvas_tdc_live = new TCanvas("canvas_tdc_live","Canvas TDC",900,600);
   canvas_tdc_hour = new TCanvas("canvas_tdc_hour","Canvas TDC (1 hour)",900,600);
   canvas_npaddles = new TCanvas("canvas_npaddles","Canvas NPaddles",900,600);
   canvas_npaddles_hour = new TCanvas("canvas_npaddles_hour","Canvas NPaddles (1 hour)",900,600);
@@ -476,9 +478,13 @@ bool MonitorMRDLive::Execute(){
   //---------------Get live event info---------------------
   //-------------------------------------------------------
 
+  bool has_cc;
+  m_data->CStore.Get("HasCCData",has_cc);
+
   std::string State;
   m_data->CStore.Get("State",State);
 
+  if (has_cc){
   if (State == "MRDSingle"){				//is data valid for live event plotting?->MRDSingle state
 
     if (verbosity > 2) std::cout <<"MRDSingle Event: MonitorMRDLive is executed..."<<std::endl;
@@ -563,7 +569,7 @@ bool MonitorMRDLive::Execute(){
     if (verbosity > 1) std::cout <<"State not recognized: "<<State<<std::endl;
 
   }
-
+  }
   //plot the integrated rate monitoring plots
 
   if (verbosity > 2) {
@@ -628,7 +634,7 @@ bool MonitorMRDLive::Finalise(){
   delete c_FreqCrates;
   delete c_Freq2D;
   delete c_Times;
-  delete canvas_tdc;
+  delete canvas_tdc_live;
   delete canvas_tdc_hour;
   delete canvas_npaddles;
   delete canvas_npaddles_hour;
@@ -1139,7 +1145,7 @@ void MonitorMRDLive::UpdateRatePlots(){
 
   //plot the other histograms as well
 
-  canvas_tdc->cd();
+  canvas_tdc_live->cd();
   TDC_hist->Draw();
   canvas_tdc_hour->cd();
   TDC_hist_hour->Draw();
@@ -1151,7 +1157,7 @@ void MonitorMRDLive::UpdateRatePlots(){
   //save TDC & NPaddles plot
   std::stringstream ss_tdc;
   ss_tdc<<outpath<<"MRD_TDC_Live_5min.jpg";
-  canvas_tdc->SaveAs(ss_tdc.str().c_str());
+  canvas_tdc_live->SaveAs(ss_tdc.str().c_str());
   std::stringstream ss_tdc_hour;
   ss_tdc_hour<<outpath<<"MRD_TDC_Live_1hour.jpg";
   canvas_tdc_hour->SaveAs(ss_tdc_hour.str().c_str());
@@ -1174,7 +1180,7 @@ void MonitorMRDLive::UpdateRatePlots(){
   n_paddles_hit_hour->Reset();
   canvas_rates->Clear();
   canvas_rates_hour->Clear();
-  canvas_tdc->Clear();
+  canvas_tdc_live->Clear();
   canvas_tdc_hour->Clear();
   canvas_npaddles->Clear();
   canvas_npaddles_hour->Clear();

@@ -94,7 +94,6 @@ if (tool=="CNNImage") ret=new CNNImage;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
-if (tool=="MonitorSimReceiveSingleFile") ret=new MonitorSimReceiveSingleFile;
 if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
 if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
 if (tool=="PlotWaveforms") ret=new PlotWaveforms;

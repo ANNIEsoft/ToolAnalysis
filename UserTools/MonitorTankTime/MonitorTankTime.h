@@ -81,6 +81,7 @@ class MonitorTankTime: public Tool {
   void DrawHitMap(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
+  void PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   //helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
@@ -257,6 +258,7 @@ class MonitorTankTime: public Tool {
   //define histogram showing the history (log) of files 
   TH1F *log_files=nullptr;
   TCanvas *canvas_logfile = nullptr;
+  TCanvas *canvas_file_timestamp_tank = nullptr;
   int num_files_history;
 
 

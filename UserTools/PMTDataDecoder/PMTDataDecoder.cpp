@@ -102,10 +102,16 @@ bool PMTDataDecoder::Execute(){
   } 
   
   else if (Mode == "Processing" || Mode == "Monitoring"){
+    
+    bool has_pmt;
+    m_data->CStore.Get("HasPMTData",has_pmt);
+    //Don't do any processing if there is no PMTData in the file
+    if (!has_pmt) return true;
+
     std::string State;
     m_data->CStore.Get("State",State);
     Log("PMTDataDecoder tool: checking CStore for status of data stream",v_debug,verbosity);
-    if (State == "Wait"){
+    if (State == "Wait" || State == "MRDSingle"){
       if (verbosity > v_message) std::cout <<"PMTDataDecoder: State is "<<State<< ". No new full data file available" << std::endl;
       return true; 
     } 
@@ -330,8 +336,8 @@ bool PMTDataDecoder::Execute(){
     CDEntryNum = 0;
     FileNum += 1;
     ////////////// END EXECUTE LOOP ///////////////
-    if (Mode != "Monitoring" && Mode != "Processing") RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
-    if (Mode != "Monitoring") PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+    if (Mode != "Monitoring" && Mode != "Processing") {RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);}
+    if (Mode != "Monitoring") {PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);}
     if(Mode == "SingleFile"){
       Log("PMTDataDecoder Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
 	  m_data->vars.Set("StopLoop",1);
@@ -355,9 +361,11 @@ bool PMTDataDecoder::Finalise(){
   RawData->Close();
   RawData->Delete();
   delete RawData;
-  PMTData->Close();
-  PMTData->Delete();
-  delete PMTData;
+  if (Mode != "Processing" && Mode != "Monitoring"){
+    PMTData->Close();
+    PMTData->Delete();
+    delete PMTData;
+  }
   Log("PMTDataDecoder tool exitting",v_warning,verbosity);
   return true;
 }
