@@ -35,15 +35,15 @@ class SimpleTankEnergyCalibrator: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
 
   std::vector<Hit> GetInWindowHits();
-  std::map<int,double> LoadChargePEMap(std::string ChargeFile);
   double GetTotalQ(std::vector<Hit> AllHits);
   double GetTotalPE(std::vector<Hit> AllHits);
 
  private:
 
+  std::map<int,double> ChannelKeyToSPEMap;
+
   Geometry *geom = nullptr;
 
-  std::string SPEChargeFile;
   std::map<unsigned long, std::vector<std::vector<ADCPulse>>> RecoADCHits;
   std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
   std::map<unsigned long,vector<Hit>>* TDCData=nullptr;

@@ -28,7 +28,7 @@ bool SimpleTankEnergyCalibrator::Initialise(std::string configfile, DataModel &d
   //TODO: Read in a simple CSV file that has channel charge/PE conversions.
   
   std::cout << "SimpleTankEnergyCalibrator Tool: Loading Charge to PE Map" << std::endl;
-  ChannelKeyToSPEMap = this->LoadChargePEMap(SPEChargeFile);
+  m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelKeyToSPEMap);
 
   std::cout << "SimpleTankEnergyCalibrator Tool Initialized" << std::endl;
   return true;
@@ -197,27 +197,6 @@ std::vector<Hit> SimpleTankEnergyCalibrator::GetInWindowHits(){
     }
   }
   return BeamHits;
-}
-
-std::map<int,double> SimpleTankEnergyCalibrator::LoadChargePEMap(std::string ChargeFile){
-  std::map<int,double> CKeyToSPEMap;
-  ifstream myfile(ChargeFile.c_str());
-  std::string line;
-  if (myfile.is_open()){
-    //Loop over lines, collect all detector data (should only be one line here)
-    while(getline(myfile,line)){
-      if(verbosity>3) std::cout << line << std::endl; //has our stuff;
-      if(line.find("#")!=std::string::npos) continue;
-      std::vector<std::string> DataEntries;
-      boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
-      int channelkey = -9999;
-      double SPECharge = -9999.;
-      channelkey = std::stoi(DataEntries.at(0));
-      SPECharge= std::stod(DataEntries.at(1));
-      CKeyToSPEMap.emplace(channelkey,SPECharge);
-    }
-  }
-  return CKeyToSPEMap;
 }
 
 double SimpleTankEnergyCalibrator::GetTotalQ(std::vector<Hit> AllHits){

@@ -29,6 +29,8 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MaxWaveforms",MaxWaveforms);
   m_variables.Get("LEDsUsed",LEDsUsed);
   m_variables.Get("LEDSetpoints",LEDSetpoints);
+
+
   if(annieeventexists==0) {
     std::cout << "PrintADCData: No ANNIE Event in store to print!" << std::endl;
     return false;
@@ -46,8 +48,13 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
    file_out=new TFile(rootfile_out_name.c_str(),"RECREATE"); //create one root file for each run to save the detailed plots and fits for all PMTs 
    file_out->cd();
   }
+
   hist_pulseocc_2D_y_phi = new TH2F("hist_pulseocc_2D_y_phi","Spatial distribution(mean pulses per acquisition, all PMTs)",100,0,360,25,-2.5,2.5);
   hist_frachit_2D_y_phi = new TH2F("hist_frachit_2D_y_phi","Spatial distribution (% of waveforms with a pulse, all PMTs)",100,0,360,25,-2.5,2.5);
+  hist_hittime_channelnum = new TH2F("hist_hittime_channelnum","Pulse peak time distribution for channel numbers",4,0,3,700,0,70000);
+  hist_hitcharge_channelnum = new TH2F("hist_hitcharge_channelnum","Pulse charge distribution for channel numbers",4,0,3,700,0,70000);
+  hist_PEVNHit = new TH2F("hist_PEVNHit","Number of photoelectrons as a function of number of pulses",250,0,1000,100,0,300);
+  hist_ChargePoint = new TH2F("hist_ChargePoint","Number of photoelectrons as a function of charge point z-component",250,0,1000,30,0,1;
 
   //Initialize text file saving pulse occupancy info
   std::string pulsefile_out_prefix="_PulseInfo.txt";
@@ -68,7 +75,8 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
 
   //Initialize some ADC data histograms
   wave_lengths = new TH1F("wave_lengths","Number of samples in ADC waveforms",50000,0,50000);
-
+  m_data->CStore.Get("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
+  m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelKeyToSPEMap);
 
   WaveformNum = 0;
   std::cout << "PrintADCData: tool initialized" << std::endl;
@@ -89,6 +97,7 @@ bool PrintADCData::Execute(){
   m_data->Stores["ANNIEEvent"]->Get("RawADCAuxData",RawADCAuxData);
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNum);
   m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNum);
+  
   if (CurrentRun == -1){
     CurrentRun = RunNum;
     CurrentSubrun = SubrunNum;
@@ -113,6 +122,7 @@ bool PrintADCData::Execute(){
   }
   else {
     this->PrintInfoInData(RawADCData,false);
+    this->CalculateChargePoint();
   }
   if ( RawADCAuxData.empty() ) {
     Log("PrintADCData Error: Found an empty RawADCData entry in event", 0,
@@ -130,7 +140,7 @@ bool PrintADCData::Finalise(){
   
   wave_lengths->GetXaxis()->SetTitle("Number of samples in waveform (ADC)");
   wave_lengths->Write();
-  this->MakeYPhiHists();
+  this->Make2DHists();
   if(SaveWaves) file_out->Close();
   this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);
   result_file.close();
@@ -142,22 +152,39 @@ bool PrintADCData::Finalise(){
 void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData,
         bool isAuxData)
 {
+  std::vector<int> CrateSpaceInfo;
   for (const auto& temp_pair : RawADCData) {
     const auto& channel_key = temp_pair.first;
     
     //If working with PMT ADC data, fill out pulse occupancy information
     if(!isAuxData){
       std::vector<std::vector<ADCPulse>> buffer_pulses = RecoADCHits.at(channel_key);
+      CrateSpaceInfo = ChannelNumToTankPMTCrateSpaceMap.at(channel_key);
+      double total_PE = 0;
       int num_pulses = 0;
+      int num_hits = 0;
       for (int i = 0; i < buffer_pulses.size(); i++){
           std::vector<ADCPulse> onebuffer_pulses = buffer_pulses.at(i);
           for (int j = 0; j < onebuffer_pulses.size(); j++){
             ADCPulse apulse = onebuffer_pulses.at(j);
+            double pulse_charge = apulse.charge();
+            double pulse_PE = 0;
+            std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
+            if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
+              pulse_PE  = pulse_charge / ChannelKeyToSPEMap.at(channel_key);
+              total_PE+=pulse_PE;
+              num_hits+=1;
+            } else {
+              if(verbosity>2){
+                std::cout << "FOUND A HIT FOR CHANNELKEY " << channel_key << "BUT NO CONVERSION " <<
+                    "TO PE AVAILABLE.  SKIPPING PE." << std::endl;
+              }
+            hist_hittime_channelnum->Fill(CrateSpaceInfo.at(2),apulse.peak_time());
+            hist_hitcharge_channelnum->Fill(CrateSpaceInfo.at(2),pulse_charge);
             int pulse_height = apulse.raw_amplitude() - apulse.baseline();
             if (pulse_height >= pulse_threshold) num_pulses +=1;
           }
       }
-
       //Fill in pulse log information
       std::map<unsigned long, int>::iterator it = NumWaves.find(channel_key);
       if(it != NumWaves.end()){ //First time encountering channel key
@@ -176,7 +203,7 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
         if (num_pulses==0) continue;
       }
     }
-
+    hist_PEVNHit->Fill(total_PE,num_hits);
 
     if(verbosity>3) std::cout << "Waveform info for channel " << channel_key << std::endl;
     //Default running: raw_waveforms only has one entry.  If we go to a
@@ -277,7 +304,7 @@ void PrintADCData::ClearOccupancyInfo()
   return;
 }
 
-void PrintADCData::MakeYPhiHists(){
+void PrintADCData::Make2DHists(){
   std::map<std::string, std::map<unsigned long,Detector*>>* Detectors = geom->GetDetectors();
   for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("Tank").begin(); it != Detectors->at("Tank").end(); ++it){
 
@@ -332,10 +359,68 @@ void PrintADCData::MakeYPhiHists(){
   hist_frachit_2D_y_phi->GetXaxis()->SetTitle("#phi [deg]");
   hist_frachit_2D_y_phi->GetYaxis()->SetTitle("y [m]");
   hist_frachit_2D_y_phi->SetStats(0);
+  hist_hittime_channelnum->GetXaxis()->SetTitle("Channel number");
+  hist_hittime_channelnum->GetYaxis()->SetTitle("Pulse peak time [ns]");
+  hist_hittime_channelnum->SetStats(0);
+  hist_hitcharge_channelnum->GetXaxis()->SetTitle("Channel number");
+  hist_hitcharge_channelnum->GetYaxis()->SetTitle("Pulse charge [nC]");
+  hist_hitcharge_channelnum->SetStats(0);
+  hist_PEVNHit->GetXaxis()->SetTitle("Number of pulses");
+  hist_PEVNHit->GetYaxis()->SetTitle("Total PE");
+  hist_PEVNHit->SetStats(0);
   std::string hd = "2D_Histograms";
   TDirectory* histdir = file_out->mkdir(hd.c_str());
   histdir->cd();
   hist_pulseocc_2D_y_phi->Write();
   hist_frachit_2D_y_phi->Write();
+  hist_hittime_channelnum->Write();
+  hist_hitcharge_channelnum->Write();
+  hist_PEVNHit->Write();
+  hist_ChargePoint->Write();
+
+  return;
+}
+
+void PrintADCData::CalculateChargePoint(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData)
+{
+
+  double x_weight = 0;
+  double y_weight = 0;
+  double z_weight = 0;
+  for (const auto& temp_pair : RawADCData) {
+    const auto& channel_key = temp_pair.first;
+    
+    //Get the total photoelectron count and total pulses for channel
+    std::vector<std::vector<ADCPulse>> buffer_pulses = RecoADCHits.at(channel_key);
+    CrateSpaceInfo = ChannelNumToTankPMTCrateSpaceMap.at(channel_key);
+    double total_PE = 0;
+    int num_hits = 0;
+    for (int i = 0; i < buffer_pulses.size(); i++){
+      std::vector<ADCPulse> onebuffer_pulses = buffer_pulses.at(i);
+      for (int j = 0; j < onebuffer_pulses.size(); j++){
+        ADCPulse apulse = onebuffer_pulses.at(j);
+        double pulse_charge = apulse.charge();
+        double pulse_PE = 0;
+        std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
+        if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
+          pulse_PE  = pulse_charge / ChannelKeyToSPEMap.at(channel_key);
+          total_PE+=pulse_PE;
+          num_hits+=1;
+        } else {
+          if(verbosity>2){
+            std::cout << "FOUND A HIT FOR CHANNELKEY " << channel_key << "BUT NO CONVERSION " <<
+                "TO PE AVAILABLE.  SKIPPING PE." << std::endl;
+          }
+        }
+      }
+    }
+    Detector* this_detector = geom->ChannelToDetector(channel_key);
+    Position det_position = this_detector->GetDetectorPosition();
+    x_weight+= det_position.X()*pulse_PE;
+    y_weight+= det_position.Y()*pulse_PE;
+    z_weight+= det_position.Z()*pulse_PE;
+  }
+  Direction charge_weight(x_weight,y_weight,z_weight);
+  hist_ChargePoint->Fill(total_PE,charge_weight.Z());
   return;
 }

@@ -39,10 +39,11 @@ class PrintADCData: public Tool {
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
-  void MakeYPhiHists();
+  void Make2DHists();
   void PrintInfoInData(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData,
         bool isAuxData); // Fill ROOT file with histograms from either PMT ADC data or auxiliary channel data.
                          // For now, all Aux Data will be output to the file regardless of any pulse activity
+  void CalculateChargePoint(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData);
   void SaveOccupancyInfo(uint32_t Run, uint32_t Subrun);
   void ClearOccupancyInfo();
   ofstream result_file;
@@ -52,6 +53,11 @@ class PrintADCData: public Tool {
   //Variables needed to fill occupancy plots; code modified from Michael
   TH2F *hist_pulseocc_2D_y_phi = nullptr;
   TH2F *hist_frachit_2D_y_phi = nullptr;
+  TH2F *hist_hittime_channelnum = nullptr;
+  TH2F *hist_hitcharge_channelnum = nullptr;
+  TH2F* hist_PEVNHit;
+  TH2F* hist_ChargePoint;
+
   std::map<unsigned long,unsigned long> detkey_to_chankey;
   std::vector<unsigned long> pmt_detkeys;
   Geometry *geom = nullptr;
@@ -62,6 +68,11 @@ class PrintADCData: public Tool {
   std::map<unsigned long, double> phi_PMT;
   int n_tank_pmts;
   double tank_center_x, tank_center_y, tank_center_z;
+
+  std::map<int,std::vector<int>>* ChannelNumToTankPMTCrateSpaceMap;
+  std::map<int,double> ChannelKeyToSPEMap;
+
+
 
   bool use_led_waveforms;
   int pulse_threshold;
@@ -85,6 +96,7 @@ class PrintADCData: public Tool {
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData;
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCAuxData;
   std::map<unsigned long, std::vector< std::vector<ADCPulse>> > RecoADCHits;
+  std::map<unsigned long,std::vector<Hit>> Hits;
   int RunNumber;
 
   //Used to print information on how many pulses are found and % of events with a pulse
