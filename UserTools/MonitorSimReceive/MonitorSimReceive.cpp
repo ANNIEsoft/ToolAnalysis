@@ -100,6 +100,7 @@ bool MonitorSimReceive::Execute(){
     if (i_loop<vec_filename.size()){
       datapath = vec_filename.at(i_loop);
       if (verbosity > 2) std::cout <<"Current file: "<<datapath<<std::endl;
+      if (i_loop == vec_filename.size()-1) m_data->vars.Set("StopLoop",true);
     } else {
       m_data->vars.Set("StopLoop",true);
       if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
@@ -173,6 +174,8 @@ bool MonitorSimReceive::Finalise(){
     if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
 
     if (m_data->CStore.Has("State")) m_data->CStore.Remove("State");
+    if (m_data->CStore.Has("HasCCData")) m_data->CStore.Remove("HasCCData");
+    if (m_data->CStore.Has("HasPMTData")) m_data->CStore.Remove("HasPMTData");
     if (m_data->Stores["CCData"]->Has("FileData")) m_data->Stores["CCData"]->Remove("FileData");
     if (m_data->Stores["PMTData"]->Has("FileData")) m_data->Stores["PMTData"]->Remove("FileData");
     m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete(); 

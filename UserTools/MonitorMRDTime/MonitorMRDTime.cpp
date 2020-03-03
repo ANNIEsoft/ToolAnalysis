@@ -419,7 +419,7 @@ bool MonitorMRDTime::Finalise(){
   delete canvas_tdc;
   delete canvas_trigger;
   delete canvas_trigger_time;
-  //delete canvas_rate_electronics;
+  delete canvas_rate_electronics;
   delete canvas_rate_physical;
   delete canvas_rate_physical_facc;
   delete canvas_pie;

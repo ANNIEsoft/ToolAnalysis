@@ -115,7 +115,7 @@ bool MonitorReceive::Execute(){
 	} else {
 		m_data->CStore.Set("HasCCData",false);
 	}
-	if (indata->Has("PMTData"){
+	if (indata->Has("PMTData")){
 		m_data->CStore.Set("HasPMTData",true);
 		indata->Get("PMTData",*PMTData);
 		PMTData->Save("tmp");
@@ -123,11 +123,8 @@ bool MonitorReceive::Execute(){
 	} else {
 		m_data->CStore.Set("HasPMTData",false);
 	}
-	
       }
-      
-    }
-    
+     }     
   }
 
   return true;

@@ -213,7 +213,7 @@ class MonitorTankTime: public Tool {
   TCanvas *canvas_peddiff = nullptr;
   TCanvas *canvas_sigmadiff = nullptr;
   TCanvas *canvas_ratediff = nullptr;
-  TCanvas *canvas_ch_single = nullptr;
+  TCanvas *canvas_ch_single_tank = nullptr;
   TCanvas *canvas_fifo = nullptr;
   std::vector<TCanvas*> canvas_Channels_temp;
   std::vector<TCanvas*> canvas_Channels_freq;
@@ -229,7 +229,7 @@ class MonitorTankTime: public Tool {
   TLegend *leg_rate = nullptr;
   TCanvas *canvas_ch_ped = nullptr;
   TCanvas *canvas_ch_sigma = nullptr;
-  TCanvas *canvas_ch_rate = nullptr;
+  TCanvas *canvas_ch_rate_tank = nullptr;
 
 
   //helper root objects / visualization
@@ -257,7 +257,7 @@ class MonitorTankTime: public Tool {
 
   //define histogram showing the history (log) of files 
   TH1F *log_files=nullptr;
-  TCanvas *canvas_logfile = nullptr;
+  TCanvas *canvas_logfile_tank = nullptr;
   TCanvas *canvas_file_timestamp_tank = nullptr;
   int num_files_history;
 

@@ -357,11 +357,13 @@ bool MonitorTankTime::Finalise(){
   delete canvas_sigmadiff;
   delete canvas_ratediff;
   delete canvas_fifo;
-  delete canvas_logfile;
+  delete canvas_logfile_tank;
   delete canvas_ch_ped;
   delete canvas_ch_sigma;
-  delete canvas_ch_rate;
-  delete canvas_ch_single;
+
+  delete canvas_ch_rate_tank;
+  delete canvas_ch_single_tank;
+
   delete canvas_file_timestamp_tank;
 
   for (unsigned int i_channel = 0; i_channel < canvas_Channels_temp.size(); i_channel++){
@@ -501,9 +503,9 @@ void MonitorTankTime::InitializeHists(){
   canvas_fifo = new TCanvas("canvas_fifo","FIFO Overflow Errors (VME)",900,600);
   canvas_ch_ped = new TCanvas("canvas_ch_ped","Channel Ped Canvas",900,600);
   canvas_ch_sigma = new TCanvas("canvas_ch_sigma","Channel Sigma Canvas",900,600);
-  canvas_ch_rate = new TCanvas("canvas_ch_rate","Channel Rate Canvas",900,600);
-  canvas_ch_single = new TCanvas("canvas_ch_single","Channel Canvas Single",900,600);
-  canvas_logfile = new TCanvas("canvas_logfile","PMT File History",900,600); 
+  canvas_ch_rate_tank = new TCanvas("canvas_ch_rate_tank","Channel Rate Canvas",900,600);
+  canvas_ch_single_tank = new TCanvas("canvas_ch_single_tank","Channel Canvas Single",900,600);
+  canvas_logfile_tank = new TCanvas("canvas_logfile_tank","PMT File History",900,600); 
   canvas_file_timestamp_tank = new TCanvas("canvas_file_timestamp_tank","Timestamp Last file",900,600);
 
   for (int i_active = 0; i_active<num_active_slots; i_active++){
@@ -1833,7 +1835,7 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
         multi_ch_sigma->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
         multi_ch_sigma->GetXaxis()->SetTimeOffset(0.);
         leg_sigma->Draw();
-        canvas_ch_rate->cd();
+        canvas_ch_rate_tank->cd();
         multi_ch_rate->Draw("apl");
         multi_ch_rate->SetTitle(ss_ch_rate.str().c_str());
         multi_ch_rate->GetYaxis()->SetTitle("Rate [kHz]");
@@ -1855,7 +1857,7 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
 
         canvas_ch_ped->SaveAs(ss_ch_ped.str().c_str());
         canvas_ch_sigma->SaveAs(ss_ch_sigma.str().c_str());
-        canvas_ch_rate->SaveAs(ss_ch_rate.str().c_str()); 
+        canvas_ch_rate_tank->SaveAs(ss_ch_rate.str().c_str()); 
 
         for (int i_gr=0; i_gr < CH_per_CANVAS; i_gr++){
           int i_balance = (i_channel == num_active_slots*num_channels_tank-1)? 1 : 0;
@@ -1872,7 +1874,7 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
       
       canvas_ch_ped->Clear();
       canvas_ch_sigma->Clear();
-      canvas_ch_rate->Clear();
+      canvas_ch_rate_tank->Clear();
 
      } 
 
@@ -1905,8 +1907,8 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
       unsigned int slot = crateslotchannel.at(1);
       unsigned int channel = crateslotchannel.at(2);
 
-      canvas_ch_single->cd();
-      canvas_ch_single->Clear();
+      canvas_ch_single_tank->cd();
+      canvas_ch_single_tank->Clear();
       gr_ped.at(i_channel)->GetYaxis()->SetTitle("Pedestal");
       gr_ped.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
       gr_ped.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
@@ -1916,9 +1918,9 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
       gr_ped.at(i_channel)->Draw("apl");
       std::stringstream ss_ch_single;
       ss_ch_single<<outpath<<"PMTTimeEvolutionPed_Cr"<<crate<<"_Sl"<<slot<<"_Ch"<<channel<<"_"<<file_ending<<"."<<img_extension;
-      canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
+      canvas_ch_single_tank->SaveAs(ss_ch_single.str().c_str());
 
-      canvas_ch_single->Clear();
+      canvas_ch_single_tank->Clear();
       gr_sigma.at(i_channel)->GetYaxis()->SetTitle("Sigma");
       gr_sigma.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
       gr_sigma.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
@@ -1928,9 +1930,9 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
       gr_sigma.at(i_channel)->Draw("apl");
       ss_ch_single.str("");
       ss_ch_single<<outpath<<"PMTTimeEvolutionSigma_Cr"<<crate<<"_Sl"<<slot<<"_Ch"<<channel<<"_"<<file_ending<<"."<<img_extension;
-      canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
+      canvas_ch_single_tank->SaveAs(ss_ch_single.str().c_str());
 
-      canvas_ch_single->Clear();
+      canvas_ch_single_tank->Clear();
       gr_rate.at(i_channel)->GetYaxis()->SetTitle("Rate [kHz]");
       gr_rate.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
       gr_rate.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
@@ -1940,7 +1942,7 @@ void MonitorTankTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fra
       gr_rate.at(i_channel)->Draw("apl");
       ss_ch_single.str("");
       ss_ch_single<<outpath<<"PMTTimeEvolutionRate_Cr"<<crate<<"_Sl"<<slot<<"_Ch"<<channel<<"_"<<file_ending<<"."<<img_extension;
-      canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
+      canvas_ch_single_tank->SaveAs(ss_ch_single.str().c_str());
 
     }
 
@@ -2623,7 +2625,7 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
   std::stringstream ss_timeframe;
   ss_timeframe << round(time_frame*100.)/100.;
 
-  canvas_logfile->cd();
+  canvas_logfile_tank->cd();
   log_files->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
   log_files->GetXaxis()->SetTimeOffset(0.);
   log_files->Draw();
@@ -2645,14 +2647,14 @@ void MonitorTankTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame
 
   std::stringstream ss_logfiles;
   ss_logfiles << outpath << "PMT_FileHistory_" << file_ending << "." << img_extension;
-  canvas_logfile->SaveAs(ss_logfiles.str().c_str());
+  canvas_logfile_tank->SaveAs(ss_logfiles.str().c_str());
 
   for (unsigned int i_line = 0; i_line < file_markers.size(); i_line++){
     delete file_markers.at(i_line);
   }
 
   log_files->Reset();
-  canvas_logfile->Clear();
+  canvas_logfile_tank->Clear();
 
 
 }
