@@ -95,8 +95,17 @@ bool MonitorReceive::Execute(){
 	  PMTData=0;	  
 	}*/	      
 	      
+	if (MRDData!=0){
+	  m_data->Stores["CCData"]->Delete();
+	}
+	      
+	if (PMTData!=0){
+	  m_data->Stores["PMTData"]->Delete();
+	}
+	      
 	if(indata!=0){
 	  indata->Close();
+	  indata->Delete();
 	  delete indata;
 	  indata=0;
 	}
