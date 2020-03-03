@@ -66,6 +66,9 @@ bool PrintADCData::Initialise(std::string configfile, DataModel &data){
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
 
+  //Initialize some ADC data histograms
+  wave_lengths = new TH1F("wave_lengths","Number of samples in ADC waveforms",50000,0,50000);
+
 
   WaveformNum = 0;
   std::cout << "PrintADCData: tool initialized" << std::endl;
@@ -124,6 +127,9 @@ bool PrintADCData::Execute(){
 
 bool PrintADCData::Finalise(){
   file_out->cd();
+  
+  wave_lengths->GetXaxis()->SetTitle("Number of samples in waveform (ADC)");
+  wave_lengths->Write();
   this->MakeYPhiHists();
   if(SaveWaves) file_out->Close();
   this->SaveOccupancyInfo(CurrentRun, CurrentSubrun);
@@ -171,6 +177,7 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
       }
     }
 
+
     if(verbosity>3) std::cout << "Waveform info for channel " << channel_key << std::endl;
     //Default running: raw_waveforms only has one entry.  If we go to a
     //hefty-mode style of running though, this could have multiple minibuffers
@@ -185,9 +192,12 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
       Waveform<unsigned short> awaveform = raw_waveforms.at(j);
       if(verbosity>4)std::cout << "Waveform start time: " << std::setprecision(16) << awaveform.GetStartTime() << std::endl;
       std::vector<unsigned short>* thewave=awaveform.GetSamples();
+      int wavelength = thewave->size();
+      file_out->cd();
+      wave_lengths->Fill(wavelength);
       if(verbosity>4){
         std::cout << "BEGIN SAMPLES" << std::endl;
-        for (int i=0; i < thewave->size(); i++){
+        for (int i=0; i < wavelength; i++){
           std::cout << thewave->at(i) << std::endl;
         }
       }

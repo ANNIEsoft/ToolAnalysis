@@ -104,5 +104,6 @@ if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
 if (tool=="AmBeRunStatistics") ret=new AmBeRunStatistics;
+if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
 return ret;
 }

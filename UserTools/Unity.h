@@ -112,3 +112,4 @@
 #include "PrintADCData.h"
 #include "AmBeRunStatistics.h"
 #include "ClusterFinder.h"
+#include "SimpleTankEnergyCalibrator.h"
