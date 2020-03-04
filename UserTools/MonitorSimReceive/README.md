@@ -1,8 +1,6 @@
 # MonitorSimReceive
 
-MonitorSimReceive
-
-used to simulate receiving monitoring data.
+MonitorSimReceive is used to simulate receiving monitoring data.
 
 ## Data
 
