@@ -93,83 +93,85 @@ bool PMTDataDecoder::Execute(){
 	      Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     	  PMTData->GetEntry(CDEntryNum);
     	  PMTData->Get("CardData",Cdata);
-	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata.size()),v_debug, verbosity);
+	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata->size()),v_debug, verbosity);
     
-        for (unsigned int CardDataIndex=0; CardDataIndex<Cdata.size(); CardDataIndex++){
+        for (unsigned int CardDataIndex=0; CardDataIndex<Cdata->size(); CardDataIndex++){
           if(verbosity>v_debug){
             std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
-            std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata.at(CardDataIndex).CardID<<std::endl;
-            std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata.at(CardDataIndex).Data.size()<<std::endl;
+            std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata->at(CardDataIndex).CardID<<std::endl;
+            std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata->at(CardDataIndex).Data.size()<<std::endl;
           }
-          CardData aCardData = Cdata.at(CardDataIndex);
+          CardData aCardData = Cdata->at(CardDataIndex);
           //Check if card experienced any data loss
           int FIFOstate = aCardData.FIFOstate;
           if(FIFOstate == 1){  //FIFO overflow
-          Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
-          fifo1.push_back(aCardData.CardID);
-        }
-        if(FIFOstate == 2){  //FIFO overflow and error clearing overvlow
-          Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
-          fifo2.push_back(aCardData.CardID);
-        }
-        bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
-        if (IsNextInSequence) {
+            Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
+            fifo1.push_back(aCardData.CardID);
+          }
+          if(FIFOstate == 2){  //FIFO overflow and error clearing overvlow
+            Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
+            fifo2.push_back(aCardData.CardID);
+          }
+          bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
+          if (IsNextInSequence) {
 	        Log("PMTDataDecoder Tool: CardData"+to_string(aCardData.CardID)+" is next in sequence. Decoding... ",v_debug, verbosity);
 	        Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
-          //For this CardData entry, decode raw binary frames.  Locates header markers
-          //And separates the Frame Header from the data stream bits.
-          std::vector<DecodedFrame> ThisCardDFs;
-          ThisCardDFs = this->DecodeFrames(aCardData.Data);
-          if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
-          else{
-            // Parse each decoded frame's data stream and frame header 
-            for (unsigned int i=0; i < ThisCardDFs.size(); i++){
-              this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+            //For this CardData entry, decode raw binary frames.  Locates header markers
+            //And separates the Frame Header from the data stream bits.
+            std::vector<DecodedFrame> ThisCardDFs;
+            ThisCardDFs = this->DecodeFrames(aCardData.Data);
+            if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
+            else{
+              // Parse each decoded frame's data stream and frame header 
+              for (unsigned int i=0; i < ThisCardDFs.size(); i++){
+                this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+              }
+              NumPMTDataProcessed+=1;
             }
-            NumPMTDataProcessed+=1;
-          }
-        } else {
+          } else {
 	        Log("PMTDataDecoder Tool WARNING: CardData OUT OF SEQUENCE!!!",v_warning, verbosity);
-          //This CardData will be needed later when it's next in sequence.  
-          //Log it in the Out-Of-Order (OOO) Data seen so far.
-          int OOOCardID = aCardData.CardID; 
-          int OOOSequenceID = aCardData.SequenceID;
-          int OOOBoostEntry = CDEntryNum;
-          int OOOCardDataIndex = CardDataIndex;
-          std::vector<int> OOOProperties{OOOSequenceID, OOOBoostEntry, OOOCardDataIndex};
+            //This CardData will be needed later when it's next in sequence.  
+            //Log it in the Out-Of-Order (OOO) Data seen so far.
+            int OOOCardID = aCardData.CardID; 
+            int OOOSequenceID = aCardData.SequenceID;
+            int OOOBoostEntry = CDEntryNum;
+            int OOOCardDataIndex = CardDataIndex;
+            std::vector<int> OOOProperties{OOOSequenceID, OOOBoostEntry, OOOCardDataIndex};
 	        Log("PMTDataDecoder Tool:  Storing CardID... " +
                 to_string(aCardData.CardID),v_warning, verbosity);
 	        Log("PMTDataDecoder Tool:  Storing Of SequenceID... " + 
                 to_string(aCardData.SequenceID),v_warning, verbosity);
 	        Log("PMTDataDecoder Tool:  Into UnprocessedEntries. Map ",v_warning, verbosity);
-          if(UnprocessedEntries.count(OOOCardID)==0){
-            deque<std::vector<int>> OOOqueue;
-            OOOqueue.push_back(OOOProperties);
-            UnprocessedEntries.emplace(OOOCardID,OOOqueue);
-          } else {
-            if (OOOSequenceID < UnprocessedEntries.at(OOOCardID).at(0).at(0)){
-              //This new out-of-order entry has the smallest SequenceID
-              UnprocessedEntries.at(OOOCardID).push_front(OOOProperties);
+            if(UnprocessedEntries.count(OOOCardID)==0){
+              deque<std::vector<int>> OOOqueue;
+              OOOqueue.push_back(OOOProperties);
+              UnprocessedEntries.emplace(OOOCardID,OOOqueue);
             } else {
-              //Not the earliest for now; just put it at the back
-              UnprocessedEntries.at(OOOCardID).push_back(OOOProperties);
+              if (OOOSequenceID < UnprocessedEntries.at(OOOCardID).at(0).at(0)){
+                //This new out-of-order entry has the smallest SequenceID
+                UnprocessedEntries.at(OOOCardID).push_front(OOOProperties);
+              } else {
+                //Not the earliest for now; just put it at the back
+                UnprocessedEntries.at(OOOCardID).push_back(OOOProperties);
+              }
             }
           }
-        }
+	}
       }
-	    Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
+      
+      Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
       ExecuteEntryNum += 1; 
       CDEntryNum+=1; 
           
       this->ParseOOOsNowInOrder();
         
-      CStorePMTWaves = FinishedPMTWaves;
+      CStorePMTWaves = *FinishedPMTWaves;
       m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
       m_data->CStore.Set("NewTankPMTDataAvailable",true);
       m_data->CStore.Set("FIFOError1",fifo1);
       m_data->CStore.Set("FIFOError2",fifo2);
         
-      FinishedPMTWaves.clear();  
+      FinishedPMTWaves->clear();  
       
       CDEntryNum = 0;
 
