@@ -15,10 +15,17 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   verbosity = 0;
 
   ADCCountsToBuild = 0;
+  
+  Mode = "Offline";
 
   m_variables.Get("verbosity",verbosity);
+  m_variables.Get("Mode",Mode);
   m_variables.Get("ADCCountsToBuildWaves",ADCCountsToBuild);
 
+  if (Mode != "Monitoring" && Mode != "Offline") Mode = "Offline";
+  if (Mode == "Monitoring") PMTData = new BoostStore(false,2);
+  CDEntryNum = 0;
+  
   //Default mode of operation is the continuous flow of data for the live monitoring
   //The other possibility is reading in data from a specified list of files
 
@@ -39,7 +46,143 @@ bool PMTDataDecoder::Execute(){
   NewWavesBuilt = false;
   //Set in CStore that there's currently no new tank data available
   m_data->CStore.Set("NewTankPMTDataAvailable",false);
+  
+  if (Mode == "Monitoring"){
+  
+    bool has_pmt;
+    m_data->CStore.Get("HasPMTData",has_pmt);
+    //Don't do any processing if there is no PMTData in the file
+    if (!has_pmt) return true;
+   
+    std::string State;
+    m_data->CStore.Get("State",State);
+    Log("PMTDataDecoder tool: checking CStore for status of data stream",v_debug,verbosity);
+    if (State == "Wait" || State == "MRDSingle"){
+      if (verbosity > v_message) std::cout <<"PMTDataDecoder: State is "<<State<< ". No new full data file available" << std::endl;
+      return true; 
+    } 
+    else if (State == "DataFile"){
+      // Full PMTData file ready to parse
+      if (verbosity > v_message) std::cout<<"PMTDataDecoder: New raw data file available."<<std::endl;
+      m_data->Stores["PMTData"]->Get("FileData",PMTData);
+      PMTData->Print(false);
+      
+      long totalentries;
+      PMTData->Header->Get("TotalEntries",totalentries);
+      if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
 
+      fifo1.clear();
+      fifo2.clear();
+      
+      SequenceMap.clear();
+      TriggerTimeBank.clear();
+      WaveBank.clear();
+      
+      NumPMTDataProcessed = 0;
+      int ExecuteEntryNum = 0;
+      int EntriesToDo;
+      if(ADCCountsToBuild<=0) EntriesToDo = totalentries;
+      else EntriesToDo = ADCCountsToBuild;
+      if(verbosity>v_warning){
+        double CDDouble = (double)CDEntryNum;
+        double ETDDouble = (double)EntriesToDo;
+        std::cout << "PMTDataDecoder Tool: Current progress in file processing: CDData = "<<CDDouble<<", ETDDouble = "<<ETDDouble << ", fraction = "<<(CDDouble/ETDDouble)*100 << std::endl;
+      }
+  
+      while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
+	      Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
+    	  PMTData->GetEntry(CDEntryNum);
+    	  PMTData->Get("CardData",Cdata_old);
+	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata_old.size()),v_debug, verbosity);
+        for (unsigned int CardDataIndex=0; CardDataIndex<Cdata_old.size(); CardDataIndex++){
+          if(verbosity>v_debug){
+            std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
+            std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata_old.at(CardDataIndex).CardID<<std::endl;
+            std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata_old.at(CardDataIndex).Data.size()<<std::endl;
+          }
+          CardData aCardData = Cdata_old.at(CardDataIndex);
+          //Check if card experienced any data loss
+          int FIFOstate = aCardData.FIFOstate;
+          if(FIFOstate == 1){  //FIFO overflow
+            Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
+            fifo1.push_back(aCardData.CardID);
+          }
+          if(FIFOstate == 2){  //FIFO overflow and error clearing overvlow
+            Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
+            fifo2.push_back(aCardData.CardID);
+          }
+          bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
+          if (IsNextInSequence) {
+	        Log("PMTDataDecoder Tool: CardData"+to_string(aCardData.CardID)+" is next in sequence. Decoding... ",v_debug, verbosity);
+	        Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
+            //For this CardData entry, decode raw binary frames.  Locates header markers
+            //And separates the Frame Header from the data stream bits.
+            std::vector<DecodedFrame> ThisCardDFs;
+            ThisCardDFs = this->DecodeFrames(aCardData.Data);
+            if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
+            else{
+              // Parse each decoded frame's data stream and frame header 
+              for (unsigned int i=0; i < ThisCardDFs.size(); i++){
+                this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+              }
+              NumPMTDataProcessed+=1;
+            }
+          } else {
+	        Log("PMTDataDecoder Tool WARNING: CardData OUT OF SEQUENCE!!!",v_warning, verbosity);
+            //This CardData will be needed later when it's next in sequence.  
+            //Log it in the Out-Of-Order (OOO) Data seen so far.
+            int OOOCardID = aCardData.CardID; 
+            int OOOSequenceID = aCardData.SequenceID;
+            int OOOBoostEntry = CDEntryNum;
+            int OOOCardDataIndex = CardDataIndex;
+            std::vector<int> OOOProperties{OOOSequenceID, OOOBoostEntry, OOOCardDataIndex};
+	        Log("PMTDataDecoder Tool:  Storing CardID... " +
+                to_string(aCardData.CardID),v_warning, verbosity);
+	        Log("PMTDataDecoder Tool:  Storing Of SequenceID... " + 
+                to_string(aCardData.SequenceID),v_warning, verbosity);
+	        Log("PMTDataDecoder Tool:  Into UnprocessedEntries. Map ",v_warning, verbosity);
+            if(UnprocessedEntries.count(OOOCardID)==0){
+              deque<std::vector<int>> OOOqueue;
+              OOOqueue.push_back(OOOProperties);
+              UnprocessedEntries.emplace(OOOCardID,OOOqueue);
+            } else {
+              if (OOOSequenceID < UnprocessedEntries.at(OOOCardID).at(0).at(0)){
+                //This new out-of-order entry has the smallest SequenceID
+                UnprocessedEntries.at(OOOCardID).push_front(OOOProperties);
+              } else {
+                //Not the earliest for now; just put it at the back
+                UnprocessedEntries.at(OOOCardID).push_back(OOOProperties);
+              }
+            }
+          }
+	}
+        Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
+        ExecuteEntryNum += 1; 
+        CDEntryNum+=1; 
+      }
+        
+      this->ParseOOOsNowInOrder();
+        
+      CStorePMTWaves = *FinishedPMTWaves;
+      m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
+      m_data->CStore.Set("NewTankPMTDataAvailable",true);
+      m_data->CStore.Set("FIFOError1",fifo1);
+      m_data->CStore.Set("FIFOError2",fifo2);
+        
+      FinishedPMTWaves->clear(); 
+      
+      CDEntryNum = 0;
+
+      Log("PMTDataDecoder Tool: Current raw data file parsed. Waiting until next file is produced",v_message,verbosity);
+      
+      return true;
+    } 
+    else {
+      Log("PMTDataDecoder Tool: The State >>> "+State+" <<< was not recognized. Please make sure you execute the MonitorReceive tool before the PMTDataDecoder tool when operating in continuous mode",v_error,verbosity);
+      return true;   
+    }    
+  }
+  
   bool NewEntryAvailable;
   m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
@@ -47,7 +190,7 @@ bool PMTDataDecoder::Execute(){
     m_data->vars.Set("StopLoop",1);
     return true;
   }
-
+  
 
   bool PauseTankDecoding = false;
   m_data->CStore.Get("PauseTankDecoding",PauseTankDecoding);
@@ -174,11 +317,13 @@ bool PMTDataDecoder::Execute(){
   if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
   //Transfer finished waves from this execute loop to the CStore
+
   if(!NewWavesBuilt){
 	Log("PMTDataDecoder Tool: No finished PMT waves available.",v_debug, verbosity);
   } else {
 	Log("PMTDataDecoder Tool: New finished waves available.",v_debug, verbosity);
   }
+
   m_data->CStore.Set("InProgressTankEvents",FinishedPMTWaves);
   m_data->CStore.Set("NewTankPMTDataAvailable",NewWavesBuilt);
 
@@ -193,6 +338,7 @@ bool PMTDataDecoder::Execute(){
 
 
 bool PMTDataDecoder::Finalise(){
+
   Log("PMTDataDecoder tool exitting",v_warning,verbosity);
   delete FinishedPMTWaves; 
   return true;
@@ -281,7 +427,7 @@ void PMTDataDecoder::ParseOOOsNowInOrder()
   }
   for(unsigned int i=0;i<UnprocCardIDs.size(); i++){
     int UnprocCardID = UnprocCardIDs.at(i);
-    std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
+    if (verbosity > v_message) std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
     bool OOOResolved = true;
     while(OOOResolved){ //Keep re-parsing out-of-order card data as long as one is found in order
       OOOResolved = this->ParseOneCardOOOs(UnprocCardID);
@@ -368,7 +514,7 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
     for (unsigned int j = 0; j<DF.recordheader_starts.size(); j++){
       //TODO: More graceful way to handle this?  It's already happened once
       if(WaveSecBegin>DF.recordheader_starts.at(j)){
-        std::cout << "WARNING: Record header label found inside another record header." << 
+        if (verbosity > v_warning) std::cout << "WARNING: Record header label found inside another record header." << 
             "This is likely due a 000FFF in the counter.  Skipping record header and " <<
             "continuing" << std::endl;
         continue;
@@ -499,8 +645,8 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   //Add the WaveSlice to the proper vector in the WaveBank.
   std::vector<int> wave_key{CardID,ChannelID};
   if(WaveBank.count(wave_key)==0){
-    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_error, verbosity);
-    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_error, verbosity);
+    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_warning, verbosity);
+    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_warning, verbosity);
     return;
   } else {
   WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),

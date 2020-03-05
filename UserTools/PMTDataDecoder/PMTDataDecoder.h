@@ -71,6 +71,7 @@ class PMTDataDecoder: public Tool {
   bool NewWavesBuilt;
   int CurrentEntryNum = 0;
   int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
+  int CDEntryNum = 0; 
   int FileNum = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
@@ -90,6 +91,7 @@ class PMTDataDecoder: public Tool {
 
   BoostStore* PMTData;
   std::vector<CardData>* Cdata = nullptr;
+  std::vector<CardData> Cdata_old;
 
   bool FileCompleted = false;
  
@@ -98,6 +100,10 @@ class PMTDataDecoder: public Tool {
 
   //Maps for keeping track of what SequenceID is next for each Card
   std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
+
+  //Vector to keep track of fifo errors (type I, type II, for monitoring tools)
+  std::vector<int> fifo1;
+  std::vector<int> fifo2;
 
 
   std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
@@ -109,6 +115,8 @@ class PMTDataDecoder: public Tool {
 
   //Maps that store completed waveforms from cards
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves_old;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStorePMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   bool NewWaveBuilt;
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStoreTankEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
 
