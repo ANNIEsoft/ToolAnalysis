@@ -981,8 +981,10 @@ void MonitorTankTime::WriteToFile(){
   //------------------WriteToFile -------------------------
   //-------------------------------------------------------
 
-  t_file_start = timestamp_file.at(0)*8/1000000.;	//conversion from clock ticks to UTC in msec
-  t_file_end = timestamp_file.at(timestamp_file.size()-1)*8/1000000.;       //conversion from clock ticks to UTC in msec
+ // t_file_start = timestamp_file.at(0)*8/1000000.;	//conversion from clock ticks to UTC in msec
+ // t_file_end = timestamp_file.at(timestamp_file.size()-1)*8/1000000.;       //conversion from clock ticks to UTC in msec
+  t_file_start = timestamp_file.at(0)/1000000.;	//conversion from ns to UTC in msec
+  t_file_end = timestamp_file.at(timestamp_file.size()-1)/1000000.;       //conversion from ns to UTC in msec
   std::string file_start_date = convertTimeStamp_to_Date(t_file_start);
   std::stringstream root_filename;
   root_filename << path_monitoring << "PMT_" << file_start_date <<".root";

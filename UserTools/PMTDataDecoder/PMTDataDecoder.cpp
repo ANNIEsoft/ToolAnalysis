@@ -92,16 +92,15 @@ bool PMTDataDecoder::Execute(){
       while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
 	      Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     	  PMTData->GetEntry(CDEntryNum);
-    	  PMTData->Get("CardData",Cdata);
-	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata->size()),v_debug, verbosity);
-    
-        for (unsigned int CardDataIndex=0; CardDataIndex<Cdata->size(); CardDataIndex++){
+    	  PMTData->Get("CardData",Cdata_old);
+	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata_old.size()),v_debug, verbosity);
+        for (unsigned int CardDataIndex=0; CardDataIndex<Cdata_old.size(); CardDataIndex++){
           if(verbosity>v_debug){
             std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
-            std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata->at(CardDataIndex).CardID<<std::endl;
-            std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata->at(CardDataIndex).Data.size()<<std::endl;
+            std::cout<<"PMTDataDecoder Tool: CardData's CardID="<<Cdata_old.at(CardDataIndex).CardID<<std::endl;
+            std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<Cdata_old.at(CardDataIndex).Data.size()<<std::endl;
           }
-          CardData aCardData = Cdata->at(CardDataIndex);
+          CardData aCardData = Cdata_old.at(CardDataIndex);
           //Check if card experienced any data loss
           int FIFOstate = aCardData.FIFOstate;
           if(FIFOstate == 1){  //FIFO overflow
@@ -157,12 +156,11 @@ bool PMTDataDecoder::Execute(){
             }
           }
 	}
+        Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
+        ExecuteEntryNum += 1; 
+        CDEntryNum+=1; 
       }
-      
-      Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
-      ExecuteEntryNum += 1; 
-      CDEntryNum+=1; 
-          
+        
       this->ParseOOOsNowInOrder();
         
       CStorePMTWaves = *FinishedPMTWaves;
@@ -171,7 +169,7 @@ bool PMTDataDecoder::Execute(){
       m_data->CStore.Set("FIFOError1",fifo1);
       m_data->CStore.Set("FIFOError2",fifo2);
         
-      FinishedPMTWaves->clear();  
+      FinishedPMTWaves->clear(); 
       
       CDEntryNum = 0;
 
@@ -647,8 +645,8 @@ void PMTDataDecoder::AddSamplesToWaveBank(int CardID, int ChannelID,
   //Add the WaveSlice to the proper vector in the WaveBank.
   std::vector<int> wave_key{CardID,ChannelID};
   if(WaveBank.count(wave_key)==0){
-    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_error, verbosity);
-    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_error, verbosity);
+    Log("PMTDataDecoder Tool: HAVE WAVE SLICE BUT NO WAVE BEING BUILT.: ",v_warning, verbosity);
+    Log("PMTDataDecoder Tool: WAVE SLICE WILL NOT BE SAVED, DATA LOST",v_warning, verbosity);
     return;
   } else {
   WaveBank.at(wave_key).insert(WaveBank.at(wave_key).end(),
