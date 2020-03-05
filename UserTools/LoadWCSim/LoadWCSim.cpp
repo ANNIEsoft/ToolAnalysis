@@ -675,9 +675,10 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
 	m_data->Stores.at("ANNIEEvent")->Set("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex,false);
 	m_data->Stores.at("ANNIEEvent")->Set("MRDTriggerType",Triggertype);
+
 	m_data->Stores.at("ANNIEEvent")->Set("PrimaryMuonIndex",primarymuonindex);
 	
-        //Things that need to be set by later tools:
+	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
 	//RawLAPPDData

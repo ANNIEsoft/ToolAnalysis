@@ -96,10 +96,6 @@ bool LoadANNIEEvent::Execute() {
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   ++current_entry_;
   
-/*  std::map<unsigned long,std::vector<Hit>> *TDCHit = nullptr;
-  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCHit);
-  std::cout <<"LoadANNIEEvent tool: TDCHit size = "<<TDCHit->size()<<std::endl;
-*/
   if ( current_entry_ >= total_entries_in_file_ ) {
     ++current_file_;
     if ( current_file_ >= input_filenames_.size() ) {

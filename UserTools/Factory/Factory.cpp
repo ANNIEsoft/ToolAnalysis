@@ -101,6 +101,8 @@ if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
+if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
+if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="LoadRawData") ret=new LoadRawData;
 return ret;
 }
