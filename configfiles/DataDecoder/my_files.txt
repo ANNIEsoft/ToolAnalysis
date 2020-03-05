@@ -1,6 +1,1 @@
-/AnnieShare/EventBuilder/RAWDataR1140S0p0
-/AnnieShare/EventBuilder/RAWDataR1140S0p1
-/AnnieShare/EventBuilder/RAWDataR1140S0p2
-/AnnieShare/EventBuilder/RAWDataR1141S0p0
-/AnnieShare/EventBuilder/RAWDataR1142S0p0
-/AnnieShare/EventBuilder/RAWDataR1143S0p0
+/pnfs/annie/scratch/users/pershint/RawData/RAWDataR103S0p0
