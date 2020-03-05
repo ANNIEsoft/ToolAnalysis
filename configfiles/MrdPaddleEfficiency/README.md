@@ -24,7 +24,7 @@ myLoadANNIEEvent LoadANNIEEvent configfiles/MrdPaddleEfficiency/Data/LoadANNIEEv
 myTimeClustering TimeClustering configfiles/MrdPaddleEfficiency/Data/TimeClusteringConfig
 myFindMrdTracks FindMrdTracks configfiles/MrdPaddleEfficiency/Data/FindMrdTracksConfig
 myPlotMrdTracks MrdPaddlePlot configfiles/MrdPaddleEfficiency/Data/MrdPaddlePlotConfig
-#myMrdPaddleEfficiency MrdPaddleEfficiency configfiles/MrdPaddleEfficiency/Data/MrdPaddleEfficiencyConfig
+myMrdPaddleEfficiencyPreparer MrdPaddleEfficiencyPreparer configfiles/MrdPaddleEfficiency/Data/MrdPaddleEfficiencyPreparerConfig
 ```
 
 **MC**
@@ -34,6 +34,6 @@ myLoadWCSim LoadWCSim configfiles/MrdPaddleEfficiency/MC/LoadWCSimConfig		#choos
 myTimeClustering TimeClustering configfiles/MrdPaddleEfficiency/MC/TimeClusteringConfig
 myFindMrdTracks FindMrdTracks configfiles/MrdPaddleEfficiency/MC/FindMrdTracksConfig
 myPlotMrdTracks MrdPaddlePlot configfiles/MrdPaddleEfficiency/MC/MrdPaddlePlotConfig
-#myMrdPaddleEfficiency MrdPaddleEfficiency configfiles/MrdPaddleEfficiency/MC/MrdPaddleEfficiencyConfig
+myMrdPaddleEfficiencyPreparer MrdPaddleEfficiencyPreparer configfiles/MrdPaddleEfficiency/MC/MrdPaddleEfficiencyPreparerConfig
 ```
 
