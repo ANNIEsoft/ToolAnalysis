@@ -34,6 +34,7 @@ class MonitorReceive: public Tool {
   std::map<std::string,Store*> connections; 
   BoostStore* indata;
   BoostStore* MRDData;
+  BoostStore* PMTData;
 };
 
 
