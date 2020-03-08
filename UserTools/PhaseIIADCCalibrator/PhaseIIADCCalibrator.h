@@ -49,9 +49,12 @@ class PhaseIIADCCalibrator : public Tool {
     std::vector< CalibratedADCWaveform<double> > make_calibrated_waveforms_rootfit(
       const std::vector<Waveform<short unsigned int> >& raw_waveforms);
     
+    /// @brief Calculate mean and standard deviation using num_baseline_samples at beginning of waveform
+    std::vector< CalibratedADCWaveform<double> > make_calibrated_waveforms_simple(
+      const std::vector<Waveform<short unsigned int> >& raw_waveforms);
+    
     bool use_ze3ra_algorithm;
     bool use_root_algorithm;
-    
  
     void make_raw_led_waveforms(unsigned long channel_key,
       const std::vector< Waveform<unsigned short> > raw_waveforms,

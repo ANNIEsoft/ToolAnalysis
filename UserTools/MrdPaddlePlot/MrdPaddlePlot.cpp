@@ -97,7 +97,6 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		hpaddleids = new TH1D("hpaddleids","Hits on Individual Paddles",400,0,400);
 		hpaddleinlayeridsh = new TH1D("hpaddleinlayeridsh","Hits on Paddle Positions in H Layers",13,0,13);
 		hpaddleinlayeridsv = new TH1D("hpaddleinlayeridsv","Hits on Paddle Positions in V Layers",17,0,17);
-		hdigittimes = new TH1D("hdigittimes","MRD Track Digit Times",100,0,1000);
 		gROOT->cd();
 	}
 	
@@ -264,8 +263,6 @@ bool MrdPaddlePlot::Execute(){
 					Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
 					// 3) scan over the range of paddle ids and record that they were hit
 					for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
-					// record the times of all hits in this cluster
-					for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
 				}
 				// repeat above for clusters on vertical paddles
 				for(auto&& acluster : thetrack.vtrackclusters){
@@ -273,7 +270,6 @@ bool MrdPaddlePlot::Execute(){
 					Int_t uptubetopid = (2*acluster.xmaxid) + MRDSpecs::layeroffsets.at(acluster.layer);
 					Int_t uptubebottomid = (2*acluster.xminid) + MRDSpecs::layeroffsets.at(acluster.layer);
 					for(int i=uptubebottomid; i<=uptubebottomid; i++) hpaddleids->Fill(i);
-					for(auto&& adigitime : acluster.digittimes) hdigittimes->Fill(adigitime);
 				}
 				// fill histogram of the number of cells in h/v tracks
 				hnumhcells->Fill(thetrack.htrackcells.size());
@@ -637,15 +633,6 @@ bool MrdPaddlePlot::Finalise(){
 			hpaddleids->Write();
 			gROOT->cd();
 		}
-		hdigittimes->Draw();
-		imgname=hdigittimes->GetTitle();
-		std::replace(imgname.begin(), imgname.end(), ' ', '_');
-		if (saveimages) mrdTrackCanv->SaveAs(TString::Format("%s/%s.png",plotDirectory,imgname.c_str()));
-		if (saverootfile){
-			mrdvis_file->cd();
-			hdigittimes->Write();
-			gROOT->cd();
-		}	
 
 		delete mrdTrackCanv;
                 mrdTrackCanv=nullptr;
@@ -653,7 +640,7 @@ bool MrdPaddlePlot::Finalise(){
 	
 	// cleanup
 	
-	std::vector<TH1*> histos {hnumhclusters, hnumvclusters, hnumhcells, hnumvcells, hpaddleids, hpaddleinlayeridsh, hpaddleinlayeridsv, hdigittimes};
+	std::vector<TH1*> histos {hnumhclusters, hnumvclusters, hnumhcells, hnumvcells, hpaddleids, hpaddleinlayeridsh, hpaddleinlayeridsv};
 	if (!saverootfile) { 
 		for(TH1* ahisto : histos){ if(ahisto) delete ahisto; ahisto=0; }
 	}

@@ -32,31 +32,41 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
   
   // get config variables: general
   m_variables.Get("verbosity", verbosity);
-  
+ 
+  //Set defaults in case config file has no entries
+  adc_window_db = "none";
+  make_led_waveforms = false;
+  BEType = "ze3ra";
+ 
   // algorithm selection
-  use_ze3ra_algorithm = true; // default
-  use_root_algorithm = false; // default
-  get_ok = m_variables.Get("UseZe3raAlgorithm", use_ze3ra_algorithm);
-  get_ok = m_variables.Get("UseRootFitAlgorithm",use_root_algorithm);
-  if((!use_ze3ra_algorithm)&&(!use_root_algorithm)) use_ze3ra_algorithm=true;
-  std::string method = (use_ze3ra_algorithm) ? "ze3ra" : "root fit";
-  Log("PhaseIIADCCalibrator Tool: Configured to use "+method+" baseline subtraction method", v_message, verbosity);
+  get_ok = m_variables.Get("BaselineEstimationType", BEType);
+  if(BEType != "ze3ra" || BEType != "rootfit" || BEType != "simple"){
+    Log("PhaseIIADCCalibrator Tool: Baseline estimation type not recognized!  Default to ze3ra", v_warning, verbosity);
+     BEType = "ze3ra";
+  }
+  Log("PhaseIIADCCalibrator Tool: Configured to use "+BEType+" baseline subtraction method", v_message, verbosity);
   
   //Set defaults in case config file has no entries
   p_critical = 0.01;
   num_sub_waveforms = 6;
-  num_baseline_samples = (use_ze3ra_algorithm) ? 5 : 980;
+  num_baseline_samples = (BEType == "rootfit") ? 980 : 5;
   
-  // get ze3ra variables
-  m_variables.Get("PCritical", p_critical);
+  // get baseline variables
   m_variables.Get("NumBaselineSamples", num_baseline_samples);
+
+  // get ze3ra variables 
+  m_variables.Get("PCritical", p_critical);
   m_variables.Get("NumSubWaveforms", num_sub_waveforms);
 
   // Get the Auxiliary channel types; identifies which channels are SiPM channels
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
 
+  // get LED waveform-making variables
+  m_variables.Get("MakeCalLEDWaveforms",make_led_waveforms);
+  m_variables.Get("WindowIntegrationDB", adc_window_db); 
+  
   // get ROOT fitting variables
-  if(use_root_algorithm){
+  if(BEType == "rootfit"){
     m_variables.Get("drawBaselineRootFit",draw_baseline_fit);
     if(not get_ok) draw_baseline_fit=false;
     m_variables.Get("BaselineFitStartSample",baseline_start_sample);
@@ -92,24 +102,12 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
     m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
   }
 
-  //Set defaults in case config file has no entries
-  p_critical = 0.01;
-  num_sub_waveforms = 6;
-  num_baseline_samples = 5;
-  adc_window_db = "none";
-  make_led_waveforms = false;
-  BEType = "ze3ra";
 
-  m_variables.Get("verbosity", verbosity);
-  m_variables.Get("PCritical", p_critical);
-  m_variables.Get("BaselineEstimationType", BEType);
-  m_variables.Get("NumBaselineSamples", num_baseline_samples);
-  m_variables.Get("NumSubWaveforms", num_sub_waveforms);
-  m_variables.Get("MakeCalLEDWaveforms",make_led_waveforms);
-  m_variables.Get("WindowIntegrationDB", adc_window_db); 
   
 
   if(adc_window_db != "none") channel_window_map = this->load_window_map(adc_window_db);
+
+  m_data->CStore.Set("NumBaselineSamples",num_baseline_samples);
 
   return true;
 }
@@ -172,10 +170,12 @@ bool PhaseIIADCCalibrator::Execute() {
     Log("Making calibrated waveforms for ADC channel " +
       std::to_string(channel_key), 3, verbosity);
 
-    if(use_ze3ra_algorithm){
+    if(BEType == "ze3ra"){
       calibrated_waveform_map[channel_key] = make_calibrated_waveforms_ze3ra(raw_waveforms);
-    } else if(use_root_algorithm){
+    } else if(BEType == "rootfit"){
       calibrated_waveform_map[channel_key] = make_calibrated_waveforms_rootfit(raw_waveforms);
+    } else if (BEType == "simple"){
+      calibrated_waveform_map[channel_key] = make_calibrated_waveforms_simple(raw_waveforms);
     }
 
     if(make_led_waveforms){
@@ -184,10 +184,12 @@ bool PhaseIIADCCalibrator::Execute() {
       std::vector<Waveform<unsigned short>> LEDWaveforms;
       this->make_raw_led_waveforms(channel_key,raw_waveforms,LEDWaveforms);
       raw_led_waveform_map.emplace(channel_key,LEDWaveforms);
-      if(use_ze3ra_algorithm){
+      if(BEType == "ze3ra"){
         calibrated_led_waveform_map[channel_key] = make_calibrated_waveforms_ze3ra(LEDWaveforms);
-      } else if(use_root_algorithm){
+      } else if(BEType == "rootfit"){
         calibrated_led_waveform_map[channel_key] = make_calibrated_waveforms_rootfit(LEDWaveforms);
+      } else if(BEType == "simple"){
+        calibrated_led_waveform_map[channel_key] = make_calibrated_waveforms_simple(LEDWaveforms);
       }
     }
   }
@@ -232,7 +234,7 @@ bool PhaseIIADCCalibrator::Execute() {
 
 bool PhaseIIADCCalibrator::Finalise() {
   
-  if(use_root_algorithm){
+  if(BEType == "rootfit"){
     Log("PhaseIIADCCalibrator Tool: Cleaning up ROOT fitting objects",v_message,verbosity);
     //std::cout<<"dumping gObjecTable:"<<std::endl;
     //gObjectTable->Print();
@@ -377,6 +379,30 @@ void PhaseIIADCCalibrator::ze3ra_baseline(
 
 // version based on the ze3bra algorithm; assumes a DC offset is sufficient
 std::vector< CalibratedADCWaveform<double> >
+PhaseIIADCCalibrator::make_calibrated_waveforms_simple(
+  const std::vector< Waveform<unsigned short> >& raw_waveforms)
+{
+
+  // Determine the baseline for the set of raw waveforms (assumed to all
+  // come from the same readout for the same channel)
+  std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
+  for (const auto& raw_waveform : raw_waveforms) {
+    double baseline, sigma_baseline;
+    std::vector<double> cal_data;
+    const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
+    ComputeMeanAndVariance(raw_data, baseline, sigma_baseline, num_baseline_samples);
+    for (const auto& sample : raw_data) {
+      cal_data.push_back((static_cast<double>(sample) - baseline)
+        * ADC_TO_VOLT);
+    }
+    calibrated_waveforms.emplace_back(raw_waveform.GetStartTime(),
+      cal_data, baseline, sigma_baseline);
+  }
+  return calibrated_waveforms;
+}
+
+// version based on the ze3bra algorithm; assumes a DC offset is sufficient
+std::vector< CalibratedADCWaveform<double> >
 PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra(
   const std::vector< Waveform<unsigned short> >& raw_waveforms)
 {
@@ -386,16 +412,10 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra(
   std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
   for (const auto& raw_waveform : raw_waveforms) {
     double baseline, sigma_baseline;
-    if(BEType == "ze3ra"){
-      ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
-        num_baseline_samples);
-    }
+    ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
+      num_baseline_samples);
     std::vector<double> cal_data;
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
-    if(BEType == "simple"){
-      ComputeMeanAndVariance(raw_data, baseline, sigma_baseline, num_baseline_samples);
-    } 
-  
     for (const auto& sample : raw_data) {
       cal_data.push_back((static_cast<double>(sample) - baseline)
         * ADC_TO_VOLT);
@@ -407,86 +427,6 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra(
   return calibrated_waveforms;
 }
 
-void PhaseIIADCCalibrator::make_raw_led_waveforms(unsigned long channel_key,
-  const std::vector< Waveform<unsigned short> > raw_waveforms,
-  std::vector< Waveform<unsigned short> >& raw_led_waveforms)
-{
-  //Get the windows for this channel key
-  std::vector<std::vector<int>> thispmt_adc_windows;
-  thispmt_adc_windows = this->get_db_windows(channel_key);
-  for(int j=0; j<raw_waveforms.size(); j++){
-    for(int i = 0; i<thispmt_adc_windows.size();i++){
-      // Make a waveform out of this subwindow, plus the number of samples
-      // used for background estimation
-      std::vector<int> awindow = thispmt_adc_windows.at(i);
-      int windowmin = awindow.at(0) - ((int)num_baseline_samples*(int)num_sub_waveforms);
-      if(windowmin<0){
-        std::cout << "PhaseIIADCCalibrator Tool WARNING: when making an " <<
-            "LED window, there was not enough room prior to the window to " <<
-            "include samples for a background estimate.  Don't put your window "<<
-           " too close to zero ADC counts." << std::endl;
-        windowmin = 0;
-      }
-      int windowmax = awindow.at(1);
-
-      std::vector<uint16_t> led_waveform;
-      //FIXME: want start time of window, not of the full raw waveform
-      uint64_t start_time = raw_waveforms.at(j).GetStartTime();
-      for (size_t s = windowmin; s < windowmax; ++s) {
-        led_waveform.push_back(raw_waveforms.at(j).GetSample(s));
-      }
-      Waveform<uint16_t> led_rawwave{start_time,led_waveform};
-      raw_led_waveforms.push_back(led_rawwave);
-    }
-  }
-  return;
-}
-
-std::vector<std::vector<int>> PhaseIIADCCalibrator::get_db_windows(unsigned long channelkey){
-    std::vector<std::vector<int>> this_pmt_windows;
-  //Look in the map and check if channelkey exists.
-  if (channel_window_map.find(channelkey) == channel_window_map.end() ) {
-     if (verbosity>3){
-       std::cout << "PhaseIIADCHitFinder Warning: no integration windows found" <<
-       "for channel_key" << channelkey <<". Not finding pulses." << std::endl;
-       }
-  } else {
-    // gottem
-    this_pmt_windows = channel_window_map.at(channelkey);
-  }
-  return this_pmt_windows;
-}
-
-std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCCalibrator::load_window_map(std::string window_db)
-{
-  std::map<unsigned long, std::vector<std::vector<int>>> chanwindowmap;
-  std::string fileline;
-  ifstream myfile(window_db.c_str());
-  if (myfile.is_open()){
-    while(getline(myfile,fileline)){
-      if(fileline.find("#")!=std::string::npos) continue;
-      std::cout << fileline << std::endl; //has our stuff;
-      std::vector<std::string> dataline;
-      boost::split(dataline,fileline, boost::is_any_of(","), boost::token_compress_on);
-      unsigned long chanvalue = std::stoul(dataline.at(0));
-      int windowminvalue = std::stoi(dataline.at(1));
-      int windowmaxvalue = std::stoi(dataline.at(2));
-      std::vector<int> window{windowminvalue,windowmaxvalue};
-      if(chanwindowmap.count(chanvalue)==0){ // Place window range into integral windows
-        std::vector<std::vector<int>> window_vector{window};
-        chanwindowmap.emplace(chanvalue,window_vector);
-      }
-      else { // Add this window to the windows to integrate in
-        chanwindowmap.at(chanvalue).push_back(window);
-      }
-    }
-  } else {
-    Log("PhaseIIADCHitFinder Tool: Input integration window DB file not found. "
-        " no integration will occur. ",
-        1, verbosity);
-  }
-  return chanwindowmap;
-}
 
 // version based on a polynomial fit done via ROOT
 std::vector< CalibratedADCWaveform<double> >
@@ -879,4 +819,85 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_rootfit(
   }
   
   return calibrated_waveforms;
+}
+
+void PhaseIIADCCalibrator::make_raw_led_waveforms(unsigned long channel_key,
+  const std::vector< Waveform<unsigned short> > raw_waveforms,
+  std::vector< Waveform<unsigned short> >& raw_led_waveforms)
+{
+  //Get the windows for this channel key
+  std::vector<std::vector<int>> thispmt_adc_windows;
+  thispmt_adc_windows = this->get_db_windows(channel_key);
+  for(int j=0; j<raw_waveforms.size(); j++){
+    for(int i = 0; i<thispmt_adc_windows.size();i++){
+      // Make a waveform out of this subwindow, plus the number of samples
+      // used for background estimation
+      std::vector<int> awindow = thispmt_adc_windows.at(i);
+      int windowmin = awindow.at(0) - ((int)num_baseline_samples);
+      if(windowmin<0){
+        std::cout << "PhaseIIADCCalibrator Tool WARNING: when making an " <<
+            "LED window, there was not enough room prior to the window to " <<
+            "include samples for a background estimate.  Don't put your window "<<
+           " too close to zero ADC counts." << std::endl;
+        windowmin = 0;
+      }
+      int windowmax = awindow.at(1);
+
+      std::vector<uint16_t> led_waveform;
+      //FIXME: want start time of window, not of the full raw waveform
+      uint64_t start_time = raw_waveforms.at(j).GetStartTime();
+      for (size_t s = windowmin; s < windowmax; ++s) {
+        led_waveform.push_back(raw_waveforms.at(j).GetSample(s));
+      }
+      Waveform<uint16_t> led_rawwave{start_time,led_waveform};
+      raw_led_waveforms.push_back(led_rawwave);
+    }
+  }
+  return;
+}
+
+std::vector<std::vector<int>> PhaseIIADCCalibrator::get_db_windows(unsigned long channelkey){
+    std::vector<std::vector<int>> this_pmt_windows;
+  //Look in the map and check if channelkey exists.
+  if (channel_window_map.find(channelkey) == channel_window_map.end() ) {
+     if (verbosity>3){
+       std::cout << "PhaseIIADCHitFinder Warning: no integration windows found" <<
+       "for channel_key" << channelkey <<". Not finding pulses." << std::endl;
+       }
+  } else {
+    // gottem
+    this_pmt_windows = channel_window_map.at(channelkey);
+  }
+  return this_pmt_windows;
+}
+
+std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCCalibrator::load_window_map(std::string window_db)
+{
+  std::map<unsigned long, std::vector<std::vector<int>>> chanwindowmap;
+  std::string fileline;
+  ifstream myfile(window_db.c_str());
+  if (myfile.is_open()){
+    while(getline(myfile,fileline)){
+      if(fileline.find("#")!=std::string::npos) continue;
+      std::cout << fileline << std::endl; //has our stuff;
+      std::vector<std::string> dataline;
+      boost::split(dataline,fileline, boost::is_any_of(","), boost::token_compress_on);
+      unsigned long chanvalue = std::stoul(dataline.at(0));
+      int windowminvalue = std::stoi(dataline.at(1));
+      int windowmaxvalue = std::stoi(dataline.at(2));
+      std::vector<int> window{windowminvalue,windowmaxvalue};
+      if(chanwindowmap.count(chanvalue)==0){ // Place window range into integral windows
+        std::vector<std::vector<int>> window_vector{window};
+        chanwindowmap.emplace(chanvalue,window_vector);
+      }
+      else { // Add this window to the windows to integrate in
+        chanwindowmap.at(chanvalue).push_back(window);
+      }
+    }
+  } else {
+    Log("PhaseIIADCHitFinder Tool: Input integration window DB file not found. "
+        " no integration will occur. ",
+        1, verbosity);
+  }
+  return chanwindowmap;
 }

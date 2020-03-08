@@ -91,7 +91,6 @@ if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
 if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
 if (tool=="CNNImage") ret=new CNNImage;
-if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
@@ -106,5 +105,8 @@ if (tool=="ClusterFinder") ret=new ClusterFinder;
 if (tool=="AmBeRunStatistics") ret=new AmBeRunStatistics;
 if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
 if (tool=="BeamClusterAnalysis") ret=new BeamClusterAnalysis;
+if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
+if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
+if (tool=="LoadRawData") ret=new LoadRawData;
 return ret;
 }
