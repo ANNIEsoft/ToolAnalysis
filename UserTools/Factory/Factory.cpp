@@ -104,5 +104,6 @@ if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="LoadRawData") ret=new LoadRawData;
+if (tool=="TriggerDataDecoder") ret=new TriggerDataDecoder;
 return ret;
 }

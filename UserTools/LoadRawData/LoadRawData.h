@@ -29,6 +29,7 @@ class LoadRawData: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   void LoadPMTMRDData(); 
+  void LoadTriggerData(); 
   bool InitializeNewFile(); 
 
  private:
@@ -44,6 +45,7 @@ class LoadRawData: public Tool {
 
   int FileNum = 0;
   int tanktotalentries;
+  int trigtotalentries;
   int mrdtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
@@ -54,7 +56,9 @@ class LoadRawData: public Tool {
   BoostStore *RawData = nullptr;
   BoostStore *PMTData = nullptr;
   BoostStore *MRDData = nullptr;
+  BoostStore *TrigData = nullptr;
   std::vector<CardData>* Cdata = nullptr;
+  std::vector<TriggerData>* Tdata = nullptr;
   MRDOut* Mdata = nullptr;
 
   int verbosity;
