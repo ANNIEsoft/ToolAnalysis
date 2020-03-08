@@ -49,8 +49,6 @@ class SimpleTankEnergyCalibrator: public Tool {
   std::map<unsigned long,vector<Hit>>* TDCData=nullptr;
 
 
-  std::map<int,double> ChannelKeyToSPEMap;
-
   int evnum;
   int TankBeamWindowStart;
   int TankBeamWindowEnd;

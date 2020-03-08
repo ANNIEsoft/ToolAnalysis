@@ -15,7 +15,6 @@ bool SimpleTankEnergyCalibrator::Initialise(std::string configfile, DataModel &d
   verbosity = 0;
 
   m_variables.Get("verbosity",verbosity);
-  m_variables.Get("SPEChargeFile",SPEChargeFile);
   m_variables.Get("TankBeamWindowStart",TankBeamWindowStart);
   m_variables.Get("TankBeamWindowEnd",TankBeamWindowEnd);
   m_variables.Get("TankNHitThreshold",TankNHitThreshold);

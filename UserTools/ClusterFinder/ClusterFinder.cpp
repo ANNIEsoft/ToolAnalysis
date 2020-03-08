@@ -17,7 +17,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   //----------------------------------------------------------------------------
   //---------------Get configuration variables for this tool--------------------
   //----------------------------------------------------------------------------  
-  
+  m_variables.Get("Verbosity",verbose);
   m_variables.Get("HitStore",HitStoreName);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("ClusterFindingWindow",ClusterFindingWindow); 

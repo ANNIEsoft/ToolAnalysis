@@ -532,7 +532,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
     //If any pulse crosses the sampling window, restrict it's value to within window
     for (int j=0; j<window_starts.size(); j++){
       if (window_starts.at(j) < 0) window_starts.at(j) = 0;
-      if (window_ends.at(j) < static_cast<int>(num_samples)) window_ends.at(j) = static_cast<int>(num_samples)-1;
+      if (window_ends.at(j) > static_cast<int>(num_samples)) window_ends.at(j) = static_cast<int>(num_samples)-1;
     }
     // Integrate the pulse to get its area. Use a Riemann sum. Also get
     // the raw amplitude (maximum ADC value within the pulse) and the

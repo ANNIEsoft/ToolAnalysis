@@ -1,0 +1,12 @@
+//Load any configurables set in the config file
+verbosity 5
+
+OutputFile BeamClusterAnalysisR1489p2
+PromptPEMin 500
+PromptWindowMin 0
+PromptWindowMax 2000
+DelayedWindowMin 11000
+DelayedWindowMax 70000
+NeutronPEMin 5
+NeutronPEMax 150
+PEPerMeVInTank 12

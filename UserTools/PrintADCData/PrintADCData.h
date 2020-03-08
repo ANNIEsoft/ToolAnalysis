@@ -44,6 +44,9 @@ class PrintADCData: public Tool {
         bool isAuxData); // Fill ROOT file with histograms from either PMT ADC data or auxiliary channel data.
                          // For now, all Aux Data will be output to the file regardless of any pulse activity
   void CalculateChargePoint(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData);
+  void CalculateChargeBalance(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData);
+  void CalculateMaxPE(std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCData);
+
   void SaveOccupancyInfo(uint32_t Run, uint32_t Subrun);
   void ClearOccupancyInfo();
   ofstream result_file;
@@ -55,8 +58,10 @@ class PrintADCData: public Tool {
   TH2F *hist_frachit_2D_y_phi = nullptr;
   TH2F *hist_hittime_channelnum = nullptr;
   TH2F *hist_hitcharge_channelnum = nullptr;
-  TH2F* hist_PEVNHit;
-  TH2F* hist_ChargePoint;
+  TH2F* hist_PEVNHit = nullptr;
+  TH2F* hist_ChargePoint = nullptr;
+  TH2F* hist_ChargeBalance = nullptr;
+  TH2F* hist_TotPEVsMaxPE = nullptr;
 
   std::map<unsigned long,unsigned long> detkey_to_chankey;
   std::vector<unsigned long> pmt_detkeys;
@@ -69,7 +74,7 @@ class PrintADCData: public Tool {
   int n_tank_pmts;
   double tank_center_x, tank_center_y, tank_center_z;
 
-  std::map<int,std::vector<int>>* ChannelNumToTankPMTCrateSpaceMap;
+  std::map<int,std::vector<int>> ChannelNumToTankPMTCrateSpaceMap;
   std::map<int,double> ChannelKeyToSPEMap;
 
 

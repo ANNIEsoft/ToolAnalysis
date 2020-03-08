@@ -19,8 +19,8 @@ bool AmBeRunStatistics::Initialise(std::string configfile, DataModel &data){
   SWindowMax = 4000; //ns
   S1Threshold = 10; //V
   S2Threshold = 10; //V
-  ClusterQMin = 0.005; //Neighborhood of 5 PE when gain-matched at 7E6
-  ClusterQMax = 0.1; //Neighborhood of 100 PE when gain-matched at 7E6
+  ClusterPEMin = 5; //Neighborhood of 5 PE when gain-matched at 7E6
+  ClusterPEMax = 150; //Neighborhood of 100 PE when gain-matched at 7E6
   DeltaTimeThreshold = 50; //ns
 
   //Load any configurables set in the config file
@@ -30,8 +30,8 @@ bool AmBeRunStatistics::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SiPMWindowMax",SWindowMax);
   m_variables.Get("SiPM1TriggerThreshold", S1Threshold); 
   m_variables.Get("SiPM2TriggerThreshold", S2Threshold); 
-  m_variables.Get("ClusterChargeMin", ClusterQMin); 
-  m_variables.Get("ClusterChargeMax", ClusterQMax); 
+  m_variables.Get("ClusterPEMin", ClusterPEMin); 
+  m_variables.Get("ClusterPEMax", ClusterPEMax); 
   m_variables.Get("DeltaTimeThreshold", DeltaTimeThreshold); 
 
 
@@ -47,6 +47,8 @@ bool AmBeRunStatistics::Initialise(std::string configfile, DataModel &data){
 
   this->InitializeHistograms();
   this->SetHistogramLabels();
+
+  m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelKeyToSPEMap);
 
   std::cout << "AmBeRunStatistics Tool Initialized" << std::endl;
   return true;
@@ -103,7 +105,7 @@ bool AmBeRunStatistics::Execute(){
 
   bool CleanAmBeTrigger = true;
   // Check the criteria for a valid clean AmBe trigger event
-  if ((SiPM1_NumPulses != 1 || SiPM1_NumPulses != 1) || 
+  if ((SiPM1_NumPulses != 1 || SiPM2_NumPulses != 1) || 
       (abs(deltat) > DeltaTimeThreshold) || 
       (SiPM1_MaxPulse.peak_time() < SWindowMin || SiPM1_MaxPulse.peak_time() > SWindowMax) ||
       (SiPM2_MaxPulse.peak_time() < SWindowMin || SiPM2_MaxPulse.peak_time() > SWindowMax)) CleanAmBeTrigger = false;
@@ -131,24 +133,37 @@ bool AmBeRunStatistics::Execute(){
   }
   double cluster_charge;
   double cluster_time;
+  double cluster_PE;
   if(verbosity>3) std::cout << "AmBeRunStatistics Tool: looping through clusters to get cluster info now" << std::endl;
   if(verbosity>3) std::cout << "AmBeRunStatistics Tool: number of clusters: " << m_all_clusters->size() << std::endl;
   for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
     cluster_charge = 0;
     cluster_time = cluster_pair.first;
+    cluster_PE = 0;
     std::vector<Hit> cluster_hits = cluster_pair.second;
     for (int i = 0; i<cluster_hits.size(); i++){
-      double hit_charge = cluster_hits.at(i).GetCharge();
-      cluster_charge+=hit_charge;
+      int hit_ID = cluster_hits.at(i).GetTubeId();
+      std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(hit_ID);
+      if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
+        double hit_charge = cluster_hits.at(i).GetCharge();
+        double hit_PE = hit_charge / ChannelKeyToSPEMap.at(hit_ID);
+        cluster_charge+=hit_charge;
+        cluster_PE+=hit_PE;
+      } else {
+        if(verbosity>2){
+          std::cout << "FOUND A HIT FOR CHANNELKEY " << hit_ID << "BUT NO CONVERSION " <<
+              "TO PE AVAILABLE.  SKIPPING PE." << std::endl;
+        }
+      }
     }
     if(verbosity>3) std::cout << "AmBeRunStatistics Tool: cluster time,charge: : " << cluster_time << "," << cluster_charge << std::endl;
     h_Cluster_ChargeCleanPromptTrig->Fill(cluster_charge);
     h_Cluster_TimeMeanCleanPromptTrig->Fill(cluster_time);
     h_Cluster_MultiplicityCleanPromptTrig->Fill(m_all_clusters->size());
     //See if this cluster is a valid neutron candidate based on input criteria
-    if(((cluster_charge > ClusterQMin) && (cluster_charge < ClusterQMax))
-          && (cluster_time > SWindowMax)){
+    if((cluster_PE > ClusterPEMin) && (cluster_PE < ClusterPEMax) && (cluster_time > SWindowMax)){
       h_Cluster_ChargeNeutronCandidate->Fill(cluster_charge);
+      h_Cluster_PENeutronCandidate->Fill(cluster_PE);
       h_Cluster_TimeMeanNeutronCandidate->Fill(cluster_time);
       h_Cluster_MultiplicityNeutronCandidate->Fill(m_all_clusters->size());
     }
@@ -158,7 +173,7 @@ bool AmBeRunStatistics::Execute(){
   bool GoldenNeutronCandidate = true;
   //Now, see if there's only one cluster with a charge relatively consistent with a neutron
   //FIXME: Need to convert to PE count
-  if(m_all_clusters->size() != 1 || ((cluster_charge < ClusterQMin) || (cluster_charge > ClusterQMax))
+  if(m_all_clusters->size() != 1 || ((cluster_PE < ClusterPEMin) || (cluster_PE > ClusterPEMax))
           || (cluster_time < SWindowMax)) {
     //Is not a valid single cluster neutron candidate event
     GoldenNeutronCandidate = false;
@@ -171,6 +186,7 @@ bool AmBeRunStatistics::Execute(){
   h_Cluster_ChargeGoldenCandidate->Fill(cluster_charge);
   h_Cluster_TimeMeanGoldenCandidate->Fill(cluster_time);
   h_Cluster_MultiplicityGoldenCandidate->Fill(m_all_clusters->size());
+  h_Cluster_PEGoldenCandidate->Fill(cluster_PE);
   h_SiPM1_AmplitudeGoldenCandidate->Fill(SiPM1_MaxPulse.amplitude());
   h_SiPM2_AmplitudeGoldenCandidate->Fill(SiPM2_MaxPulse.amplitude());
   h_SiPM1_ChargeGoldenCandidate->Fill(SiPM1_MaxPulse.charge());
@@ -256,8 +272,8 @@ void AmBeRunStatistics::GetSiPMPulseInfo(ADCPulse& SiPM1_Pulse,
 
 void AmBeRunStatistics::InitializeHistograms(){
   //All Event Histograms
-  h_SiPM1_Amplitude = new TH1F("h_SiPM1_Amplitude","Max amplitude of SiPM1 in all events",50,0,0.5);
-  h_SiPM2_Amplitude = new TH1F("h_SiPM2_Amplitude","Max amplitude of SiPM2 in all events",50,0,0.5);
+  h_SiPM1_Amplitude = new TH1F("h_SiPM1_Amplitude","Max amplitude of SiPM1 in all events",300,0,0.3);
+  h_SiPM2_Amplitude = new TH1F("h_SiPM2_Amplitude","Max amplitude of SiPM2 in all events",300,0,0.3);
   h_SiPM1_Charge = new TH1F("h_SiPM1_Charge","Total charge of SiPM1 in all events",300,0,3);
   h_SiPM2_Charge = new TH1F("h_SiPM2_Charge","Total charge of SiPM2 in all events",300,0,3);
   h_S1S2_Amplitudes = new TH2F("h_S1S2_Amplitudes","Max amplitude of SiPM1 and SiPM2 in all events",50,0,0.5,50,0,0.5);
@@ -278,15 +294,17 @@ void AmBeRunStatistics::InitializeHistograms(){
   h_S1S2_AmplitudesCleanPromptTrig = new TH2F("h_S1S2_AmplitudesCleanPromptTrig","Max amplitude of SiPM1 and SiPM2 in clean prompt triggers",50,0,0.5,50,0,0.5);
   h_S1S2_ChargeratioCleanPromptTrig = new TH1F("h_S1S2_ChargeratioCleanPromptTrig","SiPM1/SiPM2 charge ratio in clean prompt triggers",50,0.5,1.5);
   h_S1S2_DeltatCleanPromptTrig = new TH1F("h_S1S2_DeltatCleanPromptTrig","Time difference between peaks of SiPM1 and SiPM2 (S1-S2) in clean prompt triggers",200,-100,100);
-  h_Cluster_ChargeNeutronCandidate = new TH1F("h_Cluster_ChargeNeutronCandidate","Cluster charges for events with a neutron candidate",1000,0,1);
-  h_Cluster_TimeMeanNeutronCandidate = new TH1F("h_Cluster_TimeMeanNeutronCandidate","Mean cluster time for events with a neutron candidate",80000,0,80000);
-  h_Cluster_MultiplicityNeutronCandidate = new TH1F("h_Cluster_MultiplicityNeutronCandidate","Multiplicity of clusters for events with a neutron candidate",22,-2,20);
+  h_Cluster_ChargeNeutronCandidate = new TH1F("h_Cluster_ChargeNeutronCandidate","Cluster charges for neutron candidate",1000,0,1);
+  h_Cluster_TimeMeanNeutronCandidate = new TH1F("h_Cluster_TimeMeanNeutronCandidate","Mean cluster time for neutron candidates",80000,0,80000);
+  h_Cluster_MultiplicityNeutronCandidate = new TH1F("h_Cluster_MultiplicityNeutronCandidate","Multiplicity of neutron candidate clusters",22,-2,20);
+  h_Cluster_PENeutronCandidate = new TH1F("h_Cluster_PENeutronCandidate","Total PE for neutron candidates",300,0,300);
   //Valid Golden Neutron Candidate Histograms (one cluster only)
   h_Cluster_ChargeGoldenCandidate = new TH1F("h_Cluster_ChargeGoldenCandidate","Cluster charges for events with a golden neutron candidate",1000,0,1);
   h_Cluster_TimeMeanGoldenCandidate = new TH1F("h_Cluster_TimeMeanGoldenCandidate","Mean cluster time for events with a golden neutron candidate",80000,0,80000);
   h_Cluster_MultiplicityGoldenCandidate = new TH1F("h_Cluster_MultiplicityGoldenCandidate","Multiplicity of clusters for events with a golden neutron candidate",22,-2,20);
-  h_SiPM1_AmplitudeGoldenCandidate = new TH1F("h_SiPM1_AmplitudeGoldenCandidate","Max amplitude of SiPM1 in golden neutron candidates", 50, 0, 0.5);
-  h_SiPM2_AmplitudeGoldenCandidate = new TH1F("h_SiPM2_AmplitudeGoldenCandidate","Max amplitude of SiPM2 in golden neutron candidates", 50, 0, 0.5);
+  h_Cluster_PEGoldenCandidate = new TH1F("h_Cluster_PEGoldenCandidate","Total PE for golden neutron candidates",(ClusterPEMax-ClusterPEMin),ClusterPEMin,ClusterPEMax);
+  h_SiPM1_AmplitudeGoldenCandidate = new TH1F("h_SiPM1_AmplitudeGoldenCandidate","Max amplitude of SiPM1 in golden neutron candidates", 300, 0, 0.3);
+  h_SiPM2_AmplitudeGoldenCandidate = new TH1F("h_SiPM2_AmplitudeGoldenCandidate","Max amplitude of SiPM2 in golden neutron candidates", 300, 0, 0.3);
   h_SiPM1_ChargeGoldenCandidate = new TH1F("h_SiPM1_ChargeGoldenCandidate","Total charge of SiPM1 pulse in golden neutron candidates",300,0,3);
   h_SiPM2_ChargeGoldenCandidate = new TH1F("h_SiPM2_ChargeGoldenCandidate","Total charge of SiPM2 pulse in golden neutron candidates",300,0,3);
   h_SiPM1_PeakTimeGoldenCandidate = new TH1F("h_SiPM1_PeakTimeGoldenCandidate","Peak time for largest SiPM1 pulse in golden neutron candidates",4000,0,4000);
@@ -330,6 +348,7 @@ void AmBeRunStatistics::WriteHistograms(){
   h_S1S2_ChargeratioCleanPromptTrig->Write();
   h_S1S2_DeltatCleanPromptTrig->Write();
   h_Cluster_ChargeNeutronCandidate->Write();
+  h_Cluster_PENeutronCandidate->Write();
   h_Cluster_TimeMeanNeutronCandidate->Write();
   h_Cluster_MultiplicityNeutronCandidate->Write();
   
@@ -339,6 +358,7 @@ void AmBeRunStatistics::WriteHistograms(){
   h_Cluster_ChargeGoldenCandidate->Write();
   h_Cluster_TimeMeanGoldenCandidate->Write();
   h_Cluster_MultiplicityGoldenCandidate->Write();
+  h_Cluster_PEGoldenCandidate->Write();
   h_SiPM1_AmplitudeGoldenCandidate->Write();
   h_SiPM2_AmplitudeGoldenCandidate->Write();
   h_SiPM1_ChargeGoldenCandidate->Write();

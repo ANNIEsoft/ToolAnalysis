@@ -113,3 +113,4 @@
 #include "AmBeRunStatistics.h"
 #include "ClusterFinder.h"
 #include "SimpleTankEnergyCalibrator.h"
+#include "BeamClusterAnalysis.h"

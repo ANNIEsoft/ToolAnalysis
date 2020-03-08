@@ -58,13 +58,14 @@ class AmBeRunStatistics: public Tool {
   std::map<unsigned long, std::vector<Hit>>* AuxHits = nullptr;
 
   std::map<int,std::string>* AuxChannelNumToTypeMap;
+  std::map<int,double> ChannelKeyToSPEMap;
 
   double SWindowMin;
   double SWindowMax;
   double S1Threshold; 
   double S2Threshold;
-  double ClusterQMin;
-  double ClusterQMax;
+  double ClusterPEMin;
+  double ClusterPEMax;
   double DeltaTimeThreshold; 
 
   float NumberOfEvents = 0;
@@ -98,10 +99,12 @@ class AmBeRunStatistics: public Tool {
   TH1F* h_Cluster_ChargeNeutronCandidate = nullptr;
   TH1F* h_Cluster_TimeMeanNeutronCandidate = nullptr;
   TH1F* h_Cluster_MultiplicityNeutronCandidate = nullptr;
+  TH1F* h_Cluster_PENeutronCandidate = nullptr;
   //Golden Neutron Candidate Histograms
   TH1F* h_Cluster_ChargeGoldenCandidate = nullptr;
   TH1F* h_Cluster_TimeMeanGoldenCandidate = nullptr;
   TH1F* h_Cluster_MultiplicityGoldenCandidate = nullptr;
+  TH1F* h_Cluster_PEGoldenCandidate = nullptr;
   TH1F* h_SiPM1_AmplitudeGoldenCandidate = nullptr;
   TH1F* h_SiPM2_AmplitudeGoldenCandidate = nullptr;
   TH1F* h_SiPM1_ChargeGoldenCandidate = nullptr;

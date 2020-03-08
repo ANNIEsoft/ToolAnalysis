@@ -1,0 +1,6 @@
+myLoadANNIEEvent LoadANNIEEvent ./configfiles/BeamClusterAnalysis/LoadANNIEEventConfig
+myLoadGeometry LoadGeometry ./configfiles/BeamClusterAnalysis/LoadGeometryConfig
+#myPhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/BeamClusterAnalysis/PhaseIIADCCalibratorConfig
+#myPhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/BeamClusterAnalysis/PhaseIIADCHitFinderConfig
+myClusterFinder ClusterFinder ./configfiles/BeamClusterAnalysis/ClusterFinderConfig
+myBeamClusterAnalysis BeamClusterAnalysis ./configfiles/BeamClusterAnalysis/BeamClusterAnalysisConfig
