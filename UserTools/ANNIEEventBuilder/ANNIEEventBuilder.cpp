@@ -589,10 +589,6 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
   ANNIEEvent->Set("EventTimeTank",ClockTime);
-  //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
-  //  - EventTime
-  //  - TriggerData
-  //  - RawLAPPDData
   if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: ANNIE Event "+
       to_string(ANNIEEventNum)+" built." << std::endl;
   return;

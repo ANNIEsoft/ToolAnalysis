@@ -70,6 +70,10 @@ bool BeamClusterAnalysis::Execute(){
     std::cout << "BeamClusterAnalysis tool: No clusters found!" << std::endl;
     return true;
   }
+  bool got_ccp = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargePoints", ClusterChargePoints);
+  bool got_ccb = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargeBalanaces", ClusterChargeBalances);
+  bool got_cmpe = m_data->Stores.at("ANNIEEvent")->Get("ClusterMaxPEs", ClusterMaxPEs);
+
   if(verbosity>3) std::cout << "BeamClusterAnalysis Tool: looping through clusters to get cluster info now" << std::endl;
   if(verbosity>3) std::cout << "BeamClusterAnalysis Tool: number of clusters: " << m_all_clusters->size() << std::endl;
   
@@ -109,11 +113,11 @@ bool BeamClusterAnalysis::Execute(){
       hist_prompt_PE->Fill(cluster_PE);
       hist_prompt_TimeVPE->Fill(cluster_time,cluster_PE);
       hist_prompt_PEVNHit->Fill(cluster_PE,num_hits);
-      double ChargePointZ = this->CalculateChargePoint(cluster_hits);
+      double ChargePointZ = ClusterChargePoints.at(cluster_time).Z();
       hist_prompt_ChargePoint->Fill(cluster_PE,ChargePointZ);
-      double ChargeBalance = this->CalculateChargeBalance(cluster_hits);
+      double ChargeBalance = ClusterChargeBalances.at(cluster_time);
       hist_prompt_ChargeBalance->Fill(cluster_PE,ChargeBalance);
-      double max_PE = this->CalculateMaxPE(cluster_hits);
+      double max_PE = ClusterMaxPEs.at(cluster_time);
       hist_prompt_TotPEVsMaxPE->Fill(cluster_PE,max_PE);
     }
     if((cluster_time > DelayedWindowMin) && (cluster_time < DelayedWindowMax)){
@@ -124,11 +128,11 @@ bool BeamClusterAnalysis::Execute(){
       hist_delayed_PE->Fill(cluster_PE);
       hist_delayed_TimeVPE->Fill(cluster_time,cluster_PE);
       hist_delayed_PEVNHit->Fill(cluster_PE,num_hits);
-      double ChargePointZ = this->CalculateChargePoint(cluster_hits);
+      double ChargePointZ = ClusterChargePoints.at(cluster_time).Z();
       hist_delayed_ChargePoint->Fill(cluster_PE,ChargePointZ);
-      double ChargeBalance = this->CalculateChargeBalance(cluster_hits);
+      double ChargeBalance = ClusterChargeBalances.at(cluster_time);
       hist_delayed_ChargeBalance->Fill(cluster_PE,ChargeBalance);
-      double max_PE = this->CalculateMaxPE(cluster_hits);
+      double max_PE = ClusterMaxPEs.at(cluster_time);
       hist_delayed_TotPEVsMaxPE->Fill(cluster_PE,max_PE);
     }
   }
@@ -158,66 +162,6 @@ bool BeamClusterAnalysis::Finalise(){
   return true;
 }
 
-double BeamClusterAnalysis::CalculateChargePoint(std::vector<Hit> cluster_hits)
-{
-
-  double x_weight = 0;
-  double y_weight = 0;
-  double z_weight = 0;
-
-  for (int i = 0; i < cluster_hits.size(); i++){
-    Hit ahit = cluster_hits.at(i); 
-    double hit_charge = ahit.GetCharge();
-    int channel_key = ahit.GetTubeId();
-    double hit_PE = 0;
-    if(verbosity>4) std::cout << "Finding charge to SPE conversion for channel " << channel_key << std::endl;
-    std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
-    if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
-      hit_PE  = hit_charge / ChannelKeyToSPEMap.at(channel_key);
-      Detector* this_detector = geom->ChannelToDetector(channel_key);
-      Position det_position = this_detector->GetDetectorPosition();
-      double pos_mag = sqrt(pow(det_position.X(),2) + pow(det_position.Y(),2) + pow(det_position.Z(),2));
-      x_weight+= det_position.X()*hit_PE/pos_mag;
-      y_weight+= det_position.Y()*hit_PE/pos_mag;
-      z_weight+= det_position.Z()*hit_PE/pos_mag;
-    }
-  }
-
-  Direction charge_weight(x_weight,y_weight,z_weight);
-  return charge_weight.Z();
-}
-
-double BeamClusterAnalysis::CalculateChargeBalance(std::vector<Hit> cluster_hits)
-{
-  double total_Q = 0;
-  double total_QSquared = 0;
-  for (int i = 0; i < cluster_hits.size(); i++){
-    Hit ahit = cluster_hits.at(i); 
-    double hit_charge = ahit.GetCharge();
-    total_Q+= hit_charge;
-    total_QSquared += (hit_charge * hit_charge);
-  } 
-  double charge_balance  = sqrt((total_QSquared)/(total_Q*total_Q) - (1./126.));
-  return charge_balance;
-}
-
-double BeamClusterAnalysis::CalculateMaxPE(std::vector<Hit> cluster_hits)
-{
-  double max_PE = 0;
-  for (int i = 0; i < cluster_hits.size(); i++){
-    Hit ahit = cluster_hits.at(i); 
-    double hit_charge = ahit.GetCharge();
-    int channel_key = ahit.GetTubeId();
-    double hit_PE = 0;
-    if(verbosity>4) std::cout << "Finding charge to SPE conversion for channel " << channel_key << std::endl;
-    std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
-    if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
-      hit_PE  = hit_charge / ChannelKeyToSPEMap.at(channel_key);
-      if(hit_PE > max_PE) max_PE = hit_PE;
-    }
-  }
-  return max_PE;
-}
 
 void BeamClusterAnalysis::InitializeHistograms(){
   //All Event Histograms

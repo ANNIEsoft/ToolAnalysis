@@ -88,6 +88,10 @@ class BeamClusterAnalysis: public Tool {
   double NeutronPEMax;
   double PEPerMeV;
 
+  std::map<double,double> ClusterMaxPEs;
+  std::map<double,Direction> ClusterChargePoints;
+  std::map<double,double> ClusterChargeBalances;
+
 
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;
