@@ -161,7 +161,7 @@ bool LoadRawData::Execute(){
   if(!TrigEntriesCompleted){
       Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum),v_debug, verbosity);
       TrigData->GetEntry(TrigEntryNum);
-      TrigData->Get("Data",*Tdata);
+      TrigData->Get("TriggerData",*Tdata);
       m_data->CStore.Set("TrigData",Tdata,true);
       TrigEntryNum+=1;
     }

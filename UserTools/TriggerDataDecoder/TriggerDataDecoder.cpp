@@ -39,6 +39,7 @@ bool TriggerDataDecoder::Execute(){
   
   for (unsigned int TDataInd=0; TDataInd<Tdata->size(); TDataInd++){
     TriggerData aTrigData = Tdata->at(TDataInd);
+    this->DecodePayload(TDataInd.
     if(verbosity>v_debug){
       std::cout<<"TriggerDataDecoder Tool: Loading next CardData from entry's index " << TDataInd <<std::endl;
       //FIXME: Soooo, how do we want to parse out the stuff in the TriggerData class?
@@ -54,6 +55,42 @@ bool TriggerDataDecoder::Execute(){
 bool TriggerDataDecoder::Finalise(){
 
   return true;
+}
+
+bool TriggerDataDecoder::AddWord(uint32_t word){
+  new_timestamp_available = false;
+  uint64_t payload = 0;
+  uint32_t wordid = 0;
+  if(word == 0xF1F0E5E7){
+    have_c1 = false;
+    c1 = 0;
+    have_c2 = false;
+    c2 = 0;
+    fiforesets.push_back(processed_sources.size()); 
+    return new_timestamp_available;
+  }
+
+  wordid = word>>24;
+  payload = word & 0x00FFFFFF;
+
+  if(wordid == 0xC0){
+    return new_timestamp_available;
+  }
+  else if (wordid == 0xC1 || wordid == 0xC3){
+    c1 = (payload&0x0000FFFF)<<24;
+    have_c1 = true;
+  } else if (wordid == 0xC2 || wordid == 0xC4){
+    c2 = payload << 40;
+    have_c2 = true;
+  } else {
+    if(have_c1 && have_c2){
+      ns = (c1 + c2 + payload)*8;
+      processed_sources.push_back(wordid);
+      processed_ns.push_back(ns);
+      new_timestamp_available = true;
+    }
+  }
+  return new_timestamp_available;
 }
 
 bool TriggerDataDecoder::CheckForRunChange()

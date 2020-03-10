@@ -6,7 +6,7 @@
 
 #include "Tool.h"
 #include "CardData.h"
-#include "TriggerData.h"
+#include "TriggerDataPhII.h"
 #include "BoostStore.h"
 #include "Store.h"
 
@@ -58,7 +58,7 @@ class LoadRawData: public Tool {
   BoostStore *MRDData = nullptr;
   BoostStore *TrigData = nullptr;
   std::vector<CardData>* Cdata = nullptr;
-  std::vector<TriggerData>* Tdata = nullptr;
+  std::vector<TriggerDataPhII>* Tdata = nullptr;
   MRDOut* Mdata = nullptr;
 
   int verbosity;

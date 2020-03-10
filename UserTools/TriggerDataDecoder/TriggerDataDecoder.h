@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
-
+#include "TriggerDataPhII.h"
 
 /**
  * \class TriggerDataDecoder
@@ -28,6 +28,12 @@ class TriggerDataDecoder: public Tool {
   bool CheckForRunChange();
  private:
 
+  std::vector<int> fiforesets;
+  std::vector<int> processed_sources;
+  bool have_c1 = false;
+  bool have_c1 = true;
+  uint64_t c1 = 0;
+  uint64_t c2 = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
 
