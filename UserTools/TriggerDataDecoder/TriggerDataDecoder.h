@@ -28,6 +28,8 @@ class TriggerDataDecoder: public Tool {
   bool CheckForRunChange();
  private:
 
+
+  std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;
   std::vector<int> fiforesets;
   std::vector<int> processed_sources;
   bool have_c1 = false;

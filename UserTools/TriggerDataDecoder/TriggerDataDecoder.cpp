@@ -18,20 +18,24 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   CurrentRunNum = -1;
   CurrentSubrunNum = -1;
 
+  TimeToTriggerWordMap = new std::map<uint64_t,uint32_t>;
+
   return true;
 }
 
 
 bool TriggerDataDecoder::Execute(){
+  m_data->CStore.Set("NewCTCDataAvailable",false);
   bool PauseTriggerDecoding = false;
   m_data->CStore.Get("PauseTriggerDecoding",PauseTriggerDecoding);
   if (PauseTriggerDecoding){
     std::cout << "TriggerDataDecoder tool: Pausing trigger decoding to let Tank and MRD data catch up..." << std::endl;
     return true;
   }
-
   //Clear decoding maps if a new run/subrun is encountered
   this->CheckForRunChange();
+
+  bool TriggerDataDecoder::AddWord(uint32_t word){
 
   //Get the TriggerData vector pointer from the CStore
   m_data->CStore.Get("TrigData",Tdata);
@@ -39,21 +43,29 @@ bool TriggerDataDecoder::Execute(){
   
   for (unsigned int TDataInd=0; TDataInd<Tdata->size(); TDataInd++){
     TriggerData aTrigData = Tdata->at(TDataInd);
-    this->DecodePayload(TDataInd.
-    if(verbosity>v_debug){
-      std::cout<<"TriggerDataDecoder Tool: Loading next CardData from entry's index " << TDataInd <<std::endl;
-      //FIXME: Soooo, how do we want to parse out the stuff in the TriggerData class?
+    std::vector<uint32_t> aTimeStampData = aTrigData.TimeStampData;
+    for(int i = 0; i < aTimeStampData.size(); i++){
+      if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
+      bool new_ts_available = this->AddWord(aTimeStampData.at(i));
+    }
+    if(new_ts_available){
+      if(verbosity>4){
+        std::cout << "PARSED TRIGGER TIME: " << processed_ns.back().c << std::endl;
+        std::cout << "PARSED TRIGGER WORD: " << processed_sources.back().c << std::endl;
+        m_data->CStore.Set("NewMRDDataAvailable",true);
+      }
+      TimeToTriggerWordMap->emplace(processed_ns.back().c,processed_sources.back().c);
     }
 
-
-  m_data->CStore.Set("ParsedTrigData",ParsedTrigData);
+  m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
 
   return true;
 }
 
 
 bool TriggerDataDecoder::Finalise(){
-
+  delete TimeToTriggerMap;
+  std::cout << "TriggerDataDecoder tool exitting" << std::endl;
   return true;
 }
 
@@ -114,14 +126,11 @@ bool TriggerDataDecoder::CheckForRunChange()
   }
   else if (RunNumber != CurrentRunNum){ //New run has been encountered
     Log("TriggerDataDecoder Tool: New run encountered.  Clearing event building maps",v_message,verbosity); 
-    //FIXME
+    TimeToTriggerWordMap->clear();
   }
   else if (SubRunNumber != CurrentSubrunNum){ //New run has been encountered
     Log("TriggerDataDecoder Tool: New subrun encountered.",v_message,verbosity); 
-    //TODO: Even though sequence IDs continue in a subrun, they haven't been
-    // EXACTLY in sequence with the end of the prev. run.  Will they be eventually?
-    // This prevents freezing up on OUT OF SEQUENCE!! errors
-    // FIXME
+    TimeToTriggerWordMap->clear();
   }
   return;
 }

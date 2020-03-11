@@ -29,15 +29,12 @@ class ANNIEEventBuilder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   
-  void PauseDecodingOnAheadStream();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void PairTankPMTAndMRDTriggers();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
   void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType);
-  void CalculateSlidWindows(std::vector<uint64_t> FirstTimestampSet,
-        std::vector<uint64_t> SecondTimestampSet, int shift, double& tmean, double& tvar);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveEntryToFile(int RunNum, int SubRunNum);
   void OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT);
@@ -58,9 +55,10 @@ class ANNIEEventBuilder: public Tool {
 
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
-  std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
+  std::map<uint64_t, std::string>  MRDTriggerTypeMap;  //Key: {MTCTime}, value: string noting what loopback channels were fired in the MRD in this event
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  std::map<uint64_t,uint32_t>* TimeToTriggerWordMap  // Key: CTCTimestamp, value: Trigger Mask ID;
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
 
   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
@@ -74,24 +72,27 @@ class ANNIEEventBuilder: public Tool {
   
   std::vector<uint64_t> FinishedTankTimestamps;  //Contains timestamps for PMT Events that are fully built
 
-  std::vector<uint64_t> UnpairedTankTimestamps;  //Contains timestamps for all PMT events that haven't been paired to an MRD TS
-  std::vector<uint64_t> UnpairedMRDTimestamps;  //Contains timestamps for all MRD events that haven't been paired to a PMT TS
-  std::map<uint64_t,uint64_t> UnbuiltTankMRDPairs; //Pairs of Tank PMT/MRD counters ready to be built if all PMT waveforms are ready
+  std::vector<uint64_t> BeamTankTimestamps;  //Contains beam timestamps for all PMT events that haven't been paired to an MRD TS
+  std::vector<uint64_t> BeamMRDTimestamps;  //Contains beam timestamps for all MRD events that haven't been paired to a PMT TS
+  std::map<uint64_t,uint64_t> BeamTankMRDPairs; //Pairs of beam-triggered Tank PMT/MRD counters ready to be built if all PMT waveforms are ready
+
+  std::vector<uint64_t> CTCTimestamps;  //Contains CTC timestamps encountered so far
+  std::map<uint64_t,std::vector<std::map<std::string,uint64_t>>> BuildMap; //key: CTC timestamp, value: vector of maps with key: "Tank", "MRD", or "LAPPD" and value of timestamp for that data stream
   
+  
+  bool OrphanOldTankTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
+  int OldTimestampThreshold;  // Threshold where a timestamp relative to the newest timestamp crosses before moving to the orphanage
+  int OrphanWarningValue;    //Number of orphanage placements in a pairing event to print a warning
   std::vector<uint64_t> OrphanTankTimestamps;  //Contains timestamps for all PMT events that were out of step with the rest of the stream
   std::vector<uint64_t> OrphanMRDTimestamps;  //Contains timestamps for all MRD events that were out of step with the rest of the stream
   
   std::string BuildType;
-  bool TankFileComplete;
-  bool DataStreamsSynced;
 
   BoostStore *ANNIEEvent = nullptr;
   std::map<unsigned long, std::vector<Hit>> *TDCData = nullptr;
 
   std::string InputFile;
 
-  // Number of trigger entries from TriggerData loaded here
-  long trigentries=0;
 
   // Number of PMTs that must be found in a WaveSet to build the event
   //
@@ -101,18 +102,15 @@ class ANNIEEventBuilder: public Tool {
   int ExecuteCount = 0;
 
 
-  bool OrphanOldTankTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
-  int OldTimestampThreshold;  // Threshold where a timestamp relative to the newest timestamp crosses before moving to the orphanage
   uint64_t NewestTimestamp = 0;
-
   double CurrentDriftMean = 0;
   double CurrentDriftVariance = 0;
 
   int MRDPMTTimeDiffTolerance;   //Threshold relative to current drift mean where an event will be put to the orphanage
   int DriftWarningValue;
-  int OrphanWarningValue;    //Number of orphanage placements in a pairing event to print a warning
   bool IsNewMRDData;
   bool IsNewTankData;
+  bool IsNewCTCData;
 
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   uint32_t ANNIEEventNum;
@@ -120,12 +118,7 @@ class ANNIEEventBuilder: public Tool {
   int CurrentSubRunNum;
   int CurrentRunType;
   int CurrentStarTime;
-  int LowestRunNum;
-  int LowestSubRunNum;
-  int LowestRunType;
-  int LowestStarTime;
 
-  bool SaveToFile; 
   std::string SavePath;
   std::string ProcessedFilesBasename;
 
