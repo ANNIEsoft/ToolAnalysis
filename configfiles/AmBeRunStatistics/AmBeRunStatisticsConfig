@@ -1,18 +1,18 @@
 verbosity 5
 
-OutputFile AmBeStatistics1548
+OutputFile AmBeStatistics1595p22
 //SiPM window in ns
 SiPMWindowMin 0
 SiPMWindowMax 4000
 
 //Trigger threshold in mV
-SiPM1TriggerThreshold 10
-SiPM2TriggerThreshold 10
+SiPM1TriggerThreshold 5
+SiPM2TriggerThreshold 5
 
 //Cut on time difference between SiPM peak times
 DeltaTimeThreshold 100
 
-//Cluster charge in nC (0.001 nC approx 1 PE)
-ClusterChargeMin 0.005
-ClusterChargeMax 0.15
+//Cluster photoelectron limits for neutron candidates
+ClusterPEMin 5
+ClusterPEMax 150
 

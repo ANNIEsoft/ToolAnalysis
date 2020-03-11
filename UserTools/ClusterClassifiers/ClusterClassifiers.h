@@ -35,10 +35,6 @@ class ClusterClassifiers: public Tool {
 
   std::map<int,double> ChannelKeyToSPEMap;
 
-  std::map<double,double>* ClusterMaxPEs = nullptr;
-  std::map<double,Direction>* ClusterChargePoints = nullptr;
-  std::map<double,double>* ClusterChargeBalances = nullptr;
-
   std::map<double,std::vector<Hit>>* m_all_clusters = nullptr;  
 
   Geometry *geom = nullptr;

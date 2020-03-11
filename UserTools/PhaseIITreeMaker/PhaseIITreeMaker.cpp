@@ -22,155 +22,178 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("SiPMPulseInfo_fill",SiPMPulseInfo_fill);
   m_variables.Get("ClusterProcessing",ClusterProcessing);
+  m_variables.Get("TriggerProcessing",TriggerProcessing);
 
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
   fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
-  if(ClusterProcessing) fPhaseIITankClusterTree = new TTree("phaseIIClusterTree", "ANNIE Phase II Tank Cluster Tree");
+  fPhaseIITankClusterTree = new TTree("phaseIIClusterTree", "ANNIE Phase II Tank Cluster Tree");
   fPhaseIITrigTree = new TTree("phaseIITriggerTree", "ANNIE Phase II Ntuple Trigger Tree");
 
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
   m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelKeyToSPEMap);
 
-  //Metadata for standard Events
-  fPhaseIITrigTree->Branch("runNumber",&fRunNumber,"runNumber/I");
-  fPhaseIITrigTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
-  fPhaseIITrigTree->Branch("runType",&fRunType,"runType/I");
-  fPhaseIITrigTree->Branch("startTime",&fStartTime,"startTime/I");
-
-  //Some lower level information to save
-  fPhaseIITrigTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
-  fPhaseIITrigTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/I");
-  fPhaseIITrigTree->Branch("nhits",&fNHits,"nhits/I");
-
-  //Event Staus Flag Information
-  if(fillCleanEventsOnly){
-    fPhaseIITrigTree->Branch("eventStatusApplied",&fEventStatusApplied,"eventStatusApplied/I");
-    fPhaseIITrigTree->Branch("eventStatusFlagged",&fEventStatusFlagged,"eventStatusFlagged/I");
+  auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",geom);
+  if(!get_geometry){
+  	Log("DigitBuilder Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
+  	return false; 
   }
  
   if(ClusterProcessing){
-     fPhaseIITankClusterTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/I");
+     fPhaseIITankClusterTree->Branch("runNumber",&fRunNumber,"runNumber/I");
+     fPhaseIITankClusterTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
+     fPhaseIITankClusterTree->Branch("runType",&fRunType,"runType/I");
+     fPhaseIITankClusterTree->Branch("startTime",&fStartTime,"startTime/l");
+
+     //Some lower level information to save
+     fPhaseIITankClusterTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
+     fPhaseIITankClusterTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
      fPhaseIITankClusterTree->Branch("clusterNumber",&fClusterNumber,"clusterNumber/I");
      fPhaseIITankClusterTree->Branch("clusterTime",&fClusterTime,"clusterTime/D");
      fPhaseIITankClusterTree->Branch("clusterCharge",&fClusterCharge,"clusterCharge/D");
      fPhaseIITankClusterTree->Branch("clusterPE",&fClusterPE,"clusterPE/D");
+     fPhaseIITankClusterTree->Branch("clusterMaxPE",&fClusterMaxPE,"clusterMaxPE/D");
+     fPhaseIITankClusterTree->Branch("clusterChargePointX",&fClusterChargePointX,"clusterChargePointX/D");
+     fPhaseIITankClusterTree->Branch("clusterChargePointY",&fClusterChargePointY,"clusterChargePointY/D");
+     fPhaseIITankClusterTree->Branch("clusterChargePointZ",&fClusterChargePointZ,"clusterChargePointZ/D");
+     fPhaseIITankClusterTree->Branch("clusterChargeBalance",&fClusterChargeBalance,"clusterChargeBalance/D");
      fPhaseIITankClusterTree->Branch("clusterHits",&fClusterHits,"clusterHits/i");
   } 
   
   //SiPM Pulse Info; load into both trees for now...
   if(SiPMPulseInfo_fill){
-    fPhaseIITrigTree->Branch("SiPMhitQ",&fSiPMHitQ);
-    fPhaseIITrigTree->Branch("SiPMhitT",&fSiPMHitT);
-    fPhaseIITrigTree->Branch("SiPMhitAmplitude",&fSiPMHitAmplitude);
-    fPhaseIITrigTree->Branch("SiPMNum",&fSiPMNum);
     fPhaseIITankClusterTree->Branch("SiPMhitQ",&fSiPMHitQ);
     fPhaseIITankClusterTree->Branch("SiPMhitT",&fSiPMHitT);
     fPhaseIITankClusterTree->Branch("SiPMhitAmplitude",&fSiPMHitAmplitude);
     fPhaseIITankClusterTree->Branch("SiPMNum",&fSiPMNum);
   }
-  //Hit information (PMT and LAPPD)
-  if(HitInfo_fill){
-    fPhaseIITrigTree->Branch("filter",&fIsFiltered);
-    fPhaseIITrigTree->Branch("hitX",&fHitX);
-    fPhaseIITrigTree->Branch("hitY",&fHitY);
-    fPhaseIITrigTree->Branch("hitZ",&fHitZ);
-    fPhaseIITrigTree->Branch("hitT",&fHitT);
-    fPhaseIITrigTree->Branch("hitQ",&fHitQ);
-    fPhaseIITrigTree->Branch("hitPE",&fHitPE);
-    fPhaseIITrigTree->Branch("hitType", &fHitType);
-    fPhaseIITrigTree->Branch("hitDetID", &fHitDetID);
-  }
 
-  //Reconstructed variables after full Muon Reco Analysis
-  if(Reco_fill){
-    fPhaseIITrigTree->Branch("recoVtxX",&fRecoVtxX,"recoVtxX/D");
-    fPhaseIITrigTree->Branch("recoVtxY",&fRecoVtxY,"recoVtxY/D");
-    fPhaseIITrigTree->Branch("recoVtxZ",&fRecoVtxZ,"recoVtxZ/D");
-    fPhaseIITrigTree->Branch("recoVtxTime",&fRecoVtxTime,"recoVtxTime/D");
-    fPhaseIITrigTree->Branch("recoDirX",&fRecoDirX,"recoDirX/D");
-    fPhaseIITrigTree->Branch("recoDirY",&fRecoDirY,"recoDirY/D");
-    fPhaseIITrigTree->Branch("recoDirZ",&fRecoDirZ,"recoDirZ/D");
-    fPhaseIITrigTree->Branch("recoAngle",&fRecoAngle,"recoAngle/D");
-    fPhaseIITrigTree->Branch("recoPhi",&fRecoPhi,"recoPhi/D");
-    fPhaseIITrigTree->Branch("recoVtxFOM",&fRecoVtxFOM,"recoVtxFOM/D");
-    fPhaseIITrigTree->Branch("recoStatus",&fRecoStatus,"recoStatus/I");
-  }
+  if(TriggerProcessing){
+    //Metadata for standard Events
+    fPhaseIITrigTree->Branch("runNumber",&fRunNumber,"runNumber/I");
+    fPhaseIITrigTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
+    fPhaseIITrigTree->Branch("runType",&fRunType,"runType/I");
+    fPhaseIITrigTree->Branch("startTime",&fStartTime,"startTime/I");
+
+    //Some lower level information to save
+    fPhaseIITrigTree->Branch("eventNumber",&fEventNumber,"eventNumber/l");
+    fPhaseIITrigTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
+    fPhaseIITrigTree->Branch("nhits",&fNHits,"nhits/I");
+
+    //Event Staus Flag Information
+    if(fillCleanEventsOnly){
+      fPhaseIITrigTree->Branch("eventStatusApplied",&fEventStatusApplied,"eventStatusApplied/I");
+      fPhaseIITrigTree->Branch("eventStatusFlagged",&fEventStatusFlagged,"eventStatusFlagged/I");
+    }
+    //Hit information (PMT and LAPPD)
+    if(SiPMPulseInfo_fill){
+      fPhaseIITrigTree->Branch("SiPMhitQ",&fSiPMHitQ);
+      fPhaseIITrigTree->Branch("SiPMhitT",&fSiPMHitT);
+      fPhaseIITrigTree->Branch("SiPMhitAmplitude",&fSiPMHitAmplitude);
+      fPhaseIITrigTree->Branch("SiPMNum",&fSiPMNum);
+    }
+
+    if(HitInfo_fill){
+      fPhaseIITrigTree->Branch("filter",&fIsFiltered);
+      fPhaseIITrigTree->Branch("hitX",&fHitX);
+      fPhaseIITrigTree->Branch("hitY",&fHitY);
+      fPhaseIITrigTree->Branch("hitZ",&fHitZ);
+      fPhaseIITrigTree->Branch("hitT",&fHitT);
+      fPhaseIITrigTree->Branch("hitQ",&fHitQ);
+      fPhaseIITrigTree->Branch("hitPE",&fHitPE);
+      fPhaseIITrigTree->Branch("hitType", &fHitType);
+      fPhaseIITrigTree->Branch("hitDetID", &fHitDetID);
+    }
+
+    //Reconstructed variables after full Muon Reco Analysis
+    if(Reco_fill){
+      fPhaseIITrigTree->Branch("recoVtxX",&fRecoVtxX,"recoVtxX/D");
+      fPhaseIITrigTree->Branch("recoVtxY",&fRecoVtxY,"recoVtxY/D");
+      fPhaseIITrigTree->Branch("recoVtxZ",&fRecoVtxZ,"recoVtxZ/D");
+      fPhaseIITrigTree->Branch("recoVtxTime",&fRecoVtxTime,"recoVtxTime/D");
+      fPhaseIITrigTree->Branch("recoDirX",&fRecoDirX,"recoDirX/D");
+      fPhaseIITrigTree->Branch("recoDirY",&fRecoDirY,"recoDirY/D");
+      fPhaseIITrigTree->Branch("recoDirZ",&fRecoDirZ,"recoDirZ/D");
+      fPhaseIITrigTree->Branch("recoAngle",&fRecoAngle,"recoAngle/D");
+      fPhaseIITrigTree->Branch("recoPhi",&fRecoPhi,"recoPhi/D");
+      fPhaseIITrigTree->Branch("recoVtxFOM",&fRecoVtxFOM,"recoVtxFOM/D");
+      fPhaseIITrigTree->Branch("recoStatus",&fRecoStatus,"recoStatus/I");
+    }
   
-  //MC truth information for muons
-  //Output to tree when MCTruth_fill = 1 in config
-  if (MCTruth_fill){
-    fPhaseIITrigTree->Branch("triggerNumber",&fMCTriggerNum,"triggerNumber/I");
-    fPhaseIITrigTree->Branch("mcEntryNumber",&fMCEventNum,"mcEntryNumber/I");
-    fPhaseIITrigTree->Branch("trueVtxX",&fTrueVtxX,"trueVtxX/D");
-    fPhaseIITrigTree->Branch("trueVtxY",&fTrueVtxY,"trueVtxY/D");
-    fPhaseIITrigTree->Branch("trueVtxZ",&fTrueVtxZ,"trueVtxZ/D");
-    fPhaseIITrigTree->Branch("trueVtxTime",&fTrueVtxTime,"trueVtxTime/D");
-    fPhaseIITrigTree->Branch("trueDirX",&fTrueDirX,"trueDirX/D");
-    fPhaseIITrigTree->Branch("trueDirY",&fTrueDirY,"trueDirY/D");
-    fPhaseIITrigTree->Branch("trueDirZ",&fTrueDirZ,"trueDirZ/D");
-    fPhaseIITrigTree->Branch("trueAngle",&fTrueAngle,"trueAngle/D");
-    fPhaseIITrigTree->Branch("truePhi",&fTruePhi,"truePhi/D");
-    fPhaseIITrigTree->Branch("trueMuonEnergy",&fTrueMuonEnergy, "trueMuonEnergy/D");
-    fPhaseIITrigTree->Branch("trueTrackLengthInWater",&fTrueTrackLengthInWater,"trueTrackLengthInWater/D");
-    fPhaseIITrigTree->Branch("trueTrackLengthInMRD",&fTrueTrackLengthInMRD,"trueTrackLengthInMRD/D");
-    fPhaseIITrigTree->Branch("Pi0Count",&fPi0Count,"Pi0Count/I");
-    fPhaseIITrigTree->Branch("PiPlusCount",&fPiPlusCount,"PiPlusCount/I");
-    fPhaseIITrigTree->Branch("PiMinusCount",&fPiMinusCount,"PiMinusCount/I");
-    fPhaseIITrigTree->Branch("K0Count",&fK0Count,"K0Count/I");
-    fPhaseIITrigTree->Branch("KPlusCount",&fKPlusCount,"KPlusCount/I");
-    fPhaseIITrigTree->Branch("KMinusCount",&fKMinusCount,"KMinusCount/I");
-  }
+    //MC truth information for muons
+    //Output to tree when MCTruth_fill = 1 in config
+    if (MCTruth_fill){
+      fPhaseIITrigTree->Branch("triggerNumber",&fMCTriggerNum,"triggerNumber/I");
+      fPhaseIITrigTree->Branch("mcEntryNumber",&fMCEventNum,"mcEntryNumber/I");
+      fPhaseIITrigTree->Branch("trueVtxX",&fTrueVtxX,"trueVtxX/D");
+      fPhaseIITrigTree->Branch("trueVtxY",&fTrueVtxY,"trueVtxY/D");
+      fPhaseIITrigTree->Branch("trueVtxZ",&fTrueVtxZ,"trueVtxZ/D");
+      fPhaseIITrigTree->Branch("trueVtxTime",&fTrueVtxTime,"trueVtxTime/D");
+      fPhaseIITrigTree->Branch("trueDirX",&fTrueDirX,"trueDirX/D");
+      fPhaseIITrigTree->Branch("trueDirY",&fTrueDirY,"trueDirY/D");
+      fPhaseIITrigTree->Branch("trueDirZ",&fTrueDirZ,"trueDirZ/D");
+      fPhaseIITrigTree->Branch("trueAngle",&fTrueAngle,"trueAngle/D");
+      fPhaseIITrigTree->Branch("truePhi",&fTruePhi,"truePhi/D");
+      fPhaseIITrigTree->Branch("trueMuonEnergy",&fTrueMuonEnergy, "trueMuonEnergy/D");
+      fPhaseIITrigTree->Branch("trueTrackLengthInWater",&fTrueTrackLengthInWater,"trueTrackLengthInWater/D");
+      fPhaseIITrigTree->Branch("trueTrackLengthInMRD",&fTrueTrackLengthInMRD,"trueTrackLengthInMRD/D");
+      fPhaseIITrigTree->Branch("Pi0Count",&fPi0Count,"Pi0Count/I");
+      fPhaseIITrigTree->Branch("PiPlusCount",&fPiPlusCount,"PiPlusCount/I");
+      fPhaseIITrigTree->Branch("PiMinusCount",&fPiMinusCount,"PiMinusCount/I");
+      fPhaseIITrigTree->Branch("K0Count",&fK0Count,"K0Count/I");
+      fPhaseIITrigTree->Branch("KPlusCount",&fKPlusCount,"KPlusCount/I");
+      fPhaseIITrigTree->Branch("KMinusCount",&fKMinusCount,"KMinusCount/I");
+    }
   
-  // Reconstructed variables from each step in Muon Reco Analysis
-  // Currently output when RecoDebug_fill = 1 in config 
-  if (RecoDebug_fill){
-    fPhaseIITrigTree->Branch("seedVtxX",&fSeedVtxX); 
-    fPhaseIITrigTree->Branch("seedVtxY",&fSeedVtxY); 
-    fPhaseIITrigTree->Branch("seedVtxZ",&fSeedVtxZ);
-    fPhaseIITrigTree->Branch("seedVtxFOM",&fSeedVtxFOM); 
-    fPhaseIITrigTree->Branch("seedVtxTime",&fSeedVtxTime,"seedVtxTime/D");
+    // Reconstructed variables from each step in Muon Reco Analysis
+    // Currently output when RecoDebug_fill = 1 in config 
+    if (RecoDebug_fill){
+      fPhaseIITrigTree->Branch("seedVtxX",&fSeedVtxX); 
+      fPhaseIITrigTree->Branch("seedVtxY",&fSeedVtxY); 
+      fPhaseIITrigTree->Branch("seedVtxZ",&fSeedVtxZ);
+      fPhaseIITrigTree->Branch("seedVtxFOM",&fSeedVtxFOM); 
+      fPhaseIITrigTree->Branch("seedVtxTime",&fSeedVtxTime,"seedVtxTime/D");
     
-    fPhaseIITrigTree->Branch("pointPosX",&fPointPosX,"pointPosX/D");
-    fPhaseIITrigTree->Branch("pointPosY",&fPointPosY,"pointPosY/D");
-    fPhaseIITrigTree->Branch("pointPosZ",&fPointPosZ,"pointPosZ/D");
-    fPhaseIITrigTree->Branch("pointPosTime",&fPointPosTime,"pointPosTime/D");
-    fPhaseIITrigTree->Branch("pointPosFOM",&fPointPosFOM,"pointPosFOM/D");
-    fPhaseIITrigTree->Branch("pointPosStatus",&fPointPosStatus,"pointPosStatus/I");
+      fPhaseIITrigTree->Branch("pointPosX",&fPointPosX,"pointPosX/D");
+      fPhaseIITrigTree->Branch("pointPosY",&fPointPosY,"pointPosY/D");
+      fPhaseIITrigTree->Branch("pointPosZ",&fPointPosZ,"pointPosZ/D");
+      fPhaseIITrigTree->Branch("pointPosTime",&fPointPosTime,"pointPosTime/D");
+      fPhaseIITrigTree->Branch("pointPosFOM",&fPointPosFOM,"pointPosFOM/D");
+      fPhaseIITrigTree->Branch("pointPosStatus",&fPointPosStatus,"pointPosStatus/I");
+      
+      fPhaseIITrigTree->Branch("pointDirX",&fPointDirX,"pointDirX/D");
+      fPhaseIITrigTree->Branch("pointDirY",&fPointDirY,"pointDirY/D");
+      fPhaseIITrigTree->Branch("pointDirZ",&fPointDirZ,"pointDirZ/D");
+      fPhaseIITrigTree->Branch("pointDirTime",&fPointDirTime,"pointDirTime/D");
+      fPhaseIITrigTree->Branch("pointDirStatus",&fPointDirStatus,"pointDirStatus/I");
+      fPhaseIITrigTree->Branch("pointDirFOM",&fPointDirFOM,"pointDirFOM/D");
     
-    fPhaseIITrigTree->Branch("pointDirX",&fPointDirX,"pointDirX/D");
-    fPhaseIITrigTree->Branch("pointDirY",&fPointDirY,"pointDirY/D");
-    fPhaseIITrigTree->Branch("pointDirZ",&fPointDirZ,"pointDirZ/D");
-    fPhaseIITrigTree->Branch("pointDirTime",&fPointDirTime,"pointDirTime/D");
-    fPhaseIITrigTree->Branch("pointDirStatus",&fPointDirStatus,"pointDirStatus/I");
-    fPhaseIITrigTree->Branch("pointDirFOM",&fPointDirFOM,"pointDirFOM/D");
-    
-    fPhaseIITrigTree->Branch("pointVtxPosX",&fPointVtxPosX,"pointVtxPosX/D");
-    fPhaseIITrigTree->Branch("pointVtxPosY",&fPointVtxPosY,"pointVtxPosY/D");
-    fPhaseIITrigTree->Branch("pointVtxPosZ",&fPointVtxPosZ,"pointVtxPosZ/D");
-    fPhaseIITrigTree->Branch("pointVtxTime",&fPointVtxTime,"pointVtxTime/D");
-    fPhaseIITrigTree->Branch("pointVtxDirX",&fPointVtxDirX,"pointVtxDirX/D");
-    fPhaseIITrigTree->Branch("pointVtxDirY",&fPointVtxDirY,"pointVtxDirY/D");
-    fPhaseIITrigTree->Branch("pointVtxDirZ",&fPointVtxDirZ,"pointVtxDirZ/D");
-    fPhaseIITrigTree->Branch("pointVtxFOM",&fPointVtxFOM,"pointVtxFOM/D");
-    fPhaseIITrigTree->Branch("pointVtxStatus",&fPointVtxStatus,"pointVtxStatus/I");
-  } 
+      fPhaseIITrigTree->Branch("pointVtxPosX",&fPointVtxPosX,"pointVtxPosX/D");
+      fPhaseIITrigTree->Branch("pointVtxPosY",&fPointVtxPosY,"pointVtxPosY/D");
+      fPhaseIITrigTree->Branch("pointVtxPosZ",&fPointVtxPosZ,"pointVtxPosZ/D");
+      fPhaseIITrigTree->Branch("pointVtxTime",&fPointVtxTime,"pointVtxTime/D");
+      fPhaseIITrigTree->Branch("pointVtxDirX",&fPointVtxDirX,"pointVtxDirX/D");
+      fPhaseIITrigTree->Branch("pointVtxDirY",&fPointVtxDirY,"pointVtxDirY/D");
+      fPhaseIITrigTree->Branch("pointVtxDirZ",&fPointVtxDirZ,"pointVtxDirZ/D");
+      fPhaseIITrigTree->Branch("pointVtxFOM",&fPointVtxFOM,"pointVtxFOM/D");
+      fPhaseIITrigTree->Branch("pointVtxStatus",&fPointVtxStatus,"pointVtxStatus/I");
+    } 
 
-  // Difference in MC Truth and Muon Reconstruction Analysis
-  // Output to tree when muonTruthRecoDiff_fill = 1 in config
-  if (muonTruthRecoDiff_fill){
-    fPhaseIITrigTree->Branch("deltaVtxX",&fDeltaVtxX,"deltaVtxX/D");
-    fPhaseIITrigTree->Branch("deltaVtxY",&fDeltaVtxY,"deltaVtxY/D");
-    fPhaseIITrigTree->Branch("deltaVtxZ",&fDeltaVtxZ,"deltaVtxZ/D");
-    fPhaseIITrigTree->Branch("deltaVtxR",&fDeltaVtxR,"deltaVtxR/D");
-    fPhaseIITrigTree->Branch("deltaVtxT",&fDeltaVtxT,"deltaVtxT/D");
-    fPhaseIITrigTree->Branch("deltaParallel",&fDeltaParallel,"deltaParallel/D");
-    fPhaseIITrigTree->Branch("deltaPerpendicular",&fDeltaPerpendicular,"deltaPerpendicular/D");
-    fPhaseIITrigTree->Branch("deltaAzimuth",&fDeltaAzimuth,"deltaAzimuth/D");
-    fPhaseIITrigTree->Branch("deltaZenith",&fDeltaZenith,"deltaZenith/D");
-    fPhaseIITrigTree->Branch("deltaAngle",&fDeltaAngle,"deltaAngle/D");
-  } 
-
+    // Difference in MC Truth and Muon Reconstruction Analysis
+    // Output to tree when muonTruthRecoDiff_fill = 1 in config
+    if (muonTruthRecoDiff_fill){
+      fPhaseIITrigTree->Branch("deltaVtxX",&fDeltaVtxX,"deltaVtxX/D");
+      fPhaseIITrigTree->Branch("deltaVtxY",&fDeltaVtxY,"deltaVtxY/D");
+      fPhaseIITrigTree->Branch("deltaVtxZ",&fDeltaVtxZ,"deltaVtxZ/D");
+      fPhaseIITrigTree->Branch("deltaVtxR",&fDeltaVtxR,"deltaVtxR/D");
+      fPhaseIITrigTree->Branch("deltaVtxT",&fDeltaVtxT,"deltaVtxT/D");
+      fPhaseIITrigTree->Branch("deltaParallel",&fDeltaParallel,"deltaParallel/D");
+      fPhaseIITrigTree->Branch("deltaPerpendicular",&fDeltaPerpendicular,"deltaPerpendicular/D");
+      fPhaseIITrigTree->Branch("deltaAzimuth",&fDeltaAzimuth,"deltaAzimuth/D");
+      fPhaseIITrigTree->Branch("deltaZenith",&fDeltaZenith,"deltaZenith/D");
+      fPhaseIITrigTree->Branch("deltaAngle",&fDeltaAngle,"deltaAngle/D");
+    } 
+  }
   return true;
 }
 
@@ -198,43 +221,52 @@ bool PhaseIITreeMaker::Execute(){
     }
   }
 
-  //Standard run level information
-  m_data->Stores.at("ANNIEEvent")->Get("RunNumber",fRunNumber);
-  m_data->Stores.at("ANNIEEvent")->Get("SubrunNumber",fSubrunNumber);
-  m_data->Stores.at("ANNIEEvent")->Get("RunType",fRunType);
-  m_data->Stores.at("ANNIEEvent")->Get("RunStartTime",fStartTime);
-  
-  bool got_tank = m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
 
 
   if(ClusterProcessing){
+    Log("PhaseIITreeMaker Tool: Beginning cluster processing",v_debug,verbosity);
+    //bool get_clusters = m_data->Stores.at("ANNIEEvent")->Get("ClusterMap",m_all_clusters);
     bool get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
     if(!get_clusters){
       std::cout << "BeamClusterAnalysis tool: No clusters found!" << std::endl;
       return false;
     }
-    //Save classifiers to ANNIEEvent
-    bool got_ccp = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargePoints", ClusterChargePoints);
-    bool got_ccb = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargeBalanaces", ClusterChargeBalances);
-    bool got_cmpe = m_data->Stores.at("ANNIEEvent")->Get("ClusterMaxPEs", ClusterMaxPEs);
-
-    bool good_classifiers = got_ccp && got_ccb && got_cmpe;
+    Log("PhaseIITreeMaker Tool: Accessing pairs in all_clusters map",v_debug,verbosity);
+    int cluster_num = 0;
     for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
+      Log("PhaseIITreeMaker Tool: Resetting variables prior to getting run level info",v_debug,verbosity);
       this->ResetVariables();
+      fClusterNumber = cluster_num;
+
+      //Standard run level information
+      Log("PhaseIITreeMaker Tool: Getting run level information from ANNIEEvent",v_debug,verbosity);
+      m_data->Stores.at("ANNIEEvent")->Get("RunNumber",fRunNumber);
+      m_data->Stores.at("ANNIEEvent")->Get("SubrunNumber",fSubrunNumber);
+      m_data->Stores.at("ANNIEEvent")->Get("RunType",fRunType);
+      m_data->Stores.at("ANNIEEvent")->Get("RunStartTime",fStartTime);
+  
       // ANNIE Event number
+      m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
       m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
 
       std::vector<Hit> cluster_hits = cluster_pair.second;
       fClusterTime = cluster_pair.first;
       if(HitInfo_fill){
+        Log("PhaseIITreeMaker Tool: Loading tank cluster hits into cluster tree",v_debug,verbosity);
         this->LoadTankClusterHits(cluster_hits);
       }
-      if(good_classifiers) this->LoadTankClusterClassifiers(fClusterTime);
+
+      bool good_class = this->LoadTankClusterClassifiers(cluster_pair.first);
+      if(!good_class){
+        if(verbosity>3) Log("PhaseIITreeMaker Tool: No cluster classifiers.  Continuing tree",v_debug,verbosity);
+      }
       if(SiPMPulseInfo_fill) this->LoadSiPMHits();
       fPhaseIITankClusterTree->Fill();
+      cluster_num += 1;
     }
 
-  } else {
+  }
+  if(TriggerProcessing) {
     // ANNIE Event number
     m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
 
@@ -283,6 +315,11 @@ void PhaseIITreeMaker::ResetVariables() {
   }
 
   if(ClusterProcessing){
+    fClusterMaxPE = -9999;
+    fClusterChargePointX = -9999;
+    fClusterChargePointY = -9999;
+    fClusterChargePointZ = -9999;
+    fClusterChargeBalance = -9999;
     fClusterTime = -9999;
     fClusterCharge = -9999;
     fClusterNumber = -9999; 
@@ -379,14 +416,26 @@ void PhaseIITreeMaker::ResetVariables() {
   }
 }
 
-void PhaseIITreeMaker::LoadTankClusterClassifiers(double cluster_time){
-  fClusterMaxPE = ClusterMaxPEs.at(cluster_time);
-  Direction ClusterChargePoint = ClusterChargePoints.at(cluster_time);
-  fClusterChargePointX = ClusterChargePoint.X();
-  fClusterChargePointY = ClusterChargePoint.Y();
-  fClusterChargePointZ = ClusterChargePoint.Z();
-  fClusterChargeBalance = ClusterChargeBalances.at(cluster_time);
-  return;
+bool PhaseIITreeMaker::LoadTankClusterClassifiers(double cluster_time){
+  //Save classifiers to ANNIEEvent
+  Log("PhaseITreeMaker tool: Getting cluster classifiers", v_debug, verbosity);
+
+  bool got_ccp = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargePoints", ClusterChargePoints);
+  bool got_ccb = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargeBalances", ClusterChargeBalances);
+  bool got_cmpe = m_data->Stores.at("ANNIEEvent")->Get("ClusterMaxPEs", ClusterMaxPEs);
+  bool good_classifiers = got_ccp && got_ccb && got_cmpe;
+  if(!good_classifiers){
+    Log("PhaseITreeMaker tool: One of the charge cluster classifiers is not available", v_debug, verbosity);
+  } else { 
+    Log("PhaseITreeMaker tool: Setting fCluster variables to classifier parameters", v_debug, verbosity);
+    fClusterMaxPE = ClusterMaxPEs.at(cluster_time);
+    Direction ClusterChargePoint = ClusterChargePoints.at(cluster_time);
+    fClusterChargePointX = ClusterChargePoint.X();
+    fClusterChargePointY = ClusterChargePoint.Y();
+    fClusterChargePointZ = ClusterChargePoint.Z();
+    fClusterChargeBalance = ClusterChargeBalances.at(cluster_time);
+  }
+  return good_classifiers;
 }
 
 void PhaseIITreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits){

@@ -14,11 +14,16 @@ bool ClusterClassifiers::Initialise(std::string configfile, DataModel &data){
 
 
   verbosity = 0;
-  ClusterMaxPEs = new std::map<double,double>;
-  ClusterChargePoints = new std::map<double,Direction>;
-  ClusterChargeBalances = new std::map<double,double>;
 
   m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelKeyToSPEMap);
+
+  m_variables.Get("verbosity",verbosity);
+
+  auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",geom);
+  if(!get_geometry){
+  	Log("DigitBuilder Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
+  	return false; 
+  }
 
   return true;
 }
@@ -27,50 +32,47 @@ bool ClusterClassifiers::Initialise(std::string configfile, DataModel &data){
 bool ClusterClassifiers::Execute(){
 
   //We're gonna make ourselves a couple cluster classifier maps boyeeee
-
+  if(verbosity>4) std::cout << "ClusterClassifiers tool: Accessing cluster map in CStore" << std::endl;
   bool get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
   if(!get_clusters){
     std::cout << "ClusterClassifiers tool: No clusters found!" << std::endl;
-    return true;
+    return false;
   }
   if(verbosity>3) std::cout << "ClusterClassifiers Tool: looping through clusters to get cluster info now" << std::endl;
   
-  double max_prompt_clustertime = -1;
-  double max_prompt_clusterPE = -1;
-  std::vector<double> delayed_cluster_times;
-  std::vector<double> delayed_ncandidate_times;
+  std::map<double,double> ClusterMaxPEs;
+  std::map<double,Direction> ClusterChargePoints;
+  std::map<double,double> ClusterChargeBalances;
 
   for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
     double cluster_time = cluster_pair.first;
     std::vector<Hit> cluster_hits = cluster_pair.second;
+    if(verbosity>4) std::cout << "ClusterClassifiers Tool: cluster of hit time " << cluster_time << "processing.." << std::endl;
     Direction ChargePoint = this->CalculateChargePoint(cluster_hits);
-    ClusterChargePoints->emplace(cluster_time,ChargePoint);
+    ClusterChargePoints.emplace(cluster_time,ChargePoint);
     double ChargeBalance = this->CalculateChargeBalance(cluster_hits);
-    ClusterChargeBalances->emplace(cluster_time,ChargeBalance);
+    ClusterChargeBalances.emplace(cluster_time,ChargeBalance);
     double max_PE = this->CalculateMaxPE(cluster_hits);
-    ClusterMaxPEs->emplace(cluster_time,max_PE);
+    ClusterMaxPEs.emplace(cluster_time,max_PE);
   }
 
   //Save classifiers to ANNIEEvent
+  if(verbosity>4) std::cout << "ClusterClassifiers Tool: Save classifiers to ANNIEEvent" << std::endl;
   m_data->Stores.at("ANNIEEvent")->Set("ClusterChargePoints", ClusterChargePoints);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterChargeBalances", ClusterChargeBalances);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterMaxPEs", ClusterMaxPEs);
-
   return true;
 }
 
 
 bool ClusterClassifiers::Finalise(){
-  delete ClusterMaxPEs;
-  delete ClusterChargePoints;
-  delete ClusterChargeBalances;
   std::cout << "ClusterClassifiers tool exitting" << std::endl;
   return true;
 }
 
 Direction ClusterClassifiers::CalculateChargePoint(std::vector<Hit> cluster_hits)
 {
-
+  if(verbosity>4) std::cout << "Calculating charge point" << std::endl;
   double x_weight = 0;
   double y_weight = 0;
   double z_weight = 0;
@@ -98,6 +100,7 @@ Direction ClusterClassifiers::CalculateChargePoint(std::vector<Hit> cluster_hits
   }
 
   Direction charge_weight(x_weight,y_weight,z_weight);
+  if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated charge weight direction of  (" << charge_weight.X() << "," << charge_weight.Y() << "," << charge_weight.Z() << ")" << std::endl;
   return charge_weight;
 }
 

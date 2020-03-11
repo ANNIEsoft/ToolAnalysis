@@ -104,7 +104,7 @@ if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
 if (tool=="AmBeRunStatistics") ret=new AmBeRunStatistics;
 if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
-if (tool=="BeamClusterAnalysis") ret=new BeamClusterAnalysis;
+if (tool=="BeamClusterPlots") ret=new BeamClusterPlots;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="LoadRawData") ret=new LoadRawData;

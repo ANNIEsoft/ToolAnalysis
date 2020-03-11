@@ -112,7 +112,7 @@
 #include "AmBeRunStatistics.h"
 #include "ClusterFinder.h"
 #include "SimpleTankEnergyCalibrator.h"
-#include "BeamClusterAnalysis.h"
+#include "BeamClusterPlots.h"
 #include "MrdPaddleEfficiencyPreparer.h"
 #include "MrdPaddleEfficiencyCalc.h"
 #include "LoadRawData.h"

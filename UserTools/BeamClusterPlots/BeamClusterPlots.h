@@ -1,5 +1,5 @@
-#ifndef BeamClusterAnalysis_H
-#define BeamClusterAnalysis_H
+#ifndef BeamClusterPlots_H
+#define BeamClusterPlots_H
 
 #include <string>
 #include <iostream>
@@ -22,20 +22,20 @@
 #include "TGraph.h"
 
 /**
- * \class BeamClusterAnalysis
+ * \class BeamClusterPlots
  *
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
-* $Author: B.Richards $
-* $Date: 2019/05/28 10:44:00 $
-* Contact: b.richards@qmul.ac.uk
+* $Author: Teal Pershing $
+* $Date: 2020/03/10 10:44:00 $
+* Contact: tjpershing@ucdavis.edu 
 */
-class BeamClusterAnalysis: public Tool {
+class BeamClusterPlots: public Tool {
 
 
  public:
 
-  BeamClusterAnalysis(); ///< Simple constructor
+  BeamClusterPlots(); ///< Simple constructor
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.

@@ -1,6 +1,6 @@
 # ClusterFinder Config File
 
-Verbosity 0
+Verbosity 3
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
 OutputFile CommissioningBeamRun1487p2_ClusterFinder #Output root prefix name for the current run
 ClusterFindingWindow 100 # in ns, size of the window used to "clusterize"

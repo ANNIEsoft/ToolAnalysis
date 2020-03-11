@@ -1,9 +1,9 @@
-#include "BeamClusterAnalysis.h"
+#include "BeamClusterPlots.h"
 
-BeamClusterAnalysis::BeamClusterAnalysis():Tool(){}
+BeamClusterPlots::BeamClusterPlots():Tool(){}
 
 
-bool BeamClusterAnalysis::Initialise(std::string configfile, DataModel &data){
+bool BeamClusterPlots::Initialise(std::string configfile, DataModel &data){
 
   /////////////////// Useful header ///////////////////////
   if(configfile!="") m_variables.Initialise(configfile); // loading config file
@@ -14,7 +14,7 @@ bool BeamClusterAnalysis::Initialise(std::string configfile, DataModel &data){
 
   // Load the default threshold settings for finding pulses
   verbosity = 3;
-  outputfile = "BeamClusterAnalysisDefault_";
+  outputfile = "BeamClusterPlotsDefault_";
   PromptPEMin = 500;
   PromptWindowMin = 0;  //ns
   PromptWindowMax = 2000; //ns
@@ -61,21 +61,21 @@ bool BeamClusterAnalysis::Initialise(std::string configfile, DataModel &data){
 }
 
 
-bool BeamClusterAnalysis::Execute(){
+bool BeamClusterPlots::Execute(){
 
   //First, get clusters from the BoostStore
   //Clean AmBe triggers with all cluster info first. 
   bool get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
   if(!get_clusters){
-    std::cout << "BeamClusterAnalysis tool: No clusters found!" << std::endl;
+    std::cout << "BeamClusterPlots tool: No clusters found!" << std::endl;
     return true;
   }
   bool got_ccp = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargePoints", ClusterChargePoints);
   bool got_ccb = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargeBalanaces", ClusterChargeBalances);
   bool got_cmpe = m_data->Stores.at("ANNIEEvent")->Get("ClusterMaxPEs", ClusterMaxPEs);
 
-  if(verbosity>3) std::cout << "BeamClusterAnalysis Tool: looping through clusters to get cluster info now" << std::endl;
-  if(verbosity>3) std::cout << "BeamClusterAnalysis Tool: number of clusters: " << m_all_clusters->size() << std::endl;
+  if(verbosity>3) std::cout << "BeamClusterPlots Tool: looping through clusters to get cluster info now" << std::endl;
+  if(verbosity>3) std::cout << "BeamClusterPlots Tool: number of clusters: " << m_all_clusters->size() << std::endl;
   
   double max_prompt_clustertime = -1;
   double max_prompt_clusterPE = -1;
@@ -102,7 +102,7 @@ bool BeamClusterAnalysis::Execute(){
         }
       }
     }
-    if(verbosity>3) std::cout << "BeamClusterAnalysis Tool: cluster_time is : " << cluster_time << std::endl;
+    if(verbosity>3) std::cout << "BeamClusterPlots Tool: cluster_time is : " << cluster_time << std::endl;
     if((cluster_time > PromptWindowMin) && (cluster_time < PromptWindowMax)){
       if(cluster_PE > max_prompt_clusterPE){
         max_prompt_clusterPE = cluster_PE;
@@ -155,15 +155,15 @@ bool BeamClusterAnalysis::Execute(){
 }
 
 
-bool BeamClusterAnalysis::Finalise(){
+bool BeamClusterPlots::Finalise(){
   this->WriteHistograms();
   bca_file_out->Close();
-  std::cout << "BeamClusterAnalysis tool exitting" << std::endl;
+  std::cout << "BeamClusterPlots tool exitting" << std::endl;
   return true;
 }
 
 
-void BeamClusterAnalysis::InitializeHistograms(){
+void BeamClusterPlots::InitializeHistograms(){
   //All Event Histograms
   hist_prompt_Time = new TH1F("hist_prompt_Time","Prompt cluster times",(PromptWindowMax-PromptWindowMin),PromptWindowMin,PromptWindowMax);
   hist_prompt_PE = new TH1F("hist_prompt_PE","Prompt cluster total PEs",6000,0,6000);
@@ -188,7 +188,7 @@ void BeamClusterAnalysis::InitializeHistograms(){
   hist_prompt_neutron_multiplicityvstankE = new TH2F("hist_prompt_neutron_multiplicityvstankE","Delayed cluster multiplicity vs. visible tank energy estimate",20,0,20,500,0,1000);
 }
 
-void BeamClusterAnalysis::WriteHistograms(){
+void BeamClusterPlots::WriteHistograms(){
   bca_file_out->cd();
   //All Event Histograms
   hist_prompt_Time->Write();
@@ -214,7 +214,7 @@ void BeamClusterAnalysis::WriteHistograms(){
   hist_prompt_neutron_multiplicityvstankE->Write();
 }
 
-void BeamClusterAnalysis::SetHistogramLabels(){
+void BeamClusterPlots::SetHistogramLabels(){
   //All Event Histograms
   hist_prompt_Time->GetXaxis()->SetTitle("Prompt cluster time [ns]");
   hist_prompt_PE->GetXaxis()->SetTitle("Prompt PE");

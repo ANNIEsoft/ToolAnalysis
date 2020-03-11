@@ -41,7 +41,7 @@ class PhaseIITreeMaker: public Tool {
   /// \brief Summary of Reconstructed vertex
   void RecoSummary();
   void LoadTankClusterHits(std::vector<Hit> cluster_hits);
-  void LoadTankClusterClassifiers(double cluster_time);
+  bool LoadTankClusterClassifiers(double cluster_time);
   void LoadAllTankHits();
   void LoadSiPMHits();
 
@@ -208,6 +208,7 @@ class PhaseIITreeMaker: public Tool {
 
   /// \Integer flags that control additional output to the PhaseIITree
   bool ClusterProcessing = 0;
+  bool TriggerProcessing = 1;
   bool HitInfo_fill = 0;
   bool fillCleanEventsOnly = 0; //Only output events not flagged by EventSelector tool
   bool MCTruth_fill = 0; //Output the MC truth information
