@@ -81,8 +81,9 @@ bool PMTDataDecoder::Execute(){
       NumPMTDataProcessed = 0;
       int ExecuteEntryNum = 0;
       int EntriesToDo=1000;
- //     if(ADCCountsToBuild<=0) EntriesToDo = totalentries;
-  //    else EntriesToDo = ADCCountsToBuild;
+      CDEntryNum = totalentries - EntriesToDo - 10;
+      if (CDEntryNum < 0) CDEntryNum = 0;
+      
       if(verbosity>v_warning){
         double CDDouble = (double)CDEntryNum;
         double ETDDouble = (double)EntriesToDo;
