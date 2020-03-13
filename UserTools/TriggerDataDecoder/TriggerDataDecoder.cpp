@@ -56,9 +56,9 @@ bool TriggerDataDecoder::Execute(){
       TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
     }
   }
-  /*Log("TriggerDataDecoder Tool: entry has #TriggerDataPhII classes = "+to_string(Tdata->size()),v_debug, verbosity);
+  /*Log("TriggerDataDecoder Tool: entry has #TriggerData classes = "+to_string(Tdata->size()),v_debug, verbosity);
   for (unsigned int TDataInd=0; TDataInd<Tdata->size(); TDataInd++){
-    TriggerDataPhII aTrigData = Tdata->at(TDataInd);
+    TriggerDataP aTrigData = Tdata->at(TDataInd);
     std::vector<uint32_t> aTimeStampData = aTrigData.TimeStampData;
     bool new_ts_available = false;  
     for(int i = 0; i < aTimeStampData.size(); i++){

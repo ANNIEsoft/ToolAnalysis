@@ -628,8 +628,6 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
     int ChannelID = apair.first.at(1);
     int CrateNum=-1;
     int SlotNum=-1;
-    if(verbosity>v_debug) std::cout << "Converting card ID " << CardID << ", channel ID " <<
-          ChannelID << " to electronics space" << std::endl;
     this->CardIDToElectronicsSpace(CardID, CrateNum, SlotNum);
     std::vector<uint16_t> TheWaveform = apair.second;
     Waveform<uint16_t> TheWave(ClockTime, TheWaveform);

@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "TriggerDataPhII.h"
+#include "TriggerData.h"
 
 /**
  * \class TriggerDataDecoder
@@ -30,8 +30,8 @@ class TriggerDataDecoder: public Tool {
   void CheckForRunChange();
  private:
 
-  //std::vector<TriggerDataPhII> *Tdata = nullptr;
-  TriggerDataPhII *Tdata = nullptr;
+  //std::vector<TriggerData> *Tdata = nullptr;
+  TriggerData *Tdata = nullptr;
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;
   std::vector<int> fiforesets;
   std::vector<uint32_t> processed_sources;

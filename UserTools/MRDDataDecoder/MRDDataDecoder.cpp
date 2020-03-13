@@ -53,6 +53,8 @@ bool MRDDataDecoder::Execute(){
   std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
   MRDEvents.emplace(timestamp,ChankeyTimePairs);
     
+  bool cosmic_loopback=false;
+  bool beam_loopback = false;
   //For each entry, loop over all crates and get data
   for (unsigned int i_data = 0; i_data < mrddata->Crate.size(); i_data++){
     int crate = mrddata->Crate.at(i_data);
@@ -65,10 +67,13 @@ bool MRDDataDecoder::Execute(){
       std::pair <unsigned long,int> keytimepair(chankey,hittimevalue);  //chankey will be 0 when looking at loopback channels that don't have an entry in the mapping-->skip
       MRDEvents[timestamp].push_back(keytimepair);
     }
-    if (crate == 7 && slot == 11 && channel == 14) mrdTriggertype = "Cosmic";   //FIXME: don't hard-code the trigger channels?
-    if (crate == 7 && slot == 11 && channel == 15) mrdTriggertype = "Beam";     //FIXME: don't hard-code the trigger channels?
+    if (crate == 7 && slot == 11 && channel == 14) cosmic_loopback=true;   //FIXME: don't hard-code the trigger channels?
+    if (crate == 7 && slot == 11 && channel == 15) beam_loopback=true;     //FIXME: don't hard-code the trigger channels?
   }
   
+  if (beam_loopback) mrdTriggertype = "Beam";
+  if (cosmic_loopback) mrdTriggertype = "Cosmic";		//advantage cosmic loopback over beam loopback
+
   //Entry processing done.  Label the trigger type and increment index
   TriggerTypeMap.emplace(timestamp,mrdTriggertype);
 

@@ -229,8 +229,6 @@ bool LoadRawData::Finalise(){
   MRDData->Close();
   MRDData->Delete();
   delete MRDData;
-  delete Cdata;
-  delete Mdata;
 
   std::cout << "LoadRawData Tool Exitting" << std::endl;
   return true;
@@ -292,7 +290,7 @@ std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
             std::string part = line.substr(0,pplace);
             std::reverse(part.begin(),part.end());
             rawfilepart = std::stoi(part);
-	    	// Get the address
+	    	// Get the
 	    	char * p = std::strtok(const_cast<char*>(line.c_str()),"RSp");
 	    	while(numargs <2){
 	    		p = std::strtok(NULL,"RSp");
@@ -344,8 +342,9 @@ bool LoadRawData::InitializeNewFile(){
   FileNum += 1;
   RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
   MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = new BoostStore(false,2);
-  PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
   TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStore(false,2);
+  PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+
   TankEntryNum = 0;
   MRDEntryNum = 0;
   TrigEntryNum = 0;
