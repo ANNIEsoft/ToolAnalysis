@@ -35,6 +35,7 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   MRDData = new BoostStore(false,2);
   TrigData = new BoostStore(false,2);
   Cdata = new std::vector<CardData>;
+  Tdata = new TriggerData;
   Mdata = new MRDOut;
 
 
