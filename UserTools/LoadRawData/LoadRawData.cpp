@@ -195,14 +195,14 @@ bool LoadRawData::Finalise(){
   RawData->Close();
   RawData->Delete();
   delete RawData;
-  PMTData->Close();
+  /*PMTData->Close();
   PMTData->Delete();
-  delete PMTData;
+  delete PMTData;*/
   MRDData->Close();
   MRDData->Delete();
   delete MRDData;
-  delete Cdata;
-  delete Mdata;
+  //delete Cdata;
+  //delete Mdata;
 
   std::cout << "LoadRawData Tool Exitting" << std::endl;
   return true;
@@ -256,7 +256,7 @@ std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
             std::string part = line.substr(0,pplace);
             std::reverse(part.begin(),part.end());
             rawfilepart = std::stoi(part);
-	    	// Get the address
+	    	// Get the
 	    	char * p = std::strtok(const_cast<char*>(line.c_str()),"RSp");
 	    	while(numargs <2){
 	    		p = std::strtok(NULL,"RSp");
@@ -308,7 +308,10 @@ bool LoadRawData::InitializeNewFile(){
   FileNum += 1;
   RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
   MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = new BoostStore(false,2);
-  PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+  //PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+  //if (PMTData!=0) m_data->CStore.Delete();
+  PMTData = new BoostStore(false,2);
+
   TankEntryNum = 0;
   MRDEntryNum = 0;
   TankEntriesCompleted = false;

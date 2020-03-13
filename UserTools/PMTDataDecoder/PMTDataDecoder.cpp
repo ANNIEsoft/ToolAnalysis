@@ -340,7 +340,7 @@ bool PMTDataDecoder::Execute(){
 bool PMTDataDecoder::Finalise(){
 
   Log("PMTDataDecoder tool exitting",v_warning,verbosity);
-  delete FinishedPMTWaves; 
+  //delete FinishedPMTWaves; 
   return true;
 }
 

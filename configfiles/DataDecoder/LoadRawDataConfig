@@ -1,5 +1,5 @@
-verbosity 5
-BuildType Tank
+verbosity 0
+BuildType TankAndMRD
 Mode FileList
 InputFile ./configfiles/DataDecoder/my_files.txt
 DummyRunInfo 1
