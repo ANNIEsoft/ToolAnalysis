@@ -27,7 +27,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
   fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
-  fPhaseIITankClusterTree = new TTree("phaseIIClusterTree", "ANNIE Phase II Tank Cluster Tree");
+  fPhaseIITankClusterTree = new TTree("phaseIITankClusterTree", "ANNIE Phase II Tank Cluster Tree");
   fPhaseIITrigTree = new TTree("phaseIITriggerTree", "ANNIE Phase II Ntuple Trigger Tree");
 
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
@@ -40,33 +40,46 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   }
  
   if(ClusterProcessing){
-     fPhaseIITankClusterTree->Branch("runNumber",&fRunNumber,"runNumber/I");
-     fPhaseIITankClusterTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
-     fPhaseIITankClusterTree->Branch("runType",&fRunType,"runType/I");
-     fPhaseIITankClusterTree->Branch("startTime",&fStartTime,"startTime/l");
+    fPhaseIITankClusterTree->Branch("runNumber",&fRunNumber,"runNumber/I");
+    fPhaseIITankClusterTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
+    fPhaseIITankClusterTree->Branch("runType",&fRunType,"runType/I");
+    fPhaseIITankClusterTree->Branch("startTime",&fStartTime,"startTime/l");
 
-     //Some lower level information to save
-     fPhaseIITankClusterTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
-     fPhaseIITankClusterTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
-     fPhaseIITankClusterTree->Branch("clusterNumber",&fClusterNumber,"clusterNumber/I");
-     fPhaseIITankClusterTree->Branch("clusterTime",&fClusterTime,"clusterTime/D");
-     fPhaseIITankClusterTree->Branch("clusterCharge",&fClusterCharge,"clusterCharge/D");
-     fPhaseIITankClusterTree->Branch("clusterPE",&fClusterPE,"clusterPE/D");
-     fPhaseIITankClusterTree->Branch("clusterMaxPE",&fClusterMaxPE,"clusterMaxPE/D");
-     fPhaseIITankClusterTree->Branch("clusterChargePointX",&fClusterChargePointX,"clusterChargePointX/D");
-     fPhaseIITankClusterTree->Branch("clusterChargePointY",&fClusterChargePointY,"clusterChargePointY/D");
-     fPhaseIITankClusterTree->Branch("clusterChargePointZ",&fClusterChargePointZ,"clusterChargePointZ/D");
-     fPhaseIITankClusterTree->Branch("clusterChargeBalance",&fClusterChargeBalance,"clusterChargeBalance/D");
-     fPhaseIITankClusterTree->Branch("clusterHits",&fClusterHits,"clusterHits/i");
+    //Some lower level information to save
+    fPhaseIITankClusterTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
+    fPhaseIITankClusterTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
+    fPhaseIITankClusterTree->Branch("clusterNumber",&fClusterNumber,"clusterNumber/I");
+    fPhaseIITankClusterTree->Branch("clusterTime",&fClusterTime,"clusterTime/D");
+    fPhaseIITankClusterTree->Branch("clusterCharge",&fClusterCharge,"clusterCharge/D");
+    fPhaseIITankClusterTree->Branch("clusterPE",&fClusterPE,"clusterPE/D");
+    fPhaseIITankClusterTree->Branch("clusterMaxPE",&fClusterMaxPE,"clusterMaxPE/D");
+    fPhaseIITankClusterTree->Branch("clusterChargePointX",&fClusterChargePointX,"clusterChargePointX/D");
+    fPhaseIITankClusterTree->Branch("clusterChargePointY",&fClusterChargePointY,"clusterChargePointY/D");
+    fPhaseIITankClusterTree->Branch("clusterChargePointZ",&fClusterChargePointZ,"clusterChargePointZ/D");
+    fPhaseIITankClusterTree->Branch("clusterChargeBalance",&fClusterChargeBalance,"clusterChargeBalance/D");
+    fPhaseIITankClusterTree->Branch("clusterHits",&fClusterHits,"clusterHits/i");
+    if(HitInfo_fill){
+      fPhaseIITankClusterTree->Branch("filter",&fIsFiltered);
+      fPhaseIITankClusterTree->Branch("hitX",&fHitX);
+      fPhaseIITankClusterTree->Branch("hitY",&fHitY);
+      fPhaseIITankClusterTree->Branch("hitZ",&fHitZ);
+      fPhaseIITankClusterTree->Branch("hitT",&fHitT);
+      fPhaseIITankClusterTree->Branch("hitQ",&fHitQ);
+      fPhaseIITankClusterTree->Branch("hitPE",&fHitPE);
+      fPhaseIITankClusterTree->Branch("hitType", &fHitType);
+      fPhaseIITankClusterTree->Branch("hitDetID", &fHitDetID);
+    }
+    //SiPM Pulse Info; load into both trees for now...
+    if(SiPMPulseInfo_fill){
+      fPhaseIITankClusterTree->Branch("SiPMhitQ",&fSiPMHitQ);
+      fPhaseIITankClusterTree->Branch("SiPMhitT",&fSiPMHitT);
+      fPhaseIITankClusterTree->Branch("SiPMhitAmplitude",&fSiPMHitAmplitude);
+      fPhaseIITankClusterTree->Branch("SiPMNum",&fSiPMNum);
+      fPhaseIITankClusterTree->Branch("SiPM1NPulses",&fSiPM1NPulses,"SiPM1NPulses/I");
+      fPhaseIITankClusterTree->Branch("SiPM2NPulses",&fSiPM2NPulses,"SiPM2NPulses/I");
+    }
   } 
   
-  //SiPM Pulse Info; load into both trees for now...
-  if(SiPMPulseInfo_fill){
-    fPhaseIITankClusterTree->Branch("SiPMhitQ",&fSiPMHitQ);
-    fPhaseIITankClusterTree->Branch("SiPMhitT",&fSiPMHitT);
-    fPhaseIITankClusterTree->Branch("SiPMhitAmplitude",&fSiPMHitAmplitude);
-    fPhaseIITankClusterTree->Branch("SiPMNum",&fSiPMNum);
-  }
 
   if(TriggerProcessing){
     //Metadata for standard Events
@@ -87,6 +100,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     }
     //Hit information (PMT and LAPPD)
     if(SiPMPulseInfo_fill){
+      fPhaseIITrigTree->Branch("SiPM1NPulses",&fSiPM1NPulses,"SiPM1NPulses/I");
+      fPhaseIITrigTree->Branch("SiPM2NPulses",&fSiPM2NPulses,"SiPM2NPulses/I");
       fPhaseIITrigTree->Branch("SiPMhitQ",&fSiPMHitQ);
       fPhaseIITrigTree->Branch("SiPMhitT",&fSiPMHitT);
       fPhaseIITrigTree->Branch("SiPMhitAmplitude",&fSiPMHitAmplitude);
@@ -308,6 +323,8 @@ void PhaseIITreeMaker::ResetVariables() {
   fNHits = -9999;
 
   if(SiPMPulseInfo_fill){
+    fSiPM1NPulses = -9999;
+    fSiPM2NPulses = -9999;
     fSiPMHitQ.clear();
     fSiPMHitT.clear();
     fSiPMHitAmplitude.clear();
@@ -496,6 +513,8 @@ void PhaseIITreeMaker::LoadSiPMHits() {
     size_t num_minibuffers = sipm_minibuffers.size();  //Should be size 1 in FrankDAQ mode
     for (size_t mb = 0; mb < num_minibuffers; ++mb) {
       std::vector<ADCPulse> thisbuffer_pulses = sipm_minibuffers.at(mb);
+      if(sipm_number == 1) fSiPM1NPulses += thisbuffer_pulses.size();
+      if(sipm_number == 2) fSiPM2NPulses += thisbuffer_pulses.size();
       for (size_t i = 0; i < thisbuffer_pulses.size(); i++){
         ADCPulse apulse = thisbuffer_pulses.at(i);
         fSiPMHitAmplitude.push_back(apulse.amplitude());

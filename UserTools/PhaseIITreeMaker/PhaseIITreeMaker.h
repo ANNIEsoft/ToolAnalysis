@@ -80,6 +80,8 @@ class PhaseIITreeMaker: public Tool {
   int fEventStatusFlagged;
 
   // SiPM Hit Info
+  int fSiPM1NPulses;
+  int fSiPM2NPulses;
   std::vector<double> fSiPMHitQ;
   std::vector<double> fSiPMHitT;
   std::vector<double> fSiPMHitAmplitude;
