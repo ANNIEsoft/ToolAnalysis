@@ -73,10 +73,10 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fPhaseIITrigTree->Branch("runNumber",&fRunNumber,"runNumber/I");
     fPhaseIITrigTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
     fPhaseIITrigTree->Branch("runType",&fRunType,"runType/I");
-    fPhaseIITrigTree->Branch("startTime",&fStartTime,"startTime/I");
+    fPhaseIITrigTree->Branch("startTime",&fStartTime,"startTime/l");
 
     //Some lower level information to save
-    fPhaseIITrigTree->Branch("eventNumber",&fEventNumber,"eventNumber/l");
+    fPhaseIITrigTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
     fPhaseIITrigTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
     fPhaseIITrigTree->Branch("nhits",&fNHits,"nhits/I");
 
