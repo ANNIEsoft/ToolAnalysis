@@ -86,7 +86,6 @@ Direction ClusterClassifiers::CalculateChargePoint(std::vector<Hit> cluster_hits
     double hit_charge = ahit.GetCharge();
     int channel_key = ahit.GetTubeId();
     double hit_PE = 0;
-    if(verbosity>4) std::cout << "Finding charge to SPE conversion for channel " << channel_key << std::endl;
     std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
     if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
       hit_PE  = hit_charge / ChannelKeyToSPEMap.at(channel_key);
@@ -115,6 +114,7 @@ double ClusterClassifiers::CalculateChargeBalance(std::vector<Hit> cluster_hits)
     total_QSquared += (hit_charge * hit_charge);
   } 
   double charge_balance  = sqrt((total_QSquared)/(total_Q*total_Q) - (1./126.));
+  if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated charge balance of " << charge_balance << std::endl;
   return charge_balance;
 }
 
@@ -126,12 +126,12 @@ double ClusterClassifiers::CalculateMaxPE(std::vector<Hit> cluster_hits)
     double hit_charge = ahit.GetCharge();
     int channel_key = ahit.GetTubeId();
     double hit_PE = 0;
-    if(verbosity>4) std::cout << "Finding charge to SPE conversion for channel " << channel_key << std::endl;
     std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
     if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
       hit_PE  = hit_charge / ChannelKeyToSPEMap.at(channel_key);
       if(hit_PE > max_PE) max_PE = hit_PE;
     }
   }
+  if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated max PE hit of " << max_PE << std::endl;
   return max_PE;
 }
