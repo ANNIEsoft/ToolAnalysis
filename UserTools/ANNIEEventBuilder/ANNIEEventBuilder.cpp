@@ -35,7 +35,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OldTimestampThreshold",OldTimestampThreshold);
   m_variables.Get("ExecutesPerBuild",ExecutesPerBuild);
 
-  if(BuildType == "TankAndMRD" || BuiltType == "TankAndMRDAndCTC"){
+  if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
         std::endl;
   }
@@ -180,7 +180,7 @@ bool ANNIEEventBuilder::Execute(){
     m_data->CStore.Get("InProgressTankEvents",InProgressTankEvents);
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
     std::vector<uint64_t> InProgressTankEventsToDelete;
-    if(IsNewTankData) InProgressTankEventsToDelete = this->ProcessNewTankData();
+    if(IsNewTankData) InProgressTankEventsToDelete = this->ProcessNewTankPMTData();
     
     //Look through our MRD data for any new timestamps
     m_data->CStore.Get("MRDEventTriggerTypes",MRDTriggerTypeMap);
@@ -240,7 +240,7 @@ bool ANNIEEventBuilder::Execute(){
     m_data->CStore.Get("InProgressTankEvents",InProgressTankEvents);
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
     std::vector<uint64_t> InProgressTankEventsToDelete;
-    if(IsNewTankData) InProgressTankEventsToDelete = this->ProcessNewTankData();
+    if(IsNewTankData) InProgressTankEventsToDelete = this->ProcessNewTankPMTData();
     if(verbosity>3)std::cout << "Erasing finished timestamps from InProgressTankEvents" << std::endl;
     for (unsigned int j=0; j< InProgressTankEventsToDelete.size(); j++){
       InProgressTankEvents->erase(InProgressTankEventsToDelete.at(j));
@@ -273,36 +273,33 @@ bool ANNIEEventBuilder::Execute(){
       this->MergeStreams();
 
       std::vector<uint64_t> BuiltSetKeys;
-      for(std::pair<uint64_t, std::map<std::string.uint64_t>> builder_entries : aBuildSet){
-        uint64_t CTCtimestamp = builder_entries.first
-        std::map<std::string.uint64_t> aBuildSet = builder_entries.second; 
-        for(std::pair<std::string,uint64_t> trigger_entries : aBuildSet){
+      for(std::pair<uint64_t, std::map<std::string,uint64_t>> builder_entries : BuildMap){
+        uint64_t CTCtimestamp = builder_entries.first;
+        std::map<std::string,uint64_t> aBuildSet = builder_entries.second; 
+        for(std::pair<std::string,uint64_t> buildset_entries : aBuildSet){
           this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
           //If we have PMT and MRD infor for this trigger, build it 
-          std::string label = aBuildSet.first;
+          std::string label = buildset_entries.first;
           if(label == "CTC"){
-            uint64_t CTCWord = aBuildSet.second;
+            uint64_t CTCWord = buildset_entries.second;
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord);//TODO: Have a BuildANNIEEventTriggerInfo()
             TimeToTriggerWordMap->erase(CTCtimestamp);
           }
           if(label == "TankPMT"){
-            uint64_t TankPMTTime = aBuildSet.second;
+            uint64_t TankPMTTime = buildset_entries.second;
             if(verbosity>4) std::cout << "TANK EVENT WITH TIMESTAMP " << TankPMTTime << "HAS REQUIRED MINIMUM NUMBER OF WAVES TO BUILD" << std::endl;
             std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = FinishedTankEvents.at(TankPMTTime);
             this->BuildANNIEEventTank(TankPMTTime, aWaveMap);
-            BuiltTankTimes.push_back(TankPMTTime);
             FinishedTankEvents.erase(TankPMTTime);
-            FinishedTankPMTTimes.erase(std::remove(FinishedTankPMTTimes.begin(),FinishedTankPMTTimes.end(),TankPMTTime), 
-                       FinishedTankPMTTimes.end());
           }
           if(label == "MRD"){
-            uint64_t MRDTimeStamp = aBuildSet.second;
+            uint64_t MRDTimeStamp = buildset_entries.second;
             if(verbosity>4) std::cout << "MRD TIMESTAMP: " << MRDTimeStamp << std::endl;
             std::vector<std::pair<unsigned long,int>> MRDHits = MRDEvents.at(MRDTimeStamp);
             std::string MRDTriggerType = MRDTriggerTypeMap[MRDTimeStamp];
             this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
-            MRDEvents.erase(timestamp);
-            MRDTriggerTypeMap.erase(timestamp);
+            MRDEvents.erase(MRDTimeStamp);
+            MRDTriggerTypeMap.erase(MRDTimeStamp);
           }
           this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
           if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT SUCCESSFULLY" << std::endl;
@@ -346,7 +343,7 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
   for(std::pair<uint64_t,uint32_t> apair : *TimeToTriggerWordMap){
     uint64_t CTCTimeStamp = apair.first;
     uint32_t CTCWord = apair.second;
-    CTCTimestamps.push_back(CTCTimestamp);
+    CTCTimestamps.push_back(CTCTimeStamp);
     if(verbosity>3)std::cout << "CTCTIMESTAMP,WORD" << CTCTimeStamp << "," << CTCWord << std::endl;
   }
   RemoveDuplicates(CTCTimestamps);
@@ -363,7 +360,7 @@ void ANNIEEventBuilder::ProcessNewMRDData(){
   return;
 }
 
-std::vector<uint64_t> ANNIEEventBuilder::ProcessNewTankData(){
+std::vector<uint64_t> ANNIEEventBuilder::ProcessNewTankPMTData(){
   //Check if any In-progress tank events now have all waveforms
   std::vector<uint64_t> InProgressTankEventsToDelete;
   if(verbosity>3) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
@@ -435,13 +432,13 @@ void ANNIEEventBuilder::MergeStreams(){
   std::map<uint64_t,uint64_t> PairedCTCTankTimes; 
   std::map<uint64_t,uint64_t> PairedCTCMRDTimes;
   int j = 0;
-  MRDSize = BeamMRDTimestamps.size();
+  int MRDSize = BeamMRDTimestamps.size();
   for(int i=0; i<EventsPerPairing; i++){
     while(j<MRDSize){
       double TSDiff = (static_cast<double>(CTCTimestamps.at(i)/1E6) - 21600000.0) - static_cast<double>(BeamTankTimestamps.at(i));
       if( abs(TSDiff) < CTCMRDTolerance){
         PairedCTCMRDTimes.emplace(CTCTimestamps.at(i), BeamMRDTimestamps.at(j));
-        BeamMRDTimestamps.erase(i);
+        BeamMRDTimestamps.erase(BeamMRDTimestamps.begin() + j);
         MRDSize-=1;
         j-=1;
         break;
@@ -449,13 +446,13 @@ void ANNIEEventBuilder::MergeStreams(){
       j+=1;
     }
   }
-  int j = 0;
-  PMTSize = BeamTankTimestamps.size();
+  j = 0;
+  int PMTSize = BeamTankTimestamps.size();
   for(int i=0; i<EventsPerPairing; i++){
     while(j<PMTSize){
       if( abs(CTCTimestamps.at(i) - BeamTankTimestamps.at(j)) < CTCTankTolerance){
         PairedCTCTankTimes.emplace(CTCTimestamps.at(i), BeamTankTimestamps.at(j));
-        BeamTankTimestamps.erase(i);
+        BeamTankTimestamps.erase(BeamTankTimestamps.begin() + j);
         PMTSize-=1;
         j-=1;
         break;
@@ -471,14 +468,14 @@ void ANNIEEventBuilder::MergeStreams(){
     std::map<std::string,uint64_t> aBuildSet;
     //See if there's an MRD or PMT timestamp associated with this CTC time
     //Check if this CardData is next in it's sequence for processing
-    aBuildSet.emplace("CTC",TimeToTriggerWordMap.at(CTCKey));
-    std::map<uint64_t, uint64_t>::iterator it = PairedCTCTankTimestamps.find(CTCTime);
-    if(it != PairedCTCTankTimestamps.end()){ //Have PMT data for this CTC timestamp
-      aBuildSet.emplace("TankPMT",PairedCTCTankTimestamps.at(it->second));
+    aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey));
+    std::map<uint64_t, uint64_t>::iterator it = PairedCTCTankTimes.find(CTCKey);
+    if(it != PairedCTCTankTimes.end()){ //Have PMT data for this CTC timestamp
+      aBuildSet.emplace("TankPMT",PairedCTCTankTimes.at(it->second));
     }
-    std::map<uint64_t, uint64_t>::iterator it = PairedCTCMRDTimestamps.find(CTCTime);
-    if(it != PairedCTCMRDTimestamps.end()){ //Have PMT data for this CTC timestamp
-      aBuildSet.emplace("MRD",PairedCTCTankTimestamps.at(it->second));
+    std::map<uint64_t, uint64_t>::iterator it2 = PairedCTCMRDTimes.find(CTCKey);
+    if(it2 != PairedCTCMRDTimes.end()){ //Have PMT data for this CTC timestamp
+      aBuildSet.emplace("MRD",PairedCTCTankTimes.at(it2->second));
     }
     BuildMap.emplace(CTCKey,aBuildSet);
   }

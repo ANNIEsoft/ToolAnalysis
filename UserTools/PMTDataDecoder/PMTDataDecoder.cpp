@@ -90,10 +90,10 @@ bool PMTDataDecoder::Execute(){
       }
   
       while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
-	      Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
-    	  PMTData->GetEntry(CDEntryNum);
-    	  PMTData->Get("CardData",Cdata_old);
-	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata_old.size()),v_debug, verbosity);
+	    Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
+    	PMTData->GetEntry(CDEntryNum);
+    	PMTData->Get("CardData",Cdata_old);
+	    Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata_old.size()),v_debug, verbosity);
         for (unsigned int CardDataIndex=0; CardDataIndex<Cdata_old.size(); CardDataIndex++){
           if(verbosity>v_debug){
             std::cout<<"PMTDataDecoder Tool: Loading next CardData from entry's index " << CardDataIndex <<std::endl;
@@ -112,76 +112,50 @@ bool PMTDataDecoder::Execute(){
             fifo2.push_back(aCardData.CardID);
           }
           bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
-          if (IsNextInSequence) {
-	        Log("PMTDataDecoder Tool: CardData"+to_string(aCardData.CardID)+" is next in sequence. Decoding... ",v_debug, verbosity);
-	        Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
-            //For this CardData entry, decode raw binary frames.  Locates header markers
-            //And separates the Frame Header from the data stream bits.
-            std::vector<DecodedFrame> ThisCardDFs;
-            ThisCardDFs = this->DecodeFrames(aCardData.Data);
-            if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
-            else{
-              // Parse each decoded frame's data stream and frame header 
-              for (unsigned int i=0; i < ThisCardDFs.size(); i++){
-                this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
-              }
-              NumPMTDataProcessed+=1;
-            }
-          } else {
-	        Log("PMTDataDecoder Tool WARNING: CardData OUT OF SEQUENCE!!!",v_warning, verbosity);
-            //This CardData will be needed later when it's next in sequence.  
-            //Log it in the Out-Of-Order (OOO) Data seen so far.
-            int OOOCardID = aCardData.CardID; 
-            int OOOSequenceID = aCardData.SequenceID;
-            int OOOBoostEntry = CDEntryNum;
-            int OOOCardDataIndex = CardDataIndex;
-            std::vector<int> OOOProperties{OOOSequenceID, OOOBoostEntry, OOOCardDataIndex};
-	        Log("PMTDataDecoder Tool:  Storing CardID... " +
-                to_string(aCardData.CardID),v_warning, verbosity);
-	        Log("PMTDataDecoder Tool:  Storing Of SequenceID... " + 
-                to_string(aCardData.SequenceID),v_warning, verbosity);
-	        Log("PMTDataDecoder Tool:  Into UnprocessedEntries. Map ",v_warning, verbosity);
-            if(UnprocessedEntries.count(OOOCardID)==0){
-              deque<std::vector<int>> OOOqueue;
-              OOOqueue.push_back(OOOProperties);
-              UnprocessedEntries.emplace(OOOCardID,OOOqueue);
-            } else {
-              if (OOOSequenceID < UnprocessedEntries.at(OOOCardID).at(0).at(0)){
-                //This new out-of-order entry has the smallest SequenceID
-                UnprocessedEntries.at(OOOCardID).push_front(OOOProperties);
-              } else {
-                //Not the earliest for now; just put it at the back
-                UnprocessedEntries.at(OOOCardID).push_back(OOOProperties);
-              }
-            }
+          if (!IsNextInSequence) {
+            Log("PMTDataDecoder Tool WARNING: CardData found OUT OF SEQUENCE!!!",v_warning, verbosity);
+            Log("PMTDataDecoder Tool:  OOO CardID... " +
+                    to_string(aCardData.CardID),v_warning, verbosity);
+            Log("PMTDataDecoder Tool:  OOO SequenceID... " + 
+                    to_string(aCardData.SequenceID),v_warning, verbosity);
           }
-	}
+          Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
+          //For this CardData entry, decode raw binary frames.  Locates header markers
+          //And separates the Frame Header from the data stream bits.
+          std::vector<DecodedFrame> ThisCardDFs;
+          ThisCardDFs = this->DecodeFrames(aCardData.Data);
+          if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
+          else{
+            // Parse each decoded frame's data stream and frame header 
+            for (unsigned int i=0; i < ThisCardDFs.size(); i++){
+              this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
+            }
+            NumPMTDataProcessed+=1;
+          }
+        }
         Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
         ExecuteEntryNum += 1; 
         CDEntryNum+=1; 
       }
-        
-      this->ParseOOOsNowInOrder();
         
       CStorePMTWaves = *FinishedPMTWaves;
       m_data->CStore.Set("FinishedPMTWaves",CStorePMTWaves);
       m_data->CStore.Set("NewTankPMTDataAvailable",true);
       m_data->CStore.Set("FIFOError1",fifo1);
       m_data->CStore.Set("FIFOError2",fifo2);
-        
-      FinishedPMTWaves->clear(); 
       
+      FinishedPMTWaves->clear(); 
+    
       CDEntryNum = 0;
 
       Log("PMTDataDecoder Tool: Current raw data file parsed. Waiting until next file is produced",v_message,verbosity);
-      
+    
       return true;
-    } 
-    else {
+    } else {
       Log("PMTDataDecoder Tool: The State >>> "+State+" <<< was not recognized. Please make sure you execute the MonitorReceive tool before the PMTDataDecoder tool when operating in continuous mode",v_error,verbosity);
       return true;   
-    }    
-  }
+    }
+  }     
   
   bool NewEntryAvailable;
   m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
@@ -202,7 +176,6 @@ bool PMTDataDecoder::Execute(){
   //Check if we are starting a new file 
   if (FileCompleted) m_data->CStore.Set("TankPMTFileComplete",false);
 
-  m_data->CStore.Get("PMTDataPointer",PMTData);
   m_data->CStore.Get("CurrentTankEntryNum",CurrentEntryNum);
 
   // Load RawData BoostStore to use in execute loop
@@ -231,14 +204,14 @@ bool PMTDataDecoder::Execute(){
   }
   else if (SubRunNumber != CurrentSubrunNum){ //New run has been encountered
     Log("PMTDataDecoder Tool: New subrun encountered.",v_message,verbosity); 
-    //TODO: Even though sequence IDs continue in a subrun, they haven't been
-    // EXACTLY in sequence with the end of the prev. run.  Will they be eventually?
-    // This prevents freezing up on OUT OF SEQUENCE!! errors
     SequenceMap.clear();
     TriggerTimeBank.clear();
     WaveBank.clear();
     CurrentSubrunNum = SubRunNumber;
   }
+  bool NewRawDataFile = false;
+  m_data->CStore.Get("NewRawDataFileAccessed",NewRawDataFile);
+  if(NewRawDataFile) SequenceMap.clear();
 
   Log("PMTDataDecoder Tool: Procesing PMTData Entry from CStore",v_debug, verbosity);
   m_data->CStore.Get("CardData",Cdata);
@@ -260,61 +233,32 @@ bool PMTDataDecoder::Execute(){
       Log("PMTDataDecoder Tool: WARNING Failure to clear FIFO Overflow on card ID"+to_string(aCardData.CardID),v_error,verbosity);
     }
     bool IsNextInSequence = this->CheckIfCardNextInSequence(aCardData);
-    if (IsNextInSequence) {
-      Log("PMTDataDecoder Tool: CardData"+to_string(aCardData.CardID)+" is next in sequence. Decoding... ",v_debug, verbosity);
-      Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
-      //For this CardData entry, decode raw binary frames.  Locates header markers
-      //And separates the Frame Header from the data stream bits.
-      std::vector<DecodedFrame> ThisCardDFs;
-      ThisCardDFs = this->DecodeFrames(aCardData.Data);
-      if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
-      else{
-        // Parse each decoded frame's data stream and frame header 
-        for (unsigned int i=0; i < ThisCardDFs.size(); i++){
-          this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
-        }
-        NumPMTDataProcessed+=1;
-      }
-    } else {
-      Log("PMTDataDecoder Tool WARNING: CardData OUT OF SEQUENCE!!!",v_warning, verbosity);
-      //This CardData will be needed later when it's next in sequence.  
-      //Log it in the Out-Of-Order (OOO) Data seen so far.
-      int OOOCardID = aCardData.CardID; 
-      int OOOSequenceID = aCardData.SequenceID;
-      int OOOBoostEntry = CurrentEntryNum;
-      int OOOCardDataIndex = CardDataIndex;
-      std::vector<int> OOOProperties{OOOSequenceID, OOOBoostEntry, OOOCardDataIndex};
-      Log("PMTDataDecoder Tool:  Storing CardID... " +
+    if (!IsNextInSequence) {
+      Log("PMTDataDecoder Tool WARNING: CardData found OUT OF SEQUENCE!!!",v_warning, verbosity);
+      Log("PMTDataDecoder Tool:  OOO CardID... " +
               to_string(aCardData.CardID),v_warning, verbosity);
-      Log("PMTDataDecoder Tool:  Storing Of SequenceID... " + 
+      Log("PMTDataDecoder Tool:  OOO SequenceID... " + 
               to_string(aCardData.SequenceID),v_warning, verbosity);
-      Log("PMTDataDecoder Tool:  Into UnprocessedEntries. Map ",v_warning, verbosity);
-      if(UnprocessedEntries.count(OOOCardID)==0){
-        deque<std::vector<int>> OOOqueue;
-        OOOqueue.push_back(OOOProperties);
-        UnprocessedEntries.emplace(OOOCardID,OOOqueue);
-      } else {
-        if (OOOSequenceID < UnprocessedEntries.at(OOOCardID).at(0).at(0)){
-          //This new out-of-order entry has the smallest SequenceID
-          UnprocessedEntries.at(OOOCardID).push_front(OOOProperties);
-        } else {
-          //Not the earliest for now; just put it at the back
-          UnprocessedEntries.at(OOOCardID).push_back(OOOProperties);
-        }
+    }
+    Log("PMTDataDecoder Tool:  CardData has SequenceID... "+to_string(aCardData.SequenceID),v_debug, verbosity);
+    //For this CardData entry, decode raw binary frames.  Locates header markers
+    //And separates the Frame Header from the data stream bits.
+    std::vector<DecodedFrame> ThisCardDFs;
+    ThisCardDFs = this->DecodeFrames(aCardData.Data);
+    if(ThisCardDFs.size() == 0) Log("PMTDataDecoder Tool:  CardData object has no data. ",v_debug, verbosity);
+    else{
+      // Parse each decoded frame's data stream and frame header 
+      for (unsigned int i=0; i < ThisCardDFs.size(); i++){
+        this->ParseFrame(aCardData.CardID,ThisCardDFs.at(i));
       }
+      NumPMTDataProcessed+=1;
     }
   }
 
   Log("PMTDataDecoder Tool: PMTData Entry processed",v_debug, verbosity);
   
-  ///////////////Search through All Out-Of-Order Cards;/////////////
-  ///////////////Parse any in OOO vectors that are now in order ///////////////// 
-  this->ParseOOOsNowInOrder();
 
   //PARSING COMPLETE THIS LOOP: PRINT SOME DIAGNOSTICS 
-  if(verbosity>v_error) std::cout << "Number of unprocessed entries right now: " << 
-     UnprocessedEntries.size() << std::endl;
-  if(verbosity>v_error) std::cout << "SET FINISHED WAVES IN THE CSTORE" << std::endl;
 
   //Transfer finished waves from this execute loop to the CStore
 
@@ -346,12 +290,11 @@ bool PMTDataDecoder::Finalise(){
 
 bool PMTDataDecoder::CheckIfCardNextInSequence(CardData aCardData)
 {
-  if(verbosity>vv_debug) std::cout << "CHECKING IF CARD ID " << aCardData.CardID << "NEXT IN SEQUENCE: HAS SID  " << aCardData.SequenceID << std::endl;
   bool IsNextInSequence = false;
   //Check if this CardData is next in it's sequence for processing
   std::map<int, int>::iterator it = SequenceMap.find(aCardData.CardID);
   if(it != SequenceMap.end()){ //Data from this Card has been seen before
-    if(verbosity>v_debug)std::cout << "THE NEXT SEQUENCE ID EXPECTED IS : " << it->second << std::endl;
+    if(verbosity>v_debug)std::cout << "ExpectedSID,FoundSIE " << it->second << "," << aCardData.SequenceID << std::endl;
     if (it->second == aCardData.SequenceID){ //This CardData is expected next
       IsNextInSequence = true;
       it->second+=1;
@@ -361,80 +304,16 @@ bool PMTDataDecoder::CheckIfCardNextInSequence(CardData aCardData)
     if(verbosity>v_debug) std::cout << "CARD ID " << aCardData.CardID << "NEXT IN SEQUENCE SHOULD BE " << aCardData.SequenceID+1 << std::endl;
     SequenceMap.emplace(aCardData.CardID, aCardData.SequenceID+1); //Assume this is the first sequenceID even if not zero
     IsNextInSequence = true;
+  } else {
+    if(verbosity>v_error) std::cout << "SEQUENCE JUMP BY " << (aCardData.SequenceID - it->second) << "!!!!" << std::endl;
+    it->second = aCardData.SequenceID;
+    IsNextInSequence = false;
   }
+
   return IsNextInSequence;
 }
 
-bool PMTDataDecoder::ParseOneCardOOOs(int CardID)
-{
-  //Now, we want to loop through the Out-Of-Order card data and see if any of it
-  //is in order.  Each time a CardData is actually in order now, look again after
-  //parsing the In-Order to see if any other cards are also now in order.
-  bool ProcessedAnOOO = false;
-  Log("PMTDataDecoder Tool: Parsing any in-order data for CardID "+to_string(CardID),v_debug,verbosity); 
-  deque<std::vector<int>> OOOProperties = UnprocessedEntries.at(CardID);
-  bool IsNextInSequence = false;
-  Log("PMTDataDecoder Tool: Get this CardIDs next in sequence ",v_debug,verbosity); 
-  int NextInCardsSequence = SequenceMap.at(CardID);
-  std::vector<int> NowInOrderInds;
-  Log("PMTDataDecoder Tool: Looping through CardID OOOProperties ",v_debug,verbosity); 
-  for (unsigned int i=0; i < OOOProperties.size();i++){
-    std::vector<int> OOOProperty = OOOProperties.at(i);
-    int OOOSequenceID = OOOProperty.at(0);
-    int OOOBoostEntry = OOOProperty.at(1);
-    int OOOCardVectorInd = OOOProperty.at(2);
-    if(OOOSequenceID == NextInCardsSequence){
-      //This OOO CardData is now next in order.  Parse it.
-      Log("PMTDataDecoder Tool: Out of order card is next in sequence!",v_debug,verbosity); 
-      PMTData->GetEntry(OOOBoostEntry);
-      PMTData->Get("CardData",*Cdata);
-      CardData aCardData = Cdata->at(OOOCardVectorInd);
-      std::vector<DecodedFrame> ThisCardDFs;
-      ThisCardDFs = this->DecodeFrames(aCardData.Data);
-      //Now, loop through each frame and Parse their information
-      for (unsigned int j=0; j < ThisCardDFs.size(); j++){
-        this->ParseFrame(aCardData.CardID,ThisCardDFs.at(j));
-      }
-      NowInOrderInds.push_back(i);
-      ProcessedAnOOO = true;
-      NumPMTDataProcessed+=1;
-    }
-  }
-  //Delete all OOOProperties that are now in order.  Start from the
-  //Back index and move forward  in deletion.
-  std::sort(NowInOrderInds.begin(), NowInOrderInds.end());
-  std::reverse(NowInOrderInds.begin(), NowInOrderInds.end());
-  for (unsigned int j=0;j < NowInOrderInds.size();j++){
-    int OrderedInd = NowInOrderInds.at(j);
-    OOOProperties.erase(OOOProperties.begin()+OrderedInd);
-  }
-  UnprocessedEntries.at(CardID) = OOOProperties;
-  //If any data for a card that was out-of-order was re-ordered, loop through again
-  //And try to resolve any now-fixed OOOs
-  return ProcessedAnOOO;
-}
 
-
-void PMTDataDecoder::ParseOOOsNowInOrder()
-{
-  //Now, we want to loop through the Out-Of-Order card data and see if any of it
-  //is in order.  Each time a CardData is actually in order now, look again after
-  //parsing the In-Order to see if any other cards are also now in order.
-  std::vector<int> UnprocCardIDs;
-  for (std::map<int, deque<std::vector<int>>>::iterator it=UnprocessedEntries.begin();
-          it!=UnprocessedEntries.end(); ++it) {
-    UnprocCardIDs.push_back(it->first);
-  }
-  for(unsigned int i=0;i<UnprocCardIDs.size(); i++){
-    int UnprocCardID = UnprocCardIDs.at(i);
-    if (verbosity > v_message) std::cout << "Trying to Parse unprocessed entries for CardID " <<UnprocCardID << std::endl;
-    bool OOOResolved = true;
-    while(OOOResolved){ //Keep re-parsing out-of-order card data as long as one is found in order
-      OOOResolved = this->ParseOneCardOOOs(UnprocCardID);
-    }
-  }
-  return;
-}
 
 std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> bank)
 {

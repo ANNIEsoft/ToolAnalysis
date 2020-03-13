@@ -19,43 +19,61 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   CurrentSubrunNum = -1;
 
   TimeToTriggerWordMap = new std::map<uint64_t,uint32_t>;
-
+  m_data->CStore.Set("PauseCTCDecoding",false);
   return true;
 }
 
 
 bool TriggerDataDecoder::Execute(){
   m_data->CStore.Set("NewCTCDataAvailable",false);
-  bool PauseTriggerDecoding = false;
-  m_data->CStore.Get("PauseTriggerDecoding",PauseTriggerDecoding);
-  if (PauseTriggerDecoding){
+  bool PauseCTCDecoding = false;
+  m_data->CStore.Get("PauseCTCDecoding",PauseCTCDecoding);
+  if (PauseCTCDecoding){
     std::cout << "TriggerDataDecoder tool: Pausing trigger decoding to let Tank and MRD data catch up..." << std::endl;
     return true;
   }
   //Clear decoding maps if a new run/subrun is encountered
   this->CheckForRunChange();
 
-  bool TriggerDataDecoder::AddWord(uint32_t word){
-
   //Get the TriggerData vector pointer from the CStore
-  m_data->CStore.Get("TrigData",Tdata);
-  Log("TriggerDataDecoder Tool: entry has #CardData classes = "+to_string(Tdata->size()),v_debug, verbosity);
-  
-  for (unsigned int TDataInd=0; TDataInd<Tdata->size(); TDataInd++){
-    TriggerData aTrigData = Tdata->at(TDataInd);
-    std::vector<uint32_t> aTimeStampData = aTrigData.TimeStampData;
-    for(int i = 0; i < aTimeStampData.size(); i++){
-      if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
-      bool new_ts_available = this->AddWord(aTimeStampData.at(i));
-    }
+  Log("TriggerDataDecoder Tool: Accessing TrigData vector in CStore",v_debug, verbosity);
+  bool got_tdata = m_data->CStore.Get("TrigData",Tdata);
+  if(!got_tdata){
+    if(verbosity>0) std:;cout << "TriggerDataDecoder error: No TriggerData in CStore!" << std::endl;
+    return false;
+  }
+  bool new_ts_available = false;
+  std::vector<uint32_t> aTimeStampData = Tdata->TimeStampData;
+  for(int i = 0; i < aTimeStampData.size(); i++){
+    if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
+    new_ts_available = this->AddWord(aTimeStampData.at(i));
     if(new_ts_available){
       if(verbosity>4){
-        std::cout << "PARSED TRIGGER TIME: " << processed_ns.back().c << std::endl;
-        std::cout << "PARSED TRIGGER WORD: " << processed_sources.back().c << std::endl;
+        std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
+        std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
         m_data->CStore.Set("NewMRDDataAvailable",true);
       }
-      TimeToTriggerWordMap->emplace(processed_ns.back().c,processed_sources.back().c);
+      TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
     }
+  }
+  /*Log("TriggerDataDecoder Tool: entry has #TriggerDataPhII classes = "+to_string(Tdata->size()),v_debug, verbosity);
+  for (unsigned int TDataInd=0; TDataInd<Tdata->size(); TDataInd++){
+    TriggerDataPhII aTrigData = Tdata->at(TDataInd);
+    std::vector<uint32_t> aTimeStampData = aTrigData.TimeStampData;
+    bool new_ts_available = false;  
+    for(int i = 0; i < aTimeStampData.size(); i++){
+      if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
+      new_ts_available = this->AddWord(aTimeStampData.at(i));
+      if(new_ts_available){
+        if(verbosity>4){
+          std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
+          std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
+          m_data->CStore.Set("NewMRDDataAvailable",true);
+        }
+        TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+      }
+    }
+  }*/
 
   m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
 
@@ -64,13 +82,13 @@ bool TriggerDataDecoder::Execute(){
 
 
 bool TriggerDataDecoder::Finalise(){
-  delete TimeToTriggerMap;
+  delete TimeToTriggerWordMap;
   std::cout << "TriggerDataDecoder tool exitting" << std::endl;
   return true;
 }
 
 bool TriggerDataDecoder::AddWord(uint32_t word){
-  new_timestamp_available = false;
+  bool new_timestamp_available = false;
   uint64_t payload = 0;
   uint32_t wordid = 0;
   if(word == 0xF1F0E5E7){
@@ -96,7 +114,7 @@ bool TriggerDataDecoder::AddWord(uint32_t word){
     have_c2 = true;
   } else {
     if(have_c1 && have_c2){
-      ns = (c1 + c2 + payload)*8;
+      uint64_t ns = (c1 + c2 + payload)*8;
       processed_sources.push_back(wordid);
       processed_ns.push_back(ns);
       new_timestamp_available = true;
@@ -105,7 +123,7 @@ bool TriggerDataDecoder::AddWord(uint32_t word){
   return new_timestamp_available;
 }
 
-bool TriggerDataDecoder::CheckForRunChange()
+void TriggerDataDecoder::CheckForRunChange()
 {
   // Load RawData BoostStore to use in execute loop
   Store RunInfoPostgress;

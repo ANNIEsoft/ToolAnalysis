@@ -1,6 +1,6 @@
 verbosity 2
 
-BuildType TankAndMRDAndCTC
+BuildType TankAndMRD
 ProcessedFilesBasename ProcessedRawData
 EventsPerPairing 50
 SavePath ./

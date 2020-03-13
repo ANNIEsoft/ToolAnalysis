@@ -57,11 +57,6 @@ class PMTDataDecoder: public Tool {
   bool CheckIfCardNextInSequence(CardData aCardData);
   void BuildReadyEvents();
 
-  bool ParseOneCardOOOs(int CardID); // Gets a single CardID's UnprocessedEntries vector and
-                                     // Parses any cards that are now in order 
-                              // If any is in order, it's data frames are decoded and parsed.
-  void ParseOOOsNowInOrder(); // Checks if any Out-Of-Order Sequence data is now in order.
-                              // If any is in order, it's data frames are decoded and parsed.
 
  private:
 
@@ -105,8 +100,6 @@ class PMTDataDecoder: public Tool {
   std::vector<int> fifo1;
   std::vector<int> fifo2;
 
-
-  std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
   //Maps used in decoding frames; specifically, holds record header and record waveform info
   std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 

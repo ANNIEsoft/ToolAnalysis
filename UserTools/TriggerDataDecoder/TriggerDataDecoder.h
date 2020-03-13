@@ -25,22 +25,31 @@ class TriggerDataDecoder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
-  bool CheckForRunChange();
+  bool AddWord(uint32_t word);
+
+  void CheckForRunChange();
  private:
 
-
+  //std::vector<TriggerDataPhII> *Tdata = nullptr;
+  TriggerDataPhII *Tdata = nullptr;
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;
   std::vector<int> fiforesets;
-  std::vector<int> processed_sources;
+  std::vector<uint32_t> processed_sources;
+  std::vector<uint64_t> processed_ns;
   bool have_c1 = false;
-  bool have_c1 = true;
+  bool have_c2 = false;
   uint64_t c1 = 0;
   uint64_t c2 = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
 
   int verbosity;
-
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  int vv_debug=4;
+  std::string logmessage;
 };
 
 

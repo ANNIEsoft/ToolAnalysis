@@ -49,16 +49,19 @@ class LoadRawData: public Tool {
   int mrdtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
+  bool TrigEntriesCompleted;
   bool FileCompleted;
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
+  int TrigEntryNum = 0;
 
   BoostStore *RawData = nullptr;
   BoostStore *PMTData = nullptr;
   BoostStore *MRDData = nullptr;
   BoostStore *TrigData = nullptr;
   std::vector<CardData>* Cdata = nullptr;
-  std::vector<TriggerDataPhII>* Tdata = nullptr;
+  //std::vector<TriggerDataPhII>* Tdata = nullptr;
+  TriggerDataPhII* Tdata = nullptr;
   MRDOut* Mdata = nullptr;
 
   int verbosity;

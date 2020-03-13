@@ -33,12 +33,16 @@ class ANNIEEventBuilder: public Tool {
   void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
+  void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType);
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveEntryToFile(int RunNum, int SubRunNum);
   void OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT);
-
+  std::vector<uint64_t> ProcessNewTankPMTData();
+  void ProcessNewMRDData();
+  void ProcessNewCTCData();
+  void MergeStreams();
   
   template<typename T> void RemoveDuplicates(std::vector<T> &v){
     typename std::vector<T>::iterator itr = v.begin();
@@ -58,26 +62,22 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t, std::string>  MRDTriggerTypeMap;  //Key: {MTCTime}, value: string noting what loopback channels were fired in the MRD in this event
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
-  std::map<uint64_t,uint32_t>* TimeToTriggerWordMap  // Key: CTCTimestamp, value: Trigger Mask ID;
+  std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
 
   std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int> AuxCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
-  BoostStore *RawData;
-  BoostStore *TrigData;
 
   //######### INFORMATION USED FOR PAIRING UP TANK AND MRD DATA TRIGGERS ########
-  int EventsPerPairing;  //Determines how many Tank and MRD events are needed before starting to pair up for event building
+  int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)
   
-  std::vector<uint64_t> FinishedTankTimestamps;  //Contains timestamps for PMT Events that are fully built
-
-  std::vector<uint64_t> BeamTankTimestamps;  //Contains beam timestamps for all PMT events that haven't been paired to an MRD TS
-  std::vector<uint64_t> BeamMRDTimestamps;  //Contains beam timestamps for all MRD events that haven't been paired to a PMT TS
-  std::map<uint64_t,uint64_t> BeamTankMRDPairs; //Pairs of beam-triggered Tank PMT/MRD counters ready to be built if all PMT waveforms are ready
-
+  std::vector<uint64_t> BeamTankTimestamps;  //Contains beam timestamps for all PMT events that haven't been paired to an MRD or CTC TS
+  std::vector<uint64_t> BeamMRDTimestamps;  //Contains beam timestamps for all MRD events that haven't been paired to a PMT or CTC TS
   std::vector<uint64_t> CTCTimestamps;  //Contains CTC timestamps encountered so far
-  std::map<uint64_t,std::vector<std::map<std::string,uint64_t>>> BuildMap; //key: CTC timestamp, value: vector of maps with key: "Tank", "MRD", or "LAPPD" and value of timestamp for that data stream
+  std::map<uint64_t,uint64_t> BeamTankMRDPairs; //Pairs of beam-triggered Tank PMT/MRD counters ready to be built if all PMT waveforms are ready (TankAndMRD mode only)
+  std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap; //key: CTC timestamp, value: vector of maps with key: "Tank", "MRD", or "LAPPD" and value of timestamp for that data stream,
+                                                                           //or "CTC" for the trigger word of that timestamp
   
   
   bool OrphanOldTankTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
@@ -86,12 +86,9 @@ class ANNIEEventBuilder: public Tool {
   std::vector<uint64_t> OrphanTankTimestamps;  //Contains timestamps for all PMT events that were out of step with the rest of the stream
   std::vector<uint64_t> OrphanMRDTimestamps;  //Contains timestamps for all MRD events that were out of step with the rest of the stream
   
-  std::string BuildType;
 
   BoostStore *ANNIEEvent = nullptr;
   std::map<unsigned long, std::vector<Hit>> *TDCData = nullptr;
-
-  std::string InputFile;
 
 
   // Number of PMTs that must be found in a WaveSet to build the event
@@ -101,6 +98,8 @@ class ANNIEEventBuilder: public Tool {
   int ExecutesPerBuild;          // Number of execute loops to pass through before running the execute loop
   int ExecuteCount = 0;
 
+  std::string InputFile;
+  std::string BuildType;
 
   uint64_t NewestTimestamp = 0;
   double CurrentDriftMean = 0;
