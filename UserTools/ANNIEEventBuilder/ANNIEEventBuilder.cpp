@@ -267,8 +267,12 @@ bool ANNIEEventBuilder::Execute(){
     int NumTrigs = CTCTimestamps.size();
     int MinStamps = std::min(MinTMStamps,NumTrigs);
 
-
+    if(verbosity>3){
+        std::cout << "Number of CTCTimes, MRDTimes, PMTTimes: " << 
+            NumTrigs << "," << NumTankTimestamps << "," << NumMRDTimestamps << std::endl;
+    }
     if(MinStamps > (EventsPerPairing*10)){
+      if(verbosity>3) std::cout << "BEGINNING STREAM MERGING " << std::endl;
       //We have enough Trigger,PMT, and MRD data to hopefully do some pairings.
       this->MergeStreams();
 
@@ -344,7 +348,7 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
     uint64_t CTCTimeStamp = apair.first;
     uint32_t CTCWord = apair.second;
     CTCTimestamps.push_back(CTCTimeStamp);
-    if(verbosity>3)std::cout << "CTCTIMESTAMP,WORD" << CTCTimeStamp << "," << CTCWord << std::endl;
+    if(verbosity>5)std::cout << "CTCTIMESTAMP,WORD" << CTCTimeStamp << "," << CTCWord << std::endl;
   }
   RemoveDuplicates(CTCTimestamps);
   return;
@@ -354,7 +358,7 @@ void ANNIEEventBuilder::ProcessNewMRDData(){
   for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
     unsigned long MRDTimeStamp = apair.first;
     BeamMRDTimestamps.push_back(MRDTimeStamp);
-    if(verbosity>3)std::cout << "MRDTIMESTAMPTRIGTYPE," << MRDTimeStamp << "," << MRDTriggerTypeMap.at(MRDTimeStamp) << std::endl;
+    if(verbosity>5)std::cout << "MRDTIMESTAMPTRIGTYPE," << MRDTimeStamp << "," << MRDTriggerTypeMap.at(MRDTimeStamp) << std::endl;
   }
   RemoveDuplicates(BeamMRDTimestamps);
   return;
@@ -363,7 +367,7 @@ void ANNIEEventBuilder::ProcessNewMRDData(){
 std::vector<uint64_t> ANNIEEventBuilder::ProcessNewTankPMTData(){
   //Check if any In-progress tank events now have all waveforms
   std::vector<uint64_t> InProgressTankEventsToDelete;
-  if(verbosity>3) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
+  if(verbosity>5) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
   for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
     uint64_t PMTCounterTimeNs = apair.first;
     std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
@@ -435,8 +439,10 @@ void ANNIEEventBuilder::MergeStreams(){
   int MRDSize = BeamMRDTimestamps.size();
   for(int i=0; i<EventsPerPairing; i++){
     while(j<MRDSize){
-      double TSDiff = (static_cast<double>(CTCTimestamps.at(i)/1E6) - 21600000.0) - static_cast<double>(BeamTankTimestamps.at(i));
+      double TSDiff = (static_cast<double>(CTCTimestamps.at(i)/1E6) - 21600000.0) - static_cast<double>(BeamMRDTimestamps.at(i));
+      if(verbosity>4) std::cout << "CTC,MRDTIMESTAMP (NS): " << static_cast<double>((CTCTimestamps.at(i)/1E6) - 21600000.0) << "," << static_cast<double>(BeamMRDTimestamps.at(i)) << std::endl;
       if( abs(TSDiff) < CTCMRDTolerance){
+        if(verbosity>4) std::cout << "CTC,MRD TIMESTAMP FORMED" << std::endl;
         PairedCTCMRDTimes.emplace(CTCTimestamps.at(i), BeamMRDTimestamps.at(j));
         BeamMRDTimestamps.erase(BeamMRDTimestamps.begin() + j);
         MRDSize-=1;
@@ -450,7 +456,9 @@ void ANNIEEventBuilder::MergeStreams(){
   int PMTSize = BeamTankTimestamps.size();
   for(int i=0; i<EventsPerPairing; i++){
     while(j<PMTSize){
-      if( abs(CTCTimestamps.at(i) - BeamTankTimestamps.at(j)) < CTCTankTolerance){
+      double TSDiff = (static_cast<double>(CTCTimestamps.at(i)) - static_cast<double>(BeamTankTimestamps.at(j)));
+      if(verbosity>4) std::cout << "CTC,TANK TIMESTAMPS (NS): " << static_cast<double>(CTCTimestamps.at(i)) << "," << static_cast<double>(BeamTankTimestamps.at(j)) << std::endl;
+      if( abs(TSDiff) < CTCTankTolerance){
         PairedCTCTankTimes.emplace(CTCTimestamps.at(i), BeamTankTimestamps.at(j));
         BeamTankTimestamps.erase(BeamTankTimestamps.begin() + j);
         PMTSize-=1;
@@ -472,12 +480,19 @@ void ANNIEEventBuilder::MergeStreams(){
     std::map<uint64_t, uint64_t>::iterator it = PairedCTCTankTimes.find(CTCKey);
     if(it != PairedCTCTankTimes.end()){ //Have PMT data for this CTC timestamp
       aBuildSet.emplace("TankPMT",PairedCTCTankTimes.at(it->second));
+      buildSetMade = true;
     }
     std::map<uint64_t, uint64_t>::iterator it2 = PairedCTCMRDTimes.find(CTCKey);
     if(it2 != PairedCTCMRDTimes.end()){ //Have PMT data for this CTC timestamp
+      buildSetMade = true;
       aBuildSet.emplace("MRD",PairedCTCTankTimes.at(it2->second));
     }
-    BuildMap.emplace(CTCKey,aBuildSet);
+    if(buildSetMade) {
+      BuildMap.emplace(CTCKey,aBuildSet);
+    } else {
+      OrphanCTCTimeWordPairs.emplace(CTCKey,TimeToTriggerWordMap->at(CTCKey));
+      TimeToTriggerWordMap->erase(CTCKey);
+    }
   }
   return;
 }

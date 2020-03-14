@@ -1,7 +1,7 @@
-verbosity 0
+verbosity 5
 
 BuildType TankAndMRDAndCTC
-ProcessedFilesBasename ProcessedRawData
+ProcessedFilesBasename ProcessedRawData_TMCTest
 NumEventsPerPairing 50
 SavePath ./
 

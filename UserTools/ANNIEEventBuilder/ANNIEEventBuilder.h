@@ -84,6 +84,7 @@ class ANNIEEventBuilder: public Tool {
   int OldTimestampThreshold;  // Threshold where a timestamp relative to the newest timestamp crosses before moving to the orphanage
   int OrphanWarningValue;    //Number of orphanage placements in a pairing event to print a warning
   std::vector<uint64_t> OrphanTankTimestamps;  //Contains timestamps for all PMT events that were out of step with the rest of the stream
+  std::map<uint64_t, uint32_t> OrphanCTCTimeWordPairs;  //CTC timestamps with no PMT/MRD pair.  key: CTC time in ns, value: CTC word
   std::vector<uint64_t> OrphanMRDTimestamps;  //Contains timestamps for all MRD events that were out of step with the rest of the stream
   
 

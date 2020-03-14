@@ -51,8 +51,8 @@ bool TriggerDataDecoder::Execute(){
       if(verbosity>4){
         std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
         std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
-        m_data->CStore.Set("NewMRDDataAvailable",true);
       }
+      m_data->CStore.Set("NewCTCDataAvailable",true);
       TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
     }
   }
@@ -74,7 +74,8 @@ bool TriggerDataDecoder::Execute(){
       }
     }
   }*/
-
+  if(verbosity>3) Log("TriggerDataDecoder Tool: size of TimeToTriggerWordMap: "+to_string(TimeToTriggerWordMap->size()),v_message,verbosity); 
+ 
   m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
 
   return true;
