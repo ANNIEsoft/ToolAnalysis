@@ -28,21 +28,30 @@ class ANNIEEventBuilder: public Tool {
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
-  
-  void PairTankPMTAndMRDTriggers();  // Put together timestamps of finished decoding Tank Triggers and MRD Triggers 
-  void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only
+ 
+  void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
+  void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only (TankAndMRD only)
+
+  //Methods to add info from different data streams to ANNIEEvent booststore
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
         unsigned long MRDTimeStamp, std::string MRDTriggerType);
-  void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void SaveEntryToFile(int RunNum, int SubRunNum);
   void OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT);
+
+  //Methods for getting all timestamps encountered by decoder tools
   std::vector<uint64_t> ProcessNewTankPMTData();
   void ProcessNewMRDData();
   void ProcessNewCTCData();
-  void MergeStreams();
+
+  //Methods used to merge CTC/PMT/MRD streams
+  void PairTankPMTAndMRDTriggers();  // TankAndMRD pairing mode
+  void MergeStreams();               // TankAndMRDAndCTC pairing mode
+  void MoveToOrphanage(std::vector<uint64_t> TankOrphans,
+                       std::vector<uint64_t> MRDOrphans,
+                       std::vector<uint64_t> CTCOrphans);
   
   template<typename T> void RemoveDuplicates(std::vector<T> &v){
     typename std::vector<T>::iterator itr = v.begin();
