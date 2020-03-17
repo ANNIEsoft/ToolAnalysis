@@ -40,7 +40,7 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
  
   // algorithm selection
   get_ok = m_variables.Get("BaselineEstimationType", BEType);
-  if(BEType != "ze3ra" || BEType != "rootfit" || BEType != "simple"){
+  if(BEType != "ze3ra" || BEType != "rootfit" || BEType != "simple" || BEType != "ze3ra_multi"){
     Log("PhaseIIADCCalibrator Tool: Baseline estimation type not recognized!  Default to ze3ra", v_warning, verbosity);
      BEType = "ze3ra";
   }
@@ -60,6 +60,12 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
 
   // Get the Auxiliary channel types; identifies which channels are SiPM channels
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
+  
+  // get ze3ra_multi variables, set defaults
+  baseline_rep_samples = 1000;
+  baseline_unc_tolerance = 5;
+  m_variables.Get("SamplesPerBaselineEstimate", baseline_rep_samples);
+  m_variables.Get("BaselineUncertaintyTolerance", baseline_unc_tolerance);
 
   // get LED waveform-making variables
   m_variables.Get("MakeCalLEDWaveforms",make_led_waveforms);
@@ -172,6 +178,8 @@ bool PhaseIIADCCalibrator::Execute() {
 
     if(BEType == "ze3ra"){
       calibrated_waveform_map[channel_key] = make_calibrated_waveforms_ze3ra(raw_waveforms);
+    } else if(BEType == "ze3ra_multi"){
+      calibrated_waveform_map[channel_key] = make_calibrated_waveforms_ze3ra_multi(raw_waveforms);
     } else if(BEType == "rootfit"){
       calibrated_waveform_map[channel_key] = make_calibrated_waveforms_rootfit(raw_waveforms);
     } else if (BEType == "simple"){
@@ -186,6 +194,8 @@ bool PhaseIIADCCalibrator::Execute() {
       raw_led_waveform_map.emplace(channel_key,LEDWaveforms);
       if(BEType == "ze3ra"){
         calibrated_led_waveform_map[channel_key] = make_calibrated_waveforms_ze3ra(LEDWaveforms);
+      } else if(BEType == "ze3ra_multi"){
+        calibrated_led_waveform_map[channel_key] = make_calibrated_waveforms_ze3ra_multi(LEDWaveforms);
       } else if(BEType == "rootfit"){
         calibrated_led_waveform_map[channel_key] = make_calibrated_waveforms_rootfit(LEDWaveforms);
       } else if(BEType == "simple"){
@@ -211,10 +221,14 @@ bool PhaseIIADCCalibrator::Execute() {
     Log("Making calibrated waveforms for Auxiliary channel " +
       std::to_string(channel_key), 3, verbosity);
 
-    if(use_ze3ra_algorithm){
+    if(BEType == "ze3ra"){
       calibrated_auxwaveform_map[channel_key] = make_calibrated_waveforms_ze3ra(raw_auxwaveforms);
-    } else if(use_root_algorithm){
+    } else if(BEType == "ze3ra_multi"){
+      calibrated_auxwaveform_map[channel_key] = make_calibrated_waveforms_ze3ra_multi(raw_auxwaveforms);
+    } else if(BEType == "rootfit"){
       calibrated_auxwaveform_map[channel_key] = make_calibrated_waveforms_rootfit(raw_auxwaveforms);
+    } else if (BEType == "simple"){
+      calibrated_auxwaveform_map[channel_key] = make_calibrated_waveforms_simple(raw_auxwaveforms);
     }
   }
 
@@ -265,7 +279,7 @@ bool PhaseIIADCCalibrator::Finalise() {
 
 void PhaseIIADCCalibrator::ze3ra_baseline(
   const  Waveform<unsigned short> raw_data,
-  double& baseline, double& sigma_baseline, size_t num_baseline_samples)
+  double& baseline, double& sigma_baseline, size_t num_baseline_samples,size_t starting_sample)
 {
 
   // Signal ADC means, variances, and F-distribution probability values
@@ -280,8 +294,8 @@ void PhaseIIADCCalibrator::ze3ra_baseline(
   const auto& data = raw_data.Samples();
   for (size_t sub_mb = 0u; sub_mb < num_sub_waveforms; ++sub_mb) {
     std::vector<unsigned short> sub_mb_data(
-      data.cbegin() + sub_mb * num_baseline_samples,
-      data.cbegin() + (1u + sub_mb) * num_baseline_samples);
+      data.cbegin()+ starting_sample + sub_mb * num_baseline_samples,
+      data.cbegin() + starting_sample + (1u + sub_mb) * num_baseline_samples);
 
     double mean, var;
     ComputeMeanAndVariance(sub_mb_data, mean, var, num_baseline_samples);
@@ -413,7 +427,7 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra(
   for (const auto& raw_waveform : raw_waveforms) {
     double baseline, sigma_baseline;
     ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
-      num_baseline_samples);
+      num_baseline_samples, 0);
     std::vector<double> cal_data;
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
     for (const auto& sample : raw_data) {
@@ -426,6 +440,52 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra(
   }
   return calibrated_waveforms;
 }
+
+// version based on the ze3bra algorithm; assumes a DC offset is sufficient
+std::vector< CalibratedADCWaveform<double> >
+PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
+  const std::vector< Waveform<unsigned short> >& raw_waveforms)
+{
+
+  // Determine the baseline for the set of raw waveforms (assumed to all
+  // come from the same readout for the same channel)
+  std::vector<uint16_t> baselines;
+  std::vector<size_t> RepresentationRegion;
+  std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
+  for (const auto& raw_waveform : raw_waveforms) {
+    double baseline, sigma_baseline;
+    const size_t nsamples = raw_waveform.Samples().size();
+    for(size_t starting_sample = 0; starting_sample + baseline_rep_samples < nsamples; starting_sample += baseline_rep_samples){
+      double baseline, sigma_baseline;
+      ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
+        num_baseline_samples,starting_sample);
+      if(sigma_baseline<baseline_unc_tolerance){
+        RepresentationRegion.push_back(starting_sample + baseline_rep_samples);
+        baselines.push_back(baseline);
+      }
+    }
+    std::vector<double> cal_data;
+    const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
+    for (const auto& asample: raw_data){
+      for(int j = 0; j<RepresentationRegion.size(); j++){
+        if(asample < RepresentationRegion.at(j)){
+          cal_data.push_back((static_cast<double>(asample) - baselines.at(j))
+            * ADC_TO_VOLT);
+          break;
+        } else if (asample >= RepresentationRegion.back()){
+          cal_data.push_back((static_cast<double>(asample) - baselines.back())
+            * ADC_TO_VOLT);
+        }
+      }
+    }
+    double bl_estimates_mean, bl_estimates_var;
+    ComputeMeanAndVariance(baselines, bl_estimates_mean, bl_estimates_var);
+    calibrated_waveforms.emplace_back(raw_waveform.GetStartTime(),
+      cal_data, bl_estimates_mean, bl_estimates_var);
+  }
+  return calibrated_waveforms;
+}
+
 
 
 // version based on a polynomial fit done via ROOT
