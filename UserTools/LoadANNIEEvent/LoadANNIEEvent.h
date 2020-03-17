@@ -16,6 +16,14 @@ class LoadANNIEEvent: public Tool {
     bool Execute();
     bool Finalise();
 
+  private:
+  
+    int v_error = 0;
+    int v_warning = 1;
+    int v_message = 2;
+    int v_debug = 3;
+    int vv_debug = 4;
+
   protected:
 
     /// @brief Integer code that determines the level of logging to show in
@@ -27,6 +35,9 @@ class LoadANNIEEvent: public Tool {
 
     /// @brief The index of the current entry in the ANNIEEvent store
     size_t current_entry_;
+
+    /// @brief Event offset if one wants to ignore the first offset_evnum events
+    int offset_evnum;
 
     /// @brief The index of the current file in this list of input files
     size_t current_file_;

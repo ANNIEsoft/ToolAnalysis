@@ -1,3 +1,0 @@
-myLoadWCSim LoadWCSim configfiles/EventDisplay/LoadWCSimConfig
-myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/EventDisplay/LoadWCSimLAPPDConfig
-myEventDisplay EventDisplay configfiles/EventDisplay/EventDisplayConfig

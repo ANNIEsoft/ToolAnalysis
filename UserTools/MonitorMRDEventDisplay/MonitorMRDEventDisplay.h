@@ -14,11 +14,17 @@
 #include "TLegend.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TH2Poly.h"
 #include "TList.h"
 #include "TPaletteAxis.h"
 #include "MRDOut.h"
 #include "TObjectTable.h"
+#include "TROOT.h"
+#include "TColor.h"
+#include "TFile.h"
 
+#include "Detector.h"
+#include "Paddle.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -33,35 +39,23 @@ class MonitorMRDEventDisplay: public Tool {
 		bool Execute();
 		bool Finalise();
 
-		void InitializeVectors();
-		void EraseOldData();
-		void UpdateMonitorPlots();
+		void PlotMRDEvent();
 
 
 	private:
 
 		BoostStore *CCData;
 		std::string outpath;
-		std::string active_slots;
-		std::string inactive_channels;
+		std::string outpath_temp;
+		int custom_range;
+		int custom_tdc_min;
+		int custom_tdc_max;
 		BoostStore* MRDdata;
 		MRDOut MRDout;
+		std::string output_format;
+		std::string output_file;
+		int evnum;
 		int verbosity;
-
-		boost::posix_time::ptime current;
-
-		static const int num_crates = 2;
-		static const int num_slots = 24;
-		static const int num_channels = 32;
-		static const int min_crate = 7;
-		int num_active_slots;
-		int num_active_slots_cr1, num_active_slots_cr2;
-		int active_channel[2][24]={{0}};
-		std::vector<int> active_slots_cr1;
-		std::vector<int> active_slots_cr2;
-		std::vector<int> nr_slot;
-		std::vector<int> inactive_ch_crate1, inactive_slot_crate1;
-		std::vector<int> inactive_ch_crate2, inactive_slot_crate2;
 
 		//MRD store includes the following variables
 		unsigned int OutN, Trigger;
@@ -71,32 +65,32 @@ class MonitorMRDEventDisplay: public Tool {
 		long current_stamp;
 
 		//time variables
-		boost::posix_time::time_duration period_update;
-		boost::posix_time::time_duration duration;
-		boost::posix_time::ptime last;
 		time_t t;
-  		std::stringstream title_time; 
-  		double integration_period = 5.; 	//5 minutes integration for rate calculation?
-  		double integration_period2 = 60.;
+		std::stringstream title_time; 
 
-  		//storing variables
-		std::vector<std::vector<unsigned int> > live_tdc, vector_tdc, live_tdc_hour, vector_tdc_hour;
-		std::vector<unsigned int> vector_nchannels, vector_nslots, vector_nchannels_hour;
-		std::vector<unsigned int> tdc_paddle, tdc_paddle_hour;
-		std::vector<std::vector<ULong64_t> > live_timestamp, live_timestamp_hour;
-		std::vector<ULong64_t> vector_timestamp, vector_timestamp_hour;
+		//geometry conversion table
+		Geometry *geom = nullptr;
+		std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap = nullptr;
+		TH2Poly *hist_mrd_top = nullptr;
+		TH2Poly *hist_mrd_side = nullptr;
+		TH2Poly *hist_facc = nullptr;
+		double enlargeBoxes = 0.01;
+		double shiftSecRow = 0.04;
+		double tank_center_x, tank_center_y, tank_center_z;
+		TCanvas *canvas_mrd_evdisplay = nullptr;
+		TCanvas *canvas_facc_evdisplay = nullptr;
 
-		//plot variables
-		TH2F *rate_crate1, *rate_crate1_hour;
-		TH2F *rate_crate2, *rate_crate2_hour;
-		TH1F *TDC_hist, *TDC_hist_hour;
-		TH1F *TDC_hist_coincidence;
-		TH1F *n_paddles_hit, *n_paddles_hit_hour;
-		TH1F *n_paddles_hit_coincidence;
-		double min_ch, max_ch;
-		bool update_plots;
+		//set color palette
+		const int n_colors=255;
+		double alpha=1.;    //make colors opaque, not transparent
+		Int_t Bird_palette[255];
+		Int_t Bird_Idx;
+		Double_t stops[9] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
+		Double_t red[9]   = { 0.2082, 0.0592, 0.0780, 0.0232, 0.1802, 0.5301, 0.8186, 0.9956, 0.9764};
+		Double_t green[9] = { 0.1664, 0.3599, 0.5041, 0.6419, 0.7178, 0.7492, 0.7328, 0.7862, 0.9832};
+		Double_t blue[9]  = { 0.5293, 0.8684, 0.8385, 0.7914, 0.6425, 0.4662, 0.3499, 0.1968, 0.0539};
 
-
+		TFile *rootfile = nullptr;
 
 
 };

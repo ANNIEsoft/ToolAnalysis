@@ -1,0 +1,5 @@
+myLoadWCSim LoadWCSim configfiles/MrdPaddleEfficiency/MC/LoadWCSimConfig		#choose LoadWCSim for MC files
+myTimeClustering TimeClustering configfiles/MrdPaddleEfficiency/MC/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks configfiles/MrdPaddleEfficiency/MC/FindMrdTracksConfig
+myPlotMrdTracks MrdPaddlePlot configfiles/MrdPaddleEfficiency/MC/MrdPaddlePlotConfig
+myMrdPaddleEfficiencyPreparer MrdPaddleEfficiencyPreparer configfiles/MrdPaddleEfficiency/MC/MrdPaddleEfficiencyPreparerConfig

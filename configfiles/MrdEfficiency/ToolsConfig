@@ -4,6 +4,6 @@ myMCParticleProperties MCParticleProperties ./configfiles/MrdEfficiency/MCPartic
 #myPrintANNIEEvent PrintANNIEEvent ./configfiles/MrdEfficiency/PrintANNIEEventConfig
 myFindMrdTracks FindMrdTracks ./configfiles/MrdEfficiency/FindMrdTracksConfig
 #myMrdTrackPlotter MrdPaddlePlot ./configfiles/MrdEfficiency/PlotMrdTracksConfig
-#myMrdDistributions MrdDistributions ./configfiles/MrdEfficiency/MrdDistributionsConfig
+myMrdDistributions MrdDistributions ./configfiles/MrdEfficiency/MrdDistributionsConfig
 myMrdEfficiency MrdEfficiency ./configfiles/MrdEfficiency/MrdEfficiencyConfig
 

@@ -1,4 +1,4 @@
-MRDDataPath /ANNIECode/data/MRDTest/MRDTest26commonstopp207
-MRDTxtFile ./configfiles/Monitoring/MRDfiles.txt
-Mode FileList
-verbose 0
+FileList ./configfiles/Monitoring/MRDfiles.txt
+OutPath ./monitoringplots/
+Mode FileList	#Options: FileList, Single, Wait
+verbose 3

@@ -6,6 +6,7 @@
 #include <stdlib.h>     
 #include <time.h>   
 
+#include "MRDOut.h"
 #include "Tool.h"
 
 class MonitorSimReceive: public Tool {
@@ -21,13 +22,14 @@ class MonitorSimReceive: public Tool {
 
  private:
 
-  std::string MRDDataPath, MRDDataPathSingle;
-  std::string MRD_path_to_file;
+  std::string file_list;
   std::string mode;
+  std::string outpath;
   int verbosity;
   
-  BoostStore* MRDData;
-  BoostStore* MRDData2;
+  BoostStore *indata = nullptr;
+  BoostStore* MRDData = nullptr;
+  BoostStore* PMTData = nullptr;
 
   std::vector<std::string> vec_filename;
   int i_loop;

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 #include "Tool.h"
 #include "Geometry.h"
@@ -14,6 +15,8 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TClonesArray.h"
+#include "TObjectTable.h"
+
 // for drawing
 class TApplication;
 class TCanvas;
@@ -33,12 +36,13 @@ private:
 	
 	// Variables stored in Config file
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	int minimumdigits;
-	double maxsubeventduration;
-	double minimum_subevent_timeseparation;
 	std::string outputdir="";
 	bool writefile=false;
-	
+        std::string outputfile;
+	bool triggertype_selection;
+	std::string triggertype;
+	bool isData;
+
 	// Variables retrieved from ANNIEEVENT
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::string MCFile;      //-> currentfilestring
@@ -47,13 +51,19 @@ private:
 	uint32_t EventNumber;   // -> eventnum   ( " " )
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass 
-	std::map<unsigned long,vector<Hit>>* TDCData;
 	Geometry* geo=nullptr;  // for num MRD PMTs
 	int numvetopmts=0;      // current method for separating veto / mrd pmts in TDCData
+	std::string file_chankeymap;	
+
+
+	// From the CStore, for converting WCSim TubeId to channelkey
+	std::map<int,unsigned long> mrdpmtid_to_channelkey;
 	
-	// From the CStore, for converting WCSim TubeId t channelkey
-	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	// Store information regarding MRD Time clusters
+	std::vector<std::vector<int>> MrdTimeClusters;
+        std::string MRDTriggertype;
 	
+
 	// MRD TRACK RECONSTRUCTION
 	// ~~~~~~~~~~~~~~~~~~~~~~~~
 	// variables for file writing
