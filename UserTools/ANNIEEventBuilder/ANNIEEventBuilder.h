@@ -49,6 +49,7 @@ class ANNIEEventBuilder: public Tool {
   //Methods used to merge CTC/PMT/MRD streams
   void PairTankPMTAndMRDTriggers();  // TankAndMRD pairing mode
   void MergeStreams();               // TankAndMRDAndCTC pairing mode
+  void ManagePMTMRDOrphanage();
   void MoveToOrphanage(std::vector<uint64_t> TankOrphans,
                        std::vector<uint64_t> MRDOrphans,
                        std::vector<uint64_t> CTCOrphans);
@@ -65,6 +66,8 @@ class ANNIEEventBuilder: public Tool {
   }
 
  private:
+
+  bool DaylightSavings;  //If true, in the spring/summer.  If false, fall/winter
 
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
