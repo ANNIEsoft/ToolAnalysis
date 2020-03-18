@@ -40,7 +40,7 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
  
   // algorithm selection
   get_ok = m_variables.Get("BaselineEstimationType", BEType);
-  if(BEType != "ze3ra" || BEType != "rootfit" || BEType != "simple" || BEType != "ze3ra_multi"){
+  if(BEType != "ze3ra" && BEType != "rootfit" && BEType != "simple" && BEType != "ze3ra_multi"){
     Log("PhaseIIADCCalibrator Tool: Baseline estimation type not recognized!  Default to ze3ra", v_warning, verbosity);
      BEType = "ze3ra";
   }
@@ -449,19 +449,21 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
 
   // Determine the baseline for the set of raw waveforms (assumed to all
   // come from the same readout for the same channel)
-  std::vector<uint16_t> baselines;
-  std::vector<size_t> RepresentationRegion;
   std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
   for (const auto& raw_waveform : raw_waveforms) {
+    std::vector<uint16_t> baselines;
+    std::vector<size_t> RepresentationRegion;
     double baseline, sigma_baseline;
     const size_t nsamples = raw_waveform.Samples().size();
-    for(size_t starting_sample = 0; starting_sample + baseline_rep_samples < nsamples; starting_sample += baseline_rep_samples){
+    for(size_t starting_sample = 0; starting_sample < nsamples; starting_sample += baseline_rep_samples){
       double baseline, sigma_baseline;
       ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
         num_baseline_samples,starting_sample);
       if(sigma_baseline<baseline_unc_tolerance){
         RepresentationRegion.push_back(starting_sample + baseline_rep_samples);
         baselines.push_back(baseline);
+      } else {
+        if(verbosity>4) std::cout << "BASELINE UNCERTAINTY BEYOND SET THRESHOLD.  IGNORING SAMPLE" << std::endl;
       }
     }
     std::vector<double> cal_data;

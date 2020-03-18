@@ -48,6 +48,12 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
     return false;
   }
 
+  auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",geom);
+  if(!get_geometry){
+  	Log("DigitBuilder Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
+  	return false; 
+  }
+
   //Load window and threshold CSV files if defined
   if(adc_threshold_db != "none") channel_threshold_map = this->load_channel_threshold_map(adc_threshold_db);
   if(adc_window_db != "none") channel_window_map = this->load_integration_window_map(adc_window_db);
@@ -141,6 +147,9 @@ bool PhaseIIADCHitFinder::Execute() {
     for (const auto& temp_pair : raw_waveform_map) {
       const auto& achannel_key = temp_pair.first;
       const auto& araw_waveforms = temp_pair.second;
+      //Don't make hit objects for any offline channels
+      Channel* thischannel = geom->GetChannel(achannel_key);
+      if(thischannel->GetStatus() == channelstatus::OFF) continue;
       std::vector<CalibratedADCWaveform<double> > acalibrated_waveforms = calibrated_waveform_map.at(achannel_key);
       bool MadeMaps = this->build_pulse_and_hit_map(achannel_key, araw_waveforms, acalibrated_waveforms, pulse_map,*hit_map);
       if(!MadeMaps){
@@ -583,7 +592,11 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       if ( !in_pulse && raw_minibuffer_data.GetSample(s) > adc_threshold ) {
         in_pulse = true;
         if(verbosity>4) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
-        pulse_start_sample = s;
+        if(static_cast<int>(s)-5 < 0) {
+          pulse_start_sample = 0;
+        } else {
+          pulse_start_sample = s-5;
+        }
       }
       // In the second test below, we force a pulse to end if we reach the end of
       // the minibuffer.

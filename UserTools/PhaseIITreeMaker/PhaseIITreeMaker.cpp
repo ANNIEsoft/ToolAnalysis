@@ -495,19 +495,19 @@ void PhaseIITreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits){
 
 
 void PhaseIITreeMaker::LoadSiPMHits() {
-  std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
-    calibrated_auxwaveform_map;
   std::map<unsigned long, std::vector< std::vector<ADCPulse>> > aux_pulse_map;
-  m_data->Stores.at("ANNIEEvent")->Get("CalibratedADCAuxData", calibrated_auxwaveform_map);
   m_data->Stores.at("ANNIEEvent")->Get("RecoADCAuxHits", aux_pulse_map);
-
+  fSiPM1NPulses = 0;
+  fSiPM2NPulses = 0;
   for (const auto& temp_pair : aux_pulse_map) {
     const auto& channel_key = temp_pair.first;
     //For now, only calibrate the SiPM waveforms
     int sipm_number = -1;
-    if(AuxChannelNumToTypeMap->at(channel_key) != "SiPM1") sipm_number = 1;
-    if(AuxChannelNumToTypeMap->at(channel_key) != "SiPM2") sipm_number = 2;
-    else continue;
+    if(AuxChannelNumToTypeMap->at(channel_key) == "SiPM1"){
+      sipm_number = 1;
+    } else if (AuxChannelNumToTypeMap->at(channel_key) == "SiPM2"){
+      sipm_number = 2;
+    } else continue;
 
     std::vector< std::vector<ADCPulse>> sipm_minibuffers = temp_pair.second;
     size_t num_minibuffers = sipm_minibuffers.size();  //Should be size 1 in FrankDAQ mode

@@ -24,6 +24,7 @@
 #include "Tool.h"
 #include "Waveform.h"
 #include "Constants.h"
+#include "Channel.h"
 #include <boost/algorithm/string.hpp>
 
 class PhaseIIADCHitFinder : public Tool {
@@ -42,6 +43,8 @@ class PhaseIIADCHitFinder : public Tool {
     int v_message=2;
     int v_debug=3;
   protected:
+
+    Geometry *geom = nullptr;
 
     //Configurables for HitFinding tool; see README for details
     std::string pulse_finding_approach;

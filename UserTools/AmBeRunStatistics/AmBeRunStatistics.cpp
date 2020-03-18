@@ -104,8 +104,23 @@ bool AmBeRunStatistics::Execute(){
   }
 
   bool CleanAmBeTrigger = true;
+  double MeanSiPMPulseTime = (SiPM1_MaxPulse.peak_time() + SiPM2_MaxPulse.peak_time())/2.;
+
+  //See if any cluster is within DeltaTimeThreshold ns of the mean SiPM pulse time.
+  bool get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
+  if(!get_clusters){
+    std::cout << "AmBeRunStatistics tool: No clusters found!" << std::endl;
+    return true;
+  }
+
+  bool ClusterNearTrigger = false;
+  for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
+    double cluster_time = cluster_pair.first;
+    if(abs(cluster_time-MeanSiPMPulseTime) < DeltaTimeThreshold) ClusterNearTrigger = true;
+  }
+
   // Check the criteria for a valid clean AmBe trigger event
-  if ((SiPM1_NumPulses != 1 || SiPM2_NumPulses != 1) || 
+  if ((SiPM1_NumPulses != 1 || SiPM2_NumPulses != 1) || ClusterNearTrigger || 
       (abs(deltat) > DeltaTimeThreshold) || 
       (SiPM1_MaxPulse.peak_time() < SWindowMin || SiPM1_MaxPulse.peak_time() > SWindowMax) ||
       (SiPM2_MaxPulse.peak_time() < SWindowMin || SiPM2_MaxPulse.peak_time() > SWindowMax)) CleanAmBeTrigger = false;
@@ -124,13 +139,6 @@ bool AmBeRunStatistics::Execute(){
   h_S1S2_ChargeratioCleanPromptTrig->Fill(charge_ratio);
   h_S1S2_DeltatCleanPromptTrig->Fill(deltat);
 
-  //Now, let's look at cluster info.  Make histograms for all
-  //Clean AmBe triggers with all cluster info first. 
-  bool get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
-  if(!get_clusters){
-    std::cout << "AmBeRunStatistics tool: No clusters found!" << std::endl;
-    return true;
-  }
   double cluster_charge;
   double cluster_time;
   double cluster_PE;
