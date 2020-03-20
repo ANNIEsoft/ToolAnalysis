@@ -13,21 +13,25 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   
   m_variables.Get("verbose", verbosity);
-  m_variables.Get("HitInfo_fill", HitInfo_fill);
+  m_variables.Get("TankHitInfo_fill", TankHitInfo_fill);
+  m_variables.Get("MRDHitInfo_fill", MRDHitInfo_fill);
   m_variables.Get("fillCleanEventsOnly", fillCleanEventsOnly);
   m_variables.Get("MCTruth_fill", MCTruth_fill);
-  m_variables.Get("Reco_fill", Reco_fill);
+  m_variables.Get("MRDReco_fill", MRDReco_fill);
+  m_variables.Get("TankReco_fill", TankReco_fill);
   m_variables.Get("RecoDebug_fill", RecoDebug_fill);
   m_variables.Get("muonTruthRecoDiff_fill", muonTruthRecoDiff_fill);
 
   m_variables.Get("SiPMPulseInfo_fill",SiPMPulseInfo_fill);
-  m_variables.Get("ClusterProcessing",ClusterProcessing);
+  m_variables.Get("TankClusterProcessing",TankClusterProcessing);
+  m_variables.Get("MRDClusterProcessing",MRDClusterProcessing);
   m_variables.Get("TriggerProcessing",TriggerProcessing);
 
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
   fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
   fPhaseIITankClusterTree = new TTree("phaseIITankClusterTree", "ANNIE Phase II Tank Cluster Tree");
+  fPhaseIIMRDClusterTree = new TTree("phaseIIMRDClusterTree", "ANNIE Phase II MRD Cluster Tree");
   fPhaseIITrigTree = new TTree("phaseIITriggerTree", "ANNIE Phase II Ntuple Trigger Tree");
 
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
@@ -39,7 +43,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   	return false; 
   }
  
-  if(ClusterProcessing){
+  if(TankClusterProcessing){
     fPhaseIITankClusterTree->Branch("runNumber",&fRunNumber,"runNumber/I");
     fPhaseIITankClusterTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
     fPhaseIITankClusterTree->Branch("runType",&fRunType,"runType/I");
@@ -58,7 +62,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fPhaseIITankClusterTree->Branch("clusterChargePointZ",&fClusterChargePointZ,"clusterChargePointZ/D");
     fPhaseIITankClusterTree->Branch("clusterChargeBalance",&fClusterChargeBalance,"clusterChargeBalance/D");
     fPhaseIITankClusterTree->Branch("clusterHits",&fClusterHits,"clusterHits/i");
-    if(HitInfo_fill){
+    if(TankHitInfo_fill){
       fPhaseIITankClusterTree->Branch("filter",&fIsFiltered);
       fPhaseIITankClusterTree->Branch("hitX",&fHitX);
       fPhaseIITankClusterTree->Branch("hitY",&fHitY);
@@ -79,7 +83,39 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITankClusterTree->Branch("SiPM2NPulses",&fSiPM2NPulses,"SiPM2NPulses/I");
     }
   } 
-  
+
+  if(MRDClusterProcessing){
+    fPhaseIIMRDClusterTree->Branch("runNumber",&fRunNumber,"runNumber/I");
+    fPhaseIIMRDClusterTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
+    fPhaseIIMRDClusterTree->Branch("runType",&fRunType,"runType/I");
+    fPhaseIIMRDClusterTree->Branch("startTime",&fStartTime,"startTime/l");
+
+
+    //Some lower level information to save
+    fPhaseIIMRDClusterTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
+    fPhaseIIMRDClusterTree->Branch("eventTimeMRD",&fEventTimeMRD,"eventTimeMRD/l");
+    fPhaseIIMRDClusterTree->Branch("clusterNumber",&fMRDClusterNumber,"clusterNumber/I");
+    fPhaseIIMRDClusterTree->Branch("clusterTime",&fMRDClusterTime,"clusterTime/D");
+    fPhaseIIMRDClusterTree->Branch("clusterTimeSigma",&fMRDClusterTimeSigma,"clusterTimeSigma/D");
+    fPhaseIIMRDClusterTree->Branch("clusterHits",&fMRDClusterHits,"clusterHits/i");
+    if(MRDHitInfo_fill){
+      fPhaseIIMRDClusterTree->Branch("MRDhitT",&fMRDHitT);
+      fPhaseIIMRDClusterTree->Branch("MRDhitDetID", &fMRDHitDetID);
+      fPhaseIIMRDClusterTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
+    }
+    if(MRDReco_fill){
+      fPhaseIIMRDClusterTree->Branch("numClusterTracks",&fNumClusterTracks,"numClusterTracks/I");
+      fPhaseIIMRDClusterTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
+    //Push back some properties
+      fPhaseIIMRDClusterTree->Branch("MRDTrackAngle",&fMRDTrackAngle);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackAngleError",&fMRDTrackAngleError);
+      fPhaseIIMRDClusterTree->Branch("MRDPenetrationDepth",&fMRDPenetrationDepth);
+      fPhaseIIMRDClusterTree->Branch("MRDEntryPointRadius",&fMRDEntryPointRadius);
+      fPhaseIIMRDClusterTree->Branch("MRDLayersHit",&fMRDLayersHit);
+      fPhaseIIMRDClusterTree->Branch("MRDEnergyLoss",&fMRDEnergyLoss);
+      fPhaseIIMRDClusterTree->Branch("MRDEnergyLossError",&fMRDEnergyLossError);
+    }
+  }
 
   if(TriggerProcessing){
     //Metadata for standard Events
@@ -91,7 +127,10 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     //Some lower level information to save
     fPhaseIITrigTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
     fPhaseIITrigTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
+    fPhaseIITrigTree->Branch("eventTimeMRD",&fEventTimeMRD,"eventTimeMRD/l");
     fPhaseIITrigTree->Branch("nhits",&fNHits,"nhits/I");
+
+    fPhaseIITrigTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
 
     //Event Staus Flag Information
     if(fillCleanEventsOnly){
@@ -108,7 +147,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("SiPMNum",&fSiPMNum);
     }
 
-    if(HitInfo_fill){
+    if(TankHitInfo_fill){
       fPhaseIITrigTree->Branch("filter",&fIsFiltered);
       fPhaseIITrigTree->Branch("hitX",&fHitX);
       fPhaseIITrigTree->Branch("hitY",&fHitY);
@@ -120,8 +159,28 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("hitDetID", &fHitDetID);
     }
 
+    if(MRDHitInfo_fill){
+      fPhaseIITrigTree->Branch("MRDhitT",&fMRDHitT);
+      fPhaseIITrigTree->Branch("MRDhitDetID", &fMRDHitDetID);
+      fPhaseIITrigTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
+    }
+    if(MRDReco_fill){
+      fPhaseIITrigTree->Branch("numMRDTracks",&fNumClusterTracks,"numMRDTracks/I");
+      fPhaseIITrigTree->Branch("MRDhitT",&fMRDHitT);
+      fPhaseIITrigTree->Branch("MRDhitDetID", &fMRDHitDetID);
+      fPhaseIITrigTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
+    //Push back some properties
+      fPhaseIITrigTree->Branch("MRDTrackAngle",&fMRDTrackAngle);
+      fPhaseIITrigTree->Branch("MRDTrackAngleError",&fMRDTrackAngleError);
+      fPhaseIITrigTree->Branch("MRDPenetrationDepth",&fMRDPenetrationDepth);
+      fPhaseIITrigTree->Branch("MRDEntryPointRadius",&fMRDEntryPointRadius);
+      fPhaseIITrigTree->Branch("MRDLayersHit",&fMRDLayersHit);
+      fPhaseIITrigTree->Branch("MRDEnergyLoss",&fMRDEnergyLoss);
+      fPhaseIITrigTree->Branch("MRDEnergyLossError",&fMRDEnergyLossError);
+    }
+
     //Reconstructed variables after full Muon Reco Analysis
-    if(Reco_fill){
+    if(TankReco_fill){
       fPhaseIITrigTree->Branch("recoVtxX",&fRecoVtxX,"recoVtxX/D");
       fPhaseIITrigTree->Branch("recoVtxY",&fRecoVtxY,"recoVtxY/D");
       fPhaseIITrigTree->Branch("recoVtxZ",&fRecoVtxZ,"recoVtxZ/D");
@@ -238,8 +297,8 @@ bool PhaseIITreeMaker::Execute(){
 
 
 
-  if(ClusterProcessing){
-    Log("PhaseIITreeMaker Tool: Beginning cluster processing",v_debug,verbosity);
+  if(TankClusterProcessing){
+    Log("PhaseIITreeMaker Tool: Beginning Tank cluster processing",v_debug,verbosity);
     //bool get_clusters = m_data->Stores.at("ANNIEEvent")->Get("ClusterMap",m_all_clusters);
     bool get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
     if(!get_clusters){
@@ -266,7 +325,7 @@ bool PhaseIITreeMaker::Execute(){
 
       std::vector<Hit> cluster_hits = cluster_pair.second;
       fClusterTime = cluster_pair.first;
-      if(HitInfo_fill){
+      if(TankHitInfo_fill){
         Log("PhaseIITreeMaker Tool: Loading tank cluster hits into cluster tree",v_debug,verbosity);
         this->LoadTankClusterHits(cluster_hits);
       }
@@ -281,18 +340,95 @@ bool PhaseIITreeMaker::Execute(){
     }
 
   }
+
+  if(MRDClusterProcessing){
+    Log("PhaseIITreeMaker Tool: Beginning MRD cluster processing",v_debug,verbosity);
+
+	bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+    if(!get_clusters){
+      std::cout << "BeamClusterAnalysis tool: No MRD clusters found! Did you run the TimeClustering tool?" << std::endl;
+      return false;
+    }
+	
+	m_data->CStore.Get("MrdDigitTimes",mrddigittimesthisevent);
+	m_data->CStore.Get("MrdDigitPmts",mrddigitpmtsthisevent);
+    
+    int cluster_num = 0;
+    for (int i=0; i<MrdTimeClusters.size(); i++){
+      Log("PhaseIITreeMaker Tool: Resetting variables prior to getting MRD cluster info",v_debug,verbosity);
+      this->ResetVariables();
+      fMRDClusterHits = 0;
+      fVetoHit = 0;
+      std::vector<int> ThisClusterIndices = MrdTimeClusters.at(i);
+      for(int j=0;j<ThisClusterIndices.size(); j++){
+        int channel_key = mrddigitpmtsthisevent.at(ThisClusterIndices.at(j));
+        Detector* thedetector = geom->ChannelToDetector(channel_key);
+        unsigned long detkey = thedetector->GetDetectorID();
+        if(thedetector->GetDetectorElement()=="Veto") fVetoHit=1; // this is a veto hit, not an MRD hit.
+        fMRDHitT.push_back(mrddigittimesthisevent.at(ThisClusterIndices.at(j)));
+        fMRDHitDetID.push_back(mrddigitpmtsthisevent.at(ThisClusterIndices.at(j)));
+        fMRDClusterHits+=1;
+      }
+
+      fMRDClusterNumber = cluster_num;
+      ComputeMeanAndVariance(fMRDHitT, fMRDClusterTime, fMRDClusterTimeSigma);
+      //FIXME: calculate fMRDClusterTime
+
+      //Standard run level information
+      Log("PhaseIITreeMaker Tool: Getting run level information from ANNIEEvent",v_debug,verbosity);
+      m_data->Stores.at("ANNIEEvent")->Get("RunNumber",fRunNumber);
+      m_data->Stores.at("ANNIEEvent")->Get("SubrunNumber",fSubrunNumber);
+      m_data->Stores.at("ANNIEEvent")->Get("RunType",fRunType);
+      m_data->Stores.at("ANNIEEvent")->Get("RunStartTime",fStartTime);
+  
+      // ANNIE Event number
+      bool got_mrdtime = m_data->Stores.at("ANNIEEvent")->Get("EventTime",mrd_timestamp);
+      if(got_mrdtime) fEventTimeMRD = static_cast<uint64_t>(mrd_timestamp->GetNs());
+      m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
+
+      if(MRDReco_fill){
+        fNumClusterTracks = this->LoadMRDTrackReco(i);
+        //Get the track info
+      }
+
+      fPhaseIIMRDClusterTree->Fill();
+      cluster_num += 1;
+    }
+  }
+ 
   if(TriggerProcessing) {
+    Log("PhaseIITreeMaker Tool: Getting run level information from ANNIEEvent",v_debug,verbosity);
+    m_data->Stores.at("ANNIEEvent")->Get("RunNumber",fRunNumber);
+    m_data->Stores.at("ANNIEEvent")->Get("SubrunNumber",fSubrunNumber);
+    m_data->Stores.at("ANNIEEvent")->Get("RunType",fRunType);
+    m_data->Stores.at("ANNIEEvent")->Get("RunStartTime",fStartTime);
+  
     // ANNIE Event number
     m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
+    m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
+    bool got_mrdtime = m_data->Stores.at("ANNIEEvent")->Get("EventTime",mrd_timestamp);
+    if(got_mrdtime) fEventTimeMRD = static_cast<uint64_t>(mrd_timestamp->GetNs());
 
     // Read hits and load into ntuple
-    if(HitInfo_fill){
+    if(TankHitInfo_fill){
       this->LoadAllTankHits();
     }
     if(SiPMPulseInfo_fill) this->LoadSiPMHits();
 
+	if(MRDHitInfo_fill) this->LoadAllMRDHits();
+
+    if(MRDReco_fill){
+      fNumClusterTracks=0;
+      bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+      if(!get_clusters){
+        std::cout << "BeamClusterAnalysis tool: No MRD clusters found.  Will be no tracks." << std::endl;
+        return false;
+      }
+      for(int i=0; i < MrdTimeClusters.size(); i++) fNumClusterTracks += this->LoadMRDTrackReco(i);
+    }
+
     bool got_reco = false;
-    if(Reco_fill) got_reco = this->FillRecoInfo();
+    if(TankReco_fill) got_reco = this->FillTankRecoInfo();
 
     bool gotmctruth = false;
     if(MCTruth_fill)  gotmctruth = this->FillMCTruthInfo();
@@ -311,6 +447,7 @@ bool PhaseIITreeMaker::Execute(){
 bool PhaseIITreeMaker::Finalise(){
 	fOutput_tfile->cd();
 	fPhaseIITrigTree->Write();
+    fPhaseIIMRDClusterTree->Write();
 	fPhaseIITankClusterTree->Write();
 	fOutput_tfile->Close();
 	if(verbosity>0) cout<<"PhaseIITreeMaker exitting"<<endl;
@@ -320,7 +457,10 @@ bool PhaseIITreeMaker::Finalise(){
 void PhaseIITreeMaker::ResetVariables() {
   // tree variables
   fEventNumber = -9999;
+  fEventTimeTank = 9999;
   fNHits = -9999;
+  fVetoHit = -9999;
+  fEventTimeMRD = 9999;
 
   if(SiPMPulseInfo_fill){
     fSiPM1NPulses = -9999;
@@ -331,7 +471,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fSiPMNum.clear();
   }
 
-  if(ClusterProcessing){
+  if(TankClusterProcessing){
     fClusterMaxPE = -9999;
     fClusterChargePointX = -9999;
     fClusterChargePointY = -9999;
@@ -393,7 +533,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fPointVtxFOM = -9999;
   }
 
-  if(Reco_fill){
+  if(TankReco_fill){
     fRecoVtxX = -9999;
     fRecoVtxY = -9999;
     fRecoVtxZ = -9999;
@@ -407,7 +547,27 @@ void PhaseIITreeMaker::ResetVariables() {
     fRecoPhi = -9999;
   }
 
-  if(HitInfo_fill){
+  if(MRDClusterProcessing){
+    fMRDClusterNumber = -9999;
+    fMRDClusterTime = -9999;
+    fMRDClusterTimeSigma = -9999;
+    fMRDClusterHits = -9999;
+  }
+  if(MRDHitInfo_fill){
+    fMRDHitT.clear();
+    fMRDHitDetID.clear();
+  }
+  if(MRDReco_fill){
+    fMRDTrackAngle.clear();
+    fMRDTrackAngleError.clear();
+    fMRDPenetrationDepth.clear();
+    fMRDEntryPointRadius.clear();
+    fMRDLayersHit.clear();
+    fMRDEnergyLoss.clear();
+    fMRDEnergyLossError.clear();
+  }
+
+  if(TankHitInfo_fill){
     fIsFiltered.clear();
     fHitX.clear();
     fHitY.clear();
@@ -526,6 +686,87 @@ void PhaseIITreeMaker::LoadSiPMHits() {
   }
 }
 
+void PhaseIITreeMaker::LoadAllMRDHits(){
+  bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+  if(!get_clusters){
+    std::cout << "BeamClusterAnalysis tool: No MRD clusters found! Did you run the TimeClustering tool?" << std::endl;
+    return;
+  }
+  
+  m_data->CStore.Get("MrdDigitTimes",mrddigittimesthisevent);
+  m_data->CStore.Get("MrdDigitPmts",mrddigitpmtsthisevent);
+  
+  int cluster_num = 0;
+  fVetoHit = 0;
+  for (int i=0; i<MrdTimeClusters.size(); i++){
+    std::vector<int> ThisClusterIndices = MrdTimeClusters.at(i);
+    for(int j=0;j<ThisClusterIndices.size(); j++){
+      int channel_key = mrddigitpmtsthisevent.at(ThisClusterIndices.at(j));
+      Detector* thedetector = geom->ChannelToDetector(channel_key);
+      unsigned long detkey = thedetector->GetDetectorID();
+      if(thedetector->GetDetectorElement()=="Veto") fVetoHit=1; // this is a veto hit, not an MRD hit.
+      fMRDHitT.push_back(mrddigittimesthisevent.at(ThisClusterIndices.at(j)));
+      fMRDHitDetID.push_back(mrddigitpmtsthisevent.at(ThisClusterIndices.at(j)));
+    }
+  }
+  return;
+}
+
+int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
+  //Check for valid track criteria
+  m_data->Stores["MRDTracks"]->Get("MRDTracks",theMrdTracks);
+  m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
+  // Loop over reconstructed tracks
+
+
+  Position StartVertex;
+  Position StopVertex;
+  double TrackLength = -9999;
+  double TrackAngle = -9999;
+  double TrackAngleError = -9999;
+  double PenetrationDepth = -9999;
+  Position MrdEntryPoint;
+  int LayersHit = -9999;
+  double EnergyLoss = -9999; //in MeV
+  double EnergyLossError = -9999;
+  double EntryPointRadius = -9999; 
+  
+  int NumClusterTracks = 0;
+  for(int tracki=0; tracki<numtracksinev; tracki++){
+    BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
+    int TrackEventID = -1; 
+    //get track properties that are needed for the through-going muon selection
+	thisTrackAsBoostStore->Get("MrdSubEventID",TrackEventID);
+    if(TrackEventID!= SubEventID) continue;
+ 
+
+    //If we're here, this track is associated with this cluster
+    thisTrackAsBoostStore->Get("StartVertex",StartVertex);
+    thisTrackAsBoostStore->Get("StopVertex",StopVertex);
+    thisTrackAsBoostStore->Get("TrackAngle",TrackAngle);
+    thisTrackAsBoostStore->Get("TrackAngleError",TrackAngleError);
+    thisTrackAsBoostStore->Get("PenetrationDepth",PenetrationDepth);
+    thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);
+    thisTrackAsBoostStore->Get("LayersHit",LayersHit);
+    thisTrackAsBoostStore->Get("EnergyLoss",EnergyLoss);
+    thisTrackAsBoostStore->Get("EnergyLossError",EnergyLossError);
+    TrackLength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
+    EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100.0; // convert to cm
+    PenetrationDepth = PenetrationDepth*100.0;
+
+    //Push back some properties
+    fMRDTrackAngle.push_back(TrackAngle);
+    fMRDTrackAngleError.push_back(TrackAngleError);
+    fMRDPenetrationDepth.push_back(PenetrationDepth);
+    fMRDEntryPointRadius.push_back(EntryPointRadius);
+    fMRDLayersHit.push_back(LayersHit);
+    fMRDEnergyLoss.push_back(EnergyLoss);
+    fMRDEnergyLossError.push_back(EnergyLossError);
+    NumClusterTracks+=1;
+  }
+  return NumClusterTracks;
+}
+
 void PhaseIITreeMaker::LoadAllTankHits() {
   std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
   bool got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
@@ -563,7 +804,7 @@ void PhaseIITreeMaker::LoadAllTankHits() {
   return;
 }
 
-bool PhaseIITreeMaker::FillRecoInfo() {
+bool PhaseIITreeMaker::FillTankRecoInfo() {
   bool got_reco_info = true;
   auto* reco_event = m_data->Stores["RecoEvent"];
   if (!reco_event) {

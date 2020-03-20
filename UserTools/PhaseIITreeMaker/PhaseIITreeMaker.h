@@ -18,6 +18,8 @@
 #include "CalibratedADCWaveform.h"
 #include "Hit.h"
 #include "RecoDigit.h"
+#include "ANNIEalgorithms.h"
+#include "TimeClass.h"
 
 class PhaseIITreeMaker: public Tool {
 
@@ -34,7 +36,9 @@ class PhaseIITreeMaker: public Tool {
   /// Function loads the Muon MC Truth variables with the information
   /// Saved in the RecoEvent store.
   bool FillMCTruthInfo();
-  bool FillRecoInfo();
+  bool FillTankRecoInfo();
+  int LoadMRDTrackReco(int SubEventNumber);
+  void LoadAllMRDHits();
   void FillRecoDebugInfo();
   void FillTruthRecoDiffInfo(bool got_mc, bool got_reco);
 
@@ -60,6 +64,7 @@ class PhaseIITreeMaker: public Tool {
   /// \brief TTree that will be used to store output
   TTree* fPhaseIITrigTree = nullptr;
   TTree* fPhaseIITankClusterTree = nullptr;
+  TTree* fPhaseIIMRDClusterTree = nullptr;
  
   std::map<double,std::vector<Hit>>* m_all_clusters = nullptr;  
   Geometry *geom = nullptr;
@@ -70,6 +75,8 @@ class PhaseIITreeMaker: public Tool {
   uint32_t fRunNumber;
   uint32_t fSubrunNumber;
   uint64_t fEventTimeTank;
+  TimeClass* mrd_timestamp=nullptr;
+  uint64_t fEventTimeMRD;
   int fRunType;
   uint64_t fStartTime;
   int fNumEntries;
@@ -97,13 +104,28 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fHitPE; 
   std::vector<int> fHitType;
   std::vector<int> fHitDetID;
- 
+
+  // MRD hit info 
+  int fVetoHit;
+  std::vector<double> fMRDHitT;
+  std::vector<int> fMRDHitDetID;
+
+  // ************** MRD Cluster level information ********** //
+  int fMRDClusterNumber;
+  int fMRDClusterHits;
+  double fMRDClusterTime;
+  double fMRDClusterTimeSigma;
+  // Cluster properties
+  std::vector<double> mrddigittimesthisevent;
+  std::vector<int> mrddigitpmtsthisevent;
+  std::vector<std::vector<int>> MrdTimeClusters;
   
-  // ************** Cluster level information ********** //
+  // ************** Tank Cluster level information ********** //
   std::map<double,double> ClusterMaxPEs;
   std::map<double,Direction> ClusterChargePoints;
   std::map<double,double> ClusterChargeBalances;
   int fClusterNumber;
+  int fNumClusterTracks;
   int fClusterHits;
   double fClusterCharge;
   double fClusterTime;
@@ -113,7 +135,19 @@ class PhaseIITreeMaker: public Tool {
   double fClusterChargePointY;
   double fClusterChargePointZ;
   double fClusterChargeBalance;
-  
+ 
+  // ************ Muon reconstruction level information ******** //
+  std::string MRDTriggertype;
+  std::vector<BoostStore>* theMrdTracks;   // the reconstructed tracks
+  int numtracksinev;
+  std::vector<double> fMRDTrackAngle;
+  std::vector<double> fMRDTrackAngleError;
+  std::vector<double> fMRDPenetrationDepth;
+  std::vector<double> fMRDEntryPointRadius;
+  std::vector<int> fMRDLayersHit;
+  std::vector<double> fMRDEnergyLoss;
+  std::vector<double> fMRDEnergyLossError;
+
   // ************ MC Truth Information **************** //
   uint64_t fMCEventNum;
   uint16_t fMCTriggerNum;
@@ -209,12 +243,15 @@ class PhaseIITreeMaker: public Tool {
   int get_ok;	
 
   /// \Integer flags that control additional output to the PhaseIITree
-  bool ClusterProcessing = 0;
+  bool TankClusterProcessing = 0;
+  bool MRDClusterProcessing = 0;
   bool TriggerProcessing = 1;
-  bool HitInfo_fill = 0;
+  bool TankHitInfo_fill = 0;
+  bool MRDHitInfo_fill = 0;
   bool fillCleanEventsOnly = 0; //Only output events not flagged by EventSelector tool
   bool MCTruth_fill = 0; //Output the MC truth information
-  bool Reco_fill = 0;
+  bool TankReco_fill = 0;
+  bool MRDReco_fill = 0;
   bool RecoDebug_fill = 0; //Outputs results of Reconstruction at each step (best fits, FOMs, etc.)
   bool muonTruthRecoDiff_fill = 0; //Output difference in tmuonruth and reconstructed values
   bool SiPMPulseInfo_fill = 0;
