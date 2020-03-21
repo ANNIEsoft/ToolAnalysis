@@ -143,8 +143,8 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fMRDTrackAngle;
   std::vector<double> fMRDTrackAngleError;
   std::vector<double> fMRDPenetrationDepth;
+  std::vector<double> fMRDTrackLength;
   std::vector<double> fMRDEntryPointRadius;
-  std::vector<int> fMRDLayersHit;
   std::vector<double> fMRDEnergyLoss;
   std::vector<double> fMRDEnergyLossError;
 

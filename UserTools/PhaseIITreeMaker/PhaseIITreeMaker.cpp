@@ -94,6 +94,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     //Some lower level information to save
     fPhaseIIMRDClusterTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
     fPhaseIIMRDClusterTree->Branch("eventTimeMRD",&fEventTimeMRD,"eventTimeMRD/l");
+    fPhaseIIMRDClusterTree->Branch("eventTimeTank",&fEventTimeTank,"eventTimeTank/l");
     fPhaseIIMRDClusterTree->Branch("clusterNumber",&fMRDClusterNumber,"clusterNumber/I");
     fPhaseIIMRDClusterTree->Branch("clusterTime",&fMRDClusterTime,"clusterTime/D");
     fPhaseIIMRDClusterTree->Branch("clusterTimeSigma",&fMRDClusterTimeSigma,"clusterTimeSigma/D");
@@ -110,8 +111,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIIMRDClusterTree->Branch("MRDTrackAngle",&fMRDTrackAngle);
       fPhaseIIMRDClusterTree->Branch("MRDTrackAngleError",&fMRDTrackAngleError);
       fPhaseIIMRDClusterTree->Branch("MRDPenetrationDepth",&fMRDPenetrationDepth);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackLength",&fMRDTrackLength);
       fPhaseIIMRDClusterTree->Branch("MRDEntryPointRadius",&fMRDEntryPointRadius);
-      fPhaseIIMRDClusterTree->Branch("MRDLayersHit",&fMRDLayersHit);
       fPhaseIIMRDClusterTree->Branch("MRDEnergyLoss",&fMRDEnergyLoss);
       fPhaseIIMRDClusterTree->Branch("MRDEnergyLossError",&fMRDEnergyLossError);
     }
@@ -173,8 +174,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("MRDTrackAngle",&fMRDTrackAngle);
       fPhaseIITrigTree->Branch("MRDTrackAngleError",&fMRDTrackAngleError);
       fPhaseIITrigTree->Branch("MRDPenetrationDepth",&fMRDPenetrationDepth);
+      fPhaseIITrigTree->Branch("MRDTrackLength",&fMRDTrackLength);
       fPhaseIITrigTree->Branch("MRDEntryPointRadius",&fMRDEntryPointRadius);
-      fPhaseIITrigTree->Branch("MRDLayersHit",&fMRDLayersHit);
       fPhaseIITrigTree->Branch("MRDEnergyLoss",&fMRDEnergyLoss);
       fPhaseIITrigTree->Branch("MRDEnergyLossError",&fMRDEnergyLossError);
     }
@@ -380,11 +381,12 @@ bool PhaseIITreeMaker::Execute(){
       m_data->Stores.at("ANNIEEvent")->Get("SubrunNumber",fSubrunNumber);
       m_data->Stores.at("ANNIEEvent")->Get("RunType",fRunType);
       m_data->Stores.at("ANNIEEvent")->Get("RunStartTime",fStartTime);
+      m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
+      m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
   
       // ANNIE Event number
       bool got_mrdtime = m_data->Stores.at("ANNIEEvent")->Get("EventTime",mrd_timestamp);
       if(got_mrdtime) fEventTimeMRD = static_cast<uint64_t>(mrd_timestamp->GetNs());
-      m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
 
       if(MRDReco_fill){
         fNumClusterTracks = this->LoadMRDTrackReco(i);
@@ -406,6 +408,7 @@ bool PhaseIITreeMaker::Execute(){
     // ANNIE Event number
     m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
     m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
+
     bool got_mrdtime = m_data->Stores.at("ANNIEEvent")->Get("EventTime",mrd_timestamp);
     if(got_mrdtime) fEventTimeMRD = static_cast<uint64_t>(mrd_timestamp->GetNs());
 
@@ -561,8 +564,8 @@ void PhaseIITreeMaker::ResetVariables() {
     fMRDTrackAngle.clear();
     fMRDTrackAngleError.clear();
     fMRDPenetrationDepth.clear();
+    fMRDTrackLength.clear();
     fMRDEntryPointRadius.clear();
-    fMRDLayersHit.clear();
     fMRDEnergyLoss.clear();
     fMRDEnergyLossError.clear();
   }
@@ -726,7 +729,6 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
   double TrackAngleError = -9999;
   double PenetrationDepth = -9999;
   Position MrdEntryPoint;
-  int LayersHit = -9999;
   double EnergyLoss = -9999; //in MeV
   double EnergyLossError = -9999;
   double EntryPointRadius = -9999; 
@@ -747,19 +749,19 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
     thisTrackAsBoostStore->Get("TrackAngleError",TrackAngleError);
     thisTrackAsBoostStore->Get("PenetrationDepth",PenetrationDepth);
     thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);
-    thisTrackAsBoostStore->Get("LayersHit",LayersHit);
     thisTrackAsBoostStore->Get("EnergyLoss",EnergyLoss);
     thisTrackAsBoostStore->Get("EnergyLossError",EnergyLossError);
-    TrackLength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
+    TrackLength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2)) * 100.0;
     EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100.0; // convert to cm
     PenetrationDepth = PenetrationDepth*100.0;
+
 
     //Push back some properties
     fMRDTrackAngle.push_back(TrackAngle);
     fMRDTrackAngleError.push_back(TrackAngleError);
+    fMRDTrackLength.push_back(TrackLength);
     fMRDPenetrationDepth.push_back(PenetrationDepth);
     fMRDEntryPointRadius.push_back(EntryPointRadius);
-    fMRDLayersHit.push_back(LayersHit);
     fMRDEnergyLoss.push_back(EnergyLoss);
     fMRDEnergyLossError.push_back(EnergyLossError);
     NumClusterTracks+=1;
