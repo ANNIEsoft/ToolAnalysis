@@ -1,10 +1,13 @@
 verbose 5
 
-OutputFile TestFile.ntuple.root
-ClusterProcessing 1
+OutputFile BeamRun1628.ntuple.root
+TankClusterProcessing 1
+MRDClusterProcessing 1
 TriggerProcessing 1
-HitInfo_fill 1
-SiPMPulseInfo_fill 1
+TankHitInfo_fill 1
+MRDHitInfo_fill 1
+MRDReco_fill 1
+SiPMPulseInfo_fill 0
 fillCleanEventsOnly 0
 MCTruth_fill 0
 Reco_fill 0

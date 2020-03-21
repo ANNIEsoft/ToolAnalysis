@@ -138,7 +138,7 @@ bool SimpleTankEnergyCalibrator::Execute(){
     thisTrackAsBoostStore->Get("TrackAngleError",TrackAngleError);
     thisTrackAsBoostStore->Get("PenetrationDepth",PenetrationDepth);
     thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);
-    thisTrackAsBoostStore->Get("LayersHit",LayersHit);
+    thisTrackAsBoostStore->Get("NumLayersHit",LayersHit);
     thisTrackAsBoostStore->Get("EnergyLoss",EnergyLoss);
     thisTrackAsBoostStore->Get("EnergyLossError",EnergyLossError);
     tracklength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));

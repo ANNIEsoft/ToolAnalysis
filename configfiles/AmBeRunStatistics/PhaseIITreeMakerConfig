@@ -1,6 +1,6 @@
 verbose 5
 
-OutputFile AmBeR1612S0p2.ntuple.root
+OutputFile AmBeR1612S0p1.ntuple.root
 ClusterProcessing 1
 TriggerProcessing 1
 HitInfo_fill 1
