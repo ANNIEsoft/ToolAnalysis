@@ -106,7 +106,6 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     }
     if(MRDReco_fill){
       fPhaseIIMRDClusterTree->Branch("numClusterTracks",&fNumClusterTracks,"numClusterTracks/I");
-      fPhaseIIMRDClusterTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
     //Push back some properties
       fPhaseIIMRDClusterTree->Branch("MRDTrackAngle",&fMRDTrackAngle);
       fPhaseIIMRDClusterTree->Branch("MRDTrackAngleError",&fMRDTrackAngleError);
@@ -131,7 +130,6 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fPhaseIITrigTree->Branch("eventTimeMRD",&fEventTimeMRD,"eventTimeMRD/l");
     fPhaseIITrigTree->Branch("nhits",&fNHits,"nhits/I");
 
-    fPhaseIITrigTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
 
     //Event Staus Flag Information
     if(fillCleanEventsOnly){
@@ -167,9 +165,6 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     }
     if(MRDReco_fill){
       fPhaseIITrigTree->Branch("numMRDTracks",&fNumClusterTracks,"numMRDTracks/I");
-      fPhaseIITrigTree->Branch("MRDhitT",&fMRDHitT);
-      fPhaseIITrigTree->Branch("MRDhitDetID", &fMRDHitDetID);
-      fPhaseIITrigTree->Branch("vetoHit",&fVetoHit,"vetoHit/I");
     //Push back some properties
       fPhaseIITrigTree->Branch("MRDTrackAngle",&fMRDTrackAngle);
       fPhaseIITrigTree->Branch("MRDTrackAngleError",&fMRDTrackAngleError);

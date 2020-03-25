@@ -107,13 +107,25 @@ double ClusterClassifiers::CalculateChargeBalance(std::vector<Hit> cluster_hits)
 {
   double total_Q = 0;
   double total_QSquared = 0;
+  std::map<int, double> CBMap;
   for (int i = 0; i < cluster_hits.size(); i++){
     Hit ahit = cluster_hits.at(i); 
     double hit_charge = ahit.GetCharge();
-    total_Q+= hit_charge;
-    total_QSquared += (hit_charge * hit_charge);
-  } 
-  double charge_balance  = sqrt((total_QSquared)/(total_Q*total_Q) - (1./126.));
+    int hit_ID = ahit.GetTubeId();
+    std::map<int, double>::iterator it = CBMap.find(hit_ID);
+    if(it != CBMap.end()){ //A hit from this tube has been seen before
+      CBMap.at(hit_ID)+=hit_charge;
+    } else {
+      CBMap.emplace(hit_ID,hit_charge);
+    }
+  }
+  for (std::pair<int,double> CBPair : CBMap) {
+    double tube_charge = CBPair.second;
+    total_Q+= tube_charge;
+    total_QSquared += (tube_charge * tube_charge);
+  }
+  //FIXME: Need a method to have the 123 be equal to the number of operating detectors
+  double charge_balance  = sqrt((total_QSquared)/(total_Q*total_Q) - (1./123.));
   if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated charge balance of " << charge_balance << std::endl;
   return charge_balance;
 }
