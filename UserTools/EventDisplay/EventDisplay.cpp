@@ -16,7 +16,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   gObjectTable->Print();*/
 
   //--------------------------------------------
-  //---------loading config file----------------
+  //---------Loading config file----------------
   //--------------------------------------------
 
   if(configfile!="")  m_variables.Initialise(configfile); 
@@ -43,7 +43,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   string_date_label = "01/13/2020";
 
   //--------------------------------------------
-  //-------get configuration variables----------
+  //-------Get configuration variables----------
   //--------------------------------------------
 
   m_variables.Get("verbose",verbose);
@@ -72,18 +72,18 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OutputFile",out_file);
   m_variables.Get("DetectorConfiguration",detector_config);
   m_variables.Get("IsData",isData);
-  m_variables.Get("UserTriggerLabel",user_trigger_label);
-  m_variables.Get("UserDateLabel",string_date_label);
+  m_variables.Get("RunNumber",user_run_number); 
   m_variables.Get("HistogramConfig",histogram_config);
   m_variables.Get("NPMTCut",npmtcut);
-  m_variables.Get("DrawCluster",draw_cluster);
+  m_variables.Get("DrawClusterPMT",draw_cluster);
+  m_variables.Get("DrawClusterMRD",draw_cluster_mrd);
   m_variables.Get("ChargeFormat",charge_format);
   m_variables.Get("SinglePEGains",singlePEgains);
 
   Log("EventDisplay tool: Initialising",v_message,verbose);
 
   //---------------------------------------------------
-  //check for non-sense input  / set default behavior--
+  //Check for non-sense input  / set default behavior--
   //---------------------------------------------------
 
   if (mode !="Charge" && mode!="Time") mode = "Charge";
@@ -98,7 +98,13 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   if (user_input!=0 && user_input!=1) user_input = 0;
   if (use_tapplication!= 0 && use_tapplication!= 1) use_tapplication = 0;
   if (draw_cluster!=0 && draw_cluster!=1) draw_cluster=0;
+  if (draw_cluster_mrd!=0 && draw_cluster_mrd!=1) draw_cluster_mrd=0;
   if (charge_format != "nC" && charge_format != "pe") charge_format = "nC";
+  if (str_event_list!="None") single_event = -999;
+  if (user_input) {
+    single_event = -999;
+    str_event_list = "None";
+  }
   if (isData) {
     //Currently only the true vertex and ring can be drawn, so disable this feature for data files
     draw_ring = false;
@@ -131,7 +137,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
 
   //---------------------------------------------------
-  //-------get ev list in case it's specified----------
+  //-------Get ev list in case it's specified----------
   //---------------------------------------------------
 
   if (str_event_list!="None"){
@@ -148,7 +154,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   Log(logmessage,v_message,verbose);
 
   //---------------------------------------------------
-  // ------print chosen settings for EventDisplay------
+  // ------Print chosen settings for EventDisplay------
   //---------------------------------------------------
 
   if (verbose > 0){
@@ -178,7 +184,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
 
   //----------------------------------------------------
-  //--only evaluate active LAPPD file if told to do so--
+  //--Only evaluate active LAPPD file if told to do so--
   //----------------------------------------------------
 
   if (lappds_selected){ 
@@ -198,7 +204,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
 
   //----------------------------------------------------
-  //---------get geometry of detector-------------------
+  //---------Get geometry of detector-------------------
   //----------------------------------------------------
 
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
@@ -225,9 +231,12 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   n_lappds = geom->GetNumDetectorsInSet("LAPPD");
   n_mrd_pmts = geom->GetNumDetectorsInSet("MRD");
   n_veto_pmts = geom->GetNumDetectorsInSet("Veto");
-  //need the following conversion from WCSim IDs because Digit Objects in the RecoEvent store currently still depend on them (MC only)
+
+  //Need the following conversion from WCSim IDs because Digit Objects in the RecoEvent store currently still depend on them
   if (!isData){
     m_data->CStore.Get("lappd_tubeid_to_detectorkey",lappd_tubeid_to_detectorkey);
+  }
+  if (EventType == "RecoEvent"){
     m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
   }
   if (verbose > 0) std::cout <<"EventDisplay: Num Tank PMTs: "<<n_tank_pmts<<", num MRD PMTs: "<<n_mrd_pmts<<", num Veto PMTs: "<<n_veto_pmts<<", num LAPPDs: "<<n_lappds<<std::endl;
@@ -235,7 +244,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   if (verbose > 0) std::cout <<"Detectors size: "<<Detectors->size()<<std::endl;
   
   //----------------------------------------------------------------------
-  //-----------read in the LAPPD detkeys into a vector--------------------
+  //-----------Read in the LAPPD detkeys into a vector--------------------
   //----------------------------------------------------------------------
 
   for (std::map<unsigned long,Detector*>::iterator it = Detectors->at("LAPPD").begin();
@@ -251,7 +260,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
    Log(logmessage,v_message,verbose);
 
   //----------------------------------------------------------------------
-  //-----------convert user's provided LAPPD indexes to detectorkey-------
+  //-----------Convert user's provided LAPPD indexes to detectorkey-------
   //----------------------------------------------------------------------
 
   if(lappds_selected){
@@ -277,7 +286,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
 
   //----------------------------------------------------------------------
-  //-----------read in PMT x/y/z positions into vectors-------------------
+  //-----------Read in PMT x/y/z positions into vectors-------------------
   //----------------------------------------------------------------------
 
   max_y=-100.;
@@ -383,7 +392,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   file_singlepe.close();
 
   //---------------------------------------------------------------
-  //----initialize TApplication in case of displayed graphics------
+  //----Initialize TApplication in case of displayed graphics------
   //---------------------------------------------------------------
 
   if (use_tapplication){
@@ -395,12 +404,12 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
 
   //---------------------------------------------------------------
-  //---------------set the color palette once----------------------
+  //---------------Set the color palette once----------------------
   //---------------------------------------------------------------
   set_color_palette();
 
   //---------------------------------------------------------------
-  //---------------initialize canvases ----------------------------
+  //---------------Initialize canvases ----------------------------
   //---------------------------------------------------------------
 
   if (output_format == "root") {
@@ -416,24 +425,40 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   }
   canvas_ev_display=new TCanvas("canvas_ev_display","Event Display",900,900);
 
-  time_alignment_MRD_PMTs = new TH2F("time_alignment_PMTs","Time PMTs vs. Time MRD",pmt_Tbins,0,4000,pmt_Tbins,0,4000); 
-  time_alignment_MRD_PMTs->GetXaxis()->SetTitle("t_{MRD} [ns]");
-  time_alignment_MRD_PMTs->GetYaxis()->SetTitle("t_{PMT} [ns]");
-  
   for (int i_lappd=0; i_lappd < max_num_lappds; i_lappd++){
     time_LAPPDs[i_lappd] = nullptr;
     charge_LAPPDs[i_lappd] = nullptr;
   }
 
   //--------------------------------------------------------------
+  //------------ Initialise map of runtypes-----------------------
+  //--------------------------------------------------------------
+  
+  map_runtypes.emplace(0,"Test");
+  map_runtypes.emplace(1,"LED");
+  map_runtypes.emplace(2,"Ped");
+  map_runtypes.emplace(3,"Beam");
+  map_runtypes.emplace(4,"AmBe");
+
+  std::string StartTime = "1970/1/1";
+  Epoch = new boost::posix_time::ptime(boost::gregorian::from_string(StartTime));
+
+  //--------------------------------------------------------------
   //------------Get first of selected events ---------------------
   //--------------------------------------------------------------
   
   if (ev_list.size()>0){
-      m_data->CStore.Set("UserEvent",true);
-      m_data->CStore.Set("LoadEvNr",ev_list.at(0));
-      m_data->CStore.Set("CheckFurtherTriggers",false);
-      i_loop=1;
+    m_data->CStore.Set("UserEvent",true);
+    m_data->CStore.Set("LoadEvNr",ev_list.at(0));
+    m_data->CStore.Set("CheckFurtherTriggers",false);
+    i_loop=1;
+  }
+
+  if (single_event >= 0){
+    m_data->CStore.Set("UserEvent",true);
+    m_data->CStore.Set("LoadEvNr",single_event);
+    m_data->CStore.Set("CheckFurtherTriggers",false);
+    i_loop=1;
   }
 
   return true;
@@ -450,27 +475,63 @@ bool EventDisplay::Execute(){
     return false;
   }
 
+  //---------------------------------------------------------------
+  //---------------Get User EventNumber ---------------------------
+  //---------------------------------------------------------------
+
   if (str_event_list!="None"){
-  if (ev_list.size() > i_loop){
-    m_data->CStore.Set("UserEvent",true);
-    m_data->CStore.Set("LoadEvNr",ev_list.at(i_loop));
-    m_data->CStore.Set("CheckFurtherTriggers",false);
-    i_loop++;
-  } else {
-    m_data->CStore.Set("UserEvent",false);
-    m_data->vars.Set("StopLoop",1);
-  }
+    if (int(ev_list.size()) > i_loop){
+      m_data->CStore.Set("UserEvent",true);
+      m_data->CStore.Set("LoadEvNr",ev_list.at(i_loop));
+      m_data->CStore.Set("CheckFurtherTriggers",false);
+      i_loop++;
+    } else {
+      m_data->CStore.Set("UserEvent",false);
+      m_data->vars.Set("StopLoop",1);
+    }
   }
 
   int get_ok;
 
   //---------------------------------------------------------------
-  //---------------Get ANNIEEvent & RecoEvent objects -------------------------
+  //---------------Get general objects ----------------------------
   //---------------------------------------------------------------
 
-  // Get ANNIEEvent related variables
-  
-  // Currently event information needs to be loaded differently for data and MC (difference in Hits/MCHits objects)
+  std::cout <<"get eventnumber"<<std::endl;
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
+  if(not get_ok) { Log("EventDisplay tool: Error retrieving EventNumber, true from ANNIEEvent!",v_error,verbose); return false;}
+  std::cout <<"get runnumber"<<std::endl;
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
+  if(not get_ok){ Log("EventDisplay tool: Error retrieving RunNumber, true from ANNIEEvent!",v_error,verbose); return false;}
+  //get_ok = m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
+  //if(not get_ok){ Log("EventDisplay tool: Error retrieving SubRunNumber, true from ANNIEEvent!",v_error,verbose); return false;}
+ 
+  //---------------------------------------------------------------
+  //------------------ Get Data related objects -------------------
+  //---------------------------------------------------------------
+
+  if (isData) {
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
+    if(not get_ok){ Log("EventDisplay tool: Error retrieving Hits, true from ANNIEEvent!",v_error,verbose);}
+    //For data, it is currently still possible that there does not exist the TDCData or LAPPDHits object. Don't return false in these cases
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_Data);  // a std::map<ChannelKey,vector<TDCHit>>
+    if(not get_ok){ Log("EventDisplay tool: Error retrieving TDCData (Data), true from ANNIEEvent!",v_error,verbose);}
+    //TODO: Uncomment following two lines once LAPPDs are available in data
+    //get_ok = m_data->Stores["ANNIEEvent"]->Get("LAPPDHits",LAPPDHits);
+    //if(not get_ok){ Log("EventDisplay tool: Error retrieving LAPPDHits, true from ANNIEEvent!",v_error,verbose);}
+    std::cout <<"get runtype"<<std::endl;
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("RunType",RunType);
+    if(not get_ok){ Log("EventDisplay tool: Error retrieving RunType, true from ANNIEEvent! ",v_error,verbose); return false;}
+    std::cout <<"get eventtimetank"<<std::endl;
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTimeTank",EventTankTime);
+    if(not get_ok){ Log("EventDisplay tool: Error retrieving EventTimeTank, true from ANNIEEvent! ",v_error,verbose); return false;}
+  }
+
+
+  //---------------------------------------------------------------
+  //------------------ Get MC related objects ---------------------
+  //---------------------------------------------------------------
+
   if (!isData){
     get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles); //needed to retrieve true vertex and direction
     if(not get_ok){ Log("EventDisplay tool: Error retrieving MCParticles, true from ANNIEEvent!",v_error,verbose); return false;}
@@ -480,55 +541,31 @@ bool EventDisplay::Execute(){
     if(not get_ok){ Log("EventDisplay tool: Error retrieving TDCData, true from ANNIEEvent!",v_error,verbose); return false;}
     get_ok = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving MCLAPPDHits, true from ANNIEEvent!",v_error,verbose); return false;} 
- } else {
-    get_ok = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
-    if(not get_ok){ Log("EventDisplay tool: Error retrieving Hits, true from ANNIEEvent!",v_error,verbose);}
-    //For data, it is currently still possible that there does not exist the TDCData or LAPPDHits object. Don't return false in these cases
-    get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_Data);  // a std::map<ChannelKey,vector<TDCHit>>
-    if(not get_ok){ Log("EventDisplay tool: Error retrieving TDCData (Data), true from ANNIEEvent!",v_error,verbose);}
-    get_ok = m_data->Stores["ANNIEEvent"]->Get("LAPPDHits",LAPPDHits);
-    if(not get_ok){ Log("EventDisplay tool: Error retrieving LAPPDHits, true from ANNIEEvent!",v_error,verbose);}
-  }
-  get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
-  if(not get_ok) { Log("EventDisplay tool: Error retrieving EventNumber, true from ANNIEEvent!",v_error,verbose); return false;}
-  get_ok = m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
-  if(not get_ok){ Log("EventDisplay tool: Error retrieving RunNumber, true from ANNIEEvent!",v_error,verbose); return false;}
-  //get_ok = m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
-  //if(not get_ok){ Log("EventDisplay tool: Error retrieving SubRunNumber, true from ANNIEEvent!",v_error,verbose); return false;}
-  if (!isData){
+    
     //EventTime currently not implemented in data
     get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving EventTime, true from ANNIEEvent!",v_error,verbose); return false;}
-  }
-  //Currently TriggerData is not available for data, will be inserted in the future
-  //TODO: Load the same information for data once the EventBuilder is fully operational
-  if (!isData){
+    
+    //Currently TriggerData is not available for data, will be inserted in the future
+    //TODO: Load the same information for data once the EventBuilder is fully operational
     get_ok = m_data->Stores["ANNIEEvent"]->Get("BeamStatus",BeamStatus);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving BeamStatus, true from ANNIEEvent!",v_error,verbose); return false;}
     get_ok = m_data->Stores["ANNIEEvent"]->Get("TriggerData",TriggerData);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving TriggerData, true from ANNIEEvent!",v_error,verbose); return false;}
-  }
-
-  //MCEventNum and MCTriggernum only available for MC (for now)
-  //TODO: Get the information also for data as soon as the EventBuilder is configured to save the information
-  if (!isData){
+  
+    //MCEventNum and MCTriggernum only available for MC (for now)
+    //TODO: Get the information also for data as soon as the EventBuilder is configured to save the information
     get_ok = m_data->Stores["ANNIEEvent"]->Get("MCEventNum",mcevnum);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving MCEventNum, true from ANNIEEvent!",v_error,verbose); return false;}
     get_ok = m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving MCTriggernum, true from ANNIEEvent!",v_error,verbose); return false;}
-  }
-
-  //Get RecoEvent related variables, related to MC
-  //TODO: Add reconstructed versions of vertices and rings 
-  if (!isData){
+  
+    //Get RecoEvent related variables, related to MC
+    //TODO: Add reconstructed versions of vertices and rings 
     get_ok = m_data->Stores.at("RecoEvent")->Get("TrueVertex",TrueVertex);
     if(not get_ok){ Log("EventDisplay Tool: Error retrieving TrueVertex,true from RecoEvent!",v_error,verbose); return false; }
     get_ok = m_data->Stores.at("RecoEvent")->Get("TrueStopVertex",TrueStopVertex);
     if(not get_ok){ Log("EventDisplay Tool: Error retrieving TrueStopVertex,true from RecoEvent!",v_error,verbose); return false; }
-    get_ok = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutStatus);
-    if(not get_ok){ Log("EventDisplay Tool: Error retrieving EventCutStatus,true from RecoEvent!",v_error,verbose); return false; }
-    get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",RecoDigits);
-    if(not get_ok){ Log("EventDisplay Tool: Error retrieving RecoDigit,true from RecoEvent!",v_error,verbose); return false; }
     get_ok = m_data->Stores.at("RecoEvent")->Get("TrueMuonEnergy",TrueMuonEnergy);
     if(not get_ok){ Log("EventDisplay Tool: Error retrieving TrueMuonEnergy,true from RecoEvent!",v_error,verbose); return false; }
     get_ok = m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
@@ -537,7 +574,23 @@ bool EventDisplay::Execute(){
     if(not get_ok){ Log("EventDisplay Tool: Error retrieving IndexParticlesRing, true from RecoEvent!",v_error,verbose); return false; }
   }
 
-  //Get Clustered Event information (from ClusterFinder tool)
+
+  //---------------------------------------------------------------
+  //------------- Get RecoEvent related variables - ---------------
+  //---------------------------------------------------------------
+  
+  if (EventType == "RecoEvent"){
+    get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",RecoDigits);
+    if(not get_ok){ Log("EventDisplay Tool: Error retrieving RecoDigit,true from RecoEvent!",v_error,verbose); return false; }
+    get_ok = m_data->Stores.at("RecoEvent")->Get("EventCutStatus",EventCutStatus);
+    if(not get_ok){ Log("EventDisplay Tool: Error retrieving EventCutStatus,true from RecoEvent!",v_error,verbose); return false; }
+  }
+
+  //---------------------------------------------------------------
+  //------------- Get Clustered Event information -----------------
+  //---------------------------------------------------------------
+
+  //Get Clustered PMT information (from ClusterFinder tool)
   if (draw_cluster){
     get_ok = m_data->CStore.Get("ClusterMap",m_all_clusters);
     if (not get_ok) { Log("EventDisplay Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbose); return false; }
@@ -545,7 +598,7 @@ bool EventDisplay::Execute(){
     if (not get_ok) { Log("EventDisplay Tool: Error retrieving ClusterMapDetkey from CStore, did you run ClusterFinder beforehand?",v_error,verbose); return false; }
   }
   //Get MRD Cluster information (from TimeClustering tool)
-  if (draw_cluster){
+  if (draw_cluster_mrd){
     get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
     if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdTimeClusters map from CStore, did you run TimeClustering beforehand?",v_error,verbose); return false; }
     if (MrdTimeClusters.size()!=0){
@@ -558,25 +611,41 @@ bool EventDisplay::Execute(){
 
   std::string logmessage;
 
+  //---------------------------------------------------------------
+  //------------- Evaluate Event Date & Triggertype ---------------
+  //---------------------------------------------------------------
+  
+  //Set default run type to beam (if not stored in data)
+  if (RunType == -1) RunType =3;
+  if (runnumber == -1) runnumber = user_run_number;
+  
   if (!isData){
     for (unsigned int i_trigger=0;i_trigger<TriggerData->size();i_trigger++){
       logmessage = "EventDisplay tool: Trigger name: "+TriggerData->at(i_trigger).GetName()+", Trigger time: "+std::to_string(TriggerData->at(i_trigger).GetTime().GetNs());
       Log(logmessage,v_message,verbose);
       trigger_label = TriggerData->at(i_trigger).GetName();
     }
+    string_date_label = "MC/MC/MCMC";
   }
   else if (isData){
-    trigger_label = user_trigger_label;
+    trigger_label = map_runtypes.at(RunType);
+    EventTankTime/=1.e6;	//convert EventTankTime to milliseconds
+    boost::posix_time::ptime eventtime = *Epoch + boost::posix_time::time_duration(int(EventTankTime/1000/60/60),int(EventTankTime/1000/60)%60,int(EventTankTime/1000)%60,EventTankTime%1000);
+    struct tm eventtime_tm = boost::posix_time::to_tm(eventtime);
+    std::stringstream ss_date_label;
+    ss_date_label << eventtime_tm.tm_year+1900 << "/" << eventtime_tm.tm_mon+1 << "/" << eventtime_tm.tm_mday << "-" << eventtime_tm.tm_hour << ":" << eventtime_tm.tm_min;
+    string_date_label = ss_date_label.str();
   }
 
   //---------------------------------------------------------------
   //---------------Current event to be processed? -----------------
   //---------------------------------------------------------------
 
-  logmessage = "EventDisplay tool: single_event = "+std::to_string(single_event)+", event number "+std::to_string(evnum);
-  Log(logmessage,v_debug,verbose);
+  logmessage = "EventDisplay tool: Event number "+std::to_string(evnum);
+  Log(logmessage,v_message,verbose);
 
-  if (str_event_list=="None" && (evnum!=single_event && single_event!=-999)) return true;
+  if (single_event>=0 && i_loop ==2) return true;
+  else i_loop = 2;
   passed_selection_cuts = EventCutStatus;
   if (selected_event && !passed_selection_cuts) return true;
   Log("EventDisplay tool: Event number check passed.",v_debug,verbose);
@@ -719,12 +788,16 @@ bool EventDisplay::Execute(){
   }
 
   //---------------------------------------------------------------
-  //-------------------Iterate over MCHits ------------------------
+  //-------------------Iterate over PMTHits ------------------------
   //---------------------------------------------------------------
 
+  // Separate cases: ANNIEEvent Store/ RecoEvent Store
+  // The RecoEvent store is used the same way for data & MC (RecoDigits)
+  // The ANNIEEvent store is used differently for data & MC (Hits/MCHits)
+  // Clustered hits can only be selected in the ANNIEEvent store (RecoDigits should already be clustered)
 
-  if (!isData){
-    if (EventType == "ANNIEEvent"){
+   if (EventType == "ANNIEEvent"){
+    if (!isData){
       int vectsize;
       total_hits_pmts=0;
       if (MCHits){
@@ -755,8 +828,90 @@ bool EventDisplay::Execute(){
         vectsize = 0;
       }
       logmessage = "EventDisplay tool: MCHits size = "+std::to_string(vectsize);
-      Log(logmessage,v_message,verbose); 
-    } else if (EventType == "RecoEvent"){
+      Log(logmessage,v_message,verbose);
+
+    } else {
+    
+      //data file case
+      int vectsize;
+      total_hits_pmts=0;
+      if (!draw_cluster && Hits){
+        vectsize = Hits->size();
+        for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits){
+          unsigned long chankey = apair.first;
+          Log("EventDisplay tool: Loop over Hits: Chankey = "+std::to_string(chankey),v_debug,verbose);
+          Detector* thistube = geom->ChannelToDetector(chankey);
+          unsigned long detkey = thistube->GetDetectorID();
+          Log("EventDisplay tool: Loop over Hits: Detkey = "+std::to_string(detkey),v_debug,verbose);
+          if (thistube->GetDetectorElement()=="Tank"){
+            if(thistube->GetTankLocation()=="OD") continue;             //don't plot OD PMTs (they are not included in the final design of ANNIE)
+            hitpmt_detkeys.push_back(detkey);
+            std::vector<Hit>& Hits = apair.second;
+            int hits_pmt = 0;
+            int wcsim_id;
+            for (Hit &ahit : Hits){
+              charge[detkey] += ahit.GetCharge();
+              std::cout <<"detkey = "<<detkey<<", time = "<<ahit.GetTime()<<std::endl;
+              time[detkey] += ahit.GetTime();
+              hits_pmt++;
+            }
+            time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
+            total_hits_pmts++;
+          }
+        }
+      } else if (draw_cluster && m_all_clusters){
+        int clustersize = m_all_clusters->size();
+        Log("EventDisplay tool: Clustersize of m_all_clusters: "+std::to_string(clustersize),v_message,verbose);
+        bool clusters_available = false;
+        bool muon_available = false;
+        if (clustersize != 0) clusters_available = true;
+        if (clusters_available){
+	  //determine the main cluster (max charge and in [0 ...2000ns] time window)
+	  double max_cluster = 0;
+          double max_charge_temp = 0;
+          for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
+	    std::vector<Hit>&Hits = apair.second;
+            double time_temp = 0;
+            double charge_temp = 0;
+            int hits_temp=0;
+            for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
+              hits_temp++;
+              time_temp+=Hits.at(i_hit).GetTime();
+              charge_temp+=Hits.at(i_hit).GetCharge();
+            }
+            if (hits_temp>0) time_temp/=hits_temp;
+            if (time_temp > 2000.) continue;	//not a beam muon if not in primary window
+	    if (charge_temp > max_charge_temp) {
+              muon_available = true;
+              max_charge_temp = charge_temp;
+              max_cluster = apair.first;
+            }
+  	  }
+	  if (muon_available){
+	  std::vector<Hit>& Hits = m_all_clusters->at(max_cluster);
+          std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(max_cluster);
+          int hits_pmt = 0;
+	  for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
+	    Hit ahit = Hits.at(i_hit);
+            unsigned long detkey = detkeys.at(i_hit);
+	    charge[detkey] += ahit.GetCharge();
+	    time[detkey] += ahit.GetTime();
+	    hits[detkey]++;
+	    if (std::find(hitpmt_detkeys.begin(),hitpmt_detkeys.end(),detkey)==hitpmt_detkeys.end()) hitpmt_detkeys.push_back(detkey);
+	  }
+	  for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+	    unsigned long detkey = hitpmt_detkeys.at(i_pmt);
+            time[detkey] /= hits[detkey];
+            total_hits_pmts++;
+	  }
+        }
+      }
+    }else {
+      Log("EventDisplay tool: No Hits!",v_warning,verbose);
+      vectsize = 0;
+    }
+  }
+  } else if (EventType == "RecoEvent"){
 
       total_hits_pmts=0;
       total_hits_lappds=0;
@@ -807,82 +962,28 @@ bool EventDisplay::Execute(){
         }
       }
     }
-  } else {
-    
-    //data file case
-    int vectsize;
-    total_hits_pmts=0;
-    if (!draw_cluster && Hits){
-      vectsize = Hits->size();
-      for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits){
-        unsigned long chankey = apair.first;
-        Log("EventDisplay tool: Loop over Hits: Chankey = "+std::to_string(chankey),v_debug,verbose);
-        Detector* thistube = geom->ChannelToDetector(chankey);
-        unsigned long detkey = thistube->GetDetectorID();
-        Log("EventDisplay tool: Loop over Hits: Detkey = "+std::to_string(detkey),v_debug,verbose);
-        if (thistube->GetDetectorElement()=="Tank"){
-          if(thistube->GetTankLocation()=="OD") continue;             //don't plot OD PMTs (they are not included in the final design of ANNIE)
-          hitpmt_detkeys.push_back(detkey);
-          std::vector<Hit>& Hits = apair.second;
-          int hits_pmt = 0;
-          int wcsim_id;
-          for (Hit &ahit : Hits){
-            charge[detkey] += ahit.GetCharge();
-            std::cout <<"detkey = "<<detkey<<", time = "<<ahit.GetTime()<<std::endl;
-            time[detkey] += ahit.GetTime();
-            hits_pmt++;
-          }
-          time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
-          total_hits_pmts++;
-        }
-      }
-    } else if (draw_cluster && m_all_clusters){
-      int clustersize = m_all_clusters->size();
-      std::cout <<"Clustersize of m_all_clusters: "<<clustersize<<std::endl;
-      bool clusters_available = false;
-      if (clustersize != 0) clusters_available = true;
-      if (clusters_available){
-	//determine the main cluster
-	double max_cluster = 0;
-        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-	  if (apair.first > max_cluster) max_cluster = apair.first;
-	}
-	std::vector<Hit>& Hits = m_all_clusters->at(max_cluster);
-        std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(max_cluster);
-        int hits_pmt = 0;
-	for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-	  Hit ahit = Hits.at(i_hit);
-          unsigned long detkey = detkeys.at(i_hit);
-	  charge[detkey] += ahit.GetCharge();
-	  time[detkey] += ahit.GetTime();
-	  hits[detkey]++;
-	  if (std::find(hitpmt_detkeys.begin(),hitpmt_detkeys.end(),detkey)==hitpmt_detkeys.end()) hitpmt_detkeys.push_back(detkey);
-	}
-	for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
-	  unsigned long detkey = hitpmt_detkeys.at(i_pmt);
-          time[detkey] /= hits[detkey];
-          total_hits_pmts++;
-	}
-      }
-    }else {
-      Log("EventDisplay tool: No Hits!",v_warning,verbose);
-      vectsize = 0;
-    }
-  }
-  
-
-  if (total_hits_pmts < npmtcut) {
-    Log("EventDisplay tool: Only "+std::to_string(total_hits_pmts)+" PMTs hit. Required: "+std::to_string(npmtcut)+". Terminate this execute step.",v_message,verbose);
-    return true;
-   }
 
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
   
-   for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
-    if (charge_format == "pe"){
-     unsigned long detkey = hitpmt_detkeys.at(i_pmt); 
-     if (pmt_gains[detkey]>0) charge[detkey]/=pmt_gains[detkey];
+  //Convert charges to p.e.
+  if (isData){
+    for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+      if (charge_format == "pe"){
+        unsigned long detkey = hitpmt_detkeys.at(i_pmt); 
+        if (pmt_gains[detkey]>0) charge[detkey]/=pmt_gains[detkey];
+      }
     }
+  }
+
+  //NHits threshold cut
+  int total_hits_pmts_above_thr=0;
+  for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
+      unsigned long detkey = hitpmt_detkeys.at(i_pmt);
+      if (charge[detkey] > threshold) total_hits_pmts_above_thr++;
+  }
+  if (total_hits_pmts_above_thr < npmtcut) {
+    Log("EventDisplay tool: Only "+std::to_string(total_hits_pmts_above_thr)+" PMTs hit above threshold. Required: "+std::to_string(npmtcut)+". Terminate this execute step.",v_message,verbose);
+    return true;
    }
   
   //---------------------------------------------------------------
@@ -1231,7 +1332,7 @@ bool EventDisplay::Execute(){
     } else {
       if(TDCData_Data->size()==0){
         Log("EventDisplay tool: No TDC hits to plot in Event Display!",v_message,verbose);
-      } else if (!draw_cluster) {
+      } else if (!draw_cluster_mrd) {
           Log("EventDisplay tool: Looping over FACC/MRD hits...Size of TDCData hits (data): "+std::to_string(TDCData_Data->size()),v_message,verbose);
         for(auto&& anmrdpmt : (*TDCData_Data)){
           unsigned long chankey = anmrdpmt.first;
@@ -1300,13 +1401,15 @@ bool EventDisplay::Execute(){
    }
   }
 
+
+  //Calculate mean MRD cluster time
   double mean_mrd_time = 0;
   for (unsigned int i = 0; i< hitmrd_detkeys.size(); i++){
     mean_mrd_time+=mrddigittimesthisevent[hitmrd_detkeys.at(i)];
   }
   if (hitmrd_detkeys.size()>0) mean_mrd_time/=hitmrd_detkeys.size();
   if (hitmrd_detkeys.size()>0 && hitpmt_detkeys.size()>0){
-    time_alignment_MRD_PMTs->Fill(mean_mrd_time,mean_pmt_time);
+    //Use mean_mrd_time for something?
   }
 
 
@@ -1420,7 +1523,6 @@ bool EventDisplay::Execute(){
 bool EventDisplay::Finalise(){
 
   root_file->cd();
-  time_alignment_MRD_PMTs->Write();
 
   //-----------------------------------------------------------------
   //---------------- Delete remaining objects -----------------------
@@ -1455,6 +1557,8 @@ bool EventDisplay::Finalise(){
     root_file->Close();
     delete root_file;
   }
+
+  delete Epoch;
 
   //only for debugging memory leaks, otherwise comment out
   //std::cout <<"List of Objects (end of finalise): "<<std::endl;
@@ -1602,11 +1706,11 @@ void EventDisplay::draw_event(){
     Log("EventDisplay tool: Drawing particle legend finished.",v_message,verbose);
 
     if (draw_vertex_temp) {
-	for (unsigned int i_particle = 0; i_particle < n_particles_ring.size(); i_particle++){
-		if (n_particles_ring.at(i_particle)==1) {
-			draw_true_vertex(particles_truevtx.at(i_particle),particles_truedir.at(i_particle),particles_color.at(i_particle));
-		}
-	}
+      for (unsigned int i_particle = 0; i_particle < n_particles_ring.size(); i_particle++){
+      if (n_particles_ring.at(i_particle)==1) {
+        draw_true_vertex(particles_truevtx.at(i_particle),particles_truedir.at(i_particle),particles_color.at(i_particle));
+      }
+    }
         Log("EventDisplay tool: Drawing true vertices finished.",v_message,verbose);
     }
 
@@ -1671,8 +1775,7 @@ void EventDisplay::draw_event_box(){
     std::string lappd_hits_label = lappds_str+lappd_numbers_str+modules_str+lappd_hits_number+hits2_str;
     std::string trigger_text_label = trigger_str+trigger_label;
     std::string date_text_label = annie_date + string_date_label;
-    text_event_info->AddText(date_text_label.c_str());         //FIXME: get date/time stamp from somewhere
-    //text_event_info->AddText("Time: ");
+    text_event_info->AddText(date_text_label.c_str());         //TEMPORARY: get date/time stamp from somewhere (TriggerData, as soon as implemented)
     if (!isData) text_event_info->AddText(annie_time_label.c_str());
     text_event_info->AddText(annie_run_label.c_str());
     //text_event_info->AddText(annie_subrun_label.c_str());

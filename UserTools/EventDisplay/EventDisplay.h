@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include "Tool.h"
 #include "TEllipse.h"
 #include "TApplication.h"
@@ -98,8 +100,12 @@ class EventDisplay: public Tool {
     std::string histogram_config;
     int npmtcut;
     bool draw_cluster;
+    bool draw_cluster_mrd;
     std::string charge_format;
     std::string singlePEgains;
+    int user_run_number = -1;
+    bool draw_ring_temp;
+    bool draw_vertex_temp;
 
     //define event variables
     uint32_t evnum;
@@ -108,6 +114,8 @@ class EventDisplay: public Tool {
     int subrunnumber;
     int terminate_execution;  //for continuous execution of multiple events, prompt user input
     uint16_t MCTriggernum;
+    ULong64_t EventTankTime;
+    int RunType;
     std::map<unsigned long,vector<MCHit>>* TDCData=nullptr;
     std::map<unsigned long,vector<Hit>>* TDCData_Data=nullptr;
     TimeClass* EventTime=nullptr;
@@ -132,18 +140,20 @@ class EventDisplay: public Tool {
     int nrings;
     bool passed_selection_cuts;
     std::vector<unsigned int> particles_ring;
+    std::map<int,std::string> map_runtypes;
     int i_loop;
-
-    double detector_version;
-    std::string detector_config;
-    bool draw_ring_temp;
-    bool draw_vertex_temp;
+    boost::posix_time::ptime *Epoch;
     std::vector<int> ev_list;
+    std::map<unsigned long,double> pmt_gains;
+    double thetaC = 0.7505;    //43 degrees in rad (Cherenkov angle in water)
+    std::string trigger_label;
+    std::map<int,int> active_lappds_user;  // WCSim LAPPD IDs read from config file
+    std::map<int,int> active_lappds;       // converted to detectorkey
+
 
     //geometry variables
     Geometry *geom = nullptr;
     Detector det;
-    std::string trigger_label;
     double tank_height;
     double tank_radius;
     int max_num_lappds = 200;              //one is allowed to dream, right?
@@ -151,14 +161,19 @@ class EventDisplay: public Tool {
     int n_mrd_pmts;
     int n_veto_pmts;
     int n_lappds;
-    std::map<int,int> active_lappds_user;  // WCSim LAPPD IDs read from config file
-    std::map<int,int> active_lappds;       // converted to detectorkey
     double max_y;
     double min_y;
     double min_mrd_y, max_mrd_y, min_mrd_x, max_mrd_x, min_mrd_z, max_mrd_z;
     double mrd_diffz, mrd_diffy, mrd_diffx;
     std::vector<int> n_particles_ring;
-    std::map<unsigned long,double> pmt_gains;
+    double detector_version;
+    std::string detector_config;
+    double tank_center_x;
+    double tank_center_y;
+    double tank_center_z;
+    std::map<int, double> x_pmt, y_pmt, z_pmt;          //143 currently max configuration with additional 2 inch PMTs
+    std::map<unsigned long, std::vector<double>> mrd_x, mrd_y, mrd_z;
+    std::map<unsigned long, int> mrd_orientation, mrd_half, mrd_side;
 
     //bool variables for schematic hit plot
     bool facc_hit;
@@ -166,7 +181,6 @@ class EventDisplay: public Tool {
     bool mrd_hit;
 
     //variables for graphical visualization
-
     TPad *p1 = nullptr;
     TEllipse *top_circle = nullptr;
     TEllipse *bottom_circle = nullptr;
@@ -195,17 +209,10 @@ class EventDisplay: public Tool {
     TLatex *legend_k = nullptr;
     TText *title_mrd_side = nullptr;
     TText *title_mrd_top = nullptr;
+    std::map<unsigned long, TBox*> mrd_paddles, box_mrd_paddles;
 
 
-    std::map<int, double> x_pmt, y_pmt, z_pmt;          //143 currently max configuration with additional 2 inch PMTs
-    std::map<unsigned long, std::vector<double>> mrd_x, mrd_y, mrd_z;
-    std::map<unsigned long, int> mrd_orientation, mrd_half, mrd_side;
-
-
-    double tank_center_x;
-    double tank_center_y;
-    double tank_center_z;
-
+    //chankey WCSim ID mappings
     std::map<int,unsigned long> lappd_tubeid_to_detectorkey;
     std::map<unsigned long,int> channelkey_to_pmtid;
     std::map<int,unsigned long> pmt_tubeid_to_channelkey;
@@ -213,6 +220,8 @@ class EventDisplay: public Tool {
     std::map<unsigned long,int> channelkey_to_faccpmtid;
     static const unsigned long n_channels_per_lappd = 60;
 
+
+    //Container holding charge/timing information
     std::map<unsigned long,double> charge;
     std::map<unsigned long,double> time;
     std::map<unsigned long,int> hits;
@@ -221,12 +230,6 @@ class EventDisplay: public Tool {
     std::map<unsigned long,std::vector<double>> time_lappd;
     std::map<unsigned long,double> mrddigittimesthisevent;
 
-    std::vector<TPolyMarker*> marker_pmts_top;
-    std::vector<TPolyMarker*> marker_pmts_bottom;
-    std::vector<TPolyMarker*> marker_pmts_wall;
-    std::vector<TPolyMarker*> marker_lappds;
-    std::vector<TPolyMarker*> marker_mrd;
-    std::map<unsigned long, TBox*> mrd_paddles, box_mrd_paddles;
 
     //max and min values for color scale
     double maximum_pmts;
@@ -235,7 +238,6 @@ class EventDisplay: public Tool {
     int total_hits_lappds;
     int num_lappds_hit;
     double total_charge_pmts;
-
     double maximum_time_pmts;
     double maximum_time_lappds;
     double maximum_time_mrd;
@@ -262,6 +264,11 @@ class EventDisplay: public Tool {
     std::vector<TMarker*> vector_colordot;
     std::vector<TMarker*> vector_colordot_lappd;
     std::vector<TMarker*> vector_colordot_mrd;
+    std::vector<TPolyMarker*> marker_pmts_top;
+    std::vector<TPolyMarker*> marker_pmts_bottom;
+    std::vector<TPolyMarker*> marker_pmts_wall;
+    std::vector<TPolyMarker*> marker_lappds;
+    std::vector<TPolyMarker*> marker_mrd;
     TPolyMarker *marker_vtx = nullptr;
     TPolyMarker *marker_bary = nullptr;
     TPolyLine *ring_visual[10] = {};     //individual ring segments for parts of the ring that change between top/bottom/wall
@@ -277,7 +284,6 @@ class EventDisplay: public Tool {
     std::map<int,TH1F*> time_LAPPDs;	//the keys for the LAPPD histogram maps are the indices of the lappd_detkeys vector
     TH1F *charge_PMTs = nullptr;
     TH2F *charge_time_PMTs = nullptr;
-    TH2F *time_alignment_MRD_PMTs = nullptr;
     std::map<int,TH1F*> charge_LAPPDs;
     double pmt_Qmax, pmt_Qmin, pmt_Tmax, pmt_Tmin, lappd_Qmax, lappd_Qmin, lappd_Tmax, lappd_Tmin;
     int pmt_Qbins, pmt_Tbins, lappd_Qbins, lappd_Tbins;
@@ -300,7 +306,6 @@ class EventDisplay: public Tool {
     std::vector<int> particles_pdg;		    //PDG codes for all particles contributing to a ring
     std::map<int,int> pdg_to_color;                 //color scheme for primary particles
 
-    double thetaC = 0.7505;    //43 degrees in rad (Cherenkov angle in water)
 
     //color palettes (kBird color palette)
     const int n_colors=255;

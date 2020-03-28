@@ -54,22 +54,23 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fLappdMinHitsPerCluster = 5;   //min # of hits per cluster //Ioana 
   
   /// Get the Tool configuration variables
-	m_variables.Get("verbosity",verbosity);
-	m_variables.Get("PmtMinPulseHeight", fPmtMinPulseHeight);
-	m_variables.Get("PmtNeighbourRadius", fPmtNeighbourRadius);
-	m_variables.Get("PmtMinNeighbourDigits", fPmtMinNeighbourDigits);
-	m_variables.Get("PmtClusterRadius", fPmtClusterRadius);
-	m_variables.Get("PmtTimeWindowN", fPmtTimeWindowN);	
-	m_variables.Get("PmtTimeWindowC", fPmtTimeWindowC);
-	m_variables.Get("PmtMinHitsPerCluster", fPmtMinHitsPerCluster);	
-	m_variables.Get("LappdMinPulseHeight", fLappdMinPulseHeight);
-	m_variables.Get("LappdNeighbourRadius", fLappdNeighbourRadius);
-	m_variables.Get("LappdMinNeighbourDigits", fLappdMinNeighbourDigits);
-	m_variables.Get("LappdClusterRadius", fLappdClusterRadius );
-	m_variables.Get("LappdTimeWindowN", fLappdTimeWindowN );
-	m_variables.Get("LappdTimeWindowC", fLappdTimeWindowC );
-	m_variables.Get("LappdMinHitsPerCluster", fLappdMinHitsPerCluster );
-	m_variables.Get("MinClusterDigits", fMinClusterDigits );
+  m_variables.Get("verbosity",verbosity);
+  m_variables.Get("IsMC",fisMC);
+  m_variables.Get("PmtMinPulseHeight", fPmtMinPulseHeight);
+  m_variables.Get("PmtNeighbourRadius", fPmtNeighbourRadius);
+  m_variables.Get("PmtMinNeighbourDigits", fPmtMinNeighbourDigits);
+  m_variables.Get("PmtClusterRadius", fPmtClusterRadius);
+  m_variables.Get("PmtTimeWindowN", fPmtTimeWindowN);	
+  m_variables.Get("PmtTimeWindowC", fPmtTimeWindowC);
+  m_variables.Get("PmtMinHitsPerCluster", fPmtMinHitsPerCluster);	
+  m_variables.Get("LappdMinPulseHeight", fLappdMinPulseHeight);
+  m_variables.Get("LappdNeighbourRadius", fLappdNeighbourRadius);
+  m_variables.Get("LappdMinNeighbourDigits", fLappdMinNeighbourDigits);
+  m_variables.Get("LappdClusterRadius", fLappdClusterRadius );
+  m_variables.Get("LappdTimeWindowN", fLappdTimeWindowN );
+  m_variables.Get("LappdTimeWindowC", fLappdTimeWindowC );
+  m_variables.Get("LappdMinHitsPerCluster", fLappdMinHitsPerCluster );
+  m_variables.Get("MinClusterDigits", fMinClusterDigits );
 
   // vector of filtered digits
   fFilterAll = new std::vector<RecoDigit*>;
@@ -87,47 +88,50 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
 
 bool HitCleaner::Execute(){
 	
-	std::string name = "HitCleaner::Execute()";
-	Log(name + ": Executing",v_debug,verbosity);
+  std::string name = "HitCleaner::Execute()";
+  Log(name + ": Executing",v_debug,verbosity);
 	
-	// print filtering parameters
-	if(verbosity>v_message) this->PrintParameters();
+  // print filtering parameters
+  if(verbosity>v_message) this->PrintParameters();
 	
-	// see if "ANNIEEvent" exists
-	auto get_annieevent = m_data->Stores.count("ANNIEEvent");
-	if(!get_annieevent){
-		Log(name + ": No ANNIEEvent store!",v_error,verbosity); 
-		return false;
-	};
+  // see if "ANNIEEvent" exists
+  auto get_annieevent = m_data->Stores.count("ANNIEEvent");
+  if(!get_annieevent){
+    Log(name + ": No ANNIEEvent store!",v_error,verbosity); 
+    return false;
+  };
 	
-	/// see if "RecoEvent" exists
- 	auto get_recoevent = m_data->Stores.count("RecoEvent");
- 	if(!get_recoevent){
-  		Log(name + ": No RecoEvent store!",v_error,verbosity); 
-  		return false;
-	};
-	
-  // get true vertex
-  auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fTrueVertex);
-	if(!get_truevtx){ 
-	  Log(name + ": Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
-	  return false; 
-	}
-	// get digit list
-	auto get_recodigit = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
+  /// see if "RecoEvent" exists
+  auto get_recoevent = m_data->Stores.count("RecoEvent");
+  if(!get_recoevent){
+    Log(name + ": No RecoEvent store!",v_error,verbosity); 
+    return false;
+  };
+
+  if (fisMC) {
+    // get true vertex
+    auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", fTrueVertex);
+    if(!get_truevtx){ 
+      Log(name + ": Error retrieving TrueVertex from RecoEvent!",v_error,verbosity); 
+      return false; 
+    }
+  }
+ 
+  // get digit list
+  auto get_recodigit = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
   if(!get_recodigit){ 
-  	Log("VtxSeedGenerator  Tool: Error retrieving RecoDigits,no digit from the RecoEvent store!",v_error,verbosity); 
-  	return false;
+    Log("VtxSeedGenerator  Tool: Error retrieving RecoDigits,no digit from the RecoEvent store!",v_error,verbosity); 
+    return false;
   }
   // copy to a new digit list
   std::vector<RecoDigit*>* digits = new std::vector<RecoDigit*>;
-  for(int i=0;i<fDigitList->size();i++) {
+  for(int i=0;i<int(fDigitList->size());i++) {
   	RecoDigit* recodigitptr = &(fDigitList->at(i));
     digits->push_back((RecoDigit*)recodigitptr);
   }
   // Reset Filter
   // ============
-  for( int n=0; n<digits->size(); n++ ) {
+  for(int n=0; n<int(digits->size()); n++ ) {
     digits->at(n)->ResetFilter();
   }
 
@@ -137,7 +141,7 @@ bool HitCleaner::Execute(){
 
   // Set Filter
   // ==========
-  for( int n=0; n<FilterDigitList->size(); n++ ) {
+  for(int n=0; n<int(FilterDigitList->size()); n++ ) {
   	RecoDigit* FilterDigit = (RecoDigit*)(FilterDigitList->at(n));
     FilterDigit->PassFilter();
   }
@@ -267,12 +271,14 @@ std::vector<RecoDigit*>* HitCleaner::Run(std::vector<RecoDigit*>* myDigitList)
   myOutputList = FilterDigits(myOutputList);
   if( fConfig==HitCleaner::kPulseHeightAndClusters ) return myOutputList;
   	
-  // filter using truth information (for simulation test only)
-  // =============================
-  myInputList = ResetDigits(myOutputList);
-  myOutputList = (std::vector<RecoDigit*>*)(this->FilterByTruthInfo(myInputList));
-  myOutputList = FilterDigits(myOutputList);
-  if( fConfig==HitCleaner::kPulseHeightAndTruthInfo ) return myOutputList;
+  if (fisMC){
+    // filter using truth information (for simulation test only)
+    // =============================
+    myInputList = ResetDigits(myOutputList);
+    myOutputList = (std::vector<RecoDigit*>*)(this->FilterByTruthInfo(myInputList));
+    myOutputList = FilterDigits(myOutputList);
+    if( fConfig==HitCleaner::kPulseHeightAndTruthInfo ) return myOutputList;
+  }
 
   // return vector of filtered digits
   // ================================
@@ -281,7 +287,7 @@ std::vector<RecoDigit*>* HitCleaner::Run(std::vector<RecoDigit*>* myDigitList)
 
 std::vector<RecoDigit*>* HitCleaner::ResetDigits(std::vector<RecoDigit*>* myDigitList)
 {
-  for( int idigit=0; idigit<myDigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(myDigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(myDigitList->at(idigit));
     recoDigit->ResetFilter();
   }
@@ -291,7 +297,7 @@ std::vector<RecoDigit*>* HitCleaner::ResetDigits(std::vector<RecoDigit*>* myDigi
 
 std::vector<RecoDigit*>* HitCleaner::FilterDigits(std::vector<RecoDigit*>* myDigitList)
 {
-  for( int idigit=0; idigit<myDigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(myDigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(myDigitList->at(idigit));
     recoDigit->PassFilter();
   }
@@ -307,7 +313,7 @@ std::vector<RecoDigit*>* HitCleaner::FilterAll(std::vector<RecoDigit*>* myDigitL
   fFilterAll->clear();
   // filter all digits
   // =================
-  for( int idigit=0; idigit<myDigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(myDigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(myDigitList->at(idigit));
     fFilterAll->push_back(recoDigit);
   }
@@ -328,7 +334,7 @@ std::vector<RecoDigit*>* HitCleaner::FilterByPulseHeight(std::vector<RecoDigit*>
 
   // filter by pulse height
   // ======================
-  for( int idigit=0; idigit<myDigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(myDigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(myDigitList->at(idigit));
     double qep = recoDigit->GetCalCharge();
     int detType = recoDigit->GetDigitType();
@@ -376,10 +382,10 @@ std::vector<RecoDigit*>* HitCleaner::FilterByNeighbours(std::vector<RecoDigit*>*
 
   // count number of neighbours
   // ==========================
-  for( int idigit1=0; idigit1<myDigitList->size(); idigit1++ ){
+  for(int idigit1=0; idigit1<int(myDigitList->size()); idigit1++ ){
   	RecoDigit* fdigit1 = (RecoDigit*)(myDigitList->at(idigit1));
   	TString digit1Type = fdigit1->GetDigitType();
-    for( int idigit2=idigit1+1; idigit2<myDigitList->size(); idigit2++ ){
+    for(int idigit2=idigit1+1; idigit2<int(myDigitList->size()); idigit2++ ){
       RecoDigit* fdigit2 = (RecoDigit*)(myDigitList->at(idigit2));
       TString digit2Type = fdigit2->GetDigitType();
 
@@ -437,7 +443,7 @@ std::vector<RecoDigit*>* HitCleaner::FilterByNeighbours(std::vector<RecoDigit*>*
 
   // filter by number of neighbours
   // ==============================
-  for( int idigit=0; idigit<myDigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(myDigitList->size()); idigit++){
     RecoDigit* fdigit = (RecoDigit*)(myDigitList->at(idigit));
     //std::cout << "numNeighbours[" << idigit << "] = " << numNeighbours[idigit] << std::endl;
     if( numNeighbours[idigit]>=fPmtMinNeighbourDigits ){
@@ -468,10 +474,10 @@ std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* m
   // ========================
   std::vector<RecoCluster*>* myClusterList = (std::vector<RecoCluster*>*)(this->RecoClusters(myDigitList));
 
-  for( int icluster=0; icluster<myClusterList->size(); icluster++ ){
+  for(int icluster=0; icluster<int(myClusterList->size()); icluster++ ){
     RecoCluster* myCluster = (RecoCluster*)(myClusterList->at(icluster));
     
-    for( int idigit=0; idigit<myCluster->GetNDigits(); idigit++ ){
+    for(int idigit=0; idigit<myCluster->GetNDigits(); idigit++ ){
       RecoDigit* myDigit = (RecoDigit*)(myCluster->GetDigit(idigit));
       fFilterByClusters->push_back(myDigit);
     }
@@ -490,7 +496,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
 
   // delete cluster digits
   // =====================
-  for( int i=0; i<vClusterDigitList.size(); i++ ){
+  for(int i=0; i<int(vClusterDigitList.size()); i++ ){
     delete (RecoClusterDigit*)(vClusterDigitList.at(i));
   }
   vClusterDigitList.clear();
@@ -501,7 +507,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
 
   // make cluster digits
   // ===================
-  for( int idigit=0; idigit<myDigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(myDigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(myDigitList->at(idigit));
     RecoClusterDigit* clusterDigit = new RecoClusterDigit(recoDigit);
     vClusterDigitList.push_back(clusterDigit);
@@ -509,10 +515,10 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
 
   // run clustering algorithm
   // ========================
-  for( int idigit1=0; idigit1<vClusterDigitList.size(); idigit1++ ){
+  for(int idigit1=0; idigit1<int(vClusterDigitList.size()); idigit1++){
   	RecoClusterDigit* fdigit1 = (RecoClusterDigit*)(vClusterDigitList.at(idigit1));
   	int digit1Type = fdigit1->GetDigitType();
-    for( int idigit2=idigit1+1; idigit2<vClusterDigitList.size(); idigit2++ ){
+    for(int idigit2=idigit1+1; idigit2<int(vClusterDigitList.size()); idigit2++ ){
 
       RecoClusterDigit* fdigit2 = (RecoClusterDigit*)(vClusterDigitList.at(idigit2));
       int digit2Type = fdigit2->GetDigitType();
@@ -572,7 +578,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
   // collect up clusters
   // ===================
   Bool_t carryon = 0;
-  for( int idigit=0; idigit<vClusterDigitList.size(); idigit++ ){
+  for(int idigit=0; idigit<int(vClusterDigitList.size()); idigit++ ){
     RecoClusterDigit* fdigit = (RecoClusterDigit*)(vClusterDigitList.at(idigit));
 
     if( fdigit->IsClustered()==0 && fdigit->GetNClusterDigits()>0 ){
@@ -584,7 +590,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
       carryon = 1;
       while( carryon ){
         carryon = 0;
-        for( int jdigit=0; jdigit<vClusterDigitCollection.size(); jdigit++ ){
+        for(int jdigit=0; jdigit<int(vClusterDigitCollection.size()); jdigit++ ){
 	  //std::cout <<"jdigit = "<<jdigit<<", vClusterDigitCollection.size() = "<<vClusterDigitCollection.size()<<std::endl;
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
           TString digitType = cdigit->GetDigitType();
@@ -624,7 +630,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
         RecoCluster* cluster = new RecoCluster();
         fClusterList->push_back(cluster);
 
-        for( int jdigit=0; jdigit<vClusterDigitCollection.size(); jdigit++ ){
+        for(int jdigit=0; jdigit<int(vClusterDigitCollection.size()); jdigit++ ){
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
           RecoDigit* recodigit = (RecoDigit*)(cdigit->GetRecoDigit());
           cluster->AddDigit(recodigit);        
@@ -657,7 +663,7 @@ std::vector<RecoDigit*>* HitCleaner::FilterByTruthInfo(std::vector<RecoDigit*>* 
   	
   // filter by truth
   // ======================
-  for( int idigit=0; idigit<DigitList->size(); idigit++ ){
+  for(int idigit=0; idigit<int(DigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)DigitList->at(idigit);
     double x = recoDigit->GetPosition().X();
     double y = recoDigit->GetPosition().Y();

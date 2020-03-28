@@ -95,6 +95,7 @@ class HitCleaner: public Tool {
   double fLappdMinHitsPerCluster;
   
   int    fMinClusterDigits;
+  bool fisMC;
 
   // internal containers
   std::vector<Double_t> vNdigitsCluster;  
