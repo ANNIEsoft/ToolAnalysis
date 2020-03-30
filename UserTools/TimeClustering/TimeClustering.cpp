@@ -147,6 +147,7 @@ bool TimeClustering::Execute(){
 
 	// extract the digits from the annieevent and put them into separate vectors used by the track finder
 	mrddigitpmtsthisevent.clear();
+	mrddigitchankeysthisevent.clear();
 	mrddigittimesthisevent.clear();
 	mrddigitchargesthisevent.clear();
 
@@ -205,6 +206,7 @@ bool TimeClustering::Execute(){
 			for(auto&& hitsonthismrdpmt : anmrdpmt.second){
 				if (channelkey_to_mrdpmtid.find(chankey) != channelkey_to_mrdpmtid.end()){
 					mrddigitpmtsthisevent.push_back(channelkey_to_mrdpmtid[chankey]);
+					mrddigitchankeysthisevent.push_back(chankey);
 					mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 					mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
 					if(MakeMrdDigitTimePlot){  // XXX XXX XXX rename
@@ -475,6 +477,7 @@ bool TimeClustering::Execute(){
 	m_data->CStore.Set("NumMrdTimeClusters",mrdeventcounter);
 	m_data->CStore.Set("MrdDigitTimes",mrddigittimesthisevent);
 	m_data->CStore.Set("MrdDigitPmts",mrddigitpmtsthisevent);
+	m_data->CStore.Set("MrdDigitChankeys",mrddigitchankeysthisevent);
 	m_data->CStore.Set("MrdDigitCharges",mrddigitchargesthisevent);
 
 	//only for debugging
