@@ -107,8 +107,10 @@ bool RawLoader::Initialise(const std::string config_file, DataModel& data)
       new annie::HeftyTreeReader(hefty_timing_filename));
   }
 
-  m_data->Stores["ANNIEEvent"] = new BoostStore(false,
-    BOOST_STORE_MULTIEVENT_FORMAT);
+  if(m_data->Stores.count("ANNIEEvent")==0){
+    m_data->Stores["ANNIEEvent"] = new BoostStore(false,
+      BOOST_STORE_MULTIEVENT_FORMAT);
+  }
 
   return true;
 }

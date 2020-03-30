@@ -119,3 +119,4 @@
 #include "MrdPaddleEfficiencyCalc.h"
 #include "LoadRawData.h"
 #include "ClusterClassifiers.h"
+#include "VetoEfficiency.h"
