@@ -107,6 +107,7 @@ class EventDisplay: public Tool {
     int user_run_type;
     bool draw_ring_temp;
     bool draw_vertex_temp;
+    bool use_filtered_digits;
 
     //define event variables
     uint32_t evnum;
@@ -135,7 +136,7 @@ class EventDisplay: public Tool {
     RecoVertex *TrueVertex = nullptr;
     RecoVertex *TrueStopVertex = nullptr;
     bool EventCutStatus;
-    std::vector<RecoDigit> RecoDigits; 
+    std::vector<RecoDigit>* RecoDigits = nullptr; 
     double TrueMuonEnergy;
     int NumMrdTimeClusters;
     int nrings;
@@ -150,6 +151,7 @@ class EventDisplay: public Tool {
     std::string trigger_label;
     std::map<int,int> active_lappds_user;  // WCSim LAPPD IDs read from config file
     std::map<int,int> active_lappds;       // converted to detectorkey
+    long cluster_time;
 
 
     //geometry variables

@@ -14,6 +14,19 @@ bool PrintRecoEvent::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("isMC",isMC);
+  
+
+  bool hitcleaningparam_available = true;
+  int get_ok;
+  get_ok = m_data->Stores["RecoEvent"]->Get("HitCleaningParameters",hitcleaningparam);
+  if (!get_ok) hitcleaningparam_available = false;
+
+  if (hitcleaningparam_available){
+    Log("PrintRecoEvent tool: HitCleaningParameters:",v_message,verbosity);
+    for (std::map<std::string,double>::iterator it = hitcleaningparam->begin(); it != hitcleaningparam->end(); it++){
+      Log("PrintRecoEvent tool: "+(it->first)+": "+std::to_string(int(it->second)),v_message,verbosity);
+    }
+  }
 
   return true;
 }
@@ -93,15 +106,9 @@ bool PrintRecoEvent::Execute(){
   get_ok = m_data->Stores["RecoEvent"]->Get("RecoDigit",recodigits);
   if (!get_ok) recodigits_available = false;
   
-  std::cout <<"1"<<std::endl;
   get_ok = m_data->Stores["RecoEvent"]->Get("HitCleaningDone",hitcleaningdone);
   if (!get_ok) hitcleaningdone = -1;
-  bool hitcleaningparam_available = true;
-  std::cout <<"2"<<std::endl;
-  get_ok = m_data->Stores["RecoEvent"]->Get("HitCleaningParam",hitcleaningparam);
-  if (!get_ok) hitcleaningparam_available = false;
   bool hitcleaningclusters_available = true;
-  std::cout <<"3"<<std::endl;
   get_ok = m_data->Stores["RecoEvent"]->Get("HitCleaningClusters",hitcleaningclusters);
   if (!get_ok) hitcleaningclusters_available = false;
 
@@ -181,12 +188,6 @@ bool PrintRecoEvent::Execute(){
 
   Log("PrintRecoEvent tool: HitCleaning done: "+std::to_string(hitcleaningdone),v_message,verbosity);
 
-  if (hitcleaningparam_available){
-    Log("PrintRecoEvent tool: HitCleaningParameters:",v_message,verbosity);
-    for (std::map<std::string,double>::iterator it = hitcleaningparam->begin(); it != hitcleaningparam->end(); it++){
-      Log("PrintRecoEvent tool: "+(it->first)+": "+std::to_string(it->second),v_message,verbosity);
-    }
-  }
 
   if (hitcleaningclusters_available){
     Log("PrintRecoEvent tool: HitCleaningClusters size: "+std::to_string(hitcleaningclusters->size()),v_message,verbosity);

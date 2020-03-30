@@ -142,7 +142,6 @@ bool DigitBuilder::Execute(){
     this->BuildDataRecoDigit();
   }
 
-  std::cout <<"Pushing reco digits"<<std::endl;	
   /// Hit info. to RecoEvent
   this->PushRecoDigits(true); 
   return true;
@@ -424,7 +423,6 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
           std::map<unsigned long,std::vector<double>> hitCharges;
 
 	  Log("DigitBuilder Tool: Num PMT Clustered Digits = "+to_string(Hits.size()),v_message, verbosity);
-	  std::cout <<"Hits.size(): "<<Hits.size()<<std::endl;
 	  for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
 	    Hit ahit = Hits.at(i_hit);
             unsigned long chankey = detkeys.at(i_hit);
@@ -443,7 +441,7 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
           }
 
           if(fParametricModel){
-            std::cout <<"Do Parametric Model"<<std::endl;
+            Log("DigitBuilder tool: Use Parametric Model to create digits",v_message,verbosity);
             // Do median and sum
             std::map<unsigned long,std::vector<double>>::iterator it, it2;
             for (it=hitTimes.begin(),it2 = hitCharges.begin(); it != hitTimes.end(), it2 != hitCharges.end(); it++, it2++){

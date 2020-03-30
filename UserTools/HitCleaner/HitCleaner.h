@@ -97,6 +97,11 @@ class HitCleaner: public Tool {
   int    fMinClusterDigits;
   bool   fisMC;
 
+  // p.e. conversion parameters
+  std::map<int,unsigned long> pmt_tubeid_to_channelkey;
+  std::map<unsigned long, double> pmt_gains;
+  std::string singlePEgains;
+
   // Container for parameters
   std::map<std::string, double>* fHitCleaningParam = nullptr;
 

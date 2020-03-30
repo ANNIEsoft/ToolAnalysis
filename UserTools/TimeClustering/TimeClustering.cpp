@@ -166,14 +166,14 @@ bool TimeClustering::Execute(){
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<Hit>>
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
-			return false;
+			return true;
 		}
 	} else {
 		std::cout <<"TimeClustering tool: MC file: Getting TDCData object"<<std::endl;	
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData_MC);  // a std::map<unsigned long,vector<MCHit>>
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
-			return false;
+			return true;
 		}
 	}
 	
@@ -418,7 +418,7 @@ bool TimeClustering::Execute(){
 			
 			// CONSTRUCT THE SUBEVENT
 			// -----------------------
-			if(digitidsinasubevent.size()>=minimumdigits){  // must have enough for a subevent
+			if(int(digitidsinasubevent.size())>=minimumdigits){  // must have enough for a subevent
 				Log("TimeClustering Tool: Constructing subevent "+to_string(mrdeventcounter)
 					+" with "+to_string(digitidsinasubevent.size())+" digits",v_debug,verbosity);
 				//MrdTimeClusters.Add(mrdeventcounter, digitidsinasubevent, tubeidsinasubevent, digittimesinasubevent);

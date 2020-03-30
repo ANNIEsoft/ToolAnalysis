@@ -2,7 +2,7 @@
 
 verbosity 2
 Config 3               	#config type: 1 = pulse height cut, 2 = neighbour cut, 3 = cluster cut								
-PmtMinPulseHeight 0.001    	#minimum pulse height
+PmtMinPulseHeight 5    	#minimum pulse height
 PmtNeighbourRadius 60  	#digit neighbouring distance [cm]
 PmtMinNeighbourDigits 2	#minimum neighbour digits
 PmtClusterRadius 60 	#digit clustering distance [cm]      
@@ -18,3 +18,4 @@ LappdTimeWindowC 1      #clustering time window [ns]
 LappdMinHitsPerCluster 20 #number of digits per cluster	
 MinClusterDigits 50	#minimum clustered digits							  
 IsMC 0			#Data or MC?
+SinglePEGains ./configfiles/EventDisplay/Data-ANNIEEvent/ChannelSPEGains_BeamRun20192020.csv

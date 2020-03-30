@@ -1,4 +1,4 @@
 # PrintRecoEvent config file
 
 isMC 0
-verbosity 4
+verbosity 2

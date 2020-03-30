@@ -71,6 +71,7 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("LappdTimeWindowC", fLappdTimeWindowC );
   m_variables.Get("LappdMinHitsPerCluster", fLappdMinHitsPerCluster );
   m_variables.Get("MinClusterDigits", fMinClusterDigits );
+  m_variables.Get("SinglePEGains",singlePEgains);
 
   /// Fill map with settings of HitCleaner
   fHitCleaningParam = new std::map<std::string,double>;
@@ -89,6 +90,17 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fHitCleaningParam->emplace("LappdTimeWindowC",fLappdTimeWindowC);
   fHitCleaningParam->emplace("MinClusterDigits",fMinClusterDigits);
 
+  ifstream file_singlepe(singlePEgains.c_str());
+  unsigned long temp_chankey;
+  double temp_gain;
+  while (!file_singlepe.eof()){
+    file_singlepe >> temp_chankey >> temp_gain;
+    if (file_singlepe.eof()) break;
+    pmt_gains.emplace(temp_chankey,temp_gain);
+  }
+  file_singlepe.close();
+  m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
+
   // vector of filtered digits
   fFilterAll = new std::vector<RecoDigit*>;
   fFilterByPulseHeight = new std::vector<RecoDigit*>;
@@ -99,6 +111,9 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   // vector of clusters
   fClusterList = new std::vector<RecoCluster*>;
   fHitCleaningClusters = new std::vector<RecoCluster*>;
+
+  //Set hit cleaner parameters in the RecoEvent store
+  m_data->Stores.at("RecoEvent")->Set("HitCleaningParameters", fHitCleaningParam);
 
   return true;
 }
@@ -152,6 +167,16 @@ bool HitCleaner::Execute(){
   for(int n=0; n<int(digits->size()); n++ ) {
     digits->at(n)->ResetFilter();
   }
+  // Convert charge to p.e. in data case
+  if (!fisMC){
+    for (int n=0; n<int(digits->size()); n++){
+      RecoDigit* thisdigit = digits->at(n);
+      double q_nC = thisdigit->GetCalCharge();
+      int pmtid = thisdigit->GetDetectorID();
+      unsigned long chankey = pmt_tubeid_to_channelkey[pmtid];
+      if (pmt_gains[chankey]>0) thisdigit->SetCalCharge(q_nC/pmt_gains[chankey]);
+    }
+  }
 
   // Run Hit Cleaner
   // ================
@@ -168,7 +193,6 @@ bool HitCleaner::Execute(){
   // =====
   fIsHitCleaningDone = true;
   m_data->Stores.at("RecoEvent")->Set("HitCleaningDone", fIsHitCleaningDone); 
-  m_data->Stores.at("RecoEvent")->Set("HitCleaningParameters", fHitCleaningParam);
   m_data->Stores.at("RecoEvent")->Set("HitCleaningClusters", fHitCleaningClusters);
 
   delete digits; digits = 0;

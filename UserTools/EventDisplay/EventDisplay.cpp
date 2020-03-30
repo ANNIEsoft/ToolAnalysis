@@ -80,6 +80,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DrawClusterMRD",draw_cluster_mrd);
   m_variables.Get("ChargeFormat",charge_format);
   m_variables.Get("SinglePEGains",singlePEgains);
+  m_variables.Get("UseFilteredDigits",use_filtered_digits);
 
   Log("EventDisplay tool: Initialising",v_message,verbose);
 
@@ -106,6 +107,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   else min_cluster_time = threshold_time_low;
   if (threshold_time_high == -999) max_cluster_time = 2000.;
   else max_cluster_time = threshold_time_high;
+  if (use_filtered_digits!=0 && use_filtered_digits!=1) use_filtered_digits = 0;
   if (user_input) {
     single_event = -999;
     str_event_list = "None";
@@ -502,10 +504,8 @@ bool EventDisplay::Execute(){
   //---------------Get general objects ----------------------------
   //---------------------------------------------------------------
 
-  std::cout <<"get eventnumber"<<std::endl;
   get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
   if(not get_ok) { Log("EventDisplay tool: Error retrieving EventNumber, true from ANNIEEvent!",v_error,verbose); return false;}
-  std::cout <<"get runnumber"<<std::endl;
   get_ok = m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
   if(not get_ok){ Log("EventDisplay tool: Error retrieving RunNumber, true from ANNIEEvent!",v_error,verbose); return false;}
   //get_ok = m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
@@ -524,10 +524,8 @@ bool EventDisplay::Execute(){
     //TODO: Uncomment following two lines once LAPPDs are available in data
     //get_ok = m_data->Stores["ANNIEEvent"]->Get("LAPPDHits",LAPPDHits);
     //if(not get_ok){ Log("EventDisplay tool: Error retrieving LAPPDHits, true from ANNIEEvent!",v_error,verbose);}
-    std::cout <<"get runtype"<<std::endl;
     get_ok = m_data->Stores["ANNIEEvent"]->Get("RunType",RunType);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving RunType, true from ANNIEEvent! ",v_error,verbose); return false;}
-    std::cout <<"get eventtimetank"<<std::endl;
     get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTimeTank",EventTankTime);
     if(not get_ok){ Log("EventDisplay tool: Error retrieving EventTimeTank, true from ANNIEEvent! ",v_error,verbose); return false;}
   }
@@ -890,6 +888,7 @@ bool EventDisplay::Execute(){
               muon_available = true;
               max_charge_temp = charge_temp;
               max_cluster = apair.first;
+              cluster_time = time_temp;
             }
   	  }
 	  if (muon_available){
@@ -924,28 +923,32 @@ bool EventDisplay::Execute(){
       maximum_lappds = 0;
       min_time_lappds = 99999.;
       maximum_time_lappds = 0;
+      double mean_digittime = 0;
       std::vector<unsigned long> temp_lappd_detkeys;
 
-      for (unsigned int i_digit = 0; i_digit < RecoDigits.size(); i_digit++){
+      for (unsigned int i_digit = 0; i_digit < RecoDigits->size(); i_digit++){
 
-        RecoDigit thisdigit = RecoDigits.at(i_digit);
+        RecoDigit thisdigit = RecoDigits->at(i_digit);
         Position detector_pos = thisdigit.GetPosition();
         detector_pos.UnitToMeter();
         int digittype = thisdigit.GetDigitType();   //0 - PMTs, 1 - LAPPDs  
         double digitQ = thisdigit.GetCalCharge();
         double digitT = thisdigit.GetCalTime();
+        bool isfiltered = thisdigit.GetFilterStatus();
         if (digittype == 0){
           int pmtid = thisdigit.GetDetectorID();
 	  unsigned long chankey = pmt_tubeid_to_channelkey[pmtid];
 	  Detector *det = geom->ChannelToDetector(chankey);
 	  unsigned long detkey = det->GetDetectorID();
 	  if (det->GetTankLocation()=="OD") continue;		//don't plot OD PMTs (not included in the final design of ANNIE!)
-	  hitpmt_detkeys.push_back(detkey);
+	  if (use_filtered_digits && !isfiltered) continue;     //omit unfiltered entries if specified
+          hitpmt_detkeys.push_back(detkey);
 	  Log("EventDisplay tool: Reading in RecoEvent data: PMTid = "+std::to_string(pmtid)+", chankey = "+std::to_string(chankey)+", detkey = "+std::to_string(detkey),v_debug,verbose);
           total_hits_pmts++;
 	  Log("EventDisplay tool: Reading in RecoEvent data: DigitQ = "+std::to_string(digitQ)+", digitT = "+std::to_string(digitT),v_debug,verbose);
           charge[detkey] = digitQ;
           time[detkey] = digitT;
+          mean_digittime += digitT;
         } else if (digittype == 1){
           int lappdid = thisdigit.GetDetectorID();
           unsigned long detkey = lappd_tubeid_to_detectorkey[lappdid];
@@ -966,12 +969,14 @@ bool EventDisplay::Execute(){
           }
         }
       }
+      if (total_hits_pmts > 0) mean_digittime/=total_hits_pmts; 
+      cluster_time = mean_digittime;
     }
 
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
   
   //Convert charges to p.e.
-  if (isData){
+  if (isData && !use_filtered_digits){
     for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
       if (charge_format == "pe"){
         unsigned long detkey = hitpmt_detkeys.at(i_pmt); 
@@ -1753,22 +1758,25 @@ void EventDisplay::draw_event_box(){
     std::string modules_str = " module(s) / ";
     std::string hits2_str = " hits";
     std::string hits_str = " hits / ";
+    std::string cluster_time_str = "Cluster Time: ";
     std::string charge_str;
     if (charge_format == "pe") charge_str = " p.e.";
     else charge_str = " nC";
     //std::string annie_subrun = "ANNIE Subrun: ";
     std::string annie_time = "Trigger Time: ";
     std::string annie_time_unit = " [ns]";
+    std::string cluster_time_unit = " ns";
     std::string annie_date = "Date: ";
     std::string trigger_str = "Trigger: ";
     std::string annie_run_number = std::to_string(runnumber);
     std::string annie_event_number = std::to_string(evnum);
+    std::string cluster_time_number = std::to_string(cluster_time);
     std::string total_charge_str;
     if (charge_format == "pe") total_charge_str = std::to_string(int(total_charge_pmts));
     else total_charge_str = std::to_string(round(total_charge_pmts*10000.)/10000.);
     std::string total_hits_str = std::to_string(total_hits_pmts);
     //std::string annie_subrun_number = std::to_string(subrunnumber);
-    std::string annie_time_number, annie_time_label;
+    std::string annie_time_number, annie_time_label, cluster_time_label;
     if (!isData) annie_time_number = std::to_string(EventTime->GetNs()); //TODO: Remove MC restriction once EventTime is available for data files
     std::string lappd_hits_number = std::to_string(total_hits_lappds);
     std::string lappd_numbers_str = std::to_string(num_lappds_hit);
@@ -1777,6 +1785,7 @@ void EventDisplay::draw_event_box(){
     std::string pmts_label = pmts_str+total_hits_str+hits_str+total_charge_str+charge_str;
     //std::string annie_subrun_label = annie_subrun+annie_subrun_number;
     if (!isData) annie_time_label = annie_time+annie_time_number+annie_time_unit;
+    if (draw_cluster) cluster_time_label = cluster_time_str+cluster_time_number+cluster_time_unit;
     std::string lappd_hits_label = lappds_str+lappd_numbers_str+modules_str+lappd_hits_number+hits2_str;
     std::string trigger_text_label = trigger_str+trigger_label;
     std::string date_text_label = annie_date + string_date_label;
@@ -1787,6 +1796,7 @@ void EventDisplay::draw_event_box(){
     text_event_info->AddText(annie_event_label.c_str());
     text_event_info->AddText(pmts_label.c_str());
     text_event_info->AddText(lappd_hits_label.c_str());
+    if (draw_cluster) text_event_info->AddText(cluster_time_label.c_str());
     text_event_info->AddText(trigger_text_label.c_str());
     //((TText*)text_event_info->GetListOfLines()->Last())->SetTextColor(kRed+1);
     text_event_info->SetTextFont(40);  //helvetica-medium-r-normal arial.ttf
@@ -1843,7 +1853,10 @@ void EventDisplay::draw_event_box(){
     max_text->Draw();
 
     //std::string min_charge_pre = (threshold==-999)? "0" : std::to_string(int(threshold));
-    std::string min_charge_pre = (threshold==-999)? "0" : std::to_string(round(threshold*10000.)/10000.);
+    std::string min_charge_pre;
+    if (threshold == -999) min_charge_pre = "0";
+    else if (charge_format == "pe") min_charge_pre = std::to_string(int(threshold));
+    else min_charge_pre = std::to_string(round(threshold*10000.)/10000.);
     std::string min_charge = min_charge_pre+pe_string;
     std::string min_time_pre = std::to_string(int(min_time_overall));
     std::string min_time;
