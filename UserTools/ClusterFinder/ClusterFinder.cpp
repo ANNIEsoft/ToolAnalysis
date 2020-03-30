@@ -366,7 +366,6 @@ bool ClusterFinder::Execute(){
         PMT_ishit[detectorkey] = 1;
         for (Hit &ahit : ThisPMTHits){
           if (ahit.GetTime() >= *it && ahit.GetTime() <= *it + ClusterFindingWindow) {
-	    std::cout <<"chankey: "<<chankey<<", charge: "<<local_cluster_charge<<std::endl;
             local_cluster_charge += ahit.GetCharge();
 	    if (chankey != 333 && chankey != 346 && chankey != 349 && chankey != 352 && chankey != 431 && chankey != 444) local_cluster_charge_pe += ahit.GetCharge()/pmt_gains.at(detectorkey);
             v_local_cluster_times.push_back(ahit.GetTime());

@@ -70,7 +70,6 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
       unsigned long chankey;
       int pmtid;
       file_pmtid >> chankey >> pmtid;
-      std::cout <<"Emplacing chankey "<<chankey<<", pmtid: "<<pmtid<<std::endl;
       channelkey_to_pmtid.emplace(chankey,pmtid);
       pmtid_to_channelkey.emplace(pmtid,chankey);
       if (file_pmtid.eof()) break;
@@ -326,7 +325,7 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
 			int LAPPDId = detectorkey_to_lappdid.at(detkey);
       //Check if LAPPD is in selected LAPPDs
       bool isSelectedLAPPD = false;
-      for(int i=0;i<fLAPPDId.size();i++){
+      for(int i=0;i<int(fLAPPDId.size());i++){
 			  if(LAPPDId == fLAPPDId.at(i)) isSelectedLAPPD=true;
       }
       if(!isSelectedLAPPD && fLAPPDId.size()>0) continue;
@@ -449,11 +448,8 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
             std::map<unsigned long,std::vector<double>>::iterator it, it2;
             for (it=hitTimes.begin(),it2 = hitCharges.begin(); it != hitTimes.end(), it2 != hitCharges.end(); it++, it2++){
 	      unsigned long chankey = it->first;
-	      std::cout <<"chankey: "<<chankey<<std::endl;
 	      std::vector<double> hittimes = it->second;
-	      std::cout <<"hittimes.size(): "<<hittimes.size()<<std::endl;
 	      std::vector<double> hitcharges = it2->second;
-	      std::cout <<"hitcharges.size(): "<<hitcharges.size()<<std::endl;
 	      det = fGeometry->ChannelToDetector(chankey);
 	      int PMTId = channelkey_to_pmtid.at(chankey);  //PMTID In WCSim
 	      if(det==nullptr){

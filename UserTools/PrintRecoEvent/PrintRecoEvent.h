@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "RecoCluster.h"
 
 
 /**
@@ -41,7 +42,7 @@ class PrintRecoEvent: public Tool {
 
   RecoVertex *truevertex = nullptr;
   RecoVertex *truestopvertex = nullptr;
-  std::vector<RecoDigit*> recodigits;
+  std::vector<RecoDigit>* recodigits = nullptr;
   double truemuonenergy;
   double truetracklengthinwater;
   double truetracklengthinmrd;
@@ -58,7 +59,10 @@ class PrintRecoEvent: public Tool {
 
   std::vector<RecoVertex*> vseedvtxlist;
   std::vector<double> vseedfomlist;
-  std::vector<RecoDigit*> filterdigitlist;
+
+  bool hitcleaningdone;
+  std::vector<RecoCluster*>* hitcleaningclusters = nullptr;
+  std::map<std::string,double>* hitcleaningparam = nullptr;
 
   RecoVertex *simpleposition = nullptr;
   RecoVertex *pointposition = nullptr;

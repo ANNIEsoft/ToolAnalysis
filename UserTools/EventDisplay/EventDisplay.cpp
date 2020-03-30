@@ -25,7 +25,6 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   marker_size = 2.;
   output_format = "root";
   isData = false;
-  user_trigger_label = "Beam";
   pmt_Qmax = 100;
   pmt_Qmin = 0;
   pmt_Qbins = 100;
@@ -40,7 +39,8 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   lappd_Tbins = 50;
   npmtcut = 10;
   histogram_config = "None";
-  string_date_label = "01/13/2020";
+  user_run_number = -1;
+  user_run_type = 3;
 
   //--------------------------------------------
   //-------Get configuration variables----------
@@ -73,6 +73,7 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DetectorConfiguration",detector_config);
   m_variables.Get("IsData",isData);
   m_variables.Get("RunNumber",user_run_number); 
+  m_variables.Get("RunType",user_run_type); 
   m_variables.Get("HistogramConfig",histogram_config);
   m_variables.Get("NPMTCut",npmtcut);
   m_variables.Get("DrawClusterPMT",draw_cluster);
@@ -101,6 +102,10 @@ bool EventDisplay::Initialise(std::string configfile, DataModel &data){
   if (draw_cluster_mrd!=0 && draw_cluster_mrd!=1) draw_cluster_mrd=0;
   if (charge_format != "nC" && charge_format != "pe") charge_format = "nC";
   if (str_event_list!="None") single_event = -999;
+  if (threshold_time_low == -999) min_cluster_time = 0.;
+  else min_cluster_time = threshold_time_low;
+  if (threshold_time_high == -999) max_cluster_time = 2000.;
+  else max_cluster_time = threshold_time_high;
   if (user_input) {
     single_event = -999;
     str_event_list = "None";
@@ -616,7 +621,7 @@ bool EventDisplay::Execute(){
   //---------------------------------------------------------------
   
   //Set default run type to beam (if not stored in data)
-  if (RunType == -1) RunType =3;
+  if (RunType == -1) RunType = user_run_type;
   if (runnumber == -1) runnumber = user_run_number;
   
   if (!isData){
@@ -880,7 +885,7 @@ bool EventDisplay::Execute(){
               charge_temp+=Hits.at(i_hit).GetCharge();
             }
             if (hits_temp>0) time_temp/=hits_temp;
-            if (time_temp > 2000.) continue;	//not a beam muon if not in primary window
+            if (time_temp > max_cluster_time || time_temp < min_cluster_time) continue;	//not a beam muon if not in primary window
 	    if (charge_temp > max_charge_temp) {
               muon_available = true;
               max_charge_temp = charge_temp;

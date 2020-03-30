@@ -104,6 +104,7 @@ class EventDisplay: public Tool {
     std::string charge_format;
     std::string singlePEgains;
     int user_run_number = -1;
+    int user_run_type;
     bool draw_ring_temp;
     bool draw_vertex_temp;
 
@@ -246,6 +247,8 @@ class EventDisplay: public Tool {
     double min_time_lappds;
     double min_time_mrd;
     double min_time_overall;
+    double max_cluster_time;
+    double min_cluster_time;
 
     //sizes for drawings
     double size_top_drawing=0.1;
