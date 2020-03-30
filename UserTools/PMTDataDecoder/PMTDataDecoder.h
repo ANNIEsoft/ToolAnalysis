@@ -45,7 +45,6 @@ class PMTDataDecoder: public Tool {
 
   PMTDataDecoder(); ///< Simple constructor
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
-  std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   std::vector<DecodedFrame> DecodeFrames(std::vector<uint32_t> bank);
@@ -68,11 +67,11 @@ class PMTDataDecoder: public Tool {
 
   std::string InputFile;
   std::string Mode;
-  std::vector<std::string> OrganizedFileList;
 
-  int EntriesPerExecute;
-  long totalentries=0;
-  int CDEntryNum = 0;
+  bool NewWavesBuilt;
+  int CurrentEntryNum = 0;
+  int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
+  int CDEntryNum = 0; 
   int FileNum = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
@@ -90,9 +89,9 @@ class PMTDataDecoder: public Tool {
   //get the entire header.
   unsigned int SAMPLES_RIGHTOF_000 = 7;
 
-  BoostStore *RawData = nullptr;
-  BoostStore *PMTData = nullptr;
-  std::vector<CardData> Cdata;
+  BoostStore* PMTData;
+  std::vector<CardData>* Cdata = nullptr;
+  std::vector<CardData> Cdata_old;
 
   bool FileCompleted = false;
  
@@ -101,6 +100,10 @@ class PMTDataDecoder: public Tool {
 
   //Maps for keeping track of what SequenceID is next for each Card
   std::map<int, int> SequenceMap;  //Key is CardID, Value is next SequenceID 
+
+  //Vector to keep track of fifo errors (type I, type II, for monitoring tools)
+  std::vector<int> fifo1;
+  std::vector<int> fifo2;
 
 
   std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
@@ -111,8 +114,11 @@ class PMTDataDecoder: public Tool {
   std::map<int,std::vector<uint64_t>> SyncCounters; //Key: cardID.  Value: vector of sync counters filled in the order they arrive.
 
   //Maps that store completed waveforms from cards
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* FinishedPMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedPMTWaves_old;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStorePMTWaves;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
+  bool NewWaveBuilt;
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > CStoreTankEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
 
   // Notes whether DAQ is in lock step running
   // Number of PMTs that must be found in a WaveSet to build the event

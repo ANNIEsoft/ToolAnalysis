@@ -56,6 +56,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   //Make the map of channel key to crate space info
   MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  MRDChannelNumToCrateSpaceMap = new std::map<int,std::vector<int>>;
   TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
@@ -78,6 +79,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
 
   m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("MRDChannelNumToCrateSpaceMap",MRDChannelNumToCrateSpaceMap);
   m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
   m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
@@ -94,9 +96,6 @@ bool LoadGeometry::Execute(){
 
 bool LoadGeometry::Finalise(){
   std::cout << "LoadGeometry tool exitting" << std::endl;
-  //delete MRDCrateSpaceToChannelNumMap;
-  //delete TankPMTCrateSpaceToChannelNumMap;
-  //delete LAPPDCrateSpaceToChannelNumMap;
   return true;
 }
 
@@ -353,6 +352,11 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
     MRDCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
     Log("LoadGeometry Tool: ERROR: Tried assigning an MRD channel_num to a crate space already defined!!! ",v_error, verbosity);
+  }
+  if(MRDChannelNumToCrateSpaceMap->count(channel_num)==0){
+    MRDChannelNumToCrateSpaceMap->emplace(channel_num, crate_map);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning an MRD crate space to a channel number already defined!!! ",v_error, verbosity);
   }
 
   if(verbosity>5) cout<<"Adding detector to Geometry"<<endl;
