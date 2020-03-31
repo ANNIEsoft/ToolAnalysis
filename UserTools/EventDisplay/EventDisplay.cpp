@@ -976,7 +976,7 @@ bool EventDisplay::Execute(){
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
   
   //Convert charges to p.e.
-  if (isData && !use_filtered_digits){
+  if (isData && use_filtered_digits==0){
     for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
       if (charge_format == "pe"){
         unsigned long detkey = hitpmt_detkeys.at(i_pmt); 

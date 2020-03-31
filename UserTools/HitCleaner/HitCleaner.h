@@ -25,7 +25,7 @@ class HitCleaner: public Tool {
     kPulseHeight = 1,
     kPulseHeightAndNeighbours = 2,
     kPulseHeightAndClusters = 3, 
-    kPulseHeightAndTruthInfo = 3
+    kPulseHeightAndTruthInfo = 4
   } FilterConfig_t;
 
   static HitCleaner* Instance();

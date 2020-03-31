@@ -56,6 +56,7 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   /// Get the Tool configuration variables
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("IsMC",fisMC);
+  m_variables.Get("Config",fConfig);
   m_variables.Get("PmtMinPulseHeight", fPmtMinPulseHeight);
   m_variables.Get("PmtNeighbourRadius", fPmtNeighbourRadius);
   m_variables.Get("PmtMinNeighbourDigits", fPmtMinNeighbourDigits);
@@ -89,6 +90,11 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fHitCleaningParam->emplace("LappdTimeWindowN",fLappdTimeWindowN);
   fHitCleaningParam->emplace("LappdTimeWindowC",fLappdTimeWindowC);
   fHitCleaningParam->emplace("MinClusterDigits",fMinClusterDigits);
+
+  if (fConfig!=0 && fConfig !=1 && fConfig !=2 && fConfig !=3 && fConfig !=4){
+    Log("HitCleaner tool: Configuration <"+std::to_string(fConfig)+"> not recognized. Setting Config 3 (kPulseHeightAndClusters)",v_error,verbosity);
+    fConfig = HitCleaner::kPulseHeightAndClusters;
+  }
 
   ifstream file_singlepe(singlePEgains.c_str());
   unsigned long temp_chankey;
