@@ -25,6 +25,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ClusterIntegrationWindow",ClusterIntegrationWindow);
   m_variables.Get("MinHitsPerCluster",MinHitsPerCluster);
   m_variables.Get("SinglePEGains",singlePEgains);
+  m_variables.Get("2DPlots",draw_2D);
   m_variables.Get("verbosity",verbose);
 
   //----------------------------------------------------------------------------
@@ -136,9 +137,10 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   h_Cluster_charges = new TH1D("h_Cluster_charges","Cluster charges",10000,0,5);
   h_Cluster_charges_pe = new TH1D("h_Cluster_charges_pe","Cluster charges (P.E.)",10000,0,8000);
   h_Cluster_deltaT = new TH1D("h_Cluster_deltaT","Time between first and current cluster", AcqTimeWindow,0,AcqTimeWindow);
-  h_Cluster_charge_time = new TH2D("h_Cluster_charge_time","Cluster charges (P.E.) vs. time",AcqTimeWindow,0,AcqTimeWindow,1000,0,8000);
-  h_Cluster_charge_deltaT = new TH2D("h_Cluster_charge_deltaT","Cluster charges (P.E.) vs. #Delta t",AcqTimeWindow,0,AcqTimeWindow,1000,0,8000);
-
+  if (draw_2D){
+    h_Cluster_charge_time = new TH2D("h_Cluster_charge_time","Cluster charges (P.E.) vs. time",AcqTimeWindow,0,AcqTimeWindow,1000,0,8000);
+    h_Cluster_charge_deltaT = new TH2D("h_Cluster_charge_deltaT","Cluster charges (P.E.) vs. #Delta t",AcqTimeWindow,0,AcqTimeWindow,1000,0,8000);
+  }
   m_all_clusters = new std::map<double,std::vector<Hit>>;
   m_all_clusters_detkey = new std::map<double,std::vector<unsigned long>>;
 
@@ -384,10 +386,10 @@ bool ClusterFinder::Execute(){
     h_Cluster_times->Fill(local_cluster_time);
     h_Cluster_charges->Fill(local_cluster_charge);
     h_Cluster_charges_pe->Fill(local_cluster_charge_pe);
-    h_Cluster_charge_time->Fill(local_cluster_time,local_cluster_charge_pe);
+    if (draw_2D) h_Cluster_charge_time->Fill(local_cluster_time,local_cluster_charge_pe);
     if (v_clusters.size() > 1) {
       h_Cluster_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()));
-      h_Cluster_charge_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()),local_cluster_charge_pe);
+      if (draw_2D) h_Cluster_charge_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()),local_cluster_charge_pe);
     }
     // Fills the map of clusters (to be passed through CStore)
     for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits) {   
@@ -484,10 +486,13 @@ bool ClusterFinder::Finalise(){
   h_Cluster_charges->Write();
   h_Cluster_charges_pe->Write();
   h_Cluster_deltaT->Write();
-  h_Cluster_charge_time->Write();
-  h_Cluster_charge_deltaT->Write();
+  if (draw_2D){
+    h_Cluster_charge_time->Write();
+    h_Cluster_charge_deltaT->Write();
+  }
   f_output->Close();
   
-  cout <<"ClusterFinder exiting..."<<endl;
+  Log("ClusterFinder exiting...",v_message,verbosity);
+
   return true;
 }

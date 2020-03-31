@@ -66,6 +66,7 @@ class ClusterFinder: public Tool {
   int ClusterIntegrationWindow;
   int MinHitsPerCluster;
   std::string singlePEgains;
+  bool draw2D = false;
 
   // define ANNIEEvent variables
   int evnum;
