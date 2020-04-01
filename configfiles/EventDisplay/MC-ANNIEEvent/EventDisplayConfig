@@ -32,5 +32,7 @@ DrawClusterMRD 1		#Draw Clustered MRD hits instead of whole buffer
 ChargeFormat pe		#Options: pe/nC
 SinglePEGains ./configfiles/EventDisplay/Data-ANNIEEvent/ChannelSPEGains_BeamRun20192020.csv
 RunNumber 0
+RunType 3
+UseFilteredDigits 0  #Use only digits that passed the HitCleaner filtering process
 
 verbose 1
