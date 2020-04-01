@@ -1,20 +1,18 @@
 # PrintRecoEvent
 
-PrintRecoEvent
+PrintRecoEvent goes through the RecoEvent store and prints the properties of its stored objects.
 
 ## Data
 
-Describe any data formats PrintRecoEvent creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+PrintRecoEvent tries to access all the objects which could be available in the RecoEvent store and prints their properties, if found. It does not create or forward any objects to other tools, but is supposed to give an overview over the contents of the RecoEvent store.
 
 ## Configuration
 
-Describe any configuration variables for PrintRecoEvent.
+PrintRecoEvent has the following configuration options:
 
 ```
-param1 value1
-param2 value2
+verbosity 1
+isMC 0
 ```
+
+If the option `isMC` is specified, the tool will try to access and print information that's only available in MC, such as the number of pions, the true energy or the true vertex of the muon.
