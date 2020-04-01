@@ -24,7 +24,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("AcqTimeWindow",AcqTimeWindow);
   m_variables.Get("ClusterIntegrationWindow",ClusterIntegrationWindow);
   m_variables.Get("MinHitsPerCluster",MinHitsPerCluster);
-  m_variables.Get("SinglePEGains",singlePEgains);
+  m_variables.Get("2DPlots",draw_2D);
   m_variables.Get("verbosity",verbose);
 
   //----------------------------------------------------------------------------
@@ -117,28 +117,17 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   int min_detkey = std::distance(pmt_detkeys.begin(),it_minkey);
   int max_detkey = std::distance(pmt_detkeys.begin(),it_maxkey);
   int n_detkey_bins = max_detkey-min_detkey;
-  
-  //single p.e. conversion
-  ifstream file_singlepe(singlePEgains.c_str());
-  unsigned long temp_chankey;
-  double temp_gain;
-  while (!file_singlepe.eof()){
-    file_singlepe >> temp_chankey >> temp_gain;
-    if (file_singlepe.eof()) break;
-    pmt_gains.emplace(temp_chankey,temp_gain);
-  }
-  file_singlepe.close(); 
 
   // User variables
   f_output = new TFile(TString(outputfile)+".root","RECREATE");
  
   h_Cluster_times = new TH1D("h_Cluster_times","Cluster times wrt trigger time",AcqTimeWindow,0,AcqTimeWindow);
   h_Cluster_charges = new TH1D("h_Cluster_charges","Cluster charges",10000,0,5);
-  h_Cluster_charges_pe = new TH1D("h_Cluster_charges_pe","Cluster charges (P.E.)",10000,0,8000);
   h_Cluster_deltaT = new TH1D("h_Cluster_deltaT","Time between first and current cluster", AcqTimeWindow,0,AcqTimeWindow);
-  h_Cluster_charge_time = new TH2D("h_Cluster_charge_time","Cluster charges (P.E.) vs. time",AcqTimeWindow,0,AcqTimeWindow,1000,0,8000);
-  h_Cluster_charge_deltaT = new TH2D("h_Cluster_charge_deltaT","Cluster charges (P.E.) vs. #Delta t",AcqTimeWindow,0,AcqTimeWindow,1000,0,8000);
-
+  if (draw_2D){
+    h_Cluster_charge_time = new TH2D("h_Cluster_charge_time","Cluster charges (P.E.) vs. time",AcqTimeWindow,0,AcqTimeWindow,1000,0,5);
+    h_Cluster_charge_deltaT = new TH2D("h_Cluster_charge_deltaT","Cluster charges (P.E.) vs. #Delta t",AcqTimeWindow,0,AcqTimeWindow,1000,0,5);
+  }
   m_all_clusters = new std::map<double,std::vector<Hit>>;
   m_all_clusters_detkey = new std::map<double,std::vector<unsigned long>>;
 
@@ -293,7 +282,7 @@ bool ClusterFinder::Execute(){
   if (verbose > 1) cout << "Map of times and Nhits filled..." << endl;
   if (verbose > 2){
       for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
-        if (it->second.size() > MinHitsPerCluster) {
+        if (int(it->second.size()) > MinHitsPerCluster) {
           cout << "Map of time and NHits: Time = " << it->first << ", NHits = " << it->second.size() << endl;
           cout << "Look at the back of the vector (before): " << it->second.back() << endl;
           for (std::vector<double>::iterator itt = it->second.begin(); itt != it->second.end(); ++itt) {
@@ -312,7 +301,7 @@ bool ClusterFinder::Execute(){
     //cout << "Start do loop" << endl;
     max_Nhits = 0;
     for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
-      if (it->second.size() > max_Nhits) {
+      if (int(it->second.size()) > max_Nhits) {
         max_Nhits = it->second.size();
         local_cluster = it->first;
       } 
@@ -354,7 +343,6 @@ bool ClusterFinder::Execute(){
   // Now loop on the hit map again to get info about those local maxima, cluster per cluster
   for (std::vector<double>::iterator it = v_clusters.begin(); it != v_clusters.end(); ++it) {
     double local_cluster_charge = 0;
-    double local_cluster_charge_pe = 0;
     double local_cluster_time = 0;
     v_local_cluster_times.clear();
     for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits){
@@ -367,7 +355,6 @@ bool ClusterFinder::Execute(){
         for (Hit &ahit : ThisPMTHits){
           if (ahit.GetTime() >= *it && ahit.GetTime() <= *it + ClusterFindingWindow) {
             local_cluster_charge += ahit.GetCharge();
-	    local_cluster_charge_pe += ahit.GetCharge()/pmt_gains.at(detectorkey);
             v_local_cluster_times.push_back(ahit.GetTime());
             if (verbose > 2) cout << "Local cluster at " << *it << " and hit is " << ahit.GetTime() << endl;
           }
@@ -383,11 +370,10 @@ bool ClusterFinder::Execute(){
     if (verbose > 0) cout << "Local cluster at " << local_cluster_time << " ns with a total charge of " << local_cluster_charge << endl;
     h_Cluster_times->Fill(local_cluster_time);
     h_Cluster_charges->Fill(local_cluster_charge);
-    h_Cluster_charges_pe->Fill(local_cluster_charge_pe);
-    h_Cluster_charge_time->Fill(local_cluster_time,local_cluster_charge_pe);
+    if (draw_2D) h_Cluster_charge_time->Fill(local_cluster_time,local_cluster_charge);
     if (v_clusters.size() > 1) {
       h_Cluster_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()));
-      h_Cluster_charge_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()),local_cluster_charge_pe);
+      if (draw_2D) h_Cluster_charge_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()),local_cluster_charge);
     }
     // Fills the map of clusters (to be passed through CStore)
     for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits) {   
@@ -438,9 +424,9 @@ bool ClusterFinder::Execute(){
       int detectorkey = thistube->GetDetectorID();
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<std::vector<ADCPulse>> pulses = apair.second;
-        for (int i_minibuffer = 0; i_minibuffer < pulses.size(); i_minibuffer++){
+        for (int i_minibuffer = 0; i_minibuffer < int(pulses.size()); i_minibuffer++){
           std::vector<ADCPulse> apulsevector = pulses.at(i_minibuffer);
-          for (int i_pulse=0; i_pulse < apulsevector.size(); i_pulse++){
+          for (int i_pulse=0; i_pulse < int(apulsevector.size()); i_pulse++){
             ADCPulse apulse = apulsevector.at(i_pulse);
             double start_time = apulse.start_time();
             double peak_time = apulse.peak_time();
@@ -482,12 +468,14 @@ bool ClusterFinder::Finalise(){
   
   h_Cluster_times->Write();
   h_Cluster_charges->Write();
-  h_Cluster_charges_pe->Write();
   h_Cluster_deltaT->Write();
-  h_Cluster_charge_time->Write();
-  h_Cluster_charge_deltaT->Write();
+  if (draw_2D){
+    h_Cluster_charge_time->Write();
+    h_Cluster_charge_deltaT->Write();
+  }
   f_output->Close();
   
-  cout <<"ClusterFinder exiting..."<<endl;
+  Log("ClusterFinder exiting...",v_message,verbosity);
+
   return true;
 }
