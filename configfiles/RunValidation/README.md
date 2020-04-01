@@ -1,25 +1,34 @@
-# Configure files
+# RunValidation ToolChain
 
 ***********************
-#Description
+# Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
-
+The `RunValidation` ToolChain creates validation plots for phase II data runs to track stability of data taking and the quality of the acquired data.
 
 ************************
-#Usage
+# Tools in ToolChain
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+The following tools are in the `RunValidation` Toolchain:
+* LoadGeometry
+* LoadANNIEEvent
+* PhaseIIADCCalibrator
+* PhaseIIADCHitFinder
+* ClusterFinder
+* TimeClustering
+* RunValidation
 
-Variables should be stored one per line as follows:
+*********************************************
+# Configuration options of RunValidation tool
+*********************************************
 
+verbosity 0
+OutputPath ./
+InvertMRDTimes 0
+RunNumber 1627
+SubRunNumber 0
+RunType 3
+SinglePEGains ./configfiles/RunValidation/ChannelSPEGains_BeamRun20192020.csv
 
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
-
+The variables `RunNumber`, `SubRunNumber` and `RunType` only need to be set when the run information was not stored in the raw data for some reason.
