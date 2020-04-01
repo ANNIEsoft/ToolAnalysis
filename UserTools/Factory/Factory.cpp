@@ -106,5 +106,7 @@ if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
+if (tool=="LoadRawData") ret=new LoadRawData;
+
 return ret;
 }

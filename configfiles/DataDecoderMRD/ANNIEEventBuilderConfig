@@ -1,6 +1,7 @@
-verbosity 0
+verbosity 5
 
-IsTankData 0
-IsMRDData 1
-ProcessedFilesBasename ANNIEEvent_MRDTest28commonstopp0
-SavePath ./mrdfiles/
+BuildType MRD
+ProcessedFilesBasename ProcessedRawData_MRDOnly
+SavePath ./
+
+ExecutesPerBuild 10

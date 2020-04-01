@@ -1,0 +1,5 @@
+verbosity 5
+BuildType MRD
+Mode FileList
+InputFile /annie/app/users/pershint/Processing/ToolAnalysis/configfiles/DataDecoderMRD/my_files.txt
+DummyRunInfo 0

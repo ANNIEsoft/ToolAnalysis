@@ -1,0 +1,11 @@
+verbosity 5
+
+BuildType Tank
+ProcessedFilesBasename ProcessedRawData_TankOnly
+SavePath ./
+
+MinNumWavesInSet 140 // 1=Just throw any waveforms into ANNIE events if you got em
+
+ExecutesPerBuild 10
+OrphanOldTimestamps 0
+OldTimestampThreshold 150
