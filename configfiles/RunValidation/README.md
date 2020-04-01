@@ -23,6 +23,7 @@ The following tools are in the `RunValidation` Toolchain:
 # Configuration options of RunValidation tool
 *********************************************
 
+```
 verbosity 0
 OutputPath ./
 InvertMRDTimes 0
@@ -30,5 +31,6 @@ RunNumber 1627
 SubRunNumber 0
 RunType 3
 SinglePEGains ./configfiles/RunValidation/ChannelSPEGains_BeamRun20192020.csv
+```
 
 The variables `RunNumber`, `SubRunNumber` and `RunType` only need to be set when the run information was not stored in the raw data for some reason.
