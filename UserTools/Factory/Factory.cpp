@@ -104,6 +104,7 @@ if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
-
+if (tool=="FMVEfficiency") ret=new FMVEfficiency;
+if (tool=="ClusterFinder") ret=new ClusterFinder;
 return ret;
 }

@@ -112,3 +112,5 @@
 #include "PrintADCData.h"
 #include "MrdPaddleEfficiencyPreparer.h"
 #include "MrdPaddleEfficiencyCalc.h"
+#include "FMVEfficiency.h"
+#include "ClusterFinder.h"

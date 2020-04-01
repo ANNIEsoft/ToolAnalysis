@@ -7,8 +7,10 @@
 #include "Tool.h"
 #include "TFile.h"
 #include "TObjectTable.h"
+#include "TimeClass.h"
 
 class TH1D;
+class TH2D;
 class TApplication;
 class TCanvas;
 
@@ -42,6 +44,7 @@ class TimeClustering: public Tool {
 	std::string output_rootfile;
 	std::string file_chankeymap;
 	int evnum;
+	uint64_t PreviousTimeStamp;
 
 	//ANNIEEvent data
 	std::map<unsigned long,vector<Hit>>* TDCData;
@@ -55,6 +58,7 @@ class TimeClustering: public Tool {
 	// Cluster properties
 	std::vector<double> mrddigittimesthisevent;
 	std::vector<int> mrddigitpmtsthisevent;
+	std::vector<unsigned long> mrddigitchankeysthisevent;
 	std::vector<double> mrddigitchargesthisevent;
 	std::vector<std::vector<int>> MrdTimeClusters;
 	std::vector<std::vector<double>> MrdTimeClusters_Times;
@@ -73,7 +77,19 @@ class TimeClustering: public Tool {
 	TH1D *mrddigitts_single = nullptr;
 	TH1D *mrddigitts_horizontal = nullptr;
 	TH1D *mrddigitts_vertical = nullptr;
-        TFile* mrddigitts_file = nullptr;
+        TH2D *mrddigitts_cosmicloopback = nullptr;
+        TH2D *mrddigitts_beamloopback = nullptr;
+        TH2D *mrddigitts_cosmicloopback_cluster = nullptr;
+        TH2D *mrddigitts_beamloopback_cluster = nullptr;
+	
+	TH1D *time_diff_beam = nullptr;
+	TH1D *time_diff_cosmic = nullptr;
+	TH2D *time_diff_loopback_beam = nullptr;
+	TH2D *time_diff_loopback_cosmic = nullptr;
+	TH2D *time_diff_hittimes_cosmic = nullptr;
+	TH2D *time_diff_hittimes_beam = nullptr;
+
+	TFile* mrddigitts_file = nullptr;
 
 	//TApplication-related variables
 	TCanvas* timeClusterCanvas=nullptr;
