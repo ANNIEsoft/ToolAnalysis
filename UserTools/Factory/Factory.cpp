@@ -91,7 +91,6 @@ if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
 if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
 if (tool=="CNNImage") ret=new CNNImage;
-if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
@@ -104,5 +103,8 @@ if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
 if (tool=="RunValidation") ret=new RunValidation;
+if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
+if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
+if (tool=="LoadRawData") ret=new LoadRawData;
 return ret;
 }
