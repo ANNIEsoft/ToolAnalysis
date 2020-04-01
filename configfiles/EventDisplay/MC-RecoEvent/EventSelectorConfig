@@ -18,5 +18,8 @@ RecoPMTVolCut 0
 RecoFVCut 0
 NHitCut 1
 NHitmin 4	#Minimum number of hit digits
+PMTMRDCoincCut 0
+PMTMRDOffset 745
 PromptTrigOnly 1
 SaveStatusToStore 1
+IsMC 1
