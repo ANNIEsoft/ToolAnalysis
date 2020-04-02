@@ -40,6 +40,7 @@ class FMVEfficiency: public Tool {
   int verbosity;
   std::string singlePEgains;
   std::string outputfile;
+  bool useTank;
 
   //data objects
   std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;

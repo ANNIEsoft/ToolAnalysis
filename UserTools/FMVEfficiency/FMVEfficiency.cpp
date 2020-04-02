@@ -15,6 +15,9 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SinglePEGains",singlePEgains);
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
+  m_variables.Get("UseTank",useTank);
+
+  if (useTank != 0 && useTank != 1) useTank = 0;
 
   //Geometry
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
@@ -75,14 +78,15 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
   track_diff_xy_loose_Layer2 = new TH2F("track_diff_xy_loose_Layer2","Track difference X/Y Layer 2 (MRD Track)",200,-5.,5.,200,-5.,5);
 
   //Tank-FMV coincidence
+  if (useTank){
+    time_diff_tank_Layer1 = new TH1F("time_diff_tank_Layer1","Time differences FMV-Tank (Layer 1)",2000,-4000,4000);
+    time_diff_tank_Layer2 = new TH1F("time_diff_tank_Layer2","Time differences FMV-Tank (Layer 2)",2000,-4000,4000);
 
-  time_diff_tank_Layer1 = new TH1F("time_diff_tank_Layer1","Time differences FMV-Tank (Layer 1)",2000,-4000,4000);
-  time_diff_tank_Layer2 = new TH1F("time_diff_tank_Layer2","Time differences FMV-Tank (Layer 2)",2000,-4000,4000);
-
-  fmv_tank_observed_layer1 = new TH1F("fmv_tank_observed_layer1","FMV observed hits Tank Coincidence (Layer 1)",13,0,13);
-  fmv_tank_expected_layer1 = new TH1F("fmv_tank_expected_layer1","FMV expected hits Tank Coincidence (Layer 1)",13,0,13);
-  fmv_tank_observed_layer2 = new TH1F("fmv_tank_observed_layer2","FMV observed hits Tank Coincidence (Layer 2)",13,0,13);
-  fmv_tank_expected_layer2 = new TH1F("fmv_tank_expected_layer2","FMV expected hits Tank Coincidence (Layer 2)",13,0,13);
+    fmv_tank_observed_layer1 = new TH1F("fmv_tank_observed_layer1","FMV observed hits Tank Coincidence (Layer 1)",13,0,13);
+    fmv_tank_expected_layer1 = new TH1F("fmv_tank_expected_layer1","FMV expected hits Tank Coincidence (Layer 1)",13,0,13);
+    fmv_tank_observed_layer2 = new TH1F("fmv_tank_observed_layer2","FMV observed hits Tank Coincidence (Layer 2)",13,13,26);
+    fmv_tank_expected_layer2 = new TH1F("fmv_tank_expected_layer2","FMV expected hits Tank Coincidence (Layer 2)",13,13,26);
+  }
 
   //Read in MRD information from geometry
 
@@ -162,13 +166,22 @@ bool FMVEfficiency::Execute(){
   //For the tank PMT, there is no possibility to fit a track until the LaserBall calibration, here no position resolution on the paddles can be used
 
   int get_ok;
-  //Get PMT Cluster information
-  get_ok = m_data->CStore.Get("ClusterMap",m_all_clusters);
-  if (not get_ok) { Log("RunValidation Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
-  get_ok = m_data->CStore.Get("ClusterMapDetkey",m_all_clusters_detkey);
-  if (not get_ok) { Log("RunValidation Tool: Error retrieving ClusterMapDetkey from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+  
+  //  --------------------------------
+  //--------Get tank clusters---------
+  //  --------------------------------
+  
+  if (useTank){
+    get_ok = m_data->CStore.Get("ClusterMap",m_all_clusters);
+    if (not get_ok) { Log("RunValidation Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+    get_ok = m_data->CStore.Get("ClusterMapDetkey",m_all_clusters_detkey);
+    if (not get_ok) { Log("RunValidation Tool: Error retrieving ClusterMapDetkey from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+  }
 
-  //Get MRD Cluster information
+  //  --------------------------------
+  //--------Get MRD clusters---------
+  //  --------------------------------
+  
   get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
   if (not get_ok) { Log("RunValidation Tool: Error retrieving MrdTimeClusters map from CStore, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
   if (MrdTimeClusters.size()!=0){
@@ -187,37 +200,45 @@ bool FMVEfficiency::Execute(){
   double cluster_charge_pe=0;
   double cluster_time=0.; 
  
-  //Get Tank Cluster data
-  if (m_all_clusters){
-    int clustersize = m_all_clusters->size();
-    if (clustersize != 0){
-      for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-        double cluster_charge = apair.first;
-        std::vector<Hit>&Hits = apair.second;
-        std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(cluster_charge);
-        double global_time=0.;
-        double global_charge=0.;
-        int nhits=0;
-        for (unsigned i_hit = 0; i_hit < Hits.size(); i_hit++){
-          unsigned long detkey = detkeys.at(i_hit);
-          double time = Hits.at(i_hit).GetTime();
-          double charge = Hits.at(i_hit).GetCharge();
-          if (pmt_gains[detkey] > 0) charge/=pmt_gains[detkey];
-          global_time+=time;
-          global_charge+=charge;
-          nhits++;
-        }
-        if (nhits>0) global_time/=nhits;
-        if (global_time < 2000. && global_charge > cluster_charge_pe) {
-          pmt_cluster=true;
-          cluster_charge_pe = global_charge;
-          cluster_time = global_time;
+  //  --------------------------------
+  //-----Loop through tank data-------
+  //  --------------------------------
+  
+  if (useTank){
+    if (m_all_clusters){
+      int clustersize = m_all_clusters->size();
+      if (clustersize != 0){
+        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
+          double cluster_charge = apair.first;
+          std::vector<Hit>&Hits = apair.second;
+          std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(cluster_charge);
+          double global_time=0.;
+          double global_charge=0.;
+          int nhits=0;
+          for (unsigned i_hit = 0; i_hit < Hits.size(); i_hit++){
+            unsigned long detkey = detkeys.at(i_hit);
+            double time = Hits.at(i_hit).GetTime();
+            double charge = Hits.at(i_hit).GetCharge();
+            if (pmt_gains[detkey] > 0) charge/=pmt_gains[detkey];
+            global_time+=time;
+            global_charge+=charge;
+            nhits++;
+          }
+          if (nhits>0) global_time/=nhits;
+          if (global_time < 2000. && global_charge > cluster_charge_pe) {
+            pmt_cluster=true;
+            cluster_charge_pe = global_charge;
+            cluster_time = global_time;
+          }
         }
       }
     }
   }
 
-  //Get FMV data
+  //  --------------------------------
+  //---------Get FMV data-------------
+  //  --------------------------------
+  
   std::vector<unsigned long> hit_fmv_detkeys_first, hit_fmv_detkeys_second;
   std::vector<double> vector_fmv_times_first, vector_fmv_times_second;
 
@@ -270,6 +291,7 @@ bool FMVEfficiency::Execute(){
   //----Evaluate tank coincidences------
   //  --------------------------------
 
+  if (useTank){
   if (pmt_cluster){
     if (npaddles_Layer1 == 1){
       for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_first.size(); i_fmv++){
@@ -296,7 +318,12 @@ bool FMVEfficiency::Execute(){
       }
     }
   }
+  }
 
+  //  --------------------------------
+  //----Evaluate MRD coincidences-----
+  //  --------------------------------
+  
   //Only use events with one track in the MRD
   if (MrdTimeClusters.size()!=1) return true; 
 
@@ -450,6 +477,10 @@ bool FMVEfficiency::Execute(){
 
 
 bool FMVEfficiency::Finalise(){
+
+  //  --------------------------------
+  //---Fill chankey-wise histograms---
+  //  --------------------------------
 
   file->cd();
   for (unsigned int i_fmv = 0; i_fmv < fmv_secondlayer.size(); i_fmv++){
