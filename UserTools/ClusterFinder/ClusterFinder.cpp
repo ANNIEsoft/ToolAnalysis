@@ -475,7 +475,7 @@ bool ClusterFinder::Finalise(){
   }
   f_output->Close();
   
-  Log("ClusterFinder exiting...",v_message,verbosity);
+  Log("ClusterFinder exiting...",v_message,verbose);
 
   return true;
 }

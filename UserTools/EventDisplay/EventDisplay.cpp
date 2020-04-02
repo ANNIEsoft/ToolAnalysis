@@ -813,7 +813,6 @@ bool EventDisplay::Execute(){
           Log("EventDisplay tool: Loop over MCHits: Detkey = "+std::to_string(detkey),v_debug,verbose);
           if (thistube->GetDetectorElement()=="Tank"){
 	    if(thistube->GetTankLocation()=="OD") continue;		//don't plot OD PMTs (they are not included in the final design of ANNIE)
-            hitpmt_detkeys.push_back(detkey);
             std::vector<MCHit>& Hits = apair.second;
             int hits_pmt = 0;
             int wcsim_id;
@@ -823,7 +822,14 @@ bool EventDisplay::Execute(){
               hits_pmt++;
             }
             time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
-            total_hits_pmts++;
+            bool passed_lower_time_cut = (threshold_time_low == -999 || time[detkey] >= threshold_time_low);
+            bool passed_upper_time_cut = (threshold_time_high == -999 || time[detkey] <= threshold_time_high);
+            if (charge[detkey] >= threshold && passed_lower_time_cut && passed_upper_time_cut){
+              hitpmt_detkeys.push_back(detkey);
+              total_hits_pmts++;
+            } else {
+              charge[detkey] = 0;
+            }
           }
         }
       } else {
@@ -848,18 +854,25 @@ bool EventDisplay::Execute(){
           Log("EventDisplay tool: Loop over Hits: Detkey = "+std::to_string(detkey),v_debug,verbose);
           if (thistube->GetDetectorElement()=="Tank"){
             if(thistube->GetTankLocation()=="OD") continue;             //don't plot OD PMTs (they are not included in the final design of ANNIE)
-            hitpmt_detkeys.push_back(detkey);
             std::vector<Hit>& Hits = apair.second;
             int hits_pmt = 0;
             int wcsim_id;
             for (Hit &ahit : Hits){
-              charge[detkey] += ahit.GetCharge();
-              std::cout <<"detkey = "<<detkey<<", time = "<<ahit.GetTime()<<std::endl;
+              double temp_charge = ahit.GetCharge();
+              if (charge_format == "pe" && pmt_gains[detkey]>0) temp_charge /= pmt_gains[detkey];
+              charge[detkey] += temp_charge;
               time[detkey] += ahit.GetTime();
               hits_pmt++;
             }
             time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
-            total_hits_pmts++;
+            bool passed_lower_time_cut = (threshold_time_low == -999 || time[detkey] >= threshold_time_low);
+            bool passed_upper_time_cut = (threshold_time_high == -999 || time[detkey] <= threshold_time_high);
+            if (charge[detkey] >= threshold && passed_lower_time_cut && passed_upper_time_cut){
+              total_hits_pmts++;
+              hitpmt_detkeys.push_back(detkey);
+            } else {
+              charge[detkey] = 0;
+            }
           }
         }
       } else if (draw_cluster && m_all_clusters){
@@ -898,7 +911,10 @@ bool EventDisplay::Execute(){
 	  for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
 	    Hit ahit = Hits.at(i_hit);
             unsigned long detkey = detkeys.at(i_hit);
-	    charge[detkey] += ahit.GetCharge();
+            double temp_charge = ahit.GetCharge();
+            if (charge_format == "pe" && pmt_gains[detkey]>0) temp_charge /= pmt_gains[detkey];
+	    charge[detkey] += temp_charge;
+            if (charge[detkey] < threshold) continue;	//don't use hits in cluster below the threshold
 	    time[detkey] += ahit.GetTime();
 	    hits[detkey]++;
 	    if (std::find(hitpmt_detkeys.begin(),hitpmt_detkeys.end(),detkey)==hitpmt_detkeys.end()) hitpmt_detkeys.push_back(detkey);
@@ -942,13 +958,18 @@ bool EventDisplay::Execute(){
 	  unsigned long detkey = det->GetDetectorID();
 	  if (det->GetTankLocation()=="OD") continue;		//don't plot OD PMTs (not included in the final design of ANNIE!)
 	  if (use_filtered_digits && !isfiltered) continue;     //omit unfiltered entries if specified
-          hitpmt_detkeys.push_back(detkey);
 	  Log("EventDisplay tool: Reading in RecoEvent data: PMTid = "+std::to_string(pmtid)+", chankey = "+std::to_string(chankey)+", detkey = "+std::to_string(detkey),v_debug,verbose);
-          total_hits_pmts++;
 	  Log("EventDisplay tool: Reading in RecoEvent data: DigitQ = "+std::to_string(digitQ)+", digitT = "+std::to_string(digitT),v_debug,verbose);
-          charge[detkey] = digitQ;
-          time[detkey] = digitT;
-          mean_digittime += digitT;
+          if (!use_filtered_digits && charge_format == "pe" && pmt_gains[detkey] > 0) digitQ /= pmt_gains[detkey];
+          bool passed_lower_time_cut = (threshold_time_low == -999 || digitT >= threshold_time_low);
+          bool passed_upper_time_cut = (threshold_time_high == -999 || digitT <= threshold_time_high);
+          if (digitQ >= threshold && passed_lower_time_cut && passed_upper_time_cut){
+            charge[detkey] = digitQ;
+            time[detkey] = digitT;
+            mean_digittime += digitT;
+            hitpmt_detkeys.push_back(detkey);
+            total_hits_pmts++;
+          }
         } else if (digittype == 1){
           int lappdid = thisdigit.GetDetectorID();
           unsigned long detkey = lappd_tubeid_to_detectorkey[lappdid];
@@ -975,15 +996,6 @@ bool EventDisplay::Execute(){
 
    if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
   
-  //Convert charges to p.e.
-  if (isData && use_filtered_digits==0){
-    for (unsigned int i_pmt=0; i_pmt < hitpmt_detkeys.size(); i_pmt++){
-      if (charge_format == "pe"){
-        unsigned long detkey = hitpmt_detkeys.at(i_pmt); 
-        if (pmt_gains[detkey]>0) charge[detkey]/=pmt_gains[detkey];
-      }
-    }
-  }
 
   //NHits threshold cut
   int total_hits_pmts_above_thr=0;
