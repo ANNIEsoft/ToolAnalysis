@@ -154,14 +154,18 @@ bool ANNIEEventBuilder::Execute(){
     }
     m_data->CStore.Get("MRDEvents",MRDEvents);
     m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
+    m_data->CStore.Get("MRDBeamLoopback",MRDBeamLoopbackMap);
+    m_data->CStore.Get("MRDCosmicLoopback",MRDCosmicLoopbackMap);
     
    //Loop through MRDEvents and process each into ANNIEEvent.
     for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
       unsigned long MRDTimeStamp = apair.first;
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
+      int beam_tdc = MRDBeamLoopbackMap[MRDTimeStamp];
+      int cosmic_tdc = MRDCosmicLoopbackMap[MRDTimeStamp];
       this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,RunType,StarTime);
-      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
+      this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
       this->SaveEntryToFile(RunNumber,SubRunNumber);
       //Erase this entry from the InProgressTankEventsMap
       MRDEventsToDelete.push_back(MRDTimeStamp);
@@ -169,9 +173,13 @@ bool ANNIEEventBuilder::Execute(){
     for (unsigned int i=0; i< MRDEventsToDelete.size(); i++){
       MRDEvents.erase(MRDEventsToDelete.at(i));
       TriggerTypeMap.erase(MRDEventsToDelete.at(i));
+      MRDBeamLoopbackMap.erase(MRDEventsToDelete.at(i));
+      MRDCosmicLoopbackMap.erase(MRDEventsToDelete.at(i));
     }
     m_data->CStore.Set("MRDEvents",MRDEvents);
     m_data->CStore.Set("MRDEventTriggerTypes",TriggerTypeMap);
+    m_data->CStore.Set("MRDBeamLoopback",MRDBeamLoopbackMap);
+    m_data->CStore.Set("MRDCosmicLoopback",MRDCosmicLoopbackMap);
   }
 
   else if (BuildType == "TankAndMRD"){
@@ -229,6 +237,8 @@ bool ANNIEEventBuilder::Execute(){
     m_data->CStore.Get("MRDEventTriggerTypes",TriggerTypeMap);
     m_data->CStore.Get("NewMRDDataAvailable",IsNewMRDData);
     m_data->CStore.Get("MRDEvents",MRDEvents);
+    m_data->CStore.Get("MRDBeamLoopback",MRDBeamLoopbackMap);
+    m_data->CStore.Get("MRDCosmicLoopback",MRDCosmicLoopbackMap);
     if(IsNewMRDData){
       for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
         unsigned long MRDTimeStamp = apair.first;
@@ -277,10 +287,12 @@ bool ANNIEEventBuilder::Execute(){
         if(verbosity>4) std::cout << "MRD TIMESTAMP: " << MRDTimeStamp << std::endl;
         std::vector<std::pair<unsigned long,int>> MRDHits = MRDEvents.at(MRDTimeStamp);
         std::string MRDTriggerType = TriggerTypeMap[MRDTimeStamp];
+        int beam_tdc = MRDBeamLoopbackMap[MRDTimeStamp];
+        int cosmic_tdc = MRDCosmicLoopbackMap[MRDTimeStamp];
         if(verbosity>4) std::cout << "BUILDING AN ANNIE EVENT" << std::endl;
         this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
         this->BuildANNIEEventTank(TankCounterTime, aWaveMap);
-        this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType);
+        this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT SUCCESSFULLY" << std::endl;
         //Erase this entry from maps/vectors used when pairing completed events 
@@ -288,6 +300,8 @@ bool ANNIEEventBuilder::Execute(){
         FinishedTankEvents.erase(TankCounterTime);
         MRDEvents.erase(MRDTimeStamp);
         TriggerTypeMap.erase(MRDTimeStamp);
+        MRDBeamLoopbackMap.erase(MRDTimeStamp);
+        MRDCosmicLoopbackMap.erase(MRDTimeStamp);
         FinishedTankTimestamps.erase(std::remove(FinishedTankTimestamps.begin(),FinishedTankTimestamps.end(),TankCounterTime), 
                    FinishedTankTimestamps.end());
       }
@@ -301,9 +315,13 @@ bool ANNIEEventBuilder::Execute(){
   //m_data->CStore.Set("InProgressTankEvents",InProgressTankEvents);
   m_data->CStore.Set("MRDEvents",MRDEvents);
   m_data->CStore.Set("MRDEventTriggerTypes",TriggerTypeMap);
+  m_data->CStore.Set("MRDBeamLoopback",MRDBeamLoopbackMap);
+  m_data->CStore.Set("MRDCosmicLoopback",MRDCosmicLoopbackMap);
   //InProgressTankEvents.clear();
   MRDEvents.clear();
   TriggerTypeMap.clear();
+  MRDBeamLoopbackMap.clear();
+  MRDCosmicLoopbackMap.clear();
 
   ExecuteCount = 0;
   return true;
@@ -353,6 +371,8 @@ void ANNIEEventBuilder::RemoveCosmics(){
                UnpairedMRDTimestamps.end());
     MRDEvents.erase(MRDStampsToDelete.at(j));
     TriggerTypeMap.erase(MRDStampsToDelete.at(j));
+    MRDBeamLoopbackMap.erase(MRDStampsToDelete.at(j));
+    MRDCosmicLoopbackMap.erase(MRDStampsToDelete.at(j));
   }
   return;
 }
@@ -497,7 +517,7 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
 
 
 void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType)
+        unsigned long MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc)
 {
   std::cout << "Building an ANNIE Event (MRD), ANNIEEventNum = "<<ANNIEEventNum << std::endl;
 
@@ -519,12 +539,17 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
     }
   }
 
+  std::map<std::string, int> mrd_loopback_tdc;
+  mrd_loopback_tdc.emplace("BeamLoopbackTDC",beam_tdc);
+  mrd_loopback_tdc.emplace("CosmicLoopbackTDC",cosmic_tdc);
+
   Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
   TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in microseconds
   ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
   ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
+  ANNIEEvent->Set("MRDLoopbackTDC",mrd_loopback_tdc);
   return;
 }
 
