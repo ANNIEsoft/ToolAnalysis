@@ -173,16 +173,6 @@ bool HitCleaner::Execute(){
   for(int n=0; n<int(digits->size()); n++ ) {
     digits->at(n)->ResetFilter();
   }
-  // Convert charge to p.e. in data case
-  if (!fisMC){
-    for (int n=0; n<int(digits->size()); n++){
-      RecoDigit* thisdigit = digits->at(n);
-      double q_nC = thisdigit->GetCalCharge();
-      int pmtid = thisdigit->GetDetectorID();
-      unsigned long chankey = pmt_tubeid_to_channelkey[pmtid];
-      if (pmt_gains[chankey]>0) thisdigit->SetCalCharge(q_nC/pmt_gains[chankey]);
-    }
-  }
 
   // Run Hit Cleaner
   // ================
@@ -388,6 +378,11 @@ std::vector<RecoDigit*>* HitCleaner::FilterByPulseHeight(std::vector<RecoDigit*>
   for(int idigit=0; idigit<int(myDigitList->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(myDigitList->at(idigit));
     double qep = recoDigit->GetCalCharge();
+    if (!fisMC){
+      int pmtid = recoDigit->GetDetectorID();
+      unsigned long chankey = pmt_tubeid_to_channelkey[pmtid];
+      if (pmt_gains[chankey]>0) qep/=pmt_gains[chankey];
+    }
     int detType = recoDigit->GetDigitType();
     if(detType == RecoDigit::lappd_v0) {
     	if( qep>fLappdMinPulseHeight ){

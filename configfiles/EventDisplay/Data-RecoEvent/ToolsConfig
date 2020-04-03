@@ -5,6 +5,6 @@ myPhaseIIADCHitFinder PhaseIIADCHitFinder configfiles/EventDisplay/Data-RecoEven
 myClusterFinder ClusterFinder configfiles/EventDisplay/Data-RecoEvent/ClusterFinderConfig
 myTimeClustering TimeClustering configfiles/EventDisplay/Data-RecoEvent/TimeClusteringConfig
 myDigitBuilder DigitBuilder configfiles/EventDisplay/Data-RecoEvent/DigitBuilderConfig
-myHitCleaner HitCleaner configfiles/EventDisplay/Data-RecoEvent/HitCleanerConfig
+#myHitCleaner HitCleaner configfiles/EventDisplay/Data-RecoEvent/HitCleanerConfig
 myEventSelector EventSelector configfiles/EventDisplay/Data-RecoEvent/EventSelectorConfig
 myEventDisplay EventDisplay configfiles/EventDisplay/Data-RecoEvent/EventDisplayConfig

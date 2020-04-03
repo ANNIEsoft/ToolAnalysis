@@ -960,7 +960,7 @@ bool EventDisplay::Execute(){
 	  if (use_filtered_digits && !isfiltered) continue;     //omit unfiltered entries if specified
 	  Log("EventDisplay tool: Reading in RecoEvent data: PMTid = "+std::to_string(pmtid)+", chankey = "+std::to_string(chankey)+", detkey = "+std::to_string(detkey),v_debug,verbose);
 	  Log("EventDisplay tool: Reading in RecoEvent data: DigitQ = "+std::to_string(digitQ)+", digitT = "+std::to_string(digitT),v_debug,verbose);
-          if (!use_filtered_digits && charge_format == "pe" && pmt_gains[detkey] > 0) digitQ /= pmt_gains[detkey];
+          if (charge_format == "pe" && pmt_gains[detkey] > 0) digitQ /= pmt_gains[detkey];
           bool passed_lower_time_cut = (threshold_time_low == -999 || digitT >= threshold_time_low);
           bool passed_upper_time_cut = (threshold_time_high == -999 || digitT <= threshold_time_high);
           if (digitQ >= threshold && passed_lower_time_cut && passed_upper_time_cut){
