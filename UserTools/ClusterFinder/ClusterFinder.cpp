@@ -24,6 +24,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("AcqTimeWindow",AcqTimeWindow);
   m_variables.Get("ClusterIntegrationWindow",ClusterIntegrationWindow);
   m_variables.Get("MinHitsPerCluster",MinHitsPerCluster);
+  m_variables.Get("end_of_window_time_cut",end_of_window_time_cut)
 
   //----------------------------------------------------------------------------
   //---------------Get basic geometry properties -------------------------------
@@ -216,7 +217,7 @@ bool ClusterFinder::Execute(){
         PMT_ishit[detectorkey] = 1;
         for (Hit &ahit : ThisPMTHits){
           if (verbose > 2) std::cout << "Key: " << detectorkey << ", charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
-          if (ahit.GetTime() < 0.95*AcqTimeWindow) v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
+          if (ahit.GetTime() < end_of_window_time_cut*AcqTimeWindow) v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
         }
       }
     }
@@ -255,7 +256,7 @@ bool ClusterFinder::Execute(){
 
   // Move a time window within the array and look for the window with the highest number of hits
   for (std::vector<double>::iterator it = v_hittimes_sorted.begin(); it != v_hittimes_sorted.end(); ++it) {
-    if (*it + ClusterFindingWindow > AcqTimeWindow || *it > 0.95*AcqTimeWindow) {
+    if (*it + ClusterFindingWindow > AcqTimeWindow || *it > end_of_window_time_cut*AcqTimeWindow) {
       if (verbose > 2) cout << "Cluster Finding loop: Reaching the end of the acquisition time window.." << endl;
       break;
     }
