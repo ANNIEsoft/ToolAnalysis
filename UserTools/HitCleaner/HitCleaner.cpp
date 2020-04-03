@@ -146,7 +146,9 @@ bool HitCleaner::Execute(){
   // =====
   fIsHitCleaningDone = true;
   m_data->Stores.at("RecoEvent")->Set("HitCleaningDone", fIsHitCleaningDone); 
-	delete digits; digits = 0;
+  m_data->Stores.at("RecoEvent")->Set("FilterDigitList", FilterDigitList);	
+
+  delete digits; digits = 0;
   return true;
 }
 
@@ -583,6 +585,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
       while( carryon ){
         carryon = 0;
         for( int jdigit=0; jdigit<vClusterDigitCollection.size(); jdigit++ ){
+	  //std::cout <<"jdigit = "<<jdigit<<", vClusterDigitCollection.size() = "<<vClusterDigitCollection.size()<<std::endl;
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
           TString digitType = cdigit->GetDigitType();
 	        double nDigits = cdigit->GetNClusterDigits();
@@ -616,6 +619,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
 	        
         }
       } 
+	//std::cout <<"vClusterDigitCollection.size() == "<<vClusterDigitCollection.size()<<std::endl;
       if( (int)vClusterDigitCollection.size()>=fMinClusterDigits ){
         RecoCluster* cluster = new RecoCluster();
         fClusterList->push_back(cluster);
@@ -628,6 +632,8 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
       }
     }
   }
+
+  std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
   // return vector of clusters
   // =========================
   return fClusterList;

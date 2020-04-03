@@ -1,0 +1,20 @@
+# LoadCCData config file
+verbose 1
+
+# when matching, TDC readout time must be at least this close to the closest minibuffer time to be a match [ns]
+MaxTimeDiff 5000000
+
+DrawDebugGraphs 0 # debug histograms
+
+###### following entries redundant, retrieved from upstream Tools
+# text file containing list of CCData files to be used for TDC hits
+#FileList configfiles/LoadCCData/ccdatafiles
+
+# whether to use corrected times for ADC timestamps or the raw PMTData files
+#UseHeftyTimes 0
+
+# file with corrected minibuffer times
+#AlignmentFileList configfiles/LoadCCData/ccalignmentfiles
+
+# PMT Data files used for times. May be raw OR post-processed
+#AlignmentFileList configfiles/LoadCCData/ccdatafiles

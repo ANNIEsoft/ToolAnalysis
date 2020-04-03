@@ -1,5 +1,15 @@
+<<<<<<< HEAD
 verbosity 0
 
 BuildType MRD
 ProcessedFilesBasename ANNIEEvent_MRDTest28commonstopp0
 SavePath ./mrdfiles/
+=======
+verbosity 5
+
+BuildType MRD
+ProcessedFilesBasename ProcessedRawData_MRDOnly
+SavePath ./
+
+ExecutesPerBuild 10
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

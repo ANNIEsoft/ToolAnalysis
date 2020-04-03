@@ -35,6 +35,7 @@ class MRDDataDecoder: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
+<<<<<<< HEAD
   std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
 
  private:
@@ -59,6 +60,11 @@ class MRDDataDecoder: public Tool {
 
   std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
+=======
+ private:
+
+  MRDOut* mrddata=nullptr;
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   //Map used to relate MRD Crate Space value to channel key
   std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
 

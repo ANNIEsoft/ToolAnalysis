@@ -1,0 +1,10 @@
+#MrdDistributions Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+
+verbosity 1
+
+drawHistos 0            # draw the histograms
+#plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
+plotDirectory ./MrdDistributionPlots
+printTracks 0           # verbose printout of track information from BoostStore
+RootFileOutput MrdDistributions.root

@@ -4,3 +4,7 @@ FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
 DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
 LAPPDGeoFile ./configfiles/LoadGeometry/LAPPDGeometry.csv
 TankPMTGeoFile ./configfiles/LoadGeometry/FullTankPMTGeometry.csv
+<<<<<<< HEAD
+=======
+AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

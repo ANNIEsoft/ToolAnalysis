@@ -56,6 +56,10 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   //Make the map of channel key to crate space info
   MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+<<<<<<< HEAD
+=======
+  MRDChannelNumToCrateSpaceMap = new std::map<int,std::vector<int>>;
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
@@ -78,6 +82,10 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data->Stores.at("ANNIEEvent")->Header->Set("AnnieGeometry",AnnieGeometry,true);
 
   m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
+<<<<<<< HEAD
+=======
+  m_data->CStore.Set("MRDChannelNumToCrateSpaceMap",MRDChannelNumToCrateSpaceMap);
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
   m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
@@ -353,6 +361,14 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
     MRDCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
     Log("LoadGeometry Tool: ERROR: Tried assigning an MRD channel_num to a crate space already defined!!! ",v_error, verbosity);
+<<<<<<< HEAD
+=======
+  }
+  if(MRDChannelNumToCrateSpaceMap->count(channel_num)==0){
+    MRDChannelNumToCrateSpaceMap->emplace(channel_num, crate_map);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning an MRD crate space to a channel number already defined!!! ",v_error, verbosity);
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   }
 
   if(verbosity>5) cout<<"Adding detector to Geometry"<<endl;

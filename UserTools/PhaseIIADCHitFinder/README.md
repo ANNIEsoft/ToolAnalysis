@@ -26,9 +26,24 @@ is manipulable using DefaultADCThreshold and DefaultThresholdType config variabl
 
   "fixed_window": Fixed windows defined in the WindowIntegrationDB text file are
                   treated entirely as pulses.
+<<<<<<< HEAD
 
   "full_window": Every waveform is integrated completely and background-subtracted
                  to form a single pulse object.
+=======
+
+  "full_window": Every waveform is integrated completely and background-subtracted
+                 to form a single pulse object.
+
+  "full_window_maxpeak": The maximum peak anywhere in the window is taken as the pulse.  
+                 the pulse is integrated to either side of the max until dropping to 
+                 < 10% of the max peak amplitude, then background-subtracted.
+
+  "signal_window_maxpeak": The maximum peak anywhere beyond the baseline estimation window
+                  is taken as the pulse.  
+                 the pulse is integrated to either side of the max until dropping to 
+                 < 10% of the max peak amplitude, then background-subtracted.
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   
   "NNLS": Uses the NNLS algorithm that will be applied to LAPPD hit reconstruction.
           Not yet implemented.

@@ -13,6 +13,7 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   verbosity = 0;
+<<<<<<< HEAD
   EntriesPerExecute = 0;
   DummyRunNumber = 0;
 
@@ -51,6 +52,14 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
     Log("MRDDataDecoder tool: files to load have been organized.",v_message,verbosity);
   }
   
+=======
+
+  m_variables.Get("verbosity",verbosity);
+
+  m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("NewMRDDataAvailable",false);
+
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   m_data->CStore.Set("PauseMRDDecoding",false);
   Log("MRDDataDecoder Tool: Initialized successfully",v_message,verbosity);
   return true;
@@ -58,8 +67,21 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
 
 
 bool MRDDataDecoder::Execute(){
+<<<<<<< HEAD
 
   m_data->CStore.Set("NewMRDDataAvailable",false);
+=======
+  m_data->CStore.Set("NewMRDDataAvailable",false);
+
+  bool NewEntryAvailable;
+  m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
+  if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
+    Log("MRDDataDecoder Tool: There's no new MRD data.  stop at next loop.",v_warning,verbosity); 
+    m_data->vars.Set("StopLoop",1);
+    return true;
+  }
+  
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   bool PauseMRDDecoding = false;
   m_data->CStore.Get("PauseMRDDecoding",PauseMRDDecoding);
   if (PauseMRDDecoding){
@@ -67,6 +89,7 @@ bool MRDDataDecoder::Execute(){
     return true;
   }
 
+<<<<<<< HEAD
   //Check if we are starting a new file
   if (FileCompleted) m_data->CStore.Set("MRDFileComplete",false);
 
@@ -218,6 +241,36 @@ bool MRDDataDecoder::Execute(){
     ExecuteEntryNum += 1;
     EntryNum+=1;
   }
+=======
+  
+  /////////////////// getting MRD Data ////////////////////
+  Log("MRDDataDecoder Tool: Accessing MRDData from CStore",v_message,verbosity); 
+  m_data->CStore.Get("MRDData",mrddata);
+  std::string mrdTriggertype = "No Loopback";
+  std::vector<unsigned long> chankeys;
+  unsigned long timestamp = mrddata->TimeStamp;    //in ms since 1970/1/1
+  std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
+  MRDEvents.emplace(timestamp,ChankeyTimePairs);
+    
+  //For each entry, loop over all crates and get data
+  for (unsigned int i_data = 0; i_data < mrddata->Crate.size(); i_data++){
+    int crate = mrddata->Crate.at(i_data);
+    int slot = mrddata->Slot.at(i_data);
+    int channel = mrddata->Channel.at(i_data);
+    int hittimevalue = mrddata->Value.at(i_data);
+    std::vector<int> CrateSlotChannel{crate,slot,channel};
+    unsigned long chankey = MRDCrateSpaceToChannelNumMap[CrateSlotChannel];
+    if (chankey !=0){
+      std::pair <unsigned long,int> keytimepair(chankey,hittimevalue);  //chankey will be 0 when looking at loopback channels that don't have an entry in the mapping-->skip
+      MRDEvents[timestamp].push_back(keytimepair);
+    }
+    if (crate == 7 && slot == 11 && channel == 14) mrdTriggertype = "Cosmic";   //FIXME: don't hard-code the trigger channels?
+    if (crate == 7 && slot == 11 && channel == 15) mrdTriggertype = "Beam";     //FIXME: don't hard-code the trigger channels?
+  }
+  
+  //Entry processing done.  Label the trigger type and increment index
+  TriggerTypeMap.emplace(timestamp,mrdTriggertype);
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 
   //MRD Data file fully processed.   
   //Push the map of TriggerTypeMap and FinishedMRDHits 
@@ -231,6 +284,7 @@ bool MRDDataDecoder::Execute(){
   m_data->CStore.Get("MRDEventTriggerTypes",CStoreTriggerTypeMap);
   CStoreTriggerTypeMap.insert(TriggerTypeMap.begin(),TriggerTypeMap.end());
   m_data->CStore.Set("MRDEventTriggerTypes",CStoreTriggerTypeMap);
+<<<<<<< HEAD
   //FIXME: Should we now clear CStoreMRDEvents and CStoreTriggerTypesto free up memory?
   
   m_data->CStore.Set("NewMRDDataAvailable",true);
@@ -241,11 +295,22 @@ bool MRDDataDecoder::Execute(){
           to_string(MRDEvents.size()),v_debug, verbosity);
   Log("MRDDataDecoder Tool: Size of MRDEvents in CStore:" + 
           to_string(TriggerTypeMap.size()),v_debug, verbosity);
+=======
+  
+  m_data->CStore.Set("NewMRDDataAvailable",true);
+
+  //Check the size of the WaveBank to see if things are bloating
+  Log("MRDDataDecoder Tool: Size of MRDEvents in CStore (# MRD Triggers processed):" + 
+          to_string(CStoreMRDEvents.size()),v_debug, verbosity);
+  Log("MRDDataDecoder Tool: Size of TriggerTypeMap in CStore:" + 
+          to_string(CStoreTriggerTypeMap.size()),v_debug, verbosity);
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 
   std::cout << "MRD EVENT CSTORE ENTRIES SET SUCCESSFULLY.  Clearing MRDEvents map from this file." << std::endl;
   MRDEvents.clear();
   TriggerTypeMap.clear();
 
+<<<<<<< HEAD
    if(EntryNum == totalentries){
     Log("MRDDataDecoder Tool: RUN PART COMPLETED.  INDICATING FILE IS DONE.",v_debug, verbosity);
     FileCompleted = true;
@@ -267,12 +332,15 @@ bool MRDDataDecoder::Execute(){
     }
   } 
 
+=======
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   ////////////// END EXECUTE LOOP ///////////////
   return true;
 }
 
 
 bool MRDDataDecoder::Finalise(){
+<<<<<<< HEAD
   RawData->Close();
   RawData->Delete();
   delete RawData;
@@ -358,3 +426,8 @@ std::vector<std::string> MRDDataDecoder::OrganizeRunParts(std::string FileList)
   }
   return OrganizedFiles;
 }
+=======
+  std::cout << "MRDDataDecoder tool exitting" << std::endl;
+  return true;
+}
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

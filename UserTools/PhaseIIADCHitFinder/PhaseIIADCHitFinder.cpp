@@ -143,6 +143,10 @@ bool PhaseIIADCHitFinder::Execute() {
       std::vector<Hit> HitsOnPMT;
 
       if (pulse_finding_approach == "full_window"){
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
         // Integrate each whole dang minibuffer and background subtract 
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
@@ -156,7 +160,11 @@ bool PhaseIIADCHitFinder::Execute() {
       }
 
       if (pulse_finding_approach == "full_window_maxpeak"){
+<<<<<<< HEAD
         // Integrate each whole dang minibuffer and background subtract 
+=======
+        // Find the max peak anywhere in the window and subtract baseline
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
         size_t num_minibuffers = raw_waveforms.size();
         for (size_t mb = 0; mb < num_minibuffers; ++mb) {
             Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
@@ -167,6 +175,24 @@ bool PhaseIIADCHitFinder::Execute() {
               calibrated_waveforms.at(mb), onewindowvec, channel_key,true));
         }
       }
+<<<<<<< HEAD
+=======
+      
+      if (pulse_finding_approach == "signal_window_maxpeak"){
+        // Find the max peak anywhere beyond the baseline region and subtract baseline
+        size_t num_minibuffers = raw_waveforms.size();
+        for (size_t mb = 0; mb < num_minibuffers; ++mb) {
+            Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
+            int window_end = buffer_wave.GetSamples()->size()-1;
+            int num_baseline_samples = 0;
+            m_data->CStore.Set("NumBaselineSamples",num_baseline_samples);
+            std::vector<int> fullwindow{num_baseline_samples,window_end};
+            std::vector<std::vector<int>> onewindowvec{fullwindow};
+            pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
+              calibrated_waveforms.at(mb), onewindowvec, channel_key,true));
+        }
+      }
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 
       if (pulse_finding_approach == "fixed_windows"){
         // Integrate pulse over a fixed windows defined for channel 
@@ -451,7 +477,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       + calibrated_minibuffer_data.GetSigmaBaseline() ));
 
   bool in_pulse = false;
-  size_t num_samples = raw_minibuffer_data.Samples().size();
+  size_t num_samples = raw_minibuffer_data.Samples().size()-50;
 
   //Fixed integration window defined relative to ADC threshold crossings
   if(pulse_window_type == "fixed"){

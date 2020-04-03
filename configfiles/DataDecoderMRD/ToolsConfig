@@ -1,3 +1,10 @@
+<<<<<<< HEAD
 myLoadGeometry LoadGeometry ./configfiles/DataDecoderMRD/LoadGeometryConfig
 myMRDDataDecoder MRDDataDecoder ./configfiles/DataDecoderMRD/MRDDataDecoderConfig
 myANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoderMRD/ANNIEEventBuilderConfig
+=======
+LoadGeometry LoadGeometry ./configfiles/DataDecoderMRD/LoadGeometryConfig
+LoadRawData LoadRawData ./configfiles/DataDecoderMRD/LoadRawDataConfig
+MRDDataDecoder MRDDataDecoder ./configfiles/DataDecoderMRD/MRDDataDecoderConfig
+ANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoderMRD/ANNIEEventBuilderConfig
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

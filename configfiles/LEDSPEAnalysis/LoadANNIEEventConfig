@@ -1,2 +1,6 @@
 verbose 2
+<<<<<<< HEAD
 FileForListOfInputs /ToolAnalysis/configfiles/LEDSPEAnalysis/my_inputs.txt
+=======
+FileForListOfInputs ./configfiles/LEDSPEAnalysis/my_inputs.txt
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

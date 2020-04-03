@@ -99,12 +99,23 @@
 #include "TrackCombiner.h"
 #include "SimulatedWaveformDemo.h"
 #include "CNNImage.h"
-#include "MonitorTankLive.h"
 #include "MonitorTankTime.h"
 #include "PhaseIIADCCalibrator.h"
 #include "MCHitToHitComparer.h"
+<<<<<<< HEAD
+=======
+#include "LoadGenieEvent.h"
+#include "PrintGenieEvent.h"
+#include "PlotWaveforms.h"
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 #include "PMTDataDecoder.h"
 #include "ANNIEEventBuilder.h"
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
+<<<<<<< HEAD
 #include "ClusterFinder.h"
+=======
+#include "MrdPaddleEfficiencyPreparer.h"
+#include "MrdPaddleEfficiencyCalc.h"
+#include "LoadRawData.h"
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

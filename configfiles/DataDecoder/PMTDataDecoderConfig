@@ -1,6 +1,10 @@
 verbosity 2
+<<<<<<< HEAD
 Mode FileList
 EntriesPerExecute 10
 InputFile /annie/app/users/pershint/ToolAnalysis/configfiles/DataDecoder/my_files.txt
 
 
+=======
+ADCCountsToBuildWaves 0
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 verbosity 0
 Mode SingleFile
 EntriesPerExecute 10
@@ -5,3 +6,6 @@ InputFile /annie/app/users/mnieslon/MyToolAnalysis3/MRDTest28commonstopp0
 #InputFile /ToolAnalysis/configfiles/DataDecoder/my_files.txt 
 
 
+=======
+verbosity 5
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

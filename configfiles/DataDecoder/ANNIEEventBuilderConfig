@@ -1,5 +1,20 @@
+<<<<<<< HEAD
 verbosity 5
 
 BuildType TankAndMRD
 ProcessedFilesBasename ProcessedRawData
 SavePath ./
+=======
+verbosity 2
+
+BuildType TankAndMRD
+ProcessedFilesBasename ProcessedRawData
+EventsPerPairing 50
+SavePath ./
+
+MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got em
+
+ExecutesPerBuild 10
+OrphanOldTimestamps 0
+OldTimestampThreshold 150
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec

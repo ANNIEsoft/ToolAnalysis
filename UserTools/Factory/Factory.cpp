@@ -91,14 +91,25 @@ if (tool=="PhaseIIADCHitFinder") ret=new PhaseIIADCHitFinder;
 if (tool=="TrackCombiner") ret=new TrackCombiner;
 if (tool=="SimulatedWaveformDemo") ret=new SimulatedWaveformDemo;
 if (tool=="CNNImage") ret=new CNNImage;
-if (tool=="MonitorTankLive") ret=new MonitorTankLive;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
+<<<<<<< HEAD
+=======
+if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
+if (tool=="PlotWaveforms") ret=new PlotWaveforms;
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
+<<<<<<< HEAD
 if (tool=="ClusterFinder") ret=new ClusterFinder;
+=======
+if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
+if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
+if (tool=="LoadRawData") ret=new LoadRawData;
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 return ret;
 }

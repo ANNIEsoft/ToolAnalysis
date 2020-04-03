@@ -58,6 +58,10 @@ class LoadGeometry: public Tool {
 
   //Map of channel number to electronics map entry
   std::map<std::vector<int>,int>* MRDCrateSpaceToChannelNumMap;
+<<<<<<< HEAD
+=======
+  std::map<int,std::vector<int>>* MRDChannelNumToCrateSpaceMap;
+>>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
   std::map<std::vector<int>,int>* TankPMTCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int>* AuxCrateSpaceToChannelNumMap;
   std::map<std::vector<unsigned int>,int>* LAPPDCrateSpaceToChannelNumMap;
