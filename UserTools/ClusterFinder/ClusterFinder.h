@@ -65,6 +65,7 @@ class ClusterFinder: public Tool {
   int AcqTimeWindow;
   int ClusterIntegrationWindow;
   int MinHitsPerCluster;
+  double end_of_window_time_cut;
 
   // define ANNIEEvent variables
   int evnum;
@@ -111,7 +112,8 @@ class ClusterFinder: public Tool {
   // Arrays and vectors
   std::vector<double> v_hittimes; // array used to sort hits times
   std::vector<double> v_hittimes_sorted;
-  std::map<double, int> m_time_Nhits;
+  std::vector<double> v_mini_hits;
+  std::map<double, std::vector<double>> m_time_Nhits;
   std::vector<double> v_clusters;
   std::vector<double> v_local_cluster_times;
   std::map<double,std::vector<Hit>>* m_all_clusters;  
@@ -119,7 +121,8 @@ class ClusterFinder: public Tool {
   // Other variables
   int max_Nhits = 0;
   double local_cluster = 0;
-  int thiswindow_Nhits =0;
+  int thiswindow_Nhits = 0;
+  int dummy_hittime_value = -9999;
  
   //define file to save data
   TFile *file_out = nullptr;

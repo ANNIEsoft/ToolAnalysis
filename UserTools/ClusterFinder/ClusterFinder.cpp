@@ -24,6 +24,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("AcqTimeWindow",AcqTimeWindow);
   m_variables.Get("ClusterIntegrationWindow",ClusterIntegrationWindow);
   m_variables.Get("MinHitsPerCluster",MinHitsPerCluster);
+  m_variables.Get("end_of_window_time_cut",end_of_window_time_cut)
 
   //----------------------------------------------------------------------------
   //---------------Get basic geometry properties -------------------------------
@@ -145,6 +146,7 @@ bool ClusterFinder::Execute(){
   // Some initialization
   v_hittimes.clear();
   v_hittimes_sorted.clear();
+  v_mini_hits.clear();
   m_time_Nhits.clear();
   v_clusters.clear();
   v_local_cluster_times.clear();
@@ -215,7 +217,7 @@ bool ClusterFinder::Execute(){
         PMT_ishit[detectorkey] = 1;
         for (Hit &ahit : ThisPMTHits){
           if (verbose > 2) std::cout << "Key: " << detectorkey << ", charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
-          v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
+          if (ahit.GetTime() < end_of_window_time_cut*AcqTimeWindow) v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
         }
       }
     }
@@ -253,32 +255,49 @@ bool ClusterFinder::Execute(){
   }
 
   // Move a time window within the array and look for the window with the highest number of hits
-  for (double i_time = v_hittimes_sorted.at(0); i_time <= v_hittimes_sorted.at(v_hittimes_sorted.size()-1); i_time++){
-    if (i_time + ClusterFindingWindow > AcqTimeWindow || i_time > 0.9*AcqTimeWindow) {
+  for (std::vector<double>::iterator it = v_hittimes_sorted.begin(); it != v_hittimes_sorted.end(); ++it) {
+    if (*it + ClusterFindingWindow > AcqTimeWindow || *it > end_of_window_time_cut*AcqTimeWindow) {
       if (verbose > 2) cout << "Cluster Finding loop: Reaching the end of the acquisition time window.." << endl;
       break;
     }
     thiswindow_Nhits = 0;   
-    for (double j_time = i_time; j_time < i_time + ClusterFindingWindow; j_time++){  // loops through times in the window and check if there's a hit at this time
-      for(std::vector<double>::iterator it = v_hittimes_sorted.begin(); it != v_hittimes_sorted.end(); ++it) {
-        if (*it == j_time) {
+    v_mini_hits.clear();
+    for (double j_time = *it; j_time < *it + ClusterFindingWindow; j_time+=2){  // loops through times in the window and check if there's a hit at this time
+      for(std::vector<double>::iterator it2 = v_hittimes_sorted.begin(); it2 != v_hittimes_sorted.end(); ++it2) {
+        if (*it2 == j_time) {
           thiswindow_Nhits++;
+          v_mini_hits.push_back(*it2);
         }
       }
     }
-    m_time_Nhits.insert(std::pair<double,int>(i_time,thiswindow_Nhits)); // fill a map with a pair (window start time; number of hits in window)  
+    if (!v_mini_hits.empty()) {
+      m_time_Nhits.insert(std::pair<double,std::vector<double>>(*it,v_mini_hits)); // fill a map with a pair (window start time; vector of hit times in window)  
+    }
   }
   if (verbose > 1) cout << "Map of times and Nhits filled..." << endl;
+  if (verbose > 2){
+      for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
+        if (it->second.size() > MinHitsPerCluster) {
+          cout << "Map of time and NHits: Time = " << it->first << ", NHits = " << it->second.size() << endl;
+          cout << "Look at the back of the vector (before): " << it->second.back() << endl;
+          for (std::vector<double>::iterator itt = it->second.begin(); itt != it->second.end(); ++itt) {
+          cout << "At this time, hits are: " << *itt << endl;  
+        }       
+      }
+    }
+  }
+  v_mini_hits.clear();
 
   // Now loop on the time/Nhits map to find maxima (clusters) 
   max_Nhits = 0;
   local_cluster = 0;
   v_clusters.clear();
   do {
+    //cout << "Start do loop" << endl;
     max_Nhits = 0;
-    for (std::map<double,int>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
-      if (it->second > max_Nhits) {
-        max_Nhits = it->second;
+    for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
+      if (it->second.size() > max_Nhits) {
+        max_Nhits = it->second.size();
         local_cluster = it->first;
       } 
     }
@@ -289,14 +308,32 @@ bool ClusterFinder::Execute(){
       if (verbose > 0) cout << "Cluster found at " << local_cluster << " ns with " << max_Nhits << " hits" << endl;
       v_clusters.push_back(local_cluster);
       // Remove the cluster and its surroundings for the next loop over the cluster map
-      for (std::map<double,int>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
-        if (it->first > local_cluster - ClusterIntegrationWindow/2 && it->first < local_cluster + ClusterIntegrationWindow/2) {
-          if (verbose > 2) cout << "Erasing " << it->first << " " << it->second << endl;
-          m_time_Nhits.erase(it);
-        } 
+      for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
+        //cout << "On the map hits: time " << it->first << " and hits tot " << it->second.size() << endl;
+        //cout << "Look at the back of the vector (between): " << it->second.back() << endl;
+        for (std::vector<double>::iterator itt = it->second.begin(); itt != it->second.end(); ++itt) {
+          //cout << "hits are " << *itt << endl;
+          if (*itt >= local_cluster && *itt <= local_cluster + ClusterFindingWindow) { //if hit time is in the window, replace it with dummy value to be removed later
+            it->second.at(std::distance(it->second.begin(), itt)) = dummy_hittime_value;
+          }
+        }
+        //cout << "Loop of setting dummy hit time values is done..." << endl;
+        //cout << "Before erasing values, vector of hits is " << it->second.size() << " hits long" << endl;
+        //cout << "Look at the back of the vector (after): " << it->second.back() << endl;
+
+        // This loops erases the dummy hit times values that were flagged before so they are not used anymore by other clusters
+        for(std::vector<double>::iterator itt = it->second.end()-1; itt != it->second.begin()-1; --itt) {
+          cout << "Time: " << it->first << ", hit time: " << *itt << endl;
+          if (*itt == dummy_hittime_value) {
+            it->second.erase(it->second.begin() + std::distance(it->second.begin(), itt)); 
+            if (verbose > 2) cout << "Erasing " << it->first << " " << *itt << endl;
+          }
+        }
+        cout << "Erasing loop is done and new size of mini_hits is " << it->second.size() << " hits" << endl;
       }
     }
   } while (true); 
+  m_time_Nhits.clear();
 
   // Now loop on the hit map again to get info about those local maxima, cluster per cluster
   for (std::vector<double>::iterator it = v_clusters.begin(); it != v_clusters.end(); ++it) {
@@ -311,23 +348,24 @@ bool ClusterFinder::Execute(){
         std::vector<Hit>& ThisPMTHits = apair.second;
         PMT_ishit[detectorkey] = 1;
         for (Hit &ahit : ThisPMTHits){
-          if (ahit.GetTime() > *it + ClusterFindingWindow/2 - ClusterIntegrationWindow/2 && ahit.GetTime() < *it + ClusterFindingWindow/2 + ClusterIntegrationWindow/2) {
+          if (ahit.GetTime() >= *it && ahit.GetTime() <= *it + ClusterFindingWindow) {
             local_cluster_charge += ahit.GetCharge();
             v_local_cluster_times.push_back(ahit.GetTime());
+            cout << "Local cluster at " << *it << " and hit is " << ahit.GetTime() << endl;
           }
         }
       }
     }
     
-    if (verbose > 2) cout << "Next cluster ..." << endl;
     for (std::vector<double>::iterator itt = v_local_cluster_times.begin(); itt != v_local_cluster_times.end(); ++itt) {
      local_cluster_time += *itt;
     }
     local_cluster_time /= v_local_cluster_times.size();
-    if (verbose > 0) cout << "Local cluster at " << local_cluster_time << " ns with a total charge of " << local_cluster_charge << endl;
+    if (verbose > 0) cout << "Local cluster at " << local_cluster_time << " ns with a total charge of " << local_cluster_charge << " (" << v_local_cluster_times.size() << " hits)" << endl;
     h_Cluster_times->Fill(local_cluster_time);
     h_Cluster_charges->Fill(local_cluster_charge);
     if (v_clusters.size() > 1) h_Cluster_deltaT->Fill(local_cluster_time - *std::min_element(v_clusters.begin(),v_clusters.end()));
+    if (verbose > 2) cout << "Next cluster ..." << endl;
 
     // Fills the map of clusters (to be passed through CStore)
     for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits) {   
@@ -338,11 +376,11 @@ bool ClusterFinder::Execute(){
         std::vector<Hit>& ThisPMTHits = apair.second;
         PMT_ishit[detectorkey] = 1;
         for (Hit &ahit : ThisPMTHits){
-          if (ahit.GetTime() > *it + ClusterFindingWindow/2 - ClusterIntegrationWindow/2 && ahit.GetTime() < *it + ClusterFindingWindow/2 + ClusterIntegrationWindow/2) { 
-            if(m_all_clusters->count(local_cluster_charge)==0) {
-              m_all_clusters->emplace(local_cluster_charge, std::vector<Hit>{ahit});
+          if (ahit.GetTime() >= *it && ahit.GetTime() <= *it + ClusterFindingWindow) { 
+            if(m_all_clusters->count(local_cluster_time)==0) {
+              m_all_clusters->emplace(local_cluster_time, std::vector<Hit>{ahit});
             } else { 
-              m_all_clusters->at(local_cluster_charge).push_back(ahit);
+              m_all_clusters->at(local_cluster_time).push_back(ahit);
             }
           }
         }  
