@@ -26,11 +26,9 @@ class TriggerData : public SerialisableObject{
   int EventSize;
   std::vector<uint16_t> EventIDs;
   std::vector<uint64_t> EventTimes;  // units of nanoseconds.
-  //int TriggerSize; 
-  int TimeStampSize;
-  //std::vector<uint32_t> TriggerMasks;
-  //std::vector<uint32_t> TriggerCounters;
-  std::vector<uint32_t> TimeStampData; 
+  int TriggerSize; 
+  std::vector<uint32_t> TriggerMasks;
+  std::vector<uint32_t> TriggerCounters;
   int FIFOOverflow;
   int DriverOverflow;
   ~TriggerData();
@@ -46,15 +44,13 @@ class TriggerData : public SerialisableObject{
       ar & FirmwareVersion;
       ar & SequenceID;
       ar & EventSize;
-      //ar & TriggerSize;
-      ar & TimeStampSize;
+      ar & TriggerSize;
       ar & FIFOOverflow;
       ar & DriverOverflow;
       ar & EventIDs;
       ar & EventTimes;
-      //ar & TriggerMasks;
-      //ar & TriggerCounters;
-      ar & TimeStampData; 
+      ar & TriggerMasks;
+      ar & TriggerCounters;
     }
     
 };
