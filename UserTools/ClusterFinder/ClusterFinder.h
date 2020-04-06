@@ -66,6 +66,7 @@ class ClusterFinder: public Tool {
   int ClusterIntegrationWindow;
   int MinHitsPerCluster;
   bool draw_2D = false;
+  double end_of_window_time_cut;
 
   // define ANNIEEvent variables
   int evnum;
@@ -124,7 +125,7 @@ class ClusterFinder: public Tool {
   double local_cluster = 0;
   int thiswindow_Nhits =0;
   int dummy_hittime_value = -9999; 
-
+  
   //define file to save data
   TFile *file_out = nullptr;
 
