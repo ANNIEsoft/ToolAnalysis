@@ -453,6 +453,7 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
   for (const auto& raw_waveform : raw_waveforms) {
     std::vector<uint16_t> baselines;
     std::vector<size_t> RepresentationRegion;
+    double first_baseline, first_sigma_baseline;
     double baseline, sigma_baseline;
     const size_t nsamples = raw_waveform.Samples().size();
     for(size_t starting_sample = 0; starting_sample < nsamples; starting_sample += baseline_rep_samples){
@@ -465,6 +466,13 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
       } else {
         if(verbosity>4) std::cout << "BASELINE UNCERTAINTY BEYOND SET THRESHOLD.  IGNORING SAMPLE" << std::endl;
       }
+    }
+
+    // If NO baselines within tolerance found, just go with the first
+    if(baselines.size() == 0){
+      if(verbosity>4) std::cout << "NO BASLINE FOUND WITHIN TOLERANCE.  USING FIRST AS BEST ESTIMATE" << std::endl;
+      RepresentationRegion.push_back(baseline_rep_samples);
+      baselines.push_back(first_baseline);
     }
     std::vector<double> cal_data;
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();

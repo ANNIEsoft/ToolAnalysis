@@ -41,14 +41,14 @@ bool ClusterClassifiers::Execute(){
   if(verbosity>3) std::cout << "ClusterClassifiers Tool: looping through clusters to get cluster info now" << std::endl;
   
   std::map<double,double> ClusterMaxPEs;
-  std::map<double,Direction> ClusterChargePoints;
+  std::map<double,Position> ClusterChargePoints;
   std::map<double,double> ClusterChargeBalances;
 
   for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
     double cluster_time = cluster_pair.first;
     std::vector<Hit> cluster_hits = cluster_pair.second;
     if(verbosity>4) std::cout << "ClusterClassifiers Tool: cluster of hit time " << cluster_time << "processing.." << std::endl;
-    Direction ChargePoint = this->CalculateChargePoint(cluster_hits);
+    Position ChargePoint = this->CalculateChargePoint(cluster_hits);
     ClusterChargePoints.emplace(cluster_time,ChargePoint);
     double ChargeBalance = this->CalculateChargeBalance(cluster_hits);
     ClusterChargeBalances.emplace(cluster_time,ChargeBalance);
@@ -70,7 +70,7 @@ bool ClusterClassifiers::Finalise(){
   return true;
 }
 
-Direction ClusterClassifiers::CalculateChargePoint(std::vector<Hit> cluster_hits)
+Position ClusterClassifiers::CalculateChargePoint(std::vector<Hit> cluster_hits)
 {
   if(verbosity>4) std::cout << "Calculating charge point" << std::endl;
   double x_weight = 0;
@@ -98,7 +98,7 @@ Direction ClusterClassifiers::CalculateChargePoint(std::vector<Hit> cluster_hits
     }
   }
 
-  Direction charge_weight(x_weight,y_weight,z_weight);
+  Position charge_weight(x_weight,y_weight,z_weight);
   if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated charge weight direction of  (" << charge_weight.X() << "," << charge_weight.Y() << "," << charge_weight.Z() << ")" << std::endl;
   return charge_weight;
 }

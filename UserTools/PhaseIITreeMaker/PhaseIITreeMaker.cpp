@@ -114,6 +114,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIIMRDClusterTree->Branch("MRDEntryPointRadius",&fMRDEntryPointRadius);
       fPhaseIIMRDClusterTree->Branch("MRDEnergyLoss",&fMRDEnergyLoss);
       fPhaseIIMRDClusterTree->Branch("MRDEnergyLossError",&fMRDEnergyLossError);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackStartX",&fMRDTrackStartX);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackStartY",&fMRDTrackStartY);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackStartZ",&fMRDTrackStartZ);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackStopX",&fMRDTrackStopX);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackStopY",&fMRDTrackStopY);
+      fPhaseIIMRDClusterTree->Branch("MRDTrackStopZ",&fMRDTrackStopZ);
     }
   }
 
@@ -173,6 +179,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("MRDEntryPointRadius",&fMRDEntryPointRadius);
       fPhaseIITrigTree->Branch("MRDEnergyLoss",&fMRDEnergyLoss);
       fPhaseIITrigTree->Branch("MRDEnergyLossError",&fMRDEnergyLossError);
+      fPhaseIITrigTree->Branch("MRDTrackStartX",&fMRDTrackStartX);
+      fPhaseIITrigTree->Branch("MRDTrackStartY",&fMRDTrackStartY);
+      fPhaseIITrigTree->Branch("MRDTrackStartZ",&fMRDTrackStartZ);
+      fPhaseIITrigTree->Branch("MRDTrackStopX",&fMRDTrackStopX);
+      fPhaseIITrigTree->Branch("MRDTrackStopY",&fMRDTrackStopY);
+      fPhaseIITrigTree->Branch("MRDTrackStopZ",&fMRDTrackStopZ);
     }
 
     //Reconstructed variables after full Muon Reco Analysis
@@ -348,19 +360,32 @@ bool PhaseIITreeMaker::Execute(){
 	
 	m_data->CStore.Get("MrdDigitTimes",mrddigittimesthisevent);
 	m_data->CStore.Get("MrdDigitPmts",mrddigitpmtsthisevent);
+
+    //Check if there's a veto hit in the acquisition
+    int TrigHasVetoHit = 0;
+    bool get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+    if (!get_ok){
+      std::cout << "No TDCData store in ANNIEEvent." << std::endl;
+      return false;
+    }
+    if(TDCData->size()>0){
+      Log("PhaseIITreeMaker tool: Looping over FACC/MRD hits... looking for Veto activity",v_debug,verbosity);
+      for(auto&& anmrdpmt : (*TDCData)){
+        unsigned long chankey = anmrdpmt.first;
+        Detector* thedetector = geom->ChannelToDetector(chankey);
+        unsigned long detkey = thedetector->GetDetectorID();
+        if(thedetector->GetDetectorElement()=="Veto") TrigHasVetoHit=1; // this is a veto hit, not an MRD hit.
+      }
+    }
     
     int cluster_num = 0;
     for (int i=0; i<MrdTimeClusters.size(); i++){
       Log("PhaseIITreeMaker Tool: Resetting variables prior to getting MRD cluster info",v_debug,verbosity);
       this->ResetVariables();
       fMRDClusterHits = 0;
-      fVetoHit = 0;
+      fVetoHit = TrigHasVetoHit;
       std::vector<int> ThisClusterIndices = MrdTimeClusters.at(i);
       for(int j=0;j<ThisClusterIndices.size(); j++){
-        int channel_key = mrddigitpmtsthisevent.at(ThisClusterIndices.at(j));
-        Detector* thedetector = geom->ChannelToDetector(channel_key);
-        unsigned long detkey = thedetector->GetDetectorID();
-        if(thedetector->GetDetectorElement()=="Veto") fVetoHit=1; // this is a veto hit, not an MRD hit.
         fMRDHitT.push_back(mrddigittimesthisevent.at(ThisClusterIndices.at(j)));
         fMRDHitDetID.push_back(mrddigitpmtsthisevent.at(ThisClusterIndices.at(j)));
         fMRDClusterHits+=1;
@@ -563,6 +588,12 @@ void PhaseIITreeMaker::ResetVariables() {
     fMRDEntryPointRadius.clear();
     fMRDEnergyLoss.clear();
     fMRDEnergyLossError.clear();
+    fMRDTrackStartX.clear();
+    fMRDTrackStartY.clear();
+    fMRDTrackStartZ.clear();
+    fMRDTrackStopX.clear();
+    fMRDTrackStopY.clear();
+    fMRDTrackStopZ.clear();
   }
 
   if(TankHitInfo_fill){
@@ -604,7 +635,7 @@ bool PhaseIITreeMaker::LoadTankClusterClassifiers(double cluster_time){
   } else { 
     Log("PhaseITreeMaker tool: Setting fCluster variables to classifier parameters", v_debug, verbosity);
     fClusterMaxPE = ClusterMaxPEs.at(cluster_time);
-    Direction ClusterChargePoint = ClusterChargePoints.at(cluster_time);
+    Position ClusterChargePoint = ClusterChargePoints.at(cluster_time);
     fClusterChargePointX = ClusterChargePoint.X();
     fClusterChargePointY = ClusterChargePoint.Y();
     fClusterChargePointZ = ClusterChargePoint.Z();
@@ -685,26 +716,33 @@ void PhaseIITreeMaker::LoadSiPMHits() {
 }
 
 void PhaseIITreeMaker::LoadAllMRDHits(){
-  bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
-  if(!get_clusters){
-    std::cout << "BeamClusterAnalysis tool: No MRD clusters found! Did you run the TimeClustering tool?" << std::endl;
+  //bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+  //if(!get_clusters){
+  //  std::cout << "BeamClusterAnalysis tool: No MRD clusters found! Did you run the TimeClustering tool?" << std::endl;
+  //  return;
+  //}
+  
+  //m_data->CStore.Get("MrdDigitTimes",mrddigittimesthisevent);
+  //m_data->CStore.Get("MrdDigitPmts",mrddigitpmtsthisevent);
+
+  fVetoHit = 0; 
+  bool get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+  if (!get_ok){
+    std::cout << "PhaseIITreeMaker tool: No TDCData store in ANNIEEvent." << std::endl;
     return;
   }
-  
-  m_data->CStore.Get("MrdDigitTimes",mrddigittimesthisevent);
-  m_data->CStore.Get("MrdDigitPmts",mrddigitpmtsthisevent);
-  
-  int cluster_num = 0;
-  fVetoHit = 0;
-  for (int i=0; i<MrdTimeClusters.size(); i++){
-    std::vector<int> ThisClusterIndices = MrdTimeClusters.at(i);
-    for(int j=0;j<ThisClusterIndices.size(); j++){
-      int channel_key = mrddigitpmtsthisevent.at(ThisClusterIndices.at(j));
-      Detector* thedetector = geom->ChannelToDetector(channel_key);
+  if(TDCData->size()>0){
+    Log("PhaseIITreeMaker tool: Looping over FACC/MRD hits... looking for Veto activity",v_debug,verbosity);
+    for(auto&& anmrdpmt : (*TDCData)){
+      unsigned long chankey = anmrdpmt.first;
+      Detector* thedetector = geom->ChannelToDetector(chankey);
       unsigned long detkey = thedetector->GetDetectorID();
       if(thedetector->GetDetectorElement()=="Veto") fVetoHit=1; // this is a veto hit, not an MRD hit.
-      fMRDHitT.push_back(mrddigittimesthisevent.at(ThisClusterIndices.at(j)));
-      fMRDHitDetID.push_back(mrddigitpmtsthisevent.at(ThisClusterIndices.at(j)));
+      std::vector<Hit> mrdhits = anmrdpmt.second;
+      for(int j = 0; j<mrdhits.size(); j++){
+        fMRDHitT.push_back(mrdhits.at(j).GetTime());
+        fMRDHitDetID.push_back(mrdhits.at(j).GetTubeId());
+      }
     }
   }
   return;
@@ -726,7 +764,7 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
   Position MrdEntryPoint;
   double EnergyLoss = -9999; //in MeV
   double EnergyLossError = -9999;
-  double EntryPointRadius = -9999; 
+  double EntryPointRadius = -9999;
   
   int NumClusterTracks = 0;
   for(int tracki=0; tracki<numtracksinev; tracki++){
@@ -759,6 +797,12 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
     fMRDEntryPointRadius.push_back(EntryPointRadius);
     fMRDEnergyLoss.push_back(EnergyLoss);
     fMRDEnergyLossError.push_back(EnergyLossError);
+    fMRDTrackStartX.push_back(StartVertex.X());
+    fMRDTrackStartY.push_back(StartVertex.Y());
+    fMRDTrackStartZ.push_back(StartVertex.Z());
+    fMRDTrackStopX.push_back(StopVertex.X());
+    fMRDTrackStopY.push_back(StopVertex.Y());
+    fMRDTrackStopZ.push_back(StopVertex.Z());
     NumClusterTracks+=1;
   }
   return NumClusterTracks;

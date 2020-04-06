@@ -27,7 +27,7 @@ class ClusterClassifiers: public Tool {
   bool Initialise(std::string configfile,DataModel &data); ///< Initialise Function for setting up Tool resources. @param configfile The path and name of the dynamic configuration file to read in. @param data A reference to the transient data class used to pass information between Tools.
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
-  Direction CalculateChargePoint(std::vector<Hit> cluster_hits);
+  Position CalculateChargePoint(std::vector<Hit> cluster_hits);
   double CalculateChargeBalance(std::vector<Hit> cluster_hits);
   double CalculateMaxPE(std::vector<Hit> cluster_hits);
 

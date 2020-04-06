@@ -109,6 +109,7 @@ class PhaseIITreeMaker: public Tool {
   int fVetoHit;
   std::vector<double> fMRDHitT;
   std::vector<int> fMRDHitDetID;
+  std::map<unsigned long,vector<Hit>>* TDCData=nullptr;
 
   // ************** MRD Cluster level information ********** //
   int fMRDClusterNumber;
@@ -122,7 +123,7 @@ class PhaseIITreeMaker: public Tool {
   
   // ************** Tank Cluster level information ********** //
   std::map<double,double> ClusterMaxPEs;
-  std::map<double,Direction> ClusterChargePoints;
+  std::map<double,Position> ClusterChargePoints;
   std::map<double,double> ClusterChargeBalances;
   int fClusterNumber;
   int fNumClusterTracks;
@@ -147,7 +148,13 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fMRDEntryPointRadius;
   std::vector<double> fMRDEnergyLoss;
   std::vector<double> fMRDEnergyLossError;
-
+  std::vector<double> fMRDTrackStartX;
+  std::vector<double> fMRDTrackStartY;
+  std::vector<double> fMRDTrackStartZ;
+  std::vector<double> fMRDTrackStopX;
+  std::vector<double> fMRDTrackStopY;
+  std::vector<double> fMRDTrackStopZ;
+  
   // ************ MC Truth Information **************** //
   uint64_t fMCEventNum;
   uint16_t fMCTriggerNum;
