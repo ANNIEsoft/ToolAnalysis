@@ -24,7 +24,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("AcqTimeWindow",AcqTimeWindow);
   m_variables.Get("ClusterIntegrationWindow",ClusterIntegrationWindow);
   m_variables.Get("MinHitsPerCluster",MinHitsPerCluster);
-  m_variables.Get("2DPlots",draw_2D);
+  m_variables.Get("Plots2D",draw_2D);
   m_variables.Get("verbosity",verbose);
   m_variables.Get("end_of_window_time_cut",end_of_window_time_cut);
 
