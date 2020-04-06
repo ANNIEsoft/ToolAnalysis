@@ -65,7 +65,10 @@ class ClusterFinder: public Tool {
   int AcqTimeWindow;
   int ClusterIntegrationWindow;
   int MinHitsPerCluster;
+<<<<<<< HEAD
   bool draw_2D = false;
+=======
+>>>>>>> 63c16df2bcfc75fbcd7a124e244d2d00b5f5e9d2
   double end_of_window_time_cut;
 
   // define ANNIEEvent variables
