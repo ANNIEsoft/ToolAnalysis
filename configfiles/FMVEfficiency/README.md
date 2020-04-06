@@ -1,25 +1,24 @@
-# Configure files
+# FMVEfficiency ToolChain
 
 ***********************
-#Description
+# Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
-
+The FMVEfficiency toolchain calculates FMV paddle efficiencies by evaluating coincidences between the FMV layers and PMT/MRD clusters.
 
 ************************
-#Usage
+# Usage
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+The FMVEfficiency toolchain consists of the following tools:
 
-Variables should be stored one per line as follows:
+* LoadGeometry
+* LoadANNIEEvent
+* PhaseIIADCCalibrator
+* PhaseIIADCHitFinder
+* ClusterFinder
+* TimeClustering
+* FindMrdTracks
+* FMVEfficiency
 
-
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
-
+If one wants to calculate efficiencies based on MRD/FMV coincidences only, the tools `PhaseIIADCCalibrator`, `PhaseIIADCHitFinder` & `ClusterFinder` are not needed.
