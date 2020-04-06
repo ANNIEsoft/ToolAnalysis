@@ -92,16 +92,6 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
                 mrddigitts = new TH1D("mrddigitts","MRD Times",1000,0,4000);
 		mrddigitts_vertical = new TH1D("mrddigitts_vertical","MRD Times (Vertical Layers)",1000,0,4000);
 		mrddigitts_horizontal = new TH1D("mrddigitts_horizontal","MRD Times (Horizontal Layers)",1000,0,4000); 
-                mrddigitts_beamloopback = new TH2D("mrddigitts_beamloopback","MRD Times vs Beam Loopback TDC",1000,0,1000,1000,0,4000); 
-                mrddigitts_cosmicloopback = new TH2D("mrddigitts_cosmicloopback","MRD Times vs Cosmic Loopback TDC",1000,0,1000,1000,0,4000); 
-                mrddigitts_beamloopback_cluster = new TH2D("mrddigitts_beamloopback_cluster","MRD Times vs Beam Loopback TDC (Cluster)",1000,0,1000,1000,0,4000); 
-                mrddigitts_cosmicloopback_cluster = new TH2D("mrddigitts_cosmicloopback_cluster","MRD Times vs Cosmic Loopback TDC (Cluster)",1000,0,1000,1000,0,4000); 
- 		time_diff_beam = new TH1D("time_diff_beam","Time difference between beam events",500,0,1000);
-		time_diff_cosmic = new TH1D("time_diff_cosmic","Time difference between cosmic events",5000,0,10000);
- 		time_diff_loopback_beam = new TH2D("time_diff_loopback_beam","Time difference between beam events vs loopback TDC",1000,0,1000,500,0,1000);
-		time_diff_loopback_cosmic = new TH2D("time_diff_loopback_cosmic","Time difference between cosmic events vs loopback TDC",1000,0,1000,500,0,10000);
-		time_diff_hittimes_beam = new TH2D("time_diff_hittimes_beam","Beam hit times vs. time difference last event",500,0,1000,1000,0,4000); 
-		time_diff_hittimes_cosmic = new TH2D("time_diff_hittimes_cosmic","Cosmic hit times vs. time difference last event",500,0,1000,1000,0,4000); 
     		if (MakeSingleEventPlots){
 			mrddigitts_single = new TH1D("mrddigitts_single","MRD Single Times",1000,0,4000);
 			mrddigitts_cluster_single = new TH1D("mrddigitts_cluster_single","MRD Single Times",1000,0,4000);
@@ -154,8 +144,6 @@ bool TimeClustering::Execute(){
 	m_data->CStore.Set("MrdTimeClusters",MrdTimeClusters);
 	m_data->CStore.Set("NumMrdTimeClusters",0);
 	int mrdeventcounter=0;
-	int beam_tdc = 0;
-	int cosmic_tdc = 0;	
 
         //Get Trigger type to decide which events are cosmic/beam/etc
         std::string MRDTriggertype;
@@ -163,26 +151,8 @@ bool TimeClustering::Execute(){
         m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
 	Log("TimeClustering tool: MRDTriggertype is "+MRDTriggertype+" (from ANNIEEvent store)",v_debug,verbosity);
 	m_data->Stores.at("ANNIEEvent")->Get("EventNumber",evnum);
-        m_data->Stores.at("ANNIEEvent")->Get("MRDLoopbackBeam",beam_tdc);
         m_data->Stores.at("ANNIEEvent")->Get("EventTime",timeclass_timestamp); 	
-	if (MRDTriggertype == "Cosmic") m_data->Stores.at("ANNIEEvent")->Get("MRDLoopbackcosmic",cosmic_tdc);
 
-	uint64_t eventtime = timeclass_timestamp.GetNs();
-	Log("TimeClustering tool: Eventtime is: "+std::to_string(eventtime)+" ns, cosmic_tdc: "+std::to_string(cosmic_tdc)+", beam_tdc: "+std::to_string(beam_tdc)+", triggertype: "+MRDTriggertype,v_message,verbosity);
-
-	unsigned long utime_diff = 0;
-	if (PreviousTimeStamp != 0){
-		utime_diff = eventtime/1E3 - PreviousTimeStamp;	//in milliseconds
-		if (MRDTriggertype == "Cosmic"){
-			time_diff_cosmic->Fill(utime_diff);
-			time_diff_loopback_cosmic->Fill(cosmic_tdc,utime_diff);
-		}
-		else if (MRDTriggertype == "Beam") {
-			time_diff_beam->Fill(utime_diff);
-			time_diff_loopback_beam->Fill(beam_tdc,utime_diff);
-		}
-	} 
-	PreviousTimeStamp = eventtime/1E3;
 
 	// extract the digits from the annieevent and put them into separate vectors used by the track finder
 	mrddigitpmtsthisevent.clear();
@@ -255,13 +225,9 @@ bool TimeClustering::Execute(){
 						mrddigitts->Fill(hitsonthismrdpmt.GetTime());
 						if (MRDTriggertype == "Cosmic") {
 							mrddigitts_cosmic->Fill(hitsonthismrdpmt.GetTime());
-							mrddigitts_cosmicloopback->Fill(cosmic_tdc,hitsonthismrdpmt.GetTime());
-							time_diff_hittimes_cosmic->Fill(utime_diff,hitsonthismrdpmt.GetTime());
 						}
 						else if (MRDTriggertype == "Beam") {
 							mrddigitts_beam->Fill(hitsonthismrdpmt.GetTime());
-							mrddigitts_beamloopback->Fill(beam_tdc,hitsonthismrdpmt.GetTime());
-							time_diff_hittimes_beam->Fill(utime_diff,hitsonthismrdpmt.GetTime());
 						}
 						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());       //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
 						Detector* thistube = geom->ChannelToDetector(chankey);
@@ -321,11 +287,9 @@ bool TimeClustering::Execute(){
 						mrddigitts->Fill(hitsonthismrdpmt.GetTime());
 						if (MRDTriggertype == "Cosmic") {
 							mrddigitts_cosmic->Fill(hitsonthismrdpmt.GetTime());
-							mrddigitts_cosmicloopback->Fill(cosmic_tdc,hitsonthismrdpmt.GetTime());
 						}
 						else if (MRDTriggertype == "Beam") {
 							mrddigitts_beam->Fill(hitsonthismrdpmt.GetTime());
-							mrddigitts_beamloopback->Fill(beam_tdc,hitsonthismrdpmt.GetTime());
 						}
 						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());       //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
 						Detector* thistube = geom->ChannelToDetector(chankey);
@@ -380,11 +344,9 @@ bool TimeClustering::Execute(){
 				mrddigitts_cluster->Fill(mrddigittimesthisevent.at(i_time));
 				if (MRDTriggertype == "Cosmic") {
 					mrddigitts_cosmic_cluster->Fill(mrddigittimesthisevent.at(i_time));
-					mrddigitts_cosmicloopback_cluster->Fill(cosmic_tdc,mrddigittimesthisevent.at(i_time));
 				}
 				else if (MRDTriggertype == "Beam") {
 					mrddigitts_beam_cluster->Fill(mrddigittimesthisevent.at(i_time));
-					mrddigitts_beamloopback_cluster->Fill(beam_tdc,mrddigittimesthisevent.at(i_time));
 				}
 				else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback_cluster->Fill(mrddigittimesthisevent.at(i_time));
 			}
@@ -491,11 +453,9 @@ bool TimeClustering::Execute(){
 						if (MakeSingleEventPlots) mrddigitts_cluster_single->Fill(digittimesinasubevent.at(i_time));
 						if (MRDTriggertype == "Cosmic") {
 							mrddigitts_cosmic_cluster->Fill(digittimesinasubevent.at(i_time));
-                                			mrddigitts_cosmicloopback_cluster->Fill(cosmic_tdc,digittimesinasubevent.at(i_time));
 						}
 						else if (MRDTriggertype == "Beam"){
 							mrddigitts_beam_cluster->Fill(digittimesinasubevent.at(i_time));
-                                			mrddigitts_beamloopback_cluster->Fill(beam_tdc,digittimesinasubevent.at(i_time));
 						}
 						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback_cluster->Fill(digittimesinasubevent.at(i_time));						
 					}
@@ -572,16 +532,6 @@ bool TimeClustering::Finalise(){
         	mrddigitts->Write();
 		mrddigitts_horizontal->Write();
 		mrddigitts_vertical->Write();
-		mrddigitts_cosmicloopback->Write();
-		mrddigitts_beamloopback->Write();
-		mrddigitts_cosmicloopback_cluster->Write();
-		mrddigitts_beamloopback_cluster->Write();
-		time_diff_beam->Write();
-		time_diff_cosmic->Write();
-		time_diff_loopback_beam->Write();
-		time_diff_loopback_cosmic->Write();
-		time_diff_hittimes_beam->Write();
-		time_diff_hittimes_cosmic->Write();
         	mrddigitts_file->Close();
         	delete mrddigitts_file;     //histograms get deleted by deleting associated TFile
 		mrddigitts_file=0;

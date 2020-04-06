@@ -107,5 +107,6 @@ if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
 if (tool=="LoadRawData") ret=new LoadRawData;
 
+if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 return ret;
 }
