@@ -96,16 +96,18 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
     fConfig = HitCleaner::kPulseHeightAndClusters;
   }
 
-  ifstream file_singlepe(singlePEgains.c_str());
-  unsigned long temp_chankey;
-  double temp_gain;
-  while (!file_singlepe.eof()){
-    file_singlepe >> temp_chankey >> temp_gain;
-    if (file_singlepe.eof()) break;
-    pmt_gains.emplace(temp_chankey,temp_gain);
+  if (!fisMC){
+    ifstream file_singlepe(singlePEgains.c_str());
+    unsigned long temp_chankey;
+    double temp_gain;
+    while (!file_singlepe.eof()){
+      file_singlepe >> temp_chankey >> temp_gain;
+      if (file_singlepe.eof()) break;
+      pmt_gains.emplace(temp_chankey,temp_gain);
+    }
+    file_singlepe.close();
+    m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
   }
-  file_singlepe.close();
-  m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
 
   // vector of filtered digits
   fFilterAll = new std::vector<RecoDigit*>;
