@@ -28,12 +28,8 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	/////////////////////////////////////////////////////////////////
 	
 	LaunchTApplication = false;
-<<<<<<< HEAD
 	MakeSingleEventPlots = false;           //very verbose, mostly for debugging
 	PreviousTimeStamp = 0;
-=======
-	MakeSingleEventPlots = false; 		//very verbose, mostly for debugging
->>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("IsData",isData);
@@ -96,7 +92,6 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
                 mrddigitts = new TH1D("mrddigitts","MRD Times",1000,0,4000);
 		mrddigitts_vertical = new TH1D("mrddigitts_vertical","MRD Times (Vertical Layers)",1000,0,4000);
 		mrddigitts_horizontal = new TH1D("mrddigitts_horizontal","MRD Times (Horizontal Layers)",1000,0,4000); 
-<<<<<<< HEAD
                 mrddigitts_beamloopback = new TH2D("mrddigitts_beamloopback","MRD Times vs Beam Loopback TDC",1000,0,1000,1000,0,4000); 
                 mrddigitts_cosmicloopback = new TH2D("mrddigitts_cosmicloopback","MRD Times vs Cosmic Loopback TDC",1000,0,1000,1000,0,4000); 
                 mrddigitts_beamloopback_cluster = new TH2D("mrddigitts_beamloopback_cluster","MRD Times vs Beam Loopback TDC (Cluster)",1000,0,1000,1000,0,4000); 
@@ -112,14 +107,6 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 			mrddigitts_cluster_single = new TH1D("mrddigitts_cluster_single","MRD Single Times",1000,0,4000);
 		}
 		gROOT->cd();
-=======
-	
-		if (MakeSingleEventPlots){
-			mrddigitts_single = new TH1D("mrddigitts_single","MRD Single Times",1000,0,4000);
-			mrddigitts_cluster_single = new TH1D("mrddigitts_cluster_single","MRD Single Times",1000,0,4000);
-		}
-       		gROOT->cd();
->>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 	}
 
         // Setup mapping from Channelkeys to WCSim IDs (important for track fitting with old MRD classes in FindMrdTracks)
@@ -502,7 +489,6 @@ bool TimeClustering::Execute(){
 						mrddigitts_file->cd();
 						mrddigitts_cluster->Fill(digittimesinasubevent.at(i_time));
 						if (MakeSingleEventPlots) mrddigitts_cluster_single->Fill(digittimesinasubevent.at(i_time));
-<<<<<<< HEAD
 						if (MRDTriggertype == "Cosmic") {
 							mrddigitts_cosmic_cluster->Fill(digittimesinasubevent.at(i_time));
                                 			mrddigitts_cosmicloopback_cluster->Fill(cosmic_tdc,digittimesinasubevent.at(i_time));
@@ -512,11 +498,6 @@ bool TimeClustering::Execute(){
                                 			mrddigitts_beamloopback_cluster->Fill(beam_tdc,digittimesinasubevent.at(i_time));
 						}
 						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback_cluster->Fill(digittimesinasubevent.at(i_time));						
-=======
-						if (MRDTriggertype == "Cosmic") mrddigitts_cosmic_cluster->Fill(digittimesinasubevent.at(i_time));
-                                		else if (MRDTriggertype == "Beam") mrddigitts_beam_cluster->Fill(digittimesinasubevent.at(i_time));
-                                		else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback_cluster->Fill(digittimesinasubevent.at(i_time));						
->>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 					}
 				}
 			}
@@ -550,12 +531,7 @@ bool TimeClustering::Execute(){
 		if (verbosity > v_debug) std::cout <<"mrddigitpmts, entry "<<i<<", time: "<<mrddigittimesthisevent.at(i)<<", pmt: "<<mrddigitpmtsthisevent.at(i)<<", charge: "<<mrddigitchargesthisevent.at(i)<<std::endl;
 }
 
-<<<<<<< HEAD
 	if (MakeMrdDigitTimePlot && MakeSingleEventPlots){
-=======
-	if (MakeMrdDigitTimePlot){
-
->>>>>>> 9c4f1fe9459397040a7c12f7a38791c71151c2ec
 		mrddigitts_file->cd();
 		if (MakeSingleEventPlots){
 			mrddigitts_cluster_single->Write();

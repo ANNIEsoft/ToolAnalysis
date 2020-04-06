@@ -496,10 +496,12 @@ bool FMVEfficiency::Finalise(){
     fmv_expected_track_strict_layer2->SetBinContent(i_fmv+1,fmv_secondlayer_expected_track_strict.at(i_fmv));
     fmv_observed_track_loose_layer2->SetBinContent(i_fmv+1,fmv_secondlayer_observed_track_loose.at(i_fmv));
     fmv_expected_track_loose_layer2->SetBinContent(i_fmv+1,fmv_secondlayer_expected_track_loose.at(i_fmv));
-    fmv_tank_observed_layer1->SetBinContent(i_fmv+1,fmv_tank_firstlayer_observed.at(i_fmv));
-    fmv_tank_expected_layer1->SetBinContent(i_fmv+1,fmv_tank_firstlayer_expected.at(i_fmv));
-    fmv_tank_observed_layer2->SetBinContent(i_fmv+1,fmv_tank_secondlayer_observed.at(i_fmv));
-    fmv_tank_expected_layer2->SetBinContent(i_fmv+1,fmv_tank_secondlayer_expected.at(i_fmv));
+    if (useTank){
+      fmv_tank_observed_layer1->SetBinContent(i_fmv+1,fmv_tank_firstlayer_observed.at(i_fmv));
+      fmv_tank_expected_layer1->SetBinContent(i_fmv+1,fmv_tank_firstlayer_expected.at(i_fmv));
+      fmv_tank_observed_layer2->SetBinContent(i_fmv+1,fmv_tank_secondlayer_observed.at(i_fmv));
+      fmv_tank_expected_layer2->SetBinContent(i_fmv+1,fmv_tank_secondlayer_expected.at(i_fmv));
+    }
   }
   file->Write();
   file->Close();
