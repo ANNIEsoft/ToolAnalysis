@@ -1,25 +1,26 @@
-# Configure files
+# PrintRecoEvent ToolChain
 
 ***********************
-#Description
+# Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
-
+The `PrintRecoEvent` toolchain prints out information that is stored in the `m_data->Stores["RecoEvent"]` BoostStore. The `RecoEvent` BoostStore contains information about the characteristics of the reconstruction and in case of MC also some truth information from the simulation. Depending on how many reconstruction tools are in the toolchain, a different level of detail will be presented when using `PrintRecoEvent`.
 
 ************************
-#Usage
+# Usage
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+All reconstruction tools rely on a data format of `RecoDigit` objects, it is hence important to run the tool `DigitBuilder` first. 
 
-Variables should be stored one per line as follows:
+Exemplary toolchain for data without vertex reconstruction:
 
-
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
-
+* LoadGeometry
+* LoadANNIEEvent
+* PhaseIIADCCalibrator
+* PhaseIIADCHitFinder
+* ClusterFinder
+* DigitBuilder
+* HitCleaner
+* TimeClustering
+* EventSelector
+* PrintRecoEvent
