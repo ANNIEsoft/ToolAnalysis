@@ -65,6 +65,8 @@ class RunValidation: public Tool {
   int n_facc_mrd;
   int n_facc_pmt_mrd;
   bool first_entry;
+  int n_pmt_mrd_time;
+  int n_pmt_mrd_time_facc;
 
   //RunStartTime variables
   ULong64_t start_time;
@@ -99,6 +101,7 @@ class RunValidation: public Tool {
   TH1D *PMT_delayed_charge_zoom = nullptr;
   TH1D *ANNIE_counts = nullptr;
   TH1D *ANNIE_rates = nullptr;
+  TH1D *ANNIE_fractions = nullptr;
 
   //verbosity-related variables
   int v_error = 0;

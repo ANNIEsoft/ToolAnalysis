@@ -55,8 +55,7 @@ zmq::message_t ms2(&SequenceID,sizeof SequenceID, bencleanup2);
   //zmq::message_t ms9(&(TriggerMasks.at(0)), sizeof(uint32_t)*TriggerMasks.size(), bencleanup2);
 
   //zmq::message_t ms10(&(TriggerCounters.at(0)), sizeof(uint32_t)*TriggerCounters.size(), bencleanup2);
-zmq::message_t ms10(&(TimeStampData.at(0)), sizeof(uint32_t)*TimeStampD\│cp
-ata.size(), bencleanup2);   
+  zmq::message_t ms10(&(TimeStampData.at(0)), sizeof(uint32_t)*TimeStampData.size(), bencleanup2);   
   //  std::cout<<"d0.12"<<std::endl;
 
   //  std::cout<<"data.size = "<<Data.size()<<std::endl;

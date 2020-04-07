@@ -44,6 +44,8 @@ bool RunValidation::Initialise(std::string configfile, DataModel &data){
   n_mrd_clusters=0;
   n_pmt_mrd_clusters=0;
   n_pmt_mrd_nofacc=0;
+  n_pmt_mrd_time=0;
+  n_pmt_mrd_time_facc=0;
   n_facc=0;
   n_facc_pmt=0;
   n_facc_mrd=0;
@@ -78,9 +80,9 @@ bool RunValidation::Execute(){
   if (not get_ok) { Log("RunValidation Tool: Error retrieving MrdTimeClusters map from CStore, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
   if (MrdTimeClusters.size()!=0){
     get_ok = m_data->CStore.Get("MrdDigitTimes",MrdDigitTimes);
-    if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdDigitTimes map from CStore, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
+    if (not get_ok) { Log("RunValidation Tool: Error retrieving MrdDigitTimes map from CStore, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
     get_ok = m_data->CStore.Get("MrdDigitChankeys",mrddigitchankeysthisevent);
-    if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand",v_error,verbosity); return false;}
+    if (not get_ok) { Log("RunValidation Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand",v_error,verbosity); return false;}
   }
 
   //-------------------------------------------------------------------------
@@ -89,17 +91,22 @@ bool RunValidation::Execute(){
    
   int RunNumber, SubRunNumber, RunType, EventNumber;
   ULong64_t RunStartTime,EventTimeTank;
-  RunNumber = user_runnumber;
-  SubRunNumber = user_subrunnumber;
-  RunType = user_runtype;
-  RunStartTime = 0;
   
-  /*
+  
   m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
   m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubRunNumber);
   m_data->Stores["ANNIEEvent"]->Get("RunType",RunType);
   m_data->Stores["ANNIEEvent"]->Get("RunStartTime",RunStartTime);
-  */m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
+  
+  //Check if stored run information is sensible and replace with user input, if not
+  if (RunNumber == -1) {
+    RunNumber = user_runnumber;
+    RunStartTime = 0;
+  }
+  if (SubRunNumber == -1) SubRunNumber = user_subrunnumber;
+  if (RunType == -1) RunType = user_runtype;
+
+  m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
   m_data->Stores["ANNIEEvent"]->Get("EventTimeTank",EventTimeTank);
   EventTimeTank/=1.e6;
   m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
@@ -117,11 +124,11 @@ bool RunValidation::Execute(){
     start_time = EventTimeTank;
 
     std::stringstream file_name;
-    file_name << outfile_path << "RunValidation_R"<<GlobalRunNumber<<".root";
+    file_name << outfile_path << "RunValidation_R"<<GlobalRunNumber<<"S"<<GlobalSubRunNumber<<"T"<<RunType<<".root";
     outfile = new TFile(file_name.str().c_str(),"RECREATE");
     outfile->cd();
 
-    std::stringstream title_mrd, title_pmt, title_pmt_2pe, title_pmt_5pe, title_pmt_10pe, title_pmt_30pe, title_mrd_pmt, title_mrd_pmt_100pe, title_mrd_pmt_delta, title_mrd_pmt_delta_100pe, title_pmt_prompt, title_pmt_prompt_10, title_chargeperpmt, title_chargeperpmt_100pe, title_pmt_delayed, title_pmt_delayed_10, title_counts, title_rates;
+    std::stringstream title_mrd, title_pmt, title_pmt_2pe, title_pmt_5pe, title_pmt_10pe, title_pmt_30pe, title_mrd_pmt, title_mrd_pmt_100pe, title_mrd_pmt_delta, title_mrd_pmt_delta_100pe, title_pmt_prompt, title_pmt_prompt_10, title_chargeperpmt, title_chargeperpmt_100pe, title_pmt_delayed, title_pmt_delayed_10, title_counts, title_rates, title_fractions;
     title_mrd << "MRD Cluster Times - Run "<<GlobalRunNumber;
     title_pmt << "PMT Cluster Times - Run "<<GlobalRunNumber;
     title_pmt_2pe << "PMT Cluster Times (>2 p.e.) - Run "<<GlobalRunNumber;
@@ -140,6 +147,7 @@ bool RunValidation::Execute(){
     title_pmt_delayed_10 << "PMT Delayed Charge (>10 hits)- Run "<<GlobalRunNumber;
     title_counts << "ANNIE Counts - Run "<<GlobalRunNumber;
     title_rates << " ANNIE Rates - Run "<<GlobalRunNumber;
+    title_fractions << " ANNIE Event Fractions - Run "<<GlobalRunNumber;
    
     MRD_t_clusters = new TH1D("MRD_t_clusters",title_mrd.str().c_str(),250,0,4000);
     PMT_t_clusters = new TH1D("PMT_t_clusters",title_pmt.str().c_str(),250,0,2000);
@@ -166,6 +174,7 @@ bool RunValidation::Execute(){
     PMT_chargeperpmt_100pe = new TH1D("PMT_chargeperpmt_100pe",title_chargeperpmt_100pe.str().c_str(),50,0,30);
     ANNIE_counts = new TH1D("ANNIE_counts",title_counts.str().c_str(),10,0,10);  
     ANNIE_rates = new TH1D("ANNIE_rates",title_rates.str().c_str(),10,0,10);  
+    ANNIE_fractions = new TH1D("ANNIE_fractions",title_fractions.str().c_str(),10,0,10);  
   
     MRD_t_clusters->GetXaxis()->SetTitle("t_{MRD} [ns]");
     PMT_t_clusters->GetXaxis()->SetTitle("t_{PMT} [ns]");
@@ -194,8 +203,10 @@ bool RunValidation::Execute(){
     PMT_chargeperpmt_100pe->GetXaxis()->SetTitle("q/n_{pmt} [p.e.]");
     ANNIE_rates->GetYaxis()->SetTitle("Rate [Hz]");
     ANNIE_counts->GetYaxis()->SetTitle("#");
+    ANNIE_fractions->GetYaxis()->SetTitle("Fraction of events [%]");
     ANNIE_rates->SetStats(0);
     ANNIE_counts->SetStats(0);
+    ANNIE_fractions->SetStats(0);
 
     gROOT->cd();
 
@@ -331,10 +342,12 @@ bool RunValidation::Execute(){
   //---------------Increment event type counters-----------------------------
   //-------------------------------------------------------------------------
   
+  bool pmt_mrd_time_coinc=false;
   if (n_mrd_hits>0) global_mrd_time/=n_mrd_hits;
   if (n_mrd_hits>0 && n_pmt_hits>0){
     MRD_PMT_t->Fill(global_mrd_time,PMT_prompt_time);
     MRD_PMT_Deltat->Fill(global_mrd_time-PMT_prompt_time);
+    if ((global_mrd_time-PMT_prompt_time)>700 && (global_mrd_time-PMT_prompt_time)<800) pmt_mrd_time_coinc = true;
     if (max_charge_pe > 100){
       MRD_PMT_t_100pe->Fill(global_mrd_time,PMT_prompt_time);
       MRD_PMT_Deltat_100pe->Fill(global_mrd_time-PMT_prompt_time);
@@ -347,6 +360,8 @@ bool RunValidation::Execute(){
   if (mrd_hit) n_mrd_clusters++;
   if (coincident_tank_mrd) n_pmt_mrd_clusters++;
   if (coincident_tank_mrd && !facc_hit) n_pmt_mrd_nofacc++;
+  if (pmt_mrd_time_coinc) n_pmt_mrd_time++;
+  if (pmt_mrd_time_coinc && facc_hit) n_pmt_mrd_time_facc++;
   if (facc_hit) n_facc++;
   if (tank_hit && facc_hit) n_facc_pmt++;
   if (mrd_hit && facc_hit) n_facc_mrd++;
@@ -383,6 +398,19 @@ bool RunValidation::Finalise(){
   double rate_facc_pmt=0;
   double rate_facc_mrd=0;
   double rate_facc_pmt_mrd=0;
+  double fraction_entries=0;
+  double fraction_tank=0;
+  double fraction_tank_threshold=0;
+  double fraction_mrd=0;
+  double fraction_coincident=0;
+  double fraction_coincident_nofacc=0;
+  double fraction_facc=0;
+  double fraction_facc_pmt=0;
+  double fraction_facc_mrd=0;
+  double fraction_facc_pmt_mrd=0;
+  double fraction_coincident_time = 0;
+  double fraction_coincident_time_facc = 0;
+
 
   double time_diff = (current_time-start_time)/1000.;
   if (time_diff > 0.){
@@ -396,6 +424,20 @@ bool RunValidation::Finalise(){
     rate_facc_pmt = n_facc_pmt/time_diff;
     rate_facc_mrd = n_facc_mrd/time_diff;
     rate_facc_pmt_mrd = n_facc_pmt_mrd/time_diff;
+  }
+  if (n_entries > 0){
+    fraction_entries = 100;
+    fraction_tank = double(n_pmt_clusters)/n_entries*100;
+    fraction_tank_threshold = double(n_pmt_clusters_threshold)/n_entries*100;
+    fraction_mrd = double(n_mrd_clusters)/n_entries*100;
+    fraction_coincident = double(n_pmt_mrd_clusters)/n_entries*100;
+    fraction_coincident_nofacc = double(n_pmt_mrd_nofacc)/n_entries*100;
+    fraction_facc = double(n_facc)/n_entries*100;
+    fraction_facc_pmt = double(n_facc_pmt)/n_entries*100;
+    fraction_facc_mrd = double(n_facc_mrd)/n_entries*100;
+    fraction_facc_pmt_mrd = double(n_facc_pmt_mrd)/n_entries*100;
+    fraction_coincident_time = double(n_pmt_mrd_time)/n_entries*100;
+    fraction_coincident_time_facc = double(n_pmt_mrd_time_facc)/n_entries*100;
   }
 
   ANNIE_rates->SetBinContent(1,rate_entries);
@@ -419,18 +461,33 @@ bool RunValidation::Finalise(){
   ANNIE_counts->SetBinContent(8,n_facc_pmt);
   ANNIE_counts->SetBinContent(9,n_facc_mrd);
   ANNIE_counts->SetBinContent(10,n_facc_pmt_mrd);
+  
+  ANNIE_fractions->SetBinContent(1,fraction_entries);
+  ANNIE_fractions->SetBinContent(2,fraction_tank);
+  ANNIE_fractions->SetBinContent(3,fraction_tank_threshold);
+  ANNIE_fractions->SetBinContent(4,fraction_mrd);
+  ANNIE_fractions->SetBinContent(5,fraction_coincident);
+  ANNIE_fractions->SetBinContent(6,fraction_coincident_nofacc);
+  ANNIE_fractions->SetBinContent(7,fraction_facc);
+  ANNIE_fractions->SetBinContent(8,fraction_facc_pmt);
+  ANNIE_fractions->SetBinContent(9,fraction_facc_mrd);
+  ANNIE_fractions->SetBinContent(10,fraction_facc_pmt_mrd);
 
   const char *category_label[10] = {"All Events","PMT Clusters","PMT Clusters > 100p.e.","MRD Clusters","PMT+MRD Clusters","PMT+MRD, No FMV","FMV","FMV+PMT","FMV+MRD","FMV+PMT+MRD"};
   for (int i_label=0;i_label<10;i_label++){
     ANNIE_rates->GetXaxis()->SetBinLabel(i_label+1,category_label[i_label]);
     ANNIE_counts->GetXaxis()->SetBinLabel(i_label+1,category_label[i_label]);
+    ANNIE_fractions->GetXaxis()->SetBinLabel(i_label+1,category_label[i_label]);
   }
 
   Log("RunValidation tool: Finished analysing run. Summary:",v_message,verbosity);
   Log("RunValidation tool: Duration: "+std::to_string(int(time_diff/3600))+"h:"+std::to_string(int(time_diff/60)%60)+"min:"+std::to_string(int(time_diff)%60)+"sec",v_message,verbosity);
   Log("RunValidation tool: Num Entries: "+std::to_string(n_entries)+", PMT Clusters: "+std::to_string(n_pmt_clusters)+", PMT Clusters > 100p.e.: "+std::to_string(n_pmt_clusters_threshold)+", MRD Clusters: "+std::to_string(n_mrd_clusters)+", PMT+MRD clusters: "+std::to_string(n_pmt_mrd_clusters)+", FACC Events: "+std::to_string(n_facc)+", FACC+PMT: "+std::to_string(n_facc_pmt)+", FACC+MRD: "+std::to_string(n_facc_mrd)+", FACC+PMT+MRD: "+std::to_string(n_facc_pmt_mrd),v_message,verbosity); 
   Log("RunValidation tool: Total Rate: "+std::to_string(rate_entries)+", Rate PMT Clusters: "+std::to_string(rate_tank)+", Rate PMT Clusters > 100p.e.: "+std::to_string(rate_tank_threshold)+", Rate MRD Clusters: "+std::to_string(rate_mrd)+", Rate PMT+MRD clusters: "+std::to_string(rate_coincident)+", FACC Events: "+std::to_string(rate_facc)+", Rate FACC+PMT: "+std::to_string(rate_facc_pmt)+", Rate FACC+MRD: "+std::to_string(rate_facc_mrd)+", Rate FACC+PMT+MRD: "+std::to_string(rate_facc_pmt_mrd),v_message,verbosity); 
+  Log("RunValidation tool: Fraction PMT Clusters: "+std::to_string(fraction_tank)+", Fraction PMT Clusters > 100p.e.: "+std::to_string(fraction_tank_threshold)+", Fraction MRD Clusters: "+std::to_string(fraction_mrd)+", Fraction PMT+MRD clusters: "+std::to_string(fraction_coincident)+", Fraction FACC: "+std::to_string(fraction_facc)+", Fraction FACC+PMT: "+std::to_string(fraction_facc_pmt)+", Fraction FACC+MRD: "+std::to_string(fraction_facc_mrd)+", Fraction FACC+PMT+MRD: "+std::to_string(fraction_facc_pmt_mrd),v_message,verbosity); 
+  Log("RunValidation tool: Fraction Coincident PMT/MRD clusters: "+std::to_string(fraction_coincident_time)+", Fraction Coincident PMT/MRD clusters with FMV hit: "+std::to_string(fraction_coincident_time_facc),v_message,verbosity);
   Log("RunValidation tool: End of Summary",v_message,verbosity);
+
 
   //-------------------------------------------------------------------------
   //--------------------Write histograms to file-----------------------------
@@ -462,6 +519,7 @@ bool RunValidation::Finalise(){
   PMT_chargeperpmt_100pe->Write();
   ANNIE_counts->Write();
   ANNIE_rates->Write();
+  ANNIE_fractions->Write();
   outfile->Close();
   delete outfile;
 
