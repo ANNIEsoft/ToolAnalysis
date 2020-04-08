@@ -35,6 +35,7 @@ class LoadGeometry: public Tool {
                                std::vector<std::string> TankPMTLegendEntries);
   bool ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
                                std::vector<std::string> AuxChannelLegendEntries);
+  void LoadTankPMTGains();
 
   Geometry* AnnieGeometry;
 
@@ -47,6 +48,7 @@ class LoadGeometry: public Tool {
   int LAPPD_channel_count;
   std::string fFACCMRDGeoFile;
   std::string fTankPMTGeoFile;
+  std::string fTankPMTGainFile;
   std::string fAuxChannelFile;
   std::string fLAPPDGeoFile;
   std::string fDetectorGeoFile;
@@ -61,6 +63,9 @@ class LoadGeometry: public Tool {
   std::map<int,std::vector<int>>* MRDChannelNumToCrateSpaceMap;
   std::map<std::vector<int>,int>* TankPMTCrateSpaceToChannelNumMap;
   std::map<std::vector<int>,int>* AuxCrateSpaceToChannelNumMap;
+  std::map<int,std::vector<int>>* ChannelNumToTankPMTCrateSpaceMap;
+  std::map<int,double>* ChannelNumToTankPMTSPEChargeMap;
+  std::map<int,std::string>* AuxChannelNumToTypeMap;
   std::map<std::vector<unsigned int>,int>* LAPPDCrateSpaceToChannelNumMap;
 
   //Vector of strings indicating variables of interest and their data types in

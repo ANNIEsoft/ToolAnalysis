@@ -40,9 +40,12 @@ class PhaseIIADCCalibrator : public Tool {
     /// @details See section 2.2 of https://arxiv.org/pdf/1106.0808.pdf for a
     /// description of the algorithm.
     void ze3ra_baseline(const Waveform<unsigned short> raw_data,
-      double& baseline, double& sigma_baseline, size_t num_baseline_samples);
+      double& baseline, double& sigma_baseline, size_t num_baseline_samples, size_t starting_sample);
 
     std::vector< CalibratedADCWaveform<double> > make_calibrated_waveforms_ze3ra(
+      const std::vector< Waveform<unsigned short> >& raw_waveforms);
+    
+    std::vector< CalibratedADCWaveform<double> > make_calibrated_waveforms_ze3ra_multi(
       const std::vector< Waveform<unsigned short> >& raw_waveforms);
     
     /// @brief Fit a polynomial to the baseline of each waveform.
@@ -68,15 +71,24 @@ class PhaseIIADCCalibrator : public Tool {
     std::map<unsigned long, std::vector<std::vector<int>>> channel_window_map;
 
     std::string BEType;
+
+
+    std::map<int,std::string>* AuxChannelNumToTypeMap;
     int verbosity;
     // All F-distribution probabilities above this value will pass the
     // variance consistency test in ze3ra_baseline(). That is, p_critical
     // is the maximum p-value for which we will reject the null hypothesis
     // of equal variances.
     double p_critical;
-    
+   
+    //ze3ra and ze3ra_multi configurables 
     size_t num_baseline_samples;
     size_t num_sub_waveforms;
+
+    //ze3ra_multi configurables
+    size_t baseline_rep_samples;
+    size_t baseline_unc_tolerance;
+
     bool make_led_waveforms;
     std::string adc_window_db; 
     
