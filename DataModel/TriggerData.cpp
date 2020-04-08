@@ -18,7 +18,8 @@ zmq::message_t ms2(&SequenceID,sizeof SequenceID, bencleanup2);
  zmq::message_t ms3(&EventSize,sizeof EventSize, bencleanup2);
   //std::cout<<"d0.3"<<std::endl;
 
-  zmq::message_t ms4(&TriggerSize,sizeof TriggerSize, bencleanup2);
+  zmq::message_t ms4(&TimeStampSize,sizeof TimeStampSize, bencleanup2); 
+  //zmq::message_t ms4(&TriggerSize,sizeof TriggerSize, bencleanup2);
   //std::cout<<"d0.4"<<std::endl;
 
   zmq::message_t ms5(&FIFOOverflow,sizeof FIFOOverflow, bencleanup2);
@@ -51,10 +52,10 @@ zmq::message_t ms2(&SequenceID,sizeof SequenceID, bencleanup2);
   //zmq::message_t ms3(&FirmwareVersion,sizeof FirmwareVersion, bencleanup2); 
   zmq::message_t ms7(&(EventIDs.at(0)), sizeof(uint16_t)*EventIDs.size(), bencleanup2);
   zmq::message_t ms8(&(EventTimes.at(0)), sizeof(uint64_t)*EventTimes.size(), bencleanup2);
-  zmq::message_t ms9(&(TriggerMasks.at(0)), sizeof(uint32_t)*TriggerMasks.size(), bencleanup2);
+  //zmq::message_t ms9(&(TriggerMasks.at(0)), sizeof(uint32_t)*TriggerMasks.size(), bencleanup2);
 
-  zmq::message_t ms10(&(TriggerCounters.at(0)), sizeof(uint32_t)*TriggerCounters.size(), bencleanup2);
-
+  //zmq::message_t ms10(&(TriggerCounters.at(0)), sizeof(uint32_t)*TriggerCounters.size(), bencleanup2);
+  zmq::message_t ms10(&(TimeStampData.at(0)), sizeof(uint32_t)*TimeStampData.size(), bencleanup2);   
   //  std::cout<<"d0.12"<<std::endl;
 
   //  std::cout<<"data.size = "<<Data.size()<<std::endl;
@@ -76,7 +77,7 @@ if(Data.at(i)==0)    std::cout<<" data.at("<<i<<")="<<Data.at(i);
   socket->send(ms6,ZMQ_SNDMORE);                              
   socket->send(ms7,ZMQ_SNDMORE);
   socket->send(ms8,ZMQ_SNDMORE);
-  socket->send(ms9,ZMQ_SNDMORE);
+  //socket->send(ms9,ZMQ_SNDMORE);
   socket->send(ms10,flag);
   // socket->send(ms11,ZMQ_SNDMORE);
   // socket->send(ms12);
@@ -139,12 +140,45 @@ bool TriggerData::Receive(zmq::socket_t *socket){
   socket->recv(&message);
   EventSize=*(reinterpret_cast<int*>(message.data()));
   socket->recv(&message);
-  TriggerSize=*(reinterpret_cast<int*>(message.data()));
+  TimeStampSize=*(reinterpret_cast<int*>(message.data()));  
+  //TriggerSize=*(reinterpret_cast<int*>(message.data()));
   socket->recv(&message);
   FIFOOverflow=*(reinterpret_cast<int*>(message.data()));
   socket->recv(&message);
   DriverOverflow=*(reinterpret_cast<int*>(message.data()));
   //std::cout<<"triggercounts rec size check = "<<message.size()<<std::endl;
+ 
+   zmq::message_t message2;  
+  socket->recv(&message2);
+   int tmp=*(reinterpret_cast<int*>(message2.data()));
+   if(tmp>0){  
+      socket->recv(&message); 
+     EventIDs.resize(message.size()/sizeof(uint16_t)); 
+      std::memcpy(&EventIDs[0], message.data(), message.size());   
+     }  
+  
+   zmq::message_t message3;
+  socket->recv(&message3);  
+   tmp=*(reinterpret_cast<int*>(message3.data())); 
+  if(tmp>0){  
+    socket->recv(&message); 
+    EventTimes.resize(message.size()/sizeof(uint64_t));  
+     std::memcpy(&EventTimes[0], message.data(), message.size());
+    } 
+  
+  zmq::message_t message5; 
+  socket->recv(&message5);      
+  tmp=*(reinterpret_cast<int*>(message5.data())); 
+  if(tmp>0){
+    socket->recv(&message);
+     TimeStampData.resize(message.size()/sizeof(uint32_t));
+    std::memcpy(&TimeStampData[0], message.data(), message.size());
+  }
+  
+  
+     
+     
+  /*
   socket->recv(&message);
   EventIDs.resize(message.size()/sizeof(uint16_t));
   std::memcpy(&EventIDs[0], message.data(), message.size());

@@ -1,0 +1,13 @@
+verbose 5
+
+OutputFile AmBeR1612S0p1.ntuple.root
+ClusterProcessing 1
+TriggerProcessing 1
+HitInfo_fill 1
+SiPMPulseInfo_fill 1
+fillCleanEventsOnly 0
+MCTruth_fill 0
+Reco_fill 0
+RecoDebug_fill 0
+muonTruthRecoDiff_fill 0
+

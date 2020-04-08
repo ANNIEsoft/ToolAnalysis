@@ -19,6 +19,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("FACCMRDGeoFile", fFACCMRDGeoFile);
   m_variables.Get("TankPMTGeoFile", fTankPMTGeoFile);
+  m_variables.Get("TankPMTGainFile", fTankPMTGainFile);
   m_variables.Get("AuxiliaryChannelFile", fAuxChannelFile);
   m_variables.Get("LAPPDGeoFile", fLAPPDGeoFile);
   m_variables.Get("DetectorGeoFile", fDetectorGeoFile);
@@ -47,6 +48,11 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGeoFile << std::endl;
     return false;
   }
+  if(!this->FileExists(fTankPMTGainFile)){
+    Log("LoadGeometry Tool: File for Tank PMT Gains does not exist!",v_error,verbosity);
+    if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGainFile << std::endl;
+    return false;
+  }
   
   if(!this->FileExists(fAuxChannelFile)){
     Log("LoadGeometry Tool: File for Auxiliary Channels does not exist!",v_error,verbosity);
@@ -58,7 +64,10 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   MRDCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   MRDChannelNumToCrateSpaceMap = new std::map<int,std::vector<int>>;
   TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  ChannelNumToTankPMTSPEChargeMap = new std::map<int,double>;
+  ChannelNumToTankPMTCrateSpaceMap = new std::map<int,std::vector<int>>;
   AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
+  AuxChannelNumToTypeMap = new std::map<int,std::string>;
   LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
 
   //Initialize the geometry using the geometry CSV file entries
@@ -69,6 +78,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
 
   //Load TankPMT Geometry Detector/Channel Information
   this->LoadTankPMTDetectors();
+
+  //Load TankPMT charge to PE conversion 
+  this->LoadTankPMTGains();
 
   //Load auxiliary and spare channels
   this->LoadAuxiliaryChannels();
@@ -81,7 +93,10 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("MRDChannelNumToCrateSpaceMap",MRDChannelNumToCrateSpaceMap);
   m_data->CStore.Set("TankPMTCrateSpaceToChannelNumMap",TankPMTCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
+  m_data->CStore.Set("ChannelNumToTankPMTSPEChargeMap",ChannelNumToTankPMTSPEChargeMap);
   m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
   m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
    //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
 
@@ -443,6 +458,12 @@ bool LoadGeometry::ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
     Log("LoadGeometry Tool: ERROR: Tried assigning an Auxiliary Channel channel_num to a crate space already defined!!! ",v_error, verbosity);
     Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
   }
+  if(AuxChannelNumToTypeMap->count(channel_num)==0){
+    AuxChannelNumToTypeMap->emplace(channel_num, channel_type);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning an Auxiliary Channel Type to a channel already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR DETAILS: Signal Type = "+ channel_type +", channel key = "+std::to_string(channel_num),v_error,verbosity);
+  }
 
   return true;
 }
@@ -604,6 +625,7 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
   std::vector<int> crate_map{signal_crate,signal_slot,signal_channel};
   if(TankPMTCrateSpaceToChannelNumMap->count(crate_map)==0){
     TankPMTCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
+    ChannelNumToTankPMTCrateSpaceMap->emplace(channel_num,crate_map);
   } else {
     Log("LoadGeometry Tool: ERROR: Tried assigning a Tank PMT channel_num to a crate space already defined!!! ",v_error, verbosity);
     Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
@@ -846,4 +868,24 @@ std::string LoadGeometry::GetLegendLine(std::string name) {
   }
   myfile.close();
   return legendline;
+}
+
+void LoadGeometry::LoadTankPMTGains(){
+  ifstream myfile(fTankPMTGainFile.c_str());
+  std::string line;
+  if (myfile.is_open()){
+    //Loop over lines, collect all detector data (should only be one line here)
+    while(getline(myfile,line)){
+      if(verbosity>3) std::cout << line << std::endl; //has our stuff;
+      if(line.find("#")!=std::string::npos) continue;
+      std::vector<std::string> DataEntries;
+      boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
+      int channelkey = -9999;
+      double SPECharge = -9999.;
+      channelkey = std::stoi(DataEntries.at(0));
+      SPECharge= std::stod(DataEntries.at(1));
+      ChannelNumToTankPMTSPEChargeMap->emplace(channelkey,SPECharge);
+    }
+  }
+  return;
 }
