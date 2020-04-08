@@ -9,6 +9,7 @@
 #include "TObjectTable.h"
 
 class TH1D;
+class TH2D;
 class TApplication;
 class TCanvas;
 
@@ -55,6 +56,7 @@ class TimeClustering: public Tool {
 	// Cluster properties
 	std::vector<double> mrddigittimesthisevent;
 	std::vector<int> mrddigitpmtsthisevent;
+	std::vector<unsigned long> mrddigitchankeysthisevent;
 	std::vector<double> mrddigitchargesthisevent;
 	std::vector<std::vector<int>> MrdTimeClusters;
 	std::vector<std::vector<double>> MrdTimeClusters_Times;
@@ -73,7 +75,7 @@ class TimeClustering: public Tool {
 	TH1D *mrddigitts_single = nullptr;
 	TH1D *mrddigitts_horizontal = nullptr;
 	TH1D *mrddigitts_vertical = nullptr;
-        TFile* mrddigitts_file = nullptr;
+	TFile* mrddigitts_file = nullptr;
 
 	//TApplication-related variables
 	TCanvas* timeClusterCanvas=nullptr;
