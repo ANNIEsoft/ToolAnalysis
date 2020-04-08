@@ -138,9 +138,11 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
 {
   for (const auto& temp_pair : RawADCData) {
     const auto& channel_key = temp_pair.first;
+    if(verbosity>4) std::cout << "Loading pulse information for channel key " << channel_key << std::endl;
     
     //If working with PMT ADC data, fill out pulse occupancy information
-    if(!isAuxData){
+    std::map<unsigned long, std::vector<std::vector<ADCPulse>>>::iterator it1 = RecoADCHits.find(channel_key);
+    if(!isAuxData && it1!=RecoADCHits.end()){
       std::vector<std::vector<ADCPulse>> buffer_pulses = RecoADCHits.at(channel_key);
       int num_pulses = 0;
       for (int i = 0; i < buffer_pulses.size(); i++){
@@ -154,7 +156,7 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
 
       //Fill in pulse log information
       std::map<unsigned long, int>::iterator it = NumWaves.find(channel_key);
-      if(it != NumWaves.end()){ //First time encountering channel key
+      if(it != NumWaves.end()){ //Encountered channel key before
         NumWaves.at(channel_key)+=1;
         NumPulses.at(channel_key)+=num_pulses;
         if(num_pulses>0) NumWavesWithAPulse.at(channel_key)+=1;
@@ -185,7 +187,7 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
       Waveform<unsigned short> awaveform = raw_waveforms.at(j);
       if(verbosity>4)std::cout << "Waveform start time: " << std::setprecision(16) << awaveform.GetStartTime() << std::endl;
       std::vector<unsigned short>* thewave=awaveform.GetSamples();
-      if(verbosity>4){
+      if(verbosity>5){
         std::cout << "BEGIN SAMPLES" << std::endl;
         for (int i=0; i < thewave->size(); i++){
           std::cout << thewave->at(i) << std::endl;
@@ -207,13 +209,14 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
         upcastdata.resize(SampleLength);
         
         // for plotting on a TGraph we need to up-cast the data from uint16_t to int32_t
-        Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
+        Log("PrintADCData Tool: Making Samples waveform",v_debug,verbosity);
         for(int samplei=0; samplei<SampleLength; samplei++){
             upcastdata.at(samplei) = samples->at(samplei);
         }
         //I hate my life
         std::string ckey = to_string(channel_key);
         if(mb_graph){ delete mb_graph; }
+        Log("PrintADCData Tool: Making TGraph",v_debug,verbosity);
         mb_graph = new TGraph(SampleLength, numberline.data(), upcastdata.data());
         std::string graph_name = "mb_graph_"+to_string(channel_key)+"_"+to_string(StartTime);
         //Place graph into correct channel_key tree
@@ -221,12 +224,16 @@ void PrintADCData::PrintInfoInData(std::map<unsigned long, std::vector<Waveform<
         std::string title = graph_name+";Time since acquisition start (ADC);Sample value (ADC)";
         mb_graph->SetTitle(title.c_str());
         std::map<std::string, TDirectory * >::iterator it = ChanKeyToDirectory.find(ckey);
+        Log("PrintADCData Tool: Looking for channel in directories",v_debug,verbosity);
         if(it == ChanKeyToDirectory.end()){ //No Tree made yet for this channel key.  make it
+          Log("PrintADCData Tool: New channel key!",v_debug,verbosity);
           ChanKeyToDirectory.emplace(ckey, file_out->mkdir(ckey.c_str()));
         }
         ChanKeyToDirectory.at(ckey)->cd();
+        Log("PrintADCData Tool: Writing graph to file",v_debug,verbosity);
         mb_graph->Write();
         WaveformNum+=1;
+        Log("PrintADCData Tool: We've done it.  Next minibuffer",v_debug,verbosity);
       } // end loop over minibuffers
     }
   }
