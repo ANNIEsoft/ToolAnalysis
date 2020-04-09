@@ -1,0 +1,21 @@
+# HitCleaner config file
+
+verbosity 2
+Config 3               	#config type: 1 = pulse height cut, 2 = neighbour cut, 3 = cluster cut								
+PmtMinPulseHeight 5    	#minimum pulse height
+PmtNeighbourRadius 60  	#digit neighbouring distance [cm]
+PmtMinNeighbourDigits 2	#minimum neighbour digits
+PmtClusterRadius 60 	#digit clustering distance [cm]      
+PmtTimeWindowN 50	#neighbouring time window [ns]    
+PmtTimeWindowC 50 	#clustering time window [ns]           
+PmtMinHitsPerCluster 4	#number of hits per cluster								                         
+LappdMinPulseHeight 0	#minimum pulse height                             
+LappdNeighbourRadius 25 #digit neighbouring distance [cm]              
+LappdMinNeighbourDigits 20 #minimum neighbour digits                      
+LappdClusterRadius 25   #digit clustering distance [cm]                                    
+LappdTimeWindowN 0.6    #neighbouring time window [ns]                 
+LappdTimeWindowC 1      #clustering time window [ns]                   
+LappdMinHitsPerCluster 20 #number of digits per cluster	
+MinClusterDigits 50	#minimum clustered digits							  
+IsMC 0			#Data or MC?
+SinglePEGains ./configfiles/EventDisplay/Data-ANNIEEvent/ChannelSPEGains_BeamRun20192020.csv

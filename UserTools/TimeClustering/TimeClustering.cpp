@@ -152,6 +152,7 @@ bool TimeClustering::Execute(){
 
 	// extract the digits from the annieevent and put them into separate vectors used by the track finder
 	mrddigitpmtsthisevent.clear();
+	mrddigitchankeysthisevent.clear();
 	mrddigittimesthisevent.clear();
 	mrddigitchargesthisevent.clear();
 
@@ -170,14 +171,14 @@ bool TimeClustering::Execute(){
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<Hit>>
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
-			return false;
+			return true;
 		}
 	} else {
 		std::cout <<"TimeClustering tool: MC file: Getting TDCData object"<<std::endl;	
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData_MC);  // a std::map<unsigned long,vector<MCHit>>
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
-			return false;
+			return true;
 		}
 	}
 	
@@ -210,6 +211,7 @@ bool TimeClustering::Execute(){
 			for(auto&& hitsonthismrdpmt : anmrdpmt.second){
 				if (channelkey_to_mrdpmtid.find(chankey) != channelkey_to_mrdpmtid.end()){
 					mrddigitpmtsthisevent.push_back(channelkey_to_mrdpmtid[chankey]);
+					mrddigitchankeysthisevent.push_back(chankey);
 					mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 					mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
 					if(MakeMrdDigitTimePlot){  // XXX XXX XXX rename
@@ -421,7 +423,7 @@ bool TimeClustering::Execute(){
 			
 			// CONSTRUCT THE SUBEVENT
 			// -----------------------
-			if(digitidsinasubevent.size()>=minimumdigits){  // must have enough for a subevent
+			if(int(digitidsinasubevent.size())>=minimumdigits){  // must have enough for a subevent
 				Log("TimeClustering Tool: Constructing subevent "+to_string(mrdeventcounter)
 					+" with "+to_string(digitidsinasubevent.size())+" digits",v_debug,verbosity);
 				//MrdTimeClusters.Add(mrdeventcounter, digitidsinasubevent, tubeidsinasubevent, digittimesinasubevent);
@@ -483,6 +485,7 @@ bool TimeClustering::Execute(){
 	m_data->CStore.Set("NumMrdTimeClusters",mrdeventcounter);
 	m_data->CStore.Set("MrdDigitTimes",mrddigittimesthisevent);
 	m_data->CStore.Set("MrdDigitPmts",mrddigitpmtsthisevent);
+	m_data->CStore.Set("MrdDigitChankeys",mrddigitchankeysthisevent);
 	m_data->CStore.Set("MrdDigitCharges",mrddigitchargesthisevent);
 
 	//only for debugging
