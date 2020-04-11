@@ -103,8 +103,12 @@ if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
 if (tool=="RunValidation") ret=new RunValidation;
+if (tool=="AmBeRunStatistics") ret=new AmBeRunStatistics;
+if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
+if (tool=="BeamClusterPlots") ret=new BeamClusterPlots;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="LoadRawData") ret=new LoadRawData;
+if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 return ret;
 }

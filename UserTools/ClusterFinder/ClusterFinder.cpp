@@ -17,7 +17,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   //----------------------------------------------------------------------------
   //---------------Get configuration variables for this tool--------------------
   //----------------------------------------------------------------------------  
-  
+  m_variables.Get("Verbosity",verbose);
   m_variables.Get("HitStore",HitStoreName);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("ClusterFindingWindow",ClusterFindingWindow); 
@@ -236,7 +236,7 @@ bool ClusterFinder::Execute(){
 
   if (verbose > 2) {
     for (std::vector<double>::iterator it = v_hittimes.begin(); it != v_hittimes.end(); ++it) {
-      cout << "Hit time -> " << *it << endl;
+      if(verbose>3) cout << "Hit time -> " << *it << endl;
     }
   }
 
@@ -256,7 +256,7 @@ bool ClusterFinder::Execute(){
   
   if (verbose > 2) {
     for (std::vector<double>::iterator it = v_hittimes_sorted.begin(); it != v_hittimes_sorted.end(); ++it) {
-      cout << "Hit time (sorted) -> " << *it << endl;
+      if(verbose>3) cout << "Hit time (sorted) -> " << *it << endl;
     }
   }
 
@@ -284,10 +284,10 @@ bool ClusterFinder::Execute(){
   if (verbose > 2){
       for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
         if (int(it->second.size()) > MinHitsPerCluster) {
-          cout << "Map of time and NHits: Time = " << it->first << ", NHits = " << it->second.size() << endl;
-          cout << "Look at the back of the vector (before): " << it->second.back() << endl;
+          if(verbose>3) cout << "Map of time and NHits: Time = " << it->first << ", NHits = " << it->second.size() << endl;
+          if(verbose>3) cout << "Look at the back of the vector (before): " << it->second.back() << endl;
           for (std::vector<double>::iterator itt = it->second.begin(); itt != it->second.end(); ++itt) {
-          cout << "At this time, hits are: " << *itt << endl;  
+          if(verbose>3) cout << "At this time, hits are: " << *itt << endl;  
         }       
       }
     }
@@ -329,13 +329,13 @@ bool ClusterFinder::Execute(){
 
         // This loops erases the dummy hit times values that were flagged before so they are not used anymore by other clusters
         for(std::vector<double>::iterator itt = it->second.end()-1; itt != it->second.begin()-1; --itt) {
-          if (verbose > 2) cout << "Time: " << it->first << ", hit time: " << *itt << endl;
+          if(verbose>3) std::cout << "Time: " << it->first << ", hit time: " << *itt << endl;
           if (*itt == dummy_hittime_value) {
             it->second.erase(it->second.begin() + std::distance(it->second.begin(), itt)); 
             if (verbose > 2) cout << "Erasing " << it->first << " " << *itt << endl;
           }
         }
-        if (verbose > 2) cout << "Erasing loop is done and new size of mini_hits is " << it->second.size() << " hits" << endl;
+        if(verbose>3) std::cout << "Erasing loop is done and new size of mini_hits is " << it->second.size() << " hits" << endl;
       }
     }
   } while (true); 
@@ -357,7 +357,7 @@ bool ClusterFinder::Execute(){
           if (ahit.GetTime() >= *it && ahit.GetTime() <= *it + ClusterFindingWindow) {
             local_cluster_charge += ahit.GetCharge();
             v_local_cluster_times.push_back(ahit.GetTime());
-            if (verbose > 2) cout << "Local cluster at " << *it << " and hit is " << ahit.GetTime() << endl;
+            if(verbose>3) std::cout << "Local cluster at " << *it << " and hit is " << ahit.GetTime() << endl;
           }
         }
       }
