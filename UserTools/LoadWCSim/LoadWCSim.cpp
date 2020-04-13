@@ -330,7 +330,8 @@ bool LoadWCSim::Execute(){
 
 					tracktype startstoptype = tracktype::UNDEFINED;
 					//MC particle times are relative to the trigger time
-					if(nextrack->GetFlag()==-1) m_data->CStore.Set("NeutrinoEnergy",nextrack->GetE());
+					if(nextrack->GetFlag()==-1) {m_data->CStore.Set("NeutrinoEnergy",nextrack->GetE());
+					cout << "Neutrino Energy LoadWCSim: " << nextrack->GetE() << ", " << nextrack->GetEndE() << endl;}
 					if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
 					MCParticle thisparticle(
 						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),

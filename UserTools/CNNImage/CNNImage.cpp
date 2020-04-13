@@ -443,21 +443,27 @@ bool CNNImage::Execute(){
     unsigned long detkey = hitpmt_detkeys[i_pmt];
     if (charge[detkey]>maximum_pmts) maximum_pmts = charge[detkey];
     total_charge_pmts+=charge[detkey];
+//    std::cout<< time[detkey]<< endl;
     if (time[detkey]>max_time_pmts) max_time_pmts = time[detkey];
     if (time[detkey]<min_time_pmts) min_time_pmts = time[detkey];
   }
-
+// std::cout<<"Max Wert und min Wert: " << max_time_pmts<<", " << min_time_pmts<< endl;
   maximum_lappds = 0;
   for (unsigned int i_lappd = 0; i_lappd < lappd_detkeys.size();i_lappd++){
     unsigned long detkey = lappd_detkeys[i_lappd];
-    for (int iX=0; iX<20; iX++){
-      for (int iY=0; iY<20; iY++){
+    for (int iX=0; iX<dimensionLAPPD; iX++){
+      for (int iY=0; iY<dimensionLAPPD; iY++){
         if (charge_lappd[detkey].at(iX).at(iY) > maximum_lappds) maximum_lappds = charge_lappd[detkey].at(iX).at(iY);
       }
     }
   }
+  double global_min_time = (min_time_pmts < min_time_lappds)? min_time_pmts : min_time_lappds;
+  double global_max_time = (max_time_pmts > max_time_lappds)? max_time_pmts : max_time_lappds;
+  double global_max_charge = (maximum_pmts > maximum_lappds)? maximum_pmts : maximum_lappds;
+  double global_min_charge = 0.;
 
-
+  if (fabs(global_max_time-global_min_time)<0.01) global_max_time = global_min_time+1;
+  if (global_max_charge<0.001) global_max_charge=1;  
   //---------------------------------------------------------------
   //-------------- Readout MRD ------------------------------------
   //---------------------------------------------------------------
@@ -571,10 +577,16 @@ bool CNNImage::Execute(){
     if (maximum_pmts < 0.001) maximum_pmts = 1.;
     if (fabs(max_time_pmts) < 0.001) max_time_pmts = 1.;
    
-    double charge_fill = charge[detkey]/maximum_pmts;
+    // double charge_fill = charge[detkey]/maximum_pmts;
+    double charge_fill = charge[detkey]/global_max_charge;
+
     hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
-    double time_fill = (time[detkey]-min_time_pmts)/(max_time_pmts-min_time_pmts);
+    //    double time_fill = (time[detkey]-min_time_pmts)/(max_time_pmts-min_time_pmts);
+    double time_fill = (time[detkey]-global_min_time)/(global_max_time-global_min_time);
+
     hist_cnn_time->SetBinContent(binx,biny,hist_cnn_time->GetBinContent(binx,biny)+time_fill);
+
+  //  std::cout<<"Time Detector key: " << time[detkey] << ", Time fill: " <<   time_fill <<endl;
 
     //fill the pmt-wise histogram
     if ((y_pmt[detkey]>=max_y || y_pmt[detkey]<=min_y) && !includeTopBottom) continue;       //don't include endcaps in the pmt-wise histogram for now
@@ -614,10 +626,14 @@ bool CNNImage::Execute(){
     //fill the lappd-wise histograms
     for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size(); i_lappd++){
       unsigned long detkey = lappd_detkeys.at(i_lappd);
-      for (int iX=0; iX < 20; iX++){
-        for (int iY=0; iY < 20; iY++){
-          double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/maximum_lappds;
-          double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-min_time_lappds)/(max_time_lappds-min_time_lappds);
+      for (int iX=0; iX < dimensionLAPPD; iX++){
+        for (int iY=0; iY < dimensionLAPPD; iY++){
+          //double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/maximum_lappds;
+          //double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-min_time_lappds)/(max_time_lappds-min_time_lappds);
+          double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/global_max_charge;
+          double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-global_min_time)/(global_max_time-global_min_time);
+
+
           if (lappd_time_fill < 0)  std::cout <<"Min LAPPD time: "<<min_time_lappds<<", Max LAPPD time: "<<max_time_lappds<<", time_lappd: "<<time_lappd[detkey].at(iX).at(iY)<<", fill time: "<<lappd_time_fill<<std::endl;
           hists_lappd.at(i_lappd)->SetBinContent(iX+1,iY+1,lappd_charge_fill);
           hists_time_lappd.at(i_lappd)->SetBinContent(iX+1,iY+1,lappd_time_fill);

@@ -5,7 +5,7 @@ EnergyExtractor::EnergyExtractor():Tool(){}
 
 
 
-duble TrueEnergy;
+double TrueEnergy;
 ofstream outfile_EnergyNeutrino, outfile_EnergyPion, outfile_EnergyKaon, outfile_EnergyMuon, outfile_EnergyElectron, outfile_NeutronNumber ,outfile_VisibleEnergy;
 std::map<int,double> pdgcodetomass;
 string cnn_outpath;
@@ -13,9 +13,24 @@ std::vector<MCParticle>* fMCParticles=nullptr;
 std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
 std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits = nullptr;
 Geometry *geom = nullptr;
+int verbosity;
+int v_error=0;
+int v_message=2;
+double n=1.33;
 
-
-
+std::map<string, vector<double>> Energystore;
+std::vector<double> filler;
+int pi0count = 0;
+int pipcount = 0;
+int pimcount = 0;
+int K0count = 0;
+int Kpcount = 0;
+int Kmcount = 0;
+int ecount = 0;
+int epcount = 0;
+int mcount = 0;
+int mpcount = 0;
+int ncount = 0;
 
 bool EnergyExtractor::Initialise(std::string configfile, DataModel &data){
 
@@ -23,12 +38,23 @@ bool EnergyExtractor::Initialise(std::string configfile, DataModel &data){
   if(configfile!="") m_variables.Initialise(configfile); // loading config file
   //m_variables.Print();
   m_variables.Get("OutputFile",cnn_outpath);
+  m_variables.Get("Verbosity",verbosity);
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
   m_data->CStore.Get("PdgMassMap",pdgcodetomass);
 
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
 
+  Energystore.emplace("e-",filler);
+  Energystore.emplace("e+",filler);
+  Energystore.emplace("mu-",filler);
+  Energystore.emplace("mu+",filler);
+  Energystore.emplace("pi-",filler);
+  Energystore.emplace("pi+",filler);
+  Energystore.emplace("pi0",filler);
+  Energystore.emplace("K+",filler);
+  Energystore.emplace("K-",filler);
+  Energystore.emplace("K0",filler);
   std::string str_csv = ".csv";
   std::string str_EnergyNeutrino = "_EnergyNeutrino";
   std::string str_EnergyPion = "_EnergyPion";
@@ -66,34 +92,12 @@ bool EnergyExtractor::Execute()
 {
 
   bool passed_eventselection;
+
   m_data->Stores["RecoEvent"]->Get("EventCutStatus",passed_eventselection);
   std::cout <<"passed_eventselection: "<<passed_eventselection<<std::endl;
   if (!passed_eventselection) {
     return true;
   }
-  std::map<std::string, std::vector<double>> Energystore;
-  std::std::vector<double> filler;
-  Energystore.emplace("e-",filler);
-  Energystore.emplace("e+",filler);
-  Energystore.emplace("mu-",filler);
-  Energystore.emplace("mu+",filler);
-  Energystore.emplace("pi-",filler);
-  Energystore.emplace("pi+",filler);
-  Energystore.emplace("pi0",filler);
-  Energystore.emplace("K+",filler);
-  Energystore.emplace("K-",filler);
-  Energystore.emplace("K0",filler);
-  int pi0count = 0;
-  int pipcount = 0;
-  int pimcount = 0;
-  int K0count = 0;
-  int Kpcount = 0;
-  int Kmcount = 0;
-  int ecount = 0;
-  int epcount = 0;
-  int mcount = 0;
-  int mpcount = 0;
-  int ncount = 0;
 
   // see if "ANNIEEvent" exists
   auto get_annieevent = m_data->Stores.count("ANNIEEvent");
@@ -101,6 +105,8 @@ bool EnergyExtractor::Execute()
     Log("DigitBuilder Tool: No ANNIEEvent store!",v_error,verbosity);
     return false;
   }
+
+
   m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
   m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits", MCLAPPDHits);
   // Load MC Particles information for this event
@@ -138,7 +144,7 @@ bool EnergyExtractor::Execute()
       }
     }
   }
-  int vectsize = MCLAPPDHits->size();
+  vectsize = MCLAPPDHits->size();
   if (verbosity > 1) std::cout <<"Tool CNNImage: MCLAPPDHits size: "<<vectsize<<std::endl;
   double total_charge_lappd=0;
   for(std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits)
@@ -163,8 +169,10 @@ bool EnergyExtractor::Execute()
 
 
 
-  double neutrino_Energy;
-  m_data->CStore.Get("NeutrinoEnergy",neutrino_Energy)
+  Float_t neutrino_Energy=-2;
+  bool isok;
+  isok=m_data->CStore.Get("NeutrinoEnergy",neutrino_Energy);
+  cout << " Neutrino Energy: " << neutrino_Energy <<" , "<< isok<< endl;
   outfile_EnergyNeutrino << neutrino_Energy << endl;
 
 
@@ -180,7 +188,7 @@ bool EnergyExtractor::Execute()
   }
   outfile_EnergyPion << endl;
 
-  outfile_EnergyKaon << kmcount<<"," << kpcount << "," ;
+  outfile_EnergyKaon << Kmcount<<"," << Kpcount << "," ;
   for(int i=0 ; i<Energystore["K-"].size() ; i++)
   {
     outfile_EnergyKaon << Energystore["K-"][i] << ",";
@@ -220,7 +228,27 @@ bool EnergyExtractor::Execute()
 
   outfile_VisibleEnergy << total_charge_pmts << "," << total_charge_lappd <<endl;
 
-
+  Energystore["pi+"].clear();
+  Energystore["pi-"].clear();
+  Energystore["K+"].clear();
+  Energystore["K-"].clear();
+  Energystore["e+"].clear();
+  Energystore["e-"].clear();
+  Energystore["mu+"].clear();
+  Energystore["mu-"].clear();
+  Energystore["K0"].clear();
+  Energystore["pi0"].clear();
+  pi0count = 0;
+  pipcount = 0;
+  pimcount = 0;
+  K0count = 0;
+  Kpcount = 0;
+  Kmcount = 0;
+  ecount = 0;
+  epcount = 0;
+  mcount = 0;
+  mpcount = 0;
+  ncount = 0;
   return true;
 }
 
@@ -268,60 +296,59 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
 
       TrueEnergy = aparticle.GetStartEnergy();
 
-
+      cout<<"True Energy  " << TrueEnergy << " and PDG is " << aparticle.GetPdgCode() << " and CTH is " << GetCherenkovThresholdE(aparticle.GetPdgCode())<<endl;
       if(aparticle.GetPdgCode()==111){               // is a primary pi0
-        pionfound = true;
-        pi0count++;
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(111)) {Energystore["pi0"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(111)) {Energystore["pi0"].push_back(TrueEnergy);pi0count++;}
 
       }
       if(aparticle.GetPdgCode()==211){               // is a primary pi+
 
-        pipcount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(211)) {Energystore["pi+"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(211)) {Energystore["pi+"].push_back(TrueEnergy);pipcount++;}
       }
       if(aparticle.GetPdgCode()==-211){               // is a primary pi-
 
-        pimcount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-211)) {Energystore["pi-"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-211)) {Energystore["pi-"].push_back(TrueEnergy);pimcount++;}
       }
       if(aparticle.GetParentPdg()!=0) continue;
 
       if(aparticle.GetPdgCode()==311){               // is a primary K0
-        K0count++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(311)) {Energystore["K0"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(311)) {Energystore["K0"].push_back(TrueEnergy);K0count++;}
       }
       if(aparticle.GetPdgCode()==321){               // is a primary K+
-        Kpcount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(321)) {Energystore["K+"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(321)) {Energystore["K+"].push_back(TrueEnergy);Kpcount++;}
       }
       if(aparticle.GetPdgCode()==-321){               // is a primary K-
-        Kmcount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-321)) {Energystore["K-"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-321)) {Energystore["K-"].push_back(TrueEnergy);Kmcount++;}
       }
       if(aparticle.GetPdgCode()==11){               // is a primary e-
-        ecount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(11)) {Energystore["e-"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(11)) {Energystore["e-"].push_back(TrueEnergy);ecount++;}
       }
       if(aparticle.GetPdgCode()==-11){               // is a primary e+
-        epcount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-11)) {Energystore["e+"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-11)) {Energystore["e+"].push_back(TrueEnergy);epcount++;}
       }
       if(aparticle.GetPdgCode()==13){               // is a primary mu-
-        mcount++;
 
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(13)) {Energystore["mu-"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(13)) {Energystore["mu-"].push_back(TrueEnergy);mcount++;}
       }
       if(aparticle.GetPdgCode()==-13){               // is a primary mu+
-        mpcount++;
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-13)) {Energystore["mu+"].push_back(TrueEnergy);}
+
+        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-13)) {Energystore["mu+"].push_back(TrueEnergy);mpcount++;}
       }
       if(aparticle.GetPdgCode()==2112){               // is a primary mu+
         ncount++;
@@ -337,7 +364,8 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
 }
 
 double EnergyExtractor::GetCherenkovThresholdE(int pdg_code) {
-  Log("EnergyExtractor Tool: GetCherenkovThresholdE",v_message,verbosity);            ///> Calculate Cherenkov threshold energies depending on particle pdg
+  Log("EnergyExtractor Tool: GetCherenkovThresholdE",v_message,verbosity);
+  cout << "pdgcodetomass: " << pdgcodetomass[pdg_code] << "n: " << n <<endl;             ///> Calculate Cherenkov threshold energies depending on particle pdg
   double Ethr = pdgcodetomass[pdg_code]*sqrt(1+1./sqrt(n*n-1));
   return Ethr;
 }
