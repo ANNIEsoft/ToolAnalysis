@@ -105,3 +105,4 @@
 #include "MCHitToHitComparer.h"
 #include "CNNImage.h"
 
+#include "EnergyExtractor.h"

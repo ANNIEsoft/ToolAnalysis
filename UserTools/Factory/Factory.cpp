@@ -96,5 +96,6 @@ if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 if (tool=="CNNImage") ret=new CNNImage;
+if (tool=="EnergyExtractor") ret=new EnergyExtractor;
 return ret;
 }
