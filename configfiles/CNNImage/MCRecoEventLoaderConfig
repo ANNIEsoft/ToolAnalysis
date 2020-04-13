@@ -8,8 +8,9 @@ GetNRings 1
 #Particle ID you want to load from parent particles; 13 for muon
 ParticleSelection 1
 
-ParticleID 13		#muon
+#ParticleID 13		#muon
 #ParticleID -11		#positron
+ParticleID 22		#gamma
 #coordinate shifts needed to put particles in tank origin coordinates
 xshift 0.0
 yshift 14.46469

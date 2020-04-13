@@ -44,7 +44,8 @@ class EventSelector: public Tool {
    kFlagMCIsSingleRing = 0x800, //2048
    kFlagMCIsMultiRing  = 0x1000, //4096
    kFlagMCProjectedMRDHit = 0x2000, //8192
-   kFlagMCEnergyCut   = 0x4000
+   kFlagMCEnergyCut   = 0x4000,
+   kFlagMCDSNBlike = 0x8000
   } EventFlags_t;
 
  private:
@@ -135,6 +136,13 @@ class EventSelector: public Tool {
   /// the MRD.
   bool EventSelectionByMCProjectedMRDHit();
 
+  /// \brief Event selection by DSNB-like
+  ////
+  ///This event selection criteria requires a positron+neutron coincidence or a 
+  ///gamma+neutron coincidence that might be misinterpreted as an IBD signature
+  bool DSNBCheck();
+
+
  	/// \brief MC entry number
   uint64_t fMCEventNum;
   
@@ -173,6 +181,7 @@ class EventSelector: public Tool {
   int  fNHitmin = 4;
   double Emin = 0.;
   double Emax = 10000.;
+  bool fMCDSNBlike = false;
   bool fRecoPMTVolCut = false;
   bool fRecoFVCut = false;
   bool fPromptTrigOnly = true;
