@@ -266,7 +266,6 @@ bool EventSelector::NHitCountCheck(int NHitCut) {
   int size_pmt_digits = 0;
 
   for (unsigned int i_digit = 0; i_digit < fDigitList->size(); i_digit++){
-    std::cout <<"Getting RecoDigit object "<<i_digit<<std::endl;
     RecoDigit thisdigit = fDigitList->at(i_digit);
     int digittype = thisdigit.GetDigitType();
     if (digittype == 0) size_pmt_digits++;

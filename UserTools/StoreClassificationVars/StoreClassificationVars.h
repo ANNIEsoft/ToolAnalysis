@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <fstream>
 
 #include "Tool.h"
 #include "TH1F.h"
@@ -49,6 +50,7 @@ class StoreClassificationVars: public Tool {
   bool save_root;
   bool save_csv;
   std::string variable_config;
+  std::string variable_config_path;
   bool EventCutStatus;
   bool selection_passed;
   bool mldata_present;
@@ -74,11 +76,7 @@ class StoreClassificationVars: public Tool {
   TH1F *hist_pmtY_single = nullptr;
   TH1F *hist_pmtDist_single = nullptr;
   TH1F *hist_pmtThetaBary_single = nullptr;
-  TH1F *hist_pmtThetaBary_single_Qweighted = nullptr;
-  TH1F *hist_pmtYBary_single = nullptr;
-  TH1F *hist_pmtYBary_single_Qweighted = nullptr;
   TH1F *hist_pmtPhiBary_single = nullptr;
-  TH1F *hist_pmtPhiBary_single_Qweighted = nullptr;
   TH1F *hist_pmtHits = nullptr;
   TH1F *hist_pmtPEtotal = nullptr;
   TH1F *hist_pmtPEtotalClustered = nullptr;

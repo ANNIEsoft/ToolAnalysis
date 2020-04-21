@@ -1,0 +1,9 @@
+# StoreClassificationVars config file
+
+verbosity 5
+Filename classification_test
+SaveCSV 1
+SaveROOT 1
+VariableConfig Full
+VariableConfigPath ./configfiles/Classification/PrepareClassificationTraining
+IsData 0

@@ -1,0 +1,5 @@
+# CalcClassificationVars config file
+
+verbosity 2
+UseMCTruth 0
+IsData 0

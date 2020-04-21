@@ -348,7 +348,6 @@ bool CalcClassificationVars::Execute(){
 			pmt_fracQDownstream = pmt_QDownstream/pmt_totalQ;
 			pmt_frachighestQ = pmt_highestQ/pmt_totalQ;
 			pmt_fracClustered = pmt_totalQ_Clustered/pmt_totalQ;
-			if (verbosity > v_debug) std::cout <<"pmt_totalQ_Clustered = "<<pmt_totalQ_Clustered<<", pmt_totalQ = "<<pmt_totalQ<<", pmt_fracClustered = "<<pmt_fracClustered<<std::endl;
 			pmt_fracLowQ = double(pmt_hits_lowq)/pmt_hits;
 			pmt_fracLate = double(pmt_hits_late)/pmt_hits;		
 			pmt_fracEarly = double(pmt_hits_early)/pmt_hits;
@@ -437,7 +436,6 @@ bool CalcClassificationVars::Execute(){
 			pmt_rmsPhiBary+=(pow(pmt_phi_bary,2));
 			pmt_varPhiBary+=(pow(pmt_phi_bary,2)*pmtQ.at(i_pmt)/pmt_totalQ);
 			
-			std::cout <<"pmt_theta_bary: "<<pmt_theta_bary<<", pmt_phi_bary: "<<pmt_phi_bary<<std::endl;
 			if (fabs(pmt_theta_bary) > 0.9) pmt_hits_largeangle_theta++;
 			if (fabs(pmt_phi_bary) > 1.) pmt_hits_largeangle_phi++;
 		}
@@ -445,12 +443,8 @@ bool CalcClassificationVars::Execute(){
 		if (pmtQ.size()>0) {
 			pmt_rmsThetaBary = sqrt(pmt_rmsThetaBary/pmtQ.size());
 			pmt_rmsPhiBary = sqrt(pmt_rmsPhiBary/pmtQ.size());
-			std::cout <<"pmt_hits_largeangle_theta: "<<pmt_hits_largeangle_theta<<std::endl;
 			pmt_fracLargeAngleTheta = double(pmt_hits_largeangle_theta)/pmtQ.size();
-			std::cout <<"pmt_fracLargeAngleTheta: "<<pmt_fracLargeAngleTheta<<std::endl;
-			std::cout <<"pmt_hits_largeangle_phi: "<<pmt_hits_largeangle_phi<<std::endl;
 			pmt_fracLargeAnglePhi = double(pmt_hits_largeangle_phi)/pmtQ.size();	
-			std::cout <<"pmt_fracLargeAnglePhi: "<<pmt_fracLargeAnglePhi<<std::endl;
 			pmt_varTheta = sqrt(pmt_varTheta);
 			pmt_varPhi = sqrt(pmt_varPhi);
 		}	
@@ -598,7 +592,6 @@ bool CalcClassificationVars::Execute(){
 		m_data->Stores["Classification"]->Set("PMTFracEarly",pmt_fracEarly);
 		m_data->Stores["Classification"]->Set("PMTFracLate",pmt_fracLate);
 		m_data->Stores["Classification"]->Set("PMTRMSTheta",pmt_rmsTheta);
-		std::cout <<"CalcClassificationVars: Store pmt_varTheta = "<<pmt_varTheta<<std::endl;
 		m_data->Stores["Classification"]->Set("PMTVarTheta",pmt_varTheta);
 		m_data->Stores["Classification"]->Set("PMTRMSThetaBary",pmt_rmsThetaBary);
 		m_data->Stores["Classification"]->Set("PMTVarThetaBary",pmt_varThetaBary);
@@ -608,9 +601,7 @@ bool CalcClassificationVars::Execute(){
 		m_data->Stores["Classification"]->Set("PMTVarPhiBary",pmt_varPhiBary);
 		m_data->Stores["Classification"]->Set("PMTFracLargeAnglePhi",pmt_fracLargeAnglePhi);
 		m_data->Stores["Classification"]->Set("PMTFracLargeAngleTheta",pmt_fracLargeAngleTheta);
-		std::cout <<"CalcClassificationVars:: Store pmt_fracLargeAngleTheta = "<<pmt_fracLargeAngleTheta<<std::endl;
 		m_data->Stores["Classification"]->Set("PMTHitsLargeAngleTheta",pmt_hits_largeangle_theta);
-		std::cout <<"CalcClassificationVars::Getting PMTHitsLargeAngleTheta = "<<pmt_hits_largeangle_theta<<std::endl;
 		m_data->Stores["Classification"]->Set("PMTHitsLargeAnglePhi",pmt_hits_largeangle_phi);
 
 		//LAPPD variables	
@@ -666,7 +657,6 @@ bool CalcClassificationVars::Execute(){
 		m_data->Stores["Classification"]->Set("LAPPDDistVector",lappdDist);
 		m_data->Stores["Classification"]->Set("LAPPDThetaVector",lappdTheta);
 		m_data->Stores["Classification"]->Set("LAPPDThetaBaryVector",lappdThetaBary);
-		std::cout <<"Size lappdtheta: "<<lappdTheta.size()<<", size lappdThetaBary: "<<lappdThetaBary.size()<<std::endl;
 
 	}
 

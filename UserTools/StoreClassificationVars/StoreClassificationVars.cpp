@@ -24,6 +24,7 @@ bool StoreClassificationVars::Initialise(std::string configfile, DataModel &data
 	m_variables.Get("SaveCSV",save_csv);
 	m_variables.Get("SaveROOT",save_root);
 	m_variables.Get("VariableConfig",variable_config);
+	m_variables.Get("VariableConfigPath",variable_config_path);
 	m_variables.Get("IsData",isData);
 
 	std::string logmessage = "StoreClassificationVars Tool: Output Filename is "+filename+".csv/root";
@@ -41,7 +42,11 @@ bool StoreClassificationVars::Initialise(std::string configfile, DataModel &data
 	if (!config_loaded) {
 		Log("StoreClassificationVars Tool: Chosen variable configuration >>>"+variable_config+"<<< is not a valid option [Minimal/Full]. Using Minimal configuration.",v_error,verbosity);
 		std::string minimal_configuration = "Minimal";
-		this->LoadVariableConfig(minimal_configuration);
+		config_loaded = this->LoadVariableConfig(minimal_configuration);
+		if (!config_loaded) {
+			Log("StoreClassificationVars Tool: Path to variable configuration ["+variable_config_path+"] seems to be invalid. Abort.",v_error,verbosity);
+			return false;
+		}
 	}
 
 	//Initialise ROOT histograms
@@ -97,8 +102,6 @@ bool StoreClassificationVars::Execute(){
 		return true;
 	}
 
-	std::cout <<"Getting variables from ClassificationStore"<<std::endl;
-	std::cout <<"PMT"<<std::endl;
 	//PMT variables
         m_data->Stores["Classification"]->Get("PMTBaryTheta",pmt_baryTheta);
         m_data->Stores["Classification"]->Get("PMTAvgDist",pmt_avgDist);
@@ -125,7 +128,6 @@ bool StoreClassificationVars::Execute(){
         m_data->Stores["Classification"]->Get("PMTFracLargeAnglePhi",pmt_fracLargeAnglePhi);
         m_data->Stores["Classification"]->Get("PMTHitsLargeAnglePhi",pmt_hitsLargeAnglePhi);
 
-	std::cout <<"LAPPD"<<std::endl;
 	//LAPPD variables
         m_data->Stores["Classification"]->Get("LAPPDBaryTheta",lappd_baryTheta);
         m_data->Stores["Classification"]->Get("LAPPDAvgDist",lappd_avgDist);
@@ -137,7 +139,6 @@ bool StoreClassificationVars::Execute(){
         m_data->Stores["Classification"]->Get("LAPPDRMSThetaBary",lappd_rmsThetaBary);
         m_data->Stores["Classification"]->Get("LAPPDVarThetaBary",lappd_varThetaBary);
 
-	std::cout <<"MRD"<<std::endl;
 	//MRD variables
 	m_data->Stores["Classification"]->Get("MrdLayers",num_mrd_layers);
         m_data->Stores["Classification"]->Get("MrdPaddles",num_mrd_paddles);
@@ -194,18 +195,15 @@ bool StoreClassificationVars::Execute(){
 	m_data->Stores["Classification"]->Get("LAPPDThetaVector",lappdTheta);
 	m_data->Stores["Classification"]->Get("LAPPDThetaBaryVector",lappdThetaBary);
 
-	std::cout<< "Fill histograms"<<std::endl;
 	//Fill classification variables in ROOT histograms
 	if (save_root) {
 		this->FillClassHistograms();
 		this->FillClassTree();
 	}
 
-	std::cout <<"Update config map"<<std::endl;
 	//Update variables in config map
 	if (save_csv) this->UpdateConfigMap();
 
-	std::cout <<"Fill csv"<<std::endl;
 	//Fill classification variables into csv file
 	if (save_csv) this->FillCSV();
 
@@ -243,57 +241,24 @@ bool StoreClassificationVars::LoadVariableConfig(std::string config_name){
 
 	bool config_loaded = false;
 
-	if (config_name == "Minimal" || config_name == "Full"){
-	
-		//PMT variables
-		variable_names.push_back("PMTBaryTheta");
-		variable_names.push_back("PMTAvgDist");
-		variable_names.push_back("PMTAvgT");
-		variable_names.push_back("PMTQtotal");
-		variable_names.push_back("PMTQtotalClustered");
-		variable_names.push_back("PMTHits");
-		variable_names.push_back("PMTFracQmax");
-		variable_names.push_back("PMTFracQdownstream");
-		variable_names.push_back("PMTFracClustered");
-		variable_names.push_back("PMTFracLowQ");
-		variable_names.push_back("PMTFracEarly");
-		variable_names.push_back("PMTFracLate");
-		variable_names.push_back("PMTRMSTheta");
-		variable_names.push_back("PMTVarTheta");
-		variable_names.push_back("PMTRMSThetaBary");
-		variable_names.push_back("PMTVarThetaBary");
-		variable_names.push_back("PMTRMSPhi");
-		variable_names.push_back("PMTVarPhi");
-		variable_names.push_back("PMTRMSPhiBary");
-		variable_names.push_back("PMTVarPhiBary");
-		variable_names.push_back("PMTFracLargeAnglePhi");
-		variable_names.push_back("PMTFracLargeAngleTheta");
-		variable_names.push_back("PMTHitsLargeAnglePhi");
-		variable_names.push_back("PMTHitsLargeAngleTheta");
-
-		//LAPPD variables
-		variable_names.push_back("LAPPDBaryTheta");
-		variable_names.push_back("LAPPDAvgDist");
-		variable_names.push_back("LAPPDQtotal");
-		variable_names.push_back("LAPPDAvgT");
-		variable_names.push_back("LAPPDHits");
-		variable_names.push_back("LAPPDRMSTheta");
-		variable_names.push_back("LAPPDVarTheta");
-		variable_names.push_back("LAPPDRMSThetaBary");
-		variable_names.push_back("LAPPDVarThetaBary");
-
-		//MRD variables
-		variable_names.push_back("MrdLayers");
-		variable_names.push_back("MrdPaddles");
-		variable_names.push_back("MrdConsLayers");
-		variable_names.push_back("MrdAdjHits");
-		variable_names.push_back("MrdPadPerLayer");
-		variable_names.push_back("MrdXSpread");
-		variable_names.push_back("MrdYSpread");
-		variable_names.push_back("MrdClusters");
-
-		config_loaded = true;
+	std::stringstream config_filename;
+	config_filename << variable_config_path << "/VariableConfig_" << config_name << ".txt";
+	std::cout <<"config_filename: "<<config_filename.str()<<std::endl;
+	ifstream configfile(config_filename.str().c_str());
+	if (!configfile.good()){
+		Log("StoreClassificationVars tool: Variable configuration file "+config_filename.str()+" does not seem to exist. Abort",v_error,verbosity);
+		return false;
 	}
+
+	std::string temp_string;
+	while (!configfile.eof()){
+		configfile >> temp_string;
+		if (configfile.eof()) break;
+		variable_names.push_back(temp_string);
+	}
+	configfile.close();
+	config_loaded = true;
+
 
 	return config_loaded;
 }
@@ -320,12 +285,8 @@ void StoreClassificationVars::InitClassHistograms(){
 	hist_pmtPhi_single = new TH1F("hist_pmtPhi_single","Single PMT Phi",100,0,2*TMath::Pi());
 	hist_pmtY_single = new TH1F("hist_pmtY_single","Single PMT Y",100,-2.,2.);
 	hist_pmtDist_single = new TH1F("hist_pmtDist_single","Single PMT Distance",100,0.,4.);
-	hist_pmtThetaBary_single = new TH1F("hist_pmtThetaBary_single","#theta_{Bary} distribution",100,0,TMath::Pi());
-	hist_pmtThetaBary_single_Qweighted = new TH1F("hist_pmtThetaBary_single_QWeighted","Charge weighted #theta_{Bary} distribution",100,0,TMath::Pi());
-	hist_pmtYBary_single = new TH1F("hist_pmtYBary_single","Y_{Bary} distribution",100,-2.,2.);
-	hist_pmtYBary_single_Qweighted = new TH1F("hist_pmtYBary_single_QWeighted","Charge weighted Y_{Bary} distribution",100,-2.,2.);
+	hist_pmtThetaBary_single = new TH1F("hist_pmtThetaBary_single","#theta_{Bary} distribution",100,-TMath::Pi(),TMath::Pi());
 	hist_pmtPhiBary_single = new TH1F("hist_pmtPhiBary_single","#phi_{Bary} distribution",100,-TMath::Pi(),TMath::Pi());
-	hist_pmtPhiBary_single_Qweighted = new TH1F("hist_pmtPhiBary_single_QWeighted","Charge weighted #phi_{Bary} distribution",100,-TMath::Pi(),TMath::Pi());
 
 	hist_pmtHits = new TH1F("hist_pmtHits","Hit PMTs",150,0,150);
 	hist_pmtPEtotal = new TH1F("hist_pmtPEtotal","PMT Total Charge",500,0,12000);
@@ -338,7 +299,7 @@ void StoreClassificationVars::InitClassHistograms(){
 	hist_pmtThetaBaryRMS = new TH1F("hist_pmtThetaBaryRMS","PMT RMS of #theta_{Bary}",100,0,TMath::Pi());
 	hist_pmtThetaBaryVar = new TH1F("hist_pmtThetaBaryVar","PMT Variance of #theta_{Bary}",100,0,TMath::Pi());;
 	hist_pmtFracLargeAngleThetaBary= new TH1F("hist_pmtFracLargeAngleThetaBary","#theta_{Bary} fraction large angles",100,0,1.);
-	hist_pmtPhiRMS = new TH1F("hist_pmtPhiRMS","PMT RMS of #phi",100,0,TMath::Pi());
+	hist_pmtPhiRMS = new TH1F("hist_pmtPhiRMS","PMT RMS of #phi",100,0,2*TMath::Pi());
 	hist_pmtPhiVar = new TH1F("hist_pmtPhiVar","PMT Variance of #phi",100,0,2*TMath::Pi());
 	hist_pmtPhiBaryRMS = new TH1F("hist_pmtPhiBaryRMS","PMT RMS of #theta_{Bary}",100,0,TMath::Pi());
 	hist_pmtPhiBaryVar = new TH1F("hist_pmtPhiBaryVar","PMT Variance of #theta_{Bary}",100,0,TMath::Pi());;
@@ -406,7 +367,7 @@ void StoreClassificationVars::InitClassTree(){
 	Log("StoreClassificationVars tool: Initialising classification tree.",v_message,verbosity);
 
 	file->cd();
-	tree = new TTree("classification_tree");
+	tree = new TTree("classification_tree","Classification tree");
 
 	tree->Branch("pmt_baryTheta",&pmt_baryTheta);
 	tree->Branch("pmt_avgDist",&pmt_avgDist);
@@ -445,7 +406,7 @@ void StoreClassificationVars::InitClassTree(){
 
 	tree->Branch("num_mrd_layers",&num_mrd_layers);
 	tree->Branch("num_mrd_paddles",&num_mrd_paddles);
-	tree->Branch("num_mrd_conslayers",&num_conslayers);
+	tree->Branch("num_mrd_conslayers",&num_mrd_conslayers);
 	tree->Branch("mrd_padperlayer",&mrd_padperlayer);
 	tree->Branch("mrd_mean_xspread",&mrd_mean_xspread);
 	tree->Branch("mrd_mean_yspread",&mrd_mean_yspread);
@@ -485,6 +446,7 @@ void StoreClassificationVars::InitClassTree(){
 	tree->Branch("pmtT_vec",&pmtT_vec);
 	tree->Branch("pmtDist_vec",&pmtDist_vec);
 	tree->Branch("pmtTheta_vec",&pmtTheta_vec);
+	tree->Branch("pmtThetaBary_vec",&pmtThetaBary_vec);
 	tree->Branch("pmtPhi_vec",&pmtPhi_vec);
 	tree->Branch("pmtPhiBary_vec",&pmtPhiBary_vec);
 	tree->Branch("pmtY_vec",&pmtY_vec);
@@ -664,7 +626,6 @@ void StoreClassificationVars::FillClassHistograms(){
 
 	file->cd();
 
-	std::cout <<"PMT histograms"<<std::endl;
 	hist_pmtHits->Fill(pmt_hits);
 	hist_pmtPEtotal->Fill(pmt_totalQ);
 	hist_pmtPEtotalClustered->Fill(pmt_totalQ_Clustered);
@@ -723,7 +684,6 @@ void StoreClassificationVars::FillClassHistograms(){
 
 	//Detailed (single PMT variables)
 	for (unsigned int i_pmt = 0; i_pmt < pmtQ.size(); i_pmt++){
-		std::cout <<"i_pmt: "<<i_pmt<<std::endl;
 		hist_pmtPE_single->Fill(pmtQ.at(i_pmt));
 		hist_pmtTime_single->Fill(pmtT.at(i_pmt));
 		hist_pmtTheta_single->Fill(pmtTheta.at(i_pmt));
@@ -782,12 +742,12 @@ void StoreClassificationVars::FillClassTree(){
 		
 		lappdQ_vec->push_back(lappdQ.at(i_lappd));
 		lappdT_vec->push_back(lappdT.at(i_lappd));
-		lappdDist_vec->push_bcak(lappdDist.at(i_lappd));
+		lappdDist_vec->push_back(lappdDist.at(i_lappd));
 		lappdTheta_vec->push_back(lappdTheta.at(i_lappd));
 		lappdThetaBary_vec->push_back(lappdThetaBary.at(i_lappd));
 	}
 
-	tree->Fill(kOverwrite::True);
+	tree->Fill();
 
 }
 
@@ -831,7 +791,7 @@ void StoreClassificationVars::WriteClassHistograms(){
 		
   	file->cd();
  
-	//PMT histograms
+	//PMT-single histograms
  		        
         hist_pmtPE_single->Write();
         hist_pmtTime_single->Write();
@@ -839,7 +799,12 @@ void StoreClassificationVars::WriteClassHistograms(){
 	hist_pmtPhi_single->Write();
 	hist_pmtY_single->Write();
 	hist_pmtDist_single->Write();
-        hist_pmtHits->Write();
+	hist_pmtThetaBary_single->Write();
+	hist_pmtPhiBary_single->Write();
+        
+	//PMT-average histograms
+
+	hist_pmtHits->Write();
         hist_pmtPEtotal->Write();
         hist_pmtAvgTime->Write();
         hist_pmtThetaBary->Write();
@@ -859,12 +824,6 @@ void StoreClassificationVars::WriteClassHistograms(){
 	hist_pmtFracLowCharge->Write();
 	hist_pmtFracLateTime->Write();
 	hist_pmtFracEarlyTime->Write();
-	hist_pmtThetaBary_single->Write();
-	hist_pmtThetaBary_single_Qweighted->Write();
-	hist_pmtPhiBary_single->Write();
-	hist_pmtPhiBary_single_Qweighted->Write();
-	hist_pmtYBary_single->Write();
-	hist_pmtYBary_single_Qweighted->Write();
 	hist_pmtFracLargeAngleThetaBary->Write();
 	hist_pmtFracLargeAnglePhiBary->Write();
 
@@ -874,7 +833,8 @@ void StoreClassificationVars::WriteClassHistograms(){
         hist_lappdTime_single->Write();
         hist_lappdTheta_single->Write();
         hist_lappdDist_single->Write();
-        hist_lappdHits->Write();
+        hist_lappdThetaBary_single->Write();
+	hist_lappdHits->Write();
         hist_lappdPEtotal->Write();
        	hist_lappdAvgTime->Write();
         hist_lappdThetaBary->Write();
@@ -906,6 +866,9 @@ void StoreClassificationVars::WriteClassHistograms(){
 	hist_nrings->Write();
 
 	hist_multiplerings->Write();
+
+	//Write tree
+	tree->Write();
 
 	file->Close();
 	delete file;
