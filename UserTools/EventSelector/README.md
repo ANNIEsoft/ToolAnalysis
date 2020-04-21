@@ -14,8 +14,15 @@ utilized include:
   - MCMRDCut: Flags MC muon events with muons that do not stop in the MRD
   - PromptTrigOnly: Flags muon events that do not have an MCTriggernum of 0
                     (any store event with MCTriggernum>0 is a delayed trigger)
-  - NHit: Flags events that do not have at least some number of hits (default is 4)
+  - NHitCut: Flags events that do not have at least some number of hits (default is 4)
   - Identical cuts, but with the reconstructed information, are prefaced with "Reco"
+  
+Cuts that are only available in MC:
+  - MCIsElectronCut: Flags events that had a primary electron
+  - MCIsMuonCut: Flags events that had a primary muon
+  - MCIsSingleRingCut: Flags events that had a single ring
+  - MCIsMultiRingCut: Flags events that had multiple rings
+  - MCEnergyCut: Flags events that were in a certain energy range
 
 After running the event selector tool, two bitmasks are added to the RecoEvent
 store: "EventFlagApplied" and "EventFlagged".  The prior indicates which event
@@ -32,6 +39,13 @@ event selection the event actually failed.  The bitmask as of now is given by:
    kFlagNHit         = 0x40, //64
    kFlagRecoFV       = 0x80, //128
    kFlagRecoPMTVol   = 0x100, //256
+   kFlagMCIsMuon       = 0x200, //512
+   kFlagMCIsElectron   = 0x400, //1024
+   kFlagMCIsSingleRing = 0x800, //2048
+   kFlagMCIsMultiRing  = 0x1000, //4096
+   kFlagMCProjectedMRDHit = 0x2000, //8192
+   kFlagMCEnergyCut   = 0x4000 //16384
+
 
 For each event, all cuts defined with the config file are checked.  
 
@@ -61,5 +75,9 @@ NHitCut
 PromptTrigOnly
 RecoFVCut
 RecoPMTVolCut
+MCIsMuonCut
+MCIsElectronCut
+MCProjectedMRDHit
+MCEnergyCut
 SaveStatusToStore
 ```

@@ -1,26 +1,27 @@
 # TankCalibrationDiffuser Config File
 
-OutputFile Teal_Photonbomb_File #Output root prefix name for the current run
+HitStore Hits			#Options: Hits / MCHits
+OutputFile R1367_Stats_ADCThr10          #Output root prefix name for the current run
 NBinsTimeTotal 500		#number of bins for summary time histogram
-TimeTotalMin -10		#left limit of range for summary time histogram
-TimeTotalMax 100		#right limit of range for summary time histogram
+TimeTotalMin 0		#left limit of range for summary time histogram
+TimeTotalMax 4000		#right limit of range for summary time histogram
 NBinsChargeTotal 500		#number of bins for summary charge histogram
 ChargeTotalMin 1		#left limit of range for summary charge histogram
 ChargeTotalMax 0		#right limit of range for summary charge histogram
-NBinsTime 200			#number of bins for single time histograms
-TimeMin -10.			#left limit of range for single time histograms
-TimeMax 30.			#right limit of range for single time histograms
+NBinsTime 500			#number of bins for single time histograms
+TimeMin -0			#left limit of range for single time histograms
+TimeMax 4000			#right limit of range for single time histograms
 NBinsCharge 200			#number of bins for single charge histograms
 ChargeMin 0.			#left limit of range for single charge histograms
-ChargeMax 40.			#right limit of range for single charge histograms
+ChargeMax 1.			#right limit of range for single charge histograms
 NBinsStartTimeTotal 500         #number of bins for summary start time histograms
 NBinsStartTime 200              #number of bins for start time histograms
-StartTimeMin 350.               #left limit of range for start time histograms
-StartTimeMax 500.               #right limit of range for start time histograms
+StartTimeMin 0.               #left limit of range for start time histograms
+StartTimeMax 4000.               #right limit of range for start time histograms
 NBinsPeakTimeTotal 500          #number of bins for summary peak time histograms
 NBinsPeakTime 200               #number of bins for peak time histograms
-PeakTimeMin 350.                #left limit of range for peak time histograms
-PeakTimeMax 500.                #right limit of range for peak time histograms
+PeakTimeMin 0.                #left limit of range for peak time histograms
+PeakTimeMax 4000.                #right limit of range for peak time histograms
 NBinsBaselineTotal 500          #number of bins for summary baseline histograms
 NBinsBaseline 200               #number of bins for baseline histograms
 BaselineMin 308.                #left limit of range for basleine histograms
@@ -41,15 +42,15 @@ NBinsRawAreaTotal 500           #number of bins for summary raw area histograms
 NBinsRawArea 200                #number of bins for raw area histograms
 RawAreaMin 1000.                #left limit of range for raw area histograms
 RawAreaMax 18000.               #right limit of range for raw area histograms
-NBinsTimeFit 100		#number of bins for fitted mean times
-TimeFitMin -20			#left limit of range for fitted mean times
-TimeFitMax 20			#right limit of range for fitted mean times
-NBinsTimeDev 100		#number of bins for fitted time deviations
-TimeDevMin -10			#left limit of range for fitted time deviations
-TimeDevMax 10			#right limit of range for fitted time deviations
-NBinsChargeFit 100		#number of bins for fitted mean charges
+NBinsTimeFit 500		#number of bins for fitted mean times
+TimeFitMin 0			#left limit of range for fitted mean times
+TimeFitMax 4000			#right limit of range for fitted mean times
+NBinsTimeDev 500		#number of bins for fitted time deviations
+TimeDevMin -2000		#left limit of range for fitted time deviations
+TimeDevMax 2000			#right limit of range for fitted time deviations
+NBinsChargeFit 200		#number of bins for fitted mean charges
 ChargeFitMin 0.			#left limit or range for fitted mean charges
-ChargeFitMax 10.		#right limit of range for fitted mean charges
+ChargeFitMax 1.			#right limit of range for fitted mean charges
 DiffuserX 0.      		#x-position of the diffuser ball
 DiffuserY 0.      		#y-position of the diffuser ball
 DiffuserZ 0.      		#z-position of the diffuser ball

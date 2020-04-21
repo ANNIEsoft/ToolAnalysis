@@ -9,6 +9,7 @@
 #include "Tool.h"
 #include "TH1F.h"
 #include "TFile.h"
+#include "TTree.h"
 #include "TMath.h"
 
 #include "Hit.h"
@@ -28,6 +29,17 @@ class StoreClassificationVars: public Tool {
   bool Execute();
   bool Finalise();
 
+  bool LoadVariableConfig(std::string config_name);
+  void InitClassHistograms();
+  void InitClassTree();
+  void InitCSV();
+  void PopulateConfigMap();
+  void UpdateConfigMap();
+  void FillClassHistograms();
+  void FillClassTree();
+  void FillCSV();
+  void WriteClassHistograms();
+
  private:
 
   // Configuration variables
@@ -36,38 +48,51 @@ class StoreClassificationVars: public Tool {
   std::string filename;
   bool save_root;
   bool save_csv;
-
+  std::string variable_config;
   bool EventCutStatus;
+  bool selection_passed;
+  bool mldata_present;
+  bool isData;
+
+  std::vector<std::string> variable_names;
+  std::map<std::string,double> variable_map;
 
   // Files to save data in
   
   TFile *file = nullptr;
   ofstream csv_file, csv_statusfile;
 
+  // Classification variables - TTree
+  TTree *tree = nullptr;
 
   // Classification variables - histograms (1D)
   
-  TH1F *hist_pmtPE = nullptr;
-  TH1F *hist_pmtTime = nullptr;
-  TH1F *hist_pmtTheta = nullptr;
-  TH1F *hist_pmtPhi = nullptr;
-  TH1F *hist_pmtY = nullptr;
-  TH1F *hist_pmtDist = nullptr;
+  TH1F *hist_pmtPE_single = nullptr;
+  TH1F *hist_pmtTime_single = nullptr;
+  TH1F *hist_pmtTheta_single = nullptr;
+  TH1F *hist_pmtPhi_single = nullptr;
+  TH1F *hist_pmtY_single = nullptr;
+  TH1F *hist_pmtDist_single = nullptr;
+  TH1F *hist_pmtThetaBary_single = nullptr;
+  TH1F *hist_pmtThetaBary_single_Qweighted = nullptr;
+  TH1F *hist_pmtYBary_single = nullptr;
+  TH1F *hist_pmtYBary_single_Qweighted = nullptr;
+  TH1F *hist_pmtPhiBary_single = nullptr;
+  TH1F *hist_pmtPhiBary_single_Qweighted = nullptr;
   TH1F *hist_pmtHits = nullptr;
   TH1F *hist_pmtPEtotal = nullptr;
+  TH1F *hist_pmtPEtotalClustered = nullptr;
   TH1F *hist_pmtAvgTime = nullptr;
   TH1F *hist_pmtAvgDist = nullptr;
   TH1F *hist_pmtThetaBary = nullptr;
-  TH1F *hist_pmtRMSTheta = nullptr;
-  TH1F *hist_pmtVarTheta = nullptr;
-  TH1F *hist_pmtSkewTheta = nullptr;
-  TH1F *hist_pmtKurtTheta = nullptr;
-  TH1F *hist_pmtRMSThetaBary = nullptr;
-  TH1F *hist_pmtVarThetaBary = nullptr;
-  TH1F *hist_pmtSkewThetaBary = nullptr;
-  TH1F *hist_pmtKurtThetaBary = nullptr;
-  TH1F *hist_pmtRMSPhiBary = nullptr;
-  TH1F *hist_pmtVarPhiBary = nullptr;
+  TH1F *hist_pmtThetaRMS = nullptr;
+  TH1F *hist_pmtThetaVar = nullptr;
+  TH1F *hist_pmtThetaBaryRMS = nullptr;
+  TH1F *hist_pmtThetaBaryVar = nullptr;
+  TH1F *hist_pmtPhiBaryRMS = nullptr;
+  TH1F *hist_pmtPhiBaryVar = nullptr;
+  TH1F *hist_pmtPhiRMS = nullptr;
+  TH1F *hist_pmtPhiVar = nullptr;
   TH1F *hist_pmtFracLargeAnglePhiBary = nullptr;
   TH1F *hist_pmtFracLargeAngleThetaBary = nullptr;
   TH1F *hist_pmtFracRing = nullptr;
@@ -78,32 +103,23 @@ class StoreClassificationVars: public Tool {
   TH1F *hist_pmtFracLowCharge = nullptr;
   TH1F *hist_pmtFracLateTime = nullptr;
   TH1F *hist_pmtFracEarlyTime = nullptr;
-  TH1F *hist_pmtThetaBary_all = nullptr;
-  TH1F *hist_pmtThetaBaryQweighted_all = nullptr;
-  TH1F *hist_pmtYBary_all = nullptr;
-  TH1F *hist_pmtYBaryQweighted_all = nullptr;
-  TH1F *hist_pmtPhiBary_all = nullptr;
-  TH1F *hist_pmtPhiBaryQweighted_all = nullptr;
 
-  TH1F *hist_lappdPE = nullptr;
-  TH1F *hist_lappdTime = nullptr;
-  TH1F *hist_lappdTheta = nullptr;
-  TH1F *hist_lappdDist = nullptr;
+  TH1F *hist_lappdPE_single = nullptr;
+  TH1F *hist_lappdTime_single = nullptr;
+  TH1F *hist_lappdTheta_single = nullptr;
+  TH1F *hist_lappdThetaBary_single = nullptr;
+  TH1F *hist_lappdDist_single = nullptr;
+
   TH1F *hist_lappdHits = nullptr;
   TH1F *hist_lappdPEtotal = nullptr;
   TH1F *hist_lappdAvgTime = nullptr;
   TH1F *hist_lappdAvgDist = nullptr;
   TH1F *hist_lappdThetaBary = nullptr;
-  TH1F *hist_lappdRMSTheta = nullptr;
-  TH1F *hist_lappdVarTheta = nullptr;
-  TH1F *hist_lappdSkewTheta = nullptr;
-  TH1F *hist_lappdKurtTheta = nullptr;
-  TH1F *hist_lappdRMSThetaBary = nullptr;
-  TH1F *hist_lappdVarThetaBary = nullptr;
-  TH1F *hist_lappdSkewThetaBary = nullptr;
-  TH1F *hist_lappdKurtThetaBary = nullptr;
+  TH1F *hist_lappdThetaRMS = nullptr;
+  TH1F *hist_lappdThetaVar = nullptr;
+  TH1F *hist_lappdThetaBaryRMS = nullptr;
+  TH1F *hist_lappdThetaBaryVar = nullptr;
   TH1F *hist_lappdFracRing = nullptr;
-  TH1F *hist_lappdFracRingNoWeight = nullptr;
   
   TH1F *hist_mrdPaddles = nullptr;
   TH1F *hist_mrdLayers = nullptr;
@@ -123,19 +139,25 @@ class StoreClassificationVars: public Tool {
   TH1F *hist_nrings = nullptr;
   TH1F *hist_multiplerings = nullptr;
   TH1F *hist_pdg = nullptr;
+  TH1F *hist_truetime = nullptr;
+
 
   //classification variables - csv
 
   //mctruth variables
-  bool use_mctruth;
+  bool use_mctruth, multiplerings;
+  int nrings, evnum, pdg;
   double energy, distWallHor, distWallVert, distInnerStrHor, distInnerStrVert, true_time, pmt_fracRing, pmt_fracRingNoWeight, lappd_fracRing, lappd_fracRingNoWeight; 
 
   //general variables
-  double pmt_avgDist, pmt_hits, pmt_totalQ, pmt_avgT, pmt_baryTheta, pmt_rmsTheta, pmt_varTheta, pmt_skewTheta, pmt_kurtTheta, pmt_rmsThetaBary, pmt_varThetaBary, pmt_skewThetaBary, pmt_kurtThetaBary, pmt_fracDownstream, pmt_fracHighestQ, pmt_fracClustered, pmt_fracLowQ, pmt_fracLateT, pmt_fracEarlyT, pmt_rmsPhiBary, pmt_rmsPhi, pmt_varPhi, pmt_varPhiBary, pmt_fracLargeAnglePhi, pmt_fracLargeAngleTheta, pmt_hitsLargeAnglePhi, pmt_hitsLargeAngleTheta;
-  double lappd_avgDist, lappd_hits, lappd_totalQ, lappd_avgT, lappd_baryTheta, lappd_rmsTheta, lappd_varTheta, lappd_skewTheta, lappd_kurtTheta, lappd_rmsThetaBary, lappd_varThetaBary, lappd_skewThetaBary, lappd_kurtThetaBary; 
-  int num_mrd_paddles, num_mrd_layers, num_mrd_conslayers, num_mrd_clusters, num_mrd_adjacent;
+  int pmt_hits, lappd_hits,pmt_hitsLargeAnglePhi, pmt_hitsLargeAngleTheta;
+  double pmtBaryTheta, pmt_avgDist, pmt_totalQ, pmt_totalQ_Clustered, pmt_avgT, pmt_baryTheta, pmt_rmsTheta, pmt_varTheta, pmt_rmsThetaBary, pmt_varThetaBary, pmt_fracDownstream, pmt_fracHighestQ, pmt_fracClustered, pmt_fracLowQ, pmt_fracLateT, pmt_fracEarlyT, pmt_rmsPhiBary, pmt_rmsPhi, pmt_varPhi, pmt_varPhiBary, pmt_fracLargeAnglePhi, pmt_fracLargeAngleTheta;
+  double lappdBaryTheta, lappd_avgDist, lappd_totalQ, lappd_avgT, lappd_baryTheta, lappd_rmsTheta, lappd_varTheta, lappd_rmsThetaBary, lappd_varThetaBary; 
+  int num_mrd_paddles, num_mrd_layers, num_mrd_conslayers, num_mrd_adjacent, num_mrd_clusters;
   double mrd_mean_xspread, mrd_mean_yspread, mrd_padperlayer;
-  int nrings, multiplerings, evnum, pdg;
+  std::vector<double> pmtQ, pmtT, pmtDist, pmtTheta, pmtThetaBary, pmtPhi, pmtPhiBary, pmtY, lappdQ, lappdT, lappdDist, lappdTheta, lappdThetaBary;
+  std::vector<double> *pmtQ_vec=0, *pmtT_vec=0, *pmtDist_vec=0, *pmtTheta_vec=0, *pmtThetaBary_vec=0, *pmtPhi_vec=0, *pmtPhiBary_vec=0, *pmtY_vec=0, *lappdQ_vec=0, *lappdT_vec=0, *lappdDist_vec=0, *lappdTheta_vec=0, *lappdThetaBary_vec=0;
+
 
   double cherenkov_angle = 0.719889;	//arccos(1/1.33), if assuming relevant primaries move with velocity c
 

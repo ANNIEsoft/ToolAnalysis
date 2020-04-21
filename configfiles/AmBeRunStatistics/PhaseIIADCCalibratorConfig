@@ -1,0 +1,11 @@
+# Dummy config file
+verbosity 0
+
+BaselineEstimationType ze3ra_multi
+NumBaselineSamples 10
+NumSubWaveforms 10
+
+SamplesPerBaselineEstimate 2000
+BaselineUncertaintyTolerance 5
+PCritical 0.01
+MakeCalLEDWaveforms 0

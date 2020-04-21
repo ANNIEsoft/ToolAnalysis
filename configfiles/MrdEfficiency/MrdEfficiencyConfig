@@ -1,3 +1,4 @@
-verbosity 100
+verbosity 1
 drawHistos 1                          # plots of how the efficiency varied against various event metrics
 plotDirectory ./MrdEfficiencyPlots    # where to save the plots
+outputfile MrdEfficiency.root         # root file to save TGraphs / Histos to.

@@ -143,7 +143,7 @@ bool VtxExtendedVertexFinder::Finalise(){
 RecoVertex* VtxExtendedVertexFinder::FitExtendedVertex(RecoVertex* myVertex) {
   //fit with Minuit
   MinuitOptimizer* myOptimizer = new MinuitOptimizer();
-  myOptimizer->SetPrintLevel(0);
+  myOptimizer->SetPrintLevel(-1);
   myOptimizer->SetMeanTimeCalculatorType(1); //Type 1: most probable time
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myOptimizer->LoadVertex(myVertex); //Load vertex seed

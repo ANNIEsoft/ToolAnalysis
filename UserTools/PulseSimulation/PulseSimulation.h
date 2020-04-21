@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "CardData.h"
+#include "MCCardData.h"
 
 #include "TTree.h"
 #include "TFile.h"
@@ -126,7 +126,7 @@ class PulseSimulation: public Tool {
 	int minibuffers_per_fullbuffer;          // 
 	int emulated_event_size;                 // just (minibuffer_datapoints_per_channel / 4) *
 	bool DoPhaseOneRiffle;                   // whether or not to shuffle data in vectors
-	// * = member of CardData
+	// * = member of MCCardData
 	
 	// Members used in waveform generation
 	// ------------------------------------
@@ -149,7 +149,7 @@ class PulseSimulation: public Tool {
 	
 	// variables to go into the fake raw files
 	// ---------------------------------------
-	std::vector<CardData> emulated_pmtdata_readout;
+	std::vector<MCCardData> emulated_pmtdata_readout;
 	std::vector<std::vector<uint16_t>> temporary_databuffers; // temp buffers while creating waveforms
 	std::vector<int64_t> StartCountVals;
 	std::vector<uint64_t> StartTimeNSecVals;

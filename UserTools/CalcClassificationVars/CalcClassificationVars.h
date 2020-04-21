@@ -28,11 +28,16 @@ class CalcClassificationVars: public Tool {
   bool Execute();
   bool Finalise();
 
+  double CalcArcTan(double x, double z);
+
  private:
 
   // Configuration variables
   int verbosity=0;
   bool use_mctruth;
+  bool isData;
+  double lateT;
+  double lowQ;
 
   // ANNIEEvent / RecoStore variables
   int evnum, mcevnum;
@@ -42,11 +47,12 @@ class CalcClassificationVars: public Tool {
   RecoVertex *TrueVertex = nullptr;
   RecoVertex *TrueStopVertex = nullptr;
   bool EventCutStatus;
-  std::vector<RecoDigit> RecoDigits; 
+  std::vector<RecoDigit>* RecoDigits; 
   double TrueMuonEnergy;
   int NumMrdTimeClusters;
   int nrings;
   bool no_pik; 
+  int pdg;
 
   // Geometry variables
   Geometry *geom = nullptr;

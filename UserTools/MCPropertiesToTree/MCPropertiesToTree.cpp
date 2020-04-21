@@ -8,19 +8,136 @@ bool MCPropertiesToTree::Initialise(std::string configfile, DataModel &data){
   if(configfile!="") m_variables.Initialise(configfile);
   m_data= &data;
 
-  outfile_name = "explore_mcproperties.root";
-  //load in configuration variables
+  //Default variable settings
+  outfile_name = "mcproperties.root";
+  save_histograms = true;
+  save_tree = true;
+
+  //Load in configuration variables
   m_variables.Get("verbose",verbosity);
   m_variables.Get("OutFile",outfile_name);
+  m_variables.Get("SaveHistograms",save_histograms);
+  m_variables.Get("SaveTree",save_tree);
 
-  //
-  //define ROOT file to write histograms and tree to
-  //
+  //Define ROOT file to write histograms and tree to
   f = new TFile(outfile_name.c_str(),"RECREATE");
 
-  //
-  //define all histograms
-  //
+  //Define histograms + tree
+  if (save_histograms) this->DefineHistograms();
+  if (save_tree) this->DefineTree();
+
+  //Get geometry of tank --> tank center
+  m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
+  Position detector_center=geom->GetTankCentre();
+  tank_center_x = detector_center.X();
+  tank_center_y = detector_center.Y();
+  tank_center_z = detector_center.Z();
+
+  return true;
+}
+
+
+bool MCPropertiesToTree::Execute(){
+
+  //Check if relevant BoostStores (ANNIEEvent/RecoEvent) exist
+  int annieeventexists = m_data->Stores.count("ANNIEEvent");
+  int recoeventexists = m_data->Stores.count("RecoEvent");
+  
+  if(!annieeventexists){ 
+    Log("MCPropertiesToTree tool: No ANNIEEvent store! Exiting...",v_error,verbosity);
+    return false;
+  }
+  if (!recoeventexists){
+    Log("MCPropertiesToTree tool: No RecoEvent store! Exiting...",v_error,verbosity);
+    return false;
+  }
+  
+  //Get relevant objects from ANNIEEvent store
+  bool get_ok;
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No MCParticles object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("TriggerData",TriggerData);  
+  if (!get_ok) {Log("MCPropertiesToTree tool: No TriggerData object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No MCTriggernum object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No EventNumber object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No MCHits object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No MCLAPPDHits object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+  if (!get_ok) {Log("MCPropertiesToTree tool: No TDCData object in ANNIEEvent! Abort.",v_error,verbosity); return true;}
+
+  //Get relevant objects from RecoEvent store
+  get_ok = m_data->Stores["RecoEvent"]->Get("NRings",nrings);	// need to execute MCRecoEventLoader before this tool to load the relevant information into the store
+  if (!get_ok) {Log("MCPropertiesToTree tool: No NRings object in RecoEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["RecoEvent"]->Get("MRDStop",mrd_stop);	// need to execute EventSelector tool before this tool to load the relevant information
+  if (!get_ok) {Log("MCPropertiesToTree tool: No MRDStop object in RecoEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["RecoEvent"]->Get("EventFV",event_fv);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No EventFV object in RecoEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["RecoEvent"]->Get("NoPiK",no_pik);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No NoPiK object in RecoEvent! Abort.",v_error,verbosity); return true;}
+  get_ok = m_data->Stores["RecoEvent"]->Get("EventPMTVol",event_pmtvol);
+  if (!get_ok) {Log("MCPropertiesToTree tool: No EventPMTVol object in RecoEvent! Abort.",v_error,verbosity); return true;}
+
+  //Get relevant objects from CStore
+  get_ok = m_data->Stores.at("ANNIEEvent")->Get("NumMrdTimeClusters",mrdClusters);   // need to execute time clustering tool before accessing this variable
+  if (!get_ok) {Log("MCPropertiesToTree tool: No NumMrdTimeClusters object in CStore! Abort.",v_error,verbosity); return true;}
+
+  //Clear vectors stored in tree
+  if (save_tree) this->ClearVectors();
+
+  fill_tree = false;
+
+  //Evaluate the TriggerData object
+  this->EvalTriggerData();
+
+  //Evaluate the MCParticles object
+  this->EvalMCParticles();
+
+  //Evaluate the MCHits object
+  this->EvalMCHits();
+
+  //Evaluate the MCLAPPDHits object
+  this->EvalMCLAPPDHits();
+
+  //Fill tree if there was data
+  if (fill_tree && save_tree) {
+   f->cd();
+   t->Fill();
+  }
+
+  return true;
+}
+
+
+bool MCPropertiesToTree::Finalise(){
+
+  //Explicitly switch to TFile to avoid conflicts with potential TFiles from other tools
+  f->cd();
+
+  //Write tree
+  if (save_tree) t->Write("",TObject::kOverwrite);
+
+  //Write histograms
+  if (save_histograms) WriteHistograms();
+ 
+  //Closing and deleting f takes care of cleanup for histograms and trees
+  f->Close();
+  delete f;
+  
+  return true;
+}
+
+void MCPropertiesToTree::DefineHistograms(){
+
+  //-----------------------------------------
+  //--------Define all histograms------------
+  //-----------------------------------------
+
+  f->cd();
+
   hE = new TH1F("hE","Histogram True Energies",1000,0,5000);
   hPosX = new TH1F("hPosX","True X Start Position",200,-3.,3.);
   hPosY = new TH1F("hPosY","True Y Start Position",200,-2.5,2.5);
@@ -51,10 +168,22 @@ bool MCPropertiesToTree::Initialise(std::string configfile, DataModel &data){
   hMRDPaddles = new TH1F("hMRDPaddles","MRD Paddle Hits",100,0,100);
   hMRDLayers = new TH1F("hMRDLayers","MRD Layer Hits",11,0,11);
   hMRDClusters = new TH1F("hMRDClusters","MRD Clustered Hits",5,0,5);  
+  hVetoHits = new TH1F("hVetoHits","Veto Hits",26,0,26);
 
-  //define TTree
+  gROOT->cd();
+
+}
+
+void MCPropertiesToTree::DefineTree(){
+
+  //----------------------------------------
+  //-----------Define TTree-----------------
+  //----------------------------------------
+
   //The Tree is meant to be used if one wants to look at more detailed information about the data
   //Enables a more flexible selection of data
+
+  f->cd();
 
   t = new TTree("mcproperties","Tree MCProperties");
 
@@ -108,6 +237,7 @@ bool MCPropertiesToTree::Initialise(std::string configfile, DataModel &data){
   t->Branch("MRDPaddles",&mrdPaddles);
   t->Branch("MRDLayers",&mrdLayers);
   t->Branch("MRDClusters",&mrdClusters);
+  t->Branch("VetoHits",&num_veto_hits);
   t->Branch("Prompt",&is_prompt);
   t->Branch("TriggerTime",&trigger_time);
   t->Branch("NRings",&nrings);
@@ -116,75 +246,51 @@ bool MCPropertiesToTree::Initialise(std::string configfile, DataModel &data){
   t->Branch("FV",&event_fv);
   t->Branch("PMTVol",&event_pmtvol);
 
-  //
-  // get geometry for the tank center
-  //
+  gROOT->cd();
 
-  m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
-
-  Position detector_center=geom->GetTankCentre();
-  tank_center_x = detector_center.X();
-  tank_center_y = detector_center.Y();
-  tank_center_z = detector_center.Z();
-
-  return true;
 }
 
+void MCPropertiesToTree::WriteHistograms(){
 
-bool MCPropertiesToTree::Execute(){
+  f->cd();
 
-  int annieeventexists = m_data->Stores.count("ANNIEEvent");
-  int recoeventexists = m_data->Stores.count("RecoEvent");
-  
-  if(!annieeventexists){ 
-    Log("MCPropertiesToTree tool: No ANNIEEvent store! Exiting...",v_error,verbosity);
-    return false;
-  }
-  if (!recoeventexists){
-    Log("MCPropertiesToTree tool: No RecoEvent store! Exiting...",v_error,verbosity);
-    return false;
-  }
-  
-  //Get relevant objects from ANNIEEvent store
-  m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles);
-  m_data->Stores["ANNIEEvent"]->Get("TriggerData",TriggerData);  
-  m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
-  m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
-  m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
-  m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits",MCLAPPDHits);
-  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);  // a std::map<ChannelKey,vector<TDCHit>>
+  hE->Write();
+  hPosX->Write();
+  hPosY->Write();
+  hPosZ->Write();
+  hPosStopX->Write();
+  hPosStopY->Write();
+  hPosStopZ->Write();
+  hDirX->Write();
+  hDirY->Write();
+  hDirZ->Write();
+  hQ->Write();
+  hT->Write();
+  hQtotal->Write();
+  hQ_LAPPD->Write();
+  hT_LAPPD->Write();
+  hQtotal_LAPPD->Write();
+  hMRDLayers->Write();
+  hMRDPaddles->Write();
+  hMRDClusters->Write();
+  hVetoHits->Write();
+  hPMTHits->Write();
+  hLAPPDHits->Write();
+  hNumPrimaries->Write();
+  hNumSecondaries->Write();
+  hPDGPrimaries->Write();
+  hPDGSecondaries->Write();
+  hRings->Write();
+  hNoPiK->Write();
+  hMRDStop->Write();
+  hFV->Write();
+  hPMTVol->Write();
 
-  //Get relevant objects from RecoEvent store
-  m_data->Stores["RecoEvent"]->Get("NRings",nrings);	// need to execute MCRecoEventLoader before this tool to load the relevant information into the store
-  m_data->Stores["RecoEvent"]->Get("MRDStop",mrd_stop);	// need to execute EventSelector tool before this tool to load the relevant information
-  m_data->Stores["RecoEvent"]->Get("EventFV",event_fv);
-  m_data->Stores["RecoEvent"]->Get("NoPiK",no_pik);
-  m_data->Stores["RecoEvent"]->Get("EventPMTVol",event_pmtvol);
+  gROOT->cd();
 
-  //Get relevant objects from CStore
-  m_data->Stores.at("ANNIEEvent")->Get("NumMrdTimeClusters",mrdClusters);   // need to execute time clustering tool before accessing this variable
+}
 
-  //Evaluate the TriggerData object
-  particleTriggers = TriggerData->size();   	//there will be always 1 trigger entry for 1 WCSim event
-  for (unsigned int i_trigger = 0; i_trigger< TriggerData->size(); i_trigger++){
-    TriggerTime = TriggerData->at(i_trigger).GetTime();
-    if (verbosity){
-	std::cout <<"ParticleTriggers: "<<particleTriggers<<", ";
-  	std::cout <<"MCTriggerNum: "<<MCTriggernum<<", ";
-  	std::cout <<"EventNr: "<<evnum<<", ";
-	std::cout <<"TriggerTime: "<<TriggerTime.GetNs()<<std::endl;
-    }
-    trigger_time = TriggerTime.GetNs();
-  }
-  Log("MCPropertiesToTree tool: Trigger time = "+std::to_string(trigger_time)+", FV = "+std::to_string(event_fv)+", PMTVol = "+std::to_string(event_pmtvol)+", MRDStop = "+std::to_string(mrd_stop),v_message,verbosity);
-  if (MCTriggernum==0) is_prompt = 1;
-  else is_prompt = 0;
-
-
-  //Evaluate the MCParticles object
-  num_primaries = 0;
-  num_secondaries = 0;
-  bool fill_tree = false;
+void MCPropertiesToTree::ClearVectors(){
 
   particleE->clear();
   particlePDG->clear();
@@ -206,12 +312,44 @@ bool MCPropertiesToTree::Execute(){
   lappdQ->clear();
   lappdT->clear();
 
-  f->cd();
+}
+
+void MCPropertiesToTree::EvalTriggerData(){
+ 
+ //Get TriggerTime in ns, MCTriggerNum
+ particleTriggers = TriggerData->size();   	//there will be always 1 trigger entry for 1 WCSim event
+  
+ for (unsigned int i_trigger = 0; i_trigger< TriggerData->size(); i_trigger++){
+    TriggerTime = TriggerData->at(i_trigger).GetTime();
+
+    if (verbosity >= v_message){
+	std::cout <<"ParticleTriggers = "<<particleTriggers<<", ";
+  	std::cout <<"MCTriggerNum = "<<MCTriggernum<<", ";
+  	std::cout <<"EventNr = "<<evnum<<", ";
+	std::cout <<"TriggerTime = "<<TriggerTime.GetNs()<<std::endl;
+    }
+
+    trigger_time = TriggerTime.GetNs();
+  }
+
+  Log("MCPropertiesToTree tool: Trigger time = "+std::to_string(trigger_time)+", FV = "+std::to_string(event_fv)+", PMTVol = "+std::to_string(event_pmtvol)+", MRDStop = "+std::to_string(mrd_stop),v_message,verbosity);
+
+  //Prompt event or delayed?
+  if (MCTriggernum==0) is_prompt = 1;
+  else is_prompt = 0;
+}
+
+void MCPropertiesToTree::EvalMCParticles(){
+
+  //Get information about true particle behavior
+
+  num_primaries = 0;
+  num_secondaries = 0;
 
   for (unsigned int i_particle = 0; i_particle < mcparticles->size(); i_particle++){
 
     MCParticle aparticle = mcparticles->at(i_particle);
-    double particle_energy = aparticle.GetStopEnergy();
+    double particle_energy = aparticle.GetStartEnergy();
     int particle_pdg = aparticle.GetPdgCode();
     int particle_parentpdg = aparticle.GetParentPdg();
     int particle_flag = aparticle.GetFlag();
@@ -225,6 +363,7 @@ bool MCPropertiesToTree::Execute(){
       particlePDG_secondaries->push_back(particle_pdg);
     } 
 
+    //Only accept primary particles
     if (particle_parentpdg!=0) continue;
     if (particle_flag!=0) continue;
 
@@ -243,196 +382,189 @@ bool MCPropertiesToTree::Execute(){
     double particledirY = dir.Y();
     double particledirZ = dir.Z();
 
-    hE->Fill(particle_energy);
-    hPosX->Fill(particleposX);
-    hPosY->Fill(particleposY);
-    hPosZ->Fill(particleposZ);
-    hPosStopX->Fill(particlestopposX);
-    hPosStopY->Fill(particlestopposY);
-    hPosStopZ->Fill(particlestopposZ);
-    hDirX->Fill(particledirX);
-    hDirY->Fill(particledirY);
-    hDirZ->Fill(particledirZ);
-    hNumPrimaries->Fill(num_primaries);
-    hNumSecondaries->Fill(num_secondaries);
-    for (unsigned int i_primary = 0; i_primary < particlePDG_primaries->size(); i_primary++){
-      hPDGPrimaries->Fill(particlePDG_primaries->at(i_primary));
+    if (save_histograms){
+      hE->Fill(particle_energy);
+      hPosX->Fill(particleposX);
+      hPosY->Fill(particleposY);
+      hPosZ->Fill(particleposZ);
+      hPosStopX->Fill(particlestopposX);
+      hPosStopY->Fill(particlestopposY);
+      hPosStopZ->Fill(particlestopposZ);
+      hDirX->Fill(particledirX);
+      hDirY->Fill(particledirY);
+      hDirZ->Fill(particledirZ);
+      hNumPrimaries->Fill(num_primaries);
+      hNumSecondaries->Fill(num_secondaries);
+      for (unsigned int i_primary = 0; i_primary < particlePDG_primaries->size(); i_primary++){
+        hPDGPrimaries->Fill(particlePDG_primaries->at(i_primary));
+      }
+      for (unsigned int i_secondary = 0; i_secondary < particlePDG_secondaries->size(); i_secondary++){
+        hPDGSecondaries->Fill(particlePDG_secondaries->at(i_secondary));
+      }
+      hRings->Fill(nrings);
+      hNoPiK->Fill(no_pik);
+      hMRDStop->Fill(mrd_stop);
+      hFV->Fill(event_fv);
+      hPMTVol->Fill(event_pmtvol);
+      hMRDClusters->Fill(mrdClusters);
     }
-    for (unsigned int i_secondary = 0; i_secondary < particlePDG_secondaries->size(); i_secondary++){
-      hPDGSecondaries->Fill(particlePDG_secondaries->at(i_secondary));
+
+    if (save_tree){
+      particleE->push_back(particle_energy);
+      particlePDG->push_back(particle_pdg);
+      particleParentPDG->push_back(particle_parentpdg);
+      particleFlag->push_back(particle_flag);
+      particle_posX->push_back(particleposX);
+      particle_posY->push_back(particleposY);
+      particle_posZ->push_back(particleposZ);
+      particle_stopposX->push_back(particlestopposX);
+      particle_stopposY->push_back(particlestopposY);
+      particle_stopposZ->push_back(particlestopposZ);
+      particle_dirX->push_back(particledirX);
+      particle_dirY->push_back(particledirY);
+      particle_dirZ->push_back(particledirZ); 
     }
-    hRings->Fill(nrings);
-    hNoPiK->Fill(no_pik);
-    hMRDStop->Fill(mrd_stop);
-    hFV->Fill(event_fv);
-    hPMTVol->Fill(event_pmtvol);
-    hMRDClusters->Fill(mrdClusters);
-    particleE->push_back(particle_energy);
-    particlePDG->push_back(particle_pdg);
-    particleParentPDG->push_back(particle_parentpdg);
-    particleFlag->push_back(particle_flag);
-    particle_posX->push_back(particleposX);
-    particle_posY->push_back(particleposY);
-    particle_posZ->push_back(particleposZ);
-    particle_stopposX->push_back(particlestopposX);
-    particle_stopposY->push_back(particlestopposY);
-    particle_stopposZ->push_back(particlestopposZ);
-    particle_dirX->push_back(particledirX);
-    particle_dirY->push_back(particledirY);
-    particle_dirZ->push_back(particledirZ); 
   }
 
-  if (fill_tree) {
-
-    pmtHits=0;
-    pmtQtotal=0;
-    if (MCHits){
-      for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
-        unsigned long chankey = apair.first;
-        Detector* thistube = geom->ChannelToDetector(chankey);
-        unsigned long detkey = thistube->GetDetectorID();
-        if (thistube->GetDetectorElement()=="Tank"){
-          std::vector<MCHit>& Hits = apair.second;
-          double q=0;
-          double t=0;
-          int singlepmtHits=0;
-          for (MCHit &ahit : Hits){
-            q += ahit.GetCharge();
-            t += ahit.GetTime();
-            singlepmtHits++;
-          }
-          t/=singlepmtHits;         //use mean time of all hits on one PMT
-          pmtT->push_back(t);
-          pmtQ->push_back(q);
-          hQ->Fill(q);
-          hT->Fill(t);
-          pmtHits++;
-	  pmtQtotal+=q;
-        }
-      }
-    }
-    hPMTHits->Fill(pmtHits);
-    hQtotal->Fill(pmtQtotal);
-
-    lappdHits = 0;
-    lappdQtotal = 0;
-    int num_lappds_hit=0;
-  
-    if(MCLAPPDHits){
-      num_lappds_hit = MCLAPPDHits->size();
-      for (std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits){
-        unsigned long chankey = apair.first;
-        Detector *det = geom->ChannelToDetector(chankey);
-        if(det==nullptr){
-          if (verbosity > 0) std::cout <<"MCPropertiesToTree Tool: LAPPD Detector not found! "<<std::endl;;
-          continue;
-        }
-        int detkey = det->GetDetectorID();
-        std::vector<MCLAPPDHit>& hits = apair.second;
-        for (MCLAPPDHit& ahit : hits){
-          lappdQ->push_back(1.0);
-          lappdT->push_back(ahit.GetTime());
-          hT_LAPPD->Fill(ahit.GetTime());
-          hQ_LAPPD->Fill(1.0);
-	  lappdQtotal++;
-        }
-        lappdHits++;
-      }
-    } else {
-      Log("MCPropertiesToTree tool: No MCLAPPDHits!", v_warning, verbosity);
-      num_lappds_hit = 0;
-    }
-    hLAPPDHits->Fill(lappdHits);
-    hQtotal_LAPPD->Fill(lappdQtotal);
-
-    if(!TDCData){
-        Log("MCPropertiesToTree tool: No TDC data to process!",v_warning,verbosity);
-    } else {
-        if(TDCData->size()==0){
-          Log("MCPropertiesToTree tool: No TDC hits.",v_message,verbosity);
-          hMRDPaddles->Fill(0);
-          hMRDLayers->Fill(0);
-          mrdPaddles = 0;
-          mrdLayers = 0;
-        } else {
-          mrdPaddles=0;
-          mrdLayers=0;
-          bool layer_occupied[11] = {0};
-          for(auto&& anmrdpmt : (*TDCData)){
-            unsigned long chankey = anmrdpmt.first;
-            Detector *thedetector = geom->ChannelToDetector(chankey);
-            if(thedetector->GetDetectorElement()!="MRD") {
-              continue;                 // this is a veto hit, not an MRD hit.
-            }
-            mrdPaddles++;
-            int detkey = thedetector->GetDetectorID();
-            Paddle *apaddle = geom->GetDetectorPaddle(detkey);
-            int layer = apaddle->GetLayer();
-            layer_occupied[layer]=true;
-          }
-          hMRDPaddles->Fill(mrdPaddles);
-          
-          if (mrdPaddles > 0) {
-            for (int i_layer=0;i_layer<11;i_layer++){
-              if (layer_occupied[i_layer]==true) {
-                mrdLayers++;
-              }
-            }
-          }     
-        }
-      }
-    hMRDLayers->Fill(mrdLayers);
-
-    t->Fill();
-  }
-
-  return true;
 }
 
+void MCPropertiesToTree::EvalMCHits(){
 
-bool MCPropertiesToTree::Finalise(){
+  //Get information associated to PMT hits
 
-  //Explicitly switch to TFile to avoid conflicts with potential TFiles from other tools
-  f->cd();
+  pmtHits=0;
+  pmtQtotal=0;
+  if (MCHits){
+    for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
+      unsigned long chankey = apair.first;
+      Detector* thistube = geom->ChannelToDetector(chankey);
+      unsigned long detkey = thistube->GetDetectorID();
+      if (thistube->GetDetectorElement()=="Tank"){
+        std::vector<MCHit>& Hits = apair.second;
+        double q=0;
+        double t=0;
+        int singlepmtHits=0;
+        for (MCHit &ahit : Hits){
+          q += ahit.GetCharge();
+          t += ahit.GetTime();
+          singlepmtHits++;
+        }
+        t/=singlepmtHits;         //use mean time of all hits on one PMT
+        if (save_histograms){
+          pmtT->push_back(t);
+          pmtQ->push_back(q);
+        }
+        if (save_tree){
+          hQ->Fill(q);
+          hT->Fill(t);
+        }
+        pmtHits++;
+	pmtQtotal+=q;
+      }
+    }
+  }
 
-  //Write tree
-  t->Write("",TObject::kOverwrite);
+  if (save_histograms){
+    hPMTHits->Fill(pmtHits);
+    hQtotal->Fill(pmtQtotal);
+  }
+}
 
-  //Write histograms
-  hE->Write();
-  hPosX->Write();
-  hPosY->Write();
-  hPosZ->Write();
-  hPosStopX->Write();
-  hPosStopY->Write();
-  hPosStopZ->Write();
-  hDirX->Write();
-  hDirY->Write();
-  hDirZ->Write();
-  hQ->Write();
-  hT->Write();
-  hQtotal->Write();
-  hQ_LAPPD->Write();
-  hT_LAPPD->Write();
-  hQtotal_LAPPD->Write();
-  hMRDLayers->Write();
-  hMRDPaddles->Write();
-  hMRDClusters->Write();
-  hPMTHits->Write();
-  hLAPPDHits->Write();
-  hNumPrimaries->Write();
-  hNumSecondaries->Write();
-  hPDGPrimaries->Write();
-  hPDGSecondaries->Write();
-  hRings->Write();
-  hNoPiK->Write();
-  hMRDStop->Write();
-  hFV->Write();
-  hPMTVol->Write();
- 
-  //Closing and deleting f takes care of cleanup for histograms and trees
-  f->Close();
-  delete f;
+void MCPropertiesToTree::EvalMCLAPPDHits(){
+    
+  //Get information associated to LAPPD hits
+
+  lappdHits = 0;
+  lappdQtotal = 0;
+  int num_lappds_hit=0;
   
-  return true;
+  if(MCLAPPDHits){
+    num_lappds_hit = MCLAPPDHits->size();
+    for (std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits){
+      unsigned long chankey = apair.first;
+      Detector *det = geom->ChannelToDetector(chankey);
+      if(det==nullptr){
+        if (verbosity > 0) std::cout <<"MCPropertiesToTree Tool: LAPPD Detector not found! "<<std::endl;;
+        continue;
+      }
+      int detkey = det->GetDetectorID();
+      std::vector<MCLAPPDHit>& hits = apair.second;
+      for (MCLAPPDHit& ahit : hits){
+  	if (save_tree){
+          lappdQ->push_back(1.0);
+          lappdT->push_back(ahit.GetTime());
+        }
+        if (save_histograms){
+          hT_LAPPD->Fill(ahit.GetTime());
+          hQ_LAPPD->Fill(1.0);
+        }
+	lappdQtotal++;
+      }
+      lappdHits++;
+    }
+  } else {
+    Log("MCPropertiesToTree tool: No MCLAPPDHits!", v_warning, verbosity);
+    num_lappds_hit = 0;
+  }
+ 
+  if (save_histograms){   
+    hLAPPDHits->Fill(lappdHits);
+    hQtotal_LAPPD->Fill(lappdQtotal);
+  }
+
+}
+
+void MCPropertiesToTree::EvalTDCData(){
+ 
+  //Get information associated to MRD hits
+
+  if(!TDCData){
+    Log("MCPropertiesToTree tool: No TDC data to process!",v_warning,verbosity);
+  } else {
+    if(TDCData->size()==0){
+      Log("MCPropertiesToTree tool: No TDC hits.",v_message,verbosity);
+      if (save_histograms){
+        hMRDPaddles->Fill(0);
+        hMRDLayers->Fill(0);
+	hVetoHits->Fill(0);
+      }
+      mrdPaddles = 0;
+      mrdLayers = 0;
+      num_veto_hits = 0;
+    } else {
+      mrdPaddles=0;
+      mrdLayers=0;
+      num_veto_hits=0;
+      bool layer_occupied[11] = {0};
+      for(auto&& anmrdpmt : (*TDCData)){
+        unsigned long chankey = anmrdpmt.first;
+        Detector *thedetector = geom->ChannelToDetector(chankey);
+        if(thedetector->GetDetectorElement()!="MRD") {
+          num_veto_hits++;
+          continue;  // this is a veto hit, not an MRD hit.
+        }
+        mrdPaddles++;
+        int detkey = thedetector->GetDetectorID();
+        Paddle *apaddle = geom->GetDetectorPaddle(detkey);
+        int layer = apaddle->GetLayer();
+        layer_occupied[layer]=true;
+      }
+ 
+      if (save_histograms) {
+        hMRDPaddles->Fill(mrdPaddles);
+        hVetoHits->Fill(num_veto_hits);
+      }
+          
+      if (mrdPaddles > 0) {
+        for (int i_layer=0;i_layer<11;i_layer++){
+          if (layer_occupied[i_layer]==true) {
+            mrdLayers++;
+          }
+        }
+      }     
+    }
+  }
+ 
+  if (save_histograms) hMRDLayers->Fill(mrdLayers);
+
 }

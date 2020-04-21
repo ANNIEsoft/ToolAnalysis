@@ -1,0 +1,8 @@
+verbosity 1
+Minimum_H_Layer 2       # must have hit this layer number (z, starts from 2 - 0,1 are veto).
+Minimum_V_Layer 3       # first MRD layer is H=2. To permit 1-paddle stubs would be H=2, V=3.
+Max_Matching_Tdiff 300  # [ns]
+Max_Matching_MrdEntry_Discrepancy 1.0 # meters, measured in the X-Y plane at the MRD front face.
+Require_Tank_Event 1
+Show_All_Stubs 0
+Overwrite_FindMrdTracks_Tracks 0

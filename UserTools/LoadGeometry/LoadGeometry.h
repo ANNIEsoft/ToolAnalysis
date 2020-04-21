@@ -30,8 +30,12 @@ class LoadGeometry: public Tool {
                               std::vector<std::string> LAPPDLegendEntries);
 
   void LoadTankPMTDetectors();
+  void LoadAuxiliaryChannels();
   bool ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
-                               std::vector<std::string> PMTLegendEntries);
+                               std::vector<std::string> TankPMTLegendEntries);
+  bool ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
+                               std::vector<std::string> AuxChannelLegendEntries);
+  void LoadTankPMTGains();
 
   Geometry* AnnieGeometry;
 
@@ -44,6 +48,8 @@ class LoadGeometry: public Tool {
   int LAPPD_channel_count;
   std::string fFACCMRDGeoFile;
   std::string fTankPMTGeoFile;
+  std::string fTankPMTGainFile;
+  std::string fAuxChannelFile;
   std::string fLAPPDGeoFile;
   std::string fDetectorGeoFile;
 
@@ -53,7 +59,14 @@ class LoadGeometry: public Tool {
   std::string DataEndLineLabel = "DATA_END";
 
   //Map of channel number to electronics map entry
-  std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int>* MRDCrateSpaceToChannelNumMap;
+  std::map<int,std::vector<int>>* MRDChannelNumToCrateSpaceMap;
+  std::map<std::vector<int>,int>* TankPMTCrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int>* AuxCrateSpaceToChannelNumMap;
+  std::map<int,std::vector<int>>* ChannelNumToTankPMTCrateSpaceMap;
+  std::map<int,double>* ChannelNumToTankPMTSPEChargeMap;
+  std::map<int,std::string>* AuxChannelNumToTypeMap;
+  std::map<std::vector<unsigned int>,int>* LAPPDCrateSpaceToChannelNumMap;
 
   //Vector of strings indicating variables of interest and their data types in
   //The MRD file.  Used in the LoadFACCMRDDetectors() method
@@ -84,6 +97,11 @@ class LoadGeometry: public Tool {
                                    "hv_crate","hv_slot","hv_channel","nominal_HV"};
   std::vector<std::string> TankPMTDoubleValues{"x_pos","y_pos","z_pos","x_dir","y_dir","z_dir"};
   std::vector<std::string> TankPMTStringValues{"detector_tank_location","PMT_type","cable_label","detector_status","notes"};
+
+  //Vector of strings indicating variables of interest and their data types in
+  //The AuxChannel file.  Used in the LoadAuxiliaryChannels() method
+  std::vector<std::string> AuxChannelIntegerValues{"channel_num","signal_crate","signal_slot","signal_channel"};
+  std::vector<std::string> AuxChannelStringValues{"channel_type","notes"};
 
   //verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=1;
