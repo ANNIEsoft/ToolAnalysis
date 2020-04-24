@@ -2,7 +2,8 @@
 # all variables retrieved with m_variables.Get() must be defined here!
 verbose 1
 
-InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.1.9.root
+InputFile /pnfs/annie/persistent/users/dmaksimo/wcsim/wcsim_atmospheric_0.0.0.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.1.9.root
 #InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.1.9.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded

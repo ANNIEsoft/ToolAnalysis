@@ -462,6 +462,8 @@ bool CNNImage::Execute(){
   double global_max_charge = (maximum_pmts > maximum_lappds)? maximum_pmts : maximum_lappds;
   double global_min_charge = 0.;
 
+  std::cout <<"min_time_pmts: "<<min_time_pmts<<", min_time_lappds: "<<min_time_lappds<<", global_min_time: "<<global_min_time<<std::endl;
+
   if (fabs(global_max_time-global_min_time)<0.01) global_max_time = global_min_time+1;
   if (global_max_charge<0.001) global_max_charge=1;  
   //---------------------------------------------------------------
@@ -582,7 +584,8 @@ bool CNNImage::Execute(){
 
     hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
     //    double time_fill = (time[detkey]-min_time_pmts)/(max_time_pmts-min_time_pmts);
-    double time_fill = (time[detkey]-global_min_time)/(global_max_time-global_min_time);
+    double time_fill = 0.;
+    if (charge_fill > 1e-10) time_fill = (time[detkey]-global_min_time)/(global_max_time-global_min_time);
 
     hist_cnn_time->SetBinContent(binx,biny,hist_cnn_time->GetBinContent(binx,biny)+time_fill);
 
@@ -631,7 +634,8 @@ bool CNNImage::Execute(){
           //double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/maximum_lappds;
           //double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-min_time_lappds)/(max_time_lappds-min_time_lappds);
           double lappd_charge_fill = charge_lappd[detkey].at(iX).at(iY)/global_max_charge;
-          double lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-global_min_time)/(global_max_time-global_min_time);
+          double lappd_time_fill = 0.;
+          if (lappd_charge_fill > 1e-10) lappd_time_fill = (time_lappd[detkey].at(iX).at(iY)-global_min_time)/(global_max_time-global_min_time);
 
 
           if (lappd_time_fill < 0)  std::cout <<"Min LAPPD time: "<<min_time_lappds<<", Max LAPPD time: "<<max_time_lappds<<", time_lappd: "<<time_lappd[detkey].at(iX).at(iY)<<", fill time: "<<lappd_time_fill<<std::endl;

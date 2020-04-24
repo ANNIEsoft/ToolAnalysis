@@ -1,11 +1,11 @@
 # CNNImage config file
 
-verbosity 2
+verbosity 5
 DataMode Normal			#options: Charge/Time
 SaveMode PMT-wise		#options: Geometric / PMT-wise
 DimensionX 16			#choose something suitable (32/64/...)
 DimensionY 20			#choose something suitable (32/64/...)
-OutputFile beam_RC_Muon_lappd10x10_4996
-DimensionLAPPD 10              # Size of the LAPPD pannal 
+OutputFile atmospheric_RC_Muon_lappd5x5_0
+DimensionLAPPD 5              # Size of the LAPPD pannal 
 IncludeTopBottom 1
 DetectorConf ANNIEp2v6		#specify the detector version used in simulation
