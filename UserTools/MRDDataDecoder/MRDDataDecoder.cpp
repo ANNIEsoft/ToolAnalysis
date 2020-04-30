@@ -43,7 +43,7 @@ bool MRDDataDecoder::Execute(){
     return true;
   }
 
-  
+
   /////////////////// getting MRD Data ////////////////////
   Log("MRDDataDecoder Tool: Accessing MRDData from CStore",v_message,verbosity); 
   m_data->CStore.Get("MRDData",mrddata);
@@ -52,9 +52,14 @@ bool MRDDataDecoder::Execute(){
   unsigned long timestamp = mrddata->TimeStamp;    //in ms since 1970/1/1
   std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
   MRDEvents.emplace(timestamp,ChankeyTimePairs);
-    
-  bool cosmic_loopback=false;
+  
+  bool cosmic_loopback = false;
   bool beam_loopback = false;
+  int cosmic_tdc = -1;
+  int beam_tdc = -1;
+  std::vector<int> CrateSlotChannel_Beam{7,11,15};
+  std::vector<int> CrateSlotChannel_Cosmic{7,11,14};
+    
   //For each entry, loop over all crates and get data
   for (unsigned int i_data = 0; i_data < mrddata->Crate.size(); i_data++){
     int crate = mrddata->Crate.at(i_data);
@@ -63,16 +68,19 @@ bool MRDDataDecoder::Execute(){
     int hittimevalue = mrddata->Value.at(i_data);
     std::vector<int> CrateSlotChannel{crate,slot,channel};
     unsigned long chankey = MRDCrateSpaceToChannelNumMap[CrateSlotChannel];
-    if (chankey !=0){
+    if (CrateSlotChannel != CrateSlotChannel_Beam && CrateSlotChannel != CrateSlotChannel_Cosmic){
       std::pair <unsigned long,int> keytimepair(chankey,hittimevalue);  //chankey will be 0 when looking at loopback channels that don't have an entry in the mapping-->skip
       MRDEvents[timestamp].push_back(keytimepair);
     }
-    if (crate == 7 && slot == 11 && channel == 14) cosmic_loopback=true;   //FIXME: don't hard-code the trigger channels?
-    if (crate == 7 && slot == 11 && channel == 15) beam_loopback=true;     //FIXME: don't hard-code the trigger channels?
+    if (crate == 7 && slot == 11 && channel == 14) {cosmic_loopback=true; cosmic_tdc = hittimevalue;}   //FIXME: don't hard-code the trigger channels?
+    if (crate == 7 && slot == 11 && channel == 15) {beam_loopback=true; beam_tdc = hittimevalue;}     //FIXME: don't hard-code the trigger channels?
   }
   
   if (beam_loopback) mrdTriggertype = "Beam";
-  if (cosmic_loopback) mrdTriggertype = "Cosmic";		//advantage cosmic loopback over beam loopback
+  if (cosmic_loopback) mrdTriggertype = "Cosmic";      //prefer cosmic loopback over beam loopback (cosmic event will always also have a beam loopback entry)
+
+  CosmicLoopbackMap.emplace(timestamp,cosmic_tdc);
+  BeamLoopbackMap.emplace(timestamp,beam_tdc);
 
   //Entry processing done.  Label the trigger type and increment index
   TriggerTypeMap.emplace(timestamp,mrdTriggertype);
@@ -89,6 +97,14 @@ bool MRDDataDecoder::Execute(){
   m_data->CStore.Get("MRDEventTriggerTypes",CStoreTriggerTypeMap);
   CStoreTriggerTypeMap.insert(TriggerTypeMap.begin(),TriggerTypeMap.end());
   m_data->CStore.Set("MRDEventTriggerTypes",CStoreTriggerTypeMap);
+ 
+  m_data->CStore.Get("MRDBeamLoopback",CStoreBeamLoopbackMap);
+  CStoreBeamLoopbackMap.insert(BeamLoopbackMap.begin(),BeamLoopbackMap.end());
+  m_data->CStore.Set("MRDBeamLoopback",CStoreBeamLoopbackMap);
+ 
+  m_data->CStore.Get("MRDCosmicLoopback",CStoreCosmicLoopbackMap);
+  CStoreCosmicLoopbackMap.insert(CosmicLoopbackMap.begin(),CosmicLoopbackMap.end());
+  m_data->CStore.Set("MRDCosmicLoopback",CStoreCosmicLoopbackMap);
   
   m_data->CStore.Set("NewMRDDataAvailable",true);
 
@@ -101,6 +117,8 @@ bool MRDDataDecoder::Execute(){
   std::cout << "MRD EVENT CSTORE ENTRIES SET SUCCESSFULLY.  Clearing MRDEvents map from this file." << std::endl;
   MRDEvents.clear();
   TriggerTypeMap.clear();
+  BeamLoopbackMap.clear();
+  CosmicLoopbackMap.clear();
 
   ////////////// END EXECUTE LOOP ///////////////
   return true;
@@ -108,6 +126,6 @@ bool MRDDataDecoder::Execute(){
 
 
 bool MRDDataDecoder::Finalise(){
-  std::cout << "MRDDataDecoder tool exitting" << std::endl;
+  Log("MRDDataDecoder tool exitting",v_message,verbosity);
   return true;
 }

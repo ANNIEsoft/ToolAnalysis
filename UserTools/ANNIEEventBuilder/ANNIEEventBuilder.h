@@ -37,7 +37,8 @@ class ANNIEEventBuilder: public Tool {
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType);
+  unsigned long MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc);
+
   void SaveEntryToFile(int RunNum, int SubRunNum);
   void OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT);
 
@@ -72,6 +73,8 @@ class ANNIEEventBuilder: public Tool {
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  MRDTriggerTypeMap;  //Key: {MTCTime}, value: string noting what loopback channels were fired in the MRD in this event
+  std::map<uint64_t, int> MRDBeamLoopbackMap;  //Key: {MTCTime}, value: beam loopback TDC
+  std::map<uint64_t, int> MRDCosmicLoopbackMap;  //Key: {MTCTime}, value: cosmic loopback TDC
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
