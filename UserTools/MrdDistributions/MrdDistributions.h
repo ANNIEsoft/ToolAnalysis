@@ -34,7 +34,8 @@ class MrdDistributions: public Tool {
 	private:
 	// retrieved from ANNIEEvent
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~
-	std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
+	std::map<unsigned long,std::vector<MCHit>>* TDCData=nullptr;
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 	int numsubevs;
 	int numtracksinev;
 	
@@ -44,12 +45,24 @@ class MrdDistributions: public Tool {
 	uint32_t EventNumber;   // -> eventnum   ( " " )
 	uint16_t MCTriggernum;  // -> triggernum ( " " )
 	uint64_t MCEventNum;    // not yet in MRDTrackClass
+	ULong64_t MCEventNumRoot;
+	int NumHitMrdPMTsInEvent;
+	int NumMrdHitsInEvent;
+	int NumHitMrdPMTsInSubEvent;
+	int NumMrdHitsInSubEvent;
+	
+	// track-wise
+	int NumPmtsHit;
 	
 	// Retrieved from ANNIEvent
-	//std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
-	//std::vector<double>* ParticleId_to_MrdCharge;
+	std::map<int,std::map<unsigned long,double>>* ParticleId_to_MrdTubeIds;
 	std::map<int,int> Reco_to_True_Id_Map;
 	std::map<int,int>* trackid_to_mcparticleindex=nullptr;
+	std::map<int,int> True_to_Reco_Id_Map;
+	
+	// Retrieved from RecoEvent store
+	RecoVertex* theExtendedVertex=nullptr;
+	ROOT::Math::XYZVector recoVtxOrigin;
 	
 	// Variables from MRDTracks BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,6 +94,7 @@ class MrdDistributions: public Tool {
 	Position RecoTrackOrigin;
 	Position ClosestAppPoint;
 	double ClosestAppDist;
+	int LongTrack;
 	
 	double HtrackOrigin;
 	double HtrackOriginError;
@@ -179,32 +193,37 @@ class MrdDistributions: public Tool {
 	std::vector<double> fileout_EnergyLossError;
 	std::vector<double> fileout_TrackLength;
 	std::vector<double> fileout_PenetrationDepth;
+	std::vector<int> fileout_NumLayersHit;
+	std::vector<int> fileout_NumPmtsHit;
 	std::vector<ROOT::Math::XYZVector> fileout_StartVertex;
 	std::vector<ROOT::Math::XYZVector> fileout_StopVertex;
 	std::vector<ROOT::Math::XYZVector> fileout_TankExitPoint;
 	std::vector<ROOT::Math::XYZVector> fileout_MrdEntryPoint;
+	std::vector<int> fileout_LongTrackReco;
 	// truth variables
 	std::vector<int> fileout_MCTruthParticleID;
-	std::vector<double> fileout_TrackAngleX;
-	std::vector<double> fileout_TrackAngleY;
+	std::vector<double> fileout_TrueTrackAngleX;
+	std::vector<double> fileout_TrueTrackAngleY;
 	std::vector<double> fileout_TrueTrackAngle;
 	std::vector<double> fileout_TrueEnergyLoss;
 	std::vector<double> fileout_TrueTrackLength;
 	std::vector<double> fileout_TruePenetrationDepth;
+	std::vector<int> fileout_TrueNumLayersHit;
+	std::vector<int> fileout_TrueNumPmtsHit;
 	std::vector<ROOT::Math::XYZVector> fileout_TrueStopVertex;
 	std::vector<ROOT::Math::XYZVector> fileout_TrueTankExitPoint;
 	std::vector<ROOT::Math::XYZVector> fileout_TrueMrdEntryPoint;
-	std::vector<uint64_t> fileout_StartTime;
-	std::vector<int> fileout_InterceptsTank;
-	std::vector<int> fileout_NumLayersHit;
-	std::vector<int> fileout_IsMrdStopped;
-	std::vector<int> fileout_IsMrdPenetrating;
-	std::vector<int> fileout_IsMrdSideExit;
+	std::vector<uint64_t> fileout_TrueStartTime;
+	std::vector<int> fileout_TrueInterceptsTank;
+	std::vector<int> fileout_TrueIsMrdStopped;
+	std::vector<int> fileout_TrueIsMrdPenetrating;
+	std::vector<int> fileout_TrueIsMrdSideExit;
 	//
+	std::vector<int> fileout_RecoParticleID;
 	std::vector<ROOT::Math::XYZVector> fileout_TrueOriginVertex;
 	std::vector<ROOT::Math::XYZVector> fileout_RecoOriginVertex;
-	std::vector<ROOT::Math::XYZVector> fileout_ClosestApproachPoint;
-	std::vector<double> fileout_ClosestApproachDist;
+	std::vector<ROOT::Math::XYZVector> fileout_TrueClosestApproachPoint;
+	std::vector<double> fileout_TrueClosestApproachDist;
 	
 	// addresses for ROOT file
 	std::vector<int>* pfileout_MrdSubEventID;
@@ -218,32 +237,37 @@ class MrdDistributions: public Tool {
 	std::vector<double>* pfileout_EnergyLossError;
 	std::vector<double>* pfileout_TrackLength;
 	std::vector<double>* pfileout_PenetrationDepth;
+	std::vector<int>* pfileout_NumLayersHit;
+	std::vector<int>* pfileout_NumPmtsHit;
 	std::vector<ROOT::Math::XYZVector>* pfileout_StartVertex;
 	std::vector<ROOT::Math::XYZVector>* pfileout_StopVertex;
 	std::vector<ROOT::Math::XYZVector>* pfileout_TankExitPoint;
 	std::vector<ROOT::Math::XYZVector>* pfileout_MrdEntryPoint;
+	std::vector<int>* pfileout_LongTrackReco;
 	// truth variables
 	std::vector<int>* pfileout_MCTruthParticleID;
-	std::vector<double>* pfileout_TrackAngleX;
-	std::vector<double>* pfileout_TrackAngleY;
+	std::vector<double>* pfileout_TrueTrackAngleX;
+	std::vector<double>* pfileout_TrueTrackAngleY;
 	std::vector<double>* pfileout_TrueTrackAngle;
 	std::vector<double>* pfileout_TrueEnergyLoss;
 	std::vector<double>* pfileout_TrueTrackLength;
 	std::vector<double>* pfileout_TruePenetrationDepth;
+	std::vector<int>* pfileout_TrueNumLayersHit;
+	std::vector<int>* pfileout_TrueNumPmtsHit;
 	std::vector<ROOT::Math::XYZVector>* pfileout_TrueStopVertex;
 	std::vector<ROOT::Math::XYZVector>* pfileout_TrueTankExitPoint;
 	std::vector<ROOT::Math::XYZVector>* pfileout_TrueMrdEntryPoint;
-	std::vector<uint64_t>* pfileout_StartTime;
-	std::vector<int>* pfileout_InterceptsTank;
-	std::vector<int>* pfileout_NumLayersHit;
-	std::vector<int>* pfileout_IsMrdStopped;
-	std::vector<int>* pfileout_IsMrdPenetrating;
-	std::vector<int>* pfileout_IsMrdSideExit;
+	std::vector<uint64_t>* pfileout_TrueStartTime;
+	std::vector<int>* pfileout_TrueInterceptsTank;
+	std::vector<int>* pfileout_TrueIsMrdStopped;
+	std::vector<int>* pfileout_TrueIsMrdPenetrating;
+	std::vector<int>* pfileout_TrueIsMrdSideExit;
 	//
+	std::vector<int>* pfileout_RecoParticleID;
 	std::vector<ROOT::Math::XYZVector>* pfileout_TrueOriginVertex;
 	std::vector<ROOT::Math::XYZVector>* pfileout_RecoOriginVertex;
-	std::vector<ROOT::Math::XYZVector>* pfileout_ClosestApproachPoint;
-	std::vector<double>* pfileout_ClosestApproachDist;
+	std::vector<ROOT::Math::XYZVector>* pfileout_TrueClosestApproachPoint;
+	std::vector<double>* pfileout_TrueClosestApproachDist;
 	
 	// TApplication for making histograms
 	bool drawHistos;

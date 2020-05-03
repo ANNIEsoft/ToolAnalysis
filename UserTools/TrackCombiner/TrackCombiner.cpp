@@ -895,7 +895,7 @@ BoostStore* TrackCombiner::FindShortMrdTracks(std::map<unsigned long,vector<doub
 						theclusters->back().AddDigit(0, wcsimtubeid-1, earliest_hit_time);
 					}
 				}
-			
+				
 				// if this isn't the first cluster, make a cell between it and the previous one
 				int nclusters = theclusters->size();
 				if(nclusters>1){
@@ -1024,6 +1024,9 @@ BoostStore* TrackCombiner::FindShortMrdTracks(std::map<unsigned long,vector<doub
 								atrack->GetMrdEntryPoint().Z() / 100.);
 		thisTrackAsBoostStore->Set("TankExitPoint",TankExitPoint);
 		thisTrackAsBoostStore->Set("MrdEntryPoint",MrdEntryPoint);
+		
+		// differentiate tracks found with this algorithm from those found by the FindMrdTracks tool
+		thisTrackAsBoostStore->Set("LongTrack",0);
 		
 		// if it's the first loop and we found a matching pair, grab the pointer to return
 		if((stub_i==0)&&(found_matching_stub)){
