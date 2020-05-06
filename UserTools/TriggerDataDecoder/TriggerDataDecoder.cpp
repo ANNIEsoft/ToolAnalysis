@@ -12,14 +12,22 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
   verbosity = 0;
+  TriggerMaskFile = "none";
 
   m_variables.Get("verbosity",verbosity);
+  m_variables.Get("TriggerMaskFile",TriggerMaskFile);
 
   CurrentRunNum = -1;
   CurrentSubrunNum = -1;
 
   TimeToTriggerWordMap = new std::map<uint64_t,uint32_t>;
   m_data->CStore.Set("PauseCTCDecoding",false);
+
+  if(TriggerMaskFile!="none"){
+    TriggerMask = LoadTriggerMask(TriggerMaskFile);
+    if(TriggerMask.size()>0) UseTrigMask = true;
+  }
+
   return true;
 }
 
@@ -52,28 +60,22 @@ bool TriggerDataDecoder::Execute(){
         std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
         std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
       }
-      m_data->CStore.Set("NewCTCDataAvailable",true);
-      TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
-    }
-  }
-  /*Log("TriggerDataDecoder Tool: entry has #TriggerData classes = "+to_string(Tdata->size()),v_debug, verbosity);
-  for (unsigned int TDataInd=0; TDataInd<Tdata->size(); TDataInd++){
-    TriggerDataP aTrigData = Tdata->at(TDataInd);
-    std::vector<uint32_t> aTimeStampData = aTrigData.TimeStampData;
-    bool new_ts_available = false;  
-    for(int i = 0; i < aTimeStampData.size(); i++){
-      if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
-      new_ts_available = this->AddWord(aTimeStampData.at(i));
-      if(new_ts_available){
-        if(verbosity>4){
-          std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
-          std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
-          m_data->CStore.Set("NewMRDDataAvailable",true);
+      if(UseTrigMask){
+        uint32_t recent_trigger_word = processed_sources.back();
+        for(int j = 0; j<TriggerMask.size(); j++){
+          if(TriggerMask.at(j) == recent_trigger_word){
+            m_data->CStore.Set("NewCTCDataAvailable",true);
+            if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
+            TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+          }
         }
+      } else {
+        m_data->CStore.Set("NewCTCDataAvailable",true);
+        if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
         TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
       }
     }
-  }*/
+  }
   if(verbosity>3) Log("TriggerDataDecoder Tool: size of TimeToTriggerWordMap: "+to_string(TimeToTriggerWordMap->size()),v_message,verbosity); 
  
   m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
@@ -152,4 +154,26 @@ void TriggerDataDecoder::CheckForRunChange()
     TimeToTriggerWordMap->clear();
   }
   return;
+}
+
+std::vector<int> TriggerDataDecoder::LoadTriggerMask(std::string triggermask_file){
+  std::vector<int> trigger_mask;
+  std::string fileline;
+  ifstream myfile(triggermask_file.c_str());
+  if (myfile.is_open()){
+    while(getline(myfile,fileline)){
+      if(fileline.find("#")!=std::string::npos) continue;
+      std::cout << fileline << std::endl; //has our stuff;
+      std::vector<std::string> dataline;
+      boost::split(dataline,fileline, boost::is_any_of(","), boost::token_compress_on);
+      uint32_t triggernum = std::stoul(dataline.at(0));
+      if(verbosity>4) std::cout << "Trigger mask will have trigger number " << triggernum << std::endl;
+      trigger_mask.push_back(triggernum);
+    }
+  } else {
+    Log("TriggerDataDecoder Tool: Input trigger mask file not found. "
+        " all triggers from CTC will attempt to be paired with PMT/MRD data. ",
+        v_warning, verbosity);
+  }
+  return trigger_mask;
 }

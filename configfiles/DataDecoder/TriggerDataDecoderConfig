@@ -1,1 +1,2 @@
-verbosity 2
+verbosity 5
+TriggerMaskFile ./configfiles/DataDecoder/DefaultTriggerMask.txt

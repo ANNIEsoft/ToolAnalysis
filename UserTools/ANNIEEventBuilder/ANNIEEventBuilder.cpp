@@ -489,7 +489,7 @@ void ANNIEEventBuilder::MergeStreams(){
       }
     }
   }
-  LargestCTCIndex = CTCInd;
+  LargestCTCIndex = CTCInd - 1;
 
   //Now form CTC-PMT pairs
   if(verbosity>3) std::cout << "Finding CTC-Tank pairs..." << std::endl;
@@ -513,68 +513,36 @@ void ANNIEEventBuilder::MergeStreams(){
       }
     }
   }
-  if(CTCInd>LargestCTCIndex) LargestCTCIndex=CTCInd;
+  if(CTCInd>LargestCTCIndex) LargestCTCIndex=CTCInd-1;
 
-  //int MRDSize = BeamMRDTimestamps.size();
-  //int CTCSize = CTCTimestamps.size();
-
-  //for(int i=0; i<EventsPerPairing; i++){
-  //  while(j<MRDSize){
-  //    double TSDiff = (static_cast<double>(CTCTimestamps.at(i)/1E6) - TimeZoneShift) - static_cast<double>(BeamMRDTimestamps.at(i));
-  //    if(TSDiff
-  //    if(verbosity>4) std::cout << "CTC,MRDTIMESTAMP (NS): " << static_cast<double>((CTCTimestamps.at(i)/1E6) - TimeZoneShift) << "," << static_cast<double>(BeamMRDTimestamps.at(i)) << std::endl;
-  //    if( abs(TSDiff) < CTCMRDTolerance){
-  //      if(verbosity>4) std::cout << "CTC,MRD TIMESTAMP FORMED" << std::endl;
-  //      PairedCTCMRDTimes.emplace(CTCTimestamps.at(i), BeamMRDTimestamps.at(j));
-  //      BeamMRDTimestamps.erase(BeamMRDTimestamps.begin() + j);
-  //      MRDSize-=1;
-  //      j-=1;
-  //      break;
-  //    }
-  //    j+=1;
-  //  }
-  //}
-//  j = 0;
-//  int PMTSize = BeamTankTimestamps.size();
-//  for(int i=0; i<EventsPerPairing; i++){
-//    while(j<PMTSize){
-//      double TSDiff = (static_cast<double>(CTCTimestamps.at(i)) - static_cast<double>(BeamTankTimestamps.at(j)));
-//      if(verbosity>4) std::cout << "CTC,TANK TIMESTAMPS (NS): " << static_cast<double>(CTCTimestamps.at(i)) << "," << static_cast<double>(BeamTankTimestamps.at(j)) << std::endl;
-//      if( abs(TSDiff) < CTCTankTolerance){
-//        PairedCTCTankTimes.emplace(CTCTimestamps.at(i), BeamTankTimestamps.at(j));
-//        BeamTankTimestamps.erase(BeamTankTimestamps.begin() + j);
-//        PMTSize-=1;
-//        j-=1;
-//        break;
-//      }
-//      j+=1;
-//    }
-//  }
-  
   //Neat.  Now, add timestamps to the buildmap.
 
   std::vector<uint64_t> BuiltCTCs;
   if(verbosity>4) std::cout << "LARGEST CTC INDEX WAS " << LargestCTCIndex << std::endl;
   if(verbosity>4) std::cout << "AND CTCTIMESTAMPS SIZE IS " << CTCTimestamps.size() << std::endl;
   for(int i=0; i<(LargestCTCIndex-1); i++){
+    if(verbosity>4) std::cout << "TRYING TO BUILD A SET WITH CTCTIMESTAMP INDEX " << i << std::endl;
     uint64_t CTCKey = CTCTimestamps.at(i);
     bool buildSetMade = false;
     std::map<std::string,uint64_t> aBuildSet;
     //See if there's an MRD or PMT timestamp associated with this CTC time
     //Check if this CardData is next in it's sequence for processing
+    if(verbosity>4) std::cout << "EMPLACING CTC TIME INTO BUILD SEST "<< std::endl;
     aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey));
-    std::map<uint64_t, uint64_t>::iterator it = PairedCTCTankTimes.find(CTCKey);
-    if(it != PairedCTCTankTimes.end()){ //Have PMT data for this CTC timestamp
-      aBuildSet.emplace("TankPMT",PairedCTCTankTimes.at(it->second));
-      BeamTankTimestamps.erase(std::remove(BeamTankTimestamps.begin(),BeamTankTimestamps.end(),it->second), 
+    std::map<uint64_t, uint64_t>::iterator it_tank = PairedCTCTankTimes.find(CTCKey);
+    if(it_tank != PairedCTCTankTimes.end()){ //Have PMT data for this CTC timestamp
+      if(verbosity>4) std::cout << "EMPLACING PMT TIME INTO BUILD SEST "<< std::endl;
+      aBuildSet.emplace("TankPMT",it_tank->second);
+      BeamTankTimestamps.erase(std::remove(BeamTankTimestamps.begin(),BeamTankTimestamps.end(),it_tank->second), 
            BeamTankTimestamps.end());
       buildSetMade = true;
     }
-    std::map<uint64_t, uint64_t>::iterator it2 = PairedCTCMRDTimes.find(CTCKey);
-    if(it2 != PairedCTCMRDTimes.end()){ //Have PMT data for this CTC timestamp
+    std::map<uint64_t, uint64_t>::iterator it_mrd = PairedCTCMRDTimes.find(CTCKey);
+    if(it_mrd != PairedCTCMRDTimes.end()){ //Have PMT data for this CTC timestamp
       buildSetMade = true;
-      aBuildSet.emplace("MRD",PairedCTCMRDTimes.at(it2->second));
-      BeamMRDTimestamps.erase(std::remove(BeamMRDTimestamps.begin(),BeamMRDTimestamps.end(),it2->second), 
+      if(verbosity>4) std::cout << "EMPLACING MRD TIME INTO BUILD SEST "<< std::endl;
+      aBuildSet.emplace("MRD",it_mrd->second);
+      BeamMRDTimestamps.erase(std::remove(BeamMRDTimestamps.begin(),BeamMRDTimestamps.end(),it_mrd->second), 
            BeamMRDTimestamps.end());
     }
     if(buildSetMade) {
@@ -582,7 +550,7 @@ void ANNIEEventBuilder::MergeStreams(){
       BuildMap.emplace(CTCKey,aBuildSet);
       BuiltCTCs.push_back(CTCKey);
     } else {
-      if(verbosity>4) std::cout << "NO MRD OR TANK TIMESTAMP FOR THIS CTC TIME... CTC TO ORPHANAGE. CTCKEY IS" << CTCKey << std::endl;
+      if(verbosity>4) std::cout << "NO MRD OR TANK TIMESTAMP FOR THIS CTC TIME... CTC TO ORPHANAGE. CTCKEY IS " << CTCKey << std::endl;
       CTCOrphans.push_back(CTCKey);
     }
   }

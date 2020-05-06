@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 
+#include <boost/algorithm/string.hpp>
+
 #include "Tool.h"
 #include "TriggerData.h"
 
@@ -26,13 +28,18 @@ class TriggerDataDecoder: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
 
   bool AddWord(uint32_t word);
-
+  std::vector<int> LoadTriggerMask(std::string triggermask_file);
   void CheckForRunChange();
  private:
 
   //std::vector<TriggerData> *Tdata = nullptr;
   TriggerData *Tdata = nullptr;
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;
+  bool UseTrigMask = false;
+
+  std::string TriggerMaskFile;
+  std::vector<int> TriggerMask;
+
   std::vector<int> fiforesets;
   std::vector<uint32_t> processed_sources;
   std::vector<uint64_t> processed_ns;

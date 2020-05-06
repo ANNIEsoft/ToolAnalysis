@@ -277,7 +277,7 @@ std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCHitFinder::load
       }
     }
   } else {
-    Log("PhaseIIADCHitFinder Tool: Input integration window DB file not found. "
+    Log("PhaseIIADCHitFinder Tool ERROR! Input integration window DB file not found! "
         " no integration will occur. ",
         v_warning, verbosity);
   }
