@@ -52,6 +52,9 @@ bool MonitorReceive::Execute(){
     sources=UpdateMonitorSources();
   }
 
+  m_data->CStore.Set("HasCCData",false);
+  m_data->CStore.Set("HasPMTData",false);
+
   std::string State="Wait";
   m_data->CStore.Set("State",State);
  

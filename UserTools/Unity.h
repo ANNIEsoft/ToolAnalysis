@@ -110,6 +110,8 @@
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
 #include "ClusterFinder.h"
+#include "RunValidation.h"
+#include "AmBeRunStatistics.h"
 #include "PrintRecoEvent.h"
 #include "MrdPaddleEfficiencyPreparer.h"
 #include "MrdPaddleEfficiencyCalc.h"

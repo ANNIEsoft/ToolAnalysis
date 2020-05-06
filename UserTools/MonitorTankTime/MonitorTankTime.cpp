@@ -201,14 +201,19 @@ bool MonitorTankTime::Initialise(std::string configfile, DataModel &data){
 
 bool MonitorTankTime::Execute(){
 
-  Log("Tool MonitorTankTime: Executing ....",v_message,verbosity);
+  //Log("Tool MonitorTankTime: Executing ....",v_message,verbosity);
 
   current = (boost::posix_time::second_clock::local_time());
   duration = boost::posix_time::time_duration(current - last); 
   current_stamp_duration = boost::posix_time::time_duration(current - *Epoch);
   current_stamp = current_stamp_duration.total_milliseconds();
+  utc = (boost::posix_time::second_clock::universal_time());
+  current_utc_duration = boost::posix_time::time_duration(utc-current);
+  current_utc = current_utc_duration.total_milliseconds();
+  utc_to_t = (ULong64_t) current_utc;
+  utc_to_fermi = (ULong64_t) utc_to_t*MSEC_to_SEC*MSEC_to_SEC;
 
-  Log("MonitorTankTime: "+std::to_string(duration.total_milliseconds()/1000./60.)+" mins since last time plot",v_message,verbosity);
+  //Log("MonitorTankTime: "+std::to_string(duration.total_milliseconds()/1000./60.)+" mins since last time plot",v_message,verbosity);
 
   //for testing purposes only: execute in every step / set State to DataFile
   //m_data->CStore.Set("State","DataFile");

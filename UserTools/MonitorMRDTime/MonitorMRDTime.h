@@ -115,11 +115,13 @@ class MonitorMRDTime: public Tool {
   //define variables for keeping track of time
   boost::posix_time::ptime *Epoch;
   boost::posix_time::ptime current;
+  boost::posix_time::ptime utc;
   boost::posix_time::ptime last;
   boost::posix_time::time_duration period_update;
   boost::posix_time::time_duration duration;
   boost::posix_time::time_duration current_stamp_duration;
-  long current_stamp;
+  boost::posix_time::time_duration current_utc_duration;
+  long current_stamp, current_utc;
   time_t t;
   std::stringstream title_time; 
   ULong64_t readfromfile_tend;
