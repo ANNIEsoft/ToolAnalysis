@@ -284,8 +284,8 @@ bool ClusterFinder::Execute(){
   if (verbose > 2){
       for (std::map<double,std::vector<double>>::iterator it = m_time_Nhits.begin(); it != m_time_Nhits.end(); ++it) {
         if (int(it->second.size()) > MinHitsPerCluster) {
-          cout << "Map of time and NHits: Time = " << it->first << ", NHits = " << it->second.size() << endl;
-          cout << "Look at the back of the vector (before): " << it->second.back() << endl;
+          if(verbose>3) cout << "Map of time and NHits: Time = " << it->first << ", NHits = " << it->second.size() << endl;
+          if(verbose>3) cout << "Look at the back of the vector (before): " << it->second.back() << endl;
           for (std::vector<double>::iterator itt = it->second.begin(); itt != it->second.end(); ++itt) {
           cout << "At this time, hits are: " << *itt << endl;  
         }       
