@@ -65,6 +65,8 @@ class ClusterFinder: public Tool {
   int AcqTimeWindow;
   int ClusterIntegrationWindow;
   int MinHitsPerCluster;
+  bool draw_2D = false;
+  double end_of_window_time_cut;
 
   // define ANNIEEvent variables
   int evnum;
@@ -116,7 +118,8 @@ class ClusterFinder: public Tool {
   std::vector<double> v_clusters;
   std::vector<double> v_local_cluster_times;
   std::map<double,std::vector<Hit>>* m_all_clusters;  
-  
+  std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey; 
+ 
   // Other variables
   int max_Nhits = 0;
   double local_cluster = 0;
@@ -130,8 +133,16 @@ class ClusterFinder: public Tool {
   TH1D* h_Cluster_times=nullptr;
   TH1D* h_Cluster_charges=nullptr;
   TH1D* h_Cluster_deltaT=nullptr;
+  TH2D* h_Cluster_charge_time=nullptr;
+  TH2D* h_Cluster_charge_deltaT=nullptr;
   TCanvas* canvas_Cluster=nullptr;
   TFile* f_output=nullptr;
+
+  int v_error = 0;
+  int v_warning = 1;
+  int v_message = 2;
+  int v_debug = 3;
+  int vv_debug = 4;
 };
 
 
