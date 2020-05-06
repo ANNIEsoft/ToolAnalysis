@@ -126,12 +126,15 @@ class MonitorTankTime: public Tool {
   boost::posix_time::time_duration period_update;
   boost::posix_time::time_duration duration;
   boost::posix_time::ptime last;
+  boost::posix_time::ptime utc;
   boost::posix_time::time_duration current_stamp_duration;
+  boost::posix_time::time_duration current_utc_duration;
   time_t t;
   std::stringstream title_time; 
-  long current_stamp;
+  long current_stamp, current_utc;
   ULong64_t readfromfile_tend;
   double readfromfile_timeframe;
+
 
   //variables to convert times
   double MSEC_to_SEC = 1000.;

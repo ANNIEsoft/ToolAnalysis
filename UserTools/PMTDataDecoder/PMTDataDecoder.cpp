@@ -81,8 +81,11 @@ bool PMTDataDecoder::Execute(){
       NumPMTDataProcessed = 0;
       int ExecuteEntryNum = 0;
       int EntriesToDo;
-      if(ADCCountsToBuild<=0) EntriesToDo = totalentries;
-      else EntriesToDo = ADCCountsToBuild;
+      if (totalentries < 3000) EntriesToDo = 70;	//don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
+      else EntriesToDo = (int) totalentries/15;	        //otherwise do ~1000 entries out of 15000
+      CDEntryNum = totalentries - EntriesToDo - 10;
+      if (CDEntryNum < 0) CDEntryNum = 0;
+      
       if(verbosity>v_warning){
         double CDDouble = (double)CDEntryNum;
         double ETDDouble = (double)EntriesToDo;
