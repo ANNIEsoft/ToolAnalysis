@@ -242,14 +242,18 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
 
 bool MonitorMRDTime::Execute(){
 
-  if (verbosity > 2) std::cout <<"MonitorMRDTime: Executing ...."<<std::endl;
+  if (verbosity > 10) std::cout <<"MonitorMRDTime: Executing ...."<<std::endl;
 
   current = (boost::posix_time::second_clock::local_time());
   duration = boost::posix_time::time_duration(current - last);
   current_stamp_duration = boost::posix_time::time_duration(current - *Epoch);
   current_stamp = current_stamp_duration.total_milliseconds();
+  utc = (boost::posix_time::second_clock::universal_time());
+  current_utc_duration = boost::posix_time::time_duration(utc-current);
+  current_utc = current_utc_duration.total_milliseconds();
+  utc_to_t = (ULong64_t) current_utc;
 
-  if (verbosity > 2) std::cout <<"MRDMonitorTime: "<<duration.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN<<" mins since last time plot"<<std::endl;
+  if (verbosity > 10) std::cout <<"MRDMonitorTime: "<<duration.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN<<" mins since last time plot"<<std::endl;
 
   //-------------------------------------------------------
   //---------Checking the state of MRD data stream---------
@@ -1221,7 +1225,7 @@ void MonitorMRDTime::InitializeVectors(){
 
   rate_top = new TH2Poly("rate_top","MRD Rates Top View",1.6,3.,-2.,2.);
   rate_side = new TH2Poly("rate_side","MRD Rates Side View",1.6,3.,-2.,2.);
-  rate_facc = new TH2Poly("rate_facc","FACC Rates",-1.66,-1.58,-2.5,2.5);
+  rate_facc = new TH2Poly("rate_facc","FMV Rates",-1.66,-1.58,-2.5,2.5);
   rate_top->GetXaxis()->SetTitle("z [m]");
   rate_top->GetYaxis()->SetTitle("x [m]");
   rate_side->GetXaxis()->SetTitle("z [m]");
@@ -1854,7 +1858,7 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
 
     if (i_trigger == 0){
       ss_ch_scatter << "Trigger TDC "<<end_time.str()<<" (last File)";
-      hist_scatter.at(total_ch)->GetXaxis()->SetTimeOffset(t_file_start+utc_to_t/MSEC_to_SEC);
+      hist_scatter.at(total_ch)->GetXaxis()->SetTimeOffset((t_file_start+utc_to_t)/MSEC_to_SEC);
       hist_scatter.at(total_ch)->SetTitle(ss_ch_scatter.str().c_str());
       hist_scatter.at(total_ch)->Draw();
     }
@@ -1884,6 +1888,7 @@ void MonitorMRDTime::DrawTDCHistogram(){
 
 
   for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
+      if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(0) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(0) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(0)) continue; //Omit cosmic loopback signal
       if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(1) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(1) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(1)) continue; //Omit beam loopback signal
     for (unsigned int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
       hist_tdc->Fill(tdc_file.at(i_channel).at(i_tdc));
@@ -2217,7 +2222,7 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   std::stringstream ss_topTitle, ss_sideTitle, ss_faccTitle;
   ss_topTitle << "MRD Rates - Top "<<end_time.str()<<" ("<<file_ending<<")";
   ss_sideTitle << "MRD Rates - Side "<<end_time.str()<<" ("<<file_ending<<")";
-  ss_faccTitle << "FACC Rates "<<end_time.str()<<" ("<<file_ending<<")";
+  ss_faccTitle << "FMV Rates "<<end_time.str()<<" ("<<file_ending<<")";
   rate_side->SetTitle(ss_sideTitle.str().c_str());
   rate_top->SetTitle(ss_topTitle.str().c_str());
   rate_facc->SetTitle(ss_faccTitle.str().c_str());
@@ -2305,7 +2310,7 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
 
   canvas_rate_physical_facc->cd();
   //rate_facc->GetZaxis()->SetRangeUser(1e-6,max_ch);
-  rate_facc->GetZaxis()->SetRangeUser(1e-6,1.);
+  rate_facc->GetZaxis()->SetRangeUser(1e-6,0.4);
   rate_facc->GetZaxis()->SetTitleOffset(1.3);
   rate_facc->GetZaxis()->SetTitleSize(0.03);
   rate_facc->Draw("colz L");                           //option L to show contours around bins (indicating where MRD paddles are)
