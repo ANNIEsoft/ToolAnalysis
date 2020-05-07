@@ -138,7 +138,7 @@ bool MonitorReceive::Execute(){
       }
      }     
   }
-  else sleep(1);
+  else usleep(100000);
 
   return true;
 }
