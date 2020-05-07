@@ -9,7 +9,7 @@ IO_Threads 1 ## Number of threads for network traffic (~ 1/Gbps)
 
 ###### Logging #####
 log_mode Local # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
-log_local_path ./log
+log_local_path /monitoringplots/log
 log_service LogStore
 
 
