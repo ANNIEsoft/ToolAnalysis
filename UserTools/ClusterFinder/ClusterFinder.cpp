@@ -329,13 +329,13 @@ bool ClusterFinder::Execute(){
 
         // This loops erases the dummy hit times values that were flagged before so they are not used anymore by other clusters
         for(std::vector<double>::iterator itt = it->second.end()-1; itt != it->second.begin()-1; --itt) {
-          if (verbose > 2) cout << "Time: " << it->first << ", hit time: " << *itt << endl;
+          cout << "Time: " << it->first << ", hit time: " << *itt << endl;
           if (*itt == dummy_hittime_value) {
             it->second.erase(it->second.begin() + std::distance(it->second.begin(), itt)); 
             if (verbose > 2) cout << "Erasing " << it->first << " " << *itt << endl;
           }
         }
-        if (verbose > 2) cout << "Erasing loop is done and new size of mini_hits is " << it->second.size() << " hits" << endl;
+        cout << "Erasing loop is done and new size of mini_hits is " << it->second.size() << " hits" << endl;
       }
     }
   } while (true); 
@@ -357,7 +357,7 @@ bool ClusterFinder::Execute(){
           if (ahit.GetTime() >= *it && ahit.GetTime() <= *it + ClusterFindingWindow) {
             local_cluster_charge += ahit.GetCharge();
             v_local_cluster_times.push_back(ahit.GetTime());
-            if (verbose > 2) cout << "Local cluster at " << *it << " and hit is " << ahit.GetTime() << endl;
+            cout << "Local cluster at " << *it << " and hit is " << ahit.GetTime() << endl;
           }
         }
       }
