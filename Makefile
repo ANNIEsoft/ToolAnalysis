@@ -84,13 +84,13 @@ clean:
 
 lib/libDataModel.so: DataModel/* lib/libLogging.so lib/libStore.so $(patsubst DataModel/%.cpp, DataModel/%.o, $(wildcard DataModel/*.cpp))
 	@echo -e "\n*************** Making " $@ "****************"
-	cp DataModel/*.h include/
+	cp -f DataModel/*.h include/
 	$(CC) DataModel/*.o -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
 lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so lib/libStore.so $(patsubst UserTools/%.cpp, UserTools/%.o, $(wildcard UserTools/*/*.cpp)) |lib/libDataModel.so lib/libToolChain.so 
 	@echo -e "\n*************** Making " $@ "****************"
-	cp UserTools/*/*.h include/
-	cp UserTools/*.h include/
+	cp -f UserTools/*/*.h include/
+	cp -f UserTools/*.h include/
 	#$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 	$(CC) UserTools/*/*.o -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 

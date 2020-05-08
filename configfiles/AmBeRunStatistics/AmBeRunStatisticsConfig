@@ -1,0 +1,18 @@
+verbosity 5
+
+OutputFile AmBeStatistics1612p1
+//SiPM window in ns
+SiPMWindowMin 0
+SiPMWindowMax 4000
+
+//Trigger threshold in mV
+SiPM1TriggerThreshold 5
+SiPM2TriggerThreshold 5
+
+//Cut on time difference between SiPM peak times
+DeltaTimeThreshold 100
+
+//Cluster photoelectron limits for neutron candidates
+ClusterPEMin 5
+ClusterPEMax 150
+

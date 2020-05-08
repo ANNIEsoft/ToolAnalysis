@@ -1,0 +1,9 @@
+# RunValidation config file
+
+verbosity 0
+OutputPath ./
+InvertMRDTimes 0
+RunNumber 1627
+SubRunNumber 0
+RunType 3
+SinglePEGains ./configfiles/RunValidation/ChannelSPEGains_BeamRun20192020.csv
