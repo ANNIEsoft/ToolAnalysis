@@ -10,6 +10,8 @@
 #include "TH1F.h"
 #include "TFile.h"
 #include "TMath.h"
+#include "TFile.h"
+#include "TApplication.h"
 
 #include "Hit.h"
 #include "LAPPDHit.h"
@@ -29,6 +31,11 @@ class CalcClassificationVars: public Tool {
   bool Finalise();
 
   double CalcArcTan(double x, double z);
+  void StorePionEnergies();
+  bool GetBoostStoreVariables();
+  void ClassificationVarsMCTruth();
+  void ClassificationVarsPMTLAPPD();
+  void ClassificationVarsMRD();
 
  private:
 
@@ -38,21 +45,59 @@ class CalcClassificationVars: public Tool {
   bool isData;
   double lateT;
   double lowQ;
+  std::string pdf_emu;
 
   // ANNIEEvent / RecoStore variables
   int evnum, mcevnum;
   std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
   std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
   std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
+  std::vector<MCParticle>* mcparticles = nullptr;
   RecoVertex *TrueVertex = nullptr;
   RecoVertex *TrueStopVertex = nullptr;
   bool EventCutStatus;
   std::vector<RecoDigit>* RecoDigits; 
   double TrueMuonEnergy;
+  double TrueNeutrinoEnergy;
+  MCParticle neutrino;
   int NumMrdTimeClusters;
   int nrings;
   bool no_pik; 
   int pdg;
+  bool neutrino_sample;
+
+  // Particle maps
+  std::map<int,std::vector<double>> map_pion_energies;
+  std::map<int,double> pdgcodetocherenkov;
+
+  //Variable maps
+  std::map<std::string,int> classification_map_int;  //map for ints
+  std::map<std::string,bool> classification_map_bool;  //map for bools
+  std::map<std::string,double> classification_map_double;  //map for doubles
+  std::map<std::string,std::vector<double>> classification_map_vector;	//map for vectors
+  std::map<std::string,int> classification_map_map;	//maps variable name to correct map
+
+  //PDFs
+  TH1F *pdf_mu_charge = nullptr;
+  TH1F *pdf_mu_time = nullptr;
+  TH1F *pdf_mu_theta = nullptr;
+  TH1F *pdf_mu_phi = nullptr;
+  TH1F *pdf_e_charge = nullptr;
+  TH1F *pdf_e_time = nullptr;
+  TH1F *pdf_e_theta = nullptr;
+  TH1F *pdf_e_phi = nullptr;
+  TH1F *event_charge = nullptr;
+  TH1F *event_time = nullptr;
+  TH1F *event_theta = nullptr;
+  TH1F *event_phi = nullptr;
+
+  TApplication *app_calc = nullptr;
+
+  //General variables
+  double pos_x, pos_y, pos_z, dir_x, dir_y, dir_z;
+  Position pos;
+  bool multi_ring;
+  std::string filename;
 
   // Geometry variables
   Geometry *geom = nullptr;

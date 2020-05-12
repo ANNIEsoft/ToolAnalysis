@@ -1,7 +1,7 @@
 # StoreClassificationVars config file
 
-verbosity 5
-Filename classification_test
+verbosity 1
+Filename beamlike_electrons_DigitThr10_276
 SaveCSV 1
 SaveROOT 1
 VariableConfig Full

@@ -39,13 +39,22 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
 
   // Get particle masses map from CStore (populated by MCParticleProperties tool)
   m_data->CStore.Get("PdgMassMap",pdgcodetomass);
+
+  std::map<int,double>::iterator it_map;
+  for (it_map = pdgcodetomass.begin(); it_map != pdgcodetomass.end(); it_map++){
+    int pdgcode = it_map->first;
+    int pdgmass = it_map->second;
+    double cherenkov_thr = GetCherenkovThresholdE(pdgcode);
+    pdgcodetocherenkov.emplace(pdgcode,cherenkov_thr);
+  }
   
+  // Set particle pdg - Cherenkov threshold map to CStore
+  m_data->CStore.Set("PdgCherenkovMap",pdgcodetocherenkov);
 
   return true;
 }
-
-
 bool MCRecoEventLoader::Execute(){
+
   /// Reset everything
   this->Reset();
 
