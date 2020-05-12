@@ -86,15 +86,15 @@ class ANNIEEventBuilder: public Tool {
 
   //######### INFORMATION USED FOR PAIRING UP TANK AND MRD DATA TRIGGERS ########
   int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)
-  
-  std::vector<uint64_t> BeamTankTimestamps;  //Contains beam timestamps for all PMT events that haven't been paired to an MRD or CTC TS
-  std::vector<uint64_t> BeamMRDTimestamps;  //Contains beam timestamps for all MRD events that haven't been paired to a PMT or CTC TS
-  std::vector<uint64_t> CTCTimestamps;  //Contains CTC timestamps encountered so far
+  std::vector<uint64_t> BeamTankTimestamps;  //Contains beam timestamps for all PMT events that haven't been paired to an MRD or CTC TS (keys in FinishedTankEvents)
+  std::vector<uint64_t> BeamMRDTimestamps;  //Contains beam timestamps for all MRD events that haven't been paired to a PMT or CTC TS (keys in MRDEvents)
+  std::vector<uint64_t> CTCTimestamps;  //Contains CTC timestamps encountered so far (keys in TimeToTriggerWordMap)
   std::map<uint64_t,uint64_t> BeamTankMRDPairs; //Pairs of beam-triggered Tank PMT/MRD counters ready to be built if all PMT waveforms are ready (TankAndMRD mode only)
-  std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap; //key: CTC timestamp, value: vector of maps with key: "Tank", "MRD", or "LAPPD" and value of timestamp for that data stream,
-                                                                           //or "CTC" for the trigger word of that timestamp
+  std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap; //key: CTC timestamp, value: vector of maps.  Each map has the keys: "Tank", "MRD", "CTC", or "LAPPD" with values: 
+                                                              //timestamp of that stream (exception: "CTC" key has the trigger word as the value).
   
   
+  //######### INFORMATION USED FOR TRACKING ORPHAN DATA (EVENTS FROM STREAMS THAT HAVE NO OTHER PAIRS) ############
   bool OrphanOldTankTimestamps;  // If a timestamp in the InProgressTankEvents gets too old, clear it and move to orphanage
   int OldTimestampThreshold;  // Threshold where a timestamp relative to the newest timestamp crosses before moving to the orphanage
   int OrphanWarningValue;    //Number of orphanage placements in a pairing event to print a warning
@@ -108,10 +108,9 @@ class ANNIEEventBuilder: public Tool {
 
 
   // Number of PMTs that must be found in a WaveSet to build the event
-  //
   unsigned int NumWavesInCompleteSet = 140; 
 
-  int ExecutesPerBuild;          // Number of execute loops to pass through before running the execute loop
+  int ExecutesPerBuild;          // Number of executions to pass through before running the execute loop
   int ExecuteCount = 0;
 
   std::string InputFile;

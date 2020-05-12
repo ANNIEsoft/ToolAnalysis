@@ -189,24 +189,58 @@ bool LoadRawData::Execute(){
 
   m_data->CStore.Set("RunInfoPostgress",Postgress);
 
+
+  //Update which streams should be paused
+  //Pause building any stream which has more fully built events in ANNIEEventBuilder tool than the others
+  TankPaused = false;
+  MRDPaused = false;
+  CTCPaused = false;
+
+  int lowest_size = 1E18;
+  int NumTankTimestamps, NumMRDTimestamps, NumCTCTimestamps;
+  bool have_tankevts = m_data->CStore.Get("NumTankTimestamps",NumTankTimestamps);
+  bool have_mrdevts = m_data->CStore.Get("NumMRDTimestamps",NumMRDTimestamps);
+  bool have_ctcevts = m_data->CStore.Get("NumCTCTimestamps",NumCTCTimestamps);
+  //if (have_tankevts && (NumTankTimestamps < lowest_size)) lowest_size = NumTankTimestamps;
+  //if (have_mrdevts && (NumMRDTimestamps < lowest_size)) lowest_size = NumMRDTimestamps;
+  //if (have_ctcevts && (NumCTCTimestamps < lowest_size)) lowest_size = NumCTCTimestamps;
+  //if (have_tankevts && (NumTankTimestamps > lowest_size)) TankPaused = true;
+  //if (have_mrdevts && (NumMRDTimestamps > lowest_size)) MRDPaused = true;
+  //if (have_ctcevts && (NumCTCTimestamps > lowest_size)) CTCPaused = true;
+  if (have_tankevts && (TankEntryNum < lowest_size)) lowest_size = TankEntryNum;
+  if (have_mrdevts && (MRDEntryNum < lowest_size)) lowest_size = MRDEntryNum;
+  if (have_ctcevts && (TrigEntryNum < lowest_size)) lowest_size = TrigEntryNum;
+  if (have_tankevts && (TankEntryNum > lowest_size)) TankPaused = true;
+  if (have_mrdevts && (MRDEntryNum > lowest_size)) MRDPaused = true;
+  if (have_ctcevts && (TrigEntryNum > lowest_size)) CTCPaused = true;
+  std::cout << "LOWEST SIZE EVT ARRAY IS: " << lowest_size << std::endl;
+
+  //Pause any streams where all of the entries have been collected; force others to keep building
   if(TankEntryNum == tanktotalentries){
     Log("LoadRawData Tool: ALL PMT ENTRIES COLLECTED.",v_debug, verbosity);
     TankEntriesCompleted = true;
-    m_data->CStore.Set("PauseTankDecoding",true);
-    m_data->CStore.Set("PauseMRDDecoding",false);
+    TankPaused = true;
+    if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
+    if(TrigEntryNum < trigtotalentries) CTCPaused = false;
   }
   if(MRDEntryNum == mrdtotalentries){
     Log("LoadRawData Tool: ALL MRD ENTRIES COLLECTED.",v_debug, verbosity);
     MRDEntriesCompleted = true;
-    m_data->CStore.Set("PauseMRDDecoding",true);
-    m_data->CStore.Set("PauseTankDecoding",false);
+    MRDPaused = true;
+    if(TankEntryNum < tanktotalentries) TankPaused = false;
+    if(TrigEntryNum < trigtotalentries) CTCPaused = false;
   }
-  
   if(TrigEntryNum == trigtotalentries){
-    Log("LoadRawData Tool: ALL MRD ENTRIES COLLECTED.",v_debug, verbosity);
+    Log("LoadRawData Tool: ALL TRIG ENTRIES COLLECTED.",v_debug, verbosity);
     TrigEntriesCompleted = true;
-    m_data->CStore.Set("PauseTriggerDecoding",true);
+    CTCPaused = true;
+    if(TankEntryNum < tanktotalentries) TankPaused = false;
+    if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
   }
+
+  m_data->CStore.Set("PauseTankDecoding",TankPaused);
+  m_data->CStore.Set("PauseMRDDecoding",MRDPaused);
+  m_data->CStore.Set("PauseCTCDecoding",CTCPaused);
 
   //Set if the raw data file has been completed
   if (TankEntriesCompleted && BuildType == "Tank") FileCompleted = true;
@@ -354,7 +388,7 @@ bool LoadRawData::InitializeNewFile(){
   TrigEntriesCompleted = false;
   m_data->CStore.Set("PauseTankDecoding",false);
   m_data->CStore.Set("PauseMRDDecoding",false);
-  m_data->CStore.Set("PauseTriggerDecoding",false);
+  m_data->CStore.Set("PauseCTCDecoding",false);
 
   if(Mode == "SingleFile"){
     Log("LoadRawData Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);

@@ -114,7 +114,7 @@ bool MRDDataDecoder::Execute(){
   Log("MRDDataDecoder Tool: Size of TriggerTypeMap in CStore:" + 
           to_string(CStoreTriggerTypeMap.size()),v_debug, verbosity);
 
-  std::cout << "MRD EVENT CSTORE ENTRIES SET SUCCESSFULLY.  Clearing MRDEvents map from this file." << std::endl;
+  std::cout << "MRD EVENT CSTORE ENTRIES SET SUCCESSFULLY.  Clearing MRDEvent vector in MRDDataDecoder tool." << std::endl;
   MRDEvents.clear();
   TriggerTypeMap.clear();
   BeamLoopbackMap.clear();
