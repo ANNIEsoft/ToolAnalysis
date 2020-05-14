@@ -288,7 +288,7 @@ bool ANNIEEventBuilder::Execute(){
         std::cout << "Number of CTCTimes, MRDTimes, PMTTimes: " << 
             NumTrigs << "," << NumMRDTimestamps << "," << NumTankTimestamps << std::endl;
     }
-    if(MinStamps > (EventsPerPairing*10)){
+    if(MinStamps > (EventsPerPairing)){
       if(verbosity>3) std::cout << "BEGINNING STREAM MERGING " << std::endl;
       //We have enough Trigger,PMT, and MRD data to hopefully do some pairings.
       this->MergeStreams(); // Fills the BuildMap object
