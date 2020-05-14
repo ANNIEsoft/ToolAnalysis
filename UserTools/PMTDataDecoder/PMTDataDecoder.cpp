@@ -62,14 +62,18 @@ bool PMTDataDecoder::Execute(){
       return true; 
     } 
     else if (State == "DataFile"){
+      std::map<int,std::vector<CardData>> CardData_Map;
+      m_data->Stores["PMTData"]->Get("CardDataMap",CardData_Map);
+
+
       // Full PMTData file ready to parse
       if (verbosity > v_message) std::cout<<"PMTDataDecoder: New raw data file available."<<std::endl;
-      m_data->Stores["PMTData"]->Get("FileData",PMTData);
-      PMTData->Print(false);
+      //m_data->Stores["PMTData"]->Get("FileData",PMTData);
+      //PMTData->Print(false);
       
-      long totalentries;
-      PMTData->Header->Get("TotalEntries",totalentries);
-      if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
+      //long totalentries;
+      //PMTData->Header->Get("TotalEntries",totalentries);
+      //if(verbosity>v_message) std::cout<<"Total entries in PMTData store: "<<totalentries<<std::endl;
 
       fifo1.clear();
       fifo2.clear();
@@ -78,7 +82,7 @@ bool PMTDataDecoder::Execute(){
       TriggerTimeBank.clear();
       WaveBank.clear();
       
-      NumPMTDataProcessed = 0;
+      /*NumPMTDataProcessed = 0;
       int ExecuteEntryNum = 0;
       int EntriesToDo;
       if (totalentries < 3000) EntriesToDo = 70;	//don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
@@ -95,7 +99,14 @@ bool PMTDataDecoder::Execute(){
       while((ExecuteEntryNum < EntriesToDo) && (CDEntryNum<totalentries)){
 	      Log("PMTDataDecoder Tool: Procesing PMTData Entry "+to_string(CDEntryNum),v_debug, verbosity);
     	  PMTData->GetEntry(CDEntryNum);
-    	  PMTData->Get("CardData",Cdata_old);
+    	  PMTData->Get("CardData",Cdata_old);*/
+	    
+	     std::map<int,std::vector<CardData>>::iterator it;
+        for (it=CardData_Map.begin(); it!= CardData_Map.end(); it++){
+            int CDEntryNum = it->first;
+            std::vector<CardData> Cdata_old = it->second;
+            std::cout <<"CDEntryNum: "<<CDEntryNum<<", CData vector size: "<<Cdata_old.size()<<std::endl;
+
 	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata_old.size()),v_debug, verbosity);
         for (unsigned int CardDataIndex=0; CardDataIndex<Cdata_old.size(); CardDataIndex++){
           if(verbosity>v_debug){
@@ -160,8 +171,8 @@ bool PMTDataDecoder::Execute(){
           }
 	}
         Log("PMTDataDecoder Tool: PMTData Entry "+to_string(CDEntryNum)+" processed",v_debug, verbosity);
-        ExecuteEntryNum += 1; 
-        CDEntryNum+=1; 
+        //ExecuteEntryNum += 1; 
+        //CDEntryNum+=1; 
       }
         
       this->ParseOOOsNowInOrder();
