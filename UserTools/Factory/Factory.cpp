@@ -110,6 +110,7 @@ if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="LoadRawData") ret=new LoadRawData;
+if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
   
 return ret;
