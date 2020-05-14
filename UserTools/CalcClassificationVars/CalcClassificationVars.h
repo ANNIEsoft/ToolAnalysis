@@ -78,6 +78,7 @@ class CalcClassificationVars: public Tool {
   std::map<std::string,int> classification_map_map;	//maps variable name to correct map
 
   //PDFs
+  TFile *f_emu = nullptr;
   TH1F *pdf_mu_charge = nullptr;
   TH1F *pdf_mu_time = nullptr;
   TH1F *pdf_mu_theta = nullptr;
@@ -90,8 +91,17 @@ class CalcClassificationVars: public Tool {
   TH1F *event_time = nullptr;
   TH1F *event_theta = nullptr;
   TH1F *event_phi = nullptr;
+ 
+  TFile *f_rings = nullptr;
+  TH1F *pdf_single_charge = nullptr;
+  TH1F *pdf_single_time = nullptr;
+  TH1F *pdf_single_theta = nullptr;
+  TH1F *pdf_single_phi = nullptr;
+  TH1F *pdf_multi_charge = nullptr;
+  TH1F *pdf_multi_time = nullptr;
+  TH1F *pdf_multi_theta = nullptr;
+  TH1F *pdf_multi_phi = nullptr;
 
-  TApplication *app_calc = nullptr;
 
   //General variables
   double pos_x, pos_y, pos_z, dir_x, dir_y, dir_z;

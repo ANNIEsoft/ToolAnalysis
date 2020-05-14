@@ -5,7 +5,7 @@ PMTVarT    100    -20.    20.
 PMTQtotal    500    0.    12000.
 PMTQtotalClustered    500    0    12000.
 PMTHits    150    0.    150.
-PMTQPerPMT    500    0.    10.
+PMTQPerPMT    500    0.    500.
 PMTFracQmax    100    0.    1.
 PMTFracQdownstream    100    0.    1.
 PMTFracClustered    100    0.    1.
@@ -28,10 +28,14 @@ PMTEllip    100    0.    5.
 PMTBaryTheta_Clustered    100    0.    3.1415
 PMTBaryTheta_NonClustered    100    0.    3.1415
 PMTDeltaBarycenter_Clustered    100    0.    3.1415
-PMTLikelihoodQ    500    -100.    100.
-PMTLikelihoodT    500    -100.    100.
-PMTLikelihoodTheta    500    -100.    100.
-PMTLikelihoodPhi    500    -100.    100.
+PMTLikelihoodQ    500    -5.    5.
+PMTLikelihoodT    500    -5.    5.
+PMTLikelihoodTheta    500    -5.    5.
+PMTLikelihoodPhi    500    -5.    5.
+PMTLikelihoodQRings    500    -5.    5.
+PMTLikelihoodTRings    500    -5.    5.
+PMTLikelihoodThetaRings    500    -5.    5.
+PMTLikelihoodPhiRings    500    -5.    5.
 LAPPDBaryTheta    100    0.    3.1415
 LAPPDAvgDist    100    0.    4.
 LAPPDQtotal    1000    0.    1000.

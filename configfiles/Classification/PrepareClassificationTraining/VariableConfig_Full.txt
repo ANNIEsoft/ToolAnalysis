@@ -32,6 +32,10 @@ PMTLikelihoodQ
 PMTLikelihoodT
 PMTLikelihoodTheta
 PMTLikelihoodPhi
+PMTLikelihoodQRings
+PMTLikelihoodTRings
+PMTLikelihoodThetaRings
+PMTLikelihoodPhiRings
 LAPPDBaryTheta
 LAPPDAvgDist
 LAPPDQtotal

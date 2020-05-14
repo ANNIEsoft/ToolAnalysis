@@ -11,16 +11,16 @@ bool CalcClassificationVars::Initialise(std::string configfile, DataModel &data)
 	// Default variables	
 	verbosity = 2;
 	isData = 0;
-	lateT = 10;
-	lowQ = 30;
 	neutrino_sample = false;
-	pdf_emu = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu.root";
+	pdf_emu = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu_rough.root";
+	pdf_rings = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beam_rings_rough.root";
 
 	// Configuration variables
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("IsData",isData);
 	m_variables.Get("NeutrinoSample",neutrino_sample);
 	m_variables.Get("PDF_emu",pdf_emu);
+	m_variables.Get("PDF_rings",pdf_rings);
 
 	// Geometry variables
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
@@ -53,57 +53,15 @@ bool CalcClassificationVars::Initialise(std::string configfile, DataModel &data)
   	}
 
 	//Get electron/muon pdfs
-	TFile *f_emu = new TFile(pdf_emu.c_str(),"READ");
-	pdf_mu_charge = (TH1F*) f_emu->Get("pdf_beamlike_muon_charge");
-	pdf_mu_time = (TH1F*) f_emu->Get("pdf_beamlike_muon_time");
-	pdf_mu_theta = (TH1F*) f_emu->Get("pdf_beamlike_muon_thetaB");
-	pdf_mu_phi = (TH1F*) f_emu->Get("pdf_beamlike_muon_phiB");
-	pdf_e_charge = (TH1F*) f_emu->Get("pdf_beamlike_electron_charge");
-	pdf_e_time = (TH1F*) f_emu->Get("pdf_beamlike_electron_time");
-	pdf_e_theta = (TH1F*) f_emu->Get("pdf_beamlike_electron_thetaB");
-	pdf_e_phi = (TH1F*) f_emu->Get("pdf_beamlike_electron_phiB");
-	pdf_mu_theta->Rebin(10);
-	pdf_mu_phi->Rebin(10);
-	pdf_e_theta->Rebin(10);
-	pdf_e_phi->Rebin(10);
-	event_charge = new TH1F("event_charge","Charge values for event",500,0.,500.);
-	event_time = new TH1F("event_time","Time values for event",500,-5.,45.);
-	event_theta = new TH1F("event_theta","Theta values for event",50,-3.76,3.76);
-	event_phi = new TH1F("event_phi","Phi values for event",50,-2.84,3.32);
+	this->InitialisePDFs();
 
 	// Create classification BoostStore
 	int classstoreexists = m_data->Stores.count("Classification");
 	if (classstoreexists==0) m_data->Stores["Classification"] = new BoostStore(false,2);
 
 	//Create mapping of variables to their respective variable type map
-	std::vector<std::string> int_variable_names = {"PMTHits","PMTHitsLargeAnglePhi","PMTHitsLargeAngleTheta","LAPPDHits","MrdLayers","MrdPaddles","MrdConsLayers","MrdAdjHits","MrdClusters","MCNRings","EventNumber","MCPDG","MCNeutrons"};
-	std::vector<std::string> double_variable_names = {"PMTBaryTheta","PMTAvgDist","PMTAvgT","PMTVarT","PMTQtotal","PMTQPerPMT","PMTQtotalClustered","PMTFracQmax","PMTFracQdownstream","PMTFracClustered","PMTFracLowQ","PMTFracEarly","PMTFracLate","PMTRMSTheta","PMTVarTheta","PMTRMSThetaBary","PMTVarThetaBary","PMTRMSPhi","PMTVarPhi","PMTRMSPhiBary","PMTVarPhiBary","PMTFracLargeAnglePhi","PMTFracLargeAngleTheta","PMTBaryTheta_Clustered","PMTBaryTheta_NonClustered","PMTDeltaBarycenter_Clustered","PMTEllip","PMTLikelihoodQ","PMTLikelihoodT","PMTLikelihoodTheta","PMTLikelihoodPhi","LAPPDBaryTheta","LAPPDAvgDist","LAPPDQtotal","LAPPDAvgT","LAPPDVarT","LAPPDRMSTheta","LAPPDVarTheta","LAPPDRMSThetaBary","LAPPDVarThetaBary","MrdPadPerLayer","MrdXSpread","MrdYSpread","MCPMTFracRing","MCPMTFracRingNoWeight","MCLAPPDFracRing","MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCLAPPDVarTheta","MCLAPPDBaryTheta","MCLAPPDRMSTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCVDistVtxWall","MCHDistVtxWall","MCVDistVtxInner","MCHDistVtxInner","MCVtxTrueTime","MCTrueNeutrinoEnergy","MCTrueMuonEnergy"};
-	std::vector<std::string> boolean_variable_names = {"MCMultiRing"};
-	std::vector<std::string> vector_variable_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector","MCPMTThetaBaryVector","MCLAPPDThetaBaryVector","MCPMTTVectorTOF","MCLAPPDTVectorTOF"};
-	
-	// Map identification number for ints: 1
-	for (unsigned int i_int=0; i_int < int_variable_names.size(); i_int++){
-		classification_map_map.emplace(int_variable_names.at(i_int),1);
-	}
-	// Map identification number for doubles: 2
-	for (unsigned int i_double = 0; i_double < double_variable_names.size(); i_double++){
-		classification_map_map.emplace(double_variable_names.at(i_double),2);
-	}
-	// Map identification number for bools: 3
-	for (unsigned int i_bool = 0; i_bool < boolean_variable_names.size(); i_bool++){
-		classification_map_map.emplace(boolean_variable_names.at(i_bool),3);
-	}
-	// Map identification number for vectors: 4
-	for (unsigned int i_vector = 0; i_vector < vector_variable_names.size(); i_vector++){
-		classification_map_map.emplace(vector_variable_names.at(i_vector),4);
-	}
+	this->InitialiseClassificationMaps();
 
-	m_data->Stores["Classification"]->Set("ClassificationMapMap",classification_map_map);
-
-
-	//int myargc = 0;
-	//char *myargv[] {(char*) "options"};
-	//app_calc = new TApplication("app_calc",&myargc,myargv);
 	
 	return true;
 }
@@ -222,6 +180,98 @@ double CalcClassificationVars::CalcArcTan(double x, double z){
 	if (x < 0. && z > 0. ) atan_result = TMath::Pi()+atan(-x/z);
 
 	return atan_result;
+}
+
+void CalcClassificationVars::InitialisePDFs(){
+
+	// Electron/muon pdfs
+	f_emu = new TFile(pdf_emu.c_str(),"READ");
+	pdf_mu_charge = (TH1F*) f_emu->Get("pdf_beamlike_muon_charge");
+	pdf_mu_time = (TH1F*) f_emu->Get("pdf_beamlike_muon_time");
+	pdf_mu_theta = (TH1F*) f_emu->Get("pdf_beamlike_muon_thetaB");
+	pdf_mu_phi = (TH1F*) f_emu->Get("pdf_beamlike_muon_phiB");
+	pdf_e_charge = (TH1F*) f_emu->Get("pdf_beamlike_electron_charge");
+	pdf_e_time = (TH1F*) f_emu->Get("pdf_beamlike_electron_time");
+	pdf_e_theta = (TH1F*) f_emu->Get("pdf_beamlike_electron_thetaB");
+	pdf_e_phi = (TH1F*) f_emu->Get("pdf_beamlike_electron_phiB");
+
+	pdf_mu_charge->Rebin(10);
+	pdf_mu_time->Rebin(10);
+	pdf_mu_theta->Rebin(10);
+	pdf_mu_phi->Rebin(10);
+	pdf_e_charge->Rebin(10);
+	pdf_e_time->Rebin(10);
+	pdf_e_theta->Rebin(10);
+	pdf_e_phi->Rebin(10);
+
+	int nbins_charge = pdf_mu_charge->GetNbinsX();
+	int nbins_time = pdf_mu_charge->GetNbinsX();
+	int nbins_theta = pdf_mu_charge->GetNbinsX();
+	int nbins_phi = pdf_mu_charge->GetNbinsX();
+	double min_charge = pdf_mu_charge->GetXaxis()->GetXmin();
+	double max_charge = pdf_mu_charge->GetXaxis()->GetXmax();
+	double min_time = pdf_mu_time->GetXaxis()->GetXmin();
+	double max_time = pdf_mu_time->GetXaxis()->GetXmax();
+	double min_theta = pdf_mu_theta->GetXaxis()->GetXmin();
+	double max_theta = pdf_mu_theta->GetXaxis()->GetXmax();
+	double min_phi = pdf_mu_phi->GetXaxis()->GetXmin();
+	double max_phi = pdf_mu_phi->GetXaxis()->GetXmax();
+	
+	event_charge = new TH1F("event_charge","Charge values for event",nbins_charge,min_charge,max_charge);
+	event_time = new TH1F("event_time","Time values for event",nbins_time,min_time,max_time);
+	event_theta = new TH1F("event_theta","Theta values for event",nbins_theta,min_theta,max_theta);
+	event_phi = new TH1F("event_phi","Phi values for event",nbins_phi,min_phi,max_phi);
+	
+	// Single/multi-ring pdfs
+	f_rings = new TFile(pdf_rings.c_str(),"READ");
+	pdf_single_charge = (TH1F*) f_emu->Get("pdf_beam_single_charge");
+	pdf_single_time = (TH1F*) f_emu->Get("pdf_beam_single_time");
+	pdf_single_theta = (TH1F*) f_emu->Get("pdf_beam_single_thetaB");
+	pdf_single_phi = (TH1F*) f_emu->Get("pdf_beam_single_phiB");
+	pdf_multi_charge = (TH1F*) f_emu->Get("pdf_beam_multi_charge");
+	pdf_multi_time = (TH1F*) f_emu->Get("pdf_beam_multi_time");
+	pdf_multi_theta = (TH1F*) f_emu->Get("pdf_beam_multi_thetaB");
+	pdf_multi_phi = (TH1F*) f_emu->Get("pdf_beam_multi_phiB");
+
+	pdf_single_charge->Rebin(10);
+	pdf_single_time->Rebin(10);
+	pdf_single_theta->Rebin(10);
+	pdf_single_phi->Rebin(10);
+	pdf_multi_charge->Rebin(10);
+	pdf_multi_time->Rebin(10);
+	pdf_multi_theta->Rebin(10);
+	pdf_multi_phi->Rebin(10);
+
+
+}
+
+void CalcClassificationVars::InitialiseClassificationMaps(){
+
+	//Sort variables into their respective maps
+	std::vector<std::string> int_variable_names = {"PMTHits","PMTHitsLargeAnglePhi","PMTHitsLargeAngleTheta","LAPPDHits","MrdLayers","MrdPaddles","MrdConsLayers","MrdAdjHits","MrdClusters","MCNRings","EventNumber","MCPDG","MCNeutrons"};
+	std::vector<std::string> double_variable_names = {"PMTBaryTheta","PMTAvgDist","PMTAvgT","PMTVarT","PMTQtotal","PMTQPerPMT","PMTQtotalClustered","PMTFracQmax","PMTFracQdownstream","PMTFracClustered","PMTFracLowQ","PMTFracEarly","PMTFracLate","PMTRMSTheta","PMTVarTheta","PMTRMSThetaBary","PMTVarThetaBary","PMTRMSPhi","PMTVarPhi","PMTRMSPhiBary","PMTVarPhiBary","PMTFracLargeAnglePhi","PMTFracLargeAngleTheta","PMTBaryTheta_Clustered","PMTBaryTheta_NonClustered","PMTDeltaBarycenter_Clustered","PMTEllip","PMTLikelihoodQ","PMTLikelihoodT","PMTLikelihoodTheta","PMTLikelihoodPhi","PMTLikelihoodQRings","PMTLikelihoodTRings","PMTLikelihoodThetaRings","PMTLikelihoodPhiRings","LAPPDBaryTheta","LAPPDAvgDist","LAPPDQtotal","LAPPDAvgT","LAPPDVarT","LAPPDRMSTheta","LAPPDVarTheta","LAPPDRMSThetaBary","LAPPDVarThetaBary","MrdPadPerLayer","MrdXSpread","MrdYSpread","MCPMTFracRing","MCPMTFracRingNoWeight","MCLAPPDFracRing","MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCLAPPDVarTheta","MCLAPPDBaryTheta","MCLAPPDRMSTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCVDistVtxWall","MCHDistVtxWall","MCVDistVtxInner","MCHDistVtxInner","MCVtxTrueTime","MCTrueNeutrinoEnergy","MCTrueMuonEnergy"};
+	std::vector<std::string> boolean_variable_names = {"MCMultiRing"};
+	std::vector<std::string> vector_variable_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector","MCPMTThetaBaryVector","MCLAPPDThetaBaryVector","MCPMTTVectorTOF","MCLAPPDTVectorTOF"};
+	
+	// Map identification number for ints: 1
+	for (unsigned int i_int=0; i_int < int_variable_names.size(); i_int++){
+		classification_map_map.emplace(int_variable_names.at(i_int),1);
+	}
+	// Map identification number for doubles: 2
+	for (unsigned int i_double = 0; i_double < double_variable_names.size(); i_double++){
+		classification_map_map.emplace(double_variable_names.at(i_double),2);
+	}
+	// Map identification number for bools: 3
+	for (unsigned int i_bool = 0; i_bool < boolean_variable_names.size(); i_bool++){
+		classification_map_map.emplace(boolean_variable_names.at(i_bool),3);
+	}
+	// Map identification number for vectors: 4
+	for (unsigned int i_vector = 0; i_vector < vector_variable_names.size(); i_vector++){
+		classification_map_map.emplace(vector_variable_names.at(i_vector),4);
+	}
+
+	m_data->Stores["Classification"]->Set("ClassificationMapMap",classification_map_map);
+
 }
 
 bool CalcClassificationVars::GetBoostStoreVariables(){
@@ -593,14 +643,20 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 		pmtBaryTheta = 0;
 		pmtBaryPhi = 0.;
 		pmtBaryY = 0.;
-		pmtBaryTheta_Clustered = 0.;
-		pmtBaryTheta_NonClustered = 0.;
-	}
-	else {
+	} else {
 		pmtBaryTheta = acos(pmtBaryQ.Z()/pmtBaryDist);
 		pmtBaryPhi = CalcArcTan(pmtBaryQ.X(),pmtBaryQ.Z());
 		pmtBaryY = pmtBaryQ.Y();
+	} 
+	if (fabs(pmtBaryDist_Clustered)<0.0001){
+		pmtBaryTheta_Clustered = 0.;
+	} else {
 		pmtBaryTheta_Clustered = acos(pmtBaryQ_Clustered.Z()/pmtBaryDist_Clustered);
+	}
+	if (fabs(pmtBaryDist_NonClustered)<0.0001){
+		pmtBaryTheta_NonClustered = 0.;
+	}
+	else {
 		pmtBaryTheta_NonClustered = acos(pmtBaryQ_NonClustered.Z()/pmtBaryDist_NonClustered);
 	}
 	lappdBaryDist = lappdBaryQ.Mag();
@@ -707,34 +763,31 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 		}
 	}
 
-	pdf_mu_charge->Scale(event_charge->Integral());
-	pdf_mu_time->Scale(event_time->Integral());
-	pdf_mu_theta->Scale(event_theta->Integral());
-	pdf_mu_phi->Scale(event_phi->Integral());
-	pdf_e_charge->Scale(event_charge->Integral());
-	pdf_e_time->Scale(event_time->Integral());
-	pdf_e_theta->Scale(event_theta->Integral());
-	pdf_e_phi->Scale(event_phi->Integral());
-	double pmt_charge_mu = pdf_mu_charge->Chi2Test(event_charge,"UUPNORMCHI2");
-	double pmt_time_mu = pdf_mu_time->Chi2Test(event_time,"UUPNORMCHI2");
-	double pmt_theta_mu = pdf_mu_theta->Chi2Test(event_theta,"UUPNORMCHI2");
-	double pmt_phi_mu = pdf_mu_phi->Chi2Test(event_phi,"UUPNORMCHI2");
-	double pmt_charge_e = pdf_e_charge->Chi2Test(event_charge,"UUPNORMCHI2");
-	double pmt_time_e = pdf_e_time->Chi2Test(event_time,"UUPNORMCHI2");
-	double pmt_theta_e = pdf_e_theta->Chi2Test(event_theta,"UUPNORMCHI2");
-	double pmt_phi_e = pdf_e_phi->Chi2Test(event_phi,"UUPNORMCHI2");
+	double pmt_charge_mu = pdf_mu_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
+	double pmt_time_mu = pdf_mu_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
+	double pmt_theta_mu = pdf_mu_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
+	double pmt_phi_mu = pdf_mu_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
+	double pmt_charge_e = pdf_e_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
+	double pmt_time_e = pdf_e_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
+	double pmt_theta_e = pdf_e_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
+	double pmt_phi_e = pdf_e_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
 	double pmt_charge_likelihood = pmt_charge_mu - pmt_charge_e;
 	double pmt_time_likelihood = pmt_time_mu - pmt_time_e;
 	double pmt_theta_likelihood = pmt_theta_mu - pmt_theta_e;
 	double pmt_phi_likelihood = pmt_phi_mu - pmt_phi_e;
-	pdf_mu_charge->Scale(1./event_charge->Integral());
-	pdf_mu_time->Scale(1./event_time->Integral());
-	pdf_mu_theta->Scale(1./event_theta->Integral());
-	pdf_mu_phi->Scale(1./event_phi->Integral());
-	pdf_e_charge->Scale(1./event_charge->Integral());
-	pdf_e_time->Scale(1./event_time->Integral());
-	pdf_e_theta->Scale(1./event_theta->Integral());
-	pdf_e_phi->Scale(1./event_phi->Integral());
+	
+	double pmt_charge_single = pdf_mu_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
+	double pmt_time_single = pdf_mu_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
+	double pmt_theta_single = pdf_mu_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
+	double pmt_phi_single = pdf_mu_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
+	double pmt_charge_multi = pdf_e_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
+	double pmt_time_multi = pdf_e_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
+	double pmt_theta_multi = pdf_e_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
+	double pmt_phi_multi = pdf_e_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
+	double pmt_charge_likelihood_rings = pmt_charge_single - pmt_charge_multi;
+	double pmt_time_likelihood_rings = pmt_time_single - pmt_time_multi;
+	double pmt_theta_likelihood_rings = pmt_theta_single - pmt_theta_multi;
+	double pmt_phi_likelihood_rings = pmt_phi_single - pmt_phi_multi;
 
 
 	// PMT variables
@@ -772,6 +825,10 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	classification_map_double.emplace("PMTLikelihoodT",pmt_time_likelihood);
 	classification_map_double.emplace("PMTLikelihoodTheta",pmt_theta_likelihood);
 	classification_map_double.emplace("PMTLikelihoodPhi",pmt_phi_likelihood);
+	classification_map_double.emplace("PMTLikelihoodQRings",pmt_charge_likelihood_rings);
+	classification_map_double.emplace("PMTLikelihoodTRings",pmt_time_likelihood_rings);
+	classification_map_double.emplace("PMTLikelihoodThetaRings",pmt_theta_likelihood_rings);
+	classification_map_double.emplace("PMTLikelihoodPhiRings",pmt_phi_likelihood_rings);
 
 
 	// LAPPD variables
