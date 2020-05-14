@@ -107,6 +107,7 @@ bool MonitorSimReceive::Execute(){
     } else {
       m_data->vars.Set("StopLoop",true);
       if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
+      if (PMTData!=0) {PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
       return true;
     }
 
@@ -115,6 +116,10 @@ bool MonitorSimReceive::Execute(){
     }
     if (PMTData!=0){
       m_data->Stores["PMTData"]->Delete();
+      PMTData->Close();
+      PMTData->Delete();
+      delete PMTData;
+      PMTData=0;
     }
     if (indata!=0){
       std::cout <<"close indata"<<std::endl;
@@ -159,8 +164,31 @@ bool MonitorSimReceive::Execute(){
 
     if (has_pmt){
         indata->Get("PMTData",*PMTData);
-        PMTData->Save("tmp");
-        m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+        //PMTData->Save("tmp");
+	PMTData->Print(false);
+        long totalentries;
+        PMTData->Header->Get("TotalEntries",totalentries);
+        std::cout <<"MonitorSimReceive: Total entries: "<<totalentries<<std::endl;
+        int ExecuteEntryNum=0;
+        int EntriesToDo,CDEntryNum;
+        if (totalentries < 3000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
+        else EntriesToDo = (int) totalentries/15;               //otherwise do ~1000 entries out of 15000
+        CDEntryNum = totalentries - EntriesToDo - 10;
+        if (CDEntryNum < 0) CDEntryNum = 0;
+        std::map<int,std::vector<CardData>> CardData_Map;
+        while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
+            std::cout <<"ExecuteEntryNum: "<<ExecuteEntryNum<<std::endl;
+            std::vector<CardData> vector_CardData;
+            PMTData->GetEntry(CDEntryNum);
+            PMTData->Get("CardData",vector_CardData);
+            CardData_Map.emplace(CDEntryNum,vector_CardData);
+            ExecuteEntryNum++;
+            CDEntryNum++;
+        }
+        m_data->Stores["PMTData"]->Set("CardDataMap",CardData_Map);  
+	    
+	    
+        //m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
     }
 
     i_loop++;
@@ -175,6 +203,8 @@ bool MonitorSimReceive::Finalise(){
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Finalising"<<std::endl;
 
     if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
+    if (PMTData!=0) { PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
+
 
     if (m_data->CStore.Has("State")) m_data->CStore.Remove("State");
     if (m_data->CStore.Has("HasCCData")) m_data->CStore.Remove("HasCCData");
