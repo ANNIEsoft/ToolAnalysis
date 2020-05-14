@@ -110,6 +110,7 @@ if (tool=="BeamClusterPlots") ret=new BeamClusterPlots;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="LoadRawData") ret=new LoadRawData;
+if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 
 return ret;
 }
