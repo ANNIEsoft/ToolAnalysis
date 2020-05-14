@@ -38,11 +38,11 @@ private:
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::string outputdir="";
 	bool writefile=false;
-        std::string outputfile;
+	std::string outputfile;
 	bool triggertype_selection;
 	std::string triggertype;
 	bool isData;
-
+	
 	// Variables retrieved from ANNIEEVENT
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::string MCFile;      //-> currentfilestring
@@ -53,17 +53,16 @@ private:
 	uint64_t MCEventNum;    // not yet in MRDTrackClass 
 	Geometry* geo=nullptr;  // for num MRD PMTs
 	int numvetopmts=0;      // current method for separating veto / mrd pmts in TDCData
-	std::string file_chankeymap;	
-
-
+	std::string file_chankeymap;
+	
 	// From the CStore, for converting WCSim TubeId to channelkey
-	std::map<int,unsigned long> mrdpmtid_to_channelkey;
+	std::map<int,unsigned long> mrd_tubeid_to_channelkey;
 	
 	// Store information regarding MRD Time clusters
 	std::vector<std::vector<int>> MrdTimeClusters;
-        std::string MRDTriggertype;
+	std::string MRDTriggertype;
 	
-
+	
 	// MRD TRACK RECONSTRUCTION
 	// ~~~~~~~~~~~~~~~~~~~~~~~~
 	// variables for file writing

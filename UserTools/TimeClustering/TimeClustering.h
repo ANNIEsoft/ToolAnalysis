@@ -38,20 +38,20 @@ class TimeClustering: public Tool {
 	bool MakeMrdDigitTimePlot=false;
 	bool MakeSingleEventPlots;
 	bool LaunchTApplication;
-	bool isData;	
+	bool isData;
 	std::string output_rootfile;
 	std::string file_chankeymap;
 	int evnum;
-
+	
 	//ANNIEEvent data
 	std::map<unsigned long,vector<Hit>>* TDCData;
 	std::map<unsigned long,vector<MCHit>>* TDCData_MC;
-	Geometry *geom = nullptr;	
-
+	Geometry *geom = nullptr;
+	
 	// From the CStore, for converting WCSim TubeId t channelkey
-        std::map<unsigned long,int> channelkey_to_mrdpmtid;
-        std::map<unsigned long,int> channelkey_to_faccpmtid;
-
+	std::map<unsigned long,int> channelkey_to_mrdpmtid;
+	std::map<unsigned long,int> channelkey_to_faccpmtid;
+	
 	// Cluster properties
 	std::vector<double> mrddigittimesthisevent;
 	std::vector<int> mrddigitpmtsthisevent;
@@ -61,21 +61,21 @@ class TimeClustering: public Tool {
 	std::vector<std::vector<double>> MrdTimeClusters_Times;
 	std::vector<std::vector<double>> MrdTimeClusters_Charges;
 	
-        // Histograms storing information about the MRD cluster times
+	// Histograms storing information about the MRD cluster times
 	TH1D* mrddigitts_cosmic_cluster = nullptr;
-        TH1D* mrddigitts_beam_cluster = nullptr;
-        TH1D* mrddigitts_noloopback_cluster = nullptr;
-        TH1D* mrddigitts_cluster = nullptr;
-        TH1D* mrddigitts_cosmic = nullptr;
-        TH1D* mrddigitts_beam = nullptr;
-        TH1D* mrddigitts_noloopback = nullptr;
-        TH1D* mrddigitts = nullptr;
+	TH1D* mrddigitts_beam_cluster = nullptr;
+	TH1D* mrddigitts_noloopback_cluster = nullptr;
+	TH1D* mrddigitts_cluster = nullptr;
+	TH1D* mrddigitts_cosmic = nullptr;
+	TH1D* mrddigitts_beam = nullptr;
+	TH1D* mrddigitts_noloopback = nullptr;
+	TH1D* mrddigitts = nullptr;
 	TH1D *mrddigitts_cluster_single = nullptr;
 	TH1D *mrddigitts_single = nullptr;
 	TH1D *mrddigitts_horizontal = nullptr;
 	TH1D *mrddigitts_vertical = nullptr;
-        TFile* mrddigitts_file = nullptr;
-
+	TFile* mrddigitts_file = nullptr;
+	
 	//TApplication-related variables
 	TCanvas* timeClusterCanvas=nullptr;
 	TApplication* rootTApp=nullptr;
