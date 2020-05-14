@@ -112,6 +112,8 @@
 #include "ANNIEEventBuilder.h"
 #include "MRDDataDecoder.h"
 #include "PrintADCData.h"
+#include "ClusterFinder.h"
+#include "RunValidation.h"
 #include "AmBeRunStatistics.h"
 #include "ClusterFinder.h"
 #include "SimpleTankEnergyCalibrator.h"
