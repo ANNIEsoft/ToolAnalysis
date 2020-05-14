@@ -136,7 +136,7 @@ bool PhaseITreeMaker::Initialise(std::string config_filename, DataModel& data)
     "toroids_agree/O");
 
   // Get the geometry
-  m_data->Stores.at("ANNIEEvent")->Get("ANNIEGeometry",anniegeom);
+  m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",anniegeom);
 
   return true;
 }

@@ -112,6 +112,7 @@ if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="LoadRawData") ret=new LoadRawData;
 if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
-  
+if (tool=="VetoEfficiency") ret=new VetoEfficiency;
+
 return ret;
 }
