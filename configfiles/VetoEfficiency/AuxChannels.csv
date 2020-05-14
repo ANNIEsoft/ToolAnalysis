@@ -1,0 +1,11 @@
+LEGEND_LINE,,,,,
+channel_num,signal_crate,signal_slot,signal_channel,channel_type,notes
+#################################,,,,,
+DATA_START,,,,,
+10001,1,21,0,FACC,combined current sum
+10002,1,21,1,MRDL1,combined current sum
+10003,1,21,2,RWM,ok
+10004,1,21,3,MRDL2,combined current sum
+10005,1,4,1,NCV1,ok
+10006,1,18,0,NCV2,ok
+DATA_END,,,,,

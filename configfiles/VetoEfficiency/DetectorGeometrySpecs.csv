@@ -1,0 +1,7 @@
+#Units are in meters
+LEGEND_LINE
+geometry_version,tank_xcenter,tank_ycenter,tank_zcenter,tank_radius,tank_halfheight,pmt_enclosed_radius,pmt_enclosed_halfheight,mrd_width,mrd_height,mrd_depth,mrd_start
+
+DATA_START
+1,0.0,-0.144649,1.681,1.52,3.96,1.0,1.45,1.5225,1.3195,1.4049,3.255
+DATA_END
