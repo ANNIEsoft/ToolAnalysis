@@ -69,6 +69,9 @@ bool MonitorSimReceive::Execute(){
 
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Executing"<<std::endl;
 
+    m_data->CStore.Set("HasCCData",false);
+    m_data->CStore.Set("HasPMTData",false);
+
     if (mode == "Wait"){
       std::string Wait = "Wait";     
       m_data->CStore.Set("State",Wait);
