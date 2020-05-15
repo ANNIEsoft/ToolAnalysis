@@ -1,6 +1,6 @@
 # PMTMonitoring config file
 
-verbose 3
+verbose 0
 #OutputPath ./monitoringplots/
 OutputPath fromStore
 ActiveSlots configfiles/Monitoring/PMT_activeslots.txt #define which channels of the crate are connected
