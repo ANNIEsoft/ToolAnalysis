@@ -143,8 +143,9 @@ bool MonitorReceive::Execute(){
         	int EntriesToDo,CDEntryNum;
         	if (totalentries < 3000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
         	else EntriesToDo = (int) totalentries/15;               //otherwise do ~1000 entries out of 15000
-        	CDEntryNum = totalentries - EntriesToDo - 10;
-        	if (CDEntryNum < 0) CDEntryNum = 0;
+        	//CDEntryNum = totalentries - EntriesToDo - 10;
+        	//if (CDEntryNum < 0) CDEntryNum = 0;
+		CDEntryNum = 0;
         	std::map<int,std::vector<CardData>> CardData_Map;
         	while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
             		std::cout <<"ExecuteEntryNum: "<<ExecuteEntryNum<<std::endl;
