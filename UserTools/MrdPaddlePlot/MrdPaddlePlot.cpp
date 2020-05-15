@@ -29,7 +29,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	
 	useTApplication = true;
 	plotOnlyTracks = false;
-
+	
 	// get configuration variables for this tool
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("gdmlpath",gdmlpath);
@@ -45,9 +45,9 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("useTApplication",useTApplication);
 	m_variables.Get("OutputROOTFile",output_rootfile);
 	m_variables.Get("PlotOnlyTracks",plotOnlyTracks);
-
-	if (drawGdmlOverlay) useTApplication=true;	// need TApplication to display GDML plots
-
+	
+	if (drawGdmlOverlay) useTApplication=true;   // need TApplication to display GDML plots
+	
 	// for gdml overlay
 	double buildingoffsetx, buildingoffsety, buildingoffsetz;
 	m_variables.Get("buildingoffsetx",buildingoffsetx);
@@ -87,7 +87,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 		mrdvis_file = new TFile(ss_rootfilename.str().c_str(),"RECREATE");
 		gROOT->cd();
 	}
-
+	
 	if(drawStatistics){
 		if (saverootfile) mrdvis_file->cd();
 		hnumhclusters = new TH1D("hnumhclusters","Num track clusters in H view",10,0,10);
@@ -124,7 +124,7 @@ bool MrdPaddlePlot::Initialise(std::string configfile, DataModel &data){
 //		// we also need to specify a marker style so we can distinguish them TODO add legend
 //		markercolours.emplace("mctruth_start_vertices",kBlue);
 //		// repeat for as many point types as we need
-
+	
 	}
 #endif
 	
@@ -169,10 +169,10 @@ bool MrdPaddlePlot::Execute(){
 	// check which subevents had a track
 	std::vector<int> track_subevs;
 	m_data->CStore.Get("TracksSubEvs",track_subevs);
-
+	
 	if(verbosity>2) cout<<"Event "<<EventNumber<<" had "<<numtracksinev<<" tracks in "<<numsubevs<<" subevents"<<endl;
-
-	std::cout <<"MrdPaddlePlot: Check at start of execute: plotDirectory = "<<plotDirectory<<std::endl;
+	
+	//std::cout <<"MrdPaddlePlot: Check at start of execute: plotDirectory = "<<plotDirectory<<std::endl;
 	
 	// ##############################################################################
 	// Track drawing and Histogram Filling code
@@ -415,7 +415,10 @@ bool MrdPaddlePlot::Execute(){
 		//gSystem->ProcessEvents();
 		//gPad->WaitPrimitive();
 		// only need to sleep when using the interactive process
-		if (useTApplication) std::this_thread::sleep_for (std::chrono::seconds(2));
+		if (useTApplication){
+			//gPad->WaitPrimitive();
+			std::this_thread::sleep_for (std::chrono::seconds(2));
+		}
 		
 		if(drawGdmlOverlay){
 			// TODO, we should definitely move this somewhere else
@@ -565,10 +568,10 @@ bool MrdPaddlePlot::Execute(){
 	if(numtracksinev!=numtracksrunningtot){
 		cerr<<"number of tracks in event does not correspond to sum of tracks in subevents!"<<endl;
 	}
-
-        //only for debugging
-        //std::cout <<"MRDPaddlePlot tool: List of objects (End of Execute): "<<std::endl;
-        //gObjectTable->Print();
+	
+	//only for debugging
+	//std::cout <<"MRDPaddlePlot tool: List of objects (End of Execute): "<<std::endl;
+	//gObjectTable->Print();
 	
 	return true;
 }
@@ -633,9 +636,8 @@ bool MrdPaddlePlot::Finalise(){
 			hpaddleids->Write();
 			gROOT->cd();
 		}
-
-		delete mrdTrackCanv;
-                mrdTrackCanv=nullptr;
+		
+		delete mrdTrackCanv; mrdTrackCanv=nullptr;
 	}
 	
 	// cleanup

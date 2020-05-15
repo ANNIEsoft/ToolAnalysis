@@ -17,10 +17,10 @@ drawPaddlePlot 1        # draw the top/side view paddle plot of tracks
 drawGdmlOverlay 0       # draw a 3D representation of the ANNIE detector overlaid with MRD tracks
 drawStatistics 0        # histograms plotting some debug statistics about the track reconstruction
 saveimages 0            # save the paddle plots as images.
-saverootfile 1		# save the paddle plots within a rootfile
+saverootfile 1          # save the paddle plots within a rootfile
 #plotDirectory /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/MrdPlots  # where to save plot images
 plotDirectory ./MrdPaddlePlots
 printTClonesTracks 0    # verbose printout of track information from TClonesArray
-useTApplication 0	# launch a TApplication to directly show the plots (slow on cluster)
-OutputROOTFile MRDPaddlePlots_test	#which root file name should we save to?
-DrawOnlyTracks 1	# should subevents only be drawn if a track was found?
+useTApplication 0       # launch a TApplication to directly show the plots (slow on cluster)
+OutputROOTFile MRDPaddlePlots_test   #which root file name should we save to?
+DrawOnlyTracks 1        # should subevents only be drawn if a track was found?

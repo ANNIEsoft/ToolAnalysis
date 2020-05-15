@@ -29,7 +29,7 @@ class LoadWCSimLAPPD: public Tool {
 	
 	private:
 	// config file variables
-	int verbose=1;
+	int verbosity=1;
 	std::string MCFile;
 	double Rinnerstruct;    // cm octagonal inner structure radius
 	
@@ -56,7 +56,7 @@ class LoadWCSimLAPPD: public Tool {
 	std::vector<MCLAPPDHit> unassignedhits;  // lappd hits not yet assigned to a trigger
 	
 	bool DEBUG_DRAW_LAPPD_HITS;
-	TApplication* lappdRootDrawApp;
+	TApplication* rootTApp;
 	TCanvas* lappdRootCanvas;
 	TPolyMarker3D* lappdhitshist;
 	TH1D *digixpos, *digiypos, *digizpos, *digits;
@@ -69,6 +69,14 @@ class LoadWCSimLAPPD: public Tool {
 	// pre-trigger-selection (so no WCSim trigger association is included)
 	std::map<unsigned long,std::vector<MCLAPPDHit>>* MCLAPPDHits;
 	std::map<int,int>* TrackId_to_MCParticleIndex=nullptr; // maps WCSim trackId to index in MCParticles
+	
+	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;
 	
 };
 
