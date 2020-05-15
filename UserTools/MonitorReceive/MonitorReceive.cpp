@@ -188,7 +188,8 @@ bool MonitorReceive::Finalise(){
 
   m_data->Stores["CCData"]->Remove("FileData");
   m_data->Stores["CCData"]->Remove("Single");
-  m_data->Stores["PMTData"]->Remove("FileData");
+  m_data->Stores["PMTData"]->Remove("CardDataMap");
+  // m_data->Stores["PMTData"]->Remove("FileData");
 	
   m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete();
   m_data->Stores["PMTData"]->Close(); m_data->Stores["PMTData"]->Delete();
