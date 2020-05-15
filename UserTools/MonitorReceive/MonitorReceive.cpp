@@ -107,6 +107,7 @@ bool MonitorReceive::Execute(){
 	if (PMTData!=0){
 	  m_data->Stores["PMTData"]->Delete();
 	  PMTData->Close();
+	  PMTData->Delete();
 	  delete PMTData;
 	  PMTData=0;
 	}
