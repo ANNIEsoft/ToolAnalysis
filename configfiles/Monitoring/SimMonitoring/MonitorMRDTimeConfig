@@ -1,6 +1,6 @@
 # MRDMonitoring config file
 
-verbose 9
+verbose 0
 #OutputPath ./monitoringplots/
 OutputPath fromStore
 ActiveSlots configfiles/Monitoring/MRD_activeslots.txt #define which channels of the crate are connected
