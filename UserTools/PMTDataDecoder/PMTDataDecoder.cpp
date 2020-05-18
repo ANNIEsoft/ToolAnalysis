@@ -105,7 +105,7 @@ bool PMTDataDecoder::Execute(){
         for (it=CardData_Map.begin(); it!= CardData_Map.end(); it++){
             int CDEntryNum = it->first;
             std::vector<CardData> Cdata_old = it->second;
-            std::cout <<"CDEntryNum: "<<CDEntryNum<<", CData vector size: "<<Cdata_old.size()<<std::endl;
+            //std::cout <<"CDEntryNum: "<<CDEntryNum<<", CData vector size: "<<Cdata_old.size()<<std::endl;
 
 	      Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata_old.size()),v_debug, verbosity);
         for (unsigned int CardDataIndex=0; CardDataIndex<Cdata_old.size(); CardDataIndex++){
