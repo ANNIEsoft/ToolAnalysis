@@ -2356,6 +2356,8 @@ void MonitorTankTime::DrawBufferPlots(){
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
       if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Reset();
+      hChannels_temp.at(i_slot*num_channels_tank+i_channel)->SetMaximum(-1111); //needed to reset max/minimum computation
+      hChannels_temp.at(i_slot*num_channels_tank+i_channel)->SetMinimum(-1111); //needed to reset max/minimum computation
     }
   }
 
@@ -2443,6 +2445,7 @@ void MonitorTankTime::DrawADCFreqPlots(){
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
       if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Reset();
+      hChannels_freq.at(i_slot*num_channels_tank+i_channel)->SetMaximum(-1111); //needed to reset max/minimum value computation for histogram
     }
   }
 
