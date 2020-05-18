@@ -148,7 +148,7 @@ bool MonitorReceive::Execute(){
 		CDEntryNum = 0;
         	std::map<int,std::vector<CardData>> CardData_Map;
         	while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
-            		std::cout <<"ExecuteEntryNum: "<<ExecuteEntryNum<<std::endl;
+            		//std::cout <<"ExecuteEntryNum: "<<ExecuteEntryNum<<std::endl;
             		std::vector<CardData> vector_CardData;
             		PMTData->GetEntry(CDEntryNum);
             		PMTData->Get("CardData",vector_CardData);
