@@ -70,6 +70,11 @@ class ANNIEEventBuilder: public Tool {
 
   bool DaylightSavings;  //If true, in the spring/summer.  If false, fall/winter
 
+  std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int> AuxCrateSpaceToChannelNumMap;
+  std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
+
+
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;  //Key: {MTCTime}, value: "WaveMap" with key (CardID,ChannelID), value FinishedWaveform
   std::map<uint64_t, std::string>  MRDTriggerTypeMap;  //Key: {MTCTime}, value: string noting what loopback channels were fired in the MRD in this event
@@ -79,10 +84,6 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
-
-  std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
-  std::map<std::vector<int>,int> AuxCrateSpaceToChannelNumMap;
-  std::map<std::vector<int>,int> MRDCrateSpaceToChannelNumMap;
 
   //######### INFORMATION USED FOR PAIRING UP TANK AND MRD DATA TRIGGERS ########
   int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)
@@ -120,7 +121,9 @@ class ANNIEEventBuilder: public Tool {
   double CurrentDriftMean = 0;
   double CurrentDriftVariance = 0;
 
-  int MRDPMTTimeDiffTolerance;   //Threshold relative to current drift mean where an event will be put to the orphanage
+  int CTCTankTimeTolerance;   //Allowed time difference between CTC timestamp and Tank timestamp to pair data for event
+  int CTCMRDTimeTolerance;   //Allowed time difference between CTC timestamp and MRD timestamp to pair data for event
+  int MRDTankTimeTolerance;   //Threshold relative to current drift mean where an event will be put to the orphanage
   int DriftWarningValue;
   bool IsNewMRDData;
   bool IsNewTankData;

@@ -31,7 +31,7 @@ bool MRDDataDecoder::Execute(){
   bool NewEntryAvailable;
   m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
-    Log("MRDDataDecoder Tool: There's no new MRD data.  stop at next loop.",v_warning,verbosity); 
+    Log("MRDDataDecoder Tool: There's no new MRD data.  stop at next loop to save what data has been built.",v_warning,verbosity); 
     m_data->vars.Set("StopLoop",1);
     return true;
   }

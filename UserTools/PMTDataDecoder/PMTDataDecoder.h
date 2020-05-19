@@ -64,9 +64,9 @@ class PMTDataDecoder: public Tool {
   std::string Mode;
 
   bool NewWavesBuilt;
-  int CurrentEntryNum = 0;
   int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
-  int CDEntryNum = 0; 
+  int EntriesPerExecute;
+  int PMTDEntryNum = 0; 
   int FileNum = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
@@ -88,8 +88,6 @@ class PMTDataDecoder: public Tool {
   std::vector<CardData>* Cdata = nullptr;
   std::vector<CardData> Cdata_old;
 
-  bool FileCompleted = false;
- 
   //Counter used to track the number of entries processed in a PMT file
   int NumPMTDataProcessed = 0;
 

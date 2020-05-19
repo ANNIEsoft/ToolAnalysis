@@ -30,6 +30,8 @@ class LoadRawData: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
   void LoadPMTMRDData(); 
   void LoadTriggerData(); 
+  void LoadRunInformation();
+  void GetNextDataEntries();
   bool InitializeNewFile(); 
 
  private:
@@ -54,6 +56,11 @@ class LoadRawData: public Tool {
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
   int TrigEntryNum = 0;
+
+  //Bools modified to determine which Decoder tools are paused downstream
+  bool TankPaused;
+  bool MRDPaused;
+  bool CTCPaused;
 
   BoostStore *RawData = nullptr;
   BoostStore *PMTData = nullptr;

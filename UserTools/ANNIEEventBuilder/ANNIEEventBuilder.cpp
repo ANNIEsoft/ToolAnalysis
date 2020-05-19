@@ -16,7 +16,10 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   BuildType = "TankAndMRD";
   EventsPerPairing = 200;
   OrphanWarningValue = 20;
-  MRDPMTTimeDiffTolerance = 10;   //ms
+  MRDTankTimeTolerance = 10;   //ms
+  CTCMRDTimeTolerance = 2;  //ms
+  CTCTankTimeTolerance = 100; //ns
+
   DriftWarningValue = 5;           //ms
   NumWavesInCompleteSet = 140;
   OrphanOldTankTimestamps = true;
@@ -36,6 +39,9 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OldTimestampThreshold",OldTimestampThreshold);
   m_variables.Get("DaylightSavingsSpring",DaylightSavings);
   m_variables.Get("ExecutesPerBuild",ExecutesPerBuild);
+  m_variables.Get("MRDTankTimeTolerance",MRDTankTimeTolerance);
+  m_variables.Get("CTCTankTimeTolerance",CTCTankTimeTolerance);
+  m_variables.Get("CTCMRDTimeTolerance",CTCMRDTimeTolerance);
 
   if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
@@ -290,6 +296,7 @@ bool ANNIEEventBuilder::Execute(){
     }
     if(MinStamps > (EventsPerPairing)){
       if(verbosity>3) std::cout << "BEGINNING STREAM MERGING " << std::endl;
+      this->RemoveCosmics();
       //We have enough Trigger,PMT, and MRD data to hopefully do some pairings.
       this->MergeStreams(); // Fills the BuildMap object
       this->ManagePMTMRDOrphanage(); //Placeholder for eventual handling of orphanage
@@ -453,9 +460,6 @@ void ANNIEEventBuilder::MergeStreams(){
   //CTCTimestamps vectors (acquired as the building continues) and builds maps 
   //stored in the BuildMap and used to build ANNIEEvents.
  
-  int CTCMRDTolerance = 5;  //ms
-  int CTCTankTolerance = 100; //ns
-
   //First, pair up CTCTimestamps and MRD/PMT timestamps
   std::map<uint64_t,uint64_t> PairedCTCTankTimes; 
   std::map<uint64_t,uint64_t> PairedCTCMRDTimes;
@@ -476,10 +480,10 @@ void ANNIEEventBuilder::MergeStreams(){
     while(CTCInd<CTCSize){
       double TSDiff =  static_cast<double>(BeamMRDTimestamps.at(j)) - (static_cast<double>(CTCTimestamps.at(CTCInd)/1E6) - TimeZoneShift);
       if(verbosity>4) std::cout << "MRDTS - CTCTS in milliseconds is " << TSDiff << std::endl;
-      if(TSDiff>CTCMRDTolerance){ // Need to move forward in indices
+      if(TSDiff>CTCMRDTimeTolerance){ // Need to move forward in indices
         CTCInd+=1;
         continue;
-      } else if (TSDiff<(-1.*static_cast<double>(CTCMRDTolerance))){ //We've crossed past where a pair would be found
+      } else if (TSDiff<(-1.*static_cast<double>(CTCMRDTimeTolerance))){ //We've crossed past where a pair would be found
         if(verbosity>4) std::cout << "NO CTC STAMP FOUND MATCHING MRD STAMP... MRD TO ORPHANAGE" << std::endl;
         MRDOrphans.push_back(BeamMRDTimestamps.at(j));
         break;
@@ -500,10 +504,10 @@ void ANNIEEventBuilder::MergeStreams(){
     while(CTCInd<CTCSize){
       double TSDiff =  static_cast<double>(BeamTankTimestamps.at(j)) - static_cast<double>(CTCTimestamps.at(CTCInd));
       if(verbosity>4) std::cout << "TankTS - CTCTS in nanoseconds is " << TSDiff << std::endl;
-      if(TSDiff>CTCTankTolerance){ // Need to move forward in indices
+      if(TSDiff>CTCTankTimeTolerance){ // Need to move forward in indices
         CTCInd+=1;
         continue;
-      } else if (TSDiff<(-1.*static_cast<double>(CTCTankTolerance))){ //We've crossed past where a pair would be found
+      } else if (TSDiff<(-1.*static_cast<double>(CTCTankTimeTolerance))){ //We've crossed past where a pair would be found
         if(verbosity>4) std::cout << "NO CTC STAMP FOUND MATCHING TANK STAMP... TANK TO ORPHANAGE" << std::endl;
         TankOrphans.push_back(BeamTankTimestamps.at(j));
         break;
@@ -634,8 +638,8 @@ void ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
       std::cout << "DIFFERENCE BETWEEN PMT AND MRD TIMESTAMP (ms): " << 
       (((BeamTankTimestamps.at(i)/1E6) - TimeZoneShift) - BeamMRDTimestamps.at(i)) << std::endl;
     }
-    if(std::abs(TSDiff-CurrentDriftMean) > MRDPMTTimeDiffTolerance){
-      if(verbosity>3) std::cout << "DEVIATION OF " << MRDPMTTimeDiffTolerance << " ms DETECTED IN STREAMS!" << std::endl;
+    if(std::abs(TSDiff-CurrentDriftMean) > MRDTankTimeTolerance){
+      if(verbosity>3) std::cout << "DEVIATION OF " << MRDTankTimeTolerance << " ms DETECTED IN STREAMS!" << std::endl;
       if(TSDiff > 0) {
         if(verbosity>3) std::cout << "MOVING MRD TIMESTAMP TO ORPHANAGE" << std::endl;
         OrphanMRDTimestamps.push_back(BeamMRDTimestamps.at(i));
