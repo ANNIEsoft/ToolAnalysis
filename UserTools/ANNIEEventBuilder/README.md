@@ -6,29 +6,50 @@ The ANNIEEventBuilder takes parsed MRD,Trigger, and PMT data from the
 MRDDataDecoder, TriggerDataDecoder, PMTDataDecoder tools and pairs the data 
 into ANNIEEvent BoostStores based on timestamps.
 
+The ANNIEEventBuilder has three key structs used throughout the event building process.
+
+Struct TimeStream;
+This struct holds vector of timestamps for each datastream (MRD, PMT, and CTC).  Entries in the vectors are 
+ordered chronologically (earliest time at the first index).  These timestreams are used to pair data from each
+timestream for building into an ANNIEEvent.
+
+Struct Orphanage;
+This struct holds either PMT timestamps associated with PMT data that never finished building all of it's waveforms
+(maybe data was lost due to a FIFO overflow) or data from all three streams that was never successfully paired 
+for building an ANNIEEvent.  Currently, these timestamps are used to delete orphans.  Eventually, more sophisticated
+logic for attempting to merge Orphans together is needed.
+
+Struct MRDEventMaps;
+This struct holds all the maps that are accessed from the CStores built by the MRDDataDecoder tool.  Each contain key-value
+pairs where the key is the MRD timestamp and the value is the data of interest (hit information, if the event has a 
+beam or cosmic loopback hit, and the MRDTriggerType).
+
 ##BuildTypes Tank and MRD are simple.  They take any fully built Tank and MRD data and push them into ANNIEEvents.##
 
 ##TankAndMRD and TankAndMRDAndCTC BuildTypes are a bit more complex.##
 
 TankAndMRD: Timestamps in the Tank and MRD data streams are paired together if 
-they are within a tolerance set in the configurables (placed into the 
-BeamTankMRDPairs map; see the PairTankPMTAndMRDTriggers() method).  Tank PMT waveforms and MRD paddle hit info. related to these
+they are within a tolerance set in the configurables.  Pairs are placed into the 
+BeamTankMRDPairs map; see the PairTankPMTAndMRDTriggers() method.  
+Tank PMT waveforms and MRD paddle hit info. related to these
 pairs are then pushed into ANNIEEvent BoostStores.
 
-TankAndMRDAndCTC: CTC timestamps are individually paired with the Tank and MRD 
+TankAndMRDAndCTC: 
+First, MRD data with a cosmic hit are paired with CTC timestamps containing the
+CR trigger word (hard-coded as 35+1; see PairCTCCosmicPairs() method) and added
+to the BuildMap for event building. Then,
+CTC timestamps are individually paired with the Tank and MRD 
 data stream timestamps using the time tolerances set in the configurables
 (see the MergeStreams() method).
-If a CTC timestamp pairs with BOTH a Tank and MRD timestamp,
-the CTC/PMT/MRD data are all combined into a single ANNIEEvent BoostStore.
+If a CTC timestamp pairs with BOTH a Tank and MRD timestamp or a Tank timestamp alone,
+the CTC/PMT/MRD data are all put into the BuildMap object.  The BuildMap object is then 
+used to combine paired timestamps and associated data into a single ANNIEEvent BoostStore.
 
 ## Data
-
 Describe any data formats ANNIEEventBuilder creates, destroys, changes, or analyzes. E.G.
 
 See the ANNIEEventBuilder.h header file for comments on the maps used/modified 
 in the ANNIEEventBuilder tool.
-
-ANNIEEventBuilder outputs
 
 ## Configuration
 

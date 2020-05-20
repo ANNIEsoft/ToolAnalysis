@@ -158,9 +158,9 @@ bool LoadRawData::Execute(){
   CTCPaused = false;
 
   int lowest_size = 1E18;
-  if (TankEntryNum < lowest_size) lowest_size = TankEntryNum;
-  if (MRDEntryNum < lowest_size) lowest_size = MRDEntryNum;
-  if (TrigEntryNum < lowest_size) lowest_size = TrigEntryNum;
+  if ((BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC") &&  TankEntryNum < lowest_size) lowest_size = TankEntryNum;
+  if ((BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC") && MRDEntryNum < lowest_size) lowest_size = MRDEntryNum;
+  if ((BuildType == "TankAndMRDAndCTC") && TrigEntryNum < lowest_size) lowest_size = TrigEntryNum;
 
   if (TankEntryNum > lowest_size) TankPaused = true;
   if (MRDEntryNum > lowest_size) MRDPaused = true;
