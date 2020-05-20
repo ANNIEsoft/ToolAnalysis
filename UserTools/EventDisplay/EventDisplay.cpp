@@ -1567,11 +1567,12 @@ bool EventDisplay::Finalise(){
     delete leg_time;
   }
   Log("EventDisplay tool: Delete canvases",v_debug,verbose);
-  delete canvas_pmt;
+  
+  delete canvas_ev_display;
   if (draw_histograms){
+    delete canvas_pmt;
     delete canvas_pmt_supplementary;
     delete canvas_lappd;
-    delete canvas_ev_display;
   }
 
   Log("EventDisplay tool: Delete root file",v_debug,verbose);
