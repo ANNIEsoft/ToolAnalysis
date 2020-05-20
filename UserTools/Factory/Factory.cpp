@@ -109,8 +109,10 @@ if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
 if (tool=="BeamClusterPlots") ret=new BeamClusterPlots;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
+if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="LoadRawData") ret=new LoadRawData;
 if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
+if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;
 
 return ret;

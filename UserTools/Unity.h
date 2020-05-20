@@ -117,6 +117,8 @@
 #include "PrintRecoEvent.h"
 #include "MrdPaddleEfficiencyPreparer.h"
 #include "MrdPaddleEfficiencyCalc.h"
+#include "FMVEfficiency.h"
 #include "LoadRawData.h"
 #include "ClusterClassifiers.h"
+#include "MRDLoopbackAnalysis.h"
 #include "VetoEfficiency.h"
