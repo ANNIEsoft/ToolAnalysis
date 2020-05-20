@@ -15,6 +15,7 @@ utilized include:
   - PromptTrigOnly: Flags muon events that do not have an MCTriggernum of 0
                     (any store event with MCTriggernum>0 is a delayed trigger)
   - NHitCut: Flags events that do not have at least some number of hits (default is 4)
+  - PMTMRDCoincCut: Flags events that do not have a certain time offset between PMT & MRD cluster
   - Identical cuts, but with the reconstructed information, are prefaced with "Reco"
   
 Cuts that are only available in MC:
@@ -45,6 +46,7 @@ event selection the event actually failed.  The bitmask as of now is given by:
    kFlagMCIsMultiRing  = 0x1000, //4096
    kFlagMCProjectedMRDHit = 0x2000, //8192
    kFlagMCEnergyCut   = 0x4000 //16384
+   kFlagPMTMRDCoinc   = 0x8000 //32768
 
 
 For each event, all cuts defined with the config file are checked.  
@@ -79,5 +81,10 @@ MCIsMuonCut
 MCIsElectronCut
 MCProjectedMRDHit
 MCEnergyCut
+Emin
+Emax
+PMTMRDCoincCut
+PMTMRDOffset
+IsMC
 SaveStatusToStore
 ```
