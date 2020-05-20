@@ -1,0 +1,4 @@
+# PrintRecoEvent config file
+
+isMC 0
+verbosity 2

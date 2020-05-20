@@ -38,4 +38,7 @@ LAPPDIDFile string
 
 DigitChargeThr double
 
+ChankeyToPMTIDMap string
+This string contains the path to a conversion file between channelkeys and WCSim IDs, to be used with data.
+
 ```

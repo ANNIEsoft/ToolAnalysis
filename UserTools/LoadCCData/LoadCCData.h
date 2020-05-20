@@ -61,6 +61,7 @@ private:
 	Long64_t NumADCEntries;
 	TChain* ADCTimestampChain;
 	uint64_t nextreadoutfirstminibufstart;
+	uint64_t thelastminibufferTS;
 	std::vector<uint64_t> minibufTS=std::vector<uint64_t>{};      // minibuffer times taken from the alignment files
 	std::vector<uint64_t> nextminibufTs=std::vector<uint64_t>{};  // next event's minibuffer times " " files
 	uint64_t maxtimediff;
@@ -99,9 +100,11 @@ private:
 	
 	// for debug drawing
 	bool DEBUG_DRAW_TDC_HITS;
-	TApplication* tdcRootDrawApp;
-	TCanvas* tdcRootCanvas;
-	TH1D *hTDCHitTimes, *hTDCTimeDiffs;
+	TApplication* rootTApp=nullptr;
+	TCanvas* tdcRootCanvas=nullptr;
+	TH1D *hTDCHitTimes=nullptr, *hTDCTimeDiffs=nullptr, *hTDCValues=nullptr;
+	TH1D *hVetoL1Times=nullptr, *hVetoL2Times=nullptr, *hMrdL1Times=nullptr, *hMrdL2Times=nullptr;
+	TH1D *hTDCNextTimeDiffs=nullptr, *hTDCLastTimeDiffs=nullptr;
 	
 	TFile* tdcDebugRootFileOut=nullptr;
 	TTree* tdcDebugTreeOut=nullptr;
@@ -109,6 +112,7 @@ private:
 	UInt_t camacchannel;
 	UInt_t mrdpmtxnum, mrdpmtynum, mrdpmtznum;
 	Long64_t mrdtimeinreadout;
+	UInt_t mrdticksinreadout;
 	UInt_t mrdreadoutindex;
 	ULong64_t mrdreadouttime;
 	UInt_t adcreadoutindex;

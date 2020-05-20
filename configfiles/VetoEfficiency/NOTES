@@ -1,0 +1,17 @@
+TO change input file:
+1) it must be changed in RawLoaderConfig
+AND 
+2) the beam fetch times or the beamchecker file must be changed!
+
+if using hefty mode data, you need to pass the RawLoaderConfig a Hefty timing file, generated from the entire run (all subruns and parts needed) using one of jonathan's interpolation python scripts.
+
+n.b. phase 1 had about 26 part files per subrun 
+
+sjg:
+I have a bunch of pre-made timing files in `/pnfs/annie/scratch/users/gardiner/hefty_timing/`
+If you want to make them yourself, here's the procedure:
+1. `cd` to a folder where you have write permission
+2. `source /cvmfs/annie.opensciencegrid.org/annietools/setup_timing.sh`
+3. `timing.py RUN_NUMBER .`
+The third step will write all of the timing files for that run into the current directory
+You can see the syntax for using my `timing.py` script by executing it without any arguments
