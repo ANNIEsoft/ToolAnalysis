@@ -102,6 +102,7 @@ if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
+if (tool=="PrintRecoEvent") ret=new PrintRecoEvent;
 if (tool=="RunValidation") ret=new RunValidation;
 if (tool=="AmBeRunStatistics") ret=new AmBeRunStatistics;
 if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
@@ -111,5 +112,6 @@ if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="LoadRawData") ret=new LoadRawData;
 if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;
+
 return ret;
 }

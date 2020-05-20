@@ -1,0 +1,38 @@
+# EventDisplay config file
+
+Event -999		#use -999 if want to loop over all events in file, otherwise the specific event number (0 ... N_events - 1)
+Mode Charge		#select Display Mode (Charge / Time)
+EventType RecoEvent	#choose Store format to read from. ANNIEEvent: Use MCHits/MCLAPPDHits variables & the true MCParticles variables, RecoEvent: use the RecoStore and the associated charge and time information in the Digitized Hits
+EventList None 		#/ANNIECode/ToolAnalysis/exemplary_event_list.dat #to be used with Event -999
+SelectedEvents 1	#show only events for which the EventSelector cuts were passed
+Threshold_Charge 1	#choose threshold for events in charge (lower limit)
+Threshold_ChargeLAPPD 1.		#same as threshold, but for LAPPDs
+Threshold_TimeLow -10	#for time, use lower and upper limits, use -999 if min and max values should be taken from data
+Threshold_TimeHigh 40
+Threshold_TimeLowMRD 0   #time threshold for MRD display
+Threshold_TimeHighMRD 4000 
+TextBox	1		#choose if TextBox with information about run & event should be displayed (0: not shown, 1: shown)
+LAPPDsSelected 1	#if true, only the LAPPDs specified in LAPPDsFile will be used in the analysis. If false, all LAPPD hits will be displayed 
+LAPPDsFile LAPPDIDs.txt	#specify the LAPPD IDs that are active (one ID per line) 
+DrawVertex 1		#true vertex is drawn
+DrawRing 1		#true expected ring distribution is drawn
+SavePlots 1		#decide whether to save plots as png/root or not
+OutputFormat root	#options: root/image
+HistogramPlots 1	#decide whether histogram plots (charge/time) are shown in addition to EventDisplay
+MarkerSize 2		#size of PMT circles (default: 2)
+UserInput 0		#If true, manually decide if next event shown
+Graphics 0		#should a TApplication be launched?
+OutputFile evdisplay_beam_muon_RecoEvent_EventSelector_DigitThr10
+DetectorConfiguration ANNIEp2v6	#specify the detector configuration used in the simulation (options e.g. ANNIEp2v2, ANNIEp2v4, ANNIEp2v6)
+IsData 0		#are we evaluating a data file? (0: MC, 1: data)
+NPMTCut 4  #Only look at events with > NPMTCut PMTs hit above threshold
+DrawClusterPMT 0 #Draw clustered PMT hits instead of whole buffer
+DrawClusterMRD 0 #Draw clustered MRD hits
+ChargeFormat pe  #Options: pe/nC
+SinglePEGains ./configfiles/EventDisplay/Data-ANNIEEvent/ChannelSPEGains_BeamRun20192020.csv
+RunNumber 0
+RunType 3
+UseFilteredDigits 1    #Use only digits that passed the HitCleaner filtering process
+
+
+verbose 1

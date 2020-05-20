@@ -1,0 +1,8 @@
+myLoadWCSim LoadWCSim configfiles/EventDisplay/MC-ANNIEEvent/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/EventDisplay/MC-ANNIEEvent/LoadWCSimLAPPDConfig
+myMCParticleProperties MCParticleProperties configfiles/EventDisplay/MC-ANNIEEvent/MCParticlePropertiesConfig
+myMCRecoEventLoader MCRecoEventLoader configfiles/EventDisplay/MC-ANNIEEvent/MCRecoEventLoaderConfig
+myDigitBuilder DigitBuilder configfiles/EventDisplay/MC-ANNIEEvent/DigitBuilderConfig
+myEventSelector EventSelector configfiles/EventDisplay/MC-ANNIEEvent/EventSelectorConfig
+myTimeClustering TimeClustering configfiles/EventDisplay/MC-ANNIEEvent/TimeClusteringConfig
+myEventDisplay EventDisplay configfiles/EventDisplay/MC-ANNIEEvent/EventDisplayConfig
