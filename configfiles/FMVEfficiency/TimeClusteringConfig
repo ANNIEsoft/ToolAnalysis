@@ -1,0 +1,13 @@
+#TimeClustering config file
+
+verbosity 2
+MinDigitsForTrack 3
+MaxMrdSubEventDuration 30
+MinSubeventTimeSep 30
+MakeMrdDigitTimePlot 1
+LaunchTApplication 0
+IsData 1
+#OutputROOTFile TimeClustering_MRDTest28_cluster30ns
+OutputROOTFile test
+MapChankey_WCSimID ./configfiles/FindMrdTracks/MRD_Chankey_WCSimID.dat
+

@@ -9,6 +9,7 @@
 #include "TROOT.h"
 #include "TSystem.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TCanvas.h"
 #include "TApplication.h"
 
@@ -89,7 +90,7 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		mrddigitts = new TH1D("mrddigitts","MRD Times",1000,0,4000);
 		mrddigitts_vertical = new TH1D("mrddigitts_vertical","MRD Times (Vertical Layers)",1000,0,4000);
 		mrddigitts_horizontal = new TH1D("mrddigitts_horizontal","MRD Times (Horizontal Layers)",1000,0,4000); 
-		
+
 		if (MakeSingleEventPlots){
 			mrddigitts_single = new TH1D("mrddigitts_single","MRD Single Times",1000,0,4000);
 			mrddigitts_cluster_single = new TH1D("mrddigitts_cluster_single","MRD Single Times",1000,0,4000);
@@ -168,6 +169,7 @@ bool TimeClustering::Execute(){
 	if (isData){
 		std::cout <<"TimeClustering tool: Data file: Getting TDCData object"<<std::endl;
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<Hit>>
+
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
 			return true;
@@ -218,6 +220,7 @@ bool TimeClustering::Execute(){
 						if (MakeSingleEventPlots) mrddigitts_single->Fill(hitsonthismrdpmt.GetTime());
 						mrddigitts->Fill(hitsonthismrdpmt.GetTime());
 						if (MRDTriggertype == "Cosmic") mrddigitts_cosmic->Fill(hitsonthismrdpmt.GetTime());
+						
 						else if (MRDTriggertype == "Beam") mrddigitts_beam->Fill(hitsonthismrdpmt.GetTime());
 						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());    //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
 						Detector* thistube = geom->ChannelToDetector(chankey);
@@ -289,6 +292,7 @@ bool TimeClustering::Execute(){
 						if (MakeSingleEventPlots) mrddigitts_single->Fill(hitsonthismrdpmt.GetTime());
 						mrddigitts->Fill(hitsonthismrdpmt.GetTime());
 						if (MRDTriggertype == "Cosmic") mrddigitts_cosmic->Fill(hitsonthismrdpmt.GetTime());
+						
 						else if (MRDTriggertype == "Beam") mrddigitts_beam->Fill(hitsonthismrdpmt.GetTime());
 						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());   //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
 						Detector* thistube = geom->ChannelToDetector(chankey);
@@ -481,6 +485,7 @@ bool TimeClustering::Execute(){
 	for (unsigned int i=0; i< mrddigittimesthisevent.size(); i++){
 		if (verbosity > v_debug) std::cout <<"mrddigitpmts, entry "<<i<<", time: "<<mrddigittimesthisevent.at(i)<<", pmt: "<<mrddigitpmtsthisevent.at(i)<<", charge: "<<mrddigitchargesthisevent.at(i)<<std::endl;
 }
+
 
 	if (MakeMrdDigitTimePlot){
 	

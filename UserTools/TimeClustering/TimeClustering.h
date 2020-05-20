@@ -9,6 +9,7 @@
 #include "TObjectTable.h"
 
 class TH1D;
+class TH2D;
 class TApplication;
 class TCanvas;
 
@@ -75,7 +76,7 @@ class TimeClustering: public Tool {
 	TH1D *mrddigitts_horizontal = nullptr;
 	TH1D *mrddigitts_vertical = nullptr;
 	TFile* mrddigitts_file = nullptr;
-	
+
 	//TApplication-related variables
 	TCanvas* timeClusterCanvas=nullptr;
 	TApplication* rootTApp=nullptr;
