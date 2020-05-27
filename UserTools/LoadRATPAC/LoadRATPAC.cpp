@@ -239,7 +239,7 @@ bool LoadRATPAC::Execute(){
             (startpoint.Y())/1000., (startpoint.Z())/1000.), Position((endpoint.X())/1000.,
             (endpoint.Y())/1000., (endpoint.Z())/1000.), starttime,
             endtime, partdir,
-            tracklength/1000., startstoptype, particleid, parentid, -9999);
+            tracklength/1000., startstoptype, particleid, parentid, -9999,0);
     MCParticles->push_back(thisparticle);
   }
 

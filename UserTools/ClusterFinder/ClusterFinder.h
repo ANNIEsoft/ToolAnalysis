@@ -123,9 +123,9 @@ class ClusterFinder: public Tool {
   // Other variables
   int max_Nhits = 0;
   double local_cluster = 0;
-  int thiswindow_Nhits = 0;
-  int dummy_hittime_value = -9999;
- 
+  int thiswindow_Nhits =0;
+  int dummy_hittime_value = -9999; 
+  
   //define file to save data
   TFile *file_out = nullptr;
 

@@ -2,13 +2,14 @@
 #include "TimeClustering.h"
 
 // for sleeping
-#include <thread>          // std::this_thread::sleep_for
-#include <chrono>          // std::chrono::seconds
+#include <thread>  // std::this_thread::sleep_for
+#include <chrono>  // std::chrono::seconds
 
 // for ROOT debug plot
 #include "TROOT.h"
 #include "TSystem.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TCanvas.h"
 #include "TApplication.h"
 
@@ -27,8 +28,8 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	/////////////////////////////////////////////////////////////////
 	
 	LaunchTApplication = false;
-	MakeSingleEventPlots = false; 		//very verbose, mostly for debugging
-
+	MakeSingleEventPlots = false;      //very verbose, mostly for debugging
+	
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("IsData",isData);
 	m_variables.Get("MinDigitsForTrack",minimumdigits);
@@ -39,10 +40,9 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("LaunchTApplication",LaunchTApplication);
 	m_variables.Get("OutputROOTFile",output_rootfile);
 	m_variables.Get("MapChankey_WCSimID",file_chankeymap);
-
-
-	if (!MakeMrdDigitTimePlot) LaunchTApplication = false;	//no use launching TApplication when histograms are not produced
-
+	
+	if (!MakeMrdDigitTimePlot) LaunchTApplication = false;  //no use launching TApplication when histograms are not produced
+	
 	if(LaunchTApplication){
 		canvwidth = 900;
 		canvheight = 600;
@@ -52,7 +52,7 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		// There may only be one TApplication, so if another tool has already made one
 		// register ourself as a user. Otherwise, make one and put a pointer in the CStore for other Tools
 		// create the ROOT application to show histograms
-
+		
 		int myargc=0;
 		//char *myargv[] = {(const char*)"Ahh shark!"};
 		intptr_t tapp_ptr=0;
@@ -72,33 +72,33 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		else tapplicationusers++;
 		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
 	}
-
+	
 	// setup objects to save clustered hit times to a *.root file
 	if (MakeMrdDigitTimePlot){
-                std::stringstream ss_rootfilename;
-                ss_rootfilename << output_rootfile << ".root";
+		std::stringstream ss_rootfilename;
+		ss_rootfilename << output_rootfile << ".root";
 		Log("TimeClustering tool: Create ROOT-file "+ss_rootfilename.str(),v_message,verbosity);
 		//save the cluster time information for different trigger types in different histograms
-                mrddigitts_file = new TFile(ss_rootfilename.str().c_str(),"RECREATE");
-                mrddigitts_cosmic_cluster = new TH1D("mrddigitts_cosmic_cluster","MRD Cosmic Times Clustered",1000,0,4000);
-                mrddigitts_beam_cluster = new TH1D("mrddigitts_beam_cluster","MRD Beam Times Clustered",1000,0,4000);
-                mrddigitts_noloopback_cluster = new TH1D("mrddigitts_noloopback_cluster","MRD No Loopback Times Clustered",1000,0,4000);
-                mrddigitts_cluster = new TH1D("mrddigitts_cluster","MRD Times Clustered",1000,0,4000);
-                mrddigitts_cosmic = new TH1D("mrddigitts_cosmic","MRD Cosmic Times",1000,0,4000);
-                mrddigitts_beam = new TH1D("mrddigitts_beam","MRD Beam Times",1000,0,4000);
-                mrddigitts_noloopback = new TH1D("mrddigitts_noloopback","MRD No Loopback Times",1000,0,4000);
-                mrddigitts = new TH1D("mrddigitts","MRD Times",1000,0,4000);
+		mrddigitts_file = new TFile(ss_rootfilename.str().c_str(),"RECREATE");
+		mrddigitts_cosmic_cluster = new TH1D("mrddigitts_cosmic_cluster","MRD Cosmic Times Clustered",1000,0,4000);
+		mrddigitts_beam_cluster = new TH1D("mrddigitts_beam_cluster","MRD Beam Times Clustered",1000,0,4000);
+		mrddigitts_noloopback_cluster = new TH1D("mrddigitts_noloopback_cluster","MRD No Loopback Times Clustered",1000,0,4000);
+		mrddigitts_cluster = new TH1D("mrddigitts_cluster","MRD Times Clustered",1000,0,4000);
+		mrddigitts_cosmic = new TH1D("mrddigitts_cosmic","MRD Cosmic Times",1000,0,4000);
+		mrddigitts_beam = new TH1D("mrddigitts_beam","MRD Beam Times",1000,0,4000);
+		mrddigitts_noloopback = new TH1D("mrddigitts_noloopback","MRD No Loopback Times",1000,0,4000);
+		mrddigitts = new TH1D("mrddigitts","MRD Times",1000,0,4000);
 		mrddigitts_vertical = new TH1D("mrddigitts_vertical","MRD Times (Vertical Layers)",1000,0,4000);
 		mrddigitts_horizontal = new TH1D("mrddigitts_horizontal","MRD Times (Horizontal Layers)",1000,0,4000); 
-	
+
 		if (MakeSingleEventPlots){
 			mrddigitts_single = new TH1D("mrddigitts_single","MRD Single Times",1000,0,4000);
 			mrddigitts_cluster_single = new TH1D("mrddigitts_cluster_single","MRD Single Times",1000,0,4000);
 		}
-       		gROOT->cd();
+		gROOT->cd();
 	}
-
-        // Setup mapping from Channelkeys to WCSim IDs (important for track fitting with old MRD classes in FindMrdTracks)
+	
+	// Setup mapping from Channelkeys to WCSim IDs (important for track fitting with old MRD classes in FindMrdTracks)
 	if (isData){
 		ifstream file_mapping(file_chankeymap);
 		unsigned long temp_chankey;
@@ -112,11 +112,11 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 			Log("FindMrdTracks tool: Emplaced temp_chankey "+std::to_string(temp_chankey)+" with temp_wcsimid "+std::to_string(temp_wcsimid)+"into channelkey_to_mrdpmtid object!",v_debug,verbosity);
 		}
 		file_mapping.close();
-	 	m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
-	 	m_data->CStore.Set("mrdpmtid_to_channelkey",mrdpmtid_to_channelkey);
-       	}
+		m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+		m_data->CStore.Set("mrdpmtid_to_channelkey",mrdpmtid_to_channelkey);
+		}
 	else {
-		get_ok = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);	//for MC, simply get the sample obtained from the LoadWCSim tool
+		get_ok = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);  //for MC, simply get the sample obtained from the LoadWCSim tool
 		if(not get_ok){
 			Log("TimeClustering Tool: Error! No channelkey_to_mrdpmtid in CStore!",v_error,verbosity);
 			return false;
@@ -127,10 +127,10 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 			return false;
 		}
 	}
-
+	
 	// Get Detectors map to divide in horizontal and vertical layers
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
-
+	
 	return true;
 }
 
@@ -144,18 +144,18 @@ bool TimeClustering::Execute(){
 	m_data->CStore.Set("NumMrdTimeClusters",0);
 	int mrdeventcounter=0;
 	
-        //Get Trigger type to decide which events are cosmic/beam/etc
-        std::string MRDTriggertype;
-        m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
+	//Get Trigger type to decide which events are cosmic/beam/etc
+	std::string MRDTriggertype;
+	m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
 	Log("TimeClustering tool: MRDTriggertype is "+MRDTriggertype+" (from ANNIEEvent store)",v_debug,verbosity);
 	m_data->Stores.at("ANNIEEvent")->Get("EventNumber",evnum);
-
+	
 	// extract the digits from the annieevent and put them into separate vectors used by the track finder
 	mrddigitpmtsthisevent.clear();
 	mrddigitchankeysthisevent.clear();
 	mrddigittimesthisevent.clear();
 	mrddigitchargesthisevent.clear();
-
+	
 	if (MakeMrdDigitTimePlot && MakeSingleEventPlots){
 		mrddigitts_single->Reset();
 		mrddigitts_cluster_single->Reset();
@@ -165,20 +165,21 @@ bool TimeClustering::Execute(){
 		mrddigitts_single->SetName(ss_single.str().c_str());
 		mrddigitts_cluster_single->SetName(ss_cluster_single.str().c_str());
 	}
-
-	if (isData){	
+	
+	if (isData){
 		std::cout <<"TimeClustering tool: Data file: Getting TDCData object"<<std::endl;
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<Hit>>
+
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
-			return false;
+			return true;
 		}
 	} else {
-		std::cout <<"TimeClustering tool: MC file: Getting TDCData object"<<std::endl;	
+		std::cout <<"TimeClustering tool: MC file: Getting TDCData object"<<std::endl;
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData_MC);  // a std::map<unsigned long,vector<MCHit>>
 		if(not get_ok){
 			Log("TimeClustering Tool: No TDC data in ANNIEEvent!",v_error,verbosity);
-			return false;
+			return true;
 		}
 	}
 	
@@ -197,7 +198,7 @@ bool TimeClustering::Execute(){
 	
 	if (isData) Log("TimeClustering Tool: Retrieving digit info from "+to_string(TDCData->size())+" hit pmts",v_debug,verbosity);
 	else Log("TimeClustering Tool: Retrieving digit info from "+to_string(TDCData_MC->size())+" hit pmts",v_debug,verbosity);
-
+	
 	// just dump all the hit times in this event into a vector. Allows us to sort hit times and search for clusters.
 	if (isData){
 		for(auto&& anmrdpmt : (*TDCData)){
@@ -219,8 +220,9 @@ bool TimeClustering::Execute(){
 						if (MakeSingleEventPlots) mrddigitts_single->Fill(hitsonthismrdpmt.GetTime());
 						mrddigitts->Fill(hitsonthismrdpmt.GetTime());
 						if (MRDTriggertype == "Cosmic") mrddigitts_cosmic->Fill(hitsonthismrdpmt.GetTime());
+						
 						else if (MRDTriggertype == "Beam") mrddigitts_beam->Fill(hitsonthismrdpmt.GetTime());
-						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());       //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
+						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());    //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
 						Detector* thistube = geom->ChannelToDetector(chankey);
 						unsigned long detkey = thistube->GetDetectorID();
 						Paddle *mrdpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
@@ -242,33 +244,46 @@ bool TimeClustering::Execute(){
 //				Log("TimeClustering Tool: Null detector in TDCData_MC!",v_error,verbosity);
 //				continue;
 //			}
-//			if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit
-//			if(channelkey_to_mrdpmtid.count(chankey)==0){
+//			if((thedetector->GetDetectorElement()!="MRD") &&
+//			   (thedetector->GetDetectorElement()!="Veto") ){
+//				Log("TDC hit on channel that is neither MRD nor Veto! Type: " + thedetector->GetDetectorElement(),v_debug,verbosity);
+//			}
+//			if( (channelkey_to_mrdpmtid.count(chankey) ==0) &&
+//				(channelkey_to_faccpmtid.count(chankey)==0)){
 //				Log("TimeClustering Tool: MRD PMT with ID not in channelkey_to_mrdpmtid map!",v_error,verbosity);
-//				if(verbosity>2){
+//				if(true||verbosity>2){
 //					std::cerr<<"We have: "<<channelkey_to_mrdpmtid.size()
-//							 <<" known mappings and they are: {"<<std::endl;
+//							 <<" known MRD mappings and they are: {"<<std::endl;
 //					for(auto&& apair : channelkey_to_mrdpmtid){
+//						std::cout<<apair.first<<" : "<<apair.second<<std::endl;
+//					}
+//					std::cout<<"}"<<std::endl;
+//					std::cerr<<"We have: "<<channelkey_to_faccpmtid.size()
+//							 <<" known FACC mappings and they are: {"<<std::endl;
+//					for(auto&& apair : channelkey_to_faccpmtid){
 //						std::cout<<apair.first<<" : "<<apair.second<<std::endl;
 //					}
 //					std::cout<<"}"<<std::endl;
 //				}
 //				continue;
 //			}
+//			int wcsimtubeid = -1;
+//			wcsimtubeid = (channelkey_to_mrdpmtid.count(chankey)) ? channelkey_to_mrdpmtid.at(chankey) :
+//																	channelkey_to_faccpmtid.at(chankey);
 //			if(wcsimtubeid==0){
 //				Log("TimeClustering Tool: channel with wcsimpmtid 0! IDs should number from 1!",v_error, verbosity);
 //				continue;
 //			}
+			// checking channelkey_to_mrdpmtid (as opposed to channelkey_to_faccpmtid)
+			// will filter out MRD PMTs only
+			int pmtidwcsim=-1;
+			if (channelkey_to_mrdpmtid.count(chankey)){
+				pmtidwcsim = channelkey_to_mrdpmtid.at(chankey)-1;
+			} else if(channelkey_to_faccpmtid.count(chankey)){
+				pmtidwcsim = channelkey_to_faccpmtid.at(chankey)-1;
+			}
 			for(auto&& hitsonthismrdpmt : anmrdpmt.second){
-				// checking channelkey_to_mrdpmtid (as opposed to channelkey_to_faccpmtid)
-				// will filter out MRD PMTs only
-				int pmtidwcsim=-1;
-				if (channelkey_to_mrdpmtid.find(chankey) != channelkey_to_mrdpmtid.end()){
-					pmtidwcsim = channelkey_to_mrdpmtid.at(chankey)-1;
-				} else if(channelkey_to_faccpmtid.count(chankey)){
-					pmtidwcsim = channelkey_to_faccpmtid.at(chankey)-1;
-				}
-				if(pmtidwcsim>0){
+				if(pmtidwcsim>=0){
 					mrddigitpmtsthisevent.push_back(pmtidwcsim);
 					mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 					mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
@@ -277,8 +292,9 @@ bool TimeClustering::Execute(){
 						if (MakeSingleEventPlots) mrddigitts_single->Fill(hitsonthismrdpmt.GetTime());
 						mrddigitts->Fill(hitsonthismrdpmt.GetTime());
 						if (MRDTriggertype == "Cosmic") mrddigitts_cosmic->Fill(hitsonthismrdpmt.GetTime());
+						
 						else if (MRDTriggertype == "Beam") mrddigitts_beam->Fill(hitsonthismrdpmt.GetTime());
-						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());       //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
+						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback->Fill(hitsonthismrdpmt.GetTime());   //this triggertype should not occur if everything is running smoothly, but it can serve as a good cross-check in any case
 						Detector* thistube = geom->ChannelToDetector(chankey);
 						unsigned long detkey = thistube->GetDetectorID();
 						Paddle *mrdpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
@@ -287,7 +303,7 @@ bool TimeClustering::Execute(){
 						else mrddigitts_vertical->Fill(hitsonthismrdpmt.GetTime());
 					}
 				} else {
-					Log("TimeClustering tool: Did not find channelkey "+std::to_string(chankey)+" in chankey_to_mrdpmtid map.",v_warning,verbosity);
+					Log("TimeClustering tool: Did not find channelkey "+std::to_string(chankey)+" in chankey_to_mrdpmtid or channelkey_to_faccpmtid maps.",v_warning,verbosity);
 				}
 			}
 		}
@@ -321,7 +337,7 @@ bool TimeClustering::Execute(){
 	// JUST ONE SUBEVENT
 	// =================
 		Log("TimeClustering Tool: All hits this event within one subevent.",v_debug,verbosity);
-		std::vector<int> digitidsinasubevent(numdigits);                     // a vector of indices of the digits in this subevent
+		std::vector<int> digitidsinasubevent(numdigits);    // a vector of indices of the digits in this subevent
 		std::iota(digitidsinasubevent.begin(),digitidsinasubevent.end(),1);  // fill with 1-N, as all digits are are in this subevent
 		MrdTimeClusters.push_back(digitidsinasubevent);
 		if (MakeMrdDigitTimePlot){
@@ -360,7 +376,7 @@ bool TimeClustering::Execute(){
 		
 		//write subeventhittimesv to CStore for subsequent tools (e.g. FindMrdTracks)
 		m_data->CStore.Set("ClusterStartTimes",subeventhittimesv);
-
+		
 		// DEBUG CHECK
 		// -----------
 		// debug check of the timing splitting: draw a histogram of the times
@@ -370,7 +386,7 @@ bool TimeClustering::Execute(){
 			timeClusterCanvas = new TCanvas("timeClusterCanvas","timeClusterCanvas",canvwidth,canvheight);
 			timeClusterCanvas->SetWindowSize(canvwidth,canvheight);
 			timeClusterCanvas->cd();
-			if (MakeSingleEventPlots) mrddigitts_single->Draw();		//the other histograms are simply written to file, otherwise swamped with unnecessary information during execution
+			if (MakeSingleEventPlots) mrddigitts_single->Draw();  //the other histograms are simply written to file, otherwise swamped with unnecessary information during execution
 			timeClusterCanvas->Modified();
 			timeClusterCanvas->Update();
 			gSystem->ProcessEvents();
@@ -416,14 +432,14 @@ bool TimeClustering::Execute(){
 					digitchargesinasubevent.push_back(mrddigitchargesthisevent.at(thisdigit));
 					if (MakeMrdDigitTimePlot){
 						mrddigitts_file->cd();
-						if (MakeSingleEventPlots) mrddigitts_single->Fill(mrddigittimesthisevent.at(thisdigit));			
-					}			
+						if (MakeSingleEventPlots) mrddigitts_single->Fill(mrddigittimesthisevent.at(thisdigit));
+					}
 				}
 			}
 			
 			// CONSTRUCT THE SUBEVENT
 			// -----------------------
-			if(digitidsinasubevent.size()>=minimumdigits){  // must have enough for a subevent
+			if(int(digitidsinasubevent.size())>=minimumdigits){  // must have enough for a subevent
 				Log("TimeClustering Tool: Constructing subevent "+to_string(mrdeventcounter)
 					+" with "+to_string(digitidsinasubevent.size())+" digits",v_debug,verbosity);
 				//MrdTimeClusters.Add(mrdeventcounter, digitidsinasubevent, tubeidsinasubevent, digittimesinasubevent);
@@ -435,8 +451,8 @@ bool TimeClustering::Execute(){
 						mrddigitts_cluster->Fill(digittimesinasubevent.at(i_time));
 						if (MakeSingleEventPlots) mrddigitts_cluster_single->Fill(digittimesinasubevent.at(i_time));
 						if (MRDTriggertype == "Cosmic") mrddigitts_cosmic_cluster->Fill(digittimesinasubevent.at(i_time));
-                                		else if (MRDTriggertype == "Beam") mrddigitts_beam_cluster->Fill(digittimesinasubevent.at(i_time));
-                                		else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback_cluster->Fill(digittimesinasubevent.at(i_time));						
+						else if (MRDTriggertype == "Beam") mrddigitts_beam_cluster->Fill(digittimesinasubevent.at(i_time));
+						else if (MRDTriggertype == "No Loopback") mrddigitts_noloopback_cluster->Fill(digittimesinasubevent.at(i_time));
 					}
 				}
 			}
@@ -460,18 +476,19 @@ bool TimeClustering::Execute(){
 	// verbose check about what is contained in MrdTimeClusters object
 	for (unsigned int i_cluster=0; i_cluster < MrdTimeClusters.size(); i_cluster++){
 		if (verbosity >= v_debug) std::cout << "TimeClustering tool: Cluster " << i_cluster+1 << ", MrdTimeClusters.at(i_cluster).size() = " << MrdTimeClusters.at(i_cluster).size() << std::endl;
-                for (unsigned int i_entry = 0; i_entry < MrdTimeClusters.at(i_cluster).size(); i_entry++){
-                        if (verbosity >= v_debug) std::cout <<MrdTimeClusters.at(i_cluster).at(i_entry)<<", ";
-                }
-                if (verbosity >= v_debug) std::cout << std::endl;	
+			for (unsigned int i_entry = 0; i_entry < MrdTimeClusters.at(i_cluster).size(); i_entry++){
+				if (verbosity >= v_debug) std::cout <<MrdTimeClusters.at(i_cluster).at(i_entry)<<", ";
+			}
+			if (verbosity >= v_debug) std::cout << std::endl;
 	}
-
+	
 	for (unsigned int i=0; i< mrddigittimesthisevent.size(); i++){
 		if (verbosity > v_debug) std::cout <<"mrddigitpmts, entry "<<i<<", time: "<<mrddigittimesthisevent.at(i)<<", pmt: "<<mrddigitpmtsthisevent.at(i)<<", charge: "<<mrddigitchargesthisevent.at(i)<<std::endl;
 }
 
-	if (MakeMrdDigitTimePlot){
 
+	if (MakeMrdDigitTimePlot){
+	
 		mrddigitts_file->cd();
 		if (MakeSingleEventPlots){
 			mrddigitts_cluster_single->Write();
@@ -479,7 +496,7 @@ bool TimeClustering::Execute(){
 		}
 		gROOT->cd();
 	}
-
+	
 	// pass the found clusters to the ANNIEEvent
 	m_data->CStore.Set("MrdTimeClusters",MrdTimeClusters);
 	m_data->CStore.Set("NumMrdTimeClusters",mrdeventcounter);
@@ -487,11 +504,11 @@ bool TimeClustering::Execute(){
 	m_data->CStore.Set("MrdDigitPmts",mrddigitpmtsthisevent);
 	m_data->CStore.Set("MrdDigitChankeys",mrddigitchankeysthisevent);
 	m_data->CStore.Set("MrdDigitCharges",mrddigitchargesthisevent);
-
+	
 	//only for debugging
 	//std::cout <<"TimeClustering tool: List of objects (End of Execute): "<<std::endl;
 	//gObjectTable->Print();
-
+	
 	return true;
 }
 
@@ -502,23 +519,22 @@ bool TimeClustering::Finalise(){
 	
 	if (MakeMrdDigitTimePlot){
 		mrddigitts_file->cd();
-        	mrddigitts_cosmic_cluster->Write();
-        	mrddigitts_beam_cluster->Write();
-        	mrddigitts_noloopback_cluster->Write();
-        	mrddigitts_cluster->Write();
-        	mrddigitts_cosmic->Write();
-        	mrddigitts_beam->Write();
-        	mrddigitts_noloopback->Write();
-        	mrddigitts->Write();
+			mrddigitts_cosmic_cluster->Write();
+			mrddigitts_beam_cluster->Write();
+			mrddigitts_noloopback_cluster->Write();
+			mrddigitts_cluster->Write();
+			mrddigitts_cosmic->Write();
+			mrddigitts_beam->Write();
+			mrddigitts_noloopback->Write();
+			mrddigitts->Write();
 		mrddigitts_horizontal->Write();
 		mrddigitts_vertical->Write();
-        	mrddigitts_file->Close();
-        	delete mrddigitts_file;     //histograms get deleted by deleting associated TFile
+			mrddigitts_file->Close();
+			delete mrddigitts_file;     //histograms get deleted by deleting associated TFile
 		mrddigitts_file=0;
 		gROOT->cd();
 	}
-
-
+	
 	if (LaunchTApplication){
 		// see if we're the last user of the TApplication and release it if so,
 		// otherwise de-register us as a user since we're done
