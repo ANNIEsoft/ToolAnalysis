@@ -66,7 +66,7 @@ bool StoreClassificationVars::Initialise(std::string configfile, DataModel &data
 	mc_names = {"MCTrueMuonEnergy", "MCTrueNeutrinoEnergy",/* "MCFilename",*/ "EventNumber", "MCNeutrons", "MCVDistVtxWall", "MCHDistVtxWall", "MCVDistVtxInner", "MCHDistVtxInner", "MCPMTFracRing","MCPMTFracRingNoWeight", "MCLAPPDFracRing", "MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCPMTThetaBaryVector","MCLAPPDVarTheta","MCLAPPDRMSTheta","MCLAPPDBaryTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCLAPPDThetaBaryVector","MCPMTTVectorTOF","MCLAPPDTVectorTOF","MCNRings", "MCMultiRing", "MCPDG"};
 
 	// Set vector variables
-	vec_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector"};
+	vec_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","PMTIDVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector","LAPPDIDVector"};
 
 
 	classification_map_map.clear();
@@ -415,6 +415,9 @@ void StoreClassificationVars::WriteClassHistograms(){
 
 void StoreClassificationVars::EvaluatePionEnergies(){
 
+        m_data->Stores["Classification"]->Get("MCPionEnergies",map_pion_energies);
+	m_data->Stores["Classification"]->Get("MCNeutrons",n_neutrons);
+
 	int n_pip=0;
 	int n_pim=0;
 	int n_pi0=0;
@@ -427,37 +430,39 @@ void StoreClassificationVars::EvaluatePionEnergies(){
 	std::vector<double> vec_km;
 
 	std::map<int,std::vector<double>>::iterator it;
+	std::cout <<"Storevars: map_pion_energies size: "<<map_pion_energies.size()<<std::endl;
 	for (it = map_pion_energies.begin(); it != map_pion_energies.end(); it++){
 
 		int pdg_code = it->first;
 		std::vector<double> particle_energy = it->second;
+		std::cout <<"pdg_code: "<<pdg_code<<std::endl;
 
 		if (pdg_code == 111){
-			n_pi0++;
+			n_pi0+=particle_energy.size();
 			for (int i=0; i<int(particle_energy.size()); i++){
 				vec_pi0.push_back(particle_energy.at(i));
 			}			
 		}	
 		if (pdg_code == 211){
-			n_pip++;
+			n_pip+=particle_energy.size();
 			for (int i=0; i<int(particle_energy.size()); i++){
 				vec_pip.push_back(particle_energy.at(i));
 			}
 		}	
 		if (pdg_code == -211){
-			n_pim++;
+			n_pim+=particle_energy.size();
 			for (int i=0; i<int(particle_energy.size()); i++){
 				vec_pim.push_back(particle_energy.at(i));
 			}
 		}	
 		if (pdg_code == 321){
-			n_kp++;
+			n_kp+=particle_energy.size();
 			for (int i=0; i<int(particle_energy.size()); i++){
 				vec_kp.push_back(particle_energy.at(i));
 			}
 		}	
 		if (pdg_code == -321){
-			n_km++;
+			n_km+=particle_energy.size();
 			for (int i=0; i<int(particle_energy.size()); i++){
 				vec_km.push_back(particle_energy.at(i));
 			}

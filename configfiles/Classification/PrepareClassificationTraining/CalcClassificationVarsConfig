@@ -1,5 +1,8 @@
 # CalcClassificationVars config file
 
 verbosity 2
-UseMCTruth 0
 IsData 0
+NeutrinoSample 1
+PDF_emu /annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu_rough.root
+PDF_rings /annie/app/users/mnieslon/MyToolAnalysis6/pdf_beam_rings_rough.root
+

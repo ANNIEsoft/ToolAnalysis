@@ -25,7 +25,7 @@ class HitCleaner: public Tool {
     kPulseHeight = 1,
     kPulseHeightAndNeighbours = 2,
     kPulseHeightAndClusters = 3, 
-    kPulseHeightAndTruthInfo = 3
+    kPulseHeightAndTruthInfo = 4
   } FilterConfig_t;
 
   static HitCleaner* Instance();
@@ -113,6 +113,9 @@ class HitCleaner: public Tool {
   // vectors of clusters
   std::vector<RecoCluster*>* fClusterList;
   	
+  // vector of clusters (accessible to the CStore)
+  std::vector<RecoCluster*>* fHitCleaningClusters = nullptr;
+
   // true vertex
   RecoVertex* fTrueVertex = 0; 
   

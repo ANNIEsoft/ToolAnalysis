@@ -36,6 +36,7 @@ PMTLikelihoodQRings    500    -5.    5.
 PMTLikelihoodTRings    500    -5.    5.
 PMTLikelihoodThetaRings    500    -5.    5.
 PMTLikelihoodPhiRings    500    -5.    5.
+PMTHitCleaningClusters    10    0.    10.
 LAPPDBaryTheta    100    0.    3.1415
 LAPPDAvgDist    100    0.    4.
 LAPPDQtotal    1000    0.    1000.
@@ -62,11 +63,13 @@ PMTThetaBaryVector    100    0.    3.1415
 PMTPhiVector    100    0.    6.283
 PMTPhiBaryVector    100    -3.1415    3.1415
 PMTYVector    100    -2.    2.
+PMTIDVector    500    0.    500.
 LAPPDQVector    100    0.    5.
 LAPPDTVector    1000    0.    500.
 LAPPDDistVector    100    0.    4.
 LAPPDThetaVector    100    0.    3.1415
 LAPPDThetaBaryVector    100    -3.1415    3.1415
+LAPPDIDVector    500    0.    500.
 MCPMTFracRing    100    0.    1.
 MCPMTFracRingNoWeight    100    0.    1.
 MCLAPPDFracRing    100    0.    1.

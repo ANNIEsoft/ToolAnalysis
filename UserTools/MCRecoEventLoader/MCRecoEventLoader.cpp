@@ -16,6 +16,7 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   fGetPiKInfo = 1;
   fGetNRings = 1;
   fParticleID = 13;
+  fDoParticleSelection = 1;
   xshift = 0.;
   yshift = 14.46469;
   zshift = -168.1;
@@ -24,6 +25,7 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("GetPionKaonInfo", fGetPiKInfo);
   m_variables.Get("GetNRings",fGetNRings);
+  m_variables.Get("DoParticleSelection",fDoParticleSelection);
   m_variables.Get("ParticleID", fParticleID);
   m_variables.Get("xshift", xshift);
   m_variables.Get("yshift", yshift);
@@ -48,6 +50,7 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
     pdgcodetocherenkov.emplace(pdgcode,cherenkov_thr);
   }
   
+  std::cout <<"PdgCherenkovMap size (MCRecoEventLoader): "<<pdgcodetocherenkov.size()<<std::endl;
   // Set particle pdg - Cherenkov threshold map to CStore
   m_data->CStore.Set("PdgCherenkovMap",pdgcodetocherenkov);
 
@@ -58,12 +61,12 @@ bool MCRecoEventLoader::Execute(){
   /// Reset everything
   this->Reset();
 
-	// see if "ANNIEEvent" exists
-	auto get_annieevent = m_data->Stores.count("ANNIEEvent");
-	if(!get_annieevent){
-		Log("DigitBuilder Tool: No ANNIEEvent store!",v_error,verbosity); 
-		return false;
-	};
+  // see if "ANNIEEvent" exists
+  auto get_annieevent = m_data->Stores.count("ANNIEEvent");
+  if(!get_annieevent){
+    Log("DigitBuilder Tool: No ANNIEEvent store!",v_error,verbosity); 
+    return false;
+  };
 
   // Load MC Particles information for this event
   auto get_mcparticles = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",
@@ -120,11 +123,19 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
       MCParticle aparticle = fMCParticles->at(particlei);
       //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose
       if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
-      if(aparticle.GetPdgCode()!=fParticleID) continue;       // not a muon
-      primarymuon = aparticle;                       // note the particle
-      mufound=true;                                  // note that we found it
-      m_data->Stores.at("RecoEvent")->Set("PdgPrimary",fParticleID);  //save the primary particle pdg code to the RecoEvent store
-      break;                                         // won't have more than one primary muon
+      if (fDoParticleSelection){
+        if(aparticle.GetPdgCode()!=fParticleID) continue;       // not a muon
+        primarymuon = aparticle;                       // note the particle
+        mufound=true;                                  // note that we found it
+        m_data->Stores.at("RecoEvent")->Set("PdgPrimary",fParticleID);  //save the primary particle pdg code to the RecoEvent store
+        break;                                         // won't have more than one primary muon
+      } else {
+        if( aparticle.GetPdgCode()!=11 && aparticle.GetPdgCode()!=13) continue;
+	primarymuon = aparticle;
+	mufound=true;
+	m_data->Stores.at("RecoEvent")->Set("PdgPrimary",aparticle.GetPdgCode());
+	break;
+      }
     }
   } else {
     Log("MCRecoEventLoader::  Tool: No MCParticles in the event!",v_error,verbosity);

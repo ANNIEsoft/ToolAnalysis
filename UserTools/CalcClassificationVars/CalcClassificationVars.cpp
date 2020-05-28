@@ -116,8 +116,10 @@ bool CalcClassificationVars::Execute(){
 		//If EventSelection cuts were passed, get the relevant information from the data
 		
 		//Evaluate true information
-		if (!isData) this->ClassificationVarsMCTruth();
-		
+		if (!isData) {
+			this->ClassificationVarsMCTruth();
+		}
+
 		//Evaluate PMT/LAPPD classification variables
 		this->ClassificationVarsPMTLAPPD();
 
@@ -221,7 +223,7 @@ void CalcClassificationVars::InitialisePDFs(){
 	event_time = new TH1F("event_time","Time values for event",nbins_time,min_time,max_time);
 	event_theta = new TH1F("event_theta","Theta values for event",nbins_theta,min_theta,max_theta);
 	event_phi = new TH1F("event_phi","Phi values for event",nbins_phi,min_phi,max_phi);
-	
+	/*
 	// Single/multi-ring pdfs
 	f_rings = new TFile(pdf_rings.c_str(),"READ");
 	pdf_single_charge = (TH1F*) f_emu->Get("pdf_beam_single_charge");
@@ -241,7 +243,7 @@ void CalcClassificationVars::InitialisePDFs(){
 	pdf_multi_time->Rebin(10);
 	pdf_multi_theta->Rebin(10);
 	pdf_multi_phi->Rebin(10);
-
+*/
 
 }
 
@@ -249,9 +251,9 @@ void CalcClassificationVars::InitialiseClassificationMaps(){
 
 	//Sort variables into their respective maps
 	std::vector<std::string> int_variable_names = {"PMTHits","PMTHitsLargeAnglePhi","PMTHitsLargeAngleTheta","LAPPDHits","MrdLayers","MrdPaddles","MrdConsLayers","MrdAdjHits","MrdClusters","MCNRings","EventNumber","MCPDG","MCNeutrons"};
-	std::vector<std::string> double_variable_names = {"PMTBaryTheta","PMTAvgDist","PMTAvgT","PMTVarT","PMTQtotal","PMTQPerPMT","PMTQtotalClustered","PMTFracQmax","PMTFracQdownstream","PMTFracClustered","PMTFracLowQ","PMTFracEarly","PMTFracLate","PMTRMSTheta","PMTVarTheta","PMTRMSThetaBary","PMTVarThetaBary","PMTRMSPhi","PMTVarPhi","PMTRMSPhiBary","PMTVarPhiBary","PMTFracLargeAnglePhi","PMTFracLargeAngleTheta","PMTBaryTheta_Clustered","PMTBaryTheta_NonClustered","PMTDeltaBarycenter_Clustered","PMTEllip","PMTLikelihoodQ","PMTLikelihoodT","PMTLikelihoodTheta","PMTLikelihoodPhi","PMTLikelihoodQRings","PMTLikelihoodTRings","PMTLikelihoodThetaRings","PMTLikelihoodPhiRings","LAPPDBaryTheta","LAPPDAvgDist","LAPPDQtotal","LAPPDAvgT","LAPPDVarT","LAPPDRMSTheta","LAPPDVarTheta","LAPPDRMSThetaBary","LAPPDVarThetaBary","MrdPadPerLayer","MrdXSpread","MrdYSpread","MCPMTFracRing","MCPMTFracRingNoWeight","MCLAPPDFracRing","MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCLAPPDVarTheta","MCLAPPDBaryTheta","MCLAPPDRMSTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCVDistVtxWall","MCHDistVtxWall","MCVDistVtxInner","MCHDistVtxInner","MCVtxTrueTime","MCTrueNeutrinoEnergy","MCTrueMuonEnergy"};
+	std::vector<std::string> double_variable_names = {"PMTBaryTheta","PMTAvgDist","PMTAvgT","PMTVarT","PMTQtotal","PMTQPerPMT","PMTQtotalClustered","PMTFracQmax","PMTFracQdownstream","PMTFracClustered","PMTFracLowQ","PMTFracEarly","PMTFracLate","PMTRMSTheta","PMTVarTheta","PMTRMSThetaBary","PMTVarThetaBary","PMTRMSPhi","PMTVarPhi","PMTRMSPhiBary","PMTVarPhiBary","PMTFracLargeAnglePhi","PMTFracLargeAngleTheta","PMTBaryTheta_Clustered","PMTBaryTheta_NonClustered","PMTDeltaBarycenter_Clustered","PMTEllip","PMTLikelihoodQ","PMTLikelihoodT","PMTLikelihoodTheta","PMTLikelihoodPhi","PMTLikelihoodQRings","PMTLikelihoodTRings","PMTLikelihoodThetaRings","PMTLikelihoodPhiRings","PMTHitCleaningClusters","LAPPDBaryTheta","LAPPDAvgDist","LAPPDQtotal","LAPPDAvgT","LAPPDVarT","LAPPDRMSTheta","LAPPDVarTheta","LAPPDRMSThetaBary","LAPPDVarThetaBary","MrdPadPerLayer","MrdXSpread","MrdYSpread","MCPMTFracRing","MCPMTFracRingNoWeight","MCLAPPDFracRing","MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCLAPPDVarTheta","MCLAPPDBaryTheta","MCLAPPDRMSTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCVDistVtxWall","MCHDistVtxWall","MCVDistVtxInner","MCHDistVtxInner","MCVtxTrueTime","MCTrueNeutrinoEnergy","MCTrueMuonEnergy"};
 	std::vector<std::string> boolean_variable_names = {"MCMultiRing"};
-	std::vector<std::string> vector_variable_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector","MCPMTThetaBaryVector","MCLAPPDThetaBaryVector","MCPMTTVectorTOF","MCLAPPDTVectorTOF"};
+	std::vector<std::string> vector_variable_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","PMTIDVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector","LAPPDIDVector","MCPMTThetaBaryVector","MCLAPPDThetaBaryVector","MCPMTTVectorTOF","MCLAPPDTVectorTOF"};
 	
 	// Map identification number for ints: 1
 	for (unsigned int i_int=0; i_int < int_variable_names.size(); i_int++){
@@ -306,6 +308,8 @@ bool CalcClassificationVars::GetBoostStoreVariables(){
 	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving EventCutStatus,true from RecoEvent!",v_error,verbosity); return false; }
 	get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",RecoDigits);
 	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving RecoDigit,true from RecoEvent!",v_error,verbosity); return false; }
+	get_ok = m_data->Stores.at("RecoEvent")->Get("HitCleaningClusters",fHitCleaningClusters);
+	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving HitCleaningClusters,true from RecoEvent!",v_error,verbosity); return false; }
 	if (!isData){
 		get_ok = m_data->Stores.at("RecoEvent")->Get("TrueMuonEnergy",TrueMuonEnergy);
 		if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving TrueMuonEnergy,true from RecoEvent!",v_error,verbosity); return false; }
@@ -328,6 +332,8 @@ bool CalcClassificationVars::GetBoostStoreVariables(){
 
 	get_ok = m_data->CStore.Get("PdgCherenkovMap",pdgcodetocherenkov);
 	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving PdgCherenkovMap, did you run MCRecoEventLoader beforehand?",v_error,verbosity); return false; }
+
+	std::cout <<"pdgcodetocherenkovmap.size(): "<<pdgcodetocherenkov.size()<<std::endl;
 
 	return true;
 
@@ -419,7 +425,7 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	double lappd_avgT=0.;
 	double lappd_varT=0.;
 	int lappd_hits=0;
-	std::vector<double> pmtQ, lappdQ, pmtT, pmtT_tof, lappdT, lappdT_tof;
+	std::vector<double> pmtQ, lappdQ, pmtT, pmtT_tof, lappdT, lappdT_tof, pmtID, lappdID;
 	std::vector<Position> pmtPos, lappdPos;
 	std::vector<double> pmtDist, pmtTheta, pmtPhi, pmtThetaBary, pmtPhiBary, pmtY, lappdDist, lappdTheta, lappdThetaBary, pmtThetaMC, pmtThetaBaryMC, lappdThetaMC, lappdThetaBaryMC;
 	double pmt_rmsTheta=0.; 
@@ -450,6 +456,7 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 		double digitT = thisdigit.GetCalTime();
 		double detDist, detTheta, detPhi;
 		double MCdetDist, MCdetTheta;
+		int digitID = thisdigit.GetDetectorID();
 			
 
 		//Standard calculations with respect to the center of the tank
@@ -468,6 +475,7 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 			// Time/charge variables
 			pmtQ.push_back(digitQ);
 			pmtT.push_back(digitT);
+			pmtID.push_back(digitID);
 			event_charge->Fill(digitQ);
 			event_time->Fill(digitT);
 			pmtPos.push_back(detector_pos);
@@ -524,6 +532,7 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 			// Time/charge variables
 			lappdQ.push_back(digitQ);
 			lappdT.push_back(digitT);
+			lappdID.push_back(digitID);
 			lappdPos.push_back(detector_pos);
 			lappdBaryQ += digitQ*detector_pos;
 			lappd_totalQ+=digitQ;
@@ -763,6 +772,7 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 		}
 	}
 
+	// Calculate likelihood variables
 	double pmt_charge_mu = pdf_mu_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
 	double pmt_time_mu = pdf_mu_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
 	double pmt_theta_mu = pdf_mu_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
@@ -775,20 +785,27 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	double pmt_time_likelihood = pmt_time_mu - pmt_time_e;
 	double pmt_theta_likelihood = pmt_theta_mu - pmt_theta_e;
 	double pmt_phi_likelihood = pmt_phi_mu - pmt_phi_e;
-	
-	double pmt_charge_single = pdf_mu_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
-	double pmt_time_single = pdf_mu_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
-	double pmt_theta_single = pdf_mu_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
-	double pmt_phi_single = pdf_mu_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
-	double pmt_charge_multi = pdf_e_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
-	double pmt_time_multi = pdf_e_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
-	double pmt_theta_multi = pdf_e_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
-	double pmt_phi_multi = pdf_e_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
+	/*
+	double pmt_charge_single = pdf_single_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
+	double pmt_time_single = pdf_single_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
+	double pmt_theta_single = pdf_single_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
+	double pmt_phi_single = pdf_single_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
+	double pmt_charge_multi = pdf_multi_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
+	double pmt_time_multi = pdf_multi_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
+	double pmt_theta_multi = pdf_multi_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
+	double pmt_phi_multi = pdf_multi_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
 	double pmt_charge_likelihood_rings = pmt_charge_single - pmt_charge_multi;
 	double pmt_time_likelihood_rings = pmt_time_single - pmt_time_multi;
 	double pmt_theta_likelihood_rings = pmt_theta_single - pmt_theta_multi;
 	double pmt_phi_likelihood_rings = pmt_phi_single - pmt_phi_multi;
+*/
+	double pmt_charge_likelihood_rings = 0.;
+	double pmt_time_likelihood_rings = 0.;
+	double pmt_theta_likelihood_rings = 0.;
+	double pmt_phi_likelihood_rings = 0.;
 
+	// Obtain number of clusters from HitCleaner
+	int pmt_hitcleaning_clusters = fHitCleaningClusters->size();
 
 	// PMT variables
 	classification_map_double.emplace("PMTBaryTheta",pmtBaryTheta);
@@ -829,6 +846,7 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	classification_map_double.emplace("PMTLikelihoodTRings",pmt_time_likelihood_rings);
 	classification_map_double.emplace("PMTLikelihoodThetaRings",pmt_theta_likelihood_rings);
 	classification_map_double.emplace("PMTLikelihoodPhiRings",pmt_phi_likelihood_rings);
+	classification_map_double.emplace("PMTHitCleaningClusters",pmt_hitcleaning_clusters);
 
 
 	// LAPPD variables
@@ -853,11 +871,13 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	classification_map_vector.emplace("PMTPhiVector",pmtPhi);
 	classification_map_vector.emplace("PMTPhiBaryVector",pmtPhiBary);
 	classification_map_vector.emplace("PMTYVector",pmtY);
+	classification_map_vector.emplace("PMTIDVector",pmtID);
 	classification_map_vector.emplace("LAPPDQVector",lappdQ);
 	classification_map_vector.emplace("LAPPDTVector",lappdT);
 	classification_map_vector.emplace("LAPPDDistVector",lappdDist);
 	classification_map_vector.emplace("LAPPDThetaVector",lappdTheta);
 	classification_map_vector.emplace("LAPPDThetaBaryVector",lappdThetaBary);
+	classification_map_vector.emplace("LAPPDIDVector",lappdID);
 
 	// PMT & LAPPD mctruth variables
 	if (!isData){
@@ -1008,11 +1028,16 @@ void CalcClassificationVars::StorePionEnergies(){
 
   map_pion_energies.clear();
   int n_neutrons = 0;
+  std::cout <<"StorePionEnergies: mcparticles->size(): "<<mcparticles->size()<<std::endl;
 
   for (unsigned int i_particle = 0; i_particle < mcparticles->size(); i_particle++){
 
     MCParticle temp_particle = mcparticles->at(i_particle);
     int pdg_code = temp_particle.GetPdgCode();
+    std::cout <<"pdg_code: "<<pdg_code<<std::endl;
+
+    if (temp_particle.GetFlag() != 0) continue;
+    if (temp_particle.GetParentPdg() != 0) continue; // not a primary particle
 
     if (pdg_code == 2112) {
       n_neutrons++;
@@ -1020,12 +1045,13 @@ void CalcClassificationVars::StorePionEnergies(){
     }    
 
     //Only use energies of pions and kaons 
-    if (pdg_code != 211 && pdg_code != 221 && pdg_code != -221 && pdg_code != 311 && pdg_code != 321 && pdg_code != -321) continue;
+    if (pdg_code != 111 && pdg_code != 211 && pdg_code != -211 && pdg_code != 321 && pdg_code != -321) continue;
 
     double cherenkov_threshold = pdgcodetocherenkov[pdg_code];
     double particle_energy = temp_particle.GetStartEnergy();
-    
-    if (particle_energy > cherenkov_threshold){
+    std::cout <<"pdg: "<<pdg_code<<", threshold: "<<cherenkov_threshold<<", energy: "<<particle_energy<<std::endl;    
+
+    if (particle_energy > cherenkov_threshold || pdg_code == 111){
       if (map_pion_energies.find(pdg_code) != map_pion_energies.end()){
         map_pion_energies.at(pdg_code).push_back(particle_energy);
       }  
@@ -1037,7 +1063,8 @@ void CalcClassificationVars::StorePionEnergies(){
 
   }
 
+  std::cout <<"CalcClassificationVars: map_pion_energies.size(): "<<map_pion_energies.size()<<std::endl;
+  classification_map_int.emplace("MCNeutrons",n_neutrons);
   m_data->Stores["Classification"]->Set("MCPionEnergies",map_pion_energies);
-  classification_map_bool.emplace("MCNeutrons",n_neutrons);
 
 }

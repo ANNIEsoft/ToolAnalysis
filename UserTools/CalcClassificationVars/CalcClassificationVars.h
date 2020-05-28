@@ -19,7 +19,7 @@
 #include "Direction.h"
 #include "RecoVertex.h"
 #include "RecoDigit.h"
-
+#include "RecoCluster.h"
 
 class CalcClassificationVars: public Tool {
 
@@ -31,6 +31,8 @@ class CalcClassificationVars: public Tool {
   bool Finalise();
 
   double CalcArcTan(double x, double z);
+  void InitialisePDFs();
+  void InitialiseClassificationMaps();
   void StorePionEnergies();
   bool GetBoostStoreVariables();
   void ClassificationVarsMCTruth();
@@ -43,9 +45,8 @@ class CalcClassificationVars: public Tool {
   int verbosity=0;
   bool use_mctruth;
   bool isData;
-  double lateT;
-  double lowQ;
   std::string pdf_emu;
+  std::string pdf_rings;
 
   // ANNIEEvent / RecoStore variables
   int evnum, mcevnum;
@@ -56,7 +57,8 @@ class CalcClassificationVars: public Tool {
   RecoVertex *TrueVertex = nullptr;
   RecoVertex *TrueStopVertex = nullptr;
   bool EventCutStatus;
-  std::vector<RecoDigit>* RecoDigits; 
+  std::vector<RecoDigit>* RecoDigits;
+  std::vector<RecoCluster*>* fHitCleaningClusters = nullptr;
   double TrueMuonEnergy;
   double TrueNeutrinoEnergy;
   MCParticle neutrino;

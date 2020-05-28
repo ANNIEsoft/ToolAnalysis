@@ -36,6 +36,7 @@ PMTLikelihoodQRings
 PMTLikelihoodTRings
 PMTLikelihoodThetaRings
 PMTLikelihoodPhiRings
+PMTHitCleaningClusters
 LAPPDBaryTheta
 LAPPDAvgDist
 LAPPDQtotal

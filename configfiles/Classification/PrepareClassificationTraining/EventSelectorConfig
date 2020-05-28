@@ -6,7 +6,7 @@ MCFVCut 1
 MCPMTVolCut 1
 MCMRDCut 0
 MCPiKCut 0
-MCIsMuonCut 1
+MCIsMuonCut 0
 MCIsElectronCut 0
 MCIsSingleRingCut 0
 MCIsMultiRingCut 0

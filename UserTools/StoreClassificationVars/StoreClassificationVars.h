@@ -73,7 +73,8 @@ class StoreClassificationVars: public Tool {
 
   // Pion energy map
   std::map<int,std::vector<double>> map_pion_energies;
-  
+  int n_neutrons; 
+ 
   // Histogram configuration maps
   std::map<std::string,int> n_bins;
   std::map<std::string,double> min_bins;

@@ -80,6 +80,7 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fFilterByTruthInfo = new std::vector<RecoDigit*>; 
   // vector of clusters
   fClusterList = new std::vector<RecoCluster*>;
+  fHitCleaningClusters = new std::vector<RecoCluster*>;
 
   return true;
 }
@@ -147,6 +148,7 @@ bool HitCleaner::Execute(){
   fIsHitCleaningDone = true;
   m_data->Stores.at("RecoEvent")->Set("HitCleaningDone", fIsHitCleaningDone); 
   m_data->Stores.at("RecoEvent")->Set("FilterDigitList", FilterDigitList);	
+  m_data->Stores.at("RecoEvent")->Set("HitCleaningClusters", fHitCleaningClusters);
 
   delete digits; digits = 0;
   return true;
@@ -157,6 +159,7 @@ bool HitCleaner::Finalise(){
   delete fFilterByPulseHeight; fFilterByPulseHeight = 0;
   delete fFilterByNeighbours; fFilterByNeighbours = 0;
   delete fFilterByClusters; fFilterByClusters = 0;
+  delete fHitCleaningClusters; fHitCleaningClusters = 0;
   delete fClusterList; fClusterList = 0;
   // for test
   delete fFilterByTruthInfo; fFilterByTruthInfo = 0;
@@ -463,6 +466,7 @@ std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* m
   // clear vector of filtered digits
   // ===============================
   fFilterByClusters->clear();
+  fHitCleaningClusters->clear();
 
   // run clustering algorithm
   // ========================
@@ -470,7 +474,8 @@ std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* m
 
   for( int icluster=0; icluster<myClusterList->size(); icluster++ ){
     RecoCluster* myCluster = (RecoCluster*)(myClusterList->at(icluster));
-    
+    fHitCleaningClusters->push_back(myCluster);    
+
     for( int idigit=0; idigit<myCluster->GetNDigits(); idigit++ ){
       RecoDigit* myDigit = (RecoDigit*)(myCluster->GetDigit(idigit));
       fFilterByClusters->push_back(myDigit);
