@@ -121,6 +121,8 @@ bool MonitorReceive::Execute(){
 	
 	indata=new BoostStore(false,0); 
 	indata->Initialise(iss.str());
+	      
+	std::cout <<"MonitorReceive: Received new file: "<<iss.str()<<std::endl;
 
 	MRDData= new BoostStore(false,2);
 	PMTData= new BoostStore(false,2);
@@ -138,7 +140,7 @@ bool MonitorReceive::Execute(){
 		indata->Get("PMTData",*PMTData);
 		long totalentries;
         	PMTData->Header->Get("TotalEntries",totalentries);
-        	std::cout <<"MonitorSimReceive: Total entries: "<<totalentries<<std::endl;
+        	std::cout <<"MonitorReceive: Total entries: "<<totalentries<<std::endl;
         	int ExecuteEntryNum=0;
         	int EntriesToDo,CDEntryNum;
         	if (totalentries < 3000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
