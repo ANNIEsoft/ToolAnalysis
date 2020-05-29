@@ -25,7 +25,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	
 	/////////////////// Useful header ///////////////////////
 	
-	if(verbose) cout<<"Initializing Tool LoadWCSimLAPPD"<<endl;
+	if(verbosity) cout<<"Initializing Tool LoadWCSimLAPPD"<<endl;
 	
 	if(configfile!="") m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
@@ -38,8 +38,8 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	
 	// Get the Tool configuration variables
 	// ====================================
-	m_variables.Get("verbose",verbose);
-	//verbose=10;
+	m_variables.Get("verbose",verbosity);
+	//verbosity=10;
 	m_variables.Get("InputFile",MCFile);
 	m_variables.Get("InnerStructureRadius",Rinnerstruct);
 	m_variables.Get("DrawDebugGraphs",DEBUG_DRAW_LAPPD_HITS);
@@ -47,7 +47,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("WCSimVersion",FILE_VERSION);
 	// See if we loaded a WCSim simulation file version
 	int LoadWCSimToolFILE_VERSION=-1;
-	int get_ok = m_data->CStore.Get("WCSimVersion",LoadWCSimToolFILE_VERSION);
+	get_ok = m_data->CStore.Get("WCSimVersion",LoadWCSimToolFILE_VERSION);
 	if(get_ok){
 		// if we did, check if they're from the same version
 		if(FILE_VERSION!=LoadWCSimToolFILE_VERSION){
@@ -60,7 +60,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	
 	// Make class private members; e.g. the LAPPDTree
 	// ==============================================
-	if(verbose>2) cout<<"LoadWCSimLAPPD Tool: loading file "<<MCFile<<endl;
+	if(verbosity>2) cout<<"LoadWCSimLAPPD Tool: loading file "<<MCFile<<endl;
 	//file= new TFile(MCFile.c_str(),"READ");
 	//lappdtree= (TTree*) file->Get("LAPPDTree");
 	//NumEvents=lappdtree->GetEntries();
@@ -79,7 +79,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	// =========================================
 	m_data->CStore.Get("WCSimPreTriggerWindow",pretriggerwindow);
 	m_data->CStore.Get("WCSimPostTriggerWindow",posttriggerwindow);
-	if(verbose>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
+	if(verbosity>2) cout<<"WCSimPreTriggerWindow="<<pretriggerwindow
 					  <<", WCSimPostTriggerWindow="<<posttriggerwindow<<endl;
 	
 	// Get the mapping of WCSim tubeid to detectorkey needed for filling ANNIEEVENT MCHits
@@ -97,7 +97,7 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 //	} else {
 //		cerr<<"No WCSimRootGeom needed by LoadWCSimLAPPD tool!"<<endl;
 //	}
-	if(verbose>3){
+	if(verbosity>3){
 		cout<<"Retrieved WCSimRootGeom from geo="<<geo<<", geomptr="<<geomptr<<endl;
 		int numlappds = geo->GetWCNumLAPPD();
 		cout<<"we have "<<numlappds<<" LAPPDs"<<endl;
@@ -107,10 +107,25 @@ bool LoadWCSimLAPPD::Initialise(std::string configfile, DataModel &data){
 	MCLAPPDHits = new std::map<unsigned long,std::vector<MCLAPPDHit>>;
 	
 	if(DEBUG_DRAW_LAPPD_HITS){
-		// create the ROOT application to show histograms
+		// Only one TApplication may exist. Get it, or make it if there isn't one
 		int myargc=0;
-		//char *myargv[] = {(const char*)"somestring"};
-		lappdRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,0);
+		intptr_t tapp_ptr=0;
+		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+		if(not get_ok){
+			if(verbosity>2) cout<<"LoadWCSimLAPPD Tool: making global TApplication"<<endl;
+			rootTApp = new TApplication("rootTApp",&myargc,0);
+			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+			m_data->CStore.Set("RootTApplication",tapp_ptr);
+		} else {
+			if(verbosity>2) cout<<"LoadWCSimLAPPD Tool: Retrieving global TApplication"<<std::endl;
+			rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+		}
+		int tapplicationusers;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok) tapplicationusers=1;
+		else tapplicationusers++;
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
+		
 		lappdhitshist = new TPolyMarker3D();
 		digixpos = new TH1D("digixpos","lappd digixpos",100,-2,2);
 		digiypos = new TH1D("digiypos","lappd digiypos",100,-2.5,2.5);
@@ -130,7 +145,7 @@ bool LoadWCSimLAPPD::Execute(){
 	// we need to scan through the LAPPD hits and check for hits within the trigger time window.
 	// If you wish, you can bypass this easily enough, but in that case bear in mind the same
 	// LAPPD hits may appear in multiple ToolAnalysis 'events' unless you otherwise handle it.
-	if(verbose) cout<<"Executing tool LoadWCSimLAPPD"<<endl;
+	if(verbosity) cout<<"Executing tool LoadWCSimLAPPD"<<endl;
 	
 	int storegetret=666; // return 1 success
 	storegetret = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);
@@ -143,17 +158,17 @@ bool LoadWCSimLAPPD::Execute(){
 	}
 	
 	double wcsimtriggertime = static_cast<double>(EventTime->GetNs()); // returns a uint64_t
-	if(verbose>2) cout<<"LAPPDTool: Trigger time for event "<<MCEventNum<<", trigger "
+	if(verbosity>2) cout<<"LAPPDTool: Trigger time for event "<<MCEventNum<<", trigger "
 					  <<MCTriggernum<<" was "<<wcsimtriggertime<<"ns"<<endl;
 	
 	MCLAPPDHits->clear(); // clear any hits from previous trigger
 	
 	if(MCTriggernum>0){
 		if(unassignedhits.size()==0){
-			if(verbose>2) cout<<"no LAPPD hits to add to this trigger"<<endl;
+			if(verbosity>2) cout<<"no LAPPD hits to add to this trigger"<<endl;
 			return true;
 		} else {
-			if(verbose>2) cout<<"looping over "<<unassignedhits.size()
+			if(verbosity>2) cout<<"looping over "<<unassignedhits.size()
 							  <<" LAPPD hits that weren't in the first trigger window"<<endl;
 			for(int hiti=0; hiti<unassignedhits.size(); hiti++){
 				MCLAPPDHit nexthit = unassignedhits.at(hiti);
@@ -167,12 +182,12 @@ bool LoadWCSimLAPPD::Execute(){
 					unsigned int key = nexthit.GetTubeId();
 					if(MCLAPPDHits->count(key)==0) MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					else MCLAPPDHits->at(key).push_back(nexthit);
-					if(verbose>3) cout<<"new lappd digit added"<<endl;
+					if(verbosity>3) cout<<"new lappd digit added"<<endl;
 				}
 			}
 		}
 	} else {  // MCTriggernum == 0
-		if(verbose>3) cout<<"loading LAPPDEntry"<<MCEventNum<<endl;
+		if(verbosity>3) cout<<"loading LAPPDEntry"<<MCEventNum<<endl;
 		LAPPDEntry->GetEntry(MCEventNum);
 		
 		/////////////////////////////////
@@ -180,7 +195,7 @@ bool LoadWCSimLAPPD::Execute(){
 		// Create LAPPDHit objects for those within the trigger window
 		// Store the results of calculations temporarily for future triggers in this event
 		/////////////////////////////////
-		if(verbose>2) cout<<"There were "<<LAPPDEntry->lappd_numhits<<" LAPPDs hit in this event"<<endl;
+		if(verbosity>2) cout<<"There were "<<LAPPDEntry->lappd_numhits<<" LAPPDs hit in this event"<<endl;
 		int runningcount=0;
 		for(int lappdi=0; lappdi<LAPPDEntry->lappd_numhits; lappdi++){
 			// loop over LAPPDs that had at least one hit
@@ -222,7 +237,7 @@ bool LoadWCSimLAPPD::Execute(){
 			} // FILE_VERSION<3
 			
 			int numhitsthislappd=LAPPDEntry->lappdhit_edep[lappdi];
-			if(verbose>3) cout<<"LAPPD "<<LAPPDID<<" had "<<numhitsthislappd<<" hits in total"<<endl;
+			if(verbosity>3) cout<<"LAPPD "<<LAPPDID<<" had "<<numhitsthislappd<<" hits in total"<<endl;
 			int lastrunningcount=runningcount;
 			// loop over all the hits on this lappd
 			for(;runningcount<(lastrunningcount+numhitsthislappd); runningcount++){
@@ -280,7 +295,7 @@ bool LoadWCSimLAPPD::Execute(){
 				
 				// we now have all the necessary info about this LAPPD hit:
 				// check if it falls within the current trigger window
-				if(verbose>4){
+				if(verbosity>4){
 					cout<<"LAPPD hit time is "<<relativedigitst<<" [ns], triggertime is "<<wcsimtriggertime
 						<<", giving window ("<<(wcsimtriggertime+pretriggerwindow)
 						<<"), ("<<(wcsimtriggertime+posttriggerwindow)<<")"<<endl;
@@ -295,7 +310,7 @@ bool LoadWCSimLAPPD::Execute(){
 						MCLAPPDHits->at(key).emplace_back(key, relativedigitst, digiq,
 															globalpos, localpos, parents);
 					}
-					if(verbose>3) cout<<"new lappd digit added"<<endl;
+					if(verbosity>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
 					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents);
 				}
@@ -303,7 +318,7 @@ bool LoadWCSimLAPPD::Execute(){
 		}     // end loop over lappds hit in this event
 	}         // end if MCTriggernum == 0
 	
-	if(verbose>3) cout<<"Saving MCLAPPDHits to ANNIEEvent"<<endl;
+	if(verbosity>3) cout<<"Saving MCLAPPDHits to ANNIEEvent"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCLAPPDHits",MCLAPPDHits,true);
 	
 	return true;
@@ -371,9 +386,9 @@ bool LoadWCSimLAPPD::Finalise(){
 		lappdRootCanvas->Update();
 		lappdRootCanvas->SaveAs("lappdhits_sideview.png");
 		gSystem->ProcessEvents();
-		//lappdRootDrawApp->Run();
+		//rootTApp->Run();
 		//std::this_thread::sleep_for (std::chrono::seconds(5));
-		//lappdRootDrawApp->Terminate(0);
+		//rootTApp->Terminate(0);
 		
 		delete digixpos;
 		delete digiypos;
@@ -381,7 +396,20 @@ bool LoadWCSimLAPPD::Finalise(){
 		delete frame3d;
 		delete lappdhitshist;
 		delete lappdRootCanvas;
-		delete lappdRootDrawApp;
+		
+		if(DEBUG_DRAW_LAPPD_HITS){
+			int tapplicationusers=0;
+			get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+			if(not get_ok || tapplicationusers==1){
+				if(rootTApp){
+					std::cout<<"LoadWCSimLAPPD Tool: Deleting global TApplication"<<std::endl;
+					delete rootTApp;
+					rootTApp=nullptr;
+				}
+			} else if(tapplicationusers>1){
+				m_data->CStore.Set("RootTApplicationUsers",tapplicationusers-1);
+			}
+		}
 	}
 	
 	return true;

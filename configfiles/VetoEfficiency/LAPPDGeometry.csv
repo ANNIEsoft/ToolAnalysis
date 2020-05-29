@@ -1,0 +1,5 @@
+LEGEND_LINE,,,,,,,,,,,,,,,,,,,,,,,,
+detector_num,detector_position_x,detector_position_y,detector_position_z,detector_direction_x,detector_direction_y,detector_direction_z,detector_type,detector_status,channel_num,channel_position_x,channel_position_y,channel_position_z,channel_strip_side,channel_strip_num,channel_signal_crate,channel_signal_card,channel_signal_channel,channel_level2_crate,channel_level2_card,channel_level2_channel,channel_hv_crate,channel_hv_card,channel_hv_channel,channel_status
+,,,,,,,,,,,,,,,,,,,,,,,,
+DATA_START,,,,,,,,,,,,,,,,,,,,,,,,
+DATA_END,,,,,,,,,,,,,,,,,,,,,,,,

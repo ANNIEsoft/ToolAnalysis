@@ -95,6 +95,15 @@ class HitCleaner: public Tool {
   double fLappdMinHitsPerCluster;
   
   int    fMinClusterDigits;
+  bool   fisMC;
+
+  // p.e. conversion parameters
+  std::map<int,unsigned long> pmt_tubeid_to_channelkey;
+  std::map<unsigned long, double> pmt_gains;
+  std::string singlePEgains;
+
+  // Container for parameters
+  std::map<std::string, double>* fHitCleaningParam = nullptr;
 
   // internal containers
   std::vector<Double_t> vNdigitsCluster;  
@@ -112,10 +121,10 @@ class HitCleaner: public Tool {
 
   // vectors of clusters
   std::vector<RecoCluster*>* fClusterList;
-  	
+ 
   // vector of clusters (accessible to the CStore)
-  std::vector<RecoCluster*>* fHitCleaningClusters = nullptr;
-
+  std::vector<RecoCluster*>* fHitCleaningClusters = nullptr;  
+ 	
   // true vertex
   RecoVertex* fTrueVertex = 0; 
   
