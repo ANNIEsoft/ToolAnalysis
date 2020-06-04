@@ -143,8 +143,8 @@ bool MonitorReceive::Execute(){
         	std::cout <<"MonitorReceive: Total entries: "<<totalentries<<std::endl;
         	int ExecuteEntryNum=0;
         	int EntriesToDo,CDEntryNum;
-        	if (totalentries < 3000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
-        	else EntriesToDo = (int) totalentries/15;               //otherwise do ~1000 entries out of 15000
+        	if (totalentries < 14000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
+        	else EntriesToDo = 1000;               //otherwise do ~1000 entries out of ~15000 (or more)
         	//CDEntryNum = totalentries - EntriesToDo - 10;
         	//if (CDEntryNum < 0) CDEntryNum = 0;
 		CDEntryNum = 0;
