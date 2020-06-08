@@ -27,6 +27,7 @@ HitCleaner::~HitCleaner() {
 
 bool HitCleaner::Initialise(std::string configfile, DataModel &data){
 
+
   /////////////////// Usefull header ///////////////////////
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
@@ -44,7 +45,8 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fPmtTimeWindowN = 10;        // timing window for neighbours (ns)
   fPmtTimeWindowC = 10;        // timing window for clusters (ns)
   fPmtMinHitsPerCluster = -1;   //min # of hits per cluster //Ioana 
-  
+  fisMC = 1;			//default: MC 
+ 
   fLappdMinPulseHeight = -1.0;     // minimum pulse height (PEs) //Ioana... initial 1.0
   fLappdNeighbourRadius = 25.0;  // clustering window (cm) //Ioana... intial 300.0
   fLappdMinNeighbourDigits = 5;   // minimum neighbouring digits //Ioana.... initial 2
@@ -91,6 +93,7 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fHitCleaningParam->emplace("LappdTimeWindowC",fLappdTimeWindowC);
   fHitCleaningParam->emplace("MinClusterDigits",fMinClusterDigits);
 
+
   if (fConfig!=0 && fConfig !=1 && fConfig !=2 && fConfig !=3 && fConfig !=4){
     Log("HitCleaner tool: Configuration <"+std::to_string(fConfig)+"> not recognized. Setting Config 3 (kPulseHeightAndClusters)",v_error,verbosity);
     fConfig = HitCleaner::kPulseHeightAndClusters;
@@ -109,6 +112,7 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
     m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
   }
 
+  
   // vector of filtered digits
   fFilterAll = new std::vector<RecoDigit*>;
   fFilterByPulseHeight = new std::vector<RecoDigit*>;
@@ -123,14 +127,17 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   //Set hit cleaner parameters in the RecoEvent store
   m_data->Stores.at("RecoEvent")->Set("HitCleaningParameters", fHitCleaningParam);
 
+
+
   return true;
 }
 
 
 bool HitCleaner::Execute(){
 	
+  
   std::string name = "HitCleaner::Execute()";
-  Log(name + ": Executing",v_debug,verbosity);
+  Log(name + ": Executing",v_error,verbosity);
 	
   // print filtering parameters
   if(verbosity>v_message) this->PrintParameters();
@@ -689,7 +696,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
     }
   }
 
-  std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
+  //std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
   // return vector of clusters
   // =========================
   return fClusterList;

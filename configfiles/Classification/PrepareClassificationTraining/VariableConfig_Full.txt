@@ -55,3 +55,8 @@ MrdPadPerLayer
 MrdXSpread
 MrdYSpread
 MrdClusters
+MrdLayersCluster
+MrdPaddlesCluster
+MrdConsLayersCluster
+MrdAdjHitsCluster
+MrdPadPerLayerCluster

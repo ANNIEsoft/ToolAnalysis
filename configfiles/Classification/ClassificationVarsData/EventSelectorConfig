@@ -6,7 +6,7 @@ MCFVCut 1
 MCPMTVolCut 1
 MCMRDCut 0
 MCPiKCut 0
-MCIsMuonCut 1
+MCIsMuonCut 0
 MCIsElectronCut 0
 MCIsSingleRingCut 0
 MCIsMultiRingCut 0
@@ -18,7 +18,5 @@ NHitCut 1
 NHitmin 4
 PromptTrigOnly 1
 RecoFVCut 0
-PMTMRDCoincCut 0
-PMTMRDOffset 10
 RecoPMTVolCut 0
 SaveStatusToStore 1

@@ -1,0 +1,5 @@
+verbose 2
+OutFile mcproperties_genie_test.root
+SaveHistograms 1
+SaveTree 1
+HasGENIE 1

@@ -1,7 +1,7 @@
 # StoreClassificationVars config file
 
 verbosity 1
-Filename beamlike_muons_updatedMRD_DigitThr10_399
+Filename beam_DigitThr10_4996
 SaveCSV 1
 SaveROOT 1
 VariableConfig Full

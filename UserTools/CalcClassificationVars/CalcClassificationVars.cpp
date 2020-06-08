@@ -12,8 +12,8 @@ bool CalcClassificationVars::Initialise(std::string configfile, DataModel &data)
 	verbosity = 2;
 	isData = 0;
 	neutrino_sample = false;
-	pdf_emu = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu_rough.root";
-	pdf_rings = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beam_rings_rough.root";
+	pdf_emu = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu_500bins_sumw2.root";
+	pdf_rings = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beam_rings_500bins_sumw2.root";
 
 	// Configuration variables
 	m_variables.Get("verbosity",verbosity);
@@ -84,8 +84,8 @@ bool CalcClassificationVars::Execute(){
 		return false;
 	}
 
-	// Get ANNIEEvent,RecoEvent,CStore variables
-	this->GetBoostStoreVariables();
+	// Get ANNIEEvent,RecoEvent
+        this->GetBoostStoreVariables();
 	
 	// Clear maps and set variables to default settings
 	classification_map_int.clear();
@@ -197,19 +197,13 @@ void CalcClassificationVars::InitialisePDFs(){
 	pdf_e_theta = (TH1F*) f_emu->Get("pdf_beamlike_electron_thetaB");
 	pdf_e_phi = (TH1F*) f_emu->Get("pdf_beamlike_electron_phiB");
 
-	pdf_mu_charge->Rebin(10);
-	pdf_mu_time->Rebin(10);
-	pdf_mu_theta->Rebin(10);
-	pdf_mu_phi->Rebin(10);
-	pdf_e_charge->Rebin(10);
-	pdf_e_time->Rebin(10);
-	pdf_e_theta->Rebin(10);
-	pdf_e_phi->Rebin(10);
+	pdf_mu_charge->Rebin(50);
+	pdf_e_charge->Rebin(50);
 
 	int nbins_charge = pdf_mu_charge->GetNbinsX();
-	int nbins_time = pdf_mu_charge->GetNbinsX();
-	int nbins_theta = pdf_mu_charge->GetNbinsX();
-	int nbins_phi = pdf_mu_charge->GetNbinsX();
+	int nbins_time = pdf_mu_time->GetNbinsX();
+	int nbins_theta = pdf_mu_theta->GetNbinsX();
+	int nbins_phi = pdf_mu_phi->GetNbinsX();
 	double min_charge = pdf_mu_charge->GetXaxis()->GetXmin();
 	double max_charge = pdf_mu_charge->GetXaxis()->GetXmax();
 	double min_time = pdf_mu_time->GetXaxis()->GetXmin();
@@ -223,35 +217,29 @@ void CalcClassificationVars::InitialisePDFs(){
 	event_time = new TH1F("event_time","Time values for event",nbins_time,min_time,max_time);
 	event_theta = new TH1F("event_theta","Theta values for event",nbins_theta,min_theta,max_theta);
 	event_phi = new TH1F("event_phi","Phi values for event",nbins_phi,min_phi,max_phi);
-	/*
+	
 	// Single/multi-ring pdfs
 	f_rings = new TFile(pdf_rings.c_str(),"READ");
-	pdf_single_charge = (TH1F*) f_emu->Get("pdf_beam_single_charge");
-	pdf_single_time = (TH1F*) f_emu->Get("pdf_beam_single_time");
-	pdf_single_theta = (TH1F*) f_emu->Get("pdf_beam_single_thetaB");
-	pdf_single_phi = (TH1F*) f_emu->Get("pdf_beam_single_phiB");
-	pdf_multi_charge = (TH1F*) f_emu->Get("pdf_beam_multi_charge");
-	pdf_multi_time = (TH1F*) f_emu->Get("pdf_beam_multi_time");
-	pdf_multi_theta = (TH1F*) f_emu->Get("pdf_beam_multi_thetaB");
-	pdf_multi_phi = (TH1F*) f_emu->Get("pdf_beam_multi_phiB");
+	pdf_single_charge = (TH1F*) f_rings->Get("pdf_beam_single_charge");
+	pdf_single_time = (TH1F*) f_rings->Get("pdf_beam_single_time");
+	pdf_single_theta = (TH1F*) f_rings->Get("pdf_beam_single_thetaB");
+	pdf_single_phi = (TH1F*) f_rings->Get("pdf_beam_single_phiB");
+	pdf_multi_charge = (TH1F*) f_rings->Get("pdf_beam_multi_charge");
+	pdf_multi_time = (TH1F*) f_rings->Get("pdf_beam_multi_time");
+	pdf_multi_theta = (TH1F*) f_rings->Get("pdf_beam_multi_thetaB");
+	pdf_multi_phi = (TH1F*) f_rings->Get("pdf_beam_multi_phiB");
 
-	pdf_single_charge->Rebin(10);
-	pdf_single_time->Rebin(10);
-	pdf_single_theta->Rebin(10);
-	pdf_single_phi->Rebin(10);
-	pdf_multi_charge->Rebin(10);
-	pdf_multi_time->Rebin(10);
-	pdf_multi_theta->Rebin(10);
-	pdf_multi_phi->Rebin(10);
-*/
+	pdf_single_charge->Rebin(50);
+	pdf_multi_charge->Rebin(50);
+
 
 }
 
 void CalcClassificationVars::InitialiseClassificationMaps(){
 
 	//Sort variables into their respective maps
-	std::vector<std::string> int_variable_names = {"PMTHits","PMTHitsLargeAnglePhi","PMTHitsLargeAngleTheta","LAPPDHits","MrdLayers","MrdPaddles","MrdConsLayers","MrdAdjHits","MrdClusters","MCNRings","EventNumber","MCPDG","MCNeutrons"};
-	std::vector<std::string> double_variable_names = {"PMTBaryTheta","PMTAvgDist","PMTAvgT","PMTVarT","PMTQtotal","PMTQPerPMT","PMTQtotalClustered","PMTFracQmax","PMTFracQdownstream","PMTFracClustered","PMTFracLowQ","PMTFracEarly","PMTFracLate","PMTRMSTheta","PMTVarTheta","PMTRMSThetaBary","PMTVarThetaBary","PMTRMSPhi","PMTVarPhi","PMTRMSPhiBary","PMTVarPhiBary","PMTFracLargeAnglePhi","PMTFracLargeAngleTheta","PMTBaryTheta_Clustered","PMTBaryTheta_NonClustered","PMTDeltaBarycenter_Clustered","PMTEllip","PMTLikelihoodQ","PMTLikelihoodT","PMTLikelihoodTheta","PMTLikelihoodPhi","PMTLikelihoodQRings","PMTLikelihoodTRings","PMTLikelihoodThetaRings","PMTLikelihoodPhiRings","PMTHitCleaningClusters","LAPPDBaryTheta","LAPPDAvgDist","LAPPDQtotal","LAPPDAvgT","LAPPDVarT","LAPPDRMSTheta","LAPPDVarTheta","LAPPDRMSThetaBary","LAPPDVarThetaBary","MrdPadPerLayer","MrdXSpread","MrdYSpread","MCPMTFracRing","MCPMTFracRingNoWeight","MCLAPPDFracRing","MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCLAPPDVarTheta","MCLAPPDBaryTheta","MCLAPPDRMSTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCVDistVtxWall","MCHDistVtxWall","MCVDistVtxInner","MCHDistVtxInner","MCVtxTrueTime","MCTrueNeutrinoEnergy","MCTrueMuonEnergy"};
+	std::vector<std::string> int_variable_names = {"PMTHits","PMTHitsLargeAnglePhi","PMTHitsLargeAngleTheta","LAPPDHits","MrdLayers","MrdPaddles","MrdConsLayers","MrdAdjHits","MrdClusters","MrdLayersCluster","MrdPaddlesCluster","MrdConsLayersCluster","MrdAdjHitsCluster","MCNRings","EventNumber","MCPDG","MCNeutrons"};
+	std::vector<std::string> double_variable_names = {"PMTBaryTheta","PMTAvgDist","PMTAvgT","PMTVarT","PMTQtotal","PMTQPerPMT","PMTQtotalClustered","PMTFracQmax","PMTFracQdownstream","PMTFracClustered","PMTFracLowQ","PMTFracEarly","PMTFracLate","PMTRMSTheta","PMTVarTheta","PMTRMSThetaBary","PMTVarThetaBary","PMTRMSPhi","PMTVarPhi","PMTRMSPhiBary","PMTVarPhiBary","PMTFracLargeAnglePhi","PMTFracLargeAngleTheta","PMTBaryTheta_Clustered","PMTBaryTheta_NonClustered","PMTDeltaBarycenter_Clustered","PMTEllip","PMTLikelihoodQ","PMTLikelihoodT","PMTLikelihoodTheta","PMTLikelihoodPhi","PMTLikelihoodQRings","PMTLikelihoodTRings","PMTLikelihoodThetaRings","PMTLikelihoodPhiRings","PMTHitCleaningClusters","LAPPDBaryTheta","LAPPDAvgDist","LAPPDQtotal","LAPPDAvgT","LAPPDVarT","LAPPDRMSTheta","LAPPDVarTheta","LAPPDRMSThetaBary","LAPPDVarThetaBary","MrdPadPerLayer","MrdXSpread","MrdYSpread","MrdPadPerLayerCluster","MCPMTFracRing","MCPMTFracRingNoWeight","MCLAPPDFracRing","MCPMTVarTheta","MCPMTRMSTheta","MCPMTBaryTheta","MCPMTRMSThetaBary","MCPMTVarThetaBary","MCLAPPDVarTheta","MCLAPPDBaryTheta","MCLAPPDRMSTheta","MCLAPPDRMSThetaBary","MCLAPPDVarThetaBary","MCVDistVtxWall","MCHDistVtxWall","MCVDistVtxInner","MCHDistVtxInner","MCVtxTrueTime","MCTrueNeutrinoEnergy","MCTrueMuonEnergy"};
 	std::vector<std::string> boolean_variable_names = {"MCMultiRing"};
 	std::vector<std::string> vector_variable_names = {"PMTQVector","PMTTVector","PMTDistVector","PMTThetaVector","PMTThetaBaryVector","PMTPhiVector","PMTPhiBaryVector","PMTYVector","PMTIDVector","LAPPDQVector","LAPPDTVector","LAPPDDistVector","LAPPDThetaVector","LAPPDThetaBaryVector","LAPPDIDVector","MCPMTThetaBaryVector","MCLAPPDThetaBaryVector","MCPMTTVectorTOF","MCLAPPDTVectorTOF"};
 	
@@ -330,10 +318,17 @@ bool CalcClassificationVars::GetBoostStoreVariables(){
 	get_ok = m_data->CStore.Get("NumMrdTimeClusters",NumMrdTimeClusters);
 	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving NumMrdTimeClusters, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
 
+	if (NumMrdTimeClusters >= 0 ){
+		get_ok = m_data->CStore.Get("MrdDigitChankeys",mrddigitchankeysthisevent);
+		if (not get_ok){ Log("CalcClassificationVars Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
+	}
+
+	get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+	if (not get_ok) { Log("CalcClassificationVars Tool: Error retrieving MrdTimeClusters, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
+
 	get_ok = m_data->CStore.Get("PdgCherenkovMap",pdgcodetocherenkov);
 	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving PdgCherenkovMap, did you run MCRecoEventLoader beforehand?",v_error,verbosity); return false; }
 
-	std::cout <<"pdgcodetocherenkovmap.size(): "<<pdgcodetocherenkov.size()<<std::endl;
 
 	return true;
 
@@ -781,11 +776,11 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	double pmt_time_e = pdf_e_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
 	double pmt_theta_e = pdf_e_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
 	double pmt_phi_e = pdf_e_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
-	double pmt_charge_likelihood = pmt_charge_mu - pmt_charge_e;
-	double pmt_time_likelihood = pmt_time_mu - pmt_time_e;
-	double pmt_theta_likelihood = pmt_theta_mu - pmt_theta_e;
-	double pmt_phi_likelihood = pmt_phi_mu - pmt_phi_e;
-	/*
+	double pmt_charge_likelihood = pmt_charge_e - pmt_charge_mu;
+	double pmt_time_likelihood = pmt_time_e - pmt_time_mu;
+	double pmt_theta_likelihood = pmt_theta_e - pmt_theta_mu;
+	double pmt_phi_likelihood = pmt_phi_e - pmt_phi_mu;
+	
 	double pmt_charge_single = pdf_single_charge->Chi2Test(event_charge,"UUNORMCHI2/NDF");
 	double pmt_time_single = pdf_single_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
 	double pmt_theta_single = pdf_single_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
@@ -794,15 +789,11 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 	double pmt_time_multi = pdf_multi_time->Chi2Test(event_time,"UUNORMCHI2/NDF");
 	double pmt_theta_multi = pdf_multi_theta->Chi2Test(event_theta,"UUNORMCHI2/NDF");
 	double pmt_phi_multi = pdf_multi_phi->Chi2Test(event_phi,"UUNORMCHI2/NDF");
-	double pmt_charge_likelihood_rings = pmt_charge_single - pmt_charge_multi;
-	double pmt_time_likelihood_rings = pmt_time_single - pmt_time_multi;
-	double pmt_theta_likelihood_rings = pmt_theta_single - pmt_theta_multi;
-	double pmt_phi_likelihood_rings = pmt_phi_single - pmt_phi_multi;
-*/
-	double pmt_charge_likelihood_rings = 0.;
-	double pmt_time_likelihood_rings = 0.;
-	double pmt_theta_likelihood_rings = 0.;
-	double pmt_phi_likelihood_rings = 0.;
+	double pmt_charge_likelihood_rings = pmt_charge_multi - pmt_charge_single;
+	double pmt_time_likelihood_rings = pmt_time_multi - pmt_time_single;
+	double pmt_theta_likelihood_rings = pmt_theta_multi - pmt_theta_single;
+	double pmt_phi_likelihood_rings = pmt_phi_multi - pmt_phi_single;
+
 
 	// Obtain number of clusters from HitCleaner
 	int pmt_hitcleaning_clusters = fHitCleaningClusters->size();
@@ -921,6 +912,14 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 	bool layer_occupied[11] = {0};
 	double mrd_paddlesize[11];
 
+	int num_mrd_paddles_cluster=0;
+	int num_mrd_layers_cluster=0;
+	int num_mrd_conslayers_cluster=0;
+	int num_mrd_adjacent_cluster=0;
+	double mrd_padperlayer_cluster=0.;
+	bool layer_occupied_cluster[11] = {0};
+	double mrd_paddlesize_cluster[11];
+
 	if(!TDCData){
 		Log("CalcClassificationVars tool: No TDC data to process!",v_warning,verbosity);
 	} else {
@@ -980,10 +979,12 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 					}
 					for (unsigned int i_hitpaddle=0; i_hitpaddle<mrd_hits.at(i_layer).size(); i_hitpaddle++){
 						for (unsigned int j_hitpaddle= i_hitpaddle+1; j_hitpaddle < mrd_hits.at(i_layer).size(); j_hitpaddle++){
-							if (fabs(mrd_hits.at(i_layer).at(i_hitpaddle)-mrd_hits.at(i_layer).at(j_hitpaddle))-mrd_paddlesize[i_layer] < 0.001) num_mrd_adjacent++;
+							if (fabs(mrd_hits.at(i_layer).at(i_hitpaddle)-mrd_hits.at(i_layer).at(j_hitpaddle))<= (mrd_paddlesize[i_layer]+0.001)) num_mrd_adjacent++;
 						}
 					} 		
 				}
+				//Place the last num_mrd_conslayers value also in the vector
+				temp_cons_layers.push_back(num_mrd_conslayers);
 			}
 			std::vector<int>::iterator it = std::max_element(temp_cons_layers.begin(),temp_cons_layers.end());
 			if (it != temp_cons_layers.end()) num_mrd_conslayers = *it;
@@ -1021,6 +1022,80 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 	classification_map_double.emplace("MrdXSpread",mrd_mean_xspread);
 	classification_map_double.emplace("MrdYSpread",mrd_mean_yspread);
 	classification_map_int.emplace("MrdClusters",NumMrdTimeClusters);
+	
+	/*if(!MrdTimeCl){
+		Log("CalcClassificationVars tool: No MrdTimeClusters to process!",v_warning,verbosity);
+	} else */ if (true) {
+		//helper histograms to determine MRD spread in x/y direction
+		if(MrdTimeClusters.size()==0){
+			//No entries in TDCData object, don't read out anything
+			Log("CalcClassificationVars tool: No MRDClusters entries.",v_message,verbosity);
+		} else {
+			std::vector<std::vector<double>> mrd_hits;
+			for (int i_layer=0; i_layer<11; i_layer++){
+				std::vector<double> empty_hits;
+				mrd_hits.push_back(empty_hits);
+			}
+			std::vector<int> temp_cons_layers;
+			for (int i_cluster=0; i_cluster < (int) MrdTimeClusters.size(); i_cluster++){
+				if (i_cluster > 0) continue; 		//only evaluate first cluster, if there are multiple
+				std::vector<int> single_cluster = MrdTimeClusters.at(i_cluster);
+				for (int i_pmt = 0; i_pmt < (int) single_cluster.size(); i_pmt++){
+					int idigit = single_cluster.at(i_pmt);
+					unsigned long chankey = mrddigitchankeysthisevent.at(idigit);
+					Detector *thedetector = geom->ChannelToDetector(chankey);
+					if(thedetector->GetDetectorElement()!="MRD") {
+						continue;                 // this is a veto hit, not an MRD hit.
+					}
+					num_mrd_paddles_cluster++;
+					int detkey = thedetector->GetDetectorID();
+					Paddle *apaddle = geom->GetDetectorPaddle(detkey);
+					int layer = apaddle->GetLayer();
+					layer_occupied_cluster[layer-1]=true;
+					if (apaddle->GetOrientation()==1) {
+						mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+						mrd_paddlesize_cluster[layer-2]=apaddle->GetPaddleWidth();
+					}
+					else if (apaddle->GetOrientation()==0) {
+						mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+						mrd_paddlesize_cluster[layer-2]=apaddle->GetPaddleWidth();
+					}
+				}
+				if (num_mrd_paddles_cluster > 0) {
+					for (int i_layer=0;i_layer<11;i_layer++){
+						if (layer_occupied_cluster[i_layer]==true) {
+							num_mrd_layers_cluster++;
+							if (num_mrd_conslayers_cluster==0) num_mrd_conslayers_cluster++;
+							else {
+								if (layer_occupied_cluster[i_layer-1]==true) num_mrd_conslayers_cluster++;
+								else {
+									temp_cons_layers.push_back(num_mrd_conslayers_cluster);
+									num_mrd_conslayers_cluster=0;
+								}
+							}
+						}
+						for (unsigned int i_hitpaddle=0; i_hitpaddle<mrd_hits.at(i_layer).size(); i_hitpaddle++){
+							for (unsigned int j_hitpaddle= i_hitpaddle+1; j_hitpaddle < mrd_hits.at(i_layer).size(); j_hitpaddle++){
+								if (fabs(mrd_hits.at(i_layer).at(i_hitpaddle)-mrd_hits.at(i_layer).at(j_hitpaddle))<=mrd_paddlesize[i_layer]+0.001) num_mrd_adjacent_cluster++;
+							}
+						}	 		
+					}
+				}
+				temp_cons_layers.push_back(num_mrd_conslayers_cluster);
+				std::vector<int>::iterator it = std::max_element(temp_cons_layers.begin(),temp_cons_layers.end());
+				if (it != temp_cons_layers.end()) num_mrd_conslayers_cluster = *it;
+				else num_mrd_conslayers_cluster=0;
+				if (num_mrd_layers_cluster > 0.) mrd_padperlayer = double(num_mrd_paddles_cluster)/num_mrd_layers_cluster;
+			}
+		}
+	}
+
+
+	classification_map_int.emplace("MrdLayersCluster",num_mrd_layers_cluster);
+	classification_map_int.emplace("MrdPaddlesCluster",num_mrd_paddles_cluster);
+	classification_map_int.emplace("MrdConsLayersCluster",num_mrd_conslayers_cluster);
+	classification_map_int.emplace("MrdAdjHitsCluster",num_mrd_adjacent_cluster);
+	classification_map_double.emplace("MrdPadPerLayerCluster",mrd_padperlayer_cluster);
 
 }
 
@@ -1028,13 +1103,11 @@ void CalcClassificationVars::StorePionEnergies(){
 
   map_pion_energies.clear();
   int n_neutrons = 0;
-  std::cout <<"StorePionEnergies: mcparticles->size(): "<<mcparticles->size()<<std::endl;
 
   for (unsigned int i_particle = 0; i_particle < mcparticles->size(); i_particle++){
 
     MCParticle temp_particle = mcparticles->at(i_particle);
     int pdg_code = temp_particle.GetPdgCode();
-    std::cout <<"pdg_code: "<<pdg_code<<std::endl;
 
     if (temp_particle.GetFlag() != 0) continue;
     if (temp_particle.GetParentPdg() != 0) continue; // not a primary particle
@@ -1049,7 +1122,6 @@ void CalcClassificationVars::StorePionEnergies(){
 
     double cherenkov_threshold = pdgcodetocherenkov[pdg_code];
     double particle_energy = temp_particle.GetStartEnergy();
-    std::cout <<"pdg: "<<pdg_code<<", threshold: "<<cherenkov_threshold<<", energy: "<<particle_energy<<std::endl;    
 
     if (particle_energy > cherenkov_threshold || pdg_code == 111){
       if (map_pion_energies.find(pdg_code) != map_pion_energies.end()){
@@ -1063,8 +1135,134 @@ void CalcClassificationVars::StorePionEnergies(){
 
   }
 
-  std::cout <<"CalcClassificationVars: map_pion_energies.size(): "<<map_pion_energies.size()<<std::endl;
   classification_map_int.emplace("MCNeutrons",n_neutrons);
   m_data->Stores["Classification"]->Set("MCPionEnergies",map_pion_energies);
+
+}
+
+double CalcClassificationVars::ComputeChi2(TH1F *h1, TH1F *h2){
+
+  double chi2 = 0.0;
+  int ndf = 0;
+  Double_t sum1 = 0.0, sum2 = 0.0;
+  Double_t sumw1 = 0.0, sumw2 = 0.0;
+  Int_t i_start, i_end;
+
+  const TAxis *xaxis1 = h1->GetXaxis();
+  const TAxis *xaxis2 = h2->GetXaxis();
+
+  int nbinx1 = xaxis1->GetNbins();
+  int nbinx2 = xaxis2->GetNbins();
+
+  if (h1->GetDimension() != h2->GetDimension() ){
+    Log("CalcClassificationVars tool: ComputeChi2: h1 & h2 have different dimensions!",v_error,verbosity);
+    return 0.0;
+  }
+ 
+  if (nbinx1 != nbinx2){
+    Log("CalcClassificationVars tool: ComputeChi2: h1 & h2 have different numbers of x-channels!",v_error,verbosity);
+    return 0.0;
+  }
+  
+
+  i_start = 1;
+  i_end = nbinx1;
+
+  if (xaxis1->TestBit(TAxis::kAxisRange)) {
+    i_start = xaxis1->GetFirst();
+    i_end = xaxis1->GetLast();
+  }
+
+  ndf = (i_end - i_start + 1)-1;
+
+  Stat_t s[13];
+  h1->GetStats(s);
+  Double_t sumBinContent1 = s[0];
+  Double_t effEntries1 = (s[1] ? s[0] / s[1] : 0.0);
+  
+  h2->GetStats(s);
+  Double_t sumBinContent2 = s[0];
+  Double_t effEntries2 = (s[1] ? s[0] / s[1] : 0.0);
+
+  for (int i = i_start; i <= i_end; ++i){
+    Int_t bin = h1->GetBin(i);
+    Double_t cnt1 = h1->GetBinContent(bin);
+    Double_t cnt2 = h2->GetBinContent(bin);
+    Double_t e1sq = h1->GetBinError(bin);
+    Double_t e2sq = h2->GetBinError(bin);
+    e1sq*=e1sq;
+    e2sq*=e2sq;
+
+    
+    if (e1sq > 0.0) {
+      Double_t var = cnt1 / e1sq * cnt1 + 0.5;
+      cnt1 = TMath::Floor(cnt1 * cnt1 / e1sq + 0.5);
+    }
+    else {
+      std::cout <<"e1sq <= 0.0"<<std::endl;
+      cnt1 = 0.0;
+    }
+    
+    if (e2sq > 0.0) cnt2 = TMath::Floor(cnt2 * cnt2 / e2sq + 0.5);
+    else cnt2 = 0.0;
+    sum1 += cnt1;
+    sum2 += cnt2;
+    sumw1 += e1sq;
+    sumw2 += e2sq;
+  }
+
+  if (sum1 == 0.0 || sum2 == 0.0) {
+    Log("CalcClassificationVars tool: GetChi2Value: One histogram is empty! sum1 = "+std::to_string(sum1)+", sum2 = "+std::to_string(sum2));
+    return 0.0;
+  }
+
+  Int_t m = 0, n = 0;
+  
+  //Experiment - experiment comparison
+
+   std::cout <<"sum1: "<<sum1<<", sum2: "<<sum2<<std::endl;
+
+  Double_t sum = sum1 + sum2;
+  for (Int_t i= i_start; i <= i_end; ++i){
+    Int_t bin = h1->GetBin(i);
+
+    Double_t cnt1 = h1->GetBinContent(bin);
+    Double_t cnt2 = h2->GetBinContent(bin);
+    Double_t e1sq = h1->GetBinError(bin);
+    Double_t e2sq = h2->GetBinError(bin);
+    e1sq*=e1sq;
+    e2sq*=e2sq;   
+ 
+
+    if (e1sq > 0.0) cnt1 = TMath::Floor(cnt1 * cnt1 / e1sq + 0.5);
+    else cnt1 = 0.0;
+
+    if (e2sq > 0.0) cnt2 = TMath::Floor(cnt2 * cnt2 / e2sq + 0.5);
+    else cnt2 = 0.0;
+    
+
+    if (Int_t(cnt1) == 0 && Int_t(cnt2) == 0) --ndf;
+    else {
+
+      Double_t cntsum = cnt1+cnt2;
+      Double_t nexp1 = cntsum * sum1 / sum;
+
+      if (cnt1 < 1) ++m;
+      if (cnt2 < 1) ++n;
+
+      Double_t correct = (1. - sum1 / sum) * (1. - cntsum / sum);
+      Double_t delta = sum2 * cnt1 - sum1 * cnt2;
+      chi2 += delta * delta / cntsum;
+
+    }
+
+  }
+
+  chi2 /= (sum1*sum2);
+
+  double chi2_ndf = 0;
+  if (ndf > 0) chi2_ndf = chi2 / ndf;
+  
+  return chi2_ndf;
 
 }

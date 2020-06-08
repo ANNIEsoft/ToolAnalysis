@@ -50,7 +50,7 @@ bool MCRecoEventLoader::Initialise(std::string configfile, DataModel &data){
     pdgcodetocherenkov.emplace(pdgcode,cherenkov_thr);
   }
   
-  std::cout <<"PdgCherenkovMap size (MCRecoEventLoader): "<<pdgcodetocherenkov.size()<<std::endl;
+  //std::cout <<"PdgCherenkovMap size (MCRecoEventLoader): "<<pdgcodetocherenkov.size()<<std::endl;
   // Set particle pdg - Cherenkov threshold map to CStore
   m_data->CStore.Set("PdgCherenkovMap",pdgcodetocherenkov);
 
@@ -108,7 +108,7 @@ void MCRecoEventLoader::Reset() {
   TrueMuonEnergy = -9999.;
   WaterTrackLength = -9999.;
   MRDTrackLength = -9999.;
-  
+  projectedmrdhit = false;  
 }
 
 void MCRecoEventLoader::FindTrueVertexFromMC() {
@@ -130,6 +130,7 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
         m_data->Stores.at("RecoEvent")->Set("PdgPrimary",fParticleID);  //save the primary particle pdg code to the RecoEvent store
         break;                                         // won't have more than one primary muon
       } else {
+	//Accept both electrons and muons as primary particles, if no selection is specified
         if( aparticle.GetPdgCode()!=11 && aparticle.GetPdgCode()!=13) continue;
 	primarymuon = aparticle;
 	mufound=true;
@@ -318,7 +319,9 @@ void MCRecoEventLoader::PushProjectedMrdHit(bool projectedmrdhit){
 
 double MCRecoEventLoader::GetCherenkovThresholdE(int pdg_code) {
   Log("MCRecoEventLoader Tool: GetCherenkovThresholdE",v_message,verbosity);            ///> Calculate Cherenkov threshold energies depending on particle pdg
-  double Ethr = pdgcodetomass[pdg_code]*sqrt(1+1./sqrt(n*n-1));
+  //std::cout <<"mass particle: "<<pdgcodetomass[pdg_code]<<std::endl;
+  double Ethr = pdgcodetomass[pdg_code]*sqrt(1/(1-1/(n*n)));
+  //std::cout <<"Etrh: "<<Ethr<<std::endl;
   return Ethr;
 }
 

@@ -38,6 +38,8 @@ class CalcClassificationVars: public Tool {
   void ClassificationVarsMCTruth();
   void ClassificationVarsPMTLAPPD();
   void ClassificationVarsMRD();
+  double ComputeChi2(TH1F *h1, TH1F *h2);
+
 
  private:
 
@@ -63,6 +65,8 @@ class CalcClassificationVars: public Tool {
   double TrueNeutrinoEnergy;
   MCParticle neutrino;
   int NumMrdTimeClusters;
+  std::vector<unsigned long> mrddigitchankeysthisevent;
+  std::vector<std::vector<int>> MrdTimeClusters;
   int nrings;
   bool no_pik; 
   int pdg;

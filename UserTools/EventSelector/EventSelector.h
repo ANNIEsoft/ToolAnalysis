@@ -156,15 +156,19 @@ class EventSelector: public Tool {
   int fEventApplied; //Integer indicates what event cleaning flags were checked for the event
   int fEventFlagged; //Integer indicates what evt. cleaning flags the event was flagged with
   
-  Geometry fGeometry;    ///< ANNIE Geometry
+  Geometry *fGeometry = nullptr;    ///< ANNIE Geometry
   RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
   RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
   std::vector<RecoDigit>* fDigitList;		///< Reconstructed Hits including both LAPPD hits and PMT hits
   RecoVertex* fRecoVertex = nullptr; 	 ///< Reconstructed Vertex 
   std::map<double,std::vector<Hit>>* m_all_clusters;   ///< clustered PMT hits
+  std::map<double,std::vector<MCHit>>* m_all_clusters_MC;   ///< clustered PMT hits
   std::vector<std::vector<int>> MrdTimeClusters;      ///< clustered MRD hits
   std::vector<double> MrdDigitTimes;          ///< clustered MRD times
   std::vector<unsigned long> MrdDigitChankeys;          ///< clustered MRD chankeys
+  std::vector<double> *vec_pmtclusters_charge = nullptr;
+  std::vector<double> *vec_pmtclusters_time = nullptr;
+  std::vector<double> *vec_mrdclusters_time = nullptr;
 
   //verbosity initialization
   int verbosity=1;
@@ -192,7 +196,7 @@ class EventSelector: public Tool {
   bool fPromptTrigOnly = true;
   bool fEventCutStatus;
   bool fIsMC; 
- 
+
   
   bool fSaveStatusToStore = true;
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
