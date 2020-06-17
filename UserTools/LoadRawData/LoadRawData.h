@@ -29,6 +29,9 @@ class LoadRawData: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
   void LoadPMTMRDData(); 
+  void LoadTriggerData(); 
+  void LoadRunInformation();
+  void GetNextDataEntries();
   bool InitializeNewFile(); 
 
  private:
@@ -44,17 +47,28 @@ class LoadRawData: public Tool {
 
   int FileNum = 0;
   int tanktotalentries;
+  int trigtotalentries;
   int mrdtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
+  bool TrigEntriesCompleted;
   bool FileCompleted;
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
+  int TrigEntryNum = 0;
+
+  //Bools modified to determine which Decoder tools are paused downstream
+  bool TankPaused;
+  bool MRDPaused;
+  bool CTCPaused;
 
   BoostStore *RawData = nullptr;
   BoostStore *PMTData = nullptr;
   BoostStore *MRDData = nullptr;
+  BoostStore *TrigData = nullptr;
   std::vector<CardData>* Cdata = nullptr;
+  //std::vector<TriggerData>* Tdata = nullptr;
+  TriggerData* Tdata = nullptr;
   MRDOut* Mdata = nullptr;
 
   int verbosity;
