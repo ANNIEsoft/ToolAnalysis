@@ -2,4 +2,4 @@ verbosity 5
 BuildType Tank
 Mode FileList
 InputFile ./configfiles/DataDecoderTank/my_files.txt
-DummyRunInfo 0
+DummyRunInfo 1

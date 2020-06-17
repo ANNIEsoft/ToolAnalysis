@@ -1,0 +1,12 @@
+verbosity 5
+
+BuildType TankAndMRD
+ProcessedFilesBasename ProcessedRawData_TankMRDR1623p1
+NumEventsPerPairing 50
+SavePath ./
+
+MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got em
+
+ExecutesPerBuild 10
+OrphanOldTankTimestamps 1
+OldTimestampThreshold 200
