@@ -57,11 +57,6 @@ class PMTDataDecoder: public Tool {
   bool CheckIfCardNextInSequence(CardData aCardData);
   void BuildReadyEvents();
 
-  bool ParseOneCardOOOs(int CardID); // Gets a single CardID's UnprocessedEntries vector and
-                                     // Parses any cards that are now in order 
-                              // If any is in order, it's data frames are decoded and parsed.
-  void ParseOOOsNowInOrder(); // Checks if any Out-Of-Order Sequence data is now in order.
-                              // If any is in order, it's data frames are decoded and parsed.
 
  private:
 
@@ -69,9 +64,9 @@ class PMTDataDecoder: public Tool {
   std::string Mode;
 
   bool NewWavesBuilt;
-  int CurrentEntryNum = 0;
   int ADCCountsToBuild;  //If a finished wave doesn't have this many ADC counts at least, don't add it for building
-  int CDEntryNum = 0; 
+  int EntriesPerExecute;
+  int PMTDEntryNum = 0; 
   int FileNum = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
@@ -93,8 +88,6 @@ class PMTDataDecoder: public Tool {
   std::vector<CardData>* Cdata = nullptr;
   std::vector<CardData> Cdata_old;
 
-  bool FileCompleted = false;
- 
   //Counter used to track the number of entries processed in a PMT file
   int NumPMTDataProcessed = 0;
 
@@ -105,8 +98,6 @@ class PMTDataDecoder: public Tool {
   std::vector<int> fifo1;
   std::vector<int> fifo2;
 
-
-  std::map<int, deque<std::vector<int>>> UnprocessedEntries; //Key is CardID, Value is vector of vector{SequenceID, BoostEntry, CdataVectorIndex}
 
   //Maps used in decoding frames; specifically, holds record header and record waveform info
   std::map<std::vector<int>, uint64_t> TriggerTimeBank;  //Key: {cardID, channelID}. Value: trigger time associated with wave in WaveBank 
