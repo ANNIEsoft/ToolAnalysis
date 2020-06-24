@@ -94,5 +94,5 @@ if do_prediction:
 
 	with open(output_file,'w') as f:
 		for item in range(len(Y_pred)):
-			print(str(Y_pred[item])+','+Y_pred_prob[item],file=f)
+			print(str(Y_pred[item])+','+str(Y_pred_prob[item]),file=f)
 
