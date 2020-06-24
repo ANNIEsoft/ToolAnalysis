@@ -90,8 +90,9 @@ if do_prediction:
 	X = pd.DataFrame(scaler_model.transform(X))
 
 	Y_pred = loaded_model.predict(X)
+	Y_pred_prob = loaded_model.predict_proba(X)
 
 	with open(output_file,'w') as f:
-		for item in Y_pred:
-			print(item,file=f)
+		for item in range(len(Y_pred)):
+			print(str(Y_pred[item])+','+Y_pred_prob[item],file=f)
 
