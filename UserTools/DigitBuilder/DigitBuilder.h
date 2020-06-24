@@ -80,6 +80,7 @@ class DigitBuilder: public Tool {
   std::string  fLAPPDIDFile="none";
   double fDigitChargeThr;
   std::string path_chankeymap;
+  std::string singlePEgains;
 
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
   TRandom3 frand;  ///< Random number generator
@@ -107,6 +108,8 @@ class DigitBuilder: public Tool {
   std::map<unsigned long,std::vector<MCHit>>* fTDCData=nullptr;            ///< MRD & veto hits
   std::map<double,std::vector<Hit>>* m_all_clusters=nullptr;            ///< Clusters, from ClusterFinder tool
   std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey=nullptr;         ///< Chankeys corresponding to clusters, from ClusterFinder tool
+
+  std::map<unsigned long, double> pmt_gains;
 
   // retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
   // Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates

@@ -1,0 +1,5 @@
+PMTHits,10,110,5
+PMTQtotal,0,6000,300
+MCTrueMuonEnergy,0,3000,200
+MCTrueNeutrinoEnergy,0,3000,200
+MCNeutrons,0,10,1

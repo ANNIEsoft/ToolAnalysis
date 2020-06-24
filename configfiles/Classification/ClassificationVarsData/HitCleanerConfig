@@ -17,3 +17,6 @@ LappdTimeWindowN 0.6  #neighbouring time window [ns]
 LappdTimeWindowC 1  #clustering time window [ns]                   
 LappdMinHitsPerCluster 20   #number of digits per cluster	
 MinClusterDigits  10  #minimum clustered digits
+
+IsMC 0
+SinglePEGains ./configfiles/Classification/ClassificationVarsData/ChannelSPEGains_BeamRun20192020.csv

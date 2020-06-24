@@ -109,7 +109,7 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 			if (file_mapping.eof()) break;
 			channelkey_to_mrdpmtid.emplace(temp_chankey,temp_wcsimid);
 			mrdpmtid_to_channelkey.emplace(temp_wcsimid,temp_chankey);
-			Log("FindMrdTracks tool: Emplaced temp_chankey "+std::to_string(temp_chankey)+" with temp_wcsimid "+std::to_string(temp_wcsimid)+"into channelkey_to_mrdpmtid object!",v_debug,verbosity);
+			Log("TimeClustering tool: Emplaced temp_chankey "+std::to_string(temp_chankey)+" with temp_wcsimid "+std::to_string(temp_wcsimid)+"into channelkey_to_mrdpmtid object!",v_debug,verbosity);
 		}
 		file_mapping.close();
 		m_data->CStore.Set("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);

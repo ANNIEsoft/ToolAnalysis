@@ -125,3 +125,4 @@
 #include "ClusterClassifiers.h"
 #include "MRDLoopbackAnalysis.h"
 #include "VetoEfficiency.h"
+#include "EventClassification.h"

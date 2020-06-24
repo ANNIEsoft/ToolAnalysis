@@ -12,8 +12,9 @@ bool CalcClassificationVars::Initialise(std::string configfile, DataModel &data)
 	verbosity = 2;
 	isData = 0;
 	neutrino_sample = false;
-	pdf_emu = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu_500bins_sumw2.root";
-	pdf_rings = "/annie/app/users/mnieslon/MyToolAnalysis6/pdf_beam_rings_500bins_sumw2.root";
+	charge_conversion = 1.375;
+	pdf_emu = "/annie/app/users/mnieslon/MyToolAnalysis6/pdfs/pdf_beamlike_emu_500bins_sumw2.root";
+	pdf_rings = "/annie/app/users/mnieslon/MyToolAnalysis6/pdfs/pdf_beam_rings_500bins_sumw2.root";
 
 	// Configuration variables
 	m_variables.Get("verbosity",verbosity);
@@ -21,6 +22,8 @@ bool CalcClassificationVars::Initialise(std::string configfile, DataModel &data)
 	m_variables.Get("NeutrinoSample",neutrino_sample);
 	m_variables.Get("PDF_emu",pdf_emu);
 	m_variables.Get("PDF_rings",pdf_rings);
+	m_variables.Get("SinglePEgains",singlePEgains);
+	m_variables.Get("ChargeConversionMCData",charge_conversion);
 
 	// Geometry variables
 	m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
@@ -51,6 +54,19 @@ bool CalcClassificationVars::Initialise(std::string configfile, DataModel &data)
     		if (pmts_y[chankey]>tank_ymax) tank_ymax = pmts_y.at(chankey);
     		if (pmts_y[chankey]<tank_ymin) tank_ymin = pmts_y.at(chankey);
   	}
+
+	if (isData){
+		//Get single PE gains when looking at data
+		ifstream file_singlepe(singlePEgains.c_str());
+		unsigned long temp_chankey;
+		double temp_gain;
+		while (!file_singlepe.eof()){
+			file_singlepe >> temp_chankey >> temp_gain;
+			if (file_singlepe.eof()) break;
+			pmt_gains.emplace(temp_chankey,temp_gain);
+		}
+  		file_singlepe.close();
+	}
 
 	//Get electron/muon pdfs
 	this->InitialisePDFs();
@@ -272,12 +288,18 @@ bool CalcClassificationVars::GetBoostStoreVariables(){
 
 	get_ok = m_data->Stores.at("ANNIEEvent")->Get("EventNumber",evnum);
 	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving EventNumber,true from ANNIEEvent!",v_error,verbosity); return false; }
-	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",mcevnum);
-	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving MCEventNum,true from ANNIEEvent!",v_error,verbosity); return false; }
-	get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
-	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving TDCData,true from ANNIEEvent!",v_error,verbosity); return false; }
+	if (!isData){
+		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData_MC);
+		if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving TDCData, true from ANNIEEvent!",v_error,verbosity); return false; }
+	} else {
+		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
+		if (not get_ok) { Log("CalcClassificationVars Tool: Error retrieving TDCData, true from ANNIEEvent!",v_error,verbosity); return false; } 
+	}
+
 
 	if (!isData){
+		get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",mcevnum);
+		if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving MCEventNum,true from ANNIEEvent!",v_error,verbosity); return false; }
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCFile",filename);
 		if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving MCFilename, true from ANNIEEvent!",v_error, verbosity); return false;}
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("MCParticles",mcparticles);
@@ -326,9 +348,10 @@ bool CalcClassificationVars::GetBoostStoreVariables(){
 	get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
 	if (not get_ok) { Log("CalcClassificationVars Tool: Error retrieving MrdTimeClusters, did you run TimeClustering beforehand?",v_error,verbosity); return false; }
 
-	get_ok = m_data->CStore.Get("PdgCherenkovMap",pdgcodetocherenkov);
-	if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving PdgCherenkovMap, did you run MCRecoEventLoader beforehand?",v_error,verbosity); return false; }
-
+	if (!isData){
+		get_ok = m_data->CStore.Get("PdgCherenkovMap",pdgcodetocherenkov);
+		if(not get_ok){ Log("CalcClassificationVars Tool: Error retrieving PdgCherenkovMap, did you run MCRecoEventLoader beforehand?",v_error,verbosity); return false; }
+	}
 
 	return true;
 
@@ -453,6 +476,10 @@ void CalcClassificationVars::ClassificationVarsPMTLAPPD(){
 		double MCdetDist, MCdetTheta;
 		int digitID = thisdigit.GetDetectorID();
 			
+		if (isData){
+			if (pmt_gains.find(digitID)!=pmt_gains.end()) digitQ /= pmt_gains.at(digitID);
+			digitQ/=charge_conversion;		
+		}
 
 		//Standard calculations with respect to the center of the tank
 		detDist = sqrt(pow(detector_pos.X(),2)+pow(detector_pos.Y(),2)+pow(detector_pos.Z(),2));
@@ -920,7 +947,7 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 	bool layer_occupied_cluster[11] = {0};
 	double mrd_paddlesize_cluster[11];
 
-	if(!TDCData){
+	if((isData && !TDCData) || (!isData && !TDCData_MC)){
 		Log("CalcClassificationVars tool: No TDC data to process!",v_warning,verbosity);
 	} else {
 		//helper histograms to determine MRD spread in x/y direction
@@ -932,7 +959,7 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 			x_layer[i_layer] = new TH1F(ss_x_layer.str().c_str(),ss_x_layer.str().c_str(),100,1,0);
 			y_layer[i_layer] = new TH1F(ss_y_layer.str().c_str(),ss_y_layer.str().c_str(),100,1,0);
 		}
-		if(TDCData->size()==0){
+		if((isData && (TDCData->size()==0))||(!isData && (TDCData_MC->size()==0))){
 			//No entries in TDCData object, don't read out anything
 			Log("CalcClassificationVars tool: No TDC hits.",v_message,verbosity);
 		} else {
@@ -942,26 +969,51 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 				mrd_hits.push_back(empty_hits);
 			}
 			std::vector<int> temp_cons_layers;
-			for(auto&& anmrdpmt : (*TDCData)){
-				unsigned long chankey = anmrdpmt.first;
-				Detector *thedetector = geom->ChannelToDetector(chankey);
-				if(thedetector->GetDetectorElement()!="MRD") {
-					continue;                 // this is a veto hit, not an MRD hit.
+			if (isData){
+				for(auto&& anmrdpmt : (*TDCData)){
+					unsigned long chankey = anmrdpmt.first;
+					Detector *thedetector = geom->ChannelToDetector(chankey);
+					if(thedetector->GetDetectorElement()!="MRD") {
+						continue;                 // this is a veto hit, not an MRD hit.
+					}
+					num_mrd_paddles++;
+					int detkey = thedetector->GetDetectorID();
+					Paddle *apaddle = geom->GetDetectorPaddle(detkey);
+					int layer = apaddle->GetLayer();
+					layer_occupied[layer-1]=true;
+					if (apaddle->GetOrientation()==1) {
+						x_layer[layer-2]->Fill(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+						mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+						mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+					}
+					else if (apaddle->GetOrientation()==0) {
+						y_layer[layer-2]->Fill(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+						mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+						mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+					}
 				}
-				num_mrd_paddles++;
-				int detkey = thedetector->GetDetectorID();
-				Paddle *apaddle = geom->GetDetectorPaddle(detkey);
-				int layer = apaddle->GetLayer();
-				layer_occupied[layer-1]=true;
-				if (apaddle->GetOrientation()==1) {
-					x_layer[layer-2]->Fill(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
-					mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
-					mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
-				}
-				else if (apaddle->GetOrientation()==0) {
-					y_layer[layer-2]->Fill(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
-					mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
-					mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+			} else {
+				for(auto&& anmrdpmt : (*TDCData_MC)){
+					unsigned long chankey = anmrdpmt.first;
+					Detector *thedetector = geom->ChannelToDetector(chankey);
+					if(thedetector->GetDetectorElement()!="MRD") {
+						continue;                 // this is a veto hit, not an MRD hit.
+					}
+					num_mrd_paddles++;
+					int detkey = thedetector->GetDetectorID();
+					Paddle *apaddle = geom->GetDetectorPaddle(detkey);
+					int layer = apaddle->GetLayer();
+					layer_occupied[layer-1]=true;
+					if (apaddle->GetOrientation()==1) {
+						x_layer[layer-2]->Fill(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+						mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetXmin()+apaddle->GetXmax()));
+						mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+					}
+					else if (apaddle->GetOrientation()==0) {
+						y_layer[layer-2]->Fill(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+						mrd_hits.at(layer-2).push_back(0.5*(apaddle->GetYmin()+apaddle->GetYmax()));
+						mrd_paddlesize[layer-2]=apaddle->GetPaddleWidth();
+					}
 				}
 			}
 			if (num_mrd_paddles > 0) {
@@ -1085,7 +1137,7 @@ void CalcClassificationVars::ClassificationVarsMRD(){
 				std::vector<int>::iterator it = std::max_element(temp_cons_layers.begin(),temp_cons_layers.end());
 				if (it != temp_cons_layers.end()) num_mrd_conslayers_cluster = *it;
 				else num_mrd_conslayers_cluster=0;
-				if (num_mrd_layers_cluster > 0.) mrd_padperlayer = double(num_mrd_paddles_cluster)/num_mrd_layers_cluster;
+				if (num_mrd_layers_cluster > 0.) mrd_padperlayer_cluster = double(num_mrd_paddles_cluster)/num_mrd_layers_cluster;
 			}
 		}
 	}
@@ -1142,6 +1194,11 @@ void CalcClassificationVars::StorePionEnergies(){
 
 double CalcClassificationVars::ComputeChi2(TH1F *h1, TH1F *h2){
 
+  //Copy of ROOT code for calculating chi2-values when comparing two histograms.
+  //Implemented to find out why there were different results for different root versions
+  //Turned out to be the need for recalculate the errors for histograms after rescaling in older versions (automatically done in newer version)
+  //Technically the function is not needed anymore, but left here in case further cross-checks are needed.
+
   double chi2 = 0.0;
   int ndf = 0;
   Double_t sum1 = 0.0, sum2 = 0.0;
@@ -1163,7 +1220,6 @@ double CalcClassificationVars::ComputeChi2(TH1F *h1, TH1F *h2){
     Log("CalcClassificationVars tool: ComputeChi2: h1 & h2 have different numbers of x-channels!",v_error,verbosity);
     return 0.0;
   }
-  
 
   i_start = 1;
   i_end = nbinx1;
@@ -1199,7 +1255,6 @@ double CalcClassificationVars::ComputeChi2(TH1F *h1, TH1F *h2){
       cnt1 = TMath::Floor(cnt1 * cnt1 / e1sq + 0.5);
     }
     else {
-      std::cout <<"e1sq <= 0.0"<<std::endl;
       cnt1 = 0.0;
     }
     
@@ -1220,8 +1275,6 @@ double CalcClassificationVars::ComputeChi2(TH1F *h1, TH1F *h2){
   
   //Experiment - experiment comparison
 
-   std::cout <<"sum1: "<<sum1<<", sum2: "<<sum2<<std::endl;
-
   Double_t sum = sum1 + sum2;
   for (Int_t i= i_start; i <= i_end; ++i){
     Int_t bin = h1->GetBin(i);
@@ -1233,7 +1286,6 @@ double CalcClassificationVars::ComputeChi2(TH1F *h1, TH1F *h2){
     e1sq*=e1sq;
     e2sq*=e2sq;   
  
-
     if (e1sq > 0.0) cnt1 = TMath::Floor(cnt1 * cnt1 / e1sq + 0.5);
     else cnt1 = 0.0;
 

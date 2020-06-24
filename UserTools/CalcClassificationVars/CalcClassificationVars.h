@@ -49,12 +49,15 @@ class CalcClassificationVars: public Tool {
   bool isData;
   std::string pdf_emu;
   std::string pdf_rings;
+  std::string singlePEgains;
+  double charge_conversion;
 
   // ANNIEEvent / RecoStore variables
   int evnum, mcevnum;
   std::map<unsigned long,std::vector<Hit>>* MCHits=nullptr;
   std::map<unsigned long,std::vector<LAPPDHit>>* MCLAPPDHits=nullptr;
   std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
+  std::map<unsigned long,std::vector<MCHit>>* TDCData_MC=nullptr;
   std::vector<MCParticle>* mcparticles = nullptr;
   RecoVertex *TrueVertex = nullptr;
   RecoVertex *TrueStopVertex = nullptr;
@@ -71,6 +74,7 @@ class CalcClassificationVars: public Tool {
   bool no_pik; 
   int pdg;
   bool neutrino_sample;
+  std::map<unsigned long, double> pmt_gains;
 
   // Particle maps
   std::map<int,std::vector<double>> map_pion_energies;

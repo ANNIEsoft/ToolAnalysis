@@ -38,6 +38,8 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("RecoPMTVolCut", fRecoPMTVolCut);
   m_variables.Get("PMTMRDCoincCut",fPMTMRDCoincCut);
   m_variables.Get("PMTMRDOffset",fPMTMRDOffset);
+  m_variables.Get("NoVeto",fNoVetoCut);
+  m_variables.Get("Veto",fVetoCut);
   m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
   m_variables.Get("IsMC",fIsMC);
 
@@ -113,12 +115,31 @@ bool EventSelector::Execute(){
       Log("EventSelector Tool: Error retrieving TrueStopVertex from RecoEvent!",v_error,verbosity); 
       return false; 
     }
+   
+    //Get MC version of MRD hits
+    bool get_mrd = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData_MC);
+    if (!get_mrd) {
+      Log("EventSelector Tool: Error retrieving TDCData, true from ANNIEEvent!",v_error,verbosity);
+      return false;
+    }
+  } else {
+  
+    //Get data version of MRD hits
+    bool get_mrd = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
+    if (!get_mrd) {
+      Log("EventSelector Tool: Error retrieving TDCData, true from ANNIEEvent!",v_error,verbosity);
+      return false;
+    }
+
   }
 
-  bool IsSingleRing = false, IsMultiRing = false, HasProjectedMRDHit = false, passNoPiK = false, passMCFVCut = false, passMCPMTCut = false, passMCMRDCut = false, IsInsideEnergyWindow = false, IsElectron = false, IsMuon = false;
+  bool IsSingleRing = false, IsMultiRing = false, HasProjectedMRDHit = false, passNoPiK = false, passMCFVCut = false, passMCPMTCut = false, passMCMRDCut = false, IsInsideEnergyWindow = false, IsElectron = false, IsMuon = false, isPromptTrigger=false;
  
   if (fIsMC){
 
+    isPromptTrigger = this->PromptTriggerCheck();
+    m_data->Stores.at("RecoEvent")->Set("PromptEvent",isPromptTrigger);
+    
     IsSingleRing = this->EventSelectionByMCSingleRing();
     m_data->Stores.at("RecoEvent")->Set("MCSingleRingEvent",IsSingleRing);
 
@@ -150,8 +171,6 @@ bool EventSelector::Execute(){
     m_data->Stores.at("RecoEvent")->Set("MCIsElectron",IsElectron);
   }
 
-  bool isPromptTrigger = this->PromptTriggerCheck();
-  m_data->Stores.at("RecoEvent")->Set("PromptEvent",isPromptTrigger);
 
   bool HasEnoughHits = this->NHitCountCheck(fNHitmin);
   m_data->Stores.at("RecoEvent")->Set("NHitCut",HasEnoughHits);  
@@ -159,6 +178,8 @@ bool EventSelector::Execute(){
   bool passPMTMRDCoincCut = this->EventSelectionByPMTMRDCoinc();
   m_data->Stores.at("RecoEvent")->Set("PMTMRDCoinc",passPMTMRDCoincCut);
 
+  bool passVetoCut = this->EventSelectionByVetoCut();
+  m_data->Stores.at("RecoEvent")->Set("NoVeto",passVetoCut);
 
   // Fill the EventSelection mask for the cuts that are supposed to be applied
   if (fMCPiKCut){
@@ -258,6 +279,16 @@ bool EventSelector::Execute(){
     if (!passPMTMRDCoincCut) fEventFlagged |= EventSelector::kFlagPMTMRDCoinc;
   }
 
+  if (fNoVetoCut){
+    fEventApplied |= EventSelector::kFlagNoVeto;
+    if (!passVetoCut) fEventFlagged |= EventSelector::kFlagNoVeto;
+  }
+
+  if (fVetoCut){
+    fEventApplied |= EventSelector::kFlagVeto;
+    if (passVetoCut) fEventFlagged |= EventSelector::kFlagVeto;
+  }
+  
   if(fEventFlagged != EventSelector::kFlagNone) fEventCutStatus = false;
   if(fEventCutStatus){  
     Log("EventSelector Tool: Event is clean according to current event selection.",v_message,verbosity);
@@ -589,7 +620,6 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
         if (Hits.size()>0) time_temp/=Hits.size();
         vec_pmtclusters_charge->push_back(charge_temp);
         vec_pmtclusters_time->push_back(time_temp);
-	std::cout <<"PMT cluster, time: "<<time_temp<<", charge: "<<charge_temp<<std::endl;
         if (time_temp > 2000.) continue;	//not a prompt event
         if (charge_temp > max_charge){
           max_charge = charge_temp;
@@ -634,12 +664,10 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   double pmtmrd_coinc_min = fPMTMRDOffset - 50;
   double pmtmrd_coinc_max = fPMTMRDOffset + 50;
 
-
-  std::cout <<"Check coincidence"<<std::endl;
   bool coincidence = false;
   for (int i_mrd = 0; i_mrd < int(mrd_meantimes.size()); i_mrd++){
     double time_diff = mrd_meantimes.at(i_mrd) - pmt_time;
-    std::cout <<"MRD time: "<<mrd_meantimes.at(i_mrd)<<", PMT time: "<<pmt_time<<", difference: "<<time_diff<<std::endl;
+    if (verbosity > 0) std::cout <<"MRD time: "<<mrd_meantimes.at(i_mrd)<<", PMT time: "<<pmt_time<<", difference: "<<time_diff<<std::endl;
     Log("EventSelector tool: MRD/Tank coincidene candidate "+std::to_string(i_mrd)+ " has time difference: "+std::to_string(time_diff),v_message,verbosity);
     if (time_diff > pmtmrd_coinc_min && time_diff < pmtmrd_coinc_max){
       coincidence = true;
@@ -647,6 +675,46 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   }
 
   return coincidence;
+
+}
+
+bool EventSelector::EventSelectionByVetoCut(){
+
+ bool has_veto = false;
+ if (fIsMC) {
+    if(TDCData_MC){
+    if (TDCData_MC->size()==0){
+      Log("EventSelector tool: TDC data is empty in this event.",v_message,verbosity);
+    } else {
+      for (auto&& anmrdpmt : (*TDCData_MC)){
+        unsigned long chankey = anmrdpmt.first;
+        Detector* thedetector = fGeometry->ChannelToDetector(chankey);
+        unsigned long detkey = thedetector->GetDetectorID();
+        if (thedetector->GetDetectorElement()=="Veto") has_veto = true;
+      }
+    }
+  } else {
+    Log("EventSelector tool: No TDC data available in this event.",v_message,verbosity);
+  }
+ }
+else {
+  if(TDCData){
+    if (TDCData->size()==0){
+      Log("EventSelector tool: TDC data is empty in this event.",v_message,verbosity);
+    } else {
+      for (auto&& anmrdpmt : (*TDCData)){
+        unsigned long chankey = anmrdpmt.first;
+        Detector* thedetector = fGeometry->ChannelToDetector(chankey);
+        unsigned long detkey = thedetector->GetDetectorID();
+        if (thedetector->GetDetectorElement()=="Veto") has_veto = true;
+      }
+    }
+  } else {
+    Log("EventSelector tool: No TDC data available in this event.",v_message,verbosity);
+  }
+  }
+
+  return (!has_veto);	//Successful selection means no veto hit 
 
 }
 

@@ -5,4 +5,4 @@ isMC 1
 ParametricModel 1
 PhotoDetectorConfiguration All
 LAPPDIDFile ./configfiles/VertexReco/PhaseIIRecoTruth/LAPPDIDs.txt
-DigitChargeThr 10
+DigitChargeThr 0

@@ -45,7 +45,9 @@ class EventSelector: public Tool {
    kFlagMCIsMultiRing  = 0x1000, //4096
    kFlagMCProjectedMRDHit = 0x2000, //8192
    kFlagMCEnergyCut   = 0x4000, //16384
-   kFlagPMTMRDCoinc   = 0x8000 //32768
+   kFlagPMTMRDCoinc   = 0x8000, //32768
+   kFlagNoVeto        = 0x10000, //65536
+   kFlagVeto        = 0x20000 //131072
   } EventFlags_t;
 
  private:
@@ -143,6 +145,12 @@ class EventSelector: public Tool {
   /// event.
   bool EventSelectionByPMTMRDCoinc();
 
+  /// \brief Event selection by rejecting veto hits
+  ////
+  /// This event selection criteria requires that no veto paddles
+  /// of the Front Muon Veto fired during the event
+  bool EventSelectionByVetoCut();
+  
   /// \brief MC entry number
   uint64_t fMCEventNum;
   
@@ -166,6 +174,8 @@ class EventSelector: public Tool {
   std::vector<std::vector<int>> MrdTimeClusters;      ///< clustered MRD hits
   std::vector<double> MrdDigitTimes;          ///< clustered MRD times
   std::vector<unsigned long> MrdDigitChankeys;          ///< clustered MRD chankeys
+  std::map<unsigned long,std::vector<MCHit>>* TDCData_MC;	///< MRD hits (MC)
+  std::map<unsigned long,std::vector<Hit>>* TDCData;	///< MRD hits (data)
   std::vector<double> *vec_pmtclusters_charge = nullptr;
   std::vector<double> *vec_pmtclusters_time = nullptr;
   std::vector<double> *vec_mrdclusters_time = nullptr;
@@ -194,6 +204,8 @@ class EventSelector: public Tool {
   bool fPMTMRDCoincCut = false;
   double fPMTMRDOffset = 745;
   bool fPromptTrigOnly = true;
+  bool fNoVetoCut = false;
+  bool fVetoCut = false;
   bool fEventCutStatus;
   bool fIsMC; 
 

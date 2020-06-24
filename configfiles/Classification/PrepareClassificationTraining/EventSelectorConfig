@@ -2,11 +2,11 @@
 
 verbosity 1
 MRDRecoCut 0
-MCFVCut 1
+MCFVCut 0
 MCPMTVolCut 1
 MCMRDCut 0
 MCPiKCut 0
-MCIsMuonCut 1
+MCIsMuonCut 0
 MCIsElectronCut 0
 MCIsSingleRingCut 0
 MCIsMultiRingCut 0
@@ -18,7 +18,8 @@ NHitCut 1
 NHitmin 4
 PromptTrigOnly 1
 RecoFVCut 0
-PMTMRDCoincCut 0
+PMTMRDCoincCut 1
 PMTMRDOffset 10
+NoVeto 1
 RecoPMTVolCut 0
 SaveStatusToStore 1
