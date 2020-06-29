@@ -99,8 +99,11 @@ bool MCPropertiesToTree::Execute(){
 
 
   //Get relevant objects from CStore
-  get_ok = m_data->Stores.at("ANNIEEvent")->Get("NumMrdTimeClusters",mrdClusters);   // need to execute time clustering tool before accessing this variable
+  get_ok = m_data->CStore.Get("NumMrdTimeClusters",mrdClusters);   // need to execute time clustering tool before accessing this variable
   if (!get_ok) {Log("MCPropertiesToTree tool: No NumMrdTimeClusters object in CStore! Abort.",v_error,verbosity); return true;}
+
+  bool new_genieentry = false;
+  m_data->CStore.Get("NewGENIEEntry",new_genieentry);
 
   //Clear vectors stored in tree
   if (save_tree) this->ClearVectors();
@@ -119,14 +122,17 @@ bool MCPropertiesToTree::Execute(){
   //Evaluate the MCLAPPDHits object
   this->EvalMCLAPPDHits();
 
+  //Evaluate the TDCData object
+  this->EvalTDCData();
+
   //Evaluate GENIE information (if any)
-  if (has_genie) this->EvalGENIE();
+  if (has_genie && new_genieentry) this->EvalGENIE();
 
   //Fill tree if there was data
   if (fill_tree && save_tree) {
     f->cd();
     t->Fill();
-    t_genie->Fill();
+    if (has_genie && new_genieentry) t_genie->Fill();
   }
 
   return true;
@@ -139,7 +145,10 @@ bool MCPropertiesToTree::Finalise(){
   f->cd();
 
   //Write tree
-  if (save_tree) t->Write("",TObject::kOverwrite);
+  if (save_tree) {
+    t->Write("",TObject::kOverwrite);
+    if (has_genie) t_genie->Write("",TObject::kOverwrite);
+  }
 
   //Write histograms
   if (save_histograms) WriteHistograms();
@@ -236,10 +245,14 @@ void MCPropertiesToTree::DefineTree(){
   sec_particle_dirZ = new std::vector<double>;
   pmtQ = new std::vector<double>;
   pmtT = new std::vector<double>;
-  pmtID = new std::vector<double>;
+  pmtID = new std::vector<int>;
   lappdQ = new std::vector<double>;
   lappdT = new std::vector<double>;
-  lappdID = new std::vector<double>;
+  lappdID = new std::vector<int>;
+  mrdT = new std::vector<double>;
+  mrdID = new std::vector<int>;
+  fmvT = new std::vector<double>;
+  fmvID = new std::vector<int>;
 
   t->Branch("E_true",&particleE);
   t->Branch("PDG",&particlePDG);
@@ -283,8 +296,11 @@ void MCPropertiesToTree::DefineTree(){
   t->Branch("LAPPDHits",&lappdHits);
   t->Branch("MRDPaddles",&mrdPaddles);
   t->Branch("MRDLayers",&mrdLayers);
-  t->Branch("MRDClusters",&mrdClusters);
-  t->Branch("VetoHits",&num_veto_hits);
+  t->Branch("MRDT",&mrdT);
+  t->Branch("MRDID",&mrdID);
+  t->Branch("FMVHits",&num_veto_hits);
+  t->Branch("FMVT",&fmvT);
+  t->Branch("FMVID",&fmvID);
   t->Branch("Prompt",&is_prompt);
   t->Branch("MCTriggerNum",&mctriggernum);
   t->Branch("TriggerTime",&trigger_time);
@@ -296,6 +312,7 @@ void MCPropertiesToTree::DefineTree(){
   t->Branch("SingleRing",&event_singlering);
   t->Branch("MultiRing",&event_multiring);
   t->Branch("PMTMRDCoinc",&event_pmtmrdcoinc);
+  t->Branch("NumMRDClusters",&mrdClusters);
   t->Branch("NumPMTClusters",&event_pmtclusters);
   t->Branch("PMTClustersCharge",&event_pmtclusters_Q);
   t->Branch("PMTClustersTime",&event_pmtclusters_T);
@@ -305,18 +322,18 @@ void MCPropertiesToTree::DefineTree(){
 
     t_genie = new TTree("genieproperties","Tree GENIE properties");
 
-    genie_file_pointer = new std::string;  
+    /*genie_file_pointer = new std::string;  
     genie_parentdecaystring_pointer = new std::string;
     genie_parentpdgattgtexitstring_pointer = new std::string;
     genie_interactiontypestring_pointer = new std::string;
     genie_fsleptonname_pointer = new std::string;
-
-    t_genie->Branch("file",&genie_file_pointer);
+*/
+    t_genie->Branch("file",&genie_file);
     t_genie->Branch("fluxver",&genie_fluxver);
     t_genie->Branch("evtnum",&genie_evtnum);
     t_genie->Branch("ParentPdg",&genie_parentpdg);
     t_genie->Branch("ParentDecayMode",&genie_parentdecaymode);
-    t_genie->Branch("ParentDecayString",&genie_parentdecaystring_pointer);
+    t_genie->Branch("ParentDecayString",&genie_parentdecaystring);
     t_genie->Branch("ParentDecayVtx_X",&genie_parentdecayvtxx);
     t_genie->Branch("ParentDecayVtx_Y",&genie_parentdecayvtxy);
     t_genie->Branch("ParentDecayVtx_Z",&genie_parentdecayvtxz);
@@ -327,10 +344,12 @@ void MCPropertiesToTree::DefineTree(){
     t_genie->Branch("ParentProdMom_Y",&genie_prodmomy);
     t_genie->Branch("ParentProdMom_Z",&genie_prodmomz);
     t_genie->Branch("ParentPdgAtTgtExit",&genie_parentpdgattgtexit);
-    t_genie->Branch("ParentPdgAtTgtExitString",&genie_parentpdgattgtexitstring_pointer);
+    t_genie->Branch("ParentTypeAtTgtExitString",&genie_parenttypeattgtexitstring);
     t_genie->Branch("ParentTgtExitMom_X",&genie_parenttgtexitmomx);
     t_genie->Branch("ParentTgtExitMom_Y",&genie_parenttgtexitmomy);
     t_genie->Branch("ParentTgtExitMom_Z",&genie_parenttgtexitmomz);
+    t_genie->Branch("ParentProdMedium",&genie_parentprodmedium);
+    t_genie->Branch("ParentProdMediumString",&genie_parentprodmediumstring);
    
     t_genie->Branch("IsQuasiElastic",&genie_isquasielastic);
     t_genie->Branch("IsResonant",&genie_isresonant);
@@ -345,7 +364,7 @@ void MCPropertiesToTree::DefineTree(){
     t_genie->Branch("IsWeakCC",&genie_isweakcc);
     t_genie->Branch("IsWeakNC",&genie_isweaknc);
     t_genie->Branch("IsMEC",&genie_ismec);
-    t_genie->Branch("InteractionTypeString",&genie_interactiontypestring_pointer);
+    t_genie->Branch("InteractionTypeString",&genie_interactiontypestring);
     t_genie->Branch("NeutCode",&genie_neutcode);
     t_genie->Branch("NuIntVtx_X",&genie_nuintvtxx);
     t_genie->Branch("NuIntVtx_Y",&genie_nuintvtxy);
@@ -358,14 +377,14 @@ void MCPropertiesToTree::DefineTree(){
     t_genie->Branch("NeutrinoPDG",&genie_neutrinopdg);
     t_genie->Branch("MuonEnergy",&genie_muonenergy);
     t_genie->Branch("MuonAngle",&genie_muonangle);
-    t_genie->Branch("FSLeptonName",&genie_fsleptonname_pointer);
+    t_genie->Branch("FSLeptonName",&genie_fsleptonname);
     t_genie->Branch("NumFSProtons",&genie_numfsp);
     t_genie->Branch("NumFSNeutrons",&genie_numfsn);
-    t_genie->Branch("NumFSNumFSPi0",&genie_numfspi0);
+    t_genie->Branch("NumFSPi0",&genie_numfspi0);
     t_genie->Branch("NumFSPiPlus",&genie_numfspiplus);
     t_genie->Branch("NumFSPiMinus",&genie_numfspiminus);
-
-
+    t_genie->Branch("NumFSKPlus",&genie_numfskplus);
+    t_genie->Branch("NumFSKMinus",&genie_numfskminus);
   }
 
   gROOT->cd();
@@ -446,6 +465,10 @@ void MCPropertiesToTree::ClearVectors(){
   lappdQ->clear();
   lappdT->clear();
   lappdID->clear();
+  mrdT->clear();
+  mrdID->clear();
+  fmvT->clear();
+  fmvID->clear();
 
 }
 
@@ -479,7 +502,6 @@ void MCPropertiesToTree::EvalTriggerData(){
 void MCPropertiesToTree::EvalMCParticles(){
 
   //Get information about true particle behavior
-
   num_primaries = 0;
   num_secondaries = 0;
 
@@ -708,10 +730,21 @@ void MCPropertiesToTree::EvalTDCData(){
       for(auto&& anmrdpmt : (*TDCData)){
         unsigned long chankey = anmrdpmt.first;
         Detector *thedetector = geom->ChannelToDetector(chankey);
+        double mrdtimes=0.;
+        int mrddigits=0;
+        for(auto&& hitsonthismrdpmt : anmrdpmt.second){
+          mrdtimes+=hitsonthismrdpmt.GetTime();
+          mrddigits++;
+        }
+        if (mrddigits > 0) mrdtimes/=mrddigits;
         if(thedetector->GetDetectorElement()!="MRD") {
           num_veto_hits++;
+    	  fmvT->push_back(mrdtimes);
+          fmvID->push_back(chankey);
           continue;  // this is a veto hit, not an MRD hit.
         }
+	mrdT->push_back(mrdtimes);
+        mrdID->push_back(chankey);
         mrdPaddles++;
         int detkey = thedetector->GetDetectorID();
         Paddle *apaddle = geom->GetDetectorPaddle(detkey);
@@ -759,8 +792,10 @@ void MCPropertiesToTree::EvalGENIE(){
   m_data->Stores["GenieInfo"]->Get("ParentProdMom_X",genie_prodmomx);
   m_data->Stores["GenieInfo"]->Get("ParentProdMom_Y",genie_prodmomy);
   m_data->Stores["GenieInfo"]->Get("ParentProdMom_Z",genie_prodmomz);
+  m_data->Stores["GenieInfo"]->Get("ParentProdMedium",genie_parentprodmedium);
+  m_data->Stores["GenieInfo"]->Get("ParentProdMediumString",genie_parentprodmediumstring);
   m_data->Stores["GenieInfo"]->Get("ParentPdgAtTgtExit",genie_parentpdgattgtexit);
-  m_data->Stores["GenieInfo"]->Get("ParentPdgAtTgtExitString",genie_parentpdgattgtexitstring);
+  m_data->Stores["GenieInfo"]->Get("ParentTypeAtTgtExitString",genie_parenttypeattgtexitstring);
   m_data->Stores["GenieInfo"]->Get("ParentTgtExitMom",genie_parenttgtexitmom);
   m_data->Stores["GenieInfo"]->Get("ParentTgtExitMom_X",genie_parenttgtexitmomx);
   m_data->Stores["GenieInfo"]->Get("ParentTgtExitMom_Y",genie_parenttgtexitmomy);
@@ -782,10 +817,10 @@ void MCPropertiesToTree::EvalGENIE(){
   m_data->Stores["GenieInfo"]->Get("IsMEC",genie_ismec);
   m_data->Stores["GenieInfo"]->Get("InteractionTypeString",genie_interactiontypestring);
   m_data->Stores["GenieInfo"]->Get("NeutCode",genie_neutcode);
-  m_data->Stores["GenieInfo"]->Get("NuIntVtx_X",genie_nuintvtxx);
-  m_data->Stores["GenieInfo"]->Get("NuIntVtx_Y",genie_nuintvtxy);
-  m_data->Stores["GenieInfo"]->Get("NuIntVtx_Z",genie_nuintvtxz);
-  m_data->Stores["GenieInfo"]->Get("NuIntVtx_T",genie_nuintvtxt);
+  m_data->Stores["GenieInfo"]->Get("NuIntxVtx_X",genie_nuintvtxx);
+  m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Y",genie_nuintvtxy);
+  m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Z",genie_nuintvtxz);
+  m_data->Stores["GenieInfo"]->Get("NuIntxVtx_T",genie_nuintvtxt);
   m_data->Stores["GenieInfo"]->Get("NuVtxInTank",genie_nuvtxintank);
   m_data->Stores["GenieInfo"]->Get("NuVtxInFidVol",genie_nuvtxinfidvol);
   m_data->Stores["GenieInfo"]->Get("EventQ2",genie_eventQ2);
@@ -796,8 +831,10 @@ void MCPropertiesToTree::EvalGENIE(){
   m_data->Stores["GenieInfo"]->Get("FSLeptonName",genie_fsleptonname);
   m_data->Stores["GenieInfo"]->Get("NumFSProtons",genie_numfsp);
   m_data->Stores["GenieInfo"]->Get("NumFSNeutrons",genie_numfsn);
-  m_data->Stores["GenieInfo"]->Get("NumFSNumFSPi0",genie_numfspi0);
+  m_data->Stores["GenieInfo"]->Get("NumFSPi0",genie_numfspi0);
   m_data->Stores["GenieInfo"]->Get("NumFSPiPlus",genie_numfspiplus);
   m_data->Stores["GenieInfo"]->Get("NumFSPiMinus",genie_numfspiminus);
+  m_data->Stores["GenieInfo"]->Get("NumFSKPlus",genie_numfskplus);
+  m_data->Stores["GenieInfo"]->Get("NumFSKMinus",genie_numfskminus);
   
 }

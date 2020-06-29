@@ -130,10 +130,14 @@ class MCPropertiesToTree: public Tool {
   bool mrd_stop=false, event_fv=false, event_pmtvol=false, no_pik=false, event_singlering=false, event_multiring=false, event_pmtmrdcoinc=false;
   std::vector<double> *pmtQ = nullptr;
   std::vector<double> *pmtT = nullptr;
-  std::vector<double> *pmtID = nullptr;
+  std::vector<int> *pmtID = nullptr;
   std::vector<double> *lappdQ = nullptr;
   std::vector<double> *lappdT = nullptr;
-  std::vector<double> *lappdID = nullptr;
+  std::vector<int> *lappdID = nullptr;
+  std::vector<double> *mrdT = nullptr;
+  std::vector<int> *mrdID = nullptr;
+  std::vector<double> *fmvT = nullptr;
+  std::vector<int>* fmvID = nullptr;
   double pmtQtotal, lappdQtotal;
   std::vector<double> *particle_posX = nullptr;
   std::vector<double> *particle_posY = nullptr;
@@ -165,15 +169,17 @@ class MCPropertiesToTree: public Tool {
   int genie_parentdecaymode=-1;
   std::string genie_parentdecaystring="dummy";
   Position genie_parentdecayvtx;
-  double genie_parentdecayvtxx=-1., genie_parentdecayvtxy=-1., genie_parentdecayvtxz=-1.;
+  float genie_parentdecayvtxx=-1., genie_parentdecayvtxy=-1., genie_parentdecayvtxz=-1.;
   Position genie_parentdecaymom;
-  double genie_parentdecaymomx=-1., genie_parentdecaymomy=-1., genie_parentdecaymomz=-1.;
+  float genie_parentdecaymomx=-1., genie_parentdecaymomy=-1., genie_parentdecaymomz=-1.;
   Position genie_parentprodmom;
-  double genie_prodmomx=-1., genie_prodmomy=-1., genie_prodmomz=-1.;
+  float genie_prodmomx=-1., genie_prodmomy=-1., genie_prodmomz=-1.;
+  int genie_parentprodmedium=-1;
+  std::string genie_parentprodmediumstring = "dummy";
   int genie_parentpdgattgtexit=-1.;
-  std::string genie_parentpdgattgtexitstring="dummy";
+  std::string genie_parenttypeattgtexitstring="dummy";
   Position genie_parenttgtexitmom;
-  double genie_parenttgtexitmomx=-1., genie_parenttgtexitmomy=-1., genie_parenttgtexitmomz=-1.;
+  float genie_parenttgtexitmomx=-1., genie_parenttgtexitmomy=-1., genie_parenttgtexitmomz=-1.;
 
   bool genie_isquasielastic=false, genie_isresonant=false, genie_isdeepinelastic=false, genie_iscoherent=false, genie_isdiffractive=false, genie_isinversemudecay=false, genie_isimdannihilation=false, genie_issinglekaon=false, genie_isnuelectronelastic=false, genie_isem=false, genie_isweakcc=false, genie_isweaknc=false, genie_ismec=false;
   std::string genie_interactiontypestring="dummy";
@@ -185,13 +191,13 @@ class MCPropertiesToTree: public Tool {
   int genie_neutrinopdg=-1;
   double genie_muonenergy=-1., genie_muonangle=-1.;
   std::string genie_fsleptonname="dummy";
-  int genie_numfsp=-1, genie_numfsn=-1, genie_numfspi0=-1, genie_numfspiplus=-1, genie_numfspiminus=-1;
+  int genie_numfsp=-1, genie_numfsn=-1, genie_numfspi0=-1, genie_numfspiplus=-1, genie_numfspiminus=-1, genie_numfskplus=-1, genie_numfskminus=-1;
 
-  std::string *genie_file_pointer = nullptr;
-  std::string *genie_parentdecaystring_pointer = nullptr;
-  std::string *genie_parentpdgattgtexitstring_pointer = nullptr;
-  std::string *genie_interactiontypestring_pointer = nullptr;
-  std::string *genie_fsleptonname_pointer = nullptr;
+  //std::string *genie_file_pointer = nullptr;
+  //std::string *genie_parentdecaystring_pointer = nullptr;
+  //std::string *genie_parentpdgattgtexitstring_pointer = nullptr;
+  //std::string *genie_interactiontypestring_pointer = nullptr;
+  //std::string *genie_fsleptonname_pointer = nullptr;
 
   //Verbosity variables
   int v_error = 0;

@@ -563,24 +563,22 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
     has_clustered_mrd = m_data->CStore.Get("MrdDigitChankeys",MrdDigitChankeys);
     if (not has_clustered_mrd) { Log("EventDisplay Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand",v_error,verbosity); return false;}
   }
-
-  if (fIsMC){
-    if (MrdTimeClusters.size() == 0 || m_all_clusters_MC->size() == 0) return false;
-  } else {
-    if (MrdTimeClusters.size() == 0 || m_all_clusters->size() == 0) return false;
-  }
-
+  
   int pmt_cluster_size;
   if (fIsMC) pmt_cluster_size = (int) m_all_clusters_MC->size();
   else pmt_cluster_size = (int) m_all_clusters->size();
   m_data->Stores["RecoEvent"]->Set("NumPMTClusters",pmt_cluster_size);
+  vec_pmtclusters_charge->clear();
+  vec_pmtclusters_time->clear();
+  m_data->Stores["RecoEvent"]->Set("PMTClustersCharge",vec_pmtclusters_charge,false);
+  m_data->Stores["RecoEvent"]->Set("PMTClustersTime",vec_pmtclusters_time,false);
+  vec_mrdclusters_time->clear();
+  m_data->Stores["RecoEvent"]->Set("MRDClustersTime",vec_mrdclusters_time);
 
 
   bool prompt_cluster = false;
   double pmt_time = 0;
 
-  vec_pmtclusters_charge->clear();
-  vec_pmtclusters_time->clear();
 
   if (fIsMC){
     if (m_all_clusters_MC->size()){
@@ -660,6 +658,12 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
     vec_mrdclusters_time->push_back(mrd_meantimes.at(i));
   }
   m_data->Stores["RecoEvent"]->Set("MRDClustersTime",vec_mrdclusters_time);
+  
+  if (fIsMC){
+    if (MrdTimeClusters.size() == 0 || m_all_clusters_MC->size() == 0) return false;
+  } else {
+    if (MrdTimeClusters.size() == 0 || m_all_clusters->size() == 0) return false;
+  }
 
   double pmtmrd_coinc_min = fPMTMRDOffset - 50;
   double pmtmrd_coinc_max = fPMTMRDOffset + 50;

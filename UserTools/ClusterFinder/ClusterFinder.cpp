@@ -232,9 +232,13 @@ bool ClusterFinder::Execute(){
     }
   }
 
+  
   if (v_hittimes.size() == 0) {
     if (verbose > 1) cout << "No hits, event is skipped..." << endl;
-    return true;
+      if (HitStoreName == "Hits") m_data->CStore.Set("ClusterMap",m_all_clusters);
+      else if (HitStoreName == "MCHits") m_data->CStore.Set("ClusterMapMC",m_all_clusters_MC);
+      m_data->CStore.Set("ClusterMapDetkey",m_all_clusters_detkey);
+      return true;
   }
 
   if (verbose > 2) {
