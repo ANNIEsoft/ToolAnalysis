@@ -1,3 +1,0 @@
-pmtHits,10,110,5
-pmtTotalQ,0,6000,300
-energy,100,2500,100
