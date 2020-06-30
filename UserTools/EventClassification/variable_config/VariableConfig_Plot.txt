@@ -1,4 +1,0 @@
-PMTHits,10,110,10
-PMTQtotal,0,6000,300
-MrdClusters,0,5,1
-energy,100,2500,280
