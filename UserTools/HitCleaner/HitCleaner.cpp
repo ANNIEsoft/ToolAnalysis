@@ -27,7 +27,6 @@ HitCleaner::~HitCleaner() {
 
 bool HitCleaner::Initialise(std::string configfile, DataModel &data){
 
-
   /////////////////// Usefull header ///////////////////////
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
@@ -93,7 +92,6 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fHitCleaningParam->emplace("LappdTimeWindowC",fLappdTimeWindowC);
   fHitCleaningParam->emplace("MinClusterDigits",fMinClusterDigits);
 
-
   if (fConfig!=0 && fConfig !=1 && fConfig !=2 && fConfig !=3 && fConfig !=4){
     Log("HitCleaner tool: Configuration <"+std::to_string(fConfig)+"> not recognized. Setting Config 3 (kPulseHeightAndClusters)",v_error,verbosity);
     fConfig = HitCleaner::kPulseHeightAndClusters;
@@ -112,7 +110,6 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
     m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
   }
 
-  
   // vector of filtered digits
   fFilterAll = new std::vector<RecoDigit*>;
   fFilterByPulseHeight = new std::vector<RecoDigit*>;
@@ -126,8 +123,6 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
 
   //Set hit cleaner parameters in the RecoEvent store
   m_data->Stores.at("RecoEvent")->Set("HitCleaningParameters", fHitCleaningParam);
-
-
 
   return true;
 }
