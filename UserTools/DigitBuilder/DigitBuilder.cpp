@@ -46,7 +46,6 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 
   /// Construct the other objects we'll be setting at event level,
   fDigitList = new std::vector<RecoDigit>;
-  std::cout <<"IsMC: "<<fIsMC<<std::endl;
 
   // Make the RecoDigit Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
@@ -63,11 +62,9 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   // I would recommend moving away from the use of WCSim IDs if possible as they are liable to change
   // but for tools that need them, in the LoadWCSim tool I put a map of WCSim TubeId to channelkey
   if (fIsMC){
-    std::cout <<"MC case"<<std::endl;
     m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
     m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
   } else {
-    std::cout <<"Data case"<<std::endl;
     ifstream file_pmtid(path_chankeymap.c_str());
     while (!file_pmtid.eof()){
       unsigned long chankey;
@@ -88,7 +85,6 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
       file_singlepe >> temp_chankey >> temp_gain;
       if (file_singlepe.eof()) break;
       pmt_gains.emplace(temp_chankey,temp_gain);
-      std::cout <<"Emplace chankey = "<<temp_chankey<<", gain: "<<temp_gain<<std::endl;
     }
     file_singlepe.close();
 
