@@ -1,9 +1,10 @@
-verbosity 5
+verbosity 2
 
 UseLEDWaveforms 0
 
+ADCThresholdDB ./configfiles/AmBeRunStatistics/SiPMThresholds.csv
 PulseFindingApproach threshold
 PulseWindowType dynamic
-DefaultADCThreshold 10
+DefaultADCThreshold 7
 DefaultThresholdType relative
 

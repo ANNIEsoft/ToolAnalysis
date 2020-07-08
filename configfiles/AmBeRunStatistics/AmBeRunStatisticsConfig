@@ -1,6 +1,6 @@
 verbosity 5
 
-OutputFile AmBeStatistics1612p1
+OutputFile AmBeStatistics1652S0
 //SiPM window in ns
 SiPMWindowMin 0
 SiPMWindowMax 4000
