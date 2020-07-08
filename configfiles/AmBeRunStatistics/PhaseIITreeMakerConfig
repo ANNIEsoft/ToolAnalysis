@@ -1,6 +1,6 @@
 verbose 5
 
-OutputFile AmBeR1652S0_5PET100ns.ntuple.root
+OutputFile AmBeFile_DefaultOutput.ntuple.root
 TankClusterProcessing 1
 MRDClusterProcessing 0
 TriggerProcessing 1
