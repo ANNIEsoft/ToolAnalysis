@@ -19,7 +19,6 @@
 #include "TFile.h"
 #include "TTree.h"
 
-
 /**
  * \class MrdPaddleEfficiencyPreparer
  *
@@ -48,7 +47,9 @@ class MrdPaddleEfficiencyPreparer: public Tool {
  	std::vector<BoostStore>* theMrdTracks;                        // the reconstructed tracks
  	std::string MRDTriggertype;
 	std::string outputfile; 
+	bool usetruetrack;
 	Geometry *geom = nullptr;
+	bool isData;
 
 	std::map<unsigned long,int> channelkey_to_mrdpmtid;
 

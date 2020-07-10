@@ -13,7 +13,7 @@ plotDirectory .
 # but can then require coincidence with a tank event, defined by:
 min_unique_water_pmts 10
 # and
-min_tank_charge 1  # units nC
+min_tank_charge 0.5  # units nC
 # or we can require coincidence with an MRD event, defined by:
 min_mrdl1_pmts 1
 # and

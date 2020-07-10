@@ -41,10 +41,13 @@ class FMVEfficiency: public Tool {
   std::string singlePEgains;
   std::string outputfile;
   bool useTank;
+  bool isData = true;
 
   //data objects
   std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
+  std::map<unsigned long,std::vector<MCHit>>* TDCData_MC=nullptr;
   std::map<double,std::vector<Hit>>* m_all_clusters;  //from ClusterFinder tool
+  std::map<double,std::vector<MCHit>>* m_all_clusters_MC;  //from ClusterFinder tool
   std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey;  //from ClusterFinder tool
   std::vector<std::vector<int>> MrdTimeClusters;  //from TimeClustering tool
   std::vector<double> MrdDigitTimes;  //from TimeClustering tool
@@ -56,6 +59,8 @@ class FMVEfficiency: public Tool {
   Geometry *geom = nullptr;
   int n_veto_pmts;
   double fmv_firstlayer_z, fmv_secondlayer_z, fmv_xmin, fmv_xmax, fmv_x;
+  unsigned long first_fmv_chankey=0;
+  unsigned long first_fmv_detkey=0;
 
   //storing containers
   std::vector<double> fmv_firstlayer_ymin, fmv_firstlayer_ymax, fmv_firstlayer_y, fmv_secondlayer_ymin, fmv_secondlayer_ymax, fmv_secondlayer_y;

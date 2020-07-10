@@ -42,6 +42,10 @@ class MrdPaddleEfficiencyCalc: public Tool {
   std::string str_output;
   std::string str_inactive;
   int verbosity;
+  bool isData;
+  std::string mc_chankey_path;
+  std::map<int,int> chankeymap_MC_data;
+  std::map<int,int> chankeymap_data_MC;
 
   //TFile variables
   TFile *inputfile = nullptr;
