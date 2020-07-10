@@ -56,6 +56,7 @@ class VetoEfficiency: public Tool {
 	TTree* roottreeout=nullptr;
 	TTree* summarytreeout=nullptr;
 	TFile* f_veto=nullptr;		//Additional debug TFile
+	bool useTApplication;
 
 	double compute_tank_charge(size_t minibuffer_number,
 	const std::map< unsigned long, std::vector< std::vector<ADCPulse> > >& adc_hits,
