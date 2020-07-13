@@ -1,0 +1,4 @@
+FileList ./configfiles/Monitoring/SimMonitoring/AmBefiles_lx02.txt
+OutPath /monitoringplots/
+Mode FileList	#Options: FileList, Single, Wait
+verbose 3
