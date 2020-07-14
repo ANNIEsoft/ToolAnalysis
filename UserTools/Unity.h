@@ -123,3 +123,4 @@
 #include "ClusterClassifiers.h"
 #include "MRDLoopbackAnalysis.h"
 #include "VetoEfficiency.h"
+#include "MonitorTrigger.h"
