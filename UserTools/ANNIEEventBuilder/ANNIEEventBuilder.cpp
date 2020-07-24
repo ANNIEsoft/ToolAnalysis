@@ -454,6 +454,9 @@ bool ANNIEEventBuilder::Finalise(){
   if(verbosity>2) std::cout << "PMT/MRD Orphan number at finalise: " << myOrphanage.OrphanTankTimestamps.size() <<
           "," << myOrphanage.OrphanMRDTimestamps.size() << std::endl;
   //Save the current subrun and delete ANNIEEvent
+  OrphanStore->Close();
+  OrphanStore->Delete();
+  delete OrphanStore;
   std::cout << "ANNIEEventBuilder Exitting" << std::endl;
   return true;
 }
