@@ -88,7 +88,6 @@ bool ANNIEEventBuilder::Execute(){
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
     Log("ANNIEEventBuilder Tool: There's no new PMT/MRD data.  Stopping loop, ANNIEEvent BoostStore will save.",v_warning,verbosity); 
     m_data->vars.Set("StopLoop",1);
-    return true;
   }
   
   // ensure we always build if the toolchain is stopping

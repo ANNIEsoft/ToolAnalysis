@@ -10,4 +10,5 @@ MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got 
 ExecutesPerBuild 10
 OrphanOldTankTimestamps 0
 OldTimestampThreshold 300
+OrphanFileBase OrphanStore_
 MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the others, pause reading
