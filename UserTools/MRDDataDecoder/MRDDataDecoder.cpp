@@ -56,7 +56,7 @@ bool MRDDataDecoder::Execute(){
   std::vector<unsigned long> chankeys;
   uint64_t timestamp = static_cast<uint64_t>(mrddata->TimeStamp);    //in ms since 1970/1/1
   // before anything else convert it to UTC ns
-  timestamp = (timestamp-TimeZoneShift)*1E6;
+  timestamp = (timestamp+TimeZoneShift)*1E6;
   std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
   MRDEvents.emplace(timestamp,ChankeyTimePairs);
   

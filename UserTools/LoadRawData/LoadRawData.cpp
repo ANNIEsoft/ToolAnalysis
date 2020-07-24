@@ -146,28 +146,48 @@ bool LoadRawData::Execute(){
     std::cout << "LoadRawData Tool: Current progress in file processing: TankEntryNum = "<< TankEntryNum <<", fraction = "<<((double)TankEntryNum/(double)tanktotalentries)*100 << std::endl;
     std::cout << "LoadRawData Tool: Current progress in file processing: MRDEntryNum = "<< MRDEntryNum <<", fraction = "<<((double)MRDEntryNum/(double)mrdtotalentries)*100 << std::endl;
     std::cout << "LoadRawData Tool: Current progress in file processing: TrigEntryNum = "<< TrigEntryNum <<", fraction = "<<((double)TrigEntryNum/(double)trigtotalentries)*100 << std::endl;
+    if(verbosity>10){
+      // print human readable timestamps from the 3 most recently read entries
+      // note that the timestamps aren't easily accessible from the raw data, so we'll lag one loop behind
+      // and get the most recent timestamp from the respective decoding tools
+      std::cout<<"Getting most recent timestamps"<<std::endl;
+      bool get_ok;
+      // PMT:
+      std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents=nullptr;
+      get_ok = m_data->CStore.Get("InProgressTankEvents",InProgressTankEvents);
+      TimeClass tt;
+      if(get_ok && InProgressTankEvents){
+        if(InProgressTankEvents->size()){
+          uint64_t PMTCounterTimeNs = InProgressTankEvents->rbegin()->first;
+          tt = TimeClass(PMTCounterTimeNs);
+        }
+      }
+      // TrigData:
+      std::map<uint64_t,uint32_t>* TimeToTriggerWordMap=nullptr;
+      get_ok = m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+      TimeClass cc;
+      if(get_ok && TimeToTriggerWordMap){
+        if(TimeToTriggerWordMap->size()){
+          uint64_t CTCTimeStamp = TimeToTriggerWordMap->rbegin()->first;
+          cc = TimeClass(CTCTimeStamp);
+        }
+      }
+      // MRDData:
+      std::map<uint64_t, std::string>  MRDTriggerTypeMap;
+      get_ok = m_data->CStore.Get("MRDEventTriggerTypes",MRDTriggerTypeMap);
+      TimeClass mm;
+      if(get_ok){
+        if(MRDTriggerTypeMap.size()){
+          uint64_t MRDTimeStamp = MRDTriggerTypeMap.rbegin()->first;
+          mm = TimeClass (MRDTimeStamp);
+        }
+      }
+      std::cout<<"Lates times are:\nTANK: "<<tt.AsString()<<"\nMRD:  "<<mm.AsString()
+               <<"\nCTC:  "<<cc.AsString()<<std::endl;
+    }
   }
 
-  //Get next data entries; are saved to CStore for tools downstream
-  this->GetNextDataEntries();
-
-  //Update which streams should be paused
-  //Pause building any stream which has more fully built events in ANNIEEventBuilder tool than the others
-  TankPaused = false;
-  MRDPaused = false;
-  CTCPaused = false;
-
-  int lowest_size = 1E18;
-  if ((BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC") &&  TankEntryNum < lowest_size) lowest_size = TankEntryNum;
-  if ((BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC") && MRDEntryNum < lowest_size) lowest_size = MRDEntryNum;
-  if ((BuildType == "TankAndMRDAndCTC") && TrigEntryNum < lowest_size) lowest_size = TrigEntryNum;
-
-  if (TankEntryNum > lowest_size) TankPaused = true;
-  if (MRDEntryNum > lowest_size) MRDPaused = true;
-  if (TrigEntryNum > lowest_size) CTCPaused = true;
-  std::cout << "LOWEST SIZE EVT ARRAY IS: " << lowest_size << std::endl;
-
-  //Pause any streams where all of the entries have been collected; force others to keep building
+  // Unpause all other streams when any stream has read all of its events
   if(TankEntryNum == tanktotalentries){
     Log("LoadRawData Tool: ALL PMT ENTRIES COLLECTED.",v_debug, verbosity);
     TankEntriesCompleted = true;
@@ -194,6 +214,9 @@ bool LoadRawData::Execute(){
   m_data->CStore.Set("PauseMRDDecoding",MRDPaused);
   m_data->CStore.Set("PauseCTCDecoding",CTCPaused);
 
+  //Get next data entries; are saved to CStore for tools downstream
+  this->GetNextDataEntries();
+
   //Set if the raw data file has been completed
   if (TankEntriesCompleted && BuildType == "Tank") FileCompleted = true;
   if (MRDEntriesCompleted && BuildType == "MRD") FileCompleted = true;
@@ -201,6 +224,7 @@ bool LoadRawData::Execute(){
   if ((TrigEntriesCompleted && TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRDAndCTC")) FileCompleted = true;
     
   m_data->CStore.Set("NewRawDataEntryAccessed",true);
+  m_data->CStore.Set("FileCompleted",FileCompleted);
   Log("LoadRawData tool: execution loop complete.",v_debug,verbosity);
   return true;
 }
@@ -243,6 +267,7 @@ void LoadRawData::LoadPMTMRDData(){
     Log("LoadRawData Tool: Accessing PMT Data in raw data",v_message,verbosity);
     RawData->Get("PMTData",*PMTData);
     PMTData->Header->Get("TotalEntries",tanktotalentries);
+    Log("LoadRawData Tool: PMTData has "+std::to_string(tanktotalentries)+" entries",v_debug,verbosity);
     if(verbosity>3) PMTData->Print(false);
     if(verbosity>3) PMTData->Header->Print(false);
     Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
@@ -251,6 +276,7 @@ void LoadRawData::LoadPMTMRDData(){
     Log("LoadRawData Tool: Accessing MRD Data in raw data",v_message,verbosity);
     RawData->Get("CCData",*MRDData);
     MRDData->Header->Get("TotalEntries",mrdtotalentries);
+    Log("LoadRawData Tool: MRDData has "+std::to_string(mrdtotalentries)+" entries",v_debug,verbosity);
     if(verbosity>3) MRDData->Print(false);
   }
   return;
@@ -260,8 +286,8 @@ void LoadRawData::LoadTriggerData(){
   Log("LoadRawData Tool: Accessing Trigger Data in raw data",v_message,verbosity);
   RawData->Get("TrigData",*TrigData);
   if(verbosity>3) TrigData->Print(false);
-  Log("LoadRawData Tool: Number of entries in trigger data:"+to_string(trigtotalentries),v_message,verbosity);
   TrigData->Header->Get("TotalEntries",trigtotalentries);
+  Log("LoadRawData Tool: TrigData has "+to_string(trigtotalentries)+" entries",v_message,verbosity);
   return;
 }
 
@@ -381,7 +407,7 @@ void LoadRawData::GetNextDataEntries(){
   //Get next PMTData Entry
   if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
     if(!TankPaused && !TankEntriesCompleted){
-      Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum),v_debug, verbosity);
+      Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum)+"/"+to_string(tanktotalentries),v_debug, verbosity);
       PMTData->GetEntry(TankEntryNum);
       Log("LoadRawData Tool: Getting the PMT card data entry",v_debug, verbosity);
       PMTData->Get("CardData",*Cdata);
@@ -396,7 +422,7 @@ void LoadRawData::GetNextDataEntries(){
   //Get next MRDData Entry
   if(BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
     if(!MRDPaused && !MRDEntriesCompleted){
-      Log("LoadRawData Tool: Procesing CCData Entry "+to_string(MRDEntryNum),v_debug, verbosity);
+      Log("LoadRawData Tool: Procesing CCData Entry "+to_string(MRDEntryNum)+"/"+to_string(mrdtotalentries),v_debug, verbosity);
       MRDData->GetEntry(MRDEntryNum);
       MRDData->Get("Data",*Mdata);
       m_data->CStore.Set("MRDData",Mdata,true);
@@ -406,7 +432,7 @@ void LoadRawData::GetNextDataEntries(){
 
   //Get next TrigData Entry
   if(BuildType == "TankAndMRDAndCTC" && !TrigEntriesCompleted && !CTCPaused){
-    Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum),v_debug, verbosity);
+    Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum)+"/"+to_string(trigtotalentries),v_debug, verbosity);
     TrigData->GetEntry(TrigEntryNum);
     TrigData->Get("TrigData",*Tdata);
     m_data->CStore.Set("TrigData",Tdata);
