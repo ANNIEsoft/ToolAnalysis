@@ -30,6 +30,7 @@ class MonitorSimReceive: public Tool {
   BoostStore *indata = nullptr;
   BoostStore* MRDData = nullptr;
   BoostStore* PMTData = nullptr;
+  BoostStore* TrigData = nullptr;
 
   std::vector<std::string> vec_filename;
   int i_loop;

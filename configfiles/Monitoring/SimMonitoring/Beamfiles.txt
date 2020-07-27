@@ -1,0 +1,6 @@
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1634S0p0
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1634S0p1
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1634S0p2
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1634S0p3
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1634S0p4
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1634S0p5

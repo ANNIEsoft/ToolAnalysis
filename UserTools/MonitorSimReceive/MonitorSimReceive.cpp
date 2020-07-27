@@ -44,9 +44,11 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     srand(time(NULL));
     m_data->Stores["CCData"]=new BoostStore(false,2);  
     m_data->Stores["PMTData"]=new BoostStore(false,2);
+    m_data->Stores["TrigData"]=new BoostStore(false,2);
 
     MRDData = 0;
     PMTData = 0;
+    TrigData = 0;
     indata = 0;
 
     i_loop = 0;
@@ -71,6 +73,7 @@ bool MonitorSimReceive::Execute(){
 
     m_data->CStore.Set("HasCCData",false);
     m_data->CStore.Set("HasPMTData",false);
+    m_data->CStore.Set("HasTrigData",false);
 
     if (mode == "Wait"){
       std::string Wait = "Wait";     
@@ -108,6 +111,7 @@ bool MonitorSimReceive::Execute(){
       m_data->vars.Set("StopLoop",true);
       if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
       if (PMTData!=0) {PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
+      if (TrigData!=0) {TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = 0;}
       return true;
     }
 
@@ -120,6 +124,13 @@ bool MonitorSimReceive::Execute(){
       PMTData->Delete();
       delete PMTData;
       PMTData=0;
+    }
+    if (TrigData!=0){
+      m_data->Stores["TrigData"]->Delete();
+      TrigData->Close();
+      TrigData->Delete();
+      delete TrigData;
+      TrigData=0;
     }
     if (indata!=0){
       std::cout <<"close indata"<<std::endl;
@@ -139,6 +150,7 @@ bool MonitorSimReceive::Execute(){
 
     bool has_cc=false;
     bool has_pmt=false;
+    bool has_trig=false;
 
     if (indata->Has("CCData")){
 	std::cout <<"RawData has CCData Store!"<<std::endl;
@@ -150,9 +162,15 @@ bool MonitorSimReceive::Execute(){
         has_pmt = true;
         PMTData = new BoostStore(false,2);
     }
+    if (indata->Has("TrigData")){
+        std::cout <<"RawData has TrigData Store!"<<std::endl;
+        has_trig = true;
+        TrigData = new BoostStore(false,2);
+    }
 
     m_data->CStore.Set("HasCCData",has_cc);
     m_data->CStore.Set("HasPMTData",has_pmt);
+    m_data->CStore.Set("HasTrigData",has_trig);
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
 
@@ -173,8 +191,6 @@ bool MonitorSimReceive::Execute(){
         int EntriesToDo,CDEntryNum;
         if (totalentries < 3000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
         else EntriesToDo = (int) totalentries/15;               //otherwise do ~1000 entries out of 15000
-        //CDEntryNum = totalentries - EntriesToDo - 10;
-	//if (CDEntryNum < 0) CDEntryNum = 0;
         CDEntryNum = 0;
 	std::map<int,std::vector<CardData>> CardData_Map;
         while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
@@ -187,9 +203,20 @@ bool MonitorSimReceive::Execute(){
             CDEntryNum++;
         }
         m_data->Stores["PMTData"]->Set("CardDataMap",CardData_Map);  
-	    
-	    
-        //m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+    }
+
+    if (has_trig){
+      indata->Get("TrigData",*TrigData);
+      long totalentries_trig;
+      TrigData->Header->Get("TotalEntries",totalentries_trig);
+      std::map<int,TriggerData> TrigData_Map;
+      for (int i_trig=0; i_trig < totalentries_trig; i_trig++){
+        TriggerData TData;
+        TrigData->GetEntry(i_trig);
+        TrigData->Get("TrigData",TData);
+        TrigData_Map.emplace(i_trig,TData);
+      }
+      m_data->Stores["TrigData"]->Set("TrigDataMap",TrigData_Map);
     }
 
     i_loop++;
@@ -204,16 +231,20 @@ bool MonitorSimReceive::Finalise(){
     if (verbosity > 2) std::cout <<"MonitorSimReceive: Finalising"<<std::endl;
 
     if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
-    if (PMTData!=0) { PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
-
+    if (PMTData!=0) {PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
+    if (TrigData!=0) {TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = 0;}
 
     if (m_data->CStore.Has("State")) m_data->CStore.Remove("State");
     if (m_data->CStore.Has("HasCCData")) m_data->CStore.Remove("HasCCData");
     if (m_data->CStore.Has("HasPMTData")) m_data->CStore.Remove("HasPMTData");
+    if (m_data->CStore.Has("HasTrigData")) m_data->CStore.Remove("HasTrigData");
     if (m_data->Stores["CCData"]->Has("FileData")) m_data->Stores["CCData"]->Remove("FileData");
     if (m_data->Stores["PMTData"]->Has("FileData")) m_data->Stores["PMTData"]->Remove("FileData");
+    if (m_data->Stores["PMTData"]->Has("CardDataMap")) m_data->Stores["PMTData"]->Remove("CardDataMap");
+    if (m_data->Stores["TrigData"]->Has("TrigDataMap")) m_data->Stores["TrigData"]->Remove("TrigDataMap");
     m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete(); 
     m_data->Stores["PMTData"]->Close(); m_data->Stores["PMTData"]->Delete(); 
+    m_data->Stores["TrigData"]->Close(); m_data->Stores["TrigData"]->Delete();
     m_data->Stores.clear();
 
     return true;
