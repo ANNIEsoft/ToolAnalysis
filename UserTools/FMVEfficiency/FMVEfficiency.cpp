@@ -46,7 +46,9 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
   time_diff_Layer2 = new TH1F("time_diff_Layer2","Time differences FMV-MRD (Layer 2)",2000,-4000,4000);
   num_paddles_Layer1= new TH1F("num_paddles_Layer1","Number of hit FMV paddles (Layer 1)",14,0,14); 
   num_paddles_Layer2= new TH1F("num_paddles_Layer2","Number of hit FMV paddles (Layer 2)",14,0,14); 
-  
+ 
+  fmv_layer1_layer2 = new TH2F("fmv_layer1_layer2","FMV Layer 1 vs. Layer 2",13,0,13,13,13,26);
+ 
   fmv_observed_layer1 = new TH1F("fmv_observed_layer1","FMV observed hits (Layer 1)",13,0,13);
   fmv_expected_layer1 = new TH1F("fmv_expected_layer1","FMV expected hits (Layer 1)",13,0,13);
   fmv_observed_layer2 = new TH1F("fmv_observed_layer2","FMV observed hits (Layer 2)",13,13,26);
@@ -513,6 +515,9 @@ bool FMVEfficiency::Execute(){
         track_diff_y_strict_Layer1->Fill(y_layer1-fmv_firstlayer_y.at(detkey_first));
         track_diff_xy_strict_Layer1->Fill(x_layer1-fmv_x,y_layer1-fmv_firstlayer_y.at(detkey_first));
       }
+      for (int i_second=0; i_second < (int) hit_fmv_detkeys_second.size(); i_second++){
+        fmv_layer1_layer2->Fill(detkey_first,hit_fmv_detkeys_second.at(i_second));
+      }
       if (std::find(hit_fmv_detkeys_second.begin(),hit_fmv_detkeys_second.end(),detkey_first+n_veto_pmts/2)!=hit_fmv_detkeys_second.end()) {
         if (y_layer1-fmv_firstlayer_y.at(detkey_first) > -0.4 && y_layer1-fmv_firstlayer_y.at(detkey_first)<0.6 && fabs(x_layer1-fmv_x)<1.6){
           fmv_secondlayer_observed_track_loose.at(detkey_first)++;
@@ -562,6 +567,9 @@ bool FMVEfficiency::Execute(){
           fmv_firstlayer_observed_track_loose.at(detkey_first)++;
           vector_observed_loose_layer1.at(detkey_first)->Fill(x_layer2);
         }
+       for (int i_first=0; i_first < (int) hit_fmv_detkeys_first.size(); i_first++){
+        fmv_layer1_layer2->Fill(hit_fmv_detkeys_first.at(i_first),detkey_second);
+       }
         fmv_firstlayer_observed.at(detkey_first)++;
         if (hit_chankey_layer2 == detkey_second){
           vector_observed_strict_layer1.at(detkey_first)->Fill(x_layer2);
@@ -583,6 +591,7 @@ bool FMVEfficiency::Finalise(){
   //  --------------------------------
 
   file->cd();
+  fmv_layer1_layer2->Write();
   for (unsigned int i_fmv = 0; i_fmv < fmv_secondlayer.size(); i_fmv++){
     fmv_observed_layer1->SetBinContent(i_fmv+1,fmv_firstlayer_observed.at(i_fmv));
     fmv_expected_layer1->SetBinContent(i_fmv+1,fmv_firstlayer_expected.at(i_fmv));

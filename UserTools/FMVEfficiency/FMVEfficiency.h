@@ -77,6 +77,8 @@ class FMVEfficiency: public Tool {
   TH1F *num_paddles_Layer1 = nullptr;
   TH1F *num_paddles_Layer2 = nullptr;
 
+  TH2F *fmv_layer1_layer2 = nullptr;
+
   std::vector<TH1F*> vector_observed_strict_layer1, vector_expected_strict_layer1, vector_observed_loose_layer1, vector_expected_loose_layer1;
   std::vector<TH1F*> vector_observed_strict_layer2, vector_expected_strict_layer2, vector_observed_loose_layer2, vector_expected_loose_layer2;
   TH1F *fmv_observed_layer1 = nullptr;
