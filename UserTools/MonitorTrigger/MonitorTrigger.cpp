@@ -17,8 +17,8 @@ bool MonitorTrigger::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   //Only for debugging memory leaks (ROOT-related), otherwise comment out
-  std::cout <<"List of Objects (Beginning of Initialise): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"List of Objects (Beginning of Initialise): "<<std::endl;
+  //gObjectTable->Print();
 
   //-------------------------------------------------------
   //-----------------Get Configuration---------------------
@@ -88,7 +88,6 @@ bool MonitorTrigger::Initialise(std::string configfile, DataModel &data){
 
 bool MonitorTrigger::Execute(){
 
-  std::cout <<"execute"<<std::endl;
   //Get current time, time since last timestamp, etc.
   current = (boost::posix_time::second_clock::local_time());
   duration = boost::posix_time::time_duration(current - last);
@@ -156,7 +155,7 @@ bool MonitorTrigger::Execute(){
     Log("MonitorTrigger: "+std::to_string(update_frequency)+" mins passed... Updating file history plot.",v_message,verbosity);
 
     last=current;
-    std::cout <<"DrawFileHistory (period update)"<<std::endl;
+    //std::cout <<"DrawFileHistory (period update)"<<std::endl;
     this->DrawFileHistoryTrig(current_stamp,24.,"current_24h",1);     //show 24h history of Tank files
     this->PrintFileTimeStamp(current_stamp,24.,"current_24h");
     this->DrawFileHistoryTrig(current_stamp,2.,"current_2h",3);
@@ -164,8 +163,8 @@ bool MonitorTrigger::Execute(){
   }
 
   //Only for debugging memory leaks, otherwise comment out
-  std::cout <<"List of objects (after Execute step): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"List of objects (after Execute step): "<<std::endl;
+  //gObjectTable->Print();
 
   return true;
 }
@@ -317,6 +316,7 @@ void MonitorTrigger::InitializeHists(){
   h_triggerword_selected = new TH1F("h_triggerword_selected",ss_title_triggerword_selected.str().c_str(),num_triggerwords_selected,0,num_triggerwords_selected);
   h_rate_triggerword = new TH1F("h_rate_triggerword",ss_title_rate_triggerword.str().c_str(),num_triggerwords,0,num_triggerwords);
   h_rate_triggerword_selected = new TH1F("h_rate_triggerword_selected",ss_title_rate_triggerword_selected.str().c_str(),num_triggerwords_selected,0,num_triggerwords_selected);
+  num_files_history = 10;
   log_files_trig = new TH1F("log_files_trig","Trigger Files History",num_files_history,0,num_files_history);
 
   h_triggerword->SetStats(0);
@@ -604,7 +604,7 @@ void MonitorTrigger::ReadFromFile(ULong64_t timestamp_end, double time_frame){
  
       if (tree_exists){
 
-        Log("MonitorTankTime: Tree exists, start reading in data",v_message,verbosity);
+        Log("MonitorTrigger: Tree exists, start reading in data",v_message,verbosity);
   
         ULong64_t t_start, t_end;
         std::vector<int> *trigword = new std::vector<int>;
@@ -716,10 +716,9 @@ void MonitorTrigger::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
 
     for (unsigned int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
 
-      std::cout <<"i_plot: "<<i_plot<<std::endl;
       if (plotTypes.at(i_time).at(i_plot) == "TriggerRatePlots") this->DrawFrequencyRatePlots(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "TimeEvolution") this->DrawTimeEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
-      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") {std::cout <<"draw file history (updatemonitorplots)"<<std::endl;this->DrawFileHistoryTrig(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time),1);}
+      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") {this->DrawFileHistoryTrig(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time),1);}
       else {
         if (verbosity > 0) std::cout <<"ERROR (MonitorTrigger): UpdateMonitorPlots: Specified plot type -"<<plotTypes.at(i_time).at(i_plot)<<"- does not exist! Omit entry."<<std::endl;
       }
@@ -857,7 +856,6 @@ void MonitorTrigger::DrawTimeAlignmentPlots(){
   }
 
 
-  std::cout <<"t_file_start: "<<t_file_start<<std::endl;
   uint64_t previous_filestamp = 0;
   int previous_triggerword=-1;
   for (int t=0; t < (int) triggerword_file.size(); t++){
@@ -865,8 +863,8 @@ void MonitorTrigger::DrawTimeAlignmentPlots(){
       previous_filestamp = timestamp_file.at(t);
       previous_triggerword = triggerword_file.at(t);
     }
-    std::cout <<"Current word: "<<triggerword_file.at(t)<<", previous word: "<<previous_triggerword;
-    std::cout <<", delta t previous filestamp: "<<timestamp_file.at(t)-previous_filestamp<<std::endl;
+    //std::cout <<"Current word: "<<triggerword_file.at(t)<<", previous word: "<<previous_triggerword;
+    //std::cout <<", delta t previous filestamp: "<<timestamp_file.at(t)-previous_filestamp<<std::endl;
     int triggerword = triggerword_file.at(t);
     h_timestamp.at(triggerword)->Fill((timestamp_file.at(t)/1000000+utc_to_t)/MSEC_to_SEC);
     for (int i_align=0; i_align < (int) TriggerAlign.size(); i_align++){
@@ -1030,10 +1028,10 @@ bool MonitorTrigger::does_file_exist(std::string filename){
 
 void MonitorTrigger::DrawFileHistoryTrig(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth){
 
-  Log("MonitorTrigger: DrawFileHistory",v_message,verbosity);
+  Log("MonitorTrigger: DrawFileHistoryTrig",v_message,verbosity);
 
   //-------------------------------------------------------
-  //------------------DrawFileHistory ---------------------
+  //------------------DrawFileHistoryTrig ---------------------
   //-------------------------------------------------------
 
   //Creates a plot showing the time stamps for all the files within the last time_frame mins
@@ -1041,30 +1039,22 @@ void MonitorTrigger::DrawFileHistoryTrig(ULong64_t timestamp_end, double time_fr
 
   if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
 
-  std::cout <<"timestamp_end: "<<timestamp_end<<std::endl;
-
   timestamp_end += utc_to_t;
-  std::cout <<"corrected timestamp_end: "<<timestamp_end<<std::endl;
 
   ULong64_t timestamp_start = timestamp_end - time_frame*MSEC_to_SEC*SEC_to_MIN*MIN_to_HOUR;
   std::stringstream ss_timeframe;
   ss_timeframe << round(time_frame*100.)/100.;
 
-  std::cout <<"cd canvas_logfile_trig"<<std::endl;
   canvas_logfile_trig->cd();
-  std::cout <<"access log_files_trig"<<std::endl;
   log_files_trig->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
   log_files_trig->GetXaxis()->SetTimeOffset(0.);
   log_files_trig->Draw();
 
-  std::cout <<"drawn"<<std::endl;
   std::stringstream ss_title_filehistory;
   ss_title_filehistory << "Trigger Files History (last "<<ss_timeframe.str()<<"h)";
 
-  std::cout <<"set title"<<std::endl;
   log_files_trig->SetTitle(ss_title_filehistory.str().c_str());
 
-  std::cout <<"Set vector file_markers"<<std::endl;
   std::vector<TLine*> file_markers_trig;
   for (unsigned int i_file = 0; i_file < tend_plot.size(); i_file++){
     TLine *line_file = new TLine((tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,0.,(tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,1.);
@@ -1075,26 +1065,18 @@ void MonitorTrigger::DrawFileHistoryTrig(ULong64_t timestamp_end, double time_fr
     file_markers_trig.push_back(line_file);
   }
 
-  std::cout <<"Set title logfiles"<<std::endl;
   std::stringstream ss_logfiles;
-  std::cout <<"file_ending: "<<file_ending<<std::endl;
   ss_logfiles << outpath << "Trigger_FileHistory_" << file_ending << "." << img_extension;
-  std::cout <<"Save canvas at address "<<ss_logfiles.str()<<std::endl;
-  std::cout <<"canvas_logfile_trig address: "<<std::endl;
-  std::cout <<canvas_logfile_trig<<std::endl;
   canvas_logfile_trig->SaveAs(ss_logfiles.str().c_str());
   
 
-  std::cout <<"delete file_markers"<<std::endl;
   for (unsigned int i_line = 0; i_line < file_markers_trig.size(); i_line++){
     delete file_markers_trig.at(i_line);
   }
 
-  std::cout <<"Reset, Clear"<<std::endl;
   log_files_trig->Reset();
   canvas_logfile_trig->Clear();
 
-  std::cout <<"Done with the function"<<std::endl;
 
 }
 
@@ -1159,7 +1141,6 @@ std::vector<int> MonitorTrigger::LoadTriggerMask(std::string triggermask_file){
   if (myfile.is_open()){
     while(getline(myfile,fileline)){
       if(fileline.find("#")!=std::string::npos) continue;
-      std::cout << fileline << std::endl; //has our stuff;
       std::vector<std::string> dataline;
       boost::split(dataline,fileline, boost::is_any_of(","), boost::token_compress_on);
       uint32_t triggernum = std::stoul(dataline.at(0));

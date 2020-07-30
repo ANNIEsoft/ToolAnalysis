@@ -906,9 +906,31 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("nevents",&nevents);
 
         nentries_tree = t->GetEntries();
-        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
 
+        //Sort timestamps for the case that they are not in order
+        //
+        std::vector<ULong64_t> vector_timestamps;
+        std::map<ULong64_t,int> map_timestamp_entry;
+        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
           t->GetEntry(i_entry);
+          if (t_start >= timestamp_start && t_end <= timestamp_end){
+            vector_timestamps.push_back(t_start);
+            map_timestamp_entry.emplace(t_start,i_entry);
+          }
+        }
+
+        std::sort(vector_timestamps.begin(), vector_timestamps.end());
+        std::vector<int> vector_sorted_entry;
+
+        for (int i_entry = 0; i_entry < (int) vector_timestamps.size(); i_entry++){
+          vector_sorted_entry.push_back(map_timestamp_entry.at(vector_timestamps.at(i_entry)));
+        }
+
+        for (int i_entry = 0; i_entry < (int) vector_sorted_entry.size(); i_entry++){
+
+          int next_entry = vector_sorted_entry.at(i_entry);
+
+          t->GetEntry(next_entry);
           if (t_start >= timestamp_start && t_end <= timestamp_end){
             tdc_plot.push_back(*tdc);
             rms_plot.push_back(*rms);
