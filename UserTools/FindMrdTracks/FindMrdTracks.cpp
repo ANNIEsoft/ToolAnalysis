@@ -225,6 +225,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				// (they would be out of bounds in the expected maps...)
 				// so convert back to channelkey, get the Detector, and check whether it's MRD or Veto
 				int wcsimid = mrddigitpmtsthisevent.at(digit_value);
+				if (!isData) wcsimid++;		//mrd_tubeid_to_channelkey map is 1-based in MC
 				if(mrd_tubeid_to_channelkey.count(wcsimid)==0){
 					Log("FindMrdTracks tool: Error! WCSimID "+to_string(wcsimid)
 						+" was not in the mrd_tubeid_to_channelkey map!",v_error,verbosity);
