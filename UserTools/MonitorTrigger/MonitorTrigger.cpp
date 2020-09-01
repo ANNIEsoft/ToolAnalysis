@@ -503,6 +503,9 @@ void MonitorTrigger::WriteToFile(){
   if (omit_entries){
     //Don't write file again, but still delete TFile and TTree object!
     f->Close();
+    delete trigword;
+    delete freq_trigword;
+    delete rate_trigword;
     delete f;
 
     gROOT->cd();
