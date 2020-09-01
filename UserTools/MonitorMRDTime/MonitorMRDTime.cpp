@@ -702,8 +702,15 @@ void MonitorMRDTime::WriteToFile(){
   //if data is already written to DB/File, do not write it again
   if (omit_entries) {
 
-    //don't write file again, but still delete TFile and TTree object!!!
+    //don't write file again, but still delete TFile and TTree object!!! (and vectors)
     f->Close();
+    delete crate;
+    delete slot;
+    delete channel;
+    delete tdc;
+    delete rms;
+    delete rate;
+    delete channelcount;
     delete f;
 
     gROOT->cd();
