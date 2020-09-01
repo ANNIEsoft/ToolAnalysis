@@ -1200,6 +1200,13 @@ void MonitorTankTime::WriteToFile(){
 
   //don't write file again, but still delete TFile and TTree object!!!
   f->Close();
+  delete crate;
+  delete slot;
+  delete channel;
+  delete ped;
+  delete sigma;
+  delete rate;
+  delete channelcount;
   delete f;
 
   gROOT->cd();
