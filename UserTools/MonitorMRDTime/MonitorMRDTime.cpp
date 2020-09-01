@@ -1975,6 +1975,7 @@ void MonitorMRDTime::DrawTDCHistogram(){
   ss_tdc_hist.str("");
   ss_tdc_hist << outpath << "MRDTDCHist_Cluster_lastFile."<<img_extension;
   canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster->Reset();
 
 }
 
