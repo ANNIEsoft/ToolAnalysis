@@ -277,7 +277,7 @@ std::map<unsigned long, std::vector<std::vector<int>>> PhaseIIADCHitFinder::load
       }
     }
   } else {
-    Log("PhaseIIADCHitFinder Tool: Input integration window DB file not found. "
+    Log("PhaseIIADCHitFinder Tool ERROR! Input integration window DB file not found! "
         " no integration will occur. ",
         v_warning, verbosity);
   }
@@ -305,10 +305,10 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
   std::vector< std::vector<ADCPulse> > pulse_vec;
   std::vector<Hit> HitsOnPMT;
 
+  size_t num_minibuffers = raw_waveforms.size();
   if (pulse_finding_approach == "full_window"){
 
     // Integrate each whole dang minibuffer and background subtract 
-    size_t num_minibuffers = raw_waveforms.size();
     for (size_t mb = 0; mb < num_minibuffers; ++mb) {
         Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
         int window_end = buffer_wave.GetSamples()->size()-1;
@@ -321,7 +321,6 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
 
   if (pulse_finding_approach == "full_window_maxpeak"){
     // Integrate each whole dang minibuffer and background subtract 
-    size_t num_minibuffers = raw_waveforms.size();
     for (size_t mb = 0; mb < num_minibuffers; ++mb) {
         Waveform<unsigned short> buffer_wave = raw_waveforms.at(mb);
         int window_end = buffer_wave.GetSamples()->size()-1;
@@ -338,7 +337,6 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
     thispmt_adc_windows = this->get_db_windows(channel_key);
 
     //For each minibuffer, integrate window to get pulses
-    size_t num_minibuffers = raw_waveforms.size();
     for (size_t mb = 0; mb < num_minibuffers; ++mb) {
         pulse_vec.push_back(this->find_pulses_bywindow(raw_waveforms.at(mb),
           calibrated_waveforms.at(mb), thispmt_adc_windows, channel_key,false));
@@ -351,7 +349,6 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
     thispmt_adc_threshold = this->get_db_threshold(channel_key);
 
     //For each minibuffer, adjust threshold for baseline calibration and find pulses
-    size_t num_minibuffers = raw_waveforms.size();
     for (size_t mb = 0; mb < num_minibuffers; ++mb) {
       if (threshold_type == "relative") {
         thispmt_adc_threshold = thispmt_adc_threshold

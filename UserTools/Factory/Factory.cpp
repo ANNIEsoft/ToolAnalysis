@@ -111,6 +111,7 @@ if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
 if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="LoadRawData") ret=new LoadRawData;
+if (tool=="TriggerDataDecoder") ret=new TriggerDataDecoder;
 if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;

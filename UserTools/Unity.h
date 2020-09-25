@@ -119,6 +119,7 @@
 #include "MrdPaddleEfficiencyCalc.h"
 #include "FMVEfficiency.h"
 #include "LoadRawData.h"
+#include "TriggerDataDecoder.h"
 #include "ClusterClassifiers.h"
 #include "MRDLoopbackAnalysis.h"
 #include "VetoEfficiency.h"
