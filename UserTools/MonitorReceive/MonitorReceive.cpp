@@ -87,7 +87,7 @@ bool MonitorReceive::Execute(){
 	std::istringstream iss(static_cast<char*>(filepath.data()));
 	//Check if we already processed this file
 	if (std::find(loaded_files.begin(),loaded_files.end(),iss.str()) != loaded_files.end()){
-		std::cout <<"MonitorReceive: File "<<iss.str()<<" already loaded before. Abort execution of MonitorReceive tool."<<std::endl;
+		//std::cout <<"MonitorReceive: File "<<iss.str()<<" already loaded before. Abort execution of MonitorReceive tool."<<std::endl;
 		return true;
 	}
 	//Add current file to the list of already processed filenames
