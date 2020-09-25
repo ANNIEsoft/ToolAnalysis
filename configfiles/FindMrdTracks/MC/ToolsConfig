@@ -1,0 +1,22 @@
+myLoadWCSim LoadWCSim ./configfiles/FindMrdTracks/MC/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/FindMrdTracks/MC/LoadWCSimLAPPDConfig
+#myPrintANNIEEvent PrintANNIEEvent ./configfiles/FindMrdTracks/MC/PrintANNIEEventConfig
+# reconstruct tank events so we can combine to find stubs
+myMCParticleProperties MCParticleProperties configfiles/FindMrdTracks/MC/MCParticlePropertiesConfig
+MCRecoEventLoader MCRecoEventLoader configfiles/FindMrdTracks/MC/MCRecoEventLoaderConfig
+DigitBuilder DigitBuilder configfiles/FindMrdTracks/MC/DigitBuilderConfig
+EventSelector EventSelector configfiles/FindMrdTracks/MC/EventSelectorConfig
+VtxSeedGenerator VtxSeedGenerator configfiles/FindMrdTracks/MC/VtxSeedGeneratorConfig
+VtxExtendedVertexFinder VtxExtendedVertexFinder configfiles/FindMrdTracks/MC/VtxExtendedVertexFinderConfig
+PhaseIITreeMaker PhaseIITreeMaker configfiles/FindMrdTracks/MC/PhaseIITreeMakerConfig
+# find clusters
+myTimeClustering TimeClustering ./configfiles/FindMrdTracks/MC/TimeClusteringConfig
+# find long tracks
+myFindMrdTracks FindMrdTracks ./configfiles/FindMrdTracks/MC/FindMrdTracksConfig
+# find short tracks
+myTrackCombiner TrackCombiner ./configfiles/FindMrdTracks/MC/TrackCombinerConfig
+# plot tracks found
+myMrdPaddlePlot MrdPaddlePlot ./configfiles/FindMrdTracks/MC/PlotMrdTracksConfig
+myMrdEfficiency MrdEfficiency ./configfiles/FindMrdTracks/MC/MrdEfficiencyConfig
+myMrdDistributions MrdDistributions ./configfiles/FindMrdTracks/MC/MrdDistributionsConfig
+myGracefulStop GracefulStop ./configfiles/FindMrdTracks/MC/GracefulStopConfig

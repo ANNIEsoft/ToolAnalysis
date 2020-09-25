@@ -1,6 +1,0 @@
-myLoadGeometry LoadGeometry configfiles/EventDisplay/Data/LoadGeometryConfig
-myLoadANNIEEvent LoadANNIEEvent configfiles/EventDisplay/Data/LoadANNIEEventConfig
-myPhaseIIADCCalibrator PhaseIIADCCalibrator configfiles/EventDisplay/Data/PhaseIIADCCalibratorConfig
-myPhaseIIADCHitFinder PhaseIIADCHitFinder configfiles/EventDisplay/Data/PhaseIIADCHitFinderConfig
-#myPrintADCData PrintADCData configfiles/EventDisplay/Data/PrintADCDataConfig
-myEventDisplay EventDisplay configfiles/EventDisplay/Data/EventDisplayConfig

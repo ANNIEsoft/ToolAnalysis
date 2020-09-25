@@ -1,0 +1,5 @@
+# Dummy config file
+verbose 1
+NumBaselineSamples 25
+NumSubMinibuffers 40 
+QCritical 1e-4

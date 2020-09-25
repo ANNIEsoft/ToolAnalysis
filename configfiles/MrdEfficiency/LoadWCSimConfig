@@ -8,7 +8,8 @@ verbose 1
 #InputFile /pnfs/annie/persistent/users/moflaher/wcsim_lappd_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.0.0.root   #  beam file
 #InputFile /annie/app/users/moflaher/wcsim/root_work/in/MRD_muon_sample/ANNIEtest_MRD_muon_sample_1a0f480.root  # MRD sample file; muons shot into MRD
 #InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/root_work/out/wcsim_mrdtest_0.root
-InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_29_03_19_ANNIEp2v6_muonsonly_nodigit_BNB_Water_10k_22-05-17/wcsim_0.*.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_29_03_19_ANNIEp2v6_muonsonly_nodigit_BNB_Water_10k_22-05-17/wcsim_0.*.root
+InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.*.root
 #InputFile wcsim_0.0.0.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded

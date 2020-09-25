@@ -1,0 +1,6 @@
+# MrdPaddleEfficiencyCalc config file
+
+InputFile /annie/app/users/mnieslon/MyToolAnalysis8/mrd_paddleeff/R1619_R1624_mrdobserved.root
+OutputFile R1619_R1624_mrdefficiency.root
+InactiveFile ./configfiles/MrdPaddleEfficiencyCalc/MRD_inactivech_eff.txt
+verbosity 2

@@ -1,0 +1,11 @@
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p0
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p1
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p10
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p2
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p3
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p4
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p5
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p6
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p7
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p8
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/beam/RAWDataR1604S0p9

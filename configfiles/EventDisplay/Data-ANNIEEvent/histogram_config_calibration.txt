@@ -1,0 +1,12 @@
+pmt_Qmax 1000
+pmt_Qmin 0.
+pmt_Qbins 500
+pmt_Tmax 2000
+pmt_Tmin 0
+pmt_Tbins 500
+lappd_Qmax 60
+lappd_Qmin 0
+lappd_Qbins 60
+lappd_Tmax 40
+lappd_Tmin -10
+lappd_Tbins 50

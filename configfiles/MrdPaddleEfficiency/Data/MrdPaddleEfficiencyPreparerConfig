@@ -1,0 +1,4 @@
+#MRDPaddleEfficiencyPreparer Config file
+
+OutputFile RAWDataR1613S0p89R0S0
+verbosity 1

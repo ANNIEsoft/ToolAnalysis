@@ -47,12 +47,13 @@ RUN yum install -y \
     emacs \
     curl \
     curl-devel \
+    osg-wn-client \
     && yum clean all \
     && rm -rf /var/cache/yum
 
 
     
-Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git -b root6; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
+Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;

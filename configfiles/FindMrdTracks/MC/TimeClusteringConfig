@@ -1,0 +1,14 @@
+#TimeClustering config file
+
+verbosity 1
+MinDigitsForTrack 4
+MaxMrdSubEventDuration 30     # if ALL hits are within this duration, they'll all be considered as one subevent
+                              # Purely for efficiency, this is NOT a limit on the time span of digits in a subevent!
+MinSubeventTimeSep 30         # a gap of this length will delimit subevents
+MakeMrdDigitTimePlot 0
+LaunchTApplication 0
+IsData 0
+#OutputROOTFile TimeClustering_MRDTest28_cluster30ns
+OutputROOTFile mrdhittimeclusters  # output file will be '<OutputROOTFile>.root'
+MapChankey_WCSimID ./configfiles/MrdPaddleEfficiency/MRD_Chankey_WCSimID.dat
+

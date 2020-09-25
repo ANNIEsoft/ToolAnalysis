@@ -1,0 +1,8 @@
+# Dummy config file
+verbose 1
+# Default threshold is calibrated baseline + roughly 4.1 mV
+DefaultThresholdType relative
+DefaultADCThreshold 7 
+ADCThresholdForChannel6  357  # NCV PMT #1 uses the Hefty threshold
+ADCThresholdForChannel49 357  # NCV PMT #2 uses the Hefty threshold
+ADCThresholdForChannel63 2000 # RWM signals are large square pulses

@@ -1,0 +1,7 @@
+# LoadCCData config file
+verbose 0
+
+# when matching, TDC readout time must be at least this close to the closest minibuffer time to be a match [ns]
+MaxTimeDiff 5000000
+
+DrawDebugGraphs 0 # debug histograms

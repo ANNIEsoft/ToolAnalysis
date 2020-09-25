@@ -66,7 +66,8 @@ class MonitorMRDTime: public Tool {
   void DrawRatePlotPhysical(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTimeEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTriggerEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
-  void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+  void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
+  void PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawPieChart(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   //helper functions
@@ -95,7 +96,6 @@ class MonitorMRDTime: public Tool {
   std::string inactive_channels;
   std::string loopback_channels;
   std::string StartTime;
-  std::string mode;
   std::string path_monitoring;
   std::string img_extension;
   double update_frequency;
@@ -115,11 +115,13 @@ class MonitorMRDTime: public Tool {
   //define variables for keeping track of time
   boost::posix_time::ptime *Epoch;
   boost::posix_time::ptime current;
+  boost::posix_time::ptime utc;
   boost::posix_time::ptime last;
   boost::posix_time::time_duration period_update;
   boost::posix_time::time_duration duration;
   boost::posix_time::time_duration current_stamp_duration;
-  long current_stamp;
+  boost::posix_time::time_duration current_utc_duration;
+  long current_stamp, current_utc;
   time_t t;
   std::stringstream title_time; 
   ULong64_t readfromfile_tend;
@@ -163,11 +165,15 @@ class MonitorMRDTime: public Tool {
   std::vector<std::string> loopback_name;
   std::vector<unsigned int> loopback_crate, loopback_slot, loopback_channel;
   std::vector<int> mapping_vector_ch;
+  int beam_ch=0;
+  int cosmic_ch=0;
 
   //define live storing variables (for data of current file)
   std::vector<std::vector<int>> tdc_file;
   std::vector<std::vector<ULong64_t>> timestamp_file;
-  long t_file_start, t_file_end;
+  std::vector<std::vector<int>> tdc_file_times;
+  ULong64_t t_file_start, t_file_end;
+  ULong64_t utc_to_t=21600000;	//6h clock delay (MRD timestamped in UTC time)
   long n_doublehits;
   long n_zerohits;
   long n_noloopback;
@@ -227,12 +233,14 @@ class MonitorMRDTime: public Tool {
 
   //define TDC histogram
   TH1F *hist_tdc = nullptr;
+  TH1F *hist_tdc_cluster = nullptr;
 
   //define rate histograms
   TH2F *rate_crate1=nullptr;
   TH2F *rate_crate2=nullptr;
   TLatex *label_rate_cr1 = nullptr;
   TLatex *label_rate_cr2 = nullptr; 
+  TLatex *label_rate_facc = nullptr;
   std::vector<TBox*> vector_box_inactive;
 
   //geometry conversion table
@@ -241,13 +249,12 @@ class MonitorMRDTime: public Tool {
   std::map<std::vector<int>,int>* CrateSpaceToChannelNumMap = nullptr;
   TH2Poly *rate_top = nullptr;
   TH2Poly *rate_side = nullptr;
+  TH2Poly *rate_facc = nullptr;
   double enlargeBoxes = 0.01;
   double shiftSecRow = 0.04;
 
   //define histogram showing the history (log) of files 
-  TH1F *log_files=nullptr;
-  std::vector<TLine*> file_markers;
-  int n_bins_logfiles;
+  TH1F *log_files_mrd=nullptr;
   int num_files_history;
 
   //define TPie objects showing pie charts of the event type composition
@@ -262,7 +269,8 @@ class MonitorMRDTime: public Tool {
   TCanvas *canvas_tdc = nullptr;
   TCanvas *canvas_rate_electronics = nullptr;
   TCanvas *canvas_rate_physical = nullptr;
-  TCanvas *canvas_logfile = nullptr;
+  TCanvas *canvas_rate_physical_facc = nullptr;
+  TCanvas *canvas_logfile_mrd = nullptr;
   TCanvas *canvas_ch_tdc = nullptr;
   TCanvas *canvas_ch_rms = nullptr;
   TCanvas *canvas_ch_rate = nullptr;
@@ -272,6 +280,7 @@ class MonitorMRDTime: public Tool {
   TCanvas *canvas_scatter = nullptr;
   TCanvas *canvas_scatter_single = nullptr;
   TCanvas *canvas_pie = nullptr;
+  TCanvas *canvas_file_timestamp = nullptr;
 
   //define colors for multitude of TGraphs for each channel
   int color_scheme[16] = {1,2,3,4,5,6,7,8,9,13,15,205,94,220,221,225}; 

@@ -27,7 +27,6 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("InActiveChannels",inactive_channels);
   m_variables.Get("LoopbackChannels",loopback_channels);
   m_variables.Get("StartTime",StartTime);
-  m_variables.Get("Mode",mode);
   m_variables.Get("PlotConfiguration",plot_configuration);
   m_variables.Get("UpdateFrequency",update_frequency);
   m_variables.Get("PathMonitoring",path_monitoring);
@@ -39,12 +38,6 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
 
   if (verbosity > 1) std::cout <<"Tool MonitorMRDTime: Initialising...."<<std::endl;
 
-  //Default mode of operation is the continuous flow of data for the live monitoring
-  //The other possibility is reading in data from a specified list of files
-  if (mode != "Continuous" && mode != "FileList") {
-    if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): Specified mode of operation ("<<mode<<") is not an option [Continuous/FileList]. Setting default Continuous mode"<<std::endl;
-    mode = "Continuous";
-  }
   //Update frequency specifies the frequency at which the File Log Histogram is updated
   //All other monitor plots are updated as soon as a new file is available for readout
   if (update_frequency < 0.1) {
@@ -75,7 +68,7 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
   //-------------------------------------------------------
 
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
-  m_data->CStore.Get("CrateSpaceToChannelNumMap",CrateSpaceToChannelNumMap);
+  m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",CrateSpaceToChannelNumMap);
   Position center_position = geom->GetTankCentre();
   tank_center_x = center_position.X();
   tank_center_y = center_position.Y();
@@ -207,6 +200,14 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
     loopback_crate.push_back(temp_crate);
     loopback_slot.push_back(temp_slot);
     loopback_channel.push_back(temp_channel);
+    std::vector<unsigned int> CrateSlotChannel{temp_crate,temp_slot,temp_channel};
+    int i_active = CrateSlotChannel_to_TotalChannel[CrateSlotChannel];
+    if (temp_loopback_name == "Beam") {
+	beam_ch = i_active;
+    }
+    else if (temp_loopback_name == "Cosmic") {  
+      cosmic_ch = i_active;
+    }
   }
   file_loopback.close();
 
@@ -241,22 +242,30 @@ bool MonitorMRDTime::Initialise(std::string configfile, DataModel &data){
 
 bool MonitorMRDTime::Execute(){
 
-  if (verbosity > 2) std::cout <<"MonitorMRDTime: Executing ...."<<std::endl;
+  if (verbosity > 10) std::cout <<"MonitorMRDTime: Executing ...."<<std::endl;
 
   current = (boost::posix_time::second_clock::local_time());
   duration = boost::posix_time::time_duration(current - last);
   current_stamp_duration = boost::posix_time::time_duration(current - *Epoch);
   current_stamp = current_stamp_duration.total_milliseconds();
+  utc = (boost::posix_time::second_clock::universal_time());
+  current_utc_duration = boost::posix_time::time_duration(utc-current);
+  current_utc = current_utc_duration.total_milliseconds();
+  utc_to_t = (ULong64_t) current_utc;
 
-  if (verbosity > 2) std::cout <<"MRDMonitorTime: "<<duration.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN<<" mins since last time plot"<<std::endl;
+  if (verbosity > 10) std::cout <<"MRDMonitorTime: "<<duration.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN<<" mins since last time plot"<<std::endl;
 
   //-------------------------------------------------------
   //---------Checking the state of MRD data stream---------
   //-------------------------------------------------------
 
+  bool has_cc;
+  m_data->CStore.Get("HasCCData",has_cc);
+
   std::string State;
   m_data->CStore.Get("State",State);
 
+  if (has_cc){
    if (State == "MRDSingle" || State == "Wait"){
 
     //MRDMonitorLive is executed
@@ -268,7 +277,7 @@ bool MonitorMRDTime::Execute(){
    	if (verbosity > 1) std::cout<<"MRDMonitorTime: New data file available."<<std::endl;
 
     //Setting print to false is necessary in order for it to work properly
-   	m_data->Stores["CCData"]->Get("FileData",MRDdata);
+    m_data->Stores["CCData"]->Get("FileData",MRDdata);
     MRDdata->Print(false);
     bool_mrddata = true;
 
@@ -291,6 +300,7 @@ bool MonitorMRDTime::Execute(){
    	if (verbosity > 1) std::cout <<"MRDMonitorTime: State not recognized: "<<State<<std::endl;
 
    }
+  }
   //-------------------------------------------------------------
   //---------------Draw customly defined plots-------------------
   //-------------------------------------------------------------
@@ -305,8 +315,10 @@ bool MonitorMRDTime::Execute(){
 
   if(duration>=period_update){
     last=current;
-    DrawFileHistory(current_stamp,24.,"current");     //show 24h history of MRD files
-	}
+    DrawFileHistory(current_stamp,24.,"current_24h",1);     //show 24h history of MRD files
+    PrintFileTimeStamp(current_stamp,24.,"current_24h");
+    DrawFileHistory(current_stamp,2.,"current_2h",3);     //show 2h history of MRD files
+  }
 
   
   //gObjectTable only for debugging memory leaks, otherwise comment out
@@ -322,7 +334,7 @@ bool MonitorMRDTime::Finalise(){
 
   if (verbosity > 1) std::cout <<"Tool MonitorMRDTime: Finalising ...."<<std::endl;
 
-  if (bool_mrddata) MRDdata->Delete();
+  //if (bool_mrddata) MRDdata->Delete();
 
   //delete all the pointer to objects that are still active
 
@@ -334,12 +346,13 @@ bool MonitorMRDTime::Finalise(){
   delete label_cr2;
   delete label_rate_cr1;
   delete label_rate_cr2;
+  delete label_rate_facc;
   delete separate_crates;
-  for (int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
+  for (unsigned int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
     delete vector_box_inactive.at(i_box);
   }
   for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
-    for (int i_box = 0; i_box < vector_box_inactive_hitmap[i_slot].size(); i_box++){
+    for (unsigned int i_box = 0; i_box < vector_box_inactive_hitmap[i_slot].size(); i_box++){
       delete vector_box_inactive_hitmap[i_slot].at(i_box);
     }
   }
@@ -362,26 +375,28 @@ bool MonitorMRDTime::Finalise(){
   //histograms
   delete hist_hitmap_cr1;
   delete hist_hitmap_cr2;
-  for (int i=0; i<hist_hitmap_slot.size();i++){
+  for (unsigned int i=0; i<hist_hitmap_slot.size();i++){
     delete hist_hitmap_slot.at(i);
   }
-  for (int i_scatter = 0; i_scatter < hist_scatter.size(); i_scatter++){
+  for (unsigned int i_scatter = 0; i_scatter < hist_scatter.size(); i_scatter++){
     delete hist_scatter.at(i_scatter);
   }
   delete hist_tdc;
-  delete log_files;
+  delete hist_tdc_cluster;
+  delete log_files_mrd;
   delete rate_crate1;
   delete rate_crate2;
   delete rate_top;
   delete rate_side;
+  delete rate_facc;
 
   //graphs
-  for (int i_ch=0; i_ch<gr_tdc.size();i_ch++){
+  for (unsigned int i_ch=0; i_ch<gr_tdc.size();i_ch++){
     delete gr_tdc.at(i_ch);
     delete gr_rms.at(i_ch);
     delete gr_rate.at(i_ch);
   }
-  for (int i_trigger = 0; i_trigger < gr_trigger.size(); i_trigger++){
+  for (unsigned int i_trigger = 0; i_trigger < gr_trigger.size(); i_trigger++){
     delete gr_trigger.at(i_trigger);
   }
   delete gr_noloopback;
@@ -398,7 +413,7 @@ bool MonitorMRDTime::Finalise(){
   //canvases
   delete canvas_hitmap;
   delete canvas_hitmap_slot;
-  delete canvas_logfile;
+  delete canvas_logfile_mrd;
   delete canvas_ch_tdc;
   delete canvas_ch_rms;
   delete canvas_ch_rate;
@@ -410,8 +425,9 @@ bool MonitorMRDTime::Finalise(){
   delete canvas_trigger_time;
   delete canvas_rate_electronics;
   delete canvas_rate_physical;
+  delete canvas_rate_physical_facc;
   delete canvas_pie;
-
+  delete canvas_file_timestamp;
 
   return true;
 }
@@ -444,7 +460,7 @@ void MonitorMRDTime::ReadInConfiguration(){
       config_endtime.push_back(values.at(1));
       config_label.push_back(values.at(2));
       std::vector<std::string> plottypes;
-      for (int i=3; i < values.size(); i++){
+      for (unsigned int i=3; i < values.size(); i++){
         plottypes.push_back(values.at(i));
       }
       config_plottypes.push_back(plottypes);
@@ -458,9 +474,9 @@ void MonitorMRDTime::ReadInConfiguration(){
   if (verbosity > 2){
     std::cout <<"---------------------------------------------------------------------"<<std::endl;
     std::cout <<"MonitorMRDTime: ReadInConfiguration: Read in the following data into configuration variables: "<<std::endl;
-    for (int i_t=0; i_t < config_timeframes.size(); i_t++){
+    for (unsigned int i_t=0; i_t < config_timeframes.size(); i_t++){
       std::cout <<config_timeframes.at(i_t)<<", "<<config_endtime.at(i_t)<<", "<<config_label.at(i_t)<<", ";
-      for (int i_plot = 0; i_plot < config_plottypes.at(i_t).size(); i_plot++){
+      for (unsigned int i_plot = 0; i_plot < config_plottypes.at(i_t).size(); i_plot++){
         std::cout <<config_plottypes.at(i_t).at(i_plot)<<", ";
       }
       std::cout<<std::endl;
@@ -469,7 +485,7 @@ void MonitorMRDTime::ReadInConfiguration(){
   }
 
   if (verbosity > 2) std::cout <<"MonitorMRDTime: ReadInConfiguration: Parsing dates: "<<std::endl;
-  for (int i_date = 0; i_date < config_endtime.size(); i_date++){
+  for (unsigned int i_date = 0; i_date < config_endtime.size(); i_date++){
     if (config_endtime.at(i_date) == "TEND_LASTFILE") {
       if (verbosity > 2) std::cout <<"TEND_LASTFILE: Starting from end of last read-in file"<<std::endl;
       ULong64_t zero = 0; 
@@ -506,6 +522,7 @@ void MonitorMRDTime::ReadInData(){
     tdc_file.at(i_channel).clear();
     timestamp_file.at(i_channel).clear();
   }
+  tdc_file_times.clear();
 
   if (verbosity > 1) std::cout <<"MonitorMRDTime: ReadInData..."<<std::endl;
   t_file_end = 0;
@@ -515,6 +532,9 @@ void MonitorMRDTime::ReadInData(){
   int count=0;
 
   for (int i_event = 0; i_event <  total_number_entries; i_event++){
+
+    //initialize vector for event times
+    std::vector<int> tdc_file_times_single;
 
     //get MRDout data
     MRDdata->GetEntry(i_event);
@@ -549,7 +569,7 @@ void MonitorMRDTime::ReadInData(){
     bool no_loopback = true;
     vector_nhits.assign(num_active_slots*num_channels,0.);
 
-    for (int i_entry = 0; i_entry < MRDout.Slot.size(); i_entry++){
+    for (unsigned int i_entry = 0; i_entry < MRDout.Slot.size(); i_entry++){
 
       //print out information if needed for debugging hardware
       if (verbosity > 3) std::cout <<"MonitorMRDTime: Channel entry: Crate "<<MRDout.Crate.at(i_entry)<<", Slot "<<MRDout.Slot.at(i_entry)<<", Channel "<<MRDout.Channel.at(i_entry)<<", TDC value: "<<MRDout.Value.at(i_entry)<<std::endl;
@@ -573,8 +593,9 @@ void MonitorMRDTime::ReadInData(){
       tdc_file.at(ch).push_back(MRDout.Value.at(i_entry));
       timestamp_file.at(ch).push_back(MRDout.TimeStamp);
       vector_nhits[ch]++;
+      tdc_file_times_single.push_back(MRDout.Value.at(i_entry));
 
-      for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+      for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
         if (MRDout.Crate.at(i_entry) == loopback_crate.at(i_trigger) && MRDout.Slot.at(i_entry) == loopback_slot.at(i_trigger) && MRDout.Channel.at(i_entry) == loopback_channel.at(i_trigger)) no_loopback = false;
       }
     }
@@ -583,6 +604,8 @@ void MonitorMRDTime::ReadInData(){
     for (int i_ch = 0; i_ch < num_active_slots*num_channels; i_ch++){
       if (vector_nhits[i_ch] > 1) n_doublehits++;
     }
+
+    tdc_file_times.push_back(tdc_file_times_single);
 
     //clear MRDout member vectors afterwards
     MRDout.Value.clear();
@@ -682,6 +705,9 @@ void MonitorMRDTime::WriteToFile(){
     //don't write file again, but still delete TFile and TTree object!!!
     f->Close();
     delete f;
+
+    gROOT->cd();
+
     return;
 
   } 
@@ -697,6 +723,8 @@ void MonitorMRDTime::WriteToFile(){
   t_start = t_file_start;
   t_end = t_file_end;
   t_frame = t_end - t_start;
+
+  rate_doublehit = n_doublehits/(t_frame/MSEC_to_SEC);
   rate_zerohits = n_zerohits/(t_frame/MSEC_to_SEC);
   rate_normalhit = n_normalhits/(t_frame/MSEC_to_SEC);
   rate_noloopback = n_noloopback/(t_frame/MSEC_to_SEC);
@@ -718,12 +746,12 @@ void MonitorMRDTime::WriteToFile(){
     double rate_temp = tdc_file.at(i_channel).size() / (t_frame/MSEC_to_SEC);
     double mean_tdc = 0.;
     double rms_temp = 0.;
-    for (int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
+    for (unsigned int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
       mean_tdc+=tdc_file.at(i_channel).at(i_tdc);
     }
     if (tdc_file.at(i_channel).size() > 0) {
       mean_tdc/=tdc_file.at(i_channel).size();
-      for (int i_tdc = 0.; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
+      for (unsigned int i_tdc = 0.; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
         rms_temp += pow((tdc_file.at(i_channel).at(i_tdc)-mean_tdc),2);
       }
       rms_temp=sqrt(rms_temp);
@@ -732,7 +760,7 @@ void MonitorMRDTime::WriteToFile(){
       rms_temp = 0.;
     }
 
-    for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+    for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
       if (crate_temp == loopback_crate.at(i_trigger) && slot_temp == loopback_slot.at(i_trigger) && channel_temp == loopback_channel.at(i_trigger)){
         if (loopback_name.at(i_trigger) == "Cosmic") n_cosmic+=tdc_file.at(i_channel).size();
         else if (loopback_name.at(i_trigger) == "Beam") n_beam+=tdc_file.at(i_channel).size();
@@ -769,6 +797,8 @@ void MonitorMRDTime::WriteToFile(){
   delete rate;
   delete channelcount;
   delete f;     //tree should get deleted automatically by closing file
+
+  gROOT->cd();
 
 }
 
@@ -876,7 +906,6 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("nevents",&nevents);
 
         nentries_tree = t->GetEntries();
-
         for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
 
           t->GetEntry(i_entry);
@@ -896,7 +925,6 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
             nevents_plot.push_back(nevents);
             boost::posix_time::ptime boost_tend = *Epoch+boost::posix_time::time_duration(int(t_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_end/MSEC_to_SEC/1000.)%60,t_end%1000);
             struct tm label_timestamp = boost::posix_time::to_tm(boost_tend);
-            
             TDatime datime_timestamp(1900+label_timestamp.tm_year,label_timestamp.tm_mon+1,label_timestamp.tm_mday,label_timestamp.tm_hour,label_timestamp.tm_min,label_timestamp.tm_sec);
             labels_timeaxis.push_back(datime_timestamp);
           }
@@ -912,9 +940,9 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         delete channelcount;
 
       }
-
       f->Close();
       delete f;
+      gROOT->cd();
 
     } else {
       if (verbosity > 0) std::cout <<"MonitorMRDTime: ReadFromFile: File "<<root_filename_i.str()<<" does not exist. Omit file."<<std::endl;
@@ -968,26 +996,30 @@ void MonitorMRDTime::InitializeVectors(){
   //-----------------Initialize canvases-------------------
   //-------------------------------------------------------
 
+  gROOT->cd();
   canvas_ch_tdc = new TCanvas("canvas_ch_tdc","Channel TDC Canvas",900,600);
   canvas_ch_rms = new TCanvas("canvas_ch_rms","Channel RMS Canvas",900,600);
   canvas_ch_rate = new TCanvas("canvas_ch_rate","Channel Freq Canvas",900,600);
   canvas_ch_single = new TCanvas("canvas_ch_single","Channel Canvas Single",900,600);
   canvas_hitmap = new TCanvas("canvas_hitmap","Hitmap MRD",900,600);
   canvas_hitmap_slot = new TCanvas("canvas_hitmap_slot","Hitmap MRD Slot",900,600);
-  canvas_logfile = new TCanvas("canvas_logfile","MRD File History",900,600);
+  canvas_logfile_mrd = new TCanvas("canvas_logfile_mrd","MRD File History",900,600);
   canvas_scatter = new TCanvas("canvas_scatter","Scatter Plot Canvas",900,600);
   canvas_scatter_single = new TCanvas("canvas_scatter_single","Scatter Plot Canvas Single",900,600);
   canvas_tdc = new TCanvas("canvas_tdc","TDC Canvas",900,600);
   canvas_rate_electronics = new TCanvas("canvas_rate_electronics","Rate Electronics Space",900,600);
   canvas_rate_physical = new TCanvas("canvas_rate_physical","Rate Physical Space",900,600);
+  canvas_rate_physical_facc = new TCanvas("canvas_rate_physical_facc","Rate Physical Space FACC",900,600);
   canvas_trigger = new TCanvas("canvas_trigger","MRD Trigger Rates",900,600);
   canvas_trigger_time = new TCanvas("canvas_trigger_time","MRD Trigger Rates (Time)",900,600);
   canvas_pie = new TCanvas("canvas_pie","MRD Pie Chart Canvas",700,700);
+  canvas_file_timestamp = new TCanvas("canvas_file_timestamp","Timestamp Last File",900,600);
 
   canvas_hitmap->SetGridy();
   canvas_hitmap->SetLogy();
   canvas_hitmap_slot->SetGridx();
   canvas_hitmap_slot->SetLogy();
+
 
   //-------------------------------------------------------
   //-----------------Initialize hitmap histograms----------
@@ -1084,22 +1116,25 @@ void MonitorMRDTime::InitializeVectors(){
   //-------------------------------------------------------
 
   num_files_history = 10;
-  log_files = new TH1F("log_files","MRD Files History",num_files_history,0,num_files_history);
-  log_files->GetXaxis()->SetTimeDisplay(1);
-  log_files->GetXaxis()->SetLabelSize(0.03);
-  log_files->GetXaxis()->SetLabelOffset(0.03);
-  log_files->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-  log_files->GetYaxis()->SetTickLength(0.);
-  log_files->GetYaxis()->SetLabelOffset(999);
-  log_files->SetStats(0);
+  log_files_mrd = new TH1F("log_files_mrd","MRD Files History",num_files_history,0,num_files_history);
+  log_files_mrd->GetXaxis()->SetTimeDisplay(1);
+  log_files_mrd->GetXaxis()->SetLabelSize(0.03);
+  log_files_mrd->GetXaxis()->SetLabelOffset(0.03);
+  log_files_mrd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  log_files_mrd->GetYaxis()->SetTickLength(0.);
+  log_files_mrd->GetYaxis()->SetLabelOffset(999);
+  log_files_mrd->SetStats(0);
 
   //-------------------------------------------------------
   //------------TDC histogram------------------------------
   //-------------------------------------------------------
 
-  hist_tdc = new TH1F("hist_tdc","TDC (last file)",180,0,180);
+  hist_tdc = new TH1F("hist_tdc","TDC (last file)",500,0,1000);
   hist_tdc->GetXaxis()->SetTitle("TDC");
   hist_tdc->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster = new TH1F("hist_tdc_cluster","TDC Cluster (last file)",20,0,1000);
+  hist_tdc_cluster->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster->GetYaxis()->SetTitle("#");
 
   //-------------------------------------------------------
   //------------Pie charts---------------------------------
@@ -1182,17 +1217,24 @@ void MonitorMRDTime::InitializeVectors(){
   label_rate_cr2 = new TLatex(0.88,0.93, "R [Hz]");
   label_rate_cr2->SetNDC();
   label_rate_cr2->SetTextSize(0.03);
+  label_rate_facc = new TLatex(0.88,0.93,"R [Hz]");
+  label_rate_facc->SetNDC();
+  label_rate_facc->SetTextSize(0.03);
 
   //set up histogram for rate plots in physical space
 
   rate_top = new TH2Poly("rate_top","MRD Rates Top View",1.6,3.,-2.,2.);
   rate_side = new TH2Poly("rate_side","MRD Rates Side View",1.6,3.,-2.,2.);
+  rate_facc = new TH2Poly("rate_facc","FMV Rates",-1.66,-1.58,-2.5,2.5);
   rate_top->GetXaxis()->SetTitle("z [m]");
   rate_top->GetYaxis()->SetTitle("x [m]");
   rate_side->GetXaxis()->SetTitle("z [m]");
   rate_side->GetYaxis()->SetTitle("y [m]");
+  rate_facc->GetXaxis()->SetTitle("z [m]");
+  rate_facc->GetYaxis()->SetTitle("y [m]");
   rate_top->SetStats(0);
   rate_side->SetStats(0);
+  rate_facc->SetStats(0);
 
   // Set custom bin shapes for the histograms
 
@@ -1227,6 +1269,30 @@ void MonitorMRDTime::InitializeVectors(){
     }
   }
 
+  for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("Veto").begin();
+                                                  it != Detectors->at("Veto").end();
+                                                ++it){
+    Detector* afaccpmt = it->second;
+    unsigned long detkey = it->first;
+    unsigned long chankey = afaccpmt->GetChannels()->begin()->first;
+    Paddle *faccpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
+
+    double xmin = faccpaddle->GetXmin();
+    double xmax = faccpaddle->GetXmax();
+    double ymin = faccpaddle->GetYmin();
+    double ymax = faccpaddle->GetYmax();
+    double zmin = faccpaddle->GetZmin();
+    double zmax = faccpaddle->GetZmax();
+    int orientation = faccpaddle->GetOrientation();    //0 is horizontal, 1 is vertical
+    int half = faccpaddle->GetHalf();                  //0 or 1
+    int side = faccpaddle->GetSide();
+
+    //std::cout <<"facc chankey "<<chankey<<", xmin = "<<xmin<<", xmax = "<<xmax<<", ymin = "<<ymin<<", ymax = "<<ymax<<", zmin = "<<zmin-tank_center_z<<", zmax = "<<zmax-tank_center_z<<", half = "<<half<<", side = "<<side<<std::endl;
+
+    rate_facc->AddBin(zmin-tank_center_z,ymin-tank_center_y,zmax-tank_center_z,ymax-tank_center_y);
+
+  }
+
   //-------------------------------------------------------
   //----------Color inactive channels in grey--------------
   //-------------------------------------------------------
@@ -1247,7 +1313,7 @@ void MonitorMRDTime::InitializeVectors(){
       inactive_crate1++;
     }
   }
-  for (int i_ch = 0; i_ch < inactive_ch_crate1.size(); i_ch++){
+  for (unsigned int i_ch = 0; i_ch < inactive_ch_crate1.size(); i_ch++){
     if (verbosity > 2) std::cout <<"inactive ch crate1, entry "<<i_ch<<std::endl;
     TBox *box_inactive = new TBox(inactive_slot_crate1.at(i_ch)-1,inactive_ch_crate1.at(i_ch),inactive_slot_crate1.at(i_ch),inactive_ch_crate1.at(i_ch)+1);
     vector_box_inactive.push_back(box_inactive);
@@ -1271,7 +1337,7 @@ void MonitorMRDTime::InitializeVectors(){
       inactive_crate2++;
     }
   }
-  for (int i_ch = 0; i_ch < inactive_ch_crate2.size(); i_ch++){
+  for (unsigned int i_ch = 0; i_ch < inactive_ch_crate2.size(); i_ch++){
     if (verbosity > 2) std::cout <<"inactive ch crate2, entry "<<i_ch<<std::endl;
     TBox *box_inactive = new TBox(inactive_slot_crate2.at(i_ch)-1,inactive_ch_crate2.at(i_ch),inactive_slot_crate2.at(i_ch),inactive_ch_crate2.at(i_ch)+1);
     vector_box_inactive.push_back(box_inactive);
@@ -1411,7 +1477,7 @@ void MonitorMRDTime::InitializeVectors(){
   leg_trigger = new TLegend(0.7,0.7,0.82,0.8);
   leg_noloopback = new TLegend(0.7,0.7,0.88,0.76);
   leg_eventtypes = new TLegend(0.7,0.7,0.88,0.8);
-  for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+  for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
     std::stringstream name_graph_trigger, title_graph_trigger;
     name_graph_trigger << "trigger_"<<loopback_name.at(i_trigger);
     title_graph_trigger << "Rate "<<loopback_name.at(i_trigger)<<" trigger";
@@ -1487,7 +1553,7 @@ void MonitorMRDTime::InitializeVectors(){
 }
 
 
-void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending){
+void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth){
 
   if (verbosity > 2) std::cout <<"MonitorMRDTime: Drawing File History plot"<<std::endl;
 
@@ -1500,34 +1566,90 @@ void MonitorMRDTime::DrawFileHistory(ULong64_t timestamp_end, double time_frame,
 
   if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
 
+  timestamp_end += utc_to_t;
   ULong64_t timestamp_start = timestamp_end - time_frame*MSEC_to_SEC*SEC_to_MIN*MIN_to_HOUR;
 
-  canvas_logfile->cd();
-  log_files->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
-  log_files->GetXaxis()->SetTimeOffset(0.);
-  log_files->Draw();
+  canvas_logfile_mrd->cd();
+  log_files_mrd->SetBins(num_files_history,timestamp_start/MSEC_to_SEC,timestamp_end/MSEC_to_SEC);
+  log_files_mrd->GetXaxis()->SetTimeOffset(0.);
+  log_files_mrd->Draw();
 
   std::vector<TLine*> file_markers;
-  for (int i_file = 0; i_file < tend_plot.size(); i_file++){
-    TLine *line_file = new TLine(tend_plot.at(i_file)/MSEC_to_SEC,0.,tend_plot.at(i_file)/MSEC_to_SEC,1.);
-    line_file->SetLineColor(1);
-    line_file->SetLineStyle(1);
-    line_file->SetLineWidth(1);
-    line_file->Draw("same"); 
-    file_markers.push_back(line_file);
+  for (unsigned int i_file = 0; i_file < tend_plot.size(); i_file++){
+   if ((tend_plot.at(i_file)+utc_to_t)>=timestamp_start && (tend_plot.at(i_file)+utc_to_t)<=timestamp_end){
+      TLine *line_file = new TLine((tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,0.,(tend_plot.at(i_file)+utc_to_t)/MSEC_to_SEC,1.);
+      line_file->SetLineColor(1);
+      line_file->SetLineStyle(1);
+      line_file->SetLineWidth(_linewidth);
+      line_file->Draw("same"); 
+      file_markers.push_back(line_file);
+    }
   }
 
   std::stringstream ss_logfiles;
   ss_logfiles << outpath << "MRD_FileHistory_" << file_ending << "." << img_extension;
-  canvas_logfile->SaveAs(ss_logfiles.str().c_str());
+  canvas_logfile_mrd->SaveAs(ss_logfiles.str().c_str());
 
-  for (int i_line = 0; i_line < file_markers.size(); i_line++){
+  for (unsigned int i_line = 0; i_line < file_markers.size(); i_line++){
     delete file_markers.at(i_line);
   }
 
-  log_files->Reset();
-  canvas_logfile->Clear();
+  log_files_mrd->Reset();
+  canvas_logfile_mrd->Clear();
 
+}
+
+void MonitorMRDTime::PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending){
+
+  if (verbosity > 2) std::cout <<"MonitorMRDTime: PrintFileTimeStamp"<<std::endl;
+
+  //-------------------------------------------------------
+  //-----------------PrintFileTimeStamp--------------------
+  //-------------------------------------------------------
+
+  if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
+
+  boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(timestamp_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_end/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_end/MSEC_to_SEC/1000.)%60,timestamp_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << "Current time: "<<endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  TText *label_lastfile = nullptr;
+  label_lastfile = new TText(0.04,0.66,end_time.str().c_str());
+  label_lastfile->SetNDC(1);
+  label_lastfile->SetTextSize(0.1);
+  
+  TLatex *label_timediff = nullptr;
+
+  if (tend_plot.size() == 0){
+    std::stringstream time_diff;
+    time_diff << "#Delta t Last MRD File: >"<<time_frame<<"h";
+    label_timediff = new TLatex(0.04,0.33,time_diff.str().c_str());
+    label_timediff->SetNDC(1);
+    label_timediff->SetTextSize(0.1);
+  } else {
+    ULong64_t timestamp_lastfile = tend_plot.at(tend_plot.size()-1);
+    boost::posix_time::ptime filetime = *Epoch + boost::posix_time::time_duration(int(timestamp_lastfile/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_lastfile/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_lastfile/MSEC_to_SEC/1000.)%60,timestamp_lastfile%1000);
+    boost::posix_time::time_duration t_since_file= boost::posix_time::time_duration(endtime - filetime);
+    int t_since_file_min = int(t_since_file.total_milliseconds()/MSEC_to_SEC/SEC_to_MIN);
+    std::stringstream time_diff;
+    time_diff << "#Delta t Last MRD File: "<<t_since_file_min/60<<"h:"<<t_since_file_min%60<<"min";
+    label_timediff = new TLatex(0.04,0.33,time_diff.str().c_str());
+    label_timediff->SetNDC(1);
+    label_timediff->SetTextSize(0.1);
+  }
+
+  canvas_file_timestamp->cd();
+  label_lastfile->Draw();
+  label_timediff->Draw();
+  std::stringstream ss_file_timestamp;
+  ss_file_timestamp << outpath << "MRD_FileTimeStamp_" << file_ending << "." << img_extension;
+  canvas_file_timestamp->SaveAs(ss_file_timestamp.str().c_str());
+  
+  delete label_lastfile;
+  delete label_timediff;
+
+  canvas_file_timestamp->Clear();
 }
 
 
@@ -1569,7 +1691,7 @@ void MonitorMRDTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
 
   //Draw the monitoring plots according to the specifications in the configfiles
 
-  for (int i_time = 0; i_time < timeFrames.size(); i_time++){
+  for (unsigned int i_time = 0; i_time < timeFrames.size(); i_time++){
 
     ULong64_t zero = 0;
     if (endTimes.at(i_time) == zero) endTimes.at(i_time) = t_file_end;        //set 0 for t_file_end since we did not know what that was at the beginning of initialise
@@ -1577,7 +1699,7 @@ void MonitorMRDTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
     std::cout << (endTimes.at(i_time) == 0) << std::endl;
     std::cout <<t_file_end<<std::endl;*/
 
-    for (int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
+    for (unsigned int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
 
       if (plotTypes.at(i_time).at(i_plot) == "Hitmap") DrawHitMap(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "RateElectronics") DrawRatePlotElectronics(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
@@ -1585,7 +1707,7 @@ void MonitorMRDTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
       else if (plotTypes.at(i_time).at(i_plot) == "TimeEvolution") DrawTimeEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "PieChartTrigger") DrawPieChart(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "TriggerEvolution") DrawTriggerEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
-      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") DrawFileHistory(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") DrawFileHistory(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time),1);
       else {
         if (verbosity > 0) std::cout <<"ERROR (MonitorMRDTime): UpdateMonitorPlots: Specified plot type -"<<plotTypes.at(i_time).at(i_plot)<<"- does not exist! Omit entry."<<std::endl;
       }
@@ -1607,7 +1729,7 @@ void MonitorMRDTime::DrawScatterPlots(){
   for (int i_channel=0; i_channel<num_active_slots*num_channels;i_channel++){
     if (hist_scatter.at(i_channel)->GetEntries()>0) hist_scatter.at(i_channel)->Reset();
     hist_scatter.at(i_channel)->SetBins(n_bins_scatter,0,t_file_end/MSEC_to_SEC-t_file_start/MSEC_to_SEC,n_bins_scatter,0,200);
-    for (int i_entry=0; i_entry<tdc_file.at(i_channel).size(); i_entry++){
+    for (unsigned int i_entry=0; i_entry<tdc_file.at(i_channel).size(); i_entry++){
       hist_scatter.at(i_channel)->Fill((timestamp_file.at(i_channel).at(i_entry)-t_file_start)/MSEC_to_SEC,tdc_file.at(i_channel).at(i_entry));
     }
   }
@@ -1632,7 +1754,12 @@ void MonitorMRDTime::DrawScatterPlots(){
 
       std::string channel_range;
       if (CANVAS_NR == 0) channel_range = " Ch 0-15";
-      else channel_range = " Ch 16-31";
+      else {
+	//we already switched to the new slot with channel 32, so we need to consider the slot for the channel before
+        slot = TotalChannel_to_Slot[i_channel-1];
+	channel_range = " Ch 16-31";
+      }
+
       ss_ch_scatter << "Crate "<<crate<<" Slot "<<slot<<channel_range<<" (last File)";
 
       if ( i_channel == num_active_slots*num_channels-1){
@@ -1648,8 +1775,8 @@ void MonitorMRDTime::DrawScatterPlots(){
       }
 
       std::string channel_range_name;
-      if (CANVAS_NR == 0) channel_range_name = "_Ch0-15";
-      else channel_range_name = "_Ch16-31";
+      if (CANVAS_NR == 0) channel_range_name = "Ch0-15";
+      else channel_range_name = "Ch16-31";
       ss_ch_scatter.str("");
       ss_ch_scatter<<outpath<<"MRDScatter_lastFile_Cr"<<crate<<"_Sl"<<slot<<"_"<<channel_range_name<<"."<<img_extension;
       canvas_scatter->SaveAs(ss_ch_scatter.str().c_str());
@@ -1663,7 +1790,7 @@ void MonitorMRDTime::DrawScatterPlots(){
     //add histograms to the canvas
     canvas_scatter->cd();
     if (i_channel%CH_per_CANVAS == 0) {
-      hist_scatter.at(i_channel)->GetXaxis()->SetTimeOffset(t_file_start/MSEC_to_SEC);
+      hist_scatter.at(i_channel)->GetXaxis()->SetTimeOffset(t_file_start+utc_to_t/MSEC_to_SEC);
       hist_scatter.at(i_channel)->Draw();
     } else {
       hist_scatter.at(i_channel)->Draw("same");
@@ -1678,7 +1805,7 @@ void MonitorMRDTime::DrawScatterPlots(){
       //save single channel scatter plots as well
       canvas_scatter_single->Clear();
       canvas_scatter_single->cd();
-      hist_scatter.at(i_channel)->GetXaxis()->SetTimeOffset(t_file_start/MSEC_to_SEC);
+      hist_scatter.at(i_channel)->GetXaxis()->SetTimeOffset(t_file_start+utc_to_t/MSEC_to_SEC);
       hist_scatter.at(i_channel)->Draw();
       std::stringstream ss_ch_scatter_single;
       ss_ch_scatter_single<<outpath<<"MRDScatter_lastFile_Cr"<<crate<<"_Sl"<<slot<<"_Ch"<<channel<<"."<<img_extension;
@@ -1703,7 +1830,7 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
   std::stringstream end_time;
   end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
 
-  for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+  for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
 
     unsigned int crate = loopback_crate.at(i_trigger);
     unsigned int slot = loopback_slot.at(i_trigger);
@@ -1711,8 +1838,8 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
     std::vector<unsigned int> CrateSlotChannel{crate,slot,channel};
     int total_ch = CrateSlotChannel_to_TotalChannel[CrateSlotChannel];
     if (hist_scatter.at(total_ch)->GetEntries()>0) hist_scatter.at(total_ch)->Reset();
-    hist_scatter.at(total_ch)->SetBins(n_bins_scatter,0,t_file_end/MSEC_to_SEC-t_file_start/MSEC_to_SEC,n_bins_scatter,0,50);    //only show the TDC values up to 50, since they should be low for the trigger-associated channels
-    for (int i_entry=0; i_entry<tdc_file.at(total_ch).size(); i_entry++){
+    hist_scatter.at(total_ch)->SetBins(n_bins_scatter,0,t_file_end/MSEC_to_SEC-t_file_start/MSEC_to_SEC,n_bins_scatter,0,1000);    //show whole TDC acq window from 0 ... 1000 TDC units
+    for (unsigned int i_entry=0; i_entry<tdc_file.at(total_ch).size(); i_entry++){
       hist_scatter.at(total_ch)->Fill((timestamp_file.at(total_ch).at(i_entry)-t_file_start)/MSEC_to_SEC,tdc_file.at(total_ch).at(i_entry));
     }
   }
@@ -1720,7 +1847,7 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
   canvas_scatter->cd();
   canvas_scatter->Clear();
 
-  for (int i_trigger=0; i_trigger < loopback_name.size(); i_trigger++){
+  for (unsigned int i_trigger=0; i_trigger < loopback_name.size(); i_trigger++){
 
     std::stringstream ss_ch_scatter;
     unsigned int crate = loopback_crate.at(i_trigger);
@@ -1731,7 +1858,7 @@ void MonitorMRDTime::DrawScatterPlotsTrigger(){
 
     if (i_trigger == 0){
       ss_ch_scatter << "Trigger TDC "<<end_time.str()<<" (last File)";
-      hist_scatter.at(total_ch)->GetXaxis()->SetTimeOffset(t_file_start/MSEC_to_SEC);
+      hist_scatter.at(total_ch)->GetXaxis()->SetTimeOffset((t_file_start+utc_to_t)/MSEC_to_SEC);
       hist_scatter.at(total_ch)->SetTitle(ss_ch_scatter.str().c_str());
       hist_scatter.at(total_ch)->Draw();
     }
@@ -1757,23 +1884,75 @@ void MonitorMRDTime::DrawTDCHistogram(){
 
   canvas_tdc->cd();
   canvas_tdc->Clear();
+  canvas_tdc->SetLogy();
+
 
   for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
-    for (int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
+      if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(0) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(0) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(0)) continue; //Omit cosmic loopback signal
+      if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(1) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(1) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(1)) continue; //Omit beam loopback signal
+    for (unsigned int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
       hist_tdc->Fill(tdc_file.at(i_channel).at(i_tdc));
     }
   }
 
-  std::stringstream ss_tdc_hist_title;
-  ss_tdc_hist_title << "TDC "<<end_time.str()<<"(last file) ";
-  hist_tdc->SetTitle(ss_tdc_hist_title.str().c_str());
+  
+  for (unsigned int i_entry=0; i_entry < tdc_file_times.size(); i_entry++){
+   std::sort(tdc_file_times.at(i_entry).begin(),tdc_file_times.at(i_entry).end());
+  }
 
+  int tdc_start=0;
+  int min_cluster = 4;
+  int min_tdc_separation = 8;
+  int n_channels = 0;
+  int tdc_current = 0;
+
+  for (unsigned int i_entry = 0; i_entry < tdc_file_times.size(); i_entry++){
+   std::vector<int> tdc_times = tdc_file_times.at(i_entry);
+   for (unsigned int i_tdc=0; i_tdc < tdc_times.size(); i_tdc++){
+     if (i_tdc == 0) {
+	tdc_start = tdc_times.at(0);
+        tdc_current = tdc_times.at(0);
+	n_channels=1;
+        continue;
+      } 
+    if ((tdc_times.at(i_tdc)-tdc_current) <= min_tdc_separation){
+        n_channels++;
+	tdc_current = tdc_times.at(i_tdc);
+	if (i_tdc==tdc_times.size()-1) {
+	  if (n_channels >= min_cluster){
+	    for (int i_ch = 0; i_ch < n_channels; i_ch++){
+	      hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+            }
+          }
+	}
+      } else {
+        if (n_channels >= min_cluster){
+          for (int i_ch = 1; i_ch <= n_channels; i_ch++){
+            hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+	  }
+        }
+        n_channels = 0;
+        tdc_current = tdc_times.at(i_tdc);
+      }
+    }  
+  }
+  
+  std::stringstream ss_tdc_hist_title;
+  ss_tdc_hist_title << "TDC "<<end_time.str()<<" (last file) ";
+  hist_tdc->SetTitle(ss_tdc_hist_title.str().c_str());
   hist_tdc->Draw();
   std::stringstream ss_tdc_hist;
   ss_tdc_hist << outpath << "MRDTDCHist_lastFile."<<img_extension;
   canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
-
   hist_tdc->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster "<<end_time.str()<<" (last file) ";
+  hist_tdc_cluster->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_Cluster_lastFile."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
 
 }
 
@@ -1804,7 +1983,7 @@ void MonitorMRDTime::DrawHitMap(ULong64_t timestamp_end, double time_frame, std:
 
     long sum_channel=0;
 
-    for (int i_file=0; i_file < tdc_plot.size(); i_file++){
+    for (unsigned int i_file=0; i_file < tdc_plot.size(); i_file++){
       sum_channel+=channelcount_plot.at(i_file).at(i_channel);
     }
 
@@ -1885,7 +2064,7 @@ void MonitorMRDTime::DrawHitMap(ULong64_t timestamp_end, double time_frame, std:
     hist_hitmap_slot.at(i_slot)->SetTitle(ss_hitmap_title_slot.str().c_str());
     hist_hitmap_slot.at(i_slot)->Draw();
 
-    for (int i_box = 0; i_box < vector_box_inactive_hitmap[i_slot].size(); i_box++){
+    for (unsigned int i_box = 0; i_box < vector_box_inactive_hitmap[i_slot].size(); i_box++){
       vector_box_inactive_hitmap[i_slot].at(i_box)->SetY2(max_hitmap_slot.at(i_slot)+10);
       vector_box_inactive_hitmap[i_slot].at(i_box)->Draw("same");
     }
@@ -1917,7 +2096,7 @@ void MonitorMRDTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double tim
   double max_ch = 0.;
   double min_ch = 999999999.;
 
-  for (int i_file = 0; i_file < rate_plot.size(); i_file++){
+  for (unsigned int i_file = 0; i_file < rate_plot.size(); i_file++){
 
     current_timeframe = (tend_plot.at(i_file)-tstart_plot.at(i_file))/MSEC_to_SEC;
     overall_timeframe += current_timeframe;
@@ -1959,7 +2138,7 @@ void MonitorMRDTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double tim
   p1->Update();
   if (rate_crate1->GetMaximum()>0.){
     if (min_ch == max_ch) rate_crate1->GetZaxis()->SetRangeUser(min_ch-0.5,max_ch+0.5);
-    else rate_crate1->GetZaxis()->SetRangeUser(min_ch,max_ch);
+    else rate_crate1->GetZaxis()->SetRangeUser(1e-6,1.);
     TPaletteAxis *palette = 
     (TPaletteAxis*) rate_crate1->GetListOfFunctions()->FindObject("palette");
     palette->SetX1NDC(0.9);
@@ -1982,7 +2161,7 @@ void MonitorMRDTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double tim
 
   if (rate_crate2->GetMaximum()>0.){
     if (min_ch == max_ch) rate_crate2->GetZaxis()->SetRangeUser(min_ch-0.5,max_ch+0.5);
-    else rate_crate2->GetZaxis()->SetRangeUser(min_ch,max_ch);
+    else rate_crate2->GetZaxis()->SetRangeUser(1e-6,1.);
     TPaletteAxis *palette = 
     (TPaletteAxis*)rate_crate2->GetListOfFunctions()->FindObject("palette");
     palette->SetX1NDC(0.9);
@@ -2023,7 +2202,7 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   double max_ch = 0.;
   double min_ch = 999999999.;
 
-  for (int i_file = 0; i_file < rate_plot.size(); i_file++){
+  for (unsigned int i_file = 0; i_file < rate_plot.size(); i_file++){
 
     current_timeframe = (tend_plot.at(i_file)-tstart_plot.at(i_file))/MSEC_to_SEC;
     overall_timeframe += current_timeframe;
@@ -2040,11 +2219,13 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   }
 
 
-  std::stringstream ss_topTitle, ss_sideTitle;
+  std::stringstream ss_topTitle, ss_sideTitle, ss_faccTitle;
   ss_topTitle << "MRD Rates - Top "<<end_time.str()<<" ("<<file_ending<<")";
   ss_sideTitle << "MRD Rates - Side "<<end_time.str()<<" ("<<file_ending<<")";
+  ss_faccTitle << "FMV Rates "<<end_time.str()<<" ("<<file_ending<<")";
   rate_side->SetTitle(ss_sideTitle.str().c_str());
   rate_top->SetTitle(ss_topTitle.str().c_str());
+  rate_facc->SetTitle(ss_faccTitle.str().c_str());
 
   //fill the rate plot in detector space (Event Display - like)
 
@@ -2074,20 +2255,27 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
       double y_value = paddle_pos.Y()-tank_center_y;
       double z_value = paddle_pos.Z()-tank_center_z;
 
-      if (half == 1) z_value+=shiftSecRow;
+      std::string detector_element = det->GetDetectorElement();
 
-      if (orientation == 0) {
-        rate_side->Fill(z_value,y_value,overall_rates.at(i_ch));
+      if (detector_element == "MRD"){
+        if (half == 1) z_value+=shiftSecRow;
+
+        if (orientation == 0) {
+          rate_side->Fill(z_value,y_value,overall_rates.at(i_ch));
+        }
+        else{
+          rate_top->Fill(z_value,x_value,overall_rates.at(i_ch));
+        } 
+      } else if (detector_element == "Veto"){
+          rate_facc->Fill(z_value,y_value,overall_rates.at(i_ch));
       }
-      else{
-        rate_top->Fill(z_value,x_value,overall_rates.at(i_ch));
-      } 
     }
   }
 
   canvas_rate_physical->Divide(2,1);
   canvas_rate_physical->cd(1);
-  rate_side->GetZaxis()->SetRangeUser(0.,max_ch);
+  //rate_side->GetZaxis()->SetRangeUser(1e-6,max_ch);
+  rate_side->GetZaxis()->SetRangeUser(1e-6,1.);
   rate_side->GetZaxis()->SetTitleOffset(1.3);
   rate_side->GetZaxis()->SetTitleSize(0.03);
   rate_side->Draw("colz L");                           //option L to show contours around bins (indicating where MRD paddles are)
@@ -2101,7 +2289,8 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   label_rate_cr1->Draw();
 
   canvas_rate_physical->cd(2);
-  rate_top->GetZaxis()->SetRangeUser(0.,max_ch);
+  //rate_top->GetZaxis()->SetRangeUser(1e-6,max_ch);
+  rate_top->GetZaxis()->SetRangeUser(1e-6,1.);
   rate_top->GetZaxis()->SetTitleOffset(1.3);
   rate_top->GetZaxis()->SetTitleSize(0.03);
   rate_top->Draw("colz L");
@@ -2119,9 +2308,30 @@ void MonitorMRDTime::DrawRatePlotPhysical(ULong64_t timestamp_end, double time_f
   ss_ratephysical<<outpath<<"MRDRates_Detector_"<<file_ending<<"."<<img_extension;
   canvas_rate_physical->SaveAs(ss_ratephysical.str().c_str());
 
+  canvas_rate_physical_facc->cd();
+  //rate_facc->GetZaxis()->SetRangeUser(1e-6,max_ch);
+  rate_facc->GetZaxis()->SetRangeUser(1e-6,0.4);
+  rate_facc->GetZaxis()->SetTitleOffset(1.3);
+  rate_facc->GetZaxis()->SetTitleSize(0.03);
+  rate_facc->Draw("colz L");                           //option L to show contours around bins (indicating where MRD paddles are)
+  canvas_rate_physical_facc->Update();
+  TPaletteAxis *palette_facc = 
+  (TPaletteAxis*) rate_facc->GetListOfFunctions()->FindObject("palette");
+  palette_facc->SetX1NDC(0.9);
+  palette_facc->SetX2NDC(0.92);
+  palette_facc->SetY1NDC(0.1);
+  palette_facc->SetY2NDC(0.9);
+  label_rate_facc->Draw();
+
+  std::stringstream ss_ratephysical_facc;
+  ss_ratephysical_facc<<outpath<<"MRDRates_DetectorFACC_"<<file_ending<<"."<<img_extension;
+  canvas_rate_physical_facc->SaveAs(ss_ratephysical_facc.str().c_str());
+
   rate_top->Reset("M");
   rate_side->Reset("M");
+  rate_facc->Reset("M");
   canvas_rate_physical->Clear();
+  canvas_rate_physical_facc->Clear();
 
 }
 
@@ -2145,7 +2355,7 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
     gr_rate.at(i_channel)->Set(0);
   }
 
-  for (int i_file=0; i_file<tdc_plot.size(); i_file++){
+  for (unsigned int i_file=0; i_file<tdc_plot.size(); i_file++){
 
     //Updating channel graphs
 
@@ -2186,7 +2396,12 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
         ss_ch_rate.str("");
         std::string channel_range;
         if (CANVAS_NR == 0) channel_range = " Channel 0-15";
-        else channel_range = " Channel 16-31";
+        else {
+        //we already switched to the new slot with channel 32, so we need to consider the slot for the channel before
+          crate = TotalChannel_to_Crate[i_channel-1];
+          slot = TotalChannel_to_Slot[i_channel-1];
+          channel_range = " Channel 16-31";
+        }
         ss_ch_tdc<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
         ss_ch_rms<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
         ss_ch_rate<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
@@ -2238,8 +2453,8 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
         leg_rate->Draw();
 
         std::string channel_range_name;
-        if (CANVAS_NR == 0) channel_range_name = "_Ch0-15";
-        else channel_range_name = "_Ch16-31";
+        if (CANVAS_NR == 0) channel_range_name = "Ch0-15";
+        else channel_range_name = "Ch16-31";
         ss_ch_tdc.str("");
         ss_ch_rms.str("");
         ss_ch_rate.str("");
@@ -2308,7 +2523,7 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
       canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
 
       canvas_ch_single->Clear();
-      gr_rms.at(i_channel)->GetYaxis()->SetTitle("TDC");
+      gr_rms.at(i_channel)->GetYaxis()->SetTitle("RMS (TDC)");
       gr_rms.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
       gr_rms.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
       gr_rms.at(i_channel)->GetXaxis()->SetLabelOffset(0.03);
@@ -2320,7 +2535,7 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
       canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
 
       canvas_ch_single->Clear();
-      gr_rate.at(i_channel)->GetYaxis()->SetTitle("TDC");
+      gr_rate.at(i_channel)->GetYaxis()->SetTitle("Rate [Hz]");
       gr_rate.at(i_channel)->GetXaxis()->SetTimeDisplay(1);
       gr_rate.at(i_channel)->GetXaxis()->SetLabelSize(0.03);
       gr_rate.at(i_channel)->GetXaxis()->SetLabelOffset(0.03);
@@ -2330,7 +2545,6 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
       ss_ch_single.str("");
       ss_ch_single<<outpath<<"MRDTimeEvolutionRate_Cr"<<crate<<"_Sl"<<slot<<"_Ch"<<channel<<"_"<<file_ending<<"."<<img_extension;
       canvas_ch_single->SaveAs(ss_ch_single.str().c_str());
-
     }
 
   }
@@ -2356,13 +2570,13 @@ void MonitorMRDTime::DrawTriggerEvolution(ULong64_t timestamp_end, double time_f
   ss_eventtypes << "Event Types Trigger Rate (last "<<ss_timeframe.str()<<" h)";
   ss_filename_eventtypes << outpath << "MRDTrigger_eventtypes_"<<file_ending<<"."<<img_extension;
 
-  for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+  for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
     gr_trigger.at(i_trigger)->Set(0);
   }
 
-  for (int i_file=0; i_file<cosmicrate_plot.size(); i_file++){
+  for (unsigned int i_file=0; i_file<cosmicrate_plot.size(); i_file++){
 
-    for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+    for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
       double rate_temp;
       if (loopback_name.at(i_trigger) == "Cosmic") rate_temp = cosmicrate_plot.at(i_file);
       else if (loopback_name.at(i_trigger) == "Beam") rate_temp = beamrate_plot.at(i_file);
@@ -2371,7 +2585,7 @@ void MonitorMRDTime::DrawTriggerEvolution(ULong64_t timestamp_end, double time_f
     }
   }
 
-  for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+  for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
     multi_trigger->Add(gr_trigger.at(i_trigger));
   }
 
@@ -2389,7 +2603,7 @@ void MonitorMRDTime::DrawTriggerEvolution(ULong64_t timestamp_end, double time_f
   leg_trigger->Draw();
   canvas_trigger_time->SaveAs(ss_filename_trigger.str().c_str());
 
-  for (int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
+  for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
     multi_trigger->RecursiveRemove(gr_trigger.at(i_trigger));
   }
 
@@ -2399,10 +2613,12 @@ void MonitorMRDTime::DrawTriggerEvolution(ULong64_t timestamp_end, double time_f
   gr_zerohits->Set(0);
   gr_doublehits->Set(0);
 
-  for (int i_file=0; i_file<noloopbackrate_plot.size(); i_file++){
+  for (unsigned int i_file=0; i_file<noloopbackrate_plot.size(); i_file++){
     gr_noloopback->SetPoint(i_file,labels_timeaxis[i_file].Convert(),noloopbackrate_plot.at(i_file));
-    gr_zerohits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),zerohitsrate_plot.at(i_file));
-    gr_doublehits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),doublehitrate_plot.at(i_file));
+    if (zerohitsrate_plot.at(i_file)<0.0000001) gr_zerohits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),0.);
+    else gr_zerohits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),zerohitsrate_plot.at(i_file));
+    if (doublehitrate_plot.at(i_file)<0.0000001) gr_doublehits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),0.);  
+    else gr_doublehits->SetPoint(i_file,labels_timeaxis[i_file].Convert(),doublehitrate_plot.at(i_file));
   }
   gr_noloopback->SetTitle(ss_noloopback.str().c_str());
   gr_noloopback->Draw("apl");
@@ -2454,7 +2670,7 @@ void MonitorMRDTime::DrawPieChart(ULong64_t timestamp_end, double time_frame, st
   int nevents_zerohits = 0;
   int nevents_doublehits = 0;
 
-  for (int i_file = 0; i_file < rate_plot.size(); i_file++){
+  for (unsigned int i_file = 0; i_file < rate_plot.size(); i_file++){
 
     ULong64_t current_timeframe = (tend_plot.at(i_file)-tstart_plot.at(i_file))/MSEC_to_SEC;
     nevents_cosmic += cosmicrate_plot.at(i_file)*current_timeframe;

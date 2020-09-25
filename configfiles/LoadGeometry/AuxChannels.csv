@@ -1,0 +1,13 @@
+LEGEND_LINE,,,,,,,,,,,,,,,,,,,,,,,,,
+channel_num,signal_crate,signal_slot,signal_channel,channel_type,notes
+#################################
+DATA_START,,,,,,,,,,,,,,,,,,,,,,,,,
+10001,1,15,1,BRF,ok
+10002,1,15,2,BoosterRWM,ok
+10003,1,15,3,SiPM1,ok
+10004,1,15,4,SiPM2,ok
+10005,1,10,3,broken,broken
+10006,2,19,4,spare,ok
+10007,2,13,3,broken,broken
+10008,2,15,1,broken,broken
+DATA_END,,,,,,,,,,,,,,,,,,,,,,,,,

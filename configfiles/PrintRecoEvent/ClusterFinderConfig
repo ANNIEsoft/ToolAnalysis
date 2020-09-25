@@ -1,0 +1,10 @@
+# ClusterFinder Config File
+
+HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
+OutputFile R1611S0p1_Clusters
+ClusterFindingWindow 100 # in ns, size of the window used to "clusterize"
+AcqTimeWindow 70000 # in ns, size of the acquisition window
+ClusterIntegrationWindow 100 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
+MinHitsPerCluster 5 # group of hits are considered clusters above this amount of hits
+SinglePEGains ./configfiles/EventDisplay/Data-ANNIEEvent/ChannelSPEGains_BeamRun20192020.csv
+verbosity 0
