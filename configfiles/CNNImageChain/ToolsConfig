@@ -1,3 +1,0 @@
-myLoadWCSim LoadWCSim configfiles/CNNImageChain/LoadWCSimConfig
-#myCNNImage CNNImage configfiles/CNNImageChain/CNNImageConfig
-myEventDisplay EventDisplay configfiles/CNNImageChain/EventDisplayConfig

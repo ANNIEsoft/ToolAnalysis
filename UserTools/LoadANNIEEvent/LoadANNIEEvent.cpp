@@ -46,8 +46,6 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
 
   current_entry_ += offset_evnum;
  
-  m_data->CStore.Set("UserEvent",false);                  //enables the ability for other tools to select a specific event number
-
   return true;
 }
 

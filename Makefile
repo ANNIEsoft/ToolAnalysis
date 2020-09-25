@@ -95,24 +95,24 @@ lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so li
 	$(CC) UserTools/*/*.o -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 RemoteControl:
-	#cd $(ToolDAQPath)/ToolDAQFramework/ && make RemoteControl
+	cd $(ToolDAQPath)/ToolDAQFramework/ && make RemoteControl
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/RemoteControl ./
 
 NodeDaemon:
-	#cd $(ToolDAQPath)/ToolDAQFramework/ && make NodeDaemon
+	cd $(ToolDAQPath)/ToolDAQFramework/ && make NodeDaemon
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/NodeDaemon ./
 
 lib/libServiceDiscovery.so: $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/* | lib/libStore.so
-	#cd $(ToolDAQPath)/ToolDAQFramework && make lib/libServiceDiscovery.so
+	cd $(ToolDAQPath)/ToolDAQFramework && make lib/libServiceDiscovery.so
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.h include/
 	cp $(ToolDAQPath)/ToolDAQFramework/lib/libServiceDiscovery.so lib/
 	#$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/ServiceDiscovery/ServiceDiscovery.cpp -o lib/libServiceDiscovery.so -L lib/ -lStore  $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
 lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/* | lib/libStore.so
-	#cd $(ToolDAQPath)/ToolDAQFramework && make lib/libLogging.so
+	cd $(ToolDAQPath)/ToolDAQFramework && make lib/libLogging.so
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.h include/
 	cp $(ToolDAQPath)/ToolDAQFramework/lib/libLogging.so lib/
@@ -120,11 +120,11 @@ lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/* | lib/libStore.
 
 update:
 	@echo -e "\n*************** Updating ****************"
-	#cd $(ToolDAQPath)/ToolDAQFramework; git pull
-	#cd $(ToolDAQPath)/zeromq-4.0.7; git pull
-	#cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make -f Makefile.FNAL
-	#cd $(ToolDAQPath)/WCSimLib; git checkout . ; git pull; make
-	#cd $(ToolDAQPath)/RATEventLib; git checkout . ; git pull; make
+	cd $(ToolDAQPath)/ToolDAQFramework; git pull
+	cd $(ToolDAQPath)/zeromq-4.0.7; git pull
+	cd $(ToolDAQPath)/MrdTrackLib; git checkout . ; git pull; make -f Makefile.FNAL
+	cd $(ToolDAQPath)/WCSimLib; git checkout . ; git pull; make
+	cd $(ToolDAQPath)/RATEventLib; git checkout . ; git pull; make
 	git pull
 
 UserTools/%.o: UserTools/%.cpp lib/libStore.so include/Tool.h lib/libLogging.so lib/libDataModel.so lib/libToolChain.so

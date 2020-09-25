@@ -1,7 +1,0 @@
-# CNNImage config file
-
-verbose 4
-Mode Charge			#options: Charge/Time
-Dimension 64			#choose something suitable (32/64/...)
-OutputFile cnn_test.csv		#csv file name
-DetectorConf ANNIEp2v6		#specify the detector version used in simulation

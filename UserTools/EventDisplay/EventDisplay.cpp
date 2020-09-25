@@ -1051,8 +1051,6 @@ bool EventDisplay::Execute(){
     //charge_LAPPDs[i]->GetYaxis()->SetRangeUser(0,20.);
   }  
 
-   if (num_lappds_hit > 0 || total_hits_pmts > 0) tank_hit = true;
-
   //---------------------------------------------------------------
   //-------------------Fill time hists ----------------------------
   //---------------------------------------------------------------

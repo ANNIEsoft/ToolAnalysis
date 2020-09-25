@@ -1,3 +1,5 @@
+/* vim:set noexpandtab tabstop=4 wrap */
+
 #include "LoadWCSim.h"
 
 LoadWCSim::LoadWCSim():Tool(){}

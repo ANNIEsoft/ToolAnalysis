@@ -1,5 +1,6 @@
 #include "DigitBuilder.h"
 
+
 static DigitBuilder* fgDigitBuilder = 0;
 DigitBuilder* DigitBuilder::Instance()
 {

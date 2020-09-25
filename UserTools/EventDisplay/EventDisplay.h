@@ -169,8 +169,6 @@ class EventDisplay: public Tool {
     double min_mrd_y, max_mrd_y, min_mrd_x, max_mrd_x, min_mrd_z, max_mrd_z;
     double mrd_diffz, mrd_diffy, mrd_diffx;
     std::vector<int> n_particles_ring;
-
-
     double detector_version;
     std::string detector_config;
     double tank_center_x;
