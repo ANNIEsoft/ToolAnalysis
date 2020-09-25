@@ -115,10 +115,35 @@ bool EnergyExtractor::Execute()
       std::vector<MCHit>& Hits = apair.second;
       for (MCHit &ahit : Hits)
       {
-       // Replace with slightly different time cut
-       // if (ahit.GetTime()>-10. && ahit.GetTime()<40.)  {
+        if (ahit.GetTime()>-10. && ahit.GetTime()<40.)  {
           total_charge_pmts += ahit.GetCharge();
-       // }
+        }
+      }
+    }
+  }
+
+  // Evaluate MCLAPPDHits object
+  vectsize = MCLAPPDHits->size();
+  if (verbosity > 1) std::cout <<"EnergyExtractor tool: MCLAPPDHits size: "<<vectsize<<std::endl;
+  double total_charge_lappds=0;
+  for(std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits)
+  {
+    unsigned long chankey = apair.first;
+    if (verbosity > 3) std::cout <<"chankey: "<<chankey<<std::endl;
+    Detector* thistube = geom->ChannelToDetector(chankey);
+    unsigned long detkey = thistube->GetDetectorID();
+    if (verbosity > 3) std::cout <<"detkey: "<<detkey<<std::endl;
+    if (thistube->GetDetectorElement()=="Tank")
+    {
+      if (thistube->GetTankLocation()=="OD") continue;
+      std::vector<MCLAPPDHit>& Hits = apair.second;
+      for (MCLAPPDHit &ahit : Hits)
+      {
+        // Replace with slightly different time cut
+        if (ahit.GetTime()>-10. && ahit.GetTime()<40.)  {
+          //total_charge_lappds += ahit.GetCharge();	//put back in once charge is correctly implemented for LAPPDs
+          total_charge_lappds += 1.;
+        }
       }
     }
   }
@@ -202,7 +227,7 @@ bool EnergyExtractor::Execute()
   if (save_neutron) outfile_NeutronNumber << ncount << endl;
 
   // Save visible energy (if desired)
-  if (save_visible) outfile_VisibleEnergy << total_charge_pmts <<endl;
+  if (save_visible) outfile_VisibleEnergy << total_charge_pmts << "," << total_charge_lappds << endl;
 
   // Clear energy store map
   Energystore["pi+"].clear();
@@ -315,6 +340,6 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
 double EnergyExtractor::GetCherenkovThresholdE(int pdg_code) {
   Log("EnergyExtractor Tool: GetCherenkovThresholdE",v_message,verbosity);
   Log("EnergyExtractor Tool: PDG code: "+std::to_string(pdg_code)+", mass: "+std::to_string(pdgcodetomass[pdg_code]),v_message,verbosity);             ///> Calculate Cherenkov threshold energies depending on particle pdg
-  double Ethr = pdgcodetomass[pdg_code]*sqrt(1+1./sqrt(n*n-1));
+  double Ethr = pdgcodetomass[pdg_code]*sqrt(1./(1-1./n*n));
   return Ethr;
 }

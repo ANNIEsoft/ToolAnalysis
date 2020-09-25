@@ -300,7 +300,7 @@ void MCRecoEventLoader::PushProjectedMrdHit(bool projectedmrdhit){
 
 double MCRecoEventLoader::GetCherenkovThresholdE(int pdg_code) {
   Log("MCRecoEventLoader Tool: GetCherenkovThresholdE",v_message,verbosity);            ///> Calculate Cherenkov threshold energies depending on particle pdg
-  double Ethr = pdgcodetomass[pdg_code]*sqrt(1+1./sqrt(n*n-1));
+  double Ethr = pdgcodetomass[pdg_code]*sqrt(1/(1-1/(n*n)));
   return Ethr;
 }
 

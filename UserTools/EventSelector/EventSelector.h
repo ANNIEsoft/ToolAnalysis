@@ -45,7 +45,7 @@ class EventSelector: public Tool {
    kFlagMCIsMultiRing  = 0x1000, //4096
    kFlagMCProjectedMRDHit = 0x2000, //8192
    kFlagMCEnergyCut   = 0x4000, //16384
-   kFlagPMTMRDCoinc   = 0x8000 //32768
+   kFlagPMTMRDCoinc   = 0x8000, //32768
    kFlagMCDSNBlike = 0x10000 //65536
   } EventFlags_t;
 

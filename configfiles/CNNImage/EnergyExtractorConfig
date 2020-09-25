@@ -1,0 +1,13 @@
+# Energy Extractor config file
+
+OutputFile atmospheric_0
+Verbosity 1
+SaveNeutrino 1
+SaveElectron 0
+SaveGamma 1
+SaveMuon 0
+SavePion 0
+SaveKaon 0
+SaveNeutron 1
+SaveVisible 1
+
