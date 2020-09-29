@@ -32,7 +32,8 @@ public:
 
 private:
 	int verbosity=1;
-	
+	std::string map_version;	//Version of the electronics channel map ["v1"/"v2"]	
+
 	//TChain* PMTDataChain;
 	//TChain* RunInformationChain;
 	//TChain* TrigChain;
@@ -93,10 +94,11 @@ private:
 	bool PerformMatching(std::vector<unsigned long long> currentminibufts);
 	std::vector<uint64_t> ConvertTimeStamps(unsigned long long LastSync, int StartTimeSec, 
 		int StartTimeNSec, unsigned long long StartCount, std::vector<unsigned long long> TriggerCounts);
-	uint32_t TubeIdFromSlotChannel(unsigned int slot, unsigned int channel);
+	uint32_t TubeIdFromSlotChannel(unsigned int slot, unsigned int channel, int version);
 	// map that converts TDC camac slot + channel to the corresponding MRD tube ID
 	// tubeID is a 6-digit ID of XXYYZZ.
-	static std::map<uint16_t,std::string> slotchantopmtid;
+	static std::map<uint16_t,std::string> slotchantopmtidv1;	//Version 1 of the electronics channel map
+	static std::map<uint16_t,std::string> slotchantopmtidv2;	//Version 2 of the electronics channel map
 	
 	// for debug drawing
 	bool DEBUG_DRAW_TDC_HITS;

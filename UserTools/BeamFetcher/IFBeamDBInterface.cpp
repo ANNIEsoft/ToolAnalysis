@@ -60,7 +60,7 @@ int IFBeamDBInterface::QueryBeamDB(uint64_t t0,
     return -1;
   }
 
-  constexpr char BNB_URL_START[] = "http://ifb-data.fnal.gov:8100/ifbeam/"
+  constexpr char BNB_URL_START[] = "http://ifb-data.fnal.gov:8089/ifbeam/"
     "data/data?e=e%2C1d&b=BNBBPMTOR&f=csv&tz=&action=Show+device&t0=";
 
   std::stringstream url_stream;

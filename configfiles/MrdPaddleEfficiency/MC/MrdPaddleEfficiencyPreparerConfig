@@ -1,4 +1,6 @@
 #MRDPaddleEfficiencyPreparer Config file
 
-OutputFile RAWDataR1543S0p21R0S0
+OutputFile MC_Truth_999	#Output file name
+IsData 0	# Looking at a data or MC file?
+UseTrueTrack 1	# Should true particle track information be used?
 verbosity 1

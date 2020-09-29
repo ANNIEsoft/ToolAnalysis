@@ -278,7 +278,9 @@ bool LoadWCSim::Execute(){
 	
 	MCHits->clear();
 	TDCData->clear();
-	
+	mrd_firstlayer=false;
+	mrd_lastlayer=false;	
+
 	triggers_event = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
 	
 	//for(int MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
@@ -578,7 +580,7 @@ bool LoadWCSim::Execute(){
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigm);
 			
 			MCHit nexthit(key, digittime, digiq, parents);
-			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
+			if(TDCData->count(key)==0) {TDCData->emplace(key, std::vector<MCHit>{nexthit}); if (Mrd_Chankey_Layer.at(key)==0) mrd_firstlayer=true; if (Mrd_Chankey_Layer.at(key)==10) mrd_lastlayer=true;}
 			else TDCData->at(key).push_back(nexthit);
 			if(verbosity>2) cout<<"digit added"<<endl;
 		}
@@ -704,6 +706,8 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
 	m_data->Stores.at("ANNIEEvent")->Set("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex,false);
+	//Change MRD Triggertype if first and last layer saw a hit (Hardware Cosmic Trigger)
+	if (mrd_lastlayer && mrd_firstlayer) Triggertype = "Cosmic";
 	m_data->Stores.at("ANNIEEvent")->Set("MRDTriggerType",Triggertype);
 	m_data->Stores.at("ANNIEEvent")->Set("PrimaryMuonIndex",primarymuonindex);
 	
@@ -1074,6 +1078,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		// calculate MRD_x_y_z ... MRDSpecs doesn't provide a nice way to do this
 		int layernum=0;
 		while ((mrdpmti+1) > MRDSpecs::layeroffsets.at(layernum+1)){ layernum++; }
+		Mrd_Chankey_Layer.emplace(uniquechannelkey,layernum);
 		int in_layer_pmtnum = mrdpmti - MRDSpecs::layeroffsets.at(layernum);
 		// paddles in each layer alternate on sides; i.e. paddles 0 and 1 are on opposite sides
 		int side = in_layer_pmtnum%2;
