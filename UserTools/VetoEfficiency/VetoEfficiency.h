@@ -9,6 +9,7 @@
 #include <set>
 
 #include "Tool.h"
+#include "TH2F.h"
 
 class TFile;
 class TTree;
@@ -50,14 +51,18 @@ class VetoEfficiency: public Tool {
 	
 	private:
 	std::string outputfilename;
+	std::string debugfilename;
 	TFile* rootfileout=nullptr;
 	TTree* roottreeout=nullptr;
 	TTree* summarytreeout=nullptr;
-	
+	TFile* f_veto=nullptr;		//Additional debug TFile
+	bool useTApplication;
+
 	double compute_tank_charge(size_t minibuffer_number,
 	const std::map< unsigned long, std::vector< std::vector<ADCPulse> > >& adc_hits,
-	uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts);
-	
+	uint64_t start_time, uint64_t end_time, int& num_unique_water_pmts, int& num_pmts_above);
+	bool found_coincidence;	
+
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int verbosity=1;
 	int v_error=0;
@@ -113,6 +118,7 @@ class VetoEfficiency: public Tool {
 	int num_veto_l2_hits_;
 	int num_mrdl1_hits_;
 	int num_mrdl2_hits_;
+	int coincidence_layer_;
 	double tank_charge_;
 	int num_unique_water_pmts_;
 	CoincidenceInfo coincidence_info_;
@@ -122,13 +128,18 @@ class VetoEfficiency: public Tool {
 	ULong64_t num_source_triggers_ = 0;
 	ULong64_t num_cosmic_triggers_ = 0;
 	ULong64_t num_soft_triggers_ = 0;
-	// aggregate count of L1 and L2 hits in through-going events
-	std::vector<unsigned long> l1_hits_{0,0,0,0,0,0,0,0,0,0,0,0,0};   // 13, one for each PMT in the veto layers
-	std::vector<unsigned long> l2_hits_{0,0,0,0,0,0,0,0,0,0,0,0,0};   // 13, one for each PMT in the veto layers
+	bool is_cosmic;
+        // aggregate count of L1 and L2 hits in through-going events
+	std::vector<unsigned long> l1_hits_L1_{0,0,0,0,0,0,0,0,0,0,0,0,0};   // 13, one for each PMT in the veto layers (coincidence condition with L1)
+	std::vector<unsigned long> l2_hits_L1_{0,0,0,0,0,0,0,0,0,0,0,0,0};   // 13, one for each PMT in the veto layers (coincidence condition with L1)
 	std::vector<double> l2_efficiencies_{0,0,0,0,0,0,0,0,0,0,0,0,0};
+	std::vector<unsigned long> l1_hits_L2_{0,0,0,0,0,0,0,0,0,0,0,0,0};   // 13, one for each PMT in the veto layers (coincidence condition with L2)
+	std::vector<unsigned long> l2_hits_L2_{0,0,0,0,0,0,0,0,0,0,0,0,0};   // 13, one for each PMT in the veto layers (coincidence condition with L2)
+	std::vector<double> l1_efficiencies_{0,0,0,0,0,0,0,0,0,0,0,0,0};
 	
 	// vector of the actual coincident event details
-	std::vector<CoincidenceInfo> coincidences_;
+	std::vector<CoincidenceInfo> coincidences_;		//Coincidence condition with veto layer 1
+	std::vector<CoincidenceInfo> coincidencesl2_;		//Coincidence condition with veto layer 2
 	
 	// Configuration variables for the event selection
 	// ============================================
@@ -176,7 +187,11 @@ class VetoEfficiency: public Tool {
 	std::vector<unsigned long> allmrdkeys;
 	// populate the above
 	void LoadTDCKeys();
-	
+	std::vector<double> veto_times;	
+	std::vector<unsigned long> veto_chankeys;
+	std::vector<double> veto_times_layer2;	
+	std::vector<unsigned long> veto_chankeys_layer2;
+
 	// make the output ROOT file, tree, branches etc
 	void makeOutputFile(std::string name);
 	
@@ -187,12 +202,30 @@ class VetoEfficiency: public Tool {
 	bool drawHistos=false;
 	std::string plotDirectory=".";
 	TCanvas* plotCanv=nullptr;
-	TH1F* h_adc_times=nullptr;
 	TH1F* h_tdc_times=nullptr;
+	TH1F* h_tdc_delta_times=nullptr;
+	TH1F* h_tdc_delta_times_L1=nullptr;
+	TH1F* h_tdc_delta_times_L2=nullptr;
+	TH1F* h_tdc_chankeys_l1=nullptr;
+	TH1F* h_tdc_chankeys_l2=nullptr;
+	TH2F* h_tdc_chankeys_l1_l2=nullptr;
+	TH1F* h_veto_delta_times = nullptr;
+	TH1F* h_veto_delta_times_coinc = nullptr;
+	TH2F* h_veto_2D=nullptr;
+	TH1F* h_adc_times=nullptr;
+	TH1F* h_adc_delta_times=nullptr;
+	TH2F* h_adc_delta_times_charge = nullptr;
+	TH1F* h_adc_charge=nullptr;
+	TH1F* h_adc_charge_coinc=nullptr;
+	TH1F* h_all_adc_times=nullptr;
+	TH1F* h_all_mrd_times=nullptr;
+	TH1F* h_all_veto_times=nullptr;
+	TH1F* h_all_veto_times_layer2=nullptr;
 	TH1F* h_coincidence_event_times=nullptr;
 	TH1F* h_tankhit_time_to_coincidence=nullptr;
 	TApplication* rootTApp=nullptr;
-	
+	std::vector<TH1F*> vector_all_adc_times;	
+
 	// helper function: to_string with a precision
 	// particularly useful for printing doubles and floats in the Log function
 	template <typename T>

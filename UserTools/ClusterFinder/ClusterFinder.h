@@ -118,6 +118,7 @@ class ClusterFinder: public Tool {
   std::vector<double> v_clusters;
   std::vector<double> v_local_cluster_times;
   std::map<double,std::vector<Hit>>* m_all_clusters;  
+  std::map<double,std::vector<MCHit>>* m_all_clusters_MC;  
   std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey; 
  
   // Other variables

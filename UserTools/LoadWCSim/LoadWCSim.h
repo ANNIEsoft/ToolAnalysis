@@ -139,6 +139,8 @@ class LoadWCSim: public Tool {
 	std::map<int,double>* ParticleId_to_TankCharge = nullptr;
 	std::map<int,double>* ParticleId_to_MrdCharge = nullptr;
 	std::map<int,double>* ParticleId_to_VetoCharge = nullptr;
+	std::map<unsigned long,int> Mrd_Chankey_Layer;
+	bool mrd_firstlayer, mrd_lastlayer;
 	std::string Triggertype;
 	
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.

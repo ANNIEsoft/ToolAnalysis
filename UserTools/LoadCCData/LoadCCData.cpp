@@ -37,10 +37,17 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
 	
+	map_version = "v2";
 	m_data= &data; //assigning transient data pointer
 	// XXX Cannot run Log before we've retrieved m_data!! XXX
 	m_variables.Get("verbose",verbosity);
+	m_variables.Get("ChannelMapVersion",map_version);	//Variable is introduced to distinguish between the mapping that was present in this tool (v1) and new mapping that seems to work better for the veto efficiency studies (v2)
 	Log("LoadCCData Tool: Initializing Tool LoadCCData",v_message,verbosity);
+
+	if (map_version != "v1" && map_version != "v2"){
+		Log("LoadCCData Tool: ChannelMapVersion "+map_version+" not recognized. Use v2 as default.",v_error,verbosity);
+		map_version = "v2";
+	}
 	
 	// get the files being processed for retrieving the CCData
 	std::string events_file;
@@ -594,7 +601,9 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 					for(int hiti=0; hiti<numhitsthisevent; hiti++){
 						
 						// Get the MRD PMT ID plugged into this TDC Card + Channel
-						uint32_t tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
+						uint32_t tubeid;
+						if (map_version == "v1") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),1);
+						else if (map_version == "v2") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),2);
 						if(tubeid==std::numeric_limits<uint32_t>::max()){
 							// no matching PMT. This was not an MRD / FACC paddle hit.
 							// mostly hits on the last channel of the TDC card, to trigger readout
@@ -680,8 +689,9 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 						UInt_t numhitsthisevent = MRDData->OutNumber;
 						int usedhiti=0; // since trigger hits are skipped
 						for(int hiti=0; hiti<numhitsthisevent; hiti++){
-							uint32_t tubeid =
-								TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
+							uint32_t tubeid;
+							if (map_version == "v1") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),1);
+                                                	else if (map_version == "v2") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),2);
 							if(tubeid==std::numeric_limits<uint32_t>::max()){ continue; }
 							auto hit_time_ticks = MRDData->Value->at(hiti);
 							double hit_time_ns = static_cast<double>(hit_time_ticks) * MRD_NS_PER_SAMPLE;
@@ -829,21 +839,41 @@ std::vector<uint64_t> LoadCCData::ConvertTimeStamps(unsigned long long LastSync,
 	return alltimestamps;
 }
 
-uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int channel){
+uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int channel, int version){
 	// map TDC Slot + Channel into a MRD PMT Tube ID
 	uint32_t tubeid=-1;
 	uint16_t slotchan = static_cast<uint16_t>(slot*100)+static_cast<uint16_t>(channel);
-	if(slotchantopmtid.count(slotchan)){
-		std::string stringPMTID = "1"+slotchantopmtid.at(slotchan);
-		int iPMTID = stoi(stringPMTID);
-		tubeid = static_cast<uint32_t>(iPMTID);
-	} else if(channel==31){
-		// this is the Trigger card output to force the TDCs to always fire
-		tubeid = std::numeric_limits<uint32_t>::max();
-	} else {
-		//Log("LoadCCData Tool: Unknown TDC Slot + Channel combination: "+to_string(slotchan)
-		//	+", no matching MRD PMT ID!",v_message,verbosity);  // reported in use
-		tubeid = std::numeric_limits<uint32_t>::max();
+	if (slotchan !=1831 && slotchan != 1731) //std::cout <<"LoadCCData: slotchan = "<<slotchan<<std::endl;
+	if (version == 1){
+		if(slotchantopmtidv1.count(slotchan)){
+			std::string stringPMTID = "1"+slotchantopmtidv1.at(slotchan);
+			int iPMTID = stoi(stringPMTID);
+			tubeid = static_cast<uint32_t>(iPMTID);
+		} else if(channel==31){
+			// this is the Trigger card output to force the TDCs to always fire
+			tubeid = std::numeric_limits<uint32_t>::max();
+		} else {
+			//Log("LoadCCData Tool: Unknown TDC Slot + Channel combination: "+to_string(slotchan)
+			//	+", no matching MRD PMT ID!",v_message,verbosity);  // reported in use
+			tubeid = std::numeric_limits<uint32_t>::max();
+		}
+	} else if (version == 2){
+		if(slotchantopmtidv2.count(slotchan)){
+			std::string stringPMTID = "1"+slotchantopmtidv2.at(slotchan);
+			int iPMTID = stoi(stringPMTID);
+			tubeid = static_cast<uint32_t>(iPMTID);
+		} else if(channel==31){
+			// this is the Trigger card output to force the TDCs to always fire
+			tubeid = std::numeric_limits<uint32_t>::max();
+		} else {
+			//Log("LoadCCData Tool: Unknown TDC Slot + Channel combination: "+to_string(slotchan)
+			//	+", no matching MRD PMT ID!",v_message,verbosity);  // reported in use
+			tubeid = std::numeric_limits<uint32_t>::max();
+		}
+
+
+
+
 	}
 	logmessage="LoadCCData Tool: Calculated TubeId from Slot "+to_string(slot)
 				+", channel "+to_string(channel)+" = "+to_string(tubeid);
@@ -856,7 +886,8 @@ uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int chann
 // since c++ insists on handling integer literals with leading zeros as octal,
 // map them as string, then convert the string to int
 // phase 1 map:
-std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
+// Introduce v2 version of the map that seems to fit better with what we see in the veto channels. Old v1 version is kept below.
+std::map<uint16_t,std::string> LoadCCData::slotchantopmtidv2{
 	std::pair<uint16_t,std::string>{1701u,"000002"},
 	std::pair<uint16_t,std::string>{1702u,"000102"},
 	std::pair<uint16_t,std::string>{1703u,"000202"},
@@ -912,6 +943,91 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 	std::pair<uint16_t,std::string>{1827u,"120103"},
 	std::pair<uint16_t,std::string>{1828u,"130103"},
 	std::pair<uint16_t,std::string>{1829u,"140103"},
+	std::pair<uint16_t,std::string>{1400u,"000000"},
+	std::pair<uint16_t,std::string>{1401u,"000100"},
+	std::pair<uint16_t,std::string>{1402u,"000200"},
+	std::pair<uint16_t,std::string>{1403u,"000300"},
+	std::pair<uint16_t,std::string>{1404u,"000400"},
+	std::pair<uint16_t,std::string>{1405u,"000500"},
+	std::pair<uint16_t,std::string>{1406u,"000600"},
+	std::pair<uint16_t,std::string>{1407u,"000700"},
+	std::pair<uint16_t,std::string>{1408u,"000800"},
+	std::pair<uint16_t,std::string>{1409u,"000900"},
+	std::pair<uint16_t,std::string>{1410u,"001000"},
+	std::pair<uint16_t,std::string>{1411u,"001100"},
+	std::pair<uint16_t,std::string>{1412u,"001200"},
+	std::pair<uint16_t,std::string>{1416u,"010000"},
+	std::pair<uint16_t,std::string>{1417u,"010100"},
+	std::pair<uint16_t,std::string>{1418u,"010200"},
+	std::pair<uint16_t,std::string>{1419u,"010300"},
+	std::pair<uint16_t,std::string>{1420u,"010400"},
+	std::pair<uint16_t,std::string>{1421u,"010500"},
+	std::pair<uint16_t,std::string>{1422u,"010600"},
+	std::pair<uint16_t,std::string>{1423u,"010700"},
+	std::pair<uint16_t,std::string>{1424u,"010800"},
+	std::pair<uint16_t,std::string>{1425u,"010900"},
+	std::pair<uint16_t,std::string>{1426u,"011000"},
+	std::pair<uint16_t,std::string>{1427u,"011100"},
+	std::pair<uint16_t,std::string>{1428u,"011200"}
+	};
+
+//Original v1 map: We don't see any veto coincidences between the two layers with this!
+std::map<uint16_t,std::string> LoadCCData::slotchantopmtidv1{
+        std::pair<uint16_t,std::string>{1701u,"000002"},
+        std::pair<uint16_t,std::string>{1702u,"000102"},
+        std::pair<uint16_t,std::string>{1703u,"000202"},
+        std::pair<uint16_t,std::string>{1704u,"000302"},
+        std::pair<uint16_t,std::string>{1705u,"000402"},
+        std::pair<uint16_t,std::string>{1706u,"000502"},
+        std::pair<uint16_t,std::string>{1707u,"000602"},
+        std::pair<uint16_t,std::string>{1708u,"000702"},
+        std::pair<uint16_t,std::string>{1709u,"000802"},
+        std::pair<uint16_t,std::string>{1710u,"000902"},
+        std::pair<uint16_t,std::string>{1711u,"001002"},
+        std::pair<uint16_t,std::string>{1712u,"001102"},
+        std::pair<uint16_t,std::string>{1713u,"001202"},
+        std::pair<uint16_t,std::string>{1714u,"010002"},
+        std::pair<uint16_t,std::string>{1715u,"010102"},
+        std::pair<uint16_t,std::string>{1716u,"010202"},
+        std::pair<uint16_t,std::string>{1717u,"010302"},
+        std::pair<uint16_t,std::string>{1718u,"010402"},
+        std::pair<uint16_t,std::string>{1719u,"010502"},
+        std::pair<uint16_t,std::string>{1720u,"010602"},
+        std::pair<uint16_t,std::string>{1721u,"010702"},
+        std::pair<uint16_t,std::string>{1722u,"010802"},
+        std::pair<uint16_t,std::string>{1723u,"010902"},
+        std::pair<uint16_t,std::string>{1724u,"011002"},
+        std::pair<uint16_t,std::string>{1725u,"011102"},
+        std::pair<uint16_t,std::string>{1726u,"011202"},
+        std::pair<uint16_t,std::string>{1801u,"000003"},
+        std::pair<uint16_t,std::string>{1802u,"010003"},
+        std::pair<uint16_t,std::string>{1803u,"020003"},
+        std::pair<uint16_t,std::string>{1804u,"030003"},
+        std::pair<uint16_t,std::string>{1805u,"040003"},
+        std::pair<uint16_t,std::string>{1806u,"050003"},
+        std::pair<uint16_t,std::string>{1807u,"060003"},
+        std::pair<uint16_t,std::string>{1808u,"070003"},
+        std::pair<uint16_t,std::string>{1809u,"080003"},
+        std::pair<uint16_t,std::string>{1810u,"090003"},
+        std::pair<uint16_t,std::string>{1811u,"100003"},
+        std::pair<uint16_t,std::string>{1812u,"110003"},
+        std::pair<uint16_t,std::string>{1813u,"120003"},
+        std::pair<uint16_t,std::string>{1814u,"130003"},
+        std::pair<uint16_t,std::string>{1815u,"000103"},
+        std::pair<uint16_t,std::string>{1816u,"010103"},
+        std::pair<uint16_t,std::string>{1817u,"020103"},
+        std::pair<uint16_t,std::string>{1818u,"030103"},
+        std::pair<uint16_t,std::string>{1819u,"040103"},
+        std::pair<uint16_t,std::string>{1820u,"050103"},
+        std::pair<uint16_t,std::string>{1821u,"060103"},
+        std::pair<uint16_t,std::string>{1822u,"070103"},
+        std::pair<uint16_t,std::string>{1823u,"080103"},
+        std::pair<uint16_t,std::string>{1824u,"090103"},
+        std::pair<uint16_t,std::string>{1825u,"100103"},
+        std::pair<uint16_t,std::string>{1826u,"110103"},
+        std::pair<uint16_t,std::string>{1827u,"120103"},
+        std::pair<uint16_t,std::string>{1828u,"130103"},
+        std::pair<uint16_t,std::string>{1829u,"140103"},
 	std::pair<uint16_t,std::string>{1401u,"000000"},
 	std::pair<uint16_t,std::string>{1402u,"000100"},
 	std::pair<uint16_t,std::string>{1403u,"000200"},
@@ -938,7 +1054,8 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 	std::pair<uint16_t,std::string>{1424u,"011000"},
 	std::pair<uint16_t,std::string>{1425u,"011100"},
 	std::pair<uint16_t,std::string>{1426u,"011200"}
-};
+	};
+
 // some additional channels frequently have hits,
 // even though apparently nothing was connected:
 //	18-30
@@ -950,6 +1067,9 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 //	17-28
 // TODO maybe add these channels, or suppress their messages...
 // otherwise it just results in a lot of warnings
+// Update 10th of July, 2020
+// --> Added 14-00, 14-27, 14-28 in channelmap version 2
+// Not sure about 17-00, 17-27, 17-28 (MRD channels might have a similar issue as veto channels!)
 
 
 /////////////

@@ -1,0 +1,9 @@
+# StoreClassificationVars config file
+
+verbosity 1
+Filename R1634S0_DigitThr0_Veto
+SaveCSV 1
+SaveROOT 1
+VariableConfig Full
+VariableConfigPath ./configfiles/Classification/PrepareClassificationTraining
+IsData 1

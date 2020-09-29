@@ -23,6 +23,7 @@ class MCRecoEventLoader: public Tool {
   int verbosity=1;
   bool fGetPiKInfo;
   bool fGetNRings;
+  bool fDoParticleSelection;
   int fParticleID;
   double xshift;
   double yshift;
@@ -36,6 +37,8 @@ class MCRecoEventLoader: public Tool {
   double MRDTrackLength = -9999.;
   bool projectedmrdhit = false;
   std::map<int,double> pdgcodetomass;     ///< map that links pdg code to particle mass in MeV, provided by MCParticleProperties
+  std::map<int,std::string> pdgcodetoname;
+  std::map<int,double> pdgcodetocherenkov;
 
   double n = 1.333;   //refractive index of water, should probably rather be defined somewhere else
 

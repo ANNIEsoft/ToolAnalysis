@@ -1,4 +1,4 @@
-myLoadGeometry LoadGeometry configfiles/EventDisplay/Data-RecoEvent/LoadGeometryConfig
+myLoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
 myLoadANNIEEvent LoadANNIEEvent configfiles/EventDisplay/Data-RecoEvent/LoadANNIEEventConfig
 myPhaseIIADCCalibrator PhaseIIADCCalibrator configfiles/EventDisplay/Data-RecoEvent/PhaseIIADCCalibratorConfig
 myPhaseIIADCHitFinder PhaseIIADCHitFinder configfiles/EventDisplay/Data-RecoEvent/PhaseIIADCHitFinderConfig

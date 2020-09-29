@@ -15,11 +15,28 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   str_input = "./R1415_mrdobserved.root";
   str_output = "./R1415_mrdefficiency.root";
   str_inactive = "./configfiles/MrdPaddleEfficiencyCalc/inactive_channels.dat";
+  mc_chankey_path = "./configfiles/MrdPaddleEfficiencyCalc/MRD_Chankeys_Data_MC.dat";
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("InputFile",str_input);
   m_variables.Get("OutputFile",str_output);
   m_variables.Get("InactiveFile",str_inactive);
+  m_variables.Get("IsData",isData);
+  m_variables.Get("MCChankeyFile",mc_chankey_path);
+
+  int chankey_mc, chankey_data, wcsimid;
+
+  if (!isData){
+    ifstream mcchankey(mc_chankey_path.c_str());
+    while (!mcchankey.eof()){
+      mcchankey >> chankey_mc >> wcsimid >> chankey_data;
+      std::cout <<"Adding MC chankey "<<chankey_mc<<", data chankey "<<chankey_data<<std::endl;
+      chankeymap_MC_data.emplace(chankey_mc,chankey_data);
+      chankeymap_data_MC.emplace(chankey_data,chankey_mc);
+      if (mcchankey.eof()) break;
+    }
+    mcchankey.close();
+  }
 
   //Define input and output files
   inputfile = new TFile(str_input.c_str(),"READ");
@@ -230,9 +247,12 @@ bool MrdPaddleEfficiencyCalc::Execute(){
     //Loop over channels within that layer
     for (int i_ch = 0; i_ch < channels_per_layer[i_layer]; i_ch++){
       std::stringstream name_obs_hist, name_exp_hist, name_eff_hist, name_eff_hist_avg, title_eff_hist;
-			
-      name_obs_hist << str_observed_hist << i_layer << str_chkey << channels_start[i_layer] + i_ch;
-      name_exp_hist << str_expected_hist << i_layer << str_chkey << channels_start[i_layer] + i_ch;
+
+      int input_chankey = channels_start[i_layer]+i_ch;
+      if (!isData) input_chankey = chankeymap_data_MC[input_chankey];
+
+      name_obs_hist << str_observed_hist << i_layer << str_chkey << input_chankey;
+      name_exp_hist << str_expected_hist << i_layer << str_chkey << input_chankey;
       name_eff_hist << str_eff_hist << i_layer << str_chkey << channels_start[i_layer] + i_ch;
       name_eff_hist_avg << str_eff_hist << i_layer << str_chkey << channels_start[i_layer] + i_ch << str_avg;
       title_eff_hist << str_title_eff_hist << i_layer << str_title_chkey << channels_start[i_layer] + i_ch;

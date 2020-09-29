@@ -102,6 +102,9 @@
 #include "MonitorTankTime.h"
 #include "PhaseIIADCCalibrator.h"
 #include "MCHitToHitComparer.h"
+#include "MCPropertiesToTree.h"
+#include "CalcClassificationVars.h"
+#include "StoreClassificationVars.h"
 #include "LoadGenieEvent.h"
 #include "PrintGenieEvent.h"
 #include "PlotWaveforms.h"
@@ -124,3 +127,5 @@
 #include "MRDLoopbackAnalysis.h"
 #include "VetoEfficiency.h"
 #include "MonitorTrigger.h"
+
+#include "EventClassification.h"
