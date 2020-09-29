@@ -6,6 +6,6 @@ NumBaselineSamples 15
 NumSubWaveforms 10
 
 SamplesPerBaselineEstimate 2000
-BaselineUncertaintyTolerance 5
+BaselineUncertaintyTolerance 2
 PCritical 0.01
 MakeCalLEDWaveforms 0
