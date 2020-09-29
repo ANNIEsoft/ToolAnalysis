@@ -1,0 +1,9 @@
+# StoreClassificationVars config file
+
+verbosity 1
+Filename beam_DigitThr0_MRDCluster_4996
+SaveCSV 1
+SaveROOT 1
+VariableConfig Full
+VariableConfigPath ./configfiles/Classification/PrepareClassificationTraining
+IsData 0

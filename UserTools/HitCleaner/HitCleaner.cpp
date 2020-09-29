@@ -44,7 +44,8 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   fPmtTimeWindowN = 10;        // timing window for neighbours (ns)
   fPmtTimeWindowC = 10;        // timing window for clusters (ns)
   fPmtMinHitsPerCluster = -1;   //min # of hits per cluster //Ioana 
-  
+  fisMC = 1;			//default: MC 
+ 
   fLappdMinPulseHeight = -1.0;     // minimum pulse height (PEs) //Ioana... initial 1.0
   fLappdNeighbourRadius = 25.0;  // clustering window (cm) //Ioana... intial 300.0
   fLappdMinNeighbourDigits = 5;   // minimum neighbouring digits //Ioana.... initial 2
@@ -129,8 +130,9 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
 
 bool HitCleaner::Execute(){
 	
+  
   std::string name = "HitCleaner::Execute()";
-  Log(name + ": Executing",v_debug,verbosity);
+  Log(name + ": Executing",v_error,verbosity);
 	
   // print filtering parameters
   if(verbosity>v_message) this->PrintParameters();
@@ -198,12 +200,12 @@ bool HitCleaner::Execute(){
 }
 
 bool HitCleaner::Finalise(){
-  delete fHitCleaningParam; fHitCleaningParam = 0;
+  //delete fHitCleaningParam; fHitCleaningParam = 0;      //Will be deleted by the store, don't manually delete
   delete fFilterAll; fFilterAll = 0;
   delete fFilterByPulseHeight; fFilterByPulseHeight = 0;
   delete fFilterByNeighbours; fFilterByNeighbours = 0;
   delete fFilterByClusters; fFilterByClusters = 0;
-  delete fHitCleaningClusters; fHitCleaningClusters = 0; 
+  //delete fHitCleaningClusters; fHitCleaningClusters = 0;    //Will be deleted by the store, don't manually delete
   delete fClusterList; fClusterList = 0;
   // for test
   delete fFilterByTruthInfo; fFilterByTruthInfo = 0;
@@ -689,7 +691,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
     }
   }
 
-  std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
+  //std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
   // return vector of clusters
   // =========================
   return fClusterList;
