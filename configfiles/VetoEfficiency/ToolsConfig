@@ -8,7 +8,7 @@ LoadGeometry LoadGeometry ./configfiles/VetoEfficiency/LoadGeometryConfig
 # this could be useful to re-load PMTData when testing CCData Loading
 
 # steven's tools for PMT, Trigger and Timing Data. Keep the order. 
-raw_loader       RawLoader         configfiles/PlotWaveforms/RawLoaderConfig
+raw_loader       RawLoader         configfiles/VetoEfficiency/RawLoaderConfig
 adc_calibrator   ADCCalibrator     configfiles/VetoEfficiency/ADCCalibratorConfig
 adc_hit_finder   ADCHitFinder      configfiles/VetoEfficiency/ADCHitFinderConfig
 

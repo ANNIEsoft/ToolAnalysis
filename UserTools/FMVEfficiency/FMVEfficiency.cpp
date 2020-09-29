@@ -16,6 +16,7 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("OutputFile",outputfile);
   m_variables.Get("UseTank",useTank);
+  m_variables.Get("IsData",isData);
 
   if (useTank != 0 && useTank != 1) useTank = 0;
 
@@ -45,7 +46,9 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
   time_diff_Layer2 = new TH1F("time_diff_Layer2","Time differences FMV-MRD (Layer 2)",2000,-4000,4000);
   num_paddles_Layer1= new TH1F("num_paddles_Layer1","Number of hit FMV paddles (Layer 1)",14,0,14); 
   num_paddles_Layer2= new TH1F("num_paddles_Layer2","Number of hit FMV paddles (Layer 2)",14,0,14); 
-  
+ 
+  fmv_layer1_layer2 = new TH2F("fmv_layer1_layer2","FMV Layer 1 vs. Layer 2",13,0,13,13,13,26);
+ 
   fmv_observed_layer1 = new TH1F("fmv_observed_layer1","FMV observed hits (Layer 1)",13,0,13);
   fmv_expected_layer1 = new TH1F("fmv_expected_layer1","FMV expected hits (Layer 1)",13,0,13);
   fmv_observed_layer2 = new TH1F("fmv_observed_layer2","FMV observed hits (Layer 2)",13,13,26);
@@ -89,6 +92,8 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
   }
 
   //Read in MRD information from geometry
+  
+  bool is_first_fmv_chankey = true;
 
   for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("Veto").begin();
                                                     it != Detectors->at("Veto").end();
@@ -97,6 +102,11 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
     Detector* amrdpmt = it->second;
     unsigned long detkey = it->first;
     unsigned long chankey = amrdpmt->GetChannels()->begin()->first;
+    if (is_first_fmv_chankey){
+      first_fmv_chankey = chankey;
+      first_fmv_detkey = detkey;
+      is_first_fmv_chankey=false;
+    }
     Paddle *mrdpaddle = (Paddle*) geom->GetDetectorPaddle(detkey);
     double xmin = mrdpaddle->GetXmin();
     double xmax = mrdpaddle->GetXmax();
@@ -111,6 +121,8 @@ bool FMVEfficiency::Initialise(std::string configfile, DataModel &data){
     if (amrdpmt->GetDetectorElement()=="Veto") Log("FMVEfficiency tool: Reading in Veto paddle with Chankey: "+std::to_string(chankey)+", x = "+std::to_string(xmin)+"-"+std::to_string(xmax)+", y = "+std::to_string(ymin)+"-"+std::to_string(ymax)+", z = "+std::to_string(zmin)+"-"+std::to_string(zmax),v_debug,verbosity);
 
     //Define histogram for FMV paddle
+    //Count chankeys from 0 to 26
+    chankey = chankey - first_fmv_chankey;
     std::stringstream ss_observed_strict, ss_expected_strict, ss_observed_strict_title, ss_expected_strict_title, ss_observed_loose, ss_expected_loose, ss_observed_loose_title, ss_expected_loose_title;
     ss_observed_strict << "hist_observed_strict_chankey" << chankey; 
     ss_expected_strict << "hist_expected_strict_chankey" << chankey; 
@@ -170,12 +182,17 @@ bool FMVEfficiency::Execute(){
   //  --------------------------------
   //--------Get tank clusters---------
   //  --------------------------------
-  
+
   if (useTank){
-    get_ok = m_data->CStore.Get("ClusterMap",m_all_clusters);
-    if (not get_ok) { Log("RunValidation Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+    if (isData){
+      get_ok = m_data->CStore.Get("ClusterMap",m_all_clusters);
+      if (not get_ok) { Log("FMVEfficiency Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+    } else {
+      get_ok = m_data->CStore.Get("ClusterMapMC",m_all_clusters_MC);
+      if (not get_ok) { Log("FMVEfficiency Tool: Error retrieving ClusterMapMC from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+    } 
     get_ok = m_data->CStore.Get("ClusterMapDetkey",m_all_clusters_detkey);
-    if (not get_ok) { Log("RunValidation Tool: Error retrieving ClusterMapDetkey from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+    if (not get_ok) { Log("FMVEfficiency Tool: Error retrieving ClusterMapDetkey from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
   }
 
   //  --------------------------------
@@ -191,7 +208,8 @@ bool FMVEfficiency::Execute(){
     if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand",v_error,verbosity); return false;}
   }
 
-  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
+  if (isData) m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
+  else m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_MC);
 
   bool pmt_cluster=false;
   int n_pmt_hits=0;
@@ -204,34 +222,66 @@ bool FMVEfficiency::Execute(){
   //-----Loop through tank data-------
   //  --------------------------------
   
+
   if (useTank){
-    if (m_all_clusters){
-      int clustersize = m_all_clusters->size();
-      if (clustersize != 0){
-        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-          double cluster_charge = apair.first;
-          std::vector<Hit>&Hits = apair.second;
-          std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(cluster_charge);
-          double global_time=0.;
-          double global_charge=0.;
-          int nhits=0;
-          for (unsigned i_hit = 0; i_hit < Hits.size(); i_hit++){
-            unsigned long detkey = detkeys.at(i_hit);
-            double time = Hits.at(i_hit).GetTime();
-            double charge = Hits.at(i_hit).GetCharge();
-            if (pmt_gains[detkey] > 0) charge/=pmt_gains[detkey];
-            global_time+=time;
-            global_charge+=charge;
-            nhits++;
-          }
-          if (nhits>0) global_time/=nhits;
-          if (global_time < 2000. && global_charge > cluster_charge_pe) {
-            pmt_cluster=true;
-            cluster_charge_pe = global_charge;
-            cluster_time = global_time;
+    if (isData){
+      if (m_all_clusters){
+        int clustersize = m_all_clusters->size();
+        if (clustersize != 0){
+          for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
+            double cluster_charge = apair.first;
+            std::vector<Hit>&Hits = apair.second;
+            std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(cluster_charge);
+            double global_time=0.;
+            double global_charge=0.;
+            int nhits=0;
+            for (unsigned i_hit = 0; i_hit < Hits.size(); i_hit++){
+              unsigned long detkey = detkeys.at(i_hit);
+              double time = Hits.at(i_hit).GetTime();
+              double charge = Hits.at(i_hit).GetCharge();
+              if (pmt_gains[detkey] > 0) charge/=pmt_gains[detkey];
+              global_time+=time;
+              global_charge+=charge;
+              nhits++;
+            }
+            if (nhits>0) global_time/=nhits;
+            if (global_time < 2000. && global_charge > cluster_charge_pe) {
+              pmt_cluster=true;
+              cluster_charge_pe = global_charge;
+              cluster_time = global_time;
+            }
           }
         }
       }
+    } else {
+      if (m_all_clusters_MC){
+        int clustersize = m_all_clusters_MC->size();
+        if (clustersize != 0){
+          for(std::pair<double,std::vector<MCHit>>&& apair : *m_all_clusters_MC){
+            double cluster_charge = apair.first;
+            std::vector<MCHit>&MCHits = apair.second;
+            std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(cluster_charge);
+            double global_time=0.;
+            double global_charge=0.;
+            int nhits=0;
+            for (unsigned i_hit = 0; i_hit < MCHits.size(); i_hit++){
+              unsigned long detkey = detkeys.at(i_hit);
+              double time = MCHits.at(i_hit).GetTime();
+              double charge = MCHits.at(i_hit).GetCharge();
+              global_time+=time;
+              global_charge+=charge;
+              nhits++;
+            }
+            if (nhits>0) global_time/=nhits;
+            if (global_time < 2000. && global_charge > cluster_charge_pe) {
+              pmt_cluster=true;
+              cluster_charge_pe = global_charge;
+              cluster_time = global_time;
+            }
+          }
+        }
+      }
+
     }
   }
 
@@ -242,44 +292,88 @@ bool FMVEfficiency::Execute(){
   std::vector<unsigned long> hit_fmv_detkeys_first, hit_fmv_detkeys_second;
   std::vector<double> vector_fmv_times_first, vector_fmv_times_second;
 
-  if(TDCData){
-    if (TDCData->size()==0){
-      Log("FMVEfficiency tool: TDC data is empty in this event.",v_message,verbosity);
-    } else {
-      for (auto&& anmrdpmt : (*TDCData)){
-        unsigned long chankey = anmrdpmt.first;
-        Detector* thedetector = geom->ChannelToDetector(chankey);
-        unsigned long detkey = thedetector->GetDetectorID();
-        if (thedetector->GetDetectorElement()=="Veto") {
-          if (int(chankey) < n_veto_pmts/2) {
-            hit_fmv_detkeys_first.push_back(detkey);
-            double fmv_time=0;
-            int nhits_fmv=0;
-            for(auto&& hitsonthismrdpmt : anmrdpmt.second){
-              fmv_time+=hitsonthismrdpmt.GetTime();
-              nhits_fmv++;
+  if (isData){
+    if(TDCData){
+      if (TDCData->size()==0){
+        Log("FMVEfficiency tool: TDC data is empty in this event.",v_message,verbosity);
+      } else {
+        for (auto&& anmrdpmt : (*TDCData)){
+          unsigned long chankey = anmrdpmt.first;
+          Detector* thedetector = geom->ChannelToDetector(chankey);
+          unsigned long detkey = thedetector->GetDetectorID();
+          if (thedetector->GetDetectorElement()=="Veto") {
+            if (int(chankey) < n_veto_pmts/2) {
+              hit_fmv_detkeys_first.push_back(detkey);
+              double fmv_time=0;
+              int nhits_fmv=0;
+              for(auto&& hitsonthismrdpmt : anmrdpmt.second){
+                fmv_time+=hitsonthismrdpmt.GetTime();
+                nhits_fmv++;
+              }
+              if (nhits_fmv!=0) fmv_time/=nhits_fmv;
+              vector_fmv_times_first.push_back(fmv_time);
             }
-            if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-            vector_fmv_times_first.push_back(fmv_time);
-          }
-          else { 
-            hit_fmv_detkeys_second.push_back(detkey);
-            double fmv_time = 0;
-            int nhits_fmv = 0;
-            for(auto&&hitsonthismrdpmt : anmrdpmt.second){
-              fmv_time+=hitsonthismrdpmt.GetTime();
-              nhits_fmv++;
+            else { 
+              hit_fmv_detkeys_second.push_back(detkey);
+              double fmv_time = 0;
+              int nhits_fmv = 0;
+              for(auto&&hitsonthismrdpmt : anmrdpmt.second){
+                fmv_time+=hitsonthismrdpmt.GetTime();
+                nhits_fmv++;
+              }
+              if (nhits_fmv!=0) fmv_time/=nhits_fmv;
+              vector_fmv_times_second.push_back(fmv_time);
             }
-            if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-            vector_fmv_times_second.push_back(fmv_time);
-          }
-        } 
+          } 
+        }
       }
+    } else {
+      Log("FMVEfficiency tool: No TDC data available in this event.",v_message,verbosity);
     }
   } else {
-    Log("FMVEfficiency tool: No TDC data available in this event.",v_message,verbosity);
+    if(TDCData_MC){
+      if (TDCData_MC->size()==0){
+        Log("FMVEfficiency tool: TDC data (MC) is empty in this event.",v_message,verbosity);
+      } else {
+        for (auto&& anmrdpmt : (*TDCData_MC)){
+          unsigned long chankey = anmrdpmt.first;
+          Detector* thedetector = geom->ChannelToDetector(chankey);
+          unsigned long detkey = thedetector->GetDetectorID();
+	  chankey-=first_fmv_chankey;
+          detkey-=first_fmv_detkey;
+          if (thedetector->GetDetectorElement()=="Veto") {
+            if (int(chankey) < n_veto_pmts/2) {
+              hit_fmv_detkeys_first.push_back(detkey);
+              double fmv_time=0;
+              int nhits_fmv=0;
+              for(auto&& hitsonthismrdpmt : anmrdpmt.second){
+                fmv_time+=hitsonthismrdpmt.GetTime();
+                nhits_fmv++;
+              }
+              if (nhits_fmv!=0) fmv_time/=nhits_fmv;
+              vector_fmv_times_first.push_back(fmv_time);
+            }
+            else { 
+              hit_fmv_detkeys_second.push_back(detkey);
+              double fmv_time = 0;
+              int nhits_fmv = 0;
+              for(auto&&hitsonthismrdpmt : anmrdpmt.second){
+                fmv_time+=hitsonthismrdpmt.GetTime();
+                nhits_fmv++;
+              }
+              if (nhits_fmv!=0) fmv_time/=nhits_fmv;
+              vector_fmv_times_second.push_back(fmv_time);
+            }
+          } 
+        }
+      }
+    } else {
+      Log("FMVEfficiency tool: No TDC data available in this event.",v_message,verbosity);
+    }
+
+
   }
-  
+ 
   // How many FMV paddles were hit?
   
   unsigned int npaddles_Layer1 = hit_fmv_detkeys_first.size();
@@ -296,7 +390,11 @@ bool FMVEfficiency::Execute(){
     if (npaddles_Layer1 == 1){
       for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_first.size(); i_fmv++){
         time_diff_tank_Layer1->Fill(vector_fmv_times_first.at(i_fmv)-cluster_time);  
-        if ((vector_fmv_times_first.at(i_fmv)-cluster_time)<740 || (vector_fmv_times_first.at(i_fmv)-cluster_time)>840) continue;
+        if (isData){
+          if ((vector_fmv_times_first.at(i_fmv)-cluster_time)<740 || (vector_fmv_times_first.at(i_fmv)-cluster_time)>840) continue;
+        } else {
+          if ((vector_fmv_times_first.at(i_fmv)-cluster_time)<-100 || (vector_fmv_times_first.at(i_fmv)-cluster_time)>100) continue; 
+        }
         unsigned long detkey_first = hit_fmv_detkeys_first.at(i_fmv);
         fmv_tank_secondlayer_expected.at(detkey_first)++;
         if (std::find(hit_fmv_detkeys_second.begin(),hit_fmv_detkeys_second.end(),detkey_first+n_veto_pmts/2)!=hit_fmv_detkeys_second.end()){
@@ -308,7 +406,11 @@ bool FMVEfficiency::Execute(){
     if (npaddles_Layer2 == 1){
       for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_second.size(); i_fmv++){
         time_diff_tank_Layer2->Fill(vector_fmv_times_second.at(i_fmv)-cluster_time); 
-        if ((vector_fmv_times_second.at(i_fmv)-cluster_time)<740 || (vector_fmv_times_second.at(i_fmv)-cluster_time)>840) continue;
+        if (isData){
+          if ((vector_fmv_times_second.at(i_fmv)-cluster_time)<740 || (vector_fmv_times_second.at(i_fmv)-cluster_time)>840) continue;
+        } else {
+          if ((vector_fmv_times_second.at(i_fmv)-cluster_time)<-100 || (vector_fmv_times_second.at(i_fmv)-cluster_time)>100) continue;
+        }
         unsigned long detkey_second = hit_fmv_detkeys_second.at(i_fmv);
         unsigned long detkey_first = detkey_second - n_veto_pmts/2;
         fmv_tank_firstlayer_expected.at(detkey_first)++;
@@ -413,6 +515,9 @@ bool FMVEfficiency::Execute(){
         track_diff_y_strict_Layer1->Fill(y_layer1-fmv_firstlayer_y.at(detkey_first));
         track_diff_xy_strict_Layer1->Fill(x_layer1-fmv_x,y_layer1-fmv_firstlayer_y.at(detkey_first));
       }
+      for (int i_second=0; i_second < (int) hit_fmv_detkeys_second.size(); i_second++){
+        fmv_layer1_layer2->Fill(detkey_first,hit_fmv_detkeys_second.at(i_second));
+      }
       if (std::find(hit_fmv_detkeys_second.begin(),hit_fmv_detkeys_second.end(),detkey_first+n_veto_pmts/2)!=hit_fmv_detkeys_second.end()) {
         if (y_layer1-fmv_firstlayer_y.at(detkey_first) > -0.4 && y_layer1-fmv_firstlayer_y.at(detkey_first)<0.6 && fabs(x_layer1-fmv_x)<1.6){
           fmv_secondlayer_observed_track_loose.at(detkey_first)++;
@@ -462,6 +567,9 @@ bool FMVEfficiency::Execute(){
           fmv_firstlayer_observed_track_loose.at(detkey_first)++;
           vector_observed_loose_layer1.at(detkey_first)->Fill(x_layer2);
         }
+       for (int i_first=0; i_first < (int) hit_fmv_detkeys_first.size(); i_first++){
+        fmv_layer1_layer2->Fill(hit_fmv_detkeys_first.at(i_first),detkey_second);
+       }
         fmv_firstlayer_observed.at(detkey_first)++;
         if (hit_chankey_layer2 == detkey_second){
           vector_observed_strict_layer1.at(detkey_first)->Fill(x_layer2);
@@ -483,6 +591,7 @@ bool FMVEfficiency::Finalise(){
   //  --------------------------------
 
   file->cd();
+  fmv_layer1_layer2->Write();
   for (unsigned int i_fmv = 0; i_fmv < fmv_secondlayer.size(); i_fmv++){
     fmv_observed_layer1->SetBinContent(i_fmv+1,fmv_firstlayer_observed.at(i_fmv));
     fmv_expected_layer1->SetBinContent(i_fmv+1,fmv_firstlayer_expected.at(i_fmv));
@@ -538,7 +647,7 @@ bool FMVEfficiency::FindPaddleChankey(double x, double y, int layer, unsigned lo
 
                 if (found_chankey) break;
 
-                unsigned long chankey_tmp = (unsigned long) i_channel;
+                unsigned long chankey_tmp = (unsigned long) i_channel+first_fmv_chankey;
                 if (layer == 2) chankey_tmp += 13;
                 Detector *mrdpmt = geom->ChannelToDetector(chankey_tmp);
                 unsigned long detkey = mrdpmt->GetDetectorID();
