@@ -42,10 +42,10 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("LAPPDIDFile", fLAPPDIDFile);
   m_variables.Get("DigitChargeThr",fDigitChargeThr);
   m_variables.Get("ChankeyToPMTIDMap",path_chankeymap);
+  m_variables.Get("SinglePEGains",singlePEgains);
 
   /// Construct the other objects we'll be setting at event level,
   fDigitList = new std::vector<RecoDigit>;
-
 
   // Make the RecoDigit Store if it doesn't exist
   int recoeventexists = m_data->Stores.count("RecoEvent");
@@ -74,8 +74,20 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
       pmtid_to_channelkey.emplace(pmtid,chankey);
       if (file_pmtid.eof()) break;
     }
+    
     file_pmtid.close();
     m_data->CStore.Set("pmt_tubeid_to_channelkey",pmtid_to_channelkey);
+
+    ifstream file_singlepe(singlePEgains.c_str());
+    unsigned long temp_chankey;
+    double temp_gain;
+    while (!file_singlepe.eof()){
+      file_singlepe >> temp_chankey >> temp_gain;
+      if (file_singlepe.eof()) break;
+      pmt_gains.emplace(temp_chankey,temp_gain);
+    }
+    file_singlepe.close();
+
   }
 
 
@@ -148,7 +160,7 @@ bool DigitBuilder::Execute(){
 }
 
 bool DigitBuilder::Finalise(){
-  delete fDigitList; fDigitList = 0;
+  //delete fDigitList; fDigitList = 0;		//Don't delete pointer to fDigitList, will be deleted by the BoostStore!
   if(verbosity>0) cout<<"DigitBuilder exitting"<<endl;
   return true;
 }
@@ -481,9 +493,13 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
                 std::cout << "PMT Charge,Time: " << to_string(calQ) << "," <<
                 to_string(calT) << std::endl;
               }
-              if(calQ>fDigitChargeThr) {
+	      double calQ_temp = calQ;
+	      if (pmt_gains.find(chankey) != pmt_gains.end() && pmt_gains.at(chankey) > 0.0){
+                calQ_temp = calQ / pmt_gains.at(chankey);
+              }
+              if(calQ_temp>fDigitChargeThr) {
                 digitType = RecoDigit::PMT8inch;
-	        RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
+	        RecoDigit recoDigit(region, pos_reco, calT, calQ_temp, digitType, PMTId);
                 fDigitList->push_back(recoDigit); 
 	      }
             }

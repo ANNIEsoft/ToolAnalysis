@@ -314,7 +314,7 @@ bool LoadWCSim::Execute(){
 			
 			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
-			if(verbosity>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+			/*if(verbosity>3)*/ cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
 			m_data->CStore.Set("GenieEntry",genieentry);
 			
@@ -348,7 +348,35 @@ bool LoadWCSim::Execute(){
 					
 					tracktype startstoptype = tracktype::UNDEFINED;
 					//MC particle times are relative to the trigger time
-					if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
+					if(nextrack->GetFlag()!=0) {
+						if (nextrack->GetFlag()==-1){
+							MCParticle neutrino(
+							nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
+							Position(nextrack->GetStart(0) / 100.,
+									 nextrack->GetStart(1) / 100.,
+									 nextrack->GetStart(2) / 100.),
+							Position(nextrack->GetStop(0) / 100.,
+									 nextrack->GetStop(1) / 100.,
+									 nextrack->GetStop(2) / 100.),
+							//MC particle times now stored relative to the trigger time
+							(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
+							(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
+							Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
+							(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
+								 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
+								 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
+							startstoptype,
+							nextrack->GetId(),
+							nextrack->GetParenttype(),
+							nextrack->GetFlag(),
+							trigi);
+
+							//Set the neutrino as its own particle
+							m_data->Stores["ANNIEEvent"]->Set("NeutrinoParticle",neutrino);
+							
+							continue; // flag 0 only is normal particles: excludes neutrino
+						}
+					}
 					MCParticle thisparticle(
 						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 						Position(nextrack->GetStart(0) / 100.,

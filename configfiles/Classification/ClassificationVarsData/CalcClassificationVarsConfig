@@ -1,0 +1,9 @@
+# CalcClassificationVars config file
+
+verbosity 2
+IsData 1
+NeutrinoSample 1
+PDF_emu ./configfiles/Classification/pdfs/pdf_beamlike_emu_500bins_sumw2.root
+PDF_rings ./configfiles/Classification/pdfs/pdf_beam_rings_500bins_sumw2.root
+SinglePEgains ./configfiles/Classification/ClassificationVarsData/ChannelSPEGains_BeamRun20192020.csv
+ChargeConversionMCData 1.375
