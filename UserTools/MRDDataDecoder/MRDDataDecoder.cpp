@@ -15,6 +15,11 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   verbosity = 0;
 
   m_variables.Get("verbosity",verbosity);
+  // was this run taken at a daylight savings time of year?
+  m_variables.Get("DaylightSavingsSpring",DaylightSavings);
+  // work out the conversion required to put MRD timestamps into UTC
+  TimeZoneShift = 21600000;
+  if(DaylightSavings) TimeZoneShift = 18000000;
 
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("NewMRDDataAvailable",false);
@@ -49,7 +54,9 @@ bool MRDDataDecoder::Execute(){
   m_data->CStore.Get("MRDData",mrddata);
   std::string mrdTriggertype = "No Loopback";
   std::vector<unsigned long> chankeys;
-  unsigned long timestamp = mrddata->TimeStamp;    //in ms since 1970/1/1
+  uint64_t timestamp = static_cast<uint64_t>(mrddata->TimeStamp);    //in ms since 1970/1/1
+  // before anything else convert it to UTC ns
+  timestamp = (timestamp+TimeZoneShift)*1E6;
   std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
   MRDEvents.emplace(timestamp,ChankeyTimePairs);
   

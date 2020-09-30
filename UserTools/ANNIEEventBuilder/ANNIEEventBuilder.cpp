@@ -19,12 +19,12 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   OrphanOldTankTimestamps = true;
   OldTimestampThreshold = 120; //seconds
   OrphanWarningValue = 20;
-  DaylightSavings = true;
   ExecutesPerBuild = 50;
-  MRDTankTimeTolerance = 10;   //ms
-  CTCTankTimeTolerance = 100; //ns
-  CTCMRDTimeTolerance = 2;  //ms
-  DriftWarningValue = 5;    //ms
+  MRDTankTimeTolerance = 10;     //ms
+  CTCTankTimeTolerance = 100;    //ns
+  CTCMRDTimeTolerance = 2000000; //ns
+  DriftWarningValue = 5000000;   //ns
+  pause_threshold = 5*60;        //s
 
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
@@ -35,11 +35,13 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MinNumWavesInSet",NumWavesInCompleteSet);
   m_variables.Get("OrphanOldTankTimestamps",OrphanOldTankTimestamps);
   m_variables.Get("OldTimestampThreshold",OldTimestampThreshold);
-  m_variables.Get("DaylightSavingsSpring",DaylightSavings);
   m_variables.Get("ExecutesPerBuild",ExecutesPerBuild);
   m_variables.Get("MRDTankTimeTolerance",MRDTankTimeTolerance);
   m_variables.Get("CTCTankTimeTolerance",CTCTankTimeTolerance);
   m_variables.Get("CTCMRDTimeTolerance",CTCMRDTimeTolerance);
+  m_variables.Get("OrphanFileBase",OrphanFileBase);
+  m_variables.Get("MaxStreamMatchingTimeSeparation",pause_threshold);
+  pause_threshold*=1E9;
 
   if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
@@ -67,11 +69,14 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   }
 
   //////////////////////initialize subrun index//////////////
+  ProcessedStore = new BoostStore(false,2);
   ANNIEEvent = new BoostStore(false,2);
   ANNIEEventNum = 0;
   CurrentRunNum = -1;
   CurrentSubRunNum = -1;
   CurrentDriftMean = 0;
+  
+  OrphanStore = new BoostStore(false,2);
 
   return true;
 }
@@ -83,12 +88,21 @@ bool ANNIEEventBuilder::Execute(){
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
     Log("ANNIEEventBuilder Tool: There's no new PMT/MRD data.  Stopping loop, ANNIEEvent BoostStore will save.",v_warning,verbosity); 
     m_data->vars.Set("StopLoop",1);
-    return true;
+  }
+  
+  // ensure we always build if the toolchain is stopping
+  bool toolchain_stopping=false;
+  m_data->vars.Get("StopLoop",toolchain_stopping);
+  // likewise ensure we try to do all possible matching if we've hit the end of the file
+  bool file_completed=false;
+  m_data->CStore.Set("FileCompleted",file_completed);
+  toolchain_stopping |= file_completed;
+  if(toolchain_stopping){
+    Log("ANNIEEventBuilder: StopLoop or FileCompleted detected, forcing building of any remaining events in the timestream",v_warning,verbosity);
   }
     
-    
   ExecuteCount+=1;
-  if(ExecuteCount<ExecutesPerBuild) return true;
+  if((ExecuteCount<ExecutesPerBuild)&&(!toolchain_stopping)) return true;
 
   //See if the MRD and Tank are at the same run/subrun for building
   m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
@@ -116,12 +130,12 @@ bool ANNIEEventBuilder::Execute(){
   if (BuildType == "Tank"){
     //Check to see if there's new PMT data
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
-    if(!IsNewTankData){
+    if((!IsNewTankData)&&(!toolchain_stopping)){
       Log("ANNIEEventBuilder:: No new Tank Data.  Not building ANNIEEvent. ",v_message, verbosity);
       return true;
     }
     else if(IsNewTankData) this->ProcessNewTankPMTData();
-    this->ManagePMTMRDOrphanage();
+    this->ManageOrphanage();
 
     std::vector<uint64_t> PMTEventsToDelete;
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : FinishedTankEvents){
@@ -174,8 +188,8 @@ bool ANNIEEventBuilder::Execute(){
   //Built ANNIE events with only MRD data
   else if (BuildType == "MRD"){
     m_data->CStore.Get("NewMRDDataAvailable",IsNewMRDData);
-    std::vector<unsigned long> MRDEventsToDelete;
-    if(!IsNewMRDData){
+    std::vector<uint64_t> MRDEventsToDelete;
+    if((!IsNewMRDData)&&(!toolchain_stopping)){
       Log("ANNIEEventBuilder:: No new MRD Data.  Not building ANNIEEvent: ",v_message, verbosity);
       return true;
     }
@@ -187,8 +201,8 @@ bool ANNIEEventBuilder::Execute(){
     m_data->CStore.Set("NumMRDTimestamps",NumMRDTimestamps);
     
    //Loop through MRDEvents and process each into ANNIEEvent.
-    for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : myMRDMaps.MRDEvents){
-      unsigned long MRDTimeStamp = apair.first;
+    for(std::pair<uint64_t,std::vector<std::pair<unsigned long,int>>> apair : myMRDMaps.MRDEvents){
+      uint64_t MRDTimeStamp = apair.first;
       std::vector<std::pair<unsigned long,int>> MRDHits = apair.second;
       std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[MRDTimeStamp];
       int beam_tdc = myMRDMaps.MRDBeamLoopbackMap[MRDTimeStamp];
@@ -216,6 +230,7 @@ bool ANNIEEventBuilder::Execute(){
     //Check if any In-progress tank events now have all waveforms
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
     if(IsNewTankData) this->ProcessNewTankPMTData();
+    this->ManageOrphanage();
 
     //Look through our MRD data for any new timestamps
     m_data->CStore.Get("MRDEventTriggerTypes",myMRDMaps.MRDTriggerTypeMap);
@@ -236,15 +251,15 @@ bool ANNIEEventBuilder::Execute(){
     std::map<uint64_t,uint64_t> BeamTankMRDPairs; //Pairs of beam-triggered Tank PMT/MRD counters ready to be built if all PMT waveforms are ready (TankAndMRD mode only)
     //*10 provides a buffer between paired events and events at the tail of the timestamp streams
     //Without it, events get moved to the orphanage that probably shouldn't
-    if(MinStamps > (EventsPerPairing*10)){
+    if((MinStamps > (EventsPerPairing*10))||toolchain_stopping){
       this->RemoveCosmics();
       BeamTankMRDPairs = this->PairTankPMTAndMRDTriggers();
-      this->ManagePMTMRDOrphanage();
+      this->ManageOrphanage();
 
       std::vector<uint64_t> BuiltTankTimes;
       for(std::pair<uint64_t,uint64_t> cpair : BeamTankMRDPairs){
         uint64_t TankCounterTime = cpair.first;
-        if(verbosity>4) std::cout << "TANK EVENT WITH TIMESTAMP " << TankCounterTime << "HAS REQUIRED MINIMUM NUMBER OF WAVES TO BUILD" << std::endl;
+        if(verbosity>4) std::cout << "TANK EVENT WITH TIMESTAMP " << TankCounterTime << " HAS REQUIRED MINIMUM NUMBER OF WAVES TO BUILD" << std::endl;
         std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = FinishedTankEvents.at(TankCounterTime);
         uint64_t MRDTimeStamp = cpair.second;
         if(verbosity>4) std::cout << "MRD TIMESTAMP: " << MRDTimeStamp << std::endl;
@@ -276,6 +291,7 @@ bool ANNIEEventBuilder::Execute(){
   else if (BuildType == "TankAndMRDAndCTC"){
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
     if(IsNewTankData) this->ProcessNewTankPMTData();
+    this->ManageOrphanage();
 
     
     //Look through our MRD data for any new timestamps
@@ -294,10 +310,63 @@ bool ANNIEEventBuilder::Execute(){
     //Now, pair up PMT/MRD/Triggers...
     int NumTankTimestamps = myTimeStream.BeamTankTimestamps.size();
     int NumMRDTimestamps = myTimeStream.BeamMRDTimestamps.size();
-    int MinTMStamps = std::min(NumTankTimestamps,NumMRDTimestamps);
     int NumTrigs = myTimeStream.CTCTimestamps.size();
-    int MinStamps = std::min(MinTMStamps,NumTrigs);
-
+    
+    // get get the most recent timestamp from each TimeStream
+    uint64_t most_recent_beam = *std::max_element(myTimeStream.BeamTankTimestamps.begin(),
+                                                  myTimeStream.BeamTankTimestamps.end());
+    uint64_t most_recent_mrd = *std::max_element(myTimeStream.BeamMRDTimestamps.begin(),
+                                                  myTimeStream.BeamMRDTimestamps.end());
+    uint64_t most_recent_ctc = *std::max_element(myTimeStream.CTCTimestamps.begin(),
+                                                  myTimeStream.CTCTimestamps.end());
+    
+    // find which TimeStream is lagging the most, and what time it's currently read up to.
+    std::vector<uint64_t> newest_timestamps{most_recent_beam,most_recent_mrd,most_recent_ctc};
+    uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
+    
+    if(verbosity>4){
+      std::cout<<"ANNIEEventBuilder: most recent timestamps from each stream are: "
+           <<most_recent_beam<<", "<<most_recent_mrd<<", "<<most_recent_ctc
+           <<", with differences from the slowest stream being: "
+           <<(static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<", "
+           <<(static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<", "
+           <<(static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<std::endl;
+    }
+    
+    // always ensure the slowest stream is unpaused
+           if(slowest_stream_timestamp==most_recent_beam){
+      m_data->CStore.Set("PauseTankDecoding",false);
+    } else if(slowest_stream_timestamp==most_recent_mrd){
+      m_data->CStore.Set("PauseMRDDecoding",false);
+    } else if(slowest_stream_timestamp==most_recent_ctc){
+      m_data->CStore.Set("PauseCTCDecoding",false);
+    }
+    
+    // if any other streams are more than X seconds ahead of the slowest one, pause them...
+    if((static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      // secondly, only pause a stream once we have at least EventsPerPairing timestamps in it,
+      // otherwise doing so will prevent building attempts
+      if(NumTankTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseTankDecoding",true);
+        Log("ANNIEEventBuilder: Pausing tank stream",v_debug,verbosity);
+      }
+    }
+    if((static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      if(NumMRDTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseMRDDecoding",true);
+        Log("ANNIEEventBuilder: Pausing mrd stream",v_debug,verbosity);
+      }
+    }
+    if((static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      if(NumTrigs>EventsPerPairing){
+        m_data->CStore.Set("PauseCTCDecoding",true);
+        Log("ANNIEEventBuilder: Pausing ctc stream",v_debug,verbosity);
+      }
+    }
+    
     if(verbosity>3){
         std::cout << "Number of CTCTimes, MRDTimes, PMTTimes: " << 
             NumTrigs << "," << NumMRDTimestamps << "," << NumTankTimestamps << std::endl;
@@ -305,14 +374,22 @@ bool ANNIEEventBuilder::Execute(){
 
     std::map<uint64_t,std::map<std::string,uint64_t>> ThisBuildMap; //key: CTC timestamp, value: vector of maps.  Each map has the keys: "Tank", "MRD", "CTC", or "LAPPD" with values: 
                                                                     //timestamp of that stream (exception: "CTC" key has the trigger word as the value).
-    if(MinStamps > (EventsPerPairing)){
+    
+    int MinStamps = (NumTankTimestamps<NumMRDTimestamps) ? NumTankTimestamps : NumMRDTimestamps;
+    MinStamps = (NumTrigs<MinStamps) ? NumTrigs : MinStamps;
+    
+    // only attempt timestamp matching if we have enough timestamps to try to match,
+    // OR if the toolchain is being stopped (reached and of file, for example)
+    if((MinStamps>EventsPerPairing)||toolchain_stopping){
       if(verbosity>4) std::cout << "MERGING COSMIC/MRD PAIRS " << std::endl;
-      ThisBuildMap = this->PairCTCCosmicPairs(ThisBuildMap);
-      this->ManagePMTMRDOrphanage(); 
+      ThisBuildMap = this->PairCTCCosmicPairs(ThisBuildMap,std::max(most_recent_mrd,most_recent_ctc),toolchain_stopping);
+      this->ManageOrphanage();
 
       if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
-      ThisBuildMap = this->MergeStreams(ThisBuildMap);
-      this->ManagePMTMRDOrphanage(); 
+      ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
+      Log("ANNIEEventBuilder: Calling ManageOrphanage post MergeStreams",v_debug,verbosity);
+      this->ManageOrphanage();
+      Log("ANNIEEventBuilder: Done managing orphanage",v_debug,verbosity);
 
       for(std::pair<uint64_t, std::map<std::string,uint64_t>> buildmap_entries : ThisBuildMap){
         uint64_t CTCtimestamp = buildmap_entries.first;
@@ -377,6 +454,9 @@ bool ANNIEEventBuilder::Finalise(){
   if(verbosity>2) std::cout << "PMT/MRD Orphan number at finalise: " << myOrphanage.OrphanTankTimestamps.size() <<
           "," << myOrphanage.OrphanMRDTimestamps.size() << std::endl;
   //Save the current subrun and delete ANNIEEvent
+  OrphanStore->Close();
+  OrphanStore->Delete();
+  delete OrphanStore;
   std::cout << "ANNIEEventBuilder Exitting" << std::endl;
   return true;
 }
@@ -393,8 +473,8 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
 }
 
 void ANNIEEventBuilder::ProcessNewMRDData(){
-  for(std::pair<unsigned long,std::vector<std::pair<unsigned long,int>>> apair : myMRDMaps.MRDEvents){
-    unsigned long MRDTimeStamp = apair.first;
+  for(std::pair<uint64_t,std::vector<std::pair<unsigned long,int>>> apair : myMRDMaps.MRDEvents){
+    uint64_t MRDTimeStamp = apair.first;
     myTimeStream.BeamMRDTimestamps.push_back(MRDTimeStamp);
     if(verbosity>5)std::cout << "MRDTIMESTAMPTRIGTYPE," << MRDTimeStamp << "," << myMRDMaps.MRDTriggerTypeMap.at(MRDTimeStamp) << std::endl;
   }
@@ -406,6 +486,10 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   //Check if any In-progress tank events now have all waveforms
   m_data->CStore.Get("InProgressTankEvents",InProgressTankEvents);
   std::vector<uint64_t> InProgressTankEventsToDelete;
+  std::map<uint64_t,std::string> TankOrphans;
+  std::map<uint64_t,std::string> MRDOrphans;
+  std::map<uint64_t,std::string> CTCOrphans;
+  
   if(verbosity>5) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
   for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
     uint64_t PMTCounterTimeNs = apair.first;
@@ -432,10 +516,13 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
     //out from all TankTimestamp maps
     if(OrphanOldTankTimestamps && ((NewestTankTimestamp - PMTCounterTimeNs) > OldTimestampThreshold*1E9)){
       InProgressTankEventsToDelete.push_back(PMTCounterTimeNs);
-      myOrphanage.OrphanTankTimestamps.push_back(PMTCounterTimeNs);
+      TankOrphans.emplace(PMTCounterTimeNs,"incomplete_tank_event");
     }
   }
   RemoveDuplicates(myTimeStream.BeamTankTimestamps);
+  
+  // move abandoned in-progress events to the orphanage
+  this->MoveToOrphanage(TankOrphans, MRDOrphans, CTCOrphans);
  
   //Since timestamp pairing has been done for finished Tank Events,
   //Erase the finished Tank Events from the InProgressTankEventsMap
@@ -448,17 +535,20 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   return;
 }
 
-std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosmicPairs(std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap){
+std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosmicPairs(std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap, uint64_t max_timestamp, bool force_matching){
   uint32_t CosmicWord = 36;  //TS_in(35) + 1, where 35 is the MRD_CR_Trigger
   std::vector<uint64_t> MRDCosmicTimes;
   std::vector<uint64_t> MRDStampsToDelete;
   std::map<uint64_t,uint64_t> PairedCTCMRDTimes;
-  std::vector<uint64_t> MRDOrphans;
+  std::map<uint64_t,std::string> MRDOrphans;
+  std::map<uint64_t,std::string> TankOrphans;
+  std::map<uint64_t,std::string> CTCOrphans;
 
-  for (int i=0;i<(EventsPerPairing); i++) {
-    std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[myTimeStream.BeamMRDTimestamps.at(i)];
+  for(auto&& aTS : myTimeStream.BeamMRDTimestamps) {
+    if((aTS>max_timestamp)&&(!force_matching)) break; // don't try to match yet
+    std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[aTS];
     if(MRDTriggerType == "Cosmic"){
-      MRDCosmicTimes.push_back(myTimeStream.BeamMRDTimestamps.at(i));
+      MRDCosmicTimes.push_back(aTS);
     }
   }
  
@@ -468,39 +558,28 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
   //First, pair up myTimeStream.CTCTimestamps and MRD/PMT timestamps
   std::map<uint64_t,uint64_t> PairedCTCCosmicTimes;
 
-  double TimeZoneShift = 21600000.0;
-  if(DaylightSavings) TimeZoneShift = 18000000.0;
-  int LargestCTCIndex = 0;
-
-  int CTCSize = myTimeStream.CTCTimestamps.size();
   //Form CTC-MRD pairs
   if(verbosity>3) std::cout << "Finding CTC-MRD pairs..." << std::endl;
-  int CTCInd = 0;
-  for(int j=0; j<MRDCosmicTimes.size(); j++){
-    while(CTCInd<CTCSize){
-      if(TimeToTriggerWordMap->at(myTimeStream.CTCTimestamps.at(CTCInd)) != CosmicWord){
-        CTCInd+=1;
-         continue;
-      }
-      double TSDiff =  static_cast<double>(MRDCosmicTimes.at(j)) - 
-          (static_cast<double>(myTimeStream.CTCTimestamps.at(CTCInd)/1E6) - TimeZoneShift);
-      if(verbosity>4) std::cout << "CosmicTS - CTCTS in milliseconds is " << TSDiff << std::endl;
-      if(TSDiff>CTCMRDTimeTolerance){ // Need to move forward in indices
-        CTCInd+=1;
+  for(auto&& aMrdTS : MRDCosmicTimes){
+    for(auto&& aCtcTS : myTimeStream.CTCTimestamps){
+      if((aCtcTS>max_timestamp)&&(!force_matching)) continue;        // do not try to match just yet
+      if(TimeToTriggerWordMap->at(aCtcTS) != CosmicWord) continue;   // not a cosmic CTC
+      double TSDiff =  static_cast<double>(aMrdTS) - 
+                       static_cast<double>(aCtcTS);
+      if(verbosity>4) std::cout << "CosmicTS - CTCTS in nanoseconds is " << TSDiff << std::endl;
+      if(TSDiff>CTCMRDTimeTolerance){ // MRD timestamp is later than this CTC one. Check next CTC timestamp.
         continue;
-      } else if (TSDiff<(-1.*static_cast<double>(CTCMRDTimeTolerance))){ //We've crossed past where a pair would be found
+      } else if (TSDiff<(-1.*static_cast<double>(CTCMRDTimeTolerance))){ // We've crossed past where a pair would be found
         if(verbosity>4) std::cout << "NO CTC STAMP FOUND MATCHING COSMIC STAMP... MRD TO ORPHANAGE" << std::endl;
-        MRDOrphans.push_back(MRDCosmicTimes.at(j));
+        MRDOrphans.emplace(aMrdTS,"mrd_cosmic_no_ctc");
         break;
       } else { //We've found a valid CTC-MRD pair!
         if(verbosity>4) std::cout << "FOUND A MATCHING CTC TIME FOR THIS COSMIC MRD TIMESTAMP. NICE, PAIR EM." << std::endl;
-        PairedCTCMRDTimes.emplace(myTimeStream.CTCTimestamps.at(CTCInd), MRDCosmicTimes.at(j));
-        CTCInd+=1;
+        PairedCTCMRDTimes.emplace(aCtcTS, aMrdTS);
         break;
       }
     }
   }
-  LargestCTCIndex = CTCInd - 1;
 
   //Neat.  Now, add timestamps to the buildmap.
   std::vector<uint64_t> BuiltCTCs;
@@ -529,8 +608,6 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
 
   //Move MRD timestamps with no pairs to the orphanage.  Just empty Tank and CTC vectors for 
   //Input to function.  TODO; could overload function
-  std::vector<uint64_t> TankOrphans;
-  std::vector<uint64_t> CTCOrphans;
   this->MoveToOrphanage(TankOrphans, MRDOrphans, CTCOrphans);
   return BuildMap;
 }
@@ -561,7 +638,7 @@ void ANNIEEventBuilder::RemoveCosmics(){
 }
 
 
-std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStreams(std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap){
+std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStreams(std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap, uint64_t max_timestamp, bool force_matching){
   //This method takes timestamps from the BeamMRDTimestamps, BeamTankTimestamps, and
   //CTCTimestamps vectors (acquired as the building continues) and builds maps 
   //stored in the BuildMap and used to build ANNIEEvents.
@@ -569,65 +646,63 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   //First, pair up CTCTimestamps and MRD/PMT timestamps
   std::map<uint64_t,uint64_t> PairedCTCTankTimes; 
   std::map<uint64_t,uint64_t> PairedCTCMRDTimes;
-  std::vector<uint64_t> MRDOrphans;
-  std::vector<uint64_t> TankOrphans;
-  std::vector<uint64_t> CTCOrphans;
+  std::map<uint64_t,std::string> MRDOrphans;
+  std::map<uint64_t,std::string> TankOrphans;
+  std::map<uint64_t,std::string> CTCOrphans;
 
-  double TimeZoneShift = 21600000.0;
-  if(DaylightSavings) TimeZoneShift = 18000000.0;
-
-  int LargestCTCIndex = 0;
-
-  int CTCSize = myTimeStream.CTCTimestamps.size();
+  // only attempt matching of any kind on timestamps older than the newest timestamp we have
+  // from ALL streams - i.e. if the slowest stream has only read up to 4pm, do not try to do
+  // matching on any timestamps newer than this
   //Form CTC-MRD pairs
+  uint64_t max_ctc=0;
   if(verbosity>3) std::cout << "Finding CTC-MRD pairs..." << std::endl;
-  int CTCInd = 0;
-  for(int j=0; j<EventsPerPairing; j++){
-    while(CTCInd<CTCSize){
-      double TSDiff =  static_cast<double>(myTimeStream.BeamMRDTimestamps.at(j)) - 
-              (static_cast<double>(myTimeStream.CTCTimestamps.at(CTCInd)/1E6) - TimeZoneShift);
-      if(verbosity>4) std::cout << "MRDTS - CTCTS in milliseconds is " << TSDiff << std::endl;
-      if(TSDiff>CTCMRDTimeTolerance){ // Need to move forward in indices
-        CTCInd+=1;
+  for(auto&& aMrdTS : myTimeStream.BeamMRDTimestamps){
+    if((aMrdTS>max_timestamp)&&(!force_matching)) continue;   // don't try to match just yet
+    for(auto&& aCtcTS : myTimeStream.CTCTimestamps){
+      if((aCtcTS>max_timestamp)&&(!force_matching)) continue; // don't try to match this just yet
+      double TSDiff =  static_cast<double>(aMrdTS) - 
+                       static_cast<double>(aCtcTS);
+      if(verbosity>4) std::cout << "MRDTS - CTCTS in nanoseconds is " << TSDiff << std::endl;
+      if(TSDiff>CTCMRDTimeTolerance){ // MRD timestamp is later than CTC timestamp; try next CTC timestamp
         continue;
       } else if (TSDiff<(-1.*static_cast<double>(CTCMRDTimeTolerance))){ //We've crossed past where a pair would be found
         if(verbosity>4) std::cout << "NO CTC STAMP FOUND MATCHING MRD STAMP... MRD TO ORPHANAGE" << std::endl;
-        MRDOrphans.push_back(myTimeStream.BeamMRDTimestamps.at(j));
+        MRDOrphans.emplace(aMrdTS,"mrd_beam_no_ctc");
         break;
       } else { //We've found a valid CTC-MRD pair!
         if(verbosity>4) std::cout << "FOUND A MATCHING CTC TIME FOR THIS MRD TIMESTAMP. NICE, PAIR EM." << std::endl;
-        PairedCTCMRDTimes.emplace(myTimeStream.CTCTimestamps.at(CTCInd), myTimeStream.BeamMRDTimestamps.at(j));
-        CTCInd+=1;
+        PairedCTCMRDTimes.emplace(aCtcTS, aMrdTS);
+        max_ctc=aCtcTS;
         break;
       }
     }
   }
-  LargestCTCIndex = CTCInd - 1;
 
   //Now form CTC-PMT pairs
   if(verbosity>3) std::cout << "Finding CTC-Tank pairs..." << std::endl;
-  CTCInd = 0;
-  for(int j=0; j<EventsPerPairing; j++){
-    while(CTCInd<CTCSize){
-      double TSDiff =  static_cast<double>(myTimeStream.BeamTankTimestamps.at(j)) - 
-              static_cast<double>(myTimeStream.CTCTimestamps.at(CTCInd));
+  for(auto&& aTankTS : myTimeStream.BeamTankTimestamps){
+    if((aTankTS>max_timestamp)&&(!force_matching)) continue; // don't try to match just yet
+    for(auto&& aCtcTS : myTimeStream.CTCTimestamps){
+      if((aCtcTS>max_timestamp)&&(!force_matching)) continue; // don't try to match just yet
+      double TSDiff =  static_cast<double>(aTankTS) - 
+                       static_cast<double>(aCtcTS);
       if(verbosity>4) std::cout << "TankTS - CTCTS in nanoseconds is " << TSDiff << std::endl;
       if(TSDiff>CTCTankTimeTolerance){ // Need to move forward in indices
-        CTCInd+=1;
         continue;
       } else if (TSDiff<(-1.*static_cast<double>(CTCTankTimeTolerance))){ //We've crossed past where a pair would be found
         if(verbosity>4) std::cout << "NO CTC STAMP FOUND MATCHING TANK STAMP... TANK TO ORPHANAGE" << std::endl;
-        TankOrphans.push_back(myTimeStream.BeamTankTimestamps.at(j));
+        TankOrphans.emplace(aTankTS,"tank_no_ctc");
         break;
       } else { //We've found a valid CTC-Tank pair!
         if(verbosity>4) std::cout << "FOUND A MATCHING CTC TIME FOR THIS TANK TIMESTAMP. NICE, PAIR EM." << std::endl;
-        PairedCTCTankTimes.emplace(myTimeStream.CTCTimestamps.at(CTCInd), myTimeStream.BeamTankTimestamps.at(j));
-        CTCInd+=1;
+        PairedCTCTankTimes.emplace(aCtcTS, aTankTS);
+        if(aCtcTS>max_ctc) max_ctc=aCtcTS;
         break;
       }
     }
   }
-  if(CTCInd>LargestCTCIndex) LargestCTCIndex=CTCInd-1;
+  int LargestCTCIndex = std::distance(myTimeStream.CTCTimestamps.begin(),std::find(myTimeStream.CTCTimestamps.begin(),myTimeStream.CTCTimestamps.end(),max_ctc));
+  if(max_ctc==0) LargestCTCIndex=0;
   if(verbosity>4) std::cout << "LARGEST CTC INDEX WAS " << LargestCTCIndex << std::endl;
   if(verbosity>4) std::cout << "AND CTCTIMESTAMPS SIZE IS " << myTimeStream.CTCTimestamps.size() << std::endl;
   
@@ -675,9 +750,13 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
       //uint64_t latest_tank_orphan = TankOrphans.at(TankOrphans.size()-1);
       //uint64_t latest_MRD_orphan = MRDOrphans.at(MRDOrphans.size()-1);
       //if(CTCKey < latest_tank_orphan && CTCKey < latest_MRD_orphan){
-      CTCOrphans.push_back(CTCKey);
+      CTCOrphans.emplace(CTCKey,"ctc_no_mrd_or_tank");
       //}
     } else {
+      // beam ctc and mrd match, but no tank
+      // at the least do we need to orphan the CTC and MRD events?
+      CTCOrphans.emplace(CTCKey,"ctc_mrd_no_tank");
+      MRDOrphans.emplace(it_mrd->second,"ctc_mrd_no_tank");
       if(verbosity>4) std::cout << "CTC TIMESTAMP " << CTCKey << " PAIRS WITH EITHER A PMT OR MRD..."  << std::endl;
     }
   }
@@ -692,53 +771,136 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
 
   //Move timestamps with no pairs to the orphanage
   this->MoveToOrphanage(TankOrphans, MRDOrphans, CTCOrphans);
+  Log("ANNIEEventBuilder: Returning from Merging the Streams",v_debug,verbosity);
 
   return BuildMap;
 }
 
-void ANNIEEventBuilder::MoveToOrphanage(std::vector<uint64_t> TankOrphans, 
-                                        std::vector<uint64_t> MRDOrphans,
-                                        std::vector<uint64_t> CTCOrphans){
+void ANNIEEventBuilder::MoveToOrphanage(std::map<uint64_t, std::string> TankOrphans,
+                                        std::map<uint64_t, std::string> MRDOrphans,
+                                        std::map<uint64_t, std::string> CTCOrphans){
   if(verbosity>3) std::cout << "MOVING TIMESTAMPS WITH NO FAMILY TO ORPHANAGE" << std::endl;
   //Finally, we need to move data associated with our orphaned timestamps to the orphange
-  for(int l = 0; l<CTCOrphans.size(); l++){
-    uint64_t CTCOrphanStamp = CTCOrphans.at(l);
-    myOrphanage.OrphanCTCTimeWordPairs.emplace(CTCOrphanStamp,TimeToTriggerWordMap->at(CTCOrphanStamp));
-    TimeToTriggerWordMap->erase(CTCOrphanStamp);
+  for(auto&& nextorphan : CTCOrphans){
+    uint64_t CTCOrphanStamp = nextorphan.first;
+    
+    // build map of orphan info to save to OrphanStore
+    std::map<std::string,std::string> orphaninfo;
+    orphaninfo.emplace("reason",nextorphan.second);
+    orphaninfo.emplace("ctc_word",to_string(TimeToTriggerWordMap->at(CTCOrphanStamp)));
+    
+    // move to orphanage
+    myOrphanage.OrphanCTCTimestamps.emplace(CTCOrphanStamp,orphaninfo);
+    
+    // remove the orphan from the timestream
     myTimeStream.CTCTimestamps.erase(std::remove(myTimeStream.CTCTimestamps.begin(),
          myTimeStream.CTCTimestamps.end(),CTCOrphanStamp), 
          myTimeStream.CTCTimestamps.end());
   }
-  for(int l=0; l<TankOrphans.size(); l++){
-    myOrphanage.OrphanTankTimestamps.push_back(TankOrphans.at(l));
+  
+  for(auto&& nextorphan : TankOrphans){
+    uint64_t TankOrphanStamp = nextorphan.first;
+    
+    // build map of orphan info to save to OrphanStore
+    std::map<std::string,std::string> orphaninfo;
+    orphaninfo.emplace("reason",nextorphan.second);
+    
+    // move to orphanage
+    myOrphanage.OrphanTankTimestamps.emplace(TankOrphanStamp,orphaninfo);
+    
+    // remove the orphan from the timestream
     myTimeStream.BeamTankTimestamps.erase(std::remove(myTimeStream.BeamTankTimestamps.begin(),
-               myTimeStream.BeamTankTimestamps.end(),TankOrphans.at(l)), 
+               myTimeStream.BeamTankTimestamps.end(),TankOrphanStamp), 
                myTimeStream.BeamTankTimestamps.end());
   }
-  for(int l=0; l<MRDOrphans.size(); l++){
-    myOrphanage.OrphanMRDTimestamps.push_back(MRDOrphans.at(l));
+  
+  for(auto&& nextorphan : MRDOrphans){
+    uint64_t MrdOrphanStamp = nextorphan.first;
+    
+    // build map of orphan info to save to OrphanStore
+    std::map<std::string,std::string> orphaninfo;
+    orphaninfo.emplace("reason",nextorphan.second);
+    
+    // move to orphanage
+    myOrphanage.OrphanMRDTimestamps.emplace(MrdOrphanStamp,orphaninfo);
+    
+    // remove the orphan from the timestream
     myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
-               myTimeStream.BeamMRDTimestamps.end(),MRDOrphans.at(l)), 
+               myTimeStream.BeamMRDTimestamps.end(),MrdOrphanStamp), 
                myTimeStream.BeamMRDTimestamps.end());
   }
   if(verbosity>3) std::cout << "ORPHAN MOVEMENT COMPLETE" << std::endl;
   return;
 }
 
-void ANNIEEventBuilder::ManagePMTMRDOrphanage(){
-  //For now, just delete things from orphanage
-  for(int i=0; i<myOrphanage.OrphanTankTimestamps.size(); i++){
-    FinishedTankEvents.erase(myOrphanage.OrphanTankTimestamps.at(i));
+void ANNIEEventBuilder::ManageOrphanage(){
+  
+  // TODO
+  // try to find incomplete tank orphans to match ctc/mrd orphans
+  // build a fixed type that says what data was present:
+  // MRD? CTC? Tank? Right now without merging it'll be just one,
+  // but later if we're able to merge orphans it could be more than one
+//  std::cout<<"Going to manage the orphanage"<<std::endl;
+  
+  std::string OrphanFile = SavePath + OrphanFileBase + "R" + to_string(CurrentRunNum) + 
+      "S" + to_string(CurrentSubRunNum);
+//  std::cout<<"orphans will be saved to "<<OrphanFile<<std::endl;
+//  std::cout<<"OrphanStore is "<<OrphanStore<<std::endl;
+  
+//  std::cout<<"managing tank orphans"<<std::endl;
+  //For now, just save orphans then delete them
+  for(auto&& nextorphan : myOrphanage.OrphanTankTimestamps){
+    // copy the orphan info into OrphanStore
+//    std::cout<<"set tank orphan info into OrphanStore"<<std::endl;
+    OrphanStore->Set("EventType",std::string("Tank"));
+    OrphanStore->Set("Timestamp",nextorphan.first);
+    OrphanStore->Set("Reason",nextorphan.second.at("reason"));
+    OrphanStore->Set("Info",nextorphan.second); // redundant for now, but maybe we'll add more info later
+//    std::cout<<"Variables set, calling Save to write Orphans to file "<<OrphanFile<<std::endl;
+    OrphanStore->Save(OrphanFile);
+//    std::cout<<"Orphans have been saved, deleting the orphanage"<<std::endl;
+    OrphanStore->Delete();
+//    std::cout<<"orphanage has been deleted, erasing the orphan from the FinishedTankEvents"<<std::endl;
+    
+    // cleanup from events to process
+    FinishedTankEvents.erase(nextorphan.first);
+//    std::cout<<"done, move to next orphan"<<std::endl;
   }
-  for(int i=0; i<myOrphanage.OrphanMRDTimestamps.size(); i++){
-    myMRDMaps.MRDEvents.erase(myOrphanage.OrphanMRDTimestamps.at(i));
-    myMRDMaps.MRDTriggerTypeMap.erase(myOrphanage.OrphanMRDTimestamps.at(i));
-    myMRDMaps.MRDBeamLoopbackMap.erase(myOrphanage.OrphanMRDTimestamps.at(i));
-    myMRDMaps.MRDCosmicLoopbackMap.erase(myOrphanage.OrphanMRDTimestamps.at(i));
+//  std::cout<<"managing mrd orphans"<<std::endl;
+  for(auto&& nextorphan : myOrphanage.OrphanMRDTimestamps){
+    // copy the orphan info into OrphanStore
+    OrphanStore->Set("EventType",std::string("MRD"));
+    OrphanStore->Set("Timestamp",nextorphan.first);
+    OrphanStore->Set("Reason",nextorphan.second.at("reason"));
+    OrphanStore->Set("Info",nextorphan.second); // redundant for now, but maybe we'll add more info later
+    OrphanStore->Save(OrphanFile);
+    OrphanStore->Delete();
+    
+    // cleanup from events to process
+    myMRDMaps.MRDEvents.erase(nextorphan.first);
+    myMRDMaps.MRDTriggerTypeMap.erase(nextorphan.first);
+    myMRDMaps.MRDBeamLoopbackMap.erase(nextorphan.first);
+    myMRDMaps.MRDCosmicLoopbackMap.erase(nextorphan.first);
   }
-
+//  std::cout<<"Managing CTC orphans"<<std::endl;
+  for(auto&& nextorphan : myOrphanage.OrphanCTCTimestamps){
+    // copy the orphan info into OrphanStore
+    OrphanStore->Set("EventType",std::string("CTC"));
+    OrphanStore->Set("Timestamp",nextorphan.first);
+    OrphanStore->Set("Reason",nextorphan.second.at("reason"));
+    OrphanStore->Set("Info",nextorphan.second); // CTC word
+    OrphanStore->Save(OrphanFile);
+    OrphanStore->Delete();
+    
+    // cleanup from events to process
+    TimeToTriggerWordMap->erase(nextorphan.first);
+  }
+//  std::cout<<"all CTC orphans handled, clearing the orphan timestamps"<<std::endl;
+  
   myOrphanage.OrphanTankTimestamps.clear();
   myOrphanage.OrphanMRDTimestamps.clear();
+  myOrphanage.OrphanCTCTimestamps.clear();
+//  std::cout<<"timestamps cleared, returning"<<std::endl;
   return;
 }
 
@@ -750,38 +912,40 @@ std::map<uint64_t,uint64_t> ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
   std::vector<uint64_t> MRDStampsToDelete;
   int NumPairsToMake = EventsPerPairing;
   std::vector<double> ThisPairingTSDiffs;
+  
+  std::map<uint64_t,std::string> MRDOrphans;
+  std::map<uint64_t,std::string> TankOrphans;
+  std::map<uint64_t,std::string> CTCOrphans;
 
   int NumOrphans = 0;
-  double TimeZoneShift = 21600000.0;
-  if(DaylightSavings) TimeZoneShift = 18000000.0;
 
   //Pair PMT and MRD timestamps and calculate how much PMTTime - MRDTime has drifted 
   if(verbosity>4) std::cout << "MEAN OF PMT-MRD TIME DIFFERENCE LAST LOOP: " << CurrentDriftMean << std::endl;
-  for (int i=0;i<(NumPairsToMake); i++) {
-    double TSDiff = (static_cast<double>(myTimeStream.BeamTankTimestamps.at(i)/1E6) - TimeZoneShift) - 
-            static_cast<double>(myTimeStream.BeamMRDTimestamps.at(i));
+  for (int i=0;i<NumPairsToMake; i++) {
+    double TSDiff = static_cast<double>(myTimeStream.BeamTankTimestamps.at(i)) - 
+                    static_cast<double>(myTimeStream.BeamMRDTimestamps.at(i));
     if(verbosity>4){
       std::cout << "PAIRED TANK TIMESTAMP: " << myTimeStream.BeamTankTimestamps.at(i) << std::endl;
       std::cout << "PAIRED MRD TIMESTAMP: " << myTimeStream.BeamMRDTimestamps.at(i) << std::endl;
-      std::cout << "DIFFERENCE BETWEEN PMT AND MRD TIMESTAMP (ms): " << 
-      (((myTimeStream.BeamTankTimestamps.at(i)/1E6) - TimeZoneShift) - myTimeStream.BeamMRDTimestamps.at(i)) << std::endl;
+      std::cout << "DIFFERENCE BETWEEN PMT AND MRD TIMESTAMP (ns): " << 
+      (static_cast<double>(myTimeStream.BeamTankTimestamps.at(i)) - static_cast<double>(myTimeStream.BeamMRDTimestamps.at(i))) << std::endl;
     }
     if(std::abs(TSDiff-CurrentDriftMean) > MRDTankTimeTolerance){ // PMT/MRD timestamps farther apart than set tolerance
       if(verbosity>3) std::cout << "DEVIATION OF " << MRDTankTimeTolerance << " ms DETECTED IN STREAMS" << std::endl;
       if(TSDiff > 0) {
         if(verbosity>3) std::cout << "MOVING MRD TIMESTAMP TO ORPHANAGE" << std::endl;
-        myOrphanage.OrphanMRDTimestamps.push_back(myTimeStream.BeamMRDTimestamps.at(i));
+        MRDOrphans.emplace(myTimeStream.BeamMRDTimestamps.at(i),"mrd_beam_no_tank");
         NumOrphans +=1;
         myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
             myTimeStream.BeamMRDTimestamps.end(),myTimeStream.BeamMRDTimestamps.at(i)), 
             myTimeStream.BeamMRDTimestamps.end());
       } else {
         if(verbosity>3) std::cout << "MOVING TANK TIMESTAMP TO ORPHANAGE" << std::endl;
-        myOrphanage.OrphanTankTimestamps.push_back(myTimeStream.BeamTankTimestamps.at(i));
+        TankOrphans.emplace(myTimeStream.BeamTankTimestamps.at(i),"tank_no_mrd");
         NumOrphans +=1;
         myTimeStream.BeamTankTimestamps.erase(std::remove(myTimeStream.BeamTankTimestamps.begin(),
             myTimeStream.BeamTankTimestamps.end(),myTimeStream.BeamTankTimestamps.at(i)), 
-             myTimeStream.BeamTankTimestamps.end());
+            myTimeStream.BeamTankTimestamps.end());
       }
       i-=1;
       NumPairsToMake-=1;
@@ -789,6 +953,7 @@ std::map<uint64_t,uint64_t> ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
       ThisPairingTSDiffs.push_back(TSDiff);
     }
   }
+  this->MoveToOrphanage(TankOrphans, MRDOrphans, CTCOrphans);
 
   //With the last set of pairs calculate what the mean drift is
   //TODO: Error handling for high drift and high orphan rates?
@@ -825,7 +990,7 @@ std::map<uint64_t,uint64_t> ANNIEEventBuilder::PairTankPMTAndMRDTriggers(){
 
 
 void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
-        unsigned long MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc)
+        uint64_t MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc)
 {
   std::cout << "Building an ANNIE Event (MRD), ANNIEEventNum = "<<ANNIEEventNum << std::endl;
   TDCData = new std::map<unsigned long, std::vector<Hit>>;
@@ -853,8 +1018,8 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
-  TimeClass timeclass_timestamp((uint64_t)MRDTimeStamp*1000);  //in microseconds
-  ANNIEEvent->Set("EventTime",timeclass_timestamp); //not sure if EventTime is also in UTC or defined differently
+  TimeClass timeclass_timestamp(MRDTimeStamp);
+  ANNIEEvent->Set("EventTimeMRD",timeclass_timestamp);
   ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
   ANNIEEvent->Set("MRDLoopbackTDC",mrd_loopback_tdc);
   return;
