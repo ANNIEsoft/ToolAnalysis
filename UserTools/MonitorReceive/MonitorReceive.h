@@ -35,6 +35,8 @@ class MonitorReceive: public Tool {
   BoostStore* indata;
   BoostStore* MRDData;
   BoostStore* PMTData;
+  BoostStore* TrigData;
+  std::vector<std::string> loaded_files;
 };
 
 

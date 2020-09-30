@@ -1,0 +1,8 @@
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p0
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p1
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p2
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p3
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p4
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p5
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p6
+/pnfs/annie/persistent/users/mnieslon/data/rawdata/RAWDataR1706S0p7

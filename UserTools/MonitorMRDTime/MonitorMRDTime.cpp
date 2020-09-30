@@ -383,6 +383,7 @@ bool MonitorMRDTime::Finalise(){
   }
   delete hist_tdc;
   delete hist_tdc_cluster;
+  delete hist_tdc_cluster_20;
   delete log_files_mrd;
   delete rate_crate1;
   delete rate_crate2;
@@ -702,8 +703,15 @@ void MonitorMRDTime::WriteToFile(){
   //if data is already written to DB/File, do not write it again
   if (omit_entries) {
 
-    //don't write file again, but still delete TFile and TTree object!!!
+    //don't write file again, but still delete TFile and TTree object!!! (and vectors)
     f->Close();
+    delete crate;
+    delete slot;
+    delete channel;
+    delete tdc;
+    delete rms;
+    delete rate;
+    delete channelcount;
     delete f;
 
     gROOT->cd();
@@ -906,9 +914,31 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("nevents",&nevents);
 
         nentries_tree = t->GetEntries();
-        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
 
+        //Sort timestamps for the case that they are not in order
+        //
+        std::vector<ULong64_t> vector_timestamps;
+        std::map<ULong64_t,int> map_timestamp_entry;
+        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
           t->GetEntry(i_entry);
+          if (t_start >= timestamp_start && t_end <= timestamp_end){
+            vector_timestamps.push_back(t_start);
+            map_timestamp_entry.emplace(t_start,i_entry);
+          }
+        }
+
+        std::sort(vector_timestamps.begin(), vector_timestamps.end());
+        std::vector<int> vector_sorted_entry;
+
+        for (int i_entry = 0; i_entry < (int) vector_timestamps.size(); i_entry++){
+          vector_sorted_entry.push_back(map_timestamp_entry.at(vector_timestamps.at(i_entry)));
+        }
+
+        for (int i_entry = 0; i_entry < (int) vector_sorted_entry.size(); i_entry++){
+
+          int next_entry = vector_sorted_entry.at(i_entry);
+
+          t->GetEntry(next_entry);
           if (t_start >= timestamp_start && t_end <= timestamp_end){
             tdc_plot.push_back(*tdc);
             rms_plot.push_back(*rms);
@@ -1135,6 +1165,9 @@ void MonitorMRDTime::InitializeVectors(){
   hist_tdc_cluster = new TH1F("hist_tdc_cluster","TDC Cluster (last file)",20,0,1000);
   hist_tdc_cluster->GetXaxis()->SetTitle("TDC");
   hist_tdc_cluster->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster_20 = new TH1F("hist_tdc_cluster_20","TDC Cluster (last 20 files)",20,0,1000);
+  hist_tdc_cluster_20->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster_20->GetYaxis()->SetTitle("#");
 
   //-------------------------------------------------------
   //------------Pie charts---------------------------------
@@ -1882,10 +1915,11 @@ void MonitorMRDTime::DrawTDCHistogram(){
   std::stringstream end_time;
   end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
 
+  std::vector<int> coinc_times_mrd;	//Introduce a vector to store found coincidence times
+
   canvas_tdc->cd();
   canvas_tdc->Clear();
   canvas_tdc->SetLogy();
-
 
   for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
       if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(0) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(0) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(0)) continue; //Omit cosmic loopback signal
@@ -1922,6 +1956,7 @@ void MonitorMRDTime::DrawTDCHistogram(){
 	  if (n_channels >= min_cluster){
 	    for (int i_ch = 0; i_ch < n_channels; i_ch++){
 	      hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+              coinc_times_mrd.push_back(tdc_times.at(i_tdc-i_ch));
             }
           }
 	}
@@ -1929,9 +1964,10 @@ void MonitorMRDTime::DrawTDCHistogram(){
         if (n_channels >= min_cluster){
           for (int i_ch = 1; i_ch <= n_channels; i_ch++){
             hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+            coinc_times_mrd.push_back(tdc_times.at(i_tdc-i_ch));
 	  }
         }
-        n_channels = 0;
+        n_channels = 1;
         tdc_current = tdc_times.at(i_tdc);
       }
     }  
@@ -1953,6 +1989,28 @@ void MonitorMRDTime::DrawTDCHistogram(){
   ss_tdc_hist.str("");
   ss_tdc_hist << outpath << "MRDTDCHist_Cluster_lastFile."<<img_extension;
   canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster->Reset();
+  canvas_tdc->Clear();
+  
+  overall_mrd_coinc_times.push_back(coinc_times_mrd);
+  if (overall_mrd_coinc_times.size() > 20){
+    overall_mrd_coinc_times.erase(overall_mrd_coinc_times.begin());
+  }
+  for (int i_coinc = 0; i_coinc < (int) overall_mrd_coinc_times.size(); i_coinc++){
+    std::vector<int> single_coinc_times = overall_mrd_coinc_times.at(i_coinc);
+    for (int i_hit=0; i_hit < (int) single_coinc_times.size(); i_hit++){
+      hist_tdc_cluster_20->Fill(single_coinc_times.at(i_hit));
+    }
+  }
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster "<<end_time.str()<<" (last 20 files) ";
+  hist_tdc_cluster_20->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster_20->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_Cluster_last20Files."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster_20->Reset();
+  canvas_tdc->Clear();
 
 }
 

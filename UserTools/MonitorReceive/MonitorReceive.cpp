@@ -32,11 +32,12 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
 
   m_data->Stores["CCData"]=new BoostStore(false,0);
   m_data->Stores["PMTData"]=new BoostStore(false,0);
+  m_data->Stores["TrigData"]=new BoostStore(false,0);
 	
   indata=0;
   MRDData=0; 
   PMTData=0;
-
+  TrigData=0;
 
   return true;
 }
@@ -54,6 +55,7 @@ bool MonitorReceive::Execute(){
 
   m_data->CStore.Set("HasCCData",false);
   m_data->CStore.Set("HasPMTData",false);
+  m_data->CStore.Set("HasTrigData",false);
 
   std::string State="Wait";
   m_data->CStore.Set("State",State);
@@ -83,20 +85,23 @@ bool MonitorReceive::Execute(){
 	MonitorReceiver->recv(&filepath);
 
 	std::istringstream iss(static_cast<char*>(filepath.data()));
+	//Check if we already processed this file
+	if (std::find(loaded_files.begin(),loaded_files.end(),iss.str()) != loaded_files.end()){
+		//std::cout <<"MonitorReceive: File "<<iss.str()<<" already loaded before. Abort execution of MonitorReceive tool."<<std::endl;
+		return true;
+	}
+	//Add current file to the list of already processed filenames
+	loaded_files.push_back(iss.str());
+	//Delete any filenames that are older than the last 100
+	while (loaded_files.size()>100){
+	  loaded_files.erase(loaded_files.begin());	
+	}
+
 
 	//std::cout<<"received data file="<<iss.str()<<std::endl;
 
-	/*if(MRDData!=0){
-	  MRDData->Close();
-	  delete MRDData;
-	  MRDData=0;	  
-	}
-
-	if(PMTData!=0){
-	  PMTData->Close();
-	  delete PMTData;
-	  PMTData=0;	  
-	}*/	      
+	// Don't delete MRDData & PMTData in case they are stored in a BoostStore, otherwise there will be attempts to delete them twice!
+	      
 	      
 	if (MRDData!=0){
 	  m_data->Stores["CCData"]->Delete();
@@ -104,6 +109,18 @@ bool MonitorReceive::Execute(){
 	      
 	if (PMTData!=0){
 	  m_data->Stores["PMTData"]->Delete();
+	  PMTData->Close();
+	  PMTData->Delete();
+	  delete PMTData;
+	  PMTData=0;
+	}
+
+	if (TrigData!=0){
+	  m_data->Stores["TrigData"]->Delete();
+	  TrigData->Close();
+	  TrigData->Delete();
+	  delete TrigData;
+	  TrigData=0;
 	}
 	      
 	if(indata!=0){
@@ -115,9 +132,12 @@ bool MonitorReceive::Execute(){
 	
 	indata=new BoostStore(false,0); 
 	indata->Initialise(iss.str());
+	      
+	std::cout <<"MonitorReceive: Received new file: "<<iss.str()<<std::endl;
 
 	MRDData= new BoostStore(false,2);
 	PMTData= new BoostStore(false,2);
+	TrigData = new BoostStore(false,2);
 
 	if (indata->Has("CCData")){
 		m_data->CStore.Set("HasCCData",true);	
@@ -127,11 +147,43 @@ bool MonitorReceive::Execute(){
 	} else {
 		m_data->CStore.Set("HasCCData",false);
 	}
+	if (indata->Has("TrigData")){
+		m_data->CStore.Set("HasTrigData",true);
+		indata->Get("TrigData",*TrigData);
+		long totalentries_trig;
+		TrigData->Header->Get("TotalEntries",totalentries_trig);
+		std::map<int,TriggerData> TrigData_Map;
+		for (int i_trig=0; i_trig < totalentries_trig; i_trig++){
+			TriggerData TData;
+			TrigData->GetEntry(i_trig);
+			TrigData->Get("TrigData",TData);
+			TrigData_Map.emplace(i_trig,TData);
+		}
+		m_data->Stores["TrigData"]->Set("TrigDataMap",TrigData_Map);
+	} else {
+		m_data->CStore.Set("HasTrigData",false);
+	}
 	if (indata->Has("PMTData")){
 		m_data->CStore.Set("HasPMTData",true);
 		indata->Get("PMTData",*PMTData);
-		PMTData->Save("tmp");
-		m_data->Stores["PMTData"]->Set("FileData",PMTData,false);
+		long totalentries;
+        	PMTData->Header->Get("TotalEntries",totalentries);
+        	std::cout <<"MonitorReceive: Total entries: "<<totalentries<<std::endl;
+        	int ExecuteEntryNum=0;
+        	int EntriesToDo,CDEntryNum;
+        	if (totalentries < 14000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
+        	else EntriesToDo = 1000;               //otherwise do ~1000 entries out of ~15000 (or more)
+		CDEntryNum = 0;
+        	std::map<int,std::vector<CardData>> CardData_Map;
+        	while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
+            		std::vector<CardData> vector_CardData;
+            		PMTData->GetEntry(CDEntryNum);
+            		PMTData->Get("CardData",vector_CardData);
+            		CardData_Map.emplace(CDEntryNum,vector_CardData);
+            		ExecuteEntryNum++;
+            		CDEntryNum++;
+        	}
+        	m_data->Stores["PMTData"]->Set("CardDataMap",CardData_Map);  
 	} else {
 		m_data->CStore.Set("HasPMTData",false);
 	}
@@ -155,15 +207,22 @@ bool MonitorReceive::Finalise(){
   }
 
   connections.clear();
+	
+  if (indata != 0) {indata->Close(); indata->Delete(); delete indata; indata = 0;}
+  if (PMTData != 0) {PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
+  if (TrigData != 0) {TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = 0;}
 
   m_data->CStore.Remove("State");
 
   m_data->Stores["CCData"]->Remove("FileData");
   m_data->Stores["CCData"]->Remove("Single");
-  m_data->Stores["PMTData"]->Remove("FileData");
+  m_data->Stores["PMTData"]->Remove("CardDataMap");
+  m_data->Stores["TrigData"]->Remove("TrigDataMap");
+  // m_data->Stores["PMTData"]->Remove("FileData");
 	
   m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete();
   m_data->Stores["PMTData"]->Close(); m_data->Stores["PMTData"]->Delete();
+  m_data->Stores["TrigData"]->Close(); m_data->Stores["TrigData"]->Delete();
   m_data->Stores.clear();
 
   return true;

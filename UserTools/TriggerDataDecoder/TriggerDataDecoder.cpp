@@ -13,9 +13,18 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   verbosity = 0;
   TriggerMaskFile = "none";
+  TriggerWordFile = "none";
+  mode = "EventBuilding";
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("TriggerMaskFile",TriggerMaskFile);
+  m_variables.Get("TriggerWordFile",TriggerWordFile);
+  m_variables.Get("Mode",mode);
+
+  if (mode != "EventBuilding" && mode != "Monitoring"){
+    Log("TriggerDataDecoder tool: Specified mode of operation >> "+mode+" unknown. Use standard EventBuilding mode.",v_error,verbosity);
+    mode = "EventBuilding";
+  }
 
   CurrentRunNum = -1;
   CurrentSubrunNum = -1;
@@ -28,54 +37,98 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
     if(TriggerMask.size()>0) UseTrigMask = true;
   }
 
+  if(TriggerWordFile!="none"){
+    TriggerWords = LoadTriggerWords(TriggerWordFile);    //maps trigger words to human-readable labels
+    m_data->CStore.Set("TriggerWordMap",TriggerWords);
+  }
+
   return true;
 }
 
 
 bool TriggerDataDecoder::Execute(){
-  m_data->CStore.Set("NewCTCDataAvailable",false);
-  bool PauseCTCDecoding = false;
-  m_data->CStore.Get("PauseCTCDecoding",PauseCTCDecoding);
-  if (PauseCTCDecoding){
-    std::cout << "TriggerDataDecoder tool: Pausing trigger decoding to let Tank and MRD data catch up..." << std::endl;
-    return true;
-  }
-  //Clear decoding maps if a new run/subrun is encountered
-  this->CheckForRunChange();
 
-  //Get the TriggerData vector pointer from the CStore
-  Log("TriggerDataDecoder Tool: Accessing TrigData vector in CStore",v_debug, verbosity);
-  bool got_tdata = m_data->CStore.Get("TrigData",Tdata);
-  if(!got_tdata){
-    if(verbosity>0) std:;cout << "TriggerDataDecoder error: No TriggerData in CStore!" << std::endl;
-    return false;
-  }
-  bool new_ts_available = false;
-  std::vector<uint32_t> aTimeStampData = Tdata->TimeStampData;
-  for(int i = 0; i < aTimeStampData.size(); i++){
-    if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
-    new_ts_available = this->AddWord(aTimeStampData.at(i));
-    if(new_ts_available){
-      if(verbosity>4){
-        std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
-        std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
+  if (mode == "EventBuilding"){
+    m_data->CStore.Set("NewCTCDataAvailable",false);
+    bool PauseCTCDecoding = false;
+    m_data->CStore.Get("PauseCTCDecoding",PauseCTCDecoding);
+    if (PauseCTCDecoding){
+      std::cout << "TriggerDataDecoder tool: Pausing trigger decoding to let Tank and MRD data catch up..." << std::endl;
+      return true;
+    }
+    //Clear decoding maps if a new run/subrun is encountered
+    this->CheckForRunChange();
+  
+    //Get the TriggerData vector pointer from the CStore
+    Log("TriggerDataDecoder Tool: Accessing TrigData vector in CStore",v_debug, verbosity);
+    bool got_tdata = m_data->CStore.Get("TrigData",Tdata);
+    if(!got_tdata){
+      if(verbosity>0) std::cout << "TriggerDataDecoder error: No TriggerData in CStore!" << std::endl;
+      return false;
+    }
+    bool new_ts_available = false;
+    std::vector<uint32_t> aTimeStampData = Tdata->TimeStampData;
+    for(int i = 0; i < (int) aTimeStampData.size(); i++){
+      if(verbosity>v_debug) std::cout<<"TriggerDataDecoder Tool: Loading next TrigData from entry's index " << i <<std::endl;
+      new_ts_available = this->AddWord(aTimeStampData.at(i));
+      if(new_ts_available){
+        if(verbosity>4){
+          std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
+          std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
+        }
+        if(UseTrigMask){
+          uint32_t recent_trigger_word = processed_sources.back();
+          for(int j = 0; j<(int) TriggerMask.size(); j++){
+            if(TriggerMask.at(j) == recent_trigger_word){
+              m_data->CStore.Set("NewCTCDataAvailable",true);
+              if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
+              TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+            }
+          }
+        } else {
+          m_data->CStore.Set("NewCTCDataAvailable",true);
+          if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
+          TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+        }
       }
-      if(UseTrigMask){
-        uint32_t recent_trigger_word = processed_sources.back();
-        for(int j = 0; j<TriggerMask.size(); j++){
-          if(TriggerMask.at(j) == recent_trigger_word){
+    }
+  } 
+  else if (mode == "Monitoring"){
+    TimeToTriggerWordMap->clear();
+    processed_sources.clear();
+    processed_ns.clear();
+    std::map<int,TriggerData> TrigData_Map;
+    m_data->Stores["TrigData"]->Get("TrigDataMap",TrigData_Map);
+    bool new_ts_available = false;
+    for (int i_entry=0; i_entry < int(TrigData_Map.size()); i_entry++){
+      TriggerData TData = TrigData_Map.at(i_entry);
+      std::vector<uint32_t> aTimeStampData = TData.TimeStampData;
+      for (int i=0; i < (int) aTimeStampData.size(); i++){
+        new_ts_available = this->AddWord(aTimeStampData.at(i));
+        if (new_ts_available){
+          if(verbosity>4){
+            std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
+            std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
+          }
+          if(UseTrigMask){
+            uint32_t recent_trigger_word = processed_sources.back();
+            for(int j = 0; j<(int) TriggerMask.size(); j++){
+              if(TriggerMask.at(j) == recent_trigger_word){
+                m_data->CStore.Set("NewCTCDataAvailable",true);
+                if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
+                TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+              }
+            }
+          } else {
             m_data->CStore.Set("NewCTCDataAvailable",true);
             if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
             TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
           }
-        }
-      } else {
-        m_data->CStore.Set("NewCTCDataAvailable",true);
-        if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
-        TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+        }     
       }
     }
   }
+
   if(verbosity>3) Log("TriggerDataDecoder Tool: size of TimeToTriggerWordMap: "+to_string(TimeToTriggerWordMap->size()),v_message,verbosity); 
  
   m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
@@ -85,7 +138,7 @@ bool TriggerDataDecoder::Execute(){
 
 
 bool TriggerDataDecoder::Finalise(){
-  delete TimeToTriggerWordMap;
+  //delete TimeToTriggerWordMap;	//DONT delete TimeToTriggerWordMap since it wil be deleted by the CStore automatically
   std::cout << "TriggerDataDecoder tool exitting" << std::endl;
   return true;
 }
@@ -176,4 +229,24 @@ std::vector<int> TriggerDataDecoder::LoadTriggerMask(std::string triggermask_fil
         v_warning, verbosity);
   }
   return trigger_mask;
+}
+
+std::map<int,std::string> TriggerDataDecoder::LoadTriggerWords(std::string triggerwords_file){
+  std::map<int,std::string> triggerwordmap;
+  int triggerword;
+  std::string triggerlabel;
+  ifstream myfile(triggerwords_file.c_str());
+  if (myfile.is_open()){
+    while (!myfile.eof()){
+      myfile >> triggerword >> triggerlabel;
+      triggerwordmap.emplace(triggerword,triggerlabel);
+      if (myfile.eof()) break;
+    }
+  } else {
+    Log("TriggerDataDecoder Tool: Input trigger words file not found. "
+	" Please check why "+triggerwords_file+" cannot be found.",
+	v_warning,verbosity);
+  }
+
+  return triggerwordmap;
 }
