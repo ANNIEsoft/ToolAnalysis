@@ -1,0 +1,17 @@
+# MRDMonitoring config file
+
+verbose 0
+#OutputPath ./monitoringplots/
+OutputPath fromStore
+ActiveSlots configfiles/Monitoring/MRD_activeslots.txt #define which channels of the crate are connected
+InActiveChannels configfiles/Monitoring/MRD_inactivech.txt #define which channels of slots are not active
+LoopbackChannels configfiles/Monitoring/MRD_loopback.txt #define the position of loopback channels
+StartTime 1970/1/1 #start time for the conversion of timestamps into dates
+Mode Continuous #options: FileList / Continuous
+PlotConfiguration configfiles/Monitoring/MRDTimePlotConfig.txt #file containing instructions what to plot
+PathMonitoring ./monitoringfiles/	#path at which the monitoring plots are going to be saved
+ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
+UpdateFrequency 1. #specify frequency for the file history plot, in mins
+ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
+DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
+DrawSingle 0	#specify whether to save single channel histograms / graphs or not
