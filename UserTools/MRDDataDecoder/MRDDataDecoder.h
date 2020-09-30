@@ -50,6 +50,9 @@ class MRDDataDecoder: public Tool {
   std::map<uint64_t, int> CStoreCosmicLoopbackMap;  //KEY: {MTCTime}, value: Cosmic loopback TDC value
   std::map<uint64_t, std::string>  TriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
   std::map<uint64_t, std::string>  CStoreTriggerTypeMap;  //Key: {MTCTime}, value: string noting what type of trigger occured for the event 
+  
+  uint64_t TimeZoneShift;  // why on earth are we saving data in local timezone not UTC?!
+  bool DaylightSavings;  //If true, in the spring/summer.  If false, fall/winter
 
   // Notes whether DAQ is in lock step running
   // Number of PMTs that must be found in a WaveSet to build the event
