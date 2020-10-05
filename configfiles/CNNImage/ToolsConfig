@@ -4,5 +4,5 @@ myLoadEventloader MCRecoEventLoader configfiles/CNNImage/MCRecoEventLoaderConfig
 myDigitBuilder DigitBuilder configfiles/CNNImage/DigitBuilderConfig
 myEventSelector EventSelector configfiles/CNNImage/EventSelectorConfig
 myTimeClustering TimeClustering configfiles/CNNImage/TimeClusteringConfig
-myEnergyExtractor EenergyExtractor configfiles/CNNImage/EnergyExtractorConfig
+myEnergyExtractor EnergyExtractor configfiles/CNNImage/EnergyExtractorConfig
 myCNNImage CNNImage configfiles/CNNImage/CNNImageConfig
