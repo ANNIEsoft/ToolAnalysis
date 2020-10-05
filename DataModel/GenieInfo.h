@@ -81,7 +81,9 @@ class GenieInfo {
 	int numfspi0=-1;
 	int numfspiplus=-1;
 	int numfspiminus=-1;
-	
+	int numfskplus=-1;
+	int numfskminus=-1;	
+
 	// kinematic information
 	//FourVector* k1=0;                               // GeV/c? Neutrino incoming momentum vector
 	//FourVector* k2=0;                               // GeV/c? Muon outgoign momentum vector
@@ -133,6 +135,8 @@ class GenieInfo {
 			ar & numfspi0;
 			ar & numfspiplus;
 			ar & numfspiminus;
+			ar & numfskplus;
+			ar & numfskminus;
 			ar & q;
 			ar & costhfsl;
 			ar & fslangle;

@@ -11,9 +11,17 @@ bool MrdPaddleEfficiencyPreparer::Initialise(std::string configfile, DataModel &
 	if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	m_data= &data; //assigning transient data pointer
 
+	isData = true;
 	outputfile = "MRDTestFile_observed";
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("OutputFile",outputfile);
+	m_variables.Get("IsData",isData);
+	m_variables.Get("UseTrueTrack",usetruetrack);
+
+	if (isData) {
+		Log("MrdPaddleEfficiencyPreparer tool: Cannot use true track in data mode! Switch to non-true-track mode...",v_error,verbosity);
+		usetruetrack = false;
+	}
 
 	// Define histograms for storing general properties of the fitted Mrd tracks
 
@@ -158,6 +166,24 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 				thisTrackAsBoostStore->Get("LayersHit",LayersHit);
 				thisTrackAsBoostStore->Get("MrdTrackID",MrdTrackID);
 
+				if (usetruetrack){
+					std::vector<std::pair<Position,Position>> truetrackvertices;
+					std::vector<Int_t> truetrackpdgs;
+					m_data->CStore.Get("TrueTrackVertices",truetrackvertices);
+					m_data->CStore.Get("TrueTrackPDGs",truetrackpdgs);
+					for (int i=0; i< truetrackvertices.size(); i++){
+						if (i==0) continue; 	//first vertex is not saved correctly
+						Position startvertex = truetrackvertices.at(i).first;
+						Position stopvertex = truetrackvertices.at(i).second;
+						StartVertex.SetX(startvertex.X());
+						StartVertex.SetY(startvertex.Y());
+						StartVertex.SetZ(startvertex.Z());
+						StopVertex.SetX(stopvertex.X());
+						StopVertex.SetY(stopvertex.Y());
+						StopVertex.SetZ(stopvertex.Z());
+					}
+				}
+
 				numpmtshit = PMTsHit.size();
 				numlayershit = LayersHit.size();
 				tracklength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2));
@@ -176,7 +202,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 							if (verbosity > 2) std::cout <<"MrdPaddleEfficiencyPreparer tool: FindPaddleIntersection found x_layer = "<<x_layer<<"& y_layer = "<<y_layer<<" for track with start position ("<<StartVertex.X()<<","<<StartVertex.Y()<<","<<StartVertex.Z()<<"), stop position ("<<StopVertex.X()<<","<<StopVertex.Y()<<","<<StopVertex.Z()<<") and z intersection point "<<zLayers.at(i_layer)<<std::endl;
 
 							unsigned long hit_chankey=99999;
-							FindPaddleChankey(x_layer, y_layer, i_layer,hit_chankey); 
+							FindPaddleChankey(x_layer, y_layer, i_layer,hit_chankey);
 							if (hit_chankey == 99999) {
 								std::cout <<"FindMrdPaddleEfficiencyPreparer: Did not find paddle with the desired intersection properties for this MRD layer, abort. "<<std::endl;
 								continue;
@@ -184,11 +210,17 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 	
 							if (orientationLayers.at(i_layer) == 0) {
 								expected_MRDHits.at(i_layer).at(hit_chankey)->Fill(y_layer);
-								if (std::find(PMTsHit.begin(),PMTsHit.end(),channelkey_to_mrdpmtid[hit_chankey])!=PMTsHit.end())  observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(y_layer);
+								int mrdid;
+								if (isData) mrdid = channelkey_to_mrdpmtid[hit_chankey];
+								else mrdid = channelkey_to_mrdpmtid[hit_chankey]-1;
+								if (std::find(PMTsHit.begin(),PMTsHit.end(),mrdid)!=PMTsHit.end())  observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(y_layer);
 							}
 							else {
 								expected_MRDHits.at(i_layer).at(hit_chankey)->Fill(x_layer);
-								if (std::find(PMTsHit.begin(),PMTsHit.end(),channelkey_to_mrdpmtid[hit_chankey])!=PMTsHit.end()) observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(x_layer);
+								int mrdid;
+								if (isData) mrdid = channelkey_to_mrdpmtid[hit_chankey];
+								else mrdid = channelkey_to_mrdpmtid[hit_chankey]-1;
+								if (std::find(PMTsHit.begin(),PMTsHit.end(),mrdid)!=PMTsHit.end()) observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(x_layer);
 							}
 					}
 				}

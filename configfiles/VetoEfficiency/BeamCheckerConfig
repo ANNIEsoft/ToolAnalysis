@@ -1,8 +1,10 @@
 # Dummy config file
 verbose 0
 # Offline beam database file
-BeamDBFile RAWDataR798S0p0_beam_db.data
-#/pnfs/annie/persistent/users/gardiner/phase1_beam_db.data
+#BeamDBFile /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/RAWDataR798S0p0_beam_db.data
+#BeamDBFile /pnfs/annie/persistent/users/gardiner/phase1_beam_db.data
+#BeamDBFile /annie/app/users/mnieslon/MyToolAnalysis_Test/phase1_beam_db.data 
+BeamDBFile /annie/app/users/mnieslon/MyToolAnalysis_Test/813_db.data
 #
 # Names of devices needed for beam quality cuts
 HornCurrentDevice E:THCURR

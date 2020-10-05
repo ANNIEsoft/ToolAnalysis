@@ -224,7 +224,8 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				// but we cannot have veto PMTs in the MrdTrackLib reco algorithms
 				// (they would be out of bounds in the expected maps...)
 				// so convert back to channelkey, get the Detector, and check whether it's MRD or Veto
-				int wcsimid = mrddigitpmtsthisevent.at(digit_value)+1;
+				int wcsimid = mrddigitpmtsthisevent.at(digit_value);
+				if (!isData) wcsimid++;		//mrd_tubeid_to_channelkey map is 1-based in MC
 				if(mrd_tubeid_to_channelkey.count(wcsimid)==0){
 					Log("FindMrdTracks tool: Error! WCSimID "+to_string(wcsimid)
 						+" was not in the mrd_tubeid_to_channelkey map!",v_error,verbosity);
@@ -252,7 +253,8 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			// Just initialize MCTruth variables, as before
 			std::vector<std::pair<TVector3,TVector3>> truetrackvertices;
 			std::vector<Int_t> truetrackpdgs;
-			
+			std::vector<std::pair<Position,Position>> truetrackvertices_position;			
+
 			// In case we want to overlay the truth track in MC, also load the MCParticle information
 			
 			if (DrawTruthTracks){
@@ -262,7 +264,6 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				std::vector<float> cluster_starttimes;
 				m_data->CStore.Get("ClusterStartTimes",cluster_starttimes);
 				float endtime = (thiscluster<(MrdTimeClusters.size()-1)) ?  cluster_starttimes.at(thiscluster+1) : (eventendtime+1.);
-				
 				for(int truetracki=0; truetracki<numtracks; truetracki++){
 					MCParticle nextrack = MCParticles->at(truetracki);
 					if((subtrackthisevent.at(truetracki)<0)&&(nextrack.GetStartTime()<endtime)
@@ -272,10 +273,15 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 						Position stopvp = nextrack.GetStopVertex();
 						TVector3 stopv(stopvp.X()*100.,stopvp.Y()*100.,stopvp.Z()*100.);
 						truetrackvertices.push_back({startv,stopv});
+						truetrackvertices_position.push_back({startvp,stopvp});
+						if (verbosity >= v_message) std::cout <<"FindMrdTracks tool: True start vtx: ("<<startvp.X()<<","<<startvp.Y()<<","<<startvp.Z()<<"), true end vtx: ("<<stopvp.X()<<","<<stopvp.Y()<<","<<stopvp.Z()<<")"<<std::endl;
 						truetrackpdgs.push_back(nextrack.GetPdgCode());
 						subtrackthisevent.at(truetracki)=thiscluster;
 					}
 				}
+
+				m_data->CStore.Set("TrueTrackVertices",truetrackvertices_position);
+				m_data->CStore.Set("TrueTrackPDGs",truetrackpdgs);
 			}
 			
 			Log("FindMrdTracks tool: Constructing subevent "+std::to_string(mrdeventcounter)+" with "+std::to_string(digitidsinasubevent.size())+" digits",v_message,verbosity);

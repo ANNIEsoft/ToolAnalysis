@@ -1,0 +1,5 @@
+verbosity 2
+TriggerMaskFile none
+#TriggerMaskFile ./configfiles/Monitoring/SimMonitoring/DefaultTriggerMask.txt
+TriggerWordsFile ./configfiles/Monitoring/SimMonitoring/TriggerWords.txt
+Mode Monitoring

@@ -1,0 +1,15 @@
+# TriggerMonitoring config file
+
+verbose 5
+#OutputPath ./monitoringplots/
+OutputPath fromStore
+StartTime 1970/1/1 #start time for the conversion of timestamps into dates
+PlotConfiguration configfiles/Monitoring/TriggerTimePlotConfig.txt #file containing instructions what to plot
+PathMonitoring ./monitoringfiles/	#path at which the monitoring plots are going to be saved
+ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
+UpdateFrequency 0. #specify frequency for the file history plot, in mins
+ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
+DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
+TriggerMaskFile ./configfiles/Monitoring/MonitoringTriggerMask.txt
+TriggerWordFile ./configfiles/Monitoring/TriggerWords.txt
+TriggerAlignFile ./configfiles/Monitoring/TriggerAlign.txt

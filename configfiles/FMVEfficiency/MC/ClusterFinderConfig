@@ -1,0 +1,12 @@
+# ClusterFinder Config File
+
+HitStore MCHits
+OutputFile FMV_999_Clusters
+ClusterFindingWindow 100 # in ns, size of the window used to "clusterize"
+AcqTimeWindow 70000 # in ns, size of the acquisition window
+ClusterIntegrationWindow 100 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
+MinHitsPerCluster 5 # group of hits are considered clusters above this amount of hits
+SinglePEGains ./configfiles/FMVEfficiency/ChannelSPEGains_BeamRun20192020.csv
+end_of_window_time_cut 0.95 # from o to 1, length of the window you want to loop over with respect
+Plots2D 0 #2D charge-time plots desired?
+verbosity 0

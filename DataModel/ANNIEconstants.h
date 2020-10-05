@@ -17,6 +17,8 @@ constexpr unsigned int NS_PER_ADC_SAMPLE = 2; // ns
 constexpr int BOGUS_INT = -9999;
 
 /// @brief The format code for a multievent binary BoostStore
+constexpr int BOOST_STORE_BINARY_FORMAT = 0;
+constexpr int BOOST_STORE_ASCII_FORMAT = 1;
 constexpr int BOOST_STORE_MULTIEVENT_FORMAT = 2;
 
 // Used to convert from seconds and nanoseconds to milliseconds when

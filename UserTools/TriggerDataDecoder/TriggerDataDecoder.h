@@ -29,6 +29,7 @@ class TriggerDataDecoder: public Tool {
 
   bool AddWord(uint32_t word);
   std::vector<int> LoadTriggerMask(std::string triggermask_file);
+  std::map<int,std::string> LoadTriggerWords(std::string triggerwords_file);
   void CheckForRunChange();
  private:
 
@@ -36,9 +37,14 @@ class TriggerDataDecoder: public Tool {
   TriggerData *Tdata = nullptr;
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;
   bool UseTrigMask = false;
+  std::string TriggerWordFile;
+  std::string mode;
 
   std::string TriggerMaskFile;
   std::vector<int> TriggerMask;
+
+  std::string TriggerWordsFile;
+  std::map<int,std::string> TriggerWords;
 
   std::vector<int> fiforesets;
   std::vector<uint32_t> processed_sources;

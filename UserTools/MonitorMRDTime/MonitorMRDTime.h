@@ -234,6 +234,8 @@ class MonitorMRDTime: public Tool {
   //define TDC histogram
   TH1F *hist_tdc = nullptr;
   TH1F *hist_tdc_cluster = nullptr;
+  TH1F *hist_tdc_cluster_20 = nullptr;
+  std::vector<std::vector<int>> overall_mrd_coinc_times;
 
   //define rate histograms
   TH2F *rate_crate1=nullptr;

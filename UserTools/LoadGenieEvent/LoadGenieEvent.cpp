@@ -77,7 +77,8 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
 	m_variables.Get("FileDir",filedir);
 	m_variables.Get("FilePattern",filepattern);
-	
+	m_variables.Get("ManualFileMatching",manualmatch);
+
 	// create a store for holding Genie information to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
 	geniestore = new BoostStore(true,0); // enable type-checking, BoostStore type binary
@@ -97,6 +98,31 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		Log("Tool LoadGenieEvent: Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
 		SetBranchAddresses();
 	}
+
+	if(manualmatch){
+		// Manually create path to matching GENIE File for WCSim file
+		std::string wcsimfile;
+		m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
+		//Strip WCSim file name of its prefix path
+		std::string wcsim_prefix = "wcsim_0.";
+		wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
+		wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
+		std::string wcsimev = wcsimfile;
+		wcsimfile.erase(wcsimfile.find("."),wcsimfile.length());
+		wcsimev.erase(0,wcsimev.find(".")+1);
+
+		std::cout <<"wcsimfile: "<<wcsimfile<<", wcsimev: "<<wcsimev<<std::endl;
+		std::string::size_type sz;
+		int wcsimfilenumber = std::stoi(wcsimfile,&sz);
+		int wcsimevnumber = std::stoi(wcsimev,&sz);
+		std::cout <<"wcsimfilenumber: "<<wcsimfilenumber<<", wcsimevnumber: "<<wcsimevnumber<<std::endl;
+
+		std::string inputfile = filedir+"/gntp."+wcsimfile+".ghep.root";
+		curf=TFile::Open(inputfile.c_str());
+                flux=(TChain*)curf->Get("gtree");
+                SetBranchAddresses();
+		tchainentrynum = wcsimevnumber*500;
+	}
 	
 #else
 	Log("Tool LoadGenieEvent is disabled as Genie is not loaded",v_warning,verbosity);
@@ -110,7 +136,7 @@ bool LoadGenieEvent::Execute(){
 	
 #if LOADED_GENIE==1
 	
-	if(loadwcsimsource){
+	if(loadwcsimsource && !manualmatch){
 		// retrieve the genie file and entry number from the LoadWCSim tool
 		std::string inputfiles;
 		get_ok = m_data->CStore.Get("GenieFile",inputfiles);
@@ -156,6 +182,16 @@ bool LoadGenieEvent::Execute(){
 		curflast=curf;
 		Log("Tool LoadGenieEvent: Opening new file \""+currentfilestring+"\"",v_debug,verbosity);
 	}
+	if (manualmatch){
+		uint16_t MCTriggernum;
+		m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+		if (MCTriggernum != 0){
+			m_data->CStore.Set("NewGENIEEntry",false);	
+			return true;	//Don't evaluate new GENIE event for dealyed WCSim triggers
+		} else {
+			m_data->CStore.Set("NewGENIEEntry",true);
+		}
+	}
 	tchainentrynum++;
 	
 	// Expand out the neutrino event info
@@ -183,22 +219,25 @@ bool LoadGenieEvent::Execute(){
 		parentprodmom_x = gnumipassthruentry->ppdxdz;
 		parentprodmom_y = gnumipassthruentry->ppdydz;
 		parentprodmom_z = gnumipassthruentry->pppz;
-		//parentprodmedium = gnumipassthruentry->ppmedium;
+		parentprodmedium = gnumipassthruentry->ppmedium; //Seems to be 0 all the time? Not registered in the materials table, numbers start at 5...
 		parentpdgattgtexit = gnumipassthruentry->tptype;
 		parenttgtexitmom_x = gnumipassthruentry->tpx;
 		parenttgtexitmom_y = gnumipassthruentry->tpy;
 		parenttgtexitmom_z = gnumipassthruentry->tpz;
-		
+		pcodes = gnumipassthruentry->pcodes;	//pcodes = 0--> GEANT particle codes, 1--> converted PDG particle codes		
+
 		// convenience type conversions
 		parentdecayvtx = Position(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
 		parentdecaymom = Position(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
 		parentprodmom = Position(parentprodmom_x,parentprodmom_y,parentprodmom_z);
 		parenttgtexitmom = Position(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
-		parenttypestring = (fluxstage==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
-		parenttypestringattgtexit = (fluxstage==0) ? 
+		//parenttypestring = (fluxstage==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
+		//parenttypestringattgtexit = (fluxstage==0) ? 
+		parenttypestring = (pcodes==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
+		parenttypestringattgtexit = (pcodes==0) ? 
 			GnumiToString(parentpdgattgtexit) : PdgToString(parentpdgattgtexit);
 		parentdecaystring = DecayTypeToString(parentdecaymode);
-		//parentprodmediumstring = MediumToString(parentprodmedium);
+		parentprodmediumstring = MediumToString(parentprodmedium);
 		
 	} else {
 		// FLUXVER 1 - genie::flux::GSimpleNtpEntry
@@ -216,7 +255,7 @@ bool LoadGenieEvent::Execute(){
 		parentprodmom_x = gsimplenumientry->pppx/gsimplenumientry->pppz; // ??? is this ppdxdz?
 		parentprodmom_y = gsimplenumientry->pppy/gsimplenumientry->pppz;
 		parentprodmom_z = gsimplenumientry->pppz;
-		//parentprodmedium = gsimplenumientry->ppmedium;
+		parentprodmedium = gsimplenumientry->ppmedium;
 		parentpdgattgtexit = gsimplenumientry->tptype;
 		parenttgtexitmom_x = gsimplenumientry->tpx;
 		parenttgtexitmom_y = gsimplenumientry->tpy;
@@ -230,7 +269,7 @@ bool LoadGenieEvent::Execute(){
 		parenttypestring = PdgToString(parentpdg);
 		parenttypestringattgtexit = PdgToString(parentpdgattgtexit);
 		parentdecaystring = DecayTypeToString(parentdecaymode);
-		//parentprodmediumstring = MediumToString(parentprodmedium);
+		parentprodmediumstring = MediumToString(parentprodmedium);
 		
 	}
 	
@@ -285,12 +324,45 @@ bool LoadGenieEvent::Execute(){
 	
 	fsleptonname = std::string(thegenieinfo.fsleptonname);
 	// this data does not appear to be populated...
+	// Edit: Maybe due to the numbers for the exclusive tag being evaluated before Final State Interactions
+	// Compare e.g. documentation here: https://internal.dunescience.org/doxygen/classgenie_1_1XclsTag.html
+	/*
 	numfsprotons = thegenieinfo.numfsprotons = genieint->ExclTag().NProtons();
 	numfsneutrons = thegenieinfo.numfsneutrons = genieint->ExclTag().NNeutrons();
 	numfspi0 = thegenieinfo.numfspi0 = genieint->ExclTag().NPi0();
 	numfspiplus = thegenieinfo.numfspiplus = genieint->ExclTag().NPiPlus();
 	numfspiminus = thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
+	*/
+	//The following is more cumbersome, but seems to work (we count the number of final state particles by hand)
+	numfsprotons = 0;
+	numfsneutrons = 0;
+	numfspi0 = 0;
+	numfspiplus= 0;
+	numfspiminus = 0;
+	numfskplus = 0;
+	numfskminus = 0;	
+
+	TObjArrayIter iter(gevtRec);
+	genie::GHepParticle * p = 0;
+
+	//Loop over event particles
+	while ((p = dynamic_cast<genie::GHepParticle *>(iter.Next()))) {
+		
+		int pdgc = p->Pdg();
+		int status = p->Status();
+		
+		if (status != genie::kIStStableFinalState) continue;
+		
+		if (pdgc == genie::kPdgNeutron) numfsneutrons++;
+		else if (pdgc == genie::kPdgProton) numfsprotons++;
+		else if (pdgc == genie::kPdgPiP) numfspiplus++;
+		else if (pdgc == genie::kPdgPiM) numfspiminus++;
+		else if (pdgc == genie::kPdgPi0) numfspi0++;
+		else if (pdgc == genie::kPdgKP) numfskplus++;
+		else if (pdgc == genie::kPdgKM) numfskminus++;
+	}
 	
+
 	Log("Tool LoadGenieEvent: Passing information to the GenieEvent store",v_debug,verbosity);
 	// Update the Store with all the current event information
 	// =======================================================
@@ -313,8 +385,8 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("ParentProdMom_X",parentprodmom_x);
 	geniestore->Set("ParentProdMom_Y",parentprodmom_y);
 	geniestore->Set("ParentProdMom_Z",parentprodmom_z);
-	//geniestore->Set("ParentProdMedium",parentprodmedium);
-	//geniestore->Set("ParentProdMediumString",parentprodmediumstring);
+	geniestore->Set("ParentProdMedium",parentprodmedium);
+	geniestore->Set("ParentProdMediumString",parentprodmediumstring);
 	geniestore->Set("ParentPdgAtTgtExit",parentpdgattgtexit);
 	geniestore->Set("ParentTypeAtTgtExitString",parenttypestringattgtexit);
 	geniestore->Set("ParentTgtExitMom",parenttgtexitmom);
@@ -354,6 +426,8 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("NumFSPi0",numfspi0);
 	geniestore->Set("NumFSPiPlus",numfspiplus);
 	geniestore->Set("NumFSPiMinus",numfspiminus);
+	geniestore->Set("NumFSKPlus",numfskplus);
+	geniestore->Set("NumFSKMinus",numfskminus);
 	geniestore->Set("GenieInfo",thegenieinfo);
 	//geniestore->Set("TheGenieInfoPtr",&thegenieinfo,false);
 	//intptr_t thegenieinfoptr = reinterpret_cast<intptr_t>(&thegenieinfo);
@@ -376,7 +450,7 @@ bool LoadGenieEvent::Finalise(){
 #if LOADED_GENIE==1
 	if(flux){
 		flux->ResetBranchAddresses();
-		delete flux;
+		if (not loadwcsimsource) delete flux;	//only need to delete in case it was created with "new" --> only in not-loadwcsimource case. Otherwise double-free corruption
 		flux=nullptr;
 	}
 #endif
@@ -504,12 +578,43 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 		thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy();
 	}
 	
-	// other remnants: TODO: this information is NOT being correctly read in
-	/*Int_t*/ thegenieinfo.numfsprotons = genieint->ExclTag().NProtons();
-	/*Int_t*/ thegenieinfo.numfsneutrons = genieint->ExclTag().NNeutrons();
-	/*Int_t*/ thegenieinfo.numfspi0 = genieint->ExclTag().NPi0();
-	/*Int_t*/ thegenieinfo.numfspiplus = genieint->ExclTag().NPiPlus();
-	/*Int_t*/ thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
+	// other remnants: TEMP FIX: this information is NOT being correctly read in
+	// Edit: Maybe due to the numbers for the exclusive tag being evaluated before Final State Interactions
+	// Compare e.g. documentation here: https://internal.dunescience.org/doxygen/classgenie_1_1XclsTag.html
+	/*Int_t*/ //thegenieinfo.numfsprotons = genieint->ExclTag().NProtons();
+	/*Int_t*/ //thegenieinfo.numfsneutrons = genieint->ExclTag().NNeutrons();
+	/*Int_t*/ //thegenieinfo.numfspi0 = genieint->ExclTag().NPi0();
+	/*Int_t*/ //thegenieinfo.numfspiplus = genieint->ExclTag().NPiPlus();
+	/*Int_t*/ //thegenieinfo.numfspiminus = genieint->ExclTag().NPiMinus();
+	
+	//The following is more cumbersome, but seems to work (we count the number of final state particles by hand)
+	thegenieinfo.numfsprotons = 0;
+	thegenieinfo.numfsneutrons = 0;
+	thegenieinfo.numfspi0 = 0;
+	thegenieinfo.numfspiplus= 0;
+	thegenieinfo.numfspiminus = 0;
+	thegenieinfo.numfskplus = 0;
+	thegenieinfo.numfskminus = 0;	
+
+	TObjArrayIter iter(gevtRec);
+	genie::GHepParticle * p = 0;
+
+	//Loop over event particles
+	while ((p = dynamic_cast<genie::GHepParticle *>(iter.Next()))) {
+		
+		int pdgc = p->Pdg();
+		int status = p->Status();
+		
+		if (status != genie::kIStStableFinalState) continue;
+		
+		if (pdgc == genie::kPdgNeutron) thegenieinfo.numfsneutrons++;
+		else if (pdgc == genie::kPdgProton) thegenieinfo.numfsprotons++;
+		else if (pdgc == genie::kPdgPiP) thegenieinfo.numfspiplus++;
+		else if (pdgc == genie::kPdgPiM) thegenieinfo.numfspiminus++;
+		else if (pdgc == genie::kPdgPi0) thegenieinfo.numfspi0++;
+		else if (pdgc == genie::kPdgKP) thegenieinfo.numfskplus++;
+		else if (pdgc == genie::kPdgKM) thegenieinfo.numfskminus++;
+	}
 	
 	// kinematic information
 	Double_t NucleonM = genie::constants::kNucleonMass; 
@@ -567,6 +672,8 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 			<< " N(pi^0) = " << thegenieinfo.numfspi0
 			<< " N(pi^+) = " << thegenieinfo.numfspiplus
 			<< " N(pi^-) = " << thegenieinfo.numfspiminus
+			<< " N(K^+) = " << thegenieinfo.numfskplus
+			<< " N(K^-) = " << thegenieinfo.numfskminus
 			<<endl;
 	}
 }
@@ -603,7 +710,13 @@ std::string LoadGenieEvent::DecayTypeToString(int code){
 }
 
 std::string LoadGenieEvent::MediumToString(int code){
-	return std::to_string(code); // TODO fill this out
+	if(mediummap.size()==0) GenerateMediumMap();
+	if(mediummap.count(code)!=0){
+		return mediummap.at(code);
+	} else {
+		cerr<<"unknown medium "<<code<<endl;
+		return std::to_string(code);
+	}
 }
 
 std::map<int,std::string>* LoadGenieEvent::GenerateGnumiMap(){
@@ -736,6 +849,32 @@ std::map<int,std::string>* LoadGenieEvent::GenerateDecayMap(){
 	decaymap.emplace(13,"pi+ -> numu, mu+");
 	decaymap.emplace(14,"pi- -> numubar, mu-");
 	return &decaymap;
+}
+
+std::map<int,std::string>* LoadGenieEvent::GenerateMediumMap(){
+	//gnumi material mapping taken from table 10 in https://minos-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=6316&filename=flugg_doc.pdf&version=10
+	if(mediummap.size()!=0) return &mediummap;
+	mediummap.emplace(5,"Beryllium");
+	mediummap.emplace(6,"Carbon");
+	mediummap.emplace(9,"Aluminum");
+	mediummap.emplace(10,"Iron");
+	mediummap.emplace(11,"Slab Steel");
+	mediummap.emplace(12,"Blu Steel");
+	mediummap.emplace(15,"Air");
+	mediummap.emplace(16,"Vacuum");
+	mediummap.emplace(17,"Concrete");
+	mediummap.emplace(18,"Target");
+	mediummap.emplace(19,"Rebar Concrete");
+	mediummap.emplace(20,"Shotcrete");
+	mediummap.emplace(21,"Variable Density Aluminum");
+	mediummap.emplace(22,"Variable Density Steel");
+	mediummap.emplace(23,"1018 Steel");
+	mediummap.emplace(24,"A500 Steel");
+	mediummap.emplace(25,"Water");
+	mediummap.emplace(26,"M1018 Steel");
+	mediummap.emplace(28,"Decay Pipe Vacuum");
+	mediummap.emplace(31,"CT852");
+
 }
 
 #endif // LOADED_GENIE==1

@@ -1,0 +1,5 @@
+verbose 5
+OutFile mcproperties_beam_1221_9.root
+SaveHistograms 0
+SaveTree 1
+HasGENIE 1

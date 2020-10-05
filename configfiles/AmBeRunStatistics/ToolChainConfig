@@ -18,6 +18,6 @@ service_kick_sec -1
 Tools_File ./configfiles/AmBeRunStatistics/ToolsConfig
 
 ##### Run Type #####
-Inline 6450
+Inline 5645
 Interactive 0
 
