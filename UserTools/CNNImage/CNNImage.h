@@ -47,6 +47,7 @@ class CNNImage: public Tool {
   int dimensionY;        //dimension of the CNN image in y-direction
   int dimensionLAPPD;    //dimension of LAPPD CNN images (both directions, square)
   bool includeTopBottom;
+  bool isData; 
   int verbosity;
 
   // ANNIEEvent variables
@@ -57,12 +58,15 @@ class CNNImage: public Tool {
   std::vector<MCParticle>* mcparticles = nullptr;
   std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
   std::map<unsigned long, std::vector<MCLAPPDHit>>* MCLAPPDHits = nullptr;
+  std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
   Geometry *geom = nullptr;
   int mrdeventcounter;
   std::map<unsigned long, std::vector<MCHit>>* TDCData = nullptr;
+  std::map<unsigned long, std::vector<Hit>>* TDCData_Data = nullptr;
+  std::vector<RecoDigit>* RecoDigits=nullptr;
   std::vector<std::vector<int>> MrdTimeClusters;
   std::vector<unsigned long> mrddigitchankeysthisevent;
-
+  std::map<int,unsigned long> pmtid_to_channelkey;
 
   // RecoEvent variables
   int nrings;

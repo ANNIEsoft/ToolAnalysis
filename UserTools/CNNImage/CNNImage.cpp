@@ -17,6 +17,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   //Default values
   includeTopBottom = false;
   dimensionLAPPD = 1;
+  isData = 0;
 
   //User-specified values
   m_variables.Get("verbosity",verbosity);
@@ -28,7 +29,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("IncludeTopBottom",includeTopBottom);
   m_variables.Get("OutputFile",cnn_outpath);
   m_variables.Get("DimensionLAPPD",dimensionLAPPD);
-  
+  m_variables.Get("IsData",isData); 
+ 
   Log("CNNImage tool: Initialising...",v_message,verbosity);
 
   //Check for user options
@@ -61,8 +63,11 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   tank_center_y = detector_center.Y();
   tank_center_z = detector_center.Z();
   n_tank_pmts = geom->GetNumDetectorsInSet("Tank");
-  m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
   std::map<std::string,std::map<unsigned long,Detector*> >* Detectors = geom->GetDetectors();
+
+  if (isData){
+    m_data->CStore.Get("pmt_tubeid_to_channelkey",pmtid_to_channelkey);
+  }
 
   //Read in PMT positions
   max_y = -100.;
@@ -168,7 +173,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   //---------------------------------------------------------------
   //-------------------Get LAPPD positions-------------------------
   //---------------------------------------------------------------
-
+ 
+  if (!isData){
   max_y_lappd = -100.;
   min_y_lappd = 100.;
 
@@ -224,6 +230,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     for (unsigned int i_y=0;i_y<vec_lappd2D_y.size();i_y++){
       std::cout <<i_y<<": "<<vec_lappd2D_y.at(i_y)<<std::endl;
     }
+  }
   }
 
   //---------------------------------------------------------------
@@ -281,28 +288,53 @@ bool CNNImage::Execute(){
 
   //Get ANNIEEvent store
   int annieeventexists = m_data->Stores.count("ANNIEEvent");
-  if(!annieeventexists){ cerr<<"no ANNIEEvent store!"<<endl;}/*return false;*/
+  if(!annieeventexists){
+    std::cerr<<"CNNImage tool: No ANNIEEvent store!"<<std::endl;
+  }
   
   //---------------------------------------------------------------
   //-------------------Get ANNIEEvent objects----------------------
   //---------------------------------------------------------------
 
-  m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles); //needed to retrieve true vertex and direction
-  m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
-  m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits", MCLAPPDHits);
-  m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
-  m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
-  m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
-  m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
-  m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
-  m_data->Stores.at("ANNIEEvent")->Get("NumMrdTimeClusters",mrdeventcounter);
-  if (mrdeventcounter >= 0 ){
-    m_data->CStore.Get("MrdDigitChankeys",mrddigitchankeysthisevent);
+  bool get_ok=false;
+  if (!isData){
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",mcparticles); //needed to retrieve true vertex and direction
+    if (!get_ok) {Log("CNNImage tool: Error retrieving MCParticles object",v_error,verbosity); return false;}
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving MCHits object",v_error,verbosity); return false;}
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("MCLAPPDHits", MCLAPPDHits);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving MCLAPPDHits object",v_error,verbosity); return false;}
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving TDCData object (MC)",v_error,verbosity); return false;}
+    get_ok = m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving NRings (MC)",v_error,verbosity); return false;}
+  } else {
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving Hits object",v_error,verbosity); return false;}
+    get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",RecoDigits);
+    if(not get_ok){ Log("CNNImage Tool: Error retrieving RecoDigit,true from RecoEvent!",v_error,verbosity); return false; }
+    get_ok = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_Data);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving TDCData object (Data)",v_error,verbosity); return false;}
   }
-  m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
-  m_data->Stores.at("RecoEvent")->Get("NRings",nrings);
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
+  if (!get_ok) {Log("CNNImage tool: Error retrieving EventNumber",v_error,verbosity); return false;}
+  /*get_ok = m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
+  if (!get_ok) {Log("CNNImage tool: Error retrieving RunNumber",v_error,verbosity); return false;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
+  if (!get_ok) {Log("CNNImage tool: Error retrieving SubRunNumber",v_error,verbosity); return false;}
+  get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
+  if (!get_ok) {Log("CNNImage tool: Error retrieving EventTime",v_error,verbosity); return false;}*/
+  get_ok = m_data->CStore.Get("NumMrdTimeClusters",mrdeventcounter);
+  if (!get_ok) {Log("CNNImage tool: Error retrieving NumMrdTimeClusters",v_error,verbosity); return false;}
+  if (mrdeventcounter >= 0 ){
+    get_ok = m_data->CStore.Get("MrdDigitChankeys",mrddigitchankeysthisevent);
+    if (!get_ok) {Log("CNNImage tool: Error retrieving MrdDigitChankeys",v_error,verbosity); return false;}
+  }
+  get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+  if (!get_ok) {Log("CNNImage tool: Error retrieving MrdTimeClusters",v_error,verbosity); return false;}
   
-  Log("CNNImage tool: # Rings: "+std::to_string(nrings)+", # of MRD clusters: "+std::to_string(mrdeventcounter),v_message,verbosity);
+  if (!isData) Log("CNNImage tool: # Rings: "+std::to_string(nrings)+", # of MRD clusters: "+std::to_string(mrdeventcounter),v_message,verbosity);
+  else Log("CNNImage tool: # of MRD clusters: "+std::to_string(mrdeventcounter),v_message,verbosity);
 
   //Clear variables & containers
   charge.clear();
@@ -345,36 +377,53 @@ bool CNNImage::Execute(){
   //-------------------Iterate over MCHits ------------------------
   //---------------------------------------------------------------
 
-  int vectsize = MCHits->size();
-  Log("CNNImage tool: MCHits size: "+std::to_string(vectsize),v_message,verbosity);
-  total_hits_pmts=0;
-  for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
-    unsigned long chankey = apair.first;
-    Detector* thistube = geom->ChannelToDetector(chankey);
-    unsigned long detkey = thistube->GetDetectorID();
-    Log("CNNImage tool: Read in MCHits for chankey: "+std::to_string(chankey)+", detkey: "+std::to_string(detkey),v_debug,verbosity);
-    if (thistube->GetDetectorElement()=="Tank"){
-      if (thistube->GetTankLocation()=="OD") continue;
-      hitpmt_detkeys.push_back(detkey);
-      std::vector<MCHit>& Hits = apair.second;
-      int hits_pmt = 0;
-      for (MCHit &ahit : Hits){
-        if (ahit.GetTime()>-10. && ahit.GetTime()<40.){
-          charge[detkey] += ahit.GetCharge();
-          if (data_mode == "Normal") time[detkey] += ahit.GetTime();
-          else if (data_mode == "Charge-Weighted") time[detkey] += (ahit.GetTime()*ahit.GetCharge());
-          if (hits_pmt == 0) time_first[detkey] = ahit.GetTime();
-          hits_pmt++;
+  int vectsize;
+  if (!isData){
+    vectsize = MCHits->size();
+    Log("CNNImage tool: MCHits size: "+std::to_string(vectsize),v_message,verbosity);
+    total_hits_pmts=0;
+    for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
+      unsigned long chankey = apair.first;
+      Detector* thistube = geom->ChannelToDetector(chankey);
+      unsigned long detkey = thistube->GetDetectorID();
+      Log("CNNImage tool: Read in MCHits for chankey: "+std::to_string(chankey)+", detkey: "+std::to_string(detkey),v_debug,verbosity);
+      if (thistube->GetDetectorElement()=="Tank"){
+        if (thistube->GetTankLocation()=="OD") continue;
+        hitpmt_detkeys.push_back(detkey);
+        std::vector<MCHit>& Hits = apair.second;
+        int hits_pmt = 0;
+        for (MCHit &ahit : Hits){
+          if (ahit.GetTime()>-10. && ahit.GetTime()<40.){
+            charge[detkey] += ahit.GetCharge();
+            if (data_mode == "Normal") time[detkey] += ahit.GetTime();
+            else if (data_mode == "Charge-Weighted") time[detkey] += (ahit.GetTime()*ahit.GetCharge());
+            if (hits_pmt == 0) time_first[detkey] = ahit.GetTime();
+            hits_pmt++;
+          }
         }
+        if (data_mode == "Normal" && hits_pmt>0) time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
+        else if (data_mode == "Charge-Weighted" && charge[detkey]>0.) time[detkey] /= charge[detkey];
+        total_hits_pmts++;
       }
-      if (data_mode == "Normal" && hits_pmt>0) time[detkey]/=hits_pmt;         //use mean time of all hits on one PMT
-      else if (data_mode == "Charge-Weighted" && charge[detkey]>0.) time[detkey] /= charge[detkey];
-      total_hits_pmts++;
     }
+    Log("CNNImage tool: Done with MCHits loop",v_message,verbosity);
+  } else {
+    vectsize = RecoDigits->size();
+    Log("CNNImage tool: RecoDigits size: "+std::to_string(vectsize),v_message,verbosity);
+    total_hits_pmts = 0;
+    for (unsigned int i_digit = 0; i_digit < RecoDigits->size(); i_digit++){
+      RecoDigit thisdigit = RecoDigits->at(i_digit);
+      int digitID = thisdigit.GetDetectorID();
+      unsigned long chankey = pmtid_to_channelkey[digitID];
+      double digitQ = thisdigit.GetCalCharge();
+      double digitT = thisdigit.GetCalTime();
+      hitpmt_detkeys.push_back(chankey);
+      time[chankey] = digitT;
+      time_first[chankey] = digitT;
+      charge[chankey] = digitQ;
+    }
+    Log("CNNImage tool: Done with RecoDigits loop",v_message,verbosity);
   }
-
-  Log("CNNImage tool: Done with MCHits loop",v_message,verbosity);
-  
 
   //---------------------------------------------------------------
   //-------------------Iterate over MCLAPPDHits -------------------
@@ -384,17 +433,18 @@ bool CNNImage::Execute(){
   total_charge_lappds=0;
   min_time_lappds=9999;
   max_time_lappds=-9999;
-  vectsize = MCLAPPDHits->size();
-  Log("CNNImage tool: MCLAPPDHits size: "+std::to_string(vectsize),v_message,verbosity);
+  if (!isData){
+    vectsize = MCLAPPDHits->size();
+    Log("CNNImage tool: MCLAPPDHits size: "+std::to_string(vectsize),v_message,verbosity);
 
-  for(std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits){
-    unsigned long chankey = apair.first;
-    Detector* det = geom->ChannelToDetector(chankey);
-    unsigned long detkey = det->GetDetectorID();
-    std::vector<MCLAPPDHit>& hits = apair.second;
-    Log("CNNImage tool: Chankey: "+std::to_string(chankey)+", detkey: "+std::to_string(detkey),v_debug,verbosity);
+    for(std::pair<unsigned long, std::vector<MCLAPPDHit>>&& apair : *MCLAPPDHits){
+      unsigned long chankey = apair.first;
+      Detector* det = geom->ChannelToDetector(chankey);
+      unsigned long detkey = det->GetDetectorID();
+      std::vector<MCLAPPDHit>& hits = apair.second;
+      Log("CNNImage tool: Chankey: "+std::to_string(chankey)+", detkey: "+std::to_string(detkey),v_debug,verbosity);
 
-    for (MCLAPPDHit& ahit : hits){
+      for (MCLAPPDHit& ahit : hits){
         std::vector<double> temp_pos = ahit.GetPosition();
         double x_lappd = temp_pos.at(0)-tank_center_x;    //global x-position (in detector coordinates)
         double y_lappd = temp_pos.at(1)-tank_center_y;    //global y-position (in detector coordinates)
@@ -428,6 +478,7 @@ bool CNNImage::Execute(){
           if (hits_lappd[detkey].at(binx_lappd).at(biny_lappd) == 1) time_first_lappd[detkey].at(binx_lappd).at(biny_lappd) = t_lappd;
         }
       total_hits_lappds++;
+      }
     }
   }
 
@@ -440,7 +491,7 @@ bool CNNImage::Execute(){
     }
   }
 
-  if (min_time_lappds>0.) min_time_lappds=0.;
+  if (!isData && min_time_lappds>0.) min_time_lappds=0.;
 
   //---------------------------------------------------------------
   //------------- Determine max+min values ------------------------
@@ -755,7 +806,7 @@ bool CNNImage::Execute(){
 
   if (passed_eventselection) {
     // Save Rings and MRD information
-    outfile_Rings << nrings << endl;
+    if (!isData) outfile_Rings << nrings << endl;
     outfile_MRD << mrdeventcounter<< ","<< num_mrd_paddles_cluster <<","<< num_mrd_layers_cluster<<","<<num_mrd_conslayers_cluster<<","<<num_mrd_adjacent_cluster<<","<<mrd_padperlayer_cluster<< endl;
 
     // Save root histograms

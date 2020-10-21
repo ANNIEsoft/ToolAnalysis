@@ -47,7 +47,7 @@ class EventSelector: public Tool {
    kFlagMCEnergyCut   = 0x4000, //16384
    kFlagPMTMRDCoinc   = 0x8000, //32768
    kFlagNoVeto        = 0x10000, //65536
-   kFlagVeto        = 0x20000 //131072
+   kFlagVeto        = 0x20000, //131072
    kFlagMCDSNBlike = 0x40000 //262144
   } EventFlags_t;
 
