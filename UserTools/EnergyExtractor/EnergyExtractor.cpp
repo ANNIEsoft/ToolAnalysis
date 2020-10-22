@@ -133,9 +133,8 @@ bool EnergyExtractor::Execute()
     Detector* thistube = geom->ChannelToDetector(chankey);
     unsigned long detkey = thistube->GetDetectorID();
     if (verbosity > 3) std::cout <<"detkey: "<<detkey<<std::endl;
-    if (thistube->GetDetectorElement()=="Tank")
+    if (thistube->GetDetectorElement()=="LAPPD")
     {
-      if (thistube->GetTankLocation()=="OD") continue;
       std::vector<MCLAPPDHit>& Hits = apair.second;
       for (MCLAPPDHit &ahit : Hits)
       {
@@ -157,12 +156,11 @@ bool EnergyExtractor::Execute()
   MCParticle neutrino;
   isok = m_data->Stores["ANNIEEvent"]->Get("NeutrinoParticle", neutrino);
   if (isok) neutrino_Energy = neutrino.GetStartEnergy();
-  cout << " Neutrino Energy: " << neutrino_Energy <<" , "<< isok<< endl;
   if (save_neutrino) outfile_EnergyNeutrino << neutrino_Energy << endl;
 
   // Save pion energies (if desired)
   if (save_pion){
-    outfile_EnergyPion << pimcount<<"," << pipcount << "," ;
+    outfile_EnergyPion << pimcount<<"," << pipcount << "," << pi0count << ",";
     for (int i=0 ; i < (int) Energystore["pi-"].size() ; i++)
     {
       outfile_EnergyPion << Energystore["pi-"][i] << ",";
@@ -171,12 +169,16 @@ bool EnergyExtractor::Execute()
     {
       outfile_EnergyPion << Energystore["pi+"][i] << ",";
     }
+    for (int i=0 ; i < (int) Energystore["pi0"].size() ; i++)
+    {
+      outfile_EnergyPion << Energystore["pi0"][i] << ",";
+    }
     outfile_EnergyPion << endl;
   }
 
   // Save kaon energies (if desired)
   if (save_kaon){
-    outfile_EnergyKaon << Kmcount<<"," << Kpcount << "," ;
+    outfile_EnergyKaon << Kmcount<<"," << Kpcount << "," << K0count << "," ;
     for (int i=0 ; i < (int) Energystore["K-"].size() ; i++)
     {
       outfile_EnergyKaon << Energystore["K-"][i] << ",";
@@ -184,6 +186,10 @@ bool EnergyExtractor::Execute()
     for (int i=0 ; i < (int) Energystore["K+"].size() ; i++)
     {
       outfile_EnergyKaon << Energystore["K+"][i] << ",";
+    }
+    for (int i=0 ; i < (int) Energystore["K0"].size() ; i++)
+    {
+      outfile_EnergyKaon << Energystore["K0"][i] << ",";
     }
     outfile_EnergyKaon << endl;
   }
@@ -292,7 +298,7 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
 
       // Pions
       if(aparticle.GetPdgCode()==111){               // is a primary pi0
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(111)) {Energystore["pi0"].push_back(TrueEnergy);pi0count++;}
+        Energystore["pi0"].push_back(TrueEnergy);  pi0count++;	//Pi0 decays to two gammas --> no Cherenkov threshold check
       }
       if(aparticle.GetPdgCode()==211){               // is a primary pi+
         if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(211)) {Energystore["pi+"].push_back(TrueEnergy);pipcount++;}
@@ -302,7 +308,7 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
       }
       // Kaons
       if(aparticle.GetPdgCode()==311){               // is a primary K0
-        if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(311)) {Energystore["K0"].push_back(TrueEnergy);K0count++;}
+        Energystore["K0"].push_back(TrueEnergy);K0count++; // K0 is neutral --> No Cherenkv threshold check
       }
       if(aparticle.GetPdgCode()==321){               // is a primary K+
         if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(321)) {Energystore["K+"].push_back(TrueEnergy);Kpcount++;}
@@ -325,11 +331,11 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
         if (aparticle.GetStartEnergy() > GetCherenkovThresholdE(-13)) {Energystore["mu+"].push_back(TrueEnergy);mpcount++;}
       }
       // Neutrons
-      if(aparticle.GetPdgCode()==2112){               // is a primary mu+
+      if(aparticle.GetPdgCode()==2112){               // is a primary neutron
         ncount++;
       }
       // Gammas
-      if(aparticle.GetPdgCode() == 22) {
+      if(aparticle.GetPdgCode() == 22) {		// is a primary gamma
         Energystore["gamma"].push_back(TrueEnergy);  gammacount++;
       }
     }
@@ -342,6 +348,6 @@ void EnergyExtractor::FindTrueEnergyFromMC() {
 double EnergyExtractor::GetCherenkovThresholdE(int pdg_code) {
   Log("EnergyExtractor Tool: GetCherenkovThresholdE",v_message,verbosity);
   Log("EnergyExtractor Tool: PDG code: "+std::to_string(pdg_code)+", mass: "+std::to_string(pdgcodetomass[pdg_code]),v_message,verbosity);             ///> Calculate Cherenkov threshold energies depending on particle pdg
-  double Ethr = pdgcodetomass[pdg_code]*sqrt(1./(1-1./n*n));
+  double Ethr = pdgcodetomass[pdg_code]*sqrt(1./(1-1./(n*n)));
   return Ethr;
 }
