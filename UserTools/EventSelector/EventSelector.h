@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <bitset>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>

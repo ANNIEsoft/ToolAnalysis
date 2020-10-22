@@ -170,6 +170,7 @@ bool EventSelector::Execute(){
 
     IsElectron = this->ParticleCheck(11);
     m_data->Stores.at("RecoEvent")->Set("MCIsElectron",IsElectron);
+
   }
 
 
@@ -304,6 +305,10 @@ bool EventSelector::Execute(){
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
 
+  if (verbosity >= v_debug){
+    std::cout << "EventSelector tool: fEventApplied: "<< fEventApplied << ", fEventFlagged: " << fEventFlagged << std::endl;
+    std::cout << "EventSelector tool: Bit representation: fEventApplied: " << std::bitset<32>(fEventApplied) << ", fEventFlagged: " << std::bitset<32>(fEventFlagged) << std::endl;
+  }
 
   return true;
 }

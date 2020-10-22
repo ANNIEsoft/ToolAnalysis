@@ -154,7 +154,9 @@ bool EnergyExtractor::Execute()
   // Save neutrino energy (if desired)
   Float_t neutrino_Energy=-2;
   bool isok;
-  isok=m_data->CStore.Get("NeutrinoEnergy",neutrino_Energy);
+  MCParticle neutrino;
+  isok = m_data->Stores["ANNIEEvent"]->Get("NeutrinoParticle", neutrino);
+  if (isok) neutrino_Energy = neutrino.GetStartEnergy();
   cout << " Neutrino Energy: " << neutrino_Energy <<" , "<< isok<< endl;
   if (save_neutrino) outfile_EnergyNeutrino << neutrino_Energy << endl;
 

@@ -326,7 +326,7 @@ bool CNNImage::Execute(){
   if (!get_ok) {Log("CNNImage tool: Error retrieving EventTime",v_error,verbosity); return false;}*/
   get_ok = m_data->CStore.Get("NumMrdTimeClusters",mrdeventcounter);
   if (!get_ok) {Log("CNNImage tool: Error retrieving NumMrdTimeClusters",v_error,verbosity); return false;}
-  if (mrdeventcounter >= 0 ){
+  if (mrdeventcounter > 0 ){
     get_ok = m_data->CStore.Get("MrdDigitChankeys",mrddigitchankeysthisevent);
     if (!get_ok) {Log("CNNImage tool: Error retrieving MrdDigitChankeys",v_error,verbosity); return false;}
   }
@@ -354,7 +354,6 @@ bool CNNImage::Execute(){
     time_first.emplace(detkey,0.);
   }
 
-  std::cout <<"lappd_detkeys.size() = "<<lappd_detkeys.size()<<std::endl;
   for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size(); i_lappd++){
     unsigned long detkey = lappd_detkeys[i_lappd];
     total_charge_lappd.emplace(detkey,0);
@@ -370,6 +369,7 @@ bool CNNImage::Execute(){
     }
     charge_lappd.emplace(detkey,temp_lappdXY);
     time_lappd.emplace(detkey,temp_lappdXY);
+    time_first_lappd.emplace(detkey,temp_lappdXY);
     hits_lappd.emplace(detkey,temp_int_lappdXY);
   }
 
@@ -496,6 +496,7 @@ bool CNNImage::Execute(){
   //---------------------------------------------------------------
   //------------- Determine max+min values ------------------------
   //---------------------------------------------------------------
+
 
   maximum_pmts = 0;
   max_time_pmts = 0;
@@ -900,6 +901,28 @@ bool CNNImage::Execute(){
     outfile_time_first << std::endl;
     outfile_time_abs << std::endl;
     outfile_time_first_abs << std::endl;
+  }
+
+  //Delete histograms after accessing them
+  delete hist_cnn;
+  delete hist_cnn_abs;
+  delete hist_cnn_time;
+  delete hist_cnn_time_first;
+  delete hist_cnn_time_abs;
+  delete hist_cnn_time_first_abs;
+  delete hist_cnn_pmtwise;
+  delete hist_cnn_abs_pmtwise;
+  delete hist_cnn_time_pmtwise;
+  delete hist_cnn_time_first_pmtwise;
+  delete hist_cnn_time_abs_pmtwise;
+  delete hist_cnn_time_first_abs_pmtwise;
+  for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size();i_lappd++){
+    delete hists_lappd.at(i_lappd);
+    delete hists_abs_lappd.at(i_lappd);
+    delete hists_time_lappd.at(i_lappd);
+    delete hists_time_first_lappd.at(i_lappd);
+    delete hists_time_abs_lappd.at(i_lappd);
+    delete hists_time_first_abs_lappd.at(i_lappd);
   }
 
   return true;
