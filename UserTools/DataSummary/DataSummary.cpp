@@ -223,6 +223,7 @@ bool DataSummary::LoadNextANNIEEventEntry(){
 		return ANNIEEvent->GetEntry(localentry);
 	} // else no more ANNIEEvents, but we didn't load a new file
 	  // because there are still Orphans to process
+	return false;
 }
 
 bool DataSummary::LoadNextOrphanStoreEntry(){
@@ -243,6 +244,7 @@ bool DataSummary::LoadNextOrphanStoreEntry(){
 		return OrphanStore->GetEntry(localorphan);
 	} // else no more orphans, but we didn't load a new file
 	  // because there are still ANNIEEvents to process
+	return false;
 }
 
 bool DataSummary::LoadNextFile(){
@@ -356,6 +358,7 @@ bool DataSummary::CreateOutputFile(){
 	outtree2->Branch("OrphanedEventType",&orphantype);
 	outtree2->Branch("OrphanTimestamp",&orphantimestamp);
 	outtree2->Branch("OrphanCause",&orphancause);
+	return true;
 }
 
 bool DataSummary::CreatePlots(){
@@ -379,7 +382,7 @@ bool DataSummary::CreatePlots(){
 	AddTDiffPlots();
 	//AddTDiffPlots(30,30,0.5,"CtcToMrdTDiff");
 	//AddTDiffPlots(30,30,0.5,"TankToMrdTDiff");
-	
+	return true;	
 }
 
 // just histograms of timestamps of a given type with a time axis
@@ -436,7 +439,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	allsystems_rate->GetXaxis()->SetLabelSize(0.03);
 	noloopback_rate->GetXaxis()->SetLabelSize(0.03);
 	orphan_rate->GetXaxis()->SetLabelSize(0.03);
-	
+	return true;	
 }
 
 // TODO refactor to break up plot types and remove triplets of calls
@@ -547,5 +550,6 @@ bool DataSummary::AddTDiffPlots(){
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 	
 	// 5. you could also make a normalized histogram at each step to make a colour band plot
+	return true;
 	
 }

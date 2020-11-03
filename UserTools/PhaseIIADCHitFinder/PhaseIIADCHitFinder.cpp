@@ -524,7 +524,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       in_pulse = false;
       //check if sample is within an already defined window
       for (int i=0; i< (int) window_starts.size(); i++){
-        if ((s>(int)window_starts.at(i)) && (s<(int)window_ends.at(i))){
+        if (((int)s>window_starts.at(i)) && ((int)s<window_ends.at(i))){
           in_pulse = true;
           if(verbosity>4) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
         }
