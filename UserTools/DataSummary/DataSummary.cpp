@@ -300,10 +300,10 @@ bool DataSummary::LoadNextFile(){
 		return false;
 	}
 	ANNIEEvent->Get("RunNumber",RunNumber);
-	if(RunNumber!=run)
+	if((int)RunNumber!=run)
 		Log("DataSummary Tool: filename / entry mismatch for RunNumber!",v_error,verbosity);
 	ANNIEEvent->Get("SubrunNumber",SubrunNumber);
-	if(SubrunNumber!=subrun)
+	if((int)SubrunNumber!=subrun)
 		Log("DataSummary Tool: filename / entry mismatch for SubrunNumber!",v_error,verbosity);
 	// TODO... handle these errors? We should have an error log file.
 	PartNumber=part; // not stored so assume it's the same
@@ -530,7 +530,7 @@ bool DataSummary::AddTDiffPlots(){
 	tank_ctc_ts.reserve(tank_ctc_diff_vals.size()/(overlap_fraction*window_size));
 	int start_sample=0;
 	int step_size = window_size*overlap_fraction;
-	for(int i=0; i<tank_ctc_diff_vals.size(); ++i){
+	for(int i=0; i<(int)tank_ctc_diff_vals.size(); ++i){
 		ComputeMeanAndVariance(tank_ctc_diff_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size, start_sample);
 		tank_ctc_means.push_back(mean_ctc_to_tank);
 		tank_ctc_vars.push_back(var_ctc_to_tank);
