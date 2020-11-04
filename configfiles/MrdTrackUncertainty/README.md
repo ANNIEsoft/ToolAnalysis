@@ -1,25 +1,19 @@
-# Configure files
+# MrdTrackUncertainy
 
-***********************
-#Description
-**********************
+## Description
 
-Configure files are simple text files for passing variables to the Tools.
+The `MrdTrackUncertainty` toolchain can be used to evaluate the MRD track reconstruction performance with or without applied MRD paddle efficiency properties. In case the paddle efficiency values should be applied to the data, the tool `ApplyMRDEff` is needed and the `TimeClustering` tool needs to be configured to read in the modified `TDCData` object.
 
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
+## Tools in the ToolChain
 
+A typical toolchain to evaluate the MRD reconstruction performance will have the following sequence of tools. The `ApplyMRDEff` tool should be used if one wants to evaluate the effects of inefficient MRD paddles on the reconstruction.
 
-************************
-#Usage
-************************
-
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
-
-Variables should be stored one per line as follows:
-
-
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
+* `LoadWCSim`: Loads the data from the MC file
+* `MCParticleProperties`: Extends the MC particle information
+* `ApplyMRDEff`: Applies MRD efficiencies to the simulation data
+* `TimeClustering`: Clusters MRD hits in time
+* `FindMrdTracks`: Finds MRD tracks in clustered MRD data.
+* `MrdPaddlePlot`: Plots MRD paddles and reconstructed tracks
+* `MrdEfficiency`: Evaluates the efficiency of how many true tracks were successfully reconstructed
+* `MrdDistributions`: Plots distributions showing the properties of the reconstructed MRD tracks. 
 
