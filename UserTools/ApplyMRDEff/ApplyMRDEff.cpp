@@ -124,10 +124,10 @@ bool ApplyMRDEff::Execute(){
   dropped_ch_mc->clear();
   dropped_ch_time->clear();
   if (use_file_eff){
-    vec_random->clear();
-    dropped_ch->clear();
-    dropped_ch_mc->clear();
-    dropped_ch_time->clear();
+    vec_random_read->clear();
+    dropped_ch_read->clear();
+    dropped_ch_mc_read->clear();
+    dropped_ch_time_read->clear();
     Tree_Eff->GetEntry(evnum);
   }
 
@@ -142,11 +142,11 @@ bool ApplyMRDEff::Execute(){
       continue;
     }  
     if(thedetector->GetDetectorElement()!="MRD") continue; // this is a veto hit, not an MRD hit.
-    std::cout <<"chankey: "<<chankey<<std::endl;
+    //std::cout <<"chankey: "<<chankey<<std::endl;
     int wcsimid = channelkey_to_mrdpmtid[chankey];
-    std::cout <<"wcsimid: "<<wcsimid<<std::endl;
+    //std::cout <<"wcsimid: "<<wcsimid<<std::endl;
     unsigned long chankey_data = mrdpmtid_to_channelkey_data[wcsimid-1];
-    std::cout <<"chankey_data: "<<chankey_data<<std::endl;
+    //std::cout <<"chankey_data: "<<chankey_data<<std::endl;
     double eff = map_eff[chankey_data];
     for(auto&& hitsonthismrdpmt : anmrdpmt.second){
       /*double time = hitsonthismrdpmt.GetTime();
@@ -156,10 +156,12 @@ bool ApplyMRDEff::Execute(){
       MCHit nexthit = hitsonthismrdpmt;
       double tmp_time = nexthit.GetTime();
       bool omit_hit = false;
-      if (std::find(dropped_ch_read->begin(),dropped_ch_read->end(),chankey_data)!=dropped_ch_read->end()){
-        int index = std::distance(dropped_ch_read->begin(),std::find(dropped_ch_read->begin(),dropped_ch_read->end(),chankey_data));
-        double t = dropped_ch_time_read->at(index);
-        if (fabs(t-tmp_time)<0.0001) omit_hit = true;
+      if (use_file_eff){
+        if (std::find(dropped_ch_read->begin(),dropped_ch_read->end(),chankey_data)!=dropped_ch_read->end()){
+          int index = std::distance(dropped_ch_read->begin(),std::find(dropped_ch_read->begin(),dropped_ch_read->end(),chankey_data));
+          double t = dropped_ch_time_read->at(index);
+          if (fabs(t-tmp_time)<0.0001) omit_hit = true;
+        }
       }
       double tmp = rnd->Uniform();
       vec_random->push_back(tmp);
