@@ -44,61 +44,64 @@ class EventSelector: public Tool {
    kFlagMCIsSingleRing = 0x800, //2048
    kFlagMCIsMultiRing  = 0x1000, //4096
    kFlagMCProjectedMRDHit = 0x2000, //8192
-   kFlagMCEnergyCut   = 0x4000
+   kFlagMCEnergyCut   = 0x4000, //16384
+   kFlagPMTMRDCoinc   = 0x8000, //32768
+   kFlagNoVeto        = 0x10000, //65536
+   kFlagVeto        = 0x20000 //131072
   } EventFlags_t;
 
  private:
  	
-	/// Clear reconstruction info.
- 	void Reset();
+  /// Clear reconstruction info.
+  void Reset();
 
- 	/// \brief Event selection by MRD reconstructed information
- 	///
- 	/// Loop over all the MRC tracks. Find the track with the longest track
- 	/// length. If the longest track is stoped inside the MRD, the event is 
- 	/// selected
- 	bool EventSelectionByMRDReco();
+  /// \brief Event selection by MRD reconstructed information
+  ///
+  /// Loop over all the MRC tracks. Find the track with the longest track
+  /// length. If the longest track is stoped inside the MRD, the event is 
+  /// selected
+  bool EventSelectionByMRDReco();
 
- 	/// \brief Event selection by trigger number
- 	///
- 	/// The selection is based on the trigger number for the event
- 	/// in the store "ANNIEEvent".  Events are selected if they have
- 	/// an MCTriggernum == 0 (i.e. they are a prompt trigger) 
- 	bool PromptTriggerCheck();
+  /// \brief Event selection by trigger number
+  ///
+  /// The selection is based on the trigger number for the event
+  /// in the store "ANNIEEvent".  Events are selected if they have
+  /// an MCTriggernum == 0 (i.e. they are a prompt trigger) 
+  bool PromptTriggerCheck();
 
- 	/// \brief Event selection by number of digits hit
- 	///
+  /// \brief Event selection by number of digits hit
+  ///
   /// Require a minimum amount of digits to be hit in the event.
   /// If the criteria is not met, the event is flagged.
- 	bool NHitCountCheck(int NHitCount);
+  bool NHitCountCheck(int NHitCount);
 
- 	/// \brief Event selection by fidicual volume
- 	///
- 	/// The selection is based on the muon interaction point. 
- 	/// If isMC is true, checks the Event using muon truth info. 
-    /// If False, the reconstructed vertex is used. 
- 	bool EventSelectionByFV(bool isMC);
+  /// \brief Event selection by fidicual volume
+  ///
+  /// The selection is based on the muon interaction point. 
+  /// If isMC is true, checks the Event using muon truth info. 
+  /// If False, the reconstructed vertex is used. 
+  bool EventSelectionByFV(bool isMC);
 
- 	/// \brief Event selection by PMT Volume 
- 	///
- 	/// The selection is based on the muon interaction point. 
- 	/// If isMC is true, checks the Event using muon truth info. 
-    /// If False, the reconstructed vertex is used. 
- 	bool EventSelectionByPMTVol(bool isMC);
+  /// \brief Event selection by PMT Volume 
+  ///
+  /// The selection is based on the muon interaction point. 
+  /// If isMC is true, checks the Event using muon truth info. 
+  /// If False, the reconstructed vertex is used. 
+ bool EventSelectionByPMTVol(bool isMC);
 
- 	/// \brief Event selection by Muon MRD stop position
+  /// \brief Event selection by Muon MRD stop position
   /////
- 	/// The selection is based on the true vertex stop position from MC. 
- 	/// If the true muon vertex stops inside the MRD, the event 
- 	/// is selected. 
- 	bool EventSelectionByMCTruthMRD();
+  /// The selection is based on the true vertex stop position from MC. 
+  /// If the true muon vertex stops inside the MRD, the event 
+  /// is selected. 
+  bool EventSelectionByMCTruthMRD();
 
- 	/// \brief Event selection by Pion Kaon count
+  /// \brief Event selection by Pion Kaon count
   /////
- 	/// This event selection criteria requires that no pions or 
- 	/// kaons are parent particles in the event.  This will help
+  /// This event selection criteria requires that no pions or 
+  /// kaons are parent particles in the event.  This will help
   /// Select the CC0Pi events when testing reconstruction.
- 	bool EventSelectionNoPiK();
+  bool EventSelectionNoPiK();
 
   /// \brief Event selection by requiring the primary to be a certain particle
   ////
@@ -135,7 +138,20 @@ class EventSelector: public Tool {
   /// the MRD.
   bool EventSelectionByMCProjectedMRDHit();
 
- 	/// \brief MC entry number
+  /// \brief Event selection by PMT/MRD time coincidence
+  ////
+  /// This event selection criteria requires clustered events in tank & MRD
+  /// to have coincidicent time activity and therefore correspond to a single
+  /// event.
+  bool EventSelectionByPMTMRDCoinc();
+
+  /// \brief Event selection by rejecting veto hits
+  ////
+  /// This event selection criteria requires that no veto paddles
+  /// of the Front Muon Veto fired during the event
+  bool EventSelectionByVetoCut();
+  
+  /// \brief MC entry number
   uint64_t fMCEventNum;
   
   /// \brief trigger number
@@ -148,12 +164,22 @@ class EventSelector: public Tool {
   int fEventApplied; //Integer indicates what event cleaning flags were checked for the event
   int fEventFlagged; //Integer indicates what evt. cleaning flags the event was flagged with
   
-  Geometry fGeometry;    ///< ANNIE Geometry
+  Geometry *fGeometry = nullptr;    ///< ANNIE Geometry
   RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
   RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
-  std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
+  std::vector<RecoDigit>* fDigitList;		///< Reconstructed Hits including both LAPPD hits and PMT hits
   RecoVertex* fRecoVertex = nullptr; 	 ///< Reconstructed Vertex 
-  
+  std::map<double,std::vector<Hit>>* m_all_clusters;   ///< clustered PMT hits
+  std::map<double,std::vector<MCHit>>* m_all_clusters_MC;   ///< clustered PMT hits
+  std::vector<std::vector<int>> MrdTimeClusters;      ///< clustered MRD hits
+  std::vector<double> MrdDigitTimes;          ///< clustered MRD times
+  std::vector<unsigned long> MrdDigitChankeys;          ///< clustered MRD chankeys
+  std::map<unsigned long,std::vector<MCHit>>* TDCData_MC;	///< MRD hits (MC)
+  std::map<unsigned long,std::vector<Hit>>* TDCData;	///< MRD hits (data)
+  std::vector<double> *vec_pmtclusters_charge = nullptr;
+  std::vector<double> *vec_pmtclusters_time = nullptr;
+  std::vector<double> *vec_mrdclusters_time = nullptr;
+
   //verbosity initialization
   int verbosity=1;
   
@@ -175,9 +201,14 @@ class EventSelector: public Tool {
   double Emax = 10000.;
   bool fRecoPMTVolCut = false;
   bool fRecoFVCut = false;
+  bool fPMTMRDCoincCut = false;
+  double fPMTMRDOffset = 745;
   bool fPromptTrigOnly = true;
+  bool fNoVetoCut = false;
+  bool fVetoCut = false;
   bool fEventCutStatus;
-  
+  bool fIsMC; 
+
   
   bool fSaveStatusToStore = true;
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

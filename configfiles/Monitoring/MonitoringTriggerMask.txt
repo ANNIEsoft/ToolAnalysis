@@ -1,0 +1,15 @@
+#Triggers are given by Jonathan; place one number per line. Values are index
+#0: BES Holdoff. 1:1F. 2: 1D. 3: RWM. 21: Periodic trigger. 25: MinRate Trigger
+#31: Input Sync trigger. 33: Input 8F trigger
+#4: Delayed beam.  32: LED trigger. 34: AmBe and Cosmic trigger.  35: MRD_CR_Trigger
+0
+1
+2
+4
+21
+25
+31
+32
+33
+34
+35

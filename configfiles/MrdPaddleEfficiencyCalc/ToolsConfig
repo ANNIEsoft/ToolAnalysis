@@ -1,2 +1,2 @@
-myLoadGeometry LoadGeometry configfiles/MrdPaddleEfficiencyCalc/LoadGeometryConfig
+myLoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
 myMrdPaddleEfficiencyCalc MrdPaddleEfficiencyCalc configfiles/MrdPaddleEfficiencyCalc/MrdPaddleEfficiencyCalcConfig

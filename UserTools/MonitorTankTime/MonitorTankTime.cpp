@@ -201,7 +201,7 @@ bool MonitorTankTime::Initialise(std::string configfile, DataModel &data){
 
 bool MonitorTankTime::Execute(){
 
-  //Log("Tool MonitorTankTime: Executing ....",v_message,verbosity);
+  Log("Tool MonitorTankTime: Executing ....",v_message,verbosity);
 
   current = (boost::posix_time::second_clock::local_time());
   duration = boost::posix_time::time_duration(current - last); 
@@ -306,6 +306,9 @@ bool MonitorTankTime::Finalise(){
   delete label_peddiff;
   delete label_ratediff;
   delete label_fifo;
+  delete label_cr1;
+  delete label_cr2;
+  delete label_cr3;
   delete line1;
   delete line2;
   delete text_crate1;
@@ -316,9 +319,17 @@ bool MonitorTankTime::Finalise(){
   delete leg_rate;
   delete leg_freq;
   delete leg_temp;
+  delete separate_crates;
+  delete separate_crates2;
 
   for (unsigned int i_box = 0; i_box < vector_box_inactive.size(); i_box++){
     delete vector_box_inactive.at(i_box);
+  }
+
+  for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
+    for (unsigned int i_box = 0; i_box < vector_box_inactive_hitmap[i_slot].size(); i_box++){
+      delete vector_box_inactive_hitmap[i_slot].at(i_box);
+    }
   }
 
   //graphs
@@ -352,7 +363,16 @@ bool MonitorTankTime::Finalise(){
   delete hChannels_BRF;
   delete hChannels_temp_RWM;
   delete hChannels_temp_BRF;
+  delete hist_vme;
+  delete hist_vme_cluster;
+  delete hist_vme_cluster_20;
 
+  for (int i_crate = 0; i_crate < (int) hist_hitmap.size(); i_crate++){
+    delete hist_hitmap.at(i_crate);
+  }
+  for (int i_slot=0; i_slot < (int) hist_hitmap_slot.size(); i_slot++){
+    delete hist_hitmap_slot.at(i_slot);
+  }
 
   //canvases
   delete canvas_ped;
@@ -365,16 +385,19 @@ bool MonitorTankTime::Finalise(){
   delete canvas_logfile_tank;
   delete canvas_ch_ped;
   delete canvas_ch_sigma;
-
   delete canvas_ch_rate_tank;
   delete canvas_ch_single_tank;
-
   delete canvas_file_timestamp_tank;
+  delete canvas_vme;
+  delete canvas_hitmap_tank;
+  delete canvas_hitmap_tank_slot;
+ 
 
   for (unsigned int i_channel = 0; i_channel < canvas_Channels_temp.size(); i_channel++){
     delete canvas_Channels_temp.at(i_channel);
     delete canvas_Channels_freq.at(i_channel);
   }
+  
 
   return true;
 
@@ -512,6 +535,100 @@ void MonitorTankTime::InitializeHists(){
   canvas_ch_single_tank = new TCanvas("canvas_ch_single_tank","Channel Canvas Single",900,600);
   canvas_logfile_tank = new TCanvas("canvas_logfile_tank","PMT File History",900,600); 
   canvas_file_timestamp_tank = new TCanvas("canvas_file_timestamp_tank","Timestamp Last file",900,600);
+  canvas_vme = new TCanvas("canvas_vme","VME Canvas",900,600);
+  canvas_hitmap_tank = new TCanvas("canvas_hitmap_tank","Hitmap VME",900,600);
+  canvas_hitmap_tank_slot = new TCanvas("canvas_hitmap_tank_slot","Hitmap VME Slot",900,600);
+
+  canvas_hitmap_tank->SetGridy();
+  canvas_hitmap_tank->SetLogy();
+  //canvas_hitmap_tank_slot->SetGridx();
+  canvas_hitmap_tank_slot->SetLogy();
+ 
+  int color_scheme[3] = {8,9,2};
+  //Initialize hitmap histograms
+  for (int i_crate = 0; i_crate < 3; i_crate++){
+    //std::cout <<"crate: "<<i_crate<<std::endl;
+    std::stringstream ss_hitmap_name, ss_hitmap_title;
+    ss_hitmap_name <<"hist_hitmap_tank_"<<i_crate;
+    ss_hitmap_title<<"Hitmap VME Crate "<<i_crate;
+    TH1F *hist_hitmap_single = new TH1F(ss_hitmap_name.str().c_str(),ss_hitmap_title.str().c_str(),num_channels_tank*num_active_slots,0,num_channels_tank*num_active_slots);
+    hist_hitmap_single->SetLineColor(color_scheme[i_crate]);
+    hist_hitmap_single->SetFillColor(color_scheme[i_crate]);
+    hist_hitmap_single->SetStats(0);
+    hist_hitmap_single->GetYaxis()->SetTitle("# of entries");
+    hist_hitmap_single->GetXaxis()->SetNdivisions(int(num_active_slots));
+    hist_hitmap.push_back(hist_hitmap_single);
+   }
+
+   //std::cout <<"num_active_slots: "<<num_active_slots<<std::endl;
+   for (int i_label=0; i_label < int(num_active_slots); i_label++){
+    //std::cout <<"i_label: "<<i_label<<std::endl;
+    std::vector<unsigned int> crateslot = map_slot_to_crateslot[i_label];
+    unsigned int i_crate = crateslot.at(0)-1;
+    unsigned int slot = crateslot.at(1);
+    //std::cout <<"crate: "<<i_crate<<std::endl;
+    std::stringstream ss_slot;
+    ss_slot << "slot "<< slot;
+    for (int i_cr=0; i_cr < 3; i_cr++){
+      hist_hitmap[i_cr]->GetXaxis()->SetBinLabel(num_channels_tank*(i_label+0.5),ss_slot.str().c_str());
+    }
+  }
+  //std::cout <<"blub"<<std::endl;
+  hist_hitmap[0]->SetTitleSize(0.3,"t");
+  for (int i_crate = 0; i_crate < 3; i_crate++){
+    //std::cout <<"crate: "<<i_crate<<std::endl;
+    hist_hitmap[i_crate]->LabelsOption("v");
+    hist_hitmap[i_crate]->SetTickLength(0,"X");
+    hist_hitmap[i_crate]->SetLineWidth(2);
+  }
+  label_cr1 = new TPaveText(0.12,0.83,0.27,0.88,"NDC");
+  label_cr1->SetFillColor(0);
+  label_cr1->SetTextColor(color_scheme[0]);
+  label_cr1->AddText("VME01");
+  label_cr2 = new TPaveText(0.43,0.83,0.57,0.88,"NDC");
+  label_cr2->SetFillColor(0);
+  label_cr2->SetTextColor(color_scheme[1]);
+  label_cr2->AddText("VME02");
+  label_cr3 = new TPaveText(0.73,0.83,0.88,0.88,"NDC");
+  label_cr3->SetFillColor(0);
+  label_cr3->SetTextColor(color_scheme[2]);
+  label_cr3->AddText("VME03");
+
+  //std::cout <<"num_active_slots_cr1: "<<num_active_slots_cr1<<std::endl;
+  separate_crates = new TLine(num_channels_tank*num_active_slots_cr1,0.8,num_channels_tank*num_active_slots_cr1,100);
+  separate_crates->SetLineStyle(2);
+  separate_crates->SetLineWidth(2);
+  separate_crates2 = new TLine(num_channels_tank*(num_active_slots_cr1+num_active_slots_cr2),0.8,num_channels_tank*(num_active_slots_cr1+num_active_slots_cr2),100);
+  separate_crates2->SetLineStyle(2);
+  separate_crates2->SetLineWidth(2);
+  f1 = new TF1("f1","x",0,num_active_slots);      //workaround to only have labels for every slot
+
+  //-------------------------------------------------------
+  //------------Initialize single slot hitmaps-------------
+  //-------------------------------------------------------
+  
+  for (int i_slot = 0; i_slot < num_active_slots; i_slot++){
+    //std::cout <<"i_slot: "<<i_slot<<std::endl;
+    std::vector<unsigned int> crateslot = map_slot_to_crateslot[i_slot];
+    unsigned int crate_num = crateslot.at(0);
+    unsigned int slot_num = crateslot.at(1);
+
+    std::stringstream ss_title_single, ss_name_single;
+    ss_name_single << "hist_hitmap_tank_cr"<<crate_num<<"_sl"<<slot_num;
+    ss_title_single << "Hitmap VME Crate "<<crate_num<<" Slot "<<slot_num;
+
+    int hist_color = color_scheme[crate_num-1];
+
+    TH1F *hist_hitmap_slot_single = new TH1F(ss_name_single.str().c_str(),ss_title_single.str().c_str(),num_channels_tank,0,num_channels_tank);
+    hist_hitmap_slot_single->SetFillColor(hist_color);
+    hist_hitmap_slot_single->SetLineColor(hist_color);
+    hist_hitmap_slot_single->SetLineWidth(2);
+    hist_hitmap_slot_single->SetStats(0);
+    hist_hitmap_slot_single->GetYaxis()->SetTitle("# of entries");
+    hist_hitmap_slot_single->GetXaxis()->SetTitle("Channel #");
+    hist_hitmap_slot.push_back(hist_hitmap_slot_single);
+
+  }
 
   for (int i_active = 0; i_active<num_active_slots; i_active++){
     
@@ -616,6 +733,22 @@ void MonitorTankTime::InitializeHists(){
   log_files->GetYaxis()->SetLabelOffset(999);
   log_files->SetStats(0);
 
+  //Clustered time histograms
+  hist_vme = new TH1F("hist_vme","VME (last file)",100,0,2000);
+  hist_vme->GetXaxis()->SetTitle("Time [ns]");
+  hist_vme->GetYaxis()->SetTitle("#");
+  hist_vme_cluster = new TH1F("hist_vme_cluster","VME Cluster (last file)",20,0,2000);
+  hist_vme_cluster->GetXaxis()->SetTitle("Time [ns]");
+  hist_vme_cluster->GetYaxis()->SetTitle("#");
+  hist_vme_cluster_20 = new TH1F("hist_vme_cluster_20","VME Cluster (last 20 files)",20,0,2000);
+  hist_vme_cluster_20->GetXaxis()->SetTitle("Time [ns]");
+  hist_vme_cluster_20->GetYaxis()->SetTitle("#");
+
+  std::vector<TBox*> empty_boxvector;
+  for (int i_slot=0; i_slot < num_active_slots; i_slot++){
+    vector_box_inactive_hitmap.emplace(i_slot,empty_boxvector);
+  }
+
   //initialize vector inactive boxes
   for (int i_slot = 0; i_slot < num_slots_tank*num_crates_tank; i_slot++){
     int slot_in_crate;
@@ -667,6 +800,12 @@ void MonitorTankTime::InitializeHists(){
     box_inactive->SetFillStyle(3004);
     box_inactive->SetFillColor(2);
     vector_box_inactive.push_back(box_inactive);
+    TBox *box_inactive_hitmap = new TBox(ch-1,0.8,ch,1.);
+    box_inactive_hitmap->SetFillStyle(3004);
+    box_inactive_hitmap->SetFillColor(1);
+    std::vector<unsigned int> crateslot{crate,slot};
+    int active_slot = map_crateslot_to_slot[crateslot];
+    vector_box_inactive_hitmap[active_slot].push_back(box_inactive_hitmap);
   }
 
   //initialize labels/text boxes/etc
@@ -825,6 +964,7 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
   rate_file.clear();
   samples_file.clear();
   timestamp_file.clear();
+  channels_times.clear();
 
   int i_timestamp = 0;
   for (std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t>>>::iterator it = finishedPMTWaves.begin(); it != finishedPMTWaves.end(); it++){
@@ -834,6 +974,11 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
     timestamp_file.push_back(timestamp_temp);
     std::vector<double> ped_file_temp, sigma_file_temp, rate_file_temp;
     std::vector<int> samples_file_temp;
+    std::vector<std::vector<int>> channels_pmt_time;
+    for (int i_ch = 0; i_ch < num_active_slots*num_channels_tank; i_ch++){
+      std::vector<int> pmt_hittimes;
+      channels_pmt_time.push_back(pmt_hittimes);
+    }
     ped_file_temp.assign(num_active_slots*num_channels_tank,0.);
     sigma_file_temp.assign(num_active_slots*num_channels_tank,0.);
     rate_file_temp.assign(num_active_slots*num_channels_tank,0.);
@@ -947,10 +1092,13 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
       
       //Evaluate rates
       long sum = 0;
+      std::vector<int> pmt_time;
       for (int i_buffer = 0; i_buffer < num_samples; i_buffer++){
         if (awaveform.at(i_buffer) > channels_mean[i_channel]+5*channels_sigma[i_channel]) {
 		Log("MonitorTankTime tool: Found waveform entry > sigma: waveform = "+std::to_string(awaveform.at(i_buffer))+", mean+5sigma = "+std::to_string(channels_mean[i_channel]+5*channels_sigma[i_channel]),v_debug,verbosity);
 		sum++;
+		channels_pmt_time.at(i_channel).push_back(i_buffer*2);
+		hist_vme->Fill(i_buffer*2);
       	}
       }
       channels_rate.at(i_channel) = sum;	//actually this is just the number of signal counts, convert to a rate later on
@@ -959,9 +1107,11 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
       sigma_file_temp.at(i_channel) = channels_sigma.at(i_channel);
       rate_file_temp.at(i_channel) = channels_rate.at(i_channel);
       samples_file_temp.at(i_channel) = num_samples;
-      }  
+      }
+      
     }
 
+    channels_times.push_back(channels_pmt_time); 
     ped_file.push_back(ped_file_temp);
     sigma_file.push_back(sigma_file_temp);
     rate_file.push_back(rate_file_temp);
@@ -1050,6 +1200,13 @@ void MonitorTankTime::WriteToFile(){
 
   //don't write file again, but still delete TFile and TTree object!!!
   f->Close();
+  delete crate;
+  delete slot;
+  delete channel;
+  delete ped;
+  delete sigma;
+  delete rate;
+  delete channelcount;
   delete f;
 
   gROOT->cd();
@@ -1220,10 +1377,31 @@ void MonitorTankTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("channelcount",&channelcount);
 
         nentries_tree = t->GetEntries();
+	      
+	//Sort timestamps for the case that they are not in order
 
-        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
+	std::vector<ULong64_t> vector_timestamps;
+        std::map<ULong64_t,int> map_timestamp_entry;
+	for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
+	  t->GetEntry(i_entry);
+	  if (t_start >= timestamp_start && t_end <= timestamp_end){
+	    vector_timestamps.push_back(t_start);
+	    map_timestamp_entry.emplace(t_start,i_entry);	    
+	  }
+	}
 
-          t->GetEntry(i_entry);
+	std::sort(vector_timestamps.begin(), vector_timestamps.end());
+	std::vector<int> vector_sorted_entry;
+
+	for (int i_entry = 0; i_entry < (int) vector_timestamps.size(); i_entry++){
+	  vector_sorted_entry.push_back(map_timestamp_entry.at(vector_timestamps.at(i_entry)));
+	}
+
+        for (int i_entry = 0; i_entry < (int) vector_sorted_entry.size(); i_entry++){
+		
+	  int next_entry = vector_sorted_entry.at(i_entry);
+
+          t->GetEntry(next_entry);
           if (t_start >= timestamp_start && t_end <= timestamp_end){
             ped_plot.push_back(*ped);
             sigma_plot.push_back(*sigma);
@@ -1283,6 +1461,9 @@ void MonitorTankTime::DrawLastFilePlots(){
   //draw FIFO error plots
   DrawFIFOPlots();
 
+  //draw VME histogram plots
+  DrawVMEHistogram();
+
   //Draw ped plots plots
   DrawPedPlotElectronics(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
   //DrawPedPlotPhysical(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
@@ -1294,6 +1475,9 @@ void MonitorTankTime::DrawLastFilePlots(){
   //Draw rate plots
   DrawRatePlotElectronics(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
   //DrawRatePlotPhysical(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
+
+  //Draw hitmap plots
+  DrawHitMap(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
 
 }
 
@@ -1319,7 +1503,7 @@ void MonitorTankTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::ve
 
 
     for (unsigned int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
-
+      //std::cout <<"i_plot: "<<i_plot<<std::endl;
       if (plotTypes.at(i_time).at(i_plot) == "RateElectronics") DrawRatePlotElectronics(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "RatePhysical") DrawRatePlotPhysical(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "PedElectronics") DrawPedPlotElectronics(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
@@ -1328,6 +1512,7 @@ void MonitorTankTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::ve
       else if (plotTypes.at(i_time).at(i_plot) == "SigmaPhysical") DrawSigmaPlotPhysical(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "TimeEvolution") DrawTimeEvolution(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "TimeDifference") DrawTimeDifference(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
+      else if (plotTypes.at(i_time).at(i_plot) == "HitMap") DrawHitMap(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "FileHistory") DrawFileHistory(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time),1);
       else {
         if (verbosity > 0) std::cout <<"ERROR (MonitorTankTime): UpdateMonitorPlots: Specified plot type -"<<plotTypes.at(i_time).at(i_plot)<<"- does not exist! Omit entry."<<std::endl;
@@ -1734,7 +1919,110 @@ void MonitorTankTime::DrawHitMap(ULong64_t timestamp_end, double time_frame, std
   //---------------------DrawHitMap -----------------------
   //-------------------------------------------------------
 
-  //TODO
+   boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(timestamp_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_end/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_end/MSEC_to_SEC/1000.)%60,timestamp_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
+
+  std::stringstream ss_timeframe, ss_hitmap_title;
+  ss_timeframe << round(time_frame*100.)/100.;
+
+  //variables for scaling hitmaps
+  long max_hitmap=0;
+  std::vector<long> max_hitmap_slot;
+  max_hitmap_slot.assign(num_active_slots,0); 
+
+  for (int i_channel = 0; i_channel < num_active_slots*num_channels_tank; i_channel++){
+
+    long sum_channel = 0;
+    
+    for (unsigned int i_file = 0; i_file < rate_plot.size(); i_file++){
+      sum_channel+=channelcount_plot.at(i_file).at(i_channel);
+    }
+
+    int active_slot = i_channel / num_channels_tank;
+    std::vector<unsigned int> crateslot = map_slot_to_crateslot[active_slot];
+    unsigned int i_crate = crateslot.at(0)-1;
+    unsigned int slot = crateslot.at(1);
+    unsigned int channel = i_channel % num_channels_tank;
+
+    for (int i_cr = 0; i_cr < 3; i_cr++){
+      if (int(i_crate) != i_cr) hist_hitmap[i_cr]->SetBinContent(i_channel+1,0.001);
+    }
+    if (sum_channel!=0){
+      if (max_hitmap < sum_channel) max_hitmap = sum_channel;
+      if (max_hitmap_slot.at(active_slot) < sum_channel) max_hitmap_slot.at(active_slot) = sum_channel;
+      hist_hitmap[i_crate]->SetBinContent(i_channel+1,sum_channel);
+      hist_hitmap_slot.at(active_slot)->SetBinContent(channel+1,sum_channel);
+    } else {
+      hist_hitmap[i_crate]->SetBinContent(i_channel+1,0.001);
+      hist_hitmap_slot.at(active_slot)->SetBinContent(channel+1,0.001);
+    }
+  }
+
+  //Plot the overall hitmap histogram
+
+  canvas_hitmap_tank->cd();
+  hist_hitmap[0]->GetYaxis()->SetRangeUser(0.8,max_hitmap+10);
+  hist_hitmap[1]->GetYaxis()->SetRangeUser(0.8,max_hitmap+10);
+  hist_hitmap[2]->GetYaxis()->SetRangeUser(0.8,max_hitmap+10);
+  ss_hitmap_title << "Hitmap VME "<<end_time.str()<<" (last "<<ss_timeframe.str()<<"h)";
+  hist_hitmap[0]->SetTitle(ss_hitmap_title.str().c_str());
+  hist_hitmap[0]->Draw();
+  hist_hitmap[1]->Draw("same");
+  hist_hitmap[2]->Draw("same");
+  separate_crates->SetY2(max_hitmap+10);
+  separate_crates->SetLineStyle(2);
+  separate_crates->SetLineWidth(2);
+  separate_crates->Draw("same");
+  separate_crates2->SetY2(max_hitmap+10);
+  separate_crates2->SetLineStyle(2);
+  separate_crates2->SetLineWidth(2);
+  separate_crates2->Draw("same");
+  label_cr1->Draw();
+  label_cr2->Draw();
+  label_cr3->Draw();
+  canvas_hitmap_tank->Update();
+  TGaxis *labels_grid = new TGaxis(0,canvas_hitmap_tank->GetUymin(),num_active_slots*num_channels_tank,canvas_hitmap_tank->GetUymin(),"f1",num_active_slots,"w");
+  labels_grid->SetLabelSize(0);
+  labels_grid->Draw("w");
+  std::stringstream save_path_hitmap;
+  save_path_hitmap << outpath <<"PMTHitmap_"<<file_ending<<"."<<img_extension;
+  canvas_hitmap_tank->SaveAs(save_path_hitmap.str().c_str());
+
+  delete labels_grid;
+
+  //Plot the more detailed slot-wise hitmap distributions
+
+  //std::cout <<"num_active_slots: "<<num_active_slots<<std::endl;
+  for (int i_slot=0; i_slot < num_active_slots; i_slot++){
+    //std::cout <<"hitmap single slot "<<i_slot<<std::endl;
+    std::vector<unsigned int> crateslot = map_slot_to_crateslot[i_slot];
+    unsigned int crate = crateslot.at(0);
+    unsigned int slot = crateslot.at(1);
+
+    canvas_hitmap_tank_slot->cd();
+    std::stringstream ss_slot;
+    ss_slot << i_slot;
+    std::stringstream save_path_singlehitmap, ss_hitmap_title_slot;
+    save_path_singlehitmap << outpath <<"PMTHitmap_Cr"<<crate<<"_Sl"<<slot<<"_"<<file_ending<<"."<<img_extension;
+    ss_hitmap_title_slot << "Hitmap VME "<<end_time.str()<<" Cr "<<crate <<" Sl "<<slot<<" (last "<<ss_timeframe.str()<<"h)";
+    //std::cout <<"savepath single slot: "<<save_path_singlehitmap.str()<<std::endl;
+    hist_hitmap_slot.at(i_slot)->GetYaxis()->SetRangeUser(0.8,max_hitmap_slot.at(i_slot)+10);
+    hist_hitmap_slot.at(i_slot)->SetTitle(ss_hitmap_title_slot.str().c_str());
+    hist_hitmap_slot.at(i_slot)->Draw();
+
+    for (unsigned int i_box = 0; i_box < vector_box_inactive_hitmap[i_slot].size(); i_box++){
+      vector_box_inactive_hitmap[i_slot].at(i_box)->SetY2(max_hitmap_slot.at(i_slot)+10);
+      vector_box_inactive_hitmap[i_slot].at(i_box)->Draw("same");
+    }
+    canvas_hitmap_tank_slot->Update();
+    canvas_hitmap_tank_slot->SaveAs(save_path_singlehitmap.str().c_str());
+    canvas_hitmap_tank_slot->Clear();
+  }  
+
 
 }
 
@@ -2356,6 +2644,8 @@ void MonitorTankTime::DrawBufferPlots(){
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
       if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       hChannels_temp.at(i_slot*num_channels_tank+i_channel)->Reset();
+      hChannels_temp.at(i_slot*num_channels_tank+i_channel)->SetMaximum(-1111); //needed to reset max/minimum computation
+      hChannels_temp.at(i_slot*num_channels_tank+i_channel)->SetMinimum(-1111); //needed to reset max/minimum computation
     }
   }
 
@@ -2443,6 +2733,7 @@ void MonitorTankTime::DrawADCFreqPlots(){
     for (int i_channel = 0; i_channel < num_channels_tank; i_channel++){
       if (std::find(vec_disabled_global.begin(),vec_disabled_global.end(),i_slot*num_channels_tank+i_channel)!=vec_disabled_global.end()) continue;
       hChannels_freq.at(i_slot*num_channels_tank+i_channel)->Reset();
+      hChannels_freq.at(i_slot*num_channels_tank+i_channel)->SetMaximum(-1111); //needed to reset max/minimum value computation for histogram
     }
   }
 
@@ -2610,6 +2901,148 @@ void MonitorTankTime::DrawFIFOPlots(){
 
   h2D_fifo2->Reset();
   canvas_fifo->Clear();
+
+}
+
+void MonitorTankTime::DrawVMEHistogram(){
+
+  Log("MonitorTankTime: DrawVMEHistogram",v_message,verbosity);
+
+  //-------------------------------------------------------
+  //------------------DrawVMEHistogram---------------------
+  //-------------------------------------------------------
+
+    boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(t_file_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_file_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_file_end/MSEC_to_SEC/1000.)%60,t_file_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  canvas_vme->cd();
+  canvas_vme->Clear();
+  canvas_vme->SetLogy();
+
+  // Find clusters of hits
+
+  // Plot histograms
+  std::stringstream ss_vme_hist_title;
+  ss_vme_hist_title <<"VME "<<end_time.str()<<" (last file) ";
+  hist_vme->SetTitle(ss_vme_hist_title.str().c_str());
+  hist_vme->Draw();
+  std::stringstream ss_vme_hist;
+  ss_vme_hist << outpath << "VMEHist_lastFile."<<img_extension;
+  canvas_vme->SaveAs(ss_vme_hist.str().c_str());
+  hist_vme->Reset();
+  canvas_vme->Clear();
+  std::vector<int> coinc_times_all;
+
+  for (int i_ev = 0; i_ev < (int) channels_times.size(); i_ev++){
+
+    int num_pmts = 0;
+    std::vector<std::vector<int>> temp_times;
+    //std::cout <<"i_ev: "<<i_ev<<std::endl;
+    std::vector<std::vector<int>> channels_pmt_times = channels_times.at(i_ev);
+    for (int i_ch = 0; i_ch < (int) channels_pmt_times.size(); i_ch++){
+      std::vector<int> temp_times_single;
+      std::vector<int> ch_hits = channels_pmt_times.at(i_ch);
+      if (ch_hits.size()>0) {
+        //std::cout <<"Channel "<<i_ch<<", hits: ";
+        num_pmts++;
+      }
+      for (int i_hit = 0; i_hit < (int) ch_hits.size(); i_hit++){
+        int hit = ch_hits.at(i_hit);
+        //std::cout <<hit<<",";
+        if (i_hit == 0) temp_times_single.push_back(ch_hits.at(i_hit));
+        if (i_hit != 0 && fabs(ch_hits.at(i_hit)-ch_hits.at(i_hit-1)) > 100) temp_times_single.push_back(ch_hits.at(i_hit));
+      }     
+      if (ch_hits.size() > 0) {
+        //std::cout << std::endl;
+        std::sort(temp_times_single.begin(),temp_times_single.end());
+        temp_times.push_back(temp_times_single);
+    }
+  }
+
+  int vme_start=0;
+  int min_cluster=3;
+  int coincident_time = 50;
+  std::vector<int> coinc_ch;
+
+  if (int(temp_times.size()) >=min_cluster+1){
+
+    //std::cout <<"Number of PMTs: "<<temp_times.size()<<std::endl;
+
+    for (int i_temp=0; i_temp < (int) temp_times.size(); i_temp++){
+      //std::cout <<"i_temp: "<<i_temp<<std::endl;
+      
+      for (int i=0; i< (int) temp_times.at(i_temp).size(); i++){
+        std::vector<int> coinc_times;
+        int num_coincident_pmts=0;
+        //std::cout <<"i: "<<i<<", time: "<<temp_times.at(i_temp).at(i)<<std::endl;
+        vme_start = temp_times.at(i_temp).at(i);
+        for (int i_other=0; i_other < (int) temp_times.size() - i_temp-1; i_other++){
+          int current = i_temp+i_other+1;
+          for (int i_hit=0; i_hit < (int) temp_times.at(current).size(); i_hit++){
+            if (fabs(vme_start - temp_times.at(current).at(i_hit)) < coincident_time){
+              if (std::find(coinc_ch.begin(),coinc_ch.end(),current)==coinc_ch.end()){
+                num_coincident_pmts++;
+                coinc_ch.push_back(current);
+                coinc_times.push_back(temp_times.at(current).at(i_hit));
+              }
+            }
+          }
+        }
+        if (num_coincident_pmts>=min_cluster){
+        //std::cout <<"num_coincident_pmts: "<<num_coincident_pmts<<std::endl;
+          if (vme_start < 2000) {
+            hist_vme_cluster->Fill(vme_start);
+            coinc_times_all.push_back(vme_start);
+          }
+          for (int i_cl=0; i_cl < (int) coinc_times.size(); i_cl++){
+            if (coinc_times.at(i_cl) < 2000){
+		//std::cout <<"Fill "<<coinc_times.at(i_cl)<<std::endl;
+		hist_vme_cluster->Fill(coinc_times.at(i_cl));  
+                coinc_times_all.push_back(coinc_times.at(i_cl));
+	    }
+          }
+        }
+      }
+
+    }
+  }
+
+  }
+
+  ss_vme_hist_title.str("");
+  ss_vme_hist_title <<"VME Cluster "<<end_time.str()<<" (last file) ";
+  hist_vme_cluster->SetTitle(ss_vme_hist_title.str().c_str());
+  hist_vme_cluster->Draw();
+  ss_vme_hist.str("");
+  ss_vme_hist << outpath << "VMEHist_Cluster_lastFile."<<img_extension;
+  canvas_vme->SaveAs(ss_vme_hist.str().c_str());
+  hist_vme_cluster->Reset();
+  canvas_vme->Clear();
+
+  overall_coinc_times.push_back(coinc_times_all);
+  
+  if (overall_coinc_times.size() > 20){
+    overall_coinc_times.erase(overall_coinc_times.begin());
+  }
+
+  for (int i_coinc = 0; i_coinc < (int) overall_coinc_times.size(); i_coinc++){
+    std::vector<int> single_coinc_times = overall_coinc_times.at(i_coinc);
+    for (int i_hit=0; i_hit < (int) single_coinc_times.size(); i_hit++){
+      hist_vme_cluster_20->Fill(single_coinc_times.at(i_hit));
+    }
+  }
+
+  ss_vme_hist_title.str("");
+  ss_vme_hist_title <<"VME Cluster "<<end_time.str()<<" (last 20 files) ";
+  hist_vme_cluster_20->SetTitle(ss_vme_hist_title.str().c_str());
+  hist_vme_cluster_20->Draw();
+  ss_vme_hist.str("");
+  ss_vme_hist << outpath << "VMEHist_Cluster_last20Files."<<img_extension;
+  canvas_vme->SaveAs(ss_vme_hist.str().c_str());
+  hist_vme_cluster_20->Reset();
+  canvas_vme->Clear();
 
 }
 

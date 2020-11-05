@@ -1,0 +1,8 @@
+verbosity 0
+LAPPDChannelCount 60
+FACCMRDGeoFile ./configfiles/VetoEfficiency/FullMRDGeometry.csv
+DetectorGeoFile ./configfiles/VetoEfficiency/DetectorGeometrySpecs.csv
+LAPPDGeoFile ./configfiles/VetoEfficiency/LAPPDGeometry.csv
+TankPMTGeoFile ./configfiles/VetoEfficiency/FullTankPMTGeometry.csv
+AuxiliaryChannelFile ./configfiles/VetoEfficiency/AuxChannels.csv
+TankPMTGainFile ./configfiles/LoadGeometry/ChannelSPEGains_BeamRun20192020.csv

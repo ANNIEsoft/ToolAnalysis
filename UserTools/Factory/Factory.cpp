@@ -94,6 +94,9 @@ if (tool=="CNNImage") ret=new CNNImage;
 if (tool=="MonitorTankTime") ret=new MonitorTankTime;
 if (tool=="PhaseIIADCCalibrator") ret=new PhaseIIADCCalibrator;
 if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
+if (tool=="MCPropertiesToTree") ret=new MCPropertiesToTree;
+if (tool=="CalcClassificationVars") ret=new CalcClassificationVars;
+if (tool=="StoreClassificationVars") ret=new StoreClassificationVars;
 if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
 if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
 if (tool=="PlotWaveforms") ret=new PlotWaveforms;
@@ -102,13 +105,23 @@ if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
 if (tool=="MRDDataDecoder") ret=new MRDDataDecoder;
 if (tool=="PrintADCData") ret=new PrintADCData;
 if (tool=="ClusterFinder") ret=new ClusterFinder;
+if (tool=="PrintRecoEvent") ret=new PrintRecoEvent;
 if (tool=="RunValidation") ret=new RunValidation;
 if (tool=="AmBeRunStatistics") ret=new AmBeRunStatistics;
 if (tool=="SimpleTankEnergyCalibrator") ret=new SimpleTankEnergyCalibrator;
 if (tool=="BeamClusterPlots") ret=new BeamClusterPlots;
 if (tool=="MrdPaddleEfficiencyPreparer") ret=new MrdPaddleEfficiencyPreparer;
 if (tool=="MrdPaddleEfficiencyCalc") ret=new MrdPaddleEfficiencyCalc;
+if (tool=="FMVEfficiency") ret=new FMVEfficiency;
 if (tool=="LoadRawData") ret=new LoadRawData;
+if (tool=="TriggerDataDecoder") ret=new TriggerDataDecoder;
 if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
+if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
+if (tool=="VetoEfficiency") ret=new VetoEfficiency;
+if (tool=="MonitorTrigger") ret=new MonitorTrigger;
+
+if (tool=="EventClassification") ret=new EventClassification;
+
+if (tool=="DataSummary") ret=new DataSummary;
 return ret;
 }

@@ -9,6 +9,7 @@
 #include "TCanvas.h"
 #include "TSystem.h"
 #include "TFile.h"
+#include "THStack.h"
 
 #include <limits>
 #include <time.h>
@@ -36,10 +37,17 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	if(configfile!="")  m_variables.Initialise(configfile); //loading config file
 	//m_variables.Print();
 	
+	map_version = "v2";
 	m_data= &data; //assigning transient data pointer
 	// XXX Cannot run Log before we've retrieved m_data!! XXX
 	m_variables.Get("verbose",verbosity);
+	m_variables.Get("ChannelMapVersion",map_version);	//Variable is introduced to distinguish between the mapping that was present in this tool (v1) and new mapping that seems to work better for the veto efficiency studies (v2)
 	Log("LoadCCData Tool: Initializing Tool LoadCCData",v_message,verbosity);
+
+	if (map_version != "v1" && map_version != "v2"){
+		Log("LoadCCData Tool: ChannelMapVersion "+map_version+" not recognized. Use v2 as default.",v_error,verbosity);
+		map_version = "v2";
+	}
 	
 	// get the files being processed for retrieving the CCData
 	std::string events_file;
@@ -204,13 +212,45 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 	// For making debug Histograms/ROOT output file
 	///////////////////////////////////////////////
 	if(DEBUG_DRAW_TDC_HITS){
-		// create the ROOT application to show histograms
+		// get or create the ROOT application to show histograms
+		Log("LoadCCData Tool: getting/making TApplication",v_debug,verbosity);
 		int myargc=0;
-		//char *myargv[] = {(const char*)"somestring"};
-		tdcRootDrawApp = new TApplication("lappdRootDrawApp",&myargc,0);
-		hTDCHitTimes = new TH1D("hTDCHitTimes","TDC Hit Times in Readout",100,0,260);
+		//char *myargv[] = {(const char*)"mrddist"};
+		// get or make the TApplication
+		intptr_t tapp_ptr=0;
+		get_ok = m_data->CStore.Get("RootTApplication",tapp_ptr);
+		if(not get_ok){
+			Log("LoadCCData Tool: Making global TApplication",v_error,verbosity);
+			rootTApp = new TApplication("rootTApp",&myargc,0);
+			tapp_ptr = reinterpret_cast<intptr_t>(rootTApp);
+			m_data->CStore.Set("RootTApplication",tapp_ptr);
+		} else {
+			Log("LoadCCData Tool: Retrieving global TApplication",v_error,verbosity);
+			rootTApp = reinterpret_cast<TApplication*>(tapp_ptr);
+		}
+		int tapplicationusers;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok) tapplicationusers=1;
+		else tapplicationusers++;
+		m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
+		
+		hTDCHitTimes = new TH1D("hTDCHitTimes","TDC Hit Times in Readout",100,0,4200); // phase 1: 4us readout
+		hTDCValues = new TH1D("hTDCValues","TDC Tick Values in Readout",100,0,1100);
 		hTDCTimeDiffs = new TH1D("hTDCTimeDiffs",
-			"Time Diff between TDC Readout Time and Closest Minibuffer Timestamp [ms]",200,-2,5);
+			"Time Diff between TDC Readout Time and Closest Minibuffer Timestamp [ms]",500,-2,5);
+		hTDCLastTimeDiffs = new TH1D("hTDCLastTimeDiffs",
+			"Time Diff between TDC Readout Time and Last Minibuffer Timestamp [ms]",200,-100,100);
+		hTDCNextTimeDiffs = new TH1D("hTDCNextTimeDiffs",
+			"Time Diff between TDC Readout Time and Next Minibuffer Timestamp [ms]",200,-100,100);
+		
+		hVetoL1Times = new TH1D("hVetoL1Times","VetoL1 Hit Times in Readout",100,0,4200);
+		hVetoL2Times = new TH1D("hVetoL2Times","VetoL2 Hit Times in Readout",100,0,4200);
+		hMrdL1Times = new TH1D("hMrdL1Times","MRDL1 Hit Times in Readout",100,0,4200);
+		hMrdL2Times = new TH1D("hMrdL2Times","MRDL2 Hit Times in Readout",100,0,4200);
+		hVetoL1Times->SetLineColor(kRed);
+		hVetoL2Times->SetLineColor(kViolet);
+		hMrdL1Times->SetLineColor(kBlue);
+		hMrdL2Times->SetLineColor(kGreen+1);
 		
 		tdcDebugRootFileOut = new TFile("tdcDebugRootFileOut.root","RECREATE");
 		tdcDebugRootFileOut->cd();
@@ -221,6 +261,7 @@ bool LoadCCData::Initialise(std::string configfile, DataModel &data){
 		tdcDebugTreeOut->Branch("MRDPMTYNum",&mrdpmtynum);
 		tdcDebugTreeOut->Branch("MRDPMTZNum",&mrdpmtznum);
 		tdcDebugTreeOut->Branch("MRDTimeInReadout",&mrdtimeinreadout);
+		tdcDebugTreeOut->Branch("MRDTicksInReadout",&mrdticksinreadout);
 		tdcDebugTreeOut->Branch("MRDReadoutIndex",&mrdreadoutindex);
 		tdcDebugTreeOut->Branch("MRDReadoutTime",&mrdreadouttime);
 		tdcDebugTreeOut->Branch("ADCReadoutIndex",&adcreadoutindex);
@@ -282,7 +323,7 @@ bool LoadCCData::Execute(){
 		// each readout corresponds to a single minibuffer, but we process multiple minibuffers
 		// simultaneously. We'll need an internal loop to read as many TDCData entries
 		// as there are minibuffers in each ADC Readout.
-		Log("Getting HeftyInfo times",v_debug,verbosity);
+		Log("LoadCCData Tool: Getting HeftyInfo times",v_debug,verbosity);
 		currentminibufts = eventheftyinfo.all_times();
 		int numminibuffers = eventheftyinfo.num_minibuffers();
 		if(currentminibufts.size()!=numminibuffers){
@@ -302,8 +343,12 @@ bool LoadCCData::Execute(){
 	// Also load the next ADCData entry, so we have access to the first timestamp from the upcoming event
 	LoadPMTDataEntries();
 	
-	// Load all matching TDC hits into the ANNIEEvent
+	// Load all matching TDC hits into the TDCData
+	TDCData->clear();
 	PerformMatching(currentminibufts);
+	
+	// Update the TDCData in the ANNIEEvent
+	m_data->Stores.at("ANNIEEvent")->Set("TDCData",TDCData,true);
 	
 	ExecuteIteration++;
 	return true;
@@ -325,18 +370,55 @@ bool LoadCCData::Finalise(){
 		tdcRootCanvas->Update();
 		tdcRootCanvas->SaveAs("HitTimeInReadout.png");
 		
+		// breakdown by location
+		THStack htimebreakdown("htimebreakdown","Hit Times in Readout Breakdown");
+		htimebreakdown.Add(hVetoL1Times);
+		htimebreakdown.Add(hVetoL2Times);
+		htimebreakdown.Add(hMrdL1Times);
+		htimebreakdown.Add(hMrdL2Times);
+		htimebreakdown.Draw();
+		tdcRootCanvas->BuildLegend();
+		tdcRootCanvas->Update();
+		tdcRootCanvas->SaveAs("HitTimesInReadoutBreakdown.png");
+		
+		hTDCValues->Draw();
+		tdcRootCanvas->Update();
+		tdcRootCanvas->SaveAs("HitTicksInReadout.png");
+		
 		hTDCTimeDiffs->Draw();
 		tdcRootCanvas->Update();
 		tdcRootCanvas->SaveAs("TimeDiffToClosestMinibuf.png");
 		
+		hTDCLastTimeDiffs->Draw();
+		tdcRootCanvas->Update();
+		tdcRootCanvas->SaveAs("TimeDiffToLastMinibuf.png");
+		
+		hTDCNextTimeDiffs->Draw();
+		tdcRootCanvas->Update();
+		tdcRootCanvas->SaveAs("TimeDiffToNextMinibuf.png");
+		
 		// cleanup
 		tdcDebugTreeOut->ResetBranchAddresses();
 		tdcDebugRootFileOut->Close();
-		delete tdcDebugRootFileOut;
-		delete tdcRootCanvas;
-		delete hTDCHitTimes;
-		delete hTDCTimeDiffs;
-		delete tdcRootDrawApp;
+		if(tdcDebugRootFileOut) delete tdcDebugRootFileOut; tdcDebugRootFileOut=nullptr;
+		if(hTDCLastTimeDiffs) delete hTDCLastTimeDiffs; hTDCLastTimeDiffs=nullptr;
+		if(hTDCHitTimes) delete hTDCHitTimes; hTDCHitTimes=nullptr;
+		if(hTDCNextTimeDiffs) delete hTDCNextTimeDiffs; hTDCNextTimeDiffs=nullptr;
+		if(hTDCValues) delete hTDCValues; hTDCValues=nullptr;
+		if(hTDCTimeDiffs) delete hTDCTimeDiffs; hTDCTimeDiffs=nullptr;
+		if(tdcRootCanvas) delete tdcRootCanvas; tdcRootCanvas=nullptr;
+		
+		int tapplicationusers=0;
+		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
+		if(not get_ok || tapplicationusers==1){
+			if(rootTApp){
+				Log("LoadCCData Tool: deleting gloabl TApplication",v_debug,verbosity);
+				delete rootTApp;
+			}
+		} else if (tapplicationusers>1){
+			tapplicationusers--;
+			m_data->CStore.Set("RootTApplicationUsers",tapplicationusers);
+		}
 		
 		debugtimesdump.close();
 	}
@@ -356,7 +438,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 		// get this minibuffer's timestamp
 		uint64_t theminibufferTS = currentminibufts.at(minibufi);
 		if(theminibufferTS==0){
-			Log("Event Minibuffer Time Is 0!",v_warning,verbosity);
+			Log("LoadCCData Tool: Event Minibuffer Time Is 0!",v_warning,verbosity);
 		}
 		
 		// get the next minibuffer's timestamp. In the event that this is the last
@@ -366,7 +448,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 		if((minibufi+1)<currentminibufts.size()){
 			thenextminibufferTS = currentminibufts.at(minibufi+1);
 			if(thenextminibufferTS==0){
-				//Log("Event Next Minibuffer Time Is 0!",v_warning,verbosity); // don't report twice
+				//Log("LoadCCData Tool: Event Next Minibuffer Time Is 0!",v_warning,verbosity); // don't report twice
 			}
 		} else {
 			thenextminibufferTS = nextreadoutfirstminibufstart;
@@ -439,12 +521,12 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 			if(nextnextminibufferTS<theminibufferTS){
 				// maybe *this* timestamp is bad - the next two are both before it...
 				// skip trying to match TDC hits to this timestamp...
-				Log("Skipping attempts to match hits to this minibuffer",v_warning,verbosity);
+				Log("LoadCCData Tool: Skipping attempts to match hits to this minibuffer",v_warning,verbosity);
 				continue;
 			} else {
 				// try to skip the next timestamp
 				thenextminibufferTS = nextnextminibufferTS;
-				Log("using nextnextminibufferTS as thenextminibufferTS",v_debug,verbosity);
+				Log("LoadCCData Tool: Using nextnextminibufferTS as thenextminibufferTS",v_debug,verbosity);
 			}
 		}
 		
@@ -467,6 +549,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 			// Compare this TDC readout time with the current and next minibuffer time.
 			// if it better fits this minibuffer time, we'll call it a match
 			// need to put the result into a signed type before we can take abs!
+			int64_t time_to_last_mb = thelastminibufferTS - MRDEventTime.GetNs();
 			int64_t time_to_this_mb = theminibufferTS - MRDEventTime.GetNs();
 			int64_t time_to_next_mb = thenextminibufferTS - MRDEventTime.GetNs();
 			
@@ -518,7 +601,9 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 					for(int hiti=0; hiti<numhitsthisevent; hiti++){
 						
 						// Get the MRD PMT ID plugged into this TDC Card + Channel
-						uint32_t tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
+						uint32_t tubeid;
+						if (map_version == "v1") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),1);
+						else if (map_version == "v2") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),2);
 						if(tubeid==std::numeric_limits<uint32_t>::max()){
 							// no matching PMT. This was not an MRD / FACC paddle hit.
 							// mostly hits on the last channel of the TDC card, to trigger readout
@@ -537,7 +622,8 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 						unsigned long key = tubeid;
 						
 						//convert time since TDC Timestamp from ticks to ns
-						double hit_time_ns = static_cast<double>(MRDData->Value->at(hiti)) / MRD_NS_PER_SAMPLE;
+						auto hit_time_ticks = MRDData->Value->at(hiti);
+						double hit_time_ns = static_cast<double>(hit_time_ticks) * MRD_NS_PER_SAMPLE;
 						
 						// construct the hit in the ANNIEEvent TDCData
 						// Hit nexthit(tubeid, hit_time_ns, -1.); // charge = -1, not recorded
@@ -551,16 +637,17 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 						TDCData->at(key).at(minibufi).emplace_back(tubeid, hit_time_ns, -1.);
 						
 						if(DEBUG_DRAW_TDC_HITS){
-							// fill debug histograms
-							if(usedhiti==0) hTDCTimeDiffs->Fill(static_cast<double>(time_to_this_mb)/1000000.);
-							hTDCHitTimes->Fill(hit_time_ns);
 							// fill debug ROOT tree
 							camacslot=MRDData->Slot->at(hiti);
 							camacchannel=MRDData->Channel->at(hiti);
-							mrdpmtxnum=floor(tubeid/10000);
-							mrdpmtznum=tubeid-(100*floor(tubeid/100));
-							mrdpmtynum=(tubeid-(10000*mrdpmtxnum)-mrdpmtznum)/100;
+							int corrected_tubeid = tubeid-1000000;
+							mrdpmtxnum=floor(corrected_tubeid/10000);
+							mrdpmtznum=corrected_tubeid-(100*floor(corrected_tubeid/100));
+							mrdpmtynum=(corrected_tubeid-(10000*mrdpmtxnum)-mrdpmtznum)/100;
+							//printf("LoadCCData: TDC hit on PMT %02d:%02d:%02d in minibuffer %d\n",
+							//       mrdpmtxnum,mrdpmtynum,mrdpmtznum,minibufi);
 							mrdtimeinreadout=hit_time_ns;
+							mrdticksinreadout=hit_time_ticks;
 							mrdreadoutindex=TDCChainEntry;
 							mrdreadouttime=MRDEventTime.GetNs();
 							adcreadoutindex=ADCChainEntry;
@@ -570,29 +657,53 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 							tdcadctimediff=time_to_this_mb;
 							tdchitnum=usedhiti;
 							tdcDebugTreeOut->Fill();
+							
+							// fill debug histograms
+							if(usedhiti==0){
+								hTDCLastTimeDiffs->Fill(static_cast<double>(time_to_last_mb)/1000000.);
+								hTDCTimeDiffs->Fill(static_cast<double>(time_to_this_mb)/1000000.);
+								hTDCNextTimeDiffs->Fill(static_cast<double>(time_to_next_mb)/1000000.);
+							}
+							hTDCHitTimes->Fill(hit_time_ns);
+							hTDCValues->Fill(hit_time_ticks);
+							if(mrdpmtznum==0){
+								if(mrdpmtxnum==0){
+									hVetoL1Times->Fill(hit_time_ns);
+								} else {
+									hVetoL2Times->Fill(hit_time_ns);
+								}
+							} else if(mrdpmtznum==2){
+								hMrdL1Times->Fill(hit_time_ns);
+							} else if(mrdpmtznum==3){
+								hMrdL2Times->Fill(hit_time_ns);
+							}
 						}
 						usedhiti++;
 					} // end loop over hits this TDC readout
 				} else {
-					Log("Skipping TDC readout at "+to_string(MRDEventTime.GetNs())+" as time to closest "
-						"minibuffer time is greater than maximum difference",v_message,verbosity);
+					Log("LoadCCData Tool: Skipping TDC readout at "+to_string(MRDEventTime.GetNs())
+						+" as time to closest minibuffer time is greater than maximum difference",
+						v_message,verbosity);
 					if(DEBUG_DRAW_TDC_HITS){
 						// add them to the debug file, so we can see what we skipped
 						UInt_t numhitsthisevent = MRDData->OutNumber;
 						int usedhiti=0; // since trigger hits are skipped
 						for(int hiti=0; hiti<numhitsthisevent; hiti++){
-							uint32_t tubeid =
-								TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti));
+							uint32_t tubeid;
+							if (map_version == "v1") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),1);
+                                                	else if (map_version == "v2") tubeid = TubeIdFromSlotChannel(MRDData->Slot->at(hiti),MRDData->Channel->at(hiti),2);
 							if(tubeid==std::numeric_limits<uint32_t>::max()){ continue; }
-							double hit_time_ns =
-								static_cast<double>(MRDData->Value->at(hiti)) / MRD_NS_PER_SAMPLE;
+							auto hit_time_ticks = MRDData->Value->at(hiti);
+							double hit_time_ns = static_cast<double>(hit_time_ticks) * MRD_NS_PER_SAMPLE;
 							// fill debug ROOT tree
 							camacslot=MRDData->Slot->at(hiti);
 							camacchannel=MRDData->Channel->at(hiti);
-							mrdpmtxnum=floor(tubeid/10000);
-							mrdpmtznum=tubeid-(100*floor(tubeid/100));
-							mrdpmtynum=(tubeid-(10000*mrdpmtxnum)-mrdpmtznum)/100;
+							int corrected_tubeid = tubeid-1000000;
+							mrdpmtxnum=floor(corrected_tubeid/10000);
+							mrdpmtznum=corrected_tubeid-(100*floor(corrected_tubeid/100));
+							mrdpmtynum=(corrected_tubeid-(10000*mrdpmtxnum)-mrdpmtznum)/100;
 							mrdtimeinreadout=hit_time_ns;
+							mrdticksinreadout=hit_time_ticks;
 							mrdreadoutindex=TDCChainEntry;
 							mrdreadouttime=MRDEventTime.GetNs();
 							adcreadoutindex=ADCChainEntry;
@@ -639,6 +750,7 @@ bool LoadCCData::PerformMatching(std::vector<unsigned long long> currentminibuft
 			
 		} while (not endoftdctchain); // end of do loop looking for matching TDC readouts
 		
+		thelastminibufferTS = theminibufferTS;
 	} // end loop over minibuffers in this Execute()
 	
 	return true;
@@ -680,7 +792,8 @@ bool LoadCCData::LoadPMTDataEntries(){
 				nextminibufTs.at(1)=entryinfo->time(1); // for nextnextminibufferTS
 				nextreadoutfirstminibufstart = entryinfo->time(0);
 			} else {
-				Log("theHeftyData failed to return HeftyInfo on next() call. Last entry?",v_warning,verbosity);
+				Log("LoadCCData Tool: theHeftyData failed to return HeftyInfo on next() call. Last entry?",
+					v_warning,verbosity);
 			}
 			
 		}
@@ -726,21 +839,41 @@ std::vector<uint64_t> LoadCCData::ConvertTimeStamps(unsigned long long LastSync,
 	return alltimestamps;
 }
 
-uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int channel){
+uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int channel, int version){
 	// map TDC Slot + Channel into a MRD PMT Tube ID
 	uint32_t tubeid=-1;
 	uint16_t slotchan = static_cast<uint16_t>(slot*100)+static_cast<uint16_t>(channel);
-	if(slotchantopmtid.count(slotchan)){
-		std::string stringPMTID = slotchantopmtid.at(slotchan);
-		int iPMTID = stoi(stringPMTID);
-		tubeid = static_cast<uint32_t>(iPMTID);
-	} else if(channel==31){
-		// this is the Trigger card output to force the TDCs to always fire
-		tubeid = std::numeric_limits<uint32_t>::max();
-	} else {
-		//Log("Unknown TDC Slot + Channel combination: "+to_string(slotchan) // reported in use
-		//	+", no matching MRD PMT ID!",v_message,verbosity);
-		tubeid = std::numeric_limits<uint32_t>::max();
+	if (slotchan !=1831 && slotchan != 1731) //std::cout <<"LoadCCData: slotchan = "<<slotchan<<std::endl;
+	if (version == 1){
+		if(slotchantopmtidv1.count(slotchan)){
+			std::string stringPMTID = "1"+slotchantopmtidv1.at(slotchan);
+			int iPMTID = stoi(stringPMTID);
+			tubeid = static_cast<uint32_t>(iPMTID);
+		} else if(channel==31){
+			// this is the Trigger card output to force the TDCs to always fire
+			tubeid = std::numeric_limits<uint32_t>::max();
+		} else {
+			//Log("LoadCCData Tool: Unknown TDC Slot + Channel combination: "+to_string(slotchan)
+			//	+", no matching MRD PMT ID!",v_message,verbosity);  // reported in use
+			tubeid = std::numeric_limits<uint32_t>::max();
+		}
+	} else if (version == 2){
+		if(slotchantopmtidv2.count(slotchan)){
+			std::string stringPMTID = "1"+slotchantopmtidv2.at(slotchan);
+			int iPMTID = stoi(stringPMTID);
+			tubeid = static_cast<uint32_t>(iPMTID);
+		} else if(channel==31){
+			// this is the Trigger card output to force the TDCs to always fire
+			tubeid = std::numeric_limits<uint32_t>::max();
+		} else {
+			//Log("LoadCCData Tool: Unknown TDC Slot + Channel combination: "+to_string(slotchan)
+			//	+", no matching MRD PMT ID!",v_message,verbosity);  // reported in use
+			tubeid = std::numeric_limits<uint32_t>::max();
+		}
+
+
+
+
 	}
 	logmessage="LoadCCData Tool: Calculated TubeId from Slot "+to_string(slot)
 				+", channel "+to_string(channel)+" = "+to_string(tubeid);
@@ -753,7 +886,8 @@ uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int chann
 // since c++ insists on handling integer literals with leading zeros as octal,
 // map them as string, then convert the string to int
 // phase 1 map:
-std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
+// Introduce v2 version of the map that seems to fit better with what we see in the veto channels. Old v1 version is kept below.
+std::map<uint16_t,std::string> LoadCCData::slotchantopmtidv2{
 	std::pair<uint16_t,std::string>{1701u,"000002"},
 	std::pair<uint16_t,std::string>{1702u,"000102"},
 	std::pair<uint16_t,std::string>{1703u,"000202"},
@@ -809,6 +943,91 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 	std::pair<uint16_t,std::string>{1827u,"120103"},
 	std::pair<uint16_t,std::string>{1828u,"130103"},
 	std::pair<uint16_t,std::string>{1829u,"140103"},
+	std::pair<uint16_t,std::string>{1400u,"000000"},
+	std::pair<uint16_t,std::string>{1401u,"000100"},
+	std::pair<uint16_t,std::string>{1402u,"000200"},
+	std::pair<uint16_t,std::string>{1403u,"000300"},
+	std::pair<uint16_t,std::string>{1404u,"000400"},
+	std::pair<uint16_t,std::string>{1405u,"000500"},
+	std::pair<uint16_t,std::string>{1406u,"000600"},
+	std::pair<uint16_t,std::string>{1407u,"000700"},
+	std::pair<uint16_t,std::string>{1408u,"000800"},
+	std::pair<uint16_t,std::string>{1409u,"000900"},
+	std::pair<uint16_t,std::string>{1410u,"001000"},
+	std::pair<uint16_t,std::string>{1411u,"001100"},
+	std::pair<uint16_t,std::string>{1412u,"001200"},
+	std::pair<uint16_t,std::string>{1416u,"010000"},
+	std::pair<uint16_t,std::string>{1417u,"010100"},
+	std::pair<uint16_t,std::string>{1418u,"010200"},
+	std::pair<uint16_t,std::string>{1419u,"010300"},
+	std::pair<uint16_t,std::string>{1420u,"010400"},
+	std::pair<uint16_t,std::string>{1421u,"010500"},
+	std::pair<uint16_t,std::string>{1422u,"010600"},
+	std::pair<uint16_t,std::string>{1423u,"010700"},
+	std::pair<uint16_t,std::string>{1424u,"010800"},
+	std::pair<uint16_t,std::string>{1425u,"010900"},
+	std::pair<uint16_t,std::string>{1426u,"011000"},
+	std::pair<uint16_t,std::string>{1427u,"011100"},
+	std::pair<uint16_t,std::string>{1428u,"011200"}
+	};
+
+//Original v1 map: We don't see any veto coincidences between the two layers with this!
+std::map<uint16_t,std::string> LoadCCData::slotchantopmtidv1{
+        std::pair<uint16_t,std::string>{1701u,"000002"},
+        std::pair<uint16_t,std::string>{1702u,"000102"},
+        std::pair<uint16_t,std::string>{1703u,"000202"},
+        std::pair<uint16_t,std::string>{1704u,"000302"},
+        std::pair<uint16_t,std::string>{1705u,"000402"},
+        std::pair<uint16_t,std::string>{1706u,"000502"},
+        std::pair<uint16_t,std::string>{1707u,"000602"},
+        std::pair<uint16_t,std::string>{1708u,"000702"},
+        std::pair<uint16_t,std::string>{1709u,"000802"},
+        std::pair<uint16_t,std::string>{1710u,"000902"},
+        std::pair<uint16_t,std::string>{1711u,"001002"},
+        std::pair<uint16_t,std::string>{1712u,"001102"},
+        std::pair<uint16_t,std::string>{1713u,"001202"},
+        std::pair<uint16_t,std::string>{1714u,"010002"},
+        std::pair<uint16_t,std::string>{1715u,"010102"},
+        std::pair<uint16_t,std::string>{1716u,"010202"},
+        std::pair<uint16_t,std::string>{1717u,"010302"},
+        std::pair<uint16_t,std::string>{1718u,"010402"},
+        std::pair<uint16_t,std::string>{1719u,"010502"},
+        std::pair<uint16_t,std::string>{1720u,"010602"},
+        std::pair<uint16_t,std::string>{1721u,"010702"},
+        std::pair<uint16_t,std::string>{1722u,"010802"},
+        std::pair<uint16_t,std::string>{1723u,"010902"},
+        std::pair<uint16_t,std::string>{1724u,"011002"},
+        std::pair<uint16_t,std::string>{1725u,"011102"},
+        std::pair<uint16_t,std::string>{1726u,"011202"},
+        std::pair<uint16_t,std::string>{1801u,"000003"},
+        std::pair<uint16_t,std::string>{1802u,"010003"},
+        std::pair<uint16_t,std::string>{1803u,"020003"},
+        std::pair<uint16_t,std::string>{1804u,"030003"},
+        std::pair<uint16_t,std::string>{1805u,"040003"},
+        std::pair<uint16_t,std::string>{1806u,"050003"},
+        std::pair<uint16_t,std::string>{1807u,"060003"},
+        std::pair<uint16_t,std::string>{1808u,"070003"},
+        std::pair<uint16_t,std::string>{1809u,"080003"},
+        std::pair<uint16_t,std::string>{1810u,"090003"},
+        std::pair<uint16_t,std::string>{1811u,"100003"},
+        std::pair<uint16_t,std::string>{1812u,"110003"},
+        std::pair<uint16_t,std::string>{1813u,"120003"},
+        std::pair<uint16_t,std::string>{1814u,"130003"},
+        std::pair<uint16_t,std::string>{1815u,"000103"},
+        std::pair<uint16_t,std::string>{1816u,"010103"},
+        std::pair<uint16_t,std::string>{1817u,"020103"},
+        std::pair<uint16_t,std::string>{1818u,"030103"},
+        std::pair<uint16_t,std::string>{1819u,"040103"},
+        std::pair<uint16_t,std::string>{1820u,"050103"},
+        std::pair<uint16_t,std::string>{1821u,"060103"},
+        std::pair<uint16_t,std::string>{1822u,"070103"},
+        std::pair<uint16_t,std::string>{1823u,"080103"},
+        std::pair<uint16_t,std::string>{1824u,"090103"},
+        std::pair<uint16_t,std::string>{1825u,"100103"},
+        std::pair<uint16_t,std::string>{1826u,"110103"},
+        std::pair<uint16_t,std::string>{1827u,"120103"},
+        std::pair<uint16_t,std::string>{1828u,"130103"},
+        std::pair<uint16_t,std::string>{1829u,"140103"},
 	std::pair<uint16_t,std::string>{1401u,"000000"},
 	std::pair<uint16_t,std::string>{1402u,"000100"},
 	std::pair<uint16_t,std::string>{1403u,"000200"},
@@ -835,7 +1054,22 @@ std::map<uint16_t,std::string> LoadCCData::slotchantopmtid{
 	std::pair<uint16_t,std::string>{1424u,"011000"},
 	std::pair<uint16_t,std::string>{1425u,"011100"},
 	std::pair<uint16_t,std::string>{1426u,"011200"}
-};
+	};
+
+// some additional channels frequently have hits,
+// even though apparently nothing was connected:
+//	18-30
+//	14-00
+//	14-27
+//	14-28
+//	17-00
+//	17-27
+//	17-28
+// TODO maybe add these channels, or suppress their messages...
+// otherwise it just results in a lot of warnings
+// Update 10th of July, 2020
+// --> Added 14-00, 14-27, 14-28 in channelmap version 2
+// Not sure about 17-00, 17-27, 17-28 (MRD channels might have a similar issue as veto channels!)
 
 
 /////////////

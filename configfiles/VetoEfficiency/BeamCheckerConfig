@@ -1,0 +1,23 @@
+# Dummy config file
+verbose 0
+# Offline beam database file
+#BeamDBFile /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/RAWDataR798S0p0_beam_db.data
+#BeamDBFile /pnfs/annie/persistent/users/gardiner/phase1_beam_db.data
+#BeamDBFile /annie/app/users/mnieslon/MyToolAnalysis_Test/phase1_beam_db.data 
+BeamDBFile /annie/app/users/mnieslon/MyToolAnalysis_Test/813_db.data
+#
+# Names of devices needed for beam quality cuts
+HornCurrentDevice E:THCURR
+# The "first" toroid is the one farther upstream from the target
+FirstToroid E:TOR860
+SecondToroid E:TOR875
+# POT window
+CutPOTMin 5e11
+CutPOTMax 6e12
+# Peak horn current window (in kA)
+CutPeakHornCurrentMin 172
+CutPeakHornCurrentMax 176
+# Toroid agreement tolerance (fractional error)
+CutToroidAgreement 0.05
+# DB vs DAQ timestamp agreement tolerance (ms)
+CutTimestampAgreement 100

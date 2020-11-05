@@ -1,0 +1,32 @@
+# a tool to be able to stop the toolchain without sending SIGINT,
+# such that we can end it prematurely while still executing each tool's Finalise method
+myGracefulStop GracefulStop ./configfiles/VetoEfficiency/GracefulStopConfig
+LoadGeometry LoadGeometry ./configfiles/VetoEfficiency/LoadGeometryConfig
+
+# if we have pre-processed data we can re-load the store with
+#load_annieevent LoadANNIEEvent    configfiles/VetoEfficiency/LoadANNIEEventConfig
+# this could be useful to re-load PMTData when testing CCData Loading
+
+# steven's tools for PMT, Trigger and Timing Data. Keep the order. 
+raw_loader       RawLoader         configfiles/VetoEfficiency/RawLoaderConfig
+adc_calibrator   ADCCalibrator     configfiles/VetoEfficiency/ADCCalibratorConfig
+adc_hit_finder   ADCHitFinder      configfiles/VetoEfficiency/ADCHitFinderConfig
+
+# we only need to run the BeamFetcher once - it downloads the database file
+# it may be best to run the toolchain with just this tool the first time
+#beam_fetcher     BeamFetcher      configfiles/VetoEfficiency/BeamFetcherConfig
+# subsequent runs of the ToolChain can use the BeamChecker
+beam_checker    BeamChecker        configfiles/VetoEfficiency/BeamCheckerConfig
+
+# load TDC data
+myLoadCCData     LoadCCData       configfiles/VetoEfficiency/LoadCCDataConfig
+
+# the star of the show
+myVetoEfficiency VetoEfficiency    configfiles/VetoEfficiency/VetoEfficiencyConfig
+
+# for debug and demonstration
+#myPlotWaveforms  PlotWaveforms     configfiles/VetoEfficiency/PlotWaveformsConfig
+#myPrintANNIEEvent PrintANNIEEvent  configfiles/VetoEfficiency/PrintANNIEEventConfig
+
+# save the data so we can use LoadANNIEEvent next time
+#mySaveANNIEEvent SaveANNIEEvent   configfiles/VetoEfficiency/SaveANNIEEventConfig

@@ -79,6 +79,7 @@ class MonitorTankTime: public Tool {
   void DrawTimeEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTimeDifference(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawHitMap(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+  void DrawVMEHistogram();
 
   void DrawFileHistory(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
   void PrintFileTimeStamp(ULong64_t timestamp_end, double time_frame, std::string file_ending);
@@ -210,6 +211,9 @@ class MonitorTankTime: public Tool {
   TH1I* hChannels_RWM = nullptr;
   TH1F* hChannels_temp_BRF = nullptr;
   TH1F* hChannels_temp_RWM = nullptr;
+  std::vector<TH1F*> hist_hitmap;
+  std::vector<TH1F*> hist_hitmap_slot;
+  std::map<unsigned int,std::vector<TBox*>> vector_box_inactive_hitmap;
   TCanvas *canvas_ped = nullptr;
   TCanvas *canvas_sigma = nullptr;
   TCanvas *canvas_rate = nullptr;
@@ -218,6 +222,9 @@ class MonitorTankTime: public Tool {
   TCanvas *canvas_ratediff = nullptr;
   TCanvas *canvas_ch_single_tank = nullptr;
   TCanvas *canvas_fifo = nullptr;
+  TCanvas *canvas_vme = nullptr;
+  TCanvas *canvas_hitmap_tank = nullptr;
+  TCanvas *canvas_hitmap_tank_slot = nullptr;
   std::vector<TCanvas*> canvas_Channels_temp;
   std::vector<TCanvas*> canvas_Channels_freq;
 
@@ -239,6 +246,8 @@ class MonitorTankTime: public Tool {
   std::vector<TBox*> vector_box_inactive;
   TLine *line1 = nullptr;
   TLine *line2 = nullptr;
+  TLine *separate_crates = nullptr;
+  TLine *separate_crates2 = nullptr;
   TText *label_rate = nullptr;
   TLatex *label_ped = nullptr;
   TLatex *label_sigma = nullptr;
@@ -252,11 +261,20 @@ class MonitorTankTime: public Tool {
   TText *text_crate3 = nullptr;
   TLegend *leg_freq = nullptr;
   TLegend *leg_temp = nullptr;
+  TPaveText *label_cr1 = nullptr;
+  TPaveText *label_cr2 = nullptr;
+  TPaveText *label_cr3 = nullptr;
+  TF1 *f1 = nullptr;
   std::string str_ped, str_sigma, str_rate, str_peddiff, str_sigmadiff, str_ratediff, str_fifo1, str_fifo2;
   std::string crate_str, slot_str, ch_str;
   std::stringstream ss_title_ped, ss_title_sigma, ss_title_rate, ss_title_peddiff, ss_title_sigmadiff, ss_title_ratediff, ss_title_fifo1, ss_title_fifo2;
   std::stringstream ss_title_hist, ss_title_hist_temp;
 
+  //Histograms of clustered hits
+  TH1F *hist_vme = nullptr;
+  TH1F *hist_vme_cluster = nullptr;
+  TH1F *hist_vme_cluster_20 = nullptr;
+  std::vector<std::vector<int>> overall_coinc_times;
 
   //define histogram showing the history (log) of files 
   TH1F *log_files=nullptr;
@@ -272,7 +290,7 @@ class MonitorTankTime: public Tool {
   std::vector<double> channels_sigma;
   std::vector<TF1*> vector_gaus;
   std::vector<int> fifo1, fifo2;
-
+  std::vector<std::vector<std::vector<int>>> channels_times;	//hittimes of all PMTs to create clustered plots
 
   //verbosity variables
   int v_error = 0;
