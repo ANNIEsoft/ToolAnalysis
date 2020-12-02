@@ -950,6 +950,11 @@ void MonitorDAQ::PrintInfoBox(){
   text_filesize->SetText(0.06,0.4,ss_filesize.str().c_str());
   if (file_size<100.) text_filesize->SetTextColor(2);
   else text_filesize->SetTextColor(1);
+	  
+  if (file_size <= 100.) Log("ERROR (MonitorDAQ tool): Very small filesize < 100 MB for file "+file_name_short+": Size = "+std::to_string(file_size)+" MB.",v_error,verbosity);
+  if (!file_has_trig) Log("ERROR (MonitorDAQ tool): Did not find Trigger data in last file.",v_error,verbosity);
+  if (!file_has_pmt) Log("ERROR (MonitorDAQ tool): Did not find VME data in last file.",v_error,verbosity);
+	  
   } // end if file_produced
 
   std::stringstream ss_vmeservice;
@@ -957,6 +962,8 @@ void MonitorDAQ::PrintInfoBox(){
   text_vmeservice->SetText(0.06,0.8,ss_vmeservice.str().c_str());
   if (num_vme_service<3) text_vmeservice->SetTextColor(2);
   else text_vmeservice->SetTextColor(1);
+	
+  if (num_vme_service < 3) Log("ERROR (MonitorDAQ tool): Did not find 3 running VME services! Current # of VME_service processes: "+std::to_string(num_vme_service),v_error,verbosity);
 
   bool everything_ok=false;
   if (file_produced){
