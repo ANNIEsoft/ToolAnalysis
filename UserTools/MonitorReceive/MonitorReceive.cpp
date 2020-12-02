@@ -56,6 +56,7 @@ bool MonitorReceive::Execute(){
   m_data->CStore.Set("HasCCData",false);
   m_data->CStore.Set("HasPMTData",false);
   m_data->CStore.Set("HasTrigData",false);
+  m_data->CStore.Set("HasNewFile",false);
 
   std::string State="Wait";
   m_data->CStore.Set("State",State);
@@ -134,6 +135,15 @@ bool MonitorReceive::Execute(){
 	indata->Initialise(iss.str());
 	      
 	std::cout <<"MonitorReceive: Received new file: "<<iss.str()<<std::endl;
+	m_data->CStore.Set("HasNewFile",true);
+	m_data->CStore.Set("CurrentFileName",iss.str());
+
+	//Check the size of the current file
+	uintmax_t current_filesize = boost::filesystem::file_size(iss.str().c_str());
+	m_data->CStore.Set("CurrentFileSize",current_filesize);
+
+	std::time_t current_filetime = boost::filesystem::last_write_time(iss.str().c_str());
+	m_data->CStore.Set("CurrentFileTime",current_filetime);
 
 	MRDData= new BoostStore(false,2);
 	PMTData= new BoostStore(false,2);
