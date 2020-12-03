@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <curl/curl.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -78,6 +79,7 @@ class MonitorDAQ: public Tool {
   bool draw_marker;
   int verbosity;
   bool online;
+  std::string hook;
 
   //Configuration option for plots
   std::vector<double> config_timeframes;
@@ -132,6 +134,12 @@ class MonitorDAQ: public Tool {
   std::vector<int> num_vme_plot;
   std::vector<ULong64_t> tstart_plot;
   std::vector<ULong64_t> tend_plot;
+
+  //Online stuff
+  zmq::context_t *context = nullptr;
+  ServiceDiscovery *SD = nullptr;
+  std::string address;
+  int port=5000;
 
   //Labels
   std::vector<TDatime> labels_timeaxis;

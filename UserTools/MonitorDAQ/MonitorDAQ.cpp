@@ -33,6 +33,7 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ForceUpdate",force_update);
   m_variables.Get("DrawMarker",draw_marker);
   m_variables.Get("UseOnline",online);
+  m_variables.Get("Hook",hook);
   m_variables.Get("verbose",verbosity);
 
   if (verbosity > 2) std::cout <<"MonitorDAQ: Outpath (temporary): "<<outpath_temp<<std::endl;
@@ -71,6 +72,14 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   InitializeHists();
   //omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
+
+  std::cout <<"Hook: "<<hook<<std::endl;
+  
+  if (online){
+    address = "239.192.1.1";
+    context=new zmq::context_t(3);
+    SD=new ServiceDiscovery(address,port,context,320);
+  }
 
   return true;
 }
@@ -186,6 +195,12 @@ bool MonitorDAQ::Finalise(){
   delete canvas_vmeservice;
   delete canvas_timeevolution_size;
   delete canvas_timeevolution_vme;
+
+  //Online things
+  if (online){
+    delete SD;
+    //delete context;	//Deleting the context throws an error?
+  }
 
   return true;
 }
@@ -396,88 +411,79 @@ void MonitorDAQ::GetVMEServices(bool is_online){
 //todo: check filesize units and filedate unit & conversion
  
   if (!is_online){
-  num_vme_service=3;
+    num_vme_service=3;
   }
   else {
-  num_vme_service=0;
+    num_vme_service=0;
 
-  std::cout <<"Declare context, port, service discovery"<<std::endl;
-  //What follows is blatantly copied code from Ben's "control" section of the webpage
-  zmq::context_t *context=new zmq::context_t(3);
-  std::vector<Store*> RemoteServices;
-  std::string address("239.192.1.1");
-  int port=5000;
-  ServiceDiscovery *SD=new ServiceDiscovery(address,port,context,320);
-  
-  std::cout <<"Ireceive, connect"<<std::endl;
-  bool running=true;
-  zmq::socket_t Ireceive (*context, ZMQ_DEALER);
-  Ireceive.connect("inproc://ServiceDiscovery");
+    //What follows is blatantly copied code from Ben's "control" section of the webpage
+    std::vector<Store*> RemoteServices;
+    
+    bool running=true;
+    zmq::socket_t Ireceive (*context, ZMQ_DEALER);
+    Ireceive.connect("inproc://ServiceDiscovery");
 
-  std::cout <<"sleep"<<std::endl;
-  sleep(7);
+    sleep(7);
 
-  std::cout <<"send message"<<std::endl;
-  zmq::message_t send(256);
-  snprintf ((char *) send.data(), 256 , "%s" ,"All NULL") ;
-  Ireceive.send(send);
+    zmq::message_t send(256);
+    snprintf ((char *) send.data(), 256 , "%s" ,"All NULL") ;
+    Ireceive.send(send);
       
-  std::cout <<"receive message"<<std::endl;
-  zmq::message_t receive;
-  Ireceive.recv(&receive);
-  std::istringstream iss(static_cast<char*>(receive.data()));
-  int size;
-  iss>>size;
+    zmq::message_t receive;
+    Ireceive.recv(&receive);
+    std::istringstream iss(static_cast<char*>(receive.data()));
+    int size;
+    iss>>size;
+    
+    RemoteServices.clear();
 
-  RemoteServices.clear();
+    for(int i=0;i<size;i++){
 
-  std::cout <<"Receive remote services"<<std::endl;
-  for(int i=0;i<size;i++){
+      Store *service = new Store;
+      zmq::message_t servicem;
+      Ireceive.recv(&servicem);
+      std::istringstream ss(static_cast<char*>(servicem.data()));
+      service->JsonParser(ss.str());
+      RemoteServices.push_back(service);
 
-    Store *service = new Store;
-    zmq::message_t servicem;
-    Ireceive.recv(&servicem);
-    std::istringstream ss(static_cast<char*>(servicem.data()));
-    service->JsonParser(ss.str());
-    RemoteServices.push_back(service);
-
-  }
-
-
-  for(int i=0;i<RemoteServices.size();i++){
-
-    std::string ip;
-    std::string service;
-    std::string status;
-    std::string colour;
-
-    ip=*((*(RemoteServices.at(i)))["ip"]);
-    service=*((*(RemoteServices.at(i)))["msg_value"]);
-    status=*((*(RemoteServices.at(i)))["status"]);
-    std::cout <<"RemoteService "<<i<<", service: "<<service<<", status: "<<status<<std::endl;
-    colour="#00FFFF";
-    if (status=="Online")colour="#FF00FF";
-    else if (status=="Waiting to Initialise ToolChain")colour="#FFFF00";
-    else{
-      std::stringstream tmpstatus(status);
-      tmpstatus>>status;
-      if(status=="ToolChain"){
-	tmpstatus>>status;
-	if(status=="running"){
-          colour="#00FF00";
-          if (service=="VME_service") num_vme_service++;
-        }
-      }
-      status=tmpstatus.str();
     }
-  }
 
-  //Some cleanup
-  for (int i=0;i<RemoteServices.size();i++){
-    delete RemoteServices.at(i);
-  }
-  delete context;
-  delete SD;
+
+    for(int i=0;i<RemoteServices.size();i++){
+
+      std::string ip;
+      std::string service;
+      std::string status;
+      std::string colour;
+
+      ip=*((*(RemoteServices.at(i)))["ip"]);
+      service=*((*(RemoteServices.at(i)))["msg_value"]);
+      status=*((*(RemoteServices.at(i)))["status"]);
+      Log("MonitorDAQ: RemoteService "+std::to_string(i)+", service: "+service+", status: "+status,v_debug,verbosity);
+      colour="#00FFFF";
+      if (status=="Online")colour="#FF00FF";
+      else if (status=="Waiting to Initialise ToolChain")colour="#FFFF00";
+      else{
+        std::stringstream tmpstatus(status);
+        tmpstatus>>status;
+        if(status=="ToolChain"){
+	  tmpstatus>>status;
+	  if(status=="running"){
+            colour="#00FF00";
+            if (service=="VME_service") num_vme_service++;
+          }
+        }
+        status=tmpstatus.str();
+      }
+    }
+
+    //Some cleanup
+    for (int i=0;i<RemoteServices.size();i++){
+      delete RemoteServices.at(i);
+    }
+   
+    delete context;
+    delete SD;
   }
   Log("MonitorDAQ tool: GetVMEServices: Got "+std::to_string(num_vme_service)+" VME services!",v_message,verbosity);
   if (num_vme_service < 3){
@@ -919,13 +925,11 @@ void MonitorDAQ::PrintInfoBox(){
   ss_currentdate << "Current time: "<<current_time.str();
   text_currentdate->SetText(0.06,0.7,ss_currentdate.str().c_str());
   text_currentdate->SetTextColor(1);
-  std::cout <<"current_stamp: "<<current_stamp<<", string: "<<current_time.str()<<std::endl;
 
   boost::posix_time::ptime lasttime = *Epoch + boost::posix_time::time_duration(int(file_timestamp/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(file_timestamp/MSEC_to_SEC/SEC_to_MIN)%60,int(file_timestamp/MSEC_to_SEC)%60,file_timestamp%1000);
   struct tm lasttime_tm = boost::posix_time::to_tm(lasttime);
   std::stringstream ss_last_time;
   ss_last_time << lasttime_tm.tm_year+1900<<"/"<<lasttime_tm.tm_mon+1<<"/"<<lasttime_tm.tm_mday<<"-"<<lasttime_tm.tm_hour<<":"<<lasttime_tm.tm_min<<":"<<lasttime_tm.tm_sec;
-  std::cout <<"file_timestamp: "<<file_timestamp<<", string: "<<ss_last_time.str()<<std::endl;
 
   boost::posix_time::time_duration time_duration_since_file(currenttime-lasttime);
   long time_since_file=time_duration_since_file.total_milliseconds();
@@ -944,17 +948,86 @@ void MonitorDAQ::PrintInfoBox(){
   ss_filename << "Last File name: "<<file_name_short;
   text_filename->SetText(0.06,0.5,ss_filename.str().c_str());
 
-
   std::stringstream ss_filesize;
   ss_filesize << "Last File size: "<<file_size<<" MB";
   text_filesize->SetText(0.06,0.4,ss_filesize.str().c_str());
   if (file_size<100.) text_filesize->SetTextColor(2);
   else text_filesize->SetTextColor(1);
 	  
-  if (file_size <= 100.) Log("ERROR (MonitorDAQ tool): Very small filesize < 100 MB for file "+file_name_short+": Size = "+std::to_string(file_size)+" MB.",v_error,verbosity);
-  if (!file_has_trig) Log("ERROR (MonitorDAQ tool): Did not find Trigger data in last file.",v_error,verbosity);
-  if (!file_has_pmt) Log("ERROR (MonitorDAQ tool): Did not find VME data in last file.",v_error,verbosity);
-	  
+  if (file_size <= 100.) {
+    std::stringstream ss_error_filesize, ss_error_filesize_slack;
+    ss_error_filesize << "ERROR (MonitorDAQ tool): Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.";
+    ss_error_filesize_slack << "payload={\"text\":\"Monitoring: Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.\"}";
+    Log(ss_error_filesize.str().c_str(),v_error,verbosity);
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_filesize_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+  }
+  
+  if (!file_has_trig) {
+    std::stringstream ss_error_trig, ss_error_trig_slack;
+    ss_error_trig << "ERROR (MonitorDAQ tool): Did not find Trigger data in last file (" << file_name_short << ")";
+    ss_error_trig_slack << "payload={\"text\":\" Monitoring: Did not find Trigger data in last file (" << file_name_short << ")\"}";
+    Log(ss_error_trig.str().c_str(),v_error,verbosity);
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_trig_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+  }
+  
+  if (!file_has_pmt) {
+    std::stringstream ss_error_pmt, ss_error_pmt_slack;
+    ss_error_pmt << "ERROR (MonitorDAQ tool): Did not find VME data in last file (" << file_name_short << ")";
+    ss_error_pmt_slack << "payload={\"text\":\"Monitoring: Did not find VME data in last file (" << file_name_short << ")\"}";
+    Log(ss_error_pmt.str().c_str(),v_error,verbosity);
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_pmt_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+  }	  
   } // end if file_produced
 
   std::stringstream ss_vmeservice;
@@ -962,8 +1035,32 @@ void MonitorDAQ::PrintInfoBox(){
   text_vmeservice->SetText(0.06,0.8,ss_vmeservice.str().c_str());
   if (num_vme_service<3) text_vmeservice->SetTextColor(2);
   else text_vmeservice->SetTextColor(1);
-	
-  if (num_vme_service < 3) Log("ERROR (MonitorDAQ tool): Did not find 3 running VME services! Current # of VME_service processes: "+std::to_string(num_vme_service),v_error,verbosity);
+
+  if (num_vme_service < 3) {
+    std::stringstream ss_error_vme, ss_error_vme_slack;
+    ss_error_vme << "ERROR (MonitorDAQ tool): Did not find 3 running VME services! Current # of VME_service processes: " << num_vme_service;
+    ss_error_vme_slack << "payload={\"text\":\"Monitoring: Did not find 3 running VME services! Current # of VME_service processes: " << num_vme_service << "\"}";
+    Log(ss_error_vme.str().c_str(),v_error,verbosity);
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_vme_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+  }
+
 
   bool everything_ok=false;
   if (file_produced){
