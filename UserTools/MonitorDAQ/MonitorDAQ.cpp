@@ -390,6 +390,8 @@ void MonitorDAQ::GetFileInformation(){
   file_size = (file_size_uint)/1048576.;	//1MB=1024bytes*1024bytes
   m_data->CStore.Get("CurrentFileTime",file_time);
   file_timestamp = (ULong64_t) file_time*1000;	//cast from time_t to ULong64_t & convert seconds to milliseconds
+  file_timestamp -= utc_to_t;	//Correct timestamp to be displayed in Fermilab time
+
 
   if (verbosity > 2){
     std::cout <<"////////////////////////////////"<<std::endl;
