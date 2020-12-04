@@ -80,6 +80,7 @@ class MonitorDAQ: public Tool {
   int verbosity;
   bool online;
   std::string hook;
+  bool send_slack;
 
   //Configuration option for plots
   std::vector<double> config_timeframes;

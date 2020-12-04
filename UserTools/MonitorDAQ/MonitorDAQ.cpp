@@ -33,6 +33,7 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ForceUpdate",force_update);
   m_variables.Get("DrawMarker",draw_marker);
   m_variables.Get("UseOnline",online);
+  m_variables.Get("SendSlack",send_slack);
   m_variables.Get("Hook",hook);
   m_variables.Get("verbose",verbosity);
 
@@ -55,6 +56,9 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   if (online !=0 && online !=1){
     online = 0;
   }
+  if (send_slack !=0 && send_slack !=1){
+    send_slack = 0;
+  }
 
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
@@ -73,7 +77,7 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   //omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
 
-  std::cout <<"Hook: "<<hook<<std::endl;
+  //std::cout <<"Hook: "<<hook<<std::endl;
   
   if (online){
     address = "239.192.1.1";
@@ -959,6 +963,7 @@ void MonitorDAQ::PrintInfoBox(){
     ss_error_filesize << "ERROR (MonitorDAQ tool): Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.";
     ss_error_filesize_slack << "payload={\"text\":\"Monitoring: Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.\"}";
     Log(ss_error_filesize.str().c_str(),v_error,verbosity);
+    if (send_slack){
     try{
       CURL *curl;
       CURLcode res;
@@ -977,6 +982,7 @@ void MonitorDAQ::PrintInfoBox(){
     catch(...){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
+    }
   }
   
   if (!file_has_trig) {
@@ -984,6 +990,7 @@ void MonitorDAQ::PrintInfoBox(){
     ss_error_trig << "ERROR (MonitorDAQ tool): Did not find Trigger data in last file (" << file_name_short << ")";
     ss_error_trig_slack << "payload={\"text\":\" Monitoring: Did not find Trigger data in last file (" << file_name_short << ")\"}";
     Log(ss_error_trig.str().c_str(),v_error,verbosity);
+    if (send_slack){
     try{
       CURL *curl;
       CURLcode res;
@@ -1002,6 +1009,7 @@ void MonitorDAQ::PrintInfoBox(){
     catch(...){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
+    }
   }
   
   if (!file_has_pmt) {
@@ -1009,6 +1017,7 @@ void MonitorDAQ::PrintInfoBox(){
     ss_error_pmt << "ERROR (MonitorDAQ tool): Did not find VME data in last file (" << file_name_short << ")";
     ss_error_pmt_slack << "payload={\"text\":\"Monitoring: Did not find VME data in last file (" << file_name_short << ")\"}";
     Log(ss_error_pmt.str().c_str(),v_error,verbosity);
+    if (send_slack){
     try{
       CURL *curl;
       CURLcode res;
@@ -1027,6 +1036,7 @@ void MonitorDAQ::PrintInfoBox(){
     catch(...){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
+    }
   }	  
   } // end if file_produced
 
@@ -1041,6 +1051,7 @@ void MonitorDAQ::PrintInfoBox(){
     ss_error_vme << "ERROR (MonitorDAQ tool): Did not find 3 running VME services! Current # of VME_service processes: " << num_vme_service;
     ss_error_vme_slack << "payload={\"text\":\"Monitoring: Did not find 3 running VME services! Current # of VME_service processes: " << num_vme_service << "\"}";
     Log(ss_error_vme.str().c_str(),v_error,verbosity);
+    if (send_slack){
     try{
       CURL *curl;
       CURLcode res;
@@ -1058,6 +1069,7 @@ void MonitorDAQ::PrintInfoBox(){
     }
     catch(...){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
     }
   }
 
