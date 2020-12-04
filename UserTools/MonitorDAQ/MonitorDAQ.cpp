@@ -486,8 +486,6 @@ void MonitorDAQ::GetVMEServices(bool is_online){
       delete RemoteServices.at(i);
     }
    
-    delete context;
-    delete SD;
   }
   Log("MonitorDAQ tool: GetVMEServices: Got "+std::to_string(num_vme_service)+" VME services!",v_message,verbosity);
   if (num_vme_service < 3){
