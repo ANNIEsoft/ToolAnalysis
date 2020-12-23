@@ -29,6 +29,7 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("UpdateFrequency",update_frequency);
   m_variables.Get("PlotConfiguration",plot_configuration);
   m_variables.Get("PathMonitoring",path_monitoring);
+  m_variables.Get("PathCompStats",path_compstats);
   m_variables.Get("ImageFormat",img_extension);
   m_variables.Get("ForceUpdate",force_update);
   m_variables.Get("DrawMarker",draw_marker);
@@ -36,6 +37,7 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SendSlack",send_slack);
   m_variables.Get("Hook",hook);
   m_variables.Get("verbose",verbosity);
+  m_variables.Get("TestMode",testmode);
 
   if (verbosity > 2) std::cout <<"MonitorDAQ: Outpath (temporary): "<<outpath_temp<<std::endl;
   if (outpath_temp == "fromStore") m_data->CStore.Get("OutPath",outpath);
@@ -58,6 +60,9 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   }
   if (send_slack !=0 && send_slack !=1){
     send_slack = 0;
+  }
+  if (testmode != 0 && testmode != 1){
+    testmode = 0;
   }
 
   //-------------------------------------------------------
@@ -83,6 +88,24 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
     address = "239.192.1.1";
     context=new zmq::context_t(3);
     SD=new ServiceDiscovery(address,port,context,320);
+  } 
+
+  if (testmode){
+    ifstream testfile("./configfiles/Monitoring/SimMonitoring/TestMonitorDAQ.txt");
+    double temp_file, temp_disk;
+    bool temp_trig, temp_pmt;
+    int temp_vme;
+    while (!testfile.eof()){
+      testfile >> temp_file >> temp_trig >> temp_pmt >> temp_vme >> temp_disk;
+      if (testfile.eof()) break;
+      test_filesize.push_back(temp_file);
+      test_hastrig.push_back(temp_trig);
+      test_haspmt.push_back(temp_pmt);
+      test_vme.push_back(temp_vme);
+      test_disk.push_back(temp_disk);
+    }
+    testfile.close();
+    testcounter=0;
   }
 
   return true;
@@ -157,14 +180,18 @@ bool MonitorDAQ::Execute(){
 
     last=current;
     this->GetVMEServices(online);
+    this->GetCompStats();
     this->DrawVMEService(current_stamp,24.,"current_24h",1);     //show 24h history of Tank files
     this->PrintInfoBox();
 
   }
 
-  //Only for debugging memory leaks, otherwise comment out
-  //std::cout <<"List of objects (after Execute step): "<<std::endl;
-  //gObjectTable->Print();
+  //Only for debugging memory leaks, otherwise comment out --> test mode
+  if (testmode){
+    //std::cout <<"List of objects (after Execute step): "<<std::endl;
+    //gObjectTable->Print();
+    testcounter++;
+  }
 
   return true;
 }
@@ -179,6 +206,20 @@ bool MonitorDAQ::Finalise(){
   //Graphs
   delete gr_filesize;
   delete gr_vmeservice;
+  delete gr_mem_daq01;
+  delete gr_mem_vme01;
+  delete gr_mem_vme02;
+  delete gr_mem_vme03;
+  delete gr_cpu_daq01;
+  delete gr_cpu_vme01;
+  delete gr_cpu_vme02;
+  delete gr_cpu_vme03;
+  delete multi_mem;
+  delete multi_cpu;
+
+  //Legends
+  delete leg_mem;
+  delete leg_cpu;
 
   //Pie charts
   delete pie_vme;
@@ -192,13 +233,23 @@ bool MonitorDAQ::Finalise(){
   delete text_filename;
   delete text_haspmt;
   delete text_hascc;
-  delete text_hastrigger; 
+  delete text_hastrigger;
+  delete text_disk_title;
+  delete text_disk_daq01;
+  delete text_mem_daq01;
+  delete text_mem_vme01;
+  delete text_mem_vme02;
+  delete text_mem_vme03;
 
   //Canvas
   delete canvas_infobox;
   delete canvas_vmeservice;
   delete canvas_timeevolution_size;
   delete canvas_timeevolution_vme;
+
+  delete canvas_info_diskspace;
+  delete canvas_timeevolution_mem;
+  delete canvas_timeevolution_cpu;
 
   //Online things
   if (online){
@@ -321,6 +372,9 @@ void MonitorDAQ::InitializeHists(){
   canvas_vmeservice = new TCanvas("canvas_vmeservice","VME services",900,600);
   canvas_timeevolution_size = new TCanvas("canvas_timeevolution_size","Size Time evolution",900,600);
   canvas_timeevolution_vme = new TCanvas("canvas_timeevolution_vme","VME Time evolution",900,600);
+  canvas_info_diskspace = new TCanvas("canvas_info_diskspace","DAQ01 Diskspace",900,600);
+  canvas_timeevolution_mem = new TCanvas("canvas_timeevolution_mem","Memory Time evolution",900,600);
+  canvas_timeevolution_cpu = new TCanvas("canvas_timeevolution_cpu","CPU Time evolution",900,600);
 
   //TGraphs (time evolution plots)
   gr_filesize = new TGraph();
@@ -351,6 +405,125 @@ void MonitorDAQ::InitializeHists(){
   gr_vmeservice->GetXaxis()->SetLabelOffset(0.03);
   gr_vmeservice->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
 
+  gr_mem_daq01 = new TGraph();
+  gr_mem_daq01->SetName("gr_mem_daq01");
+  gr_mem_daq01->SetTitle("DAQ01 Memory");
+  if (draw_marker) gr_mem_daq01->SetMarkerStyle(20);
+  gr_mem_daq01->SetMarkerColor(1);
+  gr_mem_daq01->SetLineColor(1);
+  gr_mem_daq01->SetLineWidth(2);
+  gr_mem_daq01->SetFillColor(0);
+  gr_mem_daq01->GetYaxis()->SetTitle("Memory [%]");
+  gr_mem_daq01->GetXaxis()->SetTimeDisplay(1);
+  gr_mem_daq01->GetXaxis()->SetLabelSize(0.03);
+  gr_mem_daq01->GetXaxis()->SetLabelOffset(0.03);
+  gr_mem_daq01->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_mem_vme01 = new TGraph();
+  gr_mem_vme01->SetName("gr_mem_vme01");
+  gr_mem_vme01->SetTitle("VME01 Memory");
+  if (draw_marker) gr_mem_vme01->SetMarkerStyle(20);
+  gr_mem_vme01->SetMarkerColor(2);
+  gr_mem_vme01->SetLineColor(2);
+  gr_mem_vme01->SetLineWidth(2);
+  gr_mem_vme01->SetFillColor(0);
+  gr_mem_vme01->GetYaxis()->SetTitle("Memory [%]");
+  gr_mem_vme01->GetXaxis()->SetTimeDisplay(1);
+  gr_mem_vme01->GetXaxis()->SetLabelSize(0.03);
+  gr_mem_vme01->GetXaxis()->SetLabelOffset(0.03);
+  gr_mem_vme01->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_mem_vme02 = new TGraph();
+  gr_mem_vme02->SetName("gr_mem_vme02");
+  gr_mem_vme02->SetTitle("VME02 Memory");
+  if (draw_marker) gr_mem_vme02->SetMarkerStyle(20);
+  gr_mem_vme02->SetMarkerColor(4);
+  gr_mem_vme02->SetLineColor(4);
+  gr_mem_vme02->SetLineWidth(2);
+  gr_mem_vme02->SetFillColor(0);
+  gr_mem_vme02->GetYaxis()->SetTitle("Memory [%]");
+  gr_mem_vme02->GetXaxis()->SetTimeDisplay(1);
+  gr_mem_vme02->GetXaxis()->SetLabelSize(0.03);
+  gr_mem_vme02->GetXaxis()->SetLabelOffset(0.03);
+  gr_mem_vme02->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_mem_vme03 = new TGraph();
+  gr_mem_vme03->SetName("gr_mem_vme03");
+  gr_mem_vme03->SetTitle("VME03 Memory");
+  if (draw_marker) gr_mem_vme03->SetMarkerStyle(20);
+  gr_mem_vme03->SetMarkerColor(8);
+  gr_mem_vme03->SetLineColor(8);
+  gr_mem_vme03->SetLineWidth(2);
+  gr_mem_vme03->SetFillColor(0);
+  gr_mem_vme03->GetYaxis()->SetTitle("Memory [%]");
+  gr_mem_vme03->GetXaxis()->SetTimeDisplay(1);
+  gr_mem_vme03->GetXaxis()->SetLabelSize(0.03);
+  gr_mem_vme03->GetXaxis()->SetLabelOffset(0.03);
+  gr_mem_vme03->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_cpu_daq01 = new TGraph();
+  gr_cpu_daq01->SetName("gr_cpu_daq01");
+  gr_cpu_daq01->SetTitle("DAQ01 CPU Usage");
+  if (draw_marker) gr_cpu_daq01->SetMarkerStyle(20);
+  gr_cpu_daq01->SetMarkerColor(1);
+  gr_cpu_daq01->SetLineColor(1);
+  gr_cpu_daq01->SetLineWidth(2);
+  gr_cpu_daq01->SetFillColor(0);
+  gr_cpu_daq01->GetYaxis()->SetTitle("CPU [%]");
+  gr_cpu_daq01->GetXaxis()->SetTimeDisplay(1);
+  gr_cpu_daq01->GetXaxis()->SetLabelSize(0.03);
+  gr_cpu_daq01->GetXaxis()->SetLabelOffset(0.03);
+  gr_cpu_daq01->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_cpu_vme01 = new TGraph();
+  gr_cpu_vme01->SetName("gr_cpu_vme01");
+  gr_cpu_vme01->SetTitle("VME01 CPU Usage");
+  if (draw_marker) gr_cpu_vme01->SetMarkerStyle(20);
+  gr_cpu_vme01->SetMarkerColor(2);
+  gr_cpu_vme01->SetLineColor(2);
+  gr_cpu_vme01->SetLineWidth(2);
+  gr_cpu_vme01->SetFillColor(0);
+  gr_cpu_vme01->GetYaxis()->SetTitle("CPU [%]");
+  gr_cpu_vme01->GetXaxis()->SetTimeDisplay(1);
+  gr_cpu_vme01->GetXaxis()->SetLabelSize(0.03);
+  gr_cpu_vme01->GetXaxis()->SetLabelOffset(0.03);
+  gr_cpu_vme01->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_cpu_vme02 = new TGraph();
+  gr_cpu_vme02->SetName("gr_cpu_vme02");
+  gr_cpu_vme02->SetTitle("VME02 CPU Usage");
+  if (draw_marker) gr_cpu_vme02->SetMarkerStyle(20);
+  gr_cpu_vme02->SetMarkerColor(4);
+  gr_cpu_vme02->SetLineColor(4);
+  gr_cpu_vme02->SetLineWidth(2);
+  gr_cpu_vme02->SetFillColor(0);
+  gr_cpu_vme02->GetYaxis()->SetTitle("CPU [%]");
+  gr_cpu_vme02->GetXaxis()->SetTimeDisplay(1);
+  gr_cpu_vme02->GetXaxis()->SetLabelSize(0.03);
+  gr_cpu_vme02->GetXaxis()->SetLabelOffset(0.03);
+  gr_cpu_vme02->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_cpu_vme03 = new TGraph();
+  gr_cpu_vme03->SetName("gr_cpu_vme03");
+  gr_cpu_vme03->SetTitle("VME03 CPU Usage");
+  if (draw_marker) gr_cpu_vme03->SetMarkerStyle(20);
+  gr_cpu_vme03->SetMarkerColor(8);
+  gr_cpu_vme03->SetLineColor(8);
+  gr_cpu_vme03->SetLineWidth(2);
+  gr_cpu_vme03->SetFillColor(0);
+  gr_cpu_vme03->GetYaxis()->SetTitle("CPU [%]");
+  gr_cpu_vme03->GetXaxis()->SetTimeDisplay(1);
+  gr_cpu_vme03->GetXaxis()->SetLabelSize(0.03);
+  gr_cpu_vme03->GetXaxis()->SetLabelOffset(0.03);
+  gr_cpu_vme03->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  multi_mem = new TMultiGraph();
+  multi_cpu = new TMultiGraph();
+  leg_mem = new TLegend(0.7,0.7,0.88,0.88);
+  leg_cpu = new TLegend(0.7,0.7,0.88,0.88);
+  leg_mem->SetLineColor(0);
+  leg_cpu->SetLineColor(0);
+
   //TText objects for infobox
   text_summary = new TText();
   text_vmeservice = new TText();
@@ -362,6 +535,13 @@ void MonitorDAQ::InitializeHists(){
   text_currentdate = new TText();
   text_filename = new TText();
 
+  text_disk_title = new TText();
+  text_disk_daq01 = new TText();
+  text_mem_daq01 = new TText();
+  text_mem_vme01 = new TText();
+  text_mem_vme02 = new TText();
+  text_mem_vme03 = new TText();
+
   text_summary->SetNDC(1);
   text_vmeservice->SetNDC(1);
   text_filesize->SetNDC(1);
@@ -371,6 +551,13 @@ void MonitorDAQ::InitializeHists(){
   text_hastrigger->SetNDC(1);
   text_currentdate->SetNDC(1);
   text_filename->SetNDC(1);
+
+  text_disk_title->SetNDC(1);
+  text_disk_daq01->SetNDC(1);
+  text_mem_daq01->SetNDC(1);
+  text_mem_vme01->SetNDC(1);
+  text_mem_vme02->SetNDC(1);
+  text_mem_vme03->SetNDC(1);
 
 }
 
@@ -408,14 +595,13 @@ void MonitorDAQ::GetFileInformation(){
   //Get information about the number of VME service processes running
   this->GetVMEServices(online);
   
+  //Get statistics about the DAQ & VME computers
+  this->GetCompStats();
+
 }
 
 void MonitorDAQ::GetVMEServices(bool is_online){
 
-//todo: add code from control.cpp in WebServer repository --> first version pasted
-//todo: add code from slackbot tool to submit possible warnings
-//todo: check filesize units and filedate unit & conversion
- 
   if (!is_online){
     num_vme_service=3;
   }
@@ -455,7 +641,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
     }
 
 
-    for(int i=0;i<RemoteServices.size();i++){
+    for(int i=0;i<(int)RemoteServices.size();i++){
 
       std::string ip;
       std::string service;
@@ -484,7 +670,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
     }
 
     //Some cleanup
-    for (int i=0;i<RemoteServices.size();i++){
+    for (int i=0;i<(int)RemoteServices.size();i++){
       delete RemoteServices.at(i);
     }
    
@@ -493,6 +679,102 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (num_vme_service < 3){
     Log("MonitorDAQ tool ERROR: Only "+std::to_string(num_vme_service)+" VME services running! Check DAQ",v_error,verbosity);
   }
+
+}
+
+void MonitorDAQ::GetCompStats(){
+
+  //Get statistics about the DAQ computer (disk space, memory consumption)
+  std::stringstream ss_path_daq01;
+  ss_path_daq01 << path_compstats << "/compstatsDAQ01";
+  if (verbosity > 4) std::cout <<"MonitorDAQ: GetCompStats: Opening file "<<ss_path_daq01.str()<<std::endl;
+  Store storeDAQ01;
+  storeDAQ01.Initialise(ss_path_daq01.str().c_str());
+  long timeDAQ01;
+  int diskDAQ01;
+  long memtotDAQ01;
+  long memfreeDAQ01;
+  double idleDAQ01;
+  storeDAQ01.Get("Time",timeDAQ01);
+  storeDAQ01.Get("Disk",diskDAQ01);
+  storeDAQ01.Get("MemTotal",memtotDAQ01);
+  storeDAQ01.Get("MemFree",memfreeDAQ01);
+  storeDAQ01.Get("CPUidle",idleDAQ01);
+
+  if (verbosity > 4){
+    std::cout <<"///////////// Read in DAQ01 file information /////////"<<std::endl;
+    std::cout <<"Filepath: "<<ss_path_daq01.str()<<std::endl;
+    std::cout <<"Time: "<<timeDAQ01<<std::endl;
+    std::cout <<"MemTotal: "<<memtotDAQ01<<std::endl;
+    std::cout <<"MemFree: "<<memfreeDAQ01<<std::endl;
+    std::cout <<"CPUidle: "<<idleDAQ01<<std::endl;
+  }
+
+  timestamp_daq01 = (ULong64_t) timeDAQ01*1000;	//convert to ms
+  disk_daq01 = diskDAQ01;
+  mem_daq01 = double(memtotDAQ01-memfreeDAQ01)/memtotDAQ01;
+  cpu_daq01 = 100.-idleDAQ01;
+  timestamp_daq01 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+
+  std::stringstream ss_path_vme01;
+  ss_path_vme01 << path_compstats << "/compstatsVME01";
+  if (verbosity > 4) std::cout <<"MonitorDAQ: GetCompStats: Opening file "<<ss_path_vme01.str()<<std::endl;
+  Store storeVME01;
+  storeVME01.Initialise(ss_path_vme01.str().c_str());
+  long timeVME01;
+  long memtotVME01;
+  long memfreeVME01;
+  long memavailVME01;
+  double idleVME01;
+  storeVME01.Get("Time",timeVME01);
+  storeVME01.Get("MemTotal",memtotVME01);
+  storeVME01.Get("MemFree",memfreeVME01);
+  storeVME01.Get("MemAvailable",memavailVME01);
+  storeVME01.Get("CPUidle",idleVME01);
+  timestamp_vme01 = (ULong64_t) timeVME01*1000; //convert to ms
+  mem_vme01 = double(memtotVME01-memfreeVME01)/memtotVME01;
+  cpu_vme01 = 100.-idleVME01;
+  timestamp_vme01 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+
+  std::stringstream ss_path_vme02;
+  ss_path_vme02 << path_compstats << "/compstatsVME02";
+  if (verbosity > 4) std::cout <<"MonitorDAQ: GetCompStats: Opening file "<<ss_path_vme02.str()<<std::endl;
+  Store storeVME02;
+  storeVME02.Initialise(ss_path_vme02.str().c_str());
+  long timeVME02;
+  long memtotVME02;
+  long memfreeVME02;
+  long memavailVME02;
+  double idleVME02;
+  storeVME02.Get("Time",timeVME02);
+  storeVME02.Get("MemTotal",memtotVME02);
+  storeVME02.Get("MemFree",memfreeVME02);
+  storeVME02.Get("MemAvailable",memavailVME02);
+  storeVME02.Get("CPUidle",idleVME02);
+  timestamp_vme02 = (ULong64_t) timeVME02*1000;  //convert to ms
+  mem_vme02 = double(memtotVME02-memfreeVME02)/memtotVME02;
+  cpu_vme02 = 100.-idleVME02;
+  timestamp_vme02 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+
+  std::stringstream ss_path_vme03;
+  ss_path_vme03 << path_compstats << "/compstatsVME03";
+  if (verbosity > 4) std::cout <<"MonitorDAQ: GetCompStats: Opening file "<<ss_path_vme03.str()<<std::endl;
+  Store storeVME03;
+  storeVME03.Initialise(ss_path_vme03.str().c_str());
+  long timeVME03;
+  long memtotVME03;
+  long memfreeVME03;
+  long memavailVME03;
+  double idleVME03;
+  storeVME03.Get("Time",timeVME03);
+  storeVME03.Get("MemTotal",memtotVME03);
+  storeVME03.Get("MemFree",memfreeVME03);
+  storeVME03.Get("MemAvailable",memavailVME03);
+  storeVME03.Get("CPUidle",idleVME03);
+  timestamp_vme03 = (ULong64_t) timeVME03*1000;  //convert to ns
+  mem_vme03 = double(memtotVME03-memfreeVME03)/memtotVME03;
+  cpu_vme03 = 100.-idleVME03;
+  timestamp_vme03 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
 
 }
 
@@ -523,6 +805,19 @@ void MonitorDAQ::WriteToFile(){
   double temp_file_size;
   ULong64_t temp_file_time;
   int temp_num_vme_service;
+  double temp_disk_daq01;
+  double temp_mem_daq01;
+  double temp_mem_vme01;
+  double temp_mem_vme02;
+  double temp_mem_vme03;
+  double temp_cpu_daq01;
+  double temp_cpu_vme01;
+  double temp_cpu_vme02;
+  double temp_cpu_vme03;
+  ULong64_t temp_stamp_daq01;
+  ULong64_t temp_stamp_vme01;
+  ULong64_t temp_stamp_vme02;
+  ULong64_t temp_stamp_vme03;
 
   TTree *t;
   if (f->GetListOfKeys()->Contains("daqmonitor_tree")) {
@@ -537,6 +832,19 @@ void MonitorDAQ::WriteToFile(){
     t->SetBranchAddress("file_size",&temp_file_size);
     t->SetBranchAddress("file_time",&temp_file_time);
     t->SetBranchAddress("num_vme_services",&temp_num_vme_service);
+    t->SetBranchAddress("timestamp_daq01",&temp_stamp_daq01);
+    t->SetBranchAddress("timestamp_vme01",&temp_stamp_vme01);
+    t->SetBranchAddress("timestamp_vme02",&temp_stamp_vme02);
+    t->SetBranchAddress("timestamp_vme03",&temp_stamp_vme03);
+    t->SetBranchAddress("disk_daq01",&temp_disk_daq01);
+    t->SetBranchAddress("mem_daq01",&temp_mem_daq01);
+    t->SetBranchAddress("mem_vme01",&temp_mem_vme01);
+    t->SetBranchAddress("mem_vme02",&temp_mem_vme02);
+    t->SetBranchAddress("mem_vme03",&temp_mem_vme03);
+    t->SetBranchAddress("cpu_daq01",&temp_cpu_daq01);
+    t->SetBranchAddress("cpu_vme01",&temp_cpu_vme01);
+    t->SetBranchAddress("cpu_vme02",&temp_cpu_vme02);
+    t->SetBranchAddress("cpu_vme03",&temp_cpu_vme03);
   } else {
     t = new TTree("daqmonitor_tree","DAQ Monitoring tree");
     Log("MonitorDAQ: WriteToFile: Tree is created from scratch",v_message,verbosity);
@@ -549,13 +857,26 @@ void MonitorDAQ::WriteToFile(){
     t->Branch("file_size",&temp_file_size);
     t->Branch("file_time",&temp_file_time);
     t->Branch("num_vme_services",&temp_num_vme_service);
+    t->Branch("timestamp_daq01",&temp_stamp_daq01);
+    t->Branch("timestamp_vme01",&temp_stamp_vme01);
+    t->Branch("timestamp_vme02",&temp_stamp_vme02);
+    t->Branch("timestamp_vme03",&temp_stamp_vme03);
+    t->Branch("disk_daq01",&temp_disk_daq01);
+    t->Branch("mem_daq01",&temp_mem_daq01);
+    t->Branch("mem_vme01",&temp_mem_vme01);
+    t->Branch("mem_vme02",&temp_mem_vme02);
+    t->Branch("mem_vme03",&temp_mem_vme03);
+    t->Branch("cpu_daq01",&temp_cpu_daq01);
+    t->Branch("cpu_vme01",&temp_cpu_vme01);
+    t->Branch("cpu_vme02",&temp_cpu_vme02);
+    t->Branch("cpu_vme03",&temp_cpu_vme03);
   }
 
   int n_entries = t->GetEntries();
   bool omit_entries = false;
   for (int i_entry = 0; i_entry < n_entries; i_entry++){
     t->GetEntry(i_entry);
-    if (t_start == t_file_start) {
+    if ((long) t_start == t_file_start) {
       Log("WARNING (MonitorDAQ): WriteToFile: Wanted to write data from file that is already written to DB. Omit entries.",v_warning,verbosity);
       omit_entries = true;
     }
@@ -584,6 +905,19 @@ void MonitorDAQ::WriteToFile(){
   temp_file_size = file_size;
   temp_file_time = file_timestamp;
   temp_num_vme_service = num_vme_service;
+  temp_stamp_daq01 = (ULong64_t) timestamp_daq01;
+  temp_stamp_vme01 = (ULong64_t) timestamp_vme01;
+  temp_stamp_vme02 = (ULong64_t) timestamp_vme02;
+  temp_stamp_vme03 = (ULong64_t) timestamp_vme03;
+  temp_disk_daq01 = disk_daq01;
+  temp_mem_daq01 = mem_daq01;
+  temp_mem_vme01 = mem_vme01;
+  temp_mem_vme02 = mem_vme02;
+  temp_mem_vme03 = mem_vme03;
+  temp_cpu_daq01 = cpu_daq01;
+  temp_cpu_vme01 = cpu_vme01;
+  temp_cpu_vme02 = cpu_vme02;
+  temp_cpu_vme03 = cpu_vme03;
 
   boost::posix_time::ptime starttime = *Epoch + boost::posix_time::time_duration(int(t_start/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_start/MSEC_to_SEC/SEC_to_MIN)%60,int(t_start/MSEC_to_SEC/1000.)%60,t_start%1000);
   struct tm starttime_tm = boost::posix_time::to_tm(starttime);
@@ -621,6 +955,19 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
   labels_timeaxis.clear();
   tstart_plot.clear();
   tend_plot.clear();
+  disk_daq01_plot.clear();
+  mem_daq01_plot.clear();
+  mem_vme01_plot.clear();
+  mem_vme02_plot.clear();
+  mem_vme03_plot.clear();
+  cpu_daq01_plot.clear();
+  cpu_vme01_plot.clear();
+  cpu_vme02_plot.clear();
+  cpu_vme03_plot.clear();
+  t_daq01_plot.clear();
+  t_vme01_plot.clear();
+  t_vme02_plot.clear();
+  t_vme03_plot.clear();
 
   //take the end time and calculate the start time with the given time_frame
   ULong64_t timestamp_start = timestamp_end - time_frame*MIN_to_HOUR*SEC_to_MIN*MSEC_to_SEC;
@@ -678,6 +1025,20 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
   
         int nevents;
         int nentries_tree;
+
+        ULong64_t temp_timestamp_daq01;
+        ULong64_t temp_timestamp_vme01;
+        ULong64_t temp_timestamp_vme02;
+        ULong64_t temp_timestamp_vme03;
+        double temp_disk_daq01;
+        double temp_mem_daq01;
+        double temp_mem_vme01;
+        double temp_mem_vme02;
+        double temp_mem_vme03;
+        double temp_cpu_daq01;
+        double temp_cpu_vme01;
+        double temp_cpu_vme02;
+        double temp_cpu_vme03;
   
         t->SetBranchAddress("t_start",&t_start);
         t->SetBranchAddress("t_end",&t_end);
@@ -688,7 +1049,20 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("file_size",&temp_filesize);
         t->SetBranchAddress("file_time",&temp_filetime);
 	t->SetBranchAddress("num_vme_services",&temp_numvme);
-  
+        t->SetBranchAddress("timestamp_daq01",&temp_timestamp_daq01);
+        t->SetBranchAddress("timestamp_vme01",&temp_timestamp_vme01);
+        t->SetBranchAddress("timestamp_vme02",&temp_timestamp_vme02);
+        t->SetBranchAddress("timestamp_vme03",&temp_timestamp_vme03);
+        t->SetBranchAddress("disk_daq01",&temp_disk_daq01);
+        t->SetBranchAddress("mem_daq01",&temp_mem_daq01);
+        t->SetBranchAddress("mem_vme01",&temp_mem_vme01);
+        t->SetBranchAddress("mem_vme02",&temp_mem_vme02);
+        t->SetBranchAddress("mem_vme03",&temp_mem_vme03);
+        t->SetBranchAddress("cpu_daq01",&temp_cpu_daq01);
+        t->SetBranchAddress("cpu_vme01",&temp_cpu_vme01);
+        t->SetBranchAddress("cpu_vme02",&temp_cpu_vme02);
+        t->SetBranchAddress("cpu_vme03",&temp_cpu_vme03);  
+
         nentries_tree = t->GetEntries();
   
         //Sort timestamps for the case that they are not in order
@@ -725,6 +1099,19 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
 	    num_vme_plot.push_back(temp_numvme);
             tstart_plot.push_back(t_start);
             tend_plot.push_back(t_end);
+            disk_daq01_plot.push_back(temp_disk_daq01);
+            mem_daq01_plot.push_back(temp_mem_daq01);
+            mem_vme01_plot.push_back(temp_mem_vme01);
+            mem_vme02_plot.push_back(temp_mem_vme02);
+            mem_vme03_plot.push_back(temp_mem_vme03);
+            cpu_daq01_plot.push_back(temp_cpu_daq01);
+            cpu_vme01_plot.push_back(temp_cpu_vme01);
+            cpu_vme02_plot.push_back(temp_cpu_vme02);
+            cpu_vme03_plot.push_back(temp_cpu_vme03);
+            t_daq01_plot.push_back(temp_timestamp_daq01);
+            t_vme01_plot.push_back(temp_timestamp_vme01);
+            t_vme02_plot.push_back(temp_timestamp_vme02);
+            t_vme03_plot.push_back(temp_timestamp_vme03);
             boost::posix_time::ptime boost_tend = *Epoch+boost::posix_time::time_duration(int(t_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_end/MSEC_to_SEC/1000.)%60,t_end%1000);
             struct tm label_timestamp = boost::posix_time::to_tm(boost_tend);
   
@@ -801,22 +1188,45 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   //Resetting time evolution graphs
   gr_filesize->Set(0);
   gr_vmeservice->Set(0);
+  gr_mem_daq01->Set(0);
+  gr_mem_vme01->Set(0);
+  gr_mem_vme02->Set(0);
+  gr_mem_vme03->Set(0);
+  gr_cpu_daq01->Set(0);
+  gr_cpu_vme01->Set(0);
+  gr_cpu_vme02->Set(0);
+  gr_cpu_vme03->Set(0);
 
-  for (int i_file=0; i_file < tend_plot.size(); i_file++){
+
+  for (int i_file=0; i_file < (int) tend_plot.size(); i_file++){
     gr_filesize->SetPoint(i_file,labels_timeaxis[i_file].Convert(),filesize_plot.at(i_file));
     gr_vmeservice->SetPoint(i_file,labels_timeaxis[i_file].Convert(),num_vme_plot.at(i_file));
+    gr_mem_daq01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_daq01_plot.at(i_file)*100.);
+    gr_mem_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_vme01_plot.at(i_file)*100.);
+    gr_mem_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_vme02_plot.at(i_file)*100.);
+    gr_mem_vme03->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_vme03_plot.at(i_file)*100.);
+    gr_cpu_daq01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_daq01_plot.at(i_file));
+    gr_cpu_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme01_plot.at(i_file));
+    gr_cpu_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme02_plot.at(i_file));
+    gr_cpu_vme03->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme03_plot.at(i_file));
   }
 
-  std::stringstream ss_title_filesize, ss_title_vme;
+  std::stringstream ss_title_filesize, ss_title_vme, ss_title_memory, ss_title_cpu;
   ss_title_filesize << "File sizes (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
   ss_title_vme << "VME services (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  ss_title_memory << "Memory consumption (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  ss_title_cpu << "CPU load (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
 
   gr_filesize->SetTitle(ss_title_filesize.str().c_str());
   gr_vmeservice->SetTitle(ss_title_vme.str().c_str());
+  gr_mem_daq01->SetTitle(ss_title_memory.str().c_str());
+  gr_cpu_daq01->SetTitle(ss_title_cpu.str().c_str());
 
-  std::stringstream ss_filename_filesize, ss_filename_vme;
+  std::stringstream ss_filename_filesize, ss_filename_vme, ss_filename_mem, ss_filename_cpu;
   ss_filename_filesize << outpath << "DAQFileSize_"<<file_ending<<"."<<img_extension;
   ss_filename_vme << outpath << "DAQVMEServices_"<<file_ending<<"."<<img_extension;
+  ss_filename_mem << outpath << "DAQMemory_"<<file_ending<<"."<<img_extension;
+  ss_filename_cpu << outpath << "DAQCPU_"<<file_ending<<"."<<img_extension;
 
   canvas_timeevolution_size->Clear();
   canvas_timeevolution_size->cd();
@@ -844,6 +1254,57 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   gr_vmeservice->GetYaxis()->SetRangeUser(0.001,1.1*max_vme);
   canvas_timeevolution_vme->SaveAs(ss_filename_vme.str().c_str());
 
+  canvas_timeevolution_mem->Clear();
+  canvas_timeevolution_mem->cd();
+  multi_mem->Add(gr_mem_daq01);
+  leg_mem->AddEntry(gr_mem_daq01,"DAQ01","l");
+  multi_mem->Add(gr_mem_vme01);
+  leg_mem->AddEntry(gr_mem_vme01,"VME01","l");
+  multi_mem->Add(gr_mem_vme02);
+  leg_mem->AddEntry(gr_mem_vme02,"VME02","l");
+  multi_mem->Add(gr_mem_vme03);
+  leg_mem->AddEntry(gr_mem_vme03,"VME03","l");
+  multi_mem->Draw("apl");
+  multi_mem->SetTitle(ss_title_memory.str().c_str());
+  multi_mem->GetYaxis()->SetTitle("Memory [%]");
+  multi_mem->GetXaxis()->SetTimeDisplay(1);
+  multi_mem->GetXaxis()->SetLabelSize(0.03);
+  multi_mem->GetXaxis()->SetLabelOffset(0.03);
+  multi_mem->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  multi_mem->GetXaxis()->SetTimeOffset(0.);
+  leg_mem->Draw();
+  canvas_timeevolution_mem->SaveAs(ss_filename_mem.str().c_str());
+  multi_mem->RecursiveRemove(gr_mem_daq01);
+  multi_mem->RecursiveRemove(gr_mem_vme01);
+  multi_mem->RecursiveRemove(gr_mem_vme02);
+  multi_mem->RecursiveRemove(gr_mem_vme03);
+  leg_mem->Clear();
+
+  canvas_timeevolution_cpu->Clear();
+  canvas_timeevolution_cpu->cd();
+  multi_cpu->Add(gr_cpu_daq01);
+  leg_cpu->AddEntry(gr_cpu_daq01,"DAQ01","l");
+  multi_cpu->Add(gr_cpu_vme01);
+  leg_cpu->AddEntry(gr_cpu_vme01,"VME01","l");
+  multi_cpu->Add(gr_cpu_vme02);
+  leg_cpu->AddEntry(gr_cpu_vme02,"VME02","l");
+  multi_cpu->Add(gr_cpu_vme03);
+  leg_cpu->AddEntry(gr_cpu_vme03,"VME03","l");
+  multi_cpu->Draw("apl");
+  multi_cpu->SetTitle(ss_title_cpu.str().c_str());
+  multi_cpu->GetYaxis()->SetTitle("CPU [%]");
+  multi_cpu->GetXaxis()->SetTimeDisplay(1);
+  multi_cpu->GetXaxis()->SetLabelSize(0.03);
+  multi_cpu->GetXaxis()->SetLabelOffset(0.03);
+  multi_cpu->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  multi_cpu->GetXaxis()->SetTimeOffset(0.);
+  leg_cpu->Draw();
+  canvas_timeevolution_cpu->SaveAs(ss_filename_cpu.str().c_str());
+  multi_cpu->RecursiveRemove(gr_cpu_daq01);
+  multi_cpu->RecursiveRemove(gr_cpu_vme01);
+  multi_cpu->RecursiveRemove(gr_cpu_vme02);
+  multi_cpu->RecursiveRemove(gr_cpu_vme03);
+  leg_cpu->Clear();
 }
 
 void MonitorDAQ::DrawVMEService(ULong64_t timestamp_end, double time_frame, std::string file_ending, bool current){
@@ -958,12 +1419,20 @@ void MonitorDAQ::PrintInfoBox(){
   if (file_size<100.) text_filesize->SetTextColor(2);
   else text_filesize->SetTextColor(1);
 	  
+  if (testmode){
+    if (testcounter < (int) test_filesize.size()) file_size = test_filesize.at(testcounter);
+    else file_size = test_filesize.at(test_filesize.size()-1);
+  }
+
   if (file_size <= 100.) {
     std::stringstream ss_error_filesize, ss_error_filesize_slack;
     ss_error_filesize << "ERROR (MonitorDAQ tool): Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.";
     ss_error_filesize_slack << "payload={\"text\":\"Monitoring: Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.\"}";
-    Log(ss_error_filesize.str().c_str(),v_error,verbosity);
-    if (send_slack){
+    bool issue_warning = (!warning_filesize || (warning_filesize_filename!=file_name_short));
+    warning_filesize = true;
+    warning_filesize_filename = file_name_short;
+    if (issue_warning) Log(ss_error_filesize.str().c_str(),v_error,verbosity);
+    if (send_slack && issue_warning){
     try{
       CURL *curl;
       CURLcode res;
@@ -983,14 +1452,24 @@ void MonitorDAQ::PrintInfoBox(){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
     }
+  } else {
+    warning_filesize = false;
   }
   
+  if (testmode){
+    if (testcounter < (int) test_hastrig.size()) file_has_trig = test_hastrig.at(testcounter);
+    else file_has_trig = test_hastrig.at(test_hastrig.size()-1);
+  }
+
   if (!file_has_trig) {
     std::stringstream ss_error_trig, ss_error_trig_slack;
     ss_error_trig << "ERROR (MonitorDAQ tool): Did not find Trigger data in last file (" << file_name_short << ")";
     ss_error_trig_slack << "payload={\"text\":\" Monitoring: Did not find Trigger data in last file (" << file_name_short << ")\"}";
-    Log(ss_error_trig.str().c_str(),v_error,verbosity);
-    if (send_slack){
+    bool issue_warning = (!warning_trigdata || (warning_trigdata_filename!=file_name_short));
+    warning_trigdata = true;
+    warning_trigdata_filename = file_name_short;
+    if (issue_warning) Log(ss_error_trig.str().c_str(),v_error,verbosity);
+    if (send_slack && issue_warning){
     try{
       CURL *curl;
       CURLcode res;
@@ -1010,14 +1489,24 @@ void MonitorDAQ::PrintInfoBox(){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
     }
+  } else {
+    warning_trigdata = false;
+  }
+  
+  if (testmode){
+    if (testcounter < (int) test_haspmt.size()) file_has_pmt = test_haspmt.at(testcounter);
+    else file_has_pmt = test_haspmt.at(test_haspmt.size()-1);
   }
   
   if (!file_has_pmt) {
     std::stringstream ss_error_pmt, ss_error_pmt_slack;
     ss_error_pmt << "ERROR (MonitorDAQ tool): Did not find VME data in last file (" << file_name_short << ")";
     ss_error_pmt_slack << "payload={\"text\":\"Monitoring: Did not find VME data in last file (" << file_name_short << ")\"}";
-    Log(ss_error_pmt.str().c_str(),v_error,verbosity);
-    if (send_slack){
+    bool issue_warning = (!warning_pmtdata || (warning_pmtdata_filename!=file_name_short));
+    warning_pmtdata = true;
+    warning_pmtdata_filename = file_name_short;
+    if (issue_warning) Log(ss_error_pmt.str().c_str(),v_error,verbosity);
+    if (send_slack && issue_warning){
     try{
       CURL *curl;
       CURLcode res;
@@ -1037,6 +1526,8 @@ void MonitorDAQ::PrintInfoBox(){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
     }
+  } else {
+    warning_pmtdata = false;
   }	  
   } // end if file_produced
 
@@ -1045,13 +1536,21 @@ void MonitorDAQ::PrintInfoBox(){
   text_vmeservice->SetText(0.06,0.8,ss_vmeservice.str().c_str());
   if (num_vme_service<3) text_vmeservice->SetTextColor(2);
   else text_vmeservice->SetTextColor(1);
+  
+  if (testmode){
+    if (testcounter < (int) test_vme.size()) num_vme_service = test_vme.at(testcounter);
+    else num_vme_service = test_vme.at(test_vme.size()-1);
+  }
 
   if (num_vme_service < 3) {
     std::stringstream ss_error_vme, ss_error_vme_slack;
     ss_error_vme << "ERROR (MonitorDAQ tool): Did not find 3 running VME services! Current # of VME_service processes: " << num_vme_service;
     ss_error_vme_slack << "payload={\"text\":\"Monitoring: Did not find 3 running VME services! Current # of VME_service processes: " << num_vme_service << "\"}";
-    Log(ss_error_vme.str().c_str(),v_error,verbosity);
-    if (send_slack){
+    bool issue_warning = (!warning_vme || (num_vme_service != warning_vme_num));
+    warning_vme_num=num_vme_service;
+    warning_vme = true;
+    if (issue_warning) Log(ss_error_vme.str().c_str(),v_error,verbosity);
+    if (send_slack && issue_warning){
     try{
       CURL *curl;
       CURLcode res;
@@ -1071,6 +1570,9 @@ void MonitorDAQ::PrintInfoBox(){
       Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
     }
     }
+  } else {
+    warning_vme = false;
+    warning_vme_num=num_vme_service;
   }
 
 
@@ -1090,6 +1592,180 @@ void MonitorDAQ::PrintInfoBox(){
     text_summary->SetTextColor(2);
   }
 
+  text_disk_title->SetText(0.06,0.9,"Disk space / Memory");
+ 
+  if (testmode) timestamp_daq01 += (0.3*60*1000*testcounter);
+
+  boost::posix_time::ptime daq01time = *Epoch + boost::posix_time::time_duration(int(timestamp_daq01/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_daq01/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_daq01/MSEC_to_SEC)%60,timestamp_daq01%1000);
+  struct tm daq01time_tm = boost::posix_time::to_tm(daq01time);
+  std::stringstream ss_daq01_time;
+  ss_daq01_time << daq01time_tm.tm_year+1900<<"/"<<daq01time_tm.tm_mon+1<<"/"<<daq01time_tm.tm_mday<<"-"<<daq01time_tm.tm_hour<<":"<<daq01time_tm.tm_min<<":"<<daq01time_tm.tm_sec;
+
+  std::stringstream ss_text_disk_daq01;
+  ss_text_disk_daq01 << "DAQ01 Disk space: "<<disk_daq01<<" % ("<<ss_daq01_time.str()<<")";
+  text_disk_daq01->SetText(0.06,0.8,ss_text_disk_daq01.str().c_str());
+  if (disk_daq01 >= 80.) text_disk_daq01->SetTextColor(kOrange);
+  if (disk_daq01 >= 90.) text_disk_daq01->SetTextColor(kRed);
+
+  if (testmode){
+    if (testcounter < (int) test_disk.size()) disk_daq01 = test_disk.at(testcounter);
+    else disk_daq01 = test_disk.at(test_disk.size()-1);
+  }
+
+  if (disk_daq01 >= 80.) {
+    std::stringstream ss_error_disk, ss_error_disk_slack;
+    ss_error_disk << "ERROR (MonitorDAQ tool): DAQ01 disk space above 80%! (" << disk_daq01 << " %)";
+    ss_error_disk_slack << "payload={\"text\":\"Monitoring: DAQ01 disk space above 80%! (" << disk_daq01 << " %)\"}";
+    bool issue_warning = (!warning_diskspace_80);
+    warning_diskspace_80 = true;
+    if (issue_warning) Log(ss_error_disk.str().c_str(),v_error,verbosity);
+    if (send_slack && issue_warning){
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_disk_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+    }
+  } else {
+    warning_diskspace_80 = false;
+  }
+  if (disk_daq01 >= 85.) {
+    std::stringstream ss_error_disk, ss_error_disk_slack;
+    ss_error_disk << "ERROR (MonitorDAQ tool): DAQ01 disk space above 85%! (" << disk_daq01 << " %)";
+    ss_error_disk_slack << "payload={\"text\":\"Monitoring: DAQ01 disk space above 85%! (" << disk_daq01 << " %)\"}";
+    bool issue_warning = (!warning_diskspace_85);
+    warning_diskspace_85 = true;
+    if (issue_warning) Log(ss_error_disk.str().c_str(),v_error,verbosity);
+    if (send_slack && issue_warning){
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_disk_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+    }
+  } else {
+    warning_diskspace_85 = false;
+  }
+  if (disk_daq01 >= 90.) {
+    std::stringstream ss_error_disk, ss_error_disk_slack;
+    ss_error_disk << "ERROR (MonitorDAQ tool): DAQ01 disk space above 90%! (" << disk_daq01 << " %)";
+    ss_error_disk_slack << "payload={\"text\":\"Monitoring: Serious warning! DAQ01 disk space above 90%! (" << disk_daq01 << " %)\"}";
+    double t_since_last_warning = 0;
+    if (!warning_diskspace_90) timestamp_last_warning_diskspace_90 = daq01time; 
+    boost::posix_time::time_duration time_duration_since_warning(daq01time-timestamp_last_warning_diskspace_90);
+    long time_since_warning=time_duration_since_warning.total_milliseconds();
+    t_since_last_warning = (time_since_warning/MSEC_to_SEC/SEC_to_MIN);
+    bool issue_warning = (!warning_diskspace_90 || (t_since_last_warning > 1440));
+    warning_diskspace_90 = true;
+    if (issue_warning) {
+      Log(ss_error_disk.str().c_str(),v_error,verbosity);
+      timestamp_last_warning_diskspace_90 = daq01time;  
+    }
+    if (send_slack && issue_warning){
+    try{
+      CURL *curl;
+      CURLcode res;
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl=curl_easy_init();
+      if (curl){
+        curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+        std::string field = ss_error_disk_slack.str();
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+        res=curl_easy_perform(curl);
+        if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+        curl_easy_cleanup(curl);
+      }
+      curl_global_cleanup();
+    }
+    catch(...){
+      Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+    }
+    }
+  } else {
+    warning_diskspace_90 = false;
+  }
+
+  std::stringstream ss_text_mem_daq01;
+  double mem_round = round(mem_daq01*100.)/100.;
+  double cpu_round = round(cpu_daq01*100.)/100.;
+  ss_text_mem_daq01 << "DAQ01 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_daq01_time.str()<<")";
+  text_mem_daq01->SetText(0.06,0.7,ss_text_mem_daq01.str().c_str());
+  if (mem_round*100 >= 80.) text_mem_daq01->SetTextColor(kOrange);
+  if (mem_round*100 >= 90.) text_mem_daq01->SetTextColor(kRed);
+  if (cpu_round >= 80.) text_mem_daq01->SetTextColor(kOrange);
+  if (cpu_round >= 90.) text_mem_daq01->SetTextColor(kRed);
+ 
+  boost::posix_time::ptime vme01time = *Epoch + boost::posix_time::time_duration(int(timestamp_vme01/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_vme01/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_vme01/MSEC_to_SEC)%60,timestamp_vme01%1000);
+  struct tm vme01time_tm = boost::posix_time::to_tm(vme01time);
+  std::stringstream ss_vme01_time;
+  ss_vme01_time << vme01time_tm.tm_year+1900<<"/"<<vme01time_tm.tm_mon+1<<"/"<<vme01time_tm.tm_mday<<"-"<<vme01time_tm.tm_hour<<":"<<vme01time_tm.tm_min<<":"<<vme01time_tm.tm_sec;
+  
+  std::stringstream ss_text_mem_vme01;  
+  mem_round = round(mem_vme01*100.)/100.;
+  cpu_round = round(cpu_vme01*100.)/100.;
+  ss_text_mem_vme01 << "VME01 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme01_time.str()<<")";
+  text_mem_vme01->SetText(0.06,0.6,ss_text_mem_vme01.str().c_str());
+  if (mem_round*100 >= 80.) text_mem_vme01->SetTextColor(kOrange);
+  if (mem_round*100 >= 90.) text_mem_vme01->SetTextColor(kRed);
+  if (cpu_round >= 80.) text_mem_vme01->SetTextColor(kOrange);
+  if (cpu_round >= 90.) text_mem_vme01->SetTextColor(kRed);
+  
+  boost::posix_time::ptime vme02time = *Epoch + boost::posix_time::time_duration(int(timestamp_vme02/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_vme02/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_vme02/MSEC_to_SEC)%60,timestamp_vme02%1000);
+  struct tm vme02time_tm = boost::posix_time::to_tm(vme02time);
+  std::stringstream ss_vme02_time;
+  ss_vme02_time << vme02time_tm.tm_year+1900<<"/"<<vme02time_tm.tm_mon+1<<"/"<<vme02time_tm.tm_mday<<"-"<<vme02time_tm.tm_hour<<":"<<vme02time_tm.tm_min<<":"<<vme02time_tm.tm_sec;
+
+  std::stringstream ss_text_mem_vme02;
+  mem_round = round(mem_vme02*100.)/100.;
+  cpu_round = round(cpu_vme02*100.)/100.;
+  ss_text_mem_vme02 << "VME02 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme02_time.str()<<")";
+  text_mem_vme02->SetText(0.06,0.5,ss_text_mem_vme02.str().c_str());
+  if (mem_round*100 >= 80.) text_mem_vme02->SetTextColor(kOrange);
+  if (mem_round*100 >= 90.) text_mem_vme02->SetTextColor(kRed);
+  if (cpu_round >= 80.) text_mem_vme02->SetTextColor(kOrange);
+  if (cpu_round >= 90.) text_mem_vme02->SetTextColor(kRed);
+  
+  boost::posix_time::ptime vme03time = *Epoch + boost::posix_time::time_duration(int(timestamp_vme03/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_vme03/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_vme03/MSEC_to_SEC)%60,timestamp_vme03%1000);
+  struct tm vme03time_tm = boost::posix_time::to_tm(vme03time);
+  std::stringstream ss_vme03_time;
+  ss_vme03_time << vme03time_tm.tm_year+1900<<"/"<<vme03time_tm.tm_mon+1<<"/"<<vme03time_tm.tm_mday<<"-"<<vme03time_tm.tm_hour<<":"<<vme03time_tm.tm_min<<":"<<vme03time_tm.tm_sec;
+
+  std::stringstream ss_text_mem_vme03;
+  mem_round = round(mem_vme03*100.)/100.;
+  cpu_round = round(cpu_vme03*100.)/100.;
+  ss_text_mem_vme03 << "VME03 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme03_time.str()<<")";
+  text_mem_vme03->SetText(0.06,0.4,ss_text_mem_vme03.str().c_str());
+  if (mem_round*100 >= 80.) text_mem_vme03->SetTextColor(kOrange);
+  if (mem_round*100 >= 90.) text_mem_vme03->SetTextColor(kRed);
+  if (cpu_round >= 80.) text_mem_vme03->SetTextColor(kOrange);
+  if (cpu_round >= 90.) text_mem_vme03->SetTextColor(kRed);
+  
   text_summary->SetTextSize(0.05);
   text_vmeservice->SetTextSize(0.05);
   text_currentdate->SetTextSize(0.05);
@@ -1099,6 +1775,12 @@ void MonitorDAQ::PrintInfoBox(){
   text_haspmt->SetTextSize(0.05);
   text_hascc->SetTextSize(0.05);
   text_hastrigger->SetTextSize(0.05);
+  text_disk_title->SetTextSize(0.05);
+  text_disk_daq01->SetTextSize(0.05);
+  text_mem_daq01->SetTextSize(0.05);
+  text_mem_vme01->SetTextSize(0.05);
+  text_mem_vme02->SetTextSize(0.05);
+  text_mem_vme03->SetTextSize(0.05);
 
   text_summary->SetNDC(1);
   text_vmeservice->SetNDC(1);
@@ -1109,6 +1791,12 @@ void MonitorDAQ::PrintInfoBox(){
   text_haspmt->SetNDC(1);
   text_hascc->SetNDC(1);
   text_hastrigger->SetNDC(1);
+  text_disk_title->SetNDC(1);
+  text_disk_daq01->SetNDC(1);
+  text_mem_daq01->SetNDC(1);
+  text_mem_vme01->SetNDC(1);
+  text_mem_vme02->SetNDC(1);
+  text_mem_vme03->SetNDC(1);
 
   canvas_infobox->cd();
   text_summary->Draw();
@@ -1126,8 +1814,19 @@ void MonitorDAQ::PrintInfoBox(){
   std::stringstream ss_path_textinfo;
   ss_path_textinfo << outpath <<"DAQInfo_current."<<img_extension;
   canvas_infobox->SaveAs(ss_path_textinfo.str().c_str());
-
   canvas_infobox->Clear();
+
+  canvas_info_diskspace->cd();
+  text_disk_title->Draw();
+  text_disk_daq01->Draw();
+  text_mem_daq01->Draw();
+  text_mem_vme01->Draw();
+  text_mem_vme02->Draw();
+  text_mem_vme03->Draw();
+  std::stringstream ss_path_textinfo_disk;
+  ss_path_textinfo_disk << outpath << "DAQInfo_current_Diskspace."<<img_extension;
+  canvas_info_diskspace->SaveAs(ss_path_textinfo_disk.str().c_str());
+  canvas_info_diskspace->Clear();
 }
 
 std::string MonitorDAQ::convertTimeStamp_to_Date(ULong64_t timestamp){

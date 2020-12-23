@@ -23,6 +23,7 @@
 #include "TPie.h"
 #include "TPieSlice.h"
 #include "TMath.h"
+#include "TMultiGraph.h"
 
 #include "ServiceDiscovery.h"
 #include "zmq.hpp"
@@ -56,6 +57,7 @@ class MonitorDAQ: public Tool {
   void UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
 
   void GetVMEServices(bool is_online);
+  void GetCompStats();
 
   void DrawVMEService(ULong64_t timestamp_end, double time_frame, std::string file_ending, bool current);
   void PrintInfoBox();
@@ -75,12 +77,14 @@ class MonitorDAQ: public Tool {
   std::string plot_configuration;
   std::string path_monitoring;
   std::string img_extension;
-  bool force_update;
-  bool draw_marker;
+  std::string path_compstats;
+  bool force_update=0;
+  bool draw_marker=0;
   int verbosity;
-  bool online;
+  bool online=0;
   std::string hook;
-  bool send_slack;
+  bool send_slack=0;
+  bool testmode=0;
 
   //Configuration option for plots
   std::vector<double> config_timeframes;
@@ -124,6 +128,19 @@ class MonitorDAQ: public Tool {
   int num_vme_service;
   bool file_produced=false;
   long t_file_start, t_file_end;
+  ULong64_t timestamp_daq01;
+  double disk_daq01;
+  double mem_daq01;
+  double cpu_daq01;
+  ULong64_t timestamp_vme01;
+  double mem_vme01;
+  double cpu_vme01;
+  ULong64_t timestamp_vme02;
+  double mem_vme02;
+  double cpu_vme02;
+  ULong64_t timestamp_vme03;
+  double mem_vme03;
+  double cpu_vme03;
 
   //Storing variables for reading in data in given time slot from monitoring file / database
   std::vector<bool> has_trig_plot;
@@ -135,6 +152,34 @@ class MonitorDAQ: public Tool {
   std::vector<int> num_vme_plot;
   std::vector<ULong64_t> tstart_plot;
   std::vector<ULong64_t> tend_plot;
+  std::vector<double> disk_daq01_plot;
+  std::vector<double> mem_daq01_plot;
+  std::vector<double> mem_vme01_plot;
+  std::vector<double> mem_vme02_plot;
+  std::vector<double> mem_vme03_plot;
+  std::vector<double> cpu_daq01_plot;
+  std::vector<double> cpu_vme01_plot;
+  std::vector<double> cpu_vme02_plot;
+  std::vector<double> cpu_vme03_plot;
+  std::vector<ULong64_t> t_daq01_plot;
+  std::vector<ULong64_t> t_vme01_plot;
+  std::vector<ULong64_t> t_vme02_plot;
+  std::vector<ULong64_t> t_vme03_plot;
+
+  //Status variables for slack messages --> were the warnings already issued?
+  bool warning_filesize = false;
+  std::string warning_filesize_filename;
+  bool warning_trigdata = false;
+  std::string warning_trigdata_filename;
+  bool warning_pmtdata = false;
+  std::string warning_pmtdata_filename;
+  bool warning_vme = false;
+  int warning_vme_num = 3;
+  bool warning_diskspace_80 = false;
+  bool warning_diskspace_85 = false;
+  bool warning_diskspace_90 = false;
+  boost::posix_time::ptime timestamp_last_warning_diskspace_90;
+
 
   //Online stuff
   zmq::context_t *context = nullptr;
@@ -156,6 +201,13 @@ class MonitorDAQ: public Tool {
   TText *text_currentdate = nullptr;
   TText *text_filename = nullptr;
 
+  TText *text_disk_title = nullptr;
+  TText *text_disk_daq01 = nullptr;
+  TText *text_mem_daq01 = nullptr;
+  TText *text_mem_vme01 = nullptr;
+  TText *text_mem_vme02 = nullptr;
+  TText *text_mem_vme03 = nullptr;
+
   //Pie chart
   TPie *pie_vme = nullptr;
   TLegend *leg_vme = nullptr;  
@@ -163,13 +215,38 @@ class MonitorDAQ: public Tool {
   //TGraphs & related objects
   TGraph *gr_filesize = nullptr;
   TGraph *gr_vmeservice = nullptr;
+  TGraph *gr_mem_daq01 = nullptr;
+  TGraph *gr_mem_vme01 = nullptr;
+  TGraph *gr_mem_vme02 = nullptr;
+  TGraph *gr_mem_vme03 = nullptr;
+  TGraph *gr_cpu_daq01 = nullptr;
+  TGraph *gr_cpu_vme01 = nullptr;
+  TGraph *gr_cpu_vme02 = nullptr;
+  TGraph *gr_cpu_vme03 = nullptr;
+  TMultiGraph *multi_mem = nullptr;
+  TMultiGraph *multi_cpu = nullptr;
+  TLegend *leg_mem = nullptr;
+  TLegend *leg_cpu = nullptr;
 
   //Canvas
   TCanvas *canvas_infobox = nullptr;
   TCanvas *canvas_vmeservice = nullptr;
   TCanvas *canvas_timeevolution_size = nullptr;
   TCanvas *canvas_timeevolution_vme = nullptr;
+  
+  TCanvas *canvas_info_diskspace = nullptr;
+  TCanvas *canvas_timeevolution_mem = nullptr;
+  TCanvas *canvas_timeevolution_cpu = nullptr;
 
+  //Variables to test functionality of tool
+  std::vector<double> test_filesize;
+  std::vector<bool> test_hastrig;
+  std::vector<bool> test_haspmt;
+  std::vector<int> test_vme;
+  std::vector<double> test_disk;
+  int testcounter;
+
+  //Verbosity variables
   int v_error = 0;
   int v_warning = 1;
   int v_message = 2;
