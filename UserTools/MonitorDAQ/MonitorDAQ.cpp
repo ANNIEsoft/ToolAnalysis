@@ -1604,6 +1604,7 @@ void MonitorDAQ::PrintInfoBox(){
   std::stringstream ss_text_disk_daq01;
   ss_text_disk_daq01 << "DAQ01 Disk space: "<<disk_daq01<<" % ("<<ss_daq01_time.str()<<")";
   text_disk_daq01->SetText(0.06,0.8,ss_text_disk_daq01.str().c_str());
+  text_disk_daq01->SetTextColor(1);	//default color
   if (disk_daq01 >= 80.) text_disk_daq01->SetTextColor(kOrange);
   if (disk_daq01 >= 90.) text_disk_daq01->SetTextColor(kRed);
 
@@ -1716,6 +1717,7 @@ void MonitorDAQ::PrintInfoBox(){
   double cpu_round = round(cpu_daq01*100.)/100.;
   ss_text_mem_daq01 << "DAQ01 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_daq01_time.str()<<")";
   text_mem_daq01->SetText(0.06,0.7,ss_text_mem_daq01.str().c_str());
+  text_mem_daq01->SetTextColor(1);	//default color 
   if (mem_round*100 >= 80.) text_mem_daq01->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_daq01->SetTextColor(kRed);
   if (cpu_round >= 80.) text_mem_daq01->SetTextColor(kOrange);
@@ -1731,6 +1733,7 @@ void MonitorDAQ::PrintInfoBox(){
   cpu_round = round(cpu_vme01*100.)/100.;
   ss_text_mem_vme01 << "VME01 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme01_time.str()<<")";
   text_mem_vme01->SetText(0.06,0.6,ss_text_mem_vme01.str().c_str());
+  text_mem_vme01->SetTextColor(1);	//default color
   if (mem_round*100 >= 80.) text_mem_vme01->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_vme01->SetTextColor(kRed);
   if (cpu_round >= 80.) text_mem_vme01->SetTextColor(kOrange);
@@ -1746,6 +1749,7 @@ void MonitorDAQ::PrintInfoBox(){
   cpu_round = round(cpu_vme02*100.)/100.;
   ss_text_mem_vme02 << "VME02 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme02_time.str()<<")";
   text_mem_vme02->SetText(0.06,0.5,ss_text_mem_vme02.str().c_str());
+  text_mem_vme02->SetTextColor(1);	//default color
   if (mem_round*100 >= 80.) text_mem_vme02->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_vme02->SetTextColor(kRed);
   if (cpu_round >= 80.) text_mem_vme02->SetTextColor(kOrange);
@@ -1761,6 +1765,7 @@ void MonitorDAQ::PrintInfoBox(){
   cpu_round = round(cpu_vme03*100.)/100.;
   ss_text_mem_vme03 << "VME03 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme03_time.str()<<")";
   text_mem_vme03->SetText(0.06,0.4,ss_text_mem_vme03.str().c_str());
+  text_mem_vme03->SetTextColor(1);	//default color
   if (mem_round*100 >= 80.) text_mem_vme03->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_vme03->SetTextColor(kRed);
   if (cpu_round >= 80.) text_mem_vme03->SetTextColor(kOrange);
