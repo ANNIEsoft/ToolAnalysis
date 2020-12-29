@@ -1804,6 +1804,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_mem_vme03->SetNDC(1);
 
   canvas_infobox->cd();
+  canvas_infobox->Clear();
   text_summary->Draw();
   text_vmeservice->Draw();
   text_currentdate->Draw();
@@ -1822,6 +1823,7 @@ void MonitorDAQ::PrintInfoBox(){
   canvas_infobox->Clear();
 
   canvas_info_diskspace->cd();
+  canvas_info_diskspace->Clear();
   text_disk_title->Draw();
   text_disk_daq01->Draw();
   text_mem_daq01->Draw();
