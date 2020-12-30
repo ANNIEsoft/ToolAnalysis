@@ -38,8 +38,8 @@ bool PythonScript::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("PythonInit",pyinit);
   
   /// Starting python thread for this tool
-  pythread=Py_NewInterpreter();  
-  PyThreadState_Swap(pythread);
+  //pythread=Py_NewInterpreter();  
+  //PyThreadState_Swap(pythread);
 
   // Loading store API into python env
   //Py_InitModule("Store", StoreMethods); ///python 2 version
@@ -131,7 +131,7 @@ bool PythonScript::Initialise(std::string configfile, DataModel &data){
 
 bool PythonScript::Execute(){
 
-  PyThreadState_Swap(pythread);
+  //PyThreadState_Swap(pythread);
 
   if (pModule != NULL) {
 
@@ -174,7 +174,7 @@ bool PythonScript::Execute(){
 
 bool PythonScript::Finalise(){
   
-  PyThreadState_Swap(pythread);  
+  //PyThreadState_Swap(pythread);  
   
   if (pModule != NULL) {
     
