@@ -715,6 +715,11 @@ void MonitorDAQ::GetCompStats(){
   mem_daq01 = double(memtotDAQ01-memfreeDAQ01)/memtotDAQ01;
   cpu_daq01 = 100.-idleDAQ01;
   timestamp_daq01 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+  //Sanity checks
+  if (mem_daq01 < 0.) mem_daq01 = 0.;
+  else if (mem_daq01 > 1.) mem_daq01 = 1.;
+  if (cpu_daq01 < 0.) cpu_daq01 = 0.;
+  else if (cpu_daq01 > 100.) cpu_daq01 = 100.;
 
   std::stringstream ss_path_vme01;
   ss_path_vme01 << path_compstats << "/compstatsVME01";
@@ -735,6 +740,11 @@ void MonitorDAQ::GetCompStats(){
   mem_vme01 = double(memtotVME01-memfreeVME01)/memtotVME01;
   cpu_vme01 = 100.-idleVME01;
   timestamp_vme01 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+  //Sanity checks
+  if (mem_vme01 < 0.) mem_vme01 = 0.;
+  else if (mem_vme01 > 1.) mem_vme01 = 1.;
+  if (cpu_vme01 < 0.) cpu_vme01 = 0.;
+  else if (cpu_vme01 > 100.) cpu_vme01 = 100.;
 
   std::stringstream ss_path_vme02;
   ss_path_vme02 << path_compstats << "/compstatsVME02";
@@ -755,6 +765,11 @@ void MonitorDAQ::GetCompStats(){
   mem_vme02 = double(memtotVME02-memfreeVME02)/memtotVME02;
   cpu_vme02 = 100.-idleVME02;
   timestamp_vme02 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+  //Sanity checks
+  if (mem_vme02 < 0.) mem_vme02 = 0.;
+  else if (mem_vme02 > 1.) mem_vme02 = 1.;
+  if (cpu_vme02 < 0.) cpu_vme02 = 0.;
+  else if (cpu_vme02 > 100.) cpu_vme02 = 100.;
 
   std::stringstream ss_path_vme03;
   ss_path_vme03 << path_compstats << "/compstatsVME03";
@@ -775,6 +790,11 @@ void MonitorDAQ::GetCompStats(){
   mem_vme03 = double(memtotVME03-memfreeVME03)/memtotVME03;
   cpu_vme03 = 100.-idleVME03;
   timestamp_vme03 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+  //Sanity checks
+  if (mem_vme03 < 0.) mem_vme03 = 0.;
+  else if (mem_vme03 > 1.) mem_vme03 = 1.;
+  if (cpu_vme03 < 0.) cpu_vme03 = 0.;
+  else if (cpu_vme03 > 100.) cpu_vme03 = 100.;
 
 }
 
