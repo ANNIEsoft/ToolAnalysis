@@ -133,12 +133,15 @@ class MonitorDAQ: public Tool {
   double mem_daq01;
   double cpu_daq01;
   ULong64_t timestamp_vme01;
+  double disk_vme01;
   double mem_vme01;
   double cpu_vme01;
   ULong64_t timestamp_vme02;
+  double disk_vme02;
   double mem_vme02;
   double cpu_vme02;
   ULong64_t timestamp_vme03;
+  double disk_vme03;
   double mem_vme03;
   double cpu_vme03;
 
@@ -153,6 +156,9 @@ class MonitorDAQ: public Tool {
   std::vector<ULong64_t> tstart_plot;
   std::vector<ULong64_t> tend_plot;
   std::vector<double> disk_daq01_plot;
+  std::vector<double> disk_vme01_plot;
+  std::vector<double> disk_vme02_plot;
+  std::vector<double> disk_vme03_plot;
   std::vector<double> mem_daq01_plot;
   std::vector<double> mem_vme01_plot;
   std::vector<double> mem_vme02_plot;
@@ -203,6 +209,9 @@ class MonitorDAQ: public Tool {
 
   TText *text_disk_title = nullptr;
   TText *text_disk_daq01 = nullptr;
+  TText *text_disk_vme01 = nullptr;
+  TText *text_disk_vme02 = nullptr;
+  TText *text_disk_vme03 = nullptr;
   TText *text_mem_daq01 = nullptr;
   TText *text_mem_vme01 = nullptr;
   TText *text_mem_vme02 = nullptr;
@@ -223,16 +232,23 @@ class MonitorDAQ: public Tool {
   TGraph *gr_cpu_vme01 = nullptr;
   TGraph *gr_cpu_vme02 = nullptr;
   TGraph *gr_cpu_vme03 = nullptr;
+  TGraph *gr_disk_daq01 = nullptr;
+  TGraph *gr_disk_vme01 = nullptr;
+  TGraph *gr_disk_vme02 = nullptr;
+  TGraph *gr_disk_vme03 = nullptr;
   TMultiGraph *multi_mem = nullptr;
   TMultiGraph *multi_cpu = nullptr;
+  TMultiGraph *multi_disk = nullptr;
   TLegend *leg_mem = nullptr;
   TLegend *leg_cpu = nullptr;
+  TLegend *leg_disk = nullptr;
 
   //Canvas
   TCanvas *canvas_infobox = nullptr;
   TCanvas *canvas_vmeservice = nullptr;
   TCanvas *canvas_timeevolution_size = nullptr;
   TCanvas *canvas_timeevolution_vme = nullptr;
+  TCanvas *canvas_timeevolution_disk = nullptr;
   
   TCanvas *canvas_info_diskspace = nullptr;
   TCanvas *canvas_timeevolution_mem = nullptr;

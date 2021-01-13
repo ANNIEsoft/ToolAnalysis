@@ -206,6 +206,10 @@ bool MonitorDAQ::Finalise(){
   //Graphs
   delete gr_filesize;
   delete gr_vmeservice;
+  delete gr_disk_daq01;
+  delete gr_disk_vme01;
+  delete gr_disk_vme02;
+  delete gr_disk_vme03;
   delete gr_mem_daq01;
   delete gr_mem_vme01;
   delete gr_mem_vme02;
@@ -214,12 +218,14 @@ bool MonitorDAQ::Finalise(){
   delete gr_cpu_vme01;
   delete gr_cpu_vme02;
   delete gr_cpu_vme03;
+  delete multi_disk;
   delete multi_mem;
   delete multi_cpu;
 
   //Legends
   delete leg_mem;
   delete leg_cpu;
+  delete leg_disk;
 
   //Pie charts
   delete pie_vme;
@@ -236,6 +242,9 @@ bool MonitorDAQ::Finalise(){
   delete text_hastrigger;
   delete text_disk_title;
   delete text_disk_daq01;
+  delete text_disk_vme01;
+  delete text_disk_vme02;
+  delete text_disk_vme03;
   delete text_mem_daq01;
   delete text_mem_vme01;
   delete text_mem_vme02;
@@ -250,6 +259,7 @@ bool MonitorDAQ::Finalise(){
   delete canvas_info_diskspace;
   delete canvas_timeevolution_mem;
   delete canvas_timeevolution_cpu;
+  delete canvas_timeevolution_disk;
 
   //Online things
   if (online){
@@ -375,6 +385,7 @@ void MonitorDAQ::InitializeHists(){
   canvas_info_diskspace = new TCanvas("canvas_info_diskspace","DAQ01 Diskspace",900,600);
   canvas_timeevolution_mem = new TCanvas("canvas_timeevolution_mem","Memory Time evolution",900,600);
   canvas_timeevolution_cpu = new TCanvas("canvas_timeevolution_cpu","CPU Time evolution",900,600);
+  canvas_timeevolution_disk = new TCanvas("canvas_timeevolution_disk","Diskspace Time evolution",900,600);
 
   //TGraphs (time evolution plots)
   gr_filesize = new TGraph();
@@ -517,12 +528,71 @@ void MonitorDAQ::InitializeHists(){
   gr_cpu_vme03->GetXaxis()->SetLabelOffset(0.03);
   gr_cpu_vme03->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
   
+  gr_disk_daq01 = new TGraph();
+  gr_disk_daq01->SetName("gr_disk_daq01");
+  gr_disk_daq01->SetTitle("DAQ01 Diskspace");
+  if (draw_marker) gr_disk_daq01->SetMarkerStyle(20);
+  gr_disk_daq01->SetMarkerColor(1);
+  gr_disk_daq01->SetLineColor(1);
+  gr_disk_daq01->SetLineWidth(2);
+  gr_disk_daq01->SetFillColor(0);
+  gr_disk_daq01->GetYaxis()->SetTitle("Disk space [%]");
+  gr_disk_daq01->GetXaxis()->SetTimeDisplay(1);
+  gr_disk_daq01->GetXaxis()->SetLabelSize(0.03);
+  gr_disk_daq01->GetXaxis()->SetLabelOffset(0.03);
+  gr_disk_daq01->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_disk_vme01 = new TGraph();
+  gr_disk_vme01->SetName("gr_disk_vme01");
+  gr_disk_vme01->SetTitle("VME01 Diskspace");
+  if (draw_marker) gr_disk_vme01->SetMarkerStyle(20);
+  gr_disk_vme01->SetMarkerColor(2);
+  gr_disk_vme01->SetLineColor(2);
+  gr_disk_vme01->SetLineWidth(2);
+  gr_disk_vme01->SetFillColor(0);
+  gr_disk_vme01->GetYaxis()->SetTitle("Disk space [%]");
+  gr_disk_vme01->GetXaxis()->SetTimeDisplay(1);
+  gr_disk_vme01->GetXaxis()->SetLabelSize(0.03);
+  gr_disk_vme01->GetXaxis()->SetLabelOffset(0.03);
+  gr_disk_vme01->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_disk_vme02 = new TGraph();
+  gr_disk_vme02->SetName("gr_disk_vme02");
+  gr_disk_vme02->SetTitle("VME02 Diskspace");
+  if (draw_marker) gr_disk_vme02->SetMarkerStyle(20);
+  gr_disk_vme02->SetMarkerColor(4);
+  gr_disk_vme02->SetLineColor(4);
+  gr_disk_vme02->SetLineWidth(2);
+  gr_disk_vme02->SetFillColor(0);
+  gr_disk_vme02->GetYaxis()->SetTitle("Disk space [%]");
+  gr_disk_vme02->GetXaxis()->SetTimeDisplay(1);
+  gr_disk_vme02->GetXaxis()->SetLabelSize(0.03);
+  gr_disk_vme02->GetXaxis()->SetLabelOffset(0.03);
+  gr_disk_vme02->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  
+  gr_disk_vme03 = new TGraph();
+  gr_disk_vme03->SetName("gr_disk_vme03");
+  gr_disk_vme03->SetTitle("VME03 Diskspace");
+  if (draw_marker) gr_disk_vme03->SetMarkerStyle(20);
+  gr_disk_vme03->SetMarkerColor(8);
+  gr_disk_vme03->SetLineColor(8);
+  gr_disk_vme03->SetLineWidth(2);
+  gr_disk_vme03->SetFillColor(0);
+  gr_disk_vme03->GetYaxis()->SetTitle("Disk space [%]");
+  gr_disk_vme03->GetXaxis()->SetTimeDisplay(1);
+  gr_disk_vme03->GetXaxis()->SetLabelSize(0.03);
+  gr_disk_vme03->GetXaxis()->SetLabelOffset(0.03);
+  gr_disk_vme03->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+
   multi_mem = new TMultiGraph();
   multi_cpu = new TMultiGraph();
+  multi_disk = new TMultiGraph();
   leg_mem = new TLegend(0.7,0.7,0.88,0.88);
   leg_cpu = new TLegend(0.7,0.7,0.88,0.88);
+  leg_disk = new TLegend(0.7,0.7,0.88,0.88);
   leg_mem->SetLineColor(0);
   leg_cpu->SetLineColor(0);
+  leg_disk->SetLineColor(0);
 
   //TText objects for infobox
   text_summary = new TText();
@@ -537,6 +607,9 @@ void MonitorDAQ::InitializeHists(){
 
   text_disk_title = new TText();
   text_disk_daq01 = new TText();
+  text_disk_vme01 = new TText();
+  text_disk_vme02 = new TText();
+  text_disk_vme03 = new TText();
   text_mem_daq01 = new TText();
   text_mem_vme01 = new TText();
   text_mem_vme02 = new TText();
@@ -554,6 +627,9 @@ void MonitorDAQ::InitializeHists(){
 
   text_disk_title->SetNDC(1);
   text_disk_daq01->SetNDC(1);
+  text_disk_vme01->SetNDC(1);
+  text_disk_vme02->SetNDC(1);
+  text_disk_vme03->SetNDC(1);
   text_mem_daq01->SetNDC(1);
   text_mem_vme01->SetNDC(1);
   text_mem_vme02->SetNDC(1);
@@ -716,9 +792,11 @@ void MonitorDAQ::GetCompStats(){
   cpu_daq01 = 100.-idleDAQ01;
   timestamp_daq01 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
   //Sanity checks
-  if (mem_daq01 < 0.) mem_daq01 = 0.;
+  if (std::isinf(mem_daq01) || std::isnan(mem_daq01)) mem_daq01 = 1.;
+  else if (mem_daq01 < 0.) mem_daq01 = 0.;
   else if (mem_daq01 > 1.) mem_daq01 = 1.;
-  if (cpu_daq01 < 0.) cpu_daq01 = 0.;
+  if (std::isinf(cpu_daq01) || std::isnan(cpu_daq01)) cpu_daq01 = 100.;
+  else if (cpu_daq01 < 0.) cpu_daq01 = 0.;
   else if (cpu_daq01 > 100.) cpu_daq01 = 100.;
 
   std::stringstream ss_path_vme01;
@@ -731,19 +809,24 @@ void MonitorDAQ::GetCompStats(){
   long memfreeVME01;
   long memavailVME01;
   double idleVME01;
+  int diskVME01;
   storeVME01.Get("Time",timeVME01);
   storeVME01.Get("MemTotal",memtotVME01);
   storeVME01.Get("MemFree",memfreeVME01);
   storeVME01.Get("MemAvailable",memavailVME01);
   storeVME01.Get("CPUidle",idleVME01);
+  storeVME01.Get("Disk",diskVME01);
   timestamp_vme01 = (ULong64_t) timeVME01*1000; //convert to ms
+  disk_vme01 = diskVME01;
   mem_vme01 = double(memtotVME01-memfreeVME01)/memtotVME01;
   cpu_vme01 = 100.-idleVME01;
   timestamp_vme01 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
   //Sanity checks
-  if (mem_vme01 < 0.) mem_vme01 = 0.;
+  if (std::isinf(mem_vme01) || std::isnan(mem_vme01)) mem_vme01 = 1.;
+  else if (mem_vme01 < 0.) mem_vme01 = 0.;
   else if (mem_vme01 > 1.) mem_vme01 = 1.;
-  if (cpu_vme01 < 0.) cpu_vme01 = 0.;
+  if (std::isinf(cpu_vme01) || std::isnan(cpu_vme01)) cpu_vme01 = 100.;
+  else if (cpu_vme01 < 0.) cpu_vme01 = 0.;
   else if (cpu_vme01 > 100.) cpu_vme01 = 100.;
 
   std::stringstream ss_path_vme02;
@@ -756,19 +839,24 @@ void MonitorDAQ::GetCompStats(){
   long memfreeVME02;
   long memavailVME02;
   double idleVME02;
+  int diskVME02;
   storeVME02.Get("Time",timeVME02);
   storeVME02.Get("MemTotal",memtotVME02);
   storeVME02.Get("MemFree",memfreeVME02);
   storeVME02.Get("MemAvailable",memavailVME02);
   storeVME02.Get("CPUidle",idleVME02);
+  storeVME02.Get("Disk",diskVME02);
   timestamp_vme02 = (ULong64_t) timeVME02*1000;  //convert to ms
+  disk_vme02 = diskVME02;
   mem_vme02 = double(memtotVME02-memfreeVME02)/memtotVME02;
   cpu_vme02 = 100.-idleVME02;
   timestamp_vme02 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
   //Sanity checks
-  if (mem_vme02 < 0.) mem_vme02 = 0.;
+  if (std::isinf(mem_vme02) || std::isnan(mem_vme02)) mem_vme02 = 1.;
+  else if (mem_vme02 < 0.) mem_vme02 = 0.;
   else if (mem_vme02 > 1.) mem_vme02 = 1.;
-  if (cpu_vme02 < 0.) cpu_vme02 = 0.;
+  if (std::isinf(cpu_vme02) || std::isnan(cpu_vme02)) cpu_vme02 = 100.;
+  else if (cpu_vme02 < 0.) cpu_vme02 = 0.;
   else if (cpu_vme02 > 100.) cpu_vme02 = 100.;
 
   std::stringstream ss_path_vme03;
@@ -781,19 +869,24 @@ void MonitorDAQ::GetCompStats(){
   long memfreeVME03;
   long memavailVME03;
   double idleVME03;
+  int diskVME03;
   storeVME03.Get("Time",timeVME03);
   storeVME03.Get("MemTotal",memtotVME03);
   storeVME03.Get("MemFree",memfreeVME03);
   storeVME03.Get("MemAvailable",memavailVME03);
   storeVME03.Get("CPUidle",idleVME03);
+  storeVME03.Get("Disk",diskVME03);
   timestamp_vme03 = (ULong64_t) timeVME03*1000;  //convert to ns
+  disk_vme03 = diskVME03;
   mem_vme03 = double(memtotVME03-memfreeVME03)/memtotVME03;
   cpu_vme03 = 100.-idleVME03;
   timestamp_vme03 -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
   //Sanity checks
-  if (mem_vme03 < 0.) mem_vme03 = 0.;
+  if (std::isinf(mem_vme03) || std::isnan(mem_vme03)) mem_vme03 = 1.;
+  else if (mem_vme03 < 0.) mem_vme03 = 0.;
   else if (mem_vme03 > 1.) mem_vme03 = 1.;
-  if (cpu_vme03 < 0.) cpu_vme03 = 0.;
+  if (std::isinf(cpu_vme03) || std::isnan(cpu_vme03)) cpu_vme03 = 100.;
+  else if (cpu_vme03 < 0.) cpu_vme03 = 0.;
   else if (cpu_vme03 > 100.) cpu_vme03 = 100.;
 
 }
@@ -826,6 +919,9 @@ void MonitorDAQ::WriteToFile(){
   ULong64_t temp_file_time;
   int temp_num_vme_service;
   double temp_disk_daq01;
+  double temp_disk_vme01;
+  double temp_disk_vme02;
+  double temp_disk_vme03;
   double temp_mem_daq01;
   double temp_mem_vme01;
   double temp_mem_vme02;
@@ -857,6 +953,9 @@ void MonitorDAQ::WriteToFile(){
     t->SetBranchAddress("timestamp_vme02",&temp_stamp_vme02);
     t->SetBranchAddress("timestamp_vme03",&temp_stamp_vme03);
     t->SetBranchAddress("disk_daq01",&temp_disk_daq01);
+    t->SetBranchAddress("disk_vme01",&temp_disk_vme01);
+    t->SetBranchAddress("disk_vme02",&temp_disk_vme02);
+    t->SetBranchAddress("disk_vme03",&temp_disk_vme03);
     t->SetBranchAddress("mem_daq01",&temp_mem_daq01);
     t->SetBranchAddress("mem_vme01",&temp_mem_vme01);
     t->SetBranchAddress("mem_vme02",&temp_mem_vme02);
@@ -882,6 +981,9 @@ void MonitorDAQ::WriteToFile(){
     t->Branch("timestamp_vme02",&temp_stamp_vme02);
     t->Branch("timestamp_vme03",&temp_stamp_vme03);
     t->Branch("disk_daq01",&temp_disk_daq01);
+    t->Branch("disk_vme01",&temp_disk_vme01);
+    t->Branch("disk_vme02",&temp_disk_vme02);
+    t->Branch("disk_vme03",&temp_disk_vme03);
     t->Branch("mem_daq01",&temp_mem_daq01);
     t->Branch("mem_vme01",&temp_mem_vme01);
     t->Branch("mem_vme02",&temp_mem_vme02);
@@ -930,6 +1032,9 @@ void MonitorDAQ::WriteToFile(){
   temp_stamp_vme02 = (ULong64_t) timestamp_vme02;
   temp_stamp_vme03 = (ULong64_t) timestamp_vme03;
   temp_disk_daq01 = disk_daq01;
+  temp_disk_vme01 = disk_vme01;
+  temp_disk_vme02 = disk_vme02;
+  temp_disk_vme03 = disk_vme03;
   temp_mem_daq01 = mem_daq01;
   temp_mem_vme01 = mem_vme01;
   temp_mem_vme02 = mem_vme02;
@@ -976,6 +1081,9 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
   tstart_plot.clear();
   tend_plot.clear();
   disk_daq01_plot.clear();
+  disk_vme01_plot.clear();
+  disk_vme02_plot.clear();
+  disk_vme03_plot.clear();
   mem_daq01_plot.clear();
   mem_vme01_plot.clear();
   mem_vme02_plot.clear();
@@ -1051,6 +1159,9 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         ULong64_t temp_timestamp_vme02;
         ULong64_t temp_timestamp_vme03;
         double temp_disk_daq01;
+        double temp_disk_vme01;
+        double temp_disk_vme02;
+        double temp_disk_vme03;
         double temp_mem_daq01;
         double temp_mem_vme01;
         double temp_mem_vme02;
@@ -1074,6 +1185,9 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("timestamp_vme02",&temp_timestamp_vme02);
         t->SetBranchAddress("timestamp_vme03",&temp_timestamp_vme03);
         t->SetBranchAddress("disk_daq01",&temp_disk_daq01);
+        t->SetBranchAddress("disk_vme01",&temp_disk_vme01);
+        t->SetBranchAddress("disk_vme02",&temp_disk_vme02);
+        t->SetBranchAddress("disk_vme03",&temp_disk_vme03);
         t->SetBranchAddress("mem_daq01",&temp_mem_daq01);
         t->SetBranchAddress("mem_vme01",&temp_mem_vme01);
         t->SetBranchAddress("mem_vme02",&temp_mem_vme02);
@@ -1120,6 +1234,9 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
             tstart_plot.push_back(t_start);
             tend_plot.push_back(t_end);
             disk_daq01_plot.push_back(temp_disk_daq01);
+            disk_vme01_plot.push_back(temp_disk_vme01);
+            disk_vme02_plot.push_back(temp_disk_vme02);
+            disk_vme03_plot.push_back(temp_disk_vme03);
             mem_daq01_plot.push_back(temp_mem_daq01);
             mem_vme01_plot.push_back(temp_mem_vme01);
             mem_vme02_plot.push_back(temp_mem_vme02);
@@ -1216,6 +1333,10 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   gr_cpu_vme01->Set(0);
   gr_cpu_vme02->Set(0);
   gr_cpu_vme03->Set(0);
+  gr_disk_daq01->Set(0);
+  gr_disk_vme01->Set(0);
+  gr_disk_vme02->Set(0);
+  gr_disk_vme03->Set(0);
 
 
   for (int i_file=0; i_file < (int) tend_plot.size(); i_file++){
@@ -1229,24 +1350,31 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
     gr_cpu_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme01_plot.at(i_file));
     gr_cpu_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme02_plot.at(i_file));
     gr_cpu_vme03->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme03_plot.at(i_file));
+    gr_disk_daq01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_daq01_plot.at(i_file));
+    gr_disk_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_vme01_plot.at(i_file));
+    gr_disk_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_vme02_plot.at(i_file));
+    gr_disk_vme03->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_vme03_plot.at(i_file));
   }
 
-  std::stringstream ss_title_filesize, ss_title_vme, ss_title_memory, ss_title_cpu;
+  std::stringstream ss_title_filesize, ss_title_vme, ss_title_memory, ss_title_cpu, ss_title_disk;
   ss_title_filesize << "File sizes (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
   ss_title_vme << "VME services (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
   ss_title_memory << "Memory consumption (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
   ss_title_cpu << "CPU load (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  ss_title_disk << "Disk space (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
 
   gr_filesize->SetTitle(ss_title_filesize.str().c_str());
   gr_vmeservice->SetTitle(ss_title_vme.str().c_str());
   gr_mem_daq01->SetTitle(ss_title_memory.str().c_str());
   gr_cpu_daq01->SetTitle(ss_title_cpu.str().c_str());
+  gr_disk_daq01->SetTitle(ss_title_disk.str().c_str());
 
-  std::stringstream ss_filename_filesize, ss_filename_vme, ss_filename_mem, ss_filename_cpu;
+  std::stringstream ss_filename_filesize, ss_filename_vme, ss_filename_mem, ss_filename_cpu, ss_filename_disk;
   ss_filename_filesize << outpath << "DAQFileSize_"<<file_ending<<"."<<img_extension;
   ss_filename_vme << outpath << "DAQVMEServices_"<<file_ending<<"."<<img_extension;
   ss_filename_mem << outpath << "DAQMemory_"<<file_ending<<"."<<img_extension;
   ss_filename_cpu << outpath << "DAQCPU_"<<file_ending<<"."<<img_extension;
+  ss_filename_disk << outpath << "DAQDisk_"<<file_ending<<"."<<img_extension;
 
   canvas_timeevolution_size->Clear();
   canvas_timeevolution_size->cd();
@@ -1325,6 +1453,32 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   multi_cpu->RecursiveRemove(gr_cpu_vme02);
   multi_cpu->RecursiveRemove(gr_cpu_vme03);
   leg_cpu->Clear();
+  
+  canvas_timeevolution_disk->Clear();
+  canvas_timeevolution_disk->cd();
+  multi_disk->Add(gr_disk_daq01);
+  leg_disk->AddEntry(gr_disk_daq01,"DAQ01","l");
+  multi_disk->Add(gr_disk_vme01);
+  leg_disk->AddEntry(gr_disk_vme01,"VME01","l");
+  multi_disk->Add(gr_disk_vme02);
+  leg_disk->AddEntry(gr_disk_vme02,"VME02","l");
+  multi_disk->Add(gr_disk_vme03);
+  leg_disk->AddEntry(gr_disk_vme03,"VME03","l");
+  multi_disk->Draw("apl");
+  multi_disk->SetTitle(ss_title_disk.str().c_str());
+  multi_disk->GetYaxis()->SetTitle("Disk space [%]");
+  multi_disk->GetXaxis()->SetTimeDisplay(1);
+  multi_disk->GetXaxis()->SetLabelSize(0.03);
+  multi_disk->GetXaxis()->SetLabelOffset(0.03);
+  multi_disk->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  multi_disk->GetXaxis()->SetTimeOffset(0.);
+  leg_disk->Draw();
+  canvas_timeevolution_disk->SaveAs(ss_filename_disk.str().c_str());
+  multi_disk->RecursiveRemove(gr_disk_daq01);
+  multi_disk->RecursiveRemove(gr_disk_vme01);
+  multi_disk->RecursiveRemove(gr_disk_vme02);
+  multi_disk->RecursiveRemove(gr_disk_vme03);
+  leg_disk->Clear();
 }
 
 void MonitorDAQ::DrawVMEService(ULong64_t timestamp_end, double time_frame, std::string file_ending, bool current){
@@ -1736,7 +1890,7 @@ void MonitorDAQ::PrintInfoBox(){
   double mem_round = round(mem_daq01*100.)/100.;
   double cpu_round = round(cpu_daq01*100.)/100.;
   ss_text_mem_daq01 << "DAQ01 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_daq01_time.str()<<")";
-  text_mem_daq01->SetText(0.06,0.7,ss_text_mem_daq01.str().c_str());
+  text_mem_daq01->SetText(0.06,0.4,ss_text_mem_daq01.str().c_str());
   text_mem_daq01->SetTextColor(1);	//default color 
   if (mem_round*100 >= 80.) text_mem_daq01->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_daq01->SetTextColor(kRed);
@@ -1747,12 +1901,19 @@ void MonitorDAQ::PrintInfoBox(){
   struct tm vme01time_tm = boost::posix_time::to_tm(vme01time);
   std::stringstream ss_vme01_time;
   ss_vme01_time << vme01time_tm.tm_year+1900<<"/"<<vme01time_tm.tm_mon+1<<"/"<<vme01time_tm.tm_mday<<"-"<<vme01time_tm.tm_hour<<":"<<vme01time_tm.tm_min<<":"<<vme01time_tm.tm_sec;
-  
+ 
+  std::stringstream ss_text_disk_vme01;
+  ss_text_disk_vme01 << "VME01 Disk space: "<<disk_vme01<<" % ("<<ss_vme01_time.str()<<")";
+  text_disk_vme01->SetText(0.06,0.7,ss_text_disk_vme01.str().c_str());
+  text_disk_vme01->SetTextColor(1);     //default color
+  if (disk_vme01 >= 80.) text_disk_vme01->SetTextColor(kOrange);
+  if (disk_vme01 >= 90.) text_disk_vme01->SetTextColor(kRed);
+
   std::stringstream ss_text_mem_vme01;  
   mem_round = round(mem_vme01*100.)/100.;
   cpu_round = round(cpu_vme01*100.)/100.;
   ss_text_mem_vme01 << "VME01 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme01_time.str()<<")";
-  text_mem_vme01->SetText(0.06,0.6,ss_text_mem_vme01.str().c_str());
+  text_mem_vme01->SetText(0.06,0.3,ss_text_mem_vme01.str().c_str());
   text_mem_vme01->SetTextColor(1);	//default color
   if (mem_round*100 >= 80.) text_mem_vme01->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_vme01->SetTextColor(kRed);
@@ -1764,11 +1925,18 @@ void MonitorDAQ::PrintInfoBox(){
   std::stringstream ss_vme02_time;
   ss_vme02_time << vme02time_tm.tm_year+1900<<"/"<<vme02time_tm.tm_mon+1<<"/"<<vme02time_tm.tm_mday<<"-"<<vme02time_tm.tm_hour<<":"<<vme02time_tm.tm_min<<":"<<vme02time_tm.tm_sec;
 
+  std::stringstream ss_text_disk_vme02;
+  ss_text_disk_vme02 << "VME02 Disk space: "<<disk_vme02<<" % ("<<ss_vme02_time.str()<<")";
+  text_disk_vme02->SetText(0.06,0.6,ss_text_disk_vme02.str().c_str());
+  text_disk_vme02->SetTextColor(1);     //default color
+  if (disk_vme02 >= 80.) text_disk_vme02->SetTextColor(kOrange);
+  if (disk_vme02 >= 90.) text_disk_vme02->SetTextColor(kRed);
+  
   std::stringstream ss_text_mem_vme02;
   mem_round = round(mem_vme02*100.)/100.;
   cpu_round = round(cpu_vme02*100.)/100.;
   ss_text_mem_vme02 << "VME02 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme02_time.str()<<")";
-  text_mem_vme02->SetText(0.06,0.5,ss_text_mem_vme02.str().c_str());
+  text_mem_vme02->SetText(0.06,0.2,ss_text_mem_vme02.str().c_str());
   text_mem_vme02->SetTextColor(1);	//default color
   if (mem_round*100 >= 80.) text_mem_vme02->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_vme02->SetTextColor(kRed);
@@ -1780,11 +1948,18 @@ void MonitorDAQ::PrintInfoBox(){
   std::stringstream ss_vme03_time;
   ss_vme03_time << vme03time_tm.tm_year+1900<<"/"<<vme03time_tm.tm_mon+1<<"/"<<vme03time_tm.tm_mday<<"-"<<vme03time_tm.tm_hour<<":"<<vme03time_tm.tm_min<<":"<<vme03time_tm.tm_sec;
 
+  std::stringstream ss_text_disk_vme03;
+  ss_text_disk_vme03 << "VME03 Disk space: "<<disk_vme03<<" % ("<<ss_vme03_time.str()<<")";
+  text_disk_vme03->SetText(0.06,0.5,ss_text_disk_vme03.str().c_str());
+  text_disk_vme03->SetTextColor(1);     //default color
+  if (disk_vme03 >= 80.) text_disk_vme03->SetTextColor(kOrange);
+  if (disk_vme03 >= 90.) text_disk_vme03->SetTextColor(kRed);
+
   std::stringstream ss_text_mem_vme03;
   mem_round = round(mem_vme03*100.)/100.;
   cpu_round = round(cpu_vme03*100.)/100.;
   ss_text_mem_vme03 << "VME03 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_vme03_time.str()<<")";
-  text_mem_vme03->SetText(0.06,0.4,ss_text_mem_vme03.str().c_str());
+  text_mem_vme03->SetText(0.06,0.1,ss_text_mem_vme03.str().c_str());
   text_mem_vme03->SetTextColor(1);	//default color
   if (mem_round*100 >= 80.) text_mem_vme03->SetTextColor(kOrange);
   if (mem_round*100 >= 90.) text_mem_vme03->SetTextColor(kRed);
@@ -1802,6 +1977,9 @@ void MonitorDAQ::PrintInfoBox(){
   text_hastrigger->SetTextSize(0.05);
   text_disk_title->SetTextSize(0.05);
   text_disk_daq01->SetTextSize(0.05);
+  text_disk_vme01->SetTextSize(0.05);
+  text_disk_vme02->SetTextSize(0.05);
+  text_disk_vme03->SetTextSize(0.05);
   text_mem_daq01->SetTextSize(0.05);
   text_mem_vme01->SetTextSize(0.05);
   text_mem_vme02->SetTextSize(0.05);
@@ -1818,6 +1996,9 @@ void MonitorDAQ::PrintInfoBox(){
   text_hastrigger->SetNDC(1);
   text_disk_title->SetNDC(1);
   text_disk_daq01->SetNDC(1);
+  text_disk_vme01->SetNDC(1);
+  text_disk_vme02->SetNDC(1);
+  text_disk_vme03->SetNDC(1);
   text_mem_daq01->SetNDC(1);
   text_mem_vme01->SetNDC(1);
   text_mem_vme02->SetNDC(1);
@@ -1846,6 +2027,9 @@ void MonitorDAQ::PrintInfoBox(){
   canvas_info_diskspace->Clear();
   text_disk_title->Draw();
   text_disk_daq01->Draw();
+  text_disk_vme01->Draw();
+  text_disk_vme02->Draw();
+  text_disk_vme03->Draw();
   text_mem_daq01->Draw();
   text_mem_vme01->Draw();
   text_mem_vme02->Draw();
