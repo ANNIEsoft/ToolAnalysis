@@ -108,22 +108,25 @@ bool ANNIEEventBuilder::Execute(){
   m_data->CStore.Get("RunInfoPostgress",RunInfoPostgress);
   int RunNumber;
   int SubRunNumber;
+  int PartNumber;
   uint64_t StarTime;
   int RunType;
   RunInfoPostgress.Get("RunNumber",RunNumber);
   RunInfoPostgress.Get("SubRunNumber",SubRunNumber);
+  RunInfoPostgress.Get("PartNumber",PartNumber);
   RunInfoPostgress.Get("RunType",RunType);
   RunInfoPostgress.Get("StarTime",StarTime);
   //If our first execute loop, Initialize Current run information with Tank decoding progress
   if(CurrentRunNum == -1 || CurrentSubRunNum == -1){
     CurrentRunNum = RunNumber;
     CurrentSubRunNum = SubRunNumber;
+    CurrentPartNum = PartNumber;
     CurrentStarTime = StarTime;
     CurrentRunType = RunType;
   }
   //If we're in a new run or subrun, make a new ANNIEEvent file. 
-  if((CurrentRunNum != RunNumber) || (CurrentSubRunNum != SubRunNumber)){
-    this->OpenNewANNIEEvent(RunNumber,SubRunNumber,StarTime,RunType);
+  if((CurrentRunNum != RunNumber) || (CurrentSubRunNum != SubRunNumber) || (CurrentPartNum != PartNumber)){
+    this->OpenNewANNIEEvent(RunNumber,SubRunNumber,PartNumber,StarTime,RunType);
   }
 
   //Built ANNIE events with only PMT data
@@ -141,9 +144,9 @@ bool ANNIEEventBuilder::Execute(){
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : FinishedTankEvents){
       uint64_t PMTCounterTime = apair.first;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
-      this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,RunType,StarTime);
+      this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,PartNumber,RunType,StarTime);
       this->BuildANNIEEventTank(PMTCounterTime, aWaveMap);
-      this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+      this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
       //Erase this entry from the InProgressTankEventsMap
       if(verbosity>4) std::cout << "Counter time will be erased from InProgressTankEvents: " << PMTCounterTime << std::endl;
       PMTEventsToDelete.push_back(PMTCounterTime);
@@ -207,9 +210,9 @@ bool ANNIEEventBuilder::Execute(){
       std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[MRDTimeStamp];
       int beam_tdc = myMRDMaps.MRDBeamLoopbackMap[MRDTimeStamp];
       int cosmic_tdc = myMRDMaps.MRDCosmicLoopbackMap[MRDTimeStamp];
-      this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,RunType,StarTime);
+      this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,PartNumber,RunType,StarTime);
       this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
-      this->SaveEntryToFile(RunNumber,SubRunNumber);
+      this->SaveEntryToFile(RunNumber,SubRunNumber,PartNumber);
       //Erase this entry from the InProgressTankEventsMap
       MRDEventsToDelete.push_back(MRDTimeStamp);
     }
@@ -324,10 +327,10 @@ bool ANNIEEventBuilder::Execute(){
         int beam_tdc = myMRDMaps.MRDBeamLoopbackMap[MRDTimeStamp];
         int cosmic_tdc = myMRDMaps.MRDCosmicLoopbackMap[MRDTimeStamp];
         if(verbosity>4) std::cout << "BUILDING AN ANNIE EVENT" << std::endl;
-        this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
+        this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentPartNum, CurrentRunType,CurrentStarTime);
         this->BuildANNIEEventTank(TankCounterTime, aWaveMap);
         this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
-        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD) SUCCESSFULLY" << std::endl;
         //Erase this entry from maps/vectors used when pairing completed events 
         BuiltTankTimes.push_back(TankCounterTime);
@@ -454,9 +457,9 @@ bool ANNIEEventBuilder::Execute(){
     // only attempt timestamp matching if we have enough timestamps to try to match,
     // OR if the toolchain is being stopped (reached and of file, for example)
     if((MinStamps>EventsPerPairing)||toolchain_stopping){
-      if(verbosity>4) std::cout << "MERGING COSMIC/MRD PAIRS " << std::endl;
+      /*if(verbosity>4) std::cout << "MERGING COSMIC/MRD PAIRS " << std::endl;
       ThisBuildMap = this->PairCTCCosmicPairs(ThisBuildMap,std::max(most_recent_mrd,most_recent_ctc),toolchain_stopping);
-      this->ManageOrphanage();
+      this->ManageOrphanage();*/
 
       if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
       ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
@@ -468,7 +471,7 @@ bool ANNIEEventBuilder::Execute(){
         uint64_t CTCtimestamp = buildmap_entries.first;
         std::map<std::string,uint64_t> aBuildSet = buildmap_entries.second; 
         for(std::pair<std::string,uint64_t> buildset_entries : aBuildSet){
-          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
+          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentPartNum, CurrentRunType,CurrentStarTime);
           //If we have PMT and MRD infor for this trigger, build it 
           std::string label = buildset_entries.first;
           if(label == "CTC"){
@@ -497,7 +500,7 @@ bool ANNIEEventBuilder::Execute(){
             myMRDMaps.MRDCosmicLoopbackMap.erase(MRDTimeStamp);
           }
         }
-        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD + CTC) SUCCESSFULLY" << std::endl;
       }
     }
@@ -591,7 +594,7 @@ bool ANNIEEventBuilder::Execute(){
         uint64_t CTCtimestamp = buildmap_entries.first;
         std::map<std::string,uint64_t> aBuildSet = buildmap_entries.second; 
         for(std::pair<std::string,uint64_t> buildset_entries : aBuildSet){
-          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
+          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentPartNum, CurrentRunType,CurrentStarTime);
           //If we have PMT and MRD infor for this trigger, build it 
           std::string label = buildset_entries.first;
           if(label == "CTC"){
@@ -607,7 +610,7 @@ bool ANNIEEventBuilder::Execute(){
             FinishedTankEvents.erase(TankPMTTime);
           }
         }
-        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + CTC) SUCCESSFULLY" << std::endl;
       }
     }
@@ -706,7 +709,7 @@ bool ANNIEEventBuilder::Execute(){
         uint64_t CTCtimestamp = buildmap_entries.first;
         std::map<std::string,uint64_t> aBuildSet = buildmap_entries.second; 
         for(std::pair<std::string,uint64_t> buildset_entries : aBuildSet){
-          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
+          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentPartNum, CurrentRunType,CurrentStarTime);
           //If we have PMT and MRD infor for this trigger, build it 
           std::string label = buildset_entries.first;
           if(label == "CTC"){
@@ -728,7 +731,7 @@ bool ANNIEEventBuilder::Execute(){
             myMRDMaps.MRDCosmicLoopbackMap.erase(MRDTimeStamp);
           }
         }
-        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (MRD + CTC) SUCCESSFULLY" << std::endl;
       }
     }
@@ -808,7 +811,7 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
     //Events and delete it from the in-progress events
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
     int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
-    std::cout <<"aWaveMap.size(): "<<aWaveMap.size()<<", NumWavesInCompleteSet: "<<NumWavesInCompleteSet<<std::endl;
+    //std::cout <<"aWaveMap.size(): "<<aWaveMap.size()<<", NumWavesInCompleteSet: "<<NumWavesInCompleteSet<<std::endl;
     if(aWaveMap.size() >= (NumWavesInCompleteSet)){
       FinishedTankEvents.emplace(PMTCounterTimeNs,aWaveMap);
       myTimeStream.BeamTankTimestamps.push_back(PMTCounterTimeNs);
@@ -1147,8 +1150,8 @@ void ANNIEEventBuilder::ManageOrphanage(){
   // but later if we're able to merge orphans it could be more than one
 //  std::cout<<"Going to manage the orphanage"<<std::endl;
   
-  std::string OrphanFile = SavePath + OrphanFileBase + "R" + to_string(CurrentRunNum) + 
-      "S" + to_string(CurrentSubRunNum);
+  std::string OrphanFile = SavePath + OrphanFileBase +"_"+BuildType+"_R" + to_string(CurrentRunNum) + 
+      "S" + to_string(CurrentSubRunNum) + "p" + to_string(CurrentPartNum);
 //  std::cout<<"orphans will be saved to "<<OrphanFile<<std::endl;
 //  std::cout<<"OrphanStore is "<<OrphanStore<<std::endl;
   
@@ -1330,13 +1333,14 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   return;
 }
 
-void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber,
+void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber, int PartNumber,
         int RunType, uint64_t StartTime)
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event Run Info" << std::endl;
   ANNIEEvent->Set("EventNumber",ANNIEEventNum);
   ANNIEEvent->Set("RunNumber",RunNumber);
   ANNIEEvent->Set("SubrunNumber",SubRunNumber);
+  ANNIEEvent->Set("PartNumber",PartNumber);
   ANNIEEvent->Set("RunType",RunType);
   ANNIEEvent->Set("RunStartTime",StartTime);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
@@ -1402,11 +1406,11 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
 }
 
 
-void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum)
+void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum, int PartNum)
 {
   /*if(verbosity>4)*/ std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
-  std::string Filename = SavePath + ProcessedFilesBasename + "R" + to_string(RunNum) + 
-      "S" + to_string(SubRunNum);
+  std::string Filename = SavePath + ProcessedFilesBasename + "_"+BuildType+"_R" + to_string(RunNum) + 
+      "S" + to_string(SubRunNum) + "p" + to_string(PartNum);
   ANNIEEvent->Save(Filename);
   //std::cout <<"ANNIEEvent saved, now delete"<<std::endl;
   ANNIEEvent->Delete();		//Delete() will delete the last entry in the store from memory and enable us to set a new pointer (won't erase the entry from saved file)
@@ -1425,17 +1429,18 @@ void ANNIEEventBuilder::CardIDToElectronicsSpace(int CardID,
   return;
 }
 
-void ANNIEEventBuilder::OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT){
+void ANNIEEventBuilder::OpenNewANNIEEvent(int RunNum, int SubRunNum, int PartNum, uint64_t StarT, int RunT){
   uint64_t StarTime;
   int RunType;
   if(verbosity>v_warning) std::cout << "ANNIEEventBuilder: New run or subrun encountered. Opening new BoostStore" << std::endl;
   if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: Current run,subrun:" << CurrentRunNum << "," << CurrentSubRunNum << std::endl;
-  if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: Encountered run,subrun:" << RunNum << "," << SubRunNum << std::endl;
+  if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: Encountered run,subrun,part:" << RunNum << "," << SubRunNum << ","<<PartNum<<std::endl;
   ANNIEEvent->Close();
   ANNIEEvent->Delete();
   delete ANNIEEvent; ANNIEEvent = new BoostStore(false,2);
   CurrentRunNum = RunNum;
   CurrentSubRunNum = SubRunNum;
+  CurrentPartNum = PartNum;
   CurrentRunType = RunT;
   CurrentStarTime = StarT;
   if((CurrentRunNum != RunNum)) CurrentDriftMean = 0;
