@@ -1,0 +1,6 @@
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+LoadRawData LoadRawData ./configfiles/DataDecoderTankCTC/LoadRawDataConfig
+PMTDataDecoder PMTDataDecoder ./configfiles/DataDecoderTankCTC/PMTDataDecoderConfig
+#MRDDataDecoder MRDDataDecoder ./configfiles/DataDecoder/MRDDataDecoderConfig
+TriggerDataDecoder TriggerDataDecoder ./configfiles/DataDecoderTankCTC/TriggerDataDecoderConfig
+ANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoderTankCTC/ANNIEEventBuilderConfig

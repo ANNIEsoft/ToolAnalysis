@@ -221,6 +221,8 @@ bool LoadRawData::Execute(){
   if (TankEntriesCompleted && BuildType == "Tank") FileCompleted = true;
   if (MRDEntriesCompleted && BuildType == "MRD") FileCompleted = true;
   if ((TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRD")) FileCompleted = true;
+  if ((TrigEntriesCompleted && TankEntriesCompleted) && (BuildType == "TankAndCTC")) FileCompleted = true;
+  if ((TrigEntriesCompleted && MRDEntriesCompleted) && (BuildType == "MRDAndCTC")) FileCompleted = true;
   if ((TrigEntriesCompleted && TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRDAndCTC")) FileCompleted = true;
     
   m_data->CStore.Set("NewRawDataEntryAccessed",true);
@@ -257,13 +259,17 @@ void LoadRawData::LoadRunInformation(){
     RawData->Get("RunInformation",RunInfo);
     if(verbosity>3) RunInfo.Print(false);
     RunInfo.Get("Postgress",Postgress);
+    std::cout <<"Get RunNumber from postgress"<<std::endl;
+    int temp_run;
+    Postgress.Get("RunNumber",temp_run);
+    std::cout <<"RunNumber is "<<temp_run<<std::endl;
     if(verbosity>3) Postgress.Print();
   }
   m_data->CStore.Set("RunInfoPostgress",Postgress);
 }
 
 void LoadRawData::LoadPMTMRDData(){
-  if((BuildType == "TankAndMRD") || (BuildType == "Tank") || (BuildType == "TankAndMRDAndCTC")){
+  if((BuildType == "TankAndMRD") || (BuildType == "Tank") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "TankAndCTC")){
     Log("LoadRawData Tool: Accessing PMT Data in raw data",v_message,verbosity);
     RawData->Get("PMTData",*PMTData);
     PMTData->Header->Get("TotalEntries",tanktotalentries);
@@ -272,7 +278,7 @@ void LoadRawData::LoadPMTMRDData(){
     if(verbosity>3) PMTData->Header->Print(false);
     Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
   }
-  if((BuildType == "TankAndMRD") || (BuildType == "MRD") || (BuildType == "TankAndMRDAndCTC")){
+  if((BuildType == "TankAndMRD") || (BuildType == "MRD") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "MRDAndCTC")){
     Log("LoadRawData Tool: Accessing MRD Data in raw data",v_message,verbosity);
     RawData->Get("CCData",*MRDData);
     MRDData->Header->Get("TotalEntries",mrdtotalentries);
@@ -405,7 +411,7 @@ bool LoadRawData::InitializeNewFile(){
 
 void LoadRawData::GetNextDataEntries(){
   //Get next PMTData Entry
-  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
+  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
     if(!TankPaused && !TankEntriesCompleted){
       Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum)+"/"+to_string(tanktotalentries),v_debug, verbosity);
       PMTData->GetEntry(TankEntryNum);
@@ -420,7 +426,7 @@ void LoadRawData::GetNextDataEntries(){
   }
 
   //Get next MRDData Entry
-  if(BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
+  if(BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "MRDAndCTC"){
     if(!MRDPaused && !MRDEntriesCompleted){
       Log("LoadRawData Tool: Procesing CCData Entry "+to_string(MRDEntryNum)+"/"+to_string(mrdtotalentries),v_debug, verbosity);
       MRDData->GetEntry(MRDEntryNum);
@@ -431,7 +437,7 @@ void LoadRawData::GetNextDataEntries(){
   }
 
   //Get next TrigData Entry
-  if(BuildType == "TankAndMRDAndCTC" && !TrigEntriesCompleted && !CTCPaused){
+  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC") && !TrigEntriesCompleted && !CTCPaused){
     Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum)+"/"+to_string(trigtotalentries),v_debug, verbosity);
     TrigData->GetEntry(TrigEntryNum);
     TrigData->Get("TrigData",*Tdata);

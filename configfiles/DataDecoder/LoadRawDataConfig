@@ -1,4 +1,4 @@
-verbosity 5
+verbosity 11
 BuildType TankAndMRDAndCTC
 Mode FileList
 InputFile ./configfiles/DataDecoder/my_files.txt

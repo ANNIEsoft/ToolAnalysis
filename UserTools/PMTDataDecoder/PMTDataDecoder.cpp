@@ -510,6 +510,12 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   }
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
   uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);  //Conversion from counter ticks to ns
+  if (FinishedWaveTrigTime > 2000000000000000000) {
+    Log("PMTDataDecoder: Error: Encountered timestamp that is very large: FinishedWaveTrigTime = "+std::to_string(FinishedWaveTrigTime)+". Don't include this data in the waves in progress.",v_error,verbosity);
+    WaveBank.erase(wave_key);
+    TriggerTimeBank.erase(wave_key);
+    return;		//Don't include times that are far off in the future (what is going on there?) [exclude everything beyond 18th of May 2033, ANNIE will probably not run that long...)
+  }
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Finished Wave Clock time (ns)"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
 

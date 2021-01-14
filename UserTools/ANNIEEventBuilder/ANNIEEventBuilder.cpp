@@ -47,7 +47,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
         std::endl;
   }
-  else if(BuildType == "Tank" || BuildType == "MRD"){
+  else if(BuildType == "Tank" || BuildType == "MRD" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC"){
     std::cout << "BuildANNIEEvent Building " << BuildType << "ANNIEEvents only."
          << std::endl;
   }
@@ -61,7 +61,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Get("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
 
-  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
+  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
     int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
     if(verbosity>4) std::cout << "TOTAL TANK + AUX CHANNELS: " << NumTankPMTChannels + NumAuxChannels << std::endl;
@@ -245,6 +245,62 @@ bool ANNIEEventBuilder::Execute(){
     //Now, pair up PMT and MRD events...
     int NumTankTimestamps = myTimeStream.BeamTankTimestamps.size();
     int NumMRDTimestamps = myTimeStream.BeamMRDTimestamps.size();
+    std::cout <<"NumTankTimestamps: "<<NumTankTimestamps<<", NumMRDTimestamps: "<<NumMRDTimestamps<<std::endl;
+
+    //Check if one of the streams needs to be paused
+    
+    // get get the most recent timestamp from each TimeStream
+    uint64_t most_recent_beam = 0;
+    if (NumTankTimestamps > 0) most_recent_beam = *std::max_element(myTimeStream.BeamTankTimestamps.begin(),
+                                                  myTimeStream.BeamTankTimestamps.end());
+    uint64_t most_recent_mrd = 1; //MRD will always be faster, so it's okay to have it faster for start values as well
+    if (NumMRDTimestamps > 0) most_recent_mrd = *std::max_element(myTimeStream.BeamMRDTimestamps.begin(),
+                                                  myTimeStream.BeamMRDTimestamps.end());
+    
+    // find which TimeStream is lagging the most, and what time it's currently read up to.
+    std::vector<uint64_t> newest_timestamps{most_recent_beam,most_recent_mrd};
+    std::cout <<"Newest timestamps are: "<<std::endl;
+    std::cout<<"Beam timestamp: "<<most_recent_beam<<", MRD timestamp: "<<most_recent_mrd<<std::endl;
+    uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
+    
+    if(verbosity>4){
+      std::cout<<"ANNIEEventBuilder: most recent timestamps from each stream are: "
+           <<most_recent_beam<<", "<<most_recent_mrd<<", "
+           <<", with differences from the slowest stream being: "
+           <<(static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<", "
+           <<(static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<std::endl;
+    }
+    
+    // always ensure the slowest stream is unpaused
+           if(slowest_stream_timestamp==most_recent_beam){
+      m_data->CStore.Set("PauseTankDecoding",false);
+    } else if(slowest_stream_timestamp==most_recent_mrd){
+      m_data->CStore.Set("PauseMRDDecoding",false);
+    }
+    
+    // if any other streams are more than X seconds ahead of the slowest one, pause them...
+    if((static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      // secondly, only pause a stream once we have at least EventsPerPairing timestamps in it,
+      // otherwise doing so will prevent building attempts
+      if(NumTankTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseTankDecoding",true);
+        Log("ANNIEEventBuilder: Pausing tank stream",v_debug,verbosity);
+      }
+    }
+    if((static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      if(NumMRDTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseMRDDecoding",true);
+        Log("ANNIEEventBuilder: Pausing mrd stream",v_debug,verbosity);
+      }
+    }
+    
+    if(verbosity>3){
+        std::cout << "Number of MRDTimes, PMTTimes: " << 
+            NumMRDTimestamps << "," << NumTankTimestamps << std::endl;
+    }
+
     int MinStamps = std::min(NumTankTimestamps,NumMRDTimestamps);
 
 
@@ -272,7 +328,7 @@ bool ANNIEEventBuilder::Execute(){
         this->BuildANNIEEventTank(TankCounterTime, aWaveMap);
         this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
-        if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT SUCCESSFULLY" << std::endl;
+        if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD) SUCCESSFULLY" << std::endl;
         //Erase this entry from maps/vectors used when pairing completed events 
         BuiltTankTimes.push_back(TankCounterTime);
         FinishedTankEvents.erase(TankCounterTime);
@@ -305,21 +361,30 @@ bool ANNIEEventBuilder::Execute(){
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
+    std::cout <<"ProcessNewCTCData"<<std::endl;
     if(IsNewCTCData) this->ProcessNewCTCData();
+    std::cout <<"done"<<std::endl;
 
     //Now, pair up PMT/MRD/Triggers...
     int NumTankTimestamps = myTimeStream.BeamTankTimestamps.size();
     int NumMRDTimestamps = myTimeStream.BeamMRDTimestamps.size();
     int NumTrigs = myTimeStream.CTCTimestamps.size();
-    
+    std::cout <<"Sizes of timestreams: "<<NumTankTimestamps<<","<<NumMRDTimestamps<<","<<NumTrigs<<std::endl;    
+
+    std::cout <<"get most recent timestamp"<<std::endl;
     // get get the most recent timestamp from each TimeStream
-    uint64_t most_recent_beam = *std::max_element(myTimeStream.BeamTankTimestamps.begin(),
-                                                  myTimeStream.BeamTankTimestamps.end());
-    uint64_t most_recent_mrd = *std::max_element(myTimeStream.BeamMRDTimestamps.begin(),
-                                                  myTimeStream.BeamMRDTimestamps.end());
-    uint64_t most_recent_ctc = *std::max_element(myTimeStream.CTCTimestamps.begin(),
+    std::cout <<"beam"<<std::endl;
+    uint64_t most_recent_beam = 0;
+    if (NumTankTimestamps > 0) most_recent_beam = *std::max_element(myTimeStream.BeamTankTimestamps.begin(), myTimeStream.BeamTankTimestamps.end());
+    std::cout <<"mrd"<<std::endl;
+    uint64_t most_recent_mrd = 1; //MRD will always be faster, so it's okay to have it faster for start values as well
+    if (NumMRDTimestamps > 0) most_recent_mrd = *std::max_element(myTimeStream.BeamMRDTimestamps.begin(), myTimeStream.BeamMRDTimestamps.end());
+    std::cout <<"ctc"<<std::endl;
+    uint64_t most_recent_ctc = 0;
+    if (NumTrigs > 0 ) most_recent_ctc = *std::max_element(myTimeStream.CTCTimestamps.begin(),
                                                   myTimeStream.CTCTimestamps.end());
     
+    std::cout <<"Which one is lagging the most?"<<std::endl;
     // find which TimeStream is lagging the most, and what time it's currently read up to.
     std::vector<uint64_t> newest_timestamps{most_recent_beam,most_recent_mrd,most_recent_ctc};
     uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
@@ -345,6 +410,7 @@ bool ANNIEEventBuilder::Execute(){
       m_data->CStore.Set("PauseCTCDecoding",false);
     }
     
+    std::cout <<"Check if other streams are ahead of the slowest one"<<std::endl;
     // if any other streams are more than X seconds ahead of the slowest one, pause them...
     if((static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
       // secondly, only pause a stream once we have at least EventsPerPairing timestamps in it,
@@ -352,18 +418,24 @@ bool ANNIEEventBuilder::Execute(){
       if(NumTankTimestamps>EventsPerPairing){
         m_data->CStore.Set("PauseTankDecoding",true);
         Log("ANNIEEventBuilder: Pausing tank stream",v_debug,verbosity);
+      } else {
+        m_data->CStore.Set("PauseTankDecoding",false);
       }
     }
     if((static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
       if(NumMRDTimestamps>EventsPerPairing){
         m_data->CStore.Set("PauseMRDDecoding",true);
         Log("ANNIEEventBuilder: Pausing mrd stream",v_debug,verbosity);
+      } else {
+        m_data->CStore.Set("PauseMRDDecoding",false);
       }
     }
     if((static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
       if(NumTrigs>EventsPerPairing){
         m_data->CStore.Set("PauseCTCDecoding",true);
         Log("ANNIEEventBuilder: Pausing ctc stream",v_debug,verbosity);
+      } else {
+        m_data->CStore.Set("PauseCTCDecoding",false);
       }
     }
     
@@ -378,6 +450,7 @@ bool ANNIEEventBuilder::Execute(){
     int MinStamps = (NumTankTimestamps<NumMRDTimestamps) ? NumTankTimestamps : NumMRDTimestamps;
     MinStamps = (NumTrigs<MinStamps) ? NumTrigs : MinStamps;
     
+     std::cout <<"Attempt timestamp matching?"<<std::endl;
     // only attempt timestamp matching if we have enough timestamps to try to match,
     // OR if the toolchain is being stopped (reached and of file, for example)
     if((MinStamps>EventsPerPairing)||toolchain_stopping){
@@ -425,7 +498,238 @@ bool ANNIEEventBuilder::Execute(){
           }
         }
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
-        if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT SUCCESSFULLY" << std::endl;
+        if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD + CTC) SUCCESSFULLY" << std::endl;
+      }
+    }
+    ThisBuildMap.clear();
+  }
+ //Build ANNIE events based on matching Tank and CTC timestamps
+  else if (BuildType == "TankAndCTC"){
+    m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
+    if(IsNewTankData) this->ProcessNewTankPMTData();
+    this->ManageOrphanage();
+
+    //Look through CTC data for any new timestamps
+    m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+    m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
+    if(IsNewCTCData) this->ProcessNewCTCData();
+
+    //Now, pair up PMT/MRD/Triggers...
+    int NumTankTimestamps = myTimeStream.BeamTankTimestamps.size();
+    int NumTrigs = myTimeStream.CTCTimestamps.size();
+    
+    // get get the most recent timestamp from each TimeStream
+    uint64_t most_recent_beam = 0;
+    if (NumTankTimestamps > 0) most_recent_beam = *std::max_element(myTimeStream.BeamTankTimestamps.begin(),
+                                                  myTimeStream.BeamTankTimestamps.end());
+    uint64_t most_recent_ctc = 0;
+    if (NumTrigs > 0) most_recent_ctc = *std::max_element(myTimeStream.CTCTimestamps.begin(),
+                                                  myTimeStream.CTCTimestamps.end());
+    
+    // find which TimeStream is lagging the most, and what time it's currently read up to.
+    std::vector<uint64_t> newest_timestamps{most_recent_beam,most_recent_ctc};
+    uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
+    
+    if(verbosity>4){
+      std::cout<<"ANNIEEventBuilder: most recent timestamps from each stream are: "
+           <<most_recent_beam<<", "<<most_recent_ctc
+           <<", with differences from the slowest stream being: "
+           <<(static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<", "
+           <<(static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<std::endl;
+    }
+    
+    // always ensure the slowest stream is unpaused
+           if(slowest_stream_timestamp==most_recent_beam){
+      m_data->CStore.Set("PauseTankDecoding",false);
+    } else if(slowest_stream_timestamp==most_recent_ctc){
+      m_data->CStore.Set("PauseCTCDecoding",false);
+    }
+    
+    // if any other streams are more than X seconds ahead of the slowest one, pause them...
+    if((static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      // secondly, only pause a stream once we have at least EventsPerPairing timestamps in it,
+      // otherwise doing so will prevent building attempts
+      if(NumTankTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseTankDecoding",true);
+        Log("ANNIEEventBuilder: Pausing tank stream",v_debug,verbosity);
+      } else {
+      m_data->CStore.Set("PauseTankDecoding",false);
+      }
+    }
+    if((static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      if(NumTrigs>EventsPerPairing){
+        m_data->CStore.Set("PauseCTCDecoding",true);
+        Log("ANNIEEventBuilder: Pausing ctc stream",v_debug,verbosity);
+      } else {
+        m_data->CStore.Set("PauseCTCDecoding",false);
+      }
+    }
+    
+    if(verbosity>3){
+        std::cout << "Number of CTCTimes, PMTTimes: " << 
+            NumTrigs << "," << NumTankTimestamps << std::endl;
+    }
+
+    std::map<uint64_t,std::map<std::string,uint64_t>> ThisBuildMap; //key: CTC timestamp, value: vector of maps.  Each map has the keys: "Tank", "MRD", "CTC", or "LAPPD" with values: 
+                                                                    //timestamp of that stream (exception: "CTC" key has the trigger word as the value).
+    
+    int MinStamps = (NumTankTimestamps<NumTrigs) ? NumTankTimestamps : NumTrigs;
+    
+    // only attempt timestamp matching if we have enough timestamps to try to match,
+    // OR if the toolchain is being stopped (reached and of file, for example)
+    if((MinStamps>EventsPerPairing)||toolchain_stopping){
+
+      if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
+      ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
+      Log("ANNIEEventBuilder: Calling ManageOrphanage post MergeStreams",v_debug,verbosity);
+      this->ManageOrphanage();
+      Log("ANNIEEventBuilder: Done managing orphanage",v_debug,verbosity);
+
+      for(std::pair<uint64_t, std::map<std::string,uint64_t>> buildmap_entries : ThisBuildMap){
+        uint64_t CTCtimestamp = buildmap_entries.first;
+        std::map<std::string,uint64_t> aBuildSet = buildmap_entries.second; 
+        for(std::pair<std::string,uint64_t> buildset_entries : aBuildSet){
+          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
+          //If we have PMT and MRD infor for this trigger, build it 
+          std::string label = buildset_entries.first;
+          if(label == "CTC"){
+            uint64_t CTCWord = buildset_entries.second;
+            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord);
+            TimeToTriggerWordMap->erase(CTCtimestamp);
+          }
+          if(label == "TankPMT"){
+            uint64_t TankPMTTime = buildset_entries.second;
+            if(verbosity>4) std::cout << "TANK EVENT WITH TIMESTAMP " << TankPMTTime << "HAS REQUIRED MINIMUM NUMBER OF WAVES TO BUILD" << std::endl;
+            std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = FinishedTankEvents.at(TankPMTTime);
+            this->BuildANNIEEventTank(TankPMTTime, aWaveMap);
+            FinishedTankEvents.erase(TankPMTTime);
+          }
+        }
+        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+        if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + CTC) SUCCESSFULLY" << std::endl;
+      }
+    }
+    ThisBuildMap.clear();
+  }
+ //Build ANNIE events based on matching MRD and CTC timestamps
+  else if (BuildType == "TankAndCTC"){
+
+    //Look through our MRD data for any new timestamps
+    m_data->CStore.Get("MRDEventTriggerTypes",myMRDMaps.MRDTriggerTypeMap);
+    m_data->CStore.Get("MRDEvents",myMRDMaps.MRDEvents);
+    m_data->CStore.Get("MRDBeamLoopback",myMRDMaps.MRDBeamLoopbackMap);
+    m_data->CStore.Get("MRDCosmicLoopback",myMRDMaps.MRDCosmicLoopbackMap);
+    m_data->CStore.Get("NewMRDDataAvailable",IsNewMRDData);
+    if(IsNewMRDData) this->ProcessNewMRDData();
+
+    //Look through CTC data for any new timestamps
+    m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+    m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
+    if(IsNewCTCData) this->ProcessNewCTCData();
+
+    //Now, pair up PMT/MRD/Triggers...
+    int NumMRDTimestamps = myTimeStream.BeamMRDTimestamps.size();
+    int NumTrigs = myTimeStream.CTCTimestamps.size();
+    
+    // get get the most recent timestamp from each TimeStream
+    uint64_t most_recent_mrd = 0;
+    if (NumMRDTimestamps > 0) most_recent_mrd = *std::max_element(myTimeStream.BeamMRDTimestamps.begin(),
+                                                  myTimeStream.BeamMRDTimestamps.end());
+    uint64_t most_recent_ctc = 0;
+    if (NumTrigs > 0) most_recent_ctc = *std::max_element(myTimeStream.CTCTimestamps.begin(),
+                                                  myTimeStream.CTCTimestamps.end());
+    
+    // find which TimeStream is lagging the most, and what time it's currently read up to.
+    std::vector<uint64_t> newest_timestamps{most_recent_mrd,most_recent_ctc};
+    uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
+    
+    if(verbosity>4){
+      std::cout<<"ANNIEEventBuilder: most recent timestamps from each stream are: "
+           <<most_recent_mrd<<", "<<most_recent_ctc
+           <<", with differences from the slowest stream being: "
+           <<(static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<", "
+           <<(static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))
+           <<std::endl;
+    }
+    
+    // always ensure the slowest stream is unpaused
+    if(slowest_stream_timestamp==most_recent_mrd){
+      m_data->CStore.Set("PauseMRDDecoding",false);
+    } else if(slowest_stream_timestamp==most_recent_ctc){
+      m_data->CStore.Set("PauseCTCDecoding",false);
+    }
+    
+    // if any other streams are more than X seconds ahead of the slowest one, pause them...
+    if((static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      // secondly, only pause a stream once we have at least EventsPerPairing timestamps in it,
+      // otherwise doing so will prevent building attempts
+      if(NumMRDTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseMRDDecoding",true);
+        Log("ANNIEEventBuilder: Pausing MRD stream",v_debug,verbosity);
+      } else {
+      m_data->CStore.Set("PauseMRDDecoding",false);
+      }
+    }
+    if((static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      if(NumTrigs>EventsPerPairing){
+        m_data->CStore.Set("PauseCTCDecoding",true);
+        Log("ANNIEEventBuilder: Pausing ctc stream",v_debug,verbosity);
+      } else {
+        m_data->CStore.Set("PauseCTCDecoding",false);
+      }
+    }
+    
+    if(verbosity>3){
+        std::cout << "Number of CTCTimes, MRDTimes: " << 
+            NumTrigs << "," << NumMRDTimestamps << std::endl;
+    }
+
+    std::map<uint64_t,std::map<std::string,uint64_t>> ThisBuildMap; //key: CTC timestamp, value: vector of maps.  Each map has the keys: "Tank", "MRD", "CTC", or "LAPPD" with values: 
+                                                                    //timestamp of that stream (exception: "CTC" key has the trigger word as the value).
+    
+    int MinStamps = (NumMRDTimestamps<NumTrigs) ? NumMRDTimestamps : NumTrigs;
+    
+    // only attempt timestamp matching if we have enough timestamps to try to match,
+    // OR if the toolchain is being stopped (reached and of file, for example)
+    if((MinStamps>EventsPerPairing)||toolchain_stopping){
+
+      if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
+      ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
+      Log("ANNIEEventBuilder: Calling ManageOrphanage post MergeStreams",v_debug,verbosity);
+      this->ManageOrphanage();
+      Log("ANNIEEventBuilder: Done managing orphanage",v_debug,verbosity);
+
+      for(std::pair<uint64_t, std::map<std::string,uint64_t>> buildmap_entries : ThisBuildMap){
+        uint64_t CTCtimestamp = buildmap_entries.first;
+        std::map<std::string,uint64_t> aBuildSet = buildmap_entries.second; 
+        for(std::pair<std::string,uint64_t> buildset_entries : aBuildSet){
+          this->BuildANNIEEventRunInfo(CurrentRunNum, CurrentSubRunNum, CurrentRunType,CurrentStarTime);
+          //If we have PMT and MRD infor for this trigger, build it 
+          std::string label = buildset_entries.first;
+          if(label == "CTC"){
+            uint64_t CTCWord = buildset_entries.second;
+            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord);
+            TimeToTriggerWordMap->erase(CTCtimestamp);
+          }
+          if(label == "MRD"){
+            uint64_t MRDTimeStamp = buildset_entries.second;
+            if(verbosity>4) std::cout << "MRD TIMESTAMP: " << MRDTimeStamp << std::endl;
+            std::vector<std::pair<unsigned long,int>> MRDHits = myMRDMaps.MRDEvents.at(MRDTimeStamp);
+            std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[MRDTimeStamp];
+            int beam_tdc = myMRDMaps.MRDBeamLoopbackMap[MRDTimeStamp];
+            int cosmic_tdc = myMRDMaps.MRDCosmicLoopbackMap[MRDTimeStamp];
+            this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
+            myMRDMaps.MRDEvents.erase(MRDTimeStamp);
+            myMRDMaps.MRDTriggerTypeMap.erase(MRDTimeStamp);
+            myMRDMaps.MRDBeamLoopbackMap.erase(MRDTimeStamp);
+            myMRDMaps.MRDCosmicLoopbackMap.erase(MRDTimeStamp);
+          }
+        }
+        this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum);
+        if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (MRD + CTC) SUCCESSFULLY" << std::endl;
       }
     }
     ThisBuildMap.clear();
@@ -504,6 +808,7 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
     //Events and delete it from the in-progress events
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
     int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
+    std::cout <<"aWaveMap.size(): "<<aWaveMap.size()<<", NumWavesInCompleteSet: "<<NumWavesInCompleteSet<<std::endl;
     if(aWaveMap.size() >= (NumWavesInCompleteSet)){
       FinishedTankEvents.emplace(PMTCounterTimeNs,aWaveMap);
       myTimeStream.BeamTankTimestamps.push_back(PMTCounterTimeNs);

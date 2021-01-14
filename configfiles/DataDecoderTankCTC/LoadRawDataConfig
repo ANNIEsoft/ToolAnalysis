@@ -1,0 +1,5 @@
+verbosity 11
+BuildType TankAndCTC
+Mode FileList
+InputFile ./configfiles/DataDecoderTankCTC/my_files.txt
+DummyRunInfo 1

@@ -1,7 +1,7 @@
-verbosity 3
+verbosity 5
 
-BuildType TankAndMRDAndCTC
-ProcessedFilesBasename ProcessedRawData_TankMRDCTC_R2289_Test_Test_
+BuildType TankAndCTC
+ProcessedFilesBasename ProcessedRawData_TankCTC_R2369_Test_Test_
 NumEventsPerPairing 50
 SavePath ./
 
@@ -10,5 +10,5 @@ MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got 
 ExecutesPerBuild 10
 OrphanOldTankTimestamps 1
 OldTimestampThreshold 300
-OrphanFileBase OrphanStore_TankMRDCTC_R2289_Test_Test_
+OrphanFileBase OrphanStore_TankMRDCTC_R2369_Test_Test_
 MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the others, pause reading

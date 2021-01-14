@@ -1,11 +1,12 @@
 verbosity 5
 
 BuildType Tank
-ProcessedFilesBasename ProcessedRawData_TankOnly_
+ProcessedFilesBasename ProcessedRawData_TankOnly_R2369_Test_
+OrphanFileBase ProcessedRawData_TankOnly_R2369_Orphan_Test_
 SavePath ./
 
-MinNumWavesInSet 140 // 1=Just throw any waveforms into ANNIE events if you got em
+MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got em
 
 ExecutesPerBuild 10
-OrphanOldTankTimestamps 0
+OrphanOldTankTimestamps 1
 OldTimestampThreshold 150
