@@ -967,7 +967,9 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
   channels_times.clear();
 
   bool first_rwm_entry=true;
+  bool first_brf_entry=true;
   int num_samples_first_rwm=0;
+  int num_samples_first_brf=0;
 
   int i_timestamp = 0;
   for (std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t>>>::iterator it = finishedPMTWaves.begin(); it != finishedPMTWaves.end(); it++){
@@ -1014,9 +1016,16 @@ void MonitorTankTime::LoopThroughDecodedEvents(std::map<uint64_t, std::map<std::
 		}
 		double BRF_mean = hChannels_BRF->GetMean();
 		double BRF_sigma = hChannels_BRF->GetRMS();
-		hChannels_temp_BRF->SetBins(num_samples,0,num_samples);
-		for (int i_buffer=0; i_buffer < num_samples; i_buffer++){
-			hChannels_temp_BRF->SetBinContent(i_buffer,(awaveform.at(i_buffer)-BRF_mean)*conversion_ADC_Volt);
+		//hChannels_temp_BRF->SetBins(num_samples,0,num_samples);
+		if (first_brf_entry){
+			hChannels_temp_BRF->SetBins(num_samples,0,num_samples);
+			num_samples_first_brf=num_samples;
+			first_brf_entry=false;
+		}
+		int samples = (num_samples > num_samples_first_brf)? num_samples_first_brf : num_samples;
+		for (int i_buffer=0; i_buffer < samples; i_buffer++){
+			hChannels_temp_BRF->SetBinContent(i_buffer,hChannels_temp_BRF->GetBinContent(i_buffer)+(awaveform.at(i_buffer)-BRF_mean)*conversion_ADC_Volt);
+			//hChannels_temp_BRF->SetBinContent(i_buffer,(awaveform.at(i_buffer)-BRF_mean)*conversion_ADC_Volt);
 		}
 	  }
           else if (ChannelID == int(Channel_RWM)) {
