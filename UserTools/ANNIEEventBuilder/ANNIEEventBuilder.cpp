@@ -1053,7 +1053,15 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
       if(verbosity>4) std::cout << "BUILDING A PMT ONLY BUILD MAP ENTRY. CTC IS " << CTCKey << std::endl;
       BuildMap.emplace(CTCKey,aBuildSet);
       BuiltCTCs.push_back(CTCKey);
-    } else if (!have_tankmatch && !have_mrdmatch){
+    } else if (!have_tankmatch && have_mrdmatch){
+        std::map<std::string,uint64_t> aBuildSet;
+        aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey));
+        aBuildSet.emplace("MRD",it_mrd->second);
+        myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
+             myTimeStream.BeamMRDTimestamps.end(),it_mrd->second),                             
+             myTimeStream.BeamMRDTimestamps.end());
+        if (verbosity > 4) std::cout << "BUILDING A MRD ONLY BUILD MAP ENTRY. CTC IS " << CTCKey << std::endl;   
+   } else if (!have_tankmatch && !have_mrdmatch){
       if(verbosity>4) std::cout << "NO MRD OR TANK TIMESTAMP FOR THIS CTC TIME... ORPHAN THE CTC" << std::endl;
       //uint64_t latest_tank_orphan = TankOrphans.at(TankOrphans.size()-1);
       //uint64_t latest_MRD_orphan = MRDOrphans.at(MRDOrphans.size()-1);

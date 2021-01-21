@@ -129,3 +129,5 @@
 #include "MonitorTrigger.h"
 #include "EventClassification.h"
 #include "DataSummary.h"
+#include "StoreDecodedTimestamps.h"
+#include "PlotDecodedTimestamps.h"

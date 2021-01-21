@@ -59,14 +59,14 @@ class ANNIEEventBuilder: public Tool {
   void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only (TankAndMRD only)
 
   //Methods to add info from different data streams to ANNIEEvent booststore
-  void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
+  void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int PartNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
   uint64_t MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc);
 
-  void SaveEntryToFile(int RunNum, int SubRunNum);
-  void OpenNewANNIEEvent(int RunNum, int SubRunNum,uint64_t StarT, int RunT);
+  void SaveEntryToFile(int RunNum, int SubRunNum, int PartNum);
+  void OpenNewANNIEEvent(int RunNum, int SubRunNum, int PartNum, uint64_t StarT, int RunT);
 
   //Methods for getting all timestamps encountered by decoder tools
   void ProcessNewTankPMTData();
@@ -153,6 +153,7 @@ class ANNIEEventBuilder: public Tool {
   uint32_t ANNIEEventNum;
   int CurrentRunNum;
   int CurrentSubRunNum;
+  int CurrentPartNum;
   int CurrentRunType;
   int CurrentStarTime;
 

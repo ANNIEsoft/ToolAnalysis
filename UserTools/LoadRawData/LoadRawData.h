@@ -33,6 +33,9 @@ class LoadRawData: public Tool {
   void LoadRunInformation();
   void GetNextDataEntries();
   bool InitializeNewFile(); 
+  int GetRunFromFilename();
+  int GetSubRunFromFilename();
+  int GetPartFromFilename();
 
  private:
 

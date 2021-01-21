@@ -1,0 +1,6 @@
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+LoadRawData LoadRawData ./configfiles/PlotDecodedTimestamps/LoadRawDataConfig
+#PMTDataDecoder PMTDataDecoder ./configfiles/PlotDecodedTimestamps/PMTDataDecoderConfig
+#MRDDataDecoder MRDDataDecoder ./configfiles/PlotDecodedTimestamps/MRDDataDecoderConfig
+TriggerDataDecoder TriggerDataDecoder ./configfiles/PlotDecodedTimestamps/TriggerDataDecoderConfig
+PlotDecodedTimestamps PlotDecodedTimestamps ./configfiles/PlotDecodedTimestamps/PlotDecodedTimestampsConfig

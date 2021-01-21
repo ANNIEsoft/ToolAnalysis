@@ -250,8 +250,14 @@ void LoadRawData::LoadRunInformation(){
   Log("LoadRawData Tool: Accessing run information data",v_message,verbosity); 
   Store Postgress;
   if(DummyRunInfo){
-    Postgress.Set("RunNumber",-1);
-    Postgress.Set("SubRunNumber",-1);
+    //Try to get run & subrun information from filename
+    int extract_run = this->GetRunFromFilename();
+    int extract_subrun = this->GetSubRunFromFilename();
+    int extract_part = this->GetPartFromFilename();
+    std::cout <<"extracted run/subrun: "<<extract_run<<"/"<<extract_subrun<<"/"<<extract_part<<std::endl;
+    Postgress.Set("RunNumber",extract_run);
+    Postgress.Set("SubRunNumber",extract_subrun);
+    Postgress.Set("PartNumber",extract_part);
     Postgress.Set("RunType",-1);
     Postgress.Set("StarTime",-1);
   } else{
@@ -259,10 +265,8 @@ void LoadRawData::LoadRunInformation(){
     RawData->Get("RunInformation",RunInfo);
     if(verbosity>3) RunInfo.Print(false);
     RunInfo.Get("Postgress",Postgress);
-    std::cout <<"Get RunNumber from postgress"<<std::endl;
-    int temp_run;
-    Postgress.Get("RunNumber",temp_run);
-    std::cout <<"RunNumber is "<<temp_run<<std::endl;
+    int extract_part = this->GetPartFromFilename();
+    Postgress.Set("PartNumber",extract_part);
     if(verbosity>3) Postgress.Print();
   }
   m_data->CStore.Set("RunInfoPostgress",Postgress);
@@ -445,4 +449,45 @@ void LoadRawData::GetNextDataEntries(){
     TrigEntryNum+=1;
   }
   return;
+}
+
+int LoadRawData::GetRunFromFilename(){
+
+  int extracted_run = -1;
+  size_t rawdata_pos = CurrentFile.find("RAWDataR");
+  if (rawdata_pos == std::string::npos) return extracted_run;          //if pattern not found, return -1
+  std::string filenamerun = CurrentFile.substr(rawdata_pos+8);
+  size_t pos_sub = filenamerun.find("S");
+  std::string run_str = filenamerun.substr(0,pos_sub);
+  extracted_run = std::stoi(run_str);
+  return extracted_run;
+
+}
+
+int LoadRawData::GetSubRunFromFilename(){
+
+  int extracted_subrun = -1;
+  size_t rawdata_pos = CurrentFile.find("RAWDataR");
+  if (rawdata_pos == std::string::npos) return extracted_subrun;	//if pattern not found, return -1
+  std::string filenamerun = CurrentFile.substr(rawdata_pos+8);
+  size_t pos_sub = filenamerun.find("S");
+  std::string filenamesubrun = filenamerun.substr(pos_sub+1);
+  size_t pos_part = filenamesubrun.find("p");
+  std::string subrun_str = filenamesubrun.substr(0,pos_part);
+  extracted_subrun = std::stoi(subrun_str);
+  return extracted_subrun;
+
+}
+
+int LoadRawData::GetPartFromFilename(){
+
+  int extracted_part = -1;
+  size_t rawdata_pos = CurrentFile.find("RAWDataR");
+  if (rawdata_pos == std::string::npos) return extracted_part;	//if pattern not found, return -1
+  std::string filenamerun = CurrentFile.substr(rawdata_pos+8);
+  size_t pos_part = filenamerun.find("p");
+  std::string filenamepart = filenamerun.substr(pos_part+1);
+  extracted_part = std::stoi(filenamepart);
+  return extracted_part;
+
 }
