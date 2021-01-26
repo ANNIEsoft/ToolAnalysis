@@ -1,7 +1,11 @@
 # PlotDecodedTimestamps config file
 
 verbosity 2
-OutputFile R2282S0p4_DecodedTimestamps.root
-SaveMRD 0
-SavePMT 0
-SaveCTC 1
+#OutputFile R2280S0_p0-p30_Timestamps_Plots.root
+#InputDataSummary DataSummary_R2280S0p0-p30.root
+#InputTimestamps R2280S0p0-p30_DecodedTimestamps.root
+OutputFile R2282S0_p4_1500ev_Timestamps_Plots.root
+InputDataSummary DataSummary_R2282S0p4_1500ev.root
+InputTimestamps R2282S0p4_DecodedTimestamps.root
+SecondsPerPlot 10
+TriggerWordConfig ./configfiles/PlotDecodedTimestamps/TriggerColors.txt

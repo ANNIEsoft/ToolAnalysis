@@ -32,6 +32,8 @@ struct MRDEventMaps{
 //########## VECTORS AND MAPS USED TO HOLD TIMESTAMPS OF ORPHANED DATA  ########
 struct Orphanage{
   std::map<uint64_t, std::map<std::string,std::string>> OrphanTankTimestamps;  //Contains timestamps for all PMT events that were out of step with the rest of the stream
+  std::map<uint64_t, std::vector<std::vector<int>>> OrphanTankTimestampsChannels;  //Contains timestamps & channels in WaveMap for all PMT events that were out of sync with the rest of the stream
+  std::map<uint64_t, double> OrphanTankTimestampsTDiff;  //Contains timestamps & timestamp differences to next triggerword in WaveMap for all PMT events that were out of sync with the rest of the stream
   std::map<uint64_t, std::map<std::string,std::string>> OrphanCTCTimestamps;  //CTC timestamps with no PMT/MRD pair.
   std::map<uint64_t, std::map<std::string,std::string>> OrphanMRDTimestamps;  //Contains timestamps for all MRD events that were out of step with the rest of the stream
   ~Orphanage(){}
@@ -57,6 +59,7 @@ class ANNIEEventBuilder: public Tool {
  
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only (TankAndMRD only)
+  std::vector<std::vector<int>> GetChannelsFromWaveMap(std::map<std::vector<int>,std::vector<uint16_t>>WaveMap);  //Returns the channels for WaveMap entries (used for orphaned events)
 
   //Methods to add info from different data streams to ANNIEEvent booststore
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int PartNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
@@ -79,6 +82,9 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t,std::map<std::string,uint64_t>> MergeStreams(std::map<uint64_t,std::map<std::string,uint64_t>> BuildMap, uint64_t max_timestamp, bool force_matching=false);       // TankAndMRDAndCTC pairing mode;
   void ManageOrphanage();
   void MoveToOrphanage(std::map<uint64_t,std::string> TankOrphans,
+                       std::map<uint64_t,int> TankOrphansWaveMap,
+                       std::map<uint64_t, std::vector<std::vector<int>>> TankOrphansChannels,
+                       std::map<uint64_t,double> TankOrphansTDiff,
                        std::map<uint64_t,std::string> MRDOrphans,
                        std::map<uint64_t,std::string> CTCOrphans);
   

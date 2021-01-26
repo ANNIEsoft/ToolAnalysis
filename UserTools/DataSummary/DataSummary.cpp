@@ -31,7 +31,8 @@ bool DataSummary::Initialise(std::string configfile, DataModel &data){
 	// set some defaults
 	verbosity=0;
 	DataPath=".";
-	InputFilePattern="";
+	InputFilePattern="ProcessedRawData";
+	InputFilePatternOrphan="OrphanStore";
 	StartRun=-1;
 	StartSubRun=-1;
 	StartPart=-1;
@@ -40,11 +41,15 @@ bool DataSummary::Initialise(std::string configfile, DataModel &data){
 	EndPart=-1;
 	OutputFileDir=".";
 	OutputFileName="DataSummary.root";
+	FileFormat="CombinedStore";	//Other option: SeparateStores
+	FileList="None";	//Option to use filelist instead of regex matching
 	
 	// read the user's preferences
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("DataPath",DataPath);
 	m_variables.Get("InputFilePattern",InputFilePattern);
+	m_variables.Get("InputFilePatternOrphan",InputFilePatternOrphan);	//only needed if FileFormat=SeparateStores
+	m_variables.Get("FileList",FileList);
 	m_variables.Get("StartRun",StartRun);
 	m_variables.Get("StartSubRun",StartSubRun);
 	m_variables.Get("StartPart",StartPart);
@@ -53,14 +58,38 @@ bool DataSummary::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("EndPart",EndPart);
 	m_variables.Get("OutputFileDir",OutputFileDir);
 	m_variables.Get("OutputFileName",OutputFileName);
-	
+	m_variables.Get("FileFormat",FileFormat);	
+
+	std::cout <<"Scan for wrong file format config"<<std::endl;
+	//Scan for wrong file format configuration
+	if (FileFormat != "SeparateStores" && FileFormat != "CombinedStore") {
+		Log("DataSummary tool: FileFormat option "+FileFormat+" not supported. Use SeparateStores",v_error,verbosity);
+		FileFormat = "SeparateStores";
+	}
+
+	std::cout <<"ScanForFiles"<<std::endl;
 	// scan for matching input files
-	int numfilesfound = ScanForFiles(DataPath,InputFilePattern);
+	int numfilesfound = 0;
+	if (FileList == "None") numfilesfound=ScanForFiles(DataPath,InputFilePattern,InputFilePatternOrphan);
+	else numfilesfound=ReadInFileList(FileList);
 	if(numfilesfound==0){
 		Log("No matching files found!",v_error,verbosity);
 		return false;
 	}
+
+	std::cout << "List of matched filenames: "<<std::endl;
+	for (std::map<std::string,std::string>::iterator it=filelist.begin(); it!=filelist.end(); it++){
+		std::cout <<it->first<<": "<<it->second<<std::endl;
+	}
+
+	if (FileFormat == "SeparateStores"){
+		for (std::map<std::string,std::string>::iterator it=filelist_orphan.begin(); it!=filelist_orphan.end(); it++){
+			std::cout <<it->first<<": "<<it->second<<std::endl;
+		}
+	}
+
 	
+	std::cout <<"CreateOutputFile"<<std::endl;
 	// make the output file
 	CreateOutputFile();
 	
@@ -74,6 +103,7 @@ bool DataSummary::Execute(){
 	bool got_annieevent = LoadNextANNIEEventEntry();
 	bool got_orphan = LoadNextOrphanStoreEntry();
 	if(!got_annieevent && !got_orphan){
+		std::cout <<"no annie or orphan event"<<std::endl;
 		// i got nothin' ¯\_(ツ)_/¯
 		return true;
 	}
@@ -85,19 +115,36 @@ bool DataSummary::Execute(){
 		ANNIEEvent->Get("EventNumber",EventNumber);
 		ANNIEEvent->Get("EventTimeTank",PMTtimestamp);
 		ANNIEEvent->Get("CTCTimestamp",CTCtimestamp);
-		ANNIEEvent->Get("EventTime",mrd_timeclass);       // convertme to MRDtimestamp
+		ANNIEEvent->Get("EventTimeMRD",mrd_timeclass);       // convertme to MRDtimestamp
 		ANNIEEvent->Get("TriggerWord",TriggerWord);       // convert to TriggerTypeString
 		ANNIEEvent->Get("MRDLoopbackTDC",MRDLoopbackTDC); // convert to LoopbackTimestamp values
 		// TODO optional sanity checks: consistency of RunNumber and other constants
 		
 		// calculated variables
 		MRDtimestamp = mrd_timeclass.GetNs();
+
+		PMTtimestamp_tree = (ULong64_t) PMTtimestamp;
+		CTCtimestamp_tree = (ULong64_t) CTCtimestamp;
+		MRDtimestamp_tree = (ULong64_t) MRDtimestamp;
+		PMTtimestamp_double = (double) PMTtimestamp_tree;
+		std::cout <<"PMTtimestamp_double: "<<PMTtimestamp_double<<std::endl;
+		CTCtimestamp_double = (double) CTCtimestamp_tree;
+		std::cout <<"CTCtimestamp_double: "<<CTCtimestamp_double<<std::endl;
+		MRDtimestamp_double = (double) MRDtimestamp_tree;
+		PMTtimestamp_sec = (PMTtimestamp_double)/(1.E9);
+		MRDtimestamp_sec = (MRDtimestamp_double)/(1.E9);
+		CTCtimestamp_sec = (CTCtimestamp_double)/(1.E9);
+
+		std::cout <<"PMTtimestamp_tree: "<<PMTtimestamp_tree<<", MRDTimestamp_tree: "<<MRDtimestamp_tree<<std::endl;
 		// extract out the TDC vals
 		int beamloopbackTDCticks = MRDLoopbackTDC.at("BeamLoopbackTDC");
 		int cosmicloopbackTDCticks = MRDLoopbackTDC.at("CosmicLoopbackTDC");
 		// convert to ns
 		BeamLoopbackTimestamp = 4000. - 4.*(double)beamloopbackTDCticks;
 		CosmicLoopbackTimestamp = 4000. - 4.*(double)cosmicloopbackTDCticks;
+	
+		BeamLoopbackTimestamp_tree = (ULong64_t) BeamLoopbackTimestamp;
+		CosmicLoopbackTimestamp_tree = (ULong64_t) CosmicLoopbackTimestamp;
 		// FIXME to convert loopback TDC ticks to UTC time, we need to know the time difference
 		// between the loopback signal entering the TDC card and the loopback CTC event associated with it
 		// for now, i dunno, just neglect this
@@ -123,7 +170,18 @@ bool DataSummary::Execute(){
 		OrphanStore->Get("EventType",orphantype);
 		OrphanStore->Get("Timestamp",orphantimestamp);
 		OrphanStore->Get("Reason",orphancause);
-		
+		OrphanStore->Get("NumWaves",orphannumwaves);
+		OrphanStore->Get("WaveformChankeys",orphanchankeys);
+		OrphanStore->Get("MinTDiff",orphanmintdiff);	
+	
+		orphantimestamp_tree = (ULong64_t) orphantimestamp;
+		orphantimestamp_double = (double) orphantimestamp_tree;
+		orphantimestamp_sec = orphantimestamp_double/(1.E9);
+		orphanchankeys_int.clear();
+		for (int i_vec=0; i_vec < (int) orphanchankeys.size(); i_vec++){
+			orphanchankeys_int.push_back(int(orphanchankeys.at(i_vec)));
+		}
+
 		Log("DataSummary Tool: Filling Orphan tree",v_debug,verbosity);
 		outtree2->Fill();
 	}
@@ -134,35 +192,43 @@ bool DataSummary::Execute(){
 
 bool DataSummary::Finalise(){
 	
+	std::cout <<"DataSummary:Finalise"<<std::endl;
 	// ensure the ttree is fully written out
 	outfile->Write("*",TObject::kOverwrite);
 	
+	std::cout <<"CreatePlots"<<std::endl;
 	// add the final plots
 	CreatePlots();
 	
+	std::cout <<"outfile->Write() again"<<std::endl;
 	// ensure all the histograms are fully written out
 	outfile->Write("*",TObject::kOverwrite);
 	
+	std::cout <<"ResetBranchAddresses"<<std::endl;
 	// reset ttree addresses
 	outtree->ResetBranchAddresses();
 	outtree2->ResetBranchAddresses();
 	
+	std::cout <<"close file"<<std::endl;
 	// close the file
 	outfile->Close();
 	
 	return true;
 }
 
-int DataSummary::ScanForFiles(std::string inputdir, std::string filepattern){
+int DataSummary::ScanForFiles(std::string inputdir, std::string filepattern, std::string filepattern_orphan){
 	// Scan the input directory for all files matching the specified pattern and run range
 	
 	// Step 1:
 	// first, find matching files
 	// TODO we should give booststores an extension: for now insist R*S*p* comes at the end of the filename
-	std::string lscommand = std::string("find -regextype egrep -iregex '.*?")
+	std::string slash = "/";
+	std::string lscommand = std::string("find ") + inputdir +std::string(" -regextype egrep -iregex '.*?")
 	   + InputFilePattern + std::string("R([0-9]+)S([0-9]+)[pP]([0-9]+)$'");
+	std::cout <<"lscommand: "<<lscommand<<std::endl;
 	std::string fileliststring = GetStdoutFromCommand(lscommand);
-	std::stringstream ssl;
+
+        std::stringstream ssl;
 	ssl << fileliststring;
 	std::vector<std::string> flist;
 	std::string nextfilestring;
@@ -170,14 +236,41 @@ int DataSummary::ScanForFiles(std::string inputdir, std::string filepattern){
 		flist.push_back(nextfilestring);
 	}
 	
+	std::vector<std::string> flist_orphan;
+	if (FileFormat == "SeparateStores"){
+		std::string lscommand_orphan = std::string("find ")+inputdir+std::string(" -regextype egrep -iregex '.*?")
+	   	+ InputFilePatternOrphan + std::string("R([0-9]+)S([0-9]+)[pP]([0-9]+)$'");
+		std::cout <<"lscommand_orphan: "<<lscommand_orphan<<std::endl;
+		std::string fileliststring_orphan = GetStdoutFromCommand(lscommand_orphan);
+		std::cout <<"fileliststring_orphan: "<<fileliststring_orphan<<std::endl;
+	
+        	std::stringstream ssl_orphan;
+		ssl_orphan << fileliststring_orphan;
+		std::string nextfilestring_orphan;
+		while(getline(ssl_orphan,nextfilestring_orphan)){
+			flist_orphan.push_back(nextfilestring_orphan);
+		}
+		if (flist.size() != flist_orphan.size()) {
+			Log("DataSummary tool error: Did not find the same number of orphan files and ANNIEEvent files. # of ANNIEEvent files: "+std::to_string(flist_orphan.size())+", # of Orphan files: "+std::to_string(flist.size()),v_error,verbosity);
+			return 0;
+		}
+	}
+
+
 	// now parse the list of files and extract those that the range of run/subrun numbers
+	std::cout <<"Filling filelist"<<std::endl;
 	filelist.clear();
+	int i=0;
 	for(auto afile : flist){
-		//try{
+		/*//try{
 			// extract run, subrun and part using a regex match
+			std::cout <<"afile: "<<afile<<std::endl;
 			std::smatch submatches;
-			std::regex theexpression (".*?DataR([0-9]+)S([0-9]+)[pP]([0-9]+).*");
+			std::cout <<"regex theexpression"<<std::endl;
+			std::regex theexpression(".*?R([0-9]+)S([0-9]+)[pP]([0-9]+).*",std::regex::extended);
+			std::cout <<"regex_match"<<std::endl;
 			std::regex_match ((std::string)afile, submatches, theexpression);
+			std::cout <<"submatches.size(): "<<submatches.size()<<std::endl;
 			std::string runstring = (std::string)submatches[1];
 			std::string subrunstring = (std::string)submatches[2];
 			std::string partstring = (std::string)submatches[3];
@@ -199,50 +292,208 @@ int DataSummary::ScanForFiles(std::string inputdir, std::string filepattern){
 			char buffer [13];
 			snprintf(buffer, 13, "%06d%03d%03d", run, subrun, part);
 			filelist.emplace(buffer,afile);
+		}*/
+
+		//Get run number
+		run = -1;
+		subrun = -1;
+		part = -1;
+		std::stringstream InputFilePatternR;
+		InputFilePatternR << InputFilePattern << "R";
+		size_t rawdata_pos = afile.find(InputFilePatternR.str().c_str());
+		if (rawdata_pos != std::string::npos){
+			std::string filenamerun = afile.substr(rawdata_pos+InputFilePattern.length()+1);
+			size_t pos_sub = filenamerun.find("S");
+			std::string run_str = filenamerun.substr(0,pos_sub);
+  			run = std::stoi(run_str);
+			std::string filenamesubrun = filenamerun.substr(pos_sub+1);
+			size_t pos_part = filenamesubrun.find("p");
+			std::string subrun_str = filenamesubrun.substr(0,pos_part);
+  			subrun = std::stoi(subrun_str);
+			std::string filenamepart = filenamesubrun.substr(pos_part+1);
+			part = std::stoi(filenamepart);
 		}
+		std::cout <<"Found run number: "<<run<<", subrun nr: "<<subrun<<", part nr: "<<part<<std::endl;
+		// check within range
+		if(    (run>=StartRun || StartRun<0)
+			&& (subrun>=StartSubRun || StartSubRun<0)
+			&& (part>=StartPart || StartPart<0)
+			&& (run<=EndRun || EndRun<0)
+			&& (subrun<=EndSubRun || EndSubRun<0)
+			&& (part<=EndPart || EndPart<0)
+		){
+			// ensure files are in the correct order by using a map with suitable key
+			// assume no more than 1000 parts per subrun, 1000 subruns per run, 1000000 runs
+			char buffer [13];
+			snprintf(buffer, 13, "%06d%03d%03d", run, subrun, part);
+			filelist.emplace(buffer,afile);
+		}
+/*
+		run=2282;
+		subrun=0;
+		char buffer [13];
+		snprintf(buffer,13,"%06d%03d%03d", 2282, 0, i);
+		filelist.emplace(buffer,afile);
+		i++;*/
 	}
 	
+	std::cout <<"Filling filelist_orphan"<<std::endl;
+	if (FileFormat == "SeparateStores"){
+		i=0;
+		filelist_orphan.clear();
+		for(auto afile : flist_orphan){
+		/*	//try{
+				// extract run, subrun and part using a regex match
+				std::smatch submatches;
+				std::regex theexpression (".*?R([0-9]+)S([0-9]+)[pP]([0-9]+).*");
+				std::regex_match ((std::string)afile, submatches, theexpression);
+				std::string runstring = (std::string)submatches[1];
+				std::string subrunstring = (std::string)submatches[2];
+				std::string partstring = (std::string)submatches[3];
+				run = stoi(runstring);
+				subrun = stoi(subrunstring);
+				part = stoi(partstring);
+			//} catch(const std::out_of_range& oor){continue;}
+			
+			// check within range
+			if(    (run>=StartRun || StartRun<0)
+				&& (subrun>=StartSubRun || StartSubRun<0)
+				&& (part>=StartPart || StartPart<0)
+				&& (run<=EndRun || EndRun<0)
+				&& (subrun<=EndSubRun || EndSubRun<0)
+				&& (part<=EndPart || EndPart<0)
+			){
+				// ensure files are in the correct order by using a map with suitable key
+				// assume no more than 1000 parts per subrun, 1000 subruns per run, 1000000 runs
+				char buffer [13];
+				snprintf(buffer, 13, "%06d%03d%03d", run, subrun, part);
+				filelist_orphan.emplace(buffer,afile);
+			}*/
+			
+			//Get run number
+                	run = -1;
+                	subrun = -1;
+                	part = -1;
+                	std::stringstream InputFilePatternOrphanR;
+                	InputFilePatternOrphanR << InputFilePatternOrphan << "R";
+                	size_t rawdata_pos = afile.find(InputFilePatternOrphanR.str().c_str());
+                	if (rawdata_pos != std::string::npos){
+                        	std::string filenamerun = afile.substr(rawdata_pos+InputFilePatternOrphan.length()+1);
+                        	size_t pos_sub = filenamerun.find("S");
+                        	std::string run_str = filenamerun.substr(0,pos_sub);
+                        	run = std::stoi(run_str);
+                        	std::string filenamesubrun = filenamerun.substr(pos_sub+1);
+                        	size_t pos_part = filenamesubrun.find("p");
+                        	std::string subrun_str = filenamesubrun.substr(0,pos_part);
+                        	subrun = std::stoi(subrun_str);
+                        	std::string filenamepart = filenamesubrun.substr(pos_part+1);
+                        	part = std::stoi(filenamepart);
+                	}
+                	std::cout <<"Found run number: "<<run<<", subrun nr: "<<subrun<<", part nr: "<<part<<std::endl;
+               		// check within range
+                	if(    (run>=StartRun || StartRun<0)
+                        	&& (subrun>=StartSubRun || StartSubRun<0)
+                        	&& (part>=StartPart || StartPart<0)
+                        	&& (run<=EndRun || EndRun<0)
+                       		&& (subrun<=EndSubRun || EndSubRun<0)
+                        	&& (part<=EndPart || EndPart<0)
+                	){
+                        	// ensure files are in the correct order by using a map with suitable key
+                        	// assume no more than 1000 parts per subrun, 1000 subruns per run, 1000000 runs
+                        	char buffer [13];
+                        	snprintf(buffer, 13, "%06d%03d%03d", run, subrun, part);
+                        	filelist_orphan.emplace(buffer,afile);
+                	}
+			/*
+			char buffer[13];
+			snprintf(buffer,13,"%06d%03d%03d",2282,0,i);
+			filelist_orphan.emplace(buffer,afile);
+			i++;*/
+		}
+	}
+
 	nextfile=filelist.begin();
+	if (FileFormat == "SeparateStores") nextfile_orphan=filelist_orphan.begin();
 	return filelist.size();
+}
+
+int DataSummary::ReadInFileList(std::string filelist_user){
+
+	ifstream stream_filelist(filelist_user.c_str());
+	int i=0;
+	std::string file1, file2;
+	while (!stream_filelist.eof()){
+		if (FileFormat != "SeparateStores"){
+			stream_filelist >> file1;
+			if (stream_filelist.eof()) break;
+			char buffer[13];
+			snprintf(buffer,13,"%06d%03d%03d",0,0,i);
+			filelist.emplace(buffer,file1);
+			i++;
+		} else {
+			stream_filelist >> file1 >> file2;
+			if (stream_filelist.eof()) break;
+			char buffer[13];
+			snprintf(buffer,13,"%06d%03d%03d",0,0,i);
+			filelist.emplace(buffer,file1);
+			filelist_orphan.emplace(buffer,file2);
+			i++;	
+		}
+	}
+
+	nextfile=filelist.begin();
+	if (FileFormat == "SeparateStores") nextfile_orphan=filelist_orphan.begin();
+
+	return i;
+
 }
 
 bool DataSummary::LoadNextANNIEEventEntry(){
 	// load next ANNIEEvent entry
 	localentry++;
 	globalentry++;
+	std::cout <<"Load localentry: "<<localentry<<" / "<<localentries<<" for ANNIEEvent"<<std::endl;
 	if((localentry>=localentries)&&(localorphan>=localorphans)){
 		// end of this file, try to load next file
 		bool load_ok = LoadNextFile();
 		if(not load_ok){
 			// failed to load any further files. Terminate.
-			m_variables.Set("StopLoop",true);
+			m_data->vars.Set("StopLoop",1);
 			return false;
 		}
 		return ANNIEEvent->GetEntry(localentry);
 	} else if(localentry<localentries){
 		return ANNIEEvent->GetEntry(localentry);
-	} // else no more ANNIEEvents, but we didn't load a new file
+	} else {
+          // else no more ANNIEEvents, but we didn't load a new file
 	  // because there are still Orphans to process
+	  return false;
+	}
 }
 
 bool DataSummary::LoadNextOrphanStoreEntry(){
 	// load next OrphanStore entry
 	localorphan++;
 	globalorphan++;
+	std::cout <<"Load local orphan: "<<localorphan<<" / "<<localorphans<<" for OrphanStore"<<std::endl;
 	// if we've run out of entries in both stores, load the next file
 	if((localorphan>=localorphans)&&(localentry>=localentries)){
 		bool load_ok = LoadNextFile();
+		std::cout <<"load_ok: "<<load_ok<<std::endl;
 		if(not load_ok){
 			// failed to load any further files. Terminate.
 			m_variables.Set("StopLoop",true);
 			return false;
 		}
-		return ANNIEEvent->GetEntry(localentry);
+		return OrphanStore->GetEntry(localorphan);
 	} else if(localorphan<localorphans){
 		// not a new file, still entries to process
 		return OrphanStore->GetEntry(localorphan);
-	} // else no more orphans, but we didn't load a new file
+	} else {
+	 // else no more orphans, but we didn't load a new file
 	  // because there are still ANNIEEvents to process
+	return false;
+	}
 }
 
 bool DataSummary::LoadNextFile(){
@@ -253,6 +504,14 @@ bool DataSummary::LoadNextFile(){
 	}
 	std::string nextfilename = nextfile->second;
 	
+	std::string nextfilename_orphan;
+	if (FileFormat=="SeparateStores"){
+		if (nextfile_orphan==filelist_orphan.end()){
+			return false;
+		}
+		nextfilename_orphan = nextfile_orphan->second;
+	}
+
 	// Delete the old file BoostStores if they exist
 	if(ProcessedFileStore){
 		ProcessedFileStore->Close();
@@ -271,16 +530,20 @@ bool DataSummary::LoadNextFile(){
 	}
 	
 	// create a store for the file contents
-	ProcessedFileStore = new BoostStore(false,BOOST_STORE_BINARY_FORMAT);
-	// Load the contents from the new input file into it
-	std::cout <<"Reading in current file "<<nextfilename<<std::endl;
-	int load_ok = ProcessedFileStore->Initialise(nextfilename);
-	if(not load_ok) return false;
-	
+        if (FileFormat == "CombinedStore") {
+		ProcessedFileStore = new BoostStore(false,BOOST_STORE_BINARY_FORMAT);
+		// Load the contents from the new input file into it
+		std::cout <<"Reading in current file "<<nextfilename<<std::endl;
+		int load_ok = ProcessedFileStore->Initialise(nextfilename);
+		if(not load_ok) return false;
+	}
+
 	// create an ANNIEEvent BoostStore and an OrphanStore BoostStore to load from it
 	ANNIEEvent = new BoostStore(false, BOOST_STORE_MULTIEVENT_FORMAT);
 	OrphanStore = new BoostStore(false, BOOST_STORE_MULTIEVENT_FORMAT);
 	
+	if (FileFormat == "CombinedStore"){
+
 	// retrieve the multi-event stores
 	ProcessedFileStore->Get("ANNIEEvent",*ANNIEEvent);
 	ANNIEEvent->Header->Get("TotalEntries", localentries);
@@ -288,11 +551,25 @@ bool DataSummary::LoadNextFile(){
 	// same for Orphan Store
 	ProcessedFileStore->Get("OrphanStore",*OrphanStore);
 	OrphanStore->Header->Get("TotalEntries", localorphans);
-	
+	}
+	else {
+
+		Log("DataSummary tool: Reading in current ANNIEEvent file "+nextfilename,v_message,verbosity);
+		ANNIEEvent->Initialise(nextfilename);
+		ANNIEEvent->Header->Get("TotalEntries",localentries);
+
+		Log("DataSummary tool: Reading in current Orphan file "+nextfilename_orphan,v_message,verbosity);
+		OrphanStore->Initialise(nextfilename_orphan);
+		OrphanStore->Header->Get("TotalEntries",localorphans);
+
+	}
+
 	nextfile++;
 	localentry = 0;
 	localorphan = 0;
 	
+	if (FileFormat == "SeparateStores") nextfile_orphan++;
+
 	// load run constants and sanity checks
 	get_ok = ANNIEEvent->GetEntry(0);
 	if(not get_ok){
@@ -300,6 +577,7 @@ bool DataSummary::LoadNextFile(){
 		return false;
 	}
 	ANNIEEvent->Get("RunNumber",RunNumber);
+	std::cout <<"RunNumber: "<<RunNumber<<", run: "<<run<<std::endl;
 	if(RunNumber!=run)
 		Log("DataSummary Tool: filename / entry mismatch for RunNumber!",v_error,verbosity);
 	ANNIEEvent->Get("SubrunNumber",SubrunNumber);
@@ -339,47 +617,70 @@ bool DataSummary::CreateOutputFile(){
 //	outtree->Branch("EventNumber",&EventNumber); // processed event num? file event num? run event num?
 	outtree->Branch("TriggerWord",&TriggerWord);
 	outtree->Branch("TriggerTypeString",&TriggerTypeString);
-	outtree->Branch("CTCtimestamp",&CTCtimestamp);
-	outtree->Branch("PMTtimestamp",&PMTtimestamp);
-	outtree->Branch("MRDtimestamp",&MRDtimestamp);
-	outtree->Branch("BeamLoopbackTimestamp",&BeamLoopbackTimestamp);
-	outtree->Branch("CosmicLoopbackTimestamp",&CosmicLoopbackTimestamp);
+	outtree->Branch("CTCTimestamp",&CTCtimestamp_tree);
+	outtree->Branch("PMTTimestamp",&PMTtimestamp_tree);
+	outtree->Branch("MRDTimestamp",&MRDtimestamp_tree);
+	outtree->Branch("CTCTimestamp_double",&CTCtimestamp_double);
+	outtree->Branch("PMTTimestamp_double",&PMTtimestamp_double);
+	outtree->Branch("MRDTimestamp_double",&MRDtimestamp_double);
+	outtree->Branch("CTCTimestamp_sec",&CTCtimestamp_sec);
+	outtree->Branch("PMTTimestamp_sec",&PMTtimestamp_sec);
+	outtree->Branch("MRDTimestamp_sec",&MRDtimestamp_sec);
+	outtree->Branch("BeamLoopbackTimestamp",&BeamLoopbackTimestamp_tree);
+	outtree->Branch("CosmicLoopbackTimestamp",&CosmicLoopbackTimestamp_tree);
 	outtree->Branch("SystemsPresent",&SystemsPresent);
 	outtree->Branch("LoopbacksPresent",&LoopbacksPresent);
-	outtree->SetAlias("CtcToTankTDiff","CTCtimestamp-PMTtimestamp");
-	outtree->SetAlias("CtcToMrdTDiff","CTCtimestamp-MRDtimestamp");
-	outtree->SetAlias("TankToMrdTDiff","PMTtimestamp-MRDtimestamp");
-	outtree->SetAlias("CtcToBeamLoopbackTDiff","CTCtimestamp-BeamLoopbackTimestamp");
-	outtree->SetAlias("CtcToCosmicLoopbackTDiff","CTCtimestamp-CosmicLoopbackTimestamp");
+	outtree->SetAlias("CtcToTankTDiff","CTCTimestamp_double-PMTTimestamp_double");
+	outtree->SetAlias("CtcToMrdTDiff","CTCTimestamp_double-MRDTimestamp_double");
+	outtree->SetAlias("TankToMrdTDiff","PMTTimestamp_double-MRDTimestamp_double");
+	outtree->SetAlias("CtcToBeamLoopbackTDiff","CTCTimestamp_double-BeamLoopbackTimestamp");
+	outtree->SetAlias("CtcToCosmicLoopbackTDiff","CTCTimestamp_double-CosmicLoopbackTimestamp");
 	
 	outtree2 = new TTree("OrpahStats","OrpahStats Tree");
 	outtree2->Branch("OrphanedEventType",&orphantype);
-	outtree2->Branch("OrphanTimestamp",&orphantimestamp);
+	outtree2->Branch("OrphanTimestamp",&orphantimestamp_tree);
+	outtree2->Branch("OrphanTimestamp_double",&orphantimestamp_double);
 	outtree2->Branch("OrphanCause",&orphancause);
+	outtree2->Branch("OrphanNumWaves",&orphannumwaves);
+	outtree2->Branch("OrphanChankeys",&orphanchankeys_int);
+	outtree2->Branch("OrphanMinTDiff",&orphanmintdiff);
+
+	return true;
 }
 
 bool DataSummary::CreatePlots(){
 	// make plots from the ROOT tree
 	// =============================
 	// first get the timespan we're going to be plotting
+	std::cout <<"Get CTC entries from tree"<<std::endl;
 	outtree->GetEntry(0);
 	t0 = CTCtimestamp;
 	outtree->GetEntry(outtree->GetEntriesFast()-1);
 	tn = CTCtimestamp;
+	std::cout <<"CreatePlots: t0: "<<t0<<", tn: "<<tn<<std::endl;
 	// we need to set a global "time offset", from which all other time axes will be relative to
 	// this should be in seconds
-	gStyle->SetTimeOffset(t0/1E9);
-	
+	std::cout <<"Set time offset"<<std::endl;
+	//gStyle->SetTimeOffset(t0/1E9);
+	gStyle->SetTimeOffset(0.);	
+
 	// rate plots: should be able to make these just by time-x-axis histograms
 	// TODO refactor?
+	std::cout <<"AddRatePlots"<<std::endl;
 	AddRatePlots(500);
+
+	// EventType plots: Rates, fractions & other properties of certain orphan event types
+	AddEventTypePlots();
 	
 	// TODO refactor this
 	// time evolution of the timestamp discrepancies
+	std::cout <<"Time diff plots"<<std::endl;
 	AddTDiffPlots();
 	//AddTDiffPlots(30,30,0.5,"CtcToMrdTDiff");
 	//AddTDiffPlots(30,30,0.5,"TankToMrdTDiff");
 	
+	return true;
+
 }
 
 // just histograms of timestamps of a given type with a time axis
@@ -403,18 +704,29 @@ bool DataSummary::AddRatePlots(int nbins){
 	
 	// make the histograms
 	TH1D* ctc_rate = new TH1D("ctc_rate","CTC Rate",nbins,t1,t2);
-	outtree->Draw("CTCtimestamp>>ctc_rate","CTCtimestamp>0");
+	outtree->Draw("CTCTimestamp_double/(1.E9)>>ctc_rate","CTCTimestamp>0","goff");
 	TH1D* tank_rate = new TH1D("tank_rate","Tank Rate",nbins,t1,t2);
-	outtree->Draw("PMTtimestamp>>tank_rate","PMTtimestamp>0");
+	outtree->Draw("PMTTimestamp_double/(1.E9)>>tank_rate","PMTTimestamp>0","goff");
 	TH1D* mrd_rate = new TH1D("mrd_rate","MRD Rate",nbins,t1,t2);
-	outtree->Draw("MRDtimestamp>>mrd_rate","MRDtimestamp>0");
+	outtree->Draw("MRDTimestamp_double/(1.E9)>>mrd_rate","MRDTimestamp>0","goff");
 	TH1D* allsystems_rate = new TH1D("allsystems_rate","All Systems Triggered Rate",nbins,t1,t2);
-	outtree->Draw("CTCtimestamp>>allsystems_rate","MRDtimestamp>0&&CTCtimestamp>0&&PMTtimestamp>0");
-	TH1D* noloopback_rate = new TH1D("noloopback_rate","All Systems Triggered Rate",nbins,t1,t2);
-	outtree->Draw("CTCtimestamp>>noloopback_rate","LoopbacksPresent==0");
+	outtree->Draw("CTCTimestamp_double/(1.E9)>>allsystems_rate","MRDTimestamp>0&&CTCTimestamp>0&&PMTTimestamp>0","goff");
+	TH1D* noloopback_rate = new TH1D("noloopback_rate","No Loopback Triggered Rate",nbins,t1,t2);
+	outtree->Draw("CTCTimestamp_double/(1.E9)>>noloopback_rate","LoopbacksPresent==0","goff");
 	TH1D* orphan_rate = new TH1D("orphan_rate","Orphan Rate",nbins,t1,t2);
-	outtree2->Draw("OrphanTimestamp>>orphan_rate");
-	
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate","","goff");
+	TH1D* orphan_rate_incomplete = new TH1D("orphan_rate_incomplete","Orphan Rate (incomplete VME)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_incomplete","OrphanCause==\"incomplete_tank_event\"","goff");	
+	TH1D* orphan_rate_tank_noctc = new TH1D("orphan_rate_tank_noctc","Orphan Rate (Tank, No CTC)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_tank_noctc","OrphanCause==\"tank_no_ctc\"","goff");	
+	TH1D* orphan_rate_pmt = new TH1D("orphan_rate_pmt","Orphan Rate (PMT)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_pmt","OrphanedEventType==\"Tank\"","goff");	
+	TH1D* orphan_rate_mrd = new TH1D("orphan_rate_mrd","Orphan Rate (MRD)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_mrd","OrphanedEventType==\"MRD\"","goff");	
+	TH1D* orphan_rate_ctc = new TH1D("orphan_rate_ctc","Orphan Rate (ctc)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc","OrphanedEventType==\"CTC\"","goff");	
+
+
 	// then we need to set the axes to time
 	ctc_rate->GetXaxis()->SetTimeDisplay(1);
 	tank_rate->GetXaxis()->SetTimeDisplay(1);
@@ -422,21 +734,118 @@ bool DataSummary::AddRatePlots(int nbins){
 	allsystems_rate->GetXaxis()->SetTimeDisplay(1);
 	noloopback_rate->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_incomplete->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_tank_noctc->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_pmt->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_mrd->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_ctc->GetXaxis()->SetTimeDisplay(1);
+
 	// set the timestamp format
-	ctc_rate->GetXaxis()->SetTimeFormat("%d %H:%M");
-	tank_rate->GetXaxis()->SetTimeFormat("%d %H:%M");
-	mrd_rate->GetXaxis()->SetTimeFormat("%d %H:%M");
-	allsystems_rate->GetXaxis()->SetTimeFormat("%d %H:%M");
-	noloopback_rate->GetXaxis()->SetTimeFormat("%d %H:%M");
-	orphan_rate->GetXaxis()->SetTimeFormat("%d %H:%M");
-	// make labels small enough that we don't overcrowd the axis
 	ctc_rate->GetXaxis()->SetLabelSize(0.03);
+	ctc_rate->GetXaxis()->SetLabelOffset(0.03);
 	tank_rate->GetXaxis()->SetLabelSize(0.03);
+	tank_rate->GetXaxis()->SetLabelOffset(0.03);
 	mrd_rate->GetXaxis()->SetLabelSize(0.03);
+	mrd_rate->GetXaxis()->SetLabelOffset(0.03);
 	allsystems_rate->GetXaxis()->SetLabelSize(0.03);
+	allsystems_rate->GetXaxis()->SetLabelOffset(0.03);
 	noloopback_rate->GetXaxis()->SetLabelSize(0.03);
+	noloopback_rate->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_incomplete->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_incomplete->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_tank_noctc->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_tank_noctc->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_pmt->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_pmt->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_mrd->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_mrd->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_ctc->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_ctc->GetXaxis()->SetLabelOffset(0.03);
+	ctc_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	tank_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	mrd_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	allsystems_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	noloopback_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_incomplete->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_tank_noctc->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_pmt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_mrd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_ctc->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	
+	return true;
+
+}
+
+bool DataSummary::AddEventTypePlots(){
+
+
+	outfile->cd(); // ensure plots get put in the file
+
+	TH1D* num_waveforms_orphan = new TH1D("num_waveforms_orphan","Number of waveforms (orphaned events)",200,0,200);	
+	TH1D* orphan_types = new TH1D("orphan_types","Orphan Event Types",4,0,4);
+	TH1D* orphan_types_fractions = new TH1D("orphan_types_fractions","Orphan Event Types (Fractions)",4,0,4);
+	TH1D* orphan_types_rates = new TH1D("orphan_types_rates","Orphan Event Types (Rates)",4,0,4);
+	TH1D* waveform_chankeys_orphan = new TH1D("waveform_chankeys_orphan","Waveform channelkeys (orphaned events)",500,0,500);
+	TH1D* orphan_mintdiff = new TH1D("orphan_mintdiff","Minimum time difference CTC (orphaned events)",500,-1000,1000);
+
+	int numwaves_temp;
+	std::string *orphantype = new std::string;
+	std::string *orphancause = new std::string;
+	std::vector<int> *orphanchkeys = new std::vector<int>;
+	double mintdiff;
+	outtree2->SetBranchAddress("OrphanNumWaves",&numwaves_temp);
+	outtree2->SetBranchAddress("OrphanedEventType",&orphantype);
+	outtree2->SetBranchAddress("OrphanCause",&orphancause);
+	outtree2->SetBranchAddress("OrphanChankeys",&orphanchkeys);
+	outtree2->SetBranchAddress("OrphanMinTDiff",&mintdiff);
+	int entries_tree1 = outtree->GetEntries();
+	int entries_tree2 = outtree2->GetEntries();
+	for (int i_entry=0; i_entry < entries_tree2; i_entry++){
+		outtree2->GetEntry(i_entry);
+		orphan_types->Fill(0);
+		std::cout <<"orphantype: "<<*orphantype<<std::endl;
+		if (*orphantype == "Tank"){
+			orphan_types->Fill(1);
+			orphan_mintdiff->Fill(mintdiff);
+			if (*orphancause == "incomplete_tank"){
+				num_waveforms_orphan->Fill(numwaves_temp);
+			}
+			for (int i_vec=0; i_vec < (int) orphanchkeys->size(); i_vec++){
+				waveform_chankeys_orphan->Fill(orphanchkeys->at(i_vec));
+			}
+		} else if (*orphantype == "MRD"){
+			orphan_types->Fill(2);
+		} else if (*orphantype == "CTC"){
+			orphan_types->Fill(3);
+		}
+	}
+
+	delete orphantype;
+	delete orphancause;
+
+	orphan_types->GetYaxis()->SetTitle("#");
+	orphan_types_fractions->GetYaxis()->SetTitle("Fraction");
+	const char *label_eventtypes[4] = {"All","Tank","MRD","CTC"};
+	for (int i_bin=0; i_bin<orphan_types->GetXaxis()->GetNbins(); i_bin++){
+		orphan_types->GetXaxis()->SetBinLabel(i_bin+1,label_eventtypes[i_bin]);
+		orphan_types_fractions->SetBinContent(i_bin+1,orphan_types->GetBinContent(i_bin+1)/(double(entries_tree1)+double(entries_tree2)));
+		orphan_types_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_eventtypes[i_bin]);
+	}
+	num_waveforms_orphan->GetYaxis()->SetTitle("#");
+	num_waveforms_orphan->GetXaxis()->SetTitle("# waveforms");
+	waveform_chankeys_orphan->GetXaxis()->SetTitle("Chankey");
+	waveform_chankeys_orphan->GetYaxis()->SetTitle("#");
+	orphan_mintdiff->GetXaxis()->SetTitle("Minimum #Delta t [ns]");
+	orphan_mintdiff->GetYaxis()->SetTitle("#");
+
+	orphan_types->Write();
+	orphan_types_fractions->Write();
+	num_waveforms_orphan->Write();
+	waveform_chankeys_orphan->Write();
+	orphan_mintdiff->Write();
 }
 
 // TODO refactor to break up plot types and remove triplets of calls
@@ -446,18 +855,18 @@ bool DataSummary::AddTDiffPlots(){
 	// TODO we'll do a few plots here:
 	// 1. we can make a normal histogram showing the distribution of timestamp differences
 	TH1D* all_tank_ctc_tdiffs = new TH1D("all_tank_ctc_tdiffs","All (CTC-Tank) TDiffs",100,-100,100);
-	outtree->Draw("CtcToTankTDiff>>all_tank_ctc_tdiffs");
+	outtree->Draw("CtcToTankTDiff>>all_tank_ctc_tdiffs","","goff");
 	// btw we can grab that plotted data for later
 	double* datapointer = outtree->GetV1();
 	std::vector<double> tank_ctc_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
-	TH1D* all_tank_mrd_tdiffs = new TH1D("all_tank_mrd_tdiffs","All (Tank-MRD) TDiffs",100,-100,100);
-	datapointer = outtree->GetV1();
-	std::vector<double> mrd_ctc_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
-	outtree->Draw("TankToMrdTDiff>>all_tank_mrd_tdiffs");
-	TH1D* all_mrd_ctc_tdiffs = new TH1D("all_ctc_mrd_tdiffs","All (CTC-MRD) TDiffs",100,-100,100);
-	outtree->Draw("CtcToMrdTDiff>>all_tank_mrd_tdiffs");
+	TH1D* all_tank_mrd_tdiffs = new TH1D("all_tank_mrd_tdiffs","All (Tank-MRD) TDiffs",100,-1E6,1E6);	//MRD timestamps much cruder, can be up to 1ms away!
 	datapointer = outtree->GetV1();
 	std::vector<double> mrd_tank_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
+	outtree->Draw("TankToMrdTDiff>>all_tank_mrd_tdiffs","","goff");
+	TH1D* all_mrd_ctc_tdiffs = new TH1D("all_mrd_ctc_tdiffs","All (CTC-MRD) TDiffs",100,-1E6,1E6);
+	outtree->Draw("CtcToMrdTDiff>>all_mrd_ctc_tdiffs","","goff");
+	datapointer = outtree->GetV1();
+	std::vector<double> mrd_ctc_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
 	
 	// 2. we could do the same for the above, broken down by run
 	
@@ -467,19 +876,43 @@ bool DataSummary::AddTDiffPlots(){
 	int t2 = (tn-t0)/1E9;
 	// TGraph* tank_ctc_diffs = new TGraph("tank_ctc_diffs","All (CTC-Tank) TDiffs",100,t1,t2);
 	// apparently there really isn't a way to draw from a TTree straight into a named TGraph
-	outtree->Draw("CTCtimestamp:CtcToTankTDiff","CTCtimestamp>0&&PMTtimestamp>0");
+	TH2F *tank_ctc_diffs = new TH2F("tank_ctc_diffs","(Tank - CTC) TDiffs",500,t1,t2,100,-100,100);
+	tank_ctc_diffs->GetYaxis()->SetTitle("CTC - Tank [ns]");
+	tank_ctc_diffs->GetXaxis()->SetTimeDisplay(1);
+	tank_ctc_diffs->GetXaxis()->SetLabelSize(0.03);
+	tank_ctc_diffs->GetXaxis()->SetLabelOffset(0.03);
+	tank_ctc_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	outtree->Draw("CtcToTankTDiff:CTCTimestamp_sec>>tank_ctc_diffs","CTCTimestamp>0&&PMTTimestamp>0","goff");
 	datapointer = outtree->GetV2();
 	std::vector<double> ctc_tvals(datapointer, datapointer + outtree->GetSelectedRows());
-	TGraph* tank_ctc_diffs = (TGraph*)gPad->GetPrimitive("Graph");
+
+	TH2F *mrd_ctc_diffs = new TH2F("mrd_ctc_diffs","(MRD - CTC) TDiffs",500,t1,t2,200,-1E6,1E6);
+	mrd_ctc_diffs->GetYaxis()->SetTitle("CTC - MRD [ns]");
+	mrd_ctc_diffs->GetXaxis()->SetTimeDisplay(1);
+	mrd_ctc_diffs->GetXaxis()->SetLabelSize(0.03);
+	mrd_ctc_diffs->GetXaxis()->SetLabelOffset(0.03);
+	mrd_ctc_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	outtree->Draw("CtcToMrdTDiff:CTCTimestamp_sec>>mrd_ctc_diffs","CTCTimestamp>0&&MRDTimestamp>0 && fabs(CtcToMrdTDiff)<10E6","goffcolz");
+
+	TH2F *tank_mrd_diffs = new TH2F("tank_mrd_diffs","(Tank - MRD) TDiffs",500,t1,t2,200,-1E6,1E6);
+	tank_mrd_diffs->GetYaxis()->SetTitle("MRD - Tank [ns]");
+	tank_mrd_diffs->GetXaxis()->SetTimeDisplay(1);
+	tank_mrd_diffs->GetXaxis()->SetLabelSize(0.03);
+	tank_mrd_diffs->GetXaxis()->SetLabelOffset(0.03);
+	tank_mrd_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	outtree->Draw("TankToMrdTDiff:MRDTimestamp_sec>>tank_mrd_diffs","PMTTimestamp>0&&MRDTimestamp>0 && fabs(TankToMrdTDiff)<10E6","goffcolz");
+
+	//Replaced the TGraphs by TH2 histograms (see above)
+	/*TGraph* tank_ctc_diffs = (TGraph*)gPad->GetPrimitive("Graph");
 	tank_ctc_diffs->SetName("tank_ctc_diffs");
 	tank_ctc_diffs->SetTitle("All (CTC-Tank) TDiffs;Time;CTC - Tank [s]");
 	
-	outtree->Draw("CTCtimestamp:CtcToMrdTDiff","CTCtimestamp>0&&MRDtimestamp>0");
+	outtree->Draw("CTCTimestamp:CtcToMrdTDiff","CTCTimestamp>0&&MRDTimestamp>0","goff");
 	TGraph* mrd_ctc_diffs = (TGraph*)gPad->GetPrimitive("Graph");
 	mrd_ctc_diffs->SetName("mrd_ctc_diffs");
 	mrd_ctc_diffs->SetTitle("All (CTC-Tank) TDiffs;Time;CTC - MRD [s]");
 	
-	outtree->Draw("PMTtimestamp:TankToMrdTDiff","PMTtimestamp>0&&MRDtimestamp>0");
+	outtree->Draw("PMTTimestamp:TankToMrdTDiff","PMTTimestamp>0&&MRDTimestamp>0","goff");
 	TGraph* tank_mrd_diffs = (TGraph*)gPad->GetPrimitive("Graph");
 	tank_mrd_diffs->SetName("tank_mrd_diffs");
 	tank_mrd_diffs->SetTitle("All (CTC-Tank) TDiffs;Time;Tank - MRD [s]");
@@ -489,13 +922,13 @@ bool DataSummary::AddTDiffPlots(){
 	mrd_ctc_diffs->GetXaxis()->SetTimeDisplay(1);
 	tank_mrd_diffs->GetXaxis()->SetTimeDisplay(1);
 	// set the timestamp format
-	tank_ctc_diffs->GetXaxis()->SetTimeFormat("%d %H:%M");
-	mrd_ctc_diffs->GetXaxis()->SetTimeFormat("%d %H:%M");
-	tank_mrd_diffs->GetXaxis()->SetTimeFormat("%d %H:%M");
+	tank_ctc_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	mrd_ctc_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	tank_mrd_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	// make labels small enough that we don't overcrowd the axis
 	tank_ctc_diffs->GetXaxis()->SetLabelSize(0.03);
 	mrd_ctc_diffs->GetXaxis()->SetLabelSize(0.03);
-	tank_mrd_diffs->GetXaxis()->SetLabelSize(0.03);
+	tank_mrd_diffs->GetXaxis()->SetLabelSize(0.03);*/
 	
 	// 4. we may also want to track just the mean and variance of timestamp differences over time,
 	// in which case those need to be calculated over some sliding window. That window may be defined
@@ -521,6 +954,7 @@ bool DataSummary::AddTDiffPlots(){
 	double var_ctc_to_tank;           // same for mrd to ctc
 	double var_ctc_to_mrd;            // same for mrd to ctc
 	
+	std::cout <<"calculate mean and variances"<<std::endl;
 	// calculate mean and variances over this window
 	std::vector<double> tank_ctc_means;
 	tank_ctc_means.reserve(tank_ctc_diff_vals.size()/(overlap_fraction*window_size));
@@ -530,22 +964,43 @@ bool DataSummary::AddTDiffPlots(){
 	tank_ctc_ts.reserve(tank_ctc_diff_vals.size()/(overlap_fraction*window_size));
 	int start_sample=0;
 	int step_size = window_size*overlap_fraction;
-	for(int i=0; i<tank_ctc_diff_vals.size(); ++i){
+	std::cout <<"tank_ctc_diff_vals.size(): "<<tank_ctc_diff_vals.size()<<", ctc_tvals.size(): "<<ctc_tvals.size()<<std::endl;
+	for(int i=0; i<(int)tank_ctc_diff_vals.size(); ++i){
+		//std::cout <<"i: "<<i<<std::endl;
 		ComputeMeanAndVariance(tank_ctc_diff_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size, start_sample);
 		tank_ctc_means.push_back(mean_ctc_to_tank);
 		tank_ctc_vars.push_back(var_ctc_to_tank);
+	//	std::cout <<"mean_ctc_to_tank: "<<mean_ctc_to_tank<<", var_ctc_to_tank: "<<var_ctc_to_tank<<std::endl;
 		start_sample += step_size;
-		tank_ctc_ts.push_back(static_cast<double>(ctc_tvals.at(start_sample)));
+		//std::cout <<"start_sample: "<<start_sample<<std::endl;
+		if (start_sample < (int) ctc_tvals.size()) tank_ctc_ts.push_back(static_cast<double>(ctc_tvals.at(start_sample)));
 	}
 	std::vector<double> tank_ctc_binwidths(tank_ctc_diff_vals.size(),step_size);
+	std::cout <<"tcerr"<<std::endl;
 	TGraphErrors* tcerr = new TGraphErrors(tank_ctc_means.size(), tank_ctc_ts.data(),tank_ctc_means.data(),tank_ctc_binwidths.data(),tank_ctc_vars.data());
 	std::string title="(CTC-Tank) Mean and Variances with window size "+std::to_string(window_size)+" and overlap fraction "+std::to_string(int(overlap_fraction));
 	//tcerr->SetName(title.c_str());
 	tcerr->SetTitle(title.c_str());
 	
+	outfile->cd();
+	tcerr->Draw("apl");
+	tcerr->GetYaxis()->SetTitle("#Delta t [ns]");
+	tcerr->GetYaxis()->SetTitleSize(0.035);
+	tcerr->GetYaxis()->SetTitleOffset(1.3);
+	tcerr->GetXaxis()->SetTimeDisplay(1);
+	tcerr->GetXaxis()->SetLabelSize(0.03);
+	tcerr->GetXaxis()->SetLabelOffset(0.03);
+	tcerr->GetXaxis()->SetTimeDisplay(1);
+	tcerr->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	//tcerr->GetXaxis()->SetTimeOffset(t1);
+	tcerr->GetXaxis()->SetTimeOffset(0);
+	tcerr->Write("tcerr");
+
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 	
+	std::cout <<"5"<<std::endl;
 	// 5. you could also make a normalized histogram at each step to make a colour band plot
 	
+	return true;
 }

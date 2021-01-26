@@ -1,5 +1,0 @@
-verbosity 11
-BuildType TankAndMRDAndCTC
-Mode FileList
-InputFile ./configfiles/PlotDecodedTimestamps/my_files.txt
-DummyRunInfo 1

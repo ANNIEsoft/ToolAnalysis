@@ -36,6 +36,10 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   FinishedPMTWaves = new std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >; 
 
   m_data->CStore.Set("PauseTankDecoding",false);
+  m_data->CStore.Set("FIFOError1",fifo1);
+  m_data->CStore.Set("FIFOError2",fifo2);
+  m_data->CStore.Set("TimestampsFromTheFuture",TimestampsFromTheFuture);
+
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
 }
@@ -231,6 +235,11 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Get("CardData",Cdata);
     Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata->size()),v_debug, verbosity);
     
+    //Get current state of FIFO overflows
+    m_data->CStore.Get("FIFOError1",fifo1);
+    m_data->CStore.Get("FIFOError2",fifo2);
+    m_data->CStore.Get("TimestampsFromTheFuture",TimestampsFromTheFuture);
+
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata->size(); CardDataIndex++){
       CardData aCardData = Cdata->at(CardDataIndex);
       if(verbosity>v_debug){
@@ -284,6 +293,9 @@ bool PMTDataDecoder::Execute(){
 
     m_data->CStore.Set("InProgressTankEvents",FinishedPMTWaves);
     m_data->CStore.Set("NewTankPMTDataAvailable",NewWavesBuilt);
+    m_data->CStore.Set("FIFOError1",fifo1);
+    m_data->CStore.Set("FIFOError2",fifo2);
+    m_data->CStore.Set("TimestampsFromTheFuture",TimestampsFromTheFuture);
 
     //Check the size of the WaveBank to see if things are bloating
     Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
@@ -514,6 +526,7 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
     Log("PMTDataDecoder: Error: Encountered timestamp that is very large: FinishedWaveTrigTime = "+std::to_string(FinishedWaveTrigTime)+". Don't include this data in the waves in progress.",v_error,verbosity);
     WaveBank.erase(wave_key);
     TriggerTimeBank.erase(wave_key);
+    TimestampsFromTheFuture.emplace(wave_key,FinishedWaveTrigTime);
     return;		//Don't include times that are far off in the future (what is going on there?) [exclude everything beyond 18th of May 2033, ANNIE will probably not run that long...)
   }
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);

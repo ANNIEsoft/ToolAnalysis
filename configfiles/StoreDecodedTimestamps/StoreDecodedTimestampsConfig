@@ -1,7 +1,7 @@
 # PlotDecodedTimestamps config file
 
 verbosity 2
-OutputFile R2282S0p4_DecodedTimestamps.root
+OutputFile R2280S0p0-p30_DecodedTimestamps.root
 SaveMRD 0
 SavePMT 0
 SaveCTC 1

@@ -9,6 +9,7 @@
 
 class TFile;
 class TTree;
+#include "TH2F.h"
 
 
 /**
@@ -33,16 +34,21 @@ class DataSummary: public Tool {
 	
 	std::string DataPath;         // input file path
 	std::string InputFilePattern; // input file pattern (regex, with some caveats)
+	std::string InputFilePatternOrphan; // input file pattern for orphan files (regex, with some caveats)
+	std::string FileList;
 	int StartRun;                 // limit the range of matched runs to analyse
 	int StartSubRun;
 	int StartPart;
 	int EndRun;
 	int EndSubRun;
 	int EndPart;
+	std::string FileFormat;	
 	// list of files to process, in order. key is RunSubrunPart, zero-padded to ensure order
 	std::map<std::string,std::string> filelist;
 	std::map<std::string,std::string>::iterator nextfile; // the next file to be loaded
-	
+	std::map<std::string,std::string> filelist_orphan;
+	std::map<std::string,std::string>::iterator nextfile_orphan; // the next file to be loaded
+
 	// BoostStore to read data into
 	BoostStore* ProcessedFileStore=nullptr;
 	BoostStore* ANNIEEvent=nullptr;
@@ -89,20 +95,41 @@ class DataSummary: public Tool {
 	uint8_t SystemsPresent;           // <int of what readouts were present>
 	uint8_t LoopbacksPresent;         // <int of what loopbacks were present>
 	TimeClass EventTime;              // <should we make some official TimeClass object? e.g. from CTC?>
-	
+
+	ULong64_t CTCtimestamp_tree;
+	ULong64_t PMTtimestamp_tree;
+	ULong64_t MRDtimestamp_tree;	
+	ULong64_t BeamLoopbackTimestamp_tree;
+	ULong64_t CosmicLoopbackTimestamp_tree;
+	double CTCtimestamp_double;
+	double PMTtimestamp_double;
+	double MRDtimestamp_double;
+	double CTCtimestamp_sec;
+	double PMTtimestamp_sec;
+	double MRDtimestamp_sec;
+	ULong64_t orphantimestamp_tree;
+	double orphantimestamp_double;
+	double orphantimestamp_sec;
+
 	// orphan info
 	std::string orphantype;           // EventType
 	uint64_t orphantimestamp;         // Timestamp
 	std::string orphancause;          // Reason
-	
+	int orphannumwaves;		  // Number of waveforms in orphan event
+	std::vector<unsigned long> orphanchankeys;	//Chankeys that had a waveform in the orphaned event
+	std::vector<int> orphanchankeys_int;	//Chankeys that had a waveform in the orphaned event
+	double orphanmintdiff;		  // Time difference to closest CTC timestamp	
+
 	// functions
-	int ScanForFiles(std::string inputdir, std::string filepattern);
+	int ScanForFiles(std::string inputdir, std::string filepattern, std::string filepattern_orphan);
+	int ReadInFileList(std::string filelist_user);
 	bool LoadNextANNIEEventEntry();
 	bool LoadNextOrphanStoreEntry();
 	bool LoadNextFile();
 	bool CreateOutputFile();
 	bool CreatePlots();
 	bool AddRatePlots(int nbins);
+	bool AddEventTypePlots();
 	bool AddTDiffPlots();
 	
 	//TODO: reprocess current data with CTC build type. Standardize filenames including BuildType and .bs extension
