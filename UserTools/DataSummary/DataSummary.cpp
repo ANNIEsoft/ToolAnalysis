@@ -60,14 +60,12 @@ bool DataSummary::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("OutputFileName",OutputFileName);
 	m_variables.Get("FileFormat",FileFormat);	
 
-	std::cout <<"Scan for wrong file format config"<<std::endl;
 	//Scan for wrong file format configuration
 	if (FileFormat != "SeparateStores" && FileFormat != "CombinedStore") {
 		Log("DataSummary tool: FileFormat option "+FileFormat+" not supported. Use SeparateStores",v_error,verbosity);
 		FileFormat = "SeparateStores";
 	}
 
-	std::cout <<"ScanForFiles"<<std::endl;
 	// scan for matching input files
 	int numfilesfound = 0;
 	if (FileList == "None") numfilesfound=ScanForFiles(DataPath,InputFilePattern,InputFilePatternOrphan);
@@ -89,7 +87,6 @@ bool DataSummary::Initialise(std::string configfile, DataModel &data){
 	}
 
 	
-	std::cout <<"CreateOutputFile"<<std::endl;
 	// make the output file
 	CreateOutputFile();
 	
@@ -118,6 +115,7 @@ bool DataSummary::Execute(){
 		ANNIEEvent->Get("EventTimeMRD",mrd_timeclass);       // convertme to MRDtimestamp
 		ANNIEEvent->Get("TriggerWord",TriggerWord);       // convert to TriggerTypeString
 		ANNIEEvent->Get("MRDLoopbackTDC",MRDLoopbackTDC); // convert to LoopbackTimestamp values
+                ANNIEEvent->Get("DataStreams",datastreams);  //DataStreams can be used to check which of the subdetectors is included in the data
 		// TODO optional sanity checks: consistency of RunNumber and other constants
 		
 		// calculated variables
@@ -127,9 +125,7 @@ bool DataSummary::Execute(){
 		CTCtimestamp_tree = (ULong64_t) CTCtimestamp;
 		MRDtimestamp_tree = (ULong64_t) MRDtimestamp;
 		PMTtimestamp_double = (double) PMTtimestamp_tree;
-		std::cout <<"PMTtimestamp_double: "<<PMTtimestamp_double<<std::endl;
 		CTCtimestamp_double = (double) CTCtimestamp_tree;
-		std::cout <<"CTCtimestamp_double: "<<CTCtimestamp_double<<std::endl;
 		MRDtimestamp_double = (double) MRDtimestamp_tree;
 		PMTtimestamp_sec = (PMTtimestamp_double)/(1.E9);
 		MRDtimestamp_sec = (MRDtimestamp_double)/(1.E9);
@@ -160,6 +156,13 @@ bool DataSummary::Execute(){
 		if(BeamLoopbackTimestamp!=0) LoopbacksPresent |= 1;
 		if(CosmicLoopbackTimestamp!=0) LoopbacksPresent |= 2;
 		
+		data_ctc = false;
+		data_tank = false;
+		data_mrd = false;
+		if (datastreams["CTC"]==1) data_ctc = true;
+		if (datastreams["Tank"]==1) data_tank = true;
+		if (datastreams["MRD"]==1) data_mrd = true;
+
 		Log("DataSummary Tool: Filling Event tree",v_debug,verbosity);
 		outtree->Fill();
 	}
@@ -169,8 +172,10 @@ bool DataSummary::Execute(){
 		// right now this is just a straight translation from BoostStore to ROOT =/
 		OrphanStore->Get("EventType",orphantype);
 		OrphanStore->Get("Timestamp",orphantimestamp);
+		OrphanStore->Get("TriggerWord",orphantrigword);
 		OrphanStore->Get("Reason",orphancause);
 		OrphanStore->Get("NumWaves",orphannumwaves);
+		OrphanStore->Get("WaveformChannels",orphanchannels);
 		OrphanStore->Get("WaveformChankeys",orphanchankeys);
 		OrphanStore->Get("MinTDiff",orphanmintdiff);	
 	
@@ -178,8 +183,13 @@ bool DataSummary::Execute(){
 		orphantimestamp_double = (double) orphantimestamp_tree;
 		orphantimestamp_sec = orphantimestamp_double/(1.E9);
 		orphanchankeys_int.clear();
+		orphanchannels_combined.clear();
 		for (int i_vec=0; i_vec < (int) orphanchankeys.size(); i_vec++){
 			orphanchankeys_int.push_back(int(orphanchankeys.at(i_vec)));
+		}
+		for (int i_vec=0; i_vec < (int) orphanchannels.size(); i_vec++){
+			std::vector<int> orphanchannels_single = orphanchannels.at(i_vec);
+			orphanchannels_combined.push_back(1000*orphanchannels_single.at(0)+10*orphanchannels_single.at(1)+orphanchannels_single.at(2));
 		}
 
 		Log("DataSummary Tool: Filling Orphan tree",v_debug,verbosity);
@@ -192,24 +202,19 @@ bool DataSummary::Execute(){
 
 bool DataSummary::Finalise(){
 	
-	std::cout <<"DataSummary:Finalise"<<std::endl;
 	// ensure the ttree is fully written out
 	outfile->Write("*",TObject::kOverwrite);
 	
-	std::cout <<"CreatePlots"<<std::endl;
 	// add the final plots
 	CreatePlots();
 	
-	std::cout <<"outfile->Write() again"<<std::endl;
 	// ensure all the histograms are fully written out
 	outfile->Write("*",TObject::kOverwrite);
 	
-	std::cout <<"ResetBranchAddresses"<<std::endl;
 	// reset ttree addresses
 	outtree->ResetBranchAddresses();
 	outtree2->ResetBranchAddresses();
 	
-	std::cout <<"close file"<<std::endl;
 	// close the file
 	outfile->Close();
 	
@@ -630,6 +635,9 @@ bool DataSummary::CreateOutputFile(){
 	outtree->Branch("CosmicLoopbackTimestamp",&CosmicLoopbackTimestamp_tree);
 	outtree->Branch("SystemsPresent",&SystemsPresent);
 	outtree->Branch("LoopbacksPresent",&LoopbacksPresent);
+	outtree->Branch("DataCTC",&data_ctc);
+	outtree->Branch("DataTank",&data_tank);
+	outtree->Branch("DataMRD",&data_mrd);
 	outtree->SetAlias("CtcToTankTDiff","CTCTimestamp_double-PMTTimestamp_double");
 	outtree->SetAlias("CtcToMrdTDiff","CTCTimestamp_double-MRDTimestamp_double");
 	outtree->SetAlias("TankToMrdTDiff","PMTTimestamp_double-MRDTimestamp_double");
@@ -643,16 +651,20 @@ bool DataSummary::CreateOutputFile(){
 	outtree2->Branch("OrphanCause",&orphancause);
 	outtree2->Branch("OrphanNumWaves",&orphannumwaves);
 	outtree2->Branch("OrphanChankeys",&orphanchankeys_int);
+	outtree2->Branch("OrphanChannels",&orphanchannels_combined);
 	outtree2->Branch("OrphanMinTDiff",&orphanmintdiff);
+	outtree2->Branch("OrphanTrigWord",&orphantrigword);
+
 
 	return true;
 }
 
 bool DataSummary::CreatePlots(){
+
 	// make plots from the ROOT tree
 	// =============================
 	// first get the timespan we're going to be plotting
-	std::cout <<"Get CTC entries from tree"<<std::endl;
+	
 	outtree->GetEntry(0);
 	t0 = CTCtimestamp;
 	outtree->GetEntry(outtree->GetEntriesFast()-1);
@@ -664,27 +676,29 @@ bool DataSummary::CreatePlots(){
 	//gStyle->SetTimeOffset(t0/1E9);
 	gStyle->SetTimeOffset(0.);	
 
-	// rate plots: should be able to make these just by time-x-axis histograms
-	// TODO refactor?
+	// Rate plots: should be able to make these just by time-x-axis histograms
+	// TODO: Refactor?
 	std::cout <<"AddRatePlots"<<std::endl;
 	AddRatePlots(500);
 
 	// EventType plots: Rates, fractions & other properties of certain orphan event types
 	AddEventTypePlots();
 	
-	// TODO refactor this
-	// time evolution of the timestamp discrepancies
+	// TODO: Refactor this
+	// Time evolution of the timestamp discrepancies
 	std::cout <<"Time diff plots"<<std::endl;
 	AddTDiffPlots();
-	//AddTDiffPlots(30,30,0.5,"CtcToMrdTDiff");
-	//AddTDiffPlots(30,30,0.5,"TankToMrdTDiff");
 	
 	return true;
 
 }
 
-// just histograms of timestamps of a given type with a time axis
 bool DataSummary::AddRatePlots(int nbins){
+
+	// -------------------------------------------------------------
+	// just histograms of timestamps of a given type with a time axis
+	// -------------------------------------------------------------	
+
 	outfile->cd(); // ensure plots get put in the file
 	
 	// define our histogram min/max relative to global time offset, in seconds
@@ -723,9 +737,14 @@ bool DataSummary::AddRatePlots(int nbins){
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_pmt","OrphanedEventType==\"Tank\"","goff");	
 	TH1D* orphan_rate_mrd = new TH1D("orphan_rate_mrd","Orphan Rate (MRD)",nbins,t1,t2);
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_mrd","OrphanedEventType==\"MRD\"","goff");	
-	TH1D* orphan_rate_ctc = new TH1D("orphan_rate_ctc","Orphan Rate (ctc)",nbins,t1,t2);
+	TH1D* orphan_rate_ctc = new TH1D("orphan_rate_ctc","Orphan Rate (CTC)",nbins,t1,t2);
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc","OrphanedEventType==\"CTC\"","goff");	
-
+	TH1D* orphan_rate_ctc_trig5 = new TH1D("orphan_rate_ctc_trig5","Orphan Rate (CTC, trigword 5)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig5","OrphanedEventType==\"CTC\" && OrphanTrigWord == 5","goff");	
+	TH1D* orphan_rate_ctc_trig31 = new TH1D("orphan_rate_ctc_trig31","Orphan Rate (CTC, trigword 31)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig31","OrphanedEventType==\"CTC\" && OrphanTrigWord == 31","goff");	
+	TH1D* orphan_rate_ctc_trig36 = new TH1D("orphan_rate_ctc_trig36","Orphan Rate (CTC, trigword 36)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig36","OrphanedEventType==\"CTC\" && OrphanTrigWord == 36","goff");	
 
 	// then we need to set the axes to time
 	ctc_rate->GetXaxis()->SetTimeDisplay(1);
@@ -739,6 +758,9 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_pmt->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_mrd->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_ctc_trig5->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_ctc_trig31->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_ctc_trig36->GetXaxis()->SetTimeDisplay(1);
 
 	// set the timestamp format
 	ctc_rate->GetXaxis()->SetLabelSize(0.03);
@@ -763,6 +785,12 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_mrd->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate_ctc->GetXaxis()->SetLabelSize(0.03);
 	orphan_rate_ctc->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_ctc_trig5->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_ctc_trig5->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_ctc_trig31->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_ctc_trig31->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_ctc_trig36->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_ctc_trig36->GetXaxis()->SetLabelOffset(0.03);
 	ctc_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	tank_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	mrd_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
@@ -774,6 +802,9 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_pmt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_mrd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_ctc_trig5->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_ctc_trig31->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_ctc_trig36->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	
 	return true;
 
@@ -788,64 +819,131 @@ bool DataSummary::AddEventTypePlots(){
 	TH1D* orphan_types = new TH1D("orphan_types","Orphan Event Types",4,0,4);
 	TH1D* orphan_types_fractions = new TH1D("orphan_types_fractions","Orphan Event Types (Fractions)",4,0,4);
 	TH1D* orphan_types_rates = new TH1D("orphan_types_rates","Orphan Event Types (Rates)",4,0,4);
+	TH1D* orphan_reasons = new TH1D("orphan_reasons","Orphan Reasons",4,0,4);
+	TH1D* orphan_reasons_fractions = new TH1D("orphan_reasons_fractions","Orphan Reasons (Fractions)",4,0,4);
+	TH1D* orphan_reasons_rates = new TH1D("orphan_reasons_rates","Orphan Reasons (Rates)",4,0,4);
 	TH1D* waveform_chankeys_orphan = new TH1D("waveform_chankeys_orphan","Waveform channelkeys (orphaned events)",500,0,500);
-	TH1D* orphan_mintdiff = new TH1D("orphan_mintdiff","Minimum time difference CTC (orphaned events)",500,-1000,1000);
+	TH1D* orphan_mintdiff_tank = new TH1D("orphan_mintdiff_tank","Minimum time difference CTC (orphaned tank events)",500,-1000,1000);
+	TH1D* orphan_mintdiff_mrd = new TH1D("orphan_mintdiff_mrd","Minimum time difference CTC (orphaned MRD events)",500,-10000000,10000000);
+	TH1D* waveform_channels_orphan = new TH1D("waveform_channels_orphan","Waveform channels (orphaned events)",5000,0,5000);
+	TH1D* ctc_orphans_triggerword = new TH1D("ctc_orphans_triggerword","CTC Orphans - Triggerword",64,0,64);
+	TH1D* datastreams_present = new TH1D("datastreams_present","Present datastreams",3,0,3);
+	TH1D* datastreams_present_fractions = new TH1D("datastreams_present_fractions","Present datastreams (fractions)",3,0,3);
 
 	int numwaves_temp;
 	std::string *orphantype = new std::string;
 	std::string *orphancause = new std::string;
 	std::vector<int> *orphanchkeys = new std::vector<int>;
+	std::vector<int> *orphanch = new std::vector<int>;
 	double mintdiff;
+	int trigword;
 	outtree2->SetBranchAddress("OrphanNumWaves",&numwaves_temp);
 	outtree2->SetBranchAddress("OrphanedEventType",&orphantype);
 	outtree2->SetBranchAddress("OrphanCause",&orphancause);
 	outtree2->SetBranchAddress("OrphanChankeys",&orphanchkeys);
+	outtree2->SetBranchAddress("OrphanChannels",&orphanch);
 	outtree2->SetBranchAddress("OrphanMinTDiff",&mintdiff);
+	outtree2->SetBranchAddress("OrphanTrigWord",&trigword);
 	int entries_tree1 = outtree->GetEntries();
 	int entries_tree2 = outtree2->GetEntries();
 	for (int i_entry=0; i_entry < entries_tree2; i_entry++){
 		outtree2->GetEntry(i_entry);
 		orphan_types->Fill(0);
-		std::cout <<"orphantype: "<<*orphantype<<std::endl;
 		if (*orphantype == "Tank"){
 			orphan_types->Fill(1);
-			orphan_mintdiff->Fill(mintdiff);
-			if (*orphancause == "incomplete_tank"){
+			orphan_mintdiff_tank->Fill(mintdiff);
+			std::cout <<"orphanmintdiff: "<<mintdiff<<std::endl;
+			if (*orphancause == "incomplete_tank_event"){
 				num_waveforms_orphan->Fill(numwaves_temp);
+				orphan_reasons->Fill(1);
+			} else if (*orphancause == "tank_no_ctc"){
+				orphan_reasons->Fill(0);
 			}
 			for (int i_vec=0; i_vec < (int) orphanchkeys->size(); i_vec++){
 				waveform_chankeys_orphan->Fill(orphanchkeys->at(i_vec));
 			}
+			for (int i_vec=0; i_vec < (int) orphanch->size(); i_vec++){
+				waveform_channels_orphan->Fill(orphanch->at(i_vec));
+			}
 		} else if (*orphantype == "MRD"){
 			orphan_types->Fill(2);
+			orphan_mintdiff_mrd->Fill(mintdiff);
+			std::cout <<"mintdiff (MRD): "<<mintdiff<<std::endl;
+			if (*orphancause == "mrd_beam_no_ctc"){
+				orphan_reasons->Fill(2);
+			}
 		} else if (*orphantype == "CTC"){
 			orphan_types->Fill(3);
+			ctc_orphans_triggerword->Fill(trigword);
+			if (*orphancause == "ctc_no_mrd_or_tank"){
+				orphan_reasons->Fill(3);
+			}
 		}
 	}
 
 	delete orphantype;
 	delete orphancause;
 
+	bool has_ctc, has_tank, has_mrd;
+	outtree->SetBranchAddress("DataCTC",&has_ctc);
+	outtree->SetBranchAddress("DataTank",&has_tank);
+	outtree->SetBranchAddress("DataMRD",&has_mrd);
+	for (int i_entry=0; i_entry < entries_tree1; i_entry++){
+		outtree->GetEntry(i_entry);
+		if (has_ctc && has_tank & has_mrd) datastreams_present->Fill(0);
+		else if (has_ctc && has_tank) datastreams_present->Fill(1);
+		else if (has_ctc && has_mrd) datastreams_present->Fill(2);
+	}
+
 	orphan_types->GetYaxis()->SetTitle("#");
 	orphan_types_fractions->GetYaxis()->SetTitle("Fraction");
 	const char *label_eventtypes[4] = {"All","Tank","MRD","CTC"};
+	orphan_reasons->GetYaxis()->SetTitle("#");
+	orphan_reasons_fractions->GetYaxis()->SetTitle("Fraction");
+	const char *label_reasons[4] = {"Tank - No CTC","Tank - Incomplete Waveform","MRD - No CTC","CTC - No MRD/Tank"};
 	for (int i_bin=0; i_bin<orphan_types->GetXaxis()->GetNbins(); i_bin++){
 		orphan_types->GetXaxis()->SetBinLabel(i_bin+1,label_eventtypes[i_bin]);
 		orphan_types_fractions->SetBinContent(i_bin+1,orphan_types->GetBinContent(i_bin+1)/(double(entries_tree1)+double(entries_tree2)));
 		orphan_types_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_eventtypes[i_bin]);
+		orphan_reasons->GetXaxis()->SetBinLabel(i_bin+1,label_reasons[i_bin]);
+		orphan_reasons_fractions->SetBinContent(i_bin+1,orphan_reasons->GetBinContent(i_bin+1)/(double(entries_tree1)+double(entries_tree2)));
+		orphan_reasons_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_reasons[i_bin]);
+	}
+	datastreams_present->GetYaxis()->SetTitle("#");
+	datastreams_present_fractions->GetYaxis()->SetTitle("Fraction");
+	const char *label_datastreams[3]={"CTC+Tank+MRD","CTC+Tank","CTC+MRD"};
+	for (int i_bin=0; i_bin < datastreams_present->GetXaxis()->GetNbins(); i_bin++){
+		datastreams_present->GetXaxis()->SetBinLabel(i_bin+1,label_datastreams[i_bin]);
+		datastreams_present_fractions->SetBinContent(i_bin+1,datastreams_present->GetBinContent(i_bin+1)/(double(entries_tree1)));
+		datastreams_present_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_datastreams[i_bin]);
 	}
 	num_waveforms_orphan->GetYaxis()->SetTitle("#");
 	num_waveforms_orphan->GetXaxis()->SetTitle("# waveforms");
 	waveform_chankeys_orphan->GetXaxis()->SetTitle("Chankey");
 	waveform_chankeys_orphan->GetYaxis()->SetTitle("#");
-	orphan_mintdiff->GetXaxis()->SetTitle("Minimum #Delta t [ns]");
-	orphan_mintdiff->GetYaxis()->SetTitle("#");
+	waveform_channels_orphan->GetXaxis()->SetTitle("Electronic channel");
+	waveform_channels_orphan->GetYaxis()->SetTitle("#");
+	orphan_mintdiff_tank->GetXaxis()->SetTitle("Minimum #Delta t [ns]");
+	orphan_mintdiff_tank->GetYaxis()->SetTitle("#");
+	orphan_mintdiff_mrd->GetXaxis()->SetTitle("Minimum #Delta t [ns]");
+	orphan_mintdiff_mrd->GetYaxis()->SetTitle("#");
+	ctc_orphans_triggerword->GetXaxis()->SetTitle("Triggerword");
+	ctc_orphans_triggerword->GetYaxis()->SetTitle("#");
 
 	orphan_types->Write();
 	orphan_types_fractions->Write();
+	orphan_reasons->Write();
+	orphan_reasons_fractions->Write();
 	num_waveforms_orphan->Write();
 	waveform_chankeys_orphan->Write();
-	orphan_mintdiff->Write();
+	waveform_channels_orphan->Write();
+	orphan_mintdiff_tank->Write();
+	orphan_mintdiff_mrd->Write();
+	ctc_orphans_triggerword->Write();
+	datastreams_present->Write();
+	datastreams_present_fractions->Write();
+
+	return true;
 }
 
 // TODO refactor to break up plot types and remove triplets of calls
@@ -954,7 +1052,6 @@ bool DataSummary::AddTDiffPlots(){
 	double var_ctc_to_tank;           // same for mrd to ctc
 	double var_ctc_to_mrd;            // same for mrd to ctc
 	
-	std::cout <<"calculate mean and variances"<<std::endl;
 	// calculate mean and variances over this window
 	std::vector<double> tank_ctc_means;
 	tank_ctc_means.reserve(tank_ctc_diff_vals.size()/(overlap_fraction*window_size));
@@ -999,7 +1096,6 @@ bool DataSummary::AddTDiffPlots(){
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 	
-	std::cout <<"5"<<std::endl;
 	// 5. you could also make a normalized histogram at each step to make a colour band plot
 	
 	return true;

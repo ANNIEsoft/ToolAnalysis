@@ -95,6 +95,10 @@ class DataSummary: public Tool {
 	uint8_t SystemsPresent;           // <int of what readouts were present>
 	uint8_t LoopbacksPresent;         // <int of what loopbacks were present>
 	TimeClass EventTime;              // <should we make some official TimeClass object? e.g. from CTC?>
+	std::map<std::string,bool> datastreams; // DataStreams (which subdetectors saw a coincident timestamp?)
+	bool data_ctc;			// Does the event include CTC info?
+	bool data_tank;			// Does the event include Tank data?
+	bool data_mrd;			// Does the event include MRD data?
 
 	ULong64_t CTCtimestamp_tree;
 	ULong64_t PMTtimestamp_tree;
@@ -119,6 +123,9 @@ class DataSummary: public Tool {
 	std::vector<unsigned long> orphanchankeys;	//Chankeys that had a waveform in the orphaned event
 	std::vector<int> orphanchankeys_int;	//Chankeys that had a waveform in the orphaned event
 	double orphanmintdiff;		  // Time difference to closest CTC timestamp	
+	std::vector<std::vector<int>> orphanchannels; 	//Electronics channels that were hit & orphaned
+	std::vector<int> orphanchannels_combined;	//Combined electronics channel
+	int orphantrigword;		// Trigword of orphaned CTC timestamp
 
 	// functions
 	int ScanForFiles(std::string inputdir, std::string filepattern, std::string filepattern_orphan);

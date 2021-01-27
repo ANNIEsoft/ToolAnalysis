@@ -36,6 +36,7 @@ struct Orphanage{
   std::map<uint64_t, double> OrphanTankTimestampsTDiff;  //Contains timestamps & timestamp differences to next triggerword in WaveMap for all PMT events that were out of sync with the rest of the stream
   std::map<uint64_t, std::map<std::string,std::string>> OrphanCTCTimestamps;  //CTC timestamps with no PMT/MRD pair.
   std::map<uint64_t, std::map<std::string,std::string>> OrphanMRDTimestamps;  //Contains timestamps for all MRD events that were out of step with the rest of the stream
+  std::map<uint64_t, double> OrphanMRDTimestampsTDiff;  //Contains timestamps & timestamp differences to next triggerword for MRD events that were not within fault tolerance of the CTC timestamp
   ~Orphanage(){}
 };
 
@@ -86,6 +87,7 @@ class ANNIEEventBuilder: public Tool {
                        std::map<uint64_t, std::vector<std::vector<int>>> TankOrphansChannels,
                        std::map<uint64_t,double> TankOrphansTDiff,
                        std::map<uint64_t,std::string> MRDOrphans,
+                       std::map<uint64_t,double> MRDOrphansTDiff,
                        std::map<uint64_t,std::string> CTCOrphans);
   
   // store some info about orphaned events
@@ -116,6 +118,8 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
   MRDEventMaps myMRDMaps;
 
+  //###### Temporary information about almost completed VME events
+  std::map<uint64_t,int> AlmostCompleteWaveforms;
 
   //######### MAPS THAT HOLD PAIRED TANK/MRD/CTC TIMESTAMPS ########
   int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)

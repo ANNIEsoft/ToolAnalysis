@@ -29,6 +29,9 @@ bool StoreDecodedTimestamps::Initialise(std::string configfile, DataModel &data)
   t_timestamps_pmt->Branch("t_pmt",&t_pmt);
   t_timestamps_mrd->Branch("t_mrd",&t_mrd);
   t_timestamps_ctc->Branch("t_ctc",&t_ctc);
+  t_timestamps_pmt->Branch("t_pmt_sec",&t_pmt_sec);
+  t_timestamps_mrd->Branch("t_mrd_sec",&t_mrd_sec);
+  t_timestamps_ctc->Branch("t_ctc_sec",&t_ctc_sec);
   t_timestamps_ctc->Branch("triggerword_ctc",&triggerword_ctc);
 
   InProgressTankEvents = new std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >;
@@ -64,7 +67,7 @@ bool StoreDecodedTimestamps::Execute(){
   toolchain_stopping |= file_completed;
 
   ExecuteNr++;
-  if (ExecuteNr%100 != 0 && (!toolchain_stopping)) return true;
+  if (ExecuteNr%10 != 0 && (!toolchain_stopping)) return true;
 
   //Get decoded times from subsystems
   if (new_mrd_data) {
@@ -74,6 +77,7 @@ bool StoreDecodedTimestamps::Execute(){
     for(std::pair<uint64_t,std::vector<std::pair<unsigned long,int>>> apair : MRDEvents){
       uint64_t MRDTimeStamp = apair.first;
       t_mrd = (ULong64_t) MRDTimeStamp;
+      t_mrd_sec = double(t_mrd)/(1.E9);
       t_timestamps_mrd->Fill();     
 
     }
@@ -91,8 +95,15 @@ bool StoreDecodedTimestamps::Execute(){
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
       uint64_t PMTCounterTimeNs = apair.first;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
-      if (aWaveMap.size() >= 134){
+      if (aWaveMap.size() == (133)){
+        if (AlmostCompleteWaveforms.find(PMTCounterTimeNs)!=AlmostCompleteWaveforms.end()) AlmostCompleteWaveforms[PMTCounterTimeNs]++;
+        else AlmostCompleteWaveforms.emplace(PMTCounterTimeNs,0);
+        std::cout <<"AlmostCompleteWaveforms for PMTCounterTimeNs: "<<PMTCounterTimeNs<<": "<<AlmostCompleteWaveforms.at(PMTCounterTimeNs)<<std::endl;
+      }
+
+      if (aWaveMap.size() >= 134 || ((aWaveMap.size() == 133) && (AlmostCompleteWaveforms.at(PMTCounterTimeNs)>=5))|| (aWaveMap.size() == 133 && toolchain_stopping)){
         t_pmt = (ULong64_t) PMTCounterTimeNs;
+        t_pmt_sec = double(t_pmt)/1.E9;
         t_timestamps_pmt->Fill();
         timestamps_delete.push_back(PMTCounterTimeNs);
       }
@@ -101,7 +112,6 @@ bool StoreDecodedTimestamps::Execute(){
       for (int i_delete=0; i_delete < (int) timestamps_delete.size(); i_delete++){
         InProgressTankEvents->erase(timestamps_delete.at(i_delete));
       }
-      m_data->CStore.Set("InProgressTankEvents",InProgressTankEvents);
     }
   }
 
@@ -111,12 +121,12 @@ bool StoreDecodedTimestamps::Execute(){
       uint64_t CTCTimeStamp = apair.first;
       uint32_t CTCWord = apair.second;
       t_ctc = (ULong64_t) CTCTimeStamp;
+      t_ctc_sec = (double(t_ctc))/1.E9;
       triggerword_ctc = (int) CTCWord;
       t_timestamps_ctc->Fill();
     }
     if (delete_timestamps){
       TimeToTriggerWordMap->clear();
-      m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
     }
   }
 

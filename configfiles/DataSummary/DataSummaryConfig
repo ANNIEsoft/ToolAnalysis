@@ -25,5 +25,5 @@ EndPart 4
 
 # ROOT file output
 OutputFileDir .
-OutputFileName DataSummary_R2282S0p4_1500ev.root
+OutputFileName DataSummary_R2282S0p4_improved.root
 

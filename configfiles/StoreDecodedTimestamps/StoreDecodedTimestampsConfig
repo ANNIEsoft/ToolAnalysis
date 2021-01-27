@@ -1,7 +1,8 @@
-# PlotDecodedTimestamps config file
+# StoreDecodedTimestamps config file
 
 verbosity 2
-OutputFile R2280S0p0-p30_DecodedTimestamps.root
-SaveMRD 0
-SavePMT 0
+OutputFile R2282S0p4_DecodedTimestamps.root
+SaveMRD 1
+SavePMT 1
 SaveCTC 1
+DeleteTimestamps 1

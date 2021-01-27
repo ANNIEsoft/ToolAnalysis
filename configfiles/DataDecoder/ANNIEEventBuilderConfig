@@ -2,7 +2,7 @@ verbosity 5
 
 BuildType TankAndMRDAndCTC
 ProcessedFilesBasename ProcessedRawData
-NumEventsPerPairing 50
+NumEventsPerPairing 200
 SavePath ./
 
 MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got em

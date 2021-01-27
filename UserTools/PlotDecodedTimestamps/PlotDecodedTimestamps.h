@@ -11,6 +11,7 @@
 #include "TH2F.h"
 #include "TLine.h"
 #include "TCanvas.h"
+#include "TBox.h"
 
 /**
  * \class PlotDecodedTimestamps
@@ -48,11 +49,17 @@ class PlotDecodedTimestamps: public Tool {
   TTree *t_datasummary_orphan = nullptr;
   TFile *f_timestamps = nullptr;
   TTree *t_timestamps = nullptr;
+  TTree *t_timestamps_pmt = nullptr;
+  TTree *t_timestamps_mrd = nullptr;
   TFile *f_out = nullptr;
   std::vector<TCanvas*> canvas_snapshot;
   std::vector<TLine*> timestamp_snapshot;
+  TCanvas *canvas_timestreams = nullptr;
+  std::vector<TBox*> timestreams_boxes;
 
   ULong64_t t_ctc;
+  ULong64_t t_mrd;
+  ULong64_t t_pmt;
   int triggerword_ctc;
   ULong64_t ctctimestamp;
   ULong64_t mrdtimestamp;
@@ -65,6 +72,8 @@ class PlotDecodedTimestamps: public Tool {
   int entries_datasummary;
   int entries_orphan;
   int entries_timestamps;
+  int entries_timestamps_pmt;
+  int entries_timestamps_mrd;
 
   std::vector<int> vector_triggerwords;
   std::map<int,int> map_triggerword_color;

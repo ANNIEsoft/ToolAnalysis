@@ -44,6 +44,7 @@ class StoreDecodedTimestamps: public Tool {
   std::map<uint64_t, std::vector<std::pair<unsigned long, int> > > MRDEvents;
   std::map<uint64_t, std::map<std::vector<int>,std::vector<uint16_t> > > *InProgressTankEvents;
   std::map<uint64_t, uint32_t>* TimeToTriggerWordMap;
+  std::map<uint64_t, int> AlmostCompleteWaveforms;
 
   TFile *f_timestamps = nullptr;
   TTree *t_timestamps_mrd = nullptr;
@@ -53,6 +54,9 @@ class StoreDecodedTimestamps: public Tool {
   ULong64_t t_mrd;
   ULong64_t t_ctc;
   int triggerword_ctc;
+  double t_pmt_sec;
+  double t_mrd_sec;
+  double t_ctc_sec;
 
   int ExecuteNr;
 
