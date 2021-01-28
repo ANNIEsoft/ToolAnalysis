@@ -40,6 +40,7 @@ bool PlotDecodedTimestamps::Execute(){
     t_datasummary->GetEntry(i_entry);
     if (i_entry == 0) t_first = ctctimestamp/1000000000.;
     else if (i_entry == entries_datasummary-1) t_last = ctctimestamp/1000000000.;
+    if (ctctimestamp/1000000000. < t_first) t_first = ctctimestamp/1000000000.;
   }
 
   //Make sure that t_last>t_first
@@ -152,6 +153,7 @@ bool PlotDecodedTimestamps::Execute(){
     t_datasummary_orphan->GetEntry(i_entry);
     if (i_entry==0) t_first_orphan = orphantimestamp/1000000000.;
     else if (i_entry==entries_orphan-1) t_last_orphan = orphantimestamp/1000000000.;
+    if (orphantimestamp/1000000000. < t_first_orphan) t_first_orphan = orphantimestamp/1000000000.;
     if (orphantimestamp/1000000000.<t_min || orphantimestamp/1000000000.>t_max) continue;
     int index_hist = trunc((orphantimestamp/1000000000.-t_min)/seconds_per_plot);
     if (index_hist < 0 || index_hist >=num_snapshots) continue;

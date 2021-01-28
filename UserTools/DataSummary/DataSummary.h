@@ -78,8 +78,8 @@ class DataSummary: public Tool {
 	int run,subrun,part;              // extracted from filename
 	
 	// used for making plots on time axis; first and last timestamp
-	uint64_t t0;
-	uint64_t tn;
+	double t0;
+	double tn;
 	
 	// event level
 	uint32_t EventNumber;             // EventNumber - or use global? local?

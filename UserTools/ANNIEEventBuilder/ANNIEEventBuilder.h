@@ -120,6 +120,11 @@ class ANNIEEventBuilder: public Tool {
 
   //###### Temporary information about almost completed VME events
   std::map<uint64_t,int> AlmostCompleteWaveforms;
+  uint64_t slowest_in_progress_tank;
+
+  //###### Extra maps used for FIFO overflow info and TimestampsFromTheFuture
+  std::map<uint64_t, std::map<std::vector<int>, int> >* FIFOPMTWaves = nullptr;
+  std::map<uint64_t, std::map<std::vector<int>,uint64_t>>* TimestampsFromTheFuture = nullptr;
 
   //######### MAPS THAT HOLD PAIRED TANK/MRD/CTC TIMESTAMPS ########
   int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)

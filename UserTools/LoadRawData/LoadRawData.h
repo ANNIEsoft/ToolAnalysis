@@ -46,6 +46,8 @@ class LoadRawData: public Tool {
   std::string Mode;
   std::string InputFile;
   std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
+  bool readtrigoverlap;
+  bool storetrigoverlap;
 
 
   int FileNum = 0;
@@ -59,6 +61,11 @@ class LoadRawData: public Tool {
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
   int TrigEntryNum = 0;
+
+  //Run / Subrun / part info
+  int extract_run;
+  int extract_subrun;
+  int extract_part;
 
   //Bools modified to determine which Decoder tools are paused downstream
   bool TankPaused;

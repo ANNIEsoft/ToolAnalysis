@@ -39,6 +39,9 @@ class TriggerDataDecoder: public Tool {
   bool UseTrigMask = false;
   std::string TriggerWordFile;
   std::string mode;
+  bool storetrigoverlap;
+  bool readtrigoverlap;
+  int loop_nr;
 
   std::string TriggerMaskFile;
   std::vector<int> TriggerMask;
@@ -55,6 +58,7 @@ class TriggerDataDecoder: public Tool {
   uint64_t c2 = 0;
   int CurrentRunNum;
   int CurrentSubrunNum;
+  int CurrentPartNum;
 
   int verbosity;
   int v_error=0;

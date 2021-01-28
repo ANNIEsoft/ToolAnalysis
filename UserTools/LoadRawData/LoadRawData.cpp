@@ -11,12 +11,16 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
 
   verbosity = 0;
   DummyRunInfo = false;
+  readtrigoverlap = 0;
+  storetrigoverlap = 0;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("BuildType",BuildType);
   m_variables.Get("Mode",Mode);
   m_variables.Get("InputFile",InputFile);
   m_variables.Get("DummyRunInfo",DummyRunInfo);
+  m_variables.Get("ReadTrigOverlap",readtrigoverlap);
+  m_variables.Get("StoreTrigOverlap",storetrigoverlap);
 
   m_data= &data; //assigning transient data pointer
   
@@ -83,9 +87,9 @@ bool LoadRawData::Execute(){
       Log("LoadRawData Tool: Loading Raw Data file as BoostStore",v_message,verbosity); 
       RawData->Initialise(InputFile.c_str());
       if(verbosity>4) RawData->Print(false);
+      this->LoadRunInformation();
       this->LoadPMTMRDData();
       this->LoadTriggerData();
-      this->LoadRunInformation();
     } else {
       Log("LoadRawData Tool: Continuing Raw Data file processing",v_message,verbosity); 
     }
@@ -104,9 +108,9 @@ bool LoadRawData::Execute(){
       RawData->Initialise(CurrentFile.c_str());
       m_data->CStore.Set("NewRawDataFileAccessed",true);
       if(verbosity>4) RawData->Print(false);
+      this->LoadRunInformation();
       this->LoadPMTMRDData();
       this->LoadTriggerData();
-      this->LoadRunInformation();
     } else {
      if(verbosity>v_message) std::cout << "LoadRawDataTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
     }
@@ -126,9 +130,9 @@ bool LoadRawData::Execute(){
       if (verbosity > v_warning) std::cout<<"LoadRawData: New raw data file available."<<std::endl;
       m_data->Stores["PMTData"]->Get("FileData",RawData);
       if(verbosity>4) RawData->Print(false);
+      this->LoadRunInformation();
       this->LoadPMTMRDData();
       this->LoadTriggerData();
-      this->LoadRunInformation();
     } 
     else {
       Log("LoadRawData Tool: The State >>> "+State+" <<< was not recognized. Please make sure you execute the MonitorReceive tool before the LoadRawData tool when operating in continuous mode",v_error,verbosity);
@@ -224,7 +228,8 @@ bool LoadRawData::Execute(){
   if ((TrigEntriesCompleted && TankEntriesCompleted) && (BuildType == "TankAndCTC")) FileCompleted = true;
   if ((TrigEntriesCompleted && MRDEntriesCompleted) && (BuildType == "MRDAndCTC")) FileCompleted = true;
   if ((TrigEntriesCompleted && TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRDAndCTC")) FileCompleted = true;
-    
+  if (TrigEntriesCompleted && BuildType == "CTC") FileCompleted = true;    
+
   m_data->CStore.Set("NewRawDataEntryAccessed",true);
   m_data->CStore.Set("FileCompleted",FileCompleted);
   Log("LoadRawData tool: execution loop complete.",v_debug,verbosity);
@@ -251,9 +256,9 @@ void LoadRawData::LoadRunInformation(){
   Store Postgress;
   if(DummyRunInfo){
     //Try to get run & subrun information from filename
-    int extract_run = this->GetRunFromFilename();
-    int extract_subrun = this->GetSubRunFromFilename();
-    int extract_part = this->GetPartFromFilename();
+    extract_run = this->GetRunFromFilename();
+    extract_subrun = this->GetSubRunFromFilename();
+    extract_part = this->GetPartFromFilename();
     std::cout <<"extracted run/subrun: "<<extract_run<<"/"<<extract_subrun<<"/"<<extract_part<<std::endl;
     Postgress.Set("RunNumber",extract_run);
     Postgress.Set("SubRunNumber",extract_subrun);
@@ -265,7 +270,7 @@ void LoadRawData::LoadRunInformation(){
     RawData->Get("RunInformation",RunInfo);
     if(verbosity>3) RunInfo.Print(false);
     RunInfo.Get("Postgress",Postgress);
-    int extract_part = this->GetPartFromFilename();
+    extract_part = this->GetPartFromFilename();
     Postgress.Set("PartNumber",extract_part);
     if(verbosity>3) Postgress.Print();
   }
@@ -297,7 +302,19 @@ void LoadRawData::LoadTriggerData(){
   RawData->Get("TrigData",*TrigData);
   if(verbosity>3) TrigData->Print(false);
   TrigData->Header->Get("TotalEntries",trigtotalentries);
+  if (readtrigoverlap) {
+    std::stringstream ss_trigoverlap;
+    ss_trigoverlap << "TrigOverlap_R"<<extract_run<<"S"<<extract_subrun<<"p"<<extract_part;
+    std::cout <<"BoostStore name: "<<ss_trigoverlap.str().c_str()<<std::endl;
+    BoostStore ReadTrigOverlap;
+    bool store_exist = ReadTrigOverlap.Initialise(ss_trigoverlap.str().c_str()); 
+    std::cout <<"store_exist: "<<store_exist<<std::endl;   
+    if (store_exist) trigtotalentries++;
+    std::cout <<"trigtotalentries: "<<trigtotalentries<<std::endl;
+  }
   Log("LoadRawData Tool: TrigData has "+to_string(trigtotalentries)+" entries",v_message,verbosity);
+  
+ 
   return;
 }
 
@@ -441,10 +458,33 @@ void LoadRawData::GetNextDataEntries(){
   }
 
   //Get next TrigData Entry
-  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC") && !TrigEntriesCompleted && !CTCPaused){
+  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC" || BuildType == "CTC") && !TrigEntriesCompleted && !CTCPaused){
     Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum)+"/"+to_string(trigtotalentries),v_debug, verbosity);
-    TrigData->GetEntry(TrigEntryNum);
-    TrigData->Get("TrigData",*Tdata);
+    if (storetrigoverlap && TrigEntryNum == 0 && extract_part != 0){
+      TrigData->GetEntry(TrigEntryNum);
+      TrigData->Get("TrigData",*Tdata);
+      BoostStore StoreTrigOverlap;
+      std::stringstream ss_trigoverlap;
+      ss_trigoverlap << "TrigOverlap_R"<<extract_run<<"S"<<extract_subrun<<"p"<<extract_part-1;
+      bool store_exist = StoreTrigOverlap.Initialise(ss_trigoverlap.str().c_str());
+      TriggerData TdataStore = *Tdata;
+      StoreTrigOverlap.Set("TrigData",TdataStore);
+      StoreTrigOverlap.Save(ss_trigoverlap.str().c_str());
+    } else if (!readtrigoverlap){
+      TrigData->GetEntry(TrigEntryNum);
+      TrigData->Get("TrigData",*Tdata);
+    } else if (readtrigoverlap){
+      if (TrigEntryNum != trigtotalentries-1){
+        TrigData->GetEntry(TrigEntryNum);
+        TrigData->Get("TrigData",*Tdata);
+      } else {
+        BoostStore ReadTrigOverlap;
+        std::stringstream ss_trigoverlap;
+        ss_trigoverlap << "TrigOverlap_R"<<extract_run<<"S"<<extract_subrun<<"p"<<extract_part;
+        bool got_trig = ReadTrigOverlap.Initialise(ss_trigoverlap.str().c_str());
+        ReadTrigOverlap.Get("TrigData",*Tdata);
+      }
+    }
     m_data->CStore.Set("TrigData",Tdata);
     TrigEntryNum+=1;
   }

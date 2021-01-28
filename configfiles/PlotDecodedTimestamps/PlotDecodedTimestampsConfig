@@ -4,8 +4,8 @@ verbosity 2
 #OutputFile R2280S0_p0-p30_Timestamps_Plots.root
 #InputDataSummary DataSummary_R2280S0p0-p30.root
 #InputTimestamps R2280S0p0-p30_DecodedTimestamps.root
-OutputFile R2282S0_p4_Timestamps_Plots.root
-InputDataSummary DataSummary_R2282S0p4_improved.root
-InputTimestamps R2282S0p4_DecodedTimestamps.root
+OutputFile R2282S0_p3_Timestamps_Plots.root
+InputDataSummary DataSummary_R2282S0p3_improved.root
+InputTimestamps R2282S0p3_DecodedTimestamps.root
 SecondsPerPlot 10
 TriggerWordConfig ./configfiles/PlotDecodedTimestamps/TriggerColors.txt

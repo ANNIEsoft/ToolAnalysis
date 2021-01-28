@@ -263,7 +263,6 @@ bool ANNIEEventBuilder::Execute(){
     //Now, pair up PMT and MRD events...
     int NumTankTimestamps = myTimeStream.BeamTankTimestamps.size();
     int NumMRDTimestamps = myTimeStream.BeamMRDTimestamps.size();
-    std::cout <<"NumTankTimestamps: "<<NumTankTimestamps<<", NumMRDTimestamps: "<<NumMRDTimestamps<<std::endl;
 
     //Check if one of the streams needs to be paused
     
@@ -277,8 +276,6 @@ bool ANNIEEventBuilder::Execute(){
     
     // find which TimeStream is lagging the most, and what time it's currently read up to.
     std::vector<uint64_t> newest_timestamps{most_recent_beam,most_recent_mrd};
-    std::cout <<"Newest timestamps are: "<<std::endl;
-    std::cout<<"Beam timestamp: "<<most_recent_beam<<", MRD timestamp: "<<most_recent_mrd<<std::endl;
     uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
     
     if(verbosity>4){
@@ -475,7 +472,11 @@ bool ANNIEEventBuilder::Execute(){
       this->ManageOrphanage();*/
 
       if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
-      ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
+      //Prioritize tank matching vs. MRD matching -> check slowest in progress timestamp
+      uint64_t max_matching_time = (slowest_stream_timestamp < slowest_in_progress_tank)? slowest_stream_timestamp : slowest_in_progress_tank;
+      std::cout <<"slowest_stream_timestamp: "<<slowest_stream_timestamp<<", slowest_in_progress_tank: "<<slowest_in_progress_tank<<", max_matching_time: "<<max_matching_time<<std::endl;
+      //ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
+      ThisBuildMap = this->MergeStreams(ThisBuildMap,max_matching_time,toolchain_stopping);
       Log("ANNIEEventBuilder: Calling ManageOrphanage post MergeStreams",v_debug,verbosity);
       this->ManageOrphanage();
       Log("ANNIEEventBuilder: Done managing orphanage",v_debug,verbosity);
@@ -879,14 +880,13 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   std::map<uint64_t,std::vector<std::vector<int>>> TankOrphansChannels;  
   std::map<uint64_t,double> TankOrphansTDiff;
 
-
   if(verbosity>5) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
   std::cout <<"InProgressTankEvents->size(): "<<InProgressTankEvents->size()<<std::endl;
   for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
     uint64_t PMTCounterTimeNs = apair.first;
     std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
     if(verbosity>4) std::cout << "TS: " << PMTCounterTimeNs <<", Number of waves for this counter: " << aWaveMap.size() << std::endl;
-    
+
     //Push back any new timestamps, then remove duplicates in the end
     if(PMTCounterTimeNs>NewestTankTimestamp){
       NewestTankTimestamp = PMTCounterTimeNs;
@@ -909,6 +909,10 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
       InProgressTankEventsToDelete.push_back(PMTCounterTimeNs);
     }
 
+    if ((aWaveMap.size() == NumWavesInCompleteSet-1)){
+      if (AlmostCompleteWaveforms.at(PMTCounterTimeNs)>=5) AlmostCompleteWaveforms.erase(PMTCounterTimeNs);
+    }
+
     //If this InProgressTankEvent is too old, clear it
     //out from all TankTimestamp maps
     if(OrphanOldTankTimestamps && ((NewestTankTimestamp - PMTCounterTimeNs) > OldTimestampThreshold*1E9)){
@@ -921,7 +925,14 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
     }
   }
   RemoveDuplicates(myTimeStream.BeamTankTimestamps);
-  
+ 
+  slowest_in_progress_tank = NewestTankTimestamp;
+  std::cout <<"Setting start value of slowest in progress_tank to : "<<slowest_in_progress_tank<<std::endl;
+  for (std::pair<uint64_t,int> almost_complete_waveform : AlmostCompleteWaveforms){
+    std::cout <<"almost_complete_waveform.first: "<<almost_complete_waveform.first<<std::endl;
+    if (almost_complete_waveform.first < slowest_in_progress_tank) slowest_in_progress_tank = almost_complete_waveform.first;
+  }
+
   // move abandoned in-progress events to the orphanage
   this->MoveToOrphanage(TankOrphans, TankOrphansWaveMap, TankOrphansChannels, TankOrphansTDiff, MRDOrphans, MRDOrphansTDiff, CTCOrphans);
  

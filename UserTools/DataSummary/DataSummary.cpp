@@ -665,10 +665,20 @@ bool DataSummary::CreatePlots(){
 	// =============================
 	// first get the timespan we're going to be plotting
 	
+	double t0_matched, t0_orphaned;
+	double tn_matched, tn_orphaned;
+
 	outtree->GetEntry(0);
-	t0 = CTCtimestamp;
-	outtree->GetEntry(outtree->GetEntriesFast()-1);
-	tn = CTCtimestamp;
+	t0_matched = CTCtimestamp_sec;
+	outtree->GetEntry(outtree->GetEntries()-1);
+	tn_matched = CTCtimestamp_sec;
+
+	outtree2->GetEntry(0);
+	t0_orphaned = orphantimestamp_double/1.E9;
+	outtree2->GetEntry(outtree2->GetEntries()-1);
+	tn_orphaned = orphantimestamp_double/1.E9;
+	t0 = (t0_matched < t0_orphaned)? (t0_matched-60) : (t0_orphaned - 60);
+	tn = (tn_matched > tn_orphaned)? (tn_matched+60) : (tn_orphaned + 60);
 	std::cout <<"CreatePlots: t0: "<<t0<<", tn: "<<tn<<std::endl;
 	// we need to set a global "time offset", from which all other time axes will be relative to
 	// this should be in seconds
@@ -702,9 +712,9 @@ bool DataSummary::AddRatePlots(int nbins){
 	outfile->cd(); // ensure plots get put in the file
 	
 	// define our histogram min/max relative to global time offset, in seconds
-	int t1 = 0;
-	int t2 = (tn-t0)/1E9;
-	
+        double t1 = t0;
+     	double t2 = tn;
+
 //	anything event rate
 //	all-systems event rate
 //	event with ctc rate
@@ -743,6 +753,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig5","OrphanedEventType==\"CTC\" && OrphanTrigWord == 5","goff");	
 	TH1D* orphan_rate_ctc_trig31 = new TH1D("orphan_rate_ctc_trig31","Orphan Rate (CTC, trigword 31)",nbins,t1,t2);
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig31","OrphanedEventType==\"CTC\" && OrphanTrigWord == 31","goff");	
+	TH1D* orphan_rate_ctc_trig33 = new TH1D("orphan_rate_ctc_trig33","Orphan Rate (CTC, trigword 33)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig33","OrphanedEventType==\"CTC\" && OrphanTrigWord == 33","goff");	
 	TH1D* orphan_rate_ctc_trig36 = new TH1D("orphan_rate_ctc_trig36","Orphan Rate (CTC, trigword 36)",nbins,t1,t2);
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig36","OrphanedEventType==\"CTC\" && OrphanTrigWord == 36","goff");	
 
@@ -760,6 +772,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_ctc->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc_trig5->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc_trig31->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_ctc_trig33->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc_trig36->GetXaxis()->SetTimeDisplay(1);
 
 	// set the timestamp format
@@ -789,6 +802,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_ctc_trig5->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate_ctc_trig31->GetXaxis()->SetLabelSize(0.03);
 	orphan_rate_ctc_trig31->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_ctc_trig33->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_ctc_trig33->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate_ctc_trig36->GetXaxis()->SetLabelSize(0.03);
 	orphan_rate_ctc_trig36->GetXaxis()->SetLabelOffset(0.03);
 	ctc_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
@@ -804,6 +819,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_ctc->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc_trig5->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc_trig31->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_ctc_trig33->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc_trig36->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	
 	return true;
@@ -824,7 +840,7 @@ bool DataSummary::AddEventTypePlots(){
 	TH1D* orphan_reasons_rates = new TH1D("orphan_reasons_rates","Orphan Reasons (Rates)",4,0,4);
 	TH1D* waveform_chankeys_orphan = new TH1D("waveform_chankeys_orphan","Waveform channelkeys (orphaned events)",500,0,500);
 	TH1D* orphan_mintdiff_tank = new TH1D("orphan_mintdiff_tank","Minimum time difference CTC (orphaned tank events)",500,-1000,1000);
-	TH1D* orphan_mintdiff_mrd = new TH1D("orphan_mintdiff_mrd","Minimum time difference CTC (orphaned MRD events)",500,-10000000,10000000);
+	TH1D* orphan_mintdiff_mrd = new TH1D("orphan_mintdiff_mrd","Minimum time difference CTC (orphaned MRD events)",500,-100000000,100000000);
 	TH1D* waveform_channels_orphan = new TH1D("waveform_channels_orphan","Waveform channels (orphaned events)",5000,0,5000);
 	TH1D* ctc_orphans_triggerword = new TH1D("ctc_orphans_triggerword","CTC Orphans - Triggerword",64,0,64);
 	TH1D* datastreams_present = new TH1D("datastreams_present","Present datastreams",3,0,3);
@@ -957,6 +973,8 @@ bool DataSummary::AddTDiffPlots(){
 	// btw we can grab that plotted data for later
 	double* datapointer = outtree->GetV1();
 	std::vector<double> tank_ctc_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
+	TH1D* all_tank_ctc_tdiffs_wholerange = new TH1D("all_tank_ctc_tdiffs_wholerange","All (CTC-Tank) TDiffs",500,-1000,1000);
+	outtree->Draw("CtcToTankTDiff>>all_tank_ctc_tdiffs_wholerange","","goff");
 	TH1D* all_tank_mrd_tdiffs = new TH1D("all_tank_mrd_tdiffs","All (Tank-MRD) TDiffs",100,-1E6,1E6);	//MRD timestamps much cruder, can be up to 1ms away!
 	datapointer = outtree->GetV1();
 	std::vector<double> mrd_tank_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
@@ -965,13 +983,15 @@ bool DataSummary::AddTDiffPlots(){
 	outtree->Draw("CtcToMrdTDiff>>all_mrd_ctc_tdiffs","","goff");
 	datapointer = outtree->GetV1();
 	std::vector<double> mrd_ctc_diff_vals(datapointer, datapointer + outtree->GetSelectedRows());
+	TH1D* all_mrd_ctc_tdiffs_wholerange = new TH1D("all_mrd_ctc_tdiffs_wholerange","All (CTC-MRD) TDiffs",500,-100E6,100E6);
+	outtree->Draw("CtcToMrdTDiff>>all_mrd_ctc_tdiffs_wholerange","","goff");
 	
 	// 2. we could do the same for the above, broken down by run
 	
 	// 3. we could also make 2D scatter versions, where we can see how the differences evolve over time
 	// define our histogram min/max - these are relative to the global time offset, in seconds
-	int t1 = 0;
-	int t2 = (tn-t0)/1E9;
+	double t1 = t0;
+	double t2 = tn;
 	// TGraph* tank_ctc_diffs = new TGraph("tank_ctc_diffs","All (CTC-Tank) TDiffs",100,t1,t2);
 	// apparently there really isn't a way to draw from a TTree straight into a named TGraph
 	TH2F *tank_ctc_diffs = new TH2F("tank_ctc_diffs","(Tank - CTC) TDiffs",500,t1,t2,100,-100,100);
