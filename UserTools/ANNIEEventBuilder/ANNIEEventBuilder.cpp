@@ -620,8 +620,10 @@ bool ANNIEEventBuilder::Execute(){
     // OR if the toolchain is being stopped (reached and of file, for example)
     if((MinStamps>EventsPerPairing)||toolchain_stopping){
 
+      uint64_t max_matching_time = (slowest_stream_timestamp < slowest_in_progress_tank)? slowest_stream_timestamp : slowest_in_progress_tank;
       if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
-      ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
+      ThisBuildMap = this->MergeStreams(ThisBuildMap,max_matching_time,toolchain_stopping);
+      //ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
       Log("ANNIEEventBuilder: Calling ManageOrphanage post MergeStreams",v_debug,verbosity);
       this->ManageOrphanage();
       Log("ANNIEEventBuilder: Done managing orphanage",v_debug,verbosity);
