@@ -1,25 +1,23 @@
-# Configure files
+# DataDecoderTankCTC
 
 ***********************
-#Description
+# Overview
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
+The `DataDecoderTankCTC` toolchain enables the Event Building process that merges the timestamps from the tank VME system with timestamps of selected triggerwords from the CTC.
 
 
 ************************
-#Usage
+# Usage
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+The `DataDecoderTankCTC` toolchain needs the following tools in the `ToolsConfig` file:
 
-Variables should be stored one per line as follows:
+* `LoadGeometry`
+* `LoadRawData`
+* `PMTDataDecoder`
+* `TriggerDataDecoder`
+* `ANNIEEventBuilder`
 
-
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
+Both the `LoadRawData` tool and the `ANNIEEventBuilder` tool need to set the `BuildType` configuration variable to `TankAndCTC`.
 
