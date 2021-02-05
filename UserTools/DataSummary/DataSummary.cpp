@@ -117,7 +117,37 @@ bool DataSummary::Execute(){
 		ANNIEEvent->Get("MRDLoopbackTDC",MRDLoopbackTDC); // convert to LoopbackTimestamp values
                 ANNIEEvent->Get("DataStreams",datastreams);  //DataStreams can be used to check which of the subdetectors is included in the data
 		// TODO optional sanity checks: consistency of RunNumber and other constants
+	
+		std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
+                bool has_raw = ANNIEEvent->Get("RawADCData",raw_waveform_map);
+		std::cout <<"has_raw: "<<has_raw<<std::endl;
+		if (!has_raw) {
+   	 		Log("RunValidation tool: Did not find RawADCData in ANNIEEvent! Abort",v_error,verbosity);
+    			/*return false;*/
+  		}
+		window_is_extended = false;
+		size_of_window = 2000;
+		window_sizes.clear();
+		window_chkeys.clear();
+	
+		if (has_raw){
+			for (auto& temp_pair : raw_waveform_map) {
+				const auto& achannel_key = temp_pair.first;
+				auto& araw_waveforms = temp_pair.second;
+				for (unsigned int i=0; i< araw_waveforms.size(); i++){
+					auto samples = araw_waveforms.at(i).GetSamples();
+        				int size_sample = 2*samples->size();
+					window_sizes.push_back(size_sample);
+					window_chkeys.push_back(achannel_key);
+					if (size_sample > size_of_window) {
+						size_of_window = size_sample;
+						window_is_extended = true;
+					}
+      				}
+    			}
+  		}
 		
+
 		// calculated variables
 		MRDtimestamp = mrd_timeclass.GetNs();
 
@@ -638,6 +668,10 @@ bool DataSummary::CreateOutputFile(){
 	outtree->Branch("DataCTC",&data_ctc);
 	outtree->Branch("DataTank",&data_tank);
 	outtree->Branch("DataMRD",&data_mrd);
+	outtree->Branch("ExtendedWindow",&window_is_extended);
+	outtree->Branch("WindowSize",&size_of_window);
+	outtree->Branch("AllWindowSizes",&window_sizes);
+	outtree->Branch("AllWindowChankeys",&window_chkeys);
 	outtree->SetAlias("CtcToTankTDiff","CTCTimestamp_double-PMTTimestamp_double");
 	outtree->SetAlias("CtcToMrdTDiff","CTCTimestamp_double-MRDTimestamp_double");
 	outtree->SetAlias("TankToMrdTDiff","PMTTimestamp_double-MRDTimestamp_double");

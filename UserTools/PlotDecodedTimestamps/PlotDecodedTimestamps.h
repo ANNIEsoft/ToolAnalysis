@@ -68,6 +68,9 @@ class PlotDecodedTimestamps: public Tool {
   std::string *type_orphan = nullptr;
   ULong64_t orphantimestamp;
   std::string *cause_orphan = nullptr;
+  int adc_samples;
+  bool extended_window;
+  bool data_tank;
 
   int entries_datasummary;
   int entries_orphan;

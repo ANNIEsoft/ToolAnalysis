@@ -106,6 +106,7 @@ bool LoadRawData::Execute(){
       CurrentFile = OrganizedFileList.at(FileNum);
       Log("LoadRawData Tool: LoadingRaw Data file as BoostStore",v_debug,verbosity); 
       RawData->Initialise(CurrentFile.c_str());
+      std::cout <<"Got file"<<std::endl;
       m_data->CStore.Set("NewRawDataFileAccessed",true);
       if(verbosity>4) RawData->Print(false);
       this->LoadRunInformation();
@@ -466,6 +467,7 @@ void LoadRawData::GetNextDataEntries(){
       BoostStore StoreTrigOverlap;
       std::stringstream ss_trigoverlap;
       ss_trigoverlap << "TrigOverlap_R"<<extract_run<<"S"<<extract_subrun<<"p"<<extract_part-1;
+      std::cout <<"Trig Overlap file: "<<ss_trigoverlap.str()<<std::endl;
       bool store_exist = StoreTrigOverlap.Initialise(ss_trigoverlap.str().c_str());
       TriggerData TdataStore = *Tdata;
       StoreTrigOverlap.Set("TrigData",TdataStore);

@@ -1,4 +1,4 @@
 verbosity 2
 TriggerMaskFile ./configfiles/PlotDecodedTimestamps/FullTriggerMask.txt
-ReadC1C2 StoreC1C2_R2282S0p4
-StoreC1C2 none
+StoreTrigOverlap 0
+ReadTrigOverlap 1

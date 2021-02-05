@@ -93,9 +93,36 @@ bool PlotDecodedTimestamps::Execute(){
     canvas_snapshot.push_back(c);
   } 
 
+  //Create histogram for alternative triggerwords
+  TH2F *h_alt_trigger = new TH2F("h_alt_trigger","Alternative triggers for tank orphans",64,0,64,500,-1000,1000);
+  h_alt_trigger->GetXaxis()->SetTitle("triggerword");
+  h_alt_trigger->GetYaxis()->SetTitle("#Delta t");
+  TH2F *h_trigger_prompt = new TH2F("h_trigger_prompt","Triggerwords around prompt windows",64,0,64,500,-10000,10000);
+  h_trigger_prompt->GetXaxis()->SetTitle("triggerword");
+  h_trigger_prompt->GetYaxis()->SetTitle("#Delta t");
+  TH2F *h_trigger_delayed = new TH2F("h_trigger_delayed","Triggerwords around extended windows",64,0,64,500,-10000,10000);
+  h_trigger_delayed->GetXaxis()->SetTitle("triggerword");
+  h_trigger_delayed->GetYaxis()->SetTitle("#Delta t");
+  TH1F *h_trigger_prompt_1D = new TH1F("h_trigger_prompt_1D","Triggerwords around prompt windows",64,0,64);
+  h_trigger_prompt_1D->GetXaxis()->SetTitle("triggerword");
+  h_trigger_prompt_1D->GetYaxis()->SetTitle("#");
+  TH1F *h_trigger_delayed_1D = new TH1F("h_trigger_delayed_1D","Triggerwords around extended windows",64,0,64);
+  h_trigger_delayed_1D->GetXaxis()->SetTitle("triggerword");
+  h_trigger_delayed_1D->GetYaxis()->SetTitle("#");
+
   //Loop over DataSummary file information
 
   double t_first_matched, t_last_matched;
+  std::vector<double> closest_tdiff_prompt;
+  std::vector<int> closest_triggerword_prompt;
+  std::vector<std::vector<double>> closest_tdiff_prompt_vec;
+  std::vector<std::vector<int>> closest_triggerwords_prompt_vec;
+  int n_prompt=0;
+  std::vector<double> closest_tdiff_extended;
+  std::vector<int> closest_triggerword_extended;
+  std::vector<std::vector<double>> closest_tdiff_extended_vec;
+  std::vector<std::vector<int>> closest_triggerwords_extended_vec;
+  int n_delayed=0;
   for (int i_entry = 0; i_entry < entries_datasummary; i_entry++){
     t_datasummary->GetEntry(i_entry);
     if (i_entry==0) t_first_matched = ctctimestamp/1000000000.;
@@ -125,6 +152,31 @@ bool PlotDecodedTimestamps::Execute(){
     timestamp_snapshot.push_back(l_mrd);
     timestamp_snapshot.push_back(l_pmt);
     timestamp_snapshot.push_back(l_ctc);
+    if (data_tank && ((extended_window == true && n_delayed < 500) || (extended_window == false && n_prompt < 500))){
+     if (extended_window) {
+        std::cout <<"Delayed event "<<n_delayed<<std::endl;
+        n_delayed++;
+     }
+     else {
+       std::cout <<"Prompt event "<<n_prompt<<std::endl;
+       n_prompt++;
+     }
+     double min_diff = 1000000000000;
+     int temp_closest_triggerword = 99;
+     for (int i_trig = 0; i_trig < entries_timestamps; i_trig++){
+       t_timestamps->GetEntry(i_trig);
+       double tdiff=double(pmttimestamp)-double(t_ctc);
+       if (fabs(tdiff)<10000){
+         if (extended_window) {
+           h_trigger_delayed->Fill(triggerword_ctc,tdiff);
+           h_trigger_delayed_1D->Fill(triggerword_ctc);
+         } else {
+           h_trigger_prompt->Fill(triggerword_ctc,tdiff);
+           h_trigger_prompt_1D->Fill(triggerword_ctc);
+         }
+       }
+     }
+   }
   }
 
   double t_max_matched = (t_last_matched >= t_first_matched)? t_last_matched : t_first_matched;
@@ -149,6 +201,11 @@ bool PlotDecodedTimestamps::Execute(){
 
   //Loop over orphan timestamp information
   double t_first_orphan, t_last_orphan;
+  std::vector<double> closest_tdiff;
+  std::vector<int> closest_triggerword;
+  std::vector<std::vector<double>> closest_tdiff_vec;
+  std::vector<std::vector<int>> closest_triggerwords_vec;
+  int n_orphan=0;
   for (int i_entry = 0; i_entry < entries_orphan; i_entry++){
     t_datasummary_orphan->GetEntry(i_entry);
     if (i_entry==0) t_first_orphan = orphantimestamp/1000000000.;
@@ -181,6 +238,31 @@ bool PlotDecodedTimestamps::Execute(){
     canvas_snapshot.at(index_hist)->cd();
     l_orphan->Draw("same");
     timestamp_snapshot.push_back(l_orphan);
+    //Find alternative best triggerword for unmatched tank events
+    if (*cause_orphan == "tank_no_ctc" && n_orphan < 500){
+     n_orphan++;
+     double min_diff = 1000000000000;
+     int temp_closest_triggerword = 99;
+     std::vector<int> temp_closest_triggerwords;
+     std::vector<double> temp_closest_tdiff;
+     for (int i_trig = 0; i_trig < entries_timestamps; i_trig++){
+       t_timestamps->GetEntry(i_trig);
+       double tdiff=double(orphantimestamp)-double(t_ctc);
+       if (fabs(tdiff)<1000){
+         temp_closest_triggerwords.push_back(triggerword_ctc);
+         temp_closest_tdiff.push_back(tdiff);
+         h_alt_trigger->Fill(triggerword_ctc,tdiff);
+         if (fabs(tdiff) <= fabs(min_diff)){
+           min_diff = tdiff;
+           temp_closest_triggerword = triggerword_ctc;
+         }
+       }  
+     }
+    closest_triggerword.push_back(temp_closest_triggerword);
+    closest_tdiff.push_back(min_diff);
+    closest_triggerwords_vec.push_back(temp_closest_triggerwords);
+    closest_tdiff_vec.push_back(temp_closest_tdiff);
+   }
   }
 
   double t_max_orphan = (t_last_orphan >= t_first_orphan)? t_last_orphan : t_first_orphan;
@@ -232,12 +314,29 @@ bool PlotDecodedTimestamps::Execute(){
 
   f_out->cd();
   canvas_timestreams->Write();
+  h_alt_trigger->Write();
+  h_trigger_delayed->Write();
+  h_trigger_delayed_1D->Write();
+  h_trigger_prompt->Write();
+  h_trigger_prompt_1D->Write();
   for (int i_snap = 0; i_snap < (int) canvas_snapshot.size(); i_snap++){
     canvas_snapshot.at(i_snap)->Write();
   }
   f_out->Close();
   delete f_out;
- 
+
+  ofstream file_alt_trigger("AlternativeTriggers.txt");
+  for (int i_alt=0; i_alt < closest_triggerword.size(); i_alt++){
+    file_alt_trigger << closest_triggerword.at(i_alt) << "    " << closest_tdiff.at(i_alt) << std::endl;
+    std::vector<int> single_triggerwords = closest_triggerwords_vec.at(i_alt);
+    std::vector<double> single_tdiff = closest_tdiff_vec.at(i_alt);
+    for (int i_single = 0; i_single < single_tdiff.size(); i_single++){
+      file_alt_trigger << single_triggerwords.at(i_single)<< "    "<< single_tdiff.at(i_single) << ", ";
+    }
+    file_alt_trigger << "----------------------------------------"<<std::endl;
+  }
+  file_alt_trigger.close();
+
   return true;
 }
 
@@ -268,6 +367,8 @@ bool PlotDecodedTimestamps::Finalise(){
 
 void PlotDecodedTimestamps::SetupFilesAndTrees(){
 
+  std::cout <<"SetupFilesAndTrees"<<std::endl;
+
   f_datasummary = new TFile(input_datasummary.c_str(),"READ");
   t_datasummary = (TTree*) f_datasummary->Get("EventStats");
   t_datasummary_orphan = (TTree*) f_datasummary->Get("OrpahStats");
@@ -280,6 +381,10 @@ void PlotDecodedTimestamps::SetupFilesAndTrees(){
   t_datasummary->SetBranchAddress("CTCTimestamp",&ctctimestamp);
   t_datasummary->SetBranchAddress("MRDTimestamp",&mrdtimestamp);
   t_datasummary->SetBranchAddress("PMTTimestamp",&pmttimestamp);
+  t_datasummary->SetBranchAddress("ExtendedWindow",&extended_window);
+  t_datasummary->SetBranchAddress("WindowSize",&adc_samples);
+  t_datasummary->SetBranchAddress("DataTank",&data_tank);
+
 
   type_orphan = new std::string;
   cause_orphan = new std::string;
@@ -303,6 +408,9 @@ void PlotDecodedTimestamps::SetupFilesAndTrees(){
 }
 
 void PlotDecodedTimestamps::SetupTriggerColorScheme(){
+
+  std::cout <<"SetupTriggerColorScheme"<<std::endl;
+
 
   //Always include beam and MRD CR trigger
   vector_triggerwords.push_back(5);

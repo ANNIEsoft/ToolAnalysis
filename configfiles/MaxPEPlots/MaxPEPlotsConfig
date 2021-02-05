@@ -1,0 +1,4 @@
+#MaxPEPlots config file
+
+MaxPEFilename MaxPEs_R2423_2000ns.root
+verbosity 2

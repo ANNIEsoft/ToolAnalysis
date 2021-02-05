@@ -1,8 +1,8 @@
 # StoreDecodedTimestamps config file
 
 verbosity 2
-OutputFile R2282S0p4_DecodedTimestamps.root
-SaveMRD 1
-SavePMT 1
+OutputFile R1604S0_DecodedTimestamps.root
+SaveMRD 0
+SavePMT 0
 SaveCTC 1
 DeleteTimestamps 1

@@ -1,4 +1,4 @@
-verbosity 2
+verbosity 5
 TriggerMaskFile ./configfiles/DataDecoder/DefaultTriggerMask.txt
 StoreTrigOverlap 1
 ReadTrigOverlap 0

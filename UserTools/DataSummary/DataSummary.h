@@ -99,6 +99,10 @@ class DataSummary: public Tool {
 	bool data_ctc;			// Does the event include CTC info?
 	bool data_tank;			// Does the event include Tank data?
 	bool data_mrd;			// Does the event include MRD data?
+	bool window_is_extended = false;   // Was the window an extended window?
+	int size_of_window = 2000;	//The size of the acquisition window (in us)
+	std::vector<int> window_sizes;	//ADC acquisition sizes for all recorded channels
+	std::vector<int> window_chkeys;	//Chankeys for ADC acquisition window sizes
 
 	ULong64_t CTCtimestamp_tree;
 	ULong64_t PMTtimestamp_tree;

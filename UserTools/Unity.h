@@ -131,3 +131,4 @@
 #include "DataSummary.h"
 #include "StoreDecodedTimestamps.h"
 #include "PlotDecodedTimestamps.h"
+#include "MaxPEPlots.h"

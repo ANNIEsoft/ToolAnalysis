@@ -93,13 +93,10 @@ bool ANNIEEventBuilder::Execute(){
   // ensure we always build if the toolchain is stopping
   bool toolchain_stopping=false;
   m_data->vars.Get("StopLoop",toolchain_stopping);
-  std::cout <<"toolchain_stopping: "<<toolchain_stopping<<std::endl;
   // likewise ensure we try to do all possible matching if we've hit the end of the file
   bool file_completed=false;
   m_data->CStore.Get("FileCompleted",file_completed);
-  std::cout <<"file_completed: "<<file_completed<<std::endl;
   toolchain_stopping |= file_completed;
-  std::cout <<"toolchain_stopping: "<<toolchain_stopping<<std::endl;
   if(toolchain_stopping){
     Log("ANNIEEventBuilder: StopLoop or FileCompleted detected, forcing building of any remaining events in the timestream",v_warning,verbosity);
   }
@@ -423,7 +420,7 @@ bool ANNIEEventBuilder::Execute(){
       m_data->CStore.Set("PauseCTCDecoding",false);
     }
     
-    std::cout <<"Check if other streams are ahead of the slowest one"<<std::endl;
+    if (verbosity > 4) std::cout <<"ANNIEEventBuilder Tool: Check if other streams are ahead of the slowest one"<<std::endl;
     // if any other streams are more than X seconds ahead of the slowest one, pause them...
     if((static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
       // secondly, only pause a stream once we have at least EventsPerPairing timestamps in it,
@@ -463,7 +460,6 @@ bool ANNIEEventBuilder::Execute(){
     int MinStamps = (NumTankTimestamps<NumMRDTimestamps) ? NumTankTimestamps : NumMRDTimestamps;
     MinStamps = (NumTrigs<MinStamps) ? NumTrigs : MinStamps;
     
-     std::cout <<"Attempt timestamp matching?"<<std::endl;
     // only attempt timestamp matching if we have enough timestamps to try to match,
     // OR if the toolchain is being stopped (reached and of file, for example)
     if((MinStamps>EventsPerPairing)||toolchain_stopping){
@@ -474,7 +470,7 @@ bool ANNIEEventBuilder::Execute(){
       if(verbosity>4) std::cout << "BEGINNING STREAM MERGING " << std::endl;
       //Prioritize tank matching vs. MRD matching -> check slowest in progress timestamp
       uint64_t max_matching_time = (slowest_stream_timestamp < slowest_in_progress_tank)? slowest_stream_timestamp : slowest_in_progress_tank;
-      std::cout <<"slowest_stream_timestamp: "<<slowest_stream_timestamp<<", slowest_in_progress_tank: "<<slowest_in_progress_tank<<", max_matching_time: "<<max_matching_time<<std::endl;
+      if (verbosity > 3) std::cout <<"ANNIEEventBuilder Tool: slowest_stream_timestamp: "<<slowest_stream_timestamp<<", slowest_in_progress_tank: "<<slowest_in_progress_tank<<", max_matching_time: "<<max_matching_time<<std::endl;
       //ThisBuildMap = this->MergeStreams(ThisBuildMap,slowest_stream_timestamp,toolchain_stopping);
       ThisBuildMap = this->MergeStreams(ThisBuildMap,max_matching_time,toolchain_stopping);
       Log("ANNIEEventBuilder: Calling ManageOrphanage post MergeStreams",v_debug,verbosity);
@@ -810,7 +806,7 @@ bool ANNIEEventBuilder::Finalise(){
 
   //Deal with any remaining orphans
   if(OrphanOldTankTimestamps){
-    std::cout <<"InprogressTankEvents, size: "<<InProgressTankEvents->size()<<std::endl;
+    if (verbosity > 4) std::cout <<"ANNIEEventBuilder: Remaining in progress events in Finalise step: "<<InProgressTankEvents->size()<<std::endl;
     std::map<uint64_t,std::string> MRDOrphans;
     std::map<uint64_t,double> MRDOrphansTDiff;
     std::map<uint64_t,std::string> CTCOrphans;
@@ -820,7 +816,6 @@ bool ANNIEEventBuilder::Finalise(){
     std::map<uint64_t,double> TankOrphansTDiff;
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
       uint64_t PMTCounterTimeNs = apair.first;
-      std::cout <<"PMTCounterTimeNs: "<<PMTCounterTimeNs<<std::endl;
       std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
       if(aWaveMap.size() < (NumWavesInCompleteSet)){
         TankOrphans.emplace(PMTCounterTimeNs,"incomplete_tank_event");
@@ -883,7 +878,7 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   std::map<uint64_t,double> TankOrphansTDiff;
 
   if(verbosity>5) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
-  std::cout <<"InProgressTankEvents->size(): "<<InProgressTankEvents->size()<<std::endl;
+  if (verbosity > 4) std::cout <<"ANNIEEventBuilder Tool: Number of InProgressTankEvents: "<<InProgressTankEvents->size()<<std::endl;
   for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
     uint64_t PMTCounterTimeNs = apair.first;
     std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
@@ -897,7 +892,7 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
     if (aWaveMap.size() == (NumWavesInCompleteSet-1)){
       if (AlmostCompleteWaveforms.find(PMTCounterTimeNs)!=AlmostCompleteWaveforms.end()) AlmostCompleteWaveforms[PMTCounterTimeNs]++;
       else AlmostCompleteWaveforms.emplace(PMTCounterTimeNs,0);
-      std::cout <<"AlmostCompleteWaveforms for PMTCounterTimeNs: "<<PMTCounterTimeNs<<": "<<AlmostCompleteWaveforms.at(PMTCounterTimeNs)<<std::endl;
+      if (verbosity > 4) std::cout <<"ANNIEEventBuilder Tool: AlmostCompleteWaveforms for PMTCounterTimeNs: "<<PMTCounterTimeNs<<": "<<AlmostCompleteWaveforms.at(PMTCounterTimeNs)<<std::endl;
     }
     //Events and delete it from the in-progress events
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
@@ -929,9 +924,7 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   RemoveDuplicates(myTimeStream.BeamTankTimestamps);
  
   slowest_in_progress_tank = NewestTankTimestamp;
-  std::cout <<"Setting start value of slowest in progress_tank to : "<<slowest_in_progress_tank<<std::endl;
   for (std::pair<uint64_t,int> almost_complete_waveform : AlmostCompleteWaveforms){
-    std::cout <<"almost_complete_waveform.first: "<<almost_complete_waveform.first<<std::endl;
     if (almost_complete_waveform.first < slowest_in_progress_tank) slowest_in_progress_tank = almost_complete_waveform.first;
   }
 
@@ -1253,13 +1246,13 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
 
   //If the toolchain is stopping, move remaining incomplete PMT timestamps to orphanage
   if (force_matching) {
-    std::cout <<"force matching, get InProgressTankEvents"<<std::endl;
+    if (verbosity > 2) std::cout <<"ANNIEEventBuilder Tool: Force matching at the end of toolchain, get InProgressTankEvents"<<std::endl;
     if(OrphanOldTankTimestamps){
-      std::cout <<"InprogressTankEvents, size: "<<InProgressTankEvents->size()<<std::endl;
+      if (verbosity > 2) std::cout <<"ANNIEEventBuilder Tool: Size of InprogressTankEvents: "<<InProgressTankEvents->size()<<std::endl;
       std::vector<uint64_t> InProgressTankEventsToDelete;
       for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
         uint64_t PMTCounterTimeNs = apair.first;
-        std::cout <<"PMTCounterTimeNs: "<<PMTCounterTimeNs<<std::endl;
+        if (verbosity > 4) std::cout <<"ANNIEEventBuilder Tool: PMTCounterTimeNs of InProgressTankEvent: "<<PMTCounterTimeNs<<std::endl;
         std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
         if(aWaveMap.size() < (NumWavesInCompleteSet)){
           InProgressTankEventsToDelete.push_back(PMTCounterTimeNs);
@@ -1561,7 +1554,7 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
     unsigned long channelkey = MRDHits.at(i_value).first;
     int hitTimeADC = MRDHits.at(i_value).second;
     double hitTime = 4000. - 4.*(double)hitTimeADC;
-    if (verbosity > 4) std::cout <<"creating hit with ADC value "<<hitTimeADC<<"and chankey "<<channelkey<<std::endl;
+    if (verbosity > 4) std::cout <<"creating hit with TDC value "<<hitTimeADC<<"and chankey "<<channelkey<<std::endl;
     if (verbosity > 3) std::cout <<"creating hit with time vlaue "<<hitTime<<"and chankey "<<channelkey<<std::endl;
     if (TDCData->count(channelkey)==0){
       std::vector<Hit> newhitvector;
@@ -1649,7 +1642,7 @@ void ANNIEEventBuilder::BuildANNIEEventTank(uint64_t ClockTime,
   if(RawADCData.size() == 0){
     std::cout << "No Raw ADC Data in entry.  Not putting to ANNIEEvent." << std::endl;
   }
-  std::cout << "Setting ANNIE Event information" << std::endl;
+  //std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
   ANNIEEvent->Set("EventTimeTank",ClockTime);
