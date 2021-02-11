@@ -21,9 +21,9 @@ StartSubRun 0
 StartPart 0
 EndRun 1604
 EndSubRun -1
-EndPart -1
+EndPart 0
 
 # ROOT file output
 OutputFileDir .
-OutputFileName DataSummary_R1604.root
+OutputFileName DataSummary_R1604_S0p0.root
 

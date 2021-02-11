@@ -45,6 +45,8 @@ struct TimeStream{
   std::vector<uint64_t> BeamTankTimestamps;  //Contains beam timestamps for all PMT events that haven't been paired to an MRD or CTC TS (keys in FinishedTankEvents)
   std::vector<uint64_t> BeamMRDTimestamps;  //Contains beam timestamps for all MRD events that haven't been paired to a PMT or CTC TS (keys in MRDEvents) - name is a misnomer, this is not just beam but also MRD cosmic triggers
   std::vector<uint64_t> CTCTimestamps;  //Contains CTC timestamps encountered so far (keys in TimeToTriggerWordMap)
+  std::vector<uint64_t> CTCTimestampsExtendedCC; 	//Contains CTC timestamps of triggerword 41 (CC extended readouts), used to further characterize main CTC timestamps
+  std::vector<uint64_t> CTCTimestampsExtendedNC; 	//Contains CTC timestamps of triggerword 40 (NC extended readouts), used to further characterize main CTC timestamps
   ~TimeStream(){}
 };
 
@@ -65,7 +67,7 @@ class ANNIEEventBuilder: public Tool {
   //Methods to add info from different data streams to ANNIEEvent booststore
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int PartNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
-  void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord);
+  void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord, std::map<std::string,bool> TriggerWordExtended);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
   uint64_t MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc);
 
@@ -115,12 +117,16 @@ class ANNIEEventBuilder: public Tool {
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
-  std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
+  std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
+  std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMapComplete;  // Key: CTCTimestamp, value: Trigger Mask ID;
   MRDEventMaps myMRDMaps;
 
   //###### Temporary information about almost completed VME events
   std::map<uint64_t,int> AlmostCompleteWaveforms;
   uint64_t slowest_in_progress_tank;
+
+  //###### Auxiliary information about triggerwords (extended readout windows)
+  std::map<uint64_t,std::map<std::string,bool>> CTCExtended;	// Key: CTCTimestamp, value: Boolean map indicating whether there was an extended readout window and which type (CC/NC)
 
   //###### Extra maps used for FIFO overflow info and TimestampsFromTheFuture
   std::map<uint64_t, std::map<std::vector<int>, int> >* FIFOPMTWaves = nullptr;
@@ -150,6 +156,8 @@ class ANNIEEventBuilder: public Tool {
 
   std::string InputFile;
   std::string BuildType;
+
+  bool save_raw_data;	//Should raw VME data be saved (complete waveforms)
 
   uint64_t NewestTankTimestamp = 0;
   double CurrentDriftMean = 0;

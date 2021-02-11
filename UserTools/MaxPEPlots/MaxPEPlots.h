@@ -5,11 +5,13 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "ADCPulse.h"
 
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TF1.h"
 
 /**
  * \class MaxPEPlots
@@ -41,8 +43,15 @@ class MaxPEPlots: public Tool {
   Geometry *geom = nullptr;
   std::map<string,bool> DataStreams;
   bool extended;
-  std::map<int,double>* ChannelNumToTankPMTSPEChargeMap = nullptr;;
+  std::map<int,double>* ChannelNumToTankPMTSPEChargeMap = nullptr;
   int triggerword;
+  std::vector<double> baseline;
+  std::vector<double> amplitude;
+  std::vector<double> chkey;
+  int n_mpe;
+
+  std::map<int,int> map_baseline;
+  std::map<int,int> map_mpe;
 
   int n_tank_pmts;
   std::vector<unsigned long> pmt_detkeys;
@@ -60,6 +69,21 @@ class MaxPEPlots: public Tool {
   TH2F *h_maxpe_chankey_trigword5 = nullptr; 
   TH2F *h_maxpe_prompt_chankey_trigword5 = nullptr; 
   TH2F *h_maxpe_delayed_chankey_trigword5 = nullptr;
+  TH1F *h_multiplicity_delayed_mpe = nullptr;
+  TH1F *h_multiplicity_prompt_mpe = nullptr;
+  TH1F *h_multiplicity_delayed_mpe_5pe = nullptr;
+  TH1F *h_multiplicity_prompt_mpe_5pe = nullptr;
+  TH1F *h_baseline_diff = nullptr;
+  TH1F *h_chankey_prompt_mpe = nullptr;
+  TH1F *h_chankey_delayed_mpe = nullptr;
+  TH1F *h_chankey_prompt_mpe_5pe = nullptr;
+  TH1F *h_chankey_delayed_mpe_5pe = nullptr;
+  TH2F *h_maxpe_mpe_prompt = nullptr;
+  TH2F *h_maxpe_mpe_extended = nullptr;
+
+  std::vector<TH1F*> hv_baseline_prompt, hv_baseline_delayed;
+  std::vector<TH1F*> hv_amplitude_prompt, hv_amplitude_delayed;
+  std::vector<TH1F*> hv_time_pulse;
 
   TFile *f_maxpe = nullptr;
   TTree *t_maxpe = nullptr;

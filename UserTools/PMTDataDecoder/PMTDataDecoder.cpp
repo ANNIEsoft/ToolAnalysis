@@ -555,7 +555,15 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
       }
     } else {
       FinishedPMTWaves->at(FinishedWaveTrigTime).emplace(wave_key,FinishedWave);
-      if (FIFOstate == 1 || FIFOstate == 2) FIFOPMTWaves->at(FinishedWaveTrigTime).emplace(wave_key,FIFOstate);
+      if (FIFOstate == 1 || FIFOstate == 2) {
+	if (FIFOPMTWaves->count(FinishedWaveTrigTime)==0){
+          std::map<std::vector<int>,int> FIFOInfo;
+          FIFOInfo.emplace(wave_key,FIFOstate);
+          FIFOPMTWaves->emplace(FinishedWaveTrigTime,FIFOInfo);
+        } else {
+          FIFOPMTWaves->at(FinishedWaveTrigTime).emplace(wave_key,FIFOstate);
+        }
+      }
     }
   }
   //Clear the finished wave from WaveBank and TriggerTimeBank for the new wave

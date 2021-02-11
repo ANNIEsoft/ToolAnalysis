@@ -117,13 +117,15 @@ bool StoreDecodedTimestamps::Execute(){
 
   if (new_ctc_data) {
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
-    for(std::pair<uint64_t,uint32_t> apair : *TimeToTriggerWordMap){
+    for(std::pair<uint64_t,std::vector<uint32_t>> apair : *TimeToTriggerWordMap){
       uint64_t CTCTimeStamp = apair.first;
-      uint32_t CTCWord = apair.second;
+      std::vector<uint32_t> CTCWord = apair.second;
       t_ctc = (ULong64_t) CTCTimeStamp;
       t_ctc_sec = (double(t_ctc))/1.E9;
-      triggerword_ctc = (int) CTCWord;
-      t_timestamps_ctc->Fill();
+      for (int i_vec=0; i_vec < (int) CTCWord.size(); i_vec++){
+        triggerword_ctc = (int) CTCWord.at(i_vec);
+        t_timestamps_ctc->Fill();
+      }
     }
     if (delete_timestamps){
       TimeToTriggerWordMap->clear();

@@ -21,10 +21,11 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   OrphanWarningValue = 20;
   ExecutesPerBuild = 50;
   MRDTankTimeTolerance = 10;     //ms
-  CTCTankTimeTolerance = 100;    //ns
+  CTCTankTimeTolerance = 300;    //ns		//Edit: Changed Default CTCTankTolerance from 100ns to 300ns to allow for 256ns differences [M. Nieslony]
   CTCMRDTimeTolerance = 2000000; //ns
   DriftWarningValue = 5000000;   //ns
   pause_threshold = 5*60;        //s
+  save_raw_data = false;	//Default option: Do not save the raw data (processed files get very large)
 
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
@@ -41,6 +42,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("CTCMRDTimeTolerance",CTCMRDTimeTolerance);
   m_variables.Get("OrphanFileBase",OrphanFileBase);
   m_variables.Get("MaxStreamMatchingTimeSeparation",pause_threshold);
+  m_variables.Get("SaveRawData",save_raw_data);
   pause_threshold*=1E9;
 
   if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
@@ -355,7 +357,7 @@ bool ANNIEEventBuilder::Execute(){
         myMRDMaps.MRDBeamLoopbackMap.erase(MRDTimeStamp);
         myMRDMaps.MRDCosmicLoopbackMap.erase(MRDTimeStamp);
       }
-      for(int i=0; i<BuiltTankTimes.size(); i++){
+      for(int i=0; i< (int) BuiltTankTimes.size(); i++){
         BeamTankMRDPairs.erase(BuiltTankTimes.at(i));
       }
     }
@@ -378,6 +380,7 @@ bool ANNIEEventBuilder::Execute(){
 
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+    m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
     if(IsNewCTCData) this->ProcessNewCTCData();
 
@@ -491,7 +494,8 @@ bool ANNIEEventBuilder::Execute(){
           std::string label = buildset_entries.first;
           if(label == "CTC"){
             uint64_t CTCWord = buildset_entries.second;
-            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord);
+            std::map<std::string,bool> CTCWordExtended = CTCExtended[CTCtimestamp];
+            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
           }
@@ -546,6 +550,7 @@ bool ANNIEEventBuilder::Execute(){
 
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+    m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
     if(IsNewCTCData) this->ProcessNewCTCData();
 
@@ -638,7 +643,8 @@ bool ANNIEEventBuilder::Execute(){
           std::string label = buildset_entries.first;
           if(label == "CTC"){
             uint64_t CTCWord = buildset_entries.second;
-            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord);
+            std::map<std::string,bool> CTCWordExtended = CTCExtended[CTCtimestamp];
+            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
           }
@@ -671,6 +677,7 @@ bool ANNIEEventBuilder::Execute(){
 
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+    m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
     if(IsNewCTCData) this->ProcessNewCTCData();
 
@@ -761,7 +768,8 @@ bool ANNIEEventBuilder::Execute(){
           std::string label = buildset_entries.first;
           if(label == "CTC"){
             uint64_t CTCWord = buildset_entries.second;
-            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord);
+            std::map<std::string,bool> CTCWordExtended = CTCExtended[CTCtimestamp];
+            this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
           }
@@ -845,13 +853,60 @@ bool ANNIEEventBuilder::Finalise(){
 }
 
 void ANNIEEventBuilder::ProcessNewCTCData(){
-  for(std::pair<uint64_t,uint32_t> apair : *TimeToTriggerWordMap){
+  for(std::pair<uint64_t,std::vector<uint32_t>> apair : *TimeToTriggerWordMap){
     uint64_t CTCTimeStamp = apair.first;
-    uint32_t CTCWord = apair.second;
     myTimeStream.CTCTimestamps.push_back(CTCTimeStamp);
-    if(verbosity>5)std::cout << "CTCTIMESTAMP,WORD" << CTCTimeStamp << "," << CTCWord << std::endl;
+    std::vector<uint32_t> CTCWordVector = apair.second;
+    for (int i_ctcword=0; i_ctcword < (int) CTCWordVector.size(); i_ctcword++){
+      uint32_t CTCWord = CTCWordVector.at(i_ctcword);
+      if(verbosity>5) std::cout << "CTCTIMESTAMP,WORD" << CTCTimeStamp << "," << CTCWord << std::endl;
+    }
   }
   RemoveDuplicates(myTimeStream.CTCTimestamps);
+
+  std::cout <<"ProcessNewCTCData, aux"<<std::endl;
+  std::vector<uint64_t> aux_trigword_delete;
+  //Read in auxiliary triggerword information, use information from trigword 40 (min-bias) & 41 (CC-extended readout)
+  for (std::pair<uint64_t,std::vector<uint32_t>> apair : *TimeToTriggerWordMapComplete){
+    uint64_t CTCTimestamp = apair.first;
+    std::cout <<"CTCTimestamp: "<<CTCTimestamp<<std::endl;
+    std::vector<uint32_t> CTCWordVector = apair.second;
+    for (int i_ctcword=0; i_ctcword < (int) CTCWordVector.size(); i_ctcword++){
+      uint32_t CTCWord = CTCWordVector.at(i_ctcword);
+      if (CTCWord == 40) myTimeStream.CTCTimestampsExtendedNC.push_back(CTCTimestamp);
+      if (CTCWord == 41) myTimeStream.CTCTimestampsExtendedCC.push_back(CTCTimestamp);
+    }
+    aux_trigword_delete.push_back(CTCTimestamp);
+  }
+
+  //Erase all processed TimeToTriggerWordMapComplete info
+  for (int i_aux = 0; i_aux < (int) aux_trigword_delete.size(); i_aux++){
+    TimeToTriggerWordMapComplete->erase(aux_trigword_delete.at(i_aux));
+  }
+
+  std::cout <<"Extended trigwords?"<<std::endl;
+  std::cout <<"myTimeStream.CTCTimestamps.size(): "<<myTimeStream.CTCTimestamps.size()<<std::endl;
+  //Check for each trigger timestamp if there was an extended triggerword in the immediate vicinity
+  for (int i_ctc=0; i_ctc < (int) myTimeStream.CTCTimestamps.size(); i_ctc++){
+    std::cout <<"i_ctc: "<<i_ctc<<std::endl;
+    uint64_t CTCTimeStamp = myTimeStream.CTCTimestamps.at(i_ctc);
+    std::map<std::string,bool> extended_information;
+    extended_information.emplace("Extended",false);
+    extended_information.emplace("ExtendedCC",false);
+    extended_information.emplace("ExtendedNC",false);
+    std::cout <<"CTCTimestamp: "<<CTCTimeStamp<<std::endl;
+    for (int i_ext=0; i_ext < (int) myTimeStream.CTCTimestampsExtendedCC.size(); i_ext++){
+      uint64_t CTCTimeStampCC = myTimeStream.CTCTimestampsExtendedCC.at(i_ext);
+      double diff_CC = double(CTCTimeStamp) - double(CTCTimeStampCC);
+      if (fabs(diff_CC) < 5000) { extended_information["Extended"] = true; extended_information["ExtendedCC"] = 1;}
+    }
+    for (int i_ext=0; i_ext < (int) myTimeStream.CTCTimestampsExtendedNC.size(); i_ext++){
+      uint64_t CTCTimeStampNC = myTimeStream.CTCTimestampsExtendedNC.at(i_ext);
+      double diff_NC = double(CTCTimeStamp) - double(CTCTimeStampNC);
+      if (fabs(diff_NC) < 5000) { extended_information["Extended"] = 1; extended_information["ExtendedNC"] = 1;}
+    }
+    CTCExtended.emplace(CTCTimeStamp,extended_information);
+  }
   return;
 }
 
@@ -976,7 +1031,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
     double TSDiff_current=0;
     for(auto&& aCtcTS : myTimeStream.CTCTimestamps){
       if((aCtcTS>max_timestamp)&&(!force_matching)) continue;        // do not try to match just yet
-      if(TimeToTriggerWordMap->at(aCtcTS) != CosmicWord) continue;   // not a cosmic CTC
+      if(TimeToTriggerWordMap->at(aCtcTS).at(0) != CosmicWord) continue;   // not a cosmic CTC
       double TSDiff =  static_cast<double>(aMrdTS) - 
                        static_cast<double>(aCtcTS);
       if(verbosity>4) std::cout << "CosmicTS - CTCTS in nanoseconds is " << TSDiff << std::endl;
@@ -1003,7 +1058,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
     uint64_t CTCTimestamp = aPair.first;
     uint64_t CosmicTimestamp = aPair.second;
     std::map<std::string,uint64_t> aBuildSet;
-    aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCTimestamp));
+    aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCTimestamp).at(0));
     aBuildSet.emplace("MRD",CosmicTimestamp);
     myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
          myTimeStream.BeamMRDTimestamps.end(),CosmicTimestamp), 
@@ -1015,7 +1070,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
   
 
   //Delete CTCTimestamps that have a PMT or MRD pair from CTC timestamp tracker
-  for(int j=0;j<BuiltCTCs.size();j++){
+  for(int j=0;j < (int) BuiltCTCs.size();j++){
     if(verbosity>4) std::cout << "REMOVING CTC TIME OF " << BuiltCTCs.at(j) << "FROM CTCTIMESTAMPS VECTOR" << std::endl;
     myTimeStream.CTCTimestamps.erase(std::remove(myTimeStream.CTCTimestamps.begin(),
         myTimeStream.CTCTimestamps.end(),BuiltCTCs.at(j)), 
@@ -1030,7 +1085,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
 
 void ANNIEEventBuilder::RemoveCosmics(){
   std::vector<uint64_t> MRDStampsToDelete;
-  for (int i=0;i<(myTimeStream.BeamMRDTimestamps.size()); i++) {
+  for (int i=0;i < (int) (myTimeStream.BeamMRDTimestamps.size()); i++) {
     std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[myTimeStream.BeamMRDTimestamps.at(i)];
     if(verbosity>4) std::cout << "THIS MRD TRIGGER TYPE IS: " << MRDTriggerType << std::endl;
     if(MRDTriggerType == "Cosmic"){
@@ -1041,7 +1096,7 @@ void ANNIEEventBuilder::RemoveCosmics(){
       }
     }
   }
-  for (int j=0; j<MRDStampsToDelete.size(); j++){
+  for (int j=0; j < (int) MRDStampsToDelete.size(); j++){
     myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
         myTimeStream.BeamMRDTimestamps.end(),MRDStampsToDelete.at(j)), 
         myTimeStream.BeamMRDTimestamps.end());
@@ -1147,7 +1202,10 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
         TSDiff_current = TSDiff;
         continue;
       } else if (TSDiff<(-1.*static_cast<double>(CTCTankTimeTolerance))){ //We've crossed past where a pair would be found
-        if(verbosity>4) std::cout << "NO CTC STAMP FOUND MATCHING TANK STAMP... TANK TO ORPHANAGE" << std::endl;
+        if(verbosity>4) {
+          std::cout << "NO CTC STAMP FOUND MATCHING TANK STAMP... TANK TO ORPHANAGE" << std::endl;
+          std::cout <<"TSDiff: "<<TSDiff<<std::endl;
+        }
         TankOrphans.emplace(aTankTS,"tank_no_ctc");
         TankOrphansWaveMap.emplace(aTankTS,NumWavesInCompleteSet);
         std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = FinishedTankEvents.at(aTankTS);
@@ -1186,7 +1244,14 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
     if(it_mrd != PairedCTCMRDTimes.end()) have_mrdmatch = true;
     if(have_tankmatch && have_mrdmatch){
       std::map<std::string,uint64_t> aBuildSet;
-      aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey));
+      for (int i_ctckey=0; i_ctckey < (int) TimeToTriggerWordMap->at(CTCKey).size(); i_ctckey++){
+        if (TimeToTriggerWordMap->at(CTCKey).size() > 1){
+          Log("ANNIEEventBuilding tool: Error! Multiple triggerwords for the same timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        } else if (TimeToTriggerWordMap->at(CTCKey).size() == 0){
+          Log("ANNIEEventBuilding tool: Error! No triggerwords available for timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        }
+        aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey).at(0));
+      }
       aBuildSet.emplace("TankPMT",it_tank->second);
       aBuildSet.emplace("MRD",it_mrd->second);
       myTimeStream.BeamTankTimestamps.erase(std::remove(myTimeStream.BeamTankTimestamps.begin(),
@@ -1200,7 +1265,14 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
       BuiltCTCs.push_back(CTCKey);
     } else if (have_tankmatch && !have_mrdmatch){
       std::map<std::string,uint64_t> aBuildSet;
-      aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey));
+      for (int i_ctckey=0; i_ctckey < (int) TimeToTriggerWordMap->at(CTCKey).size(); i_ctckey++){
+        if (TimeToTriggerWordMap->at(CTCKey).size() > 1){
+          Log("ANNIEEventBuilding tool: Error! Multiple triggerwords for the same timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        } else if (TimeToTriggerWordMap->at(CTCKey).size() == 0){
+          Log("ANNIEEventBuilding tool: Error! No triggerwords available for timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        }
+        aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey).at(0));
+      }
       aBuildSet.emplace("TankPMT",it_tank->second);
       myTimeStream.BeamTankTimestamps.erase(std::remove(myTimeStream.BeamTankTimestamps.begin(),
            myTimeStream.BeamTankTimestamps.end(),it_tank->second), 
@@ -1209,15 +1281,22 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
       BuildMap.emplace(CTCKey,aBuildSet);
       BuiltCTCs.push_back(CTCKey);
     } else if (!have_tankmatch && have_mrdmatch){
-        std::map<std::string,uint64_t> aBuildSet;
-        aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey));
-        aBuildSet.emplace("MRD",it_mrd->second);
-        myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
+      std::map<std::string,uint64_t> aBuildSet;
+      for (int i_ctckey=0; i_ctckey < (int) TimeToTriggerWordMap->at(CTCKey).size(); i_ctckey++){
+        if (TimeToTriggerWordMap->at(CTCKey).size() > 1){
+          Log("ANNIEEventBuilding tool: Error! Multiple triggerwords for the same timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        } else if (TimeToTriggerWordMap->at(CTCKey).size() == 0){
+          Log("ANNIEEventBuilding tool: Error! No triggerwords available for timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        }
+        aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey).at(0));
+      }
+      aBuildSet.emplace("MRD",it_mrd->second);
+      myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
              myTimeStream.BeamMRDTimestamps.end(),it_mrd->second),                             
              myTimeStream.BeamMRDTimestamps.end());
-        if (verbosity > 4) std::cout << "BUILDING A MRD ONLY BUILD MAP ENTRY. CTC IS " << CTCKey << std::endl;   
-        BuildMap.emplace(CTCKey,aBuildSet);
-        BuiltCTCs.push_back(CTCKey);
+      if (verbosity > 4) std::cout << "BUILDING A MRD ONLY BUILD MAP ENTRY. CTC IS " << CTCKey << std::endl;   
+      BuildMap.emplace(CTCKey,aBuildSet);
+      BuiltCTCs.push_back(CTCKey);
    } else if (!have_tankmatch && !have_mrdmatch){
       if(verbosity>4) std::cout << "NO MRD OR TANK TIMESTAMP FOR THIS CTC TIME... ORPHAN THE CTC" << std::endl;
       //uint64_t latest_tank_orphan = TankOrphans.at(TankOrphans.size()-1);
@@ -1237,7 +1316,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   }
 
   //Delete myTimeStream.CTCTimestamps that have a PMT or MRD pair from CTC timestamp tracker
-  for(int j=0;j<BuiltCTCs.size();j++){
+  for(int j=0;j < (int) BuiltCTCs.size();j++){
     if(verbosity>4) std::cout << "REMOVING CTC TIME OF " << BuiltCTCs.at(j) << "FROM CTCTIMESTAMPS VECTOR" << std::endl;
     myTimeStream.CTCTimestamps.erase(std::remove(myTimeStream.CTCTimestamps.begin(),
         myTimeStream.CTCTimestamps.end(),BuiltCTCs.at(j)), 
@@ -1263,7 +1342,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
           TankOrphansTDiff.emplace(PMTCounterTimeNs,0.);
         }
       }
-      for (int i_del=0; i_del < InProgressTankEventsToDelete.size(); i_del++){
+      for (int i_del=0; i_del < (int) InProgressTankEventsToDelete.size(); i_del++){
         InProgressTankEvents->erase(InProgressTankEventsToDelete.at(i_del));
       }
     }
@@ -1292,7 +1371,7 @@ void ANNIEEventBuilder::MoveToOrphanage(std::map<uint64_t, std::string> TankOrph
     // build map of orphan info to save to OrphanStore
     std::map<std::string,std::string> orphaninfo;
     orphaninfo.emplace("reason",nextorphan.second);
-    orphaninfo.emplace("ctc_word",to_string(TimeToTriggerWordMap->at(CTCOrphanStamp)));
+    orphaninfo.emplace("ctc_word",to_string(TimeToTriggerWordMap->at(CTCOrphanStamp).at(0)));
     
     // move to orphanage
     myOrphanage.OrphanCTCTimestamps.emplace(CTCOrphanStamp,orphaninfo);
@@ -1594,11 +1673,12 @@ void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber, 
   return;
 }
 
-void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord)
+void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord, std::map<std::string,bool> CTCWordExtended)
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event CTC Info" << std::endl;
   ANNIEEvent->Set("CTCTimestamp",CTCTime);
   ANNIEEvent->Set("TriggerWord",CTCWord);
+  ANNIEEvent->Set("TriggerExtended",CTCWordExtended);
   return;
 }
 

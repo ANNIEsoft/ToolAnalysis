@@ -1,7 +1,7 @@
 # StoreDecodedTimestamps config file
 
 verbosity 2
-OutputFile R1604S0_DecodedTimestamps.root
+OutputFile R2421S0p0-p10_DecodedTimestamps.root
 SaveMRD 0
 SavePMT 0
 SaveCTC 1

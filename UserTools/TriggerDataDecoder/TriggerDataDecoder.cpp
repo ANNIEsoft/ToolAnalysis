@@ -34,7 +34,8 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   CurrentSubrunNum = -1;
   CurrentPartNum = -1;
 
-  TimeToTriggerWordMap = new std::map<uint64_t,uint32_t>;
+  TimeToTriggerWordMap = new std::map<uint64_t,std::vector<uint32_t>>;
+  TimeToTriggerWordMapComplete = new std::map<uint64_t,std::vector<uint32_t>>;
   m_data->CStore.Set("PauseCTCDecoding",false);
 
   if(TriggerMaskFile!="none"){
@@ -104,19 +105,32 @@ bool TriggerDataDecoder::Execute(){
           std::cout << "PARSED TRIGGER TIME: " << processed_ns.back() << std::endl;
           std::cout << "PARSED TRIGGER WORD: " << processed_sources.back() << std::endl;
         }
+        if (TimeToTriggerWordMapComplete->find(processed_ns.back()) != TimeToTriggerWordMapComplete->end()) TimeToTriggerWordMapComplete->at(processed_ns.back()).push_back(processed_sources.back());
+        else {
+          std::vector<uint32_t> timestamp_ns{processed_sources.back()};
+          TimeToTriggerWordMapComplete->emplace(processed_ns.back(),timestamp_ns);
+        }
         if(UseTrigMask){
           uint32_t recent_trigger_word = processed_sources.back();
           for(int j = 0; j<(int) TriggerMask.size(); j++){
             if(TriggerMask.at(j) == recent_trigger_word){
               m_data->CStore.Set("NewCTCDataAvailable",true);
               if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
-              TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+              if (TimeToTriggerWordMap->find(processed_ns.back()) != TimeToTriggerWordMap->end()) TimeToTriggerWordMap->at(processed_ns.back()).push_back(processed_sources.back());
+              else {
+                std::vector<uint32_t> timestamp_ns{processed_sources.back()};
+                TimeToTriggerWordMap->emplace(processed_ns.back(),timestamp_ns);
+              }
             }
           }
         } else {
           m_data->CStore.Set("NewCTCDataAvailable",true);
           if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
-          TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+          if (TimeToTriggerWordMap->find(processed_ns.back()) != TimeToTriggerWordMap->end()) TimeToTriggerWordMap->at(processed_ns.back()).push_back(processed_sources.back());
+          else {
+            std::vector<uint32_t> timestamp_ns{processed_sources.back()};
+            TimeToTriggerWordMap->emplace(processed_ns.back(),timestamp_ns);
+          }
         }
       }
     }
@@ -144,13 +158,21 @@ bool TriggerDataDecoder::Execute(){
               if(TriggerMask.at(j) == recent_trigger_word){
                 m_data->CStore.Set("NewCTCDataAvailable",true);
                 if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
-                TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+                if (TimeToTriggerWordMap->find(processed_ns.back()) != TimeToTriggerWordMap->end()) TimeToTriggerWordMap->at(processed_ns.back()).push_back(processed_sources.back());
+                else {
+                  std::vector<uint32_t> timestamp_ns{processed_sources.back()};
+                  TimeToTriggerWordMap->emplace(processed_ns.back(),timestamp_ns);
+                }
               }
             }
           } else {
             m_data->CStore.Set("NewCTCDataAvailable",true);
             if(verbosity>4) std::cout << "TRIGGER WORD BEING ADDED TO TRIGWORDMAP" << std::endl;
-            TimeToTriggerWordMap->emplace(processed_ns.back(),processed_sources.back());
+            if (TimeToTriggerWordMap->find(processed_ns.back()) != TimeToTriggerWordMap->end()) TimeToTriggerWordMap->at(processed_ns.back()).push_back(processed_sources.back());
+            else {
+              std::vector<uint32_t> timestamp_ns{processed_sources.back()};
+              TimeToTriggerWordMap->emplace(processed_ns.back(),timestamp_ns);
+            }
           }
         }     
       }
@@ -160,6 +182,7 @@ bool TriggerDataDecoder::Execute(){
   if(verbosity>3) Log("TriggerDataDecoder Tool: size of TimeToTriggerWordMap: "+to_string(TimeToTriggerWordMap->size()),v_message,verbosity); 
  
   m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
+  m_data->CStore.Set("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
 
   loop_nr++;
 

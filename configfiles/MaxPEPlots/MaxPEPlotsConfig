@@ -1,4 +1,5 @@
 #MaxPEPlots config file
 
-MaxPEFilename MaxPEs_R2423_2000ns.root
+MaxPEFilename MaxPEs_R2421_2000ns_total.root
+ThresholdFile ./configfiles/MaxPEPlots/MPE_Thresholds.txt
 verbosity 2

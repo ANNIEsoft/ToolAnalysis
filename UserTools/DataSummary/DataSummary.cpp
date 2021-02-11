@@ -116,7 +116,9 @@ bool DataSummary::Execute(){
 		ANNIEEvent->Get("TriggerWord",TriggerWord);       // convert to TriggerTypeString
 		ANNIEEvent->Get("MRDLoopbackTDC",MRDLoopbackTDC); // convert to LoopbackTimestamp values
                 ANNIEEvent->Get("DataStreams",datastreams);  //DataStreams can be used to check which of the subdetectors is included in the data
-		// TODO optional sanity checks: consistency of RunNumber and other constants
+	        ANNIEEvent->Get("TriggerExtended",CTCWordExtended);
+
+        	// TODO optional sanity checks: consistency of RunNumber and other constants
 	
 		std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
                 bool has_raw = ANNIEEvent->Get("RawADCData",raw_waveform_map);
@@ -160,6 +162,12 @@ bool DataSummary::Execute(){
 		PMTtimestamp_sec = (PMTtimestamp_double)/(1.E9);
 		MRDtimestamp_sec = (MRDtimestamp_double)/(1.E9);
 		CTCtimestamp_sec = (CTCtimestamp_double)/(1.E9);
+		trigword_ext = false;
+		trigword_ext_cc = false;
+		trigword_ext_nc = false;
+		if (CTCWordExtended["Extended"] == true) trigword_ext = true;
+		if (CTCWordExtended["ExtendedCC"] == true) trigword_ext_cc = true;
+		if (CTCWordExtended["ExtendedNC"] == true) trigword_ext_nc = true;
 
 		std::cout <<"PMTtimestamp_tree: "<<PMTtimestamp_tree<<", MRDTimestamp_tree: "<<MRDtimestamp_tree<<std::endl;
 		// extract out the TDC vals
@@ -672,6 +680,9 @@ bool DataSummary::CreateOutputFile(){
 	outtree->Branch("WindowSize",&size_of_window);
 	outtree->Branch("AllWindowSizes",&window_sizes);
 	outtree->Branch("AllWindowChankeys",&window_chkeys);
+	outtree->Branch("TrigExtended",&trigword_ext);
+	outtree->Branch("TrigExtendedCC",&trigword_ext_cc);
+	outtree->Branch("TrigExtendedNC",&trigword_ext_nc);
 	outtree->SetAlias("CtcToTankTDiff","CTCTimestamp_double-PMTTimestamp_double");
 	outtree->SetAlias("CtcToMrdTDiff","CTCTimestamp_double-MRDTimestamp_double");
 	outtree->SetAlias("TankToMrdTDiff","PMTTimestamp_double-MRDTimestamp_double");
@@ -879,6 +890,13 @@ bool DataSummary::AddEventTypePlots(){
 	TH1D* ctc_orphans_triggerword = new TH1D("ctc_orphans_triggerword","CTC Orphans - Triggerword",64,0,64);
 	TH1D* datastreams_present = new TH1D("datastreams_present","Present datastreams",3,0,3);
 	TH1D* datastreams_present_fractions = new TH1D("datastreams_present_fractions","Present datastreams (fractions)",3,0,3);
+	TH1D* extended_types = new TH1D("extended_types","Extended Triggerwords",4,0,4);
+	TH1D* extended_types_fractions = new TH1D("extended_types_fractions","Extended Triggerwords (Fractions)",4,0,4);
+	TH1D* extended_types_rates = new TH1D("extended_types_rates","Extended Triggerwords (Rates)",4,0,4);
+	TH1D* extended_interplay = new TH1D("extended_interplay","Extended/Prompt Triggerwords",6,0,6);
+	TH1D* extended_interplay_fractions = new TH1D("extended_interplay_fractions","Extended/Prompt Triggerwords (Fractions)",6,0,6);
+	TH1D* extended_interplay_rates = new TH1D("extended_interplay_rates","Extended/Prompt Triggerwords (Rates)",6,0,6);
+
 
 	int numwaves_temp;
 	std::string *orphantype = new std::string;
@@ -935,14 +953,36 @@ bool DataSummary::AddEventTypePlots(){
 	delete orphancause;
 
 	bool has_ctc, has_tank, has_mrd;
+	bool has_extended, has_extended_cc, has_extended_nc, has_extended_vme;
 	outtree->SetBranchAddress("DataCTC",&has_ctc);
 	outtree->SetBranchAddress("DataTank",&has_tank);
 	outtree->SetBranchAddress("DataMRD",&has_mrd);
+	outtree->SetBranchAddress("TrigExtended",&has_extended);
+        outtree->SetBranchAddress("TrigExtendedCC",&has_extended_cc);
+        outtree->SetBranchAddress("TrigExtendedNC",&has_extended_nc);
+	outtree->SetBranchAddress("ExtendedWindow",&has_extended_vme);
+
 	for (int i_entry=0; i_entry < entries_tree1; i_entry++){
 		outtree->GetEntry(i_entry);
 		if (has_ctc && has_tank & has_mrd) datastreams_present->Fill(0);
 		else if (has_ctc && has_tank) datastreams_present->Fill(1);
 		else if (has_ctc && has_mrd) datastreams_present->Fill(2);
+		if (has_extended) {
+			extended_types->Fill(0);
+			if (has_extended_vme) extended_interplay->Fill(0);
+			else extended_interplay->Fill(1);
+		}
+		if (has_extended_cc && has_extended_nc) extended_types->Fill(3);
+		else if (has_extended_cc) {
+			extended_types->Fill(1);
+			if (has_extended_vme) extended_interplay->Fill(2);
+			else extended_interplay->Fill(3);
+		}
+		else if (has_extended_nc) {
+			extended_types->Fill(2);
+			if (has_extended_vme) extended_interplay->Fill(4);
+			else extended_interplay->Fill(5);
+		}
 	}
 
 	orphan_types->GetYaxis()->SetTitle("#");
@@ -967,6 +1007,25 @@ bool DataSummary::AddEventTypePlots(){
 		datastreams_present_fractions->SetBinContent(i_bin+1,datastreams_present->GetBinContent(i_bin+1)/(double(entries_tree1)));
 		datastreams_present_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_datastreams[i_bin]);
 	}
+	extended_types->GetYaxis()->SetTitle("#");
+	extended_types_fractions->GetYaxis()->SetTitle("Fraction");
+	extended_types_rates->GetYaxis()->SetTitle("Rate");
+	const char *label_extended[4] = {"Extended","Extended - CC","Extended - NC","Extended - CC+NC"};
+	for (int i_bin=0; i_bin < extended_types->GetXaxis()->GetNbins(); i_bin++){
+		extended_types->GetXaxis()->SetBinLabel(i_bin+1,label_extended[i_bin]);
+		extended_types_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_extended[i_bin]);
+		extended_types_fractions->SetBinContent(i_bin+1,extended_types->GetBinContent(i_bin+1)/double(extended_types->GetEntries()));
+	}
+	extended_interplay->GetYaxis()->SetTitle("#");
+	extended_interplay_fractions->GetYaxis()->SetTitle("Fraction");
+	extended_interplay_rates->GetYaxis()->SetTitle("Rate");
+	const char *label_interplay[6] = {"Extended + VME","Extended No VME","ExtendedCC +VME","ExtendedCC No VME","ExtendedNC +VME","ExtendedNC No VME"};
+	for (int i_bin=0; i_bin < extended_interplay->GetXaxis()->GetNbins(); i_bin++){
+		extended_interplay->GetXaxis()->SetBinLabel(i_bin+1,label_interplay[i_bin]);
+		extended_interplay_fractions->GetXaxis()->SetBinLabel(i_bin+1,label_interplay[i_bin]);
+		extended_interplay_fractions->SetBinContent(i_bin+1,extended_interplay->GetBinContent(i_bin+1)/double(extended_interplay->GetEntries()));
+	}
+
 	num_waveforms_orphan->GetYaxis()->SetTitle("#");
 	num_waveforms_orphan->GetXaxis()->SetTitle("# waveforms");
 	waveform_chankeys_orphan->GetXaxis()->SetTitle("Chankey");
@@ -992,6 +1051,10 @@ bool DataSummary::AddEventTypePlots(){
 	ctc_orphans_triggerword->Write();
 	datastreams_present->Write();
 	datastreams_present_fractions->Write();
+	extended_types->Write();
+	extended_types_fractions->Write();
+	extended_interplay->Write();
+	extended_interplay_fractions->Write();
 
 	return true;
 }

@@ -35,7 +35,8 @@ class TriggerDataDecoder: public Tool {
 
   //std::vector<TriggerData> *Tdata = nullptr;
   TriggerData *Tdata = nullptr;
-  std::map<uint64_t,uint32_t>* TimeToTriggerWordMap;
+  std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMap;
+  std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMapComplete;	//Info about all triggerwords
   bool UseTrigMask = false;
   std::string TriggerWordFile;
   std::string mode;
