@@ -13,6 +13,7 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   DummyRunInfo = false;
   readtrigoverlap = 0;
   storetrigoverlap = 0;
+  storerawdata = true;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("BuildType",BuildType);
@@ -21,6 +22,7 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DummyRunInfo",DummyRunInfo);
   m_variables.Get("ReadTrigOverlap",readtrigoverlap);
   m_variables.Get("StoreTrigOverlap",storetrigoverlap);
+  m_variables.Get("StoreRawData",storerawdata);
 
   m_data= &data; //assigning transient data pointer
   
@@ -287,6 +289,7 @@ void LoadRawData::LoadPMTMRDData(){
     if(verbosity>3) PMTData->Print(false);
     if(verbosity>3) PMTData->Header->Print(false);
     Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
+    if (!storerawdata) tanktotalentries++;	//Do one extra execute loop if we have to provide Hits objects in EventBuilding process
   }
   if((BuildType == "TankAndMRD") || (BuildType == "MRD") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "MRDAndCTC")){
     Log("LoadRawData Tool: Accessing MRD Data in raw data",v_message,verbosity);
@@ -435,15 +438,27 @@ void LoadRawData::GetNextDataEntries(){
   //Get next PMTData Entry
   if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
     if(!TankPaused && !TankEntriesCompleted){
-      Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum)+"/"+to_string(tanktotalentries),v_debug, verbosity);
-      PMTData->GetEntry(TankEntryNum);
-      Log("LoadRawData Tool: Getting the PMT card data entry",v_debug, verbosity);
-      PMTData->Get("CardData",*Cdata);
-      Log("LoadRawData Tool: Setting PMT card data entry into CStore",v_debug, verbosity);
-      m_data->CStore.Set("CardData",Cdata);
-      Log("LoadRawData Tool: Setting Tank Entry Num CStore",v_debug, verbosity);
-      m_data->CStore.Set("TankEntryNum",TankEntryNum);
-      TankEntryNum+=1;
+      bool load_data = true;
+      if (!storerawdata){
+        //Add one additional Execute loop in case we want to save Hits information during Event Building
+        if (TankEntryNum == tanktotalentries - 2) m_data->CStore.Set("LastEntry",true);
+        else if (TankEntryNum == tanktotalentries -1){
+          TankEntryNum+=1;
+          load_data = false;
+          m_data->CStore.Set("PauseTankDecoding",true);
+        }
+      }
+      if (load_data){
+        Log("LoadRawData Tool: Procesing PMTData Entry "+to_string(TankEntryNum)+"/"+to_string(tanktotalentries),v_debug, verbosity);
+        PMTData->GetEntry(TankEntryNum);
+        Log("LoadRawData Tool: Getting the PMT card data entry",v_debug, verbosity);
+        PMTData->Get("CardData",*Cdata);
+        Log("LoadRawData Tool: Setting PMT card data entry into CStore",v_debug, verbosity);
+        m_data->CStore.Set("CardData",Cdata);
+        Log("LoadRawData Tool: Setting Tank Entry Num CStore",v_debug, verbosity);
+        m_data->CStore.Set("TankEntryNum",TankEntryNum);
+        TankEntryNum+=1;
+      }
     }
   }
 

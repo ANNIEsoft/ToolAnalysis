@@ -48,7 +48,7 @@ class LoadRawData: public Tool {
   std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
   bool readtrigoverlap;
   bool storetrigoverlap;
-
+  bool storerawdata;
 
   int FileNum = 0;
   int tanktotalentries;

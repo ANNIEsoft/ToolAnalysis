@@ -11,6 +11,10 @@
 #include "TriggerClass.h"
 #include "Waveform.h"
 #include "ANNIEalgorithms.h"
+#include "ADCPulse.h"
+#include "CalibratedADCWaveform.h"
+
+
 /**
 * \class ANNIEEventBuilder
 *
@@ -62,17 +66,23 @@ class ANNIEEventBuilder: public Tool {
  
   void CardIDToElectronicsSpace(int CardID, int &CrateNum, int &SlotNum);
   void RemoveCosmics();             // Removes events from MRD stream labeled as a cosmic trigger only (TankAndMRD only)
-  std::vector<std::vector<int>> GetChannelsFromWaveMap(std::map<std::vector<int>,std::vector<uint16_t>>WaveMap);  //Returns the channels for WaveMap entries (used for orphaned events)
+  std::vector<std::vector<int>> GetChannelsFromWaveMapSampleSize(std::map<std::vector<int>,int> WaveMap);  //Returns the channels for WaveMap entries (used for orphaned events)
+  std::vector<std::vector<int>> GetChannelsFromWaveMap(std::map<std::vector<int>,std::vector<uint16_t>> WaveMap);
 
   //Methods to add info from different data streams to ANNIEEvent booststore
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int PartNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
-  void BuildANNIEEventTank(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
+  void BuildANNIEEventTankRaw(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
+  void BuildANNIEEventTankHits(uint64_t CounterTime, std::map<unsigned long,std::vector<Hit>>* PMTHits, std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHits,
+    std::map<unsigned long,std::vector<Hit>>* PMTHitsAux, std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHitsAux);
   void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord, std::map<std::string,bool> TriggerWordExtended);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
   uint64_t MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc);
 
   void SaveEntryToFile(int RunNum, int SubRunNum, int PartNum);
   void OpenNewANNIEEvent(int RunNum, int SubRunNum, int PartNum, uint64_t StarT, int RunT);
+
+  bool FetchWaveformsHits();
+
 
   //Methods for getting all timestamps encountered by decoder tools
   void ProcessNewTankPMTData();
@@ -116,7 +126,8 @@ class ANNIEEventBuilder: public Tool {
 
   //####### MAPS THAT ARE LOADED FROM OR CONTAIN INFO FROM THE CSTORE (FROM MRD/PMT DECODING) #########
   std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents;  //Key: {MTCTime}, value: map of in-progress PMT trigger decoding from WaveBank
-  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > > *FinishedTankEvents;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
+  std::map<uint64_t, std::map<std::vector<int>, int > > *FinishedTankEventsSampleSize;  //Key: {MTCTime}, value: map of fully-built waveforms from WaveBank
   std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMap;  // Key: CTCTimestamp, value: Trigger Mask ID;
   std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMapComplete;  // Key: CTCTimestamp, value: Trigger Mask ID;
   MRDEventMaps myMRDMaps;
@@ -131,6 +142,16 @@ class ANNIEEventBuilder: public Tool {
   //###### Extra maps used for FIFO overflow info and TimestampsFromTheFuture
   std::map<uint64_t, std::map<std::vector<int>, int> >* FIFOPMTWaves = nullptr;
   std::map<uint64_t, std::map<std::vector<int>,uint64_t>>* TimestampsFromTheFuture = nullptr;
+
+  //###### Maps that include the waveforms/Hits information
+  std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawWaveforms;      //Key: {MTCTime}, value: map of raw waveforms
+  std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawWaveformsAux;  //Key: {MTCTime}, value: map of raw waveforms (aux channels)
+  std::map<uint64_t, std::map<unsigned long,std::vector<CalibratedADCWaveform<double>>>> *FinishedCalibratedWaveforms;  //Key: {MTCTime}, value: map of calibrated waveforms
+  std::map<uint64_t, std::map<unsigned long,std::vector<CalibratedADCWaveform<double>>>> *FinishedCalibratedWaveformsAux;  //Key: {MTCTime}, value: map of calibrated waveforms (aux channels)
+  std::map<uint64_t, std::map<unsigned long,std::vector<Hit>>*> *FinishedHits;        //Key: {MTCTime}, value: map of  Hit distributions
+  std::map<uint64_t, std::map<unsigned long,std::vector<Hit>>*> *FinishedHitsAux;        //Key: {MTCTime}, value: map of  Hit distributions
+  std::map<uint64_t, std::map<unsigned long,std::vector<std::vector<ADCPulse>>>> *FinishedRecoADCHits; //Key: {MTCTime}, value: map of found pulses
+  std::map<uint64_t, std::map<unsigned long,std::vector<std::vector<ADCPulse>>>> *FinishedRecoADCHitsAux; //Key: {MTCTime}, value: map of found pulses
 
   //######### MAPS THAT HOLD PAIRED TANK/MRD/CTC TIMESTAMPS ########
   int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)
