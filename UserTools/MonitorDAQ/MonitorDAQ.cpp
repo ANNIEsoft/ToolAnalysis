@@ -1555,7 +1555,7 @@ void MonitorDAQ::PrintInfoBox(){
     text_haspmt->SetText(0.06,0.3,ss_pmt.str().c_str());
     text_haspmt->SetTextColor(2);	//red text if not ok
   }
-  boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(current_stamp/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(current_stamp/MSEC_to_SEC/SEC_to_MIN)%60,int(current_stamp/MSEC_to_SEC)%60,int(current_stamp)%1000);
+  boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(current_stamp/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(current_stamp/MSEC_to_SEC/SEC_to_MIN)%60,int(current_stamp/MSEC_to_SEC)%60,current_stamp%1000);
   struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
   std::stringstream current_time;
   current_time << currenttime_tm.tm_year+1900<<"/"<<currenttime_tm.tm_mon+1<<"/"<<currenttime_tm.tm_mday<<"-"<<currenttime_tm.tm_hour<<":"<<currenttime_tm.tm_min<<":"<<currenttime_tm.tm_sec;
