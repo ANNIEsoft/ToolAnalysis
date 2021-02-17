@@ -26,6 +26,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   DriftWarningValue = 5000000;   //ns
   pause_threshold = 5*60;        //s
   save_raw_data = false;	//Default option: Do not save the raw data (processed files get very large)
+  store_beam_status = false;	//Should the beam status be stored? If yes, need the BeamDecoder tool in the ToolChain
 
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
@@ -43,6 +44,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OrphanFileBase",OrphanFileBase);
   m_variables.Get("MaxStreamMatchingTimeSeparation",pause_threshold);
   m_variables.Get("SaveRawData",save_raw_data);
+  m_variables.Get("StoreBeamStatus",store_beam_status);
   pause_threshold*=1E9;
 
   if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
@@ -455,6 +457,7 @@ bool ANNIEEventBuilder::Execute(){
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
     m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
+    if (store_beam_status) m_data->CStore.Get("BeamStatusMap",BeamStatusMap);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
     if(IsNewCTCData) this->ProcessNewCTCData();
 
@@ -575,6 +578,15 @@ bool ANNIEEventBuilder::Execute(){
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
+            if (store_beam_status){
+              if (BeamStatusMap->count(CTCtimestamp) == 0){
+                Log("ANNIEEventBuilder: Did not find CTCtimestamp "+std::to_string(CTCtimestamp)+" in BeamStatusMap! Don't save BeamStatus in ANNIEEvent",v_error,verbosity);
+              } else {
+                BeamStatus beam_status = BeamStatusMap->at(CTCtimestamp);
+                ANNIEEvent->Set("BeamStatus",beam_status);
+                BeamStatusMap->erase(CTCtimestamp);
+              }
+            }
           }
           if(label == "TankPMT"){
             uint64_t TankPMTTime = buildset_entries.second;
@@ -664,6 +676,7 @@ bool ANNIEEventBuilder::Execute(){
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
     m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
+    if (store_beam_status) m_data->CStore.Get("BeamStatusMap",BeamStatusMap);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
     if(IsNewCTCData) this->ProcessNewCTCData();
 
@@ -761,6 +774,15 @@ bool ANNIEEventBuilder::Execute(){
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
+            if (store_beam_status){
+              if (BeamStatusMap->count(CTCtimestamp) == 0){
+                Log("ANNIEEventBuilder: Did not find CTCtimestamp "+std::to_string(CTCtimestamp)+" in BeamStatusMap! Don't save BeamStatus in ANNIEEvent",v_error,verbosity);
+              } else {
+                BeamStatus beam_status = BeamStatusMap->at(CTCtimestamp);
+                ANNIEEvent->Set("BeamStatus",beam_status);
+                BeamStatusMap->erase(CTCtimestamp);
+              }
+            }
           }
           if(label == "TankPMT"){
             uint64_t TankPMTTime = buildset_entries.second;
@@ -814,6 +836,7 @@ bool ANNIEEventBuilder::Execute(){
     //Look through CTC data for any new timestamps
     m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
     m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
+    if (store_beam_status) m_data->CStore.Get("BeamStatusMap",BeamStatusMap);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
     if(IsNewCTCData) this->ProcessNewCTCData();
 
@@ -908,6 +931,15 @@ bool ANNIEEventBuilder::Execute(){
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
+            if (store_beam_status){
+              if (BeamStatusMap->count(CTCtimestamp) == 0){
+                Log("ANNIEEventBuilder: Did not find CTCtimestamp "+std::to_string(CTCtimestamp)+" in BeamStatusMap! Don't save BeamStatus in ANNIEEvent",v_error,verbosity);
+              } else {
+                BeamStatus beam_status = BeamStatusMap->at(CTCtimestamp);
+                ANNIEEvent->Set("BeamStatus",beam_status);
+                BeamStatusMap->erase(CTCtimestamp);
+              }
+            }
           }
           if(label == "MRD"){
             uint64_t MRDTimeStamp = buildset_entries.second;
@@ -1840,7 +1872,7 @@ void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber, 
   ANNIEEvent->Set("RunType",RunType);
   ANNIEEvent->Set("RunStartTime",StartTime);
   //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
-  //  - BeamStatus?  
+  //  - BeamStatus?  --> stored in BuildANNIEEventCTC
   return;
 }
 

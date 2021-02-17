@@ -23,8 +23,33 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
   // Assign a transient data pointer
   m_data = &data;
 
+  // Default values
+  timestamp_mode = "MSEC";	//Other option: LOCALDATE
+  DaylightSavings = false; 
+
+  std::cout <<"Get verbose"<<std::endl;
   m_variables.Get("verbose", verbosity_);
 
+  std::cout <<"Get TimestampMode"<<std::endl;
+  bool got_timestamp_mode = m_variables.Get("TimestampMode",timestamp_mode);
+  if (timestamp_mode != "MSEC" && timestamp_mode != "LOCALDATE"){
+    Log("Error: Timestamp mode "+timestamp_mode+" not recognized! "
+    "Setting default option MSEC",0,verbosity_);
+    timestamp_mode = "MSEC";
+  }
+
+  std::cout <<"Get DaylightSavings"<<std::endl;
+  bool got_daylight_savings = m_variables.Get("DaylightSavings",DaylightSavings);
+  if (DaylightSavings != 1 && DaylightSavings != 0){
+    Log("Error: DaylightSavings setting "+std::to_string(DaylightSavings)+" not recognized"
+      "Setting default option 0",0,verbosity_);
+    DaylightSavings = 0;
+  }
+
+  TimeZoneShift = 21600000;
+  if (DaylightSavings) TimeZoneShift = 18000000;
+
+  std::cout <<"Get DB Filename"<<std::endl;
   bool got_db_filename = m_variables.Get("OutputFile", db_filename_);
 
   // Check for problems
@@ -34,6 +59,7 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
     return false;
   }
 
+  std::cout <<"Does the beam database file already exist"<<std::endl;
   // Check if the beam database file already exists using a dummy std::ifstream
   std::ifstream dummy_in_file(db_filename_);
   if ( dummy_in_file.good() ) {
@@ -49,25 +75,60 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
 
 bool BeamFetcher::Execute() {
 
-  uint64_t start_ms_since_epoch;
-  bool got_start_ms = m_variables.Get("StartMillisecondsSinceEpoch",
-    start_ms_since_epoch);
+  std::cout <<"Get Timestamps"<<std::endl;
+  if (timestamp_mode == "MSEC"){
+    std::cout <<"Mode: MSEC"<<std::endl;
+    bool got_start_ms = m_variables.Get("StartMillisecondsSinceEpoch",
+      start_ms_since_epoch);
 
-  if ( !got_start_ms ) {
-    Log("Error: Missing setting for the StartMillisecondsSinceEpoch"
+    if ( !got_start_ms ) {
+      Log("Error: Missing setting for the StartMillisecondsSinceEpoch"
+        " configuration file option", 0, verbosity_);
+      return false;
+    }
+
+    bool got_end_ms = m_variables.Get("EndMillisecondsSinceEpoch",
+      end_ms_since_epoch);
+
+    if ( !got_end_ms ) {
+      Log("Error: Missing setting for the EndMillisecondsSinceEpoch"
       " configuration file option", 0, verbosity_);
-    return false;
+      return false;
+    }
+  } else if (timestamp_mode == "LOCALDATE"){
+    std::cout <<"Mode: LOCALDATE"<<std::endl;
+    bool got_start_date = m_variables.Get("StartDate",start_date);
+    if (!got_start_date){
+      Log("Error: Missing setting for StartDate"
+      " configuration file option",0,verbosity_);
+      return false;
+    }
+
+    bool got_end_date = m_variables.Get("EndDate",end_date);
+    if (!got_end_date){
+      Log("Error: Missing setting for EndDate"
+      " configuration file option",0,verbosity_);
+    }
+
+    ifstream file_startdate(start_date);
+    getline(file_startdate,start_timestamp);
+    std::cout <<"start_timestamp: "<<start_timestamp<<std::endl;
+    file_startdate.close();
+    ifstream file_enddate(end_date);
+    getline(file_enddate,end_timestamp);
+    std::cout <<"end_timestamp: "<<end_timestamp<<std::endl;
+    file_enddate.close();
+
+
+    ///Convert string start/end dates to milliseconds
+    this->ConvertDateToMSec(start_timestamp,end_timestamp,start_ms_since_epoch,end_ms_since_epoch);
+
   }
 
-  uint64_t end_ms_since_epoch;
-  bool got_end_ms = m_variables.Get("EndMillisecondsSinceEpoch",
-    end_ms_since_epoch);
+  std::cout <<"start_ms_since_epoch: "<<start_ms_since_epoch<<std::endl;
+  std::cout <<"end_ms_since_epoch: "<<end_ms_since_epoch<<std::endl;
 
-  if ( !got_end_ms ) {
-    Log("Error: Missing setting for the EndMillisecondsSinceEpoch"
-      " configuration file option", 0, verbosity_);
-    return false;
-  }
+  std::cout <<"Got timestamps"<<std::endl;
 
   if ( start_ms_since_epoch >= end_ms_since_epoch ) {
     Log("Error: The start time for the BeamFetch tool must be less than"
@@ -146,6 +207,7 @@ bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
     beam_db_index[current_entry] = std::pair<uint64_t,
       uint64_t>(start_ms, end_ms);
 
+    std::cout <<"Set BeamDB"<<std::endl;
     beam_db_store_.Set("BeamDB", beam_data);
     beam_db_store_.Save(db_filename_);
     beam_db_store_.Delete();
@@ -175,4 +237,32 @@ bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
   Log("Retrieval of beam status data complete.", 1, verbosity_);
 
   return true;
+}
+
+void BeamFetcher::ConvertDateToMSec(std::string start_str,std::string end_str,uint64_t &start_ms,uint64_t &end_ms){
+
+  std::cout <<"ConvertDateToMSec"<<std::endl;
+  std::string epoch_start = "1970/1/1";
+  std::cout <<"1"<<std::endl;
+  boost::posix_time::ptime Epoch(boost::gregorian::from_string(epoch_start));
+  std::cout <<"2"<<std::endl;
+  std::cout <<"start_str: "<<start_str<<", end_str: "<<end_str<<std::endl;
+  boost::posix_time::ptime ptime_start(boost::posix_time::time_from_string(start_str));
+  std::cout <<"3"<<std::endl;
+  boost::posix_time::time_duration start_duration;
+  std::cout <<"4"<<std::endl;
+  start_duration = boost::posix_time::time_duration(ptime_start - Epoch);
+  std::cout <<"5"<<std::endl;
+  start_ms = start_duration.total_milliseconds()+TimeZoneShift;
+  std::cout <<"6"<<std::endl;
+  boost::posix_time::time_duration end_duration;
+  std::cout <<"7"<<std::endl;
+  boost::posix_time::ptime ptime_end(boost::posix_time::time_from_string(end_str));
+  std::cout <<"8"<<std::endl;
+  end_duration = boost::posix_time::time_duration(ptime_end - Epoch);
+  std::cout <<"9"<<std::endl;
+  end_ms = end_duration.total_milliseconds()+TimeZoneShift;
+
+  std::cout <<"start_ms: "<<start_ms<<", end_ms: "<<end_ms<<std::endl;
+
 }

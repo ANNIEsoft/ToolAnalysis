@@ -13,7 +13,7 @@
 #include "ANNIEalgorithms.h"
 #include "ADCPulse.h"
 #include "CalibratedADCWaveform.h"
-
+#include "BeamStatus.h"
 
 /**
 * \class ANNIEEventBuilder
@@ -143,6 +143,9 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t, std::map<std::vector<int>, int> >* FIFOPMTWaves = nullptr;
   std::map<uint64_t, std::map<std::vector<int>,uint64_t>>* TimestampsFromTheFuture = nullptr;
 
+  //###### Beam status map
+  std::map<uint64_t,BeamStatus> *BeamStatusMap;                         //Map containing the beam status information
+
   //###### Maps that include the waveforms/Hits information
   std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawWaveforms;      //Key: {MTCTime}, value: map of raw waveforms
   std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawWaveformsAux;  //Key: {MTCTime}, value: map of raw waveforms (aux channels)
@@ -179,6 +182,7 @@ class ANNIEEventBuilder: public Tool {
   std::string BuildType;
 
   bool save_raw_data;	//Should raw VME data be saved (complete waveforms)
+  bool store_beam_status;   //Should beam status information be saved to ANNIEEvent Store?
 
   uint64_t NewestTankTimestamp = 0;
   double CurrentDriftMean = 0;

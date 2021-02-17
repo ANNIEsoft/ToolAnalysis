@@ -10,8 +10,8 @@
 #include <string>
 
 // TODO: update this to allow for all known minibuffer labels
-enum class MinibufferLabel : uint8_t { Unknown = 0u, LED, Soft, Beam, Cosmic,
-  Source, Hefty, HeftySource };
+enum class MinibufferLabel : uint8_t { Unknown = 0u, LED, Soft, Beam, Cosmic, MRDCR,
+  Source, AmBe, Hefty, HeftySource };
 
 // Operator for printing a description of the minibuffer label to a
 // std::ostream
@@ -30,8 +30,14 @@ inline std::ostream& operator<<(std::ostream& out, const MinibufferLabel& mbl)
     case MinibufferLabel::Cosmic:
       out << "Cosmic";
       break;
+    case MinibufferLabel::MRDCR:
+      out << "MRDCR";
+      break;
     case MinibufferLabel::Source:
       out << "Source";
+      break;
+    case MinibufferLabel::AmBe:
+      out << "AmBe";
       break;
     case MinibufferLabel::Hefty:
       out << "Hefty";

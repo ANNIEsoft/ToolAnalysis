@@ -132,3 +132,5 @@
 #include "StoreDecodedTimestamps.h"
 #include "PlotDecodedTimestamps.h"
 #include "MaxPEPlots.h"
+//#include "GetRunInfoFromPSQL.h"
+#include "BeamDecoder.h"
