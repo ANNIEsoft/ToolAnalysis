@@ -73,8 +73,8 @@ class ANNIEEventBuilder: public Tool {
   void BuildANNIEEventRunInfo(int RunNum, int SubRunNum, int PartNum, int RunType, uint64_t RunStartTime);  //Loads run level information, as well as the entry number
   void BuildANNIEEventTankRaw(uint64_t CounterTime, std::map<std::vector<int>, std::vector<uint16_t>> WaveMap);
   void BuildANNIEEventTankHits(uint64_t CounterTime, std::map<unsigned long,std::vector<Hit>>* PMTHits, std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHits,
-    std::map<unsigned long,std::vector<Hit>>* PMTHitsAux, std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHitsAux);
-  void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord, std::map<std::string,bool> TriggerWordExtended);
+    std::map<unsigned long,std::vector<Hit>>* PMTHitsAux, std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHitsAux, std::map<unsigned long,std::vector<int>> PMTRawAcqSize);
+  void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord, int TriggerWordExtended);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
   uint64_t MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc);
 
@@ -137,7 +137,7 @@ class ANNIEEventBuilder: public Tool {
   uint64_t slowest_in_progress_tank;
 
   //###### Auxiliary information about triggerwords (extended readout windows)
-  std::map<uint64_t,std::map<std::string,bool>> CTCExtended;	// Key: CTCTimestamp, value: Boolean map indicating whether there was an extended readout window and which type (CC/NC)
+  std::map<uint64_t,int> CTCExtended;	// Key: CTCTimestamp, value: Boolean map indicating whether there was an extended readout window and which type (CC/NC), Value 0: No extended readout, value 1: CC extended readout, value 2: Non-CC extended readout
 
   //###### Extra maps used for FIFO overflow info and TimestampsFromTheFuture
   std::map<uint64_t, std::map<std::vector<int>, int> >* FIFOPMTWaves = nullptr;
@@ -155,6 +155,7 @@ class ANNIEEventBuilder: public Tool {
   std::map<uint64_t, std::map<unsigned long,std::vector<Hit>>*> *FinishedHitsAux;        //Key: {MTCTime}, value: map of  Hit distributions
   std::map<uint64_t, std::map<unsigned long,std::vector<std::vector<ADCPulse>>>> *FinishedRecoADCHits; //Key: {MTCTime}, value: map of found pulses
   std::map<uint64_t, std::map<unsigned long,std::vector<std::vector<ADCPulse>>>> *FinishedRecoADCHitsAux; //Key: {MTCTime}, value: map of found pulses
+  std::map<uint64_t, std::map<unsigned long,std::vector<int>>> *FinishedRawAcqSize; //Key: {MTCTime}, value: map of acquisition time window sizes
 
   //######### MAPS THAT HOLD PAIRED TANK/MRD/CTC TIMESTAMPS ########
   int EventsPerPairing;  //Determines how many Tank, MRD, and CTC events are paired per event building cycle (10* this number needed to do pairing)

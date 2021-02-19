@@ -128,7 +128,7 @@ bool PhaseIIADCCalibrator::Initialise(std::string config_filename, DataModel& da
     FinishedCalibratedWaveformsAux = new std::map<uint64_t, std::map<unsigned long,std::vector<CalibratedADCWaveform<double>>>>;
     FinishedCalibratedLEDADCData = new std::map<uint64_t, std::map<unsigned long,std::vector<CalibratedADCWaveform<double>>>>;
     FinishedRawLEDADCData = new std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>>;
-
+    FinishedRawAcqSize = new std::map<uint64_t, std::map<unsigned long, std::vector<int>>>;
   }
 
   m_data->CStore.Set("NewCalibratedData",false);
@@ -176,6 +176,8 @@ bool PhaseIIADCCalibrator::Execute() {
       verbosity);
     return false;
   }
+
+
 
   // Build the calibrated waveforms
   std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > >
@@ -320,6 +322,22 @@ bool PhaseIIADCCalibrator::Execute() {
         }
       }
 
+      //Build raw waveform acquisition size
+      std::map<unsigned long, std::vector<int>> waveform_acq_size;
+      for (auto& temp_pair : RawADCData) {
+        const auto& achannel_key = temp_pair.first;
+        auto& araw_waveforms = temp_pair.second;
+        for (unsigned int i=0; i< araw_waveforms.size(); i++){
+          auto samples = araw_waveforms.at(i).GetSamples();
+          int size_sample = samples->size();
+          if (waveform_acq_size.count(achannel_key) > 0) waveform_acq_size.at(achannel_key).push_back(size_sample);
+          else {
+            std::vector<int> temp_size{size_sample};
+            waveform_acq_size.emplace(achannel_key,temp_size);
+          }
+        }
+      }
+
       // Build the calibrated waveforms
       std::map<unsigned long, std::vector<CalibratedADCWaveform<double> > > calibrated_waveform_map;
       // Build the calibrated waveforms
@@ -390,6 +408,7 @@ bool PhaseIIADCCalibrator::Execute() {
 
       Log("PhaseIIADCCalibrator Tool: Setting CalibratedADCData",v_debug,verbosity);
 
+      FinishedRawAcqSize->emplace(PMTCounterTime,waveform_acq_size);
       FinishedRawWaveforms->emplace(PMTCounterTime,RawADCData);
       FinishedRawWaveformsAux->emplace(PMTCounterTime,RawADCAuxData);
       FinishedCalibratedWaveforms->emplace(PMTCounterTime,calibrated_waveform_map);
@@ -409,6 +428,7 @@ bool PhaseIIADCCalibrator::Execute() {
     if (new_data){
       m_data->CStore.Set("FinishedRawWaveforms",FinishedRawWaveforms);
       m_data->CStore.Set("FinishedRawWaveformsAux",FinishedRawWaveformsAux);
+      m_data->CStore.Set("FinishedRawAcqSize",FinishedRawAcqSize);
       m_data->CStore.Set("FinishedCalibratedWaveforms",FinishedCalibratedWaveforms);
       m_data->CStore.Set("FinishedCalibratedWaveformsAux",FinishedCalibratedWaveformsAux);
       if (make_led_waveforms){

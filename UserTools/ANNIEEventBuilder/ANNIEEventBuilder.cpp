@@ -192,8 +192,9 @@ bool ANNIEEventBuilder::Execute(){
         std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHits = FinishedRecoADCHits->at(PMTCounterTime);
         std::map<unsigned long,std::vector<Hit>>* aFinishedHitsAux = FinishedHitsAux->at(PMTCounterTime);
         std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHitsAux = FinishedRecoADCHitsAux->at(PMTCounterTime);
+        std::map<unsigned long,std::vector<int>> RawAcqSize = FinishedRawAcqSize->at(PMTCounterTime);
         this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,PartNumber,RunType,StarTime);
-        this->BuildANNIEEventTankHits(PMTCounterTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux);
+        this->BuildANNIEEventTankHits(PMTCounterTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux, RawAcqSize);
         ANNIEEvent->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         //Erase this entry from the InProgressTankEventsMap
@@ -214,6 +215,7 @@ bool ANNIEEventBuilder::Execute(){
         FinishedHitsAux->erase(PMTEventsToDelete.at(i));
         FinishedRecoADCHits->erase(PMTEventsToDelete.at(i));
         FinishedRecoADCHitsAux->erase(PMTEventsToDelete.at(i));
+        FinishedRawAcqSize->erase(PMTEventsToDelete.at(i));
       }
     }
   }
@@ -407,7 +409,8 @@ bool ANNIEEventBuilder::Execute(){
           std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHits = FinishedRecoADCHits->at(TankCounterTime);
           std::map<unsigned long,std::vector<Hit>>* aFinishedHitsAux = FinishedHitsAux->at(TankCounterTime);
           std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHitsAux = FinishedRecoADCHitsAux->at(TankCounterTime);
-          this->BuildANNIEEventTankHits(TankCounterTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux);
+          std::map<unsigned long,std::vector<int>> RawAcqSize = FinishedRawAcqSize->at(TankCounterTime);
+          this->BuildANNIEEventTankHits(TankCounterTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux, RawAcqSize);
       
         }
         this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
@@ -427,6 +430,7 @@ bool ANNIEEventBuilder::Execute(){
           FinishedHitsAux->erase(TankCounterTime);
           FinishedRecoADCHits->erase(TankCounterTime);
           FinishedRecoADCHitsAux->erase(TankCounterTime);
+          FinishedRawAcqSize->erase(TankCounterTime);
         }
         myMRDMaps.MRDEvents.erase(MRDTimeStamp);
         myMRDMaps.MRDTriggerTypeMap.erase(MRDTimeStamp);
@@ -574,7 +578,7 @@ bool ANNIEEventBuilder::Execute(){
           std::string label = buildset_entries.first;
           if(label == "CTC"){
             uint64_t CTCWord = buildset_entries.second;
-            std::map<std::string,bool> CTCWordExtended = CTCExtended[CTCtimestamp];
+            int CTCWordExtended = CTCExtended[CTCtimestamp];
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
@@ -600,7 +604,8 @@ bool ANNIEEventBuilder::Execute(){
               std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHits = FinishedRecoADCHits->at(TankPMTTime);
               std::map<unsigned long,std::vector<Hit>>* aFinishedHitsAux = FinishedHitsAux->at(TankPMTTime);
               std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHitsAux = FinishedRecoADCHitsAux->at(TankPMTTime);
-              this->BuildANNIEEventTankHits(TankPMTTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux);
+              std::map<unsigned long,std::vector<int>> RawAcqSize = FinishedRawAcqSize->at(TankPMTTime);
+              this->BuildANNIEEventTankHits(TankPMTTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux, RawAcqSize);
               TimesToDelete.push_back(TankPMTTime);
             }
             FinishedTankEventsSampleSize->erase(TankPMTTime);
@@ -641,7 +646,8 @@ bool ANNIEEventBuilder::Execute(){
             std::map<unsigned long,std::vector<Hit>>* emptyHits = new std::map<unsigned long,std::vector<Hit>>;
             std::map<unsigned long,std::vector<Hit>>* emptyHitsAux = new std::map<unsigned long,std::vector<Hit>>;
             std::map<unsigned long,std::vector<std::vector<ADCPulse>>> emptyRecoADC;
-            this->BuildANNIEEventTankHits(default_clocktime,emptyHits,emptyRecoADC,emptyHitsAux,emptyRecoADC);
+            std::map<unsigned long,std::vector<int>> emptyAcqSize;
+            this->BuildANNIEEventTankHits(default_clocktime,emptyHits,emptyRecoADC,emptyHitsAux,emptyRecoADC,emptyAcqSize);
           }
 	}
 	ANNIEEvent->Set("DataStreams",DataStreams);
@@ -659,6 +665,7 @@ bool ANNIEEventBuilder::Execute(){
         FinishedHitsAux->erase(TimesToDelete.at(i_delete));
         FinishedRecoADCHits->erase(TimesToDelete.at(i_delete));
         FinishedRecoADCHitsAux->erase(TimesToDelete.at(i_delete));
+        FinishedRawAcqSize->erase(TimesToDelete.at(i_delete));
       }   
       std::cout <<"Size of FinishedHits after erase: "<<FinishedHits->size()<<std::endl;
       std::cout <<"Size of FinishedTankEventsSampleSize after erase: "<<FinishedTankEventsSampleSize->size()<<std::endl;
@@ -770,7 +777,7 @@ bool ANNIEEventBuilder::Execute(){
           std::string label = buildset_entries.first;
           if(label == "CTC"){
             uint64_t CTCWord = buildset_entries.second;
-            std::map<std::string,bool> CTCWordExtended = CTCExtended[CTCtimestamp];
+            int CTCWordExtended = CTCExtended[CTCtimestamp];
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
@@ -796,7 +803,8 @@ bool ANNIEEventBuilder::Execute(){
               std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHits = FinishedRecoADCHits->at(TankPMTTime);
               std::map<unsigned long,std::vector<Hit>>* aFinishedHitsAux = FinishedHitsAux->at(TankPMTTime);
               std::map<unsigned long,std::vector<std::vector<ADCPulse>>> aFinishedRecoADCHitsAux = FinishedRecoADCHitsAux->at(TankPMTTime);
-              this->BuildANNIEEventTankHits(TankPMTTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux);
+              std::map<unsigned long,std::vector<int>> RawAcqSize = FinishedRawAcqSize->at(TankPMTTime);
+              this->BuildANNIEEventTankHits(TankPMTTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux, RawAcqSize);
               TimesToDelete.push_back(TankPMTTime);
             }
             FinishedTankEventsSampleSize->erase(TankPMTTime);
@@ -818,6 +826,7 @@ bool ANNIEEventBuilder::Execute(){
         FinishedHitsAux->erase(TimesToDelete.at(i_delete));
         FinishedRecoADCHits->erase(TimesToDelete.at(i_delete));
         FinishedRecoADCHitsAux->erase(TimesToDelete.at(i_delete));
+        FinishedRawAcqSize->erase(TimesToDelete.at(i_delete));
       }
     }
     ThisBuildMap.clear();
@@ -927,7 +936,7 @@ bool ANNIEEventBuilder::Execute(){
           std::string label = buildset_entries.first;
           if(label == "CTC"){
             uint64_t CTCWord = buildset_entries.second;
-            std::map<std::string,bool> CTCWordExtended = CTCExtended[CTCtimestamp];
+            int CTCWordExtended = CTCExtended[CTCtimestamp];
             this->BuildANNIEEventCTC(CTCtimestamp,CTCWord,CTCWordExtended);
             TimeToTriggerWordMap->erase(CTCtimestamp);
             DataStreams["CTC"]=1;
@@ -1058,20 +1067,17 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
   for (int i_ctc=0; i_ctc < (int) myTimeStream.CTCTimestamps.size(); i_ctc++){
     std::cout <<"i_ctc: "<<i_ctc<<std::endl;
     uint64_t CTCTimeStamp = myTimeStream.CTCTimestamps.at(i_ctc);
-    std::map<std::string,bool> extended_information;
-    extended_information.emplace("Extended",false);
-    extended_information.emplace("ExtendedCC",false);
-    extended_information.emplace("ExtendedNC",false);
+    int extended_information=0;
     std::cout <<"CTCTimestamp: "<<CTCTimeStamp<<std::endl;
     for (int i_ext=0; i_ext < (int) myTimeStream.CTCTimestampsExtendedCC.size(); i_ext++){
       uint64_t CTCTimeStampCC = myTimeStream.CTCTimestampsExtendedCC.at(i_ext);
       double diff_CC = double(CTCTimeStamp) - double(CTCTimeStampCC);
-      if (fabs(diff_CC) < 5000) { extended_information["Extended"] = true; extended_information["ExtendedCC"] = 1;}
+      if (fabs(diff_CC) < 5000) { extended_information = 1;}
     }
     for (int i_ext=0; i_ext < (int) myTimeStream.CTCTimestampsExtendedNC.size(); i_ext++){
       uint64_t CTCTimeStampNC = myTimeStream.CTCTimestampsExtendedNC.at(i_ext);
       double diff_NC = double(CTCTimeStamp) - double(CTCTimeStampNC);
-      if (fabs(diff_NC) < 5000) { extended_information["Extended"] = 1; extended_information["ExtendedNC"] = 1;}
+      if (fabs(diff_NC) < 5000) { extended_information = 2;}
     }
     CTCExtended.emplace(CTCTimeStamp,extended_information);
   }
@@ -1671,6 +1677,7 @@ void ANNIEEventBuilder::ManageOrphanage(){
         FinishedHitsAux->erase(nextorphan.first);
         FinishedRecoADCHits->erase(nextorphan.first);
         FinishedRecoADCHitsAux->erase(nextorphan.first);
+        FinishedRawAcqSize->erase(nextorphan.first);
     }    
     m_data->CStore.Set("FinishedTankEvents",FinishedTankEvents);
 
@@ -1871,17 +1878,24 @@ void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber, 
   ANNIEEvent->Set("PartNumber",PartNumber);
   ANNIEEvent->Set("RunType",RunType);
   ANNIEEvent->Set("RunStartTime",StartTime);
-  //TODO: Things missing from ANNIEEvent that should be in before this tool finishes:
-  //  - BeamStatus?  --> stored in BuildANNIEEventCTC
   return;
 }
 
-void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord, std::map<std::string,bool> CTCWordExtended)
+void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord, int CTCWordExtended)
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event CTC Info" << std::endl;
   ANNIEEvent->Set("CTCTimestamp",CTCTime);
   ANNIEEvent->Set("TriggerWord",CTCWord);
   ANNIEEvent->Set("TriggerExtended",CTCWordExtended);
+  //Build a TriggerClass object to be more in line with the ANNIEEvent spreadsheet
+  TimeClass TriggerTime(CTCTime);
+  std::string TriggerName = "";
+  if (CTCWord == 5) TriggerName = "Beam";
+  else if (CTCWord == 31) TriggerName = "LED";
+  else if (CTCWord == 35) TriggerName = "AmBe";
+  else if (CTCWord == 36) TriggerName = "MRDCR";
+  TriggerClass TriggerData(TriggerName,CTCWord,CTCWordExtended,true,TriggerTime);
+  ANNIEEvent->Set("TriggerData",TriggerData);
   return;
 }
 
@@ -1938,7 +1952,8 @@ void ANNIEEventBuilder::BuildANNIEEventTankHits(uint64_t ClockTime,
         std::map<unsigned long,std::vector<Hit>>* PMTHits,
         std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHits,
         std::map<unsigned long,std::vector<Hit>>* PMTHitsAux,
-        std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHitsAux)
+        std::map<unsigned long,std::vector<std::vector<ADCPulse>>> PMTRecoADCHitsAux,
+        std::map<unsigned long,std::vector<int>> PMTRawAcqSize)
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event Tank (Hits)" << std::endl;
 
@@ -1947,6 +1962,7 @@ void ANNIEEventBuilder::BuildANNIEEventTankHits(uint64_t ClockTime,
   ANNIEEvent->Set("RecoADCData",PMTRecoADCHits);
   ANNIEEvent->Set("AuxHits",PMTHitsAux,true);
   ANNIEEvent->Set("RecoAuxADCData",PMTRecoADCHitsAux);
+  ANNIEEvent->Set("RawAcqSize",PMTRawAcqSize);
   ANNIEEvent->Set("EventTimeTank",ClockTime);
   if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: ANNIE Event "+
       to_string(ANNIEEventNum)+" built." << std::endl;
@@ -2051,6 +2067,7 @@ bool ANNIEEventBuilder::FetchWaveformsHits(){
   m_data->CStore.Get("FinishedRecoADCHits",FinishedRecoADCHits);
   m_data->CStore.Get("FinishedHitsAux",FinishedHitsAux);
   m_data->CStore.Get("FinishedRecoADCHitsAux",FinishedRecoADCHitsAux);
+  m_data->CStore.Get("FinishedRawAcqSize",FinishedRawAcqSize);
 
   // Fill BeamTankTimestamps vector
   for (std::pair<uint64_t,std::map<unsigned long,std::vector<Hit>>*> apair : *FinishedHits){

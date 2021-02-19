@@ -109,6 +109,7 @@ class PhaseIIADCCalibrator : public Tool {
     std::map<uint64_t, std::map<unsigned long,std::vector<CalibratedADCWaveform<double>>>> *FinishedCalibratedWaveformsAux;  //Key: {MTCTime}, value: map of calibrated waveforms (aux channels)
     std::map<uint64_t, std::map<unsigned long,std::vector<CalibratedADCWaveform<double>>>> *FinishedCalibratedLEDADCData;  //Key: {MTCTime}, value: map of calibrated waveforms (LED channels)
     std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawLEDADCData;	//Key: {MTCTime}, value: map of raw LED waveforms
+    std::map<uint64_t, std::map<unsigned long,std::vector<int>>> *FinishedRawAcqSize;   // Key: {MTCTime}, value: map of acquisition window sizes
 
     std::map<std::vector<int>,int> TankPMTCrateSpaceToChannelNumMap;
     std::map<std::vector<int>,int> AuxCrateSpaceToChannelNumMap;
