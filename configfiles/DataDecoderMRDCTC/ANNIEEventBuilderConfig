@@ -1,11 +1,9 @@
-verbosity 5
+verbosity 2
 
-BuildType TankAndCTC
+BuildType MRDAndCTC
 ProcessedFilesBasename ProcessedRawData
-NumEventsPerPairing 200
 SavePath ./
-
-MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got em
+NumEventsPerPairing 200
 
 ExecutesPerBuild 10
 OrphanOldTankTimestamps 1
@@ -15,3 +13,4 @@ MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the oth
 
 SaveRawData 0
 StoreBeamStatus 1
+

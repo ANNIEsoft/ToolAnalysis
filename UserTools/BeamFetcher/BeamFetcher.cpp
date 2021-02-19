@@ -27,10 +27,8 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
   timestamp_mode = "MSEC";	//Other option: LOCALDATE
   DaylightSavings = false; 
 
-  std::cout <<"Get verbose"<<std::endl;
   m_variables.Get("verbose", verbosity_);
 
-  std::cout <<"Get TimestampMode"<<std::endl;
   bool got_timestamp_mode = m_variables.Get("TimestampMode",timestamp_mode);
   if (timestamp_mode != "MSEC" && timestamp_mode != "LOCALDATE"){
     Log("Error: Timestamp mode "+timestamp_mode+" not recognized! "
@@ -38,7 +36,6 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
     timestamp_mode = "MSEC";
   }
 
-  std::cout <<"Get DaylightSavings"<<std::endl;
   bool got_daylight_savings = m_variables.Get("DaylightSavings",DaylightSavings);
   if (DaylightSavings != 1 && DaylightSavings != 0){
     Log("Error: DaylightSavings setting "+std::to_string(DaylightSavings)+" not recognized"
@@ -49,7 +46,6 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
   TimeZoneShift = 21600000;
   if (DaylightSavings) TimeZoneShift = 18000000;
 
-  std::cout <<"Get DB Filename"<<std::endl;
   bool got_db_filename = m_variables.Get("OutputFile", db_filename_);
 
   // Check for problems
@@ -59,7 +55,6 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
     return false;
   }
 
-  std::cout <<"Does the beam database file already exist"<<std::endl;
   // Check if the beam database file already exists using a dummy std::ifstream
   std::ifstream dummy_in_file(db_filename_);
   if ( dummy_in_file.good() ) {
@@ -75,9 +70,7 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
 
 bool BeamFetcher::Execute() {
 
-  std::cout <<"Get Timestamps"<<std::endl;
   if (timestamp_mode == "MSEC"){
-    std::cout <<"Mode: MSEC"<<std::endl;
     bool got_start_ms = m_variables.Get("StartMillisecondsSinceEpoch",
       start_ms_since_epoch);
 
@@ -96,7 +89,6 @@ bool BeamFetcher::Execute() {
       return false;
     }
   } else if (timestamp_mode == "LOCALDATE"){
-    std::cout <<"Mode: LOCALDATE"<<std::endl;
     bool got_start_date = m_variables.Get("StartDate",start_date);
     if (!got_start_date){
       Log("Error: Missing setting for StartDate"
@@ -112,11 +104,9 @@ bool BeamFetcher::Execute() {
 
     ifstream file_startdate(start_date);
     getline(file_startdate,start_timestamp);
-    std::cout <<"start_timestamp: "<<start_timestamp<<std::endl;
     file_startdate.close();
     ifstream file_enddate(end_date);
     getline(file_enddate,end_timestamp);
-    std::cout <<"end_timestamp: "<<end_timestamp<<std::endl;
     file_enddate.close();
 
 
@@ -128,7 +118,6 @@ bool BeamFetcher::Execute() {
   std::cout <<"start_ms_since_epoch: "<<start_ms_since_epoch<<std::endl;
   std::cout <<"end_ms_since_epoch: "<<end_ms_since_epoch<<std::endl;
 
-  std::cout <<"Got timestamps"<<std::endl;
 
   if ( start_ms_since_epoch >= end_ms_since_epoch ) {
     Log("Error: The start time for the BeamFetch tool must be less than"
@@ -188,26 +177,36 @@ bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
 
     // Have a small overlap (THIRTY_SECONDS) between entries so that we
     // can be sure not to miss any time interval in the desired range
+    std::cout <<"Query"<<std::endl;
     beam_data = db.QueryBeamDB(current_time - chunk_step_ms,
       current_time + THIRTY_SECONDS);
+    std::cout <<"Query done"<<std::endl;
 
+    std::cout <<"Get pot_map"<<std::endl;
     // TODO: remove hard-coded device name here
-    const auto& pot_map = beam_data.at("E:TOR875");
-
-    // Find the range of times for which E:TOR875 data exist in the
-    // current beam database chunk
     uint64_t start_ms
       = std::numeric_limits<uint64_t>::max();
     uint64_t end_ms = 0ull;
-    for (const auto& pair : pot_map) {
-      if (pair.first < start_ms) start_ms = pair.first;
-      if (pair.first > end_ms) end_ms = pair.first;
-    }
+    
+    if (beam_data.count("E:TOR875")>0){
+      //Account for two hour timeframes where there's no beam
+      const auto& pot_map = beam_data.at("E:TOR875");
 
+      std::cout <<"Find range of times"<<std::endl;
+      // Find the range of times for which E:TOR875 data exist in the
+      // current beam database chunk
+      for (const auto& pair : pot_map) {
+        if (pair.first < start_ms) start_ms = pair.first;
+        if (pair.first > end_ms) end_ms = pair.first;
+      }
+    } else {
+      start_ms = current_time;
+      end_ms = current_time + chunk_step_ms;
+    } 
+      
     beam_db_index[current_entry] = std::pair<uint64_t,
       uint64_t>(start_ms, end_ms);
 
-    std::cout <<"Set BeamDB"<<std::endl;
     beam_db_store_.Set("BeamDB", beam_data);
     beam_db_store_.Save(db_filename_);
     beam_db_store_.Delete();
@@ -241,28 +240,18 @@ bool BeamFetcher::fetch_beam_data(uint64_t start_ms_since_epoch,
 
 void BeamFetcher::ConvertDateToMSec(std::string start_str,std::string end_str,uint64_t &start_ms,uint64_t &end_ms){
 
-  std::cout <<"ConvertDateToMSec"<<std::endl;
   std::string epoch_start = "1970/1/1";
-  std::cout <<"1"<<std::endl;
   boost::posix_time::ptime Epoch(boost::gregorian::from_string(epoch_start));
-  std::cout <<"2"<<std::endl;
-  std::cout <<"start_str: "<<start_str<<", end_str: "<<end_str<<std::endl;
+  if (verbosity_ > 2) std::cout <<"BeamFetcher: Convert Date To Msec: start_str: "<<start_str<<", end_str: "<<end_str<<std::endl;
   boost::posix_time::ptime ptime_start(boost::posix_time::time_from_string(start_str));
-  std::cout <<"3"<<std::endl;
   boost::posix_time::time_duration start_duration;
-  std::cout <<"4"<<std::endl;
   start_duration = boost::posix_time::time_duration(ptime_start - Epoch);
-  std::cout <<"5"<<std::endl;
   start_ms = start_duration.total_milliseconds()+TimeZoneShift;
-  std::cout <<"6"<<std::endl;
   boost::posix_time::time_duration end_duration;
-  std::cout <<"7"<<std::endl;
   boost::posix_time::ptime ptime_end(boost::posix_time::time_from_string(end_str));
-  std::cout <<"8"<<std::endl;
   end_duration = boost::posix_time::time_duration(ptime_end - Epoch);
-  std::cout <<"9"<<std::endl;
   end_ms = end_duration.total_milliseconds()+TimeZoneShift;
 
-  std::cout <<"start_ms: "<<start_ms<<", end_ms: "<<end_ms<<std::endl;
+  if (verbosity_ > 2)  std::cout <<"BeamFetcher: start_ms: "<<start_ms<<", end_ms: "<<end_ms<<std::endl;
 
 }

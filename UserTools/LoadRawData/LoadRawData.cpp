@@ -244,12 +244,16 @@ bool LoadRawData::Finalise(){
   RawData->Close();
   RawData->Delete();
   delete RawData;
-  PMTData->Close();
-  PMTData->Delete();
-  delete PMTData;
-  MRDData->Close();
-  MRDData->Delete();
-  delete MRDData;
+  if (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
+    PMTData->Close();
+    PMTData->Delete();
+    delete PMTData;
+  }
+  if (BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "MRDAndCTC" || BuildType == "TankAndMRDAndCTC"){
+    MRDData->Close();
+    MRDData->Delete();
+    delete MRDData;
+  }
   std::cout << "LoadRawData Tool Exitting" << std::endl;
   return true;
 }
@@ -269,10 +273,15 @@ void LoadRawData::LoadRunInformation(){
     Postgress.Set("RunType",-1);
     Postgress.Set("StarTime",-1);
   } else{
+    //TODO: This does not work --> Is the Postgress Store not saved correctly in the raw data file?
     BoostStore RunInfo(false,0);
     RawData->Get("RunInformation",RunInfo);
     if(verbosity>3) RunInfo.Print(false);
     RunInfo.Get("Postgress",Postgress);
+    //uint32_t RunNumber;
+    //Postgress.Get("RunNumber",RunNumber);
+    //std::cout <<"RunNumber: "<<RunNumber<<std::endl;
+    //Postgress.Print(false); //does not work for Stores
     extract_part = this->GetPartFromFilename();
     Postgress.Set("PartNumber",extract_part);
     if(verbosity>3) Postgress.Print();

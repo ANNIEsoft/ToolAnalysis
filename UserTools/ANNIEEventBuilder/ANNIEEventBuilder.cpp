@@ -565,7 +565,7 @@ bool ANNIEEventBuilder::Execute(){
 
       for(std::pair<uint64_t, std::map<std::string,uint64_t>> buildmap_entries : ThisBuildMap){
         uint64_t CTCtimestamp = buildmap_entries.first;
-        std::cout <<"CTCTimestamp: "<<CTCtimestamp<<std::endl;
+        //std::cout <<"CTCTimestamp: "<<CTCtimestamp<<std::endl;
         std::map<std::string,uint64_t> aBuildSet = buildmap_entries.second; 
         std::map<std::string,bool> DataStreams;
         DataStreams.emplace("Tank",0);
@@ -629,7 +629,7 @@ bool ANNIEEventBuilder::Execute(){
         }
 	//Set empty data variables in case some stream is not built
 	if (DataStreams["MRD"]==0){
-          std::cout <<"datastreams[mrd]=0"<<std::endl;
+          //std::cout <<"datastreams[mrd]=0"<<std::endl;
           std::vector<std::pair<unsigned long,int>> empty_mrdhits;
           uint64_t default_mrdtimestamp=0;
           std::string default_mrdtrigger="None";
@@ -637,7 +637,7 @@ bool ANNIEEventBuilder::Execute(){
           int default_cosmictdc=0;
           this->BuildANNIEEventMRD(empty_mrdhits, default_mrdtimestamp, default_mrdtrigger, default_beamtdc, default_cosmictdc);
 	} else if (DataStreams["Tank"]==0){
-          std::cout <<"datastreams[tank]=0"<<std::endl;
+          //std::cout <<"datastreams[tank]=0"<<std::endl;
           uint64_t default_clocktime=0;
           if (save_raw_data){
             std::map<std::vector<int>, std::vector<uint16_t>> empty_wavemap;
@@ -654,9 +654,9 @@ bool ANNIEEventBuilder::Execute(){
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD + CTC) SUCCESSFULLY" << std::endl;
       }
-      std::cout <<"Size of FinishedHits before erase: "<<FinishedHits->size()<<std::endl;
+      //std::cout <<"Size of FinishedHits before erase: "<<FinishedHits->size()<<std::endl;
       for (int i_delete = 0; i_delete < (int) TimesToDelete.size(); i_delete++){
-        std::cout <<"Delete timestamp "<<TimesToDelete.at(i_delete)<<std::endl;
+        //std::cout <<"Delete timestamp "<<TimesToDelete.at(i_delete)<<std::endl;
         /*FinishedRawWaveforms->erase(TimesToDelete.at(i_delete));
         FinishedRawWaveformsAux->erase(TimesToDelete.at(i_delete));
         FinishedCalibratedWaveforms->erase(TimesToDelete.at(i_delete));
@@ -667,8 +667,8 @@ bool ANNIEEventBuilder::Execute(){
         FinishedRecoADCHitsAux->erase(TimesToDelete.at(i_delete));
         FinishedRawAcqSize->erase(TimesToDelete.at(i_delete));
       }   
-      std::cout <<"Size of FinishedHits after erase: "<<FinishedHits->size()<<std::endl;
-      std::cout <<"Size of FinishedTankEventsSampleSize after erase: "<<FinishedTankEventsSampleSize->size()<<std::endl;
+      //std::cout <<"Size of FinishedHits after erase: "<<FinishedHits->size()<<std::endl;
+      //std::cout <<"Size of FinishedTankEventsSampleSize after erase: "<<FinishedTankEventsSampleSize->size()<<std::endl;
       m_data->CStore.Set("FinishedTankEvents",FinishedTankEvents);
     }
     ThisBuildMap.clear();
@@ -990,7 +990,7 @@ bool ANNIEEventBuilder::Execute(){
 bool ANNIEEventBuilder::Finalise(){
 
   //Deal with any remaining orphans
-  if(OrphanOldTankTimestamps){
+  if(OrphanOldTankTimestamps && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC")){
     if (verbosity > 4) std::cout <<"ANNIEEventBuilder: Remaining in progress events in Finalise step: "<<InProgressTankEvents->size()<<std::endl;
     std::map<uint64_t,std::string> MRDOrphans;
     std::map<uint64_t,double> MRDOrphansTDiff;
@@ -1046,7 +1046,7 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
   //Read in auxiliary triggerword information, use information from trigword 40 (min-bias) & 41 (CC-extended readout)
   for (std::pair<uint64_t,std::vector<uint32_t>> apair : *TimeToTriggerWordMapComplete){
     uint64_t CTCTimestamp = apair.first;
-    std::cout <<"CTCTimestamp: "<<CTCTimestamp<<std::endl;
+    //std::cout <<"CTCTimestamp: "<<CTCTimestamp<<std::endl;
     std::vector<uint32_t> CTCWordVector = apair.second;
     for (int i_ctcword=0; i_ctcword < (int) CTCWordVector.size(); i_ctcword++){
       uint32_t CTCWord = CTCWordVector.at(i_ctcword);
@@ -1061,14 +1061,13 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
     TimeToTriggerWordMapComplete->erase(aux_trigword_delete.at(i_aux));
   }
 
-  std::cout <<"Extended trigwords?"<<std::endl;
-  std::cout <<"myTimeStream.CTCTimestamps.size(): "<<myTimeStream.CTCTimestamps.size()<<std::endl;
+  if (verbosity > 4) std::cout <<"ANNIEEventBuilder: Extended trigwords? myTimeStream.CTCTimestamps.size(): "<<myTimeStream.CTCTimestamps.size()<<std::endl;
   //Check for each trigger timestamp if there was an extended triggerword in the immediate vicinity
   for (int i_ctc=0; i_ctc < (int) myTimeStream.CTCTimestamps.size(); i_ctc++){
-    std::cout <<"i_ctc: "<<i_ctc<<std::endl;
+    //std::cout <<"i_ctc: "<<i_ctc<<std::endl;
     uint64_t CTCTimeStamp = myTimeStream.CTCTimestamps.at(i_ctc);
     int extended_information=0;
-    std::cout <<"CTCTimestamp: "<<CTCTimeStamp<<std::endl;
+    //std::cout <<"CTCTimestamp: "<<CTCTimeStamp<<std::endl;
     for (int i_ext=0; i_ext < (int) myTimeStream.CTCTimestampsExtendedCC.size(); i_ext++){
       uint64_t CTCTimeStampCC = myTimeStream.CTCTimestampsExtendedCC.at(i_ext);
       double diff_CC = double(CTCTimeStamp) - double(CTCTimeStampCC);
@@ -1311,7 +1310,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   std::map<uint64_t,std::vector<std::vector<int>>> TankOrphansChannels;
   std::map<uint64_t,double> TankOrphansTDiff;
 
-  if (force_matching){
+  if (force_matching && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC")){
     std::vector<uint64_t> InProgressTankEventsToDelete;
     //Add remaining Tank timestamps that have almost complete waveforms
     for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
@@ -1401,8 +1400,6 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
         }
         TankOrphans.emplace(aTankTS,"tank_no_ctc");
         TankOrphansWaveMap.emplace(aTankTS,NumWavesInCompleteSet);
-        std::cout <<"aTankTS: "<<aTankTS<<std::endl;
-        std::cout <<"Contained in FinishedTankEventsSampleSize: "<<FinishedTankEventsSampleSize->count(aTankTS)<<std::endl;
         //std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = FinishedTankEvents->at(aTankTS);
         std::map<std::vector<int>, int> aWaveMapSampleSize = FinishedTankEventsSampleSize->at(aTankTS);
         std::vector<std::vector<int>> aWaveMapChannels = GetChannelsFromWaveMapSampleSize(aWaveMapSampleSize);
@@ -1522,7 +1519,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   //If the toolchain is stopping, move remaining incomplete PMT timestamps to orphanage
   if (force_matching) {
     if (verbosity > 2) std::cout <<"ANNIEEventBuilder Tool: Force matching at the end of toolchain, get InProgressTankEvents"<<std::endl;
-    if(OrphanOldTankTimestamps){
+    if(OrphanOldTankTimestamps && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC")){
       if (verbosity > 2) std::cout <<"ANNIEEventBuilder Tool: Size of InprogressTankEvents: "<<InProgressTankEvents->size()<<std::endl;
       std::vector<uint64_t> InProgressTankEventsToDelete;
       for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
@@ -2006,13 +2003,10 @@ void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum, int PartNum)
   /*if(verbosity>4)*/ std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
   std::string Filename = SavePath + ProcessedFilesBasename + "_"+BuildType+"_R" + to_string(RunNum) + 
       "S" + to_string(SubRunNum) + "p" + to_string(PartNum);
-  std::cout <<"save"<<std::endl;
   ANNIEEvent->Save(Filename);
-  std::cout <<"delete"<<std::endl;
   //std::cout <<"ANNIEEvent saved, now delete"<<std::endl;
   ANNIEEvent->Delete();		//Delete() will delete the last entry in the store from memory and enable us to set a new pointer (won't erase the entry from saved file)
   //std::cout <<"ANNIEEvent deleted"<<std::endl;
-  std::cout <<"increment"<<std::endl;
   ANNIEEventNum+=1;
   return;
 }

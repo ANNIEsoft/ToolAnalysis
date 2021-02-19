@@ -1,6 +1,6 @@
 # BeamFetcher config file
 verbose 5
-OutputFile ./1604_beamdb
+OutputFile ./2369_beamdb
 TimestampMode LOCALDATE
 DaylightSavings 0
 StartDate ./configfiles/BeamFetcher/my_start_date.txt
