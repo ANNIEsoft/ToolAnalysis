@@ -1,0 +1,6 @@
+# PrintANNIEEvent config file
+
+verbose 3
+
+IsMC 0		#Is it a MC (1) or data (0) file?
+HasRaw 0	#Does file contain raw data objects?
