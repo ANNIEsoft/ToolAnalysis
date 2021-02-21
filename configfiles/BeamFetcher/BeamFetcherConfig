@@ -1,8 +1,9 @@
 # BeamFetcher config file
 verbose 5
 OutputFile ./2369_beamdb
-TimestampMode LOCALDATE
+TimestampMode DB 	#Options: MSEC / LOCALDATE / DB
 DaylightSavings 0
+RunNumber 2295
 StartDate ./configfiles/BeamFetcher/my_start_date.txt
 EndDate ./configfiles/BeamFetcher/my_end_date.txt
 #StartMillisecondsSinceEpoch 1498246528696

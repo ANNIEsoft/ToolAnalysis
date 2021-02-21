@@ -126,7 +126,7 @@ if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="StoreDecodedTimestamps") ret=new StoreDecodedTimestamps;
 if (tool=="PlotDecodedTimestamps") ret=new PlotDecodedTimestamps;
 if (tool=="MaxPEPlots") ret=new MaxPEPlots;
-//if (tool=="GetRunInfoFromPSQL") ret=new GetRunInfoFromPSQL;
 if (tool=="BeamDecoder") ret=new BeamDecoder;
+if (tool=="LoadRunInfo") ret=new LoadRunInfo;
 return ret;
 }
