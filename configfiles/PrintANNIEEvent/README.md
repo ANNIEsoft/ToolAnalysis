@@ -1,25 +1,26 @@
-# Configure files
+# PrintANNIEEvent toolchain
 
 ***********************
-#Description
+# Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
+The `PrintANNIEEvent` toolchain loops through the contents of an ANNIEEvent BoostStore file and summarizes the information that is contained inside the file. It is supposed to be an overview tool that one can use to get a better feeling of the data that is stored in the file.
 
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
-
+It is used in combination with the `LoadANNIEEvent` tool:
+* `LoadANNIEEvent`: Loads the ANNIEEvent BoostStore into the shared `m_data->Stores` BoostStore space
+* `PrintANNIEEvent`: Accesses the contents of the ANNIEEvent BoostStore and prints the information.
 
 ************************
-#Usage
+# Usage
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+The PrintANNIEEvent toolchain can be configured in the following ways:
+* The verbosity can be set with the "verbose" keyword
+* The data/MC nature of the ANNIEEvent store can be selected with the "IsMC" keyword
+* The availability of raw PMT data (waveforms) in the ANNIEEvent BoostStore can be specified with the "HasRaw" keyword.
 
-Variables should be stored one per line as follows:
-
-
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
-
+```
+verbose 3
+IsMC 0          # Is it a MC (1) or data (0) file?
+HasRaw 0        # Does file contain raw data objects?
+```
