@@ -1,5 +1,0 @@
-#MaxPEPlots config file
-
-MaxPEFilename MaxPEs_R1604.root
-ThresholdFile ./configfiles/MaxPEPlots/MPE_Thresholds.txt
-verbosity 2

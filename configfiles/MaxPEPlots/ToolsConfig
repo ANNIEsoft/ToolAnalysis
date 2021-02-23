@@ -1,5 +1,0 @@
-myLoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
-myLoadANNIEEvent LoadANNIEEvent configfiles/MaxPEPlots/LoadANNIEEventConfig
-#myPhaseIIADCCalibrator PhaseIIADCCalibrator configfiles/MaxPEPlots/PhaseIIADCCalibratorConfig
-#myPhaseIIADCHitFinder PhaseIIADCHitFinder configfiles/MaxPEPlots/PhaseIIADCHitFinderConfig
-myMaxPEPlots MaxPEPlots configfiles/MaxPEPlots/MaxPEPlotsConfig

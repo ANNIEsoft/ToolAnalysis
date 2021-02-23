@@ -1,2 +1,0 @@
-LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
-PlotDecodedTimestamps PlotDecodedTimestamps ./configfiles/PlotDecodedTimestamps/PlotDecodedTimestampsConfig

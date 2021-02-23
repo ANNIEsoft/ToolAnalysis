@@ -129,8 +129,5 @@
 #include "MonitorTrigger.h"
 #include "EventClassification.h"
 #include "DataSummary.h"
-#include "StoreDecodedTimestamps.h"
-#include "PlotDecodedTimestamps.h"
-#include "MaxPEPlots.h"
 #include "BeamDecoder.h"
 #include "LoadRunInfo.h"
