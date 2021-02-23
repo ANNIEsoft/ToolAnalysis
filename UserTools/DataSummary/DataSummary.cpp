@@ -122,11 +122,7 @@ bool DataSummary::Execute(){
 	
 		std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
                 bool has_raw = ANNIEEvent->Get("RawADCData",raw_waveform_map);
-		std::cout <<"has_raw: "<<has_raw<<std::endl;
-		if (!has_raw) {
-   	 		Log("RunValidation tool: Did not find RawADCData in ANNIEEvent! Abort",v_error,verbosity);
-    			/*return false;*/
-  		}
+		
 		window_is_extended = false;
 		size_of_window = 2000;
 		window_sizes.clear();
@@ -136,7 +132,7 @@ bool DataSummary::Execute(){
 			for (auto& temp_pair : raw_waveform_map) {
 				const auto& achannel_key = temp_pair.first;
 				auto& araw_waveforms = temp_pair.second;
-				for (unsigned int i=0; i< araw_waveforms.size(); i++){
+				for (unsigned int i=0; i< (int) araw_waveforms.size(); i++){
 					auto samples = araw_waveforms.at(i).GetSamples();
         				int size_sample = 2*samples->size();
 					window_sizes.push_back(size_sample);
@@ -148,7 +144,30 @@ bool DataSummary::Execute(){
       				}
     			}
   		}
+
+		std::map<unsigned long, std::vector<int>> raw_acqsize_map;
+		bool has_raw_acqsize = ANNIEEvent->Get("RawAcqSize",raw_acqsize_map);
 		
+		if (has_raw_acqsize && !has_raw){
+			for (auto& temp_pair : raw_acqsize_map) {
+				const auto& achannel_key = temp_pair.first;
+				auto& araw_acqsize = temp_pair.second;
+				for (unsigned int i=0; i< (int) araw_acqsize.size(); i++){
+					int size_sample = 2*araw_acqsize.at(i);
+					window_sizes.push_back(size_sample);
+					window_chkeys.push_back(achannel_key);
+					if (size_sample > size_of_window){
+						size_of_window = size_sample;
+						window_is_extended = true;
+					}						
+				}
+			}
+		}
+
+		if (!has_raw && !has_raw_acqsize) {
+   	 		Log("DataSummary tool: Did not find RawADCData or RawAcqSize in ANNIEEvent! Abort",v_error,verbosity);
+    			/*return false;*/
+  		}
 
 		// calculated variables
 		MRDtimestamp = mrd_timeclass.GetNs();
@@ -165,9 +184,9 @@ bool DataSummary::Execute(){
 		trigword_ext = false;
 		trigword_ext_cc = false;
 		trigword_ext_nc = false;
-		if (CTCWordExtended["Extended"] == true) trigword_ext = true;
-		if (CTCWordExtended["ExtendedCC"] == true) trigword_ext_cc = true;
-		if (CTCWordExtended["ExtendedNC"] == true) trigword_ext_nc = true;
+		if (CTCWordExtended > 0) trigword_ext = true;
+		if (CTCWordExtended == 1) trigword_ext_cc = true;
+		if (CTCWordExtended == 2) trigword_ext_nc = true;
 
 		std::cout <<"PMTtimestamp_tree: "<<PMTtimestamp_tree<<", MRDTimestamp_tree: "<<MRDtimestamp_tree<<std::endl;
 		// extract out the TDC vals
