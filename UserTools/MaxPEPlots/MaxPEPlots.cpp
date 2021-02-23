@@ -34,6 +34,7 @@ bool MaxPEPlots::Initialise(std::string configfile, DataModel &data){
   t_maxpe->Branch("max_pe_global",&max_pe_global);
   t_maxpe->Branch("max_pe",&max_pe);
   t_maxpe->Branch("extended",&extended); 
+  t_maxpe->Branch("extended_trig",&extended_trig);
   t_maxpe->Branch("triggerword",&triggerword); 
   t_maxpe->Branch("baseline",&baseline);
   t_maxpe->Branch("amplitude",&amplitude);
@@ -54,6 +55,12 @@ bool MaxPEPlots::Initialise(std::string configfile, DataModel &data){
   h_maxpe_delayed_chankey_trigword5 = new TH2F("h_maxpe_delayed_chankey_trigword5","Max P.E. distribution (delayed) vs. chankey (Trgword 5)",132,332,464,500,0,500);  
   h_multiplicity_prompt_mpe = new TH1F("h_multiplicity_prompt_mpe","Multiplicity of PMTs above MPE threshold (prompt window)",140,0,140);
   h_multiplicity_delayed_mpe = new TH1F("h_multiplicity_delayed_mpe","Multiplicity of PMTs above MPE threshold (extended window)",140,0,140);
+  h_multiplicity_prompt_mpe_extended0 = new TH1F("h_multiplicity_prompt_mpe_extended0","Multiplicity of PMTs above MPE threshold (prompt window, trig: no extended)",140,0,140);
+  h_multiplicity_delayed_mpe_extended0 = new TH1F("h_multiplicity_delayed_mpe_extended0","Multiplicity of PMTs above MPE threshold (extended window, trig: no extended)",140,0,140);
+  h_multiplicity_prompt_mpe_extended1 = new TH1F("h_multiplicity_prompt_mpe_extended1","Multiplicity of PMTs above MPE threshold (prompt window, trig: CC extended)",140,0,140);
+  h_multiplicity_delayed_mpe_extended1 = new TH1F("h_multiplicity_delayed_mpe_extended1","Multiplicity of PMTs above MPE threshold (extended window, trig: CC extended)",140,0,140);
+  h_multiplicity_prompt_mpe_extended2 = new TH1F("h_multiplicity_prompt_mpe_extended2","Multiplicity of PMTs above MPE threshold (prompt window, trig: Non-CC extended)",140,0,140);
+  h_multiplicity_delayed_mpe_extended2 = new TH1F("h_multiplicity_delayed_mpe_extended2","Multiplicity of PMTs above MPE threshold (extended window, trig: Non-CC extended)",140,0,140);
   h_multiplicity_prompt_mpe_5pe = new TH1F("h_multiplicity_prompt_mpe_5pe","Multiplicity of PMTs above MPE threshold (prompt window, > 5p.e.)",140,0,140);
   h_multiplicity_delayed_mpe_5pe = new TH1F("h_multiplicity_delayed_mpe_5pe","Multiplicity of PMTs above MPE threshold (extended window,<5p.e.)",140,0,140);
   h_baseline_diff = new TH1F("h_baseline_diff","Baseline difference",500,0,500);
@@ -63,6 +70,10 @@ bool MaxPEPlots::Initialise(std::string configfile, DataModel &data){
   h_chankey_delayed_mpe_5pe = new TH1F("h_chankey_delayed_mpe_5pe","Chankey PMTs above MPE threshold (extended window, < 5p.e.)",140,330,470);
   h_maxpe_mpe_prompt = new TH2F("h_maxpe_mpe_prompt","# MPE channels vs. Max P.E. (prompt)",200,0,1000,100,0,140);
   h_maxpe_mpe_extended = new TH2F("h_maxpe_mpe_extended","# MPE channels vs. Max P.E. (extended)",200,0,1000,100,0,140);
+  h_eventtypes_trig = new TH1F("h_eventtypes_trig","Trigger event types (extended)",4,0,4);
+  h_window_opened = new TH1F("h_window_opened","Extended window opened",6,0,6);
+  h_extended_trig = new TH1F("h_extended_trig","Extended window triggered",6,0,6);
+  h_nowindow = new TH1F("h_nowindow","No VME extended window",2,0,2);
 
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry",geom);
   n_tank_pmts = geom->GetNumDetectorsInSet("Tank");
@@ -133,7 +144,7 @@ bool MaxPEPlots::Execute(){
   }
   if (DataStreams["Tank"]==0) return true;	//Don't do anything if no tank hits
 
-  std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
+  /*std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
   bool has_raw = m_data->Stores["ANNIEEvent"]->Get("RawADCData",raw_waveform_map);
   std::cout <<"has_raw: "<<has_raw<<std::endl;
   if (!has_raw) {
@@ -155,10 +166,38 @@ bool MaxPEPlots::Execute(){
         }
       }
     }
+  }*/
+
+  std::map<unsigned long, std::vector<int>> raw_acqsize_map;
+  bool has_raw = m_data->Stores["ANNIEEvent"]->Get("RawAcqSize",raw_acqsize_map);
+  std::cout <<"has_raw: "<<has_raw<<std::endl;
+  if (!has_raw) {
+    Log("RunValidation tool: Did not find RawAcqSize in ANNIEEvent! Abort",v_error,verbosity);
+    return false;
+  }
+  extended = false;
+  int size_of_window = 2000;
+  if (has_raw){
+    for (auto& temp_pair : raw_acqsize_map) {
+      const auto& achannel_key = temp_pair.first;
+      auto& araw_acqsize = temp_pair.second;
+      for (unsigned int i=0; i< araw_acqsize.size(); i++){
+        int size_sample = 2*araw_acqsize.at(i);
+        if (size_sample > size_of_window) {
+          size_of_window = size_sample;
+          extended = true;
+        }
+      }
+    }
   }
 
+  //Get extended triggerword information (0: no extended window, 1: CC extended window, 2: Non-CC extended window)
+  int TriggerExtended;
+  m_data->Stores["ANNIEEvent"]->Get("TriggerExtended",TriggerExtended);
+
+
   std::map<unsigned long, std::vector<std::vector<ADCPulse>>> RecoADCHits;
-  bool got_recoadc = m_data->Stores["ANNIEEvent"]->Get("RecoADCHits",RecoADCHits);
+  bool got_recoadc = m_data->Stores["ANNIEEvent"]->Get("RecoADCData",RecoADCHits);
 
   n_mpe = 0;
   std::vector<int> chankey_thr;
@@ -195,8 +234,10 @@ bool MaxPEPlots::Execute(){
             amplitude.push_back(temp_amplitude);
             chkey.push_back(detectorkey);
             if (temp_amplitude > map_mpe[detectorkey]) {
-              if (std::find(chankey_thr.begin(),chankey_thr.end(),detectorkey) != chankey_thr.end()) n_mpe++;
-              chankey_thr.push_back(detectorkey);
+              if (std::find(chankey_thr.begin(),chankey_thr.end(),detectorkey) == chankey_thr.end()) {
+                n_mpe++;
+                chankey_thr.push_back(detectorkey);
+              }
             }
             if (triggerword==5){
             hv_time_pulse.at(vecid)->Fill(peak_time);
@@ -215,14 +256,45 @@ bool MaxPEPlots::Execute(){
   }
 
   if (triggerword == 5){
+    if (TriggerExtended == 0) {
+      h_eventtypes_trig->Fill(0);
+      if (!extended) h_window_opened->Fill(0);
+      else h_window_opened->Fill(1);
+      if (chankey_thr.size()==0) h_extended_trig->Fill(0);
+      else if (chankey_thr.size() > 0) h_extended_trig->Fill(1);
+    }
+    else if (TriggerExtended == 1) {
+      h_eventtypes_trig->Fill(1); 
+      h_eventtypes_trig->Fill(2);
+      if (extended) h_window_opened->Fill(2);
+      else h_window_opened->Fill(3);
+      if (chankey_thr.size() > 0) h_extended_trig->Fill(2);
+      else h_extended_trig->Fill(3);
+    }
+    else if (TriggerExtended == 2) {
+      h_eventtypes_trig->Fill(1); 
+      h_eventtypes_trig->Fill(3);
+      if (extended) h_window_opened->Fill(4);
+      else h_window_opened->Fill(5);
+      if (chankey_thr.size() == 0) h_extended_trig->Fill(4);
+      else if (chankey_thr.size() > 0) h_extended_trig->Fill(5);
+    }
   if (extended) {
+    if (chankey_thr.size() > 0) h_nowindow->Fill(0);
     h_multiplicity_delayed_mpe->Fill(n_mpe);
+    if (TriggerExtended == 0) h_multiplicity_delayed_mpe_extended0->Fill(n_mpe);
+    else if (TriggerExtended == 1) h_multiplicity_delayed_mpe_extended1->Fill(n_mpe);
+    else if (TriggerExtended == 2) h_multiplicity_delayed_mpe_extended2->Fill(n_mpe);
     for (int i_ch=0; i_ch < chankey_thr.size(); i_ch++){
       h_chankey_delayed_mpe->Fill(chankey_thr.at(i_ch));
     }
   }
   else {
+    if (chankey_thr.size() > 0) h_nowindow->Fill(1);
     h_multiplicity_prompt_mpe->Fill(n_mpe);
+    if (TriggerExtended == 0) h_multiplicity_prompt_mpe_extended0->Fill(n_mpe);
+    else if (TriggerExtended == 1) h_multiplicity_prompt_mpe_extended1->Fill(n_mpe);
+    else if (TriggerExtended == 2) h_multiplicity_prompt_mpe_extended2->Fill(n_mpe);
     for (int i_ch=0; i_ch < chankey_thr.size(); i_ch++){
       h_chankey_prompt_mpe->Fill(chankey_thr.at(i_ch));
     }
@@ -328,6 +400,35 @@ bool MaxPEPlots::Finalise(){
     double baseline_diff = fit_mean - map_baseline[i_pmt+332];
     h_baseline_diff->SetBinContent(i_pmt+333,baseline_diff);
   }
+
+  //Set labels for histograms
+  h_eventtypes_trig->GetXaxis()->SetBinLabel(1,"Prompt window");
+  h_eventtypes_trig->GetXaxis()->SetBinLabel(2,"Extended window");
+  h_eventtypes_trig->GetXaxis()->SetBinLabel(3,"Extended window - CC");
+  h_eventtypes_trig->GetXaxis()->SetBinLabel(4,"Extended window - NC");
+  h_window_opened->GetXaxis()->SetBinLabel(1,"Prompt trig - prompt");
+  h_window_opened->GetXaxis()->SetBinLabel(2,"Prompt trig - extended");
+  h_window_opened->GetXaxis()->SetBinLabel(3,"Extended CC trig - extended");
+  h_window_opened->GetXaxis()->SetBinLabel(4,"Extended CC trig - prompt");
+  h_window_opened->GetXaxis()->SetBinLabel(5,"Extended NC trig - extended");
+  h_window_opened->GetXaxis()->SetBinLabel(6,"Extended NC trig - prompt");
+  h_extended_trig->GetXaxis()->SetBinLabel(1,"Prompt trig - no thr condition");
+  h_extended_trig->GetXaxis()->SetBinLabel(2,"Prompt trig - thr condition");
+  h_extended_trig->GetXaxis()->SetBinLabel(3,"Extended CC trig - thr condition");
+  h_extended_trig->GetXaxis()->SetBinLabel(4,"Extended CC trig - no thr condition");
+  h_extended_trig->GetXaxis()->SetBinLabel(5,"Extended NC trig - no thr condition");
+  h_extended_trig->GetXaxis()->SetBinLabel(6,"Extended NC trig - thr condition");
+  h_nowindow->GetXaxis()->SetBinLabel(1,"Extended window - observed");
+  h_nowindow->GetXaxis()->SetBinLabel(2,"Extended window - not observed");
+
+  TH1F *h_multiplicity_prompt_delayed_mpe = (TH1F*) h_multiplicity_prompt_mpe->Clone();
+  h_multiplicity_prompt_delayed_mpe->SetName("h_multiplicity_prompt_delayed_mpe");
+  h_multiplicity_prompt_delayed_mpe->Sumw2();
+  h_multiplicity_prompt_delayed_mpe->Add(h_multiplicity_delayed_mpe);
+  TH1F *h_multiplicity_ratio_mpe = (TH1F*) h_multiplicity_delayed_mpe->Clone();
+  h_multiplicity_ratio_mpe->SetName("h_multiplicity_ratio_mpe");
+  h_multiplicity_ratio_mpe->Sumw2();
+  h_multiplicity_ratio_mpe->Divide(h_multiplicity_prompt_delayed_mpe);
 
 
   f_maxpe->Write();

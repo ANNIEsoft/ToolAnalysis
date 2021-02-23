@@ -43,6 +43,7 @@ class MaxPEPlots: public Tool {
   Geometry *geom = nullptr;
   std::map<string,bool> DataStreams;
   bool extended;
+  int extended_trig;
   std::map<int,double>* ChannelNumToTankPMTSPEChargeMap = nullptr;
   int triggerword;
   std::vector<double> baseline;
@@ -71,6 +72,12 @@ class MaxPEPlots: public Tool {
   TH2F *h_maxpe_delayed_chankey_trigword5 = nullptr;
   TH1F *h_multiplicity_delayed_mpe = nullptr;
   TH1F *h_multiplicity_prompt_mpe = nullptr;
+  TH1F *h_multiplicity_prompt_mpe_extended0 = nullptr;
+  TH1F *h_multiplicity_delayed_mpe_extended0 = nullptr;
+  TH1F *h_multiplicity_prompt_mpe_extended1 = nullptr;
+  TH1F *h_multiplicity_delayed_mpe_extended1 = nullptr;
+  TH1F *h_multiplicity_prompt_mpe_extended2 = nullptr;
+  TH1F *h_multiplicity_delayed_mpe_extended2 = nullptr;
   TH1F *h_multiplicity_delayed_mpe_5pe = nullptr;
   TH1F *h_multiplicity_prompt_mpe_5pe = nullptr;
   TH1F *h_baseline_diff = nullptr;
@@ -80,6 +87,10 @@ class MaxPEPlots: public Tool {
   TH1F *h_chankey_delayed_mpe_5pe = nullptr;
   TH2F *h_maxpe_mpe_prompt = nullptr;
   TH2F *h_maxpe_mpe_extended = nullptr;
+  TH1F *h_eventtypes_trig = nullptr;
+  TH1F *h_window_opened = nullptr;
+  TH1F *h_extended_trig = nullptr;
+  TH1F *h_nowindow = nullptr;
 
   std::vector<TH1F*> hv_baseline_prompt, hv_baseline_delayed;
   std::vector<TH1F*> hv_amplitude_prompt, hv_amplitude_delayed;
