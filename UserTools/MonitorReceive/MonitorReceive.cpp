@@ -57,6 +57,7 @@ bool MonitorReceive::Execute(){
   m_data->CStore.Set("HasPMTData",false);
   m_data->CStore.Set("HasTrigData",false);
   m_data->CStore.Set("HasNewFile",false);
+  m_data->CStore.Set("Above100",false);
 
   std::string State="Wait";
   m_data->CStore.Set("State",State);
@@ -143,8 +144,13 @@ bool MonitorReceive::Execute(){
 
 		std::time_t current_filetime = boost::filesystem::last_write_time(iss.str().c_str());
 		m_data->CStore.Set("CurrentFileTime",current_filetime);
+		
+		m_data->CStore.Set("Above100",true);
+
 		return true;
         }
+	      
+	m_data->CStore.Set("Above100",false);
 	      
 	indata=new BoostStore(false,0); 
 	indata->Initialise(iss.str());
