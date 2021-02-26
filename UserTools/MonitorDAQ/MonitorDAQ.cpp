@@ -648,6 +648,13 @@ void MonitorDAQ::GetFileInformation(){
   m_data->CStore.Get("HasTrigData",file_has_trig);
   m_data->CStore.Get("HasCCData",file_has_cc);
   m_data->CStore.Get("HasPMTData",file_has_pmt);
+  bool above_hundred = false;
+  m_data->CStore.Get("Above100",above_hundred);
+  if (above_hundred){
+    file_has_trig = true;
+    file_has_cc = true;
+    file_has_pmt = true;
+  }
   m_data->CStore.Get("CurrentFileName",file_name);
   m_data->CStore.Get("CurrentFileSize",file_size_uint);
   file_size = (file_size_uint)/1048576.;	//1MB=1024bytes*1024bytes
