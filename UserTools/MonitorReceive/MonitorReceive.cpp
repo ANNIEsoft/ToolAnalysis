@@ -131,6 +131,21 @@ bool MonitorReceive::Execute(){
 	  indata=0;
 	}
 	
+	//Check the size of the current file
+	uintmax_t current_filesize = boost::filesystem::file_size(iss.str().c_str());
+	m_data->CStore.Set("CurrentFileSize",current_filesize);
+	      
+	double file_size_mb = current_filesize/1048576.;
+	if (file_size_mb > 1000.) {
+		std::cout <<"MonitorReceive: Received new file: "<<iss.str()<<std::endl;
+		m_data->CStore.Set("HasNewFile",true);
+		m_data->CStore.Set("CurrentFileName",iss.str());
+
+		std::time_t current_filetime = boost::filesystem::last_write_time(iss.str().c_str());
+		m_data->CStore.Set("CurrentFileTime",current_filetime);
+		return true;
+        }
+	      
 	indata=new BoostStore(false,0); 
 	indata->Initialise(iss.str());
 	      
@@ -138,9 +153,7 @@ bool MonitorReceive::Execute(){
 	m_data->CStore.Set("HasNewFile",true);
 	m_data->CStore.Set("CurrentFileName",iss.str());
 
-	//Check the size of the current file
-	uintmax_t current_filesize = boost::filesystem::file_size(iss.str().c_str());
-	m_data->CStore.Set("CurrentFileSize",current_filesize);
+
 
 	std::time_t current_filetime = boost::filesystem::last_write_time(iss.str().c_str());
 	m_data->CStore.Set("CurrentFileTime",current_filetime);
