@@ -137,7 +137,7 @@ bool MonitorReceive::Execute(){
 	m_data->CStore.Set("CurrentFileSize",current_filesize);
 	      
 	double file_size_mb = current_filesize/1048576.;
-	if (file_size_mb > 1800.) {
+	if (file_size_mb > 1300.) {
 		std::cout <<"MonitorReceive: Received new file: "<<iss.str()<<std::endl;
 		m_data->CStore.Set("HasNewFile",true);
 		m_data->CStore.Set("CurrentFileName",iss.str());
