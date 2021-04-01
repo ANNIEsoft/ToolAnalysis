@@ -81,6 +81,11 @@ class PrintANNIEEvent: public Tool {
 	std::map<unsigned long,std::vector<int>> RawAcqSize;
 
 	std::stringstream logmessage;
+
+        int  n_prompt;
+        int n_ext;
+        int n_ext_cc;
+        int n_ext_nc;
 };
 
 #endif

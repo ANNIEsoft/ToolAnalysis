@@ -1112,6 +1112,14 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
     std::map<std::vector<int>, std::vector<uint16_t>> aWaveMap = apair.second;
     if(verbosity>4) std::cout << "TS: " << PMTCounterTimeNs <<", Number of waves for this counter: " << aWaveMap.size() << std::endl;
 
+    if ((int) aWaveMap.size() > MaxObservedNumWaves) MaxObservedNumWaves = int(aWaveMap.size());
+    //Check if maximum number of observed waveform size is systematically smaller than the set value
+    if (InProgressTankEvents->size() > 200 && MaxObservedNumWaves < NumWavesInCompleteSet && !max_waves_adapted) {
+      Log("ANNIEEventBuilder tool: Did not observe any waveforms for the total of "+std::to_string(NumWavesInCompleteSet)+" channels so far. Reducing minimum value to observed maximum number of waveforms >>> "+std::to_string(MaxObservedNumWaves)+" <<<",v_error,verbosity);
+      NumWavesInCompleteSet = MaxObservedNumWaves;
+      max_waves_adapted = true;	//only adapt nominal number of waves per event once per part file (should not change)
+    }
+
     //Push back any new timestamps, then remove duplicates in the end
     if(PMTCounterTimeNs>NewestTankTimestamp){
       NewestTankTimestamp = PMTCounterTimeNs;
@@ -1893,6 +1901,7 @@ void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord, i
   else if (CTCWord == 36) TriggerName = "MRDCR";
   TriggerClass TriggerData(TriggerName,CTCWord,CTCWordExtended,true,TriggerTime);
   ANNIEEvent->Set("TriggerData",TriggerData);
+  if (verbosity > 2) std::cout <<"Done setting ANNIE Event CTC Info"<<std::endl;
   return;
 }
 

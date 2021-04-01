@@ -178,6 +178,8 @@ class ANNIEEventBuilder: public Tool {
 
   int ExecutesPerBuild;          // Number of executions to pass through before running the execute loop
   int ExecuteCount = 0;
+  int MaxObservedNumWaves = 0;
+  bool max_waves_adapted = false;
 
   std::string InputFile;
   std::string BuildType;

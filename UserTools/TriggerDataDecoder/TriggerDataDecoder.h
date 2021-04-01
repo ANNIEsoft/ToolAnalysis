@@ -60,6 +60,8 @@ class TriggerDataDecoder: public Tool {
   int CurrentRunNum;
   int CurrentSubrunNum;
   int CurrentPartNum;
+  
+  bool usecstore;
 
   int verbosity;
   int v_error=0;

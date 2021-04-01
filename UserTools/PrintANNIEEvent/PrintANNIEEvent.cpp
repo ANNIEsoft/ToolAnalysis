@@ -23,6 +23,11 @@ bool PrintANNIEEvent::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("HasRaw",has_raw);
 	//verbose=10;
 	
+        n_prompt = 0;
+        n_ext = 0;
+        n_ext_cc = 0;
+        n_ext_nc = 0;
+
 	return true;
 }
 
@@ -295,6 +300,9 @@ bool PrintANNIEEvent::Execute(){
                                                 auto& pulses = achannel.second;
                                                 cout<<"ChannelKey : "<<chankey<<endl;
                                                 cout<<"Pulses size : "<<pulses.size()<<endl;
+						for (int i_pulse=0; i_pulse < pulses.size(); i_pulse++){
+							//pulses.at(i_pulse).Print();
+						}
                                         }
                                         cout<<"}"<<endl;
                                 }
@@ -349,6 +357,8 @@ bool PrintANNIEEvent::Execute(){
 		get_partnr = m_data->Stores["ANNIEEvent"]->Get("PartNumber",PartNumber);
 		get_trigextended = m_data->Stores["ANNIEEvent"]->Get("TriggerExtended",TriggerExtended);
 
+           
+
 		//General event building statistics
 		if (get_partnr) cout <<"Part Number of file: "<<PartNumber<<std::endl;
 		else cout <<"Did not find File Part Number in ANNIEEvent"<<endl;
@@ -361,9 +371,9 @@ bool PrintANNIEEvent::Execute(){
 		if (get_trigword) cout <<"Triggerword: "<<TriggerWord<<std::endl;
 		else cout <<"Did not find Triggerword in ANNIEEvent"<<std::endl;
 		if (get_trigextended) {
-			if (TriggerExtended == 0) cout <<"No extended readout"<<endl;
-			else if (TriggerExtended == 1) cout <<"Extended readout (CC)"<<endl;
-			else if (TriggerExtended == 2) cout <<"Extended readout (Non-CC)"<<endl;
+			if (TriggerExtended == 0) {cout <<"No extended readout"<<endl; n_prompt++;}
+			else if (TriggerExtended == 1) {cout <<"Extended readout (CC)"<<endl; n_ext++; n_ext_cc++;}
+			else if (TriggerExtended == 2) {cout <<"Extended readout (Non-CC)"<<endl; n_ext++; n_ext_nc++;}
 			else cout <<"Unrecognized TriggerExtended value "<<TriggerExtended<<endl;
 		} else {
 			cout <<"Did not find TriggerExtended in ANNIEEvent"<<std::endl;
@@ -416,5 +426,10 @@ bool PrintANNIEEvent::Execute(){
 
 bool PrintANNIEEvent::Finalise(){
 	
+       std::cout << "Number of prompt: "<<n_prompt<<std::endl;
+       std::cout <<"Number of extended: "<<n_ext<<std::endl;
+       std::cout <<"Number of extended (CC): "<<n_ext_cc<<std::endl;
+       std::cout <<"Number of extended (NC): "<<n_ext_nc<<std::endl;
+
 	return true;
 }

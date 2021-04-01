@@ -347,7 +347,7 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
 {
   Log("PMTDataDecoder Tool: Decoding frames now ",v_debug, verbosity);
   Log("PMTDataDecoder Tool: Bank size is "+to_string(bank.size()),v_debug, verbosity);
-  uint64_t tempword;
+  uint64_t tempword=0;
   std::vector<DecodedFrame> frames;  //What we will return
   std::vector<uint16_t> samples;
   samples.resize(40); //Well, if there's 480 bits per frame of samples max, this fits it
@@ -363,6 +363,7 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
         if(verbosity>vv_debug) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
+        if(verbosity>vv_debug) std::cout <<" BANK[WORDINDEX="<<wordindex<<"]: "<<bank[wordindex]<<std::endl;
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;
         if(verbosity>vv_debug) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
         bitsleft += 32;

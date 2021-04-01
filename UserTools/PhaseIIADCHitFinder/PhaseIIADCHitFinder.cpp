@@ -578,6 +578,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
   if ( raw_minibuffer_data.Samples().size()
     != calibrated_minibuffer_data.Samples().size() )
   {
+    std::cout <<"Raw minibuffer size: "<<raw_minibuffer_data.Samples().size()<<", calibrated size: "<<calibrated_minibuffer_data.Samples().size()<<std::endl;
     throw std::runtime_error("Size mismatch between the raw and calibrated"
       " waveforms encountered in PhaseIIADCHitFinder::find_pulses_bywindow()");
   }
@@ -692,7 +693,9 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       + calibrated_minibuffer_data.GetSigmaBaseline() ));
 
   bool in_pulse = false;
-  size_t num_samples = raw_minibuffer_data.Samples().size()-50;
+  //size_t num_samples = raw_minibuffer_data.Samples().size()-50;  //-50 was the old method to get rid of the large pulses we were seeing
+  //Since those should not be an issue anymore (the bug has been found), we can simply use all samples now
+  size_t num_samples = raw_minibuffer_data.Samples().size();
 
   //Fixed integration window defined relative to ADC threshold crossings
   if(pulse_window_type == "fixed"){

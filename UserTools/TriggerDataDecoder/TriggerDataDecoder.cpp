@@ -17,6 +17,7 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   mode = "EventBuilding";
   readtrigoverlap = 0;
   storetrigoverlap = 0;
+  usecstore = 1;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("TriggerMaskFile",TriggerMaskFile);
@@ -24,6 +25,7 @@ bool TriggerDataDecoder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Mode",mode);
   m_variables.Get("ReadTrigOverlap",readtrigoverlap);
   m_variables.Get("StoreTrigOverlap",storetrigoverlap);
+  m_variables.Get("UseCStore",usecstore);
 
   if (mode != "EventBuilding" && mode != "Monitoring"){
     Log("TriggerDataDecoder tool: Specified mode of operation >> "+mode+" unknown. Use standard EventBuilding mode.",v_error,verbosity);
@@ -181,8 +183,10 @@ bool TriggerDataDecoder::Execute(){
 
   if(verbosity>3) Log("TriggerDataDecoder Tool: size of TimeToTriggerWordMap: "+to_string(TimeToTriggerWordMap->size()),v_message,verbosity); 
  
-  m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
-  m_data->CStore.Set("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
+  if (usecstore){
+    m_data->CStore.Set("TimeToTriggerWordMap",TimeToTriggerWordMap);
+    m_data->CStore.Set("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
+  }
 
   loop_nr++;
 
