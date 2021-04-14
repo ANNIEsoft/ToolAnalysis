@@ -677,6 +677,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
   if ( raw_minibuffer_data.Samples().size()
     != calibrated_minibuffer_data.Samples().size() )
   {
+    std::cout <<"PhaseIIADCHitFinder size mismatch raw/calibrated: Raw minibuffer data size: "<<raw_minibuffer_data.Samples().size()<<", calibrated samples size: "<<calibrated_minibuffer_data.Samples().size()<<std::endl;
     throw std::runtime_error("Size mismatch between the raw and calibrated"
       " waveforms encountered in PhaseIIADCHitFinder::find_pulses_bythreshold()");
   }

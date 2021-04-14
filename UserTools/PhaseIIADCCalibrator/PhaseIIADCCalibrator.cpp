@@ -365,6 +365,10 @@ bool PhaseIIADCCalibrator::Execute() {
           calibrated_waveform_map[channel_key] = make_calibrated_waveforms_simple(raw_waveforms);
         }
 
+	if (raw_waveforms.at(0).Samples().size() != calibrated_waveform_map[channel_key].at(0).Samples().size()){
+		std::cout <<"PhaseIIADCCalibrator: raw_waveforms.size(): "<<raw_waveforms.at(0).Samples().size()<<", calibrated_waveforms.size(): "<<calibrated_waveform_map[channel_key].at(0).Samples().size()<<std::endl;
+	}
+
         if(make_led_waveforms){
           Log("Also making LED window waveforms for ADC channel " + std::to_string(channel_key), 3, verbosity);
           std::vector<Waveform<unsigned short>> LEDWaveforms;
@@ -683,6 +687,7 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
         } else if (asample >= RepresentationRegion.back()){
           cal_data.push_back((static_cast<double>(asample) - baselines.back())
             * ADC_TO_VOLT);
+          break;
         }
       }
     }
