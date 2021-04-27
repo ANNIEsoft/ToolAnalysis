@@ -177,7 +177,7 @@ bool PrintANNIEEvent::Execute(){
 			get_caliblappd = m_data->Stores["ANNIEEvent"]->Get("CalibratedLAPPDData",CalibratedLAPPDData);
 			if(get_rawadc){
 				cout<<"Num RawADCData Waveforms : "<<RawADCData.size()<<endl;
-				if(verbose>1){
+				if(verbose>5){
 					cout<<"RawADCData : {"<<endl;
 					for(auto& achannel : RawADCData){
 						unsigned long chankey = achannel.first;
@@ -196,7 +196,7 @@ bool PrintANNIEEvent::Execute(){
 	
 			if(get_rawlappd){
 				cout<<"Num RawLAPPDData Waveforms : "<<RawLAPPDData.size()<<endl;
-				if(verbose>1){
+				if(verbose>5){
 					cout<<"RawLAPPDData : {"<<endl;
 					for(auto& achannel : RawLAPPDData){
 						unsigned long chankey = achannel.first;
@@ -215,7 +215,7 @@ bool PrintANNIEEvent::Execute(){
 
 			if(get_calibadc){
 				cout<<"Num CalibratedADCData Waveforms : "<<CalibratedADCData.size()<<endl;
-				if(verbose>1){
+				if(verbose>5){
 					cout<<"CalibratedADCData : {"<<endl;
 					for(auto& achannel : CalibratedADCData){
 						unsigned long chankey = achannel.first;
@@ -234,7 +234,7 @@ bool PrintANNIEEvent::Execute(){
 
 			if(get_caliblappd){
 				cout<<"Num CalibratedLAPPDData Waveforms : "<<CalibratedLAPPDData.size()<<endl;
-				if(verbose>1){
+				if(verbose>5){
 					cout<<"CalibratedLAPPDData : {"<<endl;
 					for(auto& achannel : CalibratedLAPPDData){
 						unsigned long chankey = achannel.first;
@@ -261,7 +261,7 @@ bool PrintANNIEEvent::Execute(){
 			if (get_hits){
 
                         	cout<<"Num Hits : "<<Hits->size()<<endl;
-                        	if(verbose>2){
+                        	if(verbose>5){
                                 	cout<<"Hits : {"<<endl;
                                 	for(auto&& achannel : *Hits){ 
                                         	unsigned long chankey = achannel.first;
@@ -277,7 +277,7 @@ bool PrintANNIEEvent::Execute(){
 
 			if (get_auxhits){
 				cout <<"Num Aux Hits: "<<AuxHits->size()<<std::endl;
-				if (verbose > 2){
+				if (verbose > 5){
 					cout <<"AuxHits : {"<<endl;
                                 	for(auto&& achannel : *AuxHits){ 
                                         	unsigned long chankey = achannel.first;
@@ -293,7 +293,7 @@ bool PrintANNIEEvent::Execute(){
 
 			if (get_recoadc){
 				cout <<"Num RecoADCData: "<<RecoADCData.size()<<std::endl;
-                                if (verbose > 3){
+                                if (verbose > 5){
                                         cout <<"RecoADCPulses : {"<<endl;
                                         for(auto& achannel : RecoADCData){
                                                 unsigned long chankey = achannel.first;
@@ -310,7 +310,7 @@ bool PrintANNIEEvent::Execute(){
 
 			if (get_recoauxadc){
 			        cout <<"Num RecoAuxADCData: "<<RecoAuxADCData.size()<<std::endl;
-                                if (verbose > 4){
+                                if (verbose > 5){
                                         cout <<"RecoAuxADCPulses : {"<<endl;
                                         for(auto& achannel : RecoAuxADCData){
                                                 unsigned long chankey = achannel.first;
@@ -402,7 +402,7 @@ bool PrintANNIEEvent::Execute(){
 		} else cout <<"Did not find MRDLoopbackTDC in ANNIEEvent"<<std::endl;
 		if (get_tdc){
                         cout<<"Num TDCData Hits : "<<TDCData->size()<<endl;
-                        if(verbose>2){
+                        if(verbose>5){
                                 cout<<"TDCData : {"<<endl;
                                 for(auto&& achannel : *TDCData){
                                         unsigned long chankey = achannel.first;

@@ -12,3 +12,4 @@ PCritical 0.01
 MakeCalLEDWaveforms 0
 
 EventBuilding 1
+ExecutesPerBuild 10

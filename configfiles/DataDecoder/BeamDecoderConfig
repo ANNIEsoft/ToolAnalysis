@@ -1,5 +1,5 @@
 # BeamDecoder config file
-verbosity 2
+verbosity 0
 # Names of devices needed for beam quality cuts
 HornCurrentDevice E:THCURR
 # The "first" toroid is the one farther upstream from the target

@@ -160,17 +160,28 @@ bool LoadRawData::Execute(){
       std::cout<<"Getting most recent timestamps"<<std::endl;
       bool get_ok;
       // PMT:
+      
       std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >* InProgressTankEvents=nullptr;
       get_ok = m_data->CStore.Get("InProgressTankEvents",InProgressTankEvents);
       TimeClass tt;
+      if (storerawdata){
       if(get_ok && InProgressTankEvents){
         if(InProgressTankEvents->size()){
           uint64_t PMTCounterTimeNs = InProgressTankEvents->rbegin()->first;
           tt = TimeClass(PMTCounterTimeNs);
         }
+      }} else {
+        std::map<uint64_t, std::map<unsigned long, std::vector<Hit>>* >* InProgressHits=nullptr;
+        get_ok = m_data->CStore.Get("InProgressHits",InProgressHits);
+        if (get_ok && InProgressHits){
+          if (InProgressHits->size()){
+            uint64_t PMTCounterTimeNs = InProgressHits->rbegin()->first;
+            tt = TimeClass(PMTCounterTimeNs);
+          }
+        }
       }
       // TrigData:
-      std::map<uint64_t,uint32_t>* TimeToTriggerWordMap=nullptr;
+      std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMap=nullptr;
       get_ok = m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
       TimeClass cc;
       if(get_ok && TimeToTriggerWordMap){

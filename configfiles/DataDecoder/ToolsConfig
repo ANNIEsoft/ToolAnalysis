@@ -4,6 +4,6 @@ PMTDataDecoder PMTDataDecoder ./configfiles/DataDecoder/PMTDataDecoderConfig
 MRDDataDecoder MRDDataDecoder ./configfiles/DataDecoder/MRDDataDecoderConfig
 TriggerDataDecoder TriggerDataDecoder ./configfiles/DataDecoder/TriggerDataDecoderConfig
 BeamDecoder BeamDecoder ./configfiles/DataDecoder/BeamDecoderConfig
-ANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoder/ANNIEEventBuilderConfig
 PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/DataDecoder/PhaseIIADCCalibratorConfig
 PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/DataDecoder/PhaseIIADCHitFinderConfig
+ANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoder/ANNIEEventBuilderConfig

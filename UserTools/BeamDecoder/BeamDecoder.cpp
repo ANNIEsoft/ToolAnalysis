@@ -88,7 +88,7 @@ bool BeamDecoder::Execute(){
 
   std::cout <<"Set BeamStatus map in CStore"<<std::endl;
   m_data->CStore.Set("BeamStatusMap",BeamStatusMap);
-  
+  std::cout <<"BeamStatusmap->size(): "<<BeamStatusMap->size()<<std::endl;
 
   return true;
 }
