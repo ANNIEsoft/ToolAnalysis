@@ -169,50 +169,65 @@ bool MonitorReceive::Execute(){
 	TrigData = new BoostStore(false,2);
 
 	if (indata->Has("CCData")){
-		m_data->CStore.Set("HasCCData",true);	
-		indata->Get("CCData",*MRDData);
-		MRDData->Save("tmp");
-		m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+		try{
+		  m_data->CStore.Set("HasCCData",true);	
+		  indata->Get("CCData",*MRDData);
+		  MRDData->Save("tmp");
+		  m_data->Stores["CCData"]->Set("FileData",MRDData,false);
+		} catch (...) {
+		  Log("MonitorReceive: Did not find CCData in file! (Maybe corrupted!!!) Don't process CCData",0,verbosity);
+                  m_data->CStore.Set("HasCCData",false);
+		}
 	} else {
 		m_data->CStore.Set("HasCCData",false);
 	}
 	if (indata->Has("TrigData")){
-		m_data->CStore.Set("HasTrigData",true);
-		indata->Get("TrigData",*TrigData);
-		long totalentries_trig;
-		TrigData->Header->Get("TotalEntries",totalentries_trig);
-		std::map<int,TriggerData> TrigData_Map;
-		for (int i_trig=0; i_trig < totalentries_trig; i_trig++){
-			TriggerData TData;
-			TrigData->GetEntry(i_trig);
-			TrigData->Get("TrigData",TData);
-			TrigData_Map.emplace(i_trig,TData);
+		try{
+		  m_data->CStore.Set("HasTrigData",true);
+		  indata->Get("TrigData",*TrigData);
+		  long totalentries_trig;
+		  TrigData->Header->Get("TotalEntries",totalentries_trig);
+		  std::map<int,TriggerData> TrigData_Map;
+		  for (int i_trig=0; i_trig < totalentries_trig; i_trig++){
+			  TriggerData TData;
+			  TrigData->GetEntry(i_trig);
+			  TrigData->Get("TrigData",TData);
+			  TrigData_Map.emplace(i_trig,TData);
+		  }
+		  m_data->Stores["TrigData"]->Set("TrigDataMap",TrigData_Map);
+		} catch (...) {
+		  Log("MonitorReceive: Did not find TrigData in file! (Maybe corrupted!!!) Don't process TrigData",0,verbosity);
+                  m_data->CStore.Set("HasTrigData",false);
 		}
-		m_data->Stores["TrigData"]->Set("TrigDataMap",TrigData_Map);
 	} else {
 		m_data->CStore.Set("HasTrigData",false);
 	}
 	if (indata->Has("PMTData")){
-		m_data->CStore.Set("HasPMTData",true);
-		indata->Get("PMTData",*PMTData);
-		long totalentries;
-        	PMTData->Header->Get("TotalEntries",totalentries);
-        	std::cout <<"MonitorReceive: Total entries: "<<totalentries<<std::endl;
-        	int ExecuteEntryNum=0;
-        	int EntriesToDo,CDEntryNum;
-        	if (totalentries < 14000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
-        	else EntriesToDo = 1000;               //otherwise do ~1000 entries out of ~15000 (or more)
-		CDEntryNum = 0;
-        	std::map<int,std::vector<CardData>> CardData_Map;
-        	while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
-            		std::vector<CardData> vector_CardData;
-            		PMTData->GetEntry(CDEntryNum);
-            		PMTData->Get("CardData",vector_CardData);
-            		CardData_Map.emplace(CDEntryNum,vector_CardData);
-            		ExecuteEntryNum++;
-            		CDEntryNum++;
-        	}
-        	m_data->Stores["PMTData"]->Set("CardDataMap",CardData_Map);  
+		try{
+		  m_data->CStore.Set("HasPMTData",true);
+		  indata->Get("PMTData",*PMTData);
+		  long totalentries;
+        	  PMTData->Header->Get("TotalEntries",totalentries);
+        	  std::cout <<"MonitorReceive: Total entries: "<<totalentries<<std::endl;
+        	  int ExecuteEntryNum=0;
+        	  int EntriesToDo,CDEntryNum;
+        	  if (totalentries < 14000) EntriesToDo = 70;      //don't process as many waveforms for AmBe runs (typically ~ 1000 entries)
+        	  else EntriesToDo = 1000;               //otherwise do ~1000 entries out of ~15000 (or more)
+		  CDEntryNum = 0;
+        	  std::map<int,std::vector<CardData>> CardData_Map;
+        	  while ((ExecuteEntryNum < EntriesToDo) && (CDEntryNum < totalentries)){
+            		  std::vector<CardData> vector_CardData;
+            		  PMTData->GetEntry(CDEntryNum);
+            		  PMTData->Get("CardData",vector_CardData);
+            		  CardData_Map.emplace(CDEntryNum,vector_CardData);
+            		  ExecuteEntryNum++;
+            		  CDEntryNum++;
+        	  }
+        	  m_data->Stores["PMTData"]->Set("CardDataMap",CardData_Map);  
+		} catch (...) {
+		  Log("MonitorReceive: Did not find PMTData in file! (Maybe corrupted!!!) Don't process PMTData",0,verbosity);
+                  m_data->CStore.Set("HasPMTData",false);
+		}
 	} else {
 		m_data->CStore.Set("HasPMTData",false);
 	}
