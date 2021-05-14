@@ -30,6 +30,9 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	LaunchTApplication = false;
 	MakeSingleEventPlots = false;      //very verbose, mostly for debugging
 	ModifiedTDCData = false;	
+	//Set default values for time-shifted TDC channels
+	TimeShiftChannels = "";
+	shifted_channels = {std::make_pair(0,51),std::make_pair(82,107),std::make_pair(142,167),std::make_pair(194,219),std::make_pair(250,275),std::make_pair(306,332)};
 
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("IsData",isData);
@@ -42,6 +45,7 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("OutputROOTFile",output_rootfile);
 	m_variables.Get("MapChankey_WCSimID",file_chankeymap);
 	m_variables.Get("ModifiedTDCData",ModifiedTDCData);
+        m_variables.Get("TimeShiftChannels",TimeShiftChannels);
 
 	if (!MakeMrdDigitTimePlot) LaunchTApplication = false;  //no use launching TApplication when histograms are not produced
 	
@@ -130,6 +134,28 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		get_ok = m_data->CStore.Get("channelkey_to_faccpmtid",channelkey_to_faccpmtid);
 		if(not get_ok){
 			Log("TimeClustering Tool: Error! No channelkey_to_faccpmtid in CStore!",v_error,verbosity);
+			return false;
+		}
+	}
+
+	//Read in time shifted channels from configuration file
+	if (TimeShiftChannels != ""){
+		shifted_channels.clear();		
+		ifstream file_timeshift(TimeShiftChannels);
+		if (file_timeshift.good()){
+			unsigned long lower_chkey, upper_chkey;
+			while (!file_timeshift.eof()){
+				file_timeshift >> lower_chkey >> upper_chkey;
+				if (file_timeshift.eof()) break;
+				std::cout <<"lower_chkey: "<<lower_chkey<<", upper_chkey: "<<upper_chkey<<std::endl;
+				if (lower_chkey > upper_chkey){
+					Log("TimeClustering tool: Error when reading in TiemShiftChannels file! Upper chankey "+std::to_string(upper_chkey)+" is lower than lower chankey! "+std::to_string(lower_chkey)+" Abort",v_error,verbosity);
+					return false;
+				}
+				shifted_channels.push_back(std::make_pair(lower_chkey,upper_chkey));
+			}
+		} else {
+			Log("TimeClustering Tool: Error! Timeshift file "+TimeShiftChannels+" does not exist!",v_error,verbosity);
 			return false;
 		}
 	}
@@ -223,7 +249,12 @@ bool TimeClustering::Execute(){
 					mrddigitpmtsthisevent.push_back(channelkey_to_mrdpmtid[chankey]);
 					mrddigitchankeysthisevent.push_back(chankey);
 					double time = hitsonthismrdpmt.GetTime();
-					if (chankey < 52 || (chankey > 81 && chankey <108) || (chankey > 141 && chankey < 168) || (chankey > 193 && chankey < 220) || (chankey > 249 && chankey < 276) || (chankey > 305)) time -=20.;
+					//Times of channelkeys in TDC crate 7 (vertical channels) are systematically late by ~20ns with respect to channels in crate 8 --> shift the itmes for those channelkeys manually by 20ns
+					//Affected channelkeys are stored in shifted_channels and can be configured in the config file
+					for (int i_shift=0; i_shift < (int) shifted_channels.size(); i_shift++){
+						std::pair<unsigned long,unsigned long> temp_pair = shifted_channels.at(i_shift);
+						if (chankey >= temp_pair.first && chankey <= temp_pair.second) time -= 20.;
+					}
 					mrddigittimesthisevent.push_back(time);
 					mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
 					if(MakeMrdDigitTimePlot){  // XXX XXX XXX rename

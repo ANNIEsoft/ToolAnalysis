@@ -44,6 +44,10 @@ class TimeClustering: public Tool {
 	std::string file_chankeymap;
 	int evnum;
 	bool ModifiedTDCData;	
+	std::string TimeShiftChannels;
+
+	//Information about which channels are time-shifted
+	std::vector<std::pair<unsigned long,unsigned long>> shifted_channels;
 
 	//ANNIEEvent data
 	std::map<unsigned long,vector<Hit>>* TDCData;
