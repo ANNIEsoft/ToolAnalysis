@@ -14,19 +14,18 @@ bool PrintANNIEEvent::Initialise(std::string configfile, DataModel &data){
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
 	
-        is_mc = false;
+	is_mc = false;
 	has_raw = false;
 	first_event = true;
 
 	m_variables.Get("verbose",verbose);
-        m_variables.Get("IsMC",is_mc);
 	m_variables.Get("HasRaw",has_raw);
 	//verbose=10;
 	
-        n_prompt = 0;
-        n_ext = 0;
-        n_ext_cc = 0;
-        n_ext_nc = 0;
+	n_prompt = 0;
+	n_ext = 0;
+	n_ext_cc = 0;
+	n_ext_nc = 0;
 
 	return true;
 }
@@ -58,6 +57,11 @@ bool PrintANNIEEvent::Execute(){
 	cout<<"SubrunNumber : "<<SubrunNumber<<endl;
 	cout<<"EventNumber : "<<EventNumber<<endl;
 	
+	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCFlag",MCFlag);
+	if (get_ok) {
+		if (MCFlag) is_mc = true;
+	}
+
 	if (is_mc){
         	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
 		get_ok = m_data->Stores["ANNIEEvent"]->Get("RecoParticles",RecoParticles);

@@ -115,13 +115,13 @@ bool DataSummary::Execute(){
 		ANNIEEvent->Get("EventTimeMRD",mrd_timeclass);       // convertme to MRDtimestamp
 		ANNIEEvent->Get("TriggerWord",TriggerWord);       // convert to TriggerTypeString
 		ANNIEEvent->Get("MRDLoopbackTDC",MRDLoopbackTDC); // convert to LoopbackTimestamp values
-                ANNIEEvent->Get("DataStreams",datastreams);  //DataStreams can be used to check which of the subdetectors is included in the data
+		ANNIEEvent->Get("DataStreams",datastreams);  //DataStreams can be used to check which of the subdetectors is included in the data
 	        ANNIEEvent->Get("TriggerExtended",CTCWordExtended);
 
         	// TODO optional sanity checks: consistency of RunNumber and other constants
 	
 		std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
-                bool has_raw = ANNIEEvent->Get("RawADCData",raw_waveform_map);
+		bool has_raw = ANNIEEvent->Get("RawADCData",raw_waveform_map);
 		
 		window_is_extended = false;
 		size_of_window = 2000;
@@ -141,9 +141,9 @@ bool DataSummary::Execute(){
 						size_of_window = size_sample;
 						window_is_extended = true;
 					}
-      				}
-    			}
-  		}
+				}
+			}
+		}
 
 		std::map<unsigned long, std::vector<int>> raw_acqsize_map;
 		bool has_raw_acqsize = ANNIEEvent->Get("RawAcqSize",raw_acqsize_map);
@@ -290,7 +290,7 @@ int DataSummary::ScanForFiles(std::string inputdir, std::string filepattern, std
 	std::cout <<"lscommand: "<<lscommand<<std::endl;
 	std::string fileliststring = GetStdoutFromCommand(lscommand);
 
-        std::stringstream ssl;
+	std::stringstream ssl;
 	ssl << fileliststring;
 	std::vector<std::string> flist;
 	std::string nextfilestring;
@@ -776,8 +776,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	outfile->cd(); // ensure plots get put in the file
 	
 	// define our histogram min/max relative to global time offset, in seconds
-        double t1 = t0;
-     	double t2 = tn;
+	double t1 = t0;
+	double t2 = tn;
 
 //	anything event rate
 //	all-systems event rate
@@ -977,8 +977,8 @@ bool DataSummary::AddEventTypePlots(){
 	outtree->SetBranchAddress("DataTank",&has_tank);
 	outtree->SetBranchAddress("DataMRD",&has_mrd);
 	outtree->SetBranchAddress("TrigExtended",&has_extended);
-        outtree->SetBranchAddress("TrigExtendedCC",&has_extended_cc);
-        outtree->SetBranchAddress("TrigExtendedNC",&has_extended_nc);
+	outtree->SetBranchAddress("TrigExtendedCC",&has_extended_cc);
+	outtree->SetBranchAddress("TrigExtendedNC",&has_extended_nc);
 	outtree->SetBranchAddress("ExtendedWindow",&has_extended_vme);
 
 	for (int i_entry=0; i_entry < entries_tree1; i_entry++){

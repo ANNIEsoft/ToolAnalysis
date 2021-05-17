@@ -32,7 +32,7 @@ class PrintANNIEEvent: public Tool {
 	int get_ok;
 	std::string inputfile;
 	unsigned long NumEvents;
-        bool is_mc;	
+	bool is_mc;	
 	bool has_raw;
 	bool first_event;
 
@@ -56,23 +56,23 @@ class PrintANNIEEvent: public Tool {
 	std::vector<TriggerClass>* TriggerData = nullptr;
 	
 	//Data variables
-        std::string MRDTriggertype;
-        std::map<std::string,int> MRDLoopbackTDC;
-        uint64_t EventTimeMRD;
-        uint64_t EventTimeTank;
-        uint64_t CTCTimestamp;
-        uint32_t TriggerWord;
-        std::map<std::string, bool> DataStreams;
-        BeamStatus BeamStatusData;
-        int PartNumber;
-        int TriggerExtended;
+	std::string MRDTriggertype;
+	std::map<std::string,int> MRDLoopbackTDC;
+	uint64_t EventTimeMRD;
+	uint64_t EventTimeTank;
+	uint64_t CTCTimestamp;
+	uint32_t TriggerWord;
+	std::map<std::string, bool> DataStreams;
+	BeamStatus BeamStatusData;
+	int PartNumber;
+	int TriggerExtended;
 	TriggerClass TriggerDataData;
 	std::map<unsigned long,std::vector<Hit>>* Hits=nullptr;
 	std::map<unsigned long,std::vector<Hit>>* AuxHits=nullptr;
 	std::map<unsigned long,std::vector<LAPPDHit>>* LAPPDHits=nullptr;
 	std::map<unsigned long,std::vector<Hit>>* TDCData=nullptr;
-        std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawADCData;
-        std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawAuxADCData;
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawADCData;
+	std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawAuxADCData;
 	std::map<unsigned long,std::vector<Waveform<uint16_t>>> RawLAPPDData;
 	std::map<unsigned long,std::vector<Waveform<double>>> CalibratedADCData;
 	std::map<unsigned long,std::vector<Waveform<double>>> CalibratedLAPPDData;
@@ -82,10 +82,10 @@ class PrintANNIEEvent: public Tool {
 
 	std::stringstream logmessage;
 
-        int  n_prompt;
-        int n_ext;
-        int n_ext_cc;
-        int n_ext_nc;
+	int n_prompt;
+	int n_ext;
+	int n_ext_cc;
+	int n_ext_nc;
 };
 
 #endif

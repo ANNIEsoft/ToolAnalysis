@@ -103,7 +103,7 @@ class DataSummary: public Tool {
 	int size_of_window = 2000;	//The size of the acquisition window (in us)
 	std::vector<int> window_sizes;	//ADC acquisition sizes for all recorded channels
 	std::vector<int> window_chkeys;	//Chankeys for ADC acquisition window sizes
-        int CTCWordExtended;  //Trigword information about extended windows
+	int CTCWordExtended;  //Trigword information about extended windows
 
 	ULong64_t CTCtimestamp_tree;
 	ULong64_t PMTtimestamp_tree;
@@ -119,7 +119,7 @@ class DataSummary: public Tool {
 	ULong64_t orphantimestamp_tree;
 	double orphantimestamp_double;
 	double orphantimestamp_sec;
-        bool trigword_ext;
+	bool trigword_ext;
 	bool trigword_ext_cc;
 	bool trigword_ext_nc;
 

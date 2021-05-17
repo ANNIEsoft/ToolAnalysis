@@ -150,8 +150,8 @@ bool BeamFetcher::Execute() {
 
   }
 
-  std::cout <<"start_ms_since_epoch: "<<start_ms_since_epoch<<std::endl;
-  std::cout <<"end_ms_since_epoch: "<<end_ms_since_epoch<<std::endl;
+  Log("BeamFetcher tool: Start_ms_since_epoch: "+std::to_string(start_ms_since_epoch),2,verbosity_);
+  Log("BeamFetcher tool: end_ms_since_epoch: "+std::to_string(end_ms_since_epoch),2,verbosity_);
 
 
   if ( start_ms_since_epoch >= end_ms_since_epoch ) {

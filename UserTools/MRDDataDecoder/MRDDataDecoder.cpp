@@ -22,7 +22,7 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   TimeZoneShift = 21600000;
   if(DaylightSavings) TimeZoneShift = 18000000;
 
-  std::cout <<"TimeZoneShift: "<<TimeZoneShift<<std::endl;
+  if (verbosity > 0) std::cout <<"MRDDataDecoder: TimeZoneShift: "<<TimeZoneShift<<std::endl;
 
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("NewMRDDataAvailable",false);

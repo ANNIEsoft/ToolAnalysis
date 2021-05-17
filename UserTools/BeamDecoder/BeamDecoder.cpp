@@ -50,16 +50,16 @@ bool BeamDecoder::Initialise(std::string configfile, DataModel &data){
 
 bool BeamDecoder::Execute(){
 
-  std::cout <<"first_entry: "<<first_entry<<std::endl;
+  Log("BeamDecoder: First_entry: "+std::to_string(first_entry),4,verbosity_);
   if (first_entry){
     this->initialise_beam_db();
     first_entry = false;
   }
 
-  std::cout <<"Check if new CTC data available"<<std::endl;
+  Log("BeamDecoder: Check if new CTC data available",4,verbosity_);
   //Check if there is new trigger data available
   bool get_ctc = m_data->CStore.Get("NewCTCDataAvailable",NewCTCDataAvailable);
-  std::cout <<"NewCTCDataAvailable: "<<NewCTCDataAvailable<<std::endl;
+  Log("BeamDecoder: NewCTCDataAvailable: "+std::to_string(NewCTCDataAvailable),4,verbosity_);
   if (!get_ctc){
     Log("BeamDecoder tool: Did not find NewCTCDataAvailable entry in the CStore",0,verbosity_);
     return false;
@@ -86,9 +86,9 @@ bool BeamDecoder::Execute(){
     }
   }
 
-  std::cout <<"Set BeamStatus map in CStore"<<std::endl;
+  Log("BeamDecoder tool: Set BeamStatus map in CStore",4,verbosity_);
   m_data->CStore.Set("BeamStatusMap",BeamStatusMap);
-  std::cout <<"BeamStatusmap->size(): "<<BeamStatusMap->size()<<std::endl;
+  Log("BeamDecoder tool: BeamStatusmap->size(): "+std::to_string(BeamStatusMap->size()),4,verbosity_);
 
   return true;
 }
@@ -104,7 +104,7 @@ bool BeamDecoder::initialise_beam_db(){
   m_variables.Get("verbosity", verbosity_);
 
   //Get information about run number
-  std::cout <<"Get Postgress"<<std::endl;
+  Log("BeamDecoder tool: Get Postgress information",2,verbosity_);
   Store Postgress;
   int run_nr;
   m_data->CStore.Get("RunInfoPostgress",Postgress);
@@ -113,7 +113,7 @@ bool BeamDecoder::initialise_beam_db(){
   ss_db_filename << run_nr << "_beamdb";
   std::string db_filename = ss_db_filename.str();
 
-  std::cout <<"Check that beam database file exists"<<std::endl;
+  Log("BeamDecoder tool: Check that beam database file exists",2,verbosity_);
   // Check that the beam database file exists using a dummy std::ifstream
  std::ifstream dummy_in_file(db_filename);
   if ( !dummy_in_file.good() ) {
@@ -123,15 +123,15 @@ bool BeamDecoder::initialise_beam_db(){
   }
   dummy_in_file.close();
 
-  std::cout <<"Initialise boost store"<<std::endl;
+  Log("BeamDecoder tool: Initialise BoostStore",2,verbosity_);
   beam_db_store_.Initialise( db_filename );
-  std::cout <<"Print boost store"<<std::endl;
+  Log("BeamDecoder tool: Printing BoostStore",2,verbosity_);
   beam_db_store_.Print(false);
 
-  std::cout <<"Done initialising .. Get BeamDBIndex"<<std::endl;
+  Log("BeamDecoder tool: Done initialising .. Get BeamDBIndex",4,verbosity_);
   bool got_index = beam_db_store_.Header->Get("BeamDBIndex", beam_db_index_);
 
-  std::cout <<"got it"<<std::endl;
+  Log("BeamDecoder tool: Got the beam db index",4,verbosity_);
   if ( !got_index ) {
     Log("BeamDecoder tool: Error: Could not find the BeamDBIndex entry in the beam database"
       " BoostStore header stored in the file \"" + db_filename + '\"', 0,
