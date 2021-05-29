@@ -26,8 +26,9 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("StartTime",StartTime);
   m_variables.Get("UpdateFrequency",update_frequency);
   m_variables.Get("PathMonitoring",path_monitoring);
+  m_variables.Get("PlotConfiguration",plot_configuration);
   m_variables.Get("ImageFormat",img_extension);
-  m_variables.Get("ForceUpdate",force_update):
+  m_variables.Get("ForceUpdate",force_update);
   m_variables.Get("DrawMarker",draw_marker);
   m_variables.Get("verbose",verbosity);
 
@@ -79,8 +80,6 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data){
   period_update = boost::posix_time::time_duration(0,int(update_frequency),0,0);
   last = boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
 
-  //Keep track whether there has been a MRDdata file or not
-  bool_lappddata = false;
   
   // Omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
@@ -102,6 +101,7 @@ bool MonitorLAPPDSC::Execute(){
   current_utc_duration = boost::posix_time::time_duration(utc-current);
   current_utc = current_utc_duration.total_milliseconds();
   utc_to_t = (ULong64_t) current_utc;
+  t_current = (ULong64_t) current_stamp;
 
   //------------------------------------------------------------
   //---------Checking the state of LAPPD SC data stream---------
@@ -116,19 +116,24 @@ bool MonitorLAPPDSC::Execute(){
   else if (State == "LAPPDSC"){
     if (verbosity > 1) std::cout<<"MonitorLAPPDSC: New slow-control data available."<<std::endl; 
 
-    SlowControlMonitor lappdsc;
-    m_data->Stores["LAPPDData"]->Get("LAPPDSC",lappdsc);
+    if (duration > period_update) {
 
-    //Write the event information to a file
-    //TODO: change this to a database later on!
-    //Check if data has already been written included in WriteToFile function
-    WriteToFile();
+      m_data->Stores["LAPPDData"]->Get("LAPPDSC",lappd_sc);
 
-    //Plot plots only associated to current file
-    DrawLastFilePlots();
+      //Write the event information to a file
+      //TODO: change this to a database later on!
+      //Check if data has already been written included in WriteToFile function
+      WriteToFile();
 
-    //Draw customly defined plots   
-    UpdateMonitorPlots(config_timeframes, config_endimte_long, config_label, config_plottypes);
+      //Plot plots only associated to current file
+      DrawLastFilePlots();
+
+      //Draw customly defined plots   
+      UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
+
+      last = current;
+
+    }
   }
   else {
     if (verbosity > 1) std::cout <<"MonitorLAPPDSC: State not recognized: "<<State<<std::endl;
@@ -158,6 +163,11 @@ bool MonitorLAPPDSC::Finalise(){
   delete canvas_light;
   delete canvas_hv;
   delete canvas_lv;
+  delete canvas_status_temphum;
+  delete canvas_status_lvhv;
+  delete canvas_status_relay;
+  delete canvas_status_trigger;
+  delete canvas_status_error;
 
   //graphs
   delete graph_temp;
@@ -174,6 +184,14 @@ bool MonitorLAPPDSC::Finalise(){
   //legends
   delete leg_lv;
 
+  //text
+  delete text_temphum_title;
+  delete text_temp;
+  delete text_hum;
+  delete text_light;
+  delete text_flag_temp;
+  delete text_flag_hum;
+
   return true;
 }
 
@@ -187,6 +205,11 @@ void MonitorLAPPDSC::InitializeHists(){
   canvas_light = new TCanvas("canvas_light","LVHV Light",900,600);
   canvas_hv = new TCanvas("canvas_hv","LVHV HV",900,600);
   canvas_lv = new TCanvas("canvas_lv","LVHV LV",900,600);
+  canvas_status_temphum = new TCanvas("canvas_status_temphum","Temperature / Humidity status",900,600);
+  canvas_status_lvhv = new TCanvas("canvas_status_lvhv","LV / HV status",900,600);
+  canvas_status_relay = new TCanvas("canvas_status_relay","Relay status",900,600);
+  canvas_status_trigger = new TCanvas("canvas_status_trigger","Trigger status",900,600);
+  canvas_status_error = new TCanvas("canvas_status_error","Error status",900,600);
 
   //Graphs
   graph_temp = new TGraph();
@@ -295,9 +318,27 @@ void MonitorLAPPDSC::InitializeHists(){
   graph_lv_volt2->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
   graph_lv_volt3->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 
+  //Multi-Graphs
   multi_lv = new TMultiGraph();
-  leg_lv = new TMultiGraph();
+
+  //Legends
+  leg_lv = new TLegend(0.7,0.7,0.88,0.88);
   leg_lv->SetLineColor(0);
+
+  //Text
+  text_temphum_title = new TText();
+  text_temp = new TText();
+  text_hum = new TText();
+  text_light = new TText();
+  text_flag_temp = new TText();
+  text_flag_hum = new TText();
+
+  text_temphum_title->SetNDC(1);
+  text_temp->SetNDC(1);
+  text_hum->SetNDC(1);
+  text_light->SetNDC(1);
+  text_flag_temp->SetNDC(1);
+  text_flag_hum->SetNDC(1);
 
 }
 
@@ -306,6 +347,8 @@ void MonitorLAPPDSC::ReadInConfiguration(){
   //-------------------------------------------------------
   //----------------ReadInConfiguration -------------------
   //-------------------------------------------------------
+
+  Log("MonitorLAPPDSC::ReadInConfiguration",v_message,verbosity);
 
   ifstream file(plot_configuration.c_str());
 
@@ -401,7 +444,7 @@ void MonitorLAPPDSC::WriteToFile(){
   //------------------WriteToFile -------------------------
   //-------------------------------------------------------
 
-  std::string file_start_date = convertTimeStamp_to_Date(current_time);
+  std::string file_start_date = convertTimeStamp_to_Date(t_current);
   std::stringstream root_filename;
   root_filename << path_monitoring << "LAPPDSC_" << file_start_date << ".root";
 
@@ -420,7 +463,7 @@ void MonitorLAPPDSC::WriteToFile(){
   int t_lvmon;
   bool t_lvstateset;
   float t_v33;
-  float t_v21;
+  float t_v25;
   float t_v12;
   float t_temp_low;
   float t_temp_high;
@@ -438,6 +481,7 @@ void MonitorLAPPDSC::WriteToFile(){
   float t_trig1_thr;
   float t_trig1_mon;
   float t_trig0_thr;
+  float t_trig0_mon;
   float t_trig_mon;
   float t_light_level;
   std::vector<unsigned int> *t_vec_errors = new std::vector<unsigned int>;
@@ -549,7 +593,7 @@ void MonitorLAPPDSC::WriteToFile(){
   t_lvmon = lappd_sc.LV_mon;
   t_lvstateset = lappd_sc.LV_state_set;
   t_v33 = lappd_sc.v33;
-  t_v21 = lappd_sc.v25;
+  t_v25 = lappd_sc.v25;
   t_v12 = lappd_sc.v12;
   t_temp_low = lappd_sc.LIMIT_temperature_low;
   t_temp_high = lappd_sc.LIMIT_temperature_high;
@@ -564,13 +608,13 @@ void MonitorLAPPDSC::WriteToFile(){
   t_relCh2_mon = lappd_sc.relayCh2_mon;
   t_relCh3_mon = lappd_sc.relayCh3_mon;
   t_trig_vref = lappd_sc.TrigVref;
-  t_trig1_thr lappd_sc.Trig1_threshold;
+  t_trig1_thr = lappd_sc.Trig1_threshold;
   t_trig1_mon = lappd_sc.Trig1_mon;
   t_trig0_thr = lappd_sc.Trig0_threshold;
   t_trig_mon = lappd_sc.Trig0_mon;
   t_light_level = lappd_sc.light;
-  for (int i_error = 0; i_error < (int) lappd_sc.errors->size(); i_error++){
-    t_vec_errors->push_back(lappd_sc.errors->at(i_error));
+  for (int i_error = 0; i_error < (int) lappd_sc.errorcodes.size(); i_error++){
+    t_vec_errors->push_back(lappd_sc.errorcodes.at(i_error));
   } 
 
   t->Fill();
@@ -602,7 +646,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame){
   lv_mon_plot.clear();
   lv_stateset_plot.clear();
   lv_v33_plot.clear();
-  lv_v21_plot.clear();
+  lv_v25_plot.clear();
   lv_v12_plot.clear();
   hum_high_plot.clear();
   temp_low_plot.clear();
@@ -621,7 +665,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame){
   trig0thr_plot.clear();
   trig_vref_plot.clear();
   light_plot.clear();
-  numerrors_plot.clear();
+  num_errors_plot.clear();
   labels_timeaxis.clear();
 
   //take the end time and calculate the start time with the given time_frame
@@ -678,7 +722,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame){
         int t_lvmon;
         bool t_lvstateset;
         float t_v33;
-        float t_v21;
+        float t_v25;
         float t_v12;
         float t_temp_low;
         float t_temp_high;
@@ -696,6 +740,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame){
         float t_trig1_thr;
         float t_trig1_mon;
         float t_trig0_thr;
+        float t_trig0_mon;
         float t_trig_mon;
         float t_light_level;
 
@@ -740,9 +785,9 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame){
         std::map<ULong64_t,int> map_timestamp_entry;
 	for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
 	  t->GetEntry(i_entry);
-	  if (t_time >= timestamp_start && t_time <= timestamp_end){
-	    vector_timestamps.push_back(t_start);
-	    map_timestamp_entry.emplace(t_start,i_entry);	    
+	  if (t_time >= timestamp_start && t_time <= timestamp){
+	    vector_timestamps.push_back(t_time);
+	    map_timestamp_entry.emplace(t_time,i_entry);	    
 	  }
 	}
 
@@ -761,21 +806,21 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame){
           if (t_time >= timestamp_start && t_time <= timestamp){
             times_plot.push_back(t_time);
             temp_plot.push_back(t_temp);
-            humidity_plot.push_back(t_humidity);
+            humidity_plot.push_back(t_hum);
             hv_mon_plot.push_back(t_hvmon);
             hv_volt_plot.push_back(t_hvvolt);
             hv_stateset_plot.push_back(t_hvstateset);
             lv_mon_plot.push_back(t_lvmon);
             lv_stateset_plot.push_back(t_lvstateset);
             lv_v33_plot.push_back(t_v33);
-            lv_v21_plot.push_back(t_v21);
+            lv_v25_plot.push_back(t_v25);
             lv_v12_plot.push_back(t_v12);
             hum_low_plot.push_back(t_hum_low);
             hum_high_plot.push_back(t_hum_high);
             temp_low_plot.push_back(t_temp_low);
             temp_high_plot.push_back(t_temp_high);
             flag_temp_plot.push_back(t_flag_temp);
-            flag_hum_plot.push_back(t_flag_hum);
+            flag_hum_plot.push_back(t_flag_humidity);
             relCh1_plot.push_back(t_relCh1);
             relCh2_plot.push_back(t_relCh2);
             relCh3_plot.push_back(t_relCh3);
@@ -860,8 +905,8 @@ void MonitorLAPPDSC::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
   for (unsigned int i_time = 0; i_time < timeFrames.size(); i_time++){
 
     ULong64_t zero = 0;
-    if (endTimes.at(i_time) == zero) endTimes.at(i_time) = t_file_end;        //set 0 for t_file_end since we did not know what that was at the beginning of initialise
-
+    if (endTimes.at(i_time) == zero) endTimes.at(i_time) = t_current;        //set 0 for t_file_end since we did not know what that was at the beginning of initialise
+    
     for (unsigned int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
       if (plotTypes.at(i_time).at(i_plot) == "TimeEvolution") DrawTimeEvolutionLAPPDSC(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else {
@@ -875,31 +920,321 @@ void MonitorLAPPDSC::UpdateMonitorPlots(std::vector<double> timeFrames, std::vec
 
 void MonitorLAPPDSC::DrawStatus_TempHumidity(){
 
+  Log("MonitorLAPPDSC: DrawStatus_TempHumidity",v_message,verbosity);
+
+  //-------------------------------------------------------
+  //-------------DrawStatus_TempHumidity ------------------
+  //-------------------------------------------------------
+ 
+   boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_current/MSEC_to_SEC/SEC_to_MIN)%60,int(t_current/MSEC_to_SEC)%60,t_current%1000);
+  struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
+  std::stringstream current_time;
+  current_time << currenttime_tm.tm_year+1900<<"/"<<currenttime_tm.tm_mon+1<<"/"<<currenttime_tm.tm_mday<<"-"<<currenttime_tm.tm_hour<<":"<<currenttime_tm.tm_min<<":"<<currenttime_tm.tm_sec;
+  
+  text_temphum_title->SetText(0.06,0.9,"LAPPD Temperature / Humidity");
+  std::stringstream ss_text_temp;
+  ss_text_temp << "Temperature: "<< lappd_sc.temperature_mon << " ("<<current_time.str()<<")";
+  text_temp->SetText(0.06,0.8,ss_text_temp.str().c_str());
+  text_temp->SetTextColor(1);
+  if (lappd_sc.temperature_mon < lappd_sc.LIMIT_temperature_low || lappd_sc.temperature_mon > lappd_sc.LIMIT_temperature_high) {
+    Log("MonitorLAPPDSC: SEVERE ERROR: Monitored temperature >>>"+std::to_string(lappd_sc.temperature_mon)+"<<< is outside of expected range ["+std::to_string(lappd_sc.LIMIT_temperature_low)+" , "+std::to_string(lappd_sc.LIMIT_temperature_high)+"]!!!",v_error,verbosity);
+    text_temp->SetTextColor(kRed);
+  }
+
+  std::stringstream ss_text_hum;
+  ss_text_hum << "Humidity: "<< lappd_sc.humidity_mon << " ("<<current_time.str()<<")";
+  text_hum->SetText(0.06,0.7,ss_text_hum.str().c_str());
+  text_hum->SetTextColor(1);
+  if (lappd_sc.humidity_mon < lappd_sc.LIMIT_humidity_low || lappd_sc.humidity_mon > lappd_sc.LIMIT_humidity_high) {
+    Log("MonitorLAPPDSC: SEVERE ERROR: Monitored humidity >>>"+std::to_string(lappd_sc.humidity_mon)+"<<< is outside of expected range ["+std::to_string(lappd_sc.LIMIT_humidity_low)+" , "+std::to_string(lappd_sc.LIMIT_humidity_high)+"]!!!",v_error,verbosity);
+    text_hum->SetTextColor(kRed);
+  }
+  
+  std::stringstream ss_text_light;
+  ss_text_light << "Light level: "<< lappd_sc.light << " ("<<current_time.str()<<")";
+  text_light->SetText(0.06,0.6,ss_text_light.str().c_str());
+  text_light->SetTextColor(1);
+
+  std::stringstream ss_text_flag_temp;
+  std::string emergency_temp = (lappd_sc.FLAG_temperature)? "True" : "False";
+  ss_text_flag_temp << "Emergency Temperature: "<< emergency_temp << " ("<<current_time.str()<<")";
+  text_flag_temp->SetText(0.06,0.5,ss_text_flag_temp.str().c_str());
+  text_flag_temp->SetTextColor(1);
+  if (emergency_temp == "True") {
+    Log("MonitorLAPPDSC: SEVERE ERROR: Temperature emergency flag is set!!!",v_error,verbosity);
+    text_flag_temp->SetTextColor(kRed);
+  }
+
+  std::stringstream ss_text_flag_hum;
+  std::string emergency_hum = (lappd_sc.FLAG_humidity)? "True" : "False";
+  ss_text_flag_hum << "Emergency Humidity: "<< emergency_hum << " ("<<current_time.str()<<")";
+  text_flag_hum->SetText(0.06,0.4,ss_text_flag_hum.str().c_str());
+  text_flag_hum->SetTextColor(1);
+  if (emergency_hum == "True"){
+    Log("MonitorLAPPDSC: SEVERE ERROR: Humidity emergency flag is set!!!",v_error,verbosity);
+    text_flag_hum->SetTextColor(kRed);
+  }
+
+  text_temphum_title->SetTextSize(0.05);
+  text_temp->SetTextSize(0.05);
+  text_hum->SetTextSize(0.05);
+  text_light->SetTextSize(0.05);
+  text_flag_temp->SetTextSize(0.05);
+  text_flag_hum->SetTextSize(0.05);
+
+  text_temphum_title->SetNDC(1);
+  text_temp->SetNDC(1);
+  text_hum->SetNDC(1);
+  text_light->SetNDC(1);
+  text_flag_temp->SetNDC(1);
+  text_flag_hum->SetNDC(1);
+
+  canvas_status_temphum->cd();
+  canvas_status_temphum->Clear();
+  text_temphum_title->Draw();
+  text_temp->Draw();
+  text_hum->Draw();
+  text_light->Draw();
+  text_flag_temp->Draw();
+  text_flag_hum->Draw();
+
+  std::stringstream ss_path_tempinfo;
+  ss_path_tempinfo << outpath << "LAPPDSC_TempHumInfo_current."<<img_extension;
+  canvas_status_temphum->SaveAs(ss_path_tempinfo.str().c_str());
+  canvas_status_temphum->Clear();
+
+
+   
 }
 
 void MonitorLAPPDSC::DrawStatus_LVHV(){
 
+  Log("MonitorLAPPDSC: DrawStatus_LVHV",v_message,verbosity);
+
+  //-------------------------------------------------------
+  //-------------DrawStatus_LVHV --------------------------
+  //-------------------------------------------------------
+
+  //Variable names:
+/*
+  t_hum = lappd_sc.humidity_mon;
+  std::cout <<"t_hum: "<<t_hum<<std::endl;
+  t_temp = lappd_sc.temperature_mon;
+  t_hvmon = lappd_sc.HV_mon;
+  t_hvstateset = lappd_sc.HV_state_set;
+  t_hvvolt = lappd_sc.HV_volts;
+  t_lvmon = lappd_sc.LV_mon;
+  t_lvstateset = lappd_sc.LV_state_set;
+  t_v33 = lappd_sc.v33;
+  t_v25 = lappd_sc.v25;
+  t_v12 = lappd_sc.v12;
+  t_temp_low = lappd_sc.LIMIT_temperature_low;
+  t_temp_high = lappd_sc.LIMIT_temperature_high;
+  t_hum_low = lappd_sc.LIMIT_humidity_low;
+  t_hum_high = lappd_sc.LIMIT_humidity_high;
+  t_flag_temp = lappd_sc.FLAG_temperature;
+  t_flag_humidity = lappd_sc.FLAG_humidity;
+  t_relCh1 = lappd_sc.relayCh1;
+  t_relCh2 = lappd_sc.relayCh2;
+  t_relCh3 = lappd_sc.relayCh3;
+  t_relCh1_mon = lappd_sc.relayCh1_mon;
+  t_relCh2_mon = lappd_sc.relayCh2_mon;
+  t_relCh3_mon = lappd_sc.relayCh3_mon;
+  t_trig_vref = lappd_sc.TrigVref;
+  t_trig1_thr = lappd_sc.Trig1_threshold;
+  t_trig1_mon = lappd_sc.Trig1_mon;
+  t_trig0_thr = lappd_sc.Trig0_threshold;
+  t_trig_mon = lappd_sc.Trig0_mon;
+  t_light_level = lappd_sc.light;
+*/
 }
 
 void MonitorLAPPDSC::DrawStatus_Trigger(){
 
+  Log("MonitorLAPPDSC: DrawStatus_Trigger",v_message,verbosity);
+
+  //-------------------------------------------------------
+  //-------------DrawStatus_Trigger -----------------------
+  //-------------------------------------------------------
 }
 
 void MonitorLAPPDSC::DrawStatus_Relay(){
 
+  Log("MonitorLAPPDSC: DrawStatus_Relay",v_message,verbosity);
+
+  //-------------------------------------------------------
+  //-------------DrawStatus_Relay ------------------------
+  //-------------------------------------------------------
 }
 
 void MonitorLAPPDSC::DrawStatus_Errors(){
 
+  Log("MonitorLAPPDSC: DrawStatus_Errors",v_message,verbosity);
+
+  //--------------------------------------------------------
+  //-------------DrawStatus_Errors -------------------------
+  // -------------------------------------------------------
 }
 
 void MonitorLAPPDSC::DrawStatus_Overview(){
 
+  Log("MonitorLAPPDSC: DrawStatus_Overview",v_message,verbosity);
+  
+  //--------------------------------------------------------
+  //-------------DrawStatus_Overview -----------------------
+  // -------------------------------------------------------
 }
 
 void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double time_frame, std::string file_ending){
 
+  Log("MonitorLAPPDSC: DrawTimeEvolutionLAPPDSC",v_message,verbosity);
 
+  //--------------------------------------------------------
+  //-------------DrawTimeEvolutionLAPPDSC ------------------
+  // -------------------------------------------------------
 
+  boost::posix_time::ptime endtime = *Epoch + boost::posix_time::time_duration(int(timestamp_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_end/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_end/MSEC_to_SEC/1000.)%60,timestamp_end%1000);
+  struct tm endtime_tm = boost::posix_time::to_tm(endtime);
+  std::stringstream end_time;
+  end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
+
+  if (timestamp_end != readfromfile_tend || time_frame != readfromfile_timeframe) ReadFromFile(timestamp_end, time_frame);
+
+  //looping over all files that are in the time interval, each file will be one data point
+  
+  std::stringstream ss_timeframe;
+  ss_timeframe << round(time_frame*100.)/100.;
+
+  graph_temp->Set(0);
+  graph_humidity->Set(0);
+  graph_light->Set(0);
+  graph_hv_volt->Set(0);
+  graph_lv_volt1->Set(0);
+  graph_lv_volt2->Set(0);
+  graph_lv_volt3->Set(0);
+
+  for (unsigned int i_file = 0; i_file < temp_plot.size(); i_file++){
+
+    Log("MonitorLAPPDSC: Stored data (file #"+std::to_string(i_file+1)+"): ",v_message,verbosity);
+    graph_temp->SetPoint(i_file,labels_timeaxis[i_file].Convert(),temp_plot.at(i_file));
+    graph_humidity->SetPoint(i_file,labels_timeaxis[i_file].Convert(),humidity_plot.at(i_file));
+    graph_light->SetPoint(i_file,labels_timeaxis[i_file].Convert(),light_plot.at(i_file));
+    graph_hv_volt->SetPoint(i_file,labels_timeaxis[i_file].Convert(),hv_volt_plot.at(i_file));
+    graph_lv_volt1->SetPoint(i_file,labels_timeaxis[i_file].Convert(),lv_v33_plot.at(i_file));
+    graph_lv_volt2->SetPoint(i_file,labels_timeaxis[i_file].Convert(),lv_v25_plot.at(i_file));
+    graph_lv_volt3->SetPoint(i_file,labels_timeaxis[i_file].Convert(),lv_v12_plot.at(i_file));
+
+  }
+
+  // Drawing time evolution plots
+
+  double max_canvas = 0;
+  double min_canvas = 9999999.;
+  double max_canvas_sigma = 0;
+  double min_canvas_sigma = 99999999.;
+  double max_canvas_rate = 0;
+  double min_canvas_rate = 999999999.;
+  
+  std::stringstream ss_temp;
+  ss_temp << "Temperature time evolution (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  canvas_temp->cd();
+  canvas_temp->Clear();
+  graph_temp->SetTitle(ss_temp.str().c_str());
+  graph_temp->GetYaxis()->SetTitle("Temperature");
+  graph_temp->GetXaxis()->SetTimeDisplay(1);
+  graph_temp->GetXaxis()->SetLabelSize(0.03);
+  graph_temp->GetXaxis()->SetLabelOffset(0.03);
+  graph_temp->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  graph_temp->GetXaxis()->SetTimeOffset(0.);
+  graph_temp->Draw("apl");
+  double max_temp = TMath::MaxElement(temp_plot.size(),graph_temp->GetY());
+  graph_temp->GetYaxis()->SetRangeUser(0.001,1.1*max_temp);
+  std::stringstream ss_temp_path;
+  ss_temp_path << outpath << "LAPPDSC_TimeEvolution_Temp_"<<file_ending<<"."<<img_extension;
+  canvas_temp->SaveAs(ss_temp_path.str().c_str());
+
+  std::stringstream ss_hum;
+  ss_hum << "Humidity time evolution (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  canvas_humidity->cd();
+  canvas_humidity->Clear();
+  graph_humidity->SetTitle(ss_hum.str().c_str());
+  graph_humidity->GetYaxis()->SetTitle("Humidity");
+  graph_humidity->GetXaxis()->SetTimeDisplay(1);
+  graph_humidity->GetXaxis()->SetLabelSize(0.03);
+  graph_humidity->GetXaxis()->SetLabelOffset(0.03);
+  graph_humidity->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  graph_humidity->GetXaxis()->SetTimeOffset(0.);
+  graph_humidity->Draw("apl");
+  double max_humidity = TMath::MaxElement(humidity_plot.size(),graph_humidity->GetY());
+  graph_humidity->GetYaxis()->SetRangeUser(0.001,1.1*max_humidity);
+  std::stringstream ss_hum_path;
+  ss_hum_path << outpath << "LAPPDSC_TimeEvolution_Humidity_"<<file_ending<<"."<<img_extension;
+  canvas_humidity->SaveAs(ss_hum_path.str().c_str());
+
+  std::stringstream ss_light;
+  ss_light << "Light level time evolution (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  canvas_light->cd();
+  canvas_light->Clear();
+  graph_light->SetTitle(ss_light.str().c_str());
+  graph_light->GetYaxis()->SetTitle("Light level");
+  graph_light->GetXaxis()->SetTimeDisplay(1);
+  graph_light->GetXaxis()->SetLabelSize(0.03);
+  graph_light->GetXaxis()->SetLabelOffset(0.03);
+  graph_light->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  graph_light->GetXaxis()->SetTimeOffset(0.);
+  graph_light->Draw("apl");
+  double max_light = TMath::MaxElement(light_plot.size(),graph_light->GetY());
+  graph_light->GetYaxis()->SetRangeUser(0.001,1.1*max_light);
+  std::stringstream ss_light_path;
+  ss_light_path << outpath << "LAPPDSC_TimeEvolution_Light_"<<file_ending<<"."<<img_extension;
+  canvas_light->SaveAs(ss_light_path.str().c_str());
+
+  std::stringstream ss_hv;
+  ss_hv << "HV time evolution (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  canvas_hv->cd();
+  canvas_hv->Clear();
+  graph_hv_volt->SetTitle(ss_hv.str().c_str());
+  graph_hv_volt->GetYaxis()->SetTitle("HV [V]");
+  graph_hv_volt->GetXaxis()->SetTimeDisplay(1);
+  graph_hv_volt->GetXaxis()->SetLabelSize(0.03);
+  graph_hv_volt->GetXaxis()->SetLabelOffset(0.03);
+  graph_hv_volt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  graph_hv_volt->GetXaxis()->SetTimeOffset(0.);
+  graph_hv_volt->Draw("apl");
+  double max_hv_volt = TMath::MaxElement(hv_volt_plot.size(),graph_hv_volt->GetY());
+  graph_hv_volt->GetYaxis()->SetRangeUser(0.001,1.1*max_hv_volt);
+  std::stringstream ss_hv_path;
+  ss_hv_path << outpath << "LAPPDSC_TimeEvolution_HV_"<<file_ending<<"."<<img_extension;
+  canvas_hv->SaveAs(ss_hv_path.str().c_str());
+
+  std::stringstream ss_lv;
+  ss_lv << "LV time evolution (last "<<ss_timeframe.str()<<"h) "<<end_time.str();
+  multi_lv->Add(graph_lv_volt1);
+  leg_lv->AddEntry(graph_lv_volt1,"V35","l");
+  multi_lv->Add(graph_lv_volt2);
+  leg_lv->AddEntry(graph_lv_volt2,"V21","l");
+  multi_lv->Add(graph_lv_volt3);
+  leg_lv->AddEntry(graph_lv_volt3,"V12","l");
+  canvas_lv->cd();
+  canvas_lv->Clear();
+  multi_lv->Draw("apl");
+  multi_lv->SetTitle(ss_lv.str().c_str());
+  multi_lv->GetYaxis()->SetTitle("LV [V]");
+  multi_lv->GetXaxis()->SetTimeDisplay(1);
+  multi_lv->GetXaxis()->SetLabelSize(0.03);
+  multi_lv->GetXaxis()->SetLabelOffset(0.03);
+  multi_lv->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+  multi_lv->GetXaxis()->SetTimeOffset(0.);
+  leg_lv->Draw();
+  std::stringstream ss_lv_path;
+  ss_lv_path << outpath << "LAPPDSC_TimeEvolution_LV_"<<file_ending<<"."<<img_extension;
+  canvas_lv->SaveAs(ss_lv_path.str().c_str());
+
+  multi_lv->RecursiveRemove(graph_lv_volt1);
+  multi_lv->RecursiveRemove(graph_lv_volt2);
+  multi_lv->RecursiveRemove(graph_lv_volt3);
+
+  leg_lv->Clear();
+  canvas_lv->Clear();
 
 }

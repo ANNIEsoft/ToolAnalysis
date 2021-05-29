@@ -6,6 +6,8 @@
 
 #include "Tool.h"
 
+#include "SlowControlMonitor.h"
+#include "TRandom3.h"
 
 /**
  * \class MonitorSimReceiveLAPPD
@@ -30,9 +32,8 @@ class MonitorSimReceiveLAPPD: public Tool {
  private:
 
   int verbosity;
-  std::string out_path;
   std::string mode;
-
+  std::string outpath;
 
 
 };

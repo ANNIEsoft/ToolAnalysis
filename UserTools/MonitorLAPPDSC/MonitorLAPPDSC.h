@@ -3,14 +3,34 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 #include "Tool.h"
+#include <Store.h>
+#include <BoostStore.h>
+#include <SlowControlMonitor.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
 
+#include "TMath.h"
 #include "TCanvas.h"
 #include "TGraph.h"
 #include "TMultiGraph.h"
 #include "TLegend.h"
-
+#include "TDatime.h"
+#include "TPaveText.h"
+#include "TFile.h"
+#include "TPad.h"
+#include "TAxis.h"
+#include "TROOT.h"
+#include "TH2F.h"
+#include "TH1I.h"
+#include "TH1F.h"
+#include "TObjectTable.h"
+#include "TLatex.h"
+#include "TText.h"
+#include "TTree.h"
+#include "TRandom3.h"
 
 /**
  * \class MonitorLAPPDSC
@@ -31,21 +51,80 @@ class MonitorLAPPDSC: public Tool {
   bool Execute(); ///< Execute function used to perform Tool purpose.
   bool Finalise(); ///< Finalise function used to clean up resources.
 
-  //TODO: Add functions
+  //Configuration functions
+  void ReadInConfiguration();
+  void InitializeHists();
+
+  //Read/Write functions
+  void WriteToFile();
+  void ReadFromFile(ULong64_t timestamp, double time_frame);
+
+  //Draw functions
+  void DrawLastFilePlots();
+  void UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
+  void DrawStatus_TempHumidity();
+  void DrawStatus_LVHV();
+  void DrawStatus_Trigger();
+  void DrawStatus_Relay();
+  void DrawStatus_Errors();
+  void DrawStatus_Overview();
+  void DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+
+  //Helper functions
+  std::string convertTimeStamp_to_Date(ULong64_t timestamp);
+  bool does_file_exist(std::string filename);
 
  private:
 
+  //Configuration variables
   std::string outpath_temp;
+  std::string outpath;
   std::string StartTime;
   double update_frequency;
   std::string path_monitoring;
   std::string img_extension;
-  bool force_update:
+  bool force_update;
   bool draw_marker;
   int verbosity;
+  std::string plot_configuration;
 
-  //Time reference
+  //Plot configuration variables
+  std::vector<double> config_timeframes;
+  std::vector<std::string> config_endtime;
+  std::vector<std::string> config_label;
+  std::vector<std::vector<std::string>> config_plottypes;
+  std::vector<ULong64_t> config_endtime_long;
+
+  //Time reference variables
   boost::posix_time::ptime *Epoch = nullptr;
+  boost::posix_time::ptime current;
+  boost::posix_time::time_duration period_update;
+  boost::posix_time::time_duration duration;
+  boost::posix_time::ptime last;
+  boost::posix_time::ptime utc;
+  boost::posix_time::time_duration current_stamp_duration;
+  boost::posix_time::time_duration current_utc_duration;
+  time_t t;
+  std::stringstream title_time; 
+  long current_stamp, current_utc;
+  ULong64_t readfromfile_tend;
+  double readfromfile_timeframe; 	//TODO: is this set in the code?
+  ULong64_t t_current;
+
+  //Variables to convert times
+  double MSEC_to_SEC = 1000.;
+  double SEC_to_MIN = 60.;
+  double MIN_to_HOUR = 60.;
+  double HOUR_to_DAY = 24.;
+  ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
+  ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
+
+  //Geometry variables
+  Geometry *geom = nullptr;
+  double tank_center_x, tank_center_y, tank_center_z;
+
+  //Data
+  SlowControlMonitor lappd_sc;
 
   //Plotting variables in vectors
   std::vector<ULong64_t> times_plot;
@@ -57,7 +136,7 @@ class MonitorLAPPDSC: public Tool {
   std::vector<int> lv_mon_plot;
   std::vector<bool> lv_stateset_plot;
   std::vector<float> lv_v33_plot;
-  std::vector<float> lv_v21_plot;
+  std::vector<float> lv_v25_plot;
   std::vector<float> lv_v12_plot;
   std::vector<float> hum_low_plot;
   std::vector<float> hum_high_plot;
@@ -78,7 +157,7 @@ class MonitorLAPPDSC: public Tool {
   std::vector<float> trig_vref_plot;
   std::vector<float> light_plot;
   std::vector<int> num_errors_plot;
-  //TODO: Add timelabel vector
+  std::vector<TDatime> labels_timeaxis;
 
   //canvas
   TCanvas *canvas_temp = nullptr;
@@ -86,7 +165,12 @@ class MonitorLAPPDSC: public Tool {
   TCanvas *canvas_light = nullptr;
   TCanvas *canvas_hv = nullptr;
   TCanvas *canvas_lv = nullptr;
-  
+  TCanvas *canvas_status_temphum = nullptr;
+  TCanvas *canvas_status_lvhv = nullptr;
+  TCanvas *canvas_status_relay = nullptr;
+  TCanvas *canvas_status_trigger = nullptr;
+  TCanvas *canvas_status_error = nullptr;  
+
   //graphs
   TGraph *graph_temp = nullptr;
   TGraph *graph_humidity = nullptr;
@@ -101,6 +185,14 @@ class MonitorLAPPDSC: public Tool {
   
   //legends
   TLegend *leg_lv = nullptr;
+
+  //text
+  TText *text_temphum_title = nullptr;
+  TText *text_temp = nullptr;
+  TText *text_hum = nullptr;
+  TText *text_light = nullptr;
+  TText *text_flag_temp = nullptr;
+  TText *text_flag_hum = nullptr;
 
   //Verbosity variables
   int v_error = 0;
