@@ -130,3 +130,5 @@
 #include "EventClassification.h"
 #include "DataSummary.h"
 #include "MonitorDAQ.h"
+#include "MonitorSimReceiveLAPPD.h"
+#include "MonitorLAPPDSC.h"

@@ -124,5 +124,7 @@ if (tool=="EventClassification") ret=new EventClassification;
 
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="MonitorDAQ") ret=new MonitorDAQ;
+if (tool=="MonitorSimReceiveLAPPD") ret=new MonitorSimReceiveLAPPD;
+if (tool=="MonitorLAPPDSC") ret=new MonitorLAPPDSC;
 return ret;
 }

@@ -1,0 +1,85 @@
+#include "MonitorSimReceiveLAPPD.h"
+
+MonitorSimReceiveLAPPD::MonitorSimReceiveLAPPD():Tool(){}
+
+
+bool MonitorSimReceiveLAPPD::Initialise(std::string configfile, DataModel &data){
+
+  /////////////////// Useful header ///////////////////////
+  if(configfile!="") m_variables.Initialise(configfile); // loading config file
+  //m_variables.Print();
+
+  m_data= &data; //assigning transient data pointer
+  /////////////////////////////////////////////////////////////////
+
+  m_variables.Get("OutPath",outpath);
+  m_variables.Get("Mode",mode);		//Mode: Wait/Single
+  m_variables.Get("verbose",verbosity);
+
+  m_data->CStore.Set("OutPath",outpath);
+
+  if (verbosity > 2) std::cout <<"MonitorSimReceiveLAPPD: Initialising"<<std::endl;
+
+  m_data->Stores["LAPPDData"] = new BoostStore(false,2); 
+
+  return true;
+}
+
+
+bool MonitorSimReceiveLAPPD::Execute(){
+
+  if (verbosity > 2) std::cout <<"MonitorSimReceiveLAPPD: Executing"<<std::endl;
+
+  if (mode == "Wait"){
+    std::string Wait = "Wait";
+    m_data->CStore.Set("State",Wait);
+    return true;
+  }
+  else if (mode == "Single"){
+    std::string State = "LAPPDSC";
+    m_data->CStore.Set("State",State);
+    SlowControlMonitor lappd_sc;
+    TRandom3 rand(0);
+    lappd_sc.humidity_mon = 40*rand.Gaus(1,0.1);
+    lappd_sc.temperature_mon = 83*rand.Gaus(1,0.1);
+    lappd_sc.HV_mon=-1;
+    lappd_sc.HV_state_set=true;
+    lappd_sc.HV_volts=100;
+    lappd_sc.LV_mon=-1;
+    lappd_sc.LV_state_set=true;
+    lappd_sc.v33=3.3*rand.Gaus(1,0.8);
+    lappd_sc.v25=2.5*rand.Gaus(1,0.4);
+    lappd_sc.v12=1.2*rand.Gaus(1,0.2);
+    lappd_sc.LIMIT_temperature_low = 30;
+    lappd_sc.LIMIT_temperature_high = 50;
+    lappd_sc.LIMIT_humidity_low = 75;
+    lappd_sc.LIMIT_humidity_high = 90;
+    lappd_sc.FLAG_temperature = false;
+    lappd_sc.FLAG_humidity = false;
+    lappd_sc.relayCh1 = 0;
+    lappd_sc.relayCh2 = 0;
+    lappd_sc.relayCh3 = 0;
+    lappd_sc.relayCh1_mon = 0;
+    lappd_sc.relayCh2_mon = 0;
+    lappd_sc.relayCh3_mon = 0;
+    lappd_sc.TrigVref = 2.981;
+    lappd_sc.Trig1_threshold = 1;
+    lappd_sc.Trig1_mon = -1;
+    lappd_sc.Trig0_threshold = 1;
+    lappd_sc.Trig0_mon = -1;
+    lappd_sc.light = 0.8;
+    std::vector<unsigned int> vec_errors;
+    lappd_sc.errors = vec_errors;
+    m_data->Stores["LAPPDData"]->Set("LAPPDSC",lappd_sc);
+  }
+
+  return true;
+}
+
+
+bool MonitorSimReceiveLAPPD::Finalise(){
+
+  if (verbosity > 2) std::cout <<"MonitorSimReceiveLAPPD: Finalising"<<std::endl;
+
+  return true;
+}
