@@ -1015,6 +1015,22 @@ void MonitorLAPPDSC::DrawStatus_LVHV(){
   //-------------DrawStatus_LVHV --------------------------
   //-------------------------------------------------------
 
+  //TODO: Add status board for LV and HV values
+  // 
+  // ----Rough sketch-----
+  // Title: LAPPD HV/LV
+  // HV State Set: ON/OFF
+  // HV Mon: 
+  // HV Volt: 
+  // LV Stae Set: ON/OFF
+  // LV Mon: 
+  // V33: 
+  // V25:
+  // V12:
+  // ----End of rough sketch---
+  //
+  // Number of rows in canvas: 9 (maximum of 10 rows, so it fits)
+
   //Variable names:
 /*
   t_hum = lappd_sc.humidity_mon;
@@ -1056,6 +1072,29 @@ void MonitorLAPPDSC::DrawStatus_Trigger(){
   //-------------------------------------------------------
   //-------------DrawStatus_Trigger -----------------------
   //-------------------------------------------------------
+  
+  //TODO: Add status board for trigger values
+  // 
+  // ----Rough sketch-----
+  // Title: LAPPD Triggers
+  // Trigger Vref: 
+  // Trig0 Thr: 
+  // Trig0 Mon: 
+  // Trig1 Thr:
+  // Trig1 Mon:
+  // ----End of rough sketch---
+  //
+  // Number of rows in canvas: 6 (maximum of 10 rows, so it fits)
+  
+  //Important variables
+  /*
+    t_trig_vref = lappd_sc.TrigVref;
+    t_trig1_thr = lappd_sc.Trig1_threshold;
+    t_trig1_mon = lappd_sc.Trig1_mon;
+    t_trig0_thr = lappd_sc.Trig0_threshold;
+    t_trig_mon = lappd_sc.Trig0_mon;
+  */
+
 }
 
 void MonitorLAPPDSC::DrawStatus_Relay(){
@@ -1065,6 +1104,30 @@ void MonitorLAPPDSC::DrawStatus_Relay(){
   //-------------------------------------------------------
   //-------------DrawStatus_Relay ------------------------
   //-------------------------------------------------------
+  
+  //TODO: Add status board for relay values
+  // 
+  // ----Rough sketch-----
+  // Title: LAPPD Relays
+  // Relay1 Set: ON/OFF 
+  // Relay2 Set: ON/OFF
+  // Relay3 Set: ON/OFF
+  // Relay1 Mon: ON/OFF
+  // Relay2 Mon: ON/OFF
+  // Relay3 Mon: ON/OFF
+  // ----End of rough sketch---
+  //
+  // Number of rows in canvas: 7 (maximum of 10 rows, so it fits)
+  
+  //Important variables
+  /*
+   t_relCh1 = lappd_sc.relayCh1;
+   t_relCh2 = lappd_sc.relayCh2;
+   t_relCh3 = lappd_sc.relayCh3;
+   t_relCh1_mon = lappd_sc.relayCh1_mon;
+   t_relCh2_mon = lappd_sc.relayCh2_mon;
+   t_relCh3_mon = lappd_sc.relayCh3_mon;
+   */
 }
 
 void MonitorLAPPDSC::DrawStatus_Errors(){
@@ -1073,7 +1136,18 @@ void MonitorLAPPDSC::DrawStatus_Errors(){
 
   //--------------------------------------------------------
   //-------------DrawStatus_Errors -------------------------
-  // -------------------------------------------------------
+  //--------------------------------------------------------
+  
+  //TODO: Add status board for error values
+  // 
+  // ----Rough sketch-----
+  // Title: LAPPD Errors
+  // Either each line has an error code with timestamp (only 9 most recent ones)
+  // Or there will be a histogram of error codes and their frequencies
+  // potentially both
+  // ----End of rough sketch---
+  //
+  // Number of rows in canvas: X (maximum of 10 rows)
 }
 
 void MonitorLAPPDSC::DrawStatus_Overview(){
@@ -1083,6 +1157,11 @@ void MonitorLAPPDSC::DrawStatus_Overview(){
   //--------------------------------------------------------
   //-------------DrawStatus_Overview -----------------------
   // -------------------------------------------------------
+  
+  // Potential TODO (low priority): One status board with all status variables of the Slow Control
+  // Could use green circles to indicate good behavior, red circles for bad behavior
+  // Can be done in case everything else is finished (optional)
+
 }
 
 void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double time_frame, std::string file_ending){

@@ -132,3 +132,4 @@
 #include "MonitorDAQ.h"
 #include "MonitorSimReceiveLAPPD.h"
 #include "MonitorLAPPDSC.h"
+#include "MonitorLAPPDData.h"

@@ -45,6 +45,7 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     m_data->Stores["CCData"]=new BoostStore(false,2);  
     m_data->Stores["PMTData"]=new BoostStore(false,2);
     m_data->Stores["TrigData"]=new BoostStore(false,2);
+    m_data->Stores["LAPPDData"]=new BoostStore(false,2);
 
     MRDData = 0;
     PMTData = 0;
@@ -74,6 +75,7 @@ bool MonitorSimReceive::Execute(){
     m_data->CStore.Set("HasCCData",false);
     m_data->CStore.Set("HasPMTData",false);
     m_data->CStore.Set("HasTrigData",false);
+    m_data->CStore.Set("HasLAPPDData",false);
 
     if (mode == "Wait"){
       std::string Wait = "Wait";     
@@ -112,6 +114,7 @@ bool MonitorSimReceive::Execute(){
       if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
       if (PMTData!=0) {PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = 0;}
       if (TrigData!=0) {TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = 0;}
+      if (LAPPDData!=0) {LAPPDData->Close(); LAPPDData->Delete(); delete LAPPDData; LAPPDData = 0;}
       return true;
     }
 
@@ -132,6 +135,13 @@ bool MonitorSimReceive::Execute(){
       delete TrigData;
       TrigData=0;
     }
+    if (LAPPDData!=0){
+      m_data->Stores["LAPPDData"]->Delete();
+      /*LAPPDData->Close();
+      LAPPDData->Delete();
+      delete LAPPDData;
+      LAPPDData=0;*/
+    }
     if (indata!=0){
       std::cout <<"close indata"<<std::endl;
       indata->Close();
@@ -151,6 +161,7 @@ bool MonitorSimReceive::Execute(){
     bool has_cc=false;
     bool has_pmt=false;
     bool has_trig=false;
+    bool has_lappd=false;
 
     if (indata->Has("CCData")){
 	std::cout <<"RawData has CCData Store!"<<std::endl;
@@ -166,6 +177,11 @@ bool MonitorSimReceive::Execute(){
         std::cout <<"RawData has TrigData Store!"<<std::endl;
         has_trig = true;
         TrigData = new BoostStore(false,2);
+    }
+    if (indata->Has("LAPPDData")){
+        std::cout <<"RawData has LAPPDData Store!"<<std::endl;
+        has_lappd = true;
+        LAPPDData = new BoostStore(false,2);
     }
 
     std::cout <<"datapath: "<<datapath<<std::endl;
@@ -184,6 +200,7 @@ bool MonitorSimReceive::Execute(){
     m_data->CStore.Set("HasCCData",has_cc);
     m_data->CStore.Set("HasPMTData",has_pmt);
     m_data->CStore.Set("HasTrigData",has_trig);
+    m_data->CStore.Set("HasLAPPDData",has_lappd);
     std::string State="DataFile";
     m_data->CStore.Set("State",State);
 
@@ -232,6 +249,15 @@ bool MonitorSimReceive::Execute(){
       m_data->Stores["TrigData"]->Set("TrigDataMap",TrigData_Map);
     }
 
+    if (has_lappd){
+      indata->Get("LAPPDData",*LAPPDData);
+      long totalentries_lappd;
+      LAPPDData->Header->Get("TotalEntries",totalentries_lappd);
+      m_data->Stores["LAPPDData"]->Set("LAPPDData",LAPPDData,false);
+      //TODO
+      //Potentially just transmit already processed data (depending on format)
+    }
+
     i_loop++;
     }
 
@@ -251,13 +277,16 @@ bool MonitorSimReceive::Finalise(){
     if (m_data->CStore.Has("HasCCData")) m_data->CStore.Remove("HasCCData");
     if (m_data->CStore.Has("HasPMTData")) m_data->CStore.Remove("HasPMTData");
     if (m_data->CStore.Has("HasTrigData")) m_data->CStore.Remove("HasTrigData");
+    if (m_data->CStore.Has("HasLAPPDData")) m_data->CStore.Remove("HasLAPPDData");
     if (m_data->Stores["CCData"]->Has("FileData")) m_data->Stores["CCData"]->Remove("FileData");
     if (m_data->Stores["PMTData"]->Has("FileData")) m_data->Stores["PMTData"]->Remove("FileData");
     if (m_data->Stores["PMTData"]->Has("CardDataMap")) m_data->Stores["PMTData"]->Remove("CardDataMap");
     if (m_data->Stores["TrigData"]->Has("TrigDataMap")) m_data->Stores["TrigData"]->Remove("TrigDataMap");
+    if (m_data->Stores["LAPPDData"]->Has("LAPPDData")) m_data->Stores["LAPPDData"]->Remove("LAPPDData");
     m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete(); 
     m_data->Stores["PMTData"]->Close(); m_data->Stores["PMTData"]->Delete(); 
     m_data->Stores["TrigData"]->Close(); m_data->Stores["TrigData"]->Delete();
+    m_data->Stores["LAPPDData"]->Close(); m_data->Stores["LAPPDData"]->Delete();
     m_data->Stores.clear();
 
     return true;

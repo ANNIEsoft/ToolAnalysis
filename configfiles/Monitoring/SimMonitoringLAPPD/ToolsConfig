@@ -1,3 +1,0 @@
-myLoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
-myMonitorSimReceiveLAPPD MonitorSimReceiveLAPPD configfiles/Monitoring/SimMonitoringLAPPD/MonitorSimReceiveLAPPDConfig
-myMonitorLAPPDSC MonitorLAPPDSC configfiles/Monitoring/SimMonitoringLAPPD/MonitorLAPPDSCConfig
