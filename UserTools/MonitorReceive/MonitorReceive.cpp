@@ -175,7 +175,7 @@ bool MonitorReceive::Execute(){
 		  MRDData->Save("tmp");
 		  m_data->Stores["CCData"]->Set("FileData",MRDData,false);
 		} catch (...) {
-		  Log("MonitorReceive: Did not find CCData in file! (Maybe corrupted!!!) Don't process CCData",0,verbosity);
+		  Log("MonitorReceive: Did not find CCData in file! (Maybe corrupted!!!) Don't process CCData",0,0);
                   m_data->CStore.Set("HasCCData",false);
 		}
 	} else {
@@ -196,7 +196,7 @@ bool MonitorReceive::Execute(){
 		  }
 		  m_data->Stores["TrigData"]->Set("TrigDataMap",TrigData_Map);
 		} catch (...) {
-		  Log("MonitorReceive: Did not find TrigData in file! (Maybe corrupted!!!) Don't process TrigData",0,verbosity);
+		  Log("MonitorReceive: Did not find TrigData in file! (Maybe corrupted!!!) Don't process TrigData",0,0);
                   m_data->CStore.Set("HasTrigData",false);
 		}
 	} else {
@@ -225,7 +225,7 @@ bool MonitorReceive::Execute(){
         	  }
         	  m_data->Stores["PMTData"]->Set("CardDataMap",CardData_Map);  
 		} catch (...) {
-		  Log("MonitorReceive: Did not find PMTData in file! (Maybe corrupted!!!) Don't process PMTData",0,verbosity);
+		  Log("MonitorReceive: Did not find PMTData in file! (Maybe corrupted!!!) Don't process PMTData",0,0);
                   m_data->CStore.Set("HasPMTData",false);
 		}
 	} else {
