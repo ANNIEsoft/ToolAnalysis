@@ -69,6 +69,10 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.Trig0_mon = 1.*rand.Gaus(1,0.05);
     lappd_sc.light = 0.8*rand.Gaus(1,0.05);
     std::vector<unsigned int> vec_errors;
+    int numberOfErrors = (int)rand.Gaus(8, 4);
+    for(int i = 0; i < numberOfErrors; i++){
+//    	vec_errors.push_back((int)rand.Gaus(30, 10));
+    }
     lappd_sc.errorcodes = vec_errors;
     m_data->Stores["LAPPDData"]->Set("LAPPDSC",lappd_sc);
   }
