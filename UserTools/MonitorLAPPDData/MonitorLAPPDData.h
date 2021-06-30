@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <bitset>
 
 #include "Tool.h"
 #include <Store.h>
@@ -54,7 +55,8 @@ class MonitorLAPPDData: public Tool {
 
   //Configuration functions
   void ReadInConfiguration();
-  void InitializeHists();
+  void InitializeHistsLAPPD();
+  void LoadACDCBoardConfig();
 
   //Read/Write functions
   void ProcessLAPPDData();
@@ -65,6 +67,7 @@ class MonitorLAPPDData: public Tool {
   void DrawLastFilePlots();
   void UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
   void DrawStatus_PsecData();
+  void DrawLastFileHists();
   void DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTimeAlignment();
 
@@ -92,6 +95,9 @@ class MonitorLAPPDData: public Tool {
   std::vector<std::string> config_label;
   std::vector<std::vector<std::string>> config_plottypes;
   std::vector<ULong64_t> config_endtime_long;
+
+  //Board configuration variables
+  std::vector<int> board_configuration;
 
   //Time reference variables
   boost::posix_time::ptime *Epoch = nullptr;
@@ -123,20 +129,38 @@ class MonitorLAPPDData: public Tool {
 
   //Data
   PsecData lappd_psec;
+  BoostStore *LAPPDData = nullptr;
 
-  //Processed psec data
-  double current_pps_rate;
-  double current_frame_rate;
-  double current_int_charge;
-  int current_buffer_size;
+  //Processed psec data (last file)
+  //Averaged values - one vector entry per board (last file)
+  std::vector<double> current_pps_rate;
+  std::vector<double> current_frame_rate;
+  std::vector<double> current_int_charge;
+  std::vector<int> current_buffer_size;
+  std::vector<int> current_board_index;
 
-  //Plotting variables in vectors
-  std::vector<ULong64_t> data_times_plot;
-  std::vector<double> pps_rate_plot;
-  std::vector<double> frame_rate_plot;
-  std::vector<double> int_charge_plot;
-  std::vector<int> buffer_size_plot;
-  std::vector<TDatime> labels_timeaxis;
+  //Single values - multiple vector entries per board (last file)
+  std::vector<uint64_t> beamgate_timestamp;
+  std::vector<uint64_t> data_timestamp;
+  std::vector<uint64_t> pps_timestamp;
+  std::vector<int> board_index;
+  std::vector<int> num_channels;
+  std::vector<double> average_buffer;
+  std::map<int,std::vector<int>> buffer_size;
+  std::vector<uint64_t> data_beamgate_lastfile;
+  std::vector<std::vector<uint64_t>> data_beamgate_last5files;
+  std::vector<std::vector<uint64_t>> data_beamgate_last10files;
+  std::vector<std::vector<uint64_t>> data_beamgate_last20files;
+
+  //Plotting variables in vectors (multiple files)
+  std::map<int,std::vector<ULong64_t>> data_times_plot;
+  std::map<int,std::vector<double>> pps_rate_plot;
+  std::map<int,std::vector<double>> frame_rate_plot;
+  std::map<int,std::vector<double>> beamgate_rate_plot;
+  std::map<int,std::vector<double>> int_charge_plot;
+  std::map<int,std::vector<double>> buffer_size_plot;
+  std::map<int,std::vector<int>> num_channels_plot;
+  std::map<int,std::vector<TDatime>> labels_timeaxis;
 
   //canvas
   TCanvas *canvas_status_data = nullptr;
@@ -145,19 +169,31 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_buffer_size = nullptr;
   TCanvas *canvas_int_charge = nullptr;
   TCanvas *canvas_align_1file = nullptr;
+  TCanvas *canvas_align_5files = nullptr;
   TCanvas *canvas_align_10files = nullptr;
+  TCanvas *canvas_align_20files = nullptr;
   TCanvas *canvas_align_100files = nullptr;
+  TCanvas *canvas_adc_channel = nullptr;
+  TCanvas *canvas_waveform = nullptr;
+  TCanvas *canvas_buffer_channel = nullptr;
+  TCanvas *canvas_buffer = nullptr;
 
   //graphs
-  TGraph *graph_pps_rate = nullptr;
-  TGraph *graph_frame_rate = nullptr;
-  TGraph *graph_buffer_size = nullptr;
-  TGraph *graph_int_charge = nullptr;
+  std::map<int, TGraph*> graph_pps_rate;
+  std::map<int, TGraph*> graph_frame_rate;
+  std::map<int, TGraph*> graph_buffer_size;
+  std::map<int, TGraph*> graph_int_charge;
 
   //histograms
-  TH1F *hist_align_1file = nullptr;
-  TH1F *hist_align_10files = nullptr;
-  TH1F *hist_align_100files = nullptr;
+  std::map<int, TH1F*> hist_align_1file;
+  std::map<int,TH1F*> hist_align_5file;
+  std::map<int,TH1F*> hist_align_10files;
+  std::map<int,TH1F*> hist_align_20files;
+  std::map<int,TH1F*> hist_align_100files;
+  std::map<int,TH2F*> hist_adc_channel;
+  std::map<int,TH2F*> hist_waveform_channel;
+  std::map<int,TH2F*> hist_buffer_channel;
+  std::map<int,TH1F*> hist_buffer;
 
   //text
   TText *text_data_title = nullptr;
