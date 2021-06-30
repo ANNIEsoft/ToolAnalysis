@@ -1713,24 +1713,41 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 	}
 
 	//If we have too many errors to show them all, just display one warning.
-	if (errorCodes.size() > 9) {
+	if (errorCodes.size() > 7) {
 		boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 		struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
 		std::stringstream current_time;
 		current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
-		std::stringstream ss_error_1_temp;
-		ss_error_1_temp << "Too many errors to display! (" << current_time.str() << ")";
-		text_error_number1->SetText(0.06, 0.8, ss_error_1_temp.str().c_str());
-		text_error_number1->SetTextColor(kRed);
 
-		text_error_title->SetTextSize(0.05);
-		text_error_number1->SetTextSize(0.05);
-		text_error_title->SetNDC(1);
-		text_error_number1->SetNDC(1);
 		canvas_status_error->cd();
-		canvas_status_error->Clear();
-		text_error_title->Draw();
-		text_error_number1->Draw();
+			canvas_status_error->Clear();
+			text_error_title->SetTextSize(0.05);
+			text_error_title->SetNDC(1);
+			text_error_title->Draw();
+			for (size_t i_error = 0 ; i_error < 7; i_error++) {
+				std::stringstream ss_error_temp;
+				ss_error_temp << "Error with Code " << std::to_string(errorCodes.at(errorCodes.size()-1-i_error)) << " (" << current_time.str() << ")";
+				text_error_vector.at(i_error)->SetText(0.06, 0.8 - (i_error*0.1), ss_error_temp.str().c_str());
+				text_error_vector.at(i_error)->SetTextColor(kRed);
+				text_error_vector.at(i_error)->SetTextSize(0.05);
+				text_error_vector.at(i_error)->SetNDC(1);
+				text_error_vector.at(i_error)->Draw();
+			}
+
+
+
+
+
+
+		std::stringstream ss_error_end_temp;
+		int numberOfHiddenErrors = errorCodes.size() - 7;
+		ss_error_end_temp << "Too many errors to display! " << std::to_string(numberOfHiddenErrors) << " Errors are not shown.";
+		text_error_number9->SetText(0.06, 0.1, ss_error_end_temp.str().c_str());
+		text_error_number9->SetTextColor(kRed);
+
+		text_error_number9->SetTextSize(0.05);
+		text_error_number9->SetNDC(1);
+		text_error_number9->Draw();
 
 
 
