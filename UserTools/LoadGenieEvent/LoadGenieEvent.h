@@ -16,9 +16,11 @@
 #include <Tools/Flux/GNuMIFlux.h>
 #include <GHEP/GHepUtils.h>               // neut reaction codes
 #include <ParticleData/PDGLibrary.h>
+#include <ParticleData/PDGCodes.h>
 #include <Ntuple/NtpMCEventRecord.h>
 #include <Conventions/Constants.h>
 #include <GHEP/GHepParticle.h>
+#include <GHEP/GHepStatus.h>
 #include <EventGen/EventRecord.h>
 #include <TParticlePDG.h>
 #include <Interaction/Interaction.h>
@@ -56,9 +58,11 @@ class LoadGenieEvent: public Tool {
 	std::map<int,std::string> pdgcodetoname;
 	std::map<int,std::string> decaymap;
 	std::map<int,std::string> gnumicodetoname;
+	std::map<int,std::string> mediummap;
 	std::map<int,std::string>* GenerateGnumiMap();
 	std::map<int,std::string>* GeneratePdgMap();
 	std::map<int,std::string>* GenerateDecayMap();
+	std::map<int,std::string>* GenerateMediumMap();
 	std::string GnumiToString(int code);
 	std::string PdgToString(int code);
 	std::string DecayTypeToString(int code);
@@ -84,7 +88,8 @@ class LoadGenieEvent: public Tool {
 	std::string currentfilestring;
 	unsigned long local_entry=0;           // 
 	unsigned int tchainentrynum=0;         // 
-	
+	bool manualmatch=1;			//to be used when GENIE information is not stored properly in file	
+
 	// common input/output variables to both Robert/Zarko filesets
 	int parentpdg;
 	std::string parenttypestring;
@@ -97,12 +102,13 @@ class LoadGenieEvent: public Tool {
 	float parentprodmom_x, parentprodmom_y, parentprodmom_z;
 	Position parentprodmom;
 	int parentprodmedium;                // they're all 0
-	std::string parentprodmediumstring;  // do we even have this mapping?
+	std::string parentprodmediumstring;  // do we even have this mapping? --> There seems to be a mapping here: https://minos-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=6316&filename=flugg_doc.pdf&version=10
 	int parentpdgattgtexit;
 	std::string parenttypestringattgtexit;
 	Position parenttgtexitmom;
 	float parenttgtexitmom_x, parenttgtexitmom_y, parenttgtexitmom_z;
-	
+	int pcodes;			// Needed to evaluate whether the particle codes are stored in GEANT format or in PDG format
+
 	// Additional zarko-only information
 	// TODO fillme
 	
@@ -136,16 +142,17 @@ class LoadGenieEvent: public Tool {
 	double muonenergy=-1;
 	double muonangle=-1;
 	std::string fsleptonname; // assumed to be muon, but we should confirm
-	// these may not be properly copied... 
+	// these may not be properly copied... --> temp fix applied that seems to be working
 	int numfsprotons;
 	int numfsneutrons;
 	int numfspi0;
 	int numfspiplus;
 	int numfspiminus;
-	
+	int numfskplus;
+	int numfskminus;	
+
 #endif   // LOADED_GENIE==1
 	
 };
-
 
 #endif

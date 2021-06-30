@@ -27,7 +27,7 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	outputdir = "./MRDPlots/";
 	triggertype = "Cosmic";
 	outputfile = "mrdtrackfile";
-
+	
 	// get configuration variables for this tool
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("IsData",isData);
@@ -37,14 +37,14 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("WriteTracksToFile",writefile);
 	m_variables.Get("SelectTriggerType",triggertype_selection);
 	m_variables.Get("TriggerType",triggertype);
-
+	
 	if (triggertype == "NoLoopback") triggertype = "No Loopback";
 	std::cout <<"User Trigger type: "<<triggertype<<std::endl;
 	if (isData) {
 		Log("FindMrdTracks tool: Selected DrawTruthTracks in configfile for a data file! Setting DrawTruthTracks to false",v_error,verbosity);	
 		DrawTruthTracks = false;		//if looking at data, no possiblity to draw truth tracks
 	}
-
+	
 	// create a store for holding MRD tracks to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
 	m_data->Stores["MRDTracks"] = new BoostStore(true,0);
@@ -64,11 +64,10 @@ bool FindMrdTracks::Initialise(std::string configfile, DataModel &data){
 	// put the pointer in the CStore, so it can be retrieved by MrdTrackPlotter tool Init
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
-	m_data->CStore.Get("mrdpmtid_to_channelkey",mrdpmtid_to_channelkey);
+	m_data->CStore.Get("mrd_tubeid_to_channelkey",mrd_tubeid_to_channelkey);
 	// pass this to TrackCombiner
 	m_data->CStore.Set("DrawMrdTruthTracks",DrawTruthTracks);
 	
-
 	return true;
 }
 
@@ -99,30 +98,30 @@ bool FindMrdTracks::Execute(){
 	if (not get_ok){
 		Log("FindMrdTracks: Did not find MRDTriggerType in ANNIEEvent. Please check the settings in MRDDataDecoder+BuildANNIEEvent/LoadWCSim?",v_error,verbosity);
 	}
-        Log("FindMrdTracks tool: MRDTriggertype is "+MRDTriggertype+" (from ANNIEEvent store)",v_debug,verbosity);
-
+	Log("FindMrdTracks tool: MRDTriggertype is "+MRDTriggertype+" (from ANNIEEvent store)",v_debug,verbosity);
+	
 	// Get time cluster objects from CStore
-	// MRDTime Clusters object should be created by previous tool in ToolChain (TimeClustering) 
+	// MRDTime Clusters object should be created by previous tool in ToolChain (TimeClustering)
 	get_ok = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
-        if (not get_ok) {
-                Log("FindMrdTracks: Did not find MrdTimeClusters in CStore. Did you run the tool TimeClustering beforehand?",v_error,verbosity);
-                return true;  //it can happen that an event does not have a TDCData object if MRD is not hit
-        }
+	if (not get_ok) {
+		Log("FindMrdTracks: Did not find MrdTimeClusters in CStore. Did you run the tool TimeClustering beforehand?",v_error,verbosity);
+		return true;  //it can happen that an event does not have a TDCData object if MRD is not hit
+	}
 	int NumMrdTimeClusters;
-        get_ok = m_data->CStore.Get("NumMrdTimeClusters",NumMrdTimeClusters);
-        if (not get_ok){
-                Log("FindMrdTracks: Did not find NumMrdTimeClusters in CStore. Did you run the tool TimeClustering beforehand?",v_error,verbosity);
-                return false;
-        }
-        Log("FindMrdTracks tool: Got MrdTimeClusters of size "+std::to_string(MrdTimeClusters.size())+", with "+std::to_string(NumMrdTimeClusters)+" MrdTimeClusters.",v_message,verbosity);	
-
+	get_ok = m_data->CStore.Get("NumMrdTimeClusters",NumMrdTimeClusters);
+	if (not get_ok){
+		Log("FindMrdTracks: Did not find NumMrdTimeClusters in CStore. Did you run the tool TimeClustering beforehand?",v_error,verbosity);
+		return false;
+	}
+	Log("FindMrdTracks tool: Got MrdTimeClusters of size "+std::to_string(MrdTimeClusters.size())+", with "+std::to_string(NumMrdTimeClusters)+" MrdTimeClusters.",v_message,verbosity);
+	
 	// FIXME align types until we update MRDTrackClass/MRDSubEventClass
 	currentfilestring=MCFile;
 	runnum=(int)RunNumber;
 	subrunnum=(int)SubrunNumber;
 	eventnum=(int)EventNumber;
 	triggernum=(int)MCTriggernum;
-
+	
 	// TODO: add MCEventNum to MRDTrackClass/MRDSubEventClass
 	//
 	// Setup the vector to store the information which subevent had a track (for downstream plotting tools)
@@ -135,43 +134,43 @@ bool FindMrdTracks::Execute(){
 		
 	}
 	
-
+	
 	//verbose check whether the obtained MRD data seems sensible, MRDTimeClusters contains the indices of events belonging to that subevent
-	for (unsigned int i_cluster = 0; i_cluster < MrdTimeClusters.size(); i_cluster++){
-		if (verbosity >= v_debug) std::cout << "FindMrdTracks tool: Cluster " << i_cluster+1 << ", MrdTimeClusters.at(i_cluster).size() = " << MrdTimeClusters.at(i_cluster).size() << std::endl;
-		for (unsigned int i_entry = 0; i_entry < MrdTimeClusters.at(i_cluster).size(); i_entry++){
-			if (verbosity >= v_debug) std::cout <<MrdTimeClusters.at(i_cluster).at(i_entry)<<", ";
+	if(verbosity >= v_debug){
+		for (unsigned int i_cluster = 0; i_cluster < MrdTimeClusters.size(); i_cluster++){
+			std::cout << "FindMrdTracks tool: Cluster " << i_cluster+1 << ", MrdTimeClusters.at(i_cluster).size() = " << MrdTimeClusters.at(i_cluster).size() << std::endl;
+			for (unsigned int i_entry = 0; i_entry < MrdTimeClusters.at(i_cluster).size(); i_entry++){
+				std::cout <<MrdTimeClusters.at(i_cluster).at(i_entry)<<", ";
+			}
+			std::cout << std::endl;
 		}
-		if (verbosity >= v_debug) std::cout << std::endl;
 	}
-
+	
 	// get the time and pmts digits from the CStore and put them into separate vectors used by the track finder, clear those containers
 	mrddigittimesthisevent.clear();
 	mrddigitpmtsthisevent.clear();
-	mrddigitchargesthisevent.clear();	
-
-
+	mrddigitchargesthisevent.clear();
+	
 	///////////////////////////
 	// now do the track finding
 	
 	Log("FindMrdTracks tool: Searching for MRD tracks in event "+std::to_string(eventnum),v_message,verbosity);
-
+	
 /*
 if your class contains pointers, use TrackArray.Clear("C"). You MUST then provide a Clear() method in your class that properly performs clearing and memory freeing. (or "implements the reset procedure for pointer objects")
  see https://root.cern.ch/doc/master/classTClonesArray.html#a025645e1e80ea79b43a08536c763cae2
 */
 	int mrdeventcounter=0;
-
+	
 	//select only specific trigger types if prompted to do so
 	//this is useful if one wants to look at e.g. only beam events for the analysis or only at cosmic events for the MRD paddle calibration
 	
 	if ((triggertype_selection && MRDTriggertype == triggertype) || !triggertype_selection ){
-
-
+		
 		// no clusters found
 		if (MrdTimeClusters.size() == 0){
 			nummrdsubeventsthisevent=0;
-			nummrdtracksthisevent=0;	
+			nummrdtracksthisevent=0;
 			if(writefile){
 				nummrdsubeventsthiseventb->Fill();
 				nummrdtracksthiseventb->Fill();
@@ -190,15 +189,15 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			// skip remainder
 			// ======================================================================================
 		}
-
+		
 		m_data->CStore.Get("MrdDigitTimes",mrddigittimesthisevent);
 		m_data->CStore.Get("MrdDigitPmts",mrddigitpmtsthisevent);
-		m_data->CStore.Get("MrdDigitCharges",mrddigitchargesthisevent);	
+		m_data->CStore.Get("MrdDigitCharges",mrddigitchargesthisevent);
 		double eventendtime = *std::max_element(mrddigittimesthisevent.begin(),mrddigittimesthisevent.end());
-
+		
 		// LOOP THROUGH MRD SUBEVENTS
 		// ===========================
-			
+		
 		std::vector<int> digitidsinasubevent;
 		std::vector<int> tubeidsinasubevent;
 		std::vector<double> digitqsinasubevent;
@@ -206,19 +205,19 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 		std::vector<int> digitnumtruephots;
 		std::vector<int> particleidsinasubevent;
 		std::vector<double> photontimesinasubevent;
-
+		
 		Log("FindMrdTracks tool: "+std::to_string(MrdTimeClusters.size())+" subevents this event!",v_message,verbosity);
-	
+		
 		// Now we need to sort the digits into the subevents they belong to:
 		// Loop over subevents
-
+		
 		int mrdtrackcounter=0;   // not all the subevents will have a track
 		
 		for(unsigned int thiscluster=0; thiscluster<MrdTimeClusters.size(); thiscluster++){
-
+			
 			std::vector<int> single_mrdcluster = MrdTimeClusters.at(thiscluster);
 			int numdigits = single_mrdcluster.size();
-
+			
 			for(int thisdigit=0;thisdigit<numdigits;thisdigit++){
 				int digit_value = single_mrdcluster.at(thisdigit); // digit value is index of digit in TDC hits
 				// TimeClustering tool builds clusters from both MRD and Veto hits,
@@ -226,12 +225,13 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				// (they would be out of bounds in the expected maps...)
 				// so convert back to channelkey, get the Detector, and check whether it's MRD or Veto
 				int wcsimid = mrddigitpmtsthisevent.at(digit_value);
-				if(mrdpmtid_to_channelkey.count(wcsimid)==0){
+				if (!isData) wcsimid++;		//mrd_tubeid_to_channelkey map is 1-based in MC
+				if(mrd_tubeid_to_channelkey.count(wcsimid)==0){
 					Log("FindMrdTracks tool: Error! WCSimID "+to_string(wcsimid)
-						+" was not in the mrdpmtid_to_channelkey map!",v_error,verbosity);
+						+" was not in the mrd_tubeid_to_channelkey map!",v_error,verbosity);
 					continue;
 				} else {
-					unsigned long chankey = mrdpmtid_to_channelkey.at(wcsimid);
+					unsigned long chankey = mrd_tubeid_to_channelkey.at(wcsimid);
 					Detector* thedetector = geo->ChannelToDetector(chankey);
 					if(thedetector==nullptr){
 						Log("FindMrdTracks Tool: Null detector in TDCData!",v_error,verbosity);
@@ -243,19 +243,20 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				tubeidsinasubevent.push_back(mrddigitpmtsthisevent.at(digit_value));
 				digittimesinasubevent.push_back(mrddigittimesthisevent.at(digit_value));
 				digitqsinasubevent.push_back(mrddigitchargesthisevent.at(digit_value));
-
+				
 			}
-
+			
 			digitnumtruephots.assign(digittimesinasubevent.size(),0);      // FIXME replacement of above
 			photontimesinasubevent.assign(digittimesinasubevent.size(),0); // FIXME replacement of above
-			particleidsinasubevent.assign(digittimesinasubevent.size(),0); // FIXME replacement of above		
-
+			particleidsinasubevent.assign(digittimesinasubevent.size(),0); // FIXME replacement of above
+			
 			// Just initialize MCTruth variables, as before
 			std::vector<std::pair<TVector3,TVector3>> truetrackvertices;
 			std::vector<Int_t> truetrackpdgs;
+			std::vector<std::pair<Position,Position>> truetrackvertices_position;			
 
 			// In case we want to overlay the truth track in MC, also load the MCParticle information
-
+			
 			if (DrawTruthTracks){
 				int numtracks = MCParticles->size();
 				// a vector to record the subevent number for each track, to know if we've allocated it yet.
@@ -263,7 +264,6 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 				std::vector<float> cluster_starttimes;
 				m_data->CStore.Get("ClusterStartTimes",cluster_starttimes);
 				float endtime = (thiscluster<(MrdTimeClusters.size()-1)) ?  cluster_starttimes.at(thiscluster+1) : (eventendtime+1.);
-		
 				for(int truetracki=0; truetracki<numtracks; truetracki++){
 					MCParticle nextrack = MCParticles->at(truetracki);
 					if((subtrackthisevent.at(truetracki)<0)&&(nextrack.GetStartTime()<endtime)
@@ -273,19 +273,24 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 						Position stopvp = nextrack.GetStopVertex();
 						TVector3 stopv(stopvp.X()*100.,stopvp.Y()*100.,stopvp.Z()*100.);
 						truetrackvertices.push_back({startv,stopv});
+						truetrackvertices_position.push_back({startvp,stopvp});
+						if (verbosity >= v_message) std::cout <<"FindMrdTracks tool: True start vtx: ("<<startvp.X()<<","<<startvp.Y()<<","<<startvp.Z()<<"), true end vtx: ("<<stopvp.X()<<","<<stopvp.Y()<<","<<stopvp.Z()<<")"<<std::endl;
 						truetrackpdgs.push_back(nextrack.GetPdgCode());
 						subtrackthisevent.at(truetracki)=thiscluster;
 					}
 				}
+
+				m_data->CStore.Set("TrueTrackVertices",truetrackvertices_position);
+				m_data->CStore.Set("TrueTrackPDGs",truetrackpdgs);
 			}
 			
 			Log("FindMrdTracks tool: Constructing subevent "+std::to_string(mrdeventcounter)+" with "+std::to_string(digitidsinasubevent.size())+" digits",v_message,verbosity);
 			cMRDSubEvent* currentsubevent = new((*SubEventArray)[mrdeventcounter]) cMRDSubEvent(mrdeventcounter, currentfilestring, runnum, eventnum, triggernum, digitidsinasubevent, tubeidsinasubevent, digitqsinasubevent, digittimesinasubevent, digitnumtruephots, photontimesinasubevent, particleidsinasubevent, truetrackvertices, truetrackpdgs);
-			if (currentsubevent->GetTracks()->size() > 0) track_subevs.push_back(mrdeventcounter);	//annotate the current subevent number to have a track
+			if (currentsubevent->GetTracks()->size() > 0) track_subevs.push_back(mrdeventcounter); //annotate the current subevent number to have a track
 			mrdeventcounter++;
 			mrdtrackcounter+=currentsubevent->GetTracks()->size();
 			Log("FindMrdTracksData: Subevent "+std::to_string(thiscluster)+" found "+std::to_string(currentsubevent->GetTracks()->size())+" tracks",v_message,verbosity);
-
+			
 			digitidsinasubevent.clear();
 			tubeidsinasubevent.clear();
 			digitqsinasubevent.clear();
@@ -293,9 +298,9 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			particleidsinasubevent.clear();
 			photontimesinasubevent.clear();
 			digitnumtruephots.clear();
-
+		
 		}
-
+		
 		nummrdsubeventsthisevent=mrdeventcounter;
 		nummrdtracksthisevent=mrdtrackcounter;
 		
@@ -304,12 +309,12 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			nummrdtracksthiseventb->Fill();
 			subeventsinthiseventb->Fill();
 		}
-			
+		
 	} else {
 		//did not pass the triggertype selection cut
- 	
+		
 		nummrdsubeventsthisevent=0;
-                nummrdtracksthisevent=0;
+		nummrdtracksthisevent=0;
 		if(writefile){
 			nummrdsubeventsthiseventb->Fill();
 			nummrdtracksthiseventb->Fill();
@@ -319,18 +324,18 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			mrdtree->Write("",TObject::kOverwrite);
 			gROOT->cd();
 		}
-
+		
 		Log("FindMrdTracks tool: Trigger type selection cuts were not passed; returning",v_message,verbosity);
 		return true;
-
+		
 		// XXX Note for other tools: we've written files and updated BoostStore SubEvent/Track counts to 0.
 		// XXX Other tools should check these before processing the MrdTracks BoostStore or MrdSubEventTClonesArray
 		// XXX since those are not necessarily cleared!
 		// skip remainder
 		// =====================================================================================
-
+	
 	}
-
+	
 	//if(eventnum==735){ assert(false); }
 	//if(nummrdtracksthisevent) std::this_thread::sleep_for (std::chrono::seconds(5));
 	
@@ -473,6 +478,9 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 //			thisTrackAsBoostStore->Set("DigiNumPhots",atrack->GetDigiNumPhots());
 //			thisTrackAsBoostStore->Set("DigiPhotTs",atrack->GetDigiPhotTs());
 //			thisTrackAsBoostStore->Set("DigiPhotParents",atrack->GetDigiPhotParents());
+			
+			// differentiate tracks found with this algorithm from those found by the TrackCombiner tool
+			thisTrackAsBoostStore->Set("LongTrack",1);
 		}
 	}
 	std::cout <<"Setting MRDTracks"<<std::endl;
@@ -486,20 +494,19 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 	std::cout <<"Setting subevptr in CStore"<<std::endl;
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
-
+	
 	// Set the information which subevent had a track
 	m_data->CStore.Set("TracksSubEvs",track_subevs);
 	
 	//The following is just for debugging purposes
 	//std::cout <<"FindMrdTracks tool: List of objects (End of Execute): "<<std::endl;
-        //gObjectTable->Print();
-
+	//gObjectTable->Print();
+	
 	return true;
 }
 
 bool FindMrdTracks::Finalise(){
-
-
+	
 	// close output file
 	if(mrdtrackfile){
 		mrdtrackfile->Close();

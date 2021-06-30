@@ -1,0 +1,30 @@
+# any variables here
+verbosity 1
+
+#draw histograms of TDC and ADC timestamps to ensure they're aligned
+drawHistos 1
+
+# directory for output files
+plotDirectory .
+
+# selection criteria for coincident events between upstream veto layer
+# and some downstream component, to select through-going muons
+# we always require at least one hit on the upstream veto layer,
+# but can then require coincidence with a tank event, defined by:
+min_unique_water_pmts 10
+# and
+min_tank_charge 0.5  # units nC
+# or we can require coincidence with an MRD event, defined by:
+min_mrdl1_pmts 1
+# and
+min_mrdl2_pmts 1
+
+# these coincidences must occur within a time window of:
+coincidence_tolerance 200  # units ns
+# with the window start defined by the time of the earliest hit
+# in the upstream veto layer, with a pre-trigger of:
+pre_trigger_ns 0   # units ns, POSITIVE
+
+# specify, or use 'auto' to derive from input filename
+# e.g. if input is RAW
+outputfilename auto

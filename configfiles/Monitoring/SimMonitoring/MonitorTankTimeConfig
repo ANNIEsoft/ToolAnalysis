@@ -1,0 +1,16 @@
+# PMTMonitoring config file
+
+verbose 0
+#OutputPath ./monitoringplots/
+OutputPath fromStore
+ActiveSlots configfiles/Monitoring/PMT_activeslots.txt #define which channels of the crate are connected
+SignalChannels configfiles/Monitoring/PMT_signalch.txt #define RWM and BRF channels
+DisabledChannels configfiles/Monitoring/PMT_disabledch.txt #define RWM and BRF channels
+StartTime 1970/1/1 #start time for the conversion of timestamps into dates
+PlotConfiguration configfiles/Monitoring/TankTimePlotConfig.txt #file containing instructions what to plot
+PathMonitoring ./monitoringfiles/	#path at which the monitoring plots are going to be saved
+ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
+UpdateFrequency 1. #specify frequency for the file history plot, in mins
+ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
+DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
+DrawSingle 0	#specify whether to save single channel histograms / graphs or not

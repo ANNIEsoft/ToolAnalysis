@@ -1,0 +1,24 @@
+# DataSummary config file
+
+verbosity 10
+DataPath /pnfs/annie/persistent/users/pershint/ProcessedData/BeamData2019_2020/BeamRuns_FirstPass
+
+# input files will be found by a regex search. All subdirectories within DataPath will be searched.
+# Filenames must at minimum end with 'R**S**p**', which is used to extract the run, subrun and part numbers
+# To restrict the search further a regular expression 'InputFilePattern' may be given.
+# filenames must then be of the form [anything][InputFilePattern][RXXXSYYYpZZZ]
+InputFilePattern ProcessedRawData_TankMRD
+# /pnfs/annie/persistent/users/pershint/ProcessedData/BeamData2019_2020/BeamRuns_FirstPass/ProcessedRawData_TankMRDR1623S0p2
+
+# specify range of data to analyse. Use -1 to match anything.
+StartRun 1628
+StartSubRun 0
+StartPart 0
+EndRun -1
+EndSubRun -1
+EndPart -1
+
+# ROOT file output
+OutputFileDir .
+OutputFileName DataSummary.root
+

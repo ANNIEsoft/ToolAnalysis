@@ -36,11 +36,13 @@ class DigitBuilder: public Tool {
   ///
   /// \param[in] bool usetruth: buld event from MC simulation if usetruth=1
    bool BuildMCRecoDigit();
- 	
+   bool BuildDataRecoDigit();	///> Same as BuildMRDRegoDigit, but for data. Uses clusters found by the ClusterFinder tool. 
+	
   /// \brief Build PMT digits
   ///
   /// It adds PMT hits to the RecoDigit list
    bool BuildMCPMTRecoDigit();
+   bool BuildDataPMTRecoDigit();   ///> Same as BuildMCPMTRecoDigit, but applicable for data.
  	
   /// \brief Build LAPPD digits
   ///
@@ -77,6 +79,8 @@ class DigitBuilder: public Tool {
   bool fIsMC;     ///< Configure whether to load from MCHits or Hits in boost store 
   std::string  fLAPPDIDFile="none";
   double fDigitChargeThr;
+  std::string path_chankeymap;
+  std::string singlePEgains;
 
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
   TRandom3 frand;  ///< Random number generator
@@ -102,12 +106,18 @@ class DigitBuilder: public Tool {
   std::map<unsigned long,std::vector<MCHit>>* fMCPMTHits=nullptr;             ///< PMT hits
   std::map<unsigned long,std::vector<MCLAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
   std::map<unsigned long,std::vector<MCHit>>* fTDCData=nullptr;            ///< MRD & veto hits
+  std::map<double,std::vector<Hit>>* m_all_clusters=nullptr;            ///< Clusters, from ClusterFinder tool
+  std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey=nullptr;         ///< Chankeys corresponding to clusters, from ClusterFinder tool
+
+  std::map<unsigned long, double> pmt_gains;
+
   // retrieved from CStore, for mapping WCSim LAPPD IDs to unique detectorkey
   // Note: WCSim doesn't have "striplines", so while the LoadWCSim tool generates
   // the correct number of Channel (stripline) objects, all hits are on the 
   // first Channel (stripline) of the Detector (tile).
   std::map<unsigned long,int> detectorkey_to_lappdid;
   std::map<unsigned long,int> channelkey_to_pmtid;
+  std::map<int,unsigned long> pmtid_to_channelkey;
 };
 
 

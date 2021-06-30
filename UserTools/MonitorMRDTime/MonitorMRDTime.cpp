@@ -383,6 +383,13 @@ bool MonitorMRDTime::Finalise(){
   }
   delete hist_tdc;
   delete hist_tdc_cluster;
+  delete hist_tdc_cluster_20;
+  delete hist_tdc_beam;
+  delete hist_tdc_cluster_beam;
+  delete hist_tdc_cluster_beam_20;
+  delete hist_tdc_cosmic;
+  delete hist_tdc_cluster_cosmic;
+  delete hist_tdc_cluster_cosmic_20;
   delete log_files_mrd;
   delete rate_crate1;
   delete rate_crate2;
@@ -523,6 +530,7 @@ void MonitorMRDTime::ReadInData(){
     timestamp_file.at(i_channel).clear();
   }
   tdc_file_times.clear();
+  tdc_file_ch.clear();
 
   if (verbosity > 1) std::cout <<"MonitorMRDTime: ReadInData..."<<std::endl;
   t_file_end = 0;
@@ -535,6 +543,7 @@ void MonitorMRDTime::ReadInData(){
 
     //initialize vector for event times
     std::vector<int> tdc_file_times_single;
+    std::vector<int> tdc_file_ch_single;
 
     //get MRDout data
     MRDdata->GetEntry(i_event);
@@ -594,6 +603,7 @@ void MonitorMRDTime::ReadInData(){
       timestamp_file.at(ch).push_back(MRDout.TimeStamp);
       vector_nhits[ch]++;
       tdc_file_times_single.push_back(MRDout.Value.at(i_entry));
+      tdc_file_ch_single.push_back(ch);
 
       for (unsigned int i_trigger = 0; i_trigger < loopback_name.size(); i_trigger++){
         if (MRDout.Crate.at(i_entry) == loopback_crate.at(i_trigger) && MRDout.Slot.at(i_entry) == loopback_slot.at(i_trigger) && MRDout.Channel.at(i_entry) == loopback_channel.at(i_trigger)) no_loopback = false;
@@ -606,6 +616,7 @@ void MonitorMRDTime::ReadInData(){
     }
 
     tdc_file_times.push_back(tdc_file_times_single);
+    tdc_file_ch.push_back(tdc_file_ch_single);
 
     //clear MRDout member vectors afterwards
     MRDout.Value.clear();
@@ -702,8 +713,15 @@ void MonitorMRDTime::WriteToFile(){
   //if data is already written to DB/File, do not write it again
   if (omit_entries) {
 
-    //don't write file again, but still delete TFile and TTree object!!!
+    //don't write file again, but still delete TFile and TTree object!!! (and vectors)
     f->Close();
+    delete crate;
+    delete slot;
+    delete channel;
+    delete tdc;
+    delete rms;
+    delete rate;
+    delete channelcount;
     delete f;
 
     gROOT->cd();
@@ -906,9 +924,31 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("nevents",&nevents);
 
         nentries_tree = t->GetEntries();
-        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
 
+        //Sort timestamps for the case that they are not in order
+        //
+        std::vector<ULong64_t> vector_timestamps;
+        std::map<ULong64_t,int> map_timestamp_entry;
+        for (int i_entry = 0; i_entry < nentries_tree; i_entry++){
           t->GetEntry(i_entry);
+          if (t_start >= timestamp_start && t_end <= timestamp_end){
+            vector_timestamps.push_back(t_start);
+            map_timestamp_entry.emplace(t_start,i_entry);
+          }
+        }
+
+        std::sort(vector_timestamps.begin(), vector_timestamps.end());
+        std::vector<int> vector_sorted_entry;
+
+        for (int i_entry = 0; i_entry < (int) vector_timestamps.size(); i_entry++){
+          vector_sorted_entry.push_back(map_timestamp_entry.at(vector_timestamps.at(i_entry)));
+        }
+
+        for (int i_entry = 0; i_entry < (int) vector_sorted_entry.size(); i_entry++){
+
+          int next_entry = vector_sorted_entry.at(i_entry);
+
+          t->GetEntry(next_entry);
           if (t_start >= timestamp_start && t_end <= timestamp_end){
             tdc_plot.push_back(*tdc);
             rms_plot.push_back(*rms);
@@ -1135,6 +1175,27 @@ void MonitorMRDTime::InitializeVectors(){
   hist_tdc_cluster = new TH1F("hist_tdc_cluster","TDC Cluster (last file)",20,0,1000);
   hist_tdc_cluster->GetXaxis()->SetTitle("TDC");
   hist_tdc_cluster->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster_20 = new TH1F("hist_tdc_cluster_20","TDC Cluster (last 20 files)",20,0,1000);
+  hist_tdc_cluster_20->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster_20->GetYaxis()->SetTitle("#");
+  hist_tdc_beam = new TH1F("hist_tdc_beam","TDC Beam (last file)",500,0,1000);
+  hist_tdc_beam->GetXaxis()->SetTitle("TDC");
+  hist_tdc_beam->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster_beam = new TH1F("hist_tdc_cluster_beam","TDC Cluster Beam (last file)",20,0,1000);
+  hist_tdc_cluster_beam->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster_beam->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster_beam_20 = new TH1F("hist_tdc_cluster_beam_20","TDC Cluster Beam (last 20 files)",20,0,1000);
+  hist_tdc_cluster_beam_20->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster_beam_20->GetYaxis()->SetTitle("#");
+  hist_tdc_cosmic = new TH1F("hist_tdc_cosmic","TDC Cosmic (last file)",500,0,1000);
+  hist_tdc_cosmic->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cosmic->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster_cosmic = new TH1F("hist_tdc_cluster_cosmic","TDC Cluster Cosmic (last file)",20,0,1000);
+  hist_tdc_cluster_cosmic->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster_cosmic->GetYaxis()->SetTitle("#");
+  hist_tdc_cluster_cosmic_20 = new TH1F("hist_tdc_cluster_cosmic_20","TDC Cluster Cosmic (last 20 files)",20,0,1000);
+  hist_tdc_cluster_cosmic_20->GetXaxis()->SetTitle("TDC");
+  hist_tdc_cluster_cosmic_20->GetYaxis()->SetTitle("#");
 
   //-------------------------------------------------------
   //------------Pie charts---------------------------------
@@ -1882,10 +1943,13 @@ void MonitorMRDTime::DrawTDCHistogram(){
   std::stringstream end_time;
   end_time << endtime_tm.tm_year+1900<<"/"<<endtime_tm.tm_mon+1<<"/"<<endtime_tm.tm_mday<<"-"<<endtime_tm.tm_hour<<":"<<endtime_tm.tm_min<<":"<<endtime_tm.tm_sec;
 
+  std::vector<int> coinc_times_mrd;	//Introduce a vector to store found coincidence times
+  std::vector<int> coinc_times_mrd_beam;	//Introduce a vector to store found coincidence times (Beam events)
+  std::vector<int> coinc_times_mrd_cosmic;	//Introduce a vector to store found coincidence times (Cosmic events)
+
   canvas_tdc->cd();
   canvas_tdc->Clear();
   canvas_tdc->SetLogy();
-
 
   for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
       if (TotalChannel_to_Crate[i_channel] == loopback_crate.at(0) && TotalChannel_to_Slot[i_channel] == loopback_slot.at(0) && TotalChannel_to_Channel[i_channel] == loopback_channel.at(0)) continue; //Omit cosmic loopback signal
@@ -1895,9 +1959,29 @@ void MonitorMRDTime::DrawTDCHistogram(){
     }
   }
 
-  
+  std::vector<bool> is_beam;
+  std::vector<bool> is_cosmic;  
+
   for (unsigned int i_entry=0; i_entry < tdc_file_times.size(); i_entry++){
-   std::sort(tdc_file_times.at(i_entry).begin(),tdc_file_times.at(i_entry).end());
+    std::sort(tdc_file_times.at(i_entry).begin(),tdc_file_times.at(i_entry).end());
+    bool cosmic = false;
+    bool beam = false;
+    for (int i_t=0; i_t < (int) tdc_file_times.at(i_entry).size(); i_t++){
+      int channel = tdc_file_ch.at(i_entry).at(i_t);
+      if (TotalChannel_to_Crate[channel] == loopback_crate.at(1) && TotalChannel_to_Slot[channel] == loopback_slot.at(1) && TotalChannel_to_Channel[channel] == loopback_channel.at(1)) beam = true;
+      if (TotalChannel_to_Crate[channel] == loopback_crate.at(0) && TotalChannel_to_Slot[channel] == loopback_slot.at(0) && TotalChannel_to_Channel[channel] == loopback_channel.at(0)) cosmic = true;
+    }
+    if (beam && cosmic) {
+      is_cosmic.push_back(1);
+      is_beam.push_back(0);
+    }
+    else if (beam) {
+      is_cosmic.push_back(0);
+      is_beam.push_back(1);
+    } else {
+      is_cosmic.push_back(0);
+      is_beam.push_back(0);
+    }
   }
 
   int tdc_start=0;
@@ -1908,7 +1992,11 @@ void MonitorMRDTime::DrawTDCHistogram(){
 
   for (unsigned int i_entry = 0; i_entry < tdc_file_times.size(); i_entry++){
    std::vector<int> tdc_times = tdc_file_times.at(i_entry);
+   bool beam = is_beam.at(i_entry);
+   bool cosmic = is_cosmic.at(i_entry);
    for (unsigned int i_tdc=0; i_tdc < tdc_times.size(); i_tdc++){
+     if (beam) hist_tdc_beam->Fill(tdc_times.at(i_tdc));
+     else if (cosmic) hist_tdc_cosmic->Fill(tdc_times.at(i_tdc));
      if (i_tdc == 0) {
 	tdc_start = tdc_times.at(0);
         tdc_current = tdc_times.at(0);
@@ -1922,6 +2010,14 @@ void MonitorMRDTime::DrawTDCHistogram(){
 	  if (n_channels >= min_cluster){
 	    for (int i_ch = 0; i_ch < n_channels; i_ch++){
 	      hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+              coinc_times_mrd.push_back(tdc_times.at(i_tdc-i_ch));
+              if (cosmic){
+	        hist_tdc_cluster_cosmic->Fill(tdc_times.at(i_tdc-i_ch));
+                coinc_times_mrd_cosmic.push_back(tdc_times.at(i_tdc-i_ch));
+              } else if (beam){
+	        hist_tdc_cluster_beam->Fill(tdc_times.at(i_tdc-i_ch));
+                coinc_times_mrd_beam.push_back(tdc_times.at(i_tdc-i_ch));
+              }
             }
           }
 	}
@@ -1929,9 +2025,17 @@ void MonitorMRDTime::DrawTDCHistogram(){
         if (n_channels >= min_cluster){
           for (int i_ch = 1; i_ch <= n_channels; i_ch++){
             hist_tdc_cluster->Fill(tdc_times.at(i_tdc-i_ch));
+            coinc_times_mrd.push_back(tdc_times.at(i_tdc-i_ch));
+            if (cosmic){
+              hist_tdc_cluster_cosmic->Fill(tdc_times.at(i_tdc-i_ch));
+              coinc_times_mrd_cosmic.push_back(tdc_times.at(i_tdc-i_ch));
+            } else if (beam){
+              hist_tdc_cluster_beam->Fill(tdc_times.at(i_tdc-i_ch));
+              coinc_times_mrd_beam.push_back(tdc_times.at(i_tdc-i_ch));
+            }
 	  }
         }
-        n_channels = 0;
+        n_channels = 1;
         tdc_current = tdc_times.at(i_tdc);
       }
     }  
@@ -1953,6 +2057,98 @@ void MonitorMRDTime::DrawTDCHistogram(){
   ss_tdc_hist.str("");
   ss_tdc_hist << outpath << "MRDTDCHist_Cluster_lastFile."<<img_extension;
   canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Beam "<<end_time.str()<<" (last file) ";
+  hist_tdc_beam->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_beam->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHistBeam_lastFile."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_beam->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster Beam "<<end_time.str()<<" (last file) ";
+  hist_tdc_cluster_beam->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster_beam->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_ClusterBeam_lastFile."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster_beam->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cosmic "<<end_time.str()<<" (last file) ";
+  hist_tdc_cosmic->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cosmic->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHistCosmic_lastFile."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cosmic->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster Cosmic "<<end_time.str()<<" (last file) ";
+  hist_tdc_cluster_cosmic->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster_cosmic->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_ClusterCosmic_lastFile."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster_cosmic->Reset();
+  canvas_tdc->Clear();
+  
+  overall_mrd_coinc_times.push_back(coinc_times_mrd);
+  overall_mrd_coinc_times_beam.push_back(coinc_times_mrd_beam);
+  overall_mrd_coinc_times_cosmic.push_back(coinc_times_mrd_cosmic);
+  while (overall_mrd_coinc_times.size() > 20){
+    overall_mrd_coinc_times.erase(overall_mrd_coinc_times.begin());
+  }
+  while (overall_mrd_coinc_times_beam.size() > 20){
+    overall_mrd_coinc_times_beam.erase(overall_mrd_coinc_times_beam.begin());
+  }
+  while (overall_mrd_coinc_times_cosmic.size() > 20){
+    overall_mrd_coinc_times_cosmic.erase(overall_mrd_coinc_times_cosmic.begin());
+  }
+  for (int i_coinc = 0; i_coinc < (int) overall_mrd_coinc_times.size(); i_coinc++){
+    std::vector<int> single_coinc_times = overall_mrd_coinc_times.at(i_coinc);
+    std::vector<int> single_coinc_times_beam = overall_mrd_coinc_times_beam.at(i_coinc);
+    std::vector<int> single_coinc_times_cosmic = overall_mrd_coinc_times_cosmic.at(i_coinc);
+    for (int i_hit=0; i_hit < (int) single_coinc_times.size(); i_hit++){
+      hist_tdc_cluster_20->Fill(single_coinc_times.at(i_hit));
+    }
+    for (int i_hit=0; i_hit < (int) single_coinc_times_beam.size(); i_hit++){
+      hist_tdc_cluster_beam_20->Fill(single_coinc_times_beam.at(i_hit));
+    }
+    for (int i_hit=0; i_hit < (int) single_coinc_times_cosmic.size(); i_hit++){
+      hist_tdc_cluster_cosmic_20->Fill(single_coinc_times_cosmic.at(i_hit));
+    }
+  }
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster "<<end_time.str()<<" (last 20 files) ";
+  hist_tdc_cluster_20->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster_20->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_Cluster_last20Files."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster_20->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster Beam "<<end_time.str()<<" (last 20 files) ";
+  hist_tdc_cluster_beam_20->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster_beam_20->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_ClusterBeam_last20Files."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster_beam_20->Reset();
+  canvas_tdc->Clear();
+  ss_tdc_hist_title.str("");
+  ss_tdc_hist_title << "TDC Cluster Cosmic "<<end_time.str()<<" (last 20 files) ";
+  hist_tdc_cluster_cosmic_20->SetTitle(ss_tdc_hist_title.str().c_str());
+  hist_tdc_cluster_cosmic_20->Draw();
+  ss_tdc_hist.str("");
+  ss_tdc_hist << outpath << "MRDTDCHist_ClusterCosmic_last20Files."<<img_extension;
+  canvas_tdc->SaveAs(ss_tdc_hist.str().c_str());
+  hist_tdc_cluster_cosmic_20->Reset();
+  canvas_tdc->Clear();
 
 }
 

@@ -212,8 +212,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	trackid_to_mcparticleindex = new std::map<int,int>;
 	
 	//anniegeom->GetChannel(0); // trigger InitChannelMap
-
-	m_data->CStore.Set("UserEvent",false);			//enables the ability for other tools to select a specific event number
+	
+	m_data->CStore.Set("UserEvent",false);   //enables the ability for other tools to select a specific event number
 	triggers_event = 0;
 	
 	return true;
@@ -224,13 +224,13 @@ bool LoadWCSim::Execute(){
 	
 	// probably not necessary, clears the map for this entry. We're going to re-Set the event entry anyway...
 	//m_data->Stores.at("ANNIEEvent")->Clear();
-
+	
 	//check if another tool has specified a specific evnumber to load (currently e.g. the EventDisplay has the ability to do that)
 	bool user_event;
 	m_data->CStore.Get("UserEvent",user_event);
 	if (user_event){
 		m_data->CStore.Set("UserEvent",false);
-		MCTriggernum = 0;			//look at first trigger for user-specified event numbers
+		MCTriggernum = 0;   //look at first trigger for user-specified event numbers
 		int user_evnum; 
 		uint16_t currentTriggernum;
 		bool check_further_triggers=false;
@@ -246,7 +246,7 @@ bool LoadWCSim::Execute(){
 				//there is a further trigger in the previous event, load the entry
 				MCEventNum = user_evnum - 1;
 				MCTriggernum=currentTriggernum;
-			}		
+			}
 		}
 		// Pre-load entry so we can stop the loop if it this was the last one in the chain
 		if(MCEventNum>=MaxEntries && MaxEntries>0){
@@ -278,6 +278,8 @@ bool LoadWCSim::Execute(){
 	
 	MCHits->clear();
 	TDCData->clear();
+	mrd_firstlayer=false;
+	mrd_lastlayer=false;	
 
 	triggers_event = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
 	
@@ -310,24 +312,18 @@ bool LoadWCSim::Execute(){
 		if(MCTriggernum==0){
 			MCParticles->clear();
 			trackid_to_mcparticleindex->clear();
-			ParticleId_to_TankTubeIds->clear();
-			ParticleId_to_MrdTubeIds->clear();
-			ParticleId_to_VetoTubeIds->clear();
-			ParticleId_to_TankCharge->clear();
-			ParticleId_to_MrdCharge->clear();
-			ParticleId_to_VetoCharge->clear();
 			primarymuonindex=-1;
 			
 			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
-			if(verbosity>3) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+			/*if(verbosity>3)*/ cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
 			m_data->CStore.Set("GenieEntry",genieentry);
 			
 			for(int trigi=0; trigi<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); trigi++){
 				
 				WCSimRootTrigger* atrigtt = WCSimEntry->wcsimrootevent->GetTrigger(trigi);
-				if(verbosity>1) cout<<"getting "<<atrigtt->GetNtrack()<<" tracks"<<endl;
+				if(verbosity>1) cout<<"getting "<<atrigtt->GetNtrack()<<" tracks from trigger "<<trigi<<endl;
 				for(int tracki=0; tracki<atrigtt->GetNtrack(); tracki++){
 					if(verbosity>2) cout<<"getting track "<<tracki<<endl;
 					WCSimRootTrack* nextrack = (WCSimRootTrack*)atrigtt->GetTracks()->At(tracki);
@@ -354,7 +350,35 @@ bool LoadWCSim::Execute(){
 					
 					tracktype startstoptype = tracktype::UNDEFINED;
 					//MC particle times are relative to the trigger time
-					if(nextrack->GetFlag()!=0) continue; // flag 0 only is normal particles: excludes neutrino
+					if(nextrack->GetFlag()!=0) {
+						if (nextrack->GetFlag()==-1){
+							MCParticle neutrino(
+							nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
+							Position(nextrack->GetStart(0) / 100.,
+									 nextrack->GetStart(1) / 100.,
+									 nextrack->GetStart(2) / 100.),
+							Position(nextrack->GetStop(0) / 100.,
+									 nextrack->GetStop(1) / 100.,
+									 nextrack->GetStop(2) / 100.),
+							//MC particle times now stored relative to the trigger time
+							(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
+							(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
+							Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
+							(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
+								 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
+								 pow(nextrack->GetStop(2)-nextrack->GetStart(2),2.))) / 100.,
+							startstoptype,
+							nextrack->GetId(),
+							nextrack->GetParenttype(),
+							nextrack->GetFlag(),
+							trigi);
+
+							//Set the neutrino as its own particle
+							m_data->Stores["ANNIEEvent"]->Set("NeutrinoParticle",neutrino);
+							
+							continue; // flag 0 only is normal particles: excludes neutrino
+						}
+					}
 					MCParticle thisparticle(
 						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 						Position(nextrack->GetStart(0) / 100.,
@@ -373,7 +397,8 @@ bool LoadWCSim::Execute(){
 						startstoptype,
 						nextrack->GetId(),
 						nextrack->GetParenttype(),
-						nextrack->GetFlag());
+						nextrack->GetFlag(),
+						trigi);
 					// not currently in constructor call, but we now have it in latest WCSim files
 					// XXX this will fall over with older WCSim files, whose WCSimLib doesn't have this method!
 					thisparticle.SetTankExitPoint(Position(nextrack->GetTankExitPoint(0)/ 100.,
@@ -555,7 +580,7 @@ bool LoadWCSim::Execute(){
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigm);
 			
 			MCHit nexthit(key, digittime, digiq, parents);
-			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
+			if(TDCData->count(key)==0) {TDCData->emplace(key, std::vector<MCHit>{nexthit}); if (Mrd_Chankey_Layer.at(key)==0) mrd_firstlayer=true; if (Mrd_Chankey_Layer.at(key)==10) mrd_lastlayer=true;}
 			else TDCData->at(key).push_back(nexthit);
 			if(verbosity>2) cout<<"digit added"<<endl;
 		}
@@ -611,19 +636,26 @@ bool LoadWCSim::Execute(){
 		if(verbosity>2) cout<<"setting triggerdata time to "<<EventTimeNs<<"ns"<<endl;
 		TriggerData->front().SetTime(EventTimeNs);
 		
-		// copy over additional information about tracks and which tank/mrd/veto PMTs they hit
-		if(MCTriggernum==0){
-			// populate the maps of additional MC Truth information
-			// ParticleId_to_TankTubeIds is a std::map<ParticleId,std::map<ChannelKey,TotalCharge>>
-			// where TotalCharge is the total charge from that particle on that tube
-			// (in the event that the particle generated several hits on the tube)
-			// ParticleId_to_TankCharge is a std::map<ParticleId,TotalCharge> 
-			// where TotalCharge is summed over all digits, on all pmts, which contained
-			// light from that particle
-			MakeParticleToPmtMap(atrigt, firsttrigt, ParticleId_to_TankTubeIds, ParticleId_to_TankCharge, pmt_tubeid_to_channelkey);
-			MakeParticleToPmtMap(atrigm, firsttrigm, ParticleId_to_MrdTubeIds, ParticleId_to_MrdCharge, mrd_tubeid_to_channelkey);
-			MakeParticleToPmtMap(atrigv, firsttrigv, ParticleId_to_VetoTubeIds, ParticleId_to_VetoCharge, facc_tubeid_to_channelkey);
-		}
+		// update the information about tracks and which tank/mrd/veto PMTs they hit
+		// this needs updating with each MC trigger, as digits are grouped into MC trigger
+		// so these maps will then only contain the digits respective particles create
+		// in the active trigger
+		// 
+		// ParticleId_to_TankTubeIds is a std::map<ParticleId,std::map<ChannelKey,TotalCharge>>
+		// where TotalCharge is the total charge from that particle on that tube
+		// (in the event that the particle generated several hits on the tube)
+		// ParticleId_to_TankCharge is a std::map<ParticleId,TotalCharge> 
+		// where TotalCharge is summed over all digits, on all pmts, which contained
+		// light from that particle
+		ParticleId_to_TankTubeIds->clear();
+		ParticleId_to_MrdTubeIds->clear();
+		ParticleId_to_VetoTubeIds->clear();
+		ParticleId_to_TankCharge->clear();
+		ParticleId_to_MrdCharge->clear();
+		ParticleId_to_VetoCharge->clear();
+		MakeParticleToPmtMap(atrigt, firsttrigt, ParticleId_to_TankTubeIds, ParticleId_to_TankCharge, pmt_tubeid_to_channelkey);
+		MakeParticleToPmtMap(atrigm, firsttrigm, ParticleId_to_MrdTubeIds, ParticleId_to_MrdCharge, mrd_tubeid_to_channelkey);
+		MakeParticleToPmtMap(atrigv, firsttrigv, ParticleId_to_VetoTubeIds, ParticleId_to_VetoCharge, facc_tubeid_to_channelkey);
 		
 	//}
 	
@@ -674,8 +706,9 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoTubeIds", ParticleId_to_VetoTubeIds, false);
 	m_data->Stores.at("ANNIEEvent")->Set("ParticleId_to_VetoCharge", ParticleId_to_VetoCharge, false);
 	m_data->Stores.at("ANNIEEvent")->Set("TrackId_to_MCParticleIndex",trackid_to_mcparticleindex,false);
+	//Change MRD Triggertype if first and last layer saw a hit (Hardware Cosmic Trigger)
+	if (mrd_lastlayer && mrd_firstlayer) Triggertype = "Cosmic";
 	m_data->Stores.at("ANNIEEvent")->Set("MRDTriggerType",Triggertype);
-
 	m_data->Stores.at("ANNIEEvent")->Set("PrimaryMuonIndex",primarymuonindex);
 	
 	//Things that need to be set by later tools:
@@ -713,7 +746,7 @@ bool LoadWCSim::Execute(){
 			}
 		}
 	}
-
+	
 	//gObjectTable->Print();
 	return true;
 }
@@ -928,7 +961,6 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 					  detectorstatus::ON,
 					  0.);
 		
-
 		// construct the channel associated with this PMT
 		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
 		pmt_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
@@ -1046,6 +1078,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		// calculate MRD_x_y_z ... MRDSpecs doesn't provide a nice way to do this
 		int layernum=0;
 		while ((mrdpmti+1) > MRDSpecs::layeroffsets.at(layernum+1)){ layernum++; }
+		Mrd_Chankey_Layer.emplace(uniquechannelkey,layernum);
 		int in_layer_pmtnum = mrdpmti - MRDSpecs::layeroffsets.at(layernum);
 		// paddles in each layer alternate on sides; i.e. paddles 0 and 1 are on opposite sides
 		int side = in_layer_pmtnum%2;
@@ -1228,6 +1261,23 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 			if(ParticleId_to_TubeIds->at(thephotonsparenttrackid).count(channelkey)==0){
 				// in the map for this particle record that this tube was hit
 				ParticleId_to_TubeIds->at(thephotonsparenttrackid).emplace(channelkey,digihit->GetQ());
+//				
+//				double particletime = -1;
+//				int particletrigger = -1;
+//				if(trackid_to_mcparticleindex->count(thephotonsparenttrackid)){
+//					int particleindex = trackid_to_mcparticleindex->at(thephotonsparenttrackid);
+//					MCParticle theparticle = MCParticles->at(particleindex);
+//					particletime = theparticle.GetStartTime();
+//					particletrigger = theparticle.GetMCTriggerNum();
+//				}
+//				double hittime = digihit->GetT();
+//				double triggertime = thistrig->GetHeader()->GetDate();
+//				std::cout<<"Particle "<<thephotonsparenttrackid<<" created at "<<particletime
+//						 <<" in trigger "<<particletrigger
+//						 <<" produced hit on MRD PMT "<<channelkey<<" at time "<<hittime
+//						 <<" relative to trigger time at "<<triggertime
+//						 <<std::endl;
+//				
 			} else {
 				// add another hit on this tube from this particle
 				ParticleId_to_TubeIds->at(thephotonsparenttrackid).at(channelkey)+=digihit->GetQ();

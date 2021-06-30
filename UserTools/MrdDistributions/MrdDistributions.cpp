@@ -18,6 +18,11 @@
 
 MrdDistributions::MrdDistributions():Tool(){}
 
+// TODO combine the trees, record all info; muon energy. For all muons - were they primary/secondary,
+// how many tank PMTs did they hit, how many tank PMT hits were there, was the muon tank reconstructed,
+// how many MRD pmts did they hit, how many MRD hits were there, was the muon long track reconstructed,
+// or short track reconstructed? were there reconstructed tracks but not matched to this particle?...etc
+
 // misc function
 ROOT::Math::XYZVector PositionToXYZVector(Position posin);
 TVector3 PositionToTVector3(Position posin);
@@ -190,6 +195,8 @@ bool MrdDistributions::Initialise(std::string configfile, DataModel &data){
 	hmpep->SetMarkerStyle(20);
 	hmpeptrue->SetMarkerStyle(20);
 	
+	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
+	
 	return true;
 }
 
@@ -198,12 +205,17 @@ bool MrdDistributions::Execute(){
 	
 	// Get the ANNIE event and extract general event information
 	// Maybe this information could be added to plots for reference
-	m_data->Stores["ANNIEEvent"]->Get("MCFile",MCFile);
-	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
-	m_data->Stores["ANNIEEvent"]->Get("SubrunNumber",SubrunNumber);
-	m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
-	m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
-	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
+	m_data->Stores.at("ANNIEEvent")->Get("MCFile",MCFile);
+	m_data->Stores.at("ANNIEEvent")->Get("RunNumber",RunNumber);
+	m_data->Stores.at("ANNIEEvent")->Get("SubrunNumber",SubrunNumber);
+	m_data->Stores.at("ANNIEEvent")->Get("EventNumber",EventNumber);
+	m_data->Stores.at("ANNIEEvent")->Get("MCTriggernum",MCTriggernum);
+	m_data->Stores.at("ANNIEEvent")->Get("MCEventNum",MCEventNum);
+	MCEventNumRoot = static_cast<ULong64_t>(MCEventNum);
+	TDCData = nullptr;
+	m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);
+	ParticleId_to_MrdTubeIds = nullptr;
+	m_data->Stores.at("ANNIEEvent")->Get("ParticleId_to_MrdTubeIds",ParticleId_to_MrdTubeIds);
 	
 	// retrieving true tracks from the BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,6 +223,19 @@ bool MrdDistributions::Execute(){
 	if(not get_ok){
 		Log("MrdDistributions Tool: No MCParticles in ANNIEEvent!",v_error,verbosity);
 		return false;
+	}
+	
+	// retrieving tank reco vertex from the BoostStore
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	recoVtxOrigin = ROOT::Math::XYZVector(-999,-999,-999);
+	theExtendedVertex=nullptr;
+	get_ok = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex", theExtendedVertex);
+	if(get_ok){
+		if(theExtendedVertex!=nullptr){
+			if(theExtendedVertex->GetFOM()>=0){
+				recoVtxOrigin = PositionToXYZVector(theExtendedVertex->GetPosition());
+			}
+		}
 	}
 	
 	// retrieving reconstructed tracks from the BoostStore
@@ -254,11 +279,28 @@ bool MrdDistributions::Execute(){
 //		thesubevptr = reinterpret_cast<TClonesArray*>(subevptr);
 //	}
 	
+	// count the number of mrd hits and hit mrd pmts in the event
+	NumHitMrdPMTsInEvent=0;
+	NumMrdHitsInEvent=0;
+	if(TDCData!=nullptr){
+		for(auto&& apmt : *TDCData){
+			if(channelkey_to_mrdpmtid.count(apmt.first)){
+				NumHitMrdPMTsInEvent++;
+				NumMrdHitsInEvent += apmt.second.size();
+			}
+		}
+	}
+	if(NumMrdHitsInEvent<0){
+		std::cerr<<"ERROR: NEGATIVE NUMBER OF HITS IN EVENT!!!"<<std::endl;
+	}
+	
 	// Try to retrieve matching done by MrdEfficiency Tool
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// TODO These are of course only relevant if analysing MC
 	Reco_to_True_Id_Map.clear(); // maps MRD Reco Track ID to MCParticle ID
+	True_to_Reco_Id_Map.clear();
 	get_ok = m_data->CStore.Get("Reco_to_True_Id_Map",Reco_to_True_Id_Map);
+	get_ok &= m_data->CStore.Get("True_to_Reco_Id_Map",True_to_Reco_Id_Map);
 	if(not get_ok){
 		logmessage  = "MrdDistributions Tool: No Reco_to_True_Id_Map Store in CStore!\n";
 		logmessage += "Without running MrdEfficiency tool first, there will be no matching ";
@@ -326,6 +368,7 @@ bool MrdDistributions::Execute(){
 		thisTrackAsBoostStore->Get("PMTsHit",PMTsHit);                          // 
 		thisTrackAsBoostStore->Get("TankExitPoint",TankExitPoint);              // [m]
 		thisTrackAsBoostStore->Get("MrdEntryPoint",MrdEntryPoint);              // [m]
+		thisTrackAsBoostStore->Get("LongTrack",LongTrack);                      // int
 		
 		// some additional histograms are available in the MrdPaddlePlot Tool,
 		// since the cMRDTrack classes used for reconstruction contain mrdcluster objects
@@ -400,10 +443,13 @@ bool MrdDistributions::Execute(){
 		fileout_EnergyLossError.push_back(EnergyLossError);
 		fileout_TrackLength.push_back(TrackLength*100.);
 		fileout_PenetrationDepth.push_back(PenetrationDepth*100.);
+		fileout_NumLayersHit.push_back(LayersHit.size());
+		fileout_NumPmtsHit.push_back(PMTsHit.size());
 		fileout_StartVertex.push_back(PositionToXYZVector(100.*StartVertex));
 		fileout_StopVertex.push_back(PositionToXYZVector(100.*StopVertex));
 		fileout_TankExitPoint.push_back(PositionToXYZVector(100.*TankExitPoint));
 		fileout_MrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
+		fileout_LongTrackReco.push_back(LongTrack);
 		
 		// See if we had a matching truth track (if MC) and record true details if so
 		int mc_particles_index=-1;
@@ -433,8 +479,20 @@ bool MrdDistributions::Execute(){
 			TrackAngleX = nextparticle->GetTrackAngleX();
 			TrackAngleY = nextparticle->GetTrackAngleY();
 			TrackAngle = nextparticle->GetTrackAngleFromBeam();
-			NumLayersHit = nextparticle->GetNumMrdLayersPenetrated();
-			TrackLength = nextparticle->GetTrackLengthInMrd();
+			TrackLength = nextparticle->GetTrackLengthInMrd();        // the same as num layers with PMT hits!
+			NumLayersHit = nextparticle->GetNumMrdLayersPenetrated(); // XXX ! num layers penetrated is not
+			// ParticleId_to_MrdTubeIds is a std::map<ParticleId,std::map<ChannelKey,TotalCharge>>
+			if(ParticleId_to_MrdTubeIds->count(MCTruthParticleID)>0){
+				NumPmtsHit = ParticleId_to_MrdTubeIds->at(MCTruthParticleID).size();
+			} else {
+				NumPmtsHit = 0;
+			}
+			if((NumMrdHitsInEvent==0) && (NumPmtsHit>0)){
+				std::cerr<<" ***** ERROR **** ParticleId_to_MrdTubeIds reports "<<NumPmtsHit
+						 <<" tubes hit for MCParticle "<<MCTruthParticleID<<", but TDCData"
+						 <<" contains no hits!!"<<std::endl;
+				assert(false);
+			}
 			EnergyLoss = nextparticle->GetMrdEnergyLoss();
 			StartVertex = nextparticle->GetMrdEntryPoint();
 			StopVertex = nextparticle->GetMrdExitPoint();
@@ -471,6 +529,7 @@ bool MrdDistributions::Execute(){
 			TrackAngleY = 0;
 			TrackAngle = 0;
 			NumLayersHit = 0;
+			NumPmtsHit = 0;
 			TrackLength = 0;
 			EnergyLoss = 0;
 			PenetrationDepth = 0;
@@ -488,8 +547,9 @@ bool MrdDistributions::Execute(){
 		}
 		
 		// append true values into the output file vector
-		fileout_TrackAngleX.push_back(TrackAngleX);
-		fileout_TrackAngleY.push_back(TrackAngleY);
+		fileout_MCTruthParticleID.push_back(MCTruthParticleID);
+		fileout_TrueTrackAngleX.push_back(TrackAngleX);
+		fileout_TrueTrackAngleY.push_back(TrackAngleY);
 		fileout_TrueTrackAngle.push_back(TrackAngle);
 		fileout_TrueEnergyLoss.push_back(EnergyLoss);
 		fileout_TrueTrackLength.push_back(TrackLength*100.);
@@ -497,16 +557,17 @@ bool MrdDistributions::Execute(){
 		fileout_TrueStopVertex.push_back(PositionToXYZVector(100.*StopVertex));
 		fileout_TrueTankExitPoint.push_back(PositionToXYZVector(100.*TankExitPoint));
 		fileout_TrueMrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
-		fileout_InterceptsTank.push_back(InterceptsTank);
-		fileout_StartTime.push_back(StartTime);
-		fileout_NumLayersHit.push_back(NumLayersHit);
-		fileout_IsMrdStopped.push_back(IsMrdStopped);
-		fileout_IsMrdPenetrating.push_back(IsMrdPenetrating);
-		fileout_IsMrdSideExit.push_back(IsMrdSideExit);
+		fileout_TrueInterceptsTank.push_back(InterceptsTank);
+		fileout_TrueStartTime.push_back(StartTime);
+		fileout_TrueNumLayersHit.push_back(NumLayersHit);
+		fileout_TrueNumPmtsHit.push_back(NumPmtsHit);
+		fileout_TrueIsMrdStopped.push_back(IsMrdStopped);
+		fileout_TrueIsMrdPenetrating.push_back(IsMrdPenetrating);
+		fileout_TrueIsMrdSideExit.push_back(IsMrdSideExit);
 		fileout_TrueOriginVertex.push_back(PositionToXYZVector(100.*TrueTrackOrigin));
 		//fileout_RecoOriginVertex.push_back(PositionToXYZVector(100.*RecoTrackOrigin));
-		fileout_ClosestApproachPoint.push_back(PositionToXYZVector(ClosestAppPoint));
-		fileout_ClosestApproachDist.push_back(ClosestAppDist);
+		fileout_TrueClosestApproachPoint.push_back(PositionToXYZVector(ClosestAppPoint));
+		fileout_TrueClosestApproachDist.push_back(ClosestAppDist);
 		
 	}
 	
@@ -524,16 +585,24 @@ bool MrdDistributions::Execute(){
 	// ~~~~~~~~~~~~~~~~~~~~~~~
 	nummrdtracksthisevent=0;
 	
-	// Loop over reconstructed tracks and record their properties
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Loop over true tracks and record their properties
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Log("MrdDistributions Tool: Looping over MCParticles",v_debug,verbosity);
 	for(int tracki=0; tracki<MCParticles->size(); tracki++){
 		MCParticle* nextparticle = &MCParticles->at(tracki);
-		if(not (nextparticle->GetEntersMrd())) continue; // only compare with truth tracks that entered the MRD
+		if(nextparticle->GetPdgCode()!=13)                continue; // only interested in muons
+		if(not (nextparticle->GetEntersMrd()))            continue; // only record tracks that entered the MRD
+		if(nextparticle->GetMCTriggerNum()!=MCTriggernum) continue; // only record in their proper trigger
 		nummrdtracksthisevent++;
 		
 		if(verbosity>3) cout<<"track "<<tracki<<endl;
 		// Get the track details
+		MCTruthParticleID = nextparticle->GetParticleID();
+		if(True_to_Reco_Id_Map.count(MCTruthParticleID)){
+			MrdTrackID = True_to_Reco_Id_Map.at(MCTruthParticleID);
+		} else {
+			MrdTrackID = -1;
+		}
 		InterceptsTank = nextparticle->GetEntersTank();                   // 
 		StartTime = nextparticle->GetStartTime();                         // [ns]
 		StartVertex = nextparticle->GetMrdEntryPoint();                   // [m] MRD entry vertex!
@@ -546,15 +615,24 @@ bool MrdDistributions::Execute(){
 		//std::cout<<"TrackAngleX="<<TrackAngleX<<", TrackAngleY="<<TrackAngleY<<std::endl;
 		TrackAngle = nextparticle->GetTrackAngleFromBeam();               // [rad]
 		NumLayersHit = nextparticle->GetNumMrdLayersPenetrated();         // 
+		if(ParticleId_to_MrdTubeIds->count(MCTruthParticleID)>0){
+			NumPmtsHit = ParticleId_to_MrdTubeIds->at(MCTruthParticleID).size();
+		} else {
+			NumPmtsHit = 0;
+		}
+		if((NumMrdHitsInEvent==0) && (NumPmtsHit>0)){
+			std::cerr<<" ***** ERROR **** ParticleId_to_MrdTubeIds reports "<<NumPmtsHit
+					 <<" tubes hit for MCParticle "<<MCTruthParticleID
+					 <<" from trigger "<<nextparticle->GetMCTriggerNum()<<", but TDCData"
+					 <<" for trigger num "<<MCTriggernum<<" contains no hits!!"<<std::endl;
+			assert(false);
+		}
 		TrackLength = nextparticle->GetTrackLengthInMrd();                // [m]
 		EnergyLoss = nextparticle->GetMrdEnergyLoss();                    // [MeV]
 		IsMrdStopped = ((nextparticle->GetEntersMrd())&&(!nextparticle->GetExitsMrd()));    // bool
 		IsMrdPenetrating = nextparticle->GetPenetratesMrd();              // bool: fully penetrating
-		IsMrdSideExit = ((nextparticle->GetExitsMrd())&&(!IsMrdPenetrating));              // bool
+		IsMrdSideExit = ((nextparticle->GetExitsMrd())&&(!IsMrdPenetrating));               // bool
 		PenetrationDepth = nextparticle->GetMrdPenetration();             // [m]
-		
-		// TODO PMTsHit = std::vector<int> Mrd PMT Tube IDs Hit
-		// we can get this from ParticleId_to_MrdTubeIds: std::map<ParticleId,std::map<ChannelKey,Charge>>
 		
 		TankExitPoint = nextparticle->GetTankExitPoint();                 // [m]
 		//cout<<"TankExitPoint: ("<<TankExitPoint.X()<<", "<<TankExitPoint.Y()<<", "<<TankExitPoint.Z()<<")"<<endl;
@@ -585,10 +663,10 @@ bool MrdDistributions::Execute(){
 		//std::cout<<"True MrdEntryPoint ("<<MrdEntryPoint.X()*100.<<", "<<MrdEntryPoint.Y()*100.
 		//		 <<", "<<MrdEntryPoint.Z()*100.<<")"<<std::endl;
 		
-		// Print the reconstructed track info
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Print the true track info
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~
 		if(printTracks){
-			cout<<"MrdTrack "<<MrdTrackID<<" in subevent "<<MrdSubEventID<<" was reconstructed from "
+			cout<<"True MRD-intercepting particle with reco ID "<<MrdTrackID<<" hit "
 				<<PMTsHit.size()<<" MRD PMTs hit in "<<NumLayersHit
 				<<" layers for a total penetration depth of "<<PenetrationDepth<<" [m]."<<endl;
 			cout<<"The track went from ";
@@ -607,23 +685,28 @@ bool MrdDistributions::Execute(){
 		}
 		
 		// append values into the output file vector
-		fileout_TrackAngleX.push_back(TrackAngleX);
-		fileout_TrackAngleY.push_back(TrackAngleY);
+		fileout_MCTruthParticleID.push_back(MCTruthParticleID);
+		fileout_RecoParticleID.push_back(MrdTrackID);
+		fileout_TrueTrackAngleX.push_back(TrackAngleX);
+		fileout_TrueTrackAngleY.push_back(TrackAngleY);
 		fileout_TrueTrackAngle.push_back(TrackAngle);
 		fileout_TrueEnergyLoss.push_back(EnergyLoss);
 		fileout_TrueTrackLength.push_back(TrackLength*100.);
 		fileout_TruePenetrationDepth.push_back(PenetrationDepth*100.);
+		fileout_TrueNumLayersHit.push_back(NumLayersHit);
+		fileout_TrueNumPmtsHit.push_back(NumPmtsHit);
 		fileout_TrueStopVertex.push_back(PositionToXYZVector(100.*StopVertex));
 		fileout_TrueTankExitPoint.push_back(PositionToXYZVector(100.*TankExitPoint));
 		fileout_TrueMrdEntryPoint.push_back(PositionToXYZVector(100.*MrdEntryPoint));
-		fileout_InterceptsTank.push_back(InterceptsTank);
-		fileout_StartTime.push_back(StartTime);
-		fileout_NumLayersHit.push_back(NumLayersHit);
-		fileout_IsMrdStopped.push_back(IsMrdStopped);
-		fileout_IsMrdPenetrating.push_back(IsMrdPenetrating);
-		fileout_IsMrdSideExit.push_back(IsMrdSideExit);
+		fileout_TrueInterceptsTank.push_back(InterceptsTank);
+		fileout_TrueStartTime.push_back(StartTime);
+		fileout_TrueIsMrdStopped.push_back(IsMrdStopped);
+		fileout_TrueIsMrdPenetrating.push_back(IsMrdPenetrating);
+		fileout_TrueIsMrdSideExit.push_back(IsMrdSideExit);
 		
 	}
+	//std::cout<<"MrdDistributions Tool: Filling event "<<EventNumber<<", MCEventNum "<<MCEventNum
+	//		 <<", MCTriggerNum "<<MCTriggernum<<std::endl;
 	
 	truthtree->Fill();
 	outfile->cd();
@@ -829,6 +912,7 @@ bool MrdDistributions::Finalise(){
 
 TFile* MrdDistributions::MakeRootFile(){
 	// set the pointers to the vectors first
+	// reco track info
 	pfileout_MrdSubEventID = &fileout_MrdSubEventID;
 	pfileout_HtrackAngle = &fileout_HtrackAngle;
 	pfileout_HtrackAngleError = &fileout_HtrackAngleError;
@@ -840,30 +924,40 @@ TFile* MrdDistributions::MakeRootFile(){
 	pfileout_EnergyLossError = &fileout_EnergyLossError;
 	pfileout_TrackLength = &fileout_TrackLength;
 	pfileout_PenetrationDepth = &fileout_PenetrationDepth;
+	pfileout_NumLayersHit = &fileout_NumLayersHit;
+	pfileout_NumPmtsHit = &fileout_NumPmtsHit;
 	pfileout_StartVertex = &fileout_StartVertex;
 	pfileout_StopVertex = &fileout_StopVertex;
 	pfileout_TankExitPoint = &fileout_TankExitPoint;
 	pfileout_MrdEntryPoint = &fileout_MrdEntryPoint;
+	pfileout_LongTrackReco = &fileout_LongTrackReco;
+	
+	// equivalent true track info
 	pfileout_MCTruthParticleID = &fileout_MCTruthParticleID;
-	pfileout_TrackAngleX = &fileout_TrackAngleX;
-	pfileout_TrackAngleY = &fileout_TrackAngleY;
+	pfileout_TrueTrackAngleX = &fileout_TrueTrackAngleX;
+	pfileout_TrueTrackAngleY = &fileout_TrueTrackAngleY;
 	pfileout_TrueTrackAngle = &fileout_TrueTrackAngle;
 	pfileout_TrueEnergyLoss = &fileout_TrueEnergyLoss;
 	pfileout_TrueTrackLength = &fileout_TrueTrackLength;
 	pfileout_TruePenetrationDepth = &fileout_TruePenetrationDepth;
+	pfileout_TrueNumLayersHit = &fileout_TrueNumLayersHit;
+	pfileout_TrueNumPmtsHit = &fileout_TrueNumPmtsHit;
+	// (n.b. no true start vertex in mrd)
 	pfileout_TrueStopVertex = &fileout_TrueStopVertex;
 	pfileout_TrueTankExitPoint = &fileout_TrueTankExitPoint;
 	pfileout_TrueMrdEntryPoint = &fileout_TrueMrdEntryPoint;
-	pfileout_StartTime = &fileout_StartTime;
-	pfileout_InterceptsTank = &fileout_InterceptsTank;
-	pfileout_NumLayersHit = &fileout_NumLayersHit;
-	pfileout_IsMrdStopped = &fileout_IsMrdStopped;
-	pfileout_IsMrdPenetrating = &fileout_IsMrdPenetrating;
-	pfileout_IsMrdSideExit = &fileout_IsMrdSideExit;
+	
+	/// additional truth-only track info
+	pfileout_TrueStartTime = &fileout_TrueStartTime;
+	pfileout_TrueInterceptsTank = &fileout_TrueInterceptsTank;
+	pfileout_TrueIsMrdStopped = &fileout_TrueIsMrdStopped;
+	pfileout_TrueIsMrdPenetrating = &fileout_TrueIsMrdPenetrating;
+	pfileout_TrueIsMrdSideExit = &fileout_TrueIsMrdSideExit;
 	pfileout_TrueOriginVertex = &fileout_TrueOriginVertex;
-	//pfileout_RecoOriginVertex = &fileout_RecoOriginVertex;
-	pfileout_ClosestApproachPoint = &fileout_ClosestApproachPoint;
-	pfileout_ClosestApproachDist = &fileout_ClosestApproachDist;
+	//pfileout_RecoOriginVertex = &fileout_RecoOriginVertex; // reconstructed tank vertex... TODO add
+	pfileout_TrueClosestApproachPoint = &fileout_TrueClosestApproachPoint;
+	pfileout_TrueClosestApproachDist = &fileout_TrueClosestApproachDist;
+	pfileout_RecoParticleID = &fileout_RecoParticleID;
 	
 	outfile = new TFile((plotDirectory+"/"+outfilename).c_str(),"RECREATE","MRD Track Distributions");
 	outfile->cd();
@@ -873,11 +967,16 @@ TFile* MrdDistributions::MakeRootFile(){
 	recotree->Branch("RunNumber",&RunNumber);
 	recotree->Branch("SubrunNumber",&SubrunNumber);
 	recotree->Branch("EventNumber",&EventNumber);
-	recotree->Branch("MCEventNum",&MCEventNum,"l");
+	recotree->Branch("MCEventNum",&MCEventNumRoot);
 	recotree->Branch("MCTriggernum",&MCTriggernum);
 	recotree->Branch("NumSubEvs",&numsubevs);
 	recotree->Branch("NumTracksInSubEv",&numtracksinev);
 	recotree->Branch("NumTrueTracksInSubEv",&nummrdtracksthisevent);
+	recotree->Branch("NumHitMrdPMTsInEvent",&NumHitMrdPMTsInEvent);
+	recotree->Branch("NumMrdHitsInEvent",&NumMrdHitsInEvent);
+//	recotree->Branch("NumHitMrdPMTsInEvent",&NumHitMrdPMTsInSubEvent);
+//	recotree->Branch("NumHitMrdHitsInEvent",&NumMrdHitsInSubEvent);
+	recotree->Branch("RecoVtxOrigin",&recoVtxOrigin);
 	
 	// track-wise information vectors
 	recotree->Branch("MrdSubEventID", &pfileout_MrdSubEventID);
@@ -891,33 +990,39 @@ TFile* MrdDistributions::MakeRootFile(){
 	recotree->Branch("EnergyLossError", &pfileout_EnergyLossError);
 	recotree->Branch("TrackLength", &pfileout_TrackLength);
 	recotree->Branch("PenetrationDepth", &pfileout_PenetrationDepth);
+	recotree->Branch("NumLayersHit",&pfileout_NumLayersHit);
+	recotree->Branch("NumPmtsHit",&pfileout_NumPmtsHit);
 	recotree->Branch("StartVertex", &pfileout_StartVertex);
 	recotree->Branch("StopVertex", &pfileout_StopVertex);
 	recotree->Branch("TankExitPoint", &pfileout_TankExitPoint);
 	recotree->Branch("MrdEntryPoint", &pfileout_MrdEntryPoint);
+	recotree->Branch("LongTrackReco", &pfileout_LongTrackReco);
 	
-	// true tracks
+	// information about matched true track
 	recotree->Branch("MCTruthParticleID", &pfileout_MCTruthParticleID);
-	recotree->Branch("TrueTrackAngleX", &pfileout_TrackAngleX);
-	recotree->Branch("TrueTrackAngleY", &pfileout_TrackAngleY);
+	recotree->Branch("TrueTrackAngleX", &pfileout_TrueTrackAngleX);
+	recotree->Branch("TrueTrackAngleY", &pfileout_TrueTrackAngleY);
 	recotree->Branch("TrueTrackAngle", &pfileout_TrueTrackAngle);
 	recotree->Branch("TrueEnergyLoss", &pfileout_TrueEnergyLoss);
 	recotree->Branch("TrueTrackLength", &pfileout_TrueTrackLength);
 	recotree->Branch("TruePenetrationDepth", &pfileout_TruePenetrationDepth);
+	recotree->Branch("TrueNumLayersHit", &pfileout_TrueNumLayersHit);
+	recotree->Branch("TrueNumPmtsHit",&pfileout_TrueNumPmtsHit);
 	// no true (MRD reconstruction) start vertex by definition
 	recotree->Branch("TrueStopVertex", &pfileout_TrueStopVertex);
 	recotree->Branch("TrueTankExitPoint", &pfileout_TrueTankExitPoint);
 	recotree->Branch("TrueMrdEntryPoint", &pfileout_TrueMrdEntryPoint);
-	recotree->Branch("InterceptsTank", &pfileout_InterceptsTank);
-	recotree->Branch("StartTime", &pfileout_StartTime);
-	recotree->Branch("NumLayersHit", &pfileout_NumLayersHit);
-	recotree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
-	recotree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
-	recotree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
-	recotree->Branch("TrueOriginVertex", &pfileout_TrueOriginVertex);
+	
+	// truth only info
+	recotree->Branch("TrueInterceptsTank", &pfileout_TrueInterceptsTank);
+	recotree->Branch("TrueStartTime", &pfileout_TrueStartTime);
+	recotree->Branch("TrueIsMrdStopped", &pfileout_TrueIsMrdStopped);
+	recotree->Branch("TrueIsMrdPenetrating", &pfileout_TrueIsMrdPenetrating);
+	recotree->Branch("TrueIsMrdSideExit", &pfileout_TrueIsMrdSideExit);
+	recotree->Branch("TrueTrueOriginVertex", &pfileout_TrueOriginVertex);
 	//recotree->Branch("RecoOriginVertex", &pfileout_RecoOriginVertex);
-	recotree->Branch("ClosestApproachPoint", &pfileout_ClosestApproachPoint);
-	recotree->Branch("ClosestApproachDist", &fileout_ClosestApproachDist);
+	recotree->Branch("TrueClosestApproachPoint", &pfileout_TrueClosestApproachPoint);
+	recotree->Branch("TrueClosestApproachDist", &pfileout_TrueClosestApproachDist);
 	
 	// we'll have a second tree that will record all the true tracks
 	// this ensures we have an un-cut version of the distributions of tracks that went into the MRD,
@@ -928,28 +1033,33 @@ TFile* MrdDistributions::MakeRootFile(){
 	truthtree->Branch("RunNumber",&RunNumber);
 	truthtree->Branch("SubrunNumber",&SubrunNumber);
 	truthtree->Branch("EventNumber",&EventNumber);
-	truthtree->Branch("MCEventNum",&MCEventNum,"l");
+	truthtree->Branch("MCEventNum",&MCEventNumRoot);
 	truthtree->Branch("MCTriggernum",&MCTriggernum);
 	truthtree->Branch("NumSubEvs",&numsubevs);
-	truthtree->Branch("NumTracksInSubEv",&numtracksinev);
-	truthtree->Branch("NumTrueTracksInSubEv",&nummrdtracksthisevent);
+	truthtree->Branch("NumHitMrdPMTsInEvent",&NumHitMrdPMTsInEvent);
+	truthtree->Branch("NumMrdHitsInEvent",&NumMrdHitsInEvent);
+//	truthtree->Branch("NumTracksInSubEv",&numtracksinev);
+//	truthtree->Branch("NumTrueTracksInSubEv",&nummrdtracksthisevent);
+	truthtree->Branch("RecoVtxOrigin",&recoVtxOrigin);
 	// track-wise information
 	truthtree->Branch("MCTruthParticleID", &pfileout_MCTruthParticleID);
-	truthtree->Branch("TrueTrackAngleX", &pfileout_TrackAngleX);
-	truthtree->Branch("TrueTrackAngleY", &pfileout_TrackAngleY);
+	truthtree->Branch("RecoParticleID",&pfileout_RecoParticleID);
+	truthtree->Branch("TrueTrackAngleX", &pfileout_TrueTrackAngleX);
+	truthtree->Branch("TrueTrackAngleY", &pfileout_TrueTrackAngleY);
 	truthtree->Branch("TrueTrackAngle", &pfileout_TrueTrackAngle);
 	truthtree->Branch("TrueEnergyLoss", &pfileout_TrueEnergyLoss);
 	truthtree->Branch("TrueTrackLength", &pfileout_TrueTrackLength);
 	truthtree->Branch("TruePenetrationDepth", &pfileout_TruePenetrationDepth);
+	truthtree->Branch("TrueNumLayersHit", &pfileout_TrueNumLayersHit);
+	truthtree->Branch("TrueNumPmtsHit", &pfileout_TrueNumPmtsHit);
 	truthtree->Branch("TrueStopVertex", &pfileout_TrueStopVertex);
 	truthtree->Branch("TrueTankExitPoint", &pfileout_TrueTankExitPoint);
 	truthtree->Branch("TrueMrdEntryPoint", &pfileout_TrueMrdEntryPoint);
-	truthtree->Branch("InterceptsTank", &pfileout_InterceptsTank);
-	truthtree->Branch("StartTime", &pfileout_StartTime);
-	truthtree->Branch("NumLayersHit", &pfileout_NumLayersHit);
-	truthtree->Branch("IsMrdStopped", &pfileout_IsMrdStopped);
-	truthtree->Branch("IsMrdPenetrating", &pfileout_IsMrdPenetrating);
-	truthtree->Branch("IsMrdSideExit", &pfileout_IsMrdSideExit);
+	truthtree->Branch("TrueInterceptsTank", &pfileout_TrueInterceptsTank);
+	truthtree->Branch("TrueStartTime", &pfileout_TrueStartTime);
+	truthtree->Branch("TrueIsMrdStopped", &pfileout_TrueIsMrdStopped);
+	truthtree->Branch("TrueIsMrdPenetrating", &pfileout_TrueIsMrdPenetrating);
+	truthtree->Branch("TrueIsMrdSideExit", &pfileout_TrueIsMrdSideExit);
 	
 	gROOT->cd();
 	return outfile;
@@ -967,12 +1077,16 @@ void MrdDistributions::ClearBranchVectors(){
 	fileout_EnergyLossError.clear();
 	fileout_TrackLength.clear();
 	fileout_PenetrationDepth.clear();
+	fileout_NumLayersHit.clear();
+	fileout_NumPmtsHit.clear();
 	fileout_StartVertex.clear();
 	fileout_TankExitPoint.clear();
 	fileout_MrdEntryPoint.clear();
+	fileout_LongTrackReco.clear();
+	
 	fileout_MCTruthParticleID.clear();
-	fileout_TrackAngleX.clear();
-	fileout_TrackAngleY.clear();
+	fileout_TrueTrackAngleX.clear();
+	fileout_TrueTrackAngleY.clear();
 	fileout_TrueTrackAngle.clear();
 	fileout_TrueEnergyLoss.clear();
 	fileout_TrueTrackLength.clear();
@@ -980,16 +1094,18 @@ void MrdDistributions::ClearBranchVectors(){
 	fileout_TrueStopVertex.clear();
 	fileout_TrueTankExitPoint.clear();
 	fileout_TrueMrdEntryPoint.clear();
-	fileout_StartTime.clear();
-	fileout_InterceptsTank.clear();
-	fileout_NumLayersHit.clear();
-	fileout_IsMrdStopped.clear();
-	fileout_IsMrdPenetrating.clear();
-	fileout_IsMrdSideExit.clear();
+	fileout_TrueStartTime.clear();
+	fileout_TrueInterceptsTank.clear();
+	fileout_TrueNumLayersHit.clear();
+	fileout_TrueNumPmtsHit.clear();
+	fileout_TrueIsMrdStopped.clear();
+	fileout_TrueIsMrdPenetrating.clear();
+	fileout_TrueIsMrdSideExit.clear();
 	fileout_TrueOriginVertex.clear();
 	//fileout_RecoOriginVertex.clear();
-	fileout_ClosestApproachPoint.clear();
-	fileout_ClosestApproachDist.clear();
+	fileout_TrueClosestApproachPoint.clear();
+	fileout_TrueClosestApproachDist.clear();
+	fileout_RecoParticleID.clear();
 }
 
 ROOT::Math::XYZVector PositionToXYZVector(Position posin){

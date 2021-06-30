@@ -32,7 +32,8 @@ public:
 
 private:
 	int verbosity=1;
-	
+	std::string map_version;	//Version of the electronics channel map ["v1"/"v2"]	
+
 	//TChain* PMTDataChain;
 	//TChain* RunInformationChain;
 	//TChain* TrigChain;
@@ -61,6 +62,7 @@ private:
 	Long64_t NumADCEntries;
 	TChain* ADCTimestampChain;
 	uint64_t nextreadoutfirstminibufstart;
+	uint64_t thelastminibufferTS;
 	std::vector<uint64_t> minibufTS=std::vector<uint64_t>{};      // minibuffer times taken from the alignment files
 	std::vector<uint64_t> nextminibufTs=std::vector<uint64_t>{};  // next event's minibuffer times " " files
 	uint64_t maxtimediff;
@@ -92,16 +94,19 @@ private:
 	bool PerformMatching(std::vector<unsigned long long> currentminibufts);
 	std::vector<uint64_t> ConvertTimeStamps(unsigned long long LastSync, int StartTimeSec, 
 		int StartTimeNSec, unsigned long long StartCount, std::vector<unsigned long long> TriggerCounts);
-	uint32_t TubeIdFromSlotChannel(unsigned int slot, unsigned int channel);
+	uint32_t TubeIdFromSlotChannel(unsigned int slot, unsigned int channel, int version);
 	// map that converts TDC camac slot + channel to the corresponding MRD tube ID
 	// tubeID is a 6-digit ID of XXYYZZ.
-	static std::map<uint16_t,std::string> slotchantopmtid;
+	static std::map<uint16_t,std::string> slotchantopmtidv1;	//Version 1 of the electronics channel map
+	static std::map<uint16_t,std::string> slotchantopmtidv2;	//Version 2 of the electronics channel map
 	
 	// for debug drawing
 	bool DEBUG_DRAW_TDC_HITS;
-	TApplication* tdcRootDrawApp;
-	TCanvas* tdcRootCanvas;
-	TH1D *hTDCHitTimes, *hTDCTimeDiffs;
+	TApplication* rootTApp=nullptr;
+	TCanvas* tdcRootCanvas=nullptr;
+	TH1D *hTDCHitTimes=nullptr, *hTDCTimeDiffs=nullptr, *hTDCValues=nullptr;
+	TH1D *hVetoL1Times=nullptr, *hVetoL2Times=nullptr, *hMrdL1Times=nullptr, *hMrdL2Times=nullptr;
+	TH1D *hTDCNextTimeDiffs=nullptr, *hTDCLastTimeDiffs=nullptr;
 	
 	TFile* tdcDebugRootFileOut=nullptr;
 	TTree* tdcDebugTreeOut=nullptr;
@@ -109,6 +114,7 @@ private:
 	UInt_t camacchannel;
 	UInt_t mrdpmtxnum, mrdpmtynum, mrdpmtznum;
 	Long64_t mrdtimeinreadout;
+	UInt_t mrdticksinreadout;
 	UInt_t mrdreadoutindex;
 	ULong64_t mrdreadouttime;
 	UInt_t adcreadoutindex;

@@ -1,0 +1,8 @@
+# CalcClassificationVars config file
+
+verbosity 1
+IsData 0
+NeutrinoSample 1
+PDF_emu /annie/app/users/mnieslon/MyToolAnalysis6/pdf_beamlike_emu_500bins_sumw2.root
+PDF_rings /annie/app/users/mnieslon/MyToolAnalysis6/pdf_beam_rings_500bins_sumw2.root
+

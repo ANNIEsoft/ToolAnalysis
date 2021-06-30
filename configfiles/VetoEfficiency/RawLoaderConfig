@@ -1,0 +1,18 @@
+# Dummy config file
+verbose 1
+#InputFile /annie/data/users/moflaher/DataR900S4p0.root
+#InputFile /pnfs/annie/persistent/raw/raw/0798/RAWDataR798S0p0.root
+#InputFile /home/marc/LinuxSystemFiles/WCSim/gitver/root_work/RAWDataR0S0p0.root
+#InputFile /annie/app/users/moflaher/ToolAnalysis/SimulatedRAWDataR0S0p0.root
+#InputFile RAWDataR798S0p0.root
+#InputFile /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/RAWDataR798S0p0.root
+InputFile /pnfs/annie/persistent/raw/raw/0813/RAWDataR813S4p7.root
+
+# if using hefty files, you need to pass a hefty timing file. See NOTES on how to make this.
+HeftyTimingFile /pnfs/annie/persistent/anniepro/hefty_timing/0813/DataR813S4p7_timing.root
+#HeftyTimingFile /annie/app/users/moflaher/ToolAnalysis/ToolAnalysis/DataR798S0p0_timing.root
+#HeftyTimingFile /home/marc/LinuxSystemFiles/WCSim/gitver/root_work/DataR0S0p0_timing.root
+#HeftyTimingFile DataR798S0p0_timing.root
+
+#PMTtoCardChannelFile mapPMTtoDAQCardChannel_test
+PMTtoCardChannelFile mapPMTtoDAQCardChannel_phase1

@@ -15,6 +15,11 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   verbosity = 0;
 
   m_variables.Get("verbosity",verbosity);
+  // was this run taken at a daylight savings time of year?
+  m_variables.Get("DaylightSavingsSpring",DaylightSavings);
+  // work out the conversion required to put MRD timestamps into UTC
+  TimeZoneShift = 21600000;
+  if(DaylightSavings) TimeZoneShift = 18000000;
 
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("NewMRDDataAvailable",false);
@@ -31,7 +36,7 @@ bool MRDDataDecoder::Execute(){
   bool NewEntryAvailable;
   m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
-    Log("MRDDataDecoder Tool: There's no new MRD data.  stop at next loop.",v_warning,verbosity); 
+    Log("MRDDataDecoder Tool: There's no new MRD data.  stop at next loop to save what data has been built.",v_warning,verbosity); 
     m_data->vars.Set("StopLoop",1);
     return true;
   }
@@ -49,7 +54,9 @@ bool MRDDataDecoder::Execute(){
   m_data->CStore.Get("MRDData",mrddata);
   std::string mrdTriggertype = "No Loopback";
   std::vector<unsigned long> chankeys;
-  unsigned long timestamp = mrddata->TimeStamp;    //in ms since 1970/1/1
+  uint64_t timestamp = static_cast<uint64_t>(mrddata->TimeStamp);    //in ms since 1970/1/1
+  // before anything else convert it to UTC ns
+  timestamp = (timestamp+TimeZoneShift)*1E6;
   std::vector<std::pair<unsigned long, int>> ChankeyTimePairs;
   MRDEvents.emplace(timestamp,ChankeyTimePairs);
   
@@ -114,7 +121,7 @@ bool MRDDataDecoder::Execute(){
   Log("MRDDataDecoder Tool: Size of TriggerTypeMap in CStore:" + 
           to_string(CStoreTriggerTypeMap.size()),v_debug, verbosity);
 
-  std::cout << "MRD EVENT CSTORE ENTRIES SET SUCCESSFULLY.  Clearing MRDEvents map from this file." << std::endl;
+  std::cout << "MRD EVENT CSTORE ENTRIES SET SUCCESSFULLY.  Clearing MRDEvent vector in MRDDataDecoder tool." << std::endl;
   MRDEvents.clear();
   TriggerTypeMap.clear();
   BeamLoopbackMap.clear();

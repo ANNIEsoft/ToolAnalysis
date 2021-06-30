@@ -1,0 +1,6 @@
+myLoadWCSim LoadWCSim configfiles/FMVEfficiency/MC/LoadWCSimConfig
+myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/FMVEfficiency/MC/LoadWCSimLAPPDConfig
+myClusterFinder ClusterFinder configfiles/FMVEfficiency/MC/ClusterFinderConfig
+myTimeClustering TimeClustering configfiles/FMVEfficiency/MC/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks configfiles/FMVEfficiency/MC/FindMrdTracksConfig
+myFMVEfficiency FMVEfficiency configfiles/FMVEfficiency/MC/FMVEfficiencyConfig
