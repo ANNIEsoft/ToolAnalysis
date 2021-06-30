@@ -23,7 +23,7 @@ service_publish_sec 5
 service_kick_sec 60
 
 ##### Tools To Add #####
-Tools_File configfiles/Monitoring/SimMonitoringLAPPDSC/ToolsConfig  ## list of tools to run and their config files
+Tools_File configfiles/Monitoring/SimMonitoringLAPPDData/ToolsConfig  ## list of tools to run and their config files
 
 ##### Run Type #####
 Inline -1 ## number of Execute steps in program, -1 infinite loop that is ended by user 

@@ -1,6 +1,6 @@
 # LAPPD Data Monitoring config file
 
-verbose 0
+verbose 3
 #OutputPath ./monitoringplots/
 OutputPath fromStore
 StartTime 1970/1/1 #start time for the conversion of timestamps into dates
@@ -10,3 +10,4 @@ ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, 
 UpdateFrequency 1. #specify frequency for the file history plot, in mins
 ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
 DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
+ACDCBoardConfiguration ./configfiles/Monitoring/LAPPDACDCConfig.txt #configure which ACDC board numbers will be expected
