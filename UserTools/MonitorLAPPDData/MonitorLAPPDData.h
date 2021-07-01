@@ -56,7 +56,7 @@ class MonitorLAPPDData: public Tool {
   //Configuration functions
   void ReadInConfiguration();
   void InitializeHistsLAPPD();
-  void LoadACDCBoardConfig();
+  void LoadACDCBoardConfig(std::string acdc_config);
 
   //Read/Write functions
   void ProcessLAPPDData();
@@ -122,6 +122,7 @@ class MonitorLAPPDData: public Tool {
   double HOUR_to_DAY = 24.;
   ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
   ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
+  double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
 
   //Geometry variables
   Geometry *geom = nullptr;
@@ -135,9 +136,20 @@ class MonitorLAPPDData: public Tool {
   //Averaged values - one vector entry per board (last file)
   std::vector<double> current_pps_rate;
   std::vector<double> current_frame_rate;
+  std::vector<double> current_beamgate_rate;
   std::vector<double> current_int_charge;
-  std::vector<int> current_buffer_size;
+  std::vector<double> current_buffer_size;
   std::vector<int> current_board_index;
+  std::vector<int> current_num_entries;
+  std::vector<uint64_t> first_beamgate_timestamp;
+  std::vector<uint64_t> last_beamgate_timestamp;
+  std::vector<uint64_t> first_timestamp;
+  std::vector<uint64_t> last_timestamp;
+  std::vector<bool> first_entry;
+  std::vector<int> n_buffer;
+  std::vector<uint64_t> t_file_end;
+  ULong64_t t_file_start;
+  ULong64_t t_file_end_global;
 
   //Single values - multiple vector entries per board (last file)
   std::vector<uint64_t> beamgate_timestamp;
@@ -154,6 +166,7 @@ class MonitorLAPPDData: public Tool {
 
   //Plotting variables in vectors (multiple files)
   std::map<int,std::vector<ULong64_t>> data_times_plot;
+  std::map<int,std::vector<ULong64_t>> data_times_end_plot;
   std::map<int,std::vector<double>> pps_rate_plot;
   std::map<int,std::vector<double>> frame_rate_plot;
   std::map<int,std::vector<double>> beamgate_rate_plot;
@@ -186,7 +199,7 @@ class MonitorLAPPDData: public Tool {
 
   //histograms
   std::map<int, TH1F*> hist_align_1file;
-  std::map<int,TH1F*> hist_align_5file;
+  std::map<int,TH1F*> hist_align_5files;
   std::map<int,TH1F*> hist_align_10files;
   std::map<int,TH1F*> hist_align_20files;
   std::map<int,TH1F*> hist_align_100files;
