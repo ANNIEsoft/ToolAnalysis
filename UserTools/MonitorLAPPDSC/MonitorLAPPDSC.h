@@ -87,6 +87,13 @@ class MonitorLAPPDSC: public Tool {
   bool draw_marker;
   int verbosity;
   std::string plot_configuration;
+  double v33_min;
+  double v33_max;
+  double v25_min;
+  double v25_max;
+  double v12_min;
+  double v12_max;
+
 
   //Plot configuration variables
   std::vector<double> config_timeframes;
@@ -170,6 +177,7 @@ class MonitorLAPPDSC: public Tool {
   TCanvas *canvas_status_relay = nullptr;
   TCanvas *canvas_status_trigger = nullptr;
   TCanvas *canvas_status_error = nullptr;  
+  TCanvas *canvas_status_overview = nullptr;
 
   //graphs
   TGraph *graph_temp = nullptr;
@@ -187,12 +195,70 @@ class MonitorLAPPDSC: public Tool {
   TLegend *leg_lv = nullptr;
 
   //text
+  //TempHumidity texts
   TText *text_temphum_title = nullptr;
   TText *text_temp = nullptr;
   TText *text_hum = nullptr;
   TText *text_light = nullptr;
   TText *text_flag_temp = nullptr;
   TText *text_flag_hum = nullptr;
+
+  //LVHV texts
+  TText *text_lvhv_title = nullptr;
+  TText *text_hv_state = nullptr;
+  TText *text_hv_mon = nullptr;
+  TText *text_hv_volt = nullptr;
+  TText *text_lv_state = nullptr;
+  TText *text_lv_mon = nullptr;
+  TText *text_v33 = nullptr;
+  TText *text_v25 = nullptr;
+  TText *text_v12 = nullptr;
+
+  //Trigger texts
+  TText *text_trigger_title = nullptr;
+  TText *text_trigger_vref = nullptr;
+  TText *text_trigger_trig0_thr = nullptr;
+  TText *text_trigger_trig0_mon = nullptr;
+  TText *text_trigger_trig1_thr = nullptr;
+  TText *text_trigger_trig1_mon = nullptr;
+
+  //Relay texts
+  TText *text_relay_title = nullptr;
+  TText *text_relay_set1 = nullptr;
+  TText *text_relay_set2 = nullptr;
+  TText *text_relay_set3 = nullptr;
+  TText *text_relay_mon1 = nullptr;
+  TText *text_relay_mon2 = nullptr;
+  TText *text_relay_mon3 = nullptr;
+
+  //Error texts
+  TText *text_error_title = nullptr;
+  TText *text_error_number1 = nullptr;
+  TText *text_error_number2 = nullptr;
+  TText *text_error_number3 = nullptr;
+  TText *text_error_number4 = nullptr;
+  TText *text_error_number5 = nullptr;
+  TText *text_error_number6 = nullptr;
+  TText *text_error_number7 = nullptr;
+  TText *text_error_number8 = nullptr;
+  TText *text_error_number9 = nullptr;
+  std::vector<TText*> text_error_vector;
+
+  //booleans for summary status
+  bool temp_humid_check = true;
+  bool lvhv_check = true;
+  bool trigger_check = true;
+  bool relay_check = true;
+  bool error_check = false;
+
+  //Overview texts
+  TText *text_overview_title = nullptr;
+  TText *text_overview_temp = nullptr;
+  TText *text_overview_lvhv = nullptr;
+  TText *text_overview_trigger = nullptr;
+  TText *text_overview_relay = nullptr;
+  TText *text_overview_error = nullptr;
+
 
   //Verbosity variables
   int v_error = 0;
