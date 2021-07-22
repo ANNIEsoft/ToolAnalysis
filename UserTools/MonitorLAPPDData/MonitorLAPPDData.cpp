@@ -1051,7 +1051,7 @@ void MonitorLAPPDData::DrawTimeAlignment(){
     current_time << currenttime_tm.tm_year+1900<<"/"<<currenttime_tm.tm_mon+1<<"/"<<currenttime_tm.tm_mday<<"-"<<currenttime_tm.tm_hour<<":"<<currenttime_tm.tm_min<<":"<<currenttime_tm.tm_sec;
 
     //--------Last File-----------
-    hist_align_1file.at(board_nr)->Clear();
+    hist_align_1file.at(board_nr)->Reset();
     std::stringstream ss_1file;
     ss_1file << "hist_align_1file_board"<<i_board;
   //  hist_align_1file.at(board_nr)->SetName(ss_1file.str().c_str());
@@ -1061,7 +1061,7 @@ void MonitorLAPPDData::DrawTimeAlignment(){
     }
 
     //-------Last 5 Files---------
-    hist_align_5files.at(board_nr)->Clear();
+    hist_align_5files.at(board_nr)->Reset();
     for (int i_align=0; i_align < (int) data_beamgate_last5files.size(); i_align++){
       for (int i_data=0; i_data < (int) data_beamgate_last5files.at(i_align).size(); i_data++){
         hist_align_5files.at(board_nr)->Fill(data_beamgate_last5files.at(i_align).at(i_data));
@@ -1069,7 +1069,7 @@ void MonitorLAPPDData::DrawTimeAlignment(){
     }
 
     //-------Last 10 Files--------
-    hist_align_10files.at(board_nr)->Clear();
+    hist_align_10files.at(board_nr)->Reset();
     for (int i_align=0; i_align < (int) data_beamgate_last10files.size(); i_align++){
       for (int i_data=0; i_data < (int) data_beamgate_last10files.at(i_align).size(); i_data++){
         hist_align_10files.at(board_nr)->Fill(data_beamgate_last10files.at(i_align).at(i_data));
@@ -1077,7 +1077,7 @@ void MonitorLAPPDData::DrawTimeAlignment(){
     }
 
     //------Last 20 Files---------
-    hist_align_20files.at(board_nr)->Clear();
+    hist_align_20files.at(board_nr)->Reset();
     for (int i_align=0; i_align < (int) data_beamgate_last20files.size(); i_align++){
       for (int i_data=0; i_data < (int) data_beamgate_last20files.at(i_align).size(); i_data++){
         hist_align_20files.at(board_nr)->Fill(data_beamgate_last20files.at(i_align).at(i_data));
@@ -1222,10 +1222,10 @@ void MonitorLAPPDData::ProcessLAPPDData(){
   for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
     int board_nr = board_configuration.at(i_board);
 
-    hist_adc_channel.at(board_nr)->Clear();
-    hist_waveform_channel.at(board_nr)->Clear();
-    hist_buffer_channel.at(board_nr)->Clear();
-    hist_buffer.at(board_nr)->Clear();
+    hist_adc_channel.at(board_nr)->Reset();
+    hist_waveform_channel.at(board_nr)->Reset();
+    hist_buffer_channel.at(board_nr)->Reset();
+    hist_buffer.at(board_nr)->Reset();
     
     current_pps_rate.at(i_board) = 0.0;
     current_frame_rate.at(i_board) = 0.0;

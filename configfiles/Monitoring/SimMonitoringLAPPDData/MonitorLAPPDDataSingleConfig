@@ -1,0 +1,9 @@
+# LAPPD Data Monitoring config file (single/live)
+
+verbose 3
+#OutputPath ./monitoringplots/
+OutputPath fromStore
+StartTime 1970/1/1 #start time for the conversion of timestamps into dates
+PathMonitoring ./monitoringfiles/	#path at which the monitoring plots are going to be saved
+ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
+ACDCBoardConfiguration ./configfiles/Monitoring/LAPPDACDCConfig.txt #configure which ACDC board numbers will be expected
