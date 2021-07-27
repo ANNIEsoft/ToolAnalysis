@@ -121,7 +121,7 @@ bool LikelihoodFitterCheck::Execute(){
     myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
     fom = timefom*0.5+conefom*0.5;
     cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
-    fom = timefom;
+    //fom = timefom;
     dlpara[j] = - 50*dl + j*dl;
     dlfom[j] = fom;
     gr_parallel->SetPoint(j, dlpara[j], dlfom[j]);

@@ -10,7 +10,7 @@ FoMCalculator::FoMCalculator() {
   fConeFitWeight = 0.50;  // nominal cone weight
   
   // default Mean time calculator type
-  fMeanTimeCalculatorType = 0;
+  fMeanTimeCalculatorType = 1;
 }
 
 //Destructor

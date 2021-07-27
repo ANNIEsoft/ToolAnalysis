@@ -18,6 +18,7 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   fSeedGridFits = false;
   /// Get the Tool configuration variables
   m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
+  m_variables.Get("UseMeanTimeAsSeed",fUseMeanTimeAsSeed);
   m_variables.Get("FitAllOnSeedGrid",fSeedGridFits);
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("FitTimeWindowMin", fTmin);
@@ -39,6 +40,7 @@ bool VtxExtendedVertexFinder::Execute(){
   Log("VtxExtendedVertexFinder Tool: Executing",v_debug,verbosity);
   // Reset everything
   this->Reset();
+ //double fMeanTime = 0.0;
   
   // check if event passes the cut
   bool EventCutstatus = false;
@@ -61,7 +63,8 @@ bool VtxExtendedVertexFinder::Execute(){
   
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
-  
+  m_data->Stores.at("RecoEvent")->Get("meanTime", fMeanTime);
+
   std::cout<<"event number = "<<fEventNumber<<std::endl;
 	
   // Retrive digits from RecoEvent
@@ -93,6 +96,9 @@ bool VtxExtendedVertexFinder::Execute(){
     
     Log(logmessage,v_debug,verbosity);
   }
+  if(fUseMeanTimeAsSeed){
+  fTrueVertex->SetTime(fMeanTime);
+}
   // return vertex
   fExtendedVertex  = (RecoVertex*)(this->FitExtendedVertex(fTrueVertex));
   // Push fitted vertex to RecoEvent store
@@ -111,6 +117,9 @@ bool VtxExtendedVertexFinder::Execute(){
     }
     //Now, run FindGridSeeds.
     fExtendedVertex = (RecoVertex*)(this->FitGridSeeds(vSeedVtxList));
+    if(fUseMeanTimeAsSeed){
+    fExtendedVertex->SetTime(fMeanTime);
+    }
     // Push fitted vertex to RecoEvent store
     this->PushExtendedVertex(fExtendedVertex, true);
   }

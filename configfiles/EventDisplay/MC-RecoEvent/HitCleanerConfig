@@ -15,5 +15,5 @@ LappdMinNeighbourDigits 20 #minimum neighbour digits
 LappdClusterRadius 25   #digit clustering distance [cm]                                    
 LappdTimeWindowN 0.6    #neighbouring time window [ns]                 
 LappdTimeWindowC 1      #clustering time window [ns]                   
-LappdMinHitsPerCluster 20 #number of digits per cluster	
+LappdMinHitsPerCluster 0 #number of digits per cluster	
 MinClusterDigits 50	#minimum clustered digits							  

@@ -3,6 +3,7 @@ myLoadWCSimLAPPD LoadWCSimLAPPD configfiles/EventDisplay/MC-RecoEvent/LoadWCSimL
 myMCParticleProperties MCParticleProperties configfiles/EventDisplay/MC-RecoEvent/MCParticlePropertiesConfig
 myMCRecoEventLoader MCRecoEventLoader configfiles/EventDisplay/MC-RecoEvent/MCRecoEventLoaderConfig
 myDigitBuilder DigitBuilder configfiles/EventDisplay/MC-RecoEvent/DigitBuilderConfig
+myClusterFinder ClusterFinder configfiles/EventDisplay/MC-RecoEvent/ClusterFinderConfig
 myHitCleaner HitCleaner configfiles/EventDisplay/MC-RecoEvent/HitCleanerConfig
 myEventSelector EventSelector configfiles/EventDisplay/MC-RecoEvent/EventSelectorConfig
 myEventDisplay EventDisplay configfiles/EventDisplay/MC-RecoEvent/EventDisplayConfig
