@@ -13,6 +13,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TMath.h"
+#include "TGraph.h"
 #include "ADCPulse.h"
 #include "Waveform.h"
 #include "CalibratedADCWaveform.h"
@@ -238,7 +239,7 @@ class PhaseIITreeMaker: public Tool {
   double fDeltaAzimuth;
   double fDeltaZenith;  
   double fDeltaAngle;
-  
+  TGraph *gr_deltaRvAngle; 
 
   /// \brief Integer that determines the level of logging to perform
   int verbosity = 0;

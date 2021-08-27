@@ -7,6 +7,7 @@
 #include "Tool.h"
 #include "TH1.h"
 #include "TH2D.h"
+#include "TMath.h"
 
 #include "FoMCalculator.h"
 #include "VertexGeometry.h"
@@ -50,6 +51,7 @@ class LikelihoodFitterCheck: public Tool {
  	TH2D* Likelihood2D = 0;
  	TGraph *gr_parallel = 0;
  	TGraph *gr_transverse = 0;
+	TGraph *gr_zenith = 0;
  	
  	/// verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=-1;

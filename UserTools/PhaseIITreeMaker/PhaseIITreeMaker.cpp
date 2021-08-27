@@ -274,6 +274,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("deltaAzimuth",&fDeltaAzimuth,"deltaAzimuth/D");
       fPhaseIITrigTree->Branch("deltaZenith",&fDeltaZenith,"deltaZenith/D");
       fPhaseIITrigTree->Branch("deltaAngle",&fDeltaAngle,"deltaAngle/D");
+      gr_deltaRvAngle = new TGraph();
+      fPhaseIITrigTree->Branch("deltaRvAngle",&gr_deltaRvAngle, "deltaVtxR/Zenith");
     } 
   }
   return true;
@@ -470,6 +472,7 @@ bool PhaseIITreeMaker::Execute(){
 bool PhaseIITreeMaker::Finalise(){
 	fOutput_tfile->cd();
 	fPhaseIITrigTree->Write();
+	gr_deltaRvAngle->Write();
     fPhaseIIMRDClusterTree->Write();
 	fPhaseIITankClusterTree->Write();
 	fOutput_tfile->Close();
@@ -1050,6 +1053,9 @@ void PhaseIITreeMaker::FillTruthRecoDiffInfo(bool successful_mcload,bool success
     double phi = TMath::ACos(cosphi); // radians
     double TheAngle = phi/(TMath::Pi()/180.0); // radians->degrees
     fDeltaAngle = TheAngle;
+    if(fDeltaVtxR>-2000 &&fDeltaVtxR<2000){
+      gr_deltaRvAngle->SetPoint(fEventNumber, fDeltaVtxR, fRecoPhi/(TMath::Pi()/180.0));
+    }
   }
 }
 

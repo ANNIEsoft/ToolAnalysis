@@ -626,7 +626,7 @@ double VertexGeometry::GetDeltaCorrection(int idigit, double Length)
 
     double theta = ConeAngleRad;
     double sinphi = (Lpoint/LphotonNew)*sin(AngleRad);
-    double phi = asin(sinphi);
+    double phi = asin(sinphi)+(TMath::Pi()/6.0);   //Added pi/6 to test angular offset
     double alpha = theta-phi;
     double LphotonNewCorrected = LphotonNew*alpha/sin(alpha);
 
