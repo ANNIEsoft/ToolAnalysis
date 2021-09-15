@@ -1,0 +1,4 @@
+verbosity 3
+
+OutputFile /Jingbo/VtxGeometryCheckDoE.root
+ShowEvent 2

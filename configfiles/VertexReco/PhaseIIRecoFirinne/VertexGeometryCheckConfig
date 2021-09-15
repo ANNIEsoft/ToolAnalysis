@@ -1,0 +1,4 @@
+verbosity 0
+
+OutputFile /Jingbo/VGCheck1000mu-mean-gridall2.root
+ShowEvent 3

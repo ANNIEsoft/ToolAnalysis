@@ -1,0 +1,6 @@
+verbosity 0
+
+OutputFile /Jingbo/LikelihoodCheckDoE.root
+ifPlot2DFOM 1
+ShowEvent 2
+
