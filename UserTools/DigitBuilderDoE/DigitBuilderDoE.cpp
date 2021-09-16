@@ -45,7 +45,7 @@ bool DigitBuilderDoE::Initialise(std::string configfile, DataModel &data){
   
   //Construct objects
 	DigitVertices = new std::vector<LorentzVector<PxPyPzE4D<double>>>;
-  DigitWhichDet = new std::vector<std::string>;
+        DigitWhichDet = new std::vector<std::string>;
 	DigitCharges = new std::vector<double>;
 	DigitIdArray = new std::vector<int>;
 	MuonStartVertex = new TLorentzVector;
@@ -118,13 +118,14 @@ bool DigitBuilderDoE::Execute(){
       if((fPhotodetectorConfiguration == "LAPPD_only") || (fPhotodetectorConfiguration == "All")){
         DigitId = DigitIdArray->at(i);
         if (DigitId == 236 || DigitId == 203 || DigitId == 268 || DigitId==231 || DigitId == 240){
+        //if (DigitId !=-999){
           digitType = 1;
           pos_reco.SetX(DigitVertices->at(i).X());
           pos_reco.SetY(DigitVertices->at(i).Y() + 14.46469);
           pos_reco.SetZ(DigitVertices->at(i).Z() - 168.1);
           calQ = 1; //Charges not well modeled yet; don't use
           calT = DigitVertices->at(i).T() - fHistoricOffset;
-					calT = frand.Gaus(calT, 0.1); // time is smeared with 100 ps time resolution. Harded-coded for now.
+					calT = frand.Gaus(calT, 0.08); // time is smeared with 80 ps time resolution. Harded-coded for now.
     		  RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, DigitId);
     		  fDigitList->push_back(recoDigit);
         }
@@ -184,6 +185,7 @@ bool DigitBuilderDoE::Finalise(){
 void DigitBuilderDoE::PushTrueVertex(bool savetodisk) {
   Log("EventSelector Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
   m_data->Stores.at("RecoEvent")->Set("TrueVertex", fMuonStartVertex, savetodisk); 
+  cout<<"DigitbuilderDoE vertex time: "<<fMuonStartVertex->GetTime()<<endl;
 }
 
 void DigitBuilderDoE::PushRecoDigits(bool savetodisk) {

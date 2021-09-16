@@ -89,7 +89,7 @@ bool EventSelectorDoE::Execute(){
 
 bool EventSelectorDoE::Finalise(){
   if(verbosity>0) cout<<"EventSelectorDoE exitting"<<endl;
-  delete fMuonVertex;
+  //delete fMuonVertex; // code will crash with this line (Jingbo, Sep 7, 2021)
   return true;
 }
 

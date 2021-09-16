@@ -1,5 +1,5 @@
 /*************************************************************************
-    > File Name: MinuitOptimizer.hh
+    > File Name: FoMCalculator.hh
     > Author: Jingbo Wang, Teal Pershing 
     > mail: jiowang@ucdavis.edu, tjpershing@ucdavis.edu 
     > Created Time: MAY 07, 2019

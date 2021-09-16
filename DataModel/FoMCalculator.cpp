@@ -52,7 +52,8 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double& vtxFOM)
   
   // loop over digits
   // ================
-  for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
+  for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 
+  	  if(!fVtxGeo->IsFiltered(idigit)) continue;   
     	int detType = this->fVtxGeo->GetDigitType(idigit); 
       delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
       sigma = this->fVtxGeo->GetDeltaSigma(idigit);
@@ -100,6 +101,7 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   double fom = -9999.;
 
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 	
+  	if(!fVtxGeo->IsFiltered(idigit)) continue; 
     if( this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch){
       deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
       digitCharge = this->fVtxGeo->GetDigitQ(idigit);
@@ -147,6 +149,7 @@ double FoMCalculator::FindSimpleTimeProperties(double myConeEdge) {
     double myConeEdgeSigma = 7.0;  // [degrees]
     
     for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){
+    	if(!fVtxGeo->IsFiltered(idigit)) continue; 
       int detType = this->fVtxGeo->GetDigitType(idigit); 
       if( this->fVtxGeo->IsFiltered(idigit) ){
         delta = this->fVtxGeo->GetDelta(idigit);    
@@ -182,6 +185,7 @@ double FoMCalculator::FindSimpleTimeProperties(double myConeEdge) {
 		vector<double> TimeWeight;
 		
 		for( int idigit=0; idigit<fVtxGeo->GetNDigits(); idigit++ ){
+			if(!fVtxGeo->IsFiltered(idigit)) continue; 
       if(fVtxGeo->IsFiltered(idigit)){
         deltaTime1.push_back(fVtxGeo->GetDelta(idigit));  
         deltaTime2.push_back(fVtxGeo->GetDelta(idigit));   

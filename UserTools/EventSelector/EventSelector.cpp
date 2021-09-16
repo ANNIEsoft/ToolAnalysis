@@ -294,6 +294,7 @@ bool EventSelector::Execute(){
     Log("EventSelector Tool: Event is clean according to current event selection.",v_message,verbosity);
   }
   if(fSaveStatusToStore) m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
 

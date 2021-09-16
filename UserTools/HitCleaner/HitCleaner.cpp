@@ -564,7 +564,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
     RecoClusterDigit* clusterDigit = new RecoClusterDigit(recoDigit);
     vClusterDigitList.push_back(clusterDigit);
   }
-
+  
   // run clustering algorithm
   // ========================
   for(int idigit1=0; idigit1<int(vClusterDigitList.size()); idigit1++){
@@ -643,7 +643,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
       while( carryon ){
         carryon = 0;
         for(int jdigit=0; jdigit<int(vClusterDigitCollection.size()); jdigit++ ){
-	  //std::cout <<"jdigit = "<<jdigit<<", vClusterDigitCollection.size() = "<<vClusterDigitCollection.size()<<std::endl;
+	        if(verbosity>v_debug) std::cout <<"jdigit = "<<jdigit<<", vClusterDigitCollection.size() = "<<vClusterDigitCollection.size()<<std::endl;
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
           TString digitType = cdigit->GetDigitType();
 	        double nDigits = cdigit->GetNClusterDigits();
@@ -677,7 +677,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
 	        
         }
       } 
-	//std::cout <<"vClusterDigitCollection.size() == "<<vClusterDigitCollection.size()<<std::endl;
+	    if(verbosity>v_debug) std::cout <<"vClusterDigitCollection.size() == "<<vClusterDigitCollection.size()<<std::endl;
       if( (int)vClusterDigitCollection.size()>=fMinClusterDigits ){
         RecoCluster* cluster = new RecoCluster();
         fClusterList->push_back(cluster);
@@ -691,7 +691,7 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
     }
   }
 
-  //std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
+  if(verbosity>v_debug) std::cout <<"fClusterList->size() = "<<fClusterList->size()<<std::endl;
   // return vector of clusters
   // =========================
   return fClusterList;

@@ -103,6 +103,17 @@ bool LikelihoodFitterCheck::Execute(){
   VertexGeometry* myvtxgeo = VertexGeometry::Instance();
   myvtxgeo->LoadDigits(fDigitList);
   myFoMCalculator->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+  
+  // fom at true vertex position
+  double fom = -999.999*100;
+  double timefom = -999.999*100;
+  double conefom = -999.999*100;
+  myvtxgeo->CalcExtendedResiduals(trueVtxX ,trueVtxY ,trueVtxZ, 0.0, trueDirX, trueDirY,trueDirZ);
+  myFoMCalculator->TimePropertiesLnL(trueVtxT,timefom);
+  myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
+  fom = timefom*0.5+conefom*0.5;
+  if(verbosity>0)  cout<<"LilelihoodFitterCheck Tool: "<<"FOM at true vertex = "<<fom<<endl;
+  
   //parallel direction
   double dl = 1.0; // step size  = 1 cm along the track
   double dx = dl * trueDirX;
@@ -121,13 +132,13 @@ bool LikelihoodFitterCheck::Execute(){
     myvtxgeo->CalcExtendedResiduals(seedX, seedY, seedZ, 0.0, seedDirX, seedDirY, seedDirZ);
     int nhits = myvtxgeo->GetNDigits();
     double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
-    Double_t fom = -999.999*100;
+    double fom = -999.999*100;
     double timefom = -999.999*100;
     double conefom = -999.999*100;
     myFoMCalculator->TimePropertiesLnL(meantime,timefom);
     myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
     fom = timefom*0.5+conefom*0.5;
-    cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
+    if(verbosity>1) cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
     //fom = timefom;
     dlpara[j] = - 50*dl + j*dl;
     dlfom[j] = fom;
@@ -162,7 +173,7 @@ bool LikelihoodFitterCheck::Execute(){
     myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
     fom = timefom*0.5+conefom*0.5;
     //fom = timefom;
-    cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
+    if(verbosity>1) cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
     dltrans[j] = - 50*dl + j*dl;
     dlfom[j] = fom;
     gr_transverse->SetPoint(j, dlpara[j], dlfom[j]);
@@ -197,7 +208,7 @@ bool LikelihoodFitterCheck::Execute(){
           myFoMCalculator->ConePropertiesFoM(coneAngle,conefom);
           fom = timefom*0.5+conefom*0.5;
           //fom = timefom;
-          cout<<"k,m, timeFOM, coneFOM, fom = "<<k<<", "<<m<<", "<<timefom<<", "<<conefom<<", "<<fom<<endl;
+          if(verbosity>1) cout<<"k,m, timeFOM, coneFOM, fom = "<<k<<", "<<m<<", "<<timefom<<", "<<conefom<<", "<<fom<<endl;
           Likelihood2D->SetBinContent(m, k, fom);
           if(fom > bestFOM){
 	    peakX = seedX;
@@ -225,7 +236,7 @@ bool LikelihoodFitterCheck::Execute(){
         myFoMCalculator->TimePropertiesLnL(meantime, timefom);
         myFoMCalculator->ConePropertiesFoM(coneAngle, conefom);
         fom = timefom * 0.5 + conefom * 0.5;
-        cout << "k, timeFOM, coneFOM, fom = " << k << ", " << timefom << ", " << conefom << ", " << fom << endl;
+        if(verbosity>1) cout << "k, timeFOM, coneFOM, fom = " << k << ", " << timefom << ", " << conefom << ", " << fom << endl;
         gr_zenith->SetPoint(k, zenith, fom);
   }
 

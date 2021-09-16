@@ -47,7 +47,8 @@ class PhaseIITreeMaker: public Tool {
   void RecoSummary();
   void LoadTankClusterHits(std::vector<Hit> cluster_hits);
   bool LoadTankClusterClassifiers(double cluster_time);
-  void LoadAllTankHits();
+  void LoadAllTankHits();     
+  void LoadAllTankRecoDigits();
   void LoadSiPMHits();
 
  private:
@@ -94,7 +95,7 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fSiPMHitT;
   std::vector<double> fSiPMHitAmplitude;
   std::vector<double> fSiPMNum;
-  // Digits
+  // Tank Hits
   int fNHits = 0;
   std::vector<int> fIsFiltered;
   std::vector<double> fHitX;
@@ -105,6 +106,18 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fHitPE; 
   std::vector<int> fHitType;
   std::vector<int> fHitDetID;
+  	
+  // Tank RecoDigits
+  int fNRecoDigits = 0;
+  std::vector<int> fRecoDigitIsFiltered;
+  std::vector<double> fRecoDigitX;
+  std::vector<double> fRecoDigitY;
+  std::vector<double> fRecoDigitZ;
+  std::vector<double> fRecoDigitT;
+  std::vector<double> fRecoDigitQ; 
+  std::vector<double> fRecoDigitPE; 
+  std::vector<int> fRecoDigitType;
+  std::vector<int> fRecoDigitDetID;
 
   // MRD hit info 
   int fVetoHit;
@@ -255,6 +268,7 @@ class PhaseIITreeMaker: public Tool {
   bool MRDClusterProcessing = 0;
   bool TriggerProcessing = 1;
   bool TankHitInfo_fill = 0;
+  bool TankRecoDigitInfo_fill = 0;
   bool MRDHitInfo_fill = 0;
   bool fillCleanEventsOnly = 0; //Only output events not flagged by EventSelector tool
   bool MCTruth_fill = 0; //Output the MC truth information

@@ -3,7 +3,7 @@ LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/VertexReco/PhaseIIRecoFirinne/LoadWC
 MCParticleProperties MCParticleProperties ./configfiles/VertexReco/PhaseIIRecoFirinne/MCParticlePropertiesConfig
 MCRecoEventLoader MCRecoEventLoader ./configfiles/VertexReco/PhaseIIRecoFirinne/MCRecoEventLoaderConfig
 DigitBuilder DigitBuilder ./configfiles/VertexReco/PhaseIIRecoFirinne/DigitBuilderConfig
-#HitCleaner HitCleaner ./configfiles/VertexReco/PhaseIIRecoFirinne/HitCleanerConfig
+HitCleaner HitCleaner ./configfiles/VertexReco/PhaseIIRecoFirinne/HitCleanerConfig
 ClusterFinder ClusterFinder ./configfiles/VertexReco/PhaseIIRecoFirinne/ClusterFinderConfig
 TimeClustering TimeClustering ./configfiles/VertexReco/PhaseIIRecoFirinne/TimeClusteringConfig
 #VtxSeedGenerator VtxSeedGenerator ./configfiles/VertexReco/PhaseIIRecoFirinne/VtxSeedGeneratorConfig

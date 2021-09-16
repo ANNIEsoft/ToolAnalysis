@@ -1,3 +1,10 @@
+/*************************************************************************
+    > File Name: HitCleaner.h
+    > Author: Jingbo Wang
+    > Email: jingbo.wang@sdsmt.edu
+    > Other Contributors: please add your information
+ ************************************************************************/
+
 #ifndef HITCLEANER_H
 #define HITCLEANER_H
 

@@ -28,7 +28,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   fPhotodetectorConfiguration = "All";
   fParametricModel = 0;
   fIsMC = 1;
-  fDigitChargeThr = 10;
+  fDigitChargeThr = 10.0;
 
 
   /// Get the Tool configuration variables
@@ -254,7 +254,7 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
             }
             double hitTime = ahit.GetTime()*1.0;
           	if(hitTime>-10 && hitTime<40) {
-			  hitTimes.push_back(ahit.GetTime()*1.0); 
+			        hitTimes.push_back(ahit.GetTime()*1.0); 
               hitCharges.push_back(ahit.GetCharge());
             }
           }

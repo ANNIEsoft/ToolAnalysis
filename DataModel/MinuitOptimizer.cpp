@@ -762,7 +762,7 @@ void MinuitOptimizer::FitExtendedVertexWithMinuit() {
                     && fSeedVtx->FoundDirection() );
 
 
-  double seedTime = fSeedVtx->GetTime();
+  double seedTime = fSeedVtx->GetTime(); //use true vertex time
   double seedX = fSeedVtx->GetPosition().X();
   double seedY = fSeedVtx->GetPosition().Y();
   double seedZ = fSeedVtx->GetPosition().Z();
@@ -773,6 +773,10 @@ void MinuitOptimizer::FitExtendedVertexWithMinuit() {
 
   double seedTheta = acos(seedDirZ);
   double seedPhi = 0.0;
+  
+  double meanvtxTime = fgFoMCalculator->FindSimpleTimeProperties(fConeAngle);  //returns weighted average of the expected vertex time
+  seedTime = meanvtxTime; //use the weighted average vtx time as the seed
+  
   
   //modified by JW
   if( seedDirX>0.0 ){

@@ -57,6 +57,7 @@
 #include "LAPPDAnalysis.h"
 #include "ExampleOverTool.h"
 #include "PhaseIITreeMaker.h"
+#include "PhaseIITreeMakerDoE.h"
 #include "VertexGeometryCheck.h"
 #include "LikelihoodFitterCheck.h"
 #include "EventSelector.h"
