@@ -9,6 +9,6 @@ TankHitInfo_fill 0
 TankRecoDigitInfo_fill 1
 fillCleanEventsOnly 1
 
-OutputFile /Jingbo/VtxRecoTree_20210915.root
+OutputFile /annie/data/users/flemmons/VtxRecoTree-LAPPD_retry.root
 NumEventsWritten 2000
 

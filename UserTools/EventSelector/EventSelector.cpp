@@ -353,14 +353,16 @@ bool EventSelector::NHitCountCheck(int NHitCut) {
   }
   
   int size_pmt_digits = 0;
+  int size_lappd_digits = 0;
 
   for (unsigned int i_digit = 0; i_digit < fDigitList->size(); i_digit++){
     RecoDigit thisdigit = fDigitList->at(i_digit);
     int digittype = thisdigit.GetDigitType();
     if (digittype == 0) size_pmt_digits++;
+    if (digittype == 1) size_lappd_digits++;
   }
 
-  if(size_pmt_digits<NHitCut) {
+  if((size_pmt_digits+size_lappd_digits)<NHitCut) {
     Log("EventSelector Tool: Event has less than 4 digits",v_message,verbosity);
     return false;
   }
