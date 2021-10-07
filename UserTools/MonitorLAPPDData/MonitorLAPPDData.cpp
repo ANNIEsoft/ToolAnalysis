@@ -301,7 +301,6 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	canvas_pedestal_difference = new TCanvas("canvas_pedestal_difference", "LAPPD Pedestals Differences", 900, 600);
 	canvas_rate_all = new TCanvas("canvas_rate_all", "LAPPD Rates", 900, 600);
 	canvas_rate_threshold_all = new TCanvas("canvas_rate_threshold_all", "LAPPD Hits", 900, 600);
-	;
 
 	//Histograms
 	//ToDo: Not hardcode the number of channels here
@@ -339,8 +338,9 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	}
 	for (int i_label_y = 0; i_label_y < numberOfCards; i_label_y++) {
 		std::stringstream ss_card;
-		ss_card << i_label_y;
-		std::string str_card = "card " + ss_card.str();
+		int board_nr = board_configuration.at(i_label_y);
+		ss_card << board_nr;
+		std::string str_card = "board " + ss_card.str();
 		hist_pedestal_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 		hist_pedestal_difference_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 		hist_rate_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
@@ -361,6 +361,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 
 
 //TODO: Change this number
+//In principle, here we need the number of events in the file
 	for (int i_event = 0; i_event < 100; i_event++) {
 		std::map<int, std::vector<TH1F*> > tempMap;
 		for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
@@ -368,7 +369,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		std::vector<TH1F*> hist_waveform_temp_vec;
 		for (int i = 0; i < numberOfChannels; i++) {
 			std::stringstream ss_waveform_text;
-			ss_waveform_text << "hist_waveforms" << board_nr << "channel" << i;
+			ss_waveform_text << "hist_waveforms" << board_nr << "channel" << i << "event" << i_event;
 			TH1F *hist_waveforms_onedim_single = new TH1F(ss_waveform_text.str().c_str(), ss_waveform_text.str().c_str(), 256, 0, 256);
 			hist_waveforms_onedim_single->GetXaxis()->SetTitle("Buffer position");
 			hist_waveforms_onedim_single->GetYaxis()->SetTitle("ADC value");
@@ -1316,13 +1317,15 @@ void MonitorLAPPDData::DrawLastFileHists() {
 		canvas_waveform_voltages->Clear();
 		canvas_waveform_voltages->cd();
 		std::stringstream ss_text_waveform_voltages;
-		ss_text_waveform_voltages << "LAPPD voltages Board " << board_nr << " (" << current_time.str() << ")";
+		ss_text_waveform_voltages << "LAPPD waverform Board " << board_nr << " (" << current_time.str() << ")";
 		hist_waveform_voltages.at(board_nr)->SetTitle(ss_text_waveform_voltages.str().c_str());
 		hist_waveform_voltages.at(board_nr)->SetStats(0);
 		hist_waveform_voltages.at(board_nr)->Draw("COLZ");
 		std::stringstream ss_path_waveform_voltages;
 		ss_path_waveform_voltages << outpath << "LAPPDWaveform_Voltages_Board" << board_nr << "_current." << img_extension;
 		canvas_waveform_voltages->SaveAs(ss_path_waveform_voltages.str().c_str());
+
+		PedestalFits(board_nr, i_board);
 
 		long entries;
 		LAPPDData->Header->Get("TotalEntries", entries);
@@ -1337,87 +1340,17 @@ void MonitorLAPPDData::DrawLastFileHists() {
 //			hist_waveforms_onedim.at(board_nr).at(i_channel)->SetMarkerColor(colorVec.at(i_channel));
 //			hist_waveforms_onedim.at(board_nr).at(i_channel)->SetLineColor(colorVec.at(i_channel));
 				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Draw("HIST");
-
-				std::stringstream ss_path_waveform_onedim;
-				ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "eventNumber" << i_event << "_current." << img_extension;
-				canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
+				//ToDo: Find reasonable threshold for displaying pulses
+////				if(hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 2*sigma_pedestal.at(board_nr).at(i_channel)){
+//				std::stringstream ss_path_waveform_onedim;
+//				ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "eventNumber" << i_event << "_current." << img_extension;
+//				canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
+////				}
 			}
 		}
 
-		std::vector<int> entries_vec;
-		std::vector<double> mean_vec;
-		std::vector<double> sigma_vec;
-		for (size_t i_channel = 0; i_channel < hist_pedestal.at(board_nr).size(); i_channel++) {
-			canvas_pedestal->Clear();
-			canvas_pedestal->cd();
-			std::stringstream ss_path_pedestal;
-			ss_path_pedestal << outpath << "LAPPDPedestal_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
-			std::stringstream ss_text_pedestal;
-			ss_text_pedestal << "LAPPD pedestal board " << board_nr << "channel " << i_channel << " (" << current_time.str() << ")";
-			hist_pedestal.at(board_nr).at(i_channel)->SetTitle(ss_text_pedestal.str().c_str());
-			hist_pedestal.at(board_nr).at(i_channel)->SetStats(0);
-			entries_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetEntries());
-			double minimum_adc = 0;
-			double maximum_adc = 4000;
-			TF1 *fgaus = new TF1("fgaus", "gaus", minimum_adc, maximum_adc);
-			fgaus->SetParameter(1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
-			fgaus->SetParameter(2, hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
-			TFitResultPtr gaussFitResult = hist_pedestal.at(board_nr).at(i_channel)->Fit("fgaus", "Q");
-			int gaussFitResultInt = gaussFitResult;
 
-			//TODO: Put this in own function and tune parameters
 
-			hist_pedestal.at(board_nr).at(i_channel)->Draw("C");
-			fgaus->Draw("SAME");
-			canvas_pedestal->SaveAs(ss_path_pedestal.str().c_str());
-
-			int counter = 0;
-			int counterThreshold = 0;
-
-			if (gaussFitResultInt == 0) {
-				bool outOfBounds = ((fgaus->GetParameter(1) < 2000.) || (fgaus->GetParameter(1) > 3200.) || (fgaus->GetParameter(1) > 500.) || (fgaus->GetParameter(1) < 50.));
-				bool suddenChange = false;
-				//Look for a sudden change if we do not perform the first fit per board and channel
-				if (mean_pedestal.size() > i_board) {
-					if (mean_pedestal.at(board_nr).size() > i_channel) {
-						suddenChange = (fabs(fgaus->GetParameter(1) - mean_pedestal.at(board_nr).at(i_channel)) > 10 || fabs(fgaus->GetParameter(2) - sigma_pedestal.at(board_nr).at(i_channel)) > 0.2);
-					}
-				}
-				if (!outOfBounds && !suddenChange) {
-					mean_vec.push_back(fgaus->GetParameter(1));
-					sigma_vec.push_back(fgaus->GetParameter(2));
-					hist_pedestal_all->SetBinContent(i_channel + 1, i_board + 1, fgaus->GetParameter(1));
-				} else {
-					mean_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetMean());
-					sigma_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
-					hist_pedestal_all->SetBinContent(i_channel + 1, i_board + 1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
-				}
-			} else {
-				mean_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetMean());
-				sigma_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
-				hist_pedestal_all->SetBinContent(i_channel + 1, i_board + 1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
-			}
-
-			for (int i_bin = 0; i_bin < hist_pedestal.at(board_nr).at(i_channel)->GetNbinsX(); i_bin++) {
-				double center = hist_pedestal.at(board_nr).at(i_channel)->GetBinCenter(i_bin);
-				int content = hist_pedestal.at(board_nr).at(i_channel)->GetBinContent(i_bin);
-				if (center > 0) {
-					counter += content;
-				}
-				//TODO: Find better parameter
-				int x = 5;
-				if (center > (mean_vec.at(i_channel) + x*sigma_vec.at(i_channel))) {
-					counterThreshold += content;
-				}
-			}
-			hist_rate_all->SetBinContent(i_channel + 1, i_board + 1, counter);
-			hist_rate_threshold_all->SetBinContent(i_channel + 1, i_board + 1, counterThreshold);
-
-			delete fgaus;
-		}
-		num_entries.emplace(board_nr, entries_vec);
-		mean_pedestal.emplace(board_nr, mean_vec);
-		sigma_pedestal.emplace(board_nr, sigma_vec);
 
 	}
 
@@ -1455,6 +1388,93 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	canvas_rate_threshold_all->SaveAs(ss_path_rate_threshold.str().c_str());
 
 }
+
+void MonitorLAPPDData::PedestalFits(int board_nr, int i_board){
+	uint64_t t_fileend = t_file_end.at(i_board);
+	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_fileend / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_fileend / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_fileend / MSEC_to_SEC) % 60, t_fileend % 1000);
+	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
+	std::stringstream current_time;
+	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
+
+
+
+	std::vector<int> entries_vec;
+	std::vector<double> mean_vec;
+	std::vector<double> sigma_vec;
+	for (size_t i_channel = 0; i_channel < hist_pedestal.at(board_nr).size(); i_channel++) {
+		canvas_pedestal->Clear();
+		canvas_pedestal->cd();
+		std::stringstream ss_path_pedestal;
+		ss_path_pedestal << outpath << "LAPPDPedestal_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
+		std::stringstream ss_text_pedestal;
+		ss_text_pedestal << "LAPPD pedestal board " << board_nr << "channel " << i_channel << " (" << current_time.str() << ")";
+		hist_pedestal.at(board_nr).at(i_channel)->SetTitle(ss_text_pedestal.str().c_str());
+		hist_pedestal.at(board_nr).at(i_channel)->SetStats(0);
+		entries_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetEntries());
+		double minimum_adc = 0;
+		double maximum_adc = 4000;
+		TF1 *fgaus = new TF1("fgaus", "gaus", minimum_adc, maximum_adc);
+		fgaus->SetParameter(1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
+		fgaus->SetParameter(2, hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
+		TFitResultPtr gaussFitResult = hist_pedestal.at(board_nr).at(i_channel)->Fit("fgaus", "Q");
+		int gaussFitResultInt = gaussFitResult;
+
+		//TODO: Put this in own function and tune parameters
+
+		hist_pedestal.at(board_nr).at(i_channel)->Draw("C");
+		fgaus->Draw("SAME");
+		canvas_pedestal->SaveAs(ss_path_pedestal.str().c_str());
+
+		int counter = 0;
+		int counterThreshold = 0;
+
+		if (gaussFitResultInt == 0) {
+			bool outOfBounds = ((fgaus->GetParameter(1) < 2000.) || (fgaus->GetParameter(1) > 3200.) || (fgaus->GetParameter(1) > 500.) || (fgaus->GetParameter(1) < 50.));
+			bool suddenChange = false;
+			//Look for a sudden change if we do not perform the first fit per board and channel
+			if (mean_pedestal.size() > i_board) {
+				if (mean_pedestal.at(board_nr).size() > i_channel) {
+					suddenChange = (fabs(fgaus->GetParameter(1) - mean_pedestal.at(board_nr).at(i_channel)) > 10 || fabs(fgaus->GetParameter(2) - sigma_pedestal.at(board_nr).at(i_channel)) > 0.2);
+				}
+			}
+			if (!outOfBounds && !suddenChange) {
+				mean_vec.push_back(fgaus->GetParameter(1));
+				sigma_vec.push_back(fgaus->GetParameter(2));
+				hist_pedestal_all->SetBinContent(i_channel + 1, i_board + 1, fgaus->GetParameter(1));
+			} else {
+				mean_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetMean());
+				sigma_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
+				hist_pedestal_all->SetBinContent(i_channel + 1, i_board + 1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
+			}
+		} else {
+			mean_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetMean());
+			sigma_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
+			hist_pedestal_all->SetBinContent(i_channel + 1, i_board + 1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
+		}
+
+		for (int i_bin = 0; i_bin < hist_pedestal.at(board_nr).at(i_channel)->GetNbinsX(); i_bin++) {
+			double center = hist_pedestal.at(board_nr).at(i_channel)->GetBinCenter(i_bin);
+			int content = hist_pedestal.at(board_nr).at(i_channel)->GetBinContent(i_bin);
+			if (center > 0) {
+				counter += content;
+			}
+			//TODO: Find better parameter
+			int x = 5;
+			if (center > (mean_vec.at(i_channel) + x*sigma_vec.at(i_channel))) {
+				counterThreshold += content;
+			}
+		}
+		hist_rate_all->SetBinContent(i_channel + 1, i_board + 1, counter);
+		hist_rate_threshold_all->SetBinContent(i_channel + 1, i_board + 1, counterThreshold);
+
+		delete fgaus;
+	}
+	num_entries.emplace(board_nr, entries_vec);
+	mean_pedestal.emplace(board_nr, mean_vec);
+	sigma_pedestal.emplace(board_nr, sigma_vec);
+}
+
+
 
 void MonitorLAPPDData::DrawTimeAlignment() {
 
@@ -1876,11 +1896,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 				current_buffer_size.at(vector_idx) += waveform.size();
 				buffer_size += waveform.size();
 				n_buffer.at(vector_idx)++;
-//				if(it->first == 11){
-//				std::cout << i_entry << " " << it->first << " " <<waveform.at(100)<< std::endl;
-//				}
-				for
-(				int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
+				for(int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
 					hist_adc_channel.at(board_idx)->Fill(waveform.at(i_wave),it->first);
 					hist_waveform_channel.at(board_idx)->SetBinContent(i_wave+1,it->first+1,hist_waveform_channel.at(board_idx)->GetBinContent(i_wave+1,it->first+1)+waveform.at(i_wave));
 					hist_waveform_voltages.at(board_idx)->Fill(i_wave, it->first, waveform.at(i_wave));
@@ -1895,8 +1911,6 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		if (n_channels != 0)
 			buffer_size /= n_channels;
 		average_buffer.push_back(buffer_size);
-//		std::cout << hist_waveform_channel.at(board_idx)->GetBinContent(101, 12) << std::endl;
-//		std::cout << hist_waveform_voltages.at(board_idx)->GetBinContent(101, 12) << std::endl;
 	}		//end entry loop
 
 	ModifyBeamgateData(5, data_beamgate_last5files);

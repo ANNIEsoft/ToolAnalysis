@@ -75,6 +75,7 @@ class MonitorLAPPDData: public Tool {
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
   bool does_file_exist(std::string filename);
   void ModifyBeamgateData(size_t numberOfFiles, std::vector<std::vector<uint64_t>> &dataVector);
+  void PedestalFits(int board_nr, int i_board);
 
  private:
 
