@@ -74,6 +74,8 @@ class MonitorLAPPDData: public Tool {
   //Helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
   bool does_file_exist(std::string filename);
+  void ModifyBeamgateData(size_t numberOfFiles, std::vector<std::vector<uint64_t>> &dataVector);
+  void PedestalFits(int board_nr, int i_board);
 
  private:
 
@@ -163,6 +165,7 @@ class MonitorLAPPDData: public Tool {
   std::vector<std::vector<uint64_t>> data_beamgate_last5files;
   std::vector<std::vector<uint64_t>> data_beamgate_last10files;
   std::vector<std::vector<uint64_t>> data_beamgate_last20files;
+  std::vector<std::vector<uint64_t>> data_beamgate_last100files;
 
   //Plotting variables in vectors (multiple files)
   std::map<int,std::vector<ULong64_t>> data_times_plot;
@@ -174,6 +177,9 @@ class MonitorLAPPDData: public Tool {
   std::map<int,std::vector<double>> buffer_size_plot;
   std::map<int,std::vector<int>> num_channels_plot;
   std::map<int,std::vector<TDatime>> labels_timeaxis;
+  std::map<int,std::vector<int> > num_entries;
+  std::map<int,std::vector<double> > mean_pedestal;
+  std::map<int,std::vector<double> > sigma_pedestal;
 
   //canvas
   TCanvas *canvas_status_data = nullptr;
@@ -190,6 +196,13 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_waveform = nullptr;
   TCanvas *canvas_buffer_channel = nullptr;
   TCanvas *canvas_buffer = nullptr;
+  TCanvas *canvas_waveform_voltages = nullptr;
+  TCanvas *canvas_waveform_onedim = nullptr;
+  TCanvas *canvas_pedestal = nullptr;
+  TCanvas *canvas_pedestal_all = nullptr;
+  TCanvas *canvas_pedestal_difference = nullptr;
+  TCanvas *canvas_rate_all = nullptr;
+  TCanvas *canvas_rate_threshold_all = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -198,7 +211,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_int_charge;
 
   //histograms
-  std::map<int, TH1F*> hist_align_1file;
+  std::map<int,TH1F*> hist_align_1file;
   std::map<int,TH1F*> hist_align_5files;
   std::map<int,TH1F*> hist_align_10files;
   std::map<int,TH1F*> hist_align_20files;
@@ -207,11 +220,19 @@ class MonitorLAPPDData: public Tool {
   std::map<int,TH2F*> hist_waveform_channel;
   std::map<int,TH2F*> hist_buffer_channel;
   std::map<int,TH1F*> hist_buffer;
+  std::map<int,TH2F*> hist_waveform_voltages;
+  std::vector<std::map<int, std::vector<TH1F*> > > hist_waveforms_onedim;
+  std::map<int, std::vector<TH1F*> > hist_pedestal;
+  TH2F* hist_pedestal_all = nullptr;
+  TH2F* hist_pedestal_difference_all = nullptr;
+  TH2F* hist_rate_all = nullptr;
+  TH2F* hist_rate_threshold_all = nullptr;
 
   //text
   TText *text_data_title = nullptr;
   TText *text_pps_rate = nullptr;
   TText *text_frame_rate = nullptr;
+  TText *text_buffer_size = nullptr;
   TText *text_int_charge = nullptr;
 
   //Verbosity variables
