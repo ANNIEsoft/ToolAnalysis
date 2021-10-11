@@ -13,8 +13,8 @@ bool MonitorLAPPDDataSingle::Initialise(std::string configfile, DataModel &data)
   /////////////////////////////////////////////////////////////////
 
   //only for debugging memory leaks, otherwise comment out
-  //std::cout <<"List of Objects (beginning of initialise): "<<std::endl;
-  //gObjectTable->Print();
+  std::cout <<"MonitorLAPPDDataSingle: List of Objects (beginning of Initialise): "<<std::endl;
+  gObjectTable->Print();
 
   m_variables.Get("OutputPath",outpath_temp);
   m_variables.Get("verbose",verbosity);
@@ -56,7 +56,6 @@ bool MonitorLAPPDDataSingle::Initialise(std::string configfile, DataModel &data)
 
   //omit warning messages from ROOT: info messages - 1001, warning messages - 2001, error messages - 3001
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
-
 
   return true;
 }
@@ -115,6 +114,11 @@ bool MonitorLAPPDDataSingle::Execute(){
 
   }
 
+  //Check for ROOT-related memory leaks (just for debugging)
+  std::cout <<"MonitorLAPPDDataSingle: End of Execute"<<std::endl;
+  gObjectTable->Print();
+
+
   return true;
 }
 
@@ -171,6 +175,15 @@ void MonitorLAPPDDataSingle::LoadACDCBoardConfig(std::string acdc_config){
     current_hasdata.emplace(board_number,false);
   }
   acdc_file.close();
+
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    std::vector<ULong64_t> temp_vector;
+    vec_timestamps_10.emplace(board_configuration.at(i_board),temp_vector);
+    vec_timestamps_100.emplace(board_configuration.at(i_board),temp_vector);
+    vec_timestamps_1000.emplace(board_configuration.at(i_board),temp_vector);
+    vec_timestamps_10000.emplace(board_configuration.at(i_board),temp_vector);
+  }
+
 }
 
 void MonitorLAPPDDataSingle::InitializeHistsLAPPDLive(){
@@ -186,6 +199,10 @@ void MonitorLAPPDDataSingle::InitializeHistsLAPPDLive(){
   canvas_live_waveform_channel = new TCanvas("canvas_live_waveform_channel","LAPPD Live Waveform vs. channel",900,600);
   canvas_live_timeevolution = new TCanvas("canvas_live_timeevolution","Time evolution Live Data",900,600);
   canvas_live_occupancy = new TCanvas("canvas_live_occupancy","LAPPD Live channel occupancy",900,600);
+  canvas_live_timealign_10 = new TCanvas("canvas_live_timealign_10","LAPPD timestamp - beamgate",900,600);
+  canvas_live_timealign_100 = new TCanvas("canvas_live_timealign_100","LAPPD timestamp - beamgate",900,600);
+  canvas_live_timealign_1000 = new TCanvas("canvas_live_timealign_1000","LAPPD timestamp - beamgate",900,600);
+  canvas_live_timealign_10000 = new TCanvas("canvas_live_timealign_10000","LAPPD timestamp - beamgate",900,600);
 
   //Histograms
   for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++){
@@ -196,24 +213,40 @@ void MonitorLAPPDDataSingle::InitializeHistsLAPPDLive(){
     std::stringstream ss_waveform_channel, title_waveform_channel;
     std::stringstream ss_timeevolution, title_timeevolution;
     std::stringstream ss_occupancy, title_occupancy;
+    std::stringstream ss_timealign_10, title_timealign_10;
+    std::stringstream ss_timealign_100, title_timealign_100;
+    std::stringstream ss_timealign_1000, title_timealign_1000;
+    std::stringstream ss_timealign_10000, title_timealign_10000;
 
     ss_adc_channel << "hist_live_adc_channel_board"<<board_nr;
     ss_buffer_channel << "hist_live_buffer_channel_board"<<board_nr;
     ss_timeevolution << "hist_live_timeevolution_board"<<board_nr;
     ss_occupancy << "hist_live_occupancy_board"<<board_nr;
     ss_waveform_channel << "hist_live_waveform_channel_board"<<board_nr;
+    ss_timealign_10 << "hist_live_timealign_10_board"<<board_nr;
+    ss_timealign_100 << "hist_live_timealign_100_board"<<board_nr;
+    ss_timealign_1000 << "hist_live_timealign_1000_board"<<board_nr;
+    ss_timealign_10000 << "hist_live_timealign_10000_board"<<board_nr;
 
     title_adc_channel << "LAPPD Live ADC vs. channel number, Board "<<board_nr;
     title_buffer_channel << "LAPPD Live Buffer size vs. channel number, Board "<<board_nr;
     title_timeevolution << "LAPPD Live Time Evolution, Board "<<board_nr;
     title_occupancy << "LAPPD Live Channel Occupancy, Board "<<board_nr;
     title_waveform_channel << "LAPPD Live Waveform, Board "<<board_nr;
+    title_timealign_10 << "LAPPD Timestamp alignment (10 events), Board "<<board_nr;
+    title_timealign_100 << "LAPPD Timestamp alignment (100 events), Board "<<board_nr;
+    title_timealign_1000 << "LAPPD Timestamp alignment (1000 events), Board "<<board_nr;
+    title_timealign_10000 << "LAPPD Timestamp alignment (10,000 events), Board "<<board_nr;
 
     TH2F *hist_adc_channel = new TH2F(ss_adc_channel.str().c_str(),title_adc_channel.str().c_str(),200,0,4096,30,0,30);
     TH2F *hist_buffer_channel = new TH2F(ss_buffer_channel.str().c_str(),title_buffer_channel.str().c_str(),50,0,2000,30,0,30);
     TH1F *hist_timeevolution = new TH1F(ss_timeevolution.str().c_str(),title_timeevolution.str().c_str(),10,0,10);
     TH1F *hist_occupancy = new TH1F(ss_occupancy.str().c_str(),title_occupancy.str().c_str(),30,0,30);
     TH2F *hist_waveform_channel = new TH2F(ss_waveform_channel.str().c_str(),title_waveform_channel.str().c_str(),256,0,256,30,0,30);
+    TH1F *hist_timealign_10 = new TH1F(ss_timealign_10.str().c_str(),title_timealign_10.str().c_str(),100,-4000,4000);
+    TH1F *hist_timealign_100 = new TH1F(ss_timealign_100.str().c_str(),title_timealign_100.str().c_str(),100,-4000,4000);
+    TH1F *hist_timealign_1000 = new TH1F(ss_timealign_1000.str().c_str(),title_timealign_1000.str().c_str(),100,-4000,4000);
+    TH1F *hist_timealign_10000 = new TH1F(ss_timealign_10000.str().c_str(),title_timealign_10000.str().c_str(),100,-4000,4000);
 
     hist_adc_channel->GetXaxis()->SetTitle("ADC value");
     hist_adc_channel->GetYaxis()->SetTitle("Channelkey");
@@ -234,12 +267,32 @@ void MonitorLAPPDDataSingle::InitializeHistsLAPPDLive(){
     hist_waveform_channel->GetYaxis()->SetTitle("ADC");
     hist_waveform_channel->SetStats(0);
 
+    hist_timealign_10->GetXaxis()->SetTitle("Timestamp - Beamgate [ns]");
+    hist_timealign_10->GetYaxis()->SetTitle("#");
+    hist_timealign_10->SetStats(0);
+    
+    hist_timealign_100->GetXaxis()->SetTitle("Timestamp - Beamgate [ns]");
+    hist_timealign_100->GetYaxis()->SetTitle("#");
+    hist_timealign_100->SetStats(0);
+
+    hist_timealign_1000->GetXaxis()->SetTitle("Timestamp - Beamgate [ns]");
+    hist_timealign_1000->GetYaxis()->SetTitle("#");
+    hist_timealign_1000->SetStats(0);
+
+    hist_timealign_10000->GetXaxis()->SetTitle("Timestamp - Beamgate [ns]");
+    hist_timealign_10000->GetYaxis()->SetTitle("#");
+    hist_timealign_10000->SetStats(0);
+
     hist_live_adc.emplace(board_nr,hist_adc_channel);
     hist_live_buffer.emplace(board_nr,hist_buffer_channel);
     hist_live_time.emplace(board_nr,hist_timeevolution);
     hist_live_occupancy.emplace(board_nr,hist_occupancy);   
     hist_live_waveform.emplace(board_nr,hist_waveform_channel);
- 
+    hist_live_timealign_10.emplace(board_nr,hist_timealign_10); 
+    hist_live_timealign_100.emplace(board_nr,hist_timealign_100); 
+    hist_live_timealign_1000.emplace(board_nr,hist_timealign_1000); 
+    hist_live_timealign_10000.emplace(board_nr,hist_timealign_10000); 
+
   }
 
   text_live_status = new TText();
@@ -360,6 +413,51 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   current_hasdata[board_idx] = true;
   current_boardidx = board_idx;
 
+  vec_timestamps_10[board_idx].push_back(timestamp_63_0);
+  vec_beamgates_10[board_idx].push_back(beamgate_63_0);
+  vec_timestamps_100[board_idx].push_back(timestamp_63_0);
+  vec_beamgates_100[board_idx].push_back(beamgate_63_0);
+  vec_timestamps_1000[board_idx].push_back(timestamp_63_0);
+  vec_beamgates_1000[board_idx].push_back(beamgate_63_0);
+  vec_timestamps_10000[board_idx].push_back(timestamp_63_0);
+  vec_beamgates_10000[board_idx].push_back(beamgate_63_0);
+
+
+  while (vec_timestamps_10[board_idx].size() > 10){
+    vec_timestamps_10[board_idx].erase(vec_timestamps_10[board_idx].begin());
+    vec_beamgates_10[board_idx].erase(vec_beamgates_10[board_idx].begin());
+  }
+  while (vec_timestamps_100[board_idx].size() > 100){
+    vec_timestamps_100[board_idx].erase(vec_timestamps_100[board_idx].begin());
+    vec_beamgates_100[board_idx].erase(vec_beamgates_100[board_idx].begin());
+  }
+  while (vec_timestamps_1000[board_idx].size() > 1000){
+    vec_timestamps_1000[board_idx].erase(vec_timestamps_1000[board_idx].begin());
+    vec_beamgates_1000[board_idx].erase(vec_beamgates_1000[board_idx].begin());
+  }
+  while (vec_timestamps_10000[board_idx].size() > 10000){
+    vec_timestamps_10000[board_idx].erase(vec_timestamps_10000[board_idx].begin());
+    vec_beamgates_10000[board_idx].erase(vec_beamgates_10000[board_idx].begin());
+  }
+
+  hist_live_timealign_10.at(board_idx)->Reset();
+  hist_live_timealign_100.at(board_idx)->Reset();
+  hist_live_timealign_1000.at(board_idx)->Reset();
+  hist_live_timealign_10000.at(board_idx)->Reset();
+
+  for (int i_vec=0; i_vec < (int) vec_timestamps_10.at(board_idx).size(); i_vec++){
+    hist_live_timealign_10.at(board_idx)->Fill(vec_timestamps_10[board_idx].at(i_vec)-vec_beamgates_10[board_idx].at(i_vec));
+  }
+  for (int i_vec=0; i_vec < (int) vec_timestamps_100.at(board_idx).size(); i_vec++){
+    hist_live_timealign_100.at(board_idx)->Fill(vec_timestamps_100[board_idx].at(i_vec)-vec_beamgates_100[board_idx].at(i_vec));
+  }
+  for (int i_vec=0; i_vec < (int) vec_timestamps_1000.at(board_idx).size(); i_vec++){
+    hist_live_timealign_1000.at(board_idx)->Fill(vec_timestamps_1000[board_idx].at(i_vec)-vec_beamgates_1000[board_idx].at(i_vec));
+  }
+  for (int i_vec=0; i_vec < (int) vec_timestamps_10000.at(board_idx).size(); i_vec++){
+    hist_live_timealign_10000.at(board_idx)->Fill(vec_timestamps_10000[board_idx].at(i_vec)-vec_beamgates_10000[board_idx].at(i_vec));
+  }
+
 }
 
 void MonitorLAPPDDataSingle::DrawLivePlots(){
@@ -398,60 +496,131 @@ void MonitorLAPPDDataSingle::DrawLiveHistograms(){
   canvas_live_status->cd();
   std::stringstream ss_text_status;
 
-  canvas_live_adc_channel->Clear();
-  canvas_live_adc_channel->cd();
-  std::stringstream ss_text_adc;
-  ss_text_adc << "LAPPD Live ADC value Board "<<board_nr<<" ("<<live_time.str()<<")";
-  hist_live_adc.at(board_nr)->SetTitle(ss_text_adc.str().c_str());
-  hist_live_adc.at(board_nr)->SetStats(0);
-  hist_live_adc.at(board_nr)->Draw("colz");
-  std::stringstream ss_path_adc;
-  ss_path_adc << outpath << "LAPPDData_ADC_Chkey_Board"<<board_nr<<"_Live."<<img_extension;
-  canvas_live_adc_channel->SaveAs(ss_path_adc.str().c_str());
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_adc_channel->Clear();
+    canvas_live_adc_channel->cd();
+    std::stringstream ss_text_adc;
+    ss_text_adc << "LAPPD Live ADC value Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_adc.at(board)->SetTitle(ss_text_adc.str().c_str());
+    hist_live_adc.at(board)->SetStats(0);
+    hist_live_adc.at(board)->Draw("colz");
+    std::stringstream ss_path_adc;
+    ss_path_adc << outpath << "LAPPDData_ADC_Chkey_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_adc_channel->SaveAs(ss_path_adc.str().c_str());
+  }
+
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_buffer_channel->Clear();
+    canvas_live_buffer_channel->cd();
+    std::stringstream ss_text_buffer;
+    ss_text_buffer << "LAPPD Live Buffer size Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_buffer.at(board)->SetTitle(ss_text_buffer.str().c_str());
+    hist_live_buffer.at(board)->SetStats(0);
+    hist_live_buffer.at(board)->Draw("colz");
+    std::stringstream ss_path_buffer;
+    ss_path_buffer << outpath << "LAPPDData_Buffer_Chkey_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_buffer_channel->SaveAs(ss_path_buffer.str().c_str());  
+  }
+
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_waveform_channel->Clear();
+    canvas_live_waveform_channel->cd();
+    std::stringstream ss_text_waveform;
+    ss_text_waveform << "LAPPD Live Waveform Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_waveform.at(board)->SetTitle(ss_text_waveform.str().c_str());
+    hist_live_waveform.at(board)->SetStats(0);
+    hist_live_waveform.at(board)->Draw("colz");
+    std::stringstream ss_path_waveform;
+    ss_path_waveform << outpath << "LAPPDData_Waveform_Chkey_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_waveform_channel->SaveAs(ss_path_waveform.str().c_str());
+  }
+
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_timeevolution->Clear();
+    canvas_live_timeevolution->cd();
+    std::stringstream ss_text_timeevolution;
+    ss_text_timeevolution << "LAPPD Live Time evolution Board "<<board<<" ("<< live_time.str()<<")";
+    hist_live_time.at(board)->SetTitle(ss_text_timeevolution.str().c_str());
+    hist_live_time.at(board)->SetStats(0);
+    hist_live_time.at(board)->Draw("colz");
+    std::stringstream ss_path_timeev;
+    ss_path_timeev << outpath << "LAPPDData_TimeEv_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_timeevolution->SaveAs(ss_path_timeev.str().c_str());
+  }
+
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_occupancy->Clear();
+    canvas_live_occupancy->cd();
+    std::stringstream ss_text_occupancy;
+    ss_text_occupancy << "LAPPD Live Occupancy Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_occupancy.at(board)->SetTitle(ss_text_occupancy.str().c_str());
+    hist_live_occupancy.at(board)->SetStats(0);
+    hist_live_occupancy.at(board)->Draw();
+    std::stringstream ss_path_occupancy;
+    ss_path_occupancy << outpath << "LAPPDData_Occupancy_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_occupancy->SaveAs(ss_path_occupancy.str().c_str());
+  }
+
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_timealign_10->Clear();
+    canvas_live_timealign_10->cd();
+    std::stringstream ss_text_timealign_10;
+    ss_text_timealign_10 << "LAPPD Live Time Alignment 10 events - Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_timealign_10.at(board)->SetTitle(ss_text_timealign_10.str().c_str());
+    hist_live_timealign_10.at(board)->SetStats(0);
+    hist_live_timealign_10.at(board)->Draw();
+    std::stringstream ss_path_align_10;
+    ss_path_align_10 << outpath << "LAPPDData_TimeAlign_10_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_timealign_10->SaveAs(ss_path_align_10.str().c_str());
+  }
   
-  canvas_live_buffer_channel->Clear();
-  canvas_live_buffer_channel->cd();
-  std::stringstream ss_text_buffer;
-  ss_text_buffer << "LAPPD Live Buffer size Board "<<board_nr<<" ("<<live_time.str()<<")";
-  hist_live_buffer.at(board_nr)->SetTitle(ss_text_buffer.str().c_str());
-  hist_live_buffer.at(board_nr)->SetStats(0);
-  hist_live_buffer.at(board_nr)->Draw("colz");
-  std::stringstream ss_path_buffer;
-  ss_path_buffer << outpath << "LAPPDData_Buffer_Chkey_Board"<<board_nr<<"_Live."<<img_extension;
-  canvas_live_buffer_channel->SaveAs(ss_path_buffer.str().c_str());  
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_timealign_100->Clear();
+    canvas_live_timealign_100->cd();
+    std::stringstream ss_text_timealign_100;
+    ss_text_timealign_100 << "LAPPD Live Time Alignment 100 events - Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_timealign_100.at(board)->SetTitle(ss_text_timealign_100.str().c_str());
+    hist_live_timealign_100.at(board)->SetStats(0);
+    hist_live_timealign_100.at(board)->Draw();
+    std::stringstream ss_path_align_100;
+    ss_path_align_100 << outpath << "LAPPDData_TimeAlign_100_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_timealign_100->SaveAs(ss_path_align_100.str().c_str());
+  }
 
-  canvas_live_waveform_channel->Clear();
-  canvas_live_waveform_channel->cd();
-  std::stringstream ss_text_waveform;
-  ss_text_waveform << "LAPPD Live Waveform Board "<<board_nr<<" ("<<live_time.str()<<")";
-  hist_live_waveform.at(board_nr)->SetTitle(ss_text_waveform.str().c_str());
-  hist_live_waveform.at(board_nr)->SetStats(0);
-  hist_live_waveform.at(board_nr)->Draw("colz");
-  std::stringstream ss_path_waveform;
-  ss_path_waveform << outpath << "LAPPDData_Waveform_Chkey_Board"<<board_nr<<"_Live."<<img_extension;
-  canvas_live_waveform_channel->SaveAs(ss_path_waveform.str().c_str());
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_timealign_1000->Clear();
+    canvas_live_timealign_1000->cd();
+    std::stringstream ss_text_timealign_1000;
+    ss_text_timealign_1000 << "LAPPD Live Time Alignment 1000 events - Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_timealign_1000.at(board)->SetTitle(ss_text_timealign_1000.str().c_str());
+    hist_live_timealign_1000.at(board)->SetStats(0);
+    hist_live_timealign_1000.at(board)->Draw();
+    std::stringstream ss_path_align_1000;
+    ss_path_align_1000 << outpath << "LAPPDData_TimeAlign_1000_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_timealign_1000->SaveAs(ss_path_align_1000.str().c_str());
+  }
 
-  canvas_live_timeevolution->Clear();
-  canvas_live_timeevolution->cd();
-  std::stringstream ss_text_timeevolution;
-  ss_text_timeevolution << "LAPPD Live Time evolution Board "<<board_nr<<" ("<< live_time.str()<<")";
-  hist_live_time.at(board_nr)->SetTitle(ss_text_timeevolution.str().c_str());
-  hist_live_time.at(board_nr)->SetStats(0);
-  hist_live_time.at(board_nr)->Draw("colz");
-  std::stringstream ss_path_timeev;
-  ss_path_timeev << outpath << "LAPPDData_TimeEv_Board"<<board_nr<<"_Live."<<img_extension;
-  canvas_live_timeevolution->SaveAs(ss_path_timeev.str().c_str());
-
-  canvas_live_occupancy->Clear();
-  canvas_live_occupancy->cd();
-  std::stringstream ss_text_occupancy;
-  ss_text_occupancy << "LAPPD Live Occupancy Board "<<board_nr<<" ("<<live_time.str()<<")";
-  hist_live_occupancy.at(board_nr)->SetTitle(ss_text_occupancy.str().c_str());
-  hist_live_occupancy.at(board_nr)->SetStats(0);
-  hist_live_occupancy.at(board_nr)->Draw();
-  std::stringstream ss_path_occupancy;
-  ss_path_occupancy << outpath << "LAPPDData_Occupancy_Board"<<board_nr<<"_Live."<<img_extension;
-  canvas_live_occupancy->SaveAs(ss_path_occupancy.str().c_str());
+  for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+    int board = board_configuration.at(i_board);
+    canvas_live_timealign_10000->Clear();
+    canvas_live_timealign_10000->cd();
+    std::stringstream ss_text_timealign_10000;
+    ss_text_timealign_10000 << "LAPPD Live Time Alignment 10000 events - Board "<<board<<" ("<<live_time.str()<<")";
+    hist_live_timealign_10000.at(board)->SetTitle(ss_text_timealign_10000.str().c_str());
+    hist_live_timealign_10000.at(board)->SetStats(0);
+    hist_live_timealign_10000.at(board)->Draw();
+    std::stringstream ss_path_align_10000;
+    ss_path_align_10000 << outpath << "LAPPDData_TimeAlign_10000_Board"<<board<<"_Live."<<img_extension;
+    canvas_live_timealign_10000->SaveAs(ss_path_align_10000.str().c_str());
+  }
 
 }
 

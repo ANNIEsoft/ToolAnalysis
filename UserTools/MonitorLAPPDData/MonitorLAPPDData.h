@@ -39,10 +39,11 @@
  *
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
-* $Author: B.Richards $
-* $Date: 2019/05/28 10:44:00 $
-* Contact: b.richards@qmul.ac.uk
+* $Author: M. Stender, M. Nieslony $
+* $Date: 2021/10/11 13:00:00 $
+* Contact: malte.stender@desy.de, mnieslon@uni-mainz.de
 */
+
 class MonitorLAPPDData: public Tool {
 
 
@@ -70,6 +71,8 @@ class MonitorLAPPDData: public Tool {
   void DrawLastFileHists();
   void DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTimeAlignment();
+  void DrawFileHistoryLAPPD(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
+  void PrintFileTimeStampLAPPD(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   //Helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
@@ -97,6 +100,7 @@ class MonitorLAPPDData: public Tool {
   std::vector<std::string> config_label;
   std::vector<std::vector<std::string>> config_plottypes;
   std::vector<ULong64_t> config_endtime_long;
+  int num_history_lappd;
 
   //Board configuration variables
   std::vector<int> board_configuration;
@@ -203,6 +207,8 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_pedestal_difference = nullptr;
   TCanvas *canvas_rate_all = nullptr;
   TCanvas *canvas_rate_threshold_all = nullptr;
+  TCanvas *canvas_logfile_lappd = nullptr;
+  TCanvas *canvas_file_timestamp_lappd = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -227,6 +233,7 @@ class MonitorLAPPDData: public Tool {
   TH2F* hist_pedestal_difference_all = nullptr;
   TH2F* hist_rate_all = nullptr;
   TH2F* hist_rate_threshold_all = nullptr;
+  TH1F *log_files_lappd;
 
   //text
   TText *text_data_title = nullptr;

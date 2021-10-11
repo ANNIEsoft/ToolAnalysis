@@ -89,6 +89,10 @@ class MonitorLAPPDDataSingle: public Tool {
    TCanvas *canvas_live_waveform_channel = nullptr;
    TCanvas *canvas_live_timeevolution = nullptr;
    TCanvas *canvas_live_occupancy = nullptr;
+   TCanvas *canvas_live_timealign_10 = nullptr;
+   TCanvas *canvas_live_timealign_100 = nullptr;
+   TCanvas *canvas_live_timealign_1000 = nullptr;
+   TCanvas *canvas_live_timealign_10000 = nullptr;
 
    TText *text_live_status = nullptr;
    std::map<int,TText*> text_live_timestamp;
@@ -98,6 +102,10 @@ class MonitorLAPPDDataSingle: public Tool {
    std::map<int,TH1F*> hist_live_time;
    std::map<int,TH1F*> hist_live_occupancy;
    std::map<int,TH2F*> hist_live_waveform;
+   std::map<int,TH1F*> hist_live_timealign_10;
+   std::map<int,TH1F*> hist_live_timealign_100;
+   std::map<int,TH1F*> hist_live_timealign_1000;
+   std::map<int,TH1F*> hist_live_timealign_10000;
 
    std::map<int, double> current_buffer_size;
    std::map<int, uint64_t> current_beam_timestamp;
@@ -105,6 +113,15 @@ class MonitorLAPPDDataSingle: public Tool {
    std::map<int, int> current_numchannels;
    std::map<int, bool> current_hasdata;
    int current_boardidx;
+
+   std::map<int,std::vector<ULong64_t>> vec_timestamps_10;
+   std::map<int,std::vector<ULong64_t>> vec_timestamps_100;
+   std::map<int,std::vector<ULong64_t>> vec_timestamps_1000;
+   std::map<int,std::vector<ULong64_t>> vec_timestamps_10000;
+   std::map<int,std::vector<ULong64_t>> vec_beamgates_10;
+   std::map<int,std::vector<ULong64_t>> vec_beamgates_100;
+   std::map<int,std::vector<ULong64_t>> vec_beamgates_1000;
+   std::map<int,std::vector<ULong64_t>> vec_beamgates_10000;
 
    int v_error = 0;
    int v_warning = 1;

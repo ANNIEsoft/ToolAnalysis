@@ -240,6 +240,7 @@ bool MonitorDAQ::Finalise(){
   delete text_haspmt;
   delete text_hascc;
   delete text_hastrigger;
+  delete text_haslappd;
   delete text_disk_title;
   delete text_disk_daq01;
   delete text_disk_vme01;
@@ -602,6 +603,7 @@ void MonitorDAQ::InitializeHists(){
   text_haspmt = new TText();
   text_hascc = new TText();
   text_hastrigger = new TText();
+  text_haslappd = new TText();
   text_currentdate = new TText();
   text_filename = new TText();
 
@@ -621,6 +623,7 @@ void MonitorDAQ::InitializeHists(){
   text_filedate->SetNDC(1);
   text_haspmt->SetNDC(1);
   text_hascc->SetNDC(1);
+  text_haslappd->SetNDC(1);
   text_hastrigger->SetNDC(1);
   text_currentdate->SetNDC(1);
   text_filename->SetNDC(1);
@@ -648,12 +651,14 @@ void MonitorDAQ::GetFileInformation(){
   m_data->CStore.Get("HasTrigData",file_has_trig);
   m_data->CStore.Get("HasCCData",file_has_cc);
   m_data->CStore.Get("HasPMTData",file_has_pmt);
+  m_data->CStore.Get("HasLAPPDData",file_has_lappd);
   bool above_hundred = false;
   m_data->CStore.Get("Above100",above_hundred);
   if (above_hundred){
     file_has_trig = true;
     file_has_cc = true;
     file_has_pmt = true;
+    file_has_lappd = true;
   }
   m_data->CStore.Get("CurrentFileName",file_name);
   m_data->CStore.Get("CurrentFileSize",file_size_uint);
@@ -669,6 +674,7 @@ void MonitorDAQ::GetFileInformation(){
     std::cout <<"HasTrigData: "<<file_has_trig<<std::endl;
     std::cout <<"HasCCData: "<<file_has_cc<<std::endl;
     std::cout <<"HasPMTData: "<<file_has_pmt<<std::endl;
+    std::cout <<"HasLAPPDData: "<<file_has_lappd<<std::endl;
     std::cout <<"FileName: "<<file_name<<std::endl;
     std::cout <<"FileSize: "<<file_size<<std::endl;
     std::cout <<"FileTime: "<<file_time<<", converted: "<<file_timestamp<<std::endl;
@@ -921,7 +927,7 @@ void MonitorDAQ::WriteToFile(){
 
   ULong64_t t_start, t_end;
   std::string *file_name_pointer = new std::string;
-  bool temp_file_has_trig, temp_file_has_cc, temp_file_has_pmt;
+  bool temp_file_has_trig, temp_file_has_cc, temp_file_has_pmt, temp_file_has_lappd;
   double temp_file_size;
   ULong64_t temp_file_time;
   int temp_num_vme_service;
@@ -951,6 +957,7 @@ void MonitorDAQ::WriteToFile(){
     t->SetBranchAddress("has_trig",&temp_file_has_trig);
     t->SetBranchAddress("has_cc",&temp_file_has_cc);
     t->SetBranchAddress("has_pmt",&temp_file_has_pmt);
+    t->SetBranchAddress("has_lappd",&temp_file_has_lappd);
     t->SetBranchAddress("file_name",&file_name_pointer);
     t->SetBranchAddress("file_size",&temp_file_size);
     t->SetBranchAddress("file_time",&temp_file_time);
@@ -979,6 +986,7 @@ void MonitorDAQ::WriteToFile(){
     t->Branch("has_trig",&temp_file_has_trig);
     t->Branch("has_cc",&temp_file_has_cc);
     t->Branch("has_pmt",&temp_file_has_pmt);
+    t->Branch("has_lappd",&temp_file_has_lappd);
     t->Branch("file_name",&file_name_pointer);
     t->Branch("file_size",&temp_file_size);
     t->Branch("file_time",&temp_file_time);
@@ -1031,6 +1039,7 @@ void MonitorDAQ::WriteToFile(){
   temp_file_has_trig = file_has_trig;
   temp_file_has_cc = file_has_cc;
   temp_file_has_pmt = file_has_pmt;
+  temp_file_has_lappd = file_has_lappd;
   temp_file_size = file_size;
   temp_file_time = file_timestamp;
   temp_num_vme_service = num_vme_service;
@@ -1562,6 +1571,18 @@ void MonitorDAQ::PrintInfoBox(){
     text_haspmt->SetText(0.06,0.3,ss_pmt.str().c_str());
     text_haspmt->SetTextColor(2);	//red text if not ok
   }
+
+  std::stringstream ss_lappd;
+  if (file_has_lappd) {
+    ss_lappd << "LAPPDData: True";
+    text_haslappd->SetText(0.06,0.0,ss_lappd.str().c_str());
+    text_haslappd->SetTextColor(1);      //black text if ok
+  } else {
+    ss_lappd << "LAPPDData: False";
+    text_haslappd->SetText(0.06,0.0,ss_lappd.str().c_str());
+    text_haslappd->SetTextColor(2);      //red text if not ok
+  }
+
   boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(current_stamp/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(current_stamp/MSEC_to_SEC/SEC_to_MIN)%60,int(current_stamp/MSEC_to_SEC)%60,current_stamp%1000);
   struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
   std::stringstream current_time;
@@ -1982,6 +2003,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_haspmt->SetTextSize(0.05);
   text_hascc->SetTextSize(0.05);
   text_hastrigger->SetTextSize(0.05);
+  text_haslappd->SetTextSize(0.05);
   text_disk_title->SetTextSize(0.05);
   text_disk_daq01->SetTextSize(0.05);
   text_disk_vme01->SetTextSize(0.05);
@@ -2001,6 +2023,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_haspmt->SetNDC(1);
   text_hascc->SetNDC(1);
   text_hastrigger->SetNDC(1);
+  text_haslappd->SetNDC(1);
   text_disk_title->SetNDC(1);
   text_disk_daq01->SetNDC(1);
   text_disk_vme01->SetNDC(1);
@@ -2023,6 +2046,7 @@ void MonitorDAQ::PrintInfoBox(){
     text_haspmt->Draw();
     text_hascc->Draw();
     text_hastrigger->Draw();
+    text_haslappd->Draw();
   }
 
   std::stringstream ss_path_textinfo;

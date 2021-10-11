@@ -120,6 +120,7 @@ class MonitorDAQ: public Tool {
   bool file_has_trig;
   bool file_has_cc;
   bool file_has_pmt;
+  bool file_has_lappd;
   std::string file_name;
   uintmax_t file_size_uint;
   double file_size;
@@ -149,6 +150,7 @@ class MonitorDAQ: public Tool {
   std::vector<bool> has_trig_plot;
   std::vector<bool> has_cc_plot;
   std::vector<bool> has_pmt_plot;
+  std::vector<bool> has_lappd_plot;
   std::vector<std::string> filename_plot;
   std::vector<double> filesize_plot;
   std::vector<ULong64_t> filetimestamp_plot;
@@ -179,6 +181,8 @@ class MonitorDAQ: public Tool {
   std::string warning_trigdata_filename;
   bool warning_pmtdata = false;
   std::string warning_pmtdata_filename;
+  bool warning_lappddata = false;
+  std::string warning_lappddata_filename;
   bool warning_vme = false;
   int warning_vme_num = 3;
   bool warning_diskspace_80 = false;
@@ -204,6 +208,7 @@ class MonitorDAQ: public Tool {
   TText *text_haspmt = nullptr;
   TText *text_hascc = nullptr;
   TText *text_hastrigger = nullptr;
+  TText *text_haslappd = nullptr;
   TText *text_currentdate = nullptr;
   TText *text_filename = nullptr;
 
