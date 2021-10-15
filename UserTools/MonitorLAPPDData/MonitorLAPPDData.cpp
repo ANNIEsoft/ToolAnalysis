@@ -375,26 +375,22 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	for (int i_event = 0; i_event < 100; i_event++) {
 		std::map<int, std::vector<TH1F*> > tempMap;
 		for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
-		int board_nr = board_configuration.at(i_board);
-		std::vector<TH1F*> hist_waveform_temp_vec;
-		for (int i = 0; i < numberOfChannels; i++) {
-			std::stringstream ss_waveform_text;
-			ss_waveform_text << "hist_waveforms" << board_nr << "channel" << i << "event" << i_event;
-			TH1F *hist_waveforms_onedim_single = new TH1F(ss_waveform_text.str().c_str(), ss_waveform_text.str().c_str(), 256, 0, 256);
-			hist_waveforms_onedim_single->GetXaxis()->SetTitle("Buffer position");
-			hist_waveforms_onedim_single->GetYaxis()->SetTitle("ADC value");
-			hist_waveforms_onedim_single->SetStats(0);
-			hist_waveform_temp_vec.push_back(hist_waveforms_onedim_single);
-		}
-		tempMap.emplace(board_nr, hist_waveform_temp_vec);
-		hist_waveform_temp_vec.clear();
+			int board_nr = board_configuration.at(i_board);
+			std::vector<TH1F*> hist_waveform_temp_vec;
+			for (int i = 0; i < numberOfChannels; i++) {
+				std::stringstream ss_waveform_text;
+				ss_waveform_text << "hist_waveforms" << board_nr << "channel" << i << "event" << i_event;
+				TH1F *hist_waveforms_onedim_single = new TH1F(ss_waveform_text.str().c_str(), ss_waveform_text.str().c_str(), 256, 0, 256);
+				hist_waveforms_onedim_single->GetXaxis()->SetTitle("Buffer position");
+				hist_waveforms_onedim_single->GetYaxis()->SetTitle("ADC value");
+				hist_waveforms_onedim_single->SetStats(0);
+				hist_waveform_temp_vec.push_back(hist_waveforms_onedim_single);
+			}
+			tempMap.emplace(board_nr, hist_waveform_temp_vec);
+			hist_waveform_temp_vec.clear();
 		}
 		hist_waveforms_onedim.push_back(tempMap);
 	}
-
-
-
-
 
 	//Create separate histograms for all board numbers
 	for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
@@ -713,6 +709,8 @@ void MonitorLAPPDData::LoadACDCBoardConfig(std::string acdc_config) {
 		std::vector<double> empty_double;
 		std::vector<int> empty_int;
 		std::vector<TDatime> empty_datime;
+		std::vector<uint64_t> empty_int_64;
+		std::vector<std::vector<uint64_t>> empty_int_64_vec;
 		data_times_plot.emplace(board_number, empty_unsigned_long);
 		data_times_end_plot.emplace(board_number, empty_unsigned_long);
 		pps_rate_plot.emplace(board_number, empty_double);
@@ -722,7 +720,11 @@ void MonitorLAPPDData::LoadACDCBoardConfig(std::string acdc_config) {
 		buffer_size_plot.emplace(board_number, empty_double);
 		num_channels_plot.emplace(board_number, empty_int);
 		labels_timeaxis.emplace(board_number, empty_datime);
-
+		data_beamgate_lastfile.emplace(board_number, empty_int_64);
+		data_beamgate_last5files.emplace(board_number, empty_int_64_vec);
+		data_beamgate_last10files.emplace(board_number, empty_int_64_vec);
+		data_beamgate_last20files.emplace(board_number, empty_int_64_vec);
+		data_beamgate_last100files.emplace(board_number, empty_int_64_vec);
 	}
 	acdc_file.close();
 
@@ -1128,7 +1130,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	//Calculate mean values
 	for (int i_board = 0; i_board < current_pps_rate.size(); i_board++) {
 		int board_nr = board_configuration.at(i_board);
-		if(board_nr != -1){
+		if (board_nr != -1) {
 			meanPPSRate += (current_pps_rate.at(i_board) / (double) current_pps_rate.size());
 			meanFrameRate += (current_frame_rate.at(i_board) / (double) current_frame_rate.size());
 			meanBufferSize += (current_buffer_size.at(i_board) / (double) current_buffer_size.size());
@@ -1342,17 +1344,13 @@ void MonitorLAPPDData::DrawLastFileHists() {
 
 		PedestalFits(board_nr, i_board);
 
-
-		//ToDo: Entries not equal events
-		long entries;
-		LAPPDData->Header->Get("TotalEntries", entries);
+		int entries = (int)data_beamgate_lastfile.at(board_nr).size();
 		std::vector<bool> isPlotted;
 		for (size_t i_channel = 0; i_channel < 30; i_channel++) {
 			isPlotted.push_back(false);
 		}
 
-
-		for (int i_event = 0; i_event < (int) entries; i_event++) {
+		for (int i_event = 0; i_event < entries; i_event++) {
 			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_event).at(board_nr).size(); i_channel++) {
 				canvas_waveform_onedim->Clear();
 				canvas_waveform_onedim->cd();
@@ -1364,12 +1362,11 @@ void MonitorLAPPDData::DrawLastFileHists() {
 //			hist_waveforms_onedim.at(board_nr).at(i_channel)->SetLineColor(colorVec.at(i_channel));
 				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Draw("HIST");
 				//ToDo: Find reasonable threshold for displaying pulses
-				if((hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 2*sigma_pedestal.at(board_nr).at(i_channel))
-						|| (i_event + 1 == (int)entries && !isPlotted.at(i_channel))){
-				std::stringstream ss_path_waveform_onedim;
-				ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
-				canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
-				isPlotted.at(i_channel) = true;
+				if ((hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 2 * sigma_pedestal.at(board_nr).at(i_channel)) || (i_event + 1 == entries && !isPlotted.at(i_channel))) {
+					std::stringstream ss_path_waveform_onedim;
+					ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
+					canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
+					isPlotted.at(i_channel) = true;
 
 //				Testing
 //				std::cout << "i_event " << i_event << " i_channel " << i_channel << std::endl;
@@ -1377,13 +1374,11 @@ void MonitorLAPPDData::DrawLastFileHists() {
 //				std::cout << "Maximum " << hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() << std::endl;
 
 				}
+				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Reset();
 			}
 		}
 
-
-
-
-	}// end board loop
+	}	// end board loop
 
 	canvas_pedestal_all->Clear();
 	canvas_pedestal_all->cd();
@@ -1429,17 +1424,14 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	ss_path_events_channel << outpath << "LAPPD_Events_Per_Channel_current." << img_extension;
 	canvas_events_per_channel->SaveAs(ss_path_events_channel.str().c_str());
 
-
 }
 
-void MonitorLAPPDData::PedestalFits(int board_nr, int i_board){
+void MonitorLAPPDData::PedestalFits(int board_nr, int i_board) {
 	uint64_t t_fileend = t_file_end.at(i_board);
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_fileend / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_fileend / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_fileend / MSEC_to_SEC) % 60, t_fileend % 1000);
 	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
 	std::stringstream current_time;
 	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
-
-
 
 	std::vector<int> entries_vec;
 	std::vector<double> mean_vec;
@@ -1503,18 +1495,22 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board){
 			}
 			//TODO: Find better parameter
 			int x = 5;
-			if (center > (mean_vec.at(i_channel) + x*sigma_vec.at(i_channel))) {
+			if (center > (mean_vec.at(i_channel) + x * sigma_vec.at(i_channel))) {
 				counterThreshold += content;
 			}
 		}
 
-		//ToDo: Entries not equal to events
-		long entries;
-		LAPPDData->Header->Get("TotalEntries", entries);
-		int bufferSize = counter/entries;
+		int entries = (int) data_beamgate_lastfile.at(board_nr).size();
+		int bufferSize;
+		if (entries == 0) {
+			bufferSize = 0;
+		} else {
+			bufferSize = counter / entries;
+		}
+
 		//ToDo: Fix this number in config file?
 		int numberOfSamples = 256;
-		int numberOfEvents = counter/numberOfSamples;
+		int numberOfEvents = counter / numberOfSamples;
 		hist_buffer_size_all->SetBinContent(i_channel + 1, i_board + 1, bufferSize);
 		hist_rate_threshold_all->SetBinContent(i_channel + 1, i_board + 1, counterThreshold);
 		hist_events_per_channel->SetBinContent(i_channel + 1, i_board + 1, numberOfEvents);
@@ -1524,8 +1520,6 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board){
 	mean_pedestal.emplace(board_nr, mean_vec);
 	sigma_pedestal.emplace(board_nr, sigma_vec);
 }
-
-
 
 void MonitorLAPPDData::DrawTimeAlignment() {
 
@@ -1551,44 +1545,49 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
 		//--------Last File-----------
-		hist_align_1file.at(board_nr)->Clear();
+		std::cout << "size before " << hist_align_1file.at(board_nr)->GetEntries() << std::endl;
+
+		hist_align_1file.at(board_nr)->Reset();
+
+		std::cout << "size after " << hist_align_1file.at(board_nr)->GetEntries() << std::endl;
+
 		std::stringstream ss_1file;
 		ss_1file << "hist_align_1file_board" << i_board;
 		//  hist_align_1file.at(board_nr)->SetName(ss_1file.str().c_str());
 		//  hist_align_1file.at(board_nr)->SetTitle(ss_1file.str().c_str());
-		for (int i_align = 0; i_align < (int) data_beamgate_lastfile.size(); i_align++) {
-			hist_align_1file.at(board_nr)->Fill(data_beamgate_lastfile.at(i_align));
+		for (int i_align = 0; i_align < (int) data_beamgate_lastfile.at(board_nr).size(); i_align++) {
+			hist_align_1file.at(board_nr)->Fill(data_beamgate_lastfile.at(board_nr).at(i_align));
 		}
 
 		//-------Last 5 Files---------
-		hist_align_5files.at(board_nr)->Clear();
-		for (int i_align = 0; i_align < (int) data_beamgate_last5files.size(); i_align++) {
-			for (int i_data = 0; i_data < (int) data_beamgate_last5files.at(i_align).size(); i_data++) {
-				hist_align_5files.at(board_nr)->Fill(data_beamgate_last5files.at(i_align).at(i_data));
+		hist_align_5files.at(board_nr)->Reset();
+		for (int i_align = 0; i_align < (int) data_beamgate_last5files.at(board_nr).size(); i_align++) {
+			for (int i_data = 0; i_data < (int) data_beamgate_last5files.at(board_nr).at(i_align).size(); i_data++) {
+				hist_align_5files.at(board_nr)->Fill(data_beamgate_last5files.at(board_nr).at(i_align).at(i_data));
 			}
 		}
 
 		//-------Last 10 Files--------
-		hist_align_10files.at(board_nr)->Clear();
-		for (int i_align = 0; i_align < (int) data_beamgate_last10files.size(); i_align++) {
-			for (int i_data = 0; i_data < (int) data_beamgate_last10files.at(i_align).size(); i_data++) {
-				hist_align_10files.at(board_nr)->Fill(data_beamgate_last10files.at(i_align).at(i_data));
+		hist_align_10files.at(board_nr)->Reset();
+		for (int i_align = 0; i_align < (int) data_beamgate_last10files.at(board_nr).size(); i_align++) {
+			for (int i_data = 0; i_data < (int) data_beamgate_last10files.at(board_nr).at(i_align).size(); i_data++) {
+				hist_align_10files.at(board_nr)->Fill(data_beamgate_last10files.at(board_nr).at(i_align).at(i_data));
 			}
 		}
 
 		//------Last 20 Files---------
-		hist_align_20files.at(board_nr)->Clear();
-		for (int i_align = 0; i_align < (int) data_beamgate_last20files.size(); i_align++) {
-			for (int i_data = 0; i_data < (int) data_beamgate_last20files.at(i_align).size(); i_data++) {
-				hist_align_20files.at(board_nr)->Fill(data_beamgate_last20files.at(i_align).at(i_data));
+		hist_align_20files.at(board_nr)->Reset();
+		for (int i_align = 0; i_align < (int) data_beamgate_last20files.at(board_nr).size(); i_align++) {
+			for (int i_data = 0; i_data < (int) data_beamgate_last20files.at(board_nr).at(i_align).size(); i_data++) {
+				hist_align_20files.at(board_nr)->Fill(data_beamgate_last20files.at(board_nr).at(i_align).at(i_data));
 			}
 		}
 
 		//------Last 100 Files---------
-		hist_align_100files.at(board_nr)->Clear();
-		for (int i_align = 0; i_align < (int) data_beamgate_last100files.size(); i_align++) {
-			for (int i_data = 0; i_data < (int) data_beamgate_last100files.at(i_align).size(); i_data++) {
-				hist_align_100files.at(board_nr)->Fill(data_beamgate_last100files.at(i_align).at(i_data));
+		hist_align_100files.at(board_nr)->Reset();
+		for (int i_align = 0; i_align < (int) data_beamgate_last100files.at(board_nr).size(); i_align++) {
+			for (int i_data = 0; i_data < (int) data_beamgate_last100files.at(board_nr).at(i_align).size(); i_data++) {
+				hist_align_100files.at(board_nr)->Fill(data_beamgate_last100files.at(board_nr).at(i_align).at(i_data));
 			}
 		}
 		//The drawing happens here
@@ -1812,30 +1811,32 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		last_timestamp.at(i_board) = 0;
 		first_entry.at(i_board) = true;
 
+		data_beamgate_lastfile.at(board_nr).clear();
+
 		for (size_t i_channel = 0; i_channel < hist_pedestal.at(board_nr).size(); i_channel++) {
 			hist_pedestal.at(board_nr).at(i_channel)->Clear();
 		}
 
 		//ToDo: entries not equal to events
-		long entries;
-		LAPPDData->Header->Get("TotalEntries", entries);
-
-		for (int i_entry = 0; i_entry < (int) entries; i_entry++) {
-			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_entry).at(board_nr).size(); i_channel++) {
-				hist_waveforms_onedim.at(i_entry).at(board_nr).at(i_channel)->Clear();
-			}
-		}
+//		long entries;
+//		LAPPDData->Header->Get("TotalEntries", entries);
+//
+//		for (int i_entry = 0; i_entry < (int) entries; i_entry++) {
+//			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_entry).at(board_nr).size(); i_channel++) {
+//				hist_waveforms_onedim.at(i_entry).at(board_nr).at(i_channel)->Clear();
+//			}
+//		}
 	}
 
 	beamgate_timestamp.clear();
 	data_timestamp.clear();
 	num_channels.clear();
 	average_buffer.clear();
-	data_beamgate_lastfile.clear();
 	board_index.clear();
 
 	long entries;
 	LAPPDData->Header->Get("TotalEntries", entries);
+	std::cout << "entries " << entries << std::endl;
 
 	for (int i_entry = 0; i_entry < (int) entries; i_entry++) {
 		LAPPDData->GetEntry(i_entry);
@@ -1920,8 +1921,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		std::cout << "bits_timestamp_63_0: " << bits_timestamp_63_0 << std::endl;
 		beamgate_timestamp.push_back(beamgate_63_0);
 		data_timestamp.push_back(timestamp_63_0);
-		data_beamgate_lastfile.push_back(timestamp_63_0 - beamgate_63_0);
-
+		data_beamgate_lastfile.at(board_idx).push_back(timestamp_63_0 - beamgate_63_0);
 		if (first_entry.at(vector_idx) == true) {
 			first_beamgate_timestamp.at(vector_idx) = beamgate_63_0;
 			first_timestamp.at(vector_idx) = timestamp_63_0;
@@ -1947,8 +1947,8 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 				hist_buffer.at(board_idx)->Fill(waveform.size());
 				current_buffer_size.at(vector_idx) += waveform.size();
 				buffer_size += waveform.size();
-				n_buffer.at(vector_idx)++;
-				for(int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
+				n_buffer.at(vector_idx)++;for
+(				int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
 					hist_adc_channel.at(board_idx)->Fill(waveform.at(i_wave),it->first);
 					hist_waveform_channel.at(board_idx)->SetBinContent(i_wave+1,it->first+1,hist_waveform_channel.at(board_idx)->GetBinContent(i_wave+1,it->first+1)+waveform.at(i_wave));
 					hist_waveform_voltages.at(board_idx)->Fill(i_wave, it->first, waveform.at(i_wave));
@@ -1965,14 +1965,13 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		average_buffer.push_back(buffer_size);
 	}		//end entry loop
 
-	ModifyBeamgateData(5, data_beamgate_last5files);
-	ModifyBeamgateData(10, data_beamgate_last10files);
-	ModifyBeamgateData(20, data_beamgate_last20files);
-	ModifyBeamgateData(100, data_beamgate_last100files);
-
 	bool got_tfile_start = false;
 	for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
 		int board_nr = board_configuration.at(i_board);
+		ModifyBeamgateData(5, board_nr, data_beamgate_last5files);
+		ModifyBeamgateData(10, board_nr, data_beamgate_last10files);
+		ModifyBeamgateData(20, board_nr, data_beamgate_last20files);
+		ModifyBeamgateData(100, board_nr, data_beamgate_last100files);
 		if (entries > 0)
 			hist_waveform_channel.at(board_nr)->Scale(1. / entries);
 		double diff_timestamps = (last_timestamp.at(i_board) - first_timestamp.at(i_board)) * CLOCK_to_SEC;
@@ -1998,17 +1997,19 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 	}
 }
 
-void MonitorLAPPDData::ModifyBeamgateData(size_t numberOfFiles, std::vector<std::vector<uint64_t>> &dataVector) {
-	if (dataVector.size()) {
-		if (dataVector.size() == numberOfFiles) {
-			for (size_t i_file = 0; i_file < dataVector.size() - 1; i_file++) {
-				dataVector.at(i_file) = dataVector.at(i_file + 1);
+void MonitorLAPPDData::ModifyBeamgateData(size_t numberOfFiles, int boardNumber, std::map<int, std::vector<std::vector<uint64_t>>> &dataVector) {
+	if (dataVector.at(boardNumber).size()) {
+		if (dataVector.at(boardNumber).size() == numberOfFiles) {
+			for (size_t i_file = 0; i_file < dataVector.at(boardNumber).size() - 1; i_file++) {
+				dataVector.at(boardNumber).at(i_file) = dataVector.at(boardNumber).at(i_file + 1);
 			}
-			dataVector.at(numberOfFiles - 1) = data_beamgate_lastfile;
+			dataVector.at(boardNumber).at(numberOfFiles - 1) = data_beamgate_lastfile.at(boardNumber);
 		} else {
-			dataVector.push_back(data_beamgate_lastfile);
+			dataVector.at(boardNumber).push_back(data_beamgate_lastfile.at(boardNumber));
 		}
 	} else {
-		dataVector.push_back(data_beamgate_lastfile);
+		if (data_beamgate_lastfile.at(boardNumber).size()) {
+			dataVector.at(boardNumber).push_back(data_beamgate_lastfile.at(boardNumber));
+		}
 	}
 }

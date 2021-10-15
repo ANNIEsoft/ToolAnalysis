@@ -74,7 +74,7 @@ class MonitorLAPPDData: public Tool {
   //Helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
   bool does_file_exist(std::string filename);
-  void ModifyBeamgateData(size_t numberOfFiles, std::vector<std::vector<uint64_t>> &dataVector);
+  void ModifyBeamgateData(size_t numberOfFiles, int boardNumber, std::map<int,std::vector<std::vector<uint64_t>>> &dataVector);
   void PedestalFits(int board_nr, int i_board);
 
  private:
@@ -161,11 +161,11 @@ class MonitorLAPPDData: public Tool {
   std::vector<int> num_channels;
   std::vector<double> average_buffer;
   std::map<int,std::vector<int>> buffer_size;
-  std::vector<uint64_t> data_beamgate_lastfile;
-  std::vector<std::vector<uint64_t>> data_beamgate_last5files;
-  std::vector<std::vector<uint64_t>> data_beamgate_last10files;
-  std::vector<std::vector<uint64_t>> data_beamgate_last20files;
-  std::vector<std::vector<uint64_t>> data_beamgate_last100files;
+  std::map<int,std::vector<uint64_t>> data_beamgate_lastfile;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last5files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last10files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last20files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last100files;
 
   //Plotting variables in vectors (multiple files)
   std::map<int,std::vector<ULong64_t>> data_times_plot;
