@@ -224,8 +224,9 @@ bool MonitorLAPPDData::Finalise() {
 	delete canvas_pedestal;
 	delete canvas_pedestal_all;
 	delete canvas_pedestal_difference;
-	delete canvas_rate_all;
+	delete canvas_buffer_size_all;
 	delete canvas_rate_threshold_all;
+	delete canvas_events_per_channel;
 
 	std::cout << "histograms" << std::endl;
 	//histograms
@@ -299,8 +300,9 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	canvas_pedestal = new TCanvas("canvas_pedestal", "LAPPD individual pedestals", 900, 600);
 	canvas_pedestal_all = new TCanvas("canvas_pedestal_all", "LAPPD Pedestals", 900, 600);
 	canvas_pedestal_difference = new TCanvas("canvas_pedestal_difference", "LAPPD Pedestals Differences", 900, 600);
-	canvas_rate_all = new TCanvas("canvas_rate_all", "LAPPD Rates", 900, 600);
+	canvas_buffer_size_all = new TCanvas("canvas_buffer_size_all", "LAPPD Buffer Sizes", 900, 600);
 	canvas_rate_threshold_all = new TCanvas("canvas_rate_threshold_all", "LAPPD Hits", 900, 600);
+	canvas_events_per_channel = new TCanvas("canvas_events_per_channel", "LAPPD Events per Channel", 900, 600);
 
 	//Histograms
 	//ToDo: Not hardcode the number of channels here
@@ -309,23 +311,27 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 
 	hist_pedestal_all = new TH2F("Fitted pedestal values", "Fitted pedestal values", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
 	hist_pedestal_difference_all = new TH2F("Fitted pedestal difference values", "Fitted pedestal difference values", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
-	hist_rate_all = new TH2F("Rate", "Rate", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
+	hist_buffer_size_all = new TH2F("Buffer Size", "Buffer Size", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
 	hist_rate_threshold_all = new TH2F("Rate above threshold", "Rate above threshold", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
+	hist_events_per_channel = new TH2F("Events per Channel", "Events per Channel", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
 
 	hist_pedestal_all->SetStats(0);
 	hist_pedestal_difference_all->SetStats(0);
-	hist_rate_all->SetStats(0);
+	hist_buffer_size_all->SetStats(0);
 	hist_rate_threshold_all->SetStats(0);
+	hist_events_per_channel->SetStats(0);
 
 	hist_pedestal_all->GetXaxis()->SetNdivisions(numberOfChannels);
 	hist_pedestal_difference_all->GetXaxis()->SetNdivisions(numberOfChannels);
-	hist_rate_all->GetXaxis()->SetNdivisions(numberOfChannels);
+	hist_buffer_size_all->GetXaxis()->SetNdivisions(numberOfChannels);
 	hist_rate_threshold_all->GetXaxis()->SetNdivisions(numberOfChannels);
+	hist_events_per_channel->GetXaxis()->SetNdivisions(numberOfChannels);
 
 	hist_pedestal_all->GetYaxis()->SetNdivisions(numberOfCards);
 	hist_pedestal_difference_all->GetYaxis()->SetNdivisions(numberOfCards);
-	hist_rate_all->GetYaxis()->SetNdivisions(numberOfCards);
+	hist_buffer_size_all->GetYaxis()->SetNdivisions(numberOfCards);
 	hist_rate_threshold_all->GetYaxis()->SetNdivisions(numberOfCards);
+	hist_events_per_channel->GetYaxis()->SetNdivisions(numberOfCards);
 
 	for (int i_label_x = 0; i_label_x < numberOfChannels; i_label_x++) {
 		std::stringstream ss_channel;
@@ -333,8 +339,9 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		std::string str_ch = "ch " + ss_channel.str();
 		hist_pedestal_all->GetXaxis()->SetBinLabel(i_label_x + 1, str_ch.c_str());
 		hist_pedestal_difference_all->GetXaxis()->SetBinLabel(i_label_x + 1, str_ch.c_str());
-		hist_rate_all->GetXaxis()->SetBinLabel(i_label_x + 1, str_ch.c_str());
+		hist_buffer_size_all->GetXaxis()->SetBinLabel(i_label_x + 1, str_ch.c_str());
 		hist_rate_threshold_all->GetXaxis()->SetBinLabel(i_label_x + 1, str_ch.c_str());
+		hist_events_per_channel->GetXaxis()->SetBinLabel(i_label_x + 1, str_ch.c_str());
 	}
 	for (int i_label_y = 0; i_label_y < numberOfCards; i_label_y++) {
 		std::stringstream ss_card;
@@ -343,22 +350,25 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		std::string str_card = "board " + ss_card.str();
 		hist_pedestal_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 		hist_pedestal_difference_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
-		hist_rate_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
+		hist_buffer_size_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 		hist_rate_threshold_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
+		hist_events_per_channel->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 	}
 	hist_pedestal_all->GetZaxis()->SetTitle("Mean Pedestal [ADC count]");
 	hist_pedestal_difference_all->GetZaxis()->SetTitle("Mean Pedestal [ADC count]");
-	hist_rate_all->GetZaxis()->SetTitle("Number of Samples > 0");
+	hist_buffer_size_all->GetZaxis()->SetTitle("Buffer Size");
 	hist_rate_threshold_all->GetZaxis()->SetTitle("Number of Samples > Mean Pedestal");
+	hist_events_per_channel->GetZaxis()->SetTitle("Number of Events");
 	hist_pedestal_all->GetZaxis()->SetTitleOffset(1.3);
 	hist_pedestal_difference_all->GetZaxis()->SetTitleOffset(1.3);
-	hist_rate_all->GetZaxis()->SetTitleOffset(1.3);
+	hist_buffer_size_all->GetZaxis()->SetTitleOffset(1.3);
 	hist_rate_threshold_all->GetZaxis()->SetTitleOffset(1.3);
+	hist_events_per_channel->GetZaxis()->SetTitleOffset(1.3);
 	hist_pedestal_all->LabelsOption("v");
 	hist_pedestal_difference_all->LabelsOption("v");
-	hist_rate_all->LabelsOption("v");
+	hist_buffer_size_all->LabelsOption("v");
 	hist_rate_threshold_all->LabelsOption("v");
-
+	hist_events_per_channel->LabelsOption("v");
 
 //TODO: Change this number
 //In principle, here we need the number of events in the file
@@ -1117,10 +1127,13 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	double meanIntegratedCharge = 0.0;
 	//Calculate mean values
 	for (int i_board = 0; i_board < current_pps_rate.size(); i_board++) {
-		meanPPSRate += (current_pps_rate.at(i_board) / (double) current_pps_rate.size());
-		meanFrameRate += (current_frame_rate.at(i_board) / (double) current_frame_rate.size());
-		meanBufferSize += (current_buffer_size.at(i_board) / (double) current_buffer_size.size());
-		meanIntegratedCharge += (current_int_charge.at(i_board) / (double) current_int_charge.size());
+		int board_nr = board_configuration.at(i_board);
+		if(board_nr != -1){
+			meanPPSRate += (current_pps_rate.at(i_board) / (double) current_pps_rate.size());
+			meanFrameRate += (current_frame_rate.at(i_board) / (double) current_frame_rate.size());
+			meanBufferSize += (current_buffer_size.at(i_board) / (double) current_buffer_size.size());
+			meanIntegratedCharge += (current_int_charge.at(i_board) / (double) current_int_charge.size());
+		}
 	}
 
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
@@ -1172,7 +1185,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	text_pps_rate->Draw();
 	text_frame_rate->Draw();
 	text_buffer_size->Draw();
-	text_int_charge->Draw();
+//	text_int_charge->Draw();
 
 	std::stringstream ss_path_psecinfo;
 	ss_path_psecinfo << outpath << "LAPPDData_PSECData_current." << img_extension;
@@ -1230,7 +1243,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 		text_pps_rate->Draw();
 		text_frame_rate->Draw();
 		text_buffer_size->Draw();
-		text_int_charge->Draw();
+//		text_int_charge->Draw();
 
 		std::stringstream ss_path_boardpsecinfo;
 		ss_path_boardpsecinfo << outpath << "LAPPDData_PSECData_currentBoardNr" << board_nr << "." << img_extension;
@@ -1283,6 +1296,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 
 		canvas_waveform->Clear();
 		canvas_waveform->cd();
+		canvas_waveform->SetRightMargin(0.15);
 		std::stringstream ss_text_waveform;
 		ss_text_waveform << "Exemplary waveform Board " << board_nr << " (" << current_time.str() << ")";
 		hist_waveform_channel.at(board_nr)->SetTitle(ss_text_waveform.str().c_str());
@@ -1316,6 +1330,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 
 		canvas_waveform_voltages->Clear();
 		canvas_waveform_voltages->cd();
+		canvas_waveform_voltages->SetRightMargin(0.15);
 		std::stringstream ss_text_waveform_voltages;
 		ss_text_waveform_voltages << "LAPPD waverform Board " << board_nr << " (" << current_time.str() << ")";
 		hist_waveform_voltages.at(board_nr)->SetTitle(ss_text_waveform_voltages.str().c_str());
@@ -1327,32 +1342,48 @@ void MonitorLAPPDData::DrawLastFileHists() {
 
 		PedestalFits(board_nr, i_board);
 
+
+		//ToDo: Entries not equal events
 		long entries;
 		LAPPDData->Header->Get("TotalEntries", entries);
+		std::vector<bool> isPlotted;
+		for (size_t i_channel = 0; i_channel < 30; i_channel++) {
+			isPlotted.push_back(false);
+		}
+
+
 		for (int i_event = 0; i_event < (int) entries; i_event++) {
 			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_event).at(board_nr).size(); i_channel++) {
 				canvas_waveform_onedim->Clear();
 				canvas_waveform_onedim->cd();
 				std::stringstream ss_text_waveform_onedim;
-				ss_text_waveform_onedim << "LAPPD waveforms board " << board_nr << " channel " << i_channel << " event number " << i_event << " (" << current_time.str() << ")";
+				ss_text_waveform_onedim << "LAPPD waveform board " << board_nr << " channel " << i_channel << " event number " << i_event << " (" << current_time.str() << ")";
 				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->SetTitle(ss_text_waveform_onedim.str().c_str());
 				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->SetStats(0);
 //			hist_waveforms_onedim.at(board_nr).at(i_channel)->SetMarkerColor(colorVec.at(i_channel));
 //			hist_waveforms_onedim.at(board_nr).at(i_channel)->SetLineColor(colorVec.at(i_channel));
 				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Draw("HIST");
 				//ToDo: Find reasonable threshold for displaying pulses
-////				if(hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 2*sigma_pedestal.at(board_nr).at(i_channel)){
-//				std::stringstream ss_path_waveform_onedim;
-//				ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "eventNumber" << i_event << "_current." << img_extension;
-//				canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
-////				}
+				if((hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 2*sigma_pedestal.at(board_nr).at(i_channel))
+						|| (i_event + 1 == (int)entries && !isPlotted.at(i_channel))){
+				std::stringstream ss_path_waveform_onedim;
+				ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
+				canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
+				isPlotted.at(i_channel) = true;
+
+//				Testing
+//				std::cout << "i_event " << i_event << " i_channel " << i_channel << std::endl;
+//				std::cout << "Pedestal " << mean_pedestal.at(board_nr).at(i_channel) << std::endl;
+//				std::cout << "Maximum " << hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() << std::endl;
+
+				}
 			}
 		}
 
 
 
 
-	}
+	}// end board loop
 
 	canvas_pedestal_all->Clear();
 	canvas_pedestal_all->cd();
@@ -1365,16 +1396,16 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	ss_path_pedestals << outpath << "LAPPD_Pedestals_current." << img_extension;
 	canvas_pedestal_all->SaveAs(ss_path_pedestals.str().c_str());
 
-	canvas_rate_all->Clear();
-	canvas_rate_all->cd();
-	canvas_rate_all->SetRightMargin(0.15);
-	TPad *prate = (TPad*) canvas_rate_all->cd();
+	canvas_buffer_size_all->Clear();
+	canvas_buffer_size_all->cd();
+	canvas_buffer_size_all->SetRightMargin(0.15);
+	TPad *prate = (TPad*) canvas_buffer_size_all->cd();
 	prate->SetGrid();
-	hist_rate_all->Draw("COLZ");
+	hist_buffer_size_all->Draw("COLZ");
 	prate->Update();
 	std::stringstream ss_path_rate;
-	ss_path_rate << outpath << "LAPPD_Rates_current." << img_extension;
-	canvas_rate_all->SaveAs(ss_path_rate.str().c_str());
+	ss_path_rate << outpath << "LAPPD_Buffer_Size_current." << img_extension;
+	canvas_buffer_size_all->SaveAs(ss_path_rate.str().c_str());
 
 	canvas_rate_threshold_all->Clear();
 	canvas_rate_threshold_all->cd();
@@ -1386,6 +1417,18 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	std::stringstream ss_path_rate_threshold;
 	ss_path_rate_threshold << outpath << "LAPPD_Rates_Threshold_current." << img_extension;
 	canvas_rate_threshold_all->SaveAs(ss_path_rate_threshold.str().c_str());
+
+	canvas_events_per_channel->Clear();
+	canvas_events_per_channel->cd();
+	canvas_events_per_channel->SetRightMargin(0.15);
+	TPad *pevents = (TPad*) canvas_events_per_channel->cd();
+	pevents->SetGrid();
+	hist_events_per_channel->Draw("COLZ");
+	pevents->Update();
+	std::stringstream ss_path_events_channel;
+	ss_path_events_channel << outpath << "LAPPD_Events_Per_Channel_current." << img_extension;
+	canvas_events_per_channel->SaveAs(ss_path_events_channel.str().c_str());
+
 
 }
 
@@ -1464,9 +1507,17 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board){
 				counterThreshold += content;
 			}
 		}
-		hist_rate_all->SetBinContent(i_channel + 1, i_board + 1, counter);
-		hist_rate_threshold_all->SetBinContent(i_channel + 1, i_board + 1, counterThreshold);
 
+		//ToDo: Entries not equal to events
+		long entries;
+		LAPPDData->Header->Get("TotalEntries", entries);
+		int bufferSize = counter/entries;
+		//ToDo: Fix this number in config file?
+		int numberOfSamples = 256;
+		int numberOfEvents = counter/numberOfSamples;
+		hist_buffer_size_all->SetBinContent(i_channel + 1, i_board + 1, bufferSize);
+		hist_rate_threshold_all->SetBinContent(i_channel + 1, i_board + 1, counterThreshold);
+		hist_events_per_channel->SetBinContent(i_channel + 1, i_board + 1, numberOfEvents);
 		delete fgaus;
 	}
 	num_entries.emplace(board_nr, entries_vec);
@@ -1765,6 +1816,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 			hist_pedestal.at(board_nr).at(i_channel)->Clear();
 		}
 
+		//ToDo: entries not equal to events
 		long entries;
 		LAPPDData->Header->Get("TotalEntries", entries);
 

@@ -201,8 +201,11 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_pedestal = nullptr;
   TCanvas *canvas_pedestal_all = nullptr;
   TCanvas *canvas_pedestal_difference = nullptr;
-  TCanvas *canvas_rate_all = nullptr;
+  TCanvas *canvas_buffer_size_all = nullptr;
   TCanvas *canvas_rate_threshold_all = nullptr;
+  TCanvas *canvas_events_per_channel = nullptr;
+
+
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -225,8 +228,9 @@ class MonitorLAPPDData: public Tool {
   std::map<int, std::vector<TH1F*> > hist_pedestal;
   TH2F* hist_pedestal_all = nullptr;
   TH2F* hist_pedestal_difference_all = nullptr;
-  TH2F* hist_rate_all = nullptr;
+  TH2F* hist_buffer_size_all = nullptr;
   TH2F* hist_rate_threshold_all = nullptr;
+  TH2F* hist_events_per_channel = nullptr;
 
   //text
   TText *text_data_title = nullptr;
