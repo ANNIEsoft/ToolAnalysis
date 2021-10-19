@@ -1,2 +1,2 @@
 verbose 0
-MaxEntriesPerLoop 10
+MaxEntriesPerLoop 1000

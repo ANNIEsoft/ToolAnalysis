@@ -114,8 +114,8 @@ bool MonitorLAPPDDataSingle::Execute(){
   }
 
   //Check for ROOT-related memory leaks (just for debugging)
-  std::cout <<"MonitorLAPPDDataSingle: End of Execute"<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"MonitorLAPPDDataSingle: End of Execute"<<std::endl;
+  //gObjectTable->Print();
 
 
   return true;
@@ -323,8 +323,8 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   unsigned short metadata_1 = Metadata.at(1);
   int offset = 0;
   int board_idx = -1;
-  if (metadata_0 == 51712) offset = 1;
-  else if (metadata_1 == 51712) {
+  if (metadata_0 == 56496 /*51712*/) offset = 1;
+  else if (metadata_1 == 56496 /*51712*/) {
     offset = 0;
     board_idx = metadata_0;
   }

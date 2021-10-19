@@ -77,7 +77,7 @@ class MonitorLAPPDData: public Tool {
   //Helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
   bool does_file_exist(std::string filename);
-  void ModifyBeamgateData(size_t numberOfFiles, std::vector<std::vector<uint64_t>> &dataVector);
+  void ModifyBeamgateData(size_t numberOfFiles, int boardNumber, std::map<int,std::vector<std::vector<uint64_t>>> &dataVector);
   void PedestalFits(int board_nr, int i_board);
 
  private:
@@ -157,6 +157,12 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> t_file_end;
   ULong64_t t_file_start;
   ULong64_t t_file_end_global;
+  
+  //Averaged values - one vector entry per chkey (last file)
+  std::vector<int> current_chkey;
+  std::vector<double> current_rate;
+  std::vector<double> current_ped;
+  std::vector<double> current_sigma;
 
   //Single values - multiple vector entries per board (last file)
   std::vector<uint64_t> beamgate_timestamp;
@@ -166,11 +172,11 @@ class MonitorLAPPDData: public Tool {
   std::vector<int> num_channels;
   std::vector<double> average_buffer;
   std::map<int,std::vector<int>> buffer_size;
-  std::vector<uint64_t> data_beamgate_lastfile;
-  std::vector<std::vector<uint64_t>> data_beamgate_last5files;
-  std::vector<std::vector<uint64_t>> data_beamgate_last10files;
-  std::vector<std::vector<uint64_t>> data_beamgate_last20files;
-  std::vector<std::vector<uint64_t>> data_beamgate_last100files;
+  std::map<int,std::vector<uint64_t>> data_beamgate_lastfile;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last5files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last10files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last20files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last100files;
 
   //Plotting variables in vectors (multiple files)
   std::map<int,std::vector<ULong64_t>> data_times_plot;
@@ -185,6 +191,10 @@ class MonitorLAPPDData: public Tool {
   std::map<int,std::vector<int> > num_entries;
   std::map<int,std::vector<double> > mean_pedestal;
   std::map<int,std::vector<double> > sigma_pedestal;
+  std::map<int,std::vector<double> > rate_pedestal;
+  std::map<int,std::vector<double> > ped_plot;
+  std::map<int,std::vector<double> > sigma_plot;
+  std::map<int,std::vector<double> > rate_plot;
 
   //canvas
   TCanvas *canvas_status_data = nullptr;
@@ -206,10 +216,13 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_pedestal = nullptr;
   TCanvas *canvas_pedestal_all = nullptr;
   TCanvas *canvas_pedestal_difference = nullptr;
-  TCanvas *canvas_rate_all = nullptr;
+  TCanvas *canvas_buffer_size_all = nullptr;
   TCanvas *canvas_rate_threshold_all = nullptr;
   TCanvas *canvas_logfile_lappd = nullptr;
   TCanvas *canvas_file_timestamp_lappd = nullptr;
+  TCanvas *canvas_events_per_channel = nullptr;
+
+
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -232,9 +245,10 @@ class MonitorLAPPDData: public Tool {
   std::map<int, std::vector<TH1F*> > hist_pedestal;
   TH2F* hist_pedestal_all = nullptr;
   TH2F* hist_pedestal_difference_all = nullptr;
-  TH2F* hist_rate_all = nullptr;
+  TH2F* hist_buffer_size_all = nullptr;
   TH2F* hist_rate_threshold_all = nullptr;
   TH1F *log_files_lappd;
+  TH2F* hist_events_per_channel = nullptr;
 
   //text
   TText *text_data_title = nullptr;

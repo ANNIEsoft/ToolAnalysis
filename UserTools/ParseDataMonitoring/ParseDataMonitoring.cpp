@@ -62,7 +62,7 @@ bool ParseDataMonitoring::Execute()
 	LAPPDData->GetEntry(i_entry);
         PsecData PDATA;
         LAPPDData->Get("LAPPDData",PDATA);
-        PDATA.Print();
+        //PDATA.Print();
 
         std::vector<unsigned short> Raw_Buffer = PDATA.RawWaveform;
         std::vector<int> BoardId_Buffer = {PDATA.BoardIndex};
