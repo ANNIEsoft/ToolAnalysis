@@ -15,8 +15,8 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	/////////////////////////////////////////////////////////////////
 
 	//gObjectTable only for debugging memory leaks, otherwise comment out
-	//std::cout <<"MonitorMRDTime: List of Objects (beginning of Initialise): "<<std::endl;
-	//gObjectTable->Print();
+	std::cout <<"MonitorLAPPDSC: List of Objects (beginning of Initialise): "<<std::endl;
+	gObjectTable->Print();
 
 	//-------------------------------------------------------
 	//-----------------Get Configuration---------------------
@@ -53,11 +53,11 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 		std::cout << "Tool MonitorLAPPDSC: Initialising...." << std::endl;
 	// Update frequency specifies the frequency at which the File Log Histogram is updated
 	// All other monitor plots are updated as soon as a new file is available for readout
-	if (update_frequency < 0.1) {
+/*	if (update_frequency < 0.1) {
 		if (verbosity > 0)
 			std::cout << "MonitorLAPPDSC: Update Frequency of " << update_frequency << " mins is too low. Setting default value of 1 min." << std::endl;
 		update_frequency = 1.;
-	}
+	}*/
 
 	//default should be no forced update of the monitoring plots every execute step
 	if (force_update != 0 && force_update != 1) {
@@ -165,8 +165,8 @@ bool MonitorLAPPDSC::Execute() {
 		UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
 	//gObjectTable only for debugging memory leaks, otherwise comment out
-	//std::cout <<"List of Objects (after execute step): "<<std::endl;
-	//gObjectTable->Print();
+	std::cout <<"List of Objects (after execute step): "<<std::endl;
+	gObjectTable->Print();
 
 	return true;
 }

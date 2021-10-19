@@ -1,0 +1,3 @@
+/pnfs/annie/persistent/users/mnieslon/data/LAPPDtest0
+/pnfs/annie/persistent/users/mnieslon/data/LAPPDtest1
+/pnfs/annie/persistent/users/mnieslon/data/LAPPDtest2

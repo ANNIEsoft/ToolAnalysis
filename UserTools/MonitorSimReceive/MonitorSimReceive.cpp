@@ -50,6 +50,7 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
     MRDData = 0;
     PMTData = 0;
     TrigData = 0;
+    LAPPDData = 0;
     indata = 0;
 
     i_loop = 0;
@@ -250,12 +251,17 @@ bool MonitorSimReceive::Execute(){
     }
 
     if (has_lappd){
+       std::cout <<"has_lappd"<<std::endl;
       indata->Get("LAPPDData",*LAPPDData);
       long totalentries_lappd;
       LAPPDData->Header->Get("TotalEntries",totalentries_lappd);
+      std::cout <<"total entries lappd: "<<totalentries_lappd<<std::endl;
+      std::cout <<"Print Lappd Data"<<std::endl;
+      //PsecData psec;
+      LAPPDData->Print(false);
+      //LAPPDData->Get("LAPPDData",psec);
+      //psec.Print();
       m_data->Stores["LAPPDData"]->Set("LAPPDData",LAPPDData,false);
-      //TODO
-      //Potentially just transmit already processed data (depending on format)
     }
 
     i_loop++;

@@ -51,6 +51,10 @@ bool MonitorSimReceiveLAPPDData::Initialise(std::string configfile, DataModel &d
       std::string datapath = vec_filename.at(0);
       LAPPDData = new BoostStore(false,2);
       bool has_lappd = LAPPDData->Initialise(datapath);
+      LAPPDData->Print(false);
+      long entries;
+      LAPPDData->Header->Get("TotalEntries",entries);
+      std::cout <<"# of entries: "<<entries<<std::endl;
     }
 
 
@@ -71,7 +75,9 @@ bool MonitorSimReceiveLAPPDData::Execute(){
     }
     else if (mode == "Single"){
        m_data->CStore.Set("HasLAPPDData",true);
-       long entries = LAPPDData->Header->Get("TotalEntries",entries);
+       long entries;
+       LAPPDData->Header->Get("TotalEntries",entries);
+       std::cout <<"# of entries (Single loop): "<<entries<<std::endl;
        int event=rand() % entries;
        std::string State="LAPPDSingle";
        m_data->CStore.Set("State",State);

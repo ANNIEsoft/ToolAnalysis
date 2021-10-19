@@ -39,10 +39,11 @@
  *
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
-* $Author: B.Richards $
-* $Date: 2019/05/28 10:44:00 $
-* Contact: b.richards@qmul.ac.uk
+* $Author: M. Stender, M. Nieslony $
+* $Date: 2021/10/11 13:00:00 $
+* Contact: malte.stender@desy.de, mnieslon@uni-mainz.de
 */
+
 class MonitorLAPPDData: public Tool {
 
 
@@ -70,6 +71,8 @@ class MonitorLAPPDData: public Tool {
   void DrawLastFileHists();
   void DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, double time_frame, std::string file_ending);
   void DrawTimeAlignment();
+  void DrawFileHistoryLAPPD(ULong64_t timestamp_end, double time_frame, std::string file_ending, int _linewidth);
+  void PrintFileTimeStampLAPPD(ULong64_t timestamp_end, double time_frame, std::string file_ending);
 
   //Helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
@@ -97,9 +100,11 @@ class MonitorLAPPDData: public Tool {
   std::vector<std::string> config_label;
   std::vector<std::vector<std::string>> config_plottypes;
   std::vector<ULong64_t> config_endtime_long;
+  int num_history_lappd;
 
   //Board configuration variables
   std::vector<int> board_configuration;
+  std::vector<int> board_channel;
 
   //Time reference variables
   boost::posix_time::ptime *Epoch = nullptr;
@@ -152,6 +157,12 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> t_file_end;
   ULong64_t t_file_start;
   ULong64_t t_file_end_global;
+  
+  //Averaged values - one vector entry per chkey (last file)
+  std::vector<int> current_chkey;
+  std::vector<double> current_rate;
+  std::vector<double> current_ped;
+  std::vector<double> current_sigma;
 
   //Single values - multiple vector entries per board (last file)
   std::vector<uint64_t> beamgate_timestamp;
@@ -180,6 +191,10 @@ class MonitorLAPPDData: public Tool {
   std::map<int,std::vector<int> > num_entries;
   std::map<int,std::vector<double> > mean_pedestal;
   std::map<int,std::vector<double> > sigma_pedestal;
+  std::map<int,std::vector<double> > rate_pedestal;
+  std::map<int,std::vector<double> > ped_plot;
+  std::map<int,std::vector<double> > sigma_plot;
+  std::map<int,std::vector<double> > rate_plot;
 
   //canvas
   TCanvas *canvas_status_data = nullptr;
@@ -203,6 +218,8 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_pedestal_difference = nullptr;
   TCanvas *canvas_buffer_size_all = nullptr;
   TCanvas *canvas_rate_threshold_all = nullptr;
+  TCanvas *canvas_logfile_lappd = nullptr;
+  TCanvas *canvas_file_timestamp_lappd = nullptr;
   TCanvas *canvas_events_per_channel = nullptr;
 
 
@@ -230,6 +247,7 @@ class MonitorLAPPDData: public Tool {
   TH2F* hist_pedestal_difference_all = nullptr;
   TH2F* hist_buffer_size_all = nullptr;
   TH2F* hist_rate_threshold_all = nullptr;
+  TH1F *log_files_lappd;
   TH2F* hist_events_per_channel = nullptr;
 
   //text
