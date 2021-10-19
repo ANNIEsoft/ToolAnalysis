@@ -59,6 +59,7 @@ class MonitorLAPPDDataSingle: public Tool {
 
    //Board configuration variables
    std::vector<int> board_configuration;
+   std::vector<int> board_channel;
 
    //Time reference variables
    boost::posix_time::ptime *Epoch = nullptr;

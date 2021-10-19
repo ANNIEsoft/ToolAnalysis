@@ -129,5 +129,6 @@ if (tool=="MonitorLAPPDSC") ret=new MonitorLAPPDSC;
 if (tool=="MonitorLAPPDData") ret=new MonitorLAPPDData;
 if (tool=="MonitorSimReceiveLAPPDData") ret=new MonitorSimReceiveLAPPDData;
 if (tool=="MonitorLAPPDDataSingle") ret=new MonitorLAPPDDataSingle;
+if (tool=="ParseDataMonitoring") ret=new ParseDataMonitoring;
 return ret;
 }

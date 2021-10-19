@@ -1,0 +1,4 @@
+FileList ./configfiles/Monitoring/SimMonitoring/LAPPDFileTest.txt
+OutPath ./monitoringplots/
+Mode FileList	#Options: FileList, Single, Wait
+verbose 5

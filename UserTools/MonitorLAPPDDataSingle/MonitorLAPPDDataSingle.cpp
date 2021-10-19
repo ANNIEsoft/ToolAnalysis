@@ -22,7 +22,6 @@ bool MonitorLAPPDDataSingle::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("ImageFormat",img_extension);
   m_variables.Get("StartTime",StartTime);
 
-
   Log("Tool MonitorLAPPDDataSingle: Initializing",v_message,verbosity);
   
   if (outpath_temp == "fromStore") m_data->CStore.Get("OutPath",outpath);
@@ -161,12 +160,13 @@ void MonitorLAPPDDataSingle::LoadACDCBoardConfig(std::string acdc_config){
 
   //Load the active ACDC board numbers specified in the configuration file
    ifstream acdc_file(acdc_config);
-  int board_number;
+  int board_number, board_ch;
   while (!acdc_file.eof()){
-    acdc_file >> board_number;
+    acdc_file >> board_number >> board_ch;
     if (acdc_file.eof()) break; 
     Log("MonitorLAPPDData: Setting Board number >>>"+std::to_string(board_number)+"<<< as an active LAPPD ACDC board number",v_message,verbosity);
     board_configuration.push_back(board_number);
+    board_channel.push_back(board_ch);
 
     current_buffer_size.emplace(board_number,0.);
     current_beam_timestamp.emplace(board_number,0);
@@ -357,14 +357,14 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   std::bitset<16> bits_beamgate_47_32(beamgate_47_32);
   std::bitset<16> bits_beamgate_31_16(beamgate_31_16);
   std::bitset<16> bits_beamgate_15_0(beamgate_15_0);
-  std::cout <<"bits_beamgate_63_48: "<<bits_beamgate_63_48<<std::endl;
-  std::cout <<"bits_beamgate_47_32: "<<bits_beamgate_47_32<<std::endl;
-  std::cout <<"bits_beamgate_31_16: "<<bits_beamgate_31_16<<std::endl;
-  std::cout <<"bits_beamgate_15_0: "<<bits_beamgate_15_0<<std::endl;
+  //std::cout <<"bits_beamgate_63_48: "<<bits_beamgate_63_48<<std::endl;
+  //std::cout <<"bits_beamgate_47_32: "<<bits_beamgate_47_32<<std::endl;
+  //std::cout <<"bits_beamgate_31_16: "<<bits_beamgate_31_16<<std::endl;
+  //std::cout <<"bits_beamgate_15_0: "<<bits_beamgate_15_0<<std::endl;
   unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
   std::cout <<"beamgate combined: "<<beamgate_63_0<<std::endl;
   std::bitset<64> bits_beamgate_63_0(beamgate_63_0);
-  std::cout <<"bits_beamgate_63_0: "<<bits_beamgate_63_0<<std::endl;
+  //std::cout <<"bits_beamgate_63_0: "<<bits_beamgate_63_0<<std::endl;
 
   //Build data timestamp
   unsigned short timestamp_63_48 = Metadata.at(70-offset);	//Shift everything by 1 for the test file
@@ -375,14 +375,14 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   std::bitset<16> bits_timestamp_47_32(timestamp_47_32);
   std::bitset<16> bits_timestamp_31_16(timestamp_31_16);
   std::bitset<16> bits_timestamp_15_0(timestamp_15_0);
-  std::cout <<"bits_timestamp_63_48: "<<bits_timestamp_63_48<<std::endl;
-  std::cout <<"bits_timestamp_47_32: "<<bits_timestamp_47_32<<std::endl;
-  std::cout <<"bits_timestamp_31_16: "<<bits_timestamp_31_16<<std::endl;
-  std::cout <<"bits_timestamp_15_0: "<<bits_timestamp_15_0<<std::endl;
+  //std::cout <<"bits_timestamp_63_48: "<<bits_timestamp_63_48<<std::endl;
+  //std::cout <<"bits_timestamp_47_32: "<<bits_timestamp_47_32<<std::endl;
+  //std::cout <<"bits_timestamp_31_16: "<<bits_timestamp_31_16<<std::endl;
+  //std::cout <<"bits_timestamp_15_0: "<<bits_timestamp_15_0<<std::endl;
   unsigned long timestamp_63_0 = (static_cast<unsigned long>(timestamp_63_48) << 48) + (static_cast<unsigned long>(timestamp_47_32) << 32) + (static_cast<unsigned long>(timestamp_31_16) << 16) + (static_cast<unsigned long>(timestamp_15_0));
   std::cout <<"timestamp combined: "<<timestamp_63_0<<std::endl;
   std::bitset<64> bits_timestamp_63_0(timestamp_63_0);
-  std::cout <<"bits_timestamp_63_0: "<<bits_timestamp_63_0<<std::endl;
+  //std::cout <<"bits_timestamp_63_0: "<<bits_timestamp_63_0<<std::endl;
 
   int n_channels = 0;
   double buffer_size = 0;
