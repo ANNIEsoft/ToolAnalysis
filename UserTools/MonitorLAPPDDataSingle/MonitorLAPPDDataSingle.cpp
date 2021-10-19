@@ -13,8 +13,8 @@ bool MonitorLAPPDDataSingle::Initialise(std::string configfile, DataModel &data)
   /////////////////////////////////////////////////////////////////
 
   //only for debugging memory leaks, otherwise comment out
-  std::cout <<"MonitorLAPPDDataSingle: List of Objects (beginning of Initialise): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"MonitorLAPPDDataSingle: List of Objects (beginning of Initialise): "<<std::endl;
+  //gObjectTable->Print();
 
   m_variables.Get("OutputPath",outpath_temp);
   m_variables.Get("verbose",verbosity);
