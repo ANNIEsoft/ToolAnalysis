@@ -39,19 +39,21 @@ bool ParseDataMonitoring::Execute()
       return true;
     }
 
+    if (state == "DataFile"){
+
     m_data->Stores["LAPPDData"]->Get("LAPPDData",LAPPDData);
     std::cout <<"Print LAPPDData:"<<std::endl;
     LAPPDData->Print(false);
 
     long entries;
     LAPPDData->Header->Get("TotalEntries",entries);
-
+/*
     std::vector<std::map<unsigned long, vector<Waveform<double>>>> lappdDATA;
     std::vector<std::vector<unsigned short>> lappdPPS;
     std::vector<std::vector<unsigned short>> lappdACC;
     std::vector<std::vector<unsigned short>> lappdMETA;
     std::vector<std::string> lappdType;
-
+*/
     int entries_loop = (entries > max_entries)? max_entries : entries;
 
     for (int i_entry=0; i_entry < entries_loop; i_entry++)
@@ -89,13 +91,6 @@ bool ParseDataMonitoring::Execute()
 	    TempData->Save("LAPPDTemp");
 	    TempData->Delete();
 
-            //return all as is
-            /*
-            m_data->ToDataModel.DATA = EMPTY;
-            m_data->ToDataModel.PPS = Raw_Buffer;
-            m_data->ToDataModel.ACCINFOFRAME = PDATA.AccInfoFrame;
-            m_data->ToDataModel.METADATA = EMPTY;
-            */
             return true;
         }
 
@@ -164,14 +159,6 @@ bool ParseDataMonitoring::Execute()
         TempData->Save("LAPPDTemp");
         TempData->Delete();
 
-        //Give the parsed data somewhere
-        /*
-        m_data->ToDataModel.DATA = LAPPDWaveforms;
-        m_data->ToDataModel.PPS = EMPTY;
-        m_data->ToDataModel.ACCINFOFRAME = PDATA.AccInfoFrame;
-        m_data->ToDataModel.METADATA = meta;
-        */
-
         meta.clear(); 
         LAPPDWaveforms.clear(); 
         data.clear(); 
@@ -190,14 +177,105 @@ bool ParseDataMonitoring::Execute()
     m_data->CStore.Set("LAPPD_Type",lappdType);
 */
 
-    //LAPPDData->Close();	//LAPPDData will be closed in MonitorSimReceive/MonitorReceive
-    //indata->Close();
 
-    if (TempData!=0){
-      TempData->Close();
-      delete TempData;
-      TempData=0;
+      if (TempData!=0){
+        TempData->Close();
+        delete TempData;
+        TempData=0;
+      }
+    } else if (state == "LAPPDSingle"){
+
+    PsecData psec;
+    m_data->Stores["LAPPDData"]->Get("Single",psec);
+
+    std::vector<unsigned short> Raw_Buffer = psec.RawWaveform;
+    std::vector<int> BoardId_Buffer = {psec.BoardIndex};
+    
+    int frametype = Raw_Buffer.size()/BoardId_Buffer.size();
+    if(frametype!=NUM_VECTOR_DATA && frametype!=NUM_VECTOR_PPS)
+    {
+      cout << "Problem identifying the frametype, size of raw vector was " << Raw_Buffer.size() << endl;
+      cout << "It was expected to be either " << NUM_VECTOR_DATA*BoardId_Buffer.size() << " or " <<  NUM_VECTOR_PPS*BoardId_Buffer.size() << endl;
+      cout << "Please check manually!" << endl;
+      return false;
     }
+
+    if(frametype==NUM_VECTOR_PPS)
+    {
+      if (verbosity > 2) std::cout <<"PPS frame"<<std::endl;
+
+        m_data->CStore.Set("PPS",Raw_Buffer);
+        m_data->CStore.Set("ACC",psec.AccInfoFrame);
+        m_data->CStore.Set("Type","PPS");
+         
+        return true;
+      }
+
+      for(int bi: BoardId_Buffer)
+      {
+        //Go over all ACDC board data frames by seperating them
+        //for(int c=bi*frametype; c<(bi+1)*frametype; c++)
+	for(int c=0*frametype; c<BoardId_Buffer.size()*frametype; c++)
+        {
+          Parse_Buffer.push_back(Raw_Buffer[c]);
+        }
+        //Grab the parsed data and give it to a global variable 'data'
+        retval = getParsedData(Parse_Buffer,bi*NUM_CH);
+        if(retval == 0)
+        {
+           //Grab the parsed metadata and give it to a global variable 'meta'
+           retval = getParsedMeta(Parse_Buffer,bi);
+           if(retval!=0)
+           {
+             cout << "Meta parsing went wrong! " << retval << endl;
+           }
+         }else
+         {
+           cout << "Parsing went wrong! " << retval << endl;
+           return false;
+          }
+      }
+
+      Waveform<double> tmpWave;
+      vector<Waveform<double>> VecTmpWave;
+      //Loop over data stream
+      for(std::map<int, vector<unsigned short>>::iterator it=data.begin(); it!=data.end(); ++it)
+      {
+         bool first=true;
+         for(unsigned short k: it->second)
+         {
+           tmpWave.PushSample((double)k);
+           if (verbosity > 4 && first) std::cout <<"Chankey "<<it->first<<", ADC value "<<k<<std::endl;
+	   first = false;
+         }
+         VecTmpWave.push_back(tmpWave);
+         LAPPDWaveforms.insert(pair<unsigned long, vector<Waveform<double>>>((unsigned long)it->first,VecTmpWave));
+         tmpWave.ClearSamples();
+         VecTmpWave.clear();
+      }
+
+      if (verbosity > 4){
+        std::cout <<"META DATA"<<std::endl;
+	for (int i_meta=0; i_meta < (int) meta.size(); i_meta++){std::cout <<meta.at(i_meta)<<std::endl;}
+	std::cout <<"ACC INFO DATA"<<std::endl;
+        for (int i_acc=0; i_acc < (int) psec.AccInfoFrame.size(); i_acc++){std::cout <<psec.AccInfoFrame.at(i_acc)<<std::endl;}
+      }
+
+      if (verbosity > 2) std::cout <<"Data entry"<<std::endl;
+
+      m_data->CStore.Set("Data",LAPPDWaveforms);
+      m_data->CStore.Set("ACC",psec.AccInfoFrame);
+      m_data->CStore.Set("Meta",meta);
+      std::string str_data="Data";
+      m_data->CStore.Set("Type",str_data);
+
+      meta.clear(); 
+      LAPPDWaveforms.clear(); 
+      data.clear(); 
+      Raw_Buffer.clear(); 
+      BoardId_Buffer.clear(); 
+
+   }
     
 
     return true;

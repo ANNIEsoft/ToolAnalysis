@@ -62,6 +62,10 @@ bool MonitorSimReceive::Initialise(std::string configfile, DataModel &data){
       MRDData = new BoostStore(false,2);
       bool has_cc = indata->Has("CCData");
       if (has_cc) indata->Get("CCData",*MRDData);
+
+      LAPPDData = new BoostStore(false,2);
+      bool has_lappd = indata->Has("LAPPDData");
+      if (has_lappd) indata->Get("LAPPDData",*LAPPDData);
     }
 
 
@@ -102,6 +106,25 @@ bool MonitorSimReceive::Execute(){
        else MRDData->GetEntry(entries-1);
        MRDData->Get("Data", tmp);
        m_data->Stores["CCData"]->Set("Single",tmp);
+
+       bool has_lappd = indata->Has("LAPPDData");
+       m_data->CStore.Set("HasLAPPDData",has_lappd);
+       if (!has_lappd){
+         State = "Wait";
+         m_data->CStore.Set("State",State);
+         return true;
+       }
+       event = rand() % 1000;
+       State="LAPPDSingle";
+       m_data->CStore.Set("State",State);
+       PsecData psec;
+       LAPPDData->Header->Get("TotalEntries",entries);
+       std::cout <<"LAPPD Single: event: "<<event<<", entries: "<<entries<<std::endl;
+       if (event < entries) LAPPDData->GetEntry(event);
+       else LAPPDData->GetEntry(entries-1);
+       LAPPDData->Get("LAPPDData",psec);
+       m_data->Stores["LAPPDData"]->Set("Single",psec);
+
        return true;
     } 
     else if (mode == "FileList"){

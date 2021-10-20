@@ -86,6 +86,7 @@ class MonitorLAPPDData: public Tool {
   std::string outpath_temp;
   std::string outpath;
   std::string StartTime;
+  std::string ReferenceTime;
   double update_frequency;
   std::string path_monitoring;
   std::string img_extension;
@@ -130,6 +131,7 @@ class MonitorLAPPDData: public Tool {
   ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
   ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
   double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
+  ULong64_t reference_time;
 
   //Geometry variables
   Geometry *geom = nullptr;

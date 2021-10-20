@@ -28,6 +28,7 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 
 	m_variables.Get("OutputPath", outpath_temp);
 	m_variables.Get("StartTime", StartTime);
+	m_variables.Get("ReferenceTime", ReferenceTime);
 	m_variables.Get("UpdateFrequency", update_frequency);
 	m_variables.Get("PathMonitoring", path_monitoring);
 	m_variables.Get("PlotConfiguration", plot_configuration);
@@ -63,6 +64,12 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 
 	//Set up Epoch
 	Epoch = new boost::posix_time::ptime(boost::gregorian::from_string(StartTime));
+
+	//Set up reference time
+	boost::posix_time::ptime Reference(boost::gregorian::from_string(ReferenceTime));
+        boost::posix_time::time_duration reference_stamp = boost::posix_time::time_duration(Reference - *Epoch);
+        reference_time = reference_stamp.total_milliseconds();
+	std::cout <<"ReferenceTime: "<<ReferenceTime<<", total milliseconds: "<<reference_time<<std::endl;
 
 	//Evaluating output path for monitoring plots
 	if (outpath_temp == "fromStore")
@@ -1326,10 +1333,10 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	for (int i_board = 0; i_board < current_pps_rate.size(); i_board++) {
 		int board_nr = board_configuration.at(i_board);
 		if (board_nr != -1) {
-			meanPPSRate += (current_pps_rate.at(i_board) / (double) current_pps_rate.size());
-			meanFrameRate += (current_frame_rate.at(i_board) / (double) current_frame_rate.size());
-			meanBufferSize += (current_buffer_size.at(i_board) / (double) current_buffer_size.size());
-			meanIntegratedCharge += (current_int_charge.at(i_board) / (double) current_int_charge.size());
+			meanPPSRate += (current_pps_rate.at(i_board) / (double) (current_pps_rate.size()-1));
+			meanFrameRate += (current_frame_rate.at(i_board) / (double) (current_frame_rate.size()-1));
+			meanBufferSize += (current_buffer_size.at(i_board) / (double) (current_buffer_size.size()-1));
+			meanIntegratedCharge += (current_int_charge.at(i_board) / (double) (current_int_charge.size()-1));
 		}
 	}
 
@@ -1565,12 +1572,14 @@ void MonitorLAPPDData::DrawLastFileHists() {
 				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Draw("HIST");
 				
 				//Only save plot if pulse was seen (or if no pulse was observed)
-				if ((hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 5 * sigma_pedestal.at(board_nr).at(i_channel)) || (i_event + 1 == 100 /*entries*/ && !isPlotted.at(i_channel))) {
+				if ((hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 5 * sigma_pedestal.at(board_nr).at(i_channel)) || (/*i_event + 1 == 100*/ /*entries*/ /*&&*/ !isPlotted.at(i_channel))) {
+					if (hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetEntries()>0){
 					std::cout <<"Save canvas for channel "<< i_channel <<std::endl;
 					std::stringstream ss_path_waveform_onedim;
 					ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
 					canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
 					isPlotted.at(i_channel) = true;
+					}
 
 //				Testing
 //				std::cout << "i_event " << i_event << " i_channel " << i_channel << std::endl;
@@ -2261,7 +2270,9 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 
 		Temp->Get("Type",entry_type);
 
-       		Temp->Get("Data",RawLAPPDData);
+		if (entry_type == "Data") Temp->Get("Data",RawLAPPDData);
+		else if (entry_type == "PPS") Temp->Get("PPS",pps);
+
         	Temp->Get("ACC",AccInfoFrame);
         	Temp->Get("Meta",Metadata);
 
@@ -2282,6 +2293,35 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 			Metadata = lappdMETA.at(entry_data);
 			entry_data++;
 		}*/
+
+		if (entry_type == "PPS"){
+
+
+			std::cout <<"PPS entry!"<<std::endl;
+			std::cout <<"Size of PPS vector: "<<pps.size()<<std::endl;
+
+			if (pps.size()==16){
+				unsigned short pps_63_48 = pps.at(2);
+                		unsigned short pps_47_32 = pps.at(3);
+                		unsigned short pps_31_16 = pps.at(4);
+                		unsigned short pps_15_0 = pps.at(5);
+                		std::bitset < 16 > bits_pps_63_48(pps_63_48);
+                		std::bitset < 16 > bits_pps_47_32(pps_47_32);
+               			std::bitset < 16 > bits_pps_31_16(pps_31_16);
+                		std::bitset < 16 > bits_pps_15_0(pps_15_0);
+                		std::cout << "bits_pps_63_48: " << bits_pps_63_48 << std::endl;
+                		std::cout << "bits_pps_47_32: " << bits_pps_47_32 << std::endl;
+                		std::cout << "bits_pps_31_16: " << bits_pps_31_16 << std::endl;
+                		std::cout << "bits_pps_15_0: " << bits_pps_15_0 << std::endl;
+                		unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
+                		if (verbosity > 2) std::cout << "pps combined: " << pps_63_0 << std::endl;
+                		std::bitset < 64 > bits_pps_63_0(pps_63_0);
+                		std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
+
+				have_pps = true;
+				continue;
+			}
+		}
 
 
 		if (verbosity > 2){
@@ -2441,6 +2481,13 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		last_timestamp.at(i_board) *= (CLOCK_to_SEC * 1000);
 		first_beamgate_timestamp.at(i_board) *= (CLOCK_to_SEC * 1000);
 		last_beamgate_timestamp.at(i_board) *= (CLOCK_to_SEC * 1000);
+
+		//Add reference time offset
+		first_timestamp.at(i_board) += reference_time;
+		last_timestamp.at(i_board) += reference_time;
+		first_beamgate_timestamp.at(i_board) += reference_time;
+		last_beamgate_timestamp.at(i_board) += reference_time;
+
 
 		if (!got_tfile_start && first_timestamp.at(i_board) > 0) {
 			t_file_start = first_timestamp.at(i_board);
