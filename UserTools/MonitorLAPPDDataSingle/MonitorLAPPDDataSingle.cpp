@@ -13,8 +13,8 @@ bool MonitorLAPPDDataSingle::Initialise(std::string configfile, DataModel &data)
   /////////////////////////////////////////////////////////////////
 
   //only for debugging memory leaks, otherwise comment out
-  std::cout <<"MonitorLAPPDDataSingle: List of Objects (beginning of Initialise): "<<std::endl;
-  gObjectTable->Print();
+  //std::cout <<"MonitorLAPPDDataSingle: List of Objects (beginning of Initialise): "<<std::endl;
+  //gObjectTable->Print();
 
   m_variables.Get("OutputPath",outpath_temp);
   m_variables.Get("verbose",verbosity);
@@ -83,6 +83,10 @@ bool MonitorLAPPDDataSingle::Execute(){
   if (has_lappd){
 
     if (State == "LAPPDSingle"){
+
+      std::string Type;
+      m_data->CStore.Get("Type",Type);
+      if (Type == "PPS") return true;     
 
       //Process single LAPPD data entry
       this->ProcessLAPPDDataLive();
@@ -208,6 +212,8 @@ void MonitorLAPPDDataSingle::InitializeHistsLAPPDLive(){
   for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++){
 
     int board_nr = board_configuration.at(i_board);
+    int min_board = board_channel.at(i_board);  
+
     std::stringstream ss_adc_channel, title_adc_channel;
     std::stringstream ss_buffer_channel, title_buffer_channel;
     std::stringstream ss_waveform_channel, title_waveform_channel;
@@ -238,11 +244,11 @@ void MonitorLAPPDDataSingle::InitializeHistsLAPPDLive(){
     title_timealign_1000 << "LAPPD Timestamp alignment (1000 events), Board "<<board_nr;
     title_timealign_10000 << "LAPPD Timestamp alignment (10,000 events), Board "<<board_nr;
 
-    TH2F *hist_adc_channel = new TH2F(ss_adc_channel.str().c_str(),title_adc_channel.str().c_str(),200,0,4096,30,0,30);
-    TH2F *hist_buffer_channel = new TH2F(ss_buffer_channel.str().c_str(),title_buffer_channel.str().c_str(),50,0,2000,30,0,30);
+    TH2F *hist_adc_channel = new TH2F(ss_adc_channel.str().c_str(),title_adc_channel.str().c_str(),200,0,4096,30,min_board,min_board+30);
+    TH2F *hist_buffer_channel = new TH2F(ss_buffer_channel.str().c_str(),title_buffer_channel.str().c_str(),50,0,2000,30,min_board,min_board+30);
     TH1F *hist_timeevolution = new TH1F(ss_timeevolution.str().c_str(),title_timeevolution.str().c_str(),10,0,10);
-    TH1F *hist_occupancy = new TH1F(ss_occupancy.str().c_str(),title_occupancy.str().c_str(),30,0,30);
-    TH2F *hist_waveform_channel = new TH2F(ss_waveform_channel.str().c_str(),title_waveform_channel.str().c_str(),256,0,256,30,0,30);
+    TH1F *hist_occupancy = new TH1F(ss_occupancy.str().c_str(),title_occupancy.str().c_str(),30,min_board,min_board+30);
+    TH2F *hist_waveform_channel = new TH2F(ss_waveform_channel.str().c_str(),title_waveform_channel.str().c_str(),256,0,256,30,min_board,min_board+30);
     TH1F *hist_timealign_10 = new TH1F(ss_timealign_10.str().c_str(),title_timealign_10.str().c_str(),100,-4000,4000);
     TH1F *hist_timealign_100 = new TH1F(ss_timealign_100.str().c_str(),title_timealign_100.str().c_str(),100,-4000,4000);
     TH1F *hist_timealign_1000 = new TH1F(ss_timealign_1000.str().c_str(),title_timealign_1000.str().c_str(),100,-4000,4000);
@@ -315,10 +321,16 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   std::map<unsigned long, std::vector<Waveform<double>>> RawLAPPDData;
   std::vector<unsigned short> Metadata;
   std::vector<unsigned short> AccInfoFrame;
+  /*
   m_data->Stores["LAPPDData"]->Get("RawLAPPDData",RawLAPPDData);
   m_data->Stores["LAPPDData"]->Get("Metadata",Metadata);
   m_data->Stores["LAPPDData"]->Get("AccInfoFrame",AccInfoFrame);
- 
+ */
+
+  m_data->CStore.Get("Data",RawLAPPDData);
+  m_data->CStore.Get("Meta",Metadata);
+  m_data->CStore.Get("ACC",AccInfoFrame);
+
   unsigned short metadata_0 = Metadata.at(0);
   unsigned short metadata_1 = Metadata.at(1);
   int offset = 0;
@@ -330,15 +342,28 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   }
 
   if (board_idx != -1){
-    std::cout <<"Metadata Board #: "<<board_idx<<std::endl;
+    if (verbosity > 2) std::cout <<"Metadata Board #: "<<board_idx<<std::endl;
     std::bitset<16> bits_metadata(board_idx);
-    std::cout <<"Metadata Bits: "<<bits_metadata<<std::endl;
+    if (verbosity > 2) std::cout <<"Metadata Bits: "<<bits_metadata<<std::endl;
   } else {
     Log("MonitorLAPPDData: ERROR!!! Found no board index in the data!",v_error,verbosity);
   }
  
-  std::cout <<"hist_live_occupancy entries (before): "<<hist_live_occupancy.at(board_idx)->GetEntries();
-  std::cout <<"count hist_live_adc: "<<hist_live_adc.count(board_idx)<<std::endl;
+ int vector_idx = -1;
+ std::vector<int>::iterator it = std::find(board_configuration.begin(), board_configuration.end(), board_idx);
+ if (it != board_configuration.end()) {
+    vector_idx = std::distance(board_configuration.begin(), it);
+    if (verbosity > 2) std::cout << "Found board index " << board_idx << " at position " << vector_idx << " inside of the vector" << std::endl;
+  } else {
+    Log("MonitorLAPPDDataSingle: ERROR!!! Board index " + std::to_string(board_idx) + " was not found as one of the configured board index options!!! Abort LAPPD data entry", v_error, verbosity);
+    return;
+  }
+
+  if (verbosity > 3) {
+    std::cout <<"hist_live_occupancy entries (before): "<<hist_live_occupancy.at(board_idx)->GetEntries();
+    std::cout <<"count hist_live_adc: "<<hist_live_adc.count(board_idx)<<std::endl;
+  }
+
   if (hist_live_adc.count(board_idx)>0){
     hist_live_adc.at(board_idx)->Reset();
     hist_live_buffer.at(board_idx)->Reset();
@@ -346,7 +371,7 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
     hist_live_time.at(board_idx)->Reset();
     hist_live_occupancy.at(board_idx)->Reset();
   }
-  std::cout <<"hist_live_occupancy entries: "<<hist_live_occupancy.at(board_idx)->GetEntries();
+  if (verbosity > 3) std::cout <<"hist_live_occupancy entries: "<<hist_live_occupancy.at(board_idx)->GetEntries();
 
   //Build beamgate timestamp
   unsigned short beamgate_63_48 = Metadata.at(7-offset);	//Shift everything by 1 for the test file
@@ -362,7 +387,7 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   //std::cout <<"bits_beamgate_31_16: "<<bits_beamgate_31_16<<std::endl;
   //std::cout <<"bits_beamgate_15_0: "<<bits_beamgate_15_0<<std::endl;
   unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
-  std::cout <<"beamgate combined: "<<beamgate_63_0<<std::endl;
+  if (verbosity > 2) std::cout <<"beamgate combined: "<<beamgate_63_0<<std::endl;
   std::bitset<64> bits_beamgate_63_0(beamgate_63_0);
   //std::cout <<"bits_beamgate_63_0: "<<bits_beamgate_63_0<<std::endl;
 
@@ -380,7 +405,7 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
   //std::cout <<"bits_timestamp_31_16: "<<bits_timestamp_31_16<<std::endl;
   //std::cout <<"bits_timestamp_15_0: "<<bits_timestamp_15_0<<std::endl;
   unsigned long timestamp_63_0 = (static_cast<unsigned long>(timestamp_63_48) << 48) + (static_cast<unsigned long>(timestamp_47_32) << 32) + (static_cast<unsigned long>(timestamp_31_16) << 16) + (static_cast<unsigned long>(timestamp_15_0));
-  std::cout <<"timestamp combined: "<<timestamp_63_0<<std::endl;
+  if (verbosity > 2) std::cout <<"timestamp combined: "<<timestamp_63_0<<std::endl;
   std::bitset<64> bits_timestamp_63_0(timestamp_63_0);
   //std::cout <<"bits_timestamp_63_0: "<<bits_timestamp_63_0<<std::endl;
 
@@ -397,7 +422,7 @@ void MonitorLAPPDDataSingle::ProcessLAPPDDataLive(){
       hist_live_occupancy.at(board_idx)->Fill(it->first);
       for (int i_wave=0; i_wave < (int) waveform.size(); i_wave++){ 
         hist_live_adc.at(board_idx)->Fill(waveform.at(i_wave),it->first);
-        hist_live_waveform.at(board_idx)->SetBinContent(i_wave+1,it->first+1,hist_live_waveform.at(board_idx)->GetBinContent(i_wave+1,it->first+1)+waveform.at(i_wave));
+        hist_live_waveform.at(board_idx)->SetBinContent(i_wave+1,(it->first%30)+1,hist_live_waveform.at(board_idx)->GetBinContent(i_wave+1,(it->first%30)+1)+waveform.at(i_wave));
       }
     }
   }

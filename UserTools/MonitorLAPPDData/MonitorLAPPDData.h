@@ -86,6 +86,7 @@ class MonitorLAPPDData: public Tool {
   std::string outpath_temp;
   std::string outpath;
   std::string StartTime;
+  std::string ReferenceTime;
   double update_frequency;
   std::string path_monitoring;
   std::string img_extension;
@@ -130,6 +131,7 @@ class MonitorLAPPDData: public Tool {
   ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
   ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
   double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
+  ULong64_t reference_time;
 
   //Geometry variables
   Geometry *geom = nullptr;
@@ -221,14 +223,28 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_logfile_lappd = nullptr;
   TCanvas *canvas_file_timestamp_lappd = nullptr;
   TCanvas *canvas_events_per_channel = nullptr;
-
-
+  TCanvas *canvas_ped = nullptr;
+  TCanvas *canvas_sigma = nullptr;
+  TCanvas *canvas_rate = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
   std::map<int, TGraph*> graph_frame_rate;
   std::map<int, TGraph*> graph_buffer_size;
   std::map<int, TGraph*> graph_int_charge;
+  std::map<int, TGraph*> graph_rate;
+  std::map<int, TGraph*> graph_ped;
+  std::map<int, TGraph*> graph_sigma;
+
+  //multi-graphs
+  TMultiGraph *multi_ped = nullptr;
+  TMultiGraph *multi_sigma = nullptr;
+  TMultiGraph *multi_rate = nullptr;
+
+  //legends
+  TLegend *leg_ped = nullptr;
+  TLegend *leg_sigma = nullptr;
+  TLegend *leg_rate = nullptr;
 
   //histograms
   std::map<int,TH1F*> hist_align_1file;

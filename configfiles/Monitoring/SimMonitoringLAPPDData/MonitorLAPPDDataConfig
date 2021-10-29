@@ -1,9 +1,10 @@
 # LAPPD Data Monitoring config file
 
-verbose 5
+verbose 2
 #OutputPath ./monitoringplots/
 OutputPath fromStore
 StartTime 1970/1/1 #start time for the conversion of timestamps into dates
+ReferenceTime 2021/10/20  # reference time for power up of LAPPD
 PlotConfiguration ./configfiles/Monitoring/LAPPDDataPlotConfig.txt #file containing instructions what to plot
 PathMonitoring ./monitoringfiles/	#path at which the monitoring plots are going to be saved
 ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
