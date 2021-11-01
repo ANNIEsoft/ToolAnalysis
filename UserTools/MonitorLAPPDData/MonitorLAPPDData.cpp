@@ -25,10 +25,11 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 	update_frequency = 0.;
 
 	std::string acdc_configuration;
-
+		
 	m_variables.Get("OutputPath", outpath_temp);
 	m_variables.Get("StartTime", StartTime);
-	m_variables.Get("ReferenceTime", ReferenceTime);
+	m_variables.Get("ReferenceDate", referenceDate);
+	m_variables.Get("ReferenceTime", referenceTime);
 	m_variables.Get("UpdateFrequency", update_frequency);
 	m_variables.Get("PathMonitoring", path_monitoring);
 	m_variables.Get("PlotConfiguration", plot_configuration);
@@ -37,7 +38,7 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 	m_variables.Get("ForceUpdate", force_update);
 	m_variables.Get("DrawMarker", draw_marker);
 	m_variables.Get("verbose", verbosity);
-
+		
 	if (verbosity > 1)
 		std::cout << "Tool MonitorLAPPDData: Initialising...." << std::endl;
 	// Update frequency specifies the frequency at which the File Log Histogram is updated
@@ -64,12 +65,16 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 
 	//Set up Epoch
 	Epoch = new boost::posix_time::ptime(boost::gregorian::from_string(StartTime));
-
+	
+	
+	referenceTimeDate = referenceDate + " " + referenceTime;
+	boost::posix_time::ptime reference = boost::posix_time::time_from_string(referenceTimeDate);
+	
 	//Set up reference time
-	boost::posix_time::ptime Reference(boost::gregorian::from_string(ReferenceTime));
-        boost::posix_time::time_duration reference_stamp = boost::posix_time::time_duration(Reference - *Epoch);
-        reference_time = reference_stamp.total_milliseconds();
-	std::cout <<"ReferenceTime: "<<ReferenceTime<<", total milliseconds: "<<reference_time<<std::endl;
+	boost::posix_time::time_duration reference_stamp = boost::posix_time::time_duration(reference - *Epoch);
+	reference_time = reference_stamp.total_milliseconds();
+	std::cout <<"ReferenceTime: "<<referenceTimeDate<<", total milliseconds: "<<reference_time<<std::endl;
+
 
 	//Evaluating output path for monitoring plots
 	if (outpath_temp == "fromStore")
@@ -2317,7 +2322,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
                 		if (verbosity > 2) std::cout << "pps combined: " << pps_63_0 << std::endl;
                 		std::bitset < 64 > bits_pps_63_0(pps_63_0);
                 		std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
-
+                		last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
 				have_pps = true;
 				continue;
 			}
@@ -2436,8 +2441,8 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 				hist_buffer.at(board_idx)->Fill(waveform.size());
 				current_buffer_size.at(vector_idx) += waveform.size();
 				buffer_size += waveform.size();
-				n_buffer.at(vector_idx)++;for
-(				int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
+				n_buffer.at(vector_idx)++;
+				for(int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
 					hist_adc_channel.at(board_idx)->Fill(waveform.at(i_wave),it->first);
 					hist_waveform_channel.at(board_idx)->SetBinContent(i_wave+1,(it->first)%30+1,hist_waveform_channel.at(board_idx)->GetBinContent(i_wave+1,(it->first)%30+1)+waveform.at(i_wave));
 					hist_waveform_voltages.at(board_idx)->Fill(i_wave, it->first, waveform.at(i_wave));

@@ -86,7 +86,9 @@ class MonitorLAPPDData: public Tool {
   std::string outpath_temp;
   std::string outpath;
   std::string StartTime;
-  std::string ReferenceTime;
+  std::string referenceDate;
+  std::string referenceTime;
+  std::string referenceTimeDate;
   double update_frequency;
   std::string path_monitoring;
   std::string img_extension;
@@ -132,6 +134,7 @@ class MonitorLAPPDData: public Tool {
   ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
   double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
   ULong64_t reference_time;
+  ULong64_t last_pps_timestamp;
 
   //Geometry variables
   Geometry *geom = nullptr;
