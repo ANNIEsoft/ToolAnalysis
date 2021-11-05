@@ -85,9 +85,9 @@ bool LikelihoodFitterCheck::Execute(){
   // Get true Vertex information
   Position vtxPos = fTrueVertex->GetPosition();
 	Direction vtxDir = fTrueVertex->GetDirection();
-	trueVtxX = vtxPos.X();
-  trueVtxY = vtxPos.Y();
-  trueVtxZ = vtxPos.Z();
+	trueVtxX = -52.9262; //vtxPos.X();
+  trueVtxY = -46.4062; //vtxPos.Y();
+  trueVtxZ = -185.982; //vtxPos.Z();
   trueVtxT = fTrueVertex->GetTime();
   trueDirX = vtxDir.X();
   trueDirY = vtxDir.Y();

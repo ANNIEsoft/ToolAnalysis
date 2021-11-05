@@ -318,6 +318,7 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
 	double calT = 0;
 	double calQ = 0;
 	int digitType = -999;
+	TRandom3 *mit = new TRandom3();
 	Detector* det=nullptr;
 	Position  pos_sim, pos_reco;
   // repeat for LAPPD hits
@@ -372,6 +373,7 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
 					RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType,LAPPDId);
 					//if(v_message<verbosity) recoDigit.Print();
 				  //make some cuts here. It will be moved to the Hitcleaning tool
+				  Double_t mitigation = mit->Rndm();
 				  if(calT>40 || calT<-10) continue; // cut off delayed hits
 				  fDigitList->push_back(recoDigit);
 				}

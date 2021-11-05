@@ -3,7 +3,7 @@
 
 verbose 0
 HistoricTriggeroffset 0
-WCSimVersion 5
+WCSimVersion 4
 InputFile /annie/data/users/flemmons/PureMuonSim/OneThousandMuonFid/wcsim-thousand-high_0.root
 LappdNumStrips 60        ## num channels to construct from each LAPPD
 LappdStripLength 100     ## relative x position of each LAPPD strip, for dual-sided readout [mm]

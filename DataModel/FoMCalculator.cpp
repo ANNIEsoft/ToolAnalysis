@@ -183,7 +183,6 @@ double FoMCalculator::FindSimpleTimeProperties(double myConeEdge) {
 		vector<double> deltaTime1;
 		vector<double> deltaTime2;
 		vector<double> TimeWeight;
-		
 		for( int idigit=0; idigit<fVtxGeo->GetNDigits(); idigit++ ){
 			if(!fVtxGeo->IsFiltered(idigit)) continue; 
       if(fVtxGeo->IsFiltered(idigit)){
