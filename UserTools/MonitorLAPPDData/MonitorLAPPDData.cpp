@@ -156,13 +156,13 @@ bool MonitorLAPPDData::Execute() {
 			//Write the event information to a file
 			//TODO: change this to a database later on!
 			//Check if data has already been written included in WriteToFile function
-			WriteToFile();
+			this->WriteToFile();
 
 			//Plot plots only associated to current file
-			DrawLastFilePlots();
+			this->DrawLastFilePlots();
 
 			//Draw customly defined plots
-			UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
+			this->UpdateMonitorPlotsLAPPD(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
 			last = current;
 
@@ -174,7 +174,7 @@ bool MonitorLAPPDData::Execute() {
 
 	// if force_update is specified, the plots will be updated no matter whether there has been a new file or not
 	if (force_update)
-		UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
+		this->UpdateMonitorPlotsLAPPD(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
 	//-------------------------------------------------------
 	//-----------Has enough time passed for update?----------
@@ -236,6 +236,9 @@ bool MonitorLAPPDData::Finalise() {
 	delete canvas_logfile_lappd;
 	delete canvas_file_timestamp_lappd;
 	delete canvas_events_per_channel;
+	delete canvas_ped_lappd;
+	delete canvas_sigma_lappd;
+	delete canvas_rate_lappd;
 
 	std::cout << "histograms" << std::endl;
 	//histograms
@@ -281,14 +284,14 @@ bool MonitorLAPPDData::Finalise() {
 
 
 	//multi-graphs
-	delete multi_ped;
-	delete multi_sigma;
-	delete multi_rate;
+	delete multi_ped_lappd;
+	delete multi_sigma_lappd;
+	delete multi_rate_lappd;
 
 	//legends
-	delete leg_ped;
-	delete leg_sigma;
-	delete leg_rate;
+	delete leg_ped_lappd;
+	delete leg_sigma_lappd;
+	delete leg_rate_lappd;
 
 	std::cout << "text" << std::endl;
 	//text
@@ -332,9 +335,9 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	canvas_logfile_lappd = new TCanvas("canvas_logfile_lappd","LAPPD File History",900,600);
 	canvas_file_timestamp_lappd = new TCanvas("canvas_file_timestamp_lappd","Timestamp Last File",900,600);
 	canvas_events_per_channel = new TCanvas("canvas_events_per_channel", "LAPPD Events per Channel", 900, 600);
-	canvas_ped = new TCanvas("canvas_ped","LAPPD Pedestals",900,600);
-	canvas_sigma = new TCanvas("canvas_sigma","LAPPD Sigmas",900,600);
-	canvas_rate = new TCanvas("canvas_rate","LAPPD Rates",900,600);
+	canvas_ped_lappd = new TCanvas("canvas_ped_lappd","LAPPD Pedestals",900,600);
+	canvas_sigma_lappd = new TCanvas("canvas_sigma_lappd","LAPPD Sigmas",900,600);
+	canvas_rate_lappd = new TCanvas("canvas_rate_lappd","LAPPD Rates",900,600);
 
 	//Histograms
 	//ToDo: Not hardcode the number of channels here
@@ -703,17 +706,17 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 
 	//Multi-Graphs
 
-	multi_ped = new TMultiGraph();
-	multi_sigma = new TMultiGraph();
-	multi_rate = new TMultiGraph();
+	multi_ped_lappd = new TMultiGraph();
+	multi_sigma_lappd = new TMultiGraph();
+	multi_rate_lappd = new TMultiGraph();
 
 	//Legends
-	leg_ped = new TLegend(0.7,0.7,0.88,0.88);
-	leg_sigma = new TLegend(0.7,0.7,0.88,0.88);
-	leg_rate = new TLegend(0.7,0.7,0.88,0.88);
-	leg_ped->SetLineColor(0);
-	leg_sigma->SetLineColor(0);
-	leg_rate->SetLineColor(0);
+	leg_ped_lappd = new TLegend(0.7,0.7,0.88,0.88);
+	leg_sigma_lappd = new TLegend(0.7,0.7,0.88,0.88);
+	leg_rate_lappd = new TLegend(0.7,0.7,0.88,0.88);
+	leg_ped_lappd->SetLineColor(0);
+	leg_sigma_lappd->SetLineColor(0);
+	leg_rate_lappd->SetLineColor(0);
 
 	//Text
 	text_data_title = new TText();
@@ -1274,9 +1277,9 @@ void MonitorLAPPDData::DrawLastFilePlots() {
 
 }
 
-void MonitorLAPPDData::UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes) {
+void MonitorLAPPDData::UpdateMonitorPlotsLAPPD(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes) {
 
-	Log("MonitorLAPPDData: UpdateMonitorPlots", v_message, verbosity);
+	Log("MonitorLAPPDData: UpdateMonitorPlotsLAPPD", v_message, verbosity);
 
 	//-------------------------------------------------------
 	//------------------UpdateMonitorPlots ------------------
@@ -1295,7 +1298,7 @@ void MonitorLAPPDData::UpdateMonitorPlots(std::vector<double> timeFrames, std::v
 				DrawTimeEvolutionLAPPDData(endTimes.at(i_time), timeFrames.at(i_time), fileLabels.at(i_time));
 			else {
 				if (verbosity > 0)
-					std::cout << "ERROR (MonitorLAPPDData): UpdateMonitorPlots: Specified plot type -" << plotTypes.at(i_time).at(i_plot) << "- does not exist! Omit entry." << std::endl;
+					std::cout << "ERROR (MonitorLAPPDData): UpdateMonitorPlotsLAPPD: Specified plot type -" << plotTypes.at(i_time).at(i_plot) << "- does not exist! Omit entry." << std::endl;
 			}
 		}
 	}
@@ -2070,46 +2073,46 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 						if (i == 29){
 							ss_leg.str("");
 							ss_leg << "ch "<<chkey;
-							multi_ped->Add(graph_ped.at(chkey));
-							leg_ped->AddEntry(graph_ped.at(chkey),ss_leg.str().c_str(),"l");
-							multi_sigma->Add(graph_sigma.at(chkey));
-							leg_sigma->AddEntry(graph_sigma.at(chkey),ss_leg.str().c_str(),"l");
-							multi_rate->Add(graph_rate.at(chkey));
-							leg_rate->AddEntry(graph_rate.at(chkey),ss_leg.str().c_str(),"l");
+							multi_ped_lappd->Add(graph_ped.at(chkey));
+							leg_ped_lappd->AddEntry(graph_ped.at(chkey),ss_leg.str().c_str(),"l");
+							multi_sigma_lappd->Add(graph_sigma.at(chkey));
+							leg_sigma_lappd->AddEntry(graph_sigma.at(chkey),ss_leg.str().c_str(),"l");
+							multi_rate_lappd->Add(graph_rate.at(chkey));
+							leg_rate_lappd->AddEntry(graph_rate.at(chkey),ss_leg.str().c_str(),"l");
 						}
 
-						canvas_ped->cd();
-						multi_ped->Draw("apl");
-						multi_ped->SetTitle(ss_ped.str().c_str());
-						multi_ped->GetYaxis()->SetTitle("Pedestal");
-						multi_ped->GetXaxis()->SetTimeDisplay(1);
-						multi_ped->GetXaxis()->SetLabelSize(0.03);
-						multi_ped->GetXaxis()->SetLabelOffset(0.03);
-						multi_ped->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-						multi_ped->GetXaxis()->SetTimeOffset(0.);
-						leg_ped->Draw();
+						canvas_ped_lappd->cd();
+						multi_ped_lappd->Draw("apl");
+						multi_ped_lappd->SetTitle(ss_ped.str().c_str());
+						multi_ped_lappd->GetYaxis()->SetTitle("Pedestal");
+						multi_ped_lappd->GetXaxis()->SetTimeDisplay(1);
+						multi_ped_lappd->GetXaxis()->SetLabelSize(0.03);
+						multi_ped_lappd->GetXaxis()->SetLabelOffset(0.03);
+						multi_ped_lappd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+						multi_ped_lappd->GetXaxis()->SetTimeOffset(0.);
+						leg_ped_lappd->Draw();
 
-						canvas_sigma->cd();
-						multi_sigma->Draw("apl");
-						multi_sigma->SetTitle(ss_sigma.str().c_str());
-						multi_sigma->GetYaxis()->SetTitle("Sigma");
-						multi_sigma->GetXaxis()->SetTimeDisplay(1);
-						multi_sigma->GetXaxis()->SetLabelSize(0.03);
-						multi_sigma->GetXaxis()->SetLabelOffset(0.03);
-						multi_sigma->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-						multi_sigma->GetXaxis()->SetTimeOffset(0.);
-						leg_sigma->Draw();
+						canvas_sigma_lappd->cd();
+						multi_sigma_lappd->Draw("apl");
+						multi_sigma_lappd->SetTitle(ss_sigma.str().c_str());
+						multi_sigma_lappd->GetYaxis()->SetTitle("Sigma");
+						multi_sigma_lappd->GetXaxis()->SetTimeDisplay(1);
+						multi_sigma_lappd->GetXaxis()->SetLabelSize(0.03);
+						multi_sigma_lappd->GetXaxis()->SetLabelOffset(0.03);
+						multi_sigma_lappd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+						multi_sigma_lappd->GetXaxis()->SetTimeOffset(0.);
+						leg_sigma_lappd->Draw();
 						
-						canvas_rate->cd();
-						multi_rate->Draw("apl");
-						multi_rate->SetTitle(ss_rate.str().c_str());
-						multi_rate->GetYaxis()->SetTitle("Rate");
-						multi_rate->GetXaxis()->SetTimeDisplay(1);
-						multi_rate->GetXaxis()->SetLabelSize(0.03);
-						multi_rate->GetXaxis()->SetLabelOffset(0.03);
-						multi_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-						multi_rate->GetXaxis()->SetTimeOffset(0.);
-						leg_rate->Draw();
+						canvas_rate_lappd->cd();
+						multi_rate_lappd->Draw("apl");
+						multi_rate_lappd->SetTitle(ss_rate.str().c_str());
+						multi_rate_lappd->GetYaxis()->SetTitle("Rate");
+						multi_rate_lappd->GetXaxis()->SetTimeDisplay(1);
+						multi_rate_lappd->GetXaxis()->SetLabelSize(0.03);
+						multi_rate_lappd->GetXaxis()->SetLabelOffset(0.03);
+						multi_rate_lappd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+						multi_rate_lappd->GetXaxis()->SetTimeOffset(0.);
+						leg_rate_lappd->Draw();
 
 						ss_ped.str("");
 						ss_sigma.str("");
@@ -2119,25 +2122,25 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 						ss_sigma << outpath << "LAPPDTimeEvolution_Sigma_Ch"<<chkey<<"_"<<file_ending<<"."<<img_extension;
 						ss_rate << outpath << "LAPPDTimeEvolution_Rate_Ch"<<chkey<<"_"<<file_ending<<"."<<img_extension;
 
-						canvas_ped->SaveAs(ss_ped.str().c_str());
-						canvas_sigma->SaveAs(ss_sigma.str().c_str());
-						canvas_rate->SaveAs(ss_rate.str().c_str());
+						canvas_ped_lappd->SaveAs(ss_ped.str().c_str());
+						canvas_sigma_lappd->SaveAs(ss_sigma.str().c_str());
+						canvas_rate_lappd->SaveAs(ss_rate.str().c_str());
 
 						for (int i_gr=0; i_gr < CH_per_CANVAS; i_gr++){
 							int i_balance = (i == 29)? 1 : 0;
-							multi_ped->RecursiveRemove(graph_ped.at(chkey-CH_per_CANVAS+i_gr+i_balance));
-							multi_sigma->RecursiveRemove(graph_sigma.at(chkey-CH_per_CANVAS+i_gr+i_balance));
-							multi_rate->RecursiveRemove(graph_rate.at(chkey-CH_per_CANVAS+i_gr+i_balance));
+							multi_ped_lappd->RecursiveRemove(graph_ped.at(chkey-CH_per_CANVAS+i_gr+i_balance));
+							multi_sigma_lappd->RecursiveRemove(graph_sigma.at(chkey-CH_per_CANVAS+i_gr+i_balance));
+							multi_rate_lappd->RecursiveRemove(graph_rate.at(chkey-CH_per_CANVAS+i_gr+i_balance));
 						}
 
 					}
-					leg_ped->Clear();
-					leg_sigma->Clear();
-					leg_rate->Clear();
+					leg_ped_lappd->Clear();
+					leg_sigma_lappd->Clear();
+					leg_rate_lappd->Clear();
 
-					canvas_ped->Clear();
-					canvas_sigma->Clear();
-					canvas_rate->Clear();
+					canvas_ped_lappd->Clear();
+					canvas_sigma_lappd->Clear();
+					canvas_rate_lappd->Clear();
 
 				}			
 
@@ -2145,20 +2148,20 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 					ss_leg.str("");
 					ss_leg << "ch "<<chkey;
 					
-					multi_ped->Add(graph_ped.at(chkey));
+					multi_ped_lappd->Add(graph_ped.at(chkey));
 					if (graph_ped.at(chkey)->GetMaximum()>max_canvas_ped) max_canvas_ped = graph_ped.at(chkey)->GetMaximum();
 					if (graph_ped.at(chkey)->GetMinimum()>min_canvas_ped) min_canvas_ped = graph_ped.at(chkey)->GetMaximum();
-					leg_ped->AddEntry(graph_ped.at(chkey),ss_leg.str().c_str(),"l");
+					leg_ped_lappd->AddEntry(graph_ped.at(chkey),ss_leg.str().c_str(),"l");
 
-					multi_sigma->Add(graph_sigma.at(chkey));
+					multi_sigma_lappd->Add(graph_sigma.at(chkey));
 					if (graph_sigma.at(chkey)->GetMaximum()>max_canvas_sigma) max_canvas_sigma = graph_sigma.at(chkey)->GetMaximum();
 					if (graph_sigma.at(chkey)->GetMinimum()>min_canvas_sigma) min_canvas_sigma = graph_sigma.at(chkey)->GetMaximum();
-					leg_sigma->AddEntry(graph_sigma.at(chkey),ss_leg.str().c_str(),"l");
+					leg_sigma_lappd->AddEntry(graph_sigma.at(chkey),ss_leg.str().c_str(),"l");
 
-					multi_rate->Add(graph_rate.at(chkey));
+					multi_rate_lappd->Add(graph_rate.at(chkey));
 					if (graph_rate.at(chkey)->GetMaximum()>max_canvas_rate) max_canvas_rate = graph_rate.at(chkey)->GetMaximum();
 					if (graph_rate.at(chkey)->GetMinimum()>min_canvas_rate) min_canvas_rate = graph_rate.at(chkey)->GetMaximum();
-					leg_rate->AddEntry(graph_rate.at(chkey),ss_leg.str().c_str(),"l");
+					leg_rate_lappd->AddEntry(graph_rate.at(chkey),ss_leg.str().c_str(),"l");
 
 				}
 

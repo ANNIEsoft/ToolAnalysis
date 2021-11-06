@@ -66,7 +66,7 @@ class MonitorLAPPDData: public Tool {
 
   //Draw functions
   void DrawLastFilePlots();
-  void UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
+  void UpdateMonitorPlotsLAPPD(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes);
   void DrawStatus_PsecData();
   void DrawLastFileHists();
   void DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, double time_frame, std::string file_ending);
@@ -223,9 +223,9 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_logfile_lappd = nullptr;
   TCanvas *canvas_file_timestamp_lappd = nullptr;
   TCanvas *canvas_events_per_channel = nullptr;
-  TCanvas *canvas_ped = nullptr;
-  TCanvas *canvas_sigma = nullptr;
-  TCanvas *canvas_rate = nullptr;
+  TCanvas *canvas_ped_lappd = nullptr;
+  TCanvas *canvas_sigma_lappd = nullptr;
+  TCanvas *canvas_rate_lappd = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -237,14 +237,14 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_sigma;
 
   //multi-graphs
-  TMultiGraph *multi_ped = nullptr;
-  TMultiGraph *multi_sigma = nullptr;
-  TMultiGraph *multi_rate = nullptr;
+  TMultiGraph *multi_ped_lappd = nullptr;
+  TMultiGraph *multi_sigma_lappd = nullptr;
+  TMultiGraph *multi_rate_lappd = nullptr;
 
   //legends
-  TLegend *leg_ped = nullptr;
-  TLegend *leg_sigma = nullptr;
-  TLegend *leg_rate = nullptr;
+  TLegend *leg_ped_lappd = nullptr;
+  TLegend *leg_sigma_lappd = nullptr;
+  TLegend *leg_rate_lappd = nullptr;
 
   //histograms
   std::map<int,TH1F*> hist_align_1file;

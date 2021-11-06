@@ -54,8 +54,8 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.LIMIT_temperature_high = 50;
     lappd_sc.LIMIT_humidity_low = 75;
     lappd_sc.LIMIT_humidity_high = 90;
-    lappd_sc.FLAG_temperature = false;
-    lappd_sc.FLAG_humidity = false;
+    lappd_sc.FLAG_temperature = 1;
+    lappd_sc.FLAG_humidity = 0;
     lappd_sc.relayCh1 = true;
     lappd_sc.relayCh2 = true;
     lappd_sc.relayCh3 = false;
