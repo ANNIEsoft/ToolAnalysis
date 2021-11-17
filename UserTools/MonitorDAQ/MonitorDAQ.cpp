@@ -1794,6 +1794,7 @@ void MonitorDAQ::PrintInfoBox(){
     else disk_daq01 = test_disk.at(test_disk.size()-1);
   }
 
+  if (disk_daq01 <= 100.){		//prevent slack warnings in case of 971% diskspace bug
   if (disk_daq01 >= 80.) {
     std::stringstream ss_error_disk, ss_error_disk_slack;
     ss_error_disk << "ERROR (MonitorDAQ tool): DAQ01 disk space above 80%! (" << disk_daq01 << " %)";
@@ -1891,6 +1892,7 @@ void MonitorDAQ::PrintInfoBox(){
     }
   } else {
     warning_diskspace_90 = false;
+  }
   }
 
   std::stringstream ss_text_mem_daq01;
