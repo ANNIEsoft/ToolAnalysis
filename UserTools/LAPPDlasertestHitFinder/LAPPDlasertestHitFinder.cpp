@@ -51,7 +51,7 @@ m_data->Stores["ANNIEEvent"]->Get("CFDRecoLAPPDPulses",LAPPDPulseCluster);
 //m_data->Stores["ANNIEEvent"]->Get("SimpleRecoLAPPDPulses",LAPPDPulseCluster);
 
    LAPPDPulse MaxPulse;
-double MaxAmp =-1.0;
+   double MaxAmp =-1.0;
 
 //Find the biggest pulse inside the time window
   for (int i = 0; i < 3; i++){
@@ -115,8 +115,8 @@ LAPPDPulse OpposPulse;
   double SumBelow;
 
   if(!TwoSided){
-  std::cout<<"Not twosided"<<endl;
-    for (int i =0;i<3; i++){
+    std::cout<<"Not twosided"<<endl;
+    for (int i=0;i<3; i++){
       std::vector<LAPPDPulse> neighbourVector;
        if(i!=MaxPulse.GetChannelID()){
 
@@ -130,43 +130,40 @@ LAPPDPulse OpposPulse;
 	std::cout<<"NeighboursPulses size  "<<NeighboursPulses.size()<<endl;
       }
     }
-}
-    if(NeighboursPulses.size()>0){
-  for (int i=0; i<3; i++){
-    int j=0;
-    if(j<NeighboursPulses.size()){
-      if(i!=MaxPulse.GetChannelID())
-	{
-	SumAbove +=  (stripID[i] * NeighboursPulses.at(j).GetPeak());
-	SumBelow +=  (NeighboursPulses.at(j).GetPeak());
-	j++;
-	}
-      else
-	{
-	SumAbove += (stripID[i] * MaxPulse.GetPeak());
-	SumBelow += MaxPulse.GetPeak();
-	}
-    }
   }
-  PerpPosition = (SumAbove / SumBelow);
+  if(NeighboursPulses.size()>0){
+    for (int i=0; i<3; i++){
+      int j=0;
+      if(j<NeighboursPulses.size()){
+        if(i!=MaxPulse.GetChannelID()){
+	         SumAbove +=  (stripID[i] * NeighboursPulses.at(j).GetPeak());
+	         SumBelow +=  (NeighboursPulses.at(j).GetPeak());
+	         j++;
+	        }
+          else {
+	           SumAbove += (stripID[i] * MaxPulse.GetPeak());
+	           SumBelow += MaxPulse.GetPeak();
+	          }
+          }
+        }
+        PerpPosition = (SumAbove / SumBelow);
+      }
+      else {
+        PerpPosition =stripID.at(MaxPulse.GetChannelID());
+      }
     }
     else {
-      PerpPosition =stripID.at(MaxPulse.GetChannelID());
-    }
-  }
-  else
-    {
       for(int i =0; i<3; i++){
-	if(i!=MaxPulse.GetChannelID() && i!=OpposPulse.GetChannelID()){
-	  for (int j = 0; j < LAPPDPulseCluster.at(i).size(); j++){
-	    if (fabs(LAPPDPulseCluster.at(i).at(j).GetTime()*1000. - MaxPulse.GetTime()*1000.) < PTRange){
-	       NeighboursPulses.push_back(LAPPDPulseCluster.at(i).at(j));
-	     }
-	   }
-	}
-      }
-      PerpPosition=stripID.at(MaxPulse.GetChannelID());
-	}
+	       if(i!=MaxPulse.GetChannelID() && i!=OpposPulse.GetChannelID()){
+	          for (int j = 0; j < LAPPDPulseCluster.at(i).size(); j++){
+	             if (fabs(LAPPDPulseCluster.at(i).at(j).GetTime()*1000. - MaxPulse.GetTime()*1000.) < PTRange){
+	                NeighboursPulses.push_back(LAPPDPulseCluster.at(i).at(j));
+	               }
+	              }
+	             }
+             }
+             PerpPosition=stripID.at(MaxPulse.GetChannelID());
+	          }
  LocalPosition.push_back(PerpPosition);
 
  std::cout<<stripID.at(0)<<endl;
@@ -197,26 +194,26 @@ LAPPDPulse OpposPulse;
       HitPulses.push_back(OpposPulse);
       PulseNum=2;
         std::cout<<"Stored twosided +filler"<<endl;
-}
-  }
-else
-{
-  if(NeighboursPulses.size()>1){
-  std::cout<<NeighboursPulses.size()<<std::endl;
-  HitPulses.push_back(NeighboursPulses.at(0));
-  HitPulses.push_back(MaxPulse);
-  HitPulses.push_back(NeighboursPulses.at(1));
-  PulseNum=3;
-  std::cout<<"Stored Onesided"<<endl;
-  }
-  else if(NeighboursPulses.size()>0){
-      LAPPDPulse FillerPulse;
-      FillerPulse.SetChannelID(7);
-      HitPulses.push_back(NeighboursPulses.at(0));
-      HitPulses.push_back(MaxPulse);
-      HitPulses.push_back(FillerPulse);
-      PulseNum=2;
+      }
     }
+    else
+    {
+      if(NeighboursPulses.size()>1){
+        std::cout<<NeighboursPulses.size()<<std::endl;
+        HitPulses.push_back(NeighboursPulses.at(0));
+        HitPulses.push_back(MaxPulse);
+        HitPulses.push_back(NeighboursPulses.at(1));
+        PulseNum=3;
+        std::cout<<"Stored Onesided"<<endl;
+      }
+      else if(NeighboursPulses.size()>0){
+        LAPPDPulse FillerPulse;
+        FillerPulse.SetChannelID(7);
+        HitPulses.push_back(NeighboursPulses.at(0));
+        HitPulses.push_back(MaxPulse);
+        HitPulses.push_back(FillerPulse);
+        PulseNum=2;
+      }
     else
     {
       LAPPDPulse FillerPulse;

@@ -24,6 +24,9 @@ class LAPPDIntegratePulse: public Tool {
    double Deltat;
    double lowR;
    double hiR;
+   int IS1, IS2, IS3, IS4;
+   Geometry* _geom;
+   int LAPPDIntegVerbosity;
 
 };
 
