@@ -4,40 +4,114 @@ SampleSize 100
 NChannels 60
 TrigChannel -1
 
+#NewPsecReadout
+#NewFormatFile   /annie/data/users/venkat12/Aug16/LAPPD20210406_120206
+NewFormatFile ./LAPPD_NewFormatFile
+
+#LoadGeometry
+verbosity 6
+LAPPDChannelCount 60
+FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
+DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
+LAPPDGeoFile ./configfiles/LAPPDteststand/LAPPDGeometry.csv
+TankPMTGeoFile ./configfiles/LoadGeometry/FullTankPMTGeometry.csv
+
+TankPMTGainFile ./configfiles/LoadGeometry/ChannelSPEGains_BeamRun20192020.csv
+AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
+
+#LAPPDPSECReadIn
+LAPPDPSECReadInVerbosity 0
+RawDataOutpuWavLabel  RawLAPPDData
+#PSECinputfile /pnfs/annie/persistent/users/mascenci/2022-01-04/LASERdata_FullSystemIntegration_ACDC30+23/PosX0Y-40/Ascii20220401_134302.txt
+PSECinputfile Ascii20220601_002414.txt
+DoPedSubtraction 1 
+
+Nboards 2 
+Pedinputfile1 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board0.txt
+Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
+
+#LAPPDReorderData
+ReorderVerbosityLevel 0
+ReorderInputWavLabel RawLAPPDData
+ReorderOutputWavLabel LAPPDWaveforms
+DelayOffset 0
+GlobalShift 180
+
 #LAPPDBaselineSubtract
-LowBLfitrange 40000;
-HiBLfitrange  60000;
+BLSInputWavLabel LAPPDWaveforms
+LowBLfitrange 2;
+HiBLfitrange  19;
+BLSOutputWavLabel BLsubtractedLAPPDData
 
-# LAPPDSim
-SimInput  ./UserTools/LAPPDSim/pulsecharacteristics.root
-
-# LAPPDParseScope
-FileInput ../LAPPDdata_fff/LAPPD25_3.22.18/2400_2100_1300_bsln_2sided_root.fff
+#LAPPDFindT0
+FindT0Verbosity 0
+#FindT0InputWavLabel BLsubtractedLAPPDData
+FindT0InputWavLabel LAPPDWaveforms
+TrigEarlyCut 27
+TrigLateCut 40
+T0channelNo 1005
+T0signalmax -100.
+T0signalthreshold -100.
+T0offset  58
+FindT0OutputWavLabel AlignedLAPPDData
+GlobalShiftT0 140 
 
 #LAPPDFilter
-FilterInputWavLabel RawLAPPDData
-#FilterInputWavLabel BLsubtractedLAPPDData
+#RawFilterInputWavLabel LAPPDWaveforms
+RawFilterInputWavLabel AlignedLAPPDData
+#BLSFilterInputWavLabel BLsubtractedLAPPDData
+#BLSFilterInputWavLabel AlignedLAPPDData
+#BLSFilterInputWavLabel ABLSLAPPDData
+BLSFilterInputWavLabel AlignedLAPPDData
 doFilter false
 CutoffFrequency 500000000
 
 #LAPPDIntegratePulse
-IntegLow  64000
-IntegHi 67000
+IntegStrip1 11
+IntegStrip2 -1
+IntegStrip3 -1
+IntegStrip4 -1
+IntegLow  4500
+IntegHi 9000
 
 #LAPPDFindPeak
-PeakInputWavLabel FiltLAPPDData
-TotThreshold 0.5
-MinimumTot 2000.
+FindPeakVerbosity 0
+FiltPeakInputWavLabel FiltLAPPDData
+RawPeakInputWavLabel LAPPDWaveforms
+BLSPeakInputWavLabel AlignedLAPPDData
+TotThreshold 3.0
+MinimumTot 1000.
 Deltat 100.
 
 # LAPPDcfd
-CFDInputWavLabel FiltLAPPDData
-Fraction_CFD 0.4
+CFDVerbosity 0
+FiltCFDInputWavLabel FiltLAPPDData
+RawCFDInputWavLabel LAPPDWaveforms
+BLSCFDInputWavLabel AlignedLAPPDData
+Fraction_CFD 0.15
+
+#LAPPDPlotWaveForms
+requireT0signal 1
+SaveByChannel 1
+#PlotWavLabel FiltLAPPDData
+PlotWavLabel AlignedLAPPDData
+#outfile WaveForms_filt.root
+outfile WaveForms_filt
+NHistos 200
+SaveSingleStrip 0
+SingleStripNo 11
+TrigNo 1005
+WhichChannel 1059
 
 # LAPPDSave
 path ./testoutput
 
-# LAPPDSaveROOT
-outfile ../LAPPDoutputs/SimTest.root
-#outfile ./testout.root
-NHistos 100
+#LAPPDCluster
+ClusterVerbosity  0
+SimpleClusterLabel SimpleRecoLAPPDPulses
+CFDClusterLabel CFDRecoLAPPDPulses
+HitOutLabel Clusters
+
+#LAPPDClusterTree
+ClusterTreeVerbosity  0
+getSimpleClusters 1

@@ -1,0 +1,18 @@
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LAPPDPlotWaveForms
+#SaveByChannel false
+SaveByChannel 1
+#PlotWavLabel BLsubtractedLAPPDData
+PlotWavLabel AlignedLAPPDData
+#outfile WaveForms_rawblsub.root
+outfile WaveForms_rawblsub
+NHistos 20000
+SaveSingleStrip 0
+SingleStripNo 11
+TrigNo 1005
+WhichChannel 1059
