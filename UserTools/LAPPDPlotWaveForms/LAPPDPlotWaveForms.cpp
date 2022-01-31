@@ -87,8 +87,8 @@ bool LAPPDPlotWaveForms::Execute(){
     std::map<unsigned long,vector<Waveform<double>>> lappddata;
 
     //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
-    m_data->Stores["ANNIEEvent"]->Get(InputWavLabel,lappddata);
-
+    bool work = m_data->Stores["ANNIEEvent"]->Get(InputWavLabel,lappddata);
+    //cout<<"IN PLOT WAVES "<<InputWavLabel<<" "<<work<<endl;
     bool T0signalInWindow;
     m_data->Stores["ANNIEEvent"]->Get("T0signalInWindow",T0signalInWindow);
     if(requireT0signal && !T0signalInWindow) {
@@ -118,7 +118,7 @@ bool LAPPDPlotWaveForms::Execute(){
             Waveform<double> bwav = Vwavs.at(i);
 
             int nbins = bwav.GetSamples()->size();
-            //cout<<"IN PLOT WAVES "<<channelno<<" "<<nbins<<endl;
+            //cout<<"IN PLOT WAVES "<<InputWavLabel<<" "<<channelno<<" "<<nbins<<endl;
             double starttime=0.;
             double endtime = starttime + ((double)nbins)*100.;
 
@@ -148,7 +148,7 @@ bool LAPPDPlotWaveForms::Execute(){
               hwav = new TH1D(hname,hname,nbins,starttime,endtime);
 
               for(int i=0; i<nbins; i++){
-                hwav->SetBinContent(i+1,bwav.GetSamples()->at(i));
+                hwav->SetBinContent(i+1,-bwav.GetSamples()->at(i));
               }
 
               mtf->cd("wavs");
@@ -167,7 +167,7 @@ bool LAPPDPlotWaveForms::Execute(){
                 hname+=miter;
                 hwav = new TH1D(hname,hname,nbins,starttime,endtime);
                 for(int i=0; i<nbins; i++){
-                  hwav->SetBinContent(i+1,bwav.GetSamples()->at(i));
+                  hwav->SetBinContent(i+1,-bwav.GetSamples()->at(i));
                 }
                 if(miter<NHistos) hwav->Write();
                 delete hwav;
@@ -178,7 +178,7 @@ bool LAPPDPlotWaveForms::Execute(){
                 hname+=miter;
                 hwav = new TH1D(hname,hname,nbins,starttime,endtime);
                 for(int i=0; i<nbins; i++){
-                  hwav->SetBinContent(i+1,bwav.GetSamples()->at(i));
+                  hwav->SetBinContent(i+1,-bwav.GetSamples()->at(i));
                 }
                 if(miter<NHistos) hwav->Write();
                 delete hwav;
