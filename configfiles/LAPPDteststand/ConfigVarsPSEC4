@@ -5,11 +5,11 @@ NChannels 60
 TrigChannel -1
 
 #NewPsecReadout
-#NewFormatFile   /annie/data/users/venkat12/Aug16/LAPPD20210406_120206
+#NewFormatFile  /annie/data/users/venkat12/Aug16/LAPPD20210406_120206
 NewFormatFile ./LAPPD_NewFormatFile
 
 #LoadGeometry
-verbosity 6
+verbosity 2
 LAPPDChannelCount 60
 FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
 DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
@@ -23,12 +23,15 @@ AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
 LAPPDPSECReadInVerbosity 0
 RawDataOutpuWavLabel  RawLAPPDData
 #PSECinputfile /pnfs/annie/persistent/users/mascenci/2022-01-04/LASERdata_FullSystemIntegration_ACDC30+23/PosX0Y-40/Ascii20220401_134302.txt
-PSECinputfile Ascii20220601_002414.txt
-DoPedSubtraction 1 
+#PSECinputfile Ascii20220601_002414.txt
+PSECinputfile ../Data/2022-01-14/2200V_13mV13mV_-40y_ParallelScan/-80x/All.txt
+DoPedSubtraction 1
 
-Nboards 2 
-Pedinputfile1 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board0.txt
-Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
+Nboards 2
+#Pedinputfile1 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board0.txt
+#Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
+Pedinputfile1 ../Data/2022-01-14/PEDS_ACDC_board0.txt
+Pedinputfile2 ../Data/2022-01-14/PEDS_ACDC_board1.txt
 
 #LAPPDReorderData
 ReorderVerbosityLevel 0
@@ -38,32 +41,37 @@ DelayOffset 0
 GlobalShift 180
 
 #LAPPDBaselineSubtract
+TrigChannel1  1005
+TrigChannel2  1035
 BLSInputWavLabel LAPPDWaveforms
 LowBLfitrange 2;
 HiBLfitrange  19;
+TrigLowBLfitrange 2
+TrigHiBLfitrange  19
 BLSOutputWavLabel BLsubtractedLAPPDData
 
 #LAPPDFindT0
 FindT0Verbosity 0
-#FindT0InputWavLabel BLsubtractedLAPPDData
-FindT0InputWavLabel LAPPDWaveforms
-TrigEarlyCut 27
-TrigLateCut 40
+FindT0InputWavLabel BLsubtractedLAPPDData
+#FindT0InputWavLabel LAPPDWaveforms
+TrigEarlyCut 20
+TrigLateCut 200
 T0channelNo 1005
+T0channelNo1 1005
+T0channelNo2 1005
 T0signalmax -100.
 T0signalthreshold -100.
 T0offset  58
 FindT0OutputWavLabel AlignedLAPPDData
-GlobalShiftT0 140 
+GlobalShiftT0 170
 
 #LAPPDFilter
 #RawFilterInputWavLabel LAPPDWaveforms
 RawFilterInputWavLabel AlignedLAPPDData
 #BLSFilterInputWavLabel BLsubtractedLAPPDData
 #BLSFilterInputWavLabel AlignedLAPPDData
-#BLSFilterInputWavLabel ABLSLAPPDData
-BLSFilterInputWavLabel AlignedLAPPDData
-doFilter false
+BLSFilterInputWavLabel ABLSLAPPDData
+doFilter true
 CutoffFrequency 500000000
 
 #LAPPDIntegratePulse
@@ -77,8 +85,9 @@ IntegHi 9000
 #LAPPDFindPeak
 FindPeakVerbosity 0
 FiltPeakInputWavLabel FiltLAPPDData
-RawPeakInputWavLabel LAPPDWaveforms
-BLSPeakInputWavLabel AlignedLAPPDData
+#RawPeakInputWavLabel LAPPDWaveforms
+#BLSPeakInputWavLabel AlignedLAPPDData
+BLSPeakInputWavLabel ABLSLAPPDData
 TotThreshold 3.0
 MinimumTot 1000.
 Deltat 100.
@@ -91,12 +100,11 @@ BLSCFDInputWavLabel AlignedLAPPDData
 Fraction_CFD 0.15
 
 #LAPPDPlotWaveForms
-requireT0signal 1
+requireT0signal 0
 SaveByChannel 1
 #PlotWavLabel FiltLAPPDData
 PlotWavLabel AlignedLAPPDData
-#outfile WaveForms_filt.root
-outfile WaveForms_filt
+outfile WaveForms_filt.root
 NHistos 200
 SaveSingleStrip 0
 SingleStripNo 11
@@ -113,5 +121,5 @@ CFDClusterLabel CFDRecoLAPPDPulses
 HitOutLabel Clusters
 
 #LAPPDClusterTree
-ClusterTreeVerbosity  0
+LAPPDClusterTreeVerbosity  0
 getSimpleClusters 1

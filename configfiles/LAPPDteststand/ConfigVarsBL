@@ -6,6 +6,10 @@ TrigChannel -1
 
 #LAPPDBaselineSubtract
 BLSInputWavLabel AlignedLAPPDData
-LowBLfitrange 20;
-HiBLfitrange  45;
+TrigChannel1  1005
+TrigChannel2  1035
+LowBLfitrange 165;
+HiBLfitrange  185;
+TrigLowBLfitrange 2
+TrigHiBLfitrange  19
 BLSOutputWavLabel ABLSLAPPDData
