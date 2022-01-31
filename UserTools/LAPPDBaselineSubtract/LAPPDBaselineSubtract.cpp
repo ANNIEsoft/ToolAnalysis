@@ -17,8 +17,12 @@ bool LAPPDBaselineSubtract::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("Nsamples", DimSize);
   m_variables.Get("SampleSize",Deltat);
+  m_variables.Get("TrigChannel1",TrigChannel1);
+  m_variables.Get("TrigChannel2",TrigChannel2);
   m_variables.Get("LowBLfitrange", LowBLfitrange);
   m_variables.Get("HiBLfitrange",HiBLfitrange);
+  m_variables.Get("TrigLowBLfitrange", TrigLowBLfitrange);
+  m_variables.Get("TrigHiBLfitrange",TrigHiBLfitrange);
   TString BLSIWL;
   m_variables.Get("BLSInputWavLabel", BLSIWL);
   BLSInputWavLabel= BLSIWL;
@@ -65,10 +69,24 @@ bool LAPPDBaselineSubtract::Execute(){
             HiBLfitrange=1;
         }
 
-        double BLval=0;
-        for(int j=LowBLfitrange; j<HiBLfitrange; j++){
-            BLval+=bwav.GetSamples()->at(j);
+        if(TrigLowBLfitrange>DimSize || TrigHiBLfitrange>DimSize){
+            cout<<"BASELINE FITRANGE IS WRONG!!! "<<TrigLowBLfitrange<<" "<<TrigHiBLfitrange<<endl;
+            TrigLowBLfitrange=0;
+            TrigHiBLfitrange=1;
         }
+
+        double BLval=0;
+
+        if(channelno==TrigChannel1 || channelno==TrigChannel2){
+          for(int j=TrigLowBLfitrange; j<TrigHiBLfitrange; j++){
+              BLval+=bwav.GetSamples()->at(j);
+          }
+        } else{
+            for(int j=LowBLfitrange; j<HiBLfitrange; j++){
+                BLval+=bwav.GetSamples()->at(j);
+            }
+        }
+        
         double AvgBL = BLval/((double)(HiBLfitrange-LowBLfitrange));
 
         Waveform<double> blswav;
