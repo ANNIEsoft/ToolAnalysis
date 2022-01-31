@@ -5,12 +5,14 @@ NChannels 60
 TrigChannel -1
 
 #LAPPDPlotWaveForms
+requireT0signal 0
 SaveByChannel 1
-#SaveByChannel 1
 #PlotWavLabel LAPPDWaveforms
-PlotWavLabel AlignedLAPPDData
+#PlotWavLabel AlignedLAPPDData
+PlotWavLabel ABLSLAPPDData
+#PlotWavLabel RawLAPPDData
 outfile WaveForms_rawblsub.root
-NHistos 20000
+NHistos 200
 SaveSingleStrip 0
-SingleStripNo 11
+SingleStripNo 20
 TrigNo 1005

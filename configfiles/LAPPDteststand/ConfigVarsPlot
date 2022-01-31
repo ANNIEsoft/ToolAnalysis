@@ -6,12 +6,14 @@ TrigChannel -1
 
 #LAPPDPlotWaveForms
 #SaveByChannel false
+requireT0signal 0
 SaveByChannel 1
 #PlotWavLabel BLsubtractedLAPPDData
-PlotWavLabel AlignedLAPPDData
+#PlotWavLabel AlignedLAPPDData
+PlotWavLabel FiltLAPPDData
 #outfile WaveForms_rawblsub.root
-outfile WaveForms_rawblsub
-NHistos 20000
+outfile WaveForms_filt.root
+NHistos 200
 SaveSingleStrip 0
 SingleStripNo 11
 TrigNo 1005
