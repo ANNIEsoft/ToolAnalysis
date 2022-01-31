@@ -42,13 +42,14 @@ bool LAPPDCluster::Execute(){
   m_data->Stores["ANNIEEvent"]->Get("isCFD",isCFD);
   std::map <unsigned long, vector<LAPPDPulse>> RecoLAPPDPulses;
   //cout<< "ClusterLabel  "<<ClusterLabel<<endl;
+  //cout<<"hmmm "<<isCFD<<" "<<HitOutLabel<<endl;
   if(isCFD==true){
     m_data->Stores["ANNIEEvent"]->Get(CFDClusterLabel,RecoLAPPDPulses);
-      //cout<<"Are you there?"<<endl;
+    if(ClusterVerbosity>0) cout<<"CFD "<<CFDClusterLabel<<" "<<HitOutLabel<<endl;
   }
   else if(isCFD==false){
     m_data->Stores["ANNIEEvent"]->Get(SimpleClusterLabel,RecoLAPPDPulses);
-      //cout<<"excuse me?"<<endl;
+    if(ClusterVerbosity>0) cout<<"Simple "<<SimpleClusterLabel<<" "<<HitOutLabel<<endl;
   }
 
   //cout<<RecoLAPPDPulses.size()<<endl;
@@ -68,8 +69,10 @@ bool LAPPDCluster::Execute(){
   for (pulseitr = RecoLAPPDPulses.begin(); pulseitr != RecoLAPPDPulses.end(); ++pulseitr){
     vector<LAPPDHit> thehits;
     vector<double> localposition;
-    double ParaPosition=-5555;
+    double sition=-5555;
     double PerpPosition=-5555;
+    double ParaPosition=-5555;
+
 
     unsigned long chankey = pulseitr->first;
 
