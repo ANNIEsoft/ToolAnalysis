@@ -93,7 +93,7 @@ bool LAPPDFindT0::Execute(){
           int ibin = j + globalshiftT0;
           if(ibin > 255) ibin = ibin - 255;
           double nsamp = rwav.GetSamples()->at(ibin);
-          rwavShift.PushSample(nsamp);  
+          rwavShift.PushSample(nsamp);
         }
 
         Vrwav.push_back(rwavShift);
@@ -136,8 +136,8 @@ double LAPPDFindT0::Tfit(std::vector<double>* wf){
 
     if(FindT0VerbosityLevel==2) cout<<i<<" "<<ppre<<" "<<pvol<<" "<<T0signalmax<<endl;
 
-    //if(firstcross && pvol > T0signalmax && ppre < T0signalmax && i>5 && i<250){
     if(firstcross && pvol < T0signalmax && ppre > T0signalmax && i>5 && i<250){
+
       if(FindT0VerbosityLevel>1) cout<<"t0 bin: "<<i<<endl;
 
       TGraph *edge = new TGraph();
@@ -150,9 +150,8 @@ double LAPPDFindT0::Tfit(std::vector<double>* wf){
 
         if(FindT0VerbosityLevel==3) cout<<k<<" "<<(edge->Eval((double)k, 0, "S"))<<endl;
 
-        //if(((edge->Eval((double)k, 0, "S"))>T0signalthreshold) && firstthreshcross){
-        if(((edge->Eval((double)k, 0, "S"))<T0signalthreshold) && firstthreshcross){ 
-         if(FindT0VerbosityLevel>0) cout<<"time: "<<k<<endl;
+        if(((edge->Eval((double)k, 0, "S"))<T0signalthreshold) && firstthreshcross){
+          if(FindT0VerbosityLevel>0) cout<<"time: "<<k<<endl;
           ttime=(double)k;
           firstthreshcross=false;
         }
