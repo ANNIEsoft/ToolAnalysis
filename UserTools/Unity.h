@@ -129,12 +129,11 @@
 #include "MonitorTrigger.h"
 #include "EventClassification.h"
 #include "DataSummary.h"
-
 #include "LAPPDPSECReadIn.h"
 #include "LAPPDReorderData.h"
 #include "LAPPDPlotWaveForms.h"
 #include "LAPPDFindT0.h"
-#include "ClusterTree.h"
 #include "ClusterDummy.h"
 #include "LAPPDMakePeds.h"
 #include "LAPPDCluster.h"
+#include "LAPPDClusterTree.h"
