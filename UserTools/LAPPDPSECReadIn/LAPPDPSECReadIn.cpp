@@ -47,11 +47,11 @@ bool LAPPDPSECReadIn::Initialise(std::string configfile, DataModel &data){
 
   //since unsure if LAPPDFilter, LAPPDBaselineSubtract, or LAPPDcfd are being used, isFiltered, isBLsub, and isCFD are set to false
   bool isFiltered = false;
-  m_data->Stores["ANNIEEvent"]->Header->Set("isFiltered",isFiltered);
+  m_data->Stores["ANNIEEvent"]->Set("isFiltered",isFiltered);
   bool isBLsub = false;
-  m_data->Stores["ANNIEEvent"]->Header->Set("isBLsubtracted",isBLsub);
+  m_data->Stores["ANNIEEvent"]->Set("isBLsubtracted",isBLsub);
   bool isCFD=false;
-  m_data->Stores["ANNIEEvent"]->Header->Set("isCFD",isCFD);
+  m_data->Stores["ANNIEEvent"]->Set("isCFD",isCFD);
 
   PedestalValues = new std::map<unsigned long, vector<int>>;
 
