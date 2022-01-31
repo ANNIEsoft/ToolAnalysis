@@ -124,7 +124,6 @@ if (tool=="LAPPDPSECReadIn") ret=new LAPPDPSECReadIn;
 if (tool=="LAPPDPlotWaveForms") ret=new LAPPDPlotWaveForms;
 if (tool=="LAPPDReorderData") ret=new LAPPDReorderData;
 if (tool=="LAPPDFindT0") ret=new LAPPDFindT0;
-if (tool=="ClusterTree") ret=new ClusterTree;
 if (tool=="ClusterDummy") ret=new ClusterDummy;
 if (tool=="LAPPDCluster") ret=new LAPPDCluster;
 if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
@@ -133,5 +132,6 @@ if (tool=="EventClassification") ret=new EventClassification;
 
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="DataSummary") ret=new DataSummary;
+if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
 return ret;
 }
