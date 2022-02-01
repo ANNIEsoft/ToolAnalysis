@@ -692,6 +692,15 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
   for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
+    //TODO: It seems that the last value has "^M", and the statement later is not handled properly
+    //      to hack that we added the following lines:
+    if(i==24) {
+      LAPPDLegendEntries.at(i)="channel_status";
+      SpecLine.at(i)="ON";
+    }
+    // Adding a reminder 
+    if(i>24) std::cerr << "You exceeded the i value (>24). Make sure the last line of the reading file does not have ^M!!!!!!" << std::endl;
+    
     unsigned int uivalue =0;
     double dvalue = 0.0;
     std::string svalue = "default";

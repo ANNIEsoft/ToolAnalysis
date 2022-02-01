@@ -24,14 +24,15 @@ LAPPDPSECReadInVerbosity 0
 RawDataOutpuWavLabel  RawLAPPDData
 #PSECinputfile /pnfs/annie/persistent/users/mascenci/2022-01-04/LASERdata_FullSystemIntegration_ACDC30+23/PosX0Y-40/Ascii20220401_134302.txt
 #PSECinputfile Ascii20220601_002414.txt
-PSECinputfile ../Data/2022-01-14/2200V_13mV13mV_-40y_ParallelScan/-80x/All.txt
+#PSECinputfile ../Data/2022-01-14/2200V_13mV13mV_-40y_ParallelScan/-80x/All.txt
+PSECinputfile ../../GitHub_LAPPDToolAnalysis/Ascii20220601_002414.txt
 DoPedSubtraction 1
 
 Nboards 2
-#Pedinputfile1 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board0.txt
-#Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
-Pedinputfile1 ../Data/2022-01-14/PEDS_ACDC_board0.txt
-Pedinputfile2 ../Data/2022-01-14/PEDS_ACDC_board1.txt
+Pedinputfile1 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board0.txt
+Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
+#Pedinputfile1 ../Data/2022-01-14/PEDS_ACDC_board0.txt
+#Pedinputfile2 ../Data/2022-01-14/PEDS_ACDC_board1.txt
 
 #LAPPDReorderData
 ReorderVerbosityLevel 0

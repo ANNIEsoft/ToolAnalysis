@@ -3,3 +3,4 @@
 Analyse
 ToolDAQ
 *.o
+*.root
