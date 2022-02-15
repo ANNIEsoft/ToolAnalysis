@@ -131,3 +131,4 @@
 #include "EventClassification.h"
 #include "DataSummary.h"
 #include "MeanTimeCheck.h"
+#include "VtxSeedFineGrid.h"

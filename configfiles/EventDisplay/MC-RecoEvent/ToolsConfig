@@ -4,6 +4,10 @@ myMCParticleProperties MCParticleProperties configfiles/EventDisplay/MC-RecoEven
 myMCRecoEventLoader MCRecoEventLoader configfiles/EventDisplay/MC-RecoEvent/MCRecoEventLoaderConfig
 myDigitBuilder DigitBuilder configfiles/EventDisplay/MC-RecoEvent/DigitBuilderConfig
 myClusterFinder ClusterFinder configfiles/EventDisplay/MC-RecoEvent/ClusterFinderConfig
+TimeClustering TimeClustering configfiles/EventDisplay/MC-RecoEvent/TimeClusteringConfig
 myHitCleaner HitCleaner configfiles/EventDisplay/MC-RecoEvent/HitCleanerConfig
 myEventSelector EventSelector configfiles/EventDisplay/MC-RecoEvent/EventSelectorConfig
 myEventDisplay EventDisplay configfiles/EventDisplay/MC-RecoEvent/EventDisplayConfig
+LikelihoodFitterCheck LikelihoodFitterCheck configfiles/EventDisplay/MC-RecoEvent/LikelihoodFitterCheckConfig
+VtxGeometryCheck VertexGeometryCheck ./configfiles/EventDisplay/MC-RecoEvent/VertexGeometryCheckConfig
+

@@ -51,6 +51,7 @@ class VtxSeedFineGrid: public Tool {
 	 std::vector<RecoVertex>* SeedGridList = nullptr;
 	 RecoVertex* fTrueVertex = 0;
 	 Position Center;
+	 Direction SeedDir;
 	 int fThisDigit = 0;
 	 int fSeedType = 2;
 	 int verbosity = -1;

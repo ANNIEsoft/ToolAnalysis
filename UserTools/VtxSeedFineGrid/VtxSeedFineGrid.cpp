@@ -143,6 +143,7 @@ Position VtxSeedFineGrid::FindCenter() {
 			peakX = seedX;
 			peakY = seedY;
 			peakZ = seedZ;
+			SeedDir = iSeed.GetDirection();
 			thisCenterSeed = iSeed;
 		}
 
@@ -164,8 +165,11 @@ void VtxSeedFineGrid::GenerateFineGrid() {
 				Seed.SetZ(Center.Z() - 10 + 5 * i);
 				Seed.SetX(Center.X() - 10 + 5 * j);
 				Seed.SetY(Center.Y() - 10 + 5 * k);
+
+
 				//medianTime = this->GetMedianSeedTime(Seed);
 				thisFineSeed.SetVertex(Seed, medianTime);
+				thisFineSeed.SetDirection(SeedDir);
 				vSeedVtxList->push_back(thisFineSeed);
 
 			}
@@ -180,18 +184,21 @@ Direction VtxSeedFineGrid::findDirectionMRD() {
 	m_data->Stores["MRDTracks"]->Get("NumMrdTracks", numtracksinev);
 
 	if (numtracksinev > 1) Log("Multiple tracks need work; just using first for now", v_debug, verbosity);
-	double dirX, dirY, dirZ;
+	double gradx, grady, theta, phi;
 	Direction startVertex, endVertex, result;
 	BoostStore* thisTrack = &(Tracks->at(0));
 	
-	thisTrack->Get("StartVertex", startVertex);
-	thisTrack->Get("StopVertex", endVertex);
-	dirX = endVertex.X() - startVertex.X();
-	dirY = endVertex.Y() - startVertex.Y();
-	dirZ = endVertex.Z() - startVertex.Y();
-	result.SetX(dirX);
-	result.SetY(dirY);
-	result.SetZ(dirZ);
+	thisTrack->Get("VTrackGradient", gradx);
+	thisTrack->Get("HTrackGradient", grady);
+	theta = atan(grady / gradx);
+	phi = acos(pow((gradx*gradx + grady * grady), 0.5));
+	/*TRandom3 smear;
+	Direction vtxDir = fTrueVertex->GetDirection();
+	Direction result;
+	result.SetTheta(smear.Gaus(vtxDir.GetTheta(), 0.4));
+	result.SetPhi(smear.Gaus(vtxDir.GetPhi(), 0.4));*/
+	result.SetTheta(theta);
+	result.SetPhi(phi);
 
 	return result;
 

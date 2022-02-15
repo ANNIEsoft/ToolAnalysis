@@ -125,5 +125,6 @@ if (tool=="EventClassification") ret=new EventClassification;
 
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="MeanTimeCheck") ret=new MeanTimeCheck;
+if (tool=="VtxSeedFineGrid") ret=new VtxSeedFineGrid;
 return ret;
 }

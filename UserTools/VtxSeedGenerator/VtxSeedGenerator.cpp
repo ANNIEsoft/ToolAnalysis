@@ -85,7 +85,7 @@ bool VtxSeedGenerator::Execute(){
 	  if (fFineGrid) {
 		  Position fFineCenter;
 		  fFineCenter=this->FindCenter();
-		  this->GenerateFineGrid(fNumSeeds, fFineCenter);
+		  //this->GenerateFineGrid(fNumSeeds, fFineCenter);
 	  }
   }else {
     Log("VtxSeedGenerator Tool: Generating quadfitter seeds",v_debug,verbosity);
@@ -454,18 +454,19 @@ Position VtxSeedGenerator::FindCenter() {
 		trialFoM->TimePropertiesLnL(meantime, timefom);
 		trialFoM->ConePropertiesFoM(ConeAngle, conefom);
 		fom = 0.5*timefom + 0.5*conefom;
-		std::cout<<"fom= "<<fom<<" bestfom= "<<bestfom<<endl;
+		//std::cout<<"fom= "<<fom<<" bestfom= "<<bestfom<<endl;
 		if (fom > bestfom) {
 			bestfom = fom;
-			std::cout<<"fom= "<<fom<<" bestfom= "<<bestfom<<endl;
+			//std::cout<<"fom= "<<fom<<" bestfom= "<<bestfom<<endl;
 			thisCenterSeed = thisTrialSeed;
-			std::cout<<"center seed: "<<vtxPos.X()<<","<<vtxPos.Y()<<","<<vtxPos.Z()<<endl;
+			//std::cout<<"center seed: "<<vtxPos.X()<<","<<vtxPos.Y()<<","<<vtxPos.Z()<<endl;
 		}
 		if (pow(pow(vtxPos.X()-truePos.X(),2)+pow(vtxPos.Y()-truePos.Y(),2)+pow(vtxPos.Z()-truePos.Z(),2),0.5)<10){
-		std::cout<<"vtxPos: "<<vtxPos.X()<<","<<vtxPos.Y()<<","<<vtxPos.Z()<<endl;
+		std::cout<<"nearPos: "<<vtxPos.X()<<","<<vtxPos.Y()<<","<<vtxPos.Z()<<endl;
 		std::cout<<"nearfom: "<<fom<<endl;
 		}
 	}
+	std::cout<<"CenterSeed: "<<thisCenterSeed->GetPosition().X()<<", "<<thisCenterSeed->GetPosition().Y()<<", "<<thisCenterSeed->GetPosition().X()<<endl;
 	//delete thisTrialSeed;
 	return thisCenterSeed->GetPosition();
 

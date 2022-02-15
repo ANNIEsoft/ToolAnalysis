@@ -1,11 +1,10 @@
-#LoadWCSimLAPPD Config File (EventDisplay version)
+#LoadWCSimLAPPD Config File
 # all variables retrieved with m_variables.Get() must be defined here!
 
-verbose 1
-InputFile /annie/data/users/flemmons/PureMuonSim/TwentyMuonFid/wcsim-twenty_lappd_0.root
-#InputFile /annie/app/users/mnieslon/MyToolAnalysis/wcsim_beamlike_electrons_FV_lappd_0_499.root
-
-
-WCSimVersion 5    # should reflect the WCSim version of the files being loaded
-InnerStructureRadius 1.3545 # octagonal inner structure radius in m (from drawings 106.64")
+verbose 0
+WCSimVersion 5
+InputFile /annie/data/users/flemmons/PureMuonSim/OneThousandMuonFid/wcsim-thousand-high_lappd_0.root
+# octagonal inner structure radius in m (from drawings 106.64")
+InnerStructureRadius 1.3545
+HistoricTriggeroffset 0
 DrawDebugGraphs 0 # whether to draw TPolyMarker3D's of hits

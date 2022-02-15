@@ -18,6 +18,7 @@ fi
 
 ToolDAQapp=`pwd`
 
+
 source ${ToolDAQapp}/ToolDAQ/root-6.06.08/install/bin/thisroot.sh
 
 
@@ -30,7 +31,7 @@ export GENIE=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/
 
 export PATH=$GENIE/bin:$PATH
 
-for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
+for folder in `ls -d UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done
