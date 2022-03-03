@@ -13,8 +13,8 @@ verbosity 2
 LAPPDChannelCount 60
 FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
 DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
-LAPPDGeoFile ./configfiles/LAPPDteststand/LAPPDGeometry.csv
 TankPMTGeoFile ./configfiles/LoadGeometry/FullTankPMTGeometry.csv
+LAPPDGeoFile ./configfiles/LAPPDteststand/LAPPDGeometry.csv
 
 TankPMTGainFile ./configfiles/LoadGeometry/ChannelSPEGains_BeamRun20192020.csv
 AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
@@ -22,17 +22,16 @@ AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
 #LAPPDPSECReadIn
 LAPPDPSECReadInVerbosity 0
 RawDataOutpuWavLabel  RawLAPPDData
+PSECinputfile ../Data/2022-03-02/LAPPD40_BucketTest_VoltageScan/2350V/All.txt
 #PSECinputfile /pnfs/annie/persistent/users/mascenci/2022-01-04/LASERdata_FullSystemIntegration_ACDC30+23/PosX0Y-40/Ascii20220401_134302.txt
-#PSECinputfile Ascii20220601_002414.txt
-#PSECinputfile ../Data/2022-01-14/2200V_13mV13mV_-40y_ParallelScan/-80x/All.txt
-PSECinputfile ../../GitHub_LAPPDToolAnalysis/Ascii20220601_002414.txt
-DoPedSubtraction 1
+#PSECinputfile ../../GitHub_LAPPDToolAnalysis/Ascii20220601_002414.txt
 
+DoPedSubtraction 1
 Nboards 2
 Pedinputfile1 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board0.txt
 Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
-#Pedinputfile1 ../Data/2022-01-14/PEDS_ACDC_board0.txt
-#Pedinputfile2 ../Data/2022-01-14/PEDS_ACDC_board1.txt
+#Pedinputfile1 PEDS_ACDC_board0.txt
+#Pedinputfile2 PEDS_ACDC_board1.txt
 
 #LAPPDReorderData
 ReorderVerbosityLevel 0
@@ -60,8 +59,8 @@ TrigLateCut 200
 T0channelNo 1005
 T0channelNo1 1005
 T0channelNo2 1005
-T0signalmax -100.
-T0signalthreshold -100.
+T0signalmax -80.
+T0signalthreshold -80.
 T0offset  58
 FindT0OutputWavLabel AlignedLAPPDData
 GlobalShiftT0 170
@@ -89,8 +88,8 @@ FiltPeakInputWavLabel FiltLAPPDData
 #RawPeakInputWavLabel LAPPDWaveforms
 #BLSPeakInputWavLabel AlignedLAPPDData
 BLSPeakInputWavLabel ABLSLAPPDData
-TotThreshold 3.0
-MinimumTot 1000.
+TotThreshold 10.0
+MinimumTot 800.
 Deltat 100.
 
 # LAPPDcfd
