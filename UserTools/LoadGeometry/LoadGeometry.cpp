@@ -24,6 +24,8 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("LAPPDGeoFile", fLAPPDGeoFile);
   m_variables.Get("DetectorGeoFile", fDetectorGeoFile);
   m_variables.Get("LAPPDChannelCount", LAPPD_channel_count);
+  m_variables.Get("LAPPDchannelOffset", LAPPD_channel_offset);
+
 
   //Check files exist
   if(!this->FileExists(fDetectorGeoFile)){
@@ -53,7 +55,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGainFile << std::endl;
     return false;
   }
-  
+
   if(!this->FileExists(fAuxChannelFile)){
     Log("LoadGeometry Tool: File for Auxiliary Channels does not exist!",v_error,verbosity);
     if (verbosity > 0) std::cout << "Filepath was... " << fAuxChannelFile << std::endl;
@@ -341,7 +343,7 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
                std::pair<double,double>{x_center/100.-(x_width/200.), x_center/100.+(x_width/200.)},
                std::pair<double,double>{y_center/100.-(y_width/200.), y_center/100.+(y_width/200.)},
                std::pair<double,double>{z_center/100.-(z_width/200.), z_center/100.+(z_width/200.)});
-  
+
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),
                       -1, // stripside
@@ -698,9 +700,9 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
       LAPPDLegendEntries.at(i)="channel_status";
       SpecLine.at(i)="ON";
     }
-    // Adding a reminder 
+    // Adding a reminder
     if(i>24) std::cerr << "You exceeded the i value (>24). Make sure the last line of the reading file does not have ^M!!!!!!" << std::endl;
-    
+
     unsigned int uivalue =0;
     double dvalue = 0.0;
     std::string svalue = "default";
@@ -765,6 +767,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   if(verbosity>4) std::cout << "Filling a LAPPD data line into Detector/Channel classes" << std::endl;
   if(detector_num != detector_num_store){
   detectorstatus detstat = detectorstatus::OFF;
+
   if(detector_status == "OFF"){
     detstat = detectorstatus::OFF;
     }
@@ -793,6 +796,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   detector_num_store = detector_num;
   }
 
+
   channelstatus channelstat = channelstatus::OFF;
   if(channel_status == "OFF"){
       channelstat = channelstatus::OFF;
@@ -806,7 +810,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   else{
   std::cerr << "The chosen channel status isn't available!!!" << std::endl;
       }
-  Channel lappdchannel(464+channel_num,
+  Channel lappdchannel(LAPPD_channel_offset+channel_num,
                       Position(channel_position_x,
                                channel_position_y,
                                channel_position_z),
