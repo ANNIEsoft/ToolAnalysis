@@ -1,0 +1,119 @@
+### General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on 
+NUM_VECTOR_PPS 16 #Fixed PPS vector size
+NUM_VECTOR_DATA 7795 #Fixed DATA vector size
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+Folder ../Data/LAPPD40_PortDarkBox_LED_HiStat+FakeDAQ_2022-02-25/
+
+
+### LoadGeometry
+verbosity 0
+LAPPDChannelCount 60
+FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
+DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
+LAPPDGeoFile ./configfiles/LAPPDteststand/LAPPDGeometry.csv
+TankPMTGeoFile ./configfiles/LoadGeometry/FullTankPMTGeometry.csv
+TankPMTGainFile ./configfiles/LoadGeometry/ChannelSPEGains_BeamRun20192020.csv
+AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
+
+
+### ReadIn Parameters
+LAPPDStoreReadInVerbosity 0 #Verbosity
+RawDataInputWavLabel RawLAPPDDataFrame #Label of the raw dataframe in the store
+RawDataOutpuWavLabel  RawLAPPDData #Label of the output waveforms in the store
+BoardIndexLabel ReadBoards #Label of the vector of read out boards
+PSECinputfile ../Data/LAPPD40_PortDarkBox_LED_HiStat+FakeDAQ_2022-02-25/LAPPD20222502_134754 #Input file path and name
+DoPedSubtraction 1 #Do pedestal substraction flag
+Nboards 2 #Number of pedestal files to be read in 
+Pedinputfile ../Data/PEDS_ACDC
+PedinputfileTXT ../Data/LAPPD40_PortDarkBox_LED_HiStat+FakeDAQ_2022-02-25/PEDS_ACDC_board #prefix of the pedestal files path+name. index and filetype will be set automatically
+
+
+### LAPPDReorderData
+ReorderVerbosityLevel 0
+ReorderInputWavLabel RawLAPPDData
+ReorderOutputWavLabel LAPPDWaveforms
+DelayOffset 0
+GlobalShift 180
+
+
+### LAPPDBaselineSubtract
+BaselineSubstractVerbosityLevel 0
+BLSInputWavLabel LAPPDWaveforms
+LowBLfitrange 2;
+HiBLfitrange  19;
+TrigLowBLfitrange 2
+TrigHiBLfitrange  19
+BLSOutputWavLabel BLsubtractedLAPPDData
+
+
+### LAPPDFindT0
+FindT0Verbosity 0
+FindT0InputWavLabel BLsubtractedLAPPDData
+TrigEarlyCut 20
+TrigLateCut 200
+T0signalmax -100.
+T0signalthreshold -100.
+T0offset  58
+FindT0OutputWavLabel AlignedLAPPDData
+GlobalShiftT0 170
+
+
+### LAPPDFindPeak
+FindPeakVerbosity 0
+RawPeakInputWavLabel AlignedLAPPDData
+FiltPeakInputWavLabel FiltLAPPDData
+BLSPeakInputWavLabel ABLSLAPPDData
+FindPeakOutLabel SimpleRecoLAPPDPulses
+TotThreshold 3.0
+MinimumTot 1000.
+Deltat 100.
+
+
+### LAPPDFilter
+RawFilterInputWavLabel AlignedLAPPDData
+BLSFilterInputWavLabel ABLSLAPPDData
+FilterOutWavLabel FiltLAPPDData
+doFilter true
+CutoffFrequency 500000000
+
+
+### LAPPDcfd
+CFDVerbosity 0
+FiltCFDInputWavLabel FiltLAPPDData 
+RawCFDInputWavLabel AlignedLAPPDData #LAPPDWaveforms vs ALigned?
+BLSCFDInputWavLabel ABLSLAPPDData #AlignedLAPPDData vs ABLSLAPDData?
+SimpleRecoInputLabel SimpleRecoLAPPDPulses
+CFDOutLabel CFDRecoLAPPDPulses
+Fraction_CFD 0.15
+
+
+### LAPPDCluster
+ClusterVerbosity  0
+SimpleClusterLabel SimpleRecoLAPPDPulses
+CFDClusterLabel CFDRecoLAPPDPulses
+HitOutLabel Clusters
+
+
+### LAPPDClusterTree
+LAPPDClusterTreeVerbosity  0
+getSimpleClusters 1
+
+
+##########################################       UNUSED
+### LAPPDIntegratePulse
+#IntegStrip1 11
+#IntegStrip2 -1
+#IntegStrip3 -1
+#IntegStrip4 -1
+#IntegLow  4500
+#IntegHi 9000
+
+
+### LAPPDSave
+#path ./testoutput
+
+
