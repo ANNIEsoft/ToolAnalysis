@@ -138,13 +138,13 @@ bool LAPPDClusterTree::Execute()
   if(simpleClusters){
     for (itr = Hits.begin(); itr != Hits.end(); ++itr)
       {
+        int m=0;
         //  cout<<"HANDLING A HIT YO"<<endl;
         unsigned long  channel= itr->first;
         vector<LAPPDHit> hitvect = itr->second;
         int numberhits = itr->second.size();
         NHits = numberhits;
         //cout<<"Size of numberhits:  "<< numberhits << endl;
-        int m=0;
         for (itrr = itr->second.begin(); itrr!= itr->second.end(); ++itrr)
         {
             hT[m]=hitvect[m].GetTime();
@@ -160,6 +160,7 @@ bool LAPPDClusterTree::Execute()
             }
             htime[m]=hitvect[m].GetTime();
             m++;
+            if(m>=59) { cout<<"MORE THAN 60 HITS!!!!!!"<<endl; break; }
           }
         }
     }
@@ -170,13 +171,13 @@ bool LAPPDClusterTree::Execute()
         //cout<<"In here"<<endl;
         for (sitr = SimpleHits.begin(); sitr != SimpleHits.end(); ++sitr)
           {
+            int m=0;
             //cout<<"HANDLING A HIT YO"<<endl;
             unsigned long  channel= sitr->first;
             vector<LAPPDHit> hitvect = sitr->second;
             int numberhits = sitr->second.size();
             NHits_simp = numberhits;
             //cout<<"Size of numberhits:  "<< numberhits << endl;
-            int m=0;
             for (sitrr = sitr->second.begin(); sitrr!= sitr->second.end(); ++sitrr)
             {
                 hT_simp[m]=hitvect[m].GetTime();
@@ -192,6 +193,7 @@ bool LAPPDClusterTree::Execute()
                 }
                 htime_simp[m]=hitvect[m].GetTime();
                 m++;
+                if(m>=59) { cout<<"MORE THAN 60 SIMPLE HITS!!!!!!"<<endl; break; }
             }
           }
       }
@@ -219,6 +221,7 @@ bool LAPPDClusterTree::Execute()
           if(LAPPDClusterTreeVerbosity>1) cout<<"in cfd pulse loop "<<Npulses_cfd<<" "<<vPulse.size()<<endl;
 
           for(int jj=0; jj<vPulse.size(); jj++){
+            if(Npulses_cfd>=59) { cout<<"MORE THAN 60 CFD PULSES!!!!!! "<<Npulses_cfd<<endl; break; }
             LAPPDPulse apulse = vPulse.at(jj);
             if(LAPPDClusterTreeVerbosity>1) cout<<"the charge of this pulse is: "<<apulse.GetCharge()<<endl;
             if(LAPPDClusterTreeVerbosity>1) cout<<"The Time of this Pulse is " <<apulse.GetTime() <<endl;
@@ -256,12 +259,12 @@ bool LAPPDClusterTree::Execute()
           if(LAPPDClusterTreeVerbosity>2) cout<<"vPsize: "<<vPulse.size()<<" "<<mystripnum<<" "<<mystripside<<endl;;
 
           for(int jj=0; jj<vPulse.size(); jj++){
+            if(Npulses_simp>=59) { cout<<"MORE THAN 60 SIMPLE PULSES!!!!!!"<<endl; break; }
             LAPPDPulse apulse = vPulse.at(jj);
             if(LAPPDClusterTreeVerbosity>2) cout<<"the charge of this pulse is: "<<apulse.GetCharge()<<" "<<Npulses_simp<<" "<<mystripnum<<" "<<mystripside<<endl;
             if(LAPPDClusterTreeVerbosity>2) cout<< "The Time of this Pulse is " <<apulse.GetTime() <<endl;
 
                 //pulsestart_simp[Npulses_simp]= apulse.GetLowRange();
-
            pulsestrip_simp[Npulses_simp]=mystripnum;
            pulseside_simp[Npulses_simp]=mystripside;
            pulsestart_simp[Npulses_simp]= apulse.GetTime();
