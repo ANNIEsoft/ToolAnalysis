@@ -174,7 +174,7 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
            // cout<<theWav->at(i)<<endl;
             length++;
             if(pvol>peak) {peak = pvol; peakbin=i;}
-            Q+=(theWav->at(i));
+            Q+=(((theWav->at(i))/50000.)*(1e-10));
             if(!pulsestarted) low=(double)i;
             pulsestarted=true;
         }
