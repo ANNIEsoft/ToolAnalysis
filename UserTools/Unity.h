@@ -137,3 +137,7 @@
 #include "LAPPDMakePeds.h"
 #include "LAPPDCluster.h"
 #include "LAPPDClusterTree.h"
+#include "LAPPDStoreBaselineSubtract.h"
+#include "LAPPDStoreFindT0.h"
+#include "LAPPDStoreReadIn.h"
+#include "LAPPDStoreReorderData.h"
