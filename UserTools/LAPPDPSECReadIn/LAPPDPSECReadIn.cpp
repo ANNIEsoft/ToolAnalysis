@@ -45,14 +45,6 @@ bool LAPPDPSECReadIn::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("NChannels", NChannels);
   m_variables.Get("TrigChannel", TrigChannel);
 
-  //since unsure if LAPPDFilter, LAPPDBaselineSubtract, or LAPPDcfd are being used, isFiltered, isBLsub, and isCFD are set to false
-  bool isFiltered = false;
-  m_data->Stores["ANNIEEvent"]->Set("isFiltered",isFiltered);
-  bool isBLsub = false;
-  m_data->Stores["ANNIEEvent"]->Set("isBLsubtracted",isBLsub);
-  bool isCFD=false;
-  m_data->Stores["ANNIEEvent"]->Set("isCFD",isCFD);
-
   PedestalValues = new std::map<unsigned long, vector<int>>;
 
   if(DoPedSubtract==1){
@@ -71,6 +63,14 @@ bool LAPPDPSECReadIn::Initialise(std::string configfile, DataModel &data){
 bool LAPPDPSECReadIn::Execute(){
   //create raw lappd object
 
+
+  //since unsure if LAPPDFilter, LAPPDBaselineSubtract, or LAPPDcfd are being used, isFiltered, isBLsub, and isCFD are set to false
+  bool isFiltered = false;
+  m_data->Stores["ANNIEEvent"]->Set("isFiltered",isFiltered);
+  bool isBLsub = false;
+  m_data->Stores["ANNIEEvent"]->Set("isBLsubtracted",isBLsub);
+  bool isCFD=false;
+  m_data->Stores["ANNIEEvent"]->Set("isCFD",isCFD);
 
   if(eventNo%10==0) cout<<"Event: "<<eventNo<<endl;
 
