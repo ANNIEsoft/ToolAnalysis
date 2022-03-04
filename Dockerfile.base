@@ -62,6 +62,7 @@ Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEvent;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
+RUN chmod -R 777 /ToolAnalysis
 
 ### Open terminal
 CMD ["/bin/bash"]
