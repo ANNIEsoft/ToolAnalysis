@@ -34,12 +34,12 @@ bool ParseDataMonitoring::Execute()
     }
 
     m_data->CStore.Get("HasLAPPDData",has_lappd);
-    if (!has_lappd) {
+    /*if (!has_lappd) {
       Log("ParseDataMonitoringMonitoring: No LAPPD data present! Abort",2,verbosity);
       return true;
-    }
+    }*/
 
-    if (state == "DataFile"){
+    if (state == "DataFile" && has_lappd){
 
     m_data->Stores["LAPPDData"]->Get("LAPPDData",LAPPDData);
     std::cout <<"Print LAPPDData:"<<std::endl;
