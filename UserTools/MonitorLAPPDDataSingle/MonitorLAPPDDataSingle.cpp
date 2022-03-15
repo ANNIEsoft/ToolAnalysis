@@ -80,7 +80,7 @@ bool MonitorLAPPDDataSingle::Execute(){
   std::string State;
   m_data->CStore.Get("State",State);
 
-  if (has_lappd){
+ // if (has_lappd){
 
     if (State == "LAPPDSingle"){
 
@@ -104,7 +104,7 @@ bool MonitorLAPPDDataSingle::Execute(){
       if (verbosity > 1) std::cout <<"State not recognized: "<<State<<std::endl;
     }
 
-  }
+//  }
 
   if (duration >= period_update){
 
