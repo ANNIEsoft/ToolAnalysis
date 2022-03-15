@@ -1618,7 +1618,7 @@ void MonitorDAQ::PrintInfoBox(){
   std::stringstream ss_filesize;
   ss_filesize << "Last File size: "<<file_size<<" MB";
   text_filesize->SetText(0.06,0.4,ss_filesize.str().c_str());
-  if (file_size<100.) text_filesize->SetTextColor(2);
+  if (file_size<50.) text_filesize->SetTextColor(2);
   else text_filesize->SetTextColor(1);
 	  
   if (testmode){
@@ -1626,10 +1626,10 @@ void MonitorDAQ::PrintInfoBox(){
     else file_size = test_filesize.at(test_filesize.size()-1);
   }
 
-  if (file_size <= 100.) {
+  if (file_size <= 50.) {
     std::stringstream ss_error_filesize, ss_error_filesize_slack;
-    ss_error_filesize << "ERROR (MonitorDAQ tool): Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.";
-    ss_error_filesize_slack << "payload={\"text\":\"Monitoring: Very small filesize < 100 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.\"}";
+    ss_error_filesize << "ERROR (MonitorDAQ tool): Very small filesize < 50 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.";
+    ss_error_filesize_slack << "payload={\"text\":\"Monitoring: Very small filesize < 50 MB for file " << file_name_short << ": Size = " << std::to_string(file_size) << " MB.\"}";
     bool issue_warning = (!warning_filesize || (warning_filesize_filename!=file_name_short));
     warning_filesize = true;
     warning_filesize_filename = file_name_short;
@@ -1780,7 +1780,7 @@ void MonitorDAQ::PrintInfoBox(){
 
   bool everything_ok=false;
   if (file_produced){
-    if (file_has_trig && file_has_pmt && file_size > 100. && num_vme_service==3 && mins_since_file<30.) everything_ok = true;
+    if (file_has_trig && file_has_pmt && file_size > 50. && num_vme_service==3 && mins_since_file<30.) everything_ok = true;
   }
   else if (num_vme_service==3) everything_ok = true;
   std::stringstream ss_summary;
@@ -1815,6 +1815,7 @@ void MonitorDAQ::PrintInfoBox(){
     else disk_daq01 = test_disk.at(test_disk.size()-1);
   }
 
+  if (disk_daq01 <= 100.){		//prevent slack warnings in case of 971% diskspace bug
   if (disk_daq01 >= 80.) {
     std::stringstream ss_error_disk, ss_error_disk_slack;
     ss_error_disk << "ERROR (MonitorDAQ tool): DAQ01 disk space above 80%! (" << disk_daq01 << " %)";
@@ -1912,6 +1913,7 @@ void MonitorDAQ::PrintInfoBox(){
     }
   } else {
     warning_diskspace_90 = false;
+  }
   }
 
   std::stringstream ss_text_mem_daq01;
