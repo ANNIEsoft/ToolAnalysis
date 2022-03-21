@@ -5,7 +5,7 @@ verbose 0
 OutputPath fromStore
 StartTime 1970/1/1 #start time for the conversion of timestamps into dates
 PlotConfiguration ./configfiles/Monitoring/LAPPDSCPlotConfig.txt #file containing instructions what to plot
-PathMonitoring ./monitoringfiles/	#path at which the monitoring plots are going to be saved
+PathMonitoring /monitoringfiles/	#path at which the monitoring plots are going to be saved
 ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
 UpdateFrequency 1. #specify frequency for the file history plot, in mins
 ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
@@ -16,3 +16,5 @@ VoltageMin25 2.0
 VoltageMax25 3.0
 VoltageMin12 1.0
 VoltageMax12 1.5
+LimitSaltLow 100
+LimitSaltHigh 1000

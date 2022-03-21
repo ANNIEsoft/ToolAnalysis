@@ -47,6 +47,7 @@ bool ParseDataMonitoring::Execute()
 
     long entries;
     LAPPDData->Header->Get("TotalEntries",entries);
+    std::cout <<"TotalEntries: "<<entries<<std::endl;
 /*
     std::vector<std::map<unsigned long, vector<Waveform<double>>>> lappdDATA;
     std::vector<std::vector<unsigned short>> lappdPPS;
@@ -63,13 +64,19 @@ bool ParseDataMonitoring::Execute()
         
 	LAPPDData->GetEntry(i_entry);
         PsecData PDATA;
+	std::cout <<"Get PsecData"<<std::endl;
         LAPPDData->Get("LAPPDData",PDATA);
-        //PDATA.Print();
+        PDATA.Print();
 
+	std::cout <<"Get RawWaveform"<<std::endl;
         std::vector<unsigned short> Raw_Buffer = PDATA.RawWaveform;
-        std::vector<int> BoardId_Buffer = {PDATA.BoardIndex};
+	std::cout <<"Get BoardIndex"<<std::endl;
+        std::vector<int> BoardId_Buffer = PDATA.BoardIndex;
     
+	std::cout <<"frametype"<<std::endl;
+	std::cout <<"Raw_Buffer.size(): "<<Raw_Buffer.size()<<", BoardId_Buffer.size(): "<<BoardId_Buffer.size()<<std::endl;
         int frametype = Raw_Buffer.size()/BoardId_Buffer.size();
+	std::cout <<"got frametype = "<<frametype<<std::endl;
         if(frametype!=NUM_VECTOR_DATA && frametype!=NUM_VECTOR_PPS)
         {
             cout << "Problem identifying the frametype, size of raw vector was " << Raw_Buffer.size() << endl;
@@ -94,6 +101,7 @@ bool ParseDataMonitoring::Execute()
             return true;
         }
 
+	std::cout <<"loop boardid_buffer"<<std::endl;
         for(int bi: BoardId_Buffer)
         {
             //Go over all ACDC board data frames by seperating them
@@ -119,6 +127,7 @@ bool ParseDataMonitoring::Execute()
             }
         }
 
+	std::cout <<"Loop over data stream"<<std::endl;
         Waveform<double> tmpWave;
         vector<Waveform<double>> VecTmpWave;
         //Loop over data stream
@@ -151,6 +160,8 @@ bool ParseDataMonitoring::Execute()
         lappdMETA.push_back(meta);
         lappdType.push_back("DATA");*/
 	
+	std::cout <<"Set TempData"<<std::endl;
+
 	TempData->Set("Data",LAPPDWaveforms);
         TempData->Set("ACC",PDATA.AccInfoFrame);
 	TempData->Set("Meta",meta);

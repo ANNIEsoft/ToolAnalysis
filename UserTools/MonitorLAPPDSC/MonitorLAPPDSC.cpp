@@ -15,14 +15,16 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	/////////////////////////////////////////////////////////////////
 
 	//gObjectTable only for debugging memory leaks, otherwise comment out
-	std::cout <<"MonitorLAPPDSC: List of Objects (beginning of Initialise): "<<std::endl;
-	gObjectTable->Print();
+	//std::cout <<"MonitorLAPPDSC: List of Objects (beginning of Initialise): "<<std::endl;
+	//gObjectTable->Print();
 
 	//-------------------------------------------------------
 	//-----------------Get Configuration---------------------
 	//-------------------------------------------------------
 
 	update_frequency = 0.;
+	limit_salt_low = 0;	// no idea what the units are, probably non-sense default limits?
+	limit_salt_high = 1;	//no idea what the units are, probably non-sense default limits?
 
 	m_variables.Get("OutputPath", outpath_temp);
 	m_variables.Get("StartTime", StartTime);
@@ -39,6 +41,8 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	m_variables.Get("VoltageMax25", v25_max);
 	m_variables.Get("VoltageMin12", v12_min);
 	m_variables.Get("VoltageMax12", v12_max);
+	m_variables.Get("LimitSaltLow", limit_salt_low);
+	m_variables.Get("LimitSaltHigh", limit_salt_high);
 
 	if (verbosity > 2) {
 		std::cout << "v33_min " << v33_min << std::endl;
@@ -47,6 +51,8 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 		std::cout << "v25_max " << v25_max << std::endl;
 		std::cout << "v12_min " << v12_min << std::endl;
 		std::cout << "v12_max " << v12_max << std::endl;
+		std::cout << "limit_salt_low: " << limit_salt_low << std::endl;
+		std::cout << "limit_salt_high: " << limit_salt_high << std::endl;
 	}
 
 	if (verbosity > 1)
@@ -139,8 +145,10 @@ bool MonitorLAPPDSC::Execute() {
 
 		if (duration > period_update) {
 
-			m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_sc);
+			m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
 
+			//std::cout <<"Salt-bridge (received): "<<lappd_SC.saltbridge<<std::endl;
+			//std::cout <<"SC Print(): "<<lappd_SC.Print()<<std::endl;
 			//Write the event information to a file
 			//TODO: change this to a database later on!
 			//Check if data has already been written included in WriteToFile function
@@ -165,8 +173,8 @@ bool MonitorLAPPDSC::Execute() {
 		UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
 	//gObjectTable only for debugging memory leaks, otherwise comment out
-	std::cout <<"List of Objects (after execute step): "<<std::endl;
-	gObjectTable->Print();
+	//std::cout <<"List of Objects (after execute step): "<<std::endl;
+	//gObjectTable->Print();
 
 	return true;
 }
@@ -182,6 +190,8 @@ bool MonitorLAPPDSC::Finalise() {
 	//canvas
 	delete canvas_temp;
 	delete canvas_humidity;
+	delete canvas_thermistor;
+	delete canvas_salt;
 	delete canvas_light;
 	delete canvas_hv;
 	delete canvas_lv;
@@ -196,6 +206,8 @@ bool MonitorLAPPDSC::Finalise() {
 	delete graph_temp;
 	delete graph_humidity;
 	delete graph_light;
+	delete graph_thermistor;
+	delete graph_salt;
 	delete graph_hv_volt;
 	delete graph_lv_volt1;
 	delete graph_lv_volt2;
@@ -212,9 +224,13 @@ bool MonitorLAPPDSC::Finalise() {
 	delete text_temphum_title;
 	delete text_temp;
 	delete text_hum;
+	delete text_thermistor;
+	delete text_salt;
 	delete text_light;
 	delete text_flag_temp;
 	delete text_flag_hum;
+	delete text_flag_thermistor;
+	delete text_flag_salt;
 
 	//LVHV texts
 	delete text_lvhv_title;
@@ -275,6 +291,8 @@ void MonitorLAPPDSC::InitializeHists() {
 	//Canvas
 	canvas_temp = new TCanvas("canvas_temp", "LVHV Temperature", 900, 600);
 	canvas_humidity = new TCanvas("canvas_humidity", "LVHV Humidity", 900, 600);
+	canvas_thermistor = new TCanvas("canvas_thermistor", "LVHV Thermistor", 900, 600);
+	canvas_salt = new TCanvas("canvas_salt", "LVHV Salt bridge", 900, 600);
 	canvas_light = new TCanvas("canvas_light", "LVHV Light", 900, 600);
 	canvas_hv = new TCanvas("canvas_hv", "LVHV HV", 900, 600);
 	canvas_lv = new TCanvas("canvas_lv", "LVHV LV", 900, 600);
@@ -289,6 +307,8 @@ void MonitorLAPPDSC::InitializeHists() {
 	//Graphs
 	graph_temp = new TGraph();
 	graph_humidity = new TGraph();
+	graph_thermistor = new TGraph();
+	graph_salt = new TGraph();
 	graph_light = new TGraph();
 	graph_hv_volt = new TGraph();
 	graph_lv_volt1 = new TGraph();
@@ -297,6 +317,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->SetName("graph_temp");
 	graph_humidity->SetName("graph_humidity");
+	graph_thermistor->SetName("graph_thermistor");
+	graph_salt->SetName("graph_salt");
 	graph_light->SetName("graph_light");
 	graph_hv_volt->SetName("graph_hv_volt");
 	graph_lv_volt1->SetName("graph_lv_volt1");
@@ -305,6 +327,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->SetTitle("LVHV temperature time evolution");
 	graph_humidity->SetTitle("LVHV humidity time evolution");
+	graph_thermistor->SetTitle("LVHV thermistor time evolution");
+	graph_salt->SetTitle("LVHV salt bridge time evolution");
 	graph_light->SetTitle("LVHV light level time evolution");
 	graph_hv_volt->SetTitle("LVHV HV time evolution");
 	graph_lv_volt1->SetTitle("LVHV LV1 time evolution");
@@ -314,6 +338,8 @@ void MonitorLAPPDSC::InitializeHists() {
 	if (draw_marker) {
 		graph_temp->SetMarkerStyle(20);
 		graph_humidity->SetMarkerStyle(20);
+		graph_thermistor->SetMarkerStyle(20);
+		graph_salt->SetMarkerStyle(20);
 		graph_light->SetMarkerStyle(20);
 		graph_hv_volt->SetMarkerStyle(20);
 		graph_lv_volt1->SetMarkerStyle(20);
@@ -323,6 +349,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->SetMarkerColor(kBlack);
 	graph_humidity->SetMarkerColor(kBlack);
+	graph_thermistor->SetMarkerColor(kBlack);
+	graph_salt->SetMarkerColor(kBlack);
 	graph_light->SetMarkerColor(kBlack);
 	graph_hv_volt->SetMarkerColor(kBlack);
 	graph_lv_volt1->SetMarkerColor(kBlack);
@@ -331,6 +359,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->SetLineColor(kBlack);
 	graph_humidity->SetLineColor(kBlack);
+	graph_thermistor->SetLineColor(kBlack);
+	graph_salt->SetLineColor(kBlack);
 	graph_light->SetLineColor(kBlack);
 	graph_hv_volt->SetLineColor(kBlack);
 	graph_lv_volt1->SetLineColor(kBlack);
@@ -339,6 +369,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->SetLineWidth(2);
 	graph_humidity->SetLineWidth(2);
+	graph_thermistor->SetLineWidth(2);
+	graph_salt->SetLineWidth(2);
 	graph_light->SetLineWidth(2);
 	graph_hv_volt->SetLineWidth(2);
 	graph_lv_volt1->SetLineWidth(2);
@@ -347,6 +379,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->SetFillColor(0);
 	graph_humidity->SetFillColor(0);
+	graph_thermistor->SetFillColor(0);
+	graph_salt->SetFillColor(0);
 	graph_light->SetFillColor(0);
 	graph_hv_volt->SetFillColor(0);
 	graph_lv_volt1->SetFillColor(0);
@@ -355,6 +389,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->GetYaxis()->SetTitle("Temperature");
 	graph_humidity->GetYaxis()->SetTitle("Humidity");
+	graph_thermistor->GetYaxis()->SetTitle("Temperature");
+	graph_salt->GetYaxis()->SetTitle("Humidity");
 	graph_light->GetYaxis()->SetTitle("Light level");
 	graph_hv_volt->GetYaxis()->SetTitle("HV mon (V)");
 	graph_lv_volt1->GetYaxis()->SetTitle("LV mon (V)");
@@ -363,6 +399,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->GetXaxis()->SetTimeDisplay(1);
 	graph_humidity->GetXaxis()->SetTimeDisplay(1);
+	graph_thermistor->GetXaxis()->SetTimeDisplay(1);
+	graph_salt->GetXaxis()->SetTimeDisplay(1);
 	graph_light->GetXaxis()->SetTimeDisplay(1);
 	graph_hv_volt->GetXaxis()->SetTimeDisplay(1);
 	graph_lv_volt1->GetXaxis()->SetTimeDisplay(1);
@@ -371,6 +409,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->GetXaxis()->SetLabelSize(0.03);
 	graph_humidity->GetXaxis()->SetLabelSize(0.03);
+	graph_thermistor->GetXaxis()->SetLabelSize(0.03);
+	graph_salt->GetXaxis()->SetLabelSize(0.03);
 	graph_light->GetXaxis()->SetLabelSize(0.03);
 	graph_hv_volt->GetXaxis()->SetLabelSize(0.03);
 	graph_lv_volt1->GetXaxis()->SetLabelSize(0.03);
@@ -379,6 +419,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->GetXaxis()->SetLabelOffset(0.03);
 	graph_humidity->GetXaxis()->SetLabelOffset(0.03);
+	graph_thermistor->GetXaxis()->SetLabelOffset(0.03);
+	graph_salt->GetXaxis()->SetLabelOffset(0.03);
 	graph_light->GetXaxis()->SetLabelOffset(0.03);
 	graph_hv_volt->GetXaxis()->SetLabelOffset(0.03);
 	graph_lv_volt1->GetXaxis()->SetLabelOffset(0.03);
@@ -387,6 +429,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_humidity->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+	graph_thermistor->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+	graph_salt->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_light->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_hv_volt->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_lv_volt1->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
@@ -405,16 +449,24 @@ void MonitorLAPPDSC::InitializeHists() {
 	text_temphum_title = new TText();
 	text_temp = new TText();
 	text_hum = new TText();
+	text_thermistor = new TText();
+	text_salt = new TText();
 	text_light = new TText();
 	text_flag_temp = new TText();
 	text_flag_hum = new TText();
+	text_flag_thermistor = new TText();
+	text_flag_salt = new TText();
 
 	text_temphum_title->SetNDC(1);
 	text_temp->SetNDC(1);
 	text_hum->SetNDC(1);
+	text_thermistor->SetNDC(1);
+	text_salt->SetNDC(1);
 	text_light->SetNDC(1);
 	text_flag_temp->SetNDC(1);
 	text_flag_hum->SetNDC(1);
+	text_flag_thermistor->SetNDC(1);
+	text_flag_salt->SetNDC(1);
 
 	//LVHV texts
 	text_lvhv_title = new TText();
@@ -641,6 +693,8 @@ void MonitorLAPPDSC::WriteToFile() {
 	ULong64_t t_time;
 	float t_hum;
 	float t_temp;
+	float t_thermistor;
+	float t_salt;
 	int t_hvmon;
 	bool t_hvstateset;
 	float t_hvvolt;
@@ -655,6 +709,8 @@ void MonitorLAPPDSC::WriteToFile() {
 	float t_hum_high;
 	int t_flag_temp;
 	int t_flag_humidity;
+	int t_flag_thermistor;
+	int t_flag_salt;
 	bool t_relCh1;
 	bool t_relCh2;
 	bool t_relCh3;
@@ -677,6 +733,8 @@ void MonitorLAPPDSC::WriteToFile() {
 		t->SetBranchAddress("t_current", &t_time);
 		t->SetBranchAddress("humidity", &t_hum);
 		t->SetBranchAddress("temp", &t_temp);
+		t->SetBranchAddress("thermistor", &t_thermistor);
+		t->SetBranchAddress("salt", &t_salt);
 		t->SetBranchAddress("hv_mon", &t_hvmon);
 		t->SetBranchAddress("hv_state_set", &t_hvstateset);
 		t->SetBranchAddress("hv_volt", &t_hvvolt);
@@ -691,6 +749,8 @@ void MonitorLAPPDSC::WriteToFile() {
 		t->SetBranchAddress("hum_high", &t_hum_high);
 		t->SetBranchAddress("flag_temp", &t_flag_temp);
 		t->SetBranchAddress("flag_hum", &t_flag_humidity);
+		t->SetBranchAddress("flag_thermistor", &t_flag_thermistor);
+		t->SetBranchAddress("flag_salt", &t_flag_salt);
 		t->SetBranchAddress("relCh1", &t_relCh1);
 		t->SetBranchAddress("relCh2", &t_relCh2);
 		t->SetBranchAddress("relCh3", &t_relCh3);
@@ -710,6 +770,8 @@ void MonitorLAPPDSC::WriteToFile() {
 		t->Branch("t_current", &t_time);
 		t->Branch("humidity", &t_hum);
 		t->Branch("temp", &t_temp);
+		t->Branch("thermistor", &t_thermistor);
+		t->Branch("salt", &t_salt);
 		t->Branch("hv_mon", &t_hvmon);
 		t->Branch("hv_state_set", &t_hvstateset);
 		t->Branch("hv_volt", &t_hvvolt);
@@ -724,6 +786,8 @@ void MonitorLAPPDSC::WriteToFile() {
 		t->Branch("hum_high", &t_hum_high);
 		t->Branch("flag_temp", &t_flag_temp);
 		t->Branch("flag_hum", &t_flag_humidity);
+		t->Branch("flag_thermistor", &t_flag_thermistor);
+		t->Branch("flag_salt", &t_flag_salt);
 		t->Branch("relCh1", &t_relCh1);
 		t->Branch("relCh2", &t_relCh2);
 		t->Branch("relCh3", &t_relCh3);
@@ -771,36 +835,40 @@ void MonitorLAPPDSC::WriteToFile() {
 			"MonitorTankTime: WriteToFile: Writing data to file: " + std::to_string(starttime_tm.tm_year + 1900) + "/" + std::to_string(starttime_tm.tm_mon + 1) + "/" + std::to_string(starttime_tm.tm_mday) + "-" + std::to_string(starttime_tm.tm_hour) + ":" + std::to_string(starttime_tm.tm_min) + ":"
 					+ std::to_string(starttime_tm.tm_sec), v_message, verbosity);
 
-	t_hum = lappd_sc.humidity_mon;
-	t_temp = lappd_sc.temperature_mon;
-	t_hvmon = lappd_sc.HV_mon;
-	t_hvstateset = lappd_sc.HV_state_set;
-	t_hvvolt = lappd_sc.HV_volts;
-	t_lvmon = lappd_sc.LV_mon;
-	t_lvstateset = lappd_sc.LV_state_set;
-	t_v33 = lappd_sc.v33;
-	t_v25 = lappd_sc.v25;
-	t_v12 = lappd_sc.v12;
-	t_temp_low = lappd_sc.LIMIT_temperature_low;
-	t_temp_high = lappd_sc.LIMIT_temperature_high;
-	t_hum_low = lappd_sc.LIMIT_humidity_low;
-	t_hum_high = lappd_sc.LIMIT_humidity_high;
-	t_flag_temp = lappd_sc.FLAG_temperature;
-	t_flag_humidity = lappd_sc.FLAG_humidity;
-	t_relCh1 = lappd_sc.relayCh1;
-	t_relCh2 = lappd_sc.relayCh2;
-	t_relCh3 = lappd_sc.relayCh3;
-	t_relCh1_mon = lappd_sc.relayCh1_mon;
-	t_relCh2_mon = lappd_sc.relayCh2_mon;
-	t_relCh3_mon = lappd_sc.relayCh3_mon;
-	t_trig_vref = lappd_sc.TrigVref;
-	t_trig1_thr = lappd_sc.Trig1_threshold;
-	t_trig1_mon = lappd_sc.Trig1_mon;
-	t_trig0_thr = lappd_sc.Trig0_threshold;
-	t_trig_mon = lappd_sc.Trig0_mon;
-	t_light_level = lappd_sc.light;
-	for (int i_error = 0; i_error < (int) lappd_sc.errorcodes.size(); i_error++) {
-		t_vec_errors->push_back(lappd_sc.errorcodes.at(i_error));
+	t_hum = lappd_SC.humidity_mon;
+	t_temp = lappd_SC.temperature_mon;
+	t_thermistor = lappd_SC.temperature_thermistor;
+	t_salt = lappd_SC.saltbridge;
+	t_hvmon = lappd_SC.HV_mon;
+	t_hvstateset = lappd_SC.HV_state_set;
+	t_hvvolt = lappd_SC.HV_volts;
+	t_lvmon = lappd_SC.LV_mon;
+	t_lvstateset = lappd_SC.LV_state_set;
+	t_v33 = lappd_SC.v33;
+	t_v25 = lappd_SC.v25;
+	t_v12 = lappd_SC.v12;
+	t_temp_low = lappd_SC.LIMIT_temperature_low;
+	t_temp_high = lappd_SC.LIMIT_temperature_high;
+	t_hum_low = lappd_SC.LIMIT_humidity_low;
+	t_hum_high = lappd_SC.LIMIT_humidity_high;
+	t_flag_temp = lappd_SC.FLAG_temperature;
+	t_flag_humidity = lappd_SC.FLAG_humidity;
+	t_flag_thermistor = lappd_SC.FLAG_temperature_Thermistor;
+	t_flag_salt = lappd_SC.FLAG_saltbridge;
+	t_relCh1 = lappd_SC.relayCh1;
+	t_relCh2 = lappd_SC.relayCh2;
+	t_relCh3 = lappd_SC.relayCh3;
+	t_relCh1_mon = lappd_SC.relayCh1_mon;
+	t_relCh2_mon = lappd_SC.relayCh2_mon;
+	t_relCh3_mon = lappd_SC.relayCh3_mon;
+	t_trig_vref = lappd_SC.TrigVref;
+	t_trig1_thr = lappd_SC.Trig1_threshold;
+	t_trig1_mon = lappd_SC.Trig1_mon;
+	t_trig0_thr = lappd_SC.Trig0_threshold;
+	t_trig_mon = lappd_SC.Trig0_mon;
+	t_light_level = lappd_SC.light;
+	for (int i_error = 0; i_error < (int) lappd_SC.errorcodes.size(); i_error++) {
+		t_vec_errors->push_back(lappd_SC.errorcodes.at(i_error));
 	}
 
 	t->Fill();
@@ -825,6 +893,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 	times_plot.clear();
 	temp_plot.clear();
 	humidity_plot.clear();
+	thermistor_plot.clear();
+	salt_plot.clear();
 	hum_low_plot.clear();
 	hv_volt_plot.clear();
 	hv_mon_plot.clear();
@@ -839,6 +909,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 	temp_high_plot.clear();
 	flag_temp_plot.clear();
 	flag_hum_plot.clear();
+	flag_thermistor_plot.clear();
+	flag_salt_plot.clear();
 	relCh1_plot.clear();
 	relCh2_plot.clear();
 	relCh3_plot.clear();
@@ -906,6 +978,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 				std::vector<unsigned int> *t_vec_errors = new std::vector<unsigned int>;
 				float t_hum;
 				float t_temp;
+				float t_thermistor;
+				float t_salt;
 				int t_hvmon;
 				bool t_hvstateset;
 				float t_hvvolt;
@@ -920,6 +994,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 				float t_hum_high;
 				int t_flag_temp;
 				int t_flag_humidity;
+				int t_flag_thermistor;
+				int t_flag_salt;
 				bool t_relCh1;
 				bool t_relCh2;
 				bool t_relCh3;
@@ -939,6 +1015,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 				t->SetBranchAddress("t_current", &t_time);
 				t->SetBranchAddress("humidity", &t_hum);
 				t->SetBranchAddress("temp", &t_temp);
+				t->SetBranchAddress("thermistor", &t_thermistor);
+				t->SetBranchAddress("salt", &t_salt);
 				t->SetBranchAddress("hv_mon", &t_hvmon);
 				t->SetBranchAddress("hv_state_set", &t_hvstateset);
 				t->SetBranchAddress("hv_volt", &t_hvvolt);
@@ -953,6 +1031,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 				t->SetBranchAddress("hum_high", &t_hum_high);
 				t->SetBranchAddress("flag_temp", &t_flag_temp);
 				t->SetBranchAddress("flag_hum", &t_flag_humidity);
+				t->SetBranchAddress("flag_thermistor", &t_flag_thermistor);
+				t->SetBranchAddress("flag_salt", &t_flag_salt);
 				t->SetBranchAddress("relCh1", &t_relCh1);
 				t->SetBranchAddress("relCh2", &t_relCh2);
 				t->SetBranchAddress("relCh3", &t_relCh3);
@@ -997,6 +1077,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 						times_plot.push_back(t_time);
 						temp_plot.push_back(t_temp);
 						humidity_plot.push_back(t_hum);
+						thermistor_plot.push_back(t_thermistor);
+						salt_plot.push_back(t_salt);
 						hv_mon_plot.push_back(t_hvmon);
 						hv_volt_plot.push_back(t_hvvolt);
 						hv_stateset_plot.push_back(t_hvstateset);
@@ -1011,6 +1093,8 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 						temp_high_plot.push_back(t_temp_high);
 						flag_temp_plot.push_back(t_flag_temp);
 						flag_hum_plot.push_back(t_flag_humidity);
+						flag_thermistor_plot.push_back(t_flag_thermistor);
+						flag_salt_plot.push_back(t_flag_salt);
 						relCh1_plot.push_back(t_relCh1);
 						relCh2_plot.push_back(t_relCh2);
 						relCh3_plot.push_back(t_relCh3);
@@ -1125,34 +1209,54 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 
 	text_temphum_title->SetText(0.06, 0.9, "LAPPD Temperature / Humidity");
 	std::stringstream ss_text_temp;
-	ss_text_temp << "Temperature: " << lappd_sc.temperature_mon << " (" << current_time.str() << ")";
+	ss_text_temp << "Temperature: " << lappd_SC.temperature_mon << " (" << current_time.str() << ")";
 	text_temp->SetText(0.06, 0.8, ss_text_temp.str().c_str());
 	text_temp->SetTextColor(1);
-	if (lappd_sc.temperature_mon < lappd_sc.LIMIT_temperature_low || lappd_sc.temperature_mon > lappd_sc.LIMIT_temperature_high) {
-		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored temperature >>>" + std::to_string(lappd_sc.temperature_mon) + "<<< is outside of expected range [" + std::to_string(lappd_sc.LIMIT_temperature_low) + " , " + std::to_string(lappd_sc.LIMIT_temperature_high) + "]!!!", v_error, verbosity);
+	if (lappd_SC.temperature_mon < lappd_SC.LIMIT_temperature_low || lappd_SC.temperature_mon > lappd_SC.LIMIT_temperature_high) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored temperature >>>" + std::to_string(lappd_SC.temperature_mon) + "<<< is outside of expected range [" + std::to_string(lappd_SC.LIMIT_temperature_low) + " , " + std::to_string(lappd_SC.LIMIT_temperature_high) + "]!!!", v_error, verbosity);
 		text_temp->SetTextColor(kRed);
 		temp_humid_check = false;
 	}
 
 	std::stringstream ss_text_hum;
-	ss_text_hum << "Humidity: " << lappd_sc.humidity_mon << " (" << current_time.str() << ")";
+	ss_text_hum << "Humidity: " << lappd_SC.humidity_mon << " (" << current_time.str() << ")";
 	text_hum->SetText(0.06, 0.7, ss_text_hum.str().c_str());
 	text_hum->SetTextColor(1);
-	if (lappd_sc.humidity_mon < lappd_sc.LIMIT_humidity_low || lappd_sc.humidity_mon > lappd_sc.LIMIT_humidity_high) {
-		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored humidity >>>" + std::to_string(lappd_sc.humidity_mon) + "<<< is outside of expected range [" + std::to_string(lappd_sc.LIMIT_humidity_low) + " , " + std::to_string(lappd_sc.LIMIT_humidity_high) + "]!!!", v_error, verbosity);
+	if (lappd_SC.humidity_mon < lappd_SC.LIMIT_humidity_low || lappd_SC.humidity_mon > lappd_SC.LIMIT_humidity_high) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored humidity >>>" + std::to_string(lappd_SC.humidity_mon) + "<<< is outside of expected range [" + std::to_string(lappd_SC.LIMIT_humidity_low) + " , " + std::to_string(lappd_SC.LIMIT_humidity_high) + "]!!!", v_error, verbosity);
 		text_hum->SetTextColor(kRed);
 		temp_humid_check = false;
 	}
 
+	std::stringstream ss_text_thermistor;
+	ss_text_thermistor << "Thermistor: " << lappd_SC.temperature_thermistor << " (" << current_time.str() << ")";
+	text_thermistor->SetText(0.06, 0.6, ss_text_thermistor.str().c_str());
+	text_thermistor->SetTextColor(1);
+	if (lappd_SC.temperature_thermistor < lappd_SC.LIMIT_Thermistor_temperature_low || lappd_SC.temperature_thermistor > lappd_SC.LIMIT_Thermistor_temperature_high) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored thermistor temperature >>>" + std::to_string(lappd_SC.temperature_thermistor) + "<<< is outside of expected range [" + std::to_string(lappd_SC.LIMIT_Thermistor_temperature_low) + " , " + std::to_string(lappd_SC.LIMIT_Thermistor_temperature_high) + "]!!!", v_error, verbosity);
+		text_thermistor->SetTextColor(kRed);
+		temp_humid_check = false;
+	}
+
+	std::stringstream ss_text_salt;
+	ss_text_salt << "Salt bridge: " << lappd_SC.saltbridge << " (" << current_time.str() << ")";
+	text_salt->SetText(0.06, 0.5, ss_text_salt.str().c_str());
+	text_salt->SetTextColor(1);
+	if (lappd_SC.saltbridge < limit_salt_low || lappd_SC.saltbridge > limit_salt_high) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is outside of expected range [" + std::to_string(limit_salt_low) + " , " + std::to_string(limit_salt_high) + "]!!!", v_error, verbosity);
+		text_salt->SetTextColor(kRed);
+		temp_humid_check = false;
+	}
+
 	std::stringstream ss_text_light;
-	ss_text_light << "Light level: " << lappd_sc.light << " (" << current_time.str() << ")";
-	text_light->SetText(0.06, 0.6, ss_text_light.str().c_str());
+	ss_text_light << "Light level: " << lappd_SC.light << " (" << current_time.str() << ")";
+	text_light->SetText(0.06, 0.4, ss_text_light.str().c_str());
 	text_light->SetTextColor(1);
 
 	std::stringstream ss_text_flag_temp;
-	std::string emergency_temp = (lappd_sc.FLAG_temperature) ? "True" : "False";
+	std::string emergency_temp = (lappd_SC.FLAG_temperature) ? "True" : "False";
 	ss_text_flag_temp << "Emergency Temperature: " << emergency_temp << " (" << current_time.str() << ")";
-	text_flag_temp->SetText(0.06, 0.5, ss_text_flag_temp.str().c_str());
+	text_flag_temp->SetText(0.06, 0.3, ss_text_flag_temp.str().c_str());
 	text_flag_temp->SetTextColor(1);
 	if (emergency_temp == "True") {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Temperature emergency flag is set!!!", v_error, verbosity);
@@ -1161,9 +1265,9 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	}
 
 	std::stringstream ss_text_flag_hum;
-	std::string emergency_hum = (lappd_sc.FLAG_humidity) ? "True" : "False";
+	std::string emergency_hum = (lappd_SC.FLAG_humidity) ? "True" : "False";
 	ss_text_flag_hum << "Emergency Humidity: " << emergency_hum << " (" << current_time.str() << ")";
-	text_flag_hum->SetText(0.06, 0.4, ss_text_flag_hum.str().c_str());
+	text_flag_hum->SetText(0.06, 0.2, ss_text_flag_hum.str().c_str());
 	text_flag_hum->SetTextColor(1);
 	if (emergency_hum == "True") {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Humidity emergency flag is set!!!", v_error, verbosity);
@@ -1171,28 +1275,62 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		temp_humid_check = false;
 	}
 
+	std::stringstream ss_text_flag_thermistor;
+	std::string emergency_thermistor = (lappd_SC.FLAG_temperature_Thermistor) ? "True" : "False";
+	ss_text_flag_thermistor << "Emergency Thermistor: " << emergency_thermistor << " (" << current_time.str() << ")";
+	text_flag_thermistor->SetText(0.06, 0.1, ss_text_flag_thermistor.str().c_str());
+	text_flag_thermistor->SetTextColor(1);
+	if (emergency_thermistor == "True") {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Thermistor emergency flag is set!!!", v_error, verbosity);
+		text_flag_thermistor->SetTextColor(kRed);
+		temp_humid_check = false;
+	}
+
+	std::stringstream ss_text_flag_salt;
+	std::string emergency_salt = (lappd_SC.FLAG_saltbridge) ? "True" : "False";
+	ss_text_flag_salt << "Emergency Salt-Bridge: " << emergency_salt << " (" << current_time.str() << ")";
+	text_flag_salt->SetText(0.06, 0.0, ss_text_flag_salt.str().c_str());
+	text_flag_salt->SetTextColor(1);
+	if (emergency_hum == "True") {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Salt-bridge emergency flag is set!!!", v_error, verbosity);
+		text_flag_salt->SetTextColor(kRed);
+		temp_humid_check = false;
+	}
+
 	text_temphum_title->SetTextSize(0.05);
 	text_temp->SetTextSize(0.05);
 	text_hum->SetTextSize(0.05);
+	text_thermistor->SetTextSize(0.05);
+	text_salt->SetTextSize(0.05);
 	text_light->SetTextSize(0.05);
 	text_flag_temp->SetTextSize(0.05);
 	text_flag_hum->SetTextSize(0.05);
+	text_flag_thermistor->SetTextSize(0.05);
+	text_flag_salt->SetTextSize(0.05);
 
 	text_temphum_title->SetNDC(1);
 	text_temp->SetNDC(1);
 	text_hum->SetNDC(1);
+	text_thermistor->SetNDC(1);
+	text_salt->SetNDC(1);
 	text_light->SetNDC(1);
 	text_flag_temp->SetNDC(1);
 	text_flag_hum->SetNDC(1);
+	text_flag_thermistor->SetNDC(1);
+	text_flag_salt->SetNDC(1);
 
 	canvas_status_temphum->cd();
 	canvas_status_temphum->Clear();
 	text_temphum_title->Draw();
 	text_temp->Draw();
 	text_hum->Draw();
+	text_thermistor->Draw();
+	text_salt->Draw();
 	text_light->Draw();
 	text_flag_temp->Draw();
 	text_flag_hum->Draw();
+	text_flag_thermistor->Draw();
+	text_flag_salt->Draw();
 
 	std::stringstream ss_path_tempinfo;
 	ss_path_tempinfo << outpath << "LAPPDSC_TempHumInfo_current." << img_extension;
@@ -1220,7 +1358,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 
 	//HV State
 	std::stringstream ss_text_hv_state;
-	std::string temp_hv_state = (lappd_sc.HV_state_set) ? "ON" : "OFF";
+	std::string temp_hv_state = (lappd_SC.HV_state_set) ? "ON" : "OFF";
 	ss_text_hv_state << "HV State Set: " << temp_hv_state << " (" << current_time.str() << ")";
 	text_hv_state->SetText(0.06, 0.8, ss_text_hv_state.str().c_str());
 	text_hv_state->SetTextColor(1);
@@ -1235,32 +1373,32 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	//ToDo: Which values are acceptable? Any messages to display?
 	//HV Mon
 	std::stringstream ss_hv_mon_temp;
-	ss_hv_mon_temp << "HV Mon: " << lappd_sc.HV_mon << " (" << current_time.str() << ")";
+	ss_hv_mon_temp << "HV Mon: " << lappd_SC.HV_mon << " (" << current_time.str() << ")";
 	text_hv_mon->SetText(0.06, 0.7, ss_hv_mon_temp.str().c_str());
 	text_hv_mon->SetTextColor(1);
-	if (lappd_sc.HV_mon == 0) {
+	if (lappd_SC.HV_mon == 0) {
 		text_hv_mon->SetTextColor(kRed);
 		lvhv_check = false;
 	}
 
 	//HV Set and Mon mismatch warning
-	if (lappd_sc.HV_state_set && lappd_sc.HV_mon == 0) {
+	if (lappd_SC.HV_state_set && lappd_SC.HV_mon == 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: HV state is set to ON, but HV mon is OFF!!!", v_error, verbosity);
 	}
 
-	if (!lappd_sc.HV_state_set && lappd_sc.HV_mon > 0) {
+	if (!lappd_SC.HV_state_set && lappd_SC.HV_mon > 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: HV state is set to OFF, but HV mon is ON!!!", v_error, verbosity);
 	}
 
 	//HV Volt
 	std::stringstream ss_hv_volt_temp;
-	ss_hv_volt_temp << "HV Volt: " << lappd_sc.HV_volts << " V (" << current_time.str() << ")";
+	ss_hv_volt_temp << "HV Volt: " << lappd_SC.HV_volts << " V (" << current_time.str() << ")";
 	text_hv_volt->SetText(0.06, 0.6, ss_hv_volt_temp.str().c_str());
 	text_hv_volt->SetTextColor(1);
 
 	//LV State Set
 	std::stringstream ss_text_lv_state;
-	std::string temp_lv_state = (lappd_sc.LV_state_set) ? "ON" : "OFF";
+	std::string temp_lv_state = (lappd_SC.LV_state_set) ? "ON" : "OFF";
 	ss_text_lv_state << "LV State Set: " << temp_lv_state << " (" << current_time.str() << ")";
 	text_lv_state->SetText(0.06, 0.5, ss_text_lv_state.str().c_str());
 	text_lv_state->SetTextColor(1);
@@ -1271,52 +1409,52 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 
 	//LV Mon
 	std::stringstream ss_lv_mon_temp;
-	ss_lv_mon_temp << "LV Mon: " << lappd_sc.LV_mon << " (" << current_time.str() << ")";
+	ss_lv_mon_temp << "LV Mon: " << lappd_SC.LV_mon << " (" << current_time.str() << ")";
 	text_lv_mon->SetText(0.06, 0.4, ss_lv_mon_temp.str().c_str());
 	text_lv_mon->SetTextColor(1);
-	if (lappd_sc.LV_mon == 0) {
+	if (lappd_SC.LV_mon == 0) {
 		text_lv_mon->SetTextColor(kRed);
 		lvhv_check = false;
 	}
 
 	//LV Set and Mon mismatch warning
-	if (lappd_sc.LV_state_set && lappd_sc.LV_mon == 0) {
+	if (lappd_SC.LV_state_set && lappd_SC.LV_mon == 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: LV state is set to ON, but LV mon is OFF!!!", v_error, verbosity);
 	}
 
-	if (!lappd_sc.LV_state_set && lappd_sc.LV_mon > 0) {
+	if (!lappd_SC.LV_state_set && lappd_SC.LV_mon > 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: LV state is set to OFF, but LV mon is ON!!!", v_error, verbosity);
 	}
 
 	//V33
 	std::stringstream ss_v33_temp;
-	ss_v33_temp << "V33: " << lappd_sc.v33 << " V (" << current_time.str() << ")";
+	ss_v33_temp << "V33: " << lappd_SC.v33 << " V (" << current_time.str() << ")";
 	text_v33->SetText(0.06, 0.3, ss_v33_temp.str().c_str());
 	text_v33->SetTextColor(1);
-	if (lappd_sc.v33 < v33_min || lappd_sc.v33 > v33_max) {
-		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_sc.v33) + "<<< is outside of expected range [" + std::to_string(v33_min) + " , " + std::to_string(v33_max) + "]!!!", v_error, verbosity);
+	if (lappd_SC.v33 < v33_min || lappd_SC.v33 > v33_max) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is outside of expected range [" + std::to_string(v33_min) + " , " + std::to_string(v33_max) + "]!!!", v_error, verbosity);
 		text_v33->SetTextColor(kRed);
 		lvhv_check = false;
 	}
 
 	//V25
 	std::stringstream ss_v25_temp;
-	ss_v25_temp << "V25: " << lappd_sc.v25 << " V (" << current_time.str() << ")";
+	ss_v25_temp << "V25: " << lappd_SC.v25 << " V (" << current_time.str() << ")";
 	text_v25->SetText(0.06, 0.2, ss_v25_temp.str().c_str());
 	text_v25->SetTextColor(1);
-	if (lappd_sc.v25 < v25_min || lappd_sc.v25 > v25_max) {
-		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_sc.v25) + "<<< is outside of expected range [" + std::to_string(v25_min) + " , " + std::to_string(v25_max) + "]!!!", v_error, verbosity);
+	if (lappd_SC.v25 < v25_min || lappd_SC.v25 > v25_max) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is outside of expected range [" + std::to_string(v25_min) + " , " + std::to_string(v25_max) + "]!!!", v_error, verbosity);
 		text_v25->SetTextColor(kRed);
 		lvhv_check = false;
 	}
 
 	//V12
 	std::stringstream ss_v12_temp;
-	ss_v12_temp << "V12: " << lappd_sc.v12 << " V (" << current_time.str() << ")";
+	ss_v12_temp << "V12: " << lappd_SC.v12 << " V (" << current_time.str() << ")";
 	text_v12->SetText(0.06, 0.1, ss_v12_temp.str().c_str());
 	text_v12->SetTextColor(1);
-	if (lappd_sc.v12 < v12_min || lappd_sc.v12 > v12_max) {
-		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_sc.v12) + "<<< is outside of expected range [" + std::to_string(v12_min) + " , " + std::to_string(v12_max) + "]!!!", v_error, verbosity);
+	if (lappd_SC.v12 < v12_min || lappd_SC.v12 > v12_max) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is outside of expected range [" + std::to_string(v12_min) + " , " + std::to_string(v12_max) + "]!!!", v_error, verbosity);
 		text_v12->SetTextColor(kRed);
 		lvhv_check = false;
 	}
@@ -1377,35 +1515,35 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 
 	//Variable names:
 	/*
-	 t_hum = lappd_sc.humidity_mon;
+	 t_hum = lappd_SC.humidity_mon;
 	 std::cout <<"t_hum: "<<t_hum<<std::endl;
-	 t_temp = lappd_sc.temperature_mon;
-	 t_hvmon = lappd_sc.HV_mon;
-	 t_hvstateset = lappd_sc.HV_state_set;
-	 t_hvvolt = lappd_sc.HV_volts;
-	 t_lvmon = lappd_sc.LV_mon;
-	 t_lvstateset = lappd_sc.LV_state_set;
-	 t_v33 = lappd_sc.v33;
-	 t_v25 = lappd_sc.v25;
-	 t_v12 = lappd_sc.v12;
-	 t_temp_low = lappd_sc.LIMIT_temperature_low;
-	 t_temp_high = lappd_sc.LIMIT_temperature_high;
-	 t_hum_low = lappd_sc.LIMIT_humidity_low;
-	 t_hum_high = lappd_sc.LIMIT_humidity_high;
-	 t_flag_temp = lappd_sc.FLAG_temperature;
-	 t_flag_humidity = lappd_sc.FLAG_humidity;
-	 t_relCh1 = lappd_sc.relayCh1;
-	 t_relCh2 = lappd_sc.relayCh2;
-	 t_relCh3 = lappd_sc.relayCh3;
-	 t_relCh1_mon = lappd_sc.relayCh1_mon;
-	 t_relCh2_mon = lappd_sc.relayCh2_mon;
-	 t_relCh3_mon = lappd_sc.relayCh3_mon;
-	 t_trig_vref = lappd_sc.TrigVref;
-	 t_trig1_thr = lappd_sc.Trig1_threshold;
-	 t_trig1_mon = lappd_sc.Trig1_mon;
-	 t_trig0_thr = lappd_sc.Trig0_threshold;
-	 t_trig_mon = lappd_sc.Trig0_mon;
-	 t_light_level = lappd_sc.light;
+	 t_temp = lappd_SC.temperature_mon;
+	 t_hvmon = lappd_SC.HV_mon;
+	 t_hvstateset = lappd_SC.HV_state_set;
+	 t_hvvolt = lappd_SC.HV_volts;
+	 t_lvmon = lappd_SC.LV_mon;
+	 t_lvstateset = lappd_SC.LV_state_set;
+	 t_v33 = lappd_SC.v33;
+	 t_v25 = lappd_SC.v25;
+	 t_v12 = lappd_SC.v12;
+	 t_temp_low = lappd_SC.LIMIT_temperature_low;
+	 t_temp_high = lappd_SC.LIMIT_temperature_high;
+	 t_hum_low = lappd_SC.LIMIT_humidity_low;
+	 t_hum_high = lappd_SC.LIMIT_humidity_high;
+	 t_flag_temp = lappd_SC.FLAG_temperature;
+	 t_flag_humidity = lappd_SC.FLAG_humidity;
+	 t_relCh1 = lappd_SC.relayCh1;
+	 t_relCh2 = lappd_SC.relayCh2;
+	 t_relCh3 = lappd_SC.relayCh3;
+	 t_relCh1_mon = lappd_SC.relayCh1_mon;
+	 t_relCh2_mon = lappd_SC.relayCh2_mon;
+	 t_relCh3_mon = lappd_SC.relayCh3_mon;
+	 t_trig_vref = lappd_SC.TrigVref;
+	 t_trig1_thr = lappd_SC.Trig1_threshold;
+	 t_trig1_mon = lappd_SC.Trig1_mon;
+	 t_trig0_thr = lappd_SC.Trig0_threshold;
+	 t_trig_mon = lappd_SC.Trig0_mon;
+	 t_light_level = lappd_SC.light;
 	 */
 
 }
@@ -1428,31 +1566,31 @@ void MonitorLAPPDSC::DrawStatus_Trigger() {
 
 	//Trigger Vref
 	std::stringstream ss_trigger_vref_temp;
-	ss_trigger_vref_temp << "Trigger Vref: " << lappd_sc.TrigVref << " V (" << current_time.str() << ")";
+	ss_trigger_vref_temp << "Trigger Vref: " << lappd_SC.TrigVref << " V (" << current_time.str() << ")";
 	text_trigger_vref->SetText(0.06, 0.8, ss_trigger_vref_temp.str().c_str());
 	text_trigger_vref->SetTextColor(1);
 
 	//Trig0 Thr
 	std::stringstream ss_trigger_trig0_thr_temp;
-	ss_trigger_trig0_thr_temp << "Trig0 Thr: " << lappd_sc.Trig0_threshold << " V (" << current_time.str() << ")";
+	ss_trigger_trig0_thr_temp << "Trig0 Thr: " << lappd_SC.Trig0_threshold << " V (" << current_time.str() << ")";
 	text_trigger_trig0_thr->SetText(0.06, 0.7, ss_trigger_trig0_thr_temp.str().c_str());
 	text_trigger_trig0_thr->SetTextColor(1);
 
 	//Trig0 Mon
 	std::stringstream ss_trigger_trig0_mon_temp;
-	ss_trigger_trig0_mon_temp << "Trig0 Mon: " << lappd_sc.Trig0_mon << " V (" << current_time.str() << ")";
+	ss_trigger_trig0_mon_temp << "Trig0 Mon: " << lappd_SC.Trig0_mon << " V (" << current_time.str() << ")";
 	text_trigger_trig0_mon->SetText(0.06, 0.6, ss_trigger_trig0_mon_temp.str().c_str());
 	text_trigger_trig0_mon->SetTextColor(1);
 
 	//Trig1 Thr
 	std::stringstream ss_trigger_trig1_thr_temp;
-	ss_trigger_trig1_thr_temp << "Trig1 Thr: " << lappd_sc.Trig1_threshold << " V (" << current_time.str() << ")";
+	ss_trigger_trig1_thr_temp << "Trig1 Thr: " << lappd_SC.Trig1_threshold << " V (" << current_time.str() << ")";
 	text_trigger_trig1_thr->SetText(0.06, 0.5, ss_trigger_trig1_thr_temp.str().c_str());
 	text_trigger_trig1_thr->SetTextColor(1);
 
 	//Trig1 Mon
 	std::stringstream ss_trigger_trig1_mon_temp;
-	ss_trigger_trig1_mon_temp << "Trig1 Mon: " << lappd_sc.Trig1_mon << " V (" << current_time.str() << ")";
+	ss_trigger_trig1_mon_temp << "Trig1 Mon: " << lappd_SC.Trig1_mon << " V (" << current_time.str() << ")";
 	text_trigger_trig1_mon->SetText(0.06, 0.4, ss_trigger_trig1_mon_temp.str().c_str());
 	text_trigger_trig1_mon->SetTextColor(1);
 
@@ -1500,11 +1638,11 @@ void MonitorLAPPDSC::DrawStatus_Trigger() {
 
 	//Important variables
 	/*
-	 t_trig_vref = lappd_sc.TrigVref;
-	 t_trig1_thr = lappd_sc.Trig1_threshold;
-	 t_trig1_mon = lappd_sc.Trig1_mon;
-	 t_trig0_thr = lappd_sc.Trig0_threshold;
-	 t_trig_mon = lappd_sc.Trig0_mon;
+	 t_trig_vref = lappd_SC.TrigVref;
+	 t_trig1_thr = lappd_SC.Trig1_threshold;
+	 t_trig1_mon = lappd_SC.Trig1_mon;
+	 t_trig0_thr = lappd_SC.Trig0_threshold;
+	 t_trig_mon = lappd_SC.Trig0_mon;
 	 */
 
 }
@@ -1529,94 +1667,94 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 
 	//Relay 1
 	std::stringstream ss_relay_ch1_temp;
-	std::string ch1_temp = (lappd_sc.relayCh1) ? "True" : "False";
+	std::string ch1_temp = (lappd_SC.relayCh1) ? "True" : "False";
 	ss_relay_ch1_temp << "Relay 1 Set: " << ch1_temp << " (" << current_time.str() << ")";
 	text_relay_set1->SetText(0.06, 0.8, ss_relay_ch1_temp.str().c_str());
 	text_relay_set1->SetTextColor(1);
-	if (!lappd_sc.relayCh1) {
+	if (!lappd_SC.relayCh1) {
 		text_relay_set1->SetTextColor(kRed);
 		relay_check = false;
 	}
 
 	//Relay 2
 	std::stringstream ss_relay_ch2_temp;
-	std::string ch2_temp = (lappd_sc.relayCh2) ? "True" : "False";
+	std::string ch2_temp = (lappd_SC.relayCh2) ? "True" : "False";
 	ss_relay_ch2_temp << "Relay 2 Set: " << ch2_temp << " (" << current_time.str() << ")";
 	text_relay_set2->SetText(0.06, 0.7, ss_relay_ch2_temp.str().c_str());
 	text_relay_set2->SetTextColor(1);
-	if (!lappd_sc.relayCh2) {
+	if (!lappd_SC.relayCh2) {
 		text_relay_set2->SetTextColor(kRed);
 		relay_check = false;
 	}
 
 	//Relay 3
 	std::stringstream ss_relay_ch3_temp;
-	std::string ch3_temp = (lappd_sc.relayCh3) ? "True" : "False";
+	std::string ch3_temp = (lappd_SC.relayCh3) ? "True" : "False";
 	ss_relay_ch3_temp << "Relay 3 Set: " << ch3_temp << " (" << current_time.str() << ")";
 	text_relay_set3->SetText(0.06, 0.6, ss_relay_ch3_temp.str().c_str());
 	text_relay_set3->SetTextColor(1);
-	if (!lappd_sc.relayCh3) {
+	if (!lappd_SC.relayCh3) {
 		text_relay_set3->SetTextColor(kRed);
 		relay_check = false;
 	}
 
 	//Relay Mon 1
 	std::stringstream ss_relay_mon1_temp;
-	std::string ch1_mon_temp = (lappd_sc.relayCh1_mon) ? "True" : "False";
+	std::string ch1_mon_temp = (lappd_SC.relayCh1_mon) ? "True" : "False";
 	ss_relay_mon1_temp << "Relay 1 Mon: " << ch1_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon1->SetText(0.06, 0.5, ss_relay_mon1_temp.str().c_str());
 	text_relay_mon1->SetTextColor(1);
-	if (!lappd_sc.relayCh1_mon) {
+	if (!lappd_SC.relayCh1_mon) {
 		text_relay_mon1->SetTextColor(kRed);
 		relay_check = false;
 	}
 
 	//Relay Mon 2
 	std::stringstream ss_relay_mon2_temp;
-	std::string ch2_mon_temp = (lappd_sc.relayCh2_mon) ? "True" : "False";
+	std::string ch2_mon_temp = (lappd_SC.relayCh2_mon) ? "True" : "False";
 	ss_relay_mon2_temp << "Relay 2 Mon: " << ch2_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon2->SetText(0.06, 0.4, ss_relay_mon2_temp.str().c_str());
 	text_relay_mon2->SetTextColor(1);
-	if (!lappd_sc.relayCh2_mon) {
+	if (!lappd_SC.relayCh2_mon) {
 		text_relay_mon2->SetTextColor(kRed);
 		relay_check = false;
 	}
 
 	//Relay Mon 3
 	std::stringstream ss_relay_mon3_temp;
-	std::string ch3_mon_temp = (lappd_sc.relayCh3_mon) ? "True" : "False";
+	std::string ch3_mon_temp = (lappd_SC.relayCh3_mon) ? "True" : "False";
 	ss_relay_mon3_temp << "Relay 3 Mon: " << ch3_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon3->SetText(0.06, 0.3, ss_relay_mon3_temp.str().c_str());
 	text_relay_mon3->SetTextColor(1);
-	if (!lappd_sc.relayCh3_mon) {
+	if (!lappd_SC.relayCh3_mon) {
 		text_relay_mon3->SetTextColor(kRed);
 		relay_check = false;
 	}
 
 	//Warnings
-	if (lappd_sc.relayCh1 && !lappd_sc.relayCh1_mon) {
+	if (lappd_SC.relayCh1 && !lappd_SC.relayCh1_mon) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Relay 1 state is set to ON, but relay mon 1 is OFF!!!", v_error, verbosity);
 	}
 
-	if (!lappd_sc.relayCh1 && lappd_sc.relayCh1_mon) {
+	if (!lappd_SC.relayCh1 && lappd_SC.relayCh1_mon) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Relay 1 state is set to OFF, but relay mon 1 is ON!!!", v_error, verbosity);
 	}
 
 	//Warnings
-	if (lappd_sc.relayCh2 && !lappd_sc.relayCh2_mon) {
+	if (lappd_SC.relayCh2 && !lappd_SC.relayCh2_mon) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Relay 2 state is set to ON, but relay mon 2 is OFF!!!", v_error, verbosity);
 	}
 
-	if (!lappd_sc.relayCh2 && lappd_sc.relayCh2_mon) {
+	if (!lappd_SC.relayCh2 && lappd_SC.relayCh2_mon) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Relay 2 state is set to OFF, but relay mon 2 is ON!!!", v_error, verbosity);
 	}
 
 	//Warnings
-	if (lappd_sc.relayCh3 && !lappd_sc.relayCh3_mon) {
+	if (lappd_SC.relayCh3 && !lappd_SC.relayCh3_mon) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Relay 3 state is set to ON, but relay mon 3 is OFF!!!", v_error, verbosity);
 	}
 
-	if (!lappd_sc.relayCh3 && lappd_sc.relayCh3_mon) {
+	if (!lappd_SC.relayCh3 && lappd_SC.relayCh3_mon) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Relay 3 state is set to OFF, but relay mon 3 is ON!!!", v_error, verbosity);
 	}
 
@@ -1668,12 +1806,12 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 
 	//Important variables
 	/*
-	 t_relCh1 = lappd_sc.relayCh1;
-	 t_relCh2 = lappd_sc.relayCh2;
-	 t_relCh3 = lappd_sc.relayCh3;
-	 t_relCh1_mon = lappd_sc.relayCh1_mon;
-	 t_relCh2_mon = lappd_sc.relayCh2_mon;
-	 t_relCh3_mon = lappd_sc.relayCh3_mon;
+	 t_relCh1 = lappd_SC.relayCh1;
+	 t_relCh2 = lappd_SC.relayCh2;
+	 t_relCh3 = lappd_SC.relayCh3;
+	 t_relCh1_mon = lappd_SC.relayCh1_mon;
+	 t_relCh2_mon = lappd_SC.relayCh2_mon;
+	 t_relCh3_mon = lappd_SC.relayCh3_mon;
 	 */
 }
 
@@ -1699,7 +1837,7 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 	//Title
 	text_error_title->SetText(0.06, 0.9, "LAPPD Errors");
 
-	std::vector<unsigned int> errorCodes = lappd_sc.errorcodes;
+	std::vector<unsigned int> errorCodes = lappd_SC.errorcodes;
 
 	//Always write all the errors to the log
 	for (size_t i_error = 0 ; i_error < errorCodes.size(); i_error++) {
@@ -1941,6 +2079,8 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 
 	graph_temp->Set(0);
 	graph_humidity->Set(0);
+	graph_thermistor->Set(0);
+	graph_salt->Set(0);
 	graph_light->Set(0);
 	graph_hv_volt->Set(0);
 	graph_lv_volt1->Set(0);
@@ -1952,6 +2092,8 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 		Log("MonitorLAPPDSC: Stored data (file #" + std::to_string(i_file + 1) + "): ", v_message, verbosity);
 		graph_temp->SetPoint(i_file, labels_timeaxis[i_file].Convert(), temp_plot.at(i_file));
 		graph_humidity->SetPoint(i_file, labels_timeaxis[i_file].Convert(), humidity_plot.at(i_file));
+		graph_thermistor->SetPoint(i_file, labels_timeaxis[i_file].Convert(), thermistor_plot.at(i_file));
+		graph_salt->SetPoint(i_file, labels_timeaxis[i_file].Convert(), salt_plot.at(i_file));
 		graph_light->SetPoint(i_file, labels_timeaxis[i_file].Convert(), light_plot.at(i_file));
 		graph_hv_volt->SetPoint(i_file, labels_timeaxis[i_file].Convert(), hv_volt_plot.at(i_file));
 		graph_lv_volt1->SetPoint(i_file, labels_timeaxis[i_file].Convert(), lv_v33_plot.at(i_file));
@@ -2004,6 +2146,42 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	std::stringstream ss_hum_path;
 	ss_hum_path << outpath << "LAPPDSC_TimeEvolution_Humidity_" << file_ending << "." << img_extension;
 	canvas_humidity->SaveAs(ss_hum_path.str().c_str());
+
+	std::stringstream ss_thermistor;
+	ss_thermistor << "Thermistor time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+	canvas_thermistor->cd();
+	canvas_thermistor->Clear();
+	graph_thermistor->SetTitle(ss_hum.str().c_str());
+	graph_thermistor->GetYaxis()->SetTitle("Thermistor");
+	graph_thermistor->GetXaxis()->SetTimeDisplay(1);
+	graph_thermistor->GetXaxis()->SetLabelSize(0.03);
+	graph_thermistor->GetXaxis()->SetLabelOffset(0.03);
+	graph_thermistor->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	graph_thermistor->GetXaxis()->SetTimeOffset(0.);
+	graph_thermistor->Draw("apl");
+	double max_thermistor = TMath::MaxElement(thermistor_plot.size(), graph_thermistor->GetY());
+	graph_thermistor->GetYaxis()->SetRangeUser(0.001, 1.1 * max_thermistor);
+	std::stringstream ss_thermistor_path;
+	ss_thermistor_path << outpath << "LAPPDSC_TimeEvolution_Thermistor_" << file_ending << "." << img_extension;
+	canvas_thermistor->SaveAs(ss_thermistor_path.str().c_str());
+
+	std::stringstream ss_salt;
+	ss_salt << "Salt-bridge time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+	canvas_salt->cd();
+	canvas_salt->Clear();
+	graph_salt->SetTitle(ss_hum.str().c_str());
+	graph_salt->GetYaxis()->SetTitle("Salt-bridge");
+	graph_salt->GetXaxis()->SetTimeDisplay(1);
+	graph_salt->GetXaxis()->SetLabelSize(0.03);
+	graph_salt->GetXaxis()->SetLabelOffset(0.03);
+	graph_salt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	graph_salt->GetXaxis()->SetTimeOffset(0.);
+	graph_salt->Draw("apl");
+	double max_salt = TMath::MaxElement(salt_plot.size(), graph_salt->GetY());
+	graph_salt->GetYaxis()->SetRangeUser(0.001, 1.1 * max_salt);
+	std::stringstream ss_salt_path;
+	ss_salt_path << outpath << "LAPPDSC_TimeEvolution_SaltBridge_" << file_ending << "." << img_extension;
+	canvas_salt->SaveAs(ss_salt_path.str().c_str());
 
 	std::stringstream ss_light;
 	ss_light << "Light level time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();

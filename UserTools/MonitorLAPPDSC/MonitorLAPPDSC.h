@@ -93,7 +93,8 @@ class MonitorLAPPDSC: public Tool {
   double v25_max;
   double v12_min;
   double v12_max;
-
+  double limit_salt_low;
+  double limit_salt_high;
 
   //Plot configuration variables
   std::vector<double> config_timeframes;
@@ -131,12 +132,14 @@ class MonitorLAPPDSC: public Tool {
   double tank_center_x, tank_center_y, tank_center_z;
 
   //Data
-  SlowControlMonitor lappd_sc;
+  SlowControlMonitor lappd_SC;
 
   //Plotting variables in vectors
   std::vector<ULong64_t> times_plot;
   std::vector<float> temp_plot;
   std::vector<float> humidity_plot;
+  std::vector<float> thermistor_plot;
+  std::vector<float> salt_plot;
   std::vector<int> hv_mon_plot;
   std::vector<float> hv_volt_plot;
   std::vector<bool> hv_stateset_plot;
@@ -149,8 +152,12 @@ class MonitorLAPPDSC: public Tool {
   std::vector<float> hum_high_plot;
   std::vector<float> temp_low_plot;
   std::vector<float> temp_high_plot;
+  std::vector<float> thermistor_low_plot;
+  std::vector<float> thermistor_high_plot;
   std::vector<int> flag_temp_plot;
   std::vector<int> flag_hum_plot;
+  std::vector<int> flag_thermistor_plot;
+  std::vector<int> flag_salt_plot;
   std::vector<bool> relCh1_plot;
   std::vector<bool> relCh2_plot;
   std::vector<bool> relCh3_plot;
@@ -168,6 +175,8 @@ class MonitorLAPPDSC: public Tool {
 
   //canvas
   TCanvas *canvas_temp = nullptr;
+  TCanvas *canvas_thermistor = nullptr;
+  TCanvas *canvas_salt = nullptr;
   TCanvas *canvas_humidity = nullptr;
   TCanvas *canvas_light = nullptr;
   TCanvas *canvas_hv = nullptr;
@@ -178,10 +187,14 @@ class MonitorLAPPDSC: public Tool {
   TCanvas *canvas_status_trigger = nullptr;
   TCanvas *canvas_status_error = nullptr;  
   TCanvas *canvas_status_overview = nullptr;
+  TCanvas *canvas_status_thermistor = nullptr;
+  TCanvas *canvas_status_salt = nullptr;
 
   //graphs
   TGraph *graph_temp = nullptr;
   TGraph *graph_humidity = nullptr;
+  TGraph *graph_thermistor = nullptr;
+  TGraph *graph_salt = nullptr;
   TGraph *graph_light = nullptr;
   TGraph *graph_hv_volt = nullptr;
   TGraph *graph_lv_volt1 = nullptr;
@@ -199,9 +212,13 @@ class MonitorLAPPDSC: public Tool {
   TText *text_temphum_title = nullptr;
   TText *text_temp = nullptr;
   TText *text_hum = nullptr;
+  TText *text_thermistor = nullptr;
+  TText *text_salt = nullptr;
   TText *text_light = nullptr;
   TText *text_flag_temp = nullptr;
   TText *text_flag_hum = nullptr;
+  TText *text_flag_thermistor = nullptr;
+  TText *text_flag_salt = nullptr;
 
   //LVHV texts
   TText *text_lvhv_title = nullptr;

@@ -42,6 +42,8 @@ bool MonitorSimReceiveLAPPD::Execute(){
     TRandom3 rand(0);
     lappd_sc.humidity_mon = 40*rand.Gaus(1,0.02);
     lappd_sc.temperature_mon = 83*rand.Gaus(1,0.02);
+    lappd_sc.temperature_thermistor = 20*rand.Gaus(1,0.02);
+    lappd_sc.saltbridge= 50*rand.Gaus(1,0.05);
     lappd_sc.HV_mon=1;
     lappd_sc.HV_state_set=true;
     lappd_sc.HV_volts=1000*rand.Gaus(1,0.02);
@@ -54,8 +56,12 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.LIMIT_temperature_high = 50;
     lappd_sc.LIMIT_humidity_low = 75;
     lappd_sc.LIMIT_humidity_high = 90;
+    lappd_sc.LIMIT_Thermistor_temperature_low = 15;
+    lappd_sc.LIMIT_Thermistor_temperature_high = 25;
     lappd_sc.FLAG_temperature = 1;
     lappd_sc.FLAG_humidity = 0;
+    lappd_sc.FLAG_temperature_Thermistor = 1;
+    lappd_sc.FLAG_saltbridge = 1;
     lappd_sc.relayCh1 = true;
     lappd_sc.relayCh2 = true;
     lappd_sc.relayCh3 = false;
@@ -74,6 +80,10 @@ bool MonitorSimReceiveLAPPD::Execute(){
     	vec_errors.push_back((int)rand.Gaus(30, 10));
     }
     lappd_sc.errorcodes = vec_errors;
+	
+    //std::cout << "saltbridge: "<<lappd_sc.saltbridge<<std::endl;
+    //std::cout <<"sc print: "<<lappd_sc.Print()<<std::endl;
+
     m_data->Stores["LAPPDData"]->Set("LAPPDSC",lappd_sc);
   }
 
