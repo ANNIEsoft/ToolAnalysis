@@ -86,7 +86,7 @@ bool MonitorReceive::Execute(){
       }
       else if (tmp.str()=="LAPPDMon"){
         SlowControlMonitor scmon;
-        scmon.Receive(MonitorReceiver);
+        scmon.Receive_Mon(MonitorReceiver);
         m_data->Stores["LAPPDData"]->Set("LAPPDSC",scmon);
         m_data->CStore.Set("HasLAPPDMonData",true);
       }

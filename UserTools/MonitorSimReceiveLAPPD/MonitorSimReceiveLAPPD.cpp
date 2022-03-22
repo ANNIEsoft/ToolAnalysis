@@ -36,7 +36,7 @@ bool MonitorSimReceiveLAPPD::Execute(){
     return true;
   }
   else if (mode == "Single"){
-    std::string State = "LAPPDSC";
+    std::string State = "LAPPDMon";
     m_data->CStore.Set("State",State);
     SlowControlMonitor lappd_sc;
     TRandom3 rand(0);
