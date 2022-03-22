@@ -3,7 +3,7 @@
 SlowControlMonitor::SlowControlMonitor(){}
 
 bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
-	std::string tmp="SlowControlMonitor";
+	std::string tmp="LAPPDMon";
 	zmq::message_t msg0(tmp.length()+1);
 	snprintf((char*) msg0.data(), tmp.length()+1, "%s", tmp.c_str());
 
@@ -109,8 +109,8 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 	zmq::message_t msg;
 
 	//Ident message string
-	sock->recv(&msg);
-	ident_string=*(reinterpret_cast<char*>(msg.data()));
+	//sock->recv(&msg);
+	//ident_string=*(reinterpret_cast<char*>(msg.data()));
 
 	//Version 
 	unsigned int tVersion;
