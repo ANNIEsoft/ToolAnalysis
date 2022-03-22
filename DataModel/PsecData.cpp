@@ -2,8 +2,8 @@
 
 PsecData::PsecData(){
 
-  unsigned int VersionNumber = 0x0002;
-  int FailedReadCounter=0;
+  VersionNumber = 0x0002;
+  FailedReadCounter=0;
 
 
 }
