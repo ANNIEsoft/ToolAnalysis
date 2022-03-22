@@ -139,7 +139,7 @@ bool MonitorLAPPDSC::Execute() {
 	if (State == "Wait") {
 		if (verbosity > 2)
 			std::cout << "MonitorLAPPDSC: State is " << State << std::endl;
-	} else if (State == "LAPPDSC") {
+	} else if (State == "LAPPDMon") {
 		if (verbosity > 1)
 			std::cout << "MonitorLAPPDSC: New slow-control data available." << std::endl;
 
