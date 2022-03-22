@@ -389,8 +389,8 @@ void MonitorLAPPDSC::InitializeHists() {
 
 	graph_temp->GetYaxis()->SetTitle("Temperature");
 	graph_humidity->GetYaxis()->SetTitle("Humidity");
-	graph_thermistor->GetYaxis()->SetTitle("Temperature");
-	graph_salt->GetYaxis()->SetTitle("Humidity");
+	graph_thermistor->GetYaxis()->SetTitle("Thermistor");
+	graph_salt->GetYaxis()->SetTitle("Salt-Bridge");
 	graph_light->GetYaxis()->SetTitle("Light level");
 	graph_hv_volt->GetYaxis()->SetTitle("HV mon (V)");
 	graph_lv_volt1->GetYaxis()->SetTitle("LV mon (V)");
@@ -2151,7 +2151,7 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	ss_thermistor << "Thermistor time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_thermistor->cd();
 	canvas_thermistor->Clear();
-	graph_thermistor->SetTitle(ss_hum.str().c_str());
+	graph_thermistor->SetTitle(ss_thermistor.str().c_str());
 	graph_thermistor->GetYaxis()->SetTitle("Thermistor");
 	graph_thermistor->GetXaxis()->SetTimeDisplay(1);
 	graph_thermistor->GetXaxis()->SetLabelSize(0.03);
@@ -2169,7 +2169,7 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	ss_salt << "Salt-bridge time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_salt->cd();
 	canvas_salt->Clear();
-	graph_salt->SetTitle(ss_hum.str().c_str());
+	graph_salt->SetTitle(ss_salt.str().c_str());
 	graph_salt->GetYaxis()->SetTitle("Salt-bridge");
 	graph_salt->GetXaxis()->SetTimeDisplay(1);
 	graph_salt->GetXaxis()->SetLabelSize(0.03);
