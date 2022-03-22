@@ -16,5 +16,5 @@ VoltageMin25 2.0
 VoltageMax25 3.0
 VoltageMin12 1.0
 VoltageMax12 1.5
-LimitSaltLow 100
-LimitSaltHigh 1000
+LimitSaltLow 100000
+LimitSaltHigh 1000000
