@@ -59,6 +59,7 @@ bool MonitorReceive::Execute(){
   m_data->CStore.Set("HasPMTData",false);
   m_data->CStore.Set("HasTrigData",false);
   m_data->CStore.Set("HasLAPPDData",false);
+  m_data->CStore.Set("HasLAPPDMonData",false);
   m_data->CStore.Set("HasNewFile",false);
   m_data->CStore.Set("Above100",false);
 
@@ -83,6 +84,18 @@ bool MonitorReceive::Execute(){
 	m_data->Stores["CCData"]->Set("Single",data);      
 	m_data->CStore.Set("HasCCData",true);
       }
+      else if (tmp.str()=="LAPPDMon"){
+        SlowControlMonitor scmon;
+        scmon.Receive(MonitorReceiver);
+        m_data->Stores["LAPPDData"]->Set("LAPPDSC",scmon);
+        m_data->CStore.Set("HasLAPPDMonData",true);
+      }
+     /* else if (tmp.str()==""){
+        PsecData psec;
+        psec.Receive(MonitorReceiver);
+        m_data->Stores["LAPPDData"]->Set("Single",psec);
+        m_data->CStore.Set("HasLAPPDData",true);
+      }*/
       
       else if(tmp.str()=="DataFile"){
 	
