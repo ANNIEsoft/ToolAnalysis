@@ -1291,7 +1291,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	ss_text_flag_salt << "Emergency Salt-Bridge: " << emergency_salt << " (" << current_time.str() << ")";
 	text_flag_salt->SetText(0.06, 0.0, ss_text_flag_salt.str().c_str());
 	text_flag_salt->SetTextColor(1);
-	if (emergency_hum == "True") {
+	if (emergency_salt == "True") {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Salt-bridge emergency flag is set!!!", v_error, verbosity);
 		text_flag_salt->SetTextColor(kRed);
 		temp_humid_check = false;
