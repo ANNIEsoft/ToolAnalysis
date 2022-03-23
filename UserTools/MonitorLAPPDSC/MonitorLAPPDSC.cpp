@@ -148,7 +148,10 @@ bool MonitorLAPPDSC::Execute() {
 			m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
 
 			//std::cout <<"Salt-bridge (received): "<<lappd_SC.saltbridge<<std::endl;
-			//std::cout <<"SC Print(): "<<lappd_SC.Print()<<std::endl;
+			if (verbosity > -1) {
+				std::cout <<"////////////////Got slow control data: //////////////"<<std::endl;
+				std::cout << lappd_SC.Print()<<std::endl;
+			}
 			//Write the event information to a file
 			//TODO: change this to a database later on!
 			//Check if data has already been written included in WriteToFile function
