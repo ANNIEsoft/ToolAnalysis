@@ -1929,6 +1929,7 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 				text_error_vector.at(i_error)->SetNDC(1);
 				text_error_vector.at(i_error)->Draw();
 			}
+			error_check = false;
 
 
 
