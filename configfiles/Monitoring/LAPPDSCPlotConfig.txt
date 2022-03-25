@@ -3,6 +3,7 @@
 ###	Options for PLOTTYPEs are "Hitmap", "RateElectronics", "RatePhysical", "PedElectronics", "PedPhysical", "SigmaElectronics", "SigmaPhysical", "TimeEvolution", "TimeDifference", "FileHistory"
 ###
 24.	TEND_LASTFILE	lastDay	TimeEvolution
+2.	TEND_LASTFILE	lastTwoHours	TimeEvolution
 0.5	TEND_LASTFILE	lastHalfHour	TimeEvolution
-0.1	TEND_LASTFILE	lastMinutes	TimeEvolution
+#0.1	TEND_LASTFILE	lastMinutes	TimeEvolution
 #100.	20200207T060000	Feb03_Feb07	RateElectronics	RatePhysical	PedElectronics	PedPhysical	SigmaElectronics	SigmaPhysical	TimeEvolution	TimeDifference	FileHistory

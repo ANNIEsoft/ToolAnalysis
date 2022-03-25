@@ -16,5 +16,13 @@ VoltageMin25 2.0
 VoltageMax25 3.0
 VoltageMin12 1.0
 VoltageMax12 1.5
-LimitSaltLow 10
-LimitSaltHigh 60
+#LimitSaltLow 10
+#LimitSaltHigh 60
+LimitSaltLow 500000
+LimitSaltHigh 400000
+LimitTempLow 50.
+LimitTempHigh 58.
+LimitHumLow 15.
+LimitHumHigh 20.
+LimitThermistorLow 7000.
+LimitThermistorHigh 5800.

@@ -17,69 +17,74 @@ class SlowControlMonitor : public SerialisableObject{
  public:
 
   SlowControlMonitor();
-
+  
   //Comms
   bool Send_Mon(zmq::socket_t* sock);
   bool Receive_Mon(zmq::socket_t* sock);
   bool Send_Config(zmq::socket_t* sock);
   bool Receive_Config(zmq::socket_t* sock);
   bool RelayControl(zmq::socket_t* sock);
-  int recieveFlag = 0;
+  int recieveFlag = 1;
+  
   std::string ident_string;
  
   //Version number
-  unsigned int VersionNumber = 0x0004;
- 
+  unsigned int VersionNumber = 0x0005;
+  
   //RHT
   float humidity_mon=-444;
   float temperature_mon=-444;
   float temperature_thermistor=-444; 
-  
+ 
   //HV
+  bool HV_state_set=false; //Default chosen 
+  float HV_volts=0; //Default chosen 
   int HV_mon=-1;
-  bool HV_state_set;
-  float HV_volts=-1;
-  float HV_return_mon = -1;
-
+  float HV_return_mon =-1;
+ 
   //LV
+  bool LV_state_set=false; //Default chosen 
   int LV_mon=-1;
-  bool LV_state_set;
   float v33=-444;
   float v25=-444;
   float v12=-444;
-
+ 
   //Saltbridge
   float saltbridge = -1;
 
   //Emergency variables
-  float LIMIT_temperature_low = 0;
-  float LIMIT_humidity_low = 0;
-  float LIMIT_temperature_high = 0;
-  float LIMIT_humidity_high = 0;  
-  float LIMIT_Thermistor_temperature_low = 0;
-  float LIMIT_Thermistor_temperature_high = 0; 
   int FLAG_temperature = 0;
   int FLAG_humidity = 0;
   int FLAG_temperature_Thermistor = 0;
-  int FLAG_saltbridge = 0; 
-
+  int FLAG_saltbridge = 0;
+  
+  float LIMIT_temperature_low = 50; //Default chosen 
+  float LIMIT_temperature_high = 58; //Default chosen 
+  float LIMIT_humidity_low = 15; //Default chosen 
+  float LIMIT_humidity_high = 20; //Default chosen 
+  float LIMIT_Thermistor_temperature_low = 7000; //Default chosen 
+  float LIMIT_Thermistor_temperature_high = 5800; //Default chosen 
+  float LIMIT_saltbridge_low = 500000; //Default chosen 
+  float LIMIT_saltbridge_high = 400000; //Default chosen 
+ 
   //relay
-  bool relayCh1;
-  bool relayCh2;
-  bool relayCh3;
+  bool relayCh1=true; //Default chosen 
+  bool relayCh2=true; //Default chosen 
+  bool relayCh3=true; //Default chosen 
   bool relayCh1_mon;
   bool relayCh2_mon;
   bool relayCh3_mon;
 
   //Triggerboard
-  float TrigVref;
-  float Trig1_threshold;
-  float Trig1_mon=-1;
-  float Trig0_threshold;
+  float TrigVref=2.981; //Default chosen 
+  float Trig0_threshold=1.223; //Default chosen 
   float Trig0_mon=-1;
+  float Trig1_threshold=1.23; //Default chosen 
+  float Trig1_mon=-1;
+
  
   //Light level
-  float light;
+  float light=-1;
 
   //errors
   vector<unsigned int> errorcodes;
@@ -90,7 +95,7 @@ class SlowControlMonitor : public SerialisableObject{
  private:
  
  template <class Archive> void serialize(Archive& ar, const unsigned int version){
-
+  ar & VersionNumber;
   ar & recieveFlag;
   ar & humidity_mon;
   ar & temperature_mon;
@@ -98,17 +103,20 @@ class SlowControlMonitor : public SerialisableObject{
   ar & HV_mon;
   ar & HV_state_set;
   ar & HV_volts;
+  ar & HV_return_mon;
   ar & LV_mon;
   ar & LV_state_set;
   ar & v33;
   ar & v25;
   ar & v12;
   ar & LIMIT_temperature_low;
-  ar & LIMIT_humidity_low;
   ar & LIMIT_temperature_high;
+  ar & LIMIT_humidity_low;
   ar & LIMIT_humidity_high;  
   ar & LIMIT_Thermistor_temperature_low;
-  ar & LIMIT_Thermistor_temperature_high; 
+  ar & LIMIT_Thermistor_temperature_high;
+  ar & LIMIT_saltbridge_low;
+  ar & LIMIT_saltbridge_high;
   ar & FLAG_temperature;
   ar & FLAG_humidity;
   ar & FLAG_temperature_Thermistor;

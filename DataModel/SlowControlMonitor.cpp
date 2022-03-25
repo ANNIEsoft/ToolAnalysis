@@ -39,7 +39,7 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	zmq::message_t msgFTT(sizeof FLAG_temperature_Thermistor );
 	std::memcpy(msgFTT.data(), &FLAG_temperature_Thermistor , sizeof FLAG_temperature_Thermistor );
 	zmq::message_t msgFS(sizeof FLAG_saltbridge );
- 	std::memcpy(msgFS.data(), &FLAG_saltbridge , sizeof FLAG_saltbridge );
+	std::memcpy(msgFS.data(), &FLAG_saltbridge , sizeof FLAG_saltbridge );
 
 	//Relay send
 	zmq::message_t msgR1(sizeof relayCh1_mon);
@@ -83,11 +83,12 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	sock->send(msgTemp1,ZMQ_SNDMORE);
 	sock->send(msgTemp2,ZMQ_SNDMORE);
 	sock->send(msgHVstate,ZMQ_SNDMORE);
+	sock->send(msgHV,ZMQ_SNDMORE);
 	sock->send(msgLVstate,ZMQ_SNDMORE);
 	sock->send(msgFT,ZMQ_SNDMORE);
 	sock->send(msgFH,ZMQ_SNDMORE);
 	sock->send(msgFTT,ZMQ_SNDMORE);
-	sock->send(msgFS,ZMQ_SNDMORE);	
+	sock->send(msgFS,ZMQ_SNDMORE);
 	sock->send(msgR1,ZMQ_SNDMORE);
 	sock->send(msgR2,ZMQ_SNDMORE);
 	sock->send(msgR3,ZMQ_SNDMORE);
@@ -109,8 +110,8 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 	zmq::message_t msg;
 
 	//Ident message string
-	//sock->recv(&msg);
-	//ident_string=*(reinterpret_cast<char*>(msg.data()));
+	//	sock->recv(&msg);
+	//	ident_string=*(reinterpret_cast<char*>(msg.data()));
 
 	//Version 
 	unsigned int tVersion;
@@ -119,7 +120,7 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 	if(VersionNumber != tVersion)
 	{
 		std::cout << "Wrong version number! Please check immediately!" << std::endl;
-		return false;
+		//return false;
 	}
 
 	//Temperature/Humidity
@@ -148,7 +149,7 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 	sock->recv(&msg);
 	FLAG_temperature_Thermistor=*(reinterpret_cast<int*>(msg.data())); 
 	sock->recv(&msg);
- 	FLAG_saltbridge=*(reinterpret_cast<int*>(msg.data())); 
+	FLAG_saltbridge=*(reinterpret_cast<int*>(msg.data())); 
 
 	//Relay
 	sock->recv(&msg);
@@ -227,6 +228,10 @@ bool SlowControlMonitor::Send_Config(zmq::socket_t* sock){
 	std::memcpy(msgLTTL.data(), &LIMIT_Thermistor_temperature_low , sizeof LIMIT_Thermistor_temperature_low);
 	zmq::message_t msgLTTH(sizeof LIMIT_Thermistor_temperature_high);
 	std::memcpy(msgLTTH.data(), &LIMIT_Thermistor_temperature_high, sizeof LIMIT_Thermistor_temperature_high);
+	zmq::message_t msgLSL(sizeof LIMIT_saltbridge_low);
+	std::memcpy(msgLSL.data(), &LIMIT_saltbridge_low , sizeof LIMIT_saltbridge_low);
+	zmq::message_t msgLSH(sizeof LIMIT_saltbridge_high);
+	std::memcpy(msgLSH.data(), &LIMIT_saltbridge_high, sizeof LIMIT_saltbridge_high);
 	
 	//Triggerboard
 	zmq::message_t msgTrig0(sizeof Trig0_threshold);
@@ -255,6 +260,8 @@ bool SlowControlMonitor::Send_Config(zmq::socket_t* sock){
 	sock->send(msgLHH,ZMQ_SNDMORE);
 	sock->send(msgLTTL,ZMQ_SNDMORE);
 	sock->send(msgLTTH,ZMQ_SNDMORE);
+	sock->send(msgLSL,ZMQ_SNDMORE);
+	sock->send(msgLSH,ZMQ_SNDMORE);
 	sock->send(msgTrig0,ZMQ_SNDMORE);
 	sock->send(msgTrig1,ZMQ_SNDMORE);
 	sock->send(msgTrigRef,ZMQ_SNDMORE);
@@ -306,6 +313,10 @@ bool SlowControlMonitor::Receive_Config(zmq::socket_t* sock){
 	LIMIT_Thermistor_temperature_low =*(reinterpret_cast<float*>(msg.data())); 
 	sock->recv(&msg);
 	LIMIT_Thermistor_temperature_high =*(reinterpret_cast<float*>(msg.data())); 
+	sock->recv(&msg);
+	LIMIT_saltbridge_low =*(reinterpret_cast<float*>(msg.data())); 
+	sock->recv(&msg);
+	LIMIT_saltbridge_high =*(reinterpret_cast<float*>(msg.data())); 
 
 	//Triggerboard
 	sock->recv(&msg);   
@@ -356,12 +367,13 @@ bool SlowControlMonitor::Print(){
 	std::cout << "temperature = " << temperature_mon << std::endl;
 	std::cout << "thermistor = " << temperature_thermistor << std::endl;
 	std::cout << "HV state should be " << std::boolalpha << HV_state_set << " and is " << std::boolalpha << HV_mon << " and is set to " << HV_volts << " V" << std::endl;
+	std::cout << "Returned HV is " << HV_return_mon << "V" << std::endl;
 	std::cout << "LV state should be " << std::boolalpha << LV_state_set << " and is " << std::boolalpha << LV_mon << std::endl;
 	std::cout << "LV voltages are V(3.3)= " << v33 << "V, V(2.5)= " << v25 << "V, V(1.2)= " << v12 << "V" << std::endl;	
 	std::cout << "Temperature warning flag is " << std::boolalpha << FLAG_temperature << std::endl;
 	std::cout << "Humidity warning flag is " << std::boolalpha << FLAG_humidity << std::endl;
 	std::cout << "Temperature 2 warning flag is " << std::boolalpha << FLAG_temperature_Thermistor << std::endl;
- 	std::cout << "Saltbridge warning flag is " << std::boolalpha << FLAG_saltbridge << std::endl;	
+	std::cout << "Saltbridge warning flag is " << std::boolalpha << FLAG_saltbridge << std::endl;
 	std::cout << "Relay 1 is " << std::boolalpha << relayCh1_mon << std::endl;
 	std::cout << "Relay 2 is " << std::boolalpha << relayCh2_mon << std::endl;
 	std::cout << "Relay 3 is " << std::boolalpha << relayCh3_mon << std::endl;
@@ -375,6 +387,10 @@ bool SlowControlMonitor::Print(){
 	}else
 	{
 		printf("Errorcodes found: %li\n", errorcodes.size());
+		for(unsigned int k: errorcodes)
+		{
+			printf("0x%08x\n",k);	
+		}
 	}
 	
 	return true;

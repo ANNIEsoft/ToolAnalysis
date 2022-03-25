@@ -95,6 +95,12 @@ class MonitorLAPPDSC: public Tool {
   double v12_max;
   double limit_salt_low;
   double limit_salt_high;
+  double limit_temperature_low;
+  double limit_temperature_high;
+  double limit_humidity_low;
+  double limit_humidity_high;
+  double limit_thermistor_temperature_low;
+  double limit_thermistor_temperature_high;
 
   //Plot configuration variables
   std::vector<double> config_timeframes;
@@ -143,6 +149,7 @@ class MonitorLAPPDSC: public Tool {
   std::vector<int> hv_mon_plot;
   std::vector<float> hv_volt_plot;
   std::vector<bool> hv_stateset_plot;
+  std::vector<float> hv_returnmon_plot;
   std::vector<int> lv_mon_plot;
   std::vector<bool> lv_stateset_plot;
   std::vector<float> lv_v33_plot;
@@ -197,6 +204,7 @@ class MonitorLAPPDSC: public Tool {
   TGraph *graph_salt = nullptr;
   TGraph *graph_light = nullptr;
   TGraph *graph_hv_volt = nullptr;
+  TGraph *graph_hv_volt_mon = nullptr;
   TGraph *graph_lv_volt1 = nullptr;
   TGraph *graph_lv_volt2 = nullptr;
   TGraph *graph_lv_volt3 = nullptr;
@@ -225,6 +233,7 @@ class MonitorLAPPDSC: public Tool {
   TText *text_hv_state = nullptr;
   TText *text_hv_mon = nullptr;
   TText *text_hv_volt = nullptr;
+  TText *text_hv_monvolt = nullptr;
   TText *text_lv_state = nullptr;
   TText *text_lv_mon = nullptr;
   TText *text_v33 = nullptr;
