@@ -301,6 +301,8 @@ bool MonitorLAPPDSC::Finalise() {
 	delete text_overview_trigger;
 	delete text_overview_relay;
 	delete text_overview_error;
+	delete text_current_time;
+	delete text_sc_time;
 
 
 	return true;
@@ -600,6 +602,8 @@ void MonitorLAPPDSC::InitializeHists() {
 	text_overview_trigger = new TText();
 	text_overview_relay = new TText();
 	text_overview_error = new TText();
+	text_current_time = new TText();
+	text_sc_time = new TText();
 
 	text_overview_title->SetNDC(1);
 	text_overview_temp->SetNDC(1);
@@ -607,6 +611,8 @@ void MonitorLAPPDSC::InitializeHists() {
 	text_overview_trigger->SetNDC(1);
 	text_overview_relay->SetNDC(1);
 	text_overview_error->SetNDC(1);
+	text_current_time->SetNDC(1);
+	text_sc_time->SetNDC(1);
 
 }
 
@@ -2132,6 +2138,26 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 		text_overview_error->SetTextColor(kGreen);
 	}
 
+	//std::cout <<"set current time "<< std::endl;
+	std::stringstream ss_current_time;
+	ss_current_time << "Current time: "<< " (" << current_time.str() << ")";
+	text_current_time->SetText(0.06,0.3,ss_current_time.str().c_str());
+	text_current_time->SetTextColor(1);
+
+	//std::cout <<"compute sc time "<<std::endl;
+	unsigned long t_sc = lappd_SC.timeSinceEpochMilliseconds;
+	boost::posix_time::ptime sctime = *Epoch + boost::posix_time::time_duration(int(t_sc / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_sc / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_sc / MSEC_to_SEC) % 60, t_sc % 1000);
+        struct tm sctime_tm = boost::posix_time::to_tm(sctime);
+        std::stringstream sc_time;
+        sc_time << sctime_tm.tm_year + 1900 << "/" << sctime_tm.tm_mon + 1 << "/" << sctime_tm.tm_mday << "-" << sctime_tm.tm_hour << ":" << sctime_tm.tm_min << ":" << sctime_tm.tm_sec;
+
+	//std::cout <<"set sc time text"<<std::endl;
+	std::stringstream ss_sc_time;
+	ss_sc_time << "Slow control time: "<< " (" << sc_time.str() << ")";
+	text_sc_time->SetText(0.06,0.2,ss_sc_time.str().c_str());
+	text_sc_time->SetTextColor(1);
+
+	//std::cout <<"actual drawing"<<std::endl;
 
 	//Actual drawing
 	text_overview_title->SetTextSize(0.05);
@@ -2140,6 +2166,8 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_overview_trigger->SetTextSize(0.05);
 	text_overview_relay->SetTextSize(0.05);
 	text_overview_error->SetTextSize(0.05);
+	text_current_time->SetTextSize(0.05);
+	text_sc_time->SetTextSize(0.05);
 
 	text_overview_title->SetNDC(1);
 	text_overview_temp->SetNDC(1);
@@ -2147,6 +2175,8 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_overview_trigger->SetNDC(1);
 	text_overview_relay->SetNDC(1);
 	text_overview_error->SetNDC(1);
+	text_current_time->SetNDC(1);
+	text_sc_time->SetNDC(1);
 
 	canvas_status_overview->cd();
 	canvas_status_overview->Clear();
@@ -2156,6 +2186,8 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_overview_trigger->Draw();
 	text_overview_relay->Draw();
 	text_overview_error->Draw();
+	text_current_time->Draw();
+	text_sc_time->Draw();
 
 	std::stringstream ss_path_overviewinfo;
 	ss_path_overviewinfo << outpath << "LAPPDSC_overviewinfo_current." << img_extension;

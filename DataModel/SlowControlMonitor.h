@@ -29,8 +29,11 @@ class SlowControlMonitor : public SerialisableObject{
   std::string ident_string;
  
   //Version number
-  unsigned int VersionNumber = 0x0005;
+  unsigned int VersionNumber = 0x0006;
   
+  //Timestamp
+  unsigned long timeSinceEpochMilliseconds;
+ 
   //RHT
   float humidity_mon=-444;
   float temperature_mon=-444;
@@ -96,6 +99,7 @@ class SlowControlMonitor : public SerialisableObject{
  
  template <class Archive> void serialize(Archive& ar, const unsigned int version){
   ar & VersionNumber;
+  ar & timeSinceEpochMilliseconds;
   ar & recieveFlag;
   ar & humidity_mon;
   ar & temperature_mon;

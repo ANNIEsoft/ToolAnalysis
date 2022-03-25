@@ -12,6 +12,10 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	//Version send
 	zmq::message_t msgV(sizeof VersionNumber);
 	std::memcpy(msgV.data(), &VersionNumber, sizeof VersionNumber);	
+	
+	//Timestamp
+	zmq::message_t msgTime(sizeof timeSinceEpochMilliseconds);
+	std::memcpy(msgTime.data(), &timeSinceEpochMilliseconds , sizeof timeSinceEpochMilliseconds);		
 
 	//Sensor send
 	zmq::message_t msgHum(sizeof humidity_mon);
@@ -79,6 +83,7 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 
 	sock->send(msg0,ZMQ_SNDMORE);
 	sock->send(msgV,ZMQ_SNDMORE);
+	sock->send(msgTime,ZMQ_SNDMORE);
 	sock->send(msgHum,ZMQ_SNDMORE);
 	sock->send(msgTemp1,ZMQ_SNDMORE);
 	sock->send(msgTemp2,ZMQ_SNDMORE);
@@ -122,6 +127,10 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 		std::cout << "Wrong version number! Please check immediately!" << std::endl;
 		//return false;
 	}
+	
+	//Timestamp
+	sock->recv(&msg);   
+	timeSinceEpochMilliseconds=*(reinterpret_cast<unsigned long*>(msg.data()));
 
 	//Temperature/Humidity
 	sock->recv(&msg);   
@@ -363,6 +372,7 @@ bool SlowControlMonitor::SetDefaults(){
 
 bool SlowControlMonitor::Print(){
 
+	std::cout << "Timestamp ms since epoch = " << timeSinceEpochMilliseconds << std::endl;
 	std::cout << "humidity = " << humidity_mon << std::endl;
 	std::cout << "temperature = " << temperature_mon << std::endl;
 	std::cout << "thermistor = " << temperature_thermistor << std::endl;

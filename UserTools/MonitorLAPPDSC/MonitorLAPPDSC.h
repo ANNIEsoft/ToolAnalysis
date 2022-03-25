@@ -284,7 +284,8 @@ class MonitorLAPPDSC: public Tool {
   TText *text_overview_trigger = nullptr;
   TText *text_overview_relay = nullptr;
   TText *text_overview_error = nullptr;
-
+  TText *text_current_time = nullptr;
+  TText *text_sc_time = nullptr;
 
   //Verbosity variables
   int v_error = 0;
