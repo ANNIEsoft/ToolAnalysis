@@ -2146,6 +2146,7 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 
 	//std::cout <<"compute sc time "<<std::endl;
 	unsigned long t_sc = lappd_SC.timeSinceEpochMilliseconds;
+	if (t_sc > 2048166400000 ) t_sc = 1;
 	boost::posix_time::ptime sctime = *Epoch + boost::posix_time::time_duration(int(t_sc / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_sc / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_sc / MSEC_to_SEC) % 60, t_sc % 1000);
         struct tm sctime_tm = boost::posix_time::to_tm(sctime);
         std::stringstream sc_time;
