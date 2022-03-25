@@ -145,6 +145,10 @@ class MonitorDAQ: public Tool {
   double disk_vme03;
   double mem_vme03;
   double cpu_vme03;
+  ULong64_t timestamp_rpi;
+  double disk_rpi;
+  double mem_rpi;
+  double cpu_rpi;
 
   //Storing variables for reading in data in given time slot from monitoring file / database
   std::vector<bool> has_trig_plot;
@@ -161,18 +165,22 @@ class MonitorDAQ: public Tool {
   std::vector<double> disk_vme01_plot;
   std::vector<double> disk_vme02_plot;
   std::vector<double> disk_vme03_plot;
+  std::vector<double> disk_rpi_plot;
   std::vector<double> mem_daq01_plot;
   std::vector<double> mem_vme01_plot;
   std::vector<double> mem_vme02_plot;
   std::vector<double> mem_vme03_plot;
+  std::vector<double> mem_rpi_plot;
   std::vector<double> cpu_daq01_plot;
   std::vector<double> cpu_vme01_plot;
   std::vector<double> cpu_vme02_plot;
   std::vector<double> cpu_vme03_plot;
+  std::vector<double> cpu_rpi_plot;
   std::vector<ULong64_t> t_daq01_plot;
   std::vector<ULong64_t> t_vme01_plot;
   std::vector<ULong64_t> t_vme02_plot;
   std::vector<ULong64_t> t_vme03_plot;
+  std::vector<ULong64_t> t_rpi_plot;
 
   //Status variables for slack messages --> were the warnings already issued?
   bool warning_filesize = false;
@@ -221,6 +229,7 @@ class MonitorDAQ: public Tool {
   TText *text_mem_vme01 = nullptr;
   TText *text_mem_vme02 = nullptr;
   TText *text_mem_vme03 = nullptr;
+  TText *text_mem_rpi = nullptr;
 
   //Pie chart
   TPie *pie_vme = nullptr;
@@ -233,10 +242,12 @@ class MonitorDAQ: public Tool {
   TGraph *gr_mem_vme01 = nullptr;
   TGraph *gr_mem_vme02 = nullptr;
   TGraph *gr_mem_vme03 = nullptr;
+  TGraph *gr_mem_rpi = nullptr;
   TGraph *gr_cpu_daq01 = nullptr;
   TGraph *gr_cpu_vme01 = nullptr;
   TGraph *gr_cpu_vme02 = nullptr;
   TGraph *gr_cpu_vme03 = nullptr;
+  TGraph *gr_cpu_rpi = nullptr;
   TGraph *gr_disk_daq01 = nullptr;
   TGraph *gr_disk_vme01 = nullptr;
   TGraph *gr_disk_vme02 = nullptr;
