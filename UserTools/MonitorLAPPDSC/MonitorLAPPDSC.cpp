@@ -2328,7 +2328,7 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	graph_hv_volt->GetXaxis()->SetTimeOffset(0.);
 	graph_hv_volt->Draw("apl");
 	double max_hv_volt = TMath::MaxElement(hv_volt_plot.size(), graph_hv_volt->GetY());
-	graph_hv_volt->GetYaxis()->SetRangeUser(0.001, 1.1 * max_hv_volt);
+	//graph_hv_volt->GetYaxis()->SetRangeUser(0.001, 1.1 * max_hv_volt);
 	std::stringstream ss_hv_path;
 	ss_hv_path << outpath << "LAPPDSC_TimeEvolution_HV_" << file_ending << "." << img_extension;
 	canvas_hv->SaveAs(ss_hv_path.str().c_str());
@@ -2343,7 +2343,7 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	graph_hv_volt_mon->GetXaxis()->SetTimeOffset(0.);
 	graph_hv_volt_mon->Draw("apl");
 	double max_hv_volt_mon = TMath::MaxElement(hv_returnmon_plot.size(), graph_hv_volt_mon->GetY());
-	graph_hv_volt_mon->GetYaxis()->SetRangeUser(0.001, 1.1 * max_hv_volt_mon);
+	//graph_hv_volt_mon->GetYaxis()->SetRangeUser(0.001, 1.1 * max_hv_volt_mon);
 	std::stringstream ss_hv_path_mon;
 	ss_hv_path_mon << outpath << "LAPPDSC_TimeEvolution_HVMon_" << file_ending << "." << img_extension;
 	canvas_hv->SaveAs(ss_hv_path_mon.str().c_str());
