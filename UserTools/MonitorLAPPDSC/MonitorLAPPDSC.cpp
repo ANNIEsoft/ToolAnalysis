@@ -1550,7 +1550,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 
 	//V25
 	std::stringstream ss_v25_temp;
-	ss_v25_temp << "V25: " << lappd_SC.v25 << " V (" << current_time.str() << ")";
+	ss_v25_temp << "V31: " << lappd_SC.v25 << " V (" << current_time.str() << ")";
 	text_v25->SetText(0.06, 0.3, ss_v25_temp.str().c_str());
 	text_v25->SetTextColor(1);
 	if (lappd_SC.v25 < v25_min || lappd_SC.v25 > v25_max) {
@@ -1561,7 +1561,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 
 	//V12
 	std::stringstream ss_v12_temp;
-	ss_v12_temp << "V12: " << lappd_SC.v12 << " V (" << current_time.str() << ")";
+	ss_v12_temp << "V18: " << lappd_SC.v12 << " V (" << current_time.str() << ")";
 	text_v12->SetText(0.06, 0.2, ss_v12_temp.str().c_str());
 	text_v12->SetTextColor(1);
 	if (lappd_SC.v12 < v12_min || lappd_SC.v12 > v12_max) {
@@ -2384,11 +2384,11 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	std::stringstream ss_lv;
 	ss_lv << "LV time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	multi_lv->Add(graph_lv_volt1);
-	leg_lv->AddEntry(graph_lv_volt1, "V35", "l");
+	leg_lv->AddEntry(graph_lv_volt1, "V33", "l");
 	multi_lv->Add(graph_lv_volt2);
-	leg_lv->AddEntry(graph_lv_volt2, "V21", "l");
+	leg_lv->AddEntry(graph_lv_volt2, "V31", "l");
 	multi_lv->Add(graph_lv_volt3);
-	leg_lv->AddEntry(graph_lv_volt3, "V12", "l");
+	leg_lv->AddEntry(graph_lv_volt3, "V18", "l");
 	canvas_lv->cd();
 	canvas_lv->Clear();
 	multi_lv->Draw("apl");
