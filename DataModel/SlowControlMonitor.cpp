@@ -1,6 +1,8 @@
 #include <SlowControlMonitor.h>
 
-SlowControlMonitor::SlowControlMonitor(){}
+SlowControlMonitor::SlowControlMonitor(){
+    //VersionNumber = 0x0006;
+}
 
 bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	std::string tmp="LAPPDMon";
@@ -107,6 +109,9 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	sock->send(msgES,ZMQ_SNDMORE);
 	sock->send(msgE);
 	
+	//sock->send(msgE,ZMQ_SNDMORE);
+	//Send_Config(sock);
+	
   	return true;
 }
 
@@ -201,6 +206,8 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 		std::memcpy(&errorcodes[0], msg.data(), msg.size());
 	}
 
+	//Receive_Config(sock);
+	
 	return true;
 }
 

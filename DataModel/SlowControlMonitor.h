@@ -35,9 +35,9 @@ class SlowControlMonitor : public SerialisableObject{
   unsigned long timeSinceEpochMilliseconds;
  
   //RHT
-  float humidity_mon=-444;
-  float temperature_mon=-444;
-  float temperature_thermistor=-444; 
+  float humidity_mon=-1;
+  float temperature_mon=-1;
+  float temperature_thermistor=-1; 
  
   //HV
   bool HV_state_set=false; //Default chosen 
@@ -48,9 +48,9 @@ class SlowControlMonitor : public SerialisableObject{
   //LV
   bool LV_state_set=false; //Default chosen 
   int LV_mon=-1;
-  float v33=-444;
-  float v25=-444;
-  float v12=-444;
+  float v33=-1;
+  float v25=-1;
+  float v12=-1;
  
   //Saltbridge
   float saltbridge = -1;
@@ -71,9 +71,10 @@ class SlowControlMonitor : public SerialisableObject{
   float LIMIT_saltbridge_high = 400000; //Default chosen 
  
   //relay
-  bool relayCh1=true; //Default chosen 
-  bool relayCh2=true; //Default chosen 
-  bool relayCh3=true; //Default chosen 
+  bool SumRelays=false;
+  bool relayCh1=false; //Default chosen 
+  bool relayCh2=false; //Default chosen 
+  bool relayCh3=false; //Default chosen 
   bool relayCh1_mon;
   bool relayCh2_mon;
   bool relayCh3_mon;
