@@ -1321,6 +1321,11 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		text_salt->SetTextColor(kRed);
 		temp_humid_check = false;
 	}
+	if (lappd_SC.saltbridge > 630000.) {
+		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is above first alert level [630,000]!!!", v_error, verbosity);
+		text_salt->SetTextColor(kOrange);
+		temp_humid_check = false;
+	}
 
 	std::stringstream ss_text_light;
 	ss_text_light << "Light level: " << lappd_SC.light << " (" << current_time.str() << ")";
@@ -2145,7 +2150,8 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_current_time->SetTextColor(1);
 
 	//std::cout <<"compute sc time "<<std::endl;
-	unsigned long t_sc = lappd_SC.timeSinceEpochMilliseconds;
+	std::string t_sc_string = lappd_SC.timeSinceEpochMilliseconds;
+	unsigned long t_sc = std::stoul(t_sc_string, 0, 10);
 	if (t_sc > 2048166400000 ) t_sc = 1;
 	boost::posix_time::ptime sctime = *Epoch + boost::posix_time::time_duration(int(t_sc / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_sc / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_sc / MSEC_to_SEC) % 60, t_sc % 1000);
         struct tm sctime_tm = boost::posix_time::to_tm(sctime);

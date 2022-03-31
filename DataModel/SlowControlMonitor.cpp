@@ -1,7 +1,11 @@
 #include <SlowControlMonitor.h>
 
 SlowControlMonitor::SlowControlMonitor(){
-    //VersionNumber = 0x0006;
+    VersionNumber = 0x0007;
+	recieveFlag = 1;
+	LAPPD_ID = 0;
+	SetDefaultSettings();
+	SetDefaultValues();
 }
 
 bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
@@ -14,10 +18,14 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	//Version send
 	zmq::message_t msgV(sizeof VersionNumber);
 	std::memcpy(msgV.data(), &VersionNumber, sizeof VersionNumber);	
-	
+
+	//LAPPD_ID
+	zmq::message_t msgID(sizeof LAPPD_ID);
+	std::memcpy(msgID.data(), &LAPPD_ID, sizeof LAPPD_ID);	
+
 	//Timestamp
-	zmq::message_t msgTime(sizeof timeSinceEpochMilliseconds);
-	std::memcpy(msgTime.data(), &timeSinceEpochMilliseconds , sizeof timeSinceEpochMilliseconds);		
+	zmq::message_t msgTime(timeSinceEpochMilliseconds.length()+1);
+	snprintf((char*) msgTime.data(), timeSinceEpochMilliseconds.length()+1, "%s", timeSinceEpochMilliseconds.c_str());	
 
 	//Sensor send
 	zmq::message_t msgHum(sizeof humidity_mon);
@@ -85,6 +93,7 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 
 	sock->send(msg0,ZMQ_SNDMORE);
 	sock->send(msgV,ZMQ_SNDMORE);
+	sock->send(msgID,ZMQ_SNDMORE);
 	sock->send(msgTime,ZMQ_SNDMORE);
 	sock->send(msgHum,ZMQ_SNDMORE);
 	sock->send(msgTemp1,ZMQ_SNDMORE);
@@ -107,10 +116,10 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	sock->send(msgP,ZMQ_SNDMORE);
 	sock->send(msgSalt,ZMQ_SNDMORE);
 	sock->send(msgES,ZMQ_SNDMORE);
-	sock->send(msgE);
+	//sock->send(msgE);
 	
-	//sock->send(msgE,ZMQ_SNDMORE);
-	//Send_Config(sock);
+	sock->send(msgE,ZMQ_SNDMORE);
+	Send_Config(sock);
 	
   	return true;
 }
@@ -132,10 +141,14 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 		std::cout << "Wrong version number! Please check immediately!" << std::endl;
 		//return false;
 	}
-	
+
+	//LAPPD_ID
+	sock->recv(&msg);   
+	LAPPD_ID=*(reinterpret_cast<unsigned int*>(msg.data()));
+
 	//Timestamp
 	sock->recv(&msg);   
-	timeSinceEpochMilliseconds=*(reinterpret_cast<unsigned long*>(msg.data()));
+	timeSinceEpochMilliseconds=*(reinterpret_cast<char*>(msg.data()));
 
 	//Temperature/Humidity
 	sock->recv(&msg);   
@@ -206,7 +219,7 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 		std::memcpy(&errorcodes[0], msg.data(), msg.size());
 	}
 
-	//Receive_Config(sock);
+	Receive_Config(sock);
 	
 	return true;
 }
@@ -353,25 +366,77 @@ bool SlowControlMonitor::Receive_Config(zmq::socket_t* sock){
 	return true;
 }
 
-bool SlowControlMonitor::SetDefaults(){
-	HV_state_set = 0;
-	HV_volts = 0;
-	LV_state_set = 0;
+bool SlowControlMonitor::SetDefaultValues(){
+	//Timestamp
+	unsigned long timeSinceEpochMilliseconds=0;
 
-	LIMIT_temperature_low=55;
-	LIMIT_temperature_high=60;
-	LIMIT_humidity_low=10;
-	LIMIT_humidity_high=20; 
-	LIMIT_Thermistor_temperature_low = 45;
- 	LIMIT_Thermistor_temperature_high = 50; 
-	Trig0_threshold=1.5;
-	Trig1_threshold=1.5;
-	TrigVref=2.981;
+	//RHT
+	float humidity_mon=-1;
+	float temperature_mon=-1;
+	float temperature_thermistor=-1; 
+
+	//HV
+	int HV_mon=-1;
+	float HV_return_mon =-1;
+
+	//LV
+	int LV_mon=-1;
+	float v33=-1;
+	float v25=-1;
+	float v12=-1;
+
+	//Saltbridge
+	float saltbridge = -1;
+
+	//Emergency variables
+	int FLAG_temperature = 0;
+	int FLAG_humidity = 0;
+	int FLAG_temperature_Thermistor = 0;
+	int FLAG_saltbridge = 0;
 
 	//relay
-	relayCh1=false; 
-	relayCh2=false;
-	relayCh3=true;
+	bool relayCh1_mon;
+	bool relayCh2_mon;
+	bool relayCh3_mon;
+
+	//Triggerboard
+	float Trig0_mon=-1;
+	float Trig1_mon=-1;
+
+	//Light level
+	float light=-1;
+
+	return true;
+}
+
+bool SlowControlMonitor::SetDefaultSettings(){
+	//HV
+	bool HV_state_set=false; //Default chosen 
+	float HV_volts=0; //Default chosen 
+
+	//LV
+	bool LV_state_set=false; //Default chosen 
+
+	float LIMIT_temperature_low = 50; //Default chosen 
+	float LIMIT_temperature_high = 58; //Default chosen 
+	float LIMIT_humidity_low = 15; //Default chosen 
+	float LIMIT_humidity_high = 20; //Default chosen 
+	float LIMIT_Thermistor_temperature_low = 7000; //Default chosen 
+	float LIMIT_Thermistor_temperature_high = 5800; //Default chosen 
+	float LIMIT_saltbridge_low = 500000; //Default chosen 
+	float LIMIT_saltbridge_high = 400000; //Default chosen 
+
+	//relay
+	bool SumRelays=false;
+	bool relayCh1=false; //Default chosen 
+	bool relayCh2=false; //Default chosen 
+	bool relayCh3=false; //Default chosen 
+
+	//Triggerboard
+	float TrigVref=2.981; //Default chosen 
+	float Trig0_threshold=1.223; //Default chosen 
+
+	float Trig1_threshold=1.23; //Default chosen 
 
 	return true;
 }
@@ -379,6 +444,7 @@ bool SlowControlMonitor::SetDefaults(){
 
 bool SlowControlMonitor::Print(){
 
+	std::cout << "LAPPD ID is " << LAPPD_ID << std::endl;
 	std::cout << "Timestamp ms since epoch = " << timeSinceEpochMilliseconds << std::endl;
 	std::cout << "humidity = " << humidity_mon << std::endl;
 	std::cout << "temperature = " << temperature_mon << std::endl;

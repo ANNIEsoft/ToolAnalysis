@@ -48,8 +48,8 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.HV_state_set=true;
     lappd_sc.HV_volts=1000*rand.Gaus(1,0.02);
     lappd_sc.HV_return_mon=2000*rand.Gaus(1,0.02);
-    //lappd_sc.timeSinceEpochMilliseconds=1648166400000;
-    lappd_sc.timeSinceEpochMilliseconds=7957664024296712389;
+    lappd_sc.timeSinceEpochMilliseconds="1648166400000";
+    //lappd_sc.timeSinceEpochMilliseconds=7957664024296712389;
     //lappd_sc.HV_volts=0;
     //lappd_sc.HV_return_mon=0;
     lappd_sc.LV_mon=1;
