@@ -161,9 +161,15 @@ bool MonitorLAPPDSC::Execute() {
 		if (verbosity > 1)
 			std::cout << "MonitorLAPPDSC: New slow-control data available." << std::endl;
 
+		m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
+		if ((lappd_SC.errorcodes.size() > 1) || (lappd_SC.errorcodes.at(0) != 0)){
+			std::cout <<"///////// Encountered error in slow control data //////////"<<std::endl;
+			std::cout << lappd_SC.Print() << std::endl;
+		}
+		
 		if (duration > period_update) {
 
-			m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
+			//m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
 
 			//std::cout <<"Salt-bridge (received): "<<lappd_SC.saltbridge<<std::endl;
 			if (verbosity > -1) {
