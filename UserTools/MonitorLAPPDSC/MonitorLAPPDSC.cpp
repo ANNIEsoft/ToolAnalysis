@@ -1512,6 +1512,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	text_hv_monvolt->SetTextColor(1);
 	if (lappd_SC.HV_return_mon > 2400.) text_hv_monvolt->SetTextColor(kRed);
 
+
 	//LV State Set
 	/*std::stringstream ss_text_lv_state;
 	std::string temp_lv_state = (lappd_SC.LV_state_set) ? "ON" : "OFF";
@@ -1551,10 +1552,12 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_v33_temp << "V33: " << lappd_SC.v33 << " V (" << current_time.str() << ")";
 	text_v33->SetText(0.06, 0.4, ss_v33_temp.str().c_str());
 	text_v33->SetTextColor(1);
+	if (lappd_SC.LV_state_set){
 	if (lappd_SC.v33 < v33_min || lappd_SC.v33 > v33_max) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is outside of expected range [" + std::to_string(v33_min) + " , " + std::to_string(v33_max) + "]!!!", v_error, verbosity);
 		text_v33->SetTextColor(kRed);
 		lvhv_check = false;
+	}
 	}
 
 	//V25
@@ -1562,10 +1565,12 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_v25_temp << "V31: " << lappd_SC.v25 << " V (" << current_time.str() << ")";
 	text_v25->SetText(0.06, 0.3, ss_v25_temp.str().c_str());
 	text_v25->SetTextColor(1);
+	if (lappd_SC.LV_state_set){
 	if (lappd_SC.v25 < v25_min || lappd_SC.v25 > v25_max) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is outside of expected range [" + std::to_string(v25_min) + " , " + std::to_string(v25_max) + "]!!!", v_error, verbosity);
 		text_v25->SetTextColor(kRed);
 		lvhv_check = false;
+	}
 	}
 
 	//V12
@@ -1573,10 +1578,29 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_v12_temp << "V18: " << lappd_SC.v12 << " V (" << current_time.str() << ")";
 	text_v12->SetText(0.06, 0.2, ss_v12_temp.str().c_str());
 	text_v12->SetTextColor(1);
+	if (lappd_SC.LV_state_set){
 	if (lappd_SC.v12 < v12_min || lappd_SC.v12 > v12_max) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is outside of expected range [" + std::to_string(v12_min) + " , " + std::to_string(v12_max) + "]!!!", v_error, verbosity);
 		text_v12->SetTextColor(kRed);
 		lvhv_check = false;
+	}
+	}
+	if (!lappd_SC.LV_mon){
+		if (lappd_SC.v12 > 0.1){
+			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
+			text_v12->SetTextColor(kRed);
+			lvhv_check = false;
+		}
+		if (lappd_SC.v25 > 0.1){
+			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
+			text_v25->SetTextColor(kRed);
+			lvhv_check = false;
+		}
+		if (lappd_SC.v33 > 0.1){
+			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
+			text_v33->SetTextColor(kRed);
+			lvhv_check = false;
+		}
 	}
 
 	//Actual drawing

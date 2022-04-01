@@ -52,11 +52,11 @@ bool MonitorSimReceiveLAPPD::Execute(){
     //lappd_sc.timeSinceEpochMilliseconds=7957664024296712389;
     //lappd_sc.HV_volts=0;
     //lappd_sc.HV_return_mon=0;
-    lappd_sc.LV_mon=1;
-    lappd_sc.LV_state_set=true;
+    lappd_sc.LV_mon=0;
+    lappd_sc.LV_state_set=false;
     lappd_sc.v33=3.3*rand.Gaus(1,0.01);
     lappd_sc.v25=2.5*rand.Gaus(1,0.01);
-    lappd_sc.v12=1.2*rand.Gaus(1,0.01);
+    lappd_sc.v12=-1.;
     lappd_sc.LIMIT_temperature_low = 30;
     lappd_sc.LIMIT_temperature_high = 50;
     lappd_sc.LIMIT_humidity_low = 75;
