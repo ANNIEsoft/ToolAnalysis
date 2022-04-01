@@ -477,7 +477,7 @@ void MonitorDAQ::InitializeHists(){
   
   gr_mem_rpi = new TGraph();
   gr_mem_rpi->SetName("gr_mem_rpi");
-  gr_mem_rpi->SetTitle("RPi Memory");
+  gr_mem_rpi->SetTitle("RPi1 Memory");
   if (draw_marker) gr_mem_rpi->SetMarkerStyle(20);
   gr_mem_rpi->SetMarkerColor(kViolet);
   gr_mem_rpi->SetLineColor(kViolet);
@@ -547,7 +547,7 @@ void MonitorDAQ::InitializeHists(){
   
   gr_cpu_rpi = new TGraph();
   gr_cpu_rpi->SetName("gr_cpu_rpi");
-  gr_cpu_rpi->SetTitle("RPi CPU Usage");
+  gr_cpu_rpi->SetTitle("RPi1 CPU Usage");
   if (draw_marker) gr_cpu_rpi->SetMarkerStyle(20);
   gr_cpu_rpi->SetMarkerColor(kViolet);
   gr_cpu_rpi->SetLineColor(kViolet);
@@ -1526,7 +1526,7 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   multi_mem->Add(gr_mem_vme03);
   leg_mem->AddEntry(gr_mem_vme03,"VME03","l");
   multi_mem->Add(gr_mem_rpi);
-  leg_mem->AddEntry(gr_mem_rpi,"RPi","l");
+  leg_mem->AddEntry(gr_mem_rpi,"RPi1","l");
   multi_mem->Draw("apl");
   multi_mem->SetTitle(ss_title_memory.str().c_str());
   multi_mem->GetYaxis()->SetTitle("Memory [%]");
@@ -1555,7 +1555,7 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   multi_cpu->Add(gr_cpu_vme03);
   leg_cpu->AddEntry(gr_cpu_vme03,"VME03","l");
   multi_cpu->Add(gr_cpu_rpi);
-  leg_cpu->AddEntry(gr_cpu_rpi,"RPi","l");
+  leg_cpu->AddEntry(gr_cpu_rpi,"RPi1","l");
   multi_cpu->Draw("apl");
   multi_cpu->SetTitle(ss_title_cpu.str().c_str());
   multi_cpu->GetYaxis()->SetTitle("CPU [%]");
@@ -2107,7 +2107,7 @@ void MonitorDAQ::PrintInfoBox(){
   std::stringstream ss_text_mem_rpi;
   mem_round = round(mem_rpi*100.)/100.;
   cpu_round = round(cpu_rpi*100.)/100.;
-  ss_text_mem_rpi << "RPi Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_rpi_time.str()<<")";
+  ss_text_mem_rpi << "RPi1 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_rpi_time.str()<<")";
   text_mem_rpi->SetText(0.06,0.0,ss_text_mem_rpi.str().c_str());
   text_mem_rpi->SetTextColor(1);      //default color
   if (mem_round*100 >= 80.) text_mem_rpi->SetTextColor(kOrange);

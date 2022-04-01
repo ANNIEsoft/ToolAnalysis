@@ -884,7 +884,9 @@ void MonitorLAPPDSC::WriteToFile() {
 
 	t_hum = lappd_SC.humidity_mon;
 	t_temp = lappd_SC.temperature_mon;
-	t_thermistor = lappd_SC.temperature_thermistor;
+	t_thermistor = 0.;
+	if (lappd_SC.temperature_thermistor > 0) t_thermistor = TMath::Log(lappd_SC.temperature_thermistor/1000./29.4)/(-0.0437);
+	//t_thermistor = lappd_SC.temperature_thermistor;
 	t_salt = lappd_SC.saltbridge;
 	t_hvmon = lappd_SC.HV_mon;
 	t_hvstateset = lappd_SC.HV_state_set;
@@ -1293,7 +1295,9 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	}
 
 	std::stringstream ss_text_thermistor;
-	ss_text_thermistor << "Thermistor: " << lappd_SC.temperature_thermistor << " (" << current_time.str() << ")";
+	double thermistor_temp = 0.;
+	if (lappd_SC.temperature_thermistor>0) thermistor_temp = TMath::Log(lappd_SC.temperature_thermistor/1000./29.4)/(-0.0437);
+	ss_text_thermistor << "Thermistor: " << thermistor_temp << " deg C (" << current_time.str() << ")";
 	text_thermistor->SetText(0.06, 0.6, ss_text_thermistor.str().c_str());
 	text_thermistor->SetTextColor(1);
 	if (lappd_SC.temperature_thermistor < limit_thermistor_temperature_low) {
@@ -1960,15 +1964,19 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 
 	error_check = true;
 
-	//Always write all the errors to the log
+	//Always write all the errors to the log (unless there's only one error = 0x0000), then all good
+	if (!(errorCodes.size()==1 && errorCodes.at(0) == 0)){
 	for (size_t i_error = 0 ; i_error < errorCodes.size(); i_error++) {
 		boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 		struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
 		std::stringstream current_time;
 		current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
-		std::string errorMessage = "MonitorLAPPDSC: SEVERE ERROR: Error Code: " + std::to_string(errorCodes.at(errorCodes.size()-1-i_error)) + " timestamp " + current_time.str();
+		std::stringstream ss_errorcode_hex;
+		ss_errorcode_hex << "0x" << std::hex << errorCodes.at(errorCodes.size()-1-i_error);
+		std::string errorMessage = "MonitorLAPPDSC: SEVERE ERROR: Error Code: " + ss_errorcode_hex.str() + " timestamp " + current_time.str();
 		Log(errorMessage, v_error, verbosity);
+	}
 	}
 
 	//If we have too many errors to show them all, just display one warning.
@@ -1985,7 +1993,9 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 			text_error_title->Draw();
 			for (size_t i_error = 0 ; i_error < 7; i_error++) {
 				std::stringstream ss_error_temp;
-				ss_error_temp << "Error with Code " << std::to_string(errorCodes.at(errorCodes.size()-1-i_error)) << " (" << current_time.str() << ")";
+				std::stringstream ss_errorcode_hex;
+                		ss_errorcode_hex << "0x" << std::hex << errorCodes.at(errorCodes.size()-1-i_error);
+				ss_error_temp << "Error with Code " << ss_errorcode_hex.str() << " (" << current_time.str() << ")";
 				text_error_vector.at(i_error)->SetText(0.06, 0.8 - (i_error*0.1), ss_error_temp.str().c_str());
 				text_error_vector.at(i_error)->SetTextColor(kRed);
 				text_error_vector.at(i_error)->SetTextSize(0.05);
@@ -2040,15 +2050,15 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 			text_error_title->Draw();
 			for (size_t i_error = 0 ; i_error < errorCodes.size(); i_error++) {
 				std::stringstream ss_error_temp;
-				ss_error_temp << "Error with Code " << std::to_string(errorCodes.at(errorCodes.size()-1-i_error)) << " (" << current_time.str() << ")";
+				std::stringstream ss_errorcode_hex;
+                		ss_errorcode_hex << "0x" << std::hex << errorCodes.size()-1-i_error;
+				ss_error_temp << "Error with Code " << ss_errorcode_hex.str() << " (" << current_time.str() << ")";
 				text_error_vector.at(i_error)->SetText(0.06, 0.8 - (i_error*0.1), ss_error_temp.str().c_str());
 				text_error_vector.at(i_error)->SetTextColor(kRed);
 				text_error_vector.at(i_error)->SetTextSize(0.05);
 				text_error_vector.at(i_error)->SetNDC(1);
 				text_error_vector.at(i_error)->Draw();
 			}
-			error_check = false;
-
 			error_check = false;
 
 		}
@@ -2305,7 +2315,7 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	canvas_thermistor->cd();
 	canvas_thermistor->Clear();
 	graph_thermistor->SetTitle(ss_thermistor.str().c_str());
-	graph_thermistor->GetYaxis()->SetTitle("Thermistor resistance [#Omega]");
+	graph_thermistor->GetYaxis()->SetTitle("Thermistor temperature [deg C]");
 	graph_thermistor->GetXaxis()->SetTimeDisplay(1);
 	graph_thermistor->GetXaxis()->SetLabelSize(0.03);
 	graph_thermistor->GetXaxis()->SetLabelOffset(0.03);
