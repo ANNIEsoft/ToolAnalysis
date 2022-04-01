@@ -1827,7 +1827,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	ss_relay_mon1_temp << "Relay 1 Mon: " << ch1_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon1->SetText(0.06, 0.5, ss_relay_mon1_temp.str().c_str());
 	text_relay_mon1->SetTextColor(1);
-	if (!lappd_SC.relayCh1_mon) {
+	if (lappd_SC.relayCh1_mon != lappd_SC.relayCh1) {
 		text_relay_mon1->SetTextColor(kRed);
 		relay_check = false;
 	}
@@ -1838,7 +1838,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	ss_relay_mon2_temp << "Relay 2 Mon: " << ch2_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon2->SetText(0.06, 0.4, ss_relay_mon2_temp.str().c_str());
 	text_relay_mon2->SetTextColor(1);
-	if (!lappd_SC.relayCh2_mon) {
+	if (lappd_SC.relayCh2_mon != lappd_SC.relayCh2) {
 		text_relay_mon2->SetTextColor(kRed);
 		relay_check = false;
 	}
@@ -1849,7 +1849,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	ss_relay_mon3_temp << "Relay 3 Mon: " << ch3_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon3->SetText(0.06, 0.3, ss_relay_mon3_temp.str().c_str());
 	text_relay_mon3->SetTextColor(1);
-	if (!lappd_SC.relayCh3_mon) {
+	if (lappd_SC.relayCh3_mon != lappd_SC.relayCh3) {
 		text_relay_mon3->SetTextColor(kRed);
 		relay_check = false;
 	}
