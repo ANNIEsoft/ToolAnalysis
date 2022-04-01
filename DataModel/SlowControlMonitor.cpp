@@ -368,75 +368,74 @@ bool SlowControlMonitor::Receive_Config(zmq::socket_t* sock){
 
 bool SlowControlMonitor::SetDefaultValues(){
 	//Timestamp
-	unsigned long timeSinceEpochMilliseconds=0;
+	timeSinceEpochMilliseconds="";
 
 	//RHT
-	float humidity_mon=-1;
-	float temperature_mon=-1;
-	float temperature_thermistor=-1; 
+	humidity_mon=-1;
+	temperature_mon=-1;
+	temperature_thermistor=-1; 
 
 	//HV
-	int HV_mon=-1;
-	float HV_return_mon =-1;
+	HV_mon=-1;
+	HV_return_mon =-1;
 
 	//LV
-	int LV_mon=-1;
-	float v33=-1;
-	float v25=-1;
-	float v12=-1;
+	LV_mon=-1;
+	v33=-1;
+	v25=-1;
+	v12=-1;
 
 	//Saltbridge
-	float saltbridge = -1;
+	saltbridge = -1;
 
 	//Emergency variables
-	int FLAG_temperature = 0;
-	int FLAG_humidity = 0;
-	int FLAG_temperature_Thermistor = 0;
-	int FLAG_saltbridge = 0;
+	FLAG_temperature = 0;
+	FLAG_humidity = 0;
+	FLAG_temperature_Thermistor = 0;
+	FLAG_saltbridge = 0;
 
 	//relay
-	bool relayCh1_mon;
-	bool relayCh2_mon;
-	bool relayCh3_mon;
+	relayCh1_mon;
+	relayCh2_mon;
+	relayCh3_mon;
 
 	//Triggerboard
-	float Trig0_mon=-1;
-	float Trig1_mon=-1;
+	Trig0_mon=-1;
+	Trig1_mon=-1;
 
 	//Light level
-	float light=-1;
+	light=-1;
 
 	return true;
 }
 
 bool SlowControlMonitor::SetDefaultSettings(){
 	//HV
-	bool HV_state_set=false; //Default chosen 
-	float HV_volts=0; //Default chosen 
+	HV_state_set=false; //Default chosen 
+	HV_volts=0; //Default chosen 
 
 	//LV
-	bool LV_state_set=false; //Default chosen 
+	LV_state_set=false; //Default chosen 
 
-	float LIMIT_temperature_low = 50; //Default chosen 
-	float LIMIT_temperature_high = 58; //Default chosen 
-	float LIMIT_humidity_low = 15; //Default chosen 
-	float LIMIT_humidity_high = 20; //Default chosen 
-	float LIMIT_Thermistor_temperature_low = 7000; //Default chosen 
-	float LIMIT_Thermistor_temperature_high = 5800; //Default chosen 
-	float LIMIT_saltbridge_low = 500000; //Default chosen 
-	float LIMIT_saltbridge_high = 400000; //Default chosen 
+	LIMIT_temperature_low = 50; //Default chosen 
+	LIMIT_temperature_high = 58; //Default chosen 
+	LIMIT_humidity_low = 15; //Default chosen 
+	LIMIT_humidity_high = 20; //Default chosen 
+	LIMIT_Thermistor_temperature_low = 7000; //Default chosen 
+	LIMIT_Thermistor_temperature_high = 5800; //Default chosen 
+	LIMIT_saltbridge_low = 500000; //Default chosen 
+	LIMIT_saltbridge_high = 400000; //Default chosen 
 
 	//relay
-	bool SumRelays=false;
-	bool relayCh1=false; //Default chosen 
-	bool relayCh2=false; //Default chosen 
-	bool relayCh3=false; //Default chosen 
+	SumRelays=false;
+	relayCh1=false; //Default chosen 
+	relayCh2=false; //Default chosen 
+	relayCh3=false; //Default chosen 
 
 	//Triggerboard
-	float TrigVref=2.981; //Default chosen 
-	float Trig0_threshold=1.223; //Default chosen 
-
-	float Trig1_threshold=1.23; //Default chosen 
+	TrigVref=2.981; //Default chosen 
+	Trig0_threshold=1.223; //Default chosen 
+	Trig1_threshold=1.23; //Default chosen 
 
 	return true;
 }
