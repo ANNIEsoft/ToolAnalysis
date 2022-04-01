@@ -2365,7 +2365,7 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	canvas_light->SaveAs(ss_light_path.str().c_str());
 
 	std::stringstream ss_hv;
-	ss_hv << "HV time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+	ss_hv << "HV Set time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_hv->cd();
 	canvas_hv->Clear();
 	graph_hv_volt->SetTitle(ss_hv.str().c_str());
@@ -2382,8 +2382,10 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	ss_hv_path << outpath << "LAPPDSC_TimeEvolution_HV_" << file_ending << "." << img_extension;
 	canvas_hv->SaveAs(ss_hv_path.str().c_str());
 
+	std::stringstream ss_hv_mon;
+	ss_hv_mon << "HV Mon time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_hv->Clear();
-	graph_hv_volt_mon->SetTitle(ss_hv.str().c_str());
+	graph_hv_volt_mon->SetTitle(ss_hv_mon.str().c_str());
 	graph_hv_volt_mon->GetYaxis()->SetTitle("HV Mon [V]");
 	graph_hv_volt_mon->GetXaxis()->SetTimeDisplay(1);
 	graph_hv_volt_mon->GetXaxis()->SetLabelSize(0.03);
