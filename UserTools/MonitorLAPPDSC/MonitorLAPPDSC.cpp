@@ -1585,7 +1585,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		lvhv_check = false;
 	}
 	}
-	if (!lappd_SC.LV_mon){
+	if (lappd_SC.LV_mon == 0){
 		if (lappd_SC.v12 > 0.1){
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
 			text_v12->SetTextColor(kRed);
