@@ -275,7 +275,12 @@ class MonitorLAPPDSC: public Tool {
   bool lvhv_check = true;
   bool trigger_check = true;
   bool relay_check = true;
-  bool error_check = false;
+  bool error_check = true;
+  bool error_warning = false;
+  bool relay_warning = false;
+  bool trigger_warning = false;
+  bool lvhv_warning = false;
+  bool temp_humid_warning = false;
 
   //Overview texts
   TText *text_overview_title = nullptr;
