@@ -154,10 +154,13 @@ bool MonitorLAPPDSC::Execute() {
 	std::string State;
 	m_data->CStore.Get("State", State);
 
+	bool has_mon_data;
+	m_data->CStore.Get("HasLAPPDMonData",has_mon_data);
+
 	if (State == "Wait") {
 		if (verbosity > 2)
 			std::cout << "MonitorLAPPDSC: State is " << State << std::endl;
-	} else if (State == "LAPPDMon") {
+	} else if (State == "LAPPDMon" && has_mon_data) {
 		if (verbosity > 1)
 			std::cout << "MonitorLAPPDSC: New slow-control data available." << std::endl;
 

@@ -30,6 +30,9 @@ bool MonitorSimReceiveLAPPD::Execute(){
 
   if (verbosity > 2) std::cout <<"MonitorSimReceiveLAPPD: Executing"<<std::endl;
 
+    m_data->CStore.Set("HasLAPPDMonData",false);
+
+
   if (mode == "Wait"){
     std::string Wait = "Wait";
     m_data->CStore.Set("State",Wait);
@@ -38,6 +41,7 @@ bool MonitorSimReceiveLAPPD::Execute(){
   else if (mode == "Single"){
     std::string State = "LAPPDMon";
     m_data->CStore.Set("State",State);
+    m_data->CStore.Set("HasLAPPDMonData",true);
     SlowControlMonitor lappd_sc;
     TRandom3 rand(0);
     lappd_sc.humidity_mon = 40*rand.Gaus(1,0.02);
@@ -82,7 +86,7 @@ bool MonitorSimReceiveLAPPD::Execute(){
     std::vector<unsigned int> vec_errors;
     int numberOfErrors = (int)rand.Gaus(9, 4);
     for(int i = 0; i < 11; i++){
-    	vec_errors.push_back((int)rand.Gaus(300000, 1000));
+    	vec_errors.push_back((int)rand.Gaus(30000000, 1000));
     }
     vec_errors.push_back(0);
     lappd_sc.errorcodes = vec_errors;
