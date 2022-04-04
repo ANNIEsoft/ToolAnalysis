@@ -1263,6 +1263,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	//-------------------------------------------------------
 
 	temp_humid_check = true;
+	temp_humid_warning = false;
 
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
@@ -1277,7 +1278,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	if (lappd_SC.temperature_mon > limit_temperature_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored temperature >>>" + std::to_string(lappd_SC.temperature_mon) + "<<< is over first alert level [" + std::to_string(limit_temperature_low) + "]!!!", v_error, verbosity);
 		text_temp->SetTextColor(kOrange);
-		temp_humid_check = false;
+		temp_humid_warning = true;
 	}
 	if (lappd_SC.temperature_mon > limit_temperature_high) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored temperature >>>" + std::to_string(lappd_SC.temperature_mon) + "<<< is over second alert level [" + std::to_string(limit_temperature_high) + "]!!!", v_error, verbosity);
@@ -1292,7 +1293,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	if (lappd_SC.humidity_mon > limit_humidity_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored humidity >>>" + std::to_string(lappd_SC.humidity_mon) + "<<< is over first alert level [" + std::to_string(limit_humidity_low) + "]!!!", v_error, verbosity);
 		text_hum->SetTextColor(kOrange);
-		temp_humid_check = false;
+		temp_humid_warning = true;
 	}
 	if (lappd_SC.humidity_mon > limit_humidity_high) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored humidity >>>" + std::to_string(lappd_SC.humidity_mon) + "<<< is over second alert level [" + std::to_string(limit_humidity_high) + "]!!!", v_error, verbosity);
@@ -1309,7 +1310,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	if (lappd_SC.temperature_thermistor < limit_thermistor_temperature_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored thermistor resistance >>>" + std::to_string(lappd_SC.temperature_thermistor) + "<<< is below first alert level [" + std::to_string(limit_thermistor_temperature_low) + "]!!!", v_error, verbosity);
 		text_thermistor->SetTextColor(kOrange);
-		temp_humid_check = false;
+		temp_humid_warning = true;
 	}
 	if (lappd_SC.temperature_thermistor < limit_thermistor_temperature_high) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored thermistor resistance >>>" + std::to_string(lappd_SC.temperature_thermistor) + "<<< is below second alert level [" + std::to_string(limit_thermistor_temperature_high) + "]!!!", v_error, verbosity);
@@ -1324,7 +1325,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	if (lappd_SC.saltbridge < limit_salt_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is below first alert level [" + std::to_string(limit_salt_low) + "]!!!", v_error, verbosity);
 		text_salt->SetTextColor(kOrange);
-		temp_humid_check = false;
+		temp_humid_warning = true;
 	}
 	if (lappd_SC.saltbridge < limit_salt_high) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is below second alert level [" + std::to_string(limit_salt_high) + "]!!!", v_error, verbosity);
@@ -1334,7 +1335,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	if (lappd_SC.saltbridge > 630000.) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is above first alert level [630,000]!!!", v_error, verbosity);
 		text_salt->SetTextColor(kOrange);
-		temp_humid_check = false;
+		temp_humid_warning = true;
 	}
 
 	std::stringstream ss_text_light;
@@ -1355,7 +1356,8 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Temperature emergency flag is set to >>> "+std::to_string(lappd_SC.FLAG_temperature)+"<<<< ("+emergency_temp+") !!!", v_error, verbosity);
 		if (lappd_SC.FLAG_temperature == 1) text_flag_temp->SetTextColor(kOrange);
 		else text_flag_temp->SetTextColor(kRed);
-		temp_humid_check = false;
+		if (lappd_SC.FLAG_temperature == 1) temp_humid_warning = true;
+		else temp_humid_check = false;
 	}
 
 	std::stringstream ss_text_flag_hum;
@@ -1371,7 +1373,8 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Humidity emergency flag is set to >>> " +std::to_string(lappd_SC.FLAG_humidity) + " <<<< (" + emergency_hum + ") !!!", v_error, verbosity);
 		if (lappd_SC.FLAG_humidity == 1) text_flag_hum->SetTextColor(kOrange);
 		else text_flag_hum->SetTextColor(kRed);
-		temp_humid_check = false;
+		if (lappd_SC.FLAG_humidity == 1) temp_humid_warning = true;
+		else temp_humid_check = false;
 	}
 
 	std::stringstream ss_text_flag_thermistor;
@@ -1387,7 +1390,8 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Thermistor emergency flag is set to >>> " +std::to_string(lappd_SC.FLAG_temperature_Thermistor) +  "<<<< (" + emergency_thermistor + ") !!!", v_error, verbosity);
 		if (lappd_SC.FLAG_temperature_Thermistor == 1) text_flag_thermistor->SetTextColor(kOrange);
 		else text_flag_thermistor->SetTextColor(kRed);
-		temp_humid_check = false;
+		if (lappd_SC.FLAG_temperature_Thermistor == 1) temp_humid_warning = true;
+		else temp_humid_check = false;
 	}
 
 	std::stringstream ss_text_flag_salt;
@@ -1403,7 +1407,8 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Salt-bridge emergency flag is set to >>> " +std::to_string(lappd_SC.FLAG_saltbridge) + "<<<< (" + emergency_salt + ") !!!", v_error, verbosity);
 		if (lappd_SC.FLAG_saltbridge == 1) text_flag_salt->SetTextColor(kOrange);
 		else text_flag_salt->SetTextColor(kRed);
-		temp_humid_check = false;
+		if (lappd_SC.FLAG_saltbridge == 1) temp_humid_warning = true;
+		else temp_humid_check = false;
 	}
 
 	text_temphum_title->SetTextSize(0.05);
@@ -1457,6 +1462,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	//-------------------------------------------------------
 
 	lvhv_check = true;
+	lvhv_warning = false;
 
 	//I guess this part will be the same for each of the status drawings
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
@@ -1702,6 +1708,9 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 void MonitorLAPPDSC::DrawStatus_Trigger() {
 
 	Log("MonitorLAPPDSC: DrawStatus_Trigger", v_message, verbosity);
+	
+	trigger_check = true;
+	trigger_warning = false;
 
 	//-------------------------------------------------------
 	//-------------DrawStatus_Trigger -----------------------
@@ -1809,6 +1818,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	//-------------------------------------------------------
 
 	relay_check = true;
+	relay_warning = false;
 
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
@@ -1993,6 +2003,7 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 	std::vector<unsigned int> errorCodes = lappd_SC.errorcodes;
 
 	error_check = true;
+	error_warning = false;
 
 	//Always write all the errors to the log (unless there's only one error = 0x0000), then all good
 	if (!(errorCodes.size()==1 && errorCodes.at(0) == 0)){
@@ -2131,6 +2142,9 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	if (!temp_humid_check) {
 		text_overview_temp->SetTextColor(kRed);
 	}
+	else if (temp_humid_warning) {
+		text_overview_temp->SetTextColor(kOrange);
+	}
 	else{
 		text_overview_temp->SetTextColor(kGreen);
 	}
@@ -2142,6 +2156,9 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_overview_lvhv->SetTextColor(1);
 	if (!lvhv_check) {
 		text_overview_lvhv->SetTextColor(kRed);
+	}
+	else if (lvhv_warning) {
+		text_overview_lvhv->SetTextColor(kOrange);
 	}
 	else{
 		text_overview_lvhv->SetTextColor(kGreen);
@@ -2155,6 +2172,9 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	if (!trigger_check) {
 		text_overview_trigger->SetTextColor(kRed);
 	}
+	else if (trigger_warning){
+		text_overview_trigger->SetTextColor(kOrange);
+	}
 	else{
 		text_overview_trigger->SetTextColor(kGreen);
 	}
@@ -2167,6 +2187,9 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	if (!relay_check) {
 		text_overview_relay->SetTextColor(kRed);
 	}
+	else if (relay_warning) {
+		text_overview_relay->SetTextColor(kOrange);
+	}
 	else{
 		text_overview_relay->SetTextColor(kGreen);
 	}
@@ -2178,6 +2201,9 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_overview_error->SetTextColor(1);
 	if (!error_check) {
 		text_overview_error->SetTextColor(kRed);
+	}
+	else if (error_warning) {
+		text_overview_error->SetTextColor(kOrange);
 	}
 	else{
 		text_overview_error->SetTextColor(kGreen);
