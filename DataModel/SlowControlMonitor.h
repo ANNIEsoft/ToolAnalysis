@@ -4,6 +4,8 @@
 #include "zmq.hpp"
 #include <SerialisableObject.h>
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <iomanip>
 #include <vector>
 #include <map>

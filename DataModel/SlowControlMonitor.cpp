@@ -148,7 +148,9 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 
 	//Timestamp
 	sock->recv(&msg);   
-	timeSinceEpochMilliseconds=*(reinterpret_cast<char*>(msg.data()));
+	std::istringstream iss(static_cast<char*>(msg.data()));
+	iss >> timeSinceEpochMilliseconds;   
+	//timeSinceEpochMilliseconds=*(reinterpret_cast<char*>(msg.data()));
 
 	//Temperature/Humidity
 	sock->recv(&msg);   

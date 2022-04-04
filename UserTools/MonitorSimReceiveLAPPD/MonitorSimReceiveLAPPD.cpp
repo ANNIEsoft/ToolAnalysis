@@ -85,9 +85,9 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.light = 0.8*rand.Gaus(1,0.05);
     std::vector<unsigned int> vec_errors;
     int numberOfErrors = (int)rand.Gaus(9, 4);
-    for(int i = 0; i < 11; i++){
+ /*   for(int i = 0; i < 11; i++){
     	vec_errors.push_back((int)rand.Gaus(30000000, 1000));
-    }
+    }*/
     vec_errors.push_back(0);
     lappd_sc.errorcodes = vec_errors;
 	
