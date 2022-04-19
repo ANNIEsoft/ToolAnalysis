@@ -137,5 +137,6 @@ if (tool=="LAPPDStoreBaselineSubtract") ret=new LAPPDStoreBaselineSubtract;
 if (tool=="LAPPDStoreFindT0") ret=new LAPPDStoreFindT0;
 if (tool=="LAPPDStoreReadIn") ret=new LAPPDStoreReadIn;
 if (tool=="LAPPDStoreReorderData") ret=new LAPPDStoreReorderData;
+if (tool=="LAPPDGausBaselineSubtraction") ret=new LAPPDGausBaselineSubtraction;
 return ret;
 }
