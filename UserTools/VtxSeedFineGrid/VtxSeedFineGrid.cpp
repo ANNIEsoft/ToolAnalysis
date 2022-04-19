@@ -48,8 +48,8 @@ bool VtxSeedFineGrid::Execute(){
 		return false;
 	}
 
-	if (!(useTrueDir || useMRDTrack || usePastResolution)) {
-		Log("Using simple direction (not yet implemented)", v_debug, verbosity);
+	if (!(useTrueDir || useMRDTrack || usePastResolution || useDirectionGrid)) {
+		Log("Using simple direction", v_debug, verbosity);
 	}
 
 	if (useTrueDir && useMRDTrack) {
@@ -130,6 +130,12 @@ Position VtxSeedFineGrid::FindCenter() {
 			seedDirY = iSeed.GetDirection().Y();
 			seedDirZ = iSeed.GetDirection().Z();
 		}
+		else 	if (!(useTrueDir || useMRDTrack || usePastResolution || useDirectionGrid)) {
+			this->FindSimpleDirection(&iSeed);
+			seedDirX = iSeed.GetDirection().X();
+			seedDirY = iSeed.GetDirection().Y();
+			seedDirZ = iSeed.GetDirection().Z();
+		}
 	/*	else if (usePastResolution) {
 			TFile *f1 = new TFile(InputFile);
 			TTree *t1 = (TTree*)f1->Get("phaseIITriggerTree");
@@ -140,9 +146,9 @@ Position VtxSeedFineGrid::FindCenter() {
 			iSeed.GetDirection()->SetTheta(findDirectionMRD().GetTheta());
 		}*/
 		if (useDirectionGrid) {
-			for (int l = 0; l < 200; l++) {
-				double theta = (6 * TMath::Pi() / 200) * l;
-				double phi = (TMath::Pi() / 400) * l;
+			for (int l = 0; l < 50; l++) {
+				double theta = (6 * TMath::Pi() / 50) * l;
+				double phi = (TMath::Pi() / 200) * l;
 				seedDirX = sin(phi)*cos(theta);
 				seedDirY = sin(phi)*sin(theta);
 				seedDirZ = cos(phi);
@@ -244,6 +250,87 @@ Direction VtxSeedFineGrid::findDirectionMRD() {
 
 	return result;
 
+}
+
+RecoVertex* VtxSeedFineGrid::FindSimpleDirection(RecoVertex* myVertex) {
+
+	/// get vertex position
+	double vtxX = myVertex->GetPosition().X();
+	double vtxY = myVertex->GetPosition().Y();
+	double vtxZ = myVertex->GetPosition().Z();
+	double vtxTime = myVertex->GetTime();
+
+	// current status
+	// ==============
+	int status = myVertex->GetStatus();
+
+	/// loop over digits
+	/// ================
+	double Swx = 0.0;
+	double Swy = 0.0;
+	double Swz = 0.0;
+	double Sw = 0.0;
+	double digitq = 0.;
+	double dx, dy, dz, ds, px, py, pz, q;
+
+	RecoDigit digit;
+	for (int idigit = 0; idigit < fDigitList->size(); idigit++) {
+		digit = fDigitList->at(idigit);
+		if (digit.GetFilterStatus()) {
+			q = digit.GetCalCharge();
+			dx = digit.GetPosition().X() - vtxX;
+			dy = digit.GetPosition().Y() - vtxY;
+			dz = digit.GetPosition().Z() - vtxZ;
+			ds = sqrt(dx*dx + dy * dy + dz * dz);
+			px = dx / ds;
+			py = dx / ds;
+			pz = dz / ds;
+			Swx += q * px;
+			Swy += q * py;
+			Swz += q * pz;
+			Sw += q;
+		}
+	}
+
+	/// average direction
+	/// =================
+	double dirX = 0.0;
+	double dirY = 0.0;
+	double dirZ = 0.0;
+
+	int itr = 0;
+	bool pass = 0;
+	double fom = 0.0;
+
+	if (Sw > 0.0) {
+		double qx = Swx / Sw;
+		double qy = Swy / Sw;
+		double qz = Swz / Sw;
+		double qs = sqrt(qx*qx + qy * qy + qz * qz);
+
+		dirX = qx / qs;
+		dirY = qy / qs;   
+		pass = 1;
+	}
+
+	// set vertex and direction
+	// ========================
+	RecoVertex* newVertex = new RecoVertex(); // Note: pointer must be deleted by the invoker
+
+	if (pass) {
+		newVertex->SetVertex(vtxX, vtxY, vtxZ, vtxTime);
+		newVertex->SetDirection(dirX, dirY, dirZ);
+		newVertex->SetFOM(fom, itr, pass);
+	}
+
+	// set status
+	// ==========
+	if (!pass) status |= RecoVertex::kFailSimpleDirection;
+	newVertex->SetStatus(status);
+
+	// return vertex
+	// =============
+	return newVertex;
 }
 
 /*double VtxSeedFineGrid::GetMedianSeedTime(Position pos) {

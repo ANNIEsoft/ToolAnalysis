@@ -9,6 +9,6 @@ TankHitInfo_fill 0
 TankRecoDigitInfo_fill 1
 fillCleanEventsOnly 1
 
-OutputFile /annie/data/users/flemmons/VtxRecoTree-high-2000finegrid-3.root
+OutputFile /Data/PureMuonHigh/VtxRecoTree-high-SimpleDirection.root
 NumEventsWritten 2000
 

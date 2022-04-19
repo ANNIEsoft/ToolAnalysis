@@ -40,6 +40,7 @@ class VtxSeedFineGrid: public Tool {
 	 void GenerateFineGrid();
 
 	 Direction findDirectionMRD();
+	 RecoVertex* FindSimpleDirection(RecoVertex* myVertex);
 
 //	 double GetMedianSeedTime(Position pos);
 
