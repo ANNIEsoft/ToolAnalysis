@@ -141,3 +141,4 @@
 #include "LAPPDStoreFindT0.h"
 #include "LAPPDStoreReadIn.h"
 #include "LAPPDStoreReorderData.h"
+#include "LAPPDGausBaselineSubtraction.h"
