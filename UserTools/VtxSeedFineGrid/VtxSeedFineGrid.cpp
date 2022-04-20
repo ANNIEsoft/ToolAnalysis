@@ -130,12 +130,12 @@ Position VtxSeedFineGrid::FindCenter() {
 			seedDirY = iSeed.GetDirection().Y();
 			seedDirZ = iSeed.GetDirection().Z();
 		}
-		else 	if (!(useTrueDir || useMRDTrack || usePastResolution || useDirectionGrid)) {
+		/*else 	if (!(useTrueDir || useMRDTrack || usePastResolution || useDirectionGrid)) {
 			this->FindSimpleDirection(&iSeed);
 			seedDirX = iSeed.GetDirection().X();
 			seedDirY = iSeed.GetDirection().Y();
 			seedDirZ = iSeed.GetDirection().Z();
-		}
+		}*/
 	/*	else if (usePastResolution) {
 			TFile *f1 = new TFile(InputFile);
 			TTree *t1 = (TTree*)f1->Get("phaseIITriggerTree");
