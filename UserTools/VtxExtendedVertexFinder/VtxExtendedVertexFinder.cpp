@@ -155,7 +155,7 @@ bool VtxExtendedVertexFinder::Finalise(){
 RecoVertex* VtxExtendedVertexFinder::FitExtendedVertex(RecoVertex* myVertex) {
   //fit with Minuit
   MinuitOptimizer* myOptimizer = new MinuitOptimizer();
-  myOptimizer->SetPrintLevel(1);
+  myOptimizer->SetPrintLevel(-1);
   myOptimizer->SetMeanTimeCalculatorType(1); //Type 1: most probable time
   myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
   myOptimizer->LoadVertex(myVertex); //Load vertex seed
@@ -192,7 +192,7 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
   for( unsigned int n=0; n<nlast; n++ ){
     //Find best time with Minuit
     MinuitOptimizer* myOptimizer = new MinuitOptimizer();
-    myOptimizer->SetPrintLevel(0);
+    myOptimizer->SetPrintLevel(-1);
     myOptimizer->SetMeanTimeCalculatorType(1);
     myOptimizer->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
     myOptimizer->SetFitterTimeRange(fTmin, fTmax); //Set time range to fit over 

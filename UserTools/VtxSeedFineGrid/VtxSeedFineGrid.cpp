@@ -10,6 +10,7 @@ bool VtxSeedFineGrid::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("useTrueDir", useTrueDir);
+  m_variables.Get("useSimpleDir", useSimpleDir);
   m_variables.Get("useMRDTrack", useMRDTrack);
   m_variables.Get("usePastResolution", usePastResolution);
   m_variables.Get("useDirectionGrid", useDirectionGrid);
@@ -48,7 +49,7 @@ bool VtxSeedFineGrid::Execute(){
 		return false;
 	}
 
-	if (!(useTrueDir || useMRDTrack || usePastResolution || useDirectionGrid)) {
+	if (useSimpleDir) {
 		Log("Using simple direction", v_debug, verbosity);
 	}
 
@@ -112,13 +113,14 @@ Position VtxSeedFineGrid::FindCenter() {
 	myFoMCalculator->ConePropertiesFoM(ConeAngle, conefom);
 	fom = timefom * 0.5 + conefom * 0.5;
 	if (verbosity > 0)  cout << "VtxSeedFineGrid Tool: " << "FOM at true vertex = " << fom << endl;
-
+  
 	for (int m = 0; m < vSeedVtxList->size(); m++) {
+		RecoVertex* tempVertex = 0;
 		iSeed = vSeedVtxList->at(m);
 		seedX = iSeed.GetPosition().X();
 		seedY = iSeed.GetPosition().Y();
 		seedZ = iSeed.GetPosition().Z();
-		seedT = trueVtxT;
+		seedT = trueVtxT; //Jingbo: should use median T
 		if (useTrueDir) {
 			seedDirX = trueDirX;
 			seedDirY = trueDirY;
@@ -126,16 +128,16 @@ Position VtxSeedFineGrid::FindCenter() {
 		}
 		else if (useMRDTrack) {
 			iSeed.SetDirection(this->findDirectionMRD());
-			seedDirX = iSeed.GetDirection().X();
 			seedDirY = iSeed.GetDirection().Y();
 			seedDirZ = iSeed.GetDirection().Z();
 		}
-		/*else 	if (!(useTrueDir || useMRDTrack || usePastResolution || useDirectionGrid)) {
-			this->FindSimpleDirection(&iSeed);
-			seedDirX = iSeed.GetDirection().X();
-			seedDirY = iSeed.GetDirection().Y();
-			seedDirZ = iSeed.GetDirection().Z();
-		}*/
+		else 	if (useSimpleDir) {			
+			tempVertex = this->FindSimpleDirection(&iSeed);
+			seedDirX = tempVertex->GetDirection().X();
+			seedDirY = tempVertex->GetDirection().Y();
+			seedDirZ = tempVertex->GetDirection().Z();
+			delete tempVertex; tempVertex = 0;
+		}
 	/*	else if (usePastResolution) {
 			TFile *f1 = new TFile(InputFile);
 			TTree *t1 = (TTree*)f1->Get("phaseIITriggerTree");

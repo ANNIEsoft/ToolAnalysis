@@ -61,6 +61,7 @@ class VtxSeedFineGrid: public Tool {
 	 int v_message = 2;
 	 int v_debug = 3;
 	 bool useTrueDir = 1;
+	 bool useSimpleDir = 0;
 	 bool useMRDTrack = 0;
 	 bool usePastResolution = 0;
 	 bool useDirectionGrid = 0;
