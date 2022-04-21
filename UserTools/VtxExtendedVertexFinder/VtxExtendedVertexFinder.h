@@ -54,6 +54,7 @@ class VtxExtendedVertexFinder: public Tool {
   void PushExtendedVertex(RecoVertex* vtx, bool savetodisk);
   
   bool fUseTrueVertexAsSeed;
+  bool fUsePointVertexAsSeed;
   bool fSeedGridFits;
   bool fUseMeanTimeAsSeed;
   

@@ -1,0 +1,7 @@
+# VtxExtendedVertexFinder config file
+
+verbosity 0
+UseTrueVertexAsSeed 0
+UsePointVertexAsSeed 1
+FitAllOnSeedGrid 0
+UseMeanTimeAsSeed 0

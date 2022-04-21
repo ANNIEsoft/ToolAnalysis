@@ -223,7 +223,6 @@ void VtxSeedFineGrid::GenerateFineGrid() {
 			}
 		}
 	}
-
 }
 
 Direction VtxSeedFineGrid::findDirectionMRD() {
@@ -249,7 +248,6 @@ Direction VtxSeedFineGrid::findDirectionMRD() {
 	result.SetPhi(phi);
 
 	return result;
-
 }
 
 RecoVertex* VtxSeedFineGrid::FindSimpleDirection(RecoVertex* myVertex) {

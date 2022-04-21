@@ -1,0 +1,4 @@
+verbosity 0
+
+OutputFile /annie/app/users/wjingbo/ToolAnalysis_vtx/vtxgeometry.root
+ShowEvent 3

@@ -1,0 +1,10 @@
+#ClusterFinder Config File
+
+HitStore MCHits #Either MCHits or Hits (accessed in ANNIEEvent store)
+OutputFile WCSimTestCluster #Output root prefix name for the current run
+ClusterFindingWindow 50 # in ns, size of the window used to "clusterize"
+AcqTimeWindow 4000 # in ns, size of the acquisition window
+ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
+MinHitsPerCluster 10 # group of hits are considered clusters above this amount of hits
+
+verbosity 0         #verbosity of the application

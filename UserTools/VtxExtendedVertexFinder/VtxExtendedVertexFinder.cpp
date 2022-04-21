@@ -15,9 +15,11 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   fTmin = -10.0;
   fTmax = 10.0;
   fUseTrueVertexAsSeed = false;
+  fUsePointVertexAsSeed =  false;
   fSeedGridFits = false;
   /// Get the Tool configuration variables
   m_variables.Get("UseTrueVertexAsSeed",fUseTrueVertexAsSeed);
+  m_variables.Get("UsePointVertexAsSeed",fUsePointVertexAsSeed);
   m_variables.Get("UseMeanTimeAsSeed",fUseMeanTimeAsSeed);
   m_variables.Get("FitAllOnSeedGrid",fSeedGridFits);
   m_variables.Get("verbosity", verbosity);
@@ -122,7 +124,7 @@ bool VtxExtendedVertexFinder::Execute(){
     this->PushExtendedVertex(fExtendedVertex, true);
   }
   
-  else {
+  else if (fUsePointVertexAsSeed) {
     Log("VtxExtendedVertexFinder Tool: Run extended vertex reconstruction using point vertex",v_message,verbosity);
     // get point vertex
     RecoVertex* pointvertex = 0; 
@@ -135,6 +137,9 @@ bool VtxExtendedVertexFinder::Execute(){
     fExtendedVertex  = (RecoVertex*)(this->FitExtendedVertex(pointvertex));
     // Push fitted vertex to RecoEvent store
     this->PushExtendedVertex(fExtendedVertex, true);    	
+  }
+  else {
+    Log("VtxExtendedVertexFinder Tool: No fit option is defined!",v_error,verbosity);	
   }
   return true;
 }
