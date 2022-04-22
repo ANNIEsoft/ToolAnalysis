@@ -27,7 +27,7 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
 
   // zero out variables //////////////////////////
 
-  WraparoundBin=0; QualityVar=0; TrigDeltaT=0.; PulseHeight=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
+  WraparoundBin=0; QualityVar=0; TrigDeltaT=0.; PulseHeight=0.; BeamTime=0.; EventTime=0.; TotalCharge=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
   NHits=0; NHits_simp=0; Npulses_cfd=0; Npulses_simp=0;
   for(int i=0; i<60; i++){
       hQ[i]=0;  hxpar[i]=0; hxperp[i]=0; htime[i]=0;  hdeltime[i]=0; hvpeak[i]=0;
@@ -42,11 +42,17 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   // set the branches ///////////////////////////
 
   //global parameters
-  fMyTree->Branch("T0Bin",                    &T0Bin,                     "T0Bin/I"                   );
+  fMyTree->Branch("T0Bin",                    &T0Bin,                     "T0Bin/I"                    );
   fMyTree->Branch("WraparoundBin",            &WraparoundBin,             "WraparoundBin/I"            );
   fMyTree->Branch("QualityVar",               &QualityVar,                "QualityVar/I"               );
   fMyTree->Branch("TrigDeltaT",               &TrigDeltaT,                "TrigDeltaT/D"               );
   fMyTree->Branch("PulseHeight",              &PulseHeight,               "PulseHeight/D"              );
+
+
+  fMyTree->Branch("BeamTime",                 &BeamTime,                  "BeamTime/D"                 );
+  fMyTree->Branch("EventTime",                &EventTime,                 "EventTime/D"                );
+  fMyTree->Branch("TotalCharge",              &TotalCharge,               "TotalCharge/D"              );
+
 
   //Hit parameters (from CFD)
   fMyTree->Branch("NHits",            &NHits,             "NHits/I"               );
@@ -125,6 +131,25 @@ bool LAPPDClusterTree::Execute()
   m_data->Stores["ANNIEEvent"]->Get("T0signalInWindow",T0signalInWindow);
   //m_data->Stores["ANNIEEvent"]->Get("WraparoundBin",WraparoundBin);
 
+  vector<unsigned int> tcounters;
+  m_data->Stores["ANNIEEvent"]->Get("TimingCounters",tcounters);
+  m_data->Stores["ANNIEEvent"]->Get("EventCharge",TotalCharge);
+
+  //cout<<"Cluster Tree Yo:  "<<tcounters.at(0)<<" "<<tcounters.at(1)<<" "<<tcounters.at(2)<<" "<<tcounters.at(3)<<endl;
+
+  unsigned int beamcounter = tcounters.at(0);
+  unsigned int beamcounterL = tcounters.at(1);
+  unsigned int trigcounter = tcounters.at(2);
+  unsigned int trigcounterL = tcounters.at(3);
+
+  double largetime = (double)beamcounterL*13.1;
+  double smalltime = ((double)beamcounter/1E9)*3.125;
+
+  BeamTime=((double)((trigcounter-beamcounter))*3.125)/1E3;
+  //cout<<"TotCharge in Tree: "<<TotalCharge;
+  //cout<<"Beam Time "<<BeamTime<<" LargeTime "<<largetime<<" smalltime: "<<smalltime<<endl;
+  EventTime=largetime+smalltime;
+
   if(T0signalInWindow) QualityVar=1;
   else QualityVar=0;
 
@@ -193,7 +218,7 @@ bool LAPPDClusterTree::Execute()
                 }
                 htime_simp[m]=hitvect[m].GetTime();
                 m++;
-                if(m>=59) { cout<<"MORE THAN 60 SIMPLE HITS!!!!!!"<<endl; break; }
+                if(m>=50) { cout<<"MORE THAN 60 SIMPLE HITS!!!!!!"<<endl; break; }
             }
           }
       }
@@ -294,11 +319,11 @@ bool LAPPDClusterTree::Execute()
 
 bool LAPPDClusterTree::Finalise(){
 
+  cout<<"here at the end of ClusterTree"<<endl;
   nottf->cd();
+  cout<<"writing the tree"<<endl;
   fMyTree->Write();
-
-
-
   nottf->Close();
+  cout<<"Done closing the file"<<endl;
   return true;
 }

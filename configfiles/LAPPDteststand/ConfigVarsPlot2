@@ -12,7 +12,10 @@ SaveByChannel 1
 PlotWavLabel ABLSLAPPDData
 #PlotWavLabel RawLAPPDData
 outfile WaveForms_rawblsub.root
-NHistos 200
+NHistos 400
 SaveSingleStrip 0
-SingleStripNo 20
+SingleStripNo 9
 TrigNo 1005
+
+#LAPPDPlotWaveForms2D
+outfile2D WaveForms_2D.root

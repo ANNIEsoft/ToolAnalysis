@@ -12,7 +12,7 @@ bool LAPPDPlotWaveForms::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-    m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry", _geom);
+    bool isgeo = m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry", _geom);
 
     TString IWL;
     //RawInputWavLabel;
@@ -24,12 +24,6 @@ bool LAPPDPlotWaveForms::Initialise(std::string configfile, DataModel &data){
 
     isFiltered=false;
     isBLsub=false;
-
-    // have the pulses been filtered? integrated? is this real or simulated data?
-    bool ifilt = m_data->Stores["ANNIEEvent"]->Header->Get("isFiltered",isFiltered);
-    bool ibl = m_data->Stores["ANNIEEvent"]->Header->Get("isBLsubtracted",isBLsub);
-    bool iI = m_data->Stores["ANNIEEvent"]->Header->Get("isIntegrated",isIntegrated);
-    bool isim = m_data->Stores["ANNIEEvent"]->Header->Get("isSim",isSim);
 
     // keep count of the loop number (starting from 0)
     miter=0;
@@ -49,33 +43,10 @@ bool LAPPDPlotWaveForms::Initialise(std::string configfile, DataModel &data){
     mtf = new TFile(OutFile,"RECREATE");
     if(!SaveSingleStrip) mtf->mkdir("wavs");
 
-    cout<<"SAVE SINGLE STRIP: "<<SaveSingleStrip<<" "<<psno<<" "<<trigno<<endl;
+    //cout<<"SAVE SINGLE STRIP: "<<SaveSingleStrip<<" "<<psno<<" "<<trigno<<endl;
 
     PHD = new TH1D("PHD","PHD",1000,-1e5,1e7);
 
-    // declare the histograms
-    /*
-    hAmp = new TH1D*[NChannel];
-    hTime = new TH1D*[NChannel];
-    hQ = new TH1D*[NChannel];
-
-    // initialize the histograms
-    for(int i=0; i<NChannel; i++){
-      TString AmpName;
-      AmpName+="Amplitudes_CH";
-      AmpName+=i;
-      hAmp[i] = new TH1D(AmpName,AmpName,1000,0.,50.);
-
-      TString QName;
-      QName+="Charge_CH";
-      QName+=i;
-      hQ[i] = new TH1D(QName,QName,8800,-1e7,10e7);
-
-      TString TimeName;
-      TimeName+="Time_CH";
-      TimeName+=i;
-      hTime[i] = new TH1D(TimeName,TimeName,10000,0.,100000.);
-    }*/
 
   return true;
 }
@@ -85,6 +56,14 @@ bool LAPPDPlotWaveForms::Execute(){
 
     // get raw lappd data
     std::map<unsigned long,vector<Waveform<double>>> lappddata;
+
+    //cout<<"Plot Waveforms "<<InputWavLabel<<endl;
+
+    // have the pulses been filtered? integrated? is this real or simulated data?
+    bool ifilt = m_data->Stores["ANNIEEvent"]->Get("isFiltered",isFiltered);
+    bool ibl = m_data->Stores["ANNIEEvent"]->Get("isBLsubtracted",isBLsub);
+    bool iI = m_data->Stores["ANNIEEvent"]->Get("isIntegrated",isIntegrated);
+    bool isim = m_data->Stores["ANNIEEvent"]->Get("isSim",isSim);
 
     //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
     bool work = m_data->Stores["ANNIEEvent"]->Get(InputWavLabel,lappddata);
@@ -99,7 +78,6 @@ bool LAPPDPlotWaveForms::Execute(){
     double totcharge;
     m_data->Stores["ANNIEEvent"]->Get("TotCharge",totcharge);
     PHD->Fill(totcharge);
-
 
     // loop over all channels
     std::map<unsigned long, vector<Waveform<double>>> :: iterator itr;

@@ -45,6 +45,11 @@ class LAPPDClusterTree: public Tool {
   Int_t         QualityVar;
   Double_t      TrigDeltaT;
   Double_t      PulseHeight;
+
+  Double_t      BeamTime;
+  Double_t      EventTime;
+  Double_t      TotalCharge;
+
   // END NEW!!!
 
   Double_t      hQ[60];
