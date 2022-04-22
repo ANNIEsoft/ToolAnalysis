@@ -40,7 +40,7 @@ bool LAPPDFindPeak::Execute(){
     m_data->Stores["ANNIEEvent"]->Get("isBLsubtracted",isBLsub);
     bool isFiltered;
     m_data->Stores["ANNIEEvent"]->Get("isFiltered",isFiltered);
-    //cout<<isBLsub<<"Please Work"<<endl;
+    //cout<<isBLsub<<" Please Work "<<isFiltered<<endl;
   //Waveform<double> bwav;
   //m_data->Stores["ANNIEEvent"]->Print();
   //bool testval =  m_data->Stores["ANNIEEvent"]->Get("LAPPDtrace",bwav);
@@ -54,6 +54,7 @@ bool LAPPDFindPeak::Execute(){
     }
     else if(isBLsub==true && isFiltered==false){
         m_data->Stores["ANNIEEvent"]->Get(BLSPeakInputWavLabel,lappddata);
+        //cout<<"Getting "<<BLSPeakInputWavLabel<<endl;
     }
     else if(isFiltered==true){
         m_data->Stores["ANNIEEvent"]->Get(FiltPeakInputWavLabel,lappddata);
@@ -77,7 +78,7 @@ bool LAPPDFindPeak::Execute(){
     Channel* mychannel= _geom->GetChannel(channelno);
     int stripno = mychannel->GetStripNum();
 
-  // cout<<"channel= "<<channelno<<endl;
+    //if(channelno>1037 && channelno<1040) cout<<"channel= "<<channelno<<" "<<stripno<<endl;
 
     //loop over all Waveforms
     std::vector<LAPPDPulse> thepulses;
