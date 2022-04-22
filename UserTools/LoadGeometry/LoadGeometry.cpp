@@ -24,7 +24,9 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("LAPPDGeoFile", fLAPPDGeoFile);
   m_variables.Get("DetectorGeoFile", fDetectorGeoFile);
   m_variables.Get("LAPPDChannelCount", LAPPD_channel_count);
-  m_variables.Get("LAPPDchannelOffset", LAPPD_channel_offset);
+
+  std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+  std::cout << "Filepath was... " << fLAPPDGeoFile << std::endl;
 
 
   //Check files exist
@@ -81,7 +83,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   //Load TankPMT Geometry Detector/Channel Information
   this->LoadTankPMTDetectors();
 
-  //Load TankPMT charge to PE conversion 
+  //Load TankPMT charge to PE conversion
   this->LoadTankPMTGains();
 
   //Load auxiliary and spare channels
@@ -694,15 +696,6 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   Log("LoadGeometry tool: parsing data line into variables",v_debug,verbosity);
   for (unsigned int i=0; i<SpecLine.size(); i++){
     int ivalue = 0;
-    //TODO: It seems that the last value has "^M", and the statement later is not handled properly
-    //      to hack that we added the following lines:
-    if(i==24) {
-      LAPPDLegendEntries.at(i)="channel_status";
-      SpecLine.at(i)="ON";
-    }
-    // Adding a reminder
-    if(i>24) std::cerr << "You exceeded the i value (>24). Make sure the last line of the reading file does not have ^M!!!!!!" << std::endl;
-
     unsigned int uivalue =0;
     double dvalue = 0.0;
     std::string svalue = "default";
@@ -764,6 +757,8 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
     if (LAPPDLegendEntries.at(i) == "channel_status") channel_status = svalue;
   }
 
+  cout<<"ASWEEWWTTUYUY "<<detector_num<<" "<<channel_strip_num<<" "<<channel_num<<" "<<channel_status<<endl;
+
   if(verbosity>4) std::cout << "Filling a LAPPD data line into Detector/Channel classes" << std::endl;
   if(detector_num != detector_num_store){
   detectorstatus detstat = detectorstatus::OFF;
@@ -808,9 +803,10 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
       channelstat = channelstatus::UNSTABLE;
       }
   else{
-  std::cerr << "The chosen channel status isn't available!!!" << std::endl;
+  //std::cerr << "The chosen channel status isn't available!!!" << std::endl;
       }
-  Channel lappdchannel(LAPPD_channel_offset+channel_num,
+//  Channel lappdchannel(464+channel_num,
+  Channel lappdchannel(1000+channel_num,
                       Position(channel_position_x,
                                channel_position_y,
                                channel_position_z),
