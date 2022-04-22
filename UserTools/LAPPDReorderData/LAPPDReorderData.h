@@ -4,6 +4,9 @@
 #include <string>
 #include <iostream>
 
+#include "TFile.h"
+#include "TH1D.h"
+
 #include "Tool.h"
 #include <bitset>
 
@@ -34,6 +37,8 @@ class LAPPDReorderData: public Tool {
   int VerbosityLevel;
   string InputWavLabel;
   string OutputWavLabel;
+
+  TH1D* Trigdelay;
 
 
 
