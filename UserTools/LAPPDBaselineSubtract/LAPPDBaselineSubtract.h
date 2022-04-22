@@ -24,9 +24,15 @@ class LAPPDBaselineSubtract: public Tool {
    Waveform<double> SubtractSine(Waveform<double> iwav);
    bool isSim;
    int DimSize;
+   int TrigChannel1;
+   int TrigChannel2;
    double Deltat;
    double LowBLfitrange;
    double HiBLfitrange;
+   double TrigLowBLfitrange;
+   double TrigHiBLfitrange;
+   string BLSInputWavLabel;
+   string BLSOutputWavLabel;
 
 };
 

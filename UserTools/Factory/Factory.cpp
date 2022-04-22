@@ -121,10 +121,20 @@ if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;
 if (tool=="MonitorTrigger") ret=new MonitorTrigger;
 
+if (tool=="LAPPDPSECReadIn") ret=new LAPPDPSECReadIn;
+if (tool=="LAPPDPlotWaveForms") ret=new LAPPDPlotWaveForms;
+if (tool=="LAPPDReorderData") ret=new LAPPDReorderData;
+if (tool=="LAPPDFindT0") ret=new LAPPDFindT0;
+if (tool=="ClusterDummy") ret=new ClusterDummy;
+if (tool=="LAPPDCluster") ret=new LAPPDCluster;
+if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
+
 if (tool=="EventClassification") ret=new EventClassification;
 
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="MeanTimeCheck") ret=new MeanTimeCheck;
 if (tool=="VtxSeedFineGrid") ret=new VtxSeedFineGrid;
+if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
+if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
 return ret;
 }

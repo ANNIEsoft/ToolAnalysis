@@ -1,0 +1,5 @@
+#LAPPDCluster
+ClusterVerbosity  0
+SimpleClusterLabel SimpleRecoLAPPDPulses
+CFDClusterLabel CFDRecoLAPPDPulses
+HitOutLabel SimpleClusters

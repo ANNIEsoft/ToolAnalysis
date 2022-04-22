@@ -12,31 +12,44 @@ bool LAPPDBaselineSubtract::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  bool isBLsub = true;
-  m_data->Stores["ANNIEEvent"]->Header->Set("isBLsubtracted",isBLsub);
+  //bool isBLsub = true;
+  //m_data->Stores["ANNIEEvent"]->Header->Set("isBLsubtracted",isBLsub);
 
   m_variables.Get("Nsamples", DimSize);
   m_variables.Get("SampleSize",Deltat);
+  m_variables.Get("TrigChannel1",TrigChannel1);
+  m_variables.Get("TrigChannel2",TrigChannel2);
   m_variables.Get("LowBLfitrange", LowBLfitrange);
   m_variables.Get("HiBLfitrange",HiBLfitrange);
+  m_variables.Get("TrigLowBLfitrange", TrigLowBLfitrange);
+  m_variables.Get("TrigHiBLfitrange",TrigHiBLfitrange);
+  TString BLSIWL;
+  m_variables.Get("BLSInputWavLabel", BLSIWL);
+  BLSInputWavLabel= BLSIWL;
+
+  TString BLSOWL;
+  m_variables.Get("BLSOutputWavLabel", BLSOWL);
+  BLSOutputWavLabel=BLSOWL;
 
   return true;
 }
 
 
 bool LAPPDBaselineSubtract::Execute(){
-
-  Waveform<double> bwav;
+    bool isBLsub=true;
+    m_data->Stores["ANNIEEvent"]->Set("isBLsubtracted",isBLsub);
+    //cout<<"made it to here "<<BLSInputWavLabel<<endl;
+    Waveform<double> bwav;
 
   // get raw lappd data
-  std::map<int,vector<Waveform<double>>> rawlappddata;
-  m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
+    std::map<unsigned long,vector<Waveform<double>>> lappddata;
+    m_data->Stores["ANNIEEvent"]->Get(BLSInputWavLabel,lappddata);
+    //cout<< "did it get to this"<<endl;
+    // the filtered Waveform
+    std::map<unsigned long,vector<Waveform<double>>> blsublappddata;
 
-  // the filtered Waveform
-  std::map<int,vector<Waveform<double>>> blsublappddata;
-
-  map <int, vector<Waveform<double>>> :: iterator itr;
-  for (itr = rawlappddata.begin(); itr != rawlappddata.end(); ++itr){
+  map <unsigned long, vector<Waveform<double>>> :: iterator itr;
+  for (itr = lappddata.begin(); itr != lappddata.end(); ++itr){
     int channelno = itr->first;
     vector<Waveform<double>> Vwavs = itr->second;
     vector<Waveform<double>> Vfwavs;
@@ -45,14 +58,51 @@ bool LAPPDBaselineSubtract::Execute(){
     for(int i=0; i<Vwavs.size(); i++){
 
         Waveform<double> bwav = Vwavs.at(i);
-        Waveform<double> blswav = SubtractSine(bwav);
+
+        // This is from back when we had a sinusoidal pedestal
+        //Waveform<double> blswav = SubtractSine(bwav);
+
+        // Loop over first N samples and get average value
+        if(LowBLfitrange>DimSize || HiBLfitrange>DimSize){
+            cout<<"BASELINE FITRANGE IS WRONG!!! "<<LowBLfitrange<<" "<<HiBLfitrange<<endl;
+            LowBLfitrange=0;
+            HiBLfitrange=1;
+        }
+
+        if(TrigLowBLfitrange>DimSize || TrigHiBLfitrange>DimSize){
+            cout<<"BASELINE FITRANGE IS WRONG!!! "<<TrigLowBLfitrange<<" "<<TrigHiBLfitrange<<endl;
+            TrigLowBLfitrange=0;
+            TrigHiBLfitrange=1;
+        }
+
+        double BLval=0;
+
+        if(channelno==TrigChannel1 || channelno==TrigChannel2){
+          for(int j=TrigLowBLfitrange; j<TrigHiBLfitrange; j++){
+              BLval+=bwav.GetSamples()->at(j);
+          }
+        } else{
+            for(int j=LowBLfitrange; j<HiBLfitrange; j++){
+                BLval+=bwav.GetSamples()->at(j);
+            }
+        }
+        
+        double AvgBL = BLval/((double)(HiBLfitrange-LowBLfitrange));
+
+        Waveform<double> blswav;
+        for(int k=0; k<bwav.GetSamples()->size(); k++){
+            blswav.PushSample((bwav.GetSamples()->at(k))-AvgBL);
+        }
+
+
         Vfwavs.push_back(blswav);
       }
 
       blsublappddata.insert(pair <int,vector<Waveform<double>>> (channelno,Vfwavs));
     }
 
-  m_data->Stores["ANNIEEvent"]->Set("BLsubtractedLAPPDData",blsublappddata);
+  //cout<<BLSOutputWavLabel<<endl;
+  m_data->Stores["ANNIEEvent"]->Set(BLSOutputWavLabel,blsublappddata);
 
   return true;
 }

@@ -1,0 +1,21 @@
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LAPPDPlotWaveForms
+requireT0signal 0
+SaveByChannel 1
+#PlotWavLabel LAPPDWaveforms
+#PlotWavLabel AlignedLAPPDData
+PlotWavLabel ABLSLAPPDData
+#PlotWavLabel RawLAPPDData
+outfile WaveForms_rawblsub.root
+NHistos 400
+SaveSingleStrip 0
+SingleStripNo 9
+TrigNo 1005
+
+#LAPPDPlotWaveForms2D
+outfile2D WaveForms_2D.root

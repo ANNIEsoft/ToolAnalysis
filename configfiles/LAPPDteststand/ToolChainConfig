@@ -18,5 +18,8 @@ service_kick_sec -1
 Tools_File configfiles/LAPPDteststand/ToolsConfig  ## list of tools to run and their config files
 
 ##### Run Type #####
-Inline 10000 ## number of Execute steps in program, -1 infinite loop that is ended by user
-Interactive 0 ## set to 1 if you want to run the code interactively
+#Inline 102 ## number of Execute steps in program, -1 infinite loop that is ended by user
+#Inline 4990 ## number of Execute steps in program, -1 infinite loop that is ended by user
+#Inline 3990 ## number of Execute steps in program, -1 infinite loop that is ended by user
+Inline 100 ## number of Execute steps in program, -1 infinite loop that is ended by user
+Interactive 1 ## set to 1 if you want to run the code interactively

@@ -1,0 +1,15 @@
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LAPPDBaselineSubtract
+BLSInputWavLabel AlignedLAPPDData
+TrigChannel1  1005
+TrigChannel2  1035
+LowBLfitrange 100;
+HiBLfitrange  150;
+TrigLowBLfitrange 2
+TrigHiBLfitrange  19
+BLSOutputWavLabel ABLSLAPPDData
