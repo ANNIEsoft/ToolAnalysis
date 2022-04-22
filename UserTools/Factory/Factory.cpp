@@ -131,12 +131,8 @@ if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
 if (tool=="EventClassification") ret=new EventClassification;
 
 if (tool=="DataSummary") ret=new DataSummary;
-if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
-if (tool=="LAPPDStoreBaselineSubtract") ret=new LAPPDStoreBaselineSubtract;
-if (tool=="LAPPDStoreFindT0") ret=new LAPPDStoreFindT0;
-if (tool=="LAPPDStoreReadIn") ret=new LAPPDStoreReadIn;
-if (tool=="LAPPDStoreReorderData") ret=new LAPPDStoreReorderData;
+if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
 if (tool=="LAPPDGausBaselineSubtraction") ret=new LAPPDGausBaselineSubtraction;
 return ret;
 }

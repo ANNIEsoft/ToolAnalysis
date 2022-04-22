@@ -46,7 +46,6 @@ class LoadGeometry: public Tool {
   int counter = 0;
   Detector* adet;
   int LAPPD_channel_count;
-  int LAPPD_channel_offset;
   std::string fFACCMRDGeoFile;
   std::string fTankPMTGeoFile;
   std::string fTankPMTGainFile;
