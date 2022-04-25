@@ -138,3 +138,4 @@
 #include "LAPPDCluster.h"
 #include "LAPPDClusterTree.h"
 #include "LAPPDPlotWaveForms2D.h"
+#include "LAPPDGausBaselineSubtraction.h"
