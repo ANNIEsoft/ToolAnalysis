@@ -133,5 +133,6 @@ if (tool=="EventClassification") ret=new EventClassification;
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
 if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
+if (tool=="LAPPDGausBaselineSubtraction") ret=new LAPPDGausBaselineSubtraction;
 return ret;
 }
