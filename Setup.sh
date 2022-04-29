@@ -20,3 +20,6 @@ for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/ToolDAQ/RATEventLib/src
+export ROOT_INCLUDE_PATH=$PWD/UserTools/PlotWaveforms:$ROOT_INCLUDE_PATH
