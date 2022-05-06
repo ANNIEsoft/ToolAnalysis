@@ -789,6 +789,37 @@ void MonitorDAQ::GetVMEServices(bool is_online){
         status=tmpstatus.str();
       }
     }
+	  
+    if (RemoteServices.size() < 20) {
+      std::stringstream ss_error_services, ss_error_services_slack;
+      ss_error_services << "ERROR (MonitorDAQ tool): Less than 20 services! (" << RemoteServices.size() << " ) Potential DAQ crash?";
+      ss_error_services_slack << "payload={\"text\":\"Monitoring: Less than 20 services! (" << RemoteServices.size() << " ) Potential DAQ crash? \"}";
+      bool issue_warning_services = (!warning_services);
+      warning_services = true;
+      if (issue_warning_services) Log(ss_error_services.str().c_str(),v_error,verbosity);
+      if (send_slack && issue_warning_services){
+        try{
+          CURL *curl;
+          CURLcode res;
+          curl_global_init(CURL_GLOBAL_ALL);
+          curl=curl_easy_init();
+          if (curl){
+            curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+            std::string field = ss_error_services_slack.str();
+            curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+            res=curl_easy_perform(curl);
+            if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+            curl_easy_cleanup(curl);
+          }
+          curl_global_cleanup();
+        }
+        catch(...){
+          Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+        }
+      }
+    } else {
+      warning_services = false;
+    }
 
     //Some cleanup
     for (int i=0;i<(int)RemoteServices.size();i++){
