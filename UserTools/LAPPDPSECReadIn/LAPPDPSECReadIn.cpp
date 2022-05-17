@@ -72,6 +72,10 @@ bool LAPPDPSECReadIn::Execute(){
   bool isCFD=false;
   m_data->Stores["ANNIEEvent"]->Set("isCFD",isCFD);
 
+  //Boards: -- Hardcoded for now
+  vector<int> NReadBoards = {0,1};
+  m_data->Stores["ANNIEEvent"]->Set("ACDCboards",NReadBoards);
+
   if(eventNo%10==0) cout<<"Event: "<<eventNo<<endl;
 
   if(LAPPDPSECReadInVerbosity>0) cout<<"BEGIN LAPPDPSECReadIn "<< endl;
