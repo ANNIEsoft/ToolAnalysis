@@ -31,6 +31,8 @@ bool LAPPDFindT0::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("T0offset",T0offset);
   m_variables.Get("GlobalShiftT0",globalshiftT0);
 
+  m_variables.Get("Triggerdefault",TrigChannel);
+  m_variables.Get("LAPPDOffset",LAPPDchannelOffset);
 
   return true;
 }
@@ -38,80 +40,107 @@ bool LAPPDFindT0::Initialise(std::string configfile, DataModel &data){
 
 bool LAPPDFindT0::Execute(){
 
-  std::map<unsigned long,vector<Waveform<double>>> lappddata;
-  m_data->Stores["ANNIEEvent"]->Get(InputWavLabel,lappddata);
-  std::map<unsigned long,vector<Waveform<double>>> reordereddata;
-  bool T0signalInWindow = false;
-  double deltaT;
+    std::map<unsigned long,vector<Waveform<double>>> lappddata;
+    m_data->Stores["ANNIEEvent"]->Get(InputWavLabel,lappddata);
+    std::map<unsigned long,vector<Waveform<double>>> reordereddata;
+    bool T0signalInWindow = false;
+    double deltaT;
 
-  if(FindT0VerbosityLevel>0) cout<<"In LAPPDFindT0, T0 channel:"<< T0channelNo<<" , InputWavlabel: "<<InputWavLabel<<" , LAPPDdata.size()="<<lappddata.size()<<endl;
+    //New vectors
+    vector<double> vec_deltaT;
+    vector<bool> vec_T0signalInWindow;
+    vector<int> vec_T0Bin;
 
-  map <unsigned long, vector<Waveform<double>>> :: iterator itr;
+    //Boards: -- Hardcoded for now
+    //vector<int> NReadBoards = {0,1};
 
-  if(FindT0VerbosityLevel>1) cout<<"is the channel there? "<<lappddata.count((unsigned long) T0channelNo)<<endl;
+    vector<int> NReadBoards;
+    m_data->Stores["ANNIEEvent"]->Get("ACDCboards",NReadBoards);
 
-  itr = lappddata.find((unsigned long) T0channelNo);
-  Waveform<double> bwav = (itr->second).at(0);
+    //Find the
+    map <unsigned long, vector<Waveform<double>>> :: iterator itr_bi;
+    for(int bi: NReadBoards)
+    {
+        //Get the approp. channelno for the triggerchannels
+        T0channelNo = LAPPDchannelOffset+(30*bi)+TrigChannel;
 
-  double thetime = Tfit(bwav.GetSamples());
-  int switchbit = (int)(thetime/100.);
-  deltaT = thetime - (100.*(double)switchbit);
-  int Qvar=0;
-  if( (switchbit>=trigearlycut) && (switchbit<=triglatecut) ) T0signalInWindow = true;
+        if(FindT0VerbosityLevel>0) cout<<"In LAPPDFindT0, T0 channel:"<< T0channelNo<<" , InputWavlabel: "<<InputWavLabel<<" , LAPPDdata.size()="<<lappddata.size()<<endl;
+        if(FindT0VerbosityLevel>1) cout<<"is the channel there? "<<lappddata.count((unsigned long) T0channelNo)<<endl;
 
-  if(FindT0VerbosityLevel>0) cout<<"Done finding the time, switchbit:" << switchbit << " , deltaT: "<<deltaT<<" , inwindow: "<<T0signalInWindow<<endl;
+        itr_bi = lappddata.find((unsigned long) T0channelNo);
+        Waveform<double> bwav = (itr_bi->second).at(0);
 
+        double thetime = Tfit(bwav.GetSamples());
+        int switchbit = (int)(thetime/100.);
+        deltaT = thetime - (100.*(double)switchbit);
+        int Qvar=0;
+        if( (switchbit>=trigearlycut) && (switchbit<=triglatecut) ) T0signalInWindow = true;
 
-  if(FindT0VerbosityLevel>1) cout<<"ready to loop"<<endl;
+        //vector transcribe
+        vec_deltaT.push_back(deltaT);
+        vec_T0signalInWindow.push_back(T0signalInWindow);
+        vec_T0Bin.push_back(switchbit);
 
-  for (itr = lappddata.begin(); itr != lappddata.end(); ++itr){
-    unsigned long channelno = itr->first;
-    vector<Waveform<double>> Vwavs = itr->second;
-
-    vector<Waveform<double>> Vrwav;
-
-    //loop over all Waveforms
-    for(int i=0; i<Vwavs.size(); i++){
-
-        Waveform<double> bwav = Vwavs.at(i);
-        Waveform<double> rwav;
-        Waveform<double> rwavShift;
-
-        int sb = switchbit + T0offset;
-        if(sb<0) sb+=255;
-
-        for(int j=0; j< bwav.GetSamples()->size(); j++){
-
-            if(sb>255) sb=0;
-            double nsamp = bwav.GetSamples()->at(sb);
-            rwav.PushSample(nsamp);
-            sb++;
-
-        }
-
-        for(int j=0; j< rwav.GetSamples()->size(); j++){
-          int ibin = j + globalshiftT0;
-          if(ibin > 255) ibin = ibin - 255;
-          double nsamp = rwav.GetSamples()->at(ibin);
-          rwavShift.PushSample(nsamp);
-        }
-
-        Vrwav.push_back(rwavShift);
+        if(FindT0VerbosityLevel>0) cout<<"Done finding the time, switchbit:" << switchbit << " , deltaT: "<<deltaT<<" , inwindow: "<<T0signalInWindow<<endl;
+        if(FindT0VerbosityLevel>1) cout<<"ready to loop"<<endl;
     }
 
-    reordereddata.insert(pair<unsigned long, vector<Waveform<double>>>(channelno,Vrwav));
+    for(bool k: vec_T0signalInWindow)
+    {
+        if(!k){T0signalInWindow=false;}
+    }
 
-  }
+    map <unsigned long, vector<Waveform<double>>> :: iterator itr;
+    for (itr = lappddata.begin(); itr != lappddata.end(); ++itr){
+        unsigned long channelno = itr->first;
+        vector<Waveform<double>> Vwavs = itr->second;
+        vector<Waveform<double>> Vrwav;
+        int bi = (int)(channelno-LAPPDchannelOffset)/30;
 
-  if(FindT0VerbosityLevel>0) cout<<"End of LAPPDFindT0..."<<endl;
+        //loop over all Waveforms
+        for(int i=0; i<Vwavs.size(); i++){
 
-  m_data->Stores["ANNIEEvent"]->Set(OutputWavLabel,reordereddata);
-  m_data->Stores["ANNIEEvent"]->Set("deltaT",deltaT);
-  m_data->Stores["ANNIEEvent"]->Set("T0signalInWindow",T0signalInWindow);
-  m_data->Stores["ANNIEEvent"]->Set("T0Bin",switchbit);
+            Waveform<double> bwav = Vwavs.at(i);
+            Waveform<double> rwav;
+            Waveform<double> rwavShift;
 
+            int sb = vec_T0Bin[bi] + T0offset;
+            if(sb<0) sb+=255;
 
-  return true;
+            for(int j=0; j< bwav.GetSamples()->size(); j++){
+
+                if(sb>255) sb=0;
+                double nsamp = bwav.GetSamples()->at(sb);
+                rwav.PushSample(nsamp);
+                sb++;
+
+            }
+
+            for(int j=0; j< rwav.GetSamples()->size(); j++){
+                int ibin = j + globalshiftT0;
+                if(ibin > 255) ibin = ibin - 255;
+                double nsamp = rwav.GetSamples()->at(ibin);
+                rwavShift.PushSample(nsamp);
+            }
+
+            Vrwav.push_back(rwavShift);
+        }
+
+        reordereddata.insert(pair<unsigned long, vector<Waveform<double>>>(channelno,Vrwav));
+    }
+
+    if(FindT0VerbosityLevel>0) cout<<"End of LAPPDFindT0..."<<endl;
+
+    m_data->Stores["ANNIEEvent"]->Set(OutputWavLabel,reordereddata);
+    m_data->Stores["ANNIEEvent"]->Set("deltaT",deltaT);
+    m_data->Stores["ANNIEEvent"]->Set("T0signalInWindow",T0signalInWindow);
+    m_data->Stores["ANNIEEvent"]->Set("T0Bin",vec_T0Bin);
+
+    vec_deltaT.clear();
+    vec_T0signalInWindow.clear();
+    vec_T0Bin.clear();
+
+    return true;
 }
 
 
