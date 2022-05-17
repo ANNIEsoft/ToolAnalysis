@@ -133,6 +133,7 @@
 #include "LAPPDReorderData.h"
 #include "LAPPDPlotWaveForms.h"
 #include "LAPPDFindT0.h"
+#include "LAPPDStoreFindT0.h"
 #include "ClusterDummy.h"
 #include "LAPPDMakePeds.h"
 #include "LAPPDCluster.h"
