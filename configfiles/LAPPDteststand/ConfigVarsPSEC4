@@ -2,7 +2,11 @@
 Nsamples 256
 SampleSize 100
 NChannels 60
-TrigChannel -1
+#TrigChannel -1
+TrigChannel 5 #Specified channel the trigger signal will be on
+LAPPDchannelOffset 1000
+
+
 
 #NewPsecReadout
 #NewFormatFile  /annie/data/users/venkat12/Aug16/LAPPD20210406_120206
@@ -25,7 +29,7 @@ RawDataOutpuWavLabel  RawLAPPDData
 #PSECinputfile ../Data/2022-03-02/LAPPD40_BucketTest_VoltageScan/2350V/All.txt
 #PSECinputfile /pnfs/annie/persistent/users/mascenci/2022-01-04/LASERdata_FullSystemIntegration_ACDC30+23/PosX0Y-40/Ascii20220401_134302.txt
 #PSECinputfile ../../GitHub_LAPPDToolAnalysis/Ascii20220601_002414.txt
-PSECinputfile ../Data/2022-04-19/All_Beam.txt
+PSECinputfile ../Data/2022-04-23/All_Beam.txt
 
 DoPedSubtraction 1
 Nboards 2
@@ -57,6 +61,7 @@ BLSOutputWavLabel BLsubtractedLAPPDData
 FindT0Verbosity 0
 FindT0InputWavLabel BLsubtractedLAPPDData
 #FindT0InputWavLabel LAPPDWaveforms
+
 TrigEarlyCut 20
 TrigLateCut 200
 T0channelNo 1005
@@ -67,6 +72,11 @@ T0signalthreshold -80.
 T0offset  58
 FindT0OutputWavLabel AlignedLAPPDData
 GlobalShiftT0 170
+#Added by Marc
+Triggerdefault 5
+LAPPDOffset 1000
+
+
 
 #LAPPDFilter
 #RawFilterInputWavLabel LAPPDWaveforms
