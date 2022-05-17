@@ -124,6 +124,7 @@ if (tool=="LAPPDPSECReadIn") ret=new LAPPDPSECReadIn;
 if (tool=="LAPPDPlotWaveForms") ret=new LAPPDPlotWaveForms;
 if (tool=="LAPPDReorderData") ret=new LAPPDReorderData;
 if (tool=="LAPPDFindT0") ret=new LAPPDFindT0;
+if (tool=="LAPPDStoreFindT0") ret=new LAPPDStoreFindT0;
 if (tool=="ClusterDummy") ret=new ClusterDummy;
 if (tool=="LAPPDCluster") ret=new LAPPDCluster;
 if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
