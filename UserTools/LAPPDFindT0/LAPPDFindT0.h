@@ -38,6 +38,10 @@ class LAPPDFindT0: public Tool {
    string OutputWavLabel;
    int trigearlycut,triglatecut;
 
+   //New
+   int TrigChannel;
+   int LAPPDchannelOffset;
+
 
 
 };
