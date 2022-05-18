@@ -256,7 +256,8 @@ bool MonitorReceive::Execute(){
                 try{
                   m_data->CStore.Set("HasLAPPDData",true);
                   indata->Get("LAPPDData",*LAPPDData);
-                  m_data->Stores["LAPPDData"]->Set("LAPPDData",LAPPDData);
+		  LAPPDData->Print(false);
+                  m_data->Stores["LAPPDData"]->Set("LAPPDData",LAPPDData,false);
                   } catch (...) {
                   Log("MonitorReceive: Did not find LAPPDData in file! (Maybe corrupted!!!) Don't process LAPPDData",0,0);
                   m_data->CStore.Set("HasLAPPDData",false);
