@@ -1,4 +1,4 @@
-FileList ./configfiles/Monitoring/SimMonitoring/LAPPDFileR3374.txt
+FileList ./configfiles/Monitoring/SimMonitoring/LAPPDFileTest_new.txt
 OutPath ./monitoringplots/
 Mode FileList	#Options: FileList, Single, Wait
 verbose 5
