@@ -42,19 +42,12 @@ bool ParseDataMonitoring::Execute()
     if (state == "DataFile" && has_lappd){
 
     m_data->Stores["LAPPDData"]->Get("LAPPDData",LAPPDData);
-    std::cout <<"Print LAPPDData:"<<std::endl;
-    LAPPDData->Print(false);
+    if (verbosity > 1) LAPPDData->Print(false);
 
     long entries;
     LAPPDData->Header->Get("TotalEntries",entries);
-    std::cout <<"TotalEntries: "<<entries<<std::endl;
-/*
-    std::vector<std::map<unsigned long, vector<Waveform<double>>>> lappdDATA;
-    std::vector<std::vector<unsigned short>> lappdPPS;
-    std::vector<std::vector<unsigned short>> lappdACC;
-    std::vector<std::vector<unsigned short>> lappdMETA;
-    std::vector<std::string> lappdType;
-*/
+    if (verbosity > 1) std::cout <<"ParseDataMonitoring: TotalEntries: "<<entries<<std::endl;
+    
     int entries_loop = (entries > max_entries)? max_entries : entries;
 
     for (int i_entry=0; i_entry < entries_loop; i_entry++)
@@ -64,19 +57,20 @@ bool ParseDataMonitoring::Execute()
         
 	LAPPDData->GetEntry(i_entry);
         PsecData PDATA;
-	std::cout <<"Get PsecData"<<std::endl;
         LAPPDData->Get("LAPPDData",PDATA);
-        PDATA.Print();
+        if (verbosity > 1) PDATA.Print();
 
-	std::cout <<"Get RawWaveform"<<std::endl;
         std::vector<unsigned short> Raw_Buffer = PDATA.RawWaveform;
-	std::cout <<"Get BoardIndex"<<std::endl;
         std::vector<int> BoardId_Buffer = PDATA.BoardIndex;
     
-	std::cout <<"frametype"<<std::endl;
-	std::cout <<"Raw_Buffer.size(): "<<Raw_Buffer.size()<<", BoardId_Buffer.size(): "<<BoardId_Buffer.size()<<std::endl;
+	if (Raw_Buffer.size() == 0) {
+		std::cout <<"Encountered Raw Buffer size of 0! Abort!"<<std::endl;
+		continue;
+	}
+	if (verbosity > 2) std::cout <<"ParseDataMonitoring: Raw_Buffer.size(): "<<Raw_Buffer.size()<<", BoardId_Buffer.size(): "<<BoardId_Buffer.size()<<std::endl;
         int frametype = Raw_Buffer.size()/BoardId_Buffer.size();
-	std::cout <<"got frametype = "<<frametype<<std::endl;
+	if (verbosity > 2) std::cout <<"ParseDataMonitoring: Got frametype = "<<frametype<<std::endl;
+
         if(frametype!=NUM_VECTOR_DATA && frametype!=NUM_VECTOR_PPS)
         {
             cout << "Problem identifying the frametype, size of raw vector was " << Raw_Buffer.size() << endl;
@@ -85,23 +79,46 @@ bool ParseDataMonitoring::Execute()
             return false;
         }
 
+	if (verbosity > 2) std::cout <<"ParseDataMonitoring: frametype: "<<frametype<<", NUM_VECTOR_PPS: "<<NUM_VECTOR_PPS<<", NUM_VECTOR_DATA: "<<NUM_VECTOR_DATA<<std::endl;
+
         if(frametype==NUM_VECTOR_PPS)
         {
 	    if (verbosity > 2) std::cout <<"PPS frame"<<std::endl;
-            //lappdPPS.push_back(Raw_Buffer);
-            //lappdACC.push_back(PDATA.AccInfoFrame);
-            //lappdType.push_back("PPS");
 
 	    TempData->Set("PPS",Raw_Buffer);
 	    TempData->Set("ACC",PDATA.AccInfoFrame);
-	    TempData->Set("Type","PPS");
+	    std::string str_pps = "PPS";
+	    TempData->Set("Type",str_pps);
 	    TempData->Save("LAPPDTemp");
 	    TempData->Delete();
 
-            return true;
         }
 
-	std::cout <<"loop boardid_buffer"<<std::endl;
+	else  {			//NOT A PPS ENTRY --> DATA ENTRY
+
+
+    	//Create a vector of paraphrased board indices
+        int nbi = BoardId_Buffer.size();
+    	vector<int> ParaBoards;
+    	if(nbi%2!=0)
+    	{  
+          cout << "Why is there an uneven number of boards! this is wrong!" << endl;
+          if(nbi==1)
+          {
+            ParaBoards.push_back(1);
+          }else
+          {
+            return false;
+          }
+    	}else
+    	{
+          for(int cbi=0; cbi<nbi; cbi++)
+          {
+            ParaBoards.push_back(cbi);
+          }
+      }
+
+/* old version
         for(int bi: BoardId_Buffer)
         {
             //Go over all ACDC board data frames by seperating them
@@ -126,8 +143,42 @@ bool ParseDataMonitoring::Execute()
                 return false;
             }
         }
+*/
 
-	std::cout <<"Loop over data stream"<<std::endl;
+   data.clear();
+   for(int bi: ParaBoards)
+    {
+        Parse_Buffer.clear();
+        if(verbosity>1) std::cout << "Starting with board " << BoardId_Buffer[bi] << std::endl;
+        //Go over all ACDC board data frames by seperating them
+        for(int c=bi*frametype; c<(bi+1)*frametype; c++)
+        {
+            Parse_Buffer.push_back(Raw_Buffer[c]);
+        }
+        if(verbosity>1) std::cout << "Data for board " << BoardId_Buffer[bi] << " was grabbed!" << std::endl;
+
+
+        //Grab the parsed data and give it to a global variable 'data'
+	if (verbosity > 2) std::cout <<"bi: "<<bi<<", BoardId_Buffer[bi: "<<BoardId_Buffer[bi]<<std::endl;
+        retval = getParsedData(Parse_Buffer,BoardId_Buffer[bi]*NUM_CH);
+        if(retval == 0)
+        {
+            if(verbosity>1) std::cout << "Data for board " << BoardId_Buffer[bi] << " was parsed!" << std::endl;
+            //Grab the parsed metadata and give it to a global variable 'meta'
+            retval = getParsedMeta(Parse_Buffer,BoardId_Buffer[bi]);
+            if(retval!=0)
+            {
+                std::cout << "Meta parsing went wrong! " << retval << endl;
+            }else
+            {
+                if(verbosity>1) std::cout << "Meta for board " << BoardId_Buffer[bi] << " was parsed!" << std::endl;
+            }
+        }else
+        {
+            std::cout << "Parsing went wrong! " << retval << endl;
+            return false;
+        }
+
         Waveform<double> tmpWave;
         vector<Waveform<double>> VecTmpWave;
         //Loop over data stream
@@ -155,12 +206,6 @@ bool ParseDataMonitoring::Execute()
 
 	if (verbosity > 2) std::cout <<"Data entry"<<std::endl;
 
-        /*lappdDATA.push_back(LAPPDWaveforms);
-        lappdACC.push_back(PDATA.AccInfoFrame);
-        lappdMETA.push_back(meta);
-        lappdType.push_back("DATA");*/
-	
-	std::cout <<"Set TempData"<<std::endl;
 
 	TempData->Set("Data",LAPPDWaveforms);
         TempData->Set("ACC",PDATA.AccInfoFrame);
@@ -176,18 +221,11 @@ bool ParseDataMonitoring::Execute()
         Raw_Buffer.clear(); 
         BoardId_Buffer.clear(); 
         Parse_Buffer.clear(); 
+	}
+    }
 
         if (verbosity > 2) cout << i_entry << " of " << entries << " done" << endl;
     }
-
-/*
-    m_data->CStore.Set("LAPPD_PPS",lappdPPS);
-    m_data->CStore.Set("LAPPD_Data",lappdDATA);
-    m_data->CStore.Set("LAPPD_ACC",lappdACC);
-    m_data->CStore.Set("LAPPD_Meta",lappdMETA);
-    m_data->CStore.Set("LAPPD_Type",lappdType);
-*/
-
 
       if (TempData!=0){
         TempData->Close();
@@ -366,6 +404,7 @@ int ParseDataMonitoring::getParsedMeta(std::vector<unsigned short> buffer, int B
     //----------------------------------------------------------
     //Start the metadata parsing 
 
+    if (verbosity > 2) std::cout <<"meta push back board id "<<BoardId<<std::endl;
     meta.push_back(BoardId);
     for(int CHIP=0; CHIP<NUM_PSEC; CHIP++)
     {
@@ -396,7 +435,7 @@ int ParseDataMonitoring::getParsedData(std::vector<unsigned short> buffer, int c
     }
 
     //Prepare the Metadata vector 
-    data.clear();
+    //data.clear();
 
     //Helpers
     int DistanceFromZero;
@@ -427,6 +466,7 @@ int ParseDataMonitoring::getParsedData(std::vector<unsigned short> buffer, int c
             InfoWord.push_back((unsigned short)*bit);
             if(InfoWord.size()==NUM_SAMP)
             {
+		if (verbosity > 4) std::cout << "ch_start: "<<ch_start<<", channel_count: "<<channel_count<<std::endl;
                 data.insert(pair<int, vector<unsigned short>>(ch_start + channel_count, InfoWord));
                 InfoWord.clear();
                 channel_count++;
