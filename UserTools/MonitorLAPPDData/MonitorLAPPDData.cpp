@@ -172,7 +172,7 @@ bool MonitorLAPPDData::Execute() {
 			//Draw customly defined plots
 			this->UpdateMonitorPlotsLAPPD(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
-			last = current;
+			//last = current;	//Why was this here in the first place?
 
 		} else {
 			if (verbosity > 1)
