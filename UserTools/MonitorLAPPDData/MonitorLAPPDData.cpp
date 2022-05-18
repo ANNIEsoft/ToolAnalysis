@@ -23,6 +23,8 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 	//-------------------------------------------------------
 
 	update_frequency = 0.;
+	threshold_pulse = 5.;
+	sync_reference_time = false;
 
 	std::string acdc_configuration;
 		
@@ -37,6 +39,7 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 	m_variables.Get("ImageFormat", img_extension);
 	m_variables.Get("ForceUpdate", force_update);
 	m_variables.Get("DrawMarker", draw_marker);
+	m_variables.Get("ThresholdPulse", threshold_pulse);
 	m_variables.Get("verbose", verbosity);
 		
 	if (verbosity > 1)
@@ -73,7 +76,7 @@ bool MonitorLAPPDData::Initialise(std::string configfile, DataModel &data) {
 	//Set up reference time
 	boost::posix_time::time_duration reference_stamp = boost::posix_time::time_duration(reference - *Epoch);
 	reference_time = reference_stamp.total_milliseconds();
-	std::cout <<"ReferenceTime: "<<referenceTimeDate<<", total milliseconds: "<<reference_time<<std::endl;
+	if (verbosity > 1) std::cout <<"ReferenceTime: "<<referenceTimeDate<<", total milliseconds: "<<reference_time<<std::endl;
 
 
 	//Evaluating output path for monitoring plots
@@ -215,7 +218,6 @@ bool MonitorLAPPDData::Finalise() {
 	//timing pointers
 	delete Epoch;
 
-	std::cout << "canvas" << std::endl;
 	//canvas
 
 	delete canvas_status_data;
@@ -228,6 +230,7 @@ bool MonitorLAPPDData::Finalise() {
 	delete canvas_align_10files;
 	delete canvas_align_20files;
 	delete canvas_align_100files;
+	delete canvas_align_1000files;
 	delete canvas_adc_channel;
 	delete canvas_buffer_channel;
 	delete canvas_buffer;
@@ -245,7 +248,6 @@ bool MonitorLAPPDData::Finalise() {
 	delete canvas_sigma_lappd;
 	delete canvas_rate_lappd;
 
-	std::cout << "histograms" << std::endl;
 	//histograms
 	//
 	/* Somehow deleting histograms creates a segfault, omit for now
@@ -265,7 +267,6 @@ bool MonitorLAPPDData::Finalise() {
 	 }
 	 */
 
-	std::cout << "tgraphs" << std::endl;
 	//graphs
 	for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
 
@@ -279,7 +280,6 @@ bool MonitorLAPPDData::Finalise() {
 			int board_min = board_channel.at(i_board);
 			for (int i=0; i<30 ;i++){
 				int chkey = board_min+i;
-				std::cout <<"delete chkey "<<chkey<<std::endl;
 				delete graph_ped.at(chkey);
 				delete graph_sigma.at(chkey);
 				delete graph_rate.at(chkey);
@@ -298,7 +298,6 @@ bool MonitorLAPPDData::Finalise() {
 	delete leg_sigma_lappd;
 	delete leg_rate_lappd;
 
-	std::cout << "text" << std::endl;
 	//text
 	delete text_data_title;
 	delete text_pps_rate;
@@ -326,6 +325,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	canvas_align_10files = new TCanvas("canvas_align_10files", "Time alignment 10 files", 900, 600);
 	canvas_align_20files = new TCanvas("canvas_align_20files", "Time alignment 20 file", 900, 600);
 	canvas_align_100files = new TCanvas("canvas_align_100files", "Time alignment 100 files", 900, 600);
+	canvas_align_1000files = new TCanvas("canvas_align_1000files", "Time alignment 1000 files", 900, 600);
 	canvas_adc_channel = new TCanvas("canvas_adc_channel", "ADC values vs. channels", 900, 600);
 	canvas_waveform = new TCanvas("canvas_waveform", "Waveform canvas", 900, 600);
 	canvas_buffer_channel = new TCanvas("canvas_buffer_channel", "LAPPD Buffer size vs. channels", 900, 600);
@@ -437,24 +437,26 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 
 		int board_nr = board_configuration.at(i_board);
 		int min_board = board_channel.at(i_board);
-		std::stringstream ss_align_1file, ss_align_5files, ss_align_10files, ss_align_20files, ss_align_100files;
+		std::stringstream ss_align_1file, ss_align_5files, ss_align_10files, ss_align_20files, ss_align_100files, ss_align_1000files;
 		std::stringstream ss_adc_channel, ss_waveform_channel, ss_buffer_channel, ss_buffer, ss_waveform_voltages;
 		ss_align_1file << "hist_align_1file_board" << board_nr;
 		ss_align_5files << "hist_align_5files_board" << board_nr;
 		ss_align_10files << "hist_align_10files_board" << board_nr;
 		ss_align_20files << "hist_align_20files_board" << board_nr;
 		ss_align_100files << "hist_align_100files_board" << board_nr;
+		ss_align_1000files << "hist_align_1000files_board" << board_nr;
 		ss_adc_channel << "hist_adc_channel_board" << board_nr;
 		ss_waveform_channel << "hist_waveform_channel_board" << board_nr;
 		ss_buffer_channel << "hist_buffer_channel_board" << board_nr;
 		ss_buffer << "hist_buffer_board" << board_nr;
 		ss_waveform_voltages << "hist_waveform_voltages" << board_nr;
 
-		TH1F *hist_align_1file_single = new TH1F(ss_align_1file.str().c_str(), ss_align_1file.str().c_str(), 100, -4000, 4000);
-		TH1F *hist_align_5files_single = new TH1F(ss_align_5files.str().c_str(), ss_align_5files.str().c_str(), 100, -4000, 4000);
-		TH1F *hist_align_10files_single = new TH1F(ss_align_10files.str().c_str(), ss_align_10files.str().c_str(), 100, -4000, 4000);
-		TH1F *hist_align_20files_single = new TH1F(ss_align_20files.str().c_str(), ss_align_20files.str().c_str(), 100, -4000, 4000);
-		TH1F *hist_align_100files_single = new TH1F(ss_align_100files.str().c_str(), ss_align_100files.str().c_str(), 100, -4000, 4000);
+		TH1F *hist_align_1file_single = new TH1F(ss_align_1file.str().c_str(), ss_align_1file.str().c_str(), 100, 0, 20000);
+		TH1F *hist_align_5files_single = new TH1F(ss_align_5files.str().c_str(), ss_align_5files.str().c_str(), 100, 0, 20000);
+		TH1F *hist_align_10files_single = new TH1F(ss_align_10files.str().c_str(), ss_align_10files.str().c_str(), 100, 0, 20000);
+		TH1F *hist_align_20files_single = new TH1F(ss_align_20files.str().c_str(), ss_align_20files.str().c_str(), 100, 0, 20000);
+		TH1F *hist_align_100files_single = new TH1F(ss_align_100files.str().c_str(), ss_align_100files.str().c_str(), 100, 0, 20000);
+		TH1F *hist_align_1000files_single = new TH1F(ss_align_1000files.str().c_str(), ss_align_1000files.str().c_str(), 1000, 0, 20000);
 		TH2F *hist_adc_channel_single = new TH2F(ss_adc_channel.str().c_str(), ss_adc_channel.str().c_str(), 200, 0, 4096, 30, min_board, min_board+30);
 		TH2F *hist_waveform_channel_single = new TH2F(ss_waveform_channel.str().c_str(), ss_waveform_channel.str().c_str(), 256, 0, 256, 30, min_board, min_board+30);
 		TH2F *hist_buffer_channel_single = new TH2F(ss_buffer_channel.str().c_str(), ss_buffer_channel.str().c_str(), 50, 0, 2000, 30, min_board, min_board+30);
@@ -482,6 +484,10 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		hist_align_100files_single->GetYaxis()->SetTitle("Entries");
 		hist_align_100files_single->SetStats(0);
 
+		hist_align_1000files_single->GetXaxis()->SetTitle("Time [ns]");
+		hist_align_1000files_single->GetYaxis()->SetTitle("Entries");
+		hist_align_1000files_single->SetStats(0);
+
 		hist_adc_channel_single->GetXaxis()->SetTitle("ADC value");
 		hist_adc_channel_single->GetYaxis()->SetTitle("Channelkey");
 		hist_adc_channel_single->SetStats(0);
@@ -508,6 +514,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		hist_align_10files.emplace(board_nr, hist_align_10files_single);
 		hist_align_20files.emplace(board_nr, hist_align_20files_single);
 		hist_align_100files.emplace(board_nr, hist_align_100files_single);
+		hist_align_1000files.emplace(board_nr, hist_align_1000files_single);
 		hist_adc_channel.emplace(board_nr, hist_adc_channel_single);
 		hist_waveform_channel.emplace(board_nr, hist_waveform_channel_single);
 		hist_buffer_channel.emplace(board_nr, hist_buffer_channel_single);
@@ -839,13 +846,18 @@ void MonitorLAPPDData::LoadACDCBoardConfig(std::string acdc_config) {
 		current_buffer_size.push_back(0.0);
 		current_num_entries.push_back(0);
 		n_buffer.push_back(0);
+		n_data.push_back(0);
+		n_pps.push_back(0);
 
 		first_beamgate_timestamp.push_back(0);
 		last_beamgate_timestamp.push_back(0);
 		first_timestamp.push_back(0);
 		last_timestamp.push_back(0);
+		first_pps_timestamps.push_back(0);
+		last_pps_timestamps.push_back(0);
 		current_board_index.push_back(board_number);
 		first_entry.push_back(true);
+		first_entry_pps.push_back(true);
 
 		std::vector<ULong64_t> empty_unsigned_long;
 		std::vector<double> empty_double;
@@ -867,6 +879,7 @@ void MonitorLAPPDData::LoadACDCBoardConfig(std::string acdc_config) {
 		data_beamgate_last10files.emplace(board_number, empty_int_64_vec);
 		data_beamgate_last20files.emplace(board_number, empty_int_64_vec);
 		data_beamgate_last100files.emplace(board_number, empty_int_64_vec);
+		data_beamgate_last1000files.emplace(board_number, empty_int_64_vec);
 		if (board_number != -1){
 			for (int i=0; i<30; i++){
 				ped_plot.emplace(min_bin+i,empty_double);
@@ -978,6 +991,7 @@ void MonitorLAPPDData::WriteToFile() {
 	bool omit_entries = false;
 	for (int i_entry = 0; i_entry < n_entries; i_entry++) {
 		t->GetEntry(i_entry);
+		if (t_board_idx->at(0) == -1) continue;
 		if (t_end->at(0) == t_file_end.at(0)) {
 			Log("WARNING (MonitorLAPPDData): WriteToFile: Wanted to write data from file that is already written to DB. Omit entries", v_warning, verbosity);
 			omit_entries = true;
@@ -1039,6 +1053,8 @@ void MonitorLAPPDData::WriteToFile() {
 				"MonitorLAPPDData: WriteToFile: Board " + std::to_string(current_board_index.at(i_current)) + ". Writing data to file: " + std::to_string(starttime_tm.tm_year + 1900) + "/" + std::to_string(starttime_tm.tm_mon + 1) + "/" + std::to_string(starttime_tm.tm_mday) + "-"
 						+ std::to_string(starttime_tm.tm_hour) + ":" + std::to_string(starttime_tm.tm_min) + ":" + std::to_string(starttime_tm.tm_sec), v_message, verbosity);
 	}
+
+	if (verbosity > 3) std::cout <<"current_ped.size(): "<<current_ped.size()<<std::endl;
 	for (int i_current = 0; i_current < (int) current_ped.size(); i_current++){
 		t_chkey->push_back(current_chkey.at(i_current));
 		t_rate->push_back(current_rate.at(i_current));
@@ -1046,9 +1062,17 @@ void MonitorLAPPDData::WriteToFile() {
 		t_sigma->push_back(current_sigma.at(i_current));
 	}
 
+	if (verbosity > 3) std::cout <<"before fill"<<std::endl;
 	t->Fill();
+	if (verbosity > 3) std::cout <<"after fill"<<std::endl;
 	t->Write("", TObject::kOverwrite);     //prevent ROOT from making endless keys for the same tree when updating the tree
+	if (verbosity > 3) std::cout <<"after write"<<std::endl;
 	f->Close();
+	if (verbosity > 3) std::cout <<"after close"<<std::endl;
+
+	if (verbosity > 3) std::cout <<"t_time"<<std::endl;
+	if (verbosity > 3) std::cout <<"t_time: "<<t_time<<std::endl;
+	if (verbosity > 3) std::cout <<"t_time->size(): "<<t_time->size()<<std::endl;
 
 	//Delete potential vectors
 	delete t_time;
@@ -1261,6 +1285,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame) {
 	//Set the readfromfile time variables to make sure data is not read twice for the same time window
 	readfromfile_tend = timestamp;
 	readfromfile_timeframe = time_frame;
+
 }
 
 void MonitorLAPPDData::DrawLastFilePlots() {
@@ -1337,14 +1362,21 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	double meanFrameRate = 0.0;
 	double meanBufferSize = 0.0;
 	double meanIntegratedCharge = 0.0;
+
+	bool has_board_minus = false;
+	for (int i_board=0; i_board < current_pps_rate.size(); i_board++){
+		if (board_configuration.at(i_board)==-1) has_board_minus = true;
+	}
 	//Calculate mean values
 	for (int i_board = 0; i_board < current_pps_rate.size(); i_board++) {
 		int board_nr = board_configuration.at(i_board);
+		int size_vectors = current_pps_rate.size();
+		if (has_board_minus) size_vectors -= 1;	
 		if (board_nr != -1) {
-			meanPPSRate += (current_pps_rate.at(i_board) / (double) (current_pps_rate.size()-1));
-			meanFrameRate += (current_frame_rate.at(i_board) / (double) (current_frame_rate.size()-1));
-			meanBufferSize += (current_buffer_size.at(i_board) / (double) (current_buffer_size.size()-1));
-			meanIntegratedCharge += (current_int_charge.at(i_board) / (double) (current_int_charge.size()-1));
+			meanPPSRate += (current_pps_rate.at(i_board) / (double) (size_vectors));
+			meanFrameRate += (current_frame_rate.at(i_board) / (double) (size_vectors));
+			meanBufferSize += (current_buffer_size.at(i_board) / (double) (size_vectors));
+			meanIntegratedCharge += (current_int_charge.at(i_board) / (double) (size_vectors));
 		}
 	}
 
@@ -1485,6 +1517,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 
 	//TODO: Add histogram that shows the number of active channelkeys for each board
 
+	std::stringstream current_time;
 	//Draw histograms for each board
 	for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
 
@@ -1493,7 +1526,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 		uint64_t t_fileend = t_file_end.at(i_board);
 		boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_fileend / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_fileend / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_fileend / MSEC_to_SEC) % 60, t_fileend % 1000);
 		struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
-		std::stringstream current_time;
+		current_time.str("");
 		current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
 		canvas_adc_channel->Clear();
@@ -1564,7 +1597,6 @@ void MonitorLAPPDData::DrawLastFileHists() {
 		}
 
 		for (int i_event = 0; i_event < 100 /*entries*/; i_event++) {
-			std::cout <<"i_event: "<<i_event<<std::endl;
 			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_event).at(board_nr).size(); i_channel++) {
 				canvas_waveform_onedim->Clear();
 				canvas_waveform_onedim->cd();
@@ -1582,7 +1614,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 				//Only save plot if pulse was seen (or if no pulse was observed)
 				if ((hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() > mean_pedestal.at(board_nr).at(i_channel) + 5 * sigma_pedestal.at(board_nr).at(i_channel)) || (/*i_event + 1 == 100*/ /*entries*/ /*&&*/ !isPlotted.at(i_channel))) {
 					if (hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetEntries()>0){
-					std::cout <<"Save canvas for channel "<< i_channel <<std::endl;
+					//std::cout <<"Save canvas for channel "<< i_channel <<std::endl;
 					std::stringstream ss_path_waveform_onedim;
 					ss_path_waveform_onedim << outpath << "LAPPDWaveform_waveform_onedim_Board" << board_nr << "channel" << i_channel << "_current." << img_extension;
 					canvas_waveform_onedim->SaveAs(ss_path_waveform_onedim.str().c_str());
@@ -1595,7 +1627,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 //				std::cout << "Maximum " << hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() << std::endl;
 
 				}
-				hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Reset();
+				//hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->Reset();
 			}
 		}
 
@@ -1604,6 +1636,9 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	canvas_pedestal_all->Clear();
 	canvas_pedestal_all->cd();
 	canvas_pedestal_all->SetRightMargin(0.15);
+	std::stringstream ss_title_pedestals;
+	ss_title_pedestals << "Pedestals ("<<current_time.str()<<")";
+	hist_pedestal_all->SetTitle(ss_title_pedestals.str().c_str());
 	TPad *p = (TPad*) canvas_pedestal_all->cd();
 	p->SetGrid();
 	hist_pedestal_all->Draw("COLZ");
@@ -1615,6 +1650,9 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	canvas_buffer_size_all->Clear();
 	canvas_buffer_size_all->cd();
 	canvas_buffer_size_all->SetRightMargin(0.15);
+	std::stringstream ss_title_buffer;
+	ss_title_buffer << "Buffer Size ("<<current_time.str()<<")";
+	hist_buffer_size_all->SetTitle(ss_title_buffer.str().c_str());
 	TPad *prate = (TPad*) canvas_buffer_size_all->cd();
 	prate->SetGrid();
 	hist_buffer_size_all->Draw("COLZ");
@@ -1623,6 +1661,9 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	ss_path_rate << outpath << "LAPPD_Buffer_Size_current." << img_extension;
 	canvas_buffer_size_all->SaveAs(ss_path_rate.str().c_str());
 
+	std::stringstream ss_title_rate_threshold;
+	ss_title_rate_threshold << "Rate over Threshold - ("<<current_time.str()<<")";
+	hist_rate_threshold_all->SetTitle(ss_title_rate_threshold.str().c_str());
 	canvas_rate_threshold_all->Clear();
 	canvas_rate_threshold_all->cd();
 	canvas_rate_threshold_all->SetRightMargin(0.15);
@@ -1634,6 +1675,9 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	ss_path_rate_threshold << outpath << "LAPPD_Rates_Threshold_current." << img_extension;
 	canvas_rate_threshold_all->SaveAs(ss_path_rate_threshold.str().c_str());
 
+	std::stringstream ss_title_events_per_channel;
+	ss_title_events_per_channel << "Events ("<<current_time.str()<<")";
+	hist_events_per_channel->SetTitle(ss_title_events_per_channel.str().c_str());
 	canvas_events_per_channel->Clear();
 	canvas_events_per_channel->cd();
 	canvas_events_per_channel->SetRightMargin(0.15);
@@ -1716,13 +1760,17 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board) {
 				counter += content;
 			}
 			//TODO: Find better parameter
-			int x = 5;
-			if (center > (mean_vec.at(i_channel) + x * sigma_vec.at(i_channel))) {
+			//int x = 5;
+			if (center > (mean_vec.at(i_channel) + threshold_pulse * sigma_vec.at(i_channel))) {
+				counterThreshold += content;
+			} else if (center < (mean_vec.at(i_channel) - threshold_pulse * sigma_vec.at(i_channel))){
 				counterThreshold += content;
 			}
 		}
 
-		int entries = (int) data_beamgate_lastfile.at(board_nr).size();
+		//int entries = (int) data_beamgate_lastfile.at(board_nr).size();
+		//int entries = (int) hist_pedestal.at(board_nr).at(i_channel)->GetNbinsX();
+		int entries = n_data.at(board_nr);
 		int bufferSize;
 		if (entries == 0) {
 			bufferSize = 0;
@@ -1780,14 +1828,14 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		//  hist_align_1file.at(board_nr)->SetName(ss_1file.str().c_str());
 		//  hist_align_1file.at(board_nr)->SetTitle(ss_1file.str().c_str());
 		for (int i_align = 0; i_align < (int) data_beamgate_lastfile.at(board_nr).size(); i_align++) {
-			hist_align_1file.at(board_nr)->Fill(data_beamgate_lastfile.at(board_nr).at(i_align));
+			hist_align_1file.at(board_nr)->Fill(data_beamgate_lastfile.at(board_nr).at(i_align)*3.125);
 		}
 
 		//-------Last 5 Files---------
 		hist_align_5files.at(board_nr)->Reset();
 		for (int i_align = 0; i_align < (int) data_beamgate_last5files.at(board_nr).size(); i_align++) {
 			for (int i_data = 0; i_data < (int) data_beamgate_last5files.at(board_nr).at(i_align).size(); i_data++) {
-				hist_align_5files.at(board_nr)->Fill(data_beamgate_last5files.at(board_nr).at(i_align).at(i_data));
+				hist_align_5files.at(board_nr)->Fill(data_beamgate_last5files.at(board_nr).at(i_align).at(i_data)*3.125);
 			}
 		}
 
@@ -1795,7 +1843,8 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		hist_align_10files.at(board_nr)->Reset();
 		for (int i_align = 0; i_align < (int) data_beamgate_last10files.at(board_nr).size(); i_align++) {
 			for (int i_data = 0; i_data < (int) data_beamgate_last10files.at(board_nr).at(i_align).size(); i_data++) {
-				hist_align_10files.at(board_nr)->Fill(data_beamgate_last10files.at(board_nr).at(i_align).at(i_data));
+				hist_align_10files.at(board_nr)->Fill(data_beamgate_last10files.at(board_nr).at(i_align).at(i_data)*3.125);
+				if (verbosity > 4) std::cout <<"MonitorLAPPDData: Filling time alignment of "<<(data_beamgate_last10files.at(board_nr).at(i_align).at(i_data))<<std::endl;
 			}
 		}
 
@@ -1803,7 +1852,7 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		hist_align_20files.at(board_nr)->Reset();
 		for (int i_align = 0; i_align < (int) data_beamgate_last20files.at(board_nr).size(); i_align++) {
 			for (int i_data = 0; i_data < (int) data_beamgate_last20files.at(board_nr).at(i_align).size(); i_data++) {
-				hist_align_20files.at(board_nr)->Fill(data_beamgate_last20files.at(board_nr).at(i_align).at(i_data));
+				hist_align_20files.at(board_nr)->Fill(data_beamgate_last20files.at(board_nr).at(i_align).at(i_data)*3.125);
 			}
 		}
 
@@ -1811,9 +1860,18 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		hist_align_100files.at(board_nr)->Reset();
 		for (int i_align = 0; i_align < (int) data_beamgate_last100files.at(board_nr).size(); i_align++) {
 			for (int i_data = 0; i_data < (int) data_beamgate_last100files.at(board_nr).at(i_align).size(); i_data++) {
-				hist_align_100files.at(board_nr)->Fill(data_beamgate_last100files.at(board_nr).at(i_align).at(i_data));
+				hist_align_100files.at(board_nr)->Fill(data_beamgate_last100files.at(board_nr).at(i_align).at(i_data)*3.125);
 			}
 		}
+
+		//------Last 1000 Files---------
+		hist_align_1000files.at(board_nr)->Reset();
+		for (int i_align = 0; i_align < (int) data_beamgate_last1000files.at(board_nr).size(); i_align++) {
+			for (int i_data = 0; i_data < (int) data_beamgate_last1000files.at(board_nr).at(i_align).size(); i_data++) {
+				hist_align_1000files.at(board_nr)->Fill(data_beamgate_last1000files.at(board_nr).at(i_align).at(i_data)*3.125);
+			}
+		}
+
 		//The drawing happens here
 		canvas_align_1file->Clear();
 		canvas_align_1file->cd();
@@ -1869,6 +1927,18 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		std::stringstream ss_path_align100;
 		ss_path_align100 << outpath << "LAPPD_Time_Alignment_Hundred_Files_Board" << board_nr << "_current." << img_extension;
 		canvas_align_100files->SaveAs(ss_path_align100.str().c_str());
+		
+		canvas_align_1000files->Clear();
+		canvas_align_1000files->cd();
+		std::stringstream ss_text_align1000;
+		ss_text_align1000 << "Alignment Thousand Files Board " << board_nr << " (" << current_time.str() << ")";
+		hist_align_1000files.at(board_nr)->SetTitle(ss_text_align1000.str().c_str());
+		
+		hist_align_1000files.at(board_nr)->SetStats(0);
+		hist_align_1000files.at(board_nr)->Draw("");
+		std::stringstream ss_path_align1000;
+		ss_path_align1000 << outpath << "LAPPD_Time_Alignment_Thousand_Files_Board" << board_nr << "_current." << img_extension;
+		canvas_align_1000files->SaveAs(ss_path_align1000.str().c_str());
 
 	}
 }
@@ -1901,11 +1971,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 
 	//Set 0 rates in case no data was found for a board
 	for (int i_board=0; i_board < (int) board_configuration.size(); i_board++){
+		//std::cout <<"board: "<<i_board<<std::endl;
 
 		int board_nr = board_configuration.at(i_board);
-
+		//std::cout <<"board_nr: "<<board_nr<<std::endl;
 		if (frame_rate_plot.at(board_nr).size()==0){
 			for (int j_board=0; j_board < (int) board_configuration.size(); j_board++){
+				//std::cout <<"j_board: "<<j_board<<std::endl;
 				if (i_board == j_board) continue;
 				int board_nr2 = board_configuration.at(j_board);
 				if (frame_rate_plot.at(board_nr2).size()!=0){
@@ -1922,7 +1994,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 	}
 
 	for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
-
+		//std::cout <<"board: "<<i_board<<std::endl;
 		int board_nr = board_configuration.at(i_board);
 		int min_board = board_channel.at(i_board);
 
@@ -1959,8 +2031,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 
 		// Drawing time evolution plots
 
+		//std::cout <<"max_canvas"<<std::endl;
 		double max_canvas = 0;
 		double min_canvas = 9999999.;
+
+
+		//std::cout <<"board_nr: "<<board_nr<<std::endl;
+		//std::cout <<"pps_rate_plot.at(board_nr).size(): "<<pps_rate_plot.at(board_nr).size()<<std::endl;		
 
 		std::stringstream ss_pps;
 		ss_pps << "PPS rate time evolution Board " << board_nr << " (last " << ss_timeframe.str() << "h) " << end_time.str();
@@ -1975,7 +2052,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		graph_pps_rate.at(board_nr)->GetXaxis()->SetTimeOffset(0.);
 		graph_pps_rate.at(board_nr)->Draw("apl");
 		double max_pps = 1.;
-		double max_pps2 = TMath::MaxElement(pps_rate_plot.at(board_nr).size(), graph_pps_rate.at(board_nr)->GetY());;
+		double max_pps2 = 1.;
+		if (pps_rate_plot.at(board_nr).size()>0) max_pps2 = TMath::MaxElement(pps_rate_plot.at(board_nr).size(), graph_pps_rate.at(board_nr)->GetY());;
 		if (max_pps2 > max_pps) max_pps = max_pps2;
 		//if (pps_rate_plot.at(board_nr).size() > 0)
 		//	max_pps = TMath::MaxElement(pps_rate_plot.at(board_nr).size(), graph_pps_rate.at(board_nr)->GetY());
@@ -1984,6 +2062,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		ss_pps_path << outpath << "LAPPDData_TimeEvolution_PPSRate_Board" << board_nr << "_" << file_ending << "." << img_extension;
 		canvas_pps_rate->SaveAs(ss_pps_path.str().c_str());
 
+
+		//std::cout <<"frame rate"<<std::endl;
 		std::stringstream ss_frame;
 		ss_frame << "Frame rate time evolution Board " << board_nr << " (last " << ss_timeframe.str() << "h) " << end_time.str();
 		canvas_frame_rate->cd();
@@ -1997,7 +2077,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		graph_frame_rate.at(board_nr)->GetXaxis()->SetTimeOffset(0.);
 		graph_frame_rate.at(board_nr)->Draw("apl");
 		double max_frame = 1.;
-		double max_frame2 = TMath::MaxElement(frame_rate_plot.at(board_nr).size(), graph_frame_rate.at(board_nr)->GetY());
+		double max_frame2 = 1.;
+		if (frame_rate_plot.at(board_nr).size() > 0) max_frame2 = TMath::MaxElement(frame_rate_plot.at(board_nr).size(), graph_frame_rate.at(board_nr)->GetY());
 		if (max_frame2 > max_frame) max_frame = max_frame2;
 		//if (frame_rate_plot.at(board_nr).size() > 0 && *std::max_element(frame_rate_plot.at(board_nr).begin(),frame_rate_plot.at(board_nr).end())>0)
 			//max_frame = TMath::MaxElement(frame_rate_plot.at(board_nr).size(), graph_frame_rate.at(board_nr)->GetY());
@@ -2019,7 +2100,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		graph_int_charge.at(board_nr)->GetXaxis()->SetTimeOffset(0.);
 		graph_int_charge.at(board_nr)->Draw("apl");
 		double max_charge = 1.;
-		double max_charge2 = TMath::MaxElement(int_charge_plot.at(board_nr).size(), graph_int_charge.at(board_nr)->GetY());
+		double max_charge2 = 1.;
+		if (int_charge_plot.at(board_nr).size()>0) max_charge2 = TMath::MaxElement(int_charge_plot.at(board_nr).size(), graph_int_charge.at(board_nr)->GetY());
 		if (max_charge2 > max_charge) max_charge = max_charge2;
 //		if (int_charge_plot.at(board_nr).size() > 0)
 //			max_charge = TMath::MaxElement(int_charge_plot.at(board_nr).size(), graph_int_charge.at(board_nr)->GetY());
@@ -2041,7 +2123,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		graph_buffer_size.at(board_nr)->GetXaxis()->SetTimeOffset(0.);
 		graph_buffer_size.at(board_nr)->Draw("apl");
 		double max_buffer = 1.;
-		double max_buffer2 = TMath::MaxElement(buffer_size_plot.at(board_nr).size(), graph_buffer_size.at(board_nr)->GetY());
+		double max_buffer2 = 1.;
+		if (buffer_size_plot.at(board_nr).size()>0) max_buffer2 = TMath::MaxElement(buffer_size_plot.at(board_nr).size(), graph_buffer_size.at(board_nr)->GetY());
 		if (max_buffer2 > max_buffer) max_buffer = max_buffer2;
 		//if (buffer_size_plot.at(board_nr).size() > 0)
 		//	max_buffer = TMath::MaxElement(buffer_size_plot.at(board_nr).size(), graph_buffer_size.at(board_nr)->GetY());
@@ -2050,6 +2133,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		ss_buffer_path << outpath << "LAPPDData_TimeEvolution_BufferSize_Board" << board_nr << "_" << file_ending << "." << img_extension;
 		canvas_buffer_size->SaveAs(ss_buffer_path.str().c_str());
 
+		//std::cout <<"ped, sigma, ped"<<std::endl;
 		//Channel-wise rate, ped, sigma plots
 		if (board_nr != -1){
 
@@ -2174,6 +2258,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 
 		}
 	}
+	//std::cout <<"End of TimeEvolution"<<std::endl;
 }
 
 void MonitorLAPPDData::ProcessLAPPDData() {
@@ -2193,7 +2278,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 	Temp->Initialise("LAPPDTemp");
 	long entries;
 	Temp->Header->Get("TotalEntries",entries);
-
+	if (verbosity > 2) std::cout <<"MonitorLAPPDData: Got Temp entries: "<<entries<<std::endl;
 
 	for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++) {
 
@@ -2212,28 +2297,34 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		current_buffer_size.at(i_board) = 0.0;
 		current_num_entries.at(i_board) = 0;
 		n_buffer.at(i_board) = 0;
+		n_data.at(i_board) = 0;
+		n_pps.at(i_board) = 0;
 
 		first_beamgate_timestamp.at(i_board) = 0;
 		last_beamgate_timestamp.at(i_board) = 0;
 		first_timestamp.at(i_board) = 0;
 		last_timestamp.at(i_board) = 0;
+		first_pps_timestamps.at(i_board) = 0;
+		last_pps_timestamps.at(i_board) = 0;
 		first_entry.at(i_board) = true;
+		first_entry_pps.at(i_board) = true;
 
 		data_beamgate_lastfile.at(board_nr).clear();
 
 		for (size_t i_channel = 0; i_channel < hist_pedestal.at(board_nr).size(); i_channel++) {
-			hist_pedestal.at(board_nr).at(i_channel)->Clear();
+			//hist_pedestal.at(board_nr).at(i_channel)->Clear();
+			hist_pedestal.at(board_nr).at(i_channel)->Reset();
 		}
 
 		//ToDo: entries not equal to events
 //		long entries;
 //		LAPPDData->Header->Get("TotalEntries", entries);
 //
-//		for (int i_entry = 0; i_entry < (int) entries; i_entry++) {
-//			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_entry).at(board_nr).size(); i_channel++) {
-//				hist_waveforms_onedim.at(i_entry).at(board_nr).at(i_channel)->Clear();
-//			}
-//		}
+		for (int i_entry = 0; i_entry < 100; i_entry++) {
+			for (size_t i_channel = 0; i_channel < hist_waveforms_onedim.at(i_entry).at(board_nr).size(); i_channel++) {
+				hist_waveforms_onedim.at(i_entry).at(board_nr).at(i_channel)->Reset();
+			}
+		}
 	}
 
 	beamgate_timestamp.clear();
@@ -2267,6 +2358,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 	bool have_pps = false; 
 
 	for (int i_entry = 0; i_entry < (int) entries; i_entry++) {
+		if (verbosity > 1) std::cout <<"MonitorLAPPDData: i_entry: "<<i_entry<<"/"<<entries<<std::endl;
 
 		std::map<unsigned long, std::vector < Waveform<double>> > RawLAPPDData;
 		std::vector<unsigned short> Metadata;
@@ -2283,6 +2375,8 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 
         	Temp->Get("ACC",AccInfoFrame);
         	Temp->Get("Meta",Metadata);
+
+		if (verbosity > 1) std::cout <<"MonitorLAPPDData: entry_type: "<<entry_type<<std::endl;
 
                 /*LAPPDData->GetEntry(i_entry);
 		LAPPDData->Get("RawLAPPDData", RawLAPPDData);
@@ -2302,12 +2396,14 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 			entry_data++;
 		}*/
 
+		bool do_continue=false;
 		if (entry_type == "PPS"){
 
 
-			std::cout <<"PPS entry!"<<std::endl;
-			std::cout <<"Size of PPS vector: "<<pps.size()<<std::endl;
+			//std::cout <<"PPS entry!"<<std::endl;
+			//std::cout <<"Size of PPS vector: "<<pps.size()<<std::endl;
 
+			//if (pps.size()==16){
 			if (pps.size()==16){
 				unsigned short pps_63_48 = pps.at(2);
                 		unsigned short pps_47_32 = pps.at(3);
@@ -2317,19 +2413,102 @@ void MonitorLAPPDData::ProcessLAPPDData() {
                 		std::bitset < 16 > bits_pps_47_32(pps_47_32);
                			std::bitset < 16 > bits_pps_31_16(pps_31_16);
                 		std::bitset < 16 > bits_pps_15_0(pps_15_0);
-                		std::cout << "bits_pps_63_48: " << bits_pps_63_48 << std::endl;
-                		std::cout << "bits_pps_47_32: " << bits_pps_47_32 << std::endl;
-                		std::cout << "bits_pps_31_16: " << bits_pps_31_16 << std::endl;
-                		std::cout << "bits_pps_15_0: " << bits_pps_15_0 << std::endl;
+                		//std::cout << "bits_pps_63_48: " << bits_pps_63_48 << std::endl;
+                		//std::cout << "bits_pps_47_32: " << bits_pps_47_32 << std::endl;
+                		//std::cout << "bits_pps_31_16: " << bits_pps_31_16 << std::endl;
+                		//std::cout << "bits_pps_15_0: " << bits_pps_15_0 << std::endl;
                 		unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
                 		if (verbosity > 2) std::cout << "pps combined: " << pps_63_0 << std::endl;
                 		std::bitset < 64 > bits_pps_63_0(pps_63_0);
-                		std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
+                		//std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
                 		last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
+				int vector_idx = -1;
+				std::vector<int>::iterator it = std::find(board_configuration.begin(), board_configuration.end(), 0);
+                		if (it != board_configuration.end()) {
+                        	vector_idx = std::distance(board_configuration.begin(), it);
+                        	if (verbosity > 2) std::cout << "Found board index " << 0 << " at position " << vector_idx << " inside of the vector" << std::endl;
+                		} else {
+                        		Log("MonitorLAPPDData: ERROR!!! Board index " + std::to_string(0) + " was not found as one of the configured board index options!!! Abort LAPPD data entry", v_error, verbosity);
+                        		continue;
+                		}
+				if (first_entry_pps.at(vector_idx) == true) {
+                        		first_pps_timestamps.at(vector_idx) = last_pps_timestamp;
+                        		first_entry_pps.at(vector_idx) = false;
+                		}
+				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
+				n_pps.at(vector_idx) ++;
 				have_pps = true;
-				continue;
+				do_continue = true;
+			} else if (pps.size() == 32){
+				unsigned short pps_63_48 = pps.at(2);
+                		unsigned short pps_47_32 = pps.at(3);
+                		unsigned short pps_31_16 = pps.at(4);
+                		unsigned short pps_15_0 = pps.at(5);
+                		std::bitset < 16 > bits_pps_63_48(pps_63_48);
+                		std::bitset < 16 > bits_pps_47_32(pps_47_32);
+               			std::bitset < 16 > bits_pps_31_16(pps_31_16);
+                		std::bitset < 16 > bits_pps_15_0(pps_15_0);
+                		//std::cout << "bits_pps_63_48: " << bits_pps_63_48 << std::endl;
+                		//std::cout << "bits_pps_47_32: " << bits_pps_47_32 << std::endl;
+                		//std::cout << "bits_pps_31_16: " << bits_pps_31_16 << std::endl;
+                		//std::cout << "bits_pps_15_0: " << bits_pps_15_0 << std::endl;
+                		unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
+                		if (verbosity > 2) std::cout << "pps combined: " << pps_63_0 << std::endl;
+                		std::bitset < 64 > bits_pps_63_0(pps_63_0);
+                		//std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
+                		last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
+
+				int vector_idx = -1;
+                                std::vector<int>::iterator it = std::find(board_configuration.begin(), board_configuration.end(), 0);
+                                if (it != board_configuration.end()) {
+                                vector_idx = std::distance(board_configuration.begin(), it);
+                                if (verbosity > 2) std::cout << "Found board index " << 0 << " at position " << vector_idx << " inside of the vector" << std::endl;
+                                } else {
+                                        Log("MonitorLAPPDData: ERROR!!! Board index " + std::to_string(0) + " was not found as one of the configured board index options!!! Abort LAPPD data entry", v_error, verbosity);
+                                        continue;
+                                }
+                                if (first_entry_pps.at(vector_idx) == true) {
+                                        first_pps_timestamps.at(vector_idx) = last_pps_timestamp;
+                                        first_entry_pps.at(vector_idx) = false;
+                                }
+                                last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
+				n_pps.at(vector_idx) ++;
+				
+				pps_63_48 = pps.at(18);
+                                pps_47_32 = pps.at(19);
+                                pps_31_16 = pps.at(20);
+                                pps_15_0 = pps.at(21);
+                                std::bitset < 16 > Bits_pps_63_48(pps_63_48);
+                                std::bitset < 16 > Bits_pps_47_32(pps_47_32);
+                                std::bitset < 16 > Bits_pps_31_16(pps_31_16);
+                                std::bitset < 16 > Bits_pps_15_0(pps_15_0);
+				pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
+                                if (verbosity > 2) std::cout << "pps combined: " << pps_63_0 << std::endl;
+                                std::bitset < 64 > Bits_pps_63_0(pps_63_0);
+                                //std::cout << "bits_pps_63_0: " << Bits_pps_63_0 << std::endl;
+                                last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
+
+				it = std::find(board_configuration.begin(), board_configuration.end(), 1);
+                                if (it != board_configuration.end()) {
+                                vector_idx = std::distance(board_configuration.begin(), it);
+                                if (verbosity > 2) std::cout << "Found board index " << 1 << " at position " << vector_idx << " inside of the vector" << std::endl;
+                                } else {
+                                        Log("MonitorLAPPDData: ERROR!!! Board index " + std::to_string(1) + " was not found as one of the configured board index options!!! Abort LAPPD data entry", v_error, verbosity);
+                                        continue;
+                                }
+                                if (first_entry_pps.at(vector_idx) == true) {
+                                        first_pps_timestamps.at(vector_idx) = last_pps_timestamp;
+                                        first_entry_pps.at(vector_idx) = false;
+                                }
+                                last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
+				n_pps.at(vector_idx) ++;
+
+				have_pps = true;
+				do_continue = true;
+
 			}
 		}
+		if (do_continue) continue;
 
 
 		if (verbosity > 2){
@@ -2345,6 +2524,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		//Create "offset" variable based on position of the Board Index
 		unsigned short metadata_0 = Metadata.at(0);
 		unsigned short metadata_1 = Metadata.at(1);
+		//std::cout <<"metadata_0: "<<metadata_0<<", metadata_1: "<<metadata_1<<std::endl;
 		int offset = 0;
 		int board_idx = -1;
 		if (metadata_0 == 56496 /*51712*/)
@@ -2385,14 +2565,53 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		std::bitset < 16 > bits_beamgate_47_32(beamgate_47_32);
 		std::bitset < 16 > bits_beamgate_31_16(beamgate_31_16);
 		std::bitset < 16 > bits_beamgate_15_0(beamgate_15_0);
-		//std::cout << "bits_beamgate_63_48: " << bits_beamgate_63_48 << std::endl;
-		//std::cout << "bits_beamgate_47_32: " << bits_beamgate_47_32 << std::endl;
-		//std::cout << "bits_beamgate_31_16: " << bits_beamgate_31_16 << std::endl;
-		//std::cout << "bits_beamgate_15_0: " << bits_beamgate_15_0 << std::endl;
+		if (verbosity > 2) std::cout << "bits_beamgate_63_48: " << bits_beamgate_63_48 << std::endl;
+		if (verbosity > 2) std::cout << "bits_beamgate_47_32: " << bits_beamgate_47_32 << std::endl;
+		if (verbosity > 2) std::cout << "bits_beamgate_31_16: " << bits_beamgate_31_16 << std::endl;
+		if (verbosity > 2) std::cout << "bits_beamgate_15_0: " << bits_beamgate_15_0 << std::endl;
 		unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
 		if (verbosity > 2) std::cout << "beamgate combined: " << beamgate_63_0 << std::endl;
 		std::bitset < 64 > bits_beamgate_63_0(beamgate_63_0);
-		//std::cout << "bits_beamgate_63_0: " << bits_beamgate_63_0 << std::endl;
+		if (verbosity > 2) std::cout << "bits_beamgate_63_0: " << bits_beamgate_63_0 << std::endl;
+
+
+		std::stringstream str_beamgate_15_0;
+		str_beamgate_15_0 << std::hex << (beamgate_15_0);
+		std::stringstream str_beamgate_31_16; 
+		str_beamgate_31_16 << std::hex << (beamgate_31_16);
+		std::stringstream str_beamgate_47_32;
+		str_beamgate_47_32 << std::hex << (beamgate_47_32);
+		std::stringstream str_beamgate_63_48;
+		str_beamgate_63_48 << std::hex << (beamgate_63_48);
+		const char *hexstring = str_beamgate_63_48.str().c_str();
+		unsigned int meta7_1 = (unsigned int)strtol(hexstring, NULL, 16);
+		hexstring = str_beamgate_47_32.str().c_str();
+		unsigned int meta27_1 = (unsigned int) strtol(hexstring, NULL, 16);
+		hexstring = str_beamgate_31_16.str().c_str();
+		unsigned int meta47_1 = (unsigned int) strtol(hexstring, NULL, 16);
+		hexstring = str_beamgate_15_0.str().c_str();
+		unsigned int meta67_1 = (unsigned int) strtol(hexstring, NULL, 16);
+		meta7_1 = meta7_1 << 16;
+		meta47_1 = meta47_1 << 16;
+
+		unsigned int beamcounter = meta47_1 + meta67_1;
+		unsigned int beamcounterL = meta7_1 + meta27_1;		
+
+		double largetime = (double)beamcounterL*13.1;
+		double smalltime = ((double)beamcounter/1E9)*3.125;
+
+		if (verbosity > 2) {
+		std::cout <<"meta7_1: "<<meta7_1<<std::endl;
+		std::cout <<"meta27_1: "<<meta27_1<<std::endl;
+		std::cout <<"meta47_1: "<<meta47_1<<std::endl;
+		std::cout <<"meta67_1: "<<meta67_1<<std::endl;
+		std::cout <<"beamcounter: "<<beamcounter<<std::endl;
+		std::cout <<"beamcounterL: "<<beamcounterL<<std::endl;
+		std::cout <<"largetime: "<<largetime<<std::endl;
+		std::cout <<"smalltime: "<<smalltime<<std::endl;
+		std::cout <<"eventtime: "<<(largetime+smalltime)<<std::endl;
+		std::cout <<"beamgate old: "<<((beamgate_63_0/1E9)*3.125)<<std::endl;
+		}
 
 		//Build data timestamp
 		unsigned short timestamp_63_48 = Metadata.at(70 - offset);	//Shift everything by 1 for the test file
@@ -2434,22 +2653,35 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		if (verbosity > 2) std::cout <<"Loop through LAPPD Data"<<std::endl;
 		int n_channels = 0;
 		double buffer_size = 0;
+		n_data.at(vector_idx) ++;
 		for (std::map<unsigned long, std::vector<Waveform<double>>>::iterator it = RawLAPPDData.begin(); it != RawLAPPDData.end(); it++) {
-			//std::cout <<"Got channel "<<it->first<<std::endl;
+			if (verbosity > 4) std::cout <<"Got channel "<<it->first<<std::endl;
 			n_channels++;
 			std::vector<Waveform<double>> waveforms = it->second;
 			for (int i_vec = 0; i_vec < (int) waveforms.size(); i_vec++) {
+				//std::cout <<"i_vec: "<<i_vec<<std::endl;
+				//std::cout <<"board_idx: "<<board_idx<<std::endl;
 				std::vector<double> waveform = *(waveforms.at(i_vec).GetSamples());
 				hist_buffer_channel.at(board_idx)->Fill(waveform.size(), it->first);
 				hist_buffer.at(board_idx)->Fill(waveform.size());
 				current_buffer_size.at(vector_idx) += waveform.size();
 				buffer_size += waveform.size();
 				n_buffer.at(vector_idx)++;
+				//std::cout <<"waveform.size(): "<<waveform.size()<<std::endl;
 				for(int i_wave=0; i_wave < (int) waveform.size(); i_wave++) {
+					//std::cout <<"hist_adc_channel"<<std::endl;
 					hist_adc_channel.at(board_idx)->Fill(waveform.at(i_wave),it->first);
+					//std::cout <<"hist_waveform_channel"<<std::endl;
 					hist_waveform_channel.at(board_idx)->SetBinContent(i_wave+1,(it->first)%30+1,hist_waveform_channel.at(board_idx)->GetBinContent(i_wave+1,(it->first)%30+1)+waveform.at(i_wave));
+					//std::cout <<"hist_waveform_voltages"<<std::endl;
 					hist_waveform_voltages.at(board_idx)->Fill(i_wave, it->first, waveform.at(i_wave));
+					//std::cout <<"hist_waveforms_onedim"<<std::endl;
+					//std::cout <<i_entry<<"/"<<board_idx<<"/"<<it->first-min_board<<std::endl;
+					//std::cout <<"hist_waveforms_onedim.size(): "<<hist_waveforms_onedim.size()<<std::endl;
+					//std::cout <<"hist_waveforms_onedim.at(i_entry).size(): "<<hist_waveforms_onedim.at(i_entry).size()<<std::endl;
+					//std::cout <<"hist_waveforms_onedim.at(i_entry).at(board_idx).size(): "<<hist_waveforms_onedim.at(i_entry).at(board_idx).size()<<std::endl;
 					if (i_entry < 100) hist_waveforms_onedim.at(i_entry).at(board_idx).at(it->first-min_board)->Fill(i_wave,waveform.at(i_wave));
+					//std::cout <<"hist_pedestal"<<std::endl;
 					hist_pedestal.at(board_idx).at(it->first-min_board)->Fill(waveform.at(i_wave));
 				}
 			}
@@ -2462,6 +2694,26 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 	}		//end entry loop
 
 
+	//Check whether file time has already been synced
+	std::time_t current_filetime;
+	m_data->CStore.Get("CurrentFileTime",current_filetime);
+	boost::posix_time::ptime reference_new = boost::posix_time::from_time_t(current_filetime);
+	boost::posix_time::time_duration reference_stamp_new = boost::posix_time::time_duration(reference_new - *Epoch);
+	
+	if (!sync_reference_time){
+		if (have_pps) {
+			reference_time = reference_stamp_new.total_milliseconds();
+			reference_time -= last_pps_timestamps.at(0);
+			sync_reference_time = true;
+		}
+	} else {
+		if (have_pps){
+			ULong64_t reference_time_temp = reference_stamp_new.total_milliseconds();
+			reference_time_temp -= last_pps_timestamps.at(0);
+			double diff = double(reference_time_temp) - double(reference_time);
+			if (verbosity > 2) std::cout <<"MonitorLAPPDData: Synced time offset for PPS timestamps: "<<diff<<" milliseconds"<<std::endl;
+		}
+	}
         t_file_end.clear();
 
 	bool got_tfile_start = false;
@@ -2471,17 +2723,23 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		ModifyBeamgateData(10, board_nr, data_beamgate_last10files);
 		ModifyBeamgateData(20, board_nr, data_beamgate_last20files);
 		ModifyBeamgateData(100, board_nr, data_beamgate_last100files);
+		ModifyBeamgateData(1000, board_nr, data_beamgate_last1000files);
 		if (entries > 0)
 			hist_waveform_channel.at(board_nr)->Scale(1. / entries);
 		double diff_timestamps = (last_timestamp.at(i_board) - first_timestamp.at(i_board)) * CLOCK_to_SEC;
 		double diff_timestamps_beam = (last_beamgate_timestamp.at(i_board) - first_beamgate_timestamp.at(i_board)) * CLOCK_to_SEC;
+		double diff_timestamps_pps = (last_pps_timestamps.at(i_board) - first_pps_timestamps.at(i_board)) / 1000.;
+		if (verbosity > 3) std::cout <<"first_pps_timestamp: "<<first_pps_timestamps.at(i_board)<<", last_pps_timestamp: "<<last_pps_timestamps.at(i_board)<<", diff: "<<diff_timestamps_pps<<std::endl;
+		if (verbosity > 3) std::cout <<"n_pps: "<<n_pps.at(i_board)<<", rate: "<< (n_pps.at(i_board)/diff_timestamps_pps) <<std::endl;
 		if (verbosity > 3) std::cout <<"i_board: "<<i_board<<", first_timestamp: "<<first_timestamp.at(i_board)<<", last_timestamp: "<<last_timestamp.at(i_board)<<", diff_timestamps: "<<diff_timestamps<<std::endl;
 		if (diff_timestamps > 0.)
-			current_frame_rate.at(i_board) = n_buffer.at(i_board) / diff_timestamps; // Need to convert difference of timestamps into seconds or something similar
+			current_frame_rate.at(i_board) = n_data.at(i_board) / diff_timestamps; // Need to convert difference of timestamps into seconds or something similar
 		if (diff_timestamps_beam > 0.)
-			current_beamgate_rate.at(i_board) = n_buffer.at(i_board) / diff_timestamps_beam; // Need to convert difference of timestamps into seconds or something similar
+			current_beamgate_rate.at(i_board) = n_data.at(i_board) / diff_timestamps_beam; // Need to convert difference of timestamps into seconds or something similar
 		if (n_buffer.at(i_board) != 0)
 			current_buffer_size.at(i_board) /= n_buffer.at(i_board);
+		if (diff_timestamps_pps > 0.)
+			current_pps_rate.at(i_board) = (n_pps.at(i_board)) / diff_timestamps_pps;
 
 		//Convert timestamps to msec
 		//TODO: Need to add absolute time reference from PPS signal to get milliseconds since 1970/1/1
@@ -2499,7 +2757,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 
 		if (!got_tfile_start && first_timestamp.at(i_board) > 0) {
 			t_file_start = first_timestamp.at(i_board);
-			got_tfile_start = true;
+			if (board_nr != -1) got_tfile_start = true;
 		}
 
 		t_file_end.push_back(last_timestamp.at(i_board));
@@ -2518,6 +2776,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 
 	Temp->Close();
 	delete Temp;
+
 }
 
 void MonitorLAPPDData::ModifyBeamgateData(size_t numberOfFiles, int boardNumber, std::map<int, std::vector<std::vector<uint64_t>>> &dataVector) {

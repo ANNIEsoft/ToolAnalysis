@@ -96,7 +96,8 @@ class MonitorLAPPDData: public Tool {
   bool draw_marker;
   int verbosity;
   std::string plot_configuration;
-
+  double threshold_pulse;
+  bool sync_reference_time;
   //Plot configuration variables
   std::vector<double> config_timeframes;
   std::vector<std::string> config_endtime;
@@ -157,8 +158,13 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_beamgate_timestamp;
   std::vector<uint64_t> first_timestamp;
   std::vector<uint64_t> last_timestamp;
+  std::vector<uint64_t> first_pps_timestamps;
+  std::vector<uint64_t> last_pps_timestamps;
   std::vector<bool> first_entry;
+  std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
+  std::vector<int> n_data;
+  std::vector<int> n_pps;
   std::vector<uint64_t> t_file_end;
   ULong64_t t_file_start;
   ULong64_t t_file_end_global;
@@ -182,6 +188,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last10files;
   std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last20files;
   std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last100files;
+  std::map<int,std::vector<std::vector<uint64_t>>> data_beamgate_last1000files;
 
   //Plotting variables in vectors (multiple files)
   std::map<int,std::vector<ULong64_t>> data_times_plot;
@@ -212,6 +219,7 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_align_10files = nullptr;
   TCanvas *canvas_align_20files = nullptr;
   TCanvas *canvas_align_100files = nullptr;
+  TCanvas *canvas_align_1000files = nullptr;
   TCanvas *canvas_adc_channel = nullptr;
   TCanvas *canvas_waveform = nullptr;
   TCanvas *canvas_buffer_channel = nullptr;
@@ -255,6 +263,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int,TH1F*> hist_align_10files;
   std::map<int,TH1F*> hist_align_20files;
   std::map<int,TH1F*> hist_align_100files;
+  std::map<int,TH1F*> hist_align_1000files;
   std::map<int,TH2F*> hist_adc_channel;
   std::map<int,TH2F*> hist_waveform_channel;
   std::map<int,TH2F*> hist_buffer_channel;
