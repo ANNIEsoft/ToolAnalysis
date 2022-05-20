@@ -394,10 +394,10 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		hist_rate_threshold_all->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 		hist_events_per_channel->GetYaxis()->SetBinLabel(i_label_y + 1, str_card.c_str());
 	}
-	hist_pedestal_all->GetZaxis()->SetTitle("Mean Pedestal [ADC count]");
-	hist_pedestal_difference_all->GetZaxis()->SetTitle("Mean Pedestal [ADC count]");
+	hist_pedestal_all->GetZaxis()->SetTitle("Mean Baseline [ADC count]");
+	hist_pedestal_difference_all->GetZaxis()->SetTitle("Mean Baseline [ADC count]");
 	hist_buffer_size_all->GetZaxis()->SetTitle("Buffer Size");
-	hist_rate_threshold_all->GetZaxis()->SetTitle("Number of Samples > Mean Pedestal");
+	hist_rate_threshold_all->GetZaxis()->SetTitle("Number of Samples > Mean Baseline");
 	hist_events_per_channel->GetZaxis()->SetTitle("Number of Events");
 	hist_pedestal_all->GetZaxis()->SetTitleOffset(1.3);
 	hist_pedestal_difference_all->GetZaxis()->SetTitleOffset(1.3);
@@ -457,7 +457,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		TH1F *hist_align_20files_single = new TH1F(ss_align_20files.str().c_str(), ss_align_20files.str().c_str(), 100, 0, 20000);
 		TH1F *hist_align_100files_single = new TH1F(ss_align_100files.str().c_str(), ss_align_100files.str().c_str(), 100, 0, 20000);
 		TH1F *hist_align_1000files_single = new TH1F(ss_align_1000files.str().c_str(), ss_align_1000files.str().c_str(), 100, 0, 20000);
-		TH2F *hist_adc_channel_single = new TH2F(ss_adc_channel.str().c_str(), ss_adc_channel.str().c_str(), 200, 0, 4096, 30, min_board, min_board+30);
+		TH2F *hist_adc_channel_single = new TH2F(ss_adc_channel.str().c_str(), ss_adc_channel.str().c_str(), 200, -500, 0, 30, min_board, min_board+30);
 		TH2F *hist_waveform_channel_single = new TH2F(ss_waveform_channel.str().c_str(), ss_waveform_channel.str().c_str(), 256, 0, 256, 30, min_board, min_board+30);
 		TH2F *hist_buffer_channel_single = new TH2F(ss_buffer_channel.str().c_str(), ss_buffer_channel.str().c_str(), 50, 0, 2000, 30, min_board, min_board+30);
 		TH1F *hist_buffer_single = new TH1F(ss_buffer.str().c_str(), ss_buffer.str().c_str(), 50, 0, 2000);
@@ -527,7 +527,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 			std::stringstream ss_pedestal_text;
 			ss_pedestal_text << "hist_pedestal" << board_nr << "channel" << i;
 			//ToDo: change this values to more reasonable numbers
-			TH1F *hist_pedestal_single = new TH1F(ss_pedestal_text.str().c_str(), ss_pedestal_text.str().c_str(), 1000, 0, 4000);
+			TH1F *hist_pedestal_single = new TH1F(ss_pedestal_text.str().c_str(), ss_pedestal_text.str().c_str(), 200, -100, 0);
 			hist_pedestal_single->GetXaxis()->SetTitle("ADC value");
 			hist_pedestal_single->GetYaxis()->SetTitle("Entries");
 			hist_pedestal_single->SetStats(0);
@@ -657,7 +657,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 
 				std::stringstream title_rate, title_ped, title_sigma;
                 		title_rate << "LAPPD Rate time evolution - Channel " << chkey;
-                		title_ped << "LAPPD Pedestal time evolution - Channel " << chkey;
+                		title_ped << "LAPPD Baseline time evolution - Channel " << chkey;
                 		title_sigma << "LAPPD Sigma time evolution - Channel " << chkey;
 
 				graph_rate_single->SetTitle(title_rate.str().c_str());
@@ -687,7 +687,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 				graph_sigma_single->SetFillColor(0);
 
 				graph_rate_single->GetYaxis()->SetTitle("Rate [Hz]");
-				graph_ped_single->GetYaxis()->SetTitle("Pedestal");
+				graph_ped_single->GetYaxis()->SetTitle("Baseline");
 				graph_sigma_single->GetYaxis()->SetTitle("Sigma");
 
 				graph_rate_single->GetXaxis()->SetTimeDisplay(1);
@@ -1623,7 +1623,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 
 //				Testing
 //				std::cout << "i_event " << i_event << " i_channel " << i_channel << std::endl;
-//				std::cout << "Pedestal " << mean_pedestal.at(board_nr).at(i_channel) << std::endl;
+//				std::cout << "Baseline " << mean_pedestal.at(board_nr).at(i_channel) << std::endl;
 //				std::cout << "Maximum " << hist_waveforms_onedim.at(i_event).at(board_nr).at(i_channel)->GetMaximum() << std::endl;
 
 				}
@@ -1637,7 +1637,7 @@ void MonitorLAPPDData::DrawLastFileHists() {
 	canvas_pedestal_all->cd();
 	canvas_pedestal_all->SetRightMargin(0.15);
 	std::stringstream ss_title_pedestals;
-	ss_title_pedestals << "Pedestals ("<<current_time.str()<<")";
+	ss_title_pedestals << "Baselines ("<<current_time.str()<<")";
 	hist_pedestal_all->SetTitle(ss_title_pedestals.str().c_str());
 	TPad *p = (TPad*) canvas_pedestal_all->cd();
 	p->SetGrid();
@@ -1712,8 +1712,8 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board) {
 		hist_pedestal.at(board_nr).at(i_channel)->SetTitle(ss_text_pedestal.str().c_str());
 		hist_pedestal.at(board_nr).at(i_channel)->SetStats(0);
 		entries_vec.push_back(hist_pedestal.at(board_nr).at(i_channel)->GetEntries());
-		double minimum_adc = 0;
-		double maximum_adc = 4000;
+		double minimum_adc = -100;
+		double maximum_adc = 0;
 		TF1 *fgaus = new TF1("fgaus", "gaus", minimum_adc, maximum_adc);
 		fgaus->SetParameter(1, hist_pedestal.at(board_nr).at(i_channel)->GetMean());
 		fgaus->SetParameter(2, hist_pedestal.at(board_nr).at(i_channel)->GetRMS());
@@ -1722,7 +1722,7 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board) {
 
 		//TODO: Put this in own function and tune parameters
 
-		hist_pedestal.at(board_nr).at(i_channel)->Draw("C");
+		hist_pedestal.at(board_nr).at(i_channel)->Draw();
 		fgaus->Draw("SAME");
 		canvas_pedestal->SaveAs(ss_path_pedestal.str().c_str());
 
@@ -2173,7 +2173,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 						canvas_ped_lappd->cd();
 						multi_ped_lappd->Draw("apl");
 						multi_ped_lappd->SetTitle(ss_ped.str().c_str());
-						multi_ped_lappd->GetYaxis()->SetTitle("Pedestal");
+						multi_ped_lappd->GetYaxis()->SetTitle("Baseline");
 						multi_ped_lappd->GetXaxis()->SetTimeDisplay(1);
 						multi_ped_lappd->GetXaxis()->SetLabelSize(0.03);
 						multi_ped_lappd->GetXaxis()->SetLabelOffset(0.03);

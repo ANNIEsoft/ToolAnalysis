@@ -1,6 +1,6 @@
 # LAPPD Data Monitoring config file
 
-verbose 5
+verbose 0
 #OutputPath ./monitoringplots/
 OutputPath fromStore
 StartTime 1970/1/1 #start time for the conversion of timestamps into dates

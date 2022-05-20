@@ -15,6 +15,37 @@ bool ParseDataMonitoring::Initialise(std::string configfile, DataModel &data){
 
     LAPPDData = new BoostStore(false,2);
 
+    PedestalValues = new std::map<unsigned long, vector<int>>;
+    m_variables.Get("DoPedSubtraction", DoPedSubtract);
+    m_variables.Get("Pedinputfile",PedFileName);
+    m_variables.Get("Nboards", Nboards);
+    m_data->Stores["PedestalFile"] = new BoostStore(false,2);
+    if(DoPedSubtract==1)//extra work for multi ped files and stores
+    {
+        bool ret=false;
+        if (FILE *file = fopen(PedFileName.c_str(), "r")) 
+        {
+            fclose(file);
+            ret = true;
+            cout << "Using Store Pedestal File" << endl;
+        }
+        if(ret)
+        {
+            m_data->Stores["PedestalFile"]->Initialise(PedFileName);
+            long Pedentries;
+            m_data->Stores["PedestalFile"]->Header->Get("TotalEntries",Pedentries);
+            if(verbosity>0) cout << PedFileName << " got " << Pedentries << endl;
+            m_data->Stores["PedestalFile"]->Get("PedestalMap",PedestalValues);        
+        }else
+        {
+            m_variables.Get("PedinputfileTXT", PedFileNameTXT);
+            for(int i=0; i<Nboards; i++)
+            {
+                ReadPedestals(i);
+            }
+        }
+    }
+
     return true;
 }
 
@@ -59,6 +90,10 @@ bool ParseDataMonitoring::Execute()
         PsecData PDATA;
         LAPPDData->Get("LAPPDData",PDATA);
         if (verbosity > 1) PDATA.Print();
+
+	std::string psec_timestamp = PDATA.Timestamp;
+	if (verbosity > 1) std::cout <<"psec_timestamp: "<<psec_timestamp<<std::endl;
+	m_data->CStore.Set("PSecTimestamp",psec_timestamp);
 
         std::vector<unsigned short> Raw_Buffer = PDATA.RawWaveform;
         std::vector<int> BoardId_Buffer = PDATA.BoardIndex;
@@ -185,10 +220,21 @@ bool ParseDataMonitoring::Execute()
         for(std::map<int, vector<unsigned short>>::iterator it=data.begin(); it!=data.end(); ++it)
         {
 	    bool first=true;
-            for(unsigned short k: it->second)
+            for(int kvec=0; kvec<it->second.size(); kvec++)
+            //for(unsigned short k: it->second)
             {
-                tmpWave.PushSample((double)k);
-		if (verbosity > 4 && first) std::cout <<"Chankey "<<it->first<<", ADC value "<<k<<std::endl;
+		int pedval,val;
+		val=(int)it->second.at(kvec);
+                if(DoPedSubtract==1)
+                {
+                  pedval = ((PedestalValues->find(it->first))->second).at(kvec);
+                }else
+                {
+                  pedval = 0;
+                }
+                tmpWave.PushSample(0.3*(double)(val-pedval));
+                //tmpWave.PushSample((double)k);
+		if (verbosity > 4 && first) std::cout <<"Chankey "<<it->first<<", ADC value "<<val<<", subtracted: "<<(0.3*(double)(val-pedval))<<std::endl;
 		first = false;
             }
             VecTmpWave.push_back(tmpWave);
@@ -476,4 +522,57 @@ int ParseDataMonitoring::getParsedData(std::vector<unsigned short> buffer, int c
     }
 
     return 0;
+}
+
+bool ParseDataMonitoring::ReadPedestals(int boardNo){
+
+    if(verbosity>0) cout<<"Getting Pedestals "<<boardNo<<endl;
+
+    std::string LoadName = PedFileNameTXT;
+    string nextLine; //temp line to parse
+    double finalsampleNo;
+    std::string ext = std::to_string(boardNo);
+    ext += ".txt";
+    LoadName += ext;
+    PedFile.open(LoadName);
+    if(!PedFile.is_open())
+    {
+        cout<<"Failed to open "<<LoadName<<"!"<<endl;
+        return false;
+    }
+    if(verbosity>0) cout<<"Opened file: "<<LoadName<<endl;
+
+    int sampleNo=0; //sample number
+    while(getline(PedFile, nextLine))
+    {
+        istringstream iss(nextLine); //copies the current line in the file
+        int location=-1; //counts the current perameter in the line
+        string stempValue; //current string in the line
+        int tempValue; //current int in the line
+
+        unsigned long channelNo=boardNo*30; //channel number
+//cout<<"NEW BOARD "<<channelNo<<" "<<sampleNo<<endl;
+//
+//      //starts the loop at the beginning of the line
+        while(iss >> stempValue)
+        {
+            location++;
+
+            int tempValue = stoi(stempValue, 0, 10);
+
+            if(sampleNo==0){
+                vector<int> tempPed;
+                tempPed.push_back(tempValue);
+                //cout<<"First time: "<<channelNo<<" "<<tempValue<<endl;
+                PedestalValues->insert(pair <unsigned long,vector<int>> (channelNo,tempPed));
+            }
+	    else {
+                (((PedestalValues->find(channelNo))->second)).push_back(tempValue);
+	    }
+	  channelNo++;
+	}
+        sampleNo++;
+    }
+  PedFile.close();
+  return true;
 }

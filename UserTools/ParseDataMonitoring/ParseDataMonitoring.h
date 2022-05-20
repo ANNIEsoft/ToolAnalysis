@@ -37,6 +37,7 @@ class ParseDataMonitoring: public Tool {
 
   int getParsedData(vector<unsigned short> buffer, int ch_start);
   int getParsedMeta(vector<unsigned short> buffer, int BoardId);
+  bool ReadPedestals(int boardNo);
 
  private:
 
@@ -47,6 +48,11 @@ class ParseDataMonitoring: public Tool {
 
   int verbosity;
   int max_entries;
+  ifstream PedFile;
+  string PedFileName, PedFileNameTXT;
+  int DoPedSubtract;
+  std::map<unsigned long, vector<int>> *PedestalValues;    
+  int Nboards;
 
   int channel_count=0;
   map<int, std::vector<unsigned short>> data;
