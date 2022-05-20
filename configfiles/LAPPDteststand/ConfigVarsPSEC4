@@ -48,6 +48,7 @@ DelayOffset 0
 GlobalShift 180
 
 #LAPPDBaselineSubtract
+BaselineSubstractVerbosityLevel 0
 TrigChannel1  1005
 TrigChannel2  1035
 BLSInputWavLabel LAPPDWaveforms
