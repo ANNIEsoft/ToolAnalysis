@@ -34,6 +34,18 @@ bool LAPPDStoreReorderData::Execute()
     m_data->Stores["ANNIEEvent"]->Get("ACDCboards",NReadBoards);
     std::map<unsigned long,vector<Waveform<double>>> reordereddata;
 
+    // values are not yet calculated. This is a placeholder so I don't break tools, downstream - MW
+    unsigned int trigcounter=0;
+    unsigned int trigcounterL=0;
+    unsigned int beamcounter=0;
+    unsigned int beamcounterL=0;
+    vector<unsigned int> tcounters;
+    tcounters.push_back(beamcounter);
+    tcounters.push_back(beamcounterL);
+    tcounters.push_back(trigcounter);
+    tcounters.push_back(trigcounterL);
+    m_data->Stores["ANNIEEvent"]->Set("TimingCounters",tcounters);
+
     // Loop over waveforms, reorder data
     // For 30 channels change to 10
     vector<unsigned short> Smeta26;
@@ -51,14 +63,14 @@ bool LAPPDStoreReorderData::Execute()
         vector<Waveform<double>> Vwavs = itr->second;
         int switchbit=0;
 
-        //Get the current board and the respective meta word 
+        //Get the current board and the respective meta word
         int bi = (int)channelno/30;
         unsigned short switchword = Smeta26[std::distance(NReadBoards.begin(),std::find(NReadBoards.begin(),NReadBoards.end(),bi))];
 
         //Set the switchbit
         switchbit = (switchword & 0x7)*32;
         switchbit+=delayoffset;
-        
+
         if(ReorderVerbosityLevel>1) cout<<"channel= "<<channelno<<endl;
         vector<Waveform<double>> Vrwav;
         //loop over all Waveforms
