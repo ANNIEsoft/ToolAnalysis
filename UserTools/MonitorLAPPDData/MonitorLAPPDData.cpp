@@ -1754,11 +1754,11 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board) {
 		}
 
 		for (int i_bin = 0; i_bin < hist_pedestal.at(board_nr).at(i_channel)->GetNbinsX(); i_bin++) {
-			double center = hist_pedestal.at(board_nr).at(i_channel)->GetBinCenter(i_bin);
-			int content = hist_pedestal.at(board_nr).at(i_channel)->GetBinContent(i_bin);
-			if (center > 0) {
+			double center = hist_pedestal.at(board_nr).at(i_channel)->GetBinCenter(i_bin+1);
+			int content = hist_pedestal.at(board_nr).at(i_channel)->GetBinContent(i_bin+1);
+			//if (center > 0) {
 				counter += content;
-			}
+			//}
 			//TODO: Find better parameter
 			//int x = 5;
 			if (center > (mean_vec.at(i_channel) + threshold_pulse * sigma_vec.at(i_channel))) {

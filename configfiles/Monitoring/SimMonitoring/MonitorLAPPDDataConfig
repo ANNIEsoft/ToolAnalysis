@@ -13,3 +13,4 @@ UpdateFrequency 1. #specify frequency for the file history plot, in mins
 ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
 DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
 ACDCBoardConfiguration ./configfiles/Monitoring/LAPPDACDCConfig.txt #configure which ACDC board numbers will be expected
+ThresholdPulse 3.	#3 sigma away from baseline -> pulse
