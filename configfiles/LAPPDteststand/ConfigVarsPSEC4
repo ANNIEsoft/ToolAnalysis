@@ -25,7 +25,7 @@ RawDataOutpuWavLabel  RawLAPPDData
 #PSECinputfile ../Data/2022-03-02/LAPPD40_BucketTest_VoltageScan/2350V/All.txt
 #PSECinputfile /pnfs/annie/persistent/users/mascenci/2022-01-04/LASERdata_FullSystemIntegration_ACDC30+23/PosX0Y-40/Ascii20220401_134302.txt
 #PSECinputfile ../../GitHub_LAPPDToolAnalysis/Ascii20220601_002414.txt
-PSECinputfile ../Data/2022-04-19/All_Beam.txt
+PSECinputfile /Data/LAPPD40depl_Beam_2022-04-23/Ascii20222304_220726.txt
 
 DoPedSubtraction 1
 Nboards 2
@@ -33,8 +33,8 @@ Nboards 2
 #Pedinputfile2 /pnfs/annie/persistent/users/mascenci/2022-01-04/PEDS_ACDC_board1.txt
 #Pedinputfile1 PEDS_ACDC_board0.txt
 #Pedinputfile2 PEDS_ACDC_board1.txt
-Pedinputfile1 ../Data/2022-01-15/PEDS_ACDC_board0.txt
-Pedinputfile2 ../Data/2022-01-15/PEDS_ACDC_board1.txt
+Pedinputfile1 /Data/LAPPD40depl_Beam_2022-04-23/PEDS_ACDC_board0.txt
+Pedinputfile2 /Data/LAPPD40depl_Beam_2022-04-23/PEDS_ACDC_board1.txt
 
 #LAPPDReorderData
 ReorderVerbosityLevel 0

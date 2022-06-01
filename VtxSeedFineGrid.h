@@ -40,7 +40,6 @@ class VtxSeedFineGrid: public Tool {
 	 void GenerateFineGrid();
 
 	 Direction findDirectionMRD();
-	 RecoVertex* FindSimpleDirection(RecoVertex* myVertex);
 
 //	 double GetMedianSeedTime(Position pos);
 
@@ -51,22 +50,19 @@ class VtxSeedFineGrid: public Tool {
 
 	 std::vector<RecoVertex>* SeedGridList = nullptr;
 	 RecoVertex* fTrueVertex = 0;
-	 std::vector<Position> Center;
+	 Position Center;
 	 Direction SeedDir;
 	 int fThisDigit = 0;
 	 int fSeedType = 2;
-	 int centerIndex[3];
 	 int verbosity = -1;
 	 int v_error = 0;
 	 int v_warning = 1;
 	 int v_message = 2;
 	 int v_debug = 3;
 	 bool useTrueDir = 1;
-	 bool useSimpleDir = 0;
 	 bool useMRDTrack = 0;
 	 bool usePastResolution = 0;
 	 bool useDirectionGrid = 0;
-	 bool multiGrid = 0;
 	 std::string InputFile =" ";
 
 	 std::vector<BoostStore>* theMrdTracks;   // the MRD tracks

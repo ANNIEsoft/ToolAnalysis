@@ -1,0 +1,4 @@
+verbosity 0
+
+OutputFile /Jingbo/MTCheck10005lappd200.root
+#ShowEvent 200

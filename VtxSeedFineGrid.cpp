@@ -10,11 +10,9 @@ bool VtxSeedFineGrid::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("useTrueDir", useTrueDir);
-  m_variables.Get("useSimpleDir", useSimpleDir);
   m_variables.Get("useMRDTrack", useMRDTrack);
   m_variables.Get("usePastResolution", usePastResolution);
   m_variables.Get("useDirectionGrid", useDirectionGrid);
-  m_variables.Get("multiGrid", multiGrid);
   m_variables.Get("InputFile", InputFile);
 
 
@@ -50,32 +48,19 @@ bool VtxSeedFineGrid::Execute(){
 		return false;
 	}
 
-	if (useSimpleDir) {
-		Log("Using simple direction", v_debug, verbosity);
+	if (!(useTrueDir || useMRDTrack || usePastResolution)) {
+		Log("Using simple direction (not yet implemented)", v_debug, verbosity);
 	}
 
 	if (useTrueDir && useMRDTrack) {
 		Log("Unable to use two directions; defaulting to true direction", v_debug, verbosity);	//will change to not use true, to be more general, once MRD track usage is tested and acceptable
 		useMRDTrack = 0;
 	}
-	if (multiGrid) {
-		Log("Using MultiGrid(3)", v_debug, verbosity); //Currently using only three.  May make variable later
-		std::cout << "Using MultiGrid(3)\n";
-	}
 
-	this->FindCenter();
-	if (multiGrid) {
-		for (int i = 0; i < 3; i++) {
-			Center.push_back(vSeedVtxList->at(centerIndex[i]).GetPosition());
-		}
-	}
-	else { Center.push_back(vSeedVtxList->at(centerIndex[0]).GetPosition()); }
+	Center = this->FindCenter();
 	this->GenerateFineGrid();
-	for (int i = 0; i < 3; i++) {
-		std::cout << "Center " << i << ": " << Center.at(i).X() << ", " << Center.at(i).Y() << ", " << Center.at(i).Z() << endl;
-	}
+	std::cout << "Center: " << Center.X() << ", " << Center.Y() << ", " << Center.Z() << endl;
 	m_data->Stores.at("RecoEvent")->Set("vSeedVtxList", vSeedVtxList, true);
-	Center.clear();
 
   return true;
 }
@@ -91,11 +76,9 @@ Position VtxSeedFineGrid::FindCenter() {
 	double recoVtxX, recoVtxY, recoVtxZ, recoVtxT, recoDirX, recoDirY, recoDirZ;
 	double trueVtxX, trueVtxY, trueVtxZ, trueVtxT, trueDirX, trueDirY, trueDirZ;
 	double seedX, seedY, seedZ, seedT, seedDirX, seedDirY, seedDirZ;
-	double peakX, peakY, peakZ;
-	double bestFOM[3];
-
+	double peakX, peakY, peakZ, bestFOM;
 	double ConeAngle = Parameters::CherenkovAngle();
-	 
+
 	// Get true Vertex information
 	Position vtxPos = fTrueVertex->GetPosition();
 	Direction vtxDir = fTrueVertex->GetDirection();
@@ -109,8 +92,7 @@ Position VtxSeedFineGrid::FindCenter() {
 	peakX = trueVtxX;
 	peakY = trueVtxY;
 	peakZ = trueVtxZ;
-	bestFOM[0] = 0; bestFOM[1] = 0; bestFOM[2] = 0;
-	centerIndex[0] = 0; centerIndex[1] = 0; centerIndex[2] = 0;
+	bestFOM = 0;
 	RecoVertex iSeed;
 	RecoVertex thisCenterSeed;
 
@@ -130,14 +112,13 @@ Position VtxSeedFineGrid::FindCenter() {
 	myFoMCalculator->ConePropertiesFoM(ConeAngle, conefom);
 	fom = timefom * 0.5 + conefom * 0.5;
 	if (verbosity > 0)  cout << "VtxSeedFineGrid Tool: " << "FOM at true vertex = " << fom << endl;
-  
+
 	for (int m = 0; m < vSeedVtxList->size(); m++) {
-		RecoVertex* tempVertex = 0;
 		iSeed = vSeedVtxList->at(m);
 		seedX = iSeed.GetPosition().X();
 		seedY = iSeed.GetPosition().Y();
 		seedZ = iSeed.GetPosition().Z();
-		seedT = trueVtxT; //Jingbo: should use median T
+		seedT = trueVtxT;
 		if (useTrueDir) {
 			seedDirX = trueDirX;
 			seedDirY = trueDirY;
@@ -145,15 +126,9 @@ Position VtxSeedFineGrid::FindCenter() {
 		}
 		else if (useMRDTrack) {
 			iSeed.SetDirection(this->findDirectionMRD());
+			seedDirX = iSeed.GetDirection().X();
 			seedDirY = iSeed.GetDirection().Y();
 			seedDirZ = iSeed.GetDirection().Z();
-		}
-		else 	if (useSimpleDir) {			
-			tempVertex = this->FindSimpleDirection(&iSeed);
-			seedDirX = tempVertex->GetDirection().X();
-			seedDirY = tempVertex->GetDirection().Y();
-			seedDirZ = tempVertex->GetDirection().Z();
-			delete tempVertex; tempVertex = 0;
 		}
 	/*	else if (usePastResolution) {
 			TFile *f1 = new TFile(InputFile);
@@ -165,9 +140,9 @@ Position VtxSeedFineGrid::FindCenter() {
 			iSeed.GetDirection()->SetTheta(findDirectionMRD().GetTheta());
 		}*/
 		if (useDirectionGrid) {
-			for (int l = 0; l < 50; l++) {
-				double theta = (6 * TMath::Pi() / 50) * l;
-				double phi = (TMath::Pi() / 200) * l;
+			for (int l = 0; l < 200; l++) {
+				double theta = (6 * TMath::Pi() / 200) * l;
+				double phi = (TMath::Pi() / 400) * l;
 				seedDirX = sin(phi)*cos(theta);
 				seedDirY = sin(phi)*sin(theta);
 				seedDirZ = cos(phi);
@@ -182,20 +157,13 @@ Position VtxSeedFineGrid::FindCenter() {
 				myFoMCalculator->ConePropertiesFoM(coneAngle, conefom);
 				fom = timefom * 0.5 + conefom * 0.5;
 
-				if (fom > bestFOM[0]) {
-					if (multiGrid) {
-						bestFOM[2] = bestFOM[1];
-						bestFOM[1] = bestFOM[0];
-						centerIndex[2] = centerIndex[1];
-						centerIndex[1] = centerIndex[0];
-					}
-					bestFOM[0] = fom;
+				if (fom > bestFOM) {
+					bestFOM = fom;
 					peakX = seedX;
 					peakY = seedY;
 					peakZ = seedZ;
 					SeedDir = iSeed.GetDirection();
 					thisCenterSeed = iSeed;
-					centerIndex[0] = m;
 				}
 			}
 		}
@@ -211,22 +179,14 @@ Position VtxSeedFineGrid::FindCenter() {
 		myFoMCalculator->TimePropertiesLnL(meantime, timefom);
 		myFoMCalculator->ConePropertiesFoM(coneAngle, conefom);
 		fom = timefom * 0.5 + conefom * 0.5;
-		std::cout << "seed (" << seedX<<","<<seedY<<","<<seedZ<<") fom= " << fom << " best= " << bestFOM[0] << endl;
 
-		if (fom > bestFOM[0]) {
-			if (multiGrid) {
-				bestFOM[2] = bestFOM[1];
-				bestFOM[1] = bestFOM[0];
-				centerIndex[2] = centerIndex[1];
-				centerIndex[1] = centerIndex[2];
-			}
-			bestFOM[0] = fom;
+		if (fom > bestFOM) {
+			bestFOM = fom;
 			peakX = seedX;
 			peakY = seedY;
 			peakZ = seedZ;
 			SeedDir = iSeed.GetDirection();
 			thisCenterSeed = iSeed;
-			centerIndex[0] = m;
 		}
 	}
 	//	return thisCenterSeed.GetPosition();
@@ -241,24 +201,23 @@ void VtxSeedFineGrid::GenerateFineGrid() {
 	vSeedVtxList->clear();
 	double medianTime;
 	//double length = NSeeds something.  TODO for now setting to standard size 25x25x25, with seeds 5cm apart.
-	for (int l = 0; l < 3; l++) {
-		for (int i = 0; i < 5; i++) {
-			for (int j = 0; j < 5; j++) {
-				for (int k = 0; k < 5; k++) {
-					Seed.SetZ(Center.at(l).Z() - 10 + 5 * i);
-					Seed.SetX(Center.at(l).X() - 10 + 5 * j);
-					Seed.SetY(Center.at(l).Y() - 10 + 5 * k);
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 5; j++) {
+			for (int k = 0; k < 5; k++) {
+				Seed.SetZ(Center.Z() - 10 + 5 * i);
+				Seed.SetX(Center.X() - 10 + 5 * j);
+				Seed.SetY(Center.Y() - 10 + 5 * k);
 
 
-					//medianTime = this->GetMedianSeedTime(Seed);
-					thisFineSeed.SetVertex(Seed, medianTime);
-					thisFineSeed.SetDirection(SeedDir);
-					vSeedVtxList->push_back(thisFineSeed);
+				//medianTime = this->GetMedianSeedTime(Seed);
+				thisFineSeed.SetVertex(Seed, medianTime);
+				thisFineSeed.SetDirection(SeedDir);
+				vSeedVtxList->push_back(thisFineSeed);
 
-				}
 			}
 		}
 	}
+
 }
 
 Direction VtxSeedFineGrid::findDirectionMRD() {
@@ -284,88 +243,7 @@ Direction VtxSeedFineGrid::findDirectionMRD() {
 	result.SetPhi(phi);
 
 	return result;
-}
 
-RecoVertex* VtxSeedFineGrid::FindSimpleDirection(RecoVertex* myVertex) {
-
-	/// get vertex position
-	double vtxX = myVertex->GetPosition().X();
-	double vtxY = myVertex->GetPosition().Y();
-	double vtxZ = myVertex->GetPosition().Z();
-	double vtxTime = myVertex->GetTime();
-
-	std::cout<<"Simple Direction Input Position: (" << vtxX << "," << vtxY << "," << vtxZ << ")\n";
-	// current status
-	// ==============
-	int status = myVertex->GetStatus();
-
-	/// loop over digits
-	/// ================
-	double Swx = 0.0;
-	double Swy = 0.0;
-	double Swz = 0.0;
-	double Sw = 0.0;
-	double digitq = 0.;
-	double dx, dy, dz, ds, px, py, pz, q;
-
-	RecoDigit digit;
-	for (int idigit = 0; idigit < fDigitList->size(); idigit++) {
-		digit = fDigitList->at(idigit);
-		if (digit.GetFilterStatus()) {
-			q = digit.GetCalCharge();
-			dx = digit.GetPosition().X() - vtxX;
-			dy = digit.GetPosition().Y() - vtxY;
-			dz = digit.GetPosition().Z() - vtxZ;
-			ds = sqrt(dx*dx + dy * dy + dz * dz);
-			px = dx / ds;
-			py = dx / ds;
-			pz = dz / ds;
-			Swx += q * px;
-			Swy += q * py;
-			Swz += q * pz;
-			Sw += q;
-		}
-	}
-
-	/// average direction
-	/// =================
-	double dirX = 0.0;
-	double dirY = 0.0;
-	double dirZ = 0.0;
-
-	int itr = 0;
-	bool pass = 0;
-	double fom = 0.0;
-
-	if (Sw > 0.0) {
-		double qx = Swx / Sw;
-		double qy = Swy / Sw;
-		double qz = Swz / Sw;
-		double qs = sqrt(qx*qx + qy * qy + qz * qz);
-
-		dirX = qx / qs;
-		dirY = qy / qs;   
-		pass = 1;
-	}
-
-	// set vertex and direction
-	// ========================
-	RecoVertex* newVertex = new RecoVertex(); // Note: pointer must be deleted by the invoker
-
-	if (pass) {
-		newVertex->SetVertex(vtxX, vtxY, vtxZ, vtxTime);
-		newVertex->SetDirection(dirX, dirY, dirZ);
-		newVertex->SetFOM(fom, itr, pass);
-	}
-
-	// set status
-	// ==========
-	if (!pass) status |= RecoVertex::kFailSimpleDirection;
-	newVertex->SetStatus(status);
-
-	// return vertex
-	// =============
-	return newVertex;
 }
 
 /*double VtxSeedFineGrid::GetMedianSeedTime(Position pos) {

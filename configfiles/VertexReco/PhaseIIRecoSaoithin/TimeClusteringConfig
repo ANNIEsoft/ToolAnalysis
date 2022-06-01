@@ -1,0 +1,12 @@
+#TimeClustering Configuration
+
+verbosity 0
+MinDigitsForTrack 4             # minimum MRD paddles to constitute a cluster
+MaxMrdSubEventDuration 30       # maximum subevent duration only important if we only had 1 subevent
+MinSubeventTimeSep 30           # minimum time separation between clusters
+MakeMrdDigitTimePlot 0          # make debugging plots
+LaunchTApplication 0            # launch TApplication for on-the-fly plots?
+IsData 0                        # Data/MC
+OutputROOTFile TimeClustering_Test_Firinne         # Output ROOT file for time clustering histograms
+#MapChankey_WCSimID ./configfiles/MrdPaddleEfficiency/MRD_Chankey_WCSimID.dat  # map from Channelkey to WCSim IDs for data files
+

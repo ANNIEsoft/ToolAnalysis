@@ -1,0 +1,6 @@
+verbosity 5
+
+OutputFile /annie/data/users/flemmons/LFCheck-2000fineGrid997.root
+ifPlot2DFOM 1
+ShowEvent 997
+

@@ -9,6 +9,6 @@ TankHitInfo_fill 0
 TankRecoDigitInfo_fill 1
 fillCleanEventsOnly 1
 
-OutputFile /annie/app/users/wjingbo/ToolAnalysis_vtx/vtxreco.root
+OutputFile /Data/PureMuonHigh/Jingbotest/vtxreco-multigrid3.root
 NumEventsWritten 2000
 
