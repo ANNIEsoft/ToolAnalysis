@@ -79,6 +79,7 @@ class MonitorLAPPDData: public Tool {
   bool does_file_exist(std::string filename);
   void ModifyBeamgateData(size_t numberOfFiles, int boardNumber, std::map<int,std::vector<std::vector<uint64_t>>> &dataVector);
   void PedestalFits(int board_nr, int i_board);
+  void GetRunSubPart(std::string filename);
 
  private:
 
@@ -168,7 +169,15 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> t_file_end;
   ULong64_t t_file_start;
   ULong64_t t_file_end_global;
-  
+  int current_run;
+  int current_subrun;
+  int current_partrun;
+  int current_pps_count;
+  int current_frame_count; 
+  int totalPPSCount = 0;
+  int totalFrameCount = 0;
+  int totalRun = 0; 
+
   //Averaged values - one vector entry per chkey (last file)
   std::vector<int> current_chkey;
   std::vector<double> current_rate;
@@ -207,6 +216,12 @@ class MonitorLAPPDData: public Tool {
   std::map<int,std::vector<double> > ped_plot;
   std::map<int,std::vector<double> > sigma_plot;
   std::map<int,std::vector<double> > rate_plot;
+  std::vector<int> run_plot;
+  std::vector<int> subrun_plot;
+  std::vector<int> partrun_plot;
+  std::vector<ULong64_t> lappdoffset_plot;
+  std::vector<int> ppscount_plot;
+  std::vector<int> framecount_plot;
 
   //canvas
   TCanvas *canvas_status_data = nullptr;
@@ -237,6 +252,8 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_ped_lappd = nullptr;
   TCanvas *canvas_sigma_lappd = nullptr;
   TCanvas *canvas_rate_lappd = nullptr;
+  TCanvas *canvas_frame_count = nullptr;
+  TCanvas *canvas_pps_count = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -246,6 +263,8 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_rate;
   std::map<int, TGraph*> graph_ped;
   std::map<int, TGraph*> graph_sigma;
+  TGraph *graph_pps_count = nullptr;
+  TGraph *graph_frame_count = nullptr;
 
   //multi-graphs
   TMultiGraph *multi_ped_lappd = nullptr;
@@ -284,6 +303,8 @@ class MonitorLAPPDData: public Tool {
   TText *text_frame_rate = nullptr;
   TText *text_buffer_size = nullptr;
   TText *text_int_charge = nullptr;
+  TText *text_pps_count = nullptr;
+  TText *text_frame_count = nullptr;
 
   //Verbosity variables
   int v_error = 0;
