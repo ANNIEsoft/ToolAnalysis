@@ -113,6 +113,7 @@ class MonitorLAPPDSC: public Tool {
   boost::posix_time::ptime *Epoch = nullptr;
   boost::posix_time::ptime current;
   boost::posix_time::time_duration period_update;
+  boost::posix_time::time_duration period_warning;
   boost::posix_time::time_duration duration;
   boost::posix_time::ptime last;
   boost::posix_time::ptime utc;
@@ -124,6 +125,7 @@ class MonitorLAPPDSC: public Tool {
   ULong64_t readfromfile_tend;
   double readfromfile_timeframe; 	//TODO: is this set in the code?
   ULong64_t t_current;
+  ULong64_t t_last_update;
 
   //Variables to convert times
   double MSEC_to_SEC = 1000.;

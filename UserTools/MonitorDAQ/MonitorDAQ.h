@@ -198,7 +198,7 @@ class MonitorDAQ: public Tool {
   bool warning_diskspace_90 = false;
   bool warning_services = false;
   boost::posix_time::ptime timestamp_last_warning_diskspace_90;
-
+  bool warning_lappd_sc = false;
 
   //Online stuff
   zmq::context_t *context = nullptr;

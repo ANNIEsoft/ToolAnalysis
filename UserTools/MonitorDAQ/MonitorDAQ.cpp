@@ -65,6 +65,10 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
     testmode = 0;
   }
 
+  //Interface with MonitorLAPPDSC
+  //Status variable for slack messages in MonitorDAQ
+  m_data->CStore.Set("LAPPDSlowControlWarning",false);
+
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
   //-------------------------------------------------------
@@ -827,6 +831,38 @@ void MonitorDAQ::GetVMEServices(bool is_online){
     }
    
   }
+
+  bool lappd_slow_control;
+  m_data->CStore.Get("LAPPDSlowControlWarning",lappd_slow_control);
+  if (lappd_slow_control && !warning_lappd_sc){
+    warning_lappd_sc = true;
+    std::stringstream ss_error_sc, ss_error_sc_slack;
+    ss_error_sc << "ERROR: LAPPD Slow Control has not updated in over 10 minutes! Check the status!";
+    ss_error_sc_slack << "payload={\"text\":\"Monitoring: LAPPD Slow Control has not updated in over 10 minutes! Check the status! \"}";
+    if (send_slack){
+        try{
+          CURL *curl;
+          CURLcode res;
+          curl_global_init(CURL_GLOBAL_ALL);
+          curl=curl_easy_init();
+          if (curl){
+            curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+            std::string field = ss_error_sc_slack.str();
+            curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+            res=curl_easy_perform(curl);
+            if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+            curl_easy_cleanup(curl);
+          }
+          curl_global_cleanup();
+        }
+        catch(...){
+          Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+        }
+    }
+  } else if (!lappd_slow_control){
+    warning_lappd_sc = false;
+  }
+
   Log("MonitorDAQ tool: GetVMEServices: Got "+std::to_string(num_vme_service)+" VME services!",v_message,verbosity);
   if (num_vme_service < 3){
     Log("MonitorDAQ tool ERROR: Only "+std::to_string(num_vme_service)+" VME services running! Check DAQ",v_error,verbosity);

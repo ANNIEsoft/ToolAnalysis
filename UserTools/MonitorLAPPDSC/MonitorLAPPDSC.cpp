@@ -99,6 +99,13 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	//Set up Epoch
 	Epoch = new boost::posix_time::ptime(boost::gregorian::from_string(StartTime));
 
+	//Set default value for last update time
+	t_last_update = 0;
+
+	//Status variable for slack messages in MonitorDAQ
+         m_data->CStore.Set("LAPPDSlowControlWarning",false);
+
+
 	//Evaluating output path for monitoring plots
 	if (outpath_temp == "fromStore")
 		m_data->CStore.Get("OutPath", outpath);
@@ -124,6 +131,7 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	//-------------------------------------------------------
 
 	period_update = boost::posix_time::time_duration(0, int(update_frequency), 0, 0);
+	period_warning = boost::posix_time::time_duration(0, 10, 0, 0);
 	last = boost::posix_time::ptime(boost::posix_time::second_clock::local_time());
 
 	// Omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
@@ -164,7 +172,10 @@ bool MonitorLAPPDSC::Execute() {
 		if (verbosity > 1)
 			std::cout << "MonitorLAPPDSC: New slow-control data available." << std::endl;
 
+		m_data->CStore.Set("LAPPDSlowControlWarning",false);
+
 		m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
+		t_last_update = t_current;
 		if ((lappd_SC.errorcodes.size() > 1) || (lappd_SC.errorcodes.at(0) != 0)){
 			std::cout <<"///////// Encountered error in slow control data //////////"<<std::endl;
 			std::cout << lappd_SC.Print() << std::endl;
@@ -201,6 +212,12 @@ bool MonitorLAPPDSC::Execute() {
 	// if force_update is specified, the plots will be updated no matter whether there has been a new file or not
 	if (force_update)
 		UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
+
+	if (duration > period_warning) {
+		//Send warning in case the time since the last LAPPD Slow Control update is > 10 minutes
+		Log("Tool MonitorLAPPDSC: SEVERE ERROR: Time since last slow control update is > 10 minutes!",v_error,verbosity);
+		m_data->CStore.Set("LAPPDSlowControlWarning",true);
+	}
 
 	//gObjectTable only for debugging memory leaks, otherwise comment out
 	//std::cout <<"List of Objects (after execute step): "<<std::endl;

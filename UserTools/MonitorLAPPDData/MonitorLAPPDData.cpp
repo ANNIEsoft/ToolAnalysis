@@ -2945,7 +2945,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		if (verbosity > 3) std::cout <<"n_pps: "<<n_pps.at(i_board)<<", rate: "<< (n_pps.at(i_board)/diff_timestamps_pps) <<std::endl;
 		if (verbosity > 3) std::cout <<"i_board: "<<i_board<<", first_timestamp: "<<first_timestamp.at(i_board)<<", last_timestamp: "<<last_timestamp.at(i_board)<<", diff_timestamps: "<<diff_timestamps<<std::endl;
 		if (diff_timestamps > 0.)
-			current_frame_rate.at(i_board) = n_data.at(i_board) / diff_timestamps; // Need to convert difference of timestamps into seconds or something similar
+			current_frame_rate.at(i_board) = n_data.at(i_board) / diff_timestamps_pps; // Need to convert difference of timestamps into seconds or something similar
 		if (diff_timestamps_beam > 0.)
 			current_beamgate_rate.at(i_board) = n_data.at(i_board) / diff_timestamps_beam; // Need to convert difference of timestamps into seconds or something similar
 		if (n_buffer.at(i_board) != 0)
