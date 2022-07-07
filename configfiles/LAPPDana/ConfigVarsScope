@@ -1,0 +1,51 @@
+#General Parameters
+Nsamples 1032
+SampleSize 100
+NChannels 4
+TrigChannel 3
+
+#LAPPDBaselineSubtract
+LowBLfitrange 40000;
+HiBLfitrange  60000;
+
+#LAPPDSim
+SimInput  ./UserTools/LAPPDSim/pulsecharacteristics.root
+
+#LAPPDParseScope
+FileInput /annie/data/LAPPD25data/fffFiles/4.19.18/2500_2150_1350_nd4_3strip_p4_stop1_channel0_root.fff 
+
+#LAPPDFilter
+FilterInputWavLabel BLsubtractedLAPPDData
+doFilter false
+CutoffFrequency 500000000
+
+#LAPPDIntegratePulse
+IntegLow  64000
+IntegHi 67000
+
+#LAPPDFindPeak
+PeakInputWavLabel FiltLAPPDData
+TotThreshold 0.5
+MinimumTot 2000.
+Deltat 100.
+
+#LAPPDcfd
+CFDInputWavLabel FiltLAPPDData
+Fraction_CFD 0.4
+
+#LAPPDSave
+path 2500_2150_1350_nd4_3strip_p6_stop0_channel0_root
+
+#LAPPDlasertestHitFinder
+MinTimeWindow 64000
+MaxTimeWindow 79000
+TwoSided false
+stripID1 10
+stripID2 11
+stripID3 12
+CenterChannel 1
+PTRange 1000  
+
+#LAPPDSaveROOT
+outfile 2500_2150_1350_bsln_2sided.root
+NHistos 100
