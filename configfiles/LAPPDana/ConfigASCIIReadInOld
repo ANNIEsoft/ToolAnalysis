@@ -1,0 +1,33 @@
+# General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on
+NUM_VECTOR_PPS 16 #Fixed PPS vector size
+NUM_VECTOR_DATA 7795 #Fixed DATA vector size
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+Folder ../Data/3655/
+oldLaser 1 #1 for old data, 0 for new trigger boards
+
+#LAPPDPSECReadIn
+LAPPDStoreReadInVerbosity 0 #Verbosity
+RawDataInputWavLabel RawLAPPDDataFrame #Label of the raw dataframe in the store
+RawDataInputWavLabel RawWaveform
+RawDataOutpuWavLabel  RawLAPPDData
+BoardIndexLabel BoardIndex #Label of the vector of read out boards
+PSECinputfile ../Data/2021-01-07/975V_perMCP_trigspare/all.txt
+
+
+DoPedSubtraction 1
+Nboards 2 #Number of pedestal files to be read in
+Pedinputfile ../Data/PEDS_ACDC
+PedinputfileTXT ../Data/3655/PEDS_ACDC_board #prefix of the pedestal files path+name. index and filetype will be set automatically
+Pedinputfile1 ../Data/2020-12-29/PEDS0.txt
+Pedinputfile2 ../Data/2020-12-29/PEDS1.txt
+
+#LAPPDReorderData
+ReorderVerbosityLevel 0
+ReorderInputWavLabel RawLAPPDData
+ReorderOutputWavLabel LAPPDWaveforms
+DelayOffset 0
+GlobalShift 180

@@ -1,0 +1,28 @@
+# General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on
+NUM_VECTOR_PPS 16 #Fixed PPS vector size
+NUM_VECTOR_DATA 7795 #Fixed DATA vector size
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+Folder ../Data/3655/
+
+#GenerateHits
+nhits 3
+PathToPulsecharacteristics ./UserTools/LAPPDSim/pulsecharacteristics.root
+ArtificialEvent 0
+EventDisplay 0
+OutputFile testtestestest
+# in units of meters
+paracoord 0.05
+perpcoord -0.03
+randomizepositions 0
+trigtime 5.0
+
+# LAPPDSim
+PathToPulsecharacteristics  ./UserTools/LAPPDSim/pulsecharacteristics.root
+ArtificialEvent false
+EventDisplay false
+OutputFile bob.root
+SimOutLabel ABLSLAPPDData

@@ -1,0 +1,38 @@
+# General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on
+LAPPDchannelOffset 1000
+Folder ../Data/3655/
+#Folder ../Data/2022-06-10/
+
+#LAPPDBaselineSubtract
+BaselineSubstractVerbosityLevel 0
+TrigChannel1  1005
+TrigChannel2  1035
+BLSInputWavLabel LAPPDWaveforms
+LowBLfitrange 2;
+HiBLfitrange  19;
+TrigLowBLfitrange 2
+TrigHiBLfitrange  19
+BLSOutputWavLabel BLsubtractedLAPPDData
+oldLaserTrigAmpRange 40
+
+#LAPPDFindT0
+FindT0Verbosity 0
+FindT0InputWavLabel BLsubtractedLAPPDData
+TrigEarlyCut 20
+TrigLateCut 200
+T0channelNo 1005
+T0channelNo1 1005
+T0channelNo2 1005
+T0signalmax -80.
+T0signalthreshold -80.
+T0signalmaxOld 80. #Older data uses a positive going signal
+T0signalthresholdOld 80. #Older data uses a positive going signal
+T0offset  58
+FindT0OutputWavLabel AlignedLAPPDData
+GlobalShiftT0 170
+#Added by Marc
+Triggerdefault 5
+LAPPDOffset 1000

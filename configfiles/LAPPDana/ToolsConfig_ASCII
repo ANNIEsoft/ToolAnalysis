@@ -1,0 +1,25 @@
+LoadGeometry LoadGeometry configfiles/LAPPDteststand/ConfigGeo
+#
+#Loading Data
+LAPPDPSECReadIn LAPPDPSECReadIn configfiles/LAPPDteststand/ConfigASCIIReadIn
+LAPPDReorderData LAPPDReorderData configfiles/LAPPDteststand/ConfigASCIIReadIn
+#
+#Pre-processing
+LAPPDStoreBaselineSubtract LAPPDStoreBaselineSubtract configfiles/LAPPDteststand/ConfigPreProcess
+LAPPDFindT0 LAPPDFindT0 configfiles/LAPPDteststand/ConfigPreProcess
+#
+#Simple Pulse Analysis
+LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDteststand/ConfigSimplePulses
+LAPPDPlotWaveFormsBLS LAPPDPlotWaveForms configfiles/LAPPDteststand/ConfigSimplePulses
+LAPPDPlotWaveForms2D LAPPDPlotWaveForms2D configfiles/LAPPDteststand/ConfigSimplePulses
+LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDteststand/ConfigSimplePulses
+LAPPDClusterSimp LAPPDCluster configfiles/LAPPDteststand/ConfigSimplePulses
+#
+#Filtered Pulse Analysis
+LAPPDFilter LAPPDFilter configfiles/LAPPDteststand/ConfigFilteredPulses
+LAPPDcfd LAPPDcfd configfiles/LAPPDteststand/ConfigFilteredPulses
+LAPPDPlotWaveFormsFilt LAPPDPlotWaveForms configfiles/LAPPDteststand/ConfigFilteredPulses
+LAPPDPlotWaveForms2D LAPPDPlotWaveForms2D configfiles/LAPPDteststand/ConfigFilteredPulses
+LAPPDClusterCFD LAPPDCluster configfiles/LAPPDteststand/ConfigFilteredPulses
+#
+LAPPDClusterTree LAPPDClusterTree configfiles/LAPPDteststand/ConfigTree
