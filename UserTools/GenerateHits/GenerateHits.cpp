@@ -84,7 +84,7 @@ bool GenerateHits::Execute(){
 
   }
 
-  cout << "inserting " << hits.size() << " synthetic hits " << endl;
+  //cout << "inserting " << hits.size() << " synthetic hits " << endl;
   // stuff the hits into MCLAPPHit
   MCLAPPDHit.insert(pair <unsigned long,vector<LAPPDHit>> (0,hits));
   // add MCLAPPDHit to the ANNIEEvent store
