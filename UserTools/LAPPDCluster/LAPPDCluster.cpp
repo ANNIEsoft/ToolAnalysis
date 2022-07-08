@@ -52,7 +52,7 @@ bool LAPPDCluster::Execute(){
     if(ClusterVerbosity>0) cout<<"Simple "<<SimpleClusterLabel<<" "<<HitOutLabel<<endl;
   }
 
-  //cout<<RecoLAPPDPulses.size()<<endl;
+  if(ClusterVerbosity>0) cout<<"Number of Pulses: "<<RecoLAPPDPulses.size()<<endl;
   //m_data->Stores["ANNIEEvent"]->Get("RecoLAPPDPulses",RecoLAPPDPulses);
     //cout<<"We got "<< RecoLAPPDPulses.size()<< " Pulses" << endl;
   std::map <unsigned long, vector<LAPPDPulse>> :: iterator pulseitr;
@@ -120,25 +120,25 @@ bool LAPPDCluster::Execute(){
       int mystripnum = mychannel->GetStripNum();
       int oppostripnum = oppochannel->GetStripNum();
 
-      //cout<<"mystripnum is "<<mystripnum<<endl;
-      //cout<<"oppostripnum is "<<oppostripnum<<endl;
+      if(ClusterVerbosity>1) cout<<"mystripnum is "<<mystripnum<<endl;
+      if(ClusterVerbosity>1) cout<<"oppostripnum is "<<oppostripnum<<endl;
 
 
 
       if( (oppochankey != chankey) && (mystripnum == oppostripnum) ){
-        //cout<<"channel "<<chankey<<" and "<<oppochankey<<" are on the same strip."<<endl;
+        if(ClusterVerbosity>2) cout<<"channel "<<chankey<<" and "<<oppochankey<<" are on the same strip."<<endl;
         cPulse.insert(pair <unsigned long,LAPPDPulse> (chankey,vPulse.at(0)));
         cPulse.insert(pair <unsigned long,LAPPDPulse> (oppochankey,oppovPulse.at(0)));
         //chanhand.push_back(oppochankey);
       }
       if ( (oppochankey != chankey) && (std::abs(oppostripnum-mystripnum)==1) ){
         if (mychannel->GetStripSide() == oppochannel->GetStripSide()){
-          //cout<<"channel "<<chankey<<" and "<<oppochankey<<" are on the same sides of adjacent strips."<<endl;
+          if(ClusterVerbosity>2) cout<<"channel "<<chankey<<" and "<<oppochankey<<" are on the same sides of adjacent strips."<<endl;
           cPulse.insert(pair <unsigned long,LAPPDPulse> (oppochankey,oppovPulse.at(0)));
           //chanhand.push_back(oppochankey);
         }
         else {
-          //cout<<"channel "<<chankey<<" and "<<oppochankey<<" are on the opposite sides of adjacent strips."<<endl;
+          if(ClusterVerbosity>2) cout<<"channel "<<chankey<<" and "<<oppochankey<<" are on the opposite sides of adjacent strips."<<endl;
           cPulse.insert(pair <unsigned long,LAPPDPulse> (oppochankey,oppovPulse.at(0)));
           //chanhand.push_back(oppochankey);
         }
@@ -202,19 +202,19 @@ bool LAPPDCluster::Execute(){
       LAPPDPulse mypulse = itr->second;
 
       Channel* mychannel = _geom->GetChannel(thechankey);
-      //cout<<"thechankey "<<thechankey<<" maxchankey "<<maxchankey<<endl;
-      //cout<<"MYStrip "<<mychannel->GetStripNum()<<" MAXStrip "<<maxchannel->GetStripNum()<<endl;
-      //cout<<" "<<endl;
+      if(ClusterVerbosity>2) cout<<"thechankey "<<thechankey<<" maxchankey "<<maxchankey<<endl;
+      if(ClusterVerbosity>2) cout<<"MYStrip "<<mychannel->GetStripNum()<<" MAXStrip "<<maxchannel->GetStripNum()<<endl;
+      if(ClusterVerbosity>2) cout<<" "<<endl;
       if( (thechankey != maxchankey) && (mychannel->GetStripNum() == maxchannel->GetStripNum()) ) {
-        //cout<<"WERTWER "<<maxpulse.GetTime()<<" "<<mypulse.GetTime()<<endl;
-        //cout<<mychannel->GetStripSide()<<" "<<maxchannel->GetStripSide()<<endl;
-        //cout<<" "<<endl;
+        if(ClusterVerbosity>2) cout<<"WERTWER "<<maxpulse.GetTime()<<" "<<mypulse.GetTime()<<endl;
+        if(ClusterVerbosity>2)cout<<mychannel->GetStripSide()<<" "<<maxchannel->GetStripSide()<<endl;
+        if(ClusterVerbosity>2) cout<<" "<<endl;
         if ( (mychannel->GetStripSide()==0) && (maxchannel->GetStripSide()==1) ){
-          //cout<<"case 1"<<endl;
+          if(ClusterVerbosity>2) cout<<"case 1"<<endl;
           ParaPosition = ((mypulse.GetTime() - maxpulse.GetTime()) * 0.53 * (299.792458))/2.0;
         }
         if ( (mychannel->GetStripSide()==1) && (maxchannel->GetStripSide()==0) ){
-          //cout<<"case 2"<<endl;
+          if(ClusterVerbosity>2) cout<<"case 2"<<endl;
           ParaPosition = ((maxpulse.GetTime() - mypulse.GetTime()) * 0.53 * (299.792458))/2.0;
         }
         //cout<<leftpulse.GetTime()<<" "<<rightpulse.GetTime()<<endl;
