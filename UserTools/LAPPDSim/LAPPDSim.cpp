@@ -7,7 +7,6 @@ LAPPDSim::LAPPDSim():Tool(),myTR(nullptr),_tf(nullptr),_event_counter(0),_file_n
 
 bool LAPPDSim::Initialise(std::string configfile, DataModel &data)
 {
-
 	/////////////////// Usefull header ///////////////////////
 	if (configfile != "")
 	m_variables.Initialise(configfile); //loading config file
@@ -56,8 +55,8 @@ bool LAPPDSim::Initialise(std::string configfile, DataModel &data)
 	}
 
 	// This quantity should be set to false if we are working with real data later
-	//bool isSim = true;
-	//m_data->Stores["ANNIEEvent"]->Header->Set("isSim",isSim);
+	bool isSim = true;
+	m_data->Stores["ANNIEEvent"]->Header->Set("isSim",isSim);
 
 	// initialize the ROOT random number generator
 	myTR = new TRandom3();
@@ -71,12 +70,30 @@ bool LAPPDSim::Initialise(std::string configfile, DataModel &data)
 	{
 		_display = new LAPPDDisplay(outputFile, _display_config);
 	}
-    bool isFiltered = false;
-    m_data->Stores["ANNIEEvent"]->Header->Set("isFiltered",isFiltered);
-    bool isBLsub = false;
-    m_data->Stores["ANNIEEvent"]->Header->Set("isBLsubtracted",isBLsub);
-    bool isCFD=false;
-    m_data->Stores["ANNIEEvent"]->Header->Set("isCFD",isCFD);
+
+	bool isFiltered = false;
+  m_data->Stores["ANNIEEvent"]->Set("isFiltered",isFiltered);
+  bool isBLsub = true;
+  m_data->Stores["ANNIEEvent"]->Set("isBLsubtracted",isBLsub);
+  bool isCFD=false;
+  m_data->Stores["ANNIEEvent"]->Set("isCFD",isCFD);
+	bool isIntegrated=false;
+  m_data->Stores["ANNIEEvent"]->Set("isIntegrated",isIntegrated);
+
+	//parameters (potentially) used by the whole ToolChain
+  m_variables.Get("Nsamples", Nsamples);
+  m_variables.Get("NChannels", NChannels);
+  m_variables.Get("TrigChannel", TrigChannel);
+  m_variables.Get("LAPPDchannelOffset", LAPPDchannelOffset);
+  m_variables.Get("SampleSize", SampleSize);
+
+	cout<<"SS "<<SampleSize<<" "<<Nsamples<<endl;
+
+	m_data->Stores["ANNIEEvent"]->Set("Nsamples", Nsamples);
+	m_data->Stores["ANNIEEvent"]->Set("NChannels", NChannels);
+	m_data->Stores["ANNIEEvent"]->Set("TrigChannel", TrigChannel);
+	m_data->Stores["ANNIEEvent"]->Set("LAPPDchannelOffset", LAPPDchannelOffset);
+	m_data->Stores["ANNIEEvent"]->Set("SampleSize", SampleSize);
 
 	cout<<"Done initializing"<<endl;
 
@@ -86,7 +103,7 @@ bool LAPPDSim::Initialise(std::string configfile, DataModel &data)
 bool LAPPDSim::Execute()
 {
 
-	std::cout << "Executing LAPPDSim; event counter " << _event_counter << std::endl;
+	if(_event_counter%100==0) std::cout << "Executing LAPPDSim; event counter " << _event_counter << std::endl;
 
 	//The files become too large, if one tries to save all WCSim events into one file.
 	//Every 100 events get a new file.
@@ -94,7 +111,7 @@ bool LAPPDSim::Execute()
 	{
 		if (_display_config > 0) _display->OpenNewFile(_file_number);
 		_file_number++;
-        
+
     }
 	//Initialise the histogram for displaying all LAPPDs at once
 	if (_display_config > 0)
@@ -110,13 +127,13 @@ bool LAPPDSim::Execute()
 	{
 		vector<MCLAPPDHit> artificialHits;
 
-	std::map<std::string, std::map<unsigned long,Detector*> >* AllDetectors = _geom->GetDetectors();
-	std::map<std::string, std::map<unsigned long,Detector*> >::iterator itGeom;
-	for(itGeom = AllDetectors->begin(); itGeom != AllDetectors->end(); ++itGeom){
-		if(itGeom->first == "LAPPD"){
-			std::map<unsigned long,Detector*> LAPPDDetectors = itGeom->second;
-  		std::map<unsigned long, Detector*>::iterator itDet;
-					for(itDet = LAPPDDetectors.begin(); itDet != LAPPDDetectors.end(); ++itDet){
+		std::map<std::string, std::map<unsigned long,Detector*> >* AllDetectors = _geom->GetDetectors();
+		std::map<std::string, std::map<unsigned long,Detector*> >::iterator itGeom;
+		for(itGeom = AllDetectors->begin(); itGeom != AllDetectors->end(); ++itGeom){
+			if(itGeom->first == "LAPPD"){
+				std::map<unsigned long,Detector*> LAPPDDetectors = itGeom->second;
+  			std::map<unsigned long, Detector*>::iterator itDet;
+				for(itDet = LAPPDDetectors.begin(); itDet != LAPPDDetectors.end(); ++itDet){
 
 					LAPPDresponse response;
 					response.Initialise(_tf);
@@ -210,15 +227,16 @@ bool LAPPDSim::Execute()
 		for (itr = lappdmchits.begin(); itr != lappdmchits.end(); ++itr)
 		{
 			//Get the Channelkey
-	// NOOOOOOO!!!!
-	//		unsigned long tubeno = itr->first;
+
+			//unsigned long tubeno = itr->first;
+
 			//Retrieve the detector object with the Channelkey
-//			Detector* thelappd = _geom->ChannelToDetector(tubeno);
 			Detector* thelappd = _geom->ChannelToDetector(1000);
 			std::map<unsigned long, Channel>* lappdchannel = thelappd->GetChannels();
-            
+
 		  int numberOfLAPPDChannels = lappdchannel->size();
-		  cout<<"w00T: "<<numberOfLAPPDChannels<<endl;
+			if(_event_counter%100==0) cout<<"number of LAPPD Channels: "<<numberOfLAPPDChannels<<endl;
+
 			//Use the detector object to get the detector ID
 			unsigned long actualTubeNo = thelappd->GetDetectorID();
 
@@ -265,7 +283,7 @@ bool LAPPDSim::Execute()
 				Vwavs.push_back(awav);
 			}
 
-			cout<<"Done filling Wavs "<<Vwavs.size()<<endl;
+			if(_event_counter%100==0)  cout<<"Done filling Wavs "<<Vwavs.size()<<endl;
 
 			//Get the channels of each LAPPD
 			//std::map<unsigned long, Channel>* lappdchannel = thelappd->GetChannels();
@@ -275,13 +293,14 @@ bool LAPPDSim::Execute()
 			for (chitr = lappdchannel->begin(); chitr != lappdchannel->end(); ++chitr)
 			{
 				Channel achannel = chitr->second;
-				//achannel->Print();
+				//achannel.Print();
 				//This assignment uses the following numbering scheme:
 				//Channelkey 0-29 is the one side, Channelkey 30-59 is the other side in a way that 0 is the left side of the strip, where 30 denotes the right side.
 				//cout<<"LAPPDnumerology: "<<achannel.GetChannelID()<<" "<<achannel.GetStripNum()<<" "<<numberOfLAPPDChannels<<endl;
 
 				if (achannel.GetStripSide() == 0)
 				{
+					//cout<<"channel number: "<<achannel.GetChannelID()<<endl;
 					vector<Waveform<double>> aWav;
 					aWav.push_back(Vwavs[achannel.GetStripNum()]);
 					LAPPDWaveforms->insert(pair<unsigned long, vector<Waveform<double>>>(achannel.GetChannelID(),aWav));
@@ -292,7 +311,6 @@ bool LAPPDSim::Execute()
 					aWav.push_back(Vwavs[numberOfLAPPDChannels - achannel.GetStripNum() - 1]);
 					LAPPDWaveforms->insert(pair<unsigned long, vector<Waveform<double>>>(achannel.GetChannelID(),aWav));
 				}
-
 			}
 			//Waveforms are drawn
 			if (_display_config > 0)
@@ -318,13 +336,26 @@ bool LAPPDSim::Execute()
 		_display->FinaliseHistoAllLAPPDs();
 	}
 
+	unsigned int beamcounter=0;
+	unsigned int beamcounterL=0;
+	unsigned int trigcounter=0;
+	unsigned int trigcounterL=0;
+	vector<unsigned int> tcounters;
+	tcounters.push_back(beamcounter);
+	tcounters.push_back(beamcounterL);
+	tcounters.push_back(trigcounter);
+	tcounters.push_back(trigcounterL);
+
+	m_data->Stores["ANNIEEvent"]->Set("TimingCounters",tcounters);
+
 	//The waveforms are only saved if MC events are used.
 	//The artifical events are not meant to be saved, because they cannot be used in any other tool,
 	//since there won't be any hit information in the MCHits or MCLAPPDHits
 	if(!_is_artificial)
 	{
-		std::cout << "Saving waveforms to store " << LAPPDWaveforms->size()<< std::endl;
-		m_data->Stores.at("ANNIEEvent")->Set("LAPPDWaveforms", LAPPDWaveforms, true);
+			if(_event_counter%100==0) std::cout << "Saving waveforms to store " << LAPPDWaveforms->size()<< std::endl;
+//		m_data->Stores.at("ANNIEEvent")->Set("LAPPDWaveforms", LAPPDWaveforms, true);
+		m_data->Stores.at("ANNIEEvent")->Set("ABLSLAPPDData", LAPPDWaveforms, true);
 	}
 	_event_counter++;
 
