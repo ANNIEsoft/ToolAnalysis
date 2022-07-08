@@ -15,11 +15,11 @@ service_publish_sec -1
 service_kick_sec -1
 
 ##### Tools To Add #####
-Tools_File configfiles/LAPPDteststand/ToolsConfig_Old  ## list of tools to run and their config files
+Tools_File configfiles/LAPPDana/ToolsConfig_Sim  ## list of tools to run and their config files
 
 ##### Run Type #####
 #Inline 102 ## number of Execute steps in program, -1 infinite loop that is ended by user
 #Inline 4990 ## number of Execute steps in program, -1 infinite loop that is ended by user
 #Inline 3990 ## number of Execute steps in program, -1 infinite loop that is ended by user
-Inline 100000 ## number of Execute steps in program, -1 infinite loop that is ended by user
+Inline 1000 ## number of Execute steps in program, -1 infinite loop that is ended by user
 Interactive 1 ## set to 1 if you want to run the code interactively
