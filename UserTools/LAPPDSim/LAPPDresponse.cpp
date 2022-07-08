@@ -152,6 +152,20 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
 }
 
 
+int LAPPDresponse::TriggerSim(double threshold)
+{
+
+return 1;
+}
+
+
+Waveform<double> LAPPDresponse::GetTraceTrigger(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise)
+{
+  Waveform<double> wav_trace;
+
+  return wav_trace;
+}
+
 Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise)
 {
 
