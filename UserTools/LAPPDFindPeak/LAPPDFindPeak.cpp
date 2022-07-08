@@ -28,6 +28,7 @@ bool LAPPDFindPeak::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Deltat", Deltat);
   m_variables.Get("FindPeakVerbosity",FindPeakVerbosity);
 
+  cout<<"BLSLabel (findpeak): "<<BLSPeakInputWavLabel<<endl;
 
   return true;
 }
@@ -51,14 +52,15 @@ bool LAPPDFindPeak::Execute(){
     std::map<unsigned long,vector<Waveform<double>>> lappddata;
     if(isBLsub==false && isFiltered==false){
         m_data->Stores["ANNIEEvent"]->Get(RawPeakInputWavLabel,lappddata);
+        if(FindPeakVerbosity>0) cout<<"Getting "<<RawPeakInputWavLabel<<endl;
     }
     else if(isBLsub==true && isFiltered==false){
         m_data->Stores["ANNIEEvent"]->Get(BLSPeakInputWavLabel,lappddata);
-        //cout<<"Getting "<<BLSPeakInputWavLabel<<endl;
+        if(FindPeakVerbosity>0) cout<<"Getting "<<BLSPeakInputWavLabel<<endl;
     }
     else if(isFiltered==true){
         m_data->Stores["ANNIEEvent"]->Get(FiltPeakInputWavLabel,lappddata);
-        //cout<<"Find Peak in isFiltered if statement"<<endl;
+        if(FindPeakVerbosity>0) cout<<"Getting "<<FiltPeakInputWavLabel<<endl;
     }
   //bool testval =  m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",lappddata);
   //cout<<FiltPeakInputWavLabel<<" HElp "<<lappddata.size()<<endl;
@@ -157,7 +159,7 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
   double hi=0.;
   double tc=0;
   bool pulsestarted=false;
-  double threshold = TotThreshold*2;
+  double threshold = TotThreshold;
   double pvol = 0, vollast = 0;
   double ppre = 0;
   int nbin = theWav->size();
@@ -165,14 +167,15 @@ std::vector<LAPPDPulse> LAPPDFindPeak::FindPulses_TOT(std::vector<double> *theWa
   int MinimumTotBin = (int)(MinimumTot/Deltat);
   //std::cout<<"Min Tot Bin: "<<MinimumTotBin<<std::endl;
 
-  //cout<<"findpulsesTOT parameters: "<<TotThreshold<<" "<<MinimumTotBin<<" "<<nbin<<endl;
+  if(FindPeakVerbosity>1) cout<<"findpulsesTOT parameters: "<<TotThreshold<<" "<<MinimumTotBin<<" "<<nbin<<endl;
 
 	for(int i=0;i<nbin;i++) {
 		pvol = TMath::Abs(theWav->at(i));
         if(i>1) ppre = TMath::Abs(theWav->at(i-1));
+    if(FindPeakVerbosity>5) cout<<theWav->at(i)<<endl;
 
 		if(pvol>threshold) {
-           // cout<<theWav->at(i)<<endl;
+            if(FindPeakVerbosity>4) cout<<theWav->at(i)<<endl;
             length++;
             if(pvol>peak) {peak = pvol; peakbin=i;}
             Q+=(((theWav->at(i))/50000.)*(1e-10));
