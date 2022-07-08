@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <bitset>
 #include <fstream>
 #include "Tool.h"
 
@@ -32,7 +33,7 @@ class LAPPDStoreReadIn: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
   bool ReadPedestals(int boardNo); ///< Read in the Pedestal Files
   bool MakePedestals(); ///< Make a Pedestal File
-  
+
   int getParsedData(vector<unsigned short> buffer, int ch_start);
   int getParsedMeta(vector<unsigned short> buffer, int BoardId);
 
@@ -58,8 +59,11 @@ class LAPPDStoreReadIn: public Tool {
     int TrigChannel;
     int LAPPDStoreReadInVerbosity=0;
     int eventNo;
-    std::map<unsigned long, vector<int>> *PedestalValues;    
+    std::map<unsigned long, vector<int>> *PedestalValues;
     streampos dataPosition;
+
+    double SampleSize;
+    int LAPPDchannelOffset;
 
     //temp maps for data parsing
     std::vector<unsigned short> Raw_buffer;
