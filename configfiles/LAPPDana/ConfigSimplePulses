@@ -2,6 +2,7 @@ oldLaser 0 #1 for old data, 0 for new trigger boards
 
 #LAPPDBaselineSubtract
 BLSInputWavLabel AlignedLAPPDData
+BaselineSubstractVerbosityLevel 0
 TrigChannel1  1005
 TrigChannel2  1035
 LowBLfitrange 100;

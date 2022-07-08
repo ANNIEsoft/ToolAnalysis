@@ -5,7 +5,7 @@ LAPPDASCIIReadIn LAPPDASCIIReadIn configfiles/LAPPDana/ConfigASCIIReadInOld
 LAPPDReorderData LAPPDReorderData configfiles/LAPPDana/ConfigASCIIReadInOld
 #
 #Pre-processing
-LAPPDStoreBaselineSubtract LAPPDStoreBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
+LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
 LAPPDFindT0 LAPPDFindT0 configfiles/LAPPDana/ConfigPreProcess
 #
 #Simple Pulse Analysis
