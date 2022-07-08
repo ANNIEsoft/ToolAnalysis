@@ -757,7 +757,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
     if (LAPPDLegendEntries.at(i) == "channel_status") channel_status = svalue;
   }
 
-  cout<<"ASWEEWWTTUYUY "<<detector_num<<" "<<channel_strip_num<<" "<<channel_num<<" "<<channel_status<<endl;
+  //cout<<"ASWEEWWTTUYUY "<<detector_num<<" "<<channel_strip_num<<" "<<channel_num<<" "<<channel_status<<endl;
 
   if(verbosity>4) std::cout << "Filling a LAPPD data line into Detector/Channel classes" << std::endl;
   if(detector_num != detector_num_store){
