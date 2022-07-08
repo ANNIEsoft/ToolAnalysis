@@ -1,4 +1,5 @@
 #include "LAPPDStoreReadIn.h"
+#include "PsecData.h"
 
 LAPPDStoreReadIn::LAPPDStoreReadIn():Tool(){}
 
@@ -27,24 +28,24 @@ bool LAPPDStoreReadIn::Initialise(std::string configfile, DataModel &data){
     m_variables.Get("RawDataInputWavLabel",InputWavLabel);
     m_variables.Get("BoardIndexLabel",BoardIndexLabel);
 
-/*Multi layer boost store setup
-    //Create a multi-layer boost store and give it the file 
+//Multi layer boost store setup
+    //Create a multi-layer boost store and give it the file
     m_data->Stores["indata"] = new BoostStore(false,0);
-    //BoostStore *indata=new BoostStore(false,0);
     m_data->Stores["indata"]->Initialise(NewFileName);
-    m_data->Stores["indata"]->Print(false); 
+    m_data->Stores["indata"]->Print(false);
 
     //Create store for the LAPPD data
     m_data->Stores["LAPPDData"] = new BoostStore(false,2);
     //BoostStore *LAPPDData = new BoostStore(false,2);
-    m_data->Stores["indata"]->Get("LAPPDData",m_data->Stores["LAPPDData"]);
+
+    m_data->Stores["indata"]->Get("LAPPDData",*m_data->Stores["LAPPDData"]);
     std::cout <<"Print LAPPDData:"<<std::endl;
     m_data->Stores["LAPPDData"]->Print(false);
-*/
-/*Sinle layer boost store setup*/
-    m_data->Stores["LAPPDData"] = new BoostStore(false,2);
-    m_data->Stores["LAPPDData"]->Initialise(NewFileName);
-    if(LAPPDStoreReadInVerbosity>0) m_data->Stores["LAPPDData"]->Print(false); 
+    //m_data->Stores["LAPPDData"]->Header->Print(false);
+/*Single layer boost store setup*/
+//    m_data->Stores["LAPPDData"] = new BoostStore(false,2);
+//    m_data->Stores["LAPPDData"]->Initialise(NewFileName);
+//    if(LAPPDStoreReadInVerbosity>0) m_data->Stores["LAPPDData"]->Print(false);
 //*/
 
     //Grab the amount of total entries in the LAPPDData Store
@@ -68,7 +69,7 @@ bool LAPPDStoreReadIn::Initialise(std::string configfile, DataModel &data){
     if(DoPedSubtract==1)//extra work for multi ped files and stores
     {
         bool ret=false;
-        if (FILE *file = fopen(PedFileName.c_str(), "r")) 
+        if (FILE *file = fopen(PedFileName.c_str(), "r"))
         {
             fclose(file);
             ret = true;
@@ -80,7 +81,7 @@ bool LAPPDStoreReadIn::Initialise(std::string configfile, DataModel &data){
             long Pedentries;
             m_data->Stores["PedestalFile"]->Header->Get("TotalEntries",Pedentries);
             if(LAPPDStoreReadInVerbosity>0) cout << PedFileName << " got " << Pedentries << endl;
-            m_data->Stores["PedestalFile"]->Get("PedestalMap",PedestalValues);        
+            m_data->Stores["PedestalFile"]->Get("PedestalMap",PedestalValues);
         }else
         {
             m_variables.Get("PedinputfileTXT", PedFileNameTXT);
@@ -91,30 +92,54 @@ bool LAPPDStoreReadIn::Initialise(std::string configfile, DataModel &data){
         }
     }
     if(DoPedSubtract==1 && LAPPDStoreReadInVerbosity>1) cout<<"PEDSIZES: "<<PedestalValues->size()<<" "<<PedestalValues->at(0).size()<<" "<<PedestalValues->at(4).at(5)<<endl;
-    
+
+    //parameters (potentially) used by the whole ToolChain
+    m_variables.Get("Nsamples", Nsamples);
+    m_variables.Get("NChannels", NChannels);
+    m_variables.Get("TrigChannel", TrigChannel);
+    m_variables.Get("LAPPDchannelOffset", LAPPDchannelOffset);
+    m_variables.Get("SampleSize", SampleSize);
+
+    m_data->Stores["ANNIEEvent"]->Set("Nsamples", Nsamples);
+    m_data->Stores["ANNIEEvent"]->Set("NChannels", NChannels);
+    m_data->Stores["ANNIEEvent"]->Set("TrigChannel", TrigChannel);
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDchannelOffset", LAPPDchannelOffset);
+    m_data->Stores["ANNIEEvent"]->Set("SampleSize", SampleSize);
+
     //Prepare to start with event 0
-    eventNo=0; 
+    eventNo=0;
 
     return true;
 }
 
 
 bool LAPPDStoreReadIn::Execute(){
-    
+
     if((long)eventNo==entries) m_data->vars.Set("StopLoop",1);
 
     if(eventNo%10==0) cout<<"Event: " << eventNo << endl;
 
+    PsecData dat;
     int i_entry = eventNo;
-    if(LAPPDStoreReadInVerbosity>1) cout << "Starting entry " << i_entry << endl;
+    if(LAPPDStoreReadInVerbosity>2) cout << "Starting entry " << i_entry << endl;
     m_data->Stores["LAPPDData"]->GetEntry(i_entry);
-    if(LAPPDStoreReadInVerbosity>1) cout << "Got entry " << i_entry << endl;
+    m_data->Stores["LAPPDData"]->Get("LAPPDData",dat);
+    if(LAPPDStoreReadInVerbosity>2) cout << "Got entry " << i_entry << endl;
 
-    m_data->Stores["LAPPDData"]->Get(InputWavLabel,Raw_buffer);
-    m_data->Stores["LAPPDData"]->Get(BoardIndexLabel,ReadBoards);
-    if(LAPPDStoreReadInVerbosity>0) cout << "Number of boards was " << ReadBoards.size() << endl;
+    ReadBoards = dat.BoardIndex;
+    Raw_buffer = dat.RawWaveform;
+
+    /*
+    cout<<InputWavLabel<<" "<<BoardIndexLabel<<endl;
+    bool test1 = m_data->Stores["LAPPDData"]->Get(InputWavLabel,Raw_buffer);
+    bool test2 = m_data->Stores["LAPPDData"]->Get(BoardIndexLabel,ReadBoards);
+    cout<<"find em?"<<test1<<" "<<test2<<" "<<BoardIndex.size()<<endl;
+*/
+
+    if(LAPPDStoreReadInVerbosity>2) cout << "Number of boards was " << ReadBoards.size() << endl;
 
     int frametype = Raw_buffer.size()/ReadBoards.size();
+    //cout<<"FRAMETYPE: "<<frametype<<endl;
     if(frametype!=NUM_VECTOR_DATA && frametype!=NUM_VECTOR_PPS)
     {
         cout << "Problem identifying the frametype, size of raw vector was " << Raw_buffer.size() << endl;
@@ -125,7 +150,7 @@ bool LAPPDStoreReadIn::Execute(){
 
     if(frametype==NUM_VECTOR_PPS)
     {
-        std::cout << "PPS Frame was read! Please fix me!" << std::endl;
+        if(LAPPDStoreReadInVerbosity>2) std::cout << "PPS Frame was read! Please fix me!" << std::endl;
         //return all as is
         /*
         m_data->ToDataModel.DATA = EMPTY;
@@ -136,14 +161,14 @@ bool LAPPDStoreReadIn::Execute(){
         return true;
     }else if(frametype==NUM_VECTOR_DATA)
     {
-        if(LAPPDStoreReadInVerbosity>1) std::cout << "Data Frame was read! Starting the parsing!" << std::endl;  
+        if(LAPPDStoreReadInVerbosity>1) std::cout << "Data Frame was read! Starting the parsing!" << std::endl;
     }
 
     //Create a vector of paraphrased board indices
     int nbi = ReadBoards.size();
     vector<int> ParaBoards;
     if(nbi%2!=0)
-    {  
+    {
         cout << "Why is there an uneven number of boards! this is wrong!" << endl;
         if(nbi==1)
         {
@@ -163,20 +188,20 @@ bool LAPPDStoreReadIn::Execute(){
     for(int bi: ParaBoards)
     {
         Parse_buffer.clear();
-        if(LAPPDStoreReadInVerbosity>1) std::cout << "Starting with board " << ReadBoards[bi] << std::endl;
+        if(LAPPDStoreReadInVerbosity>2) std::cout << "Starting with board " << ReadBoards[bi] << std::endl;
         //Go over all ACDC board data frames by seperating them
         for(int c=bi*frametype; c<(bi+1)*frametype; c++)
         {
             Parse_buffer.push_back(Raw_buffer[c]);
         }
-        if(LAPPDStoreReadInVerbosity>1) std::cout << "Data for board " << ReadBoards[bi] << " was grabbed!" << std::endl;
+        if(LAPPDStoreReadInVerbosity>2) std::cout << "Data for board " << ReadBoards[bi] << " was grabbed!" << std::endl;
 
 
         //Grab the parsed data and give it to a global variable 'data'
         retval = getParsedData(Parse_buffer,ReadBoards[bi]*NUM_CH);
         if(retval == 0)
         {
-            if(LAPPDStoreReadInVerbosity>1) std::cout << "Data for board " << ReadBoards[bi] << " was parsed!" << std::endl;
+            if(LAPPDStoreReadInVerbosity>2) std::cout << "Data for board " << ReadBoards[bi] << " was parsed!" << std::endl;
             //Grab the parsed metadata and give it to a global variable 'meta'
             retval = getParsedMeta(Parse_buffer,ReadBoards[bi]);
             if(retval!=0)
@@ -184,7 +209,7 @@ bool LAPPDStoreReadIn::Execute(){
                 std::cout << "Meta parsing went wrong! " << retval << endl;
             }else
             {
-                if(LAPPDStoreReadInVerbosity>1) std::cout << "Meta for board " << ReadBoards[bi] << " was parsed!" << std::endl;
+                if(LAPPDStoreReadInVerbosity>2) std::cout << "Meta for board " << ReadBoards[bi] << " was parsed!" << std::endl;
             }
         }else
         {
@@ -193,7 +218,7 @@ bool LAPPDStoreReadIn::Execute(){
         }
     }
 
-    if(LAPPDStoreReadInVerbosity>0) cout<<"BEGIN LAPPDPSECReadIn "<< endl;
+    if(LAPPDStoreReadInVerbosity>0) cout<<"BEGIN LAPPDStoreReadIn "<< endl;
 
     std::map<unsigned long, vector<Waveform<double>>> LAPPDWaveforms;
     Waveform<double> tmpWave;
@@ -220,18 +245,20 @@ bool LAPPDStoreReadIn::Execute(){
         VecTmpWave.clear();
     }
 
-    if(LAPPDStoreReadInVerbosity>0) cout<<"*************************END LAPPDPSECReadIn************************************"<<endl;
+
+
+    if(LAPPDStoreReadInVerbosity>0) cout<<"*************************END LAPPDStoreReadIn************************************"<<endl;
 
     m_data->Stores["ANNIEEvent"]->Set(OutputWavLabel,LAPPDWaveforms);
     m_data->Stores["ANNIEEvent"]->Set("ACDCmetadata",meta);
     m_data->Stores["ANNIEEvent"]->Set("ACDCboards",ReadBoards);
     m_data->Stores["ANNIEEvent"]->Set("TriggerChannelBase",TrigChannel);
 
-    meta.clear(); 
-    LAPPDWaveforms.clear(); 
-    data.clear(); 
-    Raw_buffer.clear(); 
-    ReadBoards.clear(); 
+    meta.clear();
+    LAPPDWaveforms.clear();
+    data.clear();
+    Raw_buffer.clear();
+    ReadBoards.clear();
     Parse_buffer.clear();
 
     eventNo++;
@@ -333,15 +360,15 @@ int LAPPDStoreReadIn::getParsedMeta(std::vector<unsigned short> buffer, int Boar
         return -1;
     }
 
-    //Prepare the Metadata vector 
+    //Prepare the Metadata vector
     //meta.clear();
 
     //Helpers
     int chip_count = 0;
 
     //Indicator words for the start/end of the metadata
-    const unsigned short startword = 0xBA11; 
-    unsigned short endword = 0xFACE; 
+    const unsigned short startword = 0xBA11;
+    unsigned short endword = 0xFACE;
     unsigned short endoffile = 0x4321;
 
     //Empty metadata map for each Psec chip <PSEC #, vector with information>
@@ -355,7 +382,7 @@ int LAPPDStoreReadIn::getParsedMeta(std::vector<unsigned short> buffer, int Boar
     vector<int> start_indices=
     {
         1539, 3091, 4643, 6195, 7747
-    }; 
+    };
 
     //Fill the psec info map
     vector<unsigned short>::iterator bit;
@@ -380,7 +407,7 @@ int LAPPDStoreReadIn::getParsedMeta(std::vector<unsigned short> buffer, int Boar
     {
         for(int ch=0; ch<NUM_CH/NUM_PSEC; ch++)
         {
-            //Find the trigger data at begin + last_metadata_start + 13_info_words + 1_end_word + 1 
+            //Find the trigger data at begin + last_metadata_start + 13_info_words + 1_end_word + 1
             bit = buffer.begin() + start_indices[4] + 13 + 1 + 1 + ch + (chip*(NUM_CH/NUM_PSEC));
             PsecTriggerInfo[chip].push_back(*bit);
         }
@@ -390,7 +417,7 @@ int LAPPDStoreReadIn::getParsedMeta(std::vector<unsigned short> buffer, int Boar
     CombinedTriggerRateCount = buffer[7792];
 
     //----------------------------------------------------------
-    //Start the metadata parsing 
+    //Start the metadata parsing
 
     meta.push_back(BoardId);
     for(int CHIP=0; CHIP<NUM_PSEC; CHIP++)
@@ -398,7 +425,7 @@ int LAPPDStoreReadIn::getParsedMeta(std::vector<unsigned short> buffer, int Boar
         meta.push_back((0xDCB0 | CHIP));
         for(int INFOWORD=0; INFOWORD<13; INFOWORD++)
         {
-            meta.push_back(PsecInfo[CHIP][INFOWORD]);   
+            meta.push_back(PsecInfo[CHIP][INFOWORD]);
         }
         for(int TRIGGERWORD=0; TRIGGERWORD<6; TRIGGERWORD++)
         {
@@ -426,7 +453,7 @@ int LAPPDStoreReadIn::getParsedData(std::vector<unsigned short> buffer, int ch_s
     channel_count=0;
 
     //Indicator words for the start/end of the metadata
-    const unsigned short startword = 0xF005; 
+    const unsigned short startword = 0xF005;
     unsigned short endword = 0xBA11;
     unsigned short endoffile = 0x4321;
 
@@ -434,7 +461,7 @@ int LAPPDStoreReadIn::getParsedData(std::vector<unsigned short> buffer, int ch_s
     vector<int> start_indices=
     {
         2, 1554, 3106, 4658, 6210
-    }; 
+    };
 
     //Fill data map
     vector<unsigned short>::iterator bit;
@@ -455,7 +482,7 @@ int LAPPDStoreReadIn::getParsedData(std::vector<unsigned short> buffer, int ch_s
                 channel_count++;
             }
             ++bit;
-        } 
+        }
     }
 
     return 0;
