@@ -49,6 +49,8 @@ class LAPPDClusterTree: public Tool {
   Double_t      BeamTime;
   Double_t      EventTime;
   Double_t      TotalCharge;
+  Double_t      MaxAmp;
+
 
   // END NEW!!!
 
