@@ -20,6 +20,7 @@ class LAPPDIntegratePulse: public Tool {
  private:
 
    double CalcIntegral(Waveform<double> hwav, double lowR, double hiR);
+   double CalcAmp(Waveform<double> hwav, double lowR, double hiR);
    int DimSize;
    double Deltat;
    double lowR;
