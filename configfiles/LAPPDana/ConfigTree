@@ -1,5 +1,5 @@
 #LAPPDClusterTree
-LAPPDClusterTreeVerbosity  0
+LAPPDClusterTreeVerbosity  2
 SimpleClusterLabel SimpleRecoLAPPDPulses
 CFDClusterLabel CFDRecoLAPPDPulses
 getSimpleClusters 1
