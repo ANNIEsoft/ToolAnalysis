@@ -121,12 +121,13 @@ if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;
 if (tool=="MonitorTrigger") ret=new MonitorTrigger;
 
-if (tool=="LAPPDPSECReadIn") ret=new LAPPDPSECReadIn;
 if (tool=="LAPPDPlotWaveForms") ret=new LAPPDPlotWaveForms;
 if (tool=="LAPPDReorderData") ret=new LAPPDReorderData;
 if (tool=="LAPPDStoreReorderData") ret=new LAPPDStoreReorderData;
 if (tool=="LAPPDFindT0") ret=new LAPPDFindT0;
 if (tool=="LAPPDStoreFindT0") ret=new LAPPDStoreFindT0;
+if (tool=="LAPPDStoreReadIn") ret=new LAPPDStoreReadIn;
+
 if (tool=="ClusterDummy") ret=new ClusterDummy;
 if (tool=="LAPPDCluster") ret=new LAPPDCluster;
 if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
@@ -137,5 +138,6 @@ if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
 if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
 if (tool=="LAPPDGausBaselineSubtraction") ret=new LAPPDGausBaselineSubtraction;
+if (tool=="LAPPDASCIIReadIn") ret=new LAPPDASCIIReadIn;
 return ret;
 }
