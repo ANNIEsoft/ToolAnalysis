@@ -31,6 +31,8 @@ class LAPPDBaselineSubtract: public Tool {
    double HiBLfitrange;
    double TrigLowBLfitrange;
    double TrigHiBLfitrange;
+   double oldLaserTrigAmpRange;
+   int oldLaser;
    string BLSInputWavLabel;
    string BLSOutputWavLabel;
 
