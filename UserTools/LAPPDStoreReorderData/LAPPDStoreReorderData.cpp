@@ -34,18 +34,6 @@ bool LAPPDStoreReorderData::Execute()
     m_data->Stores["ANNIEEvent"]->Get("ACDCboards",NReadBoards);
     std::map<unsigned long,vector<Waveform<double>>> reordereddata;
 
-    // values are not yet calculated. This is a placeholder so I don't break tools, downstream - MW
-    unsigned int trigcounter=0;
-    unsigned int trigcounterL=0;
-    unsigned int beamcounter=0;
-    unsigned int beamcounterL=0;
-    vector<unsigned int> tcounters;
-    tcounters.push_back(beamcounter);
-    tcounters.push_back(beamcounterL);
-    tcounters.push_back(trigcounter);
-    tcounters.push_back(trigcounterL);
-    m_data->Stores["ANNIEEvent"]->Set("TimingCounters",tcounters);
-
     // Loop over waveforms, reorder data
     // For 30 channels change to 10
     vector<unsigned short> Smeta26;
@@ -102,6 +90,151 @@ bool LAPPDStoreReorderData::Execute()
 
     }
 
+
+    // Construct the relevant time-stamp/clock variables///////////////////////////////////
+
+    //get the appropriate metadata words from the meta structure
+    unsigned short beamgate_63_48 = acdcmetadata.at(7);
+    unsigned short beamgate_47_32 = acdcmetadata.at(27);
+    unsigned short beamgate_31_16 = acdcmetadata.at(47);
+    unsigned short beamgate_15_0 = acdcmetadata.at(67);
+
+
+    std::bitset<16> bits_beamgate_63_48(beamgate_63_48);
+    std::bitset<16> bits_beamgate_47_32(beamgate_47_32);
+    std::bitset<16> bits_beamgate_31_16(beamgate_31_16);
+    std::bitset<16> bits_beamgate_15_0(beamgate_15_0);
+
+    // cout statements
+
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_beamgate_63_48: " << bits_beamgate_63_48 << std::endl;
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_beamgate_47_32: " << bits_beamgate_47_32 << std::endl;
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_beamgate_31_16: " << bits_beamgate_31_16 << std::endl;
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_beamgate_15_0: " << bits_beamgate_15_0 << std::endl;
+    //construct the full 64-bit counter number
+    unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
+    // cout statement
+    if (ReorderVerbosityLevel > 2) std::cout << "beamgate combined: " << beamgate_63_0 << std::endl;
+    // binary digit
+    std::bitset<64> bits_beamgate_63_0(beamgate_63_0);
+    // cout the binary
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_beamgate_63_0: " << bits_beamgate_63_0 << std::endl;
+
+    // hex manipulations
+    std::stringstream str_beamgate_15_0;
+    str_beamgate_15_0 << std::hex << (beamgate_15_0);
+    std::stringstream str_beamgate_31_16;
+    str_beamgate_31_16 << std::hex << (beamgate_31_16);
+    std::stringstream str_beamgate_47_32;
+    str_beamgate_47_32 << std::hex << (beamgate_47_32);
+    std::stringstream str_beamgate_63_48;
+    str_beamgate_63_48 << std::hex << (beamgate_63_48);
+    const char *hexstring = str_beamgate_63_48.str().c_str();
+    unsigned int meta7_1 = (unsigned int)strtol(hexstring, NULL, 16);
+    hexstring = str_beamgate_47_32.str().c_str();
+    unsigned int meta27_1 = (unsigned int) strtol(hexstring, NULL, 16);
+    hexstring = str_beamgate_31_16.str().c_str();
+    unsigned int meta47_1 = (unsigned int) strtol(hexstring, NULL, 16);
+    hexstring = str_beamgate_15_0.str().c_str();
+    unsigned int meta67_1 = (unsigned int) strtol(hexstring, NULL, 16);
+    meta7_1 = meta7_1 << 16;
+    meta47_1 = meta47_1 << 16;
+
+    // my two beam counter values
+    unsigned int beamcounter = meta47_1 + meta67_1;
+    unsigned int beamcounterL = meta7_1 + meta27_1;
+    // as doubles
+    double largetime = (double)beamcounterL*13.1;
+    double smalltime = ((double)beamcounter/1E9)*3.125;
+
+    // bunch of couts
+    if (ReorderVerbosityLevel > 2) {
+    std::cout <<"meta7_1: "<<meta7_1<<std::endl;
+    std::cout <<"meta27_1: "<<meta27_1<<std::endl;
+    std::cout <<"meta47_1: "<<meta47_1<<std::endl;
+    std::cout <<"meta67_1: "<<meta67_1<<std::endl;
+    std::cout <<"beamcounter: "<<beamcounter<<std::endl;
+    std::cout <<"beamcounterL: "<<beamcounterL<<std::endl;
+    std::cout <<"largetime: "<<largetime<<std::endl;
+    std::cout <<"smalltime: "<<smalltime<<std::endl;
+    std::cout <<"eventtime: "<<(largetime+smalltime)<<std::endl;
+    std::cout <<"beamgate old: "<<((beamgate_63_0/1E9)*3.125)<<std::endl;
+    }
+
+    //Build data timestamp
+    unsigned short timestamp_63_48 = acdcmetadata.at(70);
+    unsigned short timestamp_47_32 = acdcmetadata.at(50);
+    unsigned short timestamp_31_16 = acdcmetadata.at(30);
+    unsigned short timestamp_15_0 = acdcmetadata.at(10);
+    std::bitset<16> bits_timestamp_63_48(timestamp_63_48);
+    std::bitset<16> bits_timestamp_47_32(timestamp_47_32);
+    std::bitset<16> bits_timestamp_31_16(timestamp_31_16);
+    std::bitset<16> bits_timestamp_15_0(timestamp_15_0);
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_timestamp_63_48: " << bits_timestamp_63_48 << std::endl;
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_timestamp_47_32: " << bits_timestamp_47_32 << std::endl;
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_timestamp_31_16: " << bits_timestamp_31_16 << std::endl;
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_timestamp_15_0: " << bits_timestamp_15_0 << std::endl;
+    //construct the full 64-bit counter number
+    unsigned long timestamp_63_0 = (static_cast<unsigned long>(timestamp_63_48) << 48) + (static_cast<unsigned long>(timestamp_47_32) << 32) + (static_cast<unsigned long>(timestamp_31_16) << 16) + (static_cast<unsigned long>(timestamp_15_0));
+    // cout statement
+    if (ReorderVerbosityLevel > 2) std::cout << "timestamp combined: " << timestamp_63_0 << std::endl;
+    std::bitset<64> bits_timestamp_63_0(timestamp_63_0);
+    // cout the binary
+    if (ReorderVerbosityLevel > 2) std::cout << "bits_timestamp_63_0: " << bits_timestamp_63_0 << std::endl;
+
+    // hex manipulations
+    std::stringstream str_timestamp_63_48;
+    str_timestamp_63_48 << std::hex << (timestamp_63_48);
+    std::stringstream str_timestamp_47_32;
+    str_timestamp_47_32 << std::hex << (timestamp_47_32);
+    std::stringstream str_timestamp_31_16;
+    str_timestamp_31_16 << std::hex << (timestamp_31_16);
+    std::stringstream str_timestamp_15_0;
+    str_timestamp_15_0 << std::hex << (timestamp_15_0);
+
+    hexstring = str_timestamp_63_48.str().c_str();
+    unsigned int meta70_1 = (unsigned int)strtol(hexstring, NULL, 16);
+    hexstring = str_timestamp_47_32.str().c_str();
+    unsigned int meta50_1 = (unsigned int) strtol(hexstring, NULL, 16);
+    hexstring = str_timestamp_31_16.str().c_str();
+    unsigned int meta30_1 = (unsigned int) strtol(hexstring, NULL, 16);
+    hexstring = str_timestamp_15_0.str().c_str();
+    unsigned int meta10_1 = (unsigned int) strtol(hexstring, NULL, 16);
+    meta70_1 = meta70_1 << 16;
+    meta30_1 = meta30_1 << 16;
+
+    // my two beam counter values
+    unsigned int trigcounter = meta30_1 + meta10_1;
+    unsigned int trigcounterL = meta50_1 + meta70_1;
+    // as doubles
+    //double largetime = (double)beamcounterL*13.1;
+    //double smalltime = ((double)beamcounter/1E9)*3.125;
+
+    vector<unsigned int> tcounters;
+    tcounters.push_back(beamcounter);
+    tcounters.push_back(beamcounterL);
+    tcounters.push_back(trigcounter);
+    tcounters.push_back(trigcounterL);
+
+    /*
+      	beamgate_timestamp.push_back(beamgate_63_0);
+    		data_timestamp.push_back(timestamp_63_0);
+
+    		//for (int i=0; i<first_entry.size(); i++) std::cout << first_entry.at(i)<<std::endl;
+
+    		data_beamgate_lastfile.at(board_idx).push_back(timestamp_63_0 - beamgate_63_0);
+    		if (first_entry.at(vector_idx) == true) {
+    			//std::cout <<"true"<<std::endl;
+    			first_beamgate_timestamp.at(vector_idx) = beamgate_63_0;
+    			first_timestamp.at(vector_idx) = timestamp_63_0;
+    			first_entry.at(vector_idx) = false;
+    		}
+    		//Just overwrite "last" entry every time
+    		last_beamgate_timestamp.at(vector_idx) = beamgate_63_0;
+    		last_timestamp.at(vector_idx) = timestamp_63_0;
+    */
+
+    m_data->Stores["ANNIEEvent"]->Set("TimingCounters",tcounters);
     m_data->Stores["ANNIEEvent"]->Set(OutputWavLabel,reordereddata);
 
     return true;
