@@ -49,6 +49,7 @@ bool LAPPDIntegratePulse::Execute(){
   map <unsigned long, vector<Waveform<double>>> :: iterator itr;
 
   double totCharge=0;
+  double MaxAmp=0;
   for (itr = lappddata.begin(); itr != lappddata.end(); ++itr){
 
     unsigned long channelno = itr->first;
@@ -77,6 +78,8 @@ bool LAPPDIntegratePulse::Execute(){
         if( stripno==IS1 || stripno==IS2 || stripno==IS3 || stripno==IS4 ){
           totCharge+=Qelectrons;
         }
+        //get the maximum amplitude
+        if(stripno==IS1) MaxAmp = CalcAmp(bwav,lowR,hiR);
       }
 
       // store the charge vector by channel
@@ -86,6 +89,7 @@ bool LAPPDIntegratePulse::Execute(){
     // add the charge information to the Boost Store
     m_data->Stores["ANNIEEvent"]->Set("theCharges",thecharge);
     m_data->Stores["ANNIEEvent"]->Set("TotCharge",-totCharge);
+    m_data->Stores["ANNIEEvent"]->Set("MaxAmp",MaxAmp);
 
     //cout<<"DONE INTEGRATING. TOTAL CHARGE = "<<-totCharge<<endl;
 
@@ -114,4 +118,26 @@ double LAPPDIntegratePulse::CalcIntegral(Waveform<double> hwav, double lowR, dou
   } else std::cout<<"OUT OF RANGE!!!!";
 
   return tQ;
+}
+
+
+
+double LAPPDIntegratePulse::CalcAmp(Waveform<double> hwav, double lowR, double hiR){
+
+  double sT=0.; // currently hard coded
+
+  int lowb = (lowR - sT)/Deltat;
+  int hib = (hiR - sT)/Deltat;
+
+  double tQ=0.;
+
+  double tAmp=0;
+
+  if( (lowb>=0) && (hib<hwav.GetSamples()->size()) ){
+    for(int i=lowb; i<hib; i++){
+      if(fabs(hwav.GetSample(i))>fabs(tAmp)) tAmp=hwav.GetSample(i);
+    }
+  } else std::cout<<"OUT OF RANGE!!!!";
+
+  return tAmp;
 }
