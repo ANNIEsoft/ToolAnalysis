@@ -42,6 +42,12 @@ class LAPPDSim: public Tool {
    Geometry* _geom;
    std::map<unsigned long, vector<Waveform<double> > >* LAPPDWaveforms;
 
+   int NChannels;
+   int Nsamples;
+   double SampleSize;
+   int LAPPDchannelOffset;
+   int TrigChannel;
+
 };
 
 
