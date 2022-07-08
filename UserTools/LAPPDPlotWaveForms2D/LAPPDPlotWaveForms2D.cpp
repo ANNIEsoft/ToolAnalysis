@@ -19,6 +19,8 @@ bool LAPPDPlotWaveForms2D::Initialise(std::string configfile, DataModel &data){
     m_variables.Get("PlotWavLabel",IWL);
     InputWavLabel = IWL;
 
+    cout<<"InputWavLabel: "<<InputWavLabel<<endl;
+
     //tf->mkdir("filteredwavs");
     //tf->mkdir("blswavs");
 
@@ -26,20 +28,25 @@ bool LAPPDPlotWaveForms2D::Initialise(std::string configfile, DataModel &data){
     isBLsub=false;
 
     // have the pulses been filtered? integrated? is this real or simulated data?
-    bool ifilt = m_data->Stores["ANNIEEvent"]->Header->Get("isFiltered",isFiltered);
-    bool ibl = m_data->Stores["ANNIEEvent"]->Header->Get("isBLsubtracted",isBLsub);
-    bool iI = m_data->Stores["ANNIEEvent"]->Header->Get("isIntegrated",isIntegrated);
-    bool isim = m_data->Stores["ANNIEEvent"]->Header->Get("isSim",isSim);
+    bool ifilt = m_data->Stores["ANNIEEvent"]->Get("isFiltered",isFiltered);
+    bool ibl = m_data->Stores["ANNIEEvent"]->Get("isBLsubtracted",isBLsub);
+    bool iI = m_data->Stores["ANNIEEvent"]->Get("isIntegrated",isIntegrated);
+    bool isim = m_data->Stores["ANNIEEvent"]->Get("isSim",isSim);
 
     // keep count of the loop number (starting from 0)
     miter=0;
 
+    int TrigChannel,LAPPDchannelOffset;
+    m_data->Stores["ANNIEEvent"]->Get("SampleSize",Deltat);
+    m_data->Stores["ANNIEEvent"]->Get("TrigChannel",TrigChannel);
+    m_data->Stores["ANNIEEvent"]->Get("LAPPDchannelOffset",LAPPDchannelOffset);
+
+    trigno = TrigChannel + LAPPDchannelOffset;
+
     m_variables.Get("NHistos", NHistos);
-    m_variables.Get("SampleSize",Deltat);
     m_variables.Get("SaveByChannel",SaveByChannel);
     m_variables.Get("SaveSingleStrip",SaveSingleStrip);
     m_variables.Get("SingleStripNo",psno);
-    m_variables.Get("TrigNo",trigno);
     m_variables.Get("requireT0signal",requireT0signal);
 
 
@@ -68,7 +75,7 @@ bool LAPPDPlotWaveForms2D::Execute(){
 
     //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
     bool work = m_data->Stores["ANNIEEvent"]->Get(InputWavLabel,lappddata);
-    //cout<<"IN PLOT WAVES "<<InputWavLabel<<" "<<work<<endl;
+    //cout<<"IN PLOT WAVES 2D "<<InputWavLabel<<" "<<work<<endl;
     bool T0signalInWindow;
     m_data->Stores["ANNIEEvent"]->Get("T0signalInWindow",T0signalInWindow);
     if(requireT0signal && !T0signalInWindow) {
@@ -98,6 +105,7 @@ bool LAPPDPlotWaveForms2D::Execute(){
     //cout<<"ope"<<endl;
     Waveform<double> fwav = (lappddata.begin()->second).at(0);
     int nbins = fwav.GetSamples()->size();
+    //cout<<"nbins: "<<nbins<<endl;
     //cout<<"nope"<<endl;
     double starttime=0.;
     double endtime = starttime + ((double)nbins)*100.;
@@ -109,6 +117,8 @@ bool LAPPDPlotWaveForms2D::Execute(){
     h3name+="event1_";
     h3name+=miter;
     TH2D* hEvent_1 = new TH2D(h3name,h3name,nbins,starttime/1000.,endtime/1000.,30,-0.5,29.5);
+
+    //cout<<"done?"<<endl;
 
     double eventcharge = 0.;
     double eventamplitude = 0.;
