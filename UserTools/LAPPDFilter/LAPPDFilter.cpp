@@ -15,7 +15,7 @@ bool LAPPDFilter::Initialise(std::string configfile, DataModel &data){
   //bool isFiltered = true;
   //m_data->Stores["ANNIEEvent"]->Header->Set("isFiltered",isFiltered);
 
-  TString FIWL;
+    TString FIWL;
     TString RFIWL;
     TString BLSFIWL;
   //FilterInputWavLabel;
@@ -25,9 +25,12 @@ bool LAPPDFilter::Initialise(std::string configfile, DataModel &data){
     BLSFilterInputWavLabel= BLSFIWL;
     m_variables.Get("FilterInputWavLabel",FIWL);
     FilterInputWavLabel = FIWL;
-    m_variables.Get("Nsamples", DimSize);
+    //m_variables.Get("Nsamples", DimSize);
     m_variables.Get("CutoffFrequency", CutoffFrequency);
-    m_variables.Get("SampleSize",Deltat);
+
+    m_data->Stores["ANNIEEvent"]->Get("SampleSize",Deltat);
+    m_data->Stores["ANNIEEvent"]->Get("Nsamples", DimSize);
+    cout<<Deltat<<" in Filter"<<" "<<DimSize<<endl;
     return true;
 }
 
@@ -35,28 +38,28 @@ bool LAPPDFilter::Initialise(std::string configfile, DataModel &data){
 bool LAPPDFilter::Execute(){
     bool isFiltered=true;
     m_data->Stores["ANNIEEvent"]->Set("isFiltered",isFiltered);
-    
+
     //cout<<isFiltered<<"kjhjkhkhkhkj"<<endl;
     bool isBLsub;
     m_data->Stores["ANNIEEvent"]->Get("isBLsubtracted",isBLsub);
-    
- 
+
+
     Waveform<double> bwav;
 
     // get raw lappd data
     std::map<unsigned long,vector<Waveform<double>>> lappddata;
-   
+
     //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",lappddata);
     if(isBLsub==false)
     {
         m_data->Stores["ANNIEEvent"]->Get(RawFilterInputWavLabel,lappddata);
-        //cout<<"I'm in the filt if"<<endl;
+        //cout<<"I'm in the filt if isBLSsub false"<<endl;
     }
     else if(isBLsub==true)
     {
        m_data->Stores["ANNIEEvent"]->Get(BLSFilterInputWavLabel,lappddata);
     }
-     // cout<<"In FilterInputWavLabel "<< FilterInputWavLabel<<" "<<rawlappddata.size()<<endl;
+    //cout<<"In FilterInputWavLabel "<< RawFilterInputWavLabel<<" "<<BLSFilterInputWavLabel<<" "<<lappddata.size()<<endl;
     // the filtered Waveform
     std::map<unsigned long,vector<Waveform<double>>> filteredlappddata;
     // cout<<"In LAPPDFilter "<< rawlappddata.size()<<endl;
@@ -72,6 +75,7 @@ bool LAPPDFilter::Execute(){
         // cout<<"LOOPING WAVEFORMS!!"<<endl;
             Waveform<double> bwav = Vwavs.at(i);
             Waveform<double> filtwav = Waveform_FFT(bwav);
+            //cout<<"in filter, nbins: "<<bwav.GetSamples()->size()<<endl;
             Vfwavs.push_back(filtwav);
         }
 
@@ -79,7 +83,7 @@ bool LAPPDFilter::Execute(){
         }
 
       m_data->Stores["ANNIEEvent"]->Set("FiltLAPPDData",filteredlappddata);
-    
+
       //cout<<"End of LAPPDFilter "<<filteredlappddata.size()<<endl;
 
       return true;
