@@ -28,8 +28,8 @@ class LAPPDFilter: public Tool {
   double CutoffFrequency;
   double Deltat;
   string FilterInputWavLabel;
-    string RawFilterInputWavLabel;
-    string BLSFilterInputWavLabel;
+  string RawFilterInputWavLabel;
+  string BLSFilterInputWavLabel;
 
 };
 
