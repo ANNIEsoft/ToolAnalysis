@@ -15,14 +15,16 @@ bool LAPPDBaselineSubtract::Initialise(std::string configfile, DataModel &data){
   //bool isBLsub = true;
   //m_data->Stores["ANNIEEvent"]->Header->Set("isBLsubtracted",isBLsub);
 
-  m_variables.Get("Nsamples", DimSize);
-  m_variables.Get("SampleSize",Deltat);
+  m_data->Stores["ANNIEEvent"]->Get("SampleSize",Deltat);
   m_variables.Get("TrigChannel1",TrigChannel1);
   m_variables.Get("TrigChannel2",TrigChannel2);
+
   m_variables.Get("LowBLfitrange", LowBLfitrange);
   m_variables.Get("HiBLfitrange",HiBLfitrange);
   m_variables.Get("TrigLowBLfitrange", TrigLowBLfitrange);
   m_variables.Get("TrigHiBLfitrange",TrigHiBLfitrange);
+  m_variables.Get("oldLaserTrigAmpRange",oldLaserTrigAmpRange);
+
   TString BLSIWL;
   m_variables.Get("BLSInputWavLabel", BLSIWL);
   BLSInputWavLabel= BLSIWL;
@@ -41,6 +43,10 @@ bool LAPPDBaselineSubtract::Execute(){
     //cout<<"made it to here "<<BLSInputWavLabel<<endl;
     Waveform<double> bwav;
 
+    oldLaser = 0;
+    m_data->Stores["ANNIEEvent"]->Get("oldLaser", oldLaser);
+    //cout<<"BLSub oldLaser: "<<oldLaser<<endl;
+
   // get raw lappd data
     std::map<unsigned long,vector<Waveform<double>>> lappddata;
     m_data->Stores["ANNIEEvent"]->Get(BLSInputWavLabel,lappddata);
@@ -58,7 +64,7 @@ bool LAPPDBaselineSubtract::Execute(){
     for(int i=0; i<Vwavs.size(); i++){
 
         Waveform<double> bwav = Vwavs.at(i);
-
+        DimSize = bwav.GetSamples()->size();
         // This is from back when we had a sinusoidal pedestal
         //Waveform<double> blswav = SubtractSine(bwav);
 
@@ -76,18 +82,33 @@ bool LAPPDBaselineSubtract::Execute(){
         }
 
         double BLval=0;
-
+        double AvgBL=0;
         if(channelno==TrigChannel1 || channelno==TrigChannel2){
           for(int j=TrigLowBLfitrange; j<TrigHiBLfitrange; j++){
               BLval+=bwav.GetSamples()->at(j);
           }
+          AvgBL = BLval/((double)(HiBLfitrange-LowBLfitrange));
+          if(oldLaser == 1) {
+            BLval = 0;
+            int range = 0;
+            double min =  *std::min_element(bwav.GetSamples()->begin(), bwav.GetSamples()->end()) ;
+            for(int k = 0; k<bwav.GetSamples()->size();k++){
+              if(bwav.GetSamples()->at(k) < min + oldLaserTrigAmpRange){
+                BLval += bwav.GetSamples()->at(k);
+                range += 1;
+              }
+            }
+            AvgBL = BLval/((double)range);
+
+          };
+
         } else{
             for(int j=LowBLfitrange; j<HiBLfitrange; j++){
                 BLval+=bwav.GetSamples()->at(j);
             }
+            AvgBL = BLval/((double)(HiBLfitrange-LowBLfitrange));
         }
-        
-        double AvgBL = BLval/((double)(HiBLfitrange-LowBLfitrange));
+
 
         Waveform<double> blswav;
         for(int k=0; k<bwav.GetSamples()->size(); k++){
