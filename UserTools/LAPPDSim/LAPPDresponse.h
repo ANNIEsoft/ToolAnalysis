@@ -26,6 +26,10 @@ class LAPPDresponse {
 
   Waveform<double> GetTrace(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise);
 
+  Waveform<double> GetTraceTrigger(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise);
+
+  int TriggerSim(double threshold);
+
   int FindStripNumber(double trans);
 
   double StripCoordinate(int stripnumber);
