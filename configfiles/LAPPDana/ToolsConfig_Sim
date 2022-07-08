@@ -5,7 +5,7 @@ GenerateHits GenerateHits configfiles/LAPPDana/ConfigSim
 LAPPDSim LAPPDSim configfiles/LAPPDana/ConfigSim
 #
 #Pre-processing
-#LAPPDStoreBaselineSubtract LAPPDStoreBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
+#LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
 #LAPPDFindT0 LAPPDFindT0 configfiles/LAPPDana/ConfigPreProcess
 #
 #Simple Pulse Analysis
