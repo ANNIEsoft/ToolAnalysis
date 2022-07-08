@@ -21,14 +21,15 @@ bool LAPPDStoreFindT0::Initialise(std::string configfile, DataModel &data)
     m_variables.Get("TrigEarlyCut",trigearlycut);
     m_variables.Get("TrigLateCut",triglatecut);
 
-    m_variables.Get("TrigChannel",TrigChannel);
     m_variables.Get("T0signalmax",T0signalmax);
     m_variables.Get("T0signalthreshold",T0signalthreshold);
 
     m_variables.Get("T0offset",T0offset);
     m_variables.Get("GlobalShiftT0",globalshiftT0);
 
-    m_variables.Get("LAPPDchannelOffset",LAPPDchannelOffset);
+    m_data->Stores["ANNIEEvent"]->Get("TrigChannel",TrigChannel);
+    m_data->Stores["ANNIEEvent"]->Get("LAPPDchannelOffset",LAPPDchannelOffset);
+
     return true;
 }
 
@@ -42,7 +43,7 @@ bool LAPPDStoreFindT0::Execute()
     std::map<unsigned long,vector<Waveform<double>>> reordereddata;
     bool T0signalInWindow = false;
     double deltaT;
- 
+
     map <unsigned long, vector<Waveform<double>>> :: iterator itr_bi;
     for(int bi: NReadBoards)
     {
@@ -71,7 +72,7 @@ bool LAPPDStoreFindT0::Execute()
     for(bool k: vec_T0signalInWindow)
     {
         if(!k){T0signalInWindow=false;}
-    }        
+    }
 
     map <unsigned long, vector<Waveform<double>>> :: iterator itr;
     for (itr = lappddata.begin(); itr != lappddata.end(); ++itr)
