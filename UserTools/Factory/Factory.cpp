@@ -23,7 +23,6 @@ if (tool=="PrintANNIEEvent") ret=new PrintANNIEEvent;
 if (tool=="GenerateHits") ret=new GenerateHits;
 if (tool=="LAPPDcfd") ret=new LAPPDcfd;
 if (tool=="LAPPDBaselineSubtract") ret=new LAPPDBaselineSubtract;
-if (tool=="LAPPDStoreBaselineSubtract") ret=new LAPPDStoreBaselineSubtract;
 if (tool=="NeutronStudyReadSandbox") ret=new NeutronStudyReadSandbox;
 if (tool=="NeutronStudyPMCS") ret=new NeutronStudyPMCS;
 if (tool=="NeutronStudyWriteTree") ret=new NeutronStudyWriteTree;
