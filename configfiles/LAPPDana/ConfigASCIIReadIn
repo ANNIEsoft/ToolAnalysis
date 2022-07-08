@@ -10,7 +10,7 @@ Folder ../Data/3655/
 oldLaser 0 #1 for old data, 0 for new trigger boards
 
 #LAPPDPSECReadIn
-LAPPDStoreReadInVerbosity 3 #Verbosity
+LAPPDStoreReadInVerbosity 0 #Verbosity
 RawDataInputWavLabel RawLAPPDDataFrame #Label of the raw dataframe in the store
 RawDataInputWavLabel RawWaveform
 RawDataOutpuWavLabel  RawLAPPDData
