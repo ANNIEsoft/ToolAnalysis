@@ -28,12 +28,13 @@ bool LAPPDPlotWaveForms::Initialise(std::string configfile, DataModel &data){
     // keep count of the loop number (starting from 0)
     miter=0;
 
+    m_data->Stores["ANNIEEvent"]->Get("SampleSize",Deltat);
+    m_data->Stores["ANNIEEvent"]->Get("TrigNo",trigno);
+
     m_variables.Get("NHistos", NHistos);
-    m_variables.Get("SampleSize",Deltat);
     m_variables.Get("SaveByChannel",SaveByChannel);
     m_variables.Get("SaveSingleStrip",SaveSingleStrip);
     m_variables.Get("SingleStripNo",psno);
-    m_variables.Get("TrigNo",trigno);
     m_variables.Get("requireT0signal",requireT0signal);
 
 
