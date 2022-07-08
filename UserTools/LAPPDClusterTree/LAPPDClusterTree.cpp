@@ -47,6 +47,7 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   fMyTree->Branch("QualityVar",               &QualityVar,                "QualityVar/I"               );
   fMyTree->Branch("TrigDeltaT",               &TrigDeltaT,                "TrigDeltaT/D"               );
   fMyTree->Branch("PulseHeight",              &PulseHeight,               "PulseHeight/D"              );
+  fMyTree->Branch("MaxAmp",                   &MaxAmp,                    "MaxAmp/D"                   );
 
 
   fMyTree->Branch("BeamTime",                 &BeamTime,                  "BeamTime/D"                 );
@@ -127,6 +128,7 @@ bool LAPPDClusterTree::Execute()
   //get the global variables for the TREE
   m_data->Stores["ANNIEEvent"]->Get("deltaT",TrigDeltaT);
   m_data->Stores["ANNIEEvent"]->Get("TotCharge",PulseHeight);
+  m_data->Stores["ANNIEEvent"]->Get("MaxAmp",MaxAmp);
   m_data->Stores["ANNIEEvent"]->Get("T0Bin",T0Bin);
   m_data->Stores["ANNIEEvent"]->Get("T0signalInWindow",T0signalInWindow);
   //m_data->Stores["ANNIEEvent"]->Get("WraparoundBin",WraparoundBin);
@@ -156,6 +158,7 @@ bool LAPPDClusterTree::Execute()
   if(LAPPDClusterTreeVerbosity>1) cout<<"SETUP COMPLETE  HELLO"<<endl;
   if(LAPPDClusterTreeVerbosity>1&&isCFD) cout<<"HITS SIZE: "<< Hits.size() << endl;
   if(LAPPDClusterTreeVerbosity>1&&simpleClusters) cout<<simpleClusters<<" SIMPLE HITS SIZE: "<<SimpleHits.size()<<"  ASDFAS"<<endl;
+  if(LAPPDClusterTreeVerbosity>1&&simpleClusters) cout<<"SIMPLE PULSES SIZE: "<<SimpleLAPPDPulses.size()<<endl;
 
   map <unsigned long, vector<LAPPDHit>> :: iterator itr;
   vector<LAPPDHit> :: iterator itrr;
