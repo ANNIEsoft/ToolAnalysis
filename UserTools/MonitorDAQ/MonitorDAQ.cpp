@@ -199,6 +199,18 @@ bool MonitorDAQ::Execute(){
     this->DrawVMEService(current_stamp,24.,"current_24h",1);     //show 24h history of Tank files
     this->PrintInfoBox();
 
+    //reset warning variables
+    m_data->CStore.Set("LAPPDSCWarningTemp",false);
+    m_data->CStore.Set("LAPPDSCWarningHum",false);
+    m_data->CStore.Set("LAPPDSCWarningHV",false);
+    m_data->CStore.Set("LAPPDSCWarningLV1",false);
+    m_data->CStore.Set("LAPPDSCWarningLV2",false);
+    m_data->CStore.Set("LAPPDSCWarningLV3",false);
+    m_data->CStore.Set("LAPPDSCWarningSalt",false);
+    m_data->CStore.Set("LAPPDSCWarningThermistor",false);
+    m_data->CStore.Set("LAPPDSCWarningLight",false);
+    m_data->CStore.Set("LAPPDSCWarningRelay",false);
+    m_data->CStore.Set("LAPPDSCWarningErrors",false);
   }
 
   //Only for debugging memory leaks, otherwise comment out --> test mode
@@ -923,7 +935,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_lv1 && !warning_lappd_lv1){
     warning_lappd_lv1 = true;
     std::stringstream ss_lv1;
-    ss_lv1 << "Monitoring: LAPPD LV value deviates too much from setpoint! Contact experts immediately!!!" ;
+    ss_lv1 << "Monitoring: LAPPD LV (3.3V) value deviates too much from setpoint! Contact experts immediately!!!" ;
     this->SendToSlack(ss_lv1.str());
   } else if (!lappd_sc_lv1){
     warning_lappd_lv1 = false;
@@ -933,7 +945,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_lv2 && !warning_lappd_lv2){
     warning_lappd_lv2 = true;
     std::stringstream ss_lv2;
-    ss_lv2 << "Monitoring: LAPPD LV value deviates too much from setpoint! Contact experts immediately!!!" ;
+    ss_lv2 << "Monitoring: LAPPD LV value (2.5V) deviates too much from setpoint! Contact experts immediately!!!" ;
     this->SendToSlack(ss_lv2.str());
   } else if (!lappd_sc_lv2){
     warning_lappd_lv2 = false;
@@ -943,7 +955,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_lv3 && !warning_lappd_lv3){
     warning_lappd_lv3 = true;
     std::stringstream ss_lv3;
-    ss_lv3 << "Monitoring: LAPPD LV value deviates too much from setpoint! Contact experts immediately!!!" ;
+    ss_lv3 << "Monitoring: LAPPD LV value (1.8V) deviates too much from setpoint! Contact experts immediately!!!" ;
     this->SendToSlack(ss_lv3.str());
   } else if (!lappd_sc_lv3){
     warning_lappd_lv3 = false;
