@@ -68,6 +68,17 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   //Interface with MonitorLAPPDSC
   //Status variable for slack messages in MonitorDAQ
   m_data->CStore.Set("LAPPDSlowControlWarning",false);
+  m_data->CStore.Set("LAPPDSCWarningTemp",false);
+  m_data->CStore.Set("LAPPDSCWarningHum",false);
+  m_data->CStore.Set("LAPPDSCWarningHV",false);
+  m_data->CStore.Set("LAPPDSCWarningLV1",false);
+  m_data->CStore.Set("LAPPDSCWarningLV2",false);
+  m_data->CStore.Set("LAPPDSCWarningLV3",false);
+  m_data->CStore.Set("LAPPDSCWarningSalt",false);
+  m_data->CStore.Set("LAPPDSCWarningThermistor",false);
+  m_data->CStore.Set("LAPPDSCWarningLight",false);
+  m_data->CStore.Set("LAPPDSCWarningRelay",false);
+  m_data->CStore.Set("LAPPDSCWarningErrors",false);
 
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
@@ -834,6 +845,21 @@ void MonitorDAQ::GetVMEServices(bool is_online){
 
   bool lappd_slow_control;
   m_data->CStore.Get("LAPPDSlowControlWarning",lappd_slow_control);
+  bool lappd_sc_temp, lappd_sc_hum, lappd_sc_hv, lappd_sc_lv1, lappd_sc_lv2, lappd_sc_lv3;
+  bool lappd_sc_salt, lappd_sc_thermistor, lappd_sc_light, lappd_sc_relay, lappd_sc_errors;
+
+  m_data->CStore.Get("LAPPDSCWarningTemp",lappd_sc_temp);
+  m_data->CStore.Get("LAPPDSCWarningHum",lappd_sc_hum);
+  m_data->CStore.Get("LAPPDSCWarningHV",lappd_sc_hv);
+  m_data->CStore.Get("LAPPDSCWarningLV1",lappd_sc_lv1);
+  m_data->CStore.Get("LAPPDSCWarningLV2",lappd_sc_lv2);
+  m_data->CStore.Get("LAPPDSCWarningLV3",lappd_sc_lv3);
+  m_data->CStore.Get("LAPPDSCWarningSalt",lappd_sc_salt);
+  m_data->CStore.Get("LAPPDSCWarningThermistor",lappd_sc_thermistor);
+  m_data->CStore.Get("LAPPDSCWarningLight",lappd_sc_light);
+  m_data->CStore.Get("LAPPDSCWarningRelay",lappd_sc_relay);
+  m_data->CStore.Get("LAPPDSCWarningErrors",lappd_sc_errors);
+
   if (lappd_slow_control && !warning_lappd_sc){
     warning_lappd_sc = true;
     std::stringstream ss_error_sc, ss_error_sc_slack;
@@ -861,6 +887,106 @@ void MonitorDAQ::GetVMEServices(bool is_online){
     }
   } else if (!lappd_slow_control){
     warning_lappd_sc = false;
+  }
+
+  // Temperature warning
+  if (lappd_sc_temp && !warning_lappd_temp){
+    warning_lappd_temp = true;
+    std::stringstream ss_temp_mess;
+    ss_temp_mess << "Monitoring: LAPPD Slow Control temperature is over critical limit! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_temp_mess.str());
+  } else if (!lappd_sc_temp){
+    warning_lappd_temp = false;
+  }
+
+  // Humidity warning
+  if (lappd_sc_hum && !warning_lappd_hum){
+    warning_lappd_hum = true;
+    std::stringstream ss_hum;
+    ss_hum << "Monitoring: LAPPD Slow Control humidity is over critical limit! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_hum.str());
+  } else if (!lappd_sc_hum){
+    warning_lappd_hum = false;
+  }
+
+  // HV warning
+  if (lappd_sc_hv && !warning_lappd_hv){
+    warning_lappd_hv = true;
+    std::stringstream ss_hv;
+    ss_hv << "Monitoring: LAPPD HV problem! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_hv.str());
+  } else if (!lappd_sc_hv){
+    warning_lappd_hv = false;
+  }
+
+  // LV warning - 1
+  if (lappd_sc_lv1 && !warning_lappd_lv1){
+    warning_lappd_lv1 = true;
+    std::stringstream ss_lv1;
+    ss_lv1 << "Monitoring: LAPPD LV value deviates too much from setpoint! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_lv1.str());
+  } else if (!lappd_sc_lv1){
+    warning_lappd_lv1 = false;
+  }
+
+  // LV warning - 2
+  if (lappd_sc_lv2 && !warning_lappd_lv2){
+    warning_lappd_lv2 = true;
+    std::stringstream ss_lv2;
+    ss_lv2 << "Monitoring: LAPPD LV value deviates too much from setpoint! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_lv2.str());
+  } else if (!lappd_sc_lv2){
+    warning_lappd_lv2 = false;
+  }
+
+  // LV warning - 3
+  if (lappd_sc_lv3 && !warning_lappd_lv3){
+    warning_lappd_lv3 = true;
+    std::stringstream ss_lv3;
+    ss_lv3 << "Monitoring: LAPPD LV value deviates too much from setpoint! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_lv3.str());
+  } else if (!lappd_sc_lv3){
+    warning_lappd_lv3 = false;
+  }
+
+  // Salt-bridge warning
+  if (lappd_sc_salt && !warning_lappd_salt){
+    warning_lappd_salt = true;
+    std::stringstream ss_salt;
+    ss_salt << "Monitoring: LAPPD Slow Control Salt-Bridge value is below critical limit! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_salt.str());
+  } else if (!lappd_sc_salt){
+    warning_lappd_salt = false;
+  }
+
+  // Thermistor warning
+  if (lappd_sc_thermistor && !warning_lappd_thermistor){
+    warning_lappd_thermistor = true;
+    std::stringstream ss_thermistor;
+    ss_thermistor << "Monitoring: LAPPD Thermistor value critically low! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_thermistor.str());
+  } else if (!lappd_sc_thermistor){
+    warning_lappd_thermistor = false;
+  }
+
+  // Light warning
+  if (lappd_sc_light && !warning_lappd_light){
+    warning_lappd_light = true;
+    std::stringstream ss_light;
+    ss_light << "Monitoring: LAPPD Light level too high! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_light.str());
+  } else if (!lappd_sc_light){
+    warning_lappd_light = false;
+  }
+
+  // Relay warning
+  if (lappd_sc_relay && !warning_lappd_relay){
+    warning_lappd_relay = true;
+    std::stringstream ss_relay;
+    ss_relay << "Monitoring: LAPPD relays are not set correctly! Contact experts immediately!!!" ;
+    this->SendToSlack(ss_relay.str());
+  } else if (!lappd_sc_relay){
+    warning_lappd_relay = false;
   }
 
   Log("MonitorDAQ tool: GetVMEServices: Got "+std::to_string(num_vme_service)+" VME services!",v_message,verbosity);
@@ -2284,3 +2410,33 @@ bool MonitorDAQ::does_file_exist(std::string filename){
 
 }
 
+int MonitorDAQ::SendToSlack(std::string message){
+
+    int success = 0;
+    std::stringstream ss_error_slack;
+    ss_error_slack << "payload={\"text\":\"" << message << "\"}";
+ 
+    if (send_slack){
+        try{
+          CURL *curl;
+          CURLcode res;
+          curl_global_init(CURL_GLOBAL_ALL);
+          curl=curl_easy_init();
+          if (curl){
+            curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+            std::string field = ss_error_sc_slack.str();
+            curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+            res=curl_easy_perform(curl);
+            if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+            curl_easy_cleanup(curl);
+            success = 1;
+          }
+          curl_global_cleanup();
+        }
+        catch(...){
+          Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+        }
+    }
+
+    return success;
+}

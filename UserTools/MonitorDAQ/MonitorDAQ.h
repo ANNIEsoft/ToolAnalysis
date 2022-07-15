@@ -62,6 +62,7 @@ class MonitorDAQ: public Tool {
   void DrawVMEService(ULong64_t timestamp_end, double time_frame, std::string file_ending, bool current);
   void PrintInfoBox();
   void DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+  int SendToSlack(std::string message);
 
   //helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
@@ -199,6 +200,17 @@ class MonitorDAQ: public Tool {
   bool warning_services = false;
   boost::posix_time::ptime timestamp_last_warning_diskspace_90;
   bool warning_lappd_sc = false;
+  bool warning_lappd_temp = false;
+  bool warning_lappd_hum = false;
+  bool warning_lappd_hv = false;
+  bool warning_lappd_lv1 = false;
+  bool warning_lappd_lv2 = false;
+  bool warning_lappd_lv3 = false;
+  bool warning_lappd_salt = false;
+  bool warning_lappd_thermistor = false;
+  bool warning_lappd_light = false;
+  bool warning_lappd_relay = false;
+  bool warning_lappd_errors = false;
 
   //Online stuff
   zmq::context_t *context = nullptr;

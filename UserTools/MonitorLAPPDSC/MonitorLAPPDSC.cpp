@@ -104,7 +104,17 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 
 	//Status variable for slack messages in MonitorDAQ
          m_data->CStore.Set("LAPPDSlowControlWarning",false);
-
+         m_data->CStore.Set("LAPPDSCWarningTemp",false);
+         m_data->CStore.Set("LAPPDSCWarningHum",false);
+         m_data->CStore.Set("LAPPDSCWarningHV",false);
+         m_data->CStore.Set("LAPPDSCWarningLV1",false);
+         m_data->CStore.Set("LAPPDSCWarningLV2",false);
+         m_data->CStore.Set("LAPPDSCWarningLV3",false);
+         m_data->CStore.Set("LAPPDSCWarningSalt",false);
+         m_data->CStore.Set("LAPPDSCWarningThermistor",false);
+         m_data->CStore.Set("LAPPDSCWarningLight",false);
+         m_data->CStore.Set("LAPPDSCWarningRelay",false);
+         m_data->CStore.Set("LAPPDSCWarningErrors",false);
 
 	//Evaluating output path for monitoring plots
 	if (outpath_temp == "fromStore")
@@ -1304,6 +1314,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored temperature >>>" + std::to_string(lappd_SC.temperature_mon) + "<<< is over second alert level [" + std::to_string(limit_temperature_high) + "]!!!", v_error, verbosity);
 		text_temp->SetTextColor(kRed);
 		temp_humid_check = false;
+                m_data->CStore.Set("LAPPDSCWarningTemp",true);
 	}
 
 	std::stringstream ss_text_hum;
@@ -1319,6 +1330,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored humidity >>>" + std::to_string(lappd_SC.humidity_mon) + "<<< is over second alert level [" + std::to_string(limit_humidity_high) + "]!!!", v_error, verbosity);
 		text_hum->SetTextColor(kRed);
 		temp_humid_check = false;
+                m_data->CStore.Set("LAPPDSCWarningHum",true);
 	}
 
 	std::stringstream ss_text_thermistor;
@@ -1336,6 +1348,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored thermistor resistance >>>" + std::to_string(lappd_SC.temperature_thermistor) + "<<< is below second alert level [" + std::to_string(limit_thermistor_temperature_high) + "]!!!", v_error, verbosity);
 		text_thermistor->SetTextColor(kRed);
 		temp_humid_check = false;
+                m_data->CStore.Set("LAPPDSCWarningThermistor",true);
 	}
 
 	std::stringstream ss_text_salt;
@@ -1351,6 +1364,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is below second alert level [" + std::to_string(limit_salt_high) + "]!!!", v_error, verbosity);
 		text_salt->SetTextColor(kRed);
 		temp_humid_check = false;
+                m_data->CStore.Set("LAPPDSCWarningSalt",true);
 	}
 	if (lappd_SC.saltbridge > 630000.) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is above first alert level [630,000]!!!", v_error, verbosity);
@@ -1523,12 +1537,14 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: HV state is set to ON, but HV mon is OFF!!!", v_error, verbosity);
 		text_hv_mon->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningHV",true);
 	}
 
 	if (!lappd_SC.HV_state_set && lappd_SC.HV_mon > 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: HV state is set to OFF, but HV mon is ON!!!", v_error, verbosity);
 		text_hv_mon->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningHV",true);
 	}
 
 	//HV Volt
@@ -1571,12 +1587,14 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: LV state is set to ON, but LV mon is OFF!!!", v_error, verbosity);
 		text_lv_mon->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningHV",true);
 	}
 
 	if (!lappd_SC.LV_state_set && lappd_SC.LV_mon > 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: LV state is set to OFF, but LV mon is ON!!!", v_error, verbosity);
 		text_lv_mon->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningHV",true);
 	}
 
 	//V33
@@ -1589,6 +1607,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is outside of expected range [" + std::to_string(v33_min) + " , " + std::to_string(v33_max) + "]!!!", v_error, verbosity);
 		text_v33->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningLV3",true);
 	}
 	}
 
@@ -1602,6 +1621,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is outside of expected range [" + std::to_string(v25_min) + " , " + std::to_string(v25_max) + "]!!!", v_error, verbosity);
 		text_v25->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningLV2",true);
 	}
 	}
 
@@ -1615,6 +1635,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is outside of expected range [" + std::to_string(v12_min) + " , " + std::to_string(v12_max) + "]!!!", v_error, verbosity);
 		text_v12->SetTextColor(kRed);
 		lvhv_check = false;
+                m_data->CStore.Set("LAPPDSCWarningLV1",true);
 	}
 	}
 	if (lappd_SC.LV_mon == 0){
@@ -1622,16 +1643,19 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
 			text_v12->SetTextColor(kRed);
 			lvhv_check = false;
+                	m_data->CStore.Set("LAPPDSCWarningLV",true);
 		}
 		if (lappd_SC.v25 > 0.1){
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
 			text_v25->SetTextColor(kRed);
 			lvhv_check = false;
+                        m_data->CStore.Set("LAPPDSCWarningLV",true);
 		}
 		if (lappd_SC.v33 > 0.1){
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is above 0.1V although LV state (mon) is OFF!!!", v_error, verbosity);
 			text_v33->SetTextColor(kRed);
 			lvhv_check = false;
+                        m_data->CStore.Set("LAPPDSCWarningLV",true);
 		}
 	}
 
@@ -1890,6 +1914,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	if (lappd_SC.relayCh1_mon != lappd_SC.relayCh1) {
 		text_relay_mon1->SetTextColor(kRed);
 		relay_check = false;
+                m_data->CStore.Set("LAPPDSCWarningRelay",true);
 	}
 
 	//Relay Mon 2
@@ -1901,6 +1926,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	if (lappd_SC.relayCh2_mon != lappd_SC.relayCh2) {
 		text_relay_mon2->SetTextColor(kRed);
 		relay_check = false;
+                m_data->CStore.Set("LAPPDSCWarningRelay",true);
 	}
 
 	//Relay Mon 3
@@ -1912,6 +1938,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	if (lappd_SC.relayCh3_mon != lappd_SC.relayCh3) {
 		text_relay_mon3->SetTextColor(kRed);
 		relay_check = false;
+                m_data->CStore.Set("LAPPDSCWarningRelay",true);
 	}
 
 	//Warnings
