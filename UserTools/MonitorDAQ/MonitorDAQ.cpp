@@ -2424,7 +2424,7 @@ int MonitorDAQ::SendToSlack(std::string message){
           curl=curl_easy_init();
           if (curl){
             curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
-            std::string field = ss_error_sc_slack.str();
+            std::string field = ss_error_slack.str();
             curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
             res=curl_easy_perform(curl);
             if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
