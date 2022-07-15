@@ -2720,7 +2720,6 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 			std::cout << "Entry: " << i_entry << ", loop through LAPPD Raw data" << std::endl;
 		}
 
-		current_frame_count ++;
 
 		//Only look at raw data if there was a PPS entry at some point
 		//if (!have_pps) continue;
@@ -2749,6 +2748,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 		}
 
 		board_index.push_back(board_idx);
+		
 
 		//Look for board index in the board_configuration vector
 		int vector_idx = -1;
@@ -2761,6 +2761,8 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 			continue;
 		}
 		int min_board = board_channel.at(vector_idx);
+		
+		if (vector_idx == 0) current_frame_count ++;	//Only increase event counter once per event, not once per board
 
 		//Build beamgate timestamp
 		unsigned short beamgate_63_48 = Metadata.at(7 - offset);	//Shift everything by 1 for the test file
