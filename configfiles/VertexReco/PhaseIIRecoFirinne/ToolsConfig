@@ -7,6 +7,8 @@ HitCleaner HitCleaner ./configfiles/VertexReco/PhaseIIRecoFirinne/HitCleanerConf
 ClusterFinder ClusterFinder ./configfiles/VertexReco/PhaseIIRecoFirinne/ClusterFinderConfig
 TimeClustering TimeClustering ./configfiles/VertexReco/PhaseIIRecoFirinne/TimeClusteringConfig
 EventSelector EventSelector ./configfiles/VertexReco/PhaseIIRecoFirinne/EventSelectorConfig
+#FindMrdTracks FindMrdTracks ./configfiles/VertexReco/PhaseIIRecoFirinne/FindMrdT
+racksConfig
 VtxSeedGenerator VtxSeedGenerator ./configfiles/VertexReco/PhaseIIRecoFirinne/VtxSeedGeneratorConfig
 #VtxPointPositionFinder VtxPointPositionFinder ./configfiles/VertexReco/PhaseIIRecoFirinne/VtxPointPositionFinderConfig
 #VtxPointDirectionFinder VtxPointDirectionFinder ./configfiles/VertexReco/PhaseIIRecoFirinne/VtxPointDirectionFinderConfig

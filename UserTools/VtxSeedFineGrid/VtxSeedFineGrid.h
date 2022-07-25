@@ -67,7 +67,12 @@ class VtxSeedFineGrid: public Tool {
 	 bool usePastResolution = 0;
 	 bool useDirectionGrid = 0;
 	 bool multiGrid = 0;
-	 std::string InputFile =" ";
+
+	 // \brief Event Status flag masks
+	  int fEventStatusApplied;
+	  int fEventStatusFlagged;
+	
+	   std::string InputFile =" ";
 
 	 std::vector<BoostStore>* theMrdTracks;   // the MRD tracks
 	 int numtracksinev;

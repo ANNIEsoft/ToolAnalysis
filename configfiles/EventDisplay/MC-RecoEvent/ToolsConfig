@@ -8,6 +8,6 @@ TimeClustering TimeClustering configfiles/EventDisplay/MC-RecoEvent/TimeClusteri
 myHitCleaner HitCleaner configfiles/EventDisplay/MC-RecoEvent/HitCleanerConfig
 myEventSelector EventSelector configfiles/EventDisplay/MC-RecoEvent/EventSelectorConfig
 myEventDisplay EventDisplay configfiles/EventDisplay/MC-RecoEvent/EventDisplayConfig
-LikelihoodFitterCheck LikelihoodFitterCheck configfiles/EventDisplay/MC-RecoEvent/LikelihoodFitterCheckConfig
-VtxGeometryCheck VertexGeometryCheck ./configfiles/EventDisplay/MC-RecoEvent/VertexGeometryCheckConfig
+#LikelihoodFitterCheck LikelihoodFitterCheck configfiles/EventDisplay/MC-RecoEvent/LikelihoodFitterCheckConfig
+#VtxGeometryCheck VertexGeometryCheck ./configfiles/EventDisplay/MC-RecoEvent/VertexGeometryCheckConfig
 

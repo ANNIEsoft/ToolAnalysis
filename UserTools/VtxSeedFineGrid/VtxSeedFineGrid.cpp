@@ -49,6 +49,17 @@ bool VtxSeedFineGrid::Execute(){
 		Log("LikelihoodFitterCheck  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!", v_error, verbosity);
 		return false;
 	}
+	auto get_flagsapp = m_data->Stores.at("RecoEvent")->Get("EventFlagApplied",fEventStatusApplied);
+    auto get_flags = m_data->Stores.at("RecoEvent")->Get("EventFlagged",fEventStatusFlagged); 
+    if(!get_flagsapp || !get_flags) {
+      Log("PhaseITreeMaker tool: No Event status applied or flagged bitmask!!", v_error, verbosity);
+      return false;	
+    }
+    // check if event passes the cut
+    if((fEventStatusFlagged) != 0) {
+      Log("PhaseIITreeMaker Tool: Event was flagged with one of the active cuts.",v_debug, verbosity);
+      return true;	
+    }
 
 	if (useSimpleDir) {
 		Log("Using simple direction", v_debug, verbosity);

@@ -3,7 +3,7 @@
 
 verbose 0
 WCSimVersion 4
-InputFile /Data/beamlikemu/wcsim_beamlike_muon_lappd_0.96.root 
+InputFile /Data/beamlikemu/wcsim_beamlike_muon_lappd_0.1.root 
 # octagonal inner structure radius in m (from drawings 106.64")
 InnerStructureRadius 1.3545
 HistoricTriggeroffset 0

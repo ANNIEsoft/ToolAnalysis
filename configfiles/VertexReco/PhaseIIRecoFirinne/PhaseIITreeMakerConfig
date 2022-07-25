@@ -8,7 +8,8 @@ pionKaonCount_fill 1
 TankHitInfo_fill 0
 TankRecoDigitInfo_fill 1
 fillCleanEventsOnly 1
+MRDReco_fill 1
 
-OutputFile /Data/beamlikemu/vtxreco-beamlikegrid6.root
+OutputFile /Data/beamlikemu/vtxreco-beamlikemrd1.root
 NumEventsWritten 2000
 
