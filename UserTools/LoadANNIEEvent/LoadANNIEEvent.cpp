@@ -75,10 +75,35 @@ bool LoadANNIEEvent::Execute() {
       auto* annie_event = m_data->Stores.at("ANNIEEvent");
       if (annie_event) delete annie_event;
     }
+
+    // Version for combined BoostStore (does not exist yet)
+    /*if(m_data->Stores.count("ProcessedFileStore")){
+      BoostStore* ProcessedFileStore = m_data->Stores.at("ProcessedFileStore");
+      delete ProcessedFileStore; 
+    }*/
+
 /*
     if (m_data->Stores.count("ANNIEEvent")){
     m_data->Stores["ANNIEEvent"]->Close();
     }*/
+
+    //Version for the combined BoostStore format (does not exist yet)
+    /*
+     BoostStore* ProcessedFileStore = new BoostStore(false,BOOST_STORE_BINARY_FORMAT);
+
+     ProcessedFileStore->Initialise(input_filename);
+     m_data->Stores["ProcessedFileStore"]=ProcessedFileStore;
+
+     // create an ANNIEEvent BoostStore and an OrphanStore BoostStore to load from it
+     BoostStore* theANNIEEvent = new BoostStore(false,
+               BOOST_STORE_MULTIEVENT_FORMAT);
+   
+      // retrieve the multi-event stores
+      ProcessedFileStore->Get("ANNIEEvent",*theANNIEEvent);
+      // set a pointer into the Stores map
+      m_data->Stores["ANNIEEvent"]=theANNIEEvent;
+    */
+
 
     // Create a new ANNIEEvent Store
     m_data->Stores["ANNIEEvent"] = new BoostStore(false,
