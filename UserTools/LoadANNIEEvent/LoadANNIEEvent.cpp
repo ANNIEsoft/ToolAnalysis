@@ -14,9 +14,13 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
   // Assign transient data pointer
   m_data= &data;
   offset_evnum = 0;
+  global_evnr = true;
 
   m_variables.Get("verbose", verbosity_);
   m_variables.Get("EventOffset", offset_evnum);
+  m_variables.Get("GlobalEvNr",global_evnr);
+
+  global_ev = offset_evnum;
 
   std::string input_list_filename;
   bool got_input_file_list = m_variables.Get("FileForListOfInputs",
@@ -45,7 +49,12 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
   m_data->CStore.Set("UserEvent",false);
 
   current_entry_ += offset_evnum;
- 
+  if (offset_evnum != 0)  {
+    m_data->CStore.Set("UserEvent",true);
+    m_data->CStore.Set("LoadEvNr",offset_evnum);
+  }
+
+
   return true;
 }
 
@@ -56,65 +65,39 @@ bool LoadANNIEEvent::Execute() {
   m_data->vars.Get("StopLoop", stop_the_loop);
   if ( stop_the_loop == 1 ) return false;
 
+  if (input_filenames_.size()==0) m_data->vars.Set("StopLoop",1);
+
   if (need_new_file_) {
     need_new_file_=false;
 
-    // Delete the old file BoostStore if there is one
-    if(m_data->Stores.count("ProcessedFileStore")){
-      BoostStore* ProcessedFileStore = m_data->Stores.at("ProcessedFileStore");
-//      ProcessedFileStore->Close();   // XXX should we be calling these?
-//      ProcessedFileStore->Delete();  // XXX
-      delete ProcessedFileStore;
-    }
-    // also close and cleanup the associated contained stores
+    // Delete the old ANNIEEvent Store if there is one
     if ( m_data->Stores.count("ANNIEEvent") ) {
       auto* annie_event = m_data->Stores.at("ANNIEEvent");
-      if (annie_event){
-//        annie_event->Close();
-//        annie_event->Delete();
-        delete annie_event;
-      }
+      if (annie_event) delete annie_event;
     }
 /*
-    if(m_data->Stores.count("OrphanStore")){
-      auto* annie_orphans = m_data->Stores.at("OrphanStore");
-      if (annie_orphans){
-//        annie_orphans->Close();
-//        annie_orphans->Delete();
-        delete annie_orphans;
-      }
-    }
-*/
+    if (m_data->Stores.count("ANNIEEvent")){
+    m_data->Stores["ANNIEEvent"]->Close();
+    }*/
 
-    // create a store for the file contents
-    BoostStore* ProcessedFileStore = new BoostStore(false,BOOST_STORE_BINARY_FORMAT);
-    // Load the contents from the new input file into it
+    // Create a new ANNIEEvent Store
+    m_data->Stores["ANNIEEvent"] = new BoostStore(false,
+      BOOST_STORE_MULTIEVENT_FORMAT);
+
+    // Load it from the new input file
     std::string input_filename = input_filenames_.at(current_file_);
     std::cout <<"Reading in current file "<<current_file_<<std::endl;
-    ProcessedFileStore->Initialise(input_filename);
-    m_data->Stores["ProcessedFileStore"]=ProcessedFileStore;
-    
-    // create an ANNIEEvent BoostStore and an OrphanStore BoostStore to load from it
-    BoostStore* theANNIEEvent = new BoostStore(false,
-      BOOST_STORE_MULTIEVENT_FORMAT);
-    
-    // retrieve the multi-event stores
-    ProcessedFileStore->Get("ANNIEEvent",*theANNIEEvent);
-    // set a pointer into the Stores map
-    m_data->Stores["ANNIEEvent"]=theANNIEEvent;
-    // get the number of entries
-    m_data->Stores.at("ANNIEEvent")->Header->Get("TotalEntries",
+    m_data->Stores["ANNIEEvent"]->Initialise(input_filename);
+    m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",
       total_entries_in_file_);
-    
-/*
-    // same for Orphan Store
-    BoostStore* theOrphanStore = new BoostStore(false,
-      BOOST_STORE_MULTIEVENT_FORMAT);
-    ProcessedFileStore->Get("OrphanStore",*theOrphanStore);
-    m_data->Stores.["OrphanStore"] = theOrphanStore;
-    m_data->Stores.at("OrphanStore")->Header->Get("TotalEntries",
-      total_orphans_in_file_);
-*/
+    if (current_file_==0) {
+      global_events.push_back(total_entries_in_file_);
+      global_events_start.push_back(0);
+    }
+    else {
+      global_events.push_back(global_events.at(current_file_-1)+total_entries_in_file_);
+      global_events_start.push_back(global_events.at(current_file_-1));
+    }
   }
 
    bool user_event=false;
@@ -123,7 +106,42 @@ bool LoadANNIEEvent::Execute() {
      m_data->CStore.Set("UserEvent",false);
      int user_evnum;
      m_data->CStore.Get("LoadEvNr",user_evnum);
-     if (user_evnum < total_entries_in_file_ && user_evnum >=0) current_entry_ = user_evnum;
+     if (!global_evnr){
+       if (user_evnum < total_entries_in_file_ && user_evnum >=0) current_entry_ = user_evnum;
+     } else {
+       if (user_evnum >= global_events_start.at(current_file_) && user_evnum < global_events.at(current_file_)){
+         current_entry_ = user_evnum-global_events_start.at(current_file_);
+         global_ev = user_evnum;
+       } else {
+         while (current_file_ < input_filenames_.size()){
+           ++current_file_;
+           if ( current_file_ >= input_filenames_.size() ) {
+             m_data->vars.Set("StopLoop", 1);
+           }
+           else {
+             current_entry_ = 0u;
+             if ( m_data->Stores.count("ANNIEEvent") ) {
+               auto* annie_event = m_data->Stores.at("ANNIEEvent");
+               if (annie_event) delete annie_event;
+               m_data->Stores["ANNIEEvent"] = new BoostStore(false,
+                 BOOST_STORE_MULTIEVENT_FORMAT);
+               std::string input_filename = input_filenames_.at(current_file_);
+               std::cout <<"Reading in current file "<<current_file_<<std::endl;
+               m_data->Stores["ANNIEEvent"]->Initialise(input_filename);
+               m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",
+                 total_entries_in_file_);
+               global_events.push_back(global_events.at(current_file_-1)+total_entries_in_file_);
+               global_events_start.push_back(global_events.at(current_file_-1));
+               if (user_evnum >= global_events_start.at(current_file_) && user_evnum < global_events.at(current_file_)){
+                 current_entry_ = user_evnum-global_events_start.at(current_file_);
+                 global_ev = user_evnum;
+                 break;
+               }
+             }
+           }
+         }
+       }
+     }
    }
 
   Log("ANNIEEvent store has "+std::to_string(total_entries_in_file_)+" entries",v_debug,verbosity_);
@@ -134,8 +152,14 @@ bool LoadANNIEEvent::Execute() {
   if (current_entry_ != offset_evnum) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
 
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
+  m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_);
   ++current_entry_;
-  
+ 
+  if (global_evnr) m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev);
+  global_ev++; 
+
+
+
   if ( current_entry_ >= total_entries_in_file_ ) {
     ++current_file_;
     if ( current_file_ >= input_filenames_.size() ) {
