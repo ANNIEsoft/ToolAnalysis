@@ -531,11 +531,11 @@ bool EventDisplay::Execute(){
     if(not get_ok){ Log("EventDisplay tool: Error retrieving EventTimeTank, true from ANNIEEvent! ",v_error,verbose); return false;}
     
     get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTimeMRD",EventTimeMRD);
-    std::cout <<"EventTimeTank: "<<EventTankTime<<", EventTimeMRD: "<<EventTimeMRD.GetNs()<<", difference: "<<double(EventTimeMRD.GetNs())-double(EventTankTime)<<std::endl;
+    if (verbose > 2) std::cout <<"EventDisplay tool: EventTimeTank: "<<EventTankTime<<", EventTimeMRD: "<<EventTimeMRD.GetNs()<<", difference: "<<double(EventTimeMRD.GetNs())-double(EventTankTime)<<std::endl;
 
     std::string MRDTriggertype;
     get_ok = m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
-    std::cout <<" MRDTriggertype is: "<<MRDTriggertype<<std::endl;
+    if (verbose > 2) std::cout <<"EventDisplay tool: MRDTriggertype is: "<<MRDTriggertype<<std::endl;
   }
 
 
@@ -650,7 +650,7 @@ bool EventDisplay::Execute(){
     if (not get_ok) { Log("EventDisplay Tool: Error retrieving TriggerWord, was the processing done with CTC information?",v_error,verbose); return false;}
   }
 
-  std::cout <<"TriggerWord: "<<triggerword<<std::endl;
+  if (verbose > 2) std::cout <<"EventDisplay tool: TriggerWord: "<<triggerword<<std::endl;
 
   //---------------------------------------------------------------
   //---------------Current event to be processed? -----------------
@@ -956,7 +956,7 @@ bool EventDisplay::Execute(){
       double mean_digittime = 0;
       std::vector<unsigned long> temp_lappd_detkeys;
 
-      std::cout <<"RecoDigits size: "<<RecoDigits->size()<<std::endl;
+      if (verbose > 2) std::cout <<"EventDisplay tool: RecoDigits size: "<<RecoDigits->size()<<std::endl;
 
       for (unsigned int i_digit = 0; i_digit < RecoDigits->size(); i_digit++){
 
@@ -979,14 +979,14 @@ bool EventDisplay::Execute(){
  //         if (charge_format == "pe" && pmt_gains[detkey] > 0) digitQ /= pmt_gains[detkey];
           bool passed_lower_time_cut = (threshold_time_low == -999 || digitT >= threshold_time_low);
           bool passed_upper_time_cut = (threshold_time_high == -999 || digitT <= threshold_time_high);
-	  std::cout << "passed_lower_time_cut: "<<passed_lower_time_cut<<", passed_upper_time_cut: "<<passed_upper_time_cut<<std::endl;
+	  if (verbose > 2) std::cout << "EventDisplay tool: passed_lower_time_cut: "<<passed_lower_time_cut<<", passed_upper_time_cut: "<<passed_upper_time_cut<<std::endl;
           if (digitQ >= threshold && passed_lower_time_cut && passed_upper_time_cut){
             charge[detkey] = digitQ;
             time[detkey] = digitT;
             mean_digittime += digitT;
             hitpmt_detkeys.push_back(detkey);
             total_hits_pmts++;
-            std::cout <<"Filling maps"<<std::endl;
+            if (verbose > 2) std::cout <<"EventDisplay tool: Filling maps"<<std::endl;
           }
         } else if (digittype == 1){
           int lappdid = thisdigit.GetDetectorID();
