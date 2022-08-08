@@ -1,7 +1,7 @@
 # ClusterFinder Config File
 
 verbosity 0
-HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
+HitStore MCHits #Either MCHits or Hits (accessed in ANNIEEvent store)
 OutputFile BeamRun_ClusterFinder_DefaultOutput #Output root prefix name for the current run
 ClusterFindingWindow 100 # in ns, size of the window used to "clusterize"
 AcqTimeWindow 70000 # in ns, size of the acquisition window
