@@ -58,12 +58,13 @@ bool MCParticleProperties::Execute(){
 	// on this set of particles and we don't need to do it again
 	uint16_t MCTriggernum;
 	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
-	if(not get_ok){
+	Log("MCParticleProperties tool: MCTriggernum: "+std::to_string(MCTriggernum),v_message,verbosity);
+	/*if(not get_ok){
 		Log("MCParticleProperties Tool: No MCTriggernum in ANNIEEvent!",v_error,verbosity);
 		return false;
 	} else if(MCTriggernum>0){
 		return true; // nothing to do
-	}
+	}*/
 	
 	// retrieve the tracks from the BoostStore
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
