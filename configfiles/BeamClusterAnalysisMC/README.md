@@ -1,25 +1,30 @@
-# Configure files
+# BeamClusterAnalysisMC
 
 ***********************
-#Description
+## Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
+The `BeamClusterAnalysisMC` toolchain produces a ntuple ROOT-tree from simulated events, e.g. simulated with the annie version of `WCSim`. This ntuple is created via the `PhaseIITreeMaker` tool, which generates separate trees to store the information about the trigger data, tank PMT clusters, and MRD clusters. It can be used in combination with the `EventSelector` tool to only save events to the ntuple file if they meet certain criteria.
 
 
 ************************
-#Usage
+## Tools
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+The toolchain typically consists of the following tools:
 
-Variables should be stored one per line as follows:
-
-
-Name Value #Comments 
-
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
+```
+LoadGeometry
+LoadWCSim
+LoadWCSimLAPPD
+LoadGenieEvent
+MCParticleProperties
+MCRecoEventLoader
+TimeClustering
+FindMrdTracks
+ClusterFinder
+ClusterClassifiers
+EventSelector
+PhaseIITreeMaker
+```
 
