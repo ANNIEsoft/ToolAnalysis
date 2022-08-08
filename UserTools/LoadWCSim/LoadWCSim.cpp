@@ -68,6 +68,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: No Triggerword specified. Assuming TriggerWord = 5 (Beam)",v_warning,verbosity);
 		TriggerWord = 5;
 	}
+	path_chankeymap = "./configfiles/LoadWCSim/Chankey_WCSimID_v7.txt";
 	get_ok = m_variables.Get("ChankeyToPMTIDMap",path_chankeymap);
 	if (get_ok){
 		ifstream file_pmtid(path_chankeymap.c_str());
@@ -546,14 +547,14 @@ bool LoadWCSim::Execute(){
 			WCSimRootCherenkovDigiHit* digihit =
 				(WCSimRootCherenkovDigiHit*)atrigt->GetCherenkovDigiHits()->At(digiti);
 			//WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ(), GetPhotonIds()
-			if(verbosity>2) cout<<"next digihit at "<<digihit<<endl;
+			if(verbosity>2) cout<<"LoadWCSim tool: next digihit at "<<digihit<<endl;
 			int tubeid = digihit->GetTubeId();  // geometry TubeID->channelkey map is made INCLUDING offset of 1
 			if(pmt_tubeid_to_channelkey.count(tubeid)==0){
 				cerr<<"LoadWCSim ERROR: tank PMT with no associated ChannelKey!"<<endl;
 				return false;
 			}
 			unsigned long key = pmt_tubeid_to_channelkey.at(tubeid);
-			if(verbosity>2) cout<<"tubeid = "<<tubeid<<", ChannelKey="<<key<<endl;
+			if(verbosity>2) cout<<"LoadWCSim tool: tubeid = "<<tubeid<<", ChannelKey="<<key<<endl;
 			if (PMTMask != "None" && std::find(masked_ids.begin(),masked_ids.end(),tubeid)!=masked_ids.end()) continue; //Omit masked PMT IDs
 			double digittime;
 			if(use_smeared_digit_time){
@@ -691,7 +692,7 @@ bool LoadWCSim::Execute(){
 		
 		//Load neutron capture information
 		int numcaptures = atrigt ? atrigt->GetNcaptures() : 0;
-                if(verbosity>1) cout<<"looping over "<<numcaptures<<" neutron captures"<<endl;
+                if(verbosity>1) cout<<"LoadWCSim tool: looping over "<<numcaptures<<" neutron captures"<<endl;
                 for(int capi=0; capi<numcaptures; capi++){
                         if(verbosity>2) cout<<"getting capture # "<<capi<<endl;
                         WCSimRootCapture* capt =
@@ -1080,7 +1081,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		// construct the channel associated with this PMT
 		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
 		pmt_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
-		std::cout <<"WCSim ID: "<<apmt.GetTubeNo()<<", Chankey: "<<uniquechannelkey<<std::endl;
+		if (verbosity > 3) std::cout <"LoadWCSim tool: WCSim ID: "<<apmt.GetTubeNo()<<", Chankey: "<<uniquechannelkey<<std::endl;
 		channelkey_to_pmtid.emplace(uniquechannelkey,apmt.GetTubeNo());
 		
 		// fill up ADC cards and channels monotonically, they're arbitrary for simulation
@@ -1253,7 +1254,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 					  apmt.GetName(),
 					  detectorstatus::ON,
 					  0.);
-		std::cout <<"FACC tube channelkey: "<<uniquedetectorkey<<", x/y/z: "<<apmt.GetPosition(0)/100.<<"/"<<apmt.GetPosition(1)/100.<<"/"<<apmt.GetPosition(2)/100.<<std::endl;
+		if (verbosity > 3) std::cout <<"LoadWCSim tool: FACC tube channelkey: "<<uniquedetectorkey<<", x/y/z: "<<apmt.GetPosition(0)/100.<<"/"<<apmt.GetPosition(1)/100.<<"/"<<apmt.GetPosition(2)/100.<<std::endl;
 		// construct the channel associated with this PMT
 		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
 		facc_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
