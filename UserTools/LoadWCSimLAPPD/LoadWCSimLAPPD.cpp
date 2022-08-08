@@ -163,7 +163,8 @@ bool LoadWCSimLAPPD::Execute(){
 	
 	MCLAPPDHits->clear(); // clear any hits from previous trigger
 	
-	if(MCTriggernum>0){
+	//if(MCTriggernum>0){
+	if(false){
 		if(unassignedhits.size()==0){
 			if(verbosity>2) cout<<"no LAPPD hits to add to this trigger"<<endl;
 			return true;
