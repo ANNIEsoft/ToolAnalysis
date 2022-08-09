@@ -129,3 +129,6 @@
 #include "MonitorTrigger.h"
 #include "EventClassification.h"
 #include "DataSummary.h"
+#include "MaxPEPlots.h"
+#include "StoreDecodedTimestamps.h"
+#include "PlotDecodedTimestamps.h"
