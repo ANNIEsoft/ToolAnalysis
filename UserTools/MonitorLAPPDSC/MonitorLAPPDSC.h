@@ -101,6 +101,8 @@ class MonitorLAPPDSC: public Tool {
   double limit_humidity_high;
   double limit_thermistor_temperature_low;
   double limit_thermistor_temperature_high;
+  std::string lappd_id_file;
+  std::vector<int> vector_lappd_id;
 
   //Plot configuration variables
   std::vector<double> config_timeframes;
@@ -181,6 +183,7 @@ class MonitorLAPPDSC: public Tool {
   std::vector<float> light_plot;
   std::vector<int> num_errors_plot;
   std::vector<TDatime> labels_timeaxis;
+  std::vector<unsigned int> lappdid_plot;
 
   //canvas
   TCanvas *canvas_temp = nullptr;
@@ -200,22 +203,42 @@ class MonitorLAPPDSC: public Tool {
   TCanvas *canvas_status_salt = nullptr;
 
   //graphs
-  TGraph *graph_temp = nullptr;
-  TGraph *graph_humidity = nullptr;
-  TGraph *graph_thermistor = nullptr;
-  TGraph *graph_salt = nullptr;
-  TGraph *graph_light = nullptr;
-  TGraph *graph_hv_volt = nullptr;
-  TGraph *graph_hv_volt_mon = nullptr;
-  TGraph *graph_lv_volt1 = nullptr;
-  TGraph *graph_lv_volt2 = nullptr;
-  TGraph *graph_lv_volt3 = nullptr;
+  std::map<int,TGraph*> map_graph_temp;
+  std::map<int,TGraph*> map_graph_humidity;
+  std::map<int,TGraph*> map_graph_thermistor;
+  std::map<int,TGraph*> map_graph_salt;
+  std::map<int,TGraph*> map_graph_light;
+  std::map<int,TGraph*> map_graph_hv_volt;
+  std::map<int,TGraph*> map_graph_hv_volt_mon;
+  std::map<int,TGraph*> map_graph_lv_volt1;
+  std::map<int,TGraph*> map_graph_lv_volt2;
+  std::map<int,TGraph*> map_graph_lv_volt3;
   
   //multi-graphs
   TMultiGraph *multi_lv = nullptr;
+  TMultiGraph *multi_temp = nullptr;
+  TMultiGraph *multi_humidity = nullptr;
+  TMultiGraph *multi_thermistor = nullptr;
+  TMultiGraph *multi_salt = nullptr;
+  TMultiGraph *multi_light = nullptr;
+  TMultiGraph *multi_hv_volt = nullptr;
+  TMultiGraph *multi_hv_volt_mon = nullptr;
+  TMultiGraph *multi_lv_volt1 = nullptr;
+  TMultiGraph *multi_lv_volt2 = nullptr;
+  TMultiGraph *multi_lv_volt3 = nullptr;
   
   //legends
   TLegend *leg_lv = nullptr;
+  TLegend *leg_temp = nullptr;
+  TLegend *leg_humidity = nullptr;
+  TLegend *leg_thermistor = nullptr;
+  TLegend *leg_salt = nullptr;
+  TLegend *leg_light = nullptr;
+  TLegend *leg_hv_volt = nullptr;
+  TLegend *leg_hv_volt_mon = nullptr;
+  TLegend *leg_lv_volt1 = nullptr;
+  TLegend *leg_lv_volt2 = nullptr;
+  TLegend *leg_lv_volt3 = nullptr;
 
   //text
   //TempHumidity texts

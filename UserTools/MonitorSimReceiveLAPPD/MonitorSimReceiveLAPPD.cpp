@@ -53,9 +53,6 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.HV_volts=1000*rand.Gaus(1,0.02);
     lappd_sc.HV_return_mon=2000*rand.Gaus(1,0.02);
     lappd_sc.timeSinceEpochMilliseconds="1648166400000";
-    //lappd_sc.timeSinceEpochMilliseconds=7957664024296712389;
-    //lappd_sc.HV_volts=0;
-    //lappd_sc.HV_return_mon=0;
     lappd_sc.LV_mon=0;
     lappd_sc.LV_state_set=false;
     lappd_sc.v33=3.3*rand.Gaus(1,0.01);
@@ -85,15 +82,15 @@ bool MonitorSimReceiveLAPPD::Execute(){
     lappd_sc.light = 0.8*rand.Gaus(1,0.05);
     std::vector<unsigned int> vec_errors;
     int numberOfErrors = (int)rand.Gaus(9, 4);
- /*   for(int i = 0; i < 11; i++){
+    /*for(int i = 0; i < 11; i++){
     	vec_errors.push_back((int)rand.Gaus(30000000, 1000));
     }*/
     vec_errors.push_back(0);
     lappd_sc.errorcodes = vec_errors;
+    double uniform=rand.Uniform();
+    if (uniform < 0.5) lappd_sc.LAPPD_ID=0;
+    else lappd_sc.LAPPD_ID=1;	
 	
-    //std::cout << "saltbridge: "<<lappd_sc.saltbridge<<std::endl;
-    //std::cout <<"sc print: "<<lappd_sc.Print()<<std::endl;
-
     m_data->Stores["LAPPDData"]->Set("LAPPDSC",lappd_sc);
   }
 

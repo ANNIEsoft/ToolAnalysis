@@ -24,3 +24,4 @@ LimitHumLow 15.
 LimitHumHigh 20.
 LimitThermistorLow 7000.
 LimitThermistorHigh 5800.
+LAPPDIDFile ./configfiles/Monitoring/LAPPDIDs.txt

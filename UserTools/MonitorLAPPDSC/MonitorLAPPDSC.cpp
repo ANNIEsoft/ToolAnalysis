@@ -55,6 +55,7 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	m_variables.Get("LimitHumHigh", limit_humidity_high);
 	m_variables.Get("LimitThermistorLow", limit_thermistor_temperature_low);
 	m_variables.Get("LimitThermistorHigh", limit_thermistor_temperature_high);
+	m_variables.Get("LAPPDIDFile", lappd_id_file);
 
 	if (verbosity > 2) {
 		std::cout << "v33_min " << v33_min << std::endl;
@@ -95,6 +96,17 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 
 	//Print out path to monitoring files
 	std::cout << "PathMonitoring: " << path_monitoring << std::endl;
+
+	//Read in the expected LAPPD IDs
+	ifstream file_lappdid(lappd_id_file.c_str());
+	int temp_id;
+	while (!file_lappdid.eof()){
+		file_lappdid >> temp_id;
+		if (std::find(vector_lappd_id.begin(),vector_lappd_id.end(),temp_id) == vector_lappd_id.end())	vector_lappd_id.push_back(temp_id);
+		std::cout <<"MonitorLAPPDSC: Register LAPPD ID: "<<temp_id<<std::endl;
+		if (file_lappdid.eof()) break;
+	}
+	file_lappdid.close();
 
 	//Set up Epoch
 	Epoch = new boost::posix_time::ptime(boost::gregorian::from_string(StartTime));
@@ -260,22 +272,44 @@ bool MonitorLAPPDSC::Finalise() {
 	delete canvas_status_overview;
 
 	//graphs
-	delete graph_temp;
-	delete graph_humidity;
-	delete graph_light;
-	delete graph_thermistor;
-	delete graph_salt;
-	delete graph_hv_volt;
-	delete graph_hv_volt_mon;
-	delete graph_lv_volt1;
-	delete graph_lv_volt2;
-	delete graph_lv_volt3;
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+		int lappdid = vector_lappd_id.at(i_id);
+		delete map_graph_temp[lappdid];
+		delete map_graph_humidity[lappdid];
+		delete map_graph_light[lappdid];
+		delete map_graph_thermistor[lappdid];
+		delete map_graph_salt[lappdid];
+		delete map_graph_hv_volt[lappdid];
+		delete map_graph_hv_volt_mon[lappdid];
+		delete map_graph_lv_volt1[lappdid];
+		delete map_graph_lv_volt2[lappdid];
+		delete map_graph_lv_volt3[lappdid];
+	}
 
 	//multi-graphs
 	delete multi_lv;
+	delete multi_temp;
+	delete multi_humidity;
+	delete multi_light;
+	delete multi_thermistor;
+	delete multi_salt;
+	delete multi_hv_volt;
+	delete multi_hv_volt_mon;
+	delete multi_lv_volt1;
+	delete multi_lv_volt2;
+	delete multi_lv_volt3;
 
 	//legends
 	delete leg_lv;
+	delete leg_temp;
+	delete leg_humidity;
+	delete leg_light;
+	delete leg_thermistor;
+	delete leg_salt;
+	delete leg_hv_volt;
+	delete leg_lv_volt1;
+	delete leg_lv_volt2;
+	delete leg_lv_volt3;
 
 	//text
 	//TempHumidity texts
@@ -364,159 +398,221 @@ void MonitorLAPPDSC::InitializeHists() {
 	canvas_status_error = new TCanvas("canvas_status_error", "Error status", 900, 600);
 	canvas_status_overview = new TCanvas("canvas_status_overview", "Overview status", 900, 600);
 
+	std::vector<int> linecolors{1,2,4,8,9};
+
 
 	//Graphs
-	graph_temp = new TGraph();
-	graph_humidity = new TGraph();
-	graph_thermistor = new TGraph();
-	graph_salt = new TGraph();
-	graph_light = new TGraph();
-	graph_hv_volt = new TGraph();
-	graph_hv_volt_mon = new TGraph();
-	graph_lv_volt1 = new TGraph();
-	graph_lv_volt2 = new TGraph();
-	graph_lv_volt3 = new TGraph();
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+		TGraph *graph_temp = new TGraph();
+		TGraph *graph_humidity = new TGraph();
+		TGraph *graph_thermistor = new TGraph();
+		TGraph *graph_salt = new TGraph();
+		TGraph *graph_light = new TGraph();
+		TGraph *graph_hv_volt = new TGraph();
+		TGraph *graph_hv_volt_mon = new TGraph();
+		TGraph *graph_lv_volt1 = new TGraph();
+		TGraph *graph_lv_volt2 = new TGraph();
+		TGraph *graph_lv_volt3 = new TGraph();
 
-	graph_temp->SetName("graph_temp");
-	graph_humidity->SetName("graph_humidity");
-	graph_thermistor->SetName("graph_thermistor");
-	graph_salt->SetName("graph_salt");
-	graph_light->SetName("graph_light");
-	graph_hv_volt->SetName("graph_hv_volt");
-	graph_hv_volt_mon->SetName("graph_hv_volt_mon");
-	graph_lv_volt1->SetName("graph_lv_volt1");
-	graph_lv_volt2->SetName("graph_lv_volt2");
-	graph_lv_volt3->SetName("graph_lv_volt3");
+		std::stringstream ss_gr_temp, ss_gr_humidity, ss_gr_thermistor, ss_gr_salt, ss_gr_light;
+		std::stringstream ss_gr_volt, ss_gr_volt_mon, ss_gr_lv1, ss_gr_lv2, ss_gr_lv3;
 
-	graph_temp->SetTitle("LVHV temperature time evolution");
-	graph_humidity->SetTitle("LVHV humidity time evolution");
-	graph_thermistor->SetTitle("LVHV thermistor time evolution");
-	graph_salt->SetTitle("LVHV salt bridge time evolution");
-	graph_light->SetTitle("LVHV light level time evolution");
-	graph_hv_volt->SetTitle("LVHV HV time evolution");
-	graph_hv_volt_mon->SetTitle("LVHV HV MOn time evolution");
-	graph_lv_volt1->SetTitle("LVHV LV1 time evolution");
-	graph_lv_volt2->SetTitle("LVHV LV2 time evolution");
-	graph_lv_volt3->SetTitle("LVHV LV3 time evolution");
+		ss_gr_temp << "graph_temp_"<<vector_lappd_id.at(i_id);
+		ss_gr_humidity << "graph_humidity_"<<vector_lappd_id.at(i_id);
+		ss_gr_thermistor << "graph_thermistor_"<<vector_lappd_id.at(i_id);
+		ss_gr_salt << "graph_salt_"<<vector_lappd_id.at(i_id);
+		ss_gr_light << "graph_light_"<<vector_lappd_id.at(i_id);
+		ss_gr_volt << "graph_hv_volt_"<<vector_lappd_id.at(i_id);
+		ss_gr_volt_mon << "graph_hv_volt_mon_"<<vector_lappd_id.at(i_id);
+		ss_gr_lv1 << "graph_lv_volt1_"<<vector_lappd_id.at(i_id);
+		ss_gr_lv2 << "graph_lv_volt2_"<<vector_lappd_id.at(i_id);
+		ss_gr_lv3 << "graph_lv_volt3_"<<vector_lappd_id.at(i_id);
 
-	if (draw_marker) {
-		graph_temp->SetMarkerStyle(20);
-		graph_humidity->SetMarkerStyle(20);
-		graph_thermistor->SetMarkerStyle(20);
-		graph_salt->SetMarkerStyle(20);
-		graph_light->SetMarkerStyle(20);
-		graph_hv_volt->SetMarkerStyle(20);
-		graph_hv_volt_mon->SetMarkerStyle(20);
-		graph_lv_volt1->SetMarkerStyle(20);
-		graph_lv_volt2->SetMarkerStyle(20);
-		graph_lv_volt3->SetMarkerStyle(20);
+		graph_temp->SetName(ss_gr_temp.str().c_str());
+		graph_humidity->SetName(ss_gr_humidity.str().c_str());
+		graph_thermistor->SetName(ss_gr_thermistor.str().c_str());
+		graph_salt->SetName(ss_gr_salt.str().c_str());
+		graph_light->SetName(ss_gr_light.str().c_str());
+		graph_hv_volt->SetName(ss_gr_volt.str().c_str());
+		graph_hv_volt_mon->SetName(ss_gr_volt_mon.str().c_str());
+		graph_lv_volt1->SetName(ss_gr_lv1.str().c_str());
+		graph_lv_volt2->SetName(ss_gr_lv2.str().c_str());
+		graph_lv_volt3->SetName(ss_gr_lv3.str().c_str());
+
+		graph_temp->SetTitle("LVHV temperature time evolution");
+		graph_humidity->SetTitle("LVHV humidity time evolution");
+		graph_thermistor->SetTitle("LVHV thermistor time evolution");
+		graph_salt->SetTitle("LVHV salt bridge time evolution");
+		graph_light->SetTitle("LVHV light level time evolution");
+		graph_hv_volt->SetTitle("LVHV HV time evolution");
+		graph_hv_volt_mon->SetTitle("LVHV HV MOn time evolution");
+		graph_lv_volt1->SetTitle("LVHV LV1 time evolution");
+		graph_lv_volt2->SetTitle("LVHV LV2 time evolution");
+		graph_lv_volt3->SetTitle("LVHV LV3 time evolution");
+
+		if (draw_marker) {
+			graph_temp->SetMarkerStyle(20);
+			graph_humidity->SetMarkerStyle(20);
+			graph_thermistor->SetMarkerStyle(20);
+			graph_salt->SetMarkerStyle(20);
+			graph_light->SetMarkerStyle(20);
+			graph_hv_volt->SetMarkerStyle(20);
+			graph_hv_volt_mon->SetMarkerStyle(20);
+			graph_lv_volt1->SetMarkerStyle(20);
+			graph_lv_volt2->SetMarkerStyle(20);
+			graph_lv_volt3->SetMarkerStyle(20);
+		}
+
+		int linecolor=i_id+1;
+		if (i_id < 5) linecolor = linecolors.at(i_id);
+
+		graph_temp->SetMarkerColor(linecolor);
+		graph_humidity->SetMarkerColor(linecolor);
+		graph_thermistor->SetMarkerColor(linecolor);
+		graph_salt->SetMarkerColor(linecolor);
+		graph_light->SetMarkerColor(linecolor);
+		graph_hv_volt->SetMarkerColor(linecolor);
+		graph_hv_volt_mon->SetMarkerColor(linecolor);
+		graph_lv_volt1->SetMarkerColor(linecolor);
+		graph_lv_volt2->SetMarkerColor(linecolor);
+		graph_lv_volt3->SetMarkerColor(linecolor);
+
+		graph_temp->SetLineColor(linecolor);
+		graph_humidity->SetLineColor(linecolor);
+		graph_thermistor->SetLineColor(linecolor);
+		graph_salt->SetLineColor(linecolor);
+		graph_light->SetLineColor(linecolor);
+		graph_hv_volt->SetLineColor(linecolor);
+		graph_hv_volt_mon->SetLineColor(linecolor);
+		graph_lv_volt1->SetLineColor(linecolor);
+		graph_lv_volt2->SetLineColor(linecolor);
+		graph_lv_volt3->SetLineColor(linecolor);
+
+		graph_temp->SetLineWidth(2);
+		graph_humidity->SetLineWidth(2);
+		graph_thermistor->SetLineWidth(2);
+		graph_salt->SetLineWidth(2);
+		graph_light->SetLineWidth(2);
+		graph_hv_volt->SetLineWidth(2);
+		graph_hv_volt_mon->SetLineWidth(2);
+		graph_lv_volt1->SetLineWidth(2);
+		graph_lv_volt2->SetLineWidth(2);
+		graph_lv_volt3->SetLineWidth(2);
+
+		graph_temp->SetFillColor(0);
+		graph_humidity->SetFillColor(0);
+		graph_thermistor->SetFillColor(0);
+		graph_salt->SetFillColor(0);
+		graph_light->SetFillColor(0);
+		graph_hv_volt->SetFillColor(0);
+		graph_hv_volt_mon->SetFillColor(0);
+		graph_lv_volt1->SetFillColor(0);
+		graph_lv_volt2->SetFillColor(0);
+		graph_lv_volt3->SetFillColor(0);
+
+		graph_temp->GetYaxis()->SetTitle("Temperature");
+		graph_humidity->GetYaxis()->SetTitle("Humidity");
+		graph_thermistor->GetYaxis()->SetTitle("Thermistor");
+		graph_salt->GetYaxis()->SetTitle("Salt-Bridge");
+		graph_light->GetYaxis()->SetTitle("Light level");
+		graph_hv_volt->GetYaxis()->SetTitle("HV set (V)");
+		graph_hv_volt_mon->GetYaxis()->SetTitle("HV mon (V)");
+		graph_lv_volt1->GetYaxis()->SetTitle("LV mon (V)");
+		graph_lv_volt2->GetYaxis()->SetTitle("LV mon (V)");
+		graph_lv_volt3->GetYaxis()->SetTitle("LV mon (V)");
+
+		graph_temp->GetXaxis()->SetTimeDisplay(1);
+		graph_humidity->GetXaxis()->SetTimeDisplay(1);
+		graph_thermistor->GetXaxis()->SetTimeDisplay(1);
+		graph_salt->GetXaxis()->SetTimeDisplay(1);
+		graph_light->GetXaxis()->SetTimeDisplay(1);
+		graph_hv_volt->GetXaxis()->SetTimeDisplay(1);
+		graph_hv_volt_mon->GetXaxis()->SetTimeDisplay(1);
+		graph_lv_volt1->GetXaxis()->SetTimeDisplay(1);
+		graph_lv_volt2->GetXaxis()->SetTimeDisplay(1);
+		graph_lv_volt3->GetXaxis()->SetTimeDisplay(1);
+
+		graph_temp->GetXaxis()->SetLabelSize(0.03);
+		graph_humidity->GetXaxis()->SetLabelSize(0.03);
+		graph_thermistor->GetXaxis()->SetLabelSize(0.03);
+		graph_salt->GetXaxis()->SetLabelSize(0.03);
+		graph_light->GetXaxis()->SetLabelSize(0.03);
+		graph_hv_volt->GetXaxis()->SetLabelSize(0.03);
+		graph_hv_volt_mon->GetXaxis()->SetLabelSize(0.03);
+		graph_lv_volt1->GetXaxis()->SetLabelSize(0.03);
+		graph_lv_volt2->GetXaxis()->SetLabelSize(0.03);
+		graph_lv_volt3->GetXaxis()->SetLabelSize(0.03);
+	
+		graph_temp->GetXaxis()->SetLabelOffset(0.03);
+		graph_humidity->GetXaxis()->SetLabelOffset(0.03);
+		graph_thermistor->GetXaxis()->SetLabelOffset(0.03);
+		graph_salt->GetXaxis()->SetLabelOffset(0.03);
+		graph_light->GetXaxis()->SetLabelOffset(0.03);
+		graph_hv_volt->GetXaxis()->SetLabelOffset(0.03);
+		graph_hv_volt_mon->GetXaxis()->SetLabelOffset(0.03);
+		graph_lv_volt1->GetXaxis()->SetLabelOffset(0.03);
+		graph_lv_volt2->GetXaxis()->SetLabelOffset(0.03);
+		graph_lv_volt3->GetXaxis()->SetLabelOffset(0.03);
+
+		graph_temp->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_humidity->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_thermistor->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_salt->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_light->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_hv_volt->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_hv_volt_mon->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_lv_volt1->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_lv_volt2->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+		graph_lv_volt3->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+
+		map_graph_temp.emplace(vector_lappd_id.at(i_id),graph_temp);
+		map_graph_humidity.emplace(vector_lappd_id.at(i_id),graph_humidity);
+		map_graph_thermistor.emplace(vector_lappd_id.at(i_id),graph_thermistor);
+		map_graph_salt.emplace(vector_lappd_id.at(i_id),graph_salt);
+		map_graph_light.emplace(vector_lappd_id.at(i_id),graph_light);
+		map_graph_hv_volt.emplace(vector_lappd_id.at(i_id),graph_hv_volt);
+		map_graph_hv_volt_mon.emplace(vector_lappd_id.at(i_id),graph_hv_volt_mon);
+		map_graph_lv_volt1.emplace(vector_lappd_id.at(i_id),graph_lv_volt1);
+		map_graph_lv_volt2.emplace(vector_lappd_id.at(i_id),graph_lv_volt2);
+		map_graph_lv_volt3.emplace(vector_lappd_id.at(i_id),graph_lv_volt3);
 	}
-
-	graph_temp->SetMarkerColor(kBlack);
-	graph_humidity->SetMarkerColor(kBlack);
-	graph_thermistor->SetMarkerColor(kBlack);
-	graph_salt->SetMarkerColor(kBlack);
-	graph_light->SetMarkerColor(kBlack);
-	graph_hv_volt->SetMarkerColor(kBlack);
-	graph_hv_volt_mon->SetMarkerColor(kBlack);
-	graph_lv_volt1->SetMarkerColor(kBlack);
-	graph_lv_volt2->SetMarkerColor(kRed);
-	graph_lv_volt3->SetMarkerColor(kBlue);
-
-	graph_temp->SetLineColor(kBlack);
-	graph_humidity->SetLineColor(kBlack);
-	graph_thermistor->SetLineColor(kBlack);
-	graph_salt->SetLineColor(kBlack);
-	graph_light->SetLineColor(kBlack);
-	graph_hv_volt->SetLineColor(kBlack);
-	graph_hv_volt_mon->SetLineColor(kBlack);
-	graph_lv_volt1->SetLineColor(kBlack);
-	graph_lv_volt2->SetLineColor(kRed);
-	graph_lv_volt3->SetLineColor(kBlue);
-
-	graph_temp->SetLineWidth(2);
-	graph_humidity->SetLineWidth(2);
-	graph_thermistor->SetLineWidth(2);
-	graph_salt->SetLineWidth(2);
-	graph_light->SetLineWidth(2);
-	graph_hv_volt->SetLineWidth(2);
-	graph_hv_volt_mon->SetLineWidth(2);
-	graph_lv_volt1->SetLineWidth(2);
-	graph_lv_volt2->SetLineWidth(2);
-	graph_lv_volt3->SetLineWidth(2);
-
-	graph_temp->SetFillColor(0);
-	graph_humidity->SetFillColor(0);
-	graph_thermistor->SetFillColor(0);
-	graph_salt->SetFillColor(0);
-	graph_light->SetFillColor(0);
-	graph_hv_volt->SetFillColor(0);
-	graph_hv_volt_mon->SetFillColor(0);
-	graph_lv_volt1->SetFillColor(0);
-	graph_lv_volt2->SetFillColor(0);
-	graph_lv_volt3->SetFillColor(0);
-
-	graph_temp->GetYaxis()->SetTitle("Temperature");
-	graph_humidity->GetYaxis()->SetTitle("Humidity");
-	graph_thermistor->GetYaxis()->SetTitle("Thermistor");
-	graph_salt->GetYaxis()->SetTitle("Salt-Bridge");
-	graph_light->GetYaxis()->SetTitle("Light level");
-	graph_hv_volt->GetYaxis()->SetTitle("HV set (V)");
-	graph_hv_volt_mon->GetYaxis()->SetTitle("HV mon (V)");
-	graph_lv_volt1->GetYaxis()->SetTitle("LV mon (V)");
-	graph_lv_volt2->GetYaxis()->SetTitle("LV mon (V)");
-	graph_lv_volt3->GetYaxis()->SetTitle("LV mon (V)");
-
-	graph_temp->GetXaxis()->SetTimeDisplay(1);
-	graph_humidity->GetXaxis()->SetTimeDisplay(1);
-	graph_thermistor->GetXaxis()->SetTimeDisplay(1);
-	graph_salt->GetXaxis()->SetTimeDisplay(1);
-	graph_light->GetXaxis()->SetTimeDisplay(1);
-	graph_hv_volt->GetXaxis()->SetTimeDisplay(1);
-	graph_hv_volt_mon->GetXaxis()->SetTimeDisplay(1);
-	graph_lv_volt1->GetXaxis()->SetTimeDisplay(1);
-	graph_lv_volt2->GetXaxis()->SetTimeDisplay(1);
-	graph_lv_volt3->GetXaxis()->SetTimeDisplay(1);
-
-	graph_temp->GetXaxis()->SetLabelSize(0.03);
-	graph_humidity->GetXaxis()->SetLabelSize(0.03);
-	graph_thermistor->GetXaxis()->SetLabelSize(0.03);
-	graph_salt->GetXaxis()->SetLabelSize(0.03);
-	graph_light->GetXaxis()->SetLabelSize(0.03);
-	graph_hv_volt->GetXaxis()->SetLabelSize(0.03);
-	graph_hv_volt_mon->GetXaxis()->SetLabelSize(0.03);
-	graph_lv_volt1->GetXaxis()->SetLabelSize(0.03);
-	graph_lv_volt2->GetXaxis()->SetLabelSize(0.03);
-	graph_lv_volt3->GetXaxis()->SetLabelSize(0.03);
-
-	graph_temp->GetXaxis()->SetLabelOffset(0.03);
-	graph_humidity->GetXaxis()->SetLabelOffset(0.03);
-	graph_thermistor->GetXaxis()->SetLabelOffset(0.03);
-	graph_salt->GetXaxis()->SetLabelOffset(0.03);
-	graph_light->GetXaxis()->SetLabelOffset(0.03);
-	graph_hv_volt->GetXaxis()->SetLabelOffset(0.03);
-	graph_hv_volt_mon->GetXaxis()->SetLabelOffset(0.03);
-	graph_lv_volt1->GetXaxis()->SetLabelOffset(0.03);
-	graph_lv_volt2->GetXaxis()->SetLabelOffset(0.03);
-	graph_lv_volt3->GetXaxis()->SetLabelOffset(0.03);
-
-	graph_temp->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_humidity->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_thermistor->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_salt->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_light->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_hv_volt->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_hv_volt_mon->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_lv_volt1->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_lv_volt2->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
-	graph_lv_volt3->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 
 	//Multi-Graphs
 	multi_lv = new TMultiGraph();
+	multi_temp = new TMultiGraph();
+  	multi_humidity = new TMultiGraph();
+  	multi_thermistor = new TMultiGraph();
+  	multi_salt = new TMultiGraph();
+  	multi_light = new TMultiGraph();
+  	multi_hv_volt = new TMultiGraph();
+  	multi_hv_volt_mon = new TMultiGraph();
+  	multi_lv_volt1 = new TMultiGraph();
+  	multi_lv_volt2 = new TMultiGraph();
+  	multi_lv_volt3 = new TMultiGraph();
 
 	//Legends
 	leg_lv = new TLegend(0.7, 0.7, 0.88, 0.88);
 	leg_lv->SetLineColor(0);
+	leg_temp = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_humidity = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_thermistor = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_salt = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_light = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_hv_volt = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_hv_volt_mon = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_lv_volt1 = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_lv_volt2 = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_lv_volt3 = new TLegend(0.7, 0.7, 0.88, 0.88);
+	leg_temp->SetLineColor(0);
+	leg_humidity->SetLineColor(0);
+	leg_thermistor->SetLineColor(0);
+	leg_salt->SetLineColor(0);
+	leg_light->SetLineColor(0);
+	leg_hv_volt->SetLineColor(0);
+	leg_hv_volt_mon->SetLineColor(0);
+	leg_lv_volt1->SetLineColor(0);
+	leg_lv_volt2->SetLineColor(0);
+	leg_lv_volt3->SetLineColor(0);
 
 	//Text
 	//TempHumidity texts
@@ -806,6 +902,7 @@ void MonitorLAPPDSC::WriteToFile() {
 	float t_trig_mon;
 	float t_light_level;
 	std::vector<unsigned int> *t_vec_errors = new std::vector<unsigned int>;
+	int t_lappdid;
 
 	TTree *t;
 	if (f->GetListOfKeys()->Contains("lappdscmonitor_tree")) {
@@ -846,6 +943,7 @@ void MonitorLAPPDSC::WriteToFile() {
 		t->SetBranchAddress("trig0_mon", &t_trig0_mon);
 		t->SetBranchAddress("light_level", &t_light_level);
 		t->SetBranchAddress("vec_errors", &t_vec_errors);
+		t->SetBranchAddress("lappdid", &t_lappdid);
 	} else {
 		t = new TTree("lappdscmonitor_tree", "LAPPD SC Monitoring tree");
 		Log("MonitorLAPPDSC: WriteToFile: Tree is created from scratch", v_message, verbosity);
@@ -884,6 +982,7 @@ void MonitorLAPPDSC::WriteToFile() {
 		t->Branch("trig0_mon", &t_trig0_mon);
 		t->Branch("light_level", &t_light_level);
 		t->Branch("vec_errors", &t_vec_errors);
+		t->Branch("lappdid", &t_lappdid);
 	}
 
 	int n_entries = t->GetEntries();
@@ -956,6 +1055,7 @@ void MonitorLAPPDSC::WriteToFile() {
 	for (int i_error = 0; i_error < (int) lappd_SC.errorcodes.size(); i_error++) {
 		t_vec_errors->push_back(lappd_SC.errorcodes.at(i_error));
 	}
+	t_lappdid = lappd_SC.LAPPD_ID;
 
 	t->Fill();
 	t->Write("", TObject::kOverwrite);     //prevent ROOT from making endless keys for the same tree when updating the tree
@@ -1012,6 +1112,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 	light_plot.clear();
 	num_errors_plot.clear();
 	labels_timeaxis.clear();
+	lappdid_plot.clear();
 
 	//take the end time and calculate the start time with the given time_frame
 	ULong64_t timestamp_start = timestamp - time_frame * MIN_to_HOUR * SEC_to_MIN * MSEC_to_SEC;
@@ -1097,6 +1198,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 				float t_trig0_mon;
 				float t_trig_mon;
 				float t_light_level;
+				int t_lappdid;
 
 				int nentries_tree;
 
@@ -1135,6 +1237,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 				t->SetBranchAddress("trig0_mon", &t_trig0_mon);
 				t->SetBranchAddress("light_level", &t_light_level);
 				t->SetBranchAddress("vec_errors", &t_vec_errors);
+				t->SetBranchAddress("lappdid", &t_lappdid);
 
 				nentries_tree = t->GetEntries();
 
@@ -1198,6 +1301,7 @@ void MonitorLAPPDSC::ReadFromFile(ULong64_t timestamp, double time_frame) {
 						trig_vref_plot.push_back(t_trig_vref);
 						light_plot.push_back(t_light_level);
 						num_errors_plot.push_back(t_vec_errors->size());
+						lappdid_plot.push_back(t_lappdid);
 
 						boost::posix_time::ptime boost_tend = *Epoch + boost::posix_time::time_duration(int(t_time / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_time / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_time / MSEC_to_SEC / 1000.) % 60, t_time % 1000);
 						struct tm label_timestamp = boost::posix_time::to_tm(boost_tend);
@@ -1295,12 +1399,16 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	temp_humid_check = true;
 	temp_humid_warning = false;
 
+	int lappdid = lappd_SC.LAPPD_ID;
+
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
 	std::stringstream current_time;
 	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
-	text_temphum_title->SetText(0.06, 0.9, "LAPPD Temperature / Humidity");
+	std::stringstream title_temphum;
+	title_temphum << "LAPPD Temperature / Humidity (ID "<<lappdid<<")";
+	text_temphum_title->SetText(0.06, 0.9, title_temphum.str().c_str());
 	std::stringstream ss_text_temp;
 	ss_text_temp << "Temperature: " << lappd_SC.temperature_mon << " (" << current_time.str() << ")";
 	text_temp->SetText(0.06, 0.8, ss_text_temp.str().c_str());
@@ -1481,7 +1589,7 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	text_flag_salt->Draw();
 
 	std::stringstream ss_path_tempinfo;
-	ss_path_tempinfo << outpath << "LAPPDSC_TempHumInfo_current." << img_extension;
+	ss_path_tempinfo << outpath << "LAPPDSC_TempHumInfo_ID"<<lappdid<<"_current." << img_extension;
 	canvas_status_temphum->SaveAs(ss_path_tempinfo.str().c_str());
 	canvas_status_temphum->Clear();
 
@@ -1498,6 +1606,8 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	lvhv_check = true;
 	lvhv_warning = false;
 
+	int lappdid = lappd_SC.LAPPD_ID;
+
 	//I guess this part will be the same for each of the status drawings
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
@@ -1505,7 +1615,9 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
 	//Title
-	text_lvhv_title->SetText(0.06, 0.9, "LAPPD HV/LV");
+	std::stringstream title_lvhv;
+	title_lvhv << "LAPPD HV/LV - (ID "<<lappdid<<")";
+        text_lvhv_title->SetText(0.06, 0.9, title_lvhv.str().c_str());
 
 	//HV State
 	/*std::stringstream ss_text_hv_state;
@@ -1694,7 +1806,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	text_v12->Draw();
 
 	std::stringstream ss_path_lvhvinfo;
-	ss_path_lvhvinfo << outpath << "LAPPDSC_LVHVinfo_current." << img_extension;
+	ss_path_lvhvinfo << outpath << "LAPPDSC_LVHVinfo_ID"<<lappdid<<"_current." << img_extension;
 	canvas_status_lvhv->SaveAs(ss_path_lvhvinfo.str().c_str());
 	canvas_status_lvhv->Clear();
 
@@ -1717,7 +1829,6 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	//Variable names:
 	/*
 	 t_hum = lappd_SC.humidity_mon;
-	 std::cout <<"t_hum: "<<t_hum<<std::endl;
 	 t_temp = lappd_SC.temperature_mon;
 	 t_hvmon = lappd_SC.HV_mon;
 	 t_hvstateset = lappd_SC.HV_state_set;
@@ -1756,6 +1867,8 @@ void MonitorLAPPDSC::DrawStatus_Trigger() {
 	trigger_check = true;
 	trigger_warning = false;
 
+	int lappdid = lappd_SC.LAPPD_ID;
+
 	//-------------------------------------------------------
 	//-------------DrawStatus_Trigger -----------------------
 	//-------------------------------------------------------
@@ -1766,7 +1879,9 @@ void MonitorLAPPDSC::DrawStatus_Trigger() {
 	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
 	//Title
-	text_trigger_title->SetText(0.06, 0.9, "LAPPD Trigger");
+	std::stringstream title_trigger;
+	title_trigger << "LAPPD Trigger (ID "<<lappdid<<")";
+        text_trigger_title->SetText(0.06, 0.9, title_trigger.str().c_str());
 
 	//Trigger Vref
 	std::stringstream ss_trigger_vref_temp;
@@ -1823,7 +1938,7 @@ void MonitorLAPPDSC::DrawStatus_Trigger() {
 	text_trigger_trig1_mon->Draw();
 
 	std::stringstream ss_path_triggerinfo;
-	ss_path_triggerinfo << outpath << "LAPPDSC_triggerinfo_current." << img_extension;
+	ss_path_triggerinfo << outpath << "LAPPDSC_triggerinfo_ID"<<lappdid<<"_current." << img_extension;
 	canvas_status_trigger->SaveAs(ss_path_triggerinfo.str().c_str());
 	canvas_status_trigger->Clear();
 
@@ -1864,13 +1979,17 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	relay_check = true;
 	relay_warning = false;
 
+	int lappdid = lappd_SC.LAPPD_ID;
+
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
 	struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
 	std::stringstream current_time;
 	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
 	//Title
-	text_relay_title->SetText(0.06, 0.9, "LAPPD Relays");
+	std::stringstream title_relay;
+	title_relay << "LAPPD Relays (ID "<<lappdid<<")";
+        text_relay_title->SetText(0.06, 0.9, title_relay.str().c_str());
 
 	//Relay 1
 	std::stringstream ss_relay_ch1_temp;
@@ -1996,7 +2115,7 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	text_relay_mon3->Draw();
 
 	std::stringstream ss_path_relayinfo;
-	ss_path_relayinfo << outpath << "LAPPDSC_relayinfo_current." << img_extension;
+	ss_path_relayinfo << outpath << "LAPPDSC_relayinfo_ID"<<lappdid<<"_current." << img_extension;
 	canvas_status_relay->SaveAs(ss_path_relayinfo.str().c_str());
 	canvas_status_relay->Clear();
 
@@ -2045,12 +2164,16 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 	// Number of rows in canvas: X (maximum of 10 rows)
 
 	//Title
-	text_error_title->SetText(0.06, 0.9, "LAPPD Errors");
 
 	std::vector<unsigned int> errorCodes = lappd_SC.errorcodes;
 
 	error_check = true;
 	error_warning = false;
+
+	int lappdid = lappd_SC.LAPPD_ID;
+	std::stringstream title_error;
+        title_error << "LAPPD Errors (ID "<<lappdid<<")";
+        text_error_title->SetText(0.06, 0.9, title_error.str().c_str());
 
 	//Always write all the errors to the log (unless there's only one error = 0x0000), then all good
 	if (!(errorCodes.size()==1 && errorCodes.at(0) == 0)){
@@ -2153,7 +2276,7 @@ void MonitorLAPPDSC::DrawStatus_Errors() {
 	}
 
 	std::stringstream ss_path_errorinfo;
-	ss_path_errorinfo << outpath << "LAPPDSC_errorinfo_current." << img_extension;
+	ss_path_errorinfo << outpath << "LAPPDSC_errorinfo_ID"<<lappdid<<"_current." << img_extension;
 	canvas_status_error->SaveAs(ss_path_errorinfo.str().c_str());
 	canvas_status_error->Clear();
 
@@ -2176,10 +2299,12 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	std::stringstream current_time;
 	current_time << currenttime_tm.tm_year + 1900 << "/" << currenttime_tm.tm_mon + 1 << "/" << currenttime_tm.tm_mday << "-" << currenttime_tm.tm_hour << ":" << currenttime_tm.tm_min << ":" << currenttime_tm.tm_sec;
 
-
+	int lappdid = lappd_SC.LAPPD_ID;
 
 	//Title
-	text_overview_title->SetText(0.06, 0.9, "LAPPD Overview");
+	std::stringstream title_overview;
+	title_overview << "LAPPD Overview (ID "<<lappdid<<")";
+        text_overview_title->SetText(0.06, 0.9, title_overview.str().c_str());
 
 	std::stringstream ss_temphum_temp;
 	std::string temphum = (temp_humid_check) ? "Everything is awesome!" : "Something is wrong!";
@@ -2256,13 +2381,11 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 		text_overview_error->SetTextColor(kGreen);
 	}
 
-	//std::cout <<"set current time "<< std::endl;
 	std::stringstream ss_current_time;
 	ss_current_time << "Current time: "<< " (" << current_time.str() << ")";
 	text_current_time->SetText(0.06,0.3,ss_current_time.str().c_str());
 	text_current_time->SetTextColor(1);
 
-	//std::cout <<"compute sc time "<<std::endl;
 	std::string t_sc_string = lappd_SC.timeSinceEpochMilliseconds;
 	unsigned long t_sc = std::stoul(t_sc_string, 0, 10);
 	if (t_sc > 2048166400000 ) t_sc = 1;
@@ -2271,13 +2394,11 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
         std::stringstream sc_time;
         sc_time << sctime_tm.tm_year + 1900 << "/" << sctime_tm.tm_mon + 1 << "/" << sctime_tm.tm_mday << "-" << sctime_tm.tm_hour << ":" << sctime_tm.tm_min << ":" << sctime_tm.tm_sec;
 
-	//std::cout <<"set sc time text"<<std::endl;
 	std::stringstream ss_sc_time;
 	ss_sc_time << "Slow control time: "<< " (" << sc_time.str() << ")";
 	text_sc_time->SetText(0.06,0.2,ss_sc_time.str().c_str());
 	text_sc_time->SetTextColor(1);
 
-	//std::cout <<"actual drawing"<<std::endl;
 
 	//Actual drawing
 	text_overview_title->SetTextSize(0.05);
@@ -2310,13 +2431,9 @@ void MonitorLAPPDSC::DrawStatus_Overview() {
 	text_sc_time->Draw();
 
 	std::stringstream ss_path_overviewinfo;
-	ss_path_overviewinfo << outpath << "LAPPDSC_overviewinfo_current." << img_extension;
+	ss_path_overviewinfo << outpath << "LAPPDSC_overviewinfo_ID"<<lappdid<<"_current." << img_extension;
 	canvas_status_overview->SaveAs(ss_path_overviewinfo.str().c_str());
 	canvas_status_overview->Clear();
-
-
-
-
 
 }
 
@@ -2341,31 +2458,39 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	std::stringstream ss_timeframe;
 	ss_timeframe << round(time_frame * 100.) / 100.;
 
-	graph_temp->Set(0);
-	graph_humidity->Set(0);
-	graph_thermistor->Set(0);
-	graph_salt->Set(0);
-	graph_light->Set(0);
-	graph_hv_volt->Set(0);
-	graph_hv_volt_mon->Set(0);
-	graph_lv_volt1->Set(0);
-	graph_lv_volt2->Set(0);
-	graph_lv_volt3->Set(0);
+	std::map<int,int> i_file_id;
+	for (int i_id = 0; i_id < (int) vector_lappd_id.size(); i_id++){
+		int lappdid = vector_lappd_id.at(i_id);
+		map_graph_temp[lappdid]->Set(0);
+		map_graph_humidity[lappdid]->Set(0);
+		map_graph_thermistor[lappdid]->Set(0);
+		map_graph_salt[lappdid]->Set(0);
+		map_graph_light[lappdid]->Set(0);
+		map_graph_hv_volt[lappdid]->Set(0);
+		map_graph_hv_volt_mon[lappdid]->Set(0);
+		map_graph_lv_volt1[lappdid]->Set(0);
+		map_graph_lv_volt2[lappdid]->Set(0);
+		map_graph_lv_volt3[lappdid]->Set(0);
+		i_file_id.emplace(lappdid,0);
+	}
 
 	for (unsigned int i_file = 0; i_file < temp_plot.size(); i_file++) {
 
 		Log("MonitorLAPPDSC: Stored data (file #" + std::to_string(i_file + 1) + "): ", v_message, verbosity);
-		graph_temp->SetPoint(i_file, labels_timeaxis[i_file].Convert(), temp_plot.at(i_file));
-		graph_humidity->SetPoint(i_file, labels_timeaxis[i_file].Convert(), humidity_plot.at(i_file));
-		graph_thermistor->SetPoint(i_file, labels_timeaxis[i_file].Convert(), thermistor_plot.at(i_file));
-		graph_salt->SetPoint(i_file, labels_timeaxis[i_file].Convert(), salt_plot.at(i_file));
-		graph_light->SetPoint(i_file, labels_timeaxis[i_file].Convert(), light_plot.at(i_file));
-		graph_hv_volt->SetPoint(i_file, labels_timeaxis[i_file].Convert(), hv_volt_plot.at(i_file));
-		graph_hv_volt_mon->SetPoint(i_file, labels_timeaxis[i_file].Convert(), hv_returnmon_plot.at(i_file));
-		graph_lv_volt1->SetPoint(i_file, labels_timeaxis[i_file].Convert(), lv_v33_plot.at(i_file));
-		graph_lv_volt2->SetPoint(i_file, labels_timeaxis[i_file].Convert(), lv_v25_plot.at(i_file));
-		graph_lv_volt3->SetPoint(i_file, labels_timeaxis[i_file].Convert(), lv_v12_plot.at(i_file));
-
+		int lappdid = lappdid_plot.at(i_file);
+		int ifile = i_file_id[lappdid];
+		map_graph_temp[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), temp_plot.at(i_file));
+		map_graph_humidity[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), humidity_plot.at(i_file));
+		map_graph_thermistor[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), thermistor_plot.at(i_file));
+		map_graph_salt[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), salt_plot.at(i_file));
+		map_graph_light[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), light_plot.at(i_file));
+		map_graph_hv_volt[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), hv_volt_plot.at(i_file));
+		map_graph_hv_volt_mon[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), hv_returnmon_plot.at(i_file));
+		map_graph_lv_volt1[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), lv_v33_plot.at(i_file));
+		map_graph_lv_volt2[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), lv_v25_plot.at(i_file));
+		map_graph_lv_volt3[lappdid]->SetPoint(ifile, labels_timeaxis[i_file].Convert(), lv_v12_plot.at(i_file));
+		ifile++;
+		i_file_id[lappdid] = ifile;
 	}
 
 	// Drawing time evolution plots
@@ -2381,137 +2506,304 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	ss_temp << "Temperature time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_temp->cd();
 	canvas_temp->Clear();
-	graph_temp->SetTitle(ss_temp.str().c_str());
-	graph_temp->GetYaxis()->SetTitle("Temperature [deg C]");
-	graph_temp->GetXaxis()->SetTimeDisplay(1);
-	graph_temp->GetXaxis()->SetLabelSize(0.03);
-	graph_temp->GetXaxis()->SetLabelOffset(0.03);
-	graph_temp->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_temp->GetXaxis()->SetTimeOffset(0.);
-	graph_temp->Draw("apl");
-	double max_temp = TMath::MaxElement(temp_plot.size(), graph_temp->GetY());
-	graph_temp->GetYaxis()->SetRangeUser(0.001, 1.1 * max_temp);
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+		int lappdid = vector_lappd_id.at(i_id);
+		map_graph_temp[lappdid]->SetTitle(ss_temp.str().c_str());
+		//map_graph_temp[lappdid]->Draw("apl");
+		//double max_temp = TMath::MaxElement(temp_plot.size(), graph_temp->GetY());
+		//map_graph_temp[lappdid]->GetYaxis()->SetRangeUser(0.001, 1.1 * max_temp);
+		multi_temp->Add(map_graph_temp[lappdid]);
+		std::stringstream ss_lappdid;
+		ss_lappdid << "LAPPD "<<lappdid;
+		leg_temp->AddEntry(map_graph_temp[lappdid],ss_lappdid.str().c_str(),"l");
+	}
+	multi_temp->Draw("apl");
+	multi_temp->GetYaxis()->SetTitle("Temperature [deg C]");
+	multi_temp->GetXaxis()->SetTimeDisplay(1);
+	multi_temp->GetXaxis()->SetLabelSize(0.03);
+	multi_temp->GetXaxis()->SetLabelOffset(0.03);
+	multi_temp->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	multi_temp->GetXaxis()->SetTimeOffset(0.);
+	leg_temp->Draw("same");
 	std::stringstream ss_temp_path;
 	ss_temp_path << outpath << "LAPPDSC_TimeEvolution_Temp_" << file_ending << "." << img_extension;
 	canvas_temp->SaveAs(ss_temp_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_temp->RecursiveRemove(map_graph_temp[lappdid]);
+        }
 
 	std::stringstream ss_hum;
 	ss_hum << "Humidity time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_humidity->cd();
 	canvas_humidity->Clear();
-	graph_humidity->SetTitle(ss_hum.str().c_str());
-	graph_humidity->GetYaxis()->SetTitle("Humidity");
-	graph_humidity->GetXaxis()->SetTimeDisplay(1);
-	graph_humidity->GetXaxis()->SetLabelSize(0.03);
-	graph_humidity->GetXaxis()->SetLabelOffset(0.03);
-	graph_humidity->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_humidity->GetXaxis()->SetTimeOffset(0.);
-	graph_humidity->Draw("apl");
-	double max_humidity = TMath::MaxElement(humidity_plot.size(), graph_humidity->GetY());
-	graph_humidity->GetYaxis()->SetRangeUser(0.001, 1.1 * max_humidity);
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+		map_graph_humidity[lappdid]->SetTitle(ss_hum.str().c_str());
+		multi_humidity->Add(map_graph_humidity[lappdid]);
+		std::stringstream ss_lappdid;
+                ss_lappdid << "LAPPD "<<lappdid;
+		leg_humidity->AddEntry(map_graph_humidity[lappdid],ss_lappdid.str().c_str(),"l");
+	}
+	multi_humidity->Draw("apl");
+	multi_humidity->GetYaxis()->SetTitle("Humidity");
+	multi_humidity->GetXaxis()->SetTimeDisplay(1);
+	multi_humidity->GetXaxis()->SetLabelSize(0.03);
+	multi_humidity->GetXaxis()->SetLabelOffset(0.03);
+	multi_humidity->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	multi_humidity->GetXaxis()->SetTimeOffset(0.);
+	leg_humidity->Draw("same");
+	//double max_humidity = TMath::MaxElement(humidity_plot.size(), graph_humidity->GetY());
+	//graph_humidity->GetYaxis()->SetRangeUser(0.001, 1.1 * max_humidity);
 	std::stringstream ss_hum_path;
 	ss_hum_path << outpath << "LAPPDSC_TimeEvolution_Humidity_" << file_ending << "." << img_extension;
 	canvas_humidity->SaveAs(ss_hum_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_humidity->RecursiveRemove(map_graph_humidity[lappdid]);
+        }
 
 	std::stringstream ss_thermistor;
 	ss_thermistor << "Thermistor time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_thermistor->cd();
 	canvas_thermistor->Clear();
-	graph_thermistor->SetTitle(ss_thermistor.str().c_str());
-	graph_thermistor->GetYaxis()->SetTitle("Thermistor temperature [deg C]");
-	graph_thermistor->GetXaxis()->SetTimeDisplay(1);
-	graph_thermistor->GetXaxis()->SetLabelSize(0.03);
-	graph_thermistor->GetXaxis()->SetLabelOffset(0.03);
-	graph_thermistor->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_thermistor->GetXaxis()->SetTimeOffset(0.);
-	graph_thermistor->Draw("apl");
-	double max_thermistor = TMath::MaxElement(thermistor_plot.size(), graph_thermistor->GetY());
-	graph_thermistor->GetYaxis()->SetRangeUser(0.001, 1.1 * max_thermistor);
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+		map_graph_thermistor[lappdid]->SetTitle(ss_thermistor.str().c_str());
+		multi_thermistor->Add(map_graph_thermistor[lappdid]);
+		std::stringstream ss_lappdid;
+		ss_lappdid << "LAPPD "<<lappdid;
+		leg_thermistor->AddEntry(map_graph_thermistor[lappdid],ss_lappdid.str().c_str(),"l");
+	}
+	multi_thermistor->Draw("apl");
+	multi_thermistor->GetYaxis()->SetTitle("Thermistor temperature [deg C]");
+	multi_thermistor->GetXaxis()->SetTimeDisplay(1);
+	multi_thermistor->GetXaxis()->SetLabelSize(0.03);
+	multi_thermistor->GetXaxis()->SetLabelOffset(0.03);
+	multi_thermistor->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	multi_thermistor->GetXaxis()->SetTimeOffset(0.);
+	leg_thermistor->Draw("same");
+	//double max_thermistor = TMath::MaxElement(thermistor_plot.size(), graph_thermistor->GetY());
+	//graph_thermistor->GetYaxis()->SetRangeUser(0.001, 1.1 * max_thermistor);
 	std::stringstream ss_thermistor_path;
 	ss_thermistor_path << outpath << "LAPPDSC_TimeEvolution_Thermistor_" << file_ending << "." << img_extension;
 	canvas_thermistor->SaveAs(ss_thermistor_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_thermistor->RecursiveRemove(map_graph_thermistor[lappdid]);
+        }
 
 	std::stringstream ss_salt;
 	ss_salt << "Salt-bridge time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_salt->cd();
 	canvas_salt->Clear();
-	graph_salt->SetTitle(ss_salt.str().c_str());
-	graph_salt->GetYaxis()->SetTitle("Salt-bridge resistance [#Omega]");
-	graph_salt->GetXaxis()->SetTimeDisplay(1);
-	graph_salt->GetXaxis()->SetLabelSize(0.03);
-	graph_salt->GetXaxis()->SetLabelOffset(0.03);
-	graph_salt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_salt->GetXaxis()->SetTimeOffset(0.);
-	graph_salt->Draw("apl");
-	double max_salt = TMath::MaxElement(salt_plot.size(), graph_salt->GetY());
-	graph_salt->GetYaxis()->SetRangeUser(0.001, 1.1 * max_salt);
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+		map_graph_salt[lappdid]->SetTitle(ss_salt.str().c_str());
+		multi_salt->Add(map_graph_salt[lappdid]);
+		std::stringstream ss_lappdid;
+		ss_lappdid << "LAPPD "<<lappdid;
+		leg_salt->AddEntry(map_graph_salt[lappdid],ss_lappdid.str().c_str(),"l");
+	}	
+	multi_salt->Draw("apl");
+	multi_salt->GetYaxis()->SetTitle("Salt-bridge resistance [#Omega]");
+	multi_salt->GetXaxis()->SetTimeDisplay(1);
+	multi_salt->GetXaxis()->SetLabelSize(0.03);
+	multi_salt->GetXaxis()->SetLabelOffset(0.03);
+	multi_salt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	multi_salt->GetXaxis()->SetTimeOffset(0.);
+	leg_salt->Draw("same");
+	//double max_salt = TMath::MaxElement(salt_plot.size(), graph_salt->GetY());
+	//graph_salt->GetYaxis()->SetRangeUser(0.001, 1.1 * max_salt);
 	std::stringstream ss_salt_path;
 	ss_salt_path << outpath << "LAPPDSC_TimeEvolution_SaltBridge_" << file_ending << "." << img_extension;
 	canvas_salt->SaveAs(ss_salt_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_salt->RecursiveRemove(map_graph_salt[lappdid]);
+        }
 
 	std::stringstream ss_light;
 	ss_light << "Light level time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_light->cd();
 	canvas_light->Clear();
-	graph_light->SetTitle(ss_light.str().c_str());
-	graph_light->GetYaxis()->SetTitle("Light level");
-	graph_light->GetXaxis()->SetTimeDisplay(1);
-	graph_light->GetXaxis()->SetLabelSize(0.03);
-	graph_light->GetXaxis()->SetLabelOffset(0.03);
-	graph_light->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_light->GetXaxis()->SetTimeOffset(0.);
-	graph_light->Draw("apl");
-	double max_light = TMath::MaxElement(light_plot.size(), graph_light->GetY());
-	graph_light->GetYaxis()->SetRangeUser(0.001, 1.1 * max_light);
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+		map_graph_light[lappdid]->SetTitle(ss_light.str().c_str());
+		multi_light->Add(map_graph_light[lappdid]);
+		std::stringstream ss_lappdid;
+		ss_lappdid << "LAPPD "<<lappdid;
+		leg_light->AddEntry(map_graph_light[lappdid],ss_lappdid.str().c_str(),"l");
+	}
+	multi_light->Draw("apl");
+	leg_light->Draw("same");
+	multi_light->GetYaxis()->SetTitle("Light level");
+	multi_light->GetXaxis()->SetTimeDisplay(1);
+	multi_light->GetXaxis()->SetLabelSize(0.03);
+	multi_light->GetXaxis()->SetLabelOffset(0.03);
+	multi_light->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	//double max_light = TMath::MaxElement(light_plot.size(), graph_light->GetY());
+	//graph_light->GetYaxis()->SetRangeUser(0.001, 1.1 * max_light);
 	std::stringstream ss_light_path;
 	ss_light_path << outpath << "LAPPDSC_TimeEvolution_Light_" << file_ending << "." << img_extension;
 	canvas_light->SaveAs(ss_light_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+		int lappdid = vector_lappd_id.at(i_id);
+		multi_light->RecursiveRemove(map_graph_light[lappdid]);
+	}
 
 	std::stringstream ss_hv;
 	ss_hv << "HV Set time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_hv->cd();
 	canvas_hv->Clear();
-	graph_hv_volt->SetTitle(ss_hv.str().c_str());
-	graph_hv_volt->GetYaxis()->SetTitle("HV Set [V]");
-	graph_hv_volt->GetXaxis()->SetTimeDisplay(1);
-	graph_hv_volt->GetXaxis()->SetLabelSize(0.03);
-	graph_hv_volt->GetXaxis()->SetLabelOffset(0.03);
-	graph_hv_volt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_hv_volt->GetXaxis()->SetTimeOffset(0.);
-	graph_hv_volt->Draw("apl");
-	double max_hv_volt = TMath::MaxElement(hv_volt_plot.size(), graph_hv_volt->GetY());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                map_graph_hv_volt[lappdid]->SetTitle(ss_hv.str().c_str());
+                multi_hv_volt->Add(map_graph_hv_volt[lappdid]);
+                std::stringstream ss_lappdid;
+                ss_lappdid << "LAPPD "<<lappdid;
+                leg_hv_volt->AddEntry(map_graph_hv_volt[lappdid],ss_lappdid.str().c_str(),"l");
+        }
+	multi_hv_volt->Draw("apl");
+	multi_hv_volt->SetTitle(ss_hv.str().c_str());
+	multi_hv_volt->GetYaxis()->SetTitle("HV Set [V]");
+	multi_hv_volt->GetXaxis()->SetTimeDisplay(1);
+	multi_hv_volt->GetXaxis()->SetLabelSize(0.03);
+	multi_hv_volt->GetXaxis()->SetLabelOffset(0.03);
+	multi_hv_volt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	multi_hv_volt->GetXaxis()->SetTimeOffset(0.);
+	leg_hv_volt->Draw("same");
+	//double max_hv_volt = TMath::MaxElement(hv_volt_plot.size(), graph_hv_volt->GetY());
 	//graph_hv_volt->GetYaxis()->SetRangeUser(0.001, 1.1 * max_hv_volt);
 	std::stringstream ss_hv_path;
 	ss_hv_path << outpath << "LAPPDSC_TimeEvolution_HV_" << file_ending << "." << img_extension;
 	canvas_hv->SaveAs(ss_hv_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_hv_volt->RecursiveRemove(map_graph_hv_volt[lappdid]);
+        }
 
 	std::stringstream ss_hv_mon;
 	ss_hv_mon << "HV Mon time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 	canvas_hv->Clear();
-	graph_hv_volt_mon->SetTitle(ss_hv_mon.str().c_str());
-	graph_hv_volt_mon->GetYaxis()->SetTitle("HV Mon [V]");
-	graph_hv_volt_mon->GetXaxis()->SetTimeDisplay(1);
-	graph_hv_volt_mon->GetXaxis()->SetLabelSize(0.03);
-	graph_hv_volt_mon->GetXaxis()->SetLabelOffset(0.03);
-	graph_hv_volt_mon->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-	graph_hv_volt_mon->GetXaxis()->SetTimeOffset(0.);
-	graph_hv_volt_mon->Draw("apl");
-	double max_hv_volt_mon = TMath::MaxElement(hv_returnmon_plot.size(), graph_hv_volt_mon->GetY());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                map_graph_hv_volt_mon[lappdid]->SetTitle(ss_hv_mon.str().c_str());
+                multi_hv_volt_mon->Add(map_graph_hv_volt_mon[lappdid]);
+                std::stringstream ss_lappdid;
+                ss_lappdid << "LAPPD "<<lappdid;
+                leg_hv_volt_mon->AddEntry(map_graph_hv_volt_mon[lappdid],ss_lappdid.str().c_str(),"l");
+        }
+	multi_hv_volt_mon->Draw("apl");
+	multi_hv_volt_mon->SetTitle(ss_hv_mon.str().c_str());
+	multi_hv_volt_mon->GetYaxis()->SetTitle("HV Mon [V]");
+	multi_hv_volt_mon->GetXaxis()->SetTimeDisplay(1);
+	multi_hv_volt_mon->GetXaxis()->SetLabelSize(0.03);
+	multi_hv_volt_mon->GetXaxis()->SetLabelOffset(0.03);
+	multi_hv_volt_mon->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+	multi_hv_volt_mon->GetXaxis()->SetTimeOffset(0.);
+	leg_hv_volt_mon->Draw("same");
+	//double max_hv_volt_mon = TMath::MaxElement(hv_returnmon_plot.size(), graph_hv_volt_mon->GetY());
 	//graph_hv_volt_mon->GetYaxis()->SetRangeUser(0.001, 1.1 * max_hv_volt_mon);
 	std::stringstream ss_hv_path_mon;
 	ss_hv_path_mon << outpath << "LAPPDSC_TimeEvolution_HVMon_" << file_ending << "." << img_extension;
 	canvas_hv->SaveAs(ss_hv_path_mon.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_hv_volt_mon->RecursiveRemove(map_graph_hv_volt_mon[lappdid]);
+        }
 
 	std::stringstream ss_lv;
-	ss_lv << "LV time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+	ss_lv << "LV1 time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+	canvas_lv->cd();
+        canvas_lv->Clear();
+        for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                map_graph_lv_volt1[lappdid]->SetTitle(ss_lv.str().c_str());
+                multi_lv_volt1->Add(map_graph_lv_volt1[lappdid]);
+                std::stringstream ss_lappdid;
+                ss_lappdid << "LAPPD "<<lappdid;
+                leg_lv_volt1->AddEntry(map_graph_lv_volt1[lappdid],ss_lappdid.str().c_str(),"l");
+        }
+        multi_lv_volt1->Draw("apl");
+	multi_lv_volt1->GetYaxis()->SetTitle("LV Mon [V]");
+        multi_lv_volt1->GetXaxis()->SetTimeDisplay(1);
+        multi_lv_volt1->GetXaxis()->SetLabelSize(0.03);
+        multi_lv_volt1->GetXaxis()->SetLabelOffset(0.03);
+        multi_lv_volt1->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+        multi_lv_volt1->GetXaxis()->SetTimeOffset(0.);
+        leg_lv_volt1->Draw("same");
+	std::stringstream ss_lv_path;
+	ss_lv_path << outpath << "LAPPDSC_TimeEvolution_LV1_" << file_ending << "." << img_extension;
+	canvas_lv->SaveAs(ss_lv_path.str().c_str());
+	for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_lv_volt1->RecursiveRemove(map_graph_lv_volt1[lappdid]);
+        }
+
+	ss_lv.str("");
+	ss_lv << "LV2 time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+        canvas_lv->cd();
+        canvas_lv->Clear();
+        for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                map_graph_lv_volt2[lappdid]->SetTitle(ss_lv.str().c_str());
+                multi_lv_volt2->Add(map_graph_lv_volt2[lappdid]);
+                std::stringstream ss_lappdid;
+                ss_lappdid << "LAPPD "<<lappdid;
+                leg_lv_volt2->AddEntry(map_graph_lv_volt2[lappdid],ss_lappdid.str().c_str(),"l");
+        }
+        multi_lv_volt2->Draw("apl");
+        multi_lv_volt2->GetYaxis()->SetTitle("LV Mon [V]");
+        multi_lv_volt2->GetXaxis()->SetTimeDisplay(1);
+        multi_lv_volt2->GetXaxis()->SetLabelSize(0.03);
+        multi_lv_volt2->GetXaxis()->SetLabelOffset(0.03);
+        multi_lv_volt2->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+        multi_lv_volt2->GetXaxis()->SetTimeOffset(0.);
+        leg_lv_volt2->Draw("same");
+        ss_lv_path.str("");
+        ss_lv_path << outpath << "LAPPDSC_TimeEvolution_LV2_" << file_ending << "." << img_extension;
+        canvas_lv->SaveAs(ss_lv_path.str().c_str());
+        for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_lv_volt2->RecursiveRemove(map_graph_lv_volt2[lappdid]);
+        }
+
+	ss_lv.str("");
+	ss_lv << "LV3 time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+        canvas_lv->cd();
+        canvas_lv->Clear();
+        for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                map_graph_lv_volt3[lappdid]->SetTitle(ss_lv.str().c_str());
+                multi_lv_volt3->Add(map_graph_lv_volt3[lappdid]);
+                std::stringstream ss_lappdid;
+                ss_lappdid << "LAPPD "<<lappdid;
+                leg_lv_volt3->AddEntry(map_graph_lv_volt3[lappdid],ss_lappdid.str().c_str(),"l");
+        }
+        multi_lv_volt3->Draw("apl");
+        multi_lv_volt3->GetYaxis()->SetTitle("LV Mon [V]");
+        multi_lv_volt3->GetXaxis()->SetTimeDisplay(1);
+        multi_lv_volt3->GetXaxis()->SetLabelSize(0.03);
+        multi_lv_volt3->GetXaxis()->SetLabelOffset(0.03);
+        multi_lv_volt3->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+        multi_lv_volt3->GetXaxis()->SetTimeOffset(0.);
+        leg_lv_volt3->Draw("same");
+        ss_lv_path.str("");
+        ss_lv_path << outpath << "LAPPDSC_TimeEvolution_LV3_" << file_ending << "." << img_extension;
+        canvas_lv->SaveAs(ss_lv_path.str().c_str());
+        for (int i_id=0; i_id < (int) vector_lappd_id.size(); i_id++){
+                int lappdid = vector_lappd_id.at(i_id);
+                multi_lv_volt3->RecursiveRemove(map_graph_lv_volt3[lappdid]);
+        }
+
+/*
 	multi_lv->Add(graph_lv_volt1);
 	leg_lv->AddEntry(graph_lv_volt1, "V33", "l");
 	multi_lv->Add(graph_lv_volt2);
 	leg_lv->AddEntry(graph_lv_volt2, "V31", "l");
 	multi_lv->Add(graph_lv_volt3);
 	leg_lv->AddEntry(graph_lv_volt3, "V18", "l");
-	canvas_lv->cd();
-	canvas_lv->Clear();
 	multi_lv->Draw("apl");
 	multi_lv->SetTitle(ss_lv.str().c_str());
 	multi_lv->GetYaxis()->SetTitle("LV [V]");
@@ -2521,15 +2813,21 @@ void MonitorLAPPDSC::DrawTimeEvolutionLAPPDSC(ULong64_t timestamp_end, double ti
 	multi_lv->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
 	multi_lv->GetXaxis()->SetTimeOffset(0.);
 	leg_lv->Draw();
-	std::stringstream ss_lv_path;
-	ss_lv_path << outpath << "LAPPDSC_TimeEvolution_LV_" << file_ending << "." << img_extension;
-	canvas_lv->SaveAs(ss_lv_path.str().c_str());
 
 	multi_lv->RecursiveRemove(graph_lv_volt1);
 	multi_lv->RecursiveRemove(graph_lv_volt2);
 	multi_lv->RecursiveRemove(graph_lv_volt3);
-
+*/
 	leg_lv->Clear();
 	canvas_lv->Clear();
-
+	leg_temp->Clear();
+	leg_humidity->Clear();
+	leg_salt->Clear();
+	leg_light->Clear();
+	leg_thermistor->Clear();
+	leg_hv_volt->Clear();
+	leg_hv_volt_mon->Clear();
+	leg_lv_volt1->Clear();
+	leg_lv_volt2->Clear();
+	leg_lv_volt3->Clear();
 }
