@@ -79,6 +79,7 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("LAPPDSCWarningLight",false);
   m_data->CStore.Set("LAPPDSCWarningRelay",false);
   m_data->CStore.Set("LAPPDSCWarningErrors",false);
+  m_data->CStore.Set("LAPPDID",-1);
 
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
@@ -211,6 +212,7 @@ bool MonitorDAQ::Execute(){
     m_data->CStore.Set("LAPPDSCWarningLight",false);
     m_data->CStore.Set("LAPPDSCWarningRelay",false);
     m_data->CStore.Set("LAPPDSCWarningErrors",false);
+    m_data->CStore.Set("LAPPDID",-1);
   }
 
   //Only for debugging memory leaks, otherwise comment out --> test mode
@@ -859,6 +861,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   m_data->CStore.Get("LAPPDSlowControlWarning",lappd_slow_control);
   bool lappd_sc_temp, lappd_sc_hum, lappd_sc_hv, lappd_sc_lv1, lappd_sc_lv2, lappd_sc_lv3;
   bool lappd_sc_salt, lappd_sc_thermistor, lappd_sc_light, lappd_sc_relay, lappd_sc_errors;
+  unsigned int lappd_id;
 
   m_data->CStore.Get("LAPPDSCWarningTemp",lappd_sc_temp);
   m_data->CStore.Get("LAPPDSCWarningHum",lappd_sc_hum);
@@ -871,13 +874,13 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   m_data->CStore.Get("LAPPDSCWarningLight",lappd_sc_light);
   m_data->CStore.Get("LAPPDSCWarningRelay",lappd_sc_relay);
   m_data->CStore.Get("LAPPDSCWarningErrors",lappd_sc_errors);
-
+  m_data->CStore.Get("LAPPDID",lappd_id);
 
   if (lappd_slow_control && !warning_lappd_sc){
     warning_lappd_sc = true;
     std::stringstream ss_error_sc, ss_error_sc_slack;
     ss_error_sc << "ERROR: LAPPD Slow Control has not updated in over 10 minutes! Check the status!";
-    ss_error_sc_slack << "payload={\"text\":\"Monitoring: LAPPD Slow Control has not updated in over 10 minutes! Check the status! \"}";
+    ss_error_sc_slack << "payload={\"text\":\"Monitoring: LAPPD Slow Control has not updated in over 10 minutes! (LAPPD ID "<<lappd_id<<"). Check the status! \"}";
     if (send_slack){
         try{
           CURL *curl;
@@ -906,7 +909,9 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_temp && !warning_lappd_temp){
     warning_lappd_temp = true;
     std::stringstream ss_temp_mess;
-    ss_temp_mess << "Monitoring: LAPPD Slow Control temperature is over critical limit! Contact experts immediately!!!" ;
+    float lappd_temp;
+    m_data->CStore.Get("LAPPDTemp",lappd_temp);
+    ss_temp_mess << "Monitoring: LAPPD Slow Control temperature >>>>"<<lappd_temp<<"<<<< is over critical limit! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     std::cout << ss_temp_mess.str() << std::endl;
     this->SendToSlack(ss_temp_mess.str());
   } else if (!lappd_sc_temp){
@@ -916,8 +921,10 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   // Humidity warning
   if (lappd_sc_hum && !warning_lappd_hum){
     warning_lappd_hum = true;
+    float lappd_hum;
+    m_data->CStore.Get("LAPPDHum",lappd_hum);
     std::stringstream ss_hum;
-    ss_hum << "Monitoring: LAPPD Slow Control humidity is over critical limit! Contact experts immediately!!!" ;
+    ss_hum << "Monitoring: LAPPD Slow Control humidity >>>"<<lappd_hum<<"<<<< is over critical limit! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     this->SendToSlack(ss_hum.str());
     std::cout << ss_hum.str() << std::endl;
   } else if (!lappd_sc_hum){
@@ -928,7 +935,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_hv && !warning_lappd_hv){
     warning_lappd_hv = true;
     std::stringstream ss_hv;
-    ss_hv << "Monitoring: LAPPD HV problem! Contact experts immediately!!!" ;
+    ss_hv << "Monitoring: LAPPD HV problem! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     this->SendToSlack(ss_hv.str());
     std::cout << ss_hv.str() << std::endl;
   } else if (!lappd_sc_hv){
@@ -939,7 +946,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_lv1 && !warning_lappd_lv1){
     warning_lappd_lv1 = true;
     std::stringstream ss_lv1;
-    ss_lv1 << "Monitoring: LAPPD LV (3.3V) value deviates too much from setpoint! Contact experts immediately!!!" ;
+    ss_lv1 << "Monitoring: LAPPD LV (3.3V) value deviates too much from setpoint! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")";
     this->SendToSlack(ss_lv1.str());
     std::cout << ss_lv1.str() << std::endl;
   } else if (!lappd_sc_lv1){
@@ -950,7 +957,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_lv2 && !warning_lappd_lv2){
     warning_lappd_lv2 = true;
     std::stringstream ss_lv2;
-    ss_lv2 << "Monitoring: LAPPD LV value (2.5V) deviates too much from setpoint! Contact experts immediately!!!" ;
+    ss_lv2 << "Monitoring: LAPPD LV value (2.5V) deviates too much from setpoint! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")";
     this->SendToSlack(ss_lv2.str());
     std::cout << ss_lv2.str() << std::endl;
   } else if (!lappd_sc_lv2){
@@ -961,7 +968,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_lv3 && !warning_lappd_lv3){
     warning_lappd_lv3 = true;
     std::stringstream ss_lv3;
-    ss_lv3 << "Monitoring: LAPPD LV value (1.8V) deviates too much from setpoint! Contact experts immediately!!!" ;
+    ss_lv3 << "Monitoring: LAPPD LV value (1.8V) deviates too much from setpoint! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")";
     this->SendToSlack(ss_lv3.str());
     std::cout << ss_lv3.str() << std::endl;
   } else if (!lappd_sc_lv3){
@@ -971,8 +978,10 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   // Salt-bridge warning
   if (lappd_sc_salt && !warning_lappd_salt){
     warning_lappd_salt = true;
+    float lappd_salt;
+    m_data->CStore.Get("LAPPDSalt",lappd_salt);
     std::stringstream ss_salt;
-    ss_salt << "Monitoring: LAPPD Slow Control Salt-Bridge value is below critical limit! Contact experts immediately!!!" ;
+    ss_salt << "Monitoring: LAPPD Slow Control Salt-Bridge value >>>"<<lappd_salt<<"<<< is below critical limit! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     this->SendToSlack(ss_salt.str());
     std::cout << ss_salt.str() << std::endl;
   } else if (!lappd_sc_salt){
@@ -982,8 +991,10 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   // Thermistor warning
   if (lappd_sc_thermistor && !warning_lappd_thermistor){
     warning_lappd_thermistor = true;
+    float lappd_thermistor;
+    m_data->CStore.Get("LAPPDThermistor",lappd_thermistor);
     std::stringstream ss_thermistor;
-    ss_thermistor << "Monitoring: LAPPD Thermistor value critically low! Contact experts immediately!!!" ;
+    ss_thermistor << "Monitoring: LAPPD Thermistor value >>>"<<lappd_thermistor<<"<<< is critically low! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     this->SendToSlack(ss_thermistor.str());
     std::cout << ss_thermistor.str() << std::endl;
   } else if (!lappd_sc_thermistor){
@@ -994,7 +1005,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_light && !warning_lappd_light){
     warning_lappd_light = true;
     std::stringstream ss_light;
-    ss_light << "Monitoring: LAPPD Light level too high! Contact experts immediately!!!" ;
+    ss_light << "Monitoring: LAPPD Light level too high! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     this->SendToSlack(ss_light.str());
     std::cout << ss_light.str() << std::endl;
   } else if (!lappd_sc_light){
@@ -1005,7 +1016,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   if (lappd_sc_relay && !warning_lappd_relay){
     warning_lappd_relay = true;
     std::stringstream ss_relay;
-    ss_relay << "Monitoring: LAPPD relays are not set correctly! Contact experts immediately!!!" ;
+    ss_relay << "Monitoring: LAPPD relays are not set correctly! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
     this->SendToSlack(ss_relay.str());
     std::cout << ss_relay.str() << std::endl;
   } else if (!lappd_sc_relay){

@@ -117,7 +117,9 @@ class MonitorLAPPDSC: public Tool {
   boost::posix_time::time_duration period_update;
   boost::posix_time::time_duration period_warning;
   boost::posix_time::time_duration duration;
+  std::map<int,boost::posix_time::time_duration> map_duration;
   boost::posix_time::ptime last;
+  std::map<int,boost::posix_time::ptime> map_last;
   boost::posix_time::ptime utc;
   boost::posix_time::time_duration current_stamp_duration;
   boost::posix_time::time_duration current_utc_duration;
