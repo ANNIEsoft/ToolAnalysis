@@ -199,17 +199,17 @@ class MonitorDAQ: public Tool {
   bool warning_diskspace_90 = false;
   bool warning_services = false;
   boost::posix_time::ptime timestamp_last_warning_diskspace_90;
-  std::map<int,bool> map_warning_lappd_sc = false;
-  std::map<int,bool> map_warning_lappd_temp = false;
-  std::map<int,bool> map_warning_lappd_hum = false;
-  std::map<int,bool> map_warning_lappd_hv = false;
-  std::map<int,bool> map_warning_lappd_lv1 = false;
-  std::map<int,bool> map_warning_lappd_lv2 = false;
-  std::map<int,bool> map_warning_lappd_lv3 = false;
-  std::map<int,bool> map_warning_lappd_salt = false;
-  std::map<int,bool> map_warning_lappd_thermistor = false;
-  std::map<int,bool> map_warning_lappd_light = false;
-  std::map<int,bool> map_warning_lappd_relay = false;
+  std::map<int,bool> map_warning_lappd_sc;
+  std::map<int,bool> map_warning_lappd_temp;
+  std::map<int,bool> map_warning_lappd_hum;
+  std::map<int,bool> map_warning_lappd_hv;
+  std::map<int,bool> map_warning_lappd_lv1;
+  std::map<int,bool> map_warning_lappd_lv2;
+  std::map<int,bool> map_warning_lappd_lv3;
+  std::map<int,bool> map_warning_lappd_salt;
+  std::map<int,bool> map_warning_lappd_thermistor;
+  std::map<int,bool> map_warning_lappd_light;
+  std::map<int,bool> map_warning_lappd_relay;
   bool warning_lappd_errors = false;
 
   //Online stuff
