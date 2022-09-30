@@ -290,6 +290,9 @@ class MonitorDAQ: public Tool {
   std::vector<int> test_vme;
   std::vector<double> test_disk;
   int testcounter;
+ 
+  //LAPPD ID vector
+  std::vector<int> vector_lappd_id;
 
   //Verbosity variables
   int v_error = 0;
