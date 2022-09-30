@@ -107,6 +107,8 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 		if (file_lappdid.eof()) break;
 	}
 	file_lappdid.close();
+	
+	m_data->CStore.Set("VectorLAPPDID",vector_lappd_id);
 
 	//Set up Epoch
 	Epoch = new boost::posix_time::ptime(boost::gregorian::from_string(StartTime));
