@@ -861,7 +861,7 @@ void MonitorDAQ::GetVMEServices(bool is_online){
   m_data->CStore.Get("LAPPDSlowControlWarning",lappd_slow_control);
   bool lappd_sc_temp, lappd_sc_hum, lappd_sc_hv, lappd_sc_lv1, lappd_sc_lv2, lappd_sc_lv3;
   bool lappd_sc_salt, lappd_sc_thermistor, lappd_sc_light, lappd_sc_relay, lappd_sc_errors;
-  unsigned int lappd_id;
+  int lappd_id;
 
   m_data->CStore.Get("LAPPDSCWarningTemp",lappd_sc_temp);
   m_data->CStore.Get("LAPPDSCWarningHum",lappd_sc_hum);
