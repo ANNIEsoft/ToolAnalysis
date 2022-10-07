@@ -152,6 +152,7 @@ class EventDisplay: public Tool {
     std::map<int,int> active_lappds_user;  // WCSim LAPPD IDs read from config file
     std::map<int,int> active_lappds;       // converted to detectorkey
     long cluster_time;
+    int triggerword;
 
 
     //geometry variables
@@ -182,6 +183,7 @@ class EventDisplay: public Tool {
     bool facc_hit;
     bool tank_hit;
     bool mrd_hit;
+    bool get_mrd;
 
     //variables for graphical visualization
     TPad *p1 = nullptr;
