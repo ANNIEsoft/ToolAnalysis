@@ -35,6 +35,9 @@ class LoadRawData: public Tool {
   void LoadRunInformation();
   void GetNextDataEntries();
   bool InitializeNewFile(); 
+  int GetRunFromFilename();
+  int GetSubRunFromFilename();
+  int GetPartFromFilename();
 
  private:
 
@@ -45,7 +48,9 @@ class LoadRawData: public Tool {
   std::string Mode;
   std::string InputFile;
   std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
-
+  bool readtrigoverlap;
+  bool storetrigoverlap;
+  bool storerawdata;
 
   int FileNum = 0;
   int tanktotalentries;
@@ -61,6 +66,11 @@ class LoadRawData: public Tool {
   int MRDEntryNum = 0;
   int TrigEntryNum = 0;
   int LAPPDEntryNum = 0;
+
+  //Run / Subrun / part info
+  int extract_run;
+  int extract_subrun;
+  int extract_part;
 
   //Bools modified to determine which Decoder tools are paused downstream
   bool TankPaused;

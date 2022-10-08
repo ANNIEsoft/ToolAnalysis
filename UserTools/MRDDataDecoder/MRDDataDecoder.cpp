@@ -13,6 +13,7 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
 
   verbosity = 0;
+  DaylightSavings = 0;	//Make the default no correction for daylight savings (mismatch between UTC & Fermi time is only a few weeks in the year)
 
   m_variables.Get("verbosity",verbosity);
   // was this run taken at a daylight savings time of year?
@@ -20,6 +21,8 @@ bool MRDDataDecoder::Initialise(std::string configfile, DataModel &data){
   // work out the conversion required to put MRD timestamps into UTC
   TimeZoneShift = 21600000;
   if(DaylightSavings) TimeZoneShift = 18000000;
+
+  if (verbosity > 0) std::cout <<"MRDDataDecoder: TimeZoneShift: "<<TimeZoneShift<<std::endl;
 
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Set("NewMRDDataAvailable",false);
