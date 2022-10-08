@@ -266,7 +266,7 @@ bool MrdDistributions::Execute(){
 		return false;
 	}
 	// sanity check
-	if(theMrdTracks->size()<numtracksinev){
+	if((int)theMrdTracks->size()<numtracksinev){
 		cerr<<"Too few entries in MRDTracks vector relative to NumMrdTracks!"<<endl;
 		// more is fine as we don't shrink for efficiency
 	}
@@ -589,7 +589,7 @@ bool MrdDistributions::Execute(){
 	// Loop over true tracks and record their properties
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Log("MrdDistributions Tool: Looping over MCParticles",v_debug,verbosity);
-	for(int tracki=0; tracki<MCParticles->size(); tracki++){
+	for(int tracki=0; tracki<(int)MCParticles->size(); tracki++){
 		MCParticle* nextparticle = &MCParticles->at(tracki);
 		if(fabs(nextparticle->GetPdgCode())!=13)                continue; // only interested in muons 	// EDIT: Added -13 (mu+) as possible option
 		if(not (nextparticle->GetEntersMrd()))            continue; // only record tracks that entered the MRD

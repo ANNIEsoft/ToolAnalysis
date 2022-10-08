@@ -35,12 +35,13 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   PMTData = new BoostStore(false,2);
   MRDData = new BoostStore(false,2);
   TrigData = new BoostStore(false,2);
+  LAPPDData = new BoostStore(false,2);
 
   //RawDataEntryObjects
   Cdata = new std::vector<CardData>;
   Tdata = new TriggerData;
   Mdata = new MRDOut;
-
+  Ldata = new PsecData;
 
   FileNum = 0;
   TankEntryNum = 0;
@@ -72,6 +73,7 @@ bool LoadRawData::Execute(){
   m_data->CStore.Get("PauseTankDecoding",TankPaused);
   m_data->CStore.Get("PauseMRDDecoding",MRDPaused);
   m_data->CStore.Get("PauseCTCDecoding",CTCPaused);
+  m_data->CStore.Get("PauseLAPPDDecoding",LAPPDPaused);
 
   // Load RawData BoostStore to use in execute loop
   // Points RawDataObjects to current file
@@ -85,6 +87,7 @@ bool LoadRawData::Execute(){
       if(verbosity>4) RawData->Print(false);
       this->LoadPMTMRDData();
       this->LoadTriggerData();
+      this->LoadLAPPDData();
       this->LoadRunInformation();
     } else {
       Log("LoadRawData Tool: Continuing Raw Data file processing",v_message,verbosity); 
@@ -106,6 +109,7 @@ bool LoadRawData::Execute(){
       if(verbosity>4) RawData->Print(false);
       this->LoadPMTMRDData();
       this->LoadTriggerData();
+      this->LoadLAPPDData();
       this->LoadRunInformation();
     } else {
      if(verbosity>v_message) std::cout << "LoadRawDataTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
@@ -128,6 +132,7 @@ bool LoadRawData::Execute(){
       if(verbosity>4) RawData->Print(false);
       this->LoadPMTMRDData();
       this->LoadTriggerData();
+      this->LoadLAPPDData();
       this->LoadRunInformation();
     } 
     else {
@@ -172,6 +177,8 @@ bool LoadRawData::Execute(){
           cc = TimeClass(CTCTimeStamp);
         }
       }
+      // LAPPDData:
+
       // MRDData:
       std::map<uint64_t, std::string>  MRDTriggerTypeMap;
       get_ok = m_data->CStore.Get("MRDEventTriggerTypes",MRDTriggerTypeMap);
@@ -194,6 +201,7 @@ bool LoadRawData::Execute(){
     TankPaused = true;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
+    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
   }
   if(MRDEntryNum == mrdtotalentries){
     Log("LoadRawData Tool: ALL MRD ENTRIES COLLECTED.",v_debug, verbosity);
@@ -201,6 +209,7 @@ bool LoadRawData::Execute(){
     MRDPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
+    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
   }
   if(TrigEntryNum == trigtotalentries){
     Log("LoadRawData Tool: ALL TRIG ENTRIES COLLECTED.",v_debug, verbosity);
@@ -208,11 +217,21 @@ bool LoadRawData::Execute(){
     CTCPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
+    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+  }
+  if(LAPPDEntryNum == LAPPDtotalentries){
+    Log("LoadRawData Tool: ALL LAPPD ENTRIES COLLECTED.",v_debug, verbosity);
+    LAPPDEntriesCompleted = true;
+    LAPPDPaused = true;
+    if(TrigEntryNum < trigtotalentries) CTCPaused = false;
+    if(TankEntryNum < tanktotalentries) TankPaused = false;
+    if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
   }
 
   m_data->CStore.Set("PauseTankDecoding",TankPaused);
   m_data->CStore.Set("PauseMRDDecoding",MRDPaused);
   m_data->CStore.Set("PauseCTCDecoding",CTCPaused);
+  m_data->CStore.Set("PauseLAPPDDecoding",LAPPDPaused);
 
   //Get next data entries; are saved to CStore for tools downstream
   this->GetNextDataEntries();
@@ -240,6 +259,9 @@ bool LoadRawData::Finalise(){
   MRDData->Close();
   MRDData->Delete();
   delete MRDData;
+  LAPPDData->Close();
+  LAPPDData->Delete();
+  delete LAPPDData;
   std::cout << "LoadRawData Tool Exitting" << std::endl;
   return true;
 }
@@ -291,6 +313,15 @@ void LoadRawData::LoadTriggerData(){
   return;
 }
 
+void LoadRawData::LoadLAPPDData(){
+    Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
+    LAPPDData->Get("LAPPDData",*LAPPDData);
+    if (verbosity>3) LAPPDData->Print(false);
+    LAPPDData->Header->Get("TotalEntries",LAPPDtotalentries);
+    Log("LoadRawData Tool: LAPPDData had "+to_string(LAPPDtotalentries)+" entries",v_message,verbosity);
+    return;
+}
+
 std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
 {
   std::vector<std::string> OrganizedFiles;
@@ -311,10 +342,11 @@ std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
       //for(int i = 0;i<splitline.size(); i ++){
         //std::string filename = splitline.at(i);
         std::string filename = line;
-	    int rawfilerun, rawfilesubrun, rawfilepart;
+	int rawfilerun=-1;
+        int rawfilesubrun, rawfilepart;
         int numargs = 0;
-	    try{
-	    	std::reverse(line.begin(),line.end());
+	try{
+	    std::reverse(line.begin(),line.end());
             //Part number is the first character now.
             size_t pplace = line.find("p");
             std::string part = line.substr(0,pplace);
@@ -352,11 +384,11 @@ std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
     if(verbosity>v_debug) std::cout << "MRDDataDecoder Tool: Organizing filenames: " << std::endl;
     //Now, organize files based on the part number array
     std::vector < std::pair<int,std::string>> SortingVector;
-    for (int i = 0; i < UnorganizedFileList.size(); i++){
+    for (int i = 0; i < (int) UnorganizedFileList.size(); i++){
       SortingVector.push_back( std::make_pair(RunCodes.at(i),UnorganizedFileList.at(i)));
     }
     std::sort(SortingVector.begin(),SortingVector.end());
-    for (int j = 0; j<SortingVector.size();j ++) {
+    for (int j = 0; j < (int) SortingVector.size();j ++) {
       OrganizedFiles.push_back(SortingVector.at(j).second);
     }
   } else {
@@ -371,9 +403,10 @@ bool LoadRawData::InitializeNewFile(){
   bool EndOfProcessing = false;
   FileNum += 1;
   RawData->Close(); RawData->Delete(); delete RawData; RawData = new BoostStore(false,0);
-  MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = new BoostStore(false,2);
-  TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStore(false,2);
+MRDData->Close(); MRDData->Delete(); delete MRDData; MRDData = new BoostStore(false,2);
+TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStore(false,2);
   PMTData->Close(); PMTData->Delete(); delete PMTData; PMTData = new BoostStore(false,2);
+  LAPPDData->Close(); LAPPDData->Delete(); delete LAPPDData; LAPPDData = new BoostStore(false,2);
 
   TankEntryNum = 0;
   MRDEntryNum = 0;
@@ -384,6 +417,7 @@ bool LoadRawData::InitializeNewFile(){
   m_data->CStore.Set("PauseTankDecoding",false);
   m_data->CStore.Set("PauseMRDDecoding",false);
   m_data->CStore.Set("PauseCTCDecoding",false);
+  m_data->CStore.Set("PauseLAPPDDecoding",false);
 
   if(Mode == "SingleFile"){
     Log("LoadRawData Tool: Single file parsed.  Ending toolchain after this loop.",v_message, verbosity);
@@ -437,6 +471,15 @@ void LoadRawData::GetNextDataEntries(){
     TrigData->Get("TrigData",*Tdata);
     m_data->CStore.Set("TrigData",Tdata);
     TrigEntryNum+=1;
+  }
+
+  //Get next LAPPDData Entry
+  if(BuildType == "LAPPD" || BuildType == "TankAndLAPPD" || BuildType == "MRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPDAndCTC"){
+        Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(LAPPDtotalentries),v_debug,verbosity);
+        LAPPDData->GetEntry(LAPPDEntryNum);
+        LAPPDData->Get("LAPPDData", *Ldata);
+        m_data->CStore.Set("LAPPDData", Ldata);
+        LAPPDEntryNum+=1;
   }
   return;
 }

@@ -97,8 +97,8 @@ if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 if (tool=="MCPropertiesToTree") ret=new MCPropertiesToTree;
 if (tool=="CalcClassificationVars") ret=new CalcClassificationVars;
 if (tool=="StoreClassificationVars") ret=new StoreClassificationVars;
-if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
-if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
+//if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+//if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
 if (tool=="PlotWaveforms") ret=new PlotWaveforms;
 if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
@@ -119,10 +119,9 @@ if (tool=="ClusterClassifiers") ret=new ClusterClassifiers;
 if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;
 if (tool=="MonitorTrigger") ret=new MonitorTrigger;
-
 if (tool=="EventClassification") ret=new EventClassification;
-
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
+if (tool=="MonitorDAQ") ret=new MonitorDAQ;
 return ret;
 }
