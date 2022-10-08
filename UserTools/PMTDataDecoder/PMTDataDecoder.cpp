@@ -373,8 +373,8 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
         wordindex += 1;
       }
       //Logic to search for record headers
-      if((tempword&0xfff)==RECORD_HEADER_LABELPART1) haverecheader_part1 = true;
-      else if (haverecheader_part1 && ((tempword&0xfff)==RECORD_HEADER_LABELPART2)){
+      if((int)(tempword&0xfff)==RECORD_HEADER_LABELPART1) haverecheader_part1 = true;
+      else if (haverecheader_part1 && ((int)(tempword&0xfff)==RECORD_HEADER_LABELPART2)){
         if(verbosity>vv_debug) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
         thisframe.has_recordheader=true;
         thisframe.recordheader_starts.push_back(sampleindex-1);
@@ -548,7 +548,7 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Finished Wave Clock time (ns)"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
 
-  if(FinishedWave.size()>ADCCountsToBuild){
+  if((int)FinishedWave.size()>ADCCountsToBuild){
     NewWavesBuilt = true;
     if(FinishedPMTWaves->count(FinishedWaveTrigTime) == 0) {
       std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;

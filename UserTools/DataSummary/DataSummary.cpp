@@ -531,6 +531,7 @@ bool DataSummary::LoadNextANNIEEventEntry(){
 	  // because there are still Orphans to process
 	  return false;
 	}
+	return false;  // dummy
 }
 
 bool DataSummary::LoadNextOrphanStoreEntry(){
@@ -552,10 +553,11 @@ bool DataSummary::LoadNextOrphanStoreEntry(){
 		// not a new file, still entries to process
 		return OrphanStore->GetEntry(localorphan);
 	} else {
-	 // else no more orphans, but we didn't load a new file
-	  // because there are still ANNIEEvents to process
-	return false;
+	        // else no more orphans, but we didn't load a new file
+	        // because there are still ANNIEEvents to process
+	        return false;
 	}
+	return false;
 }
 
 bool DataSummary::LoadNextFile(){
@@ -640,10 +642,10 @@ bool DataSummary::LoadNextFile(){
 	}
 	ANNIEEvent->Get("RunNumber",RunNumber);
 	std::cout <<"RunNumber: "<<RunNumber<<", run: "<<run<<std::endl;
-	if(RunNumber!=run)
+	if((int)RunNumber!=run)
 		Log("DataSummary Tool: filename / entry mismatch for RunNumber!",v_error,verbosity);
 	ANNIEEvent->Get("SubrunNumber",SubrunNumber);
-	if(SubrunNumber!=subrun)
+	if((int)SubrunNumber!=subrun)
 		Log("DataSummary Tool: filename / entry mismatch for SubrunNumber!",v_error,verbosity);
 	// TODO... handle these errors? We should have an error log file.
 	PartNumber=part; // not stored so assume it's the same
@@ -719,7 +721,6 @@ bool DataSummary::CreateOutputFile(){
 	outtree2->Branch("OrphanMinTDiff",&orphanmintdiff);
 	outtree2->Branch("OrphanTrigWord",&orphantrigword);
 
-
 	return true;
 }
 
@@ -763,8 +764,7 @@ bool DataSummary::CreatePlots(){
 	std::cout <<"Time diff plots"<<std::endl;
 	AddTDiffPlots();
 	
-	return true;
-
+	return true;	
 }
 
 bool DataSummary::AddRatePlots(int nbins){
@@ -1199,7 +1199,6 @@ bool DataSummary::AddTDiffPlots(){
 	int step_size = window_size*overlap_fraction;
 	std::cout <<"tank_ctc_diff_vals.size(): "<<tank_ctc_diff_vals.size()<<", ctc_tvals.size(): "<<ctc_tvals.size()<<std::endl;
 	for(int i=0; i<(int)tank_ctc_diff_vals.size(); ++i){
-		//std::cout <<"i: "<<i<<std::endl;
 		ComputeMeanAndVariance(tank_ctc_diff_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size, start_sample);
 		tank_ctc_means.push_back(mean_ctc_to_tank);
 		tank_ctc_vars.push_back(var_ctc_to_tank);
@@ -1233,6 +1232,7 @@ bool DataSummary::AddTDiffPlots(){
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 	
 	// 5. you could also make a normalized histogram at each step to make a colour band plot
+	return true;
 	
 	return true;
 }
