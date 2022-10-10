@@ -105,16 +105,6 @@ bool MCParticleProperties::Execute(){
 				isinfiducialvol=true;
 		}
 		nextparticle->SetStartsInFiducialVolume(isinfiducialvol);
-		
-		Position startvertex_corr, stopvertex_corr;
-		startvertex_corr.SetX(startvertex.X());
-		startvertex_corr.SetY(startvertex.Y()-tank_yoffset);
-		//startvertex_corr.SetZ(startvertex.Z()-tank_start-tank_radius);
-		startvertex_corr.SetZ(startvertex.Z());
-		stopvertex_corr.SetX(stopvertex.X());
-		stopvertex_corr.SetY(stopvertex.Y()-tank_yoffset);
-		//stopvertex_corr.SetZ(stopvertex.Z()-tank_start-tank_radius);
-		stopvertex_corr.SetZ(stopvertex.Z());
 
 		//====================================================================================================
 		// Estimate MRD penetration TODO add mrd entry/exit points to WCSim Tracks?
@@ -167,7 +157,7 @@ bool MCParticleProperties::Execute(){
 		// Calculate whether the extended (projected) particle trajectory would hit the MRD (first layer)
 		//======================================================================================================
 
-		atrackprojectedhitmrd  =  CheckProjectedMRDHit(startvertex_corr, stopvertex_corr, MRDSpecs::MRD_width, MRDSpecs::MRD_height,MRDSpecs::MRD_start);
+		atrackprojectedhitmrd  =  CheckProjectedMRDHit(startvertex, stopvertex, MRDSpecs::MRD_width, MRDSpecs::MRD_height,MRDSpecs::MRD_start);
 		
 		//new version based on external function calls
 		///////////////////////////////////////////////
@@ -178,7 +168,7 @@ bool MCParticleProperties::Execute(){
 		// if 2 interceptions are found, returns interception with larger Z,
 		// if 1 interception is found, returns L2 (stopping point).
 		// error returns true if >2 intercepts are found, or other error.
-		atrackentersmrd  =  CheckLineBox(startvertex_corr, stopvertex_corr, 
+		atrackentersmrd  =  CheckLineBox(startvertex, stopvertex, 
 										Position(-MRDSpecs::MRD_width,-MRDSpecs::MRD_height,MRDSpecs::MRD_start), 
 										Position(MRDSpecs::MRD_width,MRDSpecs::MRD_height,MRDSpecs::MRD_end),
 										MRDentrypoint, MRDexitpoint, checkboxlinerror);
