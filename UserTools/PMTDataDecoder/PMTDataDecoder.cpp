@@ -16,11 +16,14 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   ADCCountsToBuild = 0;
   EntriesPerExecute = 0;
   Mode = "Offline";
+  OffsetVME03 = false;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("Mode",Mode);
   m_variables.Get("ADCCountsToBuildWaves",ADCCountsToBuild);
   m_variables.Get("EntriesPerExecute",EntriesPerExecute);
+  m_variables.Get("OffsetVME03",OffsetVME03);
+  m_variables.Get("OffsetVME01",OffsetVME01);
 
   if (Mode != "Monitoring" && Mode != "Offline") Mode = "Offline";
   if (Mode == "Monitoring") PMTData = new BoostStore(false,2);
@@ -34,8 +37,13 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   // Initialize RawData
 
   FinishedPMTWaves = new std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t> > >; 
+  FIFOPMTWaves = new std::map<uint64_t, std::map<std::vector<int>, int > >; 
+  TimestampsFromTheFuture = new std::map<uint64_t,std::map<std::vector<int>,uint64_t>>;
 
   m_data->CStore.Set("PauseTankDecoding",false);
+  m_data->CStore.Set("FIFOError1",fifo1);
+  m_data->CStore.Set("FIFOError2",fifo2);
+
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
 }
@@ -115,7 +123,8 @@ bool PMTDataDecoder::Execute(){
           }
           CardData aCardData = Cdata_old.at(CardDataIndex);
           //Check if card experienced any data loss
-          int FIFOstate = aCardData.FIFOstate;
+          FIFOstate = 0;
+          FIFOstate = aCardData.FIFOstate;
           if(FIFOstate == 1){  //FIFO overflow
             Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_warning,verbosity);
             fifo1.push_back(aCardData.CardID);
@@ -231,6 +240,10 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Get("CardData",Cdata);
     Log("PMTDataDecoder Tool: entry has #CardData classes = "+to_string(Cdata->size()),v_debug, verbosity);
     
+    //Get current state of FIFO overflows
+    m_data->CStore.Get("FIFOError1",fifo1);
+    m_data->CStore.Get("FIFOError2",fifo2);
+
     for (unsigned int CardDataIndex=0; CardDataIndex<Cdata->size(); CardDataIndex++){
       CardData aCardData = Cdata->at(CardDataIndex);
       if(verbosity>v_debug){
@@ -239,7 +252,8 @@ bool PMTDataDecoder::Execute(){
         std::cout<<"PMTDataDecoder Tool: CardData's data vector size="<<aCardData.Data.size()<<std::endl;
       }
       //Check if card experienced any data loss
-      int FIFOstate = aCardData.FIFOstate;
+      FIFOstate = 0;
+      FIFOstate = aCardData.FIFOstate;
       if(FIFOstate == 1){  //FIFO overflow
         Log("PMTDataDecoder Tool: WARNING FIFO Overflow on card ID"+to_string(aCardData.CardID),v_error,verbosity);
         fifo1.push_back(aCardData.CardID);
@@ -284,6 +298,10 @@ bool PMTDataDecoder::Execute(){
 
     m_data->CStore.Set("InProgressTankEvents",FinishedPMTWaves);
     m_data->CStore.Set("NewTankPMTDataAvailable",NewWavesBuilt);
+    m_data->CStore.Set("FIFOError1",fifo1);
+    m_data->CStore.Set("FIFOError2",fifo2);
+    m_data->CStore.Set("FIFOPMTWaves",FIFOPMTWaves);
+    m_data->CStore.Set("TimestampsFromTheFuture",TimestampsFromTheFuture);
 
     //Check the size of the WaveBank to see if things are bloating
     Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
@@ -332,7 +350,7 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
 {
   Log("PMTDataDecoder Tool: Decoding frames now ",v_debug, verbosity);
   Log("PMTDataDecoder Tool: Bank size is "+to_string(bank.size()),v_debug, verbosity);
-  uint64_t tempword;
+  uint64_t tempword=0;
   std::vector<DecodedFrame> frames;  //What we will return
   std::vector<uint16_t> samples;
   samples.resize(40); //Well, if there's 480 bits per frame of samples max, this fits it
@@ -348,14 +366,15 @@ std::vector<DecodedFrame> PMTDataDecoder::DecodeFrames(std::vector<uint32_t> ban
     while (sampleindex < 40) {  //Parse out this whole frame
       if (bitsleft < 12) {
         if(verbosity>vv_debug) std::cout << "DATA STREAM STEP AT SAMPLE INDEX" << sampleindex << std::endl;
+        if(verbosity>vv_debug) std::cout <<" BANK[WORDINDEX="<<wordindex<<"]: "<<bank[wordindex]<<std::endl;
         tempword += ((uint64_t)be32toh(bank[wordindex]))<<bitsleft;
         if(verbosity>vv_debug) std::cout << "DATA STREAM SNAPSHOT WITH NEXT 32-bit WORD FROM FRAME " << std::bitset<64>(tempword) << std::endl;
         bitsleft += 32;
         wordindex += 1;
       }
       //Logic to search for record headers
-      if((tempword&0xfff)==RECORD_HEADER_LABELPART1) haverecheader_part1 = true;
-      else if (haverecheader_part1 && ((tempword&0xfff)==RECORD_HEADER_LABELPART2)){
+      if((int)(tempword&0xfff)==RECORD_HEADER_LABELPART1) haverecheader_part1 = true;
+      else if (haverecheader_part1 && ((int)(tempword&0xfff)==RECORD_HEADER_LABELPART2)){
         if(verbosity>vv_debug) std::cout << "FOUND A RECORD HEADER. AT INDEX " << sampleindex << std::endl;
         thisframe.has_recordheader=true;
         thisframe.recordheader_starts.push_back(sampleindex-1);
@@ -510,17 +529,47 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   }
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
   uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);  //Conversion from counter ticks to ns
+  if (CardID > 3000 && OffsetVME03) FinishedWaveTrigTime -= 8;	//Offset for VME03
+  if (CardID < 2000 && OffsetVME01) FinishedWaveTrigTime += 8; //Offset for VME01
+  if (FinishedWaveTrigTime > 2000000000000000000) {
+    Log("PMTDataDecoder: Error: Encountered timestamp that is very large: FinishedWaveTrigTime = "+std::to_string(FinishedWaveTrigTime)+". Don't include this data in the waves in progress.",v_error,verbosity);
+    WaveBank.erase(wave_key);
+    TriggerTimeBank.erase(wave_key);
+    std::map<std::vector<int>,uint64_t> MapFutureTimestamps;
+    MapFutureTimestamps.emplace(wave_key,FinishedWaveTrigTime);
+    if (TimestampsFromTheFuture->count(LastGoodTimestamp)==0){
+      TimestampsFromTheFuture->emplace(LastGoodTimestamp,MapFutureTimestamps);
+    } else {
+      TimestampsFromTheFuture->at(LastGoodTimestamp).emplace(wave_key,FinishedWaveTrigTime);
+    }
+    return;		//Don't include times that are far off in the future (what is going on there?) [exclude everything beyond 18th of May 2033, ANNIE will probably not run that long...)
+  }
+  LastGoodTimestamp = FinishedWaveTrigTime;
   Log("PMTDataDecoder Tool: Finished Wave Length"+to_string(WaveBank.size()),v_debug, verbosity);
   Log("PMTDataDecoder Tool: Finished Wave Clock time (ns)"+to_string(FinishedWaveTrigTime),v_debug, verbosity);
 
-  if(FinishedWave.size()>ADCCountsToBuild){
+  if((int)FinishedWave.size()>ADCCountsToBuild){
     NewWavesBuilt = true;
     if(FinishedPMTWaves->count(FinishedWaveTrigTime) == 0) {
       std::map<std::vector<int>, std::vector<uint16_t> > WaveMap;
       WaveMap.emplace(wave_key,FinishedWave);
       FinishedPMTWaves->emplace(FinishedWaveTrigTime,WaveMap);
+      if (FIFOstate == 1 || FIFOstate ==2){
+        std::map<std::vector<int>,int> FIFOInfo;
+        FIFOInfo.emplace(wave_key,FIFOstate);
+        FIFOPMTWaves->emplace(FinishedWaveTrigTime,FIFOInfo);
+      }
     } else {
       FinishedPMTWaves->at(FinishedWaveTrigTime).emplace(wave_key,FinishedWave);
+      if (FIFOstate == 1 || FIFOstate == 2) {
+	if (FIFOPMTWaves->count(FinishedWaveTrigTime)==0){
+          std::map<std::vector<int>,int> FIFOInfo;
+          FIFOInfo.emplace(wave_key,FIFOstate);
+          FIFOPMTWaves->emplace(FinishedWaveTrigTime,FIFOInfo);
+        } else {
+          FIFOPMTWaves->at(FinishedWaveTrigTime).emplace(wave_key,FIFOstate);
+        }
+      }
     }
   }
   //Clear the finished wave from WaveBank and TriggerTimeBank for the new wave

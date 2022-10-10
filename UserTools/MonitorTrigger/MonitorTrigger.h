@@ -44,7 +44,7 @@ class MonitorTrigger: public Tool {
   //Configuration and initialization functions
   void ReadInConfiguration();
   void InitializeHists();
-  void LoopThroughDecodedEvents(std::map<uint64_t,uint32_t> timetotriggerword);
+  void LoopThroughDecodedEvents(std::map<uint64_t,std::vector<uint32_t>> timetotriggerword);
   void WriteToFile();
   void ReadFromFile(ULong64_t timestamp_end, double time_frame);
   void DrawLastFilePlots();
@@ -79,6 +79,7 @@ class MonitorTrigger: public Tool {
   std::string triggeralignfile="none";
   bool force_update;
   bool draw_marker;
+  bool draw_single;
   int verbosity;
 
   //Configuration option for plots
@@ -89,7 +90,7 @@ class MonitorTrigger: public Tool {
   std::vector<ULong64_t> config_endtime_long;
 
   //Decoded data variable
-  std::map<uint64_t,uint32_t> TimeToTriggerWordMap;
+  std::map<uint64_t,std::vector<uint32_t>> TimeToTriggerWordMap;
   std::vector<int> TriggerMask;
   std::map<int,std::string> TriggerWord;
   std::vector<std::vector<int>> TriggerAlign;
@@ -158,6 +159,7 @@ class MonitorTrigger: public Tool {
   TCanvas *canvas_timestamp = nullptr;
   TCanvas *canvas_triggeralign = nullptr;
   TCanvas *canvas_timeevolution = nullptr;
+  TCanvas *canvas_timeevolution_single = nullptr;
 
   //Histograms showing history (log) of files
   TH1F *log_files_trig = nullptr;

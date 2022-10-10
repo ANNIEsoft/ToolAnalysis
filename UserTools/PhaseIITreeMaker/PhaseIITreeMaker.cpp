@@ -645,6 +645,7 @@ bool PhaseIITreeMaker::Execute(){
       for (int j=0; j < (int) ThisClusterIndices.size(); j++){
         Detector *thedetector = geom->ChannelToDetector(mrddigitchankeysthisevent.at(ThisClusterIndices.at(j)));
         unsigned long detkey = thedetector->GetDetectorID();
+
         fMRDHitT.push_back(mrddigittimesthisevent.at(ThisClusterIndices.at(j)));
         fMRDHitDetID.push_back(detkey);
         if (isData) fMRDHitChankey.push_back(mrddigitchankeysthisevent.at(ThisClusterIndices.at(j)));
@@ -1001,7 +1002,7 @@ void PhaseIITreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits){
   fClusterCharge = 0;
   fClusterPE = 0;
   fClusterHits = 0;
-  for (int i = 0; i<cluster_hits.size(); i++){
+  for (int i = 0; i<(int)cluster_hits.size(); i++){
     int channel_key = cluster_hits.at(i).GetTubeId();
     std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
     if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
