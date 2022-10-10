@@ -132,3 +132,7 @@
 #include "MaxPEPlots.h"
 #include "StoreDecodedTimestamps.h"
 #include "PlotDecodedTimestamps.h"
+#include "BeamDecoder.h"
+#include "LoadRunInfo.h"
+#include "ApplyMRDEff.h"
+#include "MonitorDAQ.h"

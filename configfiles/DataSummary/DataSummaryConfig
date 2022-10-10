@@ -2,6 +2,8 @@
 
 verbosity 10
 DataPath /annie/app/users/mnieslon/MyToolAnalysis_Trigger/
+#FileList ./configfiles/DataSummary/my_files.txt		#If regex search is wanted, specify -None- here
+FileList None
 
 # input files will be found by a regex search. All subdirectories within DataPath will be searched.
 # Filenames must at minimum end with 'R**S**p**', which is used to extract the run, subrun and part numbers

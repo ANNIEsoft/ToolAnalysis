@@ -538,6 +538,7 @@ bool DataSummary::LoadNextANNIEEventEntry(){
 	  // because there are still Orphans to process
 	  return false;
 	}
+	return false;  // dummy
 }
 
 bool DataSummary::LoadNextOrphanStoreEntry(){
@@ -647,10 +648,10 @@ bool DataSummary::LoadNextFile(){
 	}
 	ANNIEEvent->Get("RunNumber",RunNumber);
 	std::cout <<"RunNumber: "<<RunNumber<<", run: "<<run<<std::endl;
-	if(RunNumber!=run)
+	if((int)RunNumber!=run)
 		Log("DataSummary Tool: filename / entry mismatch for RunNumber!",v_error,verbosity);
 	ANNIEEvent->Get("SubrunNumber",SubrunNumber);
-	if(SubrunNumber!=subrun)
+	if((int)SubrunNumber!=subrun)
 		Log("DataSummary Tool: filename / entry mismatch for SubrunNumber!",v_error,verbosity);
 	// TODO... handle these errors? We should have an error log file.
 	PartNumber=part; // not stored so assume it's the same
@@ -1268,6 +1269,7 @@ bool DataSummary::AddTDiffPlots(){
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 	
 	// 5. you could also make a normalized histogram at each step to make a colour band plot
+	return true;
 	
 	return true;
 }
