@@ -208,7 +208,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCHits = new std::map<unsigned long,std::vector<MCHit>>;
 	TDCData = new std::map<unsigned long,std::vector<MCHit>>;
 	EventTime = new TimeClass();
-	TriggerClass beamtrigger("beam",true,0);
+	TriggerClass beamtrigger("beam",5,0,true,0);
 	TriggerData = new std::vector<TriggerClass>{beamtrigger}; // FIXME ? one trigger and resetting time is ok?
 	
 	// we'll put these in the CStore: so don't delete them in Finalise! It'll get handled by the Store
@@ -258,7 +258,7 @@ bool LoadWCSim::Execute(){
 			}
 		}
 		// Pre-load entry so we can stop the loop if it this was the last one in the chain
-		if(MCEventNum>=MaxEntries && MaxEntries>0){
+		if((int)MCEventNum>=MaxEntries && MaxEntries>0){
 			std::cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
 			m_data->vars.Set("StopLoop",1);
 		} else {
@@ -745,7 +745,7 @@ bool LoadWCSim::Execute(){
 	
 	// Pre-load next entry so we can stop the loop if it this was the last one in the chain
 	if(newentry){  // if next loop is processing the next trigger in the same entry, no need to re-load it
-		if(MCEventNum>=MaxEntries && MaxEntries>0){
+		if((int)MCEventNum>=MaxEntries && MaxEntries>0){
 			cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
 			m_data->vars.Set("StopLoop",1);
 		} else {
@@ -1248,7 +1248,7 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 		int tubeid = digihit->GetTubeId();
 		// loop over the photons in this digit
 		std::vector<int> truephotonindices = digihit->GetPhotonIds();
-		for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
+		for(int truephoton=0; truephoton<(int)truephotonindices.size(); truephoton++){
 			int thephotonsid = truephotonindices.at(truephoton);
 			// get the index of the photon CherenkovHit object in the TClonesArray
 			if(WCSimVersion<2){
@@ -1309,7 +1309,7 @@ std::vector<int> LoadWCSim::GetHitParentIds(WCSimRootCherenkovDigiHit* digihit, 
 	
 	// loop over the photons in this digit
 	std::vector<int> truephotonindices = digihit->GetPhotonIds();
-	for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
+	for(int truephoton=0; truephoton<(int)truephotonindices.size(); truephoton++){
 		int thephotonsid = truephotonindices.at(truephoton);
 		// get the indices of the digit's photon CherenkovHitTime objects
 		if(WCSimVersion<2){
