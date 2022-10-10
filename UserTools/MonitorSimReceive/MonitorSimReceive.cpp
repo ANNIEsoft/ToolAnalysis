@@ -103,10 +103,10 @@ bool MonitorSimReceive::Execute(){
     } 
     else if (mode == "FileList"){
     std::string datapath;
-    if (i_loop<vec_filename.size()){
+    if (i_loop<(int)vec_filename.size()){
       datapath = vec_filename.at(i_loop);
       if (verbosity > 2) std::cout <<"Current file: "<<datapath<<std::endl;
-      if (i_loop == vec_filename.size()-1) m_data->vars.Set("StopLoop",true);
+      if (i_loop == (int)vec_filename.size()-1) m_data->vars.Set("StopLoop",true);
     } else {
       m_data->vars.Set("StopLoop",true);
       if (indata!=0){ indata->Close(); indata->Delete(); delete indata; indata = 0;}
@@ -167,6 +167,19 @@ bool MonitorSimReceive::Execute(){
         has_trig = true;
         TrigData = new BoostStore(false,2);
     }
+
+    std::cout <<"datapath: "<<datapath<<std::endl;
+
+    m_data->CStore.Set("HasNewFile",true);
+    m_data->CStore.Set("CurrentFileName",datapath);
+
+    
+    //Check the size of the current file
+    uintmax_t current_filesize = boost::filesystem::file_size(datapath.c_str());
+    m_data->CStore.Set("CurrentFileSize",current_filesize);
+
+    std::time_t current_filetime = boost::filesystem::last_write_time(datapath.c_str());
+    m_data->CStore.Set("CurrentFileTime",current_filetime);
 
     m_data->CStore.Set("HasCCData",has_cc);
     m_data->CStore.Set("HasPMTData",has_pmt);
