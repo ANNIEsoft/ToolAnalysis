@@ -9,7 +9,7 @@ CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/ 
 
-BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system
+BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
 RootInclude=  -I $(ToolDAQPath)/root-6.06.08/install/include
@@ -17,12 +17,12 @@ RootInclude=  -I $(ToolDAQPath)/root-6.06.08/install/include
 WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
 WCSimInclude= -I ToolDAQ/WCSimLib/include
 
-GenieIncludeDir := $(shell genie-config --topsrcdir)
-GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
-GenieLibs= `genie-config --libs` -lxml2
+#GenieIncludeDir := $(shell genie-config --topsrcdir)
+#GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
+#GenieLibs= `genie-config --libs` -lxml2
 PythiaLibs= -L ToolDAQ/Pythia6Support/v6_424/lib -lPythia6
 Log4CppLibs= -L ToolDAQ/log4cpp/lib -llog4cpp
-Log4CppInclude= -I ToolDAQ/log4cpp/include/log4cpp
+Log4CppInclude= -I ToolDAQ/log4cpp/include/log4cpp/
 
 RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
 RATEventInclude= -I ToolDAQ/RATEventLib/include

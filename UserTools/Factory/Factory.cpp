@@ -97,8 +97,8 @@ if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 if (tool=="MCPropertiesToTree") ret=new MCPropertiesToTree;
 if (tool=="CalcClassificationVars") ret=new CalcClassificationVars;
 if (tool=="StoreClassificationVars") ret=new StoreClassificationVars;
-if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
-if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
+//if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+//if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
 if (tool=="PlotWaveforms") ret=new PlotWaveforms;
 if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
 if (tool=="ANNIEEventBuilder") ret=new ANNIEEventBuilder;
@@ -132,11 +132,14 @@ if (tool=="LAPPDCluster") ret=new LAPPDCluster;
 if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
 
 if (tool=="EventClassification") ret=new EventClassification;
-
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
 if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
 if (tool=="LAPPDGausBaselineSubtraction") ret=new LAPPDGausBaselineSubtraction;
 if (tool=="LAPPDASCIIReadIn") ret=new LAPPDASCIIReadIn;
+if (tool=="BeamDecoder") ret=new BeamDecoder;
+if (tool=="LoadRunInfo") ret=new LoadRunInfo;
+if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
+if (tool=="MonitorDAQ") ret=new MonitorDAQ;
 return ret;
 }

@@ -1,7 +1,15 @@
-verbosity 5
+verbosity 2
 
 BuildType MRD
-ProcessedFilesBasename ProcessedRawData_MRDOnly
+ProcessedFilesBasename ProcessedRawData
 SavePath ./
 
 ExecutesPerBuild 10
+
+OrphanOldTankTimestamps 1
+OldTimestampThreshold 300
+OrphanFileBase OrphanStore
+MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the others, pause reading
+
+SaveRawData 0
+StoreBeamStatus 0
