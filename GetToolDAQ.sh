@@ -3,6 +3,9 @@
 # rpms prerequisits needs root
 #yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
+source scl_source enable devtoolset-8
+source scl_source enable rh-python38
+
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 init=1
@@ -342,9 +345,14 @@ then
     tar zxf root_v6.06.08.source.tar.gz
     rm -rf root_v6.06.08.source.tar.gz 
     cd root-6.06.08
+    # some fixes for gcc8
+    sed -i '104s/.*/bool hasMD() const { return bool(MDMap); }/' interpreter/llvm/src/include/llvm/IR/ValueMap.h
+    sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx line
+    sed -i '976s/.*/PyObject_GC_Track( vi );/' bindings/pyroot/src/Pythonize.cxx
     mkdir install 
     cd install
-    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
+    #cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
+    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran) -D_GLIBCXX_USE_CXX11_ABI=1
     make -j8
     make install
     source bin/thisroot.sh
@@ -412,7 +420,9 @@ then
     pip3 install tensorflow==2.10.0
     
     cd ${BASEDIR}/UserTools
+    mkdir -p InactiveTools
     mkdir -p ImportedTools
+    cd ImportedTools
     git clone https://github.com/ToolFramework/ToolPack.git
     cd ToolPack
     ./Import.sh PythonScript
