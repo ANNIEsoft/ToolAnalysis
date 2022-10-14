@@ -1,0 +1,11 @@
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LAPPDPlotWaveForms
+SaveByChannel false
+PlotWavLabel BLsubtractedLAPPDData
+outfile WaveForms_rawblsub.root
+NHistos 200

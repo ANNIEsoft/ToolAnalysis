@@ -1,17 +1,18 @@
-# LAPPDBaselineSubtract
+# LAPPDStoreBaselineSubstract
 
-LAPPDBaselineSubtract
+LAPPDStoreBaselineSubstract
 
 ## Data
 
-Describe any data formats LAPPDBaselineSubtract creates, destroys, changes, or analyzes. E.G.
+Describe any data formats LAPPDStoreBaselineSubstract creates, destroys, changes, or analyzes. E.G.
 
 **RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
 * Takes this data from the `ANNIEEvent` store and finds the number of peaks
 
+
 ## Configuration
 
-Describe any configuration variables for LAPPDBaselineSubtract.
+Describe any configuration variables for LAPPDStoreBaselineSubstract.
 
 ```
 param1 value1

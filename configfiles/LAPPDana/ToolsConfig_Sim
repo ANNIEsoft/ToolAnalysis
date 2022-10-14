@@ -1,0 +1,25 @@
+LoadGeometry LoadGeometry configfiles/LAPPDana/ConfigGeo
+#
+#Simulate Hits
+GenerateHits GenerateHits configfiles/LAPPDana/ConfigSim
+LAPPDSim LAPPDSim configfiles/LAPPDana/ConfigSim
+#
+#Pre-processing
+#LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
+#LAPPDFindT0 LAPPDFindT0 configfiles/LAPPDana/ConfigPreProcess
+#
+#Simple Pulse Analysis
+#LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDana/ConfigSimplePulses
+LAPPDPlotWaveFormsBLS LAPPDPlotWaveForms configfiles/LAPPDana/ConfigSimplePulses
+LAPPDPlotWaveForms2D LAPPDPlotWaveForms2D configfiles/LAPPDana/ConfigSimplePulses
+LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDana/ConfigSimplePulses
+LAPPDClusterSimp LAPPDCluster configfiles/LAPPDana/ConfigSimplePulses
+#
+#Filtered Pulse Analysis
+LAPPDFilter LAPPDFilter configfiles/LAPPDana/ConfigFilteredPulses
+LAPPDcfd LAPPDcfd configfiles/LAPPDana/ConfigFilteredPulses
+LAPPDPlotWaveFormsFilt LAPPDPlotWaveForms configfiles/LAPPDana/ConfigFilteredPulses
+LAPPDPlotWaveForms2DFilt LAPPDPlotWaveForms2D configfiles/LAPPDana/ConfigFilteredPulses
+LAPPDClusterCFD LAPPDCluster configfiles/LAPPDana/ConfigFilteredPulses
+#
+LAPPDClusterTree LAPPDClusterTree configfiles/LAPPDana/ConfigTree

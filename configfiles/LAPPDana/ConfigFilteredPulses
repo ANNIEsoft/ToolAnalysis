@@ -1,0 +1,35 @@
+#LAPPDFilter
+RawFilterInputWavLabel AlignedLAPPDData
+BLSFilterInputWavLabel ABLSLAPPDData
+FilterOutWavLabel FiltLAPPDData
+doFilter true
+CutoffFrequency 500000000
+
+# LAPPDcfd
+CFDVerbosity 0
+FiltCFDInputWavLabel FiltLAPPDData
+RawCFDInputWavLabel LAPPDWaveforms
+BLSCFDInputWavLabel AlignedLAPPDData
+SimpleRecoInputLabel SimpleRecoLAPPDPulses
+CFDOutLabel CFDRecoLAPPDPulses
+Fraction_CFD 0.15
+
+#LAPPDCluster
+ClusterVerbosity  0
+SimpleClusterLabel SimpleRecoLAPPDPulses
+CFDClusterLabel CFDRecoLAPPDPulses
+HitOutLabel Clusters
+
+#LAPPDPlotWaveForms
+requireT0signal 0
+SaveByChannel 1
+PlotWavLabel FiltLAPPDData
+#PlotWavLabel AlignedLAPPDData
+outfile WaveForms_filt.root
+NHistos 200
+SaveSingleStrip 0
+SingleStripNo 11
+WhichChannel 1059
+
+#LAPPDPlotWaveForms2D
+outfile2D WaveForms_2D_filt.root
