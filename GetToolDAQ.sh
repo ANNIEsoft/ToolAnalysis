@@ -3,8 +3,6 @@
 # rpms prerequisits needs root
 #yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
-source scl_source enable rh-python38 >/dev/null 2>&1
-
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 init=1
@@ -146,6 +144,26 @@ do
 	    boostflag=0
 	    zmq=0
 	    final=0
+	    MrdTrackLib=0
+	    WCSimlib=1
+	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEventlib=0
+	    ;;
+	    
+	--MrdTrackLib )
+	    echo "Installing MRDTrackLib"
+	    init=0
+	    tooldaq=0
+	    rootflag=0
+	    root6flag=0
+	    boostflag=0
+	    zmq=0
+	    final=0
+	    MrdTrackLib=1
+	    WCSimlib=0
 	    Python=0
 	    Python3=0
 	    Pythia=0
@@ -276,6 +294,9 @@ if [ $tooldaq -eq 1 ]
 then
     cd ${BASEDIR}/ToolDAQ
     git clone https://github.com/ToolDAQ/ToolDAQFramework.git
+    # ANNIE currently uses an old version
+    cd ToolDAQFramework
+    git checkout a06f13d09845c4f0fb679946f3c385dae406e2fe
 fi
 
 if [ $zmq -eq 1 ]
@@ -340,18 +361,16 @@ then
     fi
     
     cd ${BASEDIR}/ToolDAQ
-    wget https://root.cern.ch/download/root_v6.08.06.source.tar.gz
-    tar zxf root_v6.08.06.source.tar.gz
-    rm -rf root_v6.08.06.source.tar.gz 
-    cd root-6.06.08
-    # some fixes for gcc6  (actually root 6.06.08 with gcc8)
+    git clone --depth 1 --single-branch -b v6-08-00-patches https://github.com/root-project/root.git root-6.08.06
+    cd root-6.08.06
+    # fix for gcc8
     #sed -i '104s/.*/bool hasMD() const { return bool(MDMap); }/' interpreter/llvm/src/include/llvm/IR/ValueMap.h
-    #sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx line
-    #sed -i '976s/.*/PyObject_GC_Track( vi );/' bindings/pyroot/src/Pythonize.cxx
-    mkdir install 
+    # fixes for python3.8
+    sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx
+    sed -i '103s/.*/char* cppname = const_cast<char*>(PyROOT_PyUnicode_AsString(pycppname));/' bindings/pyroot/src/PyRootType.cxx
+    mkdir install
     cd install
-    #cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
-    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran)
+    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
     make -j8
     make install
     source bin/thisroot.sh
@@ -407,6 +426,8 @@ if [ $Python3 -eq 1 ]
 then
     
     cd ${BASEDIR}
+    OLDPATH="${PATH}"
+    OLDLIBS="${LD_LIBRARY_PATH}"
     source scl_source enable devtoolset-8 >/dev/null 2>&1
     
     source Setup.sh
@@ -419,7 +440,12 @@ then
     pip3 install uproot==4.3.7
     pip3 install xgboost==1.6.2
     pip3 install tensorflow==2.10.0
+    # set tensorflow verbosity to suppress info messages about not having a GPU or maximal acceleration
+    # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886
+    echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh
     
+    export PATH=${OLDPATH}
+    export LD_LIBRARY_PATH=${OLDLIBS}
     cd ${BASEDIR}/UserTools
     mkdir -p InactiveTools
     mkdir -p ImportedTools
@@ -440,6 +466,13 @@ then
     else
       source Setup.sh
     fi
+    
+    cd ${BASEDIR}/ToolDAQ
+    mkdir fsplit && cd fsplit
+    wget https://gist.githubusercontent.com/marc1uk/c0e32d955dd1c06ef69d80ce643018ad/raw/10e592d42737ecc7dca677e774ae66dcb5a3859d/fsplit.c
+    gcc fsplit.c -o fsplit
+    export PATH=$PWD:$PATH
+    echo "export PATH=$PWD:\$PATH" >> ${BASEDIR}/Setup.sh
     
     cd ${BASEDIR}/ToolDAQ
     cvs -d :pserver:anonymous@log4cpp.cvs.sourceforge.net:/cvsroot/log4cpp -z3 co log4cpp
@@ -471,7 +504,6 @@ then
     tar zxf R-3_00_04.tar.gz
     rm -rf R-3_00_04.tar.gz
     cd Generator-R-3_00_04/
-    wget https://gist.githubusercontent.com/marc1uk/c0e32d955dd1c06ef69d80ce643018ad/raw/1ff912003a46584a66cb930ec0816159596e969f/fsplit.c
     mkdir install
     export GENIE=`pwd`
     ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/install/ --disable-lhapdf5 --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
@@ -501,8 +533,12 @@ if [ $final -eq 1 ]
 then
     
     cd ${BASEDIR}
-    #echo "current directory"
-    #echo `pwd`
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    
     make clean
     make 
     
