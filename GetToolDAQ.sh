@@ -3,8 +3,7 @@
 # rpms prerequisits needs root
 #yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
-source scl_source enable devtoolset-8
-source scl_source enable rh-python38
+source scl_source enable rh-python38 >/dev/null 2>&1
 
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -147,6 +146,26 @@ do
 	    boostflag=0
 	    zmq=0
 	    final=0
+	    MrdTrackLib=0
+	    WCSimlib=1
+	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Genie=0
+	    RATEventlib=0
+	    ;;
+	    
+	--MrdTrackLib )
+	    echo "Installing MRDTrackLib"
+	    init=0
+	    tooldaq=0
+	    rootflag=0
+	    root6flag=0
+	    boostflag=0
+	    zmq=0
+	    final=0
+	    MrdTrackLib=1
+	    WCSimlib=0
 	    Python=0
 	    Python3=0
 	    Pythia=0
@@ -344,15 +363,14 @@ then
     wget https://root.cern.ch/download/root_v6.06.08.source.tar.gz
     tar zxf root_v6.06.08.source.tar.gz
     rm -rf root_v6.06.08.source.tar.gz 
+    
     cd root-6.06.08
-    # some fixes for gcc8
-    sed -i '104s/.*/bool hasMD() const { return bool(MDMap); }/' interpreter/llvm/src/include/llvm/IR/ValueMap.h
+    # some fixes for python 3.8
     sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx line
     sed -i '976s/.*/PyObject_GC_Track( vi );/' bindings/pyroot/src/Pythonize.cxx
     mkdir install 
     cd install
-    #cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
-    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran) -D_GLIBCXX_USE_CXX11_ABI=1
+    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
     make -j8
     make install
     source bin/thisroot.sh
@@ -408,6 +426,8 @@ if [ $Python3 -eq 1 ]
 then
     
     cd ${BASEDIR}
+    source scl_source enable devtoolset-8 >/dev/null 2>&1
+    
     source Setup.sh
     pip3 install numpy==1.23.4
     pip3 install pandas==1.5.0
@@ -418,6 +438,9 @@ then
     pip3 install uproot==4.3.7
     pip3 install xgboost==1.6.2
     pip3 install tensorflow==2.10.0
+    # set tensorflow verbosity to suppress info messages about not having a GPU or maximal acceleration
+    # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886
+    python3 -c "import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'";
     
     cd ${BASEDIR}/UserTools
     mkdir -p InactiveTools
@@ -438,6 +461,13 @@ then
     else
       source Setup.sh
     fi
+    
+    cd ${BASEDIR}/ToolDAQ
+    mkdir fsplit && cd fsplit
+    wget https://gist.githubusercontent.com/marc1uk/c0e32d955dd1c06ef69d80ce643018ad/raw/10e592d42737ecc7dca677e774ae66dcb5a3859d/fsplit.c
+    gcc fsplit.c -o fsplit
+    export PATH=$PWD:$PATH
+    echo "export PATH=$PWD:\$PATH" >> ${BASEDIR}/Setup.sh
     
     cd ${BASEDIR}/ToolDAQ
     cvs -d :pserver:anonymous@log4cpp.cvs.sourceforge.net:/cvsroot/log4cpp -z3 co log4cpp
@@ -498,8 +528,12 @@ if [ $final -eq 1 ]
 then
     
     cd ${BASEDIR}
-    #echo "current directory"
-    #echo `pwd`
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    
     make clean
     make 
     

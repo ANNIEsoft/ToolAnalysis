@@ -18,7 +18,6 @@ fi
 ToolDAQapp=`pwd`
 
 # for newer containers
-source scl_source enable devtoolset-8 >/dev/null 2>&1
 source scl_source enable rh-python38 >/dev/null 2>&1
 export LIBGL_ALWAYS_INDIRECT=1
 

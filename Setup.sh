@@ -5,7 +5,6 @@
 ToolDAQapp=`pwd`
 
 # for newer containers
-source scl_source enable devtoolset-8 >/dev/null 2>&1
 source scl_source enable rh-python38 >/dev/null 2>&1
 export LIBGL_ALWAYS_INDIRECT=1
 
@@ -15,8 +14,8 @@ export LD_LIBRARY_PATH=`pwd`/lib:${ToolDAQapp}/lib:${ToolDAQapp}/ToolDAQ/zeromq-
 
 export ROOT_INCLUDE_PATH=${ToolDAQapp}/ToolDAQ/WCSimLib/include/:${ToolDAQapp}/ToolDAQ/MrdTrackLib/include:${ToolDAQapp}/ToolDAQ/RATEventLib/include/:${ToolDAQapp}/UserTools/PlotWaveforms:$ROOT_INCLUDE_PATH
 
-export PYTHIA6_DIR=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/
-export GENIE=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/
+export PYTHIA6_DIR=${ToolDAQapp}/ToolDAQ/Pythia6Support/v6_424/
+export GENIE=${ToolDAQapp}/ToolDAQ/Generator-R-3_00_04/
 
 export PATH=$GENIE/bin:$PATH
 
