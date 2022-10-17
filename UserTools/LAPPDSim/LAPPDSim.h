@@ -40,7 +40,13 @@ class LAPPDSim: public Tool {
    bool _is_artificial;
    LAPPDDisplay* _display;
    Geometry* _geom;
-   std::map<unsigned long, Waveform<double> >* LAPPDWaveforms;
+   std::map<unsigned long, vector<Waveform<double> > >* LAPPDWaveforms;
+
+   int NChannels;
+   int Nsamples;
+   double SampleSize;
+   int LAPPDchannelOffset;
+   int TrigChannel;
 
 };
 

@@ -1,0 +1,57 @@
+oldLaser 0 #1 for old data, 0 for new trigger boards
+
+#LAPPDBaselineSubtract
+BLSInputWavLabel AlignedLAPPDData
+BaselineSubstractVerbosityLevel 0
+TrigChannel1  1005
+TrigChannel2  1035
+LowBLfitrange 100;
+HiBLfitrange  150;
+TrigLowBLfitrange 2
+TrigHiBLfitrange  19
+BLSOutputWavLabel ABLSLAPPDData
+oldLaserTrigAmpRange 40
+
+#LAPPDFindPeak
+FindPeakVerbosity 0
+FiltPeakInputWavLabel FiltLAPPDData
+RawPeakInputWavLabel LAPPDWaveforms
+#BLSPeakInputWavLabel AlignedLAPPDData
+BLSPeakInputWavLabel ABLSLAPPDData
+FindPeakOutLabel SimpleRecoLAPPDPulses
+TotThreshold 10.
+MinimumTot 800.
+Deltat 100.
+
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LAPPDPlotWaveForms
+requireT0signal 0
+SaveByChannel 1
+PlotWavLabel ABLSLAPPDData
+#PlotWavLabel LAPPDWaveforms
+outfile WaveForms_rawblsub.root
+NHistos 400
+SaveSingleStrip 0
+SingleStripNo 9
+
+#LAPPDPlotWaveForms2D
+outfile2D WaveForms_2D.root
+
+#LAPPDCluster
+ClusterVerbosity  0
+SimpleClusterLabel SimpleRecoLAPPDPulses
+CFDClusterLabel CFDRecoLAPPDPulses
+HitOutLabel SimpleClusters
+
+#LAPPDIntegratePulse
+IntegStrip1 11
+IntegStrip2 -1
+IntegStrip3 -1
+IntegStrip4 -1
+IntegLow  12250
+IntegHi 16750

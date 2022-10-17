@@ -1,0 +1,49 @@
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+TrigChannel -1
+
+#LoadGeometry
+verbosity 0
+LAPPDChannelCount 60
+FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
+DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
+LAPPDGeoFile ./configfiles/LAPPDteststand/LAPPDGeometry.csv
+TankPMTGeoFile ./configfiles/LoadGeometry/FullTankPMTGeometry.csv
+
+#PSECReadIn
+PSECReadInVerbosity 0
+RawDataOutpuWavLabel  RawLAPPDData
+#PSECinputfile ../Data/2020-12-19/scan8x8_20201219/ALLData_5k_X_10_Y_10.txt
+PSECinputfile ../Data/2021-01-15/Pedestal_boards_20210115/all.txt
+#Data_20201712_174129_X_-15._Y_-75.txt
+DoPedSubtraction 0
+Nboards 2
+Pedinputfile1 ../Data/PEDS_ACDC_board0.txt
+Pedinputfile2 ../Data/PEDS_ACDC_board1.txt
+
+#LAPPDReorderData
+ReorderInputWavLabel RawLAPPDData
+ReorderOutputWavLabel LAPPDWaveforms
+DelayOffset 0
+
+#LAPPDBaselineSubtract
+BLSInputWavLabel LAPPDWaveforms
+LowBLfitrange 1;
+HiBLfitrange  41;
+BLSOutputWavLabel BLsubtractedLAPPDData
+
+#LAPPDMakePeds
+PedWavLabel RawLAPPDData
+PlotPedChannel  5
+
+#LAPPDPlotWaveForms
+requireT0signal 1
+SaveByChannel 0
+PlotWavLabel RawLAPPDData
+outfile WaveForms_raw.root
+NHistos 200
+SaveSingleStrip 0
+SingleStripNo 11
+TrigNo 1005
