@@ -3,8 +3,7 @@
 # rpms prerequisits needs root
 #yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
-source scl_source enable devtoolset-8
-source scl_source enable rh-python38
+source scl_source enable rh-python38 >/dev/null 2>&1
 
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -341,18 +340,18 @@ then
     fi
     
     cd ${BASEDIR}/ToolDAQ
-    wget https://root.cern.ch/download/root_v6.06.08.source.tar.gz
-    tar zxf root_v6.06.08.source.tar.gz
-    rm -rf root_v6.06.08.source.tar.gz 
+    wget https://root.cern.ch/download/root_v6.08.06.source.tar.gz
+    tar zxf root_v6.08.06.source.tar.gz
+    rm -rf root_v6.08.06.source.tar.gz 
     cd root-6.06.08
-    # some fixes for gcc8
-    sed -i '104s/.*/bool hasMD() const { return bool(MDMap); }/' interpreter/llvm/src/include/llvm/IR/ValueMap.h
-    sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx line
-    sed -i '976s/.*/PyObject_GC_Track( vi );/' bindings/pyroot/src/Pythonize.cxx
+    # some fixes for gcc6  (actually root 6.06.08 with gcc8)
+    #sed -i '104s/.*/bool hasMD() const { return bool(MDMap); }/' interpreter/llvm/src/include/llvm/IR/ValueMap.h
+    #sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx line
+    #sed -i '976s/.*/PyObject_GC_Track( vi );/' bindings/pyroot/src/Pythonize.cxx
     mkdir install 
     cd install
     #cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
-    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran) -D_GLIBCXX_USE_CXX11_ABI=1
+    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran)
     make -j8
     make install
     source bin/thisroot.sh
@@ -408,6 +407,8 @@ if [ $Python3 -eq 1 ]
 then
     
     cd ${BASEDIR}
+    source scl_source enable devtoolset-8 >/dev/null 2>&1
+    
     source Setup.sh
     pip3 install numpy==1.23.4
     pip3 install pandas==1.5.0
@@ -423,7 +424,8 @@ then
     mkdir -p InactiveTools
     mkdir -p ImportedTools
     cd ImportedTools
-    git clone https://github.com/ToolFramework/ToolPack.git
+    #git clone https://github.com/ToolFramework/ToolPack.git
+    git clone https://github.com/marc1uk/ToolPack.git -b python --depth=1 --single-branch
     cd ToolPack
     ./Import.sh PythonScript
     
@@ -469,6 +471,7 @@ then
     tar zxf R-3_00_04.tar.gz
     rm -rf R-3_00_04.tar.gz
     cd Generator-R-3_00_04/
+    wget https://gist.githubusercontent.com/marc1uk/c0e32d955dd1c06ef69d80ce643018ad/raw/1ff912003a46584a66cb930ec0816159596e969f/fsplit.c
     mkdir install
     export GENIE=`pwd`
     ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/install/ --disable-lhapdf5 --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
