@@ -11,11 +11,16 @@ USER root
 #######################
 
 RUN yum install -y \
+    centos-release-scl \
+    gcc \
+    gcc-c++ \
+    gcc-gfortran \
+    devtoolset-8-gcc* \
+    rh-python38 \
+    rh-python38-python-devel \
     wget \
     tar \
     cmake \
-    gcc-c++ \
-    gcc \
     binutils \
     libX11-devel \
     libXpm-devel \
@@ -31,19 +36,15 @@ RUN yum install -y \
     make \
     file \
     git \
-    bzip2-devel	\
-    cvs \			
+    patch \
+    bzip2-devel \
+    cvs \
     automake \
-    svn  \	 
+    svn  \ 
     libtool \
     libxml2 \ 
     which \
     gsl-devel \
-    gcc-gfortran \ 
-    python36 \
-    python36-libs \
-    python36-devel \
-    python36-pip \
     emacs \
     curl \
     curl-devel \
@@ -55,16 +56,17 @@ RUN yum install -y \
 
 
     
-Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
+Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git ; chmod -R 777 /ToolAnalysis ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root6;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEvent;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEventlib; chmod -R 777 /ToolAnalysis/ToolDAQ/RATEventLib;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim; chmod -R 777 /ToolAnalysis/ToolDAQ/WCSimLib;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --MrdTrackLib; chmod -R 777 /ToolAnalysis/ToolDAQ/MrdTrackLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
-RUN chmod -R 777 /ToolAnalysis
+Run mkdir /pnfs /annie /cvmfs;
 
 ### Open terminal
 CMD ["/bin/bash"]
