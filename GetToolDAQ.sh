@@ -334,22 +334,6 @@ then
     
 fi
 
-if [ $rootflag -eq 1 ]
-then
-    
-    cd ${BASEDIR}/ToolDAQ
-    wget https://root.cern.ch/download/root_v5.34.34.source.tar.gz
-    tar zxvf root_v5.34.34.source.tar.gz
-    rm -rf root_v5.34.34.source.tar.gz
-    cd root
-    
-    ./configure --enable-rpath
-    make -j8
-    
-    source ./bin/thisroot.sh
-    
-fi
-
 if [ $root6flag -eq 1 ]
 then
     
@@ -361,16 +345,13 @@ then
     fi
     
     cd ${BASEDIR}/ToolDAQ
-    git clone --depth 1 --single-branch -b v6-08-00-patches https://github.com/root-project/root.git root-6.08.06
-    cd root-6.08.06
-    # fix for gcc8
-    #sed -i '104s/.*/bool hasMD() const { return bool(MDMap); }/' interpreter/llvm/src/include/llvm/IR/ValueMap.h
-    # fixes for python3.8
-    sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx
-    sed -i '103s/.*/char* cppname = const_cast<char*>(PyROOT_PyUnicode_AsString(pycppname));/' bindings/pyroot/src/PyRootType.cxx
+    #git clone --depth 1 --single-branch -b v6-08-00-patches https://github.com/root-project/root.git root-6.08.06
+    wget https://root.cern/download/root_v6.20.08.source.tar.gz
+    tar -xzf root_v6.20.08.source.tar.gz
+    cd root-6.20.08
     mkdir install
     cd install
-    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
+    cmake ../ -Dcxx14=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
     make -j8
     make install
     source bin/thisroot.sh
@@ -413,22 +394,10 @@ then
 
 fi
 
-if [ $Python -eq 1 ]
-then
-    
-    cd ${BASEDIR}
-    source Setup.sh
-    pip install numpy pandas tensorflow sklearn root_numpy
-    
-fi
-
 if [ $Python3 -eq 1 ]
 then
     
     cd ${BASEDIR}
-    OLDPATH="${PATH}"
-    OLDLIBS="${LD_LIBRARY_PATH}"
-    source scl_source enable devtoolset-8 >/dev/null 2>&1
     
     source Setup.sh
     pip3 install numpy==1.23.4
@@ -444,8 +413,6 @@ then
     # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886
     echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh
     
-    export PATH=${OLDPATH}
-    export LD_LIBRARY_PATH=${OLDLIBS}
     cd ${BASEDIR}/UserTools
     mkdir -p InactiveTools
     mkdir -p ImportedTools
