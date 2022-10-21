@@ -9,6 +9,7 @@
 #include "LAPPDFindPeak.h"
 #include "Channel.h"
 #include "Detector.h"
+#include "TString.h"
 
 
 /**

@@ -717,7 +717,7 @@ BoostStore* TrackCombiner::FindShortMrdTracks(std::map<unsigned long,vector<doub
 			logmessage = "TrackCombiner Tool: ERROR! tank_reco_success false in FindShortMrdTracks, ";
 			logmessage += " but show_all_stubs is false? How did we get here?";
 			Log(logmessage,v_error,verbosity);
-			return false;
+			//return false;
 		}
 	}
 	

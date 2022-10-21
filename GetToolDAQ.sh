@@ -19,6 +19,7 @@ Python3=1
 Pythia=1
 Genie=1
 RATEventlib=1
+PlotWaveforms=0
 fnalflag=0
 
 while [ ! $# -eq 0 ]
@@ -261,6 +262,25 @@ do
 	    RATEventlib=1
 	    ;;
 	
+        --PlotWaveforms )
+            echo "Building PlotWaveformslib"
+            init=0
+            tooldaq=0
+            rootflag=0
+            root6flag=0
+            boostflag=0
+            zmq=0
+            final=0
+            MrdTrackLib=1
+            WCSimlib=0
+            Python=0
+            Python3=0
+            Pythia=0
+            Genie=0
+            RATEventlib=0
+            PlotWaveforms=1
+            ;;
+	
 	--Final )
 	    echo "Compiling ToolDAQ"
 	    init=0
@@ -345,13 +365,12 @@ then
     fi
     
     cd ${BASEDIR}/ToolDAQ
-    #git clone --depth 1 --single-branch -b v6-08-00-patches https://github.com/root-project/root.git root-6.08.06
-    wget https://root.cern/download/root_v6.20.08.source.tar.gz
-    tar -xzf root_v6.20.08.source.tar.gz
-    cd root-6.20.08
+    wget https://root.cern/download/root_v6.24.06.source.tar.gz
+    tar -xzf root_v6.24.06.source.tar.gz
+    cd root-6.24.06
     mkdir install
     cd install
-    cmake ../ -Dcxx14=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
+    cmake ../ -DCMAKE_CXX_STANDARD=14 -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
     make -j8
     make install
     source bin/thisroot.sh
@@ -494,6 +513,21 @@ then
     cd RATEventLib/
     make
     
+fi
+
+if [ $PlotWaveforms -eq 1 ]
+then
+
+    cd ${BASEDIR}
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+
+    cd ${BASEDIR}/UserTools/PlotWaveforms
+    make
+
 fi
 
 if [ $final -eq 1 ]

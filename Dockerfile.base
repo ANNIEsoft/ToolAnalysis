@@ -51,6 +51,7 @@ RUN dnf config-manager --set-enabled extras,powertools \
     curl-devel \
     osg-ca-certs \
     osg-wn-client \
+    openssl-devel \
     fftw3 \
     fftw3-devel \
     libnsl2-devel \
@@ -59,19 +60,19 @@ RUN dnf config-manager --set-enabled extras,powertools \
 
 
     
-#Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git; chmod -R 777 /ToolAnalysis ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
-Run git clone https://github.com/marc1uk/ToolAnalysis.git -b dockerupdateB --depth=1 --single-branch; chmod -R 777 /ToolAnalysis ; cd ToolAnalysis; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
+Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git; chmod -R 777 /ToolAnalysis ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
 Run alternatives --set python3 /usr/bin/python3.8;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root6;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEventLib; chmod -R 777 /ToolAnalysis/ToolDAQ/RATEventLib;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEventlib; chmod -R 777 /ToolAnalysis/ToolDAQ/RATEventLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim; chmod -R 777 /ToolAnalysis/ToolDAQ/WCSimLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --MrdTrackLib; chmod -R 777 /ToolAnalysis/ToolDAQ/MrdTrackLib;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --PlotWaveforms; chmod -R 777 /ToolAnalysis/UserTools/PlotWaveforms;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
-Run mkdir /pnfs /annie /cvmfs;
+Run mkdir /pnfs /annie /cvmfs; chmod 777 /pnfs /annie /cvmfs;
 
 ### Open terminal
 CMD ["/bin/bash"]
