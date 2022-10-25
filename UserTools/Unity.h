@@ -146,3 +146,4 @@
 #include "LoadRunInfo.h"
 #include "ApplyMRDEff.h"
 #include "MonitorDAQ.h"
+#include "FilterLAPPDEvents.h"

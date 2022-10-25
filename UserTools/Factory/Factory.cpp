@@ -141,5 +141,6 @@ if (tool=="BeamDecoder") ret=new BeamDecoder;
 if (tool=="LoadRunInfo") ret=new LoadRunInfo;
 if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
 if (tool=="MonitorDAQ") ret=new MonitorDAQ;
+if (tool=="FilterLAPPDEvents") ret=new FilterLAPPDEvents;
 return ret;
 }

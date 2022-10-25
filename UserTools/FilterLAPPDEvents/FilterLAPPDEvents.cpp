@@ -35,7 +35,7 @@ bool FilterLAPPDEvents::Initialise(std::string configfile, DataModel &data){
 
     FilteredEvents = new BoostStore(false,2);   
     
-    // Check if valid recognised cuts selection
+    // Check if user has set a recognised cuts selection
     if(DesiredCuts != "LAPPDEvents" && DesiredCuts != "LAPPDEventsBeamgateMRDTrack" && DesiredCuts != "LAPPDEventsBeamgateMRDTrackNoVeto"){
         std::cout << "FilterLAPPDEvents Error: Invalid Cuts!" << '\n';
         std::cout << "Must be LAPPDEvents, LAPPDEventsBeamgateMRDTrack, or LAPPDEventsBeamgateMRDTrackNoVeto" << '\n';
@@ -143,6 +143,18 @@ void FilterLAPPDEvents::SetAndSaveEvent(){
     m_data->Stores["ANNIEEvent"]->Get("DataStreams",DataStreams);  FilteredEvents->Set("DataStreams",DataStreams);
     m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);  FilteredEvents->Set("EventNumber",EventNumber);
     m_data->Stores["ANNIEEvent"]->Get("EventTimeLAPPD",EventTimeLAPPD);  FilteredEvents->Set("EventTimeLAPPD",EventTimeLAPPD);
+    m_data->Stores["ANNIEEvent"]->Get("EventTimeMRD",EventTimeMRD);  FilteredEvents->Set("EventTimeMRD",EventTimeMRD);
+    m_data->Stores["ANNIEEvent"]->Get("EventTimeTank",EventTimeTank);  FilteredEvents->Set("EventTimeTank",EventTimeTank);
+    m_data->Stores["ANNIEEvent"]->Get("Hits",Hits);
+    for (auto&& entry : (*Hits)){
+        NewHits->emplace(entry.first,entry.second);
+        }
+    FilteredEvents->Set("Hits",NewHits,true);
+    
+    m_data->Stores["ANNIEEvent"]->Get("LAPPDData",LAPPDData);  FilteredEvents->Set("LAPPDData",LAPPDData);
+    m_data->Stores["ANNIEEvent"]->Get("LAPPDOffset",LAPPDOffset);  FilteredEvents->Set("LAPPDOffset",LAPPDOffset);
+    m_data->Stores["ANNIEEvent"]->Get("LocalEventNumber",LocalEventNumber);  FilteredEvents->Set("LocalEventNumber",LocalEventNumber);
+    m_data->Stores["ANNIEEvent"]->Get("MRDLoopbackTDC",MRDLoopbackTDC);  FilteredEvents->Set("MRDLoopbackTDC",MRDLoopbackTDC);
     m_data->Stores["ANNIEEvent"]->Get("MRDTriggerType",MRDTriggerType);  FilteredEvents->Set("MRDTriggerType",MRDTriggerType);
     m_data->Stores["ANNIEEvent"]->Get("PartNumber",PartNumber);  FilteredEvents->Set("PartNumber",PartNumber);
     m_data->Stores["ANNIEEvent"]->Get("RawAcqSize",RawAcqSize);  FilteredEvents->Set("RawAcqSize",RawAcqSize);
