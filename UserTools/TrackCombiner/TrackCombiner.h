@@ -4,6 +4,8 @@
 
 #include <string>
 #include <iostream>
+#include <numeric>
+#include "TClonesArray.h"
 
 #include "Tool.h"
 

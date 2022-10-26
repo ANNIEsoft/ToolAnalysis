@@ -6,6 +6,7 @@
 #include "ANNIEalgorithms.h"
 #include "LAPPDPulse.h"
 #include "TVector3.h"
+#include "TString.h"
 
 #include "Tool.h"
 

@@ -3,8 +3,6 @@
 # rpms prerequisits needs root
 #yum install make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel git bzip2-devel python-devel
 
-source scl_source enable rh-python38 >/dev/null 2>&1
-
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 init=1
@@ -21,6 +19,7 @@ Python3=1
 Pythia=1
 Genie=1
 RATEventlib=1
+PlotWaveforms=0
 fnalflag=0
 
 while [ ! $# -eq 0 ]
@@ -263,6 +262,25 @@ do
 	    RATEventlib=1
 	    ;;
 	
+        --PlotWaveforms )
+            echo "Building PlotWaveformslib"
+            init=0
+            tooldaq=0
+            rootflag=0
+            root6flag=0
+            boostflag=0
+            zmq=0
+            final=0
+            MrdTrackLib=1
+            WCSimlib=0
+            Python=0
+            Python3=0
+            Pythia=0
+            Genie=0
+            RATEventlib=0
+            PlotWaveforms=1
+            ;;
+	
 	--Final )
 	    echo "Compiling ToolDAQ"
 	    init=0
@@ -296,6 +314,9 @@ if [ $tooldaq -eq 1 ]
 then
     cd ${BASEDIR}/ToolDAQ
     git clone https://github.com/ToolDAQ/ToolDAQFramework.git
+    # ANNIE currently uses an old version
+    cd ToolDAQFramework
+    git checkout a06f13d09845c4f0fb679946f3c385dae406e2fe
 fi
 
 if [ $zmq -eq 1 ]
@@ -333,22 +354,6 @@ then
     
 fi
 
-if [ $rootflag -eq 1 ]
-then
-    
-    cd ${BASEDIR}/ToolDAQ
-    wget https://root.cern.ch/download/root_v5.34.34.source.tar.gz
-    tar zxvf root_v5.34.34.source.tar.gz
-    rm -rf root_v5.34.34.source.tar.gz
-    cd root
-    
-    ./configure --enable-rpath
-    make -j8
-    
-    source ./bin/thisroot.sh
-    
-fi
-
 if [ $root6flag -eq 1 ]
 then
     
@@ -360,17 +365,12 @@ then
     fi
     
     cd ${BASEDIR}/ToolDAQ
-    wget https://root.cern.ch/download/root_v6.06.08.source.tar.gz
-    tar zxf root_v6.06.08.source.tar.gz
-    rm -rf root_v6.06.08.source.tar.gz 
-    
-    cd root-6.06.08
-    # some fixes for python 3.8
-    sed -i '99s/.*/char* argi = const_cast<char*>(PyROOT_PyUnicode_AsString( PyList_GET_ITEM( argl, i ) ));/' bindings/pyroot/src/TPyROOTApplication.cxx line
-    sed -i '976s/.*/PyObject_GC_Track( vi );/' bindings/pyroot/src/Pythonize.cxx
-    mkdir install 
+    wget https://root.cern/download/root_v6.24.06.source.tar.gz
+    tar -xzf root_v6.24.06.source.tar.gz
+    cd root-6.24.06
+    mkdir install
     cd install
-    cmake ../ -Dcxx14=OFF -Dcxx11=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dkrb5=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
+    cmake ../ -DCMAKE_CXX_STANDARD=14 -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
     make -j8
     make install
     source bin/thisroot.sh
@@ -410,15 +410,6 @@ then
     cd MrdTrackLib
     cp Makefile.FNAL Makefile
     make
-
-fi
-
-if [ $Python -eq 1 ]
-then
-    
-    cd ${BASEDIR}
-    source Setup.sh
-    pip install numpy pandas tensorflow sklearn root_numpy
     
 fi
 
@@ -426,7 +417,6 @@ if [ $Python3 -eq 1 ]
 then
     
     cd ${BASEDIR}
-    source scl_source enable devtoolset-8 >/dev/null 2>&1
     
     source Setup.sh
     pip3 install numpy==1.23.4
@@ -440,7 +430,7 @@ then
     pip3 install tensorflow==2.10.0
     # set tensorflow verbosity to suppress info messages about not having a GPU or maximal acceleration
     # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886
-    python3 -c "import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'";
+    echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh
     
     cd ${BASEDIR}/UserTools
     mkdir -p InactiveTools
@@ -522,6 +512,21 @@ then
     cd RATEventLib/
     make
     
+fi
+
+if [ $PlotWaveforms -eq 1 ]
+then
+
+    cd ${BASEDIR}
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+
+    cd ${BASEDIR}/UserTools/PlotWaveforms
+    make
+
 fi
 
 if [ $final -eq 1 ]
