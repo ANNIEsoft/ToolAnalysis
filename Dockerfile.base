@@ -70,6 +70,7 @@ Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEventlib; chmod -R 777 /ToolAnalysis/ToolDAQ/RATEventLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim; chmod -R 777 /ToolAnalysis/ToolDAQ/WCSimLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --MrdTrackLib; chmod -R 777 /ToolAnalysis/ToolDAQ/MrdTrackLib;
+
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --PlotWaveforms; chmod -R 777 /ToolAnalysis/UserTools/PlotWaveforms;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
 Run mkdir /pnfs /annie /cvmfs; chmod 777 /pnfs /annie /cvmfs;

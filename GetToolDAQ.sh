@@ -410,7 +410,7 @@ then
     cd MrdTrackLib
     cp Makefile.FNAL Makefile
     make
-
+    
 fi
 
 if [ $Python3 -eq 1 ]
@@ -436,8 +436,7 @@ then
     mkdir -p InactiveTools
     mkdir -p ImportedTools
     cd ImportedTools
-    #git clone https://github.com/ToolFramework/ToolPack.git
-    git clone https://github.com/marc1uk/ToolPack.git -b python --depth=1 --single-branch
+    git clone https://github.com/ToolFramework/ToolPack.git
     cd ToolPack
     ./Import.sh PythonScript
     
