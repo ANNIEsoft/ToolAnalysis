@@ -198,7 +198,6 @@ class MonitorDAQ: public Tool {
   bool warning_diskspace_85 = false;
   bool warning_diskspace_90 = false;
   bool warning_services = false;
-  boost::posix_time::ptime timestamp_last_warning_diskspace_90;
   std::map<int,bool> map_warning_lappd_sc;
   std::map<int,bool> map_warning_lappd_temp;
   std::map<int,bool> map_warning_lappd_hum;

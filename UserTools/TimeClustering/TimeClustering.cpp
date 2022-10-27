@@ -1,6 +1,7 @@
 /* vim:set noexpandtab tabstop=4 wrap */
 #include "TimeClustering.h"
 
+#include <numeric>
 // for sleeping
 #include <thread>  // std::this_thread::sleep_for
 #include <chrono>  // std::chrono::seconds

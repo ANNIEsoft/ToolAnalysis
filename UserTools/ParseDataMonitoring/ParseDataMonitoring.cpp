@@ -51,6 +51,7 @@ bool ParseDataMonitoring::Initialise(std::string configfile, DataModel &data){
       int temp_acc, temp_lappdid, temp_boardid, temp_globalid;
       global_board >> temp_acc >> temp_lappdid >> temp_boardid >> temp_globalid;
       map_global_id.emplace(temp_acc*100+temp_boardid,temp_globalid);
+      std::cout <<"map global id: "<<temp_acc*100+temp_boardid<<" : "<<temp_globalid<<std::endl;
     }
     global_board.close();
 
@@ -107,15 +108,19 @@ bool ParseDataMonitoring::Execute()
         std::vector<unsigned short> Raw_Buffer = PDATA.RawWaveform;
         std::vector<int> BoardId_Buffer = PDATA.BoardIndex;
  
-	//unsigned int ACC_ID = 0;
-	unsigned int ACC_ID = i_entry %3 //for tests of the multi-LAPPD capability;
-	std::vector<int> LAPPDtoBoard1 = {0,1};
-	std::vector<int> LAPPDtoBoard2 = {2,3};
+	unsigned int ACC_ID = 0;
+	//unsigned int ACC_ID = i_entry %3; //for tests of the multi-LAPPD capability;
+	std::vector<int> LAPPDtoBoard1{0,1};
+	std::vector<int> LAPPDtoBoard2{2,3};
 	std::map<int,int> map_local_boardid;
 	map_local_boardid.emplace(LAPPDtoBoard1[0],0);
 	map_local_boardid.emplace(LAPPDtoBoard1[1],1);
 	map_local_boardid.emplace(LAPPDtoBoard2[0],2);
 	map_local_boardid.emplace(LAPPDtoBoard2[1],3);
+
+	//Enable the following section in order to get ACC_ID and LAPPDtoBoard1 & LAPPDtoBoard2 once those changes go live
+	//this will enable multi-LAPPD support
+	//
 	/*
  * 	ACC_ID = PDATA.ACC_ID;
  * 	LAPPDtoBoard1 = PDATA.LAPPDtoBoard1;
@@ -207,7 +212,7 @@ bool ParseDataMonitoring::Execute()
    data.clear();
    for(int bi: ParaBoards)
     {
-        Parse_Buffer.clear();
+        if (Parse_Buffer.size()>0) Parse_Buffer.clear();
         if(verbosity>1) std::cout << "Starting with board " << BoardId_Buffer[bi] << std::endl;
         //Go over all ACDC board data frames by seperating them
         for(int c=bi*frametype; c<(bi+1)*frametype; c++)
@@ -223,6 +228,7 @@ bool ParseDataMonitoring::Execute()
 	//Calculate global buffer ID from BoardId_Buffer[bi]
 	int localid = map_local_boardid[BoardId_Buffer[bi]];
 	int globalid = map_global_id[ACC_ID*100+localid];
+
 
         //retval = getParsedData(Parse_Buffer,BoardId_Buffer[bi]*NUM_CH);
         retval = getParsedData(Parse_Buffer,globalid*NUM_CH);
@@ -284,7 +290,6 @@ bool ParseDataMonitoring::Execute()
 
 	if (verbosity > 2) std::cout <<"Data entry"<<std::endl;
 
-
 	TempData->Set("Data",LAPPDWaveforms);
         TempData->Set("ACC",PDATA.AccInfoFrame);
 	TempData->Set("Meta",meta);
@@ -296,8 +301,8 @@ bool ParseDataMonitoring::Execute()
         meta.clear(); 
         LAPPDWaveforms.clear(); 
         data.clear(); 
-        Raw_Buffer.clear(); 
-        BoardId_Buffer.clear(); 
+        //Raw_Buffer.clear(); 
+        //BoardId_Buffer.clear(); 
         Parse_Buffer.clear(); 
 	}
     }

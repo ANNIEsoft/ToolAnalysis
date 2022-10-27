@@ -11,22 +11,29 @@
 class LAPPDBaselineSubtract: public Tool {
 
 
- public:
+    public:
 
-  LAPPDBaselineSubtract();
-  bool Initialise(std::string configfile,DataModel &data);
-  bool Execute();
-  bool Finalise();
+        LAPPDBaselineSubtract();
+        bool Initialise(std::string configfile,DataModel &data);
+        bool Execute();
+        bool Finalise();
 
 
- private:
+    private:
 
-   Waveform<double> SubtractSine(Waveform<double> iwav);
-   bool isSim;
-   int DimSize;
-   double Deltat;
-   double LowBLfitrange;
-   double HiBLfitrange;
+        Waveform<double> SubtractSine(Waveform<double> iwav);
+        int LAPPDchannelOffset;
+        int BLSVerbosityLevel;
+        bool isSim;
+        int DimSize;
+        int TrigChannel;
+        double Deltat;
+        double LowBLfitrange;
+        double HiBLfitrange;
+        double TrigLowBLfitrange;
+        double TrigHiBLfitrange;
+        string BLSInputWavLabel;
+        string BLSOutputWavLabel;
 
 };
 

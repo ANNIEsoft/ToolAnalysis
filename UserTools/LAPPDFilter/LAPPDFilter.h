@@ -13,12 +13,10 @@ class LAPPDFilter: public Tool {
 
 
  public:
-
   LAPPDFilter();
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
-
 
  private:
 
@@ -30,7 +28,8 @@ class LAPPDFilter: public Tool {
   double CutoffFrequency;
   double Deltat;
   string FilterInputWavLabel;
-
+  string RawFilterInputWavLabel;
+  string BLSFilterInputWavLabel;
 
 };
 

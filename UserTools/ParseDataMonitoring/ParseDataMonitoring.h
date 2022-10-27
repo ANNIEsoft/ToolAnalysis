@@ -13,8 +13,6 @@
 #define NUM_CH 30
 #define NUM_SAMP 256
 #define NUM_PSEC 5
-#define NUM_VECTOR_DATA 7795
-#define NUM_VECTOR_PPS 16
 
 using namespace std;
 /**
@@ -55,6 +53,9 @@ class ParseDataMonitoring: public Tool {
   std::map<int, int> map_global_id;
   int Nboards;
   std::string GlobalBoardConfig;
+
+  int NUM_VECTOR_DATA = 7795;
+  int NUM_VECTOR_PPS = 16;
 
   int channel_count=0;
   map<int, std::vector<unsigned short>> data;

@@ -1,0 +1,6 @@
+LoadGeometry LoadGeometry configfiles/LAPPDmakepeds/ConfigVarsPSEC4
+PSECReadIn PSECReadIn configfiles/LAPPDmakepeds/ConfigVarsPSEC4
+#LAPPDReorderData  LAPPDReorderData  configfiles/LAPPDmakepeds/ConfigVarsPSEC4
+#LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDmakepeds/ConfigVarsPSEC4
+LAPPDPlotWaveForms  LAPPDPlotWaveForms configfiles/LAPPDmakepeds/ConfigVarsPSEC4
+LAPPDMakePeds LAPPDMakePeds configfiles/LAPPDmakepeds/ConfigVarsPSEC4

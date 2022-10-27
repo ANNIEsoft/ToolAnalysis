@@ -9,7 +9,7 @@ CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
 ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/ 
 
-BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem
+BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem -lboost_regex
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
 RootInclude= -I `root-config --incdir`
@@ -18,9 +18,9 @@ RootInclude= -I `root-config --incdir`
 WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
 WCSimInclude= -I ToolDAQ/WCSimLib/include
 
-#GenieIncludeDir := $(shell genie-config --topsrcdir)
-#GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
-#GenieLibs= `genie-config --libs` -lxml2
+GenieIncludeDir := $(shell genie-config --topsrcdir)
+GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir) `gsl-config --cflags`
+GenieLibs= `genie-config --libs` -lxml2 `gsl-config --libs`
 PythiaLibs= -L ToolDAQ/Pythia6Support/v6_424/lib -lPythia6
 Log4CppLibs= -L ToolDAQ/log4cpp/lib -llog4cpp
 Log4CppInclude= -I ToolDAQ/log4cpp/include/log4cpp/
@@ -45,7 +45,7 @@ MyToolsInclude =  $(RootInclude) `python3-config --cflags` $(MrdTrackInclude) $(
 MyToolsLib = -lcurl $(RootLib) `python3-config --embed --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
 
 
-all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse RemoteControl NodeDaemon
+all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
 
 Analyse: src/main.cpp | lib/libMyTools.so lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so
 	@echo -e "\n*************** Making " $@ "****************"
