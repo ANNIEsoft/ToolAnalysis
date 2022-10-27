@@ -1,4 +1,0 @@
-FileList ./configfiles/Monitoring/SimMonitoring/LAPPDFileTest_new.txt
-OutPath ./monitoringplots/
-Mode FileList	#Options: FileList, Single, Wait
-verbose 0

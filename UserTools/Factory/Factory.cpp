@@ -137,8 +137,6 @@ if (tool=="MonitorDAQ") ret=new MonitorDAQ;
 if (tool=="MonitorSimReceiveLAPPD") ret=new MonitorSimReceiveLAPPD;
 if (tool=="MonitorLAPPDSC") ret=new MonitorLAPPDSC;
 if (tool=="MonitorLAPPDData") ret=new MonitorLAPPDData;
-if (tool=="MonitorSimReceiveLAPPDData") ret=new MonitorSimReceiveLAPPDData;
-if (tool=="MonitorLAPPDDataSingle") ret=new MonitorLAPPDDataSingle;
 if (tool=="ParseDataMonitoring") ret=new ParseDataMonitoring;
 if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
 if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
