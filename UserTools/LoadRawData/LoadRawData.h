@@ -9,6 +9,7 @@
 #include "TriggerData.h"
 #include "BoostStore.h"
 #include "Store.h"
+#include "PsecData.h"
 
 /**
  * \class LoadRawData
@@ -30,9 +31,13 @@ class LoadRawData: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
   void LoadPMTMRDData(); 
   void LoadTriggerData(); 
+  void LoadLAPPDData();
   void LoadRunInformation();
   void GetNextDataEntries();
   bool InitializeNewFile(); 
+  int GetRunFromFilename();
+  int GetSubRunFromFilename();
+  int GetPartFromFilename();
 
  private:
 
@@ -43,34 +48,47 @@ class LoadRawData: public Tool {
   std::string Mode;
   std::string InputFile;
   std::vector<std::string> OrganizeRunParts(std::string InputFile); //Parses all run files in InputFile and returns a vector of file paths organized by part
-
+  bool readtrigoverlap;
+  bool storetrigoverlap;
+  bool storerawdata;
 
   int FileNum = 0;
   int tanktotalentries;
   int trigtotalentries;
   int mrdtotalentries;
+  int LAPPDtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
   bool TrigEntriesCompleted;
+  bool LAPPDEntriesCompleted;
   bool FileCompleted;
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
   int TrigEntryNum = 0;
+  int LAPPDEntryNum = 0;
+
+  //Run / Subrun / part info
+  int extract_run;
+  int extract_subrun;
+  int extract_part;
 
   //Bools modified to determine which Decoder tools are paused downstream
   bool TankPaused;
   bool MRDPaused;
   bool CTCPaused;
+  bool LAPPDPaused;
 
   BoostStore *RawData = nullptr;
   BoostStore *PMTData = nullptr;
   BoostStore *MRDData = nullptr;
   BoostStore *TrigData = nullptr;
+  BoostStore *LAPPDData = nullptr;
+
   std::vector<CardData>* Cdata = nullptr;
   //std::vector<TriggerData>* Tdata = nullptr;
   TriggerData* Tdata = nullptr;
   MRDOut* Mdata = nullptr;
-
+  PsecData* Ldata = nullptr;
   int verbosity;
   int v_error=0;
   int v_warning=1;

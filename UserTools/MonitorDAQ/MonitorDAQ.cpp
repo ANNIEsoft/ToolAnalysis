@@ -867,13 +867,13 @@ void MonitorDAQ::GetVMEServices(bool is_online){
     } else {
       warning_services = false;
     }
-
+/*
     //Some cleanup
     for (int i=0;i<(int)RemoteServices.size();i++){
       delete RemoteServices.at(i);
     }
    
-  }
+  }*/
 
   bool lappd_slow_control;
   m_data->CStore.Get("LAPPDSlowControlWarning",lappd_slow_control);

@@ -211,6 +211,8 @@ class MonitorDAQ: public Tool {
   std::map<int,bool> map_warning_lappd_light;
   std::map<int,bool> map_warning_lappd_relay;
   bool warning_lappd_errors = false;
+  boost::posix_time::ptime timestamp_last_warning_diskspace_90;
+
 
   //Online stuff
   zmq::context_t *context = nullptr;

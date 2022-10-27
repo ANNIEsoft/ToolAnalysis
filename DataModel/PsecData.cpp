@@ -24,6 +24,8 @@ bool PsecData::Send(zmq::socket_t* sock)
 	int S_errorcodes = errorcodes.size();
 	int S_BoardIndex = BoardIndex.size();
 
+	std::cout<<"S1"<<std::endl;
+	
 	zmq::message_t msgV(sizeof VersionNumber);
 	std::memcpy(msgV.data(), &VersionNumber, sizeof VersionNumber);
 
@@ -55,19 +57,31 @@ bool PsecData::Send(zmq::socket_t* sock)
 
 	zmq::message_t msgF(sizeof FailedReadCounter);
 	std::memcpy(msgF.data(), &FailedReadCounter, sizeof FailedReadCounter);
-
+  std::cout<<"S2"<<std::endl;
 	sock->send(msgV,ZMQ_SNDMORE);
+	  std::cout<<"S3"<<std::endl;
 	sock->send(msgID,ZMQ_SNDMORE);
+	  std::cout<<"S4"<<std::endl;
 	sock->send(msgTime,ZMQ_SNDMORE);
+	  std::cout<<"S5"<<std::endl;
 	sock->send(msgSB,ZMQ_SNDMORE);
+	  std::cout<<"S6"<<std::endl;
 	if(S_BoardIndex>0){sock->send(msgB,ZMQ_SNDMORE);}
+	  std::cout<<"S7"<<std::endl;
 	sock->send(msgSA,ZMQ_SNDMORE);
+  std::cout<<"S8"<<std::endl;
 	if(S_AccInfoFrame>0){sock->send(msgA,ZMQ_SNDMORE);}
+	  std::cout<<"S9"<<std::endl;
 	sock->send(msgSW,ZMQ_SNDMORE);
+	  std::cout<<"S10"<<std::endl;
 	if(S_RawWaveform>0){sock->send(msgW,ZMQ_SNDMORE);}
+	  std::cout<<"S11"<<std::endl;
 	sock->send(msgSE,ZMQ_SNDMORE);
+	  std::cout<<"S12"<<std::endl;
 	if(S_errorcodes>0){sock->send(msgE,ZMQ_SNDMORE);}
+	  std::cout<<"S13"<<std::endl;
 	sock->send(msgF);
+	  std::cout<<"S14"<<std::endl;
 
 	return true;
 }

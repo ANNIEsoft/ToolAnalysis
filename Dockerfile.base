@@ -33,7 +33,7 @@ RUN yum install -y \
     git \
     bzip2-devel	\
     cvs \			
-    automake \ 		
+    automake \
     svn  \	 
     libtool \
     libxml2 \ 
@@ -48,6 +48,8 @@ RUN yum install -y \
     curl \
     curl-devel \
     osg-wn-client \
+    fftw3 \
+    fftw3-devel \
     && yum clean all \
     && rm -rf /var/cache/yum
 
@@ -62,6 +64,7 @@ Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEvent;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
+RUN chmod -R 777 /ToolAnalysis
 
 ### Open terminal
 CMD ["/bin/bash"]

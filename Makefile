@@ -12,17 +12,18 @@ ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/
 BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
-RootInclude=  -I $(ToolDAQPath)/root-6.06.08/install/include
+RootInclude= -I `root-config --incdir`
  
+
 WCSimLib= -L ToolDAQ/WCSimLib -lWCSimRoot
 WCSimInclude= -I ToolDAQ/WCSimLib/include
 
-GenieIncludeDir := $(shell genie-config --topsrcdir)
-GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
-GenieLibs= `genie-config --libs` -lxml2
+#GenieIncludeDir := $(shell genie-config --topsrcdir)
+#GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir)
+#GenieLibs= `genie-config --libs` -lxml2
 PythiaLibs= -L ToolDAQ/Pythia6Support/v6_424/lib -lPythia6
 Log4CppLibs= -L ToolDAQ/log4cpp/lib -llog4cpp
-Log4CppInclude= -I ToolDAQ/log4cpp/include/log4cpp
+Log4CppInclude= -I ToolDAQ/log4cpp/include/log4cpp/
 
 RATEventLib= -L ToolDAQ/RATEventLib/lib -lRATEvent
 RATEventInclude= -I ToolDAQ/RATEventLib/include
@@ -31,7 +32,7 @@ MrdTrackLib= -L ToolDAQ/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I ToolDAQ/MrdTrackLib/include
 
 
-RootLib=  -L $(ToolDAQPath)/root-6.06.08/install/lib `root-config --glibs` -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -m64 -lGui -lGenVector -lMinuit -lGeom -lEG -lEGPythia6 -lEve #-lGL -lGLEW -lGLU
+RootLib=  -L `root-config --libdir --glibs` -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -m64 -lGui -lGenVector -lMinuit -lGeom -lEG -lEGPythia6 -lEve #-lGL -lGLEW -lGLU
 
 RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
@@ -40,8 +41,8 @@ DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
 
-MyToolsInclude =  $(RootInclude) `python3.6-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
-MyToolsLib = -lcurl $(RootLib) `python3.6-config --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
+MyToolsInclude =  $(RootInclude) `python3-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
+MyToolsLib = -lcurl $(RootLib) `python3-config --embed --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse RemoteControl NodeDaemon

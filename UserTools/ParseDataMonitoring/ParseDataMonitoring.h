@@ -52,7 +52,9 @@ class ParseDataMonitoring: public Tool {
   string PedFileName, PedFileNameTXT;
   int DoPedSubtract;
   std::map<unsigned long, vector<int>> *PedestalValues;    
+  std::map<int, int> map_global_id;
   int Nboards;
+  std::string GlobalBoardConfig;
 
   int channel_count=0;
   map<int, std::vector<unsigned short>> data;
