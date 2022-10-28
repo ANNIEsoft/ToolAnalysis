@@ -2,8 +2,9 @@ ifndef CXXFLAGS
   CXXFLAGS = -std=c++1y -O3
 endif
 
-BoostLib= -L $(BOOST_LIB) -lboost_date_time -lboost_serialization -lboost_iostreams 
-BoostInclude= -I $(BOOST_INC)
+ToolDAQPath= ../../ToolDAQ
+BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams
+BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
 all: libRawViewer.so
 
@@ -71,16 +72,16 @@ endif
 dictionary: viewer_linkdef.hh
 	@echo "making $@"
 	$(RM) dict.* dict*.pcm
-	$(ROOTCLING) -f dict.cc -c RawViewer.h viewer_linkdef.hh
+	$(ROOTCLING) -f dict.cc -c -I ../recoANNIE -I ../../DataModel $(BoostInclude) RawViewer.h viewer_linkdef.hh
 
 dict.o: dictionary dict.cc
 	@echo "making $@"
 	$(CXX) $(CXXFLAGS) -fPIC -o $@ -I../../include -L../lib $(ROOT_CXXFLAGS) \
-	$(ROOT_LDFLAGS) -c dict.cc
+	$(ROOT_LDFLAGS) $(BoostInclude) $(BoostLib) -c dict.cc
 
 %.o: %.cc
 	@echo "making $@"
-	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include  $(BoostInclude) $(BoostLib) -o $@ -c $^
+	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include  -I ../recoANNIE -I../../DataModel $(BoostInclude) $(BoostLib) -o $@ -c $^
 
 libRawViewer.so: dict.o RawViewer.o
 	@echo "making $@"

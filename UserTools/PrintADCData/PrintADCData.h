@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <numeric>
 
 #include "Tool.h"
 #include "ADCPulse.h"
