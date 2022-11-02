@@ -253,7 +253,7 @@ bool MonitorLAPPDSC::Execute() {
 		int lappdid = vector_lappd_id.at(i_id);
 		if (map_duration[lappdid] > period_warning) {
 			//Send warning in case the time since the last LAPPD Slow Control update is > 10 minutes
-			Log("Tool MonitorLAPPDSC: SEVERE ERROR: Time since last slow control update is > 10 minutes! (LAPPD ID "+std::to_string(lappdid)+")",v_error,verbosity);
+			//Log("Tool MonitorLAPPDSC: SEVERE ERROR: Time since last slow control update is > 10 minutes! (LAPPD ID "+std::to_string(lappdid)+")",v_error,verbosity);
 			m_data->CStore.Set("LAPPDSlowControlWarning",true);
 			m_data->CStore.Set("LAPPDID",lappdid);
 		}
