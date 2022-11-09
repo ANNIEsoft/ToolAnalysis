@@ -70,15 +70,15 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	}
 	path_chankeymap = "./configfiles/LoadWCSim/Chankey_WCSimID_v7.txt";
 	get_ok = m_variables.Get("ChankeyToPMTIDMap",path_chankeymap);
-	if (get_ok){
-		ifstream file_pmtid(path_chankeymap.c_str());
+	ifstream file_pmtid(path_chankeymap.c_str());
+	if (file_pmtid.is_open()){
+		// watch out: comment or empty lines not supported here
 		while (!file_pmtid.eof()){
 			unsigned long chankey;
 			int pmtid;
 			file_pmtid >> chankey >> pmtid;
 			channelkey_to_pmtid.emplace(chankey,pmtid);
 			pmtid_to_channelkey.emplace(pmtid,chankey);
-			if (file_pmtid.eof()) break;
 		}
 
 		file_pmtid.close();
