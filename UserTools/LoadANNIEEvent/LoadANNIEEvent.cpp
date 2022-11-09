@@ -1,5 +1,6 @@
 // standard library includes
 #include <fstream>
+#include <string>
 
 // ToolAnalysis includes
 #include "LoadANNIEEvent.h"
@@ -87,9 +88,13 @@ bool LoadANNIEEvent::Execute() {
 
   int stop_the_loop = -1;
   m_data->vars.Get("StopLoop", stop_the_loop);
-  if ( stop_the_loop == 1 ) return false;
+  if ( stop_the_loop == 1 ) return true;
 
-  if (input_filenames_.size()==0) m_data->vars.Set("StopLoop",1);
+  if (input_filenames_.size()==0){
+    m_data->vars.Set("StopLoop",1);
+    Log("LoadANNIEEvent: Error! No input file names!", v_error, verbosity_);
+    return false;
+  }
 
   if (need_new_file_) {
     need_new_file_=false;
@@ -193,7 +198,15 @@ bool LoadANNIEEvent::Execute() {
      int user_evnum;
      m_data->CStore.Get("LoadEvNr",user_evnum);
      if (!global_evnr){
-       if (user_evnum < total_entries_in_file_ && user_evnum >=0) current_entry_ = user_evnum;
+       if (user_evnum < total_entries_in_file_ && user_evnum >=0){
+         current_entry_ = user_evnum;
+       } else {
+         std::string logmsg = std::string("LoadANNIEEvent error! User requested entry ") + std::to_string(user_evnum)
+                            + std::string(" out of range! There are ") + std::to_string(total_entries_in_file_)
+                            + std::string(" events in this file");
+         Log(logmsg, v_error, verbosity_);
+         return false;
+       }
      } else {
        if (user_evnum >= global_events_start.at(current_file_) && user_evnum < global_events.at(current_file_)){
          current_entry_ = user_evnum-global_events_start.at(current_file_);
@@ -203,32 +216,55 @@ bool LoadANNIEEvent::Execute() {
            ++current_file_;
            if ( current_file_ >= input_filenames_.size() ) {
              m_data->vars.Set("StopLoop", 1);
+             std::string logmsg = std::string("LoadANNIEEvent Error! User requested event number ")
+                                + std::to_string(user_evnum) + std::string(" out of range! We have ")
+                                + std::to_string(global_events.back()) + std::string(" events in total");
+             Log(logmsg, v_error, verbosity_);
+             return false;
            }
-           else {
-             current_entry_ = 0u;
-             if ( m_data->Stores.count("ANNIEEvent") ) {
-               auto* annie_event = m_data->Stores.at("ANNIEEvent");
-               if (annie_event) delete annie_event;
-               m_data->Stores["ANNIEEvent"] = new BoostStore(false,
-                 BOOST_STORE_MULTIEVENT_FORMAT);
-               std::string input_filename = input_filenames_.at(current_file_);
-               std::cout <<"Reading in current file "<<current_file_<<std::endl;
-               m_data->Stores["ANNIEEvent"]->Initialise(input_filename);
-               m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",
-                 total_entries_in_file_);
-               global_events.push_back(global_events.at(current_file_-1)+total_entries_in_file_);
-               global_events_start.push_back(global_events.at(current_file_-1));
-               if (user_evnum >= global_events_start.at(current_file_) && user_evnum < global_events.at(current_file_)){
-                 current_entry_ = user_evnum-global_events_start.at(current_file_);
-                 global_ev = user_evnum;
-                 break;
-               }
+           
+           current_entry_ = 0u;
+           if ( m_data->Stores.count("ANNIEEvent") ) {
+             auto* annie_event = m_data->Stores.at("ANNIEEvent");
+             if (annie_event) delete annie_event;
+           }
+           m_data->Stores["ANNIEEvent"] = new BoostStore(false,
+             BOOST_STORE_MULTIEVENT_FORMAT);
+           std::string input_filename = input_filenames_.at(current_file_);
+           std::cout <<"Reading in current file "<<current_file_<<std::endl;
+           m_data->Stores["ANNIEEvent"]->Initialise(input_filename);
+           m_data->Stores["ANNIEEvent"]->Header->Get("TotalEntries",
+             total_entries_in_file_);
+           global_events.push_back(global_events.at(current_file_-1)+total_entries_in_file_);
+           global_events_start.push_back(global_events.at(current_file_-1));
+           if (user_evnum >= global_events_start.at(current_file_) && user_evnum < global_events.at(current_file_)){
+             current_entry_ = user_evnum-global_events_start.at(current_file_);
+             global_ev = user_evnum;
+             
+             if (load_orphan_store){
+                 // new file, new oprhan store. Delete any existing one
+                 if(m_data->Stores.count("OrphanStore")){
+                   auto* annie_orphans = m_data->Stores.at("OrphanStore");
+                   if (annie_orphans) delete annie_orphans;
+                 }
+                 // make and populate a new one
+                 BoostStore *theOrphanStore = new BoostStore(false, BOOST_STORE_MULTIEVENT_FORMAT);
+                 if (FileFormat == "CombinedStore"){
+                   ProcessedFileStore->Get("OrphanStore",*theOrphanStore);
+                 } else if (FileFormat == "SeparateStores"){
+                   std::string input_filename_orphan = input_filenames_orphan_.at(current_file_);
+                   theOrphanStore->Initialise(input_filename_orphan);
+                 }
+                 m_data->Stores["OrphanStore"] = theOrphanStore;
+                 m_data->Stores.at("OrphanStore")->Header->Get("TotalEntries", total_orphans_in_file_);
              }
-           }
-         }
-       }
-     }
-   }
+             
+             break;
+           } // end if this file contains the user's requested event
+         } // end while loop over files to scan for user's requested global event number
+       }  // end else the user's requested global event was not in the presently loaded file
+     }  // end else we are processing multiple files (i.e global_evnr==true)
+   }  // end if user has specified the event number to load
 
   Log("ANNIEEvent store has "+std::to_string(total_entries_in_file_)+" entries",v_debug,verbosity_);
   Log("Loading entry " + std::to_string(current_entry_) + " from the"
