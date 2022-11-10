@@ -1,5 +1,8 @@
 #ignore gedit backup files:
 *~
+NodeDaemon
+RemoteControl
 Analyse
 ToolDAQ
 *.o
+*.root

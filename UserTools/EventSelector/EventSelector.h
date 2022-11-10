@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <bitset>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
@@ -47,7 +48,10 @@ class EventSelector: public Tool {
    kFlagMCEnergyCut   = 0x4000, //16384
    kFlagPMTMRDCoinc   = 0x8000, //32768
    kFlagNoVeto        = 0x10000, //65536
-   kFlagVeto        = 0x20000 //131072
+   kFlagVeto        = 0x20000, //131072
+   kFlagTrigger      = 0x40000,
+   kFlagThroughGoing     = 0x80000,
+   kFlagRecoPDG        = 0x1000000,
   } EventFlags_t;
 
  private:
@@ -138,6 +142,7 @@ class EventSelector: public Tool {
   /// the MRD.
   bool EventSelectionByMCProjectedMRDHit();
 
+
   /// \brief Event selection by PMT/MRD time coincidence
   ////
   /// This event selection criteria requires clustered events in tank & MRD
@@ -150,7 +155,27 @@ class EventSelector: public Tool {
   /// This event selection criteria requires that no veto paddles
   /// of the Front Muon Veto fired during the event
   bool EventSelectionByVetoCut();
-  
+ 
+  /// \brief Event selection by requiring specific triggerword
+  ////
+  /// This event selection criteria requires that the specified triggerword
+  /// is present for this event
+  bool EventSelectionByTrigger(int current_trigger, int reference_trigger);
+
+  /// \brief Event selection for through-going muon candidates
+  ///
+  /// This event selection criterion flags events with a through-going
+  /// muon candidate (FMV + tank + MRD)
+  bool EventSelectionByThroughGoing();
+
+  /// \brief Helper functions to get FMV intersections with muon path
+  bool FindPaddleChankey(double x, double y, int layer, unsigned long &chankey);
+  bool FindPaddleIntersection(std::vector<double> startpos, std::vector<double> endpos, double &x, double &y, double z);
+
+  /// \brief Event selection for reconstructed pdg values (currently just neutron)
+  //
+  bool EventSelectionByRecoPDG(int recoPDG, std::vector<double> & vector_reco_pdg);
+
   /// \brief MC entry number
   uint64_t fMCEventNum;
   
@@ -179,6 +204,7 @@ class EventSelector: public Tool {
   std::vector<double> *vec_pmtclusters_charge = nullptr;
   std::vector<double> *vec_pmtclusters_time = nullptr;
   std::vector<double> *vec_mrdclusters_time = nullptr;
+  std::map<int,double>* ChannelNumToTankPMTSPEChargeMap = nullptr;   ///< PMT SPE Gain Map
 
   //verbosity initialization
   int verbosity=1;
@@ -206,10 +232,18 @@ class EventSelector: public Tool {
   bool fPromptTrigOnly = true;
   bool fNoVetoCut = false;
   bool fVetoCut = false;
+  bool fThroughGoing = false;
   bool fEventCutStatus;
   bool fIsMC; 
+  int fTriggerWord;
+  int fRecoPDG;
 
-  
+  bool get_mrd = false;
+  double pmt_time = 0; 
+  double pmtmrd_coinc_min = 0; 
+  double pmtmrd_coinc_max = 0;
+  int n_hits = 0; 
+ 
   bool fSaveStatusToStore = true;
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int v_error=0;

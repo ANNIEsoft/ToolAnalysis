@@ -1,0 +1,19 @@
+### General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on 
+NUM_VECTOR_PPS 16 #Fixed PPS vector size
+NUM_VECTOR_DATA 7795 #Fixed DATA vector size
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+Folder ../Data/LAPPD40_PortDarkBox_LED_HiStat+FakeDAQ_2022-02-25/
+
+### LAPPDPlotWaveForms
+requireT0signal 0
+SaveByChannel 1
+PlotWavLabel ABLSLAPPDData
+outfile WaveForms_rawblsub.root
+NHistos 200
+SaveSingleStrip 0
+SingleStripNo 20
+

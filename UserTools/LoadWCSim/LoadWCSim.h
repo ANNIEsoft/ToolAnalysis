@@ -52,7 +52,7 @@ class LoadWCSim: public Tool {
 	bool Initialise(std::string configfile,DataModel &data);
 	bool Execute();
 	bool Finalise();
-        std::vector<int> LoadPMTMask(std::string path_to_pmtmask);
+	std::vector<int> LoadPMTMask(std::string path_to_pmtmask);
 	
 
 	private:
@@ -91,7 +91,6 @@ class LoadWCSim: public Tool {
 
 	//Masked PMTs vector
 	std::vector<int> masked_ids;
-	
 
 	// For constructing ToolChain Geometry
 	//////////////////////////////////////

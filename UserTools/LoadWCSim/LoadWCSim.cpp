@@ -63,7 +63,8 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: No Triggertype specified. Assuming TriggerType = Beam",v_warning,verbosity);
 		Triggertype = "Beam";	//other options: Cosmic / No Loopback
 	}
-	get_ok = m_variables.Get("TriggerWord",TriggerWord);
+
+  get_ok = m_variables.Get("TriggerWord",TriggerWord);
 	if (not get_ok){
 		Log("LoadWCSim Tool: No Triggerword specified. Assuming TriggerWord = 5 (Beam)",v_warning,verbosity);
 		TriggerWord = 5;
@@ -90,13 +91,14 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
                  Log("LoadWCSim Tool: No RunType specified. Assuming RunType = 3 (Beam)",v_warning,verbosity);
                  RunType = 3;
         }
-        get_ok = m_variables.Get("PMTMask",PMTMask);
-        if (not get_ok){
-                Log("LoadWCSim Tool: Assuming to use no PMTMask",v_warning,verbosity);
-                PMTMask = "None";
-        }
 
-	MCEventNum=0;
+	get_ok = m_variables.Get("PMTMask",PMTMask);
+	if (not get_ok){
+		Log("LoadWCSim Tool: Assuming to use no PMTMask",v_warning,verbosity);
+		PMTMask = "None";
+	}
+
+  MCEventNum=0;
 	get_ok = m_variables.Get("FileStartOffset",MCEventNum);
 	
 	// put version in the CStore for downstream tools
@@ -220,9 +222,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	
-        if (PMTMask != "None"){
-                masked_ids = this->LoadPMTMask(PMTMask);
-        }
+	if (PMTMask != "None"){
+		masked_ids = this->LoadPMTMask(PMTMask);
+	}
 
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
@@ -240,7 +242,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	MCHits = new std::map<unsigned long,std::vector<MCHit>>;
 	TDCData = new std::map<unsigned long,std::vector<MCHit>>;
 	EventTime = new TimeClass();
-	TriggerClass beamtrigger("beam",true,0);
+	TriggerClass beamtrigger("beam",5,0,true,0);
 	TriggerData = new std::vector<TriggerClass>{beamtrigger}; // FIXME ? one trigger and resetting time is ok?
 	
 	// we'll put these in the CStore: so don't delete them in Finalise! It'll get handled by the Store
@@ -290,7 +292,7 @@ bool LoadWCSim::Execute(){
 			}
 		}
 		// Pre-load entry so we can stop the loop if it this was the last one in the chain
-		if(MCEventNum>=MaxEntries && MaxEntries>0){
+		if((int)MCEventNum>=MaxEntries && MaxEntries>0){
 			std::cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
 			m_data->vars.Set("StopLoop",1);
 		} else {
@@ -317,6 +319,7 @@ bool LoadWCSim::Execute(){
 	}
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
+
 	MCHits->clear();
 	TDCData->clear();
 	MCNeutCap.clear();
@@ -851,7 +854,7 @@ bool LoadWCSim::Execute(){
 	}
 	// Pre-load next entry so we can stop the loop if it this was the last one in the chain
 	if(newentry){  // if next loop is processing the next trigger in the same entry, no need to re-load it
-		if(MCEventNum>=MaxEntries && MaxEntries>0){
+		if((int)MCEventNum>=MaxEntries && MaxEntries>0){
 			cout<<"LoadWCSim Tool: Reached max entries specified in config file, terminating ToolChain"<<endl;
 			m_data->vars.Set("StopLoop",1);
 		} else {
@@ -1356,7 +1359,7 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 		int tubeid = digihit->GetTubeId();
 		// loop over the photons in this digit
 		std::vector<int> truephotonindices = digihit->GetPhotonIds();
-		for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
+		for(int truephoton=0; truephoton<(int)truephotonindices.size(); truephoton++){
 			int thephotonsid = truephotonindices.at(truephoton);
 			// get the index of the photon CherenkovHit object in the TClonesArray
 			if(WCSimVersion<2){
@@ -1417,7 +1420,7 @@ std::vector<int> LoadWCSim::GetHitParentIds(WCSimRootCherenkovDigiHit* digihit, 
 	
 	// loop over the photons in this digit
 	std::vector<int> truephotonindices = digihit->GetPhotonIds();
-	for(int truephoton=0; truephoton<truephotonindices.size(); truephoton++){
+	for(int truephoton=0; truephoton<(int)truephotonindices.size(); truephoton++){
 		int thephotonsid = truephotonindices.at(truephoton);
 		// get the indices of the digit's photon CherenkovHitTime objects
 		if(WCSimVersion<2){
@@ -1466,14 +1469,14 @@ void LoadWCSim::BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig){
 
 std::vector<int> LoadWCSim::LoadPMTMask(std::string path_to_pmtmask){
 
-        std::vector<int> mask_vector;
-        int temp_id;
-        ifstream maskfile(path_to_pmtmask.c_str());
-        while (!maskfile.eof()){
-                maskfile >> temp_id;
-                mask_vector.push_back(temp_id);
-                if (maskfile.eof()) break;
-        }
+	std::vector<int> mask_vector;
+	int temp_id;
+	ifstream maskfile(path_to_pmtmask.c_str());
+	while (!maskfile.eof()){
+		maskfile >> temp_id;
+		mask_vector.push_back(temp_id);
+		if (maskfile.eof()) break;
+	}
 
-        return mask_vector;
+	return mask_vector;
 }

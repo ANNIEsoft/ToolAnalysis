@@ -12,55 +12,82 @@ bool LAPPDFilter::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  bool isFiltered = true;
-  m_data->Stores["ANNIEEvent"]->Header->Set("isFiltered",isFiltered);
+  //bool isFiltered = true;
+  //m_data->Stores["ANNIEEvent"]->Header->Set("isFiltered",isFiltered);
 
-  TString FIWL;
+    TString FIWL;
+    TString RFIWL;
+    TString BLSFIWL;
   //FilterInputWavLabel;
-  m_variables.Get("FilterInputWavLabel",FIWL);
-  FilterInputWavLabel = FIWL;
-  m_variables.Get("Nsamples", DimSize);
-  m_variables.Get("CutoffFrequency", CutoffFrequency);
-  m_variables.Get("SampleSize",Deltat);
-  return true;
+    m_variables.Get("RawFilterInputWavLabel", RFIWL);
+    RawFilterInputWavLabel= RFIWL;
+    m_variables.Get("BLSFilterInputWavLabel", BLSFIWL);
+    BLSFilterInputWavLabel= BLSFIWL;
+    m_variables.Get("FilterInputWavLabel",FIWL);
+    FilterInputWavLabel = FIWL;
+    //m_variables.Get("Nsamples", DimSize);
+    m_variables.Get("CutoffFrequency", CutoffFrequency);
+
+    m_data->Stores["ANNIEEvent"]->Get("SampleSize",Deltat);
+    m_data->Stores["ANNIEEvent"]->Get("Nsamples", DimSize);
+    cout<<Deltat<<" in Filter"<<" "<<DimSize<<endl;
+    return true;
 }
 
 
 bool LAPPDFilter::Execute(){
+    bool isFiltered=true;
+    m_data->Stores["ANNIEEvent"]->Set("isFiltered",isFiltered);
 
-  Waveform<double> bwav;
+    //cout<<isFiltered<<"kjhjkhkhkhkj"<<endl;
+    bool isBLsub;
+    m_data->Stores["ANNIEEvent"]->Get("isBLsubtracted",isBLsub);
 
-  // get raw lappd data
-  std::map<int,vector<Waveform<double>>> rawlappddata;
 
-  //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",rawlappddata);
-  m_data->Stores["ANNIEEvent"]->Get(FilterInputWavLabel,rawlappddata);
+    Waveform<double> bwav;
 
-  // the filtered Waveform
-  std::map<int,vector<Waveform<double>>> filteredlappddata;
+    // get raw lappd data
+    std::map<unsigned long,vector<Waveform<double>>> lappddata;
 
-  map <int, vector<Waveform<double>>> :: iterator itr;
-  for (itr = rawlappddata.begin(); itr != rawlappddata.end(); ++itr){
-    int channelno = itr->first;
-    vector<Waveform<double>> Vwavs = itr->second;
-    vector<Waveform<double>> Vfwavs;
-
-    //loop over all Waveforms
-    for(int i=0; i<Vwavs.size(); i++){
-
-        Waveform<double> bwav = Vwavs.at(i);
-        Waveform<double> filtwav = Waveform_FFT(bwav);
-        Vfwavs.push_back(filtwav);
-      }
-
-      filteredlappddata.insert(pair <int,vector<Waveform<double>>> (channelno,Vfwavs));
+    //m_data->Stores["ANNIEEvent"]->Get("RawLAPPDData",lappddata);
+    if(isBLsub==false)
+    {
+        m_data->Stores["ANNIEEvent"]->Get(RawFilterInputWavLabel,lappddata);
+        //cout<<"I'm in the filt if isBLSsub false"<<endl;
     }
+    else if(isBLsub==true)
+    {
+       m_data->Stores["ANNIEEvent"]->Get(BLSFilterInputWavLabel,lappddata);
+    }
+    //cout<<"In FilterInputWavLabel "<< RawFilterInputWavLabel<<" "<<BLSFilterInputWavLabel<<" "<<lappddata.size()<<endl;
+    // the filtered Waveform
+    std::map<unsigned long,vector<Waveform<double>>> filteredlappddata;
+    // cout<<"In LAPPDFilter "<< rawlappddata.size()<<endl;
+    map <unsigned long, vector<Waveform<double>>> :: iterator itr;
+    for (itr = lappddata.begin(); itr != lappddata.end(); ++itr){
+      unsigned long channelno = itr->first;
+        //cout<<"Filter channel= "<<channelno<<endl;
+      vector<Waveform<double>> Vwavs = itr->second;
+      vector<Waveform<double>> Vfwavs;
 
-  m_data->Stores["ANNIEEvent"]->Set("FiltLAPPDData",filteredlappddata);
+      //loop over all Waveforms
+      for(int i=0; i<Vwavs.size(); i++){
+        // cout<<"LOOPING WAVEFORMS!!"<<endl;
+            Waveform<double> bwav = Vwavs.at(i);
+            Waveform<double> filtwav = Waveform_FFT(bwav);
+            //cout<<"in filter, nbins: "<<bwav.GetSamples()->size()<<endl;
+            Vfwavs.push_back(filtwav);
+        }
 
+        filteredlappddata.insert(pair <unsigned long,vector<Waveform<double>>>    (channelno,Vfwavs));
+        }
 
-  return true;
-}
+      m_data->Stores["ANNIEEvent"]->Set("FiltLAPPDData",filteredlappddata);
+
+      //cout<<"End of LAPPDFilter "<<filteredlappddata.size()<<endl;
+
+      return true;
+  }
 
 
 bool LAPPDFilter::Finalise(){

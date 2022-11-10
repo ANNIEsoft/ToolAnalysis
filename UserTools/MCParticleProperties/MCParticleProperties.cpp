@@ -77,7 +77,7 @@ bool MCParticleProperties::Execute(){
 	// Loop over reconstructed tracks and calculate additional properties
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Log("MCParticleProperties Tool: Looping over MCParticles",v_debug,verbosity);
-	for(int tracki=0; tracki<MCParticles->size(); tracki++){
+	for(int tracki=0; tracki<(int)MCParticles->size(); tracki++){
 		Log("MCParticleProperties Tool: Processing MCParticle "+to_string(tracki),v_debug,verbosity);
 		// Get the track details
 		MCParticle* nextparticle = &MCParticles->at(tracki);
@@ -106,7 +106,7 @@ bool MCParticleProperties::Execute(){
 				isinfiducialvol=true;
 		}
 		nextparticle->SetStartsInFiducialVolume(isinfiducialvol);
-		
+
 		//====================================================================================================
 		// Estimate MRD penetration TODO add mrd entry/exit points to WCSim Tracks?
 		//====================================================================================================
@@ -369,15 +369,15 @@ bool MCParticleProperties::Execute(){
 			cout<<"c.f. max possible tank track length is "<<maxtanktracklength<<endl;
 		}
 		if(atracklengthintank > maxtanktracklength){
-			cerr<<"MCParticleProperties Tool: Track length is impossibly long!"<<endl;
+			Log("MCParticleProperties Tool: Track length is impossibly long!",v_error,verbosity);
 			//return false;
 		}
 		if(atracklengthintank > differencevector.Mag()){
-			cerr<<"MCParticleProperties Tool: Track length in tank is greater than total track length"<<endl;
+			Log("MCParticleProperties Tool: Track length in tank is greater than total track length.",v_warning,verbosity); //This seems to happen all the time for gammas/protons with short tracks--> reduce verbosity to warning
 			//return false;
 		}
 		if(TMath::IsNaN(atracklengthintank)){
-			cerr<<"MCParticleProperties Tool: NaN RESULT FROM MU TRACK LENGTH IN TANK?!"<<endl;
+			Log("MCParticleProperties Tool: NaN RESULT FROM MU TRACK LENGTH IN TANK?!",v_error,verbosity);
 			//return false;
 		}
 		
@@ -651,7 +651,8 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 	Position differencevector = (stopvertex-startvertex).Unit();
 	
 	// first check for the track being in the z plane, as this will produce infinite gradients
-	if(abs(differencevector.Z())<0.1){
+	//if(abs(differencevector.Z())<0.1){	//0.1 seems to be too high of a threshold, happens for a lot of tracks (normalized unit vector)
+        if(abs(differencevector.Z())<0.001){ 
 		// we have a simpler case: the tank is simply a box of height tankheight
 		// and width = length of a chord at the given z
 		if(verbose){
@@ -757,7 +758,7 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 					}
 				} // else track did not start outside tank x bounds: no wall entry
 				
-				if(!entryfound) cerr<<"could not find track entry point!?"<<endl;
+				if(!entryfound) Log("MCParticleProperties tool: Could not find track entry point!? ("+std::to_string(startvertex.X())+","+std::to_string(startvertex.Y())+","+std::to_string(startvertex.Z())+") --> ("+std::to_string(stopvertex.X())+","+std::to_string(stopvertex.Y())+","+std::to_string(stopvertex.Z())+")",v_error,verbosity);
 				else Hit2.SetZ(startvertex.Z());
 				if(verbose){
 					if(entryfound) cout<<"setting entry Z to "<<(Hit2.Z()-tank_start-tank_radius)<<endl;
@@ -799,7 +800,7 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 					}
 				} // else track did not start outside tank y bounds: no wall exit
 				
-				if(!exitfound) cerr<<"could not find track exit point!?"<<endl;
+				if(!exitfound) Log("MCParticleProperties tool: Could not find track exit point!? ("+std::to_string(startvertex.X())+","+std::to_string(startvertex.Y())+","+std::to_string(startvertex.Z())+") --> ("+std::to_string(stopvertex.X())+","+std::to_string(stopvertex.Y())+","+std::to_string(stopvertex.Z())+")",v_error,verbosity);
 				else Hit.SetZ(startvertex.Z());
 				if(verbose){
 					if(exitfound) cout<<"setting exit Z to "<<(Hit.Z()-tank_start-tank_radius)<<endl;

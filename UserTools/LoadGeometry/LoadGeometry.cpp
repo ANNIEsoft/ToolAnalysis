@@ -25,6 +25,10 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DetectorGeoFile", fDetectorGeoFile);
   m_variables.Get("LAPPDChannelCount", LAPPD_channel_count);
 
+  std::cout << "Filepath was... " << fDetectorGeoFile << std::endl;
+  std::cout << "Filepath was... " << fLAPPDGeoFile << std::endl;
+
+
   //Check files exist
   if(!this->FileExists(fDetectorGeoFile)){
      Log("LoadGeometry Tool: File for Detector Geometry does not exist!",v_error,verbosity);
@@ -53,7 +57,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
     if (verbosity > 0) std::cout << "Filepath was... " << fTankPMTGainFile << std::endl;
     return false;
   }
-  
+
   if(!this->FileExists(fAuxChannelFile)){
     Log("LoadGeometry Tool: File for Auxiliary Channels does not exist!",v_error,verbosity);
     if (verbosity > 0) std::cout << "Filepath was... " << fAuxChannelFile << std::endl;
@@ -68,6 +72,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   ChannelNumToTankPMTCrateSpaceMap = new std::map<int,std::vector<int>>;
   AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   AuxChannelNumToTypeMap = new std::map<int,std::string>;
+  AuxChannelNumToCrateSpaceMap = new std::map<int,std::vector<int>>;
   LAPPDCrateSpaceToChannelNumMap = new std::map<std::vector<unsigned int>,int>;
 
   //Initialize the geometry using the geometry CSV file entries
@@ -79,7 +84,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   //Load TankPMT Geometry Detector/Channel Information
   this->LoadTankPMTDetectors();
 
-  //Load TankPMT charge to PE conversion 
+  //Load TankPMT charge to PE conversion
   this->LoadTankPMTGains();
 
   //Load auxiliary and spare channels
@@ -96,6 +101,7 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
   m_data->CStore.Set("ChannelNumToTankPMTSPEChargeMap",ChannelNumToTankPMTSPEChargeMap);
   m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
+  m_data->CStore.Set("AuxChannelNumToCrateSpaceMap",AuxChannelNumToCrateSpaceMap);
   m_data->CStore.Set("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
   m_data->CStore.Set("LAPPDCrateSpaceToChannelNumMap",LAPPDCrateSpaceToChannelNumMap);
    //AnnieGeometry->GetChannel(0); // trigger InitChannelMap
@@ -341,7 +347,7 @@ bool LoadGeometry::ParseMRDDataEntry(std::vector<std::string> SpecLine,
                std::pair<double,double>{x_center/100.-(x_width/200.), x_center/100.+(x_width/200.)},
                std::pair<double,double>{y_center/100.-(y_width/200.), y_center/100.+(y_width/200.)},
                std::pair<double,double>{z_center/100.-(z_width/200.), z_center/100.+(z_width/200.)});
-  
+
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),
                       -1, // stripside
@@ -456,6 +462,12 @@ bool LoadGeometry::ParseAuxChannelDataEntry(std::vector<std::string> SpecLine,
     AuxCrateSpaceToChannelNumMap->emplace(crate_map, channel_num);
   } else {
     Log("LoadGeometry Tool: ERROR: Tried assigning an Auxiliary Channel channel_num to a crate space already defined!!! ",v_error, verbosity);
+    Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
+  }
+  if(AuxChannelNumToCrateSpaceMap->count(channel_num)==0){
+    AuxChannelNumToCrateSpaceMap->emplace(channel_num,crate_map);
+  } else {
+    Log("LoadGeometry Tool: ERROR: Tried assigning a crate space to an Auxiliary Channel already defined!!! ",v_error, verbosity);
     Log("LoadGeometry Tool: ERROR DETAILS: Signal Crate = "+std::to_string(signal_crate)+", Signal Slot = "+std::to_string(signal_slot)+", Signal Channel = "+std::to_string(signal_channel),v_error,verbosity);
   }
   if(AuxChannelNumToTypeMap->count(channel_num)==0){
@@ -753,9 +765,12 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
     if (LAPPDLegendEntries.at(i) == "channel_status") channel_status = svalue;
   }
 
+  //cout<<"ASWEEWWTTUYUY "<<detector_num<<" "<<channel_strip_num<<" "<<channel_num<<" "<<channel_status<<endl;
+
   if(verbosity>4) std::cout << "Filling a LAPPD data line into Detector/Channel classes" << std::endl;
   if(detector_num != detector_num_store){
   detectorstatus detstat = detectorstatus::OFF;
+
   if(detector_status == "OFF"){
     detstat = detectorstatus::OFF;
     }
@@ -784,6 +799,7 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
   detector_num_store = detector_num;
   }
 
+
   channelstatus channelstat = channelstatus::OFF;
   if(channel_status == "OFF"){
       channelstat = channelstatus::OFF;
@@ -795,9 +811,10 @@ bool LoadGeometry::ParseLAPPDDataEntry(std::vector<std::string> SpecLine,
       channelstat = channelstatus::UNSTABLE;
       }
   else{
-  std::cerr << "The chosen channel status isn't available!!!" << std::endl;
+  //std::cerr << "The chosen channel status isn't available!!!" << std::endl;
       }
-  Channel lappdchannel(464+channel_num,
+//  Channel lappdchannel(464+channel_num,
+  Channel lappdchannel(1000+channel_num,
                       Position(channel_position_x,
                                channel_position_y,
                                channel_position_z),

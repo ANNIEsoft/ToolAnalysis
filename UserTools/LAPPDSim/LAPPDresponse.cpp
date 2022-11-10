@@ -152,6 +152,20 @@ void LAPPDresponse::AddSinglePhotonTrace(double trans, double para, double time)
 }
 
 
+int LAPPDresponse::TriggerSim(double threshold)
+{
+
+return 1;
+}
+
+
+Waveform<double> LAPPDresponse::GetTraceTrigger(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise)
+{
+  Waveform<double> wav_trace;
+
+  return wav_trace;
+}
+
 Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double samplesize, int numsamples, double thenoise)
 {
 
@@ -182,7 +196,7 @@ Waveform<double> LAPPDresponse::GetTrace(int CHnumber, double starttime, double 
 
     //if there are pulses on the strip, loop over the N pulses on that strip
 	std::vector<LAPPDPulse> tempoVector = LAPPDPulseCluster.at(CHnumber);   //SD
-    for(int k=0; k<tempoVector.size(); k++){           //SD
+    for(int k=0; k<(int)tempoVector.size(); k++){           //SD
       //  for(int k=0; k<4; k++){
 
 
