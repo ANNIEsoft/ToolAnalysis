@@ -85,6 +85,7 @@ class DataSummary: public Tool {
 	uint32_t EventNumber;             // EventNumber - or use global? local?
 	uint64_t CTCtimestamp;            // CTCTimestamp
 	uint64_t PMTtimestamp;            // EventTimeTank
+	uint64_t LAPPDtimestamp;            // EventTimeLAPPD
 	TimeClass mrd_timeclass;          // EventTime in ANNIEEvent
 	uint64_t MRDtimestamp;            // <need to convert from mrd_timeclass>
 	std::map<std::string,int> MRDLoopbackTDC; // map of loopback type string to TDCVal
@@ -99,6 +100,7 @@ class DataSummary: public Tool {
 	bool data_ctc;			// Does the event include CTC info?
 	bool data_tank;			// Does the event include Tank data?
 	bool data_mrd;			// Does the event include MRD data?
+	bool data_lappd;			// Does the event include LAPPD data?
 	bool window_is_extended = false;   // Was the window an extended window?
 	int size_of_window = 2000;	//The size of the acquisition window (in us)
 	std::vector<int> window_sizes;	//ADC acquisition sizes for all recorded channels
@@ -108,14 +110,17 @@ class DataSummary: public Tool {
 	ULong64_t CTCtimestamp_tree;
 	ULong64_t PMTtimestamp_tree;
 	ULong64_t MRDtimestamp_tree;	
+	ULong64_t LAPPDtimestamp_tree;	
 	ULong64_t BeamLoopbackTimestamp_tree;
 	ULong64_t CosmicLoopbackTimestamp_tree;
 	double CTCtimestamp_double;
 	double PMTtimestamp_double;
 	double MRDtimestamp_double;
+	double LAPPDtimestamp_double;
 	double CTCtimestamp_sec;
 	double PMTtimestamp_sec;
 	double MRDtimestamp_sec;
+	double LAPPDtimestamp_sec;
 	ULong64_t orphantimestamp_tree;
 	double orphantimestamp_double;
 	double orphantimestamp_sec;

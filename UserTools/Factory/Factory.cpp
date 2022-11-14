@@ -134,6 +134,9 @@ if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
 
 if (tool=="EventClassification") ret=new EventClassification;
 if (tool=="DataSummary") ret=new DataSummary;
+if (tool=="MaxPEPlots") ret=new MaxPEPlots;
+if (tool=="StoreDecodedTimestamps") ret=new StoreDecodedTimestamps;
+if (tool=="PlotDecodedTimestamps") ret=new PlotDecodedTimestamps;
 if (tool=="MonitorDAQ") ret=new MonitorDAQ;
 if (tool=="MonitorSimReceiveLAPPD") ret=new MonitorSimReceiveLAPPD;
 if (tool=="MonitorLAPPDSC") ret=new MonitorLAPPDSC;

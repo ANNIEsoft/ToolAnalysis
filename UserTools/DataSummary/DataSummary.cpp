@@ -111,6 +111,7 @@ bool DataSummary::Execute(){
 		// variables we can directly retrieve
 		ANNIEEvent->Get("EventNumber",EventNumber);
 		ANNIEEvent->Get("EventTimeTank",PMTtimestamp);
+		ANNIEEvent->Get("EventTimeLAPPD",LAPPDtimestamp);
 		ANNIEEvent->Get("CTCTimestamp",CTCtimestamp);
 		ANNIEEvent->Get("EventTimeMRD",mrd_timeclass);       // convertme to MRDtimestamp
 		ANNIEEvent->Get("TriggerWord",TriggerWord);       // convert to TriggerTypeString
@@ -170,17 +171,21 @@ bool DataSummary::Execute(){
   		}
 
 		// calculated variables
-		MRDtimestamp = mrd_timeclass.GetNs();
+		MRDtimestamp = (uint64_t) mrd_timeclass.GetNs();
+		std::cout <<"MRD_timestamp: "<<MRDtimestamp<<std::endl;
 
 		PMTtimestamp_tree = (ULong64_t) PMTtimestamp;
 		CTCtimestamp_tree = (ULong64_t) CTCtimestamp;
 		MRDtimestamp_tree = (ULong64_t) MRDtimestamp;
+		LAPPDtimestamp_tree = (ULong64_t) LAPPDtimestamp;
 		PMTtimestamp_double = (double) PMTtimestamp_tree;
 		CTCtimestamp_double = (double) CTCtimestamp_tree;
 		MRDtimestamp_double = (double) MRDtimestamp_tree;
+		LAPPDtimestamp_double = (double) LAPPDtimestamp_tree;
 		PMTtimestamp_sec = (PMTtimestamp_double)/(1.E9);
 		MRDtimestamp_sec = (MRDtimestamp_double)/(1.E9);
 		CTCtimestamp_sec = (CTCtimestamp_double)/(1.E9);
+		LAPPDtimestamp_sec = (LAPPDtimestamp_double)/(1.E9);
 		trigword_ext = false;
 		trigword_ext_cc = false;
 		trigword_ext_nc = false;
@@ -216,9 +221,11 @@ bool DataSummary::Execute(){
 		data_ctc = false;
 		data_tank = false;
 		data_mrd = false;
+		data_lappd = false;
 		if (datastreams["CTC"]==1) data_ctc = true;
 		if (datastreams["Tank"]==1) data_tank = true;
 		if (datastreams["MRD"]==1) data_mrd = true;
+		if (datastreams["LAPPD"]==1) data_lappd = true;
 
 		Log("DataSummary Tool: Filling Event tree",v_debug,verbosity);
 		outtree->Fill();
@@ -553,11 +560,10 @@ bool DataSummary::LoadNextOrphanStoreEntry(){
 		// not a new file, still entries to process
 		return OrphanStore->GetEntry(localorphan);
 	} else {
-	        // else no more orphans, but we didn't load a new file
-	        // because there are still ANNIEEvents to process
-	        return false;
-	}
+	 // else no more orphans, but we didn't load a new file
+	  // because there are still ANNIEEvents to process
 	return false;
+	}
 }
 
 bool DataSummary::LoadNextFile(){
@@ -684,12 +690,15 @@ bool DataSummary::CreateOutputFile(){
 	outtree->Branch("CTCTimestamp",&CTCtimestamp_tree);
 	outtree->Branch("PMTTimestamp",&PMTtimestamp_tree);
 	outtree->Branch("MRDTimestamp",&MRDtimestamp_tree);
+	outtree->Branch("LAPPDTimestamp",&LAPPDtimestamp_tree);
 	outtree->Branch("CTCTimestamp_double",&CTCtimestamp_double);
 	outtree->Branch("PMTTimestamp_double",&PMTtimestamp_double);
 	outtree->Branch("MRDTimestamp_double",&MRDtimestamp_double);
+	outtree->Branch("LAPPDTimestamp_double",&LAPPDtimestamp_double);
 	outtree->Branch("CTCTimestamp_sec",&CTCtimestamp_sec);
 	outtree->Branch("PMTTimestamp_sec",&PMTtimestamp_sec);
 	outtree->Branch("MRDTimestamp_sec",&MRDtimestamp_sec);
+	outtree->Branch("LAPPDTimestamp_sec",&LAPPDtimestamp_sec);
 	outtree->Branch("BeamLoopbackTimestamp",&BeamLoopbackTimestamp_tree);
 	outtree->Branch("CosmicLoopbackTimestamp",&CosmicLoopbackTimestamp_tree);
 	outtree->Branch("SystemsPresent",&SystemsPresent);
@@ -697,6 +706,7 @@ bool DataSummary::CreateOutputFile(){
 	outtree->Branch("DataCTC",&data_ctc);
 	outtree->Branch("DataTank",&data_tank);
 	outtree->Branch("DataMRD",&data_mrd);
+	outtree->Branch("DataLAPPD",&data_lappd);
 	outtree->Branch("ExtendedWindow",&window_is_extended);
 	outtree->Branch("WindowSize",&size_of_window);
 	outtree->Branch("AllWindowSizes",&window_sizes);
@@ -706,6 +716,7 @@ bool DataSummary::CreateOutputFile(){
 	outtree->Branch("TrigExtendedNC",&trigword_ext_nc);
 	outtree->SetAlias("CtcToTankTDiff","CTCTimestamp_double-PMTTimestamp_double");
 	outtree->SetAlias("CtcToMrdTDiff","CTCTimestamp_double-MRDTimestamp_double");
+	outtree->SetAlias("CtcToLappdTDiff","CTCTimestamp_double-LAPPDTimestamp_double");
 	outtree->SetAlias("TankToMrdTDiff","PMTTimestamp_double-MRDTimestamp_double");
 	outtree->SetAlias("CtcToBeamLoopbackTDiff","CTCTimestamp_double-BeamLoopbackTimestamp");
 	outtree->SetAlias("CtcToCosmicLoopbackTDiff","CTCTimestamp_double-CosmicLoopbackTimestamp");
@@ -720,6 +731,7 @@ bool DataSummary::CreateOutputFile(){
 	outtree2->Branch("OrphanChannels",&orphanchannels_combined);
 	outtree2->Branch("OrphanMinTDiff",&orphanmintdiff);
 	outtree2->Branch("OrphanTrigWord",&orphantrigword);
+
 
 	return true;
 }
@@ -764,7 +776,8 @@ bool DataSummary::CreatePlots(){
 	std::cout <<"Time diff plots"<<std::endl;
 	AddTDiffPlots();
 	
-	return true;	
+	return true;
+
 }
 
 bool DataSummary::AddRatePlots(int nbins){
@@ -797,6 +810,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	outtree->Draw("PMTTimestamp_double/(1.E9)>>tank_rate","PMTTimestamp>0","goff");
 	TH1D* mrd_rate = new TH1D("mrd_rate","MRD Rate",nbins,t1,t2);
 	outtree->Draw("MRDTimestamp_double/(1.E9)>>mrd_rate","MRDTimestamp>0","goff");
+	TH1D* lappd_rate = new TH1D("lappd_rate","LAPPD Rate",nbins,t1,t2);
+	outtree->Draw("LAPPDTimestamp_double/(1.E9)>>lappd_rate","LAPPDTimestamp>0","goff");
 	TH1D* allsystems_rate = new TH1D("allsystems_rate","All Systems Triggered Rate",nbins,t1,t2);
 	outtree->Draw("CTCTimestamp_double/(1.E9)>>allsystems_rate","MRDTimestamp>0&&CTCTimestamp>0&&PMTTimestamp>0","goff");
 	TH1D* noloopback_rate = new TH1D("noloopback_rate","No Loopback Triggered Rate",nbins,t1,t2);
@@ -813,6 +828,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_mrd","OrphanedEventType==\"MRD\"","goff");	
 	TH1D* orphan_rate_ctc = new TH1D("orphan_rate_ctc","Orphan Rate (CTC)",nbins,t1,t2);
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc","OrphanedEventType==\"CTC\"","goff");	
+	TH1D* orphan_rate_lappd = new TH1D("orphan_rate_lappd","Orphan Rate (LAPPD)",nbins,t1,t2);
+	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_lappd","OrphanedEventType==\"LAPPD\"","goff");	
 	TH1D* orphan_rate_ctc_trig5 = new TH1D("orphan_rate_ctc_trig5","Orphan Rate (CTC, trigword 5)",nbins,t1,t2);
 	outtree2->Draw("OrphanTimestamp_double/(1.E9)>>orphan_rate_ctc_trig5","OrphanedEventType==\"CTC\" && OrphanTrigWord == 5","goff");	
 	TH1D* orphan_rate_ctc_trig31 = new TH1D("orphan_rate_ctc_trig31","Orphan Rate (CTC, trigword 31)",nbins,t1,t2);
@@ -826,6 +843,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	ctc_rate->GetXaxis()->SetTimeDisplay(1);
 	tank_rate->GetXaxis()->SetTimeDisplay(1);
 	mrd_rate->GetXaxis()->SetTimeDisplay(1);
+	lappd_rate->GetXaxis()->SetTimeDisplay(1);
 	allsystems_rate->GetXaxis()->SetTimeDisplay(1);
 	noloopback_rate->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate->GetXaxis()->SetTimeDisplay(1);
@@ -834,6 +852,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_pmt->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_mrd->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc->GetXaxis()->SetTimeDisplay(1);
+	orphan_rate_lappd->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc_trig5->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc_trig31->GetXaxis()->SetTimeDisplay(1);
 	orphan_rate_ctc_trig33->GetXaxis()->SetTimeDisplay(1);
@@ -846,6 +865,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	tank_rate->GetXaxis()->SetLabelOffset(0.03);
 	mrd_rate->GetXaxis()->SetLabelSize(0.03);
 	mrd_rate->GetXaxis()->SetLabelOffset(0.03);
+	lappd_rate->GetXaxis()->SetLabelSize(0.03);
+	lappd_rate->GetXaxis()->SetLabelOffset(0.03);
 	allsystems_rate->GetXaxis()->SetLabelSize(0.03);
 	allsystems_rate->GetXaxis()->SetLabelOffset(0.03);
 	noloopback_rate->GetXaxis()->SetLabelSize(0.03);
@@ -862,6 +883,8 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_mrd->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate_ctc->GetXaxis()->SetLabelSize(0.03);
 	orphan_rate_ctc->GetXaxis()->SetLabelOffset(0.03);
+	orphan_rate_lappd->GetXaxis()->SetLabelSize(0.03);
+	orphan_rate_lappd->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate_ctc_trig5->GetXaxis()->SetLabelSize(0.03);
 	orphan_rate_ctc_trig5->GetXaxis()->SetLabelOffset(0.03);
 	orphan_rate_ctc_trig31->GetXaxis()->SetLabelSize(0.03);
@@ -873,6 +896,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	ctc_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	tank_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	mrd_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	lappd_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	allsystems_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	noloopback_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
@@ -881,6 +905,7 @@ bool DataSummary::AddRatePlots(int nbins){
 	orphan_rate_pmt->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_mrd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+	orphan_rate_lappd->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc_trig5->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc_trig31->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	orphan_rate_ctc_trig33->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
@@ -971,11 +996,12 @@ bool DataSummary::AddEventTypePlots(){
 	delete orphantype;
 	delete orphancause;
 
-	bool has_ctc, has_tank, has_mrd;
+	bool has_ctc, has_tank, has_mrd, has_lappd;
 	bool has_extended, has_extended_cc, has_extended_nc, has_extended_vme;
 	outtree->SetBranchAddress("DataCTC",&has_ctc);
 	outtree->SetBranchAddress("DataTank",&has_tank);
 	outtree->SetBranchAddress("DataMRD",&has_mrd);
+	outtree->SetBranchAddress("DataLAPPD",&has_lappd);
 	outtree->SetBranchAddress("TrigExtended",&has_extended);
 	outtree->SetBranchAddress("TrigExtendedCC",&has_extended_cc);
 	outtree->SetBranchAddress("TrigExtendedNC",&has_extended_nc);
@@ -1102,6 +1128,8 @@ bool DataSummary::AddTDiffPlots(){
 	TH1D* all_mrd_ctc_tdiffs_wholerange = new TH1D("all_mrd_ctc_tdiffs_wholerange","All (CTC-MRD) TDiffs",500,-100E6,100E6);
 	outtree->Draw("CtcToMrdTDiff>>all_mrd_ctc_tdiffs_wholerange","","goff");
 	
+	TH1D* all_lappd_ctc_tdiffs_wholerange = new TH1D("all_lappd_ctc_tdiffs_wholerange","All (CTC-Tank) TDiffs",500,-1E6,1E6);
+        outtree->Draw("CtcToLappdTDiff>>all_lappd_ctc_tdiffs_wholerange","","goff");
 	// 2. we could do the same for the above, broken down by run
 	
 	// 3. we could also make 2D scatter versions, where we can see how the differences evolve over time
@@ -1135,6 +1163,14 @@ bool DataSummary::AddTDiffPlots(){
 	tank_mrd_diffs->GetXaxis()->SetLabelOffset(0.03);
 	tank_mrd_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
 	outtree->Draw("TankToMrdTDiff:MRDTimestamp_sec>>tank_mrd_diffs","PMTTimestamp>0&&MRDTimestamp>0 && fabs(TankToMrdTDiff)<10E6","goffcolz");
+
+	TH2F *lappd_ctc_diffs = new TH2F("lappd_ctc_diffs","(LAPPD - CTC) TDiffs",500,t1,t2,200,-1E6,1E6);
+        lappd_ctc_diffs->GetYaxis()->SetTitle("CTC - MRD [ns]");
+        lappd_ctc_diffs->GetXaxis()->SetTimeDisplay(1);
+        lappd_ctc_diffs->GetXaxis()->SetLabelSize(0.03);
+        lappd_ctc_diffs->GetXaxis()->SetLabelOffset(0.03);
+        lappd_ctc_diffs->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M:%S}");
+        outtree->Draw("CtcToLappdTDiff:CTCTimestamp_sec>>lappd_ctc_diffs","CTCTimestamp>0&&LAPPDTimestamp>0 && fabs(CtcToLappdTDiff)<10E6","goffcolz");
 
 	//Replaced the TGraphs by TH2 histograms (see above)
 	/*TGraph* tank_ctc_diffs = (TGraph*)gPad->GetPrimitive("Graph");
@@ -1199,6 +1235,7 @@ bool DataSummary::AddTDiffPlots(){
 	int step_size = window_size*overlap_fraction;
 	std::cout <<"tank_ctc_diff_vals.size(): "<<tank_ctc_diff_vals.size()<<", ctc_tvals.size(): "<<ctc_tvals.size()<<std::endl;
 	for(int i=0; i<(int)tank_ctc_diff_vals.size(); ++i){
+		//std::cout <<"i: "<<i<<std::endl;
 		ComputeMeanAndVariance(tank_ctc_diff_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size, start_sample);
 		tank_ctc_means.push_back(mean_ctc_to_tank);
 		tank_ctc_vars.push_back(var_ctc_to_tank);

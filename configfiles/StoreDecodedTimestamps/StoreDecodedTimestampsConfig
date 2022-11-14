@@ -1,0 +1,8 @@
+# StoreDecodedTimestamps config file
+
+verbosity 5
+OutputFile R3653S0p8_DecodedTimestamps_TrigOverlap_new.root
+SaveMRD 0
+SavePMT 0
+SaveCTC 1
+DeleteTimestamps 1
