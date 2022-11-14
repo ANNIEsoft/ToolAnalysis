@@ -6,6 +6,8 @@
 
 #include "Tool.h"
 
+#include "SlowControlMonitor.h"
+
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/chrono.hpp>
@@ -37,6 +39,7 @@ class MonitorReceive: public Tool {
   BoostStore* MRDData;
   BoostStore* PMTData;
   BoostStore* TrigData;
+  BoostStore* LAPPDData;
   std::vector<std::string> loaded_files;
 };
 

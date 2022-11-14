@@ -1,0 +1,27 @@
+# LAPPD SC Monitoring config file
+
+verbose 0
+#OutputPath ./monitoringplots/
+OutputPath fromStore
+StartTime 1970/1/1 #start time for the conversion of timestamps into dates
+PlotConfiguration ./configfiles/Monitoring/LAPPDSCPlotConfig.txt #file containing instructions what to plot
+PathMonitoring /monitoringfiles/	#path at which the monitoring plots are going to be saved
+ImageFormat png	#format in which monitoring plots are saved. Options: png, jpg, jpeg
+UpdateFrequency 1. #specify frequency for the file history plot, in mins
+ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
+DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
+VoltageMin33 3.1
+VoltageMax33 3.5
+VoltageMin25 2.9
+VoltageMax25 3.3
+VoltageMin12 1.6
+VoltageMax12 2.0
+LimitSaltLow 500000
+LimitSaltHigh 400000
+LimitTempLow 50.
+LimitTempHigh 58.
+LimitHumLow 15.
+LimitHumHigh 20.
+LimitThermistorLow 7000.
+LimitThermistorHigh 5800.
+LAPPDIDFile ./configfiles/Monitoring/LAPPDIDs.txt

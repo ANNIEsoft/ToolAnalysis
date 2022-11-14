@@ -1,0 +1,3 @@
+OutPath ./monitoringplots/
+Mode Single	#Options: Single, Wait
+verbose 0

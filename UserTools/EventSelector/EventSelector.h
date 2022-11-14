@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <bitset>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
@@ -140,6 +141,7 @@ class EventSelector: public Tool {
   /// enter the MRD but whose projected trajectory from the tank intersects with
   /// the MRD.
   bool EventSelectionByMCProjectedMRDHit();
+
 
   /// \brief Event selection by PMT/MRD time coincidence
   ////

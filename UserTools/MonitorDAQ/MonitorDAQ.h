@@ -62,6 +62,7 @@ class MonitorDAQ: public Tool {
   void DrawVMEService(ULong64_t timestamp_end, double time_frame, std::string file_ending, bool current);
   void PrintInfoBox();
   void DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame, std::string file_ending);
+  int SendToSlack(std::string message);
 
   //helper functions
   std::string convertTimeStamp_to_Date(ULong64_t timestamp);
@@ -120,6 +121,7 @@ class MonitorDAQ: public Tool {
   bool file_has_trig;
   bool file_has_cc;
   bool file_has_pmt;
+  bool file_has_lappd;
   std::string file_name;
   uintmax_t file_size_uint;
   double file_size;
@@ -144,11 +146,16 @@ class MonitorDAQ: public Tool {
   double disk_vme03;
   double mem_vme03;
   double cpu_vme03;
+  ULong64_t timestamp_rpi;
+  double disk_rpi;
+  double mem_rpi;
+  double cpu_rpi;
 
   //Storing variables for reading in data in given time slot from monitoring file / database
   std::vector<bool> has_trig_plot;
   std::vector<bool> has_cc_plot;
   std::vector<bool> has_pmt_plot;
+  std::vector<bool> has_lappd_plot;
   std::vector<std::string> filename_plot;
   std::vector<double> filesize_plot;
   std::vector<ULong64_t> filetimestamp_plot;
@@ -159,18 +166,22 @@ class MonitorDAQ: public Tool {
   std::vector<double> disk_vme01_plot;
   std::vector<double> disk_vme02_plot;
   std::vector<double> disk_vme03_plot;
+  std::vector<double> disk_rpi_plot;
   std::vector<double> mem_daq01_plot;
   std::vector<double> mem_vme01_plot;
   std::vector<double> mem_vme02_plot;
   std::vector<double> mem_vme03_plot;
+  std::vector<double> mem_rpi_plot;
   std::vector<double> cpu_daq01_plot;
   std::vector<double> cpu_vme01_plot;
   std::vector<double> cpu_vme02_plot;
   std::vector<double> cpu_vme03_plot;
+  std::vector<double> cpu_rpi_plot;
   std::vector<ULong64_t> t_daq01_plot;
   std::vector<ULong64_t> t_vme01_plot;
   std::vector<ULong64_t> t_vme02_plot;
   std::vector<ULong64_t> t_vme03_plot;
+  std::vector<ULong64_t> t_rpi_plot;
 
   //Status variables for slack messages --> were the warnings already issued?
   bool warning_filesize = false;
@@ -179,11 +190,26 @@ class MonitorDAQ: public Tool {
   std::string warning_trigdata_filename;
   bool warning_pmtdata = false;
   std::string warning_pmtdata_filename;
+  bool warning_lappddata = false;
+  std::string warning_lappddata_filename;
   bool warning_vme = false;
   int warning_vme_num = 3;
   bool warning_diskspace_80 = false;
   bool warning_diskspace_85 = false;
   bool warning_diskspace_90 = false;
+  bool warning_services = false;
+  std::map<int,bool> map_warning_lappd_sc;
+  std::map<int,bool> map_warning_lappd_temp;
+  std::map<int,bool> map_warning_lappd_hum;
+  std::map<int,bool> map_warning_lappd_hv;
+  std::map<int,bool> map_warning_lappd_lv1;
+  std::map<int,bool> map_warning_lappd_lv2;
+  std::map<int,bool> map_warning_lappd_lv3;
+  std::map<int,bool> map_warning_lappd_salt;
+  std::map<int,bool> map_warning_lappd_thermistor;
+  std::map<int,bool> map_warning_lappd_light;
+  std::map<int,bool> map_warning_lappd_relay;
+  bool warning_lappd_errors = false;
   boost::posix_time::ptime timestamp_last_warning_diskspace_90;
 
 
@@ -204,6 +230,7 @@ class MonitorDAQ: public Tool {
   TText *text_haspmt = nullptr;
   TText *text_hascc = nullptr;
   TText *text_hastrigger = nullptr;
+  TText *text_haslappd = nullptr;
   TText *text_currentdate = nullptr;
   TText *text_filename = nullptr;
 
@@ -216,6 +243,7 @@ class MonitorDAQ: public Tool {
   TText *text_mem_vme01 = nullptr;
   TText *text_mem_vme02 = nullptr;
   TText *text_mem_vme03 = nullptr;
+  TText *text_mem_rpi = nullptr;
 
   //Pie chart
   TPie *pie_vme = nullptr;
@@ -228,10 +256,12 @@ class MonitorDAQ: public Tool {
   TGraph *gr_mem_vme01 = nullptr;
   TGraph *gr_mem_vme02 = nullptr;
   TGraph *gr_mem_vme03 = nullptr;
+  TGraph *gr_mem_rpi = nullptr;
   TGraph *gr_cpu_daq01 = nullptr;
   TGraph *gr_cpu_vme01 = nullptr;
   TGraph *gr_cpu_vme02 = nullptr;
   TGraph *gr_cpu_vme03 = nullptr;
+  TGraph *gr_cpu_rpi = nullptr;
   TGraph *gr_disk_daq01 = nullptr;
   TGraph *gr_disk_vme01 = nullptr;
   TGraph *gr_disk_vme02 = nullptr;
@@ -261,6 +291,9 @@ class MonitorDAQ: public Tool {
   std::vector<int> test_vme;
   std::vector<double> test_disk;
   int testcounter;
+ 
+  //LAPPD ID vector
+  std::vector<int> vector_lappd_id;
 
   //Verbosity variables
   int v_error = 0;
