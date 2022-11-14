@@ -243,18 +243,18 @@ bool MonitorTankTime::Execute(){
 
     //get FinishedPMTWaves from DataDecoder tools
     m_data->CStore.Get("FinishedPMTWaves",FinishedPMTWaves);
-    LoopThroughDecodedEvents(FinishedPMTWaves);
+    this->LoopThroughDecodedEvents(FinishedPMTWaves);
 
     //Write the event information to a file
     //TODO: change this to a database later on!
     //Check if data has already been written included in WriteToFile function
-    WriteToFile();
+    this->WriteToFile();
 
     //draw last file plots
-    DrawLastFilePlots();
+    this->DrawLastFilePlots();
 
     //Draw customly defined plots
-    UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
+    this->UpdateMonitorPlots(config_timeframes, config_endtime_long, config_label, config_plottypes);
 
   } else {
    	Log("MonitorTankTime: State not recognized: "+State,v_debug,verbosity);
@@ -1497,7 +1497,6 @@ void MonitorTankTime::DrawLastFilePlots(){
 
   //Draw hitmap plots
   DrawHitMap(t_file_end,(t_file_end-t_file_start)/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR,"lastFile");
-
 }
 
 void MonitorTankTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::vector<ULong64_t> endTimes, std::vector<std::string> fileLabels, std::vector<std::vector<std::string>> plotTypes){
@@ -1522,7 +1521,6 @@ void MonitorTankTime::UpdateMonitorPlots(std::vector<double> timeFrames, std::ve
 
 
     for (unsigned int i_plot = 0; i_plot < plotTypes.at(i_time).size(); i_plot++){
-      //std::cout <<"i_plot: "<<i_plot<<std::endl;
       if (plotTypes.at(i_time).at(i_plot) == "RateElectronics") DrawRatePlotElectronics(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "RatePhysical") DrawRatePlotPhysical(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
       else if (plotTypes.at(i_time).at(i_plot) == "PedElectronics") DrawPedPlotElectronics(endTimes.at(i_time),timeFrames.at(i_time),fileLabels.at(i_time));
@@ -1566,7 +1564,9 @@ void MonitorTankTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double ti
   ULong64_t overall_timeframe = 0;
   overall_rates.assign(num_active_slots*num_channels_tank,0);
 
+
   for (unsigned int i_file = 0; i_file < rate_plot.size(); i_file++){
+
 
     current_timeframe = (tend_plot.at(i_file)-tstart_plot.at(i_file))/MSEC_to_SEC;
     overall_timeframe += current_timeframe;
@@ -1603,6 +1603,7 @@ void MonitorTankTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double ti
   ss_title_rate << "Rate VME (last "<<ss_timeframe.str()<<"h) "<<end_time.str()<<std::endl;
   h2D_rate->SetTitle(ss_title_rate.str().c_str());
 
+
   TPad *p_rate = (TPad*) canvas_rate->cd();
   h2D_rate->SetStats(0);
   h2D_rate->GetXaxis()->SetNdivisions(num_slots_tank);
@@ -1624,6 +1625,7 @@ void MonitorTankTime::DrawRatePlotElectronics(ULong64_t timestamp_end, double ti
   }
   h2D_rate->LabelsOption("v");
   h2D_rate->Draw("colz");
+
 
   for (unsigned int i_box =0; i_box < vector_box_inactive.size(); i_box++){
     vector_box_inactive.at(i_box)->Draw("same");

@@ -1,0 +1,7 @@
+verbose 0
+MaxEntriesPerLoop 1000
+DoPedSubtraction 1 #Do pedestal substraction flag
+Nboards 6 #Number of pedestal files to be read in, 2boards per LAPPD --> Nboards 6 = 3 LAPPDs
+Pedinputfile .configfiles/Monitoring/LAPPD_Ped/PEDS_ACDC
+PedinputfileTXT ./configfiles/Monitoring/LAPPD_Ped/PEDS_ACDC_board #prefix of the pedestal files path+name. index and filetype will be set automatically
+GlobalBoardConfig ./configfiles/Monitoring/LAPPDGlobalBoardConfig.txt
