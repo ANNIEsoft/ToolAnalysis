@@ -5,7 +5,6 @@
 #include "ExampleloadStore.h"
 #include "ExamplePrintData.h"
 #include "ExampleLoadRoot.h"
-#include "PythonScript.h"
 #include "LAPPDBaselineSubtract.h"
 #include "LAPPDcfd.h"
 #include "TSplineFit.h"

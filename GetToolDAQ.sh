@@ -271,7 +271,7 @@ do
             boostflag=0
             zmq=0
             final=0
-            MrdTrackLib=1
+            MrdTrackLib=0
             WCSimlib=0
             Python=0
             Python3=0
@@ -439,6 +439,14 @@ then
     git clone https://github.com/ToolFramework/ToolPack.git
     cd ToolPack
     ./Import.sh PythonScript
+    
+    # NOTE! ToolPack import script currently only imports a tool as an INACTIVE tool.
+    # TODO until we update the ToolAnalysis framework to get the ToolSelect.sh script
+    # let's just activate the tool manually
+    ln -s ${BASEDIR}/UserTools/ImportedTools/ToolPack/PythonScript ${BASEDIR}/UserTools/PythonScript
+    echo '#include "PythonScript.h"' >> ${BASEDIR}/UserTools/Unity.h
+    FACTORYLINE='if (tool=="PythonScript") ret=new PythonScript;'
+    awk -i inplace -v "var=${FACTORYLINE}" '/^return/ && !x {print var; x=1} 1' ${BASEDIR}/UserTools/Factory/Factory.cpp
     
 fi
 

@@ -40,8 +40,8 @@ DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 
 
-MyToolsInclude =  $(RootInclude) `python3-config --cflags` $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
-MyToolsLib = -lcurl $(RootLib) `python3-config --embed --libs` $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
+MyToolsInclude =  $(RootInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
+MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
