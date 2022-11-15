@@ -76,6 +76,7 @@ dictionary: viewer_linkdef.hh
 
 dict.o: dictionary dict.cc
 	@echo "making $@"
+	@cp ../recoANNIE/*.h ../../DataModel/ANNIEconstants.h ../../include/
 	$(CXX) $(CXXFLAGS) -fPIC -o $@ -I../../include -L../lib $(ROOT_CXXFLAGS) \
 	$(ROOT_LDFLAGS) $(BoostInclude) $(BoostLib) -c dict.cc
 
