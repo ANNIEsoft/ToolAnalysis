@@ -165,8 +165,8 @@ bool ClusterFinder::Execute(){
   //----------------------------------------------------------------------------
   
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
-  m_data->Stores["ANNIEEvent"]->Get("BeamStatus", BeamStatus);
-  bool got_recoadc = m_data->Stores["ANNIEEvent"]->Get("RecoADCHits",RecoADCHits);
+  //m_data->Stores["ANNIEEvent"]->Get("BeamStatus", BeamStatus);
+  bool got_recoadc = m_data->Stores["ANNIEEvent"]->Get("RecoADCData",RecoADCHits);
 
   if (HitStoreName == "MCHits"){
     bool got_mchits = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
@@ -206,12 +206,58 @@ bool ClusterFinder::Execute(){
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<MCHit>& ThisPMTHits = apair.second;
         PMT_ishit[detectorkey] = 1;
+        std::vector<double> hits_2ns_res;
+        std::vector<double> hits_2ns_res_charge;
+        std::vector<double> datalike_hits;
+        std::vector<double> datalike_hits_charge;
         for (MCHit &ahit : ThisPMTHits){
           //std::cout <<"Key: "<<detectorkey<<", charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
-          if (ahit.GetTime() < end_of_window_time_cut*AcqTimeWindow) v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
+          //if (ahit.GetTime() > 2000.) std::cout <<"Found hit later than 2us! Hit time : "<<ahit.GetTime()<<", chankey: "<<chankey<<std::endl;
+          if (ahit.GetTime() < end_of_window_time_cut*AcqTimeWindow) {
+            //Make MC more like data --> combine multiple photons if they are within a 10ns range
+            //hit times can only be recorded with 2ns precision --> possible times are 0ns, 2ns, 4ns, ...
+            hits_2ns_res.push_back(2*(int(ahit.GetTime())/2.)+(int(ahit.GetTime())%2));
+            hits_2ns_res_charge.push_back(ahit.GetCharge());
+          }
         }
+	//Combine multiple MC hits to one pulse
+        std::sort(hits_2ns_res.begin(),hits_2ns_res.end());
+	for (int i_hit=0; i_hit < (int) hits_2ns_res.size(); i_hit++){
+          double hit1 = hits_2ns_res.at(i_hit);
+          if (datalike_hits.size()==0) {
+            datalike_hits.push_back(hit1);
+            datalike_hits_charge.push_back(hits_2ns_res_charge.at(i_hit));
+          }
+          else {
+            bool new_pulse = false;
+            for (int j_hit=0; j_hit < (int) datalike_hits.size(); j_hit++){
+              if (fabs(datalike_hits.at(j_hit)-hit1)<10.) {
+                new_pulse=false;
+                datalike_hits_charge.at(j_hit)+=hits_2ns_res_charge.at(i_hit);
+                break;
+              } else new_pulse=true;
+            }
+            if (new_pulse) {
+              datalike_hits.push_back(hit1);      //Only count as a new pulse if it was 10ns away from every other pulse
+              datalike_hits_charge.push_back(hits_2ns_res_charge.at(i_hit));
+            }
+          }
+        }
+
+        for (int i_hit = 0; i_hit < (int) datalike_hits.size(); i_hit++){
+          //v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
+          v_hittimes.push_back(datalike_hits.at(i_hit));
+        }
+        std::vector<int> parents = *(ThisPMTHits.at(0).GetParents());
+        ThisPMTHits.clear();
+        std::vector<MCHit> newMCHits;
+        for (int i_hit=0; i_hit < (int) datalike_hits.size(); i_hit++){
+          newMCHits.push_back(MCHit(chankey,datalike_hits.at(i_hit),datalike_hits_charge.at(i_hit),parents));
+        }
+        MCHits->at(chankey) = newMCHits;
       }
     }
+    m_data->Stores["ANNIEEvent"]->Set("MCHits",MCHits,true);
   }
 
   if(HitStoreName=="Hits"){
@@ -249,8 +295,8 @@ bool ClusterFinder::Execute(){
 
   // Now sort the hit time array, fill the highest time in a new array until the old array is empty
   do {
-    double max_time =0;
-    int i_max_time =0;
+    double max_time = 0;
+    int i_max_time = 0;
     for (std::vector<double>::iterator it = v_hittimes.begin(); it != v_hittimes.end(); ++it) {
       if (*it > max_time) {
         max_time = *it;

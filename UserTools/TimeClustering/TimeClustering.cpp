@@ -127,6 +127,19 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 		m_data->CStore.Set("mrd_tubeid_to_channelkey",mrdpmtid_to_channelkey);
 		}
 	else {
+		ifstream file_mapping(file_chankeymap);
+ 		unsigned long temp_chankey;
+ 		int temp_wcsimid;
+ 		std::map<int,unsigned long> mrdpmtid_to_channelkey_data; // for FindMrdTracks tool
+ 		std::map<unsigned long,int> channelkey_to_mrdpmtid_data; // for FindMrdTracks tool
+ 		while (!file_mapping.eof()){
+ 			file_mapping>>temp_chankey>>temp_wcsimid;
+ 			if (file_mapping.eof()) break;
+ 			channelkey_to_mrdpmtid_data.emplace(temp_chankey,temp_wcsimid);
+ 			mrdpmtid_to_channelkey_data.emplace(temp_wcsimid,temp_chankey);
+ 			Log("TimeClustering tool: Emplaced temp_chankey "+std::to_string(temp_chankey)+" with temp_wcsimid "+std::to_string(temp_wcsimid)+"into channelkey_to_mrdpmtid object!",v_debug,verbosity);
+ 		}
+ 		file_mapping.close();
 		get_ok = m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);  //for MC, simply get the sample obtained from the LoadWCSim tool
 		if(not get_ok){
 			Log("TimeClustering Tool: Error! No channelkey_to_mrdpmtid in CStore!",v_error,verbosity);
@@ -137,6 +150,8 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 			Log("TimeClustering Tool: Error! No channelkey_to_faccpmtid in CStore!",v_error,verbosity);
 			return false;
 		}
+                m_data->CStore.Set("channelkey_to_mrdpmtid_data",channelkey_to_mrdpmtid_data);
+                m_data->CStore.Set("mrdpmtid_to_channelkey_data",mrdpmtid_to_channelkey_data);
 	}
 
 	//Read in time shifted channels from configuration file
@@ -202,7 +217,7 @@ bool TimeClustering::Execute(){
 	}
 	
 	if (isData){
-		std::cout <<"TimeClustering tool: Data file: Getting TDCData object"<<std::endl;
+		if (verbosity > 0) std::cout <<"TimeClustering tool: Data file: Getting TDCData object"<<std::endl;
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData);  // a std::map<unsigned long,vector<Hit>>
 
 		if(not get_ok){
