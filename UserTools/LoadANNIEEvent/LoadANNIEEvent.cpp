@@ -212,6 +212,7 @@ bool LoadANNIEEvent::Execute() {
          current_entry_ = user_evnum-global_events_start.at(current_file_);
          global_ev = user_evnum;
        } else {
+         // XXX note this loop is only suitable for SeparateStores format.
          while (current_file_ < input_filenames_.size()){
            ++current_file_;
            if ( current_file_ >= input_filenames_.size() ) {
@@ -249,12 +250,8 @@ bool LoadANNIEEvent::Execute() {
                  }
                  // make and populate a new one
                  BoostStore *theOrphanStore = new BoostStore(false, BOOST_STORE_MULTIEVENT_FORMAT);
-                 if (FileFormat == "CombinedStore"){
-                   ProcessedFileStore->Get("OrphanStore",*theOrphanStore);
-                 } else if (FileFormat == "SeparateStores"){
-                   std::string input_filename_orphan = input_filenames_orphan_.at(current_file_);
-                   theOrphanStore->Initialise(input_filename_orphan);
-                 }
+                 std::string input_filename_orphan = input_filenames_orphan_.at(current_file_);
+                 theOrphanStore->Initialise(input_filename_orphan);
                  m_data->Stores["OrphanStore"] = theOrphanStore;
                  m_data->Stores.at("OrphanStore")->Header->Get("TotalEntries", total_orphans_in_file_);
              }
