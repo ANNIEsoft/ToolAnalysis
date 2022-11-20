@@ -27,8 +27,8 @@ T0channelNo 1005
 T0channelNo1 1005
 T0channelNo2 1005
 T0signalmax -80.
-T0signalthreshold -80.
-T0signalmaxOld 80. #Older data uses a positive going signal
+T0signalthreshold -50.
+T0signalmaxOld 50. #Older data uses a positive going signal
 T0signalthresholdOld 80. #Older data uses a positive going signal
 T0offset  58
 FindT0OutputWavLabel AlignedLAPPDData
@@ -36,3 +36,13 @@ GlobalShiftT0 170
 #Added by Marc
 Triggerdefault 5
 LAPPDOffset 1000
+
+#LAPPDPlotWaveForms
+requireT0signal 0
+SaveByChannel 1
+PlotWavLabel BLsubtractedLAPPDData
+#PlotWavLabel LAPPDWaveforms
+outfile WaveForms_rawblsub.root
+NHistos 400
+SaveSingleStrip 0
+SingleStripNo 9
