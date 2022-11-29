@@ -27,7 +27,7 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
 
   // zero out variables //////////////////////////
 
-  WraparoundBin=0; QualityVar=0; TrigDeltaT=0.; PulseHeight=0.; BeamTime=0.; EventTime=0.; TotalCharge=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
+  WraparoundBin=0; QualityVar=0; TrigDeltaT1=0.; TrigDeltaT2=0.; PulseHeight=0.; MaxAmp0=0.; MaxAmp1=0.; BeamTime=0.; EventTime=0.; TotalCharge=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
   NHits=0; NHits_simp=0; Npulses_cfd=0; Npulses_simp=0;
   for(int i=0; i<60; i++){
       hQ[i]=0;  hxpar[i]=0; hxperp[i]=0; htime[i]=0;  hdeltime[i]=0; hvpeak[i]=0;
@@ -45,9 +45,13 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   fMyTree->Branch("T0Bin",                    &T0Bin,                     "T0Bin/I"                    );
   fMyTree->Branch("WraparoundBin",            &WraparoundBin,             "WraparoundBin/I"            );
   fMyTree->Branch("QualityVar",               &QualityVar,                "QualityVar/I"               );
-  fMyTree->Branch("TrigDeltaT",               &TrigDeltaT,                "TrigDeltaT/D"               );
+//  fMyTree->Branch("TrigDeltaT",               &TrigDeltaT,                "TrigDeltaT/D"               );
+  fMyTree->Branch("TrigDeltaT1",              &TrigDeltaT1,               "TrigDeltaT1/D"              );
+  fMyTree->Branch("TrigDeltaT2",              &TrigDeltaT2,               "TrigDeltaT2/D"              );
+
   fMyTree->Branch("PulseHeight",              &PulseHeight,               "PulseHeight/D"              );
-  fMyTree->Branch("MaxAmp",                   &MaxAmp,                    "MaxAmp/D"                   );
+  fMyTree->Branch("MaxAmp0",                  &MaxAmp0,                   "MaxAmp0/D"                  );
+  fMyTree->Branch("MaxAmp1",                  &MaxAmp1,                   "MaxAmp1/D"                  );
 
 
   fMyTree->Branch("BeamTime",                 &BeamTime,                  "BeamTime/D"                 );
@@ -126,9 +130,15 @@ bool LAPPDClusterTree::Execute()
   }
 
   //get the global variables for the TREE
+  vector<double> TrigDeltaT;
   m_data->Stores["ANNIEEvent"]->Get("deltaT",TrigDeltaT);
+  TrigDeltaT1 = TrigDeltaT.at(0);
+  TrigDeltaT2 = TrigDeltaT.at(1);
+
   m_data->Stores["ANNIEEvent"]->Get("TotCharge",PulseHeight);
-  m_data->Stores["ANNIEEvent"]->Get("MaxAmp",MaxAmp);
+  m_data->Stores["ANNIEEvent"]->Get("MaxAmp0",MaxAmp0);
+  m_data->Stores["ANNIEEvent"]->Get("MaxAmp1",MaxAmp1);
+
   m_data->Stores["ANNIEEvent"]->Get("T0Bin",T0Bin);
   m_data->Stores["ANNIEEvent"]->Get("T0signalInWindow",T0signalInWindow);
   //m_data->Stores["ANNIEEvent"]->Get("WraparoundBin",WraparoundBin);
