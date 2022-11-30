@@ -58,6 +58,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: Assuming RunStartDate of 0ns, i.e. unix epoch",v_warning,verbosity);
 		RunStartUser = 0;
 	}
+	get_ok = m_variables.Get("SplitSubTriggers",splitSubtriggers);
+	if (not get_ok) splitSubtriggers = false;
+	m_data->CStore.Set("SplitSubTriggers",splitSubtriggers);
 	get_ok = m_variables.Get("TriggerType",Triggertype);
 	if (not get_ok){
 		Log("LoadWCSim Tool: No Triggertype specified. Assuming TriggerType = Beam",v_warning,verbosity);
@@ -329,7 +332,11 @@ bool LoadWCSim::Execute(){
 
 	triggers_event = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
 	
-	for(MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
+	if (!splitSubtriggers) MCTriggernum = 0;
+	int MaxEventNr = (splitSubtriggers)? (MCTriggernum + 1) : (WCSimEntry->wcsimrootevent->GetNumberOfEvents());
+
+	while (MCTriggernum < MaxEventNr){
+	//for(MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
 		if(verbosity>1) cout<<"getting triggers"<<endl;
 		// cherenkovhit(times) are all in first trig
 		firsttrigt=WCSimEntry->wcsimrootevent->GetTrigger(0);
@@ -398,6 +405,15 @@ bool LoadWCSim::Execute(){
 					//MC particle times are relative to the trigger time
 					if(nextrack->GetFlag()!=0) {
 						if (nextrack->GetFlag()==-1){
+							double starttime, stoptime = -1;
+							if (splitSubtriggers){
+								//MC particle times now stored relative to the trigger time
+								starttime = (static_cast<double>(nextrack->GetTime()-EventTimeNs));
+                                                        	stoptime = (static_cast<double>(nextrack->GetStopTime()-EventTimeNs));
+							} else {
+								starttime = (static_cast<double>(nextrack->GetTime()));
+                                                        	stoptime = (static_cast<double>(nextrack->GetStopTime()));
+							}
 							MCParticle neutrino(
 							nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 							Position(nextrack->GetStart(0) / 100.,
@@ -406,11 +422,8 @@ bool LoadWCSim::Execute(){
 							Position(nextrack->GetStop(0) / 100.,
 									 nextrack->GetStop(1) / 100.,
 									 nextrack->GetStop(2) / 100.),
-							//MC particle times now stored relative to the trigger time
-							//(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
-							//(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
-							(static_cast<double>(nextrack->GetTime())),
-							(static_cast<double>(nextrack->GetStopTime())),
+							starttime,
+							stoptime,
 							Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
 							(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 								 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
@@ -427,6 +440,15 @@ bool LoadWCSim::Execute(){
 							continue; // flag 0 only is normal particles: excludes neutrino
 						}
 					}
+					double starttime, stoptime = -1;
+					if (splitSubtriggers){
+						//MC particle times now stored relative to the trigger time
+						starttime = (static_cast<double>(nextrack->GetTime()-EventTimeNs));
+                                                stoptime = (static_cast<double>(nextrack->GetStopTime()-EventTimeNs));
+					} else {
+						starttime = (static_cast<double>(nextrack->GetTime()));
+                                                stoptime = (static_cast<double>(nextrack->GetStopTime()));
+					}
 					MCParticle thisparticle(
 						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
 						Position(nextrack->GetStart(0) / 100.,
@@ -435,11 +457,8 @@ bool LoadWCSim::Execute(){
 						Position(nextrack->GetStop(0) / 100.,
 								 nextrack->GetStop(1) / 100.,
 								 nextrack->GetStop(2) / 100.),
-						//MC particle times now stored relative to the trigger time
-						//(static_cast<double>(nextrack->GetTime()-EventTimeNs)),
-						//(static_cast<double>(nextrack->GetStopTime()-EventTimeNs)),
-						(static_cast<double>(nextrack->GetTime())),
-						(static_cast<double>(nextrack->GetStopTime())),
+						starttime,
+						stoptime,
 						Direction(nextrack->GetDir(0), nextrack->GetDir(1), nextrack->GetDir(2)),
 						(sqrt(pow(nextrack->GetStop(0)-nextrack->GetStart(0),2.)+
 							 pow(nextrack->GetStop(1)-nextrack->GetStart(1),2.)+
@@ -536,10 +555,14 @@ bool LoadWCSim::Execute(){
 			// we need to update all the particle times
 			double timediff = EventTimeNs - firsttrigt->GetHeader()->GetDate();
 			for(MCParticle& aparticle : *MCParticles){
-				//aparticle.SetStartTime(aparticle.GetStartTime()-timediff);
-				//aparticle.SetStopTime (aparticle.GetStopTime() -timediff);
-				aparticle.SetStartTime(aparticle.GetStartTime());
-				aparticle.SetStopTime (aparticle.GetStopTime());
+				if (splitSubtriggers){
+					aparticle.SetStartTime(aparticle.GetStartTime()-timediff);
+					aparticle.SetStopTime (aparticle.GetStopTime() -timediff);
+				}
+				else {
+					aparticle.SetStartTime(aparticle.GetStartTime());
+					aparticle.SetStopTime (aparticle.GetStopTime());
+				}
 			}
 		} // end updating particle times
 		
@@ -584,7 +607,8 @@ bool LoadWCSim::Execute(){
 			// Get hit parent information
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigt);
 			//std::cout <<"digittime before adding event time: "<<digittime<<","<<EventTimeNs<<std::endl;
-			digittime += EventTimeNs;			
+			
+			if (!splitSubtriggers) digittime += EventTimeNs;			
 			//std::cout <<"digittime after adding event time: "<<digittime<<std::endl;
 
 			MCHit nexthit(key, digittime, digiq, parents);
@@ -633,7 +657,7 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigm);
-			digittime += EventTimeNs;			
+			if (!splitSubtriggers) digittime += EventTimeNs;			
 
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(TDCData->count(key)==0) {TDCData->emplace(key, std::vector<MCHit>{nexthit}); if (Mrd_Chankey_Layer.at(key)==0) mrd_firstlayer=true; if (Mrd_Chankey_Layer.at(key)==10) mrd_lastlayer=true;}
@@ -759,7 +783,7 @@ bool LoadWCSim::Execute(){
 		MakeParticleToPmtMap(atrigt, firsttrigt, ParticleId_to_TankTubeIds, ParticleId_to_TankCharge, pmt_tubeid_to_channelkey);
 		MakeParticleToPmtMap(atrigm, firsttrigm, ParticleId_to_MrdTubeIds, ParticleId_to_MrdCharge, mrd_tubeid_to_channelkey);
 		MakeParticleToPmtMap(atrigv, firsttrigv, ParticleId_to_VetoTubeIds, ParticleId_to_VetoCharge, facc_tubeid_to_channelkey);
-		
+		MCTriggernum++;
 	} //End of MCTriggerNum loop
 	
 	//int mrdentries;
@@ -801,7 +825,7 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("EventTimeMRD",RunStartTime);
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
-	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum);
+	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum-1);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant
 	//m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
@@ -1084,7 +1108,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		// construct the channel associated with this PMT
 		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
 		pmt_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
-		if (verbosity > 3) std::cout <"LoadWCSim tool: WCSim ID: "<<apmt.GetTubeNo()<<", Chankey: "<<uniquechannelkey<<std::endl;
+		if (verbosity > 3) std::cout <<"LoadWCSim tool: WCSim ID: "<<apmt.GetTubeNo()<<", Chankey: "<<uniquechannelkey<<std::endl;
 		channelkey_to_pmtid.emplace(uniquechannelkey,apmt.GetTubeNo());
 		
 		// fill up ADC cards and channels monotonically, they're arbitrary for simulation

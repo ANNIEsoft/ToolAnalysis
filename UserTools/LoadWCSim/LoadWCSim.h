@@ -66,8 +66,9 @@ class LoadWCSim: public Tool {
 	double LappdStripLength;      // [mm] for calculating relative x position for dual-ended readout
 	double LappdStripSeparation;  // [mm] for calculating relative y position of each stripline
 	std::string path_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
-	int RunType;	
-	std::string PMTMask;	
+	int RunType;			// Which run type was simulated?
+	std::string PMTMask;		// PMT mask for dead PMTs
+	bool splitSubtriggers;		// should subtriggers be split into different Execute steps?
 
 	// WCSim variables
 	//////////////////
