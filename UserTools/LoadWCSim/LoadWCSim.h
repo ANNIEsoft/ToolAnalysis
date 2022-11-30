@@ -66,6 +66,8 @@ class LoadWCSim: public Tool {
 	double LappdStripLength;      // [mm] for calculating relative x position for dual-ended readout
 	double LappdStripSeparation;  // [mm] for calculating relative y position of each stripline
 	std::string path_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
+	std::string path_mrd_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
+	std::string path_fmv_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
 	int RunType;			// Which run type was simulated?
 	std::string PMTMask;		// PMT mask for dead PMTs
 	bool splitSubtriggers;		// should subtriggers be split into different Execute steps?
@@ -114,6 +116,8 @@ class LoadWCSim: public Tool {
 	int triggers_event;	
 
 	std::map<int,unsigned long> pmtid_to_channelkey;
+	std::map<int,unsigned long> mrdid_to_channelkey;
+	std::map<int,unsigned long> fmvid_to_channelkey;
 
 
 	// FIXME temporary!! remove me when we have a better way to get FACC paddle origins

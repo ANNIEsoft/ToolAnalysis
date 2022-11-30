@@ -89,6 +89,32 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		m_data->CStore.Set("pmt_tubeid_to_channelkey_data",pmtid_to_channelkey);
 		m_data->CStore.Set("channelkey_to_pmtid_data",channelkey_to_pmtid);
 	}
+	path_mrd_chankeymap = "./configfiles/LoadWCSim/MRD_Chankey_WCSimID.dat";
+        get_ok = m_variables.Get("ChankeyToMRDIDMap",path_mrd_chankeymap);
+        ifstream file_mrdid(path_mrd_chankeymap.c_str());
+        if (file_mrdid.is_open()){
+                // watch out: comment or empty lines not supported here
+                while (!file_mrdid.eof()){
+                        unsigned long chankey;
+                        int mrdid;
+                        file_mrdid >> chankey >> mrdid;
+                        mrdid_to_channelkey.emplace(mrdid,chankey);
+                }
+                file_mrdid.close();
+        }
+	path_fmv_chankeymap = "./configfiles/LoadWCSim/FMV_Chankey_WCSimID.dat";
+        get_ok = m_variables.Get("ChankeyToFMVIDMap",path_fmv_chankeymap);
+        ifstream file_fmvid(path_fmv_chankeymap.c_str());
+        if (file_fmvid.is_open()){
+                // watch out: comment or empty lines not supported here
+                while (!file_fmvid.eof()){
+                        unsigned long chankey;
+                        int fmvid;
+                        file_fmvid >> chankey >> fmvid;
+                        fmvid_to_channelkey.emplace(fmvid,chankey);
+                }
+                file_fmvid.close();
+        }
         get_ok = m_variables.Get("RunType",RunType);
         if (not get_ok){
                  Log("LoadWCSim Tool: No RunType specified. Assuming RunType = 3 (Beam)",v_warning,verbosity);
@@ -1004,6 +1030,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		
 		// Construct the detector associated with this tile
 		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		std::cout <<"LAPPD unique detectorkey: "<<uniquedetectorkey<<std::endl;
 		lappd_tubeid_to_detectorkey.emplace(anlappd.GetTubeNo(),uniquedetectorkey);
 		detectorkey_to_lappdid.emplace(uniquedetectorkey,anlappd.GetTubeNo());
 		std::string CylLocString;
@@ -1079,7 +1106,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		WCSimRootPMT apmt = wcsimrootgeom->GetPMT(pmti);
 		
 		// Construct the detector associated with this PMT
-		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		//unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		unsigned long uniquedetectorkey =  pmtid_to_channelkey[pmti+1];
 		std::string CylLocString;
 		int cylloc = apmt.GetCylLoc();
 		if(apmt.GetName().find("EMI9954KB")!= std::string::npos){ cylloc=6; }     // FIXME set OD pmts in WCSim
@@ -1106,7 +1134,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 					  0.);
 		
 		// construct the channel associated with this PMT
-		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		//unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		unsigned long uniquechannelkey = uniquedetectorkey;
 		pmt_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
 		if (verbosity > 3) std::cout <<"LoadWCSim tool: WCSim ID: "<<apmt.GetTubeNo()<<", Chankey: "<<uniquechannelkey<<std::endl;
 		channelkey_to_pmtid.emplace(uniquechannelkey,apmt.GetTubeNo());
@@ -1153,7 +1182,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(mrdpmti);
 		
 		// Construct the detector associated with this PMT
-		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		//unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		unsigned long uniquedetectorkey =  mrdid_to_channelkey[mrdpmti];
 		std::string CylLocString;
 		switch (apmt.GetCylLoc()){
 			case 0:  CylLocString = "TopCap";    break;
@@ -1177,7 +1207,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 					  0.);
 		
 		// construct the channel associated with this PMT
-		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		//unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		unsigned long uniquechannelkey = uniquedetectorkey;
 		mrd_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
 		channelkey_to_mrdpmtid.emplace(uniquechannelkey, apmt.GetTubeNo());
 		
@@ -1256,10 +1287,11 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 	
 	// veto PMTs
 	for(int faccpmti=0; faccpmti<numvetopmts; faccpmti++){
-		WCSimRootPMT apmt = wcsimrootgeom->GetMRDPMT(faccpmti);
+		WCSimRootPMT apmt = wcsimrootgeom->GetFACCPMT(faccpmti);
 		
 		// Construct the detector associated with this PMT
-		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		//unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		unsigned long uniquedetectorkey =  fmvid_to_channelkey[faccpmti];
 		std::string CylLocString;
 		switch (apmt.GetCylLoc()){
 			case 0:  CylLocString = "TopCap";    break;
@@ -1283,7 +1315,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 					  0.);
 		if (verbosity > 3) std::cout <<"LoadWCSim tool: FACC tube channelkey: "<<uniquedetectorkey<<", x/y/z: "<<apmt.GetPosition(0)/100.<<"/"<<apmt.GetPosition(1)/100.<<"/"<<apmt.GetPosition(2)/100.<<std::endl;
 		// construct the channel associated with this PMT
-		unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		//unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+		unsigned long uniquechannelkey = uniquedetectorkey;
 		facc_tubeid_to_channelkey.emplace(apmt.GetTubeNo(), uniquechannelkey);
 		channelkey_to_faccpmtid.emplace(uniquechannelkey, apmt.GetTubeNo());
 		
@@ -1322,11 +1355,11 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		// Create a paddle
 		// FIXME even MRDSpecs can't save us here; instead hard-code the values for now,
 		// this will all be replaced eventually anyway
-		int MRD_z = (faccpmti>12); // 13 paddles per layer
+		int MRD_z = (uniquedetectorkey>12); // 13 paddles per layer
 		int MRD_x = MRD_z;         // i believe PMTs are on LHS for layer 0, RHS for layer 1
-		int MRD_y = faccpmti - (13*MRD_z);
+		int MRD_y = uniquedetectorkey - (13*MRD_z);
 		double paddle_zorigin = (MRD_z) ? 0.0728 : 0.0508;  // numbers from geofile.txt
-		double paddle_yorigin = facc_paddle_yorigins.at(faccpmti)/100.;
+		double paddle_yorigin = facc_paddle_yorigins.at(uniquedetectorkey)/100.;
 		
 		Paddle apaddle( uniquedetectorkey,
 						MRD_x,
@@ -1339,6 +1372,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		std::pair<double,double>{paddle_zorigin-0.01,paddle_zorigin+0.01});
 		
 		//std::cout <<"FACC detkey: "<<uniquedetectorkey<<", x/y/z: "<<MRD_x<<"/"<<MRD_y<<"/"<<MRD_z<<std::endl;
+		//std::cout <<"position (x/y/z): (0/"<<paddle_yorigin<<"/"<<paddle_zorigin<<")"<<std::endl;
 		if(verbosity>4) cout<<"Setting paddle for detector "<<uniquedetectorkey<<endl;
 		anniegeom->SetDetectorPaddle(uniquedetectorkey,apaddle);
 		

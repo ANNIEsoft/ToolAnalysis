@@ -18,7 +18,7 @@ class Geometry : public SerialisableObject{
 	
 	public:
 	// Do we care to have the overloaded empty constructor?
-	Geometry() : NextFreeChannelKey(0), NextFreeDetectorKey(0), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), pmt_enclosed_radius(0.), pmt_enclosed_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL) {
+	Geometry() : NextFreeChannelKey(464), NextFreeDetectorKey(464), Version(0.), tank_centre(Position(0,0,0)), tank_radius(0.), tank_halfheight(0.), pmt_enclosed_radius(0.), pmt_enclosed_halfheight(0.), mrd_width(0.), mrd_height(0.), mrd_depth(0.), mrd_start(0.), numtankpmts(0), nummrdpmts(0), numvetopmts(0), numlappds(0), Status(geostatus::FULLY_OPERATIONAL) {
 		serialise=true;
 	}
 	

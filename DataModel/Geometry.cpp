@@ -2,8 +2,8 @@
 #include "Geometry.h"
 
 Geometry::Geometry(double ver, Position tankc, double tankr, double tankhh, double pmtencr, double pmtenchh, double mrdw, double mrdh, double mrdd, double mrds, int ntankpmts, int nmrdpmts, int nvetopmts, int nlappds, geostatus statin, std::map<std::string,std::map<unsigned long,Detector> >dets){
-	NextFreeChannelKey=0;
-	NextFreeDetectorKey=0;
+	NextFreeChannelKey=464;
+	NextFreeDetectorKey=464;
 	Version=ver;
 	Status=statin;
 	tank_centre=tankc;
