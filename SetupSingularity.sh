@@ -36,3 +36,4 @@ do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done
 
+source Setup.sh

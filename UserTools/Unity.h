@@ -92,7 +92,6 @@
 #include "MonitorMRDEventDisplay.h"
 #include "LoadGeometry.h"
 #include "LoadRATPAC.h"
-#include "WaveformNNLS.h"
 #include "TimeClustering.h"
 #include "GracefulStop.h"
 #include "PhaseIIADCHitFinder.h"
@@ -154,3 +153,9 @@
 #include "BeamDecoder.h"
 #include "LoadRunInfo.h"
 #include "ApplyMRDEff.h"
+
+#include "LAPPDnnlsPeak.h"
+#include "LAPPDLocateHit.h"
+#include "LAPPDPEPulseFit.h"
+#include "LAPPDOtherSimp.h"
+

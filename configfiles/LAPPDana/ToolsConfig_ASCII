@@ -17,6 +17,12 @@ LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDana/ConfigSimplePulses
 LAPPDIntegratePulse LAPPDIntegratePulse configfiles/LAPPDana/ConfigSimplePulses
 LAPPDClusterSimp LAPPDCluster configfiles/LAPPDana/ConfigSimplePulses
 #
+#nnls pulse analysis
+LAPPDOtherSimp LAPPDOtherSimp configfiles/LAPPDana/ConfigNNLS
+#LAPPDnnlsPeak LAPPDnnlsPeak configfiles/LAPPDana/ConfigNNLS
+#LAPPDPlotWaveFormsnnls LAPPDPlotWaveForms2D configfiles/LAPPDana/ConfigNNLS
+#LAPPDLocateHit LAPPDLocateHit configfiles/LAPPDana/ConfigNNLS
+#
 #Filtered Pulse Analysis
 LAPPDFilter LAPPDFilter configfiles/LAPPDana/ConfigFilteredPulses
 LAPPDcfd LAPPDcfd configfiles/LAPPDana/ConfigFilteredPulses
