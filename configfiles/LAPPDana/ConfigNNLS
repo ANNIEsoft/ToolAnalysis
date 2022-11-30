@@ -1,0 +1,77 @@
+PPDnnlsPeak
+multiThread 0
+threadNumber 8
+nnlsInputWavLabel ABLSLAPPDData
+sampling_factor 20
+tempfilename pulsecharacteristicsNew.root
+#temphistname templatepulse
+temphistname pos11_0_1D
+timeCount 1
+nnlsPrintOption 0
+nnlsVerbosityLevel 0
+maxiter 10
+nnlsOutputWavLabel nnlsLAPPDdata
+
+#LAPPDOtherSimp
+otherSimpInputWavLabel  ABLSLAPPDData
+otherSimpOutputWavLabel ABLSLAPPDData
+OSrange1    20
+OSrange2    100
+OSstrip1  6
+OSstrip2  5
+OSstrip3  4
+OSstrip4  7
+OSstrip5  8
+nnlsOption 0
+OtherSimpFileName BaselineHisto.root
+baselineOption 0
+
+
+#LAPPDLocateHit
+positionFileName position_test.root
+positionTreeFileName position_test_Tree.root
+LocateHitLabel HitPositions
+LAPPDLocateHitVerbosity 0
+LocateInputWavLabel nnlsLAPPDdata
+LocateOutputWavLabel nnlsLAPPDlocation
+LocateRawInputWaveLabel AlignedLAPPDData
+histoBinNumber 50
+Timebinsize2D 0.5
+peakLowThreshold -0.3
+peakHighThreshold -10
+sigma 0.1
+StripLength 0.2 # m
+signalSpeed 0.2 # m per ns
+SingleEventPlot 1
+plotOption 1
+beamPlotOption 0
+colorNumber 50
+sizeNumber 0.5
+colorScaleN 3
+colorNumberstart 50 # >50 to skip default colors
+colorNumberend 85   #<85 to have defConvertMapToVec1035ination
+DisplayPDFSuffix aa
+plotStripVert 0
+
+
+#LAPPDManyPulseSelect
+pulseThreshold -15 #in mV
+maxNeededPulseNumber 7  #count two sides, so 3*2-1 is 5
+PSInputWavLabel AlignedLAPPDData
+
+#LAPPDnnlsAcrossFit
+across_factor 3 # in step size, the real step for factor 3 is 6.91/(2*3+1) = 0.987mm
+tempfilenameA nnlsAcrossTempb.root
+temphistnameA nnlsAtemp
+nnlsAVerbosityLevel 0
+trigChannel1 1005
+trigChannel2 1035
+nnlsInputWavLabelA nnlsLAPPDdata
+nnlsAOutputWavLabelA nnlsAOutput
+positionFileAName  PlotAcrossFit21.root
+fitOneSide 1
+maxiterA 5
+plotOption 1
+AFitTreeFileName AFitPosition.root
+nnlsAFitHighThres 0.20
+nnlsAFitLowThres 0.02

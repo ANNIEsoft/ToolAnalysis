@@ -61,7 +61,6 @@ if (tool=="VtxExtendedVertexFinder") ret=new VtxExtendedVertexFinder;
 if (tool=="VtxPointDirectionFinder") ret=new VtxPointDirectionFinder;
 if (tool=="VtxPointVertexFinder") ret=new VtxPointVertexFinder;
 if (tool=="LoadCCData") ret=new LoadCCData;
-if (tool=="WaveformNNLS") ret=new WaveformNNLS;
 if (tool=="HitCleaner") ret=new HitCleaner;
 if (tool=="HitResiduals") ret=new HitResiduals;
 if (tool=="MonitorReceive") ret=new MonitorReceive;
@@ -149,5 +148,10 @@ if (tool=="LAPPDASCIIReadIn") ret=new LAPPDASCIIReadIn;
 if (tool=="BeamDecoder") ret=new BeamDecoder;
 if (tool=="LoadRunInfo") ret=new LoadRunInfo;
 if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
+
+if (tool=="LAPPDnnlsPeak") ret=new LAPPDnnlsPeak;
+if (tool=="LAPPDLocateHit") ret=new LAPPDLocateHit;
+if (tool=="LAPPDPEPulseFit") ret=new LAPPDPEPulseFit;
+if (tool=="LAPPDOtherSimp") ret=new LAPPDOtherSimp;
 return ret;
 }
