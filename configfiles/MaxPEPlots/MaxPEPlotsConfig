@@ -1,0 +1,5 @@
+#MaxPEPlots config file
+
+MaxPEFilename MaxPEs_R2796_2us_MRDEvents.root
+ThresholdFile ./configfiles/MaxPEPlots/MPE_Thresholds.txt
+verbosity 2

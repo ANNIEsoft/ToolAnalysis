@@ -1,6 +1,6 @@
-verbose 5
+verbose 0
 
-OutputFile BeamRun1628.ntuple.root
+OutputFile BeamRun_R2573_AllTriggers.ntuple.root
 TankClusterProcessing 1
 MRDClusterProcessing 1
 TriggerProcessing 1
@@ -8,7 +8,7 @@ TankHitInfo_fill 1
 MRDHitInfo_fill 1
 MRDReco_fill 1
 SiPMPulseInfo_fill 0
-fillCleanEventsOnly 0
+fillCleanEventsOnly 1
 MCTruth_fill 0
 Reco_fill 0
 RecoDebug_fill 0

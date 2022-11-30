@@ -43,13 +43,17 @@ class LAPPDClusterTree: public Tool {
   Int_t         WraparoundBin;
   Int_t         T0Bin;
   Int_t         QualityVar;
-  Double_t      TrigDeltaT;
+//  Double_t      TrigDeltaT;
+  Double_t      TrigDeltaT1;
+  Double_t      TrigDeltaT2;
   Double_t      PulseHeight;
 
   Double_t      BeamTime;
   Double_t      EventTime;
   Double_t      TotalCharge;
-  Double_t      MaxAmp;
+  Double_t      MaxAmp0;
+  Double_t      MaxAmp1;
+
 
 
   // END NEW!!!

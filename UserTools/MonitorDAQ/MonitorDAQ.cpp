@@ -65,6 +65,22 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
     testmode = 0;
   }
 
+  //Interface with MonitorLAPPDSC
+  //Status variable for slack messages in MonitorDAQ
+  m_data->CStore.Set("LAPPDSlowControlWarning",false);
+  m_data->CStore.Set("LAPPDSCWarningTemp",false);
+  m_data->CStore.Set("LAPPDSCWarningHum",false);
+  m_data->CStore.Set("LAPPDSCWarningHV",false);
+  m_data->CStore.Set("LAPPDSCWarningLV1",false);
+  m_data->CStore.Set("LAPPDSCWarningLV2",false);
+  m_data->CStore.Set("LAPPDSCWarningLV3",false);
+  m_data->CStore.Set("LAPPDSCWarningSalt",false);
+  m_data->CStore.Set("LAPPDSCWarningThermistor",false);
+  m_data->CStore.Set("LAPPDSCWarningLight",false);
+  m_data->CStore.Set("LAPPDSCWarningRelay",false);
+  m_data->CStore.Set("LAPPDSCWarningErrors",false);
+  m_data->CStore.Set("LAPPDID",-1);
+
   //-------------------------------------------------------
   //------Setup time variables for periodic updates--------
   //-------------------------------------------------------
@@ -125,6 +141,24 @@ bool MonitorDAQ::Execute(){
   utc_to_t = (ULong64_t) current_utc;
   utc_to_fermi = (ULong64_t) utc_to_t*MSEC_to_SEC*MSEC_to_SEC;
 
+  if (vector_lappd_id.size() == 0){
+    m_data->CStore.Get("VectorLAPPDID",vector_lappd_id);
+    for (int i=0; i<(int) vector_lappd_id.size(); i++){
+      int id = vector_lappd_id.at(i);
+      map_warning_lappd_sc.emplace(id,false);
+      map_warning_lappd_temp.emplace(id,false);
+      map_warning_lappd_hum.emplace(id,false);
+      map_warning_lappd_hv.emplace(id,false);
+      map_warning_lappd_lv1.emplace(id,false);
+      map_warning_lappd_lv2.emplace(id,false);
+      map_warning_lappd_lv3.emplace(id,false);
+      map_warning_lappd_salt.emplace(id,false);
+      map_warning_lappd_thermistor.emplace(id,false);
+      map_warning_lappd_light.emplace(id,false);
+      map_warning_lappd_relay.emplace(id,false);
+    }
+  }	
+
   bool has_file;
   m_data->CStore.Get("HasNewFile",has_file);
 
@@ -184,6 +218,19 @@ bool MonitorDAQ::Execute(){
     this->DrawVMEService(current_stamp,24.,"current_24h",1);     //show 24h history of Tank files
     this->PrintInfoBox();
 
+    //reset warning variables
+    m_data->CStore.Set("LAPPDSCWarningTemp",false);
+    m_data->CStore.Set("LAPPDSCWarningHum",false);
+    m_data->CStore.Set("LAPPDSCWarningHV",false);
+    m_data->CStore.Set("LAPPDSCWarningLV1",false);
+    m_data->CStore.Set("LAPPDSCWarningLV2",false);
+    m_data->CStore.Set("LAPPDSCWarningLV3",false);
+    m_data->CStore.Set("LAPPDSCWarningSalt",false);
+    m_data->CStore.Set("LAPPDSCWarningThermistor",false);
+    m_data->CStore.Set("LAPPDSCWarningLight",false);
+    m_data->CStore.Set("LAPPDSCWarningRelay",false);
+    m_data->CStore.Set("LAPPDSCWarningErrors",false);
+    m_data->CStore.Set("LAPPDID",-1);
   }
 
   //Only for debugging memory leaks, otherwise comment out --> test mode
@@ -214,10 +261,12 @@ bool MonitorDAQ::Finalise(){
   delete gr_mem_vme01;
   delete gr_mem_vme02;
   delete gr_mem_vme03;
+  delete gr_mem_rpi;
   delete gr_cpu_daq01;
   delete gr_cpu_vme01;
   delete gr_cpu_vme02;
   delete gr_cpu_vme03;
+  delete gr_cpu_rpi;
   delete multi_disk;
   delete multi_mem;
   delete multi_cpu;
@@ -240,6 +289,7 @@ bool MonitorDAQ::Finalise(){
   delete text_haspmt;
   delete text_hascc;
   delete text_hastrigger;
+  delete text_haslappd;
   delete text_disk_title;
   delete text_disk_daq01;
   delete text_disk_vme01;
@@ -472,6 +522,20 @@ void MonitorDAQ::InitializeHists(){
   gr_mem_vme03->GetXaxis()->SetLabelOffset(0.03);
   gr_mem_vme03->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
   
+  gr_mem_rpi = new TGraph();
+  gr_mem_rpi->SetName("gr_mem_rpi");
+  gr_mem_rpi->SetTitle("RPi1 Memory");
+  if (draw_marker) gr_mem_rpi->SetMarkerStyle(20);
+  gr_mem_rpi->SetMarkerColor(kViolet);
+  gr_mem_rpi->SetLineColor(kViolet);
+  gr_mem_rpi->SetLineWidth(2);
+  gr_mem_rpi->SetFillColor(0);
+  gr_mem_rpi->GetYaxis()->SetTitle("Memory [%]");
+  gr_mem_rpi->GetXaxis()->SetTimeDisplay(1);
+  gr_mem_rpi->GetXaxis()->SetLabelSize(0.03);
+  gr_mem_rpi->GetXaxis()->SetLabelOffset(0.03);
+  gr_mem_rpi->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+
   gr_cpu_daq01 = new TGraph();
   gr_cpu_daq01->SetName("gr_cpu_daq01");
   gr_cpu_daq01->SetTitle("DAQ01 CPU Usage");
@@ -528,6 +592,20 @@ void MonitorDAQ::InitializeHists(){
   gr_cpu_vme03->GetXaxis()->SetLabelOffset(0.03);
   gr_cpu_vme03->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
   
+  gr_cpu_rpi = new TGraph();
+  gr_cpu_rpi->SetName("gr_cpu_rpi");
+  gr_cpu_rpi->SetTitle("RPi1 CPU Usage");
+  if (draw_marker) gr_cpu_rpi->SetMarkerStyle(20);
+  gr_cpu_rpi->SetMarkerColor(kViolet);
+  gr_cpu_rpi->SetLineColor(kViolet);
+  gr_cpu_rpi->SetLineWidth(2);
+  gr_cpu_rpi->SetFillColor(0);
+  gr_cpu_rpi->GetYaxis()->SetTitle("CPU [%]");
+  gr_cpu_rpi->GetXaxis()->SetTimeDisplay(1);
+  gr_cpu_rpi->GetXaxis()->SetLabelSize(0.03);
+  gr_cpu_rpi->GetXaxis()->SetLabelOffset(0.03);
+  gr_cpu_rpi->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+
   gr_disk_daq01 = new TGraph();
   gr_disk_daq01->SetName("gr_disk_daq01");
   gr_disk_daq01->SetTitle("DAQ01 Diskspace");
@@ -602,6 +680,7 @@ void MonitorDAQ::InitializeHists(){
   text_haspmt = new TText();
   text_hascc = new TText();
   text_hastrigger = new TText();
+  text_haslappd = new TText();
   text_currentdate = new TText();
   text_filename = new TText();
 
@@ -614,6 +693,7 @@ void MonitorDAQ::InitializeHists(){
   text_mem_vme01 = new TText();
   text_mem_vme02 = new TText();
   text_mem_vme03 = new TText();
+  text_mem_rpi = new TText();
 
   text_summary->SetNDC(1);
   text_vmeservice->SetNDC(1);
@@ -621,6 +701,7 @@ void MonitorDAQ::InitializeHists(){
   text_filedate->SetNDC(1);
   text_haspmt->SetNDC(1);
   text_hascc->SetNDC(1);
+  text_haslappd->SetNDC(1);
   text_hastrigger->SetNDC(1);
   text_currentdate->SetNDC(1);
   text_filename->SetNDC(1);
@@ -634,6 +715,7 @@ void MonitorDAQ::InitializeHists(){
   text_mem_vme01->SetNDC(1);
   text_mem_vme02->SetNDC(1);
   text_mem_vme03->SetNDC(1);
+  text_mem_rpi->SetNDC(1);
 
 }
 
@@ -648,12 +730,14 @@ void MonitorDAQ::GetFileInformation(){
   m_data->CStore.Get("HasTrigData",file_has_trig);
   m_data->CStore.Get("HasCCData",file_has_cc);
   m_data->CStore.Get("HasPMTData",file_has_pmt);
+  m_data->CStore.Get("HasLAPPDData",file_has_lappd);
   bool above_hundred = false;
   m_data->CStore.Get("Above100",above_hundred);
   if (above_hundred){
     file_has_trig = true;
     file_has_cc = true;
     file_has_pmt = true;
+    file_has_lappd = true;
   }
   m_data->CStore.Get("CurrentFileName",file_name);
   m_data->CStore.Get("CurrentFileSize",file_size_uint);
@@ -669,6 +753,7 @@ void MonitorDAQ::GetFileInformation(){
     std::cout <<"HasTrigData: "<<file_has_trig<<std::endl;
     std::cout <<"HasCCData: "<<file_has_cc<<std::endl;
     std::cout <<"HasPMTData: "<<file_has_pmt<<std::endl;
+    std::cout <<"HasLAPPDData: "<<file_has_lappd<<std::endl;
     std::cout <<"FileName: "<<file_name<<std::endl;
     std::cout <<"FileSize: "<<file_size<<std::endl;
     std::cout <<"FileTime: "<<file_time<<", converted: "<<file_timestamp<<std::endl;
@@ -751,6 +836,37 @@ void MonitorDAQ::GetVMEServices(bool is_online){
         status=tmpstatus.str();
       }
     }
+	  
+    if (RemoteServices.size() < 20) {
+      std::stringstream ss_error_services, ss_error_services_slack;
+      ss_error_services << "ERROR (MonitorDAQ tool): Less than 20 services! (" << RemoteServices.size() << " ) Potential DAQ crash?";
+      ss_error_services_slack << "payload={\"text\":\"Monitoring: Less than 20 services! (" << RemoteServices.size() << " ) Potential DAQ crash? \"}";
+      bool issue_warning_services = (!warning_services);
+      warning_services = true;
+      if (issue_warning_services) Log(ss_error_services.str().c_str(),v_error,verbosity);
+      if (send_slack && issue_warning_services){
+        try{
+          CURL *curl;
+          CURLcode res;
+          curl_global_init(CURL_GLOBAL_ALL);
+          curl=curl_easy_init();
+          if (curl){
+            curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+            std::string field = ss_error_services_slack.str();
+            curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+            res=curl_easy_perform(curl);
+            if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+            curl_easy_cleanup(curl);
+          }
+          curl_global_cleanup();
+        }
+        catch(...){
+          Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+        }
+      }
+    } else {
+      warning_services = false;
+    }
 
     //Some cleanup
     for (int i=0;i<(int)RemoteServices.size();i++){
@@ -758,6 +874,173 @@ void MonitorDAQ::GetVMEServices(bool is_online){
     }
    
   }
+
+  bool lappd_slow_control;
+  m_data->CStore.Get("LAPPDSlowControlWarning",lappd_slow_control);
+  bool lappd_sc_temp, lappd_sc_hum, lappd_sc_hv, lappd_sc_lv1, lappd_sc_lv2, lappd_sc_lv3;
+  bool lappd_sc_salt, lappd_sc_thermistor, lappd_sc_light, lappd_sc_relay, lappd_sc_errors;
+  int lappd_id;
+
+  m_data->CStore.Get("LAPPDSCWarningTemp",lappd_sc_temp);
+  m_data->CStore.Get("LAPPDSCWarningHum",lappd_sc_hum);
+  m_data->CStore.Get("LAPPDSCWarningHV",lappd_sc_hv);
+  m_data->CStore.Get("LAPPDSCWarningLV1",lappd_sc_lv1);
+  m_data->CStore.Get("LAPPDSCWarningLV2",lappd_sc_lv2);
+  m_data->CStore.Get("LAPPDSCWarningLV3",lappd_sc_lv3);
+  m_data->CStore.Get("LAPPDSCWarningSalt",lappd_sc_salt);
+  m_data->CStore.Get("LAPPDSCWarningThermistor",lappd_sc_thermistor);
+  m_data->CStore.Get("LAPPDSCWarningLight",lappd_sc_light);
+  m_data->CStore.Get("LAPPDSCWarningRelay",lappd_sc_relay);
+  m_data->CStore.Get("LAPPDSCWarningErrors",lappd_sc_errors);
+  m_data->CStore.Get("LAPPDID",lappd_id);
+
+  if (lappd_slow_control && !map_warning_lappd_sc[lappd_id]){
+    map_warning_lappd_sc[lappd_id] = true;
+    std::stringstream ss_error_sc, ss_error_sc_slack;
+    ss_error_sc << "ERROR: LAPPD Slow Control has not updated in over 10 minutes! Check the status!";
+    ss_error_sc_slack << "payload={\"text\":\"Monitoring: LAPPD Slow Control has not updated in over 10 minutes! (LAPPD ID "<<lappd_id<<"). Check the status! \"}";
+    if (send_slack){
+        try{
+          CURL *curl;
+          CURLcode res;
+          curl_global_init(CURL_GLOBAL_ALL);
+          curl=curl_easy_init();
+          if (curl){
+            curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+            std::string field = ss_error_sc_slack.str();
+            curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+            res=curl_easy_perform(curl);
+            if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+            curl_easy_cleanup(curl);
+          }
+          curl_global_cleanup();
+        }
+        catch(...){
+          Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+        }
+    }
+  } else if (!lappd_slow_control){
+    map_warning_lappd_sc[lappd_id] = false;
+  }
+
+  // Temperature warning
+  if (lappd_sc_temp && !map_warning_lappd_temp[lappd_id]){
+    map_warning_lappd_temp[lappd_id] = true;
+    std::stringstream ss_temp_mess;
+    float lappd_temp;
+    m_data->CStore.Get("LAPPDTemp",lappd_temp);
+    ss_temp_mess << "Monitoring: LAPPD Slow Control temperature >>>>"<<lappd_temp<<"<<<< is over critical limit! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    std::cout << ss_temp_mess.str() << std::endl;
+    this->SendToSlack(ss_temp_mess.str());
+  } else if (!lappd_sc_temp){
+    map_warning_lappd_temp[lappd_id] = false;
+  }
+
+  // Humidity warning
+  if (lappd_sc_hum && !map_warning_lappd_hum[lappd_id]){
+    map_warning_lappd_hum[lappd_id] = true;
+    float lappd_hum;
+    m_data->CStore.Get("LAPPDHum",lappd_hum);
+    std::stringstream ss_hum;
+    ss_hum << "Monitoring: LAPPD Slow Control humidity >>>"<<lappd_hum<<"<<<< is over critical limit! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    this->SendToSlack(ss_hum.str());
+    std::cout << ss_hum.str() << std::endl;
+  } else if (!lappd_sc_hum){
+    map_warning_lappd_hum[lappd_id] = false;
+  }
+
+  // HV warning
+  if (lappd_sc_hv && !map_warning_lappd_hv[lappd_id]){
+    map_warning_lappd_hv[lappd_id] = true;
+    std::stringstream ss_hv;
+    ss_hv << "Monitoring: LAPPD HV problem! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    this->SendToSlack(ss_hv.str());
+    std::cout << ss_hv.str() << std::endl;
+  } else if (!lappd_sc_hv){
+    map_warning_lappd_hv[lappd_id] = false;
+  }
+
+  // LV warning - 1
+  if (lappd_sc_lv1 && !map_warning_lappd_lv1[lappd_id]){
+    map_warning_lappd_lv1[lappd_id] = true;
+    std::stringstream ss_lv1;
+    ss_lv1 << "Monitoring: LAPPD LV (3.3V) value deviates too much from setpoint! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")";
+    this->SendToSlack(ss_lv1.str());
+    std::cout << ss_lv1.str() << std::endl;
+  } else if (!lappd_sc_lv1){
+    map_warning_lappd_lv1[lappd_id] = false;
+  }
+
+  // LV warning - 2
+  if (lappd_sc_lv2 && !map_warning_lappd_lv2[lappd_id]){
+    map_warning_lappd_lv2[lappd_id] = true;
+    std::stringstream ss_lv2;
+    ss_lv2 << "Monitoring: LAPPD LV value (2.5V) deviates too much from setpoint! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")";
+    this->SendToSlack(ss_lv2.str());
+    std::cout << ss_lv2.str() << std::endl;
+  } else if (!lappd_sc_lv2){
+    map_warning_lappd_lv2[lappd_id] = false;
+  }
+
+  // LV warning - 3
+  if (lappd_sc_lv3 && !map_warning_lappd_lv3[lappd_id]){
+    map_warning_lappd_lv3[lappd_id] = true;
+    std::stringstream ss_lv3;
+    ss_lv3 << "Monitoring: LAPPD LV value (1.8V) deviates too much from setpoint! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")";
+    this->SendToSlack(ss_lv3.str());
+    std::cout << ss_lv3.str() << std::endl;
+  } else if (!lappd_sc_lv3){
+    map_warning_lappd_lv3[lappd_id] = false;
+  }
+
+  // Salt-bridge warning
+  if (lappd_sc_salt && !map_warning_lappd_salt[lappd_id]){
+    map_warning_lappd_salt[lappd_id] = true;
+    float lappd_salt;
+    m_data->CStore.Get("LAPPDSalt",lappd_salt);
+    std::stringstream ss_salt;
+    ss_salt << "Monitoring: LAPPD Slow Control Salt-Bridge value >>>"<<lappd_salt<<"<<< is below critical limit! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    this->SendToSlack(ss_salt.str());
+    std::cout << ss_salt.str() << std::endl;
+  } else if (!lappd_sc_salt){
+    map_warning_lappd_salt[lappd_id] = false;
+  }
+
+  // Thermistor warning
+  if (lappd_sc_thermistor && !map_warning_lappd_thermistor[lappd_id]){
+    map_warning_lappd_thermistor[lappd_id] = true;
+    float lappd_thermistor;
+    m_data->CStore.Get("LAPPDThermistor",lappd_thermistor);
+    std::stringstream ss_thermistor;
+    ss_thermistor << "Monitoring: LAPPD Thermistor value >>>"<<lappd_thermistor<<"<<< is critically low! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    this->SendToSlack(ss_thermistor.str());
+    std::cout << ss_thermistor.str() << std::endl;
+  } else if (!lappd_sc_thermistor){
+    map_warning_lappd_thermistor[lappd_id] = false;
+  }
+
+  // Light warning
+  if (lappd_sc_light && !map_warning_lappd_light[lappd_id]){
+    map_warning_lappd_light[lappd_id] = true;
+    std::stringstream ss_light;
+    ss_light << "Monitoring: LAPPD Light level too high! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    this->SendToSlack(ss_light.str());
+    std::cout << ss_light.str() << std::endl;
+  } else if (!lappd_sc_light){
+    map_warning_lappd_light[lappd_id] = false;
+  }
+
+  // Relay warning
+  if (lappd_sc_relay && !map_warning_lappd_relay[lappd_id]){
+    map_warning_lappd_relay[lappd_id] = true;
+    std::stringstream ss_relay;
+    ss_relay << "Monitoring: LAPPD relays are not set correctly! Contact experts immediately!!! (LAPPD ID "<<lappd_id<<")" ;
+    this->SendToSlack(ss_relay.str());
+    std::cout << ss_relay.str() << std::endl;
+  } else if (!lappd_sc_relay){
+    map_warning_lappd_relay[lappd_id] = false;
+  }
+
   Log("MonitorDAQ tool: GetVMEServices: Got "+std::to_string(num_vme_service)+" VME services!",v_message,verbosity);
   if (num_vme_service < 3){
     Log("MonitorDAQ tool ERROR: Only "+std::to_string(num_vme_service)+" VME services running! Check DAQ",v_error,verbosity);
@@ -896,6 +1179,35 @@ void MonitorDAQ::GetCompStats(){
   else if (cpu_vme03 < 0.) cpu_vme03 = 0.;
   else if (cpu_vme03 > 100.) cpu_vme03 = 100.;
 
+  std::stringstream ss_path_rpi;
+  ss_path_rpi << path_compstats << "/compstatsPiMon01";
+  if (verbosity > 4) std::cout <<"MonitorDAQ: GetCompStats: Opening file "<<ss_path_rpi.str()<<std::endl;
+  Store storeRPi;
+  storeRPi.Initialise(ss_path_rpi.str().c_str());
+  long timeRPi;
+  long memtotRPi;
+  long memfreeRPi;
+  double idleRPi;
+  int diskRPi;
+  storeRPi.Get("Time",timeRPi);
+  storeRPi.Get("MemTotal",memtotRPi);
+  storeRPi.Get("MemFree",memfreeRPi);
+  storeRPi.Get("CPUidle",idleRPi);
+  storeRPi.Get("Disk",diskRPi);
+  timestamp_rpi = (ULong64_t) timeRPi*1000;  //convert to ns
+  disk_rpi = diskRPi;
+  mem_rpi = double(memtotRPi-memfreeRPi)/memtotRPi;
+  cpu_rpi = 100.-idleRPi;
+  timestamp_rpi -= utc_to_t;   //Correct timestamp to be displayed in Fermilab time
+  //Sanity checks
+  if (std::isinf(mem_rpi) || std::isnan(mem_rpi)) mem_rpi = 1.;
+  else if (mem_rpi < 0.) mem_rpi = 0.;
+  else if (mem_rpi > 1.) mem_rpi = 1.;
+  if (std::isinf(cpu_rpi) || std::isnan(cpu_rpi)) cpu_rpi = 100.;
+  else if (cpu_rpi < 0.) cpu_rpi = 0.;
+  else if (cpu_rpi > 100.) cpu_rpi = 100.;
+
+
 }
 
 void MonitorDAQ::WriteToFile(){
@@ -921,7 +1233,7 @@ void MonitorDAQ::WriteToFile(){
 
   ULong64_t t_start, t_end;
   std::string *file_name_pointer = new std::string;
-  bool temp_file_has_trig, temp_file_has_cc, temp_file_has_pmt;
+  bool temp_file_has_trig, temp_file_has_cc, temp_file_has_pmt, temp_file_has_lappd;
   double temp_file_size;
   ULong64_t temp_file_time;
   int temp_num_vme_service;
@@ -929,18 +1241,22 @@ void MonitorDAQ::WriteToFile(){
   double temp_disk_vme01;
   double temp_disk_vme02;
   double temp_disk_vme03;
+  double temp_disk_rpi;
   double temp_mem_daq01;
   double temp_mem_vme01;
   double temp_mem_vme02;
   double temp_mem_vme03;
+  double temp_mem_rpi;
   double temp_cpu_daq01;
   double temp_cpu_vme01;
   double temp_cpu_vme02;
   double temp_cpu_vme03;
+  double temp_cpu_rpi;
   ULong64_t temp_stamp_daq01;
   ULong64_t temp_stamp_vme01;
   ULong64_t temp_stamp_vme02;
   ULong64_t temp_stamp_vme03;
+  ULong64_t temp_stamp_rpi;
 
   TTree *t;
   if (f->GetListOfKeys()->Contains("daqmonitor_tree")) {
@@ -951,6 +1267,7 @@ void MonitorDAQ::WriteToFile(){
     t->SetBranchAddress("has_trig",&temp_file_has_trig);
     t->SetBranchAddress("has_cc",&temp_file_has_cc);
     t->SetBranchAddress("has_pmt",&temp_file_has_pmt);
+    t->SetBranchAddress("has_lappd",&temp_file_has_lappd);
     t->SetBranchAddress("file_name",&file_name_pointer);
     t->SetBranchAddress("file_size",&temp_file_size);
     t->SetBranchAddress("file_time",&temp_file_time);
@@ -959,18 +1276,22 @@ void MonitorDAQ::WriteToFile(){
     t->SetBranchAddress("timestamp_vme01",&temp_stamp_vme01);
     t->SetBranchAddress("timestamp_vme02",&temp_stamp_vme02);
     t->SetBranchAddress("timestamp_vme03",&temp_stamp_vme03);
+    t->SetBranchAddress("timestamp_rpi",&temp_stamp_rpi);
     t->SetBranchAddress("disk_daq01",&temp_disk_daq01);
     t->SetBranchAddress("disk_vme01",&temp_disk_vme01);
     t->SetBranchAddress("disk_vme02",&temp_disk_vme02);
     t->SetBranchAddress("disk_vme03",&temp_disk_vme03);
+    t->SetBranchAddress("disk_rpi",&temp_disk_rpi);
     t->SetBranchAddress("mem_daq01",&temp_mem_daq01);
     t->SetBranchAddress("mem_vme01",&temp_mem_vme01);
     t->SetBranchAddress("mem_vme02",&temp_mem_vme02);
     t->SetBranchAddress("mem_vme03",&temp_mem_vme03);
+    t->SetBranchAddress("mem_rpi",&temp_mem_rpi);
     t->SetBranchAddress("cpu_daq01",&temp_cpu_daq01);
     t->SetBranchAddress("cpu_vme01",&temp_cpu_vme01);
     t->SetBranchAddress("cpu_vme02",&temp_cpu_vme02);
     t->SetBranchAddress("cpu_vme03",&temp_cpu_vme03);
+    t->SetBranchAddress("cpu_rpi",&temp_cpu_rpi);
   } else {
     t = new TTree("daqmonitor_tree","DAQ Monitoring tree");
     Log("MonitorDAQ: WriteToFile: Tree is created from scratch",v_message,verbosity);
@@ -979,6 +1300,7 @@ void MonitorDAQ::WriteToFile(){
     t->Branch("has_trig",&temp_file_has_trig);
     t->Branch("has_cc",&temp_file_has_cc);
     t->Branch("has_pmt",&temp_file_has_pmt);
+    t->Branch("has_lappd",&temp_file_has_lappd);
     t->Branch("file_name",&file_name_pointer);
     t->Branch("file_size",&temp_file_size);
     t->Branch("file_time",&temp_file_time);
@@ -987,18 +1309,22 @@ void MonitorDAQ::WriteToFile(){
     t->Branch("timestamp_vme01",&temp_stamp_vme01);
     t->Branch("timestamp_vme02",&temp_stamp_vme02);
     t->Branch("timestamp_vme03",&temp_stamp_vme03);
+    t->Branch("timestamp_rpi",&temp_stamp_rpi);
     t->Branch("disk_daq01",&temp_disk_daq01);
     t->Branch("disk_vme01",&temp_disk_vme01);
     t->Branch("disk_vme02",&temp_disk_vme02);
     t->Branch("disk_vme03",&temp_disk_vme03);
+    t->Branch("disk_rpi",&temp_disk_rpi);
     t->Branch("mem_daq01",&temp_mem_daq01);
     t->Branch("mem_vme01",&temp_mem_vme01);
     t->Branch("mem_vme02",&temp_mem_vme02);
     t->Branch("mem_vme03",&temp_mem_vme03);
+    t->Branch("mem_rpi",&temp_mem_rpi);
     t->Branch("cpu_daq01",&temp_cpu_daq01);
     t->Branch("cpu_vme01",&temp_cpu_vme01);
     t->Branch("cpu_vme02",&temp_cpu_vme02);
     t->Branch("cpu_vme03",&temp_cpu_vme03);
+    t->Branch("cpu_rpi",&temp_cpu_rpi);
   }
 
   int n_entries = t->GetEntries();
@@ -1031,6 +1357,7 @@ void MonitorDAQ::WriteToFile(){
   temp_file_has_trig = file_has_trig;
   temp_file_has_cc = file_has_cc;
   temp_file_has_pmt = file_has_pmt;
+  temp_file_has_lappd = file_has_lappd;
   temp_file_size = file_size;
   temp_file_time = file_timestamp;
   temp_num_vme_service = num_vme_service;
@@ -1038,18 +1365,22 @@ void MonitorDAQ::WriteToFile(){
   temp_stamp_vme01 = (ULong64_t) timestamp_vme01;
   temp_stamp_vme02 = (ULong64_t) timestamp_vme02;
   temp_stamp_vme03 = (ULong64_t) timestamp_vme03;
+  temp_stamp_rpi = (ULong64_t) timestamp_rpi;
   temp_disk_daq01 = disk_daq01;
   temp_disk_vme01 = disk_vme01;
   temp_disk_vme02 = disk_vme02;
   temp_disk_vme03 = disk_vme03;
+  temp_disk_rpi = disk_rpi;
   temp_mem_daq01 = mem_daq01;
   temp_mem_vme01 = mem_vme01;
   temp_mem_vme02 = mem_vme02;
   temp_mem_vme03 = mem_vme03;
+  temp_mem_rpi = mem_rpi;
   temp_cpu_daq01 = cpu_daq01;
   temp_cpu_vme01 = cpu_vme01;
   temp_cpu_vme02 = cpu_vme02;
   temp_cpu_vme03 = cpu_vme03;
+  temp_cpu_rpi = cpu_rpi;
 
   boost::posix_time::ptime starttime = *Epoch + boost::posix_time::time_duration(int(t_start/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_start/MSEC_to_SEC/SEC_to_MIN)%60,int(t_start/MSEC_to_SEC/1000.)%60,t_start%1000);
   struct tm starttime_tm = boost::posix_time::to_tm(starttime);
@@ -1091,18 +1422,22 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
   disk_vme01_plot.clear();
   disk_vme02_plot.clear();
   disk_vme03_plot.clear();
+  disk_rpi_plot.clear();
   mem_daq01_plot.clear();
   mem_vme01_plot.clear();
   mem_vme02_plot.clear();
   mem_vme03_plot.clear();
+  mem_rpi_plot.clear();
   cpu_daq01_plot.clear();
   cpu_vme01_plot.clear();
   cpu_vme02_plot.clear();
   cpu_vme03_plot.clear();
+  cpu_rpi_plot.clear();
   t_daq01_plot.clear();
   t_vme01_plot.clear();
   t_vme02_plot.clear();
   t_vme03_plot.clear();
+  t_rpi_plot.clear();
 
   //take the end time and calculate the start time with the given time_frame
   ULong64_t timestamp_start = timestamp_end - time_frame*MIN_to_HOUR*SEC_to_MIN*MSEC_to_SEC;
@@ -1165,18 +1500,22 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         ULong64_t temp_timestamp_vme01;
         ULong64_t temp_timestamp_vme02;
         ULong64_t temp_timestamp_vme03;
+        ULong64_t temp_timestamp_rpi;
         double temp_disk_daq01;
         double temp_disk_vme01;
         double temp_disk_vme02;
         double temp_disk_vme03;
+        double temp_disk_rpi;
         double temp_mem_daq01;
         double temp_mem_vme01;
         double temp_mem_vme02;
         double temp_mem_vme03;
+        double temp_mem_rpi;
         double temp_cpu_daq01;
         double temp_cpu_vme01;
         double temp_cpu_vme02;
         double temp_cpu_vme03;
+        double temp_cpu_rpi;
   
         t->SetBranchAddress("t_start",&t_start);
         t->SetBranchAddress("t_end",&t_end);
@@ -1191,18 +1530,22 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("timestamp_vme01",&temp_timestamp_vme01);
         t->SetBranchAddress("timestamp_vme02",&temp_timestamp_vme02);
         t->SetBranchAddress("timestamp_vme03",&temp_timestamp_vme03);
+        t->SetBranchAddress("timestamp_rpi",&temp_timestamp_rpi);
         t->SetBranchAddress("disk_daq01",&temp_disk_daq01);
         t->SetBranchAddress("disk_vme01",&temp_disk_vme01);
         t->SetBranchAddress("disk_vme02",&temp_disk_vme02);
         t->SetBranchAddress("disk_vme03",&temp_disk_vme03);
+        t->SetBranchAddress("disk_rpi",&temp_disk_rpi);
         t->SetBranchAddress("mem_daq01",&temp_mem_daq01);
         t->SetBranchAddress("mem_vme01",&temp_mem_vme01);
         t->SetBranchAddress("mem_vme02",&temp_mem_vme02);
         t->SetBranchAddress("mem_vme03",&temp_mem_vme03);
+        t->SetBranchAddress("mem_rpi",&temp_mem_rpi);
         t->SetBranchAddress("cpu_daq01",&temp_cpu_daq01);
         t->SetBranchAddress("cpu_vme01",&temp_cpu_vme01);
         t->SetBranchAddress("cpu_vme02",&temp_cpu_vme02);
         t->SetBranchAddress("cpu_vme03",&temp_cpu_vme03);  
+        t->SetBranchAddress("cpu_rpi",&temp_cpu_rpi);  
 
         nentries_tree = t->GetEntries();
   
@@ -1244,18 +1587,22 @@ void MonitorDAQ::ReadFromFile(ULong64_t timestamp_end, double time_frame){
             disk_vme01_plot.push_back(temp_disk_vme01);
             disk_vme02_plot.push_back(temp_disk_vme02);
             disk_vme03_plot.push_back(temp_disk_vme03);
+            disk_rpi_plot.push_back(temp_disk_rpi);
             mem_daq01_plot.push_back(temp_mem_daq01);
             mem_vme01_plot.push_back(temp_mem_vme01);
             mem_vme02_plot.push_back(temp_mem_vme02);
             mem_vme03_plot.push_back(temp_mem_vme03);
+            mem_rpi_plot.push_back(temp_mem_rpi);
             cpu_daq01_plot.push_back(temp_cpu_daq01);
             cpu_vme01_plot.push_back(temp_cpu_vme01);
             cpu_vme02_plot.push_back(temp_cpu_vme02);
             cpu_vme03_plot.push_back(temp_cpu_vme03);
+            cpu_rpi_plot.push_back(temp_cpu_rpi);
             t_daq01_plot.push_back(temp_timestamp_daq01);
             t_vme01_plot.push_back(temp_timestamp_vme01);
             t_vme02_plot.push_back(temp_timestamp_vme02);
             t_vme03_plot.push_back(temp_timestamp_vme03);
+            t_rpi_plot.push_back(temp_timestamp_rpi);
             boost::posix_time::ptime boost_tend = *Epoch+boost::posix_time::time_duration(int(t_end/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(t_end/MSEC_to_SEC/SEC_to_MIN)%60,int(t_end/MSEC_to_SEC/1000.)%60,t_end%1000);
             struct tm label_timestamp = boost::posix_time::to_tm(boost_tend);
   
@@ -1336,10 +1683,12 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   gr_mem_vme01->Set(0);
   gr_mem_vme02->Set(0);
   gr_mem_vme03->Set(0);
+  gr_mem_rpi->Set(0);
   gr_cpu_daq01->Set(0);
   gr_cpu_vme01->Set(0);
   gr_cpu_vme02->Set(0);
   gr_cpu_vme03->Set(0);
+  gr_cpu_rpi->Set(0);
   gr_disk_daq01->Set(0);
   gr_disk_vme01->Set(0);
   gr_disk_vme02->Set(0);
@@ -1353,10 +1702,12 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
     gr_mem_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_vme01_plot.at(i_file)*100.);
     gr_mem_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_vme02_plot.at(i_file)*100.);
     gr_mem_vme03->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_vme03_plot.at(i_file)*100.);
+    gr_mem_rpi->SetPoint(i_file,labels_timeaxis[i_file].Convert(),mem_rpi_plot.at(i_file)*100.);
     gr_cpu_daq01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_daq01_plot.at(i_file));
     gr_cpu_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme01_plot.at(i_file));
     gr_cpu_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme02_plot.at(i_file));
     gr_cpu_vme03->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_vme03_plot.at(i_file));
+    gr_cpu_rpi->SetPoint(i_file,labels_timeaxis[i_file].Convert(),cpu_rpi_plot.at(i_file));
     gr_disk_daq01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_daq01_plot.at(i_file));
     gr_disk_vme01->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_vme01_plot.at(i_file));
     gr_disk_vme02->SetPoint(i_file,labels_timeaxis[i_file].Convert(),disk_vme02_plot.at(i_file));
@@ -1419,6 +1770,8 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   leg_mem->AddEntry(gr_mem_vme02,"VME02","l");
   multi_mem->Add(gr_mem_vme03);
   leg_mem->AddEntry(gr_mem_vme03,"VME03","l");
+  multi_mem->Add(gr_mem_rpi);
+  leg_mem->AddEntry(gr_mem_rpi,"RPi1","l");
   multi_mem->Draw("apl");
   multi_mem->SetTitle(ss_title_memory.str().c_str());
   multi_mem->GetYaxis()->SetTitle("Memory [%]");
@@ -1433,6 +1786,7 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   multi_mem->RecursiveRemove(gr_mem_vme01);
   multi_mem->RecursiveRemove(gr_mem_vme02);
   multi_mem->RecursiveRemove(gr_mem_vme03);
+  multi_mem->RecursiveRemove(gr_mem_rpi);
   leg_mem->Clear();
 
   canvas_timeevolution_cpu->Clear();
@@ -1445,6 +1799,8 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   leg_cpu->AddEntry(gr_cpu_vme02,"VME02","l");
   multi_cpu->Add(gr_cpu_vme03);
   leg_cpu->AddEntry(gr_cpu_vme03,"VME03","l");
+  multi_cpu->Add(gr_cpu_rpi);
+  leg_cpu->AddEntry(gr_cpu_rpi,"RPi1","l");
   multi_cpu->Draw("apl");
   multi_cpu->SetTitle(ss_title_cpu.str().c_str());
   multi_cpu->GetYaxis()->SetTitle("CPU [%]");
@@ -1459,6 +1815,7 @@ void MonitorDAQ::DrawDAQTimeEvolution(ULong64_t timestamp_end, double time_frame
   multi_cpu->RecursiveRemove(gr_cpu_vme01);
   multi_cpu->RecursiveRemove(gr_cpu_vme02);
   multi_cpu->RecursiveRemove(gr_cpu_vme03);
+  multi_cpu->RecursiveRemove(gr_cpu_rpi);
   leg_cpu->Clear();
   
   canvas_timeevolution_disk->Clear();
@@ -1562,6 +1919,18 @@ void MonitorDAQ::PrintInfoBox(){
     text_haspmt->SetText(0.06,0.3,ss_pmt.str().c_str());
     text_haspmt->SetTextColor(2);	//red text if not ok
   }
+
+  std::stringstream ss_lappd;
+  if (file_has_lappd) {
+    ss_lappd << "LAPPDData: True";
+    text_haslappd->SetText(0.06,0.0,ss_lappd.str().c_str());
+    text_haslappd->SetTextColor(1);      //black text if ok
+  } else {
+    ss_lappd << "LAPPDData: False";
+    text_haslappd->SetText(0.06,0.0,ss_lappd.str().c_str());
+    text_haslappd->SetTextColor(2);      //red text if not ok
+  }
+
   boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(current_stamp/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(current_stamp/MSEC_to_SEC/SEC_to_MIN)%60,int(current_stamp/MSEC_to_SEC)%60,current_stamp%1000);
   struct tm currenttime_tm = boost::posix_time::to_tm(currenttime);
   std::stringstream current_time;
@@ -1975,6 +2344,22 @@ void MonitorDAQ::PrintInfoBox(){
   if (cpu_round >= 80.) text_mem_vme03->SetTextColor(kOrange);
   if (cpu_round >= 90.) text_mem_vme03->SetTextColor(kRed);
   
+  boost::posix_time::ptime rpitime = *Epoch + boost::posix_time::time_duration(int(timestamp_rpi/MSEC_to_SEC/SEC_to_MIN/MIN_to_HOUR),int(timestamp_rpi/MSEC_to_SEC/SEC_to_MIN)%60,int(timestamp_rpi/MSEC_to_SEC)%60,timestamp_rpi%1000);
+  struct tm rpitime_tm = boost::posix_time::to_tm(rpitime);
+  std::stringstream ss_rpi_time;
+  ss_rpi_time << rpitime_tm.tm_year+1900<<"/"<<rpitime_tm.tm_mon+1<<"/"<<rpitime_tm.tm_mday<<"-"<<rpitime_tm.tm_hour<<":"<<rpitime_tm.tm_min<<":"<<rpitime_tm.tm_sec;
+
+  std::stringstream ss_text_mem_rpi;
+  mem_round = round(mem_rpi*100.)/100.;
+  cpu_round = round(cpu_rpi*100.)/100.;
+  ss_text_mem_rpi << "RPi1 Mem: "<<mem_round*100<<" %"<<"  CPU: "<<cpu_round<<" % ("<<ss_rpi_time.str()<<")";
+  text_mem_rpi->SetText(0.06,0.0,ss_text_mem_rpi.str().c_str());
+  text_mem_rpi->SetTextColor(1);      //default color
+  if (mem_round*100 >= 80.) text_mem_rpi->SetTextColor(kOrange);
+  if (mem_round*100 >= 90.) text_mem_rpi->SetTextColor(kRed);
+  if (cpu_round >= 80.) text_mem_rpi->SetTextColor(kOrange);
+  if (cpu_round >= 90.) text_mem_rpi->SetTextColor(kRed);
+
   text_summary->SetTextSize(0.05);
   text_vmeservice->SetTextSize(0.05);
   text_currentdate->SetTextSize(0.05);
@@ -1984,6 +2369,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_haspmt->SetTextSize(0.05);
   text_hascc->SetTextSize(0.05);
   text_hastrigger->SetTextSize(0.05);
+  text_haslappd->SetTextSize(0.05);
   text_disk_title->SetTextSize(0.05);
   text_disk_daq01->SetTextSize(0.05);
   text_disk_vme01->SetTextSize(0.05);
@@ -1993,6 +2379,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_mem_vme01->SetTextSize(0.05);
   text_mem_vme02->SetTextSize(0.05);
   text_mem_vme03->SetTextSize(0.05);
+  text_mem_rpi->SetTextSize(0.05);
 
   text_summary->SetNDC(1);
   text_vmeservice->SetNDC(1);
@@ -2003,6 +2390,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_haspmt->SetNDC(1);
   text_hascc->SetNDC(1);
   text_hastrigger->SetNDC(1);
+  text_haslappd->SetNDC(1);
   text_disk_title->SetNDC(1);
   text_disk_daq01->SetNDC(1);
   text_disk_vme01->SetNDC(1);
@@ -2012,6 +2400,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_mem_vme01->SetNDC(1);
   text_mem_vme02->SetNDC(1);
   text_mem_vme03->SetNDC(1);
+  text_mem_rpi->SetNDC(1);
 
   canvas_infobox->cd();
   canvas_infobox->Clear();
@@ -2025,6 +2414,7 @@ void MonitorDAQ::PrintInfoBox(){
     text_haspmt->Draw();
     text_hascc->Draw();
     text_hastrigger->Draw();
+    text_haslappd->Draw();
   }
 
   std::stringstream ss_path_textinfo;
@@ -2043,6 +2433,7 @@ void MonitorDAQ::PrintInfoBox(){
   text_mem_vme01->Draw();
   text_mem_vme02->Draw();
   text_mem_vme03->Draw();
+  text_mem_rpi->Draw();
   std::stringstream ss_path_textinfo_disk;
   ss_path_textinfo_disk << outpath << "DAQInfo_current_Diskspace."<<img_extension;
   canvas_info_diskspace->SaveAs(ss_path_textinfo_disk.str().c_str());
@@ -2071,3 +2462,33 @@ bool MonitorDAQ::does_file_exist(std::string filename){
 
 }
 
+int MonitorDAQ::SendToSlack(std::string message){
+
+    int success = 0;
+    std::stringstream ss_error_slack;
+    ss_error_slack << "payload={\"text\":\"" << message << "\"}";
+ 
+    if (send_slack){
+        try{
+          CURL *curl;
+          CURLcode res;
+          curl_global_init(CURL_GLOBAL_ALL);
+          curl=curl_easy_init();
+          if (curl){
+            curl_easy_setopt(curl,CURLOPT_URL,hook.c_str());
+            std::string field = ss_error_slack.str();
+            curl_easy_setopt(curl,CURLOPT_POSTFIELDS,field.c_str());
+            res=curl_easy_perform(curl);
+            if (res != CURLE_OK) Log("MonitorDAQ tool: curl_easy_perform() failed.",v_error,verbosity);
+            curl_easy_cleanup(curl);
+            success = 1;
+          }
+          curl_global_cleanup();
+        }
+        catch(...){
+          Log("MonitorDAQ tool: Slack send an error",v_warning,verbosity);
+        }
+    }
+
+    return success;
+}

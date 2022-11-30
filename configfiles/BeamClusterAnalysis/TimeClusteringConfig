@@ -1,9 +1,9 @@
 #TimeClustering config file
 
-verbosity 2
-MinDigitsForTrack 4
-MaxMrdSubEventDuration 40
-MinSubeventTimeSep 40
+verbosity 0
+MinDigitsForTrack 3
+MaxMrdSubEventDuration 30
+MinSubeventTimeSep 30
 MakeMrdDigitTimePlot 0
 LaunchTApplication 0
 IsData 1

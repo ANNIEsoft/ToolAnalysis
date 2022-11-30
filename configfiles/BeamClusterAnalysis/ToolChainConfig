@@ -18,6 +18,6 @@ service_kick_sec -1
 Tools_File ./configfiles/BeamClusterAnalysis/ToolsConfig
 
 ##### Run Type #####
-Inline 5000
+Inline -1
 Interactive 0
 

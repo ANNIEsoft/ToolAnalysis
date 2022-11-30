@@ -30,14 +30,23 @@ class ClusterClassifiers: public Tool {
   Position CalculateChargePoint(std::vector<Hit> cluster_hits);
   double CalculateChargeBalance(std::vector<Hit> cluster_hits);
   double CalculateMaxPE(std::vector<Hit> cluster_hits);
+  Position CalculateChargePointMC(std::vector<MCHit> cluster_hits, std::vector<unsigned long> cluster_detkeys);
+  double CalculateChargeBalanceMC(std::vector<MCHit> cluster_hits, std::vector<unsigned long> cluster_detkeys);
+  double CalculateMaxPEMC(std::vector<MCHit> cluster_hits, std::vector<unsigned long> cluster_detkeys);
 
  private:
 
   std::map<int,double> ChannelKeyToSPEMap;
+  bool isData;
 
   std::map<double,std::vector<Hit>>* m_all_clusters = nullptr;  
+  std::map<double,std::vector<MCHit>>* m_all_clusters_MC = nullptr;
+  std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey = nullptr;
 
   Geometry *geom = nullptr;
+
+  std::map<int,unsigned long> pmtid_to_channelkey;
+  std::map<unsigned long,int> channelkey_to_pmtid;
 
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;

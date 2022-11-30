@@ -134,6 +134,14 @@ if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
 
 if (tool=="EventClassification") ret=new EventClassification;
 if (tool=="DataSummary") ret=new DataSummary;
+if (tool=="MaxPEPlots") ret=new MaxPEPlots;
+if (tool=="StoreDecodedTimestamps") ret=new StoreDecodedTimestamps;
+if (tool=="PlotDecodedTimestamps") ret=new PlotDecodedTimestamps;
+if (tool=="MonitorDAQ") ret=new MonitorDAQ;
+if (tool=="MonitorSimReceiveLAPPD") ret=new MonitorSimReceiveLAPPD;
+if (tool=="MonitorLAPPDSC") ret=new MonitorLAPPDSC;
+if (tool=="MonitorLAPPDData") ret=new MonitorLAPPDData;
+if (tool=="ParseDataMonitoring") ret=new ParseDataMonitoring;
 if (tool=="LAPPDClusterTree") ret=new LAPPDClusterTree;
 if (tool=="LAPPDPlotWaveForms2D") ret=new LAPPDPlotWaveForms2D;
 if (tool=="LAPPDGausBaselineSubtraction") ret=new LAPPDGausBaselineSubtraction;
@@ -141,6 +149,5 @@ if (tool=="LAPPDASCIIReadIn") ret=new LAPPDASCIIReadIn;
 if (tool=="BeamDecoder") ret=new BeamDecoder;
 if (tool=="LoadRunInfo") ret=new LoadRunInfo;
 if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
-if (tool=="MonitorDAQ") ret=new MonitorDAQ;
 return ret;
 }

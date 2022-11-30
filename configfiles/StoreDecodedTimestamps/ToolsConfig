@@ -1,0 +1,6 @@
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+LoadRawData LoadRawData ./configfiles/StoreDecodedTimestamps/LoadRawDataConfig
+#PMTDataDecoder PMTDataDecoder ./configfiles/StoreDecodedTimestamps/PMTDataDecoderConfig
+#MRDDataDecoder MRDDataDecoder ./configfiles/StoreDecodedTimestamps/MRDDataDecoderConfig
+TriggerDataDecoder TriggerDataDecoder ./configfiles/StoreDecodedTimestamps/TriggerDataDecoderConfig
+StoreDecodedTimestamps StoreDecodedTimestamps ./configfiles/StoreDecodedTimestamps/StoreDecodedTimestampsConfig

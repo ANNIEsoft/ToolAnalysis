@@ -33,11 +33,13 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
   m_data->Stores["CCData"]=new BoostStore(false,0);
   m_data->Stores["PMTData"]=new BoostStore(false,0);
   m_data->Stores["TrigData"]=new BoostStore(false,0);
-	
+  m_data->Stores["LAPPDData"]=new BoostStore(false,0);	
+
   indata=0;
   MRDData=0; 
   PMTData=0;
   TrigData=0;
+  LAPPDData=0;
 
   return true;
 }
@@ -56,6 +58,8 @@ bool MonitorReceive::Execute(){
   m_data->CStore.Set("HasCCData",false);
   m_data->CStore.Set("HasPMTData",false);
   m_data->CStore.Set("HasTrigData",false);
+  m_data->CStore.Set("HasLAPPDData",false);
+  m_data->CStore.Set("HasLAPPDMonData",false);
   m_data->CStore.Set("HasNewFile",false);
   m_data->CStore.Set("Above100",false);
 
@@ -80,6 +84,18 @@ bool MonitorReceive::Execute(){
 	m_data->Stores["CCData"]->Set("Single",data);      
 	m_data->CStore.Set("HasCCData",true);
       }
+      else if (tmp.str()=="LAPPDMon"){
+        SlowControlMonitor scmon;
+        scmon.Receive_Mon(MonitorReceiver);
+        m_data->Stores["LAPPDData"]->Set("LAPPDSC",scmon);
+        m_data->CStore.Set("HasLAPPDMonData",true);
+      }
+     /* else if (tmp.str()==""){
+        PsecData psec;
+        psec.Receive(MonitorReceiver);
+        m_data->Stores["LAPPDData"]->Set("Single",psec);
+        m_data->CStore.Set("HasLAPPDData",true);
+      }*/
       
       else if(tmp.str()=="DataFile"){
 	
@@ -125,6 +141,10 @@ bool MonitorReceive::Execute(){
 	  TrigData=0;
 	}
 	      
+	if (LAPPDData!=0){
+	  m_data->Stores["LAPPDData"]->Delete();
+	}
+
 	if(indata!=0){
 	  indata->Close();
 	  indata->Delete();
@@ -167,6 +187,7 @@ bool MonitorReceive::Execute(){
 	MRDData= new BoostStore(false,2);
 	PMTData= new BoostStore(false,2);
 	TrigData = new BoostStore(false,2);
+	LAPPDData = new BoostStore(false,2);
 
 	if (indata->Has("CCData")){
 		try{
@@ -231,6 +252,19 @@ bool MonitorReceive::Execute(){
 	} else {
 		m_data->CStore.Set("HasPMTData",false);
 	}
+        if (indata->Has("LAPPDData")){
+                try{
+                  m_data->CStore.Set("HasLAPPDData",true);
+                  indata->Get("LAPPDData",*LAPPDData);
+		  LAPPDData->Print(false);
+                  m_data->Stores["LAPPDData"]->Set("LAPPDData",LAPPDData,false);
+                  } catch (...) {
+                  Log("MonitorReceive: Did not find LAPPDData in file! (Maybe corrupted!!!) Don't process LAPPDData",0,0);
+                  m_data->CStore.Set("HasLAPPDData",false);
+                }
+        } else {
+                m_data->CStore.Set("HasLAPPDData",false);
+        }
       }
      }     
   }
@@ -262,11 +296,13 @@ bool MonitorReceive::Finalise(){
   m_data->Stores["CCData"]->Remove("Single");
   m_data->Stores["PMTData"]->Remove("CardDataMap");
   m_data->Stores["TrigData"]->Remove("TrigDataMap");
+  m_data->Stores["LAPPDData"]->Remove("LAPPDData");
   // m_data->Stores["PMTData"]->Remove("FileData");
 	
   m_data->Stores["CCData"]->Close(); m_data->Stores["CCData"]->Delete();
   m_data->Stores["PMTData"]->Close(); m_data->Stores["PMTData"]->Delete();
   m_data->Stores["TrigData"]->Close(); m_data->Stores["TrigData"]->Delete();
+  m_data->Stores["LAPPDData"]->Close(); m_data->Stores["LAPPDData"]->Delete();
   m_data->Stores.clear();
 
   return true;
