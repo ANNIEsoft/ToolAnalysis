@@ -19,7 +19,7 @@ class SlowControlMonitor : public SerialisableObject{
  public:
 
     SlowControlMonitor();
-    SlowControlMonitor(unsigned int id);
+    SlowControlMonitor(int id);
     ~SlowControlMonitor();
 
     //Comms
@@ -34,9 +34,10 @@ class SlowControlMonitor : public SerialisableObject{
 
     //Version number
     unsigned int VersionNumber;
+    int RuntimeFlag;
 
     //LAPPD ID
-    unsigned int LAPPD_ID;
+    int LAPPD_ID;
 
     //Timestamp
     std::string timeSinceEpochMilliseconds;
@@ -108,6 +109,7 @@ class SlowControlMonitor : public SerialisableObject{
  
  template <class Archive> void serialize(Archive& ar, const unsigned int version){
     ar & VersionNumber;
+    ar & RuntimeFlag;
     ar & LAPPD_ID;
     ar & timeSinceEpochMilliseconds;
     ar & recieveFlag;

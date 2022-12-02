@@ -2,19 +2,21 @@
 
 SlowControlMonitor::SlowControlMonitor()
 {
-    VersionNumber = 0x0007;
+    VersionNumber = 0x0008;
 	recieveFlag = 1;
-	LAPPD_ID = 0;
+	LAPPD_ID = -1;
+    RuntimeFlag = 0;
 	SetDefaultSettings();
 	SetDefaultValues();
 }
 
 
-SlowControlMonitor::SlowControlMonitor(unsigned int id)
+SlowControlMonitor::SlowControlMonitor(int id)
 {
-    VersionNumber = 0x0007;
+    VersionNumber = 0x0008;
 	recieveFlag = 1;
 	LAPPD_ID = id;
+    RuntimeFlag = 0;
 	SetDefaultSettings();
 	SetDefaultValues();
 }
@@ -34,8 +36,8 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	std::memcpy(msgV.data(), &VersionNumber, sizeof VersionNumber);	
 
 	//LAPPD_ID
-	zmq::message_t msgID(sizeof LAPPD_ID);
-	std::memcpy(msgID.data(), &LAPPD_ID, sizeof LAPPD_ID);	
+	//zmq::message_t msgID(sizeof LAPPD_ID);
+	//std::memcpy(msgID.data(), &LAPPD_ID, sizeof LAPPD_ID);	
 
 	//Timestamp
 	zmq::message_t msgTime(timeSinceEpochMilliseconds.length()+1);
@@ -107,7 +109,7 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 
 	sock->send(msg0,ZMQ_SNDMORE);
 	sock->send(msgV,ZMQ_SNDMORE);
-	sock->send(msgID,ZMQ_SNDMORE);
+	//sock->send(msgID,ZMQ_SNDMORE);
 	sock->send(msgTime,ZMQ_SNDMORE);
 	sock->send(msgHum,ZMQ_SNDMORE);
 	sock->send(msgTemp1,ZMQ_SNDMORE);
@@ -131,8 +133,8 @@ bool SlowControlMonitor::Send_Mon(zmq::socket_t* sock){
 	sock->send(msgSalt,ZMQ_SNDMORE);
 	sock->send(msgES,ZMQ_SNDMORE);
 	//sock->send(msgE);
-	
 	sock->send(msgE,ZMQ_SNDMORE);
+    
 	Send_Config(sock);
 	
   	return true;
@@ -157,8 +159,8 @@ bool SlowControlMonitor::Receive_Mon(zmq::socket_t* sock){
 	}
 
 	//LAPPD_ID
-	sock->recv(&msg);   
-	LAPPD_ID=*(reinterpret_cast<unsigned int*>(msg.data()));
+	//sock->recv(&msg);   
+	//LAPPD_ID=*(reinterpret_cast<unsigned int*>(msg.data()));
 
 	//Timestamp
 	sock->recv(&msg);   
@@ -250,6 +252,10 @@ bool SlowControlMonitor::Send_Config(zmq::socket_t* sock){
 	zmq::message_t msgR(sizeof recieveFlag);
 	std::memcpy(msgR.data(), &recieveFlag, sizeof recieveFlag);
 	
+	//LAPPD_ID
+	zmq::message_t msgID(sizeof LAPPD_ID);
+	std::memcpy(msgID.data(), &LAPPD_ID, sizeof LAPPD_ID);	
+
 	//HV
 	zmq::message_t msgHVstate(sizeof HV_state_set);
 	std::memcpy(msgHVstate.data(), &HV_state_set, sizeof HV_state_set);
@@ -296,6 +302,7 @@ bool SlowControlMonitor::Send_Config(zmq::socket_t* sock){
 
 	sock->send(msgV,ZMQ_SNDMORE);
 	sock->send(msgR,ZMQ_SNDMORE);
+    sock->send(msgID,ZMQ_SNDMORE);
 	sock->send(msgHVstate,ZMQ_SNDMORE);
 	sock->send(msgHV,ZMQ_SNDMORE);
 	sock->send(msgLV,ZMQ_SNDMORE);
@@ -334,6 +341,10 @@ bool SlowControlMonitor::Receive_Config(zmq::socket_t* sock){
 	//Receive flag
 	sock->recv(&msg);
 	recieveFlag=*(reinterpret_cast<int*>(msg.data())); 
+
+    //LAPPD_ID
+	sock->recv(&msg);   
+	LAPPD_ID=*(reinterpret_cast<int*>(msg.data()));
 
 	//HV
 	sock->recv(&msg);   
