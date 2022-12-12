@@ -17,6 +17,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   EntriesPerExecute = 0;
   Mode = "Offline";
   OffsetVME03 = false;
+  OffsetPositive = true;
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("Mode",Mode);
@@ -24,6 +25,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("EntriesPerExecute",EntriesPerExecute);
   m_variables.Get("OffsetVME03",OffsetVME03);
   m_variables.Get("OffsetVME01",OffsetVME01);
+  m_variables.Get("OffsetPositive",OffsetPositive);
 
   if (Mode != "Monitoring" && Mode != "Offline") Mode = "Offline";
   if (Mode == "Monitoring") PMTData = new BoostStore(false,2);
@@ -529,8 +531,14 @@ void PMTDataDecoder::StoreFinishedWaveform(int CardID, int ChannelID)
   }
   std::vector<uint16_t> FinishedWave = WaveBank.at(wave_key);
   uint64_t FinishedWaveTrigTime = TriggerTimeBank.at(wave_key);  //Conversion from counter ticks to ns
-  if (CardID > 3000 && OffsetVME03) FinishedWaveTrigTime -= 8;	//Offset for VME03
-  if (CardID < 2000 && OffsetVME01) FinishedWaveTrigTime += 8; //Offset for VME01
+  if (CardID > 3000 && OffsetVME03) {
+    if (OffsetPositive) FinishedWaveTrigTime += 8;
+    else FinishedWaveTrigTime -= 8;	//Offset for VME03
+  }
+  if (CardID < 2000 && OffsetVME01) {
+    if (OffsetPositive) FinishedWaveTrigTime += 8; //Offset for VME01
+    else FinishedWaveTrigTime -= 8;
+  }
   if (FinishedWaveTrigTime > 2000000000000000000) {
     Log("PMTDataDecoder: Error: Encountered timestamp that is very large: FinishedWaveTrigTime = "+std::to_string(FinishedWaveTrigTime)+". Don't include this data in the waves in progress.",v_error,verbosity);
     WaveBank.erase(wave_key);

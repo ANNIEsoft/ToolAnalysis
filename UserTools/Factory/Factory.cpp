@@ -149,5 +149,6 @@ if (tool=="LAPPDASCIIReadIn") ret=new LAPPDASCIIReadIn;
 if (tool=="BeamDecoder") ret=new BeamDecoder;
 if (tool=="LoadRunInfo") ret=new LoadRunInfo;
 if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
+if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
 return ret;
 }

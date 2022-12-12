@@ -25,6 +25,7 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
   m_variables.Get("FileFormat",FileFormat);
   m_variables.Get("LoadOrphanStore",load_orphan_store);
   m_variables.Get("GlobalEvNr",global_evnr);
+  global_ev = offset_evnum;
 
   std::string input_list_filename;
   bool got_input_file_list = m_variables.Get("FileForListOfInputs",
@@ -95,6 +96,8 @@ bool LoadANNIEEvent::Execute() {
     Log("LoadANNIEEvent: Error! No input file names!", v_error, verbosity_);
     return false;
   }
+
+  if (input_filenames_.size()==0) m_data->vars.Set("StopLoop",1);
 
   if (need_new_file_) {
     need_new_file_=false;
