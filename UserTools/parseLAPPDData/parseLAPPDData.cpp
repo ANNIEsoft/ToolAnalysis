@@ -115,33 +115,33 @@ bool parseLAPPDData::Execute(){
     //Loop over meta data
     int offset = 0;
     unsigned short beamgate_63_48 = meta.at(7 - offset);	//Shift everything by 1 for the test file
-		unsigned short beamgate_47_32 = meta.at(27 - offset);	//Shift everything by 1 for the test file
-		unsigned short beamgate_31_16 = meta.at(47 - offset);	//Shift everything by 1 for the test file
-		unsigned short beamgate_15_0 = meta.at(67 - offset);	//Shift everything by 1 for the test file
-		std::bitset < 16 > bits_beamgate_63_48(beamgate_63_48);
-		std::bitset < 16 > bits_beamgate_47_32(beamgate_47_32);
-		std::bitset < 16 > bits_beamgate_31_16(beamgate_31_16);
-		std::bitset < 16 > bits_beamgate_15_0(beamgate_15_0);
-		unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
-		std::bitset < 64 > bits_beamgate_63_0(beamgate_63_0);
-		double beamgate_nsec = beamgate_63_0*CLOCK_to_NSEC;
-//Build data timestamp
-		unsigned short timestamp_63_48 = meta.at(70 - offset);	//Shift everything by 1 for the test file
-		unsigned short timestamp_47_32 = meta.at(50 - offset);	//Shift everything by 1 for the test file
-		unsigned short timestamp_31_16 = meta.at(30 - offset);	//Shift everything by 1 for the test file
-		unsigned short timestamp_15_0 = meta.at(10 - offset);		//Shift everything by 1 for the test file
-		std::bitset < 16 > bits_timestamp_63_48(timestamp_63_48);
-		std::bitset < 16 > bits_timestamp_47_32(timestamp_47_32);
-		std::bitset < 16 > bits_timestamp_31_16(timestamp_31_16);
-		std::bitset < 16 > bits_timestamp_15_0(timestamp_15_0);
-		//std::cout << "bits_timestamp_63_48: " << bits_timestamp_63_48 << std::endl;
-		//std::cout << "bits_timestamp_47_32: " << bits_timestamp_47_32 << std::endl;
-		//std::cout << "bits_timestamp_31_16: " << bits_timestamp_31_16 << std::endl;
-		//std::cout << "bits_timestamp_15_0: " << bits_timestamp_15_0 << std::endl;
-		unsigned long timestamp_63_0 = (static_cast<unsigned long>(timestamp_63_48) << 48) + (static_cast<unsigned long>(timestamp_47_32) << 32) + (static_cast<unsigned long>(timestamp_31_16) << 16) + (static_cast<unsigned long>(timestamp_15_0));
-		if (verbosity > 2) std::cout << "timestamp combined: " << timestamp_63_0 << std::endl;
-		std::bitset < 64 > bits_timestamp_63_0(timestamp_63_0);
-		double timestamp_nsec = timestamp_63_0*CLOCK_to_NSEC;
+    unsigned short beamgate_47_32 = meta.at(27 - offset);	//Shift everything by 1 for the test file
+    unsigned short beamgate_31_16 = meta.at(47 - offset);	//Shift everything by 1 for the test file
+    unsigned short beamgate_15_0 = meta.at(67 - offset);	//Shift everything by 1 for the test file
+    std::bitset < 16 > bits_beamgate_63_48(beamgate_63_48);
+    std::bitset < 16 > bits_beamgate_47_32(beamgate_47_32);
+    std::bitset < 16 > bits_beamgate_31_16(beamgate_31_16);
+    std::bitset < 16 > bits_beamgate_15_0(beamgate_15_0);
+    unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
+    std::bitset < 64 > bits_beamgate_63_0(beamgate_63_0);
+    double beamgate_nsec = beamgate_63_0*CLOCK_to_NSEC;
+    //Build data timestamp
+    unsigned short timestamp_63_48 = meta.at(70 - offset);	//Shift everything by 1 for the test file
+    unsigned short timestamp_47_32 = meta.at(50 - offset);	//Shift everything by 1 for the test file
+    unsigned short timestamp_31_16 = meta.at(30 - offset);	//Shift everything by 1 for the test file
+    unsigned short timestamp_15_0 = meta.at(10 - offset);		//Shift everything by 1 for the test file
+    std::bitset < 16 > bits_timestamp_63_48(timestamp_63_48);
+    std::bitset < 16 > bits_timestamp_47_32(timestamp_47_32);
+    std::bitset < 16 > bits_timestamp_31_16(timestamp_31_16);
+    std::bitset < 16 > bits_timestamp_15_0(timestamp_15_0);
+    //std::cout << "bits_timestamp_63_48: " << bits_timestamp_63_48 << std::endl;
+    //std::cout << "bits_timestamp_47_32: " << bits_timestamp_47_32 << std::endl;
+    //std::cout << "bits_timestamp_31_16: " << bits_timestamp_31_16 << std::endl;
+    //std::cout << "bits_timestamp_15_0: " << bits_timestamp_15_0 << std::endl;
+    unsigned long timestamp_63_0 = (static_cast<unsigned long>(timestamp_63_48) << 48) + (static_cast<unsigned long>(timestamp_47_32) << 32) + (static_cast<unsigned long>(timestamp_31_16) << 16) + (static_cast<unsigned long>(timestamp_15_0));
+    if (verbosity > 2) std::cout << "timestamp combined: " << timestamp_63_0 << std::endl;
+    std::bitset < 64 > bits_timestamp_63_0(timestamp_63_0);
+    double timestamp_nsec = timestamp_63_0*CLOCK_to_NSEC;
 
     time_since_beamgate = timestamp_nsec - beamgate_nsec;
     in_beam_window = false;
@@ -149,7 +149,9 @@ bool parseLAPPDData::Execute(){
 
     m_data->CStore.Set("LAPPD_TimeSinceBeam",time_since_beamgate);
     m_data->CStore.Set("LAPPD_InBeamWindow",in_beam_window);
-  }
+    m_data->CStore.Set("LAPPD_ParsedData",data);
+    m_data->CStore.Set("LAPPD_ParsedMeta",meta);
+    }
   }
 
   return true;
