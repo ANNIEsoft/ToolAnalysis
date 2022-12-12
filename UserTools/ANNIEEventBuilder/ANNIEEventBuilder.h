@@ -5,6 +5,7 @@
 #include <iostream>
 #include <set>
 #include <unordered_set>
+#include <numeric>
 
 #include "Tool.h"
 #include "TimeClass.h"

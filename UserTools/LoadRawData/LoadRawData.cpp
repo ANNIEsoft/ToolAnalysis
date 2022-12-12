@@ -230,7 +230,7 @@ bool LoadRawData::Execute(){
     TankPaused = true;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
-    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+    if(LAPPDEntryNum < lappdtotalentries) LAPPDPaused = false;
   }
   if(MRDEntryNum == mrdtotalentries){
     Log("LoadRawData Tool: ALL MRD ENTRIES COLLECTED.",v_debug, verbosity);
@@ -238,7 +238,7 @@ bool LoadRawData::Execute(){
     MRDPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
-    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+    if(LAPPDEntryNum < lappdtotalentries) LAPPDPaused = false;
   }
   if(TrigEntryNum == trigtotalentries){
     Log("LoadRawData Tool: ALL TRIG ENTRIES COLLECTED.",v_debug, verbosity);
@@ -246,9 +246,9 @@ bool LoadRawData::Execute(){
     CTCPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
-    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+    if(LAPPDEntryNum < lappdtotalentries) LAPPDPaused = false;
   }
-  if(LAPPDEntryNum == LAPPDtotalentries){
+  if(LAPPDEntryNum == lappdtotalentries){
     Log("LoadRawData Tool: ALL LAPPD ENTRIES COLLECTED.",v_debug, verbosity);
     LAPPDEntriesCompleted = true;
     LAPPDPaused = true;
@@ -608,7 +608,7 @@ void LoadRawData::GetNextDataEntries(){
 
   //Get next LAPPDData Entry
   if(BuildType == "LAPPD" || BuildType == "TankAndLAPPD" || BuildType == "MRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPDAndCTC"){
-        Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(LAPPDtotalentries),v_debug,verbosity);
+        Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(lappdtotalentries),v_debug,verbosity);
         LAPPDData->GetEntry(LAPPDEntryNum);
         LAPPDData->Get("LAPPDData", *Ldata);
         m_data->CStore.Set("LAPPDData", Ldata);
