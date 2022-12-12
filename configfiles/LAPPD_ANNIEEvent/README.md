@@ -1,25 +1,30 @@
-# Configure files
+# LAPPD_ANNIEEvent toolchain
 
-***********************
-#Description
-**********************
-
-Configure files are simple text files for passing variables to the Tools.
-
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
-
+The toolchain in this directory are exemplary toolchains which should showcase how one can access the LAPPD data in the raw and in the processed BoostStore data files from the official DAQ.
 
 ************************
-#Usage
+# GetLAPPDEvents
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+This toolchain operates on the raw data files of ANNIE and counts the number of LAPPD events in the data file and writes them to an output text file.
 
-Variables should be stored one per line as follows:
+************************
+# checkLAPPDStatus
+************************
 
+The `checkLAPPDStatus` toolchain is supposed to show how LAPPD data can be accessed in the processed data files. It first checks whether an event actually contains LAPPD data, then parses the LAPPD data to access whether any hits were seen in the beam window period, and runs the reconstruction of the MRD to evaluate whether the LAPPD events were happening for an event with a reconstructed MRD track and no veto activity. The information is written to a csv output file, but could also be used downstream by further tools to run additional reconstruction.
 
-Name Value #Comments 
+It contains the following tools
 
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
-
+```
+LoadANNIEEvent
+LoadGeometry
+TimeClustering
+FindMrdTracksConfig
+ClusterFinderConfig
+ClusterClassifiersConfig
+EventSelectorConfig
+checkLAPPDStatus
+parseLAPPDData
+saveLAPPDInfo
+```
