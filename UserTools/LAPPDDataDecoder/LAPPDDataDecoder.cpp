@@ -97,10 +97,6 @@ CurrentRunNum = RunNumber;
 
   std::vector<unsigned short> Raw_Buffer = Ldata->RawWaveform;
   std::vector<int> BoardId_Buffer = Ldata->BoardIndex;
-  
-  for (int i_raw=2; i_raw < 6; i_raw++){
-  std::cout << Raw_Buffer.at(i_raw)<<std::endl;
-  }
 
   if (Raw_Buffer.size() == 0) {
     std::cout <<"LAPPDDataDecoder: Encountered Raw Buffer size of 0! Abort!"<<std::endl;
@@ -179,7 +175,7 @@ CurrentRunNum = RunNumber;
     LAPPDDataBuilt = true;
   }
 
-  std::cout <<"LAPPDDataBuilt: "<<LAPPDDataBuilt<<std::endl;
+  if (verbosity > 1) std::cout <<"LAPPDDataBuilt: "<<LAPPDDataBuilt<<std::endl;
 
   m_data->CStore.Set("InProgressLAPPDEvents",LAPPDPulses);
   m_data->CStore.Set("InProgressLAPPDPPS",LAPPDPPS);
@@ -351,10 +347,6 @@ int LAPPDDataDecoder::LoopThroughPPSData(){
     unsigned short pps_47_32 = pps.at(3);
     unsigned short pps_31_16 = pps.at(4);
     unsigned short pps_15_0 = pps.at(5);
-    std::cout <<"pps_2: "<<pps.at(2)<<std::endl;
-    std::cout <<"pps_3: "<<pps.at(3)<<std::endl;
-    std::cout <<"pps_4: "<<pps.at(4)<<std::endl;
-    std::cout <<"pps_5: "<<pps.at(5)<<std::endl;
     std::bitset < 16 > bits_pps_63_48(pps_63_48);
     std::bitset < 16 > bits_pps_47_32(pps_47_32);
     std::bitset < 16 > bits_pps_31_16(pps_31_16);
