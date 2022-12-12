@@ -97,8 +97,6 @@ bool LoadANNIEEvent::Execute() {
     return false;
   }
 
-  if (input_filenames_.size()==0) m_data->vars.Set("StopLoop",1);
-
   if (need_new_file_) {
     need_new_file_=false;
 
