@@ -1,20 +1,26 @@
 # saveLAPPDInfo
 
-saveLAPPDInfo
+The `saveLAPPDInfo` is a demonstration tool how LAPPD data can be accessed and saved to an output file alongside reconstruction information from the other subsystems (tank PMTs, the MRD, and the trigger system). The associated toolchain can be found at `configfiles/LAPPD-ANNIEEvent/checkLAPPDStatus`.
 
-## Data
+The tool saves the following variables into an output csv file:
 
-Describe any data formats saveLAPPDInfo creates, destroys, changes, or analyzes. E.G.
-
-**RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
-* Takes this data from the `ANNIEEvent` store and finds the number of peaks
-
+* run number
+* subrun number
+* part number
+* event number
+* global event number
+* trigger time
+* event time (LAPPD)
+* Global LAPPD event offset
+* Time since the beginning of the beamgate
+* in beam window
+* mrd track
+* no veto    
 
 ## Configuration
 
-Describe any configuration variables for saveLAPPDInfo.
+The `saveLAPPDInfo` tool has the following configuration variables:
 
 ```
-param1 value1
-param2 value2
+OutputFile outputfile.csv
 ```
