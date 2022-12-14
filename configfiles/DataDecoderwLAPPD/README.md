@@ -50,3 +50,10 @@ In contrast, if the global offset should be inferred automatically, one needs to
 LAPPDOffsetFile None
 ```
 
+************************
+# Offset calculation
+************************
+
+An illustration of how the offsets can be calculated based on the offsets from previous and subsequent files can be found in the following repository:
+
+https://github.com/mnieslony/LAPPD_QuickAnalysis.git
