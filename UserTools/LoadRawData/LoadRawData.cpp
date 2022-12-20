@@ -53,10 +53,12 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   TankEntryNum = 0;
   MRDEntryNum = 0;
   TrigEntryNum = 0;
+  LAPPDEntryNum = 0;
   FileCompleted = false;
   TankEntriesCompleted = false;
   MRDEntriesCompleted = false;
   TrigEntriesCompleted = false;
+  LAPPDEntriesCompleted = false;
 
   m_data->CStore.Set("FileProcessingComplete",false);
   return true;
@@ -95,7 +97,6 @@ bool LoadRawData::Execute(){
       this->LoadPMTMRDData();
       this->LoadTriggerData();
       this->LoadLAPPDData();
-      this->LoadRunInformation();
     } else {
       Log("LoadRawData Tool: Continuing Raw Data file processing",v_message,verbosity); 
     }
@@ -103,7 +104,8 @@ bool LoadRawData::Execute(){
   
   else if (Mode=="FileList"){
     if(OrganizedFileList.size()==0){
-      std::cout << "LoadRawData tool ERROR: no files in file list to parse!" << std::endl;
+      std::cout << "LoadRawData tool ERROR: no files in file list to parse! Stopping toolchain" << std::endl;
+      m_data->vars.Set("StopLoop",1);
       return false;
     }
     if(FileCompleted || CurrentFile=="NONE"){
@@ -119,7 +121,6 @@ bool LoadRawData::Execute(){
       this->LoadPMTMRDData();
       this->LoadTriggerData();
       this->LoadLAPPDData();
-      this->LoadRunInformation();
     } else {
      if(verbosity>v_message) std::cout << "LoadRawDataTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
     }
@@ -143,7 +144,6 @@ bool LoadRawData::Execute(){
       this->LoadPMTMRDData();
       this->LoadTriggerData();
       this->LoadLAPPDData();
-      this->LoadRunInformation();
     } 
     else {
       Log("LoadRawData Tool: The State >>> "+State+" <<< was not recognized. Please make sure you execute the MonitorReceive tool before the LoadRawData tool when operating in continuous mode",v_error,verbosity);
@@ -156,11 +156,19 @@ bool LoadRawData::Execute(){
     return false;
   }
 
+  //If more MRD events than VME events abort
+  if (mrdtotalentries > tanktotalentries){
+    std::cout << "LoadRawData tool ERROR: More MRD entries than VME entries! Stopping toolchain" << std::endl;
+    m_data->vars.Set("StopLoop",1);
+  }
+
   //Print the current progress of event building in this file
   if(verbosity > v_message){
     std::cout << "LoadRawData Tool: Current progress in file processing: TankEntryNum = "<< TankEntryNum <<", fraction = "<<((double)TankEntryNum/(double)tanktotalentries)*100 << std::endl;
     std::cout << "LoadRawData Tool: Current progress in file processing: MRDEntryNum = "<< MRDEntryNum <<", fraction = "<<((double)MRDEntryNum/(double)mrdtotalentries)*100 << std::endl;
     std::cout << "LoadRawData Tool: Current progress in file processing: TrigEntryNum = "<< TrigEntryNum <<", fraction = "<<((double)TrigEntryNum/(double)trigtotalentries)*100 << std::endl;
+    if (lappdtotalentries > 0) std::cout << "LoadRawData Tool: Current progress in file processing: LAPPDEntryNum = "<< LAPPDEntryNum <<", fraction = "<<((double)LAPPDEntryNum/(double)lappdtotalentries)*100 << std::endl;
+    else std::cout << "LoadRawData Tool: Current progress in file processing: LAPPDEntryNum = 0, fraction = 100" << std::endl;
     if(verbosity>10){
       // print human readable timestamps from the 3 most recently read entries
       // note that the timestamps aren't easily accessible from the raw data, so we'll lag one loop behind
@@ -222,7 +230,7 @@ bool LoadRawData::Execute(){
     TankPaused = true;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
-    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+    if(LAPPDEntryNum < lappdtotalentries) LAPPDPaused = false;
   }
   if(MRDEntryNum == mrdtotalentries){
     Log("LoadRawData Tool: ALL MRD ENTRIES COLLECTED.",v_debug, verbosity);
@@ -230,7 +238,7 @@ bool LoadRawData::Execute(){
     MRDPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
-    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+    if(LAPPDEntryNum < lappdtotalentries) LAPPDPaused = false;
   }
   if(TrigEntryNum == trigtotalentries){
     Log("LoadRawData Tool: ALL TRIG ENTRIES COLLECTED.",v_debug, verbosity);
@@ -238,13 +246,20 @@ bool LoadRawData::Execute(){
     CTCPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
-    if(LAPPDEntryNum < LAPPDtotalentries) LAPPDPaused = false;
+    if(LAPPDEntryNum < lappdtotalentries) LAPPDPaused = false;
   }
-  if(LAPPDEntryNum == LAPPDtotalentries){
+  if(LAPPDEntryNum == lappdtotalentries){
     Log("LoadRawData Tool: ALL LAPPD ENTRIES COLLECTED.",v_debug, verbosity);
     LAPPDEntriesCompleted = true;
     LAPPDPaused = true;
     if(TrigEntryNum < trigtotalentries) CTCPaused = false;
+    if(TankEntryNum < tanktotalentries) TankPaused = false;
+    if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
+  }
+  if (LAPPDEntryNum == lappdtotalentries){
+    Log("LoadRawData Tool: ALL LAPPD ENTRIES COLLECTED.",v_debug, verbosity);
+    LAPPDEntriesCompleted = true;
+    LAPPDPaused = true;
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
   }
@@ -264,7 +279,11 @@ bool LoadRawData::Execute(){
   if ((TrigEntriesCompleted && TankEntriesCompleted) && (BuildType == "TankAndCTC")) FileCompleted = true;
   if ((TrigEntriesCompleted && MRDEntriesCompleted) && (BuildType == "MRDAndCTC")) FileCompleted = true;
   if ((TrigEntriesCompleted && TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRDAndCTC")) FileCompleted = true;
+  if ((TrigEntriesCompleted && TankEntriesCompleted && MRDEntriesCompleted && LAPPDEntriesCompleted) && (BuildType == "TankAndMRDAndCTCAndLAPPD")) FileCompleted = true;
   if (TrigEntriesCompleted && BuildType == "CTC") FileCompleted = true;    
+
+  m_data->CStore.Set("LAPPDEntriesCompleted",LAPPDEntriesCompleted);
+  m_data->CStore.Set("TrigEntriesCompleted",TrigEntriesCompleted);
 
   m_data->CStore.Set("NewRawDataEntryAccessed",true);
   m_data->CStore.Set("FileCompleted",FileCompleted);
@@ -277,12 +296,12 @@ bool LoadRawData::Finalise(){
   RawData->Close();
   RawData->Delete();
   delete RawData;
-  if (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
+  if (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     PMTData->Close();
     PMTData->Delete();
     delete PMTData;
   }
-  if (BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "MRDAndCTC" || BuildType == "TankAndMRDAndCTC"){
+  if (BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "MRDAndCTC" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     MRDData->Close();
     MRDData->Delete();
     delete MRDData;
@@ -328,7 +347,7 @@ void LoadRawData::LoadRunInformation(){
 }
 
 void LoadRawData::LoadPMTMRDData(){
-  if((BuildType == "TankAndMRD") || (BuildType == "Tank") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "TankAndCTC")){
+  if((BuildType == "TankAndMRD") || (BuildType == "Tank") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "TankAndCTC") || (BuildType == "TankAndMRDAndCTCAndLAPPD")){
     Log("LoadRawData Tool: Accessing PMT Data in raw data",v_message,verbosity);
     RawData->Get("PMTData",*PMTData);
     PMTData->Header->Get("TotalEntries",tanktotalentries);
@@ -338,7 +357,7 @@ void LoadRawData::LoadPMTMRDData(){
     Log("LoadRawData Tool: Setting PMTData into CStore",v_debug, verbosity);
     if (!storerawdata) tanktotalentries++;	//Do one extra execute loop if we have to provide Hits objects in EventBuilding process
   }
-  if((BuildType == "TankAndMRD") || (BuildType == "MRD") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "MRDAndCTC")){
+  if((BuildType == "TankAndMRD") || (BuildType == "MRD") || (BuildType == "TankAndMRDAndCTC") || (BuildType == "MRDAndCTC") || (BuildType == "TankAndMRDAndCTCAndLAPPD")){
     Log("LoadRawData Tool: Accessing MRD Data in raw data",v_message,verbosity);
     RawData->Get("CCData",*MRDData);
     MRDData->Header->Get("TotalEntries",mrdtotalentries);
@@ -370,12 +389,20 @@ void LoadRawData::LoadTriggerData(){
 }
 
 void LoadRawData::LoadLAPPDData(){
+  Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
+  if((BuildType == "TankAndMRDAndCTCAndLAPPD")){
     Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
-    LAPPDData->Get("LAPPDData",*LAPPDData);
-    if (verbosity>3) LAPPDData->Print(false);
-    LAPPDData->Header->Get("TotalEntries",LAPPDtotalentries);
-    Log("LoadRawData Tool: LAPPDData had "+to_string(LAPPDtotalentries)+" entries",v_message,verbosity);
-    return;
+    try{
+      RawData->Get("LAPPDData",*LAPPDData);
+      LAPPDData->Header->Get("TotalEntries",lappdtotalentries);
+      if(verbosity>3) LAPPDData->Print(false);
+     } catch (...) {
+       Log("LoadRawData: Did not find LAPPDData in raw data file! (Maybe corrupted!!!) Don't process LAPPDData",0,0);
+      lappdtotalentries=0;
+      LAPPDEntriesCompleted = true;
+    }
+    Log("LoadRawData Tool: LAPPDData has "+std::to_string(lappdtotalentries)+" entries",v_debug,verbosity);
+  }
 }
 
 std::vector<std::string> LoadRawData::OrganizeRunParts(std::string FileList)
@@ -467,9 +494,11 @@ TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStor
   TankEntryNum = 0;
   MRDEntryNum = 0;
   TrigEntryNum = 0;
+  LAPPDEntryNum = 0;
   TankEntriesCompleted = false;
   MRDEntriesCompleted = false;
   TrigEntriesCompleted = false;
+  LAPPDEntriesCompleted = false;
   m_data->CStore.Set("PauseTankDecoding",false);
   m_data->CStore.Set("PauseMRDDecoding",false);
   m_data->CStore.Set("PauseCTCDecoding",false);
@@ -494,8 +523,9 @@ TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStor
 }
 
 void LoadRawData::GetNextDataEntries(){
+  std::cout <<"BuildType: "<<BuildType<<std::endl;
   //Get next PMTData Entry
-  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
+  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     if(!TankPaused && !TankEntriesCompleted){
       bool load_data = true;
       if (!storerawdata){
@@ -522,7 +552,7 @@ void LoadRawData::GetNextDataEntries(){
   }
 
   //Get next MRDData Entry
-  if(BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "MRDAndCTC"){
+  if(BuildType == "MRD" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "MRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     if(!MRDPaused && !MRDEntriesCompleted){
       Log("LoadRawData Tool: Procesing CCData Entry "+to_string(MRDEntryNum)+"/"+to_string(mrdtotalentries),v_debug, verbosity);
       MRDData->GetEntry(MRDEntryNum);
@@ -532,8 +562,19 @@ void LoadRawData::GetNextDataEntries(){
     }
   }
 
+  //Get next LAPPDData Entry
+  if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+    if (!LAPPDPaused && !LAPPDEntriesCompleted){
+      Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(lappdtotalentries),v_debug,verbosity);
+      LAPPDData->GetEntry(LAPPDEntryNum);
+      LAPPDData->Get("LAPPDData",*Ldata);
+      m_data->CStore.Set("LAPPDData",Ldata,true);
+      LAPPDEntryNum+=1;
+    }
+  }
+
   //Get next TrigData Entry
-  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC" || BuildType == "CTC") && !TrigEntriesCompleted && !CTCPaused){
+  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC" || BuildType == "CTC" || BuildType == "TankAndMRDAndCTCAndLAPPD") && !TrigEntriesCompleted && !CTCPaused){
     Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum)+"/"+to_string(trigtotalentries),v_debug, verbosity);
     if (storetrigoverlap && TrigEntryNum == 0 && extract_part != 0){
       TrigData->GetEntry(TrigEntryNum);
@@ -567,7 +608,7 @@ void LoadRawData::GetNextDataEntries(){
 
   //Get next LAPPDData Entry
   if(BuildType == "LAPPD" || BuildType == "TankAndLAPPD" || BuildType == "MRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPDAndCTC"){
-        Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(LAPPDtotalentries),v_debug,verbosity);
+        Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(lappdtotalentries),v_debug,verbosity);
         LAPPDData->GetEntry(LAPPDEntryNum);
         LAPPDData->Get("LAPPDData", *Ldata);
         m_data->CStore.Set("LAPPDData", Ldata);

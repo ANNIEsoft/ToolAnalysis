@@ -1,0 +1,4 @@
+#LAPPDDataDecoderConfig
+
+verbosity 4
+EntriesPerExecute 1
