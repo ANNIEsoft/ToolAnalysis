@@ -153,5 +153,6 @@ if (tool=="saveLAPPDInfo") ret=new saveLAPPDInfo;
 if (tool=="parseLAPPDData") ret=new parseLAPPDData;
 if (tool=="checkLAPPDStatus") ret=new checkLAPPDStatus;
 if (tool=="GetLAPPDEvents") ret=new GetLAPPDEvents;
+if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
 return ret;
 }

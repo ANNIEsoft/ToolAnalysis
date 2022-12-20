@@ -7,6 +7,7 @@
 #include "Tool.h"
 #include "CardData.h"
 #include "TriggerData.h"
+#include "PsecData.h"
 #include "BoostStore.h"
 #include "Store.h"
 #include "PsecData.h"
@@ -31,7 +32,7 @@ class LoadRawData: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
   void LoadPMTMRDData(); 
   void LoadTriggerData(); 
-  void LoadLAPPDData();
+  void LoadLAPPDData(); 
   void LoadRunInformation();
   void GetNextDataEntries();
   bool InitializeNewFile(); 
@@ -56,7 +57,7 @@ class LoadRawData: public Tool {
   int tanktotalentries;
   int trigtotalentries;
   int mrdtotalentries;
-  int LAPPDtotalentries;
+  int lappdtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
   bool TrigEntriesCompleted;
@@ -89,6 +90,7 @@ class LoadRawData: public Tool {
   TriggerData* Tdata = nullptr;
   MRDOut* Mdata = nullptr;
   PsecData* Ldata = nullptr;
+
   int verbosity;
   int v_error=0;
   int v_warning=1;

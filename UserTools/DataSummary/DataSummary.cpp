@@ -172,7 +172,6 @@ bool DataSummary::Execute(){
 
 		// calculated variables
 		MRDtimestamp = (uint64_t) mrd_timeclass.GetNs();
-		std::cout <<"MRD_timestamp: "<<MRDtimestamp<<std::endl;
 
 		PMTtimestamp_tree = (ULong64_t) PMTtimestamp;
 		CTCtimestamp_tree = (ULong64_t) CTCtimestamp;
@@ -1269,7 +1268,6 @@ bool DataSummary::AddTDiffPlots(){
 //	ComputeMeanAndVariance(ctc_to_tank_vals, mean_ctc_to_tank, var_ctc_to_tank, window_size);
 	
 	// 5. you could also make a normalized histogram at each step to make a colour band plot
-	return true;
 	
 	return true;
 }
