@@ -117,18 +117,77 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	t_last_update = 0;
 
 	//Status variable for slack messages in MonitorDAQ
-         m_data->CStore.Set("LAPPDSlowControlWarning",false);
-         m_data->CStore.Set("LAPPDSCWarningTemp",false);
-         m_data->CStore.Set("LAPPDSCWarningHum",false);
-         m_data->CStore.Set("LAPPDSCWarningHV",false);
-         m_data->CStore.Set("LAPPDSCWarningLV1",false);
-         m_data->CStore.Set("LAPPDSCWarningLV2",false);
-         m_data->CStore.Set("LAPPDSCWarningLV3",false);
-         m_data->CStore.Set("LAPPDSCWarningSalt",false);
-         m_data->CStore.Set("LAPPDSCWarningThermistor",false);
-         m_data->CStore.Set("LAPPDSCWarningLight",false);
-         m_data->CStore.Set("LAPPDSCWarningRelay",false);
-         m_data->CStore.Set("LAPPDSCWarningErrors",false);
+	std::map<int,bool> LAPPDSlowControlWarning;
+	std::map<int,bool> LAPPDSCWarningTemp;
+	std::map<int,bool> LAPPDSCWarningHum;
+	std::map<int,bool> LAPPDSCWarningHV;
+	std::map<int,bool> LAPPDSCWarningLV1;
+	std::map<int,bool> LAPPDSCWarningLV2;
+	std::map<int,bool> LAPPDSCWarningLV3;
+	std::map<int,bool> LAPPDSCWarningSalt;
+	std::map<int,bool> LAPPDSCWarningThermistor;
+	std::map<int,bool> LAPPDSCWarningLight;
+	std::map<int,bool> LAPPDSCWarningRelay;
+	std::map<int,double> LAPPDTemp;
+	std::map<int,double> LAPPDHum;
+	std::map<int,double> LAPPDHV;
+	std::map<int,double> LAPPDLV1;
+	std::map<int,double> LAPPDLV2;
+	std::map<int,double> LAPPDLV3;
+	std::map<int,double> LAPPDSalt;
+	std::map<int,double> LAPPDThermistor;
+	std::map<int,double> LAPPDLight;
+	std::map<int,std::vector<string> > LAPPDHVError;
+	std::map<int,std::vector<string> > LAPPDLVError;
+	std::map<int,std::vector<string> > LAPPDRelayError;
+	for (int i_lappd=0; i_lappd < vector_lappd_id.size(); i_lappd++){
+	 int id = vector_lappd_id.at(i_lappd);
+         LAPPDSlowControlWarning[id] = false;
+         LAPPDSCWarningTemp[id] = false;
+         LAPPDSCWarningHum[id] = false;
+         LAPPDSCWarningHV[id] = false;
+         LAPPDSCWarningLV1[id] = false;
+         LAPPDSCWarningLV2[id] = false;
+         LAPPDSCWarningLV3[id] = false;
+         LAPPDSCWarningSalt[id] = false;
+         LAPPDSCWarningThermistor[id] = false;
+         LAPPDSCWarningLight[id] = false;
+         LAPPDSCWarningRelay[id] = false;
+         LAPPDTemp[id] = -1;
+	 LAPPDHum[id] = -1;
+         LAPPDHV[id] = -1;
+         LAPPDLV1[id] = -1;
+         LAPPDLV2[id] = -1;
+         LAPPDLV3[id] = -1;
+         LAPPDSalt[id] = -1;
+         LAPPDThermistor[id] = -1;
+         LAPPDLight[id] = -1;
+	 std::vector<std::string> empty_vec;
+	 LAPPDHVError[id] = empty_vec;
+	 LAPPDLVError[id] = empty_vec;
+	 LAPPDRelayError[id] = empty_vec;
+        }
+         m_data->CStore.Set("LAPPDSlowControlWarning",LAPPDSlowControlWarning);
+         m_data->CStore.Set("LAPPDSCWarningTemp",LAPPDSCWarningTemp);
+         m_data->CStore.Set("LAPPDSCWarningHum",LAPPDSCWarningHum);
+         m_data->CStore.Set("LAPPDSCWarningHV",LAPPDSCWarningHV);
+         m_data->CStore.Set("LAPPDSCWarningLV1",LAPPDSCWarningLV1);
+         m_data->CStore.Set("LAPPDSCWarningLV2",LAPPDSCWarningLV2);
+         m_data->CStore.Set("LAPPDSCWarningLV3",LAPPDSCWarningLV3);
+         m_data->CStore.Set("LAPPDSCWarningSalt",LAPPDSCWarningSalt);
+         m_data->CStore.Set("LAPPDSCWarningThermistor",LAPPDSCWarningThermistor);
+         m_data->CStore.Set("LAPPDSCWarningLight",LAPPDSCWarningLight);
+         m_data->CStore.Set("LAPPDSCWarningRelay",LAPPDSCWarningRelay);
+        // m_data->CStore.Set("LAPPDSCWarningErrors",LAPPDSCWarningErrors);
+	 m_data->CStore.Set("LAPPDTemp",LAPPDTemp);
+	 m_data->CStore.Set("LAPPDHum",LAPPDHum);
+	 m_data->CStore.Set("LAPPDHV",LAPPDHV);
+	 m_data->CStore.Set("LAPPDLV1",LAPPDLV1);
+	 m_data->CStore.Set("LAPPDLV2",LAPPDLV2);
+	 m_data->CStore.Set("LAPPDLV3",LAPPDLV3);
+	 m_data->CStore.Set("LAPPDSalt",LAPPDSalt);
+	 m_data->CStore.Set("LAPPDThermistor",LAPPDThermistor);
+	 m_data->CStore.Set("LAPPDLight",LAPPDLight);
 
 	//Evaluating output path for monitoring plots
 	if (outpath_temp == "fromStore")
@@ -208,7 +267,6 @@ bool MonitorLAPPDSC::Execute() {
 		if (verbosity > 1)
 			std::cout << "MonitorLAPPDSC: New slow-control data available." << std::endl;
 
-		m_data->CStore.Set("LAPPDSlowControlWarning",false);
 
 		m_data->Stores["LAPPDData"]->Get("LAPPDSC", lappd_SC);
 		t_last_update = t_current;
@@ -216,6 +274,11 @@ bool MonitorLAPPDSC::Execute() {
 			std::cout <<"///////// Encountered error in slow control data //////////"<<std::endl;
 			std::cout << lappd_SC.Print() << std::endl;
 		}
+		
+		std::map<int,bool> SC_warning;
+                m_data->CStore.Get("LAPPDSlowControlWarning",SC_warning);
+		SC_warning[lappd_SC.LAPPD_ID] = false;
+		m_data->CStore.Set("LAPPDSlowControlWarning",SC_warning);
 		
 		if (map_duration[lappd_SC.LAPPD_ID] > period_update) {
 
@@ -254,8 +317,11 @@ bool MonitorLAPPDSC::Execute() {
 		if (map_duration[lappdid] > period_warning) {
 			//Send warning in case the time since the last LAPPD Slow Control update is > 10 minutes
 			//Log("Tool MonitorLAPPDSC: SEVERE ERROR: Time since last slow control update is > 10 minutes! (LAPPD ID "+std::to_string(lappdid)+")",v_error,verbosity);
-			m_data->CStore.Set("LAPPDSlowControlWarning",true);
-			m_data->CStore.Set("LAPPDID",lappdid);
+			std::map<int,bool> slow_control_warning;
+                	m_data->CStore.Get("LAPPDSlowControlWarning",slow_control_warning);
+			slow_control_warning[lappdid] = true;
+			m_data->CStore.Set("LAPPDSlowControlWarning",slow_control_warning);
+			//m_data->CStore.Set("LAPPDID",lappdid);
 		}
 	}
 
@@ -1431,6 +1497,8 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	ss_text_temp << "Temperature: " << lappd_SC.temperature_mon << " (" << current_time.str() << ")";
 	text_temp->SetText(0.06, 0.8, ss_text_temp.str().c_str());
 	text_temp->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningTemp;
+	m_data->CStore.Get("LAPPDSCWarningTemp",LAPPDSCWarningTemp);
 	if (lappd_SC.temperature_mon > limit_temperature_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored temperature >>>" + std::to_string(lappd_SC.temperature_mon) + "<<< is over first alert level [" + std::to_string(limit_temperature_low) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_temp->SetTextColor(kOrange);
@@ -1440,15 +1508,25 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored temperature >>>" + std::to_string(lappd_SC.temperature_mon) + "<<< is over second alert level [" + std::to_string(limit_temperature_high) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_temp->SetTextColor(kRed);
 		temp_humid_check = false;
-                m_data->CStore.Set("LAPPDSCWarningTemp",true);
+		LAPPDSCWarningTemp[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningTemp",LAPPDSCWarningTemp);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
-		m_data->CStore.Set("LAPPDTemp",lappd_SC.temperature_mon);
+		std::map<int,double> lappdtemp;
+		m_data->CStore.Get("LAPPDTemp",lappdtemp);
+		lappdtemp[lappd_SC.LAPPD_ID] = lappd_SC.temperature_mon;
+		m_data->CStore.Set("LAPPDTemp",lappdtemp);
+	} else {
+		LAPPDSCWarningTemp[lappd_SC.LAPPD_ID] = false;
+		m_data->CStore.Set("LAPPDSCWarningTemp",LAPPDSCWarningTemp);
 	}
 
 	std::stringstream ss_text_hum;
 	ss_text_hum << "Humidity: " << lappd_SC.humidity_mon << " (" << current_time.str() << ")";
 	text_hum->SetText(0.06, 0.7, ss_text_hum.str().c_str());
 	text_hum->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningHum;
+        m_data->CStore.Get("LAPPDSCWarningHum",LAPPDSCWarningHum);
+
 	if (lappd_SC.humidity_mon > limit_humidity_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored humidity >>>" + std::to_string(lappd_SC.humidity_mon) + "<<< is over first alert level [" + std::to_string(limit_humidity_low) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_hum->SetTextColor(kOrange);
@@ -1458,9 +1536,16 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored humidity >>>" + std::to_string(lappd_SC.humidity_mon) + "<<< is over second alert level [" + std::to_string(limit_humidity_high) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_hum->SetTextColor(kRed);
 		temp_humid_check = false;
-                m_data->CStore.Set("LAPPDSCWarningHum",true);
+		LAPPDSCWarningHum[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningHum",LAPPDSCWarningHum);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
-                m_data->CStore.Set("LAPPDHum",lappd_SC.humidity_mon);
+		std::map<int,double> lappdhum;
+                m_data->CStore.Get("LAPPDHum",lappdhum);
+		lappdhum[lappd_SC.LAPPD_ID] = lappd_SC.humidity_mon;
+                m_data->CStore.Set("LAPPDHum",lappdhum);
+	} else {
+		LAPPDSCWarningHum[lappd_SC.LAPPD_ID] = false;
+		m_data->CStore.Set("LAPPDSCWarningHum",LAPPDSCWarningHum);
 	}
 
 	std::stringstream ss_text_thermistor;
@@ -1469,6 +1554,8 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 	ss_text_thermistor << "Thermistor: " << thermistor_temp << " deg C (" << current_time.str() << ")";
 	text_thermistor->SetText(0.06, 0.6, ss_text_thermistor.str().c_str());
 	text_thermistor->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningThermistor;
+        m_data->CStore.Get("LAPPDSCWarningThermistor",LAPPDSCWarningThermistor);
 	if (lappd_SC.temperature_thermistor < limit_thermistor_temperature_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored thermistor resistance >>>" + std::to_string(lappd_SC.temperature_thermistor) + "<<< is below first alert level [" + std::to_string(limit_thermistor_temperature_low) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_thermistor->SetTextColor(kOrange);
@@ -1478,15 +1565,24 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored thermistor resistance >>>" + std::to_string(lappd_SC.temperature_thermistor) + "<<< is below second alert level [" + std::to_string(limit_thermistor_temperature_high) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_thermistor->SetTextColor(kRed);
 		temp_humid_check = false;
-                m_data->CStore.Set("LAPPDSCWarningThermistor",true);
+		LAPPDSCWarningThermistor[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningThermistor",LAPPDSCWarningThermistor);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
-                m_data->CStore.Set("LAPPDThermistor",lappd_SC.temperature_thermistor);
+		std::map<int,double> lappdthermistor;
+                m_data->CStore.Get("LAPPDThermistor",lappdthermistor);
+		lappdthermistor[lappd_SC.LAPPD_ID] = lappd_SC.temperature_thermistor;
+                m_data->CStore.Set("LAPPDThermistor",lappdthermistor);
+	} else {
+		LAPPDSCWarningThermistor[lappd_SC.LAPPD_ID] = false;
+		m_data->CStore.Set("LAPPDSCWarningThermistor",LAPPDSCWarningThermistor);
 	}
 
 	std::stringstream ss_text_salt;
 	ss_text_salt << "Salt bridge: " << lappd_SC.saltbridge << " (" << current_time.str() << ")";
 	text_salt->SetText(0.06, 0.5, ss_text_salt.str().c_str());
 	text_salt->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningSalt;
+        m_data->CStore.Get("LAPPDSCWarningSalt",LAPPDSCWarningSalt);
 	if (lappd_SC.saltbridge < limit_salt_low) {
 		Log("MonitorLAPPDSC: ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is below first alert level [" + std::to_string(limit_salt_low) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_salt->SetTextColor(kOrange);
@@ -1496,9 +1592,16 @@ void MonitorLAPPDSC::DrawStatus_TempHumidity() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is below second alert level [" + std::to_string(limit_salt_high) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_salt->SetTextColor(kRed);
 		temp_humid_check = false;
-                m_data->CStore.Set("LAPPDSCWarningSalt",true);
+		LAPPDSCWarningSalt[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningSalt",LAPPDSCWarningSalt);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
-                m_data->CStore.Set("LAPPDSalt",lappd_SC.saltbridge);
+		std::map<int,double> lappdsalt;
+                m_data->CStore.Get("LAPPDSalt",lappdsalt);
+                lappdsalt[lappd_SC.LAPPD_ID] = lappd_SC.saltbridge;
+                m_data->CStore.Set("LAPPDSalt",lappdsalt);
+	} else {
+		LAPPDSCWarningSalt[lappd_SC.LAPPD_ID] = false;
+                m_data->CStore.Set("LAPPDSCWarningSalt",LAPPDSCWarningSalt);
 	}
 	if (lappd_SC.saltbridge > 630000.) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored salt-bridge value >>>" + std::to_string(lappd_SC.saltbridge) + "<<< is above first alert level [630,000]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
@@ -1671,20 +1774,36 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	}*/
 
 	//HV Set and Mon mismatch warning
+	std::map<int,bool> LAPPDSCWarningHV;
+        m_data->CStore.Get("LAPPDSCWarningHV",LAPPDSCWarningHV);
 	if (lappd_SC.HV_state_set && lappd_SC.HV_mon == 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: HV state is set to ON, but HV mon is OFF!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_hv_mon->SetTextColor(kRed);
 		lvhv_check = false;
-                m_data->CStore.Set("LAPPDSCWarningHV",true);
+		LAPPDSCWarningHV[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningHV",LAPPDSCWarningHV);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdhverror;
+                m_data->CStore.Get("LAPPDHVError",lappdhverror);
+		std::stringstream ss_error_hv;
+		ss_error_hv << "Monitoring LAPPD: SEVERE ERROR: HV state is set to ON, but HV mon is OFF!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdhverror[lappd_SC.LAPPD_ID].push_back(ss_error_hv.str());
+		m_data->CStore.Set("LAPPDHVError",lappdhverror);
 	}
 
 	if (!lappd_SC.HV_state_set && lappd_SC.HV_mon > 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: HV state is set to OFF, but HV mon is ON!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_hv_mon->SetTextColor(kRed);
 		lvhv_check = false;
-                m_data->CStore.Set("LAPPDSCWarningHV",true);
+                LAPPDSCWarningHV[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningHV",LAPPDSCWarningHV);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdhverror;
+                m_data->CStore.Get("LAPPDHVError",lappdhverror);
+                std::stringstream ss_error_hv;
+                ss_error_hv << "Monitoring LAPPD: SEVERE ERROR: HV state is set to OFF, but HV mon is ON!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdhverror[lappd_SC.LAPPD_ID].push_back(ss_error_hv.str());
+                m_data->CStore.Set("LAPPDHVError",lappdhverror);
 	}
 
 	//HV Volt
@@ -1727,16 +1846,30 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 		Log("MonitorLAPPDSC: SEVERE ERROR: LV state is set to ON, but LV mon is OFF!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_lv_mon->SetTextColor(kRed);
 		lvhv_check = false;
-                m_data->CStore.Set("LAPPDSCWarningHV",true);
+                LAPPDSCWarningHV[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningHV",LAPPDSCWarningHV);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdhverror;
+                m_data->CStore.Get("LAPPDHVError",lappdhverror);
+                std::stringstream ss_error_hv;
+                ss_error_hv << "Monitoring LAPPD: SEVERE ERROR: LV state is set to ON, but LV mon is OFF!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdhverror[lappd_SC.LAPPD_ID].push_back(ss_error_hv.str());
+                m_data->CStore.Set("LAPPDHVError",lappdhverror);
 	}
 
 	if (!lappd_SC.LV_state_set && lappd_SC.LV_mon > 0) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: LV state is set to OFF, but LV mon is ON!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_lv_mon->SetTextColor(kRed);
 		lvhv_check = false;
-                m_data->CStore.Set("LAPPDSCWarningHV",true);
+                LAPPDSCWarningHV[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningHV",LAPPDSCWarningHV);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdhverror;
+                m_data->CStore.Get("LAPPDHVError",lappdhverror);
+                std::stringstream ss_error_hv;
+                ss_error_hv << "Monitoring LAPPD: SEVERE ERROR: LV state is set to OFF, but LV mon is ON!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdhverror[lappd_SC.LAPPD_ID].push_back(ss_error_hv.str());
+                m_data->CStore.Set("LAPPDHVError",lappdhverror);
 	}
 
 	//V33
@@ -1744,13 +1877,20 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_v33_temp << "V33: " << lappd_SC.v33 << " V (" << current_time.str() << ")";
 	text_v33->SetText(0.06, 0.4, ss_v33_temp.str().c_str());
 	text_v33->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningLV3;
+        m_data->CStore.Get("LAPPDSCWarningLV3",LAPPDSCWarningLV3);
 	if (lappd_SC.LV_state_set){
 	if (lappd_SC.v33 < v33_min || lappd_SC.v33 > v33_max) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is outside of expected range [" + std::to_string(v33_min) + " , " + std::to_string(v33_max) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_v33->SetTextColor(kRed);
 		lvhv_check = false;
-                m_data->CStore.Set("LAPPDSCWarningLV3",true);
+		LAPPDSCWarningLV3[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningLV3",LAPPDSCWarningLV3);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int,double> lappdlv3;
+                m_data->CStore.Get("LAPPDLV3",lappdlv3);
+		lappdlv3[lappd_SC.LAPPD_ID] = lappd_SC.v33;
+		m_data->CStore.Set("LAPPDLV3",lappdlv3);
 	}
 	}
 
@@ -1759,13 +1899,20 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_v25_temp << "V31: " << lappd_SC.v25 << " V (" << current_time.str() << ")";
 	text_v25->SetText(0.06, 0.3, ss_v25_temp.str().c_str());
 	text_v25->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningLV2;
+        m_data->CStore.Get("LAPPDSCWarningLV2",LAPPDSCWarningLV2);
 	if (lappd_SC.LV_state_set){
 	if (lappd_SC.v25 < v25_min || lappd_SC.v25 > v25_max) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is outside of expected range [" + std::to_string(v25_min) + " , " + std::to_string(v25_max) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_v25->SetTextColor(kRed);
 		lvhv_check = false;
+		LAPPDSCWarningLV2[lappd_SC.LAPPD_ID] = true;
                 m_data->CStore.Set("LAPPDSCWarningLV2",true);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int,double> lappdlv2;
+                m_data->CStore.Get("LAPPDLV2",lappdlv2);
+		lappdlv2[lappd_SC.LAPPD_ID] = lappd_SC.v25;
+		m_data->CStore.Set("LAPPDLV2",lappdlv2);
 	}
 	}
 
@@ -1774,36 +1921,66 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_v12_temp << "V18: " << lappd_SC.v12 << " V (" << current_time.str() << ")";
 	text_v12->SetText(0.06, 0.2, ss_v12_temp.str().c_str());
 	text_v12->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningLV1;
+        m_data->CStore.Get("LAPPDSCWarningLV1",LAPPDSCWarningLV1);
 	if (lappd_SC.LV_state_set){
 	if (lappd_SC.v12 < v12_min || lappd_SC.v12 > v12_max) {
 		Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is outside of expected range [" + std::to_string(v12_min) + " , " + std::to_string(v12_max) + "]!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 		text_v12->SetTextColor(kRed);
 		lvhv_check = false;
-                m_data->CStore.Set("LAPPDSCWarningLV1",true);
+		LAPPDSCWarningLV1[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningLV1",LAPPDSCWarningLV1);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int,double> lappdlv1;
+                m_data->CStore.Get("LAPPDLV1",lappdlv1);
+		lappdlv1[lappd_SC.LAPPD_ID] = lappd_SC.v12;
+		m_data->CStore.Set("LAPPDLV1",lappdlv1);
 	}
 	}
 	if (lappd_SC.LV_mon == 0){
+		std::map<int,bool> LAPPDSCWarningLV;
+        	m_data->CStore.Get("LAPPDSCWarningLV",LAPPDSCWarningLV);
 		if (lappd_SC.v12 > 0.1){
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v12 >>>" + std::to_string(lappd_SC.v12) + "<<< is above 0.1V although LV state (mon) is OFF!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 			text_v12->SetTextColor(kRed);
 			lvhv_check = false;
-                	m_data->CStore.Set("LAPPDSCWarningLV",true);
+			LAPPDSCWarningLV[lappd_SC.LAPPD_ID] = true;
+                	m_data->CStore.Set("LAPPDSCWarningLV",LAPPDSCWarningLV);
                 	m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+ 			std::map<int, std::vector<std::string> > lappdlverror;
+                	m_data->CStore.Get("LAPPDLVError",lappdlverror);
+                	std::stringstream ss_error_lv;
+                	ss_error_lv << "Monitoring LAPPD: SEVERE ERROR: Monitored v12 >>>" << std::to_string(lappd_SC.v12) << "<<< is above 0.1V although LV state (mon) is OFF!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                	lappdlverror[lappd_SC.LAPPD_ID].push_back(ss_error_lv.str());
+                	m_data->CStore.Set("LAPPDLVError",lappdlverror);
 		}
 		if (lappd_SC.v25 > 0.1){
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v25 >>>" + std::to_string(lappd_SC.v25) + "<<< is above 0.1V although LV state (mon) is OFF!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 			text_v25->SetTextColor(kRed);
 			lvhv_check = false;
-                        m_data->CStore.Set("LAPPDSCWarningLV",true);
+                        LAPPDSCWarningLV[lappd_SC.LAPPD_ID] = true;
+                        m_data->CStore.Set("LAPPDSCWarningLV",LAPPDSCWarningLV);
                 	m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+			std::map<int, std::vector<std::string> > lappdlverror;
+                        m_data->CStore.Get("LAPPDLVError",lappdlverror);
+                        std::stringstream ss_error_lv;
+                        ss_error_lv << "Monitoring LAPPD: SEVERE ERROR: Monitored v25 >>>" << std::to_string(lappd_SC.v25) << "<<< is above 0.1V although LV state (mon) is OFF!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                        lappdlverror[lappd_SC.LAPPD_ID].push_back(ss_error_lv.str());
+                        m_data->CStore.Set("LAPPDLVError",lappdlverror);
 		}
 		if (lappd_SC.v33 > 0.1){
 			Log("MonitorLAPPDSC: SEVERE ERROR: Monitored v33 >>>" + std::to_string(lappd_SC.v33) + "<<< is above 0.1V although LV state (mon) is OFF!!! (LAPPD ID "+std::to_string(lappd_SC.LAPPD_ID)+")", v_error, verbosity);
 			text_v33->SetTextColor(kRed);
 			lvhv_check = false;
-                        m_data->CStore.Set("LAPPDSCWarningLV",true);
+			LAPPDSCWarningLV[lappd_SC.LAPPD_ID] = true;
+                        m_data->CStore.Set("LAPPDSCWarningLV",LAPPDSCWarningLV);
                 	m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+			std::map<int, std::vector<std::string> > lappdlverror;
+                        m_data->CStore.Get("LAPPDLVError",lappdlverror);
+                        std::stringstream ss_error_lv;
+                        ss_error_lv << "Monitoring LAPPD: SEVERE ERROR: Monitored v33 >>>" << std::to_string(lappd_SC.v33) << "<<< is above 0.1V although LV state (mon) is OFF!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                        lappdlverror[lappd_SC.LAPPD_ID].push_back(ss_error_lv.str());
+                        m_data->CStore.Set("LAPPDLVError",lappdlverror);
 		}
 	}
 
@@ -2066,11 +2243,20 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	ss_relay_mon1_temp << "Relay 1 Mon: " << ch1_mon_temp << " (" << current_time.str() << ")";
 	text_relay_mon1->SetText(0.06, 0.5, ss_relay_mon1_temp.str().c_str());
 	text_relay_mon1->SetTextColor(1);
+	std::map<int,bool> LAPPDSCWarningRelay;
+        m_data->CStore.Get("LAPPDSCWarningRelay",LAPPDSCWarningRelay);
 	if (lappd_SC.relayCh1_mon != lappd_SC.relayCh1) {
 		text_relay_mon1->SetTextColor(kRed);
 		relay_check = false;
-                m_data->CStore.Set("LAPPDSCWarningRelay",true);
+		LAPPDSCWarningRelay[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningRelay",LAPPDSCWarningRelay);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdrelayerror;
+                m_data->CStore.Get("LAPPDRelayError",lappdrelayerror);
+                std::stringstream ss_error_relay;
+                ss_error_relay << "Monitoring LAPPD: SEVERE ERROR: Monitored Relay 1 is >>>" << std::to_string(lappd_SC.relayCh1_mon) << "<<< although it should be set to >>>" << std::to_string(lappd_SC.relayCh1) << "!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdrelayerror[lappd_SC.LAPPD_ID].push_back(ss_error_relay.str());
+                m_data->CStore.Set("LAPPDRelayError",lappdrelayerror);
 	}
 
 	//Relay Mon 2
@@ -2082,8 +2268,15 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	if (lappd_SC.relayCh2_mon != lappd_SC.relayCh2) {
 		text_relay_mon2->SetTextColor(kRed);
 		relay_check = false;
-                m_data->CStore.Set("LAPPDSCWarningRelay",true);
+		LAPPDSCWarningRelay[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningRelay",LAPPDSCWarningRelay);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdrelayerror;
+                m_data->CStore.Get("LAPPDRelayError",lappdrelayerror);
+                std::stringstream ss_error_relay;
+                ss_error_relay << "Monitoring LAPPD: SEVERE ERROR: Monitored Relay 2 is >>>" << std::to_string(lappd_SC.relayCh2_mon) << "<<< although it should be set to >>>" << std::to_string(lappd_SC.relayCh2) << "!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdrelayerror[lappd_SC.LAPPD_ID].push_back(ss_error_relay.str());
+                m_data->CStore.Set("LAPPDRelayError",lappdrelayerror);
 	}
 
 	//Relay Mon 3
@@ -2095,8 +2288,15 @@ void MonitorLAPPDSC::DrawStatus_Relay() {
 	if (lappd_SC.relayCh3_mon != lappd_SC.relayCh3) {
 		text_relay_mon3->SetTextColor(kRed);
 		relay_check = false;
-                m_data->CStore.Set("LAPPDSCWarningRelay",true);
+                LAPPDSCWarningRelay[lappd_SC.LAPPD_ID] = true;
+                m_data->CStore.Set("LAPPDSCWarningRelay",LAPPDSCWarningRelay);
                 m_data->CStore.Set("LAPPDID",lappd_SC.LAPPD_ID);
+		std::map<int, std::vector<std::string> > lappdrelayerror;
+                m_data->CStore.Get("LAPPDRelayError",lappdrelayerror);
+                std::stringstream ss_error_relay;
+                ss_error_relay << "Monitoring LAPPD: SEVERE ERROR: Monitored Relay 3 is >>>" << std::to_string(lappd_SC.relayCh3_mon) << "<<< although it should be set to >>>" << std::to_string(lappd_SC.relayCh3) << "!!! (LAPPD ID " << std::to_string(lappd_SC.LAPPD_ID) << ")";
+                lappdrelayerror[lappd_SC.LAPPD_ID].push_back(ss_error_relay.str());
+                m_data->CStore.Set("LAPPDRelayError",lappdrelayerror);
 	}
 
 	//Warnings
