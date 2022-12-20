@@ -154,4 +154,8 @@
 #include "BeamDecoder.h"
 #include "LoadRunInfo.h"
 #include "ApplyMRDEff.h"
+#include "saveLAPPDInfo.h"
+#include "parseLAPPDData.h"
+#include "checkLAPPDStatus.h"
+#include "GetLAPPDEvents.h"
 #include "LAPPDDataDecoder.h"

@@ -1,0 +1,10 @@
+LoadANNIEEvent LoadANNIEEvent ./configfiles/LAPPD_ANNIEEvent/checkLAPPDStatus/LoadANNIEEventConfig
+myLoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+myTimeClustering TimeClustering ./configfiles/BeamClusterAnalysis/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks ./configfiles/BeamClusterAnalysis/FindMrdTracksConfig
+myClusterFinder ClusterFinder ./configfiles/BeamClusterAnalysis/ClusterFinderConfig
+myClusterClassifiers ClusterClassifiers ./configfiles/BeamClusterAnalysis/ClusterClassifiersConfig
+myEventSelector EventSelector ./configfiles/BeamClusterAnalysis/EventSelectorConfig
+checkLAPPDStatus checkLAPPDStatus ./configfiles/LAPPD_ANNIEEvent/checkLAPPDStatus/checkLAPPDStatusConfig
+parseLAPPDData parseLAPPDData ./configfiles/LAPPD_ANNIEEvent/checkLAPPDStatus/parseLAPPDDataConfig
+saveLAPPDInfo saveLAPPDInfo ./configfiles/LAPPD_ANNIEEvent/checkLAPPDStatus/saveLAPPDInfoConfig
