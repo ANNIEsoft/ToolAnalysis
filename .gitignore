@@ -19,6 +19,7 @@ Desktop.ini
 core.*
 !core/
 __pycache__/
+*.pyc
 
 # ROOT dictionaries are also build products
 *_RootDict.cpp

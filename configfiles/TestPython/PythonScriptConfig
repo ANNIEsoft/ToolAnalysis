@@ -1,0 +1,4 @@
+# python caller Tool config file
+PythonScript TestPython
+ConfigurationsFile configfiles/TestPython/scriptconfig1
+verbose 2
