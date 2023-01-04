@@ -107,7 +107,8 @@ DataModel/DataModel_RootDict.cpp: DataModel/DataModel_Linkdef.hh
 	cd DataModel && \
 	rootcling -f DataModel_RootDict.cpp -c -p -rmf libDataModel.rootmap $(RMLLIBS) $(ZMQInclude) $(BoostInclude) $(WCSimInclude) $(GenieInclude) $(Log4CppInclude) $(RATEventInclude) $(MrdTrackInclude) -I../include $(HEADERS) DataModel_Linkdef.hh
 	#rootcint -f $@ -c -p -fPIC `root-config --cflags` -I ./ $(HEADERS) $^
-	cp DataModel/libDataModel.rootmap lib/
+	@rm -f lib/libDataModel.rootmap
+	cp -f DataModel/libDataModel.rootmap lib/
 
 lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so lib/libStore.so $(patsubst UserTools/%.cpp, UserTools/%.o, $(wildcard UserTools/*/*.cpp)) |lib/libDataModel.so lib/libToolChain.so lib/libRawViewer.so 
 	@echo -e "\n*************** Making " $@ "****************"
