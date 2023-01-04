@@ -41,9 +41,7 @@ DataModelLib = $(RootLib)
 HEADERS=$(shell cd DataModel && ls *.h)
 
 MyToolsInclude =  $(RootInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
-MyToolsInclude += `python3-config --cflags`
 MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
-MyToolsLib += `python3-config --ldflags --embed`
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
@@ -107,8 +105,9 @@ DataModel/DataModel_RootDict.cpp: DataModel/DataModel_Linkdef.hh
 	cd DataModel && \
 	rootcling -f DataModel_RootDict.cpp -c -p -rmf libDataModel.rootmap $(RMLLIBS) $(ZMQInclude) $(BoostInclude) $(WCSimInclude) $(GenieInclude) $(Log4CppInclude) $(RATEventInclude) $(MrdTrackInclude) -I../include $(HEADERS) DataModel_Linkdef.hh
 	#rootcint -f $@ -c -p -fPIC `root-config --cflags` -I ./ $(HEADERS) $^
-	@rm -f lib/libDataModel.rootmap
+	@rm -f lib/libDataModel.rootmap lib/DataModel_RootDict_rdict.pcm
 	cp -f DataModel/libDataModel.rootmap lib/
+	cp -f DataModel/DataModel_RootDict_rdict.pcm lib/
 
 lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so lib/libStore.so $(patsubst UserTools/%.cpp, UserTools/%.o, $(wildcard UserTools/*/*.cpp)) |lib/libDataModel.so lib/libToolChain.so lib/libRawViewer.so 
 	@echo -e "\n*************** Making " $@ "****************"
