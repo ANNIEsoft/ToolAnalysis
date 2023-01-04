@@ -443,6 +443,7 @@ then
     # The ToolPack Import.sh script currently only imports a tool as an INACTIVE tool.
     # TODO until we update the ToolAnalysis framework to get the ToolSelect.sh script
     # we will need to activate the tool manually
+    unlink ${BASEDIR}/UserTools/InactiveTools/PythonScript
     ln -s ${BASEDIR}/UserTools/ImportedTools/ToolPack/PythonScript ${BASEDIR}/UserTools/PythonScript
     echo '#include "PythonScript.h"' >> ${BASEDIR}/UserTools/Unity.h
     FACTORYLINE='if (tool=="PythonScript") ret=new PythonScript;'
