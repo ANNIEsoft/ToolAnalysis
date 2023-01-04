@@ -440,17 +440,9 @@ then
     cd ToolPack
     ./Import.sh PythonScript
     
-    # ToolPack is currently for a later version of ToolFrameworkCore, and the PythonScript
-    # tool relies on the presence of a logging member variable added to the base Tool class.
-    # see if we have it (we don't currently) and inject it if not.
-    grep "m_log" ${BASEDIR}/UserTools/PythonScript/PythonScript.h > /dev/null 2>&1;
-    if [ $? -ne 0 ]; then
-        NEWLINE='  Logging* m_log;'
-        awk -i inplace -v "var=${NEWLINE}" '{print} /^  int pyinit;/ && !n {print var; n++}' ${BASEDIR}/UserTools/PythonScript/PythonScript.h
-    fi
-    # NOTE! ToolPack import script currently only imports a tool as an INACTIVE tool.
+    # The ToolPack Import.sh script currently only imports a tool as an INACTIVE tool.
     # TODO until we update the ToolAnalysis framework to get the ToolSelect.sh script
-    # let's just activate the tool manually
+    # we will need to activate the tool manually
     ln -s ${BASEDIR}/UserTools/ImportedTools/ToolPack/PythonScript ${BASEDIR}/UserTools/PythonScript
     echo '#include "PythonScript.h"' >> ${BASEDIR}/UserTools/Unity.h
     FACTORYLINE='if (tool=="PythonScript") ret=new PythonScript;'
