@@ -469,7 +469,7 @@ then
     cd ../
     git clone https://github.com/GENIE-MC-Community/Pythia6Support.git
     cd Pythia6Support
-    ./build_pythia6.sh 
+    ./build_pythia6.sh --dummies=remove
     export PYTHIA6_DIR=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/
     
 fi
@@ -485,15 +485,46 @@ then
     fi
     
     cd ${BASEDIR}/ToolDAQ
-    wget https://github.com/GENIE-MC/Generator/archive/R-3_00_04.tar.gz
-    tar zxf R-3_00_04.tar.gz
-    rm -rf R-3_00_04.tar.gz
-    cd Generator-R-3_00_04/
+    wget http://lhapdf.hepforge.org/downloads/LHAPDF-6.3.0.tar.gz
+    tar zxf LHAPDF-6.3.0.tar.gz
+    rm -rf LHAPDF-6.3.0.tar.gz
+    cd LHAPDF-6.3.0
+    mkdir install
+    ./configure --prefix=/ToolAnalysis/ToolDAQ/LHAPDF-6.3.0/install
+    make
+    make install
+    cd install/share/LHAPDF
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/CT10.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/cteq61.LHpdf
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/cteq61.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRV98lo.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRV98lo_patched.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRV98nlo.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRVG0.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRVG1.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRVPI0.LHgrid
+    wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRVPI1.LHgrid
+    cd ${BASEDIR}/ToolDAQ/LHAPDF-6.3.0
+    /bin/bash -O extglob -c 'rm -rf !(install)'
+    
+    cd ${BASEDIR}/ToolDAQ
+    wget https://github.com/ANNIEsoft/GENIE-v3/archive/refs/heads/master.zip
+    unzip master.zip
+    rm -rf master.zip
+    cd Generator-v3-master/
     mkdir install
     export GENIE=`pwd`
-    ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-R-3_00_04/install/ --disable-lhapdf5 --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
+    ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
     make -j8
     
+    cd ${BASEDIR}/ToolDAQ
+    wget https://github.com/uboone/Reweight/archive/refs/tags/v3_00_04_ub3.zip
+    unzip v3_00_04_ub3.zip
+    rm -rf v3_00_04_ub3.zip
+    cd Reweight-3_00_04_ub3/
+    export GENIE_REWEIGHT=`pwd`
+    make
+    make install
 fi
 
 
