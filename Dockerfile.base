@@ -55,6 +55,7 @@ RUN dnf config-manager --set-enabled extras,powertools \
     fftw3 \
     fftw3-devel \
     libnsl2-devel \
+    bzip2 \
     && yum clean all \
     && rm -rf /var/cache/yum
 
