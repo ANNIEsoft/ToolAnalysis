@@ -50,7 +50,7 @@ DataModelLib = $(RootLib)
 HEADERS=$(shell cd DataModel && ls *.h)
 
 MyToolsInclude =  $(RootInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
-MyToolsInclude += `python3-config --cflags`
+MyToolsInclude += `python3-config --cflags` -Wno-sign-compare
 MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
 MyToolsLib += `python3-config --ldflags --embed`
 
@@ -110,7 +110,7 @@ DataModel/DataModel_Linkdef.hh: linkdefpreamble.txt linkdefincludeheader.txt lin
 	done
 	@cat linkdefpostamble.txt >> $@
 
-DataModel/DataModel_RootDict.cpp: DataModel/DataModel_Linkdef.hh
+DataModel/DataModel_RootDict.cpp: DataModel/DataModel_Linkdef.hh | include/Tool.h lib/libStore.so
 	# the dictionary sourcefiles need to be built within the directory they're to reside in
 	# otherwise the paths encoded into the dictionary don't match those when the object is built.
 	cd DataModel && \

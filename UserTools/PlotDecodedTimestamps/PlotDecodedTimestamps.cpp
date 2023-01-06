@@ -35,7 +35,7 @@ bool PlotDecodedTimestamps::Initialise(std::string configfile, DataModel &data){
 bool PlotDecodedTimestamps::Execute(){
 
   //Get first and last timestamp of DataSummary file
-  double t_first, t_last;
+  double t_first=0, t_last=0;
   for (int i_entry = 0; i_entry < entries_datasummary; i_entry++){
     t_datasummary->GetEntry(i_entry);
     if (i_entry == 0) t_first = ctctimestamp/1000000000.;
@@ -48,7 +48,7 @@ bool PlotDecodedTimestamps::Execute(){
   double t_min = (t_last < t_first)? t_last : t_first;
   int num_snapshots = (t_max-t_min)/seconds_per_plot;
 
-  double t_first_pmt, t_last_pmt;
+  double t_first_pmt=0, t_last_pmt=0;
   for (int i_entry = 0; i_entry < entries_timestamps_pmt; i_entry++){
     t_timestamps_pmt->GetEntry(i_entry);
     if (i_entry == 0) t_first_pmt = t_pmt/1000000000.;
@@ -59,7 +59,7 @@ bool PlotDecodedTimestamps::Execute(){
   double t_max_pmt = (t_last_pmt >= t_first_pmt)? t_last_pmt : t_first_pmt;
   double t_min_pmt = (t_last_pmt < t_first_pmt)? t_last_pmt : t_first_pmt;
 
-  double t_first_mrd, t_last_mrd;
+  double t_first_mrd=0, t_last_mrd=0;
   for (int i_entry = 0; i_entry < entries_timestamps_mrd; i_entry++){
     t_timestamps_mrd->GetEntry(i_entry);
     if (i_entry == 0) t_first_mrd = t_mrd/1000000000.;
@@ -112,7 +112,7 @@ bool PlotDecodedTimestamps::Execute(){
 
   //Loop over DataSummary file information
 
-  double t_first_matched, t_last_matched;
+  double t_first_matched=0, t_last_matched=0;
   std::vector<double> closest_tdiff_prompt;
   std::vector<int> closest_triggerword_prompt;
   std::vector<std::vector<double>> closest_tdiff_prompt_vec;
@@ -202,7 +202,7 @@ bool PlotDecodedTimestamps::Execute(){
   }
 
   //Loop over orphan timestamp information
-  double t_first_orphan, t_last_orphan;
+  double t_first_orphan = 0, t_last_orphan = 0;
   std::vector<double> closest_tdiff;
   std::vector<int> closest_triggerword;
   std::vector<std::vector<double>> closest_tdiff_vec;

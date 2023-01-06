@@ -25,14 +25,13 @@ __pycache__/
 *_RootDict.cpp
 *.pcm
 *.rootmap
+*_dictUmbrella.h
+*_dictContent.h
 
 # we also build the datamodel linkdef on the fly
 DataModel/DataModel_Linkdef.hh
 
 # These are imported as part of ToolPack
-# They will be retrieved by GetToolDAQ.sh
-# and should not be present in the base repository
 UserTools/ImportedTools
-UserTools/PythonScript
-UserTools/newPyTool.sh
-UserTools/template/PyTool.py
+UserTools/InactiveTools
+
