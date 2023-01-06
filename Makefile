@@ -1,28 +1,26 @@
 ToolDAQPath=${PWD}/ToolDAQ
 
-CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Wl,--no-as-needed
+CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
 
 
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
-ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/ 
+ZMQInclude= -isystem$(ToolDAQPath)/zeromq-4.0.7/include/
 
 BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem -lboost_regex
-BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
-
-RootInclude= -I `root-config --incdir`
+BoostInclude= -isystem$(ToolDAQPath)/boost_1_66_0/install/include
  
 WCSimLib= -L $(ToolDAQPath)/WCSimLib -lWCSimRoot
 WCSimInclude= -I $(ToolDAQPath)/WCSimLib/include
 
 GenieIncludeDir := $(shell genie-config --topsrcdir)
-GenieInclude= -I$(GenieIncludeDir)/Framework -I$(GenieIncludeDir) `gsl-config --cflags`
+GenieInclude= -isystem$(GenieIncludeDir)/Framework -isystem$(GenieIncludeDir) `gsl-config --cflags`
 GenieLibs= `genie-config --libs` -lxml2 `gsl-config --libs`
 PythiaLibs= -L $(ToolDAQPath)/Pythia6Support/v6_424/lib -lPythia6
 Log4CppLibs= -L $(ToolDAQPath)/log4cpp/lib -llog4cpp
-Log4CppInclude= -I $(ToolDAQPath)/log4cpp/include/log4cpp/
+Log4CppInclude= -isystem$(ToolDAQPath)/log4cpp/include/log4cpp/
 
 RATEventLib= -L $(ToolDAQPath)/RATEventLib/lib -lRATEvent
 RATEventInclude= -I $(ToolDAQPath)/RATEventLib/include
@@ -32,6 +30,17 @@ MrdTrackInclude= -I $(ToolDAQPath)/MrdTrackLib/include
 
 
 RootLib=  -L `root-config --libdir --glibs` -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -m64 -lGui -lGenVector -lMinuit -lGeom -lEG -lEGPythia6 -lEve #-lGL -lGLEW -lGLU
+RootInclude= -isystem`root-config --incdir`
+
+ALL_INCLUDE_DIRS=$(ZMQInclude) $(BoostInclude) $(WCSimInclude) $(GenieInclude) $(Log4CppInclude) $(RATEventInclude) $(MRDTrackInclude) -I../include
+# we need to build a ROOT dictionary for the DataModel for python integration to work.
+# we're using `-isystem` instead of `-I` for dependencies here to suppress the myriad of warnings
+# coming from code we cannot fix, but rootcling ignores `-isystem`, so fails to find the headers.
+# we have two solutions:
+# 1. replace all -isystem instances with -I via:
+ALL_INCLUDE_DIRS2=$(subst -isystem,-I,$(ALL_INCLUDE_DIRS))
+# and pass this to rootcling. or...
+# 2. add those paths to ROOT_INCLUDE_PATH, which rootcling will search.
 
 RawViewerLib= -L UserTools/PlotWaveforms -lRawViewer
 
@@ -41,7 +50,9 @@ DataModelLib = $(RootLib)
 HEADERS=$(shell cd DataModel && ls *.h)
 
 MyToolsInclude =  $(RootInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
+MyToolsInclude += `python3-config --cflags`
 MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
+MyToolsLib += `python3-config --ldflags --embed`
 
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
@@ -103,7 +114,7 @@ DataModel/DataModel_RootDict.cpp: DataModel/DataModel_Linkdef.hh
 	# the dictionary sourcefiles need to be built within the directory they're to reside in
 	# otherwise the paths encoded into the dictionary don't match those when the object is built.
 	cd DataModel && \
-	rootcling -f DataModel_RootDict.cpp -c -p -rmf libDataModel.rootmap $(RMLLIBS) $(ZMQInclude) $(BoostInclude) $(WCSimInclude) $(GenieInclude) $(Log4CppInclude) $(RATEventInclude) $(MrdTrackInclude) -I../include $(HEADERS) DataModel_Linkdef.hh
+	rootcling -f DataModel_RootDict.cpp -c -p -rmf libDataModel.rootmap $(RMLLIBS) $(ALL_INCLUDE_DIRS2) $(HEADERS) DataModel_Linkdef.hh
 	#rootcint -f $@ -c -p -fPIC `root-config --cflags` -I ./ $(HEADERS) $^
 	@rm -f lib/libDataModel.rootmap lib/DataModel_RootDict_rdict.pcm
 	cp -f DataModel/libDataModel.rootmap lib/

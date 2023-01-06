@@ -150,5 +150,6 @@ if (tool=="parseLAPPDData") ret=new parseLAPPDData;
 if (tool=="checkLAPPDStatus") ret=new checkLAPPDStatus;
 if (tool=="GetLAPPDEvents") ret=new GetLAPPDEvents;
 if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
+if (tool=="PythonScript") ret=new PythonScript;
 return ret;
 }

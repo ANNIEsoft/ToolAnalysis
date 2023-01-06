@@ -17,3 +17,10 @@ export GENIE=${ToolDAQapp}/ToolDAQ/Generator-R-3_00_04/
 
 export PATH=$GENIE/bin:$PATH
 
+export PATH=/ToolAnalysis/ToolDAQ/fsplit:$PATH
+export TF_CPP_MIN_LOG_LEVEL=2
+
+for folder in `ls -d ${PWD}/UserTools/*/ `
+do
+    export PYTHONPATH=$folder:${PYTHONPATH}
+done

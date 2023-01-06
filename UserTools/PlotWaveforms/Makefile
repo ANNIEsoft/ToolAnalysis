@@ -96,4 +96,4 @@ libRawViewer.so: dict.o RawViewer.o
 .PHONY: clean
 
 clean:
-	$(RM) viewer dict.* dict*.pcm *.o
+	$(RM) viewer dict.* dict*.pcm RawViewer.o

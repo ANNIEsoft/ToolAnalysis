@@ -1189,7 +1189,7 @@ void PhaseIIADCCalibrator::make_raw_led_waveforms(unsigned long channel_key,
 
       std::vector<uint16_t> led_waveform;
       //FIXME: want start time of window, not of the full raw waveform
-      uint64_t start_time = raw_waveforms.at(j).GetStartTime();
+      double start_time = raw_waveforms.at(j).GetStartTime();
       for (int s = windowmin; s < windowmax; ++s) {
         led_waveform.push_back(raw_waveforms.at(j).GetSample(s));
       }

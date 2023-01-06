@@ -430,7 +430,7 @@ then
     pip3 install tensorflow==2.10.0
     # set tensorflow verbosity to suppress info messages about not having a GPU or maximal acceleration
     # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886
-    echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh
+    #echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh   # already done
     
     cd ${BASEDIR}/UserTools
     mkdir -p InactiveTools
@@ -439,15 +439,6 @@ then
     git clone https://github.com/ToolFramework/ToolPack.git
     cd ToolPack
     ./Import.sh PythonScript
-    
-    # The ToolPack Import.sh script currently only imports a tool as an INACTIVE tool.
-    # TODO until we update the ToolAnalysis framework to get the ToolSelect.sh script
-    # we will need to activate the tool manually
-    unlink ${BASEDIR}/UserTools/InactiveTools/PythonScript
-    ln -s ${BASEDIR}/UserTools/ImportedTools/ToolPack/PythonScript ${BASEDIR}/UserTools/PythonScript
-    echo '#include "PythonScript.h"' >> ${BASEDIR}/UserTools/Unity.h
-    FACTORYLINE='if (tool=="PythonScript") ret=new PythonScript;'
-    awk -i inplace -v "var=${FACTORYLINE}" '/^return/ && !x {print var; x=1} 1' ${BASEDIR}/UserTools/Factory/Factory.cpp
     
 fi
 
@@ -466,7 +457,7 @@ then
     wget https://gist.githubusercontent.com/marc1uk/c0e32d955dd1c06ef69d80ce643018ad/raw/10e592d42737ecc7dca677e774ae66dcb5a3859d/fsplit.c
     gcc fsplit.c -o fsplit
     export PATH=$PWD:$PATH
-    echo "export PATH=$PWD:\$PATH" >> ${BASEDIR}/Setup.sh
+    #echo "export PATH=$PWD:\$PATH" >> ${BASEDIR}/Setup.sh     # already done
     
     cd ${BASEDIR}/ToolDAQ
     cvs -d :pserver:anonymous@log4cpp.cvs.sourceforge.net:/cvsroot/log4cpp -z3 co log4cpp
