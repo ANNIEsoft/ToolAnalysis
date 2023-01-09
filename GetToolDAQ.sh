@@ -81,7 +81,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -99,7 +99,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -117,7 +117,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -136,7 +136,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -155,7 +155,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -174,7 +174,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -193,7 +193,7 @@ do
 	    Python=1
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -212,7 +212,7 @@ do
 	    Python=0
 	    Python3=1
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -231,7 +231,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=1
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -250,7 +250,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=1
+	    Lhapdf=1
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -269,7 +269,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=1
 	    RATEventlib=0
 	    ;;
@@ -288,7 +288,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=1
 	    ;;
@@ -307,7 +307,7 @@ do
             Python=0
             Python3=0
             Pythia=0
-			Lhapdf=0
+	    Lhapdf=0
             Genie=0
             RATEventlib=0
             PlotWaveforms=1
@@ -327,7 +327,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
-		Lhapdf=0
+	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -559,12 +559,11 @@ then
     ls
     unzip master.zip
     rm -rf master.zip
-    cd Generator-v3-master/
+    cd GENIE-v3-master/
     mkdir install
     export GENIE=`pwd`
     ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
     make -j8
-    
     
     cd ${BASEDIR}/ToolDAQ
     wget https://github.com/uboone/Reweight/archive/refs/tags/v3_00_04_ub3.zip
