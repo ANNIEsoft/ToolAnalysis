@@ -1042,82 +1042,6 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 	unsigned int LAPPD_HV_Card_Num = 0;
 	unsigned int LAPPD_HV_Chan_Num = 0;
 	
-	// lappds
-	for(int lappdi=0; lappdi<numlappds; lappdi++){
-		WCSimRootPMT anlappd = wcsimrootgeom->GetLAPPD(lappdi);
-		
-		// Construct the detector associated with this tile
-		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
-		std::cout <<"LAPPD unique detectorkey: "<<uniquedetectorkey<<std::endl;
-		lappd_tubeid_to_detectorkey.emplace(anlappd.GetTubeNo(),uniquedetectorkey);
-		detectorkey_to_lappdid.emplace(uniquedetectorkey,anlappd.GetTubeNo());
-		std::string CylLocString;
-		switch (anlappd.GetCylLoc()){
-			case 0:  CylLocString = "TopCap";    break;
-			case 2:  CylLocString = "BottomCap"; break;
-			case 1:  CylLocString = "Barrel";    break;
-			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
-			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
-			default: CylLocString = "NA";        break;  // unknown
-		}
-		Detector adet(uniquedetectorkey,
-					  "LAPPD",
-					  CylLocString,
-					  Position( anlappd.GetPosition(0)/100.,
-					            anlappd.GetPosition(1)/100.,
-					            anlappd.GetPosition(2)/100.),
-					  Direction(anlappd.GetOrientation(0),
-					            anlappd.GetOrientation(1),
-					            anlappd.GetOrientation(2)),
-					  anlappd.GetName(),
-					  detectorstatus::ON,
-					  0.);
-		
-		// construct all the channels associated with this LAPPD
-		for(int stripi=0; stripi<LappdNumStrips; stripi++){
-			unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
-			
-			int stripside = ((stripi%2)==0);   // StripSide=0 for LHS (x<0), StripSide=1 for RHS (x>0)
-			int stripnum = (int)(stripi/2);    // Strip number: add 2 channels per strip as we go
-			double xpos = (stripside) ? -LappdStripLength : LappdStripLength;
-			double ypos = (stripnum*LappdStripSeparation) - ((LappdNumStrips*LappdStripSeparation)/2.);
-			
-			// fill up ADC cards and channels monotonically, they're arbitrary for simulation
-			ACDC_Chan_Num++;
-			if(ACDC_Chan_Num>=ACDC_CHANNELS_PER_CARD)  { ACDC_Chan_Num=0; ACDC_Card_Num++; ACC_Chan_Num++; }
-			if(ACDC_Card_Num>=ACDC_CARDS_PER_CRATE)    { ACDC_Card_Num=0; ACDC_Crate_Num++; }
-			if(ACC_Chan_Num>=ACC_CHANNELS_PER_CARD)    { ACC_Chan_Num=0; ACC_Card_Num++;    }
-			if(ACC_Card_Num>=ACC_CARDS_PER_CRATE)      { ACC_Card_Num=0; ACC_Crate_Num++;   }
-			// same for HV
-			LAPPD_HV_Chan_Num++;
-			if(LAPPD_HV_Chan_Num>=LAPPD_HV_CHANNELS_PER_CARD)    { LAPPD_HV_Chan_Num=0; LAPPD_HV_Card_Num++;  }
-			if(LAPPD_HV_Card_Num>=LAPPD_HV_CARDS_PER_CRATE) { LAPPD_HV_Card_Num=0; LAPPD_HV_Crate_Num++; }
-			
-			Channel lappdchannel(uniquechannelkey,
-								 Position(xpos,ypos,0.),
-								 stripside,
-								 stripnum,
-								 ACDC_Crate_Num,
-								 ACDC_Card_Num,
-								 ACDC_Chan_Num,
-								 ACC_Crate_Num,
-								 ACC_Card_Num,
-								 ACC_Chan_Num,
-								 LAPPD_HV_Crate_Num,
-								 LAPPD_HV_Card_Num,
-								 LAPPD_HV_Chan_Num,
-								 channelstatus::ON);
-			
-			// Add this channel to the geometry
-			if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
-			adet.AddChannel(lappdchannel);
-		}
-		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
-		// Add this detector to the geometry
-		anniegeom->AddDetector(adet);
-		if(verbosity>4) cout<<"printing geometry"<<endl;
-		if(verbosity>4) anniegeom->PrintChannels();
-	}
 	
 	// tank PMTs
 	for(int pmti=0; pmti<numtankpmts; pmti++){
@@ -1397,6 +1321,84 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		if(verbosity>4) cout<<"printing geometry"<<endl;
 		if(verbosity>4) anniegeom->PrintChannels();
 	}
+
+	// lappds
+	// lappds moved to end such that all the other channels are assigned first
+	for(int lappdi=0; lappdi<numlappds; lappdi++){
+		WCSimRootPMT anlappd = wcsimrootgeom->GetLAPPD(lappdi);
+		
+		// Construct the detector associated with this tile
+		unsigned long uniquedetectorkey = anniegeom->ConsumeNextFreeDetectorKey();
+		std::cout <<"LAPPD unique detectorkey: "<<uniquedetectorkey<<std::endl;
+		lappd_tubeid_to_detectorkey.emplace(anlappd.GetTubeNo(),uniquedetectorkey);
+		detectorkey_to_lappdid.emplace(uniquedetectorkey,anlappd.GetTubeNo());
+		std::string CylLocString;
+		switch (anlappd.GetCylLoc()){
+			case 0:  CylLocString = "TopCap";    break;
+			case 2:  CylLocString = "BottomCap"; break;
+			case 1:  CylLocString = "Barrel";    break;
+			case 4:  CylLocString = "MRD";       break;  // TODO set this as H or V paddle? And layer?
+			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
+			default: CylLocString = "NA";        break;  // unknown
+		}
+		Detector adet(uniquedetectorkey,
+					  "LAPPD",
+					  CylLocString,
+					  Position( anlappd.GetPosition(0)/100.,
+					            anlappd.GetPosition(1)/100.,
+					            anlappd.GetPosition(2)/100.),
+					  Direction(anlappd.GetOrientation(0),
+					            anlappd.GetOrientation(1),
+					            anlappd.GetOrientation(2)),
+					  anlappd.GetName(),
+					  detectorstatus::ON,
+					  0.);
+		
+		// construct all the channels associated with this LAPPD
+		for(int stripi=0; stripi<LappdNumStrips; stripi++){
+			unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
+			
+			int stripside = ((stripi%2)==0);   // StripSide=0 for LHS (x<0), StripSide=1 for RHS (x>0)
+			int stripnum = (int)(stripi/2);    // Strip number: add 2 channels per strip as we go
+			double xpos = (stripside) ? -LappdStripLength : LappdStripLength;
+			double ypos = (stripnum*LappdStripSeparation) - ((LappdNumStrips*LappdStripSeparation)/2.);
+			
+			// fill up ADC cards and channels monotonically, they're arbitrary for simulation
+			ACDC_Chan_Num++;
+			if(ACDC_Chan_Num>=ACDC_CHANNELS_PER_CARD)  { ACDC_Chan_Num=0; ACDC_Card_Num++; ACC_Chan_Num++; }
+			if(ACDC_Card_Num>=ACDC_CARDS_PER_CRATE)    { ACDC_Card_Num=0; ACDC_Crate_Num++; }
+			if(ACC_Chan_Num>=ACC_CHANNELS_PER_CARD)    { ACC_Chan_Num=0; ACC_Card_Num++;    }
+			if(ACC_Card_Num>=ACC_CARDS_PER_CRATE)      { ACC_Card_Num=0; ACC_Crate_Num++;   }
+			// same for HV
+			LAPPD_HV_Chan_Num++;
+			if(LAPPD_HV_Chan_Num>=LAPPD_HV_CHANNELS_PER_CARD)    { LAPPD_HV_Chan_Num=0; LAPPD_HV_Card_Num++;  }
+			if(LAPPD_HV_Card_Num>=LAPPD_HV_CARDS_PER_CRATE) { LAPPD_HV_Card_Num=0; LAPPD_HV_Crate_Num++; }
+			
+			Channel lappdchannel(uniquechannelkey,
+								 Position(xpos,ypos,0.),
+								 stripside,
+								 stripnum,
+								 ACDC_Crate_Num,
+								 ACDC_Card_Num,
+								 ACDC_Chan_Num,
+								 ACC_Crate_Num,
+								 ACC_Card_Num,
+								 ACC_Chan_Num,
+								 LAPPD_HV_Crate_Num,
+								 LAPPD_HV_Card_Num,
+								 LAPPD_HV_Chan_Num,
+								 channelstatus::ON);
+			
+			// Add this channel to the geometry
+			if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
+			adet.AddChannel(lappdchannel);
+		}
+		if(verbosity>4) cout<<"Adding detector "<<uniquedetectorkey<<" to geometry"<<endl;
+		// Add this detector to the geometry
+		anniegeom->AddDetector(adet);
+		if(verbosity>4) cout<<"printing geometry"<<endl;
+		if(verbosity>4) anniegeom->PrintChannels();
+	}
 	
 	// for other WCSim tools that may need the WCSim Tube IDs
 	m_data->CStore.Set("lappd_tubeid_to_detectorkey",lappd_tubeid_to_detectorkey);
@@ -1440,8 +1442,7 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig, WCSimRootTrigge
 			// get the index of the photon CherenkovHit object in the TClonesArray
 			if(WCSimVersion<2){
 				if(timeArrayOffsetMap.size()==0) BuildTimeArrayOffsetMap(firstTrig);
-				thephotonsid+=timeArrayOffsetMap.at(tubeid);
-			}
+				thephotonsid+=timeArrayOffsetMap.at(tubeid); }
 			// Get the CherenkovHitTime object that records the photon's Parent ID
 			WCSimRootCherenkovHitTime *thehittimeobject = 
 				(WCSimRootCherenkovHitTime*)(firstTrig->GetCherenkovHitTimes()->At(thephotonsid));
