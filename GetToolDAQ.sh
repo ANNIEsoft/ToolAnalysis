@@ -17,6 +17,7 @@ WCSimlib=1
 Python=0
 Python3=1
 Pythia=1
+Lhapdf=1
 Genie=1
 RATEventlib=1
 PlotWaveforms=0
@@ -80,6 +81,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -97,6 +99,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -114,6 +117,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -132,6 +136,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -150,6 +155,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -168,6 +174,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -186,6 +193,7 @@ do
 	    Python=1
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -204,6 +212,7 @@ do
 	    Python=0
 	    Python3=1
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -222,6 +231,26 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=1
+		Lhapdf=0
+	    Genie=0
+	    RATEventlib=0
+	    ;;
+	
+	--Lhapdf )
+	    echo "Compiling ToolDAQ"
+	    init=0
+	    tooldaq=0
+	    rootflag=0
+	    root6flag=0
+	    boostflag=0
+	    zmq=0
+	    MrdTrackLib=0
+	    WCSimlib=0
+	    final=0
+	    Python=0
+	    Python3=0
+	    Pythia=0
+		Lhapdf=1
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -240,6 +269,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=1
 	    RATEventlib=0
 	    ;;
@@ -258,6 +288,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=1
 	    ;;
@@ -276,6 +307,7 @@ do
             Python=0
             Python3=0
             Pythia=0
+			Lhapdf=0
             Genie=0
             RATEventlib=0
             PlotWaveforms=1
@@ -295,6 +327,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+		Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
 	    ;;
@@ -367,12 +400,15 @@ then
     cd ${BASEDIR}/ToolDAQ
     wget https://root.cern/download/root_v6.24.06.source.tar.gz
     tar -xzf root_v6.24.06.source.tar.gz
+    rm root_v6.24.06.source.tar.gz
     cd root-6.24.06
     mkdir install
     cd install
     cmake ../ -DCMAKE_CXX_STANDARD=14 -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON
     make -j8
     make install
+    cd ../
+    /bin/bash -O extglob -c 'rm -rf !(install)'
     source bin/thisroot.sh
 
 fi
@@ -474,7 +510,7 @@ then
     
 fi
 
-if [ $Genie -eq 1 ]
+if [ $Lhapdf -eq 1 ]
 then
     
     cd ${BASEDIR}
@@ -506,9 +542,21 @@ then
     wget http://lhapdf.hepforge.org/downloads/pdfsets/5.9.1/GRVPI1.LHgrid
     cd ${BASEDIR}/ToolDAQ/LHAPDF-6.3.0
     /bin/bash -O extglob -c 'rm -rf !(install)'
+fi
+
+if [ $Genie -eq 1 ]
+then
+    
+    cd ${BASEDIR}
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
     
     cd ${BASEDIR}/ToolDAQ
     wget https://github.com/ANNIEsoft/GENIE-v3/archive/refs/heads/master.zip
+    ls
     unzip master.zip
     rm -rf master.zip
     cd Generator-v3-master/
@@ -516,6 +564,7 @@ then
     export GENIE=`pwd`
     ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
     make -j8
+    
     
     cd ${BASEDIR}/ToolDAQ
     wget https://github.com/uboone/Reweight/archive/refs/tags/v3_00_04_ub3.zip
