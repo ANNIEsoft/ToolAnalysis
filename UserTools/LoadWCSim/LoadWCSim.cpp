@@ -773,6 +773,9 @@ bool LoadWCSim::Execute(){
 			int capt_ngamma = capt->GetNGamma();
 			double capt_totalE = capt->GetTotalGammaE();
 			double capt_t = capt->GetCaptureT();
+			if (splitSubtriggers){
+				capt_t -= EventTimeNs;
+			}
 			int capt_nucleus = capt->GetCaptureNucleus();
 			std::vector<double> gamma_energies;
 			for (int i_gamma=0; i_gamma < capt_ngamma; i_gamma++){
