@@ -59,7 +59,10 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		RunStartUser = 0;
 	}
 	get_ok = m_variables.Get("SplitSubTriggers",splitSubtriggers);
-	if (not get_ok) splitSubtriggers = false;
+	if (not get_ok) {
+		Log("LoadWCSim Tool: No SplitSubTriggers configuration provided, assume no splitting of subtriggers",v_warning,verbosity);
+		splitSubtriggers = false;
+	}
 	m_data->CStore.Set("SplitSubTriggers",splitSubtriggers);
 	get_ok = m_variables.Get("TriggerType",Triggertype);
 	if (not get_ok){
@@ -67,13 +70,16 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Triggertype = "Beam";	//other options: Cosmic / No Loopback
 	}
 
-  get_ok = m_variables.Get("TriggerWord",TriggerWord);
+	get_ok = m_variables.Get("TriggerWord",TriggerWord);
 	if (not get_ok){
 		Log("LoadWCSim Tool: No Triggerword specified. Assuming TriggerWord = 5 (Beam)",v_warning,verbosity);
 		TriggerWord = 5;
 	}
 	path_chankeymap = "./configfiles/LoadWCSim/Chankey_WCSimID_v7.txt";
 	get_ok = m_variables.Get("ChankeyToPMTIDMap",path_chankeymap);
+	if (not get_ok){
+		Log("LoadWCSim Tool: No Channelkey map provided. Use the standard one at ./configfiles/LoadWCSim/Chankey_WCSimID_v7.txt",v_warning,verbosity);
+	}
 	ifstream file_pmtid(path_chankeymap.c_str());
 	if (file_pmtid.is_open()){
 		// watch out: comment or empty lines not supported here
@@ -88,6 +94,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		file_pmtid.close();
 		m_data->CStore.Set("pmt_tubeid_to_channelkey_data",pmtid_to_channelkey);
 		m_data->CStore.Set("channelkey_to_pmtid_data",channelkey_to_pmtid);
+	} else {
+		Log("LoadWCSim Tool: PMT ID Configuration file "+path_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
+		return false;
 	}
 	path_mrd_chankeymap = "./configfiles/LoadWCSim/MRD_Chankey_WCSimID.dat";
         get_ok = m_variables.Get("ChankeyToMRDIDMap",path_mrd_chankeymap);
@@ -101,6 +110,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
                         mrdid_to_channelkey.emplace(mrdid,chankey);
                 }
                 file_mrdid.close();
+        } else {
+                Log("LoadWCSim Tool: MRD ID Configuration file "+path_mrd_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
+                return false;
         }
 	path_fmv_chankeymap = "./configfiles/LoadWCSim/FMV_Chankey_WCSimID.dat";
         get_ok = m_variables.Get("ChankeyToFMVIDMap",path_fmv_chankeymap);
@@ -114,6 +126,9 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
                         fmvid_to_channelkey.emplace(fmvid,chankey);
                 }
                 file_fmvid.close();
+        } else {
+                Log("LoadWCSim Tool: FMV ID Configuration file "+path_fmv_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
+                return false;
         }
         get_ok = m_variables.Get("RunType",RunType);
         if (not get_ok){
