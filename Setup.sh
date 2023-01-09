@@ -14,7 +14,7 @@ export ROOT_INCLUDE_PATH=${ToolDAQapp}/ToolDAQ/WCSimLib/include/:${ToolDAQapp}/T
 
 export PYTHIA6_DIR=${ToolDAQapp}/ToolDAQ/Pythia6Support/v6_424/
 export LHAPATH=${ToolDAQapp}/ToolDAQ/LHAPDF-6.3.0/install/share/LHAPDF/
-export GENIE=${ToolDAQapp}/ToolDAQ/Generator-v3-master/
+export GENIE=${ToolDAQapp}/ToolDAQ/GENIE-v3-master/install
 export GENIE_REWEIGHT=${ToolDAQapp}/ToolDAQ/Reweight-3_00_04_ub3/
 
 export PATH=${ToolDAQapp}/ToolDAQ/LHAPDF-6.3.0/install/bin:$GENIE/bin:$GENIE_REWEIGHT/bin:$PATH
