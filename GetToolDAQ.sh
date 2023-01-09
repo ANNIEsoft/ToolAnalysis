@@ -562,8 +562,12 @@ then
     cd GENIE-v3-master/
     mkdir install
     export GENIE=`pwd`
-    ./configure --prefix=/ToolAnalysis/ToolDAQ/Generator-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
+    ./configure --prefix=/ToolAnalysis/ToolDAQ/GENIE-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
     make -j8
+    make install
+    rm -rf src/
+    cd install
+    export GENIE=`pwd`
     
     cd ${BASEDIR}/ToolDAQ
     wget https://github.com/uboone/Reweight/archive/refs/tags/v3_00_04_ub3.zip
