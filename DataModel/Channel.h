@@ -3,6 +3,7 @@
 #define CHANNEL_H
 
 #include <SerialisableObject.h>
+#include "Position.h"
 
 enum class channelstatus : uint8_t { OFF, ON, UNSTABLE };
 
@@ -14,7 +15,8 @@ class Channel : public SerialisableObject{
 	
 	Channel() : ChannelID(-1), channelrelposition(Position(-1,-1,-1)), stripside(2), stripnum(-1), signal_crate(-1), signal_card(-1), signal_channel(-1), level2_crate(-1), level2_card(-1), level2_channel(-1), hv_crate(-1), hv_card(-1), hv_channel(-1), status(channelstatus::OFF)
 	 {serialise=true;}
-	Channel(unsigned long chnID, Position chanpos, int strp, int strpnm, unsigned int sig_crt, unsigned int sig_crd, unsigned int sig_chn, unsigned int lv2_crt, unsigned int lv2_crd, unsigned int lv2_ch, unsigned int hv_crt, unsigned int hv_crd, unsigned int hv_chn, channelstatus chanstat) : ChannelID(chnID), channelrelposition(chanpos), stripside(strp), stripnum(strpnm), signal_crate(sig_crt), signal_card(sig_crd), signal_channel(sig_chn), level2_crate(lv2_crt), level2_card(lv2_crd), hv_crate(hv_crt), hv_card(hv_crd), hv_channel(hv_chn), status(chanstat) {serialise=true;}
+	Channel(unsigned long chnID, Position chanpos, int strp, int strpnm, unsigned int sig_crt, unsigned int sig_crd, unsigned int sig_chn, unsigned int lv2_crt, unsigned int lv2_crd, unsigned int lv2_ch, unsigned int hv_crt, unsigned int hv_crd, unsigned int hv_chn, channelstatus chanstat) : ChannelID(chnID), channelrelposition(chanpos), stripside(strp), stripnum(strpnm), signal_crate(sig_crt), signal_card(sig_crd), signal_channel(sig_chn), level2_crate(lv2_crt), level2_card(lv2_crd), level2_channel(lv2_ch), hv_crate(hv_crt), hv_card(hv_crd), hv_channel(hv_chn), status(chanstat) {serialise=true;}
+	virtual ~Channel(){}
 	
 	unsigned long GetChannelID(){return ChannelID;}
 	Position GetChannelPosition(){return channelrelposition;}

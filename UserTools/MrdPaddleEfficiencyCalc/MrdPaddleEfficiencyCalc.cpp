@@ -320,7 +320,7 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       //Get observed/expected histograms
       TH1D *temp_exp = (TH1D*) inputfile->Get(name_exp_hist.str().c_str());
       TH1D *temp_obs = (TH1D*) inputfile->Get(name_obs_hist.str().c_str());
-      TH1D *temp_exp_layer, *temp_obs_layer;
+      TH1D *temp_exp_layer=nullptr, *temp_obs_layer=nullptr;
       if (layer_plots){
         temp_exp_layer = (TH1D*) inputfile->Get(name_exp_hist_layer.str().c_str());
         temp_obs_layer = (TH1D*) inputfile->Get(name_obs_hist_layer.str().c_str());

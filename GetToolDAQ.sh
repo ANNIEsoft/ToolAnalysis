@@ -271,7 +271,7 @@ do
             boostflag=0
             zmq=0
             final=0
-            MrdTrackLib=1
+            MrdTrackLib=0
             WCSimlib=0
             Python=0
             Python3=0
@@ -430,7 +430,7 @@ then
     pip3 install tensorflow==2.10.0
     # set tensorflow verbosity to suppress info messages about not having a GPU or maximal acceleration
     # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886
-    echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh
+    #echo "export TF_CPP_MIN_LOG_LEVEL=2" >> ${BASEDIR}/Setup.sh   # already done
     
     cd ${BASEDIR}/UserTools
     mkdir -p InactiveTools
@@ -457,7 +457,7 @@ then
     wget https://gist.githubusercontent.com/marc1uk/c0e32d955dd1c06ef69d80ce643018ad/raw/10e592d42737ecc7dca677e774ae66dcb5a3859d/fsplit.c
     gcc fsplit.c -o fsplit
     export PATH=$PWD:$PATH
-    echo "export PATH=$PWD:\$PATH" >> ${BASEDIR}/Setup.sh
+    #echo "export PATH=$PWD:\$PATH" >> ${BASEDIR}/Setup.sh     # already done
     
     cd ${BASEDIR}/ToolDAQ
     cvs -d :pserver:anonymous@log4cpp.cvs.sourceforge.net:/cvsroot/log4cpp -z3 co log4cpp

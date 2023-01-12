@@ -252,7 +252,7 @@ bool MCParticleProperties::Execute(){
 		nextparticle->SetMrdPenetration(mrdpenetrationcm/100.);
 		nextparticle->SetNumMrdLayersPenetrated(mrdpenetrationlayers);
 		nextparticle->SetTrackLengthInMrd(atracklengthinmrd/100.);
-		double dEdx = cMRDTrack::MRDenergyvspenetration.Eval(atrackangle);
+		double dEdx = cMRDTrack::MRDenergyvspenetration->Eval(atrackangle);
 		double energylossinmrd = (atracklengthinmrd) ? (atracklengthinmrd*dEdx) : 0;
 		nextparticle->SetMrdEnergyLoss(energylossinmrd);
 		if(verbosity>3){
