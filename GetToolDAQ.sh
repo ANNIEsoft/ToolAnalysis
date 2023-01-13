@@ -17,6 +17,7 @@ WCSimlib=1
 Python=0
 Python3=1
 Pythia=1
+Clhep=1
 Lhapdf=1
 Genie=1
 RATEventlib=1
@@ -81,6 +82,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -99,6 +101,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -117,6 +120,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -136,6 +140,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -155,6 +160,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -174,6 +180,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -193,6 +200,7 @@ do
 	    Python=1
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -212,6 +220,7 @@ do
 	    Python=0
 	    Python3=1
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -231,6 +240,27 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=1
+	    Clhep=0
+	    Lhapdf=0
+	    Genie=0
+	    RATEventlib=0
+	    ;;
+
+	--Clhep )
+	    echo "Compiling ToolDAQ"
+	    init=0
+	    tooldaq=0
+	    rootflag=0
+	    root6flag=0
+	    boostflag=0
+	    zmq=0
+	    MrdTrackLib=0
+	    WCSimlib=0
+	    final=0
+	    Python=0
+	    Python3=0
+	    Pythia=0
+	    Clhep=1
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -250,6 +280,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=1
 	    Genie=0
 	    RATEventlib=0
@@ -269,6 +300,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=1
 	    RATEventlib=0
@@ -288,6 +320,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=1
@@ -307,6 +340,7 @@ do
             Python=0
             Python3=0
             Pythia=0
+	    Clhep=0
 	    Lhapdf=0
             Genie=0
             RATEventlib=0
@@ -327,6 +361,7 @@ do
 	    Python=0
 	    Python3=0
 	    Pythia=0
+	    Clhep=0
 	    Lhapdf=0
 	    Genie=0
 	    RATEventlib=0
@@ -506,6 +541,30 @@ then
     ./build_pythia6.sh --dummies=remove
     export PYTHIA6_DIR=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/
     
+fi
+
+if [ $Clhep -eq 1 ]
+then
+
+    cd ${BASEDIR}
+    if [ $fnalflag -eq 1 ]; then
+      source SetupFNAL.sh
+    else
+      source Setup.sh
+    fi
+    
+    cd ${BASEDIR}/ToolDAQ
+    wget https://proj-clhep.web.cern.ch/proj-clhep/dist1/clhep-2.4.0.2.tgz
+    tar zxf clhep-2.4.0.2.tgz
+    rm -rf clhep-2.4.0.2.tgz
+    cd 2.4.0.2
+    mkdir CLHEP_build CLHEP_install
+    cd CLHEP_build
+    cmake -DCMAKE_INSTALL_PREFIX=/ToolAnalysis/ToolDAQ/2.4.0.2/CLHEP_install /ToolAnalysis/ToolDAQ/2.4.0.2/CLHEP
+    cmake --build . --config RelWithDebInfo
+    cmake --build . --target install
+	cd ..
+	rm -rf CLHEP CLHEP_build
 fi
 
 if [ $Lhapdf -eq 1 ]
