@@ -1,8 +1,37 @@
-#ignore gedit backup files:
 *~
+*\#*#
+*.patch
+*.rej
 NodeDaemon
 RemoteControl
 Analyse
 ToolDAQ
+*.d
+*.DS_Store
+thumbs.db
+Thumbs.db
+desktop.ini
+Desktop.ini
 *.o
 *.root
+*.so
+*.a
+core.*
+!core/
+__pycache__/
+*.pyc
+
+# ROOT dictionaries are also build products
+*_RootDict.cpp
+*.pcm
+*.rootmap
+*_dictUmbrella.h
+*_dictContent.h
+
+# we also build the datamodel linkdef on the fly
+DataModel/DataModel_Linkdef.hh
+
+# These are imported as part of ToolPack
+UserTools/ImportedTools
+UserTools/InactiveTools
+
