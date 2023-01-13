@@ -19,7 +19,10 @@ export GENIE_REWEIGHT=${ToolDAQapp}/ToolDAQ/Reweight-3_00_04_ub3/
 
 export PATH=${ToolDAQapp}/ToolDAQ/LHAPDF-6.3.0/install/bin:$GENIE/bin:$GENIE_REWEIGHT/bin:$PATH
 
-for folder in `ls -d ${ToolDAQapp}/UserTools/*/ `
+export PATH=/ToolAnalysis/ToolDAQ/fsplit:$PATH
+export TF_CPP_MIN_LOG_LEVEL=2
+
+for folder in `ls -d ${PWD}/UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}
 done

@@ -141,7 +141,8 @@ RecoVertex* RecoVertex::CloneVertex(RecoVertex* b) {
   fIterations = b->GetIterations();
   fPass = b->GetPass();
 
-  fStatus = b->GetStatus();	
+  fStatus = b->GetStatus();
+  return this;
 }
 
 void RecoVertex::Reset()
