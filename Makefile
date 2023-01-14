@@ -20,7 +20,7 @@ GenieInclude= -isystem$(GenieIncludeDir)/Framework -isystem$(GenieIncludeDir) `g
 GenieLibs= `genie-config --libs` -lxml2 `gsl-config --libs` -L$(GENIE_REWEIGHT)/lib -lGRwClc -lGRwFwk -lGRwIO
 PythiaLibs= -L $(ToolDAQPath)/Pythia6Support/v6_424/lib -lPythia6
 Log4CppLibs= -L $(ToolDAQPath)/log4cpp/lib -llog4cpp
-Log4CppInclude= -isystem$(ToolDAQPath)/log4cpp/include/log4cpp/
+Log4CppInclude= -isystem$(ToolDAQPath)/log4cpp/include
 
 RATEventLib= -L $(ToolDAQPath)/RATEventLib/lib -lRATEvent
 RATEventInclude= -I $(ToolDAQPath)/RATEventLib/include
