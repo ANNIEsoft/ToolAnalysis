@@ -56,6 +56,8 @@ RUN dnf config-manager --set-enabled extras,powertools \
     fftw3-devel \
     libnsl2-devel \
     bzip2 \
+    unzip \
+    gdb \
     && yum clean all \
     && rm -rf /var/cache/yum
 
@@ -67,6 +69,8 @@ Run alternatives --set python3 /usr/bin/python3.8;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root6;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Clhep;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Lhapdf;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEventlib; chmod -R 777 /ToolAnalysis/ToolDAQ/RATEventLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim; chmod -R 777 /ToolAnalysis/ToolDAQ/WCSimLib;

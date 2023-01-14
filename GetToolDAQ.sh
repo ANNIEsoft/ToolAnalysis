@@ -563,8 +563,8 @@ then
     cmake -DCMAKE_INSTALL_PREFIX=/ToolAnalysis/ToolDAQ/2.4.0.2/CLHEP_install /ToolAnalysis/ToolDAQ/2.4.0.2/CLHEP
     cmake --build . --config RelWithDebInfo
     cmake --build . --target install
-	cd ..
-	rm -rf CLHEP CLHEP_build
+    cd ..
+    rm -rf CLHEP CLHEP_build
 fi
 
 if [ $Lhapdf -eq 1 ]
@@ -621,6 +621,9 @@ then
     export GENIE=`pwd`
     ./configure --prefix=/ToolAnalysis/ToolDAQ/GENIE-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
     make -j8
+    cd config
+    cp G18_10a/ModelConfiguration.xml .
+    cp G18_10a/TuneGeneratorList.xml .
     
     cd ${BASEDIR}/ToolDAQ
     wget https://github.com/uboone/Reweight/archive/refs/tags/v3_00_04_ub3.zip
