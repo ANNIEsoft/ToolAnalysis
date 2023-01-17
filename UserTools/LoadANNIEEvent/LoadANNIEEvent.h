@@ -30,6 +30,10 @@ class LoadANNIEEvent: public Tool {
     /// the output
     int verbosity_;
 
+    /// @brief Variables to count global event numbers over multiple files
+    bool global_evnr = false;
+    uint32_t global_ev;
+
     /// @brief FileFormat of input file (combined ANNIEEvent+OrphanStore or separate stores)
     std::string FileFormat;
 
@@ -60,9 +64,11 @@ class LoadANNIEEvent: public Tool {
     /// @brief Flag indicating whether we need to load a new file
     bool need_new_file_;
 
-    bool run_on_filtered;
+    bool run_on_unfiltered;
 
     bool load_orphanstore;
 
     std::stringstream logmessage;
+    std::vector<int> global_events, global_events_start;
+
 };
