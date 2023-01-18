@@ -52,7 +52,9 @@ class LoadWCSim: public Tool {
 	bool Initialise(std::string configfile,DataModel &data);
 	bool Execute();
 	bool Finalise();
+	std::vector<int> LoadPMTMask(std::string path_to_pmtmask);
 	
+
 	private:
 	
 	// variables from config file
@@ -63,7 +65,13 @@ class LoadWCSim: public Tool {
 	int LappdNumStrips;           // number of Channels per LAPPD
 	double LappdStripLength;      // [mm] for calculating relative x position for dual-ended readout
 	double LappdStripSeparation;  // [mm] for calculating relative y position of each stripline
-	
+	std::string path_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
+	std::string path_mrd_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
+	std::string path_fmv_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
+	int RunType;			// Which run type was simulated?
+	std::string PMTMask;		// PMT mask for dead PMTs
+	bool splitSubtriggers;		// should subtriggers be split into different Execute steps?
+
 	// WCSim variables
 	//////////////////
 	//TFile* file;
@@ -83,7 +91,10 @@ class LoadWCSim: public Tool {
 	int numlappds;
 	int nummrdpmts;
 	int numvetopmts;
-	
+
+	//Masked PMTs vector
+	std::vector<int> masked_ids;
+
 	// For constructing ToolChain Geometry
 	//////////////////////////////////////
 	Geometry* ConstructToolChainGeometry();
@@ -103,6 +114,11 @@ class LoadWCSim: public Tool {
 	std::map<int,int> timeArrayOffsetMap;
 	void BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig);
 	int triggers_event;	
+
+	std::map<int,unsigned long> pmtid_to_channelkey;
+	std::map<int,unsigned long> mrdid_to_channelkey;
+	std::map<int,unsigned long> fmvid_to_channelkey;
+
 
 	// FIXME temporary!! remove me when we have a better way to get FACC paddle origins
 	std::vector<double> facc_paddle_yorigins{-198.699875000, -167.999875000, -137.299875000, -106.599875000, -75.899875000, -45.199875000, -14.499875000, 16.200125000, 46.900125000, 77.600125000, 108.300125000, 139.000125000, 169.700125000, -198.064875000, -167.364875000, -136.664875000, -105.964875000, -75.264875000, -44.564875000, -13.864875000, 16.835125000, 47.535125000, 78.235125000, 108.935125000, 139.635125000, 170.335125000}; // taken from geofile.txt
@@ -127,7 +143,10 @@ class LoadWCSim: public Tool {
 	std::map<unsigned long,std::vector<MCHit>>* TDCData;
 	std::map<unsigned long,std::vector<MCHit>>* MCHits;
 	std::vector<TriggerClass>* TriggerData;
-	BeamStatusClass* BeamStatus;
+	BeamStatus beamstat;
+	std::map<std::string,std::vector<double>> MCNeutCap;
+	std::map<std::string,std::vector<std::vector<double>>> MCNeutCapGammas;
+	//BeamStatusClass* BeamStatus;
 	
 	int primarymuonindex;
 	
@@ -142,7 +161,8 @@ class LoadWCSim: public Tool {
 	std::map<unsigned long,int> Mrd_Chankey_Layer;
 	bool mrd_firstlayer, mrd_lastlayer;
 	std::string Triggertype;
-	
+	int TriggerWord;	
+
 	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
 	int v_error=0;
 	int v_warning=1;

@@ -7,6 +7,6 @@ OutputDirectory .
 OutputFile STEC_MRDTracks_cluster40ns
 DrawTruthTracks 0 # whether to add MC Truth track info for drawing in MrdPaddlePlot Tool
                   ## note you need to run that tool to actually view the tracks!
-WriteTracksToFile 1	# should the track information be written to a ROOT-file?
+WriteTracksToFile 0	# should the track information be written to a ROOT-file?
 SelectTriggerType 0	#should the loaded data be filtered by trigger type?
 TriggerType Beam	#options: Cosmic, Beam, No Loopback

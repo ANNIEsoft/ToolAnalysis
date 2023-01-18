@@ -180,6 +180,7 @@ bool EventSelector::Execute(){
 
     IsElectron = this->ParticleCheck(11);
     m_data->Stores.at("RecoEvent")->Set("MCIsElectron",IsElectron);
+
   }
 
   bool HasEnoughHits = false;
@@ -336,7 +337,14 @@ bool EventSelector::Execute(){
   if(fSaveStatusToStore) m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
+
+  if (verbosity >= v_debug){
+    std::cout << "EventSelector tool: fEventApplied: "<< fEventApplied << ", fEventFlagged: " << fEventFlagged << std::endl;
+    std::cout << "EventSelector tool: Bit representation: fEventApplied: " << std::bitset<32>(fEventApplied) << ", fEventFlagged: " << std::bitset<32>(fEventFlagged) << std::endl;
+  }
+
   if (verbosity > 1) std::cout <<"EventCutStatus: "<<fEventCutStatus<<std::endl;
+
 
   return true;
 }
@@ -378,8 +386,11 @@ bool EventSelector::PromptTriggerCheck() {
     Log("EventSelector Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
     return false; 
   }	
+  
   /// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
-  if(fMCTriggernum>0){ 
+  bool splitSubtriggers = false;
+  m_data->CStore.Get("SplitSubTriggers",splitSubtriggers);
+  if(splitSubtriggers && (fMCTriggernum>0)){ 
     Log("EventSelector Tool: This event is not a prompt trigger",v_message,verbosity); 
     return false;
   }

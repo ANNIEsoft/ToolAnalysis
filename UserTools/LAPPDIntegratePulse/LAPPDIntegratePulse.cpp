@@ -34,6 +34,9 @@ bool LAPPDIntegratePulse::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("IntegStrip3",IS3);
   m_variables.Get("IntegStrip4",IS4);
 
+  // Get the Verbosity Variabl
+  m_variables.Get("IntegVerbosity", LAPPDIntegVerbosity);
+
   return true;
 }
 
@@ -49,7 +52,8 @@ bool LAPPDIntegratePulse::Execute(){
   map <unsigned long, vector<Waveform<double>>> :: iterator itr;
 
   double totCharge=0;
-  double MaxAmp=0;
+  double MaxAmp0=0;
+  double MaxAmp1=0;
   for (itr = lappddata.begin(); itr != lappddata.end(); ++itr){
 
     unsigned long channelno = itr->first;
@@ -58,6 +62,7 @@ bool LAPPDIntegratePulse::Execute(){
     Channel* mychannel = _geom->GetChannel(channelno);
     //figure out the stripline number
     int stripno = mychannel->GetStripNum();
+    int stripside = mychannel->GetStripSide();
 
     //loop over all Waveforms
     vector<double> acharge;
@@ -79,7 +84,8 @@ bool LAPPDIntegratePulse::Execute(){
           totCharge+=Qelectrons;
         }
         //get the maximum amplitude
-        if(stripno==IS1) MaxAmp = CalcAmp(bwav,lowR,hiR);
+        if(stripno==IS1&&stripside==0) MaxAmp0 = CalcAmp(bwav,lowR,hiR);
+        if(stripno==IS1&&stripside==1) MaxAmp1 = CalcAmp(bwav,lowR,hiR);
       }
 
       // store the charge vector by channel
@@ -89,7 +95,10 @@ bool LAPPDIntegratePulse::Execute(){
     // add the charge information to the Boost Store
     m_data->Stores["ANNIEEvent"]->Set("theCharges",thecharge);
     m_data->Stores["ANNIEEvent"]->Set("TotCharge",-totCharge);
-    m_data->Stores["ANNIEEvent"]->Set("MaxAmp",MaxAmp);
+    m_data->Stores["ANNIEEvent"]->Set("MaxAmp0",MaxAmp0);
+    m_data->Stores["ANNIEEvent"]->Set("MaxAmp1",MaxAmp1);
+
+    if(LAPPDIntegVerbosity>2) cout<<"Integ end: "<<MaxAmp0<<" "<<MaxAmp1<<" "<<totCharge<<endl;
 
     //cout<<"DONE INTEGRATING. TOTAL CHARGE = "<<-totCharge<<endl;
 
@@ -108,6 +117,8 @@ double LAPPDIntegratePulse::CalcIntegral(Waveform<double> hwav, double lowR, dou
 
   int lowb = (lowR - sT)/Deltat;
   int hib = (hiR - sT)/Deltat;
+
+  if(LAPPDIntegVerbosity>1) cout<<"Integ: "<<lowb<<" "<<hib<<endl;
 
   double tQ=0.;
 
@@ -130,8 +141,9 @@ double LAPPDIntegratePulse::CalcAmp(Waveform<double> hwav, double lowR, double h
   int hib = (hiR - sT)/Deltat;
 
   double tQ=0.;
-
   double tAmp=0;
+
+  if(LAPPDIntegVerbosity>1) cout<<"Integ: "<<lowb<<" "<<hib<<endl;
 
   if( (lowb>=0) && (hib<hwav.GetSamples()->size()) ){
     for(int i=lowb; i<hib; i++){

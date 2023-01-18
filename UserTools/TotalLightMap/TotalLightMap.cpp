@@ -1257,22 +1257,22 @@ void TotalLightMap::FinalCleanup(){
 	eventcolours.clear();
 	
 	// clean up binned histograms
-	if(lmccqe) delete lmccqe; lmccqe=nullptr;
-	if(lmcc1p) delete lmcc1p; lmcc1p=nullptr;
-	if(lmdiff) delete lmdiff; lmdiff=nullptr;
-	if(lmmuon) delete lmmuon; lmmuon=nullptr;
-	if(lmpigammas) delete lmpigammas; lmpigammas=nullptr;
-	if(lmdiff2) delete lmdiff2; lmdiff2=nullptr;
+	if(lmccqe){ delete lmccqe; lmccqe=nullptr; }
+	if(lmcc1p){ delete lmcc1p; lmcc1p=nullptr; }
+	if(lmdiff){ delete lmdiff; lmdiff=nullptr; }
+	if(lmmuon){ delete lmmuon; lmmuon=nullptr; }
+	if(lmpigammas){ delete lmpigammas; lmpigammas=nullptr; }
+	if(lmdiff2){ delete lmdiff2; lmdiff2=nullptr; }
 	
-	if(lightmap_by_eventtype_canvas) delete lightmap_by_eventtype_canvas; lightmap_by_eventtype_canvas=nullptr;
-	if(lightmap_by_parent_canvas) delete lightmap_by_parent_canvas; lightmap_by_parent_canvas=nullptr;
-	if(mercatorCanv) delete mercatorCanv; mercatorCanv=nullptr;
+	if(lightmap_by_eventtype_canvas){ delete lightmap_by_eventtype_canvas; lightmap_by_eventtype_canvas=nullptr; }
+	if(lightmap_by_parent_canvas){ delete lightmap_by_parent_canvas; lightmap_by_parent_canvas=nullptr; }
+	if(mercatorCanv){ delete mercatorCanv; mercatorCanv=nullptr; }
 	
 	// final event display gui cleanup
-	if(top_circle) delete top_circle; top_circle=nullptr;
-	if(bottom_circle) delete bottom_circle; bottom_circle=nullptr;
-	if(box) delete box; box=nullptr;
-	if(gROOT->FindObject("canvas_ev_display")) delete canvas_ev_display; canvas_ev_display=nullptr;
+	if(top_circle){ delete top_circle; top_circle=nullptr; }
+	if(bottom_circle){ delete bottom_circle; bottom_circle=nullptr; }
+	if(box){ delete box; box=nullptr; }
+	if(gROOT->FindObject("canvas_ev_display")){ delete canvas_ev_display; canvas_ev_display=nullptr; }
 }
 
 // ################################################################

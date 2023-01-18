@@ -74,11 +74,17 @@ class Geometry : public SerialisableObject{
 	}
 	
 	unsigned long ConsumeNextFreeChannelKey(){
+		while (ChannelKeys.count(NextFreeChannelKey)){
+		  NextFreeChannelKey++;	
+		}
 		unsigned long thefreechannelkey = NextFreeChannelKey;
 		NextFreeChannelKey++;
 		return thefreechannelkey;
 	}
 	unsigned long ConsumeNextFreeDetectorKey(){
+		while (DetectorKeys.count(NextFreeDetectorKey)){
+		  NextFreeDetectorKey++;	
+		}
 		unsigned long thefreedetectorkey = NextFreeDetectorKey;
 		NextFreeDetectorKey++;
 		return thefreedetectorkey;
@@ -111,6 +117,15 @@ class Geometry : public SerialisableObject{
 					 <<detin.GetDetectorID()<<std::endl;
 			return false;
 		} else {
+			//Loop through channelkeys in detetor object and fill ChannelKeys vector
+			for (std::map<unsigned long,Channel>::iterator it=detin.GetChannels()->begin(); it!= detin.GetChannels()->end(); it++){
+				if (ChannelKeys.count(it->first)){
+					std::cerr<<"Geometry error! AddDetector called with non-unique ChannelKey "
+					 <<it->first <<std::endl;
+					return false;
+				}
+				ChannelKeys.emplace(it->first,1);
+			}
 			DetectorKeys.emplace(detin.GetDetectorID(),1);
 		}
 		
@@ -267,6 +282,7 @@ class Geometry : public SerialisableObject{
 	unsigned long NextFreeDetectorKey;
 	unsigned long NextFreeChannelKey;
 	std::map<int,int> DetectorKeys;
+	std::map<int,int> ChannelKeys;
 	std::map<unsigned long,Detector*> ChannelMap;
 	std::map<std::string,std::map<unsigned long,Detector>> RealDetectors;
 	std::map<std::string,std::map<unsigned long,Detector*>> Detectors;

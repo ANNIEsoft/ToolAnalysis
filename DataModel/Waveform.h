@@ -13,8 +13,9 @@ class Waveform : public SerialisableObject{
 	friend class boost::serialization::access;
 
 	public:
-  Waveform() : fStartTime(), fSamples(std::vector<T>{}) {serialise=true;}
-  Waveform(double tsin, std::vector<T> samplesin) : fStartTime(tsin), fSamples(samplesin){serialise=true;}
+	Waveform() : fStartTime(), fSamples(std::vector<T>{}) {serialise=true;}
+	Waveform(double tsin, std::vector<T> samplesin) : fStartTime(tsin), fSamples(samplesin){serialise=true;}
+	virtual ~Waveform(){}
 
 	inline double GetStartTime() const {return fStartTime;}
 	inline std::vector<T>* GetSamples() {return &fSamples;}

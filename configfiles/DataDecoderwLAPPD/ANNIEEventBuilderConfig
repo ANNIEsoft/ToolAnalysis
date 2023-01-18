@@ -1,0 +1,19 @@
+verbosity 6
+
+BuildType TankAndMRDAndCTCAndLAPPD
+ProcessedFilesBasename ProcessedRawData
+NumEventsPerPairing 200
+SavePath ./
+
+MinNumWavesInSet 134 // 1=Just throw any waveforms into ANNIE events if you got em
+
+ExecutesPerBuild 10
+OrphanOldTankTimestamps 1
+OldTimestampThreshold 1000
+OrphanFileBase OrphanStore
+MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the others, pause reading
+
+SaveRawData 0
+StoreBeamStatus 1
+#LAPPDOffsetFile None
+LAPPDOffsetFile ./configfiles/DataDecoderwLAPPD/LAPPDOffsetFile_R3823-R3844.txt

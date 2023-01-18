@@ -483,7 +483,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 			thisTrackAsBoostStore->Set("LongTrack",1);
 		}
 	}
-	std::cout <<"Setting MRDTracks"<<std::endl;
+	if (verbosity > 1) std::cout <<"Setting MRDTracks"<<std::endl;
 	m_data->Stores["MRDTracks"]->Set("MRDTracks",theMrdTracks,false); // the address may be changed by resize()
 	//m_data->Stores["MRDTracks"]->Save();   // write to file?
 	
@@ -491,7 +491,7 @@ if your class contains pointers, use TrackArray.Clear("C"). You MUST then provid
 	// into the CStore in case something wants to use it (e.g. MrdPaddlePlot tool)
 	//m_data->CStore.Set("MrdSubEventTClonesArray",SubEventArray,false);
 	// XXX shouldn't be necessary as SubEventArray is re-used, so pointer has not changed
-	std::cout <<"Setting subevptr in CStore"<<std::endl;
+	if (verbosity > 1) std::cout <<"Setting subevptr in CStore"<<std::endl;
 	intptr_t subevptr = reinterpret_cast<intptr_t>(SubEventArray);
 	m_data->CStore.Set("MrdSubEventTClonesArray",subevptr);
 	
