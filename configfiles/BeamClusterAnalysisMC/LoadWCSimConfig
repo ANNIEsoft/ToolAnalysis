@@ -17,3 +17,4 @@ LappdStripLength 100         ## relative x position of each LAPPD strip, for dua
 LappdStripSeparation 10      ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
 PMTMask configfiles/BeamClusterAnalysisMC/DeadPMTIDs_p2v7.txt ## Which PMTs should be masked out? / are dead?
 ChankeyToPMTIDMap ./configfiles/BeamClusterAnalysisMC/Chankey_WCSimID_v7.txt
+SplitSubTriggers 0		# should subtriggers be loaded in separate Execute steps?

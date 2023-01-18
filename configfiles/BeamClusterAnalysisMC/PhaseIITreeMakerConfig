@@ -1,6 +1,6 @@
 verbose 5
 
-OutputFile MCBeam_Gst_new_Run9000.ntuple.root
+OutputFile MCBeam_Gst_new_Run9000_NoSplitSubTriggers.ntuple.root
 TankClusterProcessing 1
 MRDClusterProcessing 1
 TriggerProcessing 1
@@ -14,4 +14,4 @@ Reco_fill 0
 RecoDebug_fill 0
 muonTruthRecoDiff_fill 0
 IsData 0
-HasGenie 1
+HasGenie 0

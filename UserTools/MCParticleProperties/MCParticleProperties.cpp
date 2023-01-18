@@ -58,10 +58,15 @@ bool MCParticleProperties::Execute(){
 	// on this set of particles and we don't need to do it again
 	uint16_t MCTriggernum;
 	get_ok = m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+	Log("MCParticleProperties tool: MCTriggernum: "+std::to_string(MCTriggernum),v_message,verbosity);
 	if(not get_ok){
 		Log("MCParticleProperties Tool: No MCTriggernum in ANNIEEvent!",v_error,verbosity);
 		return false;
-	} else if(MCTriggernum>0){
+	}
+
+	bool splitSubtriggers = false;
+        m_data->CStore.Get("SplitSubTriggers",splitSubtriggers);
+	if(splitSubtriggers && (MCTriggernum>0)){
 		return true; // nothing to do
 	}
 	
