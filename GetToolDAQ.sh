@@ -622,6 +622,7 @@ then
     export GENIE=`pwd`
     ./configure --prefix=/ToolAnalysis/ToolDAQ/GENIE-v3-master/install/ --enable-lhapdf6 --enable-rwght --enable-fnal --with-pythia6-inc=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/inc/ --with-pythia6-lib=/ToolAnalysis/ToolDAQ/Pythia6Support/v6_424/lib/ --with-log4cpp-inc=/ToolAnalysis/ToolDAQ/log4cpp/include/ --with-log4cpp-lib=/ToolAnalysis/ToolDAQ/log4cpp/lib/
     make -j8
+    make install
     cd config
     cp G18_10a/ModelConfiguration.xml .
     cp G18_10a/TuneGeneratorList.xml .
