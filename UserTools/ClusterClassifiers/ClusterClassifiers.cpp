@@ -325,7 +325,7 @@ bool ClusterClassifiers::IdentifyDelayedNeutronClusters(std::map<double,double> 
     if (it->first > 10000){
       double current_cb = cluster_cb.at(it->first);
       double current_q = cluster_totalq.at(it->first);
-      if (current_cb < 0.4 && current_q < 150 && ){
+      if (current_cb < 0.4 && current_q < 150 && (current_cb <= (1. - current_q/150.)*0.5)){
         cluster_neutron.push_back(tmp_cluster_id);
         return_delayed = true;
       }

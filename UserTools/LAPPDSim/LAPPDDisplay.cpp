@@ -18,9 +18,8 @@ _output_file_name(filePath),_config_number(confignumber)
 {
   //TApplication
 	int myargc = 0;
-	char *myargv[] =
-	{ (const char*) "somestring" };
-	_LAPPD_sim_app = new TApplication("LAPPDSimApp", &myargc, myargv);
+	const char *myargv[] = { (const char*) "somestring" };
+	_LAPPD_sim_app = new TApplication("LAPPDSimApp", &myargc, const_cast<char**>(myargv));
   //Canvases only need to be created, if one wants to display the plots while the program is running
 	if (_config_number == 2)
 	{

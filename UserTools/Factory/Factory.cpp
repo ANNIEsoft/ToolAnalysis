@@ -11,7 +11,6 @@ if (tool=="ExampleSaveRoot") ret=new ExampleSaveRoot;
 if (tool=="ExampleloadStore") ret=new ExampleloadStore;
 if (tool=="ExamplePrintData") ret=new ExamplePrintData;
 if (tool=="ExampleLoadRoot") ret=new ExampleLoadRoot;
-if (tool=="PythonScript") ret=new PythonScript;
 if (tool=="LAPPDParseScope") ret=new LAPPDParseScope;
 if (tool=="LAPPDParseACC") ret=new LAPPDParseACC;
 if (tool=="LAPPDFindPeak") ret=new LAPPDFindPeak;
@@ -120,18 +119,15 @@ if (tool=="MRDLoopbackAnalysis") ret=new MRDLoopbackAnalysis;
 if (tool=="VetoEfficiency") ret=new VetoEfficiency;
 if (tool=="EnergyExtractor") ret=new EnergyExtractor;
 if (tool=="MonitorTrigger") ret=new MonitorTrigger;
-
 if (tool=="LAPPDPlotWaveForms") ret=new LAPPDPlotWaveForms;
 if (tool=="LAPPDReorderData") ret=new LAPPDReorderData;
 if (tool=="LAPPDStoreReorderData") ret=new LAPPDStoreReorderData;
 if (tool=="LAPPDFindT0") ret=new LAPPDFindT0;
 if (tool=="LAPPDStoreFindT0") ret=new LAPPDStoreFindT0;
 if (tool=="LAPPDStoreReadIn") ret=new LAPPDStoreReadIn;
-
 if (tool=="ClusterDummy") ret=new ClusterDummy;
 if (tool=="LAPPDCluster") ret=new LAPPDCluster;
 if (tool=="LAPPDMakePeds") ret=new LAPPDMakePeds;
-
 if (tool=="EventClassification") ret=new EventClassification;
 if (tool=="DataSummary") ret=new DataSummary;
 if (tool=="MaxPEPlots") ret=new MaxPEPlots;
@@ -150,5 +146,11 @@ if (tool=="BeamDecoder") ret=new BeamDecoder;
 if (tool=="LoadRunInfo") ret=new LoadRunInfo;
 if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
 if (tool=="SimpleReconstruction") ret=new SimpleReconstruction;
+if (tool=="saveLAPPDInfo") ret=new saveLAPPDInfo;
+if (tool=="parseLAPPDData") ret=new parseLAPPDData;
+if (tool=="checkLAPPDStatus") ret=new checkLAPPDStatus;
+if (tool=="GetLAPPDEvents") ret=new GetLAPPDEvents;
+if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
+if (tool=="PythonScript") ret=new PythonScript;
 return ret;
 }

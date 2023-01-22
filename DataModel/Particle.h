@@ -41,6 +41,7 @@ class Particle : public SerialisableObject{
 ////			else startstoptype = tracktype::UNCONTAINED;
 //		}
 	}
+	virtual ~Particle(){}
 	
 	inline void SetPdgCode(int code){ParticlePDG=code;}
 	inline void SetStartEnergy(double E){startEnergy=E;}

@@ -525,12 +525,12 @@ bool PhaseIIADCCalibrator::Finalise() {
     //std::cout<<"dumping gObjecTable:"<<std::endl;
     //gObjectTable->Print();
     
-    if(calibrated_waveform_tgraph) delete calibrated_waveform_tgraph; calibrated_waveform_tgraph=nullptr;
-    if(calibrated_waveform_fit) delete calibrated_waveform_fit; calibrated_waveform_fit=nullptr;
-    if(gROOT->FindObject("raw_datapoint_hist")!=nullptr) delete raw_datapoint_hist; raw_datapoint_hist=nullptr;
+    if(calibrated_waveform_tgraph){ delete calibrated_waveform_tgraph; calibrated_waveform_tgraph=nullptr; }
+    if(calibrated_waveform_fit){ delete calibrated_waveform_fit; calibrated_waveform_fit=nullptr; }
+    if(gROOT->FindObject("raw_datapoint_hist")!=nullptr){ delete raw_datapoint_hist; raw_datapoint_hist=nullptr; }
     
     if(draw_baseline_fit || (drawcount>0)){
-      if(gROOT->FindObject("baselineFitCanvas")!=nullptr) delete baselineFitCanvas; baselineFitCanvas=nullptr;
+      if(gROOT->FindObject("baselineFitCanvas")!=nullptr){ delete baselineFitCanvas; baselineFitCanvas=nullptr; }
       
       int tapplicationusers=0;
       get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
@@ -1189,7 +1189,7 @@ void PhaseIIADCCalibrator::make_raw_led_waveforms(unsigned long channel_key,
 
       std::vector<uint16_t> led_waveform;
       //FIXME: want start time of window, not of the full raw waveform
-      uint64_t start_time = raw_waveforms.at(j).GetStartTime();
+      double start_time = raw_waveforms.at(j).GetStartTime();
       for (int s = windowmin; s < windowmax; ++s) {
         led_waveform.push_back(raw_waveforms.at(j).GetSample(s));
       }

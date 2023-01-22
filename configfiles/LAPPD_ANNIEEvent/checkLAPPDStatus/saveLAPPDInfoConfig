@@ -1,0 +1,4 @@
+# Dummy config file
+
+verbose 2
+OutputFile LAPPDStatistics_R3754.csv

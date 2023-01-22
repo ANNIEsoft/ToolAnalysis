@@ -400,13 +400,13 @@ bool LoadCCData::Finalise(){
 		// cleanup
 		tdcDebugTreeOut->ResetBranchAddresses();
 		tdcDebugRootFileOut->Close();
-		if(tdcDebugRootFileOut) delete tdcDebugRootFileOut; tdcDebugRootFileOut=nullptr;
-		if(hTDCLastTimeDiffs) delete hTDCLastTimeDiffs; hTDCLastTimeDiffs=nullptr;
-		if(hTDCHitTimes) delete hTDCHitTimes; hTDCHitTimes=nullptr;
-		if(hTDCNextTimeDiffs) delete hTDCNextTimeDiffs; hTDCNextTimeDiffs=nullptr;
-		if(hTDCValues) delete hTDCValues; hTDCValues=nullptr;
-		if(hTDCTimeDiffs) delete hTDCTimeDiffs; hTDCTimeDiffs=nullptr;
-		if(tdcRootCanvas) delete tdcRootCanvas; tdcRootCanvas=nullptr;
+		if(tdcDebugRootFileOut){ delete tdcDebugRootFileOut; tdcDebugRootFileOut=nullptr; }
+		if(hTDCLastTimeDiffs){ delete hTDCLastTimeDiffs; hTDCLastTimeDiffs=nullptr; }
+		if(hTDCHitTimes){ delete hTDCHitTimes; hTDCHitTimes=nullptr; }
+		if(hTDCNextTimeDiffs){ delete hTDCNextTimeDiffs; hTDCNextTimeDiffs=nullptr; }
+		if(hTDCValues){ delete hTDCValues; hTDCValues=nullptr; }
+		if(hTDCTimeDiffs){ delete hTDCTimeDiffs; hTDCTimeDiffs=nullptr; }
+		if(tdcRootCanvas){ delete tdcRootCanvas; tdcRootCanvas=nullptr; }
 		
 		int tapplicationusers=0;
 		get_ok = m_data->CStore.Get("RootTApplicationUsers",tapplicationusers);
@@ -843,7 +843,7 @@ uint32_t LoadCCData::TubeIdFromSlotChannel(unsigned int slot, unsigned int chann
 	// map TDC Slot + Channel into a MRD PMT Tube ID
 	uint32_t tubeid=-1;
 	uint16_t slotchan = static_cast<uint16_t>(slot*100)+static_cast<uint16_t>(channel);
-	if ((int)slotchan !=1831 && (int)slotchan != 1731) //std::cout <<"LoadCCData: slotchan = "<<slotchan<<std::endl;
+	//if ((int)slotchan !=1831 && (int)slotchan != 1731) std::cout <<"LoadCCData: slotchan = "<<slotchan<<std::endl;
 	if (version == 1){
 		if(slotchantopmtidv1.count(slotchan)){
 			std::string stringPMTID = "1"+slotchantopmtidv1.at(slotchan);

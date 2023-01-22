@@ -1,0 +1,4 @@
+verbose 2
+InputFile ./configfiles/LAPPD_ANNIEEvent/GetLAPPDEvents/my_files.txt
+OutputFile NumEvents_R3695.csv
+OutputFileLAPPD LAPPDFiles_R3695.txt

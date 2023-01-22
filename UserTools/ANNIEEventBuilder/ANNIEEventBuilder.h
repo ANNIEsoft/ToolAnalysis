@@ -5,6 +5,7 @@
 #include <iostream>
 #include <set>
 #include <unordered_set>
+#include <numeric>
 
 #include "Tool.h"
 #include "TimeClass.h"
@@ -14,6 +15,7 @@
 #include "ADCPulse.h"
 #include "CalibratedADCWaveform.h"
 #include "BeamStatus.h"
+#include "PsecData.h"
 
 /**
 * \class ANNIEEventBuilder
@@ -41,6 +43,8 @@ struct Orphanage{
   std::map<uint64_t, std::map<std::string,std::string>> OrphanCTCTimestamps;  //CTC timestamps with no PMT/MRD pair.
   std::map<uint64_t, std::map<std::string,std::string>> OrphanMRDTimestamps;  //Contains timestamps for all MRD events that were out of step with the rest of the stream
   std::map<uint64_t, double> OrphanMRDTimestampsTDiff;  //Contains timestamps & timestamp differences to next triggerword for MRD events that were not within fault tolerance of the CTC timestamp
+  std::map<uint64_t, std::map<std::string,std::string>> OrphanLAPPDTimestamps;  //Contains timestamps for all LAPPD events that were out of step with the rest of the stream
+  std::map<uint64_t, double> OrphanLAPPDTimestampsTDiff;  //Contains timestamps & timestamp differences to next triggerword in WaveMap for all LAPPD events that were out of sync with the rest of the stream
   ~Orphanage(){}
 };
 
@@ -51,6 +55,12 @@ struct TimeStream{
   std::vector<uint64_t> CTCTimestamps;  //Contains CTC timestamps encountered so far (keys in TimeToTriggerWordMap)
   std::vector<uint64_t> CTCTimestampsExtendedCC; 	//Contains CTC timestamps of triggerword 41 (CC extended readouts), used to further characterize main CTC timestamps
   std::vector<uint64_t> CTCTimestampsExtendedNC; 	//Contains CTC timestamps of triggerword 40 (NC extended readouts), used to further characterize main CTC timestamps
+  std::vector<uint64_t> CTCTimestampsPPS; 	//Contains CTC timestamps of triggerword 32 (PPS sync), used for LAPPD alignment
+  std::vector<uint64_t> CTCTimestampsBeam;	//Contains CTC timestamps of triggerword 5 (beam), used for LAPPD alignment
+  std::vector<uint64_t> LAPPDPPSTimestamps;	//LAPPD PPS timestamps
+  std::vector<uint64_t> LAPPDBeamgateTimestamps;	//LAPPD beamgate timestamps
+  std::vector<uint64_t> LAPPDTimestamps;	//LAPPD data timestamps
+  std::vector<uint64_t> LAPPDGlobalTimestamps;	//LAPPD beamgate timestamps (with offset)
   ~TimeStream(){}
 };
 
@@ -79,6 +89,7 @@ class ANNIEEventBuilder: public Tool {
   void BuildANNIEEventCTC(uint64_t CTCTime, uint32_t TriggerWord, int TriggerWordExtended);
   void BuildANNIEEventMRD(std::vector<std::pair<unsigned long,int>> MRDHits, 
   uint64_t MRDTimeStamp, std::string MRDTriggerType, int beam_tdc, int cosmic_tdc);
+  void BuildANNIEEventLAPPD(PsecData psecdata, uint64_t LAPPDTimeStamp, uint64_t LAPPDOffset);
 
   void SaveEntryToFile(int RunNum, int SubRunNum, int PartNum);
   void OpenNewANNIEEvent(int RunNum, int SubRunNum, int PartNum, uint64_t StarT, int RunT);
@@ -90,6 +101,10 @@ class ANNIEEventBuilder: public Tool {
   void ProcessNewTankPMTData();
   void ProcessNewMRDData();
   void ProcessNewCTCData();
+  void ProcessNewLAPPDData();
+
+  //Align LAPPD timestamps with CTC timestamps
+  int AlignLAPPDTimestamps();
 
   //Methods used to merge CTC/PMT/MRD streams
   std::map<uint64_t,uint64_t> PairTankPMTAndMRDTriggers();  // Return pairs of Tank and PMT timestamps
@@ -103,7 +118,9 @@ class ANNIEEventBuilder: public Tool {
                        std::map<uint64_t,std::string> MRDOrphans,
                        std::map<uint64_t,double> MRDOrphansTDiff,
                        std::map<uint64_t,std::string> CTCOrphans);
-  
+  void MoveToOrphanageLAPPD(std::map<uint64_t, std::string> LAPPDOrphans,
+                                             std::map<uint64_t, double> LAPPDOrphansTDiff);
+
   // store some info about orphaned events
   BoostStore *OrphanStore = nullptr;
   std::string OrphanFileBase="";
@@ -150,6 +167,12 @@ class ANNIEEventBuilder: public Tool {
   //###### Beam status map
   std::map<uint64_t,BeamStatus> *BeamStatusMap;                         //Map containing the beam status information
 
+  //###### LAPPD PsecDAta map
+  std::map<uint64_t,PsecData> LAPPDPsecMap;			//Map containing the LAPPD psec data, key: {LAPPD time}, value: PsecData entry
+  std::map<uint64_t,PsecData> *FinishedLAPPDPsecData;		//Map containing the LAPPD psec data, key: {LAPPD time, matched to CTC time}, value: PsecData entry
+  uint64_t lappd_time_offset;					//Time offset which needs to be added to the lappd data to get global timestamps
+  std::string LAPPDOffsetFile;					//File specifying offset configuration if automatic offset determination goes wrong
+
   //###### Maps that include the waveforms/Hits information
   std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawWaveforms;      //Key: {MTCTime}, value: map of raw waveforms
   std::map<uint64_t, std::map<unsigned long,std::vector<Waveform<unsigned short>>>> *FinishedRawWaveformsAux;  //Key: {MTCTime}, value: map of raw waveforms (aux channels)
@@ -181,6 +204,13 @@ class ANNIEEventBuilder: public Tool {
   BoostStore *ANNIEEvent = nullptr;
   std::map<unsigned long, std::vector<Hit>> *TDCData = nullptr;
 
+  bool lappd_aligned = false;
+
+  //LAPPD data structures
+  std::vector<uint64_t> *LAPPDPPS;
+  std::vector<uint64_t> *LAPPDTimestamps;
+  std::vector<uint64_t>* LAPPDBeamgateTimestamps;
+  std::vector<PsecData>* LAPPDPulses;
 
   // Number of PMTs that must be found in a WaveSet to build the event
   unsigned int NumWavesInCompleteSet = 140; 
@@ -202,11 +232,13 @@ class ANNIEEventBuilder: public Tool {
 
   int CTCTankTimeTolerance;   //Allowed time difference between CTC timestamp and Tank timestamp to pair data for event
   int CTCMRDTimeTolerance;   //Allowed time difference between CTC timestamp and MRD timestamp to pair data for event
+  int CTCLAPPDTimeTolerance;   //Allowed time difference between CTC timestamp and LAPPD timestamp to pair data for event
   int MRDTankTimeTolerance;   //Threshold relative to current drift mean where an event will be put to the orphanage
   int DriftWarningValue;
   bool IsNewMRDData;
   bool IsNewTankData;
   bool IsNewCTCData;
+  bool IsNewLAPPDData;
 
   //Run Number defined in config, others iterated over as ANNIEEvent filled
   Store RunInfoPostgress;   //Has Run number, subrun number, etc...
