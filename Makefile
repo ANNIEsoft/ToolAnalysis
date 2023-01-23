@@ -16,11 +16,11 @@ WCSimLib= -L $(ToolDAQPath)/WCSimLib -lWCSimRoot
 WCSimInclude= -I $(ToolDAQPath)/WCSimLib/include
 
 GenieIncludeDir := $(shell genie-config --topsrcdir)
-GenieInclude= -isystem$(GenieIncludeDir)/Framework -isystem$(GenieIncludeDir) `gsl-config --cflags`
-GenieLibs= `genie-config --libs` -lxml2 `gsl-config --libs`
+GenieInclude= -isystem$(GenieIncludeDir)/Framework -isystem$(GenieIncludeDir) `gsl-config --cflags` -isystem$(GENIE_REWEIGHT)/src
+GenieLibs= `genie-config --libs` -lxml2 `gsl-config --libs` -L$(GENIE_REWEIGHT)/lib -lGRwClc -lGRwFwk -lGRwIO
 PythiaLibs= -L $(ToolDAQPath)/Pythia6Support/v6_424/lib -lPythia6
 Log4CppLibs= -L $(ToolDAQPath)/log4cpp/lib -llog4cpp
-Log4CppInclude= -isystem$(ToolDAQPath)/log4cpp/include/log4cpp/
+Log4CppInclude= -isystem$(ToolDAQPath)/log4cpp/include
 
 RATEventLib= -L $(ToolDAQPath)/RATEventLib/lib -lRATEvent
 RATEventInclude= -I $(ToolDAQPath)/RATEventLib/include
@@ -28,6 +28,8 @@ RATEventInclude= -I $(ToolDAQPath)/RATEventLib/include
 MrdTrackLib= -L $(ToolDAQPath)/MrdTrackLib/src -lFindMrdTracks
 MrdTrackInclude= -I $(ToolDAQPath)/MrdTrackLib/include
 
+CLHEPInc= -isystem${CLHEP_DIR}/include
+CLHEPLib= -L ${CLHEP_DIR}/lib -lCLHEP-2.4.0.2
 
 RootLib=  -L `root-config --libdir --glibs` -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic -m64 -lGui -lGenVector -lMinuit -lGeom -lEG -lEGPythia6 -lEve #-lGL -lGLEW -lGLU
 RootInclude= -isystem`root-config --incdir`
@@ -49,9 +51,9 @@ DataModelInclude = $(RootInclude)
 DataModelLib = $(RootLib)
 HEADERS=$(shell cd DataModel && ls *.h)
 
-MyToolsInclude =  $(RootInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(GenieInclude) $(Log4CppInclude)
+MyToolsInclude =  $(RootInclude) $(MrdTrackInclude) $(WCSimInclude) $(RATEventInclude) $(CLHEPInc) $(Log4CppInclude) $(GenieInclude)
 MyToolsInclude += `python3-config --cflags` -Wno-sign-compare
-MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(GenieLibs) $(PythiaLibs) $(Log4CppLibs)
+MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(CLHEPLib) $(Log4CppLibs) $(GenieLibs) $(PythiaLibs)
 MyToolsLib += `python3-config --ldflags --embed`
 
 

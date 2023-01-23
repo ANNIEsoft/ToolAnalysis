@@ -62,6 +62,7 @@ bool ClusterClassifiers::Execute(){
   std::map<double,double> ClusterMaxPEs;
   std::map<double,Position> ClusterChargePoints;
   std::map<double,double> ClusterChargeBalances;
+  std::map<double,double> ClusterTotalPEs;
 
   if (isData){
     for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
@@ -74,6 +75,8 @@ bool ClusterClassifiers::Execute(){
       ClusterChargeBalances.emplace(cluster_time,ChargeBalance);
       double max_PE = this->CalculateMaxPE(cluster_hits);
       ClusterMaxPEs.emplace(cluster_time,max_PE);
+      double total_PE = this->CalculateTotalPE(cluster_hits);
+      ClusterTotalPEs.emplace(total_PE);
     }
   } else {
      for (std::pair<double,std::vector<MCHit>>&& cluster_pair : *m_all_clusters_MC) {
@@ -87,6 +90,8 @@ bool ClusterClassifiers::Execute(){
        ClusterChargeBalances.emplace(cluster_time,ChargeBalance);
        double max_PE = this->CalculateMaxPEMC(cluster_hits,cluster_detkey);
        ClusterMaxPEs.emplace(cluster_time,max_PE);
+       double total_PE = this->CalculateTotalPEMC(cluster_hits,cluster_detkey);
+       ClusterTotalPEs.emplace(total_PE);
      }
   }
 
@@ -95,6 +100,18 @@ bool ClusterClassifiers::Execute(){
   m_data->Stores.at("ANNIEEvent")->Set("ClusterChargePoints", ClusterChargePoints);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterChargeBalances", ClusterChargeBalances);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterMaxPEs", ClusterMaxPEs);
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterTotalPEs", ClusterTotalPEs);
+
+  //identify prompt muon candidate + delayed neutron candidates
+  this->IdentifyPromptMuonCluster(ClusterTotalPEs);
+
+  //delayed neutron candidates
+  this->IdentifyDelayedNeutronClusters(ClusterChargeBalances,ClusterTotalPEs);
+
+  //store indices of muon and neutron clusters to ANNIEEvent Store
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexPromptMuon", prompt_muon_index);
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexDelayedNeutron", delayed_neutron_index);
+
   return true;
 }
 
@@ -272,3 +289,94 @@ double ClusterClassifiers::CalculateMaxPEMC(std::vector<MCHit> cluster_hits, std
    if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated max PE hit of " << max_PE << std::endl;
    return max_PE;
  }
+
+bool ClusterClassifiers::IdentifyPromptMuonCluster(std::map<double,double> cluster_totalq){
+ 
+  bool return_prompt = false;
+  int tmp_cluster_id = 0;
+  int cluster_muon = -1;
+  double max_pe = 0;
+  for (std::map<double,double>::iterator it = cluster_totalq.begin(); it!= cluster_totalq.end(); it++){
+    //Check if the cluster charge is higher than the current maximum
+    //Only consider clusters in the prompt window (time < 2000 ns)
+    if (it->second > max_pe && it->first < 2000){
+      max_pe = it->second;
+      cluster_muon = tmp_cluster_id;	//For now, associate the cluster with the highest charge with the muon
+      return_prompt = true;
+    }
+    tmp_cluster_id ++;
+  }
+
+  prompt_muon_index = cluster_muon; 
+
+  return return_prompt;
+}
+
+bool ClusterClassifiers::IdentifyDelayedNeutronClusters(std::map<double,double> cluster_cb, std::map<double,double> cluster_totalq){
+
+  bool return_delayed = false;
+  int tmp_cluster_id = 0;
+  std::vector<int> cluster_neutron;
+  for (std::map<double,double>::iterator it = cluster_totalq.begin(); it!= cluster_totalq.end(); it++){
+    //Check if the cluster is in the delayed window and has a time > 10 us (exclude afterpulses)
+    //The window should should be extended in the future after relevant exlusion cuts for afterpulsing have been implemented
+    //check if the charge balance cut for neutrons is passed -> consider a neutron candidate
+    //Improve the neutron selection cuts in the future, probably cutting more signal than necessary at the moment
+    if (it->first > 10000){
+      double current_cb = cluster_cb.at(it->first);
+      double current_q = cluster_totalq.at(it->first);
+      if (current_cb < 0.4 && current_q < 150 && (current_cb <= (1. - current_q/150.)*0.5)){
+        cluster_neutron.push_back(tmp_cluster_id);
+        return_delayed = true;
+      }
+    }
+    tmp_cluster_id ++;
+  }
+
+  delayed_neutron_index = cluster_neutron;
+
+  return return_delayed; 
+
+}
+
+double ClusterClassifiers::CalculateTotalPE(std::vector<Hit> cluster_hits)
+{ 
+  double total_PE = 0;
+  for (int i = 0; i < (int) cluster_hits.size(); i++){
+    Hit ahit = cluster_hits.at(i); 
+    double hit_charge = ahit.GetCharge();
+    int channel_key = ahit.GetTubeId();
+    double hit_PE = 0;
+    std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
+    if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
+      hit_PE  = hit_charge / ChannelKeyToSPEMap.at(channel_key);
+      total_PE += hit_PE;
+    }
+  }
+  if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated total PE of " << total_PE << std::endl;
+  return total_PE;
+}
+
+double ClusterClassifiers::CalculateTotalPEMC(std::vector<MCHit> cluster_hits, std::vector<unsigned long> cluster_detkeys)
+ {
+   double total_PE = 0;
+   for (int i = 0; i < (int) cluster_hits.size(); i++){
+     MCHit ahit = cluster_hits.at(i); 
+     double hit_charge = ahit.GetCharge();
+     //int channel_key = ahit.GetTubeId();
+     unsigned long detkey = cluster_detkeys.at(i);
+     int channel_key = (int) detkey;
+     int tubeid = ahit.GetTubeId();
+     unsigned long utubeid = (unsigned long) tubeid;
+     int wcsimid = channelkey_to_pmtid.at(utubeid);
+     unsigned long detkey_data = pmtid_to_channelkey[wcsimid];
+     int channel_key_data = (int) detkey_data;
+     std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key_data);
+     if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
+       total_PE += hit_charge;
+     }
+   }
+   if(verbosity>4) std::cout << "ClusterClassifiers Tool: Calculated total PE of " << total_PE << std::endl;
+   return total_PE;
+ }
+

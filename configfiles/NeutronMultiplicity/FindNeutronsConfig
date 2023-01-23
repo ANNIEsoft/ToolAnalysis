@@ -1,0 +1,4 @@
+#FindNeutrons config file
+
+verbosity 2
+Method CB
