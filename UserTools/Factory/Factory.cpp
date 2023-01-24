@@ -151,7 +151,7 @@ if (tool=="ApplyMRDEff") ret=new ApplyMRDEff;
 
 if (tool=="LAPPDnnlsPeak") ret=new LAPPDnnlsPeak;
 if (tool=="LAPPDLocateHit") ret=new LAPPDLocateHit;
-if (tool=="LAPPDPEPulseFit") ret=new LAPPDPEPulseFit;
+
 if (tool=="LAPPDOtherSimp") ret=new LAPPDOtherSimp;
 return ret;
 }
