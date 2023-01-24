@@ -156,6 +156,6 @@
 
 #include "LAPPDnnlsPeak.h"
 #include "LAPPDLocateHit.h"
-#include "LAPPDPEPulseFit.h"
+
 #include "LAPPDOtherSimp.h"
 
