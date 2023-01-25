@@ -76,7 +76,7 @@ bool ClusterClassifiers::Execute(){
       double max_PE = this->CalculateMaxPE(cluster_hits);
       ClusterMaxPEs.emplace(cluster_time,max_PE);
       double total_PE = this->CalculateTotalPE(cluster_hits);
-      ClusterTotalPEs.emplace(total_PE);
+      ClusterTotalPEs.emplace(cluster_time,total_PE);
     }
   } else {
      for (std::pair<double,std::vector<MCHit>>&& cluster_pair : *m_all_clusters_MC) {
@@ -91,7 +91,7 @@ bool ClusterClassifiers::Execute(){
        double max_PE = this->CalculateMaxPEMC(cluster_hits,cluster_detkey);
        ClusterMaxPEs.emplace(cluster_time,max_PE);
        double total_PE = this->CalculateTotalPEMC(cluster_hits,cluster_detkey);
-       ClusterTotalPEs.emplace(total_PE);
+       ClusterTotalPEs.emplace(cluster_time,total_PE);
      }
   }
 

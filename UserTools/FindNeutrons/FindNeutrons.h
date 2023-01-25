@@ -36,6 +36,13 @@ class FindNeutrons: public Tool {
   int verbosity;
   std::string Method;
 
+  //verbosity variables
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  int vv_debug=4;
+
 };
 
 
