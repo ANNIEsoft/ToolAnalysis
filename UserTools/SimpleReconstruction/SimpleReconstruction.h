@@ -12,9 +12,9 @@
  *
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
-* $Author: B.Richards $
-* $Date: 2019/05/28 10:44:00 $
-* Contact: b.richards@qmul.ac.uk
+* $Author: M. Nieslony $
+* $Date: 2023/01/25 10:44:00 $
+* Contact: mnieslon@uni-mainz.de
 */
 class SimpleReconstruction: public Tool {
 
@@ -29,14 +29,45 @@ class SimpleReconstruction: public Tool {
   void SetDefaultValues(); ///< Set default values for SimpleReconstruction
   bool SimpleEnergyReconstruction(); ///< Simple energy reconstruction for muon energy
   bool SimpleVertexReconstruction(); ///< Simple vertex reconstruction for neutrino interaction vertex
+  bool GetANNIEEventVariables(); ////< get relevant variables from ANNIEEvent store
+  bool RecoTankExitPoint(); ////< Reconstruct the tank exit point of the muon
 
  private:
 
+  //configuration variables
+  int verbosity;  
+
+  //reconstruction variables
   int SimpleRecoFlag;
   double SimpleRecoEnergy;
   Position SimpleRecoVtx;
+  double cosTheta;
 
+  //event variables
+  std::vector<double> *eloss = nullptr;
+  std::vector<double> *tracklength = nullptr;
+  std::vector<double> *mrdstartx = nullptr;
+  std::vector<double> *mrdstarty = nullptr;
+  std::vector<double> *mrdstartz = nullptr;
+  std::vector<double> *mrdstopx = nullptr;
+  std::vector<double> *mrdstopy = nullptr;
+  std::vector<double> *mrdstopz = nullptr;
+  double dist_pmtvol_tank;
+  double mrd_eloss;
+  double max_pe;
+  double exitx;
+  double exity;
+  double exitz;
+  double dirx;
+  double diry;
+  double dirz;
 
+  //verbosity variables
+  int v_error=0;
+  int v_warning=1;
+  int v_message=2;
+  int v_debug=3;
+  int vv_debug=4;
 
 
 };

@@ -65,12 +65,18 @@ bool FindNeutrons::FindNeutronCandidates(std::string method){
   
 bool FindNeutrons::FindNeutronsByCB(){
 
+  bool return_val=false;
+
+  return return_val;
+
 }
   
 bool FindNeutrons::FillRecoParticle(){
 
+  bool return_val=false;
+
 int neutron_pdg = 2112;
-tracktype neutron_tracktype = ;
+//tracktype neutron_tracktype = ;
 double neutron_E_start = -9999;
 double neutron_E_stop = -9999;
 Position neutron_vtx_start(-999,-999,-999);
@@ -80,5 +86,6 @@ TimeClass neutron_start_time;
 TimeClass neutron_stop_time;
 double neutron_tracklength = -9999;
 
+  return return_val;
 
 }

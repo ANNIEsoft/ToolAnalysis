@@ -46,7 +46,7 @@ bool SimpleReconstruction::Finalise(){
   return true;
 }
 
-void SetDefaultValues(){
+void SimpleReconstruction::SetDefaultValues(){
 
   SimpleRecoFlag = -9999;
   SimpleRecoEnergy = -9999;
@@ -56,17 +56,17 @@ void SetDefaultValues(){
 
 }
 
-bool GetANNIEEventVariables(){
+bool SimpleReconstruction::GetANNIEEventVariables(){
 
   double mrd_eloss = eloss->at(0);
   double mrd_tracklength = tracklength->at(0);
   
-  bool reco_tank_exit = this->ReconstructTankExitPoint(); 
+  bool reco_tank_exit = this->RecoTankExitPoint(); 
   return reco_tank_exit;
 
 }
 
-bool RecoTankExitPoint(){
+bool SimpleReconstruction::RecoTankExitPoint(){
 
   bool tank_exit = false;
 
@@ -128,7 +128,7 @@ double startx = mrdstartx->at(0);
   return tank_exit;
 }
 
-bool SimpleEnergyReconstruction(){
+bool SimpleReconstruction::SimpleEnergyReconstruction(){
 
   SimpleRecoEnergy = 87.3 + 200*(dist_pmtvol_tank) + mrd_eloss + max_pe*0.08534;
   Log("SimpleEnergyReconstruction: Reconstructed muon energy: "+std::to_string(SimpleRecoEnergy),v_message,verbosity);
@@ -136,7 +136,7 @@ bool SimpleEnergyReconstruction(){
 
 }
 
-bool SimpleVertexReconstruction(){
+bool SimpleReconstruction::SimpleVertexReconstruction(){
 
   double reco_vtx_x = exitx - max_pe/9/2./100.*dirx;
   double reco_vtx_y = exitx - max_pe/9/2./100.*dirx;
