@@ -1321,7 +1321,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame) {
 			
 						//std::cout <<"i_board: "<<i_board<<", t_time->at(i_board): "<<t_time->at(i_board)<<std::endl;
 						//std::cout <<"timestamp_start: "<<timestamp_start<<", timestamp: "<<timestamp<<std::endl;
-						if (t_time->at(i_board) >= timestamp_start && t_end->at(i_board) <= timestamp) {
+						if (t_time->at(i_board) >= timestamp_start && t_end->at(i_board) <= timestamp && t_end->at(i_board)!= 0) {
 							data_times_plot.at(board_nr).push_back(t_time->at(i_board));
 							data_times_end_plot.at(board_nr).push_back(t_end->at(i_board));
 							pps_rate_plot.at(board_nr).push_back(t_pps_rate->at(i_board));
@@ -1904,6 +1904,7 @@ void MonitorLAPPDData::PedestalFits(int board_nr, int i_board) {
 		//int entries = (int) data_beamgate_lastfile.at(board_nr).size();
 		//int entries = (int) hist_pedestal.at(board_nr).at(i_channel)->GetNbinsX();
 		int entries = n_data.at(board_nr);
+		if (i_channel == 5) counter = 256* entries;	//manually set trigger channel to 256 buffer size
 		int bufferSize;
 		if (entries == 0) {
 			bufferSize = 0;
@@ -2109,18 +2110,22 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		int board_nr = board_configuration.at(i_board);
 		//std::cout <<"board_nr: "<<board_nr<<std::endl;
 		if (frame_rate_plot.at(board_nr).size()==0){
+			bool found_partner=false;
 			for (int j_board=0; j_board < (int) board_configuration.size(); j_board++){
+				if (found_partner) continue;
 				//std::cout <<"j_board: "<<j_board<<std::endl;
 				if (i_board == j_board) continue;
 				int board_nr2 = board_configuration.at(j_board);
 				if (frame_rate_plot.at(board_nr2).size()!=0){
-					for (int i_vec=0; i_vec<frame_rate_plot.at(board_nr2).size(); i_vec++){
-						pps_rate_plot.at(board_nr).push_back(0.);
-						frame_rate_plot.at(board_nr).push_back(0.);
-						buffer_size_plot.at(board_nr).push_back(0.);
-						int_charge_plot.at(board_nr).push_back(0.);
-						labels_timeaxis.at(board_nr).push_back(labels_timeaxis.at(board_nr2).at(i_vec));
-					}
+					//for (int i_vec=0; i_vec<frame_rate_plot.at(board_nr2).size(); i_vec++){
+					int i_vec = 0;
+					pps_rate_plot.at(board_nr).push_back(0.);
+					frame_rate_plot.at(board_nr).push_back(0.);
+					buffer_size_plot.at(board_nr).push_back(0.);
+					int_charge_plot.at(board_nr).push_back(0.);
+					labels_timeaxis.at(board_nr).push_back(labels_timeaxis.at(board_nr2).at(i_vec));
+					found_partner = true;
+					//}
 				}	
 			}
 		}
@@ -2151,6 +2156,12 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		int integrated_pps = 0;
 		int integrated_data = 0;
 		int integrated_run = 0;
+		/*std::cout <<"board_nr: "<<board_nr<<std::endl;
+		std::cout <<"pps_rate_plot.size(): "<<pps_rate_plot.at(board_nr).size()<<std::endl;
+		std::cout <<"labels_timeaxis.size(): "<<labels_timeaxis.at(board_nr).size()<<std::endl;
+		std::cout <<"frame_rate_plot.size(): "<<frame_rate_plot.at(board_nr).size()<<std::endl;
+		std::cout <<"buffer_size_plot.size(): "<<buffer_size_plot.at(board_nr).size()<<std::endl;
+		std::cout <<"int_charge_plot.size(): "<<int_charge_plot.at(board_nr).size()<<std::endl;*/
 		for (unsigned int i_file = 0; i_file < pps_rate_plot.at(board_nr).size(); i_file++) {
 
 			Log("MonitorLAPPDData: Stored data (file #" + std::to_string(i_file + 1) + "): ", v_message, verbosity);
@@ -2158,7 +2169,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_frame_rate.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), frame_rate_plot.at(board_nr).at(i_file));
 			graph_buffer_size.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), buffer_size_plot.at(board_nr).at(i_file));
 			graph_int_charge.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), int_charge_plot.at(board_nr).at(i_file));
-			if (board_nr != -1){
+			if (board_nr != -1 && buffer_size_plot.at(board_nr).at(i_file)>0){
 				for (int i=0; i<30; i++){
 					int chkey = min_board+i;
 					graph_rate.at(chkey)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), rate_plot.at(chkey).at(i_file));
