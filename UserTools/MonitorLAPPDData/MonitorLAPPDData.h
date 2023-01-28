@@ -176,8 +176,10 @@ class MonitorLAPPDData: public Tool {
   int current_partrun;
   int current_pps_count;
   int current_frame_count; 
+  int current_latched_count;
   int totalPPSCount = 0;
   int totalFrameCount = 0;
+  int totalLatchedCount = 0;
   int totalRun = 0; 
 
   //Averaged values - one vector entry per chkey (last file)
@@ -307,6 +309,7 @@ class MonitorLAPPDData: public Tool {
   TText *text_int_charge = nullptr;
   TText *text_pps_count = nullptr;
   TText *text_frame_count = nullptr;
+  TText *text_latched_count = nullptr;
 
   //Verbosity variables
   int v_error = 0;

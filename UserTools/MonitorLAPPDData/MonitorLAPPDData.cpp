@@ -308,6 +308,7 @@ bool MonitorLAPPDData::Finalise() {
 	delete text_int_charge;
 	delete text_pps_count;
 	delete text_frame_count;
+	delete text_latched_count;
 
 	return true;
 }
@@ -785,6 +786,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	text_int_charge = new TText();
 	text_pps_count = new TText();
 	text_frame_count = new TText();
+	text_latched_count = new TText();
 
 	text_data_title->SetNDC(1);
 	text_pps_rate->SetNDC(1);
@@ -793,6 +795,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 	text_int_charge->SetNDC(1);
 	text_pps_count->SetNDC(1);
 	text_frame_count->SetNDC(1);
+	text_latched_count->SetNDC(1);
 
 }
 
@@ -1490,11 +1493,13 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	if (current_run == totalRun){
 		totalPPSCount += current_pps_count;
 		totalFrameCount += current_frame_count;
+		totalLatchedCount += current_latched_count;
 	} else {
 		Log("MonitorLAPPDData: New run encountered, resetting PPS and data counters. New run: "+std::to_string(current_run)+", old run: "+std::to_string(totalRun),v_message,verbosity);
 		totalRun = current_run;
 		totalPPSCount = current_pps_count;
 		totalFrameCount = current_frame_count;
+		totalLatchedCount = current_latched_count;
 	}
 
 	boost::posix_time::ptime currenttime = *Epoch + boost::posix_time::time_duration(int(t_current / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_current / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_current / MSEC_to_SEC) % 60, t_current % 1000);
@@ -1538,6 +1543,11 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	text_frame_count->SetText(0.06, 0.4, ss_text_psec_frame_count.str().c_str());
 	text_frame_count->SetTextColor(1);
 
+	std::stringstream ss_text_psec_latched;
+	ss_text_psec_latched << "Events Locked External Clock: " << totalLatchedCount << " (" << current_time.str() << ")";
+	text_latched_count->SetText(0.06,0.4,ss_text_psec_latched.str().c_str());
+	text_latched_count->SetTextColor(1);
+
 	text_data_title->SetTextSize(0.05);
 	text_pps_rate->SetTextSize(0.05);
 	text_frame_rate->SetTextSize(0.05);
@@ -1545,6 +1555,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	text_int_charge->SetTextSize(0.05);
 	text_pps_count->SetTextSize(0.05);
 	text_frame_count->SetTextSize(0.05);
+	text_latched_count->SetTextSize(0.05);
 
 	text_data_title->SetNDC(1);
 	text_pps_rate->SetNDC(1);
@@ -1553,6 +1564,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 	text_int_charge->SetNDC(1);
 	text_pps_count->SetNDC(1);
 	text_frame_count->SetNDC(1);
+	text_latched_count->SetNDC(1);
 
 	canvas_status_data->cd();
 	canvas_status_data->Clear();
@@ -1563,6 +1575,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 //	text_int_charge->Draw();
 	text_pps_count->Draw();
 	text_frame_count->Draw();
+	text_latched_count->Draw();
 
 	std::stringstream ss_path_psecinfo;
 	ss_path_psecinfo << outpath << "LAPPDData_PSECData_current." << img_extension;
@@ -2568,6 +2581,7 @@ void MonitorLAPPDData::ProcessLAPPDData() {
 	int entry_pps=0;
 	current_pps_count = 0;
 	current_frame_count = 0;
+	current_latched_count = 0;
 	bool have_pps = false; 
 
 	for (int i_entry = 0; i_entry < (int) entries; i_entry++) {
@@ -2590,6 +2604,13 @@ void MonitorLAPPDData::ProcessLAPPDData() {
         	Temp->Get("Meta",Metadata);
 
 		if (verbosity > 1) std::cout <<"MonitorLAPPDData: entry_type: "<<entry_type<<std::endl;
+
+		//Check if latched to external clock
+		std::bitset < 16 > bits_latched(AccInfoFrame.at(12));
+		if (bits_latched[0] == 1) {
+			std::cout <<"LAPPD event latched to external clock"<<std::endl;
+			current_latched_count ++;
+		} else std::cout <<"LAPPD event not latched to external clock"<<std::endl;
 
                 /*LAPPDData->GetEntry(i_entry);
 		LAPPDData->Get("RawLAPPDData", RawLAPPDData);
