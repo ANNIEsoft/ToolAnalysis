@@ -159,3 +159,4 @@
 
 #include "LAPPDOtherSimp.h"
 
+#include "LAPPDTraceMax.h"
