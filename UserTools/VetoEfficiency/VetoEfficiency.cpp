@@ -1369,10 +1369,10 @@ bool VetoEfficiency::Finalise(){
 		// cleanup
 		// ~~~~~~~
 		Log("VetoEfficiency Tool: deleting reco histograms",v_debug,verbosity);
-		if(h_adc_times) delete h_adc_times; h_adc_times=nullptr;
-		if(h_tdc_times) delete h_tdc_times; h_tdc_times=nullptr;
-		if(h_tankhit_time_to_coincidence) delete h_tankhit_time_to_coincidence; h_tankhit_time_to_coincidence=nullptr;
-		if(h_coincidence_event_times) delete h_coincidence_event_times; h_coincidence_event_times=nullptr;
+		if(h_adc_times){ delete h_adc_times; h_adc_times=nullptr; }
+		if(h_tdc_times){ delete h_tdc_times; h_tdc_times=nullptr; }
+		if(h_tankhit_time_to_coincidence){ delete h_tankhit_time_to_coincidence; h_tankhit_time_to_coincidence=nullptr; }
+		if(h_coincidence_event_times){ delete h_coincidence_event_times; h_coincidence_event_times=nullptr; }
 		
 		Log("VetoEfficiency Tool: deleting canvas",v_debug,verbosity);
 		if(gROOT->FindObject("plotCanv")){ 

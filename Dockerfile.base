@@ -17,6 +17,7 @@ RUN dnf config-manager --set-enabled extras,powertools \
     gcc \
     gcc-c++ \
     gcc-gfortran \
+    libasan \
     python38 \
     python38-devel \
     wget \
@@ -55,22 +56,30 @@ RUN dnf config-manager --set-enabled extras,powertools \
     fftw3 \
     fftw3-devel \
     libnsl2-devel \
+    bzip2 \
+    unzip \
+    gdb \
+    libxkbcommon-x11 \
+    xcb-util-wm \
+    xcb-util-image \
+    xcb-util-keysyms \
+    xcb-util-renderutil \
     && yum clean all \
     && rm -rf /var/cache/yum
 
 
-    
 Run git clone https://github.com/ANNIEsoft/ToolAnalysis.git; chmod -R 777 /ToolAnalysis ; cd ToolAnalysis ; ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Boost;
 Run alternatives --set python3 /usr/bin/python3.8;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Pythia;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Root6;
-Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Python3; chmod -R 777 /ToolAnalysis/UserTools;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Clhep;
+Run cd ToolAnalysis ; ./GetToolDAQ.sh --Lhapdf;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Genie;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --RATEventlib; chmod -R 777 /ToolAnalysis/ToolDAQ/RATEventLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --WCSim; chmod -R 777 /ToolAnalysis/ToolDAQ/WCSimLib;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --MrdTrackLib; chmod -R 777 /ToolAnalysis/ToolDAQ/MrdTrackLib;
-
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --PlotWaveforms; chmod -R 777 /ToolAnalysis/UserTools/PlotWaveforms;
 Run cd ToolAnalysis ; ./GetToolDAQ.sh --Final;
 Run mkdir /pnfs /annie /cvmfs; chmod 777 /pnfs /annie /cvmfs;

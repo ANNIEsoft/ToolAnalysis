@@ -198,26 +198,28 @@ double Parameters::GetCherenkovAngle()
 
 double Parameters::GetPositionResolution(int detType) {
   if(detType == RecoDigit::PMT8inch) {
-  	  return fPMTPositionResolution; //
-  	}
-    else if(detType == RecoDigit::lappd_v0) {
-  	  return fLAPPDPositionResolution;
-  	}
-  	else {
-  	  std::cout<<"Wrong detector type! Can't find position resolution!"<<std::endl;	
-  	}	
+  	return fPMTPositionResolution; //
+  }
+  else if(detType == RecoDigit::lappd_v0) {
+  	return fLAPPDPositionResolution;
+  }
+  else {
+  	std::cout<<"Wrong detector type! Can't find position resolution!"<<std::endl;
+  }
+  return 0;
 }
 
 double Parameters::GetTimeResolution(int detType) {
-  	if(detType == RecoDigit::PMT8inch) { //PMT
-  	  return fPMTTimeResolution;
-  	}
-    else if(detType == RecoDigit::lappd_v0) { //LAPPD
-  	  return fLAPPDTimeResolution;
-  	}
-  	else {
-  	  std::cout<<"Wrong detector type! Can't find time resolution!"<<std::endl;	
-  	}
+  if(detType == RecoDigit::PMT8inch) { //PMT
+  	return fPMTTimeResolution;
+  }
+  else if(detType == RecoDigit::lappd_v0) { //LAPPD
+  	return fLAPPDTimeResolution;
+  }
+  else {
+  	std::cout<<"Wrong detector type! Can't find time resolution!"<<std::endl;
+  }
+  return 0;
 }
 
 double Parameters::GetTimeResolution(int detType, double Q) {

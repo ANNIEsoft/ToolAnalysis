@@ -21,6 +21,7 @@ class Detector : public SerialisableObject{
 	Detector() : DetectorID(0), DetectorElement(), TankLocation(), DetectorPosition(), DetectorDirection(), DetectorType(""),
 		Status(detectorstatus::OFF), Channels() {serialise=true;}
 	Detector(int detid, std::string DetEle, std::string CylLoc, Position posin, Direction dirin, std::string detype, detectorstatus stat, double avgrate, map<unsigned long,Channel> channelsin={}) : DetectorID(detid), DetectorElement(DetEle), TankLocation(CylLoc), DetectorPosition(posin), DetectorDirection(dirin), DetectorType(detype), Status(stat), Channels(channelsin) { serialise=true; }
+	virtual ~Detector(){}
 	
 	std::string GetDetectorElement(){return DetectorElement;}
 	Position GetDetectorPosition(){return DetectorPosition;}

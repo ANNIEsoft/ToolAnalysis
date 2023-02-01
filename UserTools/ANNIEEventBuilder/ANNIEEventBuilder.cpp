@@ -23,10 +23,12 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   MRDTankTimeTolerance = 10;     //ms
   CTCTankTimeTolerance = 300;    //ns		//Edit: Changed Default CTCTankTolerance from 100ns to 300ns to allow for 256ns differences [M. Nieslony]
   CTCMRDTimeTolerance = 2000000; //ns
+  CTCLAPPDTimeTolerance = 3000000;	//ns
   DriftWarningValue = 5000000;   //ns
   pause_threshold = 5*60;        //s
   save_raw_data = false;	//Default option: Do not save the raw data (processed files get very large)
   store_beam_status = false;	//Should the beam status be stored? If yes, need the BeamDecoder tool in the ToolChain
+  LAPPDOffsetFile = "None";	//File specifying the offset variables for the LAPPD global timestamps (if automatic determination goes wrong)
 
   /////////////////////////////////////////////////////////////////
   m_variables.Get("verbosity",verbosity);
@@ -41,13 +43,15 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MRDTankTimeTolerance",MRDTankTimeTolerance);
   m_variables.Get("CTCTankTimeTolerance",CTCTankTimeTolerance);
   m_variables.Get("CTCMRDTimeTolerance",CTCMRDTimeTolerance);
+  m_variables.Get("CTCLAPPDTimeTolerance",CTCLAPPDTimeTolerance);
   m_variables.Get("OrphanFileBase",OrphanFileBase);
   m_variables.Get("MaxStreamMatchingTimeSeparation",pause_threshold);
   m_variables.Get("SaveRawData",save_raw_data);
   m_variables.Get("StoreBeamStatus",store_beam_status);
+  m_variables.Get("LAPPDOffsetFile",LAPPDOffsetFile);
   pause_threshold*=1E9;
 
-  if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC"){
+  if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     std::cout << "BuildANNIEEvent Building Tank and MRD-merged ANNIE events. " <<
         std::endl;
   }
@@ -67,7 +71,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Get("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
   m_data->CStore.Get("AuxChannelNumToCrateSpaceMap",AuxChannelNumToCrateSpaceMap);
 
-  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC"){
+  if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
     int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
     if(verbosity>4) std::cout << "TOTAL TANK + AUX CHANNELS: " << NumTankPMTChannels + NumAuxChannels << std::endl;
@@ -96,6 +100,8 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   FinishedHitsAux = new std::map<uint64_t, std::map<unsigned long,std::vector<Hit>>*>;
   FinishedRecoADCHits = new std::map<uint64_t, std::map<unsigned long,std::vector<std::vector<ADCPulse>>>>;
   FinishedRecoADCHitsAux = new std::map<uint64_t, std::map<unsigned long,std::vector<std::vector<ADCPulse>>>>;
+
+  FinishedLAPPDPsecData = new std::map<uint64_t, PsecData>;
 
   return true;
 }
@@ -437,14 +443,14 @@ bool ANNIEEventBuilder::Execute(){
         myMRDMaps.MRDBeamLoopbackMap.erase(MRDTimeStamp);
         myMRDMaps.MRDCosmicLoopbackMap.erase(MRDTimeStamp);
       }
-      for(int i=0; i<(int)BuiltTankTimes.size(); i++){
+      for(int i=0; i< (int) BuiltTankTimes.size(); i++){
         BeamTankMRDPairs.erase(BuiltTankTimes.at(i));
       }
     }
   }
 
   //Build ANNIE events based on matching Tank,MRD, and CTC timestamps
-  else if (BuildType == "TankAndMRDAndCTC"){
+  else if (BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
     if(IsNewTankData) this->ProcessNewTankPMTData();
     this->FetchWaveformsHits();
@@ -464,13 +470,43 @@ bool ANNIEEventBuilder::Execute(){
     m_data->CStore.Get("TimeToTriggerWordMapComplete",TimeToTriggerWordMapComplete);
     if (store_beam_status) m_data->CStore.Get("BeamStatusMap",BeamStatusMap);
     m_data->CStore.Get("NewCTCDataAvailable",IsNewCTCData);
+    std::cout <<"IsNewCTCData: "<<IsNewCTCData<<std::endl;
     if(IsNewCTCData) this->ProcessNewCTCData();
     //std::cout <<" Done "<<std::endl;
 
+    //Look through LAPPD data for any new timestamps
+    if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+      m_data->CStore.Get("NewLAPPDDataAvailable",IsNewLAPPDData);
+      std::cout <<"IsNewLAPPDData: "<<IsNewLAPPDData<<std::endl;
+      if (IsNewLAPPDData) this->ProcessNewLAPPDData();
+    }
+    
+    bool continue_eventbuilding = true;
+
+    if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+      bool LAPPDEntriesCompleted = false;
+      bool TrigEntriesCompleted = false;
+      m_data->CStore.Get("LAPPDEntriesCompleted",LAPPDEntriesCompleted);
+      m_data->CStore.Get("TrigEntriesCompleted",TrigEntriesCompleted);
+      //bool LAPPDAndTrigEntriesCompleted = (LAPPDEntriesCompleted && TrigEntriesCompleted);
+      bool LAPPDAndTrigEntriesCompleted = file_completed;
+      std::cout <<"LAPPDAndTrigEntriesCompleted: "<<LAPPDAndTrigEntriesCompleted<<std::endl;
+      if (!LAPPDAndTrigEntriesCompleted){
+        std::cout <<"Event Building has not completed all Trig and LAPPD entries yet. Wait until they are parsed"<<std::endl;
+        continue_eventbuilding = false;
+      } else {
+        if (!lappd_aligned) this->AlignLAPPDTimestamps();//Align LAPPD timestamps with CTC timestamps
+      }
+    }
+
+    if (continue_eventbuilding){
     //Now, pair up PMT/MRD/Triggers...
     int NumTankTimestamps = myTimeStream.BeamTankTimestamps.size();
     int NumMRDTimestamps = myTimeStream.BeamMRDTimestamps.size();
     int NumTrigs = myTimeStream.CTCTimestamps.size();
+    int NumLAPPDTimestamps = 0;
+    if (BuildType == "TankAndMRDAndCTCAndLAPPD") NumLAPPDTimestamps = myTimeStream.LAPPDTimestamps.size();
+    if (NumLAPPDTimestamps == 0) NumLAPPDTimestamps = myTimeStream.LAPPDGlobalTimestamps.size();
 
     // get get the most recent timestamp from each TimeStream
     uint64_t most_recent_beam = 0;
@@ -481,20 +517,28 @@ bool ANNIEEventBuilder::Execute(){
     if (NumTrigs > 0 ) most_recent_ctc = *std::max_element(myTimeStream.CTCTimestamps.begin(),
                                                   myTimeStream.CTCTimestamps.end());
     
+    uint64_t most_recent_lappd = 0;
+    if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+      if (NumLAPPDTimestamps > 0) most_recent_lappd = *std::max_element(myTimeStream.LAPPDTimestamps.begin(),myTimeStream.LAPPDTimestamps.end());
+    }
+
     // find which TimeStream is lagging the most, and what time it's currently read up to.
     std::vector<uint64_t> newest_timestamps{most_recent_beam,most_recent_mrd,most_recent_ctc};
+    if (BuildType == "TankAndMRDAndCTCAndLAPPD") newest_timestamps.push_back(most_recent_lappd);
     uint64_t slowest_stream_timestamp = *std::min_element(newest_timestamps.begin(),newest_timestamps.end());
     
     if(verbosity>4){
       std::cout<<"ANNIEEventBuilder: most recent timestamps from each stream are: "
-           <<most_recent_beam<<", "<<most_recent_mrd<<", "<<most_recent_ctc
-           <<", with differences from the slowest stream being: "
+           <<most_recent_beam<<", "<<most_recent_mrd<<", "<<most_recent_ctc;
+      if (BuildType == "TankAndMRDAndCTCAndLAPPD") std::cout <<", "<<most_recent_lappd;
+           std::cout <<", with differences from the slowest stream being: "
            <<(static_cast<int64_t>(most_recent_beam)-static_cast<int64_t>(slowest_stream_timestamp))
            <<", "
            <<(static_cast<int64_t>(most_recent_mrd)-static_cast<int64_t>(slowest_stream_timestamp))
            <<", "
-           <<(static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp))
-           <<std::endl;
+           <<(static_cast<int64_t>(most_recent_ctc)-static_cast<int64_t>(slowest_stream_timestamp));
+       if (BuildType == "TankAndMRDAndCTCAndLAPPD") std::cout << ", " << (static_cast<int64_t>(most_recent_lappd)-static_cast<int64_t>(slowest_stream_timestamp));           
+std::cout<<std::endl;
     }
     
     // always ensure the slowest stream is unpaused
@@ -504,6 +548,8 @@ bool ANNIEEventBuilder::Execute(){
       m_data->CStore.Set("PauseMRDDecoding",false);
     } else if(slowest_stream_timestamp==most_recent_ctc){
       m_data->CStore.Set("PauseCTCDecoding",false);
+    } else if(slowest_stream_timestamp==most_recent_lappd){
+      m_data->CStore.Set("PauseLAPPDDecoding",false);
     }
     
     if (verbosity > 4) std::cout <<"ANNIEEventBuilder Tool: Check if other streams are ahead of the slowest one"<<std::endl;
@@ -534,10 +580,23 @@ bool ANNIEEventBuilder::Execute(){
         m_data->CStore.Set("PauseCTCDecoding",false);
       }
     }
+    if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+      if((static_cast<int64_t>(most_recent_lappd)-static_cast<int64_t>(slowest_stream_timestamp))>pause_threshold){
+      if(NumLAPPDTimestamps>EventsPerPairing){
+        m_data->CStore.Set("PauseLAPPDDecoding",true);
+        Log("ANNIEEventBuilder: Pausing LAPPD stream",v_debug,verbosity);
+      } else {
+        m_data->CStore.Set("PauseLAPPDDecoding",false);
+      }
+      }
+    }
     
     if(verbosity>3){
         std::cout << "Number of CTCTimes, MRDTimes, PMTTimes: " << 
             NumTrigs << "," << NumMRDTimestamps << "," << NumTankTimestamps << std::endl;
+        if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+          std::cout <<"Number of LAPPDTimes: "<< NumLAPPDTimestamps << std::endl;
+        }
     }
 
     std::map<uint64_t,std::map<std::string,uint64_t>> ThisBuildMap; //key: CTC timestamp, value: vector of maps.  Each map has the keys: "Tank", "MRD", "CTC", or "LAPPD" with values: 
@@ -629,6 +688,14 @@ bool ANNIEEventBuilder::Execute(){
             myMRDMaps.MRDCosmicLoopbackMap.erase(MRDTimeStamp);
             DataStreams["MRD"]=1;
           }
+          if(label == "LAPPD"){
+            uint64_t LAPPDTimeStamp = buildset_entries.second;
+            if (verbosity > 4) std::cout <<"LAPPD timestamp: "<<LAPPDTimeStamp << std::endl;
+            PsecData psec = FinishedLAPPDPsecData->at(LAPPDTimeStamp);
+            this->BuildANNIEEventLAPPD(psec,LAPPDTimeStamp,lappd_time_offset);
+            FinishedLAPPDPsecData->erase(LAPPDTimeStamp);
+            DataStreams["LAPPD"]=1;
+          }
         }
 	//Set empty data variables in case some stream is not built
 	if (DataStreams["MRD"]==0){
@@ -652,7 +719,11 @@ bool ANNIEEventBuilder::Execute(){
             std::map<unsigned long,std::vector<int>> emptyAcqSize;
             this->BuildANNIEEventTankHits(default_clocktime,emptyHits,emptyRecoADC,emptyHitsAux,emptyRecoADC,emptyAcqSize);
           }
-	}
+	} else if (DataStreams["LAPPD"]==0){
+          uint64_t default_lappdtimestamp = 0;
+          PsecData empty_psec;
+          this->BuildANNIEEventLAPPD(empty_psec,default_lappdtimestamp,lappd_time_offset);
+        }
 	ANNIEEvent->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD + CTC) SUCCESSFULLY" << std::endl;
@@ -667,7 +738,7 @@ bool ANNIEEventBuilder::Execute(){
       m_data->CStore.Set("FinishedTankEvents",FinishedTankEvents);
     }
     ThisBuildMap.clear();
-  }
+  }}
  //Build ANNIE events based on matching Tank and CTC timestamps
   else if (BuildType == "TankAndCTC"){
     m_data->CStore.Get("NewTankPMTDataAvailable",IsNewTankData);
@@ -1059,6 +1130,11 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
       uint32_t CTCWord = CTCWordVector.at(i_ctcword);
       if (CTCWord == 40) myTimeStream.CTCTimestampsExtendedNC.push_back(CTCTimestamp);
       if (CTCWord == 41) myTimeStream.CTCTimestampsExtendedCC.push_back(CTCTimestamp);
+      if (CTCWord == 32) myTimeStream.CTCTimestampsPPS.push_back(CTCTimestamp);
+      if (CTCWord == 5) {
+        myTimeStream.CTCTimestampsBeam.push_back(CTCTimestamp);
+        std::cout <<"CTCTimestampBeam: "<<CTCTimestamp<<std::endl;
+      }
     }
     aux_trigword_delete.push_back(CTCTimestamp);
   }
@@ -1085,7 +1161,42 @@ void ANNIEEventBuilder::ProcessNewCTCData(){
     }
     CTCExtended.emplace(CTCTimeStamp,extended_information);
   }
+
+  m_data->CStore.Set("NewCTCDataAvailable",false);
+
   return;
+}
+
+void ANNIEEventBuilder::ProcessNewLAPPDData(){
+
+  std::cout <<"ProcessNewLAPPDData"<<std::endl;
+  m_data->CStore.Get("InProgressLAPPDEvents",LAPPDPulses);
+  m_data->CStore.Get("InProgressLAPPDPPS",LAPPDPPS);
+  m_data->CStore.Get("InProgressLAPPDTimestamps",LAPPDTimestamps);
+  m_data->CStore.Get("InProgressLAPPDBeamgate",LAPPDBeamgateTimestamps);
+
+  for (int i_pps=0; i_pps < (int) LAPPDPPS->size(); i_pps++){
+    myTimeStream.LAPPDPPSTimestamps.push_back(LAPPDPPS->at(i_pps));
+  }
+  RemoveDuplicates(myTimeStream.LAPPDPPSTimestamps);
+
+  for (int i_beam=0; i_beam < (int) LAPPDBeamgateTimestamps->size(); i_beam++){
+    myTimeStream.LAPPDBeamgateTimestamps.push_back(LAPPDBeamgateTimestamps->at(i_beam));
+  }
+  RemoveDuplicates(myTimeStream.LAPPDBeamgateTimestamps);
+
+  for (int i_data=0; i_data < (int) LAPPDTimestamps->size(); i_data++){
+    myTimeStream.LAPPDTimestamps.push_back(LAPPDTimestamps->at(i_data));
+    LAPPDPsecMap.emplace(LAPPDTimestamps->at(i_data),LAPPDPulses->at(i_data));
+  }
+  RemoveDuplicates(myTimeStream.LAPPDTimestamps);
+
+  //Clear vectors after transferring data to timestreams
+  LAPPDPPS->clear();
+  LAPPDTimestamps->clear();
+  LAPPDBeamgateTimestamps->clear();
+  LAPPDPulses->clear();
+
 }
 
 void ANNIEEventBuilder::ProcessNewMRDData(){
@@ -1387,7 +1498,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
   
 
   //Delete CTCTimestamps that have a PMT or MRD pair from CTC timestamp tracker
-  for(int j=0;j<(int)BuiltCTCs.size();j++){
+  for(int j=0;j < (int) BuiltCTCs.size();j++){
     if(verbosity>4) std::cout << "REMOVING CTC TIME OF " << BuiltCTCs.at(j) << "FROM CTCTIMESTAMPS VECTOR" << std::endl;
     myTimeStream.CTCTimestamps.erase(std::remove(myTimeStream.CTCTimestamps.begin(),
         myTimeStream.CTCTimestamps.end(),BuiltCTCs.at(j)), 
@@ -1402,7 +1513,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::PairCTCCosm
 
 void ANNIEEventBuilder::RemoveCosmics(){
   std::vector<uint64_t> MRDStampsToDelete;
-  for (int i=0;i<(int)(myTimeStream.BeamMRDTimestamps.size()); i++) {
+  for (int i=0;i < (int) (myTimeStream.BeamMRDTimestamps.size()); i++) {
     std::string MRDTriggerType = myMRDMaps.MRDTriggerTypeMap[myTimeStream.BeamMRDTimestamps.at(i)];
     if(verbosity>4) std::cout << "THIS MRD TRIGGER TYPE IS: " << MRDTriggerType << std::endl;
     if(MRDTriggerType == "Cosmic"){
@@ -1413,7 +1524,7 @@ void ANNIEEventBuilder::RemoveCosmics(){
       }
     }
   }
-  for (int j=0; j<(int)MRDStampsToDelete.size(); j++){
+  for (int j=0; j < (int) MRDStampsToDelete.size(); j++){
     myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
         myTimeStream.BeamMRDTimestamps.end(),MRDStampsToDelete.at(j)), 
         myTimeStream.BeamMRDTimestamps.end());
@@ -1434,15 +1545,18 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   //First, pair up CTCTimestamps and MRD/PMT timestamps
   std::map<uint64_t,uint64_t> PairedCTCTankTimes; 
   std::map<uint64_t,uint64_t> PairedCTCMRDTimes;
+  std::map<uint64_t,uint64_t> PairedCTCLAPPDTimes;
   std::map<uint64_t,std::string> MRDOrphans;
   std::map<uint64_t,double> MRDOrphansTDiff;
   std::map<uint64_t,std::string> TankOrphans;
   std::map<uint64_t,std::string> CTCOrphans;
+  std::map<uint64_t,std::string> LAPPDOrphans;
   std::map<uint64_t,int> TankOrphansWaveMap;
   std::map<uint64_t,std::vector<std::vector<int>>> TankOrphansChannels;
   std::map<uint64_t,double> TankOrphansTDiff;
+  std::map<uint64_t,double> LAPPDOrphansTDiff;
 
-  if (force_matching && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC")){
+  if (force_matching && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD")){
     std::vector<uint64_t> InProgressTankEventsToDelete;
     //Add remaining Tank timestamps that have almost complete waveforms
     if (save_raw_data){
@@ -1589,6 +1703,37 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
       }
     }
   }
+
+  //Now match CTC-LAPPD timestamps
+  if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
+    if(verbosity>3) std::cout << "Finding CTC-LAPPD pairs..." << std::endl;
+    for(auto&& aLAPPDTS : myTimeStream.LAPPDGlobalTimestamps){
+      if((aLAPPDTS>max_timestamp)&&(!force_matching)) continue;   // don't try to match just yet
+      double TSDiff_current=0;
+      for(auto&& aCtcTS : myTimeStream.CTCTimestamps){
+        if((aCtcTS>max_timestamp)&&(!force_matching)) continue; // don't try to match this just yet
+        double TSDiff =  static_cast<double>(aLAPPDTS) -
+                       static_cast<double>(aCtcTS);
+        if(verbosity>9) std::cout << "LAPPDTS - CTCTS in nanoseconds is " << TSDiff << std::endl;
+        if(TSDiff>CTCLAPPDTimeTolerance){ // MRD timestamp is later than CTC timestamp; try next CTC timestamp
+          TSDiff_current = TSDiff;
+          continue;
+        } else if (TSDiff<(-1.*static_cast<double>(CTCLAPPDTimeTolerance))){ //We've crossed past where a pair would be found    
+          if(verbosity>9) std::cout << "NO CTC STAMP FOUND MATCHING LAPPD STAMP... LAPPD TO ORPHANAGE" << std::endl;
+          LAPPDOrphans.emplace(aLAPPDTS,"lappd_beam_no_ctc");
+          double min_tdiff = (fabs(TSDiff)<fabs(TSDiff_current))? TSDiff:TSDiff_current;
+          LAPPDOrphansTDiff.emplace(aLAPPDTS,min_tdiff);
+          break; 
+        } else { //We've found a valid CTC-LAPPD pair!
+          if(verbosity>4) std::cout << "FOUND A MATCHING CTC TIME FOR THIS LAPPD TIMESTAMP. NICE, PAIR EM." << std::endl;
+          PairedCTCLAPPDTimes.emplace(aCtcTS, aLAPPDTS);
+          max_ctc=aCtcTS;
+          break;
+        }
+      }
+    }
+  }
+
   int LargestCTCIndex = std::distance(myTimeStream.CTCTimestamps.begin(),std::find(myTimeStream.CTCTimestamps.begin(),myTimeStream.CTCTimestamps.end(),max_ctc));
   if(max_ctc==0) LargestCTCIndex=0;
   if(verbosity>4) std::cout << "LARGEST CTC INDEX WAS " << LargestCTCIndex << std::endl;
@@ -1605,10 +1750,39 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
 
     bool have_tankmatch = false;
     bool have_mrdmatch = false;    
+    bool have_lappdmatch = false;
     std::map<uint64_t, uint64_t>::iterator it_tank = PairedCTCTankTimes.find(CTCKey);
     if(it_tank != PairedCTCTankTimes.end()) have_tankmatch = true;
     std::map<uint64_t, uint64_t>::iterator it_mrd = PairedCTCMRDTimes.find(CTCKey);
     if(it_mrd != PairedCTCMRDTimes.end()) have_mrdmatch = true;
+    std::map<uint64_t, uint64_t>::iterator it_lappd = PairedCTCLAPPDTimes.find(CTCKey);
+    if(it_lappd != PairedCTCLAPPDTimes.end()) have_lappdmatch = true;
+    if (have_tankmatch && have_mrdmatch && have_lappdmatch){
+      std::map<std::string,uint64_t> aBuildSet;
+      for (int i_ctckey=0; i_ctckey < (int) TimeToTriggerWordMap->at(CTCKey).size(); i_ctckey++){
+        if (TimeToTriggerWordMap->at(CTCKey).size() > 1){
+          Log("ANNIEEventBuilding tool: Error! Multiple triggerwords for the same timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        } else if (TimeToTriggerWordMap->at(CTCKey).size() == 0){
+          Log("ANNIEEventBuilding tool: Error! No triggerwords available for timestamp. Timestamp = "+std::to_string(CTCKey),v_error,verbosity);
+        }
+        aBuildSet.emplace("CTC",TimeToTriggerWordMap->at(CTCKey).at(0));
+      }
+      aBuildSet.emplace("TankPMT",it_tank->second);
+      aBuildSet.emplace("MRD",it_mrd->second);
+      aBuildSet.emplace("LAPPD",it_lappd->second);
+      myTimeStream.BeamTankTimestamps.erase(std::remove(myTimeStream.BeamTankTimestamps.begin(),
+           myTimeStream.BeamTankTimestamps.end(),it_tank->second),
+           myTimeStream.BeamTankTimestamps.end());
+      myTimeStream.BeamMRDTimestamps.erase(std::remove(myTimeStream.BeamMRDTimestamps.begin(),
+           myTimeStream.BeamMRDTimestamps.end(),it_mrd->second),
+           myTimeStream.BeamMRDTimestamps.end());
+      myTimeStream.LAPPDGlobalTimestamps.erase(std::remove(myTimeStream.LAPPDGlobalTimestamps.begin(),
+           myTimeStream.LAPPDGlobalTimestamps.end(), it_lappd->second),
+           myTimeStream.LAPPDGlobalTimestamps.end());
+      if(verbosity>4) std::cout << "BUILDING A BUILD MAP (PMT+MRD+LAPPD) ENTRY. CTC IS " << CTCKey << std::endl;
+      BuildMap.emplace(CTCKey,aBuildSet);
+      BuiltCTCs.push_back(CTCKey);
+    }
     if(have_tankmatch && have_mrdmatch){
       std::map<std::string,uint64_t> aBuildSet;
       for (int i_ctckey=0; i_ctckey < (int) TimeToTriggerWordMap->at(CTCKey).size(); i_ctckey++){
@@ -1683,7 +1857,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   }
 
   //Delete myTimeStream.CTCTimestamps that have a PMT or MRD pair from CTC timestamp tracker
-  for(int j=0;j<(int)BuiltCTCs.size();j++){
+  for(int j=0;j < (int) BuiltCTCs.size();j++){
     if(verbosity>4) std::cout << "REMOVING CTC TIME OF " << BuiltCTCs.at(j) << "FROM CTCTIMESTAMPS VECTOR" << std::endl;
     myTimeStream.CTCTimestamps.erase(std::remove(myTimeStream.CTCTimestamps.begin(),
         myTimeStream.CTCTimestamps.end(),BuiltCTCs.at(j)), 
@@ -1693,7 +1867,7 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   //If the toolchain is stopping, move remaining incomplete PMT timestamps to orphanage
   if (force_matching) {
     if (verbosity > 2) std::cout <<"ANNIEEventBuilder Tool: Force matching at the end of toolchain, get InProgressTankEvents"<<std::endl;
-    if(OrphanOldTankTimestamps && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC")){
+    if(OrphanOldTankTimestamps && (BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD")){
       std::vector<uint64_t> InProgressTankEventsToDelete;
       if (save_raw_data){
       if (verbosity > 2) std::cout <<"ANNIEEventBuilder Tool: Size of InprogressTankEvents: "<<InProgressTankEvents->size()<<std::endl;
@@ -1746,12 +1920,35 @@ std::map<uint64_t,std::map<std::string,uint64_t>> ANNIEEventBuilder::MergeStream
   //std::cout <<"MoveToOrphanage"<<std::endl;
   //Move timestamps with no pairs to the orphanage
   this->MoveToOrphanage(TankOrphans, TankOrphansWaveMap, TankOrphansChannels, TankOrphansTDiff, MRDOrphans, MRDOrphansTDiff, CTCOrphans);
+  if (BuildType == "TankAndMRDAndCTCAndLAPPD") this->MoveToOrphanageLAPPD(LAPPDOrphans,LAPPDOrphansTDiff);
   //std::cout <<"ManageOprhanae"<<std::endl;
   this->ManageOrphanage();
 
   Log("ANNIEEventBuilder: Returning from Merging the Streams",v_debug,verbosity);
 
   return BuildMap;
+}
+
+void ANNIEEventBuilder::MoveToOrphanageLAPPD(std::map<uint64_t, std::string> LAPPDOrphans,
+                                             std::map<uint64_t, double> LAPPDOrphansTDiff){
+
+  if (verbosity > 3) std::cout <<" Moving LAPPD TIMESTAMPS WITH NO FAMILY TO ORPHANAGE" << std::endl;
+  for (auto&& nextorphan : LAPPDOrphans){
+    uint64_t LAPPDOrphanStamp = nextorphan.first;
+
+    //build map of orphan info to save to OrphanStore
+    std::map<std::string,std::string> orphaninfo;
+    orphaninfo.emplace("reason",nextorphan.second);
+
+    // move to orphanage
+    myOrphanage.OrphanLAPPDTimestamps.emplace(LAPPDOrphanStamp,orphaninfo);
+
+    // remove the orphan from the timestream
+    myTimeStream.LAPPDGlobalTimestamps.erase(std::remove(myTimeStream.LAPPDGlobalTimestamps.begin(),
+         myTimeStream.LAPPDGlobalTimestamps.end(),LAPPDOrphanStamp),
+         myTimeStream.LAPPDGlobalTimestamps.end());
+  }
+
 }
 
 void ANNIEEventBuilder::MoveToOrphanage(std::map<uint64_t, std::string> TankOrphans,
@@ -1930,11 +2127,35 @@ void ANNIEEventBuilder::ManageOrphanage(){
   }
  // std::cout<<"all CTC orphans handled, clearing the orphan timestamps"<<std::endl;
   
+  //Managing LAPPD orphans
+  for(auto&& nextorphan : myOrphanage.OrphanLAPPDTimestamps){
+    // copy the orphan info into OrphanStore
+    OrphanStore->Set("EventType",std::string("LAPPD"));
+    OrphanStore->Set("Timestamp",nextorphan.first);
+    OrphanStore->Set("Reason",nextorphan.second.at("reason"));
+    OrphanStore->Set("NumWaves",0);
+    OrphanStore->Set("TriggerWord",-1);
+    OrphanStore->Set("Info",nextorphan.second); // CTC word
+    std::vector<std::vector<int>> empty_vector;
+    OrphanStore->Set("WaveFormChannels",empty_vector);
+    std::vector<unsigned long> empty_unsigned;
+    OrphanStore->Set("WaveformChankeys",empty_unsigned);
+    OrphanStore->Set("MinTDiff",0.);
+    OrphanStore->Save(OrphanFile);
+    OrphanStore->Delete();
+
+    // cleanup from events to process
+    FinishedLAPPDPsecData->erase(nextorphan.first);
+  }
+
   myOrphanage.OrphanTankTimestamps.clear();
   myOrphanage.OrphanTankTimestampsChannels.clear();
   myOrphanage.OrphanTankTimestampsTDiff.clear();
   myOrphanage.OrphanMRDTimestamps.clear();
+  myOrphanage.OrphanMRDTimestampsTDiff.clear();
   myOrphanage.OrphanCTCTimestamps.clear();
+  myOrphanage.OrphanLAPPDTimestamps.clear();
+  myOrphanage.OrphanLAPPDTimestampsTDiff.clear();
 //  std::cout<<"timestamps cleared, returning"<<std::endl;
   return;
 }
@@ -2067,6 +2288,16 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
   ANNIEEvent->Set("MRDLoopbackTDC",mrd_loopback_tdc);
   return;
+}
+
+void ANNIEEventBuilder::BuildANNIEEventLAPPD(PsecData psecdata, uint64_t LAPPDTimeStamp, uint64_t LAPPDOffset){
+
+  Log("ANNIEEventBuilder: Build LAPPD event with timestamp "+std::to_string(LAPPDTimeStamp)+" and offset "+std::to_string(LAPPDOffset),0,verbosity);
+  
+  ANNIEEvent->Set("LAPPDData",psecdata);
+  ANNIEEvent->Set("EventTimeLAPPD",LAPPDTimeStamp);
+  ANNIEEvent->Set("LAPPDOffset",LAPPDOffset);
+
 }
 
 void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber, int PartNumber,
@@ -2324,5 +2555,217 @@ bool ANNIEEventBuilder::FetchWaveformsHits(){
   m_data->CStore.Set("NewHitsData",false);
 
   return true;
+
+}
+
+int ANNIEEventBuilder::AlignLAPPDTimestamps(){
+
+  std::cout <<"AlignLAPPDTimestamps"<<std::endl;
+  //For now, print everything to outputfiles
+  //
+  std::stringstream ss_ctc_pps, ss_ctc_beam, ss_lappd_pps, ss_lappd_beam;
+  ss_ctc_pps << "ctc_pps_" << CurrentRunNum <<"_p"<<CurrentPartNum<<".txt";
+  ss_ctc_beam << "ctc_beam_" << CurrentRunNum <<"_p"<<CurrentPartNum<<".txt";
+  ss_lappd_pps << "lappd_pps_" << CurrentRunNum <<"_p"<<CurrentPartNum<<".txt";
+  ss_lappd_beam << "lappd_beam_" << CurrentRunNum <<"_p"<<CurrentPartNum<<".txt";
+
+  std::ofstream ctc_pps(ss_ctc_pps.str().c_str());
+  std::ofstream ctc_beam(ss_ctc_beam.str().c_str());
+  std::ofstream lappd_pps(ss_lappd_pps.str().c_str());
+  std::ofstream lappd_beam(ss_lappd_beam.str().c_str());
+
+  std::vector<uint64_t> CTCTimestampsPPS;       //Contains CTC timestamps of triggerword 32 (PPS sync), used for LAPPD alignment
+  std::vector<uint64_t> CTCTimestampsBeam;      //Contains CTC timestamps of triggerword 5 (beam), used for LAPPD alignment
+  std::vector<uint64_t> LAPPDPPSTimestamps;     //LAPPD PPS timestamps
+  std::vector<uint64_t> LAPPDBeamgateTimestamps;        //LAPPD beamgate timestamps
+  std::vector<uint64_t> LAPPDTimestamps;        //LAPPD data timestamps
+
+
+  for (int i_pps=0; i_pps < (int) myTimeStream.CTCTimestampsPPS.size(); i_pps++){
+    ctc_pps << myTimeStream.CTCTimestampsPPS.at(i_pps) << std::endl;
+    CTCTimestampsPPS.push_back(myTimeStream.CTCTimestampsPPS.at(i_pps));
+  } 
+  for (int i_b=0; i_b < (int) myTimeStream.CTCTimestampsBeam.size(); i_b++){
+    ctc_beam << myTimeStream.CTCTimestampsBeam.at(i_b) << std::endl;
+    CTCTimestampsBeam.push_back(myTimeStream.CTCTimestampsBeam.at(i_b));
+    //std::cout <<"CTC Beam: "<<myTimeStream.CTCTimestampsBeam.at(i_b)<<std::endl;
+  } 
+  for (int i_pps=0; i_pps < (int) myTimeStream.LAPPDPPSTimestamps.size(); i_pps++){
+    lappd_pps << myTimeStream.LAPPDPPSTimestamps.at(i_pps) << std::endl;
+    LAPPDPPSTimestamps.push_back(myTimeStream.LAPPDPPSTimestamps.at(i_pps));
+  } 
+  for (int i_b=0; i_b < (int) myTimeStream.LAPPDBeamgateTimestamps.size(); i_b++){
+    lappd_beam << myTimeStream.LAPPDBeamgateTimestamps.at(i_b) << std::endl;
+    LAPPDBeamgateTimestamps.push_back(myTimeStream.LAPPDBeamgateTimestamps.at(i_b));
+  }
+  std::cout <<"CTCPPS size: "<<CTCTimestampsPPS.size()<<std::endl;
+  std::cout <<"CTCBeam size: "<<CTCTimestampsBeam.size()<<std::endl;
+  std::cout <<"LAPPDPPS size: "<<LAPPDPPSTimestamps.size()<<std::endl;
+  std::cout <<"LAPPDBeam size: "<<LAPPDBeamgateTimestamps.size()<<std::endl;
+
+  ctc_pps.close();
+  ctc_beam.close();
+  lappd_pps.close();
+  lappd_beam.close();
+
+  
+  
+  std::vector<double> mean_beam_deviation;
+  std::vector<double> stddev_beam;
+  std::vector<int> num_missing_beam;
+  std::vector<int> num_missing_pps;
+  std::vector<uint64_t> offset_vector;
+
+  uint64_t first_ctc_pps = CTCTimestampsPPS.at(0);
+  uint64_t last_ctc_pps = CTCTimestampsPPS.at(CTCTimestampsPPS.size()-1);
+  int counter=0;
+
+  for (int i_lappd_pps=0; i_lappd_pps < (int) LAPPDPPSTimestamps.size(); i_lappd_pps++){
+  for (int i_ctc=0; i_ctc < (int) CTCTimestampsPPS.size(); i_ctc++){
+  
+    uint64_t offset = CTCTimestampsPPS.at(i_ctc) - LAPPDPPSTimestamps.at(i_lappd_pps);
+    std::vector<double> dev_beam;
+    int missing_beam=0;
+    double first_dev=0;
+    int missing_pps=0;
+    for (int i_lappd=0; i_lappd < (int) LAPPDPPSTimestamps.size(); i_lappd++){
+      if ((LAPPDPPSTimestamps.at(i_lappd)+offset) < first_ctc_pps) missing_pps++;
+      else if ((LAPPDPPSTimestamps.at(i_lappd)+offset) > last_ctc_pps) missing_pps++;
+    }
+    num_missing_pps.push_back(missing_pps); 
+
+    //Loop through all beam timestamps  
+    for (int i_beam=0; i_beam < (int) LAPPDBeamgateTimestamps.size(); i_beam++){
+      double lappdbeam = double(LAPPDBeamgateTimestamps.at(i_beam)+offset);
+      double min_deviation = 999999999999999;
+      bool use_value = true;
+      for (int i_beam2=0; i_beam2 < (int) CTCTimestampsBeam.size(); i_beam2++){
+        double ctcbeam = double(CTCTimestampsBeam.at(i_beam2));
+        double dev = ctcbeam-lappdbeam;
+        if (i_beam2 ==0) first_dev = dev;
+        if (fabs(dev) < min_deviation) min_deviation = fabs(dev);
+        if (i_beam2 == CTCTimestampsBeam.size()-1 && fabs(min_deviation-fabs(dev))<0.01) use_value = false;
+        else if (i_beam2 == CTCTimestampsBeam.size()-1 && fabs(min_deviation-fabs(first_dev))<0.01) use_value = false;
+      }
+      if (use_value) dev_beam.push_back(min_deviation);
+      else missing_beam++;
+    }
+    num_missing_beam.push_back(missing_beam);
+    double mean_dev=0;
+    for (int i_dev=0; i_dev < (int) dev_beam.size(); i_dev++){
+      mean_dev += dev_beam.at(i_dev);
+    }
+    if (dev_beam.size() > 0) mean_dev /= dev_beam.size();
+    std::vector<double> diff(dev_beam.size());
+    std::transform(dev_beam.begin(), dev_beam.end(), diff.begin(), [mean_dev](double x) { return x - mean_dev; });
+    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / dev_beam.size());
+    mean_beam_deviation.push_back(mean_dev);
+    stddev_beam.push_back(stdev);
+    offset_vector.push_back(offset);
+   /* if (counter>2330 && counter<2350){
+        std::cout <<"counter: "<<counter<<std::endl;
+      for (int i_diff=0; i_diff < diff.size(); i_diff++){
+        std::cout <<"diff: "<<diff.at(i_diff)<<std::endl;
+      }
+      std::cout <<"mean: "<<mean_dev<<", stddev: "<<stdev<<std::endl;
+    }*/
+    
+    counter++;
+
+  }
+  }
+  
+  //Loop through deviations and find the best match
+  double min_dev=99999999999;
+  double min_mean=99999999999;
+  int best_match_ctc=-1;
+  uint64_t best_match_offset = 0;
+  int max_missing_beam = 2;
+  if (LAPPDBeamgateTimestamps.size() <=4) max_missing_beam = 0;
+
+  //Normal offset finding procedure
+  if (LAPPDOffsetFile== "None"){
+  for (int i_dev=0; i_dev < mean_beam_deviation.size(); i_dev++){
+    std::cout <<"LAPPD CTC timestamp # 0, CTC Timestamp #"<<i_dev<<", mean dev: "<<mean_beam_deviation.at(i_dev)<<", std dev: "<<stddev_beam.at(i_dev)<<", missing beam: "<<num_missing_beam.at(i_dev)<<", offset: "<<offset_vector.at(i_dev)<<std::endl;
+   //if (num_missing_beam.at(i_dev)== 0 && stddev_beam.at(i_dev) < min_dev){
+   if (num_missing_beam.at(i_dev) <= max_missing_beam && stddev_beam.at(i_dev) < min_dev && num_missing_pps.at(i_dev)<=1 && mean_beam_deviation.at(i_dev) < min_mean){
+      min_dev = stddev_beam.at(i_dev);
+      min_mean = mean_beam_deviation.at(i_dev);
+      best_match_ctc = i_dev;
+      best_match_offset = offset_vector.at(i_dev);
+std::cout <<"***NEW BEST MATCH: min_dev: "<<min_dev<<", min_mean: "<<min_mean<<", best_match_offset: "<<best_match_offset<<std::endl;
+    //} else if (num_missing_beam.at(i_dev) <= max_missing_beam && stddev_beam.at(i_dev) == min_dev && num_missing_pps.at(i_dev)<=1 && mean_beam_deviation.at(i_dev) < min_mean){
+    //} else if (num_missing_beam.at(i_dev) <= max_missing_beam && stddev_beam.at(i_dev) < 100000 && stddev_beam.at(i_dev) >= 0 && num_missing_pps.at(i_dev)<=1 && mean_beam_deviation.at(i_dev) < min_mean){
+    } else if (num_missing_beam.at(i_dev) <= max_missing_beam && stddev_beam.at(i_dev) < 100000000 && stddev_beam.at(i_dev) >= 0 && num_missing_pps.at(i_dev)<=1 && mean_beam_deviation.at(i_dev) < min_mean){
+      min_dev = stddev_beam.at(i_dev);
+      min_mean = mean_beam_deviation.at(i_dev);
+      best_match_ctc = i_dev;
+      best_match_offset = offset_vector.at(i_dev);
+      std::cout <<"***NEW BEST MATCH: min_dev: "<<min_dev<<", min_mean: "<<min_mean<<", best_match_offset: "<<best_match_offset<<std::endl;
+    }
+  }
+  } else {
+    //Offset finding procedure based on input parameters
+    double temp, c, m;
+    int counter=0;
+    ifstream offsetfile(LAPPDOffsetFile.c_str());
+    while (!offsetfile.eof()){
+     offsetfile >> temp;
+     if (counter==0) c = temp;
+     else if (counter==1) m = temp;
+     counter++;
+     if (offsetfile.eof()) break; 
+    }
+    offsetfile.close();
+
+    std::cout <<"Read in c: "<<c<<std::endl;
+    std::cout <<"Read in m: "<<m<<std::endl;
+
+    double expected_offset = c + m*CTCTimestampsPPS.at(0)/1000000000.;
+    std::cout <<"expected_offset: "<<expected_offset<<std::endl;
+    
+    for (int i_dev=0; i_dev < offset_vector.size(); i_dev++){
+      double diff_obs_exp = fabs(offset_vector.at(i_dev)/1000000000.-expected_offset);
+      if (diff_obs_exp < min_dev){
+        min_dev = diff_obs_exp;
+      best_match_ctc = i_dev;
+      best_match_offset = offset_vector.at(i_dev);
+      std::cout <<"***NEW BEST MATCH: offset: "<<offset_vector.at(i_dev)<<", expected_offset: "<<expected_offset<<", deviation: "<<min_dev<<std::endl;
+      }
+    }
+
+   }
+
+  if (best_match_ctc == -1){
+    std::cout <<"Did not find a best match between the CTC and the LAPPD timestreams!"<<std::endl;
+    std::cout <<"Check manually what went wrong..."<<std::endl;
+    return 1;
+  } else {
+    lappd_aligned = true;
+    lappd_time_offset = best_match_offset;
+    std::cout <<"Did find a best match between the CTC and the LAPPD timestream!"<<std::endl;
+    std::cout <<"Offset is "<<lappd_time_offset<<std::endl;
+
+    std::vector<uint64_t> LAPPD_timestamps_to_delete;
+    //Fill the corrected timestamps in FinishedLAPPDPsecData object
+    for (std::map<uint64_t,PsecData>::iterator it = LAPPDPsecMap.begin(); it!= LAPPDPsecMap.end(); it++){
+      uint64_t timestamp_lappd = it->first;
+      PsecData lappd_data = it->second;
+      FinishedLAPPDPsecData->emplace(timestamp_lappd+lappd_time_offset,lappd_data);
+      myTimeStream.LAPPDGlobalTimestamps.push_back(timestamp_lappd+lappd_time_offset);
+      LAPPD_timestamps_to_delete.push_back(timestamp_lappd);
+    }
+    //Erase corresponding entry from in-progress map
+    for (int i_delete=0; i_delete < (int) LAPPD_timestamps_to_delete.size(); i_delete++){
+      LAPPDPsecMap.erase(LAPPD_timestamps_to_delete.at(i_delete));
+    }
+    //Erase PPS and beamgate timestamp information (not needed anymore after matching)
+    myTimeStream.LAPPDPPSTimestamps.clear();
+    myTimeStream.LAPPDBeamgateTimestamps.clear();
+    myTimeStream.LAPPDTimestamps.clear();    
+
+    return 0;
+  }
 
 }

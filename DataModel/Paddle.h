@@ -90,6 +90,7 @@ class Paddle : public SerialisableObject{
 		} else {
 			extents_x = extsin;
 		}
+		return true;
 	}
 	bool SetExtentsY(std::pair<double,double> extsin){
 		if(extsin.first>extsin.second){
@@ -98,6 +99,7 @@ class Paddle : public SerialisableObject{
 		} else {
 			extents_y = extsin;
 		}
+		return true;
 	}
 	bool SetExtentsZ(std::pair<double,double> extsin){
 		if(extsin.first>extsin.second){
@@ -106,6 +108,7 @@ class Paddle : public SerialisableObject{
 		} else {
 			extents_z = extsin;
 		}
+		return true;
 	}
 	bool SetExtentsX(double xmin, double xmax){
 		if(xmin>xmax){
@@ -114,6 +117,7 @@ class Paddle : public SerialisableObject{
 		} else {
 			extents_x=std::pair<double,double>{xmin,xmax};
 		}
+		return true;
 	};
 	bool SetExtentsY(double ymin, double ymax){
 		if(ymin>ymax){
@@ -122,6 +126,7 @@ class Paddle : public SerialisableObject{
 		} else {
 			extents_y=std::pair<double,double>{ymin,ymax};
 		}
+		return true;
 	};
 	bool SetExtentsZ(double zmin, double zmax){
 		if(zmin>zmax){
@@ -130,6 +135,7 @@ class Paddle : public SerialisableObject{
 		} else {
 			extents_z=std::pair<double,double>{zmin,zmax};
 		}
+		return true;
 	};
 	
 	bool Print(){

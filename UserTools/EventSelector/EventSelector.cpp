@@ -386,8 +386,11 @@ bool EventSelector::PromptTriggerCheck() {
     Log("EventSelector Tool: Error retrieving MCTriggernum from ANNIEEvent!",v_error,verbosity); 
     return false; 
   }	
+  
   /// if so, truth analysis is probably not interested in this trigger. Primary muon will not be in the listed tracks.
-  if(fMCTriggernum>0){ 
+  bool splitSubtriggers = false;
+  m_data->CStore.Get("SplitSubTriggers",splitSubtriggers);
+  if(splitSubtriggers && (fMCTriggernum>0)){ 
     Log("EventSelector Tool: This event is not a prompt trigger",v_message,verbosity); 
     return false;
   }

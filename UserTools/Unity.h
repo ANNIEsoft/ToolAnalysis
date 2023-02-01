@@ -5,7 +5,6 @@
 #include "ExampleloadStore.h"
 #include "ExamplePrintData.h"
 #include "ExampleLoadRoot.h"
-#include "PythonScript.h"
 #include "LAPPDBaselineSubtract.h"
 #include "LAPPDcfd.h"
 #include "TSplineFit.h"
@@ -153,10 +152,13 @@
 #include "BeamDecoder.h"
 #include "LoadRunInfo.h"
 #include "ApplyMRDEff.h"
-
 #include "LAPPDnnlsPeak.h"
 #include "LAPPDLocateHit.h"
-
 #include "LAPPDOtherSimp.h"
-
 #include "LAPPDTraceMax.h"
+#include "saveLAPPDInfo.h"
+#include "parseLAPPDData.h"
+#include "checkLAPPDStatus.h"
+#include "GetLAPPDEvents.h"
+#include "LAPPDDataDecoder.h"
+#include "PythonScript.h"
