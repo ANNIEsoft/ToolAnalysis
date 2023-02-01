@@ -60,19 +60,29 @@ class LAPPDClusterTree: public Tool {
 
   Double_t      hQ[60];
   Double_t      hT[60];
-  double_t      hxpar[60];
-  double_t      hxperp[60];
-  double_t      htime[60];
-  double_t      hdeltime[60];
-  double_t      hvpeak[60];
+  Double_t      hxpar[60];
+  Double_t      hxperp[60];
+  Double_t      htime[60];
+  Double_t      hdeltime[60];
+  Double_t      hvpeak[60];
+
+  // Strip-level variables
+
+  Int_t         Nchannels;
+  Double_t      StripPeak[60];
+  Double_t      StripPeak_Sm[60];
+  Double_t      StripPeakT[60];
+  Double_t      StripPeakT_Sm[60];
+  Double_t      StripQ[60];
+  Double_t      StripQ_Sm[60];
 
   //NEW!!!
   Int_t         NHits_simp;
   Double_t      hQ_simp[60];
   Double_t      hT_simp[60];
   Double_t      htime_simp[60];
-  double_t      hxpar_simp[60];
-  double_t      hxperp_simp[60];
+  Double_t      hxpar_simp[60];
+  Double_t      hxperp_simp[60];
 
   Double_t      nnlsParallelP[60];
   Double_t      nnlsTransverseP[60];
