@@ -153,5 +153,6 @@ if (tool=="LAPPDnnlsPeak") ret=new LAPPDnnlsPeak;
 if (tool=="LAPPDLocateHit") ret=new LAPPDLocateHit;
 
 if (tool=="LAPPDOtherSimp") ret=new LAPPDOtherSimp;
+if (tool=="LAPPDTraceMax") ret=new LAPPDTraceMax;
 return ret;
 }
