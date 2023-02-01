@@ -29,6 +29,8 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
 
   WraparoundBin=0; QualityVar=0; TrigDeltaT1=0.; TrigDeltaT2=0.; PulseHeight=0.; MaxAmp0=0.; MaxAmp1=0.; BeamTime=0.; EventTime=0.; TotalCharge=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
   NHits=0; NHits_simp=0; Npulses_cfd=0; Npulses_simp=0;
+  Nchannels=60;
+
   for(int i=0; i<60; i++){
       hQ[i]=0;  hxpar[i]=0; hxperp[i]=0; htime[i]=0;  hdeltime[i]=0; hvpeak[i]=0;
       hQ_simp[i]=0;  hxpar_simp[i]=0; hxperp_simp[i]=0; htime_simp[i]=0;
@@ -39,6 +41,9 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
       pulseQ_simp[i]=0; pulsestrip_simp[i]=0; pulseside_simp[i]=0;
 
       SelectedAmp0[i]=0; SelectedAmp1[i]=0; SelectedTime0[i]=0; SelectedTime1[i]=0;
+
+      StripPeak[i]=0;  StripPeak_Sm[i]=0;  StripPeakT[i]=0;  StripPeakT_Sm[i] =0;
+      StripQ[i]=0;  StripQ_Sm[i]=0;
 
   }
 
@@ -70,6 +75,17 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   fMyTree->Branch("time",             htime,              "time[NHits]/D"         );
   fMyTree->Branch("deltime",          hdeltime,           "deltime[NHits]/D"      );
   fMyTree->Branch("Vpeak",            hvpeak,             "Vpeak[NHits]/D"        );
+
+  //Strip parameters (from TraceMax)
+
+  fMyTree->Branch("Nchannels",        &Nchannels,         "Nchannels/I"               );
+  fMyTree->Branch("StripPeak",        StripPeak,          "StripPeak[Nchannels]/D"    );
+  fMyTree->Branch("StripPeak_Sm",     StripPeak_Sm,       "StripPeak_Sm[Nchannels]/D" );
+  fMyTree->Branch("StripPeakT",       StripPeakT,         "StripPeakT[Nchannels]/D"   );
+  fMyTree->Branch("StripPeakT_Sm",    StripPeakT_Sm,      "StripPeakT_Sm[Nchannels]/D");
+  fMyTree->Branch("StripQ",           StripQ,             "StripQ[Nchannels]/D"       );
+  fMyTree->Branch("StripQ_Sm",        StripQ_Sm,          "StripQ_Sm[Nchannels]/D"    );
+
 
   //Hit parameters (from simple FindPeak)
   fMyTree->Branch("NHits_simp",            &NHits_simp,             "NHits_simp/I"               );
@@ -163,6 +179,42 @@ bool LAPPDClusterTree::Execute()
   m_data->Stores["ANNIEEvent"]->Get("TimingCounters",tcounters);
   m_data->Stores["ANNIEEvent"]->Get("EventCharge",TotalCharge);
 
+
+  std::map<int,vector<vector<double>>> TML;
+  std::map<int,vector<vector<double>>> TMR;
+  m_data->Stores["ANNIEEvent"]->Get("TML",TML);
+  m_data->Stores["ANNIEEvent"]->Get("TMR",TMR);
+
+
+
+  map <int, vector<vector<double>>> :: iterator TMitr;
+  for (TMitr = TML.begin(); TMitr != TML.end(); ++TMitr){
+    int stripno = TMitr->first;
+    vector<vector<double>> vaTML = TMitr->second;
+    vector<double> aTML = vaTML.at(0);
+    StripPeak[stripno] = aTML.at(0);
+    StripPeakT[stripno] = aTML.at(1);
+    StripPeak_Sm[stripno] = aTML.at(2);
+    StripPeakT_Sm[stripno] = aTML.at(3);
+    StripQ[stripno] = aTML.at(4);
+    StripQ_Sm[stripno] = aTML.at(5);
+
+    //cout<<"Trace on Strip in ClusterTree "<<(int) stripno<<" amplitude:"<<aTML.at(0)<<" peaktime: "<<aTML.at(1)<<" charge:"<<aTML.at(4)<<" charge(smoothe peak):"<<aTML.at(5)<<endl;
+  }
+
+  for (TMitr = TMR.begin(); TMitr != TMR.end(); ++TMitr){
+    int stripno = TMitr->first;
+    vector<vector<double>> vaTML = TMitr->second;
+    vector<double> aTML = vaTML.at(0);
+
+    StripPeak[stripno+30] = aTML.at(0);
+    StripPeakT[stripno+30] = aTML.at(1);
+    StripPeak_Sm[stripno+30] = aTML.at(2);
+    StripPeakT_Sm[stripno+30] = aTML.at(3);
+    StripQ[stripno+30] = aTML.at(4);
+    StripQ_Sm[stripno+30] = aTML.at(5);
+    //cout<<"Trace on Strip in ClusterTree "<<(int) channelno<<" amplitude:"<<aTML.at(0)<<" peaktime: "<<aTML.at(1)<<" charge:"<<aTML.at(4)<<" charge(smoothe peak):"<<aTML.at(5)<<endl;
+  }
 
 
   //nnls hits
