@@ -7,10 +7,14 @@ TrigChannel 5 #Specified channel the trigger signal will be on
 LAPPDchannelOffset 1000
 #TrigChannel1  1005
 #TrigChannel2  1035
-LowBLfitrange 100;
-HiBLfitrange  150;
-TrigLowBLfitrange 2
-TrigHiBLfitrange  19
+#LowBLfitrange 100;
+#HiBLfitrange  150;
+LowBLfitrange 25;
+HiBLfitrange  60;
+#TrigLowBLfitrange 2
+#TrigHiBLfitrange  19
+TrigLowBLfitrange 30
+TrigHiBLfitrange  100
 BLSOutputWavLabel ABLSLAPPDData
 oldLaserTrigAmpRange 40
 
@@ -21,8 +25,8 @@ RawPeakInputWavLabel LAPPDWaveforms
 #BLSPeakInputWavLabel AlignedLAPPDData
 BLSPeakInputWavLabel ABLSLAPPDData
 FindPeakOutLabel SimpleRecoLAPPDPulses
-TotThreshold 10.
-MinimumTot 800.
+TotThreshold 15.
+MinimumTot 900.
 Deltat 100.
 
 # General Parameters
@@ -50,10 +54,16 @@ CFDClusterLabel CFDRecoLAPPDPulses
 HitOutLabel SimpleClusters
 
 #LAPPDIntegratePulse
-IntegVerbosity 0
-IntegStrip1 11
+IntegVerbosity 1
+IntegStrip1 4
 IntegStrip2 -1
 IntegStrip3 -1
 IntegStrip4 -1
-IntegLow  12250
-IntegHi 16750
+IntegLow  7000
+IntegHi 12000
+
+#LAPPDTraceMax
+TMVerbosity 1
+Nsmooth 4
+IntegLow  11000
+IntegHi 19000
