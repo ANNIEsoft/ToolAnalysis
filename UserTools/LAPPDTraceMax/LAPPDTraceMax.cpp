@@ -175,7 +175,7 @@ double LAPPDTraceMax::CalcIntegral(Waveform<double> hwav, double lowR, double hi
     for(int i=lowb; i<hib; i++){
       tQ+=((hwav.GetSample(i))*Deltat);
     }
-  } else std::cout<<"OUT OF RANGE!!!!";
+  } else std::cout<<"OUT OF RANGE!!!!"<<std::flush;
 
   return tQ;
 }
@@ -202,7 +202,7 @@ std::vector<double> LAPPDTraceMax::CalcAmp(Waveform<double> hwav, double lowR, d
         tTime=(double)i;
       }
     }
-  } else std::cout<<"OUT OF RANGE!!!!";
+  } else std::cout<<"OUT OF RANGE!!!!"<<std::flush;
 
   vector<double> tAmpVect;
   tAmpVect.push_back(tAmp);
@@ -240,7 +240,7 @@ std::vector<double> LAPPDTraceMax::CalcAmpSmoothed(Waveform<double> hwav, double
           tTime=(double)i - (Nsmooth/2.) ;
         }
       }
-    } else std::cout<<"OUT OF RANGE!!!!";
+    } else std::cout<<"OUT OF RANGE!!!!"<<std::flush;
 
     vector<double> tAmpVect;
     tAmpVect.push_back(tAmp);

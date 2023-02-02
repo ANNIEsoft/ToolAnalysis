@@ -162,6 +162,7 @@ cout<<"break e"<<endl;
   rangeAmp1.push_back(maxA1);
   rangeTime1.push_back(timeA1/10);
 cout<<"break f"<<endl;
+  return true;
 }
 
 
