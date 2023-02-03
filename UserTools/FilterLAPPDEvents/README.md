@@ -30,8 +30,8 @@ SavePath (string)
 Where to save the filtered files.
 
 csvInputFile (string)
-The LAPPDStatistics csv files containing LAPPD event data.
+The LAPPDStatistics .csv file containing LAPPD event data.
 
 RangeOfRuns (string)
-The range of runs you will be filtering. This is appended to the SavePath and FilteredFilesBasename.
+The range of runs you will be filtering events through. This is appended to the SavePath and FilteredFilesBasename.
 ```
