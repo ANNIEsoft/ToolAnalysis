@@ -25,7 +25,6 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
   m_variables.Get("FileFormat",FileFormat);
   m_variables.Get("LoadOrphanStore",load_orphan_store);
   m_variables.Get("GlobalEvNr",global_evnr);
-  m_variables.Get("RunOnUnfiltered",run_on_unfiltered);
   global_ev = offset_evnum;
 
   std::string input_list_filename;
@@ -276,7 +275,7 @@ bool LoadANNIEEvent::Execute() {
   if (!m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")) m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_);
   ++current_entry_;
  
-  if (global_evnr && !m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")) m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev)
+  if (global_evnr && !m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")) m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev);
   global_ev++; 
 
 
