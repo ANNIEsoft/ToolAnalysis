@@ -6,16 +6,25 @@ LAPPDReorderData LAPPDReorderData configfiles/LAPPDana/ConfigASCIIReadIn
 #
 #Pre-processing
 LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
+#LAPPDBaselineSubtract LAPPDGausBaselineSubtraction configfiles/LAPPDana/ConfigPreProcess
 LAPPDPlotWaveFormsBLS LAPPDPlotWaveForms configfiles/LAPPDana/ConfigPreProcess
 LAPPDFindT0 LAPPDFindT0 configfiles/LAPPDana/ConfigPreProcess
 #
 #Simple Pulse Analysis
 LAPPDBaselineSubtract2 LAPPDBaselineSubtract configfiles/LAPPDana/ConfigSimplePulses
+#LAPPDBaselineSubtract2 LAPPDGausBaselineSubtraction configfiles/LAPPDana/ConfigSimplePulses
 LAPPDPlotWaveFormsABLS LAPPDPlotWaveForms configfiles/LAPPDana/ConfigSimplePulses
 LAPPDPlotWaveForms2D LAPPDPlotWaveForms2D configfiles/LAPPDana/ConfigSimplePulses
 LAPPDFindPeak LAPPDFindPeak configfiles/LAPPDana/ConfigSimplePulses
 LAPPDIntegratePulse LAPPDIntegratePulse configfiles/LAPPDana/ConfigSimplePulses
+LAPPDTraceMax LAPPDTraceMax configfiles/LAPPDana/ConfigSimplePulses
 LAPPDClusterSimp LAPPDCluster configfiles/LAPPDana/ConfigSimplePulses
+#
+#nnls pulse analysis
+LAPPDOtherSimp LAPPDOtherSimp configfiles/LAPPDana/ConfigNNLS
+#LAPPDnnlsPeak LAPPDnnlsPeak configfiles/LAPPDana/ConfigNNLS
+#LAPPDPlotWaveFormsnnls LAPPDPlotWaveForms2D configfiles/LAPPDana/ConfigNNLS
+#LAPPDLocateHit LAPPDLocateHit configfiles/LAPPDana/ConfigNNLS
 #
 #Filtered Pulse Analysis
 LAPPDFilter LAPPDFilter configfiles/LAPPDana/ConfigFilteredPulses
