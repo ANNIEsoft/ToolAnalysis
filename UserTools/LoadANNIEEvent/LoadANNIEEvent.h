@@ -64,8 +64,6 @@ class LoadANNIEEvent: public Tool {
     /// @brief Flag indicating whether we need to load a new file
     bool need_new_file_;
 
-    bool run_on_unfiltered;
-
     bool load_orphanstore;
 
     std::stringstream logmessage;
