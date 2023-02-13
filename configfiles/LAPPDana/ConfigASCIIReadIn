@@ -15,18 +15,22 @@ RawDataInputWavLabel RawLAPPDDataFrame #Label of the raw dataframe in the store
 RawDataInputWavLabel RawWaveform
 RawDataOutpuWavLabel  RawLAPPDData
 BoardIndexLabel BoardIndex #Label of the vector of read out boards
-PSECinputfile ../Data/2022-04-23/All_Beam.txt
+#PSECinputfile /pnfs/annie/persistent/LAPPDData/LAPPD63/2023-01-23/ND2_7/2350V/LaserOff/All.txt
+#PSECinputfile /pnfs/annie/persistent/LAPPDData/LAPPD63/All_2023-01-25_ND3_2350V.txt
+#PSECinputfile /pnfs/annie/persistent/LAPPDData/LAPPD63/2023-01-23/ND2_5/2350V/LaserOn/All.txt
+#PSECinputfile /pnfs/annie/persistent/LAPPDData/LAPPD63/2023-01-26/ND3.5/2350V/LaserOn/All.txt
+PSECinputfile /pnfs/annie/persistent/LAPPDData/LAPPD63/2023-01-26/ND4/2350V/LaserOn/All.txt
 
 DoPedSubtraction 1
 Nboards 2 #Number of pedestal files to be read in
 Pedinputfile ../Data/PEDS_ACDC
 PedinputfileTXT ../Data/3655/PEDS_ACDC_board #prefix of the pedestal files path+name. index and filetype will be set automatically
-Pedinputfile1 ../Data/2022-01-15/PEDS_ACDC_board0.txt
-Pedinputfile2 ../Data/2022-01-15/PEDS_ACDC_board1.txt
+Pedinputfile1 /pnfs/annie/persistent/LAPPDData/Pedestals/ACDC33.txt
+Pedinputfile2 /pnfs/annie/persistent/LAPPDData/Pedestals/ACDC27.txt
 
 #LAPPDReorderData
 ReorderVerbosityLevel 0
 ReorderInputWavLabel RawLAPPDData
 ReorderOutputWavLabel LAPPDWaveforms
 DelayOffset 0
-GlobalShift 180
+GlobalShift 80

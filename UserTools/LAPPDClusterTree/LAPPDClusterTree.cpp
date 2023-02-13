@@ -29,6 +29,8 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
 
   WraparoundBin=0; QualityVar=0; TrigDeltaT1=0.; TrigDeltaT2=0.; PulseHeight=0.; MaxAmp0=0.; MaxAmp1=0.; BeamTime=0.; EventTime=0.; TotalCharge=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
   NHits=0; NHits_simp=0; Npulses_cfd=0; Npulses_simp=0;
+  Nchannels=60;
+
   for(int i=0; i<60; i++){
       hQ[i]=0;  hxpar[i]=0; hxperp[i]=0; htime[i]=0;  hdeltime[i]=0; hvpeak[i]=0;
       hQ_simp[i]=0;  hxpar_simp[i]=0; hxperp_simp[i]=0; htime_simp[i]=0;
@@ -37,6 +39,12 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
 
       pulsestart_simp[i]=0; pulseend_simp[i]=0; pulseamp_simp[i]=0;  pulsepeakbin_simp[i]=0;
       pulseQ_simp[i]=0; pulsestrip_simp[i]=0; pulseside_simp[i]=0;
+
+      SelectedAmp0[i]=0; SelectedAmp1[i]=0; SelectedTime0[i]=0; SelectedTime1[i]=0;
+
+      StripPeak[i]=0;  StripPeak_Sm[i]=0;  StripPeakT[i]=0;  StripPeakT_Sm[i] =0;
+      StripQ[i]=0;  StripQ_Sm[i]=0;
+
   }
 
   // set the branches ///////////////////////////
@@ -68,13 +76,37 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   fMyTree->Branch("deltime",          hdeltime,           "deltime[NHits]/D"      );
   fMyTree->Branch("Vpeak",            hvpeak,             "Vpeak[NHits]/D"        );
 
-  //Hit parameters (from simple FindPeak)
+  //Strip parameters (from TraceMax)
 
+  fMyTree->Branch("Nchannels",        &Nchannels,         "Nchannels/I"               );
+  fMyTree->Branch("StripPeak",        StripPeak,          "StripPeak[Nchannels]/D"    );
+  fMyTree->Branch("StripPeak_Sm",     StripPeak_Sm,       "StripPeak_Sm[Nchannels]/D" );
+  fMyTree->Branch("StripPeakT",       StripPeakT,         "StripPeakT[Nchannels]/D"   );
+  fMyTree->Branch("StripPeakT_Sm",    StripPeakT_Sm,      "StripPeakT_Sm[Nchannels]/D");
+  fMyTree->Branch("StripQ",           StripQ,             "StripQ[Nchannels]/D"       );
+  fMyTree->Branch("StripQ_Sm",        StripQ_Sm,          "StripQ_Sm[Nchannels]/D"    );
+
+
+  //Hit parameters (from simple FindPeak)
   fMyTree->Branch("NHits_simp",            &NHits_simp,             "NHits_simp/I"               );
   fMyTree->Branch("Q_simp",                hQ_simp,                 "Q_simp[NHits_simp]/D"            );
   fMyTree->Branch("xpar_simp",             hxpar_simp,              "Xpar_simp[NHits_simp]/D"         );
   fMyTree->Branch("xperp_simp",            hxperp_simp,             "Xperp_simp[NHits_simp]/D"        );
   fMyTree->Branch("time_simp",             htime_simp,              "time_simp[NHits_simp]/D"         );
+
+  //Hit parameters (from nnls fitting and matching)
+  fMyTree->Branch("nnlsParallelP",         nnlsParallelP,           "nnlsParallelP/D");
+  fMyTree->Branch("nnlsTransverseP",       nnlsTransverseP,         "nnlsTransverseP/D");
+  fMyTree->Branch("nnlsArrivalTime",       nnlsArrivalTime,         "nnlsArrivalTime/D");
+  fMyTree->Branch("nnlsAmplitude",         nnlsAmplitude,           "nnlsAmplitude/D");
+
+  //Simple Distribution Analysis
+  fMyTree->Branch("SelectedAmp0",           SelectedAmp0,             "SelectedAmp0/D");
+  fMyTree->Branch("SelectedAmp1",           SelectedAmp1,             "SelectedAmp1/D");
+  fMyTree->Branch("SelectedTime0",          SelectedTime0,            "SelectedTime0/D");
+  fMyTree->Branch("SelectedTime1",          SelectedTime1,            "SelectedTime1/D");
+  fMyTree->Branch("GMaxOn0",                GMaxOn0,                  "GMaxOn0/D");
+  fMyTree->Branch("GMaxOn1",                GMaxOn1,                  "GMaxOn1/D");
 
   //Pulse parameters
   fMyTree->Branch("Npulses_simp",            &Npulses_simp,             "Npulses_simp/I"                  );
@@ -146,6 +178,75 @@ bool LAPPDClusterTree::Execute()
   vector<unsigned int> tcounters;
   m_data->Stores["ANNIEEvent"]->Get("TimingCounters",tcounters);
   m_data->Stores["ANNIEEvent"]->Get("EventCharge",TotalCharge);
+
+
+  std::map<int,vector<vector<double>>> TML;
+  std::map<int,vector<vector<double>>> TMR;
+  m_data->Stores["ANNIEEvent"]->Get("TML",TML);
+  m_data->Stores["ANNIEEvent"]->Get("TMR",TMR);
+
+
+
+  map <int, vector<vector<double>>> :: iterator TMitr;
+  for (TMitr = TML.begin(); TMitr != TML.end(); ++TMitr){
+    int stripno = TMitr->first;
+    vector<vector<double>> vaTML = TMitr->second;
+    vector<double> aTML = vaTML.at(0);
+    StripPeak[stripno] = aTML.at(0);
+    StripPeakT[stripno] = aTML.at(1);
+    StripPeak_Sm[stripno] = aTML.at(2);
+    StripPeakT_Sm[stripno] = aTML.at(3);
+    StripQ[stripno] = aTML.at(4);
+    StripQ_Sm[stripno] = aTML.at(5);
+
+    //cout<<"Trace on Strip in ClusterTree "<<(int) stripno<<" amplitude:"<<aTML.at(0)<<" peaktime: "<<aTML.at(1)<<" charge:"<<aTML.at(4)<<" charge(smoothe peak):"<<aTML.at(5)<<endl;
+  }
+
+  for (TMitr = TMR.begin(); TMitr != TMR.end(); ++TMitr){
+    int stripno = TMitr->first;
+    vector<vector<double>> vaTML = TMitr->second;
+    vector<double> aTML = vaTML.at(0);
+
+    StripPeak[stripno+30] = aTML.at(0);
+    StripPeakT[stripno+30] = aTML.at(1);
+    StripPeak_Sm[stripno+30] = aTML.at(2);
+    StripPeakT_Sm[stripno+30] = aTML.at(3);
+    StripQ[stripno+30] = aTML.at(4);
+    StripQ_Sm[stripno+30] = aTML.at(5);
+    //cout<<"Trace on Strip in ClusterTree "<<(int) channelno<<" amplitude:"<<aTML.at(0)<<" peaktime: "<<aTML.at(1)<<" charge:"<<aTML.at(4)<<" charge(smoothe peak):"<<aTML.at(5)<<endl;
+  }
+
+
+  //nnls hits
+  std::map<unsigned long,vector<double>> NNLSLocatedHits;
+  m_data->Stores["ANNIEEvent"]->Get("NNLSLocatedHits",NNLSLocatedHits);
+  std::map <unsigned long, vector<double>> :: iterator nnlsItr;
+
+    for (nnlsItr = NNLSLocatedHits.begin(); nnlsItr != NNLSLocatedHits.end(); ++nnlsItr){
+      unsigned long i = nnlsItr->first;
+      vector<double> info = nnlsItr->second;
+
+      nnlsParallelP[i] = info[0];
+      nnlsTransverseP[i] = info[1];
+      nnlsArrivalTime[i] = info[2];
+      nnlsAmplitude[i] = info[3];
+    }
+
+    //other pulse simple analysis
+    vector<vector<double>> OtherSimp;
+    m_data->Stores["ANNIEEvent"]->Get("OtherSimpVec",OtherSimp);
+    vector<double> trigMax;
+    m_data->Stores["ANNIEEvent"]->Get("OtherSimpTrigMax",trigMax);
+
+    for(int i =0;i<OtherSimp.at(0).size();i++){
+      SelectedAmp0[i] = OtherSimp.at(0).at(i);
+      SelectedAmp1[i] = OtherSimp.at(1).at(i);
+      SelectedTime0[i] = OtherSimp.at(2).at(i);
+      SelectedTime1[i] = OtherSimp.at(3).at(i);
+    }
+    GMaxOn0[0] = trigMax.at(0);
+    GMaxOn1[0] = trigMax.at(1);
+
 
   //cout<<"Cluster Tree Yo:  "<<tcounters.at(0)<<" "<<tcounters.at(1)<<" "<<tcounters.at(2)<<" "<<tcounters.at(3)<<endl;
 

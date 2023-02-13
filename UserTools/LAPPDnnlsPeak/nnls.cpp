@@ -1,4 +1,4 @@
-// File: nnls.cc 
+// File: nnls.cc
 // Author: Suvrit Sra
 // Time-stamp: <08 March 2011 01:40:04 PM CET --  suvrit>
 // nnls solver
@@ -33,7 +33,7 @@ using namespace std;
 
 int nnls::optimize()
 {
-
+  bool ManuDisplay = false;
   out.start = clock();
 
   initialize();
@@ -43,9 +43,10 @@ int nnls::optimize()
   double step;
   double *px = x->getData();
 
+  if(ManuDisplay){
   cerr << "Iter           Obj           ||g||" << endl;
   cerr << "----------------------------------" << endl;
-
+  }
   while (!term) {
     out.iter++;
 
@@ -61,12 +62,12 @@ int nnls::optimize()
 
 
     x->scalePlusAdd(-step, g); // x = x - step*gradient
-    
+
     // project
 
     for (size_t i = 0; i < x->length(); i++)
       if (px[i] < 0) px[i] = 0.0;
- 
+
 
     computeObjGrad();
     // check the descent condition
@@ -74,11 +75,11 @@ int nnls::optimize()
       checkDescentUpdateBeta();
     }
     if (out.iter % 10 == 0)
-      showStatus();
+      if(ManuDisplay){showStatus();}
 
     //return 0;
   }
-  showStatus();
+  if(ManuDisplay){showStatus();}
   cleanUp();
   return 0;
 }
@@ -103,7 +104,7 @@ void nnls::computeObjGrad()
   ax->sub(b);        // ax = ax - b
   double d;
   d = ax->norm2();
-  double tm  = (double) (clock() - out.start) / CLOCKS_PER_SEC; 
+  double tm  = (double) (clock() - out.start) / CLOCKS_PER_SEC;
   out.obj->set(out.iter, 0.5*d*d);
   out.time->set(out.iter, tm);
   A->dot(nnlsmatrix::TRAN, ax, g);          // A'(ax)
@@ -157,7 +158,7 @@ double nnls::computeBBStep()
   // Use xdelta and gdelta to compute BB step
   double step = 0.0;
   double nr;
-  double dr;  
+  double dr;
 
   if (out.iter % 2) {
     nr = xdelta->ddot(xdelta);
@@ -168,7 +169,7 @@ double nnls::computeBBStep()
   }
 
   //fprintf(stderr, " nr / dr = %lf / %lf\n", nr, dr);
-  if (nr == 0) return 0; 
+  if (nr == 0) return 0;
   step = nr / dr;
 
   step *= beta;
@@ -187,8 +188,8 @@ void nnls::checkDescentUpdateBeta()
   for (size_t i = 0; i < g->length(); i++)
     d += grad[i]*(prx[i]-px[i]);
   d *= sigma;
-  
-  d = out.obj->get(out.iter - M) - out.obj->get(out.iter) - d; 
+
+  d = out.obj->get(out.iter - M) - out.obj->get(out.iter) - d;
 
   //fprintf(stderr, "Descent value: %g - %g - %g, beta=%f\n", out.obj->get(out.iter -M), out.obj->get(out.iter - 2), d, beta*decay);
 
@@ -253,7 +254,7 @@ int nnls::initialize()
 
   // old gradient = A'*(ax - b)
 
-  A->dot(nnlsmatrix::NOTRAN, x, ax);  
+  A->dot(nnlsmatrix::NOTRAN, x, ax);
 
   ax->sub(b);
 
