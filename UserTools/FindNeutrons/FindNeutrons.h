@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
-
+#include "Particle.h"
 
 /**
  * \class FindNeutrons
@@ -27,14 +27,21 @@ class FindNeutrons: public Tool {
   bool Finalise(); ///< Finalise function used to clean up resources.
 
   bool FindNeutronCandidates(std::string method); ///< Neutron identification
-  bool FindNeutronsByCB(); ///< Neutron identification by Charge Balance cut
-  bool FillRecoParticle(); ///< Fill reco particle object with neutron information
+  bool FindNeutronsByCB(bool strict); ///< Neutron identification by Charge Balance cut
+  bool FillRecoParticles(); ///< Fill reco particle object with neutron information
 
  private:
 
   //configuration variables
   int verbosity;
   std::string Method;
+
+  //vectors storing neutron candidate properties
+  std::vector<int> cluster_neutron;
+  std::vector<double> cluster_times_neutron;
+
+  //vector storing neutron particles
+  std::vector<Particle> vec_neutrons;
 
   //verbosity variables
   int v_error=0;

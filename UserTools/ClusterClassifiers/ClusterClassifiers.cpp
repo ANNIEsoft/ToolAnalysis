@@ -110,7 +110,7 @@ bool ClusterClassifiers::Execute(){
 
   //store indices of muon and neutron clusters to ANNIEEvent Store
   m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexPromptMuon", prompt_muon_index);
-  m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexDelayedNeutron", delayed_neutron_index);
+  //m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexDelayedNeutron", delayed_neutron_index);
 
   return true;
 }
