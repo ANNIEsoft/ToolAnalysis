@@ -42,6 +42,19 @@ bool FindNeutrons::Execute(){
   this->FillRecoParticles();
 
   //Append the reco particles to the main Particle object
+  std::vector<Particle> Particles_Temp;
+  bool get_ok = m_data->Stores["ANNIEEvent"]->Get("Particles",Particles_Temp);
+  if (get_ok){
+    Log("FindNeutrons tool: Particles object already exists in ANNIEEvent store. Append neutrons...",v_message,verbosity);
+    for (int i_neutron=0; i_neutron < vec_neutrons.size(); i_neutron++){
+      Particles_Temp.push_back(vec_neutrons.at(i_neutron));
+    }
+  } else {
+    Log("FindNeutrons tool: Particles object did not exist in ANNIEEvent store yet. Set Particles object equal to vector of neutrons",v_message,verbosity);
+    Particles_Temp = vec_neutrons;
+  }
+  m_data->Stores["ANNIEEvent"]->Set("Particles",Particles_Temp);
+
 
   return true;
 }
@@ -120,7 +133,7 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
         return_val = true;
       }
     }
-    tmp_cluster_id ++;                                                                 }
+    tmp_cluster_id ++;
   }
 
   return return_val;
@@ -140,14 +153,16 @@ bool FindNeutrons::FillRecoParticles(){
   Position neutron_vtx_start(-999,-999,-999);
   Position neutron_vtx_stop(-999,-999,-999);
   Direction neutron_start_dir(0,0,1);
-  TimeClass neutron_start_time;
-  TimeClass neutron_stop_time;
+  double neutron_start_time;
+  double neutron_stop_time;
   double neutron_tracklength = -9999;
 
   for (int i_neutron=0; i_neutron < cluster_times_neutron.size(); i_neutron++){
     double stop_time = cluster_times_neutron.at(i_neutron);
-    neutron_stop_time.Set();
-    Particle neutron(neutron_pdg,neutron_E_start,neutron_E_stop,neutron_vtx_start,neutron_vtx_stop,neutron_start_dir,neutron_start_time,neutron_stop_time,neutron_tracklength,neutron_tracktype);
+    neutron_stop_time = stop_time;
+    neutron_start_time = 0;
+
+    Particle neutron(neutron_pdg,neutron_E_start,neutron_E_stop,neutron_vtx_start,neutron_vtx_stop,neutron_start_time,neutron_stop_time,neutron_start_dir,neutron_tracklength,neutron_tracktype);
     vec_neutrons.push_back(neutron);
     return_val = true;
   }

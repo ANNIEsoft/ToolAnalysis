@@ -44,6 +44,23 @@ class SimpleReconstruction: public Tool {
   double cosTheta;
 
   //event variables
+  std::vector<double> fMRDTrackAngle;
+  std::vector<double> fMRDTrackAngleError;
+  std::vector<double> fMRDTrackLength;
+  std::vector<double> fMRDPenetrationDepth;
+  std::vector<double> fMRDEntryPointRadius;
+  std::vector<double> fMRDEnergyLoss;
+  std::vector<double> fMRDEnergyLossError;
+  std::vector<double> fMRDTrackStartX;
+  std::vector<double> fMRDTrackStartY;
+  std::vector<double> fMRDTrackStartZ;
+  std::vector<double> fMRDTrackStopX;
+  std::vector<double> fMRDTrackStopY;
+  std::vector<double> fMRDTrackStopZ;
+  std::vector<bool> fMRDStop;
+  std::vector<bool> fMRDSide;
+  std::vector<bool> fMRDThrough;
+
   std::vector<double> *eloss = nullptr;
   std::vector<double> *tracklength = nullptr;
   std::vector<double> *mrdstartx = nullptr;
