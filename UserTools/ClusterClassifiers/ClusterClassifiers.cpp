@@ -102,15 +102,12 @@ bool ClusterClassifiers::Execute(){
   m_data->Stores.at("ANNIEEvent")->Set("ClusterMaxPEs", ClusterMaxPEs);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterTotalPEs", ClusterTotalPEs);
 
-  //identify prompt muon candidate + delayed neutron candidates
+  //identify prompt muon candidate
   this->IdentifyPromptMuonCluster(ClusterTotalPEs);
-
-  //delayed neutron candidates
-  this->IdentifyDelayedNeutronClusters(ClusterChargeBalances,ClusterTotalPEs);
 
   //store indices of muon and neutron clusters to ANNIEEvent Store
   m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexPromptMuon", prompt_muon_index);
-  //m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexDelayedNeutron", delayed_neutron_index);
+  m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTotalPE", ClusterTotalPEs.at(prompt_muon_index));
 
   return true;
 }

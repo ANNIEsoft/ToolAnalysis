@@ -740,6 +740,7 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
     if (verbosity > 1) std::cout <<"max_charge: "<<max_charge<<", n_hits: "<<n_hits<<std::endl;
     if (time_diff > pmtmrd_coinc_min && time_diff < pmtmrd_coinc_max && max_charge > 200 && n_hits >= 20){
       coincidence = true;
+      m_data->Stores["ANNIEEvent"]->Set("MRDCoincidenceCluster",i_mrd);
     }
   }
 

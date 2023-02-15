@@ -23,8 +23,10 @@ bool SimpleReconstruction::Execute(){
   bool get_annie  = this->GetANNIEEventVariables();
   
   //Check which track id should be considered
- 
+  m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTotalPE",max_pe); 
 
+  int clusterid;
+  m_data->Stores["ANNIEEvent"]->Get("MRDCoincidenceCluster",clusterid);
  
   bool reco_possible = this->RecoTankExitPoint(trackid); 
 
