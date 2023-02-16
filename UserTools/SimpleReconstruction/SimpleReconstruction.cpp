@@ -23,12 +23,12 @@ bool SimpleReconstruction::Execute(){
   bool get_annie  = this->GetANNIEEventVariables();
   
   //Check which track id should be considered
-  m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTotalPE",max_pe); 
+  m_data->Stores.at("ANNIEEvent")->Get("PromptMuonTotalPE",max_pe); 
 
   int clusterid;
   m_data->Stores["ANNIEEvent"]->Get("MRDCoincidenceCluster",clusterid);
  
-  bool reco_possible = this->RecoTankExitPoint(trackid); 
+  bool reco_possible = this->RecoTankExitPoint(clusterid); 
 
   //Only proceed with reconstructed if extrapolated MRD track passes the tank
   if (reco_possible){
@@ -44,6 +44,41 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoFlag",SimpleRecoFlag);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoEnergy",SimpleRecoEnergy);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoVtx",SimpleRecoVtx);
+  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
+
+  //Fill Particles object with muon
+  if (reco_possible){
+
+    //Define muon particle
+    int muon_pdg = 13;
+    tracktype muon_tracktype = tracktype::CONTAINED;
+    double muon_E_start = SimpleRecoEnergy;
+    double muon_E_stop = 0;
+    Position muon_vtx_start = SimpleRecoVtx;
+    Position muon_vtx_stop = SimpleRecoStopVtx;
+    Position muon_dir = SimpleRecoStopVtx - SimpleRecoVtx;
+    Direction muon_start_dir = Direction(muon_dir.X(),muon_dir.Y(),muon_dir.Z());
+    double muon_start_time;
+    m_data->Stores["ANNIEEvent"]->Get("PromptMuonTime",muon_start_time);
+    double muon_tracklength = muon_dir.Mag();
+    double muon_stop_time = muon_start_time + muon_tracklength/3.E8*1.33;
+
+    Particle muon(muon_pdg,muon_E_start,muon_E_stop,muon_vtx_start,muon_vtx_stop,muon_start_time,muon_stop_time,muon_start_dir,muon_tracklength,muon_tracktype);
+    if (verbosity > 2){
+      Log("SimpleReconstruction: Added muon with the following properties as a particle:",v_message,verbosity);
+      muon.Print();
+    }
+
+    //Add muon particle to Particles collection
+    std::vector<Particle> Particles;
+    bool get_ok = m_data->Stores["ANNIEEvent"]->Get("Particles",Particles);
+    if (!get_ok){
+      Particles = {muon};
+    } else {
+      Particles.push_back(muon);
+    }
+    m_data->Stores["ANNIEEvent"]->Set("Particles",Particles);
+  }
 
   return true;
 }
@@ -63,6 +98,22 @@ void SimpleReconstruction::SetDefaultValues(){
   SimpleRecoVtx.SetX(-9999);
   SimpleRecoVtx.SetY(-9999);
   SimpleRecoVtx.SetZ(-9999);
+  SimpleRecoCosTheta = -9999;
+  SimpleRecoStopVtx.SetX(-9999);
+  SimpleRecoStopVtx.SetY(-9999);
+  SimpleRecoStopVtx.SetZ(-9999);
+
+  //Helper variables
+  mrd_eloss = -9999;
+  mrd_tracklength = -9999;
+  dist_pmtvol_tank = -9999;
+  max_pe = -9999;
+  exitx = -9999;
+  exity = -9999;
+  exitz = -9999;
+  dirx = -9999;
+  diry = -9999;
+  dirz = -9999;
 
   // Clear vectors
   fMRDTrackAngle.clear();
@@ -81,6 +132,7 @@ void SimpleReconstruction::SetDefaultValues(){
   fMRDStop.clear();
   fMRDSide.clear();
   fMRDThrough.clear();
+  fMRDTrackEventID.clear();
 
 }
 
@@ -103,7 +155,20 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
   bool IsMrdStopped;
   bool IsMrdSideExit;
   int numtracksinev;
-  XXXX theMrdTracks;
+  int TrackEventID = -1; 
+  std::vector<BoostStore>* theMrdTracks;
+
+  bool get_annie = true;
+
+  std::vector<std::vector<int>> MrdTimeClusters;
+  get_annie = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+  if (!get_annie) {
+    Log("SimpleReconstruction tool: No MrdTimeClusters object in CStore! Did you run TimeClustering beforehand?",v_warning,verbosity);
+    return false;
+  } else if (MrdTimeClusters.size()==0){
+    Log("SimpleReconstruction tool: MrdTimeClusters object is empty! Don't proceed with reconstruction...",v_warning,verbosity);
+    return false;
+  }
 
   m_data->Stores["MRDTracks"]->Get("MRDTracks",theMrdTracks);
   m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
@@ -124,11 +189,12 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
     thisTrackAsBoostStore->Get("IsMrdPenetrating",IsMrdPenetrating);        // bool
     thisTrackAsBoostStore->Get("IsMrdStopped",IsMrdStopped);                // bool
     thisTrackAsBoostStore->Get("IsMrdSideExit",IsMrdSideExit);
+    thisTrackAsBoostStore->Get("MrdSubEventID",TrackEventID);
     TrackLength = sqrt(pow((StopVertex.X()-StartVertex.X()),2)+pow(StopVertex.Y()-StartVertex.Y(),2)+pow(StopVertex.Z()-StartVertex.Z(),2)) * 100.0;
     EntryPointRadius = sqrt(pow(MrdEntryPoint.X(),2) + pow(MrdEntryPoint.Y(),2)) * 100.0; // convert to cm
     PenetrationDepth = PenetrationDepth*100.0;
 
-    MRDTrackAngle.push_back(TrackAngle);
+    fMRDTrackAngle.push_back(TrackAngle);
     fMRDTrackAngleError.push_back(TrackAngleError);
     fMRDTrackLength.push_back(TrackLength);
     fMRDPenetrationDepth.push_back(PenetrationDepth);
@@ -144,16 +210,26 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
     fMRDStop.push_back(IsMrdStopped);
     fMRDSide.push_back(IsMrdSideExit);
     fMRDThrough.push_back(IsMrdPenetrating);
+    fMRDTrackEventID.push_back(TrackEventID);
     NumClusterTracks+=1;
   }
 
-  return reco_tank_exit;
+  return true;
 
 }
 
-bool SimpleReconstruction::RecoTankExitPoint(int trackid){
+bool SimpleReconstruction::RecoTankExitPoint(int clusterid){
 
-  bool tank_exit = false;
+  bool tank_exit = true;
+
+  int trackid = -1;
+  for (int i = 0; i < (int) fMRDTrackEventID.size(); i++){
+    if (fMRDTrackEventID.at(i) == clusterid) {
+      Log("SimpleReconstruction:RecoTankExitPoint: Found corresponding track id >>> "+std::to_string(i)+"<<< for cluster id "+std::to_string(clusterid)+"! Proceeding with extracting MRD track information...",v_message,verbosity);
+      trackid = i;
+    }
+  }
+  if (trackid == -1) return false;
 
   //Check if track exited from the tank
   double startx = fMRDTrackStartX.at(trackid);
@@ -186,7 +262,7 @@ bool SimpleReconstruction::RecoTankExitPoint(int trackid){
   dirx = diffx/(sqrt(diffx*diffx+diffy*diffy+diffz*diffz));
   diry = diffy/(sqrt(diffx*diffx+diffy*diffy+diffz*diffz));
   dirz = diffz/(sqrt(diffx*diffx+diffy*diffy+diffz*diffz));
-  cosTheta = dirz;
+  SimpleRecoCosTheta = dirz;
 
   //Calculate different distances
   //dist_mrd: distance traveled in MRD
@@ -216,11 +292,24 @@ bool SimpleReconstruction::RecoTankExitPoint(int trackid){
   double diff_exit_y = exityp - exity;
   double diff_exit_z = exitzp - exitz;
 
+  //Cannot proceed with reconstruction for tracks which do not have a stopping track in the MRD -> set flag to false
+  if (fMRDStop.at(trackid) == false){
+    tank_exit = false;
+    Log("SimpleReconstruction: Event does not have a stopping track in the MRD! Abort reconstruction",v_message,verbosity);
+  }
+
   mrd_eloss = fMRDEnergyLoss.at(trackid);
   mrd_tracklength = fMRDTrackLength.at(trackid);
-  max_pe = ;
-  dist_pmtvol_tank = ;
+  dist_pmtvol_tank = sqrt(pow(diff_exit_x,2)+pow(diff_exit_y,2)+pow(diff_exit_z,2));
  
+  if (tank_exit == true){
+    Log("SimpleReconstruction: Proceeding with reconstruction for event with stopping muon track in MRD. Eloss (MRD) = "+std::to_string(mrd_eloss)+" MeV, d (MRD) = "+std::to_string(mrd_tracklength)+" m, d (PMTVol - Tank) = "+std::to_string(dist_pmtvol_tank),v_message,verbosity);
+
+    SimpleRecoStopVtx.SetX(stopx);
+    SimpleRecoStopVtx.SetY(stopy);
+    SimpleRecoStopVtx.SetZ(stopz);
+  }
+
   return tank_exit;
 }
 

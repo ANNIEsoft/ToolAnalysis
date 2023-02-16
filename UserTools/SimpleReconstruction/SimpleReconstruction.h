@@ -30,7 +30,7 @@ class SimpleReconstruction: public Tool {
   bool SimpleEnergyReconstruction(); ///< Simple energy reconstruction for muon energy
   bool SimpleVertexReconstruction(); ///< Simple vertex reconstruction for neutrino interaction vertex
   bool GetANNIEEventVariables(); ////< get relevant variables from ANNIEEvent store
-  bool RecoTankExitPoint(); ////< Reconstruct the tank exit point of the muon
+  bool RecoTankExitPoint(int clusterid); ////< Reconstruct the tank exit point of the muon
 
  private:
 
@@ -41,7 +41,8 @@ class SimpleReconstruction: public Tool {
   int SimpleRecoFlag;
   double SimpleRecoEnergy;
   Position SimpleRecoVtx;
-  double cosTheta;
+  Position SimpleRecoStopVtx;
+  double SimpleRecoCosTheta;
 
   //event variables
   std::vector<double> fMRDTrackAngle;
@@ -60,18 +61,12 @@ class SimpleReconstruction: public Tool {
   std::vector<bool> fMRDStop;
   std::vector<bool> fMRDSide;
   std::vector<bool> fMRDThrough;
+  std::vector<int> fMRDTrackEventID;
 
-  std::vector<double> *eloss = nullptr;
-  std::vector<double> *tracklength = nullptr;
-  std::vector<double> *mrdstartx = nullptr;
-  std::vector<double> *mrdstarty = nullptr;
-  std::vector<double> *mrdstartz = nullptr;
-  std::vector<double> *mrdstopx = nullptr;
-  std::vector<double> *mrdstopy = nullptr;
-  std::vector<double> *mrdstopz = nullptr;
   double dist_pmtvol_tank;
   double mrd_eloss;
   double max_pe;
+  double mrd_tracklength;
   double exitx;
   double exity;
   double exitz;

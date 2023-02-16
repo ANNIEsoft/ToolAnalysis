@@ -164,6 +164,12 @@ bool FindNeutrons::FillRecoParticles(){
 
     Particle neutron(neutron_pdg,neutron_E_start,neutron_E_stop,neutron_vtx_start,neutron_vtx_stop,neutron_start_time,neutron_stop_time,neutron_start_dir,neutron_tracklength,neutron_tracktype);
     vec_neutrons.push_back(neutron);
+
+    if (verbosity > 2){
+      Log("FindNeutrons: Added neutron with the following properties as a particle:",v_message,verbosity);
+      neutron.Print();
+    }
+
     return_val = true;
   }
 
