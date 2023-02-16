@@ -87,7 +87,6 @@ class RingCounting(Tool, RingCountingGlobals):
         self.m_variables.Get("model_path", self.model_path)
         self.m_variables.Get("pmt_mask", self.pmt_mask)
         self.pmt_mask = self.PMT_MASKS[self.pmt_mask]
-        self._initialise_from_config()
 
         # ----------------------------------------------------------------------------------------------------
         # Loading data
