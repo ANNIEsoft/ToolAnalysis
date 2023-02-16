@@ -40,6 +40,8 @@
 ########################################################################################################################
 from Tool import *
 
+import os
+
 import numpy as np
 import tensorflow as tf
 
@@ -61,7 +63,7 @@ class RingCountingGlobals:
 class RingCounting(Tool, RingCountingGlobals):
     # ----------------------------------------------------------------------------------------------------
     # Data stuff
-    cnn_image_pmt: np.array = None  # To be loaded with PMT data
+    cnn_image_pmt = None  # To be loaded with PMT data
 
     # ----------------------------------------------------------------------------------------------------
     # Config stuff
@@ -104,8 +106,12 @@ class RingCounting(Tool, RingCountingGlobals):
         Todo: Docstr.
         """
         self.cnn_image_pmt = np.array([])
-        with open(self.files_to_load) as file:
+        with open(str(self.files_to_load), "r") as file:
             for data_path in file:
+                data_path = data_path.strip(" \n")
+                if data_path[0] == "#":
+                    continue
+
                 arr = np.loadtxt(data_path, delimiter=",")
                 if arr.shape == (160,):
                     # Explicitly adding the extra dimension using np.array([]) is done to ensure the data is
@@ -125,8 +131,8 @@ class RingCounting(Tool, RingCountingGlobals):
         """
         TODO: Docstr.
         """
-        for i in range(len(self.cnn_image_pmt)):
-            self.cnn_image_pmt[i] = np.put(self.cnn_image_pmt, self.pmt_mask, 0, mode='raise')
+        for event in self.cnn_image_pmt:
+            np.put(event, self.pmt_mask, 0, mode='raise')
 
         pass
 
@@ -136,6 +142,9 @@ class RingCounting(Tool, RingCountingGlobals):
     def Execute(self):
         self.m_log.Log(__file__ + " Executing", self.v_debug, self.m_verbosity)
         self.predict()
+        print(self.predicted)
+        print("predicting zero arr")
+        print(self.model.predict(np.zeros((1, 10, 16, 1))))
         return 1
 
     def Finalise(self):
@@ -151,7 +160,9 @@ class RingCounting(Tool, RingCountingGlobals):
         The following variables - to be set in the config file - will modify the behaviour of this method:
         - NONE -
         """
-        self.predicted = self.model.predict(self.cnn_image_pmt)
+        print("Predicting...")
+        print(self.cnn_image_pmt)
+        self.predicted = self.model.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1)))
 
 
 ###################
