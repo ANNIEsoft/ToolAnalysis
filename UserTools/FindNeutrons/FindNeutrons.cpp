@@ -50,7 +50,7 @@ bool FindNeutrons::Execute(){
       Particles_Temp.push_back(vec_neutrons.at(i_neutron));
     }
   } else {
-    Log("FindNeutrons tool: Particles object did not exist in ANNIEEvent store yet. Set Particles object equal to vector of neutrons",v_message,verbosity);
+    Log("FindNeutrons tool: Particles object did not exist in ANNIEEvent store yet. Set Particles object equal to vector of neutrons",vv_debug,verbosity);
     Particles_Temp = vec_neutrons;
   }
   m_data->Stores["ANNIEEvent"]->Set("Particles",Particles_Temp);

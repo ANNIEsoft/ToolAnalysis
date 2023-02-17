@@ -106,12 +106,14 @@ bool ClusterClassifiers::Execute(){
   m_data->Stores.at("ANNIEEvent")->Set("ClusterTotalPEs", ClusterTotalPEs);
 
   //identify prompt muon candidate
-  this->IdentifyPromptMuonCluster(ClusterTotalPEs);
+  bool found_prompt_muon = this->IdentifyPromptMuonCluster(ClusterTotalPEs);
 
   //store indices of muon and neutron clusters to ANNIEEvent Store
   m_data->Stores.at("ANNIEEvent")->Set("ClusterIndexPromptMuon", prompt_muon_index);
-  m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTotalPE", ClusterTotalPEs.at(ClusterTimes.at(prompt_muon_index)));
-  m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTime", ClusterTimes.at(prompt_muon_index));
+  if (found_prompt_muon){
+    m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTotalPE", ClusterTotalPEs.at(ClusterTimes.at(prompt_muon_index)));
+    m_data->Stores.at("ANNIEEvent")->Set("PromptMuonTime", ClusterTimes.at(prompt_muon_index));
+  }
 
   return true;
 }

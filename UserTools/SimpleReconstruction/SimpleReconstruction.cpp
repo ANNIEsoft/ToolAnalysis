@@ -8,7 +8,7 @@ bool SimpleReconstruction::Initialise(std::string configfile, DataModel &data){
   if(configfile!="") m_variables.Initialise(configfile); // loading config file
   m_data= &data; //assigning transient data pointer
 
-  m_data->vars.Get("verbosity",verbosity);
+  m_variables.Get("verbosity",verbosity);
 
   return true;
 }
@@ -25,7 +25,7 @@ bool SimpleReconstruction::Execute(){
   //Check which track id should be considered
   m_data->Stores.at("ANNIEEvent")->Get("PromptMuonTotalPE",max_pe); 
 
-  int clusterid;
+  int clusterid = -1;
   m_data->Stores["ANNIEEvent"]->Get("MRDCoincidenceCluster",clusterid);
  
   bool reco_possible = this->RecoTankExitPoint(clusterid); 
@@ -45,6 +45,7 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoEnergy",SimpleRecoEnergy);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoVtx",SimpleRecoVtx);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
+  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
 
   //Fill Particles object with muon
   if (reco_possible){
@@ -166,7 +167,7 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
     Log("SimpleReconstruction tool: No MrdTimeClusters object in CStore! Did you run TimeClustering beforehand?",v_warning,verbosity);
     return false;
   } else if (MrdTimeClusters.size()==0){
-    Log("SimpleReconstruction tool: MrdTimeClusters object is empty! Don't proceed with reconstruction...",v_warning,verbosity);
+    Log("SimpleReconstruction tool: MrdTimeClusters object is empty! Don't proceed with reconstruction...",vv_debug,verbosity);
     return false;
   }
 
@@ -229,7 +230,10 @@ bool SimpleReconstruction::RecoTankExitPoint(int clusterid){
       trackid = i;
     }
   }
-  if (trackid == -1) return false;
+  if (trackid == -1) {
+    Log("SimpleReconstruction tool: Did not find corresponding track id for MRD clusterid >>>"+std::to_string(clusterid)+"<<< Abort reconstruction...",vv_debug,verbosity);
+    return false;
+  }
 
   //Check if track exited from the tank
   double startx = fMRDTrackStartX.at(trackid);
@@ -256,9 +260,9 @@ bool SimpleReconstruction::RecoTankExitPoint(int clusterid){
   else t = (t1 < t2)? t1 : t2;
 
   //Calculate exit point
-  double exitx = startx - t*diffx;
-  double exity = starty - t*diffy;
-  double exitz = startz - t*diffz;
+  exitx = startx - t*diffx;
+  exity = starty - t*diffy;
+  exitz = startz - t*diffz;
   dirx = diffx/(sqrt(diffx*diffx+diffy*diffy+diffz*diffz));
   diry = diffy/(sqrt(diffx*diffx+diffy*diffy+diffz*diffz));
   dirz = diffz/(sqrt(diffx*diffx+diffy*diffy+diffz*diffz));
@@ -299,7 +303,7 @@ bool SimpleReconstruction::RecoTankExitPoint(int clusterid){
   }
 
   mrd_eloss = fMRDEnergyLoss.at(trackid);
-  mrd_tracklength = fMRDTrackLength.at(trackid);
+  mrd_tracklength = fMRDTrackLength.at(trackid)/100;
   dist_pmtvol_tank = sqrt(pow(diff_exit_x,2)+pow(diff_exit_y,2)+pow(diff_exit_z,2));
  
   if (tank_exit == true){
