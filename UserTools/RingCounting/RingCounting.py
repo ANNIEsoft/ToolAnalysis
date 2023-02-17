@@ -99,10 +99,12 @@ class RingCounting(Tool, RingCountingGlobals):
         # ----------------------------------------------------------------------------------------------------
         # Config area
         self.m_variables.Get("files_to_load", self.files_to_load)
+        self.files_to_load = str(self.files_to_load)
         self.m_variables.Get("version", self.version)
         self.m_variables.Get("model_path", self.model_path)
         self.m_variables.Get("pmt_mask", self.pmt_mask)
         self.m_variables.Get("save_to", self.save_to)
+        self.save_to = str(self.save_to)
         self.pmt_mask = self.PMT_MASKS[self.pmt_mask]
 
         # ----------------------------------------------------------------------------------------------------
@@ -128,6 +130,8 @@ class RingCounting(Tool, RingCountingGlobals):
         Handles empty files by skipping and logging a warning.
         """
         self.cnn_image_pmt = np.array([])
+        # Removes trailing and leading whitespace and "\n"
+        self.files_to_load = self.files_to_load.strip(" \n")
         with open(self.files_to_load, "r") as file:
             for data_path in file:
                 # Removes trailing and leading whitespace and "\n"
