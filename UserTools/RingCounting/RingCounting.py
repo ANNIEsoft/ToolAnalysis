@@ -75,8 +75,8 @@ class RingCounting(Tool, RingCountingGlobals):
     files_to_load = std.string()  # List of files to be loaded (must be in CNNImage format)
     version = std.string()  # Model version
     model_path = std.string()  # Path to model directory
-    pmt_mask = std.string() # See RingCountingGlobals
-    save_to = std.string() # Where to save the predictions to
+    pmt_mask = std.string()  # See RingCountingGlobals
+    save_to = std.string()  # Where to save the predictions to
 
     # ----------------------------------------------------------------------------------------------------
     # Model stuff
@@ -99,12 +99,12 @@ class RingCounting(Tool, RingCountingGlobals):
         # ----------------------------------------------------------------------------------------------------
         # Config area
         self.m_variables.Get("files_to_load", self.files_to_load)
-        self.files_to_load = str(self.files_to_load)
+        self.files_to_load = str(self.files_to_load)  # cast to str since std.string =/= str
         self.m_variables.Get("version", self.version)
         self.m_variables.Get("model_path", self.model_path)
         self.m_variables.Get("pmt_mask", self.pmt_mask)
         self.m_variables.Get("save_to", self.save_to)
-        self.save_to = str(self.save_to)
+        self.save_to = str(self.save_to)  # cast to str since std.string =/= str
         self.pmt_mask = self.PMT_MASKS[self.pmt_mask]
 
         # ----------------------------------------------------------------------------------------------------
@@ -149,10 +149,15 @@ class RingCounting(Tool, RingCountingGlobals):
 
                 if len(self.cnn_image_pmt) > 0:
                     self.cnn_image_pmt = np.concatenate([arr, self.cnn_image_pmt], axis=0)
+                    self.m_log.Log(__file__ + f" Successfully loaded CNNImage file {data_path} with {len(arr)} events.",
+                                   self.v_debug, self.m_verbosity)
                 elif len(arr) > 0:
+                    self.m_log.Log(__file__ + f" Successfully loaded CNNImage file {data_path} with {len(arr)} events.",
+                                   self.v_debug, self.m_verbosity)
                     self.cnn_image_pmt = arr
                 else:
-                    self.m_log.Log("WARNING: " + __file__ + f" Attempted to load an empty PMT-datafile (CNNImage). ({data_path})",
+                    self.m_log.Log("WARNING: " + __file__ + f" Attempted to load an empty PMT-datafile (CNNImage). "
+                                                            f"({data_path})",
                                    self.v_debug, self.m_verbosity)
 
     def save_data(self):
