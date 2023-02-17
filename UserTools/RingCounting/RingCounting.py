@@ -30,23 +30,28 @@
 #     4. Which PMT mask to use (some PMTs have been turned off in the training); check documentation for which model
 #        requires what mask.
 #       -> defined by setting [[pmt_mask]]
+#     5. Where to save the predictions.
+#       -> defined by setting [[save_to]]
 #   An example config file can also be found in in the RingCountingStore/documentation/ folders mentioned below.
 #
 # Documentation on the tool, model versions and performance can be found in (anniegpvm-machine):
-#     /pnfs/annie/persistent/users/dschmid/RingCountingStore/documentation/
+#     /pnfs/annie/persistent/users/dschmid/RingCountingStore/documentation/ **TODO**
 # All models are located in (anniegpvm-machine):
 #     /pnfs/annie/persistent/users/dschmid/RingCountingStore/models/
 #
 ########################################################################################################################
 from Tool import *
 
-import os
-
 import numpy as np
 import tensorflow as tf
 
 
 class RingCountingGlobals:
+    # The reason to mask some PMTs to 0 is to disable PMTs that differ in the MC and experimental datasets.
+    #   If a model has been trained with a specific mask toggled on, it is crucial that when evaluating experimental
+    #   data with this model, that the same specific mask is also toggled on. This is due to the model not having
+    #   encountered these PMTs being enabled during training, and thus probably producing worse predictions with
+    #   the un-encountered PMTs enabled when predicting.
     PMT_MASKS = {
         "none": [],
         # From per-PMT p.e. distribution histograms -> which PMTs have different MC / data curves
@@ -70,7 +75,8 @@ class RingCounting(Tool, RingCountingGlobals):
     files_to_load = std.string()  # List of files to be loaded (must be in CNNImage format)
     version = std.string()  # Model version
     model_path = std.string()  # Path to model directory
-    pmt_mask = std.string()
+    pmt_mask = std.string() # See RingCountingGlobals
+    save_to = std.string() # Where to save the predictions to
 
     # ----------------------------------------------------------------------------------------------------
     # Model stuff
@@ -78,6 +84,14 @@ class RingCounting(Tool, RingCountingGlobals):
     predicted = None
 
     def Initialise(self):
+        """ Initialise RingCounting tool object in following these steps:
+        1. Load necessary config
+        2. Load data
+          2.1 Modify data
+        3. Load model
+
+        For specific details, see compartmentalised function docstrings.
+        """
         # ----------------------------------------------------------------------------------------------------
         # Debug area
         self.m_log.Log(__file__ + " Initialising", self.v_debug, self.m_verbosity)
@@ -88,6 +102,7 @@ class RingCounting(Tool, RingCountingGlobals):
         self.m_variables.Get("version", self.version)
         self.m_variables.Get("model_path", self.model_path)
         self.m_variables.Get("pmt_mask", self.pmt_mask)
+        self.m_variables.Get("save_to", self.save_to)
         self.pmt_mask = self.PMT_MASKS[self.pmt_mask]
 
         # ----------------------------------------------------------------------------------------------------
@@ -102,13 +117,22 @@ class RingCounting(Tool, RingCountingGlobals):
         return 1
 
     def load_data(self):
-        """
-        Todo: Docstr.
+        """ Load data in the CNNImage format.
+
+        The files to load are specified in a txt file which filepath is defined in the RingCountingConfig file under
+        [[files_to_load]]. The CNNImage format is defined in the CNNImage tool. In short, a 160-entry list of numbers
+        (cast-able to numpy float-types) in comma separated format, where events are separated by newlines, is expected.
+
+        Uncommenting a filepath in the [[files_to_load]] file is supported by placing "#" as the first character.
+
+        Handles empty files by skipping and logging a warning.
         """
         self.cnn_image_pmt = np.array([])
-        with open(str(self.files_to_load), "r") as file:
+        with open(self.files_to_load, "r") as file:
             for data_path in file:
+                # Removes trailing and leading whitespace and "\n"
                 data_path = data_path.strip(" \n")
+                # Supports commenting out a file
                 if data_path[0] == "#":
                     continue
 
@@ -124,45 +148,46 @@ class RingCounting(Tool, RingCountingGlobals):
                 elif len(arr) > 0:
                     self.cnn_image_pmt = arr
                 else:
-                    self.m_log.Log(__file__ + f" Attempted to load an empty PMT-datafile (CNNImage). ({data_path})",
+                    self.m_log.Log("WARNING: " + __file__ + f" Attempted to load an empty PMT-datafile (CNNImage). ({data_path})",
                                    self.v_debug, self.m_verbosity)
 
+    def save_data(self):
+        """ Save the data to the specified [[save_to]]-file. """
+        np.savetxt(self.save_to, self.predicted, delimiter=",")
+
     def mask_pmts(self):
-        """
-        TODO: Docstr.
+        """ Mask PMTs to 0. The PMTs to be masked is given as a list of indices, defined by setting [[pmt_mask]].
+        For further details check the RingCountingGlobals class.
         """
         for event in self.cnn_image_pmt:
             np.put(event, self.pmt_mask, 0, mode='raise')
 
-        pass
-
     def load_model(self):
+        """ Load the specified model [[version]]."""
         self.model = tf.keras.models.load_model(self.model_path + f"RC_model_v{self.version}.model")
-
-    def Execute(self):
-        self.m_log.Log(__file__ + " Executing", self.v_debug, self.m_verbosity)
-        self.predict()
-        print(self.predicted)
-        print("predicting zero arr")
-        print(self.model.predict(np.zeros((1, 10, 16, 1))))
-        return 1
-
-    def Finalise(self):
-        self.m_log.Log(__file__ + " Finalising", self.v_debug, self.m_verbosity)
-        return 1
 
     def predict(self):
         """
-        Classify events in single- and multi-ring events using a keras model. PMT data is supplied as an ordered list
-        of arrays, saved in the path specified in the config file. Return a list of 2-dimensional predictions
-        (same order as input). When used for RC, predictions are given as [MR prediction, SR prediction].
-        ----------------------------------------------------------------------------------------------------------------
-        The following variables - to be set in the config file - will modify the behaviour of this method:
-        - NONE -
+        Classify events in single- and multi-ring events using a keras model. Save a list of 2-dimensional predictions
+        (same order as input) to self.predicted. Predictions are given as [MR prediction, SR prediction].
         """
         print("Predicting...")
         print(self.cnn_image_pmt)
         self.predicted = self.model.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1)))
+
+    def Execute(self):
+        """ Execute the tool by generating model predictions on the supplied data. """
+        self.m_log.Log(__file__ + " Executing", self.v_debug, self.m_verbosity)
+        self.predict()
+
+        return 1
+
+    def Finalise(self):
+        """ Finalise the tool by saving the predictions. """
+        self.m_log.Log(__file__ + " Finalising", self.v_debug, self.m_verbosity)
+        self.save_data()
+
+        return 1
 
 
 ###################
