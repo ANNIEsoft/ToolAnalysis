@@ -1545,7 +1545,7 @@ void MonitorLAPPDData::DrawStatus_PsecData() {
 
 	std::stringstream ss_text_psec_latched;
 	ss_text_psec_latched << "Events Locked External Clock: " << totalLatchedCount << " (" << current_time.str() << ")";
-	text_latched_count->SetText(0.06,0.4,ss_text_psec_latched.str().c_str());
+	text_latched_count->SetText(0.06,0.3,ss_text_psec_latched.str().c_str());
 	text_latched_count->SetTextColor(1);
 
 	text_data_title->SetTextSize(0.05);

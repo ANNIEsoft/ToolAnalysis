@@ -24,6 +24,8 @@ bool PsecData::Send(zmq::socket_t* sock)
 	int S_errorcodes = errorcodes.size();
 	int S_BoardIndex = BoardIndex.size();
 
+	std::cout<<"S1"<<std::endl;
+	
 	zmq::message_t msgV(sizeof VersionNumber);
 	std::memcpy(msgV.data(), &VersionNumber, sizeof VersionNumber);
 
@@ -55,19 +57,31 @@ bool PsecData::Send(zmq::socket_t* sock)
 
 	zmq::message_t msgF(sizeof FailedReadCounter);
 	std::memcpy(msgF.data(), &FailedReadCounter, sizeof FailedReadCounter);
-
+	std::cout<<"S2"<<std::endl;
 	sock->send(msgV,ZMQ_SNDMORE);
+	std::cout<<"S3"<<std::endl;
 	sock->send(msgID,ZMQ_SNDMORE);
+	std::cout<<"S4"<<std::endl;
 	sock->send(msgTime,ZMQ_SNDMORE);
+	std::cout<<"S5"<<std::endl;
 	sock->send(msgSB,ZMQ_SNDMORE);
+	std::cout<<"S6"<<std::endl;
 	if(S_BoardIndex>0){sock->send(msgB,ZMQ_SNDMORE);}
+	std::cout<<"S7"<<std::endl;
 	sock->send(msgSA,ZMQ_SNDMORE);
+	std::cout<<"S8"<<std::endl;
 	if(S_AccInfoFrame>0){sock->send(msgA,ZMQ_SNDMORE);}
+	std::cout<<"S9"<<std::endl;
 	sock->send(msgSW,ZMQ_SNDMORE);
+	std::cout<<"S10"<<std::endl;
 	if(S_RawWaveform>0){sock->send(msgW,ZMQ_SNDMORE);}
+	std::cout<<"S11"<<std::endl;
 	sock->send(msgSE,ZMQ_SNDMORE);
+	std::cout<<"S12"<<std::endl;
 	if(S_errorcodes>0){sock->send(msgE,ZMQ_SNDMORE);}
+	std::cout<<"S13"<<std::endl;
 	sock->send(msgF);
+	std::cout<<"S14"<<std::endl;
 
 	return true;
 }
@@ -81,10 +95,11 @@ bool PsecData::Receive(zmq::socket_t* sock)
 	sock->recv(&msg);
 	unsigned int tempVersionNumber;
 	tempVersionNumber=*(reinterpret_cast<unsigned int*>(msg.data())); 
-	if(tempVersionNumber != VersionNumber)
+	/*if(tempVersionNumber != VersionNumber)
 	{
 		return false;
 	}
+	*/
 
 	//ID
 	sock->recv(&msg);
@@ -143,6 +158,114 @@ bool PsecData::Receive(zmq::socket_t* sock)
 	FailedReadCounter=*(reinterpret_cast<int*>(msg.data()));
 
 	return true;
+}
+
+bool PsecData::Receive(std::queue<zmq::message_t> &message_queue)
+{
+  //printf("w1 size=%d\n",message_queue.size());
+  if(message_queue.size() <8){
+    //printf("w1\n");
+    return false;
+  }
+  
+  int tmp_size=0;
+  
+  unsigned int tempVersionNumber;
+  tempVersionNumber=*(reinterpret_cast<unsigned int*>(message_queue.front().data())); 
+  message_queue.pop();
+  //  if(tempVersionNumber != VersionNumber) return false;
+  //printf("tempVersionNumber=%d\n",tempVersionNumber);  
+  
+  //ID
+  LAPPD_ID=*(reinterpret_cast<unsigned int*>(message_queue.front().data())); 
+  message_queue.pop();         
+  
+  //printf("LAPPD_ID=%d\n",LAPPD_ID);
+
+  //Timestamp
+  std::stringstream iss(static_cast<char*>(message_queue.front().data()));
+  iss >> Timestamp;   
+  message_queue.pop();
+  
+  //printf("Timestamp=%s\n",Timestamp.c_str());
+
+  //Boards
+  tmp_size=0;
+  tmp_size=*(reinterpret_cast<int*>(message_queue.front().data()));
+  message_queue.pop();   
+
+  //printf("tmp_size=%d\n",tmp_size);
+  //printf("w2 size=%d\n",message_queue.size());  
+
+  if(tmp_size>0 &&  message_queue.size()>=5){
+    BoardIndex.resize(message_queue.front().size()/sizeof(int));
+    std::memcpy(&BoardIndex[0], message_queue.front().data(), message_queue.front().size());
+    message_queue.pop();
+  }
+  else if(tmp_size!=0){
+    //printf("w2\n");
+    return false;
+  }
+
+  //ACC
+  tmp_size=0;
+  tmp_size=*(reinterpret_cast<int*>(message_queue.front().data()));
+  message_queue.pop();
+
+  //printf("tmp_size=%d\n",tmp_size);
+  //printf("w3 size=%d\n",message_queue.size());
+
+  if(tmp_size>0 &&  message_queue.size()>=4){
+    AccInfoFrame.resize(message_queue.front().size()/sizeof(unsigned short));
+    std::memcpy(&AccInfoFrame[0], message_queue.front().data(), message_queue.front().size());
+    message_queue.pop();	
+  }
+  else if(tmp_size!=0){
+    //printf("w3\n");
+    return false;
+  }
+
+  //Waveforms
+  tmp_size=0;
+  tmp_size=*(reinterpret_cast<int*>(message_queue.front().data()));
+  message_queue.pop();
+
+  //printf("tmp_size=%d\n",tmp_size);  
+  //printf("w4 size=%d\n",message_queue.size());
+
+  if(tmp_size>0  &&  message_queue.size()>=3){
+    RawWaveform.resize(message_queue.front().size()/sizeof(unsigned short));
+    std::memcpy(&RawWaveform[0], message_queue.front().data(), message_queue.front().size());
+    message_queue.pop();
+  }
+  else if(tmp_size!=0){
+    //printf("w4\n");
+    return false;
+  }
+
+  //Errors
+  tmp_size=0;
+  tmp_size=*(reinterpret_cast<int*>(message_queue.front().data()));
+  message_queue.pop();
+  
+  //printf("tmp_size=%d\n",tmp_size);
+  //printf("w5 size=%d\n",message_queue.size());
+
+  if(tmp_size>0  &&  message_queue.size()>=2){
+    errorcodes.resize(message_queue.front().size()/sizeof(unsigned int));
+    std::memcpy(&errorcodes[0], message_queue.front().data(), message_queue.front().size());
+    message_queue.pop();
+  }
+  else if(tmp_size!=0) {
+    //printf("w5\n");
+    return false;
+  }
+
+  FailedReadCounter=*(reinterpret_cast<int*>(message_queue.front().data()));
+  message_queue.pop();    
+  //printf("FailedReadCounter=%d\n",FailedReadCounter);  
+
+  return true;
 }
 
 

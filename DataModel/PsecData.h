@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <queue>
 
 using namespace std;
 
@@ -23,6 +24,7 @@ class PsecData{
 
     bool Send(zmq::socket_t* sock);
     bool Receive(zmq::socket_t* sock);
+    bool Receive(std::queue<zmq::message_t> &message_queue);
 
     //General data
     unsigned int VersionNumber;

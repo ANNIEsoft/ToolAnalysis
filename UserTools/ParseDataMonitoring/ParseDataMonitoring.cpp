@@ -110,21 +110,45 @@ bool ParseDataMonitoring::Execute()
  
 	unsigned int ACC_ID = 0;
 	//unsigned int ACC_ID = i_entry %3; //for tests of the multi-LAPPD capability;
-	std::vector<int> LAPPDtoBoard1{0,1};
-	std::vector<int> LAPPDtoBoard2{2,3};
 	std::map<int,int> map_local_boardid;
-	map_local_boardid.emplace(LAPPDtoBoard1[0],0);
-	map_local_boardid.emplace(LAPPDtoBoard1[1],1);
-	map_local_boardid.emplace(LAPPDtoBoard2[0],2);
-	map_local_boardid.emplace(LAPPDtoBoard2[1],3);
+
+	std::vector<int> LAPPDtoBoard{0,1};
+	LAPPDtoBoard = PDATA.BoardIndex;
 
 	//Enable the following section in order to get ACC_ID and LAPPDtoBoard1 & LAPPDtoBoard2 once those changes go live
 	//this will enable multi-LAPPD support
 	//
+
+	unsigned int LAPPD_ID = PDATA.LAPPD_ID;
+	if (LAPPD_ID == 0) ACC_ID = 0;
+	else if (LAPPD_ID == 1 || LAPPD_ID == 2) ACC_ID = 1;
+	else if (LAPPD_ID == 3 || LAPPD_ID == 4) ACC_ID = 2;
+
+	if (LAPPD_ID == 0 || LAPPD_ID == 1 || LAPPD_ID == 3){
+		map_local_boardid[LAPPDtoBoard[0]] = 0;
+		map_local_boardid[LAPPDtoBoard[1]] = 1;
+	}
+	else if (LAPPD_ID == 2 || LAPPD_ID == 4){
+		map_local_boardid[LAPPDtoBoard[0]] = 2;
+		map_local_boardid[LAPPDtoBoard[1]] = 3;
+	} else {
+		Log("ParseDataMonitoring tool: Did encounter LAPPD_ID >>> "+std::to_string(LAPPD_ID)+"<<< which does not exist",v_error,verbosity);
+		//Set map just to avoid crashes in the online version
+		map_local_boardid[LAPPDtoBoard[0]] = 0;
+		map_local_boardid[LAPPDtoBoard[1]] = 1;
+	}
+
+	//Old PsecData class - keep just in case it changes again
 	/*
  * 	ACC_ID = PDATA.ACC_ID;
+	std::vector<int> LAPPDtoBoard1{0,1};
+	std::vector<int> LAPPDtoBoard2{2,3};
  * 	LAPPDtoBoard1 = PDATA.LAPPDtoBoard1;
  * 	LAPPDtoBoard2 = PData.LAPPDtoBoard2;
+	map_local_boardid.emplace(LAPPDtoBoard1[0],0);
+	map_local_boardid.emplace(LAPPDtoBoard1[1],1);
+	map_local_boardid.emplace(LAPPDtoBoard2[0],2);
+	map_local_boardid.emplace(LAPPDtoBoard2[1],3);
  * 	*/   
 
 	if (Raw_Buffer.size() == 0) {
