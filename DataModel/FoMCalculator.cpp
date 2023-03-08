@@ -96,6 +96,9 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   double digitCharge = 0.0;
   double coneCharge = 0.0;
   double allCharge = 0.0;
+  double outerCone = -99.9;
+  int outhits = 0;
+  int inhits = 0;
 
   double fom = -9999.;
 
@@ -106,17 +109,26 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
 
       if( deltaAngle<=0.0 ){
         coneCharge += digitCharge*( 0.75 + 0.25/( 1.0 + (deltaAngle*deltaAngle)/(coneEdgeLow*coneEdgeLow) ) );
+	inhits++;	
+        //if (deltaAngle > outerCone) outerCone = deltaAngle;
       }
       else{
         coneCharge += digitCharge*( 0.00 + 1.00/( 1.0 + (deltaAngle*deltaAngle)/(coneEdgeHigh*coneEdgeHigh) ) );
+	outhits++;
+        //outerCone = 0;
       }
 
       allCharge += digitCharge;
+      outerCone = -outhits/inhits;
     }
   }
 
   if( allCharge>0.0 ){
-    fom = fBaseFOM*coneCharge/allCharge;
+    if( outerCone>-42 ){
+      fom = fBaseFOM*coneCharge/allCharge/*exp(outerCone)*/;
+    }else{
+      fom = fBaseFOM*coneCharge/allCharge;
+    }
   }
 
   // return figure of merit
@@ -335,6 +347,8 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
   return;
 }
 
+
+
 //KEPT FOR HISTORY, BUT FITTER IS CURRENTLY NOT WORKING
 //void FoMCalculator::CorrectedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double& vtxAngle, double& vtxTime, double& fom)
 //{  
@@ -526,4 +540,3 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
 //
 //  return;
 //}
-

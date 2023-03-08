@@ -26,6 +26,7 @@ bool VtxSeedGenerator::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("NumberOfSeeds", fNumSeeds);
 	m_variables.Get("verbosity", verbosity);
 	m_variables.Get("UseSeedGrid", UseSeedGrid);
+	m_variables.Get("UseFineGrid", fFineGrid);
   
   // Make the ANNIEEvent Store if it doesn't exist
 	// =============================================
@@ -78,10 +79,15 @@ bool VtxSeedGenerator::Execute(){
   }
 
   // Generate vertex candidates and push to "RecoEvent" store
-  if (UseSeedGrid){
-    Log("VtxSeedGenerator Tool: Generating seed grid",v_debug,verbosity);
-    this->GenerateSeedGrid(fNumSeeds);
-  } else {
+  if (UseSeedGrid) {
+	  Log("VtxSeedGenerator Tool: Generating seed grid", v_debug, verbosity);
+	  this->GenerateSeedGrid(fNumSeeds);
+	  if (fFineGrid) {
+		  Position fFineCenter;
+		  fFineCenter=this->FindCenter();
+		  //this->GenerateFineGrid(fNumSeeds, fFineCenter);
+	  }
+  }else {
     Log("VtxSeedGenerator Tool: Generating quadfitter seeds",v_debug,verbosity);
     this->GenerateVertexSeeds(fNumSeeds);
   }
@@ -124,7 +130,7 @@ bool VtxSeedGenerator::GenerateSeedGrid(int NSeeds) {
   Log("VtxSeedGenerator Tool: Getting clean RecoDigits for event", v_debug,verbosity);
   vSeedDigitList.clear();  
   RecoDigit digit;
-  for( fThisDigit=0; fThisDigit<(int)fDigitList->size(); fThisDigit++ ){
+  for( fThisDigit=0; fThisDigit<fDigitList->size(); fThisDigit++ ){
   	digit = fDigitList->at(fThisDigit);
     if( digit.GetFilterStatus() ){ 
       if( digit.GetDigitType() == fSeedType){ 
@@ -200,7 +206,7 @@ double VtxSeedGenerator::GetMedianSeedTime(Position pos){
   double fC, fN;
   double seedtime;
   std::vector<double> extraptimes;
-  for (int entry=0; entry<(int)vSeedDigitList.size(); entry++){
+  for (int entry=0; entry<vSeedDigitList.size(); entry++){
     fThisDigit = vSeedDigitList.at(entry);
     digitx = fDigitList->at(fThisDigit).GetPosition().X();
     digity = fDigitList->at(fThisDigit).GetPosition().Y();
@@ -253,7 +259,7 @@ bool VtxSeedGenerator::GenerateVertexSeeds(int NSeeds) {
   // Here only the digit type (PMT or LAPPD or all) is specified. 
   vSeedDigitList.clear();  
   RecoDigit digit;
-  for( fThisDigit=0; fThisDigit<(int)fDigitList->size(); fThisDigit++ ){
+  for( fThisDigit=0; fThisDigit<fDigitList->size(); fThisDigit++ ){
   	digit = fDigitList->at(fThisDigit);
     if( digit.GetFilterStatus() ){ 
       if( digit.GetDigitType() == fSeedType){ 
@@ -390,7 +396,7 @@ void VtxSeedGenerator::ChooseNextDigit(double& xpos, double& ypos, double& zpos,
   int numEntries = vSeedDigitList.size();
 
   fCounter++;
-  if( fCounter>=(int)fDigitList->size() ) fCounter = 0;
+  if( fCounter>=fDigitList->size() ) fCounter = 0;
   fThisDigit = vSeedDigitList.at(fLastEntry);
 
   double r = gRandom->Uniform(); 
@@ -407,8 +413,174 @@ void VtxSeedGenerator::ChooseNextDigit(double& xpos, double& ypos, double& zpos,
   return;
 }
 
+Position VtxSeedGenerator::FindCenter() {
+	double timefom = -999.999*100;
+	double conefom = -999.999*100;
+	Double_t fom = -9999;
+	Double_t bestfom = -9999;
+	double meantime;
+	double ConeAngle = Parameters::CherenkovAngle();
+	RecoVertex *thisTrialSeed = 0;
+	RecoVertex *thisCenterSeed = new RecoVertex;
+	Position vtxPos;
+	Direction vtxDir;
+	Position truePos;
+	Direction trueDir;
+	FoMCalculator * trialFoM = new FoMCalculator();
+	RecoVertex *iSeed = new RecoVertex;
+	int nhits;
+	auto get_truevtx = m_data->Stores.at("RecoEvent")->Get("TrueVertex", thisTrialSeed);
+	truePos = thisTrialSeed->GetPosition();
+	std::cout<<"true position: "<<truePos.X()<<","<<truePos.Y()<<","<<truePos.Z()<<endl;
+	trueDir = thisTrialSeed->GetDirection();
+	std::cout<<"true direction: "<<trueDir.X()<<","<<trueDir.Y()<<","<<trueDir.Z()<<endl;
+
+	VertexGeometry * thisVtxGeo = VertexGeometry::Instance();
+	Log("VtxSeedGeneratorTool: Making fine Grid", v_message, verbosity);
+	for (int i = 0; i < vSeedVtxList->size(); i++) {
+		*iSeed = vSeedVtxList->at(i);
+		//thisTrialSeed = this->FindSimpleDirection(iSeed);
+		vtxPos = iSeed->GetPosition();
+		vtxDir = trueDir;
+		//thisTrialSeed->SetVertex(vtxPos);
+		thisVtxGeo->CalcExtendedResiduals(vtxPos.X(), vtxPos.Y(), vtxPos.Z(), 0.0, vtxDir.X(), vtxDir.Y(), vtxDir.Z());
+		nhits = thisVtxGeo->GetNDigits();
+		trialFoM->LoadVertexGeometry(thisVtxGeo);
+		meantime = trialFoM->FindSimpleTimeProperties(ConeAngle);
+		thisTrialSeed->SetVertex(vtxPos,meantime);
+		thisTrialSeed->SetDirection(trueDir);
+		timefom = -999.999*100;
+		conefom = -999.999*100;
+		trialFoM->TimePropertiesLnL(meantime, timefom);
+		trialFoM->ConePropertiesFoM(ConeAngle, conefom);
+		fom = 0.5*timefom + 0.5*conefom;
+		//std::cout<<"fom= "<<fom<<" bestfom= "<<bestfom<<endl;
+		if (fom > bestfom) {
+			bestfom = fom;
+			//std::cout<<"fom= "<<fom<<" bestfom= "<<bestfom<<endl;
+			thisCenterSeed = thisTrialSeed;
+			//std::cout<<"center seed: "<<vtxPos.X()<<","<<vtxPos.Y()<<","<<vtxPos.Z()<<endl;
+		}
+		if (pow(pow(vtxPos.X()-truePos.X(),2)+pow(vtxPos.Y()-truePos.Y(),2)+pow(vtxPos.Z()-truePos.Z(),2),0.5)<10){
+		std::cout<<"nearPos: "<<vtxPos.X()<<","<<vtxPos.Y()<<","<<vtxPos.Z()<<endl;
+		std::cout<<"nearfom: "<<fom<<endl;
+		}
+	}
+	std::cout<<"CenterSeed: "<<thisCenterSeed->GetPosition().X()<<", "<<thisCenterSeed->GetPosition().Y()<<", "<<thisCenterSeed->GetPosition().X()<<endl;
+	//delete thisTrialSeed;
+	return thisCenterSeed->GetPosition();
+
+}
+
+void VtxSeedGenerator::GenerateFineGrid(int NSeeds, Position Center) {
+	this->Reset();
+	Position Seed;
+	RecoVertex thisFineSeed;
+	double medianTime;
+	//double length = NSeeds something.  TODO for now setting to standard size 25x25x25, with seeds 5cm apart.
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 5; j++) {
+			for (int k = 0; k < 5; k++) {
+				Seed.SetZ(Center.Z() - 10 + 5*i);
+				Seed.SetX(Center.X() - 10 + 5*j);
+				Seed.SetY(Center.Y() - 10 + 5*k);
+				medianTime = this->GetMedianSeedTime(Seed);
+				thisFineSeed.SetVertex(Seed, medianTime);
+				vSeedVtxList->push_back(thisFineSeed);
+
+			}
+		}
+	}
+
+}
+
 
 void VtxSeedGenerator::PushVertexSeeds(bool savetodisk) {
   m_data->Stores.at("RecoEvent")->Set("vSeedVtxList", vSeedVtxList, savetodisk); 
+}
+
+RecoVertex* VtxSeedGenerator::FindSimpleDirection(RecoVertex* myVertex) {
+
+	/// get vertex position
+	double vtxX = myVertex->GetPosition().X();
+	double vtxY = myVertex->GetPosition().Y();
+	double vtxZ = myVertex->GetPosition().Z();
+	double vtxTime = myVertex->GetTime();
+
+	// current status
+	// ==============
+	int status = myVertex->GetStatus();
+
+	/// loop over digits
+	/// ================
+	double Swx = 0.0;
+	double Swy = 0.0;
+	double Swz = 0.0;
+	double Sw = 0.0;
+	double digitq = 0.;
+	double dx, dy, dz, ds, px, py, pz, q;
+
+	RecoDigit digit;
+	for (int idigit = 0; idigit < fDigitList->size(); idigit++) {
+		digit = fDigitList->at(idigit);
+		if (digit.GetFilterStatus()) {
+			q = digit.GetCalCharge();
+			dx = digit.GetPosition().X() - vtxX;
+			dy = digit.GetPosition().Y() - vtxY;
+			dz = digit.GetPosition().Z() - vtxZ;
+			ds = sqrt(dx*dx + dy * dy + dz * dz);
+			px = dx / ds;
+			py = dx / ds;
+			pz = dz / ds;
+			Swx += q * px;
+			Swy += q * py;
+			Swz += q * pz;
+			Sw += q;
+		}
+	}
+
+	/// average direction
+	/// =================
+	double dirX = 0.0;
+	double dirY = 0.0;
+	double dirZ = 0.0;
+
+	int itr = 0;
+	bool pass = 0;
+	double fom = 0.0;
+
+	if (Sw > 0.0) {
+		double qx = Swx / Sw;
+		double qy = Swy / Sw;
+		double qz = Swz / Sw;
+		double qs = sqrt(qx*qx + qy * qy + qz * qz);
+
+		dirX = qx / qs;
+		dirY = qy / qs;
+		dirZ = qz / qs;
+
+		fom = 1.0;
+		itr = 1;
+		pass = 1;
+	}
+
+	// set vertex and direction
+	// ========================
+	RecoVertex* newVertex = new RecoVertex(); // Note: pointer must be deleted by the invoker
+
+	if (pass) {
+		newVertex->SetVertex(vtxX, vtxY, vtxZ, vtxTime);
+		newVertex->SetDirection(dirX, dirY, dirZ);
+		newVertex->SetFOM(fom, itr, pass);
+	}
+
+	// set status
+	// ==========
+	if (!pass) status |= RecoVertex::kFailSimpleDirection;
+	newVertex->SetStatus(status);
+
+	// return vertex
+	// =============
+	return newVertex;
 }
 
