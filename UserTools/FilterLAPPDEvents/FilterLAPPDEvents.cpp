@@ -66,6 +66,7 @@ bool FilterLAPPDEvents::Execute(){
         if(DesiredCuts == "LAPPDEvents"){
             if(verbosity>0)std::cout<<"FilterLAPPDEvents: Saving event with LAPPDEvents cut"<<std::endl;
             this->SetAndSaveEvent();
+	    matched++;
         }
         // For other cuts, need to find the event in the csv input file and save it if it fits
         else {
