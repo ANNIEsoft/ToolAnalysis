@@ -272,10 +272,10 @@ bool LoadANNIEEvent::Execute() {
   if ((int)current_entry_ != offset_evnum) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
 
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
-  if (!m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")) m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_);
+  if (!m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")){ m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_); }
   ++current_entry_;
  
-  if (global_evnr && !m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")) m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev);
+  if (global_evnr && !m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber")){ m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev); }
   global_ev++; 
 
 
