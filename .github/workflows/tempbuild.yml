@@ -19,6 +19,6 @@ jobs:
     - name: prerequisits
       run: yum install -y git make gcc-c++ which wget
     - name: build
-      run: echo `pwd` && make clean && make
+      run: echo `pwd` && source ./Setup.sh && make clean && make
     - name: test
       run : source ./Setup.sh && ./Analyse
