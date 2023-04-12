@@ -54,6 +54,10 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   MRDEntryNum = 0;
   TrigEntryNum = 0;
   LAPPDEntryNum = 0;
+  tanktotalentries = 0;
+  trigtotalentries = 0;
+  mrdtotalentries = 0;
+  lappdtotalentries = 0;
   FileCompleted = false;
   TankEntriesCompleted = false;
   MRDEntriesCompleted = false;
