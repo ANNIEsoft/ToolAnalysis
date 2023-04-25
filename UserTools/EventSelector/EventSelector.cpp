@@ -46,6 +46,8 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
   m_variables.Get("IsMC",fIsMC);
   m_variables.Get("RecoPDG",fRecoPDG);
+  m_variables.Get("TriggerExtendedWindow",fTriggerExtended);
+  m_variables.Get("BeamOK",fBeamOK);
 
   if (!fIsMC){fMCFVCut = false; fMCPMTVolCut = false; fMCMRDCut = false; fMCPiKCut = false; fMCIsMuonCut = false; fMCIsElectronCut = false; fMCIsSingleRingCut = false; fMCIsMultiRingCut = false; fMCProjectedMRDHit = false; fMCEnergyCut = false; fPromptTrigOnly = false;}
 
@@ -207,6 +209,12 @@ bool EventSelector::Execute(){
   m_data->Stores.at("RecoEvent")->Set("RecoPDGVector",cluster_reco_pdg);
   m_data->Stores.at("RecoEvent")->Set("PDG",fRecoPDG);
 
+  bool passExtendedCut = this->EventSelectionByTriggerExtended();
+  m_data->Stores.at("RecoEvent")->Set("TriggerExtended",passExtendedCut);
+
+  bool passBeamOKCut = this->EventSelectionByBeamOK();
+  m_data->Stores.at("RecoEvent")->Set("BeamOK",passBeamOKCut);
+
   // Fill the EventSelection mask for the cuts that are supposed to be applied
   if (fMCPiKCut){
     fEventApplied |= EventSelector::kFlagMCPiK; 
@@ -325,6 +333,16 @@ bool EventSelector::Execute(){
     if (!passTriggerCut) fEventFlagged |= EventSelector::kFlagTrigger;
   }
 
+  if (fTriggerExtended){
+    fEventApplied |= EventSelector::kFlagExtended;
+    if (!passExtendedCut) fEventFlagged |= EventSelector::kFlagExtended;
+  }
+
+  if (fBeamOK){
+    fEventApplied |= EventSelector::kFlagBeamOK;
+    if (!passBeamOKCut) fEventFlagged |= EventSelector::kFlagBeamOK;
+  }
+
   if (fRecoPDG != -1){
     fEventApplied |= EventSelector::kFlagRecoPDG;
     if (!passRecoPDGCut) fEventFlagged |= EventSelector::kFlagRecoPDG;
@@ -334,7 +352,10 @@ bool EventSelector::Execute(){
   if(fEventCutStatus){  
     Log("EventSelector Tool: Event is clean according to current event selection.",v_message,verbosity);
   }
-  if(fSaveStatusToStore) m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+  if(fSaveStatusToStore) {
+    m_data->Stores.at("RecoEvent")->Set("EventCutStatus", fEventCutStatus);
+    m_data->Stores.at("ANNIEEvent")->Set("EventCutStatus", fEventCutStatus);
+  }
   m_data->Stores.at("RecoEvent")->Set("EventFlagApplied", fEventApplied);
   m_data->Stores.at("RecoEvent")->Set("EventFlagged", fEventFlagged);
 
@@ -1051,4 +1072,20 @@ bool EventSelector::EventSelectionByRecoPDG(int recoPDG, std::vector<double> & c
   return found_pdg;
 
 }
+bool EventSelector::EventSelectionByTriggerExtended(){
 
+  int fExtended = 0;
+  m_data->Stores["ANNIEEvent"]->Get("TriggerExtended",fExtended);
+  if (fExtended == 1) return true;
+  else return false;
+
+}
+
+bool EventSelector::EventSelectionByBeamOK(){
+
+  BeamStatus beamstat;
+  m_data->Stores["ANNIEEvent"]->Get("BeamStatus",beamstat);
+  if (beamstat.ok()) return true;
+  else return false;
+
+}
