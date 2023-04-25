@@ -65,7 +65,6 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
     std::string temp_str_orphan;
     while ( list_file_orphan >> temp_str_orphan ) input_filenames_orphan_.push_back( temp_str_orphan );
 
-
   }
 
   current_entry_ = 0u;
