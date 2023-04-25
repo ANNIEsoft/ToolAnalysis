@@ -67,7 +67,6 @@ class TestPython(Tool):
         somebool_ref = ctypes.c_bool()
         somestring = std.string()
         
-        
         # Retrieve the BoostStore* we made before
         bbstore = self.m_data.Stores.at("myBStore")
     
