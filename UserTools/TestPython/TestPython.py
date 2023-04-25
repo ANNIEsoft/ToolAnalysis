@@ -67,6 +67,7 @@ class TestPython(Tool):
         somebool_ref = ctypes.c_bool()
         somestring = std.string()
         
+        
         # Retrieve the BoostStore* we made before
         bbstore = self.m_data.Stores.at("myBStore")
     
@@ -85,8 +86,14 @@ class TestPython(Tool):
     
         print("print contents")
         mystore.Print()
+        
+        # retrieving stl containers such as std::vector, std::string, std::map etc
+        # is done in the same was as for classes, so we don't need a ctypes reference
+        v_dubs = std.vector['double']()
+        abstore.Get("myDoubles",v_dubs)
     
-        # reinit our local variables to defaults
+        # let's unpack our Store class to check it has the right contents
+        # first reinit our local variables to defaults
         print("reinit locals")
         somefloat_ref.value = -1
         somebool_ref.value = False
