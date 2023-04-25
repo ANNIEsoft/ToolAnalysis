@@ -44,6 +44,10 @@ class TestPython(Tool):
         # The BoostStore is more flexible than the Store class in that it can hold any data type
         # such as, for example, a Store class instance!
         abstore.Set("myStore",astore)
+        # or a std vector of doubles. Note that when declaring stl containers in python
+        # we need to enclose the contained type name in single quotes!
+        vect_o_dubs = std.vector['double'](range(1,10))
+        abstore.Set("myDoubles",vect_o_dubs)
     
         # put the BoostStore into the DataModel - m_data.Stores is a map of string to BoostStore*.
         print("Data model stores length: ", self.m_data.Stores.size())
