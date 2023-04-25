@@ -1,1 +1,6 @@
 verbosity 3
+
+SaveROOT 1
+SaveBoostStore 0
+Filename NeutronMultiplicity_R2506
+MRDTrackRestriction 1

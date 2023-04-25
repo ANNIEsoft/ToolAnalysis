@@ -1,1 +1,5 @@
-/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R2573/ProcessedRawData_TankAndMRDAndCTC_R2573S0p0
+/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R2506/ProcessedRawData_TankAndMRDAndCTC_R2506S0p0
+/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R2506/ProcessedRawData_TankAndMRDAndCTC_R2506S0p1
+/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R2506/ProcessedRawData_TankAndMRDAndCTC_R2506S0p2
+/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R2506/ProcessedRawData_TankAndMRDAndCTC_R2506S0p3
+/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R2506/ProcessedRawData_TankAndMRDAndCTC_R2506S0p4

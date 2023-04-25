@@ -46,6 +46,7 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoVtx",SimpleRecoVtx);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
+  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoFV",SimpleRecoFV);
 
   //Fill Particles object with muon
   if (reco_possible){
@@ -103,6 +104,7 @@ void SimpleReconstruction::SetDefaultValues(){
   SimpleRecoStopVtx.SetX(-9999);
   SimpleRecoStopVtx.SetY(-9999);
   SimpleRecoStopVtx.SetZ(-9999);
+  SimpleRecoFV = false;
 
   //Helper variables
   mrd_eloss = -9999;
@@ -312,6 +314,7 @@ bool SimpleReconstruction::RecoTankExitPoint(int clusterid){
     SimpleRecoStopVtx.SetX(stopx);
     SimpleRecoStopVtx.SetY(stopy);
     SimpleRecoStopVtx.SetZ(stopz);
+    SimpleRecoFlag = 1;
   }
 
   return tank_exit;
@@ -343,6 +346,9 @@ bool SimpleReconstruction::SimpleVertexReconstruction(){
   SimpleRecoVtx.SetZ(reco_vtx_z);
 
   Log("SimpleEnergyReconstruction: Reconstructed interaction vertex: ("+std::to_string(SimpleRecoVtx.X())+","+std::to_string(SimpleRecoVtx.Y())+","+std::to_string(SimpleRecoVtx.Z())+")",v_message,verbosity);
+
+  //Check if vertex is in Fiducial Volume
+  if (sqrt(reco_vtx_x*reco_vtx_x+(reco_vtx_z-1.681)*(reco_vtx_z-1.681))<1.0 && fabs(reco_vtx_y)<0.5 && ((reco_vtx_z-1.681) < 0.)) SimpleRecoFV = true;
 
   return true;
 

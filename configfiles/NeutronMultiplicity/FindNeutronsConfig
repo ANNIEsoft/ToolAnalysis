@@ -1,4 +1,4 @@
 #FindNeutrons config file
 
 verbosity 2
-Method CB	#selection cut method for neutrons: CB, CBStrict, in the future ML techniques
+Method CBStrict	#selection cut method for neutrons: CB, CBStrict, in the future ML techniques

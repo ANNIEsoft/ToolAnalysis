@@ -39,6 +39,7 @@ class NeutronMultiplicity: public Tool {
   bool InitialiseHistograms(); ///< Initialise root histograms & file
   bool SaveBoostStore(); ///< Save variables to BoostStore
   bool FillHistograms(); ///< Fill histograms & save to root file
+  bool GetParticleInformation();
 
  private:
 
@@ -47,6 +48,7 @@ class NeutronMultiplicity: public Tool {
   bool save_root;
   bool save_bs;
   std::string filename;
+  bool mrdtrack_restriction = false;
 
   //root file variables
   TFile *file_neutronmult = nullptr;
