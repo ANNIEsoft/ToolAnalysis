@@ -1,0 +1,2 @@
+myLoadWCSim LoadWCSim configfiles/ReweightEventsGenie/LoadWCSimConfig
+myReweightEventsGenie ReweightEventsGenie configfiles/ReweightEventsGenie/ReweightEventsGenieConfig
