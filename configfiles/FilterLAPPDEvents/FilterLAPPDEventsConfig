@@ -1,0 +1,7 @@
+DesiredCuts LAPPDEventsBeamgateMRDTrackNoVeto # either LAPPDEvents, LAPPDEventsBeamgateMRDTrack, or LAPPDEventsBeamgateMRDTrackNoVeto
+verbosity 1
+FilteredFilesBasename FilteredEvents
+#SavePath /pnfs/annie/persistent/users/redwards/data/filtered_lappd/R3649-R3844/LAPPDEventsBeamgateMRDTrackNoVeto/
+SavePath /annie/app/users/redwards/EventBuildingLAPPDToolAnalysis/ToolAnalysis/test/
+csvInputFile ../LAPPDStatistics/LAPPDStatisticsR3649-R3844BeamgateMRDTrack.csv
+RangeOfRuns R3649-R3844
