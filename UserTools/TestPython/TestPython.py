@@ -112,7 +112,7 @@ class TestPython(Tool):
         # this is a suitable way to 'delete' heap objects
         bbstore.__python_owns__ = True
         self.m_data.Stores.erase("myBStore")
-     
+        
         return 1
 
 #################
