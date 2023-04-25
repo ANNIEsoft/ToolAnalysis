@@ -10,7 +10,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
 
   m_data= &data; //assigning transient data pointer
-
+  
   SavePath = "./";
   ProcessedFilesBasename = "ProcessedRawData";
   BuildType = "TankAndMRD";
@@ -70,7 +70,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Get("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
   m_data->CStore.Get("AuxChannelNumToCrateSpaceMap",AuxChannelNumToCrateSpaceMap);
-
+  
   if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
     int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
@@ -2050,7 +2050,18 @@ void ANNIEEventBuilder::ManageOrphanage(){
     std::vector<unsigned long> CurrentWaveMapChankeys;
     for (int i_channel = 0; i_channel < (int) CurrentWaveMapChannels.size(); i_channel++){
       std::vector<int> current_cratespace = CurrentWaveMapChannels.at(i_channel);
-      unsigned long current_chankey = TankPMTCrateSpaceToChannelNumMap[current_cratespace];
+      unsigned long current_chankey = 0;
+      if (TankPMTCrateSpaceToChannelNumMap.count(current_cratespace)>0){
+        current_chankey = TankPMTCrateSpaceToChannelNumMap[current_cratespace];
+      } else if (AuxCrateSpaceToChannelNumMap.count(current_cratespace)>0){
+        current_chankey  = AuxCrateSpaceToChannelNumMap.at(current_cratespace);
+      } else {
+        Log("ANNIEEventBuilder: Encountered invalid crate space during orphan movement. Setting chankey = 99999999",v_error,verbosity);
+        current_chankey = 99999999;
+        Log("ANNIEEventBuilder::CrateNum "+to_string(current_cratespace.at(0)),v_error, verbosity);
+        Log("ANNIEEventBuilder::SlotNum "+to_string(current_cratespace.at(1)),v_error, verbosity);
+        Log("ANNIEEventBuilder::ChannelID "+to_string(current_cratespace.at(2)),v_error, verbosity);   
+      }
       CurrentWaveMapChankeys.push_back(current_chankey);
     }
     OrphanStore->Set("WaveformChankeys",CurrentWaveMapChankeys);
