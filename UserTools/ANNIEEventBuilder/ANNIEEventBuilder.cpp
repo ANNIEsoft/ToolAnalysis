@@ -10,7 +10,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
 
   m_data= &data; //assigning transient data pointer
-
+  
   SavePath = "./";
   ProcessedFilesBasename = "ProcessedRawData";
   BuildType = "TankAndMRD";
