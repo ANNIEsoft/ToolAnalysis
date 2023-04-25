@@ -2,7 +2,7 @@
 
 ##### Runtime Paramiters #####
 verbose 1
-error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
+error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handled errors
 attempt_recover 1
 
 ###### Logging #####
