@@ -155,5 +155,6 @@ if (tool=="GetLAPPDEvents") ret=new GetLAPPDEvents;
 if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
 if (tool=="PythonScript") ret=new PythonScript;
 if (tool=="ReweightEventsGenie") ret=new ReweightEventsGenie;
+if (tool=="FilterLAPPDEvents") ret=new FilterLAPPDEvents;
 return ret;
 }

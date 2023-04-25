@@ -1,0 +1,6 @@
+verbose 0
+EventOffset 0
+GlobalEvNr 1
+FileForListOfInputs ./configfiles/FilterLAPPDEvents/my_inputs1.txt
+#FileForListOfInputs ./configfiles/FilterLAPPDEvents/my_inputsR3649-R3844/my_inputsR3844.txt
+RunOnFiltered 1

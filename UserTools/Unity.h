@@ -163,3 +163,4 @@
 #include "LAPPDDataDecoder.h"
 #include "PythonScript.h"
 #include "ReweightEventsGenie.h"
+#include "FilterLAPPDEvents.h"
