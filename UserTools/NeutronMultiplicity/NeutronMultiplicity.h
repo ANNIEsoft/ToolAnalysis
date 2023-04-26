@@ -39,7 +39,8 @@ class NeutronMultiplicity: public Tool {
   bool InitialiseHistograms(); ///< Initialise root histograms & file
   bool SaveBoostStore(); ///< Save variables to BoostStore
   bool FillHistograms(); ///< Fill histograms & save to root file
-  bool GetParticleInformation();
+  bool GetParticleInformation(); ///< Get reconstructed information about muon vertex
+  bool ResetVariables(); ///< Reset variables every Execute step
 
  private:
 
@@ -108,7 +109,57 @@ class NeutronMultiplicity: public Tool {
   TH1F *h_muon_vtx_z = nullptr; 
 
   //tree variables 
+  //
+  TTree *neutron_tree = nullptr;
+  //true tree variables
+  int true_PrimNeut;
+  int true_PrimProt;
+  int true_NCaptures;
+  int true_NCapturesPMTVol;
+  double true_VtxX;
+  double true_VtxY;
+  double true_VtxZ;
+  double true_Emu;
+  double true_Enu;
+  double true_Q2;
+  int true_FV;
+  double true_CosTheta;
+  std::vector<double> *true_NeutVtxX = nullptr;
+  std::vector<double> *true_NeutVtxY = nullptr;
+  std::vector<double> *true_NeutVtxZ = nullptr;
+  std::vector<double> *true_NeutCapNucl = nullptr;
+  std::vector<double> *true_NeutCapTime = nullptr;
+  std::vector<double> *true_NeutCapETotal = nullptr;
+  std::vector<double> *true_NeutCapNGamma = nullptr;
+  std::vector<int> *true_NeutCapPrimary = nullptr;
+  int true_CC;
+  int true_QEL;
+  int true_DIS;
+  int true_RES;
+  int true_COH;
+  int true_MEC;
+  int true_MultiRing;
+  std::vector<int> *true_PrimaryPdgs = nullptr;
 
+  //reco tree variables
+  double reco_Emu;
+  double reco_Enu;
+  double reco_Q2;
+  std::vector<double> *reco_ClusterCB = nullptr;
+  std::vector<double> *reco_ClusterTime = nullptr;
+  std::vector<double> *reco_ClusterPE = nullptr;
+  std::vector<double> *reco_NCandCB = nullptr;
+  std::vector<double> *reco_NCandTime = nullptr;
+  std::vector<double> *reco_NCandPE = nullptr;
+  double reco_MrdEnergyLoss;
+  int reco_TankMRDCoinc;
+  int reco_Clusters;
+  int reco_NCandidates;
+  double reco_VtxX;
+  double reco_VtxY;
+  double reco_VtxZ;
+  int reco_FV;
+  double reco_CosTheta;
 
   //verbosity variables
   int v_error = 0;

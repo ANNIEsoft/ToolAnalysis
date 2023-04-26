@@ -36,7 +36,8 @@ bool NeutronMultiplicity::Initialise(std::string configfile, DataModel &data){
 
 bool NeutronMultiplicity::Execute(){
 
-  
+  //Reset tree variables
+  this->ResetVariables();
 
   //Get Particles variable
  
@@ -216,6 +217,72 @@ bool NeutronMultiplicity::InitialiseHistograms(){
   h_muon_vtx_z->GetXaxis()->SetTitle("Vertex Z [m]");
   h_muon_vtx_z->GetYaxis()->SetTitle("#");
 
+  //Define tree properties and variables
+  //
+
+  true_NeutVtxX = new std::vector<double>;
+  true_NeutVtxY = new std::vector<double>;
+  true_NeutVtxZ = new std::vector<double>;
+  true_NeutCapNucl = new std::vector<double>;
+  true_NeutCapTime = new std::vector<double>;
+  true_NeutCapETotal = new std::vector<double>;
+  true_NeutCapNGamma = new std::vector<double>;
+  true_NeutCapPrimary = new std::vector<int>;
+  reco_ClusterCB = new std::vector<double>;
+  reco_ClusterTime = new std::vector<double>;
+  reco_ClusterPE = new std::vector<double>;
+  reco_NCandCB = new std::vector<double>;
+  reco_NCandTime = new std::vector<double>;
+  reco_NCandPE = new std::vector<double>;
+  true_PrimaryPdgs = new std::vector<int>;
+
+  neutron_tree = new TTree("neutron_tree","Neutron tree");
+  neutron_tree->Branch("RecoTankMRDCoinc",&reco_TankMRDCoinc);
+  neutron_tree->Branch("RecoNCandidates",&reco_NCandidates);
+  neutron_tree->Branch("RecoEmu",&reco_Emu);
+  neutron_tree->Branch("RecoEnu",&reco_Enu);
+  neutron_tree->Branch("RecoQ2",&reco_Q2);
+  neutron_tree->Branch("RecoVtxX",&reco_VtxX);
+  neutron_tree->Branch("RecoVtxY",&reco_VtxY);
+  neutron_tree->Branch("RecoVtxZ",&reco_VtxZ);
+  neutron_tree->Branch("RecoFV",&reco_FV);
+  neutron_tree->Branch("RecoCosTheta",&reco_CosTheta);
+  neutron_tree->Branch("RecoClusters",&reco_Clusters);
+  neutron_tree->Branch("RecoClusterCB",&reco_ClusterCB);
+  neutron_tree->Branch("RecoClusterTime",&reco_ClusterTime);
+  neutron_tree->Branch("RecoClusterPE",&reco_ClusterPE);
+  neutron_tree->Branch("RecoNCandCB",&reco_NCandCB);
+  neutron_tree->Branch("RecoNCandTime",&reco_NCandTime);
+  neutron_tree->Branch("RecoNCandPE",&reco_NCandPE);
+  neutron_tree->Branch("RecoMrdEnergyLoss",&reco_MrdEnergyLoss);
+  neutron_tree->Branch("TrueEmu",&true_Emu);
+  neutron_tree->Branch("TrueEnu",&true_Enu);
+  neutron_tree->Branch("TrueQ2",&true_Q2);
+  neutron_tree->Branch("TrueVtxX",&true_VtxX);
+  neutron_tree->Branch("TrueVtxY",&true_VtxY);
+  neutron_tree->Branch("TrueVtxZ",&true_VtxZ);
+  neutron_tree->Branch("TruePrimNeut",&true_PrimNeut);
+  neutron_tree->Branch("TruePrimProt",&true_PrimProt);
+  neutron_tree->Branch("TrueNCaptures",&true_NCaptures);
+  neutron_tree->Branch("TrueNCapturesPMTVol",&true_NCapturesPMTVol);
+  neutron_tree->Branch("TrueNeutVtxX",&true_NeutVtxX);
+  neutron_tree->Branch("TrueNeutVtxY",&true_NeutVtxY);
+  neutron_tree->Branch("TrueNeutVtxZ",&true_NeutVtxZ);
+  neutron_tree->Branch("TrueNeutCapNucl",&true_NeutCapNucl);
+  neutron_tree->Branch("TrueNeutCapTime",&true_NeutCapTime);
+  neutron_tree->Branch("TrueNeutCapETotal",&true_NeutCapETotal);
+  neutron_tree->Branch("TrueNeutCapNGamma",&true_NeutCapNGamma);
+  neutron_tree->Branch("TrueNeutCapPrimary",&true_NeutCapPrimary);
+  neutron_tree->Branch("TrueCC",&true_CC);
+  neutron_tree->Branch("TrueQEL",&true_QEL);
+  neutron_tree->Branch("TrueDIS",&true_DIS);
+  neutron_tree->Branch("TrueRES",&true_RES);
+  neutron_tree->Branch("TrueMEC",&true_MEC);
+  neutron_tree->Branch("TrueCOH",&true_COH);
+  neutron_tree->Branch("TrueMultiRing",&true_MultiRing);
+  neutron_tree->Branch("TruePrimaryPdgs",&true_PrimaryPdgs);
+
+
   return true;
 
 }
@@ -244,6 +311,14 @@ bool NeutronMultiplicity::FillHistograms(){
   h_muon_vtx_yz->Fill(SimpleRecoVtx.Z(),SimpleRecoVtx.Y());
   h_muon_vtx_xz->Fill(SimpleRecoVtx.Z(),SimpleRecoVtx.X());
 
+  reco_VtxX = SimpleRecoVtx.X();
+  reco_VtxY = SimpleRecoVtx.Y();
+  reco_VtxZ = SimpleRecoVtx.Z();
+  reco_Emu = SimpleRecoEnergy;
+  reco_CosTheta = SimpleRecoCosTheta;
+  reco_NCandidates = NumberNeutrons;
+
+  neutron_tree->Fill();
 
   return true;
 
@@ -283,4 +358,67 @@ bool NeutronMultiplicity::GetParticleInformation(){
   return return_value;
 
 
+}
+
+bool NeutronMultiplicity::ResetVariables(){
+
+  SimpleRecoFlag = -9999;
+  SimpleRecoVtx = Position(-9999,-9999,-9999);
+  SimpleRecoStopVtx = Position(-9999,-9999,-9999);
+  SimpleRecoEnergy = -9999;
+  SimpleRecoCosTheta = -9999;
+  SimpleRecoFV = false;
+  NumberNeutrons = -9999;
+  Particles.clear();
+
+  //ROOT tree variables
+  true_PrimNeut = -9999;
+  true_PrimProt = -9999;
+  true_NCaptures = -9999;
+  true_NCapturesPMTVol = -9999;
+  true_VtxX = -9999;
+  true_VtxY = -9999;
+  true_VtxZ = -9999;
+  true_Emu = -9999;
+  true_Enu = -9999;
+  true_Q2 = -9999;
+  true_FV = -9999;
+  true_CosTheta = -9999;
+  true_NeutVtxX->clear();
+  true_NeutVtxY->clear();
+  true_NeutVtxZ->clear();
+  true_NeutCapNucl->clear();
+  true_NeutCapTime->clear();
+  true_NeutCapETotal->clear();
+  true_NeutCapNGamma->clear();
+  true_NeutCapPrimary->clear();
+  true_CC = -9999;
+  true_QEL = -9999;
+  true_DIS = -9999;
+  true_RES = -9999;
+  true_COH = -9999;
+  true_MEC = -9999;
+  true_MultiRing = -9999;
+  true_PrimaryPdgs->clear();
+
+  reco_Emu = -9999;
+  reco_Enu = -9999;
+  reco_Q2 = -9999;
+  reco_ClusterCB->clear();
+  reco_ClusterTime->clear();
+  reco_ClusterPE->clear();
+  reco_NCandCB->clear();
+  reco_NCandTime->clear();
+  reco_NCandPE->clear();
+  reco_MrdEnergyLoss = -9999;
+  reco_TankMRDCoinc = -9999;
+  reco_Clusters = -9999;
+  reco_NCandidates = -9999;
+  reco_VtxX = -9999;
+  reco_VtxY = -9999;
+  reco_VtxZ = -9999;
+  reco_FV = -9999;
+  reco_CosTheta = -9999;
+
+  return true;
 }
