@@ -47,6 +47,7 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
   m_data->Stores["ANNIEEvent"]->Set("SimpleRecoFV",SimpleRecoFV);
+  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
 
   //Fill Particles object with muon
   if (reco_possible){
@@ -105,6 +106,7 @@ void SimpleReconstruction::SetDefaultValues(){
   SimpleRecoStopVtx.SetY(-9999);
   SimpleRecoStopVtx.SetZ(-9999);
   SimpleRecoFV = false;
+  SimpleRecoMrdEnergyLoss = -9999;
 
   //Helper variables
   mrd_eloss = -9999;
@@ -328,6 +330,8 @@ bool SimpleReconstruction::SimpleEnergyReconstruction(){
   SimpleRecoEnergy = 87.3 + 200*(dist_pmtvol_tank) + mrd_eloss + max_pe*0.08534;
 
   Log("SimpleEnergyReconstruction: Reconstructed muon energy: "+std::to_string(SimpleRecoEnergy),v_message,verbosity);
+
+  SimpleRecoMrdEnergyLoss = mrd_eloss;
 
   return true;
 

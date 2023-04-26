@@ -39,6 +39,11 @@ class FindNeutrons: public Tool {
   //vectors storing neutron candidate properties
   std::vector<int> cluster_neutron;
   std::vector<double> cluster_times_neutron;
+  std::vector<double> cluster_charges_neutron;
+  std::vector<double> cluster_cb_neutron;
+  std::vector<double> cluster_times;
+  std::vector<double> cluster_charges;
+  std::vector<double> cluster_cb;
 
   //vector storing neutron particles
   std::vector<Particle> vec_neutrons;

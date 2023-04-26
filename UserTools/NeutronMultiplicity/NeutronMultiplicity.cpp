@@ -317,6 +317,12 @@ bool NeutronMultiplicity::FillHistograms(){
   reco_Emu = SimpleRecoEnergy;
   reco_CosTheta = SimpleRecoCosTheta;
   reco_NCandidates = NumberNeutrons;
+  reco_FV = SimpleRecoFV;
+  reco_MrdEnergyLoss = SimpleRecoMrdEnergyLoss;
+
+  for (int i_n=0; i_n < (int) reco_NCandTime->size(); i_n++){
+    h_time_neutrons_mrdstop->Fill(reco_NCandTime->at(i_n));
+  }
 
   neutron_tree->Fill();
 
@@ -354,9 +360,38 @@ bool NeutronMultiplicity::GetParticleInformation(){
   return_value = m_data->Stores["ANNIEEvent"]->Get("SimpleRecoStopVtx",SimpleRecoStopVtx);
   return_value = m_data->Stores["ANNIEEvent"]->Get("SimpleRecoCosTheta",SimpleRecoCosTheta);
   return_value = m_data->Stores["ANNIEEvent"]->Get("SimpleRecoFV",SimpleRecoFV);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
 
+  std::vector<int> cluster_neutron;
+  std::vector<double> cluster_times_neutron;
+  std::vector<double> cluster_charges_neutron;
+  std::vector<double> cluster_cb_neutron;
+  std::vector<double> cluster_times;
+  std::vector<double> cluster_charges;
+  std::vector<double> cluster_cb;
+
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterIndicesNeutron",cluster_neutron);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterTimesNeutron",cluster_times_neutron);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterChargesNeutron",cluster_charges_neutron);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterCBNeutron",cluster_cb_neutron);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterTimes",cluster_times);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterCharges",cluster_charges);
+  return_value = m_data->Stores["ANNIEEvent"]->Get("ClusterCB",cluster_cb);
+
+  (*reco_NCandCB) = cluster_cb_neutron;
+  (*reco_NCandTime) = cluster_times_neutron;
+  (*reco_NCandPE) = cluster_charges_neutron;
+  (*reco_ClusterCB) = cluster_cb;
+  (*reco_ClusterTime) = cluster_times;
+  (*reco_ClusterPE) = cluster_charges;
+  reco_Clusters = reco_ClusterCB->size();
+
+  bool passPMTMRDCoincCut; 
+  return_value = m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",passPMTMRDCoincCut);
+  reco_TankMRDCoinc = (passPMTMRDCoincCut)? 1 : 0;
+
+ 
   return return_value;
-
 
 }
 
@@ -369,6 +404,7 @@ bool NeutronMultiplicity::ResetVariables(){
   SimpleRecoCosTheta = -9999;
   SimpleRecoFV = false;
   NumberNeutrons = -9999;
+  SimpleRecoMrdEnergyLoss = -9999;
   Particles.clear();
 
   //ROOT tree variables

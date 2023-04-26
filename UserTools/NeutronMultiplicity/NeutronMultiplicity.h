@@ -64,6 +64,7 @@ class NeutronMultiplicity: public Tool {
   double SimpleRecoEnergy;
   double SimpleRecoCosTheta;
   bool SimpleRecoFV;
+  double SimpleRecoMrdEnergyLoss;
   int NumberNeutrons;
   std::vector<Particle> Particles;
 

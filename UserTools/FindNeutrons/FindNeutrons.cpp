@@ -55,6 +55,14 @@ bool FindNeutrons::Execute(){
   }
   m_data->Stores["ANNIEEvent"]->Set("Particles",Particles_Temp);
 
+  //Store neutron candidate information
+  m_data->Stores["ANNIEEvent"]->Set("ClusterIndicesNeutron",cluster_neutron);
+  m_data->Stores["ANNIEEvent"]->Set("ClusterTimesNeutron",cluster_times_neutron);
+  m_data->Stores["ANNIEEvent"]->Set("ClusterChargesNeutron",cluster_charges_neutron);
+  m_data->Stores["ANNIEEvent"]->Set("ClusterCBNeutron",cluster_cb_neutron);
+  m_data->Stores["ANNIEEvent"]->Set("ClusterTimes",cluster_times);
+  m_data->Stores["ANNIEEvent"]->Set("ClusterCharges",cluster_charges);
+  m_data->Stores["ANNIEEvent"]->Set("ClusterCB",cluster_cb);
 
   return true;
 }
@@ -70,6 +78,15 @@ bool FindNeutrons::FindNeutronCandidates(std::string method){
 
   //Currently only Charge Balance cut available
   //TODO: add Machine Learning classifiers in the future
+
+  //Clear vectors first
+  if (cluster_neutron.size()>0) cluster_neutron.clear();
+  if (cluster_times_neutron.size()>0) cluster_times_neutron.clear();
+  if (cluster_charges_neutron.size()>0) cluster_charges_neutron.clear();
+  if (cluster_cb_neutron.size()>0) cluster_cb_neutron.clear();
+  if (cluster_times.size()>0) cluster_times.clear();
+  if (cluster_charges.size()>0) cluster_charges.clear();
+  if (cluster_cb.size()>0) cluster_cb.clear();
 
   if (method == "CB"){
     this->FindNeutronsByCB(false);
@@ -111,9 +128,13 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
 
   //Loop through clusters and find neutrons
   int tmp_cluster_id = 0;
-  cluster_neutron.clear();
-  cluster_times_neutron.clear();
+  
   for (std::map<double,double>::iterator it = ClusterTotalPEs.begin(); it!= ClusterTotalPEs.end(); it++){
+    //First fill general cluster information into vectors
+    cluster_times.push_back(it->first);
+    cluster_charges.push_back(ClusterTotalPEs.at(it->first));
+    cluster_cb.push_back(ClusterChargeBalances.at(it->first));
+
     //Check if the cluster is in the delayed window and has a time > 10 us (exclude afterpulses)
     //The window should should be extended in the future after relevant exlusion cuts for afterpulsing have been implemented
     //check if the charge balance cut for neutrons is passed -> consider a neutron candidate
@@ -130,6 +151,8 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
         Log("FindNeutrons tool: Found neutron candidate at cluster # "+std::to_string(tmp_cluster_id)+", time: "+std::to_string(it->first)+" ns!!!",v_message,verbosity);
         cluster_neutron.push_back(tmp_cluster_id);
         cluster_times_neutron.push_back(it->first);
+        cluster_charges_neutron.push_back(current_q);
+        cluster_cb_neutron.push_back(current_cb);
         return_val = true;
       }
     }
