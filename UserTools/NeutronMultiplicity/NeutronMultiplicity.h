@@ -38,9 +38,12 @@ class NeutronMultiplicity: public Tool {
 
   bool InitialiseHistograms(); ///< Initialise root histograms & file
   bool SaveBoostStore(); ///< Save variables to BoostStore
+  bool ReadBoostStore(); ///< Read variables from BoostStore
   bool FillHistograms(); ///< Fill histograms & save to root file
   bool GetParticleInformation(); ///< Get reconstructed information about muon vertex
   bool ResetVariables(); ///< Reset variables every Execute step
+  bool FillTGraphs(); ///< Fill TGraph objects
+  bool FillSingleTGraph(TGraphErrors *gr, TH2F *h2d, std::vector<std::string> labels); ////< Fill TGraph based on averaging a 2D histogram
 
  private:
 
@@ -50,12 +53,19 @@ class NeutronMultiplicity: public Tool {
   bool save_bs;
   std::string filename;
   bool mrdtrack_restriction = false;
+  std::string read_bs;
 
   //root file variables
   TFile *file_neutronmult = nullptr;
 
   //BoostStore file variable
-  BoostStore store_neutronmult;
+  BoostStore *store_neutronmult = nullptr;
+  BoostStore *read_neutronmult = nullptr;
+  bool need_new_file_;
+  size_t current_file_;
+  size_t total_entries_in_file_;
+  size_t current_entry_;
+  std::vector<std::string> input_filenames_;
 
   //Reconstruction variables
   int SimpleRecoFlag;
@@ -67,6 +77,19 @@ class NeutronMultiplicity: public Tool {
   double SimpleRecoMrdEnergyLoss;
   int NumberNeutrons;
   std::vector<Particle> Particles;
+  uint32_t EventNumber;
+  int RunNumber;
+  int numtracksinev;
+
+  std::vector<int> cluster_neutron;
+  std::vector<double> cluster_times_neutron;
+  std::vector<double> cluster_charges_neutron;
+  std::vector<double> cluster_cb_neutron;
+  std::vector<double> cluster_times;
+  std::vector<double> cluster_charges;
+  std::vector<double> cluster_cb;
+  bool passPMTMRDCoincCut;
+
 
   //histogram variables
   TH1F *h_time_neutrons = nullptr;
@@ -108,6 +131,23 @@ class NeutronMultiplicity: public Tool {
   TH1F *h_muon_vtx_x = nullptr;
   TH1F *h_muon_vtx_y = nullptr;
   TH1F *h_muon_vtx_z = nullptr; 
+
+  //graph variables
+  TGraphErrors *gr_neutrons_muonE = nullptr;
+  TGraphErrors *gr_neutrons_muonE_fv = nullptr;
+  TGraphErrors *gr_neutrons_muonE_zoom = nullptr;
+  TGraphErrors *gr_neutrons_muonE_fv_zoom = nullptr;
+  TGraphErrors *gr_neutrons_muonCosTheta = nullptr;
+  TGraphErrors *gr_neutrons_muonCosTheta_fv = nullptr;
+  TGraphErrors *gr_neutrons_muonCosTheta_zoom = nullptr;
+  TGraphErrors *gr_neutrons_muonCosTheta_fv_zoom = nullptr;
+
+  //directory variables
+  TDirectory *dir_overall = nullptr;
+  TDirectory *dir_muon = nullptr;
+  TDirectory *dir_neutron = nullptr;
+  TDirectory *dir_mc = nullptr;
+  TDirectory *dir_graph = nullptr;
 
   //tree variables 
   //
@@ -161,6 +201,10 @@ class NeutronMultiplicity: public Tool {
   double reco_VtxZ;
   int reco_FV;
   double reco_CosTheta;
+
+  //general event variables
+  int run_nr;
+  int ev_nr;
 
   //verbosity variables
   int v_error = 0;

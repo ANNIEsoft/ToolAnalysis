@@ -18,14 +18,14 @@ bool FindNeutrons::Initialise(std::string configfile, DataModel &data){
   if (!get_ok){
     Log("FindNeutrons tool: Get variable >>> Method <<< failed. Check configuration file.",v_error,verbosity);
     Log("FindNeutrons tool: Stopping toolchain",v_error,verbosity);
-    m_variables.Set("StopLoop",1);
+    m_data->vars.Set("StopLoop",1);
   } else {
     if (Method == "CB" || Method == "CBStrict"){
       Log("FindNeutrons tool: Loaded neutron finding method >>> "+ Method + "<<< successfully",v_message,verbosity);
     } else {
       Log("FindNeutrons tool: Unknown neutron finding method >>> "+ Method + "<<< specified. Please check available options and restart toolchain.",v_error,verbosity);
       Log("FindNeutrons tool: Available options: CB",v_error,verbosity);
-      m_variables.Set("StopLoop",1);
+      m_data->vars.Set("StopLoop",1);
     }
   }
 

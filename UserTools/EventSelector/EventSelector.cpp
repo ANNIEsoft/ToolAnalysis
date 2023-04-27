@@ -366,6 +366,9 @@ bool EventSelector::Execute(){
 
   if (verbosity > 1) std::cout <<"EventCutStatus: "<<fEventCutStatus<<std::endl;
 
+  //std::cout << "EventSelector tool: Bit representation: fEventApplied: " << std::bitset<32>(fEventApplied) << ", fEventFlagged: " << std::bitset<32>(fEventFlagged) << std::endl;
+  //std::cout <<"EventCutStatus: "<<fEventCutStatus<<std::endl;
+
 
   return true;
 }
