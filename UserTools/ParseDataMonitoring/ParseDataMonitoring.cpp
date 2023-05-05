@@ -132,7 +132,7 @@ bool ParseDataMonitoring::Execute()
 		map_local_boardid[LAPPDtoBoard[0]] = 2;
 		map_local_boardid[LAPPDtoBoard[1]] = 3;
 	} else {
-		Log("ParseDataMonitoring tool: Did encounter LAPPD_ID >>> "+std::to_string(LAPPD_ID)+"<<< which does not exist",v_error,verbosity);
+		Log("ParseDataMonitoring tool: Did encounter LAPPD_ID >>> "+std::to_string(LAPPD_ID)+"<<< which does not exist",0,verbosity);
 		//Set map just to avoid crashes in the online version
 		map_local_boardid[LAPPDtoBoard[0]] = 0;
 		map_local_boardid[LAPPDtoBoard[1]] = 1;

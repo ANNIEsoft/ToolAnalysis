@@ -2940,7 +2940,7 @@ void MonitorTankTime::DrawVMEHistogram(){
 
   canvas_vme->cd();
   canvas_vme->Clear();
-  canvas_vme->SetLogy();
+  //canvas_vme->SetLogy();
 
   // Find clusters of hits
 
