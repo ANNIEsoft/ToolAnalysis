@@ -1,0 +1,20 @@
+PythonScript RingCounting
+
+InitialiseFunction Initialise
+ExecuteFunction Execute
+FinaliseFunction Finalise
+
+verbose 1
+
+# analysis specific settings
+# 
+# Define file containing (multiple) filepath(s) to be loaded
+files_to_load configfiles/RingCounting/files_to_load.txt
+# Model version -> check documentation
+version 1_0_0
+# Folder containing models
+model_path /annie/app/users/dschmid/RingCountingStore/models/
+# Masked PMTs (to 0) config -> check documentation
+pmt_mask november_22
+# Output file
+save_to RC_output.csv
