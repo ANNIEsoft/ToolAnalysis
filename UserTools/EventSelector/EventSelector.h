@@ -237,6 +237,7 @@ class EventSelector: public Tool {
   bool fIsMC; 
   int fTriggerWord;
   int fRecoPDG;
+  std::string fCutConfigurationName;  
 
   bool get_mrd = false;
   double pmt_time = 0; 

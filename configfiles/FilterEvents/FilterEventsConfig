@@ -1,0 +1,6 @@
+# FilterEvents config file
+
+verbosity 2
+FilterName NeutrinoCandidate
+FilteredFilesBasename FilteredEvents_R2628
+SavePath .
