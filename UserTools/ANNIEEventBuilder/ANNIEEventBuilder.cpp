@@ -2860,6 +2860,10 @@ void ANNIEEventBuilder::Correct8nsOffset(bool force_all_entries){
     timestamps_tank.push_back(PMTCounterTimeNs);
   }
 
+  //Exclude the last five (most recent) entries, since those are probably still in progress
+  int number_entries = (timestamps_tank.size() > 6)? timestamps_tank.size() - 5 : 1;
+  if (force_all_entries) number_entries = (int) timestamps_tank.size();
+	
   //Go through the list of PMT timestamps and look for abnormally close timestamps (8ns)
   //Start with the second entry and always compare to previous entry
   for (int i_timestamp = 1; i_timestamp < (int) timestamps_tank.size(); i_timestamp++){
