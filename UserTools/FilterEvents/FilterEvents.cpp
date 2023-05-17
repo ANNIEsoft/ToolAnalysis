@@ -12,7 +12,6 @@ bool FilterEvents::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
-  m_variables.Get("FilterName",FilterName);
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("FilteredFilesBasename",FilteredFilesBasename);
   m_variables.Get("SavePath",SavePath);
@@ -37,15 +36,7 @@ bool FilterEvents::Execute(){
 
   std::string EventSelectorCutConfiguration;
   m_data->CStore.Get("CutConfiguration",EventSelectorCutConfiguration);
-
-  if (FilterName != EventSelectorCutConfiguration){
-    Log("FilterEvents Error: FilterName and EventSelectorCutConfiguration do not match!",v_error,verbosity);
-    Log("FilterName: "+FilterName,v_error,verbosity);
-    Log("EventSelectorCutConfiguration: "+EventSelectorCutConfiguration,v_error,verbosity);
-    Log("Please use the same filter name in EventSelector and FilterEvents! Abort.",v_error,verbosity);
-    m_variables.Set("StopLoop",1);
-    return false;
-  }
+  FilterName = EventSelectorCutConfiguration;
 
   bool pass_filter = false;
   m_data->Stores.at("RecoEvent")->Get("EventCutStatus", pass_filter); 
