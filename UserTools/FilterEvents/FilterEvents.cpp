@@ -19,6 +19,13 @@ bool FilterEvents::Initialise(std::string configfile, DataModel &data){
   matched = 0;
     
   FilteredEvents = new BoostStore(false,2);   
+  
+  std::string EventSelectorCutConfiguration;
+  m_data->CStore.Get("CutConfiguration",EventSelectorCutConfiguration);
+  FilterName = EventSelectorCutConfiguration;
+
+  FilteredEvents->Header->Set("FilteredEvent",true);
+  FilteredEvents->Header->Set("FilterName",FilterName);
 
   return true;
 }
@@ -34,9 +41,6 @@ bool FilterEvents::Execute(){
   m_data->Stores["ANNIEEvent"]->Get("LocalEventNumber",localEventNumber);
   m_data->Stores["ANNIEEvent"]->Get("PartNumber",partNumber);
 
-  std::string EventSelectorCutConfiguration;
-  m_data->CStore.Get("CutConfiguration",EventSelectorCutConfiguration);
-  FilterName = EventSelectorCutConfiguration;
 
   bool pass_filter = false;
   m_data->Stores.at("RecoEvent")->Get("EventCutStatus", pass_filter); 
@@ -62,8 +66,10 @@ bool FilterEvents::Finalise(){
 
 void FilterEvents::SetAndSaveEvent(){
 
-  uint32_t RunNumber, SubrunNumber, EventNumber, TriggerWord, LocalEventNumber;
-  uint64_t RunStartTime, EventTimeTank, EventTimeMRD, EventTimeLAPPD, CTCTimestamp, LAPPDOffset;
+  uint32_t RunNumber, SubrunNumber, EventNumber, TriggerWord;
+  size_t LocalEventNumber;
+  uint64_t RunStartTime, EventTimeTank, EventTimeLAPPD, CTCTimestamp, LAPPDOffset;
+  TimeClass EventTimeMRD;
   int PartNumber, RunType, TriggerExtended;
   std::map<std::string, bool> DataStreams;
   std::string MRDTriggerType;
