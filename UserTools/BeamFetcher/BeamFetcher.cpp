@@ -25,7 +25,6 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
 
   // Default values
   timestamp_mode = "MSEC";	//Other option: LOCALDATE, DB
-  DaylightSavings = false; 
 
   m_variables.Get("verbose", verbosity_);
 
@@ -36,14 +35,7 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
     timestamp_mode = "MSEC";
   }
 
-  bool got_daylight_savings = m_variables.Get("DaylightSavings",DaylightSavings);
-  if (DaylightSavings != 1 && DaylightSavings != 0){
-    Log("Error: DaylightSavings setting "+std::to_string(DaylightSavings)+" not recognized"
-      "Setting default option 0",0,verbosity_);
-    DaylightSavings = 0;
-  }
-  TimeZoneShift = 21600000;
-  if (DaylightSavings) TimeZoneShift = 18000000;
+  // SQL Page now in UTC, no need for timezone shift and/or Daylight Savings Adjustment
 
   bool got_runnumber = m_variables.Get("RunNumber",RunNumber);
   if (timestamp_mode == "DB"){
