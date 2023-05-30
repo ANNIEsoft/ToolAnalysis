@@ -269,11 +269,11 @@ void BeamFetcher::ConvertDateToMSec(std::string start_str,std::string end_str,ui
   boost::posix_time::ptime ptime_start(boost::posix_time::time_from_string(start_str));
   boost::posix_time::time_duration start_duration;
   start_duration = boost::posix_time::time_duration(ptime_start - Epoch);
-  start_ms = start_duration.total_milliseconds()+TimeZoneShift;
+  start_ms = start_duration.total_milliseconds();
   boost::posix_time::time_duration end_duration;
   boost::posix_time::ptime ptime_end(boost::posix_time::time_from_string(end_str));
   end_duration = boost::posix_time::time_duration(ptime_end - Epoch);
-  end_ms = end_duration.total_milliseconds()+TimeZoneShift;
+  end_ms = end_duration.total_milliseconds();
 
   if (verbosity_ > 2)  std::cout <<"BeamFetcher: start_ms: "<<start_ms<<", end_ms: "<<end_ms<<std::endl;
 
