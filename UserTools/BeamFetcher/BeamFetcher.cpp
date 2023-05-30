@@ -35,7 +35,7 @@ bool BeamFetcher::Initialise(std::string config_filename, DataModel& data)
     timestamp_mode = "MSEC";
   }
 
-  // SQL Page now in UTC, no need for timezone shift and/or Daylight Savings Adjustment
+  
 
   bool got_runnumber = m_variables.Get("RunNumber",RunNumber);
   if (timestamp_mode == "DB"){
