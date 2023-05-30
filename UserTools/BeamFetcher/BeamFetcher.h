@@ -54,7 +54,7 @@ class BeamFetcher: public Tool {
     uint64_t end_ms_since_epoch;
     void ConvertDateToMSec(std::string start_str,std::string end_str,uint64_t &start_ms,uint64_t &end_ms);
     uint64_t TimeZoneShift;
-    bool DaylightSavings;
+    //bool DaylightSavings;
     std::map<int,std::map<std::string,std::string>> RunInfoDB;
     int RunNumber;
 
