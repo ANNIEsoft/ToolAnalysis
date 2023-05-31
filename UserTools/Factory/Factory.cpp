@@ -156,5 +156,7 @@ if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
 if (tool=="PythonScript") ret=new PythonScript;
 if (tool=="ReweightEventsGenie") ret=new ReweightEventsGenie;
 if (tool=="FilterLAPPDEvents") ret=new FilterLAPPDEvents;
+if (tool=="Stage1DataBuilder") ret=new Stage1DataBuilder;
+if (tool=="printStore") ret=new printStore;
 return ret;
 }
