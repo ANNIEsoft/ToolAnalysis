@@ -64,6 +64,8 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   TrigEntriesCompleted = false;
   LAPPDEntriesCompleted = false;
 
+  LAPPDPaused = 0;
+
   m_data->CStore.Set("FileProcessingComplete",false);
   return true;
 }
