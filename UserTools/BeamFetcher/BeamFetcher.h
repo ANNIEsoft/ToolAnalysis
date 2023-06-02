@@ -16,47 +16,71 @@
 // ToolAnalysis includes
 #include "Tool.h"
 
+// ROOT includes
+#include "TFile.h"
+#include "TTree.h"
+
+
 class BeamFetcher: public Tool {
 
   public:
-
     BeamFetcher();
     bool Initialise(std::string configfile, DataModel& data);
     bool Execute();
     bool Finalise();
 
   protected:
+    bool FetchFromTimes();  // Currently only supports E:TOR875
+    bool FetchFromTrigger();    
+    bool SaveToFile();
 
-    /// @brief The verbosity to use when printing logging messages
-    /// @details A larger value corresponds to more verbose output
-    int verbosity_;
+    void SetupROOTFile();
+    void WriteTrees();
+    void SaveROOTFile();
 
-    /// @brief Transient BoostStore used to save downloaded information
-    /// from the Intensity Frontier beam database to disk
-    BoostStore beam_db_store_;
-
-    /// @brief Helper function that downloads and processes the beam
-    /// information
-    bool fetch_beam_data(uint64_t start_ms_since_epoch,
-      uint64_t end_ms_since_epoch, uint64_t chunk_step_ms);
-
-    /// @brief Name of the output file in which the beam database information
-    /// will be saved
-    std::string db_filename_;
-
-    std::string start_date;
-    std::string end_date;
-    std::string start_timestamp;
-    std::string end_timestamp;
-    boost::posix_time::ptime current;
-    std::string timestamp_mode;
-    uint64_t start_ms_since_epoch;
-    uint64_t end_ms_since_epoch;
     void ConvertDateToMSec(std::string start_str,std::string end_str,uint64_t &start_ms,uint64_t &end_ms);
-    uint64_t TimeZoneShift;
-    bool DaylightSavings;
-    std::map<int,std::map<std::string,std::string>> RunInfoDB;
-    int RunNumber;
 
+    // Holder for the retrieved data and the stuff we'll save
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> > fBeamData;
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> > fBeamDataToSave;
 
+    // For saving out to a file
+    std::map<int, std::pair<uint64_t, uint64_t> > fBeamDBIdx;
+
+    // Holder for the devices we're going to look up
+    std::vector<std::string> fDevices;
+
+    // For ROOT file
+    TFile *fOutFile;
+    TTree *fOutTree;
+    uint64_t fTimestamp;
+    double fValues[100];
+    std::map<std::string, int> fDevIdx; // map from device string to idx in fValues
+
+    
+    // Configuration variables
+    int verbosity;
+    bool fIsBundle;
+    bool fFetchFromTimes;
+    bool fDaylightSavings;
+    bool fSaveROOT;
+    std::string fDevicesFile;
+    std::string fOutFileName;
+    std::string fTimestampMode;
+    std::string fStartDateFileName;
+    std::string fStopDateFileName;
+    std::string fStartTimestamp;
+    std::string fStopTimestamp;
+    uint64_t fStartMSec;
+    uint64_t fStopMSec;
+    uint64_t fChunkStepMSec;
+    int fRunNumber;
+
+    // Verbosity things
+    int v_error   = 0;
+    int v_warning = 1;
+    int v_message = 2;
+    int v_debug   = 3;
+    int vv_debug  = 4;
+    std::string logmessage;
 };
