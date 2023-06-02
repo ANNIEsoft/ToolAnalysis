@@ -23,6 +23,7 @@ IFBeamDBInterface::~IFBeamDBInterface()
   curl_easy_cleanup(fCurl);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 const IFBeamDBInterface& IFBeamDBInterface::Instance() {
 
   // Create the IFBeamDBInterface using a static variable. This ensures that
@@ -34,41 +35,106 @@ const IFBeamDBInterface& IFBeamDBInterface::Instance() {
   return *the_instance;
 }
 
-std::map<std::string, std::map<uint64_t, BeamDataPoint> >
-  IFBeamDBInterface::QueryBeamDB(uint64_t t0, uint64_t t1)
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+  IFBeamDBInterface::QueryBeamDBSingleSpan(std::string device, uint64_t t0, uint64_t t1)
   const
 {
-  // Temporary storage for the response from the IF beam database
-  std::string response;
+  std::stringstream url_stream;
+  url_stream << "http://ifb-data.fnal.gov:8089/ifbeam/data/data?e=e,1d&v=";
+  url_stream << device;
+  url_stream << std::fixed << std::setprecision(3) << (t0 - 1)/1000.;
+  url_stream << "&t1=" << (t1 + 1)/1000.;
+  url_stream << "&f=csv";
 
-  int code = QueryBeamDB(t0, t1, response);
+  std::string response;
+  int code = RunQuery(url_stream, response);
 
   if (code != CURLE_OK) throw std::runtime_error("Error accessing"
     " IF beam database. Please check your internet connection.");
 
-  auto beam_data = ParseDBResponse(response);
+  auto beam_data = ParseDBResponseSingleSpan(response);
 
   return beam_data;
 }
 
-int IFBeamDBInterface::QueryBeamDB(uint64_t t0,
-  uint64_t t1, std::string& response_string) const
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+  IFBeamDBInterface::QueryBeamDBBundleSpan(std::string bundle, uint64_t t0, uint64_t t1)
+  const
+{
+  std::stringstream url_stream;
+  url_stream << "http://ifb-data.fnal.gov:8089/ifbeam/data/data?e=e,1d&b=";
+  url_stream << bundle;
+  url_stream << "&t0="; 
+  url_stream << std::fixed << std::setprecision(3) << (t0 - 1)/1000.;
+  url_stream << "&t1=" << (t1 + 1)/1000.;
+  url_stream << "&f=csv";
+
+  std::string response;
+  int code = RunQuery(url_stream, response);
+
+  if (code != CURLE_OK) throw std::runtime_error("Error accessing"
+    " IF beam database. Please check your internet connection.");
+
+  auto beam_data = ParseDBResponseBundleSpan(response);
+
+  return beam_data;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+  IFBeamDBInterface::QueryBeamDBSingle(std::string device, uint64_t time) const
+{
+  std::stringstream url_stream;
+  url_stream << "http://ifb-data.fnal.gov:8089/ifbeam/data/data?e=e,1d&v=";
+  url_stream << device;
+  url_stream << "&t=" << std::fixed << std::setprecision(3) << time/1000.;
+  url_stream << "&f=xml";
+
+  std::string response;
+  int code = RunQuery(url_stream, response);
+
+  if (code != CURLE_OK) throw std::runtime_error("Error accessing"
+    " IF beam database. Please check your internet connection.");
+
+  auto beam_data = ParseDBResponseSingle(response);
+
+  return beam_data;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+  IFBeamDBInterface::QueryBeamDBBundle(std::string bundle, uint64_t time) const
+{
+  std::stringstream url_stream;
+  url_stream << "http://ifb-data.fnal.gov:8089/ifbeam/data/data?e=e,1d&b=";
+  url_stream << bundle;
+  url_stream << "&t=" << std::fixed << std::setprecision(3) << time/1000.;
+  url_stream << "&f=csv";
+
+  std::string response;
+  int code = RunQuery(url_stream, response);
+
+  if (code != CURLE_OK) throw std::runtime_error("Error accessing"
+    " IF beam database. Please check your internet connection.");
+
+  auto beam_data = ParseDBResponseBundle(response);
+
+  return beam_data;
+}
+
+int IFBeamDBInterface::RunQuery(const std::stringstream &url_stream, std::string &response_string)
+  const
 {
   if (!fCurl) {
-    throw std::runtime_error("IFBeamDBInterface::QueryBeamDB() called"
+    throw std::runtime_error("IFBeamDBInterface::RunQuery() called"
       " without inititalizing libcurl");
     return -1;
   }
 
-  constexpr char BNB_URL_START[] = "http://ifb-data.fnal.gov:8089/ifbeam/"
-    "data/data?e=e%2C1d&b=BNBBPMTOR&f=csv&tz=&action=Show+device&t0=";
-
-  std::stringstream url_stream;
-
-  url_stream << BNB_URL_START;
-  url_stream << std::fixed << std::setprecision(3) << (t0 - 1)/1000.;
-  url_stream << "&t1=" << (t1 + 1)/1000.;
-
+  //std::cout << "IFBeamDBInterface: sending the following query: " << url_stream.str() << std::endl;
+  
   curl_easy_setopt(fCurl, CURLOPT_URL, url_stream.str().c_str());
 
   response_string.clear();
@@ -83,6 +149,7 @@ int IFBeamDBInterface::QueryBeamDB(uint64_t t0,
       }
     )
   );
+
   curl_easy_setopt(fCurl, CURLOPT_WRITEDATA, &response_string);
 
   int code = curl_easy_perform(fCurl);
@@ -131,151 +198,250 @@ int IFBeamDBInterface::QueryBeamDB(uint64_t t0,
 //   * BTH2T2 - target air cooling temperature. This is the temperature of the
 //     air going into the horn.
 
-std::map<std::string, std::map<uint64_t, BeamDataPoint> >
-  IFBeamDBInterface::ParseDBResponse(const std::string& response) const
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+IFBeamDBInterface::ParseDBResponseSingleSpan(const std::string& response) const
 {
   // Create an empty map to store the parsed data.
-  std::map<std::string, std::map<uint64_t,
-    BeamDataPoint> > beam_data;
+  std::map<uint64_t, std::map<std::string, BeamDataPoint> > retMap;
 
   // Use a stringstream to parse the data
   std::istringstream response_stream(response);
 
   // Temporary storage for the comma-separated fields in the database response
   // string
-  uint64_t time_stamp;
-  std::string data_type;
-  std::string unit;
-  double value;
+  std::string line, junk, data_type, time_string, unit, val_string;
+  uint64_t timestamp;
+
+  // Holder for the earliest TS in a chunk
+  // We will roll this forward when a TS 60 ms later comes in
+  // (the max rate of $1D is 15 Hz or 66 ms)  
+  uint64_t earlyTS = 0;
 
   // Skip the first line (which gives textual column headers)
-  std::getline(response_stream, unit, '\n');
+  std::getline(response_stream, line, '\n');
 
-  // Parse each line of the response and load the map with the parsed data
-  while (response_stream >> time_stamp) {
-    response_stream.ignore(1);
-    std::getline(response_stream, data_type, ',');
-    std::getline(response_stream, unit, ',');
-    response_stream >> value;
+  while (std::getline(response_stream, line, '\n')) {
+    std::stringstream ss(line);
 
-    // If there were any input problems, give up
-    if (!response_stream) break;
+    std::getline(ss, junk, ',');
+    std::getline(ss, data_type, ',');
+    std::getline(ss, time_string, ',');
+    std::getline(ss, unit, ',');
+    std::getline(ss, val_string);
 
-    // Otherwise, load the new data into the map
-    beam_data[data_type][time_stamp] = BeamDataPoint(value, unit);
+    timestamp = std::stoull(time_string);
+    if (timestamp - earlyTS > 60) earlyTS = timestamp;
+    
+    retMap[earlyTS][data_type] = BeamDataPoint(std::stod(val_string),
+					       unit,
+					       timestamp);
   }
-
-  PostprocessParsedResponse(beam_data);
-
-  return beam_data;
+  
+  return retMap;
 }
 
-void IFBeamDBInterface::PostprocessParsedResponse(std::map<std::string,
-  std::map<uint64_t, BeamDataPoint> >& parsed_response) const
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+IFBeamDBInterface::ParseDBResponseBundleSpan(const std::string& response) const
 {
-  // Perform postprocessing for the given device names
-  // The only two devices currently selected for postprocessing are toroids
-  // used to measure the protons-on-target (POT)
-  constexpr std::array<const char*, 2> devices = { "E:TOR860", "E:TOR875" };
+  // Create an empty map to store the parsed data.
+  std::map<uint64_t, std::map<std::string, BeamDataPoint> > retMap;
 
-  std::stringstream ss;
-  double value;
+  // Use a stringstream to parse the data
+  std::istringstream response_stream(response);
 
-  // Check whether each device name is found in the parsed response map
-  for (const auto& device : devices) {
-    auto iter = parsed_response.find(device);
+  // Temporary storage for the comma-separated fields in the database response
+  // string
+  std::string line, junk, data_type, time_string, unit, val_string;
+  uint64_t timestamp;
 
-    // If it is, append the unit (which is known for these devices to be of the
-    // form "E12") to the end of the numerical value, then convert the entire
-    // string back to a number. Replace the given unit with "POT" (for "protons
-    // on target") and update the map with the new value and unit.
-    if (iter != parsed_response.end()) {
-      for (auto& pair : iter->second) {
+  // Holder for the earliest TS in a chunk
+  // We will roll this forward when a TS 60 ms later comes in
+  // (the max rate of $1D is 15 Hz or 66 ms)  
+  uint64_t earlyTS = 0;
 
-        // Clear and reset the string stream
-        ss.str("");
-        ss.clear();
 
-        // Do the conversion to a numerical value using the exponent from the
-        // "E12" unit
-        ss << pair.second.value << pair.second.unit;
-        ss >> value;
+  // Skip the first line (which gives textual column headers)
+  std::getline(response_stream, line, '\n');
 
-        // Update the map with the new value and unit
-        pair.second.value = value;
-        pair.second.unit = "POT";
-      }
-    } else {
-      std::cout <<"IFBeamDBInterface: Did not find device name : "<<device<<std::endl;
-    }
+  while (std::getline(response_stream, line, '\n')) {
+    std::stringstream ss(line);
+
+    std::getline(ss, time_string, ',');
+    std::getline(ss, data_type, ',');
+    std::getline(ss, unit, ',');
+    std::getline(ss, val_string);
+
+    timestamp = std::stoull(time_string);
+    if (timestamp - earlyTS > 60) earlyTS = timestamp;
+    
+    retMap[earlyTS][data_type] = BeamDataPoint(std::stod(val_string),
+					       unit,
+					       timestamp);
   }
+  
+  return retMap;
 }
 
-BeamStatus IFBeamDBInterface::GetBeamStatus(uint64_t time) const
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+IFBeamDBInterface::ParseDBResponseSingle(const std::string& response) const
 {
-  constexpr uint64_t TIME_OFFSET = 5000ull; // ms
+  std::map<uint64_t, std::map<std::string, BeamDataPoint> > retMap;
+ 
+  // Use a stringstream to parse the data
+  std::istringstream response_stream(response);
 
-  // The exact time given by the user might not appear in the database, so
-  // look for entries on the interval [time - TIME_OFFSET, time + TIME_OFFSET]
-  uint64_t t0 = time - TIME_OFFSET;
-  uint64_t t1 = time + TIME_OFFSET;
+  // Temporary storage for the comma-separated fields in the database response
+  // string
+  std::string line, junk, data_type, time_string, unit, val_string;
+  uint64_t timestamp;
 
-  // Ask the beam database for information about the time window of interest.
-  // If there are any problems, then return a bogus BeamStatus object.
-  try {
+  // This is a bit less necessary here,
+  // but it keeps all the points in the same timestamp map element
+  // Holder for the earliest TS in a chunk
+  // We will roll this forward when a TS 60 ms later comes in
+  // (the max rate of $1D is 15 Hz or 66 ms)  
+  uint64_t earlyTS = 0;
 
-    auto beam_data = QueryBeamDB(t0, t1);
+  // Skip the first line (which gives textual column headers)
+  std::getline(response_stream, line, '\n');
 
-    // TODO: remove hard-coded device name here
-    // Get protons-on-target (POT) information from the parsed data
-    const auto& pot_map = beam_data.at("E:TOR875");
+  // The second line has all the info, but also a load of crap
+  std::getline(response_stream, line, '\n');
+  std::stringstream ss(line);
+  std::getline(ss, junk, '"');
+  std::getline(ss, data_type, '"');
+  std::getline(ss, junk, '"'); std::getline(ss, junk, '"'); std::getline(ss, junk, '"');
+  std::getline(ss, unit, '"');
+  std::getline(ss, junk, '"'); std::getline(ss, junk, '"'); std::getline(ss, junk, '"');
+  std::getline(ss, time_string, '"');
+  std::getline(ss, junk, '>');
+  std::getline(ss, val_string, '\n');
+  // we can ignore the remaining lines and finish up
 
-    // Find the POT entry with the closest time to that requested by the
-    // user, and use it to create the BeamStatus object that will be returned
-    const auto low = pot_map.lower_bound(time);
-
-    if (low == pot_map.cend()) {
-      std::cerr << "WARNING: IF beam database did not have any information"
-        " for " << time << " ms after the Unix epoch\n";
-
-      return BeamStatus(TimeClass(time * MILLION), 0., BeamCondition::Missing);
-    }
-
-    else if (low == pot_map.cbegin()) {
-      // TODO: add checks for BeamCondition::Bad here?
-      return BeamStatus(TimeClass( low->first * MILLION ), low->second.value,
-        BeamCondition::Ok);
-    }
-
-    // We're between two time values, so we need to figure out which is closest
-    // to the value requested by the user
-    else {
-
-      auto prev = low;
-      --prev;
-
-      if ((time - prev->first) < (low->first - time)) {
-        // TODO: add checks for BeamCondition::Bad here?
-        return BeamStatus(TimeClass( prev->first * MILLION ),
-          prev->second.value, BeamCondition::Ok);
-      }
-      else {
-        // TODO: add checks for BeamCondition::Bad here?
-        return BeamStatus(TimeClass( low->first * MILLION ), low->second.value,
-          BeamCondition::Ok);
-      }
-    }
-
-  }
-
-  catch (const std::exception& e) {
-    std::cerr << "WARNING: problem encountered while querying IF beam"
-      " database:\n  " << e.what() << '\n';
-
-    // Return a default-constructed BeamStatus object since there was a
-    // problem. The fOk member will be set to false by default, which will
-    // flag the object as problematic.
-    return BeamStatus(TimeClass( time ), 0., BeamCondition::Missing);
-  }
-
+  timestamp = std::stoull(time_string);
+  if (timestamp - earlyTS > 60) earlyTS = timestamp;
+    
+  retMap[earlyTS][data_type] = BeamDataPoint(std::stod(val_string),
+					     unit,
+					     timestamp);
+  
+  return retMap;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+IFBeamDBInterface::ParseDBResponseBundle(const std::string& response) const
+{
+  std::map<uint64_t, std::map<std::string, BeamDataPoint> > retMap;
+  
+  // Use a stringstream to parse the data
+  std::istringstream response_stream(response);
+
+  // Temporary storage for the comma-separated fields in the database response
+  // string
+  std::string line, junk, data_type, time_string, unit, val_string;
+  uint64_t timestamp;
+
+  // This is a bit less necessary here,
+  // but it keeps all the points in the same timestamp map element
+  // Holder for the earliest TS in a chunk
+  // We will roll this forward when a TS 60 ms later comes in
+  // (the max rate of $1D is 15 Hz or 66 ms)  
+  uint64_t earlyTS = 0;
+
+  // Skip the first line (which gives textual column headers)
+  std::getline(response_stream, line, '\n');
+
+  while (std::getline(response_stream, line, '\n')) {
+    std::stringstream ss(line);
+
+    std::getline(ss, data_type, ',');
+    std::getline(ss, junk, ',');
+    std::getline(ss, time_string, ',');
+    std::getline(ss, unit, ',');
+    std::getline(ss, val_string);
+
+    timestamp = std::stoull(time_string);
+    if (timestamp - earlyTS > 60) earlyTS = timestamp;
+    
+    retMap[earlyTS][data_type] = BeamDataPoint(std::stod(val_string),
+					       unit,
+					       timestamp);
+  }
+  
+  return retMap;
+}
+
+
+// ////////////////////////////////////////////////////////////////////////////////
+// BeamStatus IFBeamDBInterface::GetBeamStatus(uint64_t time) const
+// {
+//   constexpr uint64_t TIME_OFFSET = 5000ull; // ms
+
+//   // The exact time given by the user might not appear in the database, so
+//   // look for entries on the interval [time - TIME_OFFSET, time + TIME_OFFSET]
+//   uint64_t t0 = time - TIME_OFFSET;
+//   uint64_t t1 = time + TIME_OFFSET;
+
+//   // Ask the beam database for information about the time window of interest.
+//   // If there are any problems, then return a bogus BeamStatus object.
+//   try {
+
+//     auto beam_data = QueryBeamDB(t0, t1);
+
+//     // TODO: remove hard-coded device name here
+//     // Get protons-on-target (POT) information from the parsed data
+//     const auto& pot_map = beam_data.at("E:TOR875");
+
+//     // Find the POT entry with the closest time to that requested by the
+//     // user, and use it to create the BeamStatus object that will be returned
+//     const auto low = pot_map.lower_bound(time);
+
+//     if (low == pot_map.cend()) {
+//       std::cerr << "WARNING: IF beam database did not have any information"
+//         " for " << time << " ms after the Unix epoch\n";
+
+//       return BeamStatus(TimeClass(time * MILLION), 0., BeamCondition::Missing);
+//     }
+
+//     else if (low == pot_map.cbegin()) {
+//       // TODO: add checks for BeamCondition::Bad here?
+//       return BeamStatus(TimeClass( low->first * MILLION ), low->second.value,
+//         BeamCondition::Ok);
+//     }
+
+//     // We're between two time values, so we need to figure out which is closest
+//     // to the value requested by the user
+//     else {
+
+//       auto prev = low;
+//       --prev;
+
+//       if ((time - prev->first) < (low->first - time)) {
+//         // TODO: add checks for BeamCondition::Bad here?
+//         return BeamStatus(TimeClass( prev->first * MILLION ),
+//           prev->second.value, BeamCondition::Ok);
+//       }
+//       else {
+//         // TODO: add checks for BeamCondition::Bad here?
+//         return BeamStatus(TimeClass( low->first * MILLION ), low->second.value,
+//           BeamCondition::Ok);
+//       }
+//     }
+
+//   }
+
+//   catch (const std::exception& e) {
+//     std::cerr << "WARNING: problem encountered while querying IF beam"
+//       " database:\n  " << e.what() << '\n';
+
+//     // Return a default-constructed BeamStatus object since there was a
+//     // problem. The fOk member will be set to false by default, which will
+//     // flag the object as problematic.
+//     return BeamStatus(TimeClass( time ), 0., BeamCondition::Missing);
+//   }
+
+// }
