@@ -53,20 +53,20 @@ class IFBeamDBInterface {
     /// is to use the terminal utility date like this: @verbatim date +%s%3N
     /// @endverbatim
     /// I found this handy trick here: http://unix.stackexchange.com/a/123764
-    std::map<std::string, std::map<uint64_t, BeamDataPoint> >
-      QueryBeamDB(uint64_t t0, uint64_t t1) const;
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      QueryBeamDBSingleSpan(std::string device, uint64_t t0, uint64_t t1) const;
 
-    /// @brief Get information about the BNB state from the database for the
-    /// time interval [t0, t1]
-    /// @param t0 Starting timestamp (milliseconds since the Unix epoch)
-    /// @param t1 Starting timestamp (milliseconds since the Unix epoch)
-    /// @param[out] response_string A string that will be loaded with the
-    /// csv-format data from the database
-    /// @return The libcurl integer return code for the query (zero if
-    /// everything worked ok, or nonzero if an error occurred)
-    int QueryBeamDB(uint64_t t0, uint64_t t1,
-      std::string& response_string) const;
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      QueryBeamDBBundleSpan(std::string bundle, uint64_t t0, uint64_t t1) const;
 
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      QueryBeamDBSingle(std::string device, uint64_t time) const;
+
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      QueryBeamDBBundle(std::string bundle, uint64_t time) const;
+
+    int RunQuery(const std::stringstream &url_stream, std::string &response_string) const;
+    
     /// @brief Get information about the BNB state from the database as close
     /// as possible to a given time
     /// @param time Timestamp (milliseconds since the Unix epoch) to use when
@@ -78,11 +78,20 @@ class IFBeamDBInterface {
     /// @brief Create the singleton IFBeamDBInterface object
     IFBeamDBInterface();
 
-    std::map<std::string, std::map<uint64_t, BeamDataPoint> >
-      ParseDBResponse(const std::string& response) const;
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      ParseDBResponseSingleSpan(const std::string& response) const;
 
-    void PostprocessParsedResponse(std::map<std::string,
-      std::map<uint64_t, BeamDataPoint> >& parsed_response) const;
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      ParseDBResponseBundleSpan(const std::string& response) const;
+
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      ParseDBResponseSingle(const std::string& response) const;
+
+    std::map<uint64_t, std::map<std::string, BeamDataPoint> >
+      ParseDBResponseBundle(const std::string& response) const;
+
+    void PostprocessParsedResponse(std::map<uint64_t,
+      std::map<std::string, BeamDataPoint> >& parsed_response) const;
 
     /// @brief Pointer used to interact with libcurl
     CURL* fCurl = nullptr;
