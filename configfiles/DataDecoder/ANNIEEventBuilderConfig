@@ -17,3 +17,4 @@ SaveRawData 0
 StoreBeamStatus 1
 
 BuildStage1Data true 
+SaveSeparatePartfiles true

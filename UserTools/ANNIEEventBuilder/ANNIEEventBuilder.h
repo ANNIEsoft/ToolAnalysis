@@ -264,6 +264,7 @@ class ANNIEEventBuilder: public Tool {
   std::string logmessage;
 
   bool BuildStage1Data = false;
+  bool SaveSeparatePartfiles = true;
 };
 
 

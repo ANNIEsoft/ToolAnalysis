@@ -50,6 +50,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("StoreBeamStatus",store_beam_status);
   m_variables.Get("LAPPDOffsetFile",LAPPDOffsetFile);
   m_variables.Get("BuildStage1Data",BuildStage1Data);
+  m_variables.Get("SaveSeparatePartfiles",SaveSeparatePartfiles);
   pause_threshold*=1E9;
 
   if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
@@ -2519,7 +2520,7 @@ void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum, int PartNum)
   /*if(verbosity>4)*/ std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
   std::string Filename = SavePath + ProcessedFilesBasename + "_"+BuildType+"_R" + to_string(RunNum) + 
       "S" + to_string(SubRunNum) + "p" + to_string(PartNum);
-  ANNIEEvent->Save(Filename);
+  if (SaveSeparatePartfiles) ANNIEEvent->Save(Filename);
   std::cout<<"ANNIEEvent: "<<std::endl;
   ANNIEEvent->Print(false);
   //std::cout <<"ANNIEEvent saved, now delete"<<std::endl;
