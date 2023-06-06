@@ -273,7 +273,7 @@ bool LoadANNIEEvent::Execute() {
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
   bool has_local = (m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber"));
   bool has_global = (m_data->Stores["ANNIEEvent"]->Has("EventNumber"));
-  if (!has_local){ m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_); m_data->Stores["ANNIEEvent"]->Set("EventNumber",current_entry_);}
+  if (!has_local){ m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_);}
   ++current_entry_;
  
 
