@@ -1,4 +1,4 @@
-void plot_neutrons_dirt(const char* infile, const char* outfile){
+void plot_neutrons_data_dirt(const char* infile, const char* outfile, bool verbose = false){
 
 	TFile *f = new TFile(infile,"READ");
 	TTree *tTrigger = (TTree*) f->Get("phaseIITriggerTree");
@@ -154,7 +154,6 @@ void plot_neutrons_dirt(const char* infile, const char* outfile){
 		if (!tankmrdcoinc) continue;
 		if (noveto) continue;
 		if (trigword != 5) continue;
-		//if (fabs(true_pdg) != 13) continue;
 		bool found_coinc=false;
 		bool is_extended = false;
 		int n_neutrons=0;
@@ -185,8 +184,10 @@ void plot_neutrons_dirt(const char* infile, const char* outfile){
 
 		while (i_pmt < nentries_pmt){
 			tPMT->GetEntry(i_pmt);
-			//std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
-			//std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			if (verbose){
+				std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
+				std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			}
 			if (run_trigger == run_pmt){
 				if (ev_trigger == ev_pmt){
 					if (cluster_time < 2000 && cluster_pe > max_pe) max_pe = cluster_pe;
@@ -218,7 +219,6 @@ void plot_neutrons_dirt(const char* infile, const char* outfile){
                         else if (run_pmt < run_trigger) {i_pmt++; run_switch=true;}
 			else if (i_pmt > 0) break;
 		}
-		//if (found_coinc && is_extended && num_mrd_tracks == 1) {
 		if (found_coinc && is_extended && num_mrd_tracks == 1) {
 			h_neutrons->Fill(n_neutrons);
 			for (int i_t = 0; i_t < (int) n_times.size(); i_t++){
@@ -331,7 +331,6 @@ void plot_neutrons_dirt(const char* infile, const char* outfile){
 				}
 
 				Emu = reco_muon_energy;			
-				//Enu = reco_neutrino_energy;
                                 RecoVtxX = reco_vtxx;
                                 RecoVtxY = reco_vtxy;
                                 RecoVtxZ = reco_vtxz;
