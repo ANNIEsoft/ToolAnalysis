@@ -23,10 +23,10 @@ bool SimpleReconstruction::Execute(){
   bool get_annie  = this->GetANNIEEventVariables();
   
   //Check which track id should be considered
-  m_data->Stores.at("ANNIEEvent")->Get("PromptMuonTotalPE",max_pe); 
+  m_data->Stores.at("RecoEvent")->Get("PromptMuonTotalPE",max_pe); 
 
   int clusterid = -1;
-  m_data->Stores["ANNIEEvent"]->Get("MRDCoincidenceCluster",clusterid);
+  m_data->Stores["RecoEvent"]->Get("MRDCoincidenceCluster",clusterid);
  
   bool reco_possible = this->RecoTankExitPoint(clusterid); 
 
@@ -40,14 +40,14 @@ bool SimpleReconstruction::Execute(){
     this->SimpleVertexReconstruction();
   }
 
-  //Set variables in ANNIEEvent Store
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoFlag",SimpleRecoFlag);
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoEnergy",SimpleRecoEnergy);
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoVtx",SimpleRecoVtx);
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoFV",SimpleRecoFV);
-  m_data->Stores["ANNIEEvent"]->Set("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
+  //Set variables in RecoEvent Store
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoFlag",SimpleRecoFlag);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoEnergy",SimpleRecoEnergy);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoVtx",SimpleRecoVtx);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoFV",SimpleRecoFV);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
 
   //Fill Particles object with muon
   if (reco_possible){
@@ -62,7 +62,7 @@ bool SimpleReconstruction::Execute(){
     Position muon_dir = SimpleRecoStopVtx - SimpleRecoVtx;
     Direction muon_start_dir = Direction(muon_dir.X(),muon_dir.Y(),muon_dir.Z());
     double muon_start_time;
-    m_data->Stores["ANNIEEvent"]->Get("PromptMuonTime",muon_start_time);
+    m_data->Stores["RecoEvent"]->Get("PromptMuonTime",muon_start_time);
     double muon_tracklength = muon_dir.Mag();
     double muon_stop_time = muon_start_time + muon_tracklength/3.E8*1.33;
 
