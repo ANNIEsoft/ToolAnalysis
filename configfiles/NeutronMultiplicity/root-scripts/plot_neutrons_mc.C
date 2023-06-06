@@ -1,4 +1,4 @@
-void plot_neutrons_mc_new(const char* infile, const char* outfile){
+void plot_neutrons_mc(const char* infile, const char* outfile, bool verbose = false){
 
 	TFile *f = new TFile(infile,"READ");
 	TTree *tTrigger = (TTree*) f->Get("phaseIITriggerTree");
@@ -146,8 +146,6 @@ void plot_neutrons_mc_new(const char* infile, const char* outfile){
 
 	TH1F *h_muon_energy = new TH1F("h_muon_energy","Muon energy distribution",100,0,2000);
 	TH1F *h_muon_energy_fv = new TH1F("h_muon_energy_fv","Muon energy distribution (FV)",100,0,2000);
-	//TH2F *h_muon_vtx_yz = new TH2F("h_muon_vtx_yz","Muon vertex (tank) Y-Z",200,-1,4,200,-3,3);
-	//TH2F *h_muon_vtx_xz = new TH2F("h_muon_vtx_xz","Muon vertex (tank) X-Z",200,-1,4,200,-2.5,2.5);
 	TH2F *h_muon_vtx_yz = new TH2F("h_muon_vtx_yz","Muon vertex (tank) Y-Z",200,-3,3,200,-3,3);
 	TH2F *h_muon_vtx_xz = new TH2F("h_muon_vtx_xz","Muon vertex (tank) X-Z",200,-2.5,2.5,200,-2.5,2.5);
  	TH1F *h_muon_costheta = new TH1F("h_muon_costheta","Muon cos(#theta) distribution",100,-1,1);
@@ -247,7 +245,6 @@ void plot_neutrons_mc_new(const char* infile, const char* outfile){
 		tTrigger->GetEntry(i_trig);
 		if (!noveto) continue;
 		if (!tankmrdcoinc) continue;
-		//if (fabs(true_pdg) != 13) continue;
 		bool found_coinc=false;
 		bool is_extended = false;
 		int n_neutrons=0;
@@ -295,8 +292,10 @@ void plot_neutrons_mc_new(const char* infile, const char* outfile){
 
 		while (i_pmt < nentries_pmt){
 			tPMT->GetEntry(i_pmt);
-			//std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
-			//std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			if (verbose){
+				std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
+				std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			}
 			if (run_trigger == run_pmt){
 				if (ev_trigger == ev_pmt){
 					if (cluster_time < 2000 && cluster_pe > max_pe) max_pe = cluster_pe;
