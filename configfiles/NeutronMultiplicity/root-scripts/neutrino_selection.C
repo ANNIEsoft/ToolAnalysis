@@ -1,4 +1,4 @@
-void neutrino_selection(const char* infile, const char* outfile){
+void neutrino_selection(const char* infile, const char* outfile, bool verbose = false){
 
 	TFile *f = new TFile(infile,"READ");
 	TTree *tTrigger = (TTree*) f->Get("phaseIITriggerTree");
@@ -136,8 +136,10 @@ void neutrino_selection(const char* infile, const char* outfile){
 
 		while (i_pmt < nentries_pmt){
 			tPMT->GetEntry(i_pmt);
-			//std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
-			//std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			if (verbose){
+				std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
+				std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			}
 			if (run_trigger == run_pmt){
 				if (ev_trigger == ev_pmt){
 					if (cluster_time < 2000 && cluster_pe > max_pe) {
