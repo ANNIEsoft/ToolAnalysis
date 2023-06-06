@@ -1,4 +1,4 @@
-void visible_energy_vertex(const char* infile, const char* outfile){
+void visible_energy_vertex(const char* infile, const char* outfile, bool IsMC = true, bool verbose = false){
 
 	TFile *f = new TFile(infile,"READ");
 	TTree *tTrigger = (TTree*) f->Get("phaseIITriggerTree");
@@ -12,7 +12,6 @@ void visible_energy_vertex(const char* infile, const char* outfile){
 	int nentries_pmt = tPMT->GetEntries();
 
 	std::cout << "Entries Trigger/MRD/PMT: "<<nentries_trigger<<","<<nentries_mrd<<","<<nentries_pmt<<std::endl;
-
 
 	int run_trigger;
 	int run_mrd;
@@ -138,8 +137,6 @@ void visible_energy_vertex(const char* infile, const char* outfile){
 	TH2F *h_visible_y_zrho_4500_5000 = new TH2F("h_visible_y_zrho_4500_5000","Vertex y vs |z| #rho (4500-5000p.e.)",200,0,2,200,-2,2);
 	TH2F *h_visible_y_zrho_5000_plus = new TH2F("h_visible_y_zrho_5000_plus","Vertex y vs |z| #rho (> 5000p.e.)",200,0,2,200,-2,2);
 
-
-
 	TH2F *h_Etank_Q = new TH2F("h_Etank_Q","Muon energy (tank) vs. charge",200,0,5000,200,-300,1000);
 
 	int nPrimNeut;
@@ -178,45 +175,7 @@ void visible_energy_vertex(const char* infile, const char* outfile){
 	int clusters;
 	int nCandidates;
 	std::vector<int> *primaryPdgs = new std::vector<int>;
-/*
-        TTree *tout = new TTree("neutron_tree","Neutron tree");
-        tout->Branch("TankMRDCoinc",&tankMRDCoinc);
-        tout->Branch("nPrimNeut",&nPrimNeut);
-        tout->Branch("nPrimProt",&nPrimProt);
-        tout->Branch("nCaptures",&nCaptures);
-        tout->Branch("nCapturesPMTVol",&nCapturesPMTVol);
-        tout->Branch("nCandidates",&nCandidates);
-        tout->Branch("Emu",&Emu);
-        tout->Branch("Enu",&Enu);
-        tout->Branch("Q2",&Q2);
-        tout->Branch("vtxX",&vtxX);
-        tout->Branch("vtxY",&vtxY);
-        tout->Branch("vtxZ",&vtxZ);
-        tout->Branch("Clusters",&clusters);
-        tout->Branch("ClusterCB",&clusterCB);
-        tout->Branch("ClusterTime",&clusterTime);
-        tout->Branch("ClusterPE",&clusterPE);
-        tout->Branch("nCandCB",&nCandCB);
-        tout->Branch("nCandTime",&nCandTime);
-        tout->Branch("nCandPE",&nCandPE);
-        tout->Branch("mrdTrackLength",&mrdTrackLength);
-        tout->Branch("mrdEnergyLoss",&mrdEnergyLoss);
-        tout->Branch("neutVtxX",&neutVtxX);
-        tout->Branch("neutVtxY",&neutVtxY);
-        tout->Branch("neutVtxZ",&neutVtxZ);
-        tout->Branch("neutCapNucl",&neutCapNucl);
-        tout->Branch("neutCapTime",&neutCapTime);
-        tout->Branch("neutCapETotal",&neutCapETotal);
-        tout->Branch("neutCapNGamma",&neutCapNGamma);
-        tout->Branch("isCC",&isCC);
-        tout->Branch("isQEL",&isQEL);
-        tout->Branch("isDIS",&isDIS);
-        tout->Branch("isRES",&isRES);
-        tout->Branch("isMEC",&isMEC);
-        tout->Branch("isCOH",&isCOH);
-        tout->Branch("multiRing",&multiRing);
-        tout->Branch("primaryPdgs",&primaryPdgs);
-*/
+	
 	double ChargeTank;
 	double TrueVtxX;
 	double TrueVtxY;
@@ -252,44 +211,6 @@ void visible_energy_vertex(const char* infile, const char* outfile){
 	double DirY;
 	double DirZ;
 
-/*	TTree *tout_reco = new TTree("tout_reco","Reco tree");
-	tout_reco->Branch("ChargeTank",&ChargeTank);
-	tout_reco->Branch("TrueVtxX",&TrueVtxX);
-	tout_reco->Branch("TrueVtxY",&TrueVtxY);
-	tout_reco->Branch("TrueVtxZ",&TrueVtxZ);
-	tout_reco->Branch("TrueMuonE",&TrueMuonE);
-	tout_reco->Branch("TrueNeutrinoE",&TrueNeutrinoE);
-	tout_reco->Branch("TrueFV",&TrueFV);
-	
-	tout_reco->Branch("RecoMuonE",&RecoMuonE);
-	tout_reco->Branch("RecoNeutrinoE",&RecoNeutrinoE);
-	tout_reco->Branch("RecoVtxX",&RecoVtxX);
-	tout_reco->Branch("RecoVtxY",&RecoVtxY);
-	tout_reco->Branch("RecoVtxZ",&RecoVtxZ);
-	tout_reco->Branch("FV",&FV);
-	
-	tout_reco->Branch("DWater",&DWater);
-	tout_reco->Branch("DAir",&DAir);
-	tout_reco->Branch("DMRD",&DMRD);
-	tout_reco->Branch("RecoMuonEMRD",&RecoMuonEMRD);
-	tout_reco->Branch("RecoTheta",&RecoTheta);
-	tout_reco->Branch("RecoMuonEWater",&RecoMuonEWater);
-	tout_reco->Branch("MRDStartX",&MRDStartX);
-	tout_reco->Branch("MRDStartY",&MRDStartY);
-	tout_reco->Branch("MRDStartZ",&MRDStartZ);
-	tout_reco->Branch("MRDStopX",&MRDStopX);
-	tout_reco->Branch("MRDStopY",&MRDStopY);
-	tout_reco->Branch("MRDStopZ",&MRDStopZ);
-	tout_reco->Branch("TankExitX",&TankExitX);
-	tout_reco->Branch("TankExitY",&TankExitY);
-	tout_reco->Branch("TankExitZ",&TankExitZ);
-	tout_reco->Branch("PMTVolExitX",&PMTVolExitX);
-	tout_reco->Branch("PMTVolExitY",&PMTVolExitY);
-	tout_reco->Branch("PMTVolExitZ",&PMTVolExitZ);
-	tout_reco->Branch("DirX",&DirX);
-	tout_reco->Branch("DirY",&DirY);
-	tout_reco->Branch("DirZ",&DirZ);
-*/
 	int i_pmt=0;
 	for (int i_trig=0; i_trig < nentries_trigger; i_trig++){
 		std::cout <<"Load trig entry "<<i_trig<<"/"<<nentries_trigger<<std::endl;
@@ -371,8 +292,10 @@ void visible_energy_vertex(const char* infile, const char* outfile){
 
 		while (i_pmt < nentries_pmt){
 			tPMT->GetEntry(i_pmt);
-			//std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
-			//std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			if (verbose){
+				std::cout <<"i_pmt: "<<i_pmt<<"run (PMT): "<<run_pmt<<", run (Trigger): "<<run_trigger<<std::endl;
+				std::cout <<"i_pmt: "<<i_pmt<<"event (PMT): "<<ev_pmt<<", event (Trigger): "<<ev_trigger<<std::endl;
+			}
 			if (run_trigger == run_pmt){
 				if (ev_trigger == ev_pmt){
 					if (cluster_time < 2000 && cluster_pe > max_pe) max_pe = cluster_pe;
@@ -394,8 +317,8 @@ void visible_energy_vertex(const char* infile, const char* outfile){
 				} else if (found_coinc) break;
 				else if (ev_pmt < ev_trigger) i_pmt++;
 				else if (ev_pmt > ev_trigger) {
-					//i_pmt--;	//Data case
-					break;		//MC case
+					if (IsMC) break;		//MC case
+					else i_pmt--;	//Data case
 				}
 			}
 			else if (run_pmt < run_trigger) i_pmt++;
