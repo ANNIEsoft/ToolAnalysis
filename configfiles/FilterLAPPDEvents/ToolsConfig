@@ -1,0 +1,3 @@
+LoadANNIEEvent LoadANNIEEvent configfiles/FilterLAPPDEvents/LoadANNIEEventConfig
+myLoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
+FilterLAPPDEvents FilterLAPPDEvents configfiles/FilterLAPPDEvents/FilterLAPPDEventsConfig

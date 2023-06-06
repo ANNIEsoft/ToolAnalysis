@@ -54,10 +54,10 @@ class LoadRawData: public Tool {
   bool storerawdata;
 
   int FileNum = 0;
-  int tanktotalentries;
-  int trigtotalentries;
-  int mrdtotalentries;
-  int lappdtotalentries;
+  long tanktotalentries;
+  long trigtotalentries;
+  long mrdtotalentries;
+  long lappdtotalentries;
   bool TankEntriesCompleted;
   bool MRDEntriesCompleted;
   bool TrigEntriesCompleted;

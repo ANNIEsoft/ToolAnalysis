@@ -163,5 +163,7 @@
 #include "GetLAPPDEvents.h"
 #include "LAPPDDataDecoder.h"
 #include "PythonScript.h"
+#include "ReweightEventsGenie.h"
+#include "FilterLAPPDEvents.h"
 #include "FindNeutrons.h"
 #include "NeutronMultiplicity.h"

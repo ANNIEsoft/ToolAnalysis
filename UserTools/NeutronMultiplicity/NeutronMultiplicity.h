@@ -41,6 +41,7 @@ class NeutronMultiplicity: public Tool {
   bool ReadBoostStore(); ///< Read variables from BoostStore
   bool FillHistograms(); ///< Fill histograms & save to root file
   bool GetParticleInformation(); ///< Get reconstructed information about muon vertex
+  bool GetClusterInformation(); ///< Get reconstructed information about clusters
   bool ResetVariables(); ///< Reset variables every Execute step
   bool FillTGraphs(); ///< Fill TGraph objects
   bool FillSingleTGraph(TGraphErrors *gr, TH2F *h2d, std::vector<std::string> labels); ////< Fill TGraph based on averaging a 2D histogram

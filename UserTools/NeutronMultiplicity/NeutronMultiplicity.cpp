@@ -150,10 +150,22 @@ bool NeutronMultiplicity::Execute(){
   m_data->Stores["RecoEvent"]->Get("SimpleRecoFlag",SimpleRecoFlag);
   if (SimpleRecoFlag != -9999) pass_reconstruction = true;
 
+  //Get information about clusters
+  this->GetClusterInformation();
+
+  m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
   //If MRDTrackRestriction is enabled, check if there was only one MRD track
   if (mrdtrack_restriction){
-    m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
     if (numtracksinev != 1) pass_reconstruction = false;
+    if (pass_selection && numtracksinev == 1) {
+      for (int i_n=0; i_n < (int) reco_NCandTime->size(); i_n++){
+        h_time_neutrons->Fill(reco_NCandTime->at(i_n));
+      }
+    }
+  } else if (pass_selection) {
+    for (int i_n=0; i_n < (int) reco_NCandTime->size(); i_n++){
+      h_time_neutrons->Fill(reco_NCandTime->at(i_n));
+    }
   }
 
   //std::cout <<"EventNumber: "<<EventNumber<<", pass_selection: "<<pass_selection<<", pass_reconstruction: "<<pass_reconstruction<<std::endl;
@@ -541,16 +553,9 @@ bool NeutronMultiplicity::ReadBoostStore(){
   return true;
 }
 
-bool NeutronMultiplicity::GetParticleInformation(){
+bool NeutronMultiplicity::GetClusterInformation(){
 
   bool return_value = true;
-
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoEnergy",SimpleRecoEnergy);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoVtx",SimpleRecoVtx);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoStopVtx",SimpleRecoStopVtx);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoCosTheta",SimpleRecoCosTheta);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoFV",SimpleRecoFV);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
 
   return_value = m_data->Stores["RecoEvent"]->Get("ClusterIndicesNeutron",cluster_neutron);
   return_value = m_data->Stores["RecoEvent"]->Get("ClusterTimesNeutron",cluster_times_neutron);
@@ -567,6 +572,21 @@ bool NeutronMultiplicity::GetParticleInformation(){
   (*reco_ClusterTime) = cluster_times;
   (*reco_ClusterPE) = cluster_charges;
   reco_Clusters = reco_ClusterCB->size();
+
+  return return_value;
+
+}
+
+bool NeutronMultiplicity::GetParticleInformation(){
+
+  bool return_value = true;
+
+  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoEnergy",SimpleRecoEnergy);
+  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoVtx",SimpleRecoVtx);
+  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoStopVtx",SimpleRecoStopVtx);
+  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoCosTheta",SimpleRecoCosTheta);
+  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoFV",SimpleRecoFV);
+  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
 
   return_value = m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",passPMTMRDCoincCut);
   reco_TankMRDCoinc = (passPMTMRDCoincCut)? 1 : 0;

@@ -24,6 +24,8 @@ export PATH=${ToolDAQapp}/ToolDAQ/LHAPDF-6.3.0/install/bin:$GENIE/bin:$GENIE_REW
 export PATH=/ToolAnalysis/ToolDAQ/fsplit:$PATH
 export TF_CPP_MIN_LOG_LEVEL=2
 
+export FW_SEARCH_PATH=${ToolDAQapp}/UserTools/ReweightEventsGenie
+
 for folder in `ls -d ${PWD}/UserTools/*/ `
 do
     export PYTHONPATH=$folder:${PYTHONPATH}

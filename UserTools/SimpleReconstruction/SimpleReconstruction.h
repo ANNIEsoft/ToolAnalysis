@@ -30,7 +30,7 @@ class SimpleReconstruction: public Tool {
   bool SimpleEnergyReconstruction(); ///< Simple energy reconstruction for muon energy
   bool SimpleVertexReconstruction(); ///< Simple vertex reconstruction for neutrino interaction vertex
   bool GetANNIEEventVariables(); ////< get relevant variables from ANNIEEvent store
-  bool RecoTankExitPoint(int clusterid); ////< Reconstruct the tank exit point of the muon
+  bool RecoTankExitPoint(std::vector<int> clusterid); ////< Reconstruct the tank exit point of the muon
 
  private:
 

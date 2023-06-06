@@ -27,3 +27,5 @@ NoVeto 1
 Veto 0
 ThroughGoing 0
 IsMC 0		#MC or Data?
+TriggerExtendedWindow 1
+BeamOK 1

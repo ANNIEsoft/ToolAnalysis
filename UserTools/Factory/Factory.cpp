@@ -155,6 +155,8 @@ if (tool=="checkLAPPDStatus") ret=new checkLAPPDStatus;
 if (tool=="GetLAPPDEvents") ret=new GetLAPPDEvents;
 if (tool=="LAPPDDataDecoder") ret=new LAPPDDataDecoder;
 if (tool=="PythonScript") ret=new PythonScript;
+if (tool=="ReweightEventsGenie") ret=new ReweightEventsGenie;
+if (tool=="FilterLAPPDEvents") ret=new FilterLAPPDEvents;
 if (tool=="FindNeutrons") ret=new FindNeutrons;
 if (tool=="NeutronMultiplicity") ret=new NeutronMultiplicity;
 return ret;

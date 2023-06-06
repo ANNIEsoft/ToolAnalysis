@@ -25,10 +25,10 @@ bool SimpleReconstruction::Execute(){
   //Check which track id should be considered
   m_data->Stores.at("RecoEvent")->Get("PromptMuonTotalPE",max_pe); 
 
-  int clusterid = -1;
-  m_data->Stores["RecoEvent"]->Get("MRDCoincidenceCluster",clusterid);
+  std::vector<int> vector_clusterid;
+  m_data->Stores["RecoEvent"]->Get("MRDCoincidenceCluster",vector_clusterid);
  
-  bool reco_possible = this->RecoTankExitPoint(clusterid); 
+  bool reco_possible = this->RecoTankExitPoint(vector_clusterid); 
 
   //Only proceed with reconstructed if extrapolated MRD track passes the tank
   if (reco_possible){
@@ -182,6 +182,7 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
 
   for(int tracki=0; tracki<numtracksinev; tracki++){
     BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
+    thisTrackAsBoostStore->Print(false);
 
     thisTrackAsBoostStore->Get("StartVertex",StartVertex);
     thisTrackAsBoostStore->Get("StopVertex",StopVertex);
@@ -223,19 +224,26 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
 
 }
 
-bool SimpleReconstruction::RecoTankExitPoint(int clusterid){
+bool SimpleReconstruction::RecoTankExitPoint(std::vector<int> clusterid_vec){
 
   bool tank_exit = true;
-
   int trackid = -1;
-  for (int i = 0; i < (int) fMRDTrackEventID.size(); i++){
-    if (fMRDTrackEventID.at(i) == clusterid) {
-      Log("SimpleReconstruction:RecoTankExitPoint: Found corresponding track id >>> "+std::to_string(i)+"<<< for cluster id "+std::to_string(clusterid)+"! Proceeding with extracting MRD track information...",v_message,verbosity);
-      trackid = i;
+
+  for (int i_clusterid=0; i_clusterid < (int)clusterid_vec.size(); i_clusterid++) {
+
+    int clusterid = clusterid_vec.at(i_clusterid);
+
+    for (int i = 0; i < (int) fMRDTrackEventID.size(); i++){
+      std::cout <<"i: "<<i<<", trackEventID: "<<fMRDTrackEventID.at(i)<<std::endl;
+      if (fMRDTrackEventID.at(i) == clusterid) {
+        Log("SimpleReconstruction:RecoTankExitPoint: Found corresponding track id >>> "+std::to_string(i)+"<<< for cluster id "+std::to_string(clusterid)+"! Proceeding with extracting MRD track information...",v_message,verbosity);
+        trackid = i;
+      }
     }
   }
+
   if (trackid == -1) {
-    Log("SimpleReconstruction tool: Did not find corresponding track id for MRD clusterid >>>"+std::to_string(clusterid)+"<<< Abort reconstruction...",vv_debug,verbosity);
+    Log("SimpleReconstruction tool: Did not find corresponding track id for MRD clusterids. Abort reconstruction...",vv_debug,verbosity);
     return false;
   }
 
