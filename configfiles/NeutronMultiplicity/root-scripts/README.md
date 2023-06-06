@@ -11,5 +11,6 @@ The different scripts will produce different diagrams in the output files:
 * `plot_neutrons_data_beam.C`: Regular neutron multiplicity plots on data (beam events)
 * `plot_neutrons_data_dirt.C`: Regular neutron multiplicity plots on data (dirt events)
 * `plot_neutrons_data_mc.C`: Regular neutron multiplicity plots on MC (simulated beam events)
-* `neutrino_candidates.C`: Histograms which show the time and charge distributions after the various neutrino candidate selection cuts
-* `migration.C`: Migration plots for the different reconstructed variables (energy, cos(theta))
+* `neutrino_selection.C`: Histograms which show the time and charge distributions after the various neutrino candidate selection cuts
+* `reconstruction_migration.C`: Migration plots for the different reconstructed variables (energy, cos(theta))
+* `visible_energy_vertex.C`: Histograms of the visible energy as a function of the vertex coordinates
