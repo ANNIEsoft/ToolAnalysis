@@ -26,3 +26,5 @@ The output of the toolchain is either a ROOT-file or a BoostStore file with the 
 
 The toolchain can either be used by reading in regular processed ANNIEEvent BoostStore files, by reading in filtered ANNIEEvent BoostStore files, or by reading in NeutronMultiplicity BoostStore files (as mentioned above). 
 
+The toolchain for reading in multiple NeutronMultiplicity BoostStore files and creating an overall NeutronMultiplicity BoostStore+ROOT output file can be found at `configfiles/NeutronMultiplicity/ReadFromBoostStore/ToolChainConfig`.
+
