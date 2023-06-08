@@ -15,6 +15,7 @@
 #include "TH2.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TMath.h"
 
 /**
  * \class NeutronMultiplicity
@@ -42,6 +43,7 @@ class NeutronMultiplicity: public Tool {
   bool FillHistograms(); ///< Fill histograms & save to root file
   bool GetParticleInformation(); ///< Get reconstructed information about muon vertex
   bool GetClusterInformation(); ///< Get reconstructed information about clusters
+  bool GetMCTruthInformation(); ///< Get MCTruth variables (only called for MC files)
   bool ResetVariables(); ///< Reset variables every Execute step
   bool FillTGraphs(); ///< Fill TGraph objects
   bool FillSingleTGraph(TGraphErrors *gr, TH2F *h2d, std::vector<std::string> labels); ////< Fill TGraph based on averaging a 2D histogram
@@ -55,6 +57,9 @@ class NeutronMultiplicity: public Tool {
   std::string filename;
   bool mrdtrack_restriction = false;
   std::string read_bs;
+
+  //MC configuration variable -> automatic detection
+  bool isMC;
 
   //root file variables
   TFile *file_neutronmult = nullptr;
@@ -91,6 +96,12 @@ class NeutronMultiplicity: public Tool {
   std::vector<double> cluster_cb;
   bool passPMTMRDCoincCut;
 
+  //MCTruth variables
+  std::map<std::string, std::vector<std::vector<double>>> MCNeutCapGammas;
+  std::map<std::string, std::vector<double>> MCNeutCap;
+  bool IsMultiRing = false;
+  RecoVertex* truevtx = nullptr;
+  std::string MCFile;
 
   //histogram variables
   TH1F *h_time_neutrons = nullptr;
@@ -161,11 +172,17 @@ class NeutronMultiplicity: public Tool {
   double true_VtxX;
   double true_VtxY;
   double true_VtxZ;
+  double true_VtxTime;
+  double true_DirX;
+  double true_DirY;
+  double true_DirZ;
   double true_Emu;
   double true_Enu;
   double true_Q2;
   int true_FV;
   double true_CosTheta;
+  double true_TrackLengthInWater;
+  double true_TrackLengthInMRD;
   std::vector<double> *true_NeutVtxX = nullptr;
   std::vector<double> *true_NeutVtxY = nullptr;
   std::vector<double> *true_NeutVtxZ = nullptr;

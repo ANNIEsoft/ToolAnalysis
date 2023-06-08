@@ -22,6 +22,9 @@ bool NeutronMultiplicity::Initialise(std::string configfile, DataModel &data){
   get_ok = m_variables.Get("ReadFromBoostStore",read_bs);
   get_ok = m_variables.Get("MRDTrackRestriction",mrdtrack_restriction);
 
+  //Check if we are dealing with a MC file or not
+  isMC = m_data->Stores.at("ANNIEEvent")->Get("MCFile",MCFile);
+
   if (verbosity > 1){
     std::cout <<"Initialise NeutronMultiplicity tool"<<std::endl;
     std::cout <<std::endl;
@@ -32,8 +35,8 @@ bool NeutronMultiplicity::Initialise(std::string configfile, DataModel &data){
     std::cout <<"Filename: "<<filename<<std::endl;
     std::cout <<"ReadFromBoostStore: "<<read_bs<<std::endl;
     std::cout <<"MRDTrackRestriction: "<<mrdtrack_restriction<<std::endl;
+    std::cout <<"MC file: "<<isMC<<std::endl;
   }
-  
 
   if (save_root){
     //Initialise root specific objects (files, histograms, trees)
@@ -80,6 +83,15 @@ bool NeutronMultiplicity::Initialise(std::string configfile, DataModel &data){
     } else {
       m_data->Stores["MRDTracks"] = new BoostStore(false,2);
     }
+
+    //Check if GenieInfo store is already loaded -> would interfere with loaded BoostStore file
+    if (m_data->Stores.count("GenieInfo")>0) {
+      Log("NeutronMultiplicity tool: m_data->Stores[\"GenieInfo\"] seems to be already loaded! Please remove LoadANNIEEvent/LoadWCSim/LoadGenieEvent... tools from toolchain when using the option ReadFromBoostStore! Stop execution",v_error,verbosity);
+      m_data->vars.Set("StopLoop",1);
+    } else {
+      m_data->Stores["GenieInfo"] = new BoostStore(false,2);
+    }
+
   }
 
   need_new_file_ = true;
@@ -105,6 +117,7 @@ bool NeutronMultiplicity::Execute(){
       read_neutronmult->Print(false);
       read_neutronmult->Header->Get("TotalEntries",total_entries_in_file_);
       std::cout <<"total_entries_in_file_: "<<total_entries_in_file_<<std::endl;
+      isMC = read_neutronmult->Get("MCFile",MCFile);
     } 
     if (current_entry_ != 0) read_neutronmult->Delete();
     read_neutronmult->GetEntry(current_entry_);
@@ -175,6 +188,9 @@ bool NeutronMultiplicity::Execute(){
 
     //Get reconstructed information
     this->GetParticleInformation();
+
+    //Get truth information (if MC)
+    if (isMC) this->GetMCTruthInformation();
 
     //Fill ROOT histograms
     if (save_root) this->FillHistograms();
@@ -327,6 +343,18 @@ bool NeutronMultiplicity::InitialiseHistograms(){
   h_muon_energy_fv->SetLineColor(kRed);
   h_muon_energy_fv->SetLineWidth(2);
 
+  h_muon_costheta->GetXaxis()->SetTitle("cos(#theta)");
+  h_muon_costheta->GetYaxis()->SetTitle("#");
+  h_muon_costheta->SetStats(0);
+  h_muon_costheta->SetLineWidth(2);
+
+  h_muon_costheta_fv->GetXaxis()->SetTitle("cos(#theta)");
+  h_muon_costheta_fv->GetYaxis()->SetTitle("#");
+  h_muon_costheta_fv->SetStats(0);
+  h_muon_costheta_fv->SetLineWidth(2);
+  h_muon_costheta_fv->SetLineColor(kRed);
+
+
   h_muon_vtx_yz->GetXaxis()->SetTitle("Vertex Z [m]");
   h_muon_vtx_yz->GetYaxis()->SetTitle("Vertex Y [m]");
   h_muon_vtx_yz->SetStats(0);
@@ -399,6 +427,13 @@ bool NeutronMultiplicity::InitialiseHistograms(){
   neutron_tree->Branch("TrueVtxX",&true_VtxX);
   neutron_tree->Branch("TrueVtxY",&true_VtxY);
   neutron_tree->Branch("TrueVtxZ",&true_VtxZ);
+  neutron_tree->Branch("TrueVtxTime",&true_VtxTime);
+  neutron_tree->Branch("TrueDirX",&true_DirX);
+  neutron_tree->Branch("TrueDirY",&true_DirY);
+  neutron_tree->Branch("TrueDirZ",&true_DirZ);
+  neutron_tree->Branch("TrueFV",&true_FV);
+  neutron_tree->Branch("TrueTrackLengthInWater",&true_TrackLengthInWater);
+  neutron_tree->Branch("TrueTrackLengthInMRD",&true_TrackLengthInMRD);
   neutron_tree->Branch("TruePrimNeut",&true_PrimNeut);
   neutron_tree->Branch("TruePrimProt",&true_PrimProt);
   neutron_tree->Branch("TrueNCaptures",&true_NCaptures);
@@ -446,8 +481,8 @@ bool NeutronMultiplicity::FillHistograms(){
   h_muon_vtx_x->Fill(SimpleRecoVtx.X());
   h_muon_vtx_y->Fill(SimpleRecoVtx.Y());
   h_muon_vtx_z->Fill(SimpleRecoVtx.Z());
-  h_muon_vtx_yz->Fill(SimpleRecoVtx.Z(),SimpleRecoVtx.Y());
-  h_muon_vtx_xz->Fill(SimpleRecoVtx.Z(),SimpleRecoVtx.X());
+  h_muon_vtx_yz->Fill(SimpleRecoVtx.Z()-1.681,SimpleRecoVtx.Y()-0.144);
+  h_muon_vtx_xz->Fill(SimpleRecoVtx.Z()-1.681,SimpleRecoVtx.X());
 
   reco_VtxX = SimpleRecoVtx.X();
   reco_VtxY = SimpleRecoVtx.Y();
@@ -491,6 +526,28 @@ bool NeutronMultiplicity::SaveBoostStore(){
   store_neutronmult->Set("ClusterCB",cluster_cb);
   store_neutronmult->Set("PMTMRDCoinc",passPMTMRDCoincCut);
   store_neutronmult->Set("NumMRDTracks",numtracksinev);
+
+  if (isMC){
+    store_neutronmult->Set("NeutrinoEnergy",true_Enu);
+    store_neutronmult->Set("EventQ2",true_Q2);
+    store_neutronmult->Set("IsWeakCC",true_CC);
+    store_neutronmult->Set("IsQuasiElastic",true_QEL);
+    store_neutronmult->Set("IsResonant",true_RES);
+    store_neutronmult->Set("IsDeepInelastic",true_DIS);
+    store_neutronmult->Set("IsCoherent",true_COH);
+    store_neutronmult->Set("IsMEC",true_MEC);
+    store_neutronmult->Set("NumFSNeutrons",true_PrimNeut);
+    store_neutronmult->Set("NumFSProtons",true_PrimProt);
+    store_neutronmult->Set("TrueVertex",truevtx);
+    store_neutronmult->Set("TrueMuonEnergy",true_Emu);
+    store_neutronmult->Set("PdgPrimary",*true_PrimaryPdgs);
+    store_neutronmult->Set("TrueTrackLengthInWater",true_TrackLengthInWater);
+    store_neutronmult->Set("TrueTrackLengthInMRD",true_TrackLengthInMRD);
+    store_neutronmult->Set("MCMultiRingEvent",IsMultiRing);
+    store_neutronmult->Set("MCNeutCap",MCNeutCap);
+    store_neutronmult->Set("MCNeutCapGammas",MCNeutCapGammas);
+    store_neutronmult->Set("MCFile",MCFile);
+  }
 
   //Construct BoostStore filename
   std::stringstream ss_filename;
@@ -549,6 +606,48 @@ bool NeutronMultiplicity::ReadBoostStore(){
   m_data->Stores["RecoEvent"]->Set("ClusterCB",cluster_cb);
   m_data->Stores.at("RecoEvent")->Set("PMTMRDCoinc",passPMTMRDCoincCut);
   m_data->Stores["MRDTracks"]->Set("NumMrdTracks",numtracksinev);
+  
+  if (isMC){
+    read_neutronmult->Get("NeutrinoEnergy",true_Enu);
+    read_neutronmult->Get("EventQ2",true_Q2);
+    read_neutronmult->Get("IsWeakCC",true_CC);
+    read_neutronmult->Get("IsQuasiElastic",true_QEL);
+    read_neutronmult->Get("IsResonant",true_RES);
+    read_neutronmult->Get("IsDeepInelastic",true_DIS);
+    read_neutronmult->Get("IsCoherent",true_COH);
+    read_neutronmult->Get("IsMEC",true_MEC);
+    read_neutronmult->Get("NumFSNeutrons",true_PrimNeut);
+    read_neutronmult->Get("NumFSProtons",true_PrimProt);
+    read_neutronmult->Get("TrueVertex",truevtx);
+    read_neutronmult->Get("TrueMuonEnergy",true_Emu);
+    read_neutronmult->Get("PdgPrimary",*true_PrimaryPdgs);
+    read_neutronmult->Get("TrueTrackLengthInWater",true_TrackLengthInWater);
+    read_neutronmult->Get("TrueTrackLengthInMRD",true_TrackLengthInMRD);
+    read_neutronmult->Get("MCMultiRingEvent",IsMultiRing);
+    read_neutronmult->Get("MCNeutCap",MCNeutCap);
+    read_neutronmult->Get("MCNeutCapGammas",MCNeutCapGammas);
+    read_neutronmult->Get("MCFile",MCFile);
+
+    m_data->Stores["GenieInfo"]->Set("NeutrinoEnergy",true_Enu);
+    m_data->Stores["GenieInfo"]->Set("EventQ2",true_Q2);
+    m_data->Stores["GenieInfo"]->Set("IsWeakCC",true_CC);
+    m_data->Stores["GenieInfo"]->Set("IsQuasiElastic",true_QEL);
+    m_data->Stores["GenieInfo"]->Set("IsResonant",true_RES);
+    m_data->Stores["GenieInfo"]->Set("IsDeepInelastic",true_DIS);
+    m_data->Stores["GenieInfo"]->Set("IsCoherent",true_COH);
+    m_data->Stores["GenieInfo"]->Set("IsMEC",true_MEC);
+    m_data->Stores["GenieInfo"]->Set("NumFSNeutrons",true_PrimNeut);
+    m_data->Stores["GenieInfo"]->Set("NumFSProtons",true_PrimProt);
+    m_data->Stores.at("RecoEvent")->Set("TrueVertex",truevtx);
+    m_data->Stores.at("RecoEvent")->Set("TrueMuonEnergy",true_Emu);
+    m_data->Stores.at("RecoEvent")->Set("PdgPrimary",*true_PrimaryPdgs);
+    m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInWater",true_TrackLengthInWater);
+    m_data->Stores.at("RecoEvent")->Set("TrueTrackLengthInMRD",true_TrackLengthInMRD);
+    m_data->Stores["RecoEvent"]->Set("MCMultiRingEvent",IsMultiRing);
+    m_data->Stores.at("ANNIEEvent")->Set("MCNeutCap",MCNeutCap);
+    m_data->Stores.at("ANNIEEvent")->Set("MCNeutCapGammas",MCNeutCapGammas);
+    m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
+  }
 
   return true;
 }
@@ -557,13 +656,22 @@ bool NeutronMultiplicity::GetClusterInformation(){
 
   bool return_value = true;
 
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterIndicesNeutron",cluster_neutron);
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterTimesNeutron",cluster_times_neutron);
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterChargesNeutron",cluster_charges_neutron);
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterCBNeutron",cluster_cb_neutron);
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterTimes",cluster_times);
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterCharges",cluster_charges);
-  return_value = m_data->Stores["RecoEvent"]->Get("ClusterCB",cluster_cb);
+  bool get_cluster_idxN = m_data->Stores["RecoEvent"]->Get("ClusterIndicesNeutron",cluster_neutron);
+  if (!get_cluster_idxN) Log("NeutronMultiplicity tool: No ClusterIndicesNeutron In RecoEvent!",v_error,verbosity); 
+  bool get_cluster_tN = m_data->Stores["RecoEvent"]->Get("ClusterTimesNeutron",cluster_times_neutron);
+  if (!get_cluster_tN) Log("NeutronMultiplicity tool: No ClusterTimesNeutron In RecoEvent!",v_error,verbosity); 
+  bool get_cluster_qN = m_data->Stores["RecoEvent"]->Get("ClusterChargesNeutron",cluster_charges_neutron);
+  if (!get_cluster_qN) Log("NeutronMultiplicity tool: No ClusterChargesNeutron In RecoEvent!",v_error,verbosity); 
+  bool get_cluster_cbN = m_data->Stores["RecoEvent"]->Get("ClusterCBNeutron",cluster_cb_neutron);
+  if (!get_cluster_cbN) Log("NeutronMultiplicity tool: No ClusterCBNeutron In RecoEvent!",v_error,verbosity); 
+  bool get_cluster_t = m_data->Stores["RecoEvent"]->Get("ClusterTimes",cluster_times);
+  if (!get_cluster_t) Log("NeutronMultiplicity tool: No ClusterTimes In RecoEvent!",v_error,verbosity); 
+  bool get_cluster_q = m_data->Stores["RecoEvent"]->Get("ClusterCharges",cluster_charges);
+  if (!get_cluster_q) Log("NeutronMultiplicity tool: No ClusterCharges In RecoEvent!",v_error,verbosity); 
+  bool get_cluster_cb = m_data->Stores["RecoEvent"]->Get("ClusterCB",cluster_cb);
+  if (!get_cluster_cb) Log("NeutronMultiplicity tool: No ClusterCB In RecoEvent!",v_error,verbosity); 
+
+  return_value = (get_cluster_idxN && get_cluster_tN && get_cluster_qN && get_cluster_cbN && get_cluster_t && get_cluster_q && get_cluster_cb);
 
   (*reco_NCandCB) = cluster_cb_neutron;
   (*reco_NCandTime) = cluster_times_neutron;
@@ -581,19 +689,134 @@ bool NeutronMultiplicity::GetParticleInformation(){
 
   bool return_value = true;
 
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoEnergy",SimpleRecoEnergy);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoVtx",SimpleRecoVtx);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoStopVtx",SimpleRecoStopVtx);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoCosTheta",SimpleRecoCosTheta);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoFV",SimpleRecoFV);
-  return_value = m_data->Stores["RecoEvent"]->Get("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
+  bool get_simple_e = m_data->Stores["RecoEvent"]->Get("SimpleRecoEnergy",SimpleRecoEnergy);
+  if (!get_simple_e) Log("NeutronMultiplicity tool: No SimpleRecoEnergy In RecoEvent!",v_error,verbosity); 
+  bool get_simple_vtx = m_data->Stores["RecoEvent"]->Get("SimpleRecoVtx",SimpleRecoVtx);
+  if (!get_simple_vtx) Log("NeutronMultiplicity tool: No SimpleRecoVtx In RecoEvent!",v_error,verbosity); 
+  bool get_simple_stop = m_data->Stores["RecoEvent"]->Get("SimpleRecoStopVtx",SimpleRecoStopVtx);
+  if (!get_simple_stop) Log("NeutronMultiplicity tool: No SimpleRecoStopVtx In RecoEvent!",v_error,verbosity); 
+  bool get_simple_cos = m_data->Stores["RecoEvent"]->Get("SimpleRecoCosTheta",SimpleRecoCosTheta);
+  if (!get_simple_cos) Log("NeutronMultiplicity tool: No SimpleRecoCosTheta In RecoEvent!",v_error,verbosity); 
+  bool get_simple_fv = m_data->Stores["RecoEvent"]->Get("SimpleRecoFV",SimpleRecoFV);
+  if (!get_simple_fv) Log("NeutronMultiplicity tool: No SimpleRecoFV in RecoEvent!",v_error,verbosity);
+  bool get_simple_mrdloss = m_data->Stores["RecoEvent"]->Get("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
+  if (!get_simple_mrdloss) Log("NeutronMultiplicity tool: No SimpleRecoFV in RecoEvent!",v_error,verbosity);
 
-  return_value = m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",passPMTMRDCoincCut);
+  bool get_pmtmrdcoinc = m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",passPMTMRDCoincCut);
+  if (!get_pmtmrdcoinc) Log("NeutronMultiplicity tool: No PMTMRDCoinc in RecoEvent!",v_error,verbosity);
   reco_TankMRDCoinc = (passPMTMRDCoincCut)? 1 : 0;
+
+  return_value = (get_simple_e && get_simple_vtx && get_simple_stop && get_simple_cos && get_simple_fv && get_simple_mrdloss & get_pmtmrdcoinc);
 
   run_nr = RunNumber;
   ev_nr = (int) EventNumber;
  
+  return return_value;
+
+}
+
+bool NeutronMultiplicity::GetMCTruthInformation(){
+
+  bool return_value = true;
+
+  //Get information from GENIE store
+  bool get_neutrino_energy = m_data->Stores["GenieInfo"]->Get("NeutrinoEnergy",true_Enu);
+  if (!get_neutrino_energy) Log("NeutronMultiplicity tool: No NeutrinoEnergy In GenieInfo!",v_error,verbosity); 
+  bool get_q2 = m_data->Stores["GenieInfo"]->Get("EventQ2",true_Q2);
+  if (!get_q2) Log("NeutronMultiplicity tool: No EventQ2 In GenieInfo!",v_error,verbosity); 
+  bool get_cc = m_data->Stores["GenieInfo"]->Get("IsWeakCC",true_CC);
+  if (!get_cc) Log("NeutronMultiplicity tool: No IsWeakCC In GenieInfo!",v_error,verbosity); 
+  bool get_qel = m_data->Stores["GenieInfo"]->Get("IsQuasiElastic",true_QEL);
+  if (!get_qel) Log("NeutronMultiplicity tool: No IsQuasiElastic In GenieInfo!",v_error,verbosity); 
+  bool get_res = m_data->Stores["GenieInfo"]->Get("IsResonant",true_RES);
+  if (!get_res) Log("NeutronMultiplicity tool: No IsReonant In GenieInfo!",v_error,verbosity); 
+  bool get_dis = m_data->Stores["GenieInfo"]->Get("IsDeepInelastic",true_DIS);
+  if (!get_dis) Log("NeutronMultiplicity tool: No IsDeepInelastic In GenieInfo!",v_error,verbosity); 
+  bool get_coh = m_data->Stores["GenieInfo"]->Get("IsCoherent",true_COH);
+  if (!get_coh) Log("NeutronMultiplicity tool: No IsCoherent In GenieInfo!",v_error,verbosity); 
+  bool get_mec = m_data->Stores["GenieInfo"]->Get("IsMEC",true_MEC);
+  if (!get_mec) Log("NeutronMultiplicity tool: No IsMEC In GenieInfo!",v_error,verbosity); 
+  bool get_n = m_data->Stores["GenieInfo"]->Get("NumFSNeutrons",true_PrimNeut);
+  if (!get_n) Log("NeutronMultiplicity tool: No NumFSNeutrons In GenieInfo!",v_error,verbosity); 
+  bool get_p = m_data->Stores["GenieInfo"]->Get("NumFSProtons",true_PrimProt);
+  if (!get_p) Log("NeutronMultiplicity tool: No NumFSProtons In GenieInfo!",v_error,verbosity); 
+
+  return_value = (get_neutrino_energy && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p);
+
+  //Get information from RecoEvent store
+  RecoVertex* truevtx = 0;
+  auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",truevtx);
+  if (!get_muonMC) Log("NeutronMultiplicity tool: No TrueVertex In RecoEvent!",v_error,verbosity); 
+  auto get_muonMCEnergy = m_data->Stores.at("RecoEvent")->Get("TrueMuonEnergy",true_Emu);
+  if (!get_muonMCEnergy) Log("NeutronMultiplicity tool: No TrueMuonEnergy In RecoEvent!",v_error,verbosity); 
+  auto get_pdg = m_data->Stores.at("RecoEvent")->Get("PdgPrimary",*true_PrimaryPdgs);
+  if (!get_pdg) Log("NeutronMultiplicity tool: No PdgPrimary In RecoEvent!",v_error,verbosity);
+  if(get_muonMC && get_muonMCEnergy){ 
+    true_VtxX = truevtx->GetPosition().X();
+    true_VtxY = truevtx->GetPosition().Y();
+    true_VtxZ = truevtx->GetPosition().Z();
+    true_VtxTime = truevtx->GetTime();
+    true_DirX = truevtx->GetDirection().X();
+    true_DirY = truevtx->GetDirection().Y();
+    true_DirZ = truevtx->GetDirection().Z();
+    true_CosTheta = TMath::ACos(true_DirZ);
+    if (sqrt(true_VtxX*true_VtxX+(true_VtxZ-1.681)*(true_VtxZ-1.681))<1.0 && fabs(true_VtxY)<0.5 && (true_VtxZ < 1.681)) true_FV = 1;
+    else true_FV = 0;
+  }
+  return_value = (return_value && get_muonMC && get_muonMCEnergy && get_pdg);
+
+  auto get_tankTrackLength = m_data->Stores.at("RecoEvent")->Get("TrueTrackLengthInWater",true_TrackLengthInWater); 
+  if (!get_tankTrackLength) Log("NeutronMultiplicity tool: No TrueTrackLengthInWater in RecoEvent!",v_error,verbosity);
+  auto get_MRDTrackLength = m_data->Stores.at("RecoEvent")->Get("TrueTrackLengthInMRD",true_TrackLengthInMRD); 
+  if (!get_MRDTrackLength) Log("NeutronMultiplicity tool: No TrueTrackLengthInMRD In RecoEvent!",v_error,verbosity);
+   
+  return_value = (return_value && get_tankTrackLength && get_MRDTrackLength);
+
+  bool IsMultiRing = false;
+  bool get_multi = m_data->Stores["RecoEvent"]->Get("MCMultiRingEvent",IsMultiRing);
+  if (get_multi) { true_MultiRing = (IsMultiRing)? 1 : 0;}
+  else Log("NeutronMultiplicity tool: No MCMultiRingEvent information in RecoEvent!",v_error,verbosity);
+
+  return_value = (return_value && get_multi);
+
+  std::map<std::string, std::vector<double>> MCNeutCap;
+  bool get_neutcap = m_data->Stores.at("ANNIEEvent")->Get("MCNeutCap",MCNeutCap); 
+  if (!get_neutcap){
+    Log("NeutronMultiplicity tool: Did not find MCNeutCap in ANNIEEvent Store!",v_warning,verbosity);
+  } 
+
+  std::map<std::string, std::vector<std::vector<double>>> MCNeutCapGammas;
+  bool get_neutcap_gammas = m_data->Stores.at("ANNIEEvent")->Get("MCNeutCapGammas",MCNeutCapGammas);
+  if (!get_neutcap_gammas){
+    Log("NeutronMultiplicity tool: Did not find MCNeutCapGammas in ANNIEEvent Store!",v_warning,verbosity);
+  }
+
+  return_value = (return_value && get_neutcap && get_neutcap_gammas);
+
+  if (MCNeutCap.count("CaptVtxX")>0){
+    std::vector<double> n_vtxx = MCNeutCap["CaptVtxX"];
+    std::vector<double> n_vtxy = MCNeutCap["CaptVtxY"];
+    std::vector<double> n_vtxz = MCNeutCap["CaptVtxZ"];
+    std::vector<double> n_parent = MCNeutCap["CaptParent"];
+    std::vector<double> n_ngamma = MCNeutCap["CaptNGamma"];
+    std::vector<double> n_totale = MCNeutCap["CaptTotalE"];
+    std::vector<double> n_time = MCNeutCap["CaptTime"];
+    std::vector<double> n_nuc = MCNeutCap["CaptNucleus"];
+ 
+    for (int i_cap=0; i_cap < (int) n_vtxx.size(); i_cap++){
+      true_NeutVtxX->push_back(n_vtxx.at(i_cap));
+      true_NeutVtxY->push_back(n_vtxy.at(i_cap));
+      true_NeutVtxZ->push_back(n_vtxz.at(i_cap));
+      true_NeutCapNucl->push_back(n_nuc.at(i_cap));
+      true_NeutCapTime->push_back(n_time.at(i_cap));
+      true_NeutCapNGamma->push_back(n_ngamma.at(i_cap));
+      true_NeutCapETotal->push_back(n_totale.at(i_cap));
+      true_NeutCapPrimary->push_back(0);
+    }
+
+    true_NCaptures = int(n_vtxx.size());
+  }
+
   return return_value;
 
 }
@@ -618,6 +841,10 @@ bool NeutronMultiplicity::ResetVariables(){
   cluster_charges.clear();
   cluster_cb.clear();
   numtracksinev = -9999;
+  MCNeutCapGammas.clear();
+  MCNeutCap.clear();
+  IsMultiRing = false;
+  truevtx = nullptr;
 
   //ROOT tree variables
   true_PrimNeut = -9999;
@@ -627,11 +854,17 @@ bool NeutronMultiplicity::ResetVariables(){
   true_VtxX = -9999;
   true_VtxY = -9999;
   true_VtxZ = -9999;
+  true_VtxTime = -9999;
+  true_DirX = -9999;
+  true_DirY = -9999;
+  true_DirZ = -9999;
   true_Emu = -9999;
   true_Enu = -9999;
   true_Q2 = -9999;
   true_FV = -9999;
   true_CosTheta = -9999;
+  true_TrackLengthInWater = -9999;
+  true_TrackLengthInMRD = -9999;
   true_NeutVtxX->clear();
   true_NeutVtxY->clear();
   true_NeutVtxZ->clear();
