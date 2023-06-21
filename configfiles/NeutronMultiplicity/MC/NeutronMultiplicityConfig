@@ -1,0 +1,7 @@
+verbosity 5
+
+SaveROOT 1
+SaveBoostStore 1
+ReadFromBoostStore None
+Filename NeutronMultiplicity_MCBeam_3363
+MRDTrackRestriction 1
