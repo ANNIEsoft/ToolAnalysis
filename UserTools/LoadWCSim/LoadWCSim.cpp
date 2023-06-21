@@ -326,8 +326,10 @@ bool LoadWCSim::Execute(){
 		m_data->CStore.Get("CurrentTriggernum",currentTriggernum);
 		MCEventNum = user_evnum;
 		currentTriggernum++;
-		std::cout <<"check_further_triggers = "<<check_further_triggers<<", currentTriggernum = "<<currentTriggernum<<std::endl;
-		std::cout <<"Number of Events: "<<triggers_event<<std::endl;
+		if (verbosity > 3){
+			std::cout <<"check_further_triggers = "<<check_further_triggers<<", currentTriggernum = "<<currentTriggernum<<std::endl;
+			std::cout <<"Number of Events: "<<triggers_event<<std::endl;
+		}
 		if (check_further_triggers){
 			if (currentTriggernum!=triggers_event){
 				//there is a further trigger in the previous event, load the entry
@@ -845,6 +847,9 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("EventNumber",EventNumber);
 	if(verbosity>2) cout<<"particles"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
+        //Set up Particles object for reconstructed particles
+	std::vector<Particle> Particles_Reco;
+        m_data->Stores["ANNIEEvent"]->Set("Particles",Particles_Reco);
 	if(verbosity>2) cout<<"hits"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCHits",MCHits,true);
 	if(verbosity>2) cout<<"tdcdata"<<endl;
