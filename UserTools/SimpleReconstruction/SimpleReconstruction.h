@@ -45,6 +45,9 @@ class SimpleReconstruction: public Tool {
   double SimpleRecoCosTheta;
   bool SimpleRecoFV;
   double SimpleRecoMrdEnergyLoss;
+  double SimpleRecoTrackLengthInMRD;
+  Position SimpleRecoMRDStart;
+  Position SimpleRecoMRDStop;
 
   //event variables
   std::vector<double> fMRDTrackAngle;

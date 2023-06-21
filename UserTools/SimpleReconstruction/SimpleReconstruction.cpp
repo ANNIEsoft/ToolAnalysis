@@ -48,6 +48,9 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["RecoEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoFV",SimpleRecoFV);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoTrackLengthInMRD",SimpleRecoTrackLengthInMRD);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoMRDStart",SimpleRecoMRDStart);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoMRDStop",SimpleRecoMRDStop);
 
   //Fill Particles object with muon
   if (reco_possible){
@@ -107,6 +110,13 @@ void SimpleReconstruction::SetDefaultValues(){
   SimpleRecoStopVtx.SetZ(-9999);
   SimpleRecoFV = false;
   SimpleRecoMrdEnergyLoss = -9999;
+  SimpleRecoTrackLengthInMRD = -9999;
+  SimpleRecoMRDStart.SetX(-9999);
+  SimpleRecoMRDStart.SetY(-9999);
+  SimpleRecoMRDStart.SetZ(-9999);
+  SimpleRecoMRDStop.SetX(-9999);
+  SimpleRecoMRDStop.SetY(-9999);
+  SimpleRecoMRDStop.SetZ(-9999);
 
   //Helper variables
   mrd_eloss = -9999;
@@ -254,6 +264,16 @@ bool SimpleReconstruction::RecoTankExitPoint(std::vector<int> clusterid_vec){
   double stopx = fMRDTrackStopX.at(trackid);
   double stopy = fMRDTrackStopY.at(trackid);
   double stopz = fMRDTrackStopZ.at(trackid);
+
+  SimpleRecoMRDStart.SetX(startx);
+  SimpleRecoMRDStart.SetY(starty);
+  SimpleRecoMRDStart.SetZ(startz);
+  SimpleRecoMRDStop.SetX(stopx);
+  SimpleRecoMRDStop.SetY(stopy);
+  SimpleRecoMRDStop.SetZ(stopz);
+  SimpleRecoTrackLengthInMRD = sqrt((stopx-startx)*(stopx-startx)+(stopy-starty)*(stopy-starty)+(stopz-startz)*(stopz-startz));
+
+  std::cout <<"start MRD: "<<startx<<","<<starty<<","<<startz<<std::endl;
 
   //Calculate intersection point parameter t
   bool hit_tank = false;
