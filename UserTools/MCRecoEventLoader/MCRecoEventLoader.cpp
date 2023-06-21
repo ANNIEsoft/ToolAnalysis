@@ -80,6 +80,7 @@ bool MCRecoEventLoader::Execute(){
 
   ///Get MC Particle information
   this->FindTrueVertexFromMC();
+  this->FindParticlePdgs();
   if (fGetPiKInfo) this->FindPionKaonCountFromMC();
   
   this->PushIBDInfo();
@@ -191,6 +192,21 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
 
 }
 
+void MCRecoEventLoader::FindParticlePdgs(){
+
+  std::vector<int> primary_pdgs;
+  if(fMCParticles){
+    for(unsigned int particlei=0; particlei<fMCParticles->size(); particlei++){
+      MCParticle aparticle = fMCParticles->at(particlei);
+      if(aparticle.GetParentPdg()!=0) continue;      // not a primary particle
+      int pdg_code = aparticle.GetPdgCode();
+      primary_pdgs.push_back(pdg_code);
+    }
+  }
+
+  m_data->Stores.at("RecoEvent")->Set("PrimaryPdgs",primary_pdgs);
+
+}
 
 void MCRecoEventLoader::FindPionKaonCountFromMC() {
 
