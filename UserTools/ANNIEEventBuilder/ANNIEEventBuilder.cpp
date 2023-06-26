@@ -1236,8 +1236,8 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   m_data->CStore.Get("FileCompleted",FileCompleted);
   if (FileCompleted) force_all_entries = true;
 
-  if (save_raw_data) this->Correct8nsOffsetRaw(force_all_entries);
-  else this->Correct8nsOffset(force_all_entries);
+  if (save_raw_data) this->CorrectVMEOffsetRaw(force_all_entries);
+  else this->CorrectVMEOffset(force_all_entries);
 
   /// ------------------------------
   ///---------RAW DATA case ----------
@@ -2793,9 +2793,9 @@ std::cout <<"***NEW BEST MATCH: min_dev: "<<min_dev<<", min_mean: "<<min_mean<<"
 
 }
 
-void ANNIEEventBuilder::Correct8nsOffsetRaw(bool force_all_entries){
+void ANNIEEventBuilder::CorrectVMEOffsetRaw(bool force_all_entries){
 
-  Log("ANNIEEventBuilder: Correct8nsOffsetRaw",v_message,verbosity);
+  Log("ANNIEEventBuilder: CorrectVMEOffsetRaw",v_message,verbosity);
 
   std::vector<uint64_t> timestamps_tank;
   std::map<uint64_t, uint64_t> timestamps_to_shift;
@@ -2806,25 +2806,24 @@ void ANNIEEventBuilder::Correct8nsOffsetRaw(bool force_all_entries){
     timestamps_tank.push_back(PMTCounterTimeNs);
   }
 
-  //Exclude the last five (most recent) entries, since those are probably still in progress
-  int number_entries = (timestamps_tank.size() > 6)? timestamps_tank.size() - 5 : 1;
-  if (force_all_entries) number_entries = (int) timestamps_tank.size();
-
   //Go through the list of PMT timestamps and look for abnormally close timestamps (8ns)
   //Start with the second entry and always compare to previous entry
-  for (int i_timestamp = 1; i_timestamp < number_entries; i_timestamp++){
+  for (int i_timestamp = 1; i_timestamp < timestamps_tank.size(); i_timestamp++){
     uint64_t FirstTS = timestamps_tank.at(i_timestamp-1);
     uint64_t SecondTS = timestamps_tank.at(i_timestamp);
     uint64_t TSDiff = (SecondTS > FirstTS)? (SecondTS-FirstTS) : (FirstTS-SecondTS);
-    uint64_t ExpectedOffset = 8;
-    if (TSDiff == ExpectedOffset){
-      //if 8ns offset is detected, map the entry with less waveforms onto the one with more waveforms
+    if (TSDiff == 8 || TSDiff == 16){
+      //if 8ns, 16ns offset is detected between the VME crates, map the entry with less waveforms onto the one with more waveforms
       int waveforms_first = int(InProgressTankEvents->at(FirstTS).size());
       int waveforms_second = int(InProgressTankEvents->at(SecondTS).size());
       bool first_entry_larger = (waveforms_first > waveforms_second);
-      Log("ANNIEEventBuilder: First TS = "+std::to_string(FirstTS)+", waveforms = "+std::to_string(waveforms_first)+", Second TS = "+std::to_string(SecondTS)+", waveforms = "+std::to_string(waveforms_second)+", first_entry_larger = "+std::to_string(first_entry_larger),v_debug,verbosity);
+      Log("ANNIEEventBuilder::CorrectVMEOffsetRaw: First TS = "+std::to_string(FirstTS)+", waveforms = "+std::to_string(waveforms_first)+", Second TS = "+std::to_string(SecondTS)+", waveforms = "+std::to_string(waveforms_second)+", first_entry_larger = "+std::to_string(first_entry_larger),v_debug,verbosity);
       if (first_entry_larger) timestamps_to_shift.emplace(SecondTS,FirstTS);
       else timestamps_to_shift.emplace(FirstTS,SecondTS); 
+    }
+    else if(TSDiff < 1600){ //For the log-file, to investigate why the processing does not produce Processed files
+      Log("ANNIEEventBuilder::CorrectVMEOffsetRaw: Gross missmatch in TSDiff = "+std::to_string(TSDiff),v_error,verbosity);
+      return;
     }
   }
 
@@ -2832,7 +2831,11 @@ void ANNIEEventBuilder::Correct8nsOffsetRaw(bool force_all_entries){
   for (std::map<uint64_t, uint64_t>::iterator it=timestamps_to_shift.begin(); it!= timestamps_to_shift.end(); it++){
     uint64_t FirstTS = it->first;
     uint64_t SecondTS = it->second;
-    Log("ANNIEEventBuilder: Map Timestamp "+std::to_string(FirstTS)+" to timestamp "+std::to_string(SecondTS),v_debug,verbosity);
+    Log("ANNIEEventBuilder::CorrectVMEOffsetRaw: Map Timestamp "+std::to_string(FirstTS)+" to timestamp "+std::to_string(SecondTS),v_debug,verbosity);
+    if(InProgressTankEvents->count(FirstTS) == 0 || InProgressTankEvents->count(SecondTS) == 0){ //map object at FirstTS, SecondTS may not exist yet
+      Log("ANNIEEventBuilder::CorrectVMEOffset: InProgressTankEvents->count(FirstTS) == "+std::to_string(InProgressTankEvents->count(FirstTS))+", InProgressTankEvents->count(SecondTS) == "+std::to_string(InProgressTankEvents->count(SecondTS)),v_debug,verbosity);
+      break; 
+    }
     std::map<std::vector<int>, std::vector<uint16_t>> FirstTankEvents = InProgressTankEvents->at(FirstTS);
     std::map<std::vector<int>, std::vector<uint16_t>> SecondTankEvents = InProgressTankEvents->at(SecondTS);
     
@@ -2848,9 +2851,9 @@ void ANNIEEventBuilder::Correct8nsOffsetRaw(bool force_all_entries){
 
 }
 
-void ANNIEEventBuilder::Correct8nsOffset(bool force_all_entries){
+void ANNIEEventBuilder::CorrectVMEOffset(bool force_all_entries){
 
-  Log("ANNIEEventBuilder: Correct8nsOffset",v_message,verbosity);
+  Log("ANNIEEventBuilder: CorrectVMEOffset",v_message,verbosity);
   std::vector<uint64_t> timestamps_tank;
   std::map<uint64_t, uint64_t> timestamps_to_shift;
   
@@ -2866,78 +2869,87 @@ void ANNIEEventBuilder::Correct8nsOffset(bool force_all_entries){
     uint64_t FirstTS = timestamps_tank.at(i_timestamp-1);
     uint64_t SecondTS = timestamps_tank.at(i_timestamp);
     uint64_t TSDiff = (SecondTS > FirstTS)? (SecondTS-FirstTS) : (FirstTS-SecondTS);
-    uint64_t ExpectedOffset = 8;
-    if (TSDiff == ExpectedOffset){
-      //if 8ns offset is detected, map the entry with less waveforms onto the one with more waveforms
+    if (TSDiff == 8 || TSDiff == 16){
+      //if 8ns, 16ns offset is detected between the VME crates, map the entry with less waveforms onto the one with more waveforms
       int waveforms_first = int(InProgressHits->at(FirstTS)->size());
       int waveforms_second = int(InProgressHits->at(SecondTS)->size());
       bool first_entry_larger = (waveforms_first > waveforms_second);
-      Log("ANNIEEventBuilder: First TS = "+std::to_string(FirstTS)+", waveforms = "+std::to_string(waveforms_first)+", Second TS = "+std::to_string(SecondTS)+", waveforms = "+std::to_string(waveforms_second)+", first_entry_larger = "+std::to_string(first_entry_larger),v_debug,verbosity);
+      Log("ANNIEEventBuilder::CorrectVMEOffset: TSDiff = "+std::to_string(TSDiff)+", First TS = "+std::to_string(FirstTS)+", waveforms = "+std::to_string(waveforms_first)+", Second TS = "+std::to_string(SecondTS)+", waveforms = "+std::to_string(waveforms_second)+", first_entry_larger = "+std::to_string(first_entry_larger),v_debug,verbosity);
       if (first_entry_larger) timestamps_to_shift.emplace(SecondTS,FirstTS);
       else timestamps_to_shift.emplace(FirstTS,SecondTS); 
+    }
+    else if(TSDiff < 1600){ //For the log-file, to investigate why the processing does not produce Processed files
+      Log("ANNIEEventBuilder::CorrectVMEOffset: Gross missmatch in TSDiff = "+std::to_string(TSDiff),v_error,verbosity);
+      return;
     }
   }
 
   //Go through the timestamps to shift and apply the correction
-  for (std::map<uint64_t, uint64_t>::iterator it=timestamps_to_shift.begin(); it!= timestamps_to_shift.end(); it++){
-    uint64_t FirstTS = it->first;
-    uint64_t SecondTS = it->second;
-    Log("ANNIEEventBuilder: Map Timestamp "+std::to_string(FirstTS)+" to timestamp "+std::to_string(SecondTS),v_debug,verbosity);
+  if( InProgressHitsAux != NULL && InProgressRecoADCHitsAux != NULL ){ //InProgressHitsAux,InProgressRecoADCHitsAux may exist yet
+    for (std::map<uint64_t, uint64_t>::iterator it=timestamps_to_shift.begin(); it!= timestamps_to_shift.end(); it++){
+      uint64_t FirstTS = it->first;
+      uint64_t SecondTS = it->second;
+      Log("ANNIEEventBuilder::CorrectVMEOffset: Map Timestamp "+std::to_string(FirstTS)+" to timestamp "+std::to_string(SecondTS),v_debug,verbosity);
+      if(InProgressHits->count(FirstTS) == 0 || InProgressHits->count(SecondTS) == 0){ //map object at FirstTS, SecondTS may not exist yet
+        Log("ANNIEEventBuilder::CorrectVMEOffset: InProgressHits->count(FirstTS) == "+std::to_string(InProgressHits->count(FirstTS))+", InProgressHits->count(SecondTS) == "+std::to_string(InProgressHits->count(SecondTS)),v_debug,verbosity);
+        break;
+      }
 
-    //Get InProgress* {Hits, Chkey, and RecoADCHits} objects
-    std::map<unsigned long,std::vector<Hit>>* FirstTankHits = InProgressHits->at(FirstTS);
-    std::map<unsigned long,std::vector<Hit>>* SecondTankHits = InProgressHits->at(SecondTS);
-    std::vector<unsigned long> FirstChankey = InProgressChkey->at(FirstTS);
-    std::vector<unsigned long> SecondChankey = InProgressChkey->at(SecondTS);
-    std::map<unsigned long,std::vector<Hit>>* FirstTankHitsAux = InProgressHitsAux->at(FirstTS);
-    std::map<unsigned long,std::vector<Hit>>* SecondTankHitsAux = InProgressHitsAux->at(SecondTS);
-    std::map<unsigned long,std::vector<std::vector<ADCPulse>>> FirstRecoADCHits = InProgressRecoADCHits->at(FirstTS);
-    std::map<unsigned long,std::vector<std::vector<ADCPulse>>> SecondRecoADCHits = InProgressRecoADCHits->at(SecondTS);
-    std::map<unsigned long,std::vector<std::vector<ADCPulse>>> FirstRecoADCHitsAux = InProgressRecoADCHitsAux->at(FirstTS);
-    std::map<unsigned long,std::vector<std::vector<ADCPulse>>> SecondRecoADCHitsAux = InProgressRecoADCHitsAux->at(SecondTS);
+      //Get InProgress* {Hits, Chkey, and RecoADCHits} objects
+      std::map<unsigned long,std::vector<Hit>>* FirstTankHits = InProgressHits->at(FirstTS);
+      std::map<unsigned long,std::vector<Hit>>* SecondTankHits = InProgressHits->at(SecondTS);
+      std::vector<unsigned long> FirstChankey = InProgressChkey->at(FirstTS);
+      std::vector<unsigned long> SecondChankey = InProgressChkey->at(SecondTS);
+      std::map<unsigned long,std::vector<Hit>>* FirstTankHitsAux = InProgressHitsAux->at(FirstTS);
+      std::map<unsigned long,std::vector<Hit>>* SecondTankHitsAux = InProgressHitsAux->at(SecondTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> FirstRecoADCHits = InProgressRecoADCHits->at(FirstTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> SecondRecoADCHits = InProgressRecoADCHits->at(SecondTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> FirstRecoADCHitsAux = InProgressRecoADCHitsAux->at(FirstTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> SecondRecoADCHitsAux = InProgressRecoADCHitsAux->at(SecondTS);
 
-    //Merge the two hits maps
-    SecondTankHits->insert(FirstTankHits->begin(), FirstTankHits->end());
-    Log("ANNIEEventBuilder: Size of Merged Hits map: "+std::to_string(SecondTankHits->size()),v_debug,verbosity);
+      //Merge the two hits maps
+      SecondTankHits->insert(FirstTankHits->begin(), FirstTankHits->end());
+      Log("ANNIEEventBuilder: Size of Merged Hits map: "+std::to_string(SecondTankHits->size()),v_debug,verbosity);
 
-    //Merge the two aux hits maps
-    SecondTankHitsAux->insert(FirstTankHitsAux->begin(), FirstTankHitsAux->end());
-    Log("ANNIEEventBuilder: Size of Merged AuxHits map: "+std::to_string(SecondTankHitsAux->size()),v_debug,verbosity);
+      //Merge the two aux hits maps
+      SecondTankHitsAux->insert(FirstTankHitsAux->begin(), FirstTankHitsAux->end());
+      Log("ANNIEEventBuilder: Size of Merged AuxHits map: "+std::to_string(SecondTankHitsAux->size()),v_debug,verbosity);
 
-    //Merge the two channelkey vectors
-    SecondChankey.insert(SecondChankey.end(), FirstChankey.begin(), FirstChankey.end());
-    Log("ANNIEEventBuilder: Size of Merged Chkey vector: "+std::to_string(SecondChankey.size()),v_debug,verbosity);
+      //Merge the two channelkey vectors
+      SecondChankey.insert(SecondChankey.end(), FirstChankey.begin(), FirstChankey.end());
+      Log("ANNIEEventBuilder: Size of Merged Chkey vector: "+std::to_string(SecondChankey.size()),v_debug,verbosity);
 
-    //Merge the two RecoADCHits maps
-    SecondRecoADCHits.insert(FirstRecoADCHits.begin(),FirstRecoADCHits.end());
-    Log("ANNIEEventBuilder: Size of Merged RecoADCHits map: "+std::to_string(SecondRecoADCHits.size()),v_debug,verbosity);
+      //Merge the two RecoADCHits maps
+      SecondRecoADCHits.insert(FirstRecoADCHits.begin(),FirstRecoADCHits.end());
+      Log("ANNIEEventBuilder: Size of Merged RecoADCHits map: "+std::to_string(SecondRecoADCHits.size()),v_debug,verbosity);
 
-    //Merge the two RecoADCHitsAux maps
-    SecondRecoADCHitsAux.insert(FirstRecoADCHitsAux.begin(),FirstRecoADCHitsAux.end());
-    Log("ANNIEEventBuilder: Size of Merged RecoADCHitsAux map: "+std::to_string(SecondRecoADCHitsAux.size()),v_debug,verbosity);
+      //Merge the two RecoADCHitsAux maps
+      SecondRecoADCHitsAux.insert(FirstRecoADCHitsAux.begin(),FirstRecoADCHitsAux.end());
+      Log("ANNIEEventBuilder: Size of Merged RecoADCHitsAux map: "+std::to_string(SecondRecoADCHitsAux.size()),v_debug,verbosity);
 
-    //Associated merged map with preferred TS, delete other TS
-    (*InProgressHits)[SecondTS] = SecondTankHits;
-    InProgressHits->erase(FirstTS);
-    Log("ANNIEEventBuilder: Size of merged TS in InProgressHits: "+std::to_string(InProgressHits->at(SecondTS)->size()),v_debug,verbosity);
+      //Associated merged map with preferred TS, delete other TS
+      (*InProgressHits)[SecondTS] = SecondTankHits;
+      InProgressHits->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressHits: "+std::to_string(InProgressHits->at(SecondTS)->size()),v_debug,verbosity);
 
-    (*InProgressHitsAux)[SecondTS] = SecondTankHitsAux;
-    InProgressHitsAux->erase(FirstTS);
-    Log("ANNIEEventBuilder: Size of merged TS in InProgressHitsAux: "+std::to_string(InProgressHitsAux->at(SecondTS)->size()),v_debug,verbosity);
+      (*InProgressHitsAux)[SecondTS] = SecondTankHitsAux;
+      InProgressHitsAux->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressHitsAux: "+std::to_string(InProgressHitsAux->at(SecondTS)->size()),v_debug,verbosity);
 
-    //Do the same for Chkey map
-    (*InProgressChkey)[SecondTS] = SecondChankey;
-    InProgressChkey->erase(FirstTS);
-    Log("ANNIEEventBuilder: Size of merged TS in InProgressChkey: "+std::to_string(InProgressChkey->at(SecondTS).size()),v_debug,verbosity);
+      //Do the same for Chkey map
+      (*InProgressChkey)[SecondTS] = SecondChankey;
+      InProgressChkey->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressChkey: "+std::to_string(InProgressChkey->at(SecondTS).size()),v_debug,verbosity);
 
-    (*InProgressRecoADCHits)[SecondTS] = SecondRecoADCHits;
-    InProgressRecoADCHits->erase(FirstTS);
-    Log("ANNIEEventBuilder: Size of merged TS in InProgressRecoADCHits: "+std::to_string(InProgressRecoADCHits->at(SecondTS).size()),v_debug,verbosity);
-    
-    (*InProgressRecoADCHitsAux)[SecondTS] = SecondRecoADCHitsAux;
-    InProgressRecoADCHitsAux->erase(FirstTS);
-    Log("ANNIEEventBuilder: Size of merged TS in InProgressRecoADCHitsAux: "+std::to_string(InProgressRecoADCHitsAux->at(SecondTS).size()),v_debug,verbosity);
+      (*InProgressRecoADCHits)[SecondTS] = SecondRecoADCHits;
+      InProgressRecoADCHits->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressRecoADCHits: "+std::to_string(InProgressRecoADCHits->at(SecondTS).size()),v_debug,verbosity);
+      
+      (*InProgressRecoADCHitsAux)[SecondTS] = SecondRecoADCHitsAux;
+      InProgressRecoADCHitsAux->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressRecoADCHitsAux: "+std::to_string(InProgressRecoADCHitsAux->at(SecondTS).size()),v_debug,verbosity);
 
+    }
   }
 }
 
