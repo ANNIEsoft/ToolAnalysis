@@ -74,15 +74,25 @@ class GenieInfo {
 	// final state lepton:
 	std::string fsleptonname="";                     // "n/a" if not defined
 	double fsleptonenergy=0.;                        // GeV. -1 if not defined
+        int fsleptonpdg=-1;                              // -1 if not defined
+        double fsleptonm=0;                              // -1 if not defined
+        Position fsleptonmomentum=Position(0.,0.,0.);    // GeV/c. 0 if not defined
+        Position fsleptonmomentumdir=Position(0.,0.,0.); // unit vector. 0 if not defined
+        Position fsleptonvtx=Position(0.,0.,0.);         // cm. 0 if not defined
+        double fsleptont=0.;                             // ns. -1 if not deined
 	
-	// other remnants: TODO: this information is NOT being correctly read in
-	int numfsprotons=-1;
-	int numfsneutrons=-1;
-	int numfspi0=-1;
-	int numfspiplus=-1;
-	int numfspiminus=-1;
-	int numfskplus=-1;
-	int numfskminus=-1;	
+        // other remnants: TODO: this information is NOT being correctly read in
+        int numfsprotons=-1;
+        int numfsneutrons=-1;
+        int numfspi0=-1;
+        int numfspiplus=-1;
+        int numfspipluscher=-1;
+        int numfspiminus=-1;
+        int numfspiminuscher=-1;
+        int numfskplus=-1;
+        int numfskpluscher=-1;
+        int numfskminus=-1;
+        int numfskminuscher=-1;
 
 	// kinematic information
 	//FourVector* k1=0;                               // GeV/c? Neutrino incoming momentum vector
@@ -130,13 +140,23 @@ class GenieInfo {
 			ar & remnantnucleusenergy;
 			ar & fsleptonname;
 			ar & fsleptonenergy;
-			ar & numfsprotons;
-			ar & numfsneutrons;
-			ar & numfspi0;
-			ar & numfspiplus;
-			ar & numfspiminus;
-			ar & numfskplus;
-			ar & numfskminus;
+                        ar & fsleptonpdg;
+                        ar & fsleptonm;
+                        ar & fsleptonmomentum;
+                        ar & fsleptonmomentumdir;
+                        ar & fsleptonvtx;
+                        ar & fsleptont;
+                        ar & numfsprotons;
+                        ar & numfsneutrons;
+                        ar & numfspi0;
+                        ar & numfspiplus;
+                        ar & numfspipluscher;
+                        ar & numfspiminus;
+                        ar & numfspiminuscher;
+                        ar & numfskplus;
+                        ar & numfskpluscher;
+                        ar & numfskminus;
+                        ar & numfskminuscher;
 			ar & q;
 			ar & costhfsl;
 			ar & fslangle;
