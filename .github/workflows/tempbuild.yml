@@ -19,6 +19,6 @@ jobs:
     - name: prerequisits
       run: yum install -y git make gcc-c++ which wget
     - name: build
-      run: echo `pwd` && make clean && make
+      run: echo `pwd` && ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ && ls -l && ls -l ./ToolDAQ && source ./Setup.sh && make clean && make
     - name: test
       run : source ./Setup.sh && ./Analyse

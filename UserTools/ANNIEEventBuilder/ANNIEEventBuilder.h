@@ -96,6 +96,9 @@ class ANNIEEventBuilder: public Tool {
 
   bool FetchWaveformsHits();
 
+  //Functions to correct VME crate offset error
+  void CorrectVMEOffsetRaw(bool force_all_entries);
+  void CorrectVMEOffset(bool force_all_entries);
 
   //Methods for getting all timestamps encountered by decoder tools
   void ProcessNewTankPMTData();

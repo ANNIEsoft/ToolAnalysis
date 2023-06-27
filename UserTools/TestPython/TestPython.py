@@ -23,33 +23,37 @@ class TestPython(Tool):
         somefloat = 3.334
         somebool = True
         somestring = std.string("teststing")
-    
+        
         # construct a c++ class - a simple ASCII Store
         astore = cppyy.gbl.Store()
-    
+        
         # call some methods
         astore.Set("myfloat",somefloat)
         astore.Set("mybool",somebool)
         astore.Set("mystring",somestring)
         #print("showing constructed Store contents: ")
         #astore.Print()
-    
+        
         # another c++ class - a BoostStore
         abstore = cppyy.gbl.BoostStore()
         print("constructed: ",type(abstore))
         # construct the BoostStore on the heap - i.e. prevent python from removing it at the
         # end of this function scope.
         abstore.__python_owns__ = False
-    
+        
         # The BoostStore is more flexible than the Store class in that it can hold any data type
         # such as, for example, a Store class instance!
         abstore.Set("myStore",astore)
-    
+        # or a std vector of doubles. Note that when declaring stl containers in python
+        # we need to enclose the contained type name in single quotes!
+        vect_o_dubs = std.vector['double'](range(1,10))
+        abstore.Set("myDoubles",vect_o_dubs)
+        
         # put the BoostStore into the DataModel - m_data.Stores is a map of string to BoostStore*.
         print("Data model stores length: ", self.m_data.Stores.size())
         self.m_data.Stores["myBStore"] = abstore
         print("Data model stores length: ", self.m_data.Stores.size())
-    
+        
         return 1
     
     def Finalise(self):
@@ -81,8 +85,14 @@ class TestPython(Tool):
     
         print("print contents")
         mystore.Print()
+        
+        # retrieving stl containers such as std::vector, std::string, std::map etc
+        # is done in the same was as for classes, so we don't need a ctypes reference
+        v_dubs = std.vector['double']()
+        abstore.Get("myDoubles",v_dubs)
     
-        # reinit our local variables to defaults
+        # let's unpack our Store class to check it has the right contents
+        # first reinit our local variables to defaults
         print("reinit locals")
         somefloat_ref.value = -1
         somebool_ref.value = False
@@ -102,7 +112,7 @@ class TestPython(Tool):
         # this is a suitable way to 'delete' heap objects
         bbstore.__python_owns__ = True
         self.m_data.Stores.erase("myBStore")
-     
+        
         return 1
 
 #################
