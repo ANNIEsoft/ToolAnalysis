@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <cmath>
 
 #include "Tool.h"
 
@@ -13,6 +14,7 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TH3.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
 #include "TMath.h"
@@ -46,7 +48,8 @@ class NeutronMultiplicity: public Tool {
   bool GetMCTruthInformation(); ///< Get MCTruth variables (only called for MC files)
   bool ResetVariables(); ///< Reset variables every Execute step
   bool FillTGraphs(); ///< Fill TGraph objects
-  bool FillSingleTGraph(TGraphErrors *gr, TH2F *h2d, std::vector<std::string> labels); ////< Fill TGraph based on averaging a 2D histogram
+  bool FillSingleTGraph(TGraphErrors *gr, TH2F *h2d, std::vector<std::string> labels); ////< Fill TGraph based on averaging a 2D histogra
+  bool CorrectEfficiency(TGraphErrors *gr_original, TGraphErrors *gr_eff, TGraphErrors *gr_new); ///< Correct neutron multiplicity with efficiency
 
  private:
 
@@ -79,6 +82,7 @@ class NeutronMultiplicity: public Tool {
   Position SimpleRecoStopVtx;
   double SimpleRecoEnergy;
   double SimpleRecoCosTheta;
+  double SimpleRecoPt;
   bool SimpleRecoFV;
   double SimpleRecoMrdEnergyLoss;
   double SimpleRecoTrackLengthInMRD;
@@ -98,6 +102,10 @@ class NeutronMultiplicity: public Tool {
   std::vector<double> cluster_charges;
   std::vector<double> cluster_cb;
   bool passPMTMRDCoincCut;
+
+  std::map<std::vector<double>,double> neutron_eff_map;
+  TH3F *hist_neutron_eff = nullptr;
+  bool neutron_hist_filled = false;
 
   //MCTruth variables
   std::map<std::string, std::vector<std::vector<double>>> MCNeutCapGammas;
@@ -136,6 +144,22 @@ class NeutronMultiplicity: public Tool {
   TH2F *h_totalneutrons_costheta_fv = nullptr;
   TH2F *h_pmtvolneutrons_costheta = nullptr;
   TH2F *h_pmtvolneutrons_costheta_fv = nullptr;
+  TH2F *h_neutrons_pT = nullptr;
+  TH2F *h_neutrons_pT_fv = nullptr;
+  TH2F *h_primneutrons_pT = nullptr;
+  TH2F *h_primneutrons_pT_fv = nullptr;
+  TH2F *h_totalneutrons_pT = nullptr;
+  TH2F *h_totalneutrons_pT_fv = nullptr;
+  TH2F *h_pmtvolneutrons_pT = nullptr;
+  TH2F *h_pmtvolneutrons_pT_fv = nullptr;
+  TH2F *h_eff_energy = nullptr;
+  TH2F *h_eff_energy_fv = nullptr;
+  TH2F *h_eff_energy_zoom = nullptr;
+  TH2F *h_eff_energy_fv_zoom = nullptr;
+  TH2F *h_eff_costheta = nullptr;
+  TH2F *h_eff_costheta_fv = nullptr;
+  TH2F *h_eff_pT = nullptr;
+  TH2F *h_eff_pT_fv = nullptr;
 
   TH1F *h_muon_energy = nullptr;
   TH1F *h_muon_energy_fv = nullptr;
@@ -154,15 +178,65 @@ class NeutronMultiplicity: public Tool {
   TGraphErrors *gr_neutrons_muonE_fv_zoom = nullptr;
   TGraphErrors *gr_neutrons_muonCosTheta = nullptr;
   TGraphErrors *gr_neutrons_muonCosTheta_fv = nullptr;
-  TGraphErrors *gr_neutrons_muonCosTheta_zoom = nullptr;
-  TGraphErrors *gr_neutrons_muonCosTheta_fv_zoom = nullptr;
+  TGraphErrors *gr_neutrons_pT = nullptr;
+  TGraphErrors *gr_neutrons_pT_fv = nullptr;
+
+  //graph variables - MC
+  TGraphErrors *gr_primneutrons_muonE = nullptr;
+  TGraphErrors *gr_totalneutrons_muonE = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_muonE = nullptr;
+  TGraphErrors *gr_primneutrons_muonE_fv = nullptr;
+  TGraphErrors *gr_totalneutrons_muonE_fv = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_muonE_fv = nullptr;
+  TGraphErrors *gr_primneutrons_muonE_zoom = nullptr;
+  TGraphErrors *gr_totalneutrons_muonE_zoom = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_muonE_zoom = nullptr;
+  TGraphErrors *gr_primneutrons_muonE_fv_zoom = nullptr;
+  TGraphErrors *gr_totalneutrons_muonE_fv_zoom = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_muonE_fv_zoom = nullptr;
+  TGraphErrors *gr_primneutrons_muonCosTheta = nullptr;
+  TGraphErrors *gr_totalneutrons_muonCosTheta = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_muonCosTheta = nullptr;
+  TGraphErrors *gr_primneutrons_muonCosTheta_fv = nullptr;
+  TGraphErrors *gr_totalneutrons_muonCosTheta_fv = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_muonCosTheta_fv = nullptr;
+  TGraphErrors *gr_primneutrons_pT = nullptr;
+  TGraphErrors *gr_totalneutrons_pT = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_pT = nullptr;
+  TGraphErrors *gr_primneutrons_pT_fv = nullptr;
+  TGraphErrors *gr_totalneutrons_pT_fv = nullptr;
+  TGraphErrors *gr_pmtvolneutrons_pT_fv = nullptr;
+
+  //graph variables - efficiency
+  TGraphErrors *gr_eff_muonE = nullptr;
+  TGraphErrors *gr_eff_muonE_fv = nullptr;
+  TGraphErrors *gr_eff_muonE_zoom = nullptr;
+  TGraphErrors *gr_eff_muonE_fv_zoom = nullptr;
+  TGraphErrors *gr_eff_costheta = nullptr;
+  TGraphErrors *gr_eff_costheta_fv = nullptr;
+  TGraphErrors *gr_eff_pT = nullptr;
+  TGraphErrors *gr_eff_pT_fv = nullptr;
+
+  //graph variables - corrected
+  TGraphErrors *gr_neutrons_muonE_corr = nullptr;
+  TGraphErrors *gr_neutrons_muonE_corr_fv = nullptr;
+  TGraphErrors *gr_neutrons_muonE_corr_zoom = nullptr;
+  TGraphErrors *gr_neutrons_muonE_corr_fv_zoom = nullptr;
+  TGraphErrors *gr_neutrons_muonCosTheta_corr = nullptr;
+  TGraphErrors *gr_neutrons_muonCosTheta_corr_fv = nullptr;
+  TGraphErrors *gr_neutrons_pT_corr = nullptr;
+  TGraphErrors *gr_neutrons_pT_corr_fv = nullptr;
 
   //directory variables
   TDirectory *dir_overall = nullptr;
   TDirectory *dir_muon = nullptr;
   TDirectory *dir_neutron = nullptr;
   TDirectory *dir_mc = nullptr;
+  TDirectory *dir_eff = nullptr;
   TDirectory *dir_graph = nullptr;
+  TDirectory *dir_graph_mc = nullptr;
+  TDirectory *dir_graph_eff = nullptr;
+  TDirectory *dir_graph_corr = nullptr;
 
   //tree variables 
   //
@@ -182,6 +256,7 @@ class NeutronMultiplicity: public Tool {
   double true_Emu;
   double true_Enu;
   double true_Q2;
+  double true_pT;
   int true_FV;
   double true_CosTheta;
   double true_TrackLengthInWater;
@@ -209,6 +284,7 @@ class NeutronMultiplicity: public Tool {
   double reco_Emu;
   double reco_Enu;
   double reco_Q2;
+  double reco_pT;
   std::vector<double> *reco_ClusterCB = nullptr;
   std::vector<double> *reco_ClusterTime = nullptr;
   std::vector<double> *reco_ClusterPE = nullptr;
