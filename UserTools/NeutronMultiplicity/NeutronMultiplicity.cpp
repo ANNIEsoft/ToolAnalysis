@@ -692,7 +692,9 @@ bool NeutronMultiplicity::FillHistograms(){
     }
   }
   double current_eff = min_eff;
-  std::cout <<"Position: "<<reco_VtxX<<", "<<reco_VtxY<<", "<<reco_VtxZ<<"), eff: "<<current_eff<<std::endl;
+  if (verbosity > 1){
+    std::cout <<"NeutronMultiplicity tool: vertex: ("<<reco_VtxX<<", "<<reco_VtxY<<", "<<reco_VtxZ<<"), detection eff: "<<current_eff<<std::endl;
+  }
 
   h_eff_energy->Fill(SimpleRecoEnergy,current_eff);
   h_eff_energy_zoom->Fill(SimpleRecoEnergy,current_eff);
@@ -1092,7 +1094,7 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
       double n_VtxX = n_vtxx.at(i_cap)/100.;
       double n_VtxY = n_vtxy.at(i_cap)/100.;
       double n_VtxZ = n_vtxz.at(i_cap)/100.;
-      if (sqrt(n_VtxX*n_VtxX+(n_VtxZ-1.681)*(n_VtxZ-1.681))<1.2 && fabs(n_VtxY)<1.8) {
+      if (sqrt(n_VtxX*n_VtxX+(n_VtxZ-1.681)*(n_VtxZ-1.681))<1.5 && fabs(n_VtxY)<2.0) {
 	  true_NCapturesPMTVol++;
       }
     }
