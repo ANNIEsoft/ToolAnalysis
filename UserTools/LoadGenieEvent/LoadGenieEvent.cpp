@@ -714,7 +714,7 @@ std::string LoadGenieEvent::MediumToString(int code){
 	if(mediummap.count(code)!=0){
 		return mediummap.at(code);
 	} else {
-		cerr<<"unknown medium "<<code<<endl;
+		if (verbosity > 0) cerr<<"LoadGenieEvent: Unknown medium "<<code<<endl;
 		return std::to_string(code);
 	}
 }

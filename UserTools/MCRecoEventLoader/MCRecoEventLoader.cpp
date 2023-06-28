@@ -287,7 +287,7 @@ void MCRecoEventLoader::FindPionKaonCountFromMC() {
     Log("MCRecoEventLoader::  Tool: No kaons in this event",v_warning,verbosity);
   }
   if (fGetNRings){
-    Log("MCRecoEventLoader: Found "+std::to_string(nrings)+" rings in this event, from "+std::to_string(nprimary)+" primary particles and "+std::to_string(nsecondary)+" secondary particles.");
+    Log("MCRecoEventLoader: Found "+std::to_string(nrings)+" rings in this event, from "+std::to_string(nprimary)+" primary particles and "+std::to_string(nsecondary)+" secondary particles.",2,verbosity);
   }
   //Fill in pion counts for this event
   m_data->Stores.at("RecoEvent")->Set("MCPi0Count", pi0count);

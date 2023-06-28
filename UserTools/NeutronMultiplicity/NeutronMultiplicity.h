@@ -81,6 +81,9 @@ class NeutronMultiplicity: public Tool {
   double SimpleRecoCosTheta;
   bool SimpleRecoFV;
   double SimpleRecoMrdEnergyLoss;
+  double SimpleRecoTrackLengthInMRD;
+  Position SimpleRecoMRDStart;
+  Position SimpleRecoMRDStop;
   int NumberNeutrons;
   std::vector<Particle> Particles;
   uint32_t EventNumber;
@@ -199,6 +202,8 @@ class NeutronMultiplicity: public Tool {
   int true_MEC;
   int true_MultiRing;
   std::vector<int> *true_PrimaryPdgs = nullptr;
+  std::vector<int> vec_true_PrimaryPdgs;
+  int true_PdgPrimary;
 
   //reco tree variables
   double reco_Emu;
@@ -211,6 +216,13 @@ class NeutronMultiplicity: public Tool {
   std::vector<double> *reco_NCandTime = nullptr;
   std::vector<double> *reco_NCandPE = nullptr;
   double reco_MrdEnergyLoss;
+  double reco_TrackLengthInMRD;
+  double reco_MrdStartX;
+  double reco_MrdStartY;
+  double reco_MrdStartZ;
+  double reco_MrdStopX;
+  double reco_MrdStopY;
+  double reco_MrdStopZ;
   int reco_TankMRDCoinc;
   int reco_Clusters;
   int reco_NCandidates;
