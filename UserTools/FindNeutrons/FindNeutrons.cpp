@@ -9,8 +9,9 @@ bool FindNeutrons::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
 
   //Set defaults
-  Method = "CB";
+  Method = "CBStrict";
   verbosity = 2;
+  EfficiencyMapPath = "./configfiles/NeutronMultiplicity/NeutronEffMap_Data.txt";
 
   //Get configuration variables
   bool get_ok = m_variables.Get("verbosity",verbosity);
@@ -27,6 +28,16 @@ bool FindNeutrons::Initialise(std::string configfile, DataModel &data){
       Log("FindNeutrons tool: Available options: CB",v_error,verbosity);
       m_data->vars.Set("StopLoop",1);
     }
+  }
+  
+  //Load neutron efficiency map
+  bool load_eff = this->LoadNeutronEfficiencyMap();
+  if (!load_eff){
+    Log("FindNeutrons tool: Did not find efficiency map for selected cut. Abort toolchain.",v_error,verbosity);
+    m_data->vars.Set("StopLoop",1);
+  } else {
+    //Store neutron efficiency map in RecoEvent store
+    m_data->Stores["RecoEvent"]->Set("NeutronEffMap",eff_map);
   }
 
   return true;
@@ -64,6 +75,7 @@ bool FindNeutrons::Execute(){
   m_data->Stores["RecoEvent"]->Set("ClusterCharges",cluster_charges);
   m_data->Stores["RecoEvent"]->Set("ClusterCB",cluster_cb);
 
+  
   return true;
 }
 
@@ -197,5 +209,34 @@ bool FindNeutrons::FillRecoParticles(){
   }
 
   return return_val;
+
+}
+
+bool FindNeutrons::LoadNeutronEfficiencyMap(){
+
+  ifstream eff_file(EfficiencyMapPath.c_str());
+  if (!eff_file.good()) return false;  
+
+  //Order of file should be 
+  // PORT | Heigth | X | Y | Z | EFF
+
+  int temp_port, y;
+  double temp_eff_cut;	//cut efficiency
+  double temp_eff_time;	//timing cut efficiency
+  double temp_x, temp_y, temp_z;
+  while (!eff_file.eof()){
+    eff_file >> temp_port >> y >> temp_x >> temp_y >> temp_z >> temp_eff_cut >> temp_eff_time;
+    //Conversion Port/Height to X/Y/Z (if needed)
+    /*temp_y = y - 14.4;
+    if (temp_port == 1) {temp_x = 0., temp_z = 93.1;}
+    else if (temp_port == 2) {temp_x = 0., temp_z = 243.1;}
+    else if (temp_port == 3) {temp_x = 0., temp_z = 270.1;}
+    else if (temp_port == 4) {temp_x = 75., temp_z = 168.1;}
+    else if (temp_port == 5) {temp_x = 0., temp_z = 168.1;}*/
+    std::vector<double> position{temp_x/100.,temp_y/100.,temp_z/100.};
+    eff_map.emplace(position,temp_eff_cut*temp_eff_time);
+  }
+
+  return true;
 
 }

@@ -29,12 +29,14 @@ class FindNeutrons: public Tool {
   bool FindNeutronCandidates(std::string method); ///< Neutron identification
   bool FindNeutronsByCB(bool strict); ///< Neutron identification by Charge Balance cut
   bool FillRecoParticles(); ///< Fill reco particle object with neutron information
+  bool LoadNeutronEfficiencyMap(); ///< Load neutron efficiency map (from calibration/simulation)
 
  private:
 
   //configuration variables
   int verbosity;
   std::string Method;
+  std::string EfficiencyMapPath;
 
   //vectors storing neutron candidate properties
   std::vector<int> cluster_neutron;
@@ -47,6 +49,9 @@ class FindNeutrons: public Tool {
 
   //vector storing neutron particles
   std::vector<Particle> vec_neutrons;
+
+  //map storing the efficiency map for a given cut (from calibration / simulation)
+  std::map<std::vector<double>,double> eff_map;  
 
   //verbosity variables
   int v_error=0;
