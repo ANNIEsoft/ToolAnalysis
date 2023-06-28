@@ -373,6 +373,8 @@ bool LoadWCSim::Execute(){
 	mrd_firstlayer=false;
 	mrd_lastlayer=false;	
 
+	std::map<double, bool> neutcap_is_primary;	//map to store whether a neutron capture was from primary neutron or secondary, key = ncapture time, value = was the capture primary?
+
 	triggers_event = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
 	
 	if (!splitSubtriggers) MCTriggernum = 0;
@@ -412,7 +414,7 @@ bool LoadWCSim::Execute(){
 			
 			std::string geniefilename = firsttrigt->GetHeader()->GetGenieFileName().Data();
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
-			/*if(verbosity>3)*/ cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
+			if(verbosity>1) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
 			m_data->CStore.Set("GenieEntry",genieentry);
 			
@@ -491,6 +493,11 @@ bool LoadWCSim::Execute(){
 					} else {
 						starttime = (static_cast<double>(nextrack->GetTime()));
                                                 stoptime = (static_cast<double>(nextrack->GetStopTime()));
+					}
+					if (verbosity > 2) std::cout <<"LoadWCSim tool, loaded particle with PDG: "<<nextrack->GetIpnu()<<", Time: "<<stoptime<<", Parent: "<<nextrack->GetParenttype() << ", EndProcess: "<<nextrack->GetEndProcess()<<std::endl;
+					if (nextrack->GetIpnu() == 2112 && nextrack->GetEndProcess() == "nCapture"){
+						if (verbosity > 2) std::cout <<"LoadWCSim tool: Neutron capture! Parent: "<<nextrack->GetParenttype()<<", Time: "<<stoptime<<std::endl;
+						neutcap_is_primary.emplace(stoptime,(nextrack->GetParenttype()==0));	//store whether neutron was primary
 					}
 					MCParticle thisparticle(
 						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
@@ -779,21 +786,31 @@ bool LoadWCSim::Execute(){
 				capt_t -= EventTimeNs;
 			}
 			int capt_nucleus = capt->GetCaptureNucleus();
+			double double_primary = -9999;
+			if (neutcap_is_primary.count(capt_t) > 0){
+				bool is_primary = neutcap_is_primary.at(capt_t);
+				if (verbosity > 2) std::cout <<"LoadWCSim tool: NeutCap object at "<<capt_t<<", primary: "<<is_primary<<", parent: "<<capt_parent<<", nucleus: "<<capt_nucleus<<std::endl;
+				double_primary = (is_primary)? 1. : 0.;
+			}else {
+				//This seems to occur quite often, maybe some (secondary) particles are not saved in the WCSim file, so for those particles only the capture object is filled -> check WCSim options
+				Log("LoadWCSim tool: Capture parent: "+std::to_string(capt_parent)+", capt_nucleus: "+std::to_string(capt_nucleus)+ ", time " + std::to_string(capt_t) + " was not found in neutcap_is_primary map. Was the EndProcess saved in the WCSim output file?",v_warning,verbosity);
+			}
 			std::vector<double> gamma_energies;
 			for (int i_gamma=0; i_gamma < capt_ngamma; i_gamma++){
 				WCSimRootCaptureGamma* captgamma = (WCSimRootCaptureGamma*) capt->GetGammas()->At(i_gamma);
 				gamma_energies.push_back(captgamma->GetE());
 			}
 			if (MCNeutCap.size()==0){
-				MCNeutCap.emplace("CaptParent",std::vector<double>{capt_parent});
+				MCNeutCap.emplace("CaptParent",std::vector<double>{double(capt_parent)});
 				MCNeutCap.emplace("CaptVtxX",std::vector<double>{capt_vtxx});
 				MCNeutCap.emplace("CaptVtxY",std::vector<double>{capt_vtxy});
 				MCNeutCap.emplace("CaptVtxZ",std::vector<double>{capt_vtxz});
-				MCNeutCap.emplace("CaptNGamma",std::vector<double>{capt_ngamma});
+				MCNeutCap.emplace("CaptNGamma",std::vector<double>{double(capt_ngamma)});
 				MCNeutCap.emplace("CaptTotalE",std::vector<double>{capt_totalE});
 				MCNeutCap.emplace("CaptTime",std::vector<double>{capt_t});
-				MCNeutCap.emplace("CaptNucleus",std::vector<double>{capt_nucleus});
+				MCNeutCap.emplace("CaptNucleus",std::vector<double>{double(capt_nucleus)});
 				MCNeutCapGammas.emplace("CaptGammas",std::vector<std::vector<double>>{gamma_energies});
+				MCNeutCap.emplace("CaptPrimary",std::vector<double>{double_primary});
 			} else {
 				MCNeutCap.at("CaptParent").push_back(capt_parent);
 				MCNeutCap.at("CaptVtxX").push_back(capt_vtxx);
@@ -804,6 +821,7 @@ bool LoadWCSim::Execute(){
 				MCNeutCap.at("CaptTime").push_back(capt_t);
 				MCNeutCap.at("CaptNucleus").push_back(capt_nucleus);
 				MCNeutCapGammas.at("CaptGammas").push_back(gamma_energies);
+				MCNeutCap.at("CaptPrimary").push_back(double_primary);
 			}
 		}
 
@@ -932,7 +950,7 @@ bool LoadWCSim::Execute(){
 			m_data->vars.Set("StopLoop",1);
 		} else {
 			int nbytesread = WCSimEntry->GetEntry(MCEventNum);  // <0 if out of file
-			std::cout <<"Trying to get next event, MCEventNum: "<<MCEventNum<<", nbytesread: "<<nbytesread<<std::endl;
+			if (verbosity > 2) std::cout <<"LoadWCSim tool: Trying to get next event, MCEventNum: "<<MCEventNum<<", nbytesread: "<<nbytesread<<std::endl;
 			if(nbytesread<=0){
 				Log("LoadWCSim Tool: Reached last entry of WCSim input file, terminating ToolChain",v_warning,verbosity);
 				m_data->vars.Set("StopLoop",1);
