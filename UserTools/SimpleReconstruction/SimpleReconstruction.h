@@ -43,6 +43,7 @@ class SimpleReconstruction: public Tool {
   Position SimpleRecoVtx;
   Position SimpleRecoStopVtx;
   double SimpleRecoCosTheta;
+  double SimpleRecoPt;
   bool SimpleRecoFV;
   double SimpleRecoMrdEnergyLoss;
   double SimpleRecoTrackLengthInMRD;

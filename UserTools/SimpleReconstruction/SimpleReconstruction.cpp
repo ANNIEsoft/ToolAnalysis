@@ -46,6 +46,7 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["RecoEvent"]->Set("SimpleRecoVtx",SimpleRecoVtx);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoStopVtx",SimpleRecoStopVtx);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoCosTheta",SimpleRecoCosTheta);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoPt",SimpleRecoPt);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoFV",SimpleRecoFV);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoMrdEnergyLoss",SimpleRecoMrdEnergyLoss);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoTrackLengthInMRD",SimpleRecoTrackLengthInMRD);
@@ -105,6 +106,7 @@ void SimpleReconstruction::SetDefaultValues(){
   SimpleRecoVtx.SetY(-9999);
   SimpleRecoVtx.SetZ(-9999);
   SimpleRecoCosTheta = -9999;
+  SimpleRecoPt = -9999;
   SimpleRecoStopVtx.SetX(-9999);
   SimpleRecoStopVtx.SetY(-9999);
   SimpleRecoStopVtx.SetZ(-9999);
@@ -192,7 +194,6 @@ bool SimpleReconstruction::GetANNIEEventVariables(){
 
   for(int tracki=0; tracki<numtracksinev; tracki++){
     BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
-    thisTrackAsBoostStore->Print(false);
 
     thisTrackAsBoostStore->Get("StartVertex",StartVertex);
     thisTrackAsBoostStore->Get("StopVertex",StopVertex);
@@ -244,7 +245,6 @@ bool SimpleReconstruction::RecoTankExitPoint(std::vector<int> clusterid_vec){
     int clusterid = clusterid_vec.at(i_clusterid);
 
     for (int i = 0; i < (int) fMRDTrackEventID.size(); i++){
-      std::cout <<"i: "<<i<<", trackEventID: "<<fMRDTrackEventID.at(i)<<std::endl;
       if (fMRDTrackEventID.at(i) == clusterid) {
         Log("SimpleReconstruction:RecoTankExitPoint: Found corresponding track id >>> "+std::to_string(i)+"<<< for cluster id "+std::to_string(clusterid)+"! Proceeding with extracting MRD track information...",v_message,verbosity);
         trackid = i;
@@ -273,7 +273,6 @@ bool SimpleReconstruction::RecoTankExitPoint(std::vector<int> clusterid_vec){
   SimpleRecoMRDStop.SetZ(stopz);
   SimpleRecoTrackLengthInMRD = sqrt((stopx-startx)*(stopx-startx)+(stopy-starty)*(stopy-starty)+(stopz-startz)*(stopz-startz));
 
-  std::cout <<"start MRD: "<<startx<<","<<starty<<","<<startz<<std::endl;
 
   //Calculate intersection point parameter t
   bool hit_tank = false;
@@ -360,6 +359,9 @@ bool SimpleReconstruction::SimpleEnergyReconstruction(){
   Log("SimpleEnergyReconstruction: Reconstructed muon energy: "+std::to_string(SimpleRecoEnergy),v_message,verbosity);
 
   SimpleRecoMrdEnergyLoss = mrd_eloss;
+
+  //Also calculate transverse muon momentum
+  SimpleRecoPt = sqrt((1-SimpleRecoCosTheta*SimpleRecoCosTheta)*(SimpleRecoEnergy*SimpleRecoEnergy-105.6*105.6)); 
 
   return true;
 
