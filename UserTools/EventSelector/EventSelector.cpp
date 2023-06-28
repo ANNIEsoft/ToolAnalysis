@@ -566,8 +566,7 @@ bool EventSelector::EventSelectionByMCTruthMRD() {
   double mrdEndZ = fGeometry->GetMrdEnd()*100-168.1;
   double mrdHeightY = fGeometry->GetMrdHeight()*100;
   double mrdWidthX = fGeometry->GetMrdWidth()*100;
-  std::cout <<"mrdStartZ: "<<mrdStartZ<<", mrdEndZ: "<<mrdEndZ<<", mrdHeightY: "<<mrdHeightY<<", mrdWidthX: "<<mrdWidthX<<std::endl;                                                                                     
-  Log("EventSelector tool: Read in MuonStop (X,Y,Z) = ("+std::to_string(muonStopX)+","+std::to_string(muonStopY)+","+std::to_string(muonStopZ)+")");
+  Log("EventSelector tool: Read in MuonStop (X,Y,Z) = ("+std::to_string(muonStopX)+","+std::to_string(muonStopY)+","+std::to_string(muonStopZ)+")",2,verbosity);
   if(muonStopZ<mrdStartZ || muonStopZ>mrdEndZ
   	|| muonStopX<-1.0*mrdWidthX || muonStopX>mrdWidthX
   	|| muonStopY<-1.0*mrdHeightY || muonStopY>mrdHeightY) {
@@ -756,17 +755,23 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   pmtmrd_coinc_min = fPMTMRDOffset - 50;
   pmtmrd_coinc_max = fPMTMRDOffset + 50;
 
+  std::vector<int> vector_mrd_coincidence;
+
   bool coincidence = false;
   for (int i_mrd = 0; i_mrd < int(mrd_meantimes.size()); i_mrd++){
     double time_diff = mrd_meantimes.at(i_mrd) - pmt_time;
     if (verbosity > 0) std::cout <<"MRD time: "<<mrd_meantimes.at(i_mrd)<<", PMT time: "<<pmt_time<<", difference: "<<time_diff<<std::endl;
     Log("EventSelector tool: MRD/Tank coincidene candidate "+std::to_string(i_mrd)+ " has time difference: "+std::to_string(time_diff),v_message,verbosity);
     if (verbosity > 1) std::cout <<"max_charge: "<<max_charge<<", n_hits: "<<n_hits<<std::endl;
+    Log("EventSelector tool: MRD/Tank coincidene candidate "+std::to_string(i_mrd)+ " has time difference: "+std::to_string(time_diff),1,verbosity);
+    
     if (time_diff > pmtmrd_coinc_min && time_diff < pmtmrd_coinc_max && max_charge > 200 && n_hits >= 20){
       coincidence = true;
-      m_data->Stores["ANNIEEvent"]->Set("MRDCoincidenceCluster",i_mrd);
+      vector_mrd_coincidence.push_back(i_mrd);
     }
   }
+  
+  m_data->Stores["RecoEvent"]->Set("MRDCoincidenceCluster",vector_mrd_coincidence);
 
   return coincidence;
 
