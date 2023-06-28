@@ -10,5 +10,5 @@ myClusterFinder ClusterFinder ./configfiles/NeutronMultiplicity/MC/ClusterFinder
 myClusterClassifiers ClusterClassifiers ./configfiles/NeutronMultiplicity/MC/ClusterClassifiersConfig
 myEventSelector EventSelector ./configfiles/NeutronMultiplicity/MC/EventSelectorConfig
 mySimpleReconstruction SimpleReconstruction ./configfiles/NeutronMultiplicity/SimpleReconstructionConfig
-myFindNeutrons FindNeutrons ./configfiles/NeutronMultiplicity/FindNeutronsConfig
+myFindNeutrons FindNeutrons ./configfiles/NeutronMultiplicity/MC/FindNeutronsConfig
 myNeutronMultiplicity NeutronMultiplicity ./configfiles/NeutronMultiplicity/MC/NeutronMultiplicityConfig
