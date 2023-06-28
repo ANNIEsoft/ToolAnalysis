@@ -1282,14 +1282,14 @@ bool NeutronMultiplicity::FillTGraphs(){
 
 
   //Correct graphs with efficiencies:
-  this->CorrectEfficiency(gr_neutrons_muonE,gr_eff_muonE,gr_neutrons_muonE_corr);
-  this->CorrectEfficiency(gr_neutrons_muonE_fv,gr_eff_muonE_fv,gr_neutrons_muonE_corr_fv);
-  this->CorrectEfficiency(gr_neutrons_muonE_zoom,gr_eff_muonE_zoom,gr_neutrons_muonE_corr_zoom);
-  this->CorrectEfficiency(gr_neutrons_muonE_fv_zoom,gr_eff_muonE_fv_zoom,gr_neutrons_muonE_corr_fv_zoom);
-  this->CorrectEfficiency(gr_neutrons_muonCosTheta,gr_eff_costheta,gr_neutrons_muonCosTheta_corr);
-  this->CorrectEfficiency(gr_neutrons_muonCosTheta_fv,gr_eff_costheta_fv,gr_neutrons_muonCosTheta_corr_fv);
-  this->CorrectEfficiency(gr_neutrons_pT,gr_eff_pT,gr_neutrons_pT_corr);
-  this->CorrectEfficiency(gr_neutrons_pT_fv,gr_eff_pT_fv,gr_neutrons_pT_corr_fv);
+  this->CorrectEfficiency(gr_neutrons_muonE,gr_eff_muonE,gr_neutrons_muonE_corr,labels_muon_E);
+  this->CorrectEfficiency(gr_neutrons_muonE_fv,gr_eff_muonE_fv,gr_neutrons_muonE_corr_fv,labels_muon_E_fv);
+  this->CorrectEfficiency(gr_neutrons_muonE_zoom,gr_eff_muonE_zoom,gr_neutrons_muonE_corr_zoom,labels_muon_E);
+  this->CorrectEfficiency(gr_neutrons_muonE_fv_zoom,gr_eff_muonE_fv_zoom,gr_neutrons_muonE_corr_fv_zoom,labels_muon_E_fv);
+  this->CorrectEfficiency(gr_neutrons_muonCosTheta,gr_eff_costheta,gr_neutrons_muonCosTheta_corr,labels_muon_CosTheta);
+  this->CorrectEfficiency(gr_neutrons_muonCosTheta_fv,gr_eff_costheta_fv,gr_neutrons_muonCosTheta_corr_fv,labels_muon_CosTheta_fv);
+  this->CorrectEfficiency(gr_neutrons_pT,gr_eff_pT,gr_neutrons_pT_corr,labels_muon_pT);
+  this->CorrectEfficiency(gr_neutrons_pT_fv,gr_eff_pT_fv,gr_neutrons_pT_corr_fv,labels_muon_pT_fv);
 
   return true;
 }
@@ -1345,20 +1345,31 @@ bool NeutronMultiplicity::FillSingleTGraph(TGraphErrors *gr, TH2F *h2d, std::vec
   return true;
 }
 
-bool CorrectEfficiency(TGraphErrors *gr_original, TGraphErrors *gr_eff, TGraphErrors *gr_new){
+bool NeutronMultiplicity::CorrectEfficiency(TGraphErrors *gr_original, TGraphErrors *gr_eff, TGraphErrors *gr_new,std::vector<std::string> labels){
 
   //Loop over points in original graph, grab x-values
-  int n_points = gr_original->GetN();
-  for (int i_point=1; i_point <= n_points; i_point++){
+  int n_points = gr_eff->GetN();
+  for (int i_point=0; i_point < n_points; i_point++){
     double point_x;
     double original_value;
     double eff_value;
+    double original_errorx, original_errory;
+    double errory;
 
-    gr_original->GetPoint(i_point,point_x,original_value);
     gr_eff->GetPoint(i_point,point_x,eff_value);
+    gr_original->GetPoint(i_point,point_x,original_value);
+    original_errorx = gr_original->GetErrorX(i_point);
+    original_errory = gr_original->GetErrorY(i_point);
     double new_value = (eff_value > 0)? original_value/eff_value : original_value;
+    errory = (eff_value > 0)? original_errory/eff_value : original_errory;
     gr_new->SetPoint(i_point,point_x,new_value);
+    gr_new->SetPointError(i_point,original_errorx,errory);
   }
+
+  std::string title_string = labels.at(2)+";"+labels.at(0)+";"+labels.at(1);
+  gr_new->SetTitle(title_string.c_str());
+  gr_new->SetDrawOption("ALP");
+  gr_new->SetLineWidth(2);
 
   return true;
 
