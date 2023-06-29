@@ -103,7 +103,7 @@
 #include "MCPropertiesToTree.h"
 #include "CalcClassificationVars.h"
 #include "StoreClassificationVars.h"
-//#include "LoadGenieEvent.h"
+#include "LoadGenieEvent.h"
 //#include "PrintGenieEvent.h"
 #include "PlotWaveforms.h"
 #include "PMTDataDecoder.h"
