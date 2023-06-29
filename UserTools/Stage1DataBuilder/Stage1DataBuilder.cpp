@@ -14,11 +14,7 @@ bool Stage1DataBuilder::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("Verbosity",verbosity);
   m_variables.Get("Basename",Basename);
-  m_variables.Get("RunNumber",RunNumber);
-  //RawData = new BoostStore(false,0);
 
-  //RawData->Initialise("../RawData/RAWDataR4226S0p2");
-  //RawData->Print(false);
 
   Stage1Data = new BoostStore(false,2);
 
@@ -27,65 +23,48 @@ bool Stage1DataBuilder::Initialise(std::string configfile, DataModel &data){
 
 
 bool Stage1DataBuilder::Execute(){
+  Stage1Data->Delete();
+  int RunNumber;
+  m_data->Stores.at("ANNIEEvent")->Get("RunNumber",RunNumber);
   PsecData* LData = nullptr;
   m_data->CStore.Get("LAPPDData",LData);
-  std::cout<<"LData: "<<LData<<std::endl;
-  LData->Print();
-  int lappdid = LData->LAPPD_ID;
-  std::cout<<"LAPPD ID: "<<lappdid<<std::endl;
-
-  switch(lappdid){
-  case 0:
-    LAPPD1Data = new BoostStore(false,0);
-    LAPPD1Data->Set("LAPPDData",*LData);
-    Stage1Data->Set("LAPPD1Data",LAPPD1Data);
-    break;
-  case 1:
-    LAPPD2Data = new BoostStore(false,0);
-    LAPPD2Data->Set("LAPPDData",*LData);
-    Stage1Data->Set("LAPPD2Data",LAPPD2Data);
-    break;
-  case 2:
-    LAPPD3Data = new BoostStore(false,0);
-    LAPPD3Data->Set("LAPPDData",*LData);
-    Stage1Data->Set("LAPPD3Data",LAPPD3Data);
-    break;
-  case 3:
-    LAPPD4Data = new BoostStore(false,0);
-    LAPPD4Data->Set("LAPPDData",*LData);
-    Stage1Data->Set("LAPPD4Data",LAPPD4Data);
-    break;
-  case 4:
-    LAPPD5Data = new BoostStore(false,0);
-    LAPPD5Data->Set("LAPPDData",*LData);
-    Stage1Data->Set("LAPPD5Data",LAPPD5Data);
-    break;
+  if (LData == nullptr){
+    Log("No LAPPD Data retrieved from CStore! Moving on...", v_debug, verbosity);
+    return true;
   }
+  if (verbosity > v_debug){
+    std::cout<<"LData: "<<LData<<std::endl;
+    LData->Print();
+  }
+  int lappdid = LData->LAPPD_ID;
+  Log("LAPPD ID: " + std::to_string(lappdid), v_debug, verbosity);
 
-  this->GetANNIEEvent();
-  std::cout<<"ANNIEEvent: "<<std::endl;
-  ANNIEEvent1->Print(false);
-  std::cout<<"made it here 3"<<std::endl;
+  std::string key = "LAPPD" + std::to_string(lappdid) + "Data";
+  LAPPD1Data = new BoostStore(false,0);
+  LAPPD1Data->Set("LAPPDData",*LData);
+  Stage1Data->Set(key, LAPPD1Data);
+
+  GetANNIEEvent();
   Stage1Data->Set("ANNIEEvent_noLAPPD",ANNIEEvent1);
 
-  std::cout<<"made it here 4"<<std::endl;
   std::string filename = Basename + "R" + std::to_string(RunNumber);
   Stage1Data->Save(filename);
-  std::cout<<"made it here 5"<<std::endl;
+  
 
   return true;
 }
 
 
 bool Stage1DataBuilder::Finalise(){
+  Stage1Data->Set("LAPPD0Data",LAPPD1Data);
+  Stage1Data->Set("ANNIEEvent_noLAPPD",ANNIEEvent1);
   Stage1Data->Close();
-  Stage1Data->Delete();
   delete Stage1Data;
   return true;
 }
 
 void Stage1DataBuilder::GetANNIEEvent(){
-  ANNIEEvent1 = new BoostStore(false,0);
+  ANNIEEvent1->Delete();
   std::map<unsigned long,std::vector<Hit>> *AuxHits = nullptr;
   std::map<unsigned long,std::vector<Hit>> *Hits = nullptr;
   std::map<unsigned long,std::vector<Hit>> *TDCData = nullptr;

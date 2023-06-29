@@ -32,21 +32,12 @@ class Stage1DataBuilder: public Tool {
 
 
  private:
-    std::string verbosity;
+    int verbosity;
+    int v_debug = 3;
+
     std::string Basename;
-    int RunNumber;
-    BoostStore* RawData = nullptr;
-    BoostStore* PMTData = nullptr;
-    BoostStore* MRDData = nullptr;
-    BoostStore* TrigData = nullptr;
-    BoostStore* LAPPDData = nullptr;
-    int ExecuteCounter = 0;
     BoostStore* Stage1Data = nullptr;
     BoostStore* LAPPD1Data = nullptr;
-    BoostStore* LAPPD2Data = nullptr;
-    BoostStore* LAPPD3Data = nullptr;
-    BoostStore* LAPPD4Data = nullptr;
-    BoostStore* LAPPD5Data = nullptr;
     BoostStore* ANNIEEvent1 = nullptr;
 
 

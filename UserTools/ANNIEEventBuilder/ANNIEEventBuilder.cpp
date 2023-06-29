@@ -110,7 +110,11 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
 
 
 bool ANNIEEventBuilder::Execute(){
-  if(BuildStage1Data) m_data->Stores["ANNIEEvent"] = new BoostStore(false, BOOST_STORE_MULTIEVENT_FORMAT);
+  if(BuildStage1Data){
+    m_data->Stores.at("ANNIEEvent")->Delete();
+    m_data->Stores["ANNIEEvent"] = new BoostStore(false, 0);
+  }
+
   bool NewEntryAvailable;
   m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
@@ -2319,14 +2323,6 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
-  std::cout<<"PRINTING OUT TDCDATA FIRSTS"<<std::endl;
-  std::cout<<"PRINTING OUT TDCDATA FIRSTS"<<std::endl;
-  std::cout<<"PRINTING OUT TDCDATA FIRSTS"<<std::endl;
-  std::cout<<"PRINTING OUT TDCDATA FIRSTS"<<std::endl;
-  std::cout<<"PRINTING OUT TDCDATA FIRSTS"<<std::endl;
-  for (auto&& entry : (*TDCData)){
-    std::cout<<"TDCData entry.first: "<<entry.first<<std::endl;
-  }
   if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("TDCData",TDCData,true);
   TimeClass timeclass_timestamp(MRDTimeStamp);
   ANNIEEvent->Set("EventTimeMRD",timeclass_timestamp);
