@@ -47,8 +47,8 @@ class GenieInfo {
 	int probepdg=-1;
 	std::string probepartname="";
 	//FourVector* probemomentum=0;                   // GeV/c?
-	Position probethreemomentum=Position(0.,0.,0.);  // GeV/c?
-	Position probemomentumdir=Position(0.,0.,0.);    // unit vector
+	Direction probethreemomentum=Direction(0.,0.,0.);  // GeV/c?
+	Direction probemomentumdir=Direction(0.,0.,0.);    // unit vector
 	double probeanglex=0.;                           // rads
 	double probeangley=0.;                           // rads
 	double probeangle=0.;                            // rads
@@ -57,7 +57,7 @@ class GenieInfo {
 	//genie::GHepParticle* targetnucleon=0;
 	int targetnucleonpdg=-1;
 	std::string targetnucleonname="";                        // pdg if name not known
-	Position targetnucleonthreemomentum=Position(0.,0.,0.);  // GeV/c? only defined if there is a target nucleon: not true for all events
+	Direction targetnucleonthreemomentum=Direction(0.,0.,0.);  // GeV/c? only defined if there is a target nucleon: not true for all events
 	double targetnucleonenergy=0.;                           // GeV. only defined if there is a target nucleon
 	
 	// target nucleus:
@@ -76,8 +76,8 @@ class GenieInfo {
 	double fsleptonenergy=0.;                        // GeV. -1 if not defined
         int fsleptonpdg=-1;                              // -1 if not defined
         double fsleptonm=0;                              // -1 if not defined
-        Position fsleptonmomentum=Position(0.,0.,0.);    // GeV/c. 0 if not defined
-        Position fsleptonmomentumdir=Position(0.,0.,0.); // unit vector. 0 if not defined
+        Direction fsleptonmomentum=Direction(0.,0.,0.);    // GeV/c. 0 if not defined
+        Direction fsleptonmomentumdir=Direction(0.,0.,0.); // unit vector. 0 if not defined
         Position fsleptonvtx=Position(0.,0.,0.);         // cm. 0 if not defined
         double fsleptont=0.;                             // ns. -1 if not deined
 	

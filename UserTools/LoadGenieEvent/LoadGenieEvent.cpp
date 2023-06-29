@@ -59,6 +59,7 @@ Genie 3.0.4.ub3 GNTP files: /pnfs/annie/persistent/simulation/genie3/G1810a0211a
 LoadGenieEvent::LoadGenieEvent():Tool(){}
 
 Position TVector3ToPosition(TVector3 tvecin);
+Direction TVector3ToDirection(TVector3 tvecin);
 FourVector TLorentzVectorToFourVector(TLorentzVector tlvecin);
 
 bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
@@ -70,13 +71,13 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	m_data= &data; //assigning transient data pointer
 	/////////////////////////////////////////////////////////////////
 	
-#if LOADED_GENIE==1 // only load the Tool if genie is available
 	
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
 	m_variables.Get("FileDir",filedir);
 	m_variables.Get("FilePattern",filepattern);
 	m_variables.Get("ManualFileMatching",manualmatch);
+	m_variables.Get("FileEvents",fileevents);
 
 	// create a store for holding Genie information to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
@@ -87,8 +88,9 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	///////////////////////
 	Log("Tool LoadGenieEvent: Opening TChain",v_debug,verbosity);
 	loadwcsimsource = (filepattern=="LoadWCSimTool");
-	if(not loadwcsimsource){
+	if(not loadwcsimsource && not manualmatch){
 		// construct a new TChain and add all the files at once
+		// this is for use of looking at stand alone Genie file, with no WCSim
 		std::string inputfiles = filedir+"/"+filepattern;
 		tchainentrynum=0;
 		flux = new TChain("gtree");
@@ -98,13 +100,38 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		SetBranchAddresses();
 	}
 
+	if(manualmatch){
+		// Manually create path to matching GENIE File for WCSim file
+		std::string wcsimfile;
+		m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
+		//Strip WCSim file name of its prefix path
+		std::string wcsim_prefix = "wcsim_";
+		wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
+		wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
+		std::string wcsimev = wcsimfile;
+		wcsimfile.erase(wcsimfile.find("."),wcsimfile.length());
+		wcsimev.erase(0,wcsimev.find(".")+1);
+
+		std::cout <<"wcsimfile: "<<wcsimfile<<", wcsimev: "<<wcsimev<<std::endl;
+		std::string::size_type sz;
+		int wcsimfilenumber = std::stoi(wcsimfile,&sz);
+		int wcsimevnumber = std::stoi(wcsimev,&sz);
+		std::cout <<"wcsimfilenumber: "<<wcsimfilenumber<<", wcsimevnumber: "<<wcsimevnumber<<std::endl;
+
+		std::string inputfile = filedir+"/gntp."+wcsimfile+".ghep.root";
+		curf=TFile::Open(inputfile.c_str());
+                flux=(TChain*)curf->Get("gtree");
+                SetBranchAddresses();
+		tchainentrynum = wcsimevnumber*fileevents;
+	}
+
 	return true;
 
 }
 
 bool LoadGenieEvent::Execute(){
 	
-        if(loadwcsimsource){
+        if(loadwcsimsource && !manualmatch){
                 // retrieve the genie file and entry number from the LoadWCSim tool
                 std::string inputfiles;
                 get_ok = m_data->CStore.Get("GenieFile",inputfiles);
@@ -112,7 +139,7 @@ bool LoadGenieEvent::Execute(){
                         if(verbosity) std::cout << "Tool LoadGenieEvent: Failed to find GenieFile in CStore" << std::endl;
                         return false;
                 }
-                if(manualmatch){
+                if(filedir!="NA"){
                         std::string genie_prefix = "gntp.";
                         inputfiles.erase(0, inputfiles.find(genie_prefix));
                         inputfiles = filedir+"/"+inputfiles;
@@ -153,6 +180,16 @@ bool LoadGenieEvent::Execute(){
 		curflast=curf;
 		Log("Tool LoadGenieEvent: Opening new file \""+currentfilestring+"\"",v_debug,verbosity);
 	}
+	if (manualmatch){
+		uint16_t MCTriggernum;
+		m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+		if (MCTriggernum != 0){
+			m_data->CStore.Set("NewGENIEEntry",false);	
+			return true;	//Don't evaluate new GENIE event for dealyed WCSim triggers
+		} else {
+			m_data->CStore.Set("NewGENIEEntry",true);
+		}
+	}
 	tchainentrynum++;
 	
 	// Expand out the neutrino event info
@@ -189,9 +226,9 @@ bool LoadGenieEvent::Execute(){
 
 		// convenience type conversions
 		parentdecayvtx = Position(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
-		parentdecaymom = Position(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
-		parentprodmom = Position(parentprodmom_x,parentprodmom_y,parentprodmom_z);
-		parenttgtexitmom = Position(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
+		parentdecaymom = Direction(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
+		parentprodmom = Direction(parentprodmom_x,parentprodmom_y,parentprodmom_z);
+		parenttgtexitmom = Direction(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
 		//parenttypestring = (fluxstage==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
 		//parenttypestringattgtexit = (fluxstage==0) ? 
 		parenttypestring = (pcodes==0) ? GnumiToString(parentpdg) : PdgToString(parentpdg);
@@ -233,9 +270,9 @@ bool LoadGenieEvent::Execute(){
 		
 		// convenience type conversions
 		parentdecayvtx = Position(parentdecayvtx_x,parentdecayvtx_y,parentdecayvtx_z);
-		parentdecaymom = Position(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
-		parentprodmom = Position(parentprodmom_x,parentprodmom_y,parentprodmom_z);
-		parenttgtexitmom = Position(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
+		parentdecaymom = Direction(parentdecaymom_x,parentdecaymom_y,parentdecaymom_z);
+		parentprodmom = Direction(parentprodmom_x,parentprodmom_y,parentprodmom_z);
+		parenttgtexitmom = Direction(parenttgtexitmom_x,parenttgtexitmom_y,parenttgtexitmom_z);
 		parenttypestring = PdgToString(parentpdg);
 		parenttypestringattgtexit = PdgToString(parentpdgattgtexit);
 		parentdecaystring = DecayTypeToString(parentdecaymode);
@@ -498,7 +535,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 		logmessage+= ", ProbeMomentum[0] = "+to_string(probemomentum->E());
 		Log(logmessage,v_warning,verbosity);
 	}
-	/*TVector3*/ thegenieinfo.probethreemomentum = TVector3ToPosition(probemomentum->Vect());
+	/*TVector3*/ thegenieinfo.probethreemomentum = TVector3ToDirection(probemomentum->Vect());
 	/*TVector3*/ thegenieinfo.probemomentumdir = thegenieinfo.probethreemomentum.Unit();
 	/*Double_t*/ thegenieinfo.probeanglex = 
 		TMath::ATan(thegenieinfo.probethreemomentum.X()/thegenieinfo.probethreemomentum.Z());
@@ -517,11 +554,11 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	} else {
 		thegenieinfo.targetnucleonname = std::to_string(thegenieinfo.targetnucleonpdg);
 	}
-	/*TVector3*/ thegenieinfo.targetnucleonthreemomentum=Position(0.,0.,0.);
+	/*TVector3*/ thegenieinfo.targetnucleonthreemomentum=Direction(0.,0.,0.);
 	/*Double_t*/ thegenieinfo.targetnucleonenergy=0.;
 	if(targetnucleon){
 		TLorentzVector* targetnucleonmomentum = targetnucleon->P4();
-		thegenieinfo.targetnucleonthreemomentum = TVector3ToPosition(targetnucleonmomentum->Vect());
+		thegenieinfo.targetnucleonthreemomentum = TVector3ToDirection(targetnucleonmomentum->Vect());
 		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy(); //GeV
 	}
 	
@@ -550,15 +587,15 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
         /*Int_t*/ thegenieinfo.fsleptonpdg=-1;
         /*Double_t*/ thegenieinfo.fsleptonm=-1.;
         /*Double_t*/ thegenieinfo.fsleptont=-1.;
-        /*TVector3*/ thegenieinfo.fsleptonmomentum=Position(0.,0.,0.);
-        /*TVector3*/ thegenieinfo.fsleptonmomentumdir=Position(0.,0.,0.);
+        /*TVector3*/ thegenieinfo.fsleptonmomentum=Direction(0.,0.,0.);
+        /*TVector3*/ thegenieinfo.fsleptonmomentumdir=Direction(0.,0.,0.);
         /*TVector3*/ thegenieinfo.fsleptonvtx=Position(0.,0.,0.);
         if(fsleppos>-1){
                 thegenieinfo.fsleptonname = gevtRec->Particle(fsleppos)->Name();
                 thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy();
                 thegenieinfo.fsleptonpdg = gevtRec->Particle(fsleppos)->Pdg();
                 thegenieinfo.fsleptonm = gevtRec->Particle(fsleppos)->Mass();
-                thegenieinfo.fsleptonmomentum = Position(gevtRec->Particle(fsleppos)->Px(),
+                thegenieinfo.fsleptonmomentum = Direction(gevtRec->Particle(fsleppos)->Px(),
                                 gevtRec->Particle(fsleppos)->Py(),
                                 gevtRec->Particle(fsleppos)->Pz());
                 thegenieinfo.fsleptonmomentumdir = thegenieinfo.fsleptonmomentum.Unit();
@@ -896,7 +933,6 @@ std::map<int,std::string>* LoadGenieEvent::GenerateMediumMap(){
 	return &mediummap;
 }
 
-#endif // LOADED_GENIE==1
 
 Position TVector3ToPosition(TVector3 tvecin){
 	Position pos(0,0,0);
@@ -904,6 +940,14 @@ Position TVector3ToPosition(TVector3 tvecin){
 	pos.SetY(tvecin.Y());
 	pos.SetZ(tvecin.Z());
 	return pos;
+}
+
+Direction TVector3ToDirection(TVector3 tvecin){
+	Direction dir(0,0,0);
+	dir.SetX(tvecin.X());
+	dir.SetY(tvecin.Y());
+	dir.SetZ(tvecin.Z());
+	return dir;
 }
 
 FourVector TLorentzVectorToFourVector(TLorentzVector tlvecin){
