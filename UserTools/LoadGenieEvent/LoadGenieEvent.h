@@ -103,7 +103,8 @@ class LoadGenieEvent: public Tool {
 	std::string currentfilestring;
 	unsigned long local_entry=0;           // 
 	unsigned int tchainentrynum=0;         // 
-	bool manualmatch=1;			//to be used when GENIE information is not stored properly in file	or when running on grid
+	bool manualmatch=0;			//to be used when GENIE information is not stored properly in file
+	int fileevents=0;
 
 	// common input/output variables to both Robert/Zarko filesets
 	int parentpdg;
@@ -113,14 +114,14 @@ class LoadGenieEvent: public Tool {
 	float parentdecayvtx_x, parentdecayvtx_y, parentdecayvtx_z;
 	Position parentdecayvtx;
 	float parentdecaymom_x, parentdecaymom_y, parentdecaymom_z;
-	Position parentdecaymom;
+	Direction parentdecaymom;
 	float parentprodmom_x, parentprodmom_y, parentprodmom_z;
-	Position parentprodmom;
+	Direction parentprodmom;
 	int parentprodmedium;                // they're all 0
 	std::string parentprodmediumstring;  // do we even have this mapping? --> There seems to be a mapping here: https://minos-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=6316&filename=flugg_doc.pdf&version=10
 	int parentpdgattgtexit;
 	std::string parenttypestringattgtexit;
-	Position parenttgtexitmom;
+	Direction parenttgtexitmom;
 	float parenttgtexitmom_x, parenttgtexitmom_y, parenttgtexitmom_z;
 	int pcodes;			// Needed to evaluate whether the particle codes are stored in GEANT format or in PDG format
 
@@ -166,8 +167,8 @@ class LoadGenieEvent: public Tool {
         double fsleptonenergy;
         int fsleptonpdg;
         double fsleptonm;
-        Position fsleptonmomentum;
-        Position fsleptonmomentumdir;
+        Direction fsleptonmomentum;
+        Direction fsleptonmomentumdir;
         Position fsleptonvtx; // cm
         double fsleptont;     // ns
 	// these may not be properly copied... --> temp fix applied that seems to be working
