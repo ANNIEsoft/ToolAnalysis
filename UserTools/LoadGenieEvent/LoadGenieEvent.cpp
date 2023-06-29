@@ -59,6 +59,7 @@ Genie 3.0.4.ub3 GNTP files: /pnfs/annie/persistent/simulation/genie3/G1810a0211a
 LoadGenieEvent::LoadGenieEvent():Tool(){}
 
 Position TVector3ToPosition(TVector3 tvecin);
+Direction TVector3ToDirection(TVector3 tvecin);
 FourVector TLorentzVectorToFourVector(TLorentzVector tlvecin);
 
 bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
