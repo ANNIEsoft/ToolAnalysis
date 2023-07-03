@@ -105,7 +105,7 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		std::string wcsimfile;
 		m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
 		//Strip WCSim file name of its prefix path
-		std::string wcsim_prefix = "wcsim_";
+		std::string wcsim_prefix = "wcsim_0.";
 		wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
 		wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
 		std::string wcsimev = wcsimfile;
