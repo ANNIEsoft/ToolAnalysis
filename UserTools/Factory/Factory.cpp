@@ -157,7 +157,6 @@ if (tool=="PythonScript") ret=new PythonScript;
 if (tool=="ReweightEventsGenie") ret=new ReweightEventsGenie;
 if (tool=="FilterLAPPDEvents") ret=new FilterLAPPDEvents;
 if (tool=="Stage1DataBuilder") ret=new Stage1DataBuilder;
-if (tool=="--help") ret=new --help;
 if (tool=="BeamFetcherV2") ret=new BeamFetcherV2;
 return ret;
 }
