@@ -145,7 +145,9 @@ bool LoadGenieEvent::Execute(){
                         inputfiles = filedir+"/"+inputfiles;
                         if(verbosity) std::cout << "Tool LoadGenieEvent: Loading Genie file: " << inputfiles << std::endl;
                 }
-                m_data->CStore.Get("GenieEntry",tchainentrynum);
+		std::string genieentry;
+                m_data->CStore.Get("GenieEntry",genieentry);
+		tchainentrynum = std::stoi(genieentry);
                 if(!get_ok){
                         if(verbosity) std::cout << "Tool LoadGenieEvent: Failed to find GenieEntry in CStore" << std::endl;
                         return false;
@@ -184,7 +186,8 @@ bool LoadGenieEvent::Execute(){
 		uint16_t MCTriggernum;
 		m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
 		if (MCTriggernum != 0){
-			m_data->CStore.Set("NewGENIEEntry",false);	
+			m_data->CStore.Set("NewGENIEEntry",false);
+			tchainentrynum++;
 			return true;	//Don't evaluate new GENIE event for dealyed WCSim triggers
 		} else {
 			m_data->CStore.Set("NewGENIEEntry",true);
