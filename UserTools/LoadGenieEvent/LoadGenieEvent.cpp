@@ -76,8 +76,6 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
 	m_variables.Get("FileDir",filedir);
 	m_variables.Get("FilePattern",filepattern);
-	m_variables.Get("ManualFileMatching",manualmatch);
-	m_variables.Get("FileEvents",fileevents);
 
 	// create a store for holding Genie information to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
@@ -88,7 +86,7 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	///////////////////////
 	Log("Tool LoadGenieEvent: Opening TChain",v_debug,verbosity);
 	loadwcsimsource = (filepattern=="LoadWCSimTool");
-	if(not loadwcsimsource && not manualmatch){
+	if(not loadwcsimsource){
 		// construct a new TChain and add all the files at once
 		// this is for use of looking at stand alone Genie file, with no WCSim
 		std::string inputfiles = filedir+"/"+filepattern;
@@ -100,55 +98,47 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		SetBranchAddresses();
 	}
 
-	if(manualmatch){
-		// Manually create path to matching GENIE File for WCSim file
-		std::string wcsimfile;
-		m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
-		//Strip WCSim file name of its prefix path
-		std::string wcsim_prefix = "wcsim_0.";
-		wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
-		wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
-		std::string wcsimev = wcsimfile;
-		wcsimfile.erase(wcsimfile.find("."),wcsimfile.length());
-		wcsimev.erase(0,wcsimev.find(".")+1);
-
-		std::cout <<"wcsimfile: "<<wcsimfile<<", wcsimev: "<<wcsimev<<std::endl;
-		std::string::size_type sz;
-		int wcsimfilenumber = std::stoi(wcsimfile,&sz);
-		int wcsimevnumber = std::stoi(wcsimev,&sz);
-		std::cout <<"wcsimfilenumber: "<<wcsimfilenumber<<", wcsimevnumber: "<<wcsimevnumber<<std::endl;
-
-		std::string inputfile = filedir+"/gntp."+wcsimfile+".ghep.root";
-		curf=TFile::Open(inputfile.c_str());
-                flux=(TChain*)curf->Get("gtree");
-                SetBranchAddresses();
-		tchainentrynum = wcsimevnumber*fileevents;
-	}
-
 	return true;
 
 }
 
 bool LoadGenieEvent::Execute(){
 	
-        if(loadwcsimsource && !manualmatch){
-                // retrieve the genie file and entry number from the LoadWCSim tool
+        if(loadwcsimsource){
+		// retrieve the genie entry number from the LoadWCSim tool
+		std::string genieentry;
+		get_ok = m_data->CStore.Get("GenieEntry",genieentry);
+		tchainentrynum = std::stoi(genieentry);
+                if(!get_ok){
+                        Log("Tool LoadGenieEvent: Failed to find GenieEntry in CStore",v_error,verbosity);
+                        return false;
+                }
+                // retrieve the genie file from the LoadWCSim tool
                 std::string inputfiles;
                 get_ok = m_data->CStore.Get("GenieFile",inputfiles);
-                if(!get_ok){
-                        if(verbosity) std::cout << "Tool LoadGenieEvent: Failed to find GenieFile in CStore" << std::endl;
+                if(!get_ok && filedir=="NA"){
+                        Log("Tool LoadGenieEvent: Failed to find GenieFile in CStore. Please include Genie file path to FileDir in config file!",v_error,verbosity);
                         return false;
                 }
                 if(filedir!="NA"){
-                        std::string genie_prefix = "gntp.";
-                        inputfiles.erase(0, inputfiles.find(genie_prefix));
-                        inputfiles = filedir+"/"+inputfiles;
-                        if(verbosity) std::cout << "Tool LoadGenieEvent: Loading Genie file: " << inputfiles << std::endl;
-                }
-                m_data->CStore.Get("GenieEntry",tchainentrynum);
-                if(!get_ok){
-                        if(verbosity) std::cout << "Tool LoadGenieEvent: Failed to find GenieEntry in CStore" << std::endl;
-                        return false;
+			// Manually create path to matching GENIE File for WCSim file
+			std::string wcsimfile;
+			m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
+			//Strip WCSim file name of its prefix path
+			std::string wcsim_prefix = "wcsim_0.";
+			wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
+			wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
+			std::string wcsimev = wcsimfile;
+			wcsimfile.erase(wcsimfile.find("."),wcsimfile.length());
+			wcsimev.erase(0,wcsimev.find(".")+1);
+
+			std::cout <<"wcsimfile: "<<wcsimfile<<", wcsimev: "<<wcsimev<<std::endl;
+			std::string::size_type sz;
+			int wcsimfilenumber = std::stoi(wcsimfile,&sz);
+			int wcsimevnumber = std::stoi(wcsimev,&sz);
+			Log("wcsimfilenumber: "+std::to_string(wcsimfilenumber)+", wcsimevnumber: "+std::to_string(wcsimevnumber),v_debug,verbosity);
+
+			inputfiles = filedir+"/gntp."+wcsimfile+".ghep.root";
                 }
 
                 std::string curfname = ((curf) ? curf->GetName() : "");
@@ -157,7 +147,7 @@ bool LoadGenieEvent::Execute(){
                         // we need to load the new file
                         if(flux) flux->ResetBranchAddresses();
                         if(curf) curf->Close();
-                        if(verbosity) std::cout <<"Tool LoadGenieEvent: Loading new file "<<inputfiles<<std::endl;
+                        Log("Tool LoadGenieEvent: Loading new file "+std::to_string(inputfiles),v_debug,verbosity);
                         curf=TFile::Open(inputfiles.c_str());
                         flux=(TChain*)curf->Get("gtree");
                         SetBranchAddresses();
@@ -180,15 +170,14 @@ bool LoadGenieEvent::Execute(){
 		curflast=curf;
 		Log("Tool LoadGenieEvent: Opening new file \""+currentfilestring+"\"",v_debug,verbosity);
 	}
-	if (manualmatch){
-		uint16_t MCTriggernum;
-		m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
-		if (MCTriggernum != 0){
-			m_data->CStore.Set("NewGENIEEntry",false);	
-			return true;	//Don't evaluate new GENIE event for dealyed WCSim triggers
-		} else {
-			m_data->CStore.Set("NewGENIEEntry",true);
-		}
+	uint16_t MCTriggernum;
+	m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
+	if (MCTriggernum != 0){
+		m_data->CStore.Set("NewGENIEEntry",false);
+		Log("Tool LoadGenieEvent: Delayed WCSim trigger, skipping Genie event", v_message,verbosity);
+		return true;	//Don't evaluate new GENIE event for delayed WCSim triggers
+	} else {
+		m_data->CStore.Set("NewGENIEEntry",true);
 	}
 	tchainentrynum++;
 	
