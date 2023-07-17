@@ -5,8 +5,10 @@ The `LoadGenieEvent` tool loads information from the GENIE files about the neutr
 ## Configurations ##
 
 It is possible to look at GENIE files on their own (without corresponding WCSim files), in this case the `FileDir` and `FilePattern` need to be specified in the configuration file.
-If one wants to get corresponding GENIE information for WCSim files, one should specify `LoadWCSimTool` in the `FilePattern` row. In this case the tool will try to extract the information about the corresponding GENIE file from the WCSim file and load the respective GENIE file automatically. For newer files, the path should be saved alongside the filename and one can set the `FileDir` to `NA`. For older files, only the filename is saved and one needs to specify the `FileDir` in which the GENIE files are to be found by hand.
+If one wants to get corresponding GENIE information for WCSim files, one should specify `LoadWCSimTool` in the `FilePattern` row. In this case the tool will try to extract the information about the corresponding GENIE file from the WCSim file and load the respective GENIE file automatically. For newer files, the path is SOMETIMES(*see below*) saved alongside the filename and one can set the `FileDir` to `NA`. For older files, only the filename is saved and one needs to specify the `FileDir` in which the GENIE files are to be found by hand.
 Note that a lot of WCSim files do not have the complete information about their GENIE files saved. In this case, a manual matching of GENIE files to WCSim files is possible, although the following restrictions to the naming apply: The WCSim files must have the same nomenclature as Marcus' WCSim beam files, i.e. `wcsim_0.X.Y.root`, where `X` is the number of the corresponding GENIE file, and `Y` specifies which part of the GENIE file is being looked at, with each WCSim file corresponding to 500 entries in a GENIE file. The matching GENIE file would be called `ghtp.X.ghep.root`, with the events `Y*(500) ... (Y+1)*500` corresponding to the events in the WCSim file. 
+Due to delayed WCSim triggers, there is not a 1:1 matching of GENIE events to WCSim events. For a delayed WCSim trigger, the Genie event is skipped, so not all GENIE events in the GHEP file will be present from the WCSim file.
+If the WCSim file was generated from offset GENIE events (a non-zero Y in the WCSim file name), then the WCSim only saved the file path of the GENIE file, not the filename. IT IS STRONGLY RECOMMENDED to set the FileDir to the GENIE file location.
 
 ## GenieInfo BoostStore ##
 
@@ -88,15 +90,15 @@ LoadGenieEvent has the following configuration options:
 
 ```
 verbosity 1
-FluxVersion 0   #0: rhatcher files, 1: zarko files
+FluxVersion 1   #0: rhatcher files, 1: zarko files
 #FileDir NA     #specify "NA" for newer files: full path is saved in WCSim
 FileDir /pnfs/annie/persistent/users/vfischer/genie_files/BNB_Water_10k_22-05-17
 #FileDir /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k_11-03-18_gsimpleflux
 #FilePattern gntp.*.ghep.root  ## for specifying specific files to load
 FilePattern LoadWCSimTool      ## use this pattern to load corresponding genie info with the LoadWCSimTool
-                               ## N.B: FileDir must still be specified for now! (WCSim files do not record their directory)
-ManualFileMatching 1           ## If the corresponding GENIE files are not saved reliably, a manual matching of WCSim files to GENIE files can take place
-FileEvents 500                 ## Number of events per WCSim file
-                               ## 500 events for Marcus files
-                               ## 1000 events for James files
+                               ## N.B: FileDir must still be specified for now!
+ManualFileMatching 0           ## to manually match GENIE event to corresponding WCSim event
+FileEvents 1000                ## number of events in the WCSim file
+                               ## 500 for Marcus files
+                               ## 1000 for James files
 ```

@@ -105,7 +105,7 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		std::string wcsimfile;
 		m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
 		//Strip WCSim file name of its prefix path
-		std::string wcsim_prefix = "wcsim_0.";
+		std::string wcsim_prefix = "wcsim_";
 		wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
 		wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
 		std::string wcsimev = wcsimfile;
@@ -146,20 +146,19 @@ bool LoadGenieEvent::Execute(){
                         if(verbosity) std::cout << "Tool LoadGenieEvent: Loading Genie file: " << inputfiles << std::endl;
                 }
 		std::string genieentry;
-                m_data->CStore.Get("GenieEntry",genieentry);
+		get_ok = m_data->CStore.Get("GenieEntry",genieentry);
 		tchainentrynum = std::stoi(genieentry);
                 if(!get_ok){
-                        if(verbosity) std::cout << "Tool LoadGenieEvent: Failed to find GenieEntry in CStore" << std::endl;
+                        Log("Tool LoadGenieEvent: Failed to find GenieEntry in CStore",v_error,verbosity);
                         return false;
                 }
-
                 std::string curfname = ((curf) ? curf->GetName() : "");
                 // check if this is a new file
                 if(inputfiles!=curfname){
                         // we need to load the new file
                         if(flux) flux->ResetBranchAddresses();
                         if(curf) curf->Close();
-                        if(verbosity) std::cout <<"Tool LoadGenieEvent: Loading new file "<<inputfiles<<std::endl;
+                        Log("Tool LoadGenieEvent: Loading new file "+std::to_string(inputfiles),v_debug,verbosity);
                         curf=TFile::Open(inputfiles.c_str());
                         flux=(TChain*)curf->Get("gtree");
                         SetBranchAddresses();
@@ -188,6 +187,7 @@ bool LoadGenieEvent::Execute(){
 		if (MCTriggernum != 0){
 			m_data->CStore.Set("NewGENIEEntry",false);
 			tchainentrynum++;
+			Log("Tool LoadGenieEvent: Skipping Genie event due to delayed WCSim trigger",v_debug,verbosity);
 			return true;	//Don't evaluate new GENIE event for dealyed WCSim triggers
 		} else {
 			m_data->CStore.Set("NewGENIEEntry",true);
