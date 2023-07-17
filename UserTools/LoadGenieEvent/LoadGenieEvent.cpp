@@ -158,7 +158,7 @@ bool LoadGenieEvent::Execute(){
                         // we need to load the new file
                         if(flux) flux->ResetBranchAddresses();
                         if(curf) curf->Close();
-                        Log("Tool LoadGenieEvent: Loading new file "+std::to_string(inputfiles),v_debug,verbosity);
+                        Log("Tool LoadGenieEvent: Loading new file "+inputfiles,v_debug,verbosity);
                         curf=TFile::Open(inputfiles.c_str());
                         flux=(TChain*)curf->Get("gtree");
                         SetBranchAddresses();
