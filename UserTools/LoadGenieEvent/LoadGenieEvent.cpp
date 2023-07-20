@@ -580,7 +580,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.remnantnucleusenergy=-1.;
 	if(remnucpos>-1){
 		thegenieinfo.remnantnucleusname = gevtRec->Particle(remnucpos)->Name();
-		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy(); // MeV conversion
+		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy()*1000.; // MeV conversion
 	}
 	
 	// final state lepton:
@@ -676,7 +676,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
         }
 	
 	// kinematic information
-	Double_t NucleonM = genie::constants::kNucleonMass; 
+	Double_t NucleonM = genie::constants::kNucleonMass*1000.; //MeV conversion 
 	// Calculate kinematic variables "as an experimentalist would measure them; 
 	// neglecting fermi momentum and off-shellness of bound nucleons"
 	TLorentzVector* k1 = gevtRec->Probe()->P4();
@@ -687,9 +687,9 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*TLorentzVector*/ thegenieinfo.q = TLorentzVectorToFourVector((*k1)-(*k2));
 //	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();  // not set in our GENIE files!
 	// momemtum transfer
-	/*Double_t*/ thegenieinfo.Q2 = -1 * thegenieinfo.q.M2();
+	/*Double_t*/ thegenieinfo.Q2 = (-1 * thegenieinfo.q.M2())*1000.; //MeV conversion
 	// E transfer to the nucleus
-	/*Double_t*/ thegenieinfo.Etransf = (targetnucleon) ? thegenieinfo.q.E() : -1;
+	/*Double_t*/ thegenieinfo.Etransf = (targetnucleon) ? thegenieinfo.q.E()*1000. : -1; //MeV conversion
 	// Bjorken x
 	/*Double_t*/ thegenieinfo.x = 
 		(targetnucleon) ? 0.5*thegenieinfo.Q2/(NucleonM*thegenieinfo.Etransf) : -1;
