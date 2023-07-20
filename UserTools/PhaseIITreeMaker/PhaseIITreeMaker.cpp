@@ -1660,7 +1660,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   }
 
   //Load genie information
-  if (hasGenie){
+  if (hasGenie && fMCTriggerNum == 0){
   double TrueNeutrinoEnergy, TrueQ2, TrueNuIntxVtx_X, TrueNuIntxVtx_Y, TrueNuIntxVtx_Z, TrueNuIntxVtx_T;
   double TrueFSLeptonMass, TrueFSLeptonEnergy, TrueFSLeptonTime;
   bool TrueCC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
@@ -1702,8 +1702,8 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
   std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
     if (get_neutrino_energy && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy ){
-      fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
-      fTrueNuIntxVtx_X = TrueNuIntxVtx_X;
+      fTrueNeutrinoEnergy = TrueNeutrinoEnergy*1000;
+      fTrueNuIntxVtx_X = TrueNuIntxVtx_X*100;
       fTrueNuIntxVtx_Y = TrueNuIntxVtx_Y;
       fTrueNuIntxVtx_Z = TrueNuIntxVtx_Z;
       fTrueNuIntxVtx_T = TrueNuIntxVtx_T;

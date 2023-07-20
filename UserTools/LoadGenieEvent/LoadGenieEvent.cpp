@@ -307,10 +307,10 @@ bool LoadGenieEvent::Execute(){
 	interactiontypestring=thegenieinfo.interactiontypestring;
 	neutcode=thegenieinfo.neutinteractioncode; // currently disabled to prevent excessive verbosity
 	
-	eventq2=thegenieinfo.Q2;
-	eventEnu=thegenieinfo.probeenergy;
+	eventq2=thegenieinfo.Q2;                //MeV
+	eventEnu=thegenieinfo.probeenergy;      //MeV
 	neutrinopdg=thegenieinfo.probepdg;
-	muonenergy=thegenieinfo.fsleptonenergy;
+	muonenergy=thegenieinfo.fsleptonenergy; //MeV
 	muonangle=thegenieinfo.fslangle;
 	
 	nuIntxVtx_X=thegenieinfo.Intx_x; // cm
@@ -333,10 +333,10 @@ bool LoadGenieEvent::Execute(){
 	} else { isinfiducialvol = false; }
 	
 	fsleptonname = std::string(thegenieinfo.fsleptonname);
-        fsleptonenergy = thegenieinfo.fsleptonenergy;
+        fsleptonenergy = thegenieinfo.fsleptonenergy;     //MeV
         fsleptonpdg = thegenieinfo.fsleptonpdg;
-        fsleptonm = thegenieinfo.fsleptonm;
-        fsleptonmomentum = thegenieinfo.fsleptonmomentum;
+        fsleptonm = thegenieinfo.fsleptonm;               //MeV
+        fsleptonmomentum = thegenieinfo.fsleptonmomentum; //MeV
         fsleptonmomentumdir = thegenieinfo.fsleptonmomentumdir;
         fsleptonvtx = thegenieinfo.fsleptonvtx; // cm
         fsleptont = thegenieinfo.fsleptont;     // ns
@@ -528,11 +528,11 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.Intx_t = IntxVtx->T() * 1000000000; // GENIE uses seconds
 	
 	// neutrino information:
-	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab);  // GeV
+	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab)*1000.;  // MeV conversion
 	/*Int_t*/ thegenieinfo.probepdg = genieint->InitState().Probe()->PdgCode();
 	/*TString*/ thegenieinfo.probepartname = genieint->InitState().Probe()->GetName();
 	TLorentzVector* probemomentum = gevtRec->Probe()->P4();
-	if(probemomentum->E()!=thegenieinfo.probeenergy){
+	if(probemomentum->E()*1000.!=thegenieinfo.probeenergy){
 		logmessage = "LoadGenieEvent Tool: WARNING, Probe energy from probemomentum.E and ProbeE differ!";
 		logmessage+= "ProbeE = "+to_string(thegenieinfo.probeenergy);
 		logmessage+= ", ProbeMomentum[0] = "+to_string(probemomentum->E());
@@ -562,7 +562,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	if(targetnucleon){
 		TLorentzVector* targetnucleonmomentum = targetnucleon->P4();
 		thegenieinfo.targetnucleonthreemomentum = TVector3ToDirection(targetnucleonmomentum->Vect());
-		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy(); //GeV
+		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy()*1000.; // MeV conversion
 	}
 	
 	// target nucleus:
@@ -580,7 +580,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.remnantnucleusenergy=-1.;
 	if(remnucpos>-1){
 		thegenieinfo.remnantnucleusname = gevtRec->Particle(remnucpos)->Name();
-		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy(); //GeV
+		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy(); // MeV conversion
 	}
 	
 	// final state lepton:
@@ -595,12 +595,12 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
         /*TVector3*/ thegenieinfo.fsleptonvtx=Position(0.,0.,0.);
         if(fsleppos>-1){
                 thegenieinfo.fsleptonname = gevtRec->Particle(fsleppos)->Name();
-                thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy();
+                thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy()*1000.; // MeV conversion
                 thegenieinfo.fsleptonpdg = gevtRec->Particle(fsleppos)->Pdg();
-                thegenieinfo.fsleptonm = gevtRec->Particle(fsleppos)->Mass();
-                thegenieinfo.fsleptonmomentum = Direction(gevtRec->Particle(fsleppos)->Px(),
-                                gevtRec->Particle(fsleppos)->Py(),
-                                gevtRec->Particle(fsleppos)->Pz());
+                thegenieinfo.fsleptonm = gevtRec->Particle(fsleppos)->Mass()*1000.; // MeV conversion
+                thegenieinfo.fsleptonmomentum = Direction(gevtRec->Particle(fsleppos)->Px()*1000.,
+                                gevtRec->Particle(fsleppos)->Py()*1000.,
+                                gevtRec->Particle(fsleppos)->Pz()*1000.);
                 thegenieinfo.fsleptonmomentumdir = thegenieinfo.fsleptonmomentum.Unit();
                 thegenieinfo.fsleptonvtx = Position(gevtRec->Particle(fsleppos)->Vx()*100,
                                 gevtRec->Particle(fsleppos)->Vy()*100,
@@ -638,7 +638,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 
                 int pdgc = p->Pdg();
                 int status = p->Status();
-                double wclimit = 0.160; //water Cherenkov momentum threshold
+                double wclimit = 0.160; //water Cherenkov momentum threshold GeV
 
                 if (status != genie::kIStStableFinalState) continue;
 
