@@ -95,7 +95,7 @@ if (tool=="MCHitToHitComparer") ret=new MCHitToHitComparer;
 if (tool=="MCPropertiesToTree") ret=new MCPropertiesToTree;
 if (tool=="CalcClassificationVars") ret=new CalcClassificationVars;
 if (tool=="StoreClassificationVars") ret=new StoreClassificationVars;
-//if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
+if (tool=="LoadGenieEvent") ret=new LoadGenieEvent;
 //if (tool=="PrintGenieEvent") ret=new PrintGenieEvent;
 if (tool=="PlotWaveforms") ret=new PlotWaveforms;
 if (tool=="PMTDataDecoder") ret=new PMTDataDecoder;
@@ -157,5 +157,6 @@ if (tool=="PythonScript") ret=new PythonScript;
 if (tool=="ReweightEventsGenie") ret=new ReweightEventsGenie;
 if (tool=="FilterLAPPDEvents") ret=new FilterLAPPDEvents;
 if (tool=="FilterEvents") ret=new FilterEvents;
+if (tool=="Stage1DataBuilder") ret=new Stage1DataBuilder;
 return ret;
 }
