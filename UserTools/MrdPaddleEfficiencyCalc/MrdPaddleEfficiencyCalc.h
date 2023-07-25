@@ -56,7 +56,6 @@ class MrdPaddleEfficiencyCalc: public Tool {
   TFile *outputfile = nullptr;
 
   //Histograms + canvas
-  //TH1D *eff_chankey = nullptr;
   TEfficiency *eff_chankey = nullptr;
   TEfficiency *eff_chankey_corrected = nullptr;
   TH2Poly *eff_top = nullptr;

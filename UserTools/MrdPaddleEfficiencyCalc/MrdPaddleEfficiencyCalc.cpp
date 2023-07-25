@@ -47,7 +47,6 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   outputfile = new TFile(str_output.c_str(),"RECREATE");
 
   //Define histograms & canvases
-  //eff_chankey = new TH1D("eff_chankey","Efficiency vs. channelkey",310,26,336);
   eff_chankey = new TEfficiency("eff_chankey","Efficiency vs. channelkey; chankey;efficiency #varepsilon",310,26,336);
   eff_chankey_corrected = new TEfficiency("eff_chankey_corrected","Efficiency vs. channelkey; chankey;efficiency #varepsilon",310,26,336);
   eff_top = new TH2Poly("eff_top","Efficiency - Top View",1.6,3.,-2,2.);
@@ -59,9 +58,6 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   gROOT->cd();
 
   //Label axes of histograms
-  //eff_chankey->GetXaxis()->SetTitle("chankey");
-  //eff_chankey->GetYaxis()->SetTitle("efficiency #varepsilon");
-  // eff_chankey->SetStats(0);
   eff_top->GetXaxis()->SetTitle("z [m]");
   eff_top->GetYaxis()->SetTitle("x [m]");
   eff_side->GetXaxis()->SetTitle("z [m]");
@@ -349,14 +345,15 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       TH1D *efficiency_hist = (TH1D*) temp_obs->Clone(name_eff_hist.str().c_str());
       efficiency_hist->SetStats(0);
       efficiency_hist->SetTitle(title_eff_hist.str().c_str());
+
+      //Note that for efficiency_hist_layer, the colors might not be displayed correctly in newer versions of root
+      //See https://root-forum.cern.ch/t/error-using-tcolor/39149/10 for more details on how to fix it when drawing the canvas from the output file
+
       TH1D *efficiency_hist_layer;
       if (layer_plots){
         efficiency_hist_layer = (TH1D*) temp_obs_layer->Clone(name_eff_hist_layer.str().c_str());
         efficiency_hist_layer->SetStats(0);
         efficiency_hist_layer->SetTitle(title_eff_hist_layer.str().c_str());
-	//efficiency_hist_layer->Rebin(2);
-	//temp_obs_layer->Rebin(2);
-//        efficiency_hist_layer->Scale(map_correction[input_chankey]);
       }	
 		
       if (i_layer%2==0) efficiency_hist->GetXaxis()->SetTitle("y [m]");
@@ -367,23 +364,18 @@ bool MrdPaddleEfficiencyCalc::Execute(){
         if (i_layer%2==0) efficiency_hist_layer->GetXaxis()->SetTitle("y [m]");
         else efficiency_hist_layer->GetXaxis()->SetTitle("x [m]");
         efficiency_hist_layer->GetYaxis()->SetTitle("efficiency #varepsilon");
-	//temp_exp_layer->Rebin(2);
         efficiency_hist_layer->Divide(temp_exp_layer);
       }
 
       TEfficiency *temp_teff = new TEfficiency(*temp_obs_layer,*temp_exp_layer);
       for (int i_bin=0; i_bin < temp_exp_layer->GetNbinsX(); i_bin++){
         double temp_error = temp_teff->GetEfficiencyErrorUp(i_bin+1);
-        //std::cout <<"error up: "<<temp_teff->GetEfficiencyErrorUp(i_bin+1)<<std::endl;
-        //std::cout <<"eff: "<<temp_teff->GetEfficiency(i_bin+1)<<std::endl;
         if (temp_teff->GetEfficiency(i_bin+1) > 0.) efficiency_hist_layer->SetBinError(i_bin+1,temp_error);
         else efficiency_hist_layer->SetBinError(i_bin+1,0);
       }
       
       TH1F *efficiency_hist_layer_copy = (TH1F*) efficiency_hist_layer->Clone();
       efficiency_hist_layer_copy->SetName(name_eff_hist_Layer.str().c_str());
-      //if (i_ch < channels_per_layer[i_layer]/2) efficiency_hist_layer_copy->SetLineColor(Bird_palette[int(254*(i_ch/double(channels_per_layer[i_layer]/2)))]);
-      //else efficiency_hist_layer_copy->SetLineColor(Bird_palette[int(254*((i_ch-channels_per_layer[i_layer]/2)/double(channels_per_layer[i_layer]/2)))]);
 
       //Scale down from 10 bins to 1
       temp_exp->Rebin(10);
@@ -399,8 +391,6 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       double exp = temp_exp->GetBinContent(1);
       double obs = temp_obs->GetBinContent(1);
       double err_eff = 1./exp * sqrt(obs + obs*obs/exp);
-      //eff_chankey->SetBinContent(bins_start[i_layer]+i_ch,efficiency);
-      //eff_chankey->SetBinError(bins_start[i_layer]+i_ch,err_eff);
       eff_chankey->SetTotalEvents(bins_start[i_layer]+i_ch,int(exp));
       eff_chankey->SetPassedEvents(bins_start[i_layer]+i_ch,int(obs));
       eff_chankey_corrected->SetTotalEvents(bins_start[i_layer]+i_ch,int(exp));

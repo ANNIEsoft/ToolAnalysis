@@ -305,7 +305,6 @@ bool FMVEfficiency::Execute(){
   //  --------------------------------
   
   std::vector<unsigned long> hit_fmv_detkeys_first, hit_fmv_detkeys_second;
-  //std::vector<double> vector_fmv_times_first, vector_fmv_times_second;
   std::vector<std::vector<double>> vector_fmv_times_first, vector_fmv_times_second;
 
   if (isData){
@@ -329,14 +328,15 @@ bool FMVEfficiency::Execute(){
                 single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              //vector_fmv_times_first.push_back(fmv_time);
               vector_fmv_times_first.push_back(single_fmv_times);
             }
             else { 
-	/*      if (detkey == 14 || detkey == 18 || detkey == 19) continue;
+            //The following code with channelkey changes was necessary during a period where channels were re-mapped
+	    /*if (detkey == 14 || detkey == 18 || detkey == 19) continue;
               if (detkey == 23) detkey = 14;
 	      else if (detkey == 24) detkey = 18;
 	      else if (detkey == 25) detkey = 19;*/
+
               hit_fmv_detkeys_second.push_back(detkey);
               std::vector<double> single_fmv_times;
               double fmv_time = 0;
@@ -347,7 +347,6 @@ bool FMVEfficiency::Execute(){
                 single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              //vector_fmv_times_second.push_back(fmv_time);
               vector_fmv_times_second.push_back(single_fmv_times);
             }
           } 
@@ -379,7 +378,6 @@ bool FMVEfficiency::Execute(){
                 single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              //vector_fmv_times_first.push_back(fmv_time);
               vector_fmv_times_first.push_back(single_fmv_times);
             }
             else { 
@@ -393,7 +391,6 @@ bool FMVEfficiency::Execute(){
                 single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              //vector_fmv_times_second.push_back(fmv_time);
               vector_fmv_times_second.push_back(single_fmv_times);
             }
           } 
@@ -461,30 +458,7 @@ bool FMVEfficiency::Execute(){
   //  --------------------------------
   //----Evaluate MRD coincidences-----
   //  --------------------------------
-  /*	//Change: Actually select on one fitted track instead of one subevent (cluster)
-  //Only use events with one track in the MRD
-  if (MrdTimeClusters.size()!=1) return true; 
-
-  //Calculate mean time for MRD track
-  double mrd_time = 0;
-  int n_pmts = 0; 
-  for(unsigned int thiscluster=0; thiscluster<MrdTimeClusters.size(); thiscluster++){
-    std::vector<int> single_mrdcluster = MrdTimeClusters.at(thiscluster);
-    int numdigits = single_mrdcluster.size();
-    if (numdigits >=50) return true;	//reject noise events
-    for(int thisdigit=0;thisdigit<numdigits;thisdigit++){
-      int digit_value = single_mrdcluster.at(thisdigit);
-      unsigned long chankey = mrddigitchankeysthisevent.at(digit_value);
-      Detector *thedetector = geom->ChannelToDetector(chankey);
-      unsigned long detkey = thedetector->GetDetectorID();
-      if (thedetector->GetDetectorElement()=="MRD") {
-        double mrdtimes=MrdDigitTimes.at(digit_value);
-        mrd_time+=mrdtimes;
-        n_pmts++;
-      }
-    }
-  }
-  if (n_pmts!=0) mrd_time/=n_pmts;*/
+  //Change: Actually select on one fitted track instead of one subevent (cluster)
 
   //Get fitted MRD track
   int numsubevs, numtracksinev;
@@ -559,7 +533,6 @@ bool FMVEfficiency::Execute(){
 
   //if (npaddles_Layer1 == 1){
   if (npaddles_Layer1 >= 1 && npaddles_Layer1 <= padPerLayer){
-  //if (npaddles_Layer1 > 0 && npaddles_Layer1 <=3){
     for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_first.size(); i_fmv++){
       bool found_coinc = false;
       for (int i_t = 0; i_t < vector_fmv_times_first.at(i_fmv).size(); i_t++){
@@ -625,7 +598,6 @@ bool FMVEfficiency::Execute(){
 
   //if (npaddles_Layer2 == 1){
   if (npaddles_Layer2 >= 1 && npaddles_Layer2 <=padPerLayer){
-  //if (npaddles_Layer2 > 0 && npaddles_Layer2 <=3){
     for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_second.size(); i_fmv++){
       bool found_coinc = false;
       for (int i_t=0; i_t < vector_fmv_times_second.at(i_fmv).size(); i_t++){

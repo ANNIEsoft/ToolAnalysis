@@ -197,7 +197,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 
 	// In case of a cosmic event, use the fitted track for an efficiency calculation
 
-	//if (MRDTriggertype == "Cosmic"){
+	if (true){	//previously condition for cosmic event, now removed to also investigate beam events
 		
 		// Get MRD track information from MRDTracks BoostStore
 
@@ -224,7 +224,6 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 		MissingLayer->clear();
 		NumMissingLayer=-1;	
 	
-//		if (numtracksinev >= 1) {
 		if (numtracksinev == 1) {
 
 			// Get reconstructed tracks
@@ -264,7 +263,6 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 				bool long_track = false;
 				if (StartVertexZ < 3.45 && StopVertexZ > 4.5) long_track = true;
 				IsThrough = long_track;
-				//if (NLayersHit < 8) long_track = false;
 
 				hist_nlayers->Fill(NLayersHit);
 
@@ -273,7 +271,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 					std::vector<Int_t> truetrackpdgs;
 					m_data->CStore.Get("TrueTrackVertices",truetrackvertices);
 					m_data->CStore.Get("TrueTrackPDGs",truetrackpdgs);
-					for (int i=0; i< truetrackvertices.size(); i++){
+					for (int i=0; i< (int) truetrackvertices.size(); i++){
 						if (i==0) continue; 	//first vertex is not saved correctly
 						Position startvertex = truetrackvertices.at(i).first;
 						Position stopvertex = truetrackvertices.at(i).second;
@@ -308,7 +306,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 						}*/
 					}
 
-					for (int i_layer = 0; i_layer < zLayers.size(); i_layer++){
+					for (int i_layer = 0; i_layer < (int) zLayers.size(); i_layer++){
 						
 						// Exclude first and layer from efficiency determination						
 						if (i_layer == 0 || i_layer == int(zLayers.size()) -1) continue;
@@ -397,7 +395,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 		} else {
 			//tree_trackfit->Fill();
 		}
-	//} 
+	} 
 
 	return true;
 
