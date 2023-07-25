@@ -164,4 +164,5 @@
 #include "PythonScript.h"
 #include "ReweightEventsGenie.h"
 #include "FilterLAPPDEvents.h"
+#include "FilterEvents.h"
 #include "Stage1DataBuilder.h"
