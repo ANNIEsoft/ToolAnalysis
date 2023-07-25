@@ -9,7 +9,7 @@ bool FindNeutrons::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
 
   //Set defaults
-  Method = "CBStrict";
+  Method = "CBStrict";	//Options: CB, CBStrict, NHits10
   verbosity = 2;
   EfficiencyMapPath = "./configfiles/NeutronMultiplicity/NeutronEffMap_Data.txt";
 
@@ -21,7 +21,7 @@ bool FindNeutrons::Initialise(std::string configfile, DataModel &data){
     Log("FindNeutrons tool: Stopping toolchain",v_error,verbosity);
     m_data->vars.Set("StopLoop",1);
   } else {
-    if (Method == "CB" || Method == "CBStrict"){
+    if (Method == "CB" || Method == "CBStrict" || Method == "NHits10"){
       Log("FindNeutrons tool: Loaded neutron finding method >>> "+ Method + "<<< successfully",v_message,verbosity);
     } else {
       Log("FindNeutrons tool: Unknown neutron finding method >>> "+ Method + "<<< specified. Please check available options and restart toolchain.",v_error,verbosity);
@@ -71,9 +71,11 @@ bool FindNeutrons::Execute(){
   m_data->Stores["RecoEvent"]->Set("ClusterTimesNeutron",cluster_times_neutron);
   m_data->Stores["RecoEvent"]->Set("ClusterChargesNeutron",cluster_charges_neutron);
   m_data->Stores["RecoEvent"]->Set("ClusterCBNeutron",cluster_cb_neutron);
+  m_data->Stores["RecoEvent"]->Set("ClusterNHitsNeutron",cluster_nhits_neutron);
   m_data->Stores["RecoEvent"]->Set("ClusterTimes",cluster_times);
   m_data->Stores["RecoEvent"]->Set("ClusterCharges",cluster_charges);
   m_data->Stores["RecoEvent"]->Set("ClusterCB",cluster_cb);
+  m_data->Stores["RecoEvent"]->Set("ClusterNHits",cluster_nhits);
 
   
   return true;
@@ -88,7 +90,7 @@ bool FindNeutrons::Finalise(){
 
 bool FindNeutrons::FindNeutronCandidates(std::string method){
 
-  //Currently only Charge Balance cut available
+  //Currently only Charge Balance cut & Nhits cut available
   //TODO: add Machine Learning classifiers in the future
 
   //Clear vectors first
@@ -96,15 +98,20 @@ bool FindNeutrons::FindNeutronCandidates(std::string method){
   if (cluster_times_neutron.size()>0) cluster_times_neutron.clear();
   if (cluster_charges_neutron.size()>0) cluster_charges_neutron.clear();
   if (cluster_cb_neutron.size()>0) cluster_cb_neutron.clear();
+  if (cluster_nhits_neutron.size()>0) cluster_nhits_neutron.clear();
   if (cluster_times.size()>0) cluster_times.clear();
   if (cluster_charges.size()>0) cluster_charges.clear();
   if (cluster_cb.size()>0) cluster_cb.clear();
+  if (cluster_nhits.size()>0) cluster_nhits.clear();
 
   if (method == "CB"){
     this->FindNeutronsByCB(false);
   }
   else if (method == "CBStrict"){
     this->FindNeutronsByCB(true);
+  }
+  else if (method == "NHits10"){
+    this->FindNeutronsByNHits(10);
   }
   else if (method == "ML"){
     Log("FindNeutrons: ML method not implemented yet in ToolAnalysis",v_message,verbosity);
@@ -126,6 +133,7 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
   //Get cluster objects (filled in ClusterClassifiers tool)
   std::map<double,double> ClusterChargeBalances;
   std::map<double,double> ClusterTotalPEs;
+  std::map<double,int> ClusterNHits;
   bool get_ok;
   get_ok = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargeBalances", ClusterChargeBalances);
   if (!get_ok){
@@ -137,6 +145,11 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
     Log("FindNeutrons tool: Did not find ClusterTotalPEs object! Please add ClusterClassifiers tool to your toolchain!",v_error,verbosity);
     m_variables.Set("StopLoop",1);
   }
+  get_ok = m_data->Stores.at("ANNIEEvent")->Get("ClusterNHits", ClusterNHits);
+  if (!get_ok){
+    Log("FindNeutrons tool: Did not find ClusterNHits object! Please add ClusterClassifiers tool to your toolchain!",v_error,verbosity);
+    m_variables.Set("StopLoop",1);
+  }
 
   //Loop through clusters and find neutrons
   int tmp_cluster_id = 0;
@@ -146,6 +159,7 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
     cluster_times.push_back(it->first);
     cluster_charges.push_back(ClusterTotalPEs.at(it->first));
     cluster_cb.push_back(ClusterChargeBalances.at(it->first));
+    cluster_nhits.push_back(ClusterNHits.at(it->first));
 
     //Check if the cluster is in the delayed window and has a time > 10 us (exclude afterpulses)
     //The window should should be extended in the future after relevant exlusion cuts for afterpulsing have been implemented
@@ -154,6 +168,7 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
     if (it->first > 10000){
       double current_cb = ClusterChargeBalances.at(it->first);
       double current_q = ClusterTotalPEs.at(it->first);
+      int current_nhits = ClusterNHits.at(it->first);
       bool pass_cut = false;
       if (current_cb < 0.4 && current_q < 150){
         if (!strict) pass_cut = true;
@@ -165,11 +180,74 @@ bool FindNeutrons::FindNeutronsByCB(bool strict){
         cluster_times_neutron.push_back(it->first);
         cluster_charges_neutron.push_back(current_q);
         cluster_cb_neutron.push_back(current_cb);
+        cluster_nhits_neutron.push_back(current_nhits);
         return_val = true;
       }
     }
     tmp_cluster_id ++;
   }
+
+  return return_val;
+
+}
+
+bool FindNeutrons::FindNeutronsByNHits(int nhits_thr){
+
+  bool return_val=false;
+
+  //Get cluster objects (filled in ClusterClassifiers tool)
+  std::map<double,double> ClusterTotalPEs;
+  std::map<double,int> ClusterNHits;
+  std::map<double,double> ClusterChargeBalances;
+
+  bool get_ok;
+  get_ok = m_data->Stores.at("ANNIEEvent")->Get("ClusterTotalPEs", ClusterTotalPEs);
+  if (!get_ok){
+    Log("FindNeutrons tool: Did not find ClusterTotalPEs object! Please add ClusterClassifiers tool to your toolchain!",v_error,verbosity);
+    m_variables.Set("StopLoop",1);
+  }
+  get_ok = m_data->Stores.at("ANNIEEvent")->Get("ClusterChargeBalances", ClusterChargeBalances);
+  if (!get_ok){
+    Log("FindNeutrons tool: Did not find ClusterChargeBalances object! Please add ClusterClassifiers tool to your toolchain!",v_error,verbosity);
+    m_variables.Set("StopLoop",1);
+  }
+  get_ok = m_data->Stores.at("ANNIEEvent")->Get("ClusterNHits", ClusterNHits);
+  if (!get_ok){
+    Log("FindNeutrons tool: Did not find ClusterNHits object! Please add ClusterClassifiers tool to your toolchain!",v_error,verbosity);
+    m_variables.Set("StopLoop",1);
+  }
+
+  //Loop through clusters and find neutrons
+  int tmp_cluster_id = 0;
+  
+  for (std::map<double,double>::iterator it = ClusterTotalPEs.begin(); it!= ClusterTotalPEs.end(); it++){
+    //First fill general cluster information into vectors
+    cluster_times.push_back(it->first);
+    cluster_charges.push_back(ClusterTotalPEs.at(it->first));
+    cluster_cb.push_back(ClusterChargeBalances.at(it->first));
+    cluster_nhits.push_back(ClusterNHits.at(it->first));
+
+    //Check if the cluster is in the delayed window and has a time > 10 us (exclude afterpulses)
+    //The window should should be extended in the future after relevant exlusion cuts for afterpulsing have been implemented
+    //check if the nhits cut for neutrons is passed -> consider a neutron candidate
+    //Improve the neutron selection cuts in the future, probably cutting more signal than necessary at the moment
+    if (it->first > 10000){
+      double current_cb = ClusterChargeBalances.at(it->first);
+      double current_q = ClusterTotalPEs.at(it->first);
+      int current_nhits = ClusterNHits.at(it->first);
+      if (current_nhits >= nhits_thr && current_q < 150){
+        Log("FindNeutrons tool: Found neutron candidate at cluster # "+std::to_string(tmp_cluster_id)+", time: "+std::to_string(it->first)+" ns!!!",v_message,verbosity);
+        cluster_neutron.push_back(tmp_cluster_id);
+        cluster_times_neutron.push_back(it->first);
+        cluster_charges_neutron.push_back(current_q);
+        cluster_cb_neutron.push_back(current_cb);
+        cluster_nhits_neutron.push_back(current_nhits);
+        return_val = true;
+      }
+    }
+    tmp_cluster_id ++;
+  }
+
 
   return return_val;
 

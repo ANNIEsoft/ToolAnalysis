@@ -9,6 +9,7 @@
 
 #include "Particle.h"
 #include "Position.h"
+#include "RecoVertex.h"
 
 #include "TTree.h"
 #include "TFile.h"
@@ -113,6 +114,7 @@ class NeutronMultiplicity: public Tool {
   bool IsMultiRing = false;
   RecoVertex* truevtx = nullptr;
   std::string MCFile;
+  RecoVertex true_vertex;
 
   //histogram variables
   TH1F *h_time_neutrons = nullptr;

@@ -64,6 +64,7 @@ bool ClusterClassifiers::Execute(){
   std::map<double,double> ClusterChargeBalances;
   std::map<double,double> ClusterTotalPEs;
   std::vector<double> ClusterTimes;
+  std::map<double,int> ClusterNHits;
 
   if (isData){
     for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
@@ -79,6 +80,7 @@ bool ClusterClassifiers::Execute(){
       double total_PE = this->CalculateTotalPE(cluster_hits);
       ClusterTotalPEs.emplace(cluster_time,total_PE);
       ClusterTimes.push_back(cluster_time);
+      ClusterNHits.emplace(cluster_time,int(cluster_hits.size()));
     }
   } else {
      for (std::pair<double,std::vector<MCHit>>&& cluster_pair : *m_all_clusters_MC) {
@@ -95,6 +97,7 @@ bool ClusterClassifiers::Execute(){
        double total_PE = this->CalculateTotalPEMC(cluster_hits,cluster_detkey);
        ClusterTotalPEs.emplace(cluster_time,total_PE);
        ClusterTimes.push_back(cluster_time);
+       ClusterNHits.emplace(cluster_time,int(cluster_hits.size()));
      }
   }
 
@@ -104,6 +107,7 @@ bool ClusterClassifiers::Execute(){
   m_data->Stores.at("ANNIEEvent")->Set("ClusterChargeBalances", ClusterChargeBalances);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterMaxPEs", ClusterMaxPEs);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterTotalPEs", ClusterTotalPEs);
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterNHits", ClusterNHits);
 
   //identify prompt muon candidate
   bool found_prompt_muon = this->IdentifyPromptMuonCluster(ClusterTotalPEs);

@@ -112,14 +112,24 @@ bool NeutronMultiplicity::Execute(){
   if (read_bs!= "None"){
     if (need_new_file_){
       need_new_file_ = false;
-      if (read_neutronmult) delete read_neutronmult;
+      //if (read_neutronmult) delete read_neutronmult;
+      if (current_file_ != 0) {
+		read_neutronmult->Close();
+		read_neutronmult->Delete();
+		delete read_neutronmult;
+	}
       read_neutronmult = new BoostStore(false,2);
       read_neutronmult->Initialise(input_filenames_.at(current_file_));
       read_neutronmult->Print(false);
       read_neutronmult->Header->Get("TotalEntries",total_entries_in_file_);
       isMC = read_neutronmult->Get("MCFile",MCFile);
     } 
-    if (current_entry_ != 0) read_neutronmult->Delete();
+    if (current_entry_ != 0) {
+      //Delete calls for stores is necessary for pointers to work correctly
+      read_neutronmult->Delete();
+    }
+ 
+    Log("NeutronMultiplicity tool: ReadFromBoostStore mode: Get entry "+std::to_string(current_entry_) + " / " + std::to_string(total_entries_in_file_),v_message,verbosity);     
     read_neutronmult->GetEntry(current_entry_);
     ++current_entry_;
 
@@ -753,11 +763,21 @@ bool NeutronMultiplicity::SaveBoostStore(){
     store_neutronmult->Set("IsMEC",true_MEC);
     store_neutronmult->Set("NumFSNeutrons",true_PrimNeut);
     store_neutronmult->Set("NumFSProtons",true_PrimProt);
-    RecoVertex true_vertex;
-    true_vertex.SetVertex(true_VtxX*100.,(true_VtxY+0.144)*100.,(true_VtxZ-1.681)*100.,true_VtxTime);
-    true_vertex.SetDirection(true_DirX,true_DirY,true_DirZ);
-    store_neutronmult->Set("TrueVertex",true_vertex);
-    store_neutronmult->Set("TrueMuonEnergy",true_Emu);
+
+    double temp_vtx_x = true_VtxX;
+    double temp_vtx_y = true_VtxY;
+    double temp_vtx_z = true_VtxZ;
+    double temp_vtx_t = true_VtxTime;
+    Log("NeutronMultiplicity tool: Set vertex with "+std::to_string(true_VtxX*100.)+", "+std::to_string((true_VtxY+0.144)*100.)+", "+std::to_string((true_VtxZ-1.681)*100.)+", "+std::to_string(true_VtxTime),v_message,verbosity);
+    store_neutronmult->Set("TrueVertex_X",temp_vtx_x*100.);
+    store_neutronmult->Set("TrueVertex_Y",(temp_vtx_y+0.144)*100.);
+    store_neutronmult->Set("TrueVertex_Z",(temp_vtx_z-1.681)*100.);
+    store_neutronmult->Set("TrueVertex_T",temp_vtx_t);
+    store_neutronmult->Set("TrueVertex_DirX",true_DirX);
+    store_neutronmult->Set("TrueVertex_DirY",true_DirY);
+    store_neutronmult->Set("TrueVertex_DirZ",true_DirZ);
+    
+    store_neutronmult->Set("TrueMuonEnergy",true_Emu+105.66);
     store_neutronmult->Set("PrimaryPdgs",vec_true_PrimaryPdgs);
     store_neutronmult->Set("PdgPrimary",true_PdgPrimary);
     store_neutronmult->Set("TrueTrackLengthInWater",true_TrackLengthInWater);
@@ -775,7 +795,6 @@ bool NeutronMultiplicity::SaveBoostStore(){
     
   //Save BoostStore
   store_neutronmult->Save(ss_filename.str().c_str()); 
-  store_neutronmult->Delete();
    
   return true;
 }
@@ -847,7 +866,14 @@ bool NeutronMultiplicity::ReadBoostStore(){
     read_neutronmult->Get("IsMEC",true_MEC);
     read_neutronmult->Get("NumFSNeutrons",true_PrimNeut);
     read_neutronmult->Get("NumFSProtons",true_PrimProt);
-    RecoVertex true_vertex;
+    double temp_vtx_x, temp_vtx_y, temp_vtx_z, temp_vtx_t;
+    read_neutronmult->Get("TrueVertex_X",temp_vtx_x);
+    read_neutronmult->Get("TrueVertex_Y",temp_vtx_y);
+    read_neutronmult->Get("TrueVertex_Z",temp_vtx_z);
+    read_neutronmult->Get("TrueVertex_T",temp_vtx_t);
+    read_neutronmult->Get("TrueVertex_DirX",true_DirX);
+    read_neutronmult->Get("TrueVertex_DirY",true_DirY);
+    read_neutronmult->Get("TrueVertex_DirZ",true_DirZ);
     read_neutronmult->Get("TrueVertex",true_vertex);
     read_neutronmult->Get("TrueMuonEnergy",true_Emu);
     read_neutronmult->Get("PrimaryPdgs",vec_true_PrimaryPdgs);
@@ -859,8 +885,10 @@ bool NeutronMultiplicity::ReadBoostStore(){
     read_neutronmult->Get("MCNeutCapGammas",MCNeutCapGammas);
     read_neutronmult->Get("MCFile",MCFile);
 
-    truevtx->SetVertex(true_vertex.GetPosition().X(),true_vertex.GetPosition().Y(),true_vertex.GetPosition().Z(),true_vertex.GetTime());
-    truevtx->SetDirection(true_vertex.GetDirection().X(),true_vertex.GetDirection().Y(),true_vertex.GetDirection().Z());
+    Log("NeutronMultiplicity tool: Got TrueVertex from file with properties: "+std::to_string(temp_vtx_x)+", "+std::to_string(temp_vtx_y)+", "+std::to_string(temp_vtx_z)+", "+std::to_string(temp_vtx_t),v_message,verbosity);
+
+    truevtx->SetVertex(temp_vtx_x,temp_vtx_y,temp_vtx_z,temp_vtx_t);
+    truevtx->SetDirection(true_DirX,true_DirY,true_DirZ);
 
     m_data->Stores["GenieInfo"]->Set("NeutrinoEnergy",true_Enu/1000.);
     m_data->Stores["GenieInfo"]->Set("EventQ2",true_Q2/1000.);
@@ -1018,7 +1046,10 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
   RecoVertex* TrueVtx = nullptr;
   auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",TrueVtx);
   if (!get_muonMC) Log("NeutronMultiplicity tool: No TrueVertex In RecoEvent!",v_error,verbosity); 
-  else *truevtx = *TrueVtx; 
+  else {
+    truevtx->SetVertex(TrueVtx->GetPosition().X(),TrueVtx->GetPosition().Y(),TrueVtx->GetPosition().Z(),TrueVtx->GetTime());
+    truevtx->SetDirection(TrueVtx->GetDirection().X(),TrueVtx->GetDirection().Y(),TrueVtx->GetDirection().Z());
+  }
   auto get_muonMCEnergy = m_data->Stores.at("RecoEvent")->Get("TrueMuonEnergy",true_Emu);
   if (!get_muonMCEnergy) Log("NeutronMultiplicity tool: No TrueMuonEnergy In RecoEvent!",v_error,verbosity); 
   auto get_pdg = m_data->Stores.at("RecoEvent")->Get("PdgPrimary",true_PdgPrimary);
@@ -1029,6 +1060,8 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
       true_PrimaryPdgs->push_back(vec_true_PrimaryPdgs.at(i_part));
     }
   }
+  true_Emu -= 105.66;    //Correct true muon energy by rest mass to get true kinetic energy
+  std::cout <<"get_muonMC && get_muonMCEnergy: "<<(get_muonMC && get_muonMCEnergy)<<std::endl;
   if(get_muonMC && get_muonMCEnergy){ 
     true_VtxX = truevtx->GetPosition().X()/100.; //convert to meters
     true_VtxY = truevtx->GetPosition().Y()/100.-0.144; //convert to meters, offset
@@ -1038,7 +1071,8 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
     true_DirY = truevtx->GetDirection().Y();
     true_DirZ = truevtx->GetDirection().Z();
     true_CosTheta = true_DirZ;
-    true_pT = sqrt((1-true_CosTheta*true_CosTheta)*(true_Emu*true_Emu-105.6*105.6));
+    double true_Emu_total = true_Emu + 105.66;
+    true_pT = sqrt((1-true_CosTheta*true_CosTheta)*(true_Emu_total*true_Emu_total-105.6*105.6));
     if (sqrt(true_VtxX*true_VtxX+(true_VtxZ-1.681)*(true_VtxZ-1.681))<1.0 && fabs(true_VtxY)<0.5 && (true_VtxZ < 1.681)) true_FV = 1;
     else true_FV = 0;
   }
@@ -1130,6 +1164,8 @@ bool NeutronMultiplicity::ResetVariables(){
   MCNeutCap.clear();
   IsMultiRing = false;
   truevtx->SetVertex(-9999,-9999,-9999,-9999);
+  true_vertex.SetVertex(-9999,-9999,-9999,-9999);
+  true_vertex.SetDirection(-9999,-9999,-9999);
 
   //ROOT tree variables
   true_PrimNeut = -9999;

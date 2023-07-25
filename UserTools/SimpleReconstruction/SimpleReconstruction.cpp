@@ -361,7 +361,8 @@ bool SimpleReconstruction::SimpleEnergyReconstruction(){
   SimpleRecoMrdEnergyLoss = mrd_eloss;
 
   //Also calculate transverse muon momentum
-  SimpleRecoPt = sqrt((1-SimpleRecoCosTheta*SimpleRecoCosTheta)*(SimpleRecoEnergy*SimpleRecoEnergy-105.6*105.6)); 
+  double SimpleRecoTotalEnergy = SimpleRecoEnergy + 105.6;
+  SimpleRecoPt = sqrt((1-SimpleRecoCosTheta*SimpleRecoCosTheta)*(SimpleRecoTotalEnergy*SimpleRecoTotalEnergy-105.6*105.6)); 
 
   return true;
 

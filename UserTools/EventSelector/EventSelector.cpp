@@ -645,10 +645,10 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   m_data->Stores["RecoEvent"]->Set("NumPMTClusters",pmt_cluster_size);
   vec_pmtclusters_charge->clear();
   vec_pmtclusters_time->clear();
-  m_data->Stores["RecoEvent"]->Set("PMTClustersCharge",vec_pmtclusters_charge,false);
-  m_data->Stores["RecoEvent"]->Set("PMTClustersTime",vec_pmtclusters_time,false);
+  m_data->Stores["RecoEvent"]->Set("PMTClustersCharge",vec_pmtclusters_charge,true);
+  m_data->Stores["RecoEvent"]->Set("PMTClustersTime",vec_pmtclusters_time,true);
   vec_mrdclusters_time->clear();
-  m_data->Stores["RecoEvent"]->Set("MRDClustersTime",vec_mrdclusters_time);
+  m_data->Stores["RecoEvent"]->Set("MRDClustersTime",vec_mrdclusters_time,true);
   if (verbosity > 1) std::cout <<"pmt_cluster_size: "<<pmt_cluster_size<<", mrd cluster size: "<<MrdTimeClusters.size()<<std::endl;
 
   bool prompt_cluster = false;
@@ -713,8 +713,8 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
     std::cout <<"Number of PMT hits in muon cluster: "<<n_hits<<std::endl;
   }
 
-  m_data->Stores["RecoEvent"]->Set("PMTClustersCharge",vec_pmtclusters_charge,false);
-  m_data->Stores["RecoEvent"]->Set("PMTClustersTime",vec_pmtclusters_time,false);
+  m_data->Stores["RecoEvent"]->Set("PMTClustersCharge",vec_pmtclusters_charge,true);
+  m_data->Stores["RecoEvent"]->Set("PMTClustersTime",vec_pmtclusters_time,true);
 
   std::vector<double> mrd_meantimes;
   if (verbosity > 1) std::cout <<"MrdTimeClusters.size(): "<<MrdTimeClusters.size()<<std::endl;
@@ -744,7 +744,7 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   for (int i=0; i<(int)mrd_meantimes.size(); i++){
     vec_mrdclusters_time->push_back(mrd_meantimes.at(i));
   }
-  m_data->Stores["RecoEvent"]->Set("MRDClustersTime",vec_mrdclusters_time);
+  m_data->Stores["RecoEvent"]->Set("MRDClustersTime",vec_mrdclusters_time, true);
   
   if (fIsMC){
     if (MrdTimeClusters.size() == 0 || m_all_clusters_MC->size() == 0) return false;
