@@ -4,7 +4,7 @@ The `FindNeutrons` tools looks for neutrons in the ANNIE data and saves them as 
 
 ## Input data
 
-The tool expects the `ClsuterChargeBalances` and `ClusterTotalPEs` objects to be present in the ANNIEEvent BoostStore. In order for them to be present, it is essential to add the `ClusterClassifiers` tool to the toolchain.
+The tool expects the `ClusterChargeBalances` and `ClusterTotalPEs` objects to be present in the ANNIEEvent BoostStore. In order for them to be present, it is essential to add the `ClusterClassifiers` tool to the toolchain.
 
 ## Output data
 
@@ -26,10 +26,22 @@ In addition to the Particles vector, additional information about the clusters a
 
 ## Configuration options
 
-Currently, the user can choose between two cut-based selection techniques for neutrons, "CB" or "CBStrict". The former uses a charge balance cut of CB < 0.4 and a maximum total charge of 150 p.e., whereas the strict cut also applies a combined cut in the CB - total charge plane. The method can be chosen in the configuration file via
+Currently, the user can choose between three cut-based selection techniques for neutrons, "CB", "CBStrict", or "NHits10". The former uses a charge balance cut of CB < 0.4 and a maximum total charge of 150 p.e., whereas the strict cut also applies a combined cut in the CB - total charge plane. The "NHits10" method classifies all clusters with at least 10 hits as neutrons.
+
+In addition to the selection cut, the user also has to provide the neutron efficiency map for the selected cut, in the form of a txt file. The txt file should be tab separated and should consist of 7 columns, indicating the port, height within the port, x-positiion, y-position, z-position, efficiency of the cut, and efficiency of the selected time window. The path to the efficiency map file needs to be provided with the `EfficiencyMapPath` keyword.
+
+An exemplary efficiency map file with two data points (and very good efficiency) would look like this:
 
 ```
-Method CB/CBStrict
+1	100	0	85.6	93.1	0.99	0.99
+1	50	0	35.6	93.1	0.99	0.99
+```
+
+The options can be chosen in the configuration file via
+
+```
+Method CB/CBStrict/NHits10
+EfficiencyMapPath /path/to/file
 ```
 
 Additional selection techniques can simply be added by adding a new keyword to the available Methods and implementing them in the code.

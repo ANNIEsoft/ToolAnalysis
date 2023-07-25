@@ -26,7 +26,11 @@ The neutron multiplicity tool will fill the information about the neutron multip
 * hist_muon: Histograms about the reconstructed muon properties
 * hist_neutron: Histograms about the reconstructed neutron properties
 * hist_mc: Histograms about MC specific properties
+* hist_eff: Histograms about the neutron detection efficiency as a function of muon properties
 * graph_neutron: Resulting graphs showing the neutron multiplicity as a function of the muon properties
+* graph_neutron_mc: Resulting graphs showing the TRUE neutron multiplicity as a function of the RECONSTRUCTED muon properties. True neutron multiplicity is divided into three categories: primary (number of primary neutrons), total (number of neutron captures from all primary + secondary neutrons in the whole experiment volume), pmtvol (primary + secondary neutron captures, but restricted to the water volume)
+* graph_neutron_eff: Efficiency graphs
+* graph_neutron_corr: Neutron multiplicity graphs, corrected by efficiency graphs
 * neutron_tree: the neutron_tree saves the information additionally in the form of a TTree for more interactive investigations
 
 ## Configuration variables
