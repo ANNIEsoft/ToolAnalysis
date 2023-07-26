@@ -186,9 +186,6 @@ bool MrdPaddleEfficiencyPreparer::Initialise(std::string configfile, DataModel &
 
 bool MrdPaddleEfficiencyPreparer::Execute(){
 
-
-	m_data->CStore.Set("Chankey271_Flag",false);
-
 	// Get all relevant data from ANNIEEvent BoostStore
 
 	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
@@ -335,8 +332,6 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 									observed_MRDHits_layer.at(i_layer).at(hit_chankey)->Fill(y_layer);
 									
 								} else {
-									if (hit_chankey == 271) std::cout <<"Chankey 271 did not see anexpected MRD hit! Event "<< EventNumber << std::endl;
-									m_data->CStore.Set("Chankey271_Flag",true);
 									MissingChannel->push_back(hit_chankey);
 									MissingLayer->push_back(i_layer+1);
 								}
@@ -366,7 +361,6 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 									observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(x_layer);
 									observed_MRDHits_layer.at(i_layer).at(hit_chankey)->Fill(x_layer);
 								} else {
-                                                                        if (hit_chankey == 271) std::cout <<"Chankey 271 did not see anexpected MRD hit! Event "<< EventNumber << std::endl;
 									MissingChannel->push_back(hit_chankey);
 									MissingLayer->push_back(i_layer+1);
 

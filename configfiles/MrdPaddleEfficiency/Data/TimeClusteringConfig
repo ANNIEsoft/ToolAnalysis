@@ -10,4 +10,3 @@ IsData 1
 OutputROOTFile TimeClustering_R3347
 #OutputROOTFile test
 MapChankey_WCSimID ./configfiles/MrdPaddleEfficiency/MRD_Chankey_WCSimID.dat
-EventList None
