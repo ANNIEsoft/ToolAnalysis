@@ -105,7 +105,7 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		std::string wcsimfile;
 		m_data->Stores.at("ANNIEEvent")->Get("MCFile",wcsimfile);
 		//Strip WCSim file name of its prefix path
-		std::string wcsim_prefix = "wcsim_";
+		std::string wcsim_prefix = "wcsim_0.";
 		wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
 		wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
 		std::string wcsimev = wcsimfile;
@@ -145,9 +145,7 @@ bool LoadGenieEvent::Execute(){
                         inputfiles = filedir+"/"+inputfiles;
                         if(verbosity) std::cout << "Tool LoadGenieEvent: Loading Genie file: " << inputfiles << std::endl;
                 }
-		std::string genieentry;
-		get_ok = m_data->CStore.Get("GenieEntry",genieentry);
-		tchainentrynum = std::stoi(genieentry);
+		get_ok = m_data->CStore.Get("GenieEntry",tchainentrynum);
                 if(!get_ok){
                         Log("Tool LoadGenieEvent: Failed to find GenieEntry in CStore",v_error,verbosity);
                         return false;
@@ -186,14 +184,11 @@ bool LoadGenieEvent::Execute(){
 		m_data->Stores["ANNIEEvent"]->Get("MCTriggernum",MCTriggernum);
 		if (MCTriggernum != 0){
 			m_data->CStore.Set("NewGENIEEntry",false);
-			tchainentrynum++;
-			Log("Tool LoadGenieEvent: Skipping Genie event due to delayed WCSim trigger",v_debug,verbosity);
 			return true;	//Don't evaluate new GENIE event for dealyed WCSim triggers
 		} else {
 			m_data->CStore.Set("NewGENIEEntry",true);
 		}
 	}
-	tchainentrynum++;
 	
 	// Expand out the neutrino event info
 	// =======================================================
@@ -307,10 +302,11 @@ bool LoadGenieEvent::Execute(){
 	interactiontypestring=thegenieinfo.interactiontypestring;
 	neutcode=thegenieinfo.neutinteractioncode; // currently disabled to prevent excessive verbosity
 	
-	eventq2=thegenieinfo.Q2;                //MeV
-	eventEnu=thegenieinfo.probeenergy;      //MeV
+	eventq2=thegenieinfo.Q2;                  //MeV
+	eventEnu=thegenieinfo.probeenergy;        //MeV
+	eventPnu=thegenieinfo.probethreemomentum; //MeV
 	neutrinopdg=thegenieinfo.probepdg;
-	muonenergy=thegenieinfo.fsleptonenergy; //MeV
+	muonenergy=thegenieinfo.fsleptonenergy;   //MeV
 	muonangle=thegenieinfo.fslangle;
 	
 	nuIntxVtx_X=thegenieinfo.Intx_x; // cm
@@ -337,7 +333,7 @@ bool LoadGenieEvent::Execute(){
         fsleptonpdg = thegenieinfo.fsleptonpdg;
         fsleptonm = thegenieinfo.fsleptonm;               //MeV
         fsleptonmomentum = thegenieinfo.fsleptonmomentum; //MeV
-        fsleptonmomentumdir = thegenieinfo.fsleptonmomentumdir;
+//        fsleptonmomentumdir = thegenieinfo.fsleptonmomentumdir;
         fsleptonvtx = thegenieinfo.fsleptonvtx; // cm
         fsleptont = thegenieinfo.fsleptont;     // ns
 
@@ -426,6 +422,7 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("NuVtxInFidVol",isinfiducialvol);
 	geniestore->Set("EventQ2",eventq2);
 	geniestore->Set("NeutrinoEnergy",eventEnu);
+	geniestore->Set("NeutrinoMomentum",eventPnu);
 	geniestore->Set("NeutrinoPDG",neutrinopdg);
 	geniestore->Set("MuonEnergy",muonenergy);
 	geniestore->Set("MuonAngle",muonangle);
@@ -434,7 +431,7 @@ bool LoadGenieEvent::Execute(){
         geniestore->Set("FSLeptonMass",fsleptonm);
         geniestore->Set("FSLeptonEnergy",fsleptonenergy);
         geniestore->Set("FSLeptonMomentum",fsleptonmomentum);
-        geniestore->Set("FSLeptonMomentumDir",fsleptonmomentumdir);
+//        geniestore->Set("FSLeptonMomentumDir",fsleptonmomentumdir);
         geniestore->Set("FSLeptonVertex",fsleptonvtx);
         geniestore->Set("FSLeptonTime",fsleptont);
         geniestore->Set("NumFSProtons",numfsprotons);
@@ -452,6 +449,7 @@ bool LoadGenieEvent::Execute(){
 	//geniestore->Set("TheGenieInfoPtr",&thegenieinfo,false);
 	//intptr_t thegenieinfoptr = reinterpret_cast<intptr_t>(&thegenieinfo);
 	//m_data->CStore.Set("TheGenieInfoPtr2",thegenieinfoptr);
+	tchainentrynum++;
 	
 	Log("Tool LoadGenieEvent: Clearing genieintx",v_debug,verbosity);
 	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
@@ -525,20 +523,23 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.Intx_x = IntxVtx->X() * 100.;   // same info as nuvtx in g4dirt file
 	/*Double_t*/ thegenieinfo.Intx_y = IntxVtx->Y() * 100.;   // GENIE uses meters
 	/*Double_t*/ thegenieinfo.Intx_z = IntxVtx->Z() * 100.;   // GENIE uses meters
-	/*Double_t*/ thegenieinfo.Intx_t = IntxVtx->T() * 1000000000; // GENIE uses seconds
+	/*Double_t*/ thegenieinfo.Intx_t = IntxVtx->T() * 1000000000.; // GENIE uses seconds
 	
 	// neutrino information:
-	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab)*1000.;  // MeV conversion
+	/*Double_t*/ thegenieinfo.probeenergy = genieint->InitState().ProbeE(genie::kRfLab)*1000.;  //GeV->MeV
 	/*Int_t*/ thegenieinfo.probepdg = genieint->InitState().Probe()->PdgCode();
 	/*TString*/ thegenieinfo.probepartname = genieint->InitState().Probe()->GetName();
-	TLorentzVector* probemomentum = gevtRec->Probe()->P4();
-	if(probemomentum->E()*1000.!=thegenieinfo.probeenergy){
+	TLorentzVector* probemomentum = new TLorentzVector(gevtRec->Probe()->P4()->Px()*1000.,
+			gevtRec->Probe()->P4()->Py()*1000.,
+			gevtRec->Probe()->P4()->Pz()*1000.,
+			gevtRec->Probe()->P4()->E()*1000.); //GeV->MeV
+	if(probemomentum->E()!=thegenieinfo.probeenergy){
 		logmessage = "LoadGenieEvent Tool: WARNING, Probe energy from probemomentum.E and ProbeE differ!";
 		logmessage+= "ProbeE = "+to_string(thegenieinfo.probeenergy);
 		logmessage+= ", ProbeMomentum[0] = "+to_string(probemomentum->E());
 		Log(logmessage,v_warning,verbosity);
 	}
-	/*TVector3*/ thegenieinfo.probethreemomentum = TVector3ToDirection(probemomentum->Vect());
+	/*Direction*/ thegenieinfo.probethreemomentum = TVector3ToDirection(probemomentum->Vect());
 	/*TVector3*/ thegenieinfo.probemomentumdir = thegenieinfo.probethreemomentum.Unit();
 	/*Double_t*/ thegenieinfo.probeanglex = 
 		TMath::ATan(thegenieinfo.probethreemomentum.X()/thegenieinfo.probethreemomentum.Z());
@@ -560,9 +561,12 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*TVector3*/ thegenieinfo.targetnucleonthreemomentum=Direction(0.,0.,0.);
 	/*Double_t*/ thegenieinfo.targetnucleonenergy=0.;
 	if(targetnucleon){
-		TLorentzVector* targetnucleonmomentum = targetnucleon->P4();
+		TLorentzVector* targetnucleonmomentum = new TLorentzVector(targetnucleon->P4()->Px()*1000.,
+				targetnucleon->P4()->Py()*1000.,
+				targetnucleon->P4()->Pz()*1000.,
+				targetnucleon->P4()->E()*1000.); //GeV->MeV
 		thegenieinfo.targetnucleonthreemomentum = TVector3ToDirection(targetnucleonmomentum->Vect());
-		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy()*1000.; // MeV conversion
+		thegenieinfo.targetnucleonenergy = targetnucleonmomentum->Energy();
 	}
 	
 	// target nucleus:
@@ -580,7 +584,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	/*Double_t*/ thegenieinfo.remnantnucleusenergy=-1.;
 	if(remnucpos>-1){
 		thegenieinfo.remnantnucleusname = gevtRec->Particle(remnucpos)->Name();
-		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy()*1000.; // MeV conversion
+		thegenieinfo.remnantnucleusenergy = gevtRec->Particle(remnucpos)->Energy()*1000.; //GeV->MeV
 	}
 	
 	// final state lepton:
@@ -595,17 +599,19 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
         /*TVector3*/ thegenieinfo.fsleptonvtx=Position(0.,0.,0.);
         if(fsleppos>-1){
                 thegenieinfo.fsleptonname = gevtRec->Particle(fsleppos)->Name();
-                thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy()*1000.; // MeV conversion
+                thegenieinfo.fsleptonenergy = gevtRec->Particle(fsleppos)->Energy()*1000.; //GeV->MeV
                 thegenieinfo.fsleptonpdg = gevtRec->Particle(fsleppos)->Pdg();
-                thegenieinfo.fsleptonm = gevtRec->Particle(fsleppos)->Mass()*1000.; // MeV conversion
-                thegenieinfo.fsleptonmomentum = Direction(gevtRec->Particle(fsleppos)->Px()*1000.,
+                thegenieinfo.fsleptonm = gevtRec->Particle(fsleppos)->Mass()*1000.; //GeV->MeV
+                TLorentzVector* fsleptonmom = new TLorentzVector(gevtRec->Particle(fsleppos)->Px()*1000.,
                                 gevtRec->Particle(fsleppos)->Py()*1000.,
-                                gevtRec->Particle(fsleppos)->Pz()*1000.);
+                                gevtRec->Particle(fsleppos)->Pz()*1000.,
+				gevtRec->Particle(fsleppos)->E()*1000.); //GeV->MeV
+		thegenieinfo.fsleptonmomentum = TVector3ToDirection(fsleptonmom->Vect());
                 thegenieinfo.fsleptonmomentumdir = thegenieinfo.fsleptonmomentum.Unit();
-                thegenieinfo.fsleptonvtx = Position(gevtRec->Particle(fsleppos)->Vx()*100,
-                                gevtRec->Particle(fsleppos)->Vy()*100,
-                                gevtRec->Particle(fsleppos)->Vz()*100); //meters -> cm
-                thegenieinfo.fsleptont = gevtRec->Particle(fsleppos)->Vt()*1000000000; //sec -> ns
+                thegenieinfo.fsleptonvtx = Position(gevtRec->Particle(fsleppos)->Vx()*100.,
+                                gevtRec->Particle(fsleppos)->Vy()*100.,
+                                gevtRec->Particle(fsleppos)->Vz()*100.); //meters -> cm
+                thegenieinfo.fsleptont = gevtRec->Particle(fsleppos)->Vt()*1000000000.; //sec -> ns
         }
 
 	// other remnants: TEMP FIX: this information is NOT being correctly read in
@@ -676,20 +682,26 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
         }
 	
 	// kinematic information
-	Double_t NucleonM = genie::constants::kNucleonMass*1000.; //MeV conversion 
+	Double_t NucleonM = genie::constants::kNucleonMass*1000.; //GeV->MeV
 	// Calculate kinematic variables "as an experimentalist would measure them; 
 	// neglecting fermi momentum and off-shellness of bound nucleons"
-	TLorentzVector* k1 = gevtRec->Probe()->P4();
-	TLorentzVector* k2 = gevtRec->FinalStatePrimaryLepton()->P4();
+	TLorentzVector* k1 = new TLorentzVector(gevtRec->Probe()->P4()->Px()*1000.,
+			gevtRec->Probe()->P4()->Py()*1000.,
+			gevtRec->Probe()->P4()->Pz()*1000.,
+			gevtRec->Probe()->P4()->E()*1000.); //GeV->MeV
+	TLorentzVector* k2 = new TLorentzVector(gevtRec->FinalStatePrimaryLepton()->P4()->Px()*1000.,
+			gevtRec->FinalStatePrimaryLepton()->P4()->Py()*1000.,
+			gevtRec->FinalStatePrimaryLepton()->P4()->Pz()*1000.,
+			gevtRec->FinalStatePrimaryLepton()->P4()->E()*1000.); //GeV->MeV
 	/*Double_t*/ thegenieinfo.costhfsl = TMath::Cos( k2->Vect().Angle(k1->Vect()) );
 	/*Double_t*/ thegenieinfo.fslangle = k2->Vect().Angle(k1->Vect());
 	// q=k1-k2, 4-p transfer
 	/*TLorentzVector*/ thegenieinfo.q = TLorentzVectorToFourVector((*k1)-(*k2));
 //	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();  // not set in our GENIE files!
 	// momemtum transfer
-	/*Double_t*/ thegenieinfo.Q2 = (-1 * thegenieinfo.q.M2())*1000.; //MeV conversion
+	/*Double_t*/ thegenieinfo.Q2 = -1 * thegenieinfo.q.M2();
 	// E transfer to the nucleus
-	/*Double_t*/ thegenieinfo.Etransf = (targetnucleon) ? thegenieinfo.q.E()*1000. : -1; //MeV conversion
+	/*Double_t*/ thegenieinfo.Etransf = (targetnucleon) ? thegenieinfo.q.E() : -1;
 	// Bjorken x
 	/*Double_t*/ thegenieinfo.x = 
 		(targetnucleon) ? 0.5*thegenieinfo.Q2/(NucleonM*thegenieinfo.Etransf) : -1;
@@ -703,7 +715,7 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	if(printneutrinoevent){
 		cout<<"This was a "<< thegenieinfo.procinfostring <<" (neut code "<<thegenieinfo.neutinteractioncode
 			<<") interaction of a "
-			<<thegenieinfo.probeenergy<<"GeV " << thegenieinfo.probepartname << " on a "; 
+			<<thegenieinfo.probeenergy<<"MeV " << thegenieinfo.probepartname << " on a "; 
 		
 		if( thegenieinfo.targetnucleonpdg==2212 || thegenieinfo.targetnucleonpdg==2122 ){
 			cout<<thegenieinfo.targetnucleonname<<" in a ";
@@ -715,14 +727,14 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 		else { cout<<"Z=["<<thegenieinfo.targetnucleusZ<<","<<thegenieinfo.targetnucleusA<<"] nucleus, "; }
 		
 		if(remnucpos>-1){
-			cout<<"producing a "<<thegenieinfo.remnantnucleusenergy<<"GeV "<<thegenieinfo.remnantnucleusname;
+			cout<<"producing a "<<thegenieinfo.remnantnucleusenergy<<"MeV "<<thegenieinfo.remnantnucleusname;
 		} else { cout<<"with no remnant nucleus"; }  // DIS on 16O produces no remnant nucleus?!
 		
 		if(fsleppos>-1){
-			cout<<" and a "<<thegenieinfo.fsleptonenergy<<"GeV "<<thegenieinfo.fsleptonname<<endl;
+			cout<<" and a "<<thegenieinfo.fsleptonenergy<<"MeV "<<thegenieinfo.fsleptonname<<endl;
 		} else{ cout<<" and no final state leptons"<<endl; }
 		
-		cout<<endl<<"Q^2 was "<<thegenieinfo.Q2<<"(GeV/c)^2, with final state lepton"
+		cout<<endl<<"Q^2 was "<<thegenieinfo.Q2<<"(MeV/c)^2, with final state lepton"
 			<<" ejected at Cos(θ)="<<thegenieinfo.costhfsl<<endl;
 		cout<<"Additional final state particles included "<<endl;
 		cout<< " N(p) = "  << thegenieinfo.numfsprotons

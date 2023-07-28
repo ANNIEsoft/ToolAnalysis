@@ -305,6 +305,9 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueNeutCapE",&fTrueNeutCapE);
       fPhaseIITrigTree->Branch("trueNeutCapGammaE",&fTrueNeutCapGammaE);
       fPhaseIITrigTree->Branch("trueNeutrinoEnergy",&fTrueNeutrinoEnergy,"trueNeutrinoEnergy/D");
+      fPhaseIITrigTree->Branch("trueNeutrinoMomentum_X",&fTrueNeutrinoMomentum_X,"trueNeutrinoMomentum_X/D");
+      fPhaseIITrigTree->Branch("trueNeutrinoMomentum_Y",&fTrueNeutrinoMomentum_Y,"trueNeutrinoMomentum_Y/D");
+      fPhaseIITrigTree->Branch("trueNeutrinoMomentum_Z",&fTrueNeutrinoMomentum_Z,"trueNeutrinoMomentum_Z/D");
       fPhaseIITrigTree->Branch("trueNuIntxVtx_X",&fTrueNuIntxVtx_X,"trueNuIntxVtx_X/D");
       fPhaseIITrigTree->Branch("trueNuIntxVtx_Y",&fTrueNuIntxVtx_Y,"trueNuIntxVtx_Y/D");
       fPhaseIITrigTree->Branch("trueNuIntxVtx_Z",&fTrueNuIntxVtx_Z,"trueNuIntxVtx_Z/D");
@@ -877,6 +880,9 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueNeutCapE->clear();
     fTrueNeutCapGammaE->clear();
     fTrueNeutrinoEnergy = -9999;
+    fTrueNeutrinoMomentum_X = -9999;
+    fTrueNeutrinoMomentum_Y = -9999;
+    fTrueNeutrinoMomentum_Z = -9999;
     fTrueNuIntxVtx_X = -9999;
     fTrueNuIntxVtx_Y = -9999;
     fTrueNuIntxVtx_Z = -9999;
@@ -1660,50 +1666,55 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   }
 
   //Load genie information
-  if (hasGenie && fMCTriggerNum == 0){
-  double TrueNeutrinoEnergy, TrueQ2, TrueNuIntxVtx_X, TrueNuIntxVtx_Y, TrueNuIntxVtx_Z, TrueNuIntxVtx_T;
-  double TrueFSLeptonMass, TrueFSLeptonEnergy, TrueFSLeptonTime;
-  bool TrueCC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
-  int fsNeutrons, fsProtons, fsPi0, fsPiPlus, fsPiPlusCher, fsPiMinus, fsPiMinusCher;
-  int fsKPlus, fsKPlusCher, fsKMinus, fsKMinusCher, TrueNuPDG, TrueFSLeptonPdg;
-  Position TrueFSLeptonVtx;
-  Direction TrueFSLeptonMomentum;
-  bool get_neutrino_energy = m_data->Stores["GenieInfo"]->Get("NeutrinoEnergy",TrueNeutrinoEnergy);
-  bool get_neutrino_vtxx = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_X",TrueNuIntxVtx_X);
-  bool get_neutrino_vtxy = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Y",TrueNuIntxVtx_Y);
-  bool get_neutrino_vtxz = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Z",TrueNuIntxVtx_Z);
-  bool get_neutrino_vtxt = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_T",TrueNuIntxVtx_T);
-  bool get_q2 = m_data->Stores["GenieInfo"]->Get("EventQ2",TrueQ2);
-  bool get_cc = m_data->Stores["GenieInfo"]->Get("IsWeakCC",TrueCC);
-  bool get_qel = m_data->Stores["GenieInfo"]->Get("IsQuasiElastic",TrueQEL);
-  bool get_res = m_data->Stores["GenieInfo"]->Get("IsResonant",TrueRES);
-  bool get_dis = m_data->Stores["GenieInfo"]->Get("IsDeepInelastic",TrueDIS);
-  bool get_coh = m_data->Stores["GenieInfo"]->Get("IsCoherent",TrueCOH);
-  bool get_mec = m_data->Stores["GenieInfo"]->Get("IsMEC",TrueMEC);
-  bool get_n = m_data->Stores["GenieInfo"]->Get("NumFSNeutrons",fsNeutrons);
-  bool get_p = m_data->Stores["GenieInfo"]->Get("NumFSProtons",fsProtons);
-  bool get_pi0 = m_data->Stores["GenieInfo"]->Get("NumFSPi0",fsPi0);
-  bool get_piplus = m_data->Stores["GenieInfo"]->Get("NumFSPiPlus",fsPiPlus);
-  bool get_pipluscher = m_data->Stores["GenieInfo"]->Get("NumFSPiPlusCher",fsPiPlusCher);
-  bool get_piminus = m_data->Stores["GenieInfo"]->Get("NumFSPiMinus",fsPiMinus);
-  bool get_piminuscher = m_data->Stores["GenieInfo"]->Get("NumFSPiMinusCher",fsPiMinusCher);
-  bool get_kplus = m_data->Stores["GenieInfo"]->Get("NumFSKPlus",fsKPlus);
-  bool get_kpluscher = m_data->Stores["GenieInfo"]->Get("NumFSKPlusCher",fsKPlusCher);
-  bool get_kminus = m_data->Stores["GenieInfo"]->Get("NumFSKMinus",fsKMinus);
-  bool get_kminuscher = m_data->Stores["GenieInfo"]->Get("NumFSKMinusCher",fsKMinusCher);
-  bool get_fsl_vtx = m_data->Stores["GenieInfo"]->Get("FSLeptonVertex",TrueFSLeptonVtx);
-  bool get_fsl_momentum = m_data->Stores["GenieInfo"]->Get("FSLeptonMomentum",TrueFSLeptonMomentum);
-  bool get_fsl_time = m_data->Stores["GenieInfo"]->Get("FSLeptonTime",TrueFSLeptonTime);
-  bool get_fsl_mass = m_data->Stores["GenieInfo"]->Get("FSLeptonMass",TrueFSLeptonMass);
-  bool get_fsl_pdg = m_data->Stores["GenieInfo"]->Get("FSLeptonPdg",TrueFSLeptonPdg);
-  bool get_fsl_energy = m_data->Stores["GenieInfo"]->Get("FSLeptonEnergy",TrueFSLeptonEnergy);
-  std::cout <<"get_neutrino_energy: "<<get_neutrino_energy<<"get_neutrino_vtxx: "<<get_neutrino_vtxx<<"get_neutrino_vtxy: "<<get_neutrino_vtxy<<"get_neutrino_vtxz: "<<get_neutrino_vtxz<<"get_neutrino_time: "<<get_neutrino_vtxt<<std::endl;
-  std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
-  std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
-  std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
-    if (get_neutrino_energy && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy ){
-      fTrueNeutrinoEnergy = TrueNeutrinoEnergy*1000;
-      fTrueNuIntxVtx_X = TrueNuIntxVtx_X*100;
+  if (hasGenie){
+    double TrueNeutrinoEnergy, TrueQ2, TrueNuIntxVtx_X, TrueNuIntxVtx_Y, TrueNuIntxVtx_Z, TrueNuIntxVtx_T;
+    double TrueFSLeptonMass, TrueFSLeptonEnergy, TrueFSLeptonTime;
+    bool TrueCC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
+    int fsNeutrons, fsProtons, fsPi0, fsPiPlus, fsPiPlusCher, fsPiMinus, fsPiMinusCher;
+    int fsKPlus, fsKPlusCher, fsKMinus, fsKMinusCher, TrueNuPDG, TrueFSLeptonPdg;
+    Position TrueFSLeptonVtx;
+    Direction TrueFSLeptonMomentum;
+    Direction TrueNeutrinoMomentum;
+    bool get_neutrino_energy = m_data->Stores["GenieInfo"]->Get("NeutrinoEnergy",TrueNeutrinoEnergy);
+    bool get_neutrino_mom = m_data->Stores["GenieInfo"]->Get("NeutrinoMomentum",TrueNeutrinoMomentum);
+    bool get_neutrino_vtxx = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_X",TrueNuIntxVtx_X);
+    bool get_neutrino_vtxy = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Y",TrueNuIntxVtx_Y);
+    bool get_neutrino_vtxz = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Z",TrueNuIntxVtx_Z);
+    bool get_neutrino_vtxt = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_T",TrueNuIntxVtx_T);
+    bool get_q2 = m_data->Stores["GenieInfo"]->Get("EventQ2",TrueQ2);
+    bool get_cc = m_data->Stores["GenieInfo"]->Get("IsWeakCC",TrueCC);
+    bool get_qel = m_data->Stores["GenieInfo"]->Get("IsQuasiElastic",TrueQEL);
+    bool get_res = m_data->Stores["GenieInfo"]->Get("IsResonant",TrueRES);
+    bool get_dis = m_data->Stores["GenieInfo"]->Get("IsDeepInelastic",TrueDIS);
+    bool get_coh = m_data->Stores["GenieInfo"]->Get("IsCoherent",TrueCOH);
+    bool get_mec = m_data->Stores["GenieInfo"]->Get("IsMEC",TrueMEC);
+    bool get_n = m_data->Stores["GenieInfo"]->Get("NumFSNeutrons",fsNeutrons);
+    bool get_p = m_data->Stores["GenieInfo"]->Get("NumFSProtons",fsProtons);
+    bool get_pi0 = m_data->Stores["GenieInfo"]->Get("NumFSPi0",fsPi0);
+    bool get_piplus = m_data->Stores["GenieInfo"]->Get("NumFSPiPlus",fsPiPlus);
+    bool get_pipluscher = m_data->Stores["GenieInfo"]->Get("NumFSPiPlusCher",fsPiPlusCher);
+    bool get_piminus = m_data->Stores["GenieInfo"]->Get("NumFSPiMinus",fsPiMinus);
+    bool get_piminuscher = m_data->Stores["GenieInfo"]->Get("NumFSPiMinusCher",fsPiMinusCher);
+    bool get_kplus = m_data->Stores["GenieInfo"]->Get("NumFSKPlus",fsKPlus);
+    bool get_kpluscher = m_data->Stores["GenieInfo"]->Get("NumFSKPlusCher",fsKPlusCher);
+    bool get_kminus = m_data->Stores["GenieInfo"]->Get("NumFSKMinus",fsKMinus);
+    bool get_kminuscher = m_data->Stores["GenieInfo"]->Get("NumFSKMinusCher",fsKMinusCher);
+    bool get_fsl_vtx = m_data->Stores["GenieInfo"]->Get("FSLeptonVertex",TrueFSLeptonVtx);
+    bool get_fsl_momentum = m_data->Stores["GenieInfo"]->Get("FSLeptonMomentum",TrueFSLeptonMomentum);
+    bool get_fsl_time = m_data->Stores["GenieInfo"]->Get("FSLeptonTime",TrueFSLeptonTime);
+    bool get_fsl_mass = m_data->Stores["GenieInfo"]->Get("FSLeptonMass",TrueFSLeptonMass);
+    bool get_fsl_pdg = m_data->Stores["GenieInfo"]->Get("FSLeptonPdg",TrueFSLeptonPdg);
+    bool get_fsl_energy = m_data->Stores["GenieInfo"]->Get("FSLeptonEnergy",TrueFSLeptonEnergy);
+    std::cout <<"get_neutrino_energy: "<<get_neutrino_energy<<"get_neutrino_vtxx: "<<get_neutrino_vtxx<<"get_neutrino_vtxy: "<<get_neutrino_vtxy<<"get_neutrino_vtxz: "<<get_neutrino_vtxz<<"get_neutrino_time: "<<get_neutrino_vtxt<<std::endl;
+    std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
+    std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
+    std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
+    if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy ){
+      fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
+      fTrueNeutrinoMomentum_X = TrueNeutrinoMomentum.X();
+      fTrueNeutrinoMomentum_Y = TrueNeutrinoMomentum.Y();
+      fTrueNeutrinoMomentum_Z = TrueNeutrinoMomentum.Z();
+      fTrueNuIntxVtx_X = TrueNuIntxVtx_X;
       fTrueNuIntxVtx_Y = TrueNuIntxVtx_Y;
       fTrueNuIntxVtx_Z = TrueNuIntxVtx_Z;
       fTrueNuIntxVtx_T = TrueNuIntxVtx_T;
@@ -1790,5 +1801,3 @@ void PhaseIITreeMaker::RecoSummary() {
   std::cout << "  RecoStatus = " << fRecoStatus <<std::endl;
   std::cout << std::endl;
 }
-
-
