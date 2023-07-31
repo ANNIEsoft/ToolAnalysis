@@ -134,7 +134,7 @@ void MCRecoEventLoader::FindTrueVertexFromMC() {
         break;                                         // won't have more than one primary muon
       } else {
 	//Accept both electrons and muons as primary particles, if no selection is specified
-        if( aparticle.GetPdgCode()!=11 && aparticle.GetPdgCode()!=13) continue;
+        if( fabs(aparticle.GetPdgCode())!=11 && fabs(aparticle.GetPdgCode())!=13) continue;
 	primarymuon = aparticle;
 	mufound=true;
 	m_data->Stores.at("RecoEvent")->Set("PdgPrimary",aparticle.GetPdgCode());

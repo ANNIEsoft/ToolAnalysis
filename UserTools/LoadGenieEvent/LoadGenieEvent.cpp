@@ -73,11 +73,14 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	
 #if LOADED_GENIE==1 // only load the Tool if genie is available
 	
+	int evoffset;
+
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
 	m_variables.Get("FileDir",filedir);
 	m_variables.Get("FilePattern",filepattern);
 	m_variables.Get("ManualFileMatching",manualmatch);
+	m_variables.Get("EventOffset",evoffset);
 
 	// create a store for holding Genie information to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
@@ -97,6 +100,8 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 		Log("Tool LoadGenieEvent: Read "+to_string(numbytes)+" bytes loading TChain "+inputfiles,v_debug,verbosity);
 		Log("Tool LoadGenieEvent: Genie TChain has "+to_string(flux->GetEntries())+" entries",v_message,verbosity);
 		SetBranchAddresses();
+		tchainentrynum = evoffset;
+		Log("LoadGenieEvent tool: # of flux entries: "+std::to_string(flux->GetEntries()),v_message,verbosity);
 	}
 
 	if(manualmatch){
@@ -166,7 +171,7 @@ bool LoadGenieEvent::Execute(){
 		}
 	}
 	
-	Log("Tool LoadGenieEvent: Loading tchain entry "+to_string(tchainentrynum),v_debug,verbosity);
+	Log("Tool LoadGenieEvent: Loading tchain entry "+to_string(tchainentrynum),v_message,verbosity);
 	local_entry = flux->LoadTree(tchainentrynum);
 	Log("Tool LoadGenieEvent: localentry is "+to_string(local_entry),v_debug,verbosity);
 	if(local_entry<0){
@@ -714,7 +719,7 @@ std::string LoadGenieEvent::MediumToString(int code){
 	if(mediummap.count(code)!=0){
 		return mediummap.at(code);
 	} else {
-		if (verbosity > 0) cerr<<"LoadGenieEvent: Unknown medium "<<code<<endl;
+		Log("LoadGenieEvent: unknown medium "+std::to_string(code),v_warning,verbosity);
 		return std::to_string(code);
 	}
 }
