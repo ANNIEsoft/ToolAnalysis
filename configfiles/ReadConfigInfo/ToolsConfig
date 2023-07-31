@@ -1,0 +1,2 @@
+myLoadANNIEEvent LoadANNIEEvent ./configfiles/ReadConfigInfo/LoadANNIEEventConfig
+myReadConfigInfo ReadConfigInfo ./configfiles/ReadConfigInfo/ReadConfigInfoConfig
