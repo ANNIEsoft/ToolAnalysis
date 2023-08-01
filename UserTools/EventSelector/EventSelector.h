@@ -253,6 +253,7 @@ class EventSelector: public Tool {
   int fRecoPDG;
   bool fTriggerExtended = false;
   bool fBeamOK = false;
+  std::string fCutConfigurationName;  
 
   bool get_mrd = false;
   double pmt_time = 0; 

@@ -165,5 +165,8 @@
 #include "PythonScript.h"
 #include "ReweightEventsGenie.h"
 #include "FilterLAPPDEvents.h"
+#include "FilterEvents.h"
+#include "Stage1DataBuilder.h"
+#include "BeamFetcherV2.h"
 #include "FindNeutrons.h"
 #include "NeutronMultiplicity.h"

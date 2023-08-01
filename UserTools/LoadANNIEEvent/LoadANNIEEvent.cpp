@@ -278,13 +278,8 @@ bool LoadANNIEEvent::Execute() {
  
 
 
-  if (global_evnr && !has_local){ m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev);
-    Log("LoadANNIEEvent: Load global event # "+std::to_string(global_ev),2,verbosity_); }
+  if (global_evnr && !has_local){ m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev); }
   global_ev++; 
-
-  uint32_t globalevnr;
-  m_data->Stores["ANNIEEvent"]->Get("EventNumber",globalevnr);
-  std::cout <<"Load global ev "<<globalevnr<<std::endl;
 
   if ( current_entry_ >= total_entries_in_file_ ) {
     ++current_file_;
