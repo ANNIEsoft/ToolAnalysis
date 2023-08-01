@@ -14,7 +14,6 @@ desktop.ini
 Desktop.ini
 *.o
 *.root
-*.bs
 *.so
 *.a
 core.*

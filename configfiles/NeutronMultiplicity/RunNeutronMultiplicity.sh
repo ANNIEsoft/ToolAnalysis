@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 RUNLIST=$1
-
+cut=CBStrict
 
 while read -r run
 do
@@ -18,7 +18,8 @@ do
 	cd ../../
 
 	#Run analysis from here
-	sed -i "6s#.*#Filename  NeutronMultiplicity_R${run}#" configfiles/NeutronMultiplicity/NeutronMultiplicityConfig
+	sed -i "6s#.*#Filename  NeutronMultiplicity_R${run}_${cut}#" configfiles/NeutronMultiplicity/NeutronMultiplicityConfig
+	sed -i "4s#.*#Method ${cut}#" configfiles/NeutronMultiplicity/FindNeutronsConfig
 	./Analyse ./configfiles/NeutronMultiplicity/ToolChainConfig
 
 	#Change back

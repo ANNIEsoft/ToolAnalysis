@@ -8,6 +8,10 @@ fi
 
 RUNLIST=$1
 
+FILTERED_DIR=/pnfs/annie/persistent/users/mnieslon/NeutronMultiplicity/FilteredEvents
+
+cut=CBStrict
+
 while read -r run
 do
 	echo "$run"
@@ -16,12 +20,13 @@ do
 	cd ../../
 
 	#Filtered event files need to be in the directory of ToolAnalysis
-	echo FilteredEvents_R${run}_NeutrinoCandidate > my_inputs.txt
+	echo ${FILTERED_DIR}/FilteredEvents_R${run}_NeutrinoCandidate > my_inputs.txt
         cp my_inputs.txt configfiles/NeutronMultiplicity
 
 	#Adapt config file
-	sed -i "6s#.*#Filename  NeutronMultiplicity_R${run}_Filtered#" configfiles/NeutronMultiplicity/NeutronMultiplicityConfig
-
+	sed -i "6s#.*#Filename  NeutronMultiplicity_R${run}_${cut}#" configfiles/NeutronMultiplicity/NeutronMultiplicityConfig
+	sed -i "4s#.*#Method ${cut}#" configfiles/NeutronMultiplicity/FindNeutronsConfig
+	
 	#Run analysis
 	./Analyse configfiles/NeutronMultiplicity/ToolChainConfig
 
