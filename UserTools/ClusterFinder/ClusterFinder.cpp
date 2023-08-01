@@ -172,17 +172,17 @@ bool ClusterFinder::Execute(){
     bool got_mchits = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
     if (!got_mchits){
       std::cout << "No MCHits store in ANNIEEvent!" <<  std::endl;
-      return true;
+      return false;
     }
   } else if (HitStoreName == "Hits"){
     bool got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
     if (!got_hits){
       std::cout << "No Hits store in ANNIEEvent! " << std::endl;
-      return true;
+      return false;
     }
   } else {
     std::cout << "Selected Hits store invalid.  Must be Hits or MCHits" << std::endl;
-    return true;
+    return false;
   }
   // Also load hits from the Hits Store, if available
 
