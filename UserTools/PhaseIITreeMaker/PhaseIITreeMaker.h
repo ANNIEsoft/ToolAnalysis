@@ -243,7 +243,7 @@ class PhaseIITreeMaker: public Tool {
   double fTrueFSLMomentum_Z;
   double fTrueFSLTime;
   double fTrueFSLMass;
-  double fTrueFSLPdg;
+  int fTrueFSLPdg;
   double fTrueFSLEnergy;
   double fTrueQ2;
   int fTrueCC;
