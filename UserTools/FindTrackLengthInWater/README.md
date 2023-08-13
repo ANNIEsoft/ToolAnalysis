@@ -42,7 +42,7 @@ The following variables are passed on to the next tool via the `EnergyReco` stor
 
 **num_lappd_hits** `int` Total number of lappd digits
 
-**TrueTrackLengthInWater** `int` MC track length in the water
+**TrueTrackLengthInWater** `float` MC track length in the water
 
 **trueMuonEnergy** `double` MC muon energy
 

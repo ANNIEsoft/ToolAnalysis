@@ -20,7 +20,7 @@ The following variables are obtained from the `EnergyReco` store:
 
 **num_lappd_hits** `int` Total number of lappd digits
 
-**TrueTrackLengthInWater** `int` MC track length in the water
+**TrueTrackLengthInWater** `float` MC track length in the water
 
 The following variables are obtained from the `ScalingVarsStore` store:
 
