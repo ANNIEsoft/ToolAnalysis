@@ -230,6 +230,7 @@ class PhaseIITreeMaker: public Tool {
   double fTrueNeutrinoEnergy;
   double fTrueQ2;
   int fTrueCC;
+  int fTrueNC;
   int fTrueQEL;
   int fTrueRES;
   int fTrueDIS;
