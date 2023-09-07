@@ -307,6 +307,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueNeutrinoEnergy",&fTrueNeutrinoEnergy,"trueNeutrinoEnergy/D");
       fPhaseIITrigTree->Branch("trueQ2",&fTrueQ2,"trueQ2/D");
       fPhaseIITrigTree->Branch("trueCC",&fTrueCC,"trueCC/I");
+      fPhaseIITrigTree->Branch("trueNC",&fTrueNC,"trueNC/I");
       fPhaseIITrigTree->Branch("trueQEL",&fTrueQEL,"trueQEL/I");
       fPhaseIITrigTree->Branch("trueRES",&fTrueRES,"trueRES/I");
       fPhaseIITrigTree->Branch("trueDIS",&fTrueDIS,"trueDIS/I");
@@ -856,6 +857,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueNeutrinoEnergy = -9999;
     fTrueQ2 = -9999;
     fTrueCC = -9999;
+    fTrueNC = -9999;
     fTrueQEL = -9999;
     fTrueRES = -9999;
     fTrueDIS = -9999;
@@ -1616,11 +1618,12 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   //Load genie information
   if (hasGenie){
   double TrueNeutrinoEnergy, TrueQ2;
-  bool TrueCC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
+  bool TrueCC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES, TrueNC;
   int fsNeutrons, fsProtons;
   bool get_neutrino_energy = m_data->Stores["GenieInfo"]->Get("NeutrinoEnergy",TrueNeutrinoEnergy);
   bool get_q2 = m_data->Stores["GenieInfo"]->Get("EventQ2",TrueQ2);
   bool get_cc = m_data->Stores["GenieInfo"]->Get("IsWeakCC",TrueCC);
+  bool get_nc = m_data->Stores["GenieInfo"]->Get("IsWeakNC",TrueNC);
   bool get_qel = m_data->Stores["GenieInfo"]->Get("IsQuasiElastic",TrueQEL);
   bool get_res = m_data->Stores["GenieInfo"]->Get("IsResonant",TrueRES);
   bool get_dis = m_data->Stores["GenieInfo"]->Get("IsDeepInelastic",TrueDIS);
@@ -1628,11 +1631,12 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   bool get_mec = m_data->Stores["GenieInfo"]->Get("IsMEC",TrueMEC);
   bool get_n = m_data->Stores["GenieInfo"]->Get("NumFSNeutrons",fsNeutrons);
   bool get_p = m_data->Stores["GenieInfo"]->Get("NumFSProtons",fsProtons);
-  std::cout <<"get_neutrino: "<<get_neutrino_energy<<", get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<", get_n: "<<get_n<<", get_p: "<<get_p<<std::endl;
-  if (get_neutrino_energy && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p){
+  std::cout <<"get_neutrino: "<<get_neutrino_energy<<", get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_nc: "<<get_nc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<", get_n: "<<get_n<<", get_p: "<<get_p<<std::endl;
+  if (get_neutrino_energy && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p){
     fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
     fTrueQ2 = TrueQ2;
     fTrueCC = (TrueCC)? 1 : 0;
+    fTrueNC = (TrueNC)? 1 : 0;
     fTrueQEL = (TrueQEL)? 1 : 0;
     fTrueRES = (TrueRES)? 1 : 0;
     fTrueDIS = (TrueDIS)? 1 : 0;
