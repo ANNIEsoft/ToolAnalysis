@@ -30,6 +30,13 @@ The information is loaded from the GENIE file and saved into the "GenieInfo" Boo
 * **ParentTypeAtTgtExitString** `string`: Name of parent particle at exit of target
 * **ParentTgtExitMom** `Position`: momentum of parent particle at exit of target
 * **ParentTgtExitMom_X/Y/Z** `float`: x/y/z component of parent particle momentum at exit of target
+* **ParentEntryNo** `int`: entry number of parent particle that produced neutrino
+* **ParentEventNo** `int`: event number of parent particle that produced neutrino
+* **ParentRunNo** `int`: run number of flux file
+* **ParentNEnergyN** `double`: The energy of the parent particle
+* **ParentNEnergyF** `double`: The energy of the parent particle
+* **ParentNType** `int`: The PDG code of the parent particle specific to gsimple file
+* **ParentWgt** `double`: The weight of the parent particle
 
 * **IsQuasiElastic** `bool`: Neutrino interaction was quasi-elastic
 * **IsResonant** `bool`: Neutrino interaction was RES
@@ -55,13 +62,24 @@ The information is loaded from the GENIE file and saved into the "GenieInfo" Boo
 * **MuonEnergy** `double`: Energy of produced muon
 * **MuonAngle** `double`: Angle of produced muon
 * **FSLeptonName** `string`: Final State Lepton name
+* **FSLeptonEnergy** `double`: Final State Lepton energy
+* **FSLeptonPdg** `int`: Final State Lepton PDG code
+* **FSLeptonMass** `double`: Final State Lepton mass
+* **FSLeptonMomentum** `Position`: Final State Lepton momentum vector
+* **FSLeptonMomentumDir** `Position`: Final State Lepton momentum unit vector
+* **FSLeptonVertex** `Position`: Final State Lepton initial vertex
+* **FSLeptonTime** `double`: Final State Lepton time of initial vertex
 * **NumFSProtons** `int`: Number of final state protons
 * **NumFSNeutrons** `int`: Number of final state neutrons
 * **NumFSPi0** `int`: Number of final state pi^0
 * **NumFSPiPlus** `int`: Number of final state pi^+
+* **NumFSPiPlusCher** `int`: Number of final state pi^+ that pass Cherenkov threshold
 * **NumFSPiMinus** `int`: Number of final state pi^-
+* **NumFSPiMinusCher** `int`: Number of final state pi^- that pass Cherenkov threshold
 * **NumFSKPlus** `int`: Number of final state K^+
+* **NumFSKPlusCher** `int`: Number of final state K^+ that pass Cherenkov threshold
 * **NumFSKMinus** `int`: Number of final state K^-
+* **NumFSKMinusCher** `int`: Number of final state K^- that pass Cherenkov threshold
 * **GenieInfo** `GenieInfo`: GenieInfo object containing most of the listed properties (see DataModel header-file)
 
 ## Configuration file ##
@@ -78,4 +96,7 @@ FileDir /pnfs/annie/persistent/users/vfischer/genie_files/BNB_Water_10k_22-05-17
 FilePattern LoadWCSimTool      ## use this pattern to load corresponding genie info with the LoadWCSimTool
                                ## N.B: FileDir must still be specified for now! (WCSim files do not record their directory)
 ManualFileMatching 1           ## If the corresponding GENIE files are not saved reliably, a manual matching of WCSim files to GENIE files can take place
+FileEvents 500                 ## Number of events per WCSim file
+                               ## 500 events for Marcus files
+                               ## 1000 events for James files
 ```

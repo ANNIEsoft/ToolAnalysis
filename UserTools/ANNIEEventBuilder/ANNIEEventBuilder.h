@@ -96,9 +96,9 @@ class ANNIEEventBuilder: public Tool {
 
   bool FetchWaveformsHits();
 
-  //Functions to correct 8ns offset error
-  void Correct8nsOffsetRaw(bool force_all_entries);
-  void Correct8nsOffset(bool force_all_entries);
+  //Functions to correct VME crate offset error
+  void CorrectVMEOffsetRaw(bool force_all_entries);
+  void CorrectVMEOffset(bool force_all_entries);
 
   //Methods for getting all timestamps encountered by decoder tools
   void ProcessNewTankPMTData();
@@ -262,6 +262,9 @@ class ANNIEEventBuilder: public Tool {
   int v_message=2;
   int v_debug=3;
   std::string logmessage;
+
+  bool BuildStage1Data = false;
+  bool SaveSeparatePartfiles = true;
 };
 
 
