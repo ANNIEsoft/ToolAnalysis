@@ -119,7 +119,7 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
       }
 
       allCharge += digitCharge;
-      outerCone = -outhits/inhits;
+      //outerCone = -outhits/inhits;
     }
   }
 
