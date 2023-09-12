@@ -390,7 +390,7 @@ void VtxSeedGenerator::ChooseNextDigit(double& xpos, double& ypos, double& zpos,
   int numEntries = vSeedDigitList.size();
 
   fCounter++;
-  if( fCounter>=fDigitList->(int)size() ) fCounter = 0;
+  if( fCounter>=(int)fDigitList->size() ) fCounter = 0;
   fThisDigit = vSeedDigitList.at(fLastEntry);
 
   double r = gRandom->Uniform(); 
