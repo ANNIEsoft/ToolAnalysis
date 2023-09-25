@@ -137,7 +137,6 @@ bool LoadANNIEEvent::Execute() {
         current_file_++;
         return true;
       }
-      ProcessedFileStore->Initialise(input_filename);
       m_data->Stores["ProcessedFileStore"]=ProcessedFileStore;
     
       // create an ANNIEEvent BoostStore and an OrphanStore BoostStore to load from it
