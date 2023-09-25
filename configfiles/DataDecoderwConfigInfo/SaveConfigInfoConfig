@@ -1,0 +1,3 @@
+verbosity 5
+OutFileName config_info.txt
+FullDepth 1
