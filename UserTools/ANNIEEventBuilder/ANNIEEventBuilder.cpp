@@ -2516,6 +2516,10 @@ void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum, int PartNum)
   /*if(verbosity>4)*/ std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
   std::string Filename = SavePath + ProcessedFilesBasename + "_"+BuildType+"_R" + to_string(RunNum) + 
       "S" + to_string(SubRunNum) + "p" + to_string(PartNum);
+  std::string config_info; //Save the ConfigInfo if it exists
+  if(  m_data->CStore.Get("ConfigInfo",config_info) ){
+    ANNIEEvent->Header->Set("ConfigInfo",config_info);
+  }
   if (SaveSeparatePartfiles) ANNIEEvent->Save(Filename);
   std::cout<<"ANNIEEvent: "<<std::endl;
   ANNIEEvent->Print(false);
