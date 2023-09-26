@@ -418,7 +418,7 @@ bool LoadWCSim::Execute(){
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
 			if(verbosity>1) cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
-			m_data->CStore.Set("GenieEntry",genieentry);
+			m_data->CStore.Set("GenieEntry",std::to_string(genieentry));
 			
 			for(int trigi=0; trigi<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); trigi++){
 				
@@ -1001,8 +1001,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 	double tank_ycentre = (wcsimrootgeom->GetWCOffset(1)) / 100.;
 	double tank_zcentre = (wcsimrootgeom->GetWCOffset(2)) / 100.;
 	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
-	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.;
-	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 100.;
+	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.; //GetWCCylRadius() returns the black sheet radius not the tank radius
+	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 200.; //GetWCCylLength() returns the main annulus height not the tank height
 	//Currently hard-coded; estimated with a tape measure on the ANNIE frame :)
 	double pmt_enclosed_radius = 1.0;
 	double pmt_enclosed_halfheight = 1.45;

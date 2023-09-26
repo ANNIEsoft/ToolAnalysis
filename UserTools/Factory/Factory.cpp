@@ -162,5 +162,7 @@ if (tool=="Stage1DataBuilder") ret=new Stage1DataBuilder;
 if (tool=="BeamFetcherV2") ret=new BeamFetcherV2;
 if (tool=="FindNeutrons") ret=new FindNeutrons;
 if (tool=="NeutronMultiplicity") ret=new NeutronMultiplicity;
+if (tool=="SaveConfigInfo") ret=new SaveConfigInfo;
+if (tool=="ReadConfigInfo") ret=new ReadConfigInfo;
 return ret;
 }

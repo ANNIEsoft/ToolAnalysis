@@ -170,3 +170,5 @@
 #include "BeamFetcherV2.h"
 #include "FindNeutrons.h"
 #include "NeutronMultiplicity.h"
+#include "SaveConfigInfo.h"
+#include "ReadConfigInfo.h"
