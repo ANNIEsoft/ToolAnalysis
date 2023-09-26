@@ -324,6 +324,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueFSLEnergy",&fTrueFSLEnergy,"trueFSLEnergy/D");
       fPhaseIITrigTree->Branch("trueQ2",&fTrueQ2,"trueQ2/D");
       fPhaseIITrigTree->Branch("trueCC",&fTrueCC,"trueCC/I");
+      fPhaseIITrigTree->Branch("trueNC",&fTrueNC,"trueNC/I");
       fPhaseIITrigTree->Branch("trueQEL",&fTrueQEL,"trueQEL/I");
       fPhaseIITrigTree->Branch("trueRES",&fTrueRES,"trueRES/I");
       fPhaseIITrigTree->Branch("trueDIS",&fTrueDIS,"trueDIS/I");
@@ -899,6 +900,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueFSLEnergy = -9999;
     fTrueQ2 = -9999;
     fTrueCC = -9999;
+    fTrueNC = -9999;
     fTrueQEL = -9999;
     fTrueRES = -9999;
     fTrueDIS = -9999;
@@ -1669,7 +1671,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   if (hasGenie){
     double TrueNeutrinoEnergy, TrueQ2, TrueNuIntxVtx_X, TrueNuIntxVtx_Y, TrueNuIntxVtx_Z, TrueNuIntxVtx_T;
     double TrueFSLeptonMass, TrueFSLeptonEnergy, TrueFSLeptonTime;
-    bool TrueCC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
+    bool TrueCC, TrueNC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
     int fsNeutrons, fsProtons, fsPi0, fsPiPlus, fsPiPlusCher, fsPiMinus, fsPiMinusCher;
     int fsKPlus, fsKPlusCher, fsKMinus, fsKMinusCher, TrueNuPDG, TrueFSLeptonPdg;
     Position TrueFSLeptonVtx;
@@ -1683,6 +1685,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     bool get_neutrino_vtxt = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_T",TrueNuIntxVtx_T);
     bool get_q2 = m_data->Stores["GenieInfo"]->Get("EventQ2",TrueQ2);
     bool get_cc = m_data->Stores["GenieInfo"]->Get("IsWeakCC",TrueCC);
+    bool get_nc = m_data->Stores["GenieInfo"]->Get("IsWeakNC",TrueNC);
     bool get_qel = m_data->Stores["GenieInfo"]->Get("IsQuasiElastic",TrueQEL);
     bool get_res = m_data->Stores["GenieInfo"]->Get("IsResonant",TrueRES);
     bool get_dis = m_data->Stores["GenieInfo"]->Get("IsDeepInelastic",TrueDIS);
@@ -1709,7 +1712,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
     std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
     std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
-    if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy ){
+    if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy ){
       fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
       fTrueNeutrinoMomentum_X = TrueNeutrinoMomentum.X();
       fTrueNeutrinoMomentum_Y = TrueNeutrinoMomentum.Y();
@@ -1730,6 +1733,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
       fTrueFSLEnergy = TrueFSLeptonEnergy;
       fTrueQ2 = TrueQ2;
       fTrueCC = (TrueCC)? 1 : 0;
+      fTrueNC = (TrueNC)? 1 : 0;
       fTrueQEL = (TrueQEL)? 1 : 0;
       fTrueRES = (TrueRES)? 1 : 0;
       fTrueDIS = (TrueDIS)? 1 : 0;
