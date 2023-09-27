@@ -149,12 +149,17 @@ bool MrdPaddleEfficiencyPreparer::Initialise(std::string configfile, DataModel &
 	}
 
 	hist_chankey = new TH1F("hist_chankey","MRD Chankeys - Efficiency",340,0,340);
+	hist_nlayers = new TH1F("hist_nlayers","Number of hit MRD layers",11,0,11);
+	MissingChannel = new std::vector<int>;
+	ExpectedChannel = new std::vector<int>;
+	MissingLayer = new std::vector<int>;
 	//hist_timediff = new TH1F("hist_timediff","Timediff first & last layer",2000,-2000,2000);
 	tree_trackfit = new TTree("tree_trackfit","tree_trackfit");
-	tree_trackfit->Branch("EvNum",&EventNumber);
-	tree_trackfit->Branch("MRDTriggerType",&MRDTriggertype);
+	tree_trackfit->Branch("RunNum",&RunNumber);
+        tree_trackfit->Branch("EvNum",&EventNumber);
+        tree_trackfit->Branch("MRDTriggerType",&MRDTriggertype);
 	tree_trackfit->Branch("NumMrdTracks",&numtracksinev);
-	tree_trackfit->Branch("MrdTrackID",&MrdTrackID);
+        tree_trackfit->Branch("MrdTrackID",&MrdTrackID);
 	tree_trackfit->Branch("NPMTsHit",&NPMTsHit);
 	tree_trackfit->Branch("NLayersHit",&NLayersHit);
 	tree_trackfit->Branch("StartVertexX",&StartVertexX);
@@ -163,11 +168,17 @@ bool MrdPaddleEfficiencyPreparer::Initialise(std::string configfile, DataModel &
 	tree_trackfit->Branch("StopVertexX",&StopVertexX);
 	tree_trackfit->Branch("StopVertexY",&StopVertexY);
 	tree_trackfit->Branch("StopVertexZ",&StopVertexZ);
+	tree_trackfit->Branch("IsThrough",&IsThrough);
+	tree_trackfit->Branch("MissingChannel",&MissingChannel);
+	tree_trackfit->Branch("ExpectedChannel",&ExpectedChannel);
+	tree_trackfit->Branch("NumMissingChannel",&NumMissingChannel);
+	tree_trackfit->Branch("MissingLayer",&MissingLayer);
+	tree_trackfit->Branch("NumMissingLayer",&NumMissingLayer);
 
 	m_data->CStore.Get("channelkey_to_mrdpmtid",channelkey_to_mrdpmtid);
 	m_data->CStore.Get("mrd_tubeid_to_channelkey",mrdpmtid_to_channelkey);
 
-	numtracksinev = 0;
+        numtracksinev = 0;
 
 	return true;
 
@@ -177,12 +188,13 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 
 	// Get all relevant data from ANNIEEvent BoostStore
 
+	m_data->Stores["ANNIEEvent"]->Get("RunNumber",RunNumber);
 	m_data->Stores["ANNIEEvent"]->Get("EventNumber",EventNumber);
 	m_data->Stores["ANNIEEvent"]->Get("MRDTriggerType",MRDTriggertype);
 
 	// In case of a cosmic event, use the fitted track for an efficiency calculation
 
-	if (MRDTriggertype == "Cosmic"){
+	if (true){	//previously condition for cosmic event, now removed to also investigate beam events
 		
 		// Get MRD track information from MRDTracks BoostStore
 
@@ -193,7 +205,22 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 			
 		// Only look at events with a single track (cut may be relaxed in the future)		
 
-//		if (numtracksinev >= 1) {
+        	MrdTrackID=-1;
+        	NPMTsHit=-1;
+        	NLayersHit=-1;
+        	StartVertexX=-999;
+        	StartVertexY=-999;
+        	StartVertexZ=-999;
+        	StopVertexX=-999;
+        	StopVertexY=-999;
+        	StopVertexZ=-999;
+        	IsThrough=-1;
+        	MissingChannel->clear();
+        	ExpectedChannel->clear();
+        	NumMissingChannel=-1;
+		MissingLayer->clear();
+		NumMissingLayer=-1;	
+	
 		if (numtracksinev == 1) {
 
 			// Get reconstructed tracks
@@ -210,11 +237,14 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 
 				//get track properties that are needed for the efficiency analysis
 				
+				int IsMrdPenetrating;
+
 				thisTrackAsBoostStore->Get("StartVertex",StartVertex);
 				thisTrackAsBoostStore->Get("StopVertex",StopVertex);
 				thisTrackAsBoostStore->Get("PMTsHit",PMTsHit);
 				thisTrackAsBoostStore->Get("LayersHit",LayersHit);
 				thisTrackAsBoostStore->Get("MrdTrackID",MrdTrackID);
+				thisTrackAsBoostStore->Get("IsMrdPenetrating",IsMrdPenetrating); 
 
 				StartVertexX = StartVertex.X();
 				StartVertexY = StartVertex.Y();
@@ -224,7 +254,14 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 				StopVertexZ = StopVertex.Z();
 				NPMTsHit = (int) PMTsHit.size();
 				NLayersHit = (int) LayersHit.size();
-				tree_trackfit->Fill();
+				NumMissingChannel = 0;
+				MissingChannel->clear();
+
+				bool long_track = false;
+				if (StartVertexZ < 3.45 && StopVertexZ > 4.5) long_track = true;
+				IsThrough = long_track;
+
+				hist_nlayers->Fill(NLayersHit);
 
 				if (usetruetrack){
 					std::vector<std::pair<Position,Position>> truetrackvertices;
@@ -250,7 +287,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 
 				// Minor selection cuts to only select well fit tracks
 
-				if (PMTsHit.size() < 50 ){
+				if (PMTsHit.size() < 50 && long_track){
 
 					for (int i_pmt=0; i_pmt < (int) PMTsHit.size(); i_pmt++){
 						int mrdid = PMTsHit.at(i_pmt);
@@ -265,7 +302,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 							}
 						}*/
 					}
-          
+
 					for (int i_layer = 0; i_layer < (int) zLayers.size(); i_layer++){
 						
 						// Exclude first and layer from efficiency determination						
@@ -285,6 +322,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 							if (orientationLayers.at(i_layer) == 0) {
 								expected_MRDHits.at(i_layer).at(hit_chankey)->Fill(y_layer);
 								expected_MRDHits_layer.at(i_layer).at(hit_chankey)->Fill(y_layer);
+								ExpectedChannel->push_back(hit_chankey);
 								int half_expected_ch = map_chkey_half[hit_chankey];
 								int mrdid;
 								if (isData) mrdid = channelkey_to_mrdpmtid[hit_chankey];
@@ -293,6 +331,9 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 									observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(y_layer);
 									observed_MRDHits_layer.at(i_layer).at(hit_chankey)->Fill(y_layer);
 									
+								} else {
+									MissingChannel->push_back(hit_chankey);
+									MissingLayer->push_back(i_layer+1);
 								}
 								for (unsigned long i = channels_start[i_layer]; i < channels_start[i_layer+1]; i++){
 									int half_channel = map_chkey_half[i];
@@ -311,6 +352,7 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 							else {
 								expected_MRDHits.at(i_layer).at(hit_chankey)->Fill(x_layer);
 								expected_MRDHits_layer.at(i_layer).at(hit_chankey)->Fill(x_layer);
+								ExpectedChannel->push_back(hit_chankey);
 								int half_expected_ch = map_chkey_half[hit_chankey];
 								int mrdid;
 								if (isData) mrdid = channelkey_to_mrdpmtid[hit_chankey];
@@ -318,7 +360,11 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 								if (std::find(PMTsHit.begin(),PMTsHit.end(),mrdid)!=PMTsHit.end()){
 									observed_MRDHits.at(i_layer).at(hit_chankey)->Fill(x_layer);
 									observed_MRDHits_layer.at(i_layer).at(hit_chankey)->Fill(x_layer);
-								}
+								} else {
+									MissingChannel->push_back(hit_chankey);
+									MissingLayer->push_back(i_layer+1);
+
+                                                                }
 								for (unsigned long i = channels_start[i_layer]; i < channels_start[i_layer+1]; i++){
 									int half_channel = map_chkey_half[i];
 									if (i==hit_chankey) continue;
@@ -337,8 +383,11 @@ bool MrdPaddleEfficiencyPreparer::Execute(){
 					}
 				}
 			}
-		} else {
+			NumMissingChannel = (int) MissingChannel->size();
+			NumMissingLayer = (int) MissingLayer->size();
 			tree_trackfit->Fill();
+		} else {
+			//tree_trackfit->Fill();
 		}
 	} 
 
@@ -351,6 +400,7 @@ bool MrdPaddleEfficiencyPreparer::Finalise(){
 	hist_file->cd();
 
 	hist_chankey->Write();
+	hist_nlayers->Write();
         tree_trackfit->Write();
 	for (unsigned int i_layer = 0; i_layer < zLayers.size(); i_layer++){
 		for (unsigned int i_ch = 0; i_ch < channelsLayers.at(i_layer).size(); i_ch++){

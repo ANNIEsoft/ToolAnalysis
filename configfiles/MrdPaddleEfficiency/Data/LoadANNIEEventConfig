@@ -1,3 +1,4 @@
-verbose 4
+verbose 1
 EventOffset 0
 FileForListOfInputs ./configfiles/MrdPaddleEfficiency/Data/my_inputs.txt
+GlobalEvNr 1

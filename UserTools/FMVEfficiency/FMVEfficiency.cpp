@@ -217,8 +217,14 @@ bool FMVEfficiency::Execute(){
     if (not get_ok) { Log("EventDisplay Tool: Error retrieving MrdDigitChankeys, did you run TimeClustering beforehand",v_error,verbosity); return false;}
   }
 
-  if (isData) m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
-  else m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_MC);
+  bool get_tdc;
+  if (isData) get_tdc = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData);
+  else get_tdc = m_data->Stores["ANNIEEvent"]->Get("TDCData",TDCData_MC);
+
+  if (!get_tdc){
+    if (verbosity > 0) std::cout <<"FMVEfficiency tool: No TDCData available! Abort"<<std::endl;
+    return true;
+  }
 
   bool pmt_cluster=false;
   int n_pmt_hits=0;
@@ -299,7 +305,7 @@ bool FMVEfficiency::Execute(){
   //  --------------------------------
   
   std::vector<unsigned long> hit_fmv_detkeys_first, hit_fmv_detkeys_second;
-  std::vector<double> vector_fmv_times_first, vector_fmv_times_second;
+  std::vector<std::vector<double>> vector_fmv_times_first, vector_fmv_times_second;
 
   if (isData){
     if(TDCData){
@@ -315,27 +321,33 @@ bool FMVEfficiency::Execute(){
               hit_fmv_detkeys_first.push_back(detkey);
               double fmv_time=0;
               int nhits_fmv=0;
+              std::vector<double> single_fmv_times;
               for(auto&& hitsonthismrdpmt : anmrdpmt.second){
                 fmv_time+=hitsonthismrdpmt.GetTime();
                 nhits_fmv++;
+                single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              vector_fmv_times_first.push_back(fmv_time);
+              vector_fmv_times_first.push_back(single_fmv_times);
             }
             else { 
-	      /*if (detkey == 14 || detkey == 18 || detkey == 19) continue;
+            //The following code with channelkey changes was necessary during a period where channels were re-mapped
+	    /*if (detkey == 14 || detkey == 18 || detkey == 19) continue;
               if (detkey == 23) detkey = 14;
 	      else if (detkey == 24) detkey = 18;
 	      else if (detkey == 25) detkey = 19;*/
+
               hit_fmv_detkeys_second.push_back(detkey);
+              std::vector<double> single_fmv_times;
               double fmv_time = 0;
               int nhits_fmv = 0;
               for(auto&&hitsonthismrdpmt : anmrdpmt.second){
                 fmv_time+=hitsonthismrdpmt.GetTime();
                 nhits_fmv++;
+                single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              vector_fmv_times_second.push_back(fmv_time);
+              vector_fmv_times_second.push_back(single_fmv_times);
             }
           } 
         }
@@ -359,23 +371,27 @@ bool FMVEfficiency::Execute(){
               hit_fmv_detkeys_first.push_back(detkey);
               double fmv_time=0;
               int nhits_fmv=0;
+              std::vector<double> single_fmv_times;
               for(auto&& hitsonthismrdpmt : anmrdpmt.second){
                 fmv_time+=hitsonthismrdpmt.GetTime();
                 nhits_fmv++;
+                single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              vector_fmv_times_first.push_back(fmv_time);
+              vector_fmv_times_first.push_back(single_fmv_times);
             }
             else { 
               hit_fmv_detkeys_second.push_back(detkey);
               double fmv_time = 0;
               int nhits_fmv = 0;
+              std::vector<double> single_fmv_times;
               for(auto&&hitsonthismrdpmt : anmrdpmt.second){
                 fmv_time+=hitsonthismrdpmt.GetTime();
                 nhits_fmv++;
+                single_fmv_times.push_back(hitsonthismrdpmt.GetTime());
               }
               if (nhits_fmv!=0) fmv_time/=nhits_fmv;
-              vector_fmv_times_second.push_back(fmv_time);
+              vector_fmv_times_second.push_back(single_fmv_times);
             }
           } 
         }
@@ -402,11 +418,12 @@ bool FMVEfficiency::Execute(){
   if (pmt_cluster){
     if (npaddles_Layer1 == 1){
       for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_first.size(); i_fmv++){
-        time_diff_tank_Layer1->Fill(vector_fmv_times_first.at(i_fmv)-cluster_time);  
+        for (int i_t = 0; i_t < vector_fmv_times_first.size(); i_t++){
+        time_diff_tank_Layer1->Fill(vector_fmv_times_first.at(i_fmv).at(i_t)-cluster_time);  
         if (isData){
-          if ((vector_fmv_times_first.at(i_fmv)-cluster_time)<740 || (vector_fmv_times_first.at(i_fmv)-cluster_time)>840) continue;
+          if ((vector_fmv_times_first.at(i_fmv).at(i_t)-cluster_time)<740 || (vector_fmv_times_first.at(i_fmv).at(i_t)-cluster_time)>840) continue;
         } else {
-          if ((vector_fmv_times_first.at(i_fmv)-cluster_time)<-100 || (vector_fmv_times_first.at(i_fmv)-cluster_time)>100) continue; 
+          if ((vector_fmv_times_first.at(i_fmv).at(i_t)-cluster_time)<-100 || (vector_fmv_times_first.at(i_fmv).at(i_t)-cluster_time)>100) continue; 
         }
         unsigned long detkey_first = hit_fmv_detkeys_first.at(i_fmv);
         fmv_tank_secondlayer_expected.at(detkey_first)++;
@@ -414,15 +431,17 @@ bool FMVEfficiency::Execute(){
           fmv_tank_secondlayer_observed.at(detkey_first)++;
         }
       }
+      }
     }
 
     if (npaddles_Layer2 == 1){
       for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_second.size(); i_fmv++){
-        time_diff_tank_Layer2->Fill(vector_fmv_times_second.at(i_fmv)-cluster_time); 
+        for (int i_t=0; i_t < vector_fmv_times_second.at(i_fmv).size(); i_t++){
+        time_diff_tank_Layer2->Fill(vector_fmv_times_second.at(i_fmv).at(i_t)-cluster_time); 
         if (isData){
-          if ((vector_fmv_times_second.at(i_fmv)-cluster_time)<740 || (vector_fmv_times_second.at(i_fmv)-cluster_time)>840) continue;
+          if ((vector_fmv_times_second.at(i_fmv).at(i_t)-cluster_time)<740 || (vector_fmv_times_second.at(i_fmv).at(i_t)-cluster_time)>840) continue;
         } else {
-          if ((vector_fmv_times_second.at(i_fmv)-cluster_time)<-100 || (vector_fmv_times_second.at(i_fmv)-cluster_time)>100) continue;
+          if ((vector_fmv_times_second.at(i_fmv).at(i_t)-cluster_time)<-100 || (vector_fmv_times_second.at(i_fmv).at(i_t)-cluster_time)>100) continue;
         }
         unsigned long detkey_second = hit_fmv_detkeys_second.at(i_fmv);
         unsigned long detkey_first = detkey_second - n_veto_pmts/2;
@@ -431,6 +450,7 @@ bool FMVEfficiency::Execute(){
           fmv_tank_firstlayer_observed.at(detkey_first)++;
         }
       }
+      }
     }
   }
   }
@@ -438,14 +458,31 @@ bool FMVEfficiency::Execute(){
   //  --------------------------------
   //----Evaluate MRD coincidences-----
   //  --------------------------------
-  
-  //Only use events with one track in the MRD
-  if (MrdTimeClusters.size()!=1) return true; 
+  //Change: Actually select on one fitted track instead of one subevent (cluster)
 
+  //Get fitted MRD track
+  int numsubevs, numtracksinev;
+  m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
+  m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
+  m_data->Stores["MRDTracks"]->Get("MRDTracks",theMrdTracks);
+  if (numsubevs==0) {
+   if (verbosity > 2) std::cout <<"No subevents! Abort execution of tool"<<std::endl;
+    return true;
+  }
+  if (numtracksinev !=1) {
+    if (verbosity > 2) std::cout <<"Event does not have 1 track. Abort FMVEfficiency tool (Event has "<<numtracksinev<<" tracks"<<std::endl;
+    return true;
+  }
+
+  std::vector<int> trackssubev;
+  m_data->CStore.Get("TracksSubEvs",trackssubev);
+
+  if (verbosity > 2) std::cout <<"trackssubev.size(): "<<trackssubev.size()<<", first entry: "<<trackssubev.at(0)<<std::endl;
   //Calculate mean time for MRD track
   double mrd_time = 0;
   int n_pmts = 0; 
   for(unsigned int thiscluster=0; thiscluster<MrdTimeClusters.size(); thiscluster++){
+    if (thiscluster != trackssubev.at(0)) continue;
     std::vector<int> single_mrdcluster = MrdTimeClusters.at(thiscluster);
     int numdigits = single_mrdcluster.size();
     if (numdigits >=50) return true;	//reject noise events
@@ -463,11 +500,6 @@ bool FMVEfficiency::Execute(){
   }
   if (n_pmts!=0) mrd_time/=n_pmts;
 
-  //Get fitted MRD track
-  int numsubevs, numtracksinev;
-  m_data->Stores["MRDTracks"]->Get("NumMrdSubEvents",numsubevs);
-  m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
-  m_data->Stores["MRDTracks"]->Get("MRDTracks",theMrdTracks);
   BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(0));
 
   std::vector<int> PMTsHit;
@@ -502,15 +534,20 @@ bool FMVEfficiency::Execute(){
   //if (npaddles_Layer1 == 1){
   if (npaddles_Layer1 >= 1 && npaddles_Layer1 <= padPerLayer){
     for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_first.size(); i_fmv++){
-
-      time_diff_paddle->Fill(hit_fmv_detkeys_first.at(i_fmv),vector_fmv_times_first.at(i_fmv)-mrd_time);
+      bool found_coinc = false;
+      for (int i_t = 0; i_t < vector_fmv_times_first.at(i_fmv).size(); i_t++){
+        if (found_coinc) continue;
+      time_diff_paddle->Fill(hit_fmv_detkeys_first.at(i_fmv),vector_fmv_times_first.at(i_fmv).at(i_t)-mrd_time-100);
       //Check whether MRD & FMV Layer 1 fired in coincidence (time cut)
+      if (verbosity > 3) std::cout <<"FMV time: "<<vector_fmv_times_first.at(i_fmv).at(i_t)<<", mrd time: "<<mrd_time<<std::endl;
       fmv_layer1->Fill(hit_fmv_detkeys_first.at(i_fmv));
-      time_diff_Layer1->Fill(vector_fmv_times_first.at(i_fmv)-mrd_time);
-      if (fabs(vector_fmv_times_first.at(i_fmv)-mrd_time)>100.) continue;
+      time_diff_Layer1->Fill(vector_fmv_times_first.at(i_fmv).at(i_t)-mrd_time);
+      if (fabs(vector_fmv_times_first.at(i_fmv).at(i_t)-mrd_time-100)>70.) continue;
       
+      found_coinc = true;
       //Get properties of coincident MRD/FMV Layer 1 hit
       unsigned long detkey_first = hit_fmv_detkeys_first.at(i_fmv);
+      if (verbosity > 3) std::cout <<"detkey: "<<detkey_first<<std::endl;
       track_diff_x_Layer1->Fill(x_layer1-fmv_x);
       track_diff_y_Layer1->Fill(y_layer1-fmv_firstlayer_y.at(detkey_first));
       track_diff_xy_Layer1->Fill(x_layer1-fmv_x,y_layer1-fmv_firstlayer_y.at(detkey_first));
@@ -540,31 +577,40 @@ bool FMVEfficiency::Execute(){
           vector_observed_loose_layer2.at(detkey_first)->Fill(x_layer1);
 	  std::vector<unsigned long>::iterator it = std::find(hit_fmv_detkeys_second.begin(),hit_fmv_detkeys_second.end(),detkey_first+n_veto_pmts/2);
 	  int index = std::distance(hit_fmv_detkeys_second.begin(),it);
-          time_diff_paddle_coinc->Fill(detkey_first+n_veto_pmts/2,vector_fmv_times_second.at(index)-vector_fmv_times_first.at(i_fmv));
+          for (int i_t2=0; i_t2 < vector_fmv_times_second.at(index).size(); i_t2++){
+          time_diff_paddle_coinc->Fill(detkey_first+n_veto_pmts/2,vector_fmv_times_second.at(index).at(i_t2)-vector_fmv_times_first.at(i_fmv).at(i_t));
+          }
         }
         fmv_secondlayer_observed.at(detkey_first)++;
 	std::vector<unsigned long>::iterator it = std::find(hit_fmv_detkeys_second.begin(),hit_fmv_detkeys_second.end(),detkey_first+n_veto_pmts/2);
         int index = std::distance(hit_fmv_detkeys_second.begin(),it);
-        time_diff_paddle_simplecoinc->Fill(detkey_first+n_veto_pmts/2,vector_fmv_times_second.at(index)-vector_fmv_times_first.at(i_fmv));
+        for (int i_t2=0; i_t2 < vector_fmv_times_second.at(index).size(); i_t2++){
+        time_diff_paddle_simplecoinc->Fill(detkey_first+n_veto_pmts/2,vector_fmv_times_second.at(index).at(i_t2)-vector_fmv_times_first.at(i_fmv).at(i_t));
+        }
         if (hit_chankey_layer1 == detkey_first){
           vector_observed_strict_layer2.at(detkey_first)->Fill(x_layer1);
           fmv_secondlayer_observed_track_strict.at(detkey_first)++;
         }
       }
+     }
     }
   }
 
   //if (npaddles_Layer2 == 1){
   if (npaddles_Layer2 >= 1 && npaddles_Layer2 <=padPerLayer){
     for (unsigned int i_fmv = 0; i_fmv < hit_fmv_detkeys_second.size(); i_fmv++){
-
-      time_diff_paddle->Fill(hit_fmv_detkeys_second.at(i_fmv),vector_fmv_times_second.at(i_fmv)-mrd_time-20);
+      bool found_coinc = false;
+      for (int i_t=0; i_t < vector_fmv_times_second.at(i_fmv).size(); i_t++){
+        if (found_coinc) continue;
+      time_diff_paddle->Fill(hit_fmv_detkeys_second.at(i_fmv),vector_fmv_times_second.at(i_fmv).at(i_t)-mrd_time-100);
 
       //Check whether MRD & FMV Layer 2 fired in coincidence (time cut)
-      time_diff_Layer2->Fill(vector_fmv_times_second.at(i_fmv)-mrd_time);
+      time_diff_Layer2->Fill(vector_fmv_times_second.at(i_fmv).at(i_t)-mrd_time);
       fmv_layer2->Fill(hit_fmv_detkeys_second.at(i_fmv));
-      if (fabs(vector_fmv_times_second.at(i_fmv)-mrd_time-20.)>100.) continue;
+      if (fabs(vector_fmv_times_second.at(i_fmv).at(i_t)-mrd_time-100.)>70.) continue;
       
+      found_coinc = true;
+
       //Get properties of coincident MRD/FMV Layer 2 hit
       unsigned long detkey_second = hit_fmv_detkeys_second.at(i_fmv);
       unsigned long detkey_first = detkey_second - n_veto_pmts/2;
@@ -594,11 +640,15 @@ bool FMVEfficiency::Execute(){
           vector_observed_loose_layer1.at(detkey_first)->Fill(x_layer2);
 	  std::vector<unsigned long>::iterator it = std::find(hit_fmv_detkeys_first.begin(),hit_fmv_detkeys_first.end(),detkey_first);
           int index = std::distance(hit_fmv_detkeys_first.begin(),it);
-          time_diff_paddle_coinc->Fill(detkey_first,vector_fmv_times_first.at(index)-vector_fmv_times_second.at(i_fmv));
+          for (int i_t2=0; i_t2 < vector_fmv_times_first.at(index).size(); i_t2++){
+            time_diff_paddle_coinc->Fill(detkey_first,vector_fmv_times_first.at(index).at(i_t2)-vector_fmv_times_second.at(i_fmv).at(i_t));
+          }
         }
 	std::vector<unsigned long>::iterator it = std::find(hit_fmv_detkeys_first.begin(),hit_fmv_detkeys_first.end(),detkey_first);
         int index = std::distance(hit_fmv_detkeys_first.begin(),it);
-        time_diff_paddle_simplecoinc->Fill(detkey_first,vector_fmv_times_first.at(index)-vector_fmv_times_second.at(i_fmv));
+        for (int i_t2 = 0; i_t2 < vector_fmv_times_first.at(index).size(); i_t2++){
+          time_diff_paddle_simplecoinc->Fill(detkey_first,vector_fmv_times_first.at(index).at(i_t2)-vector_fmv_times_second.at(i_fmv).at(i_t));
+        }
        for (int i_first=0; i_first < (int) hit_fmv_detkeys_first.size(); i_first++){
         fmv_layer1_layer2->Fill(hit_fmv_detkeys_first.at(i_first),detkey_second);
        }
@@ -608,6 +658,7 @@ bool FMVEfficiency::Execute(){
           fmv_firstlayer_observed_track_strict.at(detkey_first)++;
         }
       }
+     }
     }
   }
 
