@@ -349,7 +349,8 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       //Note that for efficiency_hist_layer, the colors might not be displayed correctly in newer versions of root
       //See https://root-forum.cern.ch/t/error-using-tcolor/39149/10 for more details on how to fix it when drawing the canvas from the output file
 
-      TH1D *efficiency_hist_layer;
+      TH1D *efficiency_hist_layer, *efficiency_hist_layer_copy;
+      TEfficiency *temp_teff;
       if (layer_plots){
         efficiency_hist_layer = (TH1D*) temp_obs_layer->Clone(name_eff_hist_layer.str().c_str());
         efficiency_hist_layer->SetStats(0);
@@ -365,17 +366,20 @@ bool MrdPaddleEfficiencyCalc::Execute(){
         else efficiency_hist_layer->GetXaxis()->SetTitle("x [m]");
         efficiency_hist_layer->GetYaxis()->SetTitle("efficiency #varepsilon");
         efficiency_hist_layer->Divide(temp_exp_layer);
+
+        temp_teff = new TEfficiency(*temp_obs_layer,*temp_exp_layer);
+        for (int i_bin=0; i_bin < temp_exp_layer->GetNbinsX(); i_bin++){
+          double temp_error = temp_teff->GetEfficiencyErrorUp(i_bin+1);
+          if (temp_teff->GetEfficiency(i_bin+1) > 0.) efficiency_hist_layer->SetBinError(i_bin+1,temp_error);
+          else efficiency_hist_layer->SetBinError(i_bin+1,0);
+        }
+
+        efficiency_hist_layer_copy = (TH1D*) efficiency_hist_layer->Clone();
+        efficiency_hist_layer_copy->SetName(name_eff_hist_Layer.str().c_str());
+
       }
 
-      TEfficiency *temp_teff = new TEfficiency(*temp_obs_layer,*temp_exp_layer);
-      for (int i_bin=0; i_bin < temp_exp_layer->GetNbinsX(); i_bin++){
-        double temp_error = temp_teff->GetEfficiencyErrorUp(i_bin+1);
-        if (temp_teff->GetEfficiency(i_bin+1) > 0.) efficiency_hist_layer->SetBinError(i_bin+1,temp_error);
-        else efficiency_hist_layer->SetBinError(i_bin+1,0);
-      }
       
-      TH1F *efficiency_hist_layer_copy = (TH1F*) efficiency_hist_layer->Clone();
-      efficiency_hist_layer_copy->SetName(name_eff_hist_Layer.str().c_str());
 
       //Scale down from 10 bins to 1
       temp_exp->Rebin(10);
