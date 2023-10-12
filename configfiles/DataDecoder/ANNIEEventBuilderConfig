@@ -1,4 +1,4 @@
-verbosity 2
+verbosity 0
 
 BuildType TankAndMRDAndCTC
 ProcessedFilesBasename ProcessedRawData
@@ -15,3 +15,6 @@ MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the oth
 
 SaveRawData 0
 StoreBeamStatus 1
+
+BuildStage1Data true 
+SaveSeparatePartfiles true

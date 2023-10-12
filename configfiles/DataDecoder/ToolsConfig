@@ -7,3 +7,4 @@ BeamDecoder BeamDecoder ./configfiles/DataDecoder/BeamDecoderConfig
 PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/DataDecoder/PhaseIIADCCalibratorConfig
 PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/DataDecoder/PhaseIIADCHitFinderConfig
 ANNIEEventBuilder ANNIEEventBuilder ./configfiles/DataDecoder/ANNIEEventBuilderConfig
+Stage1DataBuilder Stage1DataBuilder ./configfiles/DataDecoder/Stage1DataBuilderConfig

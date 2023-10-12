@@ -57,6 +57,7 @@ class MrdPaddleEfficiencyPreparer: public Tool {
  	int numsubevs;
  	int numtracksinev;
  	int EventNumber;
+	int RunNumber;
  	Position StartVertex;
  	Position StopVertex;
  	std::vector<int> PMTsHit;
@@ -75,9 +76,16 @@ class MrdPaddleEfficiencyPreparer: public Tool {
 	double StopVertexX = 0.;
 	double StopVertexY = 0.;
 	double StopVertexZ = 0.;
+	int IsThrough = 0;
+	std::vector<int> *MissingChannel = nullptr;
+	std::vector<int> *ExpectedChannel = nullptr;
+	int NumMissingChannel = 0;
+	std::vector<int> *MissingLayer = nullptr;
+	int NumMissingLayer = 0;
 
  	TFile *hist_file = nullptr;
 	TH1F *hist_chankey = nullptr;
+	TH1F *hist_nlayers = nullptr;
 	TTree *tree_trackfit = nullptr;
 
  	std::map<int,std::map<unsigned long,TH1D*>> observed_MRDHits;

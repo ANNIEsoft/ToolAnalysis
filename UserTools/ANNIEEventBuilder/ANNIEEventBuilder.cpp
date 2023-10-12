@@ -10,7 +10,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   //m_variables.Print();
 
   m_data= &data; //assigning transient data pointer
-
+  
   SavePath = "./";
   ProcessedFilesBasename = "ProcessedRawData";
   BuildType = "TankAndMRD";
@@ -49,6 +49,8 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SaveRawData",save_raw_data);
   m_variables.Get("StoreBeamStatus",store_beam_status);
   m_variables.Get("LAPPDOffsetFile",LAPPDOffsetFile);
+  m_variables.Get("BuildStage1Data",BuildStage1Data);
+  m_variables.Get("SaveSeparatePartfiles",SaveSeparatePartfiles);
   pause_threshold*=1E9;
 
   if(BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
@@ -70,7 +72,7 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Get("MRDCrateSpaceToChannelNumMap",MRDCrateSpaceToChannelNumMap);
   m_data->CStore.Get("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
   m_data->CStore.Get("AuxChannelNumToCrateSpaceMap",AuxChannelNumToCrateSpaceMap);
-
+  
   if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     int NumTankPMTChannels = TankPMTCrateSpaceToChannelNumMap.size();
     int NumAuxChannels = AuxCrateSpaceToChannelNumMap.size();
@@ -108,6 +110,11 @@ bool ANNIEEventBuilder::Initialise(std::string configfile, DataModel &data){
 
 
 bool ANNIEEventBuilder::Execute(){
+  if(BuildStage1Data){
+    m_data->Stores.at("ANNIEEvent")->Delete();
+    m_data->Stores["ANNIEEvent"] = new BoostStore(false, 0);
+  }
+
   bool NewEntryAvailable;
   m_data->CStore.Get("NewRawDataEntryAccessed",NewEntryAvailable);
   if(!NewEntryAvailable){ //Something went wrong processing raw data.  Stop and save what's left
@@ -189,6 +196,7 @@ bool ANNIEEventBuilder::Execute(){
         this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,PartNumber,RunType,StarTime);
         this->BuildANNIEEventTankRaw(PMTCounterTime, aWaveMap);
         ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         //Erase this entry from the InProgressTankEventsMap
         if(verbosity>4) std::cout << "Counter time will be erased from InProgressTankEvents: " << PMTCounterTime << std::endl;
@@ -210,6 +218,7 @@ bool ANNIEEventBuilder::Execute(){
         this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,PartNumber,RunType,StarTime);
         this->BuildANNIEEventTankHits(PMTCounterTime, aFinishedHits, aFinishedRecoADCHits, aFinishedHitsAux, aFinishedRecoADCHitsAux, RawAcqSize);
         ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         //Erase this entry from the InProgressTankEventsMap
         if(verbosity>4) std::cout << "Counter time will be erased from InProgressTankEvents: " << PMTCounterTime << std::endl;
@@ -293,6 +302,7 @@ bool ANNIEEventBuilder::Execute(){
       this->BuildANNIEEventRunInfo(RunNumber,SubRunNumber,PartNumber,RunType,StarTime);
       this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
       ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
       this->SaveEntryToFile(RunNumber,SubRunNumber,PartNumber);
       //Erase this entry from the InProgressTankEventsMap
       MRDEventsToDelete.push_back(MRDTimeStamp);
@@ -425,6 +435,7 @@ bool ANNIEEventBuilder::Execute(){
         }
         this->BuildANNIEEventMRD(MRDHits, MRDTimeStamp, MRDTriggerType, beam_tdc, cosmic_tdc);
         ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD) SUCCESSFULLY" << std::endl;
         //Erase this entry from maps/vectors used when pairing completed events 
@@ -650,6 +661,7 @@ std::cout<<std::endl;
               } else {
                 BeamStatus beam_status = BeamStatusMap->at(CTCtimestamp);
                 ANNIEEvent->Set("BeamStatus",beam_status);
+                if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("BeamStatus",beam_status);
                 BeamStatusMap->erase(CTCtimestamp);
               }
             }
@@ -725,6 +737,7 @@ std::cout<<std::endl;
           this->BuildANNIEEventLAPPD(empty_psec,default_lappdtimestamp,lappd_time_offset);
         }
 	ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + MRD + CTC) SUCCESSFULLY" << std::endl;
       }
@@ -854,6 +867,7 @@ std::cout<<std::endl;
               } else {
                 BeamStatus beam_status = BeamStatusMap->at(CTCtimestamp);
                 ANNIEEvent->Set("BeamStatus",beam_status);
+                if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("BeamStatus",beam_status);
                 BeamStatusMap->erase(CTCtimestamp);
               }
             }
@@ -880,6 +894,7 @@ std::cout<<std::endl;
           }
         }
         ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (TANK + CTC) SUCCESSFULLY" << std::endl;
       }
@@ -1010,6 +1025,7 @@ std::cout<<std::endl;
               } else {
                 BeamStatus beam_status = BeamStatusMap->at(CTCtimestamp);
                 ANNIEEvent->Set("BeamStatus",beam_status);
+                if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("BeamStatus",beam_status);
                 BeamStatusMap->erase(CTCtimestamp);
               }
             }
@@ -1030,6 +1046,7 @@ std::cout<<std::endl;
           }
         }
         ANNIEEvent->Set("DataStreams",DataStreams);
+        if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("DataStreams",DataStreams);
         this->SaveEntryToFile(CurrentRunNum,CurrentSubRunNum,CurrentPartNum);
         if(verbosity>4) std::cout << "BUILT AN ANNIE EVENT (MRD + CTC) SUCCESSFULLY" << std::endl;
       }
@@ -1226,6 +1243,18 @@ void ANNIEEventBuilder::ProcessNewTankPMTData(){
   std::map<uint64_t,double> TankOrphansTDiff;
 
   if(verbosity>5) std::cout << "ANNIEEventBuilder Tool: Processing new tank data " << std::endl;
+
+  /// -----------------------------------
+  /// ----- Correct 8ns offset issue ----
+  /// -----------------------------------
+ 
+  bool force_all_entries = false;
+  bool FileCompleted = false;
+  m_data->CStore.Get("FileCompleted",FileCompleted);
+  if (FileCompleted) force_all_entries = true;
+
+  if (save_raw_data) this->CorrectVMEOffsetRaw(force_all_entries);
+  else this->CorrectVMEOffset(force_all_entries);
 
   /// ------------------------------
   ///---------RAW DATA case ----------
@@ -2050,7 +2079,18 @@ void ANNIEEventBuilder::ManageOrphanage(){
     std::vector<unsigned long> CurrentWaveMapChankeys;
     for (int i_channel = 0; i_channel < (int) CurrentWaveMapChannels.size(); i_channel++){
       std::vector<int> current_cratespace = CurrentWaveMapChannels.at(i_channel);
-      unsigned long current_chankey = TankPMTCrateSpaceToChannelNumMap[current_cratespace];
+      unsigned long current_chankey = 0;
+      if (TankPMTCrateSpaceToChannelNumMap.count(current_cratespace)>0){
+        current_chankey = TankPMTCrateSpaceToChannelNumMap[current_cratespace];
+      } else if (AuxCrateSpaceToChannelNumMap.count(current_cratespace)>0){
+        current_chankey  = AuxCrateSpaceToChannelNumMap.at(current_cratespace);
+      } else {
+        Log("ANNIEEventBuilder: Encountered invalid crate space during orphan movement. Setting chankey = 99999999",v_error,verbosity);
+        current_chankey = 99999999;
+        Log("ANNIEEventBuilder::CrateNum "+to_string(current_cratespace.at(0)),v_error, verbosity);
+        Log("ANNIEEventBuilder::SlotNum "+to_string(current_cratespace.at(1)),v_error, verbosity);
+        Log("ANNIEEventBuilder::ChannelID "+to_string(current_cratespace.at(2)),v_error, verbosity);   
+      }
       CurrentWaveMapChankeys.push_back(current_chankey);
     }
     OrphanStore->Set("WaveformChankeys",CurrentWaveMapChankeys);
@@ -2283,10 +2323,14 @@ void ANNIEEventBuilder::BuildANNIEEventMRD(std::vector<std::pair<unsigned long,i
   Log("ANNIEEventBuilder: TDCData size: "+std::to_string(TDCData->size()),v_debug,verbosity);
 
   ANNIEEvent->Set("TDCData",TDCData,true);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("TDCData",TDCData,true);
   TimeClass timeclass_timestamp(MRDTimeStamp);
   ANNIEEvent->Set("EventTimeMRD",timeclass_timestamp);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("EventTimeMRD",timeclass_timestamp);
   ANNIEEvent->Set("MRDTriggerType",MRDTriggerType);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("MRDTriggerType",MRDTriggerType);
   ANNIEEvent->Set("MRDLoopbackTDC",mrd_loopback_tdc);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("MRDLoopbackTDC",mrd_loopback_tdc);
   return;
 }
 
@@ -2305,11 +2349,17 @@ void ANNIEEventBuilder::BuildANNIEEventRunInfo(int RunNumber, int SubRunNumber, 
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event Run Info" << std::endl;
   ANNIEEvent->Set("EventNumber",ANNIEEventNum);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("EventNumber",ANNIEEventNum);
   ANNIEEvent->Set("RunNumber",RunNumber);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RunNumber",RunNumber);
   ANNIEEvent->Set("SubrunNumber",SubRunNumber);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("SubrunNumber",SubRunNumber);
   ANNIEEvent->Set("PartNumber",PartNumber);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("PartNumber",PartNumber);
   ANNIEEvent->Set("RunType",RunType);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RunType",RunType);
   ANNIEEvent->Set("RunStartTime",StartTime);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RunStartTime",StartTime);
   return;
 }
 
@@ -2317,8 +2367,11 @@ void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord, i
 {
   if(verbosity>v_message)std::cout << "Building an ANNIE Event CTC Info" << std::endl;
   ANNIEEvent->Set("CTCTimestamp",CTCTime);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("CTCTimestamp",CTCTime);
   ANNIEEvent->Set("TriggerWord",CTCWord);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("TriggerWord",CTCWord);
   ANNIEEvent->Set("TriggerExtended",CTCWordExtended);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("TriggerExtended",CTCWordExtended);
   //Build a TriggerClass object to be more in line with the ANNIEEvent spreadsheet
   TimeClass TriggerTime(CTCTime);
   std::string TriggerName = "";
@@ -2328,6 +2381,7 @@ void ANNIEEventBuilder::BuildANNIEEventCTC(uint64_t CTCTime, uint32_t CTCWord, i
   else if (CTCWord == 36) TriggerName = "MRDCR";
   TriggerClass TriggerData(TriggerName,CTCWord,CTCWordExtended,true,TriggerTime);
   ANNIEEvent->Set("TriggerData",TriggerData);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("TriggerData",TriggerData);
   if (verbosity > 2) std::cout <<"Done setting ANNIE Event CTC Info"<<std::endl;
   return;
 }
@@ -2374,8 +2428,11 @@ void ANNIEEventBuilder::BuildANNIEEventTankRaw(uint64_t ClockTime,
   }
   //std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("RawADCData",RawADCData);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RawADCData",RawADCData);
   ANNIEEvent->Set("RawADCAuxData",RawADCAuxData);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RawADCAuxData",RawADCAuxData);
   ANNIEEvent->Set("EventTimeTank",ClockTime);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("EventTimeTank",ClockTime);
   if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: ANNIE Event "+
       to_string(ANNIEEventNum)+" built." << std::endl;
   return;
@@ -2392,11 +2449,17 @@ void ANNIEEventBuilder::BuildANNIEEventTankHits(uint64_t ClockTime,
 
   //std::cout << "Setting ANNIE Event information" << std::endl;
   ANNIEEvent->Set("Hits",PMTHits, true);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("Hits",PMTHits,true);
   ANNIEEvent->Set("RecoADCData",PMTRecoADCHits);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RecoADCData",PMTRecoADCHits);
   ANNIEEvent->Set("AuxHits",PMTHitsAux,true);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("AuxHits",PMTHitsAux,true);
   ANNIEEvent->Set("RecoAuxADCData",PMTRecoADCHitsAux);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RecoAuxADCData",PMTRecoADCHitsAux);
   ANNIEEvent->Set("RawAcqSize",PMTRawAcqSize);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("RawAcqSize",PMTRawAcqSize);
   ANNIEEvent->Set("EventTimeTank",ClockTime);
+  if (BuildStage1Data) m_data->Stores["ANNIEEvent"]->Set("EventTimeTank",ClockTime);
   if(verbosity>v_debug) std::cout << "ANNIEEventBuilder: ANNIE Event "+
       to_string(ANNIEEventNum)+" built." << std::endl;
   return;
@@ -2453,7 +2516,13 @@ void ANNIEEventBuilder::SaveEntryToFile(int RunNum, int SubRunNum, int PartNum)
   /*if(verbosity>4)*/ std::cout << "ANNIEEvent: Saving ANNIEEvent entry"+to_string(ANNIEEventNum) << std::endl;
   std::string Filename = SavePath + ProcessedFilesBasename + "_"+BuildType+"_R" + to_string(RunNum) + 
       "S" + to_string(SubRunNum) + "p" + to_string(PartNum);
-  ANNIEEvent->Save(Filename);
+  std::string config_info; //Save the ConfigInfo if it exists
+  if(  m_data->CStore.Get("ConfigInfo",config_info) ){
+    ANNIEEvent->Header->Set("ConfigInfo",config_info);
+  }
+  if (SaveSeparatePartfiles) ANNIEEvent->Save(Filename);
+  std::cout<<"ANNIEEvent: "<<std::endl;
+  ANNIEEvent->Print(false);
   //std::cout <<"ANNIEEvent saved, now delete"<<std::endl;
   ANNIEEvent->Delete();		//Delete() will delete the last entry in the store from memory and enable us to set a new pointer (won't erase the entry from saved file)
   //std::cout <<"ANNIEEvent deleted"<<std::endl;
@@ -2769,3 +2838,164 @@ std::cout <<"***NEW BEST MATCH: min_dev: "<<min_dev<<", min_mean: "<<min_mean<<"
   }
 
 }
+
+void ANNIEEventBuilder::CorrectVMEOffsetRaw(bool force_all_entries){
+
+  Log("ANNIEEventBuilder: CorrectVMEOffsetRaw",v_message,verbosity);
+
+  std::vector<uint64_t> timestamps_tank;
+  std::map<uint64_t, uint64_t> timestamps_to_shift;
+
+  //Make a list of PMT timestamps
+  for(std::pair<uint64_t,std::map<std::vector<int>, std::vector<uint16_t>>> apair : *InProgressTankEvents){
+    uint64_t PMTCounterTimeNs = apair.first;
+    timestamps_tank.push_back(PMTCounterTimeNs);
+  }
+
+  //Go through the list of PMT timestamps and look for abnormally close timestamps (8ns)
+  //Start with the second entry and always compare to previous entry
+  for (int i_timestamp = 1; i_timestamp < timestamps_tank.size(); i_timestamp++){
+    uint64_t FirstTS = timestamps_tank.at(i_timestamp-1);
+    uint64_t SecondTS = timestamps_tank.at(i_timestamp);
+    uint64_t TSDiff = (SecondTS > FirstTS)? (SecondTS-FirstTS) : (FirstTS-SecondTS);
+    if (TSDiff == 8 || TSDiff == 16){
+      //if 8ns, 16ns offset is detected between the VME crates, map the entry with less waveforms onto the one with more waveforms
+      int waveforms_first = int(InProgressTankEvents->at(FirstTS).size());
+      int waveforms_second = int(InProgressTankEvents->at(SecondTS).size());
+      bool first_entry_larger = (waveforms_first > waveforms_second);
+      Log("ANNIEEventBuilder::CorrectVMEOffsetRaw: First TS = "+std::to_string(FirstTS)+", waveforms = "+std::to_string(waveforms_first)+", Second TS = "+std::to_string(SecondTS)+", waveforms = "+std::to_string(waveforms_second)+", first_entry_larger = "+std::to_string(first_entry_larger),v_debug,verbosity);
+      if (first_entry_larger) timestamps_to_shift.emplace(SecondTS,FirstTS);
+      else timestamps_to_shift.emplace(FirstTS,SecondTS); 
+    }
+    else if(TSDiff < 1600){ //For the log-file, to investigate why the processing does not produce Processed files
+      Log("ANNIEEventBuilder::CorrectVMEOffsetRaw: Gross missmatch in TSDiff = "+std::to_string(TSDiff),v_error,verbosity);
+      return;
+    }
+  }
+
+  //Go through the timestamps to shift and apply the correction
+  for (std::map<uint64_t, uint64_t>::iterator it=timestamps_to_shift.begin(); it!= timestamps_to_shift.end(); it++){
+    uint64_t FirstTS = it->first;
+    uint64_t SecondTS = it->second;
+    Log("ANNIEEventBuilder::CorrectVMEOffsetRaw: Map Timestamp "+std::to_string(FirstTS)+" to timestamp "+std::to_string(SecondTS),v_debug,verbosity);
+    if(InProgressTankEvents->count(FirstTS) == 0 || InProgressTankEvents->count(SecondTS) == 0){ //map object at FirstTS, SecondTS may not exist yet
+      Log("ANNIEEventBuilder::CorrectVMEOffset: InProgressTankEvents->count(FirstTS) == "+std::to_string(InProgressTankEvents->count(FirstTS))+", InProgressTankEvents->count(SecondTS) == "+std::to_string(InProgressTankEvents->count(SecondTS)),v_debug,verbosity);
+      break; 
+    }
+    std::map<std::vector<int>, std::vector<uint16_t>> FirstTankEvents = InProgressTankEvents->at(FirstTS);
+    std::map<std::vector<int>, std::vector<uint16_t>> SecondTankEvents = InProgressTankEvents->at(SecondTS);
+    
+    //Merge the two waveform maps
+    SecondTankEvents.insert(FirstTankEvents.begin(), FirstTankEvents.end());
+    Log("ANNIEEventBuilder: Size of Merged Waveforms map: "+std::to_string(SecondTankEvents.size()),v_debug,verbosity);
+
+    //Associated merged map with preferred TS, delete other TS
+    (*InProgressTankEvents)[SecondTS] = SecondTankEvents;
+    InProgressTankEvents->erase(FirstTS);
+    Log("ANNIEEventBuilder: Size of merged TS in InProgressTankEvents: "+std::to_string(InProgressTankEvents->at(SecondTS).size()),v_debug,verbosity);
+  }
+
+}
+
+void ANNIEEventBuilder::CorrectVMEOffset(bool force_all_entries){
+
+  Log("ANNIEEventBuilder: CorrectVMEOffset",v_message,verbosity);
+  std::vector<uint64_t> timestamps_tank;
+  std::map<uint64_t, uint64_t> timestamps_to_shift;
+  
+  //Make a list of PMT timestamps
+  for(std::pair<uint64_t, std::map<unsigned long,std::vector<Hit>>*> apair : *InProgressHits){
+    uint64_t PMTCounterTimeNs = apair.first;
+    timestamps_tank.push_back(PMTCounterTimeNs);
+  }
+
+  //Go through the list of PMT timestamps and look for abnormally close timestamps (8ns)
+  //Start with the second entry and always compare to previous entry
+  for (int i_timestamp = 1; i_timestamp < (int) timestamps_tank.size(); i_timestamp++){
+    uint64_t FirstTS = timestamps_tank.at(i_timestamp-1);
+    uint64_t SecondTS = timestamps_tank.at(i_timestamp);
+    uint64_t TSDiff = (SecondTS > FirstTS)? (SecondTS-FirstTS) : (FirstTS-SecondTS);
+    if (TSDiff == 8 || TSDiff == 16){
+      //if 8ns, 16ns offset is detected between the VME crates, map the entry with less waveforms onto the one with more waveforms
+      int waveforms_first = int(InProgressHits->at(FirstTS)->size());
+      int waveforms_second = int(InProgressHits->at(SecondTS)->size());
+      bool first_entry_larger = (waveforms_first > waveforms_second);
+      Log("ANNIEEventBuilder::CorrectVMEOffset: TSDiff = "+std::to_string(TSDiff)+", First TS = "+std::to_string(FirstTS)+", waveforms = "+std::to_string(waveforms_first)+", Second TS = "+std::to_string(SecondTS)+", waveforms = "+std::to_string(waveforms_second)+", first_entry_larger = "+std::to_string(first_entry_larger),v_debug,verbosity);
+      if (first_entry_larger) timestamps_to_shift.emplace(SecondTS,FirstTS);
+      else timestamps_to_shift.emplace(FirstTS,SecondTS); 
+    }
+    else if(TSDiff < 1600){ //For the log-file, to investigate why the processing does not produce Processed files
+      Log("ANNIEEventBuilder::CorrectVMEOffset: Gross missmatch in TSDiff = "+std::to_string(TSDiff),v_error,verbosity);
+      return;
+    }
+  }
+
+  //Go through the timestamps to shift and apply the correction
+  if( InProgressHitsAux != NULL && InProgressRecoADCHitsAux != NULL ){ //InProgressHitsAux,InProgressRecoADCHitsAux may exist yet
+    for (std::map<uint64_t, uint64_t>::iterator it=timestamps_to_shift.begin(); it!= timestamps_to_shift.end(); it++){
+      uint64_t FirstTS = it->first;
+      uint64_t SecondTS = it->second;
+      Log("ANNIEEventBuilder::CorrectVMEOffset: Map Timestamp "+std::to_string(FirstTS)+" to timestamp "+std::to_string(SecondTS),v_debug,verbosity);
+      if(InProgressHits->count(FirstTS) == 0 || InProgressHits->count(SecondTS) == 0){ //map object at FirstTS, SecondTS may not exist yet
+        Log("ANNIEEventBuilder::CorrectVMEOffset: InProgressHits->count(FirstTS) == "+std::to_string(InProgressHits->count(FirstTS))+", InProgressHits->count(SecondTS) == "+std::to_string(InProgressHits->count(SecondTS)),v_debug,verbosity);
+        break;
+      }
+
+      //Get InProgress* {Hits, Chkey, and RecoADCHits} objects
+      std::map<unsigned long,std::vector<Hit>>* FirstTankHits = InProgressHits->at(FirstTS);
+      std::map<unsigned long,std::vector<Hit>>* SecondTankHits = InProgressHits->at(SecondTS);
+      std::vector<unsigned long> FirstChankey = InProgressChkey->at(FirstTS);
+      std::vector<unsigned long> SecondChankey = InProgressChkey->at(SecondTS);
+      std::map<unsigned long,std::vector<Hit>>* FirstTankHitsAux = InProgressHitsAux->at(FirstTS);
+      std::map<unsigned long,std::vector<Hit>>* SecondTankHitsAux = InProgressHitsAux->at(SecondTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> FirstRecoADCHits = InProgressRecoADCHits->at(FirstTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> SecondRecoADCHits = InProgressRecoADCHits->at(SecondTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> FirstRecoADCHitsAux = InProgressRecoADCHitsAux->at(FirstTS);
+      std::map<unsigned long,std::vector<std::vector<ADCPulse>>> SecondRecoADCHitsAux = InProgressRecoADCHitsAux->at(SecondTS);
+
+      //Merge the two hits maps
+      SecondTankHits->insert(FirstTankHits->begin(), FirstTankHits->end());
+      Log("ANNIEEventBuilder: Size of Merged Hits map: "+std::to_string(SecondTankHits->size()),v_debug,verbosity);
+
+      //Merge the two aux hits maps
+      SecondTankHitsAux->insert(FirstTankHitsAux->begin(), FirstTankHitsAux->end());
+      Log("ANNIEEventBuilder: Size of Merged AuxHits map: "+std::to_string(SecondTankHitsAux->size()),v_debug,verbosity);
+
+      //Merge the two channelkey vectors
+      SecondChankey.insert(SecondChankey.end(), FirstChankey.begin(), FirstChankey.end());
+      Log("ANNIEEventBuilder: Size of Merged Chkey vector: "+std::to_string(SecondChankey.size()),v_debug,verbosity);
+
+      //Merge the two RecoADCHits maps
+      SecondRecoADCHits.insert(FirstRecoADCHits.begin(),FirstRecoADCHits.end());
+      Log("ANNIEEventBuilder: Size of Merged RecoADCHits map: "+std::to_string(SecondRecoADCHits.size()),v_debug,verbosity);
+
+      //Merge the two RecoADCHitsAux maps
+      SecondRecoADCHitsAux.insert(FirstRecoADCHitsAux.begin(),FirstRecoADCHitsAux.end());
+      Log("ANNIEEventBuilder: Size of Merged RecoADCHitsAux map: "+std::to_string(SecondRecoADCHitsAux.size()),v_debug,verbosity);
+
+      //Associated merged map with preferred TS, delete other TS
+      (*InProgressHits)[SecondTS] = SecondTankHits;
+      InProgressHits->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressHits: "+std::to_string(InProgressHits->at(SecondTS)->size()),v_debug,verbosity);
+
+      (*InProgressHitsAux)[SecondTS] = SecondTankHitsAux;
+      InProgressHitsAux->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressHitsAux: "+std::to_string(InProgressHitsAux->at(SecondTS)->size()),v_debug,verbosity);
+
+      //Do the same for Chkey map
+      (*InProgressChkey)[SecondTS] = SecondChankey;
+      InProgressChkey->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressChkey: "+std::to_string(InProgressChkey->at(SecondTS).size()),v_debug,verbosity);
+
+      (*InProgressRecoADCHits)[SecondTS] = SecondRecoADCHits;
+      InProgressRecoADCHits->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressRecoADCHits: "+std::to_string(InProgressRecoADCHits->at(SecondTS).size()),v_debug,verbosity);
+      
+      (*InProgressRecoADCHitsAux)[SecondTS] = SecondRecoADCHitsAux;
+      InProgressRecoADCHitsAux->erase(FirstTS);
+      Log("ANNIEEventBuilder: Size of merged TS in InProgressRecoADCHitsAux: "+std::to_string(InProgressRecoADCHitsAux->at(SecondTS).size()),v_debug,verbosity);
+
+    }
+  }
+}
+

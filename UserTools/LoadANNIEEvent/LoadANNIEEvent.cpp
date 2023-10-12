@@ -65,7 +65,6 @@ bool LoadANNIEEvent::Initialise(std::string config_filename, DataModel &data) {
     std::string temp_str_orphan;
     while ( list_file_orphan >> temp_str_orphan ) input_filenames_orphan_.push_back( temp_str_orphan );
 
-
   }
 
   current_entry_ = 0u;
@@ -131,7 +130,13 @@ bool LoadANNIEEvent::Execute() {
       // Load the contents from the new input file into it
       std::string input_filename = input_filenames_.at(current_file_);
       std::cout <<"Reading in current file "<<current_file_<<std::endl;
-      ProcessedFileStore->Initialise(input_filename);
+      bool filename_valid = false;
+      filename_valid = ProcessedFileStore->Initialise(input_filename);
+      if (!filename_valid){
+        Log("LoadANNIEEvent: Filename "+input_filename+" not found! Proceed to next file",v_error,verbosity_);
+        current_file_++;
+        return true;
+      }
       m_data->Stores["ProcessedFileStore"]=ProcessedFileStore;
     
       // create an ANNIEEvent BoostStore and an OrphanStore BoostStore to load from it
@@ -169,7 +174,13 @@ bool LoadANNIEEvent::Execute() {
       BoostStore *theANNIEEvent = new BoostStore(false,
         BOOST_STORE_MULTIEVENT_FORMAT);
       std::string input_filename = input_filenames_.at(current_file_);
-      theANNIEEvent->Initialise(input_filename);
+      bool filename_valid = false;
+      filename_valid = theANNIEEvent->Initialise(input_filename);
+      if (!filename_valid){
+        Log("LoadANNIEEvent: Filename "+input_filename+" not found! Proceed to next file",v_error,verbosity_);
+        current_file_++;
+	return true;	
+      }
       m_data->Stores["ANNIEEvent"] = theANNIEEvent;
       m_data->Stores.at("ANNIEEvent")->Header->Get("TotalEntries",total_entries_in_file_);
       if (current_file_==0) {
@@ -272,13 +283,15 @@ bool LoadANNIEEvent::Execute() {
   if ((int)current_entry_ != offset_evnum) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
 
   m_data->Stores["ANNIEEvent"]->GetEntry(current_entry_);  
-  m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_);
+  bool has_local = (m_data->Stores["ANNIEEvent"]->Has("LocalEventNumber"));
+  bool has_global = (m_data->Stores["ANNIEEvent"]->Has("EventNumber"));
+  if (!has_local){ m_data->Stores["ANNIEEvent"]->Set("LocalEventNumber",current_entry_);}
   ++current_entry_;
  
-  if (global_evnr) m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev);
+
+
+  if (global_evnr && !has_local){ m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev); }
   global_ev++; 
-
-
 
   if ( current_entry_ >= total_entries_in_file_ ) {
     ++current_file_;

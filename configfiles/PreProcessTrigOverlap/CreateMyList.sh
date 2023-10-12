@@ -11,7 +11,7 @@ NUMFILES=$(ls -1q ${FILEDIR}/RAWDataR${RUN}* | wc -l)
 
 echo "NUMBER OF FILES IN ${FILEDIR}: ${NUMFILES}"
 
-for p in $(seq 0 $NUMFILES)
+for p in $(seq 0 $(($NUMFILES -1 )))
 do
 	echo "${FILEDIR}/RAWDataR${RUN}S0p${p}" >> my_files.txt
 done

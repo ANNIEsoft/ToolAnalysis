@@ -56,6 +56,16 @@ class Direction : public SerialisableObject{
 		
 		return true;
 	}
+
+	inline Direction Unit(){
+		double thismag = Mag();
+		Direction unitvec(x/thismag,y/thismag,z/thismag);
+		return unitvec;
+	}
+
+	inline double Mag2() const { return x*x + y*y + z*z; }
+	
+	inline double Mag() const { return sqrt(Mag2()); }
 	
 	private:
 	double x;        // meters
