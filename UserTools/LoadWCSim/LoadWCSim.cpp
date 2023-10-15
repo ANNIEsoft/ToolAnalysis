@@ -69,7 +69,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		Log("LoadWCSim Tool: No Triggertype specified. Assuming TriggerType = Beam",v_warning,verbosity);
 		Triggertype = "Beam";	//other options: Cosmic / No Loopback
 	}
-
+	
 	get_ok = m_variables.Get("TriggerWord",TriggerWord);
 	if (not get_ok){
 		Log("LoadWCSim Tool: No Triggerword specified. Assuming TriggerWord = 5 (Beam)",v_warning,verbosity);
@@ -90,7 +90,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 			channelkey_to_pmtid.emplace(chankey,pmtid);
 			pmtid_to_channelkey.emplace(pmtid,chankey);
 		}
-
+		
 		file_pmtid.close();
 		m_data->CStore.Set("pmt_tubeid_to_channelkey_data",pmtid_to_channelkey);
 		m_data->CStore.Set("channelkey_to_pmtid_data",channelkey_to_pmtid);
@@ -99,50 +99,50 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 		return false;
 	}
 	path_mrd_chankeymap = "./configfiles/LoadWCSim/MRD_Chankey_WCSimID.dat";
-        get_ok = m_variables.Get("ChankeyToMRDIDMap",path_mrd_chankeymap);
-        ifstream file_mrdid(path_mrd_chankeymap.c_str());
-        if (file_mrdid.is_open()){
-                // watch out: comment or empty lines not supported here
-                while (!file_mrdid.eof()){
-                        unsigned long chankey;
-                        int mrdid;
-                        file_mrdid >> chankey >> mrdid;
-                        mrdid_to_channelkey.emplace(mrdid,chankey);
-                }
-                file_mrdid.close();
-        } else {
-                Log("LoadWCSim Tool: MRD ID Configuration file "+path_mrd_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
-                return false;
-        }
+	get_ok = m_variables.Get("ChankeyToMRDIDMap",path_mrd_chankeymap);
+	ifstream file_mrdid(path_mrd_chankeymap.c_str());
+	if (file_mrdid.is_open()){
+		// watch out: comment or empty lines not supported here
+		while (!file_mrdid.eof()){
+			unsigned long chankey;
+			int mrdid;
+			file_mrdid >> chankey >> mrdid;
+			mrdid_to_channelkey.emplace(mrdid,chankey);
+		}
+		file_mrdid.close();
+	} else {
+		Log("LoadWCSim Tool: MRD ID Configuration file "+path_mrd_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
+		return false;
+	}
 	path_fmv_chankeymap = "./configfiles/LoadWCSim/FMV_Chankey_WCSimID.dat";
-        get_ok = m_variables.Get("ChankeyToFMVIDMap",path_fmv_chankeymap);
-        ifstream file_fmvid(path_fmv_chankeymap.c_str());
-        if (file_fmvid.is_open()){
-                // watch out: comment or empty lines not supported here
-                while (!file_fmvid.eof()){
-                        unsigned long chankey;
-                        int fmvid;
-                        file_fmvid >> chankey >> fmvid;
-                        fmvid_to_channelkey.emplace(fmvid,chankey);
-                }
-                file_fmvid.close();
-        } else {
-                Log("LoadWCSim Tool: FMV ID Configuration file "+path_fmv_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
-                return false;
-        }
-        get_ok = m_variables.Get("RunType",RunType);
-        if (not get_ok){
-                 Log("LoadWCSim Tool: No RunType specified. Assuming RunType = 3 (Beam)",v_warning,verbosity);
-                 RunType = 3;
-        }
-
+	get_ok = m_variables.Get("ChankeyToFMVIDMap",path_fmv_chankeymap);
+	ifstream file_fmvid(path_fmv_chankeymap.c_str());
+	if (file_fmvid.is_open()){
+		// watch out: comment or empty lines not supported here
+		while (!file_fmvid.eof()){
+			unsigned long chankey;
+			int fmvid;
+			file_fmvid >> chankey >> fmvid;
+			fmvid_to_channelkey.emplace(fmvid,chankey);
+		}
+		file_fmvid.close();
+	} else {
+		Log("LoadWCSim Tool: FMV ID Configuration file "+path_fmv_chankeymap+" could not be opened! Is the path valid? Abort",v_warning,verbosity);
+		return false;
+	}
+	get_ok = m_variables.Get("RunType",RunType);
+	if (not get_ok){
+		Log("LoadWCSim Tool: No RunType specified. Assuming RunType = 3 (Beam)",v_warning,verbosity);
+		RunType = 3;
+	}
+	
 	get_ok = m_variables.Get("PMTMask",PMTMask);
 	if (not get_ok){
 		Log("LoadWCSim Tool: Assuming to use no PMTMask",v_warning,verbosity);
 		PMTMask = "None";
 	}
-
-  MCEventNum=0;
+	
+	MCEventNum=0;
 	get_ok = m_variables.Get("FileStartOffset",MCEventNum);
 	
 	// put version in the CStore for downstream tools
@@ -269,7 +269,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	if (PMTMask != "None"){
 		masked_ids = this->LoadPMTMask(PMTMask);
 	}
-
+	
 	// use nominal beam values TODO
 	double beaminten=4.777e+12;
 	double beampow=3.2545e+16;
@@ -279,7 +279,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	beamstat.set_pot(beampow);
 	BeamCondition bc = BeamCondition::Ok;
 	beamstat.set_condition(bc);
-
+	
 	// Construct the other objects we'll be setting at event level,
 	// pass managed pointers to the ANNIEEvent Store
 	MCParticles = new std::vector<MCParticle>;
@@ -363,21 +363,23 @@ bool LoadWCSim::Execute(){
 	}
 	MCFile = WCSimEntry->GetCurrentFile()->GetName();
 	
-
 	MCHits->clear();
 	TDCData->clear();
 	MCNeutCap.clear();
 	MCNeutCapGammas.clear();
 	mrd_firstlayer=false;
-	mrd_lastlayer=false;	
-
+	mrd_lastlayer=false;
+	
 	triggers_event = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
 	
-	if (!splitSubtriggers) MCTriggernum = 0;
-	int MaxEventNr = (splitSubtriggers)? (MCTriggernum + 1) : (WCSimEntry->wcsimrootevent->GetNumberOfEvents());
-
+	int MaxEventNr = MCTriggernum+1;
+	if (!splitSubtriggers){
+		// we'll merge all subtriggers, so loop from 0 to triggers_event;
+		MCTriggernum = 0;
+		MaxEventNr = WCSimEntry->wcsimrootevent->GetNumberOfEvents();
+	} // else if we're splitting subtriggers, loop from [current MCTriggernum] to [current MCTriggernum+1]
+	
 	while (MCTriggernum < MaxEventNr){
-	//for(MCTriggernum=0; MCTriggernum<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); MCTriggernum++){
 		if(verbosity>1) cout<<"getting triggers"<<endl;
 		// cherenkovhit(times) are all in first trig
 		firsttrigt=WCSimEntry->wcsimrootevent->GetTrigger(0);
@@ -412,7 +414,7 @@ bool LoadWCSim::Execute(){
 			int genieentry = firsttrigt->GetHeader()->GetGenieEntryNum();
 			/*if(verbosity>3)*/ cout<<"Genie file is "<<geniefilename<<", genie event num was "<<genieentry<<endl;
 			m_data->CStore.Set("GenieFile",geniefilename);
-			m_data->CStore.Set("GenieEntry",genieentry);
+			m_data->CStore.Set("GenieEntry",std::to_string(genieentry));
 			
 			for(int trigi=0; trigi<WCSimEntry->wcsimrootevent->GetNumberOfEvents(); trigi++){
 				
@@ -450,10 +452,10 @@ bool LoadWCSim::Execute(){
 							if (splitSubtriggers){
 								//MC particle times now stored relative to the trigger time
 								starttime = (static_cast<double>(nextrack->GetTime()-EventTimeNs));
-                                                        	stoptime = (static_cast<double>(nextrack->GetStopTime()-EventTimeNs));
+								         stoptime = (static_cast<double>(nextrack->GetStopTime()-EventTimeNs));
 							} else {
 								starttime = (static_cast<double>(nextrack->GetTime()));
-                                                        	stoptime = (static_cast<double>(nextrack->GetStopTime()));
+								         stoptime = (static_cast<double>(nextrack->GetStopTime()));
 							}
 							MCParticle neutrino(
 							nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
@@ -474,7 +476,7 @@ bool LoadWCSim::Execute(){
 							nextrack->GetParenttype(),
 							nextrack->GetFlag(),
 							trigi);
-
+							
 							//Set the neutrino as its own particle
 							m_data->Stores["ANNIEEvent"]->Set("NeutrinoParticle",neutrino);
 							
@@ -485,10 +487,10 @@ bool LoadWCSim::Execute(){
 					if (splitSubtriggers){
 						//MC particle times now stored relative to the trigger time
 						starttime = (static_cast<double>(nextrack->GetTime()-EventTimeNs));
-                                                stoptime = (static_cast<double>(nextrack->GetStopTime()-EventTimeNs));
+						               stoptime = (static_cast<double>(nextrack->GetStopTime()-EventTimeNs));
 					} else {
 						starttime = (static_cast<double>(nextrack->GetTime()));
-                                                stoptime = (static_cast<double>(nextrack->GetStopTime()));
+						               stoptime = (static_cast<double>(nextrack->GetStopTime()));
 					}
 					MCParticle thisparticle(
 						nextrack->GetIpnu(), nextrack->GetE(), nextrack->GetEndE(),
@@ -512,8 +514,8 @@ bool LoadWCSim::Execute(){
 					// not currently in constructor call, but we now have it in latest WCSim files
 					// XXX this will fall over with older WCSim files, whose WCSimLib doesn't have this method!
 					thisparticle.SetTankExitPoint(Position(nextrack->GetTankExitPoint(0)/ 100.,
-														   nextrack->GetTankExitPoint(1)/ 100.,
-														   nextrack->GetTankExitPoint(2)/ 100.));
+					                                       nextrack->GetTankExitPoint(1)/ 100.,
+					                                       nextrack->GetTankExitPoint(2)/ 100.));
 					if( (nextrack->GetIpnu()==13) &&
 						(nextrack->GetParenttype()==0) &&
 						(nextrack->GetFlag()==0) &&
@@ -651,7 +653,7 @@ bool LoadWCSim::Execute(){
 			
 			if (!splitSubtriggers) digittime += EventTimeNs;			
 			//std::cout <<"digittime after adding event time: "<<digittime<<std::endl;
-
+			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<MCHit>{nexthit});
 			else MCHits->at(key).push_back(nexthit);
@@ -698,8 +700,8 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigm);
-			if (!splitSubtriggers) digittime += EventTimeNs;			
-
+			if (!splitSubtriggers) digittime += EventTimeNs;
+			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(TDCData->count(key)==0) {TDCData->emplace(key, std::vector<MCHit>{nexthit}); if (Mrd_Chankey_Layer.at(key)==0) mrd_firstlayer=true; if (Mrd_Chankey_Layer.at(key)==10) mrd_lastlayer=true;}
 			else TDCData->at(key).push_back(nexthit);
@@ -746,8 +748,8 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigv);
-			digittime += EventTimeNs;			
-
+			digittime += EventTimeNs;
+			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(TDCData->count(key)==0) TDCData->emplace(key, std::vector<MCHit>{nexthit});
 			else TDCData->at(key).push_back(nexthit);
@@ -760,12 +762,11 @@ bool LoadWCSim::Execute(){
 		
 		//Load neutron capture information
 		int numcaptures = atrigt ? atrigt->GetNcaptures() : 0;
-                if(verbosity>1) cout<<"LoadWCSim tool: looping over "<<numcaptures<<" neutron captures"<<endl;
-                for(int capi=0; capi<numcaptures; capi++){
-                        if(verbosity>2) cout<<"getting capture # "<<capi<<endl;
-                        WCSimRootCapture* capt =
-                                (WCSimRootCapture*)atrigt->GetCaptures()->At(capi);
-
+		if(verbosity>1) cout<<"LoadWCSim tool: looping over "<<numcaptures<<" neutron captures"<<endl;
+		for(int capi=0; capi<numcaptures; capi++){
+			if(verbosity>2) cout<<"getting capture # "<<capi<<endl;
+			WCSimRootCapture* capt = (WCSimRootCapture*)atrigt->GetCaptures()->At(capi);
+			
 			int capt_parent = capt->GetCaptureParent();
 			double capt_vtxx = capt->GetCaptureVtx(0);
 			double capt_vtxy = capt->GetCaptureVtx(1);
@@ -804,9 +805,7 @@ bool LoadWCSim::Execute(){
 				MCNeutCapGammas.at("CaptGammas").push_back(gamma_energies);
 			}
 		}
-
-
-
+		
 		// update the information about tracks and which tank/mrd/veto PMTs they hit
 		// this needs updating with each MC trigger, as digits are grouped into MC trigger
 		// so these maps will then only contain the digits respective particles create
@@ -841,7 +840,7 @@ bool LoadWCSim::Execute(){
 	if(verbosity>1) cout<<"setting the store variables"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("RunNumber",RunNumber);
 	m_data->Stores.at("ANNIEEvent")->Set("SubrunNumber",SubrunNumber);
-        m_data->Stores.at("ANNIEEvent")->Set("RunType",RunType);
+	m_data->Stores.at("ANNIEEvent")->Set("RunType",RunType);
 	m_data->Stores.at("ANNIEEvent")->Set("EventNumber",EventNumber);
 	if(verbosity>2) cout<<"particles"<<endl;
 	m_data->Stores.at("ANNIEEvent")->Set("MCParticles",MCParticles,true);
@@ -869,9 +868,12 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("EventTimeMRD",RunStartTime);
 	m_data->Stores.at("ANNIEEvent")->Set("EventTime",EventTime,true);
 	m_data->Stores.at("ANNIEEvent")->Set("MCEventNum",MCEventNum);
-	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",MCTriggernum-1);
+	// if we merged the subtriggers, report an MCTriggernum of 0
+	// so downstream tools know it's a new event
+	int reported_triggernum = splitSubtriggers ? MCTriggernum-1 : 0;
+	m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum",reported_triggernum);
 	m_data->Stores.at("ANNIEEvent")->Set("MCFile",MCFile);
-	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);                   // constant
+	m_data->Stores.at("ANNIEEvent")->Set("MCFlag",true);
 	//m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",BeamStatus,true);
 	m_data->Stores.at("ANNIEEvent")->Set("BeamStatus",beamstat);
 	m_data->Stores.at("ANNIEEvent")->Set("MCNeutCap",MCNeutCap);
@@ -890,17 +892,17 @@ bool LoadWCSim::Execute(){
 	m_data->Stores.at("ANNIEEvent")->Set("MRDTriggerType",Triggertype);
 	m_data->Stores.at("ANNIEEvent")->Set("PrimaryMuonIndex",primarymuonindex);
 	m_data->Stores.at("ANNIEEvent")->Set("TriggerWord",TriggerWord);	
-
+	
 	std::map<std::string,bool> DataStreams;
 	DataStreams.emplace(std::make_pair("Tank",true));
 	DataStreams.emplace(std::make_pair("MRD",true));
 	DataStreams.emplace(std::make_pair("Trigger",true));
 	DataStreams.emplace(std::make_pair("LAPPD",true));
 	m_data->Stores.at("ANNIEEvent")->Set("DataStreams",DataStreams);
-
+	
 	int TriggerExtended = 1;	//1: We have an extended readout for all MC events
 	m_data->Stores.at("ANNIEEvent")->Set("TriggerExtended",TriggerExtended);
-
+	
 	//Things that need to be set by later tools:
 	//RawADCData
 	//CalibratedADCData
@@ -914,7 +916,7 @@ bool LoadWCSim::Execute(){
 	bool newentry=false;
 	if(MCTriggernum==WCSimEntry->wcsimrootevent->GetNumberOfEvents()){
 		MCTriggernum=0;
-                MCEventNum++;
+		MCEventNum++;
 		newentry=true;
 		if(verbosity>2) cout<<"this is the last trigger in the event: next loop will process a new event"<<endl;
 	} else {
@@ -976,8 +978,8 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 	double tank_ycentre = (wcsimrootgeom->GetWCOffset(1)) / 100.;
 	double tank_zcentre = (wcsimrootgeom->GetWCOffset(2)) / 100.;
 	Position tank_centre(tank_xcentre, tank_ycentre, tank_zcentre);
-	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.;
-	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 100.;
+	double tank_radius = (wcsimrootgeom->GetWCCylRadius()) / 100.; //GetWCCylRadius() returns the black sheet radius not the tank radius
+	double tank_halfheight = (wcsimrootgeom->GetWCCylLength()) / 200.; //GetWCCylLength() returns the main annulus height not the tank height
 	//Currently hard-coded; estimated with a tape measure on the ANNIE frame :)
 	double pmt_enclosed_radius = 1.0;
 	double pmt_enclosed_halfheight = 1.45;
@@ -992,20 +994,20 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 	// construct the ToolChain Goemetry
 	// ================================
 	Geometry* anniegeom = new Geometry(WCSimGeometryVer,
-									   tank_centre,
-									   tank_radius,
-									   tank_halfheight,
-									   pmt_enclosed_radius,
-									   pmt_enclosed_halfheight,
-									   mrd_width,
-									   mrd_height,
-									   mrd_depth,
-									   mrd_start,
-									   numtankpmts,
-									   nummrdpmts,
-									   numvetopmts,
-									   numlappds,
-									   geostatus::FULLY_OPERATIONAL);
+	                                   tank_centre,
+	                                   tank_radius,
+	                                   tank_halfheight,
+	                                   pmt_enclosed_radius,
+	                                   pmt_enclosed_halfheight,
+	                                   mrd_width,
+	                                   mrd_height,
+	                                   mrd_depth,
+	                                   mrd_start,
+	                                   numtankpmts,
+	                                   nummrdpmts,
+	                                   numvetopmts,
+	                                   numlappds,
+	                                   geostatus::FULLY_OPERATIONAL);
 	if(verbosity>1){
 		cout<<"constructed anniegeom at "<<anniegeom<<" with tank origin "; tank_centre.Print();
 	}
@@ -1094,19 +1096,19 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		if(CAEN_HV_Card_Num>=CAEN_HV_CARDS_PER_CRATE) { CAEN_HV_Card_Num=0; CAEN_HV_Crate_Num++; }
 		
 		Channel pmtchannel( uniquechannelkey,
-							Position(0,0,0.),
-							0, // stripside
-							0, // stripnum
-							ADC_Crate_Num,
-							ADC_Card_Num,
-							ADC_Chan_Num,
-							MT_Crate_Num,
-							MT_Card_Num,
-							MT_Chan_Num,
-							CAEN_HV_Crate_Num,
-							CAEN_HV_Card_Num,
-							CAEN_HV_Chan_Num,
-							channelstatus::ON);
+		                    Position(0,0,0.),
+		                    0, // stripside
+		                    0, // stripnum
+		                    ADC_Crate_Num,
+		                    ADC_Card_Num,
+		                    ADC_Chan_Num,
+		                    MT_Crate_Num,
+		                    MT_Card_Num,
+		                    MT_Chan_Num,
+		                    CAEN_HV_Crate_Num,
+		                    CAEN_HV_Card_Num,
+		                    CAEN_HV_Chan_Num,
+		                    channelstatus::ON);
 		
 		// Add this channel to the geometry
 		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
@@ -1136,17 +1138,17 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			default: CylLocString = "NA";        break;  // unknown
 		}
 		Detector adet(uniquedetectorkey,
-					  "MRD",
-					  CylLocString,
-					  Position( apmt.GetPosition(0)/100.,
-					            apmt.GetPosition(1)/100.,
-					            apmt.GetPosition(2)/100.),
-					  Direction(apmt.GetOrientation(0),
-					            apmt.GetOrientation(1),
-					            apmt.GetOrientation(2)),
-					  apmt.GetName(),
-					  detectorstatus::ON,
-					  0.);
+		              "MRD",
+		              CylLocString,
+		              Position( apmt.GetPosition(0)/100.,
+		                        apmt.GetPosition(1)/100.,
+		                        apmt.GetPosition(2)/100.),
+		              Direction(apmt.GetOrientation(0),
+		                        apmt.GetOrientation(1),
+		                        apmt.GetOrientation(2)),
+		              apmt.GetName(),
+		              detectorstatus::ON,
+		              0.);
 		
 		// construct the channel associated with this PMT
 		//unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
@@ -1164,19 +1166,19 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		if(LeCroy_HV_Card_Num>=LECROY_HV_CARDS_PER_CRATE) { LeCroy_HV_Card_Num=0; LeCroy_HV_Crate_Num++; }
 		
 		Channel pmtchannel( uniquechannelkey,
-							Position(0,0,0.),
-							0, // stripside
-							0, // stripnum
-							TDC_Crate_Num,
-							TDC_Card_Num,
-							TDC_Chan_Num,
-							-1,                 // TDC has no level 2 signal handling
-							-1,
-							-1,
-							LeCroy_HV_Crate_Num,
-							LeCroy_HV_Card_Num,
-							LeCroy_HV_Chan_Num,
-							channelstatus::ON);
+		                    Position(0,0,0.),
+		                    0, // stripside
+		                    0, // stripnum
+		                    TDC_Crate_Num,
+		                    TDC_Card_Num,
+		                    TDC_Chan_Num,
+		                    -1,                 // TDC has no level 2 signal handling
+		                    -1,
+		                    -1,
+		                    LeCroy_HV_Crate_Num,
+		                    LeCroy_HV_Card_Num,
+		                    LeCroy_HV_Chan_Num,
+		                    channelstatus::ON);
 		
 		// Add this channel to the geometry
 		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
@@ -1207,19 +1209,19 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		int MRD_z = layernum+2;  // first MRD z layer num is 2 (veto are 0,1)
 		
 		Paddle apaddle( uniquedetectorkey,
-						MRD_x,
-						MRD_y,
-						MRD_z,
-						orientation,
-						Position( MRDSpecs::paddle_originx.at(mrdpmti)/1000.,
-								  MRDSpecs::paddle_originy.at(mrdpmti)/1000.,
-								  MRDSpecs::paddle_originz.at(mrdpmti)/1000.),
-		std::pair<double,double>{MRDSpecs::paddle_extentsx.at(mrdpmti).first/1000.,
-								 MRDSpecs::paddle_extentsx.at(mrdpmti).second/1000.},
-		std::pair<double,double>{MRDSpecs::paddle_extentsy.at(mrdpmti).first/1000.,
-								 MRDSpecs::paddle_extentsy.at(mrdpmti).second/1000.},
-		std::pair<double,double>{MRDSpecs::paddle_extentsz.at(mrdpmti).first/1000.,
-								 MRDSpecs::paddle_extentsz.at(mrdpmti).second/1000.});
+		                MRD_x,
+		                MRD_y,
+		                MRD_z,
+		                orientation,
+		                Position( MRDSpecs::paddle_originx.at(mrdpmti)/1000.,
+		                          MRDSpecs::paddle_originy.at(mrdpmti)/1000.,
+		                          MRDSpecs::paddle_originz.at(mrdpmti)/1000.),
+		                std::pair<double,double>{MRDSpecs::paddle_extentsx.at(mrdpmti).first/1000.,
+		                                         MRDSpecs::paddle_extentsx.at(mrdpmti).second/1000.},
+		                std::pair<double,double>{MRDSpecs::paddle_extentsy.at(mrdpmti).first/1000.,
+		                                         MRDSpecs::paddle_extentsy.at(mrdpmti).second/1000.},
+		                std::pair<double,double>{MRDSpecs::paddle_extentsz.at(mrdpmti).first/1000.,
+		                                         MRDSpecs::paddle_extentsz.at(mrdpmti).second/1000.});
 		if(verbosity>4) cout<<"Setting paddle for detector "<<uniquedetectorkey<<endl;
 		anniegeom->SetDetectorPaddle(uniquedetectorkey,apaddle);
 		
@@ -1243,18 +1245,18 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
 			default: CylLocString = "NA";        break;  // unknown
 		}
-		Detector adet(uniquedetectorkey,
-					  "Veto",
-					  CylLocString,
-					  Position( apmt.GetPosition(0)/100.,
-					            apmt.GetPosition(1)/100.,
-					            apmt.GetPosition(2)/100.),
-					  Direction(apmt.GetOrientation(0),
-					            apmt.GetOrientation(1),
-					            apmt.GetOrientation(2)),
-					  apmt.GetName(),
-					  detectorstatus::ON,
-					  0.);
+		Detector adet( uniquedetectorkey,
+		               "Veto",
+		               CylLocString,
+		               Position( apmt.GetPosition(0)/100.,
+		                         apmt.GetPosition(1)/100.,
+		                         apmt.GetPosition(2)/100.),
+		               Direction(apmt.GetOrientation(0),
+		                         apmt.GetOrientation(1),
+		                         apmt.GetOrientation(2)),
+		               apmt.GetName(),
+		               detectorstatus::ON,
+		               0.);
 		if (verbosity > 3) std::cout <<"LoadWCSim tool: FACC tube channelkey: "<<uniquedetectorkey<<", x/y/z: "<<apmt.GetPosition(0)/100.<<"/"<<apmt.GetPosition(1)/100.<<"/"<<apmt.GetPosition(2)/100.<<std::endl;
 		// construct the channel associated with this PMT
 		//unsigned long uniquechannelkey = anniegeom->ConsumeNextFreeChannelKey();
@@ -1272,19 +1274,19 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		if(LeCroy_HV_Card_Num>=LECROY_HV_CARDS_PER_CRATE) { LeCroy_HV_Card_Num=0; LeCroy_HV_Crate_Num++; }
 		
 		Channel pmtchannel( uniquechannelkey,
-							Position(0,0,0.),
-							0, // stripside
-							0, // stripnum
-							TDC_Crate_Num,
-							TDC_Card_Num,
-							TDC_Chan_Num,
-							-1,                 // TDC has no level 2 signal handling
-							-1,
-							-1,
-							LeCroy_HV_Crate_Num,
-							LeCroy_HV_Card_Num,
-							LeCroy_HV_Chan_Num,
-							channelstatus::ON);
+		                    Position(0,0,0.),
+		                    0, // stripside
+		                    0, // stripnum
+		                    TDC_Crate_Num,
+		                    TDC_Card_Num,
+		                    TDC_Chan_Num,
+		                    -1,                 // TDC has no level 2 signal handling
+		                    -1,
+		                    -1,
+		                    LeCroy_HV_Crate_Num,
+		                    LeCroy_HV_Card_Num,
+		                    LeCroy_HV_Chan_Num,
+		                    channelstatus::ON);
 		
 		// Add this channel to the geometry
 		if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
@@ -1321,7 +1323,7 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 		if(verbosity>4) cout<<"printing geometry"<<endl;
 		if(verbosity>4) anniegeom->PrintChannels();
 	}
-
+	
 	// lappds
 	// lappds moved to end such that all the other channels are assigned first
 	for(int lappdi=0; lappdi<numlappds; lappdi++){
@@ -1341,18 +1343,18 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			case 5:  CylLocString = "Veto";      break;  // TODO set layer?
 			default: CylLocString = "NA";        break;  // unknown
 		}
-		Detector adet(uniquedetectorkey,
-					  "LAPPD",
-					  CylLocString,
-					  Position( anlappd.GetPosition(0)/100.,
-					            anlappd.GetPosition(1)/100.,
-					            anlappd.GetPosition(2)/100.),
-					  Direction(anlappd.GetOrientation(0),
-					            anlappd.GetOrientation(1),
-					            anlappd.GetOrientation(2)),
-					  anlappd.GetName(),
-					  detectorstatus::ON,
-					  0.);
+		Detector adet( uniquedetectorkey,
+		               "LAPPD",
+		               CylLocString,
+		               Position( anlappd.GetPosition(0)/100.,
+		                         anlappd.GetPosition(1)/100.,
+		                         anlappd.GetPosition(2)/100.),
+		               Direction(anlappd.GetOrientation(0),
+		                         anlappd.GetOrientation(1),
+		                         anlappd.GetOrientation(2)),
+		               anlappd.GetName(),
+		               detectorstatus::ON,
+		               0.);
 		
 		// construct all the channels associated with this LAPPD
 		for(int stripi=0; stripi<LappdNumStrips; stripi++){
@@ -1374,20 +1376,20 @@ Geometry* LoadWCSim::ConstructToolChainGeometry(){
 			if(LAPPD_HV_Chan_Num>=LAPPD_HV_CHANNELS_PER_CARD)    { LAPPD_HV_Chan_Num=0; LAPPD_HV_Card_Num++;  }
 			if(LAPPD_HV_Card_Num>=LAPPD_HV_CARDS_PER_CRATE) { LAPPD_HV_Card_Num=0; LAPPD_HV_Crate_Num++; }
 			
-			Channel lappdchannel(uniquechannelkey,
-								 Position(xpos,ypos,0.),
-								 stripside,
-								 stripnum,
-								 ACDC_Crate_Num,
-								 ACDC_Card_Num,
-								 ACDC_Chan_Num,
-								 ACC_Crate_Num,
-								 ACC_Card_Num,
-								 ACC_Chan_Num,
-								 LAPPD_HV_Crate_Num,
-								 LAPPD_HV_Card_Num,
-								 LAPPD_HV_Chan_Num,
-								 channelstatus::ON);
+			Channel lappdchannel( uniquechannelkey,
+			                      Position(xpos,ypos,0.),
+			                      stripside,
+			                      stripnum,
+			                      ACDC_Crate_Num,
+			                      ACDC_Card_Num,
+			                      ACDC_Chan_Num,
+			                      ACC_Crate_Num,
+			                      ACC_Card_Num,
+			                      ACC_Chan_Num,
+			                      LAPPD_HV_Crate_Num,
+			                      LAPPD_HV_Card_Num,
+			                      LAPPD_HV_Chan_Num,
+			                      channelstatus::ON);
 			
 			// Add this channel to the geometry
 			if(verbosity>4) cout<<"Adding channel "<<uniquechannelkey<<" to detector "<<uniquedetectorkey<<endl;
@@ -1545,7 +1547,7 @@ void LoadWCSim::BuildTimeArrayOffsetMap(WCSimRootTrigger* firstTrig){
 }
 
 std::vector<int> LoadWCSim::LoadPMTMask(std::string path_to_pmtmask){
-
+	
 	std::vector<int> mask_vector;
 	int temp_id;
 	ifstream maskfile(path_to_pmtmask.c_str());
@@ -1554,6 +1556,6 @@ std::vector<int> LoadWCSim::LoadPMTMask(std::string path_to_pmtmask){
 		mask_vector.push_back(temp_id);
 		if (maskfile.eof()) break;
 	}
-
+	
 	return mask_vector;
 }

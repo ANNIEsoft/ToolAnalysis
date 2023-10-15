@@ -228,8 +228,26 @@ class PhaseIITreeMaker: public Tool {
 
   //Genie information for event
   double fTrueNeutrinoEnergy;
+  double fTrueNeutrinoMomentum_X;
+  double fTrueNeutrinoMomentum_Y;
+  double fTrueNeutrinoMomentum_Z;
+  double fTrueNuIntxVtx_X;
+  double fTrueNuIntxVtx_Y;
+  double fTrueNuIntxVtx_Z;
+  double fTrueNuIntxVtx_T;
+  double fTrueFSLVtx_X;
+  double fTrueFSLVtx_Y;
+  double fTrueFSLVtx_Z;
+  double fTrueFSLMomentum_X;
+  double fTrueFSLMomentum_Y;
+  double fTrueFSLMomentum_Z;
+  double fTrueFSLTime;
+  double fTrueFSLMass;
+  int fTrueFSLPdg;
+  double fTrueFSLEnergy;
   double fTrueQ2;
   int fTrueCC;
+  int fTrueNC;
   int fTrueQEL;
   int fTrueRES;
   int fTrueDIS;
@@ -237,6 +255,15 @@ class PhaseIITreeMaker: public Tool {
   int fTrueMEC;
   int fTrueNeutrons;
   int fTrueProtons;
+  int fTruePi0;
+  int fTruePiPlus;
+  int fTruePiPlusCher;
+  int fTruePiMinus;
+  int fTruePiMinusCher;
+  int fTrueKPlus;
+  int fTrueKPlusCher;
+  int fTrueKMinus;
+  int fTrueKMinusCher;
 
   // Pion and kaon counts for event
   int fPi0Count;

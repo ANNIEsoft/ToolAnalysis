@@ -13,4 +13,5 @@ MCTruth_fill 0
 Reco_fill 0
 RecoDebug_fill 0
 muonTruthRecoDiff_fill 0
-
+IsData 1
+HasGenie 0

@@ -1,0 +1,4 @@
+verbose 0
+FileForListOfInputs ./configfiles/ReadConfigInfo/my_inputs.txt
+EventOffset 0
+GlobalEvNr 1

@@ -3,29 +3,44 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <fstream>
+#include <map>
+#include <utility>
+#include <memory>
+#include <cmath>
+#include <set>
+#include <vector>
+
 
 #include "Tool.h"
 #include "GenieInfo.h"
-
-// legacy
-#define LOADED_GENIE 1
-
-#if LOADED_GENIE==1                       // disable this tool unless Genie is loaded (FNAL)
-//GENIE
+#include "CLHEP/Random/RandGaussQ.h"
+#include "CLHEP/Random/JamesRandom.h"
+#include "Framework/Conventions/KineVar.h"
+#include "Framework/EventGen/EventRecord.h"
+#include "Framework/Interaction/Interaction.h"
+#include "Framework/Interaction/Kinematics.h"
+//#include "Framework/Messenger/Messenger.h"
+#include "Framework/Utils/AppInit.h"
 #include <Tools/Flux/GSimpleNtpFlux.h>
 #include <Tools/Flux/GNuMIFlux.h>
-#include <GHEP/GHepUtils.h>               // neut reaction codes
-#include <ParticleData/PDGLibrary.h>
-#include <ParticleData/PDGCodes.h>
-#include <Ntuple/NtpMCEventRecord.h>
-#include <Conventions/Constants.h>
-#include <GHEP/GHepParticle.h>
-#include <GHEP/GHepStatus.h>
-#include <EventGen/EventRecord.h>
+#include <Framework/GHEP/GHepUtils.h>               // neut reaction codes
+#include <Framework/ParticleData/PDGLibrary.h>
+#include <Framework/ParticleData/PDGCodes.h>
+#include <Framework/Ntuple/NtpMCEventRecord.h>
+#include <Framework/Ntuple/NtpMCTreeHeader.h>
+#include <Framework/Conventions/Constants.h>
+#include <Framework/GHEP/GHepParticle.h>
+#include <Framework/GHEP/GHepStatus.h>
 #include <TParticlePDG.h>
-#include <Interaction/Interaction.h>
-// other
-#endif  // LOADED_GENIE==1
+#include "TChain.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TVector3.h"
+#include "TLorentzVector.h"
+
+#include "MRDspecs.hh"
 
 class LoadGenieEvent: public Tool {
 	
@@ -47,7 +62,6 @@ class LoadGenieEvent: public Tool {
 	
 	private:
 	
-#if LOADED_GENIE==1
 	// function to load the branch addresses
 	void SetBranchAddresses();
 
@@ -76,7 +90,8 @@ class LoadGenieEvent: public Tool {
 	TFile* curf = nullptr;       // keep track of file changes
 	TFile* curflast = nullptr;
 	genie::NtpMCEventRecord* genieintx = nullptr; // = new genie::NtpMCEventRecord;
-//	// for fluxver 0 files
+	genie::NtpMCTreeHeader* geniehdr = nullptr;
+	// for fluxver 0 files
 	genie::flux::GNuMIFluxPassThroughInfo* gnumipassthruentry  = nullptr;
 	// for fluxver 1 files
 	genie::flux::GSimpleNtpEntry* gsimpleentry = nullptr;
@@ -87,8 +102,9 @@ class LoadGenieEvent: public Tool {
 	int fluxver;                         // 0 = old flux, 1 = new flux
 	std::string currentfilestring;
 	unsigned long local_entry=0;           // 
-	unsigned int tchainentrynum=0;         // 
-	bool manualmatch=1;			//to be used when GENIE information is not stored properly in file	
+	int tchainentrynum=0;         // 
+	bool manualmatch=0;			//to be used when GENIE information is not stored properly in file
+	int fileevents=0;
 
 	// common input/output variables to both Robert/Zarko filesets
 	int parentpdg;
@@ -98,19 +114,25 @@ class LoadGenieEvent: public Tool {
 	float parentdecayvtx_x, parentdecayvtx_y, parentdecayvtx_z;
 	Position parentdecayvtx;
 	float parentdecaymom_x, parentdecaymom_y, parentdecaymom_z;
-	Position parentdecaymom;
+	Direction parentdecaymom;
 	float parentprodmom_x, parentprodmom_y, parentprodmom_z;
-	Position parentprodmom;
+	Direction parentprodmom;
 	int parentprodmedium;                // they're all 0
 	std::string parentprodmediumstring;  // do we even have this mapping? --> There seems to be a mapping here: https://minos-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=6316&filename=flugg_doc.pdf&version=10
 	int parentpdgattgtexit;
 	std::string parenttypestringattgtexit;
-	Position parenttgtexitmom;
+	Direction parenttgtexitmom;
 	float parenttgtexitmom_x, parenttgtexitmom_y, parenttgtexitmom_z;
 	int pcodes;			// Needed to evaluate whether the particle codes are stored in GEANT format or in PDG format
 
-	// Additional zarko-only information
-	// TODO fillme
+        // Additional zarko-only information, needed for flux systematic reweighting
+        int fluxrun;
+        int fluxentryno;
+        int fluxevtno;
+        int fluxntype;
+        double fluxnimpwt;
+        double fluxnenergyn;
+        double fluxnenergyf;
 	
 	// store the neutrino info from gntp files
 	// a load of variables to specify interaction type
@@ -138,20 +160,30 @@ class LoadGenieEvent: public Tool {
 	bool isinfiducialvol=false;
 	double eventq2=-1;
 	double eventEnu=-1;
+	Direction eventPnu;
 	int neutrinopdg=-1;
 	double muonenergy=-1;
 	double muonangle=-1;
 	std::string fsleptonname; // assumed to be muon, but we should confirm
+        double fsleptonenergy;
+        int fsleptonpdg;
+        double fsleptonm;
+        Direction fsleptonmomentum;
+        Direction fsleptonmomentumdir;
+        Position fsleptonvtx; // cm
+        double fsleptont;     // ns
 	// these may not be properly copied... --> temp fix applied that seems to be working
-	int numfsprotons;
-	int numfsneutrons;
-	int numfspi0;
-	int numfspiplus;
-	int numfspiminus;
-	int numfskplus;
-	int numfskminus;	
-
-#endif   // LOADED_GENIE==1
+        int numfsprotons;
+        int numfsneutrons;
+        int numfspi0;
+        int numfspiplus;
+        int numfspipluscher;  // reach Cherenkov threshold
+        int numfspiminus;
+        int numfspiminuscher; // reach Cherenkov threshold
+        int numfskplus;
+        int numfskpluscher;   // reach Cherenkov threshold
+        int numfskminus;
+        int numfskminuscher;  // reach Cherenkov threshold
 	
 };
 
