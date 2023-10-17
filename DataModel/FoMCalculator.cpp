@@ -137,6 +137,65 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   return;
 }
 
+void FoMCalculator::ConePropertiesLnL(double VtxX, double vtxY, double VtxZ, double dirX, double dirY, double dirZ, double coneEdge, double& chi2, TH1D angularDist) {
+    double coneEdgeLow = 21.0;  // cone edge (low side)      
+    double coneEdgeHigh = 3.0;  // cone edge (high side)   [muons: 3.0, electrons: 7.0]
+    double deltaAngle = 0.0;
+    double digitCharge = 0.0;
+    double digitPE = 0.0;
+    double coneCharge = 0.0;
+    double allCharge = 0.0;
+    double outerCone = -99.9;
+    double coef = angularDist.Integrate(-180, 180);
+
+    double digitX, digitY, digitZ;
+    double dx, dy, dz, ds;
+    double px, py, pz;
+    double cosphi, phi, phideg;
+    double allPE;
+    int_t refbin;
+    double weight;
+    double P;
+    
+    for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
+        if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
+            digitPE = this->fVtxGeo->GetDigitPE(idigit);
+            allPE += digitPE;
+        }
+    }
+
+    for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
+        if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
+            deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
+            digitCharge = this->fVtxGeo->GetDigitQ(idigit);
+            digitPE = this->fVtxGeo->GetDigitPE(idigit);
+            digitX = fVtxGeo->GetDigitX(idigit);
+            digitY = fVtxGeo->GetDigitY(idigit);
+            digitZ = fVtxGeo->GetDigitZ(idigit);
+            dx = digitX - vtxX;
+            dy = digitY - vtxY;
+            dz = difitZ - vtxZ;
+            ds = dx * dx + dy * dy + dz * dz;
+            px = dx / ds;
+            py = dy / ds;
+            pz = dz / ds;
+            cosphi = 1.0;
+            phi = 0.0;
+
+            cosphi = px * dirX + py * dirY + pz * dirZ;
+            phi = acos(cosphi);
+            phideg = phi / (TMath::Pi() / 180);
+            refbin = angularDist.FindBin(phideg);
+            weight = angularDist.GetBinContent(refbin) / coef;
+            P = phideg / allPE * weight;
+            chi2 += -2log(P);
+
+            allCharge += digitCharge;
+            //outerCone = -outhits/inhits;
+        }
+    }
+}
+
 
 
 
@@ -345,6 +404,38 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
   if( fom<-9999. ) fom = -9999.;
 
   return;
+}
+
+void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneAngle, double vtxTime, double& fom, TH1D pdf)
+{
+	// figure of merit
+	// ===============
+	double vtxFOM = -9999.;
+	double timeFOM = -9999.;
+	double coneFOM = -9999.;
+
+	// calculate residuals
+	// ===================
+	this->fVtxGeo->CalcExtendedResiduals(vtxX, vtxY, vtxZ, 0.0, dirX, dirY, dirZ);
+
+	// calculate figure of merit
+	// =========================
+
+	this->ConePropertiesLnL(coneAngle, coneFOM, pdf);
+	this->TimePropertiesLnL(vtxTime, timeFOM);
+
+	double fTimeFitWeight = this->fTimeFitWeight;
+	double fConeFitWeight = this->fConeFitWeight;
+	vtxFOM = (fTimeFitWeight*timeFOM + fConeFitWeight * coneFOM) / (fTimeFitWeight + fConeFitWeight);
+
+	// calculate overall figure of merit
+	// =================================
+	fom = vtxFOM;
+
+	// truncate
+	if (fom < -9999.) fom = -9999.;
+
+	return;
 }
 
 

@@ -20,7 +20,7 @@ bool VtxSeedFineGrid::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
-  vSeedVtxList = new std::vector<RecoVertex>;
+  vSeedVtxList = nullptr;
 
   return true;
 }
@@ -93,7 +93,6 @@ bool VtxSeedFineGrid::Execute(){
 
 
 bool VtxSeedFineGrid::Finalise(){
-	//delete vSeedVtxList; vSeedVtxList = 0;
 	Log("VtxSeedFineGrid exitting", v_debug, verbosity);
   return true;
 }
@@ -127,18 +126,18 @@ Position VtxSeedFineGrid::FindCenter() {
 
 	if (verbosity > 0) cout << "True vertex  = (" << trueVtxX << ", " << trueVtxY << ", " << trueVtxZ << ", " << trueVtxT << ", " << trueDirX << ", " << trueDirY << ", " << trueDirZ << ")" << endl;
 
-	FoMCalculator * myFoMCalculator = new FoMCalculator();
+	FoMCalculator myFoMCalculator;
 	VertexGeometry* myvtxgeo = VertexGeometry::Instance();
 	myvtxgeo->LoadDigits(fDigitList);
-	myFoMCalculator->LoadVertexGeometry(myvtxgeo); //Load vertex geometry
+	myFoMCalculator.LoadVertexGeometry(myvtxgeo); //Load vertex geometry
 
 	// fom at true vertex position
 	double fom = -999.999 * 100;
 	double timefom = -999.999 * 100;
 	double conefom = -999.999 * 100;
 	myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, 0.0, trueDirX, trueDirY, trueDirZ);
-	myFoMCalculator->TimePropertiesLnL(trueVtxT, timefom);
-//	myFoMCalculator->ConePropertiesFoM(ConeAngle, conefom);
+	myFoMCalculator.TimePropertiesLnL(trueVtxT, timefom);
+//	myFoMCalculator.ConePropertiesFoM(ConeAngle, conefom);
 	fom = /*timefom * 0.5 + */conefom; // * 0.5;
 	if (verbosity > 0)  cout << "VtxSeedFineGrid Tool: " << "FOM at true vertex = " << fom << endl;
   
@@ -184,13 +183,13 @@ Position VtxSeedFineGrid::FindCenter() {
 				seedDirZ = cos(phi);
 				myvtxgeo->CalcExtendedResiduals(seedX, seedY, seedZ, seedT, seedDirX, seedDirY, seedDirZ);
 				int nhits = myvtxgeo->GetNDigits();
-				double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
+				double meantime = myFoMCalculator.FindSimpleTimeProperties(ConeAngle);
 				Double_t fom = -999.999 * 100;
 				double timefom = -999.999 * 100;
 				double conefom = -999.999 * 100;
 				double coneAngle = 42.0;
-				myFoMCalculator->TimePropertiesLnL(meantime, timefom);
-				myFoMCalculator->ConePropertiesFoM(coneAngle, conefom);
+				myFoMCalculator.TimePropertiesLnL(meantime, timefom);
+				myFoMCalculator.ConePropertiesFoM(coneAngle, conefom);
 				fom = timefom * 0.5 + conefom * 0.5;
 
 				if (fom > bestFOM[0]) {
@@ -214,13 +213,13 @@ Position VtxSeedFineGrid::FindCenter() {
 
 		myvtxgeo->CalcExtendedResiduals(seedX, seedY, seedZ, seedT, seedDirX, seedDirY, seedDirZ);
 		int nhits = myvtxgeo->GetNDigits();
-		double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
+		double meantime = myFoMCalculator.FindSimpleTimeProperties(ConeAngle);
 		Double_t fom = -999.999 * 100;
 		double timefom = -999.999 * 100;
 		double conefom = -999.999 * 100;
 		double coneAngle = 42.0;
-		myFoMCalculator->TimePropertiesLnL(meantime, timefom);
-		myFoMCalculator->ConePropertiesFoM(coneAngle, conefom);
+		myFoMCalculator.TimePropertiesLnL(meantime, timefom);
+		myFoMCalculator.ConePropertiesFoM(coneAngle, conefom);
 		fom = timefom * 0.5 + conefom * 0.5;
 		std::cout << "seed (" << seedX<<","<<seedY<<","<<seedZ<<") fom= " << fom << " best= " << bestFOM[0] << endl;
 

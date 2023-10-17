@@ -50,6 +50,7 @@ public:
   double FindSimpleTimeProperties(double myConeEdge);
   void TimePropertiesLnL(double vtxTime, double& vtxFom);
   void ConePropertiesFoM(double coneEdge, double& chi2);
+  void ConePropertiesLnL(double vtxX, double vtxY, double VtxZ, double dirX, double dirY, double dirZ, double coneEdge, double& chi2, TH1F angularDist);
   void PointPositionChi2(double vtxX, double vtxY, double vtxZ, double vtxTime, double& fom);
   void PointDirectionChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneAngle, double& fom);
   void PointVertexChi2(double vtxX, double vtxY, double vtxZ,
@@ -58,6 +59,9 @@ public:
   void ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, 
 	                                    double dirX, double dirY, double dirZ, 
 	                                    double coneAngle, double vtxTime, double& fom);
+  void ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ,
+	  double dirX, double dirY, double dirZ,
+	  double coneAngle, double vtxTime, double& fom, TH1D pdf);
 //  void ConePropertiesLnL(double coneParam0, double coneParam1, double coneParam2, double& coneAngle, double& coneFOM);
 //  void CorrectedVertexChi2(double vtxX, double vtxY, double vtxZ, 
 //	                                    double dirX, double dirY, double dirZ, 
