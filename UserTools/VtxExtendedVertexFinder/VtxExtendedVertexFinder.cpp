@@ -319,12 +319,10 @@ void VtxExtendedVertexFinder::PushExtendedVertex(RecoVertex* vtx, bool savetodis
 bool VtxExtendedVertexFinder::GetPDF(TH1D &pdf) {
 	TFile f1(pdffile, "READ");
 	if (!f1) {
-		log("VtxExtendedVertexFinder: pdffile does not exist", v_error, verbosity);
+		Log("VtxExtendedVertexFinder: pdffile does not exist", v_error, verbosity);
 		return false;
 	}
-	pdf = (TH1D)f1.Get("zenith");
-	f1.close();
-	delete f1;
+	pdf = *(TH1D*)f1.Get("zenith");
 	return true;
 }
 

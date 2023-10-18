@@ -137,7 +137,7 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   return;
 }
 
-void FoMCalculator::ConePropertiesLnL(double VtxX, double vtxY, double VtxZ, double dirX, double dirY, double dirZ, double coneEdge, double& chi2, TH1D angularDist) {
+void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneEdge, double& chi2, TH1D angularDist) {
     double coneEdgeLow = 21.0;  // cone edge (low side)      
     double coneEdgeHigh = 3.0;  // cone edge (high side)   [muons: 3.0, electrons: 7.0]
     double deltaAngle = 0.0;
@@ -146,14 +146,14 @@ void FoMCalculator::ConePropertiesLnL(double VtxX, double vtxY, double VtxZ, dou
     double coneCharge = 0.0;
     double allCharge = 0.0;
     double outerCone = -99.9;
-    double coef = angularDist.Integrate(-180, 180);
+    double coef = angularDist.Integral();
 
     double digitX, digitY, digitZ;
     double dx, dy, dz, ds;
     double px, py, pz;
     double cosphi, phi, phideg;
     double allPE;
-    int_t refbin;
+    int refbin;
     double weight;
     double P;
     
@@ -174,7 +174,7 @@ void FoMCalculator::ConePropertiesLnL(double VtxX, double vtxY, double VtxZ, dou
             digitZ = fVtxGeo->GetDigitZ(idigit);
             dx = digitX - vtxX;
             dy = digitY - vtxY;
-            dz = difitZ - vtxZ;
+            dz = digitZ - vtxZ;
             ds = dx * dx + dy * dy + dz * dz;
             px = dx / ds;
             py = dy / ds;
@@ -187,8 +187,8 @@ void FoMCalculator::ConePropertiesLnL(double VtxX, double vtxY, double VtxZ, dou
             phideg = phi / (TMath::Pi() / 180);
             refbin = angularDist.FindBin(phideg);
             weight = angularDist.GetBinContent(refbin) / coef;
-            P = phideg / allPE * weight;
-            chi2 += -2log(P);
+            P = phideg * digitPE / allPE * weight;
+            chi2 += -2*log(P);
 
             allCharge += digitCharge;
             //outerCone = -outhits/inhits;
@@ -421,7 +421,7 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
 	// calculate figure of merit
 	// =========================
 
-	this->ConePropertiesLnL(coneAngle, coneFOM, pdf);
+    this->ConePropertiesLnL(vtxX, vtxY, vtxZ, dirX, dirY, dirZ, coneAngle, coneFOM, pdf);
 	this->TimePropertiesLnL(vtxTime, timeFOM);
 
 	double fTimeFitWeight = this->fTimeFitWeight;
