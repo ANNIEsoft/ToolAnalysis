@@ -1,4 +1,4 @@
 #LoadRunInfo Config
 
 verbosity 1
-RunInfoFile /pnfs/annie/persistent/users/mnieslon/data/runinfo/ANNIE_RunInformation_PSQL.txt
+RunInfoFile ./configfiles/BeamFetcher/ANNIE_RunInformation_PSQL.txt
