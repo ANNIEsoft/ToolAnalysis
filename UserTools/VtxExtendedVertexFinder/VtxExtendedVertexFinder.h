@@ -77,7 +77,8 @@ class VtxExtendedVertexFinder: public Tool {
   int v_message=2;
   int v_debug=3;
   std::string logmessage;
-  int get_ok;	
+  int get_ok;
+  TH1D pdf;
   
 
 

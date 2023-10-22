@@ -146,29 +146,32 @@ void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, dou
     double coneCharge = 0.0;
     double allCharge = 0.0;
     double outerCone = -99.9;
-    double coef = angularDist.Integral();
+    double coef = 1000; //angularDist.Integral();
+    chi2 = 0;
+    cout << "FOM CPLnL coef: " << coef << " ";
 
     double digitX, digitY, digitZ;
     double dx, dy, dz, ds;
     double px, py, pz;
     double cosphi, phi, phideg;
-    double allPE;
+    double allPE = 0;
     int refbin;
     double weight;
     double P;
     
     for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
         if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
-            digitPE = this->fVtxGeo->GetDigitPE(idigit);
-            allPE += digitPE;
+            digitCharge = this->fVtxGeo->GetDigitQ(idigit);
+            allCharge += digitCharge;
         }
     }
-
+    cout << "NDigits: " << this->fVtxGeo->GetNDigits() << " ";
+    cout << "and allQ: " << allCharge << endl;
     for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
         if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
             deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
             digitCharge = this->fVtxGeo->GetDigitQ(idigit);
-            digitPE = this->fVtxGeo->GetDigitPE(idigit);
+            //digitPE = this->fVtxGeo->GetDigitPE(idigit);
             digitX = fVtxGeo->GetDigitX(idigit);
             digitY = fVtxGeo->GetDigitY(idigit);
             digitZ = fVtxGeo->GetDigitZ(idigit);
@@ -181,18 +184,20 @@ void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, dou
             pz = dz / ds;
             cosphi = 1.0;
             phi = 0.0;
-
+            cout << "angle direction: " << dx << " " << dy << " " << dz << endl;
             cosphi = px * dirX + py * dirY + pz * dirZ;
+            cout << "cosphi: " << cosphi << endl;
             phi = acos(cosphi);
             phideg = phi / (TMath::Pi() / 180);
-            refbin = angularDist.FindBin(phideg);
-            weight = angularDist.GetBinContent(refbin) / coef;
-            P = phideg * digitPE / allPE * weight;
-            chi2 += -2*log(P);
+            refbin = angularDist.FindBin(phideg /*this->fVtxGeo->GetZenith(idigit)*/);
+            weight = angularDist.GetBinContent(refbin)/coef;
+            P = weight*digitCharge/allCharge;
+            cout << "conefomlnl P: " << P << endl;
+            chi2 += pow(digitCharge - weight, 2) / weight;
 
-            allCharge += digitCharge;
             //outerCone = -outhits/inhits;
         }
+        chi2 = chi2 / fVtxGeo->GetNDigits();
     }
 }
 

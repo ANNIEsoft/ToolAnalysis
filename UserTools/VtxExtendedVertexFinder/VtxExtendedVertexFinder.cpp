@@ -22,7 +22,8 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("FitTimeWindowMin", fTmin);
   m_variables.Get("FitTimeWindowMax", fTmax);
-  m_variables.Get("UsePDFFile", fUsePDFFile)
+  m_variables.Get("UsePDFFile", fUsePDFFile);
+  m_variables.Get("PDFFile", pdffile);
   
   /// Create extended vertex
   /// Note that the objects created by "new" must be added to the "RecoEvent" store. 
@@ -143,7 +144,6 @@ bool VtxExtendedVertexFinder::Finalise(){
 
 RecoVertex* VtxExtendedVertexFinder::FitExtendedVertex(RecoVertex* myVertex) {
   
-	TH1D pdf;
 	//fit with Minuit
   MinuitOptimizer* myOptimizer = new MinuitOptimizer();
   myOptimizer->SetPrintLevel(-1);
@@ -183,7 +183,7 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
   if (fUsePDFFile) {
 	  bool pdftest = this->GetPDF(pdf);
 	  if (!pdftest) {
-		  log("pdffile error; continuing with fom reconstruction", v_error, verbosity);
+		  Log("pdffile error; continuing with fom reconstruction", v_error, verbosity);
 		  fUsePDFFile = 0;
 	  }
   }
@@ -220,7 +220,7 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
     std::cout << "best fit reco status: " << bestGridVertex->GetStatus() << std::endl;
     std::cout << "BestVertex info: " << bestGridVertex->Print() << std::endl;
   }
-  delete pdf;
+
   return bestGridVertex;
 }
 
@@ -316,14 +316,14 @@ void VtxExtendedVertexFinder::PushExtendedVertex(RecoVertex* vtx, bool savetodis
 	m_data->Stores.at("RecoEvent")->Set("ExtendedVertex", fExtendedVertex, savetodisk);
 }
 
-bool VtxExtendedVertexFinder::GetPDF(TH1D &pdf) {
-	TFile f1(pdffile, "READ");
-	if (!f1) {
-		Log("VtxExtendedVertexFinder: pdffile does not exist", v_error, verbosity);
-		return false;
-	}
-	pdf = *(TH1D*)f1.Get("zenith");
-	return true;
+bool VtxExtendedVertexFinder::GetPDF(TH1D& pdf) {
+    TFile f1(pdffile.c_str(), "READ");
+    if (!f1.IsOpen()) {
+        Log("VtxExtendedVertexFinder: pdffile does not exist", v_error, verbosity);
+        return false;
+    }
+    pdf = *(TH1D*)f1.Get("zenith");
+    return true;
 }
 
 void VtxExtendedVertexFinder::Reset() {

@@ -14,14 +14,21 @@ bool LikelihoodFitterCheck::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("OutputFile", output_filename);
   m_variables.Get("ifPlot2DFOM", ifPlot2DFOM);
   m_variables.Get("ShowEvent", fShowEvent);
+  m_variables.Get("UsePDFFile", fUsePDFFile);
+  m_variables.Get("PDFFile", pdffile);
   fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
   
   // Histograms
   Likelihood2D = new TH2D("Likelihood2D","Figure of merit 2D", 200, -50, 150, 100, -50, 50);
+  Likelihood2D_pdf = new TH2D("Likelihood2D_pdf", "pdf-based figure of merit 2D", 200, -50, 150, 100, -50, 50);
   gr_parallel = new TGraph();
   gr_parallel->SetTitle("Figure of merit parallel to the track direction");
 	gr_transverse = new TGraph();
   gr_transverse->SetTitle("Figure of merit transverse to the track direction");
+  pdf_parallel = new TGraph();
+  pdf_parallel->SetTitle("PDF-based Figure of merit parallel to track direction");
+  pdf_transverse = new TGraph();
+  pdf_transverse->SetTitle("PDF-based figure of merit transverse to track direction");
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
 
@@ -30,6 +37,7 @@ bool LikelihoodFitterCheck::Initialise(std::string configfile, DataModel &data){
 
 
 bool LikelihoodFitterCheck::Execute(){
+
 	Log("===========================================================================================",v_debug,verbosity);
 	
 	Log("LikelihoodFitterCheck Tool: Executing",v_debug,verbosity);
@@ -72,6 +80,15 @@ bool LikelihoodFitterCheck::Execute(){
   if(!get_digit){
   	Log("LikelihoodFitterCheck  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
   	return false;
+  }
+
+  if (fUsePDFFile) {
+      bool pdftest = this->GetPDF(pdf);
+      if (!pdftest) {
+          Log("LikelihoodFitterCheck  Tool: Error retrieving pdffile; running without!", v_error, verbosity);
+          fUsePDFFile = 0;
+          return false;
+      }
   }
 	
 	double recoVtxX, recoVtxY, recoVtxZ, recoVtxT, recoDirX, recoDirY, recoDirZ;
@@ -117,14 +134,23 @@ bool LikelihoodFitterCheck::Execute(){
     Double_t fom = -999.999*100;
     double timefom = -999.999*100;
     double conefom = -999.999*100;
+    double conefomlnl = -999.999 * 100;
+    Double_t fompdf = -999.999 * 100;
     myFoMCalculator->TimePropertiesLnL(meantime,timefom);
     myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
     fom = timefom*0.5+conefom*0.5;
     cout<<"timeFOM, coneFOM, fom = "<<timefom<<", "<<conefom<<", "<<fom<<endl;
-    fom = timefom;
+    //fom = timefom;
     dlpara[j] = - 50*dl + j*dl;
     dlfom[j] = fom;
     gr_parallel->SetPoint(j, dlpara[j], dlfom[j]);
+
+    if (fUsePDFFile) {
+        myFoMCalculator->ConePropertiesLnL(seedX, seedY, seedZ, seedDirX, seedDirY, seedDirZ, ConeAngle,conefomlnl,pdf);
+        cout << "conefomlnl: " << conefomlnl << endl;
+        fompdf = timefom * conefomlnl;
+        pdf_parallel->SetPoint(j, dlpara[j], conefomlnl);
+    }
   } 
   
   //transverse direction
@@ -148,8 +174,10 @@ bool LikelihoodFitterCheck::Execute(){
     int nhits = myvtxgeo->GetNDigits();
     double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
     Double_t fom = -999.999*100;
+    Double_t fompdf = -999.999 * 100;
     double timefom = -999.999*100;
     double conefom = -999.999*100;
+    double conefomlnl = -999.999 * 100;
     double coneAngle = 42.0;
     myFoMCalculator->TimePropertiesLnL(meantime,timefom);
     myFoMCalculator->ConePropertiesFoM(ConeAngle,conefom);
@@ -159,6 +187,12 @@ bool LikelihoodFitterCheck::Execute(){
     dltrans[j] = - 50*dl + j*dl;
     dlfom[j] = fom;
     gr_transverse->SetPoint(j, dlpara[j], dlfom[j]);
+    if (fUsePDFFile) {
+        cout << "pdf fom coming\n";
+        myFoMCalculator->ConePropertiesLnL(seedX, seedY, seedZ, seedDirX, seedDirY, seedDirZ, coneAngle, conefomlnl, pdf);
+        fompdf = timefom * conefomlnl;
+        pdf_transverse->SetPoint(j, dltrans[j], conefomlnl);
+    }
   }
   
     if(ifPlot2DFOM) {
@@ -183,8 +217,10 @@ bool LikelihoodFitterCheck::Execute(){
         	int nhits = myvtxgeo->GetNDigits();
           double meantime = myFoMCalculator->FindSimpleTimeProperties(ConeAngle);
           Double_t fom = -999.999*100;
+          Double_t fompdf = -999.999 * 100;
           double timefom = -999.999*100;
           double conefom = -999.999*100;
+          double conefomlnl = -999.999 * 100;
           double coneAngle = 42.0;
           myFoMCalculator->TimePropertiesLnL(meantime,timefom);
           myFoMCalculator->ConePropertiesFoM(coneAngle,conefom);
@@ -192,6 +228,14 @@ bool LikelihoodFitterCheck::Execute(){
           //fom = timefom;
           cout<<"k,m, timeFOM, coneFOM, fom = "<<k<<", "<<m<<", "<<timefom<<", "<<conefom<<", "<<fom<<endl;
           Likelihood2D->SetBinContent(m, k, fom);
+          if (fUsePDFFile) {
+              seedDirX = cos(vtxDir.GetTheta() - TMath::Pi() + m * TMath::Pi() / 100) * sin(vtxDir.GetPhi() - TMath::Pi() + k * TMath::Pi() / 100);
+              seedDirY = sin(vtxDir.GetTheta() - TMath::Pi() + m * TMath::Pi() / 100) * sin(vtxDir.GetPhi() - TMath::Pi() + k * TMath::Pi() / 100);
+              seedDirZ = cos(vtxDir.GetPhi() - TMath::Pi() + k * TMath::Pi() / 100);
+              myFoMCalculator->ConePropertiesLnL(trueVtxX, trueVtxY, trueVtxZ, seedDirX, seedDirY, seedDirZ, coneAngle, conefomlnl, pdf);
+              fompdf = timefom * conefomlnl;
+              Likelihood2D_pdf->SetBinContent(m, k, conefomlnl);
+          }
         }
       }
     }
@@ -200,12 +244,31 @@ bool LikelihoodFitterCheck::Execute(){
 }
 
 
-bool LikelihoodFitterCheck::Finalise(){
-  fOutput_tfile->cd();
-  gr_parallel->Write();
-  gr_transverse->Write();
-  fOutput_tfile->Write();
-  fOutput_tfile->Close();
-  Log("LikelihoodFitterCheck exitting", v_debug,verbosity);
-  return true;
+bool LikelihoodFitterCheck::Finalise() {
+    fOutput_tfile->cd();
+    gr_parallel->Write();
+    gr_transverse->Write();
+
+    if (fUsePDFFile) {
+        pdf_parallel->Write();
+        pdf_transverse->Write();
+    }
+
+    fOutput_tfile->Write();
+    fOutput_tfile->Close();
+
+    Log("LikelihoodFitterCheck exitting", v_debug, verbosity);
+    return true;
 }
+
+
+  bool LikelihoodFitterCheck::GetPDF(TH1D & pdf) {
+      TFile f1(pdffile.c_str(), "READ");
+      if (!f1.IsOpen()) {
+          Log("VtxExtendedVertexFinder: pdffile does not exist", v_error, verbosity);
+          return false;
+      }
+      pdf = *(TH1D*)f1.Get("zenith");
+      cout << "pdf entries: " << pdf.GetEntries() << endl;
+      return true;
+  }
