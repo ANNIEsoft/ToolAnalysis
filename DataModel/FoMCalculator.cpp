@@ -184,16 +184,16 @@ void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, dou
             pz = dz / ds;
             cosphi = 1.0;
             phi = 0.0;
-            cout << "angle direction: " << dx << " " << dy << " " << dz << endl;
+            cout << "angle direction: " << dx << " " << dy << " " << dz << " = " << ds << endl;
             cosphi = px * dirX + py * dirY + pz * dirZ;
             cout << "cosphi: " << cosphi << endl;
             phi = acos(cosphi);
             phideg = phi / (TMath::Pi() / 180);
-            refbin = angularDist.FindBin(phideg /*this->fVtxGeo->GetZenith(idigit)*/);
+            refbin = angularDist.FindBin(fVtxGeo->GetZenith(idigit));
             weight = angularDist.GetBinContent(refbin)/coef;
-            P = weight*digitCharge/allCharge;
-            cout << "conefomlnl P: " << P << endl;
-            chi2 += pow(digitCharge - weight, 2) / weight;
+            P = digitCharge/allCharge;
+            cout << "conefomlnl P: " << P << ", weight: " << weight << endl;
+            chi2 += pow(P - weight, 2) / weight * 1000000;
 
             //outerCone = -outhits/inhits;
         }
