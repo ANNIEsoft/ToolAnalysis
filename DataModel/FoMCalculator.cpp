@@ -193,11 +193,11 @@ void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, dou
             weight = angularDist.GetBinContent(refbin)/coef;
             P = digitCharge/allCharge;
             cout << "conefomlnl P: " << P << ", weight: " << weight << endl;
-            chi2 += pow(P - weight, 2) / weight * 1000000;
+            chi2 += pow(P - weight, 2);
 
             //outerCone = -outhits/inhits;
         }
-        chi2 = chi2 / fVtxGeo->GetNDigits();
+        //chi2 = -2*log(chi2);
     }
 }
 
