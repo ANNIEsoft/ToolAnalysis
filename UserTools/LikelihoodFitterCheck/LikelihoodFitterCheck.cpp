@@ -232,7 +232,7 @@ bool LikelihoodFitterCheck::Execute(){
               seedDirX = cos(vtxDir.GetTheta() - TMath::Pi() + m * TMath::Pi() / 100) * sin(vtxDir.GetPhi() - TMath::Pi() + k * TMath::Pi() / 100);
               seedDirY = sin(vtxDir.GetTheta() - TMath::Pi() + m * TMath::Pi() / 100) * sin(vtxDir.GetPhi() - TMath::Pi() + k * TMath::Pi() / 100);
               seedDirZ = cos(vtxDir.GetPhi() - TMath::Pi() + k * TMath::Pi() / 100);
-              myFoMCalculator->ConePropertiesLnL(trueVtxX, trueVtxY, trueVtxZ, seedDirX, seedDirY, seedDirZ, coneAngle, conefomlnl, pdf);
+              myFoMCalculator->ConePropertiesLnL(seedX, seedY, seedZ, trueDirX, trueDirY, trueDirZ, coneAngle, conefomlnl, pdf);
               fompdf = timefom * conefomlnl;
               Likelihood2D_pdf->SetBinContent(m, k, conefomlnl);
           }
