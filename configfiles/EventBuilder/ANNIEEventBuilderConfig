@@ -14,7 +14,7 @@ OrphanFileBase OrphanStore
 MaxStreamMatchingTimeSeparation 60 // seconds. If one stream is ahead of the others, pause reading
 
 SaveRawData 0
-StoreBeamStatus 1
+StoreBeamStatus 0
 
 BuildStage1Data 0 
 SaveSeparatePartfiles 1
