@@ -148,7 +148,7 @@ class BDTMuonEnergyPredict(Tool):
         #Set the BDTMuonEnergy in the EnergyReco boost store to be loaded by other tools
         BDTMuonEnergy=float(recoEnergy[0])
         EnergyRecoBoostStore.Set("BDTMuonEnergy", BDTMuonEnergy)
-        self.m_data.Stores.at("ANNIEEvent").Set("RecoMuonEnergy", BDTMuonEnergy)#Set the BDTMuonEnergy in the ANNIEEvent store
+        self.m_data.Stores.at("ANNIEEvent").Set("RecoMuonEnergy", BDTMuonEnergy/1000.)#Set the BDTMuonEnergy in the ANNIEEvent store in [GeV]
         
         EnergyRecoBoostStore.Save("EnergyRecoStore.bs")#Append each entry to file in case we want to make plots
 

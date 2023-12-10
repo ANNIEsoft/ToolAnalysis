@@ -175,7 +175,7 @@ class DNNTrackLengthPredict(Tool):
         #Set the DNNRecoLength in the EnergyReco boost store for next tools
         DNNRecoLength=float(y_predicted[0])
         EnergyRecoBoostStore.Set("DNNRecoLength", DNNRecoLength)
-        self.m_data.Stores.at("ANNIEEvent").Set("RecoTrackLengthInTank", DNNRecoLength)#Set the DNNRecoLength in the ANNIEEvent store
+        self.m_data.Stores.at("ANNIEEvent").Set("RecoTrackLengthInTank", DNNRecoLength/100.)#Set the DNNRecoLength in the ANNIEEvent store in [m]
         return 1
         
     def Finalise(self):
