@@ -94,9 +94,18 @@ bool FindMrdTracks::Execute(){
 	m_data->Stores["ANNIEEvent"]->Get("TriggerNumber",MCTriggernum);
 	m_data->Stores["ANNIEEvent"]->Get("MCEventNum",MCEventNum);
 	if (!isData) m_data->Stores["ANNIEEvent"]->Get("MCParticles",MCParticles);
-	get_ok = m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
-	if (not get_ok){
-		Log("FindMrdTracks: Did not find MRDTriggerType in ANNIEEvent. Please check the settings in MRDDataDecoder+BuildANNIEEvent/LoadWCSim?",v_error,verbosity);
+        uint32_t TriggerWord;
+        get_ok = m_data->Stores["ANNIEEvent"]->Get("TriggerWord",TriggerWord);
+	if (get_ok){
+ 		if (TriggerWord == 5) MRDTriggertype = "Beam";
+ 		else if (TriggerWord == 36) MRDTriggertype = "Cosmic";
+	} else {
+		Log("FindMrdTracks tool: Triggerword not available! Extract MRD trigger type from loopback",v_warning,verbosity);
+		get_ok = m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
+		if (not get_ok){
+			Log("FindMrdTracks: Did not find MRDTriggerType in ANNIEEvent. Please check the settings in MRDDataDecoder+BuildANNIEEvent/LoadWCSim?",v_error,verbosity);
+			m_data->vars.Set("StopLoop",1);
+		}
 	}
 	Log("FindMrdTracks tool: MRDTriggertype is "+MRDTriggertype+" (from ANNIEEvent store)",v_debug,verbosity);
 	

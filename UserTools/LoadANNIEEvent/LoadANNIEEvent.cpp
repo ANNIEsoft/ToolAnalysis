@@ -130,7 +130,13 @@ bool LoadANNIEEvent::Execute() {
       // Load the contents from the new input file into it
       std::string input_filename = input_filenames_.at(current_file_);
       std::cout <<"Reading in current file "<<current_file_<<std::endl;
-      ProcessedFileStore->Initialise(input_filename);
+      bool filename_valid = false;
+      filename_valid = ProcessedFileStore->Initialise(input_filename);
+      if (!filename_valid){
+        Log("LoadANNIEEvent: Filename "+input_filename+" not found! Proceed to next file",v_error,verbosity_);
+        current_file_++;
+        return true;
+      }
       m_data->Stores["ProcessedFileStore"]=ProcessedFileStore;
     
       // create an ANNIEEvent BoostStore and an OrphanStore BoostStore to load from it
@@ -168,7 +174,13 @@ bool LoadANNIEEvent::Execute() {
       BoostStore *theANNIEEvent = new BoostStore(false,
         BOOST_STORE_MULTIEVENT_FORMAT);
       std::string input_filename = input_filenames_.at(current_file_);
-      theANNIEEvent->Initialise(input_filename);
+      bool filename_valid = false;
+      filename_valid = theANNIEEvent->Initialise(input_filename);
+      if (!filename_valid){
+        Log("LoadANNIEEvent: Filename "+input_filename+" not found! Proceed to next file",v_error,verbosity_);
+        current_file_++;
+	return true;	
+      }
       m_data->Stores["ANNIEEvent"] = theANNIEEvent;
       m_data->Stores.at("ANNIEEvent")->Header->Get("TotalEntries",total_entries_in_file_);
       if (current_file_==0) {

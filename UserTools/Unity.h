@@ -168,3 +168,5 @@
 #include "Stage1DataBuilder.h"
 #include "BeamFetcherV2.h"
 #include "PlotsTrackLengthAndEnergy.h"
+#include "SaveConfigInfo.h"
+#include "ReadConfigInfo.h"

@@ -1,7 +1,7 @@
 # FindMrdTracks Config File
 # all variables retrieved with m_variables.Get() must be defined here!
 
-verbosity 5
+verbosity 0
 IsData 1
 OutputDirectory .
 OutputFile MRDTracks_RAWDataR1624S0p99R0S0

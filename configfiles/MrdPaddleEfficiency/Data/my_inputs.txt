@@ -1,1 +1,1 @@
-/annie/app/users/mnieslon/MyToolAnalysis5/mrdfiles_complete/RAWDataR1613S0p89R0S0
+/pnfs/annie/persistent/users/mnieslon/data/processed_hits_improved/R3347/ProcessedRawData_TankAndMRDAndCTC_R3347S0p0

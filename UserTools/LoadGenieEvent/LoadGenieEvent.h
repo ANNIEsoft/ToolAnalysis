@@ -102,7 +102,7 @@ class LoadGenieEvent: public Tool {
 	int fluxver;                         // 0 = old flux, 1 = new flux
 	std::string currentfilestring;
 	unsigned long local_entry=0;           // 
-	unsigned int tchainentrynum=0;         // 
+	int tchainentrynum=0;         // 
 	bool manualmatch=0;			//to be used when GENIE information is not stored properly in file
 	int fileevents=0;
 
@@ -160,6 +160,7 @@ class LoadGenieEvent: public Tool {
 	bool isinfiducialvol=false;
 	double eventq2=-1;
 	double eventEnu=-1;
+	Direction eventPnu;
 	int neutrinopdg=-1;
 	double muonenergy=-1;
 	double muonangle=-1;
