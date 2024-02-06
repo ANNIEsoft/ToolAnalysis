@@ -1,0 +1,23 @@
+#ToolChain dynamic setup file
+
+##### Runtime Paramiters #####
+verbose 1
+error_level 0 # 0= do not exit, 1= exit on unhandeled errors only, 2= exit on unhandeled errors and handeled errors
+attempt_recover 1
+
+###### Logging #####
+log_mode Interactive # Interactive=cout , Remote= remote logging system "serservice_name Remote_Logging" , Local = local file log;
+log_local_path ./log
+log_service LogStore
+
+###### Service discovery #####
+service_publish_sec -1
+service_kick_sec -1
+
+##### Tools To Add #####
+Tools_File ./configfiles/EventBuilder/ToolsConfig
+
+##### Run Type #####
+Inline -1
+Interactive 0
+
