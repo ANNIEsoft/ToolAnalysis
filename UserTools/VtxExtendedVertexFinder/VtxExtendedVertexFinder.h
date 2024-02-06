@@ -36,6 +36,12 @@ class VtxExtendedVertexFinder: public Tool {
   // \brief maximum of fit time window
   double fTmax;
 
+  // \use external file for PDF?  If 0, will use equation fit
+  bool fUsePDFFile = 0;
+
+  // \file containing histogram of PDF of charge-angle distribution
+  std::string pdffile;
+
   /// \brief 
   RecoVertex* FitExtendedVertex(RecoVertex* myvertex);
   
@@ -44,6 +50,7 @@ class VtxExtendedVertexFinder: public Tool {
   
   /// \brief Find a simple direction using weighted sum of digit charges 
   RecoVertex* FindSimpleDirection(RecoVertex* myvertex);
+  bool GetPDF(TH1D &pdf);
   
   /// \brief Reset everything
   void Reset();
@@ -70,7 +77,8 @@ class VtxExtendedVertexFinder: public Tool {
   int v_message=2;
   int v_debug=3;
   std::string logmessage;
-  int get_ok;	
+  int get_ok;
+  TH1D pdf;
   
 
 

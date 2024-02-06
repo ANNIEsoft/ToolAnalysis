@@ -1,17 +1,18 @@
-# VertexGeometryCheck
+# MeanTimeCheck
 
-VertexGeometryCheck
+MeanTimeCheck
 
 ## Data
 
-Describe any data formats VertexGeometryCheck creates, destroys, changes, or analyzes. E.G.
+Describe any data formats MeanTimeCheck creates, destroys, changes, or analyzes. E.G.
 
 **RawLAPPDData** `map<Geometry, vector<Waveform<double>>>`
 * Takes this data from the `ANNIEEvent` store and finds the number of peaks
 
+
 ## Configuration
 
-Describe any configuration variables for VertexGeometryCheck.
+Describe any configuration variables for MeanTimeCheck.
 
 ```
 param1 value1
