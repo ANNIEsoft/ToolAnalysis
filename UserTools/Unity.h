@@ -163,4 +163,6 @@
 #include "LAPPDDataDecoder.h"
 #include "PythonScript.h"
 #include "MeanTimeCheck.h"
+#include "ReweightEventsGenie.h"
+#include "FilterLAPPDEvents.h"
 #include "VtxSeedFineGrid.h"

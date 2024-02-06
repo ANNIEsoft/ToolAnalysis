@@ -96,6 +96,9 @@ class ANNIEEventBuilder: public Tool {
 
   bool FetchWaveformsHits();
 
+  //Functions to correct 8ns offset error
+  void Correct8nsOffsetRaw(bool force_all_entries);
+  void Correct8nsOffset(bool force_all_entries);
 
   //Methods for getting all timestamps encountered by decoder tools
   void ProcessNewTankPMTData();
