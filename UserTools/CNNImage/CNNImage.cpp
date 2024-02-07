@@ -5,9 +5,8 @@ CNNImage::CNNImage():Tool(){}
 
 bool CNNImage::Initialise(std::string configfile, DataModel &data){
 
-
-  if(configfile!="") m_variables.Initialise(configfile); // loading config file
-  //m_variables.Print();
+  if(configfile!="") m_variables.Initialise(configfile);
+  m_variables.Print();
   m_data= &data; //assigning transient data pointer
 
   //---------------------------------------------------------------
@@ -27,6 +26,8 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DimensionX",dimensionX);
   m_variables.Get("DimensionY",dimensionY);
   m_variables.Get("IncludeTopBottom",includeTopBottom);
+  m_variables.Get("MCStaticMapping",mcStaticMapping);
+  m_variables.Get("DataStaticMapping",dataStaticMapping);
   m_variables.Get("OutputFile",cnn_outpath);
   m_variables.Get("DimensionLAPPD",dimensionLAPPD);
   m_variables.Get("IsData",isData); 
@@ -35,7 +36,7 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
 
   //Check for user options
   if (data_mode != "Normal" && data_mode != "Charge-Weighted" && data_mode != "TimeEvolution") data_mode = "Normal";
-  if (save_mode != "Geometric" && save_mode != "PMT-wise") save_mode = "Geometric";
+  if (save_mode != "Geometric" && save_mode != "PMT-wise" && save_mode != "Static") save_mode = "Static";
   nlappdX = dimensionLAPPD;
   nlappdY = dimensionLAPPD;
   npmtsX = 16;    //in every row, we have 16 PMTs (8 sides, 2 PMTs per side per row)
@@ -82,155 +83,105 @@ bool CNNImage::Initialise(std::string configfile, DataModel &data){
     unsigned long chankey = apmt->GetChannels()->begin()->first;
     pmt_chankeys.push_back(chankey);
     Position position_PMT = apmt->GetDetectorPosition();
-    x_pmt.insert(std::pair<int,double>(detkey,position_PMT.X()-tank_center_x));
-    y_pmt.insert(std::pair<int,double>(detkey,position_PMT.Y()-tank_center_y));
-    z_pmt.insert(std::pair<int,double>(detkey,position_PMT.Z()-tank_center_z));
+
+    x_pmt.insert(std::pair<int,double>(detkey, position_PMT.X() - tank_center_x));
+    y_pmt.insert(std::pair<int,double>(detkey, position_PMT.Y() - tank_center_y));
+    z_pmt.insert(std::pair<int,double>(detkey, position_PMT.Z() - tank_center_z));
+      
+
     if (y_pmt[detkey]>max_y && apmt->GetTankLocation()!="OD") max_y = y_pmt.at(detkey);
     if (y_pmt[detkey]<min_y && apmt->GetTankLocation()!="OD") min_y = y_pmt.at(detkey);
     
     //Some debug information
-    Log("CNNImage tool: Reading in detkey: "+std::to_string(detkey)+", chankey: "+std::to_string(chankey)+", position: ("+std::to_string(position_PMT.X())+","+std::to_string(position_PMT.Y())+","+std::to_string(position_PMT.Z())+")",v_debug,verbosity);
-    Log("CNNImage tool: Rho PMT: "+std::to_string(sqrt(x_pmt.at(detkey)*x_pmt.at(detkey)+z_pmt.at(detkey)*z_pmt.at(detkey)))+", y PMT: "+std::to_string(y_pmt.at(detkey)),v_debug,verbosity);
+    Log("CNNImage tool: Reading in detkey: " + std::to_string(detkey) + ", chankey: " + std::to_string(chankey) \
+        + ", position: (" + std::to_string(position_PMT.X()) + "," + std::to_string(position_PMT.Y()) + "," \
+        + std::to_string(position_PMT.Z()) + ")", v_debug, verbosity);
+    Log("CNNImage tool: Rho PMT: " \
+        + std::to_string(sqrt(x_pmt.at(detkey)*x_pmt.at(detkey)+z_pmt.at(detkey)*z_pmt.at(detkey))) \
+        + ", y PMT: " + std::to_string(y_pmt.at(detkey)), v_debug, verbosity);
   }
 
-  Log("CNNImage tool: Max/min y-dimensions of PMT volume: Max y = "+std::to_string(max_y)+", min y = "+std::to_string(min_y),v_message,verbosity);
+  Log("CNNImage tool: Max/min y-dimensions of PMT volume: Max y = " + std::to_string(max_y) + ", min y = " \
+      + std::to_string(min_y), v_message, verbosity);
+
+  //---------------------------------------------------------------
+  //--------Read in CNNImage mapping for static mapping mode-------
+  //---------------------------------------------------------------
+  
+  ReadStaticMapping();
 
   //---------------------------------------------------------------
   //-------------------Order PMT positions-------------------------
   //---------------------------------------------------------------
 
-  for (unsigned int i_pmt = 0; i_pmt < y_pmt.size(); i_pmt++){
-
-    double x,y;
-    unsigned long detkey = pmt_detkeys[i_pmt];
-    Position pmt_pos(x_pmt[detkey],y_pmt[detkey],z_pmt[detkey]);
-    unsigned long chankey = pmt_chankeys[i_pmt];
-    Detector *apmt = geom->ChannelToDetector(chankey);
-    if (apmt->GetTankLocation()=="OD") continue;  //don't include OD PMTs
-    if ((y_pmt[detkey] >= max_y-0.001 || y_pmt[detkey] <= min_y+0.001) && !includeTopBottom) continue;     //don't include top/bottom PMTs if specified
- 
-    if (y_pmt[detkey] >= max_y-0.001) {
-      ConvertPositionTo2D_Top(pmt_pos, x, y);
-    }
-    else if (y_pmt[detkey] <= min_y+0.001) {
-	ConvertPositionTo2D_Bottom(pmt_pos, x, y);
-    }
-    else {
-       ConvertPositionTo2D(pmt_pos, x, y);
-    }
-    x = (round(100*x)/100.);
-    y = (round(100*y)/100.);
-    if (fabs(x-0.52)<0.001) x = 0.53;
-    if (fabs(x-0.47)<0.001) x = 0.48;
-    if (y_pmt[detkey] <= min_y + 0.001){
-      if (fabs(x-0.23)<0.001) x = 0.22;
-      if (fabs(x-0.77)<0.001) x = 0.78;
-    }
-    if (y_pmt[detkey] >= max_y - 0.001){
-      if (fabs(x-0.19)<0.001) x = 0.21;
-      if (fabs(x-0.34)<0.001) x = 0.32;
-      if (fabs(x-0.48)<0.001) x = 0.50;
-      if (fabs(x-0.66)<0.001) x = 0.68;
-    }
-    if (y_pmt[detkey] >= max_y-0.001) vec_pmt2D_x_Top.push_back(x);
-    else if (y_pmt[detkey] <= min_y+0.001) vec_pmt2D_x_Bottom.push_back(x);
-    else vec_pmt2D_x.push_back(x);
-    vec_pmt2D_y.push_back(y);
-    Log("CNNImage tool: Detkey "+std::to_string(detkey)+", x (2D): "+std::to_string(x)+", y (2D): "+std::to_string(y),v_message,verbosity);
-  }
-
-  //Sort the positions (in x & y separately)
-  Log("CNNImage tool: vec_pmt2D_* size: "+std::to_string(vec_pmt2D_x.size()),v_message,verbosity);
-  std::sort(vec_pmt2D_x.begin(),vec_pmt2D_x.end());
-  std::sort(vec_pmt2D_y.begin(),vec_pmt2D_y.end());
-  std::sort(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end());
-  std::sort(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end());
-  vec_pmt2D_x.erase(std::unique(vec_pmt2D_x.begin(),vec_pmt2D_x.end()),vec_pmt2D_x.end());
-  vec_pmt2D_y.erase(std::unique(vec_pmt2D_y.begin(),vec_pmt2D_y.end()),vec_pmt2D_y.end());
-  vec_pmt2D_x_Top.erase(std::unique(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end()),vec_pmt2D_x_Top.end());
-  vec_pmt2D_x_Bottom.erase(std::unique(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end()),vec_pmt2D_x_Bottom.end());
-  
-  //Output sorted positions
-  if (verbosity >= v_message){
-    std::cout <<"Sorted 2D position vectors: Barrel x "<<std::endl;
-    for (unsigned int i_x=0;i_x<vec_pmt2D_x.size();i_x++){
-      std::cout <<i_x<<": "<<vec_pmt2D_x.at(i_x)<<std::endl;
-    }
-    std::cout <<"Sorted 2D position vectors: Top x: "<<std::endl;
-    for (unsigned int i_x=0;i_x<vec_pmt2D_x_Top.size();i_x++){
-      std::cout <<i_x<<": "<<vec_pmt2D_x_Top.at(i_x)<<std::endl;
-    }
-    std::cout <<"Sorted 2D position vectors: Bottom x: "<<std::endl;
-    for (unsigned int i_x=0;i_x<vec_pmt2D_x_Bottom.size();i_x++){
-      std::cout <<i_x<<": "<<vec_pmt2D_x_Bottom.at(i_x)<<std::endl;
-    }
-    std::cout <<"Sorted 2D position vectors: y: "<<std::endl;
-    for (unsigned int i_y=0;i_y<vec_pmt2D_y.size();i_y++){
-      std::cout <<i_y<<": "<<vec_pmt2D_y.at(i_y)<<std::endl;
-    }
-  }
+  OrderPMTPositions();
 
   //---------------------------------------------------------------
   //-------------------Get LAPPD positions-------------------------
   //---------------------------------------------------------------
- 
+
   if (!isData){
-  max_y_lappd = -100.;
-  min_y_lappd = 100.;
+    max_y_lappd = -100.;
+    min_y_lappd = 100.;
 
-  for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("LAPPD").begin();
-                                                    it != Detectors->at("LAPPD").end();
-                                                  ++it){
-    Detector* anlappd = it->second;
-    unsigned long detkey = it->first;
-    lappd_detkeys.push_back(detkey);
-    unsigned long chankey = anlappd->GetChannels()->begin()->first;
-    Position position_LAPPD = anlappd->GetDetectorPosition();
-    x_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.X()-tank_center_x));
-    y_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.Y()-tank_center_y));
-    z_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.Z()-tank_center_z));
-    if (y_lappd[detkey]>max_y_lappd) max_y_lappd = y_lappd.at(detkey);
-    if (y_lappd[detkey]<min_y_lappd) min_y_lappd = y_lappd.at(detkey);
+    for (std::map<unsigned long,Detector*>::iterator it  = Detectors->at("LAPPD").begin();
+                                                      it != Detectors->at("LAPPD").end();
+                                                    ++it){
+      Detector* anlappd = it->second;
+      unsigned long detkey = it->first;
+      lappd_detkeys.push_back(detkey);
+      unsigned long chankey = anlappd->GetChannels()->begin()->first;
+      Position position_LAPPD = anlappd->GetDetectorPosition();
+      x_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.X()-tank_center_x));
+      y_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.Y()-tank_center_y));
+      z_lappd.insert(std::pair<int,double>(detkey,position_LAPPD.Z()-tank_center_z));
+      if (y_lappd[detkey]>max_y_lappd) max_y_lappd = y_lappd.at(detkey);
+      if (y_lappd[detkey]<min_y_lappd) min_y_lappd = y_lappd.at(detkey);
 
-    //Print some debug information about LAPPD positions
-    Log("CNNImage tool: Detkey: "+std::to_string(detkey)+", Chankey: "+std::to_string(chankey)+", position: ("+std::to_string(position_LAPPD.X())+","+std::to_string(position_LAPPD.Y())+","+std::to_string(position_LAPPD.Z())+")",v_debug,verbosity);
-    Log("CNNImage tool: Rho LAPPD "+std::to_string(sqrt(x_lappd.at(detkey)*x_lappd.at(detkey)+z_lappd.at(detkey)*z_lappd.at(detkey)))+", y LAPPD: "+std::to_string(y_lappd.at(detkey)),v_debug,verbosity);
-  }
-
-  //---------------------------------------------------------------
-  //-------------------Order LAPPD positions-----------------------
-  //---------------------------------------------------------------
-
-  for (unsigned int i_lappd = 0; i_lappd < y_lappd.size(); i_lappd++){
-
-    double x,y;
-    unsigned long detkey = lappd_detkeys[i_lappd];
-    Position lappd_pos(x_lappd[detkey],y_lappd[detkey],z_lappd[detkey]);
-    if (y_lappd[detkey] >= max_y || y_lappd[detkey] <= min_y) continue;     //don't include top/bottom/OD PMTs for now
-    ConvertPositionTo2D(lappd_pos, x, y);
-    vec_lappd2D_x.push_back(x);
-    vec_lappd2D_y.push_back(y);
-    Log("CNNImage tool: Detkey "+std::to_string(detkey)+", x (2D): "+std::to_string(x)+", y (2D): "+std::to_string(y),v_message,verbosity);
-  }
-
-  //Sort LAPPD positions
-  Log("CNNImage tool: vec_lappd2D_* size: "+std::to_string(vec_lappd2D_x.size()),v_message,verbosity);
-  std::sort(vec_lappd2D_x.begin(),vec_lappd2D_x.end());
-  std::sort(vec_lappd2D_y.begin(),vec_lappd2D_y.end());
-  vec_lappd2D_x.erase(std::unique(vec_lappd2D_x.begin(),vec_lappd2D_x.end()),vec_lappd2D_x.end());
-  vec_lappd2D_y.erase(std::unique(vec_lappd2D_y.begin(),vec_lappd2D_y.end()),vec_lappd2D_y.end());
-
-  //Output the sorted positions
-  if (verbosity >=2){
-    std::cout <<"CMMImage tool: Sorted LAPPD 2D position vectors: x-values: "<<std::endl;
-    for (unsigned int i_x=0;i_x<vec_lappd2D_x.size();i_x++){
-      std::cout <<i_x<<": "<<vec_lappd2D_x.at(i_x)<<std::endl;
+      //Print some debug information about LAPPD positions
+      Log("CNNImage tool: Detkey: "+std::to_string(detkey)+", Chankey: "+std::to_string(chankey)+", position: (" \
+          + std::to_string(position_LAPPD.X())+","+std::to_string(position_LAPPD.Y())+"," \
+          + std::to_string(position_LAPPD.Z())+")",v_debug,verbosity);
+      Log("CNNImage tool: Rho LAPPD " \
+          + std::to_string(sqrt(x_lappd.at(detkey)*x_lappd.at(detkey)+z_lappd.at(detkey)*z_lappd.at(detkey))) \
+          + ", y LAPPD: "+std::to_string(y_lappd.at(detkey)),v_debug,verbosity);
     }
-    std::cout <<"CMMImage tool: Sorted LAPPD 2D position vectors: y-values: "<<std::endl;
-    for (unsigned int i_y=0;i_y<vec_lappd2D_y.size();i_y++){
-      std::cout <<i_y<<": "<<vec_lappd2D_y.at(i_y)<<std::endl;
+
+    //---------------------------------------------------------------
+    //-------------------Order LAPPD positions-----------------------
+    //---------------------------------------------------------------
+
+    for (unsigned int i_lappd = 0; i_lappd < y_lappd.size(); i_lappd++){
+
+      double x,y;
+      unsigned long detkey = lappd_detkeys[i_lappd];
+      Position lappd_pos(x_lappd[detkey],y_lappd[detkey],z_lappd[detkey]);
+      if (y_lappd[detkey] >= max_y || y_lappd[detkey] <= min_y) continue;     //don't include top/bottom/OD PMTs for now
+      ConvertPositionTo2D(lappd_pos, x, y);
+      vec_lappd2D_x.push_back(x);
+      vec_lappd2D_y.push_back(y);
+      Log("CNNImage tool: Detkey "+std::to_string(detkey)+", x (2D): "+std::to_string(x)+", y (2D): " \
+          + std::to_string(y),v_message,verbosity);
     }
-  }
+
+    //Sort LAPPD positions
+    Log("CNNImage tool: vec_lappd2D_* size: "+std::to_string(vec_lappd2D_x.size()),v_message,verbosity);
+    std::sort(vec_lappd2D_x.begin(),vec_lappd2D_x.end());
+    std::sort(vec_lappd2D_y.begin(),vec_lappd2D_y.end());
+    vec_lappd2D_x.erase(std::unique(vec_lappd2D_x.begin(),vec_lappd2D_x.end()),vec_lappd2D_x.end());
+    vec_lappd2D_y.erase(std::unique(vec_lappd2D_y.begin(),vec_lappd2D_y.end()),vec_lappd2D_y.end());
+
+    //Output the sorted positions
+    if (verbosity >=2){
+      std::cout <<"CMMImage tool: Sorted LAPPD 2D position vectors: x-values: "<<std::endl;
+      for (unsigned int i_x=0;i_x<vec_lappd2D_x.size();i_x++){
+        std::cout <<i_x<<": "<<vec_lappd2D_x.at(i_x)<<std::endl;
+      }
+      std::cout <<"CMMImage tool: Sorted LAPPD 2D position vectors: y-values: "<<std::endl;
+      for (unsigned int i_y=0;i_y<vec_lappd2D_y.size();i_y++){
+        std::cout <<i_y<<": "<<vec_lappd2D_y.at(i_y)<<std::endl;
+      }
+    }
   }
 
   //---------------------------------------------------------------
@@ -318,12 +269,6 @@ bool CNNImage::Execute(){
   }
   get_ok = m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
   if (!get_ok) {Log("CNNImage tool: Error retrieving EventNumber",v_error,verbosity); return false;}
-  /*get_ok = m_data->Stores["ANNIEEvent"]->Get("RunNumber",runnumber);
-  if (!get_ok) {Log("CNNImage tool: Error retrieving RunNumber",v_error,verbosity); return false;}
-  get_ok = m_data->Stores["ANNIEEvent"]->Get("SubRunNumber",subrunnumber);
-  if (!get_ok) {Log("CNNImage tool: Error retrieving SubRunNumber",v_error,verbosity); return false;}
-  get_ok = m_data->Stores["ANNIEEvent"]->Get("EventTime",EventTime);
-  if (!get_ok) {Log("CNNImage tool: Error retrieving EventTime",v_error,verbosity); return false;}*/
   get_ok = m_data->CStore.Get("NumMrdTimeClusters",mrdeventcounter);
   if (!get_ok) {Log("CNNImage tool: Error retrieving NumMrdTimeClusters",v_error,verbosity); return false;}
   if (mrdeventcounter > 0 ){
@@ -389,14 +334,20 @@ bool CNNImage::Execute(){
       Log("CNNImage tool: Read in MCHits for chankey: "+std::to_string(chankey)+", detkey: "+std::to_string(detkey),v_debug,verbosity);
       if (thistube->GetDetectorElement()=="Tank"){
         if (thistube->GetTankLocation()=="OD") continue;
+
         hitpmt_detkeys.push_back(detkey);
         std::vector<MCHit>& Hits = apair.second;
         int hits_pmt = 0;
         for (MCHit &ahit : Hits){
           if (ahit.GetTime()>-10. && ahit.GetTime()<40.){
             charge[detkey] += ahit.GetCharge();
-            if (data_mode == "Normal") time[detkey] += ahit.GetTime();
-            else if (data_mode == "Charge-Weighted") time[detkey] += (ahit.GetTime()*ahit.GetCharge());
+
+            if (data_mode == "Normal") {
+              time[detkey] += ahit.GetTime();
+            } else if (data_mode == "Charge-Weighted") {
+              time[detkey] += (ahit.GetTime()*ahit.GetCharge());
+            }
+
             if (hits_pmt == 0) time_first[detkey] = ahit.GetTime();
             hits_pmt++;
           }
@@ -406,12 +357,13 @@ bool CNNImage::Execute(){
         total_hits_pmts++;
       }
     }
+
     Log("CNNImage tool: Done with MCHits loop",v_message,verbosity);
   } else {
     vectsize = RecoDigits->size();
     Log("CNNImage tool: RecoDigits size: "+std::to_string(vectsize),v_message,verbosity);
     total_hits_pmts = 0;
-    for (unsigned int i_digit = 0; i_digit < RecoDigits->size(); i_digit++){
+    for (unsigned int i_digit = 0; i_digit < RecoDigits->size(); i_digit++) {
       RecoDigit thisdigit = RecoDigits->at(i_digit);
       int digitID = thisdigit.GetDetectorID();
       unsigned long chankey = pmtid_to_channelkey[digitID];
@@ -454,7 +406,7 @@ bool CNNImage::Execute(){
         double x_local_lappd = local_pos.at(1);           //local parallel position within LAPPD
         double y_local_lappd = local_pos.at(0);           //local transverse position within LAPPD
         
-	//Get corresponding bin
+	      //Get corresponding bin
         double lappd_charge = 1.0;
         double t_lappd = ahit.GetTime();
         int binx_lappd = round((x_local_lappd+0.1)/0.2*dimensionLAPPD);       //local positions can be positive and negative, 10cm > x_local_lappd > -10cm 
@@ -466,7 +418,7 @@ bool CNNImage::Execute(){
         if (binx_lappd > dimensionLAPPD-1) binx_lappd = dimensionLAPPD-1;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
         if (biny_lappd > dimensionLAPPD-1) biny_lappd = dimensionLAPPD-1;     //FIXME: hits outside of -10cm...10cm should probably be just discarded
         
-	//Write charge & time hits into the histogram
+	      //Write charge & time hits into the histogram
         if (t_lappd>-10. && t_lappd<40){
           charge_lappd[detkey].at(binx_lappd).at(biny_lappd) += lappd_charge;
           time_lappd[detkey].at(binx_lappd).at(biny_lappd) += t_lappd;
@@ -533,7 +485,9 @@ bool CNNImage::Execute(){
   double global_min_time_first = (min_firsttime_pmts < min_firsttime_lappds)? min_firsttime_pmts : min_firsttime_lappds;
   double global_max_time_first = (max_firsttime_pmts > max_firsttime_lappds)? max_firsttime_pmts : max_firsttime_lappds;
 
-  Log("CNNImage tool: Min_time_pmts: "+std::to_string(min_time_pmts)+", min_time_lappds: "+std::to_string(min_time_lappds)+", global_min_time: "+std::to_string(global_min_time),v_message,verbosity);
+  Log("CNNImage tool: Min_time_pmts: " + std::to_string(min_time_pmts) + ", min_time_lappds: " \
+      + std::to_string(min_time_lappds)+", global_min_time: " + std::to_string(global_min_time),
+      v_message, verbosity);
 
   if (fabs(global_max_time-global_min_time)<0.01) global_max_time = global_min_time+1;
   if (fabs(global_max_time_first-global_min_time_first)<0.01) global_max_time_first = global_min_time_first+1;
@@ -571,8 +525,9 @@ bool CNNImage::Execute(){
         if(thedetector->GetDetectorElement()!="MRD") {
           continue;          // this is a veto hit, not an MRD hit.
         }
+
         num_mrd_paddles_cluster++;
-	int detkey = thedetector->GetDetectorID();
+	      int detkey = thedetector->GetDetectorID();
         Paddle *apaddle = geom->GetDetectorPaddle(detkey);
         int layer = apaddle->GetLayer();
         layer_occupied_cluster[layer-1]=true;
@@ -705,7 +660,8 @@ bool CNNImage::Execute(){
     //Get corresponding bins for 2D (x,y)-position
     int binx = hist_cnn->GetXaxis()->FindBin(x);
     int biny = hist_cnn->GetYaxis()->FindBin(y);
-    Log("CNNImage tool: Filling binx: "+std::to_string(binx)+", biny: "+std::to_string(biny)+" with charge: "+std::to_string(charge[detkey])+", time: "+std::to_string(time[detkey]),v_message,verbosity);
+    Log("CNNImage tool: Filling binx: "+std::to_string(binx)+", biny: "+std::to_string(biny)+" with charge: "
+        + std::to_string(charge[detkey])+", time: "+std::to_string(time[detkey]),v_message,verbosity);
 
     if (maximum_pmts < 0.001) maximum_pmts = 1.;
     if (fabs(max_time_pmts) < 0.001) max_time_pmts = 1.;
@@ -719,50 +675,116 @@ bool CNNImage::Execute(){
      time_first_fill = (time_first[detkey]-global_min_time_first)/(global_max_time_first-global_min_time_first);
     }
 
+    Log("CNNImage tool: BinContent at ("+std::to_string(binx)+","+std::to_string(biny)+") is "+std::to_string(hist_cnn->GetBinContent(binx,biny)), v_message, verbosity);
     hist_cnn->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge_fill);
     hist_cnn_abs->SetBinContent(binx,biny,hist_cnn->GetBinContent(binx,biny)+charge[detkey]);
     hist_cnn_time->SetBinContent(binx,biny,time_fill);
     hist_cnn_time_abs->SetBinContent(binx,biny,time[detkey]);
     hist_cnn_time_first->SetBinContent(binx,biny,time_first_fill);
     hist_cnn_time_first_abs->SetBinContent(binx,biny,time_first[detkey]);
+    Log("CNNImage tool: BinContent at ("+std::to_string(binx)+","+std::to_string(biny)+") is "+std::to_string(hist_cnn->GetBinContent(binx,biny)), v_message, verbosity);
 
-    //Fill the pmt-wise histograms
-    if ((y_pmt[detkey]>=max_y || y_pmt[detkey]<=min_y) && !includeTopBottom) continue;       //don't include endcaps in the pmt-wise histogram for now
-    if (y_pmt[detkey]>=max_y) ConvertPositionTo2D_Top(pmt_pos,x,y);
-    if (y_pmt[detkey]<=min_y) ConvertPositionTo2D_Bottom(pmt_pos,x,y);
-    double xCorr, yCorr;
-    xCorr = (round(100*x)/100.);
-    yCorr = (round(100*y)/100.);
-    if (fabs(xCorr-0.52)<0.001) xCorr = 0.53;
-    if (fabs(xCorr-0.47)<0.001) xCorr = 0.48;
-    std::vector<double>::iterator it_x, it_y;
-    if (y_pmt[detkey]>=max_y){
-      if (fabs(xCorr-0.19)<0.001) xCorr = 0.21;
-      if (fabs(xCorr-0.34)<0.001) xCorr = 0.32;
-      if (fabs(xCorr-0.48)<0.001) xCorr = 0.50;
-      if (fabs(xCorr-0.66)<0.001) xCorr = 0.68;
-      it_x = std::find(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end(),xCorr);
+    //Fill the static mapping and pmt-wise histograms
+    if ((y_pmt[detkey]>=max_y || y_pmt[detkey]<=min_y) && !includeTopBottom) continue;    
+
+    int index_x = -1, index_y = -1;
+
+    if (save_mode == "PMT-wise") {
+      if (y_pmt[detkey]>=max_y) ConvertPositionTo2D_Top(pmt_pos,x,y);
+      if (y_pmt[detkey]<=min_y) ConvertPositionTo2D_Bottom(pmt_pos,x,y);
+      double xCorr, yCorr;
+      xCorr = (round(100*x)/100.);
+      yCorr = (round(100*y)/100.);
+      if (fabs(xCorr-0.52)<0.001) xCorr = 0.53;
+      if (fabs(xCorr-0.47)<0.001) xCorr = 0.48;
+      std::vector<double>::iterator it_x, it_y;
+      if (y_pmt[detkey]>=max_y){
+        if (fabs(xCorr-0.19)<0.001) xCorr = 0.21;
+        if (fabs(xCorr-0.34)<0.001) xCorr = 0.32;
+        if (fabs(xCorr-0.48)<0.001) xCorr = 0.50;
+        if (fabs(xCorr-0.66)<0.001) xCorr = 0.68;
+        it_x = std::find(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end(),xCorr);
+      }
+      else if (y_pmt[detkey]<=min_y){
+        if (fabs(xCorr-0.23)<0.001) xCorr = 0.22;
+        if (fabs(xCorr-0.77)<0.001) xCorr = 0.78;
+        it_x = std::find(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end(),xCorr);
+      }
+      else {
+        it_x = std::find(vec_pmt2D_x.begin(),vec_pmt2D_x.end(),xCorr);
+      }
+      it_y = std::find(vec_pmt2D_y.begin(),vec_pmt2D_y.end(),yCorr);
+
+      if (y_pmt[detkey]>=max_y) {
+        index_x = std::distance(vec_pmt2D_x_Top.begin(),it_x);
+      } else if (y_pmt[detkey]<=min_y) {
+        index_x = std::distance(vec_pmt2D_x_Bottom.begin(),it_x);
+      } else {
+        index_x = std::distance(vec_pmt2D_x.begin(),it_x);
+      }
+      index_y = std::distance(vec_pmt2D_y.begin(),it_y);
+    } else if (save_mode == "Static") {
+      if (isData) {
+        auto mapping_it = std::find(data_cnnimage_mapping_detkey.begin(), data_cnnimage_mapping_detkey.end(), detkey);
+        if (mapping_it != mc_cnnimage_mapping_detkey.end()) {
+          index_x = data_cnnimage_mapping_x[std::distance(data_cnnimage_mapping_detkey.begin(), mapping_it)];
+          index_y = data_cnnimage_mapping_y[std::distance(data_cnnimage_mapping_detkey.begin(), mapping_it)];
+        } else {
+          // Mapping not found = critical error, return false!
+          Log("CNNImage tool: detkey " + std::to_string(detkey) + " not found in data_cnnimage_mapping!", v_error, verbosity);
+          Log("data_cnnimage_mapping_detkey has the size " + std::to_string(data_cnnimage_mapping_detkey.size()) \
+              + " and the contents:", v_error, verbosity);
+
+          for (std::size_t i = 0; i < data_cnnimage_mapping_detkey.size(); ++i) {
+            Log(std::to_string(data_cnnimage_mapping_detkey[i]) + " " + std::to_string(data_cnnimage_mapping_x[i]) \
+                + " " + std::to_string(data_cnnimage_mapping_y[i]), v_error, verbosity);
+          }
+          return false;
+        }
+      } else {
+        auto mapping_it = std::find(mc_cnnimage_mapping_detkey.begin(), mc_cnnimage_mapping_detkey.end(), detkey);
+        if (mapping_it != mc_cnnimage_mapping_detkey.end()) {
+          index_x = mc_cnnimage_mapping_x[std::distance(mc_cnnimage_mapping_detkey.begin(), mapping_it)];
+          index_y = mc_cnnimage_mapping_y[std::distance(mc_cnnimage_mapping_detkey.begin(), mapping_it)];
+        } else {
+          // Mapping not found = critical error, return false!
+          Log("CNNImage tool: detkey " + std::to_string(detkey) + " not found in mc_cnnimage_mapping!", v_error, verbosity);
+          Log("mc_cnnimage_mapping_detkey has the size " + std::to_string(mc_cnnimage_mapping_detkey.size()) \
+              + " and the contents:", v_error, verbosity);
+
+          for (std::size_t i = 0; i < mc_cnnimage_mapping_detkey.size(); ++i) {
+            Log(std::to_string(mc_cnnimage_mapping_detkey[i]) + " " + std::to_string(mc_cnnimage_mapping_x[i]) + " " \
+                + std::to_string(mc_cnnimage_mapping_y[i]), v_error, verbosity);
+          }
+          return false;
+        }
+      }
     }
-    else if (y_pmt[detkey]<=min_y){
-      if (fabs(xCorr-0.23)<0.001) xCorr = 0.22;
-      if (fabs(xCorr-0.77)<0.001) xCorr = 0.78;
-      it_x = std::find(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end(),xCorr);
+
+    // further safety. This error should never occur, however if the mapping file contains unexpected values
+    // this will be caught here.
+    if (index_x <= -1 || index_y <= -1 || index_x >= npmtsX || index_y >= npmtsY) {
+      std::cout << index_x << "   " << index_y << std::endl;
+      Log(R"LSTR(CNNImage tool: Unexpected value for index_x or index_y when filling PMT-wise histogram to produce the 2D
+          CNNImage. This error is a result of at least one of the indices being outside the size of the specified
+          matrix (Xmax, Ymax) =
+          )LSTR"
+          + std::to_string(npmtsX) + ", " + std::to_string(npmtsY)
+          + R"LSTR(), and could hint
+          toward bad values within the mapping files for the PMT-wise mode, or unexpected behaviour when loading
+          those.)LSTR",
+          v_error, verbosity);
+      return false;
     }
-    else {
-      it_x = std::find(vec_pmt2D_x.begin(),vec_pmt2D_x.end(),xCorr);
-    }
-    it_y = std::find(vec_pmt2D_y.begin(),vec_pmt2D_y.end(),yCorr);
-    int index_x, index_y;
-    if (y_pmt[detkey]>=max_y) index_x = std::distance(vec_pmt2D_x_Top.begin(),it_x);
-    else if (y_pmt[detkey]<=min_y) index_x = std::distance(vec_pmt2D_x_Bottom.begin(),it_x);
-    else index_x = std::distance(vec_pmt2D_x.begin(),it_x);
-    index_y = std::distance(vec_pmt2D_y.begin(),it_y);
+
     hist_cnn_pmtwise->SetBinContent(index_x+1,index_y+1,charge_fill);
     hist_cnn_abs_pmtwise->SetBinContent(index_x+1,index_y+1,charge[detkey]);
     hist_cnn_time_pmtwise->SetBinContent(index_x+1,index_y+1,time_fill);
     hist_cnn_time_abs_pmtwise->SetBinContent(index_x+1,index_y+1,time[detkey]);
     hist_cnn_time_first_pmtwise->SetBinContent(index_x+1,index_y+1,time_first_fill);
     hist_cnn_time_first_abs_pmtwise->SetBinContent(index_x+1,index_y+1,time_first[detkey]);
+    Log("CNNImage tool: BinContent at ("+std::to_string(index_x)+","+std::to_string(index_y)+") is "
+        +std::to_string(hist_cnn_pmtwise->GetBinContent(index_x+1,index_y+1)), v_message, verbosity);
   }
   
   //---------------------------------------------------------------
@@ -811,18 +833,17 @@ bool CNNImage::Execute(){
     outfile_MRD << mrdeventcounter<< ","<< num_mrd_paddles_cluster <<","<< num_mrd_layers_cluster<<","<<num_mrd_conslayers_cluster<<","<<num_mrd_adjacent_cluster<<","<<mrd_padperlayer_cluster<< endl;
 
     // Save root histograms
-    hist_cnn->Write();
-    hist_cnn_abs->Write();
-    hist_cnn_time->Write();
-    hist_cnn_time_first->Write();
-    hist_cnn_time_abs->Write();
-    hist_cnn_time_first_abs->Write();
-    hist_cnn_pmtwise->Write();
-    hist_cnn_abs_pmtwise->Write();
-    hist_cnn_time_pmtwise->Write();
-    hist_cnn_time_first_pmtwise->Write();
-    hist_cnn_time_abs_pmtwise->Write();
-    hist_cnn_time_first_abs_pmtwise->Write();
+    std::vector<TH2F*> temp_histograms_to_write_vec = {
+      hist_cnn, hist_cnn_abs, hist_cnn_time, hist_cnn_time_first, hist_cnn_time_abs, hist_cnn_time_first_abs,
+      hist_cnn_pmtwise, hist_cnn_abs_pmtwise, hist_cnn_time_pmtwise, hist_cnn_time_first_pmtwise,
+      hist_cnn_time_abs_pmtwise, hist_cnn_time_first_abs_pmtwise
+    };
+
+    for (auto hist : temp_histograms_to_write_vec) {
+      hist->Write();
+    }
+
+
     for (unsigned int i_lappd=0; i_lappd<lappd_detkeys.size();i_lappd++){
       hists_lappd.at(i_lappd)->Write();
       hists_abs_lappd.at(i_lappd)->Write();
@@ -849,7 +870,7 @@ bool CNNImage::Execute(){
           if (i_binX != hist_cnn_time_first_abs->GetNbinsX()-1 || i_binY!=hist_cnn_time_first_abs->GetNbinsY()-1) outfile_time_first_abs<<",";    
         }
       }
-    } else if (save_mode == "PMT-wise"){
+    } else if (save_mode == "PMT-wise" || save_mode == "Static"){
       for (int i_binY=0; i_binY < hist_cnn_pmtwise->GetNbinsY();i_binY++){
         for (int i_binX=0; i_binX < hist_cnn_pmtwise->GetNbinsX();i_binX++){
           outfile << hist_cnn_pmtwise->GetBinContent(i_binX+1,i_binY+1);
@@ -1039,4 +1060,113 @@ void CNNImage::ConvertPositionTo2D_Bottom(Position xyz_pos, double &x, double &y
         if (phi<-TMath::Pi() || phi>TMath::Pi())  std::cout <<"Drawing Event: Phi out of bounds! "<<", x= "<<xyz_pos.X()<<", y="<<xyz_pos.Y()<<", z="<<xyz_pos.Z()<<std::endl;
         x=0.5+phi*size_top_drawing;
 
+}
+
+void CNNImage::ReadStaticMapping() {
+  std::ifstream file_mc_cnnimage_mapping(mcStaticMapping);
+  std::ifstream file_data_cnnimage_mapping(dataStaticMapping);
+
+  std::string line;
+  boost::char_separator<char> sep(" ");
+
+  Log("loading mapping files: " + mcStaticMapping + ",   " + dataStaticMapping, v_message,verbosity);
+  while (std::getline(file_mc_cnnimage_mapping, line)) {
+    boost::tokenizer<boost::char_separator<char>> token(line, sep);
+
+    auto it = token.begin();
+    if (it != token.end()) mc_cnnimage_mapping_detkey.push_back(std::stoi(*it++));
+    if (it != token.end()) mc_cnnimage_mapping_x.push_back(std::stoi(*it++));
+    if (it != token.end()) mc_cnnimage_mapping_y.push_back(std::stoi(*it));
+  }
+
+  while (std::getline(file_data_cnnimage_mapping, line)) {
+    boost::tokenizer<boost::char_separator<char>> token(line, sep);
+
+    auto it = token.begin();
+    if (it != token.end()) data_cnnimage_mapping_detkey.push_back(std::stoi(*it++));
+    if (it != token.end()) data_cnnimage_mapping_x.push_back(std::stoi(*it++));
+    if (it != token.end()) data_cnnimage_mapping_y.push_back(std::stoi(*it));
+  }
+
+
+  file_mc_cnnimage_mapping.close();
+  file_data_cnnimage_mapping.close();
+}
+
+
+void CNNImage::OrderPMTPositions() {
+  if (save_mode == "Static") {
+    return;
+  } else {
+    for (unsigned int i_pmt = 0; i_pmt < y_pmt.size(); i_pmt++){
+
+      double x,y;
+      unsigned long detkey = pmt_detkeys[i_pmt];
+      Position pmt_pos(x_pmt[detkey],y_pmt[detkey],z_pmt[detkey]);
+      unsigned long chankey = pmt_chankeys[i_pmt];
+      Detector *apmt = geom->ChannelToDetector(chankey);
+      if (apmt->GetTankLocation()=="OD") continue;  //don't include OD PMTs
+      if ((y_pmt[detkey] >= max_y-0.001 || y_pmt[detkey] <= min_y+0.001) && !includeTopBottom) continue;     //don't include top/bottom PMTs if specified
+
+      if (y_pmt[detkey] >= max_y-0.001) {
+        ConvertPositionTo2D_Top(pmt_pos, x, y);
+      }
+      else if (y_pmt[detkey] <= min_y+0.001) {
+        ConvertPositionTo2D_Bottom(pmt_pos, x, y);
+      }
+      else {
+        ConvertPositionTo2D(pmt_pos, x, y);
+      }
+      x = (round(100*x)/100.);
+      y = (round(100*y)/100.);
+      if (fabs(x-0.52)<0.001) x = 0.53;
+      if (fabs(x-0.47)<0.001) x = 0.48;
+      if (y_pmt[detkey] <= min_y + 0.001){
+        if (fabs(x-0.23)<0.001) x = 0.22;
+        if (fabs(x-0.77)<0.001) x = 0.78;
+      }
+      if (y_pmt[detkey] >= max_y - 0.001){
+        if (fabs(x-0.19)<0.001) x = 0.21;
+        if (fabs(x-0.34)<0.001) x = 0.32;
+        if (fabs(x-0.48)<0.001) x = 0.50;
+        if (fabs(x-0.66)<0.001) x = 0.68;
+      }
+      if (y_pmt[detkey] >= max_y-0.001) vec_pmt2D_x_Top.push_back(x);
+      else if (y_pmt[detkey] <= min_y+0.001) vec_pmt2D_x_Bottom.push_back(x);
+      else vec_pmt2D_x.push_back(x);
+      vec_pmt2D_y.push_back(y);
+      Log("CNNImage tool: Detkey "+std::to_string(detkey)+", x (2D): "+std::to_string(x)+", y (2D): "+std::to_string(y),v_message,verbosity);
+    }
+
+    //Sort the positions (in x & y separately)
+    Log("CNNImage tool: vec_pmt2D_* size: "+std::to_string(vec_pmt2D_x.size()),v_message,verbosity);
+    std::sort(vec_pmt2D_x.begin(),vec_pmt2D_x.end());
+    std::sort(vec_pmt2D_y.begin(),vec_pmt2D_y.end());
+    std::sort(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end());
+    std::sort(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end());
+    vec_pmt2D_x.erase(std::unique(vec_pmt2D_x.begin(),vec_pmt2D_x.end()),vec_pmt2D_x.end());
+    vec_pmt2D_y.erase(std::unique(vec_pmt2D_y.begin(),vec_pmt2D_y.end()),vec_pmt2D_y.end());
+    vec_pmt2D_x_Top.erase(std::unique(vec_pmt2D_x_Top.begin(),vec_pmt2D_x_Top.end()),vec_pmt2D_x_Top.end());
+    vec_pmt2D_x_Bottom.erase(std::unique(vec_pmt2D_x_Bottom.begin(),vec_pmt2D_x_Bottom.end()),vec_pmt2D_x_Bottom.end());
+
+    //Output sorted positions
+    if (verbosity >= v_message){
+      std::cout <<"Sorted 2D position vectors: Barrel x "<<std::endl;
+      for (unsigned int i_x=0;i_x<vec_pmt2D_x.size();i_x++){
+        std::cout <<i_x<<": "<<vec_pmt2D_x.at(i_x)<<std::endl;
+      }
+      std::cout <<"Sorted 2D position vectors: Top x: "<<std::endl;
+      for (unsigned int i_x=0;i_x<vec_pmt2D_x_Top.size();i_x++){
+        std::cout <<i_x<<": "<<vec_pmt2D_x_Top.at(i_x)<<std::endl;
+      }
+      std::cout <<"Sorted 2D position vectors: Bottom x: "<<std::endl;
+      for (unsigned int i_x=0;i_x<vec_pmt2D_x_Bottom.size();i_x++){
+        std::cout <<i_x<<": "<<vec_pmt2D_x_Bottom.at(i_x)<<std::endl;
+      }
+      std::cout <<"Sorted 2D position vectors: y: "<<std::endl;
+      for (unsigned int i_y=0;i_y<vec_pmt2D_y.size();i_y++){
+        std::cout <<i_y<<": "<<vec_pmt2D_y.at(i_y)<<std::endl;
+      }
+    }
+  }
 }
