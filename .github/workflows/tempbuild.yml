@@ -62,7 +62,8 @@ jobs:
           sudo dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -nr | head
           df . -h
           sudo du / -hx -d 4 --threshold=1G | sort -hr | head
-    
+
+      - name: checkout
       - uses: actions/checkout@v2
 
       ##################
@@ -85,8 +86,10 @@ jobs:
       #    entrypoint: /bin/bash
       #    args: -c "echo `pwd` && ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ && ls -l && ls -l ./ToolDAQ && source ./Setup.sh && make clean && make && ./Analyse"
 
+      ##################
+
       - name: build and test 
-      - uses: addnab/docker-run-action@v3
+        uses: addnab/docker-run-action@v3
         with:
           image: anniesoft/toolanalysis:latest
           options: -v ${{ github.workspace }}:/ToolAnalysis
