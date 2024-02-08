@@ -91,8 +91,8 @@ jobs:
       - name: build and test 
         uses: addnab/docker-run-action@v3
         with:
-          image: anniesoft/toolanalysis:latest
-          options: -v ${{ github.workspace }}:/ToolAnalysis
+          image: "docker://anniesoft/toolanalysis:latest"
+          options: "-v ${{ github.workspace }}:/ToolAnalysis"
           run: |
             echo "Running Script"
             echo `pwd`
