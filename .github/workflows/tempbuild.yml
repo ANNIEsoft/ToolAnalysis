@@ -93,12 +93,14 @@ jobs:
         with:
           image: anniesoft/toolanalysis:latest
           registry: docker.io
-          options: -v ${{ github.workspace }}:/ToolAnalysis
+          options: -v ${{ github.workspace }}:/TA
           run: |
             echo "Running Script"
             echo `pwd`
-            ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ
             ls -l
+            cd /TA
+            ls -l
+            ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ
             ls -l ./ToolDAQ
             source ./Setup.sh
             make clean
