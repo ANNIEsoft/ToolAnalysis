@@ -137,8 +137,8 @@ Position VtxSeedFineGrid::FindCenter() {
 	double conefom = -999.999 * 100;
 	myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, 0.0, trueDirX, trueDirY, trueDirZ);
 	myFoMCalculator.TimePropertiesLnL(trueVtxT, timefom);
-//	myFoMCalculator.ConePropertiesFoM(ConeAngle, conefom);
-	fom = /*timefom * 0.5 + */conefom; // * 0.5;
+	myFoMCalculator.ConePropertiesFoM(ConeAngle, conefom);
+	fom = timefom * 0.5 + conefom * 0.5;
 	if (verbosity > 0)  cout << "VtxSeedFineGrid Tool: " << "FOM at true vertex = " << fom << endl;
   
 	for (int m = 0; m < vSeedVtxList->size(); m++) {
