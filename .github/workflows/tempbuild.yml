@@ -62,32 +62,32 @@ jobs:
           sudo dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -nr | head
           df . -h
           sudo du / -hx -d 4 --threshold=1G | sort -hr | head
-
+      
       - name: checkout
-      - uses: actions/checkout@v2
-
+        uses: actions/checkout@v2
+      
       ##################
       
       #- name: prerequisites
       #  run: yum install -y git make gcc-c++ which wget
-
+      
       #- name: build
       #  run: 
       #  echo `pwd` && ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ && ls -l && ls -l ./ToolDAQ && source ./Setup.sh && make clean && make
-
+      
       ##################
-        
+      
       #- name: test
       #  run : source ./Setup.sh && ./Analyse
-
+      
       #- name: build and test
       #  uses: docker://anniesoft/toolanalysis:latest
       #  with:
       #    entrypoint: /bin/bash
       #    args: -c "echo `pwd` && ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ && ls -l && ls -l ./ToolDAQ && source ./Setup.sh && make clean && make && ./Analyse"
-
+      
       ##################
-
+      
       - name: build and test 
         uses: addnab/docker-run-action@v3
         with:
