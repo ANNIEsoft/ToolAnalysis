@@ -8,6 +8,7 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TH2Poly.h"
+#include "TEfficiency.h"
 #include "TCanvas.h"
 #include "TBox.h"
 #include "TROOT.h"
@@ -48,13 +49,15 @@ class MrdPaddleEfficiencyCalc: public Tool {
   std::string mc_chankey_path;
   std::map<int,int> chankeymap_MC_data;
   std::map<int,int> chankeymap_data_MC;
+  std::string correction_file;
 
   //TFile variables
   TFile *inputfile = nullptr;
   TFile *outputfile = nullptr;
 
   //Histograms + canvas
-  TH1D *eff_chankey = nullptr;
+  TEfficiency *eff_chankey = nullptr;
+  TEfficiency *eff_chankey_corrected = nullptr;
   TH2Poly *eff_top = nullptr;
   TH2Poly *eff_side = nullptr;
   TH2Poly *eff_top_side = nullptr;
@@ -72,6 +75,7 @@ class MrdPaddleEfficiencyCalc: public Tool {
   int active_channel[2][24]={{0}};
   std::map<int,std::vector<int>> MRDChannelNumToCrateSpaceMap;
   Geometry *geom = nullptr;
+  std::map<unsigned long,double> map_correction;
 
   //Layer-by-layer information
   int channels_per_layer[11] = {26,30,26,34,26,26,26,30,26,30,26};

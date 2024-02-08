@@ -1,0 +1,8 @@
+myLoadANNIEEvent LoadANNIEEvent ./configfiles/FilterEvents/LoadANNIEEventConfig
+myLoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+myTimeClustering TimeClustering configfiles/FilterEvents/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks configfiles/FilterEvents/FindMrdTracksConfig
+myClusterFinder ClusterFinder ./configfiles/FilterEvents/ClusterFinderConfig
+myClusterClassifiers ClusterClassifiers ./configfiles/FilterEvents/ClusterClassifiersConfig
+myEventSelector EventSelector ./configfiles/Filters/NeutrinoCandidateFilter
+myFilterEvents FilterEvents ./configfiles/FilterEvents/FilterEventsConfig

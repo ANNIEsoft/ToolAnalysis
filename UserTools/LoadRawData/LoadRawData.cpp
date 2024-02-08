@@ -54,11 +54,17 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   MRDEntryNum = 0;
   TrigEntryNum = 0;
   LAPPDEntryNum = 0;
+  tanktotalentries = 0;
+  trigtotalentries = 0;
+  mrdtotalentries = 0;
+  lappdtotalentries = 0;
   FileCompleted = false;
   TankEntriesCompleted = false;
   MRDEntriesCompleted = false;
   TrigEntriesCompleted = false;
   LAPPDEntriesCompleted = false;
+
+  LAPPDPaused = 0;
 
   m_data->CStore.Set("FileProcessingComplete",false);
   return true;
@@ -157,7 +163,7 @@ bool LoadRawData::Execute(){
   }
 
   //If more MRD events than VME events abort
-  if (mrdtotalentries > tanktotalentries){
+  if (mrdtotalentries > tanktotalentries && BuildType != "MRD"){
     std::cout << "LoadRawData tool ERROR: More MRD entries than VME entries! Stopping toolchain" << std::endl;
     m_data->vars.Set("StopLoop",1);
   }

@@ -1,6 +1,8 @@
 ToolDAQPath=${PWD}/ToolDAQ
 
-CPPFLAGS= -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
+GIT_VERSION := "$(shell git describe --dirty --always)"
+
+CPPFLAGS= -DVERSION=\"$(GIT_VERSION)\" -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
