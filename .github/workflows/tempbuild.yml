@@ -91,7 +91,8 @@ jobs:
       - name: build and test 
         uses: addnab/docker-run-action@v3
         with:
-          image: "docker://anniesoft/toolanalysis:latest"
+          image: anniesoft/toolanalysis:latest
+          registry: docker.io
           options: -v ${{ github.workspace }}:/ToolAnalysis
           run: |
             echo "Running Script"
