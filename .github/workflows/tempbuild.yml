@@ -92,7 +92,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: "docker://anniesoft/toolanalysis:latest"
-          options: "-v ${{ github.workspace }}:/ToolAnalysis"
+          options: -v ${{ github.workspace }}:/ToolAnalysis
           run: |
             echo "Running Script"
             echo `pwd`
