@@ -1,0 +1,15 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+verbose 0
+
+InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/pmt/wcsim_0* #James's files
+
+TriggerType Beam
+SplitSubTriggers 1
+
+WCSimVersion 10               ## should reflect the WCSim version of the files being loaded
+HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
+#UseDigitSmearedTime 1        ## whether to use smeared digit time (T), or true time of first photon (F)
+LappdNumStrips 60            ## num channels to construct from each LAPPD
+LappdStripLength 100         ## relative x position of each LAPPD strip, for dual-sided readout [mm]
+LappdStripSeparation 10      ## stripline separation, for calculating relative y position of each LAPPD strip [mm]

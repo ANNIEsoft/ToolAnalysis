@@ -3,7 +3,6 @@
 
 #include <string>
 #include <iostream>
-#include <sstream>
 #include "ANNIEalgorithms.h"
 
 #include "Tool.h"
@@ -25,25 +24,24 @@ class FindTrackLengthInWater: public Tool {
 
 
  private:
-  std::string infile;
-  TFile* file;
-  TTree* regTree;
-  TTree * nu_eneNEW;
-  ExampleRoot* Data;
-
   int maxhits0=1100;
-  long currententry;
-  long NumEvents;
   bool first=1; bool deny_access=0;
-  double diffDirAbs2=0; double diffDirAbs=0;
-  double recoDWallR2=0; double recoDWallZ2=0;
-  int count1=0;
-  
+  // counters to keep track of cut efficiencies
+  int count1=0, count2=0, count3=0, count4=0;
   std::ofstream csvfile;
-  std::string myfile;
-  std::string outputdir="";
-  bool writefile=false;
-  TFile* outputFile;
+  Geometry* anniegeom=nullptr;
+  double tank_radius;
+  double tank_halfheight;
+  int fDoTraining=0;
+  
+	// verbosity levels: if 'verbosity' < this level, the message type will be logged.
+	int verbosity=1;
+	int v_error=0;
+	int v_warning=1;
+	int v_message=2;
+	int v_debug=3;
+	std::string logmessage;
+	int get_ok;
 };
 
 

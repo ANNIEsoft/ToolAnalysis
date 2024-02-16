@@ -1,0 +1,9 @@
+# VtxPointPositionFinder config file
+
+verbosity 5
+
+# Only one of the options below should be set to 1. All the others should be set to 0
+UseTrueVertexAsSeed 0
+UsePointVertexAsSeed 0
+FitAllOnSeedGrid 1
+UseMeanTimeAsSeed 0
