@@ -32,6 +32,9 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	MakeSingleEventPlots = false;      //very verbose, mostly for debugging
 	ModifiedTDCData = false;	
 	//Set default values for time-shifted TDC channels
+	//TDCs in one of the two crates are shifted in time with respect to the channels in the other crate
+	//--> correct this systematic time offset for cluster finding process
+	// https://github.com/ANNIEsoft/ToolAnalysis/pull/247
 	TimeShiftChannels = "";
 	shifted_channels = {std::make_pair(0,51),std::make_pair(82,107),std::make_pair(142,167),std::make_pair(194,219),std::make_pair(250,275),std::make_pair(306,332)};
 

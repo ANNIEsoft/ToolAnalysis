@@ -9,6 +9,8 @@
 #include "Parameters.h"
 #include "TMath.h"
 #include "TRandom.h"
+#include "FoMCalculator.h"
+#include "VertexGeometry.h"
 
 class VtxSeedGenerator: public Tool {
 
@@ -65,6 +67,12 @@ class VtxSeedGenerator: public Tool {
  	/// Use VertexGeometry to find the seeds
  	/// \param[in] bool savetodisk: save object to disk if savetodisk=true
  	void PushVertexSeeds(bool savetodisk);
+
+	Position FindCenter();
+
+	void GenerateFineGrid(int NSeeds, Position Center);
+
+	RecoVertex* FindSimpleDirection(RecoVertex* myVertex);
  	
  		
  	/// Data variables
@@ -79,9 +87,11 @@ class VtxSeedGenerator: public Tool {
   int fLastEntry;
   int fCounter;
   int fSeedType;
+  int fFineGrid;
   std::vector<RecoVertex>* vSeedVtxList = nullptr;
   std::vector<int> vSeedDigitList;	///< a vector thats stores the index of the digits used to calculate the seeds
   std::vector<RecoDigit>* fDigitList=nullptr;
+
 
   // Initialize the list that grid vertices will go to
   int UseSeedGrid=0;

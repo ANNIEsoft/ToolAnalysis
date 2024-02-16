@@ -1,4 +1,4 @@
 #MRDPaddleEfficiencyPreparer Config file
 
-OutputFile RAWDataR1613S0p89R0S0
+OutputFile mrd_observed_new_R3347S0_Beam
 verbosity 1

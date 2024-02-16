@@ -7,6 +7,7 @@
 #include "Tool.h"
 #include "TH1.h"
 #include "TH2D.h"
+#include "TFile.h"
 
 #include "FoMCalculator.h"
 #include "VertexGeometry.h"
@@ -22,6 +23,7 @@ class LikelihoodFitterCheck: public Tool {
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
+  bool GetPDF(TH1D & pdf);
 
 
  private:
@@ -50,6 +52,11 @@ class LikelihoodFitterCheck: public Tool {
  	TH2D* Likelihood2D = 0;
  	TGraph *gr_parallel = 0;
  	TGraph *gr_transverse = 0;
+
+    /// \comparison histograms
+    TH2D* Likelihood2D_pdf = 0;
+    TGraph* pdf_parallel = 0;
+    TGraph* pdf_transverse = 0;
  	
  	/// verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=-1;
@@ -60,6 +67,9 @@ class LikelihoodFitterCheck: public Tool {
 	std::string logmessage;
 	int get_ok;	
 	bool ifPlot2DFOM = false;
+    std::string pdffile;
+    bool fUsePDFFile = 0;
+    TH1D pdf;
 	
 
 

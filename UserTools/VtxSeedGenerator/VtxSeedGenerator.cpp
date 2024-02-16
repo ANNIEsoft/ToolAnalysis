@@ -78,10 +78,10 @@ bool VtxSeedGenerator::Execute(){
   }
 
   // Generate vertex candidates and push to "RecoEvent" store
-  if (UseSeedGrid){
-    Log("VtxSeedGenerator Tool: Generating seed grid",v_debug,verbosity);
-    this->GenerateSeedGrid(fNumSeeds);
-  } else {
+  if (UseSeedGrid) {
+	  Log("VtxSeedGenerator Tool: Generating seed grid", v_debug, verbosity);
+	  this->GenerateSeedGrid(fNumSeeds);
+  }else {
     Log("VtxSeedGenerator Tool: Generating quadfitter seeds",v_debug,verbosity);
     this->GenerateVertexSeeds(fNumSeeds);
   }

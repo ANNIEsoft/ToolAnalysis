@@ -1,0 +1,12 @@
+# MCRecoEventLoader config file
+
+verbosity 0
+#Get Pion/Kaon counts from MC Truth
+GetPionKaonInfo 1
+#Particle ID you want to load from parent particles; 13 for muon
+ParticleID 13
+#coordinate shifts needed to put particles in tank origin coordinates
+xshift 0.0
+yshift 14.46469
+zshift -168.1
+

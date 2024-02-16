@@ -17,6 +17,7 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   str_inactive = "./configfiles/MrdPaddleEfficiencyCalc/inactive_channels.dat";
   mc_chankey_path = "./configfiles/MrdPaddleEfficiencyCalc/MRD_Chankeys_Data_MC.dat";
   layer_plots = false;
+  correction_file = "./configfiles/MrdPaddleEfficiencyCalc/MRDCorrectionFactors.dat";
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("InputFile",str_input);
@@ -25,6 +26,7 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   m_variables.Get("IsData",isData);
   m_variables.Get("MCChankeyFile",mc_chankey_path);
   m_variables.Get("LayerPlots",layer_plots);
+  m_variables.Get("CorrectionFile",correction_file);
 
   int chankey_mc, chankey_data, wcsimid;
 
@@ -45,7 +47,8 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   outputfile = new TFile(str_output.c_str(),"RECREATE");
 
   //Define histograms & canvases
-  eff_chankey = new TH1D("eff_chankey","Efficiency vs. channelkey",310,26,336);
+  eff_chankey = new TEfficiency("eff_chankey","Efficiency vs. channelkey; chankey;efficiency #varepsilon",310,26,336);
+  eff_chankey_corrected = new TEfficiency("eff_chankey_corrected","Efficiency vs. channelkey; chankey;efficiency #varepsilon",310,26,336);
   eff_top = new TH2Poly("eff_top","Efficiency - Top View",1.6,3.,-2,2.);
   eff_side = new TH2Poly("eff_side","Efficiency - Side View",1.6,3.,-2.,2.);
   eff_top_side = new TH2Poly("eff_top_side","Efficiency - Side/Top View",1.6,3.,-2.,2.);
@@ -55,22 +58,19 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   gROOT->cd();
 
   //Label axes of histograms
-  eff_chankey->GetXaxis()->SetTitle("chankey");
-  eff_chankey->GetYaxis()->SetTitle("efficiency #epsilon");
-  eff_chankey->SetStats(0);
   eff_top->GetXaxis()->SetTitle("z [m]");
   eff_top->GetYaxis()->SetTitle("x [m]");
   eff_side->GetXaxis()->SetTitle("z [m]");
   eff_side->GetYaxis()->SetTitle("y [m]");
-  eff_top->GetZaxis()->SetTitle("#epsilon");
-  eff_side->GetZaxis()->SetTitle("#epsilon");
+  eff_top->GetZaxis()->SetTitle("#varepsilon");
+  eff_side->GetZaxis()->SetTitle("#varepsilon");
   eff_top->SetStats(0);
   eff_side->SetStats(0);
   eff_top->GetZaxis()->SetRangeUser(0.000,1);
   eff_side->GetZaxis()->SetRangeUser(0.000,1);
   eff_top_side->GetXaxis()->SetTitle("z [m]");
   eff_top_side->GetYaxis()->SetTitle("x/y [m]");
-  eff_top_side->GetZaxis()->SetTitle("#epsilon");
+  eff_top_side->GetZaxis()->SetTitle("#varepsilon");
   eff_top_side->SetStats(0);
   eff_top_side->GetZaxis()->SetRangeUser(0.000,1);
   eff_crate1->SetStats(0);
@@ -201,6 +201,16 @@ bool MrdPaddleEfficiencyCalc::Initialise(std::string configfile, DataModel &data
   }
   inactive_file.close();
 
+  unsigned long temp_chkey;
+  double temp_eff, temp_corr;
+  ifstream f_correction(correction_file.c_str());
+  while (!f_correction.eof()){
+    f_correction >> temp_chkey >> temp_eff >> temp_corr;
+    map_correction.emplace(temp_chkey,temp_corr);
+    if (f_correction.eof()) break;
+  }
+  f_correction.close();
+
   //Set up color palette
   Bird_Idx = TColor::CreateGradientColorTable(9, stops, red, green, blue, 255, alpha);
   std::cout <<"Bird_Idx: "<<Bird_Idx<<std::endl;
@@ -282,10 +292,10 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       layer_hist1_layer->GetXaxis()->SetTitle("x [m]");
       layer_hist2_layer->GetXaxis()->SetTitle("x [m]");
     }
-    layer_hist1->GetYaxis()->SetTitle("Efficiency #epsilon");
-    layer_hist2->GetYaxis()->SetTitle("Efficiency #epsilon");
-    layer_hist1_layer->GetYaxis()->SetTitle("Efficiency #epsilon");
-    layer_hist2_layer->GetYaxis()->SetTitle("Efficiency #epsilon");
+    layer_hist1->GetYaxis()->SetTitle("Efficiency #varepsilon");
+    layer_hist2->GetYaxis()->SetTitle("Efficiency #varepsilon");
+    layer_hist1_layer->GetYaxis()->SetTitle("Efficiency #varepsilon");
+    layer_hist2_layer->GetYaxis()->SetTitle("Efficiency #varepsilon");
     layer_hist1->SetStats(0);
     layer_hist2->SetStats(0);
     layer_hist1_layer->SetStats(0);
@@ -320,7 +330,7 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       //Get observed/expected histograms
       TH1D *temp_exp = (TH1D*) inputfile->Get(name_exp_hist.str().c_str());
       TH1D *temp_obs = (TH1D*) inputfile->Get(name_obs_hist.str().c_str());
-      TH1D *temp_exp_layer=nullptr, *temp_obs_layer=nullptr;
+      TH1D *temp_exp_layer, *temp_obs_layer;
       if (layer_plots){
         temp_exp_layer = (TH1D*) inputfile->Get(name_exp_hist_layer.str().c_str());
         temp_obs_layer = (TH1D*) inputfile->Get(name_obs_hist_layer.str().c_str());
@@ -335,7 +345,12 @@ bool MrdPaddleEfficiencyCalc::Execute(){
       TH1D *efficiency_hist = (TH1D*) temp_obs->Clone(name_eff_hist.str().c_str());
       efficiency_hist->SetStats(0);
       efficiency_hist->SetTitle(title_eff_hist.str().c_str());
-      TH1D *efficiency_hist_layer;
+
+      //Note that for efficiency_hist_layer, the colors might not be displayed correctly in newer versions of root
+      //See https://root-forum.cern.ch/t/error-using-tcolor/39149/10 for more details on how to fix it when drawing the canvas from the output file
+
+      TH1D *efficiency_hist_layer, *efficiency_hist_layer_copy;
+      TEfficiency *temp_teff;
       if (layer_plots){
         efficiency_hist_layer = (TH1D*) temp_obs_layer->Clone(name_eff_hist_layer.str().c_str());
         efficiency_hist_layer->SetStats(0);
@@ -344,19 +359,27 @@ bool MrdPaddleEfficiencyCalc::Execute(){
 		
       if (i_layer%2==0) efficiency_hist->GetXaxis()->SetTitle("y [m]");
       else efficiency_hist->GetXaxis()->SetTitle("x [m]");
-      efficiency_hist->GetYaxis()->SetTitle("efficiency #epsilon");
+      efficiency_hist->GetYaxis()->SetTitle("efficiency #varepsilon");
       efficiency_hist->Divide(temp_exp);
       if (layer_plots){
         if (i_layer%2==0) efficiency_hist_layer->GetXaxis()->SetTitle("y [m]");
         else efficiency_hist_layer->GetXaxis()->SetTitle("x [m]");
-        efficiency_hist_layer->GetYaxis()->SetTitle("efficiency #epsilon");
+        efficiency_hist_layer->GetYaxis()->SetTitle("efficiency #varepsilon");
         efficiency_hist_layer->Divide(temp_exp_layer);
+
+        temp_teff = new TEfficiency(*temp_obs_layer,*temp_exp_layer);
+        for (int i_bin=0; i_bin < temp_exp_layer->GetNbinsX(); i_bin++){
+          double temp_error = temp_teff->GetEfficiencyErrorUp(i_bin+1);
+          if (temp_teff->GetEfficiency(i_bin+1) > 0.) efficiency_hist_layer->SetBinError(i_bin+1,temp_error);
+          else efficiency_hist_layer->SetBinError(i_bin+1,0);
+        }
+
+        efficiency_hist_layer_copy = (TH1D*) efficiency_hist_layer->Clone();
+        efficiency_hist_layer_copy->SetName(name_eff_hist_Layer.str().c_str());
+
       }
+
       
-      TH1F *efficiency_hist_layer_copy = (TH1F*) efficiency_hist_layer->Clone();
-      efficiency_hist_layer_copy->SetName(name_eff_hist_Layer.str().c_str());
-      //if (i_ch < channels_per_layer[i_layer]/2) efficiency_hist_layer_copy->SetLineColor(Bird_palette[int(254*(i_ch/double(channels_per_layer[i_layer]/2)))]);
-      //else efficiency_hist_layer_copy->SetLineColor(Bird_palette[int(254*((i_ch-channels_per_layer[i_layer]/2)/double(channels_per_layer[i_layer]/2)))]);
 
       //Scale down from 10 bins to 1
       temp_exp->Rebin(10);
@@ -370,10 +393,15 @@ bool MrdPaddleEfficiencyCalc::Execute(){
 
       double efficiency = efficiency_hist_avg->GetBinContent(1);
       double exp = temp_exp->GetBinContent(1);
-      double obs = temp_exp->GetBinContent(1);
+      double obs = temp_obs->GetBinContent(1);
       double err_eff = 1./exp * sqrt(obs + obs*obs/exp);
-      eff_chankey->SetBinContent(bins_start[i_layer]+i_ch,efficiency);
-      eff_chankey->SetBinError(bins_start[i_layer]+i_ch,err_eff);
+      eff_chankey->SetTotalEvents(bins_start[i_layer]+i_ch,int(exp));
+      eff_chankey->SetPassedEvents(bins_start[i_layer]+i_ch,int(obs));
+      eff_chankey_corrected->SetTotalEvents(bins_start[i_layer]+i_ch,int(exp));
+      double obs_corrected = obs*map_correction[input_chankey];
+      if (obs_corrected > exp) obs_corrected = exp;
+      eff_chankey_corrected->SetPassedEvents(bins_start[i_layer]+i_ch,int(obs_corrected));
+
 
       if (i_ch < channels_per_layer[i_layer]/2){
         layer_hist1->SetBinContent(i_ch+1,efficiency);
@@ -384,17 +412,19 @@ bool MrdPaddleEfficiencyCalc::Execute(){
 	  }
 	  canvas_layer1->cd();
           efficiency_hist_layer->SetLineColor(Bird_palette[int(254*(i_ch/double(channels_per_layer[i_layer]/2)))]);
+          efficiency_hist_layer->SetFillColorAlpha(Bird_palette[int(254*(i_ch/double(channels_per_layer[i_layer]/2)))],0.30);
+	  
           if (i_ch == 0) {
             efficiency_hist_layer->SetTitle(title_canvas_hist1.str().c_str());
             efficiency_hist_layer->GetYaxis()->SetRangeUser(0.000,1);
-            efficiency_hist_layer->Draw();
+            efficiency_hist_layer->Draw("e2");
     	    c_eff_layers->cd(j_layer);
-            efficiency_hist_layer->Draw();
+            efficiency_hist_layer->Draw("e2");
           }
           else {
-	    efficiency_hist_layer->Draw("same");
+	    efficiency_hist_layer->Draw("e2same");
             c_eff_layers->cd(j_layer);
-            efficiency_hist_layer->Draw("same");
+            efficiency_hist_layer->Draw("e2same");
           }
           }
         } else {
@@ -406,17 +436,18 @@ bool MrdPaddleEfficiencyCalc::Execute(){
   	  }
 	  canvas_layer2->cd();
           efficiency_hist_layer->SetLineColor(Bird_palette[int(254*((i_ch-channels_per_layer[i_layer]/2)/double(channels_per_layer[i_layer]/2)))]);
+          efficiency_hist_layer->SetFillColor(Bird_palette[int(254*((i_ch-channels_per_layer[i_layer]/2)/double(channels_per_layer[i_layer]/2)))]);
           if (i_ch == channels_per_layer[i_layer]/2) {
             efficiency_hist_layer->SetTitle(title_canvas_hist2.str().c_str());
             efficiency_hist_layer->GetYaxis()->SetRangeUser(0.000,1);
-            efficiency_hist_layer->Draw();
+            efficiency_hist_layer->Draw("e2");
             c_eff_layers->cd(j_layer+1);
-            efficiency_hist_layer->Draw();
+            efficiency_hist_layer->Draw("e2");
           }
           else {
-            efficiency_hist_layer->Draw("same");
+            efficiency_hist_layer->Draw("e2same");
             c_eff_layers->cd(j_layer+1);
-            efficiency_hist_layer->Draw("same");
+            efficiency_hist_layer->Draw("e2same");
           }
         }
       }
@@ -461,6 +492,7 @@ bool MrdPaddleEfficiencyCalc::Execute(){
 
   outputfile->cd();
   eff_chankey->Write();
+  eff_chankey_corrected->Write();
   eff_top->Write();
   eff_side->Write();
   eff_top_side->Write();

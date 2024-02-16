@@ -1,0 +1,6 @@
+#FindTrackLengthInWater Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+verbosity 1
+MaxTotalHitsToDNN 1100
+OutputDataFile data_for_trackLength_training.csv
+DoTraining 1

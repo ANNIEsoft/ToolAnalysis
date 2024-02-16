@@ -1,0 +1,12 @@
+# ClusterFinder Config File
+
+HitStore MCHits #Either MCHits or Hits (accessed in ANNIEEvent store)
+OutputFile Run1415S0_AllPMTs_ClusterFinder #Output root prefix name for the current run
+ClusterFindingWindow 50 # in ns, size of the window used to "clusterize"
+AcqTimeWindow 4000 # in ns, size of the acquisition window
+ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
+MinHitsPerCluster 10 # group of hits are considered clusters above this amount of hits
+
+verbosity 0         #verbosity of the application
+end_of_window_time_cut 0.95 # from 0 to 1, length of the window you want to loop over with respect to acq. window (1 for full window, 0.95 for 95% from the start)
+Plots2D 0 #2D charge-vs-time plot to be drawn?
