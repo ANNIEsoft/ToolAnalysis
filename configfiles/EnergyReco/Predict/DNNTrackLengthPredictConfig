@@ -1,0 +1,13 @@
+# This config file stores variables that may be retrieved by the python script
+# Also this is a caller config file
+
+PythonScript DNNTrackLengthPredict
+
+verbose 1
+
+# DNN model, weights etc
+TrackLengthWeightsFile UserTools/DNNTrackLength/stand_alone/weights/weights_bets.hdf5
+
+# Scaling Parameters
+
+ScalingVarsBoostStoreFile Data_Energy_Reco/ScalingVarsStore.bs

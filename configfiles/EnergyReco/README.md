@@ -1,25 +1,60 @@
 # Configure files
 
 ***********************
-#Description
+# Description
 **********************
 
-Configure files are simple text files for passing variables to the Tools.
+The `EnergyReco` toolchains are used to reconstruct the track length in the water tank and the tank energy of a muon by using a Deep Learning Neural Network(DNN) and a Boosted Decision Tree(BDT) with Gradient Boost. The `Train_Test` toolchain is used to train and test the models that we want to use later for the reconstruction. The `Predict` toolchain is used after we've trained the models in order to reconstruct the track length in the water tank and the tank energy of a muon for different events.
 
-Text files are read by the Store class (src/Store) and automatically asigned to an internal map for the relavent Tool to use.
-
+Both of these toolchains require information from the digit, the MRD and the vertex reconstruction so the appropriate tools need to be used.
 
 ************************
-#Useage
+# Tools
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
+************************
+# Train_Test
+************************
 
-Variables should be stored one per line as follows:
+The tools in the `Train_Test` toolchain are the following:
 
+* LoadWCSim
+* LoadWCSimLAPPD
+* MCParticleProperties
+* MCRecoEventLoader
+* DigitBuilder
+* HitCleaner
+* ClusterFinder
+* TimeClustering
+* EventSelector
+* FindMrdTracks
+* VtxSeedGenerator
+* VtxSeedFineGrid
+* VtxExtendedVertexFinder
+* FindTrackLengthInWater
+* DNNTrackLengthTrain_Test
+* BDTMuonEnergyTrain_Test
 
-Name Value #Comments 
+************************
+# Predict
+************************
 
+The tools in the `Predict` toolchain are the following:
 
-Note: Only one value is permitted per name and they are stored in a string stream and templated cast back to the type given.
+* LoadWCSim
+* LoadWCSimLAPPD
+* MCParticleProperties
+* MCRecoEventLoader
+* DigitBuilder
+* HitCleaner
+* ClusterFinder
+* TimeClustering
+* EventSelector
+* FindMrdTracks
+* VtxSeedGenerator
+* VtxSeedFineGrid
+* VtxExtendedVertexFinder
+* FindTrackLengthInWater
+* DNNTrackLengthPredict
+* BDTMuonEnergyPredict
 

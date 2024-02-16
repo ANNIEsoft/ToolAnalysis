@@ -1,0 +1,18 @@
+# This config file stores variables that may be retrieved by the python script
+# Access them by retrieving the corresponding variable from the 'Config' store
+
+PythonScript DNNTrackLengthTrain_Test
+
+verbosity 1
+
+InitialiseFunction Initialise
+ExecuteFunction Finalise
+FinaliseFunction Execute
+
+# DNN model, weights etc
+TrackLengthOutputWeightsFile UserTools/DNNTrackLength/stand_alone/weights/weights_bets.hdf5
+
+# Training data
+TrackLengthTrainingInputBoostStoreFile EnergyReco.bs
+
+ScalingVarsBoostStoreFile Data_Energy_Reco/ScalingVarsStore.bs

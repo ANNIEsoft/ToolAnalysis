@@ -1,0 +1,15 @@
+# This config file stores variables that may be retrieved by the python script
+# Access them by retrieving the corresponding variable from the 'Config' store
+
+PythonScript BDTMuonEnergyTrain_Test
+
+verbosity 1
+
+InitialiseFunction Initialise
+ExecuteFunction Finalise
+FinaliseFunction Execute
+
+# BDT model file to write
+BDTMuonEnergyWeightsFile finalized_BDTmodel_forMuonEnergy.sav
+
+BDTMuonEnergyTrainingInputBoostStoreFile EnergyReco.bs

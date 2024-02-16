@@ -1,0 +1,7 @@
+verbosity 5
+useDirectionGrid 0
+useSimpleDirection 1
+useTrueDir 0
+useMRDTrack 0
+usePastResolution 0
+multiGrid 1

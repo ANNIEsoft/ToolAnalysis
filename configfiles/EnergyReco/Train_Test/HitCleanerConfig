@@ -1,0 +1,20 @@
+# HitCleaner config file
+
+verbosity                   5
+Config                      2								#config type: 1 = pulse height cut, 2 = +neighbour cut, 3 = +cluster cut								
+PmtMinPulseHeight           20							#minimum pulse height
+PmtNeighbourRadius          60							#digit neighbouring distance [cm]
+PmtMinNeighbourDigits       2								#minimum neighbour digits
+PmtClusterRadius            60							#digit clustering distance [cm]      
+PmtTimeWindowN              10								#neighbouring time window [ns]    
+PmtTimeWindowC              10								#clustering time window [ns]           
+PmtMinHitsPerCluster        4								#number of hits per cluster								                         
+LappdMinPulseHeight         0							  #minimum pulse height                             
+LappdNeighbourRadius        25              #digit neighbouring distance [cm]              
+LappdMinNeighbourDigits     20              #minimum neighbour digits                      
+LappdClusterRadius          25              #digit clustering distance [cm]                                    
+LappdTimeWindowN            1               #neighbouring time window [ns]                 
+LappdTimeWindowC            1               #clustering time window [ns]                   
+LappdMinHitsPerCluster      20			        #number of digits per cluster	
+#MinClusterDigits            50							#minimum clustered digits	(LAPPD+PMT)		
+MinClusterDigits            10							#minimum clustered digits	(PMT-only)					  

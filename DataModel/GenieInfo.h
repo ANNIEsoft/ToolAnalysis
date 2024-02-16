@@ -47,8 +47,8 @@ class GenieInfo {
 	int probepdg=-1;
 	std::string probepartname="";
 	//FourVector* probemomentum=0;                   // GeV/c?
-	Position probethreemomentum=Position(0.,0.,0.);  // GeV/c?
-	Position probemomentumdir=Position(0.,0.,0.);    // unit vector
+	Direction probethreemomentum=Direction(0.,0.,0.);  // GeV/c?
+	Direction probemomentumdir=Direction(0.,0.,0.);    // unit vector
 	double probeanglex=0.;                           // rads
 	double probeangley=0.;                           // rads
 	double probeangle=0.;                            // rads
@@ -57,7 +57,7 @@ class GenieInfo {
 	//genie::GHepParticle* targetnucleon=0;
 	int targetnucleonpdg=-1;
 	std::string targetnucleonname="";                        // pdg if name not known
-	Position targetnucleonthreemomentum=Position(0.,0.,0.);  // GeV/c? only defined if there is a target nucleon: not true for all events
+	Direction targetnucleonthreemomentum=Direction(0.,0.,0.);  // GeV/c? only defined if there is a target nucleon: not true for all events
 	double targetnucleonenergy=0.;                           // GeV. only defined if there is a target nucleon
 	
 	// target nucleus:
@@ -74,15 +74,25 @@ class GenieInfo {
 	// final state lepton:
 	std::string fsleptonname="";                     // "n/a" if not defined
 	double fsleptonenergy=0.;                        // GeV. -1 if not defined
+        int fsleptonpdg=-1;                              // -1 if not defined
+        double fsleptonm=0;                              // -1 if not defined
+        Direction fsleptonmomentum=Direction(0.,0.,0.);    // GeV/c. 0 if not defined
+        Direction fsleptonmomentumdir=Direction(0.,0.,0.); // unit vector. 0 if not defined
+        Position fsleptonvtx=Position(0.,0.,0.);         // cm. 0 if not defined
+        double fsleptont=0.;                             // ns. -1 if not deined
 	
-	// other remnants: TODO: this information is NOT being correctly read in
-	int numfsprotons=-1;
-	int numfsneutrons=-1;
-	int numfspi0=-1;
-	int numfspiplus=-1;
-	int numfspiminus=-1;
-	int numfskplus=-1;
-	int numfskminus=-1;	
+        // other remnants: TODO: this information is NOT being correctly read in
+        int numfsprotons=-1;
+        int numfsneutrons=-1;
+        int numfspi0=-1;
+        int numfspiplus=-1;
+        int numfspipluscher=-1;
+        int numfspiminus=-1;
+        int numfspiminuscher=-1;
+        int numfskplus=-1;
+        int numfskpluscher=-1;
+        int numfskminus=-1;
+        int numfskminuscher=-1;
 
 	// kinematic information
 	//FourVector* k1=0;                               // GeV/c? Neutrino incoming momentum vector
@@ -130,13 +140,23 @@ class GenieInfo {
 			ar & remnantnucleusenergy;
 			ar & fsleptonname;
 			ar & fsleptonenergy;
-			ar & numfsprotons;
-			ar & numfsneutrons;
-			ar & numfspi0;
-			ar & numfspiplus;
-			ar & numfspiminus;
-			ar & numfskplus;
-			ar & numfskminus;
+                        ar & fsleptonpdg;
+                        ar & fsleptonm;
+                        ar & fsleptonmomentum;
+                        ar & fsleptonmomentumdir;
+                        ar & fsleptonvtx;
+                        ar & fsleptont;
+                        ar & numfsprotons;
+                        ar & numfsneutrons;
+                        ar & numfspi0;
+                        ar & numfspiplus;
+                        ar & numfspipluscher;
+                        ar & numfspiminus;
+                        ar & numfspiminuscher;
+                        ar & numfskplus;
+                        ar & numfskpluscher;
+                        ar & numfskminus;
+                        ar & numfskminuscher;
 			ar & q;
 			ar & costhfsl;
 			ar & fslangle;

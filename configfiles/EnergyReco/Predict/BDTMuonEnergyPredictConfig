@@ -1,0 +1,9 @@
+# This config file stores variables that may be retrieved by the python script
+# Access them by retrieving the corresponding variable from the 'Config' store
+
+PythonScript BDTMuonEnergyPredict
+
+verbose 1
+
+# BDT model file to load
+BDTMuonModelFile finalized_BDTmodel_forMuonEnergy.sav

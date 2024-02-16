@@ -46,6 +46,7 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
   m_variables.Get("IsMC",fIsMC);
   m_variables.Get("RecoPDG",fRecoPDG);
+  m_variables.Get("CutConfiguration",fCutConfigurationName);
 
   if (!fIsMC){fMCFVCut = false; fMCPMTVolCut = false; fMCMRDCut = false; fMCPiKCut = false; fMCIsMuonCut = false; fMCIsElectronCut = false; fMCIsSingleRingCut = false; fMCIsMultiRingCut = false; fMCProjectedMRDHit = false; fMCEnergyCut = false; fPromptTrigOnly = false;}
 
@@ -68,6 +69,9 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   vec_mrdclusters_time = new std::vector<double>; 
 
   m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelNumToTankPMTSPEChargeMap);
+
+  m_data->CStore.Set("CutConfiguration",fCutConfigurationName);
+
 
   return true;
 }

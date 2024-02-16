@@ -114,4 +114,7 @@ CTCMRDTimeTolerance (int)
 When pairing MRD and CTC timestamps (MRDAndMRDAndCTC BuildType only), MRD and trigger data
 will be paired into ANNIEEvents if their timestamps are within this time value.  
 Value is given in milliseconds.
+
+BuildStage1Data (bool)
+If building the intermediate Stage 1 Data format, this should be set to true, and anywhere this tool usually sets a variable in the ANNIEEvent store, it will also set this variable in Stores to be used downstream by the Stage1DataBuilder tool.
 ```
