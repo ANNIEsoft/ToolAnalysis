@@ -904,6 +904,155 @@ void MinuitOptimizer::FitExtendedVertexWithMinuit() {
   return;
 }
 
+void MinuitOptimizer::FitExtendedVertexWithMinuit(TH1D pdf) {
+    // seed vertex
+    // ===========
+    bool foundSeed = (fSeedVtx->FoundVertex()
+        && fSeedVtx->FoundDirection());
+
+
+    double seedTime = fSeedVtx->GetTime();
+    double seedX = fSeedVtx->GetPosition().X();
+    double seedY = fSeedVtx->GetPosition().Y();
+    double seedZ = fSeedVtx->GetPosition().Z();
+
+    double seedDirX = fSeedVtx->GetDirection().X();
+    double seedDirY = fSeedVtx->GetDirection().Y();
+    double seedDirZ = fSeedVtx->GetDirection().Z();
+
+    double seedTheta = acos(seedDirZ);
+    double seedPhi = 0.0;
+
+    //modified by JW
+    if (seedDirX > 0.0) {
+        seedPhi = atan(seedDirY / seedDirX);
+    }
+    if (seedDirX < 0.0) {
+        seedPhi = atan(seedDirY / seedDirX);
+        if (seedDirY > 0.0) seedPhi += TMath::Pi();
+        if (seedDirY <= 0.0) seedPhi -= TMath::Pi();
+    }
+    if (seedDirX == 0.0) {
+        if (seedDirY > 0.0) seedPhi = 0.5 * TMath::Pi();
+        else if (seedDirY < 0.0) seedPhi = -0.5 * TMath::Pi();
+        else seedPhi = 0.0;
+    }
+    // current status
+    // ==============
+    int status = fSeedVtx->GetStatus();
+
+    // reset counter
+    // =============
+    extended_vertex_reset_itr();
+
+    // abort if necessary
+    // ==================
+    if (foundSeed == 0) {
+        if (fPrintLevel >= 0) {
+            std::cout << "   <warning> extended vertex fit failed to find input vertex " << std::endl;
+        }
+        status |= RecoVertex::kFailExtendedVertex;
+        fFittedVtx->SetStatus(status);
+        return;
+    }
+
+    // run Minuit
+    // ==========  
+    // six-parameter fit to vertex position, time and direction
+
+    int err = 0;
+    int flag = 0;
+
+    double fitXpos = 0.0;
+    double fitYpos = 0.0;
+    double fitZpos = 0.0;
+    double fitTheta = 0.0;
+    double fitPhi = 0.0;
+    double fitTime = 0.0;
+
+    double fitTimeErr = 0.0;
+    double fitXposErr = 0.0;
+    double fitYposErr = 0.0;
+    double fitZposErr = 0.0;
+    double fitThetaErr = 0.0;
+    double fitPhiErr = 0.0;
+
+    double* arglist = new double[10];
+    arglist[0] = 2;  // 1: standard minimization
+    // 2: try to improve minimum
+
+// re-initialize everything...
+    fMinuitExtendedVertex->mncler();
+    fMinuitExtendedVertex->SetFCN(extended_vertex_chi2);
+    fMinuitExtendedVertex->mnset();
+    fMinuitExtendedVertex->mnexcm("SET STR", arglist, 1, err);
+    fMinuitExtendedVertex->mnparm(0, "x", seedX, 1.0, fXmin, fXmax, err);
+    fMinuitExtendedVertex->mnparm(1, "y", seedY, 1.0, fYmin, fYmax, err);
+    fMinuitExtendedVertex->mnparm(2, "z", seedZ, 5.0, fZmin, fZmax, err);
+    fMinuitExtendedVertex->mnparm(3, "theta", seedTheta, 0.125 * TMath::Pi(), -1.0 * TMath::Pi(), 2.0 * TMath::Pi(), err);
+    fMinuitExtendedVertex->mnparm(4, "phi", seedPhi, 0.125 * TMath::Pi(), -2.0 * TMath::Pi(), 2.0 * TMath::Pi(), err);
+    fMinuitExtendedVertex->mnparm(5, "vtxTime", seedTime, 1.0, fTmin, fTmax, err); //....TX
+
+    flag = fMinuitExtendedVertex->Migrad();
+
+    fMinuitExtendedVertex->GetParameter(0, fitXpos, fitXposErr);
+    fMinuitExtendedVertex->GetParameter(1, fitYpos, fitYposErr);
+    fMinuitExtendedVertex->GetParameter(2, fitZpos, fitZposErr);
+    fMinuitExtendedVertex->GetParameter(3, fitTheta, fitThetaErr);
+    fMinuitExtendedVertex->GetParameter(4, fitPhi, fitPhiErr);
+    fMinuitExtendedVertex->GetParameter(5, fitTime, fitTimeErr);
+
+    delete[] arglist;
+
+    //correct angles, JW
+    if (fitTheta < 0.0) fitTheta = -1.0 * fitTheta;
+    if (fitTheta > TMath::Pi()) fitTheta = 2.0 * TMath::Pi() - fitTheta;
+    if (fitPhi < -1.0 * TMath::Pi()) fitPhi += 2.0 * TMath::Pi();
+    if (fitPhi > TMath::Pi()) fitPhi -= 2.0 * TMath::Pi();
+
+    // sort results
+    // ============
+    fVtxX = fitXpos;
+    fVtxY = fitYpos;
+    fVtxZ = fitZpos;
+    fVtxTime = fitTime;
+    fDirX = sin(fitTheta) * cos(fitPhi);
+    fDirY = sin(fitTheta) * sin(fitPhi);
+    fDirZ = cos(fitTheta);
+
+    fVtxFOM = -9999.0;
+
+    fPass = 0;               // flag = 0: normal termination
+    if (flag == 0) fPass = 1; // anything else: abnormal termination 
+
+    fItr = extended_vertex_iterations();
+
+    // fit complete; calculate fit results
+    // ================
+    fgFoMCalculator->ExtendedVertexChi2(fVtxX, fVtxY, fVtxZ,
+        fDirX, fDirY, fDirZ,
+        fConeAngle, fVtxTime, fVtxFOM, pdf);
+
+    // set vertex and direction
+    // ========================
+    fFittedVtx->SetVertex(fVtxX, fVtxY, fVtxZ, fVtxTime);
+    fFittedVtx->SetDirection(fDirX, fDirY, fDirZ);
+    fFittedVtx->SetConeAngle(fConeAngle);
+    fFittedVtx->SetFOM(fVtxFOM, fItr, fPass);
+
+    // set status
+    // ==========
+    bool inside_det = ANNIEGeometry::Instance()->InsideDetector(fVtxX, fVtxY, fVtxZ);
+    if (!fPass || !inside_det) status |= RecoVertex::kFailExtendedVertex;
+    fFittedVtx->SetStatus(status);
+    if (fPrintLevel >= 0) {
+        if (!fPass) std::cout << "   <warning> extended vertex fit failed to converge! Error code: " << flag << std::endl;
+    }
+    // return vertex
+    // =============  
+    return;
+}
+
 
 //KEPT FOR HISTORY, BUT FITTER IS CURRENTLY NOT WORKING
 //THESE SHOULD BE MOVED TO BEFORE THE CONSTRUCTOR

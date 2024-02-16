@@ -96,6 +96,9 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   double digitCharge = 0.0;
   double coneCharge = 0.0;
   double allCharge = 0.0;
+  double outerCone = -99.9;
+  int outhits = 0;
+  int inhits = 0;
 
   double fom = -9999.;
 
@@ -106,23 +109,109 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
 
       if( deltaAngle<=0.0 ){
         coneCharge += digitCharge*( 0.75 + 0.25/( 1.0 + (deltaAngle*deltaAngle)/(coneEdgeLow*coneEdgeLow) ) );
+	inhits++;	
+        //if (deltaAngle > outerCone) outerCone = deltaAngle;
       }
       else{
         coneCharge += digitCharge*( 0.00 + 1.00/( 1.0 + (deltaAngle*deltaAngle)/(coneEdgeHigh*coneEdgeHigh) ) );
+	outhits++;
+        //outerCone = 0;
       }
 
       allCharge += digitCharge;
+      //outerCone = -outhits/inhits;
     }
   }
 
   if( allCharge>0.0 ){
-    fom = fBaseFOM*coneCharge/allCharge;
+    if( outerCone>-42 ){
+      fom = fBaseFOM*coneCharge/allCharge/*exp(outerCone)*/;
+    }else{
+      fom = fBaseFOM*coneCharge/allCharge;
+    }
   }
 
   // return figure of merit
   // ======================
   coneFOM = fom;
   return;
+}
+
+void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneEdge, double& chi2, TH1D angularDist, double& phimax, double& phimin) {
+    double coneEdgeLow = 21.0;  // cone edge (low side)      
+    double coneEdgeHigh = 3.0;  // cone edge (high side)   [muons: 3.0, electrons: 7.0]
+    double deltaAngle = 0.0;
+    double digitCharge = 0.0;
+    double digitPE = 0.0;
+    double coneCharge = 0.0;
+    double allCharge = 0.0;
+    double outerCone = -99.9;
+    double coef = angularDist.Integral(); //1000;
+    chi2 = 0;
+    cout << "ConePropertiesLnL Position: (" << vtxX << ", " << vtxY << ", " << vtxZ << ")" << endl;
+    cout << "And Direction: (" << dirX << ", " << dirY << ", " << dirZ << ")" << endl;
+
+    double digitX, digitY, digitZ;
+    double dx, dy, dz, ds;
+    double px, py, pz;
+    double cosphi, phi, phideg;
+    phimax = 0;
+    phimin = 10;
+    double allPE = 0;
+    int refbin;
+    double weight;
+    double P;
+    
+    for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
+        if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
+            digitCharge = this->fVtxGeo->GetDigitQ(idigit);
+            allCharge += digitCharge;
+        }
+    }
+
+    for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
+        if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
+            deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
+            digitCharge = this->fVtxGeo->GetDigitQ(idigit);
+            //digitPE = this->fVtxGeo->GetDigitPE(idigit);
+            digitX = fVtxGeo->GetDigitX(idigit);
+            digitY = fVtxGeo->GetDigitY(idigit);
+            digitZ = fVtxGeo->GetDigitZ(idigit);
+            dx = digitX - vtxX;
+            dy = digitY - vtxY;
+            dz = digitZ - vtxZ;
+            std::cout << "dx, dy, dz: " << dx << ", " << dy << ", " << dz << endl;
+            ds = pow(dx * dx + dy * dy + dz * dz, 0.5);
+            std::cout << "ds: " << ds << endl;
+            px = dx / ds;
+            py = dy / ds;
+            pz = dz / ds;
+            std::cout << "px, py, pz: " << px << ", " << py << ", " << pz << endl;
+            std::cout << "dirX, dirY, DirZ: " << dirX << ", " << dirY << ", " << dirZ << endl;
+
+            cosphi = 1.0;
+            phi = 0.0;
+            //cout << "angle direction: " << dx << " " << dy << " " << dz << " = " << ds << endl;
+            cosphi = px * dirX + py * dirY + pz * dirZ;
+            //cout << "cosphi: " << cosphi << endl;
+            phi = acos(cosphi);
+
+            if (phi > phimax) phimax = phi;
+            if (phi < phimin) phimin = phi;
+
+            phideg = phi / (TMath::Pi() / 180);
+            std::cout << "phi, phideg: " << phi << ", " << phideg << endl;
+            std::cout << "vs. Zenith: " << fVtxGeo->GetZenith(idigit) << endl;
+            refbin = angularDist.FindBin(phideg);
+            weight = angularDist.GetBinContent(refbin)/coef;
+            P = digitCharge / allCharge;
+            //cout << "conefomlnl P: " << P << ", weight: " << weight << endl;
+            chi2 += pow(P - weight, 2)/weight;
+
+            //outerCone = -outhits/inhits;
+        }
+    }
+    //chi2 = (100 - chi2) * exp(-pow(pow(0.7330382, 2) - pow(phimax - phimin, 2), 2) / pow(0.7330382, 2));
 }
 
 
@@ -335,6 +424,41 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
   return;
 }
 
+void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneAngle, double vtxTime, double& fom, TH1D pdf)
+{
+	// figure of merit
+	// ===============
+	double vtxFOM = -9999.;
+	double timeFOM = -9999.;
+	double coneFOM = -9999.;
+    double phimax, phimin;
+
+	// calculate residuals
+	// ===================
+	this->fVtxGeo->CalcExtendedResiduals(vtxX, vtxY, vtxZ, 0.0, dirX, dirY, dirZ);
+
+	// calculate figure of merit
+	// =========================
+
+    this->ConePropertiesLnL(vtxX, vtxY, vtxZ, dirX, dirY, dirZ, coneAngle, coneFOM, pdf, phimax, phimin);
+	this->TimePropertiesLnL(vtxTime, timeFOM);
+
+	double fTimeFitWeight = this->fTimeFitWeight;
+	double fConeFitWeight = this->fConeFitWeight;
+	vtxFOM = (fTimeFitWeight*timeFOM + fConeFitWeight * coneFOM) / (fTimeFitWeight + fConeFitWeight);
+
+	// calculate overall figure of merit
+	// =================================
+	fom = vtxFOM;
+
+	// truncate
+	if (fom < -9999.) fom = -9999.;
+
+	return;
+}
+
+
+
 //KEPT FOR HISTORY, BUT FITTER IS CURRENTLY NOT WORKING
 //void FoMCalculator::CorrectedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double& vtxAngle, double& vtxTime, double& fom)
 //{  
@@ -526,4 +650,3 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
 //
 //  return;
 //}
-

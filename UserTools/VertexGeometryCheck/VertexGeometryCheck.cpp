@@ -12,6 +12,8 @@ bool VertexGeometryCheck::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("OutputFile", output_filename);
   m_variables.Get("ShowEvent", fShowEvent);
+  m_variables.Get("Theta", vertheta);
+  m_variables.Get("Phi", verphi);
   fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
   
   // Histograms
@@ -106,6 +108,12 @@ bool VertexGeometryCheck::Execute(){
   trueDirX = vtxDir.X();
   trueDirY = vtxDir.Y();
   trueDirZ = vtxDir.Z();
+  if (vertheta != -999 && verphi != -999) {
+      Log("overriding direction", v_debug, verbosity);
+      trueDirX = cos(vertheta) * sin(verphi);
+      trueDirY = sin(vertheta) * sin(verphi);
+      trueDirZ = cos(verphi);
+  }
 
   double ConeAngle = Parameters::CherenkovAngle();
 
@@ -160,7 +168,7 @@ bool VertexGeometryCheck::Execute(){
     if(myvtxgeo->GetDigitType(n)==RecoDigit::PMT8inch) fpmtextendedtres->Fill(myvtxgeo->GetExtendedResidual(n));
     fltrack->Fill(myvtxgeo->GetDistTrack(n)); //cm
     flphoton->Fill(myvtxgeo->GetDistPhoton(n)); //cm
-    fzenith->Fill(myvtxgeo->GetZenith(n)); //
+    fzenith->Fill(phideg/*myvtxgeo->GetZenith(n)*/); //
     fazimuth->Fill(myvtxgeo->GetAzimuth(n)); //
     fconeangle->Fill(myvtxgeo->GetConeAngle(n)); //
     fdigitcharge->Fill(myvtxgeo->GetDigitQ(n));
