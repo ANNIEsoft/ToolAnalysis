@@ -6,7 +6,7 @@ FROM anniesoft/toolanalysis:base
 ### Run the following commands as super user (root):
 USER root
 
-Run cd ToolAnalysis; bash -c "source Setup.sh && git checkout -- . && make update && make"
+Run cd ToolAnalysis; bash -c "source Setup.sh && git checkout -- . && make update && make clean && make && make"
 
 ### Open terminal
 CMD ["/bin/bash"]
