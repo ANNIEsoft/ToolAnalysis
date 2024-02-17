@@ -1,0 +1,11 @@
+# MCRecoEventLoader config file
+
+verbosity 0
+GetPionKaonInfo 1
+GetNRings 1
+ParticleID 13
+DoParticleSelection 0
+xshift 0.0
+yshift 14.46469
+zshift -168.1
+IsMC 1

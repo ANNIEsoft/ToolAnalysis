@@ -1,0 +1,7 @@
+verbosity 1
+
+SaveROOT 1
+SaveBoostStore 1
+ReadFromBoostStore None
+Filename  NeutronMultiplicity_R2630_CBStrict
+MRDTrackRestriction 1

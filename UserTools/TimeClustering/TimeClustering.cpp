@@ -228,7 +228,7 @@ bool TimeClustering::Execute(){
 			return true;
 		}
 	} else {
-		std::cout <<"TimeClustering tool: MC file: Getting TDCData object"<<std::endl;
+		if (verbosity > 0) std::cout <<"TimeClustering tool: MC file: Getting TDCData object"<<std::endl;
 		if (ModifiedTDCData) get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData_mod",TDCData_MC);  // a std::map<unsigned long,vector<MCHit>>, with artificially applied efficiencies
 		else get_ok = m_data->Stores.at("ANNIEEvent")->Get("TDCData",TDCData_MC);  // a std::map<unsigned long,vector<MCHit>>, without artifically applied efficiencies
 		if(not get_ok){

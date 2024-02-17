@@ -1,0 +1,5 @@
+#FindNeutrons config file
+
+verbosity 1
+Method CBStrict	#selection cut method for neutrons: CB, CBStrict, in the future ML techniques
+EfficiencyMapPath ./configfiles/NeutronMultiplicity/NeutronEffMap_Data.txt #path to neutron efficiency map

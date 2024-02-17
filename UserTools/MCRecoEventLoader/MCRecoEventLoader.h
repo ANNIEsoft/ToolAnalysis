@@ -49,7 +49,13 @@ class MCRecoEventLoader: public Tool {
   /// This particle is the primary muon. The muon start position, time and 
   /// the muon direction are used to initise the true neutrino vertex 
   void FindTrueVertexFromMC();
-  
+ 
+  /// \brief Find all primary particle pdgs
+  ///
+  /// Loop over all MC particles with parent ID = 0 (primaries) and
+  /// store their pdg numbers in a vector
+  void FindParticlePdgs();
+ 
   /// \brief Find PionKaon Count 
   ///
   /// Loop over all MC particles and find any particles with PDG codes

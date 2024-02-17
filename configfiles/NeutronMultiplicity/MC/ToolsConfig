@@ -1,0 +1,14 @@
+myLoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+myLoadWCSim LoadWCSim ./configfiles/NeutronMultiplicity/MC/LoadWCSimConfig
+#myLoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/NeutronMultiplicity/MC/LoadWCSimLAPPDConfig
+myLoadGenieEvent LoadGenieEvent ./configfiles/NeutronMultiplicity/MC/LoadGenieEventConfig
+myMCParticleProperties MCParticleProperties ./configfiles/NeutronMultiplicity/MC/MCParticlePropertiesConfig
+myMCRecoEventLoader MCRecoEventLoader ./configfiles/NeutronMultiplicity/MC/MCRecoEventLoaderConfig
+myTimeClustering TimeClustering configfiles/NeutronMultiplicity/MC/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks configfiles/NeutronMultiplicity/MC/FindMrdTracksConfig
+myClusterFinder ClusterFinder ./configfiles/NeutronMultiplicity/MC/ClusterFinderConfig
+myClusterClassifiers ClusterClassifiers ./configfiles/NeutronMultiplicity/MC/ClusterClassifiersConfig
+myEventSelector EventSelector ./configfiles/NeutronMultiplicity/MC/EventSelectorConfig
+mySimpleReconstruction SimpleReconstruction ./configfiles/NeutronMultiplicity/SimpleReconstructionConfig
+myFindNeutrons FindNeutrons ./configfiles/NeutronMultiplicity/MC/FindNeutronsConfig
+myNeutronMultiplicity NeutronMultiplicity ./configfiles/NeutronMultiplicity/MC/NeutronMultiplicityConfig

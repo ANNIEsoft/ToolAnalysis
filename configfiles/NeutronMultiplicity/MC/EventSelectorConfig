@@ -1,0 +1,31 @@
+# EventSelector config file
+
+verbosity 0
+MCPMTVolCut 0
+MCFVCut 0
+MCMRDCut 0
+MCPiKCut 0
+MCIsMuonCut 0
+MCIsElectronCut 0
+MCIsSingleRingCut 0
+MCIsMultiRingCut 0
+MCProjectedMRDHit 0
+MCEnergyCut 0
+Emin 0		#Minimum energy in MeV
+Emax 1000	#Maximum energy in MeV
+MRDRecoCut 0
+RecoPMTVolCut 0
+RecoFVCut 0
+NHitCut 0
+NHitmin 4	#Minimum number of hit digits
+PMTMRDCoincCut 1
+PMTMRDOffset 0
+PromptTrigOnly 0
+TriggerWord 5
+SaveStatusToStore 1
+IsMC 1		#MC or Data?
+NoVeto 1
+Veto 0
+ThroughGoing 0
+TriggerExtendedWindow 1 #We always have an extended window available in MC
+BeamOK 1	#Beam is always ok in MC?

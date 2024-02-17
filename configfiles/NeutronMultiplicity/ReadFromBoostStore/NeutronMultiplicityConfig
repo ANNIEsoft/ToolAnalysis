@@ -1,0 +1,10 @@
+verbosity 3
+
+SaveROOT 1
+SaveBoostStore 1
+#ReadFromBoostStore None
+ReadFromBoostStore ./configfiles/NeutronMultiplicity/ReadFromBoostStore/datafiles.txt
+Filename NeutronMultiplicity_R2506-R2630_CBStrict
+#ReadFromBoostStore ./configfiles/NeutronMultiplicity/ReadFromBoostStore/mcfiles.txt
+#Filename NeutronMultiplicity_MCBeam_CB_0_2000
+MRDTrackRestriction 1

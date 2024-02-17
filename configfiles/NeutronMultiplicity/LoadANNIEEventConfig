@@ -1,0 +1,4 @@
+verbose 4
+FileForListOfInputs ./configfiles/NeutronMultiplicity/my_inputs.txt
+EventOffset 0
+GlobalEvNr 1

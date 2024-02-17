@@ -1,0 +1,20 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+verbose 0
+
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.1.9.root
+#InputFile /annie/app/users/mnieslon/WCSim_build/wcsim_ambe_port5_z0_5000_0.root
+InputFile /pnfs/annie/persistent/users/mnieslon/wcsim/output/tankonly/wcsim_ANNIEp2v7_beam/pmt-files/wcsim_beam_gst_1014_99_0.1999.root
+#InputFile /pnfs/annie/persistent/users/mnieslon/wcsim/output/tankonly/wcsim_ANNIEp2v7_beam/pmt-files/wcsim_beam_gst_1079_9_0.9009.root
+#InputFile /annie/app/users/mnieslon/WCSim_build/wcsim_michel_1000_0.root
+#InputFile /pnfs/annie/persistent/users/mnieslon/wcsim/output/tankonly/wcsim_ANNIEp2v7_throughgoing/wcsim_throughgoing_muon_R2614_0.0.root
+
+WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
+HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
+UseDigitSmearedTime 1        ## whether to use smeared digit time (T), or true time of first photon (F)
+LappdNumStrips 60            ## num channels to construct from each LAPPD
+LappdStripLength 100         ## relative x position of each LAPPD strip, for dual-sided readout [mm]
+LappdStripSeparation 10      ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
+PMTMask configfiles/BeamClusterAnalysisMC/DeadPMTIDs_p2v7.txt ## Which PMTs should be masked out? / are dead?
+ChankeyToPMTIDMap ./configfiles/BeamClusterAnalysisMC/Chankey_WCSimID_v7.txt
+SplitSubTriggers 0		# should subtriggers be loaded in separate Execute steps?

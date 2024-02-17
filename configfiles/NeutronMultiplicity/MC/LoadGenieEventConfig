@@ -1,0 +1,11 @@
+verbosity 0
+FluxVersion 0  # use 0 to load genie files based on bnb_annie_0000.root etc files
+               # use 1 to load files based on beammc_annie_0000.root etc files
+#FileDir NA     # specify "NA" for newer files: full path is saved in WCSim
+FileDir /pnfs/annie/persistent/users/vfischer/genie_files/BNB_Water_10k_22-05-17
+#FileDir /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k_11-03-18_gsimpleflux
+FilePattern gntp.1910.ghep.root
+#FilePattern LoadWCSimTool      ## use this pattern to load corresponding genie info with the LoadWCSimTool
+                               ## N.B: FileDir must still be specified for now! (WCSim files do not record their directory)
+ManualFileMatching 0
+EventOffset 9900

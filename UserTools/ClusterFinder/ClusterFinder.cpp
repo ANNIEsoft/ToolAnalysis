@@ -542,7 +542,7 @@ bool ClusterFinder::Execute(){
 
   } else {
 
-    std::cout <<"ClusterFinder: RecoADCHits Store does not exist and is not read out"<<std::endl;
+    if (verbose > 0) std::cout <<"ClusterFinder: RecoADCHits Store does not exist and is not read out"<<std::endl;
   }
 
   return true;

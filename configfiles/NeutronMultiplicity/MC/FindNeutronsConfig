@@ -1,0 +1,5 @@
+#FindNeutrons config file
+
+verbosity 1
+Method CB
+EfficiencyMapPath ./configfiles/NeutronMultiplicity/NeutronEffMap_MC_CB.txt
