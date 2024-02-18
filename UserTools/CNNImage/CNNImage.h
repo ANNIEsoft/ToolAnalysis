@@ -3,6 +3,10 @@
 
 #include <string>
 #include <fstream>
+#include <iostream>
+#include <vector>
+
+#include <boost/tokenizer.hpp>
 
 #include "TH2F.h"
 #include "TMath.h"
@@ -12,9 +16,11 @@
 
 
 /**
- * \class CNNImage
- *
- * The tool CNNImage is supposed to create custom csv input files for CNN classification processes. The framework relies on the EventDisplay tool and basically feeds that geometric information of the hit pattern into a matrix format
+* \class CNNImage
+*
+* The tool CNNImage is supposed to create custom csv input files for CNN classification processes.
+*    The framework relies on the EventDisplay tool and basically feeds that geometric information of the hit pattern
+*    into a matrix format
 *
 * $Author: M.Nieslony $
 * $Date: 2019/08/09 10:44:00 $
@@ -22,8 +28,6 @@
 */
 
 class CNNImage: public Tool {
-
-
  public:
 
   CNNImage(); ///< constructor for CNNImage class
@@ -35,6 +39,8 @@ class CNNImage: public Tool {
   void ConvertPositionTo2D_Top(Position xyz_pos, double &x, double &y); ///<Convert 3D position into 2D rolled up coordinates (top PMTs only)
   void ConvertPositionTo2D_Bottom(Position xyz_pos, double &x, double &y); ///<Convert 3D position into 2D rolled up coordinates (bottom PMTs only)
 
+  void ReadStaticMapping(); ///<Get static CNNImage mapping from csv files for both MC and Data
+  void OrderPMTPositions();
 
  private:
 
@@ -47,8 +53,15 @@ class CNNImage: public Tool {
   int dimensionY;        //dimension of the CNN image in y-direction
   int dimensionLAPPD;    //dimension of LAPPD CNN images (both directions, square)
   bool includeTopBottom;
-  bool isData; 
+
+  std::string mcStaticMapping; // Path to "csv"-file: Channelkey to xy mapping (format: "Channelkey x y" -> space seperated and single mapping per line)
+  std::string dataStaticMapping; // See mcStaticMapping but for data.
+  std::vector<int> data_cnnimage_mapping_detkey, data_cnnimage_mapping_x, data_cnnimage_mapping_y; // vectors to store static mapping
+  std::vector<int> mc_cnnimage_mapping_detkey, mc_cnnimage_mapping_x, mc_cnnimage_mapping_y;
+
+  bool isData;
   int verbosity;
+
 
   // ANNIEEvent variables
   int runnumber;
