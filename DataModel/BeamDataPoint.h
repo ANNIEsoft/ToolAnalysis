@@ -20,8 +20,7 @@ struct BeamDataPoint : public SerialisableObject {
 
   BeamDataPoint() : value(0.), unit(""), time(0) {}
   BeamDataPoint(double Value, const std::string& Unit, uint64_t time=0)
-    : value(Value), unit(Unit), time(time) {
-    std::cout << "BDP - value: " << value << ", unit: " << unit << ", time: " << time << std::endl;}
+    : value(Value), unit(Unit), time(time) {}
   double value;
   std::string unit;
   uint64_t time;
