@@ -36,7 +36,7 @@ struct BeamDataPoint : public SerialisableObject {
 
   virtual bool Print() override {
     std::cout << "Value : " << value << '\n';
-    std::cout << "Unit  : " << unit  << '\n'
+    std::cout << "Unit  : " << unit  << '\n';
     std::cout << "Time  : " << time  << '\n';
     return true;
   }
