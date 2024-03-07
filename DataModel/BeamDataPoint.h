@@ -18,8 +18,8 @@ struct BeamDataPoint : public SerialisableObject {
 
   friend class boost::serialization::access;
 
-  BeamDataPoint() : value(0.), unit(""), time(1) {}
-  BeamDataPoint(double Value, const std::string& Unit, uint64_t time=1)
+  BeamDataPoint() : value(0.), unit(""), time(0) {}
+  BeamDataPoint(double Value, const std::string& Unit, uint64_t time=0)
     : value(Value), unit(Unit), time(time) {
     std::cout << "BDP - value: " << value << ", unit: " << unit << ", time: " << time << std::endl;}
   double value;
