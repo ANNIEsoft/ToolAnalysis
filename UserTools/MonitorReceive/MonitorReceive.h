@@ -30,6 +30,7 @@ class MonitorReceive: public Tool {
  private:
 
   int sources;
+  int catch_up_threshold;
   zmq::socket_t* MonitorReceiver;
   boost::posix_time::ptime last;
   boost::posix_time::time_duration period;

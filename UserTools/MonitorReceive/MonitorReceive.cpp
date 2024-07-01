@@ -14,7 +14,10 @@ bool MonitorReceive::Initialise(std::string configfile, DataModel &data){
 
   std::string outpath="";
   m_variables.Get("OutPath",outpath);
+  m_variables.Get("CatchUpDelay",catch_up_threshold);
   m_data->CStore.Set("OutPath",outpath);
+
+
 
   MonitorReceiver= new zmq::socket_t(*m_data->context, ZMQ_SUB);
   MonitorReceiver->setsockopt(ZMQ_SUBSCRIBE, "", 0);
@@ -184,7 +187,13 @@ bool MonitorReceive::Execute(){
 	std::time_t current_filetime = boost::filesystem::last_write_time(iss.str().c_str());
 	m_data->CStore.Set("CurrentFileTime",current_filetime);
 
-	MRDData= new BoostStore(false,2);
+	if(time(0)-current_filetime > catch_up_threshold){
+        std::cout<<"filetimeout: jumping ahead\n";
+        return true;
+        }
+
+
+        MRDData= new BoostStore(false,2);
 	PMTData= new BoostStore(false,2);
 	TrigData = new BoostStore(false,2);
 	LAPPDData = new BoostStore(false,2);

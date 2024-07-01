@@ -17,11 +17,12 @@ VoltageMax25 3.3
 VoltageMin12 1.6
 VoltageMax12 2.0
 LimitSaltLow 200000
-LimitSaltHigh 100000
-LimitTempLow 50.
-LimitTempHigh 58.
+LimitSaltHigh 95000
+LimitTempLow 52.
+LimitTempHigh 60.
 LimitHumLow 15.
 LimitHumHigh 30.
 LimitThermistorLow 7000.
 LimitThermistorHigh 5800.
+LimitHV 2590
 LAPPDIDFile ./configfiles/Monitoring/LAPPDIDs.txt

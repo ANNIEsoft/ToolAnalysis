@@ -1,3 +1,4 @@
 # MonitorReceive config file
 
 OutPath /monitoringplots/
+CatchUpDelay 600

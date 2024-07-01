@@ -292,6 +292,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int,TH2F*> hist_buffer_channel;
   std::map<int,TH1F*> hist_buffer;
   std::map<int,TH2F*> hist_waveform_voltages;
+  std::map<int,TH2F*> hist_align_100files_2d; // testM
   std::vector<std::map<int, std::vector<TH1F*> > > hist_waveforms_onedim;
   std::map<int, std::vector<TH1F*> > hist_pedestal;
   TH2F* hist_pedestal_all = nullptr;
@@ -322,3 +323,4 @@ class MonitorLAPPDData: public Tool {
 
 
 #endif
+

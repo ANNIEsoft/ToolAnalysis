@@ -101,6 +101,7 @@ class MonitorLAPPDSC: public Tool {
   double limit_humidity_high;
   double limit_thermistor_temperature_low;
   double limit_thermistor_temperature_high;
+  double limit_hv;
   std::string lappd_id_file;
   std::vector<int> vector_lappd_id;
 

@@ -469,6 +469,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		TH2F *hist_buffer_channel_single = new TH2F(ss_buffer_channel.str().c_str(), ss_buffer_channel.str().c_str(), 50, 0, 2000, 30, min_board, min_board+30);
 		TH1F *hist_buffer_single = new TH1F(ss_buffer.str().c_str(), ss_buffer.str().c_str(), 50, 0, 2000);
 		TH2F *hist_waveform_voltages_single = new TH2F(ss_waveform_voltages.str().c_str(), ss_waveform_voltages.str().c_str(), 256, 0, 256, 30, min_board, min_board+30);
+		TH2F *hist_align_100files_single_2d = new TH2F("align_100files_2d","align_100files_2d",100, 0, 20000, 50, 0, 100); //testM
 
 		//TODO: Title, XAxis, YAxis for timing histos
 		hist_align_1file_single->GetXaxis()->SetTitle("Time [ns]");
@@ -490,6 +491,11 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		hist_align_100files_single->GetXaxis()->SetTitle("Time [ns]");
 		hist_align_100files_single->GetYaxis()->SetTitle("Entries");
 		hist_align_100files_single->SetStats(0);
+
+		//testM
+		hist_align_100files_single_2d->GetXaxis()->SetTitle("Time [ns]");
+		hist_align_100files_single_2d->GetYaxis()->SetTitle("PartFiles");
+		hist_align_100files_single_2d->SetStats(0);
 
 		hist_align_1000files_single->GetXaxis()->SetTitle("Time [ns]");
 		hist_align_1000files_single->GetYaxis()->SetTitle("Entries");
@@ -527,7 +533,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD() {
 		hist_buffer_channel.emplace(board_nr, hist_buffer_channel_single);
 		hist_buffer.emplace(board_nr, hist_buffer_single);
 		hist_waveform_voltages.emplace(board_nr, hist_waveform_voltages_single);
-
+        	hist_align_100files_2d.emplace(board_nr, hist_align_100files_single_2d); //testM
 		std::vector<TH1F*> hist_pedestal_temp_vec;
 
 		for (int i = 0; i < numberOfChannels; i++) {
@@ -2011,6 +2017,14 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 			}
 		}
 
+		//------Last 100 Files--------- //testM
+		hist_align_100files_2d.at(board_nr)->Reset();
+		for (int i_align = 0; i_align < (int) data_beamgate_last100files.at(board_nr).size(); i_align++) {
+			for (int i_data = 0; i_data < (int) data_beamgate_last100files.at(board_nr).at(i_align).size(); i_data++) {
+				hist_align_100files_2d.at(board_nr)->Fill(data_beamgate_last100files.at(board_nr).at(i_align).at(i_data)*3.125, i_align);
+			}
+		}
+
 		//------Last 1000 Files---------
 		hist_align_1000files.at(board_nr)->Reset();
 		for (int i_align = 0; i_align < (int) data_beamgate_last1000files.at(board_nr).size(); i_align++) {
@@ -2068,9 +2082,10 @@ void MonitorLAPPDData::DrawTimeAlignment() {
 		canvas_align_100files->cd();
 		std::stringstream ss_text_align100;
 		ss_text_align100 << "Alignment Hundred Files Board " << board_nr << " (" << current_time.str() << ")";
-		hist_align_100files.at(board_nr)->SetTitle(ss_text_align100.str().c_str());
-		hist_align_100files.at(board_nr)->SetStats(0);
-		hist_align_100files.at(board_nr)->Draw("");
+		hist_align_100files_2d.at(board_nr)->SetTitle(ss_text_align100.str().c_str());
+		hist_align_100files_2d.at(board_nr)->SetStats(0);
+		//hist_align_100files.at(board_nr)->Draw("");
+		hist_align_100files_2d.at(board_nr)->Draw("colz");//testM
 		std::stringstream ss_path_align100;
 		ss_path_align100 << outpath << "LAPPD_Time_Alignment_Hundred_Files_Board" << board_nr << "_current." << img_extension;
 		canvas_align_100files->SaveAs(ss_path_align100.str().c_str());
@@ -3182,3 +3197,4 @@ void MonitorLAPPDData::GetRunSubPart(std::string filename){
 	std::cout <<"extracted run: "<<current_run<<", subrun: "<<current_subrun<<", part: "<<current_partrun<<std::endl;
 
 }
+

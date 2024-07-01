@@ -31,6 +31,7 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	limit_humidity_high = 20.;
 	limit_thermistor_temperature_low = 7000.;
 	limit_thermistor_temperature_high = 5800.;
+	limit_hv = 2400;
 
 	m_variables.Get("OutputPath", outpath_temp);
 	m_variables.Get("StartTime", StartTime);
@@ -55,6 +56,7 @@ bool MonitorLAPPDSC::Initialise(std::string configfile, DataModel &data) {
 	m_variables.Get("LimitHumHigh", limit_humidity_high);
 	m_variables.Get("LimitThermistorLow", limit_thermistor_temperature_low);
 	m_variables.Get("LimitThermistorHigh", limit_thermistor_temperature_high);
+	m_variables.Get("LimitHV", limit_hv);
 	m_variables.Get("LAPPDIDFile", lappd_id_file);
 
 	if (verbosity > 2) {
@@ -1817,7 +1819,7 @@ void MonitorLAPPDSC::DrawStatus_LVHV() {
 	ss_hv_monvolt_temp << "HV Mon Volt: "<< lappd_SC.HV_return_mon << " V (" << current_time.str() << ")";
 	text_hv_monvolt->SetText(0.06, 0.6, ss_hv_monvolt_temp.str().c_str());
 	text_hv_monvolt->SetTextColor(1);
-	if (lappd_SC.HV_return_mon > 2400.) text_hv_monvolt->SetTextColor(kRed);
+	if (lappd_SC.HV_return_mon > limit_hv) text_hv_monvolt->SetTextColor(kRed);
 
 
 	//LV State Set
