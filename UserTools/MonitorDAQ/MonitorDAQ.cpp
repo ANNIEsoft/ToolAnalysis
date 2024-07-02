@@ -101,6 +101,13 @@ bool MonitorDAQ::Initialise(std::string configfile, DataModel &data){
   //omit warning messages from ROOT: 1001 - info messages, 2001 - warnings, 3001 - errors
   gROOT->ProcessLine("gErrorIgnoreLevel = 3001;");
 
+  std::ifstream slack_webhook_file(hook);
+  if(!slack_webhook_file.is_open()){
+     Log("MonitorDAQ error! Could not open slack webhook file "+hook,0,0);
+     send_slack=0;
+  } else {
+     getline(slack_webhook_file, hook);
+  }
   //std::cout <<"Hook: "<<hook<<std::endl;
   
   if (online){

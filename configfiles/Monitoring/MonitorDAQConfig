@@ -12,6 +12,6 @@ UpdateFrequency 5. #specify frequency for the file history plot, in mins
 ForceUpdate 0	#force monitor plots to be produced even if there was no new data file available
 DrawMarker 0	#specify whether to use markers for the time evolution graphs or not
 UseOnline 1	#Should the VME services be obtained online? Only possible in network
-Hook https://hooks.slack.com/services/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
+Hook /tmp/slack_webhook
 SendSlack 1	#Send warning messages to slack?
 TestMode 0	#Test mode to check functionality of warnings
