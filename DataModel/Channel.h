@@ -2,6 +2,7 @@
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
+#include "Position.h"
 #include <SerialisableObject.h>
 
 enum class channelstatus : uint8_t { OFF, ON, UNSTABLE };
