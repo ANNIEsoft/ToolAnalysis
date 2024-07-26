@@ -352,7 +352,6 @@ bool TimeClustering::Execute(){
 					mrddigitchankeysthisevent.push_back(chankey);
 					mrddigittimesthisevent.push_back(hitsonthismrdpmt.GetTime());
 					mrddigitchargesthisevent.push_back(hitsonthismrdpmt.GetCharge());
-					mrddigitchankeysthisevent.push_back(chankey);
 					if(MakeMrdDigitTimePlot){  // XXX XXX XXX rename
 						// fill the histogram if we're checking
 						if (MakeSingleEventPlots) mrddigitts_single->Fill(hitsonthismrdpmt.GetTime());
