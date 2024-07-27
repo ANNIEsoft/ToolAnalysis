@@ -9,7 +9,8 @@ verbose 1
 # analysis specific settings
 # 
 # Define file containing (multiple) filepath(s) to be loaded
-load_from_file 0
+load_from_csv 0
+save_to_csv 0
 files_to_load configfiles/RingCounting/RC_files_to_load.txt
 # Model version -> check documentation
 version 1_0_0
