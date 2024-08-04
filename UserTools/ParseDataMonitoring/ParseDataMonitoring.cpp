@@ -114,6 +114,10 @@ bool ParseDataMonitoring::Execute()
 
 	std::vector<int> LAPPDtoBoard{0,1};
 	LAPPDtoBoard = PDATA.BoardIndex;
+	if(LAPPDtoBoard.size()<2){
+		std::cerr<<"PDATA.BoardIndex size < 2!"<<std::endl;
+		return false;
+	}
 
 	//Enable the following section in order to get ACC_ID and LAPPDtoBoard1 & LAPPDtoBoard2 once those changes go live
 	//this will enable multi-LAPPD support
@@ -490,6 +494,10 @@ int ParseDataMonitoring::getParsedMeta(std::vector<unsigned short> buffer, int B
             InfoWord.push_back(*bit);
             ++bit;
         }
+	if(InfoWord.size()<13){
+		std::cerr<<"ParseDataMonitoring InfoWord vector too short!"<<std::endl;
+                return false;
+	}
         PsecInfo.insert(pair<int, vector<unsigned short>>(chip_count, InfoWord));
         chip_count++;
     }
