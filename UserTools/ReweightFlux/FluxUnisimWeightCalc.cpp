@@ -119,9 +119,9 @@ namespace evwgh {
       for (int intyp=0;intyp<4;intyp++) {
 	for (int ibin=0;ibin<200;ibin++) { //Grab events from ibin+1 
 
-	  fCV[iptyp][intyp][ibin]=(dynamic_cast<TH1F*> (fcv.Get(Form("h5%d%d",ptype[iptyp],ntype[intyp]))))->GetBinContent(ibin+1);
-	  fRWpos[iptyp][intyp][ibin]=(dynamic_cast<TH1F*> (frwpos.Get(Form("h5%d%d",ptype[iptyp],ntype[intyp]))))->GetBinContent(ibin+1);
-	  fRWneg[iptyp][intyp][ibin]=(dynamic_cast<TH1F*> (frwneg.Get(Form("h5%d%d",ptype[iptyp],ntype[intyp]))))->GetBinContent(ibin+1);
+	  fCV[iptyp][intyp][ibin]=(dynamic_cast<TH1D*> (fcv.Get(Form("h5%d%d",ptype[iptyp],ntype[intyp]))))->GetBinContent(ibin+1);
+	  fRWpos[iptyp][intyp][ibin]=(dynamic_cast<TH1D*> (frwpos.Get(Form("h5%d%d",ptype[iptyp],ntype[intyp]))))->GetBinContent(ibin+1);
+	  fRWneg[iptyp][intyp][ibin]=(dynamic_cast<TH1D*> (frwneg.Get(Form("h5%d%d",ptype[iptyp],ntype[intyp]))))->GetBinContent(ibin+1);
 
 	}// energy bin
       }//   type of neutrinos
