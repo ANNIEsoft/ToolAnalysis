@@ -26,6 +26,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Reweight_fill", Reweight_fill);
   m_variables.Get("RecoDebug_fill", RecoDebug_fill);
   m_variables.Get("SimpleReco_fill", SimpleReco_fill);
+  m_variables.Get("RingCounting_fill", RingCounting_fill);
   m_variables.Get("muonTruthRecoDiff_fill", muonTruthRecoDiff_fill);
 
   m_variables.Get("SiPMPulseInfo_fill",SiPMPulseInfo_fill);
@@ -303,7 +304,13 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("simpleRecoMRDStopZ",&fSimpleMRDStopZ,"simpleRecoMRDStopZ/D");
       fPhaseIITrigTree->Branch("simpleRecoTrackLengthInTank",&fSimpleTrackLengthInTank,"simpleRecoTrackLengthInTank/D");
     }
-  
+ 
+    //Ring Counting
+    if(RingCounting_fill){
+      fPhaseIITrigTree->Branch("RCSRPred",&fRCSRPred,"RCSRPred/D");
+      fPhaseIITrigTree->Branch("RCMRPred",&fRCMRPred,"RCMRPred/D");
+    }
+ 
     //MC truth information for muons
     //Output to tree when MCTruth_fill = 1 in config
     if (MCTruth_fill){
@@ -884,6 +891,8 @@ bool PhaseIITreeMaker::Execute(){
 
     if(SimpleReco_fill) this->FillSimpleRecoInfo();
 
+    if(RingCounting_fill) this->FillRingCountingInfo();
+
     if(Reweight_fill) this->FillWeightInfo();
 
     bool got_reco = false;
@@ -1151,6 +1160,10 @@ void PhaseIITreeMaker::ResetVariables() {
     fSimpleMRDStopX = -9999;
     fSimpleMRDStopY = -9999;
     fSimpleMRDStopZ = -9999;
+  }
+  if(RingCounting_fill){
+    fRCSRPred = -9999;
+    fRCMRPred = -9999;
   }
   if(TankHitInfo_fill){
     fIsFiltered.clear();
@@ -1642,6 +1655,24 @@ bool PhaseIITreeMaker::FillTankRecoInfo() {
     fRecoStatus = recovtx->GetStatus();
   }
   return got_reco_info;
+}
+
+void PhaseIITreeMaker::FillRingCountingInfo() {
+  auto* reco_event = m_data->Stores["RecoEvent"];
+  if (!reco_event) {
+    Log("Error: The PhaseIITreeMaker tool could not find the RecoEvent Store", v_error, verbosity);
+  }
+  double RCSRPred;
+  double RCMRPred;
+  auto get_sr = m_data->Stores["RecoEvent"]->Get("RingCountingSRPrediction",RCSRPred);
+  auto get_mr = m_data->Stores["RecoEvent"]->Get("RingCountingMRPrediction",RCMRPred);
+
+  if(get_sr && get_mr){
+    fRCSRPred = RCSRPred;
+    fRCMRPred = RCMRPred;
+  }
+  else Log("Error: PhaseIITreeMaker tool could not find RingCountingPrediction from RecoEvent Store", v_error, verbosity); 
+  return;
 }
 
 void PhaseIITreeMaker::FillSimpleRecoInfo() {
