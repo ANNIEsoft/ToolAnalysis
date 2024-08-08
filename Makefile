@@ -94,7 +94,7 @@ clean:
 	rm -f include/*.h
 	rm -f lib/*.so
 	rm -f Analyse
-	rm -f UserTools/*/*.o
+	find UserTools/* -type f -name '*.o' ! -path 'UserTools/PythonScript/*' -exec rm -f {} +
 	rm -f DataModel/*.o
 	rm -f DataModel/DataModel_Linkdef.hh
 	rm -f DataModel/DataModel_RootDict*
