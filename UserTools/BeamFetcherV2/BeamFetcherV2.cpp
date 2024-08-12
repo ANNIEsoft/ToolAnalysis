@@ -24,11 +24,12 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
   m_data = &data;
 
   // Get the things
-  bool got_verbosity   = m_variables.Get("verbose", verbosity);
-  bool got_bundleflag  = m_variables.Get("IsBundle", fIsBundle);
-  bool got_devicesfile = m_variables.Get("DevicesFile", fDevicesFile);
-  bool got_saveroot    = m_variables.Get("SaveROOT", fSaveROOT);
-  bool got_chunkMSec   = m_variables.Get("TimeChunkStepInMilliseconds", fChunkStepMSec);
+  bool got_verbosity     = m_variables.Get("verbose", verbosity);
+  bool got_bundleflag    = m_variables.Get("IsBundle", fIsBundle);
+  bool got_devicesfile   = m_variables.Get("DevicesFile", fDevicesFile);
+  bool got_saveroot      = m_variables.Get("SaveROOT", fSaveROOT);
+  bool got_chunkMSec     = m_variables.Get("TimeChunkStepInMilliseconds", fChunkStepMSec);
+  bool got_deletectcdata = m_variables.Get("DeleteCTCData", fDeleteCTCData);
   
   
   // Check the config parameters and set default values if necessary 
@@ -69,6 +70,16 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
     Log(logmessage, v_warning, verbosity);
     fSaveROOT = false;
   }
+
+
+  if (!got_deletectcdata) {
+    logmessage = ("Warning (BeamFetcherV2): DeleteCTCData was not set in the "
+		  "config file. If you're not running downstream tools that "
+		  "remove the CTC from the CStore then you probably want to "
+		  " set this to true to save memory. Using default \"false\"");
+    Log(logmessage, v_warning, verbosity);
+    fDeleteCTCData = false;
+  }
     
 
   if (!got_chunkMSec) {
@@ -87,6 +98,13 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
   }
 
   if (fSaveROOT) this->SetupROOTFile();
+
+  // initialize the last timestamp
+  fLastTimestampFetched = 0;
+  fLastTimestampSaved = 0;
+  BeamDataMap = new std::map<uint64_t, std::map<std::string, BeamDataPoint> >;
+
+  m_data->CStore.Set("NewBeamDataAvailable", false);
   
   return true;
 }
@@ -96,21 +114,33 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
 bool BeamFetcherV2::Execute()
 {
   // Do the things
-  bool goodFetch = this->FetchFromTrigger();
+  bool got_ctc = m_data->CStore.Get("NewCTCDataAvailable", fNewCTCData);
+  bool goodFetch = false;
+  if (got_ctc && fNewCTCData) {
+    logmessage = ("Message (BeamFetcherV2): New CTC data found. Fetching. ");
+    Log(logmessage, v_message, verbosity);  
 
+  goodFetch = this->FetchFromTrigger();
+  } else {
+    logmessage = ("Warning (BeamFetcherV2): No new CTC data found. Nothing to fetch. ");
+    Log(logmessage, v_message, verbosity);    
+  }
+
+  // Save it out
   if (goodFetch) {
-      // Emplace fBeamDataToSave to CStore for other tools to use
-      m_data->CStore.Set("BeamData",fBeamDataToSave);      
-      goodFetch = true;
-    }
+    logmessage = ("Debug (BeamFetcherV2): Writing out BeamDataMap, which has size: " + std::to_string(BeamDataMap->size()));
+    Log(logmessage, v_debug, verbosity);    
+    
+    // put BeamDataMap in CStore for other tools to use
+    m_data->CStore.Set("NewBeamDataAvailable", true);
+    m_data->CStore.Set("BeamDataMap", BeamDataMap);
+    if (fSaveROOT) this->WriteTrees();
+  } else if (fNewCTCData) {
+    logmessage = ("Warning (BeamFetcherV2): Bad fetch. ");
+    Log(logmessage, v_message, verbosity);    
+  }
 
-  if (fSaveROOT) this->WriteTrees();
-
-  // Clear for the next Fetch
-  fBeamDataToSave.clear();
-  
-
-  return goodFetch;
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -131,30 +161,39 @@ bool BeamFetcherV2::FetchFromTrigger()
 
   // Need to get the trigger times
   std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMap=nullptr;
-  bool get_ok = m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+  bool get_triggers = m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
 
   // Now loop over the CTC timestamps
-  if (get_ok && TimeToTriggerWordMap) {
-    for (auto iterator : *TimeToTriggerWordMap) {
-      // We only want to get beam info for beam triggers (word 5)
-      bool hasBeamTrig = false;
-      for (auto word : iterator.second) 
-	if (word == 5) hasBeamTrig = true;
-      if (!hasBeamTrig) continue;
+  // But start at the fLastTimeStampFetched to prevent double counting if the timestamp data wasn't deleted
+  if (got_triggers && TimeToTriggerWordMap) {
+    for (auto iterator = TimeToTriggerWordMap->lower_bound(fLastTimestampFetched+1);
+	 iterator != TimeToTriggerWordMap->end(); ++iterator) {
+
+      // We only care about beam triggers here - grab the undelayed beam trigger 14
+      if (std::find(iterator->second.begin(), iterator->second.end(), 14) == iterator->second.end()) {
+	continue;
+      }
       
-      uint64_t trigTimestamp = iterator.first;
+      // Grab the timestamp
+      uint64_t trigTimestamp = iterator->first;
+      fLastTimestampFetched = trigTimestamp;
 
       // Need to drop from ns to ms. This means that some timestamps will
       // already be recorded. We can skip these cases
       trigTimestamp = trigTimestamp/1E6;
-      if (fBeamDataToSave.find(trigTimestamp) != fBeamDataToSave.end()) 
+      if (BeamDataMap->find(trigTimestamp) != BeamDataMap->end()) {
+	logmessage = ("Debug (BeamFetcherV2): BeamDataMap already has this timstamp: "
+		      + std::to_string(trigTimestamp) + ", skipping.");
+	Log(logmessage, vv_debug, verbosity);    
+
 	continue;
+      }
 
       // Check if we already have the info we need
       bool fetch = false;
       std::map<uint64_t, std::map<std::string, BeamDataPoint> >::iterator low, prev;
-      low = fBeamData.lower_bound(trigTimestamp);
-      if (low == fBeamData.end()) {
+      low = BeamDataQuery.lower_bound(trigTimestamp);
+      if (low == BeamDataQuery.end()) {
 	fetch = true;
 	logmessage = ("BeamFetcherV2: I'm going to query the DB");
 	Log(logmessage, v_message, verbosity);
@@ -163,33 +202,32 @@ bool BeamFetcherV2::FetchFromTrigger()
       // We'll pull fChunkStepMSec worth of data at a time to avoid rapid queries      
       if (fetch) {
 	if (fIsBundle) {
-	  fBeamData = db.QueryBeamDBBundleSpan(fDevices[0], trigTimestamp, trigTimestamp+fChunkStepMSec);
+	  BeamDataQuery = db.QueryBeamDBBundleSpan(fDevices[0], trigTimestamp, trigTimestamp+fChunkStepMSec);
 	} else {
 	  std::map<uint64_t, std::map<std::string, BeamDataPoint> > tempMap;
-	  
 	  for (auto device : fDevices) {
 	    auto tempMap = db.QueryBeamDBSingleSpan(device, trigTimestamp, trigTimestamp+fChunkStepMSec);
-	    fBeamData.insert(tempMap.begin(), tempMap.end());
+	    BeamDataQuery.insert(tempMap.begin(), tempMap.end());
 	  }	
 	}
       }	
 	
       // Now we can match the Beam info to CTC timestamps for saving to the CStore
-      low = fBeamData.lower_bound(trigTimestamp);
-      if (low == fBeamData.end()) {
+      low = BeamDataQuery.lower_bound(trigTimestamp);
+      if (low == BeamDataQuery.end()) {
 	logmessage = ("Error (BeamFetcherV2): We fetched the data based on the CTC"
 		      " but somehow didn't turn anything up!?");
 	Log(logmessage, v_error, verbosity);
 	return false;
-      } else if (low == fBeamData.begin()) {
-	fBeamDataToSave[trigTimestamp] = low->second;
+      } else if (low == BeamDataQuery.begin()) {
+	BeamDataMap->emplace(trigTimestamp, low->second);
       } else {
 	// Check the previous DB timestamp to see if it's closer in time
 	prev = std::prev(low);
 	if ((trigTimestamp - prev->first) < (low->first - trigTimestamp))
-	  fBeamDataToSave[trigTimestamp] = prev->second;
+	  BeamDataMap->emplace(trigTimestamp, prev->second);
 	else
-	  fBeamDataToSave[trigTimestamp] = low->second;
+	  BeamDataMap->emplace(trigTimestamp, low->second);
       }
     }// end loop over trigger times
   } else {
@@ -199,6 +237,9 @@ bool BeamFetcherV2::FetchFromTrigger()
     return false;
   }
 
+  if (fDeleteCTCData)
+    TimeToTriggerWordMap->clear();
+
   return true;
 }
 
@@ -206,7 +247,7 @@ bool BeamFetcherV2::FetchFromTrigger()
 bool BeamFetcherV2::SaveToFile()
 {
   BoostStore fBeamDBStore(false, BOOST_STORE_MULTIEVENT_FORMAT);
-  fBeamDBStore.Set("BeamData", fBeamData);
+  fBeamDBStore.Set("BeamData", BeamDataQuery);
   fBeamDBStore.Save(fOutFileName);
   fBeamDBStore.Delete();
 
@@ -246,12 +287,18 @@ void BeamFetcherV2::SetupROOTFile()
 void BeamFetcherV2::WriteTrees()
 {
   // Loop over timestamps
-  int devCounter = 0;
-  for (const auto iterTS : fBeamDataToSave) {
-    fTimestamp = iterTS.first;
+  // But start at the fLastTimeStampSaved to prevent double counting if the timestamp data wasn't deleted
+  int devCounter = 0;  
+  for (auto iterTS = BeamDataMap->lower_bound(fLastTimestampSaved+1);
+       iterTS != BeamDataMap->end(); ++iterTS) {
+
+    fTimestamp = iterTS->first;
+    fLastTimestampSaved = fTimestamp;
+
+    std::cout << "Timestamp: " << fTimestamp << std::endl;
     
     // Loop over devices
-    for (const auto iterDev : iterTS.second) {
+    for (const auto iterDev : iterTS->second) {
       std::string device = iterDev.first;
       std::replace( device.begin(), device.end(), ':', '_');
       
@@ -270,6 +317,9 @@ void BeamFetcherV2::WriteTrees()
 
     fOutTree->Fill();
   }// end loop over timestamps
+
+// clear BeamDataMap after filling Tree
+BeamDataMap->clear();
 
 }
 
