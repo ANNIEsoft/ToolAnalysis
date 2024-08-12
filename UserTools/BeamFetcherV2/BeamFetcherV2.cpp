@@ -113,6 +113,7 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
 //------------------------------------------------------------------------------
 bool BeamFetcherV2::Execute()
 {
+  m_data->CStore.Set("NewBeamDataAvailable", false);
   // Do the things
   bool got_ctc = m_data->CStore.Get("NewCTCDataAvailable", fNewCTCData);
   bool goodFetch = false;
@@ -161,7 +162,7 @@ bool BeamFetcherV2::FetchFromTrigger()
 
   // Need to get the trigger times
   std::map<uint64_t,std::vector<uint32_t>>* TimeToTriggerWordMap=nullptr;
-  bool get_triggers = m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
+  bool got_triggers = m_data->CStore.Get("TimeToTriggerWordMap",TimeToTriggerWordMap);
 
   // Now loop over the CTC timestamps
   // But start at the fLastTimeStampFetched to prevent double counting if the timestamp data wasn't deleted
