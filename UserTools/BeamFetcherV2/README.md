@@ -20,21 +20,22 @@ FetchFromTrigger: The following objects will be put into the CStore
  
 ## Configuration
 
-The main configuration variable for the `BeamFetcher` tool is `FetchFromTimes`, which determines whether to use the tigger timestamps or user input timestamps. The `DevicesFile`, `IsBundle`, and `TimeChunkStepInMilliseconds` variables are required regardless of the fetch mode. You can also set the  `SaveROOT` bool in order to save out a TTree with the timestamp and device values as the leaves. 
+The main configuration variable for the `BeamFetcherV2` tool is `FetchFromTimes`, which determines whether to use the tigger timestamps or user input timestamps. The `DevicesFile`, `IsBundle`, and `TimeChunkStepInMilliseconds` variables are required regardless of the fetch mode. You can also set the  `SaveROOT` bool in order to save out a TTree with the timestamp and device values as the leaves. 
 
 If `FetchFromTimes == 1` then you will also need the additional config variables. The preferred timestamp format is chosen with the `TimestampMode` variable (LOCALDATE/MSEC/DB). For LOCALDATE mode you use Start/EndDate files with string formatted times (like 2023-04-11 23:03:19.163505). For MSEC mode you use the Start/EndMillisecondsSinceEpoch variables. For DB mode you must first run `LoadRunInfo` and the run timestamps will be pulled from the CStore. 
 
 ```
-# BeamFetcher config file
-verbose 5
+# BeamFetcherV2 config file
+verbose 1
 #
 # These three are always needed
 #
-DevicesFile ./configfiles/BeamFetcher/devices.txt # File containing one device per line or a bundle
+DevicesFile ./configfiles/BeamFetcherV2/devices.txt # File containing one device per line or a bundle
 IsBundle 0 # bool stating whether DevicesFile contains bundles or individual devices
 FetchFromTimes 0 # bool defining how to grab the data (from input times (1) or trigger(0))
 TimeChunkStepInMilliseconds 3600000 # one hour
 SaveROOT 0 # bool, do you want to write a ROOT file with the timestamps and devices?
+DeleteCTCData 0 # bool, delete viewed CTC timestamps? Helps reduce memory overhead when not running ANNIEEventBuilder.
 #
 # These parameters are only needed if FetchFromTimes == 1
 #
