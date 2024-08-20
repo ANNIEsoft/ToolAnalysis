@@ -68,6 +68,9 @@ class IFBeamDBInterfaceV2 {
       QueryBeamDBBundle(std::string bundle, uint64_t time) const;
 
     int RunQuery(const std::stringstream &url_stream, std::string &response_string) const;
+
+    /// @brief The list of devices required to save in the root tree
+    std::map<std::string, std::string> requiredDevices;
     
   protected:
     /// @brief Create the singleton IFBeamDBInterfaceV2 object
