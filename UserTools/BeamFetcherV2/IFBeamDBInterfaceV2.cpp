@@ -16,6 +16,19 @@ IFBeamDBInterfaceV2::IFBeamDBInterfaceV2()
   fCurl = curl_easy_init();
   if (!fCurl) throw std::runtime_error("IFBeamDBInterfaceV2 failed to"
     " initialize libcurl");
+
+  requiredDevices = {
+    {"E:TOR860", "E12"},
+    {"E:TOR875", "E12"},
+    {"E:THCURR", "KA"},
+    {"E:BTJT2", "DegC"},
+    {"E:HP875", "mm"},
+    {"E:VP875", "mm"},
+    {"E:HPTG1", "mm"},
+    {"E:VPTG1", "mm"},
+    {"E:HPTG2", "mm"},
+    {"E:VPTG2", "mm"},
+    {"E:BTH2T2", "DegC"}};
 }
 
 IFBeamDBInterfaceV2::~IFBeamDBInterfaceV2()
@@ -237,6 +250,14 @@ IFBeamDBInterfaceV2::ParseDBResponseSingleSpan(const std::string& response) cons
 					       unit,
 					       timestamp);
   }
+
+for (auto &ts : retMap) {
+    for (auto &dev : requiredDevices) {
+      if (ts.second.find(dev.first) == ts.second.end()) {
+          ts.second[dev.first] = BeamDataPoint(-9999, dev.second, ts.first);
+      }
+    }
+  }
   
   return retMap;
 }
@@ -280,6 +301,33 @@ IFBeamDBInterfaceV2::ParseDBResponseBundleSpan(const std::string& response) cons
 					       unit,
 					       timestamp);
   }
+
+  // count the total number of elements in retMap times the number of elements in that element, print the total number
+  int total = 0;
+  for (auto &ts : retMap) {
+    total += ts.second.size();
+  }
+  std::cout << "Total number of elements in retMap: " << total << std::endl;
+  std::cout << "Size of retMap is " << retMap.size() << std::endl;
+
+  // check each timestamp in the retMap, to see if it have all the devices in the requiredDevices map keys, if yes, continue
+  // if not, create entry for that device at retMap[TS], use the data type from the value of requiredDevices
+  // use value as -9999, unit as doulbe, timestamp = TS
+  for (auto &ts : retMap) {
+    for (auto &dev : requiredDevices) {
+      if (ts.second.find(dev.first) == ts.second.end()) {
+          //cout<<" not finding device "<<dev.first<<" at time "<<ts.first<<endl;
+          ts.second[dev.first] = BeamDataPoint(-9999., dev.second, ts.first);
+      }
+    }
+  }
+
+  int totalAfter = 0;
+  for (auto &ts : retMap) {
+    totalAfter += ts.second.size();
+  }
+  std::cout << "After inserting, total number of elements in retMap: " << totalAfter << std::endl;
+  std::cout << "Size of retMap is " << retMap.size() << std::endl;
   
   return retMap;
 }
@@ -327,6 +375,15 @@ IFBeamDBInterfaceV2::ParseDBResponseSingle(const std::string& response) const
   retMap[earlyTS][data_type] = BeamDataPoint(std::stod(val_string),
 					     unit,
 					     timestamp);
+
+for (auto &ts : retMap) {
+
+    for (auto &dev : requiredDevices) {
+      if (ts.second.find(dev.first) == ts.second.end()) {
+          ts.second[dev.first] = BeamDataPoint(-9999, dev.second, ts.first);
+      }
+    }
+  }
   
   return retMap;
 }
@@ -370,6 +427,14 @@ IFBeamDBInterfaceV2::ParseDBResponseBundle(const std::string& response) const
     retMap[earlyTS][data_type] = BeamDataPoint(std::stod(val_string),
 					       unit,
 					       timestamp);
+  }
+
+for (auto &ts : retMap) {
+    for (auto &dev : requiredDevices) {
+      if (ts.second.find(dev.first) == ts.second.end()) {
+          ts.second[dev.first] = BeamDataPoint(-9999, dev.second, ts.first);
+      }
+    }
   }
   
   return retMap;
