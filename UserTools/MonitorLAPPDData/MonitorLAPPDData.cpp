@@ -947,6 +947,8 @@ void MonitorLAPPDData::LoadACDCBoardConfig(std::string acdc_config)
 		last_timestamp.push_back(0);
 		first_pps_timestamps.push_back(0);
 		last_pps_timestamps.push_back(0);
+		current_pps_event_counters.push_back(0);
+
 		current_board_index.push_back(board_number);
 		first_entry.push_back(true);
 		first_entry_pps.push_back(true);
@@ -2777,7 +2779,8 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 		bool do_continue = false;
 		if (entry_type == "PPS")
 		{
-
+			std::vector<int>::iterator it;
+			int vector_idx = -1;
 			current_pps_count++;
 
 			// Parse PPS data according to Data Frame (PPS) metadata
@@ -2800,8 +2803,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				std::bitset<64> bits_pps_63_0(pps_63_0);
 				last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
 
-				int vector_idx = -1;
-				std::vector<int>::iterator it = std::find(board_configuration.begin(), board_configuration.end(), 0);
+				it = std::find(board_configuration.begin(), board_configuration.end(), 0);
 				if (it != board_configuration.end())
 				{
 					vector_idx = std::distance(board_configuration.begin(), it);
@@ -2818,10 +2820,23 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 					first_pps_timestamps.at(vector_idx) = last_pps_timestamp;
 					first_entry_pps.at(vector_idx) = false;
 				}
-				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
+				last_pps_timestamps.at(vector_idx) = last_pps_timestamp;
 				n_pps.at(vector_idx)++;
+
+				// Parse PPS count
+				unsigned short pps_count_31_16 = pps.at(8);
+				unsigned short pps_count_15_0 = pps.at(9);
+				std::bitset<16> bits_pps_count_31_16(pps_count_31_16);
+				std::bitset<16> bits_pps_count_15_0(pps_count_15_0);
+
+				// Combine all the bits to create PPS count
+				unsigned int pps_count_31_0 = (static_cast<unsigned long>(pps_count_31_16) << 16) + (static_cast<unsigned long>(pps_count_15_0));
+				std::bitset<32> bits_pps_count_31_0(pps_count_31_0);
+				last_pps_count = pps_count_31_0;
+
+				current_pps_event_counters.at(vector_idx) = last_pps_count;
 			}
-			
+
 			if (pps.size() == 16)
 			{
 				have_pps = true;
@@ -2829,15 +2844,15 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 			}
 			else if (pps.size() == 32)
 			{
-				pps_63_48 = pps.at(18);
-				pps_47_32 = pps.at(19);
-				pps_31_16 = pps.at(20);
-				pps_15_0 = pps.at(21);
+				unsigned short pps_63_48 = pps.at(18);
+				unsigned short pps_47_32 = pps.at(19);
+				unsigned short pps_31_16 = pps.at(20);
+				unsigned short pps_15_0 = pps.at(21);
 				std::bitset<16> Bits_pps_63_48(pps_63_48);
 				std::bitset<16> Bits_pps_47_32(pps_47_32);
 				std::bitset<16> Bits_pps_31_16(pps_31_16);
 				std::bitset<16> Bits_pps_15_0(pps_15_0);
-				pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
+				unsigned short pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
 				if (verbosity > 2)
 					std::cout << "pps combined: " << pps_63_0 << std::endl;
 				std::bitset<64> Bits_pps_63_0(pps_63_0);
@@ -2863,7 +2878,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				}
 				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
 				n_pps.at(vector_idx)++;
-
+				
 				have_pps = true;
 				do_continue = true;
 			}

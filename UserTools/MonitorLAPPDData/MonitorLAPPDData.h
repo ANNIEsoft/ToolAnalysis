@@ -139,6 +139,7 @@ class MonitorLAPPDData: public Tool {
   double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
   ULong64_t reference_time;
   ULong64_t last_pps_timestamp;
+  int last_pps_count;
 
   //Geometry variables
   Geometry *geom = nullptr;
@@ -163,6 +164,7 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_timestamp;
   std::vector<uint64_t> first_pps_timestamps;
   std::vector<uint64_t> last_pps_timestamps;
+  std::vector<int> current_pps_event_counters;
   std::vector<bool> first_entry;
   std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
