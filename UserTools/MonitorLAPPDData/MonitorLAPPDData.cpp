@@ -2779,12 +2779,11 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 		{
 
 			current_pps_count++;
-			// std::cout <<"PPS entry!"<<std::endl;
-			// std::cout <<"Size of PPS vector: "<<pps.size()<<std::endl;
 
-			// if (pps.size()==16){
-			if (pps.size() == 16)
-			{
+			// Parse PPS data according to Data Frame (PPS) metadata
+			if (pps.size() == 16 || pps.size() == 32) {
+				// Parse PPS Timestamp
+				// Get words from 2 to 5
 				unsigned short pps_63_48 = pps.at(2);
 				unsigned short pps_47_32 = pps.at(3);
 				unsigned short pps_31_16 = pps.at(4);
@@ -2793,16 +2792,14 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				std::bitset<16> bits_pps_47_32(pps_47_32);
 				std::bitset<16> bits_pps_31_16(pps_31_16);
 				std::bitset<16> bits_pps_15_0(pps_15_0);
-				// std::cout << "bits_pps_63_48: " << bits_pps_63_48 << std::endl;
-				// std::cout << "bits_pps_47_32: " << bits_pps_47_32 << std::endl;
-				// std::cout << "bits_pps_31_16: " << bits_pps_31_16 << std::endl;
-				// std::cout << "bits_pps_15_0: " << bits_pps_15_0 << std::endl;
+				
+				// Combine all the bits to create PPS timestamp 
 				unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
 				if (verbosity > 2)
 					std::cout << "pps combined: " << pps_63_0 << std::endl;
 				std::bitset<64> bits_pps_63_0(pps_63_0);
-				// std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
 				last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
+
 				int vector_idx = -1;
 				std::vector<int>::iterator it = std::find(board_configuration.begin(), board_configuration.end(), 0);
 				if (it != board_configuration.end())
@@ -2823,51 +2820,15 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				}
 				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
 				n_pps.at(vector_idx)++;
+			}
+			
+			if (pps.size() == 16)
+			{
 				have_pps = true;
 				do_continue = true;
 			}
 			else if (pps.size() == 32)
 			{
-				unsigned short pps_63_48 = pps.at(2);
-				unsigned short pps_47_32 = pps.at(3);
-				unsigned short pps_31_16 = pps.at(4);
-				unsigned short pps_15_0 = pps.at(5);
-				std::bitset<16> bits_pps_63_48(pps_63_48);
-				std::bitset<16> bits_pps_47_32(pps_47_32);
-				std::bitset<16> bits_pps_31_16(pps_31_16);
-				std::bitset<16> bits_pps_15_0(pps_15_0);
-				// std::cout << "bits_pps_63_48: " << bits_pps_63_48 << std::endl;
-				// std::cout << "bits_pps_47_32: " << bits_pps_47_32 << std::endl;
-				// std::cout << "bits_pps_31_16: " << bits_pps_31_16 << std::endl;
-				// std::cout << "bits_pps_15_0: " << bits_pps_15_0 << std::endl;
-				unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
-				if (verbosity > 2)
-					std::cout << "pps combined: " << pps_63_0 << std::endl;
-				std::bitset<64> bits_pps_63_0(pps_63_0);
-				// std::cout << "bits_pps_63_0: " << bits_pps_63_0 << std::endl;
-				last_pps_timestamp = pps_63_0 * (CLOCK_to_SEC * 1000);
-
-				int vector_idx = -1;
-				std::vector<int>::iterator it = std::find(board_configuration.begin(), board_configuration.end(), 0);
-				if (it != board_configuration.end())
-				{
-					vector_idx = std::distance(board_configuration.begin(), it);
-					if (verbosity > 2)
-						std::cout << "Found board index " << 0 << " at position " << vector_idx << " inside of the vector" << std::endl;
-				}
-				else
-				{
-					Log("MonitorLAPPDData: ERROR!!! Board index " + std::to_string(0) + " was not found as one of the configured board index options!!! Abort LAPPD data entry", v_error, verbosity);
-					continue;
-				}
-				if (first_entry_pps.at(vector_idx) == true)
-				{
-					first_pps_timestamps.at(vector_idx) = last_pps_timestamp;
-					first_entry_pps.at(vector_idx) = false;
-				}
-				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
-				n_pps.at(vector_idx)++;
-
 				pps_63_48 = pps.at(18);
 				pps_47_32 = pps.at(19);
 				pps_31_16 = pps.at(20);
