@@ -259,6 +259,7 @@ bool MonitorLAPPDData::Finalise()
 	delete canvas_rate_lappd;
 	delete canvas_frame_count;
 	delete canvas_pps_count;
+	delete canvas_pps_event_counter;
 
 	// histograms
 	//
@@ -362,6 +363,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	canvas_rate_lappd = new TCanvas("canvas_rate_lappd", "LAPPD Rates", 900, 600);
 	canvas_frame_count = new TCanvas("canvas_frame_count", "LAPPD Data Count", 900, 600);
 	canvas_pps_count = new TCanvas("canvas_pps_count", "LAPPD PPS Count", 900, 600);
+	canvas_pps_event_counter = new TCanvas("canvas_pps_event_counter", "LAPPD PPS Event Counter", 900, 600);
 
 	// Histograms
 	// ToDo: Not hardcode the number of channels here
@@ -746,12 +748,15 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 
 	// Normal Graphs without board number
 	graph_pps_count = new TGraph();
+	graph_pps_event_counter = new TGraph();
 	graph_frame_count = new TGraph();
 
 	graph_pps_count->SetName("graph_pps_count");
+	graph_pps_event_counter->SetName("graph_pps_event_counter");
 	graph_frame_count->SetName("graph_frame_count");
 
 	graph_pps_count->SetTitle("LAPPD PPS Events Time Evolution");
+	graph_pps_event_counter->SetTitle("LAPPD PPS Event Counter Time Evolution");
 	graph_frame_count->SetTitle("LAPPD Data Events Time Evolution");
 
 	if (draw_marker)
@@ -761,30 +766,39 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	}
 
 	graph_pps_count->SetMarkerColor(kBlack);
+	graph_pps_event_counter->SetMarkerColor(kBlack);
 	graph_frame_count->SetMarkerColor(kBlack);
 
 	graph_pps_count->SetLineColor(kBlack);
+	graph_pps_event_counter->SetLineColor(kBlack);
 	graph_frame_count->SetLineColor(kBlack);
 
 	graph_pps_count->SetLineWidth(2);
+	graph_pps_event_counter->SetLineWidth(2);
 	graph_frame_count->SetLineWidth(2);
 
 	graph_pps_count->SetFillColor(0);
+	graph_pps_event_counter->SetFillColor(0);
 	graph_frame_count->SetFillColor(0);
 
 	graph_pps_count->GetYaxis()->SetTitle("PPS Events");
+	graph_pps_event_counter->GetYaxis()->SetTitle("PPS Event Counter");
 	graph_frame_count->GetYaxis()->SetTitle("Data Events");
 
 	graph_pps_count->GetXaxis()->SetTimeDisplay(1);
+	graph_pps_event_counter->GetXaxis()->SetTimeDisplay(1);
 	graph_frame_count->GetXaxis()->SetTimeDisplay(1);
 
 	graph_pps_count->GetXaxis()->SetLabelSize(0.03);
+	graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
 	graph_frame_count->GetXaxis()->SetLabelSize(0.03);
 
 	graph_pps_count->GetXaxis()->SetLabelOffset(0.03);
+	graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.03);
 	graph_frame_count->GetXaxis()->SetLabelOffset(0.03);
 
 	graph_pps_count->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+	graph_pps_event_counter->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_frame_count->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 
 	// Multi-Graphs
@@ -962,6 +976,7 @@ void MonitorLAPPDData::LoadACDCBoardConfig(std::string acdc_config)
 		data_times_plot.emplace(board_number, empty_unsigned_long);
 		data_times_end_plot.emplace(board_number, empty_unsigned_long);
 		pps_rate_plot.emplace(board_number, empty_double);
+		pps_event_counter_plot.emplace(board_number, empty_double);
 		frame_rate_plot.emplace(board_number, empty_double);
 		beamgate_rate_plot.emplace(board_number, empty_double);
 		int_charge_plot.emplace(board_number, empty_double);
@@ -1046,6 +1061,7 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<ULong64_t> *t_time = new std::vector<ULong64_t>;
 	std::vector<ULong64_t> *t_end = new std::vector<ULong64_t>;
 	std::vector<double> *t_pps_rate = new std::vector<double>;
+	std::vector<double> *t_pps_event_counter = new std::vector<double>;
 	std::vector<double> *t_frame_rate = new std::vector<double>;
 	std::vector<double> *t_beamgate_rate = new std::vector<double>;
 	std::vector<double> *t_int_charge = new std::vector<double>;
@@ -1067,6 +1083,7 @@ void MonitorLAPPDData::WriteToFile()
 		t->SetBranchAddress("t_start", &t_time);
 		t->SetBranchAddress("t_end", &t_end);
 		t->SetBranchAddress("pps_rate", &t_pps_rate);
+		t->SetBranchAddress("pps_event_counter", &t_pps_event_counter);
 		t->SetBranchAddress("frame_rate", &t_frame_rate);
 		t->SetBranchAddress("beamgate_rate", &t_beamgate_rate);
 		t->SetBranchAddress("int_charge", &t_int_charge);
@@ -1090,6 +1107,7 @@ void MonitorLAPPDData::WriteToFile()
 		t->Branch("t_start", &t_time);
 		t->Branch("t_end", &t_end);
 		t->Branch("pps_rate", &t_pps_rate);
+		t->Branch("pps_event_counter", &t_pps_event_counter);
 		t->Branch("frame_rate", &t_frame_rate);
 		t->Branch("beamgate_rate", &t_beamgate_rate);
 		t->Branch("int_charge", &t_int_charge);
@@ -1129,6 +1147,7 @@ void MonitorLAPPDData::WriteToFile()
 		delete t_time;
 		delete t_end;
 		delete t_pps_rate;
+		delete t_pps_event_counter;
 		delete t_frame_rate;
 		delete t_beamgate_rate;
 		delete t_int_charge;
@@ -1149,6 +1168,7 @@ void MonitorLAPPDData::WriteToFile()
 	t_time->clear();
 	t_end->clear();
 	t_pps_rate->clear();
+	t_pps_event_counter->clear();
 	t_frame_rate->clear();
 	t_beamgate_rate->clear();
 	t_int_charge->clear();
@@ -1165,6 +1185,7 @@ void MonitorLAPPDData::WriteToFile()
 		t_time->push_back(first_timestamp.at(i_current));
 		t_end->push_back(last_timestamp.at(i_current));
 		t_pps_rate->push_back(current_pps_rate.at(i_current));
+		t_pps_event_counter->push_back(current_pps_event_counters.at(i_current));
 		t_frame_rate->push_back(current_frame_rate.at(i_current));
 		t_beamgate_rate->push_back(current_beamgate_rate.at(i_current));
 		t_int_charge->push_back(current_int_charge.at(i_current));
@@ -1218,6 +1239,7 @@ void MonitorLAPPDData::WriteToFile()
 	delete t_time;
 	delete t_end;
 	delete t_pps_rate;
+	delete t_pps_event_counter;
 	delete t_frame_rate;
 	delete t_beamgate_rate;
 	delete t_int_charge;
@@ -1247,6 +1269,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 		data_times_plot.at(board_nr).clear();
 		data_times_end_plot.at(board_nr).clear();
 		pps_rate_plot.at(board_nr).clear();
+		pps_event_counter_plot.at(board_nr).clear();
 		frame_rate_plot.at(board_nr).clear();
 		beamgate_rate_plot.at(board_nr).clear();
 		int_charge_plot.at(board_nr).clear();
@@ -1321,6 +1344,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<ULong64_t> *t_time = new std::vector<ULong64_t>;
 				std::vector<ULong64_t> *t_end = new std::vector<ULong64_t>;
 				std::vector<double> *t_pps_rate = new std::vector<double>;
+				std::vector<double> *t_pps_event_counter = new std::vector<double>;
 				std::vector<double> *t_frame_rate = new std::vector<double>;
 				std::vector<double> *t_beamgate_rate = new std::vector<double>;
 				std::vector<double> *t_int_charge = new std::vector<double>;
@@ -1340,6 +1364,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				t->SetBranchAddress("t_start", &t_time);
 				t->SetBranchAddress("t_end", &t_end);
 				t->SetBranchAddress("pps_rate", &t_pps_rate);
+				t->SetBranchAddress("pps_event_counter", &t_pps_event_counter);
 				t->SetBranchAddress("frame_rate", &t_frame_rate);
 				t->SetBranchAddress("beamgate_rate", &t_beamgate_rate);
 				t->SetBranchAddress("int_charge", &t_int_charge);
@@ -1395,6 +1420,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 						// std::cout <<"timestamp_start: "<<timestamp_start<<", timestamp: "<<timestamp<<std::endl;
 						if (t_time->at(i_board) >= timestamp_start && t_end->at(i_board) <= timestamp && t_end->at(i_board) != 0)
 						{
+							Log("MonitorLAPPDData: ReadFromFile: PPSEventCounter: " + std::to_string(t_pps_event_counter->at(i_board)), v_error, verbosity);
 							data_times_plot.at(board_nr).push_back(t_time->at(i_board));
 							data_times_end_plot.at(board_nr).push_back(t_end->at(i_board));
 							pps_rate_plot.at(board_nr).push_back(t_pps_rate->at(i_board));
@@ -1437,6 +1463,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				delete t_time;
 				delete t_end;
 				delete t_pps_rate;
+				delete t_pps_event_counter;
 				delete t_frame_rate;
 				delete t_beamgate_rate;
 				delete t_int_charge;
@@ -2246,6 +2273,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 					// for (int i_vec=0; i_vec<frame_rate_plot.at(board_nr2).size(); i_vec++){
 					int i_vec = 0;
 					pps_rate_plot.at(board_nr).push_back(0.);
+					pps_event_counter_plot.at(board_nr).push_back(0.);
 					frame_rate_plot.at(board_nr).push_back(0.);
 					buffer_size_plot.at(board_nr).push_back(0.);
 					int_charge_plot.at(board_nr).push_back(0.);
@@ -2258,6 +2286,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 	}
 
 	graph_pps_count->Set(0);
+	graph_pps_event_counter->Set(0);
 	graph_frame_count->Set(0);
 
 	for (int i_board = 0; i_board < (int)board_configuration.size(); i_board++)
@@ -2294,7 +2323,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		for (unsigned int i_file = 0; i_file < pps_rate_plot.at(board_nr).size(); i_file++)
 		{
 
-			Log("MonitorLAPPDData: Stored data (file #" + std::to_string(i_file + 1) + "): ", v_message, verbosity);
+			Log("MonitorLAPPDData: Stored data (file #" + std::to_string(i_file + 1) + ") and i_board: " + std::to_string(board_nr), v_message, verbosity);
 			graph_pps_rate.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), pps_rate_plot.at(board_nr).at(i_file));
 			graph_frame_rate.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), frame_rate_plot.at(board_nr).at(i_file));
 			graph_buffer_size.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), buffer_size_plot.at(board_nr).at(i_file));
@@ -2326,6 +2355,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				}
 				graph_pps_count->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), integrated_pps);
 				graph_frame_count->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), integrated_data);
+				Log("MonitorLAPPDData: EventCounter: " + std::to_string(pps_event_counter_plot.at(board_nr).at(i_file)) + " and pps_rate_plot size: " + std::to_string(pps_rate_plot.size()), v_message, verbosity);
+				graph_pps_event_counter->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), pps_event_counter_plot.at(board_nr).at(i_file));
 			}
 		}
 
@@ -2362,6 +2393,22 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			std::stringstream ss_pps_count_path;
 			ss_pps_count_path << outpath << "LAPPDData_TimeEvolution_PPSEvents_" << file_ending << "." << img_extension;
 			canvas_pps_count->SaveAs(ss_pps_count_path.str().c_str());
+
+			std::stringstream ss_pps_event_counter;
+			ss_pps_event_counter << "PPS event counter time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+			canvas_pps_event_counter->cd();
+			canvas_pps_event_counter->Clear();
+			graph_pps_event_counter->SetTitle(ss_pps_event_counter.str().c_str());
+			graph_pps_event_counter->GetYaxis()->SetTitle("PPS event counter");
+			graph_pps_event_counter->GetXaxis()->SetTimeDisplay(1);
+			graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
+			graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.03);
+			graph_pps_event_counter->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
+			graph_pps_event_counter->GetXaxis()->SetTimeOffset(0.);
+			graph_pps_event_counter->Draw("apl");
+			std::stringstream ss_pps_event_counter_path;
+			ss_pps_event_counter_path << outpath << "LAPPDData_TimeEvolution_PPSEventCounter_" << file_ending << "." << img_extension;
+			canvas_pps_event_counter->SaveAs(ss_pps_event_counter_path.str().c_str());
 
 			std::stringstream ss_frame_count;
 			ss_frame_count << "Data events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
@@ -2835,6 +2882,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				last_pps_count = pps_count_31_0;
 
 				current_pps_event_counters.at(vector_idx) = last_pps_count;
+				Log("Set PPS[" + std::to_string(vector_idx) + "] to " + std::to_string(last_pps_count),v_error,verbosity);
 			}
 
 			if (pps.size() == 16)

@@ -227,6 +227,7 @@ class MonitorLAPPDData: public Tool {
   std::vector<int> partrun_plot;
   std::vector<ULong64_t> lappdoffset_plot;
   std::vector<int> ppscount_plot;
+  std::map<int,std::vector<double> > pps_event_counter_plot;
   std::vector<int> framecount_plot;
 
   //canvas
@@ -260,6 +261,7 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_rate_lappd = nullptr;
   TCanvas *canvas_frame_count = nullptr;
   TCanvas *canvas_pps_count = nullptr;
+  TCanvas *canvas_pps_event_counter = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -270,6 +272,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_ped;
   std::map<int, TGraph*> graph_sigma;
   TGraph *graph_pps_count = nullptr;
+  TGraph *graph_pps_event_counter = nullptr;
   TGraph *graph_frame_count = nullptr;
 
   //multi-graphs
