@@ -2311,7 +2311,6 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		std::cout <<"int_charge_plot.size(): "<<int_charge_plot.at(board_nr).size()<<std::endl;*/
 		for (unsigned int i_file = 0; i_file < pps_rate_plot.at(board_nr).size(); i_file++)
 		{
-
 			Log("MonitorLAPPDData: Stored data (file #" + std::to_string(i_file + 1) + ") and i_board: " + std::to_string(board_nr), v_message, verbosity);
 			graph_pps_rate.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), pps_rate_plot.at(board_nr).at(i_file));
 			graph_frame_rate.at(board_nr)->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), frame_rate_plot.at(board_nr).at(i_file));
@@ -2344,7 +2343,6 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				}
 				graph_pps_count->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), integrated_pps);
 				graph_frame_count->SetPoint(i_file, labels_timeaxis.at(board_nr)[i_file].Convert(), integrated_data);
-				Log("MonitorLAPPDData: EventCounter: " + std::to_string(pps_event_counter_plot.at(board_nr).at(i_file)) + " and pps_rate_plot size: " + std::to_string(pps_rate_plot.size()), v_message, verbosity);
 			}
 		}
 
@@ -2358,6 +2356,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		// std::cout <<"pps_rate_plot.at(board_nr).size(): "<<pps_rate_plot.at(board_nr).size()<<std::endl;
 		if (i_board == 0)
 		{
+			// Add graph points for PPS event counter
+			for (int i_timestamp = 0; i_timestamp < all_timestamps.size(); i_timestamp++)
+			{
+				double timestamp_to_e13 = (double)all_timestamps.at(i_timestamp) / pow(10, 13);
+				graph_pps_event_counter->SetPoint(graph_pps_event_counter->GetN() + 1, timestamp_to_e13, all_pps_event_counters.at(i_timestamp));
+			}
+
 			std::stringstream ss_pps_count;
 			ss_pps_count << "PPS events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 			canvas_pps_count->cd();
@@ -2388,11 +2393,10 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			canvas_pps_event_counter->Clear();
 			graph_pps_event_counter->SetTitle(ss_pps_event_counter.str().c_str());
 			graph_pps_event_counter->GetYaxis()->SetTitle("PPS event counter");
-			graph_pps_event_counter->GetXaxis()->SetTimeDisplay(1);
+			graph_pps_event_counter->GetXaxis()->SetTitle("ns (1e13)");
+			graph_pps_event_counter->GetXaxis()->SetTimeDisplay(0);
+			graph_pps_event_counter->GetXaxis()->SetTimeOffset(0);
 			graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
-			graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.03);
-			graph_pps_event_counter->GetXaxis()->SetTimeFormat("#splitline{%m/%d}{%H:%M}");
-			graph_pps_event_counter->GetXaxis()->SetTimeOffset(0.);
 			graph_pps_event_counter->Draw("apl");
 			std::stringstream ss_pps_event_counter_path;
 			ss_pps_event_counter_path << outpath << "LAPPDData_TimeEvolution_PPSEventCounter_" << file_ending << "." << img_extension;
@@ -2872,8 +2876,9 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				std::bitset<32> bits_pps_count_31_0(pps_count_31_0);
 				last_pps_count = pps_count_31_0;
 
+				// Add pps count and timestamp for plotting
 				all_pps_event_counters.push_back(last_pps_count);
-				all_timestamps.push_back(last_pps_timestamp);
+				all_timestamps.push_back(pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
 			}
 
 			if (pps.size() == 16)

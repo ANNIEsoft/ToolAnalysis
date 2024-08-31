@@ -137,6 +137,7 @@ class MonitorLAPPDData: public Tool {
   ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
   ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
   double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
+  double CLOCK_to_NSEC = 3.125;       //320MHz clock -> 1/320MHz = 3.125ns
   ULong64_t reference_time;
   ULong64_t last_pps_timestamp;
   int last_pps_count;
@@ -164,8 +165,8 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_timestamp;
   std::vector<uint64_t> first_pps_timestamps;
   std::vector<uint64_t> last_pps_timestamps;
-  std::vector<int> all_pps_event_counters; // Both vectors used for
-  std::vector<int> all_timestamps;         // plotting
+  std::vector<int> all_pps_event_counters; // PPS event counters, indexed by all_timestamps
+  std::vector<uint64_t> all_timestamps; // Timestamp in nanoseconds
   std::vector<bool> first_entry;
   std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
