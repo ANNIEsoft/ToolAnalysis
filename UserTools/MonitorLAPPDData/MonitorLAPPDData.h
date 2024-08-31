@@ -164,7 +164,8 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_timestamp;
   std::vector<uint64_t> first_pps_timestamps;
   std::vector<uint64_t> last_pps_timestamps;
-  std::vector<int> current_pps_event_counters;
+  std::vector<int> all_pps_event_counters; // Both vectors used for
+  std::vector<int> all_timestamps;         // plotting
   std::vector<bool> first_entry;
   std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
