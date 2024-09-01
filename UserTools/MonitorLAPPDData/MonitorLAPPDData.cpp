@@ -2395,8 +2395,9 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_pps_event_counter->GetYaxis()->SetTitle("PPS event counter");
 			graph_pps_event_counter->GetXaxis()->SetTitle("ns (1e13)");
 			graph_pps_event_counter->GetXaxis()->SetTimeDisplay(0);
-			graph_pps_event_counter->GetXaxis()->SetTimeOffset(0);
 			graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
+			graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.01);
+			graph_pps_event_counter->GetXaxis()->SetTimeOffset(0.);
 			graph_pps_event_counter->Draw("apl");
 			std::stringstream ss_pps_event_counter_path;
 			ss_pps_event_counter_path << outpath << "LAPPDData_TimeEvolution_PPSEventCounter_" << file_ending << "." << img_extension;
@@ -2826,7 +2827,8 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 			current_pps_count++;
 
 			// Parse PPS data according to Data Frame (PPS) metadata
-			if (pps.size() == 16 || pps.size() == 32) {
+			if (pps.size() == 16 || pps.size() == 32)
+			{
 				// Parse PPS Timestamp
 				// Get words from 2 to 5
 				unsigned short pps_63_48 = pps.at(2);
@@ -2837,8 +2839,8 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				std::bitset<16> bits_pps_47_32(pps_47_32);
 				std::bitset<16> bits_pps_31_16(pps_31_16);
 				std::bitset<16> bits_pps_15_0(pps_15_0);
-				
-				// Combine all the bits to create PPS timestamp 
+
+				// Combine all the bits to create PPS timestamp
 				unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
 				if (verbosity > 2)
 					std::cout << "pps combined: " << pps_63_0 << std::endl;
@@ -2922,7 +2924,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				}
 				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
 				n_pps.at(vector_idx)++;
-				
+
 				have_pps = true;
 				do_continue = true;
 			}
