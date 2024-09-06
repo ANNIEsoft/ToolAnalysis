@@ -2883,12 +2883,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				all_timestamps.push_back(pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
 			}
 
-			if (pps.size() == 16)
-			{
-				have_pps = true;
-				do_continue = true;
-			}
-			else if (pps.size() == 32)
+			if (pps.size() == 32)
 			{
 				unsigned short pps_63_48 = pps.at(18);
 				unsigned short pps_47_32 = pps.at(19);
@@ -2924,9 +2919,6 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				}
 				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
 				n_pps.at(vector_idx)++;
-
-				have_pps = true;
-				do_continue = true;
 			}
 		}
 		if (do_continue)
