@@ -2920,6 +2920,9 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				last_pps_timestamps.at(vector_idx) = (last_pps_timestamp);
 				n_pps.at(vector_idx)++;
 			}
+			
+			have_pps = true;
+			do_continue = true;
 		}
 		if (do_continue)
 			continue;
