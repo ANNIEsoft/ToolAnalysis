@@ -2398,7 +2398,10 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
 			graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.01);
 			graph_pps_event_counter->GetXaxis()->SetTimeOffset(0.);
-			graph_pps_event_counter->Draw("apl");
+			graph_pps_event_counter->SetMarkerSize(0.4F);
+			graph_pps_event_counter->SetMarkerColor(kBlue);
+			graph_pps_event_counter->SetMarkerStyle(kFullCircle);
+			graph_pps_event_counter->Draw("AP");
 			std::stringstream ss_pps_event_counter_path;
 			ss_pps_event_counter_path << outpath << "LAPPDData_TimeEvolution_PPSEventCounter_" << file_ending << "." << img_extension;
 			canvas_pps_event_counter->SaveAs(ss_pps_event_counter_path.str().c_str());
