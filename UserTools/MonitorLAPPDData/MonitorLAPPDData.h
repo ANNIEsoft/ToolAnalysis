@@ -266,6 +266,7 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_frame_count = nullptr;
   TCanvas *canvas_pps_count = nullptr;
   TCanvas *canvas_pps_event_counter = nullptr;
+  TCanvas *canvas_pps_accumulated_number_vs_psec_timestamp = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -277,6 +278,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_sigma;
   TGraph *graph_pps_count = nullptr;
   TGraph *graph_pps_event_counter = nullptr;
+  TGraph *graph_pps_accumulated_number_vs_psec_timestamp = nullptr;
   TGraph *graph_frame_count = nullptr;
 
   //multi-graphs
