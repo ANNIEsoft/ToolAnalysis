@@ -1070,6 +1070,9 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<double> *t_rate = new std::vector<double>;
 	std::vector<double> *t_ped = new std::vector<double>;
 	std::vector<double> *t_sigma = new std::vector<double>;
+	std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
+	std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
+
 	int t_run, t_subrun, t_partrun;
 	int t_pps_count, t_frame_count;
 	ULong64_t t_lappd_offset;
@@ -1097,6 +1100,8 @@ void MonitorLAPPDData::WriteToFile()
 		t->SetBranchAddress("pps_count", &t_pps_count);
 		t->SetBranchAddress("frame_count", &t_frame_count);
 		t->SetBranchAddress("lappd_offset", &t_lappd_offset);
+		t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
+		t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 	}
 	else
 	{
@@ -1120,6 +1125,8 @@ void MonitorLAPPDData::WriteToFile()
 		t->Branch("pps_count", &t_pps_count);
 		t->Branch("frame_count", &t_frame_count);
 		t->Branch("lappd_offset", &t_lappd_offset);
+		t->Branch("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
+		t->Branch("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 	}
 
 	int n_entries = t->GetEntries();
@@ -1153,6 +1160,8 @@ void MonitorLAPPDData::WriteToFile()
 		delete t_rate;
 		delete t_ped;
 		delete t_sigma;
+		delete t_raw_lappd_data_pps_counts;
+		delete t_raw_lappd_data_pps_timestamps;
 		delete f;
 
 		gROOT->cd();
@@ -1191,6 +1200,13 @@ void MonitorLAPPDData::WriteToFile()
 		struct tm starttime_tm = boost::posix_time::to_tm(starttime);
 		Log(
 			"MonitorLAPPDData: WriteToFile: Board " + std::to_string(current_board_index.at(i_current)) + ". Writing data to file: " + std::to_string(starttime_tm.tm_year + 1900) + "/" + std::to_string(starttime_tm.tm_mon + 1) + "/" + std::to_string(starttime_tm.tm_mday) + "-" + std::to_string(starttime_tm.tm_hour) + ":" + std::to_string(starttime_tm.tm_min) + ":" + std::to_string(starttime_tm.tm_sec), v_message, verbosity);
+	}
+
+	// Push raw lappd data
+	for (int i_current = 0; i_current < raw_lappd_data_pps_timestamps.size(); i_current++)
+	{
+		t_raw_lappd_data_pps_counts->push_back(raw_lappd_data_pps_counts.at(i_current));
+		t_raw_lappd_data_pps_timestamps->push_back(raw_lappd_data_pps_timestamps.at(i_current));
 	}
 
 	if (verbosity > 3)
@@ -1243,6 +1259,8 @@ void MonitorLAPPDData::WriteToFile()
 	delete t_rate;
 	delete t_ped;
 	delete t_sigma;
+	delete t_raw_lappd_data_pps_counts;
+	delete t_raw_lappd_data_pps_timestamps;
 	delete f;
 
 	gROOT->cd();
@@ -1283,6 +1301,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 	lappdoffset_plot.clear();
 	ppscount_plot.clear();
 	framecount_plot.clear();
+	raw_lappd_data_pps_counts.clear();
+	raw_lappd_data_pps_timestamps.clear();
 
 	// take the end time and calculate the start time with the given time_frame
 	ULong64_t timestamp_start = timestamp - time_frame * MIN_to_HOUR * SEC_to_MIN * MSEC_to_SEC;
@@ -1347,6 +1367,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<double> *t_rate = new std::vector<double>;
 				std::vector<double> *t_ped = new std::vector<double>;
 				std::vector<double> *t_sigma = new std::vector<double>;
+				std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
+				std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
 
 				int t_run, t_subrun, t_partrun;
 				int t_pps_count, t_frame_count;
@@ -1372,6 +1394,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				t->SetBranchAddress("pps_count", &t_pps_count);
 				t->SetBranchAddress("frame_count", &t_frame_count);
 				t->SetBranchAddress("lappd_offset", &t_lappd_offset);
+				t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
+				t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 
 				nentries_tree = t->GetEntries();
 
@@ -1450,6 +1474,11 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 					}
 				}
 
+				for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i++) {
+					raw_lappd_data_pps_timestamps.push_back(t_raw_lappd_data_pps_timestamps->at(i));
+					raw_lappd_data_pps_counts.push_back(t_raw_lappd_data_pps_counts->at(i));
+				}
+				
 				// Delete vectors, if we have any
 				delete t_time;
 				delete t_end;
@@ -1463,6 +1492,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				delete t_rate;
 				delete t_ped;
 				delete t_sigma;
+				delete t_raw_lappd_data_pps_counts;
+				delete t_raw_lappd_data_pps_timestamps;
 			}
 
 			f->Close();
@@ -2357,10 +2388,10 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		if (i_board == 0)
 		{
 			// Add graph points for PPS event counter
-			for (int i_timestamp = 0; i_timestamp < all_timestamps.size(); i_timestamp++)
+			for (int i_timestamp = 0; i_timestamp < raw_lappd_data_pps_timestamps.size(); i_timestamp++)
 			{
-				double timestamp_to_e13 = (double)all_timestamps.at(i_timestamp) / pow(10, 13);
-				graph_pps_event_counter->SetPoint(graph_pps_event_counter->GetN() + 1, timestamp_to_e13, all_pps_event_counters.at(i_timestamp));
+				double timestamp_to_e13 = (double)raw_lappd_data_pps_timestamps.at(i_timestamp) / pow(10, 13);
+				graph_pps_event_counter->SetPoint(graph_pps_event_counter->GetN() + 1, timestamp_to_e13, raw_lappd_data_pps_counts.at(i_timestamp));
 			}
 
 			std::stringstream ss_pps_count;
@@ -2752,8 +2783,8 @@ void MonitorLAPPDData::ProcessLAPPDData()
 	current_ped.clear();
 	current_sigma.clear();
 
-	all_pps_event_counters.clear();
-	all_timestamps.clear();
+	raw_lappd_data_pps_counts.clear();
+	raw_lappd_data_pps_timestamps.clear();
 
 	/*
 		long entries;
@@ -2882,8 +2913,8 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				last_pps_count = pps_count_31_0;
 
 				// Add pps count and timestamp for plotting
-				all_pps_event_counters.push_back(last_pps_count);
-				all_timestamps.push_back(pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
+				raw_lappd_data_pps_counts.push_back(last_pps_count);
+				raw_lappd_data_pps_timestamps.push_back(pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
 			}
 
 			if (pps.size() == 32)
