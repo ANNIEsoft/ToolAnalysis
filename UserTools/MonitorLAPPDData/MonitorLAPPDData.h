@@ -167,6 +167,8 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_pps_timestamps;
   std::vector<int> raw_lappd_data_pps_counts; // PPS event counters, indexed by all_timestamps
   std::vector<uint64_t> raw_lappd_data_pps_timestamps; // Timestamp in nanoseconds
+  std::vector<int> pps_accumulated_number; // PPS accumulated number of events
+  std::vector<long> pps_accumulated_psec_timestamp; // PSec timestamps of each PPS accumulated number
   std::vector<bool> first_entry;
   std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
