@@ -1261,7 +1261,13 @@ void MonitorLAPPDData::WriteToFile()
 		t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
 
 		// Push the latest LAPPD PPS timestamp, as we will use it to plot against accumulated PPS event number
-		auto current_raw_lappd_pps_timestamp = raw_lappd_data_pps_timestamps.back();
+		long current_raw_lappd_pps_timestamp = 0;
+		for (int i_current = 0; i_current < (int)raw_lappd_data_pps_timestamps.size(); i_current++) {
+			long pps_timestamp = raw_lappd_data_pps_timestamps.at(i_current);
+			if (pps_timestamp > current_raw_lappd_pps_timestamp) {
+				current_raw_lappd_pps_timestamp = pps_timestamp;
+			}
+		}
 		t_raw_lappd_data_pps_timestamp_per_accumulated_number->push_back(current_raw_lappd_pps_timestamp);
 	}
 
