@@ -1223,20 +1223,23 @@ void MonitorLAPPDData::WriteToFile()
 			"MonitorLAPPDData: WriteToFile: Board " + std::to_string(current_board_index.at(i_current)) + ". Writing data to file: " + std::to_string(starttime_tm.tm_year + 1900) + "/" + std::to_string(starttime_tm.tm_mon + 1) + "/" + std::to_string(starttime_tm.tm_mday) + "-" + std::to_string(starttime_tm.tm_hour) + ":" + std::to_string(starttime_tm.tm_min) + ":" + std::to_string(starttime_tm.tm_sec), v_message, verbosity);
 	}
 
-	// Push raw lappd data
-	for (int i_current = 0; i_current < raw_lappd_data_pps_timestamps.size(); i_current++)
-	{
-		t_raw_lappd_data_pps_counts->push_back(raw_lappd_data_pps_counts.at(i_current));
-		t_raw_lappd_data_pps_timestamps->push_back(raw_lappd_data_pps_timestamps.at(i_current));
+	// Once every partfun file
+	if (t_partrun < current_partrun) {
+		// Push raw lappd data
+		for (int i_current = 0; i_current < raw_lappd_data_pps_timestamps.size(); i_current++)
+		{
+			t_raw_lappd_data_pps_counts->push_back(raw_lappd_data_pps_counts.at(i_current));
+			t_raw_lappd_data_pps_timestamps->push_back(raw_lappd_data_pps_timestamps.at(i_current));
+		}
+		
+		// Push accumulated PPS event number and PSec timestamp
+		t_pps_accumulated_number->push_back(current_pps_count);
+		std::string psec_timestamp_string;
+		// Get the PSecTimestamp given by ParseDataMonitoring tool
+		m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
+		// Cast PSec timestamp to long, then push it
+		t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
 	}
-
-	// Push accumulated PPS event number and PSec timestamp
-	t_pps_accumulated_number->push_back(current_pps_count);
-	std::string psec_timestamp_string;
-	// Get the PSecTimestamp given by ParseDataMonitoring tool
-	m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
-	// Cast PSec timestamp to long, then push it
-	t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
 
 	for (int i_current = 0; i_current < (int)current_ped.size(); i_current++)
 	{
