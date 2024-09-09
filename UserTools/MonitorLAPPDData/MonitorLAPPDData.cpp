@@ -2469,7 +2469,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			// Add graph points for PPS accumulated number
 			for (int i_timestamp = 0; i_timestamp < pps_accumulated_psec_timestamp.size(); i_timestamp++)
 			{
-				auto acc_timestamp = pps_accumulated_psec_timestamp.at(i_timestamp);
+				// Convert timestamp to unix seconds
+				auto acc_timestamp = pps_accumulated_psec_timestamp.at(i_timestamp) / 1000;
 				auto acc_number = pps_accumulated_number.at(i_timestamp);
 				graph_pps_accumulated_number_vs_psec_timestamp->SetPoint(i_timestamp, acc_timestamp, acc_number);
 
