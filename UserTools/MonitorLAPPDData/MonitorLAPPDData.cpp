@@ -365,7 +365,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	canvas_pps_count = new TCanvas("canvas_pps_count", "LAPPD PPS Count", 900, 600);
 	canvas_pps_event_counter = new TCanvas("canvas_pps_event_counter", "LAPPD PPS Event Counter", 900, 600);
 	canvas_pps_accumulated_number_vs_psec_timestamp = new TCanvas("canvas_pps_accumulated_number_vs_psec_timestamp", "LAPPD PPS Accumulated Number vs System Time", 900, 600); // PSec timestamp is also referred to as "System Time"
-
+	canvas_pps_time_vs_accumulated_number = new TCanvas("canvas_pps_time_vs_accumulated_number", "LAPPD PPS Time vs Accumulated Number", 900, 600);
 	// Histograms
 	// ToDo: Not hardcode the number of channels here
 	int numberOfChannels = 30;
@@ -751,16 +751,19 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	graph_pps_count = new TGraph();
 	graph_pps_event_counter = new TGraph();
 	graph_pps_accumulated_number_vs_psec_timestamp = new TGraph();
+	graph_pps_time_vs_accumulated_number = new TGraph();
 	graph_frame_count = new TGraph();
 
 	graph_pps_count->SetName("graph_pps_count");
 	graph_pps_event_counter->SetName("graph_pps_event_counter");
 	graph_pps_accumulated_number_vs_psec_timestamp->SetName("graph_pps_accumulated_number_vs_psec_timestamp");
+	graph_pps_time_vs_accumulated_number->SetName("graph_pps_time_vs_accumulated_number");
 	graph_frame_count->SetName("graph_frame_count");
 
 	graph_pps_count->SetTitle("LAPPD PPS Events Time Evolution");
 	graph_pps_event_counter->SetTitle("LAPPD PPS Event Counter Time Evolution");
 	graph_pps_accumulated_number_vs_psec_timestamp->SetTitle("LAPPD PPS Accumulated Number vs System Time");
+	graph_pps_time_vs_accumulated_number->SetTitle("LAPPD PPS Time vs Accumulated Number");
 	graph_frame_count->SetTitle("LAPPD Data Events Time Evolution");
 
 	if (draw_marker)
@@ -772,46 +775,55 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	graph_pps_count->SetMarkerColor(kBlack);
 	graph_pps_event_counter->SetMarkerColor(kBlack);
 	graph_pps_accumulated_number_vs_psec_timestamp->SetMarkerColor(kBlack);
+	graph_pps_time_vs_accumulated_number->SetMarkerColor(kBlack);
 	graph_frame_count->SetMarkerColor(kBlack);
 
 	graph_pps_count->SetLineColor(kBlack);
 	graph_pps_event_counter->SetLineColor(kBlack);
 	graph_pps_accumulated_number_vs_psec_timestamp->SetLineColor(kBlack);
+	graph_pps_time_vs_accumulated_number->SetLineColor(kBlack);
 	graph_frame_count->SetLineColor(kBlack);
 
 	graph_pps_count->SetLineWidth(2);
 	graph_pps_event_counter->SetLineWidth(2);
 	graph_pps_accumulated_number_vs_psec_timestamp->SetLineWidth(2);
+	graph_pps_time_vs_accumulated_number->SetLineWidth(2);
 	graph_frame_count->SetLineWidth(2);
 
 	graph_pps_count->SetFillColor(0);
 	graph_pps_event_counter->SetFillColor(0);
 	graph_pps_accumulated_number_vs_psec_timestamp->SetFillColor(0);
+	graph_pps_time_vs_accumulated_number->SetFillColor(0);
 	graph_frame_count->SetFillColor(0);
 
 	graph_pps_count->GetYaxis()->SetTitle("PPS Events");
 	graph_pps_event_counter->GetYaxis()->SetTitle("PPS Event Counter");
 	graph_pps_accumulated_number_vs_psec_timestamp->GetYaxis()->SetTitle("PPS Accumulated Number");
+	graph_pps_time_vs_accumulated_number->GetYaxis()->SetTitle("PPS Accumulated Number");
 	graph_frame_count->GetYaxis()->SetTitle("Data Events");
 
 	graph_pps_count->GetXaxis()->SetTimeDisplay(1);
 	graph_pps_event_counter->GetXaxis()->SetTimeDisplay(1);
 	graph_pps_accumulated_number_vs_psec_timestamp->GetXaxis()->SetTimeDisplay(1);
+	graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeDisplay(1);
 	graph_frame_count->GetXaxis()->SetTimeDisplay(1);
 
 	graph_pps_count->GetXaxis()->SetLabelSize(0.03);
 	graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
 	graph_pps_accumulated_number_vs_psec_timestamp->GetXaxis()->SetLabelSize(0.03);
+	graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelSize(0.03);
 	graph_frame_count->GetXaxis()->SetLabelSize(0.03);
 
 	graph_pps_count->GetXaxis()->SetLabelOffset(0.03);
 	graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.03);
 	graph_pps_accumulated_number_vs_psec_timestamp->GetXaxis()->SetLabelOffset(0.03);
+	graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelOffset(0.03);
 	graph_frame_count->GetXaxis()->SetLabelOffset(0.03);
 
 	graph_pps_count->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_pps_event_counter->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_pps_accumulated_number_vs_psec_timestamp->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
+	graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 	graph_frame_count->GetXaxis()->SetTimeFormat("#splitline(%m/%d}{%H:%M}");
 
 	// Multi-Graphs
@@ -1087,6 +1099,7 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
 	std::vector<int> *t_pps_accumulated_number = new std::vector<int>; // Accumulated PPS event number, taken from current_pps_count, 
 	std::vector<long> *t_pps_accumulated_psec_timestamp = new std::vector<long>; 
+	std::vector<long> *t_raw_lappd_data_pps_timestamp_per_accumulated_number = new std::vector<long>;
 	
 	int t_run, t_subrun, t_partrun;
 	int t_pps_count, t_frame_count;
@@ -1119,6 +1132,7 @@ void MonitorLAPPDData::WriteToFile()
 		t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 		t->SetBranchAddress("pps_accumulated_number", &t_pps_accumulated_number);
 		t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
+		t->SetBranchAddress("raw_lappd_data_pps_timestamp_per_accumulated_number", &t_raw_lappd_data_pps_timestamp_per_accumulated_number);
 	}
 	else
 	{
@@ -1146,6 +1160,7 @@ void MonitorLAPPDData::WriteToFile()
 		t->Branch("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 		t->Branch("pps_accumulated_number", &t_pps_accumulated_number);
 		t->Branch("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
+		t->Branch("raw_lappd_data_pps_timestamp_per_accumulated_number", &t_raw_lappd_data_pps_timestamp_per_accumulated_number);
 	}
 
 	int n_entries = t->GetEntries();
@@ -1183,6 +1198,7 @@ void MonitorLAPPDData::WriteToFile()
 		delete t_raw_lappd_data_pps_timestamps;
 		delete t_pps_accumulated_number;
 		delete t_pps_accumulated_psec_timestamp;
+		delete t_raw_lappd_data_pps_timestamp_per_accumulated_number;
 		delete f;
 
 		gROOT->cd();
@@ -1239,6 +1255,10 @@ void MonitorLAPPDData::WriteToFile()
 		m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
 		// Cast PSec timestamp to long, then push it
 		t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
+
+		// Push the latest LAPPD PPS timestamp, as we will use it to plot against accumulated PPS event number
+		auto current_raw_lappd_pps_timestamp = raw_lappd_data_pps_timestamps.back();
+		t_raw_lappd_data_pps_timestamp_per_accumulated_number->push_back(current_raw_lappd_pps_timestamp);
 	}
 
 	for (int i_current = 0; i_current < (int)current_ped.size(); i_current++)
@@ -1291,6 +1311,7 @@ void MonitorLAPPDData::WriteToFile()
 	delete t_sigma;
 	delete t_raw_lappd_data_pps_counts;
 	delete t_raw_lappd_data_pps_timestamps;
+	delete t_raw_lappd_data_pps_timestamp_per_accumulated_number;
 	delete f;
 
 	gROOT->cd();
@@ -1403,6 +1424,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
 				std::vector<double> *t_pps_accumulated_number = new std::vector<double>;
 				std::vector<long> *t_pps_accumulated_psec_timestamp = new std::vector<long>;
+				std::vector<long> *t_raw_lappd_data_pps_timestamp_per_accumulated_number = new std::vector<long>;
 
 				int t_run, t_subrun, t_partrun;
 				int t_pps_count, t_frame_count;
@@ -1432,6 +1454,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 				t->SetBranchAddress("pps_accumulated_number", &t_pps_accumulated_number);
 				t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
+				t->SetBranchAddress("raw_lappd_data_pps_timestamp_per_accumulated_number", &t_raw_lappd_data_pps_timestamp_per_accumulated_number);
 
 				nentries_tree = t->GetEntries();
 
@@ -1518,6 +1541,10 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				for (int i = 0; i < t_pps_accumulated_psec_timestamp->size(); i++) {
 					pps_accumulated_psec_timestamp.push_back(t_pps_accumulated_psec_timestamp->at(i));
 					pps_accumulated_number.push_back(t_pps_accumulated_number->at(i));
+
+					// This and the vectors above the same length, as they are both added in an accumulated fashion,
+					// so we can just add them together
+					raw_lappd_data_pps_timestamp_per_accumulated_number.push_back(t_raw_lappd_data_pps_timestamp_per_accumulated_number->at(i));
 				}
 				
 				// Delete vectors, if we have any
@@ -2441,6 +2468,10 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				auto acc_timestamp = pps_accumulated_psec_timestamp.at(i_timestamp);
 				auto acc_number = pps_accumulated_number.at(i_timestamp);
 				graph_pps_accumulated_number_vs_psec_timestamp->SetPoint(i_timestamp, acc_timestamp, acc_number);
+
+				// Also add graph points for PPS time vs accumulated number
+				auto acc_pps_timestamp_to_e13 = (double)raw_lappd_data_pps_timestamp_per_accumulated_number.at(i_timestamp) / pow(10, 13);
+				graph_pps_time_vs_accumulated_number->SetPoint(i_timestamp, acc_number, acc_pps_timestamp_to_e13);
 			}
 
 			std::stringstream ss_pps_count;
@@ -2499,8 +2530,25 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_pps_accumulated_number_vs_psec_timestamp->GetXaxis()->SetTimeOffset(0.);
 			graph_pps_accumulated_number_vs_psec_timestamp->Draw("apl");
 			std::stringstream ss_pps_accumulated_number_vs_psec_timestamp_path;
-			ss_pps_accumulated_number_vs_psec_timestamp_path << outpath << "LAPPDData_TimeEvolution_PPSAccumulatedNumber_vsPsecTimestamp_" << file_ending << "." << img_extension;
+			ss_pps_accumulated_number_vs_psec_timestamp_path << outpath << "LAPPDData_TimeEvolution_PPSAccumulatedNumber_vs_PsecTimestamp_" << file_ending << "." << img_extension;
 			canvas_pps_accumulated_number_vs_psec_timestamp->SaveAs(ss_pps_accumulated_number_vs_psec_timestamp_path.str().c_str());
+
+			std::stringstream ss_pps_time_vs_accumulated_number;
+			ss_pps_time_vs_accumulated_number << "PPS time vs accumulated number time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+			canvas_pps_time_vs_accumulated_number->cd();
+			canvas_pps_time_vs_accumulated_number->Clear();
+			graph_pps_time_vs_accumulated_number->SetTitle(ss_pps_time_vs_accumulated_number.str().c_str());
+			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTitle("PPS timestamp ns (1e13)");
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTitle("PPS accumulated number");
+			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTimeDisplay(0);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeDisplay(0);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelSize(0.03);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelOffset(0.01);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeOffset(0.);
+			graph_pps_time_vs_accumulated_number->Draw("apl");
+			std::stringstream ss_pps_time_vs_accumulated_number_path;
+			ss_pps_time_vs_accumulated_number_path << outpath << "LAPPDData_TimeEvolution_PPSTime_vs_AccumulatedNumber_" << file_ending << "." << img_extension;
+			canvas_pps_time_vs_accumulated_number->SaveAs(ss_pps_time_vs_accumulated_number_path.str().c_str());
 
 			std::stringstream ss_frame_count;
 			ss_frame_count << "Data events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();

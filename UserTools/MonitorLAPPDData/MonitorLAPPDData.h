@@ -169,6 +169,7 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> raw_lappd_data_pps_timestamps; // Timestamp in nanoseconds
   std::vector<int> pps_accumulated_number; // PPS accumulated number of events
   std::vector<long> pps_accumulated_psec_timestamp; // PSec timestamps of each PPS accumulated number
+  std::vector<long> raw_lappd_data_pps_timestamp_per_accumulated_number; // PPS timestamp of each accumulated number
   std::vector<bool> first_entry;
   std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
@@ -267,6 +268,7 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_pps_count = nullptr;
   TCanvas *canvas_pps_event_counter = nullptr;
   TCanvas *canvas_pps_accumulated_number_vs_psec_timestamp = nullptr;
+  TCanvas* canvas_pps_time_vs_accumulated_number = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -279,6 +281,7 @@ class MonitorLAPPDData: public Tool {
   TGraph *graph_pps_count = nullptr;
   TGraph *graph_pps_event_counter = nullptr;
   TGraph *graph_pps_accumulated_number_vs_psec_timestamp = nullptr;
+  TGraph *graph_pps_time_vs_accumulated_number = nullptr;
   TGraph *graph_frame_count = nullptr;
 
   //multi-graphs
