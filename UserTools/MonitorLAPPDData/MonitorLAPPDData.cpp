@@ -2466,10 +2466,18 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 		// std::cout <<"pps_rate_plot.at(board_nr).size(): "<<pps_rate_plot.at(board_nr).size()<<std::endl;
 		if (i_board == 0)
 		{
+			std::unordered_set<double> pps_event_counter_timestamps;
 			// Add graph points for PPS event counter
 			for (int i_timestamp = 0; i_timestamp < raw_lappd_data_pps_timestamps.size(); i_timestamp++)
 			{
 				double timestamp_to_e13 = (double)raw_lappd_data_pps_timestamps.at(i_timestamp) / pow(10, 13);
+				// skip if timestamp_to_e13 already exists
+				if (pps_event_counter_timestamps.count(timestamp_to_e13)) {
+					continue;
+				}
+				pps_event_counter_timestamps.insert(timestamp_to_e13);
+
+				pps_event_counter_timestamps.insert(raw_lappd_data_pps_timestamps.at(i_timestamp));
 				graph_pps_event_counter->SetPoint(i_timestamp, timestamp_to_e13, raw_lappd_data_pps_counts.at(i_timestamp));
 			}
 			// Add graph points for PPS accumulated number
@@ -3038,7 +3046,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 
 				// Add pps count and timestamp for plotting
 				raw_lappd_data_pps_counts.push_back(last_pps_count);
-				raw_lappd_data_pps_timestamps.push_back(pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
+				raw_lappd_data_pps_timestamps.push_back((double)pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
 			}
 
 			if (pps.size() == 32)
