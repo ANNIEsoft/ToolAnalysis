@@ -307,8 +307,6 @@ IFBeamDBInterfaceV2::ParseDBResponseBundleSpan(const std::string& response) cons
   for (auto &ts : retMap) {
     total += ts.second.size();
   }
-  std::cout << "Total number of elements in retMap: " << total << std::endl;
-  std::cout << "Size of retMap is " << retMap.size() << std::endl;
 
   // check each timestamp in the retMap, to see if it have all the devices in the requiredDevices map keys, if yes, continue
   // if not, create entry for that device at retMap[TS], use the data type from the value of requiredDevices
@@ -326,8 +324,6 @@ IFBeamDBInterfaceV2::ParseDBResponseBundleSpan(const std::string& response) cons
   for (auto &ts : retMap) {
     totalAfter += ts.second.size();
   }
-  std::cout << "After inserting, total number of elements in retMap: " << totalAfter << std::endl;
-  std::cout << "Size of retMap is " << retMap.size() << std::endl;
   
   return retMap;
 }
