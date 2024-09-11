@@ -1250,8 +1250,8 @@ void MonitorLAPPDData::WriteToFile()
 		
 		// Push accumulated PPS event number and PSec timestamp
 		int total_pps_count = current_pps_count;
-		for (int i_current = 0; i_current < t_pps_accumulated_number->size(); i_current++) {
-			total_pps_count += t_pps_accumulated_number->at(i_current);
+		if (!t_pps_accumulated_number->empty()) {
+			total_pps_count += t_pps_accumulated_number->back();
 		}
 		t_pps_accumulated_number->push_back(total_pps_count);
 		std::string psec_timestamp_string;
