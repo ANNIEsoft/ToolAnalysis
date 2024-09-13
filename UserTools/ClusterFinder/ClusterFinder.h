@@ -67,7 +67,7 @@ class ClusterFinder: public Tool {
   int MinHitsPerCluster;
   bool draw_2D = false;
   double end_of_window_time_cut;
-  double pulse_width;
+  double mc_pulse_width;
 
   // define ANNIEEvent variables
   int evnum;
