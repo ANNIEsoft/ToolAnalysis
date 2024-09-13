@@ -23,6 +23,7 @@ ClusterFindingWindow 50 # in ns, size of the window used to "clusterize"
 AcqTimeWindow 4000 # in ns, size of the acquisition window
 ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
 MinHitsPerCluster 10 # group of hits are considered clusters above this amount of hits
+MC_pulse_width 10  # width of MC "pulse" in which to integrate true photon hits - all true photon hits on a single PMT will be combined into a "pulse" of this width
 
 verbose 1         #verbosity of the application
 
