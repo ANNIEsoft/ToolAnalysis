@@ -8,3 +8,4 @@ ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are co
 MinHitsPerCluster 10 # group of hits are considered clusters above this amount of hits
 end_of_window_time_cut 0.95 # from o to 1, length of the window you want to loop over with respect to acq. window (1 for full window, 0.95 for 95% from the start)
 Plots2D 0 #2D charge-vs-time plot to be drawn?
+MC_pulse_width 10  # width of MC "pulse" in which to integrate true photon hits - all true photon hits on a single PMT will be combined into a "pulse" of this width
