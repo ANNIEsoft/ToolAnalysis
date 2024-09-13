@@ -27,6 +27,7 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Plots2D",draw_2D);
   m_variables.Get("verbosity",verbose);
   m_variables.Get("end_of_window_time_cut",end_of_window_time_cut);
+  m_variables.Get("MC_pulse_width",mc_pulse_width);
 
   //----------------------------------------------------------------------------
   //---------------Get basic geometry properties -------------------------------
@@ -197,6 +198,7 @@ bool ClusterFinder::Execute(){
   }
 
   if(HitStoreName=="MCHits"){
+    if (verbose > 0) std::cout << "ClusterFinder MC pulse_width: " << mc_pulse_width << " [ns]" << endl;
     int vectsize = MCHits->size();
     if (verbose > 3) std::cout <<"ClusterFinder tool: MCHits size: "<<vectsize<<std::endl;
     for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
@@ -237,7 +239,7 @@ bool ClusterFinder::Execute(){
         
 	else {
             bool new_pulse = false;
-        	if (fabs(temp_times[0]-hit1)<10.) {
+        	if (fabs(temp_times[0]-hit1)< mc_pulse_width) {
                 new_pulse=false;
                 temp_charges+=hits_2ns_res_charge.at(i_hit);
 		temp_times.push_back(hit1);
