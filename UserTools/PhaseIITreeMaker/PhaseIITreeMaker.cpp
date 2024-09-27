@@ -391,6 +391,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueKPlusCher",&fTrueKPlusCher,"trueKPlusCher/I"); 
       fPhaseIITrigTree->Branch("trueKMinus",&fTrueKMinus,"trueKMinus/I");
       fPhaseIITrigTree->Branch("trueKMinusCher",&fTrueKMinusCher,"trueKMinusCher/I"); 
+      fPhaseIITrigTree->Branch("trueBJx",&fTrueBJx,"trueBJx/D");
+      fPhaseIITrigTree->Branch("truey",&fTruey,"truey/D");
+      fPhaseIITrigTree->Branch("trueq0",&fTrueq0,"trueq0/D");
+      fPhaseIITrigTree->Branch("trueq3",&fTrueq3,"trueq3/D");
+      fPhaseIITrigTree->Branch("trueTargetZ",&fTrueTarget,"trueTargetZ/I");
+      fPhaseIITrigTree->Branch("trueW2",&fTrueW2,"trueW2/D");
     }
 
     if (Reweight_fill){
@@ -1032,6 +1038,12 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueKPlusCher = -9999;
     fTrueKMinus = -9999;
     fTrueKMinusCher = -9999;
+    fTrueW2 = -9999;
+    fTrueBJx = -9999;
+    fTruey = -9999;
+    fTrueTarget = -9999;
+    fTrueq0 = -9999;
+    fTrueq3 = -9999;
   }
 
   if (Reweight_fill){
@@ -1951,6 +1963,9 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     bool TrueCC, TrueNC, TrueQEL, TrueDIS, TrueCOH, TrueMEC, TrueRES;
     int fsNeutrons, fsProtons, fsPi0, fsPiPlus, fsPiPlusCher, fsPiMinus, fsPiMinusCher;
     int fsKPlus, fsKPlusCher, fsKMinus, fsKMinusCher, TrueNuPDG, TrueFSLeptonPdg;
+    int TrueTarget;
+    double TrueW2, TrueBJx, Truey, Trueq0, Trueq3;
+    double TrueNuIntxVtxDisToEdge;
     Position TrueFSLeptonVtx;
     Direction TrueFSLeptonMomentum;
     Direction TrueNeutrinoMomentum;
@@ -1985,11 +2000,18 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     bool get_fsl_mass = m_data->Stores["GenieInfo"]->Get("FSLeptonMass",TrueFSLeptonMass);
     bool get_fsl_pdg = m_data->Stores["GenieInfo"]->Get("FSLeptonPdg",TrueFSLeptonPdg);
     bool get_fsl_energy = m_data->Stores["GenieInfo"]->Get("FSLeptonEnergy",TrueFSLeptonEnergy);
+    bool get_w = m_data->Stores["GenieInfo"]->Get("EventW2",TrueW2);
+    bool get_bjx = m_data->Stores["GenieInfo"]->Get("EventBjx",TrueBJx);
+    bool get_y = m_data->Stores["GenieInfo"]->Get("Eventy",Truey);
+    bool get_targetZ = m_data->Stores["GenieInfo"]->Get("TargetZ",TrueTarget);
+    bool get_q0 = m_data->Stores["GenieInfo"]->Get("Eventq0",Trueq0);
+    bool get_q3 = m_data->Stores["GenieInfo"]->Get("Eventq3",Trueq3);
+    bool get_nu_pdg = m_data->Stores["GenieInfo"]->Get("NeutrinoPDG",TrueNuPDG);
     std::cout <<"get_neutrino_energy: "<<get_neutrino_energy<<"get_neutrino_vtxx: "<<get_neutrino_vtxx<<"get_neutrino_vtxy: "<<get_neutrino_vtxy<<"get_neutrino_vtxz: "<<get_neutrino_vtxz<<"get_neutrino_time: "<<get_neutrino_vtxt<<std::endl;
     std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
     std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
     std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
-    if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy ){
+    if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy && get_bjx && get_y && get_targetZ && get_q0 && get_q3 && get_w ){
       fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
       fTrueNeutrinoMomentum_X = TrueNeutrinoMomentum.X();
       fTrueNeutrinoMomentum_Y = TrueNeutrinoMomentum.Y();
@@ -2009,6 +2031,12 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
       fTrueFSLPdg = TrueFSLeptonPdg;
       fTrueFSLEnergy = TrueFSLeptonEnergy;
       fTrueQ2 = TrueQ2;
+      fTrueW2 = TrueW2;
+      fTrueBJx = TrueBJx;
+      fTruey = Truey;
+      fTrueTarget = TrueTarget;
+      fTrueq0 = Trueq0;
+      fTrueq3 = Trueq3;
       fTrueCC = (TrueCC)? 1 : 0;
       fTrueNC = (TrueNC)? 1 : 0;
       fTrueQEL = (TrueQEL)? 1 : 0;
