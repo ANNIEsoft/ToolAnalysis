@@ -190,8 +190,8 @@ void ANNIEGeometry::SetGeometry(){
   //WCSim
   fCylRadius = 152.0; //cm
   fCylLength = 396.0; //cm
-  fCylFiducialRadius = 0.0;
-  fCylFiducialLength = 0.0;
+  fCylFiducialRadius = 100.0; //cm
+  fCylFiducialLength = 200.0; //cm
   fXoffset = 0.0;
   fYoffset = 0.0; 
   fZoffset = 0.0;
@@ -337,11 +337,11 @@ bool ANNIEGeometry::InsideDetector(double x, double y, double z)
 bool ANNIEGeometry::InsideFiducialVolume(double x, double y, double z)
 {
   if( fGeoType==ANNIEGeometry::kCylinder ){
-    if( z>=-0.5*fCylFiducialLength && z<=+0.5*fCylFiducialLength
-     && x*x+y*y<=fCylFiducialRadius*fCylFiducialRadius ){
+    if( y>=-0.5*fCylFiducialLength && y<=+0.5*fCylFiducialLength
+     && x*x+z*z<=fCylFiducialRadius*fCylFiducialRadius ){
       return 1;
     }
-  } else std::cout<<"WTF ANNIE Should Be A Cylinder!!!!"<<std::endl;
+  } else std::cout<<"WTH ANNIE Should Be A Cylinder!!!!"<<std::endl;
 
   return 0;
 }
