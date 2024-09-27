@@ -308,6 +308,10 @@ bool LoadGenieEvent::Execute(){
 	neutcode=thegenieinfo.neutinteractioncode; // currently disabled to prevent excessive verbosity
 	
 	eventq2=thegenieinfo.Q2;                  //MeV
+	eventw2=thegenieinfo.W2;                  //MeV
+	eventbj_x = thegenieinfo.x; 
+	eventelastic_y = thegenieinfo.y; 
+	TrueTargetZ = thegenieinfo.targetnucleusZ;
 	eventEnu=thegenieinfo.probeenergy;        //MeV
 	eventPnu=thegenieinfo.probethreemomentum; //MeV
 	neutrinopdg=thegenieinfo.probepdg;
@@ -426,6 +430,14 @@ bool LoadGenieEvent::Execute(){
 	geniestore->Set("NuVtxInTank",isintank);
 	geniestore->Set("NuVtxInFidVol",isinfiducialvol);
 	geniestore->Set("EventQ2",eventq2);
+	geniestore->Set("EventW2",eventw2);
+	geniestore->Set("EventBjx",eventbj_x);
+	geniestore->Set("Eventy",eventelastic_y);
+	geniestore->Set("TargetZ",TrueTargetZ);
+	geniestore->Set("Eventq0",eventq0);
+	geniestore->Set("Eventq3",eventq3);
+	geniestore->Set("pdg_vector", pdgs);
+	geniestore->Set("Pmag_vector",Pmag);
 	geniestore->Set("NeutrinoEnergy",eventEnu);
 	geniestore->Set("NeutrinoMomentum",eventPnu);
 	geniestore->Set("NeutrinoPDG",neutrinopdg);
@@ -458,6 +470,8 @@ bool LoadGenieEvent::Execute(){
 	
 	Log("Tool LoadGenieEvent: Clearing genieintx",v_debug,verbosity);
 	genieintx->Clear(); // REQUIRED TO PREVENT MEMORY LEAK
+	pdgs.clear();
+	Pmag.clear();
 	
 	Log("Tool LoadGenieEvent: done",v_debug,verbosity);
 	return true;
@@ -645,44 +659,66 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	genie::GHepParticle * p = 0;
 
 	//Loop over event particles
+	/// Kolanoski, Hermann, and Norbert Wermes, Particle Detectors: Fundamentals and Applications
+	// (Oxford, 2020; online edn, Oxford Academic, 17 Sept. 2020), 
+	/// https://doi.org/10.1093/oso/9780198858362.001.0001, accessed 15 Aug. 2024.
+	// Using the equation P_th = Mass[GeV/C] / sqrt(n^2-1),  where "n" is the index for refraction
+	/// rounding to  2 SigFigs 
+	double wclimit_pion  = 0.16; //water Cherenkov momentum threshold GeV 
+	double wclimit_proton  = 1.1; //water Cherenkov momentum threshold GeV 
+	double wclimit_kaon  = .56; //water Cherenkov momentum threshold GeV **THe the charged and neutral kaons thresholds are the same to 2 sigfigs 
         while ((p = dynamic_cast<genie::GHepParticle *>(iter.Next()))) {
 
                 int pdgc = p->Pdg();
+                double pipx = p->Px();
+                double pipy = p->Py();
+                double pipz = p->Pz();
+                double P_mag =  std::sqrt(pipx*pipx + pipy*pipy + pipz*pipz);
                 int status = p->Status();
                 double wclimit = 0.160; //water Cherenkov momentum threshold GeV
 
                 if (status != genie::kIStStableFinalState) continue;
 
                 if (pdgc == genie::kPdgNeutron) thegenieinfo.numfsneutrons++;
-                else if (pdgc == genie::kPdgProton) thegenieinfo.numfsprotons++;
+                else if (pdgc == genie::kPdgProton) { 
+                        thegenieinfo.numfsprotons++;
+                        if (P_mag > wclimit_proton) {    
+            	                pdgs.push_back(pdgc); 
+            	                Pmag.push_back(P_mag);
+                        }
+                }
                 else if (pdgc == genie::kPdgPiP) {
                         thegenieinfo.numfspiplus++;
-                        double pipx = p->Px();
-                        double pipy = p->Py();
-                        double pipz = p->Pz();
-                        if (std::sqrt(pipx*pipx + pipy*pipy + pipz*pipz) > wclimit) thegenieinfo.numfspipluscher++;
+                        if (P_mag > wclimit_pion){    
+                                pdgs.push_back(pdgc); 
+                                Pmag.push_back(P_mag);
+                                thegenieinfo.numfspipluscher++;
+                        }
                 }
                 else if (pdgc == genie::kPdgPiM) {
                         thegenieinfo.numfspiminus++;
-                        double pipx = p->Px();
-                        double pipy = p->Py();
-                        double pipz = p->Pz();
-                        if (std::sqrt(pipx*pipx + pipy*pipy + pipz*pipz) > wclimit) thegenieinfo.numfspiminuscher++;
+                        if (P_mag > wclimit_pion) {    
+                                pdgs.push_back(pdgc); 
+                                Pmag.push_back(P_mag);
+                                thegenieinfo.numfspiminuscher++;
+                        }
                 }
                 else if (pdgc == genie::kPdgPi0) thegenieinfo.numfspi0++;
                 else if (pdgc == genie::kPdgKP) {
                         thegenieinfo.numfskplus++;
-                        double pipx = p->Px();
-                        double pipy = p->Py();
-                        double pipz = p->Pz();
-                        if (std::sqrt(pipx*pipx + pipy*pipy + pipz*pipz) > wclimit) thegenieinfo.numfskpluscher++;
+                        if (P_mag > wclimit_kaon) {    
+                                pdgs.push_back(pdgc); 
+                                Pmag.push_back(P_mag);
+                                thegenieinfo.numfskpluscher++;
+			}
                 }
                 else if (pdgc == genie::kPdgKM) {
                         thegenieinfo.numfskminus++;
-                        double pipx = p->Px();
-                        double pipy = p->Py();
-                        double pipz = p->Pz();
-                        if (std::sqrt(pipx*pipx + pipy*pipy + pipz*pipz) > wclimit) thegenieinfo.numfskminuscher++;
+                        if (P_mag > wclimit_kaon){    
+                                pdgs.push_back(pdgc); 
+                                Pmag.push_back(P_mag);
+                                thegenieinfo.numfskminuscher++;
+                        }
                 }
         }
 	
@@ -703,6 +739,14 @@ void LoadGenieEvent::GetGenieEntryInfo(genie::EventRecord* gevtRec, genie::Inter
 	// q=k1-k2, 4-p transfer
 	/*TLorentzVector*/ thegenieinfo.q = TLorentzVectorToFourVector((*k1)-(*k2));
 //	/*Double_t*/ thegenieinfo.Q2 = genieint->Kine().Q2();  // not set in our GENIE files!
+	double q0 =  (gevtRec->Probe()->P4()->E()*1000.) - (gevtRec->FinalStatePrimaryLepton()->P4()->E()*1000.);
+	double px1 = (gevtRec->FinalStatePrimaryLepton()->P4()->Px()*1000.) - (gevtRec->Probe()->P4()->Px()*1000.);
+	double py1 = (gevtRec->FinalStatePrimaryLepton()->P4()->Py()*1000.) - (gevtRec->Probe()->P4()->Py()*1000.);
+	double pz1 = (gevtRec->FinalStatePrimaryLepton()->P4()->Pz()*1000.) - (gevtRec->Probe()->P4()->Pz()*1000.);
+	double q3 = sqrt(px1*px1+py1*py1+pz1*pz1);
+	thegenieinfo.Q2 = q3*q3 - q0*q0;  // MeV
+	eventq0 = q0;
+	eventq3 = q3; 
 	// momemtum transfer
 	/*Double_t*/ thegenieinfo.Q2 = -1 * thegenieinfo.q.M2();
 	// E transfer to the nucleus
