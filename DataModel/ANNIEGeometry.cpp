@@ -377,9 +377,9 @@ double ANNIEGeometry::DistanceToEdge(double x, double y, double z)
       double dr = 0.0;
       if( fCylRadius>dr ) dr = fCylRadius;
       if( 0.5*fCylLength>dr ) dr = 0.5*fCylLength;
-      if( -sqrt(x*x+y*y)+fCylRadius<dr ) dr = -sqrt(x*x+y*y)+fCylRadius;
-      if( -z+0.5*fCylLength<dr ) dr = -z+0.5*fCylLength;
-      if( +z+0.5*fCylLength<dr ) dr = +z+0.5*fCylLength;
+      if( -sqrt(x*x+z*z)+fCylRadius<dr ) dr = -sqrt(x*x+z*z)+fCylRadius;
+      if( -y+0.5*fCylLength<dr ) dr = -y+0.5*fCylLength;
+      if( y+0.5*fCylLength<dr ) dr = y+0.5*fCylLength;
       return dr;
     }
 
@@ -387,32 +387,33 @@ double ANNIEGeometry::DistanceToEdge(double x, double y, double z)
     else{
 
       // side region
-      if( z>=-0.5*fCylLength && z<=+0.5*fCylLength ){
-        return -sqrt(x*x+y*y)+fCylRadius;
+      if( y>=-0.5*fCylLength && y<=+0.5*fCylLength ){
+        return -sqrt(x*x+z*z)+fCylRadius;
       }
 
-      // top region
-      if( z<=-0.5*fCylLength
-       && x*x+y*y<fCylRadius*fCylRadius ){
-        return +z+0.5*fCylLength;
+      // below tank
+      if( y<=-0.5*fCylLength
+       && x*x+z*z<fCylRadius*fCylRadius ){
+        return y+0.5*fCylLength;
       }
-      if( z>=+0.5*fCylLength
-       && x*x+y*y<fCylRadius*fCylRadius ){
-        return -z+0.5*fCylLength;
+      // above tank
+      if( y>=+0.5*fCylLength
+       && x*x+z*z<fCylRadius*fCylRadius ){
+        return -y+0.5*fCylLength;
       }
 
       // corner regions
-      if( z>=+0.5*fCylLength
-       && x*x+y*y>=fCylRadius ){
-        double dr = sqrt(x*x+y*y)-fCylRadius;
-        double dz = -z+0.5*fCylLength;
-        return -sqrt(dr*dr+dz*dz);
+      if( y>=+0.5*fCylLength
+       && x*x+z*z>=fCylRadius ){
+        double dr = sqrt(x*x+z*z)-fCylRadius;
+        double dy = -y+0.5*fCylLength;
+        return -sqrt(dr*dr+dy*dy);
       }
-      if( z<=-0.5*fCylLength
-       && x*x+y*y>=fCylRadius ){
-        double dr = sqrt(x*x+y*y)-fCylRadius;
-        double dz = +z+0.5*fCylLength;
-        return -sqrt(dr*dr+dz*dz);
+      if( y<=-0.5*fCylLength
+       && x*x+z*z>=fCylRadius ){
+        double dr = sqrt(x*x+z*z)-fCylRadius;
+        double dy = y+0.5*fCylLength;
+        return -sqrt(dr*dr+dy*dy);
       }
     }
   }
