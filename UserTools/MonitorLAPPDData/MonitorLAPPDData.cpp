@@ -1239,37 +1239,35 @@ void MonitorLAPPDData::WriteToFile()
 			"MonitorLAPPDData: WriteToFile: Board " + std::to_string(current_board_index.at(i_current)) + ". Writing data to file: " + std::to_string(starttime_tm.tm_year + 1900) + "/" + std::to_string(starttime_tm.tm_mon + 1) + "/" + std::to_string(starttime_tm.tm_mday) + "-" + std::to_string(starttime_tm.tm_hour) + ":" + std::to_string(starttime_tm.tm_min) + ":" + std::to_string(starttime_tm.tm_sec), v_message, verbosity);
 	}
 
-	// Once every partfun file
-	if (t_partrun < current_partrun) {
-		// Push raw lappd data
-		for (int i_current = 0; i_current < raw_lappd_data_pps_timestamps.size(); i_current++)
-		{
-			t_raw_lappd_data_pps_counts->push_back(raw_lappd_data_pps_counts.at(i_current));
-			t_raw_lappd_data_pps_timestamps->push_back(raw_lappd_data_pps_timestamps.at(i_current));
-		}
-		
-		// Push accumulated PPS event number and PSec timestamp
-		int total_pps_count = current_pps_count;
-		if (!t_pps_accumulated_number->empty()) {
-			total_pps_count += t_pps_accumulated_number->back();
-		}
-		t_pps_accumulated_number->push_back(total_pps_count);
-		std::string psec_timestamp_string;
-		// Get the PSecTimestamp given by ParseDataMonitoring tool
-		m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
-		// Cast PSec timestamp to long, then push it
-		t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
-
-		// Push the latest LAPPD PPS timestamp, as we will use it to plot against accumulated PPS event number
-		long current_raw_lappd_pps_timestamp = 0;
-		for (int i_current = 0; i_current < (int)raw_lappd_data_pps_timestamps.size(); i_current++) {
-			long pps_timestamp = raw_lappd_data_pps_timestamps.at(i_current);
-			if (pps_timestamp > current_raw_lappd_pps_timestamp) {
-				current_raw_lappd_pps_timestamp = pps_timestamp;
-			}
-		}
-		t_raw_lappd_data_pps_timestamp_per_accumulated_number->push_back(current_raw_lappd_pps_timestamp);
+	// Push raw lappd data
+	for (int i_current = 0; i_current < raw_lappd_data_pps_timestamps.size(); i_current++)
+	{
+		t_raw_lappd_data_pps_counts->push_back(raw_lappd_data_pps_counts.at(i_current));
+		t_raw_lappd_data_pps_timestamps->push_back(raw_lappd_data_pps_timestamps.at(i_current));
 	}
+	
+	// Push accumulated PPS event number and PSec timestamp
+	int total_pps_count = current_pps_count;
+	if (!t_pps_accumulated_number->empty()) {
+		total_pps_count += t_pps_accumulated_number->back();
+	}
+	t_pps_accumulated_number->push_back(total_pps_count);
+	std::string psec_timestamp_string;
+	// Get the PSecTimestamp given by ParseDataMonitoring tool
+	m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
+	// Cast PSec timestamp to long, then push it
+	t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
+
+	// Push the latest LAPPD PPS timestamp, as we will use it to plot against accumulated PPS event number
+	long current_raw_lappd_pps_timestamp = 0;
+	for (int i_current = 0; i_current < (int)raw_lappd_data_pps_timestamps.size(); i_current++) {
+		long pps_timestamp = raw_lappd_data_pps_timestamps.at(i_current);
+		if (pps_timestamp > current_raw_lappd_pps_timestamp) {
+			current_raw_lappd_pps_timestamp = pps_timestamp;
+		}
+	}
+	t_raw_lappd_data_pps_timestamp_per_accumulated_number->push_back(current_raw_lappd_pps_timestamp);
+
 
 	for (int i_current = 0; i_current < (int)current_ped.size(); i_current++)
 	{
