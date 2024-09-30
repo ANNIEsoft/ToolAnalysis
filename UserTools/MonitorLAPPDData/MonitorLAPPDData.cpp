@@ -2468,15 +2468,15 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			// Add graph points for PPS event counter
 			for (int i_timestamp = 0; i_timestamp < raw_lappd_data_pps_timestamps.size(); i_timestamp++)
 			{
-				double timestamp_to_e13 = (double)raw_lappd_data_pps_timestamps.at(i_timestamp) / pow(10, 13);
-				// skip if timestamp_to_e13 already exists
-				if (pps_event_counter_timestamps.count(timestamp_to_e13)) {
+				double timestamp = (double)raw_lappd_data_pps_timestamps.at(i_timestamp);
+				// skip if timestamp already exists
+				if (pps_event_counter_timestamps.count(timestamp)) {
 					continue;
 				}
-				pps_event_counter_timestamps.insert(timestamp_to_e13);
+				pps_event_counter_timestamps.insert(timestamp);
 
 				pps_event_counter_timestamps.insert(raw_lappd_data_pps_timestamps.at(i_timestamp));
-				graph_pps_event_counter->SetPoint(i_timestamp, timestamp_to_e13, raw_lappd_data_pps_counts.at(i_timestamp));
+				graph_pps_event_counter->SetPoint(i_timestamp, timestamp, raw_lappd_data_pps_counts.at(i_timestamp));
 			}
 			// Add graph points for PPS accumulated number
 			for (int i_timestamp = 0; i_timestamp < pps_accumulated_psec_timestamp.size(); i_timestamp++)
@@ -2487,8 +2487,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				graph_pps_accumulated_number_vs_psec_timestamp->SetPoint(i_timestamp, acc_timestamp, acc_number);
 
 				// Also add graph points for PPS time vs accumulated number
-				auto acc_pps_timestamp_to_e13 = (double)raw_lappd_data_pps_timestamp_per_accumulated_number.at(i_timestamp) / pow(10, 13);
-				graph_pps_time_vs_accumulated_number->SetPoint(i_timestamp, acc_number, acc_pps_timestamp_to_e13);
+				auto acc_pps_timestamp = (double)raw_lappd_data_pps_timestamp_per_accumulated_number.at(i_timestamp);
+				graph_pps_time_vs_accumulated_number->SetPoint(i_timestamp, acc_number, acc_pps_timestamp);
 			}
 
 			std::stringstream ss_pps_count;
@@ -2521,7 +2521,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			canvas_pps_event_counter->Clear();
 			graph_pps_event_counter->SetTitle(ss_pps_event_counter.str().c_str());
 			graph_pps_event_counter->GetYaxis()->SetTitle("PPS event counter");
-			graph_pps_event_counter->GetXaxis()->SetTitle("ns (1e13)");
+			graph_pps_event_counter->GetXaxis()->SetTitle("ns");
 			graph_pps_event_counter->GetXaxis()->SetTimeDisplay(0);
 			graph_pps_event_counter->GetXaxis()->SetLabelSize(0.03);
 			graph_pps_event_counter->GetXaxis()->SetLabelOffset(0.01);
