@@ -1430,7 +1430,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<double> *t_sigma = new std::vector<double>;
 				std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
 				std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
-				std::vector<double> *t_pps_accumulated_number = new std::vector<double>;
+				std::vector<int> *t_pps_accumulated_number = new std::vector<int>;
 				std::vector<long> *t_pps_accumulated_psec_timestamp = new std::vector<long>;
 				std::vector<long> *t_raw_lappd_data_pps_timestamp_per_accumulated_number = new std::vector<long>;
 
@@ -1540,21 +1540,23 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 						}
 					}
 				}
+				for (int i_entry = 0; i_entry < nentries_tree; i_entry++)
+				{
+					t->GetEntry(i_entry);
+					for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i++) {
+						raw_lappd_data_pps_timestamps.push_back(t_raw_lappd_data_pps_timestamps->at(i));
+						raw_lappd_data_pps_counts.push_back(t_raw_lappd_data_pps_counts->at(i));
+					}
 
-				for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i++) {
-					raw_lappd_data_pps_timestamps.push_back(t_raw_lappd_data_pps_timestamps->at(i));
-					raw_lappd_data_pps_counts.push_back(t_raw_lappd_data_pps_counts->at(i));
+					for (int i = 0; i < t_pps_accumulated_psec_timestamp->size(); i++) {
+						pps_accumulated_psec_timestamp.push_back(t_pps_accumulated_psec_timestamp->at(i));
+						pps_accumulated_number.push_back(t_pps_accumulated_number->at(i));
+
+						// This and the vectors above the same length, as they are both added in an accumulated fashion,
+						// so we can just add them together
+						raw_lappd_data_pps_timestamp_per_accumulated_number.push_back(t_raw_lappd_data_pps_timestamp_per_accumulated_number->at(i));
+					}
 				}
-
-				for (int i = 0; i < t_pps_accumulated_psec_timestamp->size(); i++) {
-					pps_accumulated_psec_timestamp.push_back(t_pps_accumulated_psec_timestamp->at(i));
-					pps_accumulated_number.push_back(t_pps_accumulated_number->at(i));
-
-					// This and the vectors above the same length, as they are both added in an accumulated fashion,
-					// so we can just add them together
-					raw_lappd_data_pps_timestamp_per_accumulated_number.push_back(t_raw_lappd_data_pps_timestamp_per_accumulated_number->at(i));
-				}
-				
 				// Delete vectors, if we have any
 				delete t_time;
 				delete t_end;
@@ -2474,8 +2476,6 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 					continue;
 				}
 				pps_event_counter_timestamps.insert(timestamp);
-
-				pps_event_counter_timestamps.insert(raw_lappd_data_pps_timestamps.at(i_timestamp));
 				graph_pps_event_counter->SetPoint(i_timestamp, timestamp, raw_lappd_data_pps_counts.at(i_timestamp));
 			}
 			// Add graph points for PPS accumulated number
