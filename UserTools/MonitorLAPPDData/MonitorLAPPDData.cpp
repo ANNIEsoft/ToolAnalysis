@@ -1374,6 +1374,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 		number_of_days = days_dataframe.days();
 	}
 
+	int accumulated_pps_count = 0;
 	for (int i_day = 0; i_day <= number_of_days; i_day++)
 	{
 
@@ -1521,7 +1522,6 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 						}
 					}
 				}
-				int accumulated_pps_count = 0;
 				for (int i_entry = 0; i_entry < nentries_tree; i_entry++)
 				{
 					t->GetEntry(i_entry);
@@ -1529,7 +1529,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 						raw_lappd_data_pps_timestamps.push_back(t_raw_lappd_data_pps_timestamps->at(i));
 						raw_lappd_data_pps_counts.push_back(t_raw_lappd_data_pps_counts->at(i));
 					}
-					
+
 					accumulated_pps_count += t_pps_count;
 					pps_accumulated_psec_timestamp.push_back(t_pps_accumulated_psec_timestamp);
 					pps_accumulated_number.push_back(accumulated_pps_count);
