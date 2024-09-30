@@ -1085,7 +1085,6 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<ULong64_t> *t_time = new std::vector<ULong64_t>;
 	std::vector<ULong64_t> *t_end = new std::vector<ULong64_t>;
 	std::vector<double> *t_pps_rate = new std::vector<double>;
-	std::vector<double> *t_pps_event_counter = new std::vector<double>;
 	std::vector<double> *t_frame_rate = new std::vector<double>;
 	std::vector<double> *t_beamgate_rate = new std::vector<double>;
 	std::vector<double> *t_int_charge = new std::vector<double>;
@@ -1097,12 +1096,10 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<double> *t_sigma = new std::vector<double>;
 	std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
 	std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
-	std::vector<int> *t_pps_accumulated_number = new std::vector<int>; // Accumulated PPS event number, taken from current_pps_count, 
-	std::vector<long> *t_pps_accumulated_psec_timestamp = new std::vector<long>; 
-	std::vector<long> *t_raw_lappd_data_pps_timestamp_per_accumulated_number = new std::vector<long>;
 	
 	int t_run, t_subrun, t_partrun;
 	int t_pps_count, t_frame_count;
+	long t_raw_lappd_pps_timestamp, t_pps_accumulated_psec_timestamp;
 	ULong64_t t_lappd_offset;
 
 	TTree *t;
@@ -1130,9 +1127,8 @@ void MonitorLAPPDData::WriteToFile()
 		t->SetBranchAddress("lappd_offset", &t_lappd_offset);
 		t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
 		t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
-		t->SetBranchAddress("pps_accumulated_number", &t_pps_accumulated_number);
 		t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
-		t->SetBranchAddress("raw_lappd_data_pps_timestamp_per_accumulated_number", &t_raw_lappd_data_pps_timestamp_per_accumulated_number);
+		t->SetBranchAddress("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
 	}
 	else
 	{
@@ -1158,9 +1154,8 @@ void MonitorLAPPDData::WriteToFile()
 		t->Branch("lappd_offset", &t_lappd_offset);
 		t->Branch("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
 		t->Branch("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
-		t->Branch("pps_accumulated_number", &t_pps_accumulated_number);
 		t->Branch("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
-		t->Branch("raw_lappd_data_pps_timestamp_per_accumulated_number", &t_raw_lappd_data_pps_timestamp_per_accumulated_number);
+		t->Branch("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
 	}
 
 	int n_entries = t->GetEntries();
@@ -1196,9 +1191,6 @@ void MonitorLAPPDData::WriteToFile()
 		delete t_sigma;
 		delete t_raw_lappd_data_pps_counts;
 		delete t_raw_lappd_data_pps_timestamps;
-		delete t_pps_accumulated_number;
-		delete t_pps_accumulated_psec_timestamp;
-		delete t_raw_lappd_data_pps_timestamp_per_accumulated_number;
 		delete f;
 
 		gROOT->cd();
@@ -1219,6 +1211,8 @@ void MonitorLAPPDData::WriteToFile()
 	t_rate->clear();
 	t_ped->clear();
 	t_sigma->clear();
+	t_raw_lappd_data_pps_counts->clear();
+	t_raw_lappd_data_pps_timestamps->clear();
 
 	// Get data that was processed
 	for (int i_current = 0; i_current < (int)current_pps_rate.size(); i_current++)
@@ -1247,27 +1241,19 @@ void MonitorLAPPDData::WriteToFile()
 	}
 	
 	// Push accumulated PPS event number and PSec timestamp
-	int total_pps_count = current_pps_count;
-	if (!t_pps_accumulated_number->empty()) {
-		total_pps_count += t_pps_accumulated_number->back();
-	}
-	t_pps_accumulated_number->push_back(total_pps_count);
 	std::string psec_timestamp_string;
 	// Get the PSecTimestamp given by ParseDataMonitoring tool
 	m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
 	// Cast PSec timestamp to long, then push it
-	t_pps_accumulated_psec_timestamp->push_back(std::stol(psec_timestamp_string));
+	t_pps_accumulated_psec_timestamp = std::stol(psec_timestamp_string);
 
 	// Push the latest LAPPD PPS timestamp, as we will use it to plot against accumulated PPS event number
-	long current_raw_lappd_pps_timestamp = 0;
 	for (int i_current = 0; i_current < (int)raw_lappd_data_pps_timestamps.size(); i_current++) {
 		long pps_timestamp = raw_lappd_data_pps_timestamps.at(i_current);
-		if (pps_timestamp > current_raw_lappd_pps_timestamp) {
-			current_raw_lappd_pps_timestamp = pps_timestamp;
+		if (pps_timestamp > t_raw_lappd_pps_timestamp) {
+			t_raw_lappd_pps_timestamp = pps_timestamp;
 		}
 	}
-	t_raw_lappd_data_pps_timestamp_per_accumulated_number->push_back(current_raw_lappd_pps_timestamp);
-
 
 	for (int i_current = 0; i_current < (int)current_ped.size(); i_current++)
 	{
@@ -1307,7 +1293,6 @@ void MonitorLAPPDData::WriteToFile()
 	delete t_time;
 	delete t_end;
 	delete t_pps_rate;
-	delete t_pps_event_counter;
 	delete t_frame_rate;
 	delete t_beamgate_rate;
 	delete t_int_charge;
@@ -1319,7 +1304,6 @@ void MonitorLAPPDData::WriteToFile()
 	delete t_sigma;
 	delete t_raw_lappd_data_pps_counts;
 	delete t_raw_lappd_data_pps_timestamps;
-	delete t_raw_lappd_data_pps_timestamp_per_accumulated_number;
 	delete f;
 
 	gROOT->cd();
@@ -1430,12 +1414,10 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<double> *t_sigma = new std::vector<double>;
 				std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
 				std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
-				std::vector<int> *t_pps_accumulated_number = new std::vector<int>;
-				std::vector<long> *t_pps_accumulated_psec_timestamp = new std::vector<long>;
-				std::vector<long> *t_raw_lappd_data_pps_timestamp_per_accumulated_number = new std::vector<long>;
-
+				
 				int t_run, t_subrun, t_partrun;
 				int t_pps_count, t_frame_count;
+				long t_raw_lappd_pps_timestamp, t_pps_accumulated_psec_timestamp;
 				ULong64_t t_lappd_offset;
 
 				int nentries_tree;
@@ -1460,9 +1442,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				t->SetBranchAddress("lappd_offset", &t_lappd_offset);
 				t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
 				t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
-				t->SetBranchAddress("pps_accumulated_number", &t_pps_accumulated_number);
 				t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
-				t->SetBranchAddress("raw_lappd_data_pps_timestamp_per_accumulated_number", &t_raw_lappd_data_pps_timestamp_per_accumulated_number);
+				t->SetBranchAddress("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
 
 				nentries_tree = t->GetEntries();
 
@@ -1540,6 +1521,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 						}
 					}
 				}
+				int accumulated_pps_count = 0;
 				for (int i_entry = 0; i_entry < nentries_tree; i_entry++)
 				{
 					t->GetEntry(i_entry);
@@ -1547,15 +1529,11 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 						raw_lappd_data_pps_timestamps.push_back(t_raw_lappd_data_pps_timestamps->at(i));
 						raw_lappd_data_pps_counts.push_back(t_raw_lappd_data_pps_counts->at(i));
 					}
-
-					for (int i = 0; i < t_pps_accumulated_psec_timestamp->size(); i++) {
-						pps_accumulated_psec_timestamp.push_back(t_pps_accumulated_psec_timestamp->at(i));
-						pps_accumulated_number.push_back(t_pps_accumulated_number->at(i));
-
-						// This and the vectors above the same length, as they are both added in an accumulated fashion,
-						// so we can just add them together
-						raw_lappd_data_pps_timestamp_per_accumulated_number.push_back(t_raw_lappd_data_pps_timestamp_per_accumulated_number->at(i));
-					}
+					
+					accumulated_pps_count += t_pps_count;
+					pps_accumulated_psec_timestamp.push_back(t_pps_accumulated_psec_timestamp);
+					pps_accumulated_number.push_back(accumulated_pps_count);
+					raw_lappd_data_pps_timestamp_per_accumulated_number.push_back(t_raw_lappd_pps_timestamp);
 				}
 				// Delete vectors, if we have any
 				delete t_time;
