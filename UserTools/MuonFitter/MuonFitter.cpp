@@ -471,6 +471,7 @@ bool MuonFitter::Execute(){
     //-- Extract file part number
     //-- NOTE: event numbers weren't incrementing properly...
     std::string delim = ".";
+    std::string end = ".root";
     std::string tmp_str = mcFile.erase(mcFile.rfind(delim), end.length());
     partnumber = stoi(tmp_str.substr(0, tmp_str.find(delim)));
 
