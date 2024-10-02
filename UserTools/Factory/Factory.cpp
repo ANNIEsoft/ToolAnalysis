@@ -168,5 +168,6 @@ if (tool=="NeutronMultiplicity") ret=new NeutronMultiplicity;
 if (tool=="PlotsTrackLengthAndEnergy") ret=new PlotsTrackLengthAndEnergy;
 if (tool=="SaveConfigInfo") ret=new SaveConfigInfo;
 if (tool=="ReadConfigInfo") ret=new ReadConfigInfo;
+if (tool=="MuonFitter") ret=new MuonFitter;
 return ret;
 }
