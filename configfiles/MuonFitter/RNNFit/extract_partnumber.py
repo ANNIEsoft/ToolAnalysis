@@ -4,7 +4,7 @@ import sys
 
 # Get input file name
 if (len(sys.argv) != 2):
-    print(" @@@@@ MISSING FILE TO EXTRACT PARTS FROM: fitbyeye_r{RUN}_RNN.txt !! @@@@@ ")
+    print(" @@@@@ MISSING FILE TO EXTRACT PARTS FROM: tanktrackfitfile_r{RUN}_RNN.txt !! @@@@@ ")
     exit(-1)
 
 INFILENAME = sys.argv[-1]

@@ -21,7 +21,7 @@ DATAFILE = sys.argv[-1]
 
 # ## Extract run number from filename
 # ## NOTE: Assumes filename has this structure: ev_ai_eta_R{RUN}.txt
-RUN = DATAFILE[11:15]
+RUN = DATAFILE[12:-4]
 
 # ## Define ManyToOneRNN class
 class ManyToOneRNN(nn.Module):
@@ -44,12 +44,12 @@ class ManyToOneRNN(nn.Module):
 
 
 # ## Load model
-model = torch.load('/home/jhe/annie/analysis/playground/model.pth')
+model = torch.load('model.pth')
 model.eval()
 
 
 # ## Load data (needs to be in Tensor format)
-data = pd.read_csv('/home/jhe/annie/analysis/' + DATAFILE, header=None, names=['evid','cluster_time','ai','eta'])
+data = pd.read_csv(DATAFILE, header=None, names=['evid','cluster_time','ai','eta'])
 print(data.head(5))
 
 data = data.groupby(['evid', 'cluster_time']).agg(list).reset_index()
@@ -59,7 +59,7 @@ print(data.iloc[0,2:])
 
 # ## Do the fit
 # open output file
-OUTFILENAME = "fitbyeye_r" + RUN + "_RNN.txt"
+OUTFILENAME = "tanktrackfitfile_r" + RUN + "_RNN.txt"
 out_f = open(OUTFILENAME, "a")
 
 for idx in range(len(data)):
