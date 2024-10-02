@@ -425,6 +425,13 @@ class PhaseIITreeMaker: public Tool {
   double fDeltaZenith;  
   double fDeltaAngle;
   
+  // MuonFitter vertex
+  double fRecoMuonVtxX;
+  double fRecoMuonVtxY;
+  double fRecoMuonVtxZ;
+  double fRecoTankTrack;
+  double fRecoMuonKE;
+  int fNumMrdLayers;
 
   /// \brief Integer that determines the level of logging to perform
   int verbosity = 0;
@@ -452,6 +459,7 @@ class PhaseIITreeMaker: public Tool {
   bool muonTruthRecoDiff_fill = 0; //Output difference in tmuonruth and reconstructed values
   bool SiPMPulseInfo_fill = 0;
   bool Digit_fill = 0;
+  bool MuonFitter_fill = 0;
 };
 
 
