@@ -104,6 +104,7 @@ bool NeutronMultiplicity::Initialise(std::string configfile, DataModel &data){
 bool NeutronMultiplicity::Execute(){
 
   isMC = m_data->Stores.at("ANNIEEvent")->Get("MCFile",MCFile);
+  if (isMC) std::cout << "NeutronMultiplicity Tool: MCFile found!" << std::endl;
 
   //Reset tree variables
   this->ResetVariables();
@@ -334,6 +335,11 @@ bool NeutronMultiplicity::InitialiseHistograms(){
   h_neutrons_energy_fv = new TH2F("h_neutrons_energy_fv","Neutron multiplicity vs muon energy (FV)",10,0,2000,20,0,20);
   h_neutrons_energy_zoom = new TH2F("h_neutrons_energy_zoom","Neutron multiplicity vs muon energy",8,400,1200,20,0,20);
   h_neutrons_energy_fv_zoom = new TH2F("h_neutrons_energy_fv_zoom","Neutron multiplicity vs muon energy (FV)",6,600,1200,20,0,20);
+  h_neutrons_energy_fv_down = new TH2F("h_neutrons_energy_fv_down","Neutron multiplicity vs muon energy (Downstream FV)",10,0,2000,20,0,20);
+  h_neutrons_energy_fv_cyl = new TH2F("h_neutrons_energy_fv_cyl","Neutron multiplicity vs muon energy (Cylindrical FV)",10,0,2000,20,0,20);
+  h_neutrons_q2 = new TH2F("h_neutrons_q2","Neutron multiplicity vs Q^{2}",100,0,2,20,0,20);
+  h_neutrons_q2_fv = new TH2F("h_neutrons_q2_fv","Neutron multiplicity vs Q^{2} (FV)",100,0,2,20,0,20);
+  h_neutrons_q2_fv_down = new TH2F("h_neutrons_q2_fv_down","Neutron multiplicity vs Q^{2} (Downstream FV)",100,0,2,20,0,20);
   h_neutrons_costheta = new TH2F("h_neutrons_costheta","Neutron multiplicity vs muon angle",6,0.7,1.0,20,0,20);
   h_neutrons_costheta_fv = new TH2F("h_neutrons_costheta_fv","Neutron multiplicity vs muon angle (FV)",6,0.7,1.0,20,0,20);
   h_neutrons_pT = new TH2F("h_neutrons_pT","Neutron multiplicity vs transverse muon momentum",10,0,1000,20,0,20);
@@ -410,6 +416,26 @@ bool NeutronMultiplicity::InitialiseHistograms(){
   h_neutrons_energy_fv_zoom->SetStats(0);
   h_neutrons_energy_fv_zoom->GetXaxis()->SetTitle("E_{#mu} [MeV]");
   h_neutrons_energy_fv_zoom->GetYaxis()->SetTitle("Number of neutrons");
+
+  h_neutrons_energy_fv_down->SetStats(0);
+  h_neutrons_energy_fv_down->GetXaxis()->SetTitle("E_{#mu} [MeV]");
+  h_neutrons_energy_fv_down->GetYaxis()->SetTitle("Number of neutrons");
+
+  h_neutrons_energy_fv_cyl->SetStats(0);
+  h_neutrons_energy_fv_cyl->GetXaxis()->SetTitle("E_{#mu} [MeV]");
+  h_neutrons_energy_fv_cyl->GetYaxis()->SetTitle("Number of neutrons");
+
+  h_neutrons_q2->SetStats(0);
+  h_neutrons_q2->GetXaxis()->SetTitle("Q^{2} [(GeV/c)^{2}]");
+  h_neutrons_q2->GetYaxis()->SetTitle("Number of neutrons");
+
+  h_neutrons_q2_fv->SetStats(0);
+  h_neutrons_q2_fv->GetXaxis()->SetTitle("Q^{2} [(GeV/c)^{2}]");
+  h_neutrons_q2_fv->GetYaxis()->SetTitle("Number of neutrons");
+
+  h_neutrons_q2_fv_down->SetStats(0);
+  h_neutrons_q2_fv_down->GetXaxis()->SetTitle("Q^{2} [(GeV/c)^{2}]");
+  h_neutrons_q2_fv_down->GetYaxis()->SetTitle("Number of neutrons");
 
   h_neutrons_costheta->SetStats(0);
   h_neutrons_costheta->GetXaxis()->SetTitle("cos(#theta)");
@@ -610,6 +636,7 @@ bool NeutronMultiplicity::FillHistograms(){
   h_neutrons_mrdstop->Fill(NumberNeutrons);
   h_neutrons_energy->Fill(SimpleRecoEnergy,NumberNeutrons);
   h_neutrons_energy_zoom->Fill(SimpleRecoEnergy,NumberNeutrons);
+  h_neutrons_q2->Fill(SimpleRecoQ2/1.e6,NumberNeutrons);
   h_neutrons_costheta->Fill(SimpleRecoCosTheta,NumberNeutrons);
   h_neutrons_pT->Fill(SimpleRecoPt,NumberNeutrons);
   h_muon_energy->Fill(SimpleRecoEnergy);
@@ -634,6 +661,7 @@ bool NeutronMultiplicity::FillHistograms(){
     h_muon_costheta_fv->Fill(SimpleRecoCosTheta);
     h_neutrons_energy_fv->Fill(SimpleRecoEnergy,NumberNeutrons);
     h_neutrons_energy_fv_zoom->Fill(SimpleRecoEnergy,NumberNeutrons);
+    h_neutrons_q2_fv->Fill(SimpleRecoQ2/1.e6,NumberNeutrons);
     h_neutrons_costheta_fv->Fill(SimpleRecoCosTheta,NumberNeutrons);
     h_neutrons_pT_fv->Fill(SimpleRecoPt,NumberNeutrons);
     h_neutrons_mrdstop_fv->Fill(NumberNeutrons);
@@ -652,12 +680,22 @@ bool NeutronMultiplicity::FillHistograms(){
       h_pmtvolneutrons_pT_fv->Fill(SimpleRecoPt,true_NCapturesPMTVol);
     }
   }
+  std::cout << " NM [debug] DownstreamFV/FullCylFV: " << DownstreamFV << "/" << FullCylFV << std::endl;
+  if (DownstreamFV == 1)
+  {
+    h_neutrons_energy_fv_down->Fill(SimpleRecoEnergy,NumberNeutrons);
+    h_neutrons_q2_fv_down->Fill(SimpleRecoQ2/1.e6,NumberNeutrons);
+  }
+  if (FullCylFV == 1) h_neutrons_energy_fv_cyl->Fill(SimpleRecoEnergy,NumberNeutrons);
+
 
   h_muon_vtx_x->Fill(SimpleRecoVtx.X());
   h_muon_vtx_y->Fill(SimpleRecoVtx.Y());
   h_muon_vtx_z->Fill(SimpleRecoVtx.Z());
-  h_muon_vtx_yz->Fill(SimpleRecoVtx.Z()-1.681,SimpleRecoVtx.Y()-0.144);
-  h_muon_vtx_xz->Fill(SimpleRecoVtx.Z()-1.681,SimpleRecoVtx.X());
+  //h_muon_vtx_yz->Fill(SimpleRecoVtx.Z()-1.681,SimpleRecoVtx.Y()-0.144);
+  //h_muon_vtx_xz->Fill(SimpleRecoVtx.Z()-1.681,SimpleRecoVtx.X());
+  h_muon_vtx_yz->Fill(SimpleRecoVtx.Z(),SimpleRecoVtx.Y());
+  h_muon_vtx_xz->Fill(SimpleRecoVtx.Z(),SimpleRecoVtx.X());
 
   reco_VtxX = SimpleRecoVtx.X();
   reco_VtxY = SimpleRecoVtx.Y();
@@ -751,6 +789,10 @@ bool NeutronMultiplicity::SaveBoostStore(){
   store_neutronmult->Set("NeutronEffMap",neutron_eff_map);
   store_neutronmult->Set("PMTMRDCoinc",passPMTMRDCoincCut);
   store_neutronmult->Set("NumMRDTracks",numtracksinev);
+  store_neutronmult->Set("DownstreamFV",DownstreamFV);
+  store_neutronmult->Set("FullCylFV",FullCylFV);
+  store_neutronmult->Set("SimpleRecoNeutrinoEnergy",SimpleRecoNeutrinoEnergy);
+  store_neutronmult->Set("SimpleRecoQ2",SimpleRecoQ2);
 
   if (isMC){
     store_neutronmult->Set("NeutrinoEnergy",true_Enu);
@@ -829,6 +871,10 @@ bool NeutronMultiplicity::ReadBoostStore(){
   read_neutronmult->Get("NeutronEffMap",neutron_eff_map);
   read_neutronmult->Get("PMTMRDCoinc",passPMTMRDCoincCut);
   read_neutronmult->Get("NumMRDTracks",numtracksinev);
+  read_neutronmult->Get("DownstreamFV",DownstreamFV);
+  read_neutronmult->Get("FullCylFV",FullCylFV);
+  read_neutronmult->Get("SimpleRecoNeutrinoEnergy",SimpleRecoNeutrinoEnergy);
+  read_neutronmult->Get("SimpleRecoQ2",SimpleRecoQ2);
 
   m_data->Stores["ANNIEEvent"]->Set("RunNumber",RunNumber);
   m_data->Stores["ANNIEEvent"]->Set("EventNumber",EventNumber);
@@ -854,6 +900,10 @@ bool NeutronMultiplicity::ReadBoostStore(){
   m_data->Stores["RecoEvent"]->Set("NeutronEffMap",neutron_eff_map);
   m_data->Stores.at("RecoEvent")->Set("PMTMRDCoinc",passPMTMRDCoincCut);
   m_data->Stores["MRDTracks"]->Set("NumMrdTracks",numtracksinev);
+  m_data->Stores["RecoEvent"]->Set("DownstreamFV",DownstreamFV);
+  m_data->Stores["RecoEvent"]->Set("FullCylFV",FullCylFV);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoNeutrinoEnergy",SimpleRecoNeutrinoEnergy);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoQ2",SimpleRecoQ2);
   
   if (isMC){
     read_neutronmult->Get("NeutrinoEnergy",true_Enu);
@@ -973,6 +1023,15 @@ bool NeutronMultiplicity::GetParticleInformation(){
   bool get_simple_mrdstop = m_data->Stores["RecoEvent"]->Get("SimpleRecoMRDStop",SimpleRecoMRDStop);
   if (!get_simple_mrdstop) Log("NeutronMultiplicity tool: No SimpleRecoMRDStop in RecoEvent!",v_error,verbosity);
 
+  bool get_simple_fvregion = m_data->Stores["RecoEvent"]->Get("DownstreamFV",DownstreamFV);
+  if (!get_simple_fvregion) Log("NeutronMultiplicity tool: No DownstreamFV in RecoEvent!",v_error,verbosity);
+  get_simple_fvregion = m_data->Stores["RecoEvent"]->Get("FullCylFV",FullCylFV);
+  if (!get_simple_fvregion) Log("NeutronMultiplicity tool: No FullCylFV in RecoEvent!",v_error,verbosity);
+  bool get_simple_nuenergy = m_data->Stores["RecoEvent"]->Get("SimpleRecoNeutrinoEnergy",SimpleRecoNeutrinoEnergy);
+  if (!get_simple_nuenergy) Log("NeutronMultiplicity tool: No SimpleRecoNeutrinoEnergy in RecoEvent!",v_error,verbosity);
+  bool get_simple_q2 = m_data->Stores["RecoEvent"]->Get("SimpleRecoQ2",SimpleRecoQ2);
+  if (!get_simple_q2) Log("NeutronMultiplicity tool: No SimpleRecoQ2 in RecoEvent!",v_error,verbosity);
+
 
   bool get_pmtmrdcoinc = m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",passPMTMRDCoincCut);
   if (!get_pmtmrdcoinc) Log("NeutronMultiplicity tool: No PMTMRDCoinc in RecoEvent!",v_error,verbosity);
@@ -1006,7 +1065,7 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
   bool return_value = true;
 
   //Get information from GENIE store
-  bool get_neutrino_energy = m_data->Stores["GenieInfo"]->Get("NeutrinoEnergy",true_Enu);
+/*  bool get_neutrino_energy = m_data->Stores["GenieInfo"]->Get("NeutrinoEnergy",true_Enu);
   if (!get_neutrino_energy) Log("NeutronMultiplicity tool: No NeutrinoEnergy In GenieInfo!",v_error,verbosity); 
   true_Enu *= 1000; //convert to MeV for consistency
   bool get_q2 = m_data->Stores["GenieInfo"]->Get("EventQ2",true_Q2);
@@ -1041,7 +1100,7 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
   bool get_p = m_data->Stores["GenieInfo"]->Get("NumFSProtons",true_PrimProt);
   if (!get_p) Log("NeutronMultiplicity tool: No NumFSProtons In GenieInfo!",v_error,verbosity); 
 
-  return_value = (get_neutrino_energy && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p);
+  return_value = (get_neutrino_energy && get_q2 && get_cc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p);*/
   //Get information from RecoEvent store
   RecoVertex* TrueVtx = nullptr;
   auto get_muonMC = m_data->Stores.at("RecoEvent")->Get("TrueVertex",TrueVtx);
@@ -1140,6 +1199,11 @@ bool NeutronMultiplicity::GetMCTruthInformation(){
 }
 
 bool NeutronMultiplicity::ResetVariables(){
+
+  DownstreamFV = -9999;
+  FullCylFV = -9999;
+  SimpleRecoNeutrinoEnergy = -9999;
+  SimpleRecoQ2 = -9999;
 
   SimpleRecoFlag = -9999;
   SimpleRecoVtx = Position(-9999,-9999,-9999);

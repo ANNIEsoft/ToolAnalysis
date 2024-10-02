@@ -78,6 +78,10 @@ class NeutronMultiplicity: public Tool {
   std::vector<std::string> input_filenames_;
 
   //Reconstruction variables
+  int DownstreamFV;
+  int FullCylFV;
+  double SimpleRecoNeutrinoEnergy;
+  double SimpleRecoQ2;
   int SimpleRecoFlag;
   Position SimpleRecoVtx;
   Position SimpleRecoStopVtx;
@@ -124,8 +128,13 @@ class NeutronMultiplicity: public Tool {
   TH1F *h_neutrons_mrdstop_fv = nullptr;
   TH2F *h_neutrons_energy = nullptr;
   TH2F *h_neutrons_energy_fv = nullptr;
+  TH2F *h_neutrons_energy_fv_down = nullptr;
+  TH2F *h_neutrons_energy_fv_cyl = nullptr;
   TH2F *h_neutrons_energy_zoom = nullptr;
   TH2F *h_neutrons_energy_fv_zoom = nullptr;
+  TH2F *h_neutrons_q2 = nullptr;
+  TH2F *h_neutrons_q2_fv = nullptr;
+  TH2F *h_neutrons_q2_fv_down = nullptr;
   TH2F *h_primneutrons_energy = nullptr;
   TH2F *h_primneutrons_energy_fv = nullptr;
   TH2F *h_primneutrons_energy_zoom = nullptr;
