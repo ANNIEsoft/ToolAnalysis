@@ -1296,7 +1296,6 @@ void LoadReweightGenieEvent::SetupWeightCalculators(genie::rew::GReWeight& rw, c
 	rw.AdoptWghtCalc( "hadro_intranuke", new GReWeightINuke	       );
 	rw.AdoptWghtCalc( "hadro_agky",	     new GReWeightAGKY         );
 	rw.AdoptWghtCalc( "xsec_nc",     new GReWeightNuXSecNC         );
-	rw.AdoptWghtCalc( "res_dk",      new GReWeightResonanceDecay   );
 	rw.AdoptWghtCalc( "xsec_empmec", new GReWeightXSecEmpiricalMEC );
 	// GReWeightDISNuclMod::CalcWeight() is not implemented, so we won't
 	// bother to use it here. - S. Gardiner, 9 Dec 2019
