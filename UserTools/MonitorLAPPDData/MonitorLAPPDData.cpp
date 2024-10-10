@@ -358,6 +358,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	canvas_logfile_lappd = new TCanvas("canvas_logfile_lappd", "LAPPD File History", 900, 600);
 	canvas_file_timestamp_lappd = new TCanvas("canvas_file_timestamp_lappd", "Timestamp Last File", 900, 600);
 	canvas_events_per_channel = new TCanvas("canvas_events_per_channel", "LAPPD Events per Channel", 900, 600);
+	canvas_pf_vs_data_events = new TCanvas("canvas_pf_vs_data_events", "LAPPD PF# vs Data Events", 900, 600);
 	canvas_ped_lappd = new TCanvas("canvas_ped_lappd", "LAPPD Pedestals", 900, 600);
 	canvas_sigma_lappd = new TCanvas("canvas_sigma_lappd", "LAPPD Sigmas", 900, 600);
 	canvas_rate_lappd = new TCanvas("canvas_rate_lappd", "LAPPD Rates", 900, 600);
@@ -376,7 +377,6 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	hist_buffer_size_all = new TH2F("Buffer Size", "Buffer Size", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
 	hist_rate_threshold_all = new TH2F("Rate above threshold", "Rate above threshold", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
 	hist_events_per_channel = new TH2F("Events per Channel", "Events per Channel", numberOfChannels, 0, numberOfChannels, numberOfCards, 0, numberOfCards);
-
 	hist_pedestal_all->SetStats(0);
 	hist_pedestal_difference_all->SetStats(0);
 	hist_buffer_size_all->SetStats(0);
@@ -1096,6 +1096,7 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<double> *t_sigma = new std::vector<double>;
 	std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
 	std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
+	std::vector<long> *t_data_event_timestamps = new std::vector<long>;
 	
 	int t_run, t_subrun, t_partrun;
 	int t_pps_count, t_frame_count;
@@ -1129,6 +1130,7 @@ void MonitorLAPPDData::WriteToFile()
 		t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 		t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
 		t->SetBranchAddress("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
+		t->SetBranchAddress("data_event_timestamps", &t_data_event_timestamps);
 	}
 	else
 	{
@@ -1156,6 +1158,7 @@ void MonitorLAPPDData::WriteToFile()
 		t->Branch("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 		t->Branch("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
 		t->Branch("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
+		t->Branch("data_event_timestamps", &t_data_event_timestamps);
 	}
 
 	int n_entries = t->GetEntries();
@@ -1191,6 +1194,7 @@ void MonitorLAPPDData::WriteToFile()
 		delete t_sigma;
 		delete t_raw_lappd_data_pps_counts;
 		delete t_raw_lappd_data_pps_timestamps;
+		delete t_data_event_timestamps;
 		delete f;
 
 		gROOT->cd();
@@ -1213,6 +1217,7 @@ void MonitorLAPPDData::WriteToFile()
 	t_sigma->clear();
 	t_raw_lappd_data_pps_counts->clear();
 	t_raw_lappd_data_pps_timestamps->clear();
+	t_data_event_timestamps->clear();
 
 	// Get data that was processed
 	for (int i_current = 0; i_current < (int)current_pps_rate.size(); i_current++)
@@ -1253,6 +1258,11 @@ void MonitorLAPPDData::WriteToFile()
 		if (pps_timestamp > t_raw_lappd_pps_timestamp) {
 			t_raw_lappd_pps_timestamp = pps_timestamp;
 		}
+	}
+
+	// Push data event timestamps
+	for (int i_current = 0; i_current < (int)data_event_timestamps.size(); i_current++) {
+		t_data_event_timestamps->push_back(data_event_timestamps.at(i_current));
 	}
 
 	for (int i_current = 0; i_current < (int)current_ped.size(); i_current++)
@@ -1415,6 +1425,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<double> *t_sigma = new std::vector<double>;
 				std::vector<int> *t_raw_lappd_data_pps_counts = new std::vector<int>;
 				std::vector<long> *t_raw_lappd_data_pps_timestamps = new std::vector<long>;
+				std::vector<long> *t_data_event_timestamps = new std::vector<long>;
 				
 				int t_run, t_subrun, t_partrun;
 				int t_pps_count, t_frame_count;
@@ -1445,6 +1456,7 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
 				t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
 				t->SetBranchAddress("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
+				t->SetBranchAddress("data_event_timestamps", &t_data_event_timestamps);
 
 				nentries_tree = t->GetEntries();
 
@@ -1528,6 +1540,12 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 					for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i++) {
 						raw_lappd_data_pps_timestamps.push_back(t_raw_lappd_data_pps_timestamps->at(i));
 						raw_lappd_data_pps_counts.push_back(t_raw_lappd_data_pps_counts->at(i));
+					}
+
+					// Initialise vector of timestamps per partrun
+					data_event_timestamps_per_partrun.emplace(t_partrun, std::vector<uint64_t>());
+					for (int i = 0; i < t_data_event_timestamps->size(); i++) {
+						data_event_timestamps_per_partrun.at(t_partrun).push_back(t_data_event_timestamps->at(i));
 					}
 
 					accumulated_pps_count += t_pps_count;
@@ -2469,6 +2487,46 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				graph_pps_time_vs_accumulated_number->SetPoint(i_timestamp, acc_number, acc_pps_timestamp);
 			}
 
+			double max_allowed_data_timestamp_seconds = 250;
+			int max_partrun = 10;
+			double max_data_timestamp_seconds = .0;
+			std::vector<double> hist_pf_vs_data_events_timestamps;
+			std::vector<int> hist_pf_vs_data_events_partruns;
+			// Init graph points for PF# vs data events histogram
+			for (const auto &partrun_entry : data_event_timestamps_per_partrun) {
+				const int partrun = partrun_entry.first;
+				const auto& timestamps = partrun_entry.second;
+				max_partrun = std::max(max_partrun, partrun);
+				if (timestamps.size() > 0) {
+					const auto first_data_event_timestamp = timestamps.at(0);
+
+					for (const auto& timestamp : timestamps) {
+						auto timestamp_ms_to_seconds = (timestamp - first_data_event_timestamp) / 1e9;
+						if (timestamp_ms_to_seconds > max_allowed_data_timestamp_seconds) {
+							continue;
+						}
+
+						max_data_timestamp_seconds = std::max(max_data_timestamp_seconds, timestamp_ms_to_seconds);
+
+						hist_pf_vs_data_events_timestamps.push_back(timestamp_ms_to_seconds);
+						hist_pf_vs_data_events_partruns.push_back(partrun);
+					}
+				}
+			}
+			int hist_bins_x = static_cast<int>(max_data_timestamp_seconds) + 1;
+			int hist_bins_y = static_cast<int>(max_partrun) + 1;
+			hist_pf_vs_data_events = new TH2F("PF# vs Data Events", "PF# vs Data Events", hist_bins_x, 0, hist_bins_x, hist_bins_y, 0, hist_bins_y);
+			hist_pf_vs_data_events->SetStats(0);
+			// Add graph boints
+			for (int i = 0; i < hist_pf_vs_data_events_timestamps.size(); i ++) {
+				const auto hist_timestamp = hist_pf_vs_data_events_timestamps.at(i);
+				const auto hist_partrun = hist_pf_vs_data_events_partruns.at(i);
+				if (hist_timestamp > max_data_timestamp_seconds) {
+					continue;
+				}
+				hist_pf_vs_data_events->Fill(hist_timestamp, hist_partrun, hist_pf_vs_data_events->GetBinContent(hist_timestamp, hist_partrun) + 1);
+			}
+
 			std::stringstream ss_pps_count;
 			ss_pps_count << "PPS events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 			canvas_pps_count->cd();
@@ -2533,7 +2591,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			canvas_pps_time_vs_accumulated_number->cd();
 			canvas_pps_time_vs_accumulated_number->Clear();
 			graph_pps_time_vs_accumulated_number->SetTitle(ss_pps_time_vs_accumulated_number.str().c_str());
-			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTitle("PPS timestamp ns (1e13)");
+			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTitle("PPS timestamp ns");
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTitle("PPS accumulated number");
 			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTimeDisplay(0);
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeDisplay(0);
@@ -2544,6 +2602,23 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			std::stringstream ss_pps_time_vs_accumulated_number_path;
 			ss_pps_time_vs_accumulated_number_path << outpath << "LAPPDData_TimeEvolution_PPSTime_vs_AccumulatedNumber_" << file_ending << "." << img_extension;
 			canvas_pps_time_vs_accumulated_number->SaveAs(ss_pps_time_vs_accumulated_number_path.str().c_str());
+
+			std::stringstream ss_pf_vs_data_events;
+			ss_pf_vs_data_events << "PF# vs Data Events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+			canvas_pf_vs_data_events->cd();
+			canvas_pf_vs_data_events->Clear();
+			hist_pf_vs_data_events->SetTitle(ss_pf_vs_data_events.str().c_str());
+			hist_pf_vs_data_events->GetYaxis()->SetTitle("Part File Number");
+			hist_pf_vs_data_events->GetXaxis()->SetTitle("PPS timestamp (seconds)");
+			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTimeDisplay(0);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeDisplay(0);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelSize(0.03);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelOffset(0.01);
+			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeOffset(0.);
+			hist_pf_vs_data_events->Draw("colz");
+			std::stringstream ss_pf_vs_data_events_path;
+			ss_pf_vs_data_events_path << outpath << "LAPPDData_TimeEvolution_PF_vs_DataEvents_" << file_ending << "." << img_extension;
+			canvas_pf_vs_data_events->SaveAs(ss_pf_vs_data_events_path.str().c_str());
 
 			std::stringstream ss_frame_count;
 			ss_frame_count << "Data events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
@@ -3022,7 +3097,12 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 
 				// Add pps count and timestamp for plotting
 				raw_lappd_data_pps_counts.push_back(last_pps_count);
-				raw_lappd_data_pps_timestamps.push_back((double)pps_63_0 * CLOCK_to_NSEC); // Use nanoseconds
+
+				const auto timestamp_ns = (double)pps_63_0 * CLOCK_to_NSEC; // Use nanoseconds
+				raw_lappd_data_pps_timestamps.push_back(timestamp_ns);
+
+				// Add data event timestamp
+				data_event_timestamps.push_back(timestamp_ns);
 			}
 
 			if (pps.size() == 32)
@@ -3211,6 +3291,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 		// std::cout << "bits_timestamp_63_0: " << bits_timestamp_63_0 << std::endl;
 		beamgate_timestamp.push_back(beamgate_63_0);
 		data_timestamp.push_back(timestamp_63_0);
+		data_event_timestamps.push_back((double)timestamp_63_0 * CLOCK_to_NSEC);
 
 		// for (int i=0; i<first_entry.size(); i++) std::cout << first_entry.at(i)<<std::endl;
 

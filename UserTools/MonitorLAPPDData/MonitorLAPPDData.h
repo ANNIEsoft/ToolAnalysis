@@ -167,6 +167,8 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_pps_timestamps;
   std::vector<int> raw_lappd_data_pps_counts; // PPS event counters, indexed by all_timestamps
   std::vector<uint64_t> raw_lappd_data_pps_timestamps; // Timestamp in nanoseconds
+  std::vector<uint64_t> data_event_timestamps; // Timestamp in nanoseconds
+  std::map<int, std::vector<uint64_t>> data_event_timestamps_per_partrun; // Timestamps grouped by partrun, used for Data events histogram
   std::vector<int> pps_accumulated_number; // PPS accumulated number of events
   std::vector<long> pps_accumulated_psec_timestamp; // PSec timestamps of each PPS accumulated number
   std::vector<long> raw_lappd_data_pps_timestamp_per_accumulated_number; // PPS timestamp of each accumulated number
@@ -261,6 +263,7 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_logfile_lappd = nullptr;
   TCanvas *canvas_file_timestamp_lappd = nullptr;
   TCanvas *canvas_events_per_channel = nullptr;
+  TCanvas *canvas_pf_vs_data_events = nullptr;
   TCanvas *canvas_ped_lappd = nullptr;
   TCanvas *canvas_sigma_lappd = nullptr;
   TCanvas *canvas_rate_lappd = nullptr;
@@ -315,6 +318,7 @@ class MonitorLAPPDData: public Tool {
   TH2F* hist_rate_threshold_all = nullptr;
   TH1F *log_files_lappd;
   TH2F* hist_events_per_channel = nullptr;
+  TH2F* hist_pf_vs_data_events = nullptr;
 
   //text
   TText *text_data_title = nullptr;
