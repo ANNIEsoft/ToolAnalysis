@@ -44,6 +44,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPDReco_fill", LAPPDReco_fill);
   m_variables.Get("LAPPD_PPS_fill", LAPPD_PPS_fill);
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
+  m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -268,8 +269,21 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPDWaveformInputLabel", LAPPDWaveformInputLabel);
   if (LAPPD_Waveform_fill)
   {
-    //Log("ANNIEEventTreeMaker Tool: LAPPDWaveformInputLabel = " + LAPPDWaveformInputLabel, 0, ANNIEEventTreeMakerVerbosity);
+    // Log("ANNIEEventTreeMaker Tool: LAPPDWaveformInputLabel = " + LAPPDWaveformInputLabel, 0, ANNIEEventTreeMakerVerbosity);
     fANNIETree->Branch("LAPPDWaveform", &fLAPPDWaveforms);
+  }
+
+  if (LAPPD_MC_fill)
+  {
+    fANNIETree->Branch("LAPPDMCHitTubeIDs", &fLAPPDMCHitTubeIDs);
+    fANNIETree->Branch("LAPPDMCHitChankeys", &fLAPPDMCHitChankeys);
+    fANNIETree->Branch("LAPPDMCHitTime", &fLAPPDMCHitTime);
+    fANNIETree->Branch("LAPPDMCHitCharge", &fLAPPDMCHitCharge);
+    fANNIETree->Branch("LAPPDMCHitX", &fLAPPDMCHitX);
+    fANNIETree->Branch("LAPPDMCHitY", &fLAPPDMCHitY);
+    fANNIETree->Branch("LAPPDMCHitZ", &fLAPPDMCHitZ);
+    fANNIETree->Branch("LAPPDMCHitParallelPos", &fLAPPDMCHitParallelPos);
+    fANNIETree->Branch("LAPPDMCHitTransversePos", &fLAPPDMCHitTransversePos);
   }
 
   if (MRDHitInfo_fill)
@@ -535,6 +549,11 @@ bool ANNIEEventTreeMaker::Execute()
     FillLAPPDWaveform();
   }
 
+  if (LAPPD_MC_fill)
+  {
+    FillLAPPDMCHitInfo();
+  }
+
   //****************************** Fill MRD Info *************************************//
   if (MRDHitInfo_fill)
   {
@@ -726,6 +745,20 @@ void ANNIEEventTreeMaker::ResetVariables()
   waveformMaxFoundNear.clear();
   waveformMaxNearingValue.clear();
   waveformMaxTimeBinValue.clear();
+
+  // LAPPD waveform fill
+  fLAPPDWaveforms.clear();
+
+  // LAPPD MC fill
+  fLAPPDMCHitTubeIDs.clear();
+  fLAPPDMCHitChankeys.clear();
+  fLAPPDMCHitTime.clear();
+  fLAPPDMCHitCharge.clear();
+  fLAPPDMCHitX.clear();
+  fLAPPDMCHitY.clear();
+  fLAPPDMCHitZ.clear();
+  fLAPPDMCHitParallelPos.clear();
+  fLAPPDMCHitTransversePos.clear();
 
   // tank cluster information
   fNumberOfClusters = 0;
@@ -2423,11 +2456,9 @@ void ANNIEEventTreeMaker::RecoSummary()
 
 void ANNIEEventTreeMaker::FillLAPPDWaveform()
 {
-  //Log("ANNIEEventTreeMaker: Filling LAPPD Waveform", 0, ANNIEEventTreeMakerVerbosity);
+  // Log("ANNIEEventTreeMaker: Filling LAPPD Waveform", 0, ANNIEEventTreeMakerVerbosity);
 
-  fLAPPDWaveforms.clear();
-
-  fLAPPDWaveforms =  std::vector<std::vector<double>>(60*3, std::vector<double>(256, 0.0));
+  fLAPPDWaveforms = std::vector<std::vector<double>>(60 * 3, std::vector<double>(256, 0.0));
 
   // m_data->Stores["ANNIEEvent"]->Print(false);
 
@@ -2467,7 +2498,55 @@ void ANNIEEventTreeMaker::FillLAPPDWaveform()
     // fill this waveform to fLAPPDWaveforms[LAPPD_ID][stripno+stripSide*30][n]
     for (int n = 0; n < 256; n++)
     {
-      fLAPPDWaveforms[LAPPD_ID*60+stripno + stripSide * 30][n] = wave.at(n);
+      fLAPPDWaveforms[LAPPD_ID * 60 + stripno + stripSide * 30][n] = wave.at(n);
+    }
+  }
+}
+
+void ANNIEEventTreeMaker::FillLAPPDMCHitInfo()
+{
+  std::map<unsigned long, std::vector<MCLAPPDHit>> *MCLAPPDHits = nullptr;
+  m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits", MCLAPPDHits);
+
+  int HitCount = MCLAPPDHits->size();
+  Log("ANNIEEventTreeMaker: Filling LAPPD MC Hit Info, got " + to_string(HitCount) + " MC hits", v_message, ANNIEEventTreeMakerVerbosity);
+
+  Position detector_center = geom->GetTankCentre();
+  double tank_center_x = detector_center.X();
+  double tank_center_y = detector_center.Y();
+  double tank_center_z = detector_center.Z();
+
+  for (std::pair<unsigned long, std::vector<MCLAPPDHit>> &&apair : *MCLAPPDHits)
+  {
+    unsigned long chankey = apair.first;
+    std::vector<MCLAPPDHit> hits = apair.second;
+
+    for (MCLAPPDHit &ahit : hits)
+    {
+      std::vector<double> pos = ahit.GetPosition();
+      double x = pos.at(0) - tank_center_x;
+      double y = pos.at(1) - tank_center_y;
+      double z = pos.at(2) - tank_center_z;
+
+      std::vector<double> local_pos = ahit.GetLocalPosition();
+      // double local_x = local_pos.at(1);
+      // double local_y = local_pos.at(0);
+      double parallel = local_pos.at(0);
+      double transverse = local_pos.at(1);
+
+      int tubeID = ahit.GetTubeId();
+      double hitTime = ahit.GetTime();
+      double hitCharge = ahit.GetCharge();
+
+      fLAPPDMCHitTubeIDs.push_back(tubeID);
+      fLAPPDMCHitChankeys.push_back(chankey);
+      fLAPPDMCHitTime.push_back(hitTime);
+      fLAPPDMCHitCharge.push_back(hitCharge);
+      fLAPPDMCHitX.push_back(x);
+      fLAPPDMCHitY.push_back(y);
+      fLAPPDMCHitZ.push_back(z);
+      fLAPPDMCHitParallelPos.push_back(parallel);
+      fLAPPDMCHitTransversePos.push_back(transverse);
     }
   }
 }

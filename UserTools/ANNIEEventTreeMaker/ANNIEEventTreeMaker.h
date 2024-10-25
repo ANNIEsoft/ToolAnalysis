@@ -64,6 +64,7 @@ public:
     void LoadLAPPDRecoInfo();
     void FillLAPPDRecoInfo();
     void FillLAPPDWaveform();
+    void FillLAPPDMCHitInfo();
 
     bool FillMCTruthInfo();
     bool FillTankRecoInfo();
@@ -113,6 +114,7 @@ private:
     bool RWMBRF_fill = 1;
     bool LAPPD_PPS_fill = 1;
     bool LAPPD_Waveform_fill = 1;
+    bool LAPPD_MC_fill = 0;
 
     // What reco information will be filled
     bool MCTruth_fill = 0; // Output the MC truth information
@@ -277,6 +279,17 @@ private:
     // LAPPD waveform Fill
     string LAPPDWaveformInputLabel;
     vector<vector<double>> fLAPPDWaveforms;
+
+    // LAPPD MC Hit info, loaded from WCSim
+    vector<int> fLAPPDMCHitTubeIDs;
+    vector<unsigned long> fLAPPDMCHitChankeys;
+    vector<double> fLAPPDMCHitTime;
+    vector<double> fLAPPDMCHitCharge;
+    vector<double> fLAPPDMCHitX;
+    vector<double> fLAPPDMCHitY;
+    vector<double> fLAPPDMCHitZ;
+    vector<double> fLAPPDMCHitParallelPos;
+    vector<double> fLAPPDMCHitTransversePos;
 
     // finished ****************************************************
 
