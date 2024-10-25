@@ -3039,6 +3039,8 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 		bool do_continue = false;
 		if (entry_type == "PPS")
 		{
+			int lappd_id;
+			Temp->Get("LAPPD_ID", lappd_id);
 			std::vector<int>::iterator it;
 			int vector_idx = -1;
 			current_pps_count++;

@@ -153,6 +153,7 @@ bool ParseDataMonitoring::Execute()
 	    TempData->Set("ACC",PDATA.AccInfoFrame);
 	    std::string str_pps = "PPS";
 	    TempData->Set("Type",str_pps);
+        TempData->Set("LAPPD_ID",PDATA.LAPPD_ID);
 	    TempData->Save("LAPPDTemp");
 	    TempData->Delete();
 
