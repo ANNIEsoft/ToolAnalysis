@@ -2155,9 +2155,12 @@ bool ANNIEEventTreeMaker::FillMCTruthInfo()
     for (int i_cap = 0; i_cap < (int)mcneutgammas.size(); i_cap++)
     {
       std::vector<double> capgammas = mcneutgammas.at(i_cap);
-      for (int i_gamma = 0; i_gamma < (int)capgammas.size(); i_gamma++)
+      if (ANNIEEventTreeMakerVerbosity > 1)
       {
-        std::cout << "gamma # " << i_gamma << ", energy: " << capgammas.at(i_gamma) << std::endl;
+        for (int i_gamma = 0; i_gamma < (int)capgammas.size(); i_gamma++)
+        {
+          std::cout << "gamma # " << i_gamma << ", energy: " << capgammas.at(i_gamma) << std::endl;
+        }
       }
     }
   }
@@ -2291,16 +2294,19 @@ bool ANNIEEventTreeMaker::FillMCTruthInfo()
     }
   }
 
-  std::cout << "MCNeutCapGammas count CaptGammas: " << MCNeutCapGammas.count("CaptGammas") << std::endl;
+  if (ANNIEEventTreeMakerVerbosity > 1)
+    std::cout << "MCNeutCapGammas count CaptGammas: " << MCNeutCapGammas.count("CaptGammas") << std::endl;
   if (MCNeutCapGammas.count("CaptGammas") > 0)
   {
     std::vector<std::vector<double>> cap_energies = MCNeutCapGammas["CaptGammas"];
-    std::cout << "cap_energies size: " << cap_energies.size() << std::endl;
+    if (ANNIEEventTreeMakerVerbosity > 1)
+      std::cout << "cap_energies size: " << cap_energies.size() << std::endl;
     for (int i_cap = 0; i_cap < (int)cap_energies.size(); i_cap++)
     {
       for (int i_gamma = 0; i_gamma < cap_energies.at(i_cap).size(); i_gamma++)
       {
-        std::cout << "gamma energy: " << cap_energies.at(i_cap).at(i_gamma) << std::endl;
+        if (ANNIEEventTreeMakerVerbosity > 1)
+          std::cout << "gamma energy: " << cap_energies.at(i_cap).at(i_gamma) << std::endl;
         fTrueNeutCapGammaE->push_back(cap_energies.at(i_cap).at(i_gamma));
       }
     }
@@ -2348,10 +2354,13 @@ bool ANNIEEventTreeMaker::FillMCTruthInfo()
     bool get_fsl_mass = m_data->Stores["GenieInfo"]->Get("FSLeptonMass", TrueFSLeptonMass);
     bool get_fsl_pdg = m_data->Stores["GenieInfo"]->Get("FSLeptonPdg", TrueFSLeptonPdg);
     bool get_fsl_energy = m_data->Stores["GenieInfo"]->Get("FSLeptonEnergy", TrueFSLeptonEnergy);
-    std::cout << "get_neutrino_energy: " << get_neutrino_energy << "get_neutrino_vtxx: " << get_neutrino_vtxx << "get_neutrino_vtxy: " << get_neutrino_vtxy << "get_neutrino_vtxz: " << get_neutrino_vtxz << "get_neutrino_time: " << get_neutrino_vtxt << std::endl;
-    std::cout << "get_q2: " << get_q2 << ", get_cc: " << get_cc << ", get_qel: " << get_qel << ", get_res: " << get_res << ", get_dis: " << get_dis << ", get_coh: " << get_coh << ", get_mec: " << get_mec << std::endl;
-    std::cout << "get_n: " << get_n << ", get_p: " << get_p << ", get_pi0: " << get_pi0 << ", get_piplus: " << get_piplus << ", get_pipluscher: " << get_pipluscher << ", get_piminus: " << get_piminus << ", get_piminuscher: " << get_piminuscher << ", get_kplus: " << get_kplus << ", get_kpluscher: " << get_kpluscher << ", get_kminus: " << get_kminus << ", get_kminuscher: " << get_kminuscher << std::endl;
-    std::cout << "get_fsl_vtx: " << get_fsl_vtx << ", get_fsl_momentum: " << get_fsl_momentum << ", get_fsl_time: " << get_fsl_time << ", get_fsl_mass: " << get_fsl_mass << ", get_fsl_pdg: " << get_fsl_pdg << ", get_fsl_energy: " << get_fsl_energy << std::endl;
+    if (ANNIEEventTreeMakerVerbosity > 1)
+    {
+      std::cout << "get_neutrino_energy: " << get_neutrino_energy << "get_neutrino_vtxx: " << get_neutrino_vtxx << "get_neutrino_vtxy: " << get_neutrino_vtxy << "get_neutrino_vtxz: " << get_neutrino_vtxz << "get_neutrino_time: " << get_neutrino_vtxt << std::endl;
+      std::cout << "get_q2: " << get_q2 << ", get_cc: " << get_cc << ", get_qel: " << get_qel << ", get_res: " << get_res << ", get_dis: " << get_dis << ", get_coh: " << get_coh << ", get_mec: " << get_mec << std::endl;
+      std::cout << "get_n: " << get_n << ", get_p: " << get_p << ", get_pi0: " << get_pi0 << ", get_piplus: " << get_piplus << ", get_pipluscher: " << get_pipluscher << ", get_piminus: " << get_piminus << ", get_piminuscher: " << get_piminuscher << ", get_kplus: " << get_kplus << ", get_kpluscher: " << get_kpluscher << ", get_kminus: " << get_kminus << ", get_kminuscher: " << get_kminuscher << std::endl;
+      std::cout << "get_fsl_vtx: " << get_fsl_vtx << ", get_fsl_momentum: " << get_fsl_momentum << ", get_fsl_time: " << get_fsl_time << ", get_fsl_mass: " << get_fsl_mass << ", get_fsl_pdg: " << get_fsl_pdg << ", get_fsl_energy: " << get_fsl_energy << std::endl;
+    }
     if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy)
     {
       fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
