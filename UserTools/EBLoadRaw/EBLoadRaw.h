@@ -90,6 +90,10 @@ private:
     bool LAPPDPaused;
     bool CTCPaused;
 
+    bool PMTMatchingForced;
+    bool MRDMatchingForced;
+    bool LAPPDMatchingForced;
+
     BoostStore *RawData = nullptr;
     BoostStore *PMTData = nullptr;
     BoostStore *MRDData = nullptr;

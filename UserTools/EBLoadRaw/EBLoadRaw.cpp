@@ -60,6 +60,10 @@ bool EBLoadRaw::Initialise(std::string configfile, DataModel &data)
   LoadedLAPPDTotalEntries = 0;
   LoadedCTCTotalEntries = 0;
 
+  PMTMatchingForced = false;
+  MRDMatchingForced = false;
+  LAPPDMatchingForced = false;
+
   RawData = new BoostStore(false, 0);
   PMTData = new BoostStore(false, 2);
   MRDData = new BoostStore(false, 2);
@@ -134,6 +138,10 @@ bool EBLoadRaw::Execute()
     LoadMRDData();
     LoadCTCData();
     LoadLAPPDData();
+
+    PMTMatchingForced = false;
+    MRDMatchingForced = false;
+    LAPPDMatchingForced = false;
   }
   else
   {
@@ -579,12 +587,13 @@ bool EBLoadRaw::LoadNextPMTData()
   m_data->CStore.Set("TankEntryNum", PMTEntryNum);
   PMTEntryNum++;
 
-  if (PMTEntryNum == PMTTotalEntries)
+  if (PMTEntryNum == PMTTotalEntries && !PMTMatchingForced)
   {
     // force the PMT matching when all PMT entries are completed or PMTEntryNum is greater than PMTTotalEntries
     Log("EBLoadRaw: PMTEntriesCompleted, force PMT matching", v_message, verbosityEBLoadRaw);
     bool ForcePMTMatching = true;
     m_data->CStore.Set("ForcePMTMatching", ForcePMTMatching);
+    PMTMatchingForced = true;
   }
   else
   {
@@ -604,11 +613,12 @@ bool EBLoadRaw::LoadNextMRDData()
   m_data->CStore.Set("MRDEntryNum", MRDEntryNum);
   MRDEntryNum++;
 
-  if (MRDEntryNum == MRDTotalEntries)
+  if (MRDEntryNum == MRDTotalEntries && !MRDMatchingForced)
   {
     Log("EBLoadRaw: MRDEntriesCompleted, force MRD matching", v_message, verbosityEBLoadRaw);
     bool ForceMRDMatching = true;
     m_data->CStore.Set("ForceMRDMatching", ForceMRDMatching);
+    MRDMatchingForced = true;
   }
   else
   {
@@ -629,11 +639,12 @@ bool EBLoadRaw::LoadNextLAPPDData()
   m_data->CStore.Set("LAPPDanaData", true);
   LAPPDEntryNum++;
 
-  if (LAPPDEntryNum == LAPPDTotalEntries)
+  if (LAPPDEntryNum == LAPPDTotalEntries && !LAPPDMatchingForced)
   {
     Log("EBLoadRaw: LAPPDEntriesCompleted, force LAPPD matching", v_message, verbosityEBLoadRaw);
     bool ForceLAPPDMatching = true;
     m_data->CStore.Set("ForceLAPPDMatching", ForceLAPPDMatching);
+    LAPPDMatchingForced = true;
   }
   else
   {
