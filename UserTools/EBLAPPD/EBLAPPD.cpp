@@ -80,6 +80,7 @@ bool EBLAPPD::Execute()
   if (stopLoop || runNum != thisRunNum || exeNum % exePerMatch == 0 || ForceLAPPDMatching)
   {
     Log("EBLAPPD: exeNum = " + std::to_string(exeNum) + ". Doing matching", v_message, verbosityEBLAPPD);
+    Log("EBLAPPD: Matching reason is stopLoop = " + std::to_string(stopLoop) + ", runNum = " + std::to_string(runNum) + ", exeNum = " + std::to_string(exeNum) + ", ForceLAPPDMatching = " + std::to_string(ForceLAPPDMatching), v_message, verbosityEBLAPPD);
     if (matchToAllTriggers)
     {
       Matching(0, 0);

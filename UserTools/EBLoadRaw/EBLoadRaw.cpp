@@ -210,6 +210,17 @@ bool EBLoadRaw::Execute()
   if (LoadLAPPD && !LAPPDPaused && !LAPPDEntriesCompleted)
     LoadNextLAPPDData();
 
+  if (LoadMRD && MRDEntriesCompleted)
+  {
+    bool ForceMRDMatching = false;
+    m_data->CStore.Set("ForceMRDMatching", ForceMRDMatching);
+  }
+  if (LoadLAPPD && LAPPDEntriesCompleted)
+  {
+    bool ForceLAPPDMatching = false;
+    m_data->CStore.Set("ForceLAPPDMatching", ForceLAPPDMatching);
+  }
+
   // if all required data is loaded, set filecompleted flag to true
   if ((!LoadPMT || PMTEntriesCompleted) && (!LoadMRD || MRDEntriesCompleted) && (!LoadCTC || CTCEntriesCompleted) && (!LoadLAPPD || LAPPDEntriesCompleted))
   {
@@ -613,6 +624,7 @@ bool EBLoadRaw::LoadNextMRDData()
   m_data->CStore.Set("MRDEntryNum", MRDEntryNum);
   MRDEntryNum++;
 
+  Log("EBLoadRaw: Loaded MRDData entry " + std::to_string(MRDEntryNum) + ", MRDTotalEntries " + std::to_string(MRDTotalEntries) + ", MRDMatchingForced " + std::to_string(MRDMatchingForced), v_warning, verbosityEBLoadRaw);
   if (MRDEntryNum == MRDTotalEntries && !MRDMatchingForced)
   {
     Log("EBLoadRaw: MRDEntriesCompleted, force MRD matching", v_message, verbosityEBLoadRaw);
@@ -639,6 +651,7 @@ bool EBLoadRaw::LoadNextLAPPDData()
   m_data->CStore.Set("LAPPDanaData", true);
   LAPPDEntryNum++;
 
+  Log("EBLoadRaw: Loaded LAPPDData entry " + std::to_string(LAPPDEntryNum) + ", LAPPDTotalEntries " + std::to_string(LAPPDTotalEntries) + ", LAPPDMatchingForced " + std::to_string(LAPPDMatchingForced), v_warning, verbosityEBLoadRaw);
   if (LAPPDEntryNum == LAPPDTotalEntries && !LAPPDMatchingForced)
   {
     Log("EBLoadRaw: LAPPDEntriesCompleted, force LAPPD matching", v_message, verbosityEBLoadRaw);

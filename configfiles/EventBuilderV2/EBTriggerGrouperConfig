@@ -24,5 +24,5 @@ groupPPS 0
 
 groupNuMI 1
 
-maxNumAllowedInBuffer 30000
+maxNumAllowedInBuffer 20000
 

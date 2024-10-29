@@ -1,5 +1,5 @@
 verbosityEBMRD 1
 matchTargetTrigger 8
 matchTolerance_ns 3000000
-matchToAllTriggers 1
-exePerMatch 100
+matchToAllTriggers 0
+exePerMatch 500
