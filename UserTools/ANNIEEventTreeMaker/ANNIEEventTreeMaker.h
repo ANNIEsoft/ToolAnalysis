@@ -152,6 +152,8 @@ private:
     int fHasTank;
     int fHasMRD;
     int fHasLAPPD;
+    std::string fMRDTriggerType;
+    int fMRDTriggerTypeInt;
 
     ULong64_t fEventTimeTank;
     ULong64_t fEventTimeMRD;

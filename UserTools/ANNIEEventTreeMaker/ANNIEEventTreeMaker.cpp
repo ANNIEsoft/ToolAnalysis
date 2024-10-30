@@ -84,6 +84,8 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fANNIETree->Branch("HasLAPPD", &fHasLAPPD, "HasLAPPD/I");
   fANNIETree->Branch("TankMRDCoinc", &fTankMRDCoinc, "TankMRDCoinc/I");
   fANNIETree->Branch("NoVeto", &fNoVeto, "NoVeto/I");
+  fANNIETree->Branch("MRDTriggerType", &fMRDTriggerTypeInt, "MRDTriggerType/I");
+  //fANNIETree->Branch("MRDTriggerTypeString", &fMRDTriggerType);
 
   // event information of data
   fANNIETree->Branch("eventTimeTank", &fEventTimeTank, "eventTimeTank/l");
@@ -626,6 +628,8 @@ void ANNIEEventTreeMaker::ResetVariables()
   fDataStreams.clear();
   fEventTimeTank = 0;
   fEventTimeMRD = 0;
+  fMRDTriggerType = "";
+  fMRDTriggerTypeInt = -9999;
 
   // beam info
   fPot = -9999;
@@ -1047,7 +1051,19 @@ bool ANNIEEventTreeMaker::LoadEventInfo()
     fHasTank = 0;
 
   if (fDataStreams["MRD"] == 1)
+  {
     fHasMRD = 1;
+    m_data->Stores["ANNIEEvent"]->Get("MRDTriggerType", fMRDTriggerType);
+    Log("ANNIEEventTreeMaker Tool: MRD Trigger Type: " + fMRDTriggerType, v_debug, ANNIEEventTreeMakerVerbosity);
+    bool cosmic = fMRDTriggerType == "Cosmic";
+    Log("ANNIEEventTreeMaker Tool: Cosmic Trigger: " + std::to_string(cosmic), v_debug, ANNIEEventTreeMakerVerbosity);
+    if (fMRDTriggerType == "Beam")
+      fMRDTriggerTypeInt = 1;
+    else if (fMRDTriggerType == "Cosmic")
+      fMRDTriggerTypeInt = 2;
+    else
+      fMRDTriggerTypeInt = 0;
+  }
   else
     fHasMRD = 0;
 
