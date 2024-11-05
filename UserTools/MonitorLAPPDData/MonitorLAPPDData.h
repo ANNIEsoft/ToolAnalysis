@@ -165,8 +165,8 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_timestamp;
   std::vector<uint64_t> first_pps_timestamps;
   std::vector<uint64_t> last_pps_timestamps;
-  std::vector<int> raw_lappd_data_pps_counts; // PPS event counters, indexed by all_timestamps
-  std::vector<uint64_t> raw_lappd_data_pps_timestamps; // Timestamp in nanoseconds
+  std::map<int, std::vector<int>> raw_lappd_data_pps_counts; // PPS event counters, indexed by all_timestamps
+  std::map<int, std::vector<uint64_t>> raw_lappd_data_pps_timestamps; // Timestamp in nanoseconds
   std::vector<uint64_t> data_event_timestamps; // Timestamp in nanoseconds
   std::map<int, std::vector<uint64_t>> data_event_timestamps_per_partrun; // Timestamps grouped by partrun, used for Data events histogram
   std::vector<int> pps_accumulated_number; // PPS accumulated number of events
@@ -282,7 +282,7 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_ped;
   std::map<int, TGraph*> graph_sigma;
   TGraph *graph_pps_count = nullptr;
-  TGraph *graph_pps_event_counter = nullptr;
+  std::map<int, TGraph*> graph_pps_event_counter; 
   TGraph *graph_pps_accumulated_number_vs_psec_timestamp = nullptr;
   TGraph *graph_pps_time_vs_accumulated_number = nullptr;
   TGraph *graph_frame_count = nullptr;
