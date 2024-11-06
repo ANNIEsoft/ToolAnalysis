@@ -17,7 +17,7 @@ EBPMT EBPMT ./configfiles/EventBuilderV2/EBPMTConfig
 EBMRD EBMRD ./configfiles/EventBuilderV2/EBMRDConfig
 EBLAPPD EBLAPPD ./configfiles/EventBuilderV2/EBLAPPDConfig
 
-#SaveConfigInfo SaveConfigInfo ./configfiles/EventBuilderV2/SaveConfigInfoConfig
+SaveConfigInfo SaveConfigInfo ./configfiles/EventBuilderV2/SaveConfigInfoConfig
 
 EBSaver EBSaver ./configfiles/EventBuilderV2/EBSaverConfig
 
