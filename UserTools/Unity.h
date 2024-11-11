@@ -177,3 +177,4 @@
 #include "SaveConfigInfo.h"
 #include "ReadConfigInfo.h"
 #include "BeamQuality.h"
+#include "BackTracker.h"
