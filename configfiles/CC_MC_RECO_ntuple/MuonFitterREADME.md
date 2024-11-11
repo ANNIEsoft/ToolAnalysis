@@ -39,7 +39,7 @@ To generate a model, run the following scripts in order:
 
 3. Fit_data.py
 
-WARNING: some of these scripts rely on a python package called "torch" which is not available in any ANNIE containers. Running these scripts must be done outside of the containers for the time being until a fix is completed. ALSO: please update any paths such that all files and models are available. 
+Please update any paths such that all files and models are available or copy all model files to configfiles/MuonFitter/RNNFit directory. All model files are currently located at /pnfs/annie/persistent/simulations/models/MuonFitter/
 
 To run the Tool:
 
