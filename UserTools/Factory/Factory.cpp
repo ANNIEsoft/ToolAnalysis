@@ -169,5 +169,7 @@ if (tool=="PlotsTrackLengthAndEnergy") ret=new PlotsTrackLengthAndEnergy;
 if (tool=="SaveConfigInfo") ret=new SaveConfigInfo;
 if (tool=="ReadConfigInfo") ret=new ReadConfigInfo;
 if (tool=="MuonFitter") ret=new MuonFitter;
+if (tool=="BeamQuality") ret=new BeamQuality;
+if (tool=="BackTracker") ret=new BackTracker;
 return ret;
 }

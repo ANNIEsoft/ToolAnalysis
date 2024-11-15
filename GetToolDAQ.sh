@@ -497,6 +497,7 @@ then
     pip3 install uproot==4.3.7
     pip3 install xgboost==1.6.2
     pip3 install tensorflow==2.10.0
+    pip3 install torch==1.12.1
     pip3 install PyQt5
     # set tensorflow verbosity to suppress info messages about not having a GPU or maximal acceleration
     # https://stackoverflow.com/questions/35911252/disable-tensorflow-debugging-information/42121886#42121886

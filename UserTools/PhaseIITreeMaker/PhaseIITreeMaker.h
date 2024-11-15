@@ -313,6 +313,12 @@ class PhaseIITreeMaker: public Tool {
   int fTrueFSLPdg;
   double fTrueFSLEnergy;
   double fTrueQ2;
+  double fTrueW2;
+  double fTrueBJx;
+  double fTruey;
+  double fTrueq0;
+  double fTrueq3;
+  int fTrueTarget;
   int fTrueCC;
   int fTrueNC;
   int fTrueQEL;

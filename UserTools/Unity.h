@@ -177,3 +177,5 @@
 #include "SaveConfigInfo.h"
 #include "ReadConfigInfo.h"
 #include "MuonFitter.h"
+#include "BeamQuality.h"
+#include "BackTracker.h"

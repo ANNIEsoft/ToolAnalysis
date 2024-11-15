@@ -159,6 +159,14 @@ class LoadGenieEvent: public Tool {
 	bool isintank=false;
 	bool isinfiducialvol=false;
 	double eventq2=-1;
+	double eventw2=-1;
+	int TrueTargetZ = -1; 
+	double eventbj_x=-1;
+	double eventelastic_y=-1;
+	double eventq0=-1;
+	double eventq3=-1;
+	std::vector<int>pdgs;
+	std::vector<double>Pmag;
 	double eventEnu=-1;
 	Direction eventPnu;
 	int neutrinopdg=-1;
