@@ -3,6 +3,8 @@ LoadRawData LoadRawData ./configfiles/EventBuilder/LoadRawDataConfig
 PMTDataDecoder PMTDataDecoder ./configfiles/EventBuilder/PMTDataDecoderConfig
 MRDDataDecoder MRDDataDecoder ./configfiles/EventBuilder/MRDDataDecoderConfig
 TriggerDataDecoder TriggerDataDecoder ./configfiles/EventBuilder/TriggerDataDecoderConfig
+BeamFetcherV2 BeamFetcherV2 ./configfiles/EventBuilder/BeamFetcherV2Config
+BeamQuality BeamQuality ./configfiles/EventBuilder/BeamQualityConfig
 PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/EventBuilder/PhaseIIADCCalibratorConfig
 PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/EventBuilder/PhaseIIADCHitFinderConfig
 SaveConfigInfo SaveConfigInfo ./configfiles/EventBuilder/SaveConfigInfoConfig

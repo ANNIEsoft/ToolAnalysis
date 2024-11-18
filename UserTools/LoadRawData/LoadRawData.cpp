@@ -63,7 +63,7 @@ bool LoadRawData::Initialise(std::string configfile, DataModel &data){
   MRDEntriesCompleted = false;
   TrigEntriesCompleted = false;
   LAPPDEntriesCompleted = false;
-
+  JumpBecauseLAPPD = false;
   LAPPDPaused = 0;
 
   m_data->CStore.Set("FileProcessingComplete",false);
@@ -78,7 +78,7 @@ bool LoadRawData::Execute(){
   //Check if we've reached the end of our file list or single file 
   bool ProcessingComplete = false;
   if(FileCompleted) ProcessingComplete = this->InitializeNewFile();
-  if(ProcessingComplete) {
+  if(BuildType != "LAPPDMerging" && ProcessingComplete) {
     Log("LoadRawData Tool: All files have been processed.",v_message,verbosity);
     m_data->CStore.Set("FileProcessingComplete",true);
     return true;
@@ -113,6 +113,9 @@ bool LoadRawData::Execute(){
       std::cout << "LoadRawData tool ERROR: no files in file list to parse! Stopping toolchain" << std::endl;
       m_data->vars.Set("StopLoop",1);
       return false;
+      if(BuildType == "LAPPDMerging" && FileCompleted){
+        return true;
+      }
     }
     if(FileCompleted || CurrentFile=="NONE"){
       Log("LoadRawData tool:   Moving to next file.",v_message,verbosity);
@@ -127,10 +130,63 @@ bool LoadRawData::Execute(){
       this->LoadPMTMRDData();
       this->LoadTriggerData();
       this->LoadLAPPDData();
+      
+      {
+      // extract run number and file number from filename
+      std::regex runNumber_regex("RAWDataR(\\d{4})"); 
+      std::regex subrunNUmber_regex("S(\\d{1,4})p");
+      std::regex rawFileNumber_regex("p(\\d{1,4})");  
+      std::smatch match;
+      if (std::regex_search(CurrentFile, match, runNumber_regex) && match.size() > 1)
+      {
+        int runNumber = std::stoi(match.str(1)); 
+        if(verbosity > 0) std::cout << "runNumber: " << runNumber << std::endl;
+        m_data->CStore.Set("runNumber", runNumber);
+      }
+      else
+      {
+        std::cout << "runNumber not found" << std::endl;
+        m_data->CStore.Set("rawFileNumber", -9999);
+      }
+
+      if (std::regex_search(CurrentFile, match, subrunNUmber_regex) && match.size() > 1)
+      {
+        int subrunNumber = std::stoi(match.str(1));
+        if(verbosity > 0) std::cout << "subrunNumber: " << subrunNumber << std::endl;
+        m_data->CStore.Set("subrunNumber", subrunNumber);
+      }
+      else
+      {
+        std::cout << "subrunNumber not found" << std::endl;
+        m_data->CStore.Set("subrunNumber", -9999);
+      }
+      
+      if (std::regex_search(CurrentFile, match, rawFileNumber_regex) && match.size() > 1)
+      {
+        int rawFileNumber = std::stoi(match.str(1));
+        if(verbosity > 0) std::cout << "rawFileNumber: " << rawFileNumber << std::endl;
+        m_data->CStore.Set("rawFileNumber", rawFileNumber);
+      }
+      else
+      {
+        std::cout << "rawFileNumber not found" << std::endl;
+        m_data->CStore.Set("runNumber", -9999);
+      }
+      }
+
     } else {
      if(verbosity>v_message) std::cout << "LoadRawDataTool: continuing file " << OrganizedFileList.at(FileNum) << std::endl;
     }
     FileCompleted = false;
+    if (JumpBecauseLAPPD){
+      //sometimes the LAPPD data in raw data file may have a very large entry number due to overflow
+      //then the whole loader will be stuck in the loop, so we need to jump to the next file
+      //only set while loading with LAPPD, won't affect others
+      FileCompleted = true;
+      JumpBecauseLAPPD = false;
+      cout<<"LoadRawData: Jumping to next file because there is something wrong about LAPPD data"<<endl;
+      return true;
+    }
   } 
   
   else if (Mode == "Processing"){
@@ -163,7 +219,7 @@ bool LoadRawData::Execute(){
   }
 
   //If more MRD events than VME events abort
-  if (mrdtotalentries > tanktotalentries && BuildType != "MRD"){
+  if (mrdtotalentries > tanktotalentries && BuildType != "MRD" && BuildType != "MRDAndCTC"){
     std::cout << "LoadRawData tool ERROR: More MRD entries than VME entries! Stopping toolchain" << std::endl;
     m_data->vars.Set("StopLoop",1);
   }
@@ -258,16 +314,15 @@ bool LoadRawData::Execute(){
     Log("LoadRawData Tool: ALL LAPPD ENTRIES COLLECTED.",v_debug, verbosity);
     LAPPDEntriesCompleted = true;
     LAPPDPaused = true;
-    if(TrigEntryNum < trigtotalentries) CTCPaused = false;
+    //if(TrigEntryNum < trigtotalentries) CTCPaused = false;
+    //when using ANNIEEventBuilder, the CTC data are usually pulsed at ~10 entries
+    //but if we also load the LAPPD data, the pulse will be canceled here
+    //and there is no need to recheck everything is not paused again
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
   }
-  if (LAPPDEntryNum == lappdtotalentries){
-    Log("LoadRawData Tool: ALL LAPPD ENTRIES COLLECTED.",v_debug, verbosity);
+  if (lappdtotalentries < 0){ //some times the lappd broken data can give negative value
     LAPPDEntriesCompleted = true;
-    LAPPDPaused = true;
-    if(TankEntryNum < tanktotalentries) TankPaused = false;
-    if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
   }
 
   m_data->CStore.Set("PauseTankDecoding",TankPaused);
@@ -281,6 +336,10 @@ bool LoadRawData::Execute(){
   //Set if the raw data file has been completed
   if (TankEntriesCompleted && BuildType == "Tank") FileCompleted = true;
   if (MRDEntriesCompleted && BuildType == "MRD") FileCompleted = true;
+  if (LAPPDEntriesCompleted && BuildType == "LAPPD") FileCompleted = true;
+  if ((LAPPDEntriesCompleted && TrigEntriesCompleted) && (BuildType == "LAPPDAndCTC" || BuildType == "CTCAndLAPPD")) FileCompleted = true;
+  if (lappdtotalentries == 0 && (BuildType == "LAPPD" || BuildType == "LAPPDMerging" || BuildType == "LAPPDAndCTC" || BuildType == "CTCAndLAPPD")) FileCompleted = true;
+  if (LAPPDEntriesCompleted && BuildType == "LAPPDMerging") FileCompleted = true;
   if ((TankEntriesCompleted && MRDEntriesCompleted) && (BuildType == "TankAndMRD")) FileCompleted = true;
   if ((TrigEntriesCompleted && TankEntriesCompleted) && (BuildType == "TankAndCTC")) FileCompleted = true;
   if ((TrigEntriesCompleted && MRDEntriesCompleted) && (BuildType == "MRDAndCTC")) FileCompleted = true;
@@ -396,12 +455,28 @@ void LoadRawData::LoadTriggerData(){
 
 void LoadRawData::LoadLAPPDData(){
   Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
-  if((BuildType == "TankAndMRDAndCTCAndLAPPD")){
+  if(BuildType == "TankAndMRDAndCTCAndLAPPD" || BuildType == "LAPPD" || BuildType == "LAPPDMerging" || BuildType == "LAPPDAndCTC" || BuildType == "CTCAndLAPPD"){
     Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
     try{
       RawData->Get("LAPPDData",*LAPPDData);
       LAPPDData->Header->Get("TotalEntries",lappdtotalentries);
-      if(verbosity>3) LAPPDData->Print(false);
+      if(verbosity>3) {
+        Log("LoadRawData Tool: LAPPDData printing",v_message,verbosity);
+        LAPPDData->Print(false);
+        Log("LoadRawData Tool: LAPPDData Header printing",v_message,verbosity);
+        LAPPDData->Header->Print(false);
+      }
+      if(lappdtotalentries < 0){ //some time the lappd broken data can give negative value
+        lappdtotalentries = 0;
+        LAPPDEntriesCompleted = true;
+      }else{
+        Log("LoadRawData Tool: in loading, LAPPDData has "+std::to_string(lappdtotalentries)+" entries",v_message,verbosity);
+        if(lappdtotalentries > 100000){
+          Log("LoadRawData Tool: LAPPDData has "+std::to_string(lappdtotalentries)+" entries. This is a large wrong number of entries. May be a corrupted file.",v_warning,verbosity);
+          JumpBecauseLAPPD = true; //if loading LAPPD data and the LAPPD data in this file was broken, jump to next file
+          return;
+        }
+      }
      } catch (...) {
        Log("LoadRawData: Did not find LAPPDData in raw data file! (Maybe corrupted!!!) Don't process LAPPDData",0,0);
       lappdtotalentries=0;
@@ -516,8 +591,16 @@ TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStor
     EndOfProcessing = true;
   }
   if(Mode == "FileList" && FileNum == int(OrganizedFileList.size())){
+  //In Merging LAPPD with event building data, loading LAPPD from raw data will be finished before finishing merging
+  //so set the FileNum == to >=, and minus 1 to not disturb other code relate to FileNum
     Log("LoadRawData Tool: Full file list parsed.  Ending toolchain after this loop.",v_message, verbosity);
-    m_data->vars.Set("StopLoop",1);
+    m_data->CStore.Set("LAPPDanaData",false); //while use loading raw data to merge LAPPD data with other data, after reading all LAPPD data, set later LAPPDReadIn to stop.
+    if(BuildType != "LAPPDMerging"){
+      m_data->vars.Set("StopLoop",1);
+    }else{
+      Log("LoadRawData Tool: in LAPPD Merging mode, do not stop tool chain",v_message, verbosity);
+      FileNum -= 1;
+    }
     EndOfProcessing = true;
   }
   //No need to stop the loop in continous mode
@@ -529,7 +612,7 @@ TrigData->Close(); TrigData->Delete(); delete TrigData; TrigData = new BoostStor
 }
 
 void LoadRawData::GetNextDataEntries(){
-  std::cout <<"BuildType: "<<BuildType<<std::endl;
+  if(verbosity>0) std::cout <<"BuildType: "<<BuildType<<std::endl;
   //Get next PMTData Entry
   if(BuildType == "Tank" || BuildType == "TankAndMRD" || BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "TankAndMRDAndCTCAndLAPPD"){
     if(!TankPaused && !TankEntriesCompleted){
@@ -568,19 +651,8 @@ void LoadRawData::GetNextDataEntries(){
     }
   }
 
-  //Get next LAPPDData Entry
-  if (BuildType == "TankAndMRDAndCTCAndLAPPD"){
-    if (!LAPPDPaused && !LAPPDEntriesCompleted){
-      Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(lappdtotalentries),v_debug,verbosity);
-      LAPPDData->GetEntry(LAPPDEntryNum);
-      LAPPDData->Get("LAPPDData",*Ldata);
-      m_data->CStore.Set("LAPPDData",Ldata,true);
-      LAPPDEntryNum+=1;
-    }
-  }
-
   //Get next TrigData Entry
-  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC" || BuildType == "CTC" || BuildType == "TankAndMRDAndCTCAndLAPPD") && !TrigEntriesCompleted && !CTCPaused){
+  if((BuildType == "TankAndMRDAndCTC" || BuildType == "TankAndCTC" || BuildType == "MRDAndCTC" || BuildType == "CTC" || BuildType == "TankAndMRDAndCTCAndLAPPD" || BuildType == "CTCAndLAPPD" || BuildType == "LAPPDAndCTC") && !TrigEntriesCompleted && !CTCPaused){
     Log("LoadRawData Tool: Procesing TrigData Entry "+to_string(TrigEntryNum)+"/"+to_string(trigtotalentries),v_debug, verbosity);
     if (storetrigoverlap && TrigEntryNum == 0 && extract_part != 0){
       TrigData->GetEntry(TrigEntryNum);
@@ -613,12 +685,15 @@ void LoadRawData::GetNextDataEntries(){
   }
 
   //Get next LAPPDData Entry
-  if(BuildType == "LAPPD" || BuildType == "TankAndLAPPD" || BuildType == "MRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPDAndCTC"){
-        Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(lappdtotalentries),v_debug,verbosity);
-        LAPPDData->GetEntry(LAPPDEntryNum);
-        LAPPDData->Get("LAPPDData", *Ldata);
-        m_data->CStore.Set("LAPPDData", Ldata);
-        LAPPDEntryNum+=1;
+  if(BuildType == "LAPPD" || BuildType == "TankAndLAPPD" || BuildType == "MRDAndLAPPD" || BuildType == "TankAndMRDAndLAPPD" || BuildType == "TankAndMRDAndCTCAndLAPPD" || BuildType == "CTCAndLAPPD" || BuildType == "LAPPDMerging" || BuildType == "LAPPDAndCTC" ){
+    if(!LAPPDPaused && !LAPPDEntriesCompleted){
+    Log("LoadRawData Tool: Processing LAPPDData Entry "+to_string(LAPPDEntryNum)+"/"+to_string(lappdtotalentries),v_debug,verbosity);
+    LAPPDData->GetEntry(LAPPDEntryNum);
+    LAPPDData->Get("LAPPDData", *Ldata);
+    m_data->CStore.Set("LAPPDData", Ldata);
+    m_data->CStore.Set("LAPPDanaData",true);
+    LAPPDEntryNum+=1;
+    }
   }
   return;
 }

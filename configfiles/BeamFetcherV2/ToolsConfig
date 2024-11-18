@@ -1,0 +1,4 @@
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+LoadRawData LoadRawData ./configfiles/BeamFetcherV2/LoadRawDataConfig
+TriggerDataDecoder TriggerDataDecoder ./configfiles/BeamFetcherV2/TriggerDataDecoderConfig
+BeamFetcherV2 BeamFetcherV2 ./configfiles/BeamFetcherV2/BeamFetcherV2Config

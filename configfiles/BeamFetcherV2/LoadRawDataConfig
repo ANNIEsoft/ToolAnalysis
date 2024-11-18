@@ -1,0 +1,8 @@
+verbosity 11
+BuildType CTC
+Mode FileList
+InputFile ./configfiles/BeamFetcherV2/my_files.txt
+DummyRunInfo 1
+StoreTrigOverlap 0
+ReadTrigOverlap 0
+StoreRawData 0

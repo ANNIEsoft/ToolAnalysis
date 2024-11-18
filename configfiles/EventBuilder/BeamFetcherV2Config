@@ -1,0 +1,17 @@
+# BeamFetcher config file
+verbose 0
+#
+# File containing one device per line or a bundle
+DevicesFile ./configfiles/EventBuilder/BeamDevices.txt
+#
+# bool stating whether DevicesFile contains bundles or individual devices
+IsBundle 1
+#
+# bool defining how to grab the data (from input times (1) or trigger(0))
+FetchFromTimes 0
+#
+# How much data to pull in one query (set to 1 hr)
+TimeChunkStepInMilliseconds 3600000
+#
+# bool, do you want to write a ROOT file with the timestamps and devices?
+SaveROOT 0
