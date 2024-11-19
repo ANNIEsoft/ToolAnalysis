@@ -7,46 +7,37 @@
 Date created: 2024-10-02
 The MuonFitter toolchain makes an attempt to fit muons using hit information.
 
-Configure files are simple text files for passing variables to the Tools.
+The Tool has 2 modes. The first mode is pre-reconstruction. It takes input information from the ANNIEEvent and generates a text file containing hit information for the RNN. It is advisable to include minimal tools in this ToolChain, as the same data must be re-analysed with ToolAnalysis later.
 
-Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
+This text file produced in this step is then processed by a standalone python script (Fit_data.py), which outputs fitted information into a new text file.
 
-MuonFitter has 2 functionalities. The first functionality is pre-reconstruction. It takes input information and outputs a text file providing information to be fitted. This text file is used in a script to generate an additional text file that contains the fitted information.
+The second mode is reconstruction. In this mode the Tool reads information from the ANNIEEvent, along with both text files from the previous two steps (the first mode and the python script) and reconstructs the vertex based on the fitted paths. The resulting muon fit information is passed into the DataModel.
 
-The second functionality is reconstruction. It takes both text files and reconstructs the vertex based on the fitted paths.
-
-Therefore, in order to properly use this Tool in a ToolChain: The ToolChain must be ran twice on the same set of data. Instructions are below.
+More detailed instructions are below.
 
 ************************
 #Usage
 ************************
 
-Any line starting with a "#" will be ignored by the Store, as will blank lines.
-
-Variables should be stored one per line as follows:
-
-
-Name Value #Comments 
-
-Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
-
-
-To generate a model, run the following scripts in order:
+To generate (train) a model:
+============================
 
 1. Data_prepare.py
 
 2. RNN_train.py
 
-WARNING: currently, Data_prepare.py requires input files that do not exist on the ANNIE gpvms. These scripts were created and used to create models outside of the ANNIE gpvms and ToolAnalysis container. These scripts are to be considered DEPRECATED until further notice.
+NOTE: Data_prepare.py requires input files that do not yet exist on the ANNIE gpvms; as a result the model cannot at present be re-trained.
+Previously generated models are stored in /pnfs/annie/persistent/simulations/models/MuonFitter/ which may be used.
 
-Please update any paths such that all files and models are available or copy all model files to configfiles/MuonFitter/RNNFit directory. All model files are currently located at /pnfs/annie/persistent/simulations/models/MuonFitter/
+Please update any paths in the Tool configuration and Fit_data.py accordingly, or copy the appropriate model files to the configfiles/MuonFitter/RNNFit directory.
 
-To run the Tool:
+To analyse data:
+================
 
-1. First, run in "RecoMode 0". This will generate a file: ev_ai_eta_R{RUN}.txt with a {RUN} number corresponding to the WCSim run number. You do not need any Tools further along the ToolChain for this step. This text file is all you need.
+1. First, run a ToolChain containing the MuonFitter Tool configured in "RecoMode 0". This will generate a file: ev_ai_eta_R{RUN}.txt with a {RUN} number corresponding to the WCSim run number. You should not include any Tools further along the ToolChain for this step.
 
-2. Second, run "python3 Fit_data.py ev_ai_eta_R{RUN}.txt". This will apply the fitting and generate another textfile to be ran in ToolAnalysis: tanktrackfitfile_r{RUN}_RNN.txt. ALSO: please update any paths such that all files and models are available.
+2. Second, run "python3 Fit_data.py ev_ai_eta_R{RUN}.txt". This will apply the fitting and generate another textfile to be ran in ToolAnalysis: tanktrackfitfile_r{RUN}_RNN.txt. Again: please update any paths such that all files and models are available.
 
-ASIDE: RNNFit/rnn_fit.sh can act as a helper script to run through multiple ev_ai_eta_R{RUN}.txt files. Please be sure to update the hardcoded path included in the script to the location of the ai_eta text files.
+NOTE: the script RNNFit/rnn_fit.sh can act as a helper to process multiple ev_ai_eta_R{RUN}.txt files. Be sure to update the path in the script to point to your ev_ai_eta text files from step 1.
 
-3. Finally, run in "RecoMode 1". This is running the ToolChain for real. Please set the paths for the ev_ai_eta_R{RUN}.txt and tanktrackfitfile_r{RUN}_RNN.txt accordingly so they can be read in with the corresponding data file. See the README.md in UserTools/MuonFitter/ for short descriptions of information saved to the DataModel and how to access them.
+3. Finally, run a ToolChain containing the MuonFitter Tool configured in "RecoMode 1". Please set the paths for the ev_ai_eta_R{RUN}.txt and tanktrackfitfile_r{RUN}_RNN.txt in the MuonFitter config file accordingly. You may include any downstream tools you desire for further analysis. See the UserTools/MuonFitter/README.md for short descriptions of information saved to the DataModel and how to access them.
