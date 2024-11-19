@@ -1082,8 +1082,8 @@ void MonitorLAPPDData::WriteToFile()
 	std::vector<double> *t_rate = new std::vector<double>;
 	std::vector<double> *t_ped = new std::vector<double>;
 	std::vector<double> *t_sigma = new std::vector<double>;
-	std::map<int, std::vector<uint64_t>> *t_raw_lappd_data_pps_counts = new std::map<int, std::vector<uint64_t>>;
-	std::map<int, std::vector<uint64_t>> *t_raw_lappd_data_pps_timestamps = new std::map<int, std::vector<uint64_t>>;
+	std::vector<uint64_t> *t_raw_lappd_data_pps_counts = new std::vector<uint64_t>;
+	std::vector<uint64_t> *t_raw_lappd_data_pps_timestamps = new std::vector<uint64_t>;
 	std::vector<long> *t_data_event_timestamps = new std::vector<long>;
 	
 	int t_run, t_subrun, t_partrun;
@@ -1231,13 +1231,15 @@ void MonitorLAPPDData::WriteToFile()
 		auto lappd_id = it->first;
 		auto current_pps_timestamps = it->second;
 		auto current_pps_counts = raw_lappd_data_pps_counts.at(lappd_id);
-		// Emplace if lappd_id is not in the map
-		t_raw_lappd_data_pps_counts->emplace(lappd_id, std::vector<uint64_t>());
-		t_raw_lappd_data_pps_timestamps->emplace(lappd_id, std::vector<uint64_t>());
-		for (int i_current = 0; i_current < current_pps_timestamps.size(); i_current++)
-		{
-			t_raw_lappd_data_pps_counts->at(lappd_id).push_back(current_pps_timestamps.at(i_current));
-			t_raw_lappd_data_pps_timestamps->at(lappd_id).push_back(current_pps_counts.at(i_current));
+		
+		// Because ROOT doesn't support serializing std::map, we need to pack it ourselves
+		// to a vector
+		for (int i_current = 0; i_current < current_pps_timestamps.size(); i_current++) {
+			t_raw_lappd_data_pps_timestamps->push_back(lappd_id);
+			t_raw_lappd_data_pps_counts->push_back(lappd_id);
+
+			t_raw_lappd_data_pps_timestamps->push_back(current_pps_timestamps.at(i_current));
+			t_raw_lappd_data_pps_counts->push_back(current_pps_counts.at(i_current));
 		}
 	}
 	
@@ -1421,8 +1423,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				std::vector<double> *t_rate = new std::vector<double>;
 				std::vector<double> *t_ped = new std::vector<double>;
 				std::vector<double> *t_sigma = new std::vector<double>;
-				std::map<int, std::vector<uint64_t>> *t_raw_lappd_data_pps_counts = new std::map<int, std::vector<uint64_t>>;
-				std::map<int, std::vector<uint64_t>> *t_raw_lappd_data_pps_timestamps = new std::map<int, std::vector<uint64_t>>;
+				std::vector<uint64_t> *t_raw_lappd_data_pps_counts = new std::vector<uint64_t>;
+				std::vector<uint64_t> *t_raw_lappd_data_pps_timestamps = new std::vector<uint64_t>;
 				std::vector<long> *t_data_event_timestamps = new std::vector<long>;
 				
 				int t_run, t_subrun, t_partrun;
@@ -1535,16 +1537,17 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 				for (int i_entry = 0; i_entry < nentries_tree; i_entry++)
 				{
 					t->GetEntry(i_entry);
-					for (auto it = t_raw_lappd_data_pps_timestamps->begin(); it != t_raw_lappd_data_pps_timestamps->end(); ++it) {
-						int lappd_id = it->first;
-						auto current_timestamps = it->second;
-						raw_lappd_data_pps_timestamps.emplace(lappd_id, std::vector<uint64_t>());
-						raw_lappd_data_pps_counts.emplace(lappd_id, std::vector<int>());
-						auto current_pps_counts = t_raw_lappd_data_pps_counts->at(lappd_id);
-						for (int i = 0; i < current_timestamps.size(); i++) {
-							raw_lappd_data_pps_timestamps.at(lappd_id).push_back(current_timestamps.at(i));
-							raw_lappd_data_pps_counts.at(lappd_id).push_back(current_pps_counts.at(i));
-						}	
+					
+					// Unpack vector to map
+					for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i += 2) {
+						// This could further be broken down to use a singular vector
+						// but I'd say the current solution is already hacky enough
+						auto lappd_id = t_raw_lappd_data_pps_timestamps->at(i);
+						auto pps_timestamp = t_raw_lappd_data_pps_timestamps->at(i + 1);
+						auto pps_count = t_raw_lappd_data_pps_counts->at(i + 1);
+
+						raw_lappd_data_pps_timestamps[lappd_id].push_back(pps_timestamp);
+						raw_lappd_data_pps_counts[lappd_id].push_back(pps_count);
 					}
 
 					// Initialise vector of timestamps per partrun
@@ -2471,15 +2474,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
 				auto lappd_id = it->first;
 				auto timestamps = it->second;
-				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++)
-				{
+				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
 					graph_pps_event_counter.emplace(lappd_id, new TGraph());
 					graph_pps_event_counter.at(lappd_id)->SetPoint(i_timestamp, timestamps.at(i_timestamp), raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
 				}
 			}
 			// Add graph points for PPS accumulated number
-			for (int i_timestamp = 0; i_timestamp < pps_accumulated_psec_timestamp.size(); i_timestamp++)
-			{
+			for (int i_timestamp = 0; i_timestamp < pps_accumulated_psec_timestamp.size(); i_timestamp++) {
 				// Convert timestamp to unix seconds
 				auto acc_timestamp = pps_accumulated_psec_timestamp.at(i_timestamp) / 1000;
 				auto acc_number = pps_accumulated_number.at(i_timestamp);
