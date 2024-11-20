@@ -365,6 +365,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	canvas_frame_count = new TCanvas("canvas_frame_count", "LAPPD Data Count", 900, 600);
 	canvas_pps_count = new TCanvas("canvas_pps_count", "LAPPD PPS Count", 900, 600);
 	canvas_pps_event_counter = new TCanvas("canvas_pps_event_counter", "LAPPD PPS Event Counter", 900, 600);
+	canvas_pps_interval_drift = new TCanvas("canvas_pps_interval_drift", "LAPPD PPS Interval Drift", 900, 600);
 	canvas_pps_accumulated_number_vs_psec_timestamp = new TCanvas("canvas_pps_accumulated_number_vs_psec_timestamp", "LAPPD PPS Accumulated Number vs System Time", 900, 600); // PSec timestamp is also referred to as "System Time"
 	canvas_pps_time_vs_accumulated_number = new TCanvas("canvas_pps_time_vs_accumulated_number", "LAPPD PPS Time vs Accumulated Number", 900, 600);
 	// Histograms
@@ -2479,6 +2480,37 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 					graph_pps_event_counter.at(lappd_id)->SetPoint(i_timestamp, timestamps.at(i_timestamp), raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
 				}
 			}
+			// Add graph points for PPS interval drift
+			graph_pps_interval_drift.clear();
+			lappd_pps_interval_drift_distribution.clear();
+			for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
+				auto lappd_id = it->first;
+				auto timestamps = it->second;
+				auto latest_pps_timestamp = timestamps.front();
+
+				lappd_pps_interval_drift_distribution[lappd_id] = {0, 0, 0};
+
+				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
+					graph_pps_interval_drift.emplace(lappd_id, new TH1F());
+
+					// Calculate t
+					auto curr_timestamp = timestamps.at(i_timestamp);
+					auto diff = timestamps.at(i_timestamp) - latest_pps_timestamp;
+					std::cout << "LAPPD ID: " << lappd_id << ", (t = " << diff << ", i: " << i_timestamp << ") for " << curr_timestamp << " - " << latest_pps_timestamp << std::endl;
+					graph_pps_interval_drift.at(lappd_id)->Fill(diff);
+					latest_pps_timestamp = curr_timestamp;
+
+					// Fill in PPS interval drift distribution
+					if (diff == 0) {
+						lappd_pps_interval_drift_distribution[lappd_id].at(0)++; // For t = 0
+					} else if (diff == 3.2e8 || (diff == 3.2e8 + 1) || (diff == 3.2e8 - 1)) {
+						lappd_pps_interval_drift_distribution[lappd_id].at(1)++; // For t = 3.2e8 +- 1
+					} else {
+						lappd_pps_interval_drift_distribution[lappd_id].at(2)++; // For t = other
+					}
+				}
+			}
+
 			// Add graph points for PPS accumulated number
 			for (int i_timestamp = 0; i_timestamp < pps_accumulated_psec_timestamp.size(); i_timestamp++) {
 				// Convert timestamp to unix seconds
@@ -2562,7 +2594,6 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				canvas_pps_event_counter->Clear();
 				auto lappd_id = it->first;
 				auto graph = it->second;
-				graph->Draw("apl");
 				graph->SetTitle(ss_pps_event_counter.str().c_str());
 				graph->GetYaxis()->SetTitle(("PPS event counter (LAPPD ID: " + std::to_string(lappd_id) + ")").c_str());
 				graph->GetXaxis()->SetTitle("ns");
@@ -2577,6 +2608,50 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				std::stringstream ss_pps_event_counter_path;
 				ss_pps_event_counter_path << outpath << "LAPPDData_TimeEvolution_LAPPD_" << lappd_id << "_PPSEventCounter_" << file_ending << "." << img_extension;
 				canvas_pps_event_counter->SaveAs(ss_pps_event_counter_path.str().c_str());
+			}
+
+			// Draw PPS interval drift
+			for (auto it = graph_pps_interval_drift.begin(); it != graph_pps_interval_drift.end(); ++it) {
+				canvas_pps_interval_drift->cd();
+				auto lappd_id = it->first;
+				auto graph = it->second;
+				graph->Draw("apl");
+				graph->SetTitle(("PPS Interval Drift for LAPPD: " + std::to_string(lappd_id)).c_str());
+				graph->GetYaxis()->SetTitle("PPS Interval Drift");
+				graph->Draw("HIST");
+
+				auto dist = lappd_pps_interval_drift_distribution.at(lappd_id);
+				auto total_num_dist = dist.at(0) + dist.at(1) + dist.at(2);
+				auto frac0 = static_cast<double>(dist.at(0)) / total_num_dist; // t = 0
+				auto frac1 = static_cast<double>(dist.at(1)) / total_num_dist; // t = 3.2e8 +- 1
+				auto frac2 = static_cast<double>(dist.at(2)) / total_num_dist; // t = other
+
+				// Convert fractions to percentages with two decimal places
+				std::stringstream ss_frac0, ss_frac1, ss_frac2;
+				ss_frac0 << std::setprecision(2) << frac0 * 100.0;
+				ss_frac1 << std::setprecision(2) << frac1 * 100.0;
+				ss_frac2 << std::setprecision(2) << frac2 * 100.0;
+
+				std::cout << "*************" << std::endl;
+				std::cout << "LAPPD ID: " << lappd_id << std::endl;
+				std::cout << "Total number of distributions: " << total_num_dist << std::endl;
+				std::cout << "Fraction of distributions with t = 0: " << frac0 << std::endl;
+				std::cout << "Fraction of distributions with t = 3.2e8 +- 1: " << frac1 << std::endl;
+				std::cout << "Fraction of distributions with t = other: " << frac2 << std::endl;
+
+				auto latex_frac0 = new TLatex(0.15, 0.75, ("(#Delta t = 0): " + ss_frac0.str() + "%").c_str());
+				latex_frac0->SetNDC();
+				latex_frac0->Draw("SAME");
+				auto latex_frac1 = new TLatex(0.15, 0.70, ("(#Delta t = 3.2e8#pm1): " + ss_frac1.str() + "%").c_str());
+				latex_frac1->SetNDC();
+				latex_frac1->Draw("SAME");
+				auto latex_frac2 = new TLatex(0.15, 0.65, ("Other: " + ss_frac2.str() + "%").c_str());
+				latex_frac2->SetNDC();
+				latex_frac2->Draw("SAME");
+
+				std::stringstream ss_pps_interval_drift_path;
+				ss_pps_interval_drift_path << outpath << "LAPPDData_TimeEvolution_LAPPD_" << lappd_id << "_PPSIntervalDrift_" << file_ending << "." << img_extension;
+				canvas_pps_interval_drift->SaveAs(ss_pps_interval_drift_path.str().c_str());
 			}
 
 			std::stringstream ss_pps_accumulated_number_vs_psec_timestamp;
