@@ -166,7 +166,7 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> first_pps_timestamps;
   std::vector<uint64_t> last_pps_timestamps;
   std::map<int, std::vector<int>> raw_lappd_data_pps_counts; // PPS event counters, indexed by all_timestamps
-  std::map<int, std::vector<uint64_t>> raw_lappd_data_pps_timestamps; // Timestamp in nanoseconds
+  std::map<int, std::vector<uint64_t>> raw_lappd_data_pps_timestamps; // Timestamp in CLOCK
   std::map<int, std::vector<uint64_t>> lappd_pps_interval_drift_distribution; // Maps LAPPD ID to vector of PPS interval drift distributions (t = 0, t = 3.2e8+-1, t = other)
   std::vector<uint64_t> data_event_timestamps; // Timestamp in nanoseconds
   std::map<int, std::vector<uint64_t>> data_event_timestamps_per_partrun; // Timestamps grouped by partrun, used for Data events histogram

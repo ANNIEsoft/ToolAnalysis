@@ -2476,8 +2476,9 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				auto lappd_id = it->first;
 				auto timestamps = it->second;
 				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
+					const auto timestamp = (double)timestamps.at(i_timestamp) * CLOCK_to_NSEC;
 					graph_pps_event_counter.emplace(lappd_id, new TGraph());
-					graph_pps_event_counter.at(lappd_id)->SetPoint(i_timestamp, timestamps.at(i_timestamp), raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
+					graph_pps_event_counter.at(lappd_id)->SetPoint(i_timestamp, timestamp, raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
 				}
 			}
 			// Add graph points for PPS interval drift
@@ -3191,9 +3192,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 
 				// Add pps count and timestamp for plotting
 				raw_lappd_data_pps_counts.at(lappd_id).push_back(last_pps_count);
-
-				const auto timestamp_ns = (double)pps_63_0 * CLOCK_to_NSEC; // Use nanoseconds
-				raw_lappd_data_pps_timestamps.at(lappd_id).push_back(timestamp_ns);
+				raw_lappd_data_pps_timestamps.at(lappd_id).push_back(pps_63_0);
 
 				// Add data event timestamp
 				data_event_timestamps.push_back(timestamp_ns);
