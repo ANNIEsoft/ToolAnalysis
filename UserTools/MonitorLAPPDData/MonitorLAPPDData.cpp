@@ -2490,21 +2490,21 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				auto latest_pps_timestamp = timestamps.front();
 
 				lappd_pps_interval_drift_distribution[lappd_id] = {0, 0, 0};
+				graph_pps_interval_drift.emplace(lappd_id, new TH1F("", "", 200, -22e9, 30e9));
 
 				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
-					graph_pps_interval_drift.emplace(lappd_id, new TH1F());
-
 					// Calculate t
 					auto curr_timestamp = timestamps.at(i_timestamp);
 					auto diff = timestamps.at(i_timestamp) - latest_pps_timestamp;
-					std::cout << "LAPPD ID: " << lappd_id << ", (t = " << diff << ", i: " << i_timestamp << ") for " << curr_timestamp << " - " << latest_pps_timestamp << std::endl;
 					graph_pps_interval_drift.at(lappd_id)->Fill(diff);
 					latest_pps_timestamp = curr_timestamp;
-
+					
+					// std::cout << "LAPPD ID: " << lappd_id << ", (t = " << diff << ", i: " << i_timestamp << ") for " << curr_timestamp << " - " << latest_pps_timestamp << std::endl;
+					
 					// Fill in PPS interval drift distribution
 					if (diff == 0) {
 						lappd_pps_interval_drift_distribution[lappd_id].at(0)++; // For t = 0
-					} else if (diff == 3.2e8 || (diff == 3.2e8 + 1) || (diff == 3.2e8 - 1)) {
+					} else if (diff == 3.2e9 || (diff == 3.2e9 + 1) || (diff == 3.2e9 - 1)) {
 						lappd_pps_interval_drift_distribution[lappd_id].at(1)++; // For t = 3.2e8 +- 1
 					} else {
 						lappd_pps_interval_drift_distribution[lappd_id].at(2)++; // For t = other
@@ -2616,9 +2616,9 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				canvas_pps_interval_drift->cd();
 				auto lappd_id = it->first;
 				auto graph = it->second;
-				graph->Draw("apl");
+				graph->GetXaxis()->SetTitle("#Delta t_{pps} (clock ticks)");
+				graph->GetYaxis()->SetTitle("Events (normalised)");
 				graph->SetTitle(("PPS Interval Drift for LAPPD: " + std::to_string(lappd_id)).c_str());
-				graph->GetYaxis()->SetTitle("PPS Interval Drift");
 				graph->Draw("HIST");
 
 				auto dist = lappd_pps_interval_drift_distribution.at(lappd_id);
@@ -3195,7 +3195,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				raw_lappd_data_pps_timestamps.at(lappd_id).push_back(pps_63_0);
 
 				// Add data event timestamp
-				data_event_timestamps.push_back(timestamp_ns);
+				data_event_timestamps.push_back((double)pps_63_0 * CLOCK_to_NSEC);
 			}
 
 			if (pps.size() == 32)
