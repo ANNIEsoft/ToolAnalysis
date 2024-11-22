@@ -1,0 +1,4 @@
+verbose 1
+FileForListOfInputs ./configfiles/PrintDQ/my_inputs.txt
+EventOffset 0
+GlobalEvNr 1
