@@ -1,0 +1,33 @@
+verbosity 0
+
+OutputFile MC_MuonFitter_Reco_2998.root
+IsData 0                # 1:is data, not MC; 0:not data, is MC
+LuxArea 506.7           # 10-inch R7081 Hamamatsu
+EtelArea 613.1          # 11-inch D784UKFLB ETEL
+HamamatsuArea 324.3     # 8-inch R5912-100 Hamamatsu
+WatchboyArea 506.7      # 10-inch R7081 Hamamatsu
+WatchmanArea 506.7      # 10-inch R7081-100 Hamamatsu
+PMTMRDOffset 0          # delay btwn tank and MRD PMTs
+StepSizeAi 15           # some distance muon travels [cm]
+InsideAngle 1.          # degrees added to Cherenkov angle for hits to be considered inside cone
+OutsideAngle 9.         # degrees added to Cherenkov angle for hits to be considered outside cone
+PMTChargeThreshold 2    # minimum amount of charge seen by PMT
+EtaThreshold 500        # threshold to find best vertex
+DisplayTruth 0          # display truth information in graphs (only in MC)
+RecoMode 0              # run tool after fitting tank track
+AiEtaFile ev_ai_eta_R0.0.txt
+#TankTrackFitFile /exp/annie/app/users/jhe/MyToolAnalysis_MFer/fitbyeye_wcsim_2000-2999_RNN_240525v1.txt
+#TankTrackFitFile fitbyeye_wcsim_2000-2999_RNN_240525v1.txt
+TankTrackFitFile tanktrackfitfile_r0.0_RNN.txt
+
+UseNumLayers 1          # Updates reco track length in MRD using number of layers
+UsePCA 0                # Updates reco track length in MRD using number of layers and PCA-reconstructed track angle (set UseNumLayers 1)
+UseConnDots 0           # Updates reco track length in MRD by connecting the MRD hits
+UseELoss 0              # Use official ANNIE MRD energyLoss as starting MRD energy
+UseSimpleEReco 0        # Just add ANNIE MRD energyLoss (set UseELoss 1); no updating dEdx
+RecoEnergyShift 0     # Shift reco muon energy
+
+Plot3D 0                # 0:no plot; 1:yes plot
+Draw3DFMV 0
+Draw3DMRD 0
+SaveHistograms 0        # 0:no; 1:yes

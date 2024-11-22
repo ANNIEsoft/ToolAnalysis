@@ -5,6 +5,7 @@
 **********************
 
 Date created: 2024-10-02
+Date last updated: 2024-11-22
 The MuonFitter toolchain makes an attempt to fit muons using hit information.
 
 The Tool has 2 modes. The first mode is pre-reconstruction. It takes input information from the ANNIEEvent and generates a text file containing hit information for the RNN. It is advisable to include minimal tools in this ToolChain, as the same data must be re-analysed with ToolAnalysis later.
@@ -12,6 +13,8 @@ The Tool has 2 modes. The first mode is pre-reconstruction. It takes input infor
 This text file produced in this step is then processed by a standalone python script (Fit_data.py), which outputs fitted information into a new text file.
 
 The second mode is reconstruction. In this mode the Tool reads information from the ANNIEEvent, along with both text files from the previous two steps (the first mode and the python script) and reconstructs the vertex based on the fitted paths. The resulting muon fit information is passed into the DataModel.
+
+The Toolchain included in this directory is the minimal working Toolchain for MuonFitter to function. All Tools in the ToolChain MUST be included in order for MuonFitter to function. It is recommended to include PhaseIITreeMaker after MuonFitter in RecoMode 1 to generate an ntuple with reconstructed variables from MuonFitter.
 
 More detailed instructions are below.
 
