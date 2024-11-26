@@ -6,8 +6,8 @@ import json
 
 
 # # Prepare data into pandas DataFrame
-dataX = pd.read_csv("/home/jhe/annie/analysis/Muon_vertex/X.txt",sep=',',header=None,names=['id','ai','eta'])   #ai is track segment
-dataY = pd.read_csv("/home/jhe/annie/analysis/Muon_vertex/Y.txt",sep=',',header=None,names=['id','truetracklen'])
+dataX = pd.read_csv("ev_ai_eta_R0.0.txt",sep=',',header=None,names=['id','ai','eta'])   #ai is track segment
+dataY = pd.read_csv("true_track_len.txt",sep=',',header=None,names=['id','truetracklen'])
 # dataX['combine'] = dataX[['X','Y']].values.tolist()
 
 
