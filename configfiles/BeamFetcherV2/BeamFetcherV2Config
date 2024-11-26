@@ -1,0 +1,8 @@
+# BeamFetcher config file
+verbose 5
+DevicesFile ./configfiles/BeamFetcherV2/devices.txt # File containing one device per line or a bundle
+IsBundle 1 # bool stating whether DevicesFile contains bundles or individual devices
+FetchFromTimes 0 # bool defining how to grab the data (from input times (1) or trigger(0))
+TimeChunkStepInMilliseconds 3600000 # one hour
+SaveROOT 1 # bool, do you want to write a ROOT file with the timestamps and devices?
+DeleteCTCData 1

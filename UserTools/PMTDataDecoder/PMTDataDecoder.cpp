@@ -46,6 +46,13 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("FIFOError1",fifo1);
   m_data->CStore.Set("FIFOError2",fifo2);
 
+  saveRWMRaw = true;
+  saveBRFRaw = true;
+  m_variables.Get("saveRWMRaw",saveRWMRaw);
+  m_variables.Get("saveBRFRaw",saveBRFRaw);
+  RWMRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
+  BRFRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
+
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
 }
@@ -304,6 +311,46 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Set("FIFOError2",fifo2);
     m_data->CStore.Set("FIFOPMTWaves",FIFOPMTWaves);
     m_data->CStore.Set("TimestampsFromTheFuture",TimestampsFromTheFuture);
+
+    // loop the FinishedPMTWaves, for each timestamp, put the RWM and BRF waveform to RWMRawWaveforms and BRFRawWaveforms
+    if(saveBRFRaw || saveRWMRaw)
+    {
+      for (std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t>>>::iterator it = FinishedPMTWaves->begin(); it != FinishedPMTWaves->end(); it++)
+      {
+        uint64_t timestamp = it->first;
+        std::map<std::vector<int>, std::vector<uint16_t>> afinishedPMTWaves = FinishedPMTWaves->at(timestamp);
+        for (std::pair<std::vector<int>, std::vector<uint16_t>> apair : afinishedPMTWaves)
+        {
+          int CardID = apair.first.at(0);
+          int ChannelID = apair.first.at(1);
+          int SlotNum = CardID % 100;
+          int CrateNum = CardID / 1000;
+          unsigned int uCrateNum = (unsigned int)CrateNum;
+          unsigned int uSlotNum = (unsigned int)SlotNum;
+          unsigned int uChannelID = (unsigned int)ChannelID;
+
+
+	  //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
+          if(saveBRFRaw){
+          if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
+          {
+            std::vector<uint16_t> BRFWaveform = apair.second;
+            (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+          }
+          }
+          if(saveRWMRaw){
+          if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
+          {
+            std::vector<uint16_t> RWMWaveform = apair.second;
+            (*RWMRawWaveforms)[timestamp] = RWMWaveform;
+          }
+          }
+        }
+      }
+    }
+	  
+    m_data->CStore.Set("RWMRawWaveforms",RWMRawWaveforms);
+    m_data->CStore.Set("BRFRawWaveforms",BRFRawWaveforms);
 
     //Check the size of the WaveBank to see if things are bloating
     Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 

@@ -1,0 +1,22 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+verbose 1
+
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_24-09-17_BNB_Water_10k_22-05-17/wcsim_0.49......19.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_03-05-17_rhatcher/wcsim_0.49......00.root      ## first of the DOE proposal files
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_3-12-18_ANNIEp2v6_BNB_Water_10k_22-05-17/wcsim_0.49......19.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.49......19.root
+#InputFile ./25_04_19_wcsim_0.49......19.root
+
+#InputFile /annie/app/users/jminock/ToolAnalysis/wcsim_0.root
+#InputFile /pnfs/annie/persistent/users/mnieslon/wcsim/output/tankonly/wcsim_ANNIEp2v7_beamlike/wcsim_beamlike_muon_0.100.root
+InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/pmt/wcsim_0.0.0.root
+#InputFile ./wcsim_0.*.root
+#InputFile /pnfs/annie/persistent/users/mnieslon/wcsim/output/tankonly/wcsim_ANNIEp2v7_beam/pmt-files/wcsim_beam_gst_1060_91_0.7091.root
+
+WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
+HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
+UseDigitSmearedTime 1        ## whether to use smeared digit time (T), or true time of first photon (F)
+LappdNumStrips 56            ## num channels to construct from each LAPPD
+LappdStripLength 100         ## relative x position of each LAPPD strip, for dual-sided readout [mm]
+LappdStripSeparation 10      ## stripline separation, for calculating relative y position of each LAPPD strip [mm]

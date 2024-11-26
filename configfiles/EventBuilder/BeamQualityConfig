@@ -1,0 +1,13 @@
+# BeamQuality config file
+verbose 0
+#
+# POT window for "good" beam
+POTMin 5e11
+POTMax 8e12
+#
+# Horn current window for "good" beam (in kA)
+HornCurrentMin 172
+HornCurrentMax 176
+#
+# Fractional difference between the upstream and downstream POT measurements
+BeamLossTolerance 0.05

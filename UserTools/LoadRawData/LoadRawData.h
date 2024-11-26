@@ -63,6 +63,7 @@ class LoadRawData: public Tool {
   bool TrigEntriesCompleted;
   bool LAPPDEntriesCompleted;
   bool FileCompleted;
+  bool JumpBecauseLAPPD;
   int TankEntryNum = 0;
   int MRDEntryNum = 0;
   int TrigEntryNum = 0;

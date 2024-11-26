@@ -58,6 +58,8 @@ EventSelector
 
 Tool performs reconstruction
 -----------------------
+RingCounting
+MuonFitter - this Tool REPLACES SimpleReconstruction
 SimpleReconstruction
 -----------------------
 

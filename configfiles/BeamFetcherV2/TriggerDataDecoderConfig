@@ -1,0 +1,4 @@
+verbosity 0
+TriggerMaskFile ./configfiles/BeamFetcherV2/DefaultTriggerMask.txt
+StoreTrigOverlap 0
+ReadTrigOverlap 0

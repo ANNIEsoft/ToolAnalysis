@@ -42,7 +42,12 @@ bool EventSelector::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("NoVeto",fNoVetoCut);
   m_variables.Get("Veto",fVetoCut);
   m_variables.Get("ThroughGoing",fThroughGoing);
-  m_variables.Get("TriggerWord",fTriggerWord);
+  bool got_trigger_word = m_variables.Get("TriggerWord",fTriggerWord);
+  if (!got_trigger_word) {
+      Log("EventSelector Tool: Woah there, buddy! We set TriggerWord around these parts. Come back when you've done that. \n If you're not sure what they might need to be, check out Table 3.6 in Michael Nieslony's thesis.");
+      m_data->vars.Set("StopLoop",1);
+      return false;
+  }
   m_variables.Get("SaveStatusToStore", fSaveStatusToStore);
   m_variables.Get("IsMC",fIsMC);
   m_variables.Get("RecoPDG",fRecoPDG);
