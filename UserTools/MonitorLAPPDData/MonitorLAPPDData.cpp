@@ -1244,12 +1244,8 @@ void MonitorLAPPDData::WriteToFile()
 		}
 	}
 	
-	// Push accumulated PPS event number and PSec timestamp
-	std::string psec_timestamp_string;
 	// Get the PSecTimestamp given by ParseDataMonitoring tool
-	m_data->CStore.Get("PSecTimestamp", psec_timestamp_string);
-	// Cast PSec timestamp to long, then push it
-	t_pps_accumulated_psec_timestamp = std::stol(psec_timestamp_string);
+	m_data->CStore.Get("PSecTimestamp", t_pps_accumulated_psec_timestamp);
 
 	// Push the latest LAPPD PPS timestamp, as we will use it to plot against accumulated PPS event number
 	for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
