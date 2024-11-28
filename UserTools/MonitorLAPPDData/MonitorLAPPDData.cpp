@@ -2507,10 +2507,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 					// std::cout << "LAPPD ID: " << lappd_id << ", (t = " << diff << ", i: " << i_timestamp << ") for " << curr_timestamp << " - " << latest_pps_timestamp << std::endl;
 					
 					// Fill in PPS interval drift distribution
+					// PPS are reference signals sent to ACDCs with period of 10 seconds.
+					// 1 seconds = 3.2e8 clock ticks, hence 10 seconds = 3.2e9
+					// So we expect 3.2e9 clock ticks between PPS events
 					if (diff == 0) {
 						lappd_pps_interval_drift_distribution[lappd_id].at(0)++; // For t = 0
 					} else if (diff == 3.2e9 || (diff == 3.2e9 + 1) || (diff == 3.2e9 - 1)) {
-						lappd_pps_interval_drift_distribution[lappd_id].at(1)++; // For t = 3.2e8 +- 1
+						lappd_pps_interval_drift_distribution[lappd_id].at(1)++; // For t = 3.2e9 +- 1
 					} else {
 						lappd_pps_interval_drift_distribution[lappd_id].at(2)++; // For t = other
 					}
@@ -2629,7 +2632,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				std::vector<uint64_t> dist = lappd_pps_interval_drift_distribution.at(lappd_id);
 				uint64_t total_num_dist = dist.at(0) + dist.at(1) + dist.at(2);
 				double frac0 = static_cast<double>(dist.at(0)) / total_num_dist; // t = 0
-				double frac1 = static_cast<double>(dist.at(1)) / total_num_dist; // t = 3.2e8 +- 1
+				double frac1 = static_cast<double>(dist.at(1)) / total_num_dist; // t = 3.2e9 +- 1
 				double frac2 = static_cast<double>(dist.at(2)) / total_num_dist; // t = other
 
 				// Convert fractions to percentages with two decimal places
@@ -2642,13 +2645,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				std::cout << "LAPPD ID: " << lappd_id << std::endl;
 				std::cout << "Total number of distributions: " << total_num_dist << std::endl;
 				std::cout << "Fraction of distributions with t = 0: " << frac0 << std::endl;
-				std::cout << "Fraction of distributions with t = 3.2e8 +- 1: " << frac1 << std::endl;
+				std::cout << "Fraction of distributions with t = 3.2e9 +- 1: " << frac1 << std::endl;
 				std::cout << "Fraction of distributions with t = other: " << frac2 << std::endl;
 
 				TLatex latex_frac0(0.15, 0.75, ("(#Delta t = 0): " + ss_frac0.str() + "%").c_str());
 				latex_frac0.SetNDC();
 				latex_frac0.Draw("SAME");
-				TLatex latex_frac1(0.15, 0.70, ("(#Delta t = 3.2e8#pm1): " + ss_frac1.str() + "%").c_str());
+				TLatex latex_frac1(0.15, 0.70, ("(#Delta t = 3.2e9#pm1): " + ss_frac1.str() + "%").c_str());
 				latex_frac1.SetNDC();
 				latex_frac1.Draw("SAME");
 				TLatex latex_frac2(0.15, 0.65, ("Other: " + ss_frac2.str() + "%").c_str());
