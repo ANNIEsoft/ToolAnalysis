@@ -1229,9 +1229,9 @@ void MonitorLAPPDData::WriteToFile()
 
 	// Push raw lappd data
 	for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
-		auto lappd_id = it->first;
-		auto current_pps_timestamps = it->second;
-		auto current_pps_counts = raw_lappd_data_pps_counts.at(lappd_id);
+		int lappd_id = it->first;
+		std::vector<uint64_t> current_pps_timestamps = it->second;
+		std::vector<int> current_pps_counts = raw_lappd_data_pps_counts.at(lappd_id);
 		
 		// Because ROOT doesn't support serializing std::map, we need to pack it ourselves
 		// to a vector
@@ -1539,9 +1539,9 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 					for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i += 2) {
 						// This could further be broken down to use a singular vector
 						// but I'd say the current solution is already hacky enough
-						auto lappd_id = t_raw_lappd_data_pps_timestamps->at(i);
-						auto pps_timestamp = t_raw_lappd_data_pps_timestamps->at(i + 1);
-						auto pps_count = t_raw_lappd_data_pps_counts->at(i + 1);
+						int lappd_id = t_raw_lappd_data_pps_timestamps->at(i);
+						uint64_t pps_timestamp = t_raw_lappd_data_pps_timestamps->at(i + 1);
+						uint64_t pps_count = t_raw_lappd_data_pps_counts->at(i + 1);
 
 						raw_lappd_data_pps_timestamps[lappd_id].push_back(pps_timestamp);
 						raw_lappd_data_pps_counts[lappd_id].push_back(pps_count);
@@ -2469,10 +2469,10 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_pps_event_counter.clear();
 			// Add graph points for PPS event counter
 			for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
-				auto lappd_id = it->first;
-				auto timestamps = it->second;
+				int lappd_id = it->first;
+				std::vector<uint64_t> timestamps = it->second;
 				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
-					const auto timestamp = (double)timestamps.at(i_timestamp) * CLOCK_to_NSEC;
+					double timestamp = (double)timestamps.at(i_timestamp) * CLOCK_to_NSEC;
 					graph_pps_event_counter.emplace(lappd_id, new TGraph());
 					graph_pps_event_counter.at(lappd_id)->SetPoint(i_timestamp, timestamp, raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
 				}
@@ -2481,17 +2481,17 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_pps_interval_drift.clear();
 			lappd_pps_interval_drift_distribution.clear();
 			for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
-				auto lappd_id = it->first;
-				auto timestamps = it->second;
-				auto latest_pps_timestamp = timestamps.front();
+				int lappd_id = it->first;
+				std::vector<uint64_t> timestamps = it->second;
+				uint64_t latest_pps_timestamp = timestamps.front();
 
 				lappd_pps_interval_drift_distribution[lappd_id] = {0, 0, 0};
 				graph_pps_interval_drift.emplace(lappd_id, new TH1F("", "", 200, -22e9, 30e9));
 
 				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
 					// Calculate t
-					auto curr_timestamp = timestamps.at(i_timestamp);
-					auto diff = timestamps.at(i_timestamp) - latest_pps_timestamp;
+					uint64_t curr_timestamp = timestamps.at(i_timestamp);
+					uint64_t diff = timestamps.at(i_timestamp) - latest_pps_timestamp;
 					graph_pps_interval_drift.at(lappd_id)->Fill(diff);
 					latest_pps_timestamp = curr_timestamp;
 					
@@ -2511,12 +2511,12 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			// Add graph points for PPS accumulated number
 			for (int i_timestamp = 0; i_timestamp < pps_accumulated_psec_timestamp.size(); i_timestamp++) {
 				// Convert timestamp to unix seconds
-				auto acc_timestamp = pps_accumulated_psec_timestamp.at(i_timestamp) / 1000;
-				auto acc_number = pps_accumulated_number.at(i_timestamp);
+				long acc_timestamp = pps_accumulated_psec_timestamp.at(i_timestamp) / 1000;
+				int acc_number = pps_accumulated_number.at(i_timestamp);
 				graph_pps_accumulated_number_vs_psec_timestamp->SetPoint(i_timestamp, acc_timestamp, acc_number);
 
 				// Also add graph points for PPS time vs accumulated number
-				auto acc_pps_timestamp = (double)raw_lappd_data_pps_timestamp_per_accumulated_number.at(i_timestamp);
+				double acc_pps_timestamp = (double)raw_lappd_data_pps_timestamp_per_accumulated_number.at(i_timestamp);
 				graph_pps_time_vs_accumulated_number->SetPoint(i_timestamp, acc_number, acc_pps_timestamp);
 			}
 
@@ -2528,13 +2528,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			// Init graph points for PF# vs data events histogram
 			for (const auto &partrun_entry : data_event_timestamps_per_partrun) {
 				const int partrun = partrun_entry.first;
-				const auto& timestamps = partrun_entry.second;
+				const std::vector<uint64_t>& timestamps = partrun_entry.second;
 				max_partrun = std::max(max_partrun, partrun);
 				if (timestamps.size() > 0) {
-					const auto first_data_event_timestamp = timestamps.at(0);
+					const uint64_t first_data_event_timestamp = timestamps.at(0);
 
-					for (const auto& timestamp : timestamps) {
-						auto timestamp_ms_to_seconds = (timestamp - first_data_event_timestamp) / 1e9;
+					for (const uint64_t& timestamp : timestamps) {
+						double timestamp_ms_to_seconds = (timestamp - first_data_event_timestamp) / 1e9;
 						if (timestamp_ms_to_seconds > max_allowed_data_timestamp_seconds) {
 							continue;
 						}
@@ -2552,8 +2552,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			hist_pf_vs_data_events->SetStats(0);
 			// Add graph boints
 			for (int i = 0; i < hist_pf_vs_data_events_timestamps.size(); i ++) {
-				const auto hist_timestamp = hist_pf_vs_data_events_timestamps.at(i);
-				const auto hist_partrun = hist_pf_vs_data_events_partruns.at(i);
+				const double hist_timestamp = hist_pf_vs_data_events_timestamps.at(i);
+				const int hist_partrun = hist_pf_vs_data_events_partruns.at(i);
 				if (hist_timestamp > max_data_timestamp_seconds) {
 					continue;
 				}
@@ -2589,8 +2589,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			for (auto it = graph_pps_event_counter.begin(); it != graph_pps_event_counter.end(); ++it) {
 				canvas_pps_event_counter->cd();
 				canvas_pps_event_counter->Clear();
-				auto lappd_id = it->first;
-				auto graph = it->second;
+				int lappd_id = it->first;
+				TGraph *graph = it->second;
 				graph->SetTitle(ss_pps_event_counter.str().c_str());
 				graph->GetYaxis()->SetTitle(("PPS event counter (LAPPD ID: " + std::to_string(lappd_id) + ")").c_str());
 				graph->GetXaxis()->SetTitle("ns");
@@ -2610,18 +2610,18 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			// Draw PPS interval drift
 			for (auto it = graph_pps_interval_drift.begin(); it != graph_pps_interval_drift.end(); ++it) {
 				canvas_pps_interval_drift->cd();
-				auto lappd_id = it->first;
-				auto graph = it->second;
+				int lappd_id = it->first;
+				TGraph *graph = it->second;
 				graph->GetXaxis()->SetTitle("#Delta t_{pps} (clock ticks)");
 				graph->GetYaxis()->SetTitle("Events (normalised)");
 				graph->SetTitle(("PPS Interval Drift for LAPPD: " + std::to_string(lappd_id)).c_str());
 				graph->Draw("HIST");
 
-				auto dist = lappd_pps_interval_drift_distribution.at(lappd_id);
-				auto total_num_dist = dist.at(0) + dist.at(1) + dist.at(2);
-				auto frac0 = static_cast<double>(dist.at(0)) / total_num_dist; // t = 0
-				auto frac1 = static_cast<double>(dist.at(1)) / total_num_dist; // t = 3.2e8 +- 1
-				auto frac2 = static_cast<double>(dist.at(2)) / total_num_dist; // t = other
+				std::vector<uint64_t> dist = lappd_pps_interval_drift_distribution.at(lappd_id);
+				uint64_t total_num_dist = dist.at(0) + dist.at(1) + dist.at(2);
+				double frac0 = static_cast<double>(dist.at(0)) / total_num_dist; // t = 0
+				double frac1 = static_cast<double>(dist.at(1)) / total_num_dist; // t = 3.2e8 +- 1
+				double frac2 = static_cast<double>(dist.at(2)) / total_num_dist; // t = other
 
 				// Convert fractions to percentages with two decimal places
 				std::stringstream ss_frac0, ss_frac1, ss_frac2;
