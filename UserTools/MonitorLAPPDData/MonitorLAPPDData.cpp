@@ -260,6 +260,11 @@ bool MonitorLAPPDData::Finalise()
 	delete canvas_frame_count;
 	delete canvas_pps_count;
 	delete canvas_pps_event_counter;
+	delete canvas_pf_vs_data_events;
+	delete canvas_pps_interval_drift;
+	delete canvas_pps_accumulated_number_vs_psec_timestamp;
+	delete canvas_pps_time_vs_accumulated_number;
+	
 
 	// histograms
 	//
@@ -302,6 +307,8 @@ bool MonitorLAPPDData::Finalise()
 			}
 		}
 	}
+	delete graph_pps_accumulated_number_vs_psec_timestamp;
+	delete graph_pps_time_vs_accumulated_number;
 
 	// multi-graphs
 	delete multi_ped_lappd;
@@ -2611,7 +2618,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			for (auto it = graph_pps_interval_drift.begin(); it != graph_pps_interval_drift.end(); ++it) {
 				canvas_pps_interval_drift->cd();
 				int lappd_id = it->first;
-				TGraph *graph = it->second;
+				TH1F *graph = it->second;
 				graph->GetXaxis()->SetTitle("#Delta t_{pps} (clock ticks)");
 				graph->GetYaxis()->SetTitle("Events (normalised)");
 				graph->SetTitle(("PPS Interval Drift for LAPPD: " + std::to_string(lappd_id)).c_str());
