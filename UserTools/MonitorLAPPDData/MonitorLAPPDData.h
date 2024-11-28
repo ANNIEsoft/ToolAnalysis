@@ -284,8 +284,8 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_ped;
   std::map<int, TGraph*> graph_sigma;
   TGraph *graph_pps_count = nullptr;
-  std::map<int, TGraph*> graph_pps_event_counter; 
-  std::map<int, TH1F*> graph_pps_interval_drift;
+  std::map<int, TGraph> graph_pps_event_counter; 
+  std::map<int, TH1F> graph_pps_interval_drift;
   TGraph *graph_pps_accumulated_number_vs_psec_timestamp = nullptr;
   TGraph *graph_pps_time_vs_accumulated_number = nullptr;
   TGraph *graph_frame_count = nullptr;

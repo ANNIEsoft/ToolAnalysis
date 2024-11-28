@@ -309,6 +309,8 @@ bool MonitorLAPPDData::Finalise()
 	}
 	delete graph_pps_accumulated_number_vs_psec_timestamp;
 	delete graph_pps_time_vs_accumulated_number;
+	delete graph_pps_event_counter;
+	delete graph_pps_interval_drift;
 
 	// multi-graphs
 	delete multi_ped_lappd;
@@ -2478,10 +2480,10 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			for (auto it = raw_lappd_data_pps_timestamps.begin(); it != raw_lappd_data_pps_timestamps.end(); ++it) {
 				int lappd_id = it->first;
 				std::vector<uint64_t> timestamps = it->second;
+				graph_pps_event_counter.emplace(lappd_id, TGraph());
 				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
 					double timestamp = (double)timestamps.at(i_timestamp) * CLOCK_to_NSEC;
-					graph_pps_event_counter.emplace(lappd_id, new TGraph());
-					graph_pps_event_counter.at(lappd_id)->SetPoint(i_timestamp, timestamp, raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
+					graph_pps_event_counter.at(lappd_id).SetPoint(i_timestamp, timestamp, raw_lappd_data_pps_counts.at(lappd_id).at(i_timestamp));
 				}
 			}
 			// Add graph points for PPS interval drift
@@ -2493,13 +2495,13 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				uint64_t latest_pps_timestamp = timestamps.front();
 
 				lappd_pps_interval_drift_distribution[lappd_id] = {0, 0, 0};
-				graph_pps_interval_drift.emplace(lappd_id, new TH1F("", "", 200, -22e9, 30e9));
+				graph_pps_interval_drift.emplace(lappd_id, TH1F("", "", 200, -22e9, 30e9));
 
 				for (int i_timestamp = 0; i_timestamp < timestamps.size(); i_timestamp++) {
 					// Calculate t
 					uint64_t curr_timestamp = timestamps.at(i_timestamp);
 					uint64_t diff = timestamps.at(i_timestamp) - latest_pps_timestamp;
-					graph_pps_interval_drift.at(lappd_id)->Fill(diff);
+					graph_pps_interval_drift.at(lappd_id).Fill(diff);
 					latest_pps_timestamp = curr_timestamp;
 					
 					// std::cout << "LAPPD ID: " << lappd_id << ", (t = " << diff << ", i: " << i_timestamp << ") for " << curr_timestamp << " - " << latest_pps_timestamp << std::endl;
@@ -2597,18 +2599,18 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				canvas_pps_event_counter->cd();
 				canvas_pps_event_counter->Clear();
 				int lappd_id = it->first;
-				TGraph *graph = it->second;
-				graph->SetTitle(ss_pps_event_counter.str().c_str());
-				graph->GetYaxis()->SetTitle(("PPS event counter (LAPPD ID: " + std::to_string(lappd_id) + ")").c_str());
-				graph->GetXaxis()->SetTitle("ns");
-				graph->GetXaxis()->SetTimeDisplay(0);
-				graph->GetXaxis()->SetLabelSize(0.03);
-				graph->GetXaxis()->SetLabelOffset(0.01);
-				graph->GetXaxis()->SetTimeOffset(0.);
-				graph->SetMarkerSize(0.4F);
-				graph->SetMarkerColor(kBlue);
-				graph->SetMarkerStyle(kFullCircle);
-				graph->Draw("AP");
+				TGraph &graph = it->second;
+				graph.SetTitle(ss_pps_event_counter.str().c_str());
+				graph.GetYaxis()->SetTitle(("PPS event counter (LAPPD ID: " + std::to_string(lappd_id) + ")").c_str());
+				graph.GetXaxis()->SetTitle("ns");
+				graph.GetXaxis()->SetTimeDisplay(0);
+				graph.GetXaxis()->SetLabelSize(0.03);
+				graph.GetXaxis()->SetLabelOffset(0.01);
+				graph.GetXaxis()->SetTimeOffset(0.);
+				graph.SetMarkerSize(0.4F);
+				graph.SetMarkerColor(kBlue);
+				graph.SetMarkerStyle(kFullCircle);
+				graph.Draw("AP");
 				std::stringstream ss_pps_event_counter_path;
 				ss_pps_event_counter_path << outpath << "LAPPDData_TimeEvolution_LAPPD_" << lappd_id << "_PPSEventCounter_" << file_ending << "." << img_extension;
 				canvas_pps_event_counter->SaveAs(ss_pps_event_counter_path.str().c_str());
@@ -2618,11 +2620,11 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			for (auto it = graph_pps_interval_drift.begin(); it != graph_pps_interval_drift.end(); ++it) {
 				canvas_pps_interval_drift->cd();
 				int lappd_id = it->first;
-				TH1F *graph = it->second;
-				graph->GetXaxis()->SetTitle("#Delta t_{pps} (clock ticks)");
-				graph->GetYaxis()->SetTitle("Events (normalised)");
-				graph->SetTitle(("PPS Interval Drift for LAPPD: " + std::to_string(lappd_id)).c_str());
-				graph->Draw("HIST");
+				TH1F &graph = it->second;
+				graph.GetXaxis()->SetTitle("#Delta t_{pps} (clock ticks)");
+				graph.GetYaxis()->SetTitle("Events (normalised)");
+				graph.SetTitle(("PPS Interval Drift for LAPPD: " + std::to_string(lappd_id)).c_str());
+				graph.Draw("HIST");
 
 				std::vector<uint64_t> dist = lappd_pps_interval_drift_distribution.at(lappd_id);
 				uint64_t total_num_dist = dist.at(0) + dist.at(1) + dist.at(2);
