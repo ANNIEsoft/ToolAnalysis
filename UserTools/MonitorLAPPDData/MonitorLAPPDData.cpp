@@ -2636,15 +2636,15 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				std::cout << "Fraction of distributions with t = 3.2e8 +- 1: " << frac1 << std::endl;
 				std::cout << "Fraction of distributions with t = other: " << frac2 << std::endl;
 
-				auto latex_frac0 = new TLatex(0.15, 0.75, ("(#Delta t = 0): " + ss_frac0.str() + "%").c_str());
-				latex_frac0->SetNDC();
-				latex_frac0->Draw("SAME");
-				auto latex_frac1 = new TLatex(0.15, 0.70, ("(#Delta t = 3.2e8#pm1): " + ss_frac1.str() + "%").c_str());
-				latex_frac1->SetNDC();
-				latex_frac1->Draw("SAME");
-				auto latex_frac2 = new TLatex(0.15, 0.65, ("Other: " + ss_frac2.str() + "%").c_str());
-				latex_frac2->SetNDC();
-				latex_frac2->Draw("SAME");
+				TLatex latex_frac0(0.15, 0.75, ("(#Delta t = 0): " + ss_frac0.str() + "%").c_str());
+				latex_frac0.SetNDC();
+				latex_frac0.Draw("SAME");
+				TLatex latex_frac1(0.15, 0.70, ("(#Delta t = 3.2e8#pm1): " + ss_frac1.str() + "%").c_str());
+				latex_frac1.SetNDC();
+				latex_frac1.Draw("SAME");
+				TLatex latex_frac2(0.15, 0.65, ("Other: " + ss_frac2.str() + "%").c_str());
+				latex_frac2.SetNDC();
+				latex_frac2.Draw("SAME");
 
 				std::stringstream ss_pps_interval_drift_path;
 				ss_pps_interval_drift_path << outpath << "LAPPDData_TimeEvolution_LAPPD_" << lappd_id << "_PPSIntervalDrift_" << file_ending << "." << img_extension;
