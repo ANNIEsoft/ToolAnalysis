@@ -309,8 +309,6 @@ bool MonitorLAPPDData::Finalise()
 	}
 	delete graph_pps_accumulated_number_vs_psec_timestamp;
 	delete graph_pps_time_vs_accumulated_number;
-	delete graph_pps_event_counter;
-	delete graph_pps_interval_drift;
 
 	// multi-graphs
 	delete multi_ped_lappd;
@@ -1080,21 +1078,37 @@ void MonitorLAPPDData::WriteToFile()
 		root_option = "UPDATE";
 	TFile *f = new TFile(root_filename.str().c_str(), root_option.c_str());
 
-	std::vector<ULong64_t> *t_time = new std::vector<ULong64_t>;
-	std::vector<ULong64_t> *t_end = new std::vector<ULong64_t>;
-	std::vector<double> *t_pps_rate = new std::vector<double>;
-	std::vector<double> *t_frame_rate = new std::vector<double>;
-	std::vector<double> *t_beamgate_rate = new std::vector<double>;
-	std::vector<double> *t_int_charge = new std::vector<double>;
-	std::vector<double> *t_buffer_size = new std::vector<double>;
-	std::vector<int> *t_board_idx = new std::vector<int>;
-	std::vector<int> *t_chkey = new std::vector<int>;
-	std::vector<double> *t_rate = new std::vector<double>;
-	std::vector<double> *t_ped = new std::vector<double>;
-	std::vector<double> *t_sigma = new std::vector<double>;
-	std::vector<uint64_t> *t_raw_lappd_data_pps_counts = new std::vector<uint64_t>;
-	std::vector<uint64_t> *t_raw_lappd_data_pps_timestamps = new std::vector<uint64_t>;
-	std::vector<long> *t_data_event_timestamps = new std::vector<long>;
+	std::vector<ULong64_t> t_time;
+	std::vector<ULong64_t> t_end;
+	std::vector<double> t_pps_rate;
+	std::vector<double> t_frame_rate;
+	std::vector<double> t_beamgate_rate;
+	std::vector<double> t_int_charge;
+	std::vector<double> t_buffer_size;
+	std::vector<int> t_board_idx;
+	std::vector<int> t_chkey;
+	std::vector<double> t_rate;
+	std::vector<double> t_ped;
+	std::vector<double> t_sigma;
+	std::vector<uint64_t> t_raw_lappd_data_pps_counts;
+	std::vector<uint64_t> t_raw_lappd_data_pps_timestamps;
+	std::vector<long> t_data_event_timestamps;
+
+	std::vector<ULong64_t>* t_time_ptr = &t_time;
+	std::vector<ULong64_t>* t_end_ptr = &t_end;
+	std::vector<double>* t_pps_rate_ptr = &t_pps_rate;
+	std::vector<double>* t_frame_rate_ptr = &t_frame_rate;
+	std::vector<double>* t_beamgate_rate_ptr = &t_beamgate_rate;
+	std::vector<double>* t_int_charge_ptr = &t_int_charge;
+	std::vector<double>* t_buffer_size_ptr = &t_buffer_size;
+	std::vector<int>* t_board_idx_ptr = &t_board_idx;
+	std::vector<int>* t_chkey_ptr = &t_chkey;
+	std::vector<double>* t_rate_ptr = &t_rate;
+	std::vector<double>* t_ped_ptr = &t_ped;
+	std::vector<double>* t_sigma_ptr = &t_sigma;
+	std::vector<uint64_t>* t_raw_lappd_data_pps_counts_ptr = &t_raw_lappd_data_pps_counts;
+	std::vector<uint64_t>* t_raw_lappd_data_pps_timestamps_ptr = &t_raw_lappd_data_pps_timestamps;
+	std::vector<long>* t_data_event_timestamps_ptr = &t_data_event_timestamps;
 	
 	int t_run, t_subrun, t_partrun;
 	int t_pps_count, t_frame_count;
@@ -1106,57 +1120,57 @@ void MonitorLAPPDData::WriteToFile()
 	{
 		Log("MonitorLAPPDData: WriteToFile: Tree already exists", v_message, verbosity);
 		t = (TTree *)f->Get("lappddatamonitor_tree");
-		t->SetBranchAddress("t_start", &t_time);
-		t->SetBranchAddress("t_end", &t_end);
-		t->SetBranchAddress("pps_rate", &t_pps_rate);
-		t->SetBranchAddress("frame_rate", &t_frame_rate);
-		t->SetBranchAddress("beamgate_rate", &t_beamgate_rate);
-		t->SetBranchAddress("int_charge", &t_int_charge);
-		t->SetBranchAddress("buffer_size", &t_buffer_size);
-		t->SetBranchAddress("board_idx", &t_board_idx);
-		t->SetBranchAddress("chkey", &t_chkey);
-		t->SetBranchAddress("rate", &t_rate);
-		t->SetBranchAddress("ped", &t_ped);
-		t->SetBranchAddress("sigma", &t_sigma);
+		t->SetBranchAddress("t_start", &t_time_ptr);
+		t->SetBranchAddress("t_end", &t_end_ptr);
+		t->SetBranchAddress("pps_rate", &t_pps_rate_ptr);
+		t->SetBranchAddress("frame_rate", &t_frame_rate_ptr);
+		t->SetBranchAddress("beamgate_rate", &t_beamgate_rate_ptr);
+		t->SetBranchAddress("int_charge", &t_int_charge_ptr);
+		t->SetBranchAddress("buffer_size", &t_buffer_size_ptr);
+		t->SetBranchAddress("board_idx", &t_board_idx_ptr);
+		t->SetBranchAddress("chkey", &t_chkey_ptr);
+		t->SetBranchAddress("rate", &t_rate_ptr);
+		t->SetBranchAddress("ped", &t_ped_ptr);
+		t->SetBranchAddress("sigma", &t_sigma_ptr);
 		t->SetBranchAddress("run", &t_run);
 		t->SetBranchAddress("subrun", &t_subrun);
 		t->SetBranchAddress("partrun", &t_partrun);
 		t->SetBranchAddress("pps_count", &t_pps_count);
 		t->SetBranchAddress("frame_count", &t_frame_count);
 		t->SetBranchAddress("lappd_offset", &t_lappd_offset);
-		t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
-		t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
+		t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts_ptr);
+		t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps_ptr);
 		t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
 		t->SetBranchAddress("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
-		t->SetBranchAddress("data_event_timestamps", &t_data_event_timestamps);
+		t->SetBranchAddress("data_event_timestamps", &t_data_event_timestamps_ptr);
 	}
 	else
 	{
 		t = new TTree("lappddatamonitor_tree", "LAPPD Data Monitoring tree");
 		Log("MonitorLAPPDData: WriteToFile: Tree is created from scratch", v_message, verbosity);
-		t->Branch("t_start", &t_time);
-		t->Branch("t_end", &t_end);
-		t->Branch("pps_rate", &t_pps_rate);
-		t->Branch("frame_rate", &t_frame_rate);
-		t->Branch("beamgate_rate", &t_beamgate_rate);
-		t->Branch("int_charge", &t_int_charge);
-		t->Branch("buffer_size", &t_buffer_size);
-		t->Branch("board_idx", &t_board_idx);
-		t->Branch("chkey", &t_chkey);
-		t->Branch("rate", &t_rate);
-		t->Branch("ped", &t_ped);
-		t->Branch("sigma", &t_sigma);
-		t->Branch("run", &t_run);
-		t->Branch("subrun", &t_subrun);
-		t->Branch("partrun", &t_partrun);
-		t->Branch("pps_count", &t_pps_count);
-		t->Branch("frame_count", &t_frame_count);
-		t->Branch("lappd_offset", &t_lappd_offset);
-		t->Branch("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
-		t->Branch("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
-		t->Branch("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
-		t->Branch("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
-		t->Branch("data_event_timestamps", &t_data_event_timestamps);
+		t->Branch("t_start", t_time_ptr);
+		t->Branch("t_end", t_end_ptr);
+		t->Branch("pps_rate", t_pps_rate_ptr);
+		t->Branch("frame_rate", t_frame_rate_ptr);
+		t->Branch("beamgate_rate", t_beamgate_rate_ptr);
+		t->Branch("int_charge", t_int_charge_ptr);
+		t->Branch("buffer_size", t_buffer_size_ptr);
+		t->Branch("board_idx", t_board_idx_ptr);
+		t->Branch("chkey", t_chkey_ptr);
+		t->Branch("rate", t_rate_ptr);
+		t->Branch("ped", t_ped_ptr);
+		t->Branch("sigma", t_sigma_ptr);
+		t->Branch("run", t_run);
+		t->Branch("subrun", t_subrun);
+		t->Branch("partrun", t_partrun);
+		t->Branch("pps_count", t_pps_count);
+		t->Branch("frame_count", t_frame_count);
+		t->Branch("lappd_offset", t_lappd_offset);
+		t->Branch("raw_lappd_data_pps_counts", t_raw_lappd_data_pps_counts_ptr);
+		t->Branch("raw_lappd_data_pps_timestamps", t_raw_lappd_data_pps_timestamps_ptr);
+		t->Branch("pps_accumulated_psec_timestamp", t_pps_accumulated_psec_timestamp);
+		t->Branch("raw_lappd_pps_timestamp", t_raw_lappd_pps_timestamp);
+		t->Branch("data_event_timestamps", t_data_event_timestamps_ptr);
 	}
 
 	int n_entries = t->GetEntries();
@@ -1164,9 +1178,9 @@ void MonitorLAPPDData::WriteToFile()
 	for (int i_entry = 0; i_entry < n_entries; i_entry++)
 	{
 		t->GetEntry(i_entry);
-		if (t_board_idx->at(0) == -1)
+		if (t_board_idx.at(0) == -1)
 			continue;
-		if (t_end->at(0) == t_file_end.at(0))
+		if (t_end.at(0) == t_file_end.at(0))
 		{
 			Log("WARNING (MonitorLAPPDData): WriteToFile: Wanted to write data from file that is already written to DB. Omit entries", v_warning, verbosity);
 			omit_entries = true;
@@ -1178,21 +1192,6 @@ void MonitorLAPPDData::WriteToFile()
 	{
 		// don't write file again, but still delete TFile and TTree object!!!
 		f->Close();
-		delete t_time;
-		delete t_end;
-		delete t_pps_rate;
-		delete t_frame_rate;
-		delete t_beamgate_rate;
-		delete t_int_charge;
-		delete t_buffer_size;
-		delete t_board_idx;
-		delete t_chkey;
-		delete t_rate;
-		delete t_ped;
-		delete t_sigma;
-		delete t_raw_lappd_data_pps_counts;
-		delete t_raw_lappd_data_pps_timestamps;
-		delete t_data_event_timestamps;
 		delete f;
 
 		gROOT->cd();
@@ -1201,33 +1200,33 @@ void MonitorLAPPDData::WriteToFile()
 	}
 
 	// If we have vectors, they need to be cleared
-	t_time->clear();
-	t_end->clear();
-	t_pps_rate->clear();
-	t_frame_rate->clear();
-	t_beamgate_rate->clear();
-	t_int_charge->clear();
-	t_buffer_size->clear();
-	t_board_idx->clear();
-	t_chkey->clear();
-	t_rate->clear();
-	t_ped->clear();
-	t_sigma->clear();
-	t_raw_lappd_data_pps_counts->clear();
-	t_raw_lappd_data_pps_timestamps->clear();
-	t_data_event_timestamps->clear();
+	t_time.clear();
+	t_end.clear();
+	t_pps_rate.clear();
+	t_frame_rate.clear();
+	t_beamgate_rate.clear();
+	t_int_charge.clear();
+	t_buffer_size.clear();
+	t_board_idx.clear();
+	t_chkey.clear();
+	t_rate.clear();
+	t_ped.clear();
+	t_sigma.clear();
+	t_raw_lappd_data_pps_counts.clear();
+	t_raw_lappd_data_pps_timestamps.clear();
+	t_data_event_timestamps.clear();
 
 	// Get data that was processed
 	for (int i_current = 0; i_current < (int)current_pps_rate.size(); i_current++)
 	{
-		t_time->push_back(first_timestamp.at(i_current));
-		t_end->push_back(last_timestamp.at(i_current));
-		t_pps_rate->push_back(current_pps_rate.at(i_current));
-		t_frame_rate->push_back(current_frame_rate.at(i_current));
-		t_beamgate_rate->push_back(current_beamgate_rate.at(i_current));
-		t_int_charge->push_back(current_int_charge.at(i_current));
-		t_buffer_size->push_back(current_buffer_size.at(i_current));
-		t_board_idx->push_back(current_board_index.at(i_current));
+		t_time.push_back(first_timestamp.at(i_current));
+		t_end.push_back(last_timestamp.at(i_current));
+		t_pps_rate.push_back(current_pps_rate.at(i_current));
+		t_frame_rate.push_back(current_frame_rate.at(i_current));
+		t_beamgate_rate.push_back(current_beamgate_rate.at(i_current));
+		t_int_charge.push_back(current_int_charge.at(i_current));
+		t_buffer_size.push_back(current_buffer_size.at(i_current));
+		t_board_idx.push_back(current_board_index.at(i_current));
 
 		ULong64_t time = first_timestamp.at(i_current);
 		boost::posix_time::ptime starttime = *Epoch + boost::posix_time::time_duration(int(time / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(time / MSEC_to_SEC / SEC_to_MIN) % 60, int(time / MSEC_to_SEC / 1000.) % 60, time % 1000);
@@ -1245,11 +1244,11 @@ void MonitorLAPPDData::WriteToFile()
 		// Because ROOT doesn't support serializing std::map, we need to pack it ourselves
 		// to a vector
 		for (int i_current = 0; i_current < current_pps_timestamps.size(); i_current++) {
-			t_raw_lappd_data_pps_timestamps->push_back(lappd_id);
-			t_raw_lappd_data_pps_counts->push_back(lappd_id);
+			t_raw_lappd_data_pps_timestamps.push_back(lappd_id);
+			t_raw_lappd_data_pps_counts.push_back(lappd_id);
 
-			t_raw_lappd_data_pps_timestamps->push_back(current_pps_timestamps.at(i_current));
-			t_raw_lappd_data_pps_counts->push_back(current_pps_counts.at(i_current));
+			t_raw_lappd_data_pps_timestamps.push_back(current_pps_timestamps.at(i_current));
+			t_raw_lappd_data_pps_counts.push_back(current_pps_counts.at(i_current));
 		}
 	}
 	
@@ -1268,15 +1267,15 @@ void MonitorLAPPDData::WriteToFile()
 
 	// Push data event timestamps
 	for (int i_current = 0; i_current < (int)data_event_timestamps.size(); i_current++) {
-		t_data_event_timestamps->push_back(data_event_timestamps.at(i_current));
+		t_data_event_timestamps.push_back(data_event_timestamps.at(i_current));
 	}
 
 	for (int i_current = 0; i_current < (int)current_ped.size(); i_current++)
 	{
-		t_chkey->push_back(current_chkey.at(i_current));
-		t_rate->push_back(current_rate.at(i_current));
-		t_ped->push_back(current_ped.at(i_current));
-		t_sigma->push_back(current_sigma.at(i_current));
+		t_chkey.push_back(current_chkey.at(i_current));
+		t_rate.push_back(current_rate.at(i_current));
+		t_ped.push_back(current_ped.at(i_current));
+		t_sigma.push_back(current_sigma.at(i_current));
 	}
 
 	t_run = current_run;
@@ -1301,25 +1300,10 @@ void MonitorLAPPDData::WriteToFile()
 	if (verbosity > 3)
 		std::cout << "t_time" << std::endl;
 	if (verbosity > 3)
-		std::cout << "t_time: " << t_time << std::endl;
+		std::cout << "t_time: " << t_time_ptr << std::endl;
 	if (verbosity > 3)
-		std::cout << "t_time->size(): " << t_time->size() << std::endl;
+		std::cout << "t_time->size(): " << t_time.size() << std::endl;
 
-	// Delete potential vectors
-	delete t_time;
-	delete t_end;
-	delete t_pps_rate;
-	delete t_frame_rate;
-	delete t_beamgate_rate;
-	delete t_int_charge;
-	delete t_buffer_size;
-	delete t_board_idx;
-	delete t_chkey;
-	delete t_rate;
-	delete t_ped;
-	delete t_sigma;
-	delete t_raw_lappd_data_pps_counts;
-	delete t_raw_lappd_data_pps_timestamps;
 	delete f;
 
 	gROOT->cd();
