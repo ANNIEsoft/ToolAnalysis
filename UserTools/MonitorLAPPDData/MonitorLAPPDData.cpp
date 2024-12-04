@@ -2626,12 +2626,14 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				ss_frac1 << std::setprecision(2) << frac1 * 100.0;
 				ss_frac2 << std::setprecision(2) << frac2 * 100.0;
 
-				std::cout << "*************" << std::endl;
-				std::cout << "LAPPD ID: " << lappd_id << std::endl;
-				std::cout << "Total number of distributions: " << total_num_dist << std::endl;
-				std::cout << "Fraction of distributions with t = 0: " << frac0 << std::endl;
-				std::cout << "Fraction of distributions with t = 3.2e9 +- 1: " << frac1 << std::endl;
-				std::cout << "Fraction of distributions with t = other: " << frac2 << std::endl;
+				if (verbosity > 2) { 
+					std::cout << "*************" << std::endl;
+					std::cout << "LAPPD ID: " << lappd_id << std::endl;
+					std::cout << "Total number of distributions: " << total_num_dist << std::endl;
+					std::cout << "Fraction of distributions with t = 0: " << frac0 << std::endl;
+					std::cout << "Fraction of distributions with t = 3.2e9 +- 1: " << frac1 << std::endl;
+					std::cout << "Fraction of distributions with t = other: " << frac2 << std::endl;
+				}
 
 				TLatex latex_frac0(0.15, 0.75, ("(#Delta t = 0): " + ss_frac0.str() + "%").c_str());
 				latex_frac0.SetNDC();
