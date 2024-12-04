@@ -1401,21 +1401,37 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 
 				Log("MonitorLAPPDData: Tree exists, start reading in data", v_message, verbosity);
 
-				std::vector<ULong64_t> *t_time = new std::vector<ULong64_t>;
-				std::vector<ULong64_t> *t_end = new std::vector<ULong64_t>;
-				std::vector<double> *t_pps_rate = new std::vector<double>;
-				std::vector<double> *t_frame_rate = new std::vector<double>;
-				std::vector<double> *t_beamgate_rate = new std::vector<double>;
-				std::vector<double> *t_int_charge = new std::vector<double>;
-				std::vector<double> *t_buffer_size = new std::vector<double>;
-				std::vector<int> *t_board_idx = new std::vector<int>;
-				std::vector<int> *t_chkey = new std::vector<int>;
-				std::vector<double> *t_rate = new std::vector<double>;
-				std::vector<double> *t_ped = new std::vector<double>;
-				std::vector<double> *t_sigma = new std::vector<double>;
-				std::vector<uint64_t> *t_raw_lappd_data_pps_counts = new std::vector<uint64_t>;
-				std::vector<uint64_t> *t_raw_lappd_data_pps_timestamps = new std::vector<uint64_t>;
-				std::vector<long> *t_data_event_timestamps = new std::vector<long>;
+				std::vector<ULong64_t> t_time;
+				std::vector<ULong64_t> t_end;
+				std::vector<double> t_pps_rate;
+				std::vector<double> t_frame_rate;
+				std::vector<double> t_beamgate_rate;
+				std::vector<double> t_int_charge;
+				std::vector<double> t_buffer_size;
+				std::vector<int> t_board_idx;
+				std::vector<int> t_chkey;
+				std::vector<double> t_rate;
+				std::vector<double> t_ped;
+				std::vector<double> t_sigma;
+				std::vector<uint64_t> t_raw_lappd_data_pps_counts;
+				std::vector<uint64_t> t_raw_lappd_data_pps_timestamps;
+				std::vector<long> t_data_event_timestamps;
+
+				std::vector<ULong64_t>* t_time_ptr = &t_time;
+				std::vector<ULong64_t>* t_end_ptr = &t_end;
+				std::vector<double>* t_pps_rate_ptr = &t_pps_rate;
+				std::vector<double>* t_frame_rate_ptr = &t_frame_rate;
+				std::vector<double>* t_beamgate_rate_ptr = &t_beamgate_rate;
+				std::vector<double>* t_int_charge_ptr = &t_int_charge;
+				std::vector<double>* t_buffer_size_ptr = &t_buffer_size;
+				std::vector<int>* t_board_idx_ptr = &t_board_idx;
+				std::vector<int>* t_chkey_ptr = &t_chkey;
+				std::vector<double>* t_rate_ptr = &t_rate;
+				std::vector<double>* t_ped_ptr = &t_ped;
+				std::vector<double>* t_sigma_ptr = &t_sigma;
+				std::vector<uint64_t>* t_raw_lappd_data_pps_counts_ptr = &t_raw_lappd_data_pps_counts;
+				std::vector<uint64_t>* t_raw_lappd_data_pps_timestamps_ptr = &t_raw_lappd_data_pps_timestamps;
+				std::vector<long>* t_data_event_timestamps_ptr = &t_data_event_timestamps;
 				
 				int t_run, t_subrun, t_partrun;
 				int t_pps_count, t_frame_count;
@@ -1424,29 +1440,29 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 
 				int nentries_tree;
 
-				t->SetBranchAddress("t_start", &t_time);
-				t->SetBranchAddress("t_end", &t_end);
-				t->SetBranchAddress("pps_rate", &t_pps_rate);
-				t->SetBranchAddress("frame_rate", &t_frame_rate);
-				t->SetBranchAddress("beamgate_rate", &t_beamgate_rate);
-				t->SetBranchAddress("int_charge", &t_int_charge);
-				t->SetBranchAddress("buffer_size", &t_buffer_size);
-				t->SetBranchAddress("board_idx", &t_board_idx);
-				t->SetBranchAddress("chkey", &t_chkey);
-				t->SetBranchAddress("rate", &t_rate);
-				t->SetBranchAddress("ped", &t_ped);
-				t->SetBranchAddress("sigma", &t_sigma);
+				t->SetBranchAddress("t_start", &t_time_ptr);
+				t->SetBranchAddress("t_end", &t_end_ptr);
+				t->SetBranchAddress("pps_rate", &t_pps_rate_ptr);
+				t->SetBranchAddress("frame_rate", &t_frame_rate_ptr);
+				t->SetBranchAddress("beamgate_rate", &t_beamgate_rate_ptr);
+				t->SetBranchAddress("int_charge", &t_int_charge_ptr);
+				t->SetBranchAddress("buffer_size", &t_buffer_size_ptr);
+				t->SetBranchAddress("board_idx", &t_board_idx_ptr);
+				t->SetBranchAddress("chkey", &t_chkey_ptr);
+				t->SetBranchAddress("rate", &t_rate_ptr);
+				t->SetBranchAddress("ped", &t_ped_ptr);
+				t->SetBranchAddress("sigma", &t_sigma_ptr);
 				t->SetBranchAddress("run", &t_run);
 				t->SetBranchAddress("subrun", &t_subrun);
 				t->SetBranchAddress("partrun", &t_partrun);
 				t->SetBranchAddress("pps_count", &t_pps_count);
 				t->SetBranchAddress("frame_count", &t_frame_count);
 				t->SetBranchAddress("lappd_offset", &t_lappd_offset);
-				t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts);
-				t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps);
+				t->SetBranchAddress("raw_lappd_data_pps_counts", &t_raw_lappd_data_pps_counts_ptr);
+				t->SetBranchAddress("raw_lappd_data_pps_timestamps", &t_raw_lappd_data_pps_timestamps_ptr);
 				t->SetBranchAddress("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
 				t->SetBranchAddress("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
-				t->SetBranchAddress("data_event_timestamps", &t_data_event_timestamps);
+				t->SetBranchAddress("data_event_timestamps", &t_data_event_timestamps_ptr);
 
 				nentries_tree = t->GetEntries();
 
@@ -1461,10 +1477,10 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 					for (int i_entry = 0; i_entry < nentries_tree; i_entry++)
 					{
 						t->GetEntry(i_entry);
-						if (t_time->at(i_board) >= timestamp_start && t_end->at(i_board) <= timestamp)
+						if (t_time.at(i_board) >= timestamp_start && t_end.at(i_board) <= timestamp)
 						{
-							vector_timestamps.push_back(t_time->at(i_board));
-							map_timestamp_entry.emplace(t_time->at(i_board), i_entry);
+							vector_timestamps.push_back(t_time.at(i_board));
+							map_timestamp_entry.emplace(t_time.at(i_board), i_entry);
 						}
 					}
 
@@ -1485,17 +1501,17 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 
 						// std::cout <<"i_board: "<<i_board<<", t_time->at(i_board): "<<t_time->at(i_board)<<std::endl;
 						// std::cout <<"timestamp_start: "<<timestamp_start<<", timestamp: "<<timestamp<<std::endl;
-						if (t_time->at(i_board) >= timestamp_start && t_end->at(i_board) <= timestamp && t_end->at(i_board) != 0)
+						if (t_time.at(i_board) >= timestamp_start && t_end.at(i_board) <= timestamp && t_end.at(i_board) != 0)
 						{
-							data_times_plot.at(board_nr).push_back(t_time->at(i_board));
-							data_times_end_plot.at(board_nr).push_back(t_end->at(i_board));
-							pps_rate_plot.at(board_nr).push_back(t_pps_rate->at(i_board));
-							frame_rate_plot.at(board_nr).push_back(t_frame_rate->at(i_board));
-							beamgate_rate_plot.at(board_nr).push_back(t_beamgate_rate->at(i_board));
-							int_charge_plot.at(board_nr).push_back(t_int_charge->at(i_board));
-							buffer_size_plot.at(board_nr).push_back(t_buffer_size->at(i_board));
+							data_times_plot.at(board_nr).push_back(t_time.at(i_board));
+							data_times_end_plot.at(board_nr).push_back(t_end.at(i_board));
+							pps_rate_plot.at(board_nr).push_back(t_pps_rate.at(i_board));
+							frame_rate_plot.at(board_nr).push_back(t_frame_rate.at(i_board));
+							beamgate_rate_plot.at(board_nr).push_back(t_beamgate_rate.at(i_board));
+							int_charge_plot.at(board_nr).push_back(t_int_charge.at(i_board));
+							buffer_size_plot.at(board_nr).push_back(t_buffer_size.at(i_board));
 
-							boost::posix_time::ptime boost_tend = *Epoch + boost::posix_time::time_duration(int(t_end->at(i_board) / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_end->at(i_board) / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_end->at(i_board) / MSEC_to_SEC / 1000.) % 60, t_end->at(i_board) % 1000);
+							boost::posix_time::ptime boost_tend = *Epoch + boost::posix_time::time_duration(int(t_end.at(i_board) / MSEC_to_SEC / SEC_to_MIN / MIN_to_HOUR), int(t_end.at(i_board) / MSEC_to_SEC / SEC_to_MIN) % 60, int(t_end.at(i_board) / MSEC_to_SEC / 1000.) % 60, t_end.at(i_board) % 1000);
 							struct tm label_timestamp = boost::posix_time::to_tm(boost_tend);
 							//
 							TDatime datime_timestamp(1900 + label_timestamp.tm_year, label_timestamp.tm_mon + 1, label_timestamp.tm_mday, label_timestamp.tm_hour, label_timestamp.tm_min, label_timestamp.tm_sec);
@@ -1507,10 +1523,10 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 							for (int i = 0; i < 30; i++)
 							{
 								int chankey = min_board + i;
-								ped_plot.at(chankey).push_back(t_ped->at(chankey));
-								sigma_plot.at(chankey).push_back(t_sigma->at(chankey));
+								ped_plot.at(chankey).push_back(t_ped.at(chankey));
+								sigma_plot.at(chankey).push_back(t_sigma.at(chankey));
 								// std::cout <<"chankey "<<chankey<<", sigma: "<<t_sigma->at(chankey)<<std::endl;
-								rate_plot.at(chankey).push_back(t_rate->at(chankey));
+								rate_plot.at(chankey).push_back(t_rate.at(chankey));
 							}
 							if (i_board == 0)
 							{ // No need to have separate run information for different boards
@@ -1529,12 +1545,12 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 					t->GetEntry(i_entry);
 					
 					// Unpack vector to map
-					for (int i = 0; i < t_raw_lappd_data_pps_timestamps->size(); i += 2) {
+					for (int i = 0; i < t_raw_lappd_data_pps_timestamps.size(); i += 2) {
 						// This could further be broken down to use a singular vector
 						// but I'd say the current solution is already hacky enough
-						int lappd_id = t_raw_lappd_data_pps_timestamps->at(i);
-						uint64_t pps_timestamp = t_raw_lappd_data_pps_timestamps->at(i + 1);
-						uint64_t pps_count = t_raw_lappd_data_pps_counts->at(i + 1);
+						int lappd_id = t_raw_lappd_data_pps_timestamps.at(i);
+						uint64_t pps_timestamp = t_raw_lappd_data_pps_timestamps.at(i + 1);
+						uint64_t pps_count = t_raw_lappd_data_pps_counts.at(i + 1);
 
 						raw_lappd_data_pps_timestamps[lappd_id].push_back(pps_timestamp);
 						raw_lappd_data_pps_counts[lappd_id].push_back(pps_count);
@@ -1542,8 +1558,8 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 
 					// Initialise vector of timestamps per partrun
 					data_event_timestamps_per_partrun.emplace(t_partrun, std::vector<uint64_t>());
-					for (int i = 0; i < t_data_event_timestamps->size(); i++) {
-						data_event_timestamps_per_partrun.at(t_partrun).push_back(t_data_event_timestamps->at(i));
+					for (int i = 0; i < t_data_event_timestamps.size(); i++) {
+						data_event_timestamps_per_partrun.at(t_partrun).push_back(t_data_event_timestamps.at(i));
 					}
 
 					accumulated_pps_count += t_pps_count;
@@ -1551,21 +1567,6 @@ void MonitorLAPPDData::ReadFromFile(ULong64_t timestamp, double time_frame)
 					pps_accumulated_number.push_back(accumulated_pps_count);
 					raw_lappd_data_pps_timestamp_per_accumulated_number.push_back(t_raw_lappd_pps_timestamp);
 				}
-				// Delete vectors, if we have any
-				delete t_time;
-				delete t_end;
-				delete t_pps_rate;
-				delete t_frame_rate;
-				delete t_beamgate_rate;
-				delete t_int_charge;
-				delete t_buffer_size;
-				delete t_board_idx;
-				delete t_chkey;
-				delete t_rate;
-				delete t_ped;
-				delete t_sigma;
-				delete t_raw_lappd_data_pps_counts;
-				delete t_raw_lappd_data_pps_timestamps;
 			}
 
 			f->Close();
