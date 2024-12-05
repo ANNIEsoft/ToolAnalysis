@@ -15,6 +15,10 @@ SimpleReco_fill 1
 RingCounting_fill 1
 Reweight_fill 1
 MuonFitter_fill 1
+HasBNBtimingMC 1
+TankClusterProcessing 1
+MRDClusterProcessing 1
+TriggerProcessing 1
 
 OutputFile PhaseIITree_0.0.0.root
 #NumEventsWritten 2000
