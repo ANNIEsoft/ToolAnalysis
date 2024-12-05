@@ -175,9 +175,9 @@ bool AssignBunchTimingMC::LoadStores()
 
 void AssignBunchTimingMC::BNBtiming()
 {
-    // Determined from GENIE samples (as of Oct 2024)
-    const double tank_time = 67.0;    // Tank neutrino arrival time: 67ns
-    const double world_time = 33.0;   // WORLD neutrino arrival time: 33ns
+    // Determined from GENIE samples (as of Dec 2024)
+    const double tank_time = 33.0;    // Tank neutrino arrival time: 33ns
+    const double world_time = 33.0;   // WORLD neutrino arrival time: 33ns  (As of Dec 2024, World samples have not yet been re-produced fully)
     
     if (ftriggertime == 0) {
         new_nu_time = (fsample == 0) ? (TrueNuIntxVtx_T - tank_time) : (TrueNuIntxVtx_T - world_time);
