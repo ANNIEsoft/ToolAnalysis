@@ -21,11 +21,11 @@ bunchinterval 18.936   # BNB bunch spacings [ns]
 bunchcount 81          # number of BNB bunches per spill
 
 sampletype 0           # Tank (0) or World (1) genie samples you are running over
-prompttriggertime 0    # WCSim prompt trigger settings: (0 = default, t0 = 0 when a particle enters the volume)
+prompttriggertime 1    # WCSim prompt trigger settings: (0 = default, t0 = 0 when a particle enters the volume)
                        #                                (1 = modified, t0 = 0 when the neutrino beam dump begins)
 ```
 
 
 ## Additional information
 
-The "bunchTimes" have a spill structure that starts at ~0 ns and extends to M ns (depending on the bunch spacing and number of bunches). The tool is currently configured to the most recent Genie sample production (tank: 2023, world: early 2024) for both the WCSim tank and world events (both of which have different "beam dump" starting times and prompt trigger times).
+The "bunchTimes" have a spill structure that starts at ~0 ns and extends to M ns (depending on the bunch spacing and number of bunches). The tool is currently configured to the most recent Genie sample production (tank: Dec 2024, world: early 2024) for both the WCSim tank and world events (both of which have different "beam dump" starting times and prompt trigger times).
