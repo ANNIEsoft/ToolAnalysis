@@ -1,7 +1,7 @@
 verbosityEBSaver 1
 
 savePMT 1
-saveMRD 1
+saveMRD 0
 saveCTC 1
 saveLAPPD 1
 saveRunInfo 1
