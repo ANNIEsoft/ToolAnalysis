@@ -173,5 +173,6 @@ if (tool=="BeamQuality") ret=new BeamQuality;
 if (tool=="BackTracker") ret=new BackTracker;
 if (tool=="PrintDQ") ret=new PrintDQ;
 if (tool=="AssignBunchTimingMC") ret=new AssignBunchTimingMC;
+if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
 return ret;
 }
