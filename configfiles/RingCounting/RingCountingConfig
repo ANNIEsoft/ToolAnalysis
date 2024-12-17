@@ -20,7 +20,3 @@ model_path /exp/annie/app/users/dschmid/RingCountingStore/models/
 pmt_mask november_22
 # Output file
 save_to RC_output.csv
-
-model_is_ensemble 1                                                 # If set to 1, treat as ensemble
-ensemble_model_count 13                                             # Number of models in ensemble
-ensemble_prediction_combination_mode average                        # average/voting

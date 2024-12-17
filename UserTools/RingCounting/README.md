@@ -31,12 +31,6 @@ reco_event_bs.Set("RingCountingSRPrediction", predicted_sr)
 reco_event_bs.Set("RingCountingMRPrediction", predicted_mr)
 ```
 
-and in case of using an ensemble with majority-voting the following variables are also set:
-```
-reco_event_bs.Set("RingCountingVotingSRPrediction", predicted_sr)
-reco_event_bs.Set("RingCountingVotingMRPrediction", predicted_mr)
-```
-
 ---
 ## Configuration
 
@@ -61,9 +55,4 @@ files_to_load configfiles/RingCounting/files_to_load.txt            # txt file c
 version 1_0_0                                                       # Model version
 model_path /exp/annie/app/users/dschmid/RingCountingStore/models/   # Model path
 pmt_mask november_22                                                # Masked PMTs (name of hard-coded set of PMTs to ignore)
-
-model_is_ensemble 1                                                 # If set to 1, treat as ensemble
-ensemble_model_count 13                                             # Number of models in ensemble
-ensemble_prediction_combination_mode average                        # average/voting
-
 ```

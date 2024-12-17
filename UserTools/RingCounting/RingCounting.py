@@ -35,19 +35,9 @@
 #     6. Which PMT mask to use (some PMTs have been turned off in the training); check documentation for which model
 #        requires what mask.
 #       -> defined by setting [[pmt_mask]]
-#     7. Where to save the predictions, when save_to_csv == 1
+#     7. Where to save the predictions, when save_to_csv == true
 #       -> defined by setting [[save_to]]
-#     8. Whether a single model or ensemble should be used
-#       -> defined by setting [[model_is_ensemble]]
-#     9. How many models make up the ensemble. If model count is N, "sub"-models are labeled 0, 1, ..., N-1.
-#       -> defined by setting [[ensemble_model_count]]
-#     10. How the model predictions should be combined when using an ensemble. Supported:
-#         - "None" (the type), only the first model's predictions are used. (blank line in config file)
-#         - "average", average predictions of all models
-#         - "voting", average predictions and in addition a majority-voting prediction is also produced.
-#       -> defined by setting [[ensemble_prediction_combination_mode]]
-#
-#   An example config file can be found in the configfiles/RingCounting/ ToolChain.
+#   An example config file can also be found in in the RingCountingStore/documentation/ folders mentioned below.
 #
 #
 #  When using on the grid, make sure to only use onsite computing resources. TensorFlow is not supported at all offsite
@@ -95,22 +85,16 @@ class RingCounting(Tool, RingCountingGlobals):
     load_from_csv = std.string()  # if 1, load 1 or more CNNImage formatted csv file instead of using toolchain
     save_to_csv = std.string()  # if 1, save as a csv file in format MR prediction, SR prediction
     files_to_load = std.string()  # List of files to be loaded (must be in CNNImage format,
-    #   load_from_csv has to be true)
+    #   load_from_file has to be true)
     version = std.string()  # Model version
     model_path = std.string()  # Path to model directory
     pmt_mask = std.string()  # See RingCountingGlobals
     save_to = std.string()  # Where to save the predictions to
-    model_is_ensemble = std.string()  # Whether the model consists of multiple models acting as a mixture of experts
-    #   (MOE)/ensemble
-    ensemble_model_count = std.string()  # Count of models used in the ensemble
-    ensemble_prediction_combination_mode = std.string()  # How predictions of models are combined: average, voting, ..
 
     # ----------------------------------------------------------------------------------------------------
     # Model variables
-    model = None  # Union[TF.model/Keras.model, None]
-    ensemble_models = None  # Union[List[TF.model/Keras.model], None]
-    predicted = None  # np.array()
-    predicted_ensemble = None  # List[np.array()]
+    model = None
+    predicted = None
 
     def Initialise(self):
         """ Initialise RingCounting tool object in following these steps:
@@ -139,21 +123,6 @@ class RingCounting(Tool, RingCountingGlobals):
         self.m_variables.Get("save_to", self.save_to)
         self.save_to = str(self.save_to)  # cast to str since std.string =/= str
         self.pmt_mask = self.PMT_MASKS[self.pmt_mask]
-        self.m_variables.Get("model_is_ensemble", self.model_is_ensemble)
-        self.model_is_ensemble = "1" == self.model_is_ensemble
-        self.m_variables.Get("ensemble_model_count", self.ensemble_model_count)
-        self.ensemble_model_count = int(self.ensemble_model_count)
-        if self.ensemble_model_count % 2 == 0:
-            self.m_log.Log(__file__ + f" WARNING: Number of models in ensemble is even"
-                                      f" ({self.ensemble_model_count}). Can lead to unexpected classification when"
-                                      f" using voting to determine ensemble predictions.",
-                           self.v_warning, self.m_verbosity)
-        self.m_variables.Get("ensemble_prediction_combination_mode", self.ensemble_prediction_combination_mode)
-        if self.ensemble_prediction_combination_mode not in [None, "average", "voting"]:
-            self.m_log.Log(__file__ + f" WARNING: Unsupported prediction combination mode selected"
-                                      f" ({self.ensemble_prediction_combination_mode}). Defaulting to 'average'.",
-                           self.v_warning, self.m_verbosity)
-            self.ensemble_prediction_combination_mode = "average"
 
         # ----------------------------------------------------------------------------------------------------
         # Loading data
@@ -177,7 +146,14 @@ class RingCounting(Tool, RingCountingGlobals):
         self.mask_pmts()
         self.predict()
 
-        self.process_predictions()
+        if not self.load_from_csv:
+            predicted_sr = float(self.predicted[0][1])
+            predicted_mr = float(self.predicted[0][0])
+
+            reco_event_bs = self.m_data.Stores.at("RecoEvent")
+
+            reco_event_bs.Set("RingCountingSRPrediction", predicted_sr)
+            reco_event_bs.Set("RingCountingMRPrediction", predicted_mr)
 
         return 1
 
@@ -234,13 +210,8 @@ class RingCounting(Tool, RingCountingGlobals):
                                    self.v_debug, self.m_verbosity)
 
     def save_data(self):
-        """ Save the data to the specified [[save_to]]-file. When using an ensemble, each line contains all of the
-        individual model's predictions for that event (ordered as MR1,SR1,MR2,SR2,...).
-        """
-        if self.model_is_ensemble:
-            np.savetxt(self.save_to, np.array(self.predicted_ensemble).flatten(), delimiter=",")
-        else:
-            np.savetxt(self.save_to, self.predicted, delimiter=",")
+        """ Save the data to the specified [[save_to]]-file. """
+        np.savetxt(self.save_to, self.predicted, delimiter=",")
 
     def mask_pmts(self):
         """ Mask PMTs to 0. The PMTs to be masked is given as a list of indices, defined by setting [[pmt_mask]].
@@ -253,18 +224,8 @@ class RingCounting(Tool, RingCountingGlobals):
             np.put(self.cnn_image_pmt, self.pmt_mask, 0, mode='raise')
 
     def load_model(self):
-        """ Load the specified model [[version]]. If [[model_is_ensemble]], load all models in ensemble.
-        Models files are expected to be named as 'model_path + RC_model_v[[version]].model' for single models, and
-        'model_path + RC_model_ENS_v[[version]].i.model', where i in {0, 1, ..., [[ensemble_model_count]] - 1} for
-        ensemble models.
-        """
-        if self.model_is_ensemble:
-            self.ensemble_models = [
-                tf.keras.models.load_model(self.model_path + f"RC_model_ENS_v{self.version}.{i}.model")
-                for i in range(0, self.ensemble_model_count)
-            ]
-        else:
-            self.model = tf.keras.models.load_model(self.model_path + f"RC_model_v{self.version}.model")
+        """ Load the specified model [[version]]."""
+        self.model = tf.keras.models.load_model(self.model_path + f"RC_model_v{self.version}.model")
 
     def get_next_event(self):
         """ Get the next event from the BoostStore. """
@@ -295,59 +256,8 @@ class RingCounting(Tool, RingCountingGlobals):
         """
 
         self.m_log.Log(__file__ + " PREDICTING", self.v_message, self.m_verbosity)
-        if self.model_is_ensemble:
-            self.predicted_ensemble = [
-                m.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1))) for m in self.ensemble_models
-            ]
-        else:
-            self.predicted = self.model.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1)))
+        self.predicted = self.model.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1)))
 
-    def process_predictions(self):
-        """ Process the model predictions. If an ensemble is used, calculate final predictions based on the selected
-        ensemble mode. Finally, store predictions in the RecoEvent BoostStore.
-
-        Store the output of the averaging ensemble and single model within the RecoEvent BoostStore under
-          RingCountingSRPrediction,
-          RingCountingMRPrediction.
-        Store the voted-for class prediction of the voting ensemble within the RecoEvent BoostStore under
-          RingCountingVotingSRPrediction,
-          RingCountingVotingMRPrediction.
-        """
-        predicted_sr = -1
-        predicted_mr = -1
-        reco_event_bs = self.m_data.Stores.at("RecoEvent")
-
-        if self.model_is_ensemble:
-            if self.ensemble_prediction_combination_mode is None:
-                predicted_sr = float(self.predicted_ensemble[0][0][1])
-                predicted_mr = float(self.predicted_ensemble[0][0][0])
-
-            elif self.ensemble_prediction_combination_mode in ["average", "voting"]:
-                # Voting will also get a predicted_sr and mr calculated by averaging, since it can be useful to also
-                #  use the averaged predictions in that case. Sometimes 4 models could yield outputs of a class as
-                #  0.51, while a single model could classify the class as 0.1. The average will then be < 0.5, leading
-                #  to a different predicted class based on averaging, compared to voting.
-                predicted_sr = np.average([float(i[0][1]) for i in self.predicted_ensemble])
-                predicted_mr = np.average([float(i[0][0]) for i in self.predicted_ensemble])
-
-            if self.ensemble_prediction_combination_mode == "voting":
-                # Index will be 1 for argmax in case of SR prediction, hence the sum of the argmaxes gives votes in
-                #  favour of SR.
-                # In case of having an even number of models and an equal number of votes for both classes, the class
-                #  will be set as neither SR *nor* MR.
-
-                votes = np.argmax([float(i[0]) for i in self.predicted_ensemble])
-                pred_category_sr = 1 if np.sum(votes) > self.ensemble_model_count // 2 else 0
-                pred_category_mr = 1 if np.sum(votes) < self.ensemble_model_count // 2 else 0
-
-                reco_event_bs.Set("RingCountingVotingSRPrediction", pred_category_sr)
-                reco_event_bs.Set("RingCountingVotingMRPrediction", pred_category_mr)
-        else:
-            predicted_sr = float(self.predicted[0][1])
-            predicted_mr = float(self.predicted[0][0])
-
-        reco_event_bs.Set("RingCountingSRPrediction", predicted_sr)
-        reco_event_bs.Set("RingCountingMRPrediction", predicted_mr)
 
 ###################
 # ↓ Boilerplate ↓ #
