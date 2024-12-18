@@ -105,7 +105,7 @@ private:
 
     int savePerExe;
 
-    int TotalBuiltEventsNumber;
+    int TotalBuiltEventsNumber = 0;
     int TotalBuiltPMTNumber;
     int TotalBuiltMRDNumber;
     int TotalBuiltLAPPDNumber;
