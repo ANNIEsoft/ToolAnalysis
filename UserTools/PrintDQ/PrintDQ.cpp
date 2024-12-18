@@ -146,6 +146,36 @@ bool PrintDQ::Finalise()
     std::cout << "" << std::endl;
     std::cout << "" << std::endl;
 
+    // write metrics to .csv file
+    std::ofstream csv_file("R" + std::to_string(fRunNumber) + "_PrintDQ.csv");
+
+    if (!csv_file.is_open()) {
+        Log("PrintDQ Error: Unable to open CSV file for writing", v_error, verbosity);
+        return false;
+    }
+
+    csv_file << "Metric,Counts,Rate (%),Rate Error (+/- %)\n";
+    WritetoCSV(csv_file, "Total Events", totalevents, 0.0, 0.0);  // no corresponding rate for total events
+    WritetoCSV(csv_file, "Has LAPPD Data", totalhas_lappd, has_lappd, er_has_lappd);
+    WritetoCSV(csv_file, "Has BRF Fit", totalhas_BRF, has_BRF, er_has_BRF);
+    WritetoCSV(csv_file, "EventTimeTank = 0", totaltimezero, timezero, er_timezero);
+    WritetoCSV(csv_file, "Beam OK", totalokay_beam, okay_beam, er_okay_beam);
+    WritetoCSV(csv_file, "Total Clusters (rate given as clusters / event)", totalclusters, events_per_cluster, er_events_per_cluster);
+    WritetoCSV(csv_file, "Prompt Clusters", totalclusters_in_prompt, clusters_in_prompt, er_clusters_in_prompt);
+    WritetoCSV(csv_file, "Spill Clusters", totalclusters_in_spill, clusters_in_spill, er_clusters_in_spill);
+    WritetoCSV(csv_file, "Ext Clusters", totalclusters_in_ext, clusters_in_ext, er_clusters_in_ext);
+    WritetoCSV(csv_file, "Extended (CC)", totalext_rate_1, ext_rate_1, er_ext_rate_1);
+    WritetoCSV(csv_file, "Extended (NC)", totalext_rate_2, ext_rate_2, er_ext_rate_2);
+    WritetoCSV(csv_file, "Tank+MRD Coinc", totaltmrd_coinc, tmrd_coinc, er_tmrd_coinc);
+    WritetoCSV(csv_file, "1 MRD Track", totalhas_track, has_track, er_has_track);
+    WritetoCSV(csv_file, "Tank+Veto Coinc", totalveto_hit, veto_hit, er_veto_hit);
+    WritetoCSV(csv_file, "Tank+MRD+Veto Coinc", totalveto_tmrd_coinc, veto_tmrd_coinc, er_veto_tmrd_coinc);
+
+    csv_file.close();
+
+    std::cout << "Run metrics written to " << "R" + std::to_string(fRunNumber) + "_PrintDQ.csv" << std::endl;
+    std::cout << "" << std::endl;
+
     return true;
 }
 
@@ -438,6 +468,13 @@ bool PrintDQ::GrabVariables() {
     }
     
     return true;
+}
+
+
+//------------------------------------------------------------------------------
+
+void PrintDQ::WritetoCSV(std::ofstream& file, const std::string& metric, int count, float percentage, float error) {
+    file << metric << "," << count << "," << percentage << "," << error << "\n";
 }
 
 
