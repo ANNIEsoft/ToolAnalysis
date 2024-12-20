@@ -31,6 +31,8 @@ class PrintDQ: public Tool {
         bool GrabVariables();                                                  ///< Assign values to tricky variables (clusterTime, Grouped Triggers, MRD Tracks)
         void FindCounts();                                                     ///< Loop over extracted event information and count them up
         float CalculateStatError(float numerator, float denominator);          ///< Statistical error calculation for the rates
+        void WritetoCSV(std::ofstream& file, const std::string& metric,
+                                 int count, float percentage, float error);    ///< Write each row of metrics to a .csv file
 
     private:
 

@@ -13,7 +13,7 @@
 
 ## Data
 
-`PrintDQ` currently just prints out the run statistics and does not add anything to the Store. Here's an example of the print output from the tool:
+`PrintDQ` prints out the run statistics and does not add anything to the Store. It also populates a .csv file with the same statistics (`R<run>_PrintDQ.csv`). Here's an example of the print output from the tool:
 ```
 **************************************
 Run 4314
