@@ -77,7 +77,7 @@ class PhaseIITreeMaker: public Tool {
   void LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,std::vector<unsigned long> cluster_detkeys);
   bool LoadTankClusterClassifiers(double cluster_time);
   bool LoadBNBtimingMC(double cluster_time);
-  void LoadAllTankHits(bool IsData);
+  void LoadAllTankHits(bool IsData, bool MCWaveform);
   void LoadSiPMHits();
   
   
@@ -85,6 +85,7 @@ class PhaseIITreeMaker: public Tool {
 
   //General variables
   bool isData;
+  bool MCWaveform;
   bool hasGenie;
   bool hasBNBtimingMC;
 
