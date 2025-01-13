@@ -23,7 +23,7 @@ file.write('TankHitInfo_fill 1\n')
 file.write('\n')
 
 # if we are running the LAPPDs at this stage, it is either a laser or beam run. Only beam runs need MRD info
-if run_type == 'beam':
+if run_type == 'beam' or run_type == 'beam_39':
     file.write('MRDClusterProcessing 1\n')
     file.write('MRDHitInfo_fill 1\n')
     file.write('MRDReco_fill 1\n')
@@ -50,7 +50,7 @@ file.write('LAPPDReco_fill 1\n')
 file.write('LAPPD_PPS_fill 1\n')
 file.write('LAPPD_Waveform_fill 1\n')
 
-if run_type == 'beam':
+if run_type == 'beam' or run_type == 'beam_39':
     file.write('RWMBRF_fill 1\n')
 else:
     file.write('RWMBRF_fill 0\n')
