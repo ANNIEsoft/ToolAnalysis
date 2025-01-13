@@ -658,10 +658,13 @@ bool LoadWCSim::Execute(){
 			if(verbosity>2) cout<<"digit Q is "<<digiq<<endl;
 			// Get hit parent information
 			std::vector<int> parents = GetHitParentIds(digihit, firsttrigt);
-			//std::cout <<"digittime before adding event time: "<<digittime<<","<<EventTimeNs<<std::endl;
+			if(verbosity>2){ std::cout <<"digittime before adding event time: "<<digittime<<","<<EventTimeNs<<std::endl; }
 			
-			if (!splitSubtriggers) digittime += EventTimeNs;			
-			//std::cout <<"digittime after adding event time: "<<digittime<<std::endl;
+			// Unsmeared hit times are with respect to the MC global time --> therefore we shouldn't add the event / trigger time if using unsmeared
+			if(use_smeared_digit_time){
+				if (!splitSubtriggers) digittime += EventTimeNs;
+			}			
+			if(verbosity>2){ std::cout <<"digittime after adding event time: "<<digittime<<std::endl; }
 			
 			MCHit nexthit(key, digittime, digiq, parents);
 			if(MCHits->count(key)==0) MCHits->emplace(key, std::vector<MCHit>{nexthit});
