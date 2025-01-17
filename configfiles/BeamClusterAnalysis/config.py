@@ -43,7 +43,7 @@ file.write('TankReco_fill 0\n')
 file.write('RecoDebug_fill 0\n')
 file.write('muonTruthRecoDiff_fill 0\n')
 file.write('isData 1\n')
-file.write('HasGenie 0')
+file.write('HasGenie 0\n')
 file.write('LAPPD_MC_fill 0\n')
 file.write('\n')
 
