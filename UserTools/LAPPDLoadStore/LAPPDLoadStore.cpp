@@ -140,6 +140,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_data->Stores["ANNIEEvent"]->Set("isBLsubtracted", isBLsub);
     m_data->Stores["ANNIEEvent"]->Set("isCFD", isCFD);
 
+    LAPPDEventIndex_ID = {0, 0, 0, 0, 0}; // initialize for five LAPPDs
     if (loadOffsets)
         LoadOffsetsAndCorrections();
     if (LAPPDStoreReadInVerbosity > 11)
@@ -870,7 +871,7 @@ bool LAPPDLoadStore::LoadData()
                 }
                 ReadBoards = dat.BoardIndex;
                 Raw_buffer = dat.RawWaveform;
-                if(Raw_buffer.size() == 0 || ReadBoards.size() == 0)
+                if (Raw_buffer.size() == 0 || ReadBoards.size() == 0)
                 {
                     cout << "LAPPD Load Store, find Raw buffer size == 0 or ReadBoards size == 0" << endl;
                     return false;
@@ -1131,6 +1132,19 @@ bool LAPPDLoadStore::ParsePSECData()
             return false;
         }
     }
+
+
+    LAPPDEventIndex_ID[LAPPD_ID] += 1;
+    if (LAPPDStoreReadInVerbosity > 1)
+    {
+        cout << "Adding one new event with LAPPD_ID = " << LAPPD_ID << " to the LAPPDEventIndex_ID, now it is: " << endl;
+        for (int i = 0; i < LAPPDEventIndex_ID.size(); i++)
+        {
+            cout <<  LAPPDEventIndex_ID[i] << ", " << endl;
+        }
+        cout << endl;
+    }
+
     if (LAPPDStoreReadInVerbosity > 2)
         cout << "Parsed all boards for this event finished" << endl;
     return true;
@@ -1140,6 +1154,8 @@ bool LAPPDLoadStore::DoPedestalSubtract()
 {
     if (LAPPDStoreReadInVerbosity > 0)
         cout << "LAPPDLoadStore::DoPedestalSubtract()" << endl;
+    if (DoPedSubtract == 0)
+        return true;
     Waveform<double> tmpWave;
     vector<Waveform<double>> VecTmpWave;
     int pedval, val;
@@ -1276,6 +1292,14 @@ void LAPPDLoadStore::SaveTimeStamps()
 
 void LAPPDLoadStore::SaveOffsets()
 {
+    int LoadingOffsetID = LAPPD_ID;
+    if(LoadingOffsetID+1 > LAPPDEventIndex_ID.size())
+    {
+        LAPPDEventIndex_ID.resize(LoadingOffsetID+1);
+    }
+    int GetOffsetIndex_byID = LAPPDEventIndex_ID[LoadingOffsetID];
+    if(LAPPDStoreReadInVerbosity>0)
+        cout << "LAPPDStoreReadIn, SavingOffsets, LoadingOffset for LAPPD_ID: " << LoadingOffsetID << ", OffsetIndex of this event: " << GetOffsetIndex_byID << endl;
 
     std::string key = std::to_string(runNumber) + "_" + std::to_string(subRunNumber) + "_" + std::to_string(partFileNumber) + "_" + std::to_string(LAPPD_ID);
 
@@ -1294,9 +1318,9 @@ void LAPPDLoadStore::SaveOffsets()
     int TS_PPSMissing = 0;
 
     // Check if the key exists and the index is within range for BGCorrections
-    if (BGCorrections.find(key) != BGCorrections.end() && eventNumberInPF < BGCorrections[key].size())
+    if (BGCorrections.find(key) != BGCorrections.end() && GetOffsetIndex_byID < BGCorrections[key].size())
     {
-        LAPPDBGCorrection = BGCorrections[key][eventNumberInPF];
+        LAPPDBGCorrection = BGCorrections[key][GetOffsetIndex_byID];
     }
     else
     {
@@ -1306,14 +1330,14 @@ void LAPPDLoadStore::SaveOffsets()
         }
         else
         {
-            std::cerr << "Error: eventNumberInPF out of range for BGCorrections with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for BGCorrections with key: " << key << std::endl;
         }
     }
 
     // Repeat the checks for TSCorrections, Offsets_minus_ps, and Offsets
-    if (TSCorrections.find(key) != TSCorrections.end() && eventNumberInPF < TSCorrections[key].size())
+    if (TSCorrections.find(key) != TSCorrections.end() && GetOffsetIndex_byID < TSCorrections[key].size())
     {
-        LAPPDTSCorrection = TSCorrections[key][eventNumberInPF];
+        LAPPDTSCorrection = TSCorrections[key][GetOffsetIndex_byID];
     }
     else
     {
@@ -1323,13 +1347,13 @@ void LAPPDLoadStore::SaveOffsets()
         }
         else
         {
-            std::cerr << "Error: eventNumberInPF out of range for TSCorrections with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for TSCorrections with key: " << key << std::endl;
         }
     }
 
-    if (Offsets_minus_ps.find(key) != Offsets_minus_ps.end() && eventNumberInPF < Offsets_minus_ps[key].size())
+    if (Offsets_minus_ps.find(key) != Offsets_minus_ps.end() && GetOffsetIndex_byID < Offsets_minus_ps[key].size())
     {
-        LAPPDOffset_minus_ps = Offsets_minus_ps[key][eventNumberInPF];
+        LAPPDOffset_minus_ps = Offsets_minus_ps[key][GetOffsetIndex_byID];
     }
     else
     {
@@ -1339,13 +1363,13 @@ void LAPPDLoadStore::SaveOffsets()
         }
         else
         {
-            std::cerr << "Error: eventNumberInPF out of range for Offsets_minus_ps with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for Offsets_minus_ps with key: " << key << std::endl;
         }
     }
 
-    if (Offsets.find(key) != Offsets.end() && eventNumberInPF < Offsets[key].size())
+    if (Offsets.find(key) != Offsets.end() && GetOffsetIndex_byID < Offsets[key].size())
     {
-        LAPPDOffset = Offsets[key][eventNumberInPF];
+        LAPPDOffset = Offsets[key][GetOffsetIndex_byID];
     }
     else
     {
@@ -1355,104 +1379,104 @@ void LAPPDLoadStore::SaveOffsets()
         }
         else
         {
-            std::cerr << "Error: eventNumberInPF out of range for Offsets with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for Offsets with key: " << key << std::endl;
         }
     }
 
-    if (BG_PPSBefore_loaded.find(key) != BG_PPSBefore_loaded.end() && eventNumberInPF < BG_PPSBefore_loaded[key].size())
+    if (BG_PPSBefore_loaded.find(key) != BG_PPSBefore_loaded.end() && GetOffsetIndex_byID < BG_PPSBefore_loaded[key].size())
     {
-        BG_PPSBefore = BG_PPSBefore_loaded[key][eventNumberInPF];
+        BG_PPSBefore = BG_PPSBefore_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (BG_PPSBefore_loaded.find(key) == BG_PPSBefore_loaded.end())
             std::cerr << "Error: Key not found in BG_PPSBefore_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for BG_PPSBefore_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSBefore_loaded with key: " << key << std::endl;
     }
 
-    if (BG_PPSAfter_loaded.find(key) != BG_PPSAfter_loaded.end() && eventNumberInPF < BG_PPSAfter_loaded[key].size())
+    if (BG_PPSAfter_loaded.find(key) != BG_PPSAfter_loaded.end() && GetOffsetIndex_byID < BG_PPSAfter_loaded[key].size())
     {
-        BG_PPSAfter = BG_PPSAfter_loaded[key][eventNumberInPF];
+        BG_PPSAfter = BG_PPSAfter_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (BG_PPSAfter_loaded.find(key) == BG_PPSAfter_loaded.end())
             std::cerr << "Error: Key not found in BG_PPSAfter_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for BG_PPSAfter_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSAfter_loaded with key: " << key << std::endl;
     }
 
-    if (BG_PPSDiff_loaded.find(key) != BG_PPSDiff_loaded.end() && eventNumberInPF < BG_PPSDiff_loaded[key].size())
+    if (BG_PPSDiff_loaded.find(key) != BG_PPSDiff_loaded.end() && GetOffsetIndex_byID < BG_PPSDiff_loaded[key].size())
     {
-        BG_PPSDiff = BG_PPSDiff_loaded[key][eventNumberInPF];
+        BG_PPSDiff = BG_PPSDiff_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (BG_PPSDiff_loaded.find(key) == BG_PPSDiff_loaded.end())
             std::cerr << "Error: Key not found in BG_PPSDiff_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for BG_PPSDiff_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSDiff_loaded with key: " << key << std::endl;
     }
 
-    if (BG_PPSMissing_loaded.find(key) != BG_PPSMissing_loaded.end() && eventNumberInPF < BG_PPSMissing_loaded[key].size())
+    if (BG_PPSMissing_loaded.find(key) != BG_PPSMissing_loaded.end() && GetOffsetIndex_byID < BG_PPSMissing_loaded[key].size())
     {
-        BG_PPSMissing = BG_PPSMissing_loaded[key][eventNumberInPF];
+        BG_PPSMissing = BG_PPSMissing_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (BG_PPSMissing_loaded.find(key) == BG_PPSMissing_loaded.end())
             std::cerr << "Error: Key not found in BG_PPSMissing_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for BG_PPSMissing_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSMissing_loaded with key: " << key << std::endl;
     }
 
-    if (TS_PPSBefore_loaded.find(key) != TS_PPSBefore_loaded.end() && eventNumberInPF < TS_PPSBefore_loaded[key].size())
+    if (TS_PPSBefore_loaded.find(key) != TS_PPSBefore_loaded.end() && GetOffsetIndex_byID < TS_PPSBefore_loaded[key].size())
     {
-        TS_PPSBefore = TS_PPSBefore_loaded[key][eventNumberInPF];
+        TS_PPSBefore = TS_PPSBefore_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (TS_PPSBefore_loaded.find(key) == TS_PPSBefore_loaded.end())
             std::cerr << "Error: Key not found in TS_PPSBefore_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for TS_PPSBefore_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSBefore_loaded with key: " << key << std::endl;
     }
 
-    if (TS_PPSAfter_loaded.find(key) != TS_PPSAfter_loaded.end() && eventNumberInPF < TS_PPSAfter_loaded[key].size())
+    if (TS_PPSAfter_loaded.find(key) != TS_PPSAfter_loaded.end() && GetOffsetIndex_byID < TS_PPSAfter_loaded[key].size())
     {
-        TS_PPSAfter = TS_PPSAfter_loaded[key][eventNumberInPF];
+        TS_PPSAfter = TS_PPSAfter_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (TS_PPSAfter_loaded.find(key) == TS_PPSAfter_loaded.end())
             std::cerr << "Error: Key not found in TS_PPSAfter_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for TS_PPSAfter_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSAfter_loaded with key: " << key << std::endl;
     }
 
-    if (TS_PPSDiff_loaded.find(key) != TS_PPSDiff_loaded.end() && eventNumberInPF < TS_PPSDiff_loaded[key].size())
+    if (TS_PPSDiff_loaded.find(key) != TS_PPSDiff_loaded.end() && GetOffsetIndex_byID < TS_PPSDiff_loaded[key].size())
     {
-        TS_PPSDiff = TS_PPSDiff_loaded[key][eventNumberInPF];
+        TS_PPSDiff = TS_PPSDiff_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (TS_PPSDiff_loaded.find(key) == TS_PPSDiff_loaded.end())
             std::cerr << "Error: Key not found in TS_PPSDiff_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for TS_PPSDiff_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSDiff_loaded with key: " << key << std::endl;
     }
 
-    if (TS_PPSMissing_loaded.find(key) != TS_PPSMissing_loaded.end() && eventNumberInPF < TS_PPSMissing_loaded[key].size())
+    if (TS_PPSMissing_loaded.find(key) != TS_PPSMissing_loaded.end() && GetOffsetIndex_byID < TS_PPSMissing_loaded[key].size())
     {
-        TS_PPSMissing = TS_PPSMissing_loaded[key][eventNumberInPF];
+        TS_PPSMissing = TS_PPSMissing_loaded[key][GetOffsetIndex_byID];
     }
     else
     {
         if (TS_PPSMissing_loaded.find(key) == TS_PPSMissing_loaded.end())
             std::cerr << "Error: Key not found in TS_PPSMissing_loaded: " << key << std::endl;
         else
-            std::cerr << "Error: eventNumberInPF out of range for TS_PPSMissing_loaded with key: " << key << std::endl;
+            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSMissing_loaded with key: " << key << std::endl;
     }
 
     // start to fill data
@@ -1536,7 +1560,6 @@ void LAPPDLoadStore::LoadOffsetsAndCorrections()
     tree->SetBranchAddress("TS_driftCorrection_ns", &TS_driftCorrection_ns);
     tree->SetBranchAddress("BG_driftCorrection_ns", &BG_driftCorrection_ns);
 
-
     Long64_t nentries = tree->GetEntries();
     cout << "LAPPDStoreReadIn Loading offsets and corrections, total entries: " << nentries << endl;
     for (Long64_t i = 0; i < nentries; ++i)
@@ -1602,6 +1625,11 @@ void LAPPDLoadStore::LoadRunInfo()
     if (partFileNumber != PFNumberBeforeGet)
     {
         eventNumberInPF = 0;
+        // also set all value of LAPPDEventIndex_ID to be 0
+        for (int i = 0; i < LAPPDEventIndex_ID.size(); i++)
+        {
+            LAPPDEventIndex_ID[i] = 0;
+        }
     }
     else
     {

@@ -140,6 +140,10 @@ private:
     std::map<uint64_t, int> LAPPDBGCorrection;
     std::map<uint64_t, int> LAPPDOSInMinusPS;
     std::map<std::string, bool> DataStreams;
+    std::vector<int> LAPPDEventIndex_ID; // for each LAPPD ID, count the index of current loaded event
+    // For example, this part file may have a ID=0 event, b ID=1 event, while loading data object c and loaded 3 ID=0 and 4 ID=1, I may have 
+    // LAPPDEventIndex_ID = {3, 4}
+
     // save PPS info for the second order correction
     std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore;
     std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter;

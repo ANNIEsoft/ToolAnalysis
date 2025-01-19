@@ -124,6 +124,16 @@ bool EBPMT::Execute()
 
     Log("EBPMT: ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs] >= 5), v_debug, verbosityEBPMT);
 
+
+    // print all elements in vector<unsigned long> ChannelKey
+//    cout<<"EBPMT: ChannelKey: ";
+//    for (unsigned long ch : ChannelKey)
+//    {
+//      cout<<ch<<", ";
+//    }
+//    cout<<endl;
+
+
     if (ChannelKey.size() >= NumWavesInCompleteSet || ((ChannelKey.size() == NumWavesInCompleteSet - 1) && (AlmostCompleteWaveforms[PMTCounterTimeNs] >= 5)))
     {
       Log("EBPMT: Emplace hit map to FinishedHits, ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms.at(PMTCounterTimeNs) >= 5), v_debug, verbosityEBPMT);
