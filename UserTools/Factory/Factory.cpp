@@ -174,5 +174,6 @@ if (tool=="BackTracker") ret=new BackTracker;
 if (tool=="PrintDQ") ret=new PrintDQ;
 if (tool=="AssignBunchTimingMC") ret=new AssignBunchTimingMC;
 if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
+if (tool=="EBMRD") ret=new EBMRD;
 return ret;
 }
