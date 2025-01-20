@@ -1160,8 +1160,11 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
     int triggerTrack = track.first;
     std::vector<uint64_t> times = track.second;
     Log("EBSaver: PairedMRDTimeStamps at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    for (int i = 0; i < times.size(); i++)
-      cout << i << ": " << times[i] << ", ";
+    if (verbosityEBSaver > v_message)
+    {
+      for (int i = 0; i < times.size(); i++)
+        cout << i << ": " << times[i] << ", ";
+    }
   }
   cout << endl;
 
@@ -1171,8 +1174,11 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
     int triggerTrack = track.first;
     std::vector<uint64_t> times = track.second;
     Log("EBSaver: PairedLAPPDTimeStamps at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    for (int i = 0; i < times.size(); i++)
-      cout << i << ": " << times[i] << ", ";
+    if (verbosityEBSaver > v_message)
+    {
+      for (int i = 0; i < times.size(); i++)
+        cout << i << ": " << times[i] << ", ";
+    }
   }
   cout << endl;
 
@@ -1183,16 +1189,22 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
     int triggerTrack = track.first;
     std::vector<int> indexes = track.second;
     Log("EBSaver: PairedLAPPD_TriggerIndex at track " + std::to_string(triggerTrack) + " size " + std::to_string(indexes.size()), v_message, verbosityEBSaver);
-    for (int i = 0; i < indexes.size(); i++)
-      cout << i << ": " << indexes[i] << ", ";
+    if (verbosityEBSaver > v_message)
+    {
+      for (int i = 0; i < indexes.size(); i++)
+        cout << i << ": " << indexes[i] << ", ";
+    }
   }
   cout << endl;
 
   // print Buffer_LAPPDBeamgate_ns
   Log("EBSaver: got LAPPD pairing information buffer Buffer_LAPPDBeamgate_ns size " + std::to_string(Buffer_LAPPDBeamgate_ns.size()), v_message, verbosityEBSaver);
-  for (int i = 0; i < Buffer_LAPPDBeamgate_ns.size(); i++)
-    cout << i << ": " << Buffer_LAPPDBeamgate_ns[i] << ", ";
-  cout << endl;
+  if (verbosityEBSaver > v_message)
+  {
+    for (int i = 0; i < Buffer_LAPPDBeamgate_ns.size(); i++)
+      cout << i << ": " << Buffer_LAPPDBeamgate_ns[i] << ", ";
+    cout << endl;
+  }
 
   return true;
 }
