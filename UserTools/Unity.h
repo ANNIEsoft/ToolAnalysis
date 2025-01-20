@@ -182,3 +182,5 @@
 #include "PrintDQ.h"
 #include "AssignBunchTimingMC.h"
 #include "FitRWMWaveform.h"
+#include "EBTriggerGrouper.h"
+#include "EBTriggerGrouper.h"
