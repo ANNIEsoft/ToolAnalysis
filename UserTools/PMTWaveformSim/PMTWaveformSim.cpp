@@ -110,21 +110,18 @@ bool PMTWaveformSim::Execute()
       // skip hit times past 70 us since that's our longest readout
       if (mcHit.GetTime() < 0) continue;
       if (mcHit.GetTime() > 70000) continue;
-      
-      // convert PMT hit time to clock ticks and "digitize" by converting to an int
-      // MCHit time is in ns, but we're going to sample in clock ticks
-      uint16_t hit_t0 = uint16_t(mcHit.GetTime() / NS_PER_ADC_SAMPLE);
+
+      // Grab the hit time (also converted to clock ticks) and the charge
+      double hit_t0 = mcHit.GetTime();
+      uint16_t t0_ticks = uint16_t(hit_t0 / NS_PER_ADC_SAMPLE);
       double hit_charge = mcHit.GetCharge();
 
-      // Set the readout window but don't allow negative times
-      uint16_t start_clocktick = (hit_t0 > fPrewindow)? hit_t0 - fPrewindow : 0;
+      // Set the readout window in clock ticks, but don't allow negative times
+      uint16_t start_clocktick = (t0_ticks/ NS > fPrewindow)? t0_ticks - fPrewindow : 0;
       uint16_t end_clocktick = start_clocktick + fReadoutWindow;
 
       // Randomly Sample the PMT parameters for each MCHit
       SampleFitParameters(PMTID);
-
-      //      if (mcHits.size() < 5)
-      //std::cout << "PMTWaveformSim: " << fEvtNum << ", " << hit_t0 << ", " << start_clocktick << ", " << end_clocktick << std::endl;
 
       // loop over clock ticks      
       for (uint16_t clocktick = start_clocktick; clocktick <= end_clocktick; clocktick += 1) {
@@ -198,6 +195,9 @@ bool PMTWaveformSim::LoadPMTParameters()
   }
 
   int pmtid;
+  // Stored fit parameters.
+  // p0, p1, and p2 are the mean values of the lognorm
+  // the u's are for sampling in a way that follows the fit covariance
   double p0, p1, p2, u00, u10, u11, u20, u21, u22;
   std::string comma;
   std::string line;
@@ -270,15 +270,16 @@ bool PMTWaveformSim::SampleFitParameters(int pmtid)
 }
 
 //------------------------------------------------------------------------------
-uint16_t PMTWaveformSim::CustomLogNormalPulse(uint16_t hit_t0, uint16_t clocktick, double hit_charge)
+uint16_t PMTWaveformSim::CustomLogNormalPulse(double hit_t0, uint16_t clocktick, double hit_charge)
 {
   //p0*exp( -0.5 * (log(x/p1)/p2)^2)
   
   // The fit was performed in time units of ns, but we pass samples in clock ticks
-  double x = (double(clocktick) + fT0Offset - hit_t0) * NS_PER_ADC_SAMPLE;
-  
-  double numerator = pow(log(x/fP1), 2);
-  double denom = (pow(fP2, 2));
+  double x = (clocktick + fT0Offset) * NS_PER_ADC_SAMPLE - hit_t0;
+
+  double numerator = log(x/fP1);
+  numerator = val * val;
+  double denom = fP2 * fP2;
   double amplitude = fP0 * exp(-0.5 * numerator/denom) * hit_charge;
 
   // Clip at 4095 and digitize to an integer

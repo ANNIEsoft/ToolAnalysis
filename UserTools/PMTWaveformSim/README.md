@@ -17,6 +17,6 @@ PMTWaveformSim generates PMT waveforms based on the simulated PMT hits. For each
 PMTParameterFile configfiles/PMTWaveformSim/PMTWaveformLognormFit.csv # file containing the fit parameters and triangular Cholesky decomposed covariance matrix
 Prewindow 10 # number of clock ticks before the MC hit time to begin sampling the fit function
 ReadoutWindow 35 # number of clock ticks around the MC hit time over which waveforms are sampled
-T0Offset 0 # A timing offset (in clock ticks) that can be used to align the pulse start time
+T0Offset 0 # A timing offset (in clock ticks) that can be used to align the pulse start time (can be positive or negative)
 MakeDebugFile 0 # Produce a root file containing all the simulated waveforms
 ```
