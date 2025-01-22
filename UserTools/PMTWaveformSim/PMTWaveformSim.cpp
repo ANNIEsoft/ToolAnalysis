@@ -108,7 +108,7 @@ bool PMTWaveformSim::Execute()
       double hit_charge = mcHit.GetCharge();
 
       // Set the readout window in clock ticks, but don't allow negative times
-      uint16_t start_clocktick = (t0_ticks/ NS > fPrewindow)? t0_ticks - fPrewindow : 0;
+      uint16_t start_clocktick = (t0_ticks > fPrewindow)? t0_ticks - fPrewindow : 0;
       uint16_t end_clocktick = start_clocktick + fReadoutWindow;
 
       // Randomly Sample the PMT parameters for each MCHit
@@ -268,7 +268,7 @@ uint16_t PMTWaveformSim::CustomLogNormalPulse(double hit_t0, uint16_t clocktick,
   double x = (clocktick + fT0Offset) * NS_PER_ADC_SAMPLE - hit_t0;
 
   double numerator = log(x/fP1);
-  numerator = val * val;
+  numerator = numerator * numerator;
   double denom = fP2 * fP2;
   double amplitude = fP0 * exp(-0.5 * numerator/denom) * hit_charge;
 
