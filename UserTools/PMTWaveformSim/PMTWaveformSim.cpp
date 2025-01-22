@@ -80,15 +80,6 @@ bool PMTWaveformSim::Initialise(std::string configfile, DataModel &data)
 bool PMTWaveformSim::Execute()
 {
   int load_status = LoadFromStores();
-  if (load_status == 0) {
-    ++fEvtNum;
-    return false;
-  }
-  if (load_status == 2) {
-    m_data->Stores.at("ANNIEEvent")->Set("SkipExecute", true);
-    ++fEvtNum;
-    return true;
-  }
 
   
   // The container for the data that we'll put into the ANNIEEvent
@@ -168,7 +159,6 @@ bool PMTWaveformSim::Execute()
   if (fDebug) 
     FillDebugGraphs(RawADCDataMC);
 
-  ++fEvtNum;
   m_data->Stores.at("ANNIEEvent")->Set("SkipExecute", false);
   return true;
 }
@@ -366,7 +356,9 @@ void PMTWaveformSim::FillDebugGraphs(const std::map<unsigned long, std::vector<W
     for (uint wfIdx = 0; wfIdx < itpair.second.size(); ++wfIdx) {
       auto waveform = itpair.second.at(wfIdx);
 
-      std::string grName = ("wf_" + std::to_string(fEvtNum) + "_" + std::to_string(wfIdx));
+      uint32_t evtNum = 0;
+      m_data->Stores.at("ANNIEEvent")->Get("EventNumber",evtNum);
+      std::string grName = ("wf_" + std::to_string(evtNum) + "_" + std::to_string(wfIdx));
 
       // Make the graph
       std::vector<uint16_t> samples = waveform.Samples();

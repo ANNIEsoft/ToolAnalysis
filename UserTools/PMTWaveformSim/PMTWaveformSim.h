@@ -72,7 +72,6 @@ class PMTWaveformSim: public Tool {
   
   bool fDebug;
   TFile *fOutFile;
-  int fEvtNum = 0;
   
   int verbosity;
   int v_error=0;
