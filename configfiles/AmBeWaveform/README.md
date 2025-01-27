@@ -38,6 +38,8 @@ For a 20 part file sample of an AmBe run, there will be ~7000 waveforms recorded
 
 
 ### Usage
+Populate `my_inputs.txt` with ProcessedData part files to run the toolchain over. To quickly populate the list file with part files from a processed run, you can do: `sh create_my_inputs.sh <run>`.
+
 The toolchain runs quickly (few seconds per part file), but when running over 20 part files as mentioned above the root file quickly explodes in size. For 20 part files, the root file size is ~700 MB. Until the tool is adjusted, the current solution is to use a bash script to run the toolchain in 20 part file chunks, then offload the root files from `/exp/annie/app/users/` to `scratch/` or `persistent/` to avoid overloading your app area.
 
-You can run this bash script via: `sh generate_AmBe_waveforms.sh <run_number>`. Please make the appropriate changes to the bash file prior to running it (like user name, ToolAnalysis directoruy path, etc...).
+You can run this bash script via: `sh generate_AmBe_waveforms.sh <run_number>`. Please make the appropriate changes to the bash file prior to running it (like user name, ToolAnalysis directory path, etc...).
