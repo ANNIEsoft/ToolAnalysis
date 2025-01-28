@@ -1,19 +1,31 @@
 ToolDAQPath=${PWD}/ToolDAQ
 
+ifeq ($(TOOLCHAIN),)
+TOOLCHAIN:=$(shell find ./configfiles -type d -name $(MAKECMDGOALS) -exec basename {} \; 2>/dev/null)
+TOOLS:=$(shell ./gettools.sh $(TOOLCHAIN))
+#OBJECTS:=$(foreach tool,$(TOOLS),UserTools/$(tool)/$(tool).o)
+OBJECTS:=$(shell ./getobjects.sh $(TOOLS))
+#$(info TOOLCHAIN: $(TOOLCHAIN))
+$(info TOOLS needed: $(TOOLS))
+$(info OBJECTS: $(OBJECTS))
+NPROCS:=$(shell nproc --all)
 GIT_VERSION := "$(shell git describe --dirty --always)"
+# forward these to variables to internal $(MAKE) calls
+export
+endif
 
-CPPFLAGS= -DVERSION=\"$(GIT_VERSION)\" -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
+CPPFLAGS= -fmax-errors=1 -DVERSION=\"$(GIT_VERSION)\" -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
 
 CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
 CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
 
 
-ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq 
+ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq
 ZMQInclude= -isystem$(ToolDAQPath)/zeromq-4.0.7/include/
 
 BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem -lboost_regex
 BoostInclude= -isystem$(ToolDAQPath)/boost_1_66_0/install/include
- 
+
 WCSimLib= -L $(ToolDAQPath)/WCSimLib -lWCSimRoot
 WCSimInclude= -I $(ToolDAQPath)/WCSimLib/include
 
@@ -58,10 +70,10 @@ MyToolsInclude += `python3-config --cflags` -Wno-sign-compare
 MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(CLHEPLib) $(Log4CppLibs) $(GenieLibs) $(PythiaLibs)
 MyToolsLib += `python3-config --ldflags --embed`
 
+all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libServiceDiscovery.so lib/libToolChain.so lib/libMyTools.so Analyse
+.PHONY: UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h
 
-all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so Analyse
-
-Analyse: src/main.cpp | lib/libMyTools.so lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so
+Analyse: src/main.cpp | lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libServiceDiscovery.so lib/libMyTools.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so
 	@echo -e "\n*************** Making " $@ "****************"
 	g++ -std=c++1y -g -fPIC $(CPPFLAGS) src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(DataModelLib) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
@@ -70,26 +82,23 @@ lib/libStore.so: $(ToolDAQPath)/ToolDAQFramework/src/Store/*
 	cd $(ToolDAQPath)/ToolDAQFramework && make lib/libStore.so
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Store/*.h include/
-	cp $(ToolDAQPath)/ToolDAQFramework/lib/libStore.so lib/        
-	#$(CC)  -I include $(ToolDAQPath)/ToolDAQFramework/src/Store/*.cpp -o lib/libStore.so $(BoostLib) $(BoostInclude)
+	cp $(ToolDAQPath)/ToolDAQFramework/lib/libStore.so lib/
 
 
 include/Tool.h: $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h
 	@echo -e "\n*************** Copying " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h include/
-	cp UserTools/*.h include/
-	cp UserTools/*/*.h include/
 	cp DataModel/*.h include/
 
-
-lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/* | lib/libLogging.so lib/libStore.so lib/libServiceDiscovery.so lib/libLogging.so lib/libDataModel.so
+lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/* UserTools/MyFactory/Unity.h | lib/libLogging.so lib/libStore.so lib/libServiceDiscovery.so lib/libLogging.so lib/libDataModel.so
 	@echo -e "/n*************** Making " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/UserTools/Factory/*.h include/
+	-if [ ! -z "$(TOOLCHAIN)" ]; then cp -f UserTools/MyFactory/Unity.h include/; else cp -f UserTools/Unity.h include/; fi
 	cp $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/*.h include/
 	$(CC) $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/ToolChain.cpp -I include -lpthread -L lib -lStore -lDataModel -lServiceDiscovery -lLogging -o lib/libToolChain.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude) $(MyToolsInclude)  $(BoostLib) $(BoostInclude)
 
 
-clean: 
+clean:
 	@echo -e "\n*************** Cleaning up ****************"
 	rm -f include/*.h
 	rm -f lib/*.so
@@ -101,7 +110,7 @@ clean:
 	rm -f lib/*.pcm
 	rm -f DataModel/libDataModel.rootmap
 
-lib/libDataModel.so: DataModel/* lib/libLogging.so lib/libStore.so $(patsubst DataModel/%.cpp, DataModel/%.o, $(wildcard DataModel/*.cpp)) DataModel/DataModel_RootDict.cpp
+lib/libDataModel.so: DataModel/* lib/libLogging.so lib/libStore.so $(patsubst DataModel/%.cpp, DataModel/%.o, $(wildcard DataModel/*.cpp)) DataModel/DataModel_RootDict.o
 	@echo -e "\n*************** Making " $@ "****************"
 	cp -f DataModel/*.h include/
 	$(CC) DataModel/*.o -I include -L lib -lStore  -lLogging  -o lib/libDataModel.so $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
@@ -124,12 +133,21 @@ DataModel/DataModel_RootDict.cpp: DataModel/DataModel_Linkdef.hh | include/Tool.
 	cp -f DataModel/libDataModel.rootmap lib/
 	cp -f DataModel/DataModel_RootDict_rdict.pcm lib/
 
-lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so lib/libStore.so $(patsubst UserTools/%.cpp, UserTools/%.o, $(wildcard UserTools/*/*.cpp)) |lib/libDataModel.so lib/libToolChain.so lib/libRawViewer.so 
+#lib/libMyTools.so: UserTools/*/* UserTools/* include/Tool.h lib/libLogging.so lib/libStore.so $(patsubst UserTools/%.cpp, UserTools/%.o, $(wildcard UserTools/*/*.cpp)) |lib/libDataModel.so lib/libToolChain.so lib/libRawViewer.so
+#	@echo -e "\n*************** Making " $@ "****************"
+#	cp -f UserTools/*/*.h include/
+#	cp -f UserTools/*.h include/
+#	#$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+#	$(CC) UserTools/*/*.o -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
+lib/libMyTools.so: UserTools/MyFactory/MyFactory.o include/Tool.h lib/libLogging.so lib/libStore.so |lib/libDataModel.so lib/libToolChain.so lib/libRawViewer.so
 	@echo -e "\n*************** Making " $@ "****************"
-	cp -f UserTools/*/*.h include/
-	cp -f UserTools/*.h include/
-	#$(CC)  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
-	$(CC) UserTools/*/*.o -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+	$(CC) $< $(OBJECTS) -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(DataModelInclude) $(MyToolsLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
+UserTools/MyFactory/MyFactory.o: UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h $(OBJECTS)
+	@echo -e "\n*************** Making " $@ "****************"
+	cp -f $(shell dirname $<)/*.h include
+	-$(CCC) -c -o $@ $< -I include -L lib -lStore -lDataModel -lLogging $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 RemoteControl:
 	cd $(ToolDAQPath)/ToolDAQFramework/ && make RemoteControl
@@ -155,7 +173,7 @@ lib/libLogging.so: $(ToolDAQPath)/ToolDAQFramework/src/Logging/* | lib/libStore.
 	cp $(ToolDAQPath)/ToolDAQFramework/lib/libLogging.so lib/
 	#$(CC) -I include $(ToolDAQPath)/ToolDAQFramework/src/Logging/Logging.cpp -o lib/libLogging.so -L lib/ -lStore $(ZMQInclude) $(ZMQLib) $(BoostLib) $(BoostInclude)
 
-lib/libRawViewer.so: UserTools/PlotWaveforms/RawViewer.h UserTools/PlotWaveforms/RawViewer.cc UserTools/PlotWaveforms/viewer_linkdef.hh UserTools/recoANNIE/Constants.h DataModel/ANNIEconstants.h UserTools/recoANNIE/RawReader.h UserTools/recoANNIE/RawReader.cc UserTools/recoANNIE/RawReadout.h UserTools/recoANNIE/RawReadout.cc UserTools/recoANNIE/RawChannel.h UserTools/recoANNIE/RawChannel.cc UserTools/recoANNIE/RawCard.h UserTools/recoANNIE/RawCard.cc UserTools/recoANNIE/RawTrigData.h UserTools/recoANNIE/RawTrigData.cc
+lib/libRawViewer.so: UserTools/PlotWaveforms/RawViewer.h UserTools/PlotWaveforms/RawViewer.cc UserTools/PlotWaveforms/viewer_linkdef.hh DataModel/Constants.h DataModel/ANNIEconstants.h DataModel/RawReader.h DataModel/RawReader.cpp DataModel/RawReadout.h DataModel/RawReadout.cpp DataModel/RawChannel.h DataModel/RawChannel.cpp DataModel/RawCard.h DataModel/RawCard.cpp DataModel/RawTrigData.h DataModel/RawTrigData.cpp
 	@echo -e "\n*************** Making " $@ "****************"
 	cd UserTools/PlotWaveforms && . ./setup_builder.sh && make clean && make
 	cp UserTools/PlotWaveforms/libRawViewer.so UserTools/PlotWaveforms/dict_rdict.pcm lib/
@@ -169,9 +187,9 @@ update:
 	cd $(ToolDAQPath)/RATEventLib; git checkout . ; git pull; make
 	git pull
 
-UserTools/%.o: UserTools/%.cpp lib/libStore.so include/Tool.h lib/libLogging.so lib/libDataModel.so lib/libToolChain.so
+UserTools/%.o: UserTools/%.cpp | lib/libLogging.so lib/libToolChain.so lib/libDataModel.so
 	@echo -e "\n*************** Making " $@ "****************"
-	cp $(shell dirname $<)/*.h include
+	cp -f $(shell dirname $<)/*.h include
 	-$(CCC) -c -o $@ $< -I include -L lib -lStore -lDataModel -lLogging $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 target: remove $(patsubst %.cpp, %.o, $(wildcard UserTools/$(TOOL)/*.cpp))
@@ -180,7 +198,44 @@ remove:
 	echo "removing"
 	-rm UserTools/$(TOOL)/*.o
 
-DataModel/%.o: DataModel/%.cpp lib/libLogging.so lib/libStore.so
+DataModel/%.o: DataModel/%.cpp lib/libLogging.so lib/libStore.so include/Tool.h
 	@echo -e "\n*************** Making " $@ "****************"
-	cp $(shell dirname $<)/*.h include
 	-$(CCC) -c -o $@ $< -I include -L lib -lStore -lLogging  $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
+
+UserTools/MyFactory/Unity.h:
+	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
+	@echo -n "" > $@
+	@for TOOL in $(TOOLS); do\
+		echo '#include "'"$${TOOL}.h"'"' >> $@;\
+		cp -f UserTools/$${TOOL}/*.h include/ 2>/dev/null || /bin/true;\
+	done
+
+UserTools/MyFactory/MyFactory.cpp:
+	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
+	@mkdir -p UserTools/MyFactory
+	@cp UserTools/Factory/Factory.h UserTools/MyFactory/Factory.h
+	@echo '#include "Factory.h"' > $@
+	@echo 'Tool* Factory(std::string tool) {' >> $@
+	@echo 'Tool* ret=0;' >> $@
+	@for TOOL in $(TOOLS); do\
+		echo 'if (tool=="'"$${TOOL}"'") ret=new '"$${TOOL};" >> $@;\
+	done;\
+	echo 'return ret;' >> $@;\
+	echo '}' >> $@
+
+%:: configfiles/%/ToolsConfig
+	@echo "making NEW"
+	@if [ ! -z "$(TOOLCHAIN)" ]; then echo "making ToolChain $(TOOLCHAIN)";fi
+	@# check tools file exists
+	@ls "./configfiles/$@/ToolsConfig" > /dev/null
+	
+	@# make datamodel
+	$(MAKE) -j $(NPROCS) lib/libDataModel.so
+	
+	# remake and replace factory and unity
+	#$(MAKE) UserTools/MyFactory/MyFactory.cpp
+	#$(MAKE) UserTools/MyFactory/Unity.h
+	
+	@# make executable
+	$(MAKE) -j $(NPROCS) Analyse
+

@@ -72,23 +72,27 @@ endif
 dictionary: viewer_linkdef.hh
 	@echo "making $@"
 	$(RM) dict.* dict*.pcm
-	$(ROOTCLING) -f dict.cc -c -I ../recoANNIE -I ../../DataModel $(BoostInclude) RawViewer.h viewer_linkdef.hh
+	$(ROOTCLING) -f dict.cc -c -I ../../DataModel $(BoostInclude) RawViewer.h viewer_linkdef.hh
 
 dict.o: dictionary dict.cc
 	@echo "making $@"
-	@cp ../recoANNIE/*.h ../../DataModel/ANNIEconstants.h ../../include/
+	@cp ../../DataModel/ANNIEconstants.h ../../DataModel/Constants.h ../../DataModel/RawReader.h ../../DataModel/RawReadout.h ../../DataModel/RawChannel.h ../../DataModel/RawCard.h ../../DataModel/RawTrigData.h ../../include/
 	$(CXX) $(CXXFLAGS) -fPIC -o $@ -I../../include -L../lib $(ROOT_CXXFLAGS) \
 	$(ROOT_LDFLAGS) $(BoostInclude) $(BoostLib) -c dict.cc
 
 %.o: %.cc
 	@echo "making $@"
-	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include  -I ../recoANNIE -I../../DataModel $(BoostInclude) $(BoostLib) -o $@ -c $^
+	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include -I../../DataModel $(BoostInclude) $(BoostLib) -o $@ -c $^
 
-libRawViewer.so: dict.o RawViewer.o
+../../DataModel/%.o: ../../DataModel/%.cpp
+	$(CXX) $(ROOT_CXXFLAGS) $(CXXFLAGS) -fPIC -I../../include -I../../DataModel $(BoostInclude) $(BoostLib) -o $@ -c $^
+
+libRawViewer.so: dict.o RawViewer.o ../../DataModel/RawReader.o ../../DataModel/RawReadout.o ../../DataModel/RawChannel.o ../../DataModel/RawCard.o ../../DataModel/RawTrigData.o ../../DataModel/RawReader.h ../../DataModel/RawReadout.h ../../DataModel/RawChannel.h ../../DataModel/RawCard.h ../../DataModel/RawTrigData.h ../../DataModel/Constants.h
 	@echo "making $@"
 	$(CXX) $(CXXFLAGS) -fPIC --shared -L../lib -I../../include \
-	   $(ROOT_CXXFLAGS) $(ROOT_LDFLAGS) \
+	   $(BoostInclude) $(BoostLib) $(ROOT_CXXFLAGS) $(ROOT_LDFLAGS) \
 	  -Wl,-rpath -Wl,$(libdir):$(shell pwd) dict.o RawViewer.o \
+	  ../../DataModel/RawReader.o ../../DataModel/RawReadout.o ../../DataModel/RawChannel.o ../../DataModel/RawCard.o ../../DataModel/RawTrigData.o \
 	  -o $@
 
 .INTERMEDIATE: dict.o RawViewer.o dict.cc
