@@ -292,9 +292,10 @@ bool ParseDataMonitoring::Execute()
             {
 		int pedval,val;
 		val=(int)it->second.at(kvec);
-                if(DoPedSubtract==1)
+        std::vector<int> pedvals = ((PedestalValues->find(it->first))->second);
+                if(DoPedSubtract==1 && kvec < pedvals.size())
                 {
-                  pedval = ((PedestalValues->find(it->first))->second).at(kvec);
+                  pedval = pedvals.at(kvec);
                 }else
                 {
                   pedval = 0;
