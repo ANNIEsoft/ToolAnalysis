@@ -264,7 +264,7 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_logfile_lappd = nullptr;
   TCanvas *canvas_file_timestamp_lappd = nullptr;
   TCanvas *canvas_events_per_channel = nullptr;
-  TCanvas *canvas_pf_vs_data_events = nullptr;
+  TCanvas *canvas_pf_vs_timings = nullptr;
   TCanvas *canvas_ped_lappd = nullptr;
   TCanvas *canvas_sigma_lappd = nullptr;
   TCanvas *canvas_rate_lappd = nullptr;
@@ -321,7 +321,7 @@ class MonitorLAPPDData: public Tool {
   TH2F* hist_rate_threshold_all = nullptr;
   TH1F *log_files_lappd;
   TH2F* hist_events_per_channel = nullptr;
-  TH2F hist_pf_vs_data_events;
+  TH2F hist_pf_vs_timings;
 
   //text
   TText *text_data_title = nullptr;
