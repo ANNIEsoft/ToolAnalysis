@@ -321,7 +321,7 @@ class MonitorLAPPDData: public Tool {
   TH2F* hist_rate_threshold_all = nullptr;
   TH1F *log_files_lappd;
   TH2F* hist_events_per_channel = nullptr;
-  TH2F* hist_pf_vs_data_events = nullptr;
+  TH2F hist_pf_vs_data_events;
 
   //text
   TText *text_data_title = nullptr;

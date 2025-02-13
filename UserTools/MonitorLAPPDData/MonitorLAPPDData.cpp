@@ -1160,16 +1160,16 @@ void MonitorLAPPDData::WriteToFile()
 		t->Branch("rate", t_rate_ptr);
 		t->Branch("ped", t_ped_ptr);
 		t->Branch("sigma", t_sigma_ptr);
-		t->Branch("run", t_run);
-		t->Branch("subrun", t_subrun);
-		t->Branch("partrun", t_partrun);
-		t->Branch("pps_count", t_pps_count);
-		t->Branch("frame_count", t_frame_count);
-		t->Branch("lappd_offset", t_lappd_offset);
+		t->Branch("run", &t_run);
+		t->Branch("subrun", &t_subrun);
+		t->Branch("partrun", &t_partrun);
+		t->Branch("pps_count", &t_pps_count);
+		t->Branch("frame_count", &t_frame_count);
+		t->Branch("lappd_offset", &t_lappd_offset);
 		t->Branch("raw_lappd_data_pps_counts", t_raw_lappd_data_pps_counts_ptr);
 		t->Branch("raw_lappd_data_pps_timestamps", t_raw_lappd_data_pps_timestamps_ptr);
-		t->Branch("pps_accumulated_psec_timestamp", t_pps_accumulated_psec_timestamp);
-		t->Branch("raw_lappd_pps_timestamp", t_raw_lappd_pps_timestamp);
+		t->Branch("pps_accumulated_psec_timestamp", &t_pps_accumulated_psec_timestamp);
+		t->Branch("raw_lappd_pps_timestamp", &t_raw_lappd_pps_timestamp);
 		t->Branch("data_event_timestamps", t_data_event_timestamps_ptr);
 	}
 
@@ -2517,44 +2517,19 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 				graph_pps_time_vs_accumulated_number->SetPoint(i_timestamp, acc_number, acc_pps_timestamp);
 			}
 
-			double max_allowed_data_timestamp_seconds = 250;
-			int max_partrun = 10;
-			double max_data_timestamp_seconds = .0;
-			std::vector<double> hist_pf_vs_data_events_timestamps;
-			std::vector<int> hist_pf_vs_data_events_partruns;
+			int hist_bins_x = 20000; // nsec
+			int hist_bins_y = current_partrun + 1;
+			hist_pf_vs_data_events = TH2F("PF# vs Data Events", "PF# vs Data Events", hist_bins_x, 0, hist_bins_x, hist_bins_y, 0, hist_bins_y);
 			// Init graph points for PF# vs data events histogram
 			for (const auto &partrun_entry : data_event_timestamps_per_partrun) {
 				const int partrun = partrun_entry.first;
 				const std::vector<uint64_t>& timestamps = partrun_entry.second;
-				max_partrun = std::max(max_partrun, partrun);
-				if (timestamps.size() > 0) {
-					const uint64_t first_data_event_timestamp = timestamps.at(0);
-
-					for (const uint64_t& timestamp : timestamps) {
-						double timestamp_ms_to_seconds = (timestamp - first_data_event_timestamp) / 1e9;
-						if (timestamp_ms_to_seconds > max_allowed_data_timestamp_seconds) {
-							continue;
-						}
-
-						max_data_timestamp_seconds = std::max(max_data_timestamp_seconds, timestamp_ms_to_seconds);
-
-						hist_pf_vs_data_events_timestamps.push_back(timestamp_ms_to_seconds);
-						hist_pf_vs_data_events_partruns.push_back(partrun);
-					}
+				for (const uint64_t &timestamp : timestamps) {
+					hist_pf_vs_data_events.Fill(
+						timestamp,
+						partrun,
+						hist_pf_vs_data_events.GetBinContent(timestamp, partrun) + 1);
 				}
-			}
-			int hist_bins_x = static_cast<int>(max_data_timestamp_seconds) + 1;
-			int hist_bins_y = static_cast<int>(max_partrun) + 1;
-			hist_pf_vs_data_events = new TH2F("PF# vs Data Events", "PF# vs Data Events", hist_bins_x, 0, hist_bins_x, hist_bins_y, 0, hist_bins_y);
-			hist_pf_vs_data_events->SetStats(0);
-			// Add graph boints
-			for (int i = 0; i < hist_pf_vs_data_events_timestamps.size(); i ++) {
-				const double hist_timestamp = hist_pf_vs_data_events_timestamps.at(i);
-				const int hist_partrun = hist_pf_vs_data_events_partruns.at(i);
-				if (hist_timestamp > max_data_timestamp_seconds) {
-					continue;
-				}
-				hist_pf_vs_data_events->Fill(hist_timestamp, hist_partrun, hist_pf_vs_data_events->GetBinContent(hist_timestamp, hist_partrun) + 1);
 			}
 
 			std::stringstream ss_pps_count;
@@ -2687,15 +2662,15 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			ss_pf_vs_data_events << "PF# vs Data Events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 			canvas_pf_vs_data_events->cd();
 			canvas_pf_vs_data_events->Clear();
-			hist_pf_vs_data_events->SetTitle(ss_pf_vs_data_events.str().c_str());
-			hist_pf_vs_data_events->GetYaxis()->SetTitle("Part File Number");
-			hist_pf_vs_data_events->GetXaxis()->SetTitle("PPS timestamp (seconds)");
+			hist_pf_vs_data_events.SetTitle(ss_pf_vs_data_events.str().c_str());
+			hist_pf_vs_data_events.GetYaxis()->SetTitle("Part File Number");
+			hist_pf_vs_data_events.GetXaxis()->SetTitle("PPS timestamp");
 			graph_pps_time_vs_accumulated_number->GetYaxis()->SetTimeDisplay(0);
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeDisplay(0);
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelSize(0.03);
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetLabelOffset(0.01);
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeOffset(0.);
-			hist_pf_vs_data_events->Draw("colz");
+			hist_pf_vs_data_events.Draw("colz");
 			std::stringstream ss_pf_vs_data_events_path;
 			ss_pf_vs_data_events_path << outpath << "LAPPDData_TimeEvolution_PF_vs_DataEvents_" << file_ending << "." << img_extension;
 			canvas_pf_vs_data_events->SaveAs(ss_pf_vs_data_events_path.str().c_str());
@@ -3188,9 +3163,6 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 				// Add pps count and timestamp for plotting
 				raw_lappd_data_pps_counts.at(lappd_id).push_back(last_pps_count);
 				raw_lappd_data_pps_timestamps.at(lappd_id).push_back(pps_63_0);
-
-				// Add data event timestamp
-				data_event_timestamps.push_back((double)pps_63_0 * CLOCK_to_NSEC);
 			}
 
 			if (pps.size() == 32)
@@ -3379,8 +3351,7 @@ LAPPDData->Get("AccInfoFrame", AccInfoFrame);*/
 		// std::cout << "bits_timestamp_63_0: " << bits_timestamp_63_0 << std::endl;
 		beamgate_timestamp.push_back(beamgate_63_0);
 		data_timestamp.push_back(timestamp_63_0);
-		data_event_timestamps.push_back((double)timestamp_63_0 * CLOCK_to_NSEC);
-
+		data_event_timestamps.push_back(timestamp_63_0 - beamgate_63_0);
 		// for (int i=0; i<first_entry.size(); i++) std::cout << first_entry.at(i)<<std::endl;
 
 		data_beamgate_lastfile.at(board_idx).push_back(timestamp_63_0 - beamgate_63_0);
