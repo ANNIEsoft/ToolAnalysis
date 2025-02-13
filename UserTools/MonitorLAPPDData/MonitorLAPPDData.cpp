@@ -365,7 +365,7 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 	canvas_logfile_lappd = new TCanvas("canvas_logfile_lappd", "LAPPD File History", 900, 600);
 	canvas_file_timestamp_lappd = new TCanvas("canvas_file_timestamp_lappd", "Timestamp Last File", 900, 600);
 	canvas_events_per_channel = new TCanvas("canvas_events_per_channel", "LAPPD Events per Channel", 900, 600);
-	canvas_pf_vs_timings = new TCanvas("canvas_pf_vs_timings", "LAPPD PF# vs Data Events", 900, 600);
+	canvas_pf_vs_timings = new TCanvas("canvas_pf_vs_timings", "LAPPD PF# vs Timings", 900, 600);
 	canvas_ped_lappd = new TCanvas("canvas_ped_lappd", "LAPPD Pedestals", 900, 600);
 	canvas_sigma_lappd = new TCanvas("canvas_sigma_lappd", "LAPPD Sigmas", 900, 600);
 	canvas_rate_lappd = new TCanvas("canvas_rate_lappd", "LAPPD Rates", 900, 600);
@@ -2519,8 +2519,8 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 
 			int hist_bins_x = 20000; // nsec
 			int hist_bins_y = current_partrun + 1;
-			hist_pf_vs_timings = TH2F("PF# vs Data Events", "PF# vs timings", hist_bins_x, 0, hist_bins_x, hist_bins_y, 0, hist_bins_y);
-			// Init graph points for PF# vs data events histogram
+			hist_pf_vs_timings = TH2F("PF# vs Timings", "PF# vs Timings", hist_bins_x, 0, hist_bins_x, hist_bins_y, 0, hist_bins_y);
+			// Init graph points for PF# vs timings histogram
 			for (const auto &partrun_entry : data_event_timestamps_per_partrun) {
 				const int partrun = partrun_entry.first;
 				const std::vector<uint64_t>& timestamps = partrun_entry.second;
@@ -2659,7 +2659,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			canvas_pps_time_vs_accumulated_number->SaveAs(ss_pps_time_vs_accumulated_number_path.str().c_str());
 
 			std::stringstream ss_pf_vs_timings;
-			ss_pf_vs_timings << "PF# vs Data Events time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
+			ss_pf_vs_timings << "PF# vs Timings time evolution (last " << ss_timeframe.str() << "h) " << end_time.str();
 			canvas_pf_vs_timings->cd();
 			canvas_pf_vs_timings->Clear();
 			hist_pf_vs_timings.SetTitle(ss_pf_vs_timings.str().c_str());
@@ -2672,7 +2672,7 @@ void MonitorLAPPDData::DrawTimeEvolutionLAPPDData(ULong64_t timestamp_end, doubl
 			graph_pps_time_vs_accumulated_number->GetXaxis()->SetTimeOffset(0.);
 			hist_pf_vs_timings.Draw("colz");
 			std::stringstream ss_pf_vs_timings_path;
-			ss_pf_vs_timings_path << outpath << "LAPPDData_TimeEvolution_PF_vs_DataEvents_" << file_ending << "." << img_extension;
+			ss_pf_vs_timings_path << outpath << "LAPPDData_TimeEvolution_PF_vs_Timings_" << file_ending << "." << img_extension;
 			canvas_pf_vs_timings->SaveAs(ss_pf_vs_timings_path.str().c_str());
 
 			std::stringstream ss_frame_count;
