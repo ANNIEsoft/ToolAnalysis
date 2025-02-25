@@ -840,9 +840,190 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         raw_area, max_ADC, calibrated_amplitude, charge);
     }
 
+
+  // ******************************************************************
+  // Fixed integration window defined relative to *baseline* threshold crossings
+  // "PulseWindowType" default for EventBuilding (to match the 2023 gains calibration integration approach)
+  } else if(pulse_window_type == "Fixed_2023_Gains"){
+
+      // 2023 Gains integration approach (same as 'full_window_maxpeak' PulseFindingApproach, but we require pulse threshold finding)
+      //      * pulse is defined as any instance of sample above the ADC threshold
+      //      * pulse start defined as 5 samples to the left from where the pulse emerges from the baseline
+      //      * pulse end defined as 5 samples to the right from where the pulse returns to the baseline
+
+      size_t pulse_start_sample = BOGUS_INT;
+      size_t pulse_end_sample = BOGUS_INT;
+
+      // loop through samples until we find a pulse, then extract pulse parameters
+      for (size_t s = 0; s < num_samples; ++s) {
+
+        // if any values are above threshold, we have found a pulse
+        if ( !in_pulse && raw_minibuffer_data.GetSample(s) > adc_threshold ) {
+          in_pulse = true;
+          if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
+
+          // for cases that are very early in the buffer, we can just assign the pulse start as 0 to avoid errors
+          if (static_cast<int>(s) - 5 < 0) {
+            if(verbosity>v_debug) std::cout << "Pulse found is VERY EARLY in the minibuffer (< 5 samples)... assigning pulse start as 0" << std::endl;
+            pulse_start_sample = 0;
+          } 
+
+          else {
+            size_t pulsewinleft = s;
+
+            // determine start of pulse by walking back from the threshold crossing point until we dip below baseline, then take 5 samples before as the pulse start
+            while (pulsewinleft > 0) {
+              double raw_sample_height = raw_minibuffer_data.GetSample(pulsewinleft);
+              if (raw_sample_height <= baseline_plus_one_sigma) {
+
+                if (pulsewinleft >= 5) {                   // avoid underflow
+                  pulse_start_sample = pulsewinleft - 5;   // pulse start = baseline crossing - 5 samples
+                } 
+                
+                else {
+                  if(verbosity>v_debug) std::cout << "Baseline crossing is VERY EARLY in the minibuffer (< 5 samples)... assigning pulse start as 0" << std::endl;
+                  pulse_start_sample = 0;
+                }
+
+                  break;
+              } 
+            pulsewinleft--;
+            }
+
+            // if pulsewinleft reaches 0 without finding a baseline crossing (maybe ringing?), hault it at 0 and assign pulse start
+            // TODO: figure out what is wrong with these pulses
+            if (pulsewinleft == 0) {
+              if (verbosity > v_debug) {
+                std::cout << "Baseline crossing was not found... assigning pulse start as 0" << std::endl;
+              }
+              pulse_start_sample = 0;
+            }
+          }
+
+        // once we reach the baseline again (right side of the pulse), we determine the pulse stop (5 samples after baseline + sigma crossing)
+        // or in case we've reached the end of the minibuffer, force pulse to end
+        } else if ( in_pulse && ((raw_minibuffer_data.GetSample(s) < baseline_plus_one_sigma) || (s == num_samples - 1)) ) {
+          in_pulse = false;
+          
+          if (s == num_samples - 1) {
+            if(verbosity>v_debug) std::cout << "Pulse found is VERY LATE in the minibuffer (we're at the final sample)... forcing pulse to end" << std::endl;
+            pulse_end_sample = s;
+          } else {
+            pulse_end_sample = (s + 5 < (num_samples - 1)) ? (s + 5) : (num_samples - 1);   // ensure we don't exceed the buffer
+          }
+
+          // double check that pulse start and stop were found successfully
+          if (verbosity > v_debug) {
+          std::cout << "Pulse start and end determined! (" << pulse_start_sample 
+                    << ", " << pulse_end_sample << ")" << std::endl;
+          }
+          
+          
+          // Integrate the pulse to get its area. Use a Riemann sum. Also get
+          // the raw amplitude (maximum ADC value within the pulse) and the
+          // sample at which the peak occurs.
+          unsigned long raw_area = 0; // ADC * samples
+          unsigned short max_ADC = std::numeric_limits<unsigned short>::lowest();
+          size_t peak_sample = BOGUS_INT;
+          for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+            raw_area += raw_minibuffer_data.GetSample(p);
+            if (max_ADC < raw_minibuffer_data.GetSample(p)) {
+              max_ADC = raw_minibuffer_data.GetSample(p);
+              peak_sample = p;
+            }
+          }
+          // The amplitude of the pulse (V)
+          double calibrated_amplitude
+            = calibrated_minibuffer_data.GetSample(peak_sample);
+
+          // Calculated the charge detected in this pulse (nC)
+          // using the calibrated waveform
+          double charge = 0.;
+          // Integrate the calibrated pulse (to get a quantity in V * samples)
+          for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+            charge += calibrated_minibuffer_data.GetSample(p);
+          }
+
+          // Convert the pulse integral to nC
+          // FIXME: We need a static database with each PMT's impedance
+          charge *= NS_PER_ADC_SAMPLE / ADC_IMPEDANCE;
+          // TODO: consider adding code to merge pulses if they occur
+          // very close together (i.e. if the end of one is just a few samples away
+          // from the start of another)
+
+          // PMT Timing offsets
+          double timing_offset=0.0;
+          std::map<unsigned long , double>::const_iterator it = ChannelKeyToTimingOffsetMap.find(channel_key);
+          if(it != ChannelKeyToTimingOffsetMap.end()){ //Timing offset is available
+            timing_offset = ChannelKeyToTimingOffsetMap.at(channel_key);
+          } else {
+            if(verbosity>v_error){
+              std::cout << "PhaseIIADCHitFinder: Didn't find Timing offset for channel... setting this channel's offset to 0ns" << channel_key << std::endl;
+            }
+          }
+
+          // New approach to hit timing to avoid 2ns bins - 50% threshold above baseline
+          // Look for where the ADC value crosses 50% of the maximum, assign hit time
+          // TODO: consider using an approach recommended by Bob: get time at 50%, get time at 20%, draw straight line in between and find time to zero threshold
+          const double threshold_percentage = 0.5;
+          unsigned short threshold_value = ((max_ADC - adc_threshold) * threshold_percentage) + adc_threshold;
+          double hit_time = peak_sample;
+          bool hit_time_found = false;
+
+          // Find the first sample where the ADC value is above 50%
+          for (size_t p = peak_sample; p > pulse_start_sample; --p) {
+              if (raw_minibuffer_data.GetSample(p) < threshold_value) {
+                hit_time = p;
+                hit_time_found = true;
+                break;
+                }
+          }
+
+        // Perform simple linear interpolation to find exact crossing point
+        if (hit_time_found) {
+          if(verbosity>v_debug) std::cout << "Interpolating hit time..." << std::endl;
+          if (hit_time > pulse_start_sample && hit_time < pulse_end_sample) {
+              double x1 = hit_time;
+              double x2 = hit_time + 1.0;
+              unsigned short y1 = raw_minibuffer_data.GetSample(static_cast<size_t>(x1));
+              unsigned short y2 = raw_minibuffer_data.GetSample(static_cast<size_t>(x2));
+              hit_time = x1 + (threshold_value - y1) * (x2 - x1) / (y2 - y1);   // linear interpolation
+          }
+        }
+
+        if(verbosity>v_debug) {
+          
+          std::cout << "Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
+
+          if (hit_time < 0.0) {
+            // If for some reason the interpolation finds a negative time value (if the pulse is extremely early in the buffer),
+            // default to the peak time (maximum ADC value of the pulse)
+            std::cout << "Hit time is negative! Defaulting to peak time" << std::endl;
+            hit_time = peak_sample;
+          }
+
+          std::cout << "Pulse properties: " << std::endl;
+          std::cout << "     chanID:      " << channel_key << std::endl;
+          std::cout << "     charge:      " << ( charge ) << std::endl;
+          std::cout << "     start time:  " << ( pulse_start_sample ) << std::endl;
+          std::cout << "     hit time:    " << ( hit_time ) << std::endl;
+          std::cout << "     stop time:   " << ( pulse_end_sample ) << std::endl;
+          std::cout << "     pulse width: " << ( pulse_end_sample - pulse_start_sample ) << std::endl;
+
+        }
+
+          // Store the freshly made pulse in the vector of found pulses
+          pulses.emplace_back(channel_key,
+            ( pulse_start_sample * NS_PER_ADC_SAMPLE )-timing_offset,
+            ( hit_time * NS_PER_ADC_SAMPLE )-timing_offset,                 // interpolated hit time
+            calibrated_minibuffer_data.GetBaseline(),
+            calibrated_minibuffer_data.GetSigmaBaseline(),
+            raw_area, max_ADC, calibrated_amplitude, charge);
+        }
+      }
+
 	  
   // ******************************************************************
-  // "PulseWindowType" default for EventBuilding
   // Peak windows are defined only by crossing and un-crossing of ADC threshold
   } else if(pulse_window_type == "dynamic"){
     size_t pulse_start_sample = BOGUS_INT;
@@ -947,6 +1128,15 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
 	        std::cout << "Hit time is negative! Defaulting to peak time" << std::endl;
 	        hit_time = peak_sample;
 	      }
+
+        std::cout << "Pulse properties: " << std::endl;
+        std::cout << "     chanID:      " << channel_key << std::endl;
+        std::cout << "     charge:      " << ( charge ) << std::endl;
+        std::cout << "     start time:  " << ( pulse_start_sample ) << std::endl;
+        std::cout << "     hit time:    " << ( hit_time ) << std::endl;
+        std::cout << "     stop time:   " << ( pulse_end_sample ) << std::endl;
+        std::cout << "     pulse width: " << ( pulse_end_sample - pulse_start_sample ) << std::endl;
+
       }
 
 
