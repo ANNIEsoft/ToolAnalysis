@@ -130,13 +130,16 @@ bool BackTracker::Execute()
 	if (tempTime < earliestTime) earliestTime = tempTime;
 	meanTime += tempTime;       
       }// end loop over MCHits
-      if (mcHit.size()) {
-	meanTime = meanTime / mcHit.size()
+      if (mcHits.size()) {
+	meanTime = meanTime / mcHits.size();
 	  
-	if (mcHit.size() %2 != 0)
-	  medianTime = mcHits.at(mcHit.size()/2);
-	else 
-	  medianTime = (mcHits.at((mcHit.size()-1)/2) + mcHits.at((mcHit.size())/2)) / 2;
+	if (mcHits.size() %2 != 0)
+	  medianTime = mcHits.at(mcHits.size()/2).GetTime();
+	else {
+	  double time1 = mcHits.at((mcHits.size()-1)/2).GetTime();
+	  double time2 = mcHits.at((mcHits.size())/2).GetTime();
+	  medianTime = (time1 + time2) / 2;
+	}
       }// end mean/median calculation
 
       fClusterToBestParticleIdx->emplace(apair.first, prtIdx);
