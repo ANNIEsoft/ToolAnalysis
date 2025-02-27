@@ -491,14 +491,13 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 		TH1F *hist_align_5files_single = new TH1F(ss_align_5files.str().c_str(), ss_align_5files.str().c_str(), 100, 0, 20000);
 		TH1F *hist_align_10files_single = new TH1F(ss_align_10files.str().c_str(), ss_align_10files.str().c_str(), 100, 0, 20000);
 		TH1F *hist_align_20files_single = new TH1F(ss_align_20files.str().c_str(), ss_align_20files.str().c_str(), 100, 0, 20000);
-		TH1F *hist_align_100files_single = new TH1F(ss_align_100files.str().c_str(), ss_align_100files.str().c_str(), 100, 0, 20000);
+		TH2F hist_align_100files_single_2d = TH2F("align_100files_2d","align_100files_2d",100, 0, 20000, 50, 0, 100);
 		TH2F hist_align_1000files_single_2d = TH2F("align_1000files_2d","align_1000files_2d",100, 0, 20000, 50, 0, 1000); 
 		TH2F *hist_adc_channel_single = new TH2F(ss_adc_channel.str().c_str(), ss_adc_channel.str().c_str(), 200, -500, 0, 30, min_board, min_board + 30);
 		TH2F *hist_waveform_channel_single = new TH2F(ss_waveform_channel.str().c_str(), ss_waveform_channel.str().c_str(), 256, 0, 256, 30, min_board, min_board + 30);
 		TH2F *hist_buffer_channel_single = new TH2F(ss_buffer_channel.str().c_str(), ss_buffer_channel.str().c_str(), 50, 0, 2000, 30, min_board, min_board + 30);
 		TH1F *hist_buffer_single = new TH1F(ss_buffer.str().c_str(), ss_buffer.str().c_str(), 50, 0, 2000);
 		TH2F *hist_waveform_voltages_single = new TH2F(ss_waveform_voltages.str().c_str(), ss_waveform_voltages.str().c_str(), 256, 0, 256, 30, min_board, min_board + 30);
-		TH2F hist_align_100files_single_2d = TH2F("align_100files_2d","align_100files_2d",100, 0, 20000, 50, 0, 100); //testM
 		// TODO: Title, XAxis, YAxis for timing histos
 		hist_align_1file_single->GetXaxis()->SetTitle("Time [ns]");
 		hist_align_1file_single->GetYaxis()->SetTitle("Entries");
@@ -516,11 +515,6 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 		hist_align_20files_single->GetYaxis()->SetTitle("Entries");
 		hist_align_20files_single->SetStats(0);
 
-		hist_align_100files_single->GetXaxis()->SetTitle("Time [ns]");
-		hist_align_100files_single->GetYaxis()->SetTitle("Entries");
-		hist_align_100files_single->SetStats(0);
-
-		//testM
 		hist_align_100files_single_2d.GetXaxis()->SetTitle("Time [ns]");
 		hist_align_100files_single_2d.GetYaxis()->SetTitle("PartFiles");
 		hist_align_100files_single_2d.SetStats(0);
@@ -554,14 +548,13 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 		hist_align_5files.emplace(board_nr, hist_align_5files_single);
 		hist_align_10files.emplace(board_nr, hist_align_10files_single);
 		hist_align_20files.emplace(board_nr, hist_align_20files_single);
-		hist_align_100files.emplace(board_nr, hist_align_100files_single);
 		hist_align_1000files_2d.emplace(board_nr, hist_align_1000files_single_2d);
 		hist_adc_channel.emplace(board_nr, hist_adc_channel_single);
 		hist_waveform_channel.emplace(board_nr, hist_waveform_channel_single);
 		hist_buffer_channel.emplace(board_nr, hist_buffer_channel_single);
 		hist_buffer.emplace(board_nr, hist_buffer_single);
 		hist_waveform_voltages.emplace(board_nr, hist_waveform_voltages_single);
-		hist_align_100files_2d.emplace(board_nr, hist_align_100files_single_2d); //testM
+		hist_align_100files_2d.emplace(board_nr, hist_align_100files_single_2d);
 
 		std::vector<TH1F *> hist_pedestal_temp_vec;
 
