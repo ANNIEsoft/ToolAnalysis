@@ -51,6 +51,10 @@ bool BackTracker::Initialise(std::string configfile, DataModel &data){
   fClusterEfficiency        = new std::map<double, double>;
   fClusterPurity            = new std::map<double, double>;
   fClusterTotalCharge       = new std::map<double, double>;
+  fClusterEarliestMCTime    = new std::map<double, double>;
+  fClusterMeanMCTime        = new std::map<double, double>;
+  fClusterMedianMCTime      = new std::map<double, double>;
+
   
   return true;
 }
@@ -68,9 +72,9 @@ bool BackTracker::Execute()
   fClusterEfficiency       ->clear();
   fClusterPurity           ->clear();
   fClusterTotalCharge      ->clear();
-  fClusterEarliestMCTime     ->clear();
-  fClusterMeanMCTime         ->clear();
-  fClusterMedianMCTime       ->clear();
+  fClusterEarliestMCTime   ->clear();
+  fClusterMeanMCTime       ->clear();
+  fClusterMedianMCTime     ->clear();
 
   fParticleToTankTotalCharge.clear();
   
