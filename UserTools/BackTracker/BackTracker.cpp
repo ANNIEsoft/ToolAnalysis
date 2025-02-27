@@ -27,6 +27,15 @@ bool BackTracker::Initialise(std::string configfile, DataModel &data){
     Log(logmessage, v_error, verbosity);
   }
 
+  bool gotDebugPlots = m_variables.Get("DebugPlots", fDebugPlots);
+  if (!gotDebugPlots) {
+    fDebugPlots = false;
+    logmessage = "BackTracker::Initialize: \"DebugPlots\" not set in the config, defaulting to false";
+    Log(logmessage, v_error, verbosity);
+  }
+  if (fDebugPlots)
+    SetupDebug();
+
   bool gotMCWaveforms = m_variables.Get("MCWaveforms", fMCWaveforms);
   if (!gotMCWaveforms) {
     fMCWaveforms = false;
@@ -37,7 +46,7 @@ bool BackTracker::Initialise(std::string configfile, DataModel &data){
 
   // Set up the pointers we're going to save. No need to 
   // delete them at Finalize, the store will handle it
-  fClusterToBestParticleID  = new std::map<double, int>;
+  fClusterToBestParticleIdx = new std::map<double, int>;
   fClusterToBestParticlePDG = new std::map<double, int>;
   fClusterEfficiency        = new std::map<double, double>;
   fClusterPurity            = new std::map<double, double>;
@@ -54,11 +63,14 @@ bool BackTracker::Execute()
   if (load_status == 2) return true;
   
   
-  fClusterToBestParticleID ->clear();
+  fClusterToBestParticleIdx->clear();
   fClusterToBestParticlePDG->clear();
   fClusterEfficiency       ->clear();
   fClusterPurity           ->clear();
   fClusterTotalCharge      ->clear();
+  fClusterEarliestMCTime     ->clear();
+  fClusterMeanMCTime         ->clear();
+  fClusterMedianMCTime       ->clear();
 
   fParticleToTankTotalCharge.clear();
   
@@ -95,51 +107,202 @@ bool BackTracker::Execute()
 	  return false;
 	}
 
+	// Extract all the MCHits that are in time with this cluster hit
 	std::vector<int> mcHitIdxVec = fMapChannelToPulseTimeToMCHitIdx[channel_key][hitTime];
 	for (auto mcHitIdx : mcHitIdxVec) 
 	  mcHits.push_back((fMCHitsMap->at(channel_key)).at(mcHitIdx));
       }// end loop over cluster hits
 
-      int prtId = -5;
-      int prtPdg = -5;
+      int prtIdx = -5;
+      int prtPdg = 0;
       double eff = -5;
       double pur = -5;
       double totalCharge = 0;
 
-      MatchMCParticle(mcHits, prtId, prtPdg, eff, pur, totalCharge);
+      MatchMCParticle(mcHits, prtIdx, prtPdg, eff, pur, totalCharge);
 
-      fClusterToBestParticleID ->emplace(apair.first, prtId);
+      // Go through the mcHits and determine the earliest, mean, and median hit times
+      double earliestTime = 99999;
+      double meanTime = 0;
+      double medianTime = -5;
+      for (auto mcHit : mcHits) {
+	double tempTime = mcHit.GetTime();
+	if (tempTime < earliestTime) earliestTime = tempTime;
+	meanTime += tempTime;       
+      }// end loop over MCHits
+      if (mcHit.size()) {
+	meanTime = meanTime / mcHit.size()
+	  
+	if (mcHit.size() %2 != 0)
+	  medianTime = mcHits.at(mcHit.size()/2);
+	else 
+	  medianTime = (mcHits.at((mcHit.size()-1)/2) + mcHits.at((mcHit.size())/2)) / 2;
+      }// end mean/median calculation
+
+      fClusterToBestParticleIdx->emplace(apair.first, prtIdx);
       fClusterToBestParticlePDG->emplace(apair.first, prtPdg);
       fClusterEfficiency       ->emplace(apair.first, eff);
       fClusterPurity           ->emplace(apair.first, pur);
       fClusterTotalCharge      ->emplace(apair.first, totalCharge);
-
+      fClusterEarliestMCTime   ->emplace(apair.first, earliestTime);
+      fClusterMeanMCTime       ->emplace(apair.first, meanTime);
+      fClusterMedianMCTime     ->emplace(apair.first, medianTime);
+      
       m_data->Stores.at("ANNIEEvent")->Set("MapChannelToPulseTimeToMCHitIdx",  fMapChannelToPulseTimeToMCHitIdx );
+
+
+      if (fDebugPlots) {
+	// Basic cluster values
+	fDbgClusterTime = apair.first;
+	fDbgClusterNHits = apair.second.size();
+	fDbgClusterNMCHits = mcHits.size();
+	fDbgClusterBestParticleIdx = prtIdx;
+	fDbgClusterBestParticlePDG = prtPdg;
+	fDbgClusterBestParticleCharge = fParticleToTankTotalCharge.at(prtIdx);
+	fDbgClusterBestParticleStartEnergy = fMCParticles->at(prtIdx).GetStartEnergy();
+	fDbgClusterBestParticleStopEnergy = fMCParticles->at(prtIdx).GetStopEnergy();
+	fDbgClusterBestParticleStartTime = fMCParticles->at(prtIdx).GetStartTime();
+	fDbgClusterBestParticleStopTime = fMCParticles->at(prtIdx).GetStopTime();	    
+	fDbgClusterEfficiency = eff;
+	fDbgClusterPurity = pur;
+	fDbgClusterTotalCharge = totalCharge;
+
+	// Vectors for individual cluster hits
+	fDbgClusterHitChannel.clear();
+	fDbgClusterHitCharge.clear();
+	fDbgClusterHitTime.clear();
+	for (auto hit : apair.second) {
+	  fDbgClusterHitChannel.push_back(hit.GetTubeId());
+	  fDbgClusterHitCharge.push_back(hit.GetCharge());
+	  fDbgClusterHitTime.push_back(hit.GetTime());
+	}
+
+	// Vectors for individual matched MCHits and their parent particles
+	fDbgClusterMCHitChannel.clear();
+	fDbgClusterMCHitCharge.clear();
+	fDbgClusterMCHitTime.clear();
+	fDbgClusterParticleIdx.clear();
+	fDbgClusterParticleCharge.clear();
+	fDbgClusterParticlePdgCode.clear();
+	fDbgClusterParticleStartEnergy.clear();
+	fDbgClusterParticleStopEnergy.clear();
+	fDbgClusterParticleStartTime.clear();
+	fDbgClusterParticleStopTime.clear();
+	fDbgClusterMCHitParticleTimeDiff.clear();
+	std::vector<int> seenParentIdxs;
+	for (auto hit : mcHits) {
+	  fDbgClusterMCHitChannel.push_back(hit.GetTubeId());
+	  fDbgClusterMCHitCharge.push_back(hit.GetCharge());
+	  fDbgClusterMCHitTime.push_back(hit.GetTime());
+
+	  // Vectors for all matched particles
+	  std::vector<int> parentIdxs = *(hit.GetParents());
+	  if (!parentIdxs.size()) continue;
+	  for (int parentIdx : parentIdxs) {
+	    if (std::find(seenParentIdxs.begin(), seenParentIdxs.end(), parentIdx) != seenParentIdxs.end())
+	      continue; // we've recorded info on this particle already
+
+	    fDbgClusterParticleIdx.push_back(parentIdx);
+	    fDbgClusterParticleCharge.push_back(fParticleToTankTotalCharge.at(parentIdx));
+	    fDbgClusterParticlePdgCode.push_back(fMCParticles->at(parentIdx).GetPdgCode());
+	    fDbgClusterParticleStartEnergy.push_back(fMCParticles->at(parentIdx).GetStartEnergy());
+	    fDbgClusterParticleStopEnergy.push_back(fMCParticles->at(parentIdx).GetStopEnergy());
+	    fDbgClusterParticleStartTime.push_back(fMCParticles->at(parentIdx).GetStartTime());
+	    fDbgClusterParticleStopTime.push_back(fMCParticles->at(parentIdx).GetStopTime());
+
+	    fDbgClusterMCHitParticleTimeDiff.push_back(hit.GetTime() - fMCParticles->at(parentIdx).GetStopTime());
+	  }// end loop over parent particles
+	}// end loop over matched MCHits
+
+	
+	fDbgClusterTree->Fill();
+      }// endif debug plots
+      
     }// end loop over the cluster map
   } else { // using clusters of MCHits
     // Loop over the MC clusters and do the things
     for (std::pair<double, std::vector<MCHit>>&& apair : *fClusterMapMC) {
-      int prtId = -5;
+      int prtIdx = -5;
       int prtPdg = -5;
       double eff = -5;
       double pur = -5;
       double totalCharge = 0;
 
-      MatchMCParticle(apair.second, prtId, prtPdg, eff, pur, totalCharge);
+      MatchMCParticle(apair.second, prtIdx, prtPdg, eff, pur, totalCharge);
 
-      fClusterToBestParticleID ->emplace(apair.first, prtId);
+      fClusterToBestParticleIdx->emplace(apair.first, prtIdx);
       fClusterToBestParticlePDG->emplace(apair.first, prtPdg);
       fClusterEfficiency       ->emplace(apair.first, eff);
       fClusterPurity           ->emplace(apair.first, pur);
       fClusterTotalCharge      ->emplace(apair.first, totalCharge);
+
+      if (fDebugPlots) {
+	// Basic cluster values
+	fDbgClusterTime = apair.first;
+	fDbgClusterNMCHits = apair.second.size();
+	fDbgClusterBestParticleIdx = prtIdx;
+	fDbgClusterBestParticlePDG = prtPdg;
+	fDbgClusterBestParticleCharge = fParticleToTankTotalCharge.at(prtIdx);
+	fDbgClusterBestParticleStartEnergy = fMCParticles->at(prtIdx).GetStartEnergy();
+	fDbgClusterBestParticleStopEnergy = fMCParticles->at(prtIdx).GetStopEnergy();
+	fDbgClusterBestParticleStartTime = fMCParticles->at(prtIdx).GetStartTime();
+	fDbgClusterBestParticleStopTime = fMCParticles->at(prtIdx).GetStopTime();	    
+	fDbgClusterEfficiency = eff;
+	fDbgClusterPurity = pur;
+	fDbgClusterTotalCharge = totalCharge;
+
+	// Vectors for individual matched MCHits and their parent particles
+	fDbgClusterMCHitChannel.clear();
+	fDbgClusterMCHitCharge.clear();
+	fDbgClusterMCHitTime.clear();
+	fDbgClusterParticleIdx.clear();
+	fDbgClusterParticleCharge.clear();
+	fDbgClusterParticlePdgCode.clear();
+	fDbgClusterParticleStartEnergy.clear();
+	fDbgClusterParticleStopEnergy.clear();
+	fDbgClusterParticleStartTime.clear();
+	fDbgClusterParticleStopTime.clear();
+	fDbgClusterMCHitParticleTimeDiff.clear();
+	std::vector<int> seenParentIdxs;
+	for (auto hit : apair.second) {
+	  fDbgClusterMCHitChannel.push_back(hit.GetTubeId());
+	  fDbgClusterMCHitCharge.push_back(hit.GetCharge());
+	  fDbgClusterMCHitTime.push_back(hit.GetTime());
+
+	  // Vectors for all matched particles
+	  std::vector<int> parentIdxs = *(hit.GetParents());
+	  if (!parentIdxs.size()) continue;
+	  for (int parentIdx : parentIdxs) {
+	    if (std::find(seenParentIdxs.begin(), seenParentIdxs.end(), parentIdx) != seenParentIdxs.end())
+	      continue; // we've recorded info on this particle already
+
+	    fDbgClusterParticleIdx.push_back(parentIdx);
+	    fDbgClusterParticleCharge.push_back(fParticleToTankTotalCharge.at(parentIdx));
+	    fDbgClusterParticlePdgCode.push_back(fMCParticles->at(parentIdx).GetPdgCode());
+	    fDbgClusterParticleStartEnergy.push_back(fMCParticles->at(parentIdx).GetStartEnergy());
+	    fDbgClusterParticleStopEnergy.push_back(fMCParticles->at(parentIdx).GetStopEnergy());
+	    fDbgClusterParticleStartTime.push_back(fMCParticles->at(parentIdx).GetStartTime());
+	    fDbgClusterParticleStopTime.push_back(fMCParticles->at(parentIdx).GetStopTime());
+
+	    fDbgClusterMCHitParticleTimeDiff.push_back(hit.GetTime() - fMCParticles->at(parentIdx).GetStopTime());
+	  }// end loop over parent particles
+	}// end loop over matched MCHits
+
+	
+	fDbgClusterTree->Fill();
+      }// endif debug plots
+
     }// end loop over the MC cluster map
   }// end if/else fMCWaveforms
 
-  m_data->Stores.at("ANNIEEvent")->Set("ClusterToBestParticleID",  fClusterToBestParticleID );
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterToBestParticleIdx", fClusterToBestParticleIdx);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterToBestParticlePDG", fClusterToBestParticlePDG);
   m_data->Stores.at("ANNIEEvent")->Set("ClusterEfficiency",        fClusterEfficiency       );
   m_data->Stores.at("ANNIEEvent")->Set("ClusterPurity",            fClusterPurity           );
   m_data->Stores.at("ANNIEEvent")->Set("ClusterTotalCharge",       fClusterTotalCharge      );
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterEarliestMCTime",    fClusterEarliestMCTime   );
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterMeanMCTime",        fClusterMeanMCTime       );
+  m_data->Stores.at("ANNIEEvent")->Set("ClusterMedianMCTime",      fClusterMedianMCTime     );
 
   return true;
 }
@@ -148,6 +311,11 @@ bool BackTracker::Execute()
 bool BackTracker::Finalise()
 {
 
+  if (fDebugPlots) {
+    fDebugFile->cd();
+    fDbgClusterTree->Write();
+  }
+  
   return true;
 }
 
@@ -158,83 +326,70 @@ void BackTracker::SumParticleTankCharge()
     std::vector<MCHit> mcHits = apair.second;
     for (uint mcHitIdx = 0; mcHitIdx < mcHits.size(); ++mcHitIdx) {
 
+
       // technically a MCHit could have multiple parents, but they don't appear to in practice
-      // skip any cases we come across
+      // however, if they do then split the energy equally amongg them
       std::vector<int> parentIdxs = *(mcHits[mcHitIdx].GetParents());
-      if (parentIdxs.size() != 1) continue;
-      
-      int particleId = -5;
-      for (auto bpair : *fMCParticleIndexMap) {
-	if (bpair.second == parentIdxs[0]) particleId = bpair.first;
-      }
-      if (particleId == -5) continue;
-	
-      double depositedCharge = mcHits[mcHitIdx].GetCharge();      
-      if (!fParticleToTankTotalCharge.count(particleId)) 
-	fParticleToTankTotalCharge.emplace(particleId, depositedCharge);
+      if (!parentIdxs.size()) continue; // no parents recorded?
+
+      double depositedCharge = mcHits[mcHitIdx].GetCharge() / parentIdxs.size();
+      for (int parentIdx : parentIdxs) {
+	if (!fParticleToTankTotalCharge.count(parentIdx)) 
+	fParticleToTankTotalCharge.emplace(parentIdx, depositedCharge);
       else 
-	fParticleToTankTotalCharge.at(particleId) += depositedCharge;
-    }    
-  }
+	fParticleToTankTotalCharge.at(parentIdx) += depositedCharge;
+      }// end loop over parent indexes      
+    }// end loop over MCHits    
+  }// end loop over PMTs
 }
 
 //------------------------------------------------------------------------------
-void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, int &prtPdg, double &eff, double &pur, double &totalCharge)
+void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtIdx, int &prtPdg, double &eff, double &pur, double &totalCharge)
 {
   // Loop over the hits and get all of their parents and the energy that each one contributed
-  //  be sure to bunch up all neutronic contributions
   std::map<int, double> mapParticleToTotalClusterCharge;
   totalCharge = 0;
 
   for (auto mchit : mchits) {    
     std::vector<int> parentIdxs = *(mchit.GetParents());
-    if (parentIdxs.size() != 1) {
-      logmessage = "BackTracker::MatchMCParticle: this MCHit has ";
-      logmessage += std::to_string(parentIdxs.size()) + " parents!";
-      Log(logmessage, v_debug, verbosity);
-      continue;
-    }
+    if (!parentIdxs.size()) continue; 
+
+    double hitCharge = mchit.GetCharge();
+    totalCharge += hitCharge;
+    hitCharge  = hitCharge / parentIdxs.size();
     
-    int particleId = -5;
-    for (auto apair : *fMCParticleIndexMap) {
-      if (apair.second == parentIdxs[0]) particleId = apair.first;
-    }
-    if (particleId == -5) continue;
-    
-    double depositedCharge = mchit.GetCharge();
-    totalCharge += depositedCharge;
-    
-    if (mapParticleToTotalClusterCharge.count(particleId) == 0) 
-      mapParticleToTotalClusterCharge.emplace(particleId, depositedCharge);
-    else
-      mapParticleToTotalClusterCharge[particleId] += depositedCharge;    
-  }       
+    for (int parentIdx : parentIdxs) {
+      if (mapParticleToTotalClusterCharge.count(parentIdx) == 0) 
+	mapParticleToTotalClusterCharge.emplace(parentIdx, hitCharge);
+      else
+	mapParticleToTotalClusterCharge[parentIdx] += hitCharge;
+    }// end loop over parentIdxs
+  }// end loop over MCHits    
 
   // Loop over the particleIds to find the primary contributer to the cluster
   double maxCharge = 0;
   for (auto apair : mapParticleToTotalClusterCharge) {
     if (apair.second > maxCharge) {
       maxCharge = apair.second;
-      prtId = apair.first;
+      prtIdx = apair.first;
     }
-  }
+  }// end loop over the particle charge map
 
   // Check that we have some charge, if not then something is wrong so pass back all -5
   if (totalCharge > 0) {
-    eff = maxCharge/fParticleToTankTotalCharge.at(prtId);
+    eff = maxCharge/fParticleToTankTotalCharge.at(prtIdx);
     pur = maxCharge/totalCharge;
-    prtPdg = (fMCParticles->at(fMCParticleIndexMap->at(prtId))).GetPdgCode();
+    prtPdg = (fMCParticles->at(prtIdx)).GetPdgCode();
   } else {
-    prtId = -5;
+    prtIdx = -5;
     eff = -5;
     pur = -5;
     totalCharge = -5;
   }
 
   logmessage = "BackTracker::MatchMCParticle: best particleId is : ";
-  logmessage += std::to_string(prtId) + " which has PDG: " + std::to_string(prtPdg);
+  logmessage += std::to_string(prtIdx) + " which has PDG: " + std::to_string(prtPdg);
   Log(logmessage, v_message, verbosity);
-
 }
 
 //------------------------------------------------------------------------------
@@ -274,6 +429,7 @@ bool BackTracker::MapPulsesToParentIdxs()
 	else {
 	  for (uint mcHitIdx = 0; mcHitIdx < mcHits.size(); ++mcHitIdx) {
 	    double hitTime = mcHits[mcHitIdx].GetTime();
+
 	    // The hit finding has to contend with noise so allow for a 10 ns 
 	    // slew in the pulse start time (I know it seems large)
 	    if ( hitTime + 10 >= pulse.start_time() && hitTime <= pulse.stop_time())
@@ -295,6 +451,43 @@ bool BackTracker::MapPulsesToParentIdxs()
 
   return true;
 }
+
+//------------------------------------------------------------------------------
+void BackTracker::SetupDebug()
+{
+  fDebugFile = new TFile("BackTracker_Debug.root", "RECREATE");
+  fDbgClusterTree = new TTree("clusterTree", "clusterTree");
+
+  fDbgClusterTree->Branch("Time", &fDbgClusterTime);
+  fDbgClusterTree->Branch("NHits", &fDbgClusterNHits);
+  fDbgClusterTree->Branch("NMCHits", &fDbgClusterNMCHits);
+  fDbgClusterTree->Branch("BestParticleIdx", &fDbgClusterBestParticleIdx);
+  fDbgClusterTree->Branch("BestParticlePDG", &fDbgClusterBestParticlePDG);
+  fDbgClusterTree->Branch("BestParticleCharge", &fDbgClusterBestParticleCharge);
+  fDbgClusterTree->Branch("BestParticleStartEnergy", &fDbgClusterBestParticleStartEnergy);
+  fDbgClusterTree->Branch("BestParticleStopEnergy", &fDbgClusterBestParticleStopEnergy);
+  fDbgClusterTree->Branch("BestParticleStartTime", &fDbgClusterBestParticleStartTime);
+  fDbgClusterTree->Branch("BestParticleStopTime", &fDbgClusterBestParticleStopTime);
+  fDbgClusterTree->Branch("Efficiency", &fDbgClusterEfficiency);
+  fDbgClusterTree->Branch("Purity", &fDbgClusterPurity);
+  fDbgClusterTree->Branch("TotalCharge", &fDbgClusterTotalCharge);
+  fDbgClusterTree->Branch("HitChannel", &fDbgClusterHitChannel);
+  fDbgClusterTree->Branch("HitCharge", &fDbgClusterHitCharge);
+  fDbgClusterTree->Branch("HitTime", &fDbgClusterHitTime);
+  fDbgClusterTree->Branch("MCHitChannel", &fDbgClusterMCHitChannel);
+  fDbgClusterTree->Branch("MCHitCharge", &fDbgClusterMCHitCharge);
+  fDbgClusterTree->Branch("MCHitTime", &fDbgClusterMCHitTime);
+  fDbgClusterTree->Branch("ParticleIdx", &fDbgClusterParticleIdx);
+  fDbgClusterTree->Branch("ParticleCharge", &fDbgClusterParticleCharge);
+  fDbgClusterTree->Branch("ParticlePDG", &fDbgClusterParticlePdgCode);
+  fDbgClusterTree->Branch("ParticleStartEnergy", &fDbgClusterParticleStartEnergy);
+  fDbgClusterTree->Branch("ParticleStopEnergy", &fDbgClusterParticleStopEnergy);
+  fDbgClusterTree->Branch("ParticleStartTime", &fDbgClusterParticleStartTime);
+  fDbgClusterTree->Branch("ParticleStopTime", &fDbgClusterParticleStopTime);
+  fDbgClusterTree->Branch("MCHitParticleTimeDiff", &fDbgClusterMCHitParticleTimeDiff);
+  
+}
+
 
 //------------------------------------------------------------------------------
 int BackTracker::LoadFromStores()

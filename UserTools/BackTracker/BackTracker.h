@@ -9,6 +9,10 @@
 #include "Particle.h"
 #include "ADCPulse.h"
 
+#include "TFile.h"
+#include "TTree.h"
+
+
 
 /**
  * \class BackTracker
@@ -31,9 +35,12 @@ class BackTracker: public Tool {
 
   int LoadFromStores(); ///< Does all the loading so I can move it away from the Execute function
   void SumParticleTankCharge();
-  void MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, int &prtPdg, double &eff, double &pur, double &totalCharge); ///< The meat and potatoes
+  void MatchMCParticle(std::vector<MCHit> const &mchits, int &prtIdx, int &prtPdg, double &eff, double &pur, double &totalCharge); ///< The meat and potatoes
 
   bool MapPulsesToParentIdxs();
+
+  void SetupDebug();
+
   
  private:
 
@@ -62,13 +69,55 @@ class BackTracker: public Tool {
   //   the the purity based on the best matched particle
   //   the total deposited charge in the cluster
   //   the ammount of cluster charge due to neutrons
-  std::map<double, int>    *fClusterToBestParticleID  = nullptr;
+  std::map<double, int>    *fClusterToBestParticleIdx = nullptr;
   std::map<double, int>    *fClusterToBestParticlePDG = nullptr; 
   std::map<double, double> *fClusterEfficiency        = nullptr;
   std::map<double, double> *fClusterPurity            = nullptr;
   std::map<double, double> *fClusterTotalCharge       = nullptr;
+  std::map<double, double> *fClusterEarliestMCTime    = nullptr;
+  std::map<double, double> *fClusterMeanMCTime        = nullptr;
+  std::map<double, double> *fClusterMedianMCTime      = nullptr;
 
+  // Config variables
+  bool fDebugPlots;
   bool fMCWaveforms;
+
+  // For debug plots
+  TFile *fDebugFile;
+
+  TTree *fDbgClusterTree;  
+  double fDbgClusterTime;
+  int fDbgClusterNHits;
+  int fDbgClusterNMCHits;
+  int fDbgClusterBestParticleIdx;
+  int fDbgClusterBestParticlePDG;
+  double fDbgClusterBestParticleCharge;
+  double fDbgClusterBestParticleStartEnergy;
+  double fDbgClusterBestParticleStopEnergy;
+  double fDbgClusterBestParticleStartTime;
+  double fDbgClusterBestParticleStopTime;
+  double fDbgClusterEfficiency;
+  double fDbgClusterPurity;
+  double fDbgClusterTotalCharge;
+  std::vector<double> fDbgClusterHitChannel;
+  std::vector<double> fDbgClusterHitCharge;
+  std::vector<double> fDbgClusterHitTime;
+  std::vector<double> fDbgClusterMCHitChannel;
+  std::vector<double> fDbgClusterMCHitCharge;
+  std::vector<double> fDbgClusterMCHitTime;
+  std::vector<double> fDbgClusterParticleIdx;
+  std::vector<double> fDbgClusterParticleCharge;
+  std::vector<double> fDbgClusterParticlePdgCode;
+  std::vector<double> fDbgClusterParticleStartEnergy;
+  std::vector<double> fDbgClusterParticleStopEnergy;
+  std::vector<double> fDbgClusterParticleStartTime;
+  std::vector<double> fDbgClusterParticleStopTime;
+  std::vector<double> fDbgClusterMCHitParticleTimeDiff;
+
+
+  
+  
+  
   
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity;
