@@ -181,7 +181,7 @@ double LAPPDFindT0::Tfit(std::vector<double>* wf)
     if(FindT0VerbosityLevel==2) cout<<i<<" "<<ppre<<" "<<pvol<<" "<<T0signalmax<<endl;
 
     if(oldLaser == 1){
-        if(firstcross && pvol > T0signalmax && ppre < T0signalmax && i>5 && i<250){ //trigger up to +200 2020 data
+        if(firstcross && pvol > T0signalmax && ppre < T0signalmax && i>6 && i<250){ //trigger up to +200 2020 data
           if(FindT0VerbosityLevel>1) cout<<"Old t0 bin: "<<i<<endl;
           TGraph *edge = new TGraph();
           for(int j=-7; j<1; j++){
@@ -200,7 +200,7 @@ double LAPPDFindT0::Tfit(std::vector<double>* wf)
       }
     }else{
 
-      if(firstcross && pvol < T0signalmax && ppre > T0signalmax && i>5 && i<250){
+      if(firstcross && pvol < T0signalmax && ppre > T0signalmax && i>6 && i<250){
 
           if(FindT0VerbosityLevel>1) cout<<"New t0 bin: "<<i<<endl;
 
