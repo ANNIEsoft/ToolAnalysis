@@ -204,15 +204,15 @@ DataModel/%.o: DataModel/%.cpp lib/libLogging.so lib/libStore.so include/Tool.h
 
 UserTools/MyFactory/Unity.h:
 	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
+	@mkdir -p UserTools/MyFactory
 	@echo -n "" > $@
 	@for TOOL in $(TOOLS); do\
 		echo '#include "'"$${TOOL}.h"'"' >> $@;\
 		cp -f UserTools/$${TOOL}/*.h include/ 2>/dev/null || /bin/true;\
 	done
 
-UserTools/MyFactory/MyFactory.cpp:
+UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h
 	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
-	@mkdir -p UserTools/MyFactory
 	@cp UserTools/Factory/Factory.h UserTools/MyFactory/Factory.h
 	@echo '#include "Factory.h"' > $@
 	@echo 'Tool* Factory(std::string tool) {' >> $@
@@ -231,10 +231,6 @@ UserTools/MyFactory/MyFactory.cpp:
 	
 	@# make datamodel
 	$(MAKE) -j $(NPROCS) lib/libDataModel.so
-	
-	# remake and replace factory and unity
-	#$(MAKE) UserTools/MyFactory/MyFactory.cpp
-	#$(MAKE) UserTools/MyFactory/Unity.h
 	
 	@# make executable
 	$(MAKE) -j $(NPROCS) Analyse
