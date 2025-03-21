@@ -1529,8 +1529,8 @@ void PhaseIITreeMaker::LoadDigitHits(){
           }
    // Extract the PMT & LAPPD digit information
    // ===============================
-        NDigitsPMTs = 0; // number of digits from PMT hits in the event
-        NDigitsLAPPDs = 0; // number of digits from LAPPD hits in the event
+        fNDigitsPMTs = 0; // number of digits from PMT hits in the event
+        fNDigitsLAPPDs = 0; // number of digits from LAPPD hits in the event
   //loop through all digits
         for(RecoDigit &adigit : *digitList){
 	   fdigitX.push_back(adigit.GetPosition().X());
@@ -1540,8 +1540,8 @@ void PhaseIITreeMaker::LoadDigitHits(){
 	   if(adigit.GetDigitType()==0){fNDigitsPMTs+=1;} //when the digit type is zero we have a PMT digit
 	   else{fNDigitsLAPPDs+=1;}// when it is 1 we have LAPPD
            }
-        Log("PhaseIITreeMaker Tool: Got "+to_string(NDigitsPMTs)+" PMT digits; "+to_string(fdigitT.size()) +" total digits so far",v_debug,verbosity);
-        Log("PhaseIITreeMaker Tool: Got "+to_string(NDigitsLAPPDs)+" LAPPD digits; "+to_string(fdigitT.size()) +" total digits",v_debug,verbosity);
+        Log("PhaseIITreeMaker Tool: Got "+to_string(fNDigitsPMTs)+" PMT digits; "+to_string(fdigitT.size()) +" total digits so far",v_debug,verbosity);
+        Log("PhaseIITreeMaker Tool: Got "+to_string(fNDigitsLAPPDs)+" LAPPD digits; "+to_string(fdigitT.size()) +" total digits",v_debug,verbosity);
    return;
 }       
 //DIGITS
