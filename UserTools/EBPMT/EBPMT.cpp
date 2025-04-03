@@ -26,8 +26,6 @@ bool EBPMT::Initialise(std::string configfile, DataModel &data)
   NumWavesInCompleteSet = 140;
 
   FinishedHits = new std::map<uint64_t, std::map<unsigned long, std::vector<Hit>> *>();
-  RWMRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>();
-  BRFRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>();
 
   saveRWMWaveforms = true;
   saveBRFWaveforms = true;
@@ -43,11 +41,13 @@ bool EBPMT::Execute()
   bool gotHits = m_data->CStore.Get("InProgressHits", InProgressHits);
   bool gotChkey = m_data->CStore.Get("InProgressChkey", InProgressChkey);
 
-  m_data->CStore.Get("RWMRawWaveforms", RWMRawWaveforms);
-  m_data->CStore.Get("BRFRawWaveforms", BRFRawWaveforms);
-  Log("EBPMT: Got RWMRawWaveforms size: " + std::to_string(RWMRawWaveforms->size()), v_message, verbosityEBPMT);
-  Log("EBPMT: Got BRFRawWaveforms size: " + std::to_string(BRFRawWaveforms->size()), v_message, verbosityEBPMT);
-
+  if (!gotHits || !gotChkey)
+  {
+    Log("EBPMT: No InProgressHits or InProgressChkey found", v_message, verbosityEBPMT);
+    return true;
+  }
+  Log("EBPMT: got inprogress hits and chkey with size " + std::to_string(InProgressHits->size()) + " and " + std::to_string(InProgressChkey->size()), v_message, verbosityEBPMT);
+  
   if (exeNum % 80 == 0 && exeNum != 0)
   {
     // 80 is arbitrary, because 6*80 = 480 around, close, and smaller than the pairing exe number, exePerMatch default 500
@@ -72,14 +72,17 @@ bool EBPMT::Execute()
   Log("EBPMT: Got PairedPMTTimeStamps size: " + std::to_string(PairedPMTTimeStamps.size()), v_message, verbosityEBPMT);
   Log("EBPMT: Got PairedPMTTriggerTimestamp size: " + std::to_string(PairedCTCTimeStamps.size()), v_message, verbosityEBPMT);
 
-  Log("EBPMT: gotHits = " + std::to_string(gotHits) + " gotChkey = " + std::to_string(gotChkey), v_message, verbosityEBPMT);
-  if (!gotHits || !gotChkey)
+  bool gotRWM = m_data->CStore.Get("RWMRawWaveforms", RWMRawWaveforms);
+  bool gotBRF = m_data->CStore.Get("BRFRawWaveforms", BRFRawWaveforms);
+  if (gotRWM && gotBRF && RWMRawWaveforms != NULL && BRFRawWaveforms != NULL)
   {
-    Log("EBPMT: No InProgressHits or InProgressChkey found", v_message, verbosityEBPMT);
-    return true;
+    Log("EBPMT: Got RWMRawWaveforms size: " + std::to_string(RWMRawWaveforms->size()), v_message, verbosityEBPMT);
+    Log("EBPMT: Got BRFRawWaveforms size: " + std::to_string(BRFRawWaveforms->size()), v_message, verbosityEBPMT);
   }
-
-  Log("EBPMT: got inprogress hits and chkey with size " + std::to_string(InProgressHits->size()) + " and " + std::to_string(InProgressChkey->size()), v_message, verbosityEBPMT);
+  else
+  {
+    Log("EBPMT: No RWMRawWaveforms or BRFRawWaveforms found", v_message, verbosityEBPMT);
+  }
 
   vector<uint64_t> PMTEmplacedHitTimes;
   vector<uint64_t> RWMEmplacedTimes;
@@ -116,14 +119,22 @@ bool EBPMT::Execute()
       {
         Log("EBPMT: AlmostCompleteWaveforms size = " + std::to_string(AlmostCompleteWaveforms.size()), v_debug, verbosityEBPMT);
         AlmostCompleteWaveforms[PMTCounterTimeNs]++;
+        Log("EBPMT: AlmostCompleteWaveforms adding PMTCounterTimeNs = " + std::to_string(PMTCounterTimeNs) + " to " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs]), v_debug, verbosityEBPMT);
       }
       else
+      {
         AlmostCompleteWaveforms.emplace(PMTCounterTimeNs, 0);
-      Log("EBPMT: AlmostCompleteWaveforms adding PMTCounterTimeNs = " + std::to_string(PMTCounterTimeNs) + " to " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs]), v_debug, verbosityEBPMT);
+      }
     }
 
-    Log("EBPMT: ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs] >= 5), v_debug, verbosityEBPMT);
+    auto it = AlmostCompleteWaveforms.find(PMTCounterTimeNs);
+    int AlmostCompleteWaveforms_CountHere = 0;
+    if (it != AlmostCompleteWaveforms.end())
+    {
+      AlmostCompleteWaveforms_CountHere = it->second;
+    }
 
+    Log("EBPMT: ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms_CountHere), v_debug, verbosityEBPMT);
 
     // print all elements in vector<unsigned long> ChannelKey
 //    cout<<"EBPMT: ChannelKey: ";
@@ -133,8 +144,7 @@ bool EBPMT::Execute()
 //    }
 //    cout<<endl;
 
-
-    if (ChannelKey.size() >= NumWavesInCompleteSet || ((ChannelKey.size() == NumWavesInCompleteSet - 1) && (AlmostCompleteWaveforms[PMTCounterTimeNs] >= 5)))
+    if (ChannelKey.size() >= NumWavesInCompleteSet || ((ChannelKey.size() == NumWavesInCompleteSet - 1) && (AlmostCompleteWaveforms_CountHere >= 5)))
     {
       Log("EBPMT: Emplace hit map to FinishedHits, ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms.at(PMTCounterTimeNs) >= 5), v_debug, verbosityEBPMT);
 
@@ -322,9 +332,13 @@ bool EBPMT::Matching(int targetTrigger, int matchToTrack)
     Log("EBPMT: looping hit " + std::to_string(loopNum) + ", minDT: " + std::to_string(minDT) + ", minDTTrigger time: " + std::to_string(minDTTrigger) + " with word " + std::to_string(matchedTrigWord) + ", in trigger track " + std::to_string(matchedTrack), v_warning, verbosityEBPMT);
     if (minDT < matchTolerance_ns)
     {
-      PairedCTCTimeStamps[matchedTrack].push_back(minDTTrigger);
-      PairedPMTTimeStamps[matchedTrack].push_back(PMTCounterTimeNs);
-      PairedPMT_TriggerIndex[matchedTrack].push_back(matchedIndex);
+      //PairedCTCTimeStamps[matchedTrack].push_back(minDTTrigger);
+      //PairedPMTTimeStamps[matchedTrack].push_back(PMTCounterTimeNs);
+      //PairedPMT_TriggerIndex[matchedTrack].push_back(matchedIndex);
+
+      PairedCTCTimeStamps.emplace(matchedTrack, std::vector<uint64_t>{}).first->second.push_back(minDTTrigger);
+      PairedPMTTimeStamps.emplace(matchedTrack, std::vector<uint64_t>{}).first->second.push_back(PMTCounterTimeNs);
+      PairedPMT_TriggerIndex.emplace(matchedTrack, std::vector<int>{}).first->second.push_back(matchedIndex);
 
       // the pmt hit map with timestmap PMTCounterTimeNs, match to trigger with timestamp minDTTrigger
       // the matched trigger is at matchedIndex of that trigger track
