@@ -18,7 +18,7 @@ BoardIndexLabel BoardIndex #Label of the vector of read out boards
 PsecReceiveMode 1
 stopEntries 10000000000
 
-DoPedSubtraction 1
+DoPedSubtraction 0
 Nboards 6 #Number of pedestal files to be read in
 PedinputfileTXT ../Pedestals/Laser2024Feb/P
 PSECinputfile /pnfs/annie/persistent/processed/LAPPD40Merged/FinalVersion_withRawTS/FilteredData_PMT_MRDtrack_noveto_15mV_7strips_3xxx_104
