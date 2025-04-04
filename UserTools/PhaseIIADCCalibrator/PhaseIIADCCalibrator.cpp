@@ -723,20 +723,27 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
   // come from the same readout for the same channel)
   std::vector< CalibratedADCWaveform<double> > calibrated_waveforms;
   for (const auto& raw_waveform : raw_waveforms) {
-    std::vector<uint16_t> baselines;
+    std::vector<double> baselines;
+    std::vector<double> sigma_baselines;
     std::vector<size_t> RepresentationRegion;
-    double first_baseline=0;
-    double first_sigma_baseline;
+    bool isFirst = true;
+    double first_baseline, first_sigma_baseline;
     double baseline, sigma_baseline;
     const size_t nsamples = raw_waveform.Samples().size();
     for(size_t starting_sample = 0; starting_sample < nsamples; starting_sample += baseline_rep_samples){
       double baseline, sigma_baseline;
       ze3ra_baseline(raw_waveform, baseline, sigma_baseline,
         num_baseline_samples,starting_sample);
-      if(sigma_baseline<baseline_unc_tolerance){
+      if(sigma_baseline < baseline_unc_tolerance){
         RepresentationRegion.push_back(starting_sample + baseline_rep_samples);
         baselines.push_back(baseline);
+	sigma_baselines.push_back(sigma_baseline);
       } else {
+	if (isFirst) {
+	  first_baseline = baseline;
+	  first_sigma_baseline = sigma_baseline;
+	  isFirst = false;
+	}
         if(verbosity>4) std::cout << "BASELINE UNCERTAINTY BEYOND SET THRESHOLD.  IGNORING SAMPLE" << std::endl;
       }
     }
@@ -746,6 +753,7 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
       if(verbosity>4) std::cout << "NO BASLINE FOUND WITHIN TOLERANCE.  USING FIRST AS BEST ESTIMATE" << std::endl;
       RepresentationRegion.push_back(baseline_rep_samples);
       baselines.push_back(first_baseline);
+      sigma_baselines.push_back(first_sigma_baseline);
     }
     std::vector<double> cal_data;
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
@@ -762,10 +770,23 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
         }
       }
     }
-    double bl_estimates_mean, bl_estimates_var;
-    ComputeMeanAndVariance(baselines, bl_estimates_mean, bl_estimates_var);
+    double bl_estimates_mean = 0;
+    double bl_estimates_sigma = 0;
+
+    // When averaging multiple means you need to average the variances as well
+    // We don't want to use the variance of the mean of all the baselines.
+    // If there is only one baseline then the variance is 0 if you do that...
+    for (size_t idx = 0; idx < baselines.size(); ++idx) {
+      bl_estimates_mean += baselines[idx];
+      bl_estimates_sigma += pow(sigma_baselines[idx],2);
+    }
+    bl_estimates_sigma = sqrt(bl_estimates_sigma / double(baselines.size()));
+	bl_estimates_mean = bl_estimates_mean / double(baselines.size());   
+ 
+    //    ComputeMeanAndVariance(baselines, bl_estimates_mean, bl_estimates_var, std::numeric_limits<size_t>::max(), 0, 7);
+    
     calibrated_waveforms.emplace_back(raw_waveform.GetStartTime(),
-      cal_data, bl_estimates_mean, bl_estimates_var);
+      cal_data, bl_estimates_mean, bl_estimates_sigma);
   }
   return calibrated_waveforms;
 }
