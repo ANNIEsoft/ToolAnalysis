@@ -4,6 +4,8 @@
 
 ToolDAQapp=`pwd`
 
+ulimit -n 4096
+
 export LIBGL_ALWAYS_INDIRECT=1
 
 source ${ToolDAQapp}/ToolDAQ/root-6.24.06/install/bin/thisroot.sh
