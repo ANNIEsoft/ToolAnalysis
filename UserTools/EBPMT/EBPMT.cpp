@@ -26,6 +26,8 @@ bool EBPMT::Initialise(std::string configfile, DataModel &data)
   NumWavesInCompleteSet = 140;
 
   FinishedHits = new std::map<uint64_t, std::map<unsigned long, std::vector<Hit>> *>();
+  // RWMRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>();
+  // BRFRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>();
 
   saveRWMWaveforms = true;
   saveBRFWaveforms = true;
@@ -47,7 +49,7 @@ bool EBPMT::Execute()
     return true;
   }
   Log("EBPMT: got inprogress hits and chkey with size " + std::to_string(InProgressHits->size()) + " and " + std::to_string(InProgressChkey->size()), v_message, verbosityEBPMT);
-  
+
   if (exeNum % 80 == 0 && exeNum != 0)
   {
     // 80 is arbitrary, because 6*80 = 480 around, close, and smaller than the pairing exe number, exePerMatch default 500
@@ -119,30 +121,27 @@ bool EBPMT::Execute()
       {
         Log("EBPMT: AlmostCompleteWaveforms size = " + std::to_string(AlmostCompleteWaveforms.size()), v_debug, verbosityEBPMT);
         AlmostCompleteWaveforms[PMTCounterTimeNs]++;
-        Log("EBPMT: AlmostCompleteWaveforms adding PMTCounterTimeNs = " + std::to_string(PMTCounterTimeNs) + " to " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs]), v_debug, verbosityEBPMT);
       }
       else
-      {
         AlmostCompleteWaveforms.emplace(PMTCounterTimeNs, 0);
-      }
+      Log("EBPMT: AlmostCompleteWaveforms adding PMTCounterTimeNs = " + std::to_string(PMTCounterTimeNs) + " to " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs]), v_debug, verbosityEBPMT);
     }
 
-    auto it = AlmostCompleteWaveforms.find(PMTCounterTimeNs);
-    int AlmostCompleteWaveforms_CountHere = 0;
-    if (it != AlmostCompleteWaveforms.end())
-    {
-      AlmostCompleteWaveforms_CountHere = it->second;
-    }
-
-    Log("EBPMT: ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms_CountHere), v_debug, verbosityEBPMT);
+    Log("EBPMT: ChannelKey.size() = " + std::to_string(ChannelKey.size()) + " >= NumWavesInCompleteSet = " + std::to_string(NumWavesInCompleteSet) + " or AlmostCompleteWaveforms.at(PMTCounterTimeNs) = " + std::to_string(AlmostCompleteWaveforms[PMTCounterTimeNs] >= 5), v_debug, verbosityEBPMT);
 
     // print all elements in vector<unsigned long> ChannelKey
-//    cout<<"EBPMT: ChannelKey: ";
-//    for (unsigned long ch : ChannelKey)
-//    {
-//      cout<<ch<<", ";
-//    }
-//    cout<<endl;
+    //    cout<<"EBPMT: ChannelKey: ";
+    //    for (unsigned long ch : ChannelKey)
+    //    {
+    //      cout<<ch<<", ";
+    //    }
+    //    cout<<endl;
+    auto it_acw = AlmostCompleteWaveforms.find(PMTCounterTimeNs);
+    int AlmostCompleteWaveforms_CountHere = 0;
+    if (it_acw != AlmostCompleteWaveforms.end())
+    {
+      AlmostCompleteWaveforms_CountHere = it_acw->second;
+    }
 
     if (ChannelKey.size() >= NumWavesInCompleteSet || ((ChannelKey.size() == NumWavesInCompleteSet - 1) && (AlmostCompleteWaveforms_CountHere >= 5)))
     {
@@ -332,9 +331,9 @@ bool EBPMT::Matching(int targetTrigger, int matchToTrack)
     Log("EBPMT: looping hit " + std::to_string(loopNum) + ", minDT: " + std::to_string(minDT) + ", minDTTrigger time: " + std::to_string(minDTTrigger) + " with word " + std::to_string(matchedTrigWord) + ", in trigger track " + std::to_string(matchedTrack), v_warning, verbosityEBPMT);
     if (minDT < matchTolerance_ns)
     {
-      //PairedCTCTimeStamps[matchedTrack].push_back(minDTTrigger);
-      //PairedPMTTimeStamps[matchedTrack].push_back(PMTCounterTimeNs);
-      //PairedPMT_TriggerIndex[matchedTrack].push_back(matchedIndex);
+      // PairedCTCTimeStamps[matchedTrack].push_back(minDTTrigger);
+      // PairedPMTTimeStamps[matchedTrack].push_back(PMTCounterTimeNs);
+      // PairedPMT_TriggerIndex[matchedTrack].push_back(matchedIndex);
 
       PairedCTCTimeStamps.emplace(matchedTrack, std::vector<uint64_t>{}).first->second.push_back(minDTTrigger);
       PairedPMTTimeStamps.emplace(matchedTrack, std::vector<uint64_t>{}).first->second.push_back(PMTCounterTimeNs);
@@ -407,10 +406,9 @@ void EBPMT::CorrectVMEOffset()
 
   Log("EBPMT: Found " + std::to_string(timestamps.size()) + " timestamps", v_message, verbosityEBPMT);
 
-  // loop timestamps, for each timestamp, check if the difference between it and the previous timestamp is 8 or 16
-  // if it is, get the size of the map of InProgressHits at these two timestamps
-  // record the pair in timestamps_to_shift, the first timestamp is the one with the smaller size, and the second is the larger one
-
+  // loop timestamps，对于每一个时间戳，检查它与它之前的时间戳的差值是否是8或者16
+  // 如果是，获得InProgressHits在这两个时间戳上的map的size
+  // 在timestamps_to_shift中记录pair，第一个时间戳是size较小的那个，第二个是较大的那个
   for (int i = 1; i < timestamps.size(); i++)
   {
     uint64_t dt = (timestamps[i] > timestamps[i - 1]) ? (timestamps[i] - timestamps[i - 1]) : (timestamps[i - 1] - timestamps[i]);
