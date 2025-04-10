@@ -608,7 +608,7 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
     else pmap.at(channel_key).push_back(apulsevec);
   }
   //Convert ADCPulses to Hits and fill into Hit map
-  HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
+  HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec,hit_trace_map);
   Log("PhaseIIADCHitFinder: Filling hit map.",
       v_debug, verbosity);
   for(int j=0; j < (int) HitsOnPMT.size(); j++){
@@ -717,13 +717,29 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
         }
       }
 
+    // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
+    std::vector<double> trace_x;
+    std::vector<double> trace_y;
+
+    double pulse_start_time = wmin * NS_PER_ADC_SAMPLE;
+    double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+    for (size_t p = wmin; p <= wmax; ++p) {
+        double ns_time = p * NS_PER_ADC_SAMPLE;
+        double val_adc = raw_minibuffer_data.GetSample(p);
+        trace_x.push_back(ns_time - pulse_start_time);
+        trace_y.push_back(val_adc - pulse_baseline);
+    }
+
     // Store the freshly made pulse in the vector of found pulses
     pulses.emplace_back(channel_key,
-      ( wmin * NS_PER_SAMPLE )-timing_offset,
-      (peak_sample * NS_PER_SAMPLE)-timing_offset,
+      ( wmin * NS_PER_ADC_SAMPLE )-timing_offset,
+      (peak_sample * NS_PER_ADC_SAMPLE)-timing_offset,
       calibrated_minibuffer_data.GetBaseline(),
       calibrated_minibuffer_data.GetSigmaBaseline(),
-      raw_area, max_ADC, calibrated_amplitude, charge);
+      raw_area, max_ADC, calibrated_amplitude, charge,
+      trace_x, trace_y);
   }
   return pulses;
 }
@@ -831,13 +847,30 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         }
       }
 
+      // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
+      std::vector<double> trace_x;
+      std::vector<double> trace_y;
+
+      double pulse_start_time = wmin * NS_PER_ADC_SAMPLE;
+      double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+      for (size_t p = wmin; p <= wmax; ++p) {
+          double ns_time = p * NS_PER_ADC_SAMPLE;
+          double val_adc = raw_minibuffer_data.GetSample(p);
+          trace_x.push_back(ns_time - pulse_start_time);
+          trace_y.push_back(val_adc - pulse_baseline);
+      }
+
+
       // Store the freshly made pulse in the vector of found pulses
       pulses.emplace_back(channel_key,
-        ( pulse_start_sample * NS_PER_SAMPLE )-timing_offset,
-        (peak_sample * NS_PER_SAMPLE)-timing_offset,
+        ( pulse_start_sample * NS_PER_ADC_SAMPLE )-timing_offset,
+        (peak_sample * NS_PER_ADC_SAMPLE)-timing_offset,
         calibrated_minibuffer_data.GetBaseline(),
         calibrated_minibuffer_data.GetSigmaBaseline(),
-        raw_area, max_ADC, calibrated_amplitude, charge);
+        raw_area, max_ADC, calibrated_amplitude, charge,
+        trace_x, trace_y);
     }
 
 
@@ -991,6 +1024,21 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           }
         }
 
+        // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
+        std::vector<double> trace_x;
+        std::vector<double> trace_y;
+
+        double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
+        double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+        for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+            double ns_time = p * NS_PER_ADC_SAMPLE;
+            double val_adc = raw_minibuffer_data.GetSample(p);
+            trace_x.push_back(ns_time - pulse_start_time);
+            trace_y.push_back(val_adc - pulse_baseline);
+        }
+
         if(verbosity>v_debug) {
           
           std::cout << "Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
@@ -1017,13 +1065,14 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
             ( hit_time * NS_PER_ADC_SAMPLE )-timing_offset,                 // interpolated hit time
             calibrated_minibuffer_data.GetBaseline(),
             calibrated_minibuffer_data.GetSigmaBaseline(),
-            raw_area, max_ADC, calibrated_amplitude, charge);
+            raw_area, max_ADC, calibrated_amplitude, charge,
+            trace_x, trace_y);
         }
       }
 
 	  
   // ******************************************************************
-  // "PulseWindowType" default for EventBuilding
+  // Previously used in the event building
   // Peak windows are defined only by crossing and un-crossing of ADC threshold
   } else if(pulse_window_type == "dynamic"){
     size_t pulse_start_sample = BOGUS_INT;
@@ -1130,6 +1179,21 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
 	      }
       }
 
+      // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
+      std::vector<double> trace_x;
+      std::vector<double> trace_y;
+
+      double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
+      double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+      for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+          double ns_time = p * NS_PER_ADC_SAMPLE;
+          double val_adc = raw_minibuffer_data.GetSample(p);
+          trace_x.push_back(ns_time - pulse_start_time);
+          trace_y.push_back(val_adc - pulse_baseline);
+      }
+
 
         // Store the freshly made pulse in the vector of found pulses
         pulses.emplace_back(channel_key,
@@ -1137,7 +1201,8 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           (hit_time * NS_PER_ADC_SAMPLE)-timing_offset,                 // interpolated hit time
           calibrated_minibuffer_data.GetBaseline(),
           calibrated_minibuffer_data.GetSigmaBaseline(),
-          raw_area, max_ADC, calibrated_amplitude, charge);
+          raw_area, max_ADC, calibrated_amplitude, charge,
+          trace_x, trace_y);
       }
     }
   } else {
