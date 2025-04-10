@@ -107,6 +107,9 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("beam_HPTG2", &beam_HPTG2, "beam_HPTG2/D");
     fANNIETree->Branch("beam_VPTG2", &beam_VPTG2, "beam_VPTG2/D");
     fANNIETree->Branch("beam_BTH2T2", &beam_BTH2T2, "beam_BTH2T2/D");
+    fANNIETree->Branch("beam_B_BRRMPL", &beam_B_BRRMPL, "beam_B_BRRMPL/D");
+    fANNIETree->Branch("beam_B_BRRMPQ", &beam_B_BRRMPQ, "beam_B_BRRMPQ/D");
+    fANNIETree->Branch("beam_B_BRRMPS", &beam_B_BRRMPS, "beam_B_BRRMPS/D");
     fANNIETree->Branch("BeamInfoTime", &fBeamInfoTime, "BeamInfoTime/l");
     fANNIETree->Branch("BeamInfoTimeToTriggerDiff", &fBeamInfoTimeToTriggerDiff, "BeamInfoTimeToTriggerDiff/L");
   }
@@ -645,6 +648,9 @@ void ANNIEEventTreeMaker::ResetVariables()
   beam_HPTG2 = -9999;
   beam_VPTG2 = -9999;
   beam_BTH2T2 = -9999;
+  beam_B_BRRMPL = -9999;
+  beam_B_BRRMPQ = -9999;
+  beam_B_BRRMPS = -9999;
   fBeamInfoTime = 0;
   fBeamInfoTimeToTriggerDiff = -9999;
 
@@ -1129,6 +1135,9 @@ void ANNIEEventTreeMaker::LoadBeamInfo()
   m_data->Stores["ANNIEEvent"]->Get("beam_HPTG2", beam_HPTG2);
   m_data->Stores["ANNIEEvent"]->Get("beam_VPTG2", beam_VPTG2);
   m_data->Stores["ANNIEEvent"]->Get("beam_BTH2T2", beam_BTH2T2);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPL", beam_B_BRRMPL);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPQ", beam_B_BRRMPQ);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPS", beam_B_BRRMPS);
 
   m_data->Stores["ANNIEEvent"]->Get("beam_E_TOR875", fPot);
   m_data->Stores["ANNIEEvent"]->Get("beam_good", fBeamok);
