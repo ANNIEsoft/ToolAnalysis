@@ -172,6 +172,9 @@ private:
     double beam_HPTG2;
     double beam_VPTG2;
     double beam_BTH2T2;
+    double beam_B_BRRMPL;
+    double beam_B_BRRMPQ;
+    double beam_B_BRRMPS;
     uint64_t fBeamInfoTime;
     int64_t fBeamInfoTimeToTriggerDiff;
 
