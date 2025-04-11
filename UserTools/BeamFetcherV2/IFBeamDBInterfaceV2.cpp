@@ -32,9 +32,10 @@ IFBeamDBInterfaceV2::IFBeamDBInterfaceV2()
     {"E:HPTG2", "mm"},
     {"E:VPTG2", "mm"},
     {"E:BTH2T2", "DegC"},
-    {"B:BRRMPL","bool"},
-    {"B:BRRMPS","bool"},
-    {"B:BRRMPQ","bool"}};
+    {"B:BRRMPL","unknown"},
+    {"B:BRRMPS","unknown"},
+    {"B:BRRMPQ","unknown"},
+    {"B:BRRMP","volt"}};
 }
 
 IFBeamDBInterfaceV2::~IFBeamDBInterfaceV2()
