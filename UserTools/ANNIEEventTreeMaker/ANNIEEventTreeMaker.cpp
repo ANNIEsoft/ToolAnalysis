@@ -96,6 +96,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   {
     fANNIETree->Branch("beam_pot_875", &fPot, "beam_pot_875/D");
     fANNIETree->Branch("beam_ok", &fBeamok, "beam_ok/I");
+    fANNIETree->Branch("BunchRotationOn", &fBunchRotationOn, "BunchRotationOn/D");
     fANNIETree->Branch("beam_E_TOR860", &beam_E_TOR860, "beam_E_TOR860/D");
     fANNIETree->Branch("beam_E_TOR875", &beam_E_TOR875, "beam_E_TOR875/D");
     fANNIETree->Branch("beam_THCURR", &beam_THCURR, "beam_THCURR/D");
@@ -110,6 +111,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("beam_B_BRRMPL", &beam_B_BRRMPL, "beam_B_BRRMPL/D");
     fANNIETree->Branch("beam_B_BRRMPQ", &beam_B_BRRMPQ, "beam_B_BRRMPQ/D");
     fANNIETree->Branch("beam_B_BRRMPS", &beam_B_BRRMPS, "beam_B_BRRMPS/D");
+    fANNIETree->Branch("beam_B_BRRMP", &beam_B_BRRMP, "beam_B_BRRMP/D");
     fANNIETree->Branch("BeamInfoTime", &fBeamInfoTime, "BeamInfoTime/l");
     fANNIETree->Branch("BeamInfoTimeToTriggerDiff", &fBeamInfoTimeToTriggerDiff, "BeamInfoTimeToTriggerDiff/L");
   }
@@ -637,6 +639,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   // beam info
   fPot = -9999;
   fBeamok = 0;
+  fBunchRotationOn = 0;
   beam_E_TOR860 = -9999;
   beam_E_TOR875 = -9999;
   beam_THCURR = -9999;
@@ -651,6 +654,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   beam_B_BRRMPL = -9999;
   beam_B_BRRMPQ = -9999;
   beam_B_BRRMPS = -9999;
+  beam_B_BRRMP = -9999
   fBeamInfoTime = 0;
   fBeamInfoTimeToTriggerDiff = -9999;
 
@@ -1138,9 +1142,11 @@ void ANNIEEventTreeMaker::LoadBeamInfo()
   m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPL", beam_B_BRRMPL);
   m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPQ", beam_B_BRRMPQ);
   m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPS", beam_B_BRRMPS);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMP", beam_B_BRRMP);
 
   m_data->Stores["ANNIEEvent"]->Get("beam_E_TOR875", fPot);
   m_data->Stores["ANNIEEvent"]->Get("beam_good", fBeamok);
+  m_data->Stores["ANNIEEvent"]->Get("bunch_rotation_on", fBunchRotationOn);
 
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTime", fBeamInfoTime);
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTimeToTriggerDiff", fBeamInfoTimeToTriggerDiff);
