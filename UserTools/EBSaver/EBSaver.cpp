@@ -761,9 +761,9 @@ bool EBSaver::SavePMTData(uint64_t PMTTime)
   ANNIEEvent->Set("RecoAuxADCData", PMTRecoADCHitsAux);
   ANNIEEvent->Set("RawAcqSize", PMTRawAcqSize);
 
-  if(saveRawRWMWaveform)
+  if (saveRawRWMWaveform)
   {
-    //find PMTTime as key in RWMRawWaveforms, if found, save it, if not, save an empty vector
+    // find PMTTime as key in RWMRawWaveforms, if found, save it, if not, save an empty vector
     if (RWMRawWaveforms->find(PMTTime) != RWMRawWaveforms->end() && RWMRawWaveforms->at(PMTTime).size() > 0)
     {
       std::vector<uint16_t> RWMRawWaveform = RWMRawWaveforms->at(PMTTime);
@@ -778,9 +778,9 @@ bool EBSaver::SavePMTData(uint64_t PMTTime)
       Log("EBSaver: Saved empty RWM data with PMTTime " + std::to_string(PMTTime), v_debug, verbosityEBSaver);
     }
   }
-  if(saveRawBRFWaveform)
+  if (saveRawBRFWaveform)
   {
-    //find PMTTime as key in BRFRawWaveforms, if found, save it, if not, save an empty vector
+    // find PMTTime as key in BRFRawWaveforms, if found, save it, if not, save an empty vector
     if (BRFRawWaveforms->find(PMTTime) != BRFRawWaveforms->end() && BRFRawWaveforms->at(PMTTime).size() > 0)
     {
       std::vector<uint16_t> BRFRawWaveform = BRFRawWaveforms->at(PMTTime);
@@ -947,7 +947,7 @@ bool EBSaver::SaveLAPPDData(uint64_t LAPPDTime)
     LAPPDTS_PPSDiff.emplace(LAPPDTime, Buffer_LAPPDTS_PPSDiff.at(index));
     LAPPDTS_PPSMissing.emplace(LAPPDTime, Buffer_LAPPDTS_PPSMissing.at(index));
 
-    if(Buffer_LAPPDTS_PPSMissing.at(index)!= Buffer_LAPPDBG_PPSMissing.at(index))
+    if (Buffer_LAPPDTS_PPSMissing.at(index) != Buffer_LAPPDBG_PPSMissing.at(index))
     {
       Log("EBSaver: LAPPDTS_PPSMissing is different from LAPPDBG_PPSMissing, LAPPDTS_PPSMissing " + std::to_string(Buffer_LAPPDTS_PPSMissing.at(index)) + " LAPPDBG_PPSMissing " + std::to_string(Buffer_LAPPDBG_PPSMissing.at(index)), v_message, verbosityEBSaver);
     }
@@ -1119,9 +1119,9 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
   bool gotBuffer_LAPPDTS_PPSAfter = m_data->CStore.Get("Buffer_LAPPDTS_PPSAfter", Buffer_LAPPDTS_PPSAfter);
   bool gotBuffer_LAPPDTS_PPSDiff = m_data->CStore.Get("Buffer_LAPPDTS_PPSDiff", Buffer_LAPPDTS_PPSDiff);
   bool gotBuffer_LAPPDTS_PPSMissing = m_data->CStore.Get("Buffer_LAPPDTS_PPSMissing", Buffer_LAPPDTS_PPSMissing);
-  if(!gotBuffer_LAPPDBG_PPSBefore || !gotBuffer_LAPPDBG_PPSAfter || !gotBuffer_LAPPDBG_PPSDiff || !gotBuffer_LAPPDBG_PPSMissing || !gotBuffer_LAPPDTS_PPSBefore || !gotBuffer_LAPPDTS_PPSAfter || !gotBuffer_LAPPDTS_PPSDiff || !gotBuffer_LAPPDTS_PPSMissing)
+  if (!gotBuffer_LAPPDBG_PPSBefore || !gotBuffer_LAPPDBG_PPSAfter || !gotBuffer_LAPPDBG_PPSDiff || !gotBuffer_LAPPDBG_PPSMissing || !gotBuffer_LAPPDTS_PPSBefore || !gotBuffer_LAPPDTS_PPSAfter || !gotBuffer_LAPPDTS_PPSDiff || !gotBuffer_LAPPDTS_PPSMissing)
     Log("EBSaver: Failed to get LAPPD PPS data from buffer", v_message, verbosityEBSaver);
-  
+
   // got LAPPD match info
   bool gotPairedLAPPDTriggerTimestamp = m_data->CStore.Get("PairedLAPPDTriggerTimestamp", PairedLAPPDTriggerTimestamp);
   bool gotPairedLAPPDTimeStamps = m_data->CStore.Get("PairedLAPPDTimeStamps", PairedLAPPDTimeStamps);
@@ -1349,7 +1349,7 @@ void EBSaver::LoadBeamInfo()
 
   uint64_t timestamp;
   double E_TOR860, E_TOR875, THCURR, BTJT2, HP875, VP875, HPTG1, VPTG1, HPTG2, VPTG2, BTH2T2;
-  double B_BRRMPL, B_BRRMPQ, B_BRRMPS;
+  double B_BRRMPL, B_BRRMPQ, B_BRRMPS, B_BRRMP;
 
   tree->SetBranchAddress("Timestamp", &timestamp);
   tree->SetBranchAddress("E_TOR860", &E_TOR860);
@@ -1366,6 +1366,7 @@ void EBSaver::LoadBeamInfo()
   tree->SetBranchAddress("B_BRRMPL", &B_BRRMPL);
   tree->SetBranchAddress("B_BRRMPQ", &B_BRRMPQ);
   tree->SetBranchAddress("B_BRRMPS", &B_BRRMPS);
+  tree->SetBranchAddress("B_BRRMP", &B_BRRMP);
 
   Long64_t nentries = tree->GetEntries();
   Log("EBSaver: Loading beam infor, total entries in beam info file: " + std::to_string(nentries), v_message, verbosityEBSaver);
@@ -1389,6 +1390,7 @@ void EBSaver::LoadBeamInfo()
     B_BRRMPL_map.emplace(timestamp, B_BRRMPL);
     B_BRRMPQ_map.emplace(timestamp, B_BRRMPQ);
     B_BRRMPS_map.emplace(timestamp, B_BRRMPS);
+    B_BRRMP_map.emplace(timestamp, B_BRRMP);
   }
 
   Log("EBSaver: Loaded number of E_TOR860 entries: " + std::to_string(E_TOR860_map.size()), v_message, verbosityEBSaver);
@@ -1401,7 +1403,7 @@ void EBSaver::LoadBeamInfo()
 bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
 {
   double E_TOR860, E_TOR875, THCURR, BTJT2, HP875, VP875, HPTG1, VPTG1, HPTG2, VPTG2, BTH2T2;
-  double B_BRRMPL, B_BRRMPQ, B_BRRMPS;
+  double B_BRRMPL, B_BRRMPQ, B_BRRMPS, B_BRRMP;
   // find the closest timestamp in vector<uint64_t> BeamInfoTimestamps
 
   uint64_t closestTimestamp = 0;
@@ -1432,6 +1434,7 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     int64_t timeDiff = -9999;
     double defaultVal = -9999.;
     int beam_good = 0;
+    int bunch_rotation_on = 0;
     ANNIEEvent->Set("BeamInfoTime", beamInfoTime_long);
     ANNIEEvent->Set("BeamInfoTimeToTriggerDiff", timeDiff);
     ANNIEEvent->Set("beam_E_TOR860", defaultVal);
@@ -1448,7 +1451,9 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     ANNIEEvent->Set("beam_B_BRRMPL", defaultVal);
     ANNIEEvent->Set("beam_B_BRRMPQ", defaultVal);
     ANNIEEvent->Set("beam_B_BRRMPS", defaultVal);
+    ANNIEEvent->Set("beam_B_BRRMP", defaultVal);
     ANNIEEvent->Set("beam_good", beam_good);
+    ANNIEEvent->Set("bunch_rotation_on", bunch_rotation_on);
 
     Log("EBSaver: Saved beam info with time " + std::to_string(0) + ", pot E_TOR860 = " + std::to_string(-9999) + ", beam_good = " + std::to_string(-9999), v_message, verbosityEBSaver);
   }
@@ -1476,6 +1481,7 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     B_BRRMPL = B_BRRMPL_map.at(beamInfoTime);
     B_BRRMPQ = B_BRRMPQ_map.at(beamInfoTime);
     B_BRRMPS = B_BRRMPS_map.at(beamInfoTime);
+    B_BRRMP = B_BRRMP_map.at(beamInfoTime);
 
     ANNIEEvent->Set("BeamInfoTime", beamInfoTime);
     ANNIEEvent->Set("BeamInfoTimeToTriggerDiff", timeDiff);
@@ -1494,6 +1500,7 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     ANNIEEvent->Set("beam_B_BRRMPL", B_BRRMPL);
     ANNIEEvent->Set("beam_B_BRRMPQ", B_BRRMPQ);
     ANNIEEvent->Set("beam_B_BRRMPS", B_BRRMPS);
+    ANNIEEvent->Set("beam_B_BRRMP", B_BRRMP);
 
     int beam_good = 0;
 
@@ -1504,6 +1511,13 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     }
 
     ANNIEEvent->Set("beam_good", beam_good);
+
+    int bunch_rotation_on = 0;
+    if (B_BRRMP > 0)
+    {
+      bunch_rotation_on = 1;
+    }
+    ANNIEEvent->Set("bunch_rotation_on", bunch_rotation_on);
 
     Log("EBSaver: Saved beam info with time " + std::to_string(beamInfoTime) + ", pot E_TOR860 = " + std::to_string(E_TOR860) + ", beam_good = " + std::to_string(beam_good), v_message, verbosityEBSaver);
   }

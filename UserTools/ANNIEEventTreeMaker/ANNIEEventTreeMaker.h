@@ -161,6 +161,7 @@ private:
     // beam information
     double fPot;
     int fBeamok;
+    int fBunchRotationOn;
     double beam_E_TOR860;
     double beam_E_TOR875;
     double beam_THCURR;
@@ -175,6 +176,7 @@ private:
     double beam_B_BRRMPL;
     double beam_B_BRRMPQ;
     double beam_B_BRRMPS;
+    double beam_B_BRRMP;
     uint64_t fBeamInfoTime;
     int64_t fBeamInfoTimeToTriggerDiff;
 
