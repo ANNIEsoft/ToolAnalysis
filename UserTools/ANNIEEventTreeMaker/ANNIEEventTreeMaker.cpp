@@ -654,7 +654,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   beam_B_BRRMPL = -9999;
   beam_B_BRRMPQ = -9999;
   beam_B_BRRMPS = -9999;
-  beam_B_BRRMP = -9999
+  beam_B_BRRMP = -9999;
   fBeamInfoTime = 0;
   fBeamInfoTimeToTriggerDiff = -9999;
 
