@@ -1,7 +1,7 @@
 verbosityEBLoadRaw 2
 ReadTriggerOverlap 1
 
-InputFile ./configfiles/EventBuilderV2/my_files.txt
+InputFile ./configfiles/EventBuilderV2_laser/my_files.txt
 
 LoadPMT 1
 LoadMRD 0
