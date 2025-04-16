@@ -5,6 +5,6 @@ saveMRD 0
 saveCTC 1
 saveLAPPD 1
 saveRunInfo 1
-saveBeamInfo 1
+saveBeamInfo 0
 
 beamInfoFileName beamfetcher_tree.root
