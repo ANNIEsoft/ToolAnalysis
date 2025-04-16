@@ -96,7 +96,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   {
     fANNIETree->Branch("beam_pot_875", &fPot, "beam_pot_875/D");
     fANNIETree->Branch("beam_ok", &fBeamok, "beam_ok/I");
-    fANNIETree->Branch("BunchRotationOn", &fBunchRotationOn, "BunchRotationOn/D");
+    fANNIETree->Branch("BunchRotationOn", &fBunchRotationOn, "BunchRotationOn/I");
     fANNIETree->Branch("beam_E_TOR860", &beam_E_TOR860, "beam_E_TOR860/D");
     fANNIETree->Branch("beam_E_TOR875", &beam_E_TOR875, "beam_E_TOR875/D");
     fANNIETree->Branch("beam_THCURR", &beam_THCURR, "beam_THCURR/D");
