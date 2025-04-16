@@ -1345,6 +1345,10 @@ void EBSaver::LoadBeamInfo()
   //   * BTH2T2 - target air cooling temperature. This is the temperature of the
   //     air going into the horn.
 
+  // For bunch rotation, the information can be found here:
+  // https://beamdocs.fnal.gov/AD/DocDB/0069/006904/008/20181214BunchRotation.pdf
+  // The B_BRRMP has unit of volt, others are not clear.
+
   // additionally, the unit of E_TOR860 and E_TOR875 is E12
 
   uint64_t timestamp;

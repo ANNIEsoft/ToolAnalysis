@@ -604,6 +604,8 @@ bool ProcessedLAPPDFilter::GotANNIEEventAndSave(BoostStore *BS, string savePath)
   double defaultVal = -9999.;
   int beam_good = 0;
   double E_TOR860, E_TOR875, THCURR, BTJT2, HP875, VP875, HPTG1, VPTG1, HPTG2, VPTG2, BTH2T2;
+  double B_BRRMPL, B_BRRMPQ, B_BRRMPS, B_BRRMP; 
+  int bunch_rotation_on;
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTime", beamInfoTime);
   BS->Set("BeamInfoTime", beamInfoTime);
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTimeToTriggerDiff", timeDiff);
@@ -630,6 +632,16 @@ bool ProcessedLAPPDFilter::GotANNIEEventAndSave(BoostStore *BS, string savePath)
   BS->Set("beam_VPTG2", VPTG2);
   m_data->Stores["ANNIEEvent"]->Get("beam_BTH2T2", BTH2T2);
   BS->Set("beam_BTH2T2", BTH2T2);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPL", B_BRRMPL);
+  BS->Set("beam_B_BRRMPL", B_BRRMPL);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPQ", B_BRRMPQ);
+  BS->Set("beam_B_BRRMPQ", B_BRRMPQ);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPS", B_BRRMPS);
+  BS->Set("beam_B_BRRMPS", B_BRRMPS);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMP", B_BRRMP);
+  BS->Set("beam_B_BRRMP", B_BRRMP);
+  m_data->Stores["ANNIEEvent"]->Get("bunch_rotation_on", bunch_rotation_on);
+  BS->Set("bunch_rotation_on", bunch_rotation_on);
   m_data->Stores["ANNIEEvent"]->Get("beam_good", beam_good);
   BS->Set("beam_good", beam_good);
 
