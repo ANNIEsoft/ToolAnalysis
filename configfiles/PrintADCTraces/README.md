@@ -50,3 +50,4 @@ OutputFilename ADCTraces.root   # name of the output root file
 ## Additional information
 - ADC traces will be in ADC (y) vs time [ns] (x). All pulse times will be relative (and zeroed) to the start time of the pulse. All pulse amplitudes (y) are baseline-subtracted. This way its easier to compare. You can cross reference the pulse features with the title (which contains the charge and time of the pulse) to determine more information.
 - This tool is similar to the `PrintADCData` toolchain, but instead of printing out all raw PMT waveforms, it only prints out the found pulse traces (and provides more identifying / filtering information based on charge / time).
+- `create_my_inputs.sh` will populate the my_inputs.txt file with all ProcessedData from a given run. Adjust the internal paths accordingly. Usage: `sh create_my_inputs.sh <run>`

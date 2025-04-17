@@ -1,4 +1,3 @@
 LoadANNIEEvent LoadANNIEEvent ./configfiles/PrintADCTraces/LoadANNIEEventConfig
 LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
-#ClusterFinder ClusterFinder ./configfiles/PrintADCTraces/ClusterFinderConfig
 PrintADCTraces PrintADCTraces ./configfiles/PrintADCTraces/PrintADCTracesConfig
