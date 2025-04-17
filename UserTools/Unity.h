@@ -194,3 +194,4 @@
 #include "FitRWMWaveform.h"
 #include "LAPPDLoadTXT.h"
 #include "LAPPDBSCharging.h"
+#include "PrintADCTraces.h"
