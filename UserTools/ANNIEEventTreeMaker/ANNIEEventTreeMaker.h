@@ -204,6 +204,7 @@ private:
     std::vector<int> fHitDetID;
     std::vector<int> fHitChankey;
     std::vector<int> fHitChankeyMC;
+    std::vector<int> fHitPMTType;
 
     // SiPMPulseInfo_fill
     int fSiPM1NPulses;
@@ -319,6 +320,7 @@ private:
     vector<vector<int>> fCluster_HitDetID;
     vector<vector<int>> fCluster_HitChankey;
     vector<vector<int>> fCluster_HitChankeyMC;
+    vector<vector<int>> fCluster_HitPMTType;
 
     vector<double> fClusterMaxPEV;
     vector<double> fClusterChargePointXV;

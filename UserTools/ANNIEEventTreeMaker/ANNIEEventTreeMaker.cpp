@@ -153,6 +153,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fANNIETree->Branch("Cluster_HitDetID", &fCluster_HitDetID);
   fANNIETree->Branch("Cluster_HitChankey", &fCluster_HitChankey);
   fANNIETree->Branch("Cluster_HitChankeyMC", &fCluster_HitChankeyMC);
+  fANNIETree->Branch("Cluster_HitPMTType", &fCluster_HitPMTType);
 
   // MRD cluster information
   fANNIETree->Branch("eventTimeMRD", &fEventTimeMRD_Tree);
@@ -176,6 +177,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("hitDetID", &fHitDetID);
     fANNIETree->Branch("hitChankey", &fHitChankey);
     fANNIETree->Branch("hitChankeyMC", &fHitChankeyMC);
+    fANNIETree->Branch("hitPMTType", &fHitPMTType);
   }
 
   if (SiPMPulseInfo_fill)
@@ -681,6 +683,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fHitDetID.clear();
   fHitChankey.clear();
   fHitChankeyMC.clear();
+  fHitPMTType.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -792,6 +795,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fCluster_HitDetID.clear();
   fCluster_HitChankey.clear();
   fCluster_HitChankeyMC.clear();
+  fCluster_HitPMTType.clear();
 
   fClusterMaxPEV.clear();
   fClusterChargePointXV.clear();
@@ -1242,6 +1246,8 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
           fHitDetID.push_back(detkey);
           fHitChankey.push_back(channel_key);
           fHitChankeyMC.push_back(channel_key);
+          Channel *thisHitChannel = geom->GetChannel(channel_key);
+          fHitPMTType.push_back(thisHitChannel->GetChannelType());
           fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
         }
       }
@@ -1262,6 +1268,8 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
           fHitDetID.push_back(detkey);
           fHitChankey.push_back(channel_key_data);
           fHitChankeyMC.push_back(channel_key);
+          Channel *thisHitChannel = geom->GetChannel(channel_key);
+          fHitPMTType.push_back(thisHitChannel->GetChannelType());
           fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
         }
       }
@@ -1633,6 +1641,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
   vector<int> HitDetIDV;
   vector<int> HitChankeyV;
   vector<int> HitCKMC;
+  vector<int> HitPMTType;
 
   for (int i = 0; i < (int)cluster_hits.size(); i++)
   {
@@ -1655,6 +1664,8 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
 
       HitChankeyV.push_back(channel_key);
       HitCKMC.push_back(channel_key);
+      Channel* thisHitChannel = geom->GetChannel(channel_key);
+      HitPMTType.push_back(thisHitChannel->GetChannelType());
       HitTypeV.push_back(RecoDigit::PMT8inch);
       ClusterCharge += hit_charge;
       ClusterPE += hit_PE;
@@ -1682,6 +1693,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
   fCluster_HitDetID.push_back(HitDetIDV);
   fCluster_HitChankey.push_back(HitChankeyV);
   fCluster_HitChankeyMC.push_back(HitCKMC);
+  fCluster_HitPMTType.push_back(HitPMTType);
 
   return;
 }
@@ -1706,6 +1718,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
   vector<int> HitDetIDV;
   vector<int> HitChankeyV;
   vector<int> HitCKMC;
+  vector<int> HitPMTType;
 
   for (int i = 0; i < (int)cluster_hits.size(); i++)
   {
@@ -1733,6 +1746,8 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
       HitDetIDV.push_back(detkey);
       HitChankeyV.push_back(channel_key_data);
       HitCKMC.push_back(channel_key);
+      Channel* thisHitChannel = geom->GetChannel(channel_key_data);
+      HitPMTType.push_back(thisHitChannel->GetChannelType());
       HitTypeV.push_back(RecoDigit::PMT8inch);
       ClusterCharge += hit_charge;
       ClusterPE += hit_PE;
@@ -1760,6 +1775,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
   fCluster_HitDetID.push_back(HitDetIDV);
   fCluster_HitChankey.push_back(HitChankeyV);
   fCluster_HitChankeyMC.push_back(HitCKMC);
+  fCluster_HitPMTType.push_back(HitPMTType);
 
   return;
 }
