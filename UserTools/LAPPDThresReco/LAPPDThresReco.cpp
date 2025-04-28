@@ -36,6 +36,12 @@ bool LAPPDThresReco::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("useRange", useRange);
   loadPrintMRDinfo = true; // print MRD track information
   m_variables.Get("loadPrintMRDinfo", loadPrintMRDinfo);
+  pulseFollowTimeStandard = 20; // 20 bins (2 ns) integral after each pulse
+  m_variables.Get("pulseFollowTimeStandard", pulseFollowTimeStandard);
+  baselineStart = 50; // start time for independent baseline calculation, 5ns
+  m_variables.Get("baselineStart", baselineStart);
+  baselineEnd = 100;
+  m_variables.Get("baselineEnd", baselineEnd);
   // Control variables in this tool, initialized in this tool
   eventNumber = 0;
   LoadLAPPDMapInfo = false;
@@ -229,6 +235,7 @@ void LAPPDThresReco::CleanDataObjects()
 
   LAPPD_ID = -9999;
   LAPPDana = false;
+  pulseFollowTime = pulseFollowTimeStandard;
 }
 
 void LAPPDThresReco::FillLAPPDPulse()
@@ -371,6 +378,13 @@ vector<LAPPDPulse> LAPPDThresReco::FindPulses(vector<double> wave, int LAPPD_ID,
   vector<double> binNumbers;
   vector<double> amplitudes;
 
+  double baselineGet = 0;
+  for (int i = baselineStart; i < baselineEnd; i++)
+  {
+    baselineGet += wave.at(i);
+  }
+  baselineGet = baselineGet / (baselineEnd - baselineStart);
+
   for (int i = 1; i < wave.size(); i++)
   {
     currentSig = wave.at(i);
@@ -484,6 +498,20 @@ vector<LAPPDPulse> LAPPDThresReco::FindPulses(vector<double> wave, int LAPPD_ID,
             }
           }
 
+          int startFollowTime = i;
+          int stopFollowTime = i + static_cast<int>(pulseFollowTime);
+          if (stopFollowTime > 256)
+          {
+            stopFollowTime = 256;
+            pulseFollowTime = 256 - i;
+          }
+
+          double integralFollowCharge = 0;
+          for (int j = startFollowTime; j < stopFollowTime; j++)
+          {
+            integralFollowCharge += wave.at(j);
+          }
+
           if (LAPPDThresRecoVerbosity > 1)
             cout << "inserting pulse on LAPPD ID =" << LAPPD_ID << " at time: " << peakBin * (25. / 256.) << "(" << peakBinGaus << ") with peakAmp: " << peakAmp << " from " << pulseStart << " to " << pulseStart + pulseSize << endl;
           if (useMaxTime)
@@ -491,7 +519,9 @@ vector<LAPPDPulse> LAPPDThresReco::FindPulses(vector<double> wave, int LAPPD_ID,
             LAPPDPulse thisPulse(LAPPD_ID, channel, peakBin * (25. / 256.), Q, peakAmp, pulseStart, pulseStart + pulseSize);
             thisPulse.SetHalfHeightTime(halfPeakBin * (25. / 256.) + halfPeak_ps * 0.001 * 25 / 25.6);
             thisPulse.SetHalfEndTime(halfEndBin * (25. / 256.) + halfEnd_ps * 0.001 * 25 / 25.6);
-            thisPulse.SetBaseline(0);
+            thisPulse.SetBaseline(baselineGet);
+            thisPulse.SetPulseFollowTime(pulseFollowTime);
+            thisPulse.SetPulseFollowCharge(integralFollowCharge);
             pulses.push_back(thisPulse);
           }
           else
@@ -499,7 +529,9 @@ vector<LAPPDPulse> LAPPDThresReco::FindPulses(vector<double> wave, int LAPPD_ID,
             LAPPDPulse thisPulse(LAPPD_ID, channel, peakBinGaus * (25. / 256.), Q, peakAmp, pulseStart, pulseStart + pulseSize);
             thisPulse.SetHalfHeightTime(halfPeakBin * (25. / 256.) + halfPeak_ps * 0.001 * 25 / 25.6);
             thisPulse.SetHalfEndTime(halfEndBin * (25. / 256.) + halfEnd_ps * 0.001 * 25 / 25.6);
-            thisPulse.SetBaseline(0);
+            thisPulse.SetBaseline(baselineGet);
+            thisPulse.SetPulseFollowTime(pulseFollowTime);
+            thisPulse.SetPulseFollowCharge(integralFollowCharge);
             pulses.push_back(thisPulse);
           }
           // tube ID: LAPPD_ID
