@@ -45,6 +45,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPD_PPS_fill", LAPPD_PPS_fill);
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
+  m_variables.Get("RingCounting_fill", RingCounting_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -444,6 +445,13 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("recoVtxFOM", &fRecoVtxFOM, "recoVtxFOM/D");
     fANNIETree->Branch("recoStatus", &fRecoStatus, "recoStatus/I");
   }
+  
+  // fill ring counting info
+  if (RingCounting_fill)
+  {
+    fANNIETree->Branch("RC_singleRingP", &fRC_singleRingP, "RC_singleRingP/D");
+    fANNIETree->Branch("RC_multiRingP", &fRC_multiRingP, "RC_multiRingP/D");
+  }
 
   // Reconstructed variables from each step in Muon Reco Analysis
   // Currently output when RecoDebug_fill = 1 in config
@@ -583,6 +591,14 @@ bool ANNIEEventTreeMaker::Execute()
   if (TankReco_fill)
   {
     got_reco = FillTankRecoInfo();
+  }
+
+  if (RingCounting_fill)
+  {
+    bool got_srFlag = m_data->Stores.at("RecoEvent")->Get("RingCountingSRPrediction", fRC_singleRingP);
+    bool got_mrFlag = m_data->Stores.at("RecoEvent")->Get("RingCountingMRPrediction", fRC_multiRingP);
+    if(ANNIEEventTreeMakerVerbosity>1)
+      cout<<"Printing ring counting: got_srFlag = "<<got_srFlag<<":"<<fRC_singleRingP<<", got_mrFlag = "<<got_mrFlag <<":"<<fRC_multiRingP<<endl;
   }
 
   if (RecoDebug_fill)
@@ -947,6 +963,10 @@ void ANNIEEventTreeMaker::ResetVariables()
   fRecoAngle = -9999;
   fRecoPhi = -9999;
   fRecoStatus = -9999;
+
+  // RingCounting_fill
+  fRC_singleRingP = -9999;
+  fRC_multiRingP = -9999;
 
   // RecoDebug_fill
   fSeedVtxX.clear();

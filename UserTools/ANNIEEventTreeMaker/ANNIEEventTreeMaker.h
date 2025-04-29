@@ -125,6 +125,7 @@ private:
     bool SiPMPulseInfo_fill = 0;
     bool LAPPDReco_fill = 1;
     bool BeamInfo_fill = 1;
+    bool RingCounting_fill = 0;
 
     TFile *fOutput_tfile = nullptr;
     TTree *fANNIETree = nullptr;
@@ -465,6 +466,10 @@ private:
     double fRecoAngle;
     double fRecoPhi;
     int fRecoStatus;
+
+    // RingCounting_fill
+    double fRC_singleRingP;
+    double fRC_multiRingP;
 
     // RecoDebug_fill
     //  **************** Full reco chain information ************* //

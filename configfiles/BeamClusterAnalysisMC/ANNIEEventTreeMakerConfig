@@ -10,6 +10,7 @@ TankCluster_fill 1
 cluster_TankHitInfo_fill 1
 
 TankReco_fill 0
+RingCounting_fill 1
 
 TankClusterProcessing 1
 MRDClusterProcessing 1

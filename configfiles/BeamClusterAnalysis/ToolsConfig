@@ -6,6 +6,9 @@ myClusterFinder ClusterFinder ./configfiles/BeamClusterAnalysis/ClusterFinderCon
 myClusterClassifiers ClusterClassifiers ./configfiles/BeamClusterAnalysis/ClusterClassifiersConfig
 myEventSelector EventSelector ./configfiles/BeamClusterAnalysis/EventSelectorConfig
 
+
+myDigitBuilder DigitBuilder ./configfiles/BeamClusterAnalysis/DigitBuilderConfig
+
 LAPPDLoadStore LAPPDLoadStore configfiles/LAPPDProcessedAna/Configs
 LAPPDStoreReorder LAPPDStoreReorder configfiles/LAPPDProcessedAna/ConfigStoreReadIn
 LAPPDTimeAlignment LAPPDTimeAlignment configfiles/LAPPDProcessedAna/ConfigPreProcess
@@ -14,5 +17,8 @@ LAPPDThresReco LAPPDThresReco configfiles/LAPPDProcessedAna/ConfigPlot
 #LAPPDPlots LAPPDPlots configfiles/LAPPDProcessedAna/ConfigPlot
 
 FitRWMWaveform FitRWMWaveform ./configfiles/BeamClusterAnalysis/FitRWMWaveformConfig
+
+myCNNImage CNNImage ./configfiles/BeamClusterAnalysis/CNNImageConfig
+myRingCounting PythonScript configfiles/BeamClusterAnalysis/RingCountingConfig
 
 ANNIEEventTreeMaker ANNIEEventTreeMaker ./configfiles/BeamClusterAnalysis/ANNIEEventTreeMakerConfig
