@@ -12,11 +12,11 @@ CosmicTriggerMain 36
 groupLaser 0
 LaserTolerance 10000
 
-groupLED 0
-#LEDTriggerMain 31
-#LEDTolerance 10000
+groupLED 1
+LEDTriggerMain 31
+LEDTolerance 10000
 
-groupAmBe 1
+groupAmBe 0
 AmBeTolerance 10000 # 10us for testing
 AmBeTriggerMain 11
 
