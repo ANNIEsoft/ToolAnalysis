@@ -22,4 +22,4 @@ ManualFileMatching 1           # 0 (false) - no manual matching,   1 (true) - us
 FileEvents 1000                # 1000 for James' WCSim files, 500 for Marcus' files
 
 # Number to offset the first loaded GENIE event (for usage without ManualFileMatching) - 0 by default
-EventOffset 0                  
+EventOffset 8000                  

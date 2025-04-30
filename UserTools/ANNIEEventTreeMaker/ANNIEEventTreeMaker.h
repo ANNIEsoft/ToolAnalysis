@@ -125,6 +125,7 @@ private:
     bool SiPMPulseInfo_fill = 0;
     bool LAPPDReco_fill = 1;
     bool BeamInfo_fill = 1;
+    bool RingCounting_fill = 0;
 
     TFile *fOutput_tfile = nullptr;
     TTree *fANNIETree = nullptr;
@@ -250,7 +251,9 @@ private:
     vector<double> fPulseWidth;
     vector<int> fPulseSide;
     vector<int> fPulseStripNum;
-    std::map<int, double> fChannelBaseline;
+    vector<double> fPulseBaseline;
+    vector<double> fPulseFollowTime;
+    vector<double> fPulseFollowCharge;
 
     vector<uint64_t> fLAPPDHitTimeStampUL;
     vector<uint64_t> fLAPPDHitBeamgateUL;
@@ -275,6 +278,12 @@ private:
     vector<double> fLAPPDHitP2HalfEndTime;
     vector<double> fLAPPDHitP1Charge;
     vector<double> fLAPPDHitP2Charge;
+    vector<double> fLAPPDHitP1Baseline;
+    vector<double> fLAPPDHitP2Baseline;
+    vector<double> fLAPPDHitP1FollowTime;
+    vector<double> fLAPPDHitP2FollowTime;
+    vector<double> fLAPPDHitP1FollowCharge;
+    vector<double> fLAPPDHitP2FollowCharge;
 
     // waveform
     vector<int> LAPPDWaveformChankey;
@@ -457,6 +466,10 @@ private:
     double fRecoAngle;
     double fRecoPhi;
     int fRecoStatus;
+
+    // RingCounting_fill
+    double fRC_singleRingP;
+    double fRC_multiRingP;
 
     // RecoDebug_fill
     //  **************** Full reco chain information ************* //

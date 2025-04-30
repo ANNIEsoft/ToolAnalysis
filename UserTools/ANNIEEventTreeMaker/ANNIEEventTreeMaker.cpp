@@ -45,6 +45,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPD_PPS_fill", LAPPD_PPS_fill);
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
+  m_variables.Get("RingCounting_fill", RingCounting_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -237,6 +238,9 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPD_PulseWidth", &fPulseWidth);
     fANNIETree->Branch("LAPPD_PulseSide", &fPulseSide);
     fANNIETree->Branch("LAPPD_PulseStripNum", &fPulseStripNum);
+    fANNIETree->Branch("LAPPD_PulseBaseline", &fPulseBaseline);
+    fANNIETree->Branch("LAPPD_PulseFollowTime", &fPulseFollowTime);
+    fANNIETree->Branch("LAPPD_PulseFollowCharge", &fPulseFollowCharge);
 
     // fANNIETree->Branch("LAPPDHitTimeStampUL", &fLAPPDHitTimeStampUL, "LAPPDHitTimeStampUL/l");
     // fANNIETree->Branch("LAPPDHitBeamgateUL", &fLAPPDHitBeamgateUL, "LAPPDHitBeamgateUL/l");
@@ -263,6 +267,12 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPDHitP2HalfEndTime", &fLAPPDHitP2HalfEndTime);
     fANNIETree->Branch("LAPPDHitP1Charge", &fLAPPDHitP1Charge);
     fANNIETree->Branch("LAPPDHitP2Charge", &fLAPPDHitP2Charge);
+    fANNIETree->Branch("LAPPDHitP1Baseline", &fLAPPDHitP1Baseline);
+    fANNIETree->Branch("LAPPDHitP2Baseline", &fLAPPDHitP2Baseline);
+    fANNIETree->Branch("LAPPDHitP1FollowTime", &fLAPPDHitP1FollowTime);
+    fANNIETree->Branch("LAPPDHitP2FollowTime", &fLAPPDHitP2FollowTime);
+    fANNIETree->Branch("LAPPDHitP1FollowCharge", &fLAPPDHitP1FollowCharge);
+    fANNIETree->Branch("LAPPDHitP2FollowCharge", &fLAPPDHitP2FollowCharge);
 
     /*
     fANNIETree->Branch("LAPPDWaveformChankey", &LAPPDWaveformChankey, "LAPPDWaveformChankey/I");
@@ -435,6 +445,13 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("recoVtxFOM", &fRecoVtxFOM, "recoVtxFOM/D");
     fANNIETree->Branch("recoStatus", &fRecoStatus, "recoStatus/I");
   }
+  
+  // fill ring counting info
+  if (RingCounting_fill)
+  {
+    fANNIETree->Branch("RC_singleRingP", &fRC_singleRingP, "RC_singleRingP/D");
+    fANNIETree->Branch("RC_multiRingP", &fRC_multiRingP, "RC_multiRingP/D");
+  }
 
   // Reconstructed variables from each step in Muon Reco Analysis
   // Currently output when RecoDebug_fill = 1 in config
@@ -574,6 +591,14 @@ bool ANNIEEventTreeMaker::Execute()
   if (TankReco_fill)
   {
     got_reco = FillTankRecoInfo();
+  }
+
+  if (RingCounting_fill)
+  {
+    bool got_srFlag = m_data->Stores.at("RecoEvent")->Get("RingCountingSRPrediction", fRC_singleRingP);
+    bool got_mrFlag = m_data->Stores.at("RecoEvent")->Get("RingCountingMRPrediction", fRC_multiRingP);
+    if(ANNIEEventTreeMakerVerbosity>1)
+      cout<<"Printing ring counting: got_srFlag = "<<got_srFlag<<":"<<fRC_singleRingP<<", got_mrFlag = "<<got_mrFlag <<":"<<fRC_multiRingP<<endl;
   }
 
   if (RecoDebug_fill)
@@ -730,7 +755,9 @@ void ANNIEEventTreeMaker::ResetVariables()
   fPulseWidth.clear();
   fPulseSide.clear();
   fPulseStripNum.clear();
-  fChannelBaseline.clear();
+  fPulseBaseline.clear();
+  fPulseFollowTime.clear();
+  fPulseFollowCharge.clear();
 
   fLAPPDHitTimeStampUL.clear();
   fLAPPDHitBeamgateUL.clear();
@@ -755,6 +782,12 @@ void ANNIEEventTreeMaker::ResetVariables()
   fLAPPDHitP2HalfEndTime.clear();
   fLAPPDHitP1Charge.clear();
   fLAPPDHitP2Charge.clear();
+  fLAPPDHitP1Baseline.clear();
+  fLAPPDHitP2Baseline.clear();
+  fLAPPDHitP1FollowTime.clear();
+  fLAPPDHitP2FollowTime.clear();
+  fLAPPDHitP1FollowCharge.clear();
+  fLAPPDHitP2FollowCharge.clear();
 
   LAPPDWaveformChankey.clear();
   waveformMaxValue.clear();
@@ -930,6 +963,10 @@ void ANNIEEventTreeMaker::ResetVariables()
   fRecoAngle = -9999;
   fRecoPhi = -9999;
   fRecoStatus = -9999;
+
+  // RingCounting_fill
+  fRC_singleRingP = -9999;
+  fRC_multiRingP = -9999;
 
   // RecoDebug_fill
   fSeedVtxX.clear();
@@ -1436,6 +1473,9 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
         fPulseStart.push_back(thisPulse.GetLowRange());
         fPulseEnd.push_back(thisPulse.GetHiRange());
         fPulseWidth.push_back(thisPulse.GetHiRange() - thisPulse.GetLowRange());
+        fPulseBaseline.push_back(thisPulse.GetBaseline());
+        fPulseFollowTime.push_back(thisPulse.GetPulseFollowTime());
+        fPulseFollowCharge.push_back(thisPulse.GetPulseFollowCharge());
       }
       for (int i = 0; i < pulse1.size(); i++)
       {
@@ -1451,6 +1491,9 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
         fPulseStart.push_back(thisPulse.GetLowRange());
         fPulseEnd.push_back(thisPulse.GetHiRange());
         fPulseWidth.push_back(thisPulse.GetHiRange() - thisPulse.GetLowRange());
+        fPulseBaseline.push_back(thisPulse.GetBaseline());
+        fPulseFollowTime.push_back(thisPulse.GetPulseFollowTime());
+        fPulseFollowCharge.push_back(thisPulse.GetPulseFollowCharge());
       }
     }
   }
@@ -1507,6 +1550,15 @@ void ANNIEEventTreeMaker::FillLAPPDHit()
 
         fLAPPDHitP1Charge.push_back(p1.GetCharge());
         fLAPPDHitP2Charge.push_back(p2.GetCharge());
+
+        fLAPPDHitP1Baseline.push_back(p1.GetBaseline());
+        fLAPPDHitP2Baseline.push_back(p2.GetBaseline());
+
+        fLAPPDHitP1FollowTime.push_back(p1.GetPulseFollowTime());
+        fLAPPDHitP2FollowTime.push_back(p2.GetPulseFollowTime());
+
+        fLAPPDHitP1FollowCharge.push_back(p1.GetPulseFollowCharge());
+        fLAPPDHitP2FollowCharge.push_back(p2.GetPulseFollowCharge());
       }
     }
   }

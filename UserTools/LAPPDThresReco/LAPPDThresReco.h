@@ -59,8 +59,12 @@ private:
     bool savePositionOnStrip;
     int useRange; //-1 averaged peak time, 0 low, 1 high
     bool loadPrintMRDinfo;
+    double pulseFollowTimeStandard;
+    int baselineStart;
+    int baselineEnd;
     // Variables that you need in the tool
     int eventNumber;
+    double pulseFollowTime;
 
     // LAPPD tool chain, control variables (Will be shared in multiple LAPPD tools to show the state of the tool chain in each loop)
     // Variables that you get from the config file

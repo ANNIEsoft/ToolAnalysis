@@ -1,0 +1,3 @@
+LoadANNIEEvent LoadANNIEEvent ./configfiles/PrintADCTraces/LoadANNIEEventConfig
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+PrintADCTraces PrintADCTraces ./configfiles/PrintADCTraces/PrintADCTracesConfig

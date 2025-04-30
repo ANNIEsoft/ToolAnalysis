@@ -241,7 +241,7 @@ class RingCounting(Tool, RingCountingGlobals):
         """
 
         self.m_log.Log(__file__ + " PREDICTING", self.v_message, self.m_verbosity)
-        self.predicted = self.model.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1)))
+        self.predicted = self.model.predict(np.reshape(self.cnn_image_pmt, newshape=(-1, 10, 16, 1)), verbose=0)
 
 
 ###################
