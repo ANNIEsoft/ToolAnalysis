@@ -239,7 +239,25 @@ bool BeamFetcherV2::FetchFromTrigger()
   }
 
   if (fDeleteCTCData)
+  {
+    uint64_t FirstTriggerTimestamp = TimeToTriggerWordMap->begin()->first;
+    const uint64_t MAX_CACHE_DURATION_MS = 1200000; // save only 20 mins of data maximum
+    uint64_t minTimestampAllowed = FirstTriggerTimestamp - MAX_CACHE_DURATION_MS;
+    if (!BeamDataQuery.empty())
+    {
+      std::map<uint64_t, std::map<std::string, BeamDataPoint>> newBeamDataQuery;
+      for (auto it = BeamDataQuery.lower_bound(minTimestampAllowed); it != BeamDataQuery.end(); ++it)
+      {
+        newBeamDataQuery.emplace(*it); 
+      }
+    }
+    BeamDataQuery.swap(newBeamDataQuery); // swap and release memory
+
     TimeToTriggerWordMap->clear();
+    std::map<uint64_t, std::vector<uint32_t>> *TimeToTriggerWordMapComplete = nullptr;
+    m_data->CStore.Get("TimeToTriggerWordMapComplete", TimeToTriggerWordMapComplete);
+    TimeToTriggerWordMapComplete->clear();
+  }
 
   return true;
 }
