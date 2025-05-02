@@ -44,6 +44,7 @@ file.write('RecoDebug_fill 0\n')
 file.write('muonTruthRecoDiff_fill 0\n')
 file.write('isData 1\n')
 file.write('HasGenie 0\n')
+file.write('RingCounting_fill 0\n')
 file.write('LAPPD_MC_fill 0\n')
 file.write('\n')
 
@@ -51,7 +52,7 @@ if run_type == 'beam' or run_type == 'laser' or run_type == 'beam_39':
     file.write('LAPPDData_fill 1\n')
     file.write('LAPPDReco_fill 1\n')
     file.write('LAPPD_PPS_fill 1\n')
-    file.write('LAPPD_Waveform_fill 1\n')
+    file.write('LAPPD_Waveform_fill 0\n')
 else:
     file.write('LAPPDData_fill 0\n')
     file.write('LAPPDReco_fill 0\n')
