@@ -648,10 +648,13 @@ void MonitorMRDTime::WriteToFile(){
   std::vector<unsigned int> *crate = new std::vector<unsigned int>;
   std::vector<unsigned int> *slot = new std::vector<unsigned int>;
   std::vector<unsigned int> *channel = new std::vector<unsigned int>;
-  std::vector<double> *tdc = new std::vector<double>;
+  std::vector<double> *tdc_mean = new std::vector<double>;
+  std::vector< std::vector<double> > *tdc = new std::vector< std::vector<double> >;
   std::vector<double> *rms = new std::vector<double>;
   std::vector<double> *rate = new std::vector<double>;
   std::vector<int> *channelcount = new std::vector<int>;
+  double ncosmic;
+  double nbeam;
   double rate_cosmic;
   double rate_beam;
   double rate_noloopback;
@@ -670,11 +673,14 @@ void MonitorMRDTime::WriteToFile(){
     t->SetBranchAddress("slot",&slot);
     t->SetBranchAddress("channel",&channel);
     t->SetBranchAddress("tdc",&tdc);
+    t->SetBranchAddress("tdc_mean",&tdc_mean);
     t->SetBranchAddress("rms",&rms);
     t->SetBranchAddress("rate",&rate);
     t->SetBranchAddress("channelcount",&channelcount);
     t->SetBranchAddress("rate_cosmic",&rate_cosmic);
     t->SetBranchAddress("rate_beam",&rate_beam);
+    t->SetBranchAddress("ncosmic",&ncosmic);
+    t->SetBranchAddress("nbeam",&nbeam);
     t->SetBranchAddress("rate_noloopback",&rate_noloopback);
     t->SetBranchAddress("rate_normalhit",&rate_normalhit);
     t->SetBranchAddress("rate_doublehit",&rate_doublehit);
@@ -689,11 +695,14 @@ void MonitorMRDTime::WriteToFile(){
     t->Branch("slot",&slot);
     t->Branch("channel",&channel);
     t->Branch("tdc",&tdc);
+    t->Branch("tdc_mean",&tdc_mean);
     t->Branch("rms",&rms);
     t->Branch("rate",&rate);
     t->Branch("channelcount",&channelcount);
     t->Branch("rate_cosmic",&rate_cosmic);
     t->Branch("rate_beam",&rate_beam);
+    t->Branch("ncosmic",&ncosmic);
+    t->Branch("nbeam",&nbeam);
     t->Branch("rate_noloopback",&rate_noloopback);
     t->Branch("rate_normalhit",&rate_normalhit);
     t->Branch("rate_doublehit",&rate_doublehit);
@@ -719,6 +728,7 @@ void MonitorMRDTime::WriteToFile(){
     delete slot;
     delete channel;
     delete tdc;
+    delete tdc_mean;
     delete rms;
     delete rate;
     delete channelcount;
@@ -734,6 +744,7 @@ void MonitorMRDTime::WriteToFile(){
   slot->clear();
   channel->clear();
   tdc->clear();
+  tdc_mean->clear();
   rms->clear();
   rate->clear();
   channelcount->clear();
@@ -764,9 +775,13 @@ void MonitorMRDTime::WriteToFile(){
     double rate_temp = tdc_file.at(i_channel).size() / (t_frame/MSEC_to_SEC);
     double mean_tdc = 0.;
     double rms_temp = 0.;
+    std::vector<double> tdc_v;// = new std::vector<double>;;
     for (unsigned int i_tdc = 0; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
       mean_tdc+=tdc_file.at(i_channel).at(i_tdc);
+      //std::cout << "i_channel " << i_channel << " i_tdc " << i_tdc << " tdc_file.at(i_channel).at(i_tdc) " << tdc_file.at(i_channel).at(i_tdc) << " tdc_file.at(i_channel).size() " << tdc_file.at(i_channel).size() << std::endl;
+      tdc_v.push_back(tdc_file.at(i_channel).at(i_tdc)); // not the average
     }
+
     if (tdc_file.at(i_channel).size() > 0) {
       mean_tdc/=tdc_file.at(i_channel).size();
       for (unsigned int i_tdc = 0.; i_tdc < tdc_file.at(i_channel).size(); i_tdc++){
@@ -788,7 +803,8 @@ void MonitorMRDTime::WriteToFile(){
     crate->push_back(crate_temp);
     slot->push_back(slot_temp);
     channel->push_back(channel_temp);
-    tdc->push_back(mean_tdc);
+    tdc_mean->push_back(mean_tdc);
+    tdc->push_back(tdc_v);
     rms->push_back(rms_temp);
     rate->push_back(rate_temp);
     channelcount->push_back(tdc_file.at(i_channel).size());
@@ -798,6 +814,8 @@ void MonitorMRDTime::WriteToFile(){
   if (fabs(t_frame) > 0.1) {
     rate_beam = n_beam/(t_frame/MSEC_to_SEC);
     rate_cosmic = n_cosmic/(t_frame/MSEC_to_SEC);
+    nbeam = n_beam;
+    ncosmic = n_cosmic;
   } else {
     rate_beam = 0.;
     rate_cosmic = 0.;
@@ -893,12 +911,15 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         std::vector<unsigned int> *crate = new std::vector<unsigned int>;
         std::vector<unsigned int> *slot = new std::vector<unsigned int>;
         std::vector<unsigned int> *channel = new std::vector<unsigned int>;
-        std::vector<double> *tdc = new std::vector<double>;
+        std::vector<double> *tdc_mean = new std::vector<double>;
+        std::vector< std::vector <double >> *tdc = new std::vector< std::vector<double>>;
         std::vector<double> *rms = new std::vector<double>;
         std::vector<double> *rate = new std::vector<double>;
         std::vector<int> *channelcount = new std::vector<int>;
         double rate_cosmic=0.;
         double rate_beam=0.;
+        double ncosmic=0.;
+        double nbeam=0.;
         double rate_noloopback=0.;
         double rate_normalhit=0.;
         double rate_doublehit=0.;
@@ -911,12 +932,15 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         t->SetBranchAddress("crate",&crate);
         t->SetBranchAddress("slot",&slot);
         t->SetBranchAddress("channel",&channel);
+        t->SetBranchAddress("tdc_mean",&tdc_mean);
         t->SetBranchAddress("tdc",&tdc);
         t->SetBranchAddress("rms",&rms);
         t->SetBranchAddress("rate",&rate);
         t->SetBranchAddress("channelcount",&channelcount);
         t->SetBranchAddress("rate_cosmic",&rate_cosmic);
         t->SetBranchAddress("rate_beam",&rate_beam);
+        t->SetBranchAddress("ncosmic",&ncosmic);
+        t->SetBranchAddress("nbeam",&nbeam);
         t->SetBranchAddress("rate_noloopback",&rate_noloopback);
         t->SetBranchAddress("rate_normalhit",&rate_normalhit);
         t->SetBranchAddress("rate_doublehit",&rate_doublehit);
@@ -950,7 +974,7 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
 
           t->GetEntry(next_entry);
           if (t_start >= timestamp_start && t_end <= timestamp_end){
-            tdc_plot.push_back(*tdc);
+            tdc_plot.push_back(*tdc_mean);
             rms_plot.push_back(*rms);
             rate_plot.push_back(*rate);
             channelcount_plot.push_back(*channelcount);
@@ -974,6 +998,7 @@ void MonitorMRDTime::ReadFromFile(ULong64_t timestamp_end, double time_frame){
         delete crate;
         delete slot;
         delete channel;
+        delete tdc_mean;
         delete tdc;
         delete rms;
         delete rate;
@@ -1123,7 +1148,7 @@ void MonitorMRDTime::InitializeVectors(){
     unsigned int slot = ActiveSlot_to_Slot[i_slot];
     std::stringstream ss_title_single, ss_name_single;
     ss_name_single << "hist_hitmap_cr"<<crate<<"_sl"<<slot;
-    ss_title_single << "Hitmap Crate "<<crate<<" Slot "<<slot;
+    ss_title_single << "Hitmap Rack "<<crate<<" Slot "<<slot;
 
     int hist_color;
     if (crate == min_crate) hist_color = 8;
@@ -1449,7 +1474,7 @@ void MonitorMRDTime::InitializeVectors(){
         name_graph_rms << name_graph.str()<<"_rms";
         name_graph_rate << name_graph.str()<<"_rate";
         name_scatter << name_graph.str()<<"_scatter";
-        title_graph << "Crate "<<ss_crate.str()<<", Slot "<<ss_slot.str()<<", Channel "<<ss_ch.str();
+        title_graph << "Rack "<<ss_crate.str()<<", Slot "<<ss_slot.str()<<", Channel "<<ss_ch.str();
         title_graph_tdc << title_graph.str() << " (TDC)";
         title_graph_rms << title_graph.str() <<" (RMS)";
         title_graph_rate << title_graph.str() <<" (Rate)";
@@ -1821,7 +1846,7 @@ void MonitorMRDTime::DrawScatterPlots(){
 	channel_range = " Ch 16-31";
       }
 
-      ss_ch_scatter << "Crate "<<crate<<" Slot "<<slot<<channel_range<<" (last File)";
+      ss_ch_scatter << "Rack "<<crate<<" Slot "<<slot<<channel_range<<" (last File)";
 
       if ( i_channel == num_active_slots*num_channels-1){
         canvas_scatter->cd();
@@ -2255,7 +2280,7 @@ void MonitorMRDTime::DrawHitMap(ULong64_t timestamp_end, double time_frame, std:
     ss_slot << i_slot;
     std::stringstream save_path_singlehitmap, ss_hitmap_title_slot;
     save_path_singlehitmap << outpath <<"MRDHitmap_Cr"<<crate<<"_Sl"<<slot<<"_"<<file_ending<<"."<<img_extension;
-    ss_hitmap_title_slot << "Hitmap "<<end_time.str()<<" Cr "<<crate <<" Sl "<<slot<<" (last "<<ss_timeframe.str()<<"h)";
+    ss_hitmap_title_slot << "Hitmap "<<end_time.str()<<" Rack "<<crate <<" Sl "<<slot<<" (last "<<ss_timeframe.str()<<"h)";
     hist_hitmap_slot.at(i_slot)->GetYaxis()->SetRangeUser(0.8,max_hitmap_slot.at(i_slot)+10);
     hist_hitmap_slot.at(i_slot)->SetTitle(ss_hitmap_title_slot.str().c_str());
     hist_hitmap_slot.at(i_slot)->Draw();
@@ -2557,9 +2582,12 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
 
     if (verbosity > 2) std::cout <<"MonitorMRDTime: Stored data (file #"<<i_file+1<<"): "<<std::endl;
     for (int i_channel = 0; i_channel < num_active_slots*num_channels; i_channel++){
+      if(i_channel == 111 || i_channel == 143 ) continue; //ToDo: This is temporarly. Those channels need to be moved to a different canvas
+      else {
       gr_tdc.at(i_channel)->SetPoint(i_file,labels_timeaxis[i_file].Convert(),tdc_plot.at(i_file).at(i_channel));
       gr_rms.at(i_channel)->SetPoint(i_file,labels_timeaxis[i_file].Convert(),rms_plot.at(i_file).at(i_channel));
       gr_rate.at(i_channel)->SetPoint(i_file,labels_timeaxis[i_file].Convert(),rate_plot.at(i_file).at(i_channel));
+      }
     }
 
   }
@@ -2582,6 +2610,8 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
     unsigned int slot = TotalChannel_to_Slot[i_channel];
     unsigned int channel = TotalChannel_to_Channel[i_channel];
 
+    //std::cout << "crate: "<<crate <<" slot: "<<slot<<" channel: "<<channel<<" i_channel: "<< i_channel <<std::endl;
+
     std::stringstream ss_ch_tdc, ss_ch_rms, ss_ch_rate, ss_leg_time;
   
      if (i_channel%CH_per_CANVAS == 0 || i_channel == num_active_slots*num_channels-1) {
@@ -2598,19 +2628,19 @@ void MonitorMRDTime::DrawTimeEvolution(ULong64_t timestamp_end, double time_fram
           slot = TotalChannel_to_Slot[i_channel-1];
           channel_range = " Channel 16-31";
         }
-        ss_ch_tdc<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
-        ss_ch_rms<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
-        ss_ch_rate<<"Crate "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
-
-        if ( i_channel == num_active_slots*num_channels - 1){
-          ss_leg_time.str("");
-          ss_leg_time<<"ch "<<channel;
-          multi_ch_tdc->Add(gr_tdc.at(i_channel));
-          leg_tdc->AddEntry(gr_tdc.at(i_channel),ss_leg_time.str().c_str(),"l");
-          multi_ch_rms->Add(gr_rms.at(i_channel));
-          leg_rms->AddEntry(gr_rms.at(i_channel),ss_leg_time.str().c_str(),"l");
-          multi_ch_rate->Add(gr_rate.at(i_channel));
-          leg_rate->AddEntry(gr_rate.at(i_channel),ss_leg_time.str().c_str(),"l");
+        ss_ch_tdc<<"Rack "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
+        ss_ch_rms<<"Rack "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
+        ss_ch_rate<<"Rack "<<crate<<" Slot "<<slot<<channel_range<<" ("<<ss_timeframe.str()<<"h)";
+ 
+	if ( i_channel == num_active_slots*num_channels - 1){
+           ss_leg_time.str("");
+           ss_leg_time<<"ch "<<channel;
+           multi_ch_tdc->Add(gr_tdc.at(i_channel));
+           leg_tdc->AddEntry(gr_tdc.at(i_channel),ss_leg_time.str().c_str(),"l");
+           multi_ch_rms->Add(gr_rms.at(i_channel));
+           leg_rms->AddEntry(gr_rms.at(i_channel),ss_leg_time.str().c_str(),"l");
+           multi_ch_rate->Add(gr_rate.at(i_channel));
+           leg_rate->AddEntry(gr_rate.at(i_channel),ss_leg_time.str().c_str(),"l");
         }
 
         canvas_ch_tdc->cd();
