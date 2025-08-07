@@ -137,10 +137,8 @@ class MonitorLAPPDData: public Tool {
   ULong64_t utc_to_fermi = 2.7e12;  //6h clock delay in ADC clocks (timestamps in UTC time compared to Fermilab time)
   ULong64_t utc_to_t=21600000;  //6h clock delay in millisecons
   double CLOCK_to_SEC = 3.125e-9;	//320MHz clock -> 1/320MHz = 3.125ns
-  double CLOCK_to_NSEC = 3.125;       //320MHz clock -> 1/320MHz = 3.125ns
   ULong64_t reference_time;
   ULong64_t last_pps_timestamp;
-  int last_pps_count;
 
   //Geometry variables
   Geometry *geom = nullptr;
@@ -165,14 +163,6 @@ class MonitorLAPPDData: public Tool {
   std::vector<uint64_t> last_timestamp;
   std::vector<uint64_t> first_pps_timestamps;
   std::vector<uint64_t> last_pps_timestamps;
-  std::map<int, std::vector<int>> raw_lappd_data_pps_counts; // PPS event counters, indexed by all_timestamps
-  std::map<int, std::vector<uint64_t>> raw_lappd_data_pps_timestamps; // Timestamp in CLOCK
-  std::map<int, std::vector<uint64_t>> lappd_pps_interval_drift_distribution; // Maps LAPPD ID to vector of PPS interval drift distributions (t = 0, t = 3.2e8+-1, t = other)
-  std::vector<uint64_t> data_event_timestamps; // Timestamp in nanoseconds
-  std::map<int, std::vector<uint64_t>> data_event_timestamps_per_partrun; // Timestamps grouped by partrun, used for Data events histogram
-  std::vector<int> pps_accumulated_number; // PPS accumulated number of events
-  std::vector<long> pps_accumulated_psec_timestamp; // PSec timestamps of each PPS accumulated number
-  std::vector<long> raw_lappd_data_pps_timestamp_per_accumulated_number; // PPS timestamp of each accumulated number
   std::vector<bool> first_entry;
   std::vector<bool> first_entry_pps;
   std::vector<int> n_buffer;
@@ -235,7 +225,6 @@ class MonitorLAPPDData: public Tool {
   std::vector<int> partrun_plot;
   std::vector<ULong64_t> lappdoffset_plot;
   std::vector<int> ppscount_plot;
-  std::map<int,std::vector<double> > pps_event_counter_plot;
   std::vector<int> framecount_plot;
 
   //canvas
@@ -264,16 +253,11 @@ class MonitorLAPPDData: public Tool {
   TCanvas *canvas_logfile_lappd = nullptr;
   TCanvas *canvas_file_timestamp_lappd = nullptr;
   TCanvas *canvas_events_per_channel = nullptr;
-  TCanvas *canvas_pf_vs_timings = nullptr;
   TCanvas *canvas_ped_lappd = nullptr;
   TCanvas *canvas_sigma_lappd = nullptr;
   TCanvas *canvas_rate_lappd = nullptr;
   TCanvas *canvas_frame_count = nullptr;
   TCanvas *canvas_pps_count = nullptr;
-  TCanvas *canvas_pps_event_counter = nullptr;
-  TCanvas *canvas_pps_interval_drift = nullptr;
-  TCanvas *canvas_pps_accumulated_number_vs_psec_timestamp = nullptr;
-  TCanvas* canvas_pps_time_vs_accumulated_number = nullptr;
 
   //graphs
   std::map<int, TGraph*> graph_pps_rate;
@@ -284,10 +268,6 @@ class MonitorLAPPDData: public Tool {
   std::map<int, TGraph*> graph_ped;
   std::map<int, TGraph*> graph_sigma;
   TGraph *graph_pps_count = nullptr;
-  std::map<int, TGraph> graph_pps_event_counter; 
-  std::map<int, TH1F> graph_pps_interval_drift;
-  TGraph *graph_pps_accumulated_number_vs_psec_timestamp = nullptr;
-  TGraph *graph_pps_time_vs_accumulated_number = nullptr;
   TGraph *graph_frame_count = nullptr;
 
   //multi-graphs
@@ -321,7 +301,6 @@ class MonitorLAPPDData: public Tool {
   TH2F* hist_rate_threshold_all = nullptr;
   TH1F *log_files_lappd;
   TH2F* hist_events_per_channel = nullptr;
-  TH2F hist_pf_vs_timings;
 
   //text
   TText *text_data_title = nullptr;

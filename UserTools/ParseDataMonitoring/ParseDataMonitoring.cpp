@@ -181,7 +181,6 @@ bool ParseDataMonitoring::Execute()
 	    TempData->Set("ACC",PDATA.AccInfoFrame);
 	    std::string str_pps = "PPS";
 	    TempData->Set("Type",str_pps);
-        TempData->Set("LAPPD_ID",PDATA.LAPPD_ID);
 	    TempData->Save("LAPPDTemp");
 	    TempData->Delete();
 
@@ -292,10 +291,9 @@ bool ParseDataMonitoring::Execute()
             {
 		int pedval,val;
 		val=(int)it->second.at(kvec);
-        std::vector<int> pedvals = ((PedestalValues->find(it->first))->second);
-                if(DoPedSubtract==1 && kvec < pedvals.size())
+                if(DoPedSubtract==1)
                 {
-                  pedval = pedvals.at(kvec);
+                  pedval = ((PedestalValues->find(it->first))->second).at(kvec);
                 }else
                 {
                   pedval = 0;
