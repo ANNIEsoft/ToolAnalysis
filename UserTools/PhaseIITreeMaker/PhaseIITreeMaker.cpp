@@ -989,8 +989,8 @@ void PhaseIITreeMaker::ResetVariables() {
   fEventNumber = -9999;
   fEventTimeTank_Tree = 9999;
   fNHits = -9999;
-  fNDigitsPMTs = -9999;
-  fNDigitsLAPPDs = -9999;
+  fNDigitsPMTs = 0;
+  fNDigitsLAPPDs = 0;
   fVetoHit = -9999;
   fEventTimeMRD_Tree = 9999;
   fTriggerword = -1;
@@ -1529,8 +1529,6 @@ void PhaseIITreeMaker::LoadDigitHits(){
           }
    // Extract the PMT & LAPPD digit information
    // ===============================
-        fNDigitsPMTs = 0; // number of digits from PMT hits in the event
-        fNDigitsLAPPDs = 0; // number of digits from LAPPD hits in the event
   //loop through all digits
         for(RecoDigit &adigit : *digitList){
 	   fdigitX.push_back(adigit.GetPosition().X());
