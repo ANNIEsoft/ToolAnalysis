@@ -73,7 +73,7 @@ MyToolsLib += `python3-config --ldflags --embed`
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libServiceDiscovery.so lib/libToolChain.so lib/libMyTools.so Analyse
 .PHONY: UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h
 
-Analyse: src/main.cpp | lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libServiceDiscovery.so lib/libMyTools.so lib/libToolChain.so lib/libDataModel.so lib/libServiceDiscovery.so
+Analyse: src/main.cpp | lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libServiceDiscovery.so lib/libMyTools.so lib/libDataModel.so
 	@echo -e "\n*************** Making " $@ "****************"
 	g++ -std=c++1y -g -fPIC $(CPPFLAGS) src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(DataModelLib) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
@@ -90,7 +90,7 @@ include/Tool.h: $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h
 	cp $(ToolDAQPath)/ToolDAQFramework/src/Tool/Tool.h include/
 	cp DataModel/*.h include/
 
-lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/* UserTools/MyFactory/Unity.h | lib/libLogging.so lib/libStore.so lib/libServiceDiscovery.so lib/libLogging.so lib/libDataModel.so
+lib/libToolChain.so: $(ToolDAQPath)/ToolDAQFramework/src/ToolChain/* UserTools/MyFactory/Unity.h | lib/libLogging.so lib/libStore.so lib/libServiceDiscovery.so lib/libDataModel.so
 	@echo -e "/n*************** Making " $@ "****************"
 	cp $(ToolDAQPath)/ToolDAQFramework/UserTools/Factory/*.h include/
 	-if [ ! -z "$(TOOLCHAIN)" ]; then cp -f UserTools/MyFactory/Unity.h include/; else cp -f UserTools/Unity.h include/; fi
