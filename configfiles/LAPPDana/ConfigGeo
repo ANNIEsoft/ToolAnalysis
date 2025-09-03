@@ -5,6 +5,6 @@ FACCMRDGeoFile ./configfiles/LoadGeometry/FullMRDGeometry.csv
 DetectorGeoFile ./configfiles/LoadGeometry/DetectorGeometrySpecs.csv
 LAPPDGeoFile ./configfiles/LAPPDana/LAPPDGeometry.csv
 TankPMTGeoFile ./configfiles/LoadGeometry/FullTankPMTGeometry.csv
-TankPMTGainFile ./configfiles/LoadGeometry/ChannelSPEGains_BeamRun20192020.csv
+TankPMTGainFile ./configfiles/LoadGeometry/ChannelSPEGains2023.csv
 TankPMTTimingOffsetFile ./configfiles/LoadGeometry/TankPMTTimingOffsets.csv
 AuxiliaryChannelFile ./configfiles/LoadGeometry/AuxChannels.csv
