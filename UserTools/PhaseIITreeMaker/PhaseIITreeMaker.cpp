@@ -418,7 +418,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     if (Reweight_fill){
       fPhaseIITrigTree->Branch("XSecWeights",&fxsec_weights);
       fPhaseIITrigTree->Branch("FluxWeights",&fflux_weights);
-      fPhaseIITrigTree->Branch("weight_All_UBGenie",&fAll);
+      fPhaseIITrigTree->Branch("weight_All0_UBGenie",&fAll0);
+      fPhaseIITrigTree->Branch("weight_All1_UBGenie",&fAll1);
+      fPhaseIITrigTree->Branch("weight_All2_UBGenie",&fAll2);
+      fPhaseIITrigTree->Branch("weight_All3_UBGenie",&fAll3);
+      fPhaseIITrigTree->Branch("weight_All4_UBGenie",&fAll4);
+      fPhaseIITrigTree->Branch("weight_All5_UBGenie",&fAll5);
       fPhaseIITrigTree->Branch("weight_AxFFCCQEshape_UBGenie",&fAxFFCCQEshape);
       fPhaseIITrigTree->Branch("weight_DecayAngMEC_UBGenie",&fDecayAngMEC);
       fPhaseIITrigTree->Branch("weight_NormCCCOH_UBGenie",&fNormCCCOH);
@@ -899,7 +904,7 @@ bool PhaseIITreeMaker::Execute(){
     //DIGITS
     if(Digit_fill) this->LoadDigitHits();
     //DIGITS
-    /*/
+    /*
     if(Digit_fill){
        // get digits from RecoDigit store
        std::vector<RecoDigit>* digitList;
@@ -924,7 +929,7 @@ bool PhaseIITreeMaker::Execute(){
        Log("PhaseIITreeMaker Tool: Got "+to_string(totalPMTs)+" PMT digits; "+to_string(digitT.size()) +" total digits so far",v_debug,verbosity);
        Log("PhaseIITreeMaker Tool: Got "+to_string(totalLAPPDs)+" LAPPD digits; "+to_string(digitT.size()) +" total digits",v_debug,verbosity);
     }
-/*/
+*/
 
     if(MRDReco_fill){
       fNumClusterTracks=0;
@@ -1104,7 +1109,12 @@ void PhaseIITreeMaker::ResetVariables() {
   }
 
   if (Reweight_fill){
-    fAll.clear();
+    fAll0.clear();
+    fAll1.clear();
+    fAll2.clear();
+    fAll3.clear();
+    fAll4.clear();
+    fAll5.clear();
     fAxFFCCQEshape.clear();
     fDecayAngMEC.clear();
     fNormCCCOH.clear();
@@ -2146,7 +2156,12 @@ void PhaseIITreeMaker::FillWeightInfo() {
   bool get_xsec_weights = m_data->Stores.at("ANNIEEvent")->Get("xsec_weights",fxsec_weights);
   bool get_flux_weights = m_data->Stores.at("ANNIEEvent")->Get("flux_weights",fflux_weights);
   if (get_xsec_weights && get_flux_weights){
-    fAll = fxsec_weights["All"];
+    fAll0 = fxsec_weights["All0"];
+    fAll1 = fxsec_weights["All1"];
+    fAll2 = fxsec_weights["All2"];
+    fAll3 = fxsec_weights["All3"];
+    fAll4 = fxsec_weights["All4"];
+    fAll5 = fxsec_weights["All5"];
     fAxFFCCQEshape = fxsec_weights["AxFFCCQEshape"];
     fDecayAngMEC = fxsec_weights["DecayAngMEC"];
     fNormCCCOH = fxsec_weights["NormCCCOH"];
