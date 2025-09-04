@@ -994,8 +994,8 @@ void PhaseIITreeMaker::ResetVariables() {
   fEventNumber = -9999;
   fEventTimeTank_Tree = 9999;
   fNHits = -9999;
-  fNDigitsPMTs = -9999;
-  fNDigitsLAPPDs = -9999;
+  fNDigitsPMTs = 0;
+  fNDigitsLAPPDs = 0;
   fVetoHit = -9999;
   fEventTimeMRD_Tree = 9999;
   fTriggerword = -1;
@@ -1539,8 +1539,6 @@ void PhaseIITreeMaker::LoadDigitHits(){
           }
    // Extract the PMT & LAPPD digit information
    // ===============================
-        int totalPMTs =0; // number of digits from PMT hits in the event
-        int totalLAPPDs = 0; // number of digits from LAPPD hits in the event
   //loop through all digits
         for(RecoDigit &adigit : *digitList){
 	   fdigitX.push_back(adigit.GetPosition().X());
@@ -1550,8 +1548,8 @@ void PhaseIITreeMaker::LoadDigitHits(){
 	   if(adigit.GetDigitType()==0){fNDigitsPMTs+=1;} //when the digit type is zero we have a PMT digit
 	   else{fNDigitsLAPPDs+=1;}// when it is 1 we have LAPPD
            }
-        Log("PhaseIITreeMaker Tool: Got "+to_string(totalPMTs)+" PMT digits; "+to_string(fdigitT.size()) +" total digits so far",v_debug,verbosity);
-        Log("PhaseIITreeMaker Tool: Got "+to_string(totalLAPPDs)+" LAPPD digits; "+to_string(fdigitT.size()) +" total digits",v_debug,verbosity);
+        Log("PhaseIITreeMaker Tool: Got "+to_string(fNDigitsPMTs)+" PMT digits; "+to_string(fdigitT.size()) +" total digits so far",v_debug,verbosity);
+        Log("PhaseIITreeMaker Tool: Got "+to_string(fNDigitsLAPPDs)+" LAPPD digits; "+to_string(fdigitT.size()) +" total digits",v_debug,verbosity);
    return;
 }       
 //DIGITS
