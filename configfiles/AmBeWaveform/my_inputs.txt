@@ -1,0 +1,3 @@
+/pnfs/annie/persistent/processed/processed_EBV2/R4499/ProcessedData_PMT_R4499S0p0
+/pnfs/annie/persistent/processed/processed_EBV2/R4499/ProcessedData_PMT_R4499S0p1
+/pnfs/annie/persistent/processed/processed_EBV2/R4499/ProcessedData_PMT_R4499S0p2
