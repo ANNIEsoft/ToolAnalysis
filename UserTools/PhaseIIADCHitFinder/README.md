@@ -52,8 +52,10 @@ DefaultThresholdType [string]: Marks whether the given threshold values in the D
       relative to the calibrated baseline ("relative"), or absolute ADC counts ("absolute").
 
 PulseWindowType [string]: If using "threshold" on pulse finding approach, this toggle defines
-      how the pulse windows in a waveform are found.  Either fixed window ("fixed") or
-      the pulse windows are defined by crossing and un-crossing threshold ("dynamic").
+      how the pulse windows in a waveform are found.  There are three options: fixed window ("fixed"),
+      dynamic window where the pulse windows are defined by crossing and un-crossing threshold ("dynamic"),
+      and ("Fixed_2023_Gains") which implements the same integration window used in the 2023 Gains calibration 
+      where the pulse windows are defined by crossing and un-crossing the baseline.
 
 PulseWindowStart [int]: Start of pulse window relative to when adc trigger threshold
       was crossed.  Only used when PulseFindingApproach==threshold and
