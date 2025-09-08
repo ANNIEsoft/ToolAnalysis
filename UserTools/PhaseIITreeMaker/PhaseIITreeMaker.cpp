@@ -721,7 +721,7 @@ bool PhaseIITreeMaker::Execute(){
         }
         bool good_bunch = this->LoadBNBtimingMC(it_cluster_pair_mc->first);
         if(!good_bunch){
-          if(verbosity>v_debug) Log("PhaseIITreeMaker Tool: BNB timing (MC). Continuing tree",v_debug,verbosity);
+          if(verbosity>v_debug) Log("PhaseIITreeMaker Tool: No BNB timing (MC). Continuing tree",v_debug,verbosity);
         }
         }
       }
