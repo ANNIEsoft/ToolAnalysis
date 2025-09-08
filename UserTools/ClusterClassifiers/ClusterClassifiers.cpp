@@ -36,6 +36,14 @@ bool ClusterClassifiers::Initialise(std::string configfile, DataModel &data){
 bool ClusterClassifiers::Execute(){
 
   //We're gonna make ourselves a couple cluster classifier maps boyeeee
+  bool skip = false;
+  bool goodSkipStatus = m_data->Stores.at("ANNIEEvent")->Get("SkipExecute", skip);
+  if (goodSkipStatus && skip) {
+    logmessage = "ClusterClassifier: An upstream tool told me to skip this event.";
+    Log(logmessage, v_warning, verbosity);
+    return true;
+  }
+
   if(verbosity>4) std::cout << "ClusterClassifiers tool: Accessing cluster map in CStore" << std::endl;
   bool get_clusters = false;
   m_data->CStore.Get("ClusterMap",m_all_clusters);

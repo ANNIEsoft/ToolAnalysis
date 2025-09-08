@@ -164,6 +164,16 @@ bool ClusterFinder::Execute(){
   //----------------------------------------------------------------------------
   //---------------get the members of the ANNIEEvent----------------------------
   //----------------------------------------------------------------------------
+
+  // An upstream tool may opt to skip this execution stage
+  // For example the PMTWaveformSim tool will skip events with no MCHits or if
+  // no waveforms are produced.
+  bool skip = false;
+  bool got_skip_status = m_data->Stores["ANNIEEvent"]->Get("SkipExecute", skip);
+  if (got_skip_status && skip) {
+    Log("ClusterFinder: An upstream tool told me to skip this event.",v_warning,verbose);
+    return true;
+  } 
   
   m_data->Stores["ANNIEEvent"]->Get("EventNumber", evnum);
   //m_data->Stores["ANNIEEvent"]->Get("BeamStatus", BeamStatus);
