@@ -97,6 +97,15 @@ bool EventSelector::Execute(){
   	return false;
   };
 
+  // an upstream tool may have told us to skip this event (PMTWaveformSim)
+  bool skip = false;
+  bool goodSkipStatus = m_data->Stores.at("ANNIEEvent")->Get("SkipExecute", skip);
+  if (goodSkipStatus && skip) {
+    logmessage = "EventSelector: An upstream tool told me to skip this event.";
+    Log(logmessage, v_warning, verbosity);
+    return true;
+  }
+	
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
   
