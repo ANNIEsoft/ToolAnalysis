@@ -32,3 +32,6 @@ TimeShift 0         # This is an artificial time shift to the MC Hits [ns]
                     # (as WCSim simulates particles from t0 = 0, this can be used as a toggle on the "trigger time")
 MakeDebugFile 0     # Produce a root file containing all the simulated waveforms
 ```
+
+## Other notes
+#### CAUTION: In line 90, the RNG seed is set in Initialization based on the clock time. If any other downstream tools are also setting a random seed, there may be unexpected behavior as a result of this tool.
