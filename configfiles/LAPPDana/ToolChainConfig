@@ -16,7 +16,7 @@ service_kick_sec -1
 
 ##### Tools To Add #####
 Tools_File configfiles/LAPPDana/ToolsConfig_ASCII  ## list of tools to run and their config files
-
+#Tools_File configfiles/LAPPDana/ToolsConfig_LAPPDWaveformDisplay
 ##### Run Type #####
 #Inline 102 ## number of Execute steps in program, -1 infinite loop that is ended by user
 #Inline 4990 ## number of Execute steps in program, -1 infinite loop that is ended by user
