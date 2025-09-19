@@ -306,6 +306,7 @@ class PhaseIITreeMaker: public Tool {
 
   //Genie information for event
   double fTrueNeutrinoEnergy;
+  int fTrueNuPDG;
   double fTrueNeutrinoMomentum_X;
   double fTrueNeutrinoMomentum_Y;
   double fTrueNeutrinoMomentum_Z;
