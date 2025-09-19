@@ -15,12 +15,14 @@
 
 verbosity 0
 
+PMTWaveformSim 1       # Whether we're using the data-like hits output from PMTWaveformSim
+
 # BNB properties taken from: MicroBooNE https://doi.org/10.1103/PhysRevD.108.052010
 bunchwidth 1.308       # BNB instrinic bunch spread [ns]
 bunchinterval 18.936   # BNB bunch spacings [ns]
 bunchcount 81          # number of BNB bunches per spill
 
-sampletype 0           # Tank (0) or World (1) genie samples you are running over
+sampletype 1           # Tank (0) or World (1) genie samples you are running over
 prompttriggertime 1    # WCSim prompt trigger settings: (0 = default, t0 = 0 when a particle enters the volume)
                        #                                (1 = modified, t0 = 0 when the neutrino beam dump begins)
 ```
