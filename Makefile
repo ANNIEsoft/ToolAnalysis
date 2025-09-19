@@ -14,10 +14,14 @@ GIT_VERSION := "$(shell git describe --dirty --always)"
 export
 endif
 
+ifeq ($(TOOLCHAIN),)
+TOOLCHAIN:=Dummy
+endif
+
 CPPFLAGS= -fmax-errors=1 -DVERSION=\"$(GIT_VERSION)\" -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
 
-CC=g++ -std=c++1y -g -fPIC -shared $(CPPFLAGS)
-CCC= g++ -std=c++1y -g -fPIC  $(CPPFLAGS)
+CC=g++ -std=c++1y -O3 -fPIC -shared $(CPPFLAGS)
+CCC= g++ -std=c++1y -O3 -fPIC  $(CPPFLAGS)
 
 
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq
@@ -70,10 +74,10 @@ MyToolsInclude += `python3-config --cflags` -Wno-sign-compare
 MyToolsLib = -lcurl $(RootLib) $(MrdTrackLib) $(WCSimLib) $(RATEventLib) $(RawViewerLib) $(CLHEPLib) $(Log4CppLibs) $(GenieLibs) $(PythiaLibs)
 MyToolsLib += `python3-config --ldflags --embed`
 
-all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libServiceDiscovery.so lib/libToolChain.so lib/libMyTools.so Analyse
-.PHONY: UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h
+all: Dummy lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libServiceDiscovery.so lib/libMyTools.so Analyse
+#.PHONY: UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h
 
-Analyse: src/main.cpp | lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libServiceDiscovery.so lib/libMyTools.so lib/libDataModel.so
+Analyse: UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h src/main.cpp | lib/libStore.so lib/libLogging.so lib/libToolChain.so lib/libServiceDiscovery.so lib/libMyTools.so lib/libDataModel.so
 	@echo -e "\n*************** Making " $@ "****************"
 	g++ -std=c++1y -g -fPIC $(CPPFLAGS) src/main.cpp -o Analyse -I include -L lib -lStore -lMyTools -lToolChain -lDataModel -lLogging -lServiceDiscovery -lpthread $(DataModelInclude) $(DataModelLib) $(MyToolsInclude)  $(MyToolsLib) $(ZMQLib) $(ZMQInclude)  $(BoostLib) $(BoostInclude)
 
@@ -109,6 +113,7 @@ clean:
 	rm -f DataModel/DataModel_RootDict*
 	rm -f lib/*.pcm
 	rm -f DataModel/libDataModel.rootmap
+	rm -f UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/Unity.h
 
 lib/libDataModel.so: DataModel/* lib/libLogging.so lib/libStore.so $(patsubst DataModel/%.cpp, DataModel/%.o, $(wildcard DataModel/*.cpp)) DataModel/DataModel_RootDict.o
 	@echo -e "\n*************** Making " $@ "****************"
@@ -202,16 +207,18 @@ DataModel/%.o: DataModel/%.cpp lib/libLogging.so lib/libStore.so include/Tool.h
 	@echo -e "\n*************** Making " $@ "****************"
 	-$(CCC) -c -o $@ $< -I include -L lib -lStore -lLogging  $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
-UserTools/MyFactory/Unity.h:
+UserTools/MyFactory/Unity.h: configfiles/$(TOOLCHAIN)/ToolsConfig
 	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
 	@mkdir -p UserTools/MyFactory
-	@echo -n "" > $@
+	@echo "//$(TOOLCHAIN)" > $@
 	@for TOOL in $(TOOLS); do\
 		echo '#include "'"$${TOOL}.h"'"' >> $@;\
 		cp -f UserTools/$${TOOL}/*.h include/ 2>/dev/null || /bin/true;\
 	done
 
-UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h
+
+
+UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h configfiles/$(TOOLCHAIN)/ToolsConfig
 	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
 	@cp UserTools/Factory/Factory.h UserTools/MyFactory/Factory.h
 	@echo '#include "Factory.h"' > $@
@@ -224,6 +231,7 @@ UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h
 	echo '}' >> $@
 
 %:: configfiles/%/ToolsConfig
+	if [[ `head -n1 UserTools/MyFactory/Unity.h | sed s://::` != "$(TOOLCHAIN)" ]]; then rm -rf UserTools/MyFactory/Unity.h  UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/MyFactory.o; fi
 	@echo "making NEW"
 	@if [ ! -z "$(TOOLCHAIN)" ]; then echo "making ToolChain $(TOOLCHAIN)";fi
 	@# check tools file exists
