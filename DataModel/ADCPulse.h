@@ -94,8 +94,8 @@ class ADCPulse : public Hit {
     unsigned short raw_amplitude_; // ADC
     double calibrated_amplitude_; // V
 
-    std::vector<double> trace_x_;  // x points of the pulse (start at 0, relative to pulse start) [ns]
-    std::vector<double> trace_y_;  // y points of the pulse (baseline-subtracted) [ADC]
+    std::vector<double> trace_x_ = {};  // x points of the pulse (start at 0, relative to pulse start) [ns]
+    std::vector<double> trace_y_ = {};  // y points of the pulse (baseline-subtracted) [ADC]
 };
 
 // (From Andrew Sutton) Need to increment the class version since we added time as a new variable
