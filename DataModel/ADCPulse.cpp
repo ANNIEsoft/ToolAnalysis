@@ -7,10 +7,11 @@
 ADCPulse::ADCPulse(int TubeId, double start_time, double peak_time,
   double baseline, double sigma_baseline, unsigned long area,
   unsigned short raw_amplitude, double calibrated_amplitude,
-  double charge) : Hit(TubeId, start_time, charge),
+  double charge, const std::vector<double>& trace_x, const std::vector<double>& trace_y) : 
+  Hit(TubeId, start_time, charge),
   start_time_(start_time), peak_time_(peak_time),
   baseline_(baseline), sigma_baseline_(sigma_baseline), raw_area_(area),
   raw_amplitude_(raw_amplitude), calibrated_amplitude_(calibrated_amplitude),
-  trace_x_(x_points), trace_y_(y_points)
+  trace_x_(trace_x), trace_y_(trace_y)
 {
 }
