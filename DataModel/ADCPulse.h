@@ -23,8 +23,9 @@ class ADCPulse : public Hit {
     // int TubeId member
     ADCPulse(int TubeId, double start_time, double peak_time,
       double baseline, double sigma_baseline, unsigned long raw_area,
-      unsigned short raw_amplitude, double calibrated_amplitude,
-      double charge, const std::vector<double>& trace_x_, const std::vector<double>& trace_y_);
+      unsigned short raw_amplitude, double calibrated_amplitude, double charge, 
+      const std::vector<double>& trace_x = std::vector<double>(),
+      const std::vector<double>& trace_y = std::vector<double>());
 
     // @brief Returns the start time (ns) of the pulse relative to the
     // start of its minibuffer
@@ -60,7 +61,7 @@ class ADCPulse : public Hit {
     // (baseline-subtracted) pulse
     inline double amplitude() const { return calibrated_amplitude_; }
 
-    // @brief Returns the x and y points of the "found" pulse (baseline-subtracted and relative to pulse start point)
+    // @brief Returns the x [ns] and y [ADC] points of the "found" pulse (baseline-subtracted and relative to pulse start point)
     inline const std::vector<double>& GetTraceXPoints() const { return trace_x_; }
     inline const std::vector<double>& GetTraceYPoints() const { return trace_y_; }
 
@@ -93,8 +94,8 @@ class ADCPulse : public Hit {
     unsigned short raw_amplitude_; // ADC
     double calibrated_amplitude_; // V
 
-    std::vector<double> trace_x_;  // x points of the pulse (start at 0, relative to pulse start)
-    std::vector<double> trace_y_;  // y points of the pulse (baseline-subtracted)
+    std::vector<double> trace_x_;  // x points of the pulse (start at 0, relative to pulse start) [ns]
+    std::vector<double> trace_y_;  // y points of the pulse (baseline-subtracted) [ADC]
 };
 
 // (From Andrew Sutton) Need to increment the class version since we added time as a new variable
