@@ -635,7 +635,7 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
     else pmap.at(channel_key).push_back(apulsevec);
   }
   //Convert ADCPulses to Hits and fill into Hit map
-  HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec,hit_trace_map);
+  HitsOnPMT = this->convert_adcpulses_to_hits(channel_key,pulse_vec);
   Log("PhaseIIADCHitFinder: Filling hit map.",
       v_debug, verbosity);
   for(int j=0; j < (int) HitsOnPMT.size(); j++){
@@ -915,10 +915,10 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       std::vector<double> trace_x;
       std::vector<double> trace_y;
 
-      double pulse_start_time = wmin * NS_PER_ADC_SAMPLE;
+      double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
       double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
 
-      for (size_t p = wmin; p <= wmax; ++p) {
+      for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
           double ns_time = p * NS_PER_ADC_SAMPLE;
           double val_adc = raw_minibuffer_data.GetSample(p);
           trace_x.push_back(ns_time - pulse_start_time);
