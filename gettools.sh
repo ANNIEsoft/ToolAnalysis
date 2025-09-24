@@ -1,5 +1,7 @@
 #!/bin/bash
-if [ $# -eq 0 ] || [ ! -f "configfiles/$1/ToolsConfig" ]; then
+TOOLCHAIN="${1##./configfiles/}"
+#echo "get tools for toolchain '${TOOLCHAIN}'"
+if [ $# -eq 0 ] || [ ! -f "configfiles/$TOOLCHAIN/ToolsConfig" ]; then
 	DIRS=( $(find -L UserTools -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | grep -v -e Factory -e template -e InactiveTools) )
 	declare -a TOOLS;
 	# filter out python tools as they do not need to go into Unity/Factory
@@ -20,7 +22,7 @@ if [ $# -eq 0 ] || [ ! -f "configfiles/$1/ToolsConfig" ]; then
 	echo "${TOOLS[@]}"
 	#ls UserTools/*/*.cpp | sed 's/.cpp$//' | xargs -n1 basename | grep -v -e Factory -e template -e InactiveTools
 else
-	#echo "getting tools needed for toolchain $1" >&2
+	#echo "getting tools needed for toolchain $TOOLCHAIN" >&2
         # parse into bash array
 	declare -a TOOLS;
 	while read -r line; do
@@ -30,6 +32,6 @@ else
 		TOOL=$(echo "${line}" | cut -d' ' -f 2)
 		TOOLS+=( "${TOOL}" )
 		#echo "adding tool ${TOOL}"  >&2
-	done < <(cat "./configfiles/$1/ToolsConfig")
+	done < <(cat "./configfiles/$TOOLCHAIN/ToolsConfig")
 	echo "${TOOLS[@]}"
 fi

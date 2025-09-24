@@ -1,11 +1,11 @@
 ToolDAQPath=${PWD}/ToolDAQ
 
 ifeq ($(TOOLCHAIN),)
-TOOLCHAIN:=$(shell find ./configfiles -type d -name $(MAKECMDGOALS) -exec basename {} \; 2>/dev/null)
+TOOLCHAIN:=$(shell find ./configfiles -type d -name $(MAKECMDGOALS) -exec echo {} \; 2>/dev/null)
 TOOLS:=$(shell ./gettools.sh $(TOOLCHAIN))
 #OBJECTS:=$(foreach tool,$(TOOLS),UserTools/$(tool)/$(tool).o)
 OBJECTS:=$(shell ./getobjects.sh $(TOOLS))
-#$(info TOOLCHAIN: $(TOOLCHAIN))
+$(info TOOLCHAIN: $(TOOLCHAIN))
 $(info TOOLS needed: $(TOOLS))
 $(info OBJECTS: $(OBJECTS))
 NPROCS:=$(shell nproc --all)
