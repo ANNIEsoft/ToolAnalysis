@@ -1,7 +1,7 @@
 ToolDAQPath=${PWD}/ToolDAQ
 
 ifeq ($(TOOLCHAIN),)
-TOOLCHAIN:=$(shell find ./configfiles -type d -name $(MAKECMDGOALS) -exec echo {} \; 2>/dev/null)
+TOOLCHAIN:=$(shell find ./configfiles -type d -path ./configfiles/$(MAKECMDGOALS) -exec echo {} \; 2>/dev/null)
 TOOLS:=$(shell ./gettools.sh $(TOOLCHAIN))
 #OBJECTS:=$(foreach tool,$(TOOLS),UserTools/$(tool)/$(tool).o)
 OBJECTS:=$(shell ./getobjects.sh $(TOOLS))
