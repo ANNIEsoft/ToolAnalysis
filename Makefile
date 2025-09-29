@@ -17,13 +17,14 @@ GIT_VERSION := "$(shell git describe --dirty --always)"
 export
 
 ifeq ($(TOOLCHAIN),)
-TOOLCHAIN:=Dummy
+TOOLCHAIN:=./configfiles/Dummy
+TOOLCHAINNAME:=Dummy
 endif
 
 CPPFLAGS= -fmax-errors=1 -DVERSION=\"$(GIT_VERSION)\" -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Werror=return-type -Wl,--no-as-needed
 
-CC=g++ -std=c++1y -O3 -fPIC -shared $(CPPFLAGS)
-CCC= g++ -std=c++1y -O3 -fPIC  $(CPPFLAGS)
+CC=g++ -std=c++1y -g -O3 -fPIC -shared $(CPPFLAGS)
+CCC= g++ -std=c++1y -g -O3 -fPIC  $(CPPFLAGS)
 
 
 ZMQLib= -L $(ToolDAQPath)/zeromq-4.0.7/lib -lzmq
