@@ -184,3 +184,4 @@
 #include "FitRWMWaveform.h"
 #include "PMTWaveformSim.h"
 #include "LAPPDWaveformDisplay.h"
+#include "VertexLeastSquares.h"
