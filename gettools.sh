@@ -19,7 +19,9 @@ if [ $# -eq 0 ] || [ ! -f "configfiles/$TOOLCHAIN/ToolsConfig" ]; then
 		TOOLS+=( "${TOOLNAME}" )
 	done
 	
-	echo "${TOOLS[@]}"
+	#echo "${TOOLS[@]}"
+	UNIQUE_TOOLS=( $(for ATOOL in "${TOOLS[@]}"; do echo "${ATOOL}"; done | sort -u) )
+	echo "${UNIQUE_TOOLS[@]}"
 	#ls UserTools/*/*.cpp | sed 's/.cpp$//' | xargs -n1 basename | grep -v -e Factory -e template -e InactiveTools
 else
 	#echo "getting tools needed for toolchain $TOOLCHAIN" >&2
@@ -33,5 +35,7 @@ else
 		TOOLS+=( "${TOOL}" )
 		#echo "adding tool ${TOOL}"  >&2
 	done < <(cat "./configfiles/$TOOLCHAIN/ToolsConfig")
-	echo "${TOOLS[@]}"
+	#echo "${TOOLS[@]}"
+	UNIQUE_TOOLS=( $(for ATOOL in "${TOOLS[@]}"; do echo "${ATOOL}"; done | sort -u) )
+	echo "${UNIQUE_TOOLS[@]}"
 fi

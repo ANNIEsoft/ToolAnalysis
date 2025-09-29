@@ -2,9 +2,13 @@ ToolDAQPath=${PWD}/ToolDAQ
 
 ifeq ($(TOOLCHAIN),)
 TOOLCHAIN:=$(shell find ./configfiles -type d -path ./configfiles/$(MAKECMDGOALS) -exec echo {} \; 2>/dev/null)
+TOOLCHAINNAME:=$(subst ./configfiles/,,$(TOOLCHAIN))
+$(info TOOLCHAINNAME: $(TOOLCHAINNAME))
+ifneq ($(MAKECMDGOALS),clean)
 TOOLS:=$(shell ./gettools.sh $(TOOLCHAIN))
 #OBJECTS:=$(foreach tool,$(TOOLS),UserTools/$(tool)/$(tool).o)
 OBJECTS:=$(shell ./getobjects.sh $(TOOLS))
+endif
 $(info TOOLCHAIN: $(TOOLCHAIN))
 $(info TOOLS needed: $(TOOLS))
 $(info OBJECTS: $(OBJECTS))
@@ -207,7 +211,7 @@ DataModel/%.o: DataModel/%.cpp lib/libLogging.so lib/libStore.so include/Tool.h
 	@echo -e "\n*************** Making " $@ "****************"
 	-$(CCC) -c -o $@ $< -I include -L lib -lStore -lLogging  $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
-UserTools/MyFactory/Unity.h: configfiles/$(TOOLCHAIN)/ToolsConfig
+UserTools/MyFactory/Unity.h: $(TOOLCHAIN)/ToolsConfig
 	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
 	@mkdir -p UserTools/MyFactory
 	@echo "//$(TOOLCHAIN)" > $@
@@ -218,7 +222,7 @@ UserTools/MyFactory/Unity.h: configfiles/$(TOOLCHAIN)/ToolsConfig
 
 
 
-UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h configfiles/$(TOOLCHAIN)/ToolsConfig
+UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h $(TOOLCHAIN)/ToolsConfig
 	@echo "Generating $@ for ToolChain $(TOOLCHAIN)"
 	@cp UserTools/Factory/Factory.h UserTools/MyFactory/Factory.h
 	@echo '#include "Factory.h"' > $@
@@ -230,8 +234,9 @@ UserTools/MyFactory/MyFactory.cpp: UserTools/MyFactory/Unity.h configfiles/$(TOO
 	echo 'return ret;' >> $@;\
 	echo '}' >> $@
 
-%:: configfiles/%/ToolsConfig
-	if [[ `head -n1 UserTools/MyFactory/Unity.h | sed s://::` != "$(TOOLCHAIN)" ]]; then rm -rf UserTools/MyFactory/Unity.h  UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/MyFactory.o; fi
+$(TOOLCHAINNAME):: $(TOOLCHAIN)/ToolsConfig
+	@echo "Target $@"
+	@if [[ `head -n1 UserTools/MyFactory/Unity.h 2>/dev/null | sed s://::` != "$(TOOLCHAIN)" ]]; then rm -rf UserTools/MyFactory/Unity.h  UserTools/MyFactory/MyFactory.cpp UserTools/MyFactory/MyFactory.o; fi
 	@echo "making NEW"
 	@if [ ! -z "$(TOOLCHAIN)" ]; then echo "making ToolChain $(TOOLCHAIN)";fi
 	@# check tools file exists
