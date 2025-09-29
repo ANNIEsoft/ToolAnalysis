@@ -1,5 +1,6 @@
 ToolDAQPath=${PWD}/ToolDAQ
 
+ifeq ($(TOOLCHAIN),)
 TOOLCHAIN:=$(shell find ./configfiles -type d -path ./configfiles/$(MAKECMDGOALS) -exec echo {} \; 2>/dev/null)
 TOOLCHAINNAME:=$(subst ./configfiles/,,$(TOOLCHAIN))
 $(info TOOLCHAINNAME: $(TOOLCHAINNAME))
@@ -15,6 +16,7 @@ NPROCS:=$(shell nproc --all)
 GIT_VERSION := "$(shell git describe --dirty --always)"
 # forward these to variables to internal $(MAKE) calls
 export
+endif
 
 ifeq ($(TOOLCHAIN),)
 TOOLCHAIN:=./configfiles/Dummy
