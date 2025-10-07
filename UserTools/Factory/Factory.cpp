@@ -176,5 +176,6 @@ if (tool=="AssignBunchTimingMC") ret=new AssignBunchTimingMC;
 if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
 if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
+if (tool=="PrintADCTraces") ret=new PrintADCTraces;
 return ret;
 }
