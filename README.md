@@ -17,6 +17,11 @@ To compile only the DataModel objects and those Tools needed for a toolchain 'My
 make -j$(nproc) MyToolChain
 ```
 
+or for a ToolChain within a hierarchy, e.g. a toolchain described by `./configfiles/EnergyReco/Predict/ToolChainConfig`
+```
+make -j$(nproc) EnergyReco/Predict
+```
+
 Note that compilation can take some time. After the first initial build:
 * If only files in the UserTools have been modified, only the modified Tools will be rebuilt, along with libMyTools.so and the Analyse application.
 * If anything in the DataModel has been modified, those DataModel objects will need to be rebuilt, along with libDataModel.so, ALL Tools, libMyTool.so and Analyse. This will be considerably slower (building all Tools takes a long time), and is where building a specific toolchain can help speed things up.
