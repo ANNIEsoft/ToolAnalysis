@@ -264,26 +264,24 @@ bool MonitorLAPPDData::Finalise()
 	delete canvas_pps_interval_drift;
 	delete canvas_pps_accumulated_number_vs_psec_timestamp;
 	delete canvas_pps_time_vs_accumulated_number;
-	
 
-	// histograms
-	//
-	/* Somehow deleting histograms creates a segfault, omit for now
-	 for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++){
+	for (auto& event_map : hist_waveforms_onedim) {
+		for (auto& board_pair : event_map) {
+			for (auto* hist_ptr : board_pair.second) {
+				delete hist_ptr;
+			}
+		}
+	}
+	hist_waveforms_onedim.clear();
 
-	 int board_nr = board_configuration.at(i_board);
-	 delete hist_align_1file.at(board_nr);
+	for (auto& board_pair : hist_pedestal) {
+		for (auto* hist_ptr : board_pair.second) {
+			delete hist_ptr;
+		}
+	}
+	hist_pedestal.clear();
 
-	 delete hist_align_5files.at(board_nr);
-	 delete hist_align_10files.at(board_nr);
-	 delete hist_align_20files.at(board_nr);
-	 delete hist_align_100files.at(board_nr);
-	 delete hist_adc_channel.at(board_nr);
-	 delete hist_buffer_channel.at(board_nr);
-	 delete hist_buffer.at(board_nr);
-
-	 }
-	 */
+	delete log_files_lappd;
 
 	// graphs
 	for (int i_board = 0; i_board < (int)board_configuration.size(); i_board++)
@@ -309,6 +307,8 @@ bool MonitorLAPPDData::Finalise()
 	}
 	delete graph_pps_accumulated_number_vs_psec_timestamp;
 	delete graph_pps_time_vs_accumulated_number;
+	delete graph_pps_count;
+	delete graph_frame_count;
 
 	// multi-graphs
 	delete multi_ped_lappd;
@@ -328,6 +328,13 @@ bool MonitorLAPPDData::Finalise()
 	delete text_int_charge;
 	delete text_pps_count;
 	delete text_frame_count;
+
+	// histograms
+	delete hist_pedestal_all;
+	delete hist_pedestal_difference_all; 
+	delete hist_buffer_size_all;
+	delete hist_rate_threshold_all;
+	delete hist_events_per_channel;
 
 	return true;
 }
