@@ -280,6 +280,8 @@ bool MonitorLAPPDData::Finalise()
 		}
 	}
 	hist_pedestal.clear();
+	graph_pps_event_counter.clear();
+	graph_pps_interval_drift.clear();
 
 	delete log_files_lappd;
 
@@ -305,6 +307,19 @@ bool MonitorLAPPDData::Finalise()
 			}
 		}
 	}
+	/* Adding these cause segfault
+	for (auto& pair : hist_adc_channel) { delete pair.second; }
+	for (auto& pair : hist_waveform_channel) { delete pair.second; }
+	for (auto& pair : hist_buffer_channel) { delete pair.second; }
+	for (auto& pair : hist_buffer) { delete pair.second; }
+	for (auto& pair : hist_waveform_voltages) { delete pair.second; }
+	*/
+	for (auto& pair : hist_align_1file) { delete pair.second; }
+	for (auto& pair : hist_align_5files) { delete pair.second; }
+	for (auto& pair : hist_align_10files) { delete pair.second; }
+	for (auto& pair : hist_align_20files) { delete pair.second; }
+	for (auto& pair : hist_align_100files) { delete pair.second; }
+
 	delete graph_pps_accumulated_number_vs_psec_timestamp;
 	delete graph_pps_time_vs_accumulated_number;
 	delete graph_pps_count;
@@ -331,11 +346,19 @@ bool MonitorLAPPDData::Finalise()
 
 	// histograms
 	delete hist_pedestal_all;
-	delete hist_pedestal_difference_all; 
+	delete hist_pedestal_difference_all;
 	delete hist_buffer_size_all;
 	delete hist_rate_threshold_all;
 	delete hist_events_per_channel;
+	hist_pf_vs_timings.Clear();
+	hist_adc_channel.clear();
+	hist_waveform_channel.clear();
+	hist_buffer_channel.clear();
+	hist_buffer.clear();
+	hist_waveform_voltages.clear();
 
+	gDirectory->ls();
+	// gObjectTable->Print();
 	return true;
 }
 
