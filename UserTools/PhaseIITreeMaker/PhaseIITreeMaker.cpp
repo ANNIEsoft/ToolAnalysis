@@ -15,10 +15,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   hasGenie = false;
   hasBNBtimingMC = false;
   MCWaveform = false;
+  ApplyDeadMask = false;
 
   m_variables.Get("verbose", verbosity);
   m_variables.Get("IsData",isData);
   m_variables.Get("PMTWaveformSim",MCWaveform);
+  m_variables.Get("ApplyDeadMask",ApplyDeadMask);
   m_variables.Get("HasGenie",hasGenie);
   m_variables.Get("HasBNBtimingMC",hasBNBtimingMC);
   m_variables.Get("TankHitInfo_fill", TankHitInfo_fill);
@@ -1731,6 +1733,10 @@ void PhaseIITreeMaker::LoadAllTankHits(bool isData, bool MCWaveform) {
             channel_key_data = pmtid_to_channelkey[wcsimid];
         }
 
+        if (ApplyDeadMask && this_detector->GetStatus() == channelstatus::OFF) {
+            goto skip_channel;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
+        }
+
         bool SPE_available = (isData || MCWaveform) ? 
                              (ChannelKeyToSPEMap.find(channel_key) != ChannelKeyToSPEMap.end()) : 
                              (ChannelKeyToSPEMap.find(channel_key_data) != ChannelKeyToSPEMap.end());
@@ -1773,6 +1779,7 @@ void PhaseIITreeMaker::LoadAllTankHits(bool isData, bool MCWaveform) {
             }
         }
 
+        skip_channel:   // skip the block above if the PMT is dead, advance the iterator
         if (isData || MCWaveform) {
             it_tank_data++;
             if (it_tank_data == Hits->end()) loop_tank = false;
