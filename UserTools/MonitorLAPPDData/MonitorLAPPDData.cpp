@@ -357,7 +357,7 @@ bool MonitorLAPPDData::Finalise()
 	hist_buffer.clear();
 	hist_waveform_voltages.clear();
 
-	gDirectory->ls();
+	// gDirectory->ls();
 	// gObjectTable->Print();
 	return true;
 }

@@ -290,13 +290,18 @@ bool ParseDataMonitoring::Execute()
             for(int kvec=0; kvec<it->second.size(); kvec++)
             //for(unsigned short k: it->second)
             {
-		int pedval,val;
-		val=(int)it->second.at(kvec);
-        std::vector<int> pedvals = ((PedestalValues->find(it->first))->second);
-                if(DoPedSubtract==1 && kvec < pedvals.size())
+                int pedval, val;
+	              if (DoPedSubtract==1)
                 {
-                  pedval = pedvals.at(kvec);
-                }else
+		                val=(int)it->second.at(kvec);
+                    auto ped_it = PedestalValues->find(it->first);
+                    if (ped_it == PedestalValues->end()) {
+                      if (verbosity > 1)
+                        std::cerr << "ERROR: Key not found in PedestalValues!" << std::endl;
+                      continue;
+                    }  
+                  pedval = ped_it->second.at(kvec);
+                } else
                 {
                   pedval = 0;
                 }
