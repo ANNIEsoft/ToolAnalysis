@@ -1733,11 +1733,13 @@ void PhaseIITreeMaker::LoadAllTankHits(bool isData, bool MCWaveform) {
             channel_key_data = pmtid_to_channelkey[wcsimid];
         }
 
+		bool SPE_available = false;
+
         if (ApplyDeadMask && this_detector->GetStatus() == channelstatus::OFF) {
             goto skip_channel;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
         }
 
-        bool SPE_available = (isData || MCWaveform) ? 
+        SPE_available = (isData || MCWaveform) ? 
                              (ChannelKeyToSPEMap.find(channel_key) != ChannelKeyToSPEMap.end()) : 
                              (ChannelKeyToSPEMap.find(channel_key_data) != ChannelKeyToSPEMap.end());
 
