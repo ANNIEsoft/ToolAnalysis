@@ -218,9 +218,8 @@ bool ClusterFinder::Execute(){
       int detectorkey = thistube->GetDetectorID();
 
       // fetch ON/OFF status of the PMT. If "OFF", do not include that hit in the clustering
-      if (ApplyDeadMask && thistube->GetStatus() == channelstatus::OFF) {
-        if(thistube->GetStatus() == channelstatus::OFF) continue;
-      }
+      if (ApplyDeadMask && thistube->GetStatus() == detectorstatus::OFF)
+        continue;
 
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<MCHit>& ThisPMTHits = apair.second;
@@ -333,9 +332,8 @@ bool ClusterFinder::Execute(){
       int detectorkey = thistube->GetDetectorID();
 
       // fetch ON/OFF status of the PMT. If "OFF", do not include that hit in the clustering
-      if (ApplyDeadMask) {
-        if(thistube->GetStatus() == channelstatus::OFF) continue;
-      }
+      if (ApplyDeadMask && thistube->GetStatus() == detectorstatus::OFF)
+        continue;
 
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<Hit>& ThisPMTHits = apair.second;
