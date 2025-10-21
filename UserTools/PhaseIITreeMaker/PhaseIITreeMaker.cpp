@@ -1401,9 +1401,12 @@ void PhaseIITreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits){
   fClusterHits = 0;
   for (int i = 0; i<(int)cluster_hits.size(); i++){
     int channel_key = cluster_hits.at(i).GetTubeId();
+	Detector* this_detector = geom->ChannelToDetector(channel_key);
+	if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
+      continue;
+    }
     std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
     if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
-      Detector* this_detector = geom->ChannelToDetector(channel_key);
       unsigned long detkey = this_detector->GetDetectorID();
       Position det_position = this_detector->GetDetectorPosition();
       double hit_charge = cluster_hits.at(i).GetCharge();
@@ -1447,9 +1450,12 @@ void PhaseIITreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits, st
      int wcsimid = channelkey_to_pmtid.at(utubeid);
      unsigned long detkey_data = pmtid_to_channelkey[wcsimid];
      int channel_key_data = (int) detkey_data;
+	 Detector* this_detector = geom->ChannelToDetector(tubeid);
+     if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
+       continue;
+     }
      std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key_data);
      if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
-       Detector* this_detector = geom->ChannelToDetector(tubeid);
        Position det_position = this_detector->GetDetectorPosition();
        unsigned long detkey = this_detector->GetDetectorID();
        double hit_PE = cluster_hits.at(i).GetCharge();
