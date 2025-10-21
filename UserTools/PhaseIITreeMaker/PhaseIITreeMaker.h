@@ -86,6 +86,7 @@ class PhaseIITreeMaker: public Tool {
   //General variables
   bool isData;
   bool MCWaveform;
+  bool ApplyDeadMask;
   bool hasGenie;
   bool hasBNBtimingMC;
 
