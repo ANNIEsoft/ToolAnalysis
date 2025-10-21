@@ -239,7 +239,12 @@ bool BeamFetcherV2::FetchFromTrigger()
   }
 
   if (fDeleteCTCData)
+  {
     TimeToTriggerWordMap->clear();
+    std::map<uint64_t, std::vector<uint32_t>> *TimeToTriggerWordMapComplete = nullptr;
+    m_data->CStore.Get("TimeToTriggerWordMapComplete", TimeToTriggerWordMapComplete);
+    TimeToTriggerWordMapComplete->clear();
+  }
 
   return true;
 }

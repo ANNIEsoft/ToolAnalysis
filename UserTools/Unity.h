@@ -184,3 +184,6 @@
 #include "FitRWMWaveform.h"
 #include "EBPMT.h"
 #include "EBPMT.h"
+#include "LAPPDLoadStore.h"
+#include "PMTWaveformSim.h"
+#include "LAPPDWaveformDisplay.h"

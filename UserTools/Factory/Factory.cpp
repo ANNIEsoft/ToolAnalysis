@@ -175,5 +175,8 @@ if (tool=="PrintDQ") ret=new PrintDQ;
 if (tool=="AssignBunchTimingMC") ret=new AssignBunchTimingMC;
 if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
 if (tool=="EBPMT") ret=new EBPMT;
+if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
+if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
+if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
 return ret;
 }

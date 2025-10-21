@@ -30,11 +30,12 @@ class AssignBunchTimingMC: public Tool {
         bool LoadStores(); ///< Loads all relevant information from the store, away from the Execute function
         void BNBtiming(); ///< Calculates the appropriate BNB timing to apply to the clusters
         void CalculateClusterAndBunchTimes(std::vector<MCHit> const &mchits, double &totalHitTime, int &hitCount, int &totalHits); ///< Loops through the MCHits, finds the cluster times (avg hit time), and calculates the new bunch timing
+        void CalculateClusterAndBunchTimesPMTWaveformSim(std::vector<Hit> const &hits, double &totalHitTime, int &hitCount, int &totalHits); ///< Same as above but for the data-like PMTWaveformSim clusters and hits
 
     private:
 
-        std::map<unsigned long, std::vector<MCHit>> *fMCHitsMap    = nullptr;  ///< All of the MCHits keyed by channel number
         std::map<double, std::vector<MCHit>>        *fClusterMapMC = nullptr;  ///< All MC clusters
+        std::map<double, std::vector<Hit>>          *fClusterMap = nullptr;    ///< All MC clusters (data-like hits from the PMTWaveformSim tool)
         double TrueNuIntxVtx_T;                                                ///< true neutrino interaction time in ns, from GenieInfo store
 
         std::map<double, double> *fbunchTimes                      = nullptr;  ///< Bunch-realistic timing from the cluster times; 
@@ -47,6 +48,7 @@ class AssignBunchTimingMC: public Tool {
         int fbunchcount;          ///< number of BNB bunches per spill
         int fsample;              ///< GENIE Tank or WORLD samples
         int ftriggertime;         ///< whether the samples used the default WCSim prompt trigger = 0 (when particles enter the volume), or the adjusted prompt trigger based on the start of the beam dump
+        bool fPMTWaveformSim;     ///< whether to use the PMTWaveform data-like hits or the defaul MCHits
 
         double new_nu_time;       ///< offset needed to make the cluster times beam realistic
         int bunchNumber;          ///< randomly assigned bunch number
