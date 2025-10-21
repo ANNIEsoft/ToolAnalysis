@@ -77,7 +77,7 @@ class PhaseIITreeMaker: public Tool {
   void LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,std::vector<unsigned long> cluster_detkeys);
   bool LoadTankClusterClassifiers(double cluster_time);
   bool LoadBNBtimingMC(double cluster_time);
-  void LoadAllTankHits(bool IsData);
+  void LoadAllTankHits(bool IsData, bool MCWaveform);
   void LoadSiPMHits();
   
   
@@ -85,6 +85,7 @@ class PhaseIITreeMaker: public Tool {
 
   //General variables
   bool isData;
+  bool MCWaveform;
   bool hasGenie;
   bool hasBNBtimingMC;
 
@@ -273,7 +274,12 @@ class PhaseIITreeMaker: public Tool {
   //Weights
   std::map<std::string, std::vector<double>> fxsec_weights;
   std::map<std::string, std::vector<double>> fflux_weights;
-  std::vector<double> fAll;
+  std::vector<double> fAll0;
+  std::vector<double> fAll1;
+  std::vector<double> fAll2;
+  std::vector<double> fAll3;
+  std::vector<double> fAll4;
+  std::vector<double> fAll5;
   std::vector<double> fAxFFCCQEshape;
   std::vector<double> fDecayAngMEC;
   std::vector<double> fNormCCCOH;
@@ -301,6 +307,7 @@ class PhaseIITreeMaker: public Tool {
 
   //Genie information for event
   double fTrueNeutrinoEnergy;
+  int fTrueNuPDG;
   double fTrueNeutrinoMomentum_X;
   double fTrueNeutrinoMomentum_Y;
   double fTrueNeutrinoMomentum_Z;

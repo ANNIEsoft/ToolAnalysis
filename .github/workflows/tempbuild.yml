@@ -100,6 +100,7 @@ jobs:
             echo `pwd`
             ls -l
             cd /TA
+            git config --global --add safe.directory /TA
             ls -l
             ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ
             ls -l ./ToolDAQ
