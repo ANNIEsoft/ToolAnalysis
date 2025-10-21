@@ -34,6 +34,13 @@
  * $Date: 2024/8 $
  * Contact: yuef@iastate.edu
  */
+struct IDConfigRecord {
+    int RunNumber;
+    int ACCID;
+    int ManufacturerID;
+    string Position;
+};
+
 class ANNIEEventTreeMaker : public Tool
 {
 
@@ -77,6 +84,10 @@ public:
     void LoadTankClusterHits(std::vector<Hit> cluster_hits);
     void LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits, std::vector<unsigned long> cluster_detkeys);
     bool LoadTankClusterClassifiers(double cluster_time);
+
+    vector<IDConfigRecord> LoadIDConfig(const string& filename);
+    tuple<int, string> queryNearestID(const vector<IDConfigRecord>& data, int targetRun, int accid);
+    tuple<int, string> queryNearestACCID(const vector<IDConfigRecord>& data, int targetRun, int manufacturerID);
 
     void ResetVariables();
 
@@ -216,8 +227,10 @@ private:
     std::vector<double> fSiPMNum;
 
     // LAPPDData_fill
+    vector<IDConfigRecord> idConfigRecords; // save the conversion table between RunNumber, ACCID and ManufacturerID
     int fLAPPD_Count;
     vector<int> fLAPPD_ID;
+    vector<string> fLAPPD_Position;
     vector<uint64_t> fLAPPD_Beamgate_ns;
     vector<uint64_t> fLAPPD_Timestamp_ns;
     vector<uint64_t> fLAPPD_Beamgate_Raw;

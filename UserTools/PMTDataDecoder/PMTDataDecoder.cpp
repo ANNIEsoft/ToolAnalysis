@@ -329,21 +329,46 @@ bool PMTDataDecoder::Execute(){
           unsigned int uSlotNum = (unsigned int)SlotNum;
           unsigned int uChannelID = (unsigned int)ChannelID;
 
-	  //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
+          //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
+          
+          if(RunNumber >= 5870)
+          {
+            // BRF is at crate 1, slot 2 , channel 1 after run 5870 (first run for beamyear 2025-2026)
+            if(saveBRFRaw){
+            if(uCrateNum == 1 && uSlotNum == 2 && ChannelID == 1)
+            {
+              std::vector<uint16_t> BRFWaveform = apair.second;
+              (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+            }
+            }
+            
+            if(saveRWMRaw){
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
+            {
+              std::vector<uint16_t> RWMWaveform = apair.second;
+              (*RWMRawWaveforms)[timestamp] = RWMWaveform;
+            }
+            }
+          }else{
+            // BRF is at crate 1, slot 15 , channel 1 after run 5870 (first run for beamyear 2025-2026)
           if(saveBRFRaw){
-          if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
-          {
-            std::vector<uint16_t> BRFWaveform = apair.second;
-            (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
+            {
+              std::vector<uint16_t> BRFWaveform = apair.second;
+              (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+            }
+            }
+
+            if(saveRWMRaw){
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
+            {
+              std::vector<uint16_t> RWMWaveform = apair.second;
+              (*RWMRawWaveforms)[timestamp] = RWMWaveform;
+            }
+            }
           }
-          }
-          if(saveRWMRaw){
-          if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
-          {
-            std::vector<uint16_t> RWMWaveform = apair.second;
-            (*RWMRawWaveforms)[timestamp] = RWMWaveform;
-          }
-          }
+
+
         }
       }
     }
