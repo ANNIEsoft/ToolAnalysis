@@ -334,7 +334,11 @@ bool PMTDataDecoder::Execute(){
           if(RunNumber >= 5870)
           {
             // BRF is at crate 1, slot 2 , channel 1 after run 5870 (first run for beamyear 2025-2026)
-            if(saveBRFRaw){
+            // the timeline is:
+            // around 5870 we started taking beam runs to check DAQ was ok. no BNB
+            // run 5887 LAPPD IDs were changed. no BNB
+            // run 5896 BNB returns
+			if(saveBRFRaw){
             if(uCrateNum == 1 && uSlotNum == 2 && ChannelID == 1)
             {
               std::vector<uint16_t> BRFWaveform = apair.second;
