@@ -12,17 +12,18 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   m_data = &data;
 
   // Load the default threshold settings for finding pulses
-  verbosity = 3;
+  verbosity = 0;
   use_led_waveforms = false;
   pulse_finding_approach = "threshold";
   adc_threshold_db = "none";
-  default_adc_threshold = 5;
+  default_adc_threshold = 7;
   threshold_type = "relative";
-  pulse_window_type = "fixed";
+  pulse_window_type = "Fixed_2023_Gains";
   pulse_window_start_shift = -3;
   pulse_window_end_shift = 25;
   adc_window_db = "none"; //Used when pulse_finding_approach="fixed_windows"
   eventbuilding_mode = false;
+  mc_waveforms = false;
 
   //Load any configurables set in the config file
   m_variables.Get("verbosity",verbosity); 
@@ -781,13 +782,28 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
         }
       }
 
+	// extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+    std::vector<double> trace_x;
+    std::vector<double> trace_y;
+
+    double pulse_start_time = wmin * NS_PER_ADC_SAMPLE;
+    double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+    for (size_t p = wmin; p <= wmax; ++p) {
+        double ns_time = p * NS_PER_ADC_SAMPLE;
+        double val_adc = raw_minibuffer_data.GetSample(p);
+        trace_x.push_back(ns_time - pulse_start_time);
+        trace_y.push_back(val_adc - pulse_baseline);
+    }
+
     // Store the freshly made pulse in the vector of found pulses
     pulses.emplace_back(channel_key,
-      ( wmin * NS_PER_SAMPLE )-timing_offset,
-      (peak_sample * NS_PER_SAMPLE)-timing_offset,
+      ( wmin * NS_PER_ADC_SAMPLE )-timing_offset,
+      (peak_sample * NS_PER_ADC_SAMPLE)-timing_offset,
       calibrated_minibuffer_data.GetBaseline(),
       calibrated_minibuffer_data.GetSigmaBaseline(),
-      raw_area, max_ADC, calibrated_amplitude, charge);
+      raw_area, max_ADC, calibrated_amplitude, charge,
+	  trace_x, trace_y);
   }
   return pulses;
 }
@@ -895,13 +911,28 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         }
       }
 
+	  // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+      std::vector<double> trace_x;
+      std::vector<double> trace_y;
+
+      double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
+      double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+      for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+          double ns_time = p * NS_PER_ADC_SAMPLE;
+          double val_adc = raw_minibuffer_data.GetSample(p);
+          trace_x.push_back(ns_time - pulse_start_time);
+          trace_y.push_back(val_adc - pulse_baseline);
+      }
+
       // Store the freshly made pulse in the vector of found pulses
       pulses.emplace_back(channel_key,
-        ( pulse_start_sample * NS_PER_SAMPLE )-timing_offset,
-        (peak_sample * NS_PER_SAMPLE)-timing_offset,
+        ( pulse_start_sample * NS_PER_ADC_SAMPLE )-timing_offset,
+        (peak_sample * NS_PER_ADC_SAMPLE)-timing_offset,
         calibrated_minibuffer_data.GetBaseline(),
         calibrated_minibuffer_data.GetSigmaBaseline(),
-        raw_area, max_ADC, calibrated_amplitude, charge);
+        raw_area, max_ADC, calibrated_amplitude, charge,
+		trace_x, trace_y);
     }
 
 
@@ -1052,6 +1083,19 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           }
         }
 
+		// extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+        std::vector<double> trace_x;
+        std::vector<double> trace_y;
+        double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
+        double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+        for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+            double ns_time = p * NS_PER_ADC_SAMPLE;
+            double val_adc = raw_minibuffer_data.GetSample(p);
+            trace_x.push_back(ns_time - pulse_start_time);
+            trace_y.push_back(val_adc - pulse_baseline);
+        }
+
 		if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
 
 		if (hit_time < 0.0) {
@@ -1074,7 +1118,8 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
             ( hit_time * NS_PER_ADC_SAMPLE )-timing_offset,                 // interpolated hit time
             calibrated_minibuffer_data.GetBaseline(),
             calibrated_minibuffer_data.GetSigmaBaseline(),
-            raw_area, max_ADC, calibrated_amplitude, charge);
+            raw_area, max_ADC, calibrated_amplitude, charge,
+			trace_x, trace_y);
         }
       }
 
@@ -1174,6 +1219,19 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         }
       }
 
+	  // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+      std::vector<double> trace_x;
+      std::vector<double> trace_y;
+      double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
+      double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
+
+      for (size_t p = pulse_start_sample; p <= pulse_end_sample; ++p) {
+          double ns_time = p * NS_PER_ADC_SAMPLE;
+          double val_adc = raw_minibuffer_data.GetSample(p);
+          trace_x.push_back(ns_time - pulse_start_time);
+          trace_y.push_back(val_adc - pulse_baseline);
+      }
+
       if (hit_time < 0.0) {
 	        // If for some reason the interpolation finds a negative time value (if the pulse is extremely early in the buffer),
 	        // default to the peak time (maximum ADC value of the pulse)
@@ -1202,7 +1260,8 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           (hit_time * NS_PER_ADC_SAMPLE)-timing_offset,                 // interpolated hit time
           calibrated_minibuffer_data.GetBaseline(),
           calibrated_minibuffer_data.GetSigmaBaseline(),
-          raw_area, max_ADC, calibrated_amplitude, charge);
+          raw_area, max_ADC, calibrated_amplitude, charge,
+		  trace_x, trace_y);
       }
     }
   } else {
