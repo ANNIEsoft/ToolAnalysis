@@ -219,10 +219,8 @@ bool PrintADCTraces::Execute()
                 if (xpts.empty() || ypts.empty()) continue;
 
                 // create and write to TGraph
-                TGraph gr(xpts.size());
-                for (size_t i = 0; i < std::min(xpts.size(), ypts.size()); ++i) {
-                    gr.SetPoint(i, xpts[i], ypts[i]);
-                }
+                TGraph gr(xpts.size(), xpts.data(), ypts.data());
+                gr.SetName(grTitle.str().c_str());
                 gr.SetTitle(grTitle.str().c_str());
                 gr.Write();
 
@@ -256,7 +254,6 @@ bool PrintADCTraces::Finalise()
         if (fTraceSummaryTree) {          // write summary to root file
             fOutFile->cd();
             fTraceSummaryTree->Write();
-            delete fTraceSummaryTree;     // clean up clean up everybody do your share
             fTraceSummaryTree = nullptr;
         }
 
