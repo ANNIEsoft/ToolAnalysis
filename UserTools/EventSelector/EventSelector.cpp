@@ -642,17 +642,12 @@ bool EventSelector::EventSelectionByMCProjectedMRDHit() {
 
 bool EventSelector::EventSelectionByPMTMRDCoinc() {
 
-  if (fIsMC){
-    if (fMCWaveform){
-      bool has_clustered_pmt = m_data->CStore.Get("ClusterMap",m_all_clusters);
+  if (!fIsMC || fMCWaveform) {
+	  bool has_clustered_pmt = m_data->CStore.Get("ClusterMap",m_all_clusters);
       if (not has_clustered_pmt) { Log("EventSelector Tool: MCWaveform - Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
-    } else {
-        bool has_clustered_pmt = m_data->CStore.Get("ClusterMapMC",m_all_clusters_MC);
-        if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMapMC from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
-        }
   } else {
-    bool has_clustered_pmt = m_data->CStore.Get("ClusterMap",m_all_clusters);
-    if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+	  bool has_clustered_pmt = m_data->CStore.Get("ClusterMapMC",m_all_clusters_MC);
+        if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMapMC from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
   }
 
   bool has_clustered_mrd = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
@@ -665,15 +660,12 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   }
   
   int pmt_cluster_size;
-  if (fIsMC) {
-    if (fMCWaveform) {
-        pmt_cluster_size = (int) m_all_clusters->size();
-    } else {
-        pmt_cluster_size = (int) m_all_clusters_MC->size();
-    }
+  if (!fIsMC || fMCWaveform) {
+	  pmt_cluster_size = (int) m_all_clusters->size();
   } else {
-      pmt_cluster_size = (int) m_all_clusters->size();
+	  pmt_cluster_size = (int) m_all_clusters_MC->size();
   }
+	  
   m_data->Stores["RecoEvent"]->Set("NumPMTClusters",pmt_cluster_size);
   vec_pmtclusters_charge->clear();
   vec_pmtclusters_time->clear();
@@ -690,84 +682,53 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
 
   pmt_time = -1;
 
-  if (fIsMC){
-    if (fMCWaveform) {
-      if (m_all_clusters->size()){
-      double cluster_time;
-      for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-        std::vector<Hit>&Hits = apair.second;
-        double time_temp = 0;
-        double charge_temp = 0;
-        for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-          time_temp+=Hits.at(i_hit).GetTime();
-          int tube = Hits.at(i_hit).GetTubeId();
-          // check if PMT is present in the map before accessing it
-	  auto it = ChannelNumToTankPMTSPEChargeMap->find(tube);
-	  if (it != ChannelNumToTankPMTSPEChargeMap->end()) {
-	  	double charge_pe = Hits.at(i_hit).GetCharge() / it->second;
-	  	charge_temp += charge_pe;
-	  } else {
-	  	std::cerr << "PMT channel with hit not found in ChannelNumToTankPMTSPEChargeMap. Skipping this hit." << std::endl;
-	  	continue;
-	  }
-        }
-        if (Hits.size()>0) time_temp/=Hits.size();
-        vec_pmtclusters_charge->push_back(charge_temp);
-        vec_pmtclusters_time->push_back(time_temp);
-        if (time_temp > 2000.) continue;	//not a prompt event
-        if (charge_temp > max_charge){
-          max_charge = charge_temp;
-          prompt_cluster = true;
-          pmt_time = time_temp;
-          n_hits = int(Hits.size());
-        }
-      }
-    }
-    } else {
-      if (m_all_clusters_MC->size()){
-        double cluster_time;
-        for(std::pair<double,std::vector<MCHit>>&& apair : *m_all_clusters_MC){
-          std::vector<MCHit>&MCHits = apair.second;
-          double time_temp = 0;
-          double charge_temp = 0;
-          for (unsigned int i_hit = 0; i_hit < MCHits.size(); i_hit++){
-            time_temp+=MCHits.at(i_hit).GetTime();
-            charge_temp+=MCHits.at(i_hit).GetCharge();
-          }
-          if (MCHits.size()>0) time_temp/=MCHits.size();
-          vec_pmtclusters_charge->push_back(charge_temp);
-          vec_pmtclusters_time->push_back(time_temp);
-          if (time_temp > 2000.) continue;	//not a prompt event
-          if (charge_temp > max_charge){
-            max_charge = charge_temp;
-            prompt_cluster = true;
-            pmt_time = time_temp;
-            n_hits = int(MCHits.size());
-          }
-        }
-      }
-    }
-  } else {
+  // MC Waveform or Data
+  if (!fIsMC || fMCWaveform) {
     if (m_all_clusters->size()){
-      double cluster_time;
-      for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-        std::vector<Hit>&Hits = apair.second;
-        double time_temp = 0;
-        double charge_temp = 0;
-        for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-          time_temp+=Hits.at(i_hit).GetTime();
-          int tube = Hits.at(i_hit).GetTubeId();
-          // check if PMT is present in the map before accessing it
+    double cluster_time;
+    for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
+      std::vector<Hit>&Hits = apair.second;
+      double time_temp = 0;
+      double charge_temp = 0;
+      for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
+        time_temp+=Hits.at(i_hit).GetTime();
+        int tube = Hits.at(i_hit).GetTubeId();
+        // check if PMT is present in the map before accessing it
 	  auto it = ChannelNumToTankPMTSPEChargeMap->find(tube);
 	  if (it != ChannelNumToTankPMTSPEChargeMap->end()) {
-	  	double charge_pe = Hits.at(i_hit).GetCharge() / it->second;
-	  	charge_temp += charge_pe;
+	    double charge_pe = Hits.at(i_hit).GetCharge() / it->second;
+	    charge_temp += charge_pe;
 	  } else {
-	  	std::cerr << "PMT channel with hit not found in ChannelNumToTankPMTSPEChargeMap. Skipping this hit." << std::endl;
-	  	continue;
+	    std::cerr << "PMT channel with hit not found in ChannelNumToTankPMTSPEChargeMap. Skipping this hit." << std::endl;
+	    continue;
 	  }
+      }
+      if (Hits.size()>0) time_temp/=Hits.size();
+      vec_pmtclusters_charge->push_back(charge_temp);
+      vec_pmtclusters_time->push_back(time_temp);
+      if (time_temp > 2000.) continue;	//not a prompt event
+      if (charge_temp > max_charge){
+        max_charge = charge_temp;
+        prompt_cluster = true;
+        pmt_time = time_temp;
+        n_hits = int(Hits.size());
+      }
+    }
+  }
+
+  // MC (parametric)
+  } else {
+    if (m_all_clusters_MC->size()){
+      double cluster_time;
+      for(std::pair<double,std::vector<MCHit>>&& apair : *m_all_clusters_MC){
+        std::vector<MCHit>&MCHits = apair.second;
+        double time_temp = 0;
+        double charge_temp = 0;
+        for (unsigned int i_hit = 0; i_hit < MCHits.size(); i_hit++){
+          time_temp+=MCHits.at(i_hit).GetTime();
+          charge_temp+=MCHits.at(i_hit).GetCharge();
         }
-        if (Hits.size()>0) time_temp/=Hits.size();
+        if (MCHits.size()>0) time_temp/=MCHits.size();
         vec_pmtclusters_charge->push_back(charge_temp);
         vec_pmtclusters_time->push_back(time_temp);
         if (time_temp > 2000.) continue;	//not a prompt event
@@ -775,7 +736,7 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
           max_charge = charge_temp;
           prompt_cluster = true;
           pmt_time = time_temp;
-          n_hits = int(Hits.size());
+          n_hits = int(MCHits.size());
         }
       }
     }
