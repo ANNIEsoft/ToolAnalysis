@@ -338,8 +338,10 @@ bool PMTDataDecoder::Execute(){
             // around 5870 we started taking beam runs to check DAQ was ok. no BNB
             // run 5887 LAPPD IDs were changed. no BNB
             // run 5896 BNB returns
+			// BRF is moved back to crate 1, slot 15, channel 1 and tested working since run 5914, by swapping the Level Translator
+			// The BRF (create 1, slot 15, channel 1), RWM (crate 1, slot 15, channel 3) and BES (crate 1, slot 3, channel 1)
 			if(saveBRFRaw){
-            if(uCrateNum == 1 && uSlotNum == 2 && ChannelID == 1)
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
             {
               std::vector<uint16_t> BRFWaveform = apair.second;
               (*BRFRawWaveforms)[timestamp] = BRFWaveform;
@@ -347,7 +349,7 @@ bool PMTDataDecoder::Execute(){
             }
             
             if(saveRWMRaw){
-            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 3)
             {
               std::vector<uint16_t> RWMWaveform = apair.second;
               (*RWMRawWaveforms)[timestamp] = RWMWaveform;
