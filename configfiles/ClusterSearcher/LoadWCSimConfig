@@ -1,0 +1,17 @@
+#LoadWCSim Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+verbose 0
+
+#InputFile /Data/Ambesim/pmt/*.root
+#InputFile /Data/HighEnergy/wcsim-thousand-high_0.root
+InputFile /Data/0824Beamsim/pmt/*.root
+
+WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
+HistoricTriggeroffset 0      ## time offset of digits relative to the trigger
+UseDigitSmearedTime 1        ## whether to use smeared digit time (T), or true time of first photon (F)
+LappdNumStrips 60            ## num channels to construct from each LAPPD
+LappdStripLength 100         ## relative x position of each LAPPD strip, for dual-sided readout [mm]
+LappdStripSeparation 10      ## stripline separation, for calculating relative y position of each LAPPD strip [mm]
+PMTMask configfiles/BeamClusterAnalysisMC/DeadPMTIDs_p2v7.txt ## Which PMTs should be masked out? / are dead?
+ChankeyToPMTIDMap ./configfiles/BeamClusterAnalysisMC/Chankey_WCSimID_v7.txt
+SplitSubTriggers 0		# should subtriggers be loaded in separate Execute steps?

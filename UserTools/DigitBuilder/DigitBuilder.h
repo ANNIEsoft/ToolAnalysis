@@ -16,6 +16,7 @@
 #include "TTree.h"
 #include "ANNIEGeometry.h"
 #include "Detector.h"
+#include <boost/algorithm/string.hpp>
 
 class DigitBuilder: public Tool {
 
@@ -43,6 +44,7 @@ class DigitBuilder: public Tool {
   /// It adds PMT hits to the RecoDigit list
    bool BuildMCPMTRecoDigit();
    bool BuildDataPMTRecoDigit();   ///> Same as BuildMCPMTRecoDigit, but applicable for data.
+   void CollectMCPMTHits();
  	
   /// \brief Build LAPPD digits
   ///
@@ -72,15 +74,21 @@ class DigitBuilder: public Tool {
   int verbosity=1;
   std::string fInputfile;
   unsigned long fNumEvents;
-  
+  std::vector<int>* fHitLAPPDs;
   std::vector<int> fLAPPDId; ///< selected LAPPDs
   std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
-  bool fParametricModel;     ///< configures if PMTs hits for each event are accumulated into one hit per PMT
+  int fParametricModel;     ///< configures how PMTs hits for each event are accumulated into one hit per PMT 0: they are not, 1: median hit time, 2: first hit time, 3: average first 20% of hits, 4: average all hits, 5: highest charge hit time
   bool fIsMC;     ///< Configure whether to load from MCHits or Hits in boost store 
   std::string  fLAPPDIDFile="none";
   double fDigitChargeThr;
   std::string path_chankeymap;
   std::string singlePEgains;
+  int striphit; //0 all LAPPD Hits as true; 1 average all times per strip; 2 use first time for each strip
+  double MCPMTResolution = 0;
+
+  bool fCollectHits;
+  int AcqTimeWindow;
+  double end_of_window_time_cut;
 
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
   TRandom3 frand;  ///< Random number generator
@@ -104,10 +112,11 @@ class DigitBuilder: public Tool {
   /// Reconstructed information
   std::vector<RecoDigit>* fDigitList;				///< Reconstructed Hits including both LAPPD hits and PMT hits
   std::map<unsigned long,std::vector<MCHit>>* fMCPMTHits=nullptr;             ///< PMT hits
+  std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
   std::map<unsigned long,std::vector<MCLAPPDHit>>* fMCLAPPDHits=nullptr;   ///< LAPPD hits
   std::map<unsigned long,std::vector<MCHit>>* fTDCData=nullptr;            ///< MRD & veto hits
-  std::map<double,std::vector<Hit>>* m_all_clusters=nullptr;            ///< Clusters, from ClusterFinder tool
-  std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey=nullptr;         ///< Chankeys corresponding to clusters, from ClusterFinder tool
+  std::map<double,std::vector<Hit>>* m_all_clusters=nullptr;            ///< Clusters, from ClusterFinder tool - deprecated and to be removed
+  std::map<double,std::vector<unsigned long>>* m_all_clusters_detkey=nullptr;         ///< Chankeys corresponding to clusters, from ClusterFinder tool - deprecated and to be removed
 
   std::map<unsigned long, double> pmt_gains;
 

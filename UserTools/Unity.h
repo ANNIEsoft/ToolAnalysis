@@ -187,3 +187,5 @@
 #include "LAPPDLoadStore.h"
 #include "PMTWaveformSim.h"
 #include "LAPPDWaveformDisplay.h"
+#include "ClusterSearcher.h"
+#include "NeutronCheck.h"

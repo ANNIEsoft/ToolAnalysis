@@ -35,6 +35,10 @@ class RecoDigit : public SerialisableObject{
 		}
 	~RecoDigit() {/*ANNIERecoObjectTable::Instance()->DeleteDigit();*/}
 
+	bool operator<(const RecoDigit other) const {
+		return (fPosition.X() == other.GetPosition().X()) ? fPosition.Y() < other.GetPosition().Y() : fPosition.X() < other.GetPosition().X();
+	}
+
 	inline int                 GetRegion() const {return fRegion;}
 	inline Position						 GetPosition() const {return fPosition;}
 	inline double              GetCalTime() const {return fCalTime;}
@@ -42,6 +46,7 @@ class RecoDigit : public SerialisableObject{
 	inline bool                GetFilterStatus() const {return fIsFiltered;}
 	inline int         				 GetDigitType() const {return fDigitType;}
 	inline int         				 GetDetectorID() const {return fDetectorID;}
+	inline std::vector<int> GetParents() const {return Parents;}
 	
 	inline void                SetRegion(int reg) {fRegion = reg;}
 	inline void                SetPosition(Position pos){fPosition = pos;}
@@ -52,6 +57,7 @@ class RecoDigit : public SerialisableObject{
 	inline void                SetFilter(bool pass = 1) { fIsFiltered = pass;}
   inline void                ResetFilter() {SetFilter(0);}
   inline void                PassFilter() {SetFilter(1);}
+  inline void SetParents(std::vector<int> parentsin) { Parents = parentsin; }
 
 	bool Print() {
 		cout<<"Region : "<<fRegion<<endl;
@@ -72,6 +78,7 @@ class RecoDigit : public SerialisableObject{
   bool fIsFiltered;
   int fDigitType;
   int fDetectorID;
+  std::vector<int> Parents;
 
 	template<class Archive> void serialize(Archive & ar, const unsigned int version){
 		if(serialise){

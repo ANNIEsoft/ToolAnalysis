@@ -1,0 +1,9 @@
+LoadGeometry LoadGeometry ./configfiles/ClusterSearcher/LoadGeometryConfig
+LoadWCSim LoadWCSim ./configfiles/ClusterSearcher/LoadWCSimConfig
+LoadWCSimLAPPD LoadWCSimLAPPD ./configfiles/ClusterSearcher/LoadWCSimLAPPDConfig
+MCParticleProperties MCParticleProperties ./configfiles/ClusterSearcher/MCParticlePropertiesConfig
+DigitBuilder DigitBuilder ./configfiles/ClusterSearcher/DigitBuilderConfig
+ClusterSearcher ClusterSearcher ./configfiles/ClusterSearcher/ClusterSearcherConfig
+ClusterSearcher2 ClusterSearcher2 ./configfiles/ClusterSearcher/ClusterSearcher2Config
+EventSelector EventSelector ./configfiles/ClusterSearcher/EventSelectorConfig
+NeutronCheck NeutronCheck ./configfiles/ClusterSearcher/NeutronCheckConfig
