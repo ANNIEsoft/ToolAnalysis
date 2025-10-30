@@ -178,5 +178,6 @@ if (tool=="EBPMT") ret=new EBPMT;
 if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
 if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
+if (tool=="PrintADCTraces") ret=new PrintADCTraces;
 return ret;
 }

@@ -187,3 +187,4 @@
 #include "LAPPDLoadStore.h"
 #include "PMTWaveformSim.h"
 #include "LAPPDWaveformDisplay.h"
+#include "PrintADCTraces.h"
