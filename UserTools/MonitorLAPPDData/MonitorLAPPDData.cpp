@@ -264,26 +264,26 @@ bool MonitorLAPPDData::Finalise()
 	delete canvas_pps_interval_drift;
 	delete canvas_pps_accumulated_number_vs_psec_timestamp;
 	delete canvas_pps_time_vs_accumulated_number;
-	
 
-	// histograms
-	//
-	/* Somehow deleting histograms creates a segfault, omit for now
-	 for (int i_board = 0; i_board < (int) board_configuration.size(); i_board++){
+	for (auto& event_map : hist_waveforms_onedim) {
+		for (auto& board_pair : event_map) {
+			for (auto* hist_ptr : board_pair.second) {
+				delete hist_ptr;
+			}
+		}
+	}
+	hist_waveforms_onedim.clear();
 
-	 int board_nr = board_configuration.at(i_board);
-	 delete hist_align_1file.at(board_nr);
+	for (auto& board_pair : hist_pedestal) {
+		for (auto* hist_ptr : board_pair.second) {
+			delete hist_ptr;
+		}
+	}
+	hist_pedestal.clear();
+	graph_pps_event_counter.clear();
+	graph_pps_interval_drift.clear();
 
-	 delete hist_align_5files.at(board_nr);
-	 delete hist_align_10files.at(board_nr);
-	 delete hist_align_20files.at(board_nr);
-	 delete hist_align_100files.at(board_nr);
-	 delete hist_adc_channel.at(board_nr);
-	 delete hist_buffer_channel.at(board_nr);
-	 delete hist_buffer.at(board_nr);
-
-	 }
-	 */
+	delete log_files_lappd;
 
 	// graphs
 	for (int i_board = 0; i_board < (int)board_configuration.size(); i_board++)
@@ -307,8 +307,23 @@ bool MonitorLAPPDData::Finalise()
 			}
 		}
 	}
+	/* Adding these cause segfault
+	for (auto& pair : hist_adc_channel) { delete pair.second; }
+	for (auto& pair : hist_waveform_channel) { delete pair.second; }
+	for (auto& pair : hist_buffer_channel) { delete pair.second; }
+	for (auto& pair : hist_buffer) { delete pair.second; }
+	for (auto& pair : hist_waveform_voltages) { delete pair.second; }
+	*/
+	for (auto& pair : hist_align_1file) { delete pair.second; }
+	for (auto& pair : hist_align_5files) { delete pair.second; }
+	for (auto& pair : hist_align_10files) { delete pair.second; }
+	for (auto& pair : hist_align_20files) { delete pair.second; }
+	for (auto& pair : hist_align_100files) { delete pair.second; }
+
 	delete graph_pps_accumulated_number_vs_psec_timestamp;
 	delete graph_pps_time_vs_accumulated_number;
+	delete graph_pps_count;
+	delete graph_frame_count;
 
 	// multi-graphs
 	delete multi_ped_lappd;
@@ -329,6 +344,21 @@ bool MonitorLAPPDData::Finalise()
 	delete text_pps_count;
 	delete text_frame_count;
 
+	// histograms
+	delete hist_pedestal_all;
+	delete hist_pedestal_difference_all;
+	delete hist_buffer_size_all;
+	delete hist_rate_threshold_all;
+	delete hist_events_per_channel;
+	hist_pf_vs_timings.Clear();
+	hist_adc_channel.clear();
+	hist_waveform_channel.clear();
+	hist_buffer_channel.clear();
+	hist_buffer.clear();
+	hist_waveform_voltages.clear();
+
+	// gDirectory->ls();
+	// gObjectTable->Print();
 	return true;
 }
 
@@ -491,14 +521,13 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 		TH1F *hist_align_5files_single = new TH1F(ss_align_5files.str().c_str(), ss_align_5files.str().c_str(), 100, 0, 20000);
 		TH1F *hist_align_10files_single = new TH1F(ss_align_10files.str().c_str(), ss_align_10files.str().c_str(), 100, 0, 20000);
 		TH1F *hist_align_20files_single = new TH1F(ss_align_20files.str().c_str(), ss_align_20files.str().c_str(), 100, 0, 20000);
-		TH1F *hist_align_100files_single = new TH1F(ss_align_100files.str().c_str(), ss_align_100files.str().c_str(), 100, 0, 20000);
-		TH1F *hist_align_1000files_single = new TH1F(ss_align_1000files.str().c_str(), ss_align_1000files.str().c_str(), 100, 0, 20000);
+		TH2F hist_align_100files_single_2d = TH2F("align_100files_2d","align_100files_2d",100, 0, 20000, 50, 0, 100);
+		TH2F hist_align_1000files_single_2d = TH2F("align_1000files_2d","align_1000files_2d",100, 0, 20000, 50, 0, 1000); 
 		TH2F *hist_adc_channel_single = new TH2F(ss_adc_channel.str().c_str(), ss_adc_channel.str().c_str(), 200, -500, 0, 30, min_board, min_board + 30);
 		TH2F *hist_waveform_channel_single = new TH2F(ss_waveform_channel.str().c_str(), ss_waveform_channel.str().c_str(), 256, 0, 256, 30, min_board, min_board + 30);
 		TH2F *hist_buffer_channel_single = new TH2F(ss_buffer_channel.str().c_str(), ss_buffer_channel.str().c_str(), 50, 0, 2000, 30, min_board, min_board + 30);
 		TH1F *hist_buffer_single = new TH1F(ss_buffer.str().c_str(), ss_buffer.str().c_str(), 50, 0, 2000);
 		TH2F *hist_waveform_voltages_single = new TH2F(ss_waveform_voltages.str().c_str(), ss_waveform_voltages.str().c_str(), 256, 0, 256, 30, min_board, min_board + 30);
-
 		// TODO: Title, XAxis, YAxis for timing histos
 		hist_align_1file_single->GetXaxis()->SetTitle("Time [ns]");
 		hist_align_1file_single->GetYaxis()->SetTitle("Entries");
@@ -516,13 +545,13 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 		hist_align_20files_single->GetYaxis()->SetTitle("Entries");
 		hist_align_20files_single->SetStats(0);
 
-		hist_align_100files_single->GetXaxis()->SetTitle("Time [ns]");
-		hist_align_100files_single->GetYaxis()->SetTitle("Entries");
-		hist_align_100files_single->SetStats(0);
+		hist_align_100files_single_2d.GetXaxis()->SetTitle("Time [ns]");
+		hist_align_100files_single_2d.GetYaxis()->SetTitle("PartFiles");
+		hist_align_100files_single_2d.SetStats(0);
 
-		hist_align_1000files_single->GetXaxis()->SetTitle("Time [ns]");
-		hist_align_1000files_single->GetYaxis()->SetTitle("Entries");
-		hist_align_1000files_single->SetStats(0);
+		hist_align_1000files_single_2d.GetXaxis()->SetTitle("Time [ns]");
+		hist_align_1000files_single_2d.GetYaxis()->SetTitle("PartFiles");
+		hist_align_1000files_single_2d.SetStats(0);
 
 		hist_adc_channel_single->GetXaxis()->SetTitle("ADC value");
 		hist_adc_channel_single->GetYaxis()->SetTitle("Channelkey");
@@ -549,13 +578,13 @@ void MonitorLAPPDData::InitializeHistsLAPPD()
 		hist_align_5files.emplace(board_nr, hist_align_5files_single);
 		hist_align_10files.emplace(board_nr, hist_align_10files_single);
 		hist_align_20files.emplace(board_nr, hist_align_20files_single);
-		hist_align_100files.emplace(board_nr, hist_align_100files_single);
-		hist_align_1000files.emplace(board_nr, hist_align_1000files_single);
+		hist_align_1000files_2d.emplace(board_nr, hist_align_1000files_single_2d);
 		hist_adc_channel.emplace(board_nr, hist_adc_channel_single);
 		hist_waveform_channel.emplace(board_nr, hist_waveform_channel_single);
 		hist_buffer_channel.emplace(board_nr, hist_buffer_channel_single);
 		hist_buffer.emplace(board_nr, hist_buffer_single);
 		hist_waveform_voltages.emplace(board_nr, hist_waveform_voltages_single);
+		hist_align_100files_2d.emplace(board_nr, hist_align_100files_single_2d);
 
 		std::vector<TH1F *> hist_pedestal_temp_vec;
 
@@ -2227,22 +2256,22 @@ void MonitorLAPPDData::DrawTimeAlignment()
 		}
 
 		//------Last 100 Files---------
-		hist_align_100files.at(board_nr)->Reset();
+		hist_align_100files_2d.at(board_nr).Reset();
 		for (int i_align = 0; i_align < (int)data_beamgate_last100files.at(board_nr).size(); i_align++)
 		{
 			for (int i_data = 0; i_data < (int)data_beamgate_last100files.at(board_nr).at(i_align).size(); i_data++)
 			{
-				hist_align_100files.at(board_nr)->Fill(data_beamgate_last100files.at(board_nr).at(i_align).at(i_data) * 3.125);
+				hist_align_100files_2d.at(board_nr).Fill(data_beamgate_last100files.at(board_nr).at(i_align).at(i_data) * 3.125, i_align);
 			}
 		}
 
 		//------Last 1000 Files---------
-		hist_align_1000files.at(board_nr)->Reset();
+		hist_align_1000files_2d.at(board_nr).Reset();
 		for (int i_align = 0; i_align < (int)data_beamgate_last1000files.at(board_nr).size(); i_align++)
 		{
 			for (int i_data = 0; i_data < (int)data_beamgate_last1000files.at(board_nr).at(i_align).size(); i_data++)
 			{
-				hist_align_1000files.at(board_nr)->Fill(data_beamgate_last1000files.at(board_nr).at(i_align).at(i_data) * 3.125);
+				hist_align_1000files_2d.at(board_nr).Fill(data_beamgate_last1000files.at(board_nr).at(i_align).at(i_data) * 3.125, i_align);
 			}
 		}
 
@@ -2295,9 +2324,9 @@ void MonitorLAPPDData::DrawTimeAlignment()
 		canvas_align_100files->cd();
 		std::stringstream ss_text_align100;
 		ss_text_align100 << "Alignment Hundred Files Board " << board_nr << " (" << current_time.str() << ")";
-		hist_align_100files.at(board_nr)->SetTitle(ss_text_align100.str().c_str());
-		hist_align_100files.at(board_nr)->SetStats(0);
-		hist_align_100files.at(board_nr)->Draw("");
+		hist_align_100files_2d.at(board_nr).SetTitle(ss_text_align100.str().c_str());
+		hist_align_100files_2d.at(board_nr).SetStats(0);
+		hist_align_100files_2d.at(board_nr).Draw("COLZ");
 		std::stringstream ss_path_align100;
 		ss_path_align100 << outpath << "LAPPD_Time_Alignment_Hundred_Files_Board" << board_nr << "_current." << img_extension;
 		canvas_align_100files->SaveAs(ss_path_align100.str().c_str());
@@ -2306,10 +2335,9 @@ void MonitorLAPPDData::DrawTimeAlignment()
 		canvas_align_1000files->cd();
 		std::stringstream ss_text_align1000;
 		ss_text_align1000 << "Alignment Thousand Files Board " << board_nr << " (" << current_time.str() << ")";
-		hist_align_1000files.at(board_nr)->SetTitle(ss_text_align1000.str().c_str());
-
-		hist_align_1000files.at(board_nr)->SetStats(0);
-		hist_align_1000files.at(board_nr)->Draw("");
+		hist_align_1000files_2d.at(board_nr).SetTitle(ss_text_align1000.str().c_str());
+		hist_align_1000files_2d.at(board_nr).SetStats(0);
+		hist_align_1000files_2d.at(board_nr).Draw("COLZ");
 		std::stringstream ss_path_align1000;
 		ss_path_align1000 << outpath << "LAPPD_Time_Alignment_Thousand_Files_Board" << board_nr << "_current." << img_extension;
 		canvas_align_1000files->SaveAs(ss_path_align1000.str().c_str());
