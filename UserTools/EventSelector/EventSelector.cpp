@@ -96,15 +96,6 @@ bool EventSelector::Execute(){
   	Log("EventSelector Tool: No ANNIEEvent store!",v_error,verbosity); 
   	return false;
   };
-
-  // an upstream tool may have told us to skip this event (PMTWaveformSim)
-  bool skip = false;
-  bool goodSkipStatus = m_data->Stores.at("ANNIEEvent")->Get("SkipExecute", skip);
-  if (goodSkipStatus && skip) {
-    logmessage = "EventSelector: An upstream tool told me to skip this event.";
-    Log(logmessage, v_warning, verbosity);
-    return true;
-  }
 	
   // ANNIE Event number
   m_data->Stores.at("ANNIEEvent")->Get("EventNumber",fEventNumber);
@@ -1048,17 +1039,12 @@ bool EventSelector::FindPaddleChankey(double x, double y, int layer, unsigned lo
 
 bool EventSelector::EventSelectionByRecoPDG(int recoPDG, std::vector<double> & cluster_reco_pdg){
 
-  if (fIsMC){
-    if (fMCWaveform) {
-      bool has_clustered_pmt = m_data->CStore.Get("ClusterMap",m_all_clusters);
-      if (not has_clustered_pmt) { Log("EventSelector Tool: MCWaveform --> Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
-    } else {
-      bool has_clustered_pmt = m_data->CStore.Get("ClusterMapMC",m_all_clusters_MC);
-      if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMapMC from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
-    }
+  if (!fIsMC || fMCWaveform) {
+	bool has_clustered_pmt = m_data->CStore.Get("ClusterMap",m_all_clusters);
+	if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
   } else {
-    bool has_clustered_pmt = m_data->CStore.Get("ClusterMap",m_all_clusters);
-    if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMap from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
+	  bool has_clustered_pmt = m_data->CStore.Get("ClusterMapMC",m_all_clusters_MC);
+      if (not has_clustered_pmt) { Log("EventSelector Tool: Error retrieving ClusterMapMC from CStore, did you run ClusterFinder beforehand?",v_error,verbosity); return false; }
   }
 
   std::map<double,double> ClusterMaxPEs;
@@ -1072,33 +1058,31 @@ bool EventSelector::EventSelectionByRecoPDG(int recoPDG, std::vector<double> & c
   bool found_pdg = false;
 
   if (fabs(recoPDG)==2112){
-    if (fIsMC){
-      if (fMCWaveform) {
-        if (m_all_clusters->size()){
-        double cluster_time;
-        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-          double cluster_time = apair.first;
-          double charge_balance = ClusterChargeBalances.at(cluster_time);
-          std::vector<Hit>&Hits = apair.second;
-          double time_temp = 0;
-          double charge_temp = 0;
-          for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-            time_temp+=Hits.at(i_hit).GetTime();
-            int tube = Hits.at(i_hit).GetTubeId();
-            double charge_pe = Hits.at(i_hit).GetCharge()/ChannelNumToTankPMTSPEChargeMap->at(tube);
-            charge_temp+=charge_pe;
-          }
-          if (cluster_time > 10000 && charge_balance < 0.4 && charge_temp < 120) {
-            cluster_reco_pdg.push_back(cluster_time);
-            found_pdg = true;
-            std::cout <<"Found neutron candidate for cluster at time = "<<cluster_time<<", with CB = "<<charge_balance <<"and charge "<<charge_temp<<"!!!"<<std::endl;
-          } else {
-            std::cout <<"Did not pass neutron candidate cuts!!! Time = "<<cluster_time <<", CB = "<<charge_balance << " and charge "<<charge_temp<<"!!!"<<std::endl;
-          }
-        }
-      }
-      } else {
-        if (m_all_clusters_MC->size()){
+	if (!fIsMC || fMCWaveform) {    // data-like
+		if (m_all_clusters->size()){
+	        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
+	          double cluster_time = apair.first;
+	          double charge_balance = ClusterChargeBalances.at(cluster_time);
+	          std::vector<Hit>&Hits = apair.second;
+	          double time_temp = 0;
+	          double charge_temp = 0;
+	          for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
+	            time_temp+=Hits.at(i_hit).GetTime();
+	            int tube = Hits.at(i_hit).GetTubeId();
+	            double charge_pe = Hits.at(i_hit).GetCharge()/ChannelNumToTankPMTSPEChargeMap->at(tube);
+	            charge_temp+=charge_pe;
+	          }
+	          if (cluster_time > 10000 && charge_balance < 0.4 && charge_temp < 120) {
+	            cluster_reco_pdg.push_back(cluster_time);
+	            found_pdg = true;
+	            std::cout <<"Found neutron candidate for cluster at time = "<<cluster_time<<", with CB = "<<charge_balance <<"and charge "<<charge_temp<<"!!!"<<std::endl;
+	          } else {
+	            std::cout <<"Did not pass neutron candidate cuts!!! Time = "<<cluster_time <<", CB = "<<charge_balance << " and charge "<<charge_temp<<"!!!"<<std::endl;
+	          }
+        	}
+     	 }
+	  } else {     // MCHits
+		if (m_all_clusters_MC->size()){
           for(std::pair<double,std::vector<MCHit>>&& apair : *m_all_clusters_MC){
             double cluster_time = apair.first;
             double charge_balance = ClusterChargeBalances.at(cluster_time);
@@ -1118,32 +1102,7 @@ bool EventSelector::EventSelectionByRecoPDG(int recoPDG, std::vector<double> & c
             }
           }
         }
-      }
-    } else {
-      if (m_all_clusters->size()){
-        double cluster_time;
-        for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-          double cluster_time = apair.first;
-          double charge_balance = ClusterChargeBalances.at(cluster_time);
-          std::vector<Hit>&Hits = apair.second;
-          double time_temp = 0;
-          double charge_temp = 0;
-          for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-            time_temp+=Hits.at(i_hit).GetTime();
-            int tube = Hits.at(i_hit).GetTubeId();
-            double charge_pe = Hits.at(i_hit).GetCharge()/ChannelNumToTankPMTSPEChargeMap->at(tube);
-            charge_temp+=charge_pe;
-          }
-          if (cluster_time > 10000 && charge_balance < 0.4 && charge_temp < 120) {
-            cluster_reco_pdg.push_back(cluster_time);
-            found_pdg = true;
-            std::cout <<"Found neutron candidate for cluster at time = "<<cluster_time<<", with CB = "<<charge_balance <<"and charge "<<charge_temp<<"!!!"<<std::endl;
-          } else {
-            std::cout <<"Did not pass neutron candidate cuts!!! Time = "<<cluster_time <<", CB = "<<charge_balance << " and charge "<<charge_temp<<"!!!"<<std::endl;
-          }
-        }
-      }
-    }
+	  }
   }
 
   return found_pdg;
