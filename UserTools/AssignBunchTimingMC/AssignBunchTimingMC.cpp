@@ -99,16 +99,6 @@ bool AssignBunchTimingMC::Execute()
         std::cout << "AssignBunchTimingMC: Executing tool..." << std::endl;
     }
 
-    // An upstream tool may opt to skip this execution stage
-    // For example the PMTWaveformSim tool will skip events with no MCHits or if
-    // no waveforms are produced.
-    bool skip = false;
-    bool got_skip_status = m_data->Stores["ANNIEEvent"]->Get("SkipExecute", skip);
-    if (got_skip_status && skip) {
-        Log("AssignBunchTimingMC: An upstream tool told me to skip this event.",v_warning,verbosity);
-        return true;
-    } 
-
     if (!LoadStores())      // Load info from store
         return false;
     if (verbosity >= v_debug) {
