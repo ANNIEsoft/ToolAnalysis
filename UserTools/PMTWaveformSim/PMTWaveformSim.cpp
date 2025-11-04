@@ -110,8 +110,8 @@ bool PMTWaveformSim::Execute()
     logmessage = "PMTWaveformSim: Creating single minimal baseline waveform (No MCHits)...";
     Log(logmessage, v_message, verbosity);
     
-    // we can use any valid PMT ID --> let's just use 332
-    unsigned long dummy_chankey = 332;
+    // we can put the dummy baseline in a dead PMT channel so it won't be integrated
+    unsigned long dummy_chankey = 333;    // PMT ID 333 is dead
     
     // create a short baseline waveform (~50ns) so that the hit finder will be satisfied
     int num_samples = 25;   // 50ns
