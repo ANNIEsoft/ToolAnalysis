@@ -526,16 +526,6 @@ bool PhaseIITreeMaker::Execute(){
   // Reset variables
   this->ResetVariables();
   // Get a pointer to the ANNIEEvent Store
-	
-  // An upstream tool may opt to skip this execution stage
-  // For example the PMTWaveformSim tool will skip events with no MCHits or if
-  // no waveforms are produced.
-  bool skip = false;
-  bool got_skip_status = m_data->Stores["ANNIEEvent"]->Get("SkipExecute", skip);
-  if (got_skip_status && skip) {
-    Log("PhaseIITreeMaker: An upstream tool told me to skip this event.",v_warning,verbosity);
-    return true;
-  } 
 
   //  If only clean events are built, return true for dirty events
   if(fillCleanEventsOnly){
