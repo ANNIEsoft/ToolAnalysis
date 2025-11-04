@@ -141,16 +141,6 @@ bool VertexLeastSquares::Initialise(std::string configfile, DataModel &data)
 bool VertexLeastSquares::Execute()
 {
 
-  // An upstream tool may opt to skip this execution stage
-  // For example the PMTWaveformSim tool will skip events with no MCHits or if
-  // no waveforms are produced.
-  bool skip = false;
-  bool got_skip_status = m_data->Stores["ANNIEEvent"]->Get("SkipExecute", skip);
-  if (got_skip_status && skip) {
-    Log("VertexLeastSquares: An upstream tool told me to skip this event.",v_warning,verbosity);
-    return true;
-  } 
-
   fVertexMap->clear();
   fVertexStdevMap->clear();
   if (fUseMCHits) {
