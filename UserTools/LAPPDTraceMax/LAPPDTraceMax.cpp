@@ -84,6 +84,9 @@ bool LAPPDTraceMax::Execute(){
         vector<double> ampvect = CalcAmp(bwav,lowR,hiR);
         vector<double> ampvect_sm = CalcAmpSmoothed(bwav,lowR,hiR);
 
+        // find min max amplitude
+        vector<double> ampminmaxvect = CalcMinMaxAmp(bwav);
+
         // integrate the pulse from the low range to high range in units of mV*psec
         double Qmvpsec = CalcIntegral(bwav,lowR,hiR);
         // convert to coulomb
@@ -112,6 +115,13 @@ bool LAPPDTraceMax::Execute(){
           astripsumL.push_back(ampvect_sm.at(1));
           astripsumL.push_back(Qelectrons);
           astripsumL.push_back(sQelectrons);
+
+          astripsumL.push_back(ampminmaxvect.at(0));
+          astripsumL.push_back(ampminmaxvect.at(1));
+          astripsumL.push_back(ampminmaxvect.at(2));
+          astripsumL.push_back(ampminmaxvect.at(3));
+          astripsumL.push_back(ampminmaxvect.at(4));
+          astripsumL.push_back(ampminmaxvect.at(5));
         }
 
         if(stripside==1){
@@ -121,6 +131,13 @@ bool LAPPDTraceMax::Execute(){
           astripsumR.push_back(ampvect_sm.at(1));
           astripsumR.push_back(Qelectrons);
           astripsumR.push_back(sQelectrons);
+
+          astripsumR.push_back(ampminmaxvect.at(0));
+          astripsumR.push_back(ampminmaxvect.at(1));
+          astripsumR.push_back(ampminmaxvect.at(2));
+          astripsumR.push_back(ampminmaxvect.at(3));
+          astripsumR.push_back(ampminmaxvect.at(4));
+          astripsumR.push_back(ampminmaxvect.at(5));
         }
 
         vastripsumL.push_back(astripsumL);
@@ -175,12 +192,58 @@ double LAPPDTraceMax::CalcIntegral(Waveform<double> hwav, double lowR, double hi
     for(int i=lowb; i<hib; i++){
       tQ+=((hwav.GetSample(i))*Deltat);
     }
-  } else std::cout<<"OUT OF RANGE!!!!"<<std::flush;
+  } else std::cout<<"OUT OF RANGE!!!!";
 
   return tQ;
 }
+//Marvin
+std::vector<double> LAPPDTraceMax::CalcMinMaxAmp(Waveform<double> hwav){
 
+  // Get the Samples from Waveform
+  std::vector<double> *theWav = hwav.GetSamples();
+  int nbins = theWav->size();
 
+  // Find the minimum and maximum values
+  auto minmax = std::minmax_element(theWav->begin(), theWav->end());
+
+  // Get the minimum and maximum values
+  double maxAmp = *minmax.first;
+  double minAmp = *minmax.second;
+
+  // Get the RMS
+  double sumOfSquares = 0.0;
+  for (int i=0; i<nbins; i++) sumOfSquares += pow(theWav->at(i),2);
+
+  double rms = sqrt(sumOfSquares / nbins);
+
+  // Get the integral
+  double sumInt = 0.0;
+  for (int i=0; i<nbins; i++) sumInt += theWav->at(i);
+
+  double sumint = sumInt / nbins;
+
+  // Get Variance
+  double mean = 0.0;
+  double variance = 0.0;
+  for (int i=0; i<nbins; i++) mean += theWav->at(i);
+  mean = mean/nbins;
+
+  for (int i=0; i<nbins; i++) variance += pow(theWav->at(i) - mean,2);
+  variance = variance / nbins;
+
+  // Get Standard deviation 
+  double StandDev = sqrt(variance);
+
+  vector<double> minmaxVect;
+  minmaxVect.push_back(minAmp);
+  minmaxVect.push_back(maxAmp);
+  minmaxVect.push_back(rms);
+  minmaxVect.push_back(StandDev);
+  minmaxVect.push_back(variance);
+  minmaxVect.push_back(sumint);
+
+  return minmaxVect;
+}
 
 std::vector<double> LAPPDTraceMax::CalcAmp(Waveform<double> hwav, double lowR, double hiR){
 
@@ -202,7 +265,7 @@ std::vector<double> LAPPDTraceMax::CalcAmp(Waveform<double> hwav, double lowR, d
         tTime=(double)i;
       }
     }
-  } else std::cout<<"OUT OF RANGE!!!!"<<std::flush;
+  } else std::cout<<"OUT OF RANGE!!!!";
 
   vector<double> tAmpVect;
   tAmpVect.push_back(tAmp);
@@ -240,7 +303,7 @@ std::vector<double> LAPPDTraceMax::CalcAmpSmoothed(Waveform<double> hwav, double
           tTime=(double)i - (Nsmooth/2.) ;
         }
       }
-    } else std::cout<<"OUT OF RANGE!!!!"<<std::flush;
+    } else std::cout<<"OUT OF RANGE!!!!";
 
     vector<double> tAmpVect;
     tAmpVect.push_back(tAmp);
