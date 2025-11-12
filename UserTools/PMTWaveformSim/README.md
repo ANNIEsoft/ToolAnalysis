@@ -35,3 +35,6 @@ MakeDebugFile 0     # Produce a root file containing all the simulated waveforms
 
 ## Other notes
 #### CAUTION: In line 90, the RNG seed is set in Initialization based on the clock time. If any other downstream tools are also setting a random seed, there may be unexpected behavior as a result of this tool.
+
+For events with no MCHits (and hence no waveforms to simulate) a "dummy" waveform is simulated in one of the dead PMT channels (333). The dummy waveform is very short (50ns) and samples from a noise distribution lower than normal, as to not have any hits register in the hit finder (the hit finder will skip dead PMTs anyways). Passing at least one waveform to the hit finding tools prevents crashing. **IF** that PMT is ever repaired or comes back online, please move this dummy channel to a different offline channel.
+

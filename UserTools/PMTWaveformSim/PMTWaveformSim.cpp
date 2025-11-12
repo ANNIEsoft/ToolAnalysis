@@ -97,11 +97,51 @@ bool PMTWaveformSim::Execute()
 {
   int load_status = LoadFromStores();
 
-  
+  if (load_status == 0) return false;
+
   // The container for the data that we'll put into the ANNIEEvent
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCDataMC;
   std::map<unsigned long, std::vector<CalibratedADCWaveform<double>> > CalADCDataMC;
 
+
+  // If MCHits is empty (load_status == 2), create one minimal baseline waveform so that the hit finder doesn't freak out
+  // while keeping the rest of the machinery the same
+  if (load_status == 2) {
+    logmessage = "PMTWaveformSim: Creating single minimal baseline waveform (No MCHits)...";
+    Log(logmessage, v_message, verbosity);
+    
+    // we can put the dummy baseline in a dead PMT channel so it won't be integrated
+    unsigned long dummy_chankey = 333;    // PMT ID 333 is dead
+    
+    // create a short baseline waveform (~50ns) so that the hit finder will be satisfied
+    int num_samples = 25;   // 50ns
+    double noiseSigma = fRandom.Gaus(1, 0.01);   // set the noise to basically 0
+    int baseline = fRandom.Uniform(300, 350);
+    
+    std::vector<uint16_t> rawSamples;
+    std::vector<double> calSamples;
+    
+    for (int i = 0; i < num_samples; i++) {
+      double noise = fRandom.Gaus(0, noiseSigma);
+      int sample = std::round(noise + baseline);
+      sample = (sample > 4095) ? 4095 : ((sample < 0) ? 0 : sample);  // shouldn't matter
+      
+      rawSamples.push_back(sample);
+      calSamples.push_back((sample - baseline) * ADC_TO_VOLT);
+    }
+    
+    std::vector<Waveform<uint16_t>> rawWaveforms;
+    std::vector<CalibratedADCWaveform<double>> calWaveforms;
+    
+    rawWaveforms.emplace_back(0, rawSamples);
+    calWaveforms.emplace_back(0, calSamples, baseline, noiseSigma);
+    
+    RawADCDataMC.emplace(dummy_chankey, rawWaveforms);
+    CalADCDataMC.emplace(dummy_chankey, calWaveforms);
+
+  }
+
+  // normal use case (no blank MCHits)
   for (auto mcHitsIt : *fMCHits) { // Loop over the hit PMTs
     int PMTID = mcHitsIt.first;
 
@@ -177,22 +217,14 @@ bool PMTWaveformSim::Execute()
     CalADCDataMC.emplace(PMTID, calWaveforms);
   }// end loop over PMTs
 
+
   // Publish the waveforms to the ANNIEEvent store if we have them
-   if (RawADCDataMC.size()) {     
-    m_data->Stores.at("ANNIEEvent")->Set("RawADCDataMC",      RawADCDataMC);
-    m_data->Stores.at("ANNIEEvent")->Set("CalibratedADCData", CalADCDataMC);
-   } else {
-     logmessage = "PMTWaveformSim: No waveforms produced. Skipping!";
-     Log(logmessage, v_warning, verbosity);
-     m_data->Stores.at("ANNIEEvent")->Set("SkipExecute", true);
-     return true;
-   }
-     
+  m_data->Stores.at("ANNIEEvent")->Set("RawADCDataMC",      RawADCDataMC);
+  m_data->Stores.at("ANNIEEvent")->Set("CalibratedADCData", CalADCDataMC); 
   
   if (fDebug) 
     FillDebugGraphs(RawADCDataMC);
 
-  m_data->Stores.at("ANNIEEvent")->Set("SkipExecute", false);
   return true;
 }
 
@@ -460,7 +492,7 @@ int PMTWaveformSim::LoadFromStores()
   }
 
   if (fMCHits->empty()) {
-    logmessage = "PMTWaveformSim: The MCHits map is empty! Skipping!";
+    logmessage = "PMTWaveformSim: The MCHits map is empty! Will fill a single PMT with a minimal waveform.";
     Log(logmessage, v_warning, verbosity);
     return 2;
   }
