@@ -1507,8 +1507,13 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     ANNIEEvent->Set("beam_B_BRRMP", B_BRRMP);
 
     int beam_good = 0;
-
-    if (THCURR > 172 && THCURR < 176)
+    
+    // the upper limit is increased from 176 to 178 to include earlier runs before 2022 summer shutdown 
+    // current plot can be fround at docdb 6475, thanks to Steven Doran
+    // https://annie-docdb.fnal.gov/cgi-bin/sso/ShowDocument?docid=6475
+    // so, the beam_ok for beam cluster trees before v1.2 requires current >172 and <176. 
+    // the files processed after are using this new upper limit
+    if (THCURR > 172 && THCURR < 178)
     {
       if (E_TOR860 > 0.5 && E_TOR860 < 8 && E_TOR875 > 0.5 && E_TOR875 < 8 && (E_TOR875 - E_TOR860) / E_TOR860 < 0.05)
         beam_good = 1;
