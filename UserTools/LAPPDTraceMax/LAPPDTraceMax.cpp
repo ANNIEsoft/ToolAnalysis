@@ -196,7 +196,7 @@ double LAPPDTraceMax::CalcIntegral(Waveform<double> hwav, double lowR, double hi
 
   return tQ;
 }
-//Marvin
+
 std::vector<double> LAPPDTraceMax::CalcMinMaxAmp(Waveform<double> hwav){
 
   // Get the Samples from Waveform
@@ -207,27 +207,21 @@ std::vector<double> LAPPDTraceMax::CalcMinMaxAmp(Waveform<double> hwav){
   auto minmax = std::minmax_element(theWav->begin(), theWav->end());
 
   // Get the minimum and maximum values
-  double maxAmp = *minmax.first;
-  double minAmp = *minmax.second;
+  double minAmp = *minmax.first;
+  double maxAmp = *minmax.second;
 
-  // Get the RMS
+  // Get RMS
   double sumOfSquares = 0.0;
   for (int i=0; i<nbins; i++) sumOfSquares += pow(theWav->at(i),2);
-
   double rms = sqrt(sumOfSquares / nbins);
 
-  // Get the integral
-  double sumInt = 0.0;
-  for (int i=0; i<nbins; i++) sumInt += theWav->at(i);
-
-  double sumint = sumInt / nbins;
-
+  // Get Mean 
+  double sum = 0.0;
+  for (int i=0; i<nbins; i++) sum += theWav->at(i);
+  double mean = sum / nbins;
+  
   // Get Variance
-  double mean = 0.0;
   double variance = 0.0;
-  for (int i=0; i<nbins; i++) mean += theWav->at(i);
-  mean = mean/nbins;
-
   for (int i=0; i<nbins; i++) variance += pow(theWav->at(i) - mean,2);
   variance = variance / nbins;
 
@@ -240,7 +234,7 @@ std::vector<double> LAPPDTraceMax::CalcMinMaxAmp(Waveform<double> hwav){
   minmaxVect.push_back(rms);
   minmaxVect.push_back(StandDev);
   minmaxVect.push_back(variance);
-  minmaxVect.push_back(sumint);
+  minmaxVect.push_back(mean);
 
   return minmaxVect;
 }
