@@ -120,9 +120,8 @@ class LAPPDClusterTree: public Tool {
   Double_t      pulsepeakbin_simp[60];
   Int_t         pulsestrip_simp[60];
   Int_t         pulseside_simp[60];
-
-  // NEW Mrv!
   Int_t         timestamps_meta;
+
  private:
 
     int LAPPDClusterTreeVerbosity;
