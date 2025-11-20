@@ -196,11 +196,23 @@ bool LAPPDClusterTree::Execute()
   m_data->Stores["ANNIEEvent"]->Get("TMR",TMR);
 
   vector<string> acdcmetadata;
-  m_data->Stores["ANNIEEvent"]->Get("ACDCmetadata",acdcmetadata);
+  bool okACDCmetadata = m_data->Stores["ANNIEEvent"]->Get("ACDCmetadata", acdcmetadata);
+  if (!okACDCmetadata) {
+    std::cerr << "ERROR: Could not retrieve ACDCmetadata from ANNIEEvent store." << std::endl;
+    return false; 
+  }
 
-  //std::cout<<"-------------TIMESTAMP In tree ---------------------------------"<<std::endl;
-  int meta_timestamp_int;
-  std::string meta_timestamp = acdcmetadata[204] + acdcmetadata[206] + acdcmetadata[208] + acdcmetadata[210];
+  // Adding the TIMESTAMP In tree 
+  // Timestamp indices inside ACDC metadata
+  // These four entries store the timestamp bytes (or string fragments)
+  static const std::array<size_t,4> TS_INDICES = {204, 206, 208, 210};
+
+  std::string meta_timestamp;
+  
+  for (size_t idx : TS_INDICES) {
+      meta_timestamp += acdcmetadata.at(idx);
+  }
+  
   std::istringstream iss(meta_timestamp);
   iss >> std::hex >> meta_timestamp_int;
   timestamps_meta = meta_timestamp_int;
