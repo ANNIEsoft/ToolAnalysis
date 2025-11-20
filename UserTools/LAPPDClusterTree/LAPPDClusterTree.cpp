@@ -206,7 +206,7 @@ bool LAPPDClusterTree::Execute()
   // Timestamp indices inside ACDC metadata
   // These four entries store the timestamp bytes (or string fragments)
   static const std::array<size_t,4> TS_INDICES = {204, 206, 208, 210};
-
+  int meta_timestamp_int;
   std::string meta_timestamp;
   
   for (size_t idx : TS_INDICES) {
