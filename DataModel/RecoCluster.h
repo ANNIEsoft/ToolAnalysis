@@ -5,6 +5,13 @@
 #include "RecoDigit.h"
 #include "Position.h"
 #include<SerialisableObject.h>
+#include "TVector3.h"
+#include "TMatrixDSym.h"
+#include "TMatrixDSymEigen.h"
+#include "TVectorD.h"
+#include "TMath.h"
+#include "TF1.h"
+#include "Math/IFunction.h"
 
 class RecoCluster : public SerialisableObject {
 
@@ -17,15 +24,16 @@ class RecoCluster : public SerialisableObject {
   void Reset();
   void SortCluster();
 
-  void AddDigit(RecoDigit* digit);
+  void AddDigit(RecoDigit digit);
+  inline void SetDigits(vector<RecoDigit>* indigits){fDigitList=indigits;}
 
-  RecoDigit* GetDigit(int n);
+  RecoDigit GetDigit(int n);
   
   void SetClusterMode(int cmode);
   
   int GetClusterMode();
   
-  std::vector<RecoDigit*> GetDigitList() {return this->fDigitList;}
+  std::vector<RecoDigit>* GetDigitList() {return this->fDigitList;}
   
   int GetNDigits();
   
@@ -49,15 +57,26 @@ class RecoCluster : public SerialisableObject {
   void CalcCV();
   void CalcAMD();
   void CalcSA();
-  void CalcCA();
+  void CalcAW();
+  void CalcPlanaritySphericity();
+  double CalcBeta(int order);
+  void CalcTR();
   void CalcParameters();
   int calcBestParent();
   double GetAS(int mode);
   inline double GetASC(){return ASC;}
   inline double GetAMD(){return AMD;}
   inline Position GetSA(){return SpatialAverage;}
-  inline double GetCA(){return ContainingAngle;}
-  std::vector<RecoDigit*> convexHull();
+  inline double GetAW(){return AngularWidth;}
+  inline double GetPlanarity(){return Planarity;}
+  inline double GetSphericity(){return Sphericity;}
+  double GetBeta(int order);
+  inline double GetTimeRangeT() {return TRTotal;}
+  inline double GetTimeRangeQ() {return TRQ;}
+  inline double GetTimeRangeC() {return TRCluster;}
+  inline double GetTRRTQ(){return TRRatioTQ;}
+  inline double GetTRRTC() { return TRRatioTC; }
+  inline double GetTRRQC() { return TRRatioQC; }
 
   void SetParticle(int pID,int pPDG, double eff, double pur);
   inline int GetBestParent(){return bestParticleID;}
@@ -65,6 +84,10 @@ class RecoCluster : public SerialisableObject {
   inline int GetPDG(){return bestParticlePDG;}
   inline double Efficiency(){return efficiency;}
   inline double Purity(){return purity;}
+
+  bool CheckFilter();
+  inline bool GetFilterStatus(){return fIsFiltered;}
+  //void CleanDigits();
 
   private:
 	  double clusterTime;
@@ -74,16 +97,21 @@ class RecoCluster : public SerialisableObject {
 	  double AMD;
 	  Position ChargeVector;
 	  Position SpatialAverage;
-	  double ContainingAngle;
+	  double AngularWidth;
+	  double Planarity=-999;
+	  double Sphericity=-999;
+	  std::map<int,double> BetaParameters;
+	  double TRTotal, TRQ, TRCluster;
+	  double TRRatioTQ, TRRatioTC,TRRatioQC;
 	  int bestParticleID;
 	  int bestParticlePDG;
 	  double efficiency;
 	  double purity;
+	  bool fIsFiltered=0;
 
   
   int fClusterMode = -999;
-  std::vector<RecoDigit*> fDigitList;
-  std::vector<RecoDigit*> hullDigits;
+  std::vector<RecoDigit>* fDigitList;
   Position TwoDCenter;
 
   	

@@ -33,6 +33,17 @@ class RecoDigit : public SerialisableObject{
 			fIsFiltered = 1;
 			ANNIERecoObjectTable::Instance()->NewDigit();
 		}
+	RecoDigit(RecoDigit* origin) {
+		serialise=true;
+		fRegion=origin->GetRegion();
+		fPosition = origin->GetPosition();
+		fCalTime = origin->GetCalTime();
+		fCalCharge=origin->GetCalCharge();
+		fDigitType=origin->GetDigitType();
+		fDetectorID=origin->GetDetectorID();
+		fIsFiltered=origin->GetFilterStatus();
+
+	}
 	~RecoDigit() {/*ANNIERecoObjectTable::Instance()->DeleteDigit();*/}
 
 	bool operator<(const RecoDigit other) const {
@@ -44,6 +55,7 @@ class RecoDigit : public SerialisableObject{
 	inline double              GetCalTime() const {return fCalTime;}
 	inline double              GetCalCharge() const {return fCalCharge;}
 	inline bool                GetFilterStatus() const {return fIsFiltered;}
+	inline vector<int>		GetClusteredModes() { return fClusterMode; }
 	inline int         				 GetDigitType() const {return fDigitType;}
 	inline int         				 GetDetectorID() const {return fDetectorID;}
 	inline std::vector<int> GetParents() const {return Parents;}
@@ -57,6 +69,8 @@ class RecoDigit : public SerialisableObject{
 	inline void                SetFilter(bool pass = 1) { fIsFiltered = pass;}
   inline void                ResetFilter() {SetFilter(0);}
   inline void                PassFilter() {SetFilter(1);}
+  inline void				AddCluster(int InClusterMode) {fClusterMode.push_back(InClusterMode); }
+  inline void				UnCluster(){fClusterMode.pop_back(); }
   inline void SetParents(std::vector<int> parentsin) { Parents = parentsin; }
 
 	bool Print() {
@@ -76,6 +90,7 @@ class RecoDigit : public SerialisableObject{
   double fCalTime;
   double fCalCharge; 
   bool fIsFiltered;
+  vector<int> fClusterMode;
   int fDigitType;
   int fDetectorID;
   std::vector<int> Parents;

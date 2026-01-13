@@ -8,14 +8,6 @@ ClusterSearcher* ClusterSearcher::Instance()
     fgClusterSearcher = new ClusterSearcher();
   }
 
-  if( !fgClusterSearcher ){
-    assert(fgClusterSearcher);
-  }
-
-  if( fgClusterSearcher ){
-
-  }
-
   return fgClusterSearcher;
 }
 
@@ -26,7 +18,7 @@ ClusterSearcher::~ClusterSearcher() {
 }
 
 bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
-
+    if(verbosity)cout<<"Initializing ClusterSearcher"<<endl;
   /////////////////// Usefull header ///////////////////////
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
@@ -34,31 +26,12 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
   m_data= &data; //assigning transient data pointer
   /////////////////////////////////////////////////////////////////
   
-  // Default Clustering parameters
-  fConfig = ClusterSearcher::kPulseHeightAndClusters;
-  fPmtMinPulseHeight = 5.0;     // minimum pulse height (PEs) //Ioana... initial 1.0
-  fPmtNeighbourRadius = 50.0;  // clustering window (cm) //Ioana... intial 300.0
-  fPmtMinNeighbourDigits = 2;   // minimum neighbouring digits //Ioana.... initial 2
-  fPmtClusterRadius = 50.0;    // clustering window (cm) //Ioana... initia 300.0
-  fMinClusterDigits = 2;    // minimum clustered digits
-  fPmtTimeWindowN = 10;        // timing window for neighbours (ns)
-  fPmtTimeWindowC = 10;        // timing window for clusters (ns)
-  fPmtMinHitsPerCluster = -1;   //min # of hits per cluster //Ioana 
-  fisMC = 1;			//default: MC 
- 
-  fLappdMinPulseHeight = -1.0;     // minimum pulse height (PEs) //Ioana... initial 1.0
-  fLappdNeighbourRadius = 25.0;  // clustering window (cm) //Ioana... intial 300.0
-  fLappdMinNeighbourDigits = 5;   // minimum neighbouring digits //Ioana.... initial 2
-  fLappdClusterRadius = 25.0;    // clustering window (cm) //Ioana... initia 300.0
-  fLappdTimeWindowN = 10;        // timing window for neighbours (ns)
-  fLappdTimeWindowC = 10;        // timing window for clusters (ns)
-  fLappdMinHitsPerCluster = 5;   //min # of hits per cluster //Ioana 
+
   
   /// Get the Tool configuration variables
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("IsMC",fisMC);
   m_variables.Get("ClusterMode",fClusterMode);
-  m_variables.Get("Config",fConfig);
   m_variables.Get("PmtMinPulseHeight", fPmtMinPulseHeight);
   m_variables.Get("PmtNeighbourRadius", fPmtNeighbourRadius);
   m_variables.Get("PmtMinNeighbourDigits", fPmtMinNeighbourDigits);
@@ -80,7 +53,6 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
   /// Fill map with settings of ClusterSearcher
   fClusteringParam = new std::map<std::string,double>;
   fClusteringParam->emplace("ClusterMode",fClusterMode);
-  fClusteringParam->emplace("Config",fConfig);
   fClusteringParam->emplace("PmtMinPulseHeight",fPmtMinPulseHeight);
   fClusteringParam->emplace("PmtNeighbourRadius",fPmtNeighbourRadius);
   fClusteringParam->emplace("PmtMinNeighbourDigits",fPmtMinNeighbourDigits);
@@ -95,11 +67,7 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
   fClusteringParam->emplace("LappdTimeWindowC",fLappdTimeWindowC);
   fClusteringParam->emplace("MinClusterDigits",fMinClusterDigits);
 
-  if (fConfig!=0 && fConfig !=1 && fConfig !=2 && fConfig !=3 && fConfig !=4){
-    Log("ClusterSearcher tool: Configuration <"+std::to_string(fConfig)+"> not recognized. Setting Config 3 (kPulseHeightAndClusters)",v_error,verbosity);
-    fConfig = ClusterSearcher::kPulseHeightAndClusters;
-  }
-
+  Log("ClusterSearcher " + to_string(fClusterMode) + " configs Initialized", v_debug, verbosity);
   if (!fisMC){
     ifstream file_singlepe(singlePEgains.c_str());
     unsigned long temp_chankey;
@@ -112,6 +80,7 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
     file_singlepe.close();
     m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
   }
+  Log("ClusterSearcher " + to_string(fClusterMode) + " !MC Initialized", v_debug, verbosity);
 
   // vector of selected digits
   fSelectAll = new std::vector<RecoDigit*>;
@@ -121,8 +90,8 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
   // only for test 
   fSelectByTruthInfo = new std::vector<RecoDigit*>; 
   // vector of clusters
-  fClusterList = new std::vector<RecoCluster*>;
-  fRecoClusters = new std::vector<RecoCluster*>;
+  fClusterList = new std::vector<RecoCluster>;
+  fRecoClusters = new std::vector<RecoCluster>;
 
   //Set clustering parameters in the RecoEvent store
   std::map<std::string, double>* pre_ClusteringParam = nullptr; // read existing container for parameters
@@ -132,7 +101,7 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
     pre_ClusteringParam->insert(fClusteringParam->begin(), fClusteringParam->end());
     //m_data->Stores.at("RecoEvent")->Set("ClusteringParameters", pre_ClusteringParam);   
   }
-
+  Log("ClusterSearcher "+to_string(fClusterMode)+" Initialized",v_debug,verbosity);
   return true;
 }
 
@@ -191,57 +160,25 @@ bool ClusterSearcher::Execute(){
     digits->at(n)->ResetFilter();
   }
   
-  // Run Clustering
-  // ================
-  //std::vector<RecoDigit*>* SelectDigitList = Run(digits); // Cluster digits for muon candidates
-  
   // Set Digit Filter
   // ==========
-  //for(int n=0; n<int(SelectDigitList->size()); n++ ) {
-  //	RecoDigit* SelectDigit = (RecoDigit*)(SelectDigitList->at(n));
-  //  SelectDigit->PassFilter();
-  //}
   SelectDigits(digits);
   
   fRecoClusters = this->RecoClusters(digits);
   // Digit clustering done!
   // =====
-
-  /*RecoCluster* dummyCluster1 = new RecoCluster();
-  Position pos(10,10,10);
-  RecoDigit* dummyDigit1 = new RecoDigit(0,pos,1,10,10,5);
-  dummyCluster1->AddDigit(dummyDigit1);
-  pos.SetX(20);
-  RecoDigit* dummyDigit2 = new RecoDigit(0,pos,1,11,10,7);
-  dummyCluster1->AddDigit(dummyDigit2);
-  dummyCluster1->CalcParameters();
-
-  fRecoClusters->push_back(dummyCluster1);
-  Log("dummyCluster1 loaded in.  Size of fRecoCLusters: "+to_string(fRecoClusters->size()),v_debug,verbosity);
-
-  RecoCluster* dummyCluster2 = new RecoCluster();
-  Position pos2(20, 20, 10);
-  RecoDigit* dummyDigit3 = new RecoDigit(0, pos2, 1, 10, 10, 9);
-  dummyCluster2->AddDigit(dummyDigit3);
-  pos2.SetX(30);
-  RecoDigit* dummyDigit4 = new RecoDigit(0, pos2, 1, 11, 10, 11);
-  dummyCluster2->AddDigit(dummyDigit4);
-  dummyCluster2->CalcParameters();
-
-  fRecoClusters->push_back(dummyCluster2);
-  Log("dummyCluster2 loaded in.  Size of fRecoClusters: "+to_string(fRecoClusters->size()),v_debug,verbosity);
-  */
   
   pre_RecoClusters = nullptr;   // to read existing clusters
   bool cluster_status = m_data->Stores.at("RecoEvent")->Get("RecoClusters", pre_RecoClusters);
   
   Log("ClusterSearcher Tool: Final count of clusters: "+to_string(fRecoClusters->size()),v_debug,verbosity);
   if(!cluster_status) {
-      pre_RecoClusters=new std::vector<RecoCluster*>;
+      pre_RecoClusters=new std::vector<RecoCluster>;
       for (int i = 0; i < fRecoClusters->size(); i++) {
           pre_RecoClusters->push_back(fRecoClusters->at(i));
       }
     fIsHitClusteringDone = true;
+    Log("Hit Clustering done",v_debug,verbosity);
     m_data->Stores.at("RecoEvent")->Set("HitClusteringDone", fIsHitClusteringDone);
     m_data->Stores.at("RecoEvent")->Set("RecoClusters", pre_RecoClusters); 
   }
@@ -273,10 +210,10 @@ bool ClusterSearcher::Finalise(){
   return true;
 }
 
-void ClusterSearcher::Config(int config)
+/*void ClusterSearcher::Config(int config)
 {
   ClusterSearcher::Instance()->SetConfig(config);
-}
+}*/
 
 void ClusterSearcher::PmtMinPulseHeight(double min)
 {
@@ -319,7 +256,6 @@ void ClusterSearcher::PrintParameters()
   
   std::cout << "  Clustering Parameters: " << std::endl
             << "   ClusterMode = " << fClusterMode<< std::endl
-            << "   Config = " << fConfig<< std::endl
             << "   PmtMinPulseHeight = " << fPmtMinPulseHeight << std::endl
             << "   PmtNeighbourRadius = " << fPmtNeighbourRadius << std::endl
             << "   PmtMinNeighbourDigits = " << fPmtMinNeighbourDigits << std::endl
@@ -339,57 +275,6 @@ void ClusterSearcher::Reset()
 {
 
   return;
-}
-
-std::vector<RecoDigit*>* ClusterSearcher::Run(std::vector<RecoDigit*>* DigitList)
-{
-  if(verbosity>v_debug) std::cout << " *** ClusterSearcher::Run(...) *** " << std::endl;
-  
-  // input digit list
-  // ================
-  std::vector<RecoDigit*>* InputList = DigitList;
-  std::vector<RecoDigit*>* OutputList = DigitList;
-  
-  // Select all digits
-  // =================
-  InputList = ResetDigits(OutputList); 
-  OutputList = (std::vector<RecoDigit*>*)(this->SelectAll(InputList));
-  OutputList = SelectDigits(OutputList);
-  if( fConfig==ClusterSearcher::kNone ) return OutputList;
-  
-  // Select by pulse height
-  // ======================
-  InputList = ResetDigits(OutputList);
-  OutputList = (std::vector<RecoDigit*>*)(this->SelectByPulseHeight(InputList));
-  OutputList = SelectDigits(OutputList);
-  if( fConfig==ClusterSearcher::kPulseHeight ) return OutputList;
-
-  // Select using neighbouring digits
-  // ================================
-  InputList = ResetDigits(OutputList);
-  OutputList = (std::vector<RecoDigit*>*)(this->SelectByNeighbours(InputList));
-  OutputList = SelectDigits(OutputList);
-  if( fConfig==ClusterSearcher::kPulseHeightAndNeighbours ) return OutputList;
-  	
-  // Select using clustered digits
-  // =============================
-  InputList = ResetDigits(OutputList);
-  OutputList = (std::vector<RecoDigit*>*)(this->SelectByClusters(InputList));
-  OutputList = SelectDigits(OutputList);
-  if( fConfig==ClusterSearcher::kPulseHeightAndClusters ) return OutputList;
-  	
-  if (fisMC){
-    // Select using truth information (for simulation test only)
-    // =============================
-    InputList = ResetDigits(OutputList);
-    OutputList = (std::vector<RecoDigit*>*)(this->SelectByTruthInfo(InputList));
-    OutputList = SelectDigits(OutputList);
-    if( fConfig==ClusterSearcher::kPulseHeightAndTruthInfo ) return OutputList;
-  }
-
-  // return vector of selected digits
-  // ================================
-  return OutputList;
 }
 
 // Set all filter status to 0 (default is 1)
@@ -596,14 +481,15 @@ std::vector<RecoDigit*>* ClusterSearcher::SelectByClusters(std::vector<RecoDigit
 
   // run clustering algorithm
   // ========================
-  std::vector<RecoCluster*>* ClusterList = (std::vector<RecoCluster*>*)(this->RecoClusters(DigitList));
+  std::vector<RecoCluster>* ClusterList = RecoClusters(DigitList);
 
   for(int icluster=0; icluster<int(ClusterList->size()); icluster++ ){
-    RecoCluster* Cluster = (RecoCluster*)(ClusterList->at(icluster));
+    RecoCluster Cluster = (ClusterList->at(icluster));
     fRecoClusters->push_back(Cluster);    
 
-    for(int idigit=0; idigit<Cluster->GetNDigits(); idigit++ ){
-      RecoDigit* Digit = (RecoDigit*)(Cluster->GetDigit(idigit));
+    for(int idigit=0; idigit<Cluster.GetNDigits(); idigit++ ){
+      RecoDigit* Digit = new RecoDigit;
+      *Digit=(Cluster.GetDigit(idigit));
       fSelectByClusters->push_back(Digit);
     }
   }
@@ -616,7 +502,7 @@ std::vector<RecoDigit*>* ClusterSearcher::SelectByClusters(std::vector<RecoDigit
   return fSelectByClusters;
 }
 
-std::vector<RecoCluster*>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>* DigitList)
+std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>* DigitList)
 {  
 
   // delete cluster digits
@@ -760,22 +646,38 @@ std::vector<RecoCluster*>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>
 	        
         }
       } 
+
 	//std::cout <<"vClusterDigitCollection.size() == "<<vClusterDigitCollection.size()<<std::endl;
       if( (int)vClusterDigitCollection.size()>=fMinClusterDigits ){
-        RecoCluster* cluster = new RecoCluster();
-        cluster->SetClusterMode(fClusterMode);
-        fClusterList->push_back(cluster);
+        RecoCluster cluster;
+        cluster.SetClusterMode(fClusterMode);
+        
+        Log("Adding Digits",v_debug,verbosity);
+        vector<RecoDigit>* ClusteredDigits=new vector<RecoDigit>;
 
         for(int jdigit=0; jdigit<int(vClusterDigitCollection.size()); jdigit++ ){
+            cout<<"Check 1\n";
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
-          RecoDigit* recodigit = (RecoDigit*)(cdigit->GetRecoDigit());
-          cluster->AddDigit(recodigit);        
+          cout<<"check 2\n";
+          RecoDigit* arecodigit=cdigit->GetRecoDigit();
+          arecodigit->AddCluster(fClusterMode);
+          RecoDigit brecodigit(arecodigit);
+          ClusteredDigits->push_back(brecodigit);
+          cout<<" check 3\n";
+          //cluster.AddDigit(*arecodigit);        
         }
-        cluster->CalcParameters();
+        cluster.SetDigits(ClusteredDigits);
+        ClusteredDigits = nullptr;
+        Log("Cluster has " + to_string(cluster.GetNDigits()) + " digits", v_debug, verbosity);
+        Log("ready to caluclate parameters.",v_debug,verbosity);    
+        cluster.CalcParameters();
         Log("ClusterSearcher: Clusters made: "+to_string(fClusterList->size()),v_debug,verbosity);
+        fClusterList->push_back(cluster);
+        
       }
     }
   }
+  
 
   std::cout <<"Number of clusters = "<<fClusterList->size()<<std::endl;
   // return vector of clusters

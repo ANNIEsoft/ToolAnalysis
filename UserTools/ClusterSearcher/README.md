@@ -44,7 +44,8 @@ LappdTimeWindowN            1               #neighbouring time window [ns]
 LappdTimeWindowC            1               #clustering time window [ns]                   
 LappdMinHitsPerCluster      5			#number of digits per cluster	
 MinClusterDigits            50		#minimum clustered digits	(LAPPD+PMT)		
-MinClusterDigits            4			#minimum clustered digits	(PMT-only)	
+MinClusterDigits            4			#minimum clustered digits	(PMT-only)
+SinglePEGains		/path/to/gains/file	#file in which SPE information can be found for PMT charge conversions; only needed on Data	
 FirstRun		    1		#Debug input for differentiating first iteration from later iterations
 
 ```

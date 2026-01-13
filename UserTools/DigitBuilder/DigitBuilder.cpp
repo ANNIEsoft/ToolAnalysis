@@ -18,7 +18,6 @@ DigitBuilder::~DigitBuilder() {
 bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 
   /////////////////// Usefull header ///////////////////////
-  cout<<"Initializing Tool DigitBuilder"<<endl;
   if(configfile!="")  m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
 
@@ -103,7 +102,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
         //Loop over lines, collect all detector data (should only be one line here)
         while (getline(file_singlepe, line)) {
             if (verbosity > 3) std::cout << line << std::endl; //has our stuff;
-            if (line.find("#") != std::string::npos) continue;
+            if (line.empty() || line[0] == '#') continue;
             std::vector<std::string> DataEntries;
             boost::split(DataEntries, line, boost::is_any_of(","), boost::token_compress_on);
             int channelkey = -9999;
@@ -115,12 +114,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
     }
 
 
-    /*while (!file_singlepe.eof()) {
-      file_singlepe >> temp_chankey >> temp_gain;
-      if (file_singlepe.eof()) break;
-      pmt_gains.emplace(temp_chankey,temp_gain);
-      Log("DigitBuilder Tool: still collecting SPE gains: "+to_string(temp_gain), v_debug, verbosity);
-    }*/
+    
     Log("DigitBuilder Tool: SPE gains done",v_debug,verbosity);
     file_singlepe.close();
 
@@ -176,16 +170,6 @@ bool DigitBuilder::Execute(){
           Log("DigitBuilder Tool: ERROR retrieving hits in Data mode!",v_error,verbosity);
           return false;
       }
-    /*auto get_clusters = m_data->CStore.Get("ClusterMap", m_all_clusters);
-    if (!get_clusters){
-      Log("DigitBuilder Tool: ERROR retrieving clustered hits (ClusterMap) in Data mode!",v_error,verbosity);
-      return false;
-    }
-    auto get_clusters_chankey = m_data->CStore.Get("ClusterMapDetkey",m_all_clusters_detkey);
-    if (!get_clusters_chankey){
-      Log("DigitBuilder Tool: ERROR retrieving clustered chankeys (ClusterMapDetkey) in Data mode!",v_error,verbosity);
-      return false;
-    }*/
   }
 
   /// Build RecoDigit
@@ -201,7 +185,6 @@ bool DigitBuilder::Execute(){
 }
 
 bool DigitBuilder::Finalise(){
-  //delete fDigitList; fDigitList = 0;		//Don't delete pointer to fDigitList, will be deleted by the BoostStore!
   Log("DigitBuilder exitting",v_message,verbosity);
   return true;
 }
@@ -301,7 +284,7 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
           for(MCHit& ahit : hits){
               Log("This HIT'S TIME AND CHARGE: " + to_string(ahit.GetTime()) + ", " + to_string(ahit.GetCharge()),v_debug,verbosity);
             double hitTime = ahit.GetTime()*1.0;
-          	if(hitTime>-10 && hitTime<70) {
+          	if(hitTime>-10 && hitTime<AcqTimeWindow/1000) {
 			  hitTimes.push_back(ahit.GetTime()*1.0); 
               hitCharges.push_back(ahit.GetCharge());
               //hitIDs.push_back(ahit.GetHitID());
@@ -356,7 +339,6 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
 				  }
         }else{
 			    for(MCHit& ahit : hits){
-				  	//if(v_message<verbosity) ahit.Print(); // << VERY verbose
 				  	// get calibrated PMT time (Use the MC time for now)
 				  	calT = ahit.GetTime()*1.0; 
             calQ = ahit.GetCharge(); 
@@ -365,7 +347,6 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
             calT = frand.Gaus(calT, 1.0);
 				  	digitType = RecoDigit::PMT8inch;
 				  	RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
-				    //recoDigit.Print();
                     //recoDigit.SetHitIDs(hitIDs);
 				    fDigitList->push_back(recoDigit); 
           }
@@ -575,159 +556,6 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
             
         }
     }
-
-
-    
-
-    
-    /*
-	
-	/// m_all_clusters is a std::map<double,std::vector<Hit>>
-        
-	if (m_all_clusters && m_all_clusters_detkey){
-          int clustersize = m_all_clusters->size();
-          Log("Clustersize of m_all_clusters: " + to_string(clustersize),v_debug,verbosity);
-          bool clusters_available = false;
-          bool muon_available = false;
-          if (clustersize != 0) clusters_available = true;
-          if (clusters_available){
-	  //determine the main cluster (max charge and in [0 ... 2000ns] time window)
-	  double max_cluster = 0;
-          double max_charge = 0;
-          for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-            std::vector<Hit>&Hits = apair.second;
-            double time = 0;
-            int hits=0;
-            double charge = 0;
-            for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-              hits++;
-              time+=Hits.at(i_hit).GetTime();
-              charge+=Hits.at(i_hit).GetCharge();
-          }
-          if (hits>0) {
-            time/=hits;
-          }
-          if (time > 2000.) continue;	//not a beam muon if not in primary window
-	  if (charge > max_charge) {
-            muon_available = true;
-            max_charge = charge;
-            max_cluster = apair.first;
-          }
-	}
-	if (muon_available){
-	  std::vector<Hit>& Hits = m_all_clusters->at(max_cluster);
-          std::vector<unsigned long> detkeys = m_all_clusters_detkey->at(max_cluster);
-          int hits_pmt = 0;
-
-          std::map<unsigned long,std::vector<double>> hitTimes;
-          std::map<unsigned long,std::vector<double>> hitCharges;
-
-	  Log("DigitBuilder Tool: Num PMT Clustered Digits = "+to_string(Hits.size()),v_message, verbosity);
-	  for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-	    Hit ahit = Hits.at(i_hit);
-            unsigned long chankey = detkeys.at(i_hit);
-	    
-
-	    if (hitTimes.find(chankey)!=hitTimes.end()){
-	      hitTimes.at(chankey).push_back(ahit.GetTime());
-	      hitCharges.at(chankey).push_back(ahit.GetCharge());
-            }
-	    else {
-	      std::vector<double> temp_hittimes{ahit.GetTime()};
-	      std::vector<double> temp_hitcharges{ahit.GetCharge()};
-              hitTimes.emplace(chankey,temp_hittimes);
-              hitCharges.emplace(chankey,temp_hitcharges);
-	    }
-          }
-
-          if(fParametricModel){
-            Log("DigitBuilder tool: Use Parametric Model to create digits",v_message,verbosity);
-            // Do median and sum
-            std::map<unsigned long,std::vector<double>>::iterator it, it2;
-            for (it=hitTimes.begin(),it2 = hitCharges.begin(); it != hitTimes.end(), it2 != hitCharges.end(); it++, it2++){
-	      unsigned long chankey = it->first;
-	      std::vector<double> hittimes = it->second;
-	      std::vector<double> hitcharges = it2->second;
-	      det = fGeometry->ChannelToDetector(chankey);
-	      int PMTId = channelkey_to_pmtid.at(chankey);  //PMTID In WCSim
-	      if(det==nullptr){
-	        Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
-	        continue;
-	      }
-              // convert the WCSim coordinates to the ANNIEreco coordinates
-	      // convert the unit from m to cm
-	      pos_sim = det->GetDetectorPosition();
-	      pos_sim.UnitToCentimeter();
-	      pos_reco.SetX(pos_sim.X()+xshift);
-	      pos_reco.SetY(pos_sim.Y()+yshift);
-	      pos_reco.SetZ(pos_sim.Z()+zshift);
-
-              std::sort(hittimes.begin(), hittimes.end());
-              size_t timesize = hittimes.size();
-              if (timesize == 0) continue;
-              if (timesize % 2 == 0){
-                calT = (hittimes.at(timesize/2 - 1) + hittimes.at(timesize/2))/2;
-              } else {
-                calT = hittimes.at(timesize/2);
-              }
-              calQ = 0.;
-              for(std::vector<double>::iterator it3 = hitcharges.begin(); it3 != hitcharges.end(); ++it3){
-                calQ += *it3;
-              }
- 
-                Log("PMT position (X<Y<Z): " + to_string(pos_reco.X()) + "," + to_string(pos_reco.Y()) + "," + to_string(pos_reco.Z()),v_debug,verbosity);
-                Log("PMT Charge,Time: " + to_string(calQ) + "," + to_string(calT),v_debug,verbosity);
-
-	      double calQ_temp = calQ;
-	      if (pmt_gains.find(chankey) != pmt_gains.end() && pmt_gains.at(chankey) > 0.0){
-                calQ_temp = calQ / pmt_gains.at(chankey);
-              }
-              if(calQ_temp>fDigitChargeThr) {
-                digitType = RecoDigit::PMT8inch;
-	        RecoDigit recoDigit(region, pos_reco, calT, calQ_temp, digitType, PMTId);
-            
-            //recoDigit.SetHitIDs(hitIDs);
-                fDigitList->push_back(recoDigit); 
-	      }
-            }
-          } else {
-            std::map<unsigned long,std::vector<double>>::iterator it, it2;
-            for (it=hitTimes.begin(), it2 = hitCharges.begin(); it != hitTimes.end(), it2 != hitCharges.end(); it++, it2++){
-              unsigned long chankey = it->first;
-              std::vector<double> hittimes = it->second;
-              std::vector<double> hitcharges = it2->second;
-              det = fGeometry->ChannelToDetector(chankey);
-              int PMTId = channelkey_to_pmtid.at(chankey);  //PMTID In WCSim
-              if(det==nullptr){
-                Log("DigitBuilder Tool: Detector not found! ",v_message,verbosity);
-                continue;
-              }
-              pos_sim = det->GetDetectorPosition();
-              pos_sim.UnitToCentimeter();
-              pos_reco.SetX(pos_sim.X()+xshift);
-              pos_reco.SetY(pos_sim.Y()+yshift);
-              pos_reco.SetZ(pos_sim.Z()+zshift);
-                
-              for (int i=0; i< int(hitcharges.size()); i++){
-		calT = hittimes.at(i);
-                calQ = hitcharges.at(i);
-
-                  Log("PMT position (X<Y<Z): " + to_string(pos_reco.X()) + "," + to_string(pos_reco.Y()) + "," + to_string(pos_reco.Z()),v_debug,verbosity);
-                  Log("PMT Charge,Time: " + to_string(calQ) + "," + to_string(calT),v_debug,verbosity);
-
-                digitType = RecoDigit::PMT8inch;
-                RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, PMTId);
-                //recoDigit.SetHitIDs(hitIDs);
-		fDigitList->push_back(recoDigit);
-               }
-             }
-           } 
-         }
-       }
-     } else {
-       Log("No Clustered Hits found.",v_warning,verbosity);
-       return false;
-     }*/
      
      return true;
 
@@ -794,20 +622,11 @@ void DigitBuilder::CollectMCPMTHits() {
 
 
             for (MCHit& ahit : hits) {
-                //if (ahit.GetTime() < end_of_window_time_cut * AcqTimeWindow) {
+
                     hit_times.push_back(ahit.GetTime());
-                //}
+
             }
-            /*for (MCHit& ahit : hits) {
-                //std::cout <<"Key: "<<detectorkey<<", charge "<<ahit.GetCharge()<<", time "<<ahit.GetTime()<<std::endl;
-                //if (ahit.GetTime() > 2000.) std::cout <<"Found hit later than 2us! Hit time : "<<ahit.GetTime()<<", chankey: "<<chankey<<std::endl;
-                if (ahit.GetTime() < end_of_window_time_cut * AcqTimeWindow) {
-                    //Make MC more like data --> combine multiple photons if they are within a 10ns range
-                    //hit times can only be recorded with 2ns precision --> possible times are 0ns, 2ns, 4ns, ...
-                    hits_2ns_res.push_back(2 * (int(ahit.GetTime()) / 2.) + (int(ahit.GetTime()) % 2));
-                    hits_2ns_res_charge.push_back(ahit.GetCharge());
-                }
-            }*/
+            
 
             if (hit_times.size() == 0) {
                 Log("DigitBuilder tool: no hits in window.",v_message,verbosity);
@@ -817,32 +636,30 @@ void DigitBuilder::CollectMCPMTHits() {
             //Combine multiple MC hits to one pulse
             std::sort(hit_times.begin(), hit_times.end());
             for (int i_hit = 0; i_hit < (int)hit_times.size(); i_hit++) {
-                Log("check 0: hits, hit_times, datalike_hits, parents size: "+to_string(hits.size())+" "+to_string(hit_times.size())+" "+to_string(datalike_hits.size())+" " + to_string(hits.at(i_hit).GetParents()->size()), v_debug, verbosity);
+                Log("Hits, hit_times, datalike_hits, parents size: "+to_string(hits.size())+" "+to_string(hit_times.size())+" "+to_string(datalike_hits.size())+" " + to_string(hits.at(i_hit).GetParents()->size()), v_debug, verbosity);
                 double hit1 = hit_times.at(i_hit);
                 if(hit1>end_of_window_time_cut * AcqTimeWindow) continue;
                 int j_hit=0;
                 if (datalike_hits.size() == 0) {
-                    Log("check 0-b", v_debug, verbosity);
+
                     
                     datalike_hits.push_back(hit1);
                     first_time=hit1;
 
                     datalike_hits_charge.push_back(hits.at(i_hit).GetCharge());
-                    Log("check 0-c", v_debug, verbosity);
                     if (hits.at(i_hit).GetParents()->size() == 0) {
                         Parents_by_hit.push_back(-5);
                         Log("found hit with no parent at time "+to_string(hits.at(i_hit).GetTime()),v_debug,verbosity);
                     }
                     else {
                         Parents_by_hit.push_back(hits.at(i_hit).GetParents()->at(0));
-                    Log("check 0-d: hit parent " + to_string(hits.at(i_hit).GetParents()->at(0)) + " and time: " + to_string(hits.at(i_hit).GetTime()), v_debug, verbosity);
                     }
 
                     temp_times.push_back(hit1);
                 }
                 else {
                     bool new_pulse = false;
-                    Log("check 0-a", v_debug, verbosity);
+
                     for (int j_hit = 0; j_hit < (int)datalike_hits.size(); j_hit++) {
                         
                         if (fabs(first_time - hit1) < 10.) {
@@ -856,7 +673,7 @@ void DigitBuilder::CollectMCPMTHits() {
                             temp_times.push_back(hit1);
                             
                         }
-                        Log("check 1-"+to_string(j_hit)+" new_pulse: "+to_string(new_pulse), v_debug, verbosity);
+
                     }
 
                     if (new_pulse) {
@@ -870,7 +687,7 @@ void DigitBuilder::CollectMCPMTHits() {
                         else {
                             mid_time = temp_times.at(temp_times.size() / 2);
                         }
-                        Log("check 1-a", v_debug, verbosity);
+
                         datalike_hits.at(j_hit)=mid_time;  //datalike_hits.push_back(mid_time);      //Only count as a new pulse if it was 10ns away from every other pulse
                         datalike_hits_charge.push_back(hits.at(i_hit).GetCharge());
                         j_hit++;
@@ -880,7 +697,7 @@ void DigitBuilder::CollectMCPMTHits() {
                         if (hits.at(i_hit).GetParents()->size() == 0) Parents_by_hit.push_back(-5);
                         else {
                             Parents_by_hit.push_back(hits.at(i_hit).GetParents()->at(0));
-                        Log("check 0-e: hit parent " + to_string(hits.at(i_hit).GetParents()->at(0)) + " and time: " + to_string(hits.at(i_hit).GetTime()), v_debug, verbosity);
+                        Log("Hit parent " + to_string(hits.at(i_hit).GetParents()->at(0)) + " and time: " + to_string(hits.at(i_hit).GetTime()), v_debug, verbosity);
                         }
                         temp_times.clear();
 
@@ -888,19 +705,19 @@ void DigitBuilder::CollectMCPMTHits() {
                 }
             }
 
-            Log("check 2", v_debug, verbosity);
+
             //hits.clear();
             
             for (int i_hit = 0; i_hit < (int)datalike_hits.size(); i_hit++) {
-                Log("check 1", v_debug, verbosity);
+
                 calT = datalike_hits.at(i_hit);
-                Log("check 2", v_debug, verbosity);
+
                 if (MCPMTResolution > 0) calT= frand.Gaus(calT, MCPMTResolution);
                 calQ = datalike_hits_charge.at(i_hit);
-                Log("check 3",v_debug,verbosity);
+
                 RecoDigit recoDigit(-999 /*region*/, pos_reco, calT, calQ, RecoDigit::PMT8inch, PMTId);
                 temp_parents.push_back(Parents_by_hit.at(i_hit));
-                Log("check 4",v_debug,verbosity);
+
                 recoDigit.SetParents(temp_parents);
                 fDigitList->push_back(recoDigit);
                 temp_parents.clear();

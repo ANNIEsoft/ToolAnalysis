@@ -30,8 +30,8 @@ class ClusterSearcher: public Tool {
 
   static ClusterSearcher* Instance();
 
-  static void Config(int config);
-  static void ClusterType(int ctype);
+  //static void Config(int config);
+  //static void ClusterType(int ctype);
   static void PmtMinPulseHeight(double min);
   static void PmtNeighbourRadius(double radius);
   static void PmtNeighbourDigits(int digits);
@@ -42,7 +42,6 @@ class ClusterSearcher: public Tool {
 
   void PrintParameters();
 
-  void SetConfig(int config)               { fConfig = config; }
   void SetClusterMode(int cmode)		{fClusterMode = cmode;}
   void SetPmtMinPulseHeight(double min)       { fPmtMinPulseHeight = min; }
   void SetPmtNeighbourRadius(double radius)   { fPmtNeighbourRadius = radius; }
@@ -57,11 +56,10 @@ class ClusterSearcher: public Tool {
   void SetLappdClusterRadius(double radius)     { fLappdClusterRadius = radius; }
   void SetLappdTimeWindowNeighbours(double windowN)        { fLappdTimeWindowN = windowN; }
   void SetLappdTimeWindowClusters(double windowC)        { fLappdTimeWindowC = windowC; }
-  void LoadConfigFile(string configfilename);
+  //void LoadConfigFile(string configfilename);
   void SetMinClusterDigits(int digits)        { fMinClusterDigits = digits; }
   
 
-  std::vector<RecoDigit*>* Run(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* ResetDigits(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* SelectDigits(std::vector<RecoDigit*>* digitlist);
   void SelectDigits(std::vector<RecoDigit>* digitlist);
@@ -70,15 +68,13 @@ class ClusterSearcher: public Tool {
   std::vector<RecoDigit*>* SelectByNeighbours(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* SelectByClusters(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* SelectByTruthInfo(std::vector<RecoDigit*>* digitlist); //use truth information. Only for testing the code
-  std::vector<RecoCluster*>* RecoClusters(std::vector<RecoDigit*>* digitlist);
+  std::vector<RecoCluster>* RecoClusters(std::vector<RecoDigit*>* digitlist);
   
 
 
  private:
   void Reset();
   
-  // running mode
-  int fConfig;
   
   // clustering mode
   int fClusterMode;
@@ -128,11 +124,11 @@ class ClusterSearcher: public Tool {
   std::vector<RecoDigit*>* fSelectByTruthInfo;
 
   // vectors of clusters
-  std::vector<RecoCluster*>* fClusterList;
+  std::vector<RecoCluster>* fClusterList;
  
   // vector of clusters (accessible to the CStore)
-  std::vector<RecoCluster*>* fRecoClusters = nullptr;  
-  std::vector<RecoCluster*>* pre_RecoClusters = nullptr;
+  std::vector<RecoCluster>* fRecoClusters = nullptr;  
+  std::vector<RecoCluster>* pre_RecoClusters = nullptr;
  	
   // true vertex
   RecoVertex* fTrueVertex = 0; 
