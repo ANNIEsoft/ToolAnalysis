@@ -421,7 +421,7 @@ void VertexLeastSquares::RunLoop()
             double max_vertical = fGeom->GetTankHalfheight() + fExternalVertexMaxHeight;
 
             if (radial_dist > max_radial || std::abs(dy) > max_vertical) {
-              continue;  // reject this seed
+              continue;  // reject this guess
             }
 
           }
@@ -546,7 +546,7 @@ void VertexLeastSquares::RunLoopMC()
             double max_vertical = fGeom->GetTankHalfheight() + fExternalVertexMaxHeight;
 
             if (radial_dist > max_radial || std::abs(dy) > max_vertical) {
-              continue;  // reject this seed
+              continue;  // reject this guess
             }
 
           }
