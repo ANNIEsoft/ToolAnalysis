@@ -179,98 +179,76 @@ bool VertexLeastSquares::Finalise()
 std::vector<Position> VertexLeastSquares::GenerateVetices()   // this is Andrew's fault there's a typo (and no I'm not going to fix it :) )
 {
 
+  // generate vertices in and outside the tank (+ some buffer if ExternalSeeding is enabled)
+
+  std::vector<Position> vertices;
+  std::vector<double> ys;
+  double yMin = fGeom->GetTankCentre().Y() - fGeom->GetTankHalfheight();
+  double yMax = fGeom->GetTankCentre().Y() + fGeom->GetTankHalfheight();
+  double max_radius = fGeom->GetTankRadius()
+
   if (fExternalSeeding) {
-
-      // generate vertices in and outside the tank (+ some buffer)
-
-      std::vector<Position> vertices;
-
-      std::vector<double> ys;
-      double yMin = fGeom->GetTankCentre().Y() - fGeom->GetTankHalfheight() - fYBuffer;   // tank height +/- Y buffer assigned in config
-      double yMax = fGeom->GetTankCentre().Y() + fGeom->GetTankHalfheight() + fYBuffer;
-      for (double yValue = yMin; yValue <= yMax; yValue += fYSpacing) 
-        ys.push_back(yValue);
-      
-      // generate the x and z values using the sunflower pattern (extending to the radius + buffer)
-      std::vector<double> xs;
-      std::vector<double> zs;
-      double max_radius = fGeom->GetTankRadius() + fRadialBuffer;
-      for (int n = 1; n < fNPlanarPoints+1; ++n) {
-        double rad = ( (n > fNPlanarPoints + fNBoundary) ? 1.0 :
-          sqrt((n+0.5)/(fNPlanarPoints - (fNBoundary+1.)/2.)) );
-
-        // scale to the extended radius
-        rad *= max_radius;
-        rad = rad > max_radius ? max_radius : rad;
-
-        double angle = 2. * pi * n / phisq;
-
-        xs.push_back(rad*cos(angle));
-        zs.push_back(rad*sin(angle));
-      }
-
-      // add vertices from the sunflower layers
-      for (uint yIdx = 0; yIdx < ys.size(); ++yIdx) {
-
-        // Apply a random rotation to each y level to cover more space
-        double rotAng = (double(rand())/RAND_MAX)*2*pi;
-        for (uint xzIdx = 0; xzIdx < fNPlanarPoints; ++xzIdx) {
-          double x = xs[xzIdx];
-          double z = zs[xzIdx];
-
-          vertices.push_back(Position(x*cos(rotAng) - z*sin(rotAng) + fGeom->GetTankCentre().X(),
-              ys[yIdx],
-              z*cos(rotAng) + x*sin(rotAng) + fGeom->GetTankCentre().Z()));
-        }
-      }
-
-      return vertices;
-
-  } else {
-
-      // generate vertices within the tank
-      std::vector<double> ys;
-      double yMin = fGeom->GetTankCentre().Y() - fGeom->GetTankHalfheight();
-      double yMax = fGeom->GetTankCentre().Y() + fGeom->GetTankHalfheight();
-      for (double yValue = yMin; yValue <= yMax; yValue += fYSpacing) 
-        ys.push_back(yValue);
-      
-      // generate the x and z values using the sunflower pattern
-      std::vector<double> xs;
-      std::vector<double> zs;
-      for (int n = 1; n < fNPlanarPoints+1; ++n) {
-        double rad = ( (n > fNPlanarPoints + fNBoundary) ? 1.0 :
-          sqrt((n+0.5)/(fNPlanarPoints - (fNBoundary+1.)/2.)) );
-
-        // Scale the radius to the tank and make sure it's inside
-        rad *= fGeom->GetTankRadius();
-        rad = rad > fGeom->GetTankRadius() ? fGeom->GetTankRadius() : rad;
-
-        double angle = 2. * pi * n / phisq;
-
-        xs.push_back(rad*cos(angle));
-        zs.push_back(rad*sin(angle));
-      }
-
-      std::vector<Position> vertices;
-      for (uint yIdx = 0; yIdx < ys.size(); ++yIdx) {
-
-        // Apply a random rotation to each y level to cover more space
-        double rotAng = (double(rand())/RAND_MAX)*2*pi;
-        for (uint xzIdx = 0; xzIdx < fNPlanarPoints; ++xzIdx) {
-          double x = xs[xzIdx];
-          double z = zs[xzIdx];
-
-          vertices.push_back(Position(x*cos(rotAng) - z*sin(rotAng) + fGeom->GetTankCentre().X(),
-              ys[yIdx],
-              z*cos(rotAng) + x*sin(rotAng) + fGeom->GetTankCentre().Z()));
-        }
-      }
-
-    return vertices;
-
+	yMin -= fYBuffer;
+    yMax += fYBuffer;
+  	max_radius += fRadialBuffer;
   }
+	  
+  for (double yValue = yMin; yValue <= yMax; yValue += fYSpacing) 
+  	ys.push_back(yValue);
+
+  std::vector<double> xs;
+  std::vector<double> zs;
+  for (int n = 1; n < fNPlanarPoints+1; ++n) {
+	double rad = ( (n > fNPlanarPoints + fNBoundary) ? 1.0 :
+	sqrt((n+0.5)/(fNPlanarPoints - (fNBoundary+1.)/2.)) );
+
+	rad *= max_radius;
+	rad = rad > max_radius ? max_radius : rad;
+
+	double angle = 2. * pi * n / phisq;
+
+	xs.push_back(rad*cos(angle));
+	zs.push_back(rad*sin(angle));
+  }
+
+  
+  // generate the x and z values using the sunflower pattern
+  std::vector<double> xs;
+  std::vector<double> zs;
+  double max_radius = fGeom->GetTankRadius() + fRadialBuffer;
+  for (int n = 1; n < fNPlanarPoints+1; ++n) {
+	double rad = ( (n > fNPlanarPoints + fNBoundary) ? 1.0 :
+	  sqrt((n+0.5)/(fNPlanarPoints - (fNBoundary+1.)/2.)) );
+
+	// scale to the extended radius
+	rad *= max_radius;
+	rad = rad > max_radius ? max_radius : rad;
+
+	double angle = 2. * pi * n / phisq;
+
+	xs.push_back(rad*cos(angle));
+	zs.push_back(rad*sin(angle));
+  }
+
+  // add vertices from the sunflower layers
+  std::vector<Position> vertices;
+  for (uint yIdx = 0; yIdx < ys.size(); ++yIdx) {
+
+	// Apply a random rotation to each y level to cover more space
+	double rotAng = (double(rand())/RAND_MAX)*2*pi;
+	for (uint xzIdx = 0; xzIdx < fNPlanarPoints; ++xzIdx) {
+	  double x = xs[xzIdx];
+	  double z = zs[xzIdx];
+
+	  vertices.push_back(Position(x*cos(rotAng) - z*sin(rotAng) + fGeom->GetTankCentre().X(),
+		  ys[yIdx],
+		  z*cos(rotAng) + x*sin(rotAng) + fGeom->GetTankCentre().Z()));
+	}
+  }
+
+  return vertices;
 }
+
 
 //------------------------------------------------------------------------------
 void VertexLeastSquares::EvalAtGuessVertex(util::Matrix &A, util::Vector &b,
