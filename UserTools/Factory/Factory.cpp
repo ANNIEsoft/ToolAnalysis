@@ -180,5 +180,6 @@ if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
 if (tool=="ClusterSearcher") ret=new ClusterSearcher;
 if (tool=="NeutronCheck") ret=new NeutronCheck;
+if (tool=="PrintADCTraces") ret=new PrintADCTraces;
 return ret;
 }

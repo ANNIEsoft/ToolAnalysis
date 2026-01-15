@@ -189,3 +189,4 @@
 #include "LAPPDWaveformDisplay.h"
 #include "ClusterSearcher.h"
 #include "NeutronCheck.h"
+#include "PrintADCTraces.h"

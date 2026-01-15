@@ -140,20 +140,6 @@ bool PhaseIIADCHitFinder::Execute() {
 
       if (mc_waveforms) {
 	      got_raw_data = annie_event->Get("RawADCDataMC", raw_waveform_map);
-	
-        // Some executes are skipped if there are no MCHits or waveforms produced
-	      // Put the cleared maps into the ANNIEEvent to ensure that a downstream
-	      // tool doesn't grab a map from a previous event
-        bool skip = false;
-	      bool got_skip_status = annie_event->Get("SkipExecute", skip);
-        if (got_skip_status && skip) {
-          Log("PhaseIIADCHitFinder: An upstream tool told me to skip this event.",v_warning,verbosity);
-
-          m_data->Stores.at("ANNIEEvent")->Set("RecoADCHits", pulse_map);
-          m_data->Stores.at("ANNIEEvent")->Set("RecoADCAuxHits", aux_pulse_map);
-
-	      return true;
-	      }
       }// end if mc_waveforms
 
     }
@@ -168,7 +154,7 @@ bool PhaseIIADCHitFinder::Execute() {
         verbosity);
       return false;
     }
-    else if ( raw_waveform_map.empty() ) {
+    else if ( raw_waveform_map.empty() && !mc_waveforms ) {
       Log("Error: The PhaseIIADCHitFinder tool found an empty RawADCData entry", v_error,
         verbosity);
       return false;
@@ -197,7 +183,7 @@ bool PhaseIIADCHitFinder::Execute() {
         " entry", v_error, verbosity);
       return false;
     }
-    else if ( calibrated_waveform_map.empty() ) {
+    else if ( calibrated_waveform_map.empty() && !mc_waveforms ) {
       Log("Error: The PhaseIIADCHitFinder tool found an empty CalibratedADCData entry",
         v_error, verbosity);
       return false;

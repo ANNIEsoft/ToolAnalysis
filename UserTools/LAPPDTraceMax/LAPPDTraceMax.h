@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
+#include <cmath>
 
 class LAPPDTraceMax: public Tool {
 
@@ -22,6 +23,7 @@ class LAPPDTraceMax: public Tool {
    double CalcIntegral(Waveform<double> hwav, double lowR, double hiR);
    double CalcIntegralSmoothed(Waveform<double> hwav, double lowR, double hiR);
    std::vector<double> CalcAmp(Waveform<double> hwav, double lowR, double hiR);
+   std::vector<double> CalcMinMaxAmp(Waveform<double> hwav);
    std::vector<double> CalcAmpSmoothed(Waveform<double> hwav, double lowR, double hiR);
    int DimSize;
    double Deltat;
