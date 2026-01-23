@@ -67,11 +67,12 @@ class HitCleaner: public Tool {
   std::vector<RecoDigit*>* FilterByNeighbours(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* FilterByClusters(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* FilterByTruthInfo(std::vector<RecoDigit*>* digitlist); //use truth information. Only for testing the code
-  std::vector<RecoCluster*>* RecoClusters(std::vector<RecoDigit*>* digitlist);
+  std::vector<RecoCluster>* RecoClusters(std::vector<RecoDigit*>* digitlist);
 
 
  private:
   void Reset();
+  void CBCheck(std::vector<RecoDigit*>* unfilteredDigits, std::vector<RecoDigit*>* filteredDigits);
   
   // running mode
   int fConfig;
@@ -120,10 +121,10 @@ class HitCleaner: public Tool {
   std::vector<RecoDigit*>* fFilterByTruthInfo;
 
   // vectors of clusters
-  std::vector<RecoCluster*>* fClusterList;
+  std::vector<RecoCluster>* fClusterList;
  
   // vector of clusters (accessible to the CStore)
-  std::vector<RecoCluster*>* fHitCleaningClusters = nullptr;  
+  std::vector<RecoCluster>* fHitCleaningClusters = nullptr;  
  	
   // true vertex
   RecoVertex* fTrueVertex = 0; 
