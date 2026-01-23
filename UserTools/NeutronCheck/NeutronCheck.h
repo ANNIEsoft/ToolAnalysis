@@ -118,7 +118,6 @@ class NeutronCheck: public Tool {
 	 vector<double> fClusterAS2;
 	 vector<double> fClusterASC;
 	 vector<double> fClusterAMD;
-	 vector<double> fClusterCA;
 	 //vector<double> fClusterSA;
 	 //vector<Position> fClusterCV;
 	 vector<double> fClusterCVX,fClusterCVY,fClusterCVZ,fClusterCVR;

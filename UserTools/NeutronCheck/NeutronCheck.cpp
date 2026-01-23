@@ -55,7 +55,6 @@ bool NeutronCheck::Initialise(std::string configfile, DataModel &data){
   NeutCheckTree->Branch("ClusterCVZ", &fClusterCVZ);
   NeutCheckTree->Branch("ClusterCVR", &fClusterCVR);
   NeutCheckTree->Branch("ClusterAMD", &fClusterAMD);
-  NeutCheckTree->Branch("ClusterCA", &fClusterCA);
 
 
   if(fFinderCompare){
@@ -423,7 +422,7 @@ void NeutronCheck::CSCheck() {
         fClusterAS0.push_back(fRecoClusters->at(i)->GetAS(0));
         fClusterAS1.push_back(fRecoClusters->at(i)->GetAS(1));
         fClusterAMD.push_back(fRecoClusters->at(i)->GetAMD());
-        fClusterCA.push_back(fRecoClusters->at(i)->GetCA());
+
         if(fRecoClusters->at(i)->GetAS(0)>0){
             //AS2RecoCheck->Fill(fRecoClusters->at(i)->GetAS(1)/fRecoClusters->at(i)->GetAS(0));
             fClusterAS2.push_back(fClusterAS1.at(fClusterAS1.size()-1)/fClusterAS0.at(fClusterAS0.size()-1));
@@ -467,7 +466,6 @@ void NeutronCheck::ResetVariables() {
     fClusterCVZ.clear();
     fClusterCVR.clear();
     fClusterAMD.clear();
-    fClusterCA.clear();
     fNeutronMult=0;
     fMCNeutCapTimes.clear();
     fMCNeutCapX.clear();
