@@ -2,8 +2,8 @@
 
 verbosity                  5 
 ClusterMode		     2			#searching track-like clusters	
-IsMC 			1		#whether the input data is simulation or data
-SinglePEGains		/Path/to/Gains/File	#path to the s.p.e. gains file; only needed for running over data
+Config                      3			#config type: 1 = pulse height cut, 2 = +neighbour cut, 3 = +cluster cut							
+IsMC 1
 PmtMinPulseHeight           20		#minimum pulse height
 PmtNeighbourRadius          600		#digit neighbouring distance [cm]
 PmtMinNeighbourDigits       2			#minimum neighbour digits
