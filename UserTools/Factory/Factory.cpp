@@ -178,6 +178,7 @@ if (tool=="EBMRD") ret=new EBMRD;
 if (tool=="EBPMT") ret=new EBPMT;
 if (tool=="EBLAPPD") ret=new EBLAPPD;
 if (tool=="EBTriggerGrouper") ret=new EBTriggerGrouper;
+if (tool=="EBSaver") ret=new EBSaver;
 if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
 if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
