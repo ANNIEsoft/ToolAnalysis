@@ -1,0 +1,139 @@
+oldLaser 0 #1 for old data, 0 for new trigger boards
+
+#LAPPDBaselineSubtract
+BLSInputWavLabel AlignedLAPPDData
+BaselineSubstractVerbosityLevel 0
+TrigChannel 5 #Specified channel the trigger signal will be on
+LAPPDchannelOffset 1000
+LowBLfitrange 25;
+HiBLfitrange  60;
+TrigLowBLfitrange 30
+TrigHiBLfitrange  100
+BLSOutputWavLabel ABLSLAPPDData
+oldLaserTrigAmpRange 40
+
+#LAPPDFindPeak
+FindPeakVerbosity 0
+FiltPeakInputWavLabel FiltLAPPDData
+RawPeakInputWavLabel LAPPDWaveforms
+BLSPeakInputWavLabel ABLSLAPPDData
+FindPeakOutLabel SimpleRecoLAPPDPulses
+TotThreshold 15.
+MinimumTot 900.
+Deltat 100.
+
+# General Parameters
+Nsamples 256
+SampleSize 100
+NChannels 60
+
+#LAPPDPlotWaveForms
+requireT0signal 0
+SaveByChannel 1
+#PlotWavLabel RawLAPPDData
+#PlotWavLabel LAPPDWaveforms
+PlotWavLabel BLsubtractedLAPPDData
+#PlotWavLabel AlignedLAPPDData
+switchBit 0
+
+outfile WaveForms_ablsub.root
+NHistos 200
+SaveSingleStrip 0
+SingleStripNo 9
+plotLow -10
+plotHigh 20
+
+#LAPPDPlotWaveForms2D
+outfile2D RawDataWaveForms_2D.root
+plot2DrecoPulseInputLabel thresRecoLAPPDPulses
+plot2DrecoHitInputLabel thresRecoLAPPDHits
+includeRecoPulses 1
+includeRecoHits 1
+plotAdditionalPart 1
+titleSize 0.04
+canvasMargin 0.15
+canvasTitleOffset 1
+#LAPPDSelectPlot2D
+LAPPDSelectPlotWaveform2DLabel LAPPDWaveforms
+SelectOutfile2D LAPPDSelectPlot.root
+MRDTrackExistSelection 0 
+verbosityPlot2D 10
+colorContour 255
+useDefaultPalette 1
+colorPalette 112
+
+
+
+#LAPPDThresReco
+LAPPDThresRecoVerbosity 0
+verbosity 0
+printHitsTXT 0
+threshold 10
+minPulseWidth 10
+#thresRecoInputWaveLabel AlignedLAPPDData
+ThresRecoInputWaveLabel BLsubtractedLAPPDData
+#thresRecoInputWaveLabel LAPPDWaveforms
+
+ThresRecoOutputPulseLabel LAPPDPulses
+ThresRecoOutputHitLabel LAPPDHits
+useMaxTime 1  # 1: use max bin as pulse time, 0: use gaus fit bin as pulse peak time
+#signalSpeedOnStrip 0.6667
+signalSpeedOnStrip 0.567 #1.69982/2.99792
+triggerBoardDelay 0
+loadPrintMRDinfo 0
+useRange 0   #set this to 0 for using pulse start time as the saved pulse time, 1 for high, -1 for using peak time
+plusClockBit 0
+
+savePositionOnStrip 1
+LoadLAPPDMapInfo 1
+
+#LAPPDStackStrip
+verbosityStackStrip 0
+StackOutputFileName stacked.root
+#StackInputWaveLabel BLsubtractedLAPPDData
+StackInputWaveLabel RawLAPPDData
+#StackInputWaveLabel LAPPDWaveforms
+StackStripNumber 1
+StackStripSide 0
+
+#LAPPDPlotWaveForms
+NHistos 200
+SaveByChannel 0
+SaveSingleStrip 0
+SingleStripNo 1
+requireT0signal 0
+
+
+#LAPPDTreeMaker
+treeMakerVerbosity 0
+treeMakerInputPulseLabel LAPPDPulses
+treeMakerInputHitLabel LAPPDHits
+treeMakerOutputFileName LAPPDTree.root 
+
+
+#LAPPDPlots
+LAPPDPlotInputWaveLabel BLsubtractedLAPPDData
+#LAPPDPlotInputWaveLabel LAPPDWaveforms
+#LAPPDPlotInputWaveLabel AlignedLAPPDData
+#LAPPDPlotInputWaveLabel RawLAPPDData
+LAPPDPlotsVerbosity 0
+CanvasXSubPlotNumber 2
+CanvasYSubPlotNumber 2
+canvasMargin 0.1
+drawHighThreshold 50
+drawLowThreshold -10
+BinHistMin -10
+BinHistMax  50
+BinHistNumber 100
+
+CanvasWidth 1000
+CanvasHeight 500
+
+maxDrawEventNumber 100
+
+DrawBinHist 1
+printEventNumber 50
+printLAPPDNumber 1
+printEventWaveform 1
+
+LoadLAPPDMap 1

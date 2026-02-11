@@ -398,7 +398,7 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
         
 	if (m_all_clusters && m_all_clusters_detkey){
           int clustersize = m_all_clusters->size();
-          std::cout <<"Clustersize of m_all_clusters: "<<clustersize<<std::endl;
+          if(verbosity>1) std::cout <<"Clustersize of m_all_clusters: "<<clustersize<<std::endl;
           bool clusters_available = false;
           bool muon_available = false;
           if (clustersize != 0) clusters_available = true;

@@ -4,6 +4,22 @@
 #Description
 **********************
 
-See the BeamFetcherV2 tool for description/usage. 
+Configure files are simple text files for passing variables to the Tools.
 
-Loads CTC triggers from the TriggerDataDecoder tool, then fetches the beam database entries through queries based on the CTC trigger timestamps.
+Text files are read by the Store class (src/Store) and automatically assigned to an internal map for the relevant Tool to use.
+
+
+************************
+#Usage
+************************
+
+Any line starting with a "#" will be ignored by the Store, as will blank lines.
+
+Variables should be stored one per line as follows:
+
+
+Name Value #Comments 
+
+
+Note: Only one value is permitted per name and they are stored in a string stream and template cast back to the type given.
+

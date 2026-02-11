@@ -52,6 +52,7 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("saveBRFRaw",saveBRFRaw);
   RWMRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
   BRFRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
+  
 
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
@@ -329,8 +330,7 @@ bool PMTDataDecoder::Execute(){
           unsigned int uSlotNum = (unsigned int)SlotNum;
           unsigned int uChannelID = (unsigned int)ChannelID;
 
-
-	  //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
+          //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
           if(saveBRFRaw){
           if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
           {
@@ -348,7 +348,6 @@ bool PMTDataDecoder::Execute(){
         }
       }
     }
-	  
     m_data->CStore.Set("RWMRawWaveforms",RWMRawWaveforms);
     m_data->CStore.Set("BRFRawWaveforms",BRFRawWaveforms);
 

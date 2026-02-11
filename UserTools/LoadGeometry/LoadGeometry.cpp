@@ -77,7 +77,6 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   TankPMTCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   ChannelNumToTankPMTSPEChargeMap = new std::map<int,double>;
   ChannelNumToTankPMTTimingOffsetMap = new std::map<unsigned long,double>;
-  ChannelNumToTankPMTTimingSigmaMap = new std::map<unsigned long,double>;
   ChannelNumToTankPMTCrateSpaceMap = new std::map<int,std::vector<int>>;
   AuxCrateSpaceToChannelNumMap = new std::map<std::vector<int>,int>;
   AuxChannelNumToTypeMap = new std::map<int,std::string>;
@@ -113,7 +112,6 @@ bool LoadGeometry::Initialise(std::string configfile, DataModel &data){
   m_data->CStore.Set("ChannelNumToTankPMTCrateSpaceMap",ChannelNumToTankPMTCrateSpaceMap);
   m_data->CStore.Set("ChannelNumToTankPMTSPEChargeMap",ChannelNumToTankPMTSPEChargeMap);
   m_data->CStore.Set("ChannelNumToTankPMTTimingOffsetMap",ChannelNumToTankPMTTimingOffsetMap);
-  m_data->CStore.Set("ChannelNumToTankPMTTimingSigmaMap",ChannelNumToTankPMTTimingSigmaMap);
   m_data->CStore.Set("AuxCrateSpaceToChannelNumMap",AuxCrateSpaceToChannelNumMap);
   m_data->CStore.Set("AuxChannelNumToCrateSpaceMap",AuxChannelNumToCrateSpaceMap);
   m_data->CStore.Set("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
@@ -632,6 +630,22 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                 detstatus,
                 0.);
 
+  if (verbosity > 5) std::cout << "Filling a channel with PMT_type == " << PMT_type << ", PMT_type == LUX:" << (PMT_type == "LUX") << ", PMT_type == Hamamatsu:" << (PMT_type == "Hamamatsu") << std::endl;
+  int channelType = 0;
+  if (PMT_type == "LUX"){
+    channelType = 1;
+  } else if (PMT_type == "ETEL"){
+    channelType = 2;
+  } else if (PMT_type == "Hamamatsu"){
+    channelType = 3;
+  } else if (PMT_type == "Watchboy"){
+    channelType = 4;
+  } else if (PMT_type == "Watchman"){
+    channelType = 5;
+  } else {
+    Log("LoadGeometry Tool: Loading UNDEFINED PMT type for channel "+std::to_string(channel_num),0,verbosity);
+  }
+
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),
                       -1, // stripside
@@ -645,7 +659,8 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                       hv_crate,
                       hv_slot,
                       hv_channel,
-                      chanstatus); //channel status same as detector status here
+                      chanstatus,
+                      channelType); //channel status same as detector status here
 
   // Also add this channel to the Tank PMT electronics map
   std::vector<int> crate_map{signal_crate,signal_slot,signal_channel};
@@ -921,25 +936,21 @@ void LoadGeometry::LoadTankPMTGains(){
   return;
 }
 
-// load in both the timing offsets and uncertainties from the 2023 laser campaign
 void LoadGeometry::LoadTankPMTTimingOffsets(){
   ifstream myfile(fTankPMTTimingOffsetFile.c_str());
   std::string line;
   if (myfile.is_open()){
-    // Timing offset file has columns: [0] chankey [1] PMT_location [2] offset value (ns) [3] sigma (ns) [4] notes
+    //Loop over lines, collect all detector data (should only be one line here)
     while(getline(myfile,line)){
       if(verbosity>3) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       std::vector<std::string> DataEntries;
       boost::split(DataEntries,line, boost::is_any_of(","), boost::token_compress_on);
       int channelkey = -9999;
-      double TimingOffset = -9999;
-      double TimingSigma = -9999;
+      double TimingOffset = -9999.;
       channelkey = std::stoul(DataEntries.at(0));
       TimingOffset= std::stod(DataEntries.at(2));
-      TimingSigma = std::stod(DataEntries.at(3));
       ChannelNumToTankPMTTimingOffsetMap->emplace(channelkey,TimingOffset);
-      ChannelNumToTankPMTTimingSigmaMap->emplace(channelkey,TimingSigma);
     }
   }
   return;

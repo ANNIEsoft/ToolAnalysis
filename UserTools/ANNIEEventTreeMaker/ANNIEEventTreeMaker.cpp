@@ -45,6 +45,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPD_PPS_fill", LAPPD_PPS_fill);
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
+  m_variables.Get("RingCounting_fill", RingCounting_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -96,6 +97,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   {
     fANNIETree->Branch("beam_pot_875", &fPot, "beam_pot_875/D");
     fANNIETree->Branch("beam_ok", &fBeamok, "beam_ok/I");
+    fANNIETree->Branch("BunchRotationOn", &fBunchRotationOn, "BunchRotationOn/I");
     fANNIETree->Branch("beam_E_TOR860", &beam_E_TOR860, "beam_E_TOR860/D");
     fANNIETree->Branch("beam_E_TOR875", &beam_E_TOR875, "beam_E_TOR875/D");
     fANNIETree->Branch("beam_THCURR", &beam_THCURR, "beam_THCURR/D");
@@ -107,6 +109,10 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("beam_HPTG2", &beam_HPTG2, "beam_HPTG2/D");
     fANNIETree->Branch("beam_VPTG2", &beam_VPTG2, "beam_VPTG2/D");
     fANNIETree->Branch("beam_BTH2T2", &beam_BTH2T2, "beam_BTH2T2/D");
+    fANNIETree->Branch("beam_B_BRRMPL", &beam_B_BRRMPL, "beam_B_BRRMPL/D");
+    fANNIETree->Branch("beam_B_BRRMPQ", &beam_B_BRRMPQ, "beam_B_BRRMPQ/D");
+    fANNIETree->Branch("beam_B_BRRMPS", &beam_B_BRRMPS, "beam_B_BRRMPS/D");
+    fANNIETree->Branch("beam_B_BRRMP", &beam_B_BRRMP, "beam_B_BRRMP/D");
     fANNIETree->Branch("BeamInfoTime", &fBeamInfoTime, "BeamInfoTime/l");
     fANNIETree->Branch("BeamInfoTimeToTriggerDiff", &fBeamInfoTimeToTriggerDiff, "BeamInfoTimeToTriggerDiff/L");
   }
@@ -148,6 +154,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fANNIETree->Branch("Cluster_HitDetID", &fCluster_HitDetID);
   fANNIETree->Branch("Cluster_HitChankey", &fCluster_HitChankey);
   fANNIETree->Branch("Cluster_HitChankeyMC", &fCluster_HitChankeyMC);
+  fANNIETree->Branch("Cluster_HitPMTType", &fCluster_HitPMTType);
 
   // MRD cluster information
   fANNIETree->Branch("eventTimeMRD", &fEventTimeMRD_Tree);
@@ -171,6 +178,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("hitDetID", &fHitDetID);
     fANNIETree->Branch("hitChankey", &fHitChankey);
     fANNIETree->Branch("hitChankeyMC", &fHitChankeyMC);
+    fANNIETree->Branch("hitPMTType", &fHitPMTType);
   }
 
   if (SiPMPulseInfo_fill)
@@ -230,6 +238,9 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPD_PulseWidth", &fPulseWidth);
     fANNIETree->Branch("LAPPD_PulseSide", &fPulseSide);
     fANNIETree->Branch("LAPPD_PulseStripNum", &fPulseStripNum);
+    fANNIETree->Branch("LAPPD_PulseBaseline", &fPulseBaseline);
+    fANNIETree->Branch("LAPPD_PulseFollowTime", &fPulseFollowTime);
+    fANNIETree->Branch("LAPPD_PulseFollowCharge", &fPulseFollowCharge);
 
     // fANNIETree->Branch("LAPPDHitTimeStampUL", &fLAPPDHitTimeStampUL, "LAPPDHitTimeStampUL/l");
     // fANNIETree->Branch("LAPPDHitBeamgateUL", &fLAPPDHitBeamgateUL, "LAPPDHitBeamgateUL/l");
@@ -256,6 +267,12 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPDHitP2HalfEndTime", &fLAPPDHitP2HalfEndTime);
     fANNIETree->Branch("LAPPDHitP1Charge", &fLAPPDHitP1Charge);
     fANNIETree->Branch("LAPPDHitP2Charge", &fLAPPDHitP2Charge);
+    fANNIETree->Branch("LAPPDHitP1Baseline", &fLAPPDHitP1Baseline);
+    fANNIETree->Branch("LAPPDHitP2Baseline", &fLAPPDHitP2Baseline);
+    fANNIETree->Branch("LAPPDHitP1FollowTime", &fLAPPDHitP1FollowTime);
+    fANNIETree->Branch("LAPPDHitP2FollowTime", &fLAPPDHitP2FollowTime);
+    fANNIETree->Branch("LAPPDHitP1FollowCharge", &fLAPPDHitP1FollowCharge);
+    fANNIETree->Branch("LAPPDHitP2FollowCharge", &fLAPPDHitP2FollowCharge);
 
     /*
     fANNIETree->Branch("LAPPDWaveformChankey", &LAPPDWaveformChankey, "LAPPDWaveformChankey/I");
@@ -428,6 +445,13 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("recoVtxFOM", &fRecoVtxFOM, "recoVtxFOM/D");
     fANNIETree->Branch("recoStatus", &fRecoStatus, "recoStatus/I");
   }
+  
+  // fill ring counting info
+  if (RingCounting_fill)
+  {
+    fANNIETree->Branch("RC_singleRingP", &fRC_singleRingP, "RC_singleRingP/D");
+    fANNIETree->Branch("RC_multiRingP", &fRC_multiRingP, "RC_multiRingP/D");
+  }
 
   // Reconstructed variables from each step in Muon Reco Analysis
   // Currently output when RecoDebug_fill = 1 in config
@@ -569,6 +593,14 @@ bool ANNIEEventTreeMaker::Execute()
     got_reco = FillTankRecoInfo();
   }
 
+  if (RingCounting_fill)
+  {
+    bool got_srFlag = m_data->Stores.at("RecoEvent")->Get("RingCountingSRPrediction", fRC_singleRingP);
+    bool got_mrFlag = m_data->Stores.at("RecoEvent")->Get("RingCountingMRPrediction", fRC_multiRingP);
+    if(ANNIEEventTreeMakerVerbosity>1)
+      cout<<"Printing ring counting: got_srFlag = "<<got_srFlag<<":"<<fRC_singleRingP<<", got_mrFlag = "<<got_mrFlag <<":"<<fRC_multiRingP<<endl;
+  }
+
   if (RecoDebug_fill)
     FillRecoDebugInfo();
 
@@ -634,6 +666,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   // beam info
   fPot = -9999;
   fBeamok = 0;
+  fBunchRotationOn = 0;
   beam_E_TOR860 = -9999;
   beam_E_TOR875 = -9999;
   beam_THCURR = -9999;
@@ -645,6 +678,10 @@ void ANNIEEventTreeMaker::ResetVariables()
   beam_HPTG2 = -9999;
   beam_VPTG2 = -9999;
   beam_BTH2T2 = -9999;
+  beam_B_BRRMPL = -9999;
+  beam_B_BRRMPQ = -9999;
+  beam_B_BRRMPS = -9999;
+  beam_B_BRRMP = -9999;
   fBeamInfoTime = 0;
   fBeamInfoTimeToTriggerDiff = -9999;
 
@@ -671,6 +708,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fHitDetID.clear();
   fHitChankey.clear();
   fHitChankeyMC.clear();
+  fHitPMTType.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -717,7 +755,9 @@ void ANNIEEventTreeMaker::ResetVariables()
   fPulseWidth.clear();
   fPulseSide.clear();
   fPulseStripNum.clear();
-  fChannelBaseline.clear();
+  fPulseBaseline.clear();
+  fPulseFollowTime.clear();
+  fPulseFollowCharge.clear();
 
   fLAPPDHitTimeStampUL.clear();
   fLAPPDHitBeamgateUL.clear();
@@ -742,6 +782,12 @@ void ANNIEEventTreeMaker::ResetVariables()
   fLAPPDHitP2HalfEndTime.clear();
   fLAPPDHitP1Charge.clear();
   fLAPPDHitP2Charge.clear();
+  fLAPPDHitP1Baseline.clear();
+  fLAPPDHitP2Baseline.clear();
+  fLAPPDHitP1FollowTime.clear();
+  fLAPPDHitP2FollowTime.clear();
+  fLAPPDHitP1FollowCharge.clear();
+  fLAPPDHitP2FollowCharge.clear();
 
   LAPPDWaveformChankey.clear();
   waveformMaxValue.clear();
@@ -782,6 +828,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fCluster_HitDetID.clear();
   fCluster_HitChankey.clear();
   fCluster_HitChankeyMC.clear();
+  fCluster_HitPMTType.clear();
 
   fClusterMaxPEV.clear();
   fClusterChargePointXV.clear();
@@ -916,6 +963,10 @@ void ANNIEEventTreeMaker::ResetVariables()
   fRecoAngle = -9999;
   fRecoPhi = -9999;
   fRecoStatus = -9999;
+
+  // RingCounting_fill
+  fRC_singleRingP = -9999;
+  fRC_multiRingP = -9999;
 
   // RecoDebug_fill
   fSeedVtxX.clear();
@@ -1129,9 +1180,14 @@ void ANNIEEventTreeMaker::LoadBeamInfo()
   m_data->Stores["ANNIEEvent"]->Get("beam_HPTG2", beam_HPTG2);
   m_data->Stores["ANNIEEvent"]->Get("beam_VPTG2", beam_VPTG2);
   m_data->Stores["ANNIEEvent"]->Get("beam_BTH2T2", beam_BTH2T2);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPL", beam_B_BRRMPL);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPQ", beam_B_BRRMPQ);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMPS", beam_B_BRRMPS);
+  m_data->Stores["ANNIEEvent"]->Get("beam_B_BRRMP", beam_B_BRRMP);
 
   m_data->Stores["ANNIEEvent"]->Get("beam_E_TOR875", fPot);
   m_data->Stores["ANNIEEvent"]->Get("beam_good", fBeamok);
+  m_data->Stores["ANNIEEvent"]->Get("bunch_rotation_on", fBunchRotationOn);
 
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTime", fBeamInfoTime);
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTimeToTriggerDiff", fBeamInfoTimeToTriggerDiff);
@@ -1227,6 +1283,8 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
           fHitDetID.push_back(detkey);
           fHitChankey.push_back(channel_key);
           fHitChankeyMC.push_back(channel_key);
+          Channel *thisHitChannel = geom->GetChannel(channel_key);
+          fHitPMTType.push_back(thisHitChannel->GetChannelType());
           fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
         }
       }
@@ -1247,6 +1305,8 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
           fHitDetID.push_back(detkey);
           fHitChankey.push_back(channel_key_data);
           fHitChankeyMC.push_back(channel_key);
+          Channel *thisHitChannel = geom->GetChannel(channel_key);
+          fHitPMTType.push_back(thisHitChannel->GetChannelType());
           fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
         }
       }
@@ -1413,6 +1473,9 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
         fPulseStart.push_back(thisPulse.GetLowRange());
         fPulseEnd.push_back(thisPulse.GetHiRange());
         fPulseWidth.push_back(thisPulse.GetHiRange() - thisPulse.GetLowRange());
+        fPulseBaseline.push_back(thisPulse.GetBaseline());
+        fPulseFollowTime.push_back(thisPulse.GetPulseFollowTime());
+        fPulseFollowCharge.push_back(thisPulse.GetPulseFollowCharge());
       }
       for (int i = 0; i < pulse1.size(); i++)
       {
@@ -1428,6 +1491,9 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
         fPulseStart.push_back(thisPulse.GetLowRange());
         fPulseEnd.push_back(thisPulse.GetHiRange());
         fPulseWidth.push_back(thisPulse.GetHiRange() - thisPulse.GetLowRange());
+        fPulseBaseline.push_back(thisPulse.GetBaseline());
+        fPulseFollowTime.push_back(thisPulse.GetPulseFollowTime());
+        fPulseFollowCharge.push_back(thisPulse.GetPulseFollowCharge());
       }
     }
   }
@@ -1484,6 +1550,15 @@ void ANNIEEventTreeMaker::FillLAPPDHit()
 
         fLAPPDHitP1Charge.push_back(p1.GetCharge());
         fLAPPDHitP2Charge.push_back(p2.GetCharge());
+
+        fLAPPDHitP1Baseline.push_back(p1.GetBaseline());
+        fLAPPDHitP2Baseline.push_back(p2.GetBaseline());
+
+        fLAPPDHitP1FollowTime.push_back(p1.GetPulseFollowTime());
+        fLAPPDHitP2FollowTime.push_back(p2.GetPulseFollowTime());
+
+        fLAPPDHitP1FollowCharge.push_back(p1.GetPulseFollowCharge());
+        fLAPPDHitP2FollowCharge.push_back(p2.GetPulseFollowCharge());
       }
     }
   }
@@ -1618,6 +1693,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
   vector<int> HitDetIDV;
   vector<int> HitChankeyV;
   vector<int> HitCKMC;
+  vector<int> HitPMTType;
 
   for (int i = 0; i < (int)cluster_hits.size(); i++)
   {
@@ -1640,6 +1716,8 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
 
       HitChankeyV.push_back(channel_key);
       HitCKMC.push_back(channel_key);
+      Channel* thisHitChannel = geom->GetChannel(channel_key);
+      HitPMTType.push_back(thisHitChannel->GetChannelType());
       HitTypeV.push_back(RecoDigit::PMT8inch);
       ClusterCharge += hit_charge;
       ClusterPE += hit_PE;
@@ -1667,6 +1745,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
   fCluster_HitDetID.push_back(HitDetIDV);
   fCluster_HitChankey.push_back(HitChankeyV);
   fCluster_HitChankeyMC.push_back(HitCKMC);
+  fCluster_HitPMTType.push_back(HitPMTType);
 
   return;
 }
@@ -1691,6 +1770,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
   vector<int> HitDetIDV;
   vector<int> HitChankeyV;
   vector<int> HitCKMC;
+  vector<int> HitPMTType;
 
   for (int i = 0; i < (int)cluster_hits.size(); i++)
   {
@@ -1718,6 +1798,8 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
       HitDetIDV.push_back(detkey);
       HitChankeyV.push_back(channel_key_data);
       HitCKMC.push_back(channel_key);
+      Channel* thisHitChannel = geom->GetChannel(channel_key_data);
+      HitPMTType.push_back(thisHitChannel->GetChannelType());
       HitTypeV.push_back(RecoDigit::PMT8inch);
       ClusterCharge += hit_charge;
       ClusterPE += hit_PE;
@@ -1745,6 +1827,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
   fCluster_HitDetID.push_back(HitDetIDV);
   fCluster_HitChankey.push_back(HitChankeyV);
   fCluster_HitChankeyMC.push_back(HitCKMC);
+  fCluster_HitPMTType.push_back(HitPMTType);
 
   return;
 }

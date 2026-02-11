@@ -197,6 +197,11 @@ private:
     std::map<uint64_t, double> HPTG2_map;
     std::map<uint64_t, double> VPTG2_map;
     std::map<uint64_t, double> BTH2T2_map;
+    std::map<uint64_t, double> B_BRRMPL_map;
+    std::map<uint64_t, double> B_BRRMPS_map;
+    std::map<uint64_t, double> B_BRRMPQ_map;
+    std::map<uint64_t, double> B_BRRMP_map;
+
 };
 
 #endif

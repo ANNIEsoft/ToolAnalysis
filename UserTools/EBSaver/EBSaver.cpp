@@ -170,11 +170,8 @@ bool EBSaver::Execute()
     PMTToRemove += times.size();
     // print the size of times, and all elements in times
     Log("EBSaver: PMT PairInfoToRemoveTime at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    if (verbosityEBSaver > v_message)
-    {
-      for (int i = 0; i < times.size(); i++)
-        cout << i << ": " << times[i] << ", ";
-    }
+    for (int i = 0; i < times.size(); i++)
+      cout << i << ": " << times[i] << ", ";
   }
   cout << endl;
   for (auto const &track : MRDPairInfoToRemoveTime)
@@ -183,11 +180,8 @@ bool EBSaver::Execute()
     std::vector<uint64_t> times = track.second;
     MRDToRemove += times.size();
     Log("EBSaver: MRD PairInfoToRemoveTime at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    if (verbosityEBSaver > v_message)
-    {
-      for (int i = 0; i < times.size(); i++)
-        cout << i << ": " << times[i] << ", ";
-    }
+    for (int i = 0; i < times.size(); i++)
+      cout << i << ": " << times[i] << ", ";
   }
   cout << endl;
   for (auto const &track : LAPPDPairInfoToRemoveTime)
@@ -196,11 +190,8 @@ bool EBSaver::Execute()
     std::vector<uint64_t> times = track.second;
     LAPPDToRemove += times.size();
     Log("EBSaver: LAPPD PairInfoToRemoveTime at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    if (verbosityEBSaver > v_message)
-    {
-      for (int i = 0; i < times.size(); i++)
-        cout << i << ": " << times[i] << ", ";
-    }
+    for (int i = 0; i < times.size(); i++)
+      cout << i << ": " << times[i] << ", ";
   }
   cout << endl;
 
@@ -221,7 +212,7 @@ bool EBSaver::Execute()
     cout << i << ": " << Buffer_LAPPDTimestamp_ns[i] << ", ";
   cout << endl;
 
-  // delete LAPPD related timestamps
+  // 删除 LAPPD 相关时间戳
   int removedLAPPD = 0;
   for (auto const &track : LAPPDPairInfoToRemoveTime)
   {
@@ -248,7 +239,7 @@ bool EBSaver::Execute()
     }
   }
 
-  // delete PMT related timestamps
+  // 删除 PMT 相关时间戳
 
   for (auto const &track : PMTPairInfoToRemoveTime)
   {
@@ -273,7 +264,7 @@ bool EBSaver::Execute()
     }
   }
 
-  // delete MRD related timestamps
+  // 删除 MRD 相关时间戳
   for (auto const &track : MRDPairInfoToRemoveTime)
   {
     int triggerTrack = track.first;
@@ -412,23 +403,20 @@ bool EBSaver::Finalise()
   // print the size of each track of
 
   // add debug print for the left MRD, print TriggerTimeWithoutMRD and PairedMRDTimeStamps to two txt file
-  if (verbosityEBSaver > 9)
+  std::ofstream TriggerTimeWithoutMRDFile;
+  TriggerTimeWithoutMRDFile.open("EBdebug_TriggerTimeWithoutMRD.txt");
+  for (auto const &track : TriggerTimeWithoutMRD)
   {
-    std::ofstream TriggerTimeWithoutMRDFile;
-    TriggerTimeWithoutMRDFile.open("EBdebug_TriggerTimeWithoutMRD.txt");
-    for (auto const &track : TriggerTimeWithoutMRD)
+    TriggerTimeWithoutMRDFile << track.first << " " << track.second << endl;
+  }
+  TriggerTimeWithoutMRDFile.close();
+  std::ofstream PairedMRDTimeStampsFile;
+  PairedMRDTimeStampsFile.open("EBdebug_PairedMRDTimeStamps.txt");
+  for (auto const &track : PairedMRDTimeStamps)
+  {
+    for (int i = 0; i < track.second.size(); i++)
     {
-      TriggerTimeWithoutMRDFile << track.first << " " << track.second << endl;
-    }
-    TriggerTimeWithoutMRDFile.close();
-    std::ofstream PairedMRDTimeStampsFile;
-    PairedMRDTimeStampsFile.open("EBdebug_PairedMRDTimeStamps.txt");
-    for (auto const &track : PairedMRDTimeStamps)
-    {
-      for (int i = 0; i < track.second.size(); i++)
-      {
-        PairedMRDTimeStampsFile << track.first << " " << track.second[i] << endl;
-      }
+      PairedMRDTimeStampsFile << track.first << " " << track.second[i] << endl;
     }
   }
 
@@ -1160,11 +1148,8 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
     int triggerTrack = track.first;
     std::vector<uint64_t> times = track.second;
     Log("EBSaver: PairedMRDTimeStamps at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    if (verbosityEBSaver > v_message)
-    {
-      for (int i = 0; i < times.size(); i++)
-        cout << i << ": " << times[i] << ", ";
-    }
+    for (int i = 0; i < times.size(); i++)
+      cout << i << ": " << times[i] << ", ";
   }
   cout << endl;
 
@@ -1174,11 +1159,8 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
     int triggerTrack = track.first;
     std::vector<uint64_t> times = track.second;
     Log("EBSaver: PairedLAPPDTimeStamps at track " + std::to_string(triggerTrack) + " size " + std::to_string(times.size()), v_message, verbosityEBSaver);
-    if (verbosityEBSaver > v_message)
-    {
-      for (int i = 0; i < times.size(); i++)
-        cout << i << ": " << times[i] << ", ";
-    }
+    for (int i = 0; i < times.size(); i++)
+      cout << i << ": " << times[i] << ", ";
   }
   cout << endl;
 
@@ -1189,22 +1171,16 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
     int triggerTrack = track.first;
     std::vector<int> indexes = track.second;
     Log("EBSaver: PairedLAPPD_TriggerIndex at track " + std::to_string(triggerTrack) + " size " + std::to_string(indexes.size()), v_message, verbosityEBSaver);
-    if (verbosityEBSaver > v_message)
-    {
-      for (int i = 0; i < indexes.size(); i++)
-        cout << i << ": " << indexes[i] << ", ";
-    }
+    for (int i = 0; i < indexes.size(); i++)
+      cout << i << ": " << indexes[i] << ", ";
   }
   cout << endl;
 
   // print Buffer_LAPPDBeamgate_ns
   Log("EBSaver: got LAPPD pairing information buffer Buffer_LAPPDBeamgate_ns size " + std::to_string(Buffer_LAPPDBeamgate_ns.size()), v_message, verbosityEBSaver);
-  if (verbosityEBSaver > v_message)
-  {
-    for (int i = 0; i < Buffer_LAPPDBeamgate_ns.size(); i++)
-      cout << i << ": " << Buffer_LAPPDBeamgate_ns[i] << ", ";
-    cout << endl;
-  }
+  for (int i = 0; i < Buffer_LAPPDBeamgate_ns.size(); i++)
+    cout << i << ": " << Buffer_LAPPDBeamgate_ns[i] << ", ";
+  cout << endl;
 
   return true;
 }
@@ -1369,10 +1345,15 @@ void EBSaver::LoadBeamInfo()
   //   * BTH2T2 - target air cooling temperature. This is the temperature of the
   //     air going into the horn.
 
+  // For bunch rotation, the information can be found here:
+  // https://beamdocs.fnal.gov/AD/DocDB/0069/006904/008/20181214BunchRotation.pdf
+  // The B_BRRMP has unit of volt, others are not clear.
+
   // additionally, the unit of E_TOR860 and E_TOR875 is E12
 
   uint64_t timestamp;
   double E_TOR860, E_TOR875, THCURR, BTJT2, HP875, VP875, HPTG1, VPTG1, HPTG2, VPTG2, BTH2T2;
+  double B_BRRMPL, B_BRRMPQ, B_BRRMPS, B_BRRMP;
 
   tree->SetBranchAddress("Timestamp", &timestamp);
   tree->SetBranchAddress("E_TOR860", &E_TOR860);
@@ -1386,6 +1367,10 @@ void EBSaver::LoadBeamInfo()
   tree->SetBranchAddress("E_HPTG2", &HPTG2);
   tree->SetBranchAddress("E_VPTG2", &VPTG2);
   tree->SetBranchAddress("E_BTH2T2", &BTH2T2);
+  tree->SetBranchAddress("B_BRRMPL", &B_BRRMPL);
+  tree->SetBranchAddress("B_BRRMPQ", &B_BRRMPQ);
+  tree->SetBranchAddress("B_BRRMPS", &B_BRRMPS);
+  tree->SetBranchAddress("B_BRRMP", &B_BRRMP);
 
   Long64_t nentries = tree->GetEntries();
   Log("EBSaver: Loading beam infor, total entries in beam info file: " + std::to_string(nentries), v_message, verbosityEBSaver);
@@ -1406,6 +1391,10 @@ void EBSaver::LoadBeamInfo()
     HPTG2_map.emplace(timestamp, HPTG2);
     VPTG2_map.emplace(timestamp, VPTG2);
     BTH2T2_map.emplace(timestamp, BTH2T2);
+    B_BRRMPL_map.emplace(timestamp, B_BRRMPL);
+    B_BRRMPQ_map.emplace(timestamp, B_BRRMPQ);
+    B_BRRMPS_map.emplace(timestamp, B_BRRMPS);
+    B_BRRMP_map.emplace(timestamp, B_BRRMP);
   }
 
   Log("EBSaver: Loaded number of E_TOR860 entries: " + std::to_string(E_TOR860_map.size()), v_message, verbosityEBSaver);
@@ -1418,6 +1407,7 @@ void EBSaver::LoadBeamInfo()
 bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
 {
   double E_TOR860, E_TOR875, THCURR, BTJT2, HP875, VP875, HPTG1, VPTG1, HPTG2, VPTG2, BTH2T2;
+  double B_BRRMPL, B_BRRMPQ, B_BRRMPS, B_BRRMP;
   // find the closest timestamp in vector<uint64_t> BeamInfoTimestamps
 
   uint64_t closestTimestamp = 0;
@@ -1448,6 +1438,7 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     int64_t timeDiff = -9999;
     double defaultVal = -9999.;
     int beam_good = 0;
+    int bunch_rotation_on = 0;
     ANNIEEvent->Set("BeamInfoTime", beamInfoTime_long);
     ANNIEEvent->Set("BeamInfoTimeToTriggerDiff", timeDiff);
     ANNIEEvent->Set("beam_E_TOR860", defaultVal);
@@ -1461,7 +1452,12 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     ANNIEEvent->Set("beam_HPTG2", defaultVal);
     ANNIEEvent->Set("beam_VPTG2", defaultVal);
     ANNIEEvent->Set("beam_BTH2T2", defaultVal);
+    ANNIEEvent->Set("beam_B_BRRMPL", defaultVal);
+    ANNIEEvent->Set("beam_B_BRRMPQ", defaultVal);
+    ANNIEEvent->Set("beam_B_BRRMPS", defaultVal);
+    ANNIEEvent->Set("beam_B_BRRMP", defaultVal);
     ANNIEEvent->Set("beam_good", beam_good);
+    ANNIEEvent->Set("bunch_rotation_on", bunch_rotation_on);
 
     Log("EBSaver: Saved beam info with time " + std::to_string(0) + ", pot E_TOR860 = " + std::to_string(-9999) + ", beam_good = " + std::to_string(-9999), v_message, verbosityEBSaver);
   }
@@ -1486,6 +1482,10 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     HPTG2 = HPTG2_map.at(beamInfoTime);
     VPTG2 = VPTG2_map.at(beamInfoTime);
     BTH2T2 = BTH2T2_map.at(beamInfoTime);
+    B_BRRMPL = B_BRRMPL_map.at(beamInfoTime);
+    B_BRRMPQ = B_BRRMPQ_map.at(beamInfoTime);
+    B_BRRMPS = B_BRRMPS_map.at(beamInfoTime);
+    B_BRRMP = B_BRRMP_map.at(beamInfoTime);
 
     ANNIEEvent->Set("BeamInfoTime", beamInfoTime);
     ANNIEEvent->Set("BeamInfoTimeToTriggerDiff", timeDiff);
@@ -1501,6 +1501,10 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     ANNIEEvent->Set("beam_HPTG2", HPTG2);
     ANNIEEvent->Set("beam_VPTG2", VPTG2);
     ANNIEEvent->Set("beam_BTH2T2", BTH2T2);
+    ANNIEEvent->Set("beam_B_BRRMPL", B_BRRMPL);
+    ANNIEEvent->Set("beam_B_BRRMPQ", B_BRRMPQ);
+    ANNIEEvent->Set("beam_B_BRRMPS", B_BRRMPS);
+    ANNIEEvent->Set("beam_B_BRRMP", B_BRRMP);
 
     int beam_good = 0;
 
@@ -1511,6 +1515,13 @@ bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)
     }
 
     ANNIEEvent->Set("beam_good", beam_good);
+
+    int bunch_rotation_on = 0;
+    if (B_BRRMP > 0)
+    {
+      bunch_rotation_on = 1;
+    }
+    ANNIEEvent->Set("bunch_rotation_on", bunch_rotation_on);
 
     Log("EBSaver: Saved beam info with time " + std::to_string(beamInfoTime) + ", pot E_TOR860 = " + std::to_string(E_TOR860) + ", beam_good = " + std::to_string(beam_good), v_message, verbosityEBSaver);
   }

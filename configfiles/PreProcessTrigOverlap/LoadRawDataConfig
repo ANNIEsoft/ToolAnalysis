@@ -1,4 +1,4 @@
-verbosity 11
+verbosity 0
 BuildType CTC
 Mode FileList
 InputFile ./configfiles/PreProcessTrigOverlap/my_files.txt

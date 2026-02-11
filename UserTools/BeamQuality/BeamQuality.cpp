@@ -124,9 +124,9 @@ bool BeamQuality::Execute()
     fLastTimestamp = timestamp;
     completed_timestamps.insert(timestamp);
 
-    // Check for trigger word 14 (undelayed beam trigger)
+    // Check for trigger word 5 (beam)
     // If it's not there then it isn't a beam trigger and there's nothing more to do
-    if (std::find(iterator->second.begin(), iterator->second.end(), 14) == iterator->second.end()) {
+    if (std::find(iterator->second.begin(), iterator->second.end(), 5) == iterator->second.end()) {
       BeamStatus tempStatus(TimeClass(timestamp), 0., BeamCondition::NonBeamMinibuffer);
       BeamStatusMap->emplace(timestamp, tempStatus);
       continue;

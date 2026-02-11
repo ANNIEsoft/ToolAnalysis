@@ -31,10 +31,8 @@ class PrintADCTraces: public Tool {
 
   TFile* fOutFile = nullptr;                   // output root file
   TTree* fTraceSummaryTree = nullptr;          // summary TTree in root file
-  int fchan, frun;                             // branches in summary TTree
-  uint64_t feventTime;
+  int fchan;                                   // branches in summary TTree
   float fhitT, fhitPE;
-  float fhitBaseline, fhitNoise;
 
   int totalGraphs = 0;                         // keep track how many TGraphs were written
   std::map<unsigned long, int> graphsPerChannel;

@@ -1,0 +1,68 @@
+ General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on
+NUM_VECTOR_PPS 16 #Fixed PPS vector size
+NUM_VECTOR_DATA 7795 #Fixed DATA vector size
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+NChannels 30
+
+LAPPDStoreReadInVerbosity 0
+
+mergingModeReadIn 0
+RawDataInputWavLabel RawWaveform
+RawDataOutputWavLabel  RawLAPPDData
+BoardIndexLabel BoardIndex #Label of the vector of read out boards
+
+PsecReceiveMode 1
+stopEntries 10000000000
+
+DoPedSubtraction 1
+Nboards 6 #Number of pedestal files to be read in
+#PedinputfileTXT ../Pedestals/swapLAPPD/Pedestal
+#PedinputfileTXT ../Pedestals/run3xxx/Pedestal
+PedinputfileTXT ../Pedestals/LAPPD640392/P
+PSECinputfile /pnfs/annie/persistent/processed/LAPPD40Merged/FinalVersion_withRawTS/FilteredData_PMT_MRDtrack_noveto_15mV_7strips_3xxx_104
+
+
+Pedinputfile1 ../Pedestals/PEDS_ACDC_board0.txt
+Pedinputfile2 ../Pedestals/PEDS_ACDC_board1.txt
+
+#LAPPDReorderData
+ReorderVerbosityLevel 0
+#ReorderInputWavLabel RawLAPPDData
+ReorderInputWavLabel AlignedLAPPDData
+ReorderOutputWavLabel LAPPDWaveforms
+DelayOffset 0
+GlobalShift 180
+
+ReadStore 0
+NUM_VECTOR_DATA 7795
+NUM_VECTOR_PPS 16
+OutputWavLabel RawLAPPDData
+SelectSingleLAPPD false
+SelectedLAPPD 0
+loadPSEC 1
+loadPPS 1
+loadOffsets 0
+num_vector_data 7795
+num_vector_pps 16
+
+#LAPPDTreeMaker
+LoadPulse 1
+LoadHit 1
+LoadWaveform 1
+LoadLAPPDDataTimeStamp 1
+LoadPPSTimestamp 1
+LoadRunInfoRaw 1
+LoadRunInfoANNIEEvent 0
+
+treeMakerVerbosity 0
+
+treeMakerInputPulseLabel LAPPDPulses
+treeMakerInputHitLabel LAPPDHits
+treeMakerOutputFileName LAPPDTree.root
+LoadTriggerInfo 0
+LoadGroupOption beam
+LoadGroupedTriggerInfo 1

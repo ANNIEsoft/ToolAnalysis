@@ -1,0 +1,7 @@
+verbosityEBLAPPD 0
+matchTargetTrigger 14
+matchTolerance_ns 400000
+#matchTolerance_ns 10000
+exePerMatch 500
+
+matchToAllTriggers 0

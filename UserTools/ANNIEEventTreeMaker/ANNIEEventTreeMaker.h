@@ -125,6 +125,7 @@ private:
     bool SiPMPulseInfo_fill = 0;
     bool LAPPDReco_fill = 1;
     bool BeamInfo_fill = 1;
+    bool RingCounting_fill = 0;
 
     TFile *fOutput_tfile = nullptr;
     TTree *fANNIETree = nullptr;
@@ -161,6 +162,7 @@ private:
     // beam information
     double fPot;
     int fBeamok;
+    int fBunchRotationOn;
     double beam_E_TOR860;
     double beam_E_TOR875;
     double beam_THCURR;
@@ -172,6 +174,10 @@ private:
     double beam_HPTG2;
     double beam_VPTG2;
     double beam_BTH2T2;
+    double beam_B_BRRMPL;
+    double beam_B_BRRMPQ;
+    double beam_B_BRRMPS;
+    double beam_B_BRRMP;
     uint64_t fBeamInfoTime;
     int64_t fBeamInfoTimeToTriggerDiff;
 
@@ -199,6 +205,7 @@ private:
     std::vector<int> fHitDetID;
     std::vector<int> fHitChankey;
     std::vector<int> fHitChankeyMC;
+    std::vector<int> fHitPMTType;
 
     // SiPMPulseInfo_fill
     int fSiPM1NPulses;
@@ -244,7 +251,9 @@ private:
     vector<double> fPulseWidth;
     vector<int> fPulseSide;
     vector<int> fPulseStripNum;
-    std::map<int, double> fChannelBaseline;
+    vector<double> fPulseBaseline;
+    vector<double> fPulseFollowTime;
+    vector<double> fPulseFollowCharge;
 
     vector<uint64_t> fLAPPDHitTimeStampUL;
     vector<uint64_t> fLAPPDHitBeamgateUL;
@@ -269,6 +278,12 @@ private:
     vector<double> fLAPPDHitP2HalfEndTime;
     vector<double> fLAPPDHitP1Charge;
     vector<double> fLAPPDHitP2Charge;
+    vector<double> fLAPPDHitP1Baseline;
+    vector<double> fLAPPDHitP2Baseline;
+    vector<double> fLAPPDHitP1FollowTime;
+    vector<double> fLAPPDHitP2FollowTime;
+    vector<double> fLAPPDHitP1FollowCharge;
+    vector<double> fLAPPDHitP2FollowCharge;
 
     // waveform
     vector<int> LAPPDWaveformChankey;
@@ -314,6 +329,7 @@ private:
     vector<vector<int>> fCluster_HitDetID;
     vector<vector<int>> fCluster_HitChankey;
     vector<vector<int>> fCluster_HitChankeyMC;
+    vector<vector<int>> fCluster_HitPMTType;
 
     vector<double> fClusterMaxPEV;
     vector<double> fClusterChargePointXV;
@@ -450,6 +466,10 @@ private:
     double fRecoAngle;
     double fRecoPhi;
     int fRecoStatus;
+
+    // RingCounting_fill
+    double fRC_singleRingP;
+    double fRC_multiRingP;
 
     // RecoDebug_fill
     //  **************** Full reco chain information ************* //

@@ -311,11 +311,8 @@ std::vector<std::string> EBLoadRaw::OrganizeRunParts(std::string FileList)
     std::cout << "Lines in FileList being printed" << std::endl; // has our stuff;
     while (getline(myfile, line))
     {
-      // if (line.find("#") != std::string::npos)
-      //   continue;
-      if (line[0] == '#')
+      if (line.find("#") != std::string::npos)
         continue;
-
       std::string filename = line;
       int RunCodeNumber = RunCode(filename);
 

@@ -17,6 +17,9 @@ IFBeamDBInterfaceV2::IFBeamDBInterfaceV2()
   if (!fCurl) throw std::runtime_error("IFBeamDBInterfaceV2 failed to"
     " initialize libcurl");
 
+
+  // the map include the device name we want to have in the output
+
   requiredDevices = {
     {"E:TOR860", "E12"},
     {"E:TOR875", "E12"},
@@ -28,7 +31,11 @@ IFBeamDBInterfaceV2::IFBeamDBInterfaceV2()
     {"E:VPTG1", "mm"},
     {"E:HPTG2", "mm"},
     {"E:VPTG2", "mm"},
-    {"E:BTH2T2", "DegC"}};
+    {"E:BTH2T2", "DegC"},
+    {"B:BRRMPL","unknown"},
+    {"B:BRRMPS","unknown"},
+    {"B:BRRMPQ","unknown"},
+    {"B:BRRMP","volt"}};
 }
 
 IFBeamDBInterfaceV2::~IFBeamDBInterfaceV2()
@@ -251,6 +258,7 @@ IFBeamDBInterfaceV2::ParseDBResponseSingleSpan(const std::string& response) cons
 					       timestamp);
   }
 
+
 for (auto &ts : retMap) {
     for (auto &dev : requiredDevices) {
       if (ts.second.find(dev.first) == ts.second.end()) {
@@ -302,14 +310,16 @@ IFBeamDBInterfaceV2::ParseDBResponseBundleSpan(const std::string& response) cons
 					       timestamp);
   }
 
-  // count the total number of elements in retMap times the number of elements in that element, print the total number
+  //count the total number of elements in retMap times the number of elements in that element, print the total number
   int total = 0;
   for (auto &ts : retMap) {
     total += ts.second.size();
   }
+  std::cout << "Total number of elements in retMap: " << total << std::endl;
+  std::cout << "Size of retMap is " << retMap.size() << std::endl;
 
-  // check each timestamp in the retMap, to see if it have all the devices in the requiredDevices map keys, if yes, continue
-  // if not, create entry for that device at retMap[TS], use the data type from the value of requiredDevices
+  //check each timestamp in the retMap, to see if it have all the devices in the requiredDevices map keys, if yes, continue
+  //if not, create entry for that device at retMap[TS], use the data type from the value of requiredDevices
   // use value as -9999, unit as doulbe, timestamp = TS
   for (auto &ts : retMap) {
     for (auto &dev : requiredDevices) {
@@ -324,6 +334,8 @@ IFBeamDBInterfaceV2::ParseDBResponseBundleSpan(const std::string& response) cons
   for (auto &ts : retMap) {
     totalAfter += ts.second.size();
   }
+  std::cout << "After inserting, total number of elements in retMap: " << totalAfter << std::endl;
+  std::cout << "Size of retMap is " << retMap.size() << std::endl;
   
   return retMap;
 }
@@ -380,7 +392,6 @@ for (auto &ts : retMap) {
       }
     }
   }
-  
   return retMap;
 }
 
@@ -424,6 +435,7 @@ IFBeamDBInterfaceV2::ParseDBResponseBundle(const std::string& response) const
 					       unit,
 					       timestamp);
   }
+
 
 for (auto &ts : retMap) {
     for (auto &dev : requiredDevices) {

@@ -79,8 +79,7 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   m_data->CStore.Get("AuxChannelNumToTypeMap",AuxChannelNumToTypeMap);
 
   // Get the timing offsets
-  if (!mc_waveforms)   // (don't need them for MC)
-    m_data->CStore.Get("ChannelNumToTankPMTTimingOffsetMap",ChannelKeyToTimingOffsetMap); 
+  m_data->CStore.Get("ChannelNumToTankPMTTimingOffsetMap",ChannelKeyToTimingOffsetMap); 
 
   //Recreate maps that were deleted with ANNIEEvent->Delete() ANNIEEventBuilder tool
   hit_map = new std::map<unsigned long,std::vector<Hit>>;
@@ -763,12 +762,13 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bywindow(
       if(it != ChannelKeyToTimingOffsetMap.end()){ //Timing offset is available
         timing_offset = ChannelKeyToTimingOffsetMap.at(channel_key);
       } else {
-        if(verbosity>2 && !mc_waveforms){
+        if(verbosity>2){
           std::cout << "Didn't find Timing offset for channel " << channel_key << std::endl;
         }
       }
 
-	// extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+    // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
     std::vector<double> trace_x;
     std::vector<double> trace_y;
 
@@ -892,12 +892,13 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       if(it != ChannelKeyToTimingOffsetMap.end()){ //Timing offset is available
         timing_offset = ChannelKeyToTimingOffsetMap.at(channel_key);
       } else {
-        if(verbosity>v_error && !mc_waveforms){
+        if(verbosity>v_error){
           std::cout << "PhaseIIADCHitFinder: Didn't find Timing offset for channel... setting this channel's offset to 0ns" << channel_key << std::endl;
         }
       }
 
-	  // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+      // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
       std::vector<double> trace_x;
       std::vector<double> trace_y;
 
@@ -911,6 +912,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           trace_y.push_back(val_adc - pulse_baseline);
       }
 
+
       // Store the freshly made pulse in the vector of found pulses
       pulses.emplace_back(channel_key,
         ( pulse_start_sample * NS_PER_ADC_SAMPLE )-timing_offset,
@@ -918,7 +920,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         calibrated_minibuffer_data.GetBaseline(),
         calibrated_minibuffer_data.GetSigmaBaseline(),
         raw_area, max_ADC, calibrated_amplitude, charge,
-		trace_x, trace_y);
+        trace_x, trace_y);
     }
 
 
@@ -935,17 +937,17 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       size_t pulse_start_sample = BOGUS_INT;
       size_t pulse_end_sample = BOGUS_INT;
 
-      // loop through samples until we find a pulse, then extract pulse parameters
+      // loop through samples until we find a pulse, then extraction pulse parameters
       for (size_t s = 0; s < num_samples; ++s) {
 
         // if any values are above threshold, we have found a pulse
         if ( !in_pulse && raw_minibuffer_data.GetSample(s) > adc_threshold ) {
           in_pulse = true;
-		  if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
+          if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: FOUND PULSE" << std::endl;
 
           // for cases that are very early in the buffer, we can just assign the pulse start as 0 to avoid errors
           if (static_cast<int>(s) - 5 < 0) {
-			if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Pulse found is VERY EARLY in the minibuffer (< 5 samples)... assigning pulse start as 0" << std::endl;
+            if(verbosity>v_debug) std::cout << "Pulse found is VERY EARLY in the minibuffer (< 5 samples)... assigning pulse start as 0" << std::endl;
             pulse_start_sample = 0;
           } 
 
@@ -962,7 +964,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
                 } 
                 
                 else {
-				  if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Baseline crossing is VERY EARLY in the minibuffer (< 5 samples)... assigning pulse start as 0" << std::endl;
+                  if(verbosity>v_debug) std::cout << "Baseline crossing is VERY EARLY in the minibuffer (< 5 samples)... assigning pulse start as 0" << std::endl;
                   pulse_start_sample = 0;
                 }
 
@@ -974,7 +976,9 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
             // if pulsewinleft reaches 0 without finding a baseline crossing (maybe ringing?), hault it at 0 and assign pulse start
             // TODO: figure out what is wrong with these pulses
             if (pulsewinleft == 0) {
-			  if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Baseline crossing was not found... assigning pulse start as 0" << std::endl;
+              if (verbosity > v_debug) {
+                std::cout << "Baseline crossing was not found... assigning pulse start as 0" << std::endl;
+              }
               pulse_start_sample = 0;
             }
           }
@@ -985,17 +989,18 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           in_pulse = false;
           
           if (s == num_samples - 1) {
-			if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Pulse found is VERY LATE in the minibuffer (we're at the final sample)... forcing pulse to end" << std::endl;
+            if(verbosity>v_debug) std::cout << "Pulse found is VERY LATE in the minibuffer (we're at the final sample)... forcing pulse to end" << std::endl;
             pulse_end_sample = s;
           } else {
             pulse_end_sample = (s + 5 < (num_samples - 1)) ? (s + 5) : (num_samples - 1);   // ensure we don't exceed the buffer
           }
 
           // double check that pulse start and stop were found successfully
-		  if (verbosity > v_debug) {
-          std::cout << "PhaseIIADCHitFinder: Pulse start and end determined! (" << pulse_start_sample 
+          if (verbosity > v_debug) {
+          std::cout << "Pulse start and end determined! (" << pulse_start_sample 
                     << ", " << pulse_end_sample << ")" << std::endl;
           }
+          
           
           // Integrate the pulse to get its area. Use a Riemann sum. Also get
           // the raw amplitude (maximum ADC value within the pulse) and the
@@ -1035,8 +1040,8 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           if(it != ChannelKeyToTimingOffsetMap.end()){ //Timing offset is available
             timing_offset = ChannelKeyToTimingOffsetMap.at(channel_key);
           } else {
-            if(verbosity>v_error && !mc_waveforms){
-              std::cout << "PhaseIIADCHitFinder: Didn't find Timing offset for channel " << channel_key << "... setting this channel's offset to 0ns" << std::endl;
+            if(verbosity>v_error){
+              std::cout << "PhaseIIADCHitFinder: Didn't find Timing offset for channel... setting this channel's offset to 0ns" << channel_key << std::endl;
             }
           }
 
@@ -1059,7 +1064,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
 
         // Perform simple linear interpolation to find exact crossing point
         if (hit_time_found) {
-		  if(verbosity>v_debug) std::cout << "Interpolating hit time..." << std::endl;
+          if(verbosity>v_debug) std::cout << "Interpolating hit time..." << std::endl;
           if (hit_time > pulse_start_sample && hit_time < pulse_end_sample) {
               double x1 = hit_time;
               double x2 = hit_time + 1.0;
@@ -1069,9 +1074,11 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           }
         }
 
-		// extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+        // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
         std::vector<double> trace_x;
         std::vector<double> trace_y;
+
         double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
         double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
 
@@ -1082,22 +1089,26 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
             trace_y.push_back(val_adc - pulse_baseline);
         }
 
-		if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
+        if(verbosity>v_debug) {
+          
+          std::cout << "Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
 
-		if (hit_time < 0.0) {
-			if(verbosity>v_debug) std::cout << "PhaseIIADCHitFinder: Hit time is negative! Defaulting to peak time" << std::endl;
-		    hit_time = peak_sample;
-		}
+          if (hit_time < 0.0) {
+            // If for some reason the interpolation finds a negative time value (if the pulse is extremely early in the buffer),
+            // default to the peak time (maximum ADC value of the pulse)
+            std::cout << "Hit time is negative! Defaulting to peak time" << std::endl;
+            hit_time = peak_sample;
+          }
 
-		if(verbosity>v_debug) {
-			std::cout << "PhaseIIADCHitFinder: Pulse properties: " << std::endl;
-	        std::cout << "                     chanID:      " << channel_key << std::endl;
-	        std::cout << "                     charge:      " << ( charge ) << std::endl;
-	        std::cout << "                     start time:  " << ( pulse_start_sample ) << std::endl;
-	        std::cout << "                     hit time:    " << ( hit_time ) << std::endl;
-	        std::cout << "                     stop time:   " << ( pulse_end_sample ) << std::endl;
-		}
-			
+          std::cout << "Pulse properties: " << std::endl;
+          std::cout << "     chanID:      " << channel_key << std::endl;
+          std::cout << "     charge:      " << ( charge ) << std::endl;
+          std::cout << "     start time:  " << ( pulse_start_sample ) << std::endl;
+          std::cout << "     hit time:    " << ( hit_time ) << std::endl;
+          std::cout << "     stop time:   " << ( pulse_end_sample ) << std::endl;
+
+        }
+
           // Store the freshly made pulse in the vector of found pulses
           pulses.emplace_back(channel_key,
             ( pulse_start_sample * NS_PER_ADC_SAMPLE )-timing_offset,
@@ -1105,12 +1116,13 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
             calibrated_minibuffer_data.GetBaseline(),
             calibrated_minibuffer_data.GetSigmaBaseline(),
             raw_area, max_ADC, calibrated_amplitude, charge,
-			trace_x, trace_y);
+            trace_x, trace_y);
         }
       }
 
 	  
   // ******************************************************************
+  // Previously used in the event building
   // Peak windows are defined only by crossing and un-crossing of ADC threshold
   } else if(pulse_window_type == "dynamic"){
     size_t pulse_start_sample = BOGUS_INT;
@@ -1171,7 +1183,7 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
       if(it != ChannelKeyToTimingOffsetMap.end()){ //Timing offset is available
         timing_offset = ChannelKeyToTimingOffsetMap.at(channel_key);
       } else {
-        if(verbosity>v_error && !mc_waveforms){
+        if(verbosity>v_error){
           std::cout << "PhaseIIADCHitFinder: Didn't find Timing offset for channel... setting this channel's offset to 0ns" << channel_key << std::endl;
         }
       }
@@ -1205,9 +1217,23 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
         }
       }
 
-	  // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+      if(verbosity>v_debug) {
+	      
+	      std::cout << "Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
+
+	      if (hit_time < 0.0) {
+	        // If for some reason the interpolation finds a negative time value (if the pulse is extremely early in the buffer),
+	        // default to the peak time (maximum ADC value of the pulse)
+	        std::cout << "Hit time is negative! Defaulting to peak time" << std::endl;
+	        hit_time = peak_sample;
+	      }
+      }
+
+      // extract the x and y points of the pulse (subtract off baseline and "zero" the pulse to the pulse start)
+
       std::vector<double> trace_x;
       std::vector<double> trace_y;
+
       double pulse_start_time = pulse_start_sample * NS_PER_ADC_SAMPLE;
       double pulse_baseline = calibrated_minibuffer_data.GetBaseline();
 
@@ -1216,27 +1242,6 @@ std::vector<ADCPulse> PhaseIIADCHitFinder::find_pulses_bythreshold(
           double val_adc = raw_minibuffer_data.GetSample(p);
           trace_x.push_back(ns_time - pulse_start_time);
           trace_y.push_back(val_adc - pulse_baseline);
-      }
-
-      if (hit_time < 0.0) {
-	        // If for some reason the interpolation finds a negative time value (if the pulse is extremely early in the buffer),
-	        // default to the peak time (maximum ADC value of the pulse)
-	        std::cout << "Hit time is negative! Defaulting to peak time" << std::endl;
-	        hit_time = peak_sample;
-	    }
-
-      if(verbosity>v_debug) {
-	      
-	      std::cout << "Hit time [ns] " << hit_time * NS_PER_ADC_SAMPLE << std::endl;
-
-        std::cout << "Pulse properties: " << std::endl;
-        std::cout << "     chanID:      " << channel_key << std::endl;
-        std::cout << "     charge:      " << ( charge ) << std::endl;
-        std::cout << "     start time:  " << ( pulse_start_sample ) << std::endl;
-        std::cout << "     hit time:    " << ( hit_time ) << std::endl;
-        std::cout << "     stop time:   " << ( pulse_end_sample ) << std::endl;
-        std::cout << "     pulse width: " << ( pulse_end_sample - pulse_start_sample ) << std::endl;
-
       }
 
 

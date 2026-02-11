@@ -176,6 +176,7 @@ bool LoadANNIEEvent::Execute() {
       std::string input_filename = input_filenames_.at(current_file_);
       bool filename_valid = false;
       filename_valid = theANNIEEvent->Initialise(input_filename);
+      Log("LoadANNIEEvent: Loading new file "+input_filename, 1, verbosity_);
       if (!filename_valid){
         Log("LoadANNIEEvent: Filename "+input_filename+" not found! Proceed to next file",v_error,verbosity_);
         current_file_++;
@@ -183,6 +184,8 @@ bool LoadANNIEEvent::Execute() {
       }
       m_data->Stores["ANNIEEvent"] = theANNIEEvent;
       m_data->Stores.at("ANNIEEvent")->Header->Get("TotalEntries",total_entries_in_file_);
+            Log("LoadANNIEEvent: total number of entry in this file is "+std::to_string(total_entries_in_file_), 1, verbosity_  );
+
       if (current_file_==0) {
         global_events.push_back(total_entries_in_file_);
         global_events_start.push_back(0);
@@ -278,7 +281,7 @@ bool LoadANNIEEvent::Execute() {
   Log("ANNIEEvent store has "+std::to_string(total_entries_in_file_)+" entries",v_debug,verbosity_);
   Log("Loading entry " + std::to_string(current_entry_) + " from the"
     " ANNIEEvent input file \"" + input_filenames_.at(current_file_)
-    + '\"', 1, verbosity_);
+    + '\"', 2, verbosity_);
  
   if ((int)current_entry_ != offset_evnum) m_data->Stores["ANNIEEvent"]->Delete();	//ensures that we can access pointers without problems
 
@@ -290,7 +293,9 @@ bool LoadANNIEEvent::Execute() {
  
 
 
-  if (global_evnr && !has_local){ m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev); }
+  if (global_evnr && !has_local){ m_data->Stores["ANNIEEvent"]->Set("EventNumber",global_ev); 
+  m_data->CStore.Set("EventNumberTree",global_ev);
+  }
   global_ev++; 
 
   if ( current_entry_ >= total_entries_in_file_ ) {

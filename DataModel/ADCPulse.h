@@ -98,6 +98,6 @@ class ADCPulse : public Hit {
     std::vector<double> trace_y_ = {};  // y points of the pulse (baseline-subtracted) [ADC]
 };
 
-// (From Andrew Sutton) Need to increment the class version since we added time as a new variable
+// Need to increment the class version since we added time as a new variable
 // the version number ensures backward compatibility when serializing 
 BOOST_CLASS_VERSION(ADCPulse, 1)

@@ -71,6 +71,15 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
     fSaveROOT = false;
   }
 
+  if (!got_deletectcdata) {
+    logmessage = ("Warning (BeamFetcherV2): DeleteCTCData was not set in the "
+		  "config file. If you're not running downstream tools that "
+		  "remove the CTC from the CStore then you probably want to "
+		  " set this to true to save memory. Using default \"false\"");
+    Log(logmessage, v_warning, verbosity);
+    fDeleteCTCData = false;
+  }
+
 
   if (!got_deletectcdata) {
     logmessage = ("Warning (BeamFetcherV2): DeleteCTCData was not set in the "
@@ -114,18 +123,20 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
 bool BeamFetcherV2::Execute()
 {
   m_data->CStore.Set("NewBeamDataAvailable", false);
+
   // Do the things
   bool got_ctc = m_data->CStore.Get("NewCTCDataAvailable", fNewCTCData);
   bool goodFetch = false;
   if (got_ctc && fNewCTCData) {
     logmessage = ("Message (BeamFetcherV2): New CTC data found. Fetching. ");
-    Log(logmessage, v_message, verbosity);  
+    Log(logmessage, v_message, verbosity);    
 
-  goodFetch = this->FetchFromTrigger();
+    goodFetch = this->FetchFromTrigger();
   } else {
     logmessage = ("Warning (BeamFetcherV2): No new CTC data found. Nothing to fetch. ");
     Log(logmessage, v_message, verbosity);    
   }
+
 
   // Save it out
   if (goodFetch) {
@@ -170,10 +181,14 @@ bool BeamFetcherV2::FetchFromTrigger()
     for (auto iterator = TimeToTriggerWordMap->lower_bound(fLastTimestampFetched+1);
 	 iterator != TimeToTriggerWordMap->end(); ++iterator) {
 
-      // We only care about beam triggers here - grab the undelayed beam trigger 14
+      // We only care about beam triggers here
       if (std::find(iterator->second.begin(), iterator->second.end(), 14) == iterator->second.end()) {
 	continue;
       }
+      // bool hasBeamTrig = false;
+      // for (auto word : iterator->second) 
+      // 	if (word == 5) hasBeamTrig = true;
+      // if (!hasBeamTrig) continue;
       
       // Grab the timestamp
       uint64_t trigTimestamp = iterator->first;

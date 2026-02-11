@@ -1,8 +1,9 @@
 verbosity 0
 BuildType TankAndCTC
+#BuildType CTC
 Mode FileList
-InputFile ./configfiles/EventBuilderRaw/my_files.txt
+InputFile ./configfiles/DataDecoder/my_files.txt
 DummyRunInfo 1
 StoreTrigOverlap 0
-ReadTrigOverlap 0
-StoreRawData 1
+ReadTrigOverlap 1
+StoreRawData 0

@@ -5,10 +5,13 @@ FitRWMWaveform::FitRWMWaveform() : Tool() {}
 bool FitRWMWaveform::Initialise(std::string configfile, DataModel &data)
 {
 
+  /////////////////// Useful header ///////////////////////
   if (configfile != "")
-    m_variables.Initialise(configfile);
+    m_variables.Initialise(configfile); // loading config file
+  // m_variables.Print();
 
-  m_data = &data; 
+  m_data = &data; // assigning transient data pointer
+  /////////////////////////////////////////////////////////////////
 
   m_variables.Get("verbosityFitRWMWaveform", verbosityFitRWMWaveform);
   m_variables.Get("printToRootFile", printToRootFile);
@@ -86,7 +89,6 @@ bool FitRWMWaveform::Finalise()
         hRWM->SetBinContent(i + 1, val[i]); // Note the 1-based index
       }
       hRWM->Write();
-      delete hRWM;
       RWMCount++;
     }
 
@@ -101,12 +103,10 @@ bool FitRWMWaveform::Finalise()
         hBRF->SetBinContent(i + 1, val[i]); // Note the 1-based index
       }
       hBRF->Write();
-      delete hBRF;
       BRFCount++;
     }
 
     fOutput_tfile->Close();
-    delete fOutput_tfile;
   }
 
   return true;
@@ -357,6 +357,17 @@ void FitRWMWaveform::FitBRF()
     x_vals.push_back(i * bin_size);
     y_vals.push_back(BRFRawWaveform[i]);
   }
+
+  //TGraph graph(x_vals.size(), &x_vals[0], &y_vals[0]);
+  //TF1 gaus("gaus", "gaus", fit_start_bin * bin_size, fit_end_bin * bin_size);
+
+  //graph.Fit(&gaus, "Q");
+
+  //BRFFirstPeakFit = gaus.GetParameter(1); // Mean value of the Gaussian fit
+  //Log("FitRWMWaveform: FitBRF(): First peak fit at " + std::to_string(BRFFirstPeakFit), v_debug, verbosityFitRWMWaveform);
+
+
+
 
   // Find the bin with the minimum value between the 5th and 15th bins
   auto min_it = std::min_element(BRFRawWaveform.begin() + 4, BRFRawWaveform.begin() + 15);

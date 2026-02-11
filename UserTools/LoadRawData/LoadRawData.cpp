@@ -179,7 +179,7 @@ bool LoadRawData::Execute(){
     }
     FileCompleted = false;
     if (JumpBecauseLAPPD){
-      //sometimes the LAPPD data in raw data file may have a very large entry number due to overflow
+      //something the LAPPD data in raw data file may have a very large entry number seems like because of overflow
       //then the whole loader will be stuck in the loop, so we need to jump to the next file
       //only set while loading with LAPPD, won't affect others
       FileCompleted = true;
@@ -315,13 +315,13 @@ bool LoadRawData::Execute(){
     LAPPDEntriesCompleted = true;
     LAPPDPaused = true;
     //if(TrigEntryNum < trigtotalentries) CTCPaused = false;
-    //when using ANNIEEventBuilder, the CTC data are usually pulsed at ~10 entries
+    //when use ANNIEEventBuilder, the CTC data are usually pulsed at ~10 entries
     //but if we also load the LAPPD data, the pulse will be canceled here
     //and there is no need to recheck everything is not paused again
     if(TankEntryNum < tanktotalentries) TankPaused = false;
     if(MRDEntryNum < mrdtotalentries) MRDPaused = false;
   }
-  if (lappdtotalentries < 0){ //some times the lappd broken data can give negative value
+  if (lappdtotalentries < 0){ //some time the lappd broken data can give negative value
     LAPPDEntriesCompleted = true;
   }
 
