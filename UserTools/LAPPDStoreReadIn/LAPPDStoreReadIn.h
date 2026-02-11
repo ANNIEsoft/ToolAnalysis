@@ -8,10 +8,6 @@
 #include <fstream>
 #include "Tool.h"
 
-#define NUM_CH 30
-#define NUM_PSEC 5
-#define NUM_SAMP 256
-
 using namespace std;
 /**
  * \class LAPPDStoreReadIn
