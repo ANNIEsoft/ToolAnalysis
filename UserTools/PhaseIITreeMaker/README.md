@@ -81,6 +81,13 @@ Will output to tree if 1.
 IsData (1 or 0)
 Whether the data we are processing is real (Hits) or MC (MCHits).
 
+ApplyDeadMask (1 or 0)
+Whether to include faulty/dead PMTs that may be in the ProcessedData
+
+PMTWaveformSim (1 or 0)
+PMTWaveformSim tool constructs waveforms from MC hits and performs hit finding just like in the data.
+If enabled, IsData should also be 0 to signal it is MC. 
+
 HasGenie (1 or 0)
 Input determines whether GENIE-level information is loaded by the LoadGENIEEvent tool.
 
@@ -90,3 +97,4 @@ Must have HasGenie 1 and TankClusterProcessing 1 enabled.
 (as defined in the AssignBunchTimingMC tool).  
 
 ```
+

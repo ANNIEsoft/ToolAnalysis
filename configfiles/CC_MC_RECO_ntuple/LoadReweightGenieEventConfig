@@ -1,20 +1,20 @@
 # Reweightable GENIE cross section and beam flux model uncertainties
-# Revised 28 June 2024
+# Revised 19 Feb 2025
 #
 # Maintainer:James Minock <jminock1018@physics.rutgers.edu>
 
-verbosity 1
+verbosity 0
 FluxVersion 1  # use 0 to load genie files based on bnb_annie_0000.root etc files
                # use 1 to load files based on beammc_annie_0000.root etc files
 #FileDir NA     # specify "NA" for newer files: full path is saved in WCSim
 #FileDir /pnfs/annie/persistent/users/vfischer/genie_files/BNB_Water_10k_22-05-17
 #FileDir /pnfs/annie/persistent/users/moflaher/genie/BNB_World_10k_11-03-18_gsimpleflux
-FileDir /pnfs/annie/persistent/simulations/genie3/G1810a0211a/standard/tank
-#FileDir .                     ## Use with grid
-FilePattern gntp.0.ghep.root  ## for specifying specific files to load
-#FilePattern LoadWCSimTool      ## use this pattern to load corresponding genie info with the LoadWCSimTool
+#FileDir /pnfs/annie/persistent/simulations/genie3/G1810a0211a/standard/tank
+FileDir .                     ## Use with grid
+#FilePattern gntp.0.ghep.root  ## for specifying specific files to load
+FilePattern LoadWCSimTool      ## use this pattern to load corresponding genie info with the LoadWCSimTool
                                ## N.B: FileDir must still be specified for now!
-ManualFileMatching 1           ## to manually match GENIE event to corresponding WCSim event
+ManualFileMatching 0           ## to manually match GENIE event to corresponding WCSim event
 FileEvents 1000                ## number of events in the WCSim file
                                ## 500 for Marcus files
                                ## 1000 for James files
@@ -24,8 +24,7 @@ genie_module_label generator
 
 genie_central_values MaCCQE:4.9778|RPA_CCQE:0.151|NormCCMEC:1.31189|XSecShape_CCMEC:1.0
 
-weight_functions_xsec All,AxFFCCQEshape,DecayAngMEC,NormCCCOH,Norm_NCCOH,RPA_CCQE,RootinoFix,ThetaDelta2NRad,Theta_Delta2Npi,TunedCentralValue,VecFFCCQEshape,XSecShape_CCMEC
-#weight_functions_xsec All2
+weight_functions_xsec All0,All1,All2,All3,All4,All5,AxFFCCQEshape,DecayAngMEC,NormCCCOH,Norm_NCCOH,RPA_CCQE,RootinoFix,ThetaDelta2NRad,Theta_Delta2Npi,TunedCentralValue,VecFFCCQEshape,XSecShape_CCMEC
 
   # INDIVIDUAL WEIGHT CALCULATORS
   # Thse use "minmax" mode and represent a variation between two extremes. The
@@ -59,7 +58,14 @@ TunedCentralValue type:UBGenie|random_seed:99|parameter_list:["MaCCQE","RPA_CCQE
 RootinoFix type:UBGenie|random_seed:101|parameter_list:["RESRootino"]|parameter_sigma:[1]|mode:multisim|number_of_multisims:1
 
   # ALL OTHER RECOMMENDED SYSTEMATIC VARIATIONS THROWN TOGETHER
-All type:UBGenie|random_seed:100|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:1000
+All0 type:UBGenie|random_seed:100|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:100
 
-All2 type:UBGenie|random_seed:100|parameter_list:["MaCCQE","CoulombCCQE"]|parameter_sigma:[3.467735,1.5]|mode:multisim|number_of_multisims:10
+All1 type:UBGenie|random_seed:1101|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:100
 
+All2 type:UBGenie|random_seed:1102|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:100
+
+All3 type:UBGenie|random_seed:1103|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:100
+
+All4 type:UBGenie|random_seed:1104|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:100
+
+All5 type:UBGenie|random_seed:1105|parameter_list:["MaCCQE","CoulombCCQE","MaNCEL","EtaNCEL","NormCCMEC","NormNCMEC","FracPN_CCMEC","FracDelta_CCMEC","MaCCRES","MvCCRES","MaNCRES","MvNCRES","NonRESBGvpCC1pi","NonRESBGvpCC2pi","NonRESBGvpNC1pi","NonRESBGvpNC2pi","NonRESBGvnCC1pi","NonRESBGvnCC2pi","NonRESBGvnNC1pi","NonRESBGvnNC2pi","NonRESBGvbarpCC1pi","NonRESBGvbarpCC2pi","NonRESBGvbarpNC1pi","NonRESBGvbarpNC2pi","NonRESBGvbarnCC1pi","NonRESBGvbarnCC2pi","NonRESBGvbarnNC1pi","NonRESBGvbarnNC2pi","AhtBY","BhtBY","CV1uBY","CV2uBY","AGKYxF1pi","AGKYpT1pi","MFP_pi","MFP_N","FrCEx_pi","FrInel_pi","FrAbs_pi","FrCEx_N","FrInel_N","FrAbs_N","RDecBR1gamma","RDecBR1eta"]|parameter_sigma:[3.467735,1.5,1,1,1.0,2.0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]|mode:multisim|number_of_multisims:100

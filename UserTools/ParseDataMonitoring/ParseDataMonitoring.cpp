@@ -2,6 +2,11 @@
 
 ParseDataMonitoring::ParseDataMonitoring():Tool(){}
 
+namespace {
+const unsigned int NUM_CH = 30;
+const unsigned int NUM_SAMP = 256;
+const unsigned int NUM_PSEC = 5;
+}
 
 bool ParseDataMonitoring::Initialise(std::string configfile, DataModel &data){
 

@@ -1,0 +1,8 @@
+LoadGeometry LoadGeometry configfiles/LAPPDana/ConfigGeo
+LAPPDASCIIReadIn LAPPDASCIIReadIn configfiles/LAPPDana/ConfigASCIIReadIn
+LAPPDReorderData LAPPDReorderData configfiles/LAPPDana/ConfigASCIIReadIn
+LAPPDBaselineSubtract LAPPDBaselineSubtract configfiles/LAPPDana/ConfigPreProcess
+LAPPDFindT0 LAPPDFindT0 configfiles/LAPPDana/ConfigPreProcess
+LAPPDBaselineSubtract2 LAPPDBaselineSubtract configfiles/LAPPDana/ConfigSimplePulses
+LAPPDWaveformDisplay LAPPDWaveformDisplay configfiles/LAPPDana/ConfigLAPPDWaveformDisplay
+
