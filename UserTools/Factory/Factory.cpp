@@ -176,6 +176,7 @@ if (tool=="AssignBunchTimingMC") ret=new AssignBunchTimingMC;
 if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
 if (tool=="EBMRD") ret=new EBMRD;
 if (tool=="EBPMT") ret=new EBPMT;
+if (tool=="EBTriggerGrouper") ret=new EBTriggerGrouper;
 if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
 if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
