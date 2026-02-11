@@ -184,5 +184,6 @@ if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
 if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
 if (tool=="PrintADCTraces") ret=new PrintADCTraces;
+if (tool=="ANNIEEventTreeMaker") ret=new ANNIEEventTreeMaker;
 return ret;
 }
