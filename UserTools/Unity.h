@@ -193,3 +193,4 @@
 #include "LAPPDWaveformDisplay.h"
 #include "PrintADCTraces.h"
 #include "ANNIEEventTreeMaker.h"
+#include "LAPPDTreeMaker.h"
