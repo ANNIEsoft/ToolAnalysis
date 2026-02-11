@@ -187,6 +187,7 @@
 #include "EBLAPPD.h"
 #include "EBTriggerGrouper.h"
 #include "EBSaver.h"
+#include "EBLoadRaw.h"
 #include "LAPPDLoadStore.h"
 #include "PMTWaveformSim.h"
 #include "LAPPDWaveformDisplay.h"
