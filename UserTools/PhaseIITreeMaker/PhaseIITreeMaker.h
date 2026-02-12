@@ -486,6 +486,8 @@ class PhaseIITreeMaker: public Tool {
   bool RecoDebug_fill = 0; //Outputs results of Reconstruction at each step (best fits, FOMs, etc.)
   bool muonTruthRecoDiff_fill = 0; //Output difference in tmuonruth and reconstructed values
   bool SiPMPulseInfo_fill = 0;
+  bool Digit_fill = 0;
+  bool MuonFitter_fill = 0;
 
   // LAPPD data variables
   bool LAPPDData_fill = 0;

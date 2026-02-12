@@ -730,38 +730,6 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
         }
       }
     }
-  } else {
-    if (m_all_clusters->size()){
-      double cluster_time;
-      for(std::pair<double,std::vector<Hit>>&& apair : *m_all_clusters){
-        std::vector<Hit>&Hits = apair.second;
-        double time_temp = 0;
-        double charge_temp = 0;
-        for (unsigned int i_hit = 0; i_hit < Hits.size(); i_hit++){
-          time_temp+=Hits.at(i_hit).GetTime();
-          int tube = Hits.at(i_hit).GetTubeId();
-          // check if PMT is present in the map before accessing it
-	  auto it = ChannelNumToTankPMTSPEChargeMap->find(tube);
-	  if (it != ChannelNumToTankPMTSPEChargeMap->end()) {
-	  	double charge_pe = Hits.at(i_hit).GetCharge() / it->second;
-	  	charge_temp += charge_pe;
-	  } else {
-	  	std::cerr << "PMT channel with hit not found in ChannelNumToTankPMTSPEChargeMap. Skipping this hit." << std::endl;
-	  	continue;
-	  }
-        }
-        if (Hits.size()>0) time_temp/=Hits.size();
-        vec_pmtclusters_charge->push_back(charge_temp);
-        vec_pmtclusters_time->push_back(time_temp);
-        if (time_temp > 2000.) continue;	//not a prompt event
-        if (charge_temp > max_charge){
-          max_charge = charge_temp;
-          prompt_cluster = true;
-          pmt_time = time_temp;
-          n_hits = int(Hits.size());
-        }
-      }
-    }
   }
 
   if (verbosity > 1) {
