@@ -204,7 +204,7 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
   // With BoostStore::Set("MyVariable", myvar), if myvar is not a pointer it will always
   // be saved to disk, but if myvar is a pointer the persist flag (default true) controls
   // whether it will be saved to disk. In either case the BoostStore becomes the owner
-  // of the object will handle its deletion.
+  // of the object and will handle its deletion.
   // Is 'BoostStore::Save' needed for single-entry stores?
   // ----------------
   // create a new BoostStore with key "ANNIEEvent" in the Stores std::map
