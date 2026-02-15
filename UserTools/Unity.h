@@ -182,7 +182,7 @@
 #include "PrintDQ.h"
 #include "AssignBunchTimingMC.h"
 #include "FitRWMWaveform.h"
-#include "EBPMT.h"
+#include "EBTriggerGrouper.h"
 #include "EBPMT.h"
 #include "LAPPDLoadStore.h"
 #include "PMTWaveformSim.h"
