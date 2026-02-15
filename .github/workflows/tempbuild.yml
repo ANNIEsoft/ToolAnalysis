@@ -90,7 +90,7 @@ jobs:
       ##################
       
       - name: build and test 
-        uses: Baardrw/docker-run-action@v3
+        uses: Baardrw/docker-run-action@v4
         with:
           image: anniesoft/toolanalysis:latest
           registry: docker.io
