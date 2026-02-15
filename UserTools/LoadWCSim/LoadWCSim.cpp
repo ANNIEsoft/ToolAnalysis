@@ -207,14 +207,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
   // of the object and will handle its deletion.
   // Is 'BoostStore::Save' needed for single-entry stores?
   // ----------------
-  // create a new BoostStore with key "ANNIEEvent" in the Stores std::map
   // BoostStore constructor args: typechecking (bool), m_format (0=binary, 1=ASCII, 2=multievent)
   // A BoostStore has a header where useful constants may be saved. The header is a BoostStore itself,
   // and can be accessed via: Store.Header->Get() and Store.Header->Set().
-  // The method 'Store::Save()' writes everything 'Set' since the last 'Save' to the current entry.
-  // Store::Clear clears the map of the current entry, to start building a new one.
-  // Use 'Store::GetEntry(int entrynum)' to load an entry to then be able to 'Get' it's contents.
-  // 'Store->Header->Get("TotalEntries",NumEvents)' will load the num entries into NumEvents
+  // The method 'BoostStore::Save()' writes everything 'Set' since the last 'Save' to the current entry.
+  // BoostStore::Clear clears the map of the current entry, to start building a new one.
+  // Use 'BoostStore::GetEntry(int entrynum)' to load an entry to then be able to 'Get' it's contents.
+  // 'BoostStore->Header->Get("TotalEntries",NumEvents)' will load the num entries into NumEvents
   // ------------------
   // When adding a BoostStore (or class object in general) to a BoostStore (such as ANNIEEvent)
   // you call BoostStore::Set("key",ObjectPointer) - BUT be aware that serialization happens when the
