@@ -31,7 +31,7 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY";
           echo "some directories deleted"
           sudo apt install aptitude -y >/dev/null 2>&1
-          sudo apt-get update >/dev/null 2>&1
+          sudo apt-get update --allow-releaseinfo-change
           sudo aptitude purge aria2 ansible azure-cli shellcheck rpm xorriso zsync \
             esl-erlang firefox gfortran-8 gfortran-9 google-chrome-stable \
             google-cloud-sdk google-cloud-cli imagemagick \
