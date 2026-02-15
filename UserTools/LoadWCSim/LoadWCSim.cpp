@@ -198,13 +198,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
 	
   // Short Stores README
   // ======================================================
-  // n.b. m_data->vars is a Store (of ben's Store type) that is not saved to disk?
+  // n.b. m_data->vars is a Store (of ben's Store type) that is not saved to disk.
   //      m_data->CStore is a single entry binary BoostStore that is not saved to disk.
   //      m_data->Stores["StoreName"] is a map of binary BoostStores that are saved to disk.
-  // If using Stores->BoostStore->Set("MyVariable") it will always be saved to disk
-  // Using Stores->BoostStore.Set("MyVariable",&myvar) if myvar is a pointer (to an object on
-  // the heap) puts myvar in the Store and it's deletion will be handled by the Store.
-  // (provided your class has a suitable destructor.)
+  // With BoostStore::Set("MyVariable", myvar), if myvar is not a pointer it will always
+  // be saved to disk, but if myvar is a pointer the persist flag (default true) controls
+  // whether it will be saved to disk. In either case the BoostStore becomes the owner
+  // of the object will handle its deletion.
   // Is 'BoostStore::Save' needed for single-entry stores?
   // ----------------
   // create a new BoostStore with key "ANNIEEvent" in the Stores std::map
