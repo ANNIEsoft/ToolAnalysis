@@ -2,12 +2,9 @@
 
 LoadWCSim::LoadWCSim():Tool(){}
 
-bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
-	
+bool LoadWCSim::Initialise(std::string configfile, DataModel &data)
+{	
   /////////////////// Useful header ///////////////////////
-	
-  if (verbosity) cout << "Initializing Tool LoadWCSim" << endl;
-	
   if (configfile!="") m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
 	
@@ -16,8 +13,11 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data){
   // Get the Tool configuration variables and set defaults
   // ======================================================
   if (!m_variables.Get("verbose", verbosity)) verbosity = 1;
+  logmessage = "LoadWCSim::Initialise: Initialising LoadWCSim!";
+  Log(logmessage, v_warning, verbosity);	
+	
   if (!m_variables.Get("MaxEntries", MaxEntries)) MaxEntries = -1;
-
+  
   if (!m_variables.Get("InputFile", MCFile)) {
     logmessage = "LoadWCSim::Initialise: NO InputFile set in the config!";
     Log(logmessage, v_error, verbosity);
@@ -451,9 +451,7 @@ bool LoadWCSim::Execute()
   MCFile = WCSimEntry->GetCurrentFile()->GetName();
     
   // Clean slate
-  std::cout << TDCData->size() << std::endl;
   TDCData->clear();
-  std::cout << MCHits->size() << std::endl;
   MCHits->clear();
   MCNeutCap.clear();
   MCNeutCapGammas.clear();
