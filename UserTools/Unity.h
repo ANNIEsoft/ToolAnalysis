@@ -195,4 +195,8 @@
 #include "FitRWMWaveform.h"
 #include "LAPPDLoadTXT.h"
 #include "LAPPDBSCharging.h"
+#include "EBTriggerGrouper.h"
+#include "LAPPDLoadStore.h"
+#include "PMTWaveformSim.h"
+#include "LAPPDWaveformDisplay.h"
 #include "PrintADCTraces.h"

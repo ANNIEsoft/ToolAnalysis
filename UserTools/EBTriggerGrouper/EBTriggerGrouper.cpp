@@ -20,9 +20,6 @@ bool EBTriggerGrouper::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("GroupTolerance", GroupTolerance);
   m_variables.Get("GroupTrigWord", GroupTrigWord);
 
-  TimeToTriggerWordMap = new std::map<uint64_t, std::vector<uint32_t>>;
-  TimeToTriggerWordMapComplete = new std::map<uint64_t, std::vector<uint32_t>>;
-
   groupBeam = true;
   m_variables.Get("groupBeam", groupBeam);
   groupCosmic = false;
@@ -393,7 +390,7 @@ bool EBTriggerGrouper::Finalise()
 
 bool EBTriggerGrouper::GroupByTolerance()
 {
-  Log("EBTG: GroupByTolerance()", v_warning, verbosityEBTG);
+  Log("EBTG: GroupByTolerance()", v_message, verbosityEBTG);
   Log("EBTG: Grouping by Tolerance: " + std::to_string(GroupTolerance), v_warning, verbosityEBTG);
   Log("EBTG: size of time buffer before grouping is " + std::to_string(TrigTimeForGroup.size()) + ", size of word buffer is " + std::to_string(TrigWordForGroup.size()), v_warning, verbosityEBTG);
   bool found = false;

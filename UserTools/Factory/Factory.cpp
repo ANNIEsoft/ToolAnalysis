@@ -187,6 +187,11 @@ if (tool=="BeamQuality") ret=new BeamQuality;
 if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
 if (tool=="LAPPDLoadTXT") ret=new LAPPDLoadTXT;
 if (tool=="LAPPDBSCharging") ret=new LAPPDBSCharging;
+if (tool=="EBTriggerGrouper") ret=new EBTriggerGrouper;
+if (tool=="EBPMT") ret=new EBPMT;
+if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
+if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
+if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
 if (tool=="PrintADCTraces") ret=new PrintADCTraces;
 return ret;
 }
