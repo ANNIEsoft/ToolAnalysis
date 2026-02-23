@@ -1,7 +1,7 @@
 verbosityEBTG 0
 GroupMode beam
 GroupTolerance 3000000
-GroupTrigWord 14 //undelayed beam
+GroupTrigWord 14  # undelayed beam
 
 groupBeam 0
 BeamTolerance 25000000
