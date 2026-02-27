@@ -1,3 +1,5 @@
+.NOTPARALLEL: dict.cc
+
 ifndef CXXFLAGS
   CXXFLAGS = -std=c++1y -O3
 endif
@@ -14,7 +16,7 @@ ifneq ($(MAKECMDGOALS),clean)
   CXX = g++
   CXXFLAGS += -Wall -Wextra -Wpedantic
   CXXFLAGS += -Werror -Wno-error=unused-parameter -Wcast-align
-  
+
   # Add extra compiler flags for recognized compilers (currently just gcc
   # and clang)
   CXXVERSION = $(shell $(CXX) --version)
@@ -22,7 +24,7 @@ ifneq ($(MAKECMDGOALS),clean)
   ifneq (,$(findstring clang,$(CXXVERSION)))
     # clang
     $(info Compiling using version $(COMPILER_VERSION) of clang)
-  
+
     # The ROOT headers trigger clang's no-keyword-macro warning, so disable it.
     CXXFLAGS += -Wno-keyword-macro
   else
@@ -43,7 +45,7 @@ ifneq ($(MAKECMDGOALS),clean)
       endif
     endif
   endif
-  
+
   ROOTCONFIG := $(shell command -v root-config 2> /dev/null)
   # prefer rootcling as the dictionary generator executable name, but use
   # rootcint if you can't find it
@@ -52,7 +54,7 @@ ifneq ($(MAKECMDGOALS),clean)
     ROOTCLING := $(shell command -v rootcint 2> /dev/null)
   endif
   ROOT := $(shell command -v root 2> /dev/null)
-  
+
   ifndef ROOTCONFIG
     $(error Could not find a valid ROOT installation.)
   else
@@ -69,12 +71,17 @@ ifneq ($(MAKECMDGOALS),clean)
 
 endif
 
-dictionary: viewer_linkdef.hh
+dict.cc: viewer_linkdef.hh RawViewer.h
 	@echo "making $@"
 	$(RM) dict.* dict*.pcm
-	$(ROOTCLING) -f dict.cc -c -I ../../DataModel $(BoostInclude) RawViewer.h viewer_linkdef.hh
+	MAKEFLAGS= $(ROOTCLING) -f dict.cc -c -I ../../DataModel $(BoostInclude) RawViewer.h viewer_linkdef.hh
 
-dict.o: dictionary dict.cc
+# dict.cc: viewer_linkdef.hh RawViewer.h
+# 	@echo "making $@"
+# 	$(RM) dict.* dict*.pcm
+# 	$(ROOTCLING) -f dict.cc -c -I ../../DataModel $(BoostInclude) RawViewer.h viewer_linkdef.hh
+
+dict.o: dict.cc
 	@echo "making $@"
 	@cp ../../DataModel/ANNIEconstants.h ../../DataModel/Constants.h ../../DataModel/RawReader.h ../../DataModel/RawReadout.h ../../DataModel/RawChannel.h ../../DataModel/RawCard.h ../../DataModel/RawTrigData.h ../../include/
 	$(CXX) $(CXXFLAGS) -fPIC -o $@ -I../../include -L../lib $(ROOT_CXXFLAGS) \

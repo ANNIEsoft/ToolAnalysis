@@ -184,6 +184,7 @@
 #include "FitRWMWaveform.h"
 #include "EBMRD.h"
 #include "EBPMT.h"
+#include "EBTriggerGrouper.h"
 #include "EBPMT.h"
 #include "LAPPDLoadStore.h"
 #include "PMTWaveformSim.h"
