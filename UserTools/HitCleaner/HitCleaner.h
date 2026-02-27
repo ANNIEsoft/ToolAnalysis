@@ -65,7 +65,7 @@ class HitCleaner: public Tool {
   std::vector<RecoDigit*>* FilterAll(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* FilterByPulseHeight(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* FilterByNeighbours(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* FilterByClusters(std::vector<RecoDigit*>* digitlist);
+  //std::vector<RecoDigit*>* FilterByClusters(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* FilterByTruthInfo(std::vector<RecoDigit*>* digitlist); //use truth information. Only for testing the code
   std::vector<RecoCluster>* RecoClusters(std::vector<RecoDigit*>* digitlist);
 

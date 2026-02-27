@@ -310,11 +310,11 @@ std::vector<RecoDigit*>* HitCleaner::Run(std::vector<RecoDigit*>* myDigitList)
   myOutputList = FilterDigits(myOutputList);
   if( fConfig==HitCleaner::kPulseHeightAndNeighbours ) return myOutputList;
   	
-  // filter using clustered digits
+  // filter using clustered digits              Not functional with current cluster architecture.  Removed for the time being.
   // =============================
-  myInputList = ResetDigits(myOutputList);
-  myOutputList = (std::vector<RecoDigit*>*)(this->FilterByClusters(myInputList));
-  myOutputList = FilterDigits(myOutputList);
+  //myInputList = ResetDigits(myOutputList);
+  //myOutputList = (std::vector<RecoDigit*>*)(this->FilterByClusters(myInputList));
+  //myOutputList = FilterDigits(myOutputList);
   if( fConfig==HitCleaner::kPulseHeightAndClusters ) return myOutputList;
   	
   if (fisMC){
@@ -514,7 +514,8 @@ std::vector<RecoDigit*>* HitCleaner::FilterByNeighbours(std::vector<RecoDigit*>*
   return fFilterByNeighbours;
 }
 
-std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* myDigitList)
+//FilterByClusters is not functioning with current RecoCluster architecture.
+/*std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* myDigitList)
 {
 	std::string name = "HitCleaner::FilterByClusters() ";
   // clear vector of filtered digits
@@ -543,7 +544,7 @@ std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* m
   
   
   return fFilterByClusters;
-}
+}*/
 
 std::vector<RecoCluster>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myDigitList)
 {  
