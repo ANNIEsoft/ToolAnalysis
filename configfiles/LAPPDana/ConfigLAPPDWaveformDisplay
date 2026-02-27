@@ -1,0 +1,24 @@
+# To display specific events, uncomment and set the range.
+#FirstEventNumber 0
+#LastEventNumber 500
+
+InputWaveformLabel ABLSLAPPDData
+ChannelOffset 0
+TrigerChannel1 1005
+TrigerChannel2 1035
+WaveformDisplayVerbosity 0
+RequireT0Signal 0
+DisplayTriggerChannelInPlot 1
+OutputFileName LAPPDWaveformDisplay.pdf
+
+# If PrintRunInfo is set to 0, the other settings below it are ignored, and the run information is not printed. 
+PrintRunInfo 0
+
+Date 2025-03-14
+LAPPDModel 151
+Path /pnfs/annie/persistent/LAPPDData/LAPPD151/2025-03-14/crosstalk/P2/all.txt
+LaserStatus On
+TriggerMode Forced
+NDFilter 2.0
+RunInfo ""
+

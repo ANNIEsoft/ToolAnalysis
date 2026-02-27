@@ -11,6 +11,21 @@
 //using namespace genie::constants;
 //using namespace genie::flux;
 
+// ***********************
+// GENIE ERROR HANDLING
+#include <csignal>
+#include <csetjmp>
+// global jump buffer for signal recovery
+static jmp_buf genie_jump_buffer;
+
+// signal handler function
+void handle_genie_abort(int sig) {
+    if (sig == SIGABRT) {
+        longjmp(genie_jump_buffer, 1);
+    }
+}
+// ***********************
+
 /*
 GENIE INPUTS
 ============
@@ -644,7 +659,27 @@ bool LoadReweightGenieEvent::Execute(){
 		// objects to compute the weights.
 		weights[i].resize( num_knobs );
 		for (unsigned int k = 0; k < num_knobs; ++k ) {
-			weights[i][k] = reweightVector[i].at(k).CalcWeight( *gevtRec );
+
+			// ERROR HANDLING FROM GENIE
+			// ************************************
+			// register the signal handler
+            void (*prev_handler)(int) = std::signal(SIGABRT, handle_genie_abort);
+			
+			// set the jump point
+            if (setjmp(genie_jump_buffer) == 0) {
+                // default (if no error is present)
+                weights[i][k] = reweightVector[i].at(k).CalcWeight( *gevtRec );
+            } else {
+                // recovery path: if GENIE calls abort(), we land here
+                std::cerr << "!!! GENIE Aborted on event " << tchainentrynum
+                    << " (Knob: " << k << "). Skipping and using weight 1.0." << std::endl;
+                    weights[i][k] = 1.0;
+            }
+			
+            // restore the original handler
+            std::signal(SIGABRT, prev_handler);
+			// ************************************
+
 		}
 
 		reweights.insert(std::pair<std::string,std::vector<double>>(weight_names[i],weights[i]));

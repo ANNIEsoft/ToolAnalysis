@@ -34,4 +34,5 @@ DataModel/DataModel_Linkdef.hh
 # These are imported as part of ToolPack
 UserTools/ImportedTools
 UserTools/InactiveTools
+UserTools/MyFactory
 

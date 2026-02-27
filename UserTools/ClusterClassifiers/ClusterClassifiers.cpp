@@ -35,7 +35,6 @@ bool ClusterClassifiers::Initialise(std::string configfile, DataModel &data){
 
 bool ClusterClassifiers::Execute(){
 
-  //We're gonna make ourselves a couple cluster classifier maps boyeeee
   if(verbosity>4) std::cout << "ClusterClassifiers tool: Accessing cluster map in CStore" << std::endl;
   bool get_clusters = false;
   m_data->CStore.Get("ClusterMap",m_all_clusters);

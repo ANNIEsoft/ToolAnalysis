@@ -7,6 +7,8 @@ bunchwidth 1.308       # BNB instrinic bunch spread [ns]
 bunchinterval 18.936   # BNB bunch spacings [ns]
 bunchcount 81          # number of BNB bunches per spill
 
+BRFfituncertainty 1.809 # jitter in our beam signals / BRF fitting uncertainty [ns]
+
 sampletype 0           # Tank (0) or World (1) genie samples you are running over
 prompttriggertime 1    # WCSim prompt trigger settings: (0 = default, t0 = 0 when a particle enters the volume)
                        #                                (1 = modified, t0 = 0 when the neutrino beam dump begins)
