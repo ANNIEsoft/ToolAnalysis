@@ -10,10 +10,6 @@
 
 #include "PsecData.h"
 
-#define NUM_CH 30
-#define NUM_SAMP 256
-#define NUM_PSEC 5
-
 using namespace std;
 /**
  *  * \class ParseDataMonitoring

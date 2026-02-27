@@ -14,9 +14,13 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   
   hasGenie = false;
   hasBNBtimingMC = false;
+  MCWaveform = false;
+  ApplyDeadMask = false;
 
   m_variables.Get("verbose", verbosity);
   m_variables.Get("IsData",isData);
+  m_variables.Get("PMTWaveformSim",MCWaveform);
+  m_variables.Get("ApplyDeadMask",ApplyDeadMask);
   m_variables.Get("HasGenie",hasGenie);
   m_variables.Get("HasBNBtimingMC",hasBNBtimingMC);
   m_variables.Get("TankHitInfo_fill", TankHitInfo_fill);
@@ -371,6 +375,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueNeutCapE",&fTrueNeutCapE);
       fPhaseIITrigTree->Branch("trueNeutCapGammaE",&fTrueNeutCapGammaE);
       fPhaseIITrigTree->Branch("trueNeutrinoEnergy",&fTrueNeutrinoEnergy,"trueNeutrinoEnergy/D");
+      fPhaseIITrigTree->Branch("trueNuPDG",&fTrueNuPDG,"trueNuPDG/I");
       fPhaseIITrigTree->Branch("trueNeutrinoMomentum_X",&fTrueNeutrinoMomentum_X,"trueNeutrinoMomentum_X/D");
       fPhaseIITrigTree->Branch("trueNeutrinoMomentum_Y",&fTrueNeutrinoMomentum_Y,"trueNeutrinoMomentum_Y/D");
       fPhaseIITrigTree->Branch("trueNeutrinoMomentum_Z",&fTrueNeutrinoMomentum_Z,"trueNeutrinoMomentum_Z/D");
@@ -418,7 +423,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     if (Reweight_fill){
       fPhaseIITrigTree->Branch("XSecWeights",&fxsec_weights);
       fPhaseIITrigTree->Branch("FluxWeights",&fflux_weights);
-      fPhaseIITrigTree->Branch("weight_All_UBGenie",&fAll);
+      fPhaseIITrigTree->Branch("weight_All0_UBGenie",&fAll0);
+      fPhaseIITrigTree->Branch("weight_All1_UBGenie",&fAll1);
+      fPhaseIITrigTree->Branch("weight_All2_UBGenie",&fAll2);
+      fPhaseIITrigTree->Branch("weight_All3_UBGenie",&fAll3);
+      fPhaseIITrigTree->Branch("weight_All4_UBGenie",&fAll4);
+      fPhaseIITrigTree->Branch("weight_All5_UBGenie",&fAll5);
       fPhaseIITrigTree->Branch("weight_AxFFCCQEshape_UBGenie",&fAxFFCCQEshape);
       fPhaseIITrigTree->Branch("weight_DecayAngMEC_UBGenie",&fDecayAngMEC);
       fPhaseIITrigTree->Branch("weight_NormCCCOH_UBGenie",&fNormCCCOH);
@@ -545,11 +555,19 @@ bool PhaseIITreeMaker::Execute(){
         return false;
       }
     } else {
+      if (MCWaveform){
+        get_clusters = m_data->CStore.Get("ClusterMap",m_all_clusters);
+        if(!get_clusters){
+          std::cout << "PhaseIITreeMaker tool: MCWaveform --> no clusters found!" << std::endl;
+          return false;
+        }
+      } else {
       get_clusters = m_data->CStore.Get("ClusterMapMC",m_all_clusters_MC);
       if (!get_clusters){
         std::cout <<"PhaseIITreeMaker tool: No clusters found (MC)!" << std::endl;
         return false;
       }
+    }
     }
     get_clusters = m_data->CStore.Get("ClusterMapDetkey",m_all_clusters_detkeys);
     if (!get_clusters){
@@ -560,14 +578,29 @@ bool PhaseIITreeMaker::Execute(){
 
     int cluster_num = 0;
     int cluster_size = 0;
-    if (isData) cluster_size = (int) m_all_clusters->size();
-    else cluster_size = (int) m_all_clusters_MC->size();
+    if (isData) {
+        cluster_size = (int) m_all_clusters->size();
+    } else {
+        if (MCWaveform) {
+            cluster_size = (int) m_all_clusters->size();
+        } else {
+            cluster_size = (int) m_all_clusters_MC->size();
+        }
+    }
       
     std::map<double,std::vector<Hit>>::iterator it_cluster_pair;
     std::map<double,std::vector<MCHit>>::iterator it_cluster_pair_mc;
     bool loop_map = true;
-    if (isData) it_cluster_pair = (*m_all_clusters).begin();
-    else it_cluster_pair_mc = (*m_all_clusters_MC).begin();
+    if (isData) {
+        it_cluster_pair = (*m_all_clusters).begin();
+    } else {
+        if (MCWaveform) {
+            it_cluster_pair = (*m_all_clusters).begin();
+        } else {
+            it_cluster_pair_mc = (*m_all_clusters_MC).begin();
+        }
+    }
+
     if (cluster_size == 0) loop_map = false;
     while (loop_map){
     //for (std::pair<double,std::vector<Hit>>&& cluster_pair : *m_all_clusters) {
@@ -660,6 +693,19 @@ bool PhaseIITreeMaker::Execute(){
           if(verbosity>3) Log("PhaseIITreeMaker Tool: No cluster classifiers.  Continuing tree",v_debug,verbosity);
         }
       } else {
+        if (MCWaveform){
+          std::vector<Hit> cluster_hits = it_cluster_pair->second;
+          fClusterTime = it_cluster_pair->first;
+          if(TankHitInfo_fill){
+            Log("PhaseIITreeMaker Tool: Loading tank cluster hits into cluster tree",v_debug,verbosity);
+            this->LoadTankClusterHits(cluster_hits);
+          }
+
+          bool good_class = this->LoadTankClusterClassifiers(it_cluster_pair->first);
+          if(!good_class){
+            if(verbosity>3) Log("PhaseIITreeMaker Tool: No cluster classifiers.  Continuing tree",v_debug,verbosity);
+          }
+        } else {
         std::vector<MCHit> cluster_hits = it_cluster_pair_mc->second;
         fClusterTime = it_cluster_pair_mc->first;
         std::vector<unsigned long> cluster_detkeys = m_all_clusters_detkeys->at(it_cluster_pair_mc->first);
@@ -673,7 +719,8 @@ bool PhaseIITreeMaker::Execute(){
         }
         bool good_bunch = this->LoadBNBtimingMC(it_cluster_pair_mc->first);
         if(!good_bunch){
-          if(verbosity>v_debug) Log("PhaseIITreeMaker Tool: BNB timing (MC). Continuing tree",v_debug,verbosity);
+          if(verbosity>v_debug) Log("PhaseIITreeMaker Tool: No BNB timing (MC). Continuing tree",v_debug,verbosity);
+        }
         }
       }
 
@@ -690,13 +737,25 @@ bool PhaseIITreeMaker::Execute(){
       }
       fPhaseIITankClusterTree->Fill();
       cluster_num += 1;
-      if (isData){
-        it_cluster_pair++;
-        if (it_cluster_pair == (*m_all_clusters).end()) loop_map = false;
+      if (isData) {
+          it_cluster_pair++;
+          if (it_cluster_pair == (*m_all_clusters).end()) {
+              loop_map = false;
+          }
       } else {
-        it_cluster_pair_mc++;
-        if (it_cluster_pair_mc == (*m_all_clusters_MC).end()) loop_map = false;
-      } 
+          if (MCWaveform) {
+              it_cluster_pair++;
+              if (it_cluster_pair == (*m_all_clusters).end()) {
+                  loop_map = false;
+              }
+          } else {
+              it_cluster_pair_mc++;
+              if (it_cluster_pair_mc == (*m_all_clusters_MC).end()) {
+                  loop_map = false;
+              }
+          }
+      }
+
     }
   }
   
@@ -890,7 +949,7 @@ bool PhaseIITreeMaker::Execute(){
 
     // Read hits and load into ntuple
     if(TankHitInfo_fill){
-      this->LoadAllTankHits(isData);
+      this->LoadAllTankHits(isData, MCWaveform);
     }
     if(SiPMPulseInfo_fill) this->LoadSiPMHits();
  
@@ -899,7 +958,7 @@ bool PhaseIITreeMaker::Execute(){
     //DIGITS
     if(Digit_fill) this->LoadDigitHits();
     //DIGITS
-    /*/
+    /*
     if(Digit_fill){
        // get digits from RecoDigit store
        std::vector<RecoDigit>* digitList;
@@ -924,7 +983,7 @@ bool PhaseIITreeMaker::Execute(){
        Log("PhaseIITreeMaker Tool: Got "+to_string(totalPMTs)+" PMT digits; "+to_string(digitT.size()) +" total digits so far",v_debug,verbosity);
        Log("PhaseIITreeMaker Tool: Got "+to_string(totalLAPPDs)+" LAPPD digits; "+to_string(digitT.size()) +" total digits",v_debug,verbosity);
     }
-/*/
+*/
 
     if(MRDReco_fill){
       fNumClusterTracks=0;
@@ -989,8 +1048,8 @@ void PhaseIITreeMaker::ResetVariables() {
   fEventNumber = -9999;
   fEventTimeTank_Tree = 9999;
   fNHits = -9999;
-  fNDigitsPMTs = -9999;
-  fNDigitsLAPPDs = -9999;
+  fNDigitsPMTs = 0;
+  fNDigitsLAPPDs = 0;
   fVetoHit = -9999;
   fEventTimeMRD_Tree = 9999;
   fTriggerword = -1;
@@ -1059,6 +1118,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueNeutCapE->clear();
     fTrueNeutCapGammaE->clear();
     fTrueNeutrinoEnergy = -9999;
+    fTrueNuPDG = -9999;
     fTrueNeutrinoMomentum_X = -9999;
     fTrueNeutrinoMomentum_Y = -9999;
     fTrueNeutrinoMomentum_Z = -9999;
@@ -1104,7 +1164,12 @@ void PhaseIITreeMaker::ResetVariables() {
   }
 
   if (Reweight_fill){
-    fAll.clear();
+    fAll0.clear();
+    fAll1.clear();
+    fAll2.clear();
+    fAll3.clear();
+    fAll4.clear();
+    fAll5.clear();
     fAxFFCCQEshape.clear();
     fDecayAngMEC.clear();
     fNormCCCOH.clear();
@@ -1326,9 +1391,12 @@ void PhaseIITreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits){
   fClusterHits = 0;
   for (int i = 0; i<(int)cluster_hits.size(); i++){
     int channel_key = cluster_hits.at(i).GetTubeId();
+	Detector* this_detector = geom->ChannelToDetector(channel_key);
+	if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
+      continue;
+    }
     std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
     if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
-      Detector* this_detector = geom->ChannelToDetector(channel_key);
       unsigned long detkey = this_detector->GetDetectorID();
       Position det_position = this_detector->GetDetectorPosition();
       double hit_charge = cluster_hits.at(i).GetCharge();
@@ -1372,9 +1440,12 @@ void PhaseIITreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits, st
      int wcsimid = channelkey_to_pmtid.at(utubeid);
      unsigned long detkey_data = pmtid_to_channelkey[wcsimid];
      int channel_key_data = (int) detkey_data;
+	 Detector* this_detector = geom->ChannelToDetector(tubeid);
+     if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
+       continue;
+     }
      std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key_data);
      if(it != ChannelKeyToSPEMap.end()){ //Charge to SPE conversion is available
-       Detector* this_detector = geom->ChannelToDetector(tubeid);
        Position det_position = this_detector->GetDetectorPosition();
        unsigned long detkey = this_detector->GetDetectorID();
        double hit_PE = cluster_hits.at(i).GetCharge();
@@ -1529,8 +1600,6 @@ void PhaseIITreeMaker::LoadDigitHits(){
           }
    // Extract the PMT & LAPPD digit information
    // ===============================
-        int totalPMTs =0; // number of digits from PMT hits in the event
-        int totalLAPPDs = 0; // number of digits from LAPPD hits in the event
   //loop through all digits
         for(RecoDigit &adigit : *digitList){
 	   fdigitX.push_back(adigit.GetPosition().X());
@@ -1540,8 +1609,8 @@ void PhaseIITreeMaker::LoadDigitHits(){
 	   if(adigit.GetDigitType()==0){fNDigitsPMTs+=1;} //when the digit type is zero we have a PMT digit
 	   else{fNDigitsLAPPDs+=1;}// when it is 1 we have LAPPD
            }
-        Log("PhaseIITreeMaker Tool: Got "+to_string(totalPMTs)+" PMT digits; "+to_string(fdigitT.size()) +" total digits so far",v_debug,verbosity);
-        Log("PhaseIITreeMaker Tool: Got "+to_string(totalLAPPDs)+" LAPPD digits; "+to_string(fdigitT.size()) +" total digits",v_debug,verbosity);
+        Log("PhaseIITreeMaker Tool: Got "+to_string(fNDigitsPMTs)+" PMT digits; "+to_string(fdigitT.size()) +" total digits so far",v_debug,verbosity);
+        Log("PhaseIITreeMaker Tool: Got "+to_string(fNDigitsLAPPDs)+" LAPPD digits; "+to_string(fdigitT.size()) +" total digits",v_debug,verbosity);
    return;
 }       
 //DIGITS
@@ -1615,95 +1684,109 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
   return NumClusterTracks;
 }
 
-void PhaseIITreeMaker::LoadAllTankHits(bool IsData) {
-  std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
-  std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
-  bool got_hits = false;
-  if (IsData) got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
-  else got_hits = m_data->Stores["ANNIEEvent"]->Get("MCHits",MCHits);
-  if (!got_hits){
-    std::cout << "No Hits store in ANNIEEvent. Continuing to build tree " << std::endl;
-    return;
-  }
-  Position detector_center=geom->GetTankCentre();
-  double tank_center_x = detector_center.X();
-  double tank_center_y = detector_center.Y();
-  double tank_center_z = detector_center.Z();
-  fNHits = 0;
+void PhaseIITreeMaker::LoadAllTankHits(bool isData, bool MCWaveform) {
+    std::map<unsigned long, std::vector<Hit>>* Hits = nullptr;
+    std::map<unsigned long, std::vector<MCHit>>* MCHits = nullptr;
+    bool got_hits = false;
 
-  std::map<unsigned long,std::vector<Hit>>::iterator it_tank_data;
-  std::map<unsigned long,std::vector<MCHit>>::iterator it_tank_mc;
-  if (IsData) it_tank_data = (*Hits).begin();
-  else it_tank_mc = (*MCHits).begin();
-  bool loop_tank = true;
-  int hits_size = (IsData)? Hits->size() : MCHits->size();
-  if (hits_size == 0) loop_tank = false;
-
-
-  while (loop_tank){
-  //for(std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits){
-    unsigned long channel_key;
-    if (IsData) channel_key = it_tank_data->first;
-    else channel_key = it_tank_mc->first;
-    Detector* this_detector = geom->ChannelToDetector(channel_key);
-    Position det_position = this_detector->GetDetectorPosition();
-    unsigned long detkey = this_detector->GetDetectorID();
-    unsigned long channel_key_data = channel_key;
-    if (!isData){
-      int wcsimid = channelkey_to_pmtid.at(channel_key);
-      channel_key_data = pmtid_to_channelkey[wcsimid];
-    }
-    std::map<int, double>::iterator it = ChannelKeyToSPEMap.find(channel_key);
-    std::map<int, double>::iterator it_mc = ChannelKeyToSPEMap.find(channel_key_data);
-    bool SPE_available = true;
-    if (IsData) SPE_available = (it != ChannelKeyToSPEMap.end());
-    else SPE_available = (it_mc != ChannelKeyToSPEMap.end());
-    if(SPE_available){ //Charge to SPE conversion is available
-      if (IsData){
-        std::vector<Hit> ThisPMTHits = it_tank_data->second;
-        fNHits+=ThisPMTHits.size();
-        for (Hit &ahit : ThisPMTHits){
-          double hit_charge = ahit.GetCharge();
-          double hit_PE  = hit_charge / ChannelKeyToSPEMap.at(channel_key);
-          fHitX.push_back((det_position.X()-tank_center_x));
-          fHitY.push_back((det_position.Y()-tank_center_y));
-          fHitZ.push_back((det_position.Z()-tank_center_z));
-          fHitT.push_back(ahit.GetTime());
-          fHitQ.push_back(hit_charge);
-          fHitPE.push_back(hit_PE);
-          fHitDetID.push_back(detkey);
-          fHitChankey.push_back(channel_key);
-          fHitChankeyMC.push_back(channel_key);
-          fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
-        }
-      } else {
-        std::vector<MCHit> ThisPMTHits = it_tank_mc->second;
-        fNHits+=ThisPMTHits.size();
-        for (MCHit &ahit : ThisPMTHits){
-          double hit_PE = ahit.GetCharge();
-          double hit_charge  = hit_PE * ChannelKeyToSPEMap.at(channel_key_data);
-          fHitX.push_back((det_position.X()-tank_center_x));
-          fHitY.push_back((det_position.Y()-tank_center_y));
-          fHitZ.push_back((det_position.Z()-tank_center_z));
-          fHitT.push_back(ahit.GetTime());
-          fHitQ.push_back(hit_charge);
-          fHitPE.push_back(hit_PE);
-          fHitDetID.push_back(detkey);
-          fHitChankey.push_back(channel_key_data);
-          fHitChankeyMC.push_back(channel_key);
-          fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
-        }
-      }
-    }
-    if (IsData) {
-      it_tank_data++;
-      if (it_tank_data == (*Hits).end()) loop_tank = false;
+    if (isData) {
+        got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
     } else {
-      it_tank_mc++;
-      if (it_tank_mc == (*MCHits).end()) loop_tank = false;
+        if (MCWaveform) {
+            got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
+        } else {
+            got_hits = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
+        }
     }
-  }
-  return;
+
+    if (!got_hits) {
+        std::cout << "No Hits store in ANNIEEvent. Continuing to build tree." << std::endl;
+        return;
+    }
+
+    Position detector_center = geom->GetTankCentre();
+    double tank_center_x = detector_center.X();
+    double tank_center_y = detector_center.Y();
+    double tank_center_z = detector_center.Z();
+    fNHits = 0;
+
+    bool loop_tank = true;
+    int hits_size = (isData || MCWaveform) ? Hits->size() : MCHits->size();
+    if (hits_size == 0) loop_tank = false;
+
+    auto it_tank_data = (isData || MCWaveform) ? Hits->begin() : std::map<unsigned long, std::vector<Hit>>::iterator();
+    auto it_tank_mc = (!isData && !MCWaveform) ? MCHits->begin() : std::map<unsigned long, std::vector<MCHit>>::iterator();
+
+    while (loop_tank) {
+        unsigned long channel_key = (isData || MCWaveform) ? it_tank_data->first : it_tank_mc->first;
+        Detector* this_detector = geom->ChannelToDetector(channel_key);
+        Position det_position = this_detector->GetDetectorPosition();
+        unsigned long detkey = this_detector->GetDetectorID();
+        unsigned long channel_key_data = channel_key;
+
+        if (!isData && !MCWaveform) {
+            int wcsimid = channelkey_to_pmtid.at(channel_key);
+            channel_key_data = pmtid_to_channelkey[wcsimid];
+        }
+
+		bool SPE_available = false;
+
+        if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
+            goto skip_channel;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
+        }
+
+        SPE_available = (isData || MCWaveform) ? 
+                             (ChannelKeyToSPEMap.find(channel_key) != ChannelKeyToSPEMap.end()) : 
+                             (ChannelKeyToSPEMap.find(channel_key_data) != ChannelKeyToSPEMap.end());
+
+        if (SPE_available) {
+            if (isData || MCWaveform) {
+                std::vector<Hit> ThisPMTHits = it_tank_data->second;
+                fNHits += ThisPMTHits.size();
+                for (Hit &ahit : ThisPMTHits) {
+                    double hit_charge = ahit.GetCharge();
+                    double hit_PE = hit_charge / ChannelKeyToSPEMap.at(channel_key);
+                    fHitX.push_back(det_position.X() - tank_center_x);
+                    fHitY.push_back(det_position.Y() - tank_center_y);
+                    fHitZ.push_back(det_position.Z() - tank_center_z);
+                    fHitT.push_back(ahit.GetTime());
+                    fHitQ.push_back(hit_charge);
+                    fHitPE.push_back(hit_PE);
+                    fHitDetID.push_back(detkey);
+                    fHitChankey.push_back(channel_key);
+                    fHitChankeyMC.push_back(channel_key);
+                    fHitType.push_back(RecoDigit::PMT8inch);
+                }
+            } else {
+                std::vector<MCHit> ThisPMTHits = it_tank_mc->second;
+                fNHits += ThisPMTHits.size();
+                for (MCHit &ahit : ThisPMTHits) {
+                    double hit_PE = ahit.GetCharge();
+                    double hit_charge = hit_PE * ChannelKeyToSPEMap.at(channel_key_data);
+                    fHitX.push_back(det_position.X() - tank_center_x);
+                    fHitY.push_back(det_position.Y() - tank_center_y);
+                    fHitZ.push_back(det_position.Z() - tank_center_z);
+                    fHitT.push_back(ahit.GetTime());
+                    fHitQ.push_back(hit_charge);
+                    fHitPE.push_back(hit_PE);
+                    fHitDetID.push_back(detkey);
+                    fHitChankey.push_back(channel_key_data);
+                    fHitChankeyMC.push_back(channel_key);
+                    fHitType.push_back(RecoDigit::PMT8inch);
+                }
+            }
+        }
+
+        skip_channel:   // skip the block above if the PMT is dead, advance the iterator
+        if (isData || MCWaveform) {
+            it_tank_data++;
+            if (it_tank_data == Hits->end()) loop_tank = false;
+        } else {
+            it_tank_mc++;
+            if (it_tank_mc == MCHits->end()) loop_tank = false;
+        }
+    }
+    return;
 }
 
 bool PhaseIITreeMaker::FillTankRecoInfo() {
@@ -2091,6 +2174,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
     if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy && get_bjx && get_y && get_targetZ && get_q0 && get_q3 && get_w ){
       fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
+      fTrueNuPDG = TrueNuPDG;
       fTrueNeutrinoMomentum_X = TrueNeutrinoMomentum.X();
       fTrueNeutrinoMomentum_Y = TrueNeutrinoMomentum.Y();
       fTrueNeutrinoMomentum_Z = TrueNeutrinoMomentum.Z();
@@ -2146,7 +2230,12 @@ void PhaseIITreeMaker::FillWeightInfo() {
   bool get_xsec_weights = m_data->Stores.at("ANNIEEvent")->Get("xsec_weights",fxsec_weights);
   bool get_flux_weights = m_data->Stores.at("ANNIEEvent")->Get("flux_weights",fflux_weights);
   if (get_xsec_weights && get_flux_weights){
-    fAll = fxsec_weights["All"];
+    fAll0 = fxsec_weights["All0"];
+    fAll1 = fxsec_weights["All1"];
+    fAll2 = fxsec_weights["All2"];
+    fAll3 = fxsec_weights["All3"];
+    fAll4 = fxsec_weights["All4"];
+    fAll5 = fxsec_weights["All5"];
     fAxFFCCQEshape = fxsec_weights["AxFFCCQEshape"];
     fDecayAngMEC = fxsec_weights["DecayAngMEC"];
     fNormCCCOH = fxsec_weights["NormCCCOH"];

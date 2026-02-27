@@ -8,12 +8,6 @@
 #include "Tool.h"
 #include "PsecData.h"
 
-#define NUM_CH 30
-#define NUM_SAMP 256
-#define NUM_PSEC 5
-#define NUM_VECTOR_DATA 7795
-#define NUM_VECTOR_PPS 16
-
 /**
  * \class LAPPDDataDecoder
  *

@@ -27,37 +27,78 @@ jobs:
           sudo rm -rf \
             /usr/share/dotnet /usr/local/lib/android /opt/ghc \
             /usr/local/share/powershell /usr/share/swift /usr/local/.ghcup \
-            /usr/lib/jvm /usr/local/share/boost || true
+            /usr/lib/jvm /usr/local/share/boost
           sudo rm -rf "$AGENT_TOOLSDIRECTORY";
           echo "some directories deleted"
-          sudo apt install aptitude -y >/dev/null 2>&1
-          sudo apt-get update >/dev/null 2>&1
-          sudo aptitude purge aria2 ansible azure-cli shellcheck rpm xorriso zsync \
-            esl-erlang firefox gfortran-8 gfortran-9 google-chrome-stable \
-            google-cloud-sdk google-cloud-cli imagemagick \
-            libmagickcore-dev libmagickwand-dev libmagic-dev ant ant-optional kubectl \
-            mercurial apt-transport-https mono-complete libmysqlclient \
-            unixodbc-dev yarn chrpath libssl-dev libxft-dev \
-            libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev \
-            snmp pollinate libpq-dev postgresql-client powershell ruby-full \
-            sphinxsearch subversion mongodb-org azure-cli microsoft-edge-stable \
-            -y -f >/dev/null 2>&1
-          sudo aptitude purge google-cloud-sdk -f -y >/dev/null 2>&1
-          sudo aptitude purge microsoft-edge-stable -f -y >/dev/null 2>&1 || true
-          sudo apt purge microsoft-edge-stable -f -y >/dev/null 2>&1 || true
-          sudo aptitude purge google-chrome-stable -f -y >/dev/null 2>&1 || true
-          sudo aptitude purge '~n ^mysql' -f -y >/dev/null 2>&1
-          sudo aptitude purge '~n ^php' -f -y >/dev/null 2>&1
-          sudo aptitude purge '~n ^dotnet' -f -y >/dev/null 2>&1
-          sudo aptitude purge '~n ^temurin' -f -y >/dev/null 2>&1
-          sudo apt-get autoremove -y >/dev/null 2>&1
-          sudo apt-get autoclean -y >/dev/null 2>&1
+          sudo apt-get update --allow-releaseinfo-change
+          echo "apt-get update: $?"
+          sudo apt install aptitude -y >/dev/null
+          echo "aptitude install: $?"
+          sudo aptitude purge aria2 -f -y  >/dev/null || true
+          sudo aptitude purge ansible -f -y  >/dev/null || true
+          sudo aptitude purge azure-cli -f -y  >/dev/null || true
+          sudo aptitude purge shellcheck -f -y  >/dev/null || true
+          sudo aptitude purge rpm -f -y  >/dev/null || true
+          sudo aptitude purge xorriso -f -y  >/dev/null || true
+          sudo aptitude purge zsync -f -y  >/dev/null || true
+          sudo aptitude purge esl-erlang -f -y  >/dev/null || true
+          sudo aptitude purge firefox -f -y  >/dev/null || true
+          sudo aptitude purge gfortran-8 -f -y  >/dev/null || true
+          sudo aptitude purge gfortran-9 -f -y  >/dev/null || true
+          sudo aptitude purge google-chrome-stable -f -y  >/dev/null || true
+          sudo aptitude purge google-cloud-sdk -f -y  >/dev/null || true
+          sudo aptitude purge google-cloud-cli -f -y  >/dev/null || true
+          sudo aptitude purge imagemagick -f -y  >/dev/null || true
+          sudo aptitude purge libmagickcore-dev -f -y  >/dev/null || true
+          sudo aptitude purge libmagickwand-dev -f -y  >/dev/null || true
+          sudo aptitude purge libmagic-dev -f -y  >/dev/null || true
+          sudo aptitude purge ant -f -y  >/dev/null || true
+          sudo aptitude purge ant-optional -f -y  >/dev/null || true
+          sudo aptitude purge kubectl -f -y  >/dev/null || true
+          sudo aptitude purge mercurial -f -y  >/dev/null || true
+          sudo aptitude purge apt-transport-https -f -y  >/dev/null || true
+          sudo aptitude purge mono-complete -f -y  >/dev/null || true
+          sudo aptitude purge libmysqlclient -f -y  >/dev/null || true
+          sudo aptitude purge unixodbc-dev -f -y  >/dev/null || true
+          sudo aptitude purge yarn -f -y  >/dev/null || true
+          sudo aptitude purge chrpath -f -y  >/dev/null || true
+          sudo aptitude purge libssl-dev -f -y  >/dev/null || true
+          sudo aptitude purge libxft-dev -f -y  >/dev/null || true
+          sudo aptitude purge libfreetype6 -f -y  >/dev/null || true
+          sudo aptitude purge libfreetype6-dev -f -y  >/dev/null || true
+          sudo aptitude purge libfontconfig1 -f -y  >/dev/null || true
+          sudo aptitude purge libfontconfig1-dev -f -y  >/dev/null || true
+          sudo aptitude purge snmp -f -y  >/dev/null || true
+          sudo aptitude purge pollinate -f -y  >/dev/null || true
+          sudo aptitude purge libpq-dev -f -y  >/dev/null || true
+          sudo aptitude purge postgresql-client -f -y  >/dev/null || true
+          sudo aptitude purge powershell -f -y  >/dev/null || true
+          sudo aptitude purge ruby -full -f -y  >/dev/null || true
+          sudo aptitude purge sphinxsearch -f -y  >/dev/null || true
+          sudo aptitude purge subversion -f -y  >/dev/null || true
+          sudo aptitude purge mongodb-org -f -y  >/dev/null || true
+          sudo aptitude purge azure-cli -f -y  >/dev/null || true
+          sudo aptitude purge microsoft-edge-stable -f -y  >/dev/null || true
+          sudo aptitude purge '~n ^mysql' -f -y >/dev/null || true
+          sudo aptitude purge '~n ^php' -f -y >/dev/null || true
+          sudo aptitude purge '~n ^dotnet' -f -y >/dev/null || true
+          sudo aptitude purge '~n ^temurin' -f -y >/dev/null || true
           echo "some packages purged"
+          sudo apt-get autoremove -y >/dev/null
+          sudo apt-get autoclean -y >/dev/null
+          echo "done apt autoremove and autoclean"
+          sudo rm -rf /opt/microsoft                #   783M
+          sudo rm -rf /usr/lib/llvm-*               #  1900M
+          sudo rm -rf /usr/local/julia*             #  1008M
+          sudo rm -rf /usr/local/share/chromium     #   613M
+          sudo rm -rf /usr/local/share/powershell   #  1244M
+          sudo rm -rf /usr/share/swift              #  3207M
+          sudo df -TBG /
+          echo "more directories deleted"
           #docker rmi $(docker image ls -aq) || true
           sudo swapoff /swapfile || true
           sudo rm -rf /swapfile
-          sudo apt-get autoremove -y >/dev/null 2>&1 || true
-          sudo apt-get autoclean -y >/dev/null 2>&1 || true
+          echo "cleanup done"
       - name: Check disk space
         run: |
           sudo dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -nr | head
@@ -90,7 +131,7 @@ jobs:
       ##################
       
       - name: build and test 
-        uses: addnab/docker-run-action@v3
+        uses: Baardrw/docker-run-action@v4
         with:
           image: anniesoft/toolanalysis:latest
           registry: docker.io
@@ -100,6 +141,7 @@ jobs:
             echo `pwd`
             ls -l
             cd /TA
+            git config --global --add safe.directory /TA
             ls -l
             ln -s /ToolAnalysis/ToolDAQ $PWD/ToolDAQ
             ls -l ./ToolDAQ
