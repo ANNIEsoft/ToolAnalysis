@@ -30,6 +30,7 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   WraparoundBin=0; QualityVar=0; TrigDeltaT1=0.; TrigDeltaT2=0.; PulseHeight=0.; MaxAmp0=0.; MaxAmp1=0.; BeamTime=0.; EventTime=0.; TotalCharge=0.; Npulses_cfd=0; Npulses_simp=0; T0Bin=0;
   NHits=0; NHits_simp=0; Npulses_cfd=0; Npulses_simp=0;
   Nchannels=60;
+  timestamps_meta=0;
 
   for(int i=0; i<60; i++){
       hQ[i]=0;  hxpar[i]=0; hxperp[i]=0; htime[i]=0;  hdeltime[i]=0; hvpeak[i]=0;
@@ -42,7 +43,7 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
 
       SelectedAmp0[i]=0; SelectedAmp1[i]=0; SelectedTime0[i]=0; SelectedTime1[i]=0;
 
-      StripPeak[i]=0;  StripPeak_Sm[i]=0;  StripPeakT[i]=0;  StripPeakT_Sm[i] =0;
+      StripPeak[i]=0;  StripPeak_Sm[i]=0;  StripPeakT[i]=0;  StripPeakT_Sm[i] =0; StripMaxAmp[i]=0.; StripMinAmp[i]=0.; StripRMSAmp[i]=0.; StripStandDevAmp[i]=0.; StripVarianceAmp[i]=0.; StripInt[i]=0.;
       StripQ[i]=0;  StripQ_Sm[i]=0;
 
   }
@@ -66,6 +67,7 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   fMyTree->Branch("EventTime",                &EventTime,                 "EventTime/D"                );
   fMyTree->Branch("TotalCharge",              &TotalCharge,               "TotalCharge/D"              );
 
+  fMyTree->Branch("timestamps_meta",          &timestamps_meta,           "timestamps_meta/I"          );
 
   //Hit parameters (from CFD)
   fMyTree->Branch("NHits",            &NHits,             "NHits/I"               );
@@ -85,6 +87,14 @@ bool LAPPDClusterTree::Initialise(std::string configfile, DataModel &data)
   fMyTree->Branch("StripPeakT_Sm",    StripPeakT_Sm,      "StripPeakT_Sm[Nchannels]/D");
   fMyTree->Branch("StripQ",           StripQ,             "StripQ[Nchannels]/D"       );
   fMyTree->Branch("StripQ_Sm",        StripQ_Sm,          "StripQ_Sm[Nchannels]/D"    );
+
+  // Information of the waveforms
+  fMyTree->Branch("StripMaxAmp",        StripMaxAmp,          "StripMaxAmp[Nchannels]/D"    );
+  fMyTree->Branch("StripMinAmp",        StripMinAmp,          "StripMinAmp[Nchannels]/D"    );
+  fMyTree->Branch("StripRMSAmp",        StripRMSAmp,          "StripRMSAmp[Nchannels]/D"    );
+  fMyTree->Branch("StripStandDevAmp",   StripStandDevAmp,     "StripStandDevAmp[Nchannels]/D"    );
+  fMyTree->Branch("StripVarianceAmp",   StripVarianceAmp,     "StripVarianceAmp[Nchannels]/D"    );
+  fMyTree->Branch("StripInt",           StripInt,             "StripInt[Nchannels]/D"    );
 
 
   //Hit parameters (from simple FindPeak)
@@ -185,7 +195,31 @@ bool LAPPDClusterTree::Execute()
   m_data->Stores["ANNIEEvent"]->Get("TML",TML);
   m_data->Stores["ANNIEEvent"]->Get("TMR",TMR);
 
+  vector<string> acdcmetadata;
+  bool okACDCmetadata = m_data->Stores["ANNIEEvent"]->Get("ACDCmetadata", acdcmetadata);
+  if (!okACDCmetadata) {
+    std::cerr << "ERROR: Could not retrieve ACDCmetadata from ANNIEEvent store." << std::endl;
+    return false; 
+  }
 
+  // Adding the TIMESTAMP In tree 
+  // Timestamp indices inside ACDC metadata
+  // These four entries store the timestamp bytes (or string fragments)
+  static const std::array<size_t,4> TS_INDICES = {204, 206, 208, 210};
+  int meta_timestamp_int;
+  std::string meta_timestamp;
+  
+  for (size_t idx : TS_INDICES) {
+      meta_timestamp += acdcmetadata.at(idx);
+  }
+  
+  std::istringstream iss(meta_timestamp);
+  iss >> std::hex >> meta_timestamp_int;
+  timestamps_meta = meta_timestamp_int;
+  //std::cout << meta_timestamp_int << std::endl;
+  //std::cout << acdcmetadata[204] << acdcmetadata[206] << acdcmetadata[208] << acdcmetadata[210] << std::endl;
+  //std::cout << acdcmetadata[205] << acdcmetadata[207] << acdcmetadata[209] << acdcmetadata[211] << std::endl;
+  //std::cout<<"----------------------------------------------"<<std::endl;
 
   map <int, vector<vector<double>>> :: iterator TMitr;
   for (TMitr = TML.begin(); TMitr != TML.end(); ++TMitr){
@@ -198,6 +232,12 @@ bool LAPPDClusterTree::Execute()
     StripPeakT_Sm[stripno] = aTML.at(3);
     StripQ[stripno] = aTML.at(4);
     StripQ_Sm[stripno] = aTML.at(5);
+    StripMaxAmp[stripno] = aTML.at(6);
+    StripMinAmp[stripno] = aTML.at(7);
+    StripRMSAmp[stripno] = aTML.at(8);
+    StripStandDevAmp[stripno] = aTML.at(9);
+    StripVarianceAmp[stripno] = aTML.at(10);
+    StripInt[stripno] = aTML.at(11);
 
     //cout<<"Trace on Strip in ClusterTree "<<(int) stripno<<" amplitude:"<<aTML.at(0)<<" peaktime: "<<aTML.at(1)<<" charge:"<<aTML.at(4)<<" charge(smoothe peak):"<<aTML.at(5)<<endl;
   }
@@ -213,6 +253,12 @@ bool LAPPDClusterTree::Execute()
     StripPeakT_Sm[stripno+30] = aTML.at(3);
     StripQ[stripno+30] = aTML.at(4);
     StripQ_Sm[stripno+30] = aTML.at(5);
+    StripMaxAmp[stripno+30] = aTML.at(6);
+    StripMinAmp[stripno+30] = aTML.at(7);
+    StripRMSAmp[stripno+30] = aTML.at(8);
+    StripStandDevAmp[stripno+30] = aTML.at(9);
+    StripVarianceAmp[stripno+30] = aTML.at(10);
+    StripInt[stripno+30] = aTML.at(11);
     //cout<<"Trace on Strip in ClusterTree "<<(int) channelno<<" amplitude:"<<aTML.at(0)<<" peaktime: "<<aTML.at(1)<<" charge:"<<aTML.at(4)<<" charge(smoothe peak):"<<aTML.at(5)<<endl;
   }
 
@@ -395,8 +441,8 @@ bool LAPPDClusterTree::Execute()
           int mystripnum = mychannel->GetStripNum();
           int mystripside = mychannel->GetStripSide();
 
-          if(LAPPDClusterTreeVerbosity>2) cout<<"vPsize: "<<vPulse.size()<<" "<<mystripnum<<" "<<mystripside<<endl;;
-
+          if(LAPPDClusterTreeVerbosity>2) cout<<"vPsize: "<<vPulse.size()<<" "<<mystripnum<<" "<<mystripside<<endl;
+          
           for(int jj=0; jj<vPulse.size(); jj++){
             if(Npulses_simp>=59) { cout<<"MORE THAN 60 SIMPLE PULSES!!!!!!"<<endl; break; }
             LAPPDPulse apulse = vPulse.at(jj);
@@ -414,10 +460,10 @@ bool LAPPDClusterTree::Execute()
            pulseQ_simp[Npulses_simp]=apulse.GetCharge();
            Npulses_simp++;
               //cout<<Npulses_simp<<"    sdfsdf"<<endl;
-          }
-        }
+          }   
+        }   
         if(LAPPDClusterTreeVerbosity>1) cout<<"DONE WITH SIMP Npulses: "<<Npulses_simp<<endl;
-    }
+    }   
 
 
 
