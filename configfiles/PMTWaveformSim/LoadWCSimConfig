@@ -1,0 +1,13 @@
+verbose 1
+InputFile wcsim_0.root
+
+WCSimVersion 3
+HistoricTriggeroffset 0
+UseDigitSmearedTime 0
+LappdNumStrips 56
+LappdStripLength 100
+LappdStripSeparation 10
+PMTMask ./configfiles/LoadWCSim/DeadPMTIDs_p2v7.txt
+ChankeyToPMTIDMap ./configfiles/LoadWCSim/Chankey_WCSimID_v7.txt
+ChankeyToMRDIDMap ./configfiles/LoadWCSim/MRD_Chankey_WCSimID.dat
+ChankeyToFMVIDMap ./configfiles/LoadWCSim/FMV_Chankey_WCSimID.dat

@@ -59,6 +59,7 @@ class PhaseIIADCHitFinder : public Tool {
     std::map<unsigned long, unsigned short> channel_threshold_map;
     std::map<unsigned long, std::vector<std::vector<int>>> channel_window_map;
     bool eventbuilding_mode; 
+    bool mc_waveforms;
 
     std::map<unsigned long ,double> ChannelKeyToTimingOffsetMap;
    

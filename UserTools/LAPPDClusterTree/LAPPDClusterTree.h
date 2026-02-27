@@ -76,6 +76,14 @@ class LAPPDClusterTree: public Tool {
   Double_t      StripQ[60];
   Double_t      StripQ_Sm[60];
 
+  //Noise Study
+  Double_t StripMaxAmp[60];
+  Double_t StripMinAmp[60];
+  Double_t StripRMSAmp[60];
+  Double_t StripVarianceAmp[60];
+  Double_t StripStandDevAmp[60];
+  Double_t StripInt[60];
+
   //NEW!!!
   Int_t         NHits_simp;
   Double_t      hQ_simp[60];
@@ -112,7 +120,7 @@ class LAPPDClusterTree: public Tool {
   Double_t      pulsepeakbin_simp[60];
   Int_t         pulsestrip_simp[60];
   Int_t         pulseside_simp[60];
-
+  Int_t         timestamps_meta;
 
  private:
 

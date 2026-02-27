@@ -3,6 +3,11 @@
 
 LAPPDStoreReadIn::LAPPDStoreReadIn():Tool(){}
 
+namespace {
+const unsigned int NUM_CH = 30;
+const unsigned int NUM_PSEC = 5;
+const unsigned int NUM_SAMP = 256;
+}
 
 bool LAPPDStoreReadIn::Initialise(std::string configfile, DataModel &data){
     /////////////////// Useful header ///////////////////////

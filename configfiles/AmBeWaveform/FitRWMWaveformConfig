@@ -1,0 +1,3 @@
+verbosityFitRWMWaveform 0
+maxPrintNumber 100000
+printToRootFile 1
