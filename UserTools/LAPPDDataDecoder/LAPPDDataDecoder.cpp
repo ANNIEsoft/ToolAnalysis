@@ -2,6 +2,13 @@
 
 LAPPDDataDecoder::LAPPDDataDecoder():Tool(){}
 
+namespace {
+const unsigned int NUM_CH = 30;
+const unsigned int NUM_SAMP = 256;
+const unsigned int NUM_PSEC = 5;
+const unsigned int NUM_VECTOR_DATA = 7795;
+const unsigned int NUM_VECTOR_PPS = 16;
+}
 
 bool LAPPDDataDecoder::Initialise(std::string configfile, DataModel &data){
 
