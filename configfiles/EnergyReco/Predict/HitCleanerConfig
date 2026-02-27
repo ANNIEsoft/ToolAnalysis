@@ -1,6 +1,6 @@
 # HitCleaner config file
 
-verbosity                   5
+verbosity                   2
 Config                      2								#config type: 1 = pulse height cut, 2 = +neighbour cut, 3 = +cluster cut								
 PmtMinPulseHeight           20							#minimum pulse height
 PmtNeighbourRadius          60							#digit neighbouring distance [cm]

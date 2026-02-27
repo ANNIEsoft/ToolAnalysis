@@ -190,8 +190,8 @@ void ANNIEGeometry::SetGeometry(){
   //WCSim
   fCylRadius = 152.0; //cm
   fCylLength = 396.0; //cm
-  fCylFiducialRadius = 0.0;
-  fCylFiducialLength = 0.0;
+  fCylFiducialRadius = 100.0; //cm
+  fCylFiducialLength = 200.0; //cm
   fXoffset = 0.0;
   fYoffset = 0.0; 
   fZoffset = 0.0;
@@ -337,11 +337,11 @@ bool ANNIEGeometry::InsideDetector(double x, double y, double z)
 bool ANNIEGeometry::InsideFiducialVolume(double x, double y, double z)
 {
   if( fGeoType==ANNIEGeometry::kCylinder ){
-    if( z>=-0.5*fCylFiducialLength && z<=+0.5*fCylFiducialLength
-     && x*x+y*y<=fCylFiducialRadius*fCylFiducialRadius ){
+    if( y>=-0.5*fCylFiducialLength && y<=+0.5*fCylFiducialLength
+     && x*x+z*z<=fCylFiducialRadius*fCylFiducialRadius ){
       return 1;
     }
-  } else std::cout<<"WTF ANNIE Should Be A Cylinder!!!!"<<std::endl;
+  } else std::cout<<"WTH ANNIE Should Be A Cylinder!!!!"<<std::endl;
 
   return 0;
 }
@@ -377,9 +377,9 @@ double ANNIEGeometry::DistanceToEdge(double x, double y, double z)
       double dr = 0.0;
       if( fCylRadius>dr ) dr = fCylRadius;
       if( 0.5*fCylLength>dr ) dr = 0.5*fCylLength;
-      if( -sqrt(x*x+y*y)+fCylRadius<dr ) dr = -sqrt(x*x+y*y)+fCylRadius;
-      if( -z+0.5*fCylLength<dr ) dr = -z+0.5*fCylLength;
-      if( +z+0.5*fCylLength<dr ) dr = +z+0.5*fCylLength;
+      if( -sqrt(x*x+z*z)+fCylRadius<dr ) dr = -sqrt(x*x+z*z)+fCylRadius;
+      if( -y+0.5*fCylLength<dr ) dr = -y+0.5*fCylLength;
+      if( y+0.5*fCylLength<dr ) dr = y+0.5*fCylLength;
       return dr;
     }
 
@@ -387,32 +387,33 @@ double ANNIEGeometry::DistanceToEdge(double x, double y, double z)
     else{
 
       // side region
-      if( z>=-0.5*fCylLength && z<=+0.5*fCylLength ){
-        return -sqrt(x*x+y*y)+fCylRadius;
+      if( y>=-0.5*fCylLength && y<=+0.5*fCylLength ){
+        return -sqrt(x*x+z*z)+fCylRadius;
       }
 
-      // top region
-      if( z<=-0.5*fCylLength
-       && x*x+y*y<fCylRadius*fCylRadius ){
-        return +z+0.5*fCylLength;
+      // below tank
+      if( y<=-0.5*fCylLength
+       && x*x+z*z<fCylRadius*fCylRadius ){
+        return y+0.5*fCylLength;
       }
-      if( z>=+0.5*fCylLength
-       && x*x+y*y<fCylRadius*fCylRadius ){
-        return -z+0.5*fCylLength;
+      // above tank
+      if( y>=+0.5*fCylLength
+       && x*x+z*z<fCylRadius*fCylRadius ){
+        return -y+0.5*fCylLength;
       }
 
       // corner regions
-      if( z>=+0.5*fCylLength
-       && x*x+y*y>=fCylRadius ){
-        double dr = sqrt(x*x+y*y)-fCylRadius;
-        double dz = -z+0.5*fCylLength;
-        return -sqrt(dr*dr+dz*dz);
+      if( y>=+0.5*fCylLength
+       && x*x+z*z>=fCylRadius ){
+        double dr = sqrt(x*x+z*z)-fCylRadius;
+        double dy = -y+0.5*fCylLength;
+        return -sqrt(dr*dr+dy*dy);
       }
-      if( z<=-0.5*fCylLength
-       && x*x+y*y>=fCylRadius ){
-        double dr = sqrt(x*x+y*y)-fCylRadius;
-        double dz = +z+0.5*fCylLength;
-        return -sqrt(dr*dr+dz*dz);
+      if( y<=-0.5*fCylLength
+       && x*x+z*z>=fCylRadius ){
+        double dr = sqrt(x*x+z*z)-fCylRadius;
+        double dy = y+0.5*fCylLength;
+        return -sqrt(dr*dr+dy*dy);
       }
     }
   }

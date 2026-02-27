@@ -1,0 +1,14 @@
+#LoadWCSimLAPPD Config File
+# all variables retrieved with m_variables.Get() must be defined here!
+verbose 0
+
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_24-09-17_BNB_Water_10k_22-05-17/wcsim_lappd_0.49......19.root
+#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/lappd/tankonly/wcsim_lappd_tankonly_03-05-17_rhatcher/wcsim_lappd_0.49......00.root      ## first of the DOE proposal files
+#InputFile /pnfs/annie/persistent/users/mnieslon/wcsim/output/tankonly/wcsim_ANNIEp2v7_beamlike/wcsim_beamlike_muon_lappd_0.100.root
+InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/lappd/wcsim_lappd_0.0.0.root
+#InputFile ./wcsim_lappd_0.*.root
+#InputFile /annie/app/users/jminock/ToolAnalysis/wcsim_lappd_0.root
+
+WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
+InnerStructureRadius 1.3545  ## octagonal inner structure radius in m (from drawings 106.64")
+DrawDebugGraphs 0            ## whether to draw TPolyMarker3D's of hits

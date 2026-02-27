@@ -258,7 +258,6 @@ IFBeamDBInterfaceV2::ParseDBResponseSingleSpan(const std::string& response) cons
 					       timestamp);
   }
 
-
 for (auto &ts : retMap) {
     for (auto &dev : requiredDevices) {
       if (ts.second.find(dev.first) == ts.second.end()) {
@@ -310,7 +309,7 @@ IFBeamDBInterfaceV2::ParseDBResponseBundleSpan(const std::string& response) cons
 					       timestamp);
   }
 
-  //count the total number of elements in retMap times the number of elements in that element, print the total number
+  // count the total number of elements in retMap times the number of elements in that element, print the total number
   int total = 0;
   for (auto &ts : retMap) {
     total += ts.second.size();
@@ -435,7 +434,6 @@ IFBeamDBInterfaceV2::ParseDBResponseBundle(const std::string& response) const
 					       unit,
 					       timestamp);
   }
-
 
 for (auto &ts : retMap) {
     for (auto &dev : requiredDevices) {

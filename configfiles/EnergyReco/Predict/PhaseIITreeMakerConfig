@@ -1,0 +1,18 @@
+verbose 5
+
+OutputFile MC_BeamRun_999.ntuple.root
+TankClusterProcessing  1
+MRDClusterProcessing 1
+TriggerProcessing 1
+TankHitInfo_fill 1
+MRDHitInfo_fill 1
+MRDReco_fill 1
+SiPMPulseInfo_fill 1
+fillCleanEventsOnly 1
+MCTruth_fill 1
+Reco_fill 0
+RecoDebug_fill 0
+muonTruthRecoDiff_fill 1
+IsData 0
+HasGenie 0
+Digit_fill 1

@@ -7,10 +7,6 @@ verbose 0
 # where X = run number for the corresponding GENIE file (gntp.X.ghep.root)
 #       Y = offset multiple for GENIE event number
 
-#InputFile /pnfs/annie/persistent/users/moflaher/wcsim/multipmt/tankonly/wcsim_25_04_19_ANNIEp2v6_nodigit_BNB_Water_10k_22-05-17/wcsim_0.1.9.root
-
-#InputFile /pnfs/annie/persistent/simulations/wcsim/wcsim_ANNIEp2v7_beam/pmt-files/wcsim_beam_gst_1_99_0.199.root
-
 InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/pmt/wcsim_0.99.1.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded

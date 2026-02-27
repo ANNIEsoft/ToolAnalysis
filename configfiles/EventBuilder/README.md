@@ -20,6 +20,8 @@ LoadRawData
 PMTDataDecoder
 MRDDataDecoder
 TriggerDataDecoder
+BeamFetcherV2
+BeamQuality
 PhaseIIADCCalibrator
 PhaseIIADCHitFinder
 SaveConfigInfo

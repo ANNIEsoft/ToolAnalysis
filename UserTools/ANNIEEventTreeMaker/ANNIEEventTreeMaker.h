@@ -254,6 +254,7 @@ private:
     vector<double> fPulseBaseline;
     vector<double> fPulseFollowTime;
     vector<double> fPulseFollowCharge;
+    std::map<int, double> fChannelBaseline;
 
     vector<uint64_t> fLAPPDHitTimeStampUL;
     vector<uint64_t> fLAPPDHitBeamgateUL;

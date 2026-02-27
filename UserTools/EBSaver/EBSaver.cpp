@@ -212,7 +212,7 @@ bool EBSaver::Execute()
     cout << i << ": " << Buffer_LAPPDTimestamp_ns[i] << ", ";
   cout << endl;
 
-  // 删除 LAPPD 相关时间戳
+  // delete LAPPD related timestamps
   int removedLAPPD = 0;
   for (auto const &track : LAPPDPairInfoToRemoveTime)
   {
@@ -239,7 +239,7 @@ bool EBSaver::Execute()
     }
   }
 
-  // 删除 PMT 相关时间戳
+  // delete PMT related timestamps
 
   for (auto const &track : PMTPairInfoToRemoveTime)
   {
@@ -264,7 +264,7 @@ bool EBSaver::Execute()
     }
   }
 
-  // 删除 MRD 相关时间戳
+  // delete MRD related timestamps
   for (auto const &track : MRDPairInfoToRemoveTime)
   {
     int triggerTrack = track.first;

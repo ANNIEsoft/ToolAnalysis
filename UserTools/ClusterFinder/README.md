@@ -18,11 +18,13 @@ The following variables can be configured for the ClusterFinder tool:
 # ClusterFinder Config File
 
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
+ApplyDeadMask 1 #Do not include faulty/dead PMTs that may be in the ProcessedData
 OutputFile LEDRun1415S0Beam_AllPMTs_TestClusterFinder #Output root prefix name for the current run
 ClusterFindingWindow 50 # in ns, size of the window used to "clusterize"
 AcqTimeWindow 4000 # in ns, size of the acquisition window
 ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
 MinHitsPerCluster 10 # group of hits are considered clusters above this amount of hits
+MC_pulse_width 10  # width of MC "pulse" in which to integrate true photon hits - all true photon hits on a single PMT will be combined into a "pulse" of this width
 
 verbose 1         #verbosity of the application
 

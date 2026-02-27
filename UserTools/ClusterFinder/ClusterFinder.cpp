@@ -27,6 +27,8 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Plots2D",draw_2D);
   m_variables.Get("verbosity",verbose);
   m_variables.Get("end_of_window_time_cut",end_of_window_time_cut);
+  m_variables.Get("MC_pulse_width",mc_pulse_width);
+  m_variables.Get("ApplyDeadMask",ApplyDeadMask);
 
   //----------------------------------------------------------------------------
   //---------------Get basic geometry properties -------------------------------
@@ -197,12 +199,18 @@ bool ClusterFinder::Execute(){
   }
 
   if(HitStoreName=="MCHits"){
+    if (verbose > 0) std::cout << "ClusterFinder MC pulse_width: " << mc_pulse_width << " [ns]" << endl;
     int vectsize = MCHits->size();
     if (verbose > 3) std::cout <<"ClusterFinder tool: MCHits size: "<<vectsize<<std::endl;
     for(std::pair<unsigned long, std::vector<MCHit>>&& apair : *MCHits){
       unsigned long chankey = apair.first;
       Detector* thistube = geom->ChannelToDetector(chankey);
       int detectorkey = thistube->GetDetectorID();
+
+      // fetch ON/OFF status of the PMT. If "OFF", do not include that hit in the clustering
+      if (ApplyDeadMask && thistube->GetStatus() == detectorstatus::OFF)
+        continue;
+
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<MCHit>& ThisPMTHits = apair.second;
         PMT_ishit[detectorkey] = 1;
@@ -312,6 +320,11 @@ bool ClusterFinder::Execute(){
       unsigned long chankey = apair.first;
       Detector* thistube = geom->ChannelToDetector(chankey);
       int detectorkey = thistube->GetDetectorID();
+
+      // fetch ON/OFF status of the PMT. If "OFF", do not include that hit in the clustering
+      if (ApplyDeadMask && thistube->GetStatus() == detectorstatus::OFF)
+        continue;
+
       if (thistube->GetDetectorElement()=="Tank"){
         std::vector<Hit>& ThisPMTHits = apair.second;
         PMT_ishit[detectorkey] = 1;

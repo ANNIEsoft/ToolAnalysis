@@ -1,0 +1,25 @@
+# EventSelector config file
+
+verbosity 0
+MRDRecoCut 0
+MCFVCut 0
+MCPMTVolCut 0
+MCMRDCut 0
+MCPiKCut 0
+MCIsMuonCut 1
+MCIsElectronCut 0
+MCIsSingleRingCut 0
+MCIsMultiRingCut 0
+MCProjectedMRDHit 0
+MCEnergyCut 0
+Emin 0
+Emax 5000
+NHitCut 0
+NHitmin 4
+PromptTrigOnly 0
+RecoFVCut 0
+RecoPMTVolCut 0
+PMTMRDCoincCut 0
+PMTMRDOffset 10
+SaveStatusToStore 1
+IsMC 1

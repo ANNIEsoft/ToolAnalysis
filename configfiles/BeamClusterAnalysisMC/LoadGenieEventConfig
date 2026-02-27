@@ -8,7 +8,6 @@ FluxVersion 1                  # use 0 to load genie files based on bnb_annie_00
 # Path to directory of GENIE files
 #FileDir NA                    # special option to load path from associated WCSim (Not recommended)
 #FileDir /pnfs/annie/persistent/simulations/genie3/G1810a0211a/standard/<VOLUME>
-#FileDir /pnfs/annie/persistent/users/vfischer/genie_files/BNB_Water_10k_22-05-17
 FileDir /pnfs/annie/persistent/simulations/genie3/G1810a0211a/standard/tank
 
 # Name of GENIE file to open
@@ -22,4 +21,4 @@ ManualFileMatching 1           # 0 (false) - no manual matching,   1 (true) - us
 FileEvents 1000                # 1000 for James' WCSim files, 500 for Marcus' files
 
 # Number to offset the first loaded GENIE event (for usage without ManualFileMatching) - 0 by default
-EventOffset 8000                  
+EventOffset 0                  

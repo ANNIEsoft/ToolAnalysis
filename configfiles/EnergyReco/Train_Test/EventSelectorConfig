@@ -9,6 +9,7 @@ MCIsMuonCut 1
 MRDRecoCut 0
 RecoPMTVolCut 0
 RecoFVCut 0
+NoVeto 1
 NHitCut 1
 PromptTrigOnly 1
 SaveStatusToStore 1

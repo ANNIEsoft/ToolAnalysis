@@ -1,6 +1,5 @@
 verbosity 0
 BuildType TankAndCTC
-#BuildType CTC
 Mode FileList
 InputFile ./configfiles/DataDecoder/my_files.txt
 DummyRunInfo 1

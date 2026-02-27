@@ -80,7 +80,6 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
     fDeleteCTCData = false;
   }
 
-
   if (!got_chunkMSec) {
     logmessage = ("Warning (BeamFetcherV2): TimeChunkStepInMilliseconds was not"
 		  " set in the config file. Using default \"7200000\"");
@@ -113,7 +112,6 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
 bool BeamFetcherV2::Execute()
 {
   m_data->CStore.Set("NewBeamDataAvailable", false);
-  
   // Do the things
   bool got_ctc = m_data->CStore.Get("NewCTCDataAvailable", fNewCTCData);
   bool goodFetch = false;
@@ -126,7 +124,6 @@ bool BeamFetcherV2::Execute()
     logmessage = ("Warning (BeamFetcherV2): No new CTC data found. Nothing to fetch. ");
     Log(logmessage, v_message, verbosity);    
   }
-  
 
   // Save it out
   if (goodFetch) {
@@ -175,11 +172,7 @@ bool BeamFetcherV2::FetchFromTrigger()
       if (std::find(iterator->second.begin(), iterator->second.end(), 14) == iterator->second.end()) {
 	continue;
       }
-      // bool hasBeamTrig = false;
-      // for (auto word : iterator->second) 
-      // 	if (word == 5) hasBeamTrig = true;
-      // if (!hasBeamTrig) continue;
-      
+
       // Grab the timestamp
       uint64_t trigTimestamp = iterator->first;
       fLastTimestampFetched = trigTimestamp;

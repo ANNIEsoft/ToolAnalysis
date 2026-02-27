@@ -10,4 +10,4 @@ TrackLengthWeightsFile UserTools/DNNTrackLength/stand_alone/weights/weights_bets
 
 # Scaling Parameters
 
-ScalingVarsBoostStoreFile Data_Energy_Reco/ScalingVarsStore.bs
+ScalingVarsBoostStoreFile ScalingVarsStore.bs

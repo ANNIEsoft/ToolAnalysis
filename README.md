@@ -2,6 +2,32 @@
 
 ToolAnalysis is a modular analysis program written for the ANNIE collaboration. It is based on ToolDAQ Application[1] which is an open source general DAQ Application template built using the modular ToolDAQ Framework core[2] to give separation between core and implementation code.
 
+In each new shell environment, begin by running: 
+```
+. Setup.sh
+```
+
+To compile everything run:
+```
+make -j$(nproc)
+```
+
+To compile only the DataModel objects and those Tools needed for a toolchain 'MyToolChain' (where MyToolChain is the name of the appropriate directory in configfiles)`, run:
+```
+make -j$(nproc) MyToolChain
+```
+
+or for a ToolChain within a hierarchy, e.g. a toolchain described by `./configfiles/EnergyReco/Predict/ToolChainConfig`
+```
+make -j$(nproc) EnergyReco/Predict
+```
+
+Note that compilation can take some time. After the first initial build:
+* If only files in the UserTools have been modified, only the modified Tools will be rebuilt, along with libMyTools.so and the Analyse application.
+* If anything in the DataModel has been modified, those DataModel objects will need to be rebuilt, along with libDataModel.so, ALL Tools, libMyTool.so and Analyse. This will be considerably slower (building all Tools takes a long time), and is where building a specific toolchain can help speed things up.
+
+Note that it is known that building and running on windows and mac is slower, due to filesystem differences. For best performance, run under linux. :)
+
 ****************************
 #Concept
 ****************************

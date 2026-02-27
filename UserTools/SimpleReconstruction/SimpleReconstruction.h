@@ -47,6 +47,7 @@ class SimpleReconstruction: public Tool {
   bool SimpleRecoFV;
   double SimpleRecoMrdEnergyLoss;
   double SimpleRecoTrackLengthInMRD;
+  double SimpleRecoTrackLengthInTank;
   Position SimpleRecoMRDStart;
   Position SimpleRecoMRDStop;
 

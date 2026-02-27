@@ -1,6 +1,6 @@
 #LoadWCSim Config File
 # all variables retrieved with m_variables.Get() must be defined here!
-verbose 0
+verbose 1
 
 InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/pmt/wcsim_0* #James's files
 

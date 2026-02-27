@@ -52,6 +52,7 @@ bool SimpleReconstruction::Execute(){
   m_data->Stores["RecoEvent"]->Set("SimpleRecoTrackLengthInMRD",SimpleRecoTrackLengthInMRD);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoMRDStart",SimpleRecoMRDStart);
   m_data->Stores["RecoEvent"]->Set("SimpleRecoMRDStop",SimpleRecoMRDStop);
+  m_data->Stores["RecoEvent"]->Set("SimpleRecoTrackLengthInTank",SimpleRecoTrackLengthInTank);
 
   //Fill Particles object with muon
   if (reco_possible){
@@ -113,6 +114,7 @@ void SimpleReconstruction::SetDefaultValues(){
   SimpleRecoFV = false;
   SimpleRecoMrdEnergyLoss = -9999;
   SimpleRecoTrackLengthInMRD = -9999;
+  SimpleRecoTrackLengthInTank = -9999;
   SimpleRecoMRDStart.SetX(-9999);
   SimpleRecoMRDStart.SetY(-9999);
   SimpleRecoMRDStart.SetZ(-9999);
@@ -379,6 +381,8 @@ bool SimpleReconstruction::SimpleVertexReconstruction(){
   SimpleRecoVtx.SetX(reco_vtx_x);
   SimpleRecoVtx.SetY(reco_vtx_y);
   SimpleRecoVtx.SetZ(reco_vtx_z);
+
+  SimpleRecoTrackLengthInTank = sqrt((max_pe/9/2./100.*dirx)*(max_pe/9/2./100.*dirx) + (max_pe/9/2./100.*diry)*(max_pe/9/2./100.*diry) + (max_pe/9/2./100.*dirz)*(max_pe/9/2./100.*dirz));
 
   Log("SimpleEnergyReconstruction: Reconstructed interaction vertex: ("+std::to_string(SimpleRecoVtx.X())+","+std::to_string(SimpleRecoVtx.Y())+","+std::to_string(SimpleRecoVtx.Z())+")",v_message,verbosity);
 

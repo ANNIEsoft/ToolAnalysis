@@ -1,0 +1,24 @@
+verbose 0
+
+IsData 0
+HasGenie 1
+RecoDebug_fill 1
+MCTruth_fill 1
+muonTruthRecoDiff_fill 0
+pionKaonCount_fill 0
+TankHitInfo_fill 0
+MRDHitInfo 0
+fillCleanEventsOnly 0
+MRDReco_fill 1
+TankReco_fill 1
+SimpleReco_fill 1
+RingCounting_fill 1
+Reweight_fill 1
+MuonFitter_fill 1
+HasBNBtimingMC 1
+TankClusterProcessing 1
+MRDClusterProcessing 1
+TriggerProcessing 1
+
+OutputFile PhaseIITree_0.0.0.root
+#NumEventsWritten 2000

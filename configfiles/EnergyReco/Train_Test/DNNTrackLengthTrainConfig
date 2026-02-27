@@ -15,4 +15,4 @@ TrackLengthOutputWeightsFile UserTools/DNNTrackLength/stand_alone/weights/weight
 # Training data
 TrackLengthTrainingInputBoostStoreFile EnergyReco.bs
 
-ScalingVarsBoostStoreFile Data_Energy_Reco/ScalingVarsStore.bs
+ScalingVarsBoostStoreFile ScalingVarsStore.bs

@@ -1,6 +1,6 @@
 #TimeClustering config file
 
-verbosity 7
+verbosity 3
 MinDigitsForTrack 4
 MaxMrdSubEventDuration 40
 MinSubeventTimeSep 40

@@ -758,6 +758,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fPulseBaseline.clear();
   fPulseFollowTime.clear();
   fPulseFollowCharge.clear();
+  fChannelBaseline.clear();
 
   fLAPPDHitTimeStampUL.clear();
   fLAPPDHitBeamgateUL.clear();

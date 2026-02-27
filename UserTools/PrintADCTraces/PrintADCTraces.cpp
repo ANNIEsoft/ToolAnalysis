@@ -20,8 +20,12 @@ PrintADCTraces::PrintADCTraces():Tool(){}
 // │   └── ...
 // └── TraceSummary TTree      # metadata
 //     ├── chan                # all pulse channel ids
+//     ├── run                 # all pulse run numbers 
+//     ├── eventTime           # all pulse event times
 //     ├── hitT                # all pulse hit times [ns]
-//     └── hitPE               # all pulse hit charges [pe]
+//     ├── hitPE               # all pulse hit charges [pe]
+//     ├── hitBaseline         # all pulse baselines [adc]
+//     └── hitNoise            # all pulse baseline sigma (noise) [adc]
 
 
 bool PrintADCTraces::Initialise(std::string configfile, DataModel &data)
@@ -92,8 +96,12 @@ bool PrintADCTraces::Initialise(std::string configfile, DataModel &data)
   // summary TTree containing global distribution of all saved ADC traces
   fTraceSummaryTree = new TTree("TraceSummary", "Summary of saved ADC traces");
   fTraceSummaryTree->Branch("chan", &fchan);
+  fTraceSummaryTree->Branch("run", &frun);
+  fTraceSummaryTree->Branch("eventTime", &feventTime);
   fTraceSummaryTree->Branch("hitT", &fhitT);
   fTraceSummaryTree->Branch("hitPE", &fhitPE);
+  fTraceSummaryTree->Branch("hitBaseline", &fhitBaseline);
+  fTraceSummaryTree->Branch("hitNoise", &fhitNoise);
   
   return true;
 }
@@ -177,8 +185,10 @@ bool PrintADCTraces::Execute()
 
             for (const auto& pulse : pulsevec) {
 
-                double hitT = pulse.peak_time();  // interpolated hit time
-                double hitQ = pulse.charge();     // charge in nQ
+                double hitT = pulse.peak_time();           // interpolated hit time [ns]
+                double hitQ = pulse.charge();              // charge [nQ]
+                double hitBaseline = pulse.baseline();     // baseline [adc]
+                double hitNoise = pulse.sigma_baseline();  // noise [adc]
 
                 // need to convert from nQ -> PE using SPE conversion map
                 auto spe_it = fChannelKeyToSPEMap.find(chankey);
@@ -209,17 +219,19 @@ bool PrintADCTraces::Execute()
                 if (xpts.empty() || ypts.empty()) continue;
 
                 // create and write to TGraph
-                TGraph gr(xpts.size());
-                for (size_t i = 0; i < std::min(xpts.size(), ypts.size()); ++i) {
-                    gr.SetPoint(i, xpts[i], ypts[i]);
-                }
+                TGraph gr(xpts.size(), xpts.data(), ypts.data());
+                gr.SetName(grTitle.str().c_str());
                 gr.SetTitle(grTitle.str().c_str());
                 gr.Write();
 
                 // write to summary TTree
                 fchan = chankey;
-                fhitT = pulse.peak_time();
+                frun = fRunNumber;
+                feventTime = fWaveformTime;
+                fhitT = hitT;
                 fhitPE = hitPE;
+                fhitBaseline = hitBaseline;
+                fhitNoise = hitNoise;
                 fTraceSummaryTree->Fill();
 
                 ++totalGraphs;
@@ -239,9 +251,10 @@ bool PrintADCTraces::Finalise()
 {
     if (fOutFile) {
 
-        if (fTraceSummaryTree) {      // write summary to root file
+        if (fTraceSummaryTree) {          // write summary to root file
             fOutFile->cd();
             fTraceSummaryTree->Write();
+            fTraceSummaryTree = nullptr;
         }
 
         fOutFile->cd();

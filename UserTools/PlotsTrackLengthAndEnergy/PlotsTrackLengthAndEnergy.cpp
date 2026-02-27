@@ -40,6 +40,7 @@ bool PlotsTrackLengthAndEnergy::Execute(){
     TCanvas c2("c2","c2",1280,1024);
     TCanvas c3("c3","c3",1280,1024);
     TCanvas c4("c4","c4",1280,1024);
+    TCanvas c5("c5","c5",1280,1024);
     
     TH2D lengthhist("True_RecoLength", "; MC Track Length [cm]; Reconstructed Track Length [cm]", 50, 0, 400., 50, 0., 400.);
     TH2D energyhist("True_Reco_Energy", ";  E_{MC} [MeV]; E_{reco} [MeV]", 100, 0, 2000., 100, 0., 2000.);
@@ -47,9 +48,10 @@ bool PlotsTrackLengthAndEnergy::Execute(){
     TH1D lengthresol2("wlambda_max", "Length Resolution", 80, 0, 400);
     TH1D energyresol1("MC Energy", "Energy Resolution", 100, 0, 2000);
     TH1D energyresol2("BDT Energy", "Energy Resolution", 100, 0, 2000);
+    TH1D deltaenergy("Relative Error", "Energy Relative Error %;#DeltaE/E (%)", 100, 0, 0); 
 
     for(int i=0; i<n_entries; i++){
-      double DNNRecoLength, trueMuonEnergy, BDTMuonEnergy, lambda_max;
+      double DNNRecoLength, trueMuonEnergy, BDTMuonEnergy, lambda_max, deltaE;
       float TrueTrackLengthInWater;
       
       EnergyReco.GetEntry(i);
@@ -59,13 +61,16 @@ bool PlotsTrackLengthAndEnergy::Execute(){
       EnergyReco.Get("trueMuonEnergy",trueMuonEnergy);
       EnergyReco.Get("BDTMuonEnergy",BDTMuonEnergy);
       EnergyReco.Get("lambda_max",lambda_max);
-  
+
+      deltaE = 100*(trueMuonEnergy-BDTMuonEnergy)/trueMuonEnergy;
+      
       lengthhist.Fill(TrueTrackLengthInWater,DNNRecoLength);
       energyhist.Fill(trueMuonEnergy,BDTMuonEnergy);
       lengthresol1.Fill(TMath::Abs(DNNRecoLength-TrueTrackLengthInWater));
       lengthresol2.Fill(TMath::Abs(lambda_max-TrueTrackLengthInWater));
       energyresol1.Fill(trueMuonEnergy);
       energyresol2.Fill(BDTMuonEnergy);
+      deltaenergy.Fill(deltaE);
     }
     
     c1.cd();
@@ -110,6 +115,28 @@ bool PlotsTrackLengthAndEnergy::Execute(){
     legend1.AddEntry((TObject*)0, TString::Format("mean = %.2f, std = %.2f, Prev: mean = %.2f, std = %.2f ", lengthresol1.GetMean(),lengthresol1.GetStdDev(),lengthresol2.GetMean(),lengthresol2.GetStdDev()), "");
     legend1.Draw("Same");
     c4.SaveAs("resol_length.png");
+
+    double meanDeltaE = deltaenergy.GetMean();
+    std::stringstream meandeltaE;
+    meandeltaE << std::fixed << std::setprecision(2) << meanDeltaE;
+    std::string mean = meandeltaE.str();
+    double stdDeltaE = deltaenergy.GetStdDev();
+    std::stringstream stddeltaE;
+    stddeltaE << std::fixed << std::setprecision(2) << stdDeltaE;
+    std::string stddev = stddeltaE.str();
+    std::string str = "Energy Relative Deviation % | mean =" + mean + ", std =" + stddev + ";#DeltaE/E (%)";
+    const char *title = str.c_str();
+
+    c5.cd();
+    deltaenergy.Draw();
+    deltaenergy.SetStats(0);
+    deltaenergy.SetTitle(title);
+    deltaenergy.SetTitleSize(0.5,"t");
+    TLegend legend2(0.7,0.7,0.9,0.9);
+    legend2.AddEntry(&deltaenergy, "#DeltaE/E=(E_{MC}-E_{Reco})/E_{True}","l");
+    legend2.Draw("Same");
+    deltaenergy.SetFillColorAlpha(kBlue-4, 0.35);
+    c5.SaveAs("deltaenergy.png");
     
   return true;
 }

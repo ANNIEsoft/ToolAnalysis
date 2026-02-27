@@ -1,5 +1,4 @@
 verbosity 11
-#BuildType TankAndMRDAndCTC
 BuildType CTC
 Mode FileList
 InputFile ./configfiles/BeamFetcherV2/my_files.txt

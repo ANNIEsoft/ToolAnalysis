@@ -1,0 +1,45 @@
+verbosity 0
+OnGrid 0
+
+# Reweightable beam flux model uncertainties
+# Revised 27 June 2024
+#
+# Maintainer:James Minock <jminock1018@physics.rutgers.edu>
+
+
+  #Full set of well-formed Beam Uncertainties for use with post-MCC8 Flux
+weight_functions_flux piplus,piminus,kplus,kzero,kminus,horncurrent,pioninexsec,nucleontotxsec,nucleonqexsec,nucleoninexsec,pionqexsec,piontotxsec,expskin
+#weight_functions_flux piplus2
+
+
+# FLUX CONFIGS
+piplus2 type:PrimaryHadronSWCentralSplineVariation|random_seed:2|parameter_list:["piplus"]|parameter_sigma:1|mode:multisim|scale_factor:1|number_of_multisims:10|PrimaryHadronGeantCode:211|weight_calculator:"MicroBooNE"|ExternalData:"beamData/ExternalData/BNBExternalData_uBooNE_SplinesHARP.root"|ExternalFit:"beamData/ExternalData/BNBExternalData_uBooNE.root"|use_MiniBooNE_random_numbers:false
+
+
+horncurrent type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_horn175ka_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_horn173ka_flux.root"|parameter_list:["horncurrent"]|random_seed:7|scale_factor_pos:1|scale_factor_neg:1|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+pioninexsec type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_pioninexsec_up_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_pioninexsec_down_flux.root"|parameter_list:["pioninexsec"]|random_seed:8|scale_factor_pos:1|scale_factor_neg:1|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+nucleontotxsec type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_nucleontotxsec_up_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_nucleontotxsec_down_flux.root"|parameter_list:["nucleontotxsec"]|random_seed:9|scale_factor_pos:1|scale_factor_neg:1|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+nucleonqexsec type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_nucleonqexsec_up_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_nucleonqexsec_down_flux.root"|parameter_list:["nucleonqexse"]|random_seed:10|scale_factor_pos:0.333|scale_factor_neg:0.573|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+nucleoninexsec type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_nucleoninexsec_up_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_nucleoninexsec_down_flux.root"|parameter_list:["nucleoninexsec"]|random_seed:11|scale_factor_pos:1|scale_factor_neg:1|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+pionqexsec type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_pionqexsec_up_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_pionqexsec_down_flux.root"|parameter_list:["pionqexsec"]|random_seed:12|scale_factor_pos:0.292|scale_factor_neg:0.585|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+piontotxsec type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_piontotxsec_up_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_piontotxsec_down_flux.root"|parameter_list:["piontotxsec"]|random_seed:13|scale_factor_pos:1|scale_factor_neg:1|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+expskin type:FluxUnisim|CentralValue_hist_file:"beamData/UnisimHists/july24_baseline_flux.root"|PositiveSystematicVariation_hist_file:"beamData/UnisimHists/july24_expskin_flux.root"|NegativeSystematicVariation_hist_file:"beamData/UnisimHists/july24_expskin_flux.root"|parameter_list:["expskin"]|random_seed:14|scale_factor_pos:1|scale_factor_neg:1|weight_calculator:"MicroBooNE"|mode:multisim|number_of_multisims:1000|use_MiniBooNE_random_numbers:false
+
+bnbcorrection type:FluxHist|cv_hist_file:"beamData/bnbcorrection/bnb_oldflux_volAVTPC.root"|rw_hist_file:"beamData/bnbcorrection/bnb_newflux_volAVTPC.root"|random_seed:985|mode:reweight|number_of_multisims:1000
+
+piplus type:PrimaryHadronSWCentralSplineVariation|random_seed:2|parameter_list:["piplus"]|parameter_sigma:1|mode:multisim|scale_factor:1|number_of_multisims:1000|PrimaryHadronGeantCode:211|weight_calculator:"MicroBooNE"|ExternalData:"beamData/ExternalData/BNBExternalData_uBooNE_SplinesHARP.root"|ExternalFit:"beamData/ExternalData/BNBExternalData_uBooNE.root"|use_MiniBooNE_random_numbers:false
+
+piminus type:PrimaryHadronSWCentralSplineVariation|random_seed:3|parameter_list:["piminus"]|parameter_sigma:1|mode:multisim|scale_factor:1|number_of_multisims:1000|PrimaryHadronGeantCode:-211|weight_calculator:"MicroBooNE"|ExternalData:"beamData/ExternalData/BNBExternalData_uBooNE_SplinesHARP.root"|ExternalFit:"beamData/ExternalData/BNBExternalData_uBooNE.root"|use_MiniBooNE_random_numbers:false
+ 
+kplus type:PrimaryHadronFeynmanScaling|random_seed:4|parameter_sigma:1|mode:multisim|number_of_multisims:1000|PrimaryHadronGeantCode:321|weight_calculator:"MicroBooNE"|parameter_list:["kplus"]|scale_factor:1|ExternalData:"beamData/ExternalData/BNBExternalData_uBooNE.root"|use_MiniBooNE_random_numbers:false
+
+kzero type:PrimaryHadronSanfordWang|random_seed:5|parameter_list:["kzero"]|parameter_sigma:1|mode:multisim|scale_factor:1|number_of_multisims:1000|PrimaryHadronGeantCode:[130,310,311]|weight_calculator:"MicroBooNE"|ExternalData:"beamData/ExternalData/BNBExternalData_uBooNE.root"|use_MiniBooNE_random_numbers:false
+
+kminus type:PrimaryHadronNormalization|random_seed:6|parameter_list:["kminus"]|parameter_sigma:1|mode:multisim|scale_factor:1|number_of_multisims:1000|PrimaryHadronGeantCode:-321|weight_calculator:"MiniBooNE"|use_MiniBooNE_random_numbers:false
