@@ -64,20 +64,10 @@ bool EBSaver::Initialise(std::string configfile, DataModel &data)
   m_data->CStore.Get("AmBeTriggerMain", AmBeTriggerMain);
   m_data->CStore.Get("PPSMain", PPSMain);
 
-  InProgressHits = new std::map<uint64_t, std::map<unsigned long, std::vector<Hit>> *>;
-  InProgressChkey = new std::map<uint64_t, std::vector<unsigned long>>;
-  InProgressRecoADCHits = new std::map<uint64_t, std::map<unsigned long, std::vector<std::vector<ADCPulse>>>>;
-  InProgressRecoADCHitsAux = new std::map<uint64_t, std::map<unsigned long, std::vector<std::vector<ADCPulse>>>>;
-  InProgressHitsAux = new std::map<uint64_t, std::map<unsigned long, std::vector<Hit>> *>;
-  FinishedRawAcqSize = new std::map<uint64_t, std::map<unsigned long, std::vector<int>>>;
-
-  RWMRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
-  BRFRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
-
   if (saveBeamInfo)
   {
     Log("EBSaver: saveBeamInfo is true, loading Beam Info", v_message, verbosityEBSaver);
-    LoadBeamInfo();
+    return LoadBeamInfo();
   }
 
   return true;
@@ -1304,16 +1294,25 @@ void EBSaver::BuildEmptyLAPPDData()
   ANNIEEvent->Set("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
 }
 
-void EBSaver::LoadBeamInfo()
+bool EBSaver::LoadBeamInfo()
 {
   TFile *file = new TFile(beamInfoFileName.c_str(), "READ");
+
+  if (file->IsZombie()) {
+    delete file;
+    Log("EBSaver: Failed to load beam info from file with name: " + beamInfoFileName, v_error, verbosityEBSaver);
+    return false;
+  }
+
   TTree *tree;
   file->GetObject("BeamTree", tree);
 
   if (!tree)
   {
-    cout << "EBSaver: Failed to load beam info from file with name: " << beamInfoFileName << endl;
-    return;
+    file->Close();
+    delete file;
+    Log("EBSaver: Failed to load beam info from file with name: " + beamInfoFileName, v_error, verbosityEBSaver);
+    return false;
   }
 
   // copy from IFBeamDBInterfaceV2.cpp
@@ -1401,7 +1400,9 @@ void EBSaver::LoadBeamInfo()
 
   Log("EBSaver: Finished loading beam info from " + beamInfoFileName, v_message, verbosityEBSaver);
 
-  return;
+  file->Close();
+  delete file;
+  return true;
 }
 
 bool EBSaver::SaveBeamInfo(uint64_t TriggerTime)

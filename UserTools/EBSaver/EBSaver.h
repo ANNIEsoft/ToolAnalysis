@@ -59,7 +59,7 @@ public:
     void BuildEmptyMRDData();
     void BuildEmptyLAPPDData();
 
-    void LoadBeamInfo();
+    bool LoadBeamInfo();
 
 private:
     int saveRunNumber;
