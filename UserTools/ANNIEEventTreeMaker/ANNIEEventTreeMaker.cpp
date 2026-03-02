@@ -670,6 +670,18 @@ bool ANNIEEventTreeMaker::Execute()
 
 bool ANNIEEventTreeMaker::Finalise()
 {
+  if (MCTruth_fill) {
+    delete fTrueNeutCapVtxX;
+    delete fTrueNeutCapVtxY;
+    delete fTrueNeutCapVtxZ;
+    delete fTrueNeutCapNucleus;
+    delete fTrueNeutCapTime;
+    delete fTrueNeutCapGammas;
+    delete fTrueNeutCapE;
+    delete fTrueNeutCapGammaE;
+    delete fTruePrimaryPdgs;
+  }
+
   Log("ANNIEEventTreeMaker Tool: Got " + std::to_string(processedEvents) + " events", 0, ANNIEEventTreeMakerVerbosity);
   fOutput_tfile->cd();
   fANNIETree->Write();
