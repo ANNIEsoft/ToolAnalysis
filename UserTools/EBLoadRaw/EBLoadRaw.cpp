@@ -336,6 +336,10 @@ std::vector<std::string> EBLoadRaw::OrganizeRunParts(std::string FileList)
       OrganizedFiles.push_back(SortingVector.at(j).second);
     }
   }
+  else
+  {
+    std::cerr << "EBLoadRaw::OrganizeRunParts: Failed to open file list " << FileList << std::endl;
+  }
   // print the OrganizedFiles
   for (int i = 0; i < (int)OrganizedFiles.size(); i++)
   {
