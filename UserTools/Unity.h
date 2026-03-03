@@ -188,3 +188,5 @@
 #include "PMTWaveformSim.h"
 #include "LAPPDWaveformDisplay.h"
 #include "PrintADCTraces.h"
+#include "ChargeIsotropy.h"
+#include "CCMCCorrection.h"

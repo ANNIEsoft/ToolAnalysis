@@ -180,5 +180,7 @@ if (tool=="LAPPDLoadStore") ret=new LAPPDLoadStore;
 if (tool=="PMTWaveformSim") ret=new PMTWaveformSim;
 if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
 if (tool=="PrintADCTraces") ret=new PrintADCTraces;
+if (tool=="ChargeIsotropy") ret=new ChargeIsotropy;
+if (tool=="CCMCCorrection") ret=new CCMCCorrection;
 return ret;
 }
