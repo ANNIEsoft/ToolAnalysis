@@ -194,7 +194,6 @@
 #include "BeamQuality.h"
 #include "FitRWMWaveform.h"
 #include "LAPPDLoadTXT.h"
-#include "LAPPDBSCharging.h"
 #include "MuonFitter.h"
 #include "BackTracker.h"
 #include "PrintDQ.h"
