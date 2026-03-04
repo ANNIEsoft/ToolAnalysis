@@ -74,6 +74,8 @@ class LAPPDPulse : public Hit{
 	}
 };
 
+BOOST_CLASS_VERSION(LAPPDPulse, 1)
+
 /*  Derived classes, if there's a reason to have them. So far...not really
 
 class TDCHit : public Hit {

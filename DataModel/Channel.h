@@ -107,4 +107,6 @@ class Channel : public SerialisableObject{
 	
 };
 
+BOOST_CLASS_VERSION(Channel, 1)
+
 #endif
