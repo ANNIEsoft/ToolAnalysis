@@ -305,6 +305,7 @@ double LAPPDTimeAlignment::Tfit(std::vector<double> *wf)
           }
         }
         firstcross = false;
+        delete edge;
       }
     }
     else
@@ -364,6 +365,7 @@ double LAPPDTimeAlignment::Tfit(std::vector<double> *wf)
         */
 
         firstcross = false;
+        delete edge;
       }
     }
   }
