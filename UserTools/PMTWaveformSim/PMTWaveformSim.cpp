@@ -169,7 +169,10 @@ bool PMTWaveformSim::Execute()
       if (fuseTimeSmearing) {
 
         // grab the timing jitter map
-        TimeSmearing(PMTID);
+		if (!TimeSmearing(PMTID)) {
+		    m_data->vars.Set("StopLoop", true);    // if jitter is not found, stop the show
+		    return false;
+		}
 
         // apply time smearing by sampling normal centered at 0 with std = timing_sigma
         if (verbosity > v_warning) {
