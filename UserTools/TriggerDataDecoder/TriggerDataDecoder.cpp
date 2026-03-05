@@ -214,6 +214,22 @@ bool TriggerDataDecoder::Finalise(){
     StoreC1C2.Set("c2",c2);
     StoreC1C2.Save(storec1c2.c_str());
   }*/
+  ofstream trigDebug;
+  trigDebug.open("TrigDecoderDebug.txt");
+  int i = 0;
+  for (auto it = TimeToTriggerWordMapComplete->begin(); it != TimeToTriggerWordMapComplete->end(); ++it)
+  {
+    if (i > 10000)
+      break;
+    trigDebug << it->first << " ";
+    for (auto trig = it->second.begin(); trig != it->second.end(); ++trig)
+    {
+      trigDebug << *trig << " ";
+    }
+    trigDebug << endl;
+    i++;
+  }
+  trigDebug.close();
 
   return true;
 }
@@ -299,6 +315,7 @@ void TriggerDataDecoder::CheckForRunChange()
      std::stringstream ss_trig_overlap;
      ss_trig_overlap << "TrigOverlap_R"<<RunNumber<<"S"<<SubRunNumber<<"p"<<PartNumber;
      bool store_exist = StoreTrigOverlap.Initialise(ss_trig_overlap.str().c_str());
+     std::cout<<"Saving to "<<ss_trig_overlap.str().c_str()<<"store_exist = " << store_exist << endl;
      StoreTrigOverlap.Set("c1",c1);
      StoreTrigOverlap.Set("c2",c2);
      StoreTrigOverlap.Save(ss_trig_overlap.str().c_str());

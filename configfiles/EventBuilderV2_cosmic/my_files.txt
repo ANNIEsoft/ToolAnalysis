@@ -1,0 +1,14 @@
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p0
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p1
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p2
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p3
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p4
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p5
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p6
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p7
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p8
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p9
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p10
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p11
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p12
+/pnfs/annie/persistent/raw/raw/5088/RAWDataR5088S0p13

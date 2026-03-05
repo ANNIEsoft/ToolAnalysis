@@ -1,0 +1,23 @@
+# General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on
+NUM_VECTOR_PPS 16 #Fixed PPS vector size
+NUM_VECTOR_DATA 7795 #Fixed DATA vector size
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+NChannels 30
+
+
+
+#LAPPDReorderData
+LAPPDReorderVerbosityLevel 0
+ReorderInputWavLabel RawLAPPDData
+ReorderOutputWavLabel LAPPDWaveforms
+DelayOffset 0
+GlobalShift 0
+
+NUM_VECTOR_DATA 7795
+NUM_VECTOR_PPS 16
+SelectSingleLAPPD false
+SelectedLAPPD 0

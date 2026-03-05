@@ -1,4 +1,4 @@
-verbosity 2
+verbosity 0
 
 # Refers to format of flux file used to generate GENIE sample (bnb or gsimple)
 FluxVersion 1                  # use 0 to load genie files based on bnb_annie_0000.root etc files (bnb/redecay/dk2nu flux format)
@@ -8,7 +8,7 @@ FluxVersion 1                  # use 0 to load genie files based on bnb_annie_00
 # Path to directory of GENIE files
 #FileDir NA                    # special option to load path from associated WCSim (Not recommended)
 #FileDir /pnfs/annie/persistent/simulations/genie3/G1810a0211a/standard/<VOLUME>
-FileDir /pnfs/annie/persistent/users/vfischer/genie_files/BNB_Water_10k_22-05-17
+FileDir /pnfs/annie/persistent/simulations/genie3/G1810a0211a/standard/tank
 
 # Name of GENIE file to open
 FilePattern gntp.99.ghep.root  # gntp.[run_number].ghep.root

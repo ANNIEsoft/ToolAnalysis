@@ -1,0 +1,15 @@
+# CNNImage config file
+
+verbosity 1
+DataMode Normal			#options: Normal / Charge-Weighted / TimeEvolution
+SaveMode Static 		#options: Static / Geometric / PMT-wise
+DimensionX 16			#choose something suitable (32/64/...)
+DimensionY 10			#choose something suitable (32/64/...)
+OutputFile cnnimage_electron_la_sE_1_94
+MCStaticMapping configfiles/CNNImage/mc_cnnimage_mapping.csv
+DataStaticMapping configfiles/CNNImage/data_cnnimage_mapping.csv
+DimensionLAPPD 5                #Size of the LAPPD pannal 
+IncludeTopBottom 1
+DetectorConf ANNIEp2v7		#specify the detector version used in simulation
+useLAPPDs 0
+WriteToFile 0

@@ -1,0 +1,14 @@
+LoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
+
+
+LAPPDLoadTXT LAPPDLoadTXT configfiles/LAPPDASCIIAna/ConfigTXT
+
+LAPPDStoreReorder LAPPDStoreReorder configfiles/LAPPDASCIIAna/ConfigStoreReadIn
+
+LAPPDTimeAlignment LAPPDTimeAlignment configfiles/LAPPDASCIIAna/ConfigPreProcess
+LAPPDBaseline LAPPDBaseline configfiles/LAPPDASCIIAna/ConfigPreProcess
+LAPPDPlots LAPPDPlots configfiles/LAPPDASCIIAna/ConfigPlot
+
+LAPPDThresReco LAPPDThresReco configfiles/LAPPDASCIIAna/ConfigPlot
+
+LAPPDTreeMaker LAPPDTreeMaker configfiles/LAPPDASCIIAna/Configs

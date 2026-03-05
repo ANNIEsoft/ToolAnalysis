@@ -104,7 +104,8 @@ bool FindMrdTracks::Execute(){
 		get_ok = m_data->Stores.at("ANNIEEvent")->Get("MRDTriggerType",MRDTriggertype);
 		if (not get_ok){
 			Log("FindMrdTracks: Did not find MRDTriggerType in ANNIEEvent. Please check the settings in MRDDataDecoder+BuildANNIEEvent/LoadWCSim?",v_error,verbosity);
-			m_data->vars.Set("StopLoop",1);
+			//m_data->vars.Set("StopLoop",1);
+			Log("FindMrdTracks tool was supposed to stop the loop, but will continue anyway",0,verbosity);
 		}
 	}
 	Log("FindMrdTracks tool: MRDTriggertype is "+MRDTriggertype+" (from ANNIEEvent store)",v_debug,verbosity);

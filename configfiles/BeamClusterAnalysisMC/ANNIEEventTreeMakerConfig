@@ -1,0 +1,35 @@
+ANNIEEventTreeMakerVerbosity 0
+
+OutputFile ANNIETree_MC.root
+
+
+fillAllTriggers 1
+fill_singleTrigger 0
+fillLAPPDEventsOnly 0
+TankCluster_fill 1
+cluster_TankHitInfo_fill 1
+
+TankReco_fill 0
+RingCounting_fill 1
+
+TankClusterProcessing 1
+MRDClusterProcessing 1
+TriggerProcessing 1
+TankHitInfo_fill 1
+MRDHitInfo_fill 1
+MRDReco_fill 1
+SiPMPulseInfo_fill 0
+fillCleanEventsOnly 0
+MCTruth_fill 1
+Reco_fill 0
+RecoDebug_fill 0
+muonTruthRecoDiff_fill 0
+isData 0
+HasGenie 1
+
+LAPPDData_fill 0
+LAPPDReco_fill 0
+RWMBRF_fill 0
+LAPPD_PPS_fill 0
+LAPPD_Waveform_fill 0
+LAPPD_MC_fill 1

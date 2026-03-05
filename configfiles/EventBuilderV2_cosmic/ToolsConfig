@@ -1,0 +1,24 @@
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+EBLoadRaw EBLoadRaw ./configfiles/EventBuilderV2_cosmic/EBLoadRawConfig
+
+
+PMTDataDecoder PMTDataDecoder ./configfiles/EventBuilderV2_cosmic/PMTDataDecoderConfig
+MRDDataDecoder MRDDataDecoder ./configfiles/EventBuilderV2_cosmic/MRDDataDecoderConfig
+TriggerDataDecoder TriggerDataDecoder ./configfiles/EventBuilderV2_cosmic/TriggerDataDecoderConfig
+#LAPPDLoadStore LAPPDLoadStore ./configfiles/EventBuilderV2_cosmic/LAPPDLoadStoreConfig
+
+
+PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/EventBuilderV2_cosmic/PhaseIIADCCalibratorConfig
+PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/EventBuilderV2_cosmic/PhaseIIADCHitFinderConfig
+
+
+EBTriggerGrouper EBTriggerGrouper ./configfiles/EventBuilderV2_cosmic/EBTriggerGrouperConfig
+EBPMT EBPMT ./configfiles/EventBuilderV2_cosmic/EBPMTConfig
+EBMRD EBMRD ./configfiles/EventBuilderV2_cosmic/EBMRDConfig
+#EBLAPPD EBLAPPD ./configfiles/EventBuilderV2_cosmic/EBLAPPDConfig
+
+SaveConfigInfo SaveConfigInfo ./configfiles/EventBuilderV2_cosmic/SaveConfigInfoConfig
+
+EBSaver EBSaver ./configfiles/EventBuilderV2_cosmic/EBSaverConfig
+
+

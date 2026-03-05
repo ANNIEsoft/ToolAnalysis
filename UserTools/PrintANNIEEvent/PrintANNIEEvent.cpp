@@ -301,13 +301,45 @@ bool PrintANNIEEvent::Execute(){
                                         cout <<"RecoADCPulses : {"<<endl;
                                         for(auto& achannel : RecoADCData){
                                                 unsigned long chankey = achannel.first;
-                                                auto& pulses = achannel.second;
-                                                cout<<"ChannelKey : "<<chankey<<endl;
-                                                cout<<"Pulses size : "<<pulses.size()<<endl;
-						for (int i_pulse=0; i_pulse < pulses.size(); i_pulse++){
-							//pulses.at(i_pulse).Print();
-						}
-                                        }
+                                                auto& minibuffers = achannel.second;
+												cout<<"ChannelKey : "<<chankey<<endl;
+                                                cout<<"Pulses size : "<<minibuffers.size()<<endl;
+                                        	for (size_t i_mb = 0; i_mb < minibuffers.size(); ++i_mb) {
+												auto& pulsevec = minibuffers.at(i_mb);
+                								cout << "  Minibuffer " << i_mb << " has " << pulsevec.size() << " pulses" << endl;
+
+                								for (size_t i_pulse = 0; i_pulse < pulsevec.size(); ++i_pulse) {
+                    								const ADCPulse& pulse = pulsevec.at(i_pulse);
+
+														cout << "    Pulse " << i_pulse << ":" << std::endl;
+														cout << "      Start Time       : " << pulse.start_time() << " ns" << std::endl;
+														cout << "      Peak Time        : " << pulse.peak_time() << " ns" << std::endl;
+														cout << "      Charge           : " << pulse.charge() << " nC" << std::endl;
+														cout << "      Baseline         : " << pulse.baseline() << " ADC" << std::endl;
+														cout << "      Sigma Baseline   : " << pulse.sigma_baseline() << " ADC" << std::endl;
+														cout << "      Raw Area         : " << pulse.raw_area() << " ADC·samples" << std::endl;
+														cout << "      Raw Amplitude    : " << pulse.raw_amplitude() << " ADC" << std::endl;
+														cout << "      Calib Amplitude  : " << pulse.amplitude() << " V" << std::endl;
+													
+	
+														// pulse.Print(); // Optional
+
+														const auto& xpts = pulse.GetTraceXPoints();
+														const auto& ypts = pulse.GetTraceYPoints();
+
+														if (!xpts.empty() && !ypts.empty()) {
+															std::cout << "      Trace points (ns, ADC):" << std::endl;
+															for (size_t i = 0; i < std::min(xpts.size(), ypts.size()); ++i) {
+																std::cout << "        (" << xpts[i] << ", " << ypts[i] << ")" << std::endl;
+															}
+														} else {
+    														std::cout << "      No ADC trace available." << std::endl;
+													}
+                								
+
+												}
+            								}
+										}
                                         cout<<"}"<<endl;
                                 }
 			} else cout <<"No RecoADCHits in ANNIEEvent"<<std::endl;

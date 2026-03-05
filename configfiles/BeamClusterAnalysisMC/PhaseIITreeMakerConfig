@@ -1,6 +1,7 @@
 verbose 5
 
-OutputFile MCBeam.ntuple.root
+OutputFile MCBeam_Gst_G1810a0211a_ntuple.root
+
 TankClusterProcessing 1
 MRDClusterProcessing 1
 TriggerProcessing 1

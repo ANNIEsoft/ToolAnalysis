@@ -35,7 +35,7 @@ where the TGraph name is given by: ```<run_number>_<p_file>_<eventtimetank>_<hit
 verbosity 0
 
 hitPE_min 0.5                   # minimum hit charge [pe] to include in the root file
-hitPE_max 2.5                   # maximum hit charge [pe] to include in the root file
+hitPE_max 1.5                   # maximum hit charge [pe] to include in the root file
                                     # omitting both of these will not impose a charge selection
 
 hitT_min 0                      # minimum hit time [ns] to include in the root file
@@ -53,16 +53,7 @@ useClusterHits 0                # fill root file with traces from clustered hits
 OutputFilename ADCTraces.root   # name of the output root file
 ```
 
-## Example toolchain
-```
-LoadANNIEEvent
-LoadGeometry
-ClusterFinder   (only if you are using the clustered hits)
-PrintADCTraces
-```
-
 ## Additional information
 - ADC traces will be in ADC (y) vs time [ns] (x). All pulse times will be relative (and zeroed) to the start time of the pulse. All pulse amplitudes (y) are baseline-subtracted. This way its easier to compare. You can cross reference the pulse features with the title (which contains the charge and time of the pulse) to determine more information.
 - This tool is similar to the `PrintADCData` toolchain, but instead of printing out all raw PMT waveforms, it only prints out the found pulse traces (and provides more identifying / filtering information based on charge / time).
-- Runtime is ~30s for 10 part files (about the same whether or not `ClusterFinder` is included). 
-- Filesize for the output root file is ~0.05MB per waveform per channel. If including 100 waveforms per PMT channel(`MaxTracesPerChannel 100`) the filesize is ~5MB, if 1000 the filesize is ~50MB.
+- `create_my_inputs.sh` will populate the my_inputs.txt file with all ProcessedData from a given run. Adjust the internal paths accordingly. Usage: `sh create_my_inputs.sh <run>`

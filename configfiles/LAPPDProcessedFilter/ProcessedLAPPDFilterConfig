@@ -1,0 +1,15 @@
+FilterVerbosity 0
+
+saveAllLAPPDEvents 1
+savePMTClusterEvents 0
+
+filterType MRDtrack
+
+#filterType BeamSelection
+
+RequireNoVeto 1
+RequireCherenkovCover 1
+
+
+requirePulsedAmp 15
+requirePulsedStripNumber 7
