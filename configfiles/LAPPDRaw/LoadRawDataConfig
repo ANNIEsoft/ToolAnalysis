@@ -1,0 +1,12 @@
+verbosity 0
+BuildType LAPPDAndCTC
+Mode FileList
+
+
+InputFile ./configfiles/LAPPDRaw/list.txt
+
+
+DummyRunInfo 1
+StoreTrigOverlap 0
+ReadTrigOverlap 0
+StoreRawData 0

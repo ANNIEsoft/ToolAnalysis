@@ -1,0 +1,12 @@
+LoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+EBLoadRaw EBLoadRaw ./configfiles/EventBuilderV2_LED/EBLoadRawConfig
+PMTDataDecoder PMTDataDecoder ./configfiles/EventBuilderV2_LED/PMTDataDecoderConfig
+TriggerDataDecoder TriggerDataDecoder ./configfiles/EventBuilderV2_LED/TriggerDataDecoderConfig
+PhaseIIADCCalibrator PhaseIIADCCalibrator ./configfiles/EventBuilderV2_LED/PhaseIIADCCalibratorConfig
+PhaseIIADCHitFinder PhaseIIADCHitFinder ./configfiles/EventBuilderV2_LED/PhaseIIADCHitFinderConfig
+EBTriggerGrouper EBTriggerGrouper ./configfiles/EventBuilderV2_LED/EBTriggerGrouperConfig
+EBPMT EBPMT ./configfiles/EventBuilderV2_LED/EBPMTConfig
+SaveConfigInfo SaveConfigInfo ./configfiles/EventBuilderV2_LED/SaveConfigInfoConfig
+EBSaver EBSaver ./configfiles/EventBuilderV2_LED/EBSaverConfig
+
+

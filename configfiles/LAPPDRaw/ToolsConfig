@@ -1,0 +1,19 @@
+#LoadGeometry LoadGeometry configfiles/LAPPDRaw/ConfigGeo
+LoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig
+LoadRawData LoadRawData configfiles/LAPPDRaw/LoadRawDataConfig
+
+#TriggerDataDecoder TriggerDataDecoder configfiles/LAPPDRaw/TriggerDataDecoderConfig
+
+LAPPDLoadStore LAPPDLoadStore configfiles/LAPPDRaw/Configs
+LAPPDStoreReorder LAPPDStoreReorder configfiles/LAPPDRaw/ConfigStoreReadIn
+
+LAPPDTimeAlignment LAPPDTimeAlignment configfiles/LAPPDRaw/ConfigPreProcess
+LAPPDBaseline LAPPDBaseline configfiles/LAPPDRaw/ConfigPreProcess
+LAPPDPlots LAPPDPlots configfiles/LAPPDRaw/ConfigPlot
+
+LAPPDThresReco LAPPDThresReco configfiles/LAPPDRaw/ConfigPlot
+
+LAPPDTreeMaker LAPPDTreeMaker configfiles/LAPPDRaw/Configs
+
+
+

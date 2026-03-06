@@ -71,7 +71,6 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
     fSaveROOT = false;
   }
 
-
   if (!got_deletectcdata) {
     logmessage = ("Warning (BeamFetcherV2): DeleteCTCData was not set in the "
 		  "config file. If you're not running downstream tools that "
@@ -80,7 +79,6 @@ bool BeamFetcherV2::Initialise(std::string config_filename, DataModel& data)
     Log(logmessage, v_warning, verbosity);
     fDeleteCTCData = false;
   }
-    
 
   if (!got_chunkMSec) {
     logmessage = ("Warning (BeamFetcherV2): TimeChunkStepInMilliseconds was not"
@@ -119,9 +117,9 @@ bool BeamFetcherV2::Execute()
   bool goodFetch = false;
   if (got_ctc && fNewCTCData) {
     logmessage = ("Message (BeamFetcherV2): New CTC data found. Fetching. ");
-    Log(logmessage, v_message, verbosity);  
+    Log(logmessage, v_message, verbosity);    
 
-  goodFetch = this->FetchFromTrigger();
+    goodFetch = this->FetchFromTrigger();
   } else {
     logmessage = ("Warning (BeamFetcherV2): No new CTC data found. Nothing to fetch. ");
     Log(logmessage, v_message, verbosity);    
@@ -170,11 +168,11 @@ bool BeamFetcherV2::FetchFromTrigger()
     for (auto iterator = TimeToTriggerWordMap->lower_bound(fLastTimestampFetched+1);
 	 iterator != TimeToTriggerWordMap->end(); ++iterator) {
 
-      // We only care about beam triggers here - grab the undelayed beam trigger 14
+      // We only care about beam triggers here
       if (std::find(iterator->second.begin(), iterator->second.end(), 14) == iterator->second.end()) {
 	continue;
       }
-      
+
       // Grab the timestamp
       uint64_t trigTimestamp = iterator->first;
       fLastTimestampFetched = trigTimestamp;
@@ -205,7 +203,7 @@ bool BeamFetcherV2::FetchFromTrigger()
 	if (fIsBundle) {
 	  BeamDataQuery = db.QueryBeamDBBundleSpan(fDevices[0], trigTimestamp, trigTimestamp+fChunkStepMSec);
 	} else {
-	  std::map<uint64_t, std::map<std::string, BeamDataPoint> > tempMap;
+	  std::map<uint64_t, std::map<std::string, BeamDataPoint> > tempMap;	  
 	  for (auto device : fDevices) {
 	    auto tempMap = db.QueryBeamDBSingleSpan(device, trigTimestamp, trigTimestamp+fChunkStepMSec);
 	    BeamDataQuery.insert(tempMap.begin(), tempMap.end());

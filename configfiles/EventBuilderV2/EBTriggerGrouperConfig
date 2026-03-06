@@ -1,0 +1,30 @@
+verbosityEBTG 0
+
+# beam triggers are always there, even in AmBe runs. We know they are meaningless to group beam trigger when we know there is 100% no beam, but again redundancy is not bad if it's not harmful
+GroupMode beam
+GroupTolerance 3000000
+GroupTrigWord 14 //undelayed beam
+
+groupBeam 1
+BeamTolerance 25000000
+
+groupCosmic 1
+CosmicTriggerMain 36
+
+groupLaser 1
+LaserTolerance 10000
+
+groupLED 1
+#LEDTriggerMain 31
+#LEDTolerance 10000
+
+groupAmBe 1
+AmBeTolerance 10000 # 10us for testing
+AmBeTriggerMain 11
+
+groupPPS 0
+
+groupNuMI 1
+
+maxNumAllowedInBuffer 20000
+

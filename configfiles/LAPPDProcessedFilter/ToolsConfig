@@ -1,0 +1,13 @@
+LoadANNIEEvent LoadANNIEEvent configfiles/LAPPDProcessedFilter/LoadANNIEEventConfig
+LoadGeometry LoadGeometry configfiles/LoadGeometry/LoadGeometryConfig 
+
+myTimeClustering TimeClustering configfiles/LAPPDProcessedFilter/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks configfiles/LAPPDProcessedFilter/FindMrdTracksConfig
+myClusterFinder ClusterFinder ./configfiles/LAPPDProcessedFilter/ClusterFinderConfig
+myClusterClassifiers ClusterClassifiers ./configfiles/LAPPDProcessedFilter/ClusterClassifiersConfig
+myEventSelector EventSelector ./configfiles/LAPPDProcessedFilter/EventSelectorConfig
+
+
+ProcessedLAPPDFilter ProcessedLAPPDFilter configfiles/LAPPDProcessedFilter/ProcessedLAPPDFilterConfig
+
+ 

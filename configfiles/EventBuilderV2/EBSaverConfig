@@ -1,0 +1,10 @@
+verbosityEBSaver 1
+
+savePMT 1
+saveMRD 1
+saveCTC 1
+saveLAPPD 1
+saveRunInfo 1
+saveBeamInfo 1
+
+beamInfoFileName beamfetcher_tree.root

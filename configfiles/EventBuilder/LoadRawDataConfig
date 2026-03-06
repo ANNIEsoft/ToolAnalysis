@@ -1,4 +1,4 @@
-verbosity 0
+verbosity 1
 BuildType TankAndMRDAndCTC
 #BuildType CTC
 Mode FileList

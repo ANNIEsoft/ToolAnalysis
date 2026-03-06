@@ -1,0 +1,10 @@
+#Triggers are given by Jonathan; place one number per line. Values are index + 1
+#4+1: Delayed beam.  32+1: LED trigger. 34+1: AmBe and Cosmic trigger.  35+1: MRD_CR_Trigger. 30+1: LED_Start. 45+1, 46+1: Laser. 14+1: AmBe external trigger
+5
+15
+36
+31
+33
+35
+46
+47

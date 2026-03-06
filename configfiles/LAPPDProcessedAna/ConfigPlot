@@ -37,7 +37,7 @@ PlotWavLabel BLsubtractedLAPPDData
 switchBit 0
 
 outfile WaveForms_ablsub.root
-NHistos 200
+NHistos 10
 SaveSingleStrip 0
 SingleStripNo 9
 plotLow -10
@@ -69,7 +69,7 @@ LAPPDThresRecoVerbosity 0
 verbosity 0
 printHitsTXT 0
 threshold 10
-minPulseWidth 5
+minPulseWidth 10
 #thresRecoInputWaveLabel AlignedLAPPDData
 ThresRecoInputWaveLabel BLsubtractedLAPPDData
 #thresRecoInputWaveLabel LAPPDWaveforms
@@ -81,7 +81,7 @@ useMaxTime 1  # 1: use max bin as pulse time, 0: use gaus fit bin as pulse peak 
 signalSpeedOnStrip 0.567 #1.69982/2.99792
 triggerBoardDelay 0
 loadPrintMRDinfo 0
-useRange 0   #set this to 0 for using pulse start time as the saved pulse time, 1 for high, -1 for using peak time
+useRange 0   #For hit reco, using which time from pulse to form the hit time, set this to 0 for using pulse start time for the saved hit time, 1 for high, -1 for using peak time
 plusClockBit 0
 
 savePositionOnStrip 1
@@ -97,7 +97,7 @@ StackStripNumber 1
 StackStripSide 0
 
 #LAPPDPlotWaveForms
-NHistos 200
+NHistos 10
 SaveByChannel 0
 SaveSingleStrip 0
 SingleStripNo 1
@@ -126,7 +126,7 @@ drawLowThreshold -20
 CanvasWidth 1000
 CanvasHeight 500
 
-maxDrawEventNumber 200
+maxDrawEventNumber 100
 
 DrawBinHist 1
 printEventNumber 0
