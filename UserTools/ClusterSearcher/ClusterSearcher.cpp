@@ -74,13 +74,12 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
     double temp_gain;
     while (!file_singlepe.eof()){
       file_singlepe >> temp_chankey >> temp_gain;
-      if (file_singlepe.eof()) break;
       pmt_gains.emplace(temp_chankey,temp_gain);
     }
     file_singlepe.close();
     m_data->CStore.Get("pmt_tubeid_to_channelkey",pmt_tubeid_to_channelkey);
+    Log("ClusterSearcher " + to_string(fClusterMode) + " !MC Initialized", v_debug, verbosity);
   }
-  Log("ClusterSearcher " + to_string(fClusterMode) + " !MC Initialized", v_debug, verbosity);
 
   // vector of selected digits
   fSelectAll = new std::vector<RecoDigit*>;
@@ -123,14 +122,14 @@ bool ClusterSearcher::Execute(){
   if(!get_annieevent){
     Log(name + ": No ANNIEEvent store!",v_error,verbosity); 
     return false;
-  };
+  }
 	
   /// see if "RecoEvent" exists
   auto get_recoevent = m_data->Stores.count("RecoEvent");
   if(!get_recoevent){
     Log(name + ": No RecoEvent store!",v_error,verbosity); 
     return false;
-  };
+  }
 
   if (fisMC) {
     // get true vertex
@@ -524,6 +523,7 @@ std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>*
   // ===================
   for(int idigit=0; idigit<int(fSelectByNeighbours->size()); idigit++ ){
     RecoDigit* recoDigit = (RecoDigit*)(fSelectByNeighbours->at(idigit));
+    Log("Check RC: Does the digit have a parent? "+to_string(recoDigit->GetParents().size()), v_debug, verbosity);
     RecoClusterDigit* clusterDigit = new RecoClusterDigit(recoDigit);
     vClusterDigitList.push_back(clusterDigit);
   }
@@ -653,33 +653,36 @@ std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>*
         cluster.SetClusterMode(fClusterMode);
         
         Log("Adding Digits",v_debug,verbosity);
-        vector<RecoDigit>* ClusteredDigits=new vector<RecoDigit>;
+        vector<RecoDigit> ClusteredDigits;
 
         for(int jdigit=0; jdigit<int(vClusterDigitCollection.size()); jdigit++ ){
-            cout<<"Check 1\n";
+
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
-          cout<<"check 2\n";
+
           RecoDigit* arecodigit=cdigit->GetRecoDigit();
           arecodigit->AddCluster(fClusterMode);
           RecoDigit brecodigit(arecodigit);
-          ClusteredDigits->push_back(brecodigit);
-          cout<<" check 3\n";
+          ClusteredDigits.push_back(brecodigit);
+
           //cluster.AddDigit(*arecodigit);        
         }
         cluster.SetDigits(ClusteredDigits);
-        ClusteredDigits = nullptr;
+        //ClusteredDigits = nullptr;
         Log("Cluster has " + to_string(cluster.GetNDigits()) + " digits", v_debug, verbosity);
         Log("ready to caluclate parameters.",v_debug,verbosity);    
         cluster.CalcParameters();
-        Log("ClusterSearcher: Clusters made: "+to_string(fClusterList->size()),v_debug,verbosity);
+        int parent = cluster.calcBestParent();
+        Log("Cluster Parent: "+ to_string(parent),v_debug,verbosity);
         fClusterList->push_back(cluster);
+        Log("ClusterSearcher: Clusters made: "+to_string(fClusterList->size()),v_debug,verbosity);
+        
         
       }
     }
   }
   
 
-  std::cout <<"Number of clusters = "<<fClusterList->size()<<std::endl;
+  Log("Number of clusters = "+to_string(fClusterList->size()),v_message,verbosity);
   // return vector of clusters
   // =========================
   return fClusterList;
