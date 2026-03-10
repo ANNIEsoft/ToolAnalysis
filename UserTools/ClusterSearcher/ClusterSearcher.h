@@ -66,9 +66,8 @@ class ClusterSearcher: public Tool {
   std::vector<RecoDigit*>* SelectAll(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* SelectByPulseHeight(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* SelectByNeighbours(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* SelectByClusters(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* SelectByTruthInfo(std::vector<RecoDigit*>* digitlist); //use truth information. Only for testing the code
-  std::vector<RecoCluster>* RecoClusters(std::vector<RecoDigit*>* digitlist);
+  void RecoClusters(std::vector<RecoDigit*>* digitlist);
   
 
 
@@ -122,9 +121,6 @@ class ClusterSearcher: public Tool {
   	
   // for test only
   std::vector<RecoDigit*>* fSelectByTruthInfo;
-
-  // vectors of clusters
-  std::vector<RecoCluster>* fClusterList;
  
   // vector of clusters (accessible to the CStore)
   std::vector<RecoCluster>* fRecoClusters = nullptr;  

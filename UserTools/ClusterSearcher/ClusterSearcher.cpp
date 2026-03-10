@@ -89,7 +89,7 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
   // only for test 
   fSelectByTruthInfo = new std::vector<RecoDigit*>; 
   // vector of clusters
-  fClusterList = new std::vector<RecoCluster>;
+  //fClusterList = new std::vector<RecoCluster>;
   fRecoClusters = new std::vector<RecoCluster>;
 
   //Set clustering parameters in the RecoEvent store
@@ -106,8 +106,6 @@ bool ClusterSearcher::Initialise(std::string configfile, DataModel &data){
 
 
 bool ClusterSearcher::Execute(){
-    if (fRecoClusters) Log("Prelim check1: fRecoClusters size: " + to_string(fRecoClusters->size()), v_debug, verbosity);
-    if (fRecoClusters->size()!=0) fRecoClusters->clear();
     
     if(fFirstRun && pre_RecoClusters) pre_RecoClusters->clear();
   
@@ -163,7 +161,7 @@ bool ClusterSearcher::Execute(){
   // ==========
   SelectDigits(digits);
   
-  fRecoClusters = this->RecoClusters(digits);
+  this->RecoClusters(digits);
   // Digit clustering done!
   // =====
   
@@ -203,7 +201,7 @@ bool ClusterSearcher::Finalise(){
   delete fSelectByNeighbours; fSelectByNeighbours = 0;
   delete fSelectByClusters; fSelectByClusters = 0;
   //delete fRecoClusters; fRecoClusters = 0;    //Will be deleted by the store, don't manually delete
-  delete fClusterList; fClusterList = 0;
+  delete fRecoClusters; fRecoClusters = 0;
   // for test
   delete fSelectByTruthInfo; fSelectByTruthInfo = 0;
   return true;
@@ -470,38 +468,7 @@ std::vector<RecoDigit*>* ClusterSearcher::SelectByNeighbours(std::vector<RecoDig
   return fSelectByNeighbours;
 }
 
-std::vector<RecoDigit*>* ClusterSearcher::SelectByClusters(std::vector<RecoDigit*>* DigitList)
-{
-	std::string name = "ClusterSearcher::SelectByClusters() ";
-  // clear vector of Selected digits
-  // ===============================
-  fSelectByClusters->clear();
-  //fRecoClusters->clear();
-
-  // run clustering algorithm
-  // ========================
-  std::vector<RecoCluster>* ClusterList = RecoClusters(DigitList);
-
-  for(int icluster=0; icluster<int(ClusterList->size()); icluster++ ){
-    RecoCluster Cluster = (ClusterList->at(icluster));
-    fRecoClusters->push_back(Cluster);    
-
-    for(int idigit=0; idigit<Cluster.GetNDigits(); idigit++ ){
-      RecoDigit* Digit = new RecoDigit;
-      *Digit=(Cluster.GetDigit(idigit));
-      fSelectByClusters->push_back(Digit);
-    }
-  }
-  
-  // return vector of Selected digits
-  // ================================
-  if(verbosity>v_message) std::cout << name <<"  Select by clusters: " << fSelectByClusters->size() << std::endl;
-  
-  
-  return fSelectByClusters;
-}
-
-std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>* DigitList)
+void ClusterSearcher::RecoClusters(std::vector<RecoDigit*>* DigitList)
 {  
 
   // delete cluster digits
@@ -513,7 +480,7 @@ std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>*
 
   // clear vector clusters
   // =====================
-  fClusterList->clear();
+  fRecoClusters->clear();
 
   //Digit Selection
   SelectByPulseHeight(DigitList);
@@ -673,8 +640,8 @@ std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>*
         cluster.CalcParameters();
         int parent = cluster.calcBestParent();
         Log("Cluster Parent: "+ to_string(parent),v_debug,verbosity);
-        fClusterList->push_back(cluster);
-        Log("ClusterSearcher: Clusters made: "+to_string(fClusterList->size()),v_debug,verbosity);
+        fRecoClusters->push_back(cluster);
+        Log("ClusterSearcher: Clusters made: "+to_string(fRecoClusters->size()),v_debug,verbosity);
         
         
       }
@@ -682,10 +649,10 @@ std::vector<RecoCluster>* ClusterSearcher::RecoClusters(std::vector<RecoDigit*>*
   }
   
 
-  Log("Number of clusters = "+to_string(fClusterList->size()),v_message,verbosity);
+  Log("Number of clusters = "+to_string(fRecoClusters->size()),v_message,verbosity);
   // return vector of clusters
   // =========================
-  return fClusterList;
+  return;
 }
 
 std::vector<RecoDigit*>* ClusterSearcher::SelectByTruthInfo(std::vector<RecoDigit*>* DigitList)
