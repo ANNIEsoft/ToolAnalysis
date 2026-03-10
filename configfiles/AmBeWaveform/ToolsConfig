@@ -1,3 +1,4 @@
 myLoadANNIEEvent LoadANNIEEvent ./configfiles/AmBeWaveform/LoadANNIEEventConfig
 myLoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
-myFitRWMWaveform FitRWMWaveform ./configfiles/AmBeWaveform/FitRWMWaveform
+myFitRWMWaveform FitRWMWaveform ./configfiles/AmBeWaveform/FitRWMWaveformConfig
+
