@@ -171,7 +171,6 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fGroupedTrigger->Branch("gTrigType", &groupedTriggerType, "gTrigType/I");
   fGroupedTrigger->Branch("gTrigNum", &TriggerGroupNumInThisEvent, "gTrigNum/I");
 
-  TriggerWordMap = new std::map<uint64_t, std::vector<uint32_t>>;
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry", _geom);
   EventNumber = 0;
 
@@ -369,7 +368,10 @@ bool LAPPDTreeMaker::Finalise()
   fTimeStamp->Write();
   fTrigger->Write();
   fGroupedTrigger->Write();
+
   file->Close();
+  delete file;
+
   return true;
 }
 

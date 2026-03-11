@@ -186,7 +186,6 @@ if (tool=="ProcessedLAPPDFilter") ret=new ProcessedLAPPDFilter;
 if (tool=="BeamQuality") ret=new BeamQuality;
 if (tool=="FitRWMWaveform") ret=new FitRWMWaveform;
 if (tool=="LAPPDLoadTXT") ret=new LAPPDLoadTXT;
-if (tool=="LAPPDBSCharging") ret=new LAPPDBSCharging;
 if (tool=="MuonFitter") ret=new MuonFitter;
 if (tool=="BackTracker") ret=new BackTracker;
 if (tool=="PrintDQ") ret=new PrintDQ;

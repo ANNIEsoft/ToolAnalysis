@@ -68,11 +68,15 @@ class LAPPDPulse : public Hit{
 			ar & halfHeightTime;
 			ar & halfEndTime;
 			ar & baseline;
-			ar & pulseFollowTime;
-			ar & pulseFollowCharge;
+			if(version>0){
+				ar & pulseFollowTime;
+				ar & pulseFollowCharge;
+			}
 		}
 	}
 };
+
+BOOST_CLASS_VERSION(LAPPDPulse, 1)
 
 /*  Derived classes, if there's a reason to have them. So far...not really
 
