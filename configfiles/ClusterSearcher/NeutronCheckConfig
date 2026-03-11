@@ -1,0 +1,6 @@
+verbosity 5
+outfile /Data/0824Beamsim/NeutronCheck_CS
+UseClean 1
+FinderCompare 0
+ParticleInfo 0
+VertexInfo 0

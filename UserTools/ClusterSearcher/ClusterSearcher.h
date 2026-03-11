@@ -1,5 +1,5 @@
-#ifndef HITCLEANER_H
-#define HITCLEANER_H
+#ifndef CLUSTERSEARCHER_H
+#define CLUSTERSEARCHER_H
 
 #include <string>
 #include <iostream>
@@ -10,12 +10,12 @@
 #include "RecoClusterDigit.h"
 #include "TString.h"
 
-class HitCleaner: public Tool {
+class ClusterSearcher: public Tool {
 
  public:
 
-  HitCleaner();
-  ~HitCleaner();
+  ClusterSearcher();
+  ~ClusterSearcher();
   bool Initialise(std::string configfile,DataModel &data);
   bool Execute();
   bool Finalise();
@@ -28,9 +28,10 @@ class HitCleaner: public Tool {
     kPulseHeightAndTruthInfo = 4
   } FilterConfig_t;
 
-  static HitCleaner* Instance();
+  static ClusterSearcher* Instance();
 
-  static void Config(int config);
+  //static void Config(int config);
+  //static void ClusterType(int ctype);
   static void PmtMinPulseHeight(double min);
   static void PmtNeighbourRadius(double radius);
   static void PmtNeighbourDigits(int digits);
@@ -41,7 +42,7 @@ class HitCleaner: public Tool {
 
   void PrintParameters();
 
-  void SetConfig(int config)               { fConfig = config; }
+  void SetClusterMode(int cmode)		{fClusterMode = cmode;}
   void SetPmtMinPulseHeight(double min)       { fPmtMinPulseHeight = min; }
   void SetPmtNeighbourRadius(double radius)   { fPmtNeighbourRadius = radius; }
   void SetPmtNeighbourDigits(int digits)      { fPmtMinNeighbourDigits = digits; }
@@ -55,27 +56,27 @@ class HitCleaner: public Tool {
   void SetLappdClusterRadius(double radius)     { fLappdClusterRadius = radius; }
   void SetLappdTimeWindowNeighbours(double windowN)        { fLappdTimeWindowN = windowN; }
   void SetLappdTimeWindowClusters(double windowC)        { fLappdTimeWindowC = windowC; }
-  void LoadConfigFile(string configfilename);
+  //void LoadConfigFile(string configfilename);
   void SetMinClusterDigits(int digits)        { fMinClusterDigits = digits; }
   
 
-  std::vector<RecoDigit*>* Run(std::vector<RecoDigit*>* digitlist);
   std::vector<RecoDigit*>* ResetDigits(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* FilterDigits(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* FilterAll(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* FilterByPulseHeight(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* FilterByNeighbours(std::vector<RecoDigit*>* digitlist);
-  //std::vector<RecoDigit*>* FilterByClusters(std::vector<RecoDigit*>* digitlist);
-  std::vector<RecoDigit*>* FilterByTruthInfo(std::vector<RecoDigit*>* digitlist); //use truth information. Only for testing the code
-  std::vector<RecoCluster>* RecoClusters(std::vector<RecoDigit*>* digitlist);
+  std::vector<RecoDigit*>* SelectDigits(std::vector<RecoDigit*>* digitlist);
+  void SelectDigits(std::vector<RecoDigit>* digitlist);
+  std::vector<RecoDigit*>* SelectAll(std::vector<RecoDigit*>* digitlist);
+  std::vector<RecoDigit*>* SelectByPulseHeight(std::vector<RecoDigit*>* digitlist);
+  std::vector<RecoDigit*>* SelectByNeighbours(std::vector<RecoDigit*>* digitlist);
+  std::vector<RecoDigit*>* SelectByTruthInfo(std::vector<RecoDigit*>* digitlist); //use truth information. Only for testing the code
+  void RecoClusters(std::vector<RecoDigit*>* digitlist);
+  
 
 
  private:
   void Reset();
-  void CBCheck(std::vector<RecoDigit*>* unfilteredDigits, std::vector<RecoDigit*>* filteredDigits);
   
-  // running mode
-  int fConfig;
+  
+  // clustering mode
+  int fClusterMode;
 
   // cleaning parameters
   double fPmtMinPulseHeight;
@@ -97,6 +98,7 @@ class HitCleaner: public Tool {
   
   int    fMinClusterDigits;
   bool   fisMC;
+  bool  fFirstRun;      //Likely temp; would be nice to have it automatically set.
 
   // p.e. conversion parameters
   std::map<int,unsigned long> pmt_tubeid_to_channelkey;
@@ -104,27 +106,25 @@ class HitCleaner: public Tool {
   std::string singlePEgains;
 
   // Container for parameters
-  std::map<std::string, double>* fHitCleaningParam = nullptr;
+  std::map<std::string, double>* fClusteringParam = nullptr;
 
   // internal containers
   std::vector<Double_t> vNdigitsCluster;  
   std::vector<RecoClusterDigit*> vClusterDigitList;
   std::vector<RecoClusterDigit*> vClusterDigitCollection;
 
-  // vectors of filtered digitss
-  std::vector<RecoDigit*>* fFilterAll;
-  std::vector<RecoDigit*>* fFilterByPulseHeight;
-  std::vector<RecoDigit*>* fFilterByNeighbours;
-  std::vector<RecoDigit*>* fFilterByClusters;
+  // vectors of selected digitss
+  std::vector<RecoDigit*>* fSelectAll;
+  std::vector<RecoDigit*>* fSelectByPulseHeight;
+  std::vector<RecoDigit*>* fSelectByNeighbours;
+  std::vector<RecoDigit*>* fSelectByClusters;
   	
   // for test only
-  std::vector<RecoDigit*>* fFilterByTruthInfo;
-
-  // vectors of clusters
-  std::vector<RecoCluster>* fClusterList;
+  std::vector<RecoDigit*>* fSelectByTruthInfo;
  
   // vector of clusters (accessible to the CStore)
-  std::vector<RecoCluster>* fHitCleaningClusters = nullptr;  
+  std::vector<RecoCluster>* fRecoClusters = nullptr;  
+  std::vector<RecoCluster>* pre_RecoClusters = nullptr;
  	
   // true vertex
   RecoVertex* fTrueVertex = 0; 
@@ -132,8 +132,8 @@ class HitCleaner: public Tool {
   // digit list
   std::vector<RecoDigit>* fDigitList = 0;    
   
-  // hit cleaning status;
-  bool fIsHitCleaningDone = false;    
+  // hit clustering status;
+  bool fIsHitClusteringDone = false;    
   
   /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
   int verbosity=1;
