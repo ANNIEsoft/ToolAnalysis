@@ -25,7 +25,7 @@ class RecoCluster : public SerialisableObject {
   void SortCluster();
 
   void AddDigit(RecoDigit digit);
-  inline void SetDigits(vector<RecoDigit>* indigits){fDigitList=indigits;}
+  inline void SetDigits(vector<RecoDigit> indigits){fDigitList=indigits;}
 
   RecoDigit GetDigit(int n);
   
@@ -33,13 +33,13 @@ class RecoCluster : public SerialisableObject {
   
   int GetClusterMode();
   
-  std::vector<RecoDigit>* GetDigitList() {return this->fDigitList;}
+  std::vector<RecoDigit> GetDigitList() {return fDigitList;}
   
   int GetNDigits();
   
   bool Print() {
 		cout<<"Number of digits in this cluster : "<<GetNDigits()<<endl;
-		cout<<"Clustering mode : "<<GetNDigits()<<endl;
+		cout<<"Clustering mode : "<<GetClusterMode()<<endl;
 		return true;
 	}
 
@@ -111,7 +111,7 @@ class RecoCluster : public SerialisableObject {
 
   
   int fClusterMode = -999;
-  std::vector<RecoDigit>* fDigitList;
+  std::vector<RecoDigit> fDigitList;
   Position TwoDCenter;
 
   	

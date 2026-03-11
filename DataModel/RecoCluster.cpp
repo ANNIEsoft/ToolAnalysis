@@ -16,11 +16,11 @@ RecoCluster::~RecoCluster()
 
 void RecoCluster::Reset()
 {
-  int j=fDigitList->size();
+  int j=fDigitList.size();
   /*for (int i = 0; i<j; i++) {
     delete fDigitList[i];
   }*/
-  fDigitList->clear();
+  fDigitList.clear();
 }
 
 static bool CompareTimes(RecoDigit rd1, RecoDigit rd2)
@@ -30,23 +30,23 @@ static bool CompareTimes(RecoDigit rd1, RecoDigit rd2)
 
 void RecoCluster::SortCluster()
 {
-  sort(fDigitList->begin(), fDigitList->end(), CompareTimes);
+  sort(fDigitList.begin(), fDigitList.end(), CompareTimes);
 }
 
 void RecoCluster::AddDigit(RecoDigit digit)
 {
   //digit.AddCluster(fClusterMode);
-    fDigitList->push_back(digit);
+    fDigitList.push_back(digit);
 }
 
 RecoDigit RecoCluster::GetDigit(int n)
 {
-  return (RecoDigit)(fDigitList->at(n));
+  return (RecoDigit)(fDigitList.at(n));
 }
 
 int RecoCluster::GetNDigits()
 {
-  return fDigitList->size();
+  return fDigitList.size();
 }
 
 void RecoCluster::SetClusterMode(int cmode)
@@ -65,8 +65,8 @@ bool RecoCluster::CheckFilter() {
     double baseline;
 
     fIsFiltered=true;
-    for (int i=0;i<fDigitList->size();i++) {
-        RecoDigit adigit=fDigitList->at(i);
+    for (int i=0;i<fDigitList.size();i++) {
+        RecoDigit adigit=fDigitList.at(i);
         DigitModes=adigit.GetClusteredModes();
         for (int j = 0; j < DigitModes.size(); j++) {
             if(!ModeDigitMap.count(DigitModes.at(j))) ModeDigitMap.emplace(DigitModes.at(j),adigit.GetCalCharge());
@@ -85,8 +85,8 @@ bool RecoCluster::CheckFilter() {
 
 void RecoCluster::CalcTime() {
 	double sum = 0;
-	for (int i=0; i<fDigitList->size(); i++) {
-		sum += fDigitList->at(i).GetCalTime();
+	for (int i=0; i<fDigitList.size(); i++) {
+		sum += fDigitList.at(i).GetCalTime();
 	}
 	clusterTime = sum / GetNDigits();
 
@@ -94,8 +94,8 @@ void RecoCluster::CalcTime() {
 
 void RecoCluster::CalcCharge() {
     double sum=0;
-    for (int i = 0; i < fDigitList->size(); i++) {
-        sum += fDigitList->at(i).GetCalCharge();
+    for (int i = 0; i < fDigitList.size(); i++) {
+        sum += fDigitList.at(i).GetCalCharge();
     }
     clusterCharge = sum;
 }
@@ -104,10 +104,10 @@ void RecoCluster::CalcCB() {
     //calculate unfiltered CB
     double total_Q = 0;
     double total_QSquared = 0;
-    for (int i = 0; i < fDigitList->size(); i++) {
+    for (int i = 0; i < fDigitList.size(); i++) {
         //if(unfilteredDigits->at(i)->GetDigitType()==RecoDigit::PMT8inch){
-        if (fDigitList->at(i).GetFilterStatus()) {
-            double tube_charge = fDigitList->at(i).GetCalCharge();
+        if (fDigitList.at(i).GetFilterStatus()) {
+            double tube_charge = fDigitList.at(i).GetCalCharge();
             total_Q += tube_charge;
             total_QSquared += (tube_charge * tube_charge);
             //}
@@ -136,37 +136,37 @@ void RecoCluster::CalcAS() {
         double chargeangle;
         double iq, jq;
 
-        for (int i = 0; i < fDigitList->size(); i++) {
-            i_position = fDigitList->at(i).GetPosition();
-            for (int j = 0; j < fDigitList->size(); j++) {
+        for (int i = 0; i < fDigitList.size(); i++) {
+            i_position = fDigitList.at(i).GetPosition();
+            for (int j = 0; j < fDigitList.size(); j++) {
                 if (j == i)continue;
-                j_position = fDigitList->at(j).GetPosition();
+                j_position = fDigitList.at(j).GetPosition();
 
                 angle = j_position.Angle(i_position);
                 if (angle > max_angle)max_angle = angle;
 
             }
             
-            if (fDigitList->at(i).GetCalCharge() > max_charge) {
-                max_charge = fDigitList->at(i).GetCalCharge();
+            if (fDigitList.at(i).GetCalCharge() > max_charge) {
+                max_charge = fDigitList.at(i).GetCalCharge();
                 max_index = i;
-                max_position = fDigitList->at(i).GetPosition();
+                max_position = fDigitList.at(i).GetPosition();
             }
 
-            iq = fDigitList->at(i).GetCalCharge();
-            for (int j = 0; j < fDigitList->size(); j++) {
+            iq = fDigitList.at(i).GetCalCharge();
+            for (int j = 0; j < fDigitList.size(); j++) {
                 if (j == i)continue;
-                j_position = fDigitList->at(j).GetPosition();
-                jq = fDigitList->at(j).GetCalCharge();
+                j_position = fDigitList.at(j).GetPosition();
+                jq = fDigitList.at(j).GetCalCharge();
                 chargeangle = iq * jq * j_position.Angle(i_position);
                 if (chargeangle > max_chargeangle)max_chargeangle = chargeangle;
             }
         }
         AS0 = max_angle;
 
-        for (int i = 0; i < fDigitList->size(); i++) {
+        for (int i = 0; i < fDigitList.size(); i++) {
             if (i == max_index)continue;
-            i_position = fDigitList->at(i).GetPosition();
+            i_position = fDigitList.at(i).GetPosition();
             angle = i_position.Angle(max_position);
             if (angle > max_angle2)max_angle2 = angle;
         }
@@ -212,10 +212,10 @@ int RecoCluster::calcBestParent() {
     double digitCharge;
     double maxCharge=0;
     int tempPDG = -5;
-    for (int i = 0; i < fDigitList->size(); i++) {
-        RecoDigit i_digit=fDigitList->at(i);
+    for (int i = 0; i < fDigitList.size(); i++) {
+        RecoDigit i_digit=fDigitList.at(i);
         for(int j=0; j<i_digit.GetParents().size(); j++){
-        parentCandidate=i_digit.GetParents().at(i);
+        parentCandidate=i_digit.GetParents().at(j);
         digitCharge=i_digit.GetCalCharge();
         if (ParticletoClusterCharge.count(parentCandidate) == 0) {
             ParticletoClusterCharge.emplace(parentCandidate,digitCharge);
@@ -246,10 +246,10 @@ void RecoCluster::CalcCV() {
     ChargeVector.SetX(0);
     ChargeVector.SetY(0);
     ChargeVector.SetZ(0);
-    for (int i = 0; i < fDigitList->size(); i++) {
-        for (int j = i + 1; j < fDigitList->size(); j++) {
-            ud=(fDigitList->at(i).GetPosition() - fDigitList->at(j).GetPosition()).Unit();
-            ChargeVector+=(fDigitList->at(i).GetCalCharge()*fDigitList->at(j).GetCalCharge())*ud;
+    for (int i = 0; i < fDigitList.size(); i++) {
+        for (int j = i + 1; j < fDigitList.size(); j++) {
+            ud=(fDigitList.at(i).GetPosition() - fDigitList.at(j).GetPosition()).Unit();
+            ChargeVector+=(fDigitList.at(i).GetCalCharge()*fDigitList.at(j).GetCalCharge())*ud;
         }
     }
 }
@@ -258,11 +258,11 @@ void RecoCluster::CalcAMD() {
     double min_distance = 9999;
     double ave_min_distance=0;
     double distance;
-    for (int i = 0; i < fDigitList->size(); i++) {
-        Position ipos=fDigitList->at(i).GetPosition();
-        for (int j = 0; j < fDigitList->size(); j++) {
+    for (int i = 0; i < fDigitList.size(); i++) {
+        Position ipos=fDigitList.at(i).GetPosition();
+        for (int j = 0; j < fDigitList.size(); j++) {
             if(j == i) continue;
-            Position jpos=fDigitList->at(j).GetPosition();
+            Position jpos=fDigitList.at(j).GetPosition();
             distance = (jpos-ipos).Mag();
             if(distance<min_distance) min_distance=distance;
 
@@ -270,7 +270,7 @@ void RecoCluster::CalcAMD() {
         ave_min_distance+=min_distance;
         min_distance=9999;
     }
-    ave_min_distance/=fDigitList->size();
+    ave_min_distance/=fDigitList.size();
     AMD=ave_min_distance;
 }
 
@@ -279,9 +279,9 @@ void RecoCluster::CalcSA() {
    double aveX=0;
    double aveY=0;
    double aveZ=0;
-   for (int i = 0; i < fDigitList->size(); i++) {
-       Position ipos=fDigitList->at(i).GetPosition();
-       double iq=fDigitList->at(i).GetCalCharge();
+   for (int i = 0; i < fDigitList.size(); i++) {
+       Position ipos=fDigitList.at(i).GetPosition();
+       double iq=fDigitList.at(i).GetCalCharge();
        aveX += ipos.X() * iq;
        aveY += ipos.Y() * iq;
        aveZ += ipos.Z() * iq;
@@ -297,8 +297,8 @@ void RecoCluster::CalcAW() {        //AW: Angular Width?  1-sigma angular width?
     std::map<double,double> angle_charge_map;
     double angle,charge;
     double contained=0;
-    for (int i = 0; i < fDigitList->size(); i++) {
-        RecoDigit idigit=fDigitList->at(i);
+    for (int i = 0; i < fDigitList.size(); i++) {
+        RecoDigit idigit=fDigitList.at(i);
         angle=SpatialAverage.Angle(idigit.GetPosition());
         charge = idigit.GetCalCharge();
         if(angle_charge_map.count(angle)==0)
@@ -322,9 +322,9 @@ void RecoCluster::CalcPlanaritySphericity()
     // 1) Charge-weighted centroid
     Position mean(0, 0, 0);
     double wsum = 0.0;
-    for (int i = 0; i<fDigitList->size(); i++) {
-        double w = fDigitList->at(i).GetCalCharge();
-        mean += w * fDigitList->at(i).GetPosition();
+    for (int i = 0; i<fDigitList.size(); i++) {
+        double w = fDigitList.at(i).GetCalCharge();
+        mean += w * fDigitList.at(i).GetPosition();
         wsum += w;
     }
     if (wsum <= 0.0) return;
@@ -334,8 +334,8 @@ void RecoCluster::CalcPlanaritySphericity()
     //    M = (1/wsum) * sum_i w_i * (r_i)(r_i)^T, with r_i = pos_i - mean
     TMatrixDSym cov(3);
     cov.Zero();
-    for (int i = 0; i < fDigitList->size(); i++) {
-        RecoDigit d = fDigitList->at(i);
+    for (int i = 0; i < fDigitList.size(); i++) {
+        RecoDigit d = fDigitList.at(i);
         double w = d.GetCalCharge();
         Position r = d.GetPosition() - mean;
         // Outer product r*r^T scaled by w
@@ -380,13 +380,13 @@ double RecoCluster::CalcBeta(int order) {
     double Beta=0;
     Position ipos,jpos;
     double angle;
-    int NDigits=fDigitList->size();
+    int NDigits=fDigitList.size();
     TF1 LegendreFunction("legendrefunction","ROOT::Math::legendre([0],x)",-1,1);
     LegendreFunction.SetParameter(0,order);
-    for (int i = 0; i < fDigitList->size(); i++) {
-        for (int j = i + 1; j < fDigitList->size(); j++) {
-            ipos=fDigitList->at(i).GetPosition();
-            jpos=fDigitList->at(j).GetPosition();
+    for (int i = 0; i < fDigitList.size(); i++) {
+        for (int j = i + 1; j < fDigitList.size(); j++) {
+            ipos=fDigitList.at(i).GetPosition();
+            jpos=fDigitList.at(j).GetPosition();
             angle=ipos.Angle(jpos);
             Beta+=2 * LegendreFunction.Eval(cos(angle)) / (NDigits*(NDigits-1));
         }
@@ -404,13 +404,13 @@ double RecoCluster::GetBeta(int order) {
 }
 
 void RecoCluster::CalcTR() {
-    double firsttime=fDigitList->at(0).GetCalTime();
-    double lasttime=fDigitList->at(fDigitList->size()-1).GetCalTime();
-    double maxtime=fDigitList->at(0).GetCalTime();
-    double maxcharge=fDigitList->at(0).GetCalCharge();
+    double firsttime=fDigitList.at(0).GetCalTime();
+    double lasttime=fDigitList.at(fDigitList.size()-1).GetCalTime();
+    double maxtime=fDigitList.at(0).GetCalTime();
+    double maxcharge=fDigitList.at(0).GetCalCharge();
     
-    for (int i = 0; i < fDigitList->size(); i++) {
-        RecoDigit adigit=fDigitList->at(i);
+    for (int i = 0; i < fDigitList.size(); i++) {
+        RecoDigit adigit=fDigitList.at(i);
         if(adigit.GetCalTime()<firsttime)firsttime=adigit.GetCalTime();
         if(adigit.GetCalTime()>lasttime)lasttime=adigit.GetCalTime();
         if (adigit.GetCalCharge() > maxcharge) {
@@ -431,10 +431,10 @@ void RecoCluster::CalcTR() {
 }
 
 /*void RecoCluster::CleanDigits() {
-    for (int i = 0; i < fDigitList->size(); i++) {
-        if (fDigitList->at(i) != nullptr) {
-            delete fDigitList->at(i);
-            fDigitList->at(i)=nullptr;
+    for (int i = 0; i < fDigitList.size(); i++) {
+        if (fDigitList.at(i) != nullptr) {
+            delete fDigitList.at(i);
+            fDigitList.at(i)=nullptr;
         }
     }
 }*/
