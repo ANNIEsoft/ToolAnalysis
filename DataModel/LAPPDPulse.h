@@ -68,8 +68,10 @@ class LAPPDPulse : public Hit{
 			ar & halfHeightTime;
 			ar & halfEndTime;
 			ar & baseline;
-			ar & pulseFollowTime;
-			ar & pulseFollowCharge;
+			if(version>0){
+				ar & pulseFollowTime;
+				ar & pulseFollowCharge;
+			}
 		}
 	}
 };
