@@ -276,7 +276,7 @@ bool EBLAPPD::LoadLAPPDData()
 
 bool EBLAPPD::Matching(int targetTrigger, int matchToTrack)
 {
-  cout << "\033[1;34m******* EBLAPPD : Matching *******\033[0m" << endl;
+  Log("\033[1;34m******* EBLAPPD : Matching *******\033[0m", v_message, verbosityEBLAPPD);
   Log("EBLAPPD: Matching LAPPD data with target trigger " + std::to_string(targetTrigger) + " in track " + std::to_string(matchToTrack), v_message, verbosityEBLAPPD);
 
   std::map<int, std::vector<std::map<uint64_t, uint32_t>>> GroupedTriggersInTotal; // each map is a group of triggers, with the key is the target trigger word
@@ -308,7 +308,7 @@ bool EBLAPPD::Matching(int targetTrigger, int matchToTrack)
     int matchedTrack = 0;
     int matchedIndex = 0;
 
-    for (std::pair<int, std::vector<std::map<uint64_t, uint32_t>>> pair : GroupedTriggersInTotal)
+    for (const std::pair<int, std::vector<std::map<uint64_t, uint32_t>>>& pair : GroupedTriggersInTotal)
     {
       int TrackTriggerWord = pair.first;
       if (matchedNumberInTrack.find(TrackTriggerWord) == matchedNumberInTrack.end())
@@ -318,13 +318,13 @@ bool EBLAPPD::Matching(int targetTrigger, int matchToTrack)
         // Log("EBLAPPD: Skipping TrackTriggerWord " + std::to_string(TrackTriggerWord), v_debug, verbosityEBLAPPD);
         continue;
       }
-      vector<std::map<uint64_t, uint32_t>> GroupedTriggers = pair.second;
+      const vector<std::map<uint64_t, uint32_t>>& GroupedTriggers = pair.second;
 
       for (int j = 0; j < GroupedTriggers.size(); j++)
       {
-        map<uint64_t, uint32_t> groupedTrigger = GroupedTriggers.at(j);
+        const map<uint64_t, uint32_t>& groupedTrigger = GroupedTriggers.at(j);
         // itearte over all the grouped triggers, if the value is target trigger, then calculate the time difference
-        for (std::pair<uint64_t, uint32_t> p : groupedTrigger)
+        for (const std::pair<uint64_t, uint32_t>& p : groupedTrigger)
         {
           if (matchToAllTriggers || p.second == targetTrigger)
           {

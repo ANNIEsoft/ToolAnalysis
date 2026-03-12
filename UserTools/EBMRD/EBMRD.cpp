@@ -45,17 +45,17 @@ bool EBMRD::Execute()
   Log("EBMRD: Current buffer size is " + std::to_string(MRDEventsBuffer.size()), v_message, verbosityEBMRD);
   // loop the MRDEvents, save every event to MRDEventsBuffer if it's not already in the buffer
   int newLoadedEvents = 0;
-  for (std::pair<uint64_t, std::vector<std::pair<unsigned long, int>>> p : MRDEvents)
+  for (const std::pair<uint64_t, std::vector<std::pair<unsigned long, int>>>& p : MRDEvents)
   {
-    uint64_t MTCtime = p.first;
-    std::vector<std::pair<unsigned long, int>> WaveMap = p.second;
+    const uint64_t MTCtime = p.first;
+    const std::vector<std::pair<unsigned long, int>>& WaveMap = p.second;
     // if find the MTCtime in the PairedMRDTimeStamps, then skip
     if (PairedMRDTimeStamps.size() > 0)
     {
       bool skip = false;
-      for (std::pair<int, std::vector<uint64_t>> pair : PairedMRDTimeStamps)
+      for (const std::pair<int, std::vector<uint64_t>>& pair : PairedMRDTimeStamps)
       {
-        for (uint64_t t : pair.second)
+        for (const uint64_t t : pair.second)
         {
           if (t == MTCtime)
           {
@@ -135,7 +135,7 @@ bool EBMRD::Finalise()
 
 bool EBMRD::Matching(int targetTrigger, int matchToTrack)
 {
-  cout << "\033[1;34m******* EBMRD : Matching *******\033[0m" << endl;
+  Log("\033[1;34m******* EBMRD : Matching *******\033[0m", v_message, verbosityEBMRD);
   std::map<int, std::vector<std::map<uint64_t, uint32_t>>> GroupedTriggersInTotal; // each map is a group of triggers, with the key is the target trigger word
   m_data->CStore.Get("GroupedTriggersInTotal", GroupedTriggersInTotal);
 
@@ -148,12 +148,12 @@ bool EBMRD::Matching(int targetTrigger, int matchToTrack)
   // in each group of trigger, find the target trigger word and it's time
   // fine the minimum time difference, if smaller than matchTolerance_ns, then save the time to PairedCTCTimeStamps and PairedMRDTimeStamps
   int loopNum = 0;
-  for (std::pair<uint64_t, std::vector<std::pair<unsigned long, int>>> mrdpair : MRDEventsBuffer)
+  for (const std::pair<uint64_t, std::vector<std::pair<unsigned long, int>>>& mrdpair : MRDEventsBuffer)
   {
     if (verbosityEBMRD > 11)
       cout << "******************EBMRD: new MRD event: " << loopNum << endl;
-    uint64_t MTCtime = mrdpair.first;
-    std::vector<std::pair<unsigned long, int>> WaveMap = mrdpair.second;
+    const uint64_t MTCtime = mrdpair.first;
+    const std::vector<std::pair<unsigned long, int>>& WaveMap = mrdpair.second;
     // set minDT to 5 min
     uint64_t minDT = 5 * 60 * 1e9;
     uint64_t minDTTrigger = 0;
@@ -161,7 +161,7 @@ bool EBMRD::Matching(int targetTrigger, int matchToTrack)
     uint32_t matchedTrigWord = 0;
     int matchedTrack = 0;
     int matchedIndex = 0;
-    for (std::pair<int, std::vector<std::map<uint64_t, uint32_t>>> pair : GroupedTriggersInTotal)
+    for (const std::pair<int, std::vector<std::map<uint64_t, uint32_t>>>& pair : GroupedTriggersInTotal)
     {
       int TrackTriggerWord = pair.first;
       if (TrackTriggerWord != matchToTrack && !matchToAllTriggers)
@@ -172,13 +172,13 @@ bool EBMRD::Matching(int targetTrigger, int matchToTrack)
       if (matchedNumberInTrack.find(TrackTriggerWord) == matchedNumberInTrack.end())
         matchedNumberInTrack.emplace(TrackTriggerWord, 0);
 
-      vector<std::map<uint64_t, uint32_t>> groupedTriggers = pair.second;
+      const vector<std::map<uint64_t, uint32_t>>& groupedTriggers = pair.second;
 
       for (int i = 0; i < groupedTriggers.size(); i++)
       {
-        map<uint64_t, uint32_t> groupedTrigger = groupedTriggers.at(i);
+        const map<uint64_t, uint32_t>& groupedTrigger = groupedTriggers.at(i);
         // itearte over all the grouped triggers, if the value is target trigger, then calculate the time difference
-        for (std::pair<uint64_t, uint32_t> p : groupedTrigger)
+        for (const std::pair<uint64_t, uint32_t>& p : groupedTrigger)
         {
           if (matchToAllTriggers || p.second == targetTrigger)
           {

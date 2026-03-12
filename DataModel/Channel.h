@@ -101,10 +101,12 @@ class Channel : public SerialisableObject{
 			ar & hv_card;
 			ar & hv_channel;
 			ar & status;
-			ar & channelType;
+			if(version > 0) ar & channelType;
 		}
 	}
 	
 };
+
+BOOST_CLASS_VERSION(Channel, 1)
 
 #endif
