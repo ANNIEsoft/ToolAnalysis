@@ -14,7 +14,7 @@
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
 * $Author: James Minock $
-* $Date: 2026/03/03 $
+* $Date: 2026/03/13 $
 * Contact: jmm1018@physics.rutgers.edu
 */
 class ChargeIsotropy: public Tool {
@@ -38,48 +38,11 @@ class ChargeIsotropy: public Tool {
   int verbosity;  
   double time_window;
   bool IsData;
+  bool MCWaveform;
 
   //reconstruction variables
-  int SimpleRecoFlag;
   double Qij; //< Charge Isotropy value
   Position SimpleRecoVtx;
-  Position SimpleRecoStopVtx;
-  double SimpleRecoCosTheta;
-  double SimpleRecoPt;
-  bool SimpleRecoFV;
-  double SimpleRecoMrdEnergyLoss;
-  double SimpleRecoTrackLengthInMRD;
-  double SimpleRecoTrackLengthInTank;
-
-  //event variables
-  std::vector<double> fMRDTrackAngle;
-  std::vector<double> fMRDTrackAngleError;
-  std::vector<double> fMRDTrackLength;
-  std::vector<double> fMRDPenetrationDepth;
-  std::vector<double> fMRDEntryPointRadius;
-  std::vector<double> fMRDEnergyLoss;
-  std::vector<double> fMRDEnergyLossError;
-  std::vector<double> fMRDTrackStartX;
-  std::vector<double> fMRDTrackStartY;
-  std::vector<double> fMRDTrackStartZ;
-  std::vector<double> fMRDTrackStopX;
-  std::vector<double> fMRDTrackStopY;
-  std::vector<double> fMRDTrackStopZ;
-  std::vector<bool> fMRDStop;
-  std::vector<bool> fMRDSide;
-  std::vector<bool> fMRDThrough;
-  std::vector<int> fMRDTrackEventID;
-
-  double dist_pmtvol_tank;
-  double mrd_eloss;
-  double max_pe;
-  double mrd_tracklength;
-  double exitx;
-  double exity;
-  double exitz;
-  double dirx;
-  double diry;
-  double dirz;
 
   //verbosity variables
   int v_error=0;
@@ -87,10 +50,6 @@ class ChargeIsotropy: public Tool {
   int v_message=2;
   int v_debug=3;
   int vv_debug=4;
-
-
-
-
 
 };
 

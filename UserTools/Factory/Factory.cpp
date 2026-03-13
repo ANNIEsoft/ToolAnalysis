@@ -182,5 +182,6 @@ if (tool=="LAPPDWaveformDisplay") ret=new LAPPDWaveformDisplay;
 if (tool=="PrintADCTraces") ret=new PrintADCTraces;
 if (tool=="ChargeIsotropy") ret=new ChargeIsotropy;
 if (tool=="CCMCCorrection") ret=new CCMCCorrection;
+if (tool=="LoadNUISANCEEvent") ret=new LoadNUISANCEEvent;
 return ret;
 }
