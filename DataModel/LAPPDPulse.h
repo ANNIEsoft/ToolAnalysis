@@ -28,6 +28,10 @@ class LAPPDPulse : public Hit{
 	inline double GetHalfEndTime(){return halfEndTime;}
 	inline void SetBaseline(double base){baseline=base;}
 	inline double GetBaseline(){return baseline;}
+	inline void SetPulseFollowTime(double pulseFollow){pulseFollowTime=pulseFollow;}
+	inline double GetPulseFollowTime(){return pulseFollowTime;}
+	inline void SetPulseFollowCharge(double pulseFollow){pulseFollowCharge=pulseFollow;}
+	inline double GetPulseFollowCharge(){return pulseFollowCharge;}
 
 	bool Print() {
 		cout<<"TubeId : "<<TubeId<<endl;
@@ -47,6 +51,8 @@ class LAPPDPulse : public Hit{
 	double halfHeightTime;
 	double halfEndTime;
 	double baseline;
+	double pulseFollowTime;
+	double pulseFollowCharge;
 
 
 
@@ -62,9 +68,15 @@ class LAPPDPulse : public Hit{
 			ar & halfHeightTime;
 			ar & halfEndTime;
 			ar & baseline;
+			if(version>0){
+				ar & pulseFollowTime;
+				ar & pulseFollowCharge;
+			}
 		}
 	}
 };
+
+BOOST_CLASS_VERSION(LAPPDPulse, 1)
 
 /*  Derived classes, if there's a reason to have them. So far...not really
 

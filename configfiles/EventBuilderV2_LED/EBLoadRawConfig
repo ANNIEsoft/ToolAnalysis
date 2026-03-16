@@ -1,0 +1,10 @@
+verbosityEBLoadRaw 2
+ReadTriggerOverlap 1
+
+InputFile ./configfiles/EventBuilderV2_LED/my_files.txt
+
+LoadPMT 1
+LoadMRD 0
+LoadCTC 1
+LoadLAPPD 0
+

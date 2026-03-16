@@ -118,8 +118,8 @@ bool HitCleaner::Initialise(std::string configfile, DataModel &data){
   // only for test 
   fFilterByTruthInfo = new std::vector<RecoDigit*>; 
   // vector of clusters
-  fClusterList = new std::vector<RecoCluster*>;
-  fHitCleaningClusters = new std::vector<RecoCluster*>;
+  fClusterList = new std::vector<RecoCluster>;
+  fHitCleaningClusters = new std::vector<RecoCluster>;
 
   //Set hit cleaner parameters in the RecoEvent store
   m_data->Stores.at("RecoEvent")->Set("HitCleaningParameters", fHitCleaningParam);
@@ -194,6 +194,7 @@ bool HitCleaner::Execute(){
   fIsHitCleaningDone = true;
   m_data->Stores.at("RecoEvent")->Set("HitCleaningDone", fIsHitCleaningDone); 
   m_data->Stores.at("RecoEvent")->Set("HitCleaningClusters", fHitCleaningClusters);
+  CBCheck(digits,FilterDigitList);
 
   delete digits; digits = 0;
   return true;
@@ -309,11 +310,11 @@ std::vector<RecoDigit*>* HitCleaner::Run(std::vector<RecoDigit*>* myDigitList)
   myOutputList = FilterDigits(myOutputList);
   if( fConfig==HitCleaner::kPulseHeightAndNeighbours ) return myOutputList;
   	
-  // filter using clustered digits
+  // filter using clustered digits              Not functional with current cluster architecture.  Removed for the time being.
   // =============================
-  myInputList = ResetDigits(myOutputList);
-  myOutputList = (std::vector<RecoDigit*>*)(this->FilterByClusters(myInputList));
-  myOutputList = FilterDigits(myOutputList);
+  //myInputList = ResetDigits(myOutputList);
+  //myOutputList = (std::vector<RecoDigit*>*)(this->FilterByClusters(myInputList));
+  //myOutputList = FilterDigits(myOutputList);
   if( fConfig==HitCleaner::kPulseHeightAndClusters ) return myOutputList;
   	
   if (fisMC){
@@ -513,7 +514,8 @@ std::vector<RecoDigit*>* HitCleaner::FilterByNeighbours(std::vector<RecoDigit*>*
   return fFilterByNeighbours;
 }
 
-std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* myDigitList)
+//FilterByClusters is not functioning with current RecoCluster architecture.
+/*std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* myDigitList)
 {
 	std::string name = "HitCleaner::FilterByClusters() ";
   // clear vector of filtered digits
@@ -523,14 +525,15 @@ std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* m
 
   // run clustering algorithm
   // ========================
-  std::vector<RecoCluster*>* myClusterList = (std::vector<RecoCluster*>*)(this->RecoClusters(myDigitList));
+  std::vector<RecoCluster>* myClusterList = (std::vector<RecoCluster>*)(this->RecoClusters(myDigitList));
 
   for(int icluster=0; icluster<int(myClusterList->size()); icluster++ ){
-    RecoCluster* myCluster = (RecoCluster*)(myClusterList->at(icluster));
+    RecoCluster myCluster = (myClusterList->at(icluster));
     fHitCleaningClusters->push_back(myCluster);    
 
-    for(int idigit=0; idigit<myCluster->GetNDigits(); idigit++ ){
-      RecoDigit* myDigit = (RecoDigit*)(myCluster->GetDigit(idigit));
+    for(int idigit=0; idigit<myCluster.GetNDigits(); idigit++ ){
+      RecoDigit* myDigit = new RecoDigit;
+      *myDigit=(myCluster.GetDigit(idigit));
       fFilterByClusters->push_back(myDigit);
     }
   }
@@ -541,9 +544,9 @@ std::vector<RecoDigit*>* HitCleaner::FilterByClusters(std::vector<RecoDigit*>* m
   
   
   return fFilterByClusters;
-}
+}*/
 
-std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myDigitList)
+std::vector<RecoCluster>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myDigitList)
 {  
 
   // delete cluster digits
@@ -679,13 +682,13 @@ std::vector<RecoCluster*>* HitCleaner::RecoClusters(std::vector<RecoDigit*>* myD
       } 
 	//std::cout <<"vClusterDigitCollection.size() == "<<vClusterDigitCollection.size()<<std::endl;
       if( (int)vClusterDigitCollection.size()>=fMinClusterDigits ){
-        RecoCluster* cluster = new RecoCluster();
+        RecoCluster cluster;
         fClusterList->push_back(cluster);
 
         for(int jdigit=0; jdigit<int(vClusterDigitCollection.size()); jdigit++ ){
           RecoClusterDigit* cdigit = (RecoClusterDigit*)(vClusterDigitCollection.at(jdigit));
           RecoDigit* recodigit = (RecoDigit*)(cdigit->GetRecoDigit());
-          cluster->AddDigit(recodigit);        
+          cluster.AddDigit(recodigit);        
         }
       }
     }
@@ -737,4 +740,33 @@ std::vector<RecoDigit*>* HitCleaner::FilterByTruthInfo(std::vector<RecoDigit*>* 
   if(verbosity>v_message) std::cout << name << "  filter by opening angle: " << fFilterByTruthInfo->size() << std::endl;
   
   return fFilterByTruthInfo;
+}
+
+void HitCleaner::CBCheck(std::vector<RecoDigit*>* unfilteredDigits, std::vector<RecoDigit*>* filteredDigits) {
+    //calculate unfiltered CB
+    double total_Q = 0;
+    double total_QSquared = 0;
+    for (int i=0;i<unfilteredDigits->size();i++) {
+        //if(unfilteredDigits->at(i)->GetDigitType()==RecoDigit::PMT8inch){
+        double tube_charge = unfilteredDigits->at(i)->GetCalCharge();
+        total_Q += tube_charge;
+        total_QSquared += (tube_charge * tube_charge);
+        //}
+    }
+    //FIXME: Need a method to have the 123 be equal to the number of operating detectors
+    double ucharge_balance = sqrt((total_QSquared) / (total_Q * total_Q) - (1. / 123.));
+    if (verbosity > 4) std::cout << "HitCleaner Tool: Unfiltered CB: " << ucharge_balance << std::endl;
+
+    total_Q = 0;
+    total_QSquared = 0;
+    for (int i = 0; i < filteredDigits->size(); i++) {
+        //if (filteredDigits->at(i)->GetDigitType() == RecoDigit::PMT8inch) {
+        double tube_charge = filteredDigits->at(i)->GetCalCharge();
+        total_Q += tube_charge;
+        total_QSquared += (tube_charge * tube_charge);
+        //}
+    }
+    double fcharge_balance = sqrt((total_QSquared) / (total_Q * total_Q) - (1. / 123.));
+    if (verbosity > 4) std::cout << "HitCleaner Tool: filtered CB: " << fcharge_balance << std::endl;
+
 }

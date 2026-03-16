@@ -1,0 +1,39 @@
+ General Parameters
+Nsamples 256 #Number of samples in a waveform
+SampleSize 100 #Sample size for baseline substraction
+TrigChannel 5 #Specified channel the trigger signal will be on
+NUM_VECTOR_METADATA 103 #Fixed META vector size
+LAPPDchannelOffset 1000
+NChannels 30
+
+LAPPDStoreReadInVerbosity 0
+
+mergingModeReadIn 0
+RawDataInputWavLabel RawWaveform
+RawDataOutputWavLabel  RawLAPPDData
+BoardIndexLabel BoardIndex #Label of the vector of read out boards
+
+PsecReceiveMode 1
+stopEntries 10000000000
+
+DoPedSubtraction 0
+Nboards 6 #Number of pedestal files to be read in
+PedinputfileTXT ../Pedestals/Laser2024Feb/P
+PSECinputfile /pnfs/annie/persistent/processed/LAPPD40Merged/FinalVersion_withRawTS/FilteredData_PMT_MRDtrack_noveto_15mV_7strips_3xxx_104
+
+
+Pedinputfile1 ../Pedestals/PEDS_ACDC_board0.txt
+Pedinputfile2 ../Pedestals/PEDS_ACDC_board1.txt
+
+
+ReadStore 0
+num_vector_data 7795
+num_vector_pps 16
+OutputWavLabel RawLAPPDData
+SelectSingleLAPPD false
+SelectedLAPPD 0
+loadPSEC 1
+loadPPS 1
+loadOffsets 1
+
+

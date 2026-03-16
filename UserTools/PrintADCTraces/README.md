@@ -38,8 +38,8 @@ where the TGraph name is given by: ```<run_number>_<p_file>_<eventtimetank>_<hit
 
 verbosity 0
 
-hitPE_min 0                     # minimum hit charge [pe] to include in the root file
-hitPE_max 2.5                   # maximum hit charge [pe] to include in the root file
+hitPE_min 0.5                   # minimum hit charge [pe] to include in the root file
+hitPE_max 1.5                   # maximum hit charge [pe] to include in the root file
                                     # omitting both of these will not impose a charge selection
 
 hitT_min 0                      # minimum hit time [ns] to include in the root file

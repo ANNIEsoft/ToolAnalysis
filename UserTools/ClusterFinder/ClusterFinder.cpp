@@ -245,7 +245,7 @@ bool ClusterFinder::Execute(){
         
 	else {
             bool new_pulse = false;
-        	if (fabs(temp_times[0]-hit1)< mc_pulse_width) {
+        	if (fabs(temp_times[0]-hit1)<10.) {
                 new_pulse=false;
                 temp_charges+=hits_2ns_res_charge.at(i_hit);
 		temp_times.push_back(hit1);
