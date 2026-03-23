@@ -198,5 +198,6 @@ if (tool=="PrintADCTraces") ret=new PrintADCTraces;
 if (tool=="ChargeIsotropy") ret=new ChargeIsotropy;
 if (tool=="CCMCCorrection") ret=new CCMCCorrection;
 if (tool=="LoadNUISANCEEvent") ret=new LoadNUISANCEEvent;
+if (tool=="CCMCRecoEventLoader") ret=new CCMCRecoEventLoader;
 return ret;
 }

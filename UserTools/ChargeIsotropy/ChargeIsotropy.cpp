@@ -282,7 +282,7 @@ bool ChargeIsotropy::Finalise(){
     return true;
 }
 
-double ChargeIsotrpy::LawOfCosines(double vtxx, double vtxy, double vtxz, double pmt1x, double pmt1y, double pmt1z, double pmt2x, double pmt2y, double pmt2z){
+double ChargeIsotropy::LawOfCosines(double vtxx, double vtxy, double vtxz, double pmt1x, double pmt1y, double pmt1z, double pmt2x, double pmt2y, double pmt2z){
     //vtx to pmt1 - dist^2
     double b = (vtxx-pmt1x)*(vtxx-pmt1x) + (vtxy-pmt1y)*(vtxy-pmt1y) + (vtxz-pmt1z)*(vtxz-pmt1z);
     //vtx to pmt2 - dist^2

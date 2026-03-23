@@ -211,8 +211,7 @@ bool EventSelector::Execute(){
   bool passTriggerCut = this->EventSelectionByTrigger(fTrigger,fTriggerWord);
   m_data->Stores.at("RecoEvent")->Set("TriggerCut",passTriggerCut);
 
-  //bool passThroughGoingCut = this->EventSelectionByThroughGoing();
-  bool passThroughGoingCut = true;
+  bool passThroughGoingCut = this->EventSelectionByThroughGoing();
   m_data->Stores.at("RecoEvent")->Set("ThroughGoing",passThroughGoingCut);
 
   std::vector<double> cluster_reco_pdg;
@@ -670,8 +669,6 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   pmt_time = 0;
   double max_charge = 0;
   n_hits = 0;
-
-  pmt_time = -1;
 
   // MC Waveform or Data
   if (!fIsMC || fMCWaveform) {

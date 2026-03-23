@@ -205,4 +205,5 @@
 #include "PrintADCTraces.h"
 #include "ChargeIsotropy.h"
 #include "CCMCCorrection.h"
-#include "LoadNUISANCEEvent.h
+#include "LoadNUISANCEEvent.h"
+#include "CCMCRecoEventLoader.h"

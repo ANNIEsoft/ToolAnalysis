@@ -1,0 +1,5 @@
+# CCMCCorrection config file
+
+verbosity 0
+
+MRDCalFile /exp/annie/app/users/jminock/ANNIE_AuxFiles/MRDEffCal.txt
