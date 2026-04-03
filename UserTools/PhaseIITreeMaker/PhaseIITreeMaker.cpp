@@ -384,6 +384,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("MRDStop",&fMRDStop);
       fPhaseIITrigTree->Branch("MRDThrough",&fMRDThrough);
       fPhaseIITrigTree->Branch("MRDEff",&fMRDEff);
+      fPhaseIITrigTree->Branch("weight_MRDUnc",&fMRDUnc);
     }
 
     //Reconstructed variables after full Muon Reco Analysis
@@ -552,6 +553,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
         fPhaseIITrigTree->Branch("trueFSLTime",&fTrueFSLTime,"trueFSLTime/D");
         fPhaseIITrigTree->Branch("trueFSLMass",&fTrueFSLMass,"trueFSLMass/D");
         fPhaseIITrigTree->Branch("DirtMu",&fDirtMu,"DirtMu/D");
+        fPhaseIITrigTree->Branch("weight_DirtUnc",&fDirtUnc);
         fPhaseIITrigTree->Branch("trueNC",&fTrueNC,"trueNC/I");
         fPhaseIITrigTree->Branch("trueQEL",&fTrueQEL,"trueQEL/I");
         fPhaseIITrigTree->Branch("trueRES",&fTrueRES,"trueRES/I");
@@ -1450,6 +1452,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueKMinus = -9999;
     fTrueKMinusCher = -9999;
     fDirtMu = 1.; //weight - does not exclude event, but skips weight
+    fDirtUnc.clear();
     fTrueW2 = -9999;
     fTrueBJx = -9999;
     fTruey = -9999;
@@ -1589,7 +1592,8 @@ void PhaseIITreeMaker::ResetVariables() {
     fMRDSide.clear();
     fMRDStop.clear();
     fMRDThrough.clear();
-    fMRDEff = 0.; //weight - excludes event from final plot
+    fMRDEff = 1.; //weight - excludes weight from final plot
+    fMRDUnc.clear();
   }
   if(SimpleReco_fill){
     fSimpleFlag = -9999;
@@ -2010,13 +2014,17 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
   bool IsMrdSideExit;
 
   double mrd_eff = 0.;
+  std::vector<double> mrd_unc;
   auto get_mrdeff = m_data->Stores.at("RecoEvent")->Get("MRDEff",mrd_eff);
+  auto get_mrdunc = m_data->Stores.at("RecoEvent")->Get("MRDUnc",mrd_unc);
 
-  if(get_mrdeff) {
+  if(get_mrdeff && get_mrdunc) {
     fMRDEff = mrd_eff;
+    fMRDUnc = mrd_unc;
   } else {
     Log("Warning: The PhaseIITreeMaker tool could not find MRDEff. Continuing to build tree", v_message, verbosity);
   }
+  mrd_unc.clear();
 
   int NumClusterTracks = 0;
   for(int tracki=0; tracki<numtracksinev; tracki++){
@@ -2735,6 +2743,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     double TrueW2, TrueBJx, Truey, Trueq0, Trueq3;
     double TrueNuIntxVtxDisToEdge;
     double dirt_mu;
+    vector<double> dirt_unc;
     Position TrueFSLeptonVtx;
     Direction TrueFSLeptonMomentum;
     Direction TrueNeutrinoMomentum;
@@ -2777,6 +2786,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     bool get_q3 = m_data->Stores["GenieInfo"]->Get("Eventq3",Trueq3);
     bool get_nu_pdg = m_data->Stores["GenieInfo"]->Get("NeutrinoPDG",TrueNuPDG);
     bool get_dirtmu = m_data->Stores["RecoEvent"]->Get("DirtScale",dirt_mu);
+    bool get_dirtunc = m_data->Stores["RecoEvent"]->Get("DirtUnc",dirt_unc);
     //std::cout <<"get_neutrino_energy: "<<get_neutrino_energy<<"get_neutrino_vtxx: "<<get_neutrino_vtxx<<"get_neutrino_vtxy: "<<get_neutrino_vtxy<<"get_neutrino_vtxz: "<<get_neutrino_vtxz<<"get_neutrino_time: "<<get_neutrino_vtxt<<std::endl;
     //std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
     //std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
@@ -2827,10 +2837,12 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
       fTrueKMinus = fsKMinus;
       fTrueKMinusCher = fsKMinusCher;
       fDirtMu = dirt_mu;
+      fDirtUnc = dirt_unc;
     } else {
       Log("PhaseIITreeMaker tool: Did not find GENIE information. Continuing building remaining tree",v_message,verbosity);
       successful_load = false;
     }
+    dirt_unc.clear();
   } // end if hasGenie
 
   return successful_load;

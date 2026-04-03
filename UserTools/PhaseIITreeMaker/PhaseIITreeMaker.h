@@ -247,6 +247,7 @@ class PhaseIITreeMaker: public Tool {
   std::vector<bool> fMRDStop;
   std::vector<bool> fMRDThrough;
   double fMRDEff;
+  std::vector<double> fMRDUnc;
 
   // Trigger-level information
   std::map<std::string,bool> fDataStreams;
@@ -275,6 +276,7 @@ class PhaseIITreeMaker: public Tool {
   double fTrueTrackLengthInWater; 
   double fTrueTrackLengthInMRD;
   double fDirtMu;
+  std::vector<double> fDirtUnc;
   std::vector<int> *fTruePrimaryPdgs = nullptr;
   std::vector<double> *fTrueFSPTankLength = nullptr;
   std::vector<double> *fTrueFSPMrdLength = nullptr;

@@ -35,24 +35,16 @@ int findBin(double Y, int iter, vector<double> const &bins){
 	else return findBin(Y, iter+1, bins);
 }
 
-void mrdEff(){
+void addMRDUnc(){
         //insert variables here
-	double mrd_eff; //weight for MRD Efficiency correction
-	double dirt_mu; //weight for dirt muon scaling
-	vector<double>* MRDUnc = new vector<double>();
-	vector<double>* DirtUnc = new vector<double>();
-
-	double nuvtxy;
+	double mrd_eff;
+	double dirt_muon;
 
         vector<double>* MRDTrackStartY = new vector<double>();
-        vector<bool>* MRDStop = new vector<bool>();
-        
-        //Open calibration file
-	string mrd_cal_file = "/pnfs/annie/persistent/users/jminock/CC_ToolAnalysis_Files/MRDEffCal.txt";
-	if(gSystem->AccessPathName(mrd_cal_file.c_str())){
-		std::cout << "WARNING: " << mrd_cal_file << " does not exist. Stopping." << std::endl;
-		return false;
-	}
+	vector<bool>* MRDStop = new vector<bool>();
+
+	vector<double>* MRDUnc = new vector<double>();
+//	vector<double>* DirtUnc = new vector<double>();
 
 	//read in calibration file
 	std::vector<double> bins_front;
@@ -62,13 +54,13 @@ void mrdEff(){
 	string factorY_str = "";
 	string uncsY_str = "";
 
+	string mrd_cal_file = "/exp/annie/app/users/jminock/ANNIE_AuxFiles/MRDEffUncYlarge.txt";
 	std::ifstream cal_file(mrd_cal_file.c_str(), ios::in);
 	cal_file >> bins_front_str;
 	cal_file >> factorY_str;
 	cal_file >> uncsY_str;
 	cal_file.close();
 
-	//break into appropriate vectors
 	breakCSV(bins_front_str, bins_front);
 	breakCSV(factorY_str, factorY);
 	breakCSV(uncsY_str, uncsY);
@@ -77,60 +69,72 @@ void mrdEff(){
 	rnd.SetSeed(42);
 	int n_univ = 60;
 	std::vector<std::vector<double>> mrd_reweight_vector;
-	std::vector<double> dirt_rew_vector;
+//	std::vector<double> dirt_rew_vector;
 	for(int i = 0; i < uncsY.size(); ++i){
 		std::vector<double> universes;
 		for(int j = 0; j < n_univ; ++j){
 			double mrd_unc = rnd.Gaus(1., uncsY.at(i));
+//			double mrd_unc = rnd.Gaus(1., std::abs(factorY.at(i) - 1.));
 			universes.push_back(mrd_unc);
 		}
 		mrd_reweight_vector.push_back(universes);
 	}
-	for(int j = 0; j < n_univ; ++j){
-		//0.0028 is calculated uncertainty from total # of events / POT
+/*	for(int j = 0; j < n_univ; ++j){
 		dirt_rew_vector.push_back(rnd.Gaus(1., 0.0028));
 	}
+*/
 
-	int runs = 5000;
-	//Loop through runs
-	for(int rn = 0; rn < runs; rn++){
-		std::cout << "Looping through run " << std::to_string(rn) << std::endl;
         //Open file and trees
-        string file_path = "/exp/annie/data/users/jminock/temp_add_branches/PhaseIITree_0." + std::to_string(rn) + ".0.root";
+	int runs = 3500;
+	int subruns = 1;
+	//Loop through runs
+	for(int rn = 2500; rn < runs; rn++){
+		std::cout << "Looping through run " << std::to_string(rn) << std::endl;
+	//Loop through run parts (sub runs)
+	for(int srn = 0; srn < subruns; srn++){
+//		std::cout << "Looping through subrun " << std::to_string(srn) << std::endl;
+        //Open file and trees
+        string file_path = "/exp/annie/data/users/jminock/temp_add_branches/PhaseIITree_0." + std::to_string(rn) + "." + std::to_string(srn) + ".root";
+//        string file_path = "/pnfs/annie/persistent/users/jminock/v1_3_3_weighted_ntuples/PhaseIITree_0." + std::to_string(rn) + "." + std::to_string(srn) + ".root";
 
 	//check if files exist
 	if(gSystem->AccessPathName(file_path.c_str())){
 		std::cout << "WARNING: " << file_path << " does not exist. Skipping." << std::endl;
 		continue;
 	}
-
+ 
         TFile *f = new TFile(file_path.c_str(),"update");
 //        gSystem->Load("/exp/annie/app/users/jminock/ToolAnalysis/lib/libDataModel.so");
 //      gSystem->Load("/exp/annie/app/users/jminock/ToolAnalysis/lib/libDict.so");
 //        gInterpreter->GenerateDictionary("map<string,vector<double>>", "map;string;vector");
         TTree *tTrig = (TTree*)f->Get("phaseIITriggerTree");
 
+	//TRandom3 rnd;
+	//rnd.SetSeed(rn);
+
         //Set branch addresses
         tTrig->SetBranchAddress("MRDTrackStartY",&MRDTrackStartY);
         tTrig->SetBranchAddress("MRDStop",&MRDStop);
-	tTrig->SetBranchAddress("trueNuIntxVtx_Y",&nuvtxy);
+//        tTrig->SetBranchAddress("DirtMu",&dirt_muon);
 
-	TBranch *MRDEff = tTrig->Branch("MRDEff",&mrd_eff);
-	TBranch *DirtMu = tTrig->Branch("DirtMu",&dirt_muon);
-        TBranch *MRDU   = tTrig->Branch("weight_MRDUnc",&MRDUnc);
-        TBranch *DirtU  = tTrig->Branch("weight_DirtUnc",&DirtUnc);
+        //Branches to add
+        //TBranch *MRDE   = tTrig->Branch("MRDEff",&mrd_eff);
+        TBranch *MRDU    = tTrig->Branch("weight_MRDUnc",&MRDUnc);
+//        TBranch *DU    = tTrig->Branch("weight_DirtUnc",&DirtUnc);
 
         double muon_m = 105.7;
+	double threshold = 0.0001;
         Long64_t nentriesTrig = tTrig->GetEntries();
 //        std::cout << "TriggerTree: " << nentriesTrig << std::endl;
         //fill histograms
-        for(Long64_t i = 0; i < nentriesTrig; i++) {
+        for (Long64_t i = 0; i < nentriesTrig; i++) {
                 tTrig->GetEntry(i);
 //                if(i%1000 == 0) std::cout << i << std::endl;
-		//MRD Calibration
+
+		//MRD Eff
                 //Establish MRD X/Y variable to use if there are multiple tracks
 		int ntracks = MRDTrackStartY->size();
-		if(ntracks <= 0){ //assign 1 for no MRD tracks
+		if(ntracks <= 0) {
 			mrd_eff = 1.0;
 			for(int j = 0; j < n_univ; ++j){
 				MRDUnc->push_back(1.0);
@@ -142,34 +146,36 @@ void mrdEff(){
 			}
 			//Establish which bin the event falls into
 			int binY = findBin(MRD_Y, 0, bins_front);
-			//Assign weight based on bin
-			mrd_eff = factorY[binY];
 			//Assign uncertainty based on bin
-			double mrd_uncY = uncsY[binY];
+			//mrd_eff = factorY[binY];
+			//double mrd_uncY = uncsY[binY];
 			for(int j = 0; j < n_univ; ++j){
 				MRDUnc->push_back(mrd_reweight_vector.at(binY).at(j));
+				//MRDUnc->push_back(rnd.Gaus(1.,mrd_uncY));
 			}
 		}
-		//Dirt Muon Correction
-		if(nuvtxz < 0.){
-			dirt_muon = 0.0697;//scale factor
-			for(int j = 0; j<n_univ; ++j) DirtUnc->push_back(dirt_rew_vector.at(j));
-		} else {
-			dirt_muon = 1.;
-			for(int j = 0; j<n_univ; ++j) DirtUnc->push_back(1.);
-		}
 
-		MRDEff->Fill();
-		DirtMu->Fill();
+		//Dirt Muon Correction
+/*		if(std::abs(dirt_muon - 1) < threshold){
+			for(int j = 0; j<n_univ; ++j) DirtUnc->push_back(1.);
+		} else { //is a dirt muon
+			//0.0028 is calculated uncertainty from total # of events / POT
+			for(int j = 0; j<n_univ; ++j) DirtUnc->push_back(dirt_rew_vector.at(j));
+			//for(int j = 0; j<n_univ; ++j) DirtUnc->push_back(rnd.Gaus(1., 0.0028);
+		}
+*/
+		//MRDE->Fill();
 		MRDU->Fill();
-		DirtU->Fill();
+//		DU->Fill();
 
 		MRDUnc->clear();
-		DirtUnc->clear();
+//		DirtUnc->clear();
 	}
+
 
         tTrig->Write("",TObject::kOverwrite);
 //      tTrig->ResetBranchAddresses();
         delete f;
-	} //end of loop run
+	} //end of subrun
+	} //end of run
 }

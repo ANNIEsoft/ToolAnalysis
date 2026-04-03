@@ -1,5 +1,6 @@
 # CCMCCorrection config file
 
 verbosity 0
-
-MRDCalFile /exp/annie/app/users/jminock/ANNIE_AuxFiles/MRDEffCal.txt
+NUniverses 60
+RandomSeed 42
+MRDCalFile /pnfs/annie/persistent/users/jminock/CC_ToolAnalysis_Files/MRDEffCal.txt
