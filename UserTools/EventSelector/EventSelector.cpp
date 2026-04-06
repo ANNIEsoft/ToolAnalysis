@@ -211,7 +211,8 @@ bool EventSelector::Execute(){
   bool passTriggerCut = this->EventSelectionByTrigger(fTrigger,fTriggerWord);
   m_data->Stores.at("RecoEvent")->Set("TriggerCut",passTriggerCut);
 
-  bool passThroughGoingCut = this->EventSelectionByThroughGoing();
+  //bool passThroughGoingCut = this->EventSelectionByThroughGoing();
+  bool passThroughGoingCut = true;
   m_data->Stores.at("RecoEvent")->Set("ThroughGoing",passThroughGoingCut);
 
   std::vector<double> cluster_reco_pdg;
