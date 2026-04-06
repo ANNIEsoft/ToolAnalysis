@@ -17,12 +17,6 @@ bool CCMCCorrection::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("NUniverses",n_univ);
   m_variables.Get("RandomSeed",seed);
  
-  //Open calibration file
-  if(gSystem->AccessPathName(mrd_cal_file.c_str())){
-    std::cout << "WARNING: " << mrd_cal_file << " does not exist. Stopping." << std::endl;
-    return false;
-  }
-
   //read in calibration file
   std::ifstream cal_file(mrd_cal_file.c_str(), ios::in);
   cal_file >> bins_front_str;
@@ -56,27 +50,21 @@ bool CCMCCorrection::Initialise(std::string configfile, DataModel &data){
 bool CCMCCorrection::Execute(){
   bool got_mrd = false;
   bool got_ntracks = false;
-  bool got_reco = false;
-  bool got_genie = false
-  bool get_clusters = false;
+  bool got_genie = false;
+  bool got_clusters = false;
 
   this->Reset();
 
   //Check for valid track criteria
-  get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
+  got_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
   got_mrd = m_data->Stores["MRDTracks"]->Get("MRDTracks",theMrdTracks);
   got_ntracks = m_data->Stores["MRDTracks"]->Get("NumMrdTracks",numtracksinev);
  
-  get_reco = m_data->Stores["RecoEvent"]->Get("simpleRecoTrackLengthInMRD",simpletracklength);
-  get_genie = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Z",TrueNuIntxVtx_Z);
+  got_genie = m_data->Stores["GenieInfo"]->Get("NuIntxVtx_Z",TrueNuIntxVtx_Z);
  
-  if (!(got_mrd && got_ntracks && get_clusters)) {
+  if (!(got_mrd && got_ntracks && got_clusters)) {
     std::cout << "No MRDTracks or MRDClusters. Continuing to build tree." << std::endl;
-    return;
-  }
-  if (!got_reco) {
-    std::cout << "No Simple Track Length store in RecoEvent. Continuing to build tree." << std::endl;
-    return;
+    return true;
   }
 
   //make call to MRD Eff function
@@ -156,7 +144,7 @@ double CCMCCorrection::MRDEfficiency(){
       //Assign weight based on bin
       mrd_eff = factorY[binY];
       for(int j = 0; j < n_univ; ++j){
-        MRDUnc->push_back(mrd_reweight_vector.at(binY).at(j));
+        MRDUnc.push_back(mrd_reweight_vector.at(binY).at(j));
       }
       return mrd_eff;
     }
@@ -166,7 +154,7 @@ double CCMCCorrection::MRDEfficiency(){
   return 1.0;
 }
 
-void CCMCCorrection::DirtScaling(){
+double CCMCCorrection::DirtScaling(){
   if(TrueNuIntxVtx_Z < 0.){
     dirt_mu = dirt_scale;
     for(int j = 0; j < n_univ; ++j){

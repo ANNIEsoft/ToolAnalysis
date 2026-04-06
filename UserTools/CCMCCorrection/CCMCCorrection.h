@@ -33,6 +33,7 @@ class CCMCCorrection: public Tool {
   int findBin(double Y, int iter, vector<double> const &bins); ///< Find appropriate bin for value given binning scheme from calibration file
   double MRDEfficiency(); ///< Function to perform MRD Efficiency Calibration
   double DirtScaling(); ///< Function to scale dirt events
+  void Reset(); ///< Initializes/resets variables to default and clears vectors
 
  private:
 
@@ -40,6 +41,7 @@ class CCMCCorrection: public Tool {
   string mrd_cal_file;
   int verbosity;
   int seed;
+  int n_univ;
   TRandom3 rnd;
   double mrd_eff; //weight for MRD Efficiency correction
   double dirt_mu;

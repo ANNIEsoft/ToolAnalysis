@@ -37,8 +37,14 @@ class ChargeIsotropy: public Tool {
   //configuration variables
   int verbosity;  
   double time_window;
-  bool IsData;
+  bool isData;
   bool MCWaveform;
+
+  //CStore/BoostStore variables
+  Geometry *geom = nullptr;
+  std::map<unsigned long, int> channelkey_to_pmtid;
+  std::map<int, unsigned long> pmtid_to_channelkey;
+  std::map<int,double> ChannelKeyToSPEMap;
 
   //reconstruction variables
   double Qij; //< Charge Isotropy value

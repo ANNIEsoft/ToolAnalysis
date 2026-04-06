@@ -165,10 +165,10 @@ void CCMCRecoEventLoader::FindTrueVertexFromMC() {
   muonstoppos.SetZ(muonstoppos.Z()+zshift);
   fMuonStopVertex->SetVertex(muonstoppos, muonstoptime); 
 
-  Log("MCRecoEventLoader Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
+  Log("CCMCRecoEventLoader Tool: Push true vertex to the RecoEvent store",v_message,verbosity);
   m_data->Stores.at("RecoEvent")->Set("TrueVertex", fMuonStartVertex, true); 
 
-  Log("MCRecoEventLoader Tool: Push true stop vertex to the RecoEvent store",v_message,verbosity);
+  Log("CCMCRecoEventLoader Tool: Push true stop vertex to the RecoEvent store",v_message,verbosity);
   m_data->Stores.at("RecoEvent")->Set("TrueStopVertex", fMuonStopVertex, true); 
   
   logmessage = "  trueVtx = (" +to_string(muonstartpos.X()) + ", " + to_string(muonstartpos.Y()) + ", " + to_string(muonstartpos.Z()) +", "+to_string(muonstarttime)+ "\n"
@@ -367,7 +367,7 @@ void CCMCRecoEventLoader::PushIBDInfo(){
   
 }
 
-void MCRecoEventLoader::FindFollowersFromMC(){
+void CCMCRecoEventLoader::FindFollowersFromMC(){
   vector<double> followerE;
   vector<double> followerX;
   vector<double> followerY;
@@ -378,7 +378,7 @@ void MCRecoEventLoader::FindFollowersFromMC(){
   vector<int> followerParentPDG;
 
   if(fMCParticles){
-    Log("MCRecoEventLoader::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
+    Log("CCMCRecoEventLoader::  Tool: Num MCParticles = "+to_string(fMCParticles->size()),v_message,verbosity);
     for(unsigned int particlei=0; particlei<fMCParticles->size(); particlei++){
       MCParticle aparticle = fMCParticles->at(particlei);
       //if(v_debug<verbosity) aparticle.Print();       // print if we're being *really* verbose

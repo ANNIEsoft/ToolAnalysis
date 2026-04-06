@@ -647,7 +647,7 @@ bool LoadWCSim::Execute()
   // If we merged the subtriggers, report an MCTriggerNum of 0
   // so downstream tools know it's a new event
   int reported_triggernum = splitSubtriggers ? MCTriggerNum-1 : 0;
-  m_data->Stores.at("ANNIEEvent")->Set("MCTriggerNum", reported_triggernum);
+  m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum", reported_triggernum);
   m_data->Stores.at("ANNIEEvent")->Set("MCFile", MCFile);
   m_data->Stores.at("ANNIEEvent")->Set("MCFlag", true);
   m_data->Stores.at("ANNIEEvent")->Set("BeamStatus", beamstat);

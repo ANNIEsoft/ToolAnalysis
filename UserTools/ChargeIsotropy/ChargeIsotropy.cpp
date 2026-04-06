@@ -14,9 +14,18 @@ bool ChargeIsotropy::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("verbosity",verbosity);
   m_variables.Get("time_window",time_window);
-  m_variables.Get("IsData",IsData);
+  m_variables.Get("IsData",isData);
   m_variables.Get("PMTWaveformSim",MCWaveform);
 
+  auto get_geometry= m_data->Stores.at("ANNIEEvent")->Header->Get("AnnieGeometry",geom);
+  if(!get_geometry){
+  	Log("ChargeIsotropy Tool: Error retrieving Geometry from ANNIEEvent!",v_error,verbosity); 
+  	return false; 
+  }
+
+  m_data->CStore.Get("pmt_tubeid_to_channelkey_data",pmtid_to_channelkey);
+  m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
+  m_data->CStore.Get("ChannelNumToTankPMTSPEChargeMap",ChannelKeyToSPEMap);
 
   return true;
 }
@@ -38,15 +47,15 @@ bool ChargeIsotropy::Execute(){
         }
     }
 
-    get_reco = m_data->Stores["RecoEvent"]->Get("SimpleRecoVtx",SimpleRecoVtx);
+    got_reco = m_data->Stores["RecoEvent"]->Get("SimpleRecoVtx",SimpleRecoVtx);
  
     if (!got_hits) {
         std::cout << "No Hits store in ANNIEEvent. Continuing to build tree." << std::endl;
-        return;
+        return true;
     }
     if (!got_reco) {
         std::cout << "No SimpleRecoVtx store in RecoEvent. Continuing to build tree." << std::endl;
-        return;
+        return true;
     }
 
 
@@ -63,7 +72,7 @@ bool ChargeIsotropy::Execute(){
         m_data->Stores["RecoEvent"]->Set("Qij",Qij);
         return true;
     }
-    fNHits = 0;
+    int fNHits = 0;
 
     bool loop_tank = true;
     int hits_size = (isData || MCWaveform) ? Hits->size() : MCHits->size();
@@ -74,6 +83,9 @@ bool ChargeIsotropy::Execute(){
 
     //Initialise minimum time [s]
     double minT = 99999.0;	
+
+    //Mask was not turned on for CC Analysis
+    bool ApplyDeadMask = false;
 
     //check get time cluster bounds
     while (loop_tank) {
@@ -87,7 +99,7 @@ bool ChargeIsotropy::Execute(){
         }
 	bool SPE_available = false;
         if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
-            goto skip_channel;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
+            goto skip_channel_time;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel_time
         }
         SPE_available = (isData || MCWaveform) ? 
                              (ChannelKeyToSPEMap.find(channel_key) != ChannelKeyToSPEMap.end()) : 
@@ -111,7 +123,7 @@ bool ChargeIsotropy::Execute(){
             }
         }
 
-        skip_channel:   // skip the block above if the PMT is dead, advance the iterator
+        skip_channel_time:   // skip the block above if the PMT is dead, advance the iterator
         if (isData || MCWaveform) {
             it_tank_data++;
             if (it_tank_data == Hits->end()) loop_tank = false;
@@ -169,14 +181,14 @@ bool ChargeIsotropy::Execute(){
                     int fNHits2 = 0;
     while (loop_tank2) {
         unsigned long channel_key2 = it_tank_data2->first;
-        if(channel_key2 == channel_key) goto skip_channel2data; //skip same PMT
         Detector* this_detector2 = geom->ChannelToDetector(channel_key2);
         Position det_position2 = this_detector2->GetDetectorPosition();
 
 	bool SPE_available2 = false;
 
+        if(channel_key2 == channel_key) goto skip_channel2data; //skip same PMT
         if (ApplyDeadMask && this_detector2->GetStatus() == detectorstatus::OFF) {
-            goto skip_channel2data;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
+            goto skip_channel2data;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel2data
         }
         SPE_available2 = (ChannelKeyToSPEMap.find(channel_key2) != ChannelKeyToSPEMap.end());
 
@@ -220,7 +232,6 @@ bool ChargeIsotropy::Execute(){
                     int fNHits2 = 0;
      while (loop_tank2) {
         unsigned long channel_key2 = it_tank_mc2->first;
-        if(channel_key2 == channel_key) goto skip_channel2MC; //skip same PMT
         Detector* this_detector2 = geom->ChannelToDetector(channel_key2);
         Position det_position2 = this_detector2->GetDetectorPosition();
         unsigned long channel_key_data2 = channel_key2;
@@ -230,8 +241,9 @@ bool ChargeIsotropy::Execute(){
 	
 	bool SPE_available2 = false;
 
+        if(channel_key2 == channel_key) goto skip_channel2MC; //skip same PMT 
         if (ApplyDeadMask && this_detector2->GetStatus() == detectorstatus::OFF) {
-            goto skip_channel2MC;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
+            goto skip_channel2MC;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel2MC
         }
         SPE_available2 = (ChannelKeyToSPEMap.find(channel_key_data2) != ChannelKeyToSPEMap.end());
 
