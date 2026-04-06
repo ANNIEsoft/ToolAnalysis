@@ -47,7 +47,6 @@ public:
     void SaveOffsets();
 
     vector<IDConfigRecord> LoadIDConfig(const string& filename);
-    tuple<int, string> queryNearestID(const vector<IDConfigRecord>& data, int targetRun, int accid);
     tuple<int, string> queryNearestACCID(const vector<IDConfigRecord>& data, int targetRun, int manufacturerID);
 
 private:

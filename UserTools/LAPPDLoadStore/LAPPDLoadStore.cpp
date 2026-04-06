@@ -165,19 +165,11 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
                  << ", Position: " << record.Position << endl;
         }
 
-	int testRunNum = 6050;
-        int testACCID = 0; // example ACCID to query
-        auto result = queryNearestID(idConfigRecords, testRunNum, testACCID);
-        int nearestManuID = std::get<0>(result);
-        std::string position = std::get<1>(result);
-        cout << "Querying nearest ID for RunNumber: " << testRunNum << ", ACCID: " << testACCID << endl;
-        cout << "Nearest ManufacturerID: " << nearestManuID << ", Position: " << position << endl;
-        
-	testRunNum = 5907;
+	int testRunNum = 5907;
         int testManuID = 39; // example ManufacturerID to query
-        result= queryNearestACCID(idConfigRecords, testRunNum, testManuID);
+        auto result= queryNearestACCID(idConfigRecords, testRunNum, testManuID);
         int nearestACCID = std::get<0>(result);
-        position = std::get<1>(result);
+        std::string position = std::get<1>(result);
         cout << "Querying nearest ACCID for RunNumber: " << testRunNum << ", ManufacturerID: " << testManuID << endl;
         cout << "Nearest ACCID: " << nearestACCID << ", Position: " << position << endl;
     }
@@ -1736,39 +1728,15 @@ vector<IDConfigRecord> LAPPDLoadStore::LoadIDConfig(const string& filename) {
         string token;
         IDConfigRecord r;
         
-	try {
-		getline(ss, token, ','); r.RunNumber = stoi(token);
-		getline(ss, token, ','); r.ACCID = stoi(token);
-        	getline(ss, token, ','); r.ManufacturerID = stoi(token);
-        	getline(ss, token, ','); r.Position = token;
-	} catch (...) {
-		Log("LAPPDLoadStore::LoadIDConfig: Error parsing line: " + line, v_error, LAPPDStoreReadInVerbosity);
-		throw;
-	}
-        data.push_back(r);
+	getline(ss, token, ','); r.RunNumber = stoi(token);
+	getline(ss, token, ','); r.ACCID = stoi(token);
+        getline(ss, token, ','); r.ManufacturerID = stoi(token);
+        getline(ss, token, ','); r.Position = token;
+        
+	data.push_back(r);
     }
 
     return data;
-}
-
-tuple<int, string> LAPPDLoadStore::queryNearestID(const vector<IDConfigRecord>& data, int targetRun, int accid) {
-    int bestRun = -1;
-    int bestManufacturer = -1;
-    string bestPosition;
-
-    for (const auto& r : data) {
-        if (r.ACCID == accid && r.RunNumber <= targetRun) {
-            if (r.RunNumber > bestRun) { // find the nearest run not exceeding targetRun
-                bestRun = r.RunNumber;
-                bestManufacturer = r.ManufacturerID;
-                bestPosition = r.Position;
-            }
-        }
-    }
-
-    if (bestRun == -1)
-        return {-1, ""};
-    return {bestManufacturer, bestPosition};
 }
 
 tuple<int, string> LAPPDLoadStore::queryNearestACCID(const vector<IDConfigRecord>& data, int targetRun, int manufacturerID) {
