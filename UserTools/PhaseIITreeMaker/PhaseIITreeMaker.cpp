@@ -2416,7 +2416,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   for (int i_cap=0; i_cap < (int) mcneutgammas.size(); i_cap++){
     std::vector<double> capgammas = mcneutgammas.at(i_cap);
     for (int i_gamma=0; i_gamma < (int) capgammas.size(); i_gamma++){
-      std::cout <<"gamma # "<<i_gamma<<", energy: "<<capgammas.at(i_gamma)<<std::endl;
+//      std::cout <<"gamma # "<<i_gamma<<", energy: "<<capgammas.at(i_gamma)<<std::endl;
     }
   }
   }

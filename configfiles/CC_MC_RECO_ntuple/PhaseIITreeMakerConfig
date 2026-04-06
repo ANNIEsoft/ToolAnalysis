@@ -1,4 +1,4 @@
-verbose 0
+verbose -1
 
 IsData 0
 IntGen 1          # Interaction generator: 0 for data, 1 for GENIE, 2 for NUISANCE

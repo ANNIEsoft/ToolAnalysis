@@ -67,11 +67,11 @@ bool ChargeIsotropy::Execute(){
     double recoVtxY = SimpleRecoVtx.Y();
     double recoVtxZ = SimpleRecoVtx.Z();
     //If event is not reconstructible, skip
-    if(recoVtxZ == -9999){
+/*    if(recoVtxZ == -9999){
         Qij = -9999;
         m_data->Stores["RecoEvent"]->Set("Qij",Qij);
         return true;
-    }
+    }*/
     int fNHits = 0;
 
     bool loop_tank = true;
@@ -133,9 +133,11 @@ bool ChargeIsotropy::Execute(){
         }
     }
 
+std::cout << "TIME MIN: " << minT << std::endl;
     //reset iterators
-    it_tank_data = Hits->begin();
-    it_tank_mc = MCHits->begin();
+    if(isData || MCWaveform) it_tank_data = Hits->begin();
+    else it_tank_mc = MCHits->begin();
+    loop_tank = true;
     //initialize variables
     double qval = 0.0;
     double num = 0.0;	
@@ -148,12 +150,13 @@ bool ChargeIsotropy::Execute(){
         Position det_position = this_detector->GetDetectorPosition();
         unsigned long channel_key_data = channel_key;
 
+	bool SPE_available = false;
+
         if (!isData && !MCWaveform) {
+            if (channel_key == 0) break; //Mission failed. We'll get 'em next time.
             int wcsimid = channelkey_to_pmtid.at(channel_key);
             channel_key_data = pmtid_to_channelkey[wcsimid];
         }
-	bool SPE_available = false;
-
         if (ApplyDeadMask && this_detector->GetStatus() == detectorstatus::OFF) {
             goto skip_channel;  // do not save the hits information for a Dead PMT (if the mask is on), jump to skip_channel
         }
@@ -281,8 +284,11 @@ bool ChargeIsotropy::Execute(){
         }
     }
     //Charge Isotropy
-    Qij = qval/num;
+    if(qval == 0.) Qij = -9999.;
+    else Qij = num/qval;
 
+std::cout << "num: " << num << std::endl;
+std::cout << "qval: " << qval << std::endl;
     m_data->Stores["RecoEvent"]->Set("Qij",Qij);
 
     return true;
