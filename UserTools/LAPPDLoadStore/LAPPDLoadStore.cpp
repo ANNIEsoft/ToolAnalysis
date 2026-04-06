@@ -154,7 +154,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     }
 
     idConfigRecords = LoadIDConfig(ACCIDConfigFile);
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDStoreReadInVerbosity > 1)
     {
         // print the ACCID config records for debug
         cout << "Loaded LAPPD ID Config Records from " << ACCIDConfigFile << ":" << endl;
