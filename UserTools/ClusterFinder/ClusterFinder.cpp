@@ -302,10 +302,11 @@ bool ClusterFinder::Execute(){
           v_hittimes.push_back(datalike_hits.at(i_hit));
         }
         std::vector<int> parents = *(ThisPMTHits.at(0).GetParents());
+        std::vector<int> directparents = *(ThisPMTHits.at(0).GetDirectParents());
         ThisPMTHits.clear();
         std::vector<MCHit> newMCHits;
         for (int i_hit=0; i_hit < (int) datalike_hits.size(); i_hit++){
-          newMCHits.push_back(MCHit(chankey,datalike_hits.at(i_hit),datalike_hits_charge.at(i_hit),parents));
+          newMCHits.push_back(MCHit(chankey,datalike_hits.at(i_hit),datalike_hits_charge.at(i_hit),parents, directparents));
         }
         MCHits->at(chankey) = newMCHits;
       }

@@ -1,0 +1,8 @@
+verbosity 0
+PMTParameterFile configfiles/PMTWaveformSim/PMTWaveformLognormFit.csv
+useTimeSmearing 0
+Prewindow 80
+ReadoutWindow 200
+T0Offset 25
+TimeShift 0
+MakeDebugFile 0

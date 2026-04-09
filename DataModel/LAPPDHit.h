@@ -100,11 +100,14 @@ class MCLAPPDHit : public LAPPDHit
 	friend class boost::serialization::access;
 
 public:
-	MCLAPPDHit() : LAPPDHit(), Parents(std::vector<int>{}) { serialise = true; }
-	MCLAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition, std::vector<int> theparents) : LAPPDHit(thetubeid, thetime, thecharge, theposition, thelocalposition), Parents(theparents) { serialise = true; }
+	MCLAPPDHit() : LAPPDHit(), Parents(std::vector<int>{}), DirectParents(std::vector<int>{}) { serialise = true; }
+	MCLAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition, std::vector<int> theparents, std::vector<int> thedirectparents) : LAPPDHit(thetubeid, thetime, thecharge, theposition, thelocalposition), Parents(theparents), DirectParents(thedirectparents) { serialise = true; }
 
 	const std::vector<int> *GetParents() const { return &Parents; }
 	void SetParents(std::vector<int> parentsin) { Parents = parentsin; }
+
+	const std::vector<int> *GetDirectParents() const { return &DirectParents; }
+	void SetDirectParents(std::vector<int> directparentsin) { DirectParents = directparentsin; }
 
 	bool Print()
 	{
@@ -116,6 +119,7 @@ public:
 		cout << "Parallel Pos : " << LocalPosition.at(0) << endl;
 		cout << "Transverse Pos : " << LocalPosition.at(1) << endl;
 		cout << "Charge : " << Charge << endl;
+
 		if (Parents.size())
 		{
 			cout << "Parent MCPartice indices: {";
@@ -131,6 +135,23 @@ public:
 		{
 			cout << "No recorded parents" << endl;
 		}
+
+		if (DirectParents.size())
+		{
+			cout << "Direct Parent MCPartice indices: {";
+			for (int parenti = 0; parenti < (int)DirectParents.size(); ++parenti)
+			{
+				cout << DirectParents.at(parenti);
+				if ((parenti + 1) < (int)DirectParents.size())
+					cout << ", ";
+			}
+			cout << "}" << endl;
+		}
+		else
+		{
+			cout << "##### No recorded Direct parents #####" << endl;
+		}
+		
 		return true;
 	}
 
@@ -151,6 +172,7 @@ public:
 
 protected:
 	std::vector<int> Parents;
+	std::vector<int> DirectParents;
 };
 
 /*

@@ -44,9 +44,10 @@ class PMTWaveformSim: public Tool {
   bool SampleFitParameters(int pmtid);  ///< sample fit parameters in a way that preserves covariance
   uint16_t CustomLogNormalPulse(double hit_t0, uint16_t t0_clocktick, double hit_charge);  //< construct simulated ADC pulses using sampled fit values
   void ConvertMapToWaveforms(const std::map<uint16_t, uint16_t> &sample_map,  ///< construct a waveform with the simulated pulse + baseline modulation, to feed into the PhaseIIADCHitFinder
-			     std::vector<Waveform<uint16_t>> &rawWaveforms,
-			     std::vector<CalibratedADCWaveform<double>> &calWaveforms,
-			     double noiseSigma, int baseline);
+                             const std::map<uint16_t, std::vector<int>> &hits_to_directparents_map,
+                             std::vector<Waveform<uint16_t>> &rawWaveforms,
+                             std::vector<CalibratedADCWaveform<double>> &calWaveforms,
+                             double noiseSigma, int baseline);
 
   void FillDebugGraphs(const std::map<unsigned long, std::vector<Waveform<uint16_t>> > &RawADCDataMC);   ///< debugging
   double TimeSmearing(int pmtid);   ///< prior to sampling the fits, we can add realistic time smearing (instead of relying on WCSim's time smearing) to the MCHit (true) time

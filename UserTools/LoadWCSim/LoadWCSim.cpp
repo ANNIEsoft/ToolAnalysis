@@ -8,16 +8,20 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data)
   if (configfile!="") m_variables.Initialise(configfile); //loading config file
   //m_variables.Print();
 	
+  /////////////////// Useful header ///////////////////////
+	
+  if (verbosity) cout << "Initializing Tool LoadWCSim" << endl;
+	
+  if (configfile!="") m_variables.Initialise(configfile); //loading config file
+  //m_variables.Print();
+	
   m_data = &data; //assigning transient data pointer
 	
   // Get the Tool configuration variables and set defaults
   // ======================================================
   if (!m_variables.Get("verbose", verbosity)) verbosity = 1;
-  logmessage = "LoadWCSim::Initialise: Initialising LoadWCSim!";
-  Log(logmessage, v_warning, verbosity);	
-	
   if (!m_variables.Get("MaxEntries", MaxEntries)) MaxEntries = -1;
-  
+
   if (!m_variables.Get("InputFile", MCFile)) {
     logmessage = "LoadWCSim::Initialise: NO InputFile set in the config!";
     Log(logmessage, v_error, verbosity);
@@ -198,22 +202,23 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data)
 	
   // Short Stores README
   // ======================================================
-  // n.b. m_data->vars is a Store (of ben's Store type) that is not saved to disk.
+  // n.b. m_data->vars is a Store (of ben's Store type) that is not saved to disk?
   //      m_data->CStore is a single entry binary BoostStore that is not saved to disk.
   //      m_data->Stores["StoreName"] is a map of binary BoostStores that are saved to disk.
-  // With BoostStore::Set("MyVariable", myvar), if myvar is not a pointer it will always
-  // be saved to disk, but if myvar is a pointer the persist flag (default true) controls
-  // whether it will be saved to disk. In either case the BoostStore becomes the owner
-  // of the object and will handle its deletion.
+  // If using Stores->BoostStore->Set("MyVariable") it will always be saved to disk
+  // Using Stores->BoostStore.Set("MyVariable",&myvar) if myvar is a pointer (to an object on
+  // the heap) puts myvar in the Store and it's deletion will be handled by the Store.
+  // (provided your class has a suitable destructor.)
   // Is 'BoostStore::Save' needed for single-entry stores?
   // ----------------
+  // create a new BoostStore with key "ANNIEEvent" in the Stores std::map
   // BoostStore constructor args: typechecking (bool), m_format (0=binary, 1=ASCII, 2=multievent)
   // A BoostStore has a header where useful constants may be saved. The header is a BoostStore itself,
   // and can be accessed via: Store.Header->Get() and Store.Header->Set().
-  // The method 'BoostStore::Save()' writes everything 'Set' since the last 'Save' to the current entry.
-  // BoostStore::Clear clears the map of the current entry, to start building a new one.
-  // Use 'BoostStore::GetEntry(int entrynum)' to load an entry to then be able to 'Get' it's contents.
-  // 'BoostStore->Header->Get("TotalEntries",NumEvents)' will load the num entries into NumEvents
+  // The method 'Store::Save()' writes everything 'Set' since the last 'Save' to the current entry.
+  // Store::Clear clears the map of the current entry, to start building a new one.
+  // Use 'Store::GetEntry(int entrynum)' to load an entry to then be able to 'Get' it's contents.
+  // 'Store->Header->Get("TotalEntries",NumEvents)' will load the num entries into NumEvents
   // ------------------
   // When adding a BoostStore (or class object in general) to a BoostStore (such as ANNIEEvent)
   // you call BoostStore::Set("key",ObjectPointer) - BUT be aware that serialization happens when the
@@ -628,7 +633,7 @@ bool LoadWCSim::Execute()
   // If we merged the subtriggers, report an MCTriggerNum of 0
   // so downstream tools know it's a new event
   int reported_triggernum = splitSubtriggers ? MCTriggerNum-1 : 0;
-  m_data->Stores.at("ANNIEEvent")->Set("MCTriggerNum", reported_triggernum);
+  m_data->Stores.at("ANNIEEvent")->Set("MCTriggernum", reported_triggernum);
   m_data->Stores.at("ANNIEEvent")->Set("MCFile", MCFile);
   m_data->Stores.at("ANNIEEvent")->Set("MCFlag", true);
   m_data->Stores.at("ANNIEEvent")->Set("BeamStatus", beamstat);
@@ -1101,12 +1106,12 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
       logmessage += " tracks from trigger # " + std::to_string(trigIdx);
       Log(logmessage, v_message, verbosity);	
 
+      std::cout<< "Event Number: " << aTrigTank->GetHeader()->GetEvtNum()<< std::endl;
       for (int trackIdx = 0; trackIdx < aTrigTank->GetNtrack(); trackIdx++) {
 		logmessage = "LoadWCSim::LoadMCParticles: Getting WCSim track # " + std::to_string(trackIdx);
 		Log(logmessage, v_message, verbosity);	
 
 		auto* nextTrack = (WCSimRootTrack*)aTrigTank->GetTracks()->At(trackIdx);
-					
 		tracktype startStopType = tracktype::UNDEFINED;
 
 		// Extract the neutrino information
@@ -1120,14 +1125,16 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
 		  double length = (stopPos-startPos).Mag();
 
 		  MCParticle neutrino(nextTrack->GetIpnu(), nextTrack->GetE(), nextTrack->GetEndE(),
-							  startPos, stopPos, startTime, stopTime,
-							  Direction(nextTrack->GetDir(0), nextTrack->GetDir(1), nextTrack->GetDir(2)),
-							  length, startStopType,
-							  nextTrack->GetId(),
-							  nextTrack->GetParenttype(),
-							  nextTrack->GetFlag(),
-							  trigIdx);
-							
+				      startPos, stopPos, startTime, stopTime,
+				      Direction(nextTrack->GetDir(0), nextTrack->GetDir(1), nextTrack->GetDir(2)),
+				      length, startStopType,
+				      nextTrack->GetId(),
+				      nextTrack->GetParenttype(),
+				      nextTrack->GetPrimaryParentID(),
+				      nextTrack->GetDirectParentID(),
+				      nextTrack->GetFlag(),
+				      trigIdx);
+		  
 		  // Save the neutrino own particle in the store
 		  m_data->Stores["ANNIEEvent"]->Set("NeutrinoParticle", neutrino);
 
@@ -1148,6 +1155,7 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
 		logmessage = "LoadWCSim::LoadMCParticles: Loaded particle with PDG: " + std::to_string(nextTrack->GetIpnu());
 		logmessage += ", stop time: " + std::to_string(stopTime);
 		logmessage += ", end process: " + nextTrack->GetEndProcess();
+    logmessage += ", DirectParentID: " + std::to_string(nextTrack->GetDirectParentID());
 		Log(logmessage, v_debug, verbosity);
 
 		// Record neutron primary/secondary
@@ -1155,14 +1163,16 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
 		  mapNeutronIsPrim->emplace(nextTrack->GetId(), (nextTrack->GetParenttype() == 0));
 	
 		MCParticle thisparticle(nextTrack->GetIpnu(), nextTrack->GetE(), nextTrack->GetEndE(),
-								startPos, stopPos, startTime, stopTime,
-								Direction(nextTrack->GetDir(0), nextTrack->GetDir(1), nextTrack->GetDir(2)),
-								length, startStopType,
-								nextTrack->GetId(),
-								nextTrack->GetParenttype(),
-								nextTrack->GetFlag(),
-								trigIdx);
-
+					startPos, stopPos, startTime, stopTime,
+					Direction(nextTrack->GetDir(0), nextTrack->GetDir(1), nextTrack->GetDir(2)),
+					length, startStopType,
+					nextTrack->GetId(),
+					nextTrack->GetParenttype(),
+					nextTrack->GetPrimaryParentID(),
+					nextTrack->GetDirectParentID(),
+					nextTrack->GetFlag(),
+					trigIdx);
+		
 		// Exit point is not currently in constructor call so set it separately
 		// Older WCSim files do not recor this info. This breaks backward compatibility
 		Position exitPoint(nextTrack->GetTankExitPoint(0),
@@ -1171,14 +1181,15 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
 		exitPoint.UnitToMeter();
 		thisparticle.SetTankExitPoint(exitPoint);
 
-		// Check if this is a primary muon. Only record the first one
-		if (nextTrack->GetIpnu() == 13 && nextTrack->GetParenttype() == 0 &&
+		// Check if this is a primary muon. Only record the first one 
+		if (nextTrack->GetIpnu() == 13 && nextTrack->GetParenttype() == 0 && //I think muon would always have directparent as muon and not any other particle? (DJA)
 			nextTrack->GetFlag() == 0  && primaryMuonIndex < 0 ) 
 		  primaryMuonIndex = MCParticles->size();
 
 		// Some print outs for "interesting" particles
 		if (abs(nextTrack->GetIpnu()) == 13 || abs(nextTrack->GetIpnu()) == 211 || nextTrack->GetIpnu() == 111){
 		  logmessage = "LoadWCSim::LoadMCParticles: Found " + std::to_string(nextTrack->GetIpnu());
+      logmessage += ", with DirectParentID: " + std::to_string(nextTrack->GetDirectParentID());
 		  logmessage += " with flag: " + std::to_string(nextTrack->GetFlag());
 		  logmessage += ", parent type " + std::to_string(nextTrack->GetParenttype());
 		  logmessage += ", Id " + std::to_string(nextTrack->GetId());
@@ -1198,6 +1209,13 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
       logmessage = "LoadWCSim::LoadMCParticles: Loaded " + std::to_string(MCParticles->size()) + " MCParticles";
       Log(logmessage, v_debug, verbosity);
     } // end loop over events
+
+  std::cout << "DEBUG: All saved Track IDs in trackid_to_mcparticleindex: ";
+    for (auto const& pair : *trackid_to_mcparticleindex) {
+      std::cout << pair.first << " ";
+      }
+      
+std::cout << std::endl;
   }// endif MCTriggerNum == 0
   else {
     // if MCTrigger > 0 we need to update all the particle times
@@ -1381,7 +1399,9 @@ bool LoadWCSim::LoadHits(WCSimRootTrigger* thisTrig, WCSimRootTrigger* firstTrig
     Log(logmessage, v_debug, verbosity);
     
     // Create the hit and put it in the correct map
-    MCHit nextHit(key, digiTime, digiQ, GetHitParentIdxs(digiHit, firstTrig));
+    std::pair<std::vector<int>, std::vector<int>> hitParentIDs = GetHitParentIDs(digiHit, firstTrig);
+
+    MCHit nextHit(key, digiTime, digiQ, hitParentIDs.first, hitParentIDs.second);
 
     if (system == "Tank") {
       if (MCHits->count(key) == 0) MCHits->emplace(key, std::vector<MCHit>{nextHit});
@@ -1455,7 +1475,9 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig,
       auto* thehittimeobject = (WCSimRootCherenkovHitTime*)(firstTrig->GetCherenkovHitTimes()->At(thephotonsid));
 
       // get the parent ID from the CherenkovHitTime
-      Int_t parentID = (thehittimeobject) ? thehittimeobject->GetParentID() : -1;
+      //I have changed GetParentID to GetDirectParentID in WCSimRootCherenkovHitTime, so this may need to be updated if we want direct parent IDs instead of primary parent IDs (DJA)
+      Int_t parentID = (thehittimeobject) ? thehittimeobject->GetPrimaryParentID() : -1;
+      Int_t directparentID = (thehittimeobject) ? thehittimeobject->GetDirectParentID() : -1;
 
       // We'll want a map of particle ID to channel keys, so convert WCSim TubeID to channelkey
       int chankey = tubeid_to_channelkey.at(tubeID);
@@ -1484,9 +1506,11 @@ void LoadWCSim::MakeParticleToPmtMap(WCSimRootTrigger* thistrig,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get the ID of the primary MCParticle(s) that produced this digi. hit
-std::vector<int> LoadWCSim::GetHitParentIDs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig)
+//Instead now it stores the direct parent IDs. What do we need primary MCParticles infor too? (DJA)
+std::pair<std::vector<int>, std::vector<int>> LoadWCSim::GetHitParentIDs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig)
 {
   std::vector<int> parentIDs; // a hit could technically have more than one contrbuting particle
+  std::vector<int> directParentIDs; 
 	
   // loop over the photons in this digit
   std::vector<int> photonIdxs = digiHit->GetPhotonIds();
@@ -1504,27 +1528,37 @@ std::vector<int> LoadWCSim::GetHitParentIDs(WCSimRootCherenkovDigiHit* digiHit, 
       logmessage = "LoadWCSim::GetHitParentIDs: HitTime object is NULL!!";
       Log(logmessage, v_error, verbosity);
     }
-    else 
-      parentIDs.push_back(theHitTimeObject->GetParentID());
+    else {
+        parentIDs.push_back(theHitTimeObject->GetPrimaryParentID());
+        directParentIDs.push_back(theHitTimeObject->GetDirectParentID());
+    }
+
   
   }// end loop over photons  
-  return parentIDs;
+  return std::make_pair(parentIDs, directParentIDs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get the index within the the MCParticle vector of the primaries that produced this digi. hit
-std::vector<int> LoadWCSim::GetHitParentIdxs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig)
+std::pair<std::vector<int>, std::vector<int>> LoadWCSim::GetHitParentIdxs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig)
 {
-  std::vector<int> parentIDs = GetHitParentIDs(digiHit, firstTrig);
+  std::pair<std::vector<int>, std::vector<int>> bothIDs = GetHitParentIDs(digiHit, firstTrig);
+  std::vector<int> parentIDs = bothIDs.first;
+  std::vector<int> directParentIDs = bothIDs.second;
   std::vector<int> parentIdxs;
+  std::vector<int> directParentIdxs;
 
   // Check if the parent was recorded, and if so then translate ID to index
   for (int parentID : parentIDs) {
     if (trackid_to_mcparticleindex->count(parentID))
       parentIdxs.push_back(trackid_to_mcparticleindex->at(parentID));
   }
+  for (int directParentID : directParentIDs) {
+    if (trackid_to_mcparticleindex->count(directParentID))
+      directParentIdxs.push_back(trackid_to_mcparticleindex->at(directParentID));
+  }
 
-  return parentIdxs;
+  return std::make_pair(parentIdxs, directParentIdxs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
 #include <vector>
 #include <cmath>
 #include <map>
+#include <algorithm>
 
 // ANNIE includes
 #include "ANNIEconstants.h"
@@ -102,6 +103,9 @@ bool PMTWaveformSim::Execute()
   // The container for the data that we'll put into the ANNIEEvent
   std::map<unsigned long, std::vector<Waveform<uint16_t>> > RawADCDataMC;
   std::map<unsigned long, std::vector<CalibratedADCWaveform<double>> > CalADCDataMC;
+  std::map<unsigned long, std::map<uint16_t, std::vector<int>>> PMTToDirectParentMap;
+  std::map<unsigned long, std::map<uint16_t, std::vector<int>>> PMTToPrimaryParentMap;
+
 
 
   // If MCHits is empty (load_status == 2), create one minimal baseline waveform so that the hit finder doesn't freak out
@@ -132,6 +136,7 @@ bool PMTWaveformSim::Execute()
     
     std::vector<Waveform<uint16_t>> rawWaveforms;
     std::vector<CalibratedADCWaveform<double>> calWaveforms;
+    std::vector<int> directParentIDs;
     
     rawWaveforms.emplace_back(0, rawSamples);
     calWaveforms.emplace_back(0, calSamples, baseline, noiseSigma);
@@ -145,14 +150,16 @@ bool PMTWaveformSim::Execute()
   for (auto mcHitsIt : *fMCHits) { // Loop over the hit PMTs
     int PMTID = mcHitsIt.first;
 
-    std::vector<MCHit> mcHits = mcHitsIt.second;
+    std::vector<MCHit> &mcHits = mcHitsIt.second;
 
     // Generate waveform samples from the MC hits
     // samples from hits that are close in time will be added together
     // key is hit time in clock ticks, value is amplitude
     std::map<uint16_t, uint16_t> sample_map;
-    for (const auto& mcHit : mcHits) {// Loop through each MCHit in the vector
+    std::map<uint16_t, std::vector<int>> hits_to_directparents_map;
+    std::map<uint16_t, std::vector<int>> hits_to_primaryparents_map;
 
+    for (MCHit& mcHit : mcHits) {// Loop through each MCHit in the vector
       // skip negative hit times, what does that even mean if we're not using the smeared digit time?
       // skip hit times past 70 us since that's our longest readout
       if (mcHit.GetTime() < 0) continue;
@@ -161,10 +168,12 @@ bool PMTWaveformSim::Execute()
       // Grab the hit time (also converted to clock ticks) and the charge
       double hit_t0 = mcHit.GetTime() + fTimeShift;
       double hit_charge = mcHit.GetCharge();
+      const std::vector<int>* directParentIDs = mcHit.GetDirectParents();
+      const std::vector<int>* primaryParentIDs = mcHit.GetParents();
 
-      logmessage = "PMTWaveformSim:\n    hit charge =  " + std::to_string(hit_charge) + " p.e., hit time =  " + std::to_string(hit_t0) + " for PMTID " + std::to_string(PMTID);
+      logmessage = "PMTWaveformSim:\n    hit charge =  " + std::to_string(hit_charge) + " p.e., hit time =  " + std::to_string(hit_t0) + " for PMTID " + std::to_string(PMTID)+ "Direct parent track IDs: " + std::to_string(directParentIDs->size());
       Log(logmessage, v_message, verbosity);
-
+    
       // before "digitizing", add smearing based on the uncertainty extracted in the laser analysis
       if (fuseTimeSmearing) {
         double timesmear = TimeSmearing(PMTID);
@@ -178,6 +187,10 @@ bool PMTWaveformSim::Execute()
       uint16_t start_clocktick = (t0_ticks > fPrewindow)? t0_ticks - fPrewindow : 0;
       uint16_t end_clocktick = start_clocktick + fReadoutWindow;
 
+	    // Put these ticks into the actual MCHit
+	    mcHit.SetStartTick(start_clocktick);
+	    mcHit.SetEndTick(end_clocktick);
+	  
       // Randomly Sample the PMT parameters for each MCHit
       SampleFitParameters(PMTID);
 
@@ -188,19 +201,45 @@ bool PMTWaveformSim::Execute()
         std::stringstream logmessage;
         logmessage << "    --> clocktick = " << clocktick << ", sample = " << sample;
         Log(logmessage.str(), v_message, verbosity);
-	
+
         // check if this hit time has been recorded
         // either set it or add to it
         if (sample_map.find(clocktick) == sample_map.end()) 
           sample_map[clocktick] = sample;
         else 
-          sample_map[clocktick] += sample;		
-            }// end loop over clock ticks
+          sample_map[clocktick] += sample;
+          
+        }// end loop over clock ticks
+
+      // Store parent IDs once per MCHit (at t0 tick) to avoid repeating the same parent info for every sample tick
+      if (directParentIDs->size() > 0) {
+        std::vector<int> unique_direct_parent_ids = *directParentIDs;
+        std::sort(unique_direct_parent_ids.begin(), unique_direct_parent_ids.end());
+        unique_direct_parent_ids.erase(std::unique(unique_direct_parent_ids.begin(),
+                                                   unique_direct_parent_ids.end()),
+                                       unique_direct_parent_ids.end());
+        hits_to_directparents_map[t0_ticks].insert(hits_to_directparents_map[t0_ticks].end(),
+                                                   unique_direct_parent_ids.begin(),
+                                                   unique_direct_parent_ids.end());
+      }
+
+      if (primaryParentIDs->size() > 0) {
+        std::vector<int> unique_primary_parent_ids = *primaryParentIDs;
+        std::sort(unique_primary_parent_ids.begin(), unique_primary_parent_ids.end());
+        unique_primary_parent_ids.erase(std::unique(unique_primary_parent_ids.begin(),
+                                                    unique_primary_parent_ids.end()),
+                                        unique_primary_parent_ids.end());
+        hits_to_primaryparents_map[t0_ticks].insert(hits_to_primaryparents_map[t0_ticks].end(),
+                                                    unique_primary_parent_ids.begin(),
+                                                    unique_primary_parent_ids.end());
+      }
+
         }// end loop over mcHits
     
         // If there are no samples for this PMT then no need to do the rest
         if (sample_map.empty()) continue;
-    
+
+
     
     // Set the noise envelope and baseline for this PMT
     // The noise std dev appears to be normally distributed around 1 with sigma 0.25
@@ -211,23 +250,31 @@ bool PMTWaveformSim::Execute()
     // convert the sample map into a vector of Waveforms and put them into the container
     std::vector<Waveform<uint16_t>> rawWaveforms;
     std::vector<CalibratedADCWaveform<double>> calWaveforms;
-    ConvertMapToWaveforms(sample_map, rawWaveforms, calWaveforms, noiseSigma, basline);
+    ConvertMapToWaveforms(sample_map, hits_to_directparents_map, rawWaveforms, calWaveforms, noiseSigma, basline);
 
     RawADCDataMC.emplace(PMTID, rawWaveforms);
     CalADCDataMC.emplace(PMTID, calWaveforms);
-  }// end loop over PMTs
+    PMTToDirectParentMap[PMTID] = hits_to_directparents_map;
+    PMTToPrimaryParentMap[PMTID] = hits_to_primaryparents_map;
+  } // end loop over PMTs
+
+  std::cout << "PMTWaveformSim: Finished looping over MCHits, now publishing waveforms to ANNIEEvent..." << std::endl;
 
 
   // Publish the waveforms to the ANNIEEvent store if we have them
   m_data->Stores.at("ANNIEEvent")->Set("RawADCDataMC",      RawADCDataMC);
   m_data->Stores.at("ANNIEEvent")->Set("CalibratedADCData", CalADCDataMC); 
+  m_data->Stores.at("ANNIEEvent")->Set("PMTToDirectParentMap", PMTToDirectParentMap);
+  m_data->Stores.at("ANNIEEvent")->Set("PMTToPrimaryParentMap", PMTToPrimaryParentMap);
+  m_data->Stores.at("ANNIEEvent")->Set("PMTSimPrewindowTicks", fPrewindow);
+  m_data->Stores.at("ANNIEEvent")->Set("PMTSimReadoutWindowTicks", fReadoutWindow);
+
   
   if (fDebug) 
     FillDebugGraphs(RawADCDataMC);
 
   return true;
 }
-
 //------------------------------------------------------------------------------
 bool PMTWaveformSim::Finalise()
 {
@@ -441,6 +488,7 @@ uint16_t PMTWaveformSim::CustomLogNormalPulse(double hit_t0, uint16_t clocktick,
 
 //------------------------------------------------------------------------------
 void PMTWaveformSim::ConvertMapToWaveforms(const std::map<uint16_t, uint16_t> &sample_map,
+             const std::map<uint16_t, std::vector<int>> &hits_to_directparents_map,
 					   std::vector<Waveform<uint16_t>> &rawWaveforms,
 					   std::vector<CalibratedADCWaveform<double>> &calWaveforms,
 					   double noiseSigma, int baseline)
@@ -497,7 +545,6 @@ int PMTWaveformSim::LoadFromStores()
     return 2;
   }
 
-  
   return 1;
 }
 
@@ -505,7 +552,7 @@ int PMTWaveformSim::LoadFromStores()
 void PMTWaveformSim::FillDebugGraphs(const std::map<unsigned long, std::vector<Waveform<uint16_t>> > &RawADCDataMC)
 {
   for (auto itpair : RawADCDataMC) {
-    std::string chanString = std::to_string(itpair.first);
+    std::string chanString = "RawADCData" + std::to_string(itpair.first);
 
     // Get/make the directory for this PMT
     TDirectory* dir = fOutFile->GetDirectory(chanString.c_str());
@@ -562,7 +609,4 @@ double PMTWaveformSim::TimeSmearing(int pmtid)
   return time_smearing;
 }
 				     
-
-
-
 

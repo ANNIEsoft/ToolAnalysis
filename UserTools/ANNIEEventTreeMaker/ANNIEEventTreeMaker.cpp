@@ -46,6 +46,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
   m_variables.Get("RingCounting_fill", RingCounting_fill);
+  m_variables.Get("DirectParent_MCHit_fill", DirectParent_MCHit_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -179,6 +180,15 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("hitChankey", &fHitChankey);
     fANNIETree->Branch("hitChankeyMC", &fHitChankeyMC);
     fANNIETree->Branch("hitPMTType", &fHitPMTType);
+  }
+
+  if (DirectParent_MCHit_fill){
+    fANNIETree->Branch("DirectParent_PMTID", &fDirectParent_PMTID);
+    fANNIETree->Branch("DirectParent_HitTime", &fDirectParent_HitTime);
+    fANNIETree->Branch("DirectParent_TrackIDs", &fDirectParent_TrackIDs);
+    fANNIETree->Branch("DirectParent_PDGs", &fDirectParent_PDGs);
+    fANNIETree->Branch("DirectParent_NeutronAncestorTrackID", &fDirectParent_NeutronAncestorTrackID);
+    fANNIETree->Branch("DirectParent_NeutronAncestorPDG", &fDirectParent_NeutronAncestorPDG);
   }
 
   if (SiPMPulseInfo_fill)
@@ -596,6 +606,12 @@ bool ANNIEEventTreeMaker::Execute()
     // this will fill all hits in this event
     LoadAllTankHits();
   }
+
+  //****************************** Fill MCHit DirectParent TrackIDs Info *************************************//
+  if (DirectParent_MCHit_fill)
+  {
+    LoadDirectParentIDsMCHits();
+  }
   if (SiPMPulseInfo_fill)
   {
     LoadSiPMHits();
@@ -763,6 +779,14 @@ void ANNIEEventTreeMaker::ResetVariables()
   fHitChankey.clear();
   fHitChankeyMC.clear();
   fHitPMTType.clear();
+
+  // MCHit DirectParent TrackIDs info
+  fDirectParent_PMTID.clear();
+  fDirectParent_HitTime.clear();
+  fDirectParent_TrackIDs.clear();
+  fDirectParent_PDGs.clear();
+  fDirectParent_NeutronAncestorTrackID.clear();
+  fDirectParent_NeutronAncestorPDG.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -1379,6 +1403,92 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
       it_tank_mc++;
       if (it_tank_mc == (*MCHits).end())
         loop_tank = false;
+    }
+  }
+  return;
+}
+
+// **************MCHit Directparent TrackIDs Info ************************** //
+
+void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
+  //I will make changes here//
+  //It will help me to store the information about the direct parent track IDs for each MCHit in the tree
+  Log("ANNIEEventTreeMaker Tool: LoadDirectParentIDsMCHits", v_debug, ANNIEEventTreeMakerVerbosity);
+  std::map<unsigned long, std::map<double, std::vector<int>>> *fMCHitToDirectParents = nullptr;
+  std::vector<MCParticle> *fMCParticles = nullptr;
+  std::map<int, int> *fTrackIdToIndex = nullptr;
+  std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronAncestor = nullptr;
+
+  bool got_MCHitToDirectParents = m_data->Stores["ANNIEEvent"]->Get("MCHitToDirectParents", fMCHitToDirectParents);
+  if (!got_MCHitToDirectParents)  {
+    std::cout << "No MCHitToDirectParents store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  bool got_MCParticles = m_data->Stores["ANNIEEvent"]->Get("MCParticles", fMCParticles);
+  if (!got_MCParticles) {
+    std::cout << "No MCParticles store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  bool got_TrackIdToIndex = m_data->Stores["ANNIEEvent"]->Get("TrackId_to_MCParticleIndex", fTrackIdToIndex);
+  if (!got_TrackIdToIndex) {
+    std::cout << "No TrackId_to_MCParticleIndex store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  bool got_neutronAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronAncestor", fMCHitToNeutronAncestor);
+  if (!got_neutronAncestor) {
+    std::cout << "No MCHitToNeutronAncestor store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  for (auto const& apair : *fMCHitToDirectParents) {
+    unsigned long pmtID = apair.first;
+    for (auto const& hit_directparent_pair : apair.second){
+      double hitTime = hit_directparent_pair.first;
+      std::vector<int> const& directparentids = hit_directparent_pair.second;
+
+      fDirectParent_PMTID.push_back(pmtID);
+      fDirectParent_HitTime.push_back(hitTime);
+      fDirectParent_TrackIDs.push_back(directparentids);
+
+      std::vector<int> pdgcodes;
+      if (got_MCParticles && got_TrackIdToIndex){
+        for (int directparentid : directparentids){
+          auto it = fTrackIdToIndex->find(directparentid);
+          if (it != fTrackIdToIndex->end()) {
+            int MCParticleIndex = it->second;
+            int pdg = fMCParticles->at(MCParticleIndex).GetPdgCode();;
+
+            std::cout << "DEBUG DirectParent | "
+                      << "TrackID(from hit)=" << directparentid
+                      << ", MCParticle.GetPdgCode()=" << pdg
+                      << std::endl;
+
+            pdgcodes.push_back(pdg);
+          }
+          else {
+            std::cout << "DEBUG DirectParent | TrackID=" << directparentid
+                      << " NOT FOUND in MCParticles (will use -999)" << std::endl;
+            pdgcodes.push_back(-999);
+          }
+        }
+      }
+      fDirectParent_PDGs.push_back(pdgcodes);
+
+      int neutronAncestorTrackID = -5;
+      int neutronAncestorPDG = -5;
+      if (got_neutronAncestor && fMCHitToNeutronAncestor->find(pmtID) != fMCHitToNeutronAncestor->end()){
+        auto const& pmtAncestors = fMCHitToNeutronAncestor->at(pmtID);
+        if (pmtAncestors.find(hitTime) != pmtAncestors.end()){
+          auto const& ancestorPair = pmtAncestors.at(hitTime);
+          neutronAncestorTrackID = ancestorPair.first;   
+          neutronAncestorPDG = ancestorPair.second;      
+        }
+      }
+      fDirectParent_NeutronAncestorTrackID.push_back(neutronAncestorTrackID);
+      fDirectParent_NeutronAncestorPDG.push_back(neutronAncestorPDG);
     }
   }
   return;

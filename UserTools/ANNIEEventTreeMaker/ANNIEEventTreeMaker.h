@@ -56,6 +56,7 @@ public:
     void LoadRWMBRFInfo();
 
     void LoadAllTankHits();
+    void LoadDirectParentIDsMCHits();
     void LoadSiPMHits();
 
     void LoadLAPPDInfo();
@@ -217,6 +218,15 @@ private:
     std::vector<int> fHitChankey;
     std::vector<int> fHitChankeyMC;
     std::vector<int> fHitPMTType;
+
+    // DirectParent_MCHit_fill
+    bool DirectParent_MCHit_fill = 0;
+    std::vector<unsigned long>  fDirectParent_PMTID;
+    std::vector<double> fDirectParent_HitTime;
+    std::vector<std::vector<int>> fDirectParent_TrackIDs;
+    std::vector<std::vector<int>> fDirectParent_PDGs;
+    std::vector<int> fDirectParent_NeutronAncestorTrackID; //Stored unique neutron ancestor track ID for each MCHit, if it exists. -5 if no neutron ancestor found.
+    std::vector<int> fDirectParent_NeutronAncestorPDG; //For now, we are storing Neutron's truth information. But, it could be exapand to other particle types if needed. -5 if no neutron ancestor found.
 
     // SiPMPulseInfo_fill
     int fSiPM1NPulses;
