@@ -189,6 +189,9 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("DirectParent_PDGs", &fDirectParent_PDGs);
     fANNIETree->Branch("DirectParent_NeutronAncestorTrackID", &fDirectParent_NeutronAncestorTrackID);
     fANNIETree->Branch("DirectParent_NeutronAncestorPDG", &fDirectParent_NeutronAncestorPDG);
+    fANNIETree->Branch("DirectParent_NeutronAncestorClass", &fDirectParent_NeutronAncestorClass);
+    fANNIETree->Branch("DirectParent_NeutronParentTrackID", &fDirectParent_NeutronParentTrackID);
+    fANNIETree->Branch("DirectParent_NeutronParentPDG", &fDirectParent_NeutronParentPDG);
   }
 
   if (SiPMPulseInfo_fill)
@@ -787,6 +790,9 @@ void ANNIEEventTreeMaker::ResetVariables()
   fDirectParent_PDGs.clear();
   fDirectParent_NeutronAncestorTrackID.clear();
   fDirectParent_NeutronAncestorPDG.clear();
+  fDirectParent_NeutronAncestorClass.clear();
+  fDirectParent_NeutronParentTrackID.clear();
+  fDirectParent_NeutronParentPDG.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -1418,6 +1424,8 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
   std::vector<MCParticle> *fMCParticles = nullptr;
   std::map<int, int> *fTrackIdToIndex = nullptr;
   std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronAncestor = nullptr;
+  std::map<unsigned long, std::map<double, int>> *fMCHitToNeutronAncestorClass = nullptr;
+  std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronParent = nullptr;
 
   bool got_MCHitToDirectParents = m_data->Stores["ANNIEEvent"]->Get("MCHitToDirectParents", fMCHitToDirectParents);
   if (!got_MCHitToDirectParents)  {
@@ -1442,6 +1450,8 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
     std::cout << "No MCHitToNeutronAncestor store in ANNIEEvent. Continuing to build tree " << std::endl;
     return;
   }
+  bool got_neutronAncestorClass = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
+  bool got_neutronParent = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronParent", fMCHitToNeutronParent);
 
   for (auto const& apair : *fMCHitToDirectParents) {
     unsigned long pmtID = apair.first;
@@ -1479,6 +1489,9 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
 
       int neutronAncestorTrackID = -5;
       int neutronAncestorPDG = -5;
+      int neutronAncestorClass = -5;
+      int neutronParentTrackID = -5;
+      int neutronParentPDG = -5;
       if (got_neutronAncestor && fMCHitToNeutronAncestor->find(pmtID) != fMCHitToNeutronAncestor->end()){
         auto const& pmtAncestors = fMCHitToNeutronAncestor->at(pmtID);
         if (pmtAncestors.find(hitTime) != pmtAncestors.end()){
@@ -1487,8 +1500,25 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
           neutronAncestorPDG = ancestorPair.second;      
         }
       }
+      if (got_neutronAncestorClass && fMCHitToNeutronAncestorClass->find(pmtID) != fMCHitToNeutronAncestorClass->end()){
+        auto const& pmtClasses = fMCHitToNeutronAncestorClass->at(pmtID);
+        if (pmtClasses.find(hitTime) != pmtClasses.end()){
+          neutronAncestorClass = pmtClasses.at(hitTime);
+        }
+      }
+      if (got_neutronParent && fMCHitToNeutronParent->find(pmtID) != fMCHitToNeutronParent->end()){
+        auto const& pmtParents = fMCHitToNeutronParent->at(pmtID);
+        if (pmtParents.find(hitTime) != pmtParents.end()){
+          auto const& parentPair = pmtParents.at(hitTime);
+          neutronParentTrackID = parentPair.first;
+          neutronParentPDG = parentPair.second;
+        }
+      }
       fDirectParent_NeutronAncestorTrackID.push_back(neutronAncestorTrackID);
       fDirectParent_NeutronAncestorPDG.push_back(neutronAncestorPDG);
+      fDirectParent_NeutronAncestorClass.push_back(neutronAncestorClass);
+      fDirectParent_NeutronParentTrackID.push_back(neutronParentTrackID);
+      fDirectParent_NeutronParentPDG.push_back(neutronParentPDG);
     }
   }
   return;
@@ -2913,4 +2943,3 @@ tuple<int, string> ANNIEEventTreeMaker::queryNearestACCID(const vector<IDConfigR
         return {-1, ""};
     return {bestACCID, bestPosition};
 }
-

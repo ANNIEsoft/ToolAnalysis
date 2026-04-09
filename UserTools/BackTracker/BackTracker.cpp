@@ -39,8 +39,10 @@ bool BackTracker::Initialise(std::string configfile, DataModel &data){
   fClusterEfficiency        = new std::map<double, double>;
   fClusterPurity            = new std::map<double, double>;
   fClusterTotalCharge       = new std::map<double, double>;
-  fMCHitToDirectParents       = new std::map<unsigned long, std::map<double, std::vector<int>>>;
-  fMCHitToNeutronAncestor     = new std::map<unsigned long, std::map<double, std::pair<int, int>>>;
+  fMCHitToDirectParents     = new std::map<unsigned long, std::map<double, std::vector<int>>>;
+  fMCHitToNeutronAncestor   = new std::map<unsigned long, std::map<double, std::pair<int, int>>>;
+  fMCHitToNeutronAncestorClass = new std::map<unsigned long, std::map<double, int>>;
+  fMCHitToNeutronParent     = new std::map<unsigned long, std::map<double, std::pair<int, int>>>;
   
   return true;
 }
@@ -56,7 +58,9 @@ bool BackTracker::Execute()
   fClusterPurity           ->clear();
   fClusterTotalCharge      ->clear();
   fMCHitToDirectParents    ->clear();
-  //  fMCHitToNeutronAncestor  ->clear();
+  fMCHitToNeutronAncestor  ->clear();
+  fMCHitToNeutronAncestorClass->clear();
+  fMCHitToNeutronParent->clear();
 
   fParticleToTankTotalCharge.clear();
 
@@ -93,6 +97,8 @@ bool BackTracker::Execute()
   m_data->Stores.at("ANNIEEvent")->Set("ClusterTotalCharge",       fClusterTotalCharge      );
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToDirectParents",     fMCHitToDirectParents    );
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronAncestor",   fMCHitToNeutronAncestor  );
+  m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
+  m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronParent", fMCHitToNeutronParent); //It stores 
 
   return true;
 }
@@ -229,13 +235,13 @@ void BackTracker::DirectParentsFromClockTickWindows()
 
 void BackTracker::FindNeutronAncestors() {
 
-  std::map<int, std::pair<int, int>> trackMap; // trackId -> (ParentID, pdg)
+  std::map<int, std::pair<int, int>> trackMap; // trackId -> (DirectParentID, pdg)
   for (auto& particle : *fMCParticles) {
     int trackId = particle.GetParticleID();
-    int parentId = particle.GetDirectParentID();
+    int directParentId = particle.GetDirectParentID();
     int pdg = particle.GetPdgCode();
 
-    trackMap[trackId] = std::make_pair(parentId, pdg);
+    trackMap[trackId] = std::make_pair(directParentId, pdg);
   }
 
   for (const auto& pmtPair : *fMCHitToDirectParents) {
@@ -248,7 +254,15 @@ void BackTracker::FindNeutronAncestors() {
 
       int neutronAncestorId = -5;
       int neutronAncestorPdg = -5;
-      int startParentID = directParents[0]; // take the first direct parent as the starting point
+      int neutronAncestorClass = -5;
+      //Neutron Classification:
+      // 1: primary neutron from initial interaction boundary
+      // 2: secondary neutron from proton
+      // 3: secondary neutron from neutron
+      // 4: secondary neutron from other parent type
+      int neutronParentTrackId = -5;
+      int neutronParentPdg = -5;
+      int startParentID = directParents[0]; // take the first direct parent of neutron as the starting point
       int currentID = startParentID;
 
       
@@ -267,8 +281,21 @@ void BackTracker::FindNeutronAncestors() {
         if (pdg == 2112 && neutronAncestorId == -5) { // if it's a neutron and we haven't already found an ancestor, save it
           neutronAncestorId = currentID;  // This is the neutron's TRACK ID
           neutronAncestorPdg = pdg;       // Store the PDG code (2112 for neutron)
+          neutronParentTrackId = parentID;
+          neutronParentPdg = (trackMap.count(parentID) ? trackMap[parentID].second : -5);
+
+          // Neutron classification based on parentage
+          if (neutronParentTrackId == 0) {
+            neutronAncestorClass = 1;      // primary neutron from initial interaction boundary
+          } else if (neutronParentPdg == 2212) {
+            neutronAncestorClass = 2;      // secondary neutron from proton
+          } else if (neutronParentPdg == 2112) {
+            neutronAncestorClass = 3;      // secondary neutron from neutron
+          } else {
+            neutronAncestorClass = 4;      // secondary neutron from other parent type
+          }
           break; //We care about the immidiate neutron ancestor. 
-                //Do we want to find the potential primary neutron ancestor, if there is one? (DJA)
+                //Do we want to find the potential primary neutron ancestor, if there is one? (DJA) - If the classification portion works that this question is answered.
         }
 
         if (parentID == -1) break; // reached the end of the ancestry
@@ -276,6 +303,8 @@ void BackTracker::FindNeutronAncestors() {
       }
 
       (*fMCHitToNeutronAncestor)[pmtID][hitTime] = std::make_pair(neutronAncestorId, neutronAncestorPdg);
+      (*fMCHitToNeutronAncestorClass)[pmtID][hitTime] = neutronAncestorClass;
+      (*fMCHitToNeutronParent)[pmtID][hitTime] = std::make_pair(neutronParentTrackId, neutronParentPdg);
 
     }
   }

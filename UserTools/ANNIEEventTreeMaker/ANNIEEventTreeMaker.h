@@ -227,6 +227,9 @@ private:
     std::vector<std::vector<int>> fDirectParent_PDGs;
     std::vector<int> fDirectParent_NeutronAncestorTrackID; //Stored unique neutron ancestor track ID for each MCHit, if it exists. -5 if no neutron ancestor found.
     std::vector<int> fDirectParent_NeutronAncestorPDG; //For now, we are storing Neutron's truth information. But, it could be exapand to other particle types if needed. -5 if no neutron ancestor found.
+    std::vector<int> fDirectParent_NeutronAncestorClass; // -5 none, 1 primary, 2 secondary-from-proton, 3 secondary-from-neutron, 4 secondary-other
+    std::vector<int> fDirectParent_NeutronParentTrackID; // direct parent track ID of the stored neutron ancestor
+    std::vector<int> fDirectParent_NeutronParentPDG; // direct parent PDG of the stored neutron ancestor
 
     // SiPMPulseInfo_fill
     int fSiPM1NPulses;
