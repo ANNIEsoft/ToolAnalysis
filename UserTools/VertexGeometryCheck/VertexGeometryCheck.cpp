@@ -31,9 +31,7 @@ bool VertexGeometryCheck::Initialise(std::string configfile, DataModel &data){
   fazimuth = new TH1D("azimuth","azimuth angle",180,0,360);
   fconeangle = new TH1D("coneangle","cone angle",90,0,90);
   fdigitcharge = new TH1D("digitcharge","digit charge", 500,0,500);
-  fdigittime = new TH1D("digittime", "digit time", 1000, -100, 900);
-  fdigittime = new TH1D("pmtdigittime", "digit time", 1000, -100, 900);
-  fdigittime = new TH1D("lappddigittime", "digit time", 1000, -100, 900);
+  fdigittime = new TH1D("digittime", "digit time", 1000, -10000, 10000);
   flappdtimesmear = new TH1D("lappdtimesmear","lappdtimesmear", 100, 0, 0.1);
   fpmttimesmear = new TH1D("pmttimesmear","pmttimesmear",100, 0, 1.0);   
   fYvsDigitTheta_all = new TH2D("YvsDigitTheta_all", "Y vs DigitTheta", 400, -200, 200, 400, -200, 200);
