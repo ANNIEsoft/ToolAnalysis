@@ -16,6 +16,7 @@ bool VtxSeedFineGrid::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("useDirectionGrid", useDirectionGrid);
   m_variables.Get("multiGrid", multiGrid);
   m_variables.Get("InputFile", InputFile);
+  m_variables.Get("RecoClusters", fRecoClusters);
 
 
   m_data= &data; //assigning transient data pointer
@@ -43,17 +44,48 @@ bool VtxSeedFineGrid::Execute(){
 		return false;
 	}*/
 
+	// check if event passes the cut
+	bool EventCutstatus = false;
+	auto get_evtstatus = m_data->Stores.at("RecoEvent")->Get("EventCutStatus", EventCutstatus);
+	if (!get_evtstatus) {
+		Log("Error: The PhaseITreeMaker tool could not find the Event selection status", v_error, verbosity);
+		return false;
+	}
+
+	if (!EventCutstatus) {
+		Log("Message: This event doesn't pass the prior event selection. ", v_message, verbosity);
+		return true;
+	}
+
+	if(!fRecoClusters){
 	// Retrive digits from RecoEvent
 	auto get_digit = m_data->Stores.at("RecoEvent")->Get("RecoDigit", fDigitList);  ///> Get digits from "RecoEvent" 
 	if (!get_digit) {
 		Log("LikelihoodFitterCheck  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!", v_error, verbosity);
 		return false;
 	}
+	}
+	else {
+		vector<RecoDigit> tempDigitList;
+		auto get_cluster = m_data->Stores.at("RecoEvent")->Get("RecoClusters", fClusterList);
+		if(not get_cluster){
+			Log("VtxSeedFineGrid Tool: Error retrieving RecoClusters, no clusters from the RecoEvent!", v_error, verbosity);
+			return false;
+		}
+		if (fClusterList->size() != 0 && fClusterList->at(0).GetClusterMode() == 1) {
+			tempDigitList = fClusterList->at(0).GetDigitList();
+			fDigitList = &tempDigitList;
+		}
+		else {
+			Log("VtxSeedFineGrid Tool: No primary Cherenkov Cluster.  Aborting", v_error, verbosity);
+			return false;
+		}
+	}
 	auto get_flagsapp = m_data->Stores.at("RecoEvent")->Get("EventFlagApplied",fEventStatusApplied);
     auto get_flags = m_data->Stores.at("RecoEvent")->Get("EventFlagged",fEventStatusFlagged); 
     if(!get_flagsapp || !get_flags) {
       Log("PhaseITreeMaker tool: No Event status applied or flagged bitmask!!", v_error, verbosity);
-      return false;	
+      //return false;	
     }
     // check if event passes the cut
     if((fEventStatusFlagged) != 0) {
@@ -82,7 +114,7 @@ bool VtxSeedFineGrid::Execute(){
 	}
 	else { Center.push_back(vSeedVtxList->at(centerIndex[0]).GetPosition()); }
 	this->GenerateFineGrid();
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < Center.size(); i++) {
 		std::cout << "Center " << i << ": " << Center.at(i).X() << ", " << Center.at(i).Y() << ", " << Center.at(i).Z() << endl;
 	}
 	m_data->Stores.at("RecoEvent")->Set("vSeedVtxList", vSeedVtxList, true);
@@ -137,8 +169,8 @@ Position VtxSeedFineGrid::FindCenter() {
 	double conefom = -999.999 * 100;
 	myvtxgeo->CalcExtendedResiduals(trueVtxX, trueVtxY, trueVtxZ, 0.0, trueDirX, trueDirY, trueDirZ);
 	myFoMCalculator.TimePropertiesLnL(trueVtxT, timefom);
-//	myFoMCalculator.ConePropertiesFoM(ConeAngle, conefom);
-	fom = /*timefom * 0.5 + */conefom; // * 0.5;
+	myFoMCalculator.ConePropertiesFoM(ConeAngle, conefom);
+	fom = timefom * 0.5 + conefom * 0.5;
 	if (verbosity > 0)  cout << "VtxSeedFineGrid Tool: " << "FOM at true vertex = " << fom << endl;
   
 	for (int m = 0; m < vSeedVtxList->size(); m++) {
@@ -175,7 +207,7 @@ Position VtxSeedFineGrid::FindCenter() {
 			iSeed.GetDirection()->SetTheta(findDirectionMRD().GetTheta());
 		}*/
 		if (useDirectionGrid) {
-			for (int l = 0; l < 50; l++) {
+			for (int l = 0; l < 100; l++) {
 				double theta = (6 * TMath::Pi() / 50) * l;
 				double phi = (TMath::Pi() / 200) * l;
 				seedDirX = sin(phi)*cos(theta);
@@ -228,7 +260,7 @@ Position VtxSeedFineGrid::FindCenter() {
 				bestFOM[2] = bestFOM[1];
 				bestFOM[1] = bestFOM[0];
 				centerIndex[2] = centerIndex[1];
-				centerIndex[1] = centerIndex[2];
+				centerIndex[1] = centerIndex[0];
 			}
 			bestFOM[0] = fom;
 			peakX = seedX;
@@ -237,6 +269,28 @@ Position VtxSeedFineGrid::FindCenter() {
 			SeedDir = iSeed.GetDirection();
 			thisCenterSeed = iSeed;
 			centerIndex[0] = m;
+		}
+		if (multiGrid) {
+			if (fom < bestFOM[0] && fom > bestFOM[1]) {
+				bestFOM[2] = bestFOM[1];
+				centerIndex[2] = centerIndex[1];
+				bestFOM[1] = fom;
+				peakX = seedX;
+				peakY = seedY;
+				peakZ = seedZ;
+				SeedDir = iSeed.GetDirection();
+				thisCenterSeed = iSeed;
+				centerIndex[1] = m;
+			}
+			if (fom < bestFOM[0] && fom<bestFOM[1] && fom>bestFOM[2]) {
+				bestFOM[2] = fom;
+				peakX = seedX;
+				peakY = seedY;
+				peakZ = seedZ;
+				SeedDir = iSeed.GetDirection();
+				thisCenterSeed = iSeed;
+				centerIndex[2] = m;
+			}
 		}
 	}
 	//	return thisCenterSeed.GetPosition();
@@ -251,7 +305,28 @@ void VtxSeedFineGrid::GenerateFineGrid() {
 	vSeedVtxList->clear();
 	double medianTime;
 	//double length = NSeeds something.  TODO for now setting to standard size 25x25x25, with seeds 5cm apart.
-	for (int l = 0; l < 3; l++) {
+	if (multiGrid) {
+		for (int l = 0; l < 3; l++) {
+			for (int i = 0; i < 5; i++) {
+				for (int j = 0; j < 5; j++) {
+					for (int k = 0; k < 5; k++) {
+						Seed.SetZ(Center.at(l).Z() - 10 + 5 * i);
+						Seed.SetX(Center.at(l).X() - 10 + 5 * j);
+						Seed.SetY(Center.at(l).Y() - 10 + 5 * k);
+
+
+						//medianTime = this->GetMedianSeedTime(Seed);
+						thisFineSeed.SetVertex(Seed, medianTime);
+						thisFineSeed.SetDirection(SeedDir);
+						vSeedVtxList->push_back(thisFineSeed);
+
+					}
+				}
+			}
+		}
+	}
+	else {
+		int l = 0;
 		for (int i = 0; i < 5; i++) {
 			for (int j = 0; j < 5; j++) {
 				for (int k = 0; k < 5; k++) {

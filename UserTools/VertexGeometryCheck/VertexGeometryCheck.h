@@ -40,6 +40,7 @@ class VertexGeometryCheck: public Tool {
   
   /// \brief recodigit vector
  	std::vector<RecoDigit>* fDigitList = 0;
+    std::vector<RecoCluster>* fClusterList = 0;
  		
  	/// \brief true vertex pointer
  	RecoVertex* fTrueVertex = 0;
@@ -64,8 +65,12 @@ class VertexGeometryCheck: public Tool {
   TH1D *fdigittime;
   TH1D *flappdtimesmear; 
   TH1D *fpmttimesmear;
-  TH2D *fYvsDigitTheta_all;
+  TH2D* fYvsDigitTheta_all;
+  TH2D* StripHits1;
   double vertheta = -999, verphi = -999;
+  int StripTimePlot = -1;
+  bool cleanHitsOnly = 0;
+  bool fRecoCluster;
 
 
 /// verbosity levels: if 'verbosity' < this level, the message type will be logged.
