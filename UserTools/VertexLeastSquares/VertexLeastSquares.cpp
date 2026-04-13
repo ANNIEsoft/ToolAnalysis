@@ -196,31 +196,14 @@ std::vector<Position> VertexLeastSquares::GenerateVetices()   // this is Andrew'
   for (double yValue = yMin; yValue <= yMax; yValue += fYSpacing) 
   	ys.push_back(yValue);
 
+  // generate the x and z values using the sunflower pattern
   std::vector<double> xs;
   std::vector<double> zs;
   for (int n = 1; n < fNPlanarPoints+1; ++n) {
 	double rad = ( (n > fNPlanarPoints + fNBoundary) ? 1.0 :
 	sqrt((n+0.5)/(fNPlanarPoints - (fNBoundary+1.)/2.)) );
 
-	rad *= max_radius;
-	rad = rad > max_radius ? max_radius : rad;
-
-	double angle = 2. * pi * n / phisq;
-
-	xs.push_back(rad*cos(angle));
-	zs.push_back(rad*sin(angle));
-  }
-
-  
-  // generate the x and z values using the sunflower pattern
-  std::vector<double> xs;
-  std::vector<double> zs;
-  double max_radius = fGeom->GetTankRadius() + fRadialBuffer;
-  for (int n = 1; n < fNPlanarPoints+1; ++n) {
-	double rad = ( (n > fNPlanarPoints + fNBoundary) ? 1.0 :
-	  sqrt((n+0.5)/(fNPlanarPoints - (fNBoundary+1.)/2.)) );
-
-	// scale to the extended radius
+    // scale to the extended radius
 	rad *= max_radius;
 	rad = rad > max_radius ? max_radius : rad;
 
