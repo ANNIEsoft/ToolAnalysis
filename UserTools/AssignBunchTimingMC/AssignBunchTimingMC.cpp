@@ -15,6 +15,7 @@ bool AssignBunchTimingMC::Initialise(std::string configfile, DataModel &data){
     bool got_width     = m_variables.Get("bunchwidth", fbunchwidth);
     bool got_interval  = m_variables.Get("bunchinterval", fbunchinterval);
     bool got_count     = m_variables.Get("bunchcount", fbunchcount);
+    bool got_BRF       = m_variables.Get("BRFfituncertainty", fBRF);
     bool got_sample    = m_variables.Get("sampletype", fsample);
     bool got_trigger   = m_variables.Get("prompttriggertime", ftriggertime);
     bool got_waveform  = m_variables.Get("PMTWaveformSim", fPMTWaveformSim);
@@ -49,6 +50,15 @@ bool AssignBunchTimingMC::Initialise(std::string configfile, DataModel &data){
         Log(logmessage, v_warning, verbosity);
     }
 
+    // Uncertainty due to beam signals / electronic jitter in our system
+    // see https://annie-docdb.fnal.gov/cgi-bin/sso/ShowDocument?docid=6489 for more information
+    if (!got_BRF) {
+        fBRF = 0;
+        logmessage = ("Warning (AssignBunchTimingMC): \"BRFfituncertainty\" not "
+            "set in the config file. Using default: 0ns (no uncertainty will be included for this)");
+        Log(logmessage, v_warning, verbosity);
+    }
+
     if (!got_sample) {
         fsample = 0;    // assume they are using the Tank samples
         logmessage = ("Warning (AssignBunchTimingMC): \"sampletype\" not "
@@ -78,6 +88,7 @@ bool AssignBunchTimingMC::Initialise(std::string configfile, DataModel &data){
         std::cout<<"bunch width       = "<<fbunchwidth<<" ns"<<"\n";
         std::cout<<"bunch interval    = "<<fbunchinterval<<" ns"<<"\n";
         std::cout<<"number of bunches = "<<fbunchcount<<"\n";
+        std::cout<<"BRF uncertainty   = "<<fBRF<<"\n";
         std::cout<<"PMTWaveformSim    = "<<fPMTWaveformSim<<"\n";
         std::cout<<"sample type       = "<<(fsample == 0 ? "(0) Tank" : "(1) World")<<"\n";
         std::cout<<"trigger time      = "<<(ftriggertime == 0 ? "(0) prompt trigger starts when first particle arrives (default WCSim)" 
@@ -98,16 +109,6 @@ bool AssignBunchTimingMC::Execute()
     if (verbosity >= v_debug) {
         std::cout << "AssignBunchTimingMC: Executing tool..." << std::endl;
     }
-
-    // An upstream tool may opt to skip this execution stage
-    // For example the PMTWaveformSim tool will skip events with no MCHits or if
-    // no waveforms are produced.
-    bool skip = false;
-    bool got_skip_status = m_data->Stores["ANNIEEvent"]->Get("SkipExecute", skip);
-    if (got_skip_status && skip) {
-        Log("AssignBunchTimingMC: An upstream tool told me to skip this event.",v_warning,verbosity);
-        return true;
-    } 
 
     if (!LoadStores())      // Load info from store
         return false;
@@ -216,6 +217,9 @@ bool AssignBunchTimingMC::LoadStores()
 
 void AssignBunchTimingMC::BNBtiming()
 {
+
+    // Add instrinsic bunch width and the jitter from our beam signals / fitting
+
     // Determined from GENIE samples (as of Dec 2024)
     const double tank_time = 33.0;    // Tank neutrino arrival time: 33ns
     const double world_time = 33.0;   // WORLD neutrino arrival time: 33ns
@@ -239,9 +243,17 @@ void AssignBunchTimingMC::BNBtiming()
     std::normal_distribution<double> distribution(0, fbunchwidth); 
     jitter = distribution(generator);
 
+    // assign beam jitter (BRF uncertainty)
+    std::normal_distribution<double> BRF_distribution(0, fBRF);
+    BRF_jitter = BRF_distribution(generator);
+
     if (verbosity >= v_message) {
-        std::string logmessage = "AssignBunchTimingMC: bunchNumber = " + std::to_string(bunchNumber) + " | t0 = " + std::to_string(new_nu_time);
-        Log(logmessage, v_debug, verbosity);
+        std::ostringstream logmessage;
+        logmessage << "AssignBunchTimingMC: bunchNumber = " << bunchNumber
+                << " | t0 = " << new_nu_time
+                << " | sampled intrinsic bunch jitter = " << jitter << " ns"
+                << " | sampled BRF jitter = " << BRF_jitter << " ns";
+        Log(logmessage.str(), v_debug, verbosity);
     }
 
 }
@@ -302,8 +314,8 @@ void AssignBunchTimingMC::CalculateClusterAndBunchTimesPMTWaveformSim(std::vecto
         Log(logmessage, v_debug, verbosity);
     }
 
-    // calculate BunchTime
-    bunchTime = fbunchinterval * bunchNumber + clusterTime + jitter + new_nu_time ;
+    // calculate BunchTime (add the two gaussian contributions independently)
+    bunchTime = fbunchinterval * bunchNumber + clusterTime + jitter + BRF_jitter + new_nu_time ;
     if (verbosity >= v_debug) {
         std::string logmessage = "AssignBunchTimingMC: bunchTime = " + std::to_string(bunchTime);
         Log(logmessage, v_debug, verbosity);

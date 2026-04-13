@@ -329,26 +329,55 @@ bool PMTDataDecoder::Execute(){
           unsigned int uSlotNum = (unsigned int)SlotNum;
           unsigned int uChannelID = (unsigned int)ChannelID;
 
-
-	  //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
+          //in MonitorTankTime tool, it load a file about active slot and crate, if not active, don't find the waveform in it. not sure do we need it or not
+          
+          if(RunNumber >= 5870)
+          {
+            // BRF is at crate 1, slot 2 , channel 1 after run 5870 (first run for beamyear 2025-2026)
+            // the timeline is:
+            // around 5870 we started taking beam runs to check DAQ was ok. no BNB
+            // run 5887 LAPPD IDs were changed. no BNB
+            // run 5896 BNB returns
+			// BRF is moved back to crate 1, slot 15, channel 1 and tested working since run 5914, by swapping the Level Translator
+			// The BRF (create 1, slot 15, channel 1), RWM (crate 1, slot 15, channel 3) and BES (crate 1, slot 3, channel 1)
+			if(saveBRFRaw){
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
+            {
+              std::vector<uint16_t> BRFWaveform = apair.second;
+              (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+            }
+            }
+            
+            if(saveRWMRaw){
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 3)
+            {
+              std::vector<uint16_t> RWMWaveform = apair.second;
+              (*RWMRawWaveforms)[timestamp] = RWMWaveform;
+            }
+            }
+          }else{
+            // BRF is at crate 1, slot 15 , channel 1 after run 5870 (first run for beamyear 2025-2026)
           if(saveBRFRaw){
-          if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
-          {
-            std::vector<uint16_t> BRFWaveform = apair.second;
-            (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
+            {
+              std::vector<uint16_t> BRFWaveform = apair.second;
+              (*BRFRawWaveforms)[timestamp] = BRFWaveform;
+            }
+            }
+
+            if(saveRWMRaw){
+            if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
+            {
+              std::vector<uint16_t> RWMWaveform = apair.second;
+              (*RWMRawWaveforms)[timestamp] = RWMWaveform;
+            }
+            }
           }
-          }
-          if(saveRWMRaw){
-          if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 2)
-          {
-            std::vector<uint16_t> RWMWaveform = apair.second;
-            (*RWMRawWaveforms)[timestamp] = RWMWaveform;
-          }
-          }
+
+
         }
       }
     }
-	  
     m_data->CStore.Set("RWMRawWaveforms",RWMRawWaveforms);
     m_data->CStore.Set("BRFRawWaveforms",BRFRawWaveforms);
 

@@ -15,7 +15,7 @@ files_to_load configfiles/RingCounting/RC_files_to_load.txt
 # Model version -> check documentation
 version 1_0_0
 # Folder containing models
-model_path /exp/annie/app/users/dschmid/RingCountingStore/models/
+model_path /pnfs/annie/persistent/reconstruction/RingCounting/RingCountingStore/models/
 # Masked PMTs (to 0) config -> check documentation
 pmt_mask november_22
 # Output file

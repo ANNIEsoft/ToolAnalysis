@@ -1,0 +1,4 @@
+verbosity 0
+#TriggerMaskFile ./configfiles/LAPPDBeamAnalysis/LAPPDRaw/DefaultTriggerMask.txt
+StoreTrigOverlap 0
+ReadTrigOverlap 0

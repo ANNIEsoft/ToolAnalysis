@@ -249,6 +249,7 @@ class EventSelector: public Tool {
   bool fThroughGoing = false;
   bool fEventCutStatus;
   bool fIsMC; 
+  bool fMCWaveform;
   int fTriggerWord;
   int fRecoPDG;
   bool fTriggerExtended = false;

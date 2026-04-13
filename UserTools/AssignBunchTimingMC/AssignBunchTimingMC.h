@@ -46,13 +46,16 @@ class AssignBunchTimingMC: public Tool {
         double fbunchwidth;       ///< BNB intrinsic bunch width in ns
         double fbunchinterval;    ///< BNB bunch spacing in ns
         int fbunchcount;          ///< number of BNB bunches per spill
+        double fBRF;              ///< BRF fit uncertainty extracted from the data (due to any additional electronic jitter unaccounted for)
         int fsample;              ///< GENIE Tank or WORLD samples
         int ftriggertime;         ///< whether the samples used the default WCSim prompt trigger = 0 (when particles enter the volume), or the adjusted prompt trigger based on the start of the beam dump
         bool fPMTWaveformSim;     ///< whether to use the PMTWaveform data-like hits or the defaul MCHits
 
+
         double new_nu_time;       ///< offset needed to make the cluster times beam realistic
         int bunchNumber;          ///< randomly assigned bunch number
         double jitter;            ///< random jitter based on the intrinsic bunch width
+        double BRF_jitter;        ///< random jitter based on the beam timing + fit uncertainties
         double bunchTime;         ///< individual bunch time assigned for a specific cluster
 
         /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.

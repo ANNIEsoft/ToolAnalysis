@@ -632,6 +632,22 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                 detstatus,
                 0.);
 
+  if (verbosity > 5) std::cout << "Filling a channel with PMT_type == " << PMT_type << ", PMT_type == LUX:" << (PMT_type == "LUX") << ", PMT_type == Hamamatsu:" << (PMT_type == "Hamamatsu") << std::endl;
+  int channelType = 0;
+  if (PMT_type == "LUX"){
+    channelType = 1;
+  } else if (PMT_type == "ETEL"){
+    channelType = 2;
+  } else if (PMT_type == "Hamamatsu"){
+    channelType = 3;
+  } else if (PMT_type == "Watchboy"){
+    channelType = 4;
+  } else if (PMT_type == "Watchman"){
+    channelType = 5;
+  } else {
+    Log("LoadGeometry Tool: Loading UNDEFINED PMT type for channel "+std::to_string(channel_num),0,verbosity);
+  }
+
   Channel pmtchannel( channel_num,
                       Position(0,0,0.),
                       -1, // stripside
@@ -645,7 +661,8 @@ bool LoadGeometry::ParseTankPMTDataEntry(std::vector<std::string> SpecLine,
                       hv_crate,
                       hv_slot,
                       hv_channel,
-                      chanstatus); //channel status same as detector status here
+                      chanstatus,
+                      channelType); //channel status same as detector status here
 
   // Also add this channel to the Tank PMT electronics map
   std::vector<int> crate_map{signal_crate,signal_slot,signal_channel};
