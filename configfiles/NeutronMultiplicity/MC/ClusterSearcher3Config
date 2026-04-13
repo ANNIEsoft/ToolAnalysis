@@ -1,0 +1,22 @@
+# ClusterSearcher2 config file
+
+verbosity                  0 
+ClusterMode		     3			#searching track-like clusters	
+Config                      0			#config type: 1 = pulse height cut, 2 = +neighbour cut, 3 = +cluster cut							
+PmtMinPulseHeight           0		#minimum pulse height
+PmtNeighbourRadius          1000		#digit neighbouring distance [cm]
+PmtMinNeighbourDigits       0			#minimum neighbour digits
+PmtClusterRadius            1000		#digit clustering distance [cm]      
+PmtTimeWindowN              10		#neighbouring time window [ns]    
+PmtTimeWindowC              10		#clustering time window [ns]           
+PmtMinHitsPerCluster        1			#number of hits per cluster								                         
+LappdMinPulseHeight         0			#minimum pulse height                             
+LappdNeighbourRadius        250              #digit neighbouring distance [cm]              
+LappdMinNeighbourDigits     0              #minimum neighbour digits                      
+LappdClusterRadius          250              #digit clustering distance [cm]                                    
+LappdTimeWindowN            1               #neighbouring time window [ns]                 
+LappdTimeWindowC            1               #clustering time window [ns]                   
+LappdMinHitsPerCluster      5			#number of digits per cluster	
+#MinClusterDigits           50		#minimum clustered digits	(LAPPD+PMT)		
+MinClusterDigits            1			#minimum clustered digits	(PMT-only)	
+FirstRun 0

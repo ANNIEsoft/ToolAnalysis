@@ -1,0 +1,13 @@
+verbosity 5
+outfile /Data/1225beamsim/NeutronCheck_wfsmearrc50w2sst-pmt1
+#outfile /Data/HighEnergy/NeutronCheck_HET_nwfrc-wcsmear
+#outfile /Data/Ambesim/NeutronCheck_Ambe_Tree
+#outfile /Data/beamlikemuon/NeutronCheck_muon_Tree
+IsData 0
+UseClean 0
+UseCleanCluster 1
+EventStore RecoEvent 
+FinderCompare 0
+VertexInfo 1
+ParticleInfo 1
+

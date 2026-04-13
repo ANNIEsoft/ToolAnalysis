@@ -1,0 +1,13 @@
+# VtxExtendedVertexFinder config file
+
+verbosity 0
+
+# Only one of the options below should be set to 1. All the others should be set to 0
+UseTrueVertexAsSeed 0
+UsePointVertexAsSeed 0
+FitAllOnSeedGrid 1
+UseMeanTimeAsSeed 0
+UsePDFFile 0
+RecoCluster 1
+FitTimeWindowMax 10000
+PDFFile ./Data/Singletest/VGcheck-pdftest.root
