@@ -185,7 +185,7 @@ std::vector<Position> VertexLeastSquares::GenerateVetices()   // this is Andrew'
   std::vector<double> ys;
   double yMin = fGeom->GetTankCentre().Y() - fGeom->GetTankHalfheight();
   double yMax = fGeom->GetTankCentre().Y() + fGeom->GetTankHalfheight();
-  double max_radius = fGeom->GetTankRadius()
+  double max_radius = fGeom->GetTankRadius();
 
   if (fExternalSeeding) {
 	yMin -= fYBuffer;
