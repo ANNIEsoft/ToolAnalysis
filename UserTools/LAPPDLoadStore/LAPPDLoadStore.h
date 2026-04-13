@@ -46,6 +46,9 @@ public:
     void LoadRunInfo();
     void SaveOffsets();
 
+    vector<IDConfigRecord> LoadIDConfig(const string& filename);
+    tuple<int, string> queryNearestACCID(const vector<IDConfigRecord>& data, int targetRun, int manufacturerID);
+
 private:
     // This tool, control variables (only used in this tool, every thing that is not an data object)
     // Variables that you get from the config file
@@ -143,6 +146,8 @@ private:
     std::vector<int> LAPPDEventIndex_ID; // for each LAPPD ID, count the index of current loaded event
     // For example, this part file may have a ID=0 event, b ID=1 event, while loading data object c and loaded 3 ID=0 and 4 ID=1, I may have 
     // LAPPDEventIndex_ID = {3, 4}
+    
+    vector<IDConfigRecord> idConfigRecords;
 
     // save PPS info for the second order correction
     std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore;
@@ -174,6 +179,14 @@ private:
     int partFileNumber;
     int eventNumberInPF;
     std::ofstream debugStoreReadIn;
+
+    // verbosity levels: if 'verbosity' < this level, the message type will be logged.
+    int v_error=0;
+    int v_warning=1;
+    int v_message=2;
+    int v_debug=3;
+    std::string logmessage;
+    int get_ok;
 };
 
 #endif

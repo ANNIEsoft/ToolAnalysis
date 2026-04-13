@@ -25,6 +25,7 @@ Nboards 6 #Number of pedestal files to be read in
 #PedinputfileTXT ../Pedestals/LAPPD40/P
 PedinputfileTXT /pnfs/annie/persistent/processed/processed_EBV2_LAPPDFiltered/Pedestal/2022_LAPPD40/P
 
+ACCIDConfigFile ./configfiles/LAPPDProcessedAna/LAPPDIDConfig.csv
 
 ReadStorePdeFile 0
 loadFromStoreDirectly 0
