@@ -54,7 +54,8 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double& vtxFOM)
   // ================
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){    
     	int detType = this->fVtxGeo->GetDigitType(idigit); 
-      delta = this->fVtxGeo->GetDelta(idigit) - vtxTime;
+      delta=fVtxGeo->GetExtendedResidual(idigit);                  //delta = this->fVtxGeo->GetDelta(idigit)/* - vtxTime*/;
+      //cout<<"delta check: delta, vtxTime, digitdelta, digittime: "<<delta<<", "<<vtxTime<<", "<<fVtxGeo->GetDelta(idigit)<<", "<<fVtxGeo->GetDigitT(idigit) << endl;
       sigma = this->fVtxGeo->GetDeltaSigma(idigit);
       type = this->fVtxGeo->GetDigitType(idigit);
       if (type == RecoDigit::PMT8inch){  //PMT8Inch
@@ -67,6 +68,7 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double& vtxFOM)
       }
       A  = 1.0 / ( 2.0*sigma*sqrt(0.5*TMath::Pi()) ); //normalisation constant
       Preal = A*exp(-(delta*delta)/(2.0*sigma*sigma));
+      //cout<<"Pcheck: " << Preal<<endl;
       P = (1.0-Pnoise)*Preal + Pnoise; 
       chi2 += -2.0*log(P);
       ndof += 1.0; 
@@ -80,6 +82,7 @@ void FoMCalculator::TimePropertiesLnL(double vtxTime, double& vtxFOM)
   // return figure of merit
   // ======================
   vtxFOM = fom;
+  //cout<<"timefom: "<< vtxFOM<<endl;
   return;
 }
 
@@ -103,7 +106,7 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   double fom = -9999.;
 
   for( int idigit=0; idigit<this->fVtxGeo->GetNDigits(); idigit++ ){ 	
-    if( this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch){
+    if( this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
       deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
       digitCharge = this->fVtxGeo->GetDigitQ(idigit);
 
@@ -135,83 +138,6 @@ void FoMCalculator::ConePropertiesFoM(double coneEdge, double& coneFOM)
   // ======================
   coneFOM = fom;
   return;
-}
-
-void FoMCalculator::ConePropertiesLnL(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneEdge, double& chi2, TH1D angularDist, double& phimax, double& phimin) {
-    double coneEdgeLow = 21.0;  // cone edge (low side)      
-    double coneEdgeHigh = 3.0;  // cone edge (high side)   [muons: 3.0, electrons: 7.0]
-    double deltaAngle = 0.0;
-    double digitCharge = 0.0;
-    double digitPE = 0.0;
-    double coneCharge = 0.0;
-    double allCharge = 0.0;
-    double outerCone = -99.9;
-    double coef = angularDist.Integral(); //1000;
-    chi2 = 0;
-    cout << "ConePropertiesLnL Position: (" << vtxX << ", " << vtxY << ", " << vtxZ << ")" << endl;
-    cout << "And Direction: (" << dirX << ", " << dirY << ", " << dirZ << ")" << endl;
-
-    double digitX, digitY, digitZ;
-    double dx, dy, dz, ds;
-    double px, py, pz;
-    double cosphi, phi, phideg;
-    phimax = 0;
-    phimin = 10;
-    double allPE = 0;
-    int refbin;
-    double weight;
-    double P;
-    
-    for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
-        if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
-            digitCharge = this->fVtxGeo->GetDigitQ(idigit);
-            allCharge += digitCharge;
-        }
-    }
-
-    for (int idigit = 0; idigit < this->fVtxGeo->GetNDigits(); idigit++) {
-        if (this->fVtxGeo->IsFiltered(idigit) && this->fVtxGeo->GetDigitType(idigit) == RecoDigit::PMT8inch) {
-            deltaAngle = this->fVtxGeo->GetAngle(idigit) - coneEdge;
-            digitCharge = this->fVtxGeo->GetDigitQ(idigit);
-            //digitPE = this->fVtxGeo->GetDigitPE(idigit);
-            digitX = fVtxGeo->GetDigitX(idigit);
-            digitY = fVtxGeo->GetDigitY(idigit);
-            digitZ = fVtxGeo->GetDigitZ(idigit);
-            dx = digitX - vtxX;
-            dy = digitY - vtxY;
-            dz = digitZ - vtxZ;
-            std::cout << "dx, dy, dz: " << dx << ", " << dy << ", " << dz << endl;
-            ds = pow(dx * dx + dy * dy + dz * dz, 0.5);
-            std::cout << "ds: " << ds << endl;
-            px = dx / ds;
-            py = dy / ds;
-            pz = dz / ds;
-            std::cout << "px, py, pz: " << px << ", " << py << ", " << pz << endl;
-            std::cout << "dirX, dirY, DirZ: " << dirX << ", " << dirY << ", " << dirZ << endl;
-
-            cosphi = 1.0;
-            phi = 0.0;
-            //cout << "angle direction: " << dx << " " << dy << " " << dz << " = " << ds << endl;
-            cosphi = px * dirX + py * dirY + pz * dirZ;
-            //cout << "cosphi: " << cosphi << endl;
-            phi = acos(cosphi);
-
-            if (phi > phimax) phimax = phi;
-            if (phi < phimin) phimin = phi;
-
-            phideg = phi / (TMath::Pi() / 180);
-            std::cout << "phi, phideg: " << phi << ", " << phideg << endl;
-            std::cout << "vs. Zenith: " << fVtxGeo->GetZenith(idigit) << endl;
-            refbin = angularDist.FindBin(phideg);
-            weight = angularDist.GetBinContent(refbin)/coef;
-            P = digitCharge / allCharge;
-            //cout << "conefomlnl P: " << P << ", weight: " << weight << endl;
-            chi2 += pow(P - weight, 2)/weight;
-
-            //outerCone = -outhits/inhits;
-        }
-    }
-    //chi2 = (100 - chi2) * exp(-pow(pow(0.7330382, 2) - pow(phimax - phimin, 2), 2) / pow(0.7330382, 2));
 }
 
 
@@ -369,7 +295,7 @@ void FoMCalculator::PointVertexChi2(double vtxX, double vtxY, double vtxZ,
 
   // calculate residuals
   // ===================
-  this->fVtxGeo->CalcPointResiduals(vtxX, vtxY, vtxZ, 0.0, 
+  this->fVtxGeo->CalcPointResiduals(vtxX, vtxY, vtxZ, vtxTime /*0.0 Set to Zero and subtracted later? Why??? -F.A. Lemmons*/,
                                  dirX, dirY, dirZ); //calculate expected vertex time for each digit
   // calculate figure of merit
   // =========================
@@ -402,7 +328,7 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
 
   // calculate residuals
   // ===================
-  this->fVtxGeo->CalcExtendedResiduals(vtxX,vtxY,vtxZ,0.0,dirX,dirY,dirZ);
+  this->fVtxGeo->CalcExtendedResiduals(vtxX,vtxY,vtxZ, vtxTime /*0.0 Set to Zero and subtracted later? Why??? -F.A. Lemmons*/,dirX,dirY,dirZ);
   
   // calculate figure of merit
   // =========================
@@ -422,39 +348,6 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
   if( fom<-9999. ) fom = -9999.;
 
   return;
-}
-
-void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, double dirX, double dirY, double dirZ, double coneAngle, double vtxTime, double& fom, TH1D pdf)
-{
-	// figure of merit
-	// ===============
-	double vtxFOM = -9999.;
-	double timeFOM = -9999.;
-	double coneFOM = -9999.;
-    double phimax, phimin;
-
-	// calculate residuals
-	// ===================
-	this->fVtxGeo->CalcExtendedResiduals(vtxX, vtxY, vtxZ, 0.0, dirX, dirY, dirZ);
-
-	// calculate figure of merit
-	// =========================
-
-    this->ConePropertiesLnL(vtxX, vtxY, vtxZ, dirX, dirY, dirZ, coneAngle, coneFOM, pdf, phimax, phimin);
-	this->TimePropertiesLnL(vtxTime, timeFOM);
-
-	double fTimeFitWeight = this->fTimeFitWeight;
-	double fConeFitWeight = this->fConeFitWeight;
-	vtxFOM = (fTimeFitWeight*timeFOM + fConeFitWeight * coneFOM) / (fTimeFitWeight + fConeFitWeight);
-
-	// calculate overall figure of merit
-	// =================================
-	fom = vtxFOM;
-
-	// truncate
-	if (fom < -9999.) fom = -9999.;
-
-	return;
 }
 
 
