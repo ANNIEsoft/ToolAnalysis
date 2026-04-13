@@ -1477,7 +1477,7 @@ void ANNIEEventTreeMaker::FillLAPPDInfo()
       LAPPD_IDInit = std::get<0>(config);
     }
     
-    if (ANNIEEventTreeMakerVerbosity > 0)
+    if (ANNIEEventTreeMakerVerbosity > 3)
       cout << "ANNIEEventTreeMaker: Filling LAPPD Info, Original LAPPD_ID: " << psecData.LAPPD_ID << ", Mapped LAPPD_ID: " << LAPPD_IDInit << ", Position: " << position << ", using run number: " << fRunNumber << endl;
 
     fLAPPD_ID.push_back(LAPPD_IDInit);
