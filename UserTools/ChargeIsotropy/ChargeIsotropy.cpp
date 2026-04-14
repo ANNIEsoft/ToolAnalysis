@@ -133,7 +133,6 @@ bool ChargeIsotropy::Execute(){
         }
     }
 
-std::cout << "TIME MIN: " << minT << std::endl;
     //reset iterators
     if(isData || MCWaveform) it_tank_data = Hits->begin();
     else it_tank_mc = MCHits->begin();
@@ -287,8 +286,6 @@ std::cout << "TIME MIN: " << minT << std::endl;
     if(qval == 0.) Qij = -9999.;
     else Qij = num/qval;
 
-std::cout << "num: " << num << std::endl;
-std::cout << "qval: " << qval << std::endl;
     m_data->Stores["RecoEvent"]->Set("Qij",Qij);
 
     return true;

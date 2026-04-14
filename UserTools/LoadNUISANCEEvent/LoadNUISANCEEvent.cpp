@@ -146,17 +146,17 @@ bool LoadNUISANCEEvent::Execute(){
 	// =======================================================
 	// neutrino and nucleon information:
 	bool iscc = (IsCC == '1');
-	TLorentzVector* probemomentum = new TLorentzVector(-9999.,-9999.,-9999.,-9999.);
-	TLorentzVector* targetnucleonmomentum = new TLorentzVector(-9999.,-9999.,-9999.,-9999.);
+	TLorentzVector probemomentum(-9999.,-9999.,-9999.,-9999.);
+	TLorentzVector targetnucleonmomentum(-9999.,-9999.,-9999.,-9999.);
 	for(int i = 0; i < ninitp; i++){
 		if(neutrinopdg == pdg_init[i]){
-			probemomentum->SetPxPyPzE(((double)px_init[i])*1000.,
+			probemomentum.SetPxPyPzE(((double)px_init[i])*1000.,
 				((double)py_init[i])*1000.,
 				((double)pz_init[i])*1000.,
 				((double)E_init[i])*1000.); //GeV->MeV
 		}
 		else if(pdg_init[i] == 2212 || pdg_init[i] == 2112){
-			targetnucleonmomentum->SetPxPyPzE(((double)px_init[i])*1000.,
+			targetnucleonmomentum.SetPxPyPzE(((double)px_init[i])*1000.,
 				((double)py_init[i])*1000.,
 				((double)pz_init[i])*1000.,
 				((double)E_init[i])*1000.); //GeV->MeV
@@ -224,9 +224,9 @@ bool LoadNUISANCEEvent::Execute(){
                 }
         }
 
-	eventPnu.SetX(probemomentum->Px()); //MeV
-	eventPnu.SetY(probemomentum->Py()); //MeV
-	eventPnu.SetZ(probemomentum->Pz()); //MeV
+	eventPnu.SetX(probemomentum.Px()); //MeV
+	eventPnu.SetY(probemomentum.Py()); //MeV
+	eventPnu.SetZ(probemomentum.Pz()); //MeV
 	
 	for(int i = 0; i < nfsp; i++){
 		if(pdg[i] == fsleptonpdg){
