@@ -180,8 +180,6 @@ std::vector<Position> VertexLeastSquares::GenerateVetices()   // this is Andrew'
 {
 
   // generate vertices in and outside the tank (+ some buffer if ExternalSeeding is enabled)
-
-  std::vector<Position> vertices;
   std::vector<double> ys;
   double yMin = fGeom->GetTankCentre().Y() - fGeom->GetTankHalfheight();
   double yMax = fGeom->GetTankCentre().Y() + fGeom->GetTankHalfheight();
