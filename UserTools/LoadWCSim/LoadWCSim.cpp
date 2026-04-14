@@ -534,7 +534,7 @@ bool LoadWCSim::Execute()
 
     // get run number from file content
     if(!runNumberFromFilename){
-        RunNumber = atrigt->GetHeader()->GetRun();
+        RunNumber = aTrigTank->GetHeader()->GetRun();
         SubrunNumber = 0;
         
     } else {
