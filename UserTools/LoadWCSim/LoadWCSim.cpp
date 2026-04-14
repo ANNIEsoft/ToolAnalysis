@@ -66,6 +66,13 @@ bool LoadWCSim::Initialise(std::string configfile, DataModel &data)
     Log(logmessage, v_warning, verbosity);
   }
 
+  if(!m_variables.Get("RunNumberFromFilename",runNumberFromFilename)){
+    runNumberFromFilename = false;
+    logmessage  = "LoadWCSim::Initialise: RunNumberFromFilename not set in config. ";
+    logmessage += "Using default value: " + std::to_string(runNumberFromFilename);
+    Log(logmessage, v_warning, verbosity);
+  }
+
   if (!m_variables.Get("RunStartDate", RunStartUser)) {
     RunStartUser = 0;
     logmessage  = "LoadWCSim::Initialise: RunStartUser not set in config. ";
@@ -525,26 +532,30 @@ bool LoadWCSim::Execute()
     logmessage = "LoadWCSim::Execute: Getting event date";
     Log(logmessage, v_message, verbosity);
 
-    //Old way to get run number
-    //RunNumber = atrigt->GetHeader()->GetRun();
-    //SubrunNumber = 0;
-
-    //Pulls run number and subrun number from file name
-    std::string wcsimfile = MCFile;
-    //Strip WCSim file name of its prefix path
-    std::string wcsim_prefix = "wcsim_0.";
-    wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
-    wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
-    std::string wcsimev = wcsimfile;
-    wcsimfile.erase(wcsimfile.find("."),wcsimfile.length());
-    wcsimev.erase(0,wcsimev.find(".")+1);
-
-    std::string::size_type sz;
-    int wcsimfilenumber = std::stoi(wcsimfile,&sz);
-    int wcsimevnumber = std::stoi(wcsimev,&sz);
-
-    RunNumber = wcsimfilenumber;
-    SubrunNumber = wcsimevnumber;
+    // get run number from file content
+    if(!runNumberFromFilename){
+        RunNumber = atrigt->GetHeader()->GetRun();
+        SubrunNumber = 0;
+        
+    } else {
+        
+        //Pulls run number and subrun number from file name
+        std::string wcsimfile = MCFile;
+        //Strip WCSim file name of its prefix path
+        std::string wcsim_prefix = "wcsim_0.";
+        wcsimfile.erase(0,wcsimfile.find(wcsim_prefix)+wcsim_prefix.length());
+        wcsimfile.erase(wcsimfile.find(".root"),wcsimfile.find(".root")+5);
+        std::string wcsimev = wcsimfile;
+        wcsimfile.erase(wcsimfile.find("."),wcsimfile.length());
+        wcsimev.erase(0,wcsimev.find(".")+1);
+        
+        std::string::size_type sz;
+        int wcsimfilenumber = std::stoi(wcsimfile,&sz);
+        int wcsimevnumber = std::stoi(wcsimev,&sz);
+        
+        RunNumber = wcsimfilenumber;
+        SubrunNumber = wcsimevnumber;
+    }
 
     EventTimeNs = aTrigTank->GetHeader()->GetDate();
     EventTime->SetNs(EventTimeNs);
