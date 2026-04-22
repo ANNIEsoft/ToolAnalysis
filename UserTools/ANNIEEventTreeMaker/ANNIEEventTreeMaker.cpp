@@ -192,6 +192,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("DirectParent_NeutronAncestorClass", &fDirectParent_NeutronAncestorClass);
     fANNIETree->Branch("DirectParent_NeutronParentTrackID", &fDirectParent_NeutronParentTrackID);
     fANNIETree->Branch("DirectParent_NeutronParentPDG", &fDirectParent_NeutronParentPDG);
+    fANNIETree->Branch("DirectParent_IsDarknoise", &fDirectParent_IsDarknoise);
   }
 
   if (SiPMPulseInfo_fill)
@@ -793,6 +794,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fDirectParent_NeutronAncestorClass.clear();
   fDirectParent_NeutronParentTrackID.clear();
   fDirectParent_NeutronParentPDG.clear();
+  fDirectParent_IsDarknoise.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -1426,6 +1428,7 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
   std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronAncestor = nullptr;
   std::map<unsigned long, std::map<double, int>> *fMCHitToNeutronAncestorClass = nullptr;
   std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronParent = nullptr;
+  std::map<unsigned long, std::map<double, bool>> *fMCHitToIsDarknoise = nullptr;
 
   bool got_MCHitToDirectParents = m_data->Stores["ANNIEEvent"]->Get("MCHitToDirectParents", fMCHitToDirectParents);
   if (!got_MCHitToDirectParents)  {
@@ -1452,6 +1455,7 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
   }
   bool got_neutronAncestorClass = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
   bool got_neutronParent = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronParent", fMCHitToNeutronParent);
+  bool got_isDarknoise = m_data->Stores["ANNIEEvent"]->Get("MCHitToIsDarknoise", fMCHitToIsDarknoise);
 
   for (auto const& apair : *fMCHitToDirectParents) {
     unsigned long pmtID = apair.first;
@@ -1519,6 +1523,15 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
       fDirectParent_NeutronAncestorClass.push_back(neutronAncestorClass);
       fDirectParent_NeutronParentTrackID.push_back(neutronParentTrackID);
       fDirectParent_NeutronParentPDG.push_back(neutronParentPDG);
+
+      int isDarknoise = 0;
+      if (got_isDarknoise && fMCHitToIsDarknoise->find(pmtID) != fMCHitToIsDarknoise->end()){
+        auto const& pmtNoise = fMCHitToIsDarknoise->at(pmtID);
+        if (pmtNoise.find(hitTime) != pmtNoise.end()){
+          isDarknoise = pmtNoise.at(hitTime) ? 1 : 0;
+        }
+      }
+      fDirectParent_IsDarknoise.push_back(isDarknoise);
     }
   }
   return;

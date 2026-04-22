@@ -16,9 +16,9 @@
  *
  * A tool to link reco info to the paticle(s) that generated the light 
 *
-* $Author: A.Sutton $
-* $Date: 2024/06/16 $
-* Contact: atcsutton@gmail.com
+* $Author: A.Sutton $ -> D. Ajana
+* $Date: 2024/06/16 $ -> 2026/01/26
+* Contact: atcsutton@gmail.com -> dja23@fsu.edu
 */
 class BackTracker: public Tool {
 
@@ -70,10 +70,18 @@ class BackTracker: public Tool {
 
   // PMT ID -> reco hit time -> (neutron trackID, neutron PDG)
   std::map<unsigned long, std::map<double, std::pair<int, int>>> *fMCHitToNeutronAncestor = nullptr;
-  // PMT ID -> reco hit time -> neutron class (-5 none, 1 primary, 2 secondary-from-proton, 3 secondary-from-neutron, 4 secondary-other)
+  // PMT ID -> reco hit time -> neutron class
+  //   0  dark noise (pure-noise pulse; all contributing MCHits have primary parent -1)
+  //   1  primary neutron from initial interaction boundary
+  //   2  secondary neutron from proton
+  //   3  secondary neutron from neutron
+  //   4  secondary neutron from other parent type
+  //  -5  non-neutron physics background aka MCHits from other particles (no neutron in ancestry)
   std::map<unsigned long, std::map<double, int>> *fMCHitToNeutronAncestorClass = nullptr;
   // PMT ID -> reco hit time -> (neutron direct parent trackID, neutron direct parent PDG)
   std::map<unsigned long, std::map<double, std::pair<int, int>>> *fMCHitToNeutronParent = nullptr;
+  // PMT ID -> reco hit time -> true if pulse is pure dark noise
+  std::map<unsigned long, std::map<double, bool>> *fMCHitToIsDarknoise = nullptr;
 
   bool fDirectParentClockTickMatching = true;
   uint16_t fPMTSimPrewindowTicks = 10;

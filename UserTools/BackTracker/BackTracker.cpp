@@ -1,5 +1,6 @@
 #include "BackTracker.h"
 #include "ANNIEconstants.h"
+#include <algorithm>
 
 BackTracker::BackTracker():Tool(){}
 
@@ -43,6 +44,7 @@ bool BackTracker::Initialise(std::string configfile, DataModel &data){
   fMCHitToNeutronAncestor   = new std::map<unsigned long, std::map<double, std::pair<int, int>>>;
   fMCHitToNeutronAncestorClass = new std::map<unsigned long, std::map<double, int>>;
   fMCHitToNeutronParent     = new std::map<unsigned long, std::map<double, std::pair<int, int>>>;
+  fMCHitToIsDarknoise       = new std::map<unsigned long, std::map<double, bool>>;
   
   return true;
 }
@@ -61,6 +63,7 @@ bool BackTracker::Execute()
   fMCHitToNeutronAncestor  ->clear();
   fMCHitToNeutronAncestorClass->clear();
   fMCHitToNeutronParent->clear();
+  fMCHitToIsDarknoise->clear();
 
   fParticleToTankTotalCharge.clear();
 
@@ -98,7 +101,8 @@ bool BackTracker::Execute()
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToDirectParents",     fMCHitToDirectParents    );
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronAncestor",   fMCHitToNeutronAncestor  );
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
-  m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronParent", fMCHitToNeutronParent); //It stores 
+  m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronParent", fMCHitToNeutronParent); //It stores
+  m_data->Stores.at("ANNIEEvent")->Set("MCHitToIsDarknoise", fMCHitToIsDarknoise);
 
   return true;
 }
@@ -252,16 +256,36 @@ void BackTracker::FindNeutronAncestors() {
 
       if (directParents.empty()) continue;
 
+      // Dark-noise check: a pulse is pure dark noise iff every contributing
+      // MCHit was pure noise. Noise photons carry direct parent -1 (WCSim
+      // convention), so the pulse's directParents vector is all -1 only when
+      // no real physics MCHit contributed within the pulse window. This is
+      // equivalent to MCHit::GetIsDarknoise() set in LoadWCSim, but keyed on
+      // the pulse peak_time which is what fMCHitToDirectParents uses.
+      bool isDarknoise = std::all_of(directParents.begin(), directParents.end(),
+                                     [](int id) { return id == -1; });
+      (*fMCHitToIsDarknoise)[pmtID][hitTime] = isDarknoise;
+
       int neutronAncestorId = -5;
       int neutronAncestorPdg = -5;
       int neutronAncestorClass = -5;
       //Neutron Classification:
+      // 0: dark noise (pure-noise pulse)
       // 1: primary neutron from initial interaction boundary
       // 2: secondary neutron from proton
       // 3: secondary neutron from neutron
       // 4: secondary neutron from other parent type
       int neutronParentTrackId = -5;
       int neutronParentPdg = -5;
+
+      if (isDarknoise) {
+        neutronAncestorClass = 0;
+        (*fMCHitToNeutronAncestor)[pmtID][hitTime] = std::make_pair(neutronAncestorId, neutronAncestorPdg);
+        (*fMCHitToNeutronAncestorClass)[pmtID][hitTime] = neutronAncestorClass;
+        (*fMCHitToNeutronParent)[pmtID][hitTime] = std::make_pair(neutronParentTrackId, neutronParentPdg);
+        continue;
+      }
+
       int startParentID = directParents[0]; // take the first direct parent of neutron as the starting point
       int currentID = startParentID;
 

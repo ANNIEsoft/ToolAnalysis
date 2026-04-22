@@ -100,14 +100,17 @@ class MCLAPPDHit : public LAPPDHit
 	friend class boost::serialization::access;
 
 public:
-	MCLAPPDHit() : LAPPDHit(), Parents(std::vector<int>{}), DirectParents(std::vector<int>{}) { serialise = true; }
-	MCLAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition, std::vector<int> theparents, std::vector<int> thedirectparents) : LAPPDHit(thetubeid, thetime, thecharge, theposition, thelocalposition), Parents(theparents), DirectParents(thedirectparents) { serialise = true; }
+	MCLAPPDHit() : LAPPDHit(), Parents(std::vector<int>{}), DirectParents(std::vector<int>{}), IsDarknoise(false) { serialise = true; }
+	MCLAPPDHit(int thetubeid, double thetime, double thecharge, std::vector<double> theposition, std::vector<double> thelocalposition, std::vector<int> theparents, std::vector<int> thedirectparents) : LAPPDHit(thetubeid, thetime, thecharge, theposition, thelocalposition), Parents(theparents), DirectParents(thedirectparents), IsDarknoise(false) { serialise = true; }
 
 	const std::vector<int> *GetParents() const { return &Parents; }
 	void SetParents(std::vector<int> parentsin) { Parents = parentsin; }
 
 	const std::vector<int> *GetDirectParents() const { return &DirectParents; }
 	void SetDirectParents(std::vector<int> directparentsin) { DirectParents = directparentsin; }
+
+	bool GetIsDarknoise() const { return IsDarknoise; }
+	void SetIsDarknoise(bool v) { IsDarknoise = v; }
 
 	bool Print()
 	{
@@ -151,7 +154,9 @@ public:
 		{
 			cout << "##### No recorded Direct parents #####" << endl;
 		}
-		
+
+		cout << "IsDarknoise : " << (IsDarknoise ? "true" : "false") << endl;
+
 		return true;
 	}
 
@@ -167,13 +172,20 @@ public:
 			ar & Charge;
 			// n.b. at time of writing MCHit stores no additional persistent members
 			// - it only adds parent MCParticle indices, and these aren't saved...
+
+			if (version > 0) {
+				ar & IsDarknoise;
+			}
 		}
 	}
 
 protected:
 	std::vector<int> Parents;
 	std::vector<int> DirectParents;
+	bool IsDarknoise;
 };
+
+BOOST_CLASS_VERSION(MCLAPPDHit, 1)
 
 /*
 class TDCHit : public Hit {

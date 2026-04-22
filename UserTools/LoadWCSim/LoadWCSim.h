@@ -4,6 +4,7 @@
 
 #include <string>
 #include <iostream>
+#include <tuple>
 //#include <boost/algorithm/string.hpp>  // for boost::algorithm::to_lower(string)
 
 #include "Tool.h"
@@ -121,8 +122,9 @@ class LoadWCSim: public Tool {
 	
 	// Each MCHit will contain the idx of it's parent MCParticle's
 	// position within the MCParticles vector
+	//********** Note:- ParentID serves the purpose of the PrimaryParentID in the LoadWCSim tool, I did't want to break other things by just changing the variable name. ********** //
 	std::map<int, int>* trackid_to_mcparticleindex = nullptr;
-	std::pair<std::vector<int>, std::vector<int>> GetHitParentIDs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig);
+	std::tuple<std::vector<int>, std::vector<int>, bool> GetHitParentIDs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig);
 	std::pair<std::vector<int>, std::vector<int>> GetHitParentIdxs(WCSimRootCherenkovDigiHit* digiHit, WCSimRootTrigger* firstTrig);
 
 	std::map<int, int> timeArrayOffsetMap;

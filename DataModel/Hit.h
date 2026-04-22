@@ -78,6 +78,7 @@ public:
 	, DirectParents(std::vector<int>{})
 	, StartTick(-5)
 	, EndTick(-5)
+	, IsDarknoise(false)
   {
 	serialise=true;
   }
@@ -89,6 +90,7 @@ public:
   , DirectParents(thedirectparents)
 	, StartTick(-5)
 	, EndTick(-5)
+	, IsDarknoise(false)
   {
 	serialise=true;
   }
@@ -99,11 +101,13 @@ public:
   const std::vector<int>* GetDirectParents() { return &DirectParents; }
   int GetStartTick() { return StartTick; }
   int GetEndTick() { return EndTick; }
-  
+  bool GetIsDarknoise() const { return IsDarknoise; }
+
   void SetParents(std::vector<int> parentsin) { Parents = parentsin; }
   void SetDirectParents(std::vector<int> directparentsin) { DirectParents = directparentsin; }
   void SetStartTick(int tick) { StartTick = tick; }
   void SetEndTick(int tick) { EndTick = tick; }
+  void SetIsDarknoise(bool v) { IsDarknoise = v; }
 
 	
   bool Print()
@@ -123,16 +127,19 @@ public:
 	} else {
 	  std::cout << "No recorded parents" << std::endl;
 	}
-	
+
+	std::cout << "IsDarknoise : " << (IsDarknoise ? "true" : "false") << std::endl;
+
 	return true;
   }
-	
+
 protected:
   std::vector<int> Parents;
   std::vector<int> DirectParents;
   int StartTick;
   int EndTick;
-	
+  bool IsDarknoise;
+
   template<class Archive> void serialize(Archive & ar, const unsigned int version)
   {
 	if (serialise) {
@@ -142,14 +149,18 @@ protected:
 
 	  if (version > 0) {
 		ar & Parents; // Parents is now track IDs rather than index within vector
-    ar & DirectParents; 
+    ar & DirectParents;
 		ar & StartTick;
 		ar & EndTick;
+	  }
+
+	  if (version > 1) {
+		ar & IsDarknoise;
 	  }
 	}
   }
 };
 
-BOOST_CLASS_VERSION(MCHit, 1)
+BOOST_CLASS_VERSION(MCHit, 2)
 
 #endif
