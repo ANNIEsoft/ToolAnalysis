@@ -1,11 +1,12 @@
 #LoadWCSimLAPPD Config File
 # all variables retrieved with m_variables.Get() must be defined here!
-verbose 5
+verbose 0
 
 #InputFile /Data/beamlikemuon/lappd/*.root
 #InputFile /Data/Ambesim/lappd/*.root
 #InputFile /Data/HighEnergy/wcsim-thousand-high_lappd_0.root
-InputFile /Data/1225beamsim/lappd1/*.root
+InputFile /Data/1225beamsim/lappd1/wcsim_lappd_0.0.0.root
+#InputFile /Data/nuwrosim/lappd/wcsim_lappd_*.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 InnerStructureRadius 1.3545  ## octagonal inner structure radius in m (from drawings 106.64")

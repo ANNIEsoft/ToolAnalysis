@@ -7,3 +7,7 @@ verbose 5
 
 # BDT model file to load
 BDTMuonModelFile finalized_BDTmodel_forMuonEnergy.sav
+
+InitialiseFunction Initialise
+ExecuteFunction Execute
+FinaliseFunction Finalise

@@ -9,8 +9,8 @@ pionKaonCount_fill 0
 TankHitInfo_fill 1
 MRDHitInfo_fill 1
 TankRecoDigitInfo_fill 1
-TankClusterProcessing 1
-MRDClusterProcessing 1
+TankClusterProcessing 0
+MRDClusterProcessing 0
 fillCleanEventsOnly 1
 MRDReco_fill 0
 TriggerProcessing 1
@@ -21,6 +21,8 @@ Digit_fill 1
 #OutputFile /Data/ArgonOutput/vtxreco-other.root
 #OutputFile /Data/Neutronsim/vtxreco-beamsim1038LAPPD.root
 #OutputFile /Data/HighEnergy/vtxreco-thousand-111825testing-tvslm2.root
-OutputFile /Data/1225beamsim/vtxreco-tree-pmt1.root
+#OutputFile /Data/1225beamsim/vtxreco-tree-pmt1.root
+#OutputFile /Data/nuwrosim/vtxreco-tree-pmt.root
+OutputFile /Data/vtxreco-tree-ERtest.root
 NumEventsWritten 2000
 

@@ -11,3 +11,7 @@ TrackLengthWeightsFile weights_best_pmt_only.hdf5
 # Scaling Parameters
 
 ScalingVarsBoostStoreFile ScalingVarsStore.bs
+
+InitialiseFunction Initialise
+ExecuteFunction Execute
+FinaliseFunction Finalise

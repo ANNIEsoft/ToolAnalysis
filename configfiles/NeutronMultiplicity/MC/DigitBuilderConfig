@@ -1,6 +1,6 @@
 # DigitBuilder config file
 
-verbosity 5
+verbosity 0
 ParametricModel 0
 #Reading in MC files
 IsMC 1    
@@ -14,7 +14,7 @@ end_of_window_time_cut 0.95 # from o to 1, length of the window you want to loop
 AcqTimeWindow 70000 # in ns, size of the acquisition window
 CollectHits 1 #whether to use similar hit collection to ClusterFinder for PMT simulated hits
 CollectWindow 5 
-#UseWaveforms 1
+UseWaveforms 1
 WaveformShift 0
 ChankeyToPMTIDMap ./configfiles/BeamClusterAnalysisMC/Chankey_WCSimID_v7.txt 
 SinglePEGains ./configfiles/LoadGeometry/ChannelSPEGains_BeamRun20192020.csv 
