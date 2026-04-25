@@ -25,9 +25,9 @@ struct PMTFitParams
  *
  * This is a blank template for a Tool used by the script to generate a new custom tool. Please fill out the description and author information.
 *
-* $Author: A.Sutton, S.Doran, and D. Ajana $
+* $Author: D. Ajana $
 * $Date: 2024/11/05 10:44:00 $
-* Contact: doran@iastate.edu
+* Contact: dja23@fsu.edu
 */
 class PMTWaveformSim: public Tool {
 
@@ -49,7 +49,7 @@ class PMTWaveformSim: public Tool {
 			     double noiseSigma, int baseline);
 
   void FillDebugGraphs(const std::map<unsigned long, std::vector<Waveform<uint16_t>> > &RawADCDataMC);   ///< debugging
-  double TimeSmearing(int pmtid);   ///< prior to sampling the fits, we can add realistic time smearing (instead of relying on WCSim's time smearing) to the MCHit (true) time
+  bool TimeSmearing(int pmtid);   ///< prior to sampling the fits, we can add realistic time smearing (instead of relying on WCSim's time smearing) to the MCHit (true) time
     
  private:
 
@@ -69,15 +69,17 @@ class PMTWaveformSim: public Tool {
 
   std::string fPMTParameterFile;
   
-  TRandom3 fRandom;
+  TRandom3 *fRandom;
 
   std::map<int, PMTFitParams> fPMTParamMap;
+  std::map<int, double> fPMTJitterMap;
   double fP0, fP1, fP2;                        // main peak parameters
   double fT1, fT2, fR1, fR2;                   // reflection amplitudes and time spacings
+  double fTimeSmear;
 
-                                               // timing uncertainty map
-  std::map<unsigned long, double>* ChannelKeyToTimingSigmaMap;
-  
+  int factivePMTs = 0;
+
+
   bool fDebug;
   TFile *fOutFile;
   
