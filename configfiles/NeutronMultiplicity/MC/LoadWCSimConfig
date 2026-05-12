@@ -1,6 +1,6 @@
 #LoadWCSim Config File
 # all variables retrieved with m_variables.Get() must be defined here!
-verbose 0
+verbose 5
 
 #InputFile /Data/beamlikemuon/pmt/*.root
 #InputFile /Data/Ambesim/pmt/*.root

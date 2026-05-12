@@ -295,7 +295,7 @@ void FoMCalculator::PointVertexChi2(double vtxX, double vtxY, double vtxZ,
 
   // calculate residuals
   // ===================
-  this->fVtxGeo->CalcPointResiduals(vtxX, vtxY, vtxZ, vtxTime /*0.0 Set to Zero and subtracted later? Why??? -F.A. Lemmons*/,
+  this->fVtxGeo->CalcPointResiduals(vtxX, vtxY, vtxZ, vtxTime,
                                  dirX, dirY, dirZ); //calculate expected vertex time for each digit
   // calculate figure of merit
   // =========================
@@ -328,7 +328,7 @@ void FoMCalculator::ExtendedVertexChi2(double vtxX, double vtxY, double vtxZ, do
 
   // calculate residuals
   // ===================
-  this->fVtxGeo->CalcExtendedResiduals(vtxX,vtxY,vtxZ, vtxTime /*0.0 Set to Zero and subtracted later? Why??? -F.A. Lemmons*/,dirX,dirY,dirZ);
+  this->fVtxGeo->CalcExtendedResiduals(vtxX,vtxY,vtxZ, vtxTime,dirX,dirY,dirZ);
   
   // calculate figure of merit
   // =========================
