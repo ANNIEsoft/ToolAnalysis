@@ -219,9 +219,10 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPD_BG_switchBit1", &fLAPPD_BG_switchBit1);
 
     // load the ID conversion table
-    string ACCIDConfigFile = "LAPPDIDConfig.csv";
+    std::string ACCIDConfigFile = "./configfiles/LAPPDProcessedAna/LAPPDIDConfig.csv";
     m_variables.Get("ACCIDConfigFile", ACCIDConfigFile);
     idConfigRecords = LoadIDConfig(ACCIDConfigFile);
+    
     //print the loaded records
     if (ANNIEEventTreeMakerVerbosity > 1)
     {
@@ -234,30 +235,22 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
                  << ", Position: " << record.Position << endl;
         }
 
-        int testRunNum = 4950;
-        int testACCID = 1; // example ACCID to query
+	int testRunNum = 6050;
+        int testACCID = 0; // example ACCID to query
         auto result = queryNearestID(idConfigRecords, testRunNum, testACCID);
         int nearestManuID = std::get<0>(result);
         std::string position = std::get<1>(result);
         cout << "Querying nearest ID for RunNumber: " << testRunNum << ", ACCID: " << testACCID << endl;
         cout << "Nearest ManufacturerID: " << nearestManuID << ", Position: " << position << endl;
 
-        int testRunNum2 = 5000;
-        int testACCID2 = 2; // example ACCID to query
-        auto result2 = queryNearestID(idConfigRecords, testRunNum2, testACCID2);
-        int nearestManuID2 = std::get<0>(result2);
-        std::string position2 = std::get<1>(result2);
-        cout << "Querying nearest ID for RunNumber: " << testRunNum2 << ", ACCID: " << testACCID2 << endl;
-        cout << "Nearest ManufacturerID: " << nearestManuID2 << ", Position: " << position2 << endl;
-
-        int testRunNum3 = 5907;
-        int testManuID3 = 39; // example ManufacturerID to query
-        auto result3 = queryNearestACCID(idConfigRecords, testRunNum3, testManuID3);
-        int nearestACCID3 = std::get<0>(result3);
-        std::string position3 = std::get<1>(result3);
-        cout << "Querying nearest ACCID for RunNumber: " << testRunNum3 << ", ManufacturerID: " << testManuID3 << endl;
-        cout << "Nearest ACCID: " << nearestACCID3 << ", Position: " << position3 << endl;
-    }
+	testRunNum = 5907;
+        int testManuID = 39; // example ManufacturerID to query
+        result= queryNearestACCID(idConfigRecords, testRunNum, testManuID);
+        int nearestACCID = std::get<0>(result);
+        position = std::get<1>(result);
+        cout << "Querying nearest ACCID for RunNumber: " << testRunNum << ", ManufacturerID: " << testManuID << endl;
+        cout << "Nearest ACCID: " << nearestACCID << ", Position: " << position << endl;
+     }
   }
 
   // LAPPD reconstruction information
@@ -1475,16 +1468,19 @@ void ANNIEEventTreeMaker::FillLAPPDInfo()
     // So for those runs, we need to map the ACC ID to Incom ID using the config.
     // also for positions, we use string for now, to avoid confusion with int IDs, can be changed later.
     string position;
+     
     auto config = queryNearestID(idConfigRecords, fRunNumber, LAPPD_IDInit);
     position = std::get<1>(config);
+    
     if (LAPPD_IDInit < 20)
     {
       LAPPD_IDInit = std::get<0>(config);
     }
+    
     if (ANNIEEventTreeMakerVerbosity > 3)
       cout << "ANNIEEventTreeMaker: Filling LAPPD Info, Original LAPPD_ID: " << psecData.LAPPD_ID << ", Mapped LAPPD_ID: " << LAPPD_IDInit << ", Position: " << position << ", using run number: " << fRunNumber << endl;
 
-    fLAPPD_ID.push_back(psecData.LAPPD_ID);
+    fLAPPD_ID.push_back(LAPPD_IDInit);
     fLAPPD_Position.push_back(position);
     fLAPPD_Beamgate_ns.push_back(LAPPDBeamgate_ns[key]);
     fLAPPD_Timestamp_ns.push_back(LAPPDTimeStamps_ns[key]);
@@ -1531,11 +1527,20 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
 
       vector<LAPPDPulse> pulse0 = stripPulses.at(0);
       vector<LAPPDPulse> pulse1 = stripPulses.at(1);
+
       for (int i = 0; i < pulse0.size(); i++)
       {
         fPulseSide.push_back(0);
         LAPPDPulse thisPulse = pulse0.at(i);
-        fLAPPD_IDs.push_back(thisPulse.GetTubeId());
+
+	// mapping to INCOM IDs
+	int thisPulseID = thisPulse.GetTubeId();
+        if (thisPulseID < 20) {
+		auto config = queryNearestID(idConfigRecords, fRunNumber, thisPulseID);
+		thisPulseID = std::get<0>(config);
+        }
+
+        fLAPPD_IDs.push_back(thisPulseID);
         fChannelID.push_back(thisPulse.GetChannelID());
         fPulseStripNum.push_back(stripno);
         fPulsePeakTime.push_back(thisPulse.GetTime());
@@ -1553,7 +1558,15 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
       {
         fPulseSide.push_back(1);
         LAPPDPulse thisPulse = pulse1.at(i);
-        fLAPPD_IDs.push_back(thisPulse.GetTubeId());
+        
+	// mapping to INCOM IDs
+	int thisPulseID = thisPulse.GetTubeId();
+	if (thisPulseID < 20) {
+		auto config = queryNearestID(idConfigRecords, fRunNumber, thisPulseID);
+		thisPulseID = std::get<0>(config);
+	}
+
+	fLAPPD_IDs.push_back(thisPulseID);
         fChannelID.push_back(thisPulse.GetChannelID());
         fPulseStripNum.push_back(stripno);
         fPulsePeakTime.push_back(thisPulse.GetTime());
@@ -1587,7 +1600,15 @@ void ANNIEEventTreeMaker::FillLAPPDHit()
         LAPPDHit thisHit = stripHits.at(i);
         LAPPDPulse p1 = thisHit.GetPulse1();
         LAPPDPulse p2 = thisHit.GetPulse2();
-        fLAPPDHit_IDs.push_back(thisHit.GetTubeId());
+
+	// mapping to INCOM IDs
+        int thisHitID = thisHit.GetTubeId();
+        if (thisHitID < 20) {
+		auto config = queryNearestID(idConfigRecords, fRunNumber, thisHitID);
+                thisHitID = std::get<0>(config);
+        }
+
+        fLAPPDHit_IDs.push_back(thisHitID);
         fLAPPDHitStrip.push_back(stripno);
         fLAPPDHitTime.push_back(thisHit.GetTime());
         fLAPPDHitAmp.push_back(thisHit.GetCharge());
@@ -2731,9 +2752,6 @@ void ANNIEEventTreeMaker::FillLAPPDMCHitInfo()
   }
 }
 
-
-
-
 vector<IDConfigRecord> ANNIEEventTreeMaker::LoadIDConfig(const string& filename) {
     vector<IDConfigRecord> data;
     ifstream file(filename);
@@ -2751,12 +2769,13 @@ vector<IDConfigRecord> ANNIEEventTreeMaker::LoadIDConfig(const string& filename)
         stringstream ss(line);
         string token;
         IDConfigRecord r;
+
         getline(ss, token, ','); r.RunNumber = stoi(token);
         getline(ss, token, ','); r.ACCID = stoi(token);
         getline(ss, token, ','); r.ManufacturerID = stoi(token);
         getline(ss, token, ','); r.Position = token;
-
-        data.push_back(r);
+        
+	data.push_back(r);
     }
 
     return data;
@@ -2782,8 +2801,6 @@ tuple<int, string> ANNIEEventTreeMaker::queryNearestID(const vector<IDConfigReco
     return {bestManufacturer, bestPosition};
 }
 
-
-
 tuple<int, string> ANNIEEventTreeMaker::queryNearestACCID(const vector<IDConfigRecord>& data, int targetRun, int manufacturerID) {
     int bestRun = -1;
     int bestACCID = -1;
@@ -2803,4 +2820,3 @@ tuple<int, string> ANNIEEventTreeMaker::queryNearestACCID(const vector<IDConfigR
         return {-1, ""};
     return {bestACCID, bestPosition};
 }
-

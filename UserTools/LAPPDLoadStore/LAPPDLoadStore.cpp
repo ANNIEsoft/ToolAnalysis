@@ -146,6 +146,34 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     if (LAPPDStoreReadInVerbosity > 11)
         debugStoreReadIn.open("debugStoreReadIn.txt");
 
+    std::string ACCIDConfigFile;
+    get_ok = m_variables.Get("ACCIDConfigFile", ACCIDConfigFile);
+    if(!get_ok) {
+	    Log("LAPPDLoadStore: Missing ACCIDConfigFile in config!",v_error,LAPPDStoreReadInVerbosity);
+	    return false;
+    }
+
+    idConfigRecords = LoadIDConfig(ACCIDConfigFile);
+    if (LAPPDStoreReadInVerbosity > 1)
+    {
+        // print the ACCID config records for debug
+        cout << "Loaded LAPPD ID Config Records from " << ACCIDConfigFile << ":" << endl;
+        for (const auto& record : idConfigRecords) {
+            cout << "RunNumber: " << record.RunNumber
+                 << ", ACCID: " << record.ACCID
+                 << ", ManufacturerID: " << record.ManufacturerID
+                 << ", Position: " << record.Position << endl;
+        }
+
+	int testRunNum = 5907;
+        int testManuID = 39; // example ManufacturerID to query
+        auto result= queryNearestACCID(idConfigRecords, testRunNum, testManuID);
+        int nearestACCID = std::get<0>(result);
+        std::string position = std::get<1>(result);
+        cout << "Querying nearest ACCID for RunNumber: " << testRunNum << ", ManufacturerID: " << testManuID << endl;
+        cout << "Nearest ACCID: " << nearestACCID << ", Position: " << position << endl;
+    }
+
     return true;
 }
 
@@ -187,6 +215,7 @@ bool LAPPDLoadStore::Execute()
 
     CleanDataObjects();
     m_data->CStore.Set("LAPPD_new_event", false);
+    LoadRunInfo();
 
     if (MultiLAPPDMap)
     {
@@ -274,9 +303,9 @@ bool LAPPDLoadStore::Execute()
         if (frametype == num_vector_data && loadPSEC)
         {
             m_data->CStore.Set("LAPPDanaData", true);
-            bool parsData = ParsePSECData();
             LoadRunInfo();
-            runInfoLoaded = true;
+            bool parsData = ParsePSECData();
+	    runInfoLoaded = true;
             LAPPDana = parsData;
             m_data->CStore.Set("LAPPDana", LAPPDana);
             m_data->CStore.Set("LoadingPPS", false);
@@ -353,6 +382,15 @@ bool LAPPDLoadStore::Execute()
             ReadBoards = dat.BoardIndex; // From the data, board index is not related to the LAPPD_ID! WHY use this way?
             Raw_buffer = dat.RawWaveform;
             LAPPD_ID = dat.LAPPD_ID;
+
+	    if (LAPPD_ID>20) {
+                tuple<int, string> queryResult = queryNearestACCID(idConfigRecords, runNumber, LAPPD_ID);
+                if (LAPPDStoreReadInVerbosity > 2)
+                    cout << "LAPPDLoadStore: Mapped ManufacturerID " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
+              
+	  	LAPPD_ID = get<0>(queryResult);
+            }
+
             if (LAPPD_ID != SelectedLAPPD && SelectSingleLAPPD)
                 continue;
 
@@ -877,6 +915,15 @@ bool LAPPDLoadStore::LoadData()
                     return false;
                 }
                 LAPPD_ID = dat.LAPPD_ID;
+
+		if (LAPPD_ID>20) {
+                    tuple<int, string> queryResult = queryNearestACCID(idConfigRecords, runNumber, LAPPD_ID);
+                    if (LAPPDStoreReadInVerbosity > 2)
+                        cout << "LAPPDLoadStore: Mapped ManufacturerID  " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
+                  
+	      	    LAPPD_ID = get<0>(queryResult);
+                }
+
                 if (LAPPD_ID != SelectedLAPPD && SelectSingleLAPPD)
                     return false;
                 m_data->CStore.Set("PsecTimestamp", dat.Timestamp);
@@ -918,6 +965,15 @@ bool LAPPDLoadStore::LoadData()
             ReadBoards = dat.BoardIndex;
             Raw_buffer = dat.RawWaveform;
             LAPPD_ID = dat.LAPPD_ID;
+
+	    if (LAPPD_ID>20) {
+                tuple<int, string> queryResult = queryNearestACCID(idConfigRecords, runNumber, LAPPD_ID);
+                if (LAPPDStoreReadInVerbosity > 2)
+                    cout << "LAPPDLoadStore: Mapped ManufacturerID  " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
+                    
+		LAPPD_ID = get<0>(queryResult);
+            }
+
             if (LAPPD_ID != SelectedLAPPD && SelectSingleLAPPD)
                 return false;
             m_data->CStore.Set("PsecTimestamp", dat.Timestamp);
@@ -1108,7 +1164,10 @@ bool LAPPDLoadStore::ParsePSECData()
         // insert the data start with channel number 30*ReadBoards[bi]
         // for instance, when bi=0 , LAPPD ID = 2, ReadBoards[bi] = 4, insert to channel number start with 120, to 150
         int channelShift = bi * NUM_CH + LAPPD_ID * NUM_CH * 2;
-        retval = getParsedData(Parse_buffer, channelShift); //(because there are only 2 boards, so it's 0*30 or 1*30). Inserting the channel number start from this then ++ to 30
+	if (LAPPDStoreReadInVerbosity > 2) 
+	    std::cout << "bi= " << bi << ", LAPPD_ID= " << LAPPD_ID << ", NUM_CH= " << NUM_CH << ", channelShift= " << channelShift << std::endl;
+
+	retval = getParsedData(Parse_buffer, channelShift); //(because there are only 2 boards, so it's 0*30 or 1*30). Inserting the channel number start from this then ++ to 30
         if (retval == 0)
         {
             if (LAPPDStoreReadInVerbosity > 2)
@@ -1637,4 +1696,65 @@ void LAPPDLoadStore::LoadRunInfo()
     }
     if (LAPPDStoreReadInVerbosity > 0)
         cout << "LAPPDStoreReadIn, Loaded run info, runNumber: " << runNumber << ", subRunNumber: " << subRunNumber << ", partFileNumber: " << partFileNumber << ", eventNumberInPF: " << eventNumberInPF << endl;
+
+    if (runNumber<1) {
+        if (LAPPDStoreReadInVerbosity > 1)
+            cout << "LAPPDStoreReadIn, runNumber is "<< runNumber << ", trying to get from ANNIEEvent Store" << endl;
+       
+       	m_data->Stores["ANNIEEvent"]->Get("RunNumber", runNumber);
+        m_data->Stores["ANNIEEvent"]->Get("SubRunNumber", subRunNumber);
+        m_data->Stores["ANNIEEvent"]->Get("PartNumber", partFileNumber);
+       
+       	if (LAPPDStoreReadInVerbosity > 1)
+            cout << "LAPPDStoreReadIn, Got run info from ANNIEEvent Store, runNumber: " << runNumber << ", subRunNumber: " << subRunNumber << ", partFileNumber: " << partFileNumber << endl;
+    }
+}
+
+vector<IDConfigRecord> LAPPDLoadStore::LoadIDConfig(const string& filename) {
+    vector<IDConfigRecord> data;
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "LAPPDLoadStore::LoadIDConfig: Can't open file: " << filename << endl;
+        return data;
+    }
+
+    string line;
+    getline(file, line); // skip header
+
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        replace(line.begin(), line.end(), '\t', ','); // support tab or comma
+        stringstream ss(line);
+        string token;
+        IDConfigRecord r;
+        
+	getline(ss, token, ','); r.RunNumber = stoi(token);
+	getline(ss, token, ','); r.ACCID = stoi(token);
+        getline(ss, token, ','); r.ManufacturerID = stoi(token);
+        getline(ss, token, ','); r.Position = token;
+        
+	data.push_back(r);
+    }
+
+    return data;
+}
+
+tuple<int, string> LAPPDLoadStore::queryNearestACCID(const vector<IDConfigRecord>& data, int targetRun, int manufacturerID) {
+    int bestRun = -1;
+    int bestACCID = -1;
+    string bestPosition;
+
+    for (const auto& r : data) {
+        if (r.ManufacturerID == manufacturerID && r.RunNumber <= targetRun) {
+            if (r.RunNumber > bestRun) { // find the nearest run not exceeding targetRun
+                bestRun = r.RunNumber;
+                bestACCID = r.ACCID;
+                bestPosition = r.Position;
+            }
+        }
+    }
+
+    if (bestRun == -1)
+        return {-1, ""};
+    return {bestACCID, bestPosition};
 }

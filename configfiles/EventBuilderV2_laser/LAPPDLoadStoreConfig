@@ -25,6 +25,7 @@ PSECinputfile /pnfs/annie/persistent/processed/LAPPD40Merged/FinalVersion_withRa
 Pedinputfile1 ../Pedestals/PEDS_ACDC_board0.txt
 Pedinputfile2 ../Pedestals/PEDS_ACDC_board1.txt
 
+ACCIDConfigFile ./configfiles/LAPPDProcessedAna/LAPPDIDConfig.csv
 
 ReadStore 0
 num_vector_data 7795

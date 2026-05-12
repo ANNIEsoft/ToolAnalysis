@@ -34,12 +34,6 @@
  * $Date: 2024/8 $
  * Contact: yuef@iastate.edu
  */
-struct IDConfigRecord {
-    int RunNumber;
-    int ACCID;
-    int ManufacturerID;
-    string Position;
-};
 
 class ANNIEEventTreeMaker : public Tool
 {
