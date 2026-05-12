@@ -1,7 +1,7 @@
 RunNumber,ACCID,ManufacturerID,Position
 3600,0,40,Center
-4300,1,63,UpperRight
-4300,2,64,LowerLeft
+4300,2,63,UpperRight
+4300,1,64,LowerLeft
 4700,0,64,LowerLeft
 4700,1,58,UpperRight
 4700,2,39,Center
