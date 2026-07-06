@@ -1,0 +1,4 @@
+verbose 1
+FileForListOfInputs ./configfiles/NCQE_XS_Data/my_inputs.txt
+EventOffset 0
+GlobalEvNr 1
