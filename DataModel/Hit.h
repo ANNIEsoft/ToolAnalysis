@@ -15,15 +15,18 @@ class Hit : public SerialisableObject{
 	public:
 	Hit() : TubeId(0), Time(0), Charge(0){serialise=true;}
 	Hit(int thetubeid, double thetime, double thecharge) : TubeId(thetubeid), Time(thetime), Charge(thecharge){serialise=true;}
+	Hit(int hitid, int thetubeid, double thetime, double thecharge) : HitID(hitid),TubeId(thetubeid),Time(thetime),Charge(thecharge){serialise=true;}
 	virtual ~Hit(){};
 	
 	inline int GetTubeId() const {return TubeId;}
 	inline double GetTime() const {return Time;}
 	inline double GetCharge() const {return Charge;}
+	inline int GetHitID() const {return HitID;}
 	
 	inline void SetTubeId(int tubeid){TubeId=tubeid;}
 	inline void SetTime(double tc){Time=tc;}
 	inline void SetCharge(double chg){Charge=chg;}
+	inline void SetHitID(int hitid){HitID=hitid;}
 	
 	bool Print() {
 	  std::cout<<"TubeId : "<<TubeId<<endl;
@@ -33,6 +36,7 @@ class Hit : public SerialisableObject{
 	}
 	
 	protected:
+	int HitID;
 	int TubeId;
 	double Time;
 	double Charge;
@@ -59,6 +63,7 @@ class MCHit : public Hit {
 	public:
 	MCHit() : Hit(), Parents(std::vector<int>{}) {serialise=true;}
 	MCHit(int tubeid, double thetime, double thecharge, std::vector<int> theparents) : Hit(tubeid, thetime, thecharge), Parents(theparents) {serialise=true;}
+	MCHit(int hitid, int tubeid, double thetime, double thecharge, std::vector<int> theparents) : Hit(hitid, tubeid, thetime, thecharge), Parents(theparents) { serialise = true; }
 	virtual ~MCHit(){};
 	
 	const std::vector<int>* GetParents() const { return &Parents; }

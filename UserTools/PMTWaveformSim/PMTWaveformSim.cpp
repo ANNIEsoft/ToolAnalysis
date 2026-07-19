@@ -158,6 +158,9 @@ bool PMTWaveformSim::Execute()
       if (mcHit.GetTime() < 0) continue;
       if (mcHit.GetTime() > 70000) continue;
 
+      if(!fPMTParamMap.count(PMTID)) continue;      //Skip inactive PMTs (those that don't have calibration parameters
+                                                    //TODO: Add a default set of parameters to fall back on, so ideal case with all PMTs can be approximated
+
       // Grab the hit time (also converted to clock ticks) and the charge
       double hit_t0 = mcHit.GetTime() + fTimeShift;
       double hit_charge = mcHit.GetCharge();
@@ -242,6 +245,7 @@ bool PMTWaveformSim::Execute()
   // Publish the waveforms to the ANNIEEvent store if we have them
   m_data->Stores.at("ANNIEEvent")->Set("RawADCDataMC",      RawADCDataMC);
   m_data->Stores.at("ANNIEEvent")->Set("CalibratedADCData", CalADCDataMC); 
+  m_data->Stores.at("ANNIEEvent")->Set("ActivePMTs",factivePMTs);
   
   if (fDebug) 
     FillDebugGraphs(RawADCDataMC);
@@ -306,6 +310,8 @@ bool PMTWaveformSim::LoadPMTParameters()
 
     fPMTParamMap[pmtid] = {p0, p1, p2, T1, T2, R1, R2, up0, up1, up2, uT1, uT2, uR1, uR2};
     fPMTJitterMap[pmtid] = time_jitter;
+
+    factivePMTs++;
 
     logmessage = "PMTWaveformSim: Loaded parameters for PMTID " + std::to_string(pmtid) + ": ";
     logmessage += "p0 = " + std::to_string(p0);

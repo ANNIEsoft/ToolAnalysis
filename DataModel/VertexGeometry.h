@@ -4,6 +4,7 @@
 
 #include "RecoVertex.h"
 #include "RecoDigit.h"
+#include "RecoCluster.h"
 #include "WaterModel.h"
 #include "ANNIEGeometry.h"
 #include "Parameters.h"
