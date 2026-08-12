@@ -210,8 +210,8 @@ bool EBLAPPD::LoadLAPPDData()
   LAPPDOffset = 0;
   m_data->CStore.Get("LAPPDOffset", LAPPDOffset);
 
-  LAPPDBeamgate_ns = LAPPDBeamgate_ns + LAPPDBGCorrection + LAPPDOffset;
-  LAPPDTimestamp_ns = LAPPDTimestamp_ns + LAPPDTSCorrection + LAPPDOffset;
+  LAPPDBeamgate_ns = LAPPDBeamgate_ns + LAPPDBGCorrection*3.125 + LAPPDOffset;
+  LAPPDTimestamp_ns = LAPPDTimestamp_ns + LAPPDTSCorrection*3.125 + LAPPDOffset;
 
   LAPPDBG_PPSBefore = 0;
   LAPPDBG_PPSAfter = 0;
