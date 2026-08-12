@@ -143,7 +143,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     LAPPDEventIndex_ID = {0, 0, 0, 0, 0}; // initialize for five LAPPDs
     if (loadOffsets)
         LoadOffsetsAndCorrections();
-    if (LAPPDStoreReadInVerbosity > 11)
+    if (LAPPDStoreReadInVerbosity > 5)
         debugStoreReadIn.open("debugStoreReadIn.txt");
 
     std::string ACCIDConfigFile;
@@ -347,7 +347,7 @@ bool LAPPDLoadStore::Execute()
         m_data->Stores["ANNIEEvent"]->Set("ReadedBoards", ReadedBoards);
 
         m_data->CStore.Set("NewLAPPDDataAvailable", true);
-        if (LAPPDStoreReadInVerbosity > 11)
+        if (LAPPDStoreReadInVerbosity > 5)
             debugStoreReadIn << " Set NewLAPPDDataAvailable to true" << endl;
 
         NonEmptyEvents += 1;
@@ -1336,8 +1336,16 @@ void LAPPDLoadStore::SaveTimeStamps()
     m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_Raw", beamgate_63_0);
     m_data->Stores["ANNIEEvent"]->Set("LAPPDTimestamp_Raw", timestamp_63_0);
 
-    if (LAPPDStoreReadInVerbosity > 11)
-        debugStoreReadIn << eventNo << " LAPPDStoreReadIn, Saving timestamps, beamgate_timestamp: " << beamgate_63_0 << ", lappd_timestamp: " << timestamp_63_0 << endl;
+    if (LAPPDStoreReadInVerbosity > 5) {
+        debugStoreReadIn
+            << "Event number: " << eventNo
+            << ", LAPPD ID: " << LAPPD_ID
+            << ", PSEC index: " << LAPPDEventIndex_ID[LAPPD_ID]
+            << ", PPS index: " << PPSnumber
+            << ", Timestamp: " << timestamp_63_0
+            << ", Beamgate: " << beamgate_63_0
+            << std::endl;
+    }
 
     if (loadOffsets && runInfoLoaded)
     {
@@ -1346,6 +1354,7 @@ void LAPPDLoadStore::SaveTimeStamps()
         // search it in the maps, then load
         SaveOffsets();
     }
+
     m_data->CStore.Set("LAPPD_new_event", true);
 }
 
@@ -1356,7 +1365,8 @@ void LAPPDLoadStore::SaveOffsets()
     {
         LAPPDEventIndex_ID.resize(LoadingOffsetID+1);
     }
-    int GetOffsetIndex_byID = LAPPDEventIndex_ID[LoadingOffsetID];
+    int GetOffsetIndex_byID = LAPPDEventIndex_ID[LoadingOffsetID] - 1;
+
     if(LAPPDStoreReadInVerbosity>0)
         cout << "LAPPDStoreReadIn, SavingOffsets, LoadingOffset for LAPPD_ID: " << LoadingOffsetID << ", OffsetIndex of this event: " << GetOffsetIndex_byID << endl;
 
@@ -1560,8 +1570,22 @@ void LAPPDLoadStore::SaveOffsets()
 
     // cout << "LAPPDStoreReadIn, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << ", BG_PPSBefore: " << BG_PPSBefore << ", BG_PPSAfter: " << BG_PPSAfter << ", BG_PPSDiff: " << BG_PPSDiff << ", BG_PPSMissing: " << BG_PPSMissing << ", TS_PPSBefore: " << TS_PPSBefore << ", TS_PPSAfter: " << TS_PPSAfter << ", TS_PPSDiff: " << TS_PPSDiff << ", TS_PPSMissing: " << TS_PPSMissing << endl;
 
-    if (LAPPDStoreReadInVerbosity > 11)
-        debugStoreReadIn << eventNo << "+LAPPDStoreReadIn, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << endl;
+    if (LAPPDStoreReadInVerbosity > 5) {
+        debugStoreReadIn
+            << "Event number: " << eventNo
+            << ", LAPPDStoreReadIn, Saving offsets, key: " << key
+            << ", LAPPD_ID: " << LAPPD_ID
+            << ", idx: " << GetOffsetIndex_byID
+            << ", TS_PPSBefore: " << TS_PPSBefore
+            << ", BG_PPSBefore: " << BG_PPSBefore
+            << ", TS_PPSAfter: " << TS_PPSAfter
+            << ", BG_PPSAfter: " << BG_PPSAfter
+            << ", LAPPDOffset: " << LAPPDOffset
+	    << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps
+	    << ", LAPPDTSCorrection: " << LAPPDTSCorrection
+	    << ", LAPPDBGCorrection: " << LAPPDBGCorrection
+            << std::endl;
+    }
 }
 
 void LAPPDLoadStore::LoadOffsetsAndCorrections()
