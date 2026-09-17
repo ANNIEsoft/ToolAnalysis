@@ -469,9 +469,11 @@ void BackTracker::FindNeutronAncestors() {
     }
   }
   
-  std::cout << "BackTracker::FindNeutronAncestors: found " 
-            << fMCHitToNeutronAncestor->size() 
-            << " PMTs with neutron ancestors." << std::endl;
+  if (verbosity > 1) {
+    std::cout << "BackTracker::FindNeutronAncestors: found "
+              << fMCHitToNeutronAncestor->size()
+              << " PMTs with neutron ancestors." << std::endl;
+  }
 }
 
 int BackTracker::ClassifyBackgroundPDG(int pdg) const {

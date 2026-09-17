@@ -373,7 +373,7 @@ bool MCParticleProperties::Execute(){
 			cout<<"c.f. max possible tank track length is "<<maxtanktracklength<<endl;
 		}
 		if(atracklengthintank > maxtanktracklength){
-			Log("MCParticleProperties Tool: Track length is impossibly long!",v_error,verbosity);
+			Log("MCParticleProperties Tool: Track length is impossibly long!",v_debug,verbosity);
 			//return false;
 		}
 		if(atracklengthintank > differencevector.Mag()){
@@ -762,7 +762,7 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 					}
 				} // else track did not start outside tank x bounds: no wall entry
 				
-				if(!entryfound) Log("MCParticleProperties tool: Could not find track entry point!? ("+std::to_string(startvertex.X())+","+std::to_string(startvertex.Y())+","+std::to_string(startvertex.Z())+") --> ("+std::to_string(stopvertex.X())+","+std::to_string(stopvertex.Y())+","+std::to_string(stopvertex.Z())+")",v_error,verbosity);
+				if(!entryfound) Log("MCParticleProperties tool: Could not find track entry point!? ("+std::to_string(startvertex.X())+","+std::to_string(startvertex.Y())+","+std::to_string(startvertex.Z())+") --> ("+std::to_string(stopvertex.X())+","+std::to_string(stopvertex.Y())+","+std::to_string(stopvertex.Z())+")",v_debug,verbosity);
 				else Hit2.SetZ(startvertex.Z());
 				if(verbose){
 					if(entryfound) cout<<"setting entry Z to "<<(Hit2.Z()-tank_start-tank_radius)<<endl;
@@ -804,7 +804,7 @@ bool MCParticleProperties::CheckTankIntercepts( Position startvertex, Position s
 					}
 				} // else track did not start outside tank y bounds: no wall exit
 				
-				if(!exitfound) Log("MCParticleProperties tool: Could not find track exit point!? ("+std::to_string(startvertex.X())+","+std::to_string(startvertex.Y())+","+std::to_string(startvertex.Z())+") --> ("+std::to_string(stopvertex.X())+","+std::to_string(stopvertex.Y())+","+std::to_string(stopvertex.Z())+")",v_error,verbosity);
+				if(!exitfound) Log("MCParticleProperties tool: Could not find track exit point!? ("+std::to_string(startvertex.X())+","+std::to_string(startvertex.Y())+","+std::to_string(startvertex.Z())+") --> ("+std::to_string(stopvertex.X())+","+std::to_string(stopvertex.Y())+","+std::to_string(stopvertex.Z())+")",v_debug,verbosity);
 				else Hit.SetZ(startvertex.Z());
 				if(verbose){
 					if(exitfound) cout<<"setting exit Z to "<<(Hit.Z()-tank_start-tank_radius)<<endl;

@@ -258,7 +258,7 @@ bool PMTWaveformSim::Execute()
     PMTToPrimaryParentMap[PMTID] = hits_to_primaryparents_map;
   } // end loop over PMTs
 
-  std::cout << "PMTWaveformSim: Finished looping over MCHits, now publishing waveforms to ANNIEEvent..." << std::endl;
+  // std::cout << "PMTWaveformSim: Finished looping over MCHits, now publishing waveforms to ANNIEEvent..." << std::endl;
 
 
   // Publish the waveforms to the ANNIEEvent store if we have them

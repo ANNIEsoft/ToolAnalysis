@@ -1111,7 +1111,7 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
       logmessage += " tracks from trigger # " + std::to_string(trigIdx);
       Log(logmessage, v_message, verbosity);	
 
-      std::cout<< "Event Number: " << aTrigTank->GetHeader()->GetEvtNum()<< std::endl;
+      // std::cout<< "Event Number: " << aTrigTank->GetHeader()->GetEvtNum()<< std::endl;
       for (int trackIdx = 0; trackIdx < aTrigTank->GetNtrack(); trackIdx++) {
 		logmessage = "LoadWCSim::LoadMCParticles: Getting WCSim track # " + std::to_string(trackIdx);
 		Log(logmessage, v_message, verbosity);	
@@ -1215,12 +1215,12 @@ void LoadWCSim::LoadMCParticles(WCSimRootTrigger* firstTrig)
       Log(logmessage, v_debug, verbosity);
     } // end loop over events
 
-  std::cout << "DEBUG: All saved Track IDs in trackid_to_mcparticleindex: ";
-    for (auto const& pair : *trackid_to_mcparticleindex) {
-      std::cout << pair.first << " ";
-      }
-      
-std::cout << std::endl;
+  // std::cout << "DEBUG: All saved Track IDs in trackid_to_mcparticleindex: ";
+  //   for (auto const& pair : *trackid_to_mcparticleindex) {
+  //     std::cout << pair.first << " ";
+  //     }
+  //
+  // std::cout << std::endl;
   }// endif MCTriggerNum == 0
   else {
     // if MCTrigger > 0 we need to update all the particle times
