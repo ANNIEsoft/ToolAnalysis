@@ -194,6 +194,18 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("DirectParent_NeutronParentPDG", &fDirectParent_NeutronParentPDG);
     fANNIETree->Branch("DirectParent_IsDarknoise", &fDirectParent_IsDarknoise);
     fANNIETree->Branch("DirectParent_InteractionMode", &fDirectParent_InteractionMode);
+    fANNIETree->Branch("DirectParent_ImmediateAncestorTrackID", &fDirectParent_ImmediateAncestorTrackID);
+    fANNIETree->Branch("DirectParent_ImmediateAncestorPDG", &fDirectParent_ImmediateAncestorPDG);
+    fANNIETree->Branch("DirectParent_ImmediateAncestorClass", &fDirectParent_ImmediateAncestorClass);
+    // DISABLED: PrimaryAncestor
+    // fANNIETree->Branch("DirectParent_PrimaryAncestorTrackID", &fDirectParent_PrimaryAncestorTrackID);
+    // fANNIETree->Branch("DirectParent_PrimaryAncestorPDG", &fDirectParent_PrimaryAncestorPDG);
+    fANNIETree->Branch("DirectParent_RootAncestorTrackID", &fDirectParent_RootAncestorTrackID);
+    fANNIETree->Branch("DirectParent_RootAncestorPDG", &fDirectParent_RootAncestorPDG);
+    fANNIETree->Branch("DirectParent_LineagePDG", &fDirectParent_LineagePDG);
+    fANNIETree->Branch("DirectParent_LineageTrackID", &fDirectParent_LineageTrackID);
+    fANNIETree->Branch("DirectParent_LineageDepth", &fDirectParent_LineageDepth);
+    fANNIETree->Branch("DirectParent_LineageStatus", &fDirectParent_LineageStatus);
   }
 
   if (SiPMPulseInfo_fill)
@@ -798,6 +810,18 @@ void ANNIEEventTreeMaker::ResetVariables()
   fDirectParent_NeutronParentPDG.clear();
   fDirectParent_IsDarknoise.clear();
   fDirectParent_InteractionMode.clear();
+  fDirectParent_ImmediateAncestorTrackID.clear();
+  fDirectParent_ImmediateAncestorPDG.clear();
+  fDirectParent_ImmediateAncestorClass.clear();
+  // DISABLED: PrimaryAncestor
+  // fDirectParent_PrimaryAncestorTrackID.clear();
+  // fDirectParent_PrimaryAncestorPDG.clear();
+  fDirectParent_RootAncestorTrackID.clear();
+  fDirectParent_RootAncestorPDG.clear();
+  fDirectParent_LineagePDG.clear();
+  fDirectParent_LineageTrackID.clear();
+  fDirectParent_LineageDepth.clear();
+  fDirectParent_LineageStatus.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -1462,6 +1486,19 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
   bool got_isDarknoise = m_data->Stores["ANNIEEvent"]->Get("MCHitToIsDarknoise", fMCHitToIsDarknoise);
   std::map<unsigned long, std::map<double, int>>* fMCHitToInteractionMode = nullptr;
   bool got_interactionMode = m_data->Stores["ANNIEEvent"]->Get("MCHitToInteractionMode", fMCHitToInteractionMode);
+  std::map<unsigned long, std::map<double, std::pair<int,int>>>* fMCHitToImmediateAncestor = nullptr;
+  bool got_immediateAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToImmediateAncestor", fMCHitToImmediateAncestor);
+  std::map<unsigned long, std::map<double, int>>* fMCHitToImmediateAncestorClass = nullptr;
+  bool got_immediateAncestorClass = m_data->Stores["ANNIEEvent"]->Get("MCHitToImmediateAncestorClass", fMCHitToImmediateAncestorClass);
+  // DISABLED: PrimaryAncestor
+  // std::map<unsigned long, std::map<double, std::pair<int,int>>>* fMCHitToPrimaryAncestor = nullptr;
+  // bool got_primaryAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToPrimaryAncestor", fMCHitToPrimaryAncestor);
+  std::map<unsigned long, std::map<double, std::pair<int,int>>>* fMCHitToRootAncestor = nullptr;
+  bool got_rootAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToRootAncestor", fMCHitToRootAncestor);
+  std::map<unsigned long, std::map<double, std::vector<std::pair<int,int>>>>* fMCHitToLineage = nullptr;
+  bool got_lineage = m_data->Stores["ANNIEEvent"]->Get("MCHitToLineage", fMCHitToLineage);
+  std::map<unsigned long, std::map<double, int>>* fMCHitToLineageStatus = nullptr;
+  bool got_lineageStatus = m_data->Stores["ANNIEEvent"]->Get("MCHitToLineageStatus", fMCHitToLineageStatus);
 
   for (auto const& apair : *fMCHitToDirectParents) {
     unsigned long pmtID = apair.first;
@@ -1548,6 +1585,80 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
         }
       }
       fDirectParent_InteractionMode.push_back(interactionMode);
+
+      int immediateAncestorTrackID = -5;
+      int immediateAncestorPDG = -5;
+      if (got_immediateAncestor && fMCHitToImmediateAncestor->find(pmtID) != fMCHitToImmediateAncestor->end()){
+        auto const& pmtAncestors = fMCHitToImmediateAncestor->at(pmtID);
+        if (pmtAncestors.find(hitTime) != pmtAncestors.end()){
+          auto const& ancestorPair = pmtAncestors.at(hitTime);
+          immediateAncestorTrackID = ancestorPair.first;
+          immediateAncestorPDG = ancestorPair.second;
+        }
+      }
+      fDirectParent_ImmediateAncestorTrackID.push_back(immediateAncestorTrackID);
+      fDirectParent_ImmediateAncestorPDG.push_back(immediateAncestorPDG);
+
+      int immediateAncestorClass = -5;
+      if (got_immediateAncestorClass && fMCHitToImmediateAncestorClass->find(pmtID) != fMCHitToImmediateAncestorClass->end()){
+        auto const& pmtClasses = fMCHitToImmediateAncestorClass->at(pmtID);
+        if (pmtClasses.find(hitTime) != pmtClasses.end()){
+          immediateAncestorClass = pmtClasses.at(hitTime);
+        }
+      }
+      fDirectParent_ImmediateAncestorClass.push_back(immediateAncestorClass);
+
+      // ---------------------------------------------------------------------------------
+      // DISABLED: PrimaryAncestor. Original fill, kept verbatim for future retrieval.
+      // int primaryAncestorTrackID = -5;
+      // int primaryAncestorPDG = -5;
+      // if (got_primaryAncestor && fMCHitToPrimaryAncestor->find(pmtID) != fMCHitToPrimaryAncestor->end()){
+      //   auto const& pmtPrimaries = fMCHitToPrimaryAncestor->at(pmtID);
+      //   if (pmtPrimaries.find(hitTime) != pmtPrimaries.end()){
+      //     auto const& primaryPair = pmtPrimaries.at(hitTime);
+      //     primaryAncestorTrackID = primaryPair.first;
+      //     primaryAncestorPDG = primaryPair.second;
+      //   }
+      // }
+      // fDirectParent_PrimaryAncestorTrackID.push_back(primaryAncestorTrackID);
+      // fDirectParent_PrimaryAncestorPDG.push_back(primaryAncestorPDG);
+      // ---------------------------------------------------------------------------------
+
+      int rootAncestorTrackID = -5;
+      int rootAncestorPDG = -5;
+      if (got_rootAncestor && fMCHitToRootAncestor->find(pmtID) != fMCHitToRootAncestor->end()){
+        auto const& pmtRoots = fMCHitToRootAncestor->at(pmtID);
+        if (pmtRoots.find(hitTime) != pmtRoots.end()){
+          auto const& rootPair = pmtRoots.at(hitTime);
+          rootAncestorTrackID = rootPair.first;
+          rootAncestorPDG = rootPair.second;
+        }
+      }
+      fDirectParent_RootAncestorTrackID.push_back(rootAncestorTrackID);
+      fDirectParent_RootAncestorPDG.push_back(rootAncestorPDG);
+
+      // Flatten this hit's lineage onto the concatenated arrays and record its depth, so the
+      // per-hit chain stays recoverable without a nested-vector branch.
+      int lineageDepth = 0;
+      if (got_lineage && fMCHitToLineage->find(pmtID) != fMCHitToLineage->end()){
+        auto const& pmtLineages = fMCHitToLineage->at(pmtID);
+        if (pmtLineages.find(hitTime) != pmtLineages.end()){
+          auto const& chain = pmtLineages.at(hitTime);
+          for (auto const& step : chain){
+            fDirectParent_LineageTrackID.push_back(step.first);
+            fDirectParent_LineagePDG.push_back(step.second);
+          }
+          lineageDepth = (int)chain.size();
+        }
+      }
+      fDirectParent_LineageDepth.push_back(lineageDepth);
+
+      int lineageStatus = -5;
+      if (got_lineageStatus && fMCHitToLineageStatus->find(pmtID) != fMCHitToLineageStatus->end()){
+        auto const& pmtStatus = fMCHitToLineageStatus->at(pmtID);
+        if (pmtStatus.find(hitTime) != pmtStatus.end()) lineageStatus = pmtStatus.at(hitTime);
+      }
+      fDirectParent_LineageStatus.push_back(lineageStatus);
     }
   }
   return;

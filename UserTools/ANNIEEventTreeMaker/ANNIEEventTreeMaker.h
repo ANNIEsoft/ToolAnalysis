@@ -232,6 +232,39 @@ private:
     std::vector<int> fDirectParent_NeutronParentPDG; // direct parent PDG of the stored neutron ancestor
     std::vector<int> fDirectParent_IsDarknoise; // 1 if the pulse is pure dark noise, 0 otherwise
     std::vector<int> fDirectParent_InteractionMode; // WCSim Nuance mode per hit; -999 darknoise; -9999 unavailable
+    // Immediate background particle: generalizes the neutron-only ancestry walk above to
+    // any species via a shallow (at most one-step) walk that skips a leading e-/e+ direct
+    // parent, since electrons/positrons are the ubiquitous last-step Cherenkov/ionization
+    // carriers in a water Cherenkov detector and aren't informative as "the background particle."
+    std::vector<int> fDirectParent_ImmediateAncestorTrackID; // -5 if dark noise or untraced
+    std::vector<int> fDirectParent_ImmediateAncestorPDG; // -5 if dark noise or untraced
+    std::vector<int> fDirectParent_ImmediateAncestorClass; // 0 dark-noise,1 neutron,2 muon,3 charged pion,4 proton,5 photon,6 kaon,7 electron/positron,8 other,-5 untraced
+    // DISABLED: PrimaryAncestor (PrimaryParentID-based, never committed - kept for retrieval).
+    // Replaced by the RootAncestor fields below, which reach the same top-of-tree particle by
+    // walking DirectParentID, the same mechanism as the neutron scheme.
+    // std::vector<int> fDirectParent_PrimaryAncestorTrackID; // -5 if dark noise or unresolved
+    // std::vector<int> fDirectParent_PrimaryAncestorPDG;     // -5 if dark noise or unresolved
+
+    // Root ancestor: the particle at the TOP of the DirectParentID chain, i.e. the
+    // generator-level particle out of the neutrino interaction that this deposit descends
+    // from. Derived by walking DirectParentID to its end -- the same mechanism as the
+    // neutron scheme -- NOT from PrimaryParentID. Trust only where LineageStatus == 1.
+    std::vector<int> fDirectParent_RootAncestorTrackID; // -5 if dark noise or unresolved
+    std::vector<int> fDirectParent_RootAncestorPDG;     // -5 if dark noise or unresolved
+
+    // FULL lineage per hit, the species-general analogue of the neutron scheme's
+    // {NeutronAncestor, NeutronParent} pair but as a whole chain. Stored flattened
+    // (CSR-style) rather than as vector<vector<int>>, which would need a custom ROOT
+    // dictionary. To read hit i, take Depth[i] entries starting at sum(Depth[0..i-1]):
+    //   chain_pdgs_of_hit_i = LineagePDG[offset : offset + LineageDepth[i]]
+    // Order is nearest-first: [0] the hit's direct parent (nearly always e-/e+),
+    // [1] its parent (e.g. a capture gamma), ... up to the generator primary.
+    std::vector<int> fDirectParent_LineagePDG;     // concatenated over all hits in the event
+    std::vector<int> fDirectParent_LineageTrackID; // concatenated, parallel to LineagePDG
+    std::vector<int> fDirectParent_LineageDepth;   // per hit: number of entries contributed
+    // per hit: 1 chain reached a generator primary (complete); 0 truncated because WCSim
+    // did not save the next ancestor; -1 circular reference or depth cap; -5 dark noise
+    std::vector<int> fDirectParent_LineageStatus;
 
     // SiPMPulseInfo_fill
     int fSiPM1NPulses;
