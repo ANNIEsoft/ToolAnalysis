@@ -231,6 +231,7 @@ private:
     std::vector<int> fDirectParent_NeutronParentTrackID; // direct parent track ID of the stored neutron ancestor
     std::vector<int> fDirectParent_NeutronParentPDG; // direct parent PDG of the stored neutron ancestor
     std::vector<int> fDirectParent_IsDarknoise; // 1 if the pulse is pure dark noise, 0 otherwise
+    std::vector<int> fDirectParent_InteractionMode; // WCSim Nuance mode per hit; -999 darknoise; -9999 unavailable
 
     // SiPMPulseInfo_fill
     int fSiPM1NPulses;
@@ -481,6 +482,7 @@ private:
     int fTrueKPlusCher;
     int fTrueKMinus;
     int fTrueKMinusCher;
+    int fTrueWCSimMode = -9999; // raw WCSim Nuance interaction mode from GetMode()
 
     // TankReco_fill
     double fRecoVtxX;

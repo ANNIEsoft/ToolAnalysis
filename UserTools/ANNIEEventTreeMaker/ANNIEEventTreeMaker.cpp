@@ -193,6 +193,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("DirectParent_NeutronParentTrackID", &fDirectParent_NeutronParentTrackID);
     fANNIETree->Branch("DirectParent_NeutronParentPDG", &fDirectParent_NeutronParentPDG);
     fANNIETree->Branch("DirectParent_IsDarknoise", &fDirectParent_IsDarknoise);
+    fANNIETree->Branch("DirectParent_InteractionMode", &fDirectParent_InteractionMode);
   }
 
   if (SiPMPulseInfo_fill)
@@ -484,6 +485,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("trueKPlusCher", &fTrueKPlusCher, "trueKPlusCher/I");
     fANNIETree->Branch("trueKMinus", &fTrueKMinus, "trueKMinus/I");
     fANNIETree->Branch("trueKMinusCher", &fTrueKMinusCher, "trueKMinusCher/I");
+    fANNIETree->Branch("trueWCSimMode", &fTrueWCSimMode, "trueWCSimMode/I");
   }
 
   // Reconstructed variables after full Muon Reco Analysis
@@ -795,6 +797,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fDirectParent_NeutronParentTrackID.clear();
   fDirectParent_NeutronParentPDG.clear();
   fDirectParent_IsDarknoise.clear();
+  fDirectParent_InteractionMode.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -1038,6 +1041,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fTrueKPlusCher = -9999;
   fTrueKMinus = -9999;
   fTrueKMinusCher = -9999;
+  fTrueWCSimMode = -9999;
 
   // TankReco_fill
   fRecoVtxX = -9999;
@@ -1456,6 +1460,8 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
   bool got_neutronAncestorClass = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
   bool got_neutronParent = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronParent", fMCHitToNeutronParent);
   bool got_isDarknoise = m_data->Stores["ANNIEEvent"]->Get("MCHitToIsDarknoise", fMCHitToIsDarknoise);
+  std::map<unsigned long, std::map<double, int>>* fMCHitToInteractionMode = nullptr;
+  bool got_interactionMode = m_data->Stores["ANNIEEvent"]->Get("MCHitToInteractionMode", fMCHitToInteractionMode);
 
   for (auto const& apair : *fMCHitToDirectParents) {
     unsigned long pmtID = apair.first;
@@ -1532,6 +1538,16 @@ void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
         }
       }
       fDirectParent_IsDarknoise.push_back(isDarknoise);
+
+      int interactionMode = -9999;
+      if (got_interactionMode && fMCHitToInteractionMode) {
+        auto pmtIt = fMCHitToInteractionMode->find(pmtID);
+        if (pmtIt != fMCHitToInteractionMode->end()) {
+          auto modeIt = pmtIt->second.find(hitTime);
+          if (modeIt != pmtIt->second.end()) interactionMode = modeIt->second;
+        }
+      }
+      fDirectParent_InteractionMode.push_back(interactionMode);
     }
   }
   return;
@@ -2459,6 +2475,14 @@ bool ANNIEEventTreeMaker::FillMCTruthInfo()
   Log(logmessage, v_message, ANNIEEventTreeMakerVerbosity);
 
   fiMCTriggerNum = (int)fMCTriggerNum;
+
+  {
+    std::vector<int> wcSimModes;
+    if (m_data->Stores.at("ANNIEEvent")->Get("WCSimInteractionModes", wcSimModes) && !wcSimModes.empty()) {
+      int trigIdx = fiMCTriggerNum;
+      fTrueWCSimMode = (trigIdx >= 0 && trigIdx < (int)wcSimModes.size()) ? wcSimModes[trigIdx] : wcSimModes[0];
+    }
+  }
 
   std::map<std::string, std::vector<double>> MCNeutCap;
   bool get_neutcap = m_data->Stores.at("ANNIEEvent")->Get("MCNeutCap", MCNeutCap);

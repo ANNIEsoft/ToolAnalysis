@@ -82,6 +82,11 @@ class BackTracker: public Tool {
   std::map<unsigned long, std::map<double, std::pair<int, int>>> *fMCHitToNeutronParent = nullptr;
   // PMT ID -> reco hit time -> true if pulse is pure dark noise
   std::map<unsigned long, std::map<double, bool>> *fMCHitToIsDarknoise = nullptr;
+  // PMT ID -> reco hit time -> WCSim Nuance interaction mode
+  //   -999  = dark noise (no physics parent)
+  //   -9999 = mode unavailable (LoadWCSim not run or BackTracker skipped)
+  std::map<unsigned long, std::map<double, int>> *fMCHitToInteractionMode = nullptr;
+  std::vector<int> fWCSimInteractionModes; // one entry per trigger, from LoadWCSim
 
   bool fDirectParentClockTickMatching = true;
   uint16_t fPMTSimPrewindowTicks = 10;

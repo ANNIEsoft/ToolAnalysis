@@ -45,7 +45,8 @@ bool BackTracker::Initialise(std::string configfile, DataModel &data){
   fMCHitToNeutronAncestorClass = new std::map<unsigned long, std::map<double, int>>;
   fMCHitToNeutronParent     = new std::map<unsigned long, std::map<double, std::pair<int, int>>>;
   fMCHitToIsDarknoise       = new std::map<unsigned long, std::map<double, bool>>;
-  
+  fMCHitToInteractionMode   = new std::map<unsigned long, std::map<double, int>>;
+
   return true;
 }
 
@@ -64,6 +65,7 @@ bool BackTracker::Execute()
   fMCHitToNeutronAncestorClass->clear();
   fMCHitToNeutronParent->clear();
   fMCHitToIsDarknoise->clear();
+  fMCHitToInteractionMode->clear();
 
   fParticleToTankTotalCharge.clear();
 
@@ -103,6 +105,7 @@ bool BackTracker::Execute()
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToNeutronParent", fMCHitToNeutronParent); //It stores
   m_data->Stores.at("ANNIEEvent")->Set("MCHitToIsDarknoise", fMCHitToIsDarknoise);
+  m_data->Stores.at("ANNIEEvent")->Set("MCHitToInteractionMode", fMCHitToInteractionMode);
 
   return true;
 }
@@ -283,6 +286,7 @@ void BackTracker::FindNeutronAncestors() {
         (*fMCHitToNeutronAncestor)[pmtID][hitTime] = std::make_pair(neutronAncestorId, neutronAncestorPdg);
         (*fMCHitToNeutronAncestorClass)[pmtID][hitTime] = neutronAncestorClass;
         (*fMCHitToNeutronParent)[pmtID][hitTime] = std::make_pair(neutronParentTrackId, neutronParentPdg);
+        (*fMCHitToInteractionMode)[pmtID][hitTime] = -999;
         continue;
       }
 
@@ -329,6 +333,17 @@ void BackTracker::FindNeutronAncestors() {
       (*fMCHitToNeutronAncestor)[pmtID][hitTime] = std::make_pair(neutronAncestorId, neutronAncestorPdg);
       (*fMCHitToNeutronAncestorClass)[pmtID][hitTime] = neutronAncestorClass;
       (*fMCHitToNeutronParent)[pmtID][hitTime] = std::make_pair(neutronParentTrackId, neutronParentPdg);
+
+      int interactionMode = -9999;
+      if (!directParents.empty() && !fWCSimInteractionModes.empty()) {
+        auto particleIt = fMCParticleIndexMap->find(directParents[0]);
+        if (particleIt != fMCParticleIndexMap->end()) {
+          int trigNum = fMCParticles->at(particleIt->second).GetMCTriggerNum();
+          if (trigNum >= 0 && trigNum < (int)fWCSimInteractionModes.size())
+            interactionMode = fWCSimInteractionModes[trigNum];
+        }
+      }
+      (*fMCHitToInteractionMode)[pmtID][hitTime] = interactionMode;
 
     }
   }
@@ -395,6 +410,13 @@ bool BackTracker::LoadFromStores()
     if (m_data->Stores.at("ANNIEEvent")->Get("PMTSimReadoutWindowTicks", readoutTicks)) {
       fPMTSimReadoutWindowTicks = readoutTicks;
     }
+  }
+
+  fWCSimInteractionModes.clear();
+  bool gotModes = m_data->Stores.at("ANNIEEvent")->Get("WCSimInteractionModes", fWCSimInteractionModes);
+  if (!gotModes) {
+    logmessage = "BackTracker: WCSimInteractionModes not in ANNIEEvent; interaction mode will be -9999 for all hits.";
+    Log(logmessage, v_warning, verbosity);
   }
 
   return true;
