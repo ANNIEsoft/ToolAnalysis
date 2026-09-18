@@ -1,0 +1,10 @@
+myLoadANNIEEvent LoadANNIEEvent ./configfiles/NCQE_XS_Data/LoadANNIEEventConfig
+myLoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
+myTimeClustering TimeClustering configfiles/NCQE_XS_Data/TimeClusteringConfig
+myFindMrdTracks FindMrdTracks configfiles/NCQE_XS_Data/FindMrdTracksConfig
+myClusterFinder ClusterFinder ./configfiles/NCQE_XS_Data/ClusterFinderConfig
+myClusterClassifiers ClusterClassifiers ./configfiles/NCQE_XS_Data/ClusterClassifiersConfig
+myEventSelector EventSelector ./configfiles/NCQE_XS_Data/EventSelectorConfig
+FitRWMWaveform FitRWMWaveform ./configfiles/NCQE_XS_Data/FitRWMWaveformConfig
+VertexLeastSquares VertexLeastSquares configfiles/NCQE_XS_Data/VertexLeastSquaresConfig
+ANNIEEventTreeMaker ANNIEEventTreeMaker ./configfiles/NCQE_XS_Data/ANNIEEventTreeMakerConfig

@@ -11,6 +11,13 @@
 
 using namespace std;
 
+struct IDConfigRecord {
+    int RunNumber;
+    int ACCID;
+    int ManufacturerID;
+    string Position;
+};
+
 class PsecData{
 
     friend class boost::serialization::access;

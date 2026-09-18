@@ -1,0 +1,16 @@
+verbosity 0
+UseMCHits 0
+BreakDist 0.005
+YSpacing 0.1
+NPlanarPoints 100
+Regularizer 0
+FittingSteps 200
+FilterHitsCompatibleWindow 0
+OnlyUseReliablePMTs 1
+MinimumReliableTimingStd 1.5
+
+ExternalSeeding 1
+YBuffer 1.0
+RadialBuffer 1.0
+ExternalVertexMaxRadius 4.0
+ExternalVertexMaxHeight 4.0
