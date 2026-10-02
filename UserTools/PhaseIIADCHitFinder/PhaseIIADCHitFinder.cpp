@@ -18,7 +18,7 @@ bool PhaseIIADCHitFinder::Initialise(std::string config_filename, DataModel& dat
   adc_threshold_db = "none";
   default_adc_threshold = 7;
   threshold_type = "relative";
-  pulse_window_type = "Fixed_2023_Gains";
+  pulse_window_type = "NoDoubleHits";
   pulse_window_start_shift = -3;
   pulse_window_end_shift = 25;
   adc_window_db = "none"; //Used when pulse_finding_approach="fixed_windows"
