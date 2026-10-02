@@ -155,9 +155,14 @@ bool PhaseIIADCHitFinder::Execute() {
       return false;
     }
     else if ( raw_waveform_map.empty() && !mc_waveforms ) {
-      Log("Error: The PhaseIIADCHitFinder tool found an empty RawADCData entry", v_error,
-        verbosity);
-      return false;
+      Log("PhaseIIADCHitFinder: empty RawADCData (no tank data in this event)", v_debug, verbosity);
+
+      annie_event->Set("RecoADCHits", pulse_map);
+      annie_event->Set("Hits", hit_map, true);
+      annie_event->Set("RecoADCAuxHits", aux_pulse_map);
+      annie_event->Set("AuxHits", aux_hit_map, true);
+
+      return true;
     }
     
     // Load the maps containing the ADC calibrated waveform data

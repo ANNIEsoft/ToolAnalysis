@@ -745,6 +745,29 @@ bool EBSaver::SavePMTData(uint64_t PMTTime)
     Log("EBSaver: Merged PMT data, PMTHits size " + std::to_string(PMTHits->size()), v_debug, verbosityEBSaver);
   }
 
+  if (FinishedTankEvents != nullptr && FinishedTankEvents->count(PMTTime) > 0)
+  {
+    std::map<std::vector<int>, std::vector<uint16_t>> RawMap = FinishedTankEvents->at(PMTTime);
+    std::map<std::vector<int>, std::vector<Waveform<uint16_t>>> RawWaveformMap;
+
+    ANNIEEvent->Get("RawWaveformMap", RawWaveformMap);            // keep waveforms already in this event, otherwise the map will be empty
+
+    for (const auto& apair : RawMap) {
+        Waveform<uint16_t> TheWave(static_cast<double>(PMTTime), apair.second);
+        RawWaveformMap[apair.first].push_back(TheWave);
+    }
+
+    ANNIEEvent->Set("RawWaveformMap", RawWaveformMap);
+    
+    // Erase to prevent memory leaks as we build events
+    FinishedTankEvents->erase(PMTTime);
+    Log("EBSaver: Saved RawWaveformMap of size " + std::to_string(RawMap.size()) + " with PMTTime " + std::to_string(PMTTime), v_message, verbosityEBSaver);
+  }
+  else
+  {
+    Log("EBSaver: Could not find FinishedTankEvents for PMTTime " + std::to_string(PMTTime), v_warning, verbosityEBSaver);
+  }
+
   ANNIEEvent->Set("Hits", PMTHits, true);
   ANNIEEvent->Set("RecoADCData", PMTRecoADCHits);
   ANNIEEvent->Set("AuxHits", PMTHitsAux, true);
@@ -1029,6 +1052,7 @@ bool EBSaver::SaveOrphanLAPPD(int runCode)
 bool EBSaver::GotAllDataFromOriginalBuffer()
 {
   // got PMT data
+  bool gotRawTankEvents = m_data->CStore.Get("FinishedTankEvents", FinishedTankEvents);
   bool gotPMTHits = m_data->CStore.Get("InProgressHits", InProgressHits);
   bool gotPMTChkey = m_data->CStore.Get("InProgressChkey", InProgressChkey);
   bool gotIPRecoADCHits = m_data->CStore.Get("InProgressRecoADCHits", InProgressRecoADCHits);
@@ -1038,10 +1062,12 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
   bool gotRWM = m_data->CStore.Get("RWMRawWaveforms", RWMRawWaveforms);
   bool gotBRF = m_data->CStore.Get("BRFRawWaveforms", BRFRawWaveforms);
 
-  if (!gotPMTHits || !gotPMTChkey || !gotIPRecoADCHits || !gotIPHitsAux || !gotIPRADCH || !gotFRAS)
+  if (!gotRawTankEvents || !gotPMTHits || !gotPMTChkey || !gotIPRecoADCHits || !gotIPHitsAux || !gotIPRADCH || !gotFRAS)
   {
     Log("EBSaver: Failed to get some PMT data from buffer", v_message, verbosityEBSaver);
     // print which one was failed
+    if (!gotRawTankEvents)
+      Log("EBSaver: Failed to get raw PMT Waveforms from buffer", v_message, verbosityEBSaver);
     if (!gotPMTHits)
       Log("EBSaver: Failed to get PMT hits from buffer", v_message, verbosityEBSaver);
     if (!gotPMTChkey)
@@ -1179,6 +1205,7 @@ void EBSaver::SetDataObjects()
 {
   // after erase those data, set them back to CStore
   // set PMT data
+  m_data->CStore.Set("FinishedTankEvents", FinishedTankEvents);
   m_data->CStore.Set("InProgressHits", InProgressHits);
   m_data->CStore.Set("InProgressChkey", InProgressChkey);
   m_data->CStore.Set("InProgressRecoADCHits", InProgressRecoADCHits);
@@ -1229,12 +1256,14 @@ void EBSaver::SetDataObjects()
 
 void EBSaver::BuildEmptyPMTData()
 {
+  std::map<std::vector<int>, std::vector<Waveform<uint16_t>>> RawWaveformMap;
   std::map<unsigned long, std::vector<Hit>> *PMTHits = new std::map<unsigned long, std::vector<Hit>>;
   std::map<unsigned long, std::vector<std::vector<ADCPulse>>> PMTRecoADCHits;
   std::map<unsigned long, std::vector<Hit>> *PMTHitsAux = new std::map<unsigned long, std::vector<Hit>>;
   std::map<unsigned long, std::vector<std::vector<ADCPulse>>> PMTRecoADCHitsAux;
   std::map<unsigned long, std::vector<int>> PMTRawAcqSize;
 
+  ANNIEEvent->Set("RawWaveformMap", RawWaveformMap);
   ANNIEEvent->Set("Hits", PMTHits, true);
   ANNIEEvent->Set("RecoADCData", PMTRecoADCHits);
   ANNIEEvent->Set("AuxHits", PMTHitsAux, true);

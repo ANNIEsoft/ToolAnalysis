@@ -15,6 +15,8 @@
  * $Date: 2024/04 $
  * Contact: yuef@iaistate.edu
  *
+ * Updated by: Anuj Gupta (2026.09.25)
+ *
  */
 
 class EBPMT : public Tool
@@ -45,6 +47,7 @@ private:
     std::map<uint64_t, std::vector<unsigned long>> *InProgressChkey;                 // Key: {MTCTime}, value: vector of in progress chankeys
 
     // only used for VME offset correction
+    std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t>>>* FinishedTankEvents = nullptr;     // Key: {MTCTime}, value: map of raw, uncalibrated waveforms
     std::map<uint64_t, std::map<unsigned long, std::vector<Hit>> *> *InProgressHitsAux;                        // Key: {MTCTime}, value: map of  Hit distributions
     std::map<uint64_t, std::map<unsigned long, std::vector<std::vector<ADCPulse>>>> *InProgressRecoADCHits;    // Key: {MTCTime}, value: map of found pulses
     std::map<uint64_t, std::map<unsigned long, std::vector<std::vector<ADCPulse>>>> *InProgressRecoADCHitsAux; // Key: {MTCTime}, value: map of found pulses

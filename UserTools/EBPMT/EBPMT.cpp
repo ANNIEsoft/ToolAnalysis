@@ -40,17 +40,17 @@ bool EBPMT::Initialise(std::string configfile, DataModel &data)
 bool EBPMT::Execute()
 {
   m_data->CStore.Get("RunCode", currentRunCode);
+  bool gotTankEvents = m_data->CStore.Get("FinishedTankEvents", FinishedTankEvents);
   bool gotHits = m_data->CStore.Get("InProgressHits", InProgressHits);
   bool gotChkey = m_data->CStore.Get("InProgressChkey", InProgressChkey);
 
-    if (!gotHits || !gotChkey)
+  if (!gotTankEvents || !gotHits || !gotChkey)
   {
-    Log("EBPMT: No InProgressHits or InProgressChkey found", v_message, verbosityEBPMT);
+    Log("EBPMT: No FinishedTankEvents or InProgressHits or InProgressChkey found", v_message, verbosityEBPMT);
     return true;
   }
-  Log("EBPMT: got inprogress hits and chkey with size " + std::to_string(InProgressHits->size()) + " and " + std::to_string(InProgressChkey->size()), v_message, verbosityEBPMT);
-
-
+  Log("EBPMT: got inprogress tank events, hits and chkey with size " + std::to_string(FinishedTankEvents->size()) + ", " + std::to_string(InProgressHits->size()) 
+      + " and " + std::to_string(InProgressChkey->size()), v_message, verbosityEBPMT);
 
   if (exeNum % 80 == 0 && exeNum != 0)
   {
@@ -62,6 +62,7 @@ bool EBPMT::Execute()
     m_data->CStore.Get("InProgressRecoADCHitsAux", InProgressRecoADCHitsAux);
 
     CorrectVMEOffset();
+    m_data->CStore.Set("FinishedTankEvents", FinishedTankEvents);
     m_data->CStore.Set("InProgressHits", InProgressHits);
     m_data->CStore.Set("InProgressChkey", InProgressChkey);
     m_data->CStore.Set("InProgressHitsAux", InProgressHitsAux);
@@ -415,6 +416,12 @@ void EBPMT::CorrectVMEOffset()
   // loop timestamps，对于每一个时间戳，检查它与它之前的时间戳的差值是否是8或者16
   // 如果是，获得InProgressHits在这两个时间戳上的map的size
   // 在timestamps_to_shift中记录pair，第一个时间戳是size较小的那个，第二个是较大的那个
+  
+  // Comment in English using AI
+  // Loop over the timestamps. For each one, check whether its difference from the previous timestamp is 8 or 16 ns.
+  // If so, get the size of the InProgressHits map at both timestamps.
+  // Record the pair in timestamps_to_shift: first the timestamp with the smaller map, then the one with the larger map.
+
   for (int i = 1; i < timestamps.size(); i++)
   {
     uint64_t dt = (timestamps[i] > timestamps[i - 1]) ? (timestamps[i] - timestamps[i - 1]) : (timestamps[i - 1] - timestamps[i]);
@@ -486,6 +493,20 @@ void EBPMT::CorrectVMEOffset()
       InProgressRecoADCHits->erase(SmallerMapTS);
       (*InProgressRecoADCHitsAux)[LargerMapTS] = SecondRecoADCHitsAux;
       InProgressRecoADCHitsAux->erase(SmallerMapTS);
+
+      if (FinishedTankEvents != nullptr && FinishedTankEvents->count(SmallerMapTS) > 0) {
+              std::map<std::vector<int>, std::vector<uint16_t>> FirstRaw = FinishedTankEvents->at(SmallerMapTS);
+              std::map<std::vector<int>, std::vector<uint16_t>> SecondRaw;
+              
+              if (FinishedTankEvents->count(LargerMapTS) > 0) {
+                  SecondRaw = FinishedTankEvents->at(LargerMapTS);
+              }
+              
+              SecondRaw.insert(FirstRaw.begin(), FirstRaw.end());
+              
+              (*FinishedTankEvents)[LargerMapTS] = SecondRaw;
+              FinishedTankEvents->erase(SmallerMapTS);
+      }
 
       if (saveRWMWaveforms)
       {
