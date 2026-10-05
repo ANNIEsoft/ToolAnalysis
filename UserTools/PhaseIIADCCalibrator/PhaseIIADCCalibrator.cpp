@@ -757,13 +757,15 @@ PhaseIIADCCalibrator::make_calibrated_waveforms_ze3ra_multi(
     }
     std::vector<double> cal_data;
     const std::vector<unsigned short>& raw_data = raw_waveform.Samples();
-    for (const auto& asample: raw_data){
+    const int raw_data_size = static_cast<int>(raw_data.size());
+    for(int s=0; s<raw_data_size; s++){
+      unsigned short asample = raw_data[s];
       for(int j = 0; j<(int)RepresentationRegion.size(); j++){
-        if(asample < RepresentationRegion.at(j)){
+        if(s < RepresentationRegion.at(j)){
           cal_data.push_back((static_cast<double>(asample) - baselines.at(j))
             * ADC_TO_VOLT);
           break;
-        } else if (asample >= RepresentationRegion.back()){
+        } else if (s >= RepresentationRegion.back()){
           cal_data.push_back((static_cast<double>(asample) - baselines.back())
             * ADC_TO_VOLT);
           break;

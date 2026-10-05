@@ -83,10 +83,12 @@ is manipulable using DefaultADCThreshold and DefaultThresholdType config variabl
       relative to the calibrated baseline ("relative"), or absolute ADC counts ("absolute").
 
 - PulseWindowType [string]: If using "threshold" on pulse finding approach, this toggle defines
-      how the pulse windows in a waveform are found.  There are three options: fixed window ("fixed"),
+      how the pulse windows in a waveform are found.  There are multiple options: fixed window ("fixed"),
       dynamic window where the pulse windows are defined by crossing and un-crossing threshold ("dynamic"),
       and ("Fixed_2023_Gains") which implements the same integration window used in the 2023 Gains calibration 
       where the pulse windows are defined by crossing and un-crossing the baseline.
+      The fourth option is "NoDoubleHits" which follows the approach from "Fixed_2023_Gains", but corrects a bug
+      there to make sure that pulses are not double counted.
 
 - PulseWindowStart [int]: Start of pulse window relative to when adc trigger threshold
       was crossed.  Only used when PulseFindingApproach==threshold and
@@ -117,7 +119,7 @@ verbosity 0
 UseLEDWaveforms 0
 
 PulseFindingApproach threshold
-PulseWindowType Fixed_2023_Gains
+PulseWindowType NoDoubleHits
 DefaultADCThreshold 7
 DefaultThresholdType relative
 
@@ -132,7 +134,7 @@ verbosity 0
 UseLEDWaveforms 0
 
 PulseFindingApproach threshold
-PulseWindowType Fixed_2023_Gains
+PulseWindowType NoDoubleHits
 DefaultADCThreshold 7
 DefaultThresholdType relative
 
@@ -147,7 +149,7 @@ verbosity 0
 UseLEDWaveforms 0
 
 PulseFindingApproach threshold
-PulseWindowType Fixed_2023_Gains
+PulseWindowType NoDoubleHits
 DefaultADCThreshold 7
 DefaultThresholdType relative
 
