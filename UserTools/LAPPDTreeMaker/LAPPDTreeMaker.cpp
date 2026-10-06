@@ -58,8 +58,8 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fPulse->Branch("PartFileNumber", &PartFileNumber, "PartFileNumber/I");
   fPulse->Branch("EventNumber", &EventNumber, "EventNumber/I");
   fPulse->Branch("LAPPD_ID", &LAPPD_ID, "LAPPD_ID/I");
-  fPulse->Branch("LAPPDDataTimeStampUL", &LAPPDDataTimeStampUL, "LAPPDDataTimeStampUL/l");
-  fPulse->Branch("LAPPDDataBeamgateUL", &LAPPDDataBeamgateUL, "LAPPDDataBeamgateUL/l");
+  fPulse->Branch("LAPPDDataTimeStamp0_UL", &LAPPDDataTimeStamp0_UL, "LAPPDDataTimeStamp0_UL/l");
+  fPulse->Branch("LAPPDDataBeamgate0_UL", &LAPPDDataBeamgate0_UL, "LAPPDDataBeamgate0_UL/l");
   fPulse->Branch("ChannelID", &ChannelID, "ChannelID/I");
   fPulse->Branch("StripNumber", &StripNumber, "StripNumber/I");
   fPulse->Branch("PeakTime", &PeakTime, "PeakTime/D");
@@ -73,12 +73,20 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fPulse->Branch("PulseBaseline", &PulseBaseline, "PulseBaseline/D");
   if (MultiLAPPDMapTreeMaker)
   {
-    fPulse->Branch("LTSRaw", &LTSRaw, "LTSRaw/l");
-    fPulse->Branch("LBGRaw", &LBGRaw, "LBGRaw/l");
-    fPulse->Branch("LOffset_ns", &LOffset_ns, "LOffset_ns/l");
-    fPulse->Branch("LTSCorrection", &LTSCorrection, "LTSCorrection/I");
-    fPulse->Branch("LBGCorrection", &LBGCorrection, "LBGCorrection/I");
-    fPulse->Branch("LOSInMinusPS", &LOSInMinusPS, "LOSInMinusPS/I");
+    fPulse->Branch("LTSRaw_0", &LTSRaw_0, "LTSRaw_0/l"); // Change fPulse to fHit/fWaveform for those trees
+    fPulse->Branch("LBGRaw_0", &LBGRaw_0, "LBGRaw_0/l");
+    fPulse->Branch("LOffset_ns_0", &LOffset_ns_0, "LOffset_ns_0/l");
+    fPulse->Branch("LTSCorrection_0", &LTSCorrection_0, "LTSCorrection_0/I");
+    fPulse->Branch("LBGCorrection_0", &LBGCorrection_0, "LBGCorrection_0/I");
+    fPulse->Branch("LOSInMinusPS_0", &LOSInMinusPS_0, "LOSInMinusPS_0/I");
+    
+    fPulse->Branch("LTSRaw_1", &LTSRaw_1, "LTSRaw_1/l");
+    fPulse->Branch("LBGRaw_1", &LBGRaw_1, "LBGRaw_1/l");
+    fPulse->Branch("LOffset_ns_1", &LOffset_ns_1, "LOffset_ns_1/l");
+    fPulse->Branch("LTSCorrection_1", &LTSCorrection_1, "LTSCorrection_1/I");
+    fPulse->Branch("LBGCorrection_1", &LBGCorrection_1, "LBGCorrection_1/I");
+    fPulse->Branch("LOSInMinusPS_1", &LOSInMinusPS_1, "LOSInMinusPS_1/I");
+
     fPulse->Branch("CTCPrimeTriggerTime", &CTCPrimeTriggerTime, "CTCPrimeTriggerTime/l");
   }
 
@@ -87,8 +95,8 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fHit->Branch("PartFileNumber", &PartFileNumber, "PartFileNumber/I");
   fHit->Branch("EventNumber", &EventNumber, "EventNumber/I");
   fHit->Branch("LAPPD_ID", &LAPPD_ID, "LAPPD_ID/I");
-  fHit->Branch("LAPPDDataTimeStampUL", &LAPPDDataTimeStampUL, "LAPPDDataTimeStampUL/l");
-  fHit->Branch("LAPPDDataBeamgateUL", &LAPPDDataBeamgateUL, "LAPPDDataBeamgateUL/l");
+  fHit->Branch("LAPPDDataTimeStamp0_UL", &LAPPDDataTimeStamp0_UL, "LAPPDDataTimeStamp0_UL/l");
+  fHit->Branch("LAPPDDataBeamgate0_UL", &LAPPDDataBeamgate0_UL, "LAPPDDataBeamgate0_UL/l");
   fHit->Branch("StripNumber", &StripNumber, "StripNumber/I");
   fHit->Branch("HitTime", &HitTime, "HitTime/D");
   fHit->Branch("HitAmp", &HitAmp, "HitAmp/D");
@@ -103,12 +111,20 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fHit->Branch("Pulse2LastTime", &Pulse2LastTime, "Pulse2LastTime/D");
   if (MultiLAPPDMapTreeMaker)
   {
-    fHit->Branch("LTSRaw", &LTSRaw, "LTSRaw/l");
-    fHit->Branch("LBGRaw", &LBGRaw, "LBGRaw/l");
-    fHit->Branch("LOffset_ns", &LOffset_ns, "LOffset_ns/l");
-    fHit->Branch("LTSCorrection", &LTSCorrection, "LTSCorrection/I");
-    fHit->Branch("LBGCorrection", &LBGCorrection, "LBGCorrection/I");
-    fHit->Branch("LOSInMinusPS", &LOSInMinusPS, "LOSInMinusPS/I");
+    fHit->Branch("LTSRaw_0", &LTSRaw_0, "LTSRaw_0/l");
+    fHit->Branch("LBGRaw_0", &LBGRaw_0, "LBGRaw_0/l");
+    fHit->Branch("LOffset_ns_0", &LOffset_ns_0, "LOffset_ns_0/l");
+    fHit->Branch("LTSCorrection_0", &LTSCorrection_0, "LTSCorrection_0/I");
+    fHit->Branch("LBGCorrection_0", &LBGCorrection_0, "LBGCorrection_0/I");
+    fHit->Branch("LOSInMinusPS_0", &LOSInMinusPS_0, "LOSInMinusPS_0/I");
+
+    fHit->Branch("LTSRaw_1", &LTSRaw_1, "LTSRaw_1/l");
+    fHit->Branch("LBGRaw_1", &LBGRaw_1, "LBGRaw_1/l");
+    fHit->Branch("LOffset_ns_1", &LOffset_ns_1, "LOffset_ns_1/l");
+    fHit->Branch("LTSCorrection_1", &LTSCorrection_1, "LTSCorrection_1/I");
+    fHit->Branch("LBGCorrection_1", &LBGCorrection_1, "LBGCorrection_1/I");
+    fHit->Branch("LOSInMinusPS_1", &LOSInMinusPS_1, "LOSInMinusPS_1/I");
+
     fHit->Branch("CTCPrimeTriggerTime", &CTCPrimeTriggerTime, "CTCPrimeTriggerTime/l");
   }
 
@@ -117,8 +133,8 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fWaveform->Branch("PartFileNumber", &PartFileNumber, "PartFileNumber/I");
   fWaveform->Branch("EventNumber", &EventNumber, "EventNumber/I");
   fWaveform->Branch("LAPPD_ID", &LAPPD_ID, "LAPPD_ID/I");
-  fWaveform->Branch("LAPPDDataTimeStampUL", &LAPPDDataTimeStampUL, "LAPPDDataTimeStampUL/l");
-  fWaveform->Branch("LAPPDDataBeamgateUL", &LAPPDDataBeamgateUL, "LAPPDDataBeamgateUL/l");
+  fWaveform->Branch("LAPPDDataTimeStamp0_UL", &LAPPDDataTimeStamp0_UL, "LAPPDDataTimeStamp0_UL/l");
+  fWaveform->Branch("LAPPDDataBeamgate0_UL", &LAPPDDataBeamgate0_UL, "LAPPDDataBeamgate0_UL/l");
   fWaveform->Branch("StripNumber", &StripNumber, "StripNumber/I");
   fWaveform->Branch("PulseSide", &PulseSide, "PulseSide/I");
   fWaveform->Branch("WaveformMax", &waveformMaxValue, "WaveformMax/D");
@@ -128,12 +144,20 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fWaveform->Branch("WaveformMaxNearing", &waveformMaxNearingValue, "WaveformMaxNearing/D");
   if (MultiLAPPDMapTreeMaker)
   {
-    fWaveform->Branch("LTSRaw", &LTSRaw, "LTSRaw/l");
-    fWaveform->Branch("LBGRaw", &LBGRaw, "LBGRaw/l");
-    fWaveform->Branch("LOffset_ns", &LOffset_ns, "LOffset_ns/l");
-    fWaveform->Branch("LTSCorrection", &LTSCorrection, "LTSCorrection/I");
-    fWaveform->Branch("LBGCorrection", &LBGCorrection, "LBGCorrection/I");
-    fWaveform->Branch("LOSInMinusPS", &LOSInMinusPS, "LOSInMinusPS/I");
+    fWaveform->Branch("LTSRaw_0", &LTSRaw_0, "LTSRaw_0/l");
+    fWaveform->Branch("LBGRaw_0", &LBGRaw_0, "LBGRaw_0/l");
+    fWaveform->Branch("LOffset_ns_0", &LOffset_ns_0, "LOffset_ns_0/l");
+    fWaveform->Branch("LTSCorrection_0", &LTSCorrection_0, "LTSCorrection_0/I");
+    fWaveform->Branch("LBGCorrection_0", &LBGCorrection_0, "LBGCorrection_0/I");
+    fWaveform->Branch("LOSInMinusPS_0", &LOSInMinusPS_0, "LOSInMinusPS_0/I");
+
+    fWaveform->Branch("LTSRaw_1", &LTSRaw_1, "LTSRaw_1/l");
+    fWaveform->Branch("LBGRaw_1", &LBGRaw_1, "LBGRaw_1/l");
+    fWaveform->Branch("LOffset_ns_1", &LOffset_ns_1, "LOffset_ns_1/l");
+    fWaveform->Branch("LTSCorrection_1", &LTSCorrection_1, "LTSCorrection_1/I");
+    fWaveform->Branch("LBGCorrection_1", &LBGCorrection_1, "LBGCorrection_1/I");
+    fWaveform->Branch("LOSInMinusPS_1", &LOSInMinusPS_1, "LOSInMinusPS_1/I");
+
     fWaveform->Branch("CTCPrimeTriggerTime", &CTCPrimeTriggerTime, "CTCPrimeTriggerTime/l");
   }
 
@@ -142,12 +166,18 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
   fTimeStamp->Branch("PartFileNumber", &PartFileNumber, "PartFileNumber/I");
   fTimeStamp->Branch("EventNumber", &EventNumber, "EventNumber/I");
   fTimeStamp->Branch("LAPPD_ID", &LAPPD_ID, "LAPPD_ID/I");
-  fTimeStamp->Branch("LAPPDDataTimeStampUL", &LAPPDDataTimeStampUL, "LAPPDDataTimeStampUL/l");
-  fTimeStamp->Branch("LAPPDDataBeamgateUL", &LAPPDDataBeamgateUL, "LAPPDDataBeamgateUL/l");
-  fTimeStamp->Branch("LAPPDDataTimestamp", &LAPPDDataTimestampPart1, "LAPPDDataTimestamp/l");
-  fTimeStamp->Branch("LAPPDDataBeamgate", &LAPPDDataBeamgatePart1, "LAPPDDataBeamgate/l");
-  fTimeStamp->Branch("LAPPDDataTimestampFloat", &LAPPDDataTimestampPart2, "LAPPDDataTimestampFloat/D");
-  fTimeStamp->Branch("LAPPDDataBeamgateFloat", &LAPPDDataBeamgatePart2, "LAPPDDataBeamgateFloat/D");
+  fTimeStamp->Branch("LAPPDDataTimeStamp0_UL", &LAPPDDataTimeStamp0_UL, "LAPPDDataTimeStamp0_UL/l");
+  fTimeStamp->Branch("LAPPDDataBeamgate0_UL", &LAPPDDataBeamgate0_UL, "LAPPDDataBeamgate0_UL/l");
+  fTimeStamp->Branch("LAPPDDataTimestamp0", &LAPPDDataTimestamp0_Part1, "LAPPDDataTimestamp0/l");
+  fTimeStamp->Branch("LAPPDDataBeamgate0", &LAPPDDataBeamgate0_Part1, "LAPPDDataBeamgate0/l");
+  fTimeStamp->Branch("LAPPDDataTimestamp0_Float", &LAPPDDataTimestamp0_Part2, "LAPPDDataTimestamp0_Float/D");
+  fTimeStamp->Branch("LAPPDDataBeamgate0_Float", &LAPPDDataBeamgate0_Part2, "LAPPDDataBeamgate0_Float/D");
+  fTimeStamp->Branch("LAPPDDataTimeStamp1_UL", &LAPPDDataTimeStamp1_UL, "LAPPDDataTimeStamp1_UL/l");
+  fTimeStamp->Branch("LAPPDDataBeamgate1_UL", &LAPPDDataBeamgate1_UL, "LAPPDDataBeamgate1_UL/l");
+  fTimeStamp->Branch("LAPPDDataTimestamp1", &LAPPDDataTimestamp1_Part1, "LAPPDDataTimestamp1/l");
+  fTimeStamp->Branch("LAPPDDataBeamgate1", &LAPPDDataBeamgate1_Part1, "LAPPDDataBeamgate1/l");
+  fTimeStamp->Branch("LAPPDDataTimestamp1_Float", &LAPPDDataTimestamp1_Part2, "LAPPDDataTimestamp1_Float/D");
+  fTimeStamp->Branch("LAPPDDataBeamgate1_Float", &LAPPDDataBeamgate1_Part2, "LAPPDDataBeamgate1_Float/D");
   fTimeStamp->Branch("ppsDiff", &ppsDiff, "ppsDiff/L");
   fTimeStamp->Branch("ppsCount0", &ppsCount0, "ppsCount0/l");
   fTimeStamp->Branch("ppsCount1", &ppsCount1, "ppsCount1/l");
@@ -224,62 +254,20 @@ bool LAPPDTreeMaker::Execute()
   {
     m_data->Stores["ANNIEEvent"]->Get("PrimaryTriggerTime", CTCPrimeTriggerTime);
     if (treeMakerVerbosity > 0)
-      cout << "LAPPDTreeMaker::Execute() MultiLAPPDMapTreeMaker" << endl;
+      std::cout << "LAPPDTreeMaker::Execute() MultiLAPPDMapTreeMaker" << std::endl;
+    
     LoadLAPPDMapInfo();
-    bool getMap = m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", LAPPDDataMap);
-    bool gotBeamgates_ns = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-    bool gotTimeStamps_ns = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-    bool gotTimeStampsRaw = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-    bool gotBeamgatesRaw = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-    bool gotOffsets = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets);
-    bool gotTSCorrection = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection);
-    bool gotDBGCorrection = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection);
-    bool gotOSInMinusPS = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
-    if (treeMakerVerbosity > 0)
-      cout << "LAPPDTreeMaker::Execute() MultiLAPPDMapTreeMaker get map = " << getMap << endl;
-    if (getMap)
-    {
-      if (treeMakerVerbosity > 0)
-        cout << "map size: " << LAPPDDataMap.size() << endl;
-      for (auto &item : LAPPDDataMap)
-      {
-        PsecData thisData = item.second;
-        int thisLAPPD_ID = thisData.LAPPD_ID;
-
-        uint64_t thisDataTime = item.first;
-        uint64_t thisTSRaw = LAPPDTimeStampsRaw.at(thisDataTime);
-        uint64_t thisBGRaw = LAPPDBeamgatesRaw.at(thisDataTime);
-        uint64_t thisOffset = LAPPDOffsets.at(thisDataTime);
-        int thisTSCorr = LAPPDTSCorrection.at(thisDataTime);
-        int thisDBGCorr = LAPPDBGCorrection.at(thisDataTime);
-        int thisOSInMinusPS = LAPPDOSInMinusPS.at(thisDataTime);
-
-        if (treeMakerVerbosity > 0)
-          cout << "outside tree maker, Got LAPPD ID: " << thisLAPPD_ID << ", time stamp: " << thisDataTime << ", TSraw " << thisTSRaw << ", BGraw " << thisBGRaw << ", offset " << thisOffset << ", TSCorr " << thisTSCorr << ", DBGCorr " << thisDBGCorr << ", OSInMinusPS " << thisOSInMinusPS << endl;
-
-        LAPPD_IDs.push_back(thisLAPPD_ID);
-        LAPPDMapTimeStampRaw.push_back(thisTSRaw);
-        LAPPDMapBeamgateRaw.push_back(thisBGRaw);
-        LAPPDMapOffsets.push_back(thisOffset);
-        LAPPDMapTSCorrections.push_back(thisTSCorr);
-        LAPPDMapBGCorrections.push_back(thisDBGCorr);
-        LAPPDMapOSInMinusPS.push_back(thisOSInMinusPS);
-
-        if (treeMakerVerbosity > 0)
-          cout << "outside size of LAPPD_IDs: " << LAPPD_IDs.size() << endl;
-      }
-    }
-    else
-    {
-      cout << "outside LAPPDTreeMaker::LoadLAPPDMapInfo, no LAPPDDataMap found" << endl;
-    }
-
+    
     if (treeMakerVerbosity > 0)
     {
-      cout << "LAPPDMapTimeStampRaw: ";
-      for (auto &item : LAPPDMapTimeStampRaw)
-        cout << item << " ";
-      cout << "LAPPDTreeMaker::Execute() MultiLAPPDMapTreeMaker finished " << endl;
+      std::cout << "LAPPDMapTimeStampRaw: ";
+      for (auto &item : LAPPDMapTimeStampRaw_0)
+        std::cout << item << " ";
+
+      for (auto &item : LAPPDMapTimeStampRaw_1)
+        std::cout << item << " ";
+
+      std::cout << "LAPPDTreeMaker::Execute() MultiLAPPDMapTreeMaker finished " << std::endl;
     }
   }
 
@@ -418,12 +406,21 @@ void LAPPDTreeMaker::CleanVariables()
   Pulse1LastTime = -9999;
   Pulse2LastTime = -9999;
 
-  LAPPDDataTimeStampUL = 0;
-  LAPPDDataBeamgateUL = 0;
-  LAPPDDataTimestampPart1 = 0;
-  LAPPDDataBeamgatePart1 = 0;
-  LAPPDDataTimestampPart2 = -9999;
-  LAPPDDataBeamgatePart2 = -9999;
+  // ACDC 0
+  LAPPDDataTimeStamp0_UL = 0;
+  LAPPDDataBeamgate0_UL = 0;
+  LAPPDDataTimestamp0_Part1 = 0;
+  LAPPDDataBeamgate0_Part1 = 0;
+  LAPPDDataTimestamp0_Part2 = -9999;
+  LAPPDDataBeamgate0_Part2 = -9999;
+
+  // ACDC 1
+  LAPPDDataTimeStamp1_UL = 0;
+  LAPPDDataBeamgate1_UL = 0;
+  LAPPDDataTimestamp1_Part1 = 0;
+  LAPPDDataBeamgate1_Part1 = 0;
+  LAPPDDataTimestamp1_Part2 = -9999;
+  LAPPDDataBeamgate1_Part2 = -9999;
 
   ppsDiff = -9999;
   ppsCount0 = 0;
@@ -446,22 +443,40 @@ void LAPPDTreeMaker::CleanVariables()
   groupedTriggerType = -9999;
 
   LAPPD_IDs.clear();
-  LAPPDMapTimeStampRaw.clear();
-  LAPPDMapBeamgateRaw.clear();
-  LAPPDMapOffsets.clear();
-  LAPPDMapTSCorrections.clear();
-  LAPPDMapBGCorrections.clear();
-  LAPPDMapOSInMinusPS.clear();
+
+  LAPPDMapTimeStampRaw_0.clear();
+  LAPPDMapBeamgateRaw_0.clear();
+  LAPPDMapOffsets_0.clear();
+  LAPPDMapTSCorrections_0.clear();
+  LAPPDMapBGCorrections_0.clear();
+  LAPPDMapOSInMinusPS_0.clear();
+
+  LAPPDMapTimeStampRaw_1.clear();
+  LAPPDMapBeamgateRaw_1.clear();
+  LAPPDMapOffsets_1.clear();
+  LAPPDMapTSCorrections_1.clear();
+  LAPPDMapBGCorrections_1.clear();
+  LAPPDMapOSInMinusPS_1.clear();
 
   LAPPDDataMap.clear();
-  LAPPDBeamgate_ns.clear();
-  LAPPDTimeStamps_ns.clear();
-  LAPPDTimeStampsRaw.clear();
-  LAPPDBeamgatesRaw.clear();
-  LAPPDOffsets.clear();
-  LAPPDTSCorrection.clear();
-  LAPPDBGCorrection.clear();
-  LAPPDOSInMinusPS.clear();
+  
+  LAPPDBeamgate_ns_0.clear();
+  LAPPDTimeStamps_ns_0.clear();
+  LAPPDTimeStampsRaw_0.clear();
+  LAPPDBeamgatesRaw_0.clear();
+  LAPPDOffsets_0.clear();
+  LAPPDTSCorrection_0.clear();
+  LAPPDBGCorrection_0.clear();
+  LAPPDOSInMinusPS_0.clear();
+
+  LAPPDBeamgate_ns_1.clear();
+  LAPPDTimeStamps_ns_1.clear();
+  LAPPDTimeStampsRaw_1.clear();
+  LAPPDBeamgatesRaw_1.clear();
+  LAPPDOffsets_1.clear();
+  LAPPDTSCorrection_1.clear();
+  LAPPDBGCorrection_1.clear();
+  LAPPDOSInMinusPS_1.clear();
 }
 
 bool LAPPDTreeMaker::LoadRunInfoFromRaw()
@@ -524,23 +539,37 @@ bool LAPPDTreeMaker::FillPulseTree()
         //  use that index to get the timestamp and beamgate
         //  if not found, set them to zero
         int index = std::distance(LAPPD_IDs.begin(), std::find(LAPPD_IDs.begin(), LAPPD_IDs.end(), LAPPD_ID));
-        if (index < LAPPDMapTimeStampRaw.size())
+        if (index < LAPPDMapTimeStampRaw_0.size())
         {
-          LTSRaw = LAPPDMapTimeStampRaw.at(index);
-          LBGRaw = LAPPDMapBeamgateRaw.at(index);
-          LOffset_ns = LAPPDMapOffsets.at(index);
-          LTSCorrection = LAPPDMapTSCorrections.at(index);
-          LBGCorrection = LAPPDMapBGCorrections.at(index);
-          LOSInMinusPS = LAPPDMapOSInMinusPS.at(index);
+          LTSRaw_0 = LAPPDMapTimeStampRaw_0.at(index);
+          LBGRaw_0 = LAPPDMapBeamgateRaw_0.at(index);
+          LOffset_ns_0 = LAPPDMapOffsets_0.at(index);
+          LTSCorrection_0 = LAPPDMapTSCorrections_0.at(index);
+          LBGCorrection_0 = LAPPDMapBGCorrections_0.at(index);
+          LOSInMinusPS_0 = LAPPDMapOSInMinusPS_0.at(index);
+          
+          LTSRaw_1 = LAPPDMapTimeStampRaw_1.at(index);
+          LBGRaw_1 = LAPPDMapBeamgateRaw_1.at(index);
+          LOffset_ns_1 = LAPPDMapOffsets_1.at(index);
+          LTSCorrection_1 = LAPPDMapTSCorrections_1.at(index);
+          LBGCorrection_1 = LAPPDMapBGCorrections_1.at(index);
+          LOSInMinusPS_1 = LAPPDMapOSInMinusPS_1.at(index);
         }
         else
         {
-          LTSRaw = 0;
-          LBGRaw = 0;
-          LOffset_ns = 0;
-          LTSCorrection = 0;
-          LBGCorrection = 0;
-          LOSInMinusPS = 0;
+          LTSRaw_0 = 0;
+          LBGRaw_0 = 0;
+          LOffset_ns_0 = 0;
+          LTSCorrection_0 = 0;
+          LBGCorrection_0 = 0;
+          LOSInMinusPS_0 = 0;
+
+          LTSRaw_1 = 0;
+          LBGRaw_1 = 0;
+          LOffset_ns_1 = 0;
+          LTSCorrection_1 = 0;
+          LBGCorrection_1 = 0;
+          LOSInMinusPS_1 = 0;
         }
       }
 
@@ -571,23 +600,37 @@ bool LAPPDTreeMaker::FillPulseTree()
       {
         // find the index of LAPPD_ID in LAPPD_IDs, use that index to assign the timestamlUL and beam gate UL, if not found set them to zero
         int index = std::distance(LAPPD_IDs.begin(), std::find(LAPPD_IDs.begin(), LAPPD_IDs.end(), LAPPD_ID));
-        if (index < LAPPDMapTimeStampRaw.size())
+        if (index < LAPPDMapTimeStampRaw_0.size())
         {
-          LTSRaw = LAPPDMapTimeStampRaw.at(index);
-          LBGRaw = LAPPDMapBeamgateRaw.at(index);
-          LOffset_ns = LAPPDMapOffsets.at(index);
-          LTSCorrection = LAPPDMapTSCorrections.at(index);
-          LBGCorrection = LAPPDMapBGCorrections.at(index);
-          LOSInMinusPS = LAPPDMapOSInMinusPS.at(index);
+          LTSRaw_0 = LAPPDMapTimeStampRaw_0.at(index);
+          LBGRaw_0 = LAPPDMapBeamgateRaw_0.at(index);
+          LOffset_ns_0 = LAPPDMapOffsets_0.at(index);
+          LTSCorrection_0 = LAPPDMapTSCorrections_0.at(index);
+          LBGCorrection_0 = LAPPDMapBGCorrections_0.at(index);
+          LOSInMinusPS_0 = LAPPDMapOSInMinusPS_0.at(index);
+          
+          LTSRaw_1 = LAPPDMapTimeStampRaw_1.at(index);
+          LBGRaw_1 = LAPPDMapBeamgateRaw_1.at(index);
+          LOffset_ns_1 = LAPPDMapOffsets_1.at(index);
+          LTSCorrection_1 = LAPPDMapTSCorrections_1.at(index);
+          LBGCorrection_1 = LAPPDMapBGCorrections_1.at(index);
+          LOSInMinusPS_1 = LAPPDMapOSInMinusPS_1.at(index);
         }
         else
         {
-          LTSRaw = 0;
-          LBGRaw = 0;
-          LOffset_ns = 0;
-          LTSCorrection = 0;
-          LBGCorrection = 0;
-          LOSInMinusPS = 0;
+          LTSRaw_0 = 0;
+          LBGRaw_0 = 0;
+          LOffset_ns_0 = 0;
+          LTSCorrection_0 = 0;
+          LBGCorrection_0 = 0;
+          LOSInMinusPS_0 = 0;
+
+          LTSRaw_1 = 0;
+          LBGRaw_1 = 0;
+          LOffset_ns_1 = 0;
+          LTSCorrection_1 = 0;
+          LBGCorrection_1 = 0;
+          LOSInMinusPS_1 = 0;
         }
       }
       fPulse->Fill();
@@ -647,23 +690,37 @@ bool LAPPDTreeMaker::FillHitTree()
         //  use that index to get the timestamp and beamgate
         //  if not found, set them to zero
         int index = std::distance(LAPPD_IDs.begin(), std::find(LAPPD_IDs.begin(), LAPPD_IDs.end(), LAPPD_ID));
-        if (index < LAPPDMapTimeStampRaw.size())
+        if (index < LAPPDMapTimeStampRaw_0.size())
         {
-          LTSRaw = LAPPDMapTimeStampRaw.at(index);
-          LBGRaw = LAPPDMapBeamgateRaw.at(index);
-          LOffset_ns = LAPPDMapOffsets.at(index);
-          LTSCorrection = LAPPDMapTSCorrections.at(index);
-          LBGCorrection = LAPPDMapBGCorrections.at(index);
-          LOSInMinusPS = LAPPDMapOSInMinusPS.at(index);
+          LTSRaw_0 = LAPPDMapTimeStampRaw_0.at(index);
+          LBGRaw_0 = LAPPDMapBeamgateRaw_0.at(index);
+          LOffset_ns_0 = LAPPDMapOffsets_0.at(index);
+          LTSCorrection_0 = LAPPDMapTSCorrections_0.at(index);
+          LBGCorrection_0 = LAPPDMapBGCorrections_0.at(index);
+          LOSInMinusPS_0 = LAPPDMapOSInMinusPS_0.at(index);
+          
+          LTSRaw_1 = LAPPDMapTimeStampRaw_1.at(index);
+          LBGRaw_1 = LAPPDMapBeamgateRaw_1.at(index);
+          LOffset_ns_1 = LAPPDMapOffsets_1.at(index);
+          LTSCorrection_1 = LAPPDMapTSCorrections_1.at(index);
+          LBGCorrection_1 = LAPPDMapBGCorrections_1.at(index);
+          LOSInMinusPS_1 = LAPPDMapOSInMinusPS_1.at(index);
         }
         else
         {
-          LTSRaw = 0;
-          LBGRaw = 0;
-          LOffset_ns = 0;
-          LTSCorrection = 0;
-          LBGCorrection = 0;
-          LOSInMinusPS = 0;
+          LTSRaw_0 = 0;
+          LBGRaw_0 = 0;
+          LOffset_ns_0 = 0;
+          LTSCorrection_0 = 0;
+          LBGCorrection_0 = 0;
+          LOSInMinusPS_0 = 0;
+
+          LTSRaw_1 = 0;
+          LBGRaw_1 = 0;
+          LOffset_ns_1 = 0;
+          LTSCorrection_1 = 0;
+          LBGCorrection_1 = 0;
+          LOSInMinusPS_1 = 0;
         }
       }
       fHit->Fill();
@@ -712,23 +769,38 @@ bool LAPPDTreeMaker::FillWaveformTree()
         //  use that index to get the timestamp and beamgate
         //  if not found, set them to zero
         int index = std::distance(LAPPD_IDs.begin(), std::find(LAPPD_IDs.begin(), LAPPD_IDs.end(), LAPPD_ID));
-        if (index < LAPPDMapTimeStampRaw.size())
+        
+        if (index < LAPPDMapTimeStampRaw_0.size())
         {
-          LTSRaw = LAPPDMapTimeStampRaw.at(index);
-          LBGRaw = LAPPDMapBeamgateRaw.at(index);
-          LOffset_ns = LAPPDMapOffsets.at(index);
-          LTSCorrection = LAPPDMapTSCorrections.at(index);
-          LBGCorrection = LAPPDMapBGCorrections.at(index);
-          LOSInMinusPS = LAPPDMapOSInMinusPS.at(index);
+          LTSRaw_0 = LAPPDMapTimeStampRaw_0.at(index);
+          LBGRaw_0 = LAPPDMapBeamgateRaw_0.at(index);
+          LOffset_ns_0 = LAPPDMapOffsets_0.at(index);
+          LTSCorrection_0 = LAPPDMapTSCorrections_0.at(index);
+          LBGCorrection_0 = LAPPDMapBGCorrections_0.at(index);
+          LOSInMinusPS_0 = LAPPDMapOSInMinusPS_0.at(index);
+
+          LTSRaw_1 = LAPPDMapTimeStampRaw_1.at(index);
+          LBGRaw_1 = LAPPDMapBeamgateRaw_1.at(index);
+          LOffset_ns_1 = LAPPDMapOffsets_1.at(index);
+          LTSCorrection_1 = LAPPDMapTSCorrections_1.at(index);
+          LBGCorrection_1 = LAPPDMapBGCorrections_1.at(index);
+          LOSInMinusPS_1 = LAPPDMapOSInMinusPS_1.at(index);
         }
         else
         {
-          LTSRaw = 0;
-          LBGRaw = 0;
-          LOffset_ns = 0;
-          LTSCorrection = 0;
-          LBGCorrection = 0;
-          LOSInMinusPS = 0;
+          LTSRaw_0 = 0;
+          LBGRaw_0 = 0;
+          LOffset_ns_0 = 0;
+          LTSCorrection_0 = 0;
+          LBGCorrection_0 = 0;
+          LOSInMinusPS_0 = 0;
+
+          LTSRaw_1 = 0;
+          LBGRaw_1 = 0;
+          LOffset_ns_1 = 0;
+          LTSCorrection_1 = 0;
+          LBGCorrection_1 = 0;
+          LOSInMinusPS_1 = 0;
         }
       }
       fWaveform->Fill();
@@ -755,16 +827,45 @@ bool LAPPDTreeMaker::FillPPSTimestamp()
 
 bool LAPPDTreeMaker::FillLAPPDDataTimeStamp()
 {
-  if (treeMakerVerbosity > 0)
-    cout << "LAPPDTreeMaker::FillLAPPDDataTimeStamp. Before fill: LAPPDDataTimeStampUL: " << LAPPDDataTimeStampUL << ", LAPPDDataBeamgateUL: " << LAPPDDataBeamgateUL << ", LAPPDDataTimestampPart1: " << LAPPDDataTimestampPart1 << ", LAPPDDataBeamgatePart1: " << LAPPDDataBeamgatePart1 << ", LAPPDDataTimestampPart2: " << LAPPDDataTimestampPart2 << ", LAPPDDataBeamgatePart2: " << LAPPDDataBeamgatePart2 << endl;
+  if (treeMakerVerbosity > 0) {
+    std::cout << "LAPPDTreeMaker::FillLAPPDDataTimeStamp, before fill:"
+          << "\n  ACDC 0:"
+          << "\n    Timestamp UL   = " << LAPPDDataTimeStamp0_UL
+          << "\n    Beamgate UL    = " << LAPPDDataBeamgate0_UL
+          << "\n    Timestamp Part1 = " << LAPPDDataTimestamp0_Part1
+          << "\n    Beamgate Part1  = " << LAPPDDataBeamgate0_Part1
+          << "\n    Timestamp Part2 = " << LAPPDDataTimestamp0_Part2
+          << "\n    Beamgate Part2  = " << LAPPDDataBeamgate0_Part2
+          << "\n  ACDC 1:"
+          << "\n    Timestamp UL   = " << LAPPDDataTimeStamp1_UL
+          << "\n    Beamgate UL    = " << LAPPDDataBeamgate1_UL
+          << "\n    Timestamp Part1 = " << LAPPDDataTimestamp1_Part1
+          << "\n    Beamgate Part1  = " << LAPPDDataBeamgate1_Part1
+          << "\n    Timestamp Part2 = " << LAPPDDataTimestamp1_Part2
+          << "\n    Beamgate Part2  = " << LAPPDDataBeamgate1_Part2
+          << "\n  LAPPD ID = " << LAPPD_ID
+          << std::endl;
+  }
+
   if (!MultiLAPPDMapTreeMaker)
   {
-    m_data->CStore.Get("LAPPDBeamgate_Raw", LAPPDDataBeamgateUL);
-    m_data->CStore.Get("LAPPDTimestamp_Raw", LAPPDDataTimeStampUL);
-    m_data->CStore.Get("LAPPDBGIntCombined", LAPPDDataBeamgatePart1);
-    m_data->CStore.Get("LAPPDBGFloat", LAPPDDataBeamgatePart2);
-    m_data->CStore.Get("LAPPDTSIntCombined", LAPPDDataTimestampPart1);
-    m_data->CStore.Get("LAPPDTSFloat", LAPPDDataTimestampPart2);
+
+    // Retrieve ACDC 0 reconstructed objects
+    m_data->CStore.Get("LAPPDBeamgate0_Raw", LAPPDDataBeamgate0_UL);
+    m_data->CStore.Get("LAPPDTimestamp0_Raw", LAPPDDataTimeStamp0_UL);
+    m_data->CStore.Get("LAPPDBG0_IntCombined", LAPPDDataBeamgate0_Part1);
+    m_data->CStore.Get("LAPPDBG0_Float", LAPPDDataBeamgate0_Part2);
+    m_data->CStore.Get("LAPPDTS0_IntCombined", LAPPDDataTimestamp0_Part1);
+    m_data->CStore.Get("LAPPDTS0_Float", LAPPDDataTimestamp0_Part2);
+
+    // Retrieve ACDC 1 reconstructed objects
+    m_data->CStore.Get("LAPPDBeamgate1_Raw", LAPPDDataBeamgate1_UL);
+    m_data->CStore.Get("LAPPDTimestamp1_Raw", LAPPDDataTimeStamp1_UL);
+    m_data->CStore.Get("LAPPDBG1_IntCombined", LAPPDDataBeamgate1_Part1);
+    m_data->CStore.Get("LAPPDBG1_Float", LAPPDDataBeamgate1_Part2);
+    m_data->CStore.Get("LAPPDTS1_IntCombined", LAPPDDataTimestamp1_Part1);
+    m_data->CStore.Get("LAPPDTS1_Float", LAPPDDataTimestamp1_Part2);
+
     m_data->CStore.Get("LAPPD_ID", LAPPD_ID);
     fTimeStamp->Fill();
   }
@@ -773,13 +874,36 @@ bool LAPPDTreeMaker::FillLAPPDDataTimeStamp()
     for (int i = 0; i < LAPPD_IDs.size(); i++)
     {
       LAPPD_ID = LAPPD_IDs.at(i);
-      LAPPDDataBeamgateUL = LAPPDMapBeamgateRaw.at(i);
-      LAPPDDataTimeStampUL = LAPPDMapTimeStampRaw.at(i);
+  
+      LAPPDDataBeamgate0_UL = LAPPDMapBeamgateRaw_0.at(i);
+      LAPPDDataTimeStamp0_UL = LAPPDMapTimeStampRaw_0.at(i);
+      
+      LAPPDDataBeamgate1_UL = LAPPDMapBeamgateRaw_1.at(i);
+      LAPPDDataTimeStamp1_UL = LAPPDMapTimeStampRaw_1.at(i);
+
       fTimeStamp->Fill();
     }
   }
-  if (treeMakerVerbosity > 0)
-    cout << "LAPPDDataTimeStampUL: " << LAPPDDataTimeStampUL << ", LAPPDDataBeamgateUL: " << LAPPDDataBeamgateUL << ", LAPPDDataTimestampPart1: " << LAPPDDataTimestampPart1 << ", LAPPDDataBeamgatePart1: " << LAPPDDataBeamgatePart1 << ", LAPPDDataTimestampPart2: " << LAPPDDataTimestampPart2 << ", LAPPDDataBeamgatePart2: " << LAPPDDataBeamgatePart2 << endl;
+  if (treeMakerVerbosity > 0) {
+    std::cout << "LAPPDTreeMaker::FillLAPPDDataTimeStamp, after fill:"
+          << "\n  ACDC 0:"
+          << "\n    Timestamp UL   = " << LAPPDDataTimeStamp0_UL
+          << "\n    Beamgate UL    = " << LAPPDDataBeamgate0_UL
+          << "\n    Timestamp Part1 = " << LAPPDDataTimestamp0_Part1
+          << "\n    Beamgate Part1  = " << LAPPDDataBeamgate0_Part1
+          << "\n    Timestamp Part2 = " << LAPPDDataTimestamp0_Part2
+          << "\n    Beamgate Part2  = " << LAPPDDataBeamgate0_Part2
+          << "\n  ACDC 1:"
+          << "\n    Timestamp UL   = " << LAPPDDataTimeStamp1_UL
+          << "\n    Beamgate UL    = " << LAPPDDataBeamgate1_UL
+          << "\n    Timestamp Part1 = " << LAPPDDataTimestamp1_Part1
+          << "\n    Beamgate Part1  = " << LAPPDDataBeamgate1_Part1
+          << "\n    Timestamp Part2 = " << LAPPDDataTimestamp1_Part2
+          << "\n    Beamgate Part2  = " << LAPPDDataBeamgate1_Part2
+          << "\n  LAPPD ID = " << LAPPD_ID
+          << std::endl;
+  }
+  
   return true;
 }
 
@@ -1044,45 +1168,77 @@ void LAPPDTreeMaker::CleanTriggers()
 
 void LAPPDTreeMaker::LoadLAPPDMapInfo()
 {
-  // cout << "LAPPDTreeMaker::LoadLAPPDMapInfo" << endl;
   bool getMap = m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", LAPPDDataMap);
-  bool gotBeamgates_ns = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-  bool gotTimeStamps_ns = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-  bool gotTimeStampsRaw = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-  bool gotBeamgatesRaw = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-  bool gotOffsets = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets);
-  bool gotTSCorrection = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection);
-  bool gotDBGCorrection = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection);
-  bool gotOSInMinusPS = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
-  // cout << "LAPPDTreeMaker::LoadLAPPDMapInfo() get map = " << getMap << endl;
+  
+  // ACDC 0 
+  bool gotBeamgates_ns_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+  bool gotTimeStamps_ns_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+  bool gotTimeStampsRaw_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+  bool gotBeamgatesRaw_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_0", LAPPDBeamgatesRaw_0);
+  bool gotOffsets_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_0", LAPPDOffsets_0);
+  bool gotTSCorrection_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_0", LAPPDTSCorrection_0);
+  bool gotDBGCorrection_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_0", LAPPDBGCorrection_0);
+  bool gotOSInMinusPS_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_0", LAPPDOSInMinusPS_0);
+
+  // ACDC 1
+  bool gotBeamgates_ns_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_1", LAPPDBeamgate_ns_1);
+  bool gotTimeStamps_ns_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+  bool gotTimeStampsRaw_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+  bool gotBeamgatesRaw_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_1", LAPPDBeamgatesRaw_1);
+  bool gotOffsets_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_1", LAPPDOffsets_1);
+  bool gotTSCorrection_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_1", LAPPDTSCorrection_1);
+  bool gotDBGCorrection_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_1", LAPPDBGCorrection_1);
+  bool gotOSInMinusPS_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_1", LAPPDOSInMinusPS_1);
 
   if (getMap)
   {
     if (treeMakerVerbosity > 0)
       cout << "map size: " << LAPPDDataMap.size() << endl;
+    
     for (auto &item : LAPPDDataMap)
     {
       PsecData thisData = item.second;
       int thisLAPPD_ID = thisData.LAPPD_ID;
 
       uint64_t thisDataTime = item.first;
-      uint64_t thisTSRaw = LAPPDTimeStampsRaw.at(thisDataTime);
-      uint64_t thisBGRaw = LAPPDBeamgatesRaw.at(thisDataTime);
-      uint64_t thisOffset = LAPPDOffsets.at(thisDataTime);
-      int thisTSCorr = LAPPDTSCorrection.at(thisDataTime);
-      int thisDBGCorr = LAPPDBGCorrection.at(thisDataTime);
-      int thisOSInMinusPS = LAPPDOSInMinusPS.at(thisDataTime);
+      
+      uint64_t thisTSRaw_0 = LAPPDTimeStampsRaw_0.at(thisDataTime);
+      uint64_t thisBGRaw_0 = LAPPDBeamgatesRaw_0.at(thisDataTime);
+      uint64_t thisOffset_0 = LAPPDOffsets_0.at(thisDataTime);
+      int thisTSCorr_0 = LAPPDTSCorrection_0.at(thisDataTime);
+      int thisDBGCorr_0 = LAPPDBGCorrection_0.at(thisDataTime);
+      int thisOSInMinusPS_0 = LAPPDOSInMinusPS_0.at(thisDataTime);
 
-      if (treeMakerVerbosity > 0)
-        cout << "tree maker, Got LAPPD ID: " << thisLAPPD_ID << ", time stamp: " << thisDataTime << ", TSraw " << thisTSRaw << ", BGraw " << thisBGRaw << ", offset " << thisOffset << ", TSCorr " << thisTSCorr << ", DBGCorr " << thisDBGCorr << ", OSInMinusPS " << thisOSInMinusPS << endl;
+      uint64_t thisTSRaw_1 = LAPPDTimeStampsRaw_1.at(thisDataTime);
+      uint64_t thisBGRaw_1 = LAPPDBeamgatesRaw_1.at(thisDataTime);
+      uint64_t thisOffset_1 = LAPPDOffsets_1.at(thisDataTime);
+      int thisTSCorr_1 = LAPPDTSCorrection_1.at(thisDataTime);
+      int thisDBGCorr_1 = LAPPDBGCorrection_1.at(thisDataTime);
+      int thisOSInMinusPS_1 = LAPPDOSInMinusPS_1.at(thisDataTime);
+
+      if (treeMakerVerbosity > 0) {
+        cout << "tree maker, Got LAPPD ID: " << thisLAPPD_ID << ", time stamp: " << thisDataTime 
+             << "\n  ACDC 0 - TSraw " << thisTSRaw_0 << ", BGraw " << thisBGRaw_0 << ", offset " << thisOffset_0 
+             << ", TSCorr " << thisTSCorr_0 << ", DBGCorr " << thisDBGCorr_0 << ", OSInMinusPS " << thisOSInMinusPS_0 
+             << "\n  ACDC 1 - TSraw " << thisTSRaw_1 << ", BGraw " << thisBGRaw_1 << ", offset " << thisOffset_1 
+             << ", TSCorr " << thisTSCorr_1 << ", DBGCorr " << thisDBGCorr_1 << ", OSInMinusPS " << thisOSInMinusPS_1 << endl;
+      }
 
       LAPPD_IDs.push_back(thisLAPPD_ID);
-      LAPPDMapTimeStampRaw.push_back(thisTSRaw);
-      LAPPDMapBeamgateRaw.push_back(thisBGRaw);
-      LAPPDMapOffsets.push_back(thisOffset);
-      LAPPDMapTSCorrections.push_back(thisTSCorr);
-      LAPPDMapBGCorrections.push_back(thisDBGCorr);
-      LAPPDMapOSInMinusPS.push_back(thisOSInMinusPS);
+      
+      LAPPDMapTimeStampRaw_0.push_back(thisTSRaw_0);
+      LAPPDMapBeamgateRaw_0.push_back(thisBGRaw_0);
+      LAPPDMapOffsets_0.push_back(thisOffset_0);
+      LAPPDMapTSCorrections_0.push_back(thisTSCorr_0);
+      LAPPDMapBGCorrections_0.push_back(thisDBGCorr_0);
+      LAPPDMapOSInMinusPS_0.push_back(thisOSInMinusPS_0);
+
+      LAPPDMapTimeStampRaw_1.push_back(thisTSRaw_1);
+      LAPPDMapBeamgateRaw_1.push_back(thisBGRaw_1);
+      LAPPDMapOffsets_1.push_back(thisOffset_1);
+      LAPPDMapTSCorrections_1.push_back(thisTSCorr_1);
+      LAPPDMapBGCorrections_1.push_back(thisDBGCorr_1);
+      LAPPDMapOSInMinusPS_1.push_back(thisOSInMinusPS_1);
 
       if (treeMakerVerbosity > 0)
         cout << "size of LAPPD_IDs: " << LAPPD_IDs.size() << endl;

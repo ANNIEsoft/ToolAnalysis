@@ -36,6 +36,9 @@ bool PrintDQ::Initialise(std::string configfile, DataModel &data){
     totaltimezero = 0;
     totalclusters_in_spill = 0;
 
+    // LAPPD related metric
+    totalPassPPS_check = 0;
+
     return true;
 }
 
@@ -100,6 +103,7 @@ bool PrintDQ::Finalise()
     float_t clusters_in_spill = totalclusters_in_spill * 100 / totalclusters;                  
     float_t clusters_in_prompt = totalclusters_in_prompt * 100 / totalclusters;
     float_t clusters_in_ext = totalclusters_in_ext * 100 / totalclusters;
+    float_t okay_pps_quality = totalPassPPS_check * 100 / totalhas_lappd;
 
     if (verbosity >= v_debug) {
         std::cout << "PrintDQ: Calculating errors" << std::endl;
@@ -120,6 +124,7 @@ bool PrintDQ::Finalise()
     float_t er_clusters_in_spill = CalculateStatError(totalclusters_in_spill, totalclusters);
     float_t er_clusters_in_prompt = CalculateStatError(totalclusters_in_prompt, totalclusters);
     float_t er_clusters_in_ext = CalculateStatError(totalclusters_in_ext, totalclusters);
+    float_t er_okay_pps_quality = CalculateStatError(totalPassPPS_check, totalhas_lappd);
 
     // output
     std::cout << "" << std::endl;
@@ -143,6 +148,7 @@ bool PrintDQ::Finalise()
     std::cout << "1 MRD track:          " << totalhas_track << "    (" << has_track << "% +/- " << er_has_track << "%)" << std::endl;
     std::cout << "Tank+Veto coinc:      " << totalveto_hit << "    (" << veto_hit << "% +/- " << er_veto_hit << "%)" << std::endl;
     std::cout << "Tank+MRD+Veto coinc:  " << totalveto_tmrd_coinc << "    (" << veto_tmrd_coinc << "% +/- " << er_veto_tmrd_coinc << "%)" << std::endl;
+    std::cout << "Pass PPS quality:     " << totalPassPPS_check << "    (" << okay_pps_quality << "% +/- " << er_okay_pps_quality << "%)" << std::endl;
     std::cout << "" << std::endl;
     std::cout << "" << std::endl;
 
@@ -170,6 +176,7 @@ bool PrintDQ::Finalise()
     WritetoCSV(csv_file, "1 MRD Track", totalhas_track, has_track, er_has_track);
     WritetoCSV(csv_file, "Tank+Veto Coinc", totalveto_hit, veto_hit, er_veto_hit);
     WritetoCSV(csv_file, "Tank+MRD+Veto Coinc", totalveto_tmrd_coinc, veto_tmrd_coinc, er_veto_tmrd_coinc);
+    WritetoCSV(csv_file, "Pass PPS quality", totalPassPPS_check, okay_pps_quality, er_okay_pps_quality);
 
     csv_file.close();
 
@@ -228,6 +235,25 @@ void PrintDQ::FindCounts() {
         if (fHasLAPPD == 1) {
             totalhas_lappd++;
             Log("PrintDQ: ext = 2 for this event", v_debug, verbosity);
+       
+            // Check PPS quality for all LAPPDs in this event
+            bool skip = false;
+            for (size_t k = 0; k < fLAPPD_TSPPSMissing_0.size(); k++) {
+
+                bool missing_0 = (fLAPPD_TSPPSMissing_0[k] != 0);
+                bool missing_1 = (fLAPPD_TSPPSMissing_1[k] != 0);
+
+                // OR logic: if both boards have missing ticks, skip the event.
+                // This is an event level check; its true essense is in per-LAPPD, but for quick DQ check, this is fine.
+                if (missing_0 && missing_1) {
+                    skip = true;
+                    break; 
+                }
+            }
+            if (!skip) {
+                totalPassPPS_check++;
+                Log("PrintDQ: All LAPPDs passed PPS missing tick check", v_debug, verbosity);
+            }
         }
 
 
@@ -376,6 +402,21 @@ bool PrintDQ::LoadStores()
         Log("PrintDQ: No MRD clusters found! Did you run the TimeClustering tool?", v_debug, verbosity);
     }
 
+    bool get_lappd_data = m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", fLAPPDDataMap);
+    if (!get_lappd_data) {
+        Log("PrintDQ: No LAPPDDataMap found! Did you run the LAPPDLoadStore tool?", v_debug, verbosity);
+    }
+
+    bool get_ts_pps_missing_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_0", fLAPPDTS_PPSMissing_0);
+    if (!get_ts_pps_missing_0) {
+        Log("PrintDQ: No TS PPS Missing_0 vector found! Did you run the LAPPDLoadStore tool?", v_debug, verbosity);
+    }
+
+    bool get_ts_pps_missing_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_1", fLAPPDTS_PPSMissing_1);
+    if (!get_ts_pps_missing_1) {
+        Log("PrintDQ: No TS PPS Missing_1 vector found! Did you run the LAPPDLoadStore tool?", v_debug, verbosity);
+    }
+
     return true;
 
 }
@@ -402,6 +443,12 @@ void PrintDQ::ResetVariables() {
     fNumClusterTracks.clear();
     fDataStreams.clear();
 
+    // LAPPD related metric
+    fLAPPDDataMap.clear();
+    fLAPPD_TSPPSMissing_0.clear(); 	// This vector is to store output per LAPPD
+    fLAPPDTS_PPSMissing_0.clear();	// This vector is to load from ANNIEEvent store
+    fLAPPD_TSPPSMissing_1.clear();
+    fLAPPDTS_PPSMissing_1.clear();
 }
 
 
@@ -466,7 +513,14 @@ bool PrintDQ::GrabVariables() {
         fNumClusterTracks.push_back(ThisMRDClusterTrackNum);
 
     }
-    
+   
+    for (std::map<uint64_t, PsecData>::iterator it = fLAPPDDataMap.begin(); it != fLAPPDDataMap.end(); ++it)
+    {
+        uint64_t key = it->first; 
+        fLAPPD_TSPPSMissing_0.push_back(fLAPPDTS_PPSMissing_0[key]);
+        fLAPPD_TSPPSMissing_1.push_back(fLAPPDTS_PPSMissing_1[key]);
+    }
+
     return true;
 }
 

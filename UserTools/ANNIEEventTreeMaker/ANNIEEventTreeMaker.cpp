@@ -26,26 +26,26 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fill_TriggerWord = {14, 47};
 
   m_variables.Get("fillCleanEventsOnly", fillCleanEventsOnly);
-  m_variables.Get("fillLAPPDEventsOnly", fillLAPPDEventsOnly);
 
   m_variables.Get("TankHitInfo_fill", TankHitInfo_fill);
   m_variables.Get("TankCluster_fill", TankCluster_fill);
   m_variables.Get("cluster_TankHitInfo_fill", cluster_TankHitInfo_fill);
   m_variables.Get("MRDHitInfo_fill", MRDHitInfo_fill);
   m_variables.Get("RWMBRF_fill", RWMBRF_fill);
+  m_variables.Get("SiPMPulseInfo_fill", SiPMPulseInfo_fill);
 
   m_variables.Get("MCTruth_fill", MCTruth_fill);
   m_variables.Get("MRDReco_fill", MRDReco_fill);
   m_variables.Get("TankReco_fill", TankReco_fill);
   m_variables.Get("RecoDebug_fill", RecoDebug_fill);
   m_variables.Get("muonTruthRecoDiff_fill", muonTruthRecoDiff_fill);
+  m_variables.Get("RingCounting_fill", RingCounting_fill);
+  
   m_variables.Get("LAPPDData_fill", LAPPDData_fill);
-  m_variables.Get("SiPMPulseInfo_fill", SiPMPulseInfo_fill);
   m_variables.Get("LAPPDReco_fill", LAPPDReco_fill);
   m_variables.Get("LAPPD_PPS_fill", LAPPD_PPS_fill);
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
-  m_variables.Get("RingCounting_fill", RingCounting_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -196,25 +196,50 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPD_ID", &fLAPPD_ID);
     fANNIETree->Branch("LAPPD_Position", &fLAPPD_Position);
     fANNIETree->Branch("LAPPD_Count", &fLAPPD_Count);
-    fANNIETree->Branch("LAPPD_Beamgate_ns", &fLAPPD_Beamgate_ns);
-    fANNIETree->Branch("LAPPD_Timestamp_ns", &fLAPPD_Timestamp_ns);
-    fANNIETree->Branch("LAPPD_Beamgate_Raw", &fLAPPD_Beamgate_Raw);
-    fANNIETree->Branch("LAPPD_Timestamp_Raw", &fLAPPD_Timestamp_Raw);
-    fANNIETree->Branch("LAPPD_Offset", &fLAPPD_Offset);
-    fANNIETree->Branch("LAPPD_TSCorrection", &fLAPPD_TSCorrection);
-    fANNIETree->Branch("LAPPD_BGCorrection", &fLAPPD_BGCorrection);
-    fANNIETree->Branch("LAPPD_OSInMinusPS", &fLAPPD_OSInMinusPS);
+    
+    // Board 0 Branches
+    fANNIETree->Branch("LAPPD_Beamgate_ns_0", &fLAPPD_Beamgate_ns_0);
+    fANNIETree->Branch("LAPPD_Timestamp_ns_0", &fLAPPD_Timestamp_ns_0);
+    fANNIETree->Branch("LAPPD_Beamgate_Raw_0", &fLAPPD_Beamgate_Raw_0);
+    fANNIETree->Branch("LAPPD_Timestamp_Raw_0", &fLAPPD_Timestamp_Raw_0);
+    fANNIETree->Branch("LAPPD_Offset_0", &fLAPPD_Offset_0);
+    fANNIETree->Branch("LAPPD_TSCorrection_0", &fLAPPD_TSCorrection_0);
+    fANNIETree->Branch("LAPPD_BGCorrection_0", &fLAPPD_BGCorrection_0);
+    fANNIETree->Branch("LAPPD_OSInMinusPS_0", &fLAPPD_OSInMinusPS_0);
+
+    // Board 1 Branches
+    fANNIETree->Branch("LAPPD_Beamgate_ns_1", &fLAPPD_Beamgate_ns_1);
+    fANNIETree->Branch("LAPPD_Timestamp_ns_1", &fLAPPD_Timestamp_ns_1);
+    fANNIETree->Branch("LAPPD_Beamgate_Raw_1", &fLAPPD_Beamgate_Raw_1);
+    fANNIETree->Branch("LAPPD_Timestamp_Raw_1", &fLAPPD_Timestamp_Raw_1);
+    fANNIETree->Branch("LAPPD_Offset_1", &fLAPPD_Offset_1);
+    fANNIETree->Branch("LAPPD_TSCorrection_1", &fLAPPD_TSCorrection_1);
+    fANNIETree->Branch("LAPPD_BGCorrection_1", &fLAPPD_BGCorrection_1);
+    fANNIETree->Branch("LAPPD_OSInMinusPS_1", &fLAPPD_OSInMinusPS_1);
+
     if (LAPPD_PPS_fill)
     {
-      fANNIETree->Branch("LAPPD_BGPPSBefore", &fLAPPD_BGPPSBefore);
-      fANNIETree->Branch("LAPPD_BGPPSAfter", &fLAPPD_BGPPSAfter);
-      fANNIETree->Branch("LAPPD_BGPPSDiff", &fLAPPD_BGPPSDiff);
-      fANNIETree->Branch("LAPPD_BGPPSMissing", &fLAPPD_BGPPSMissing);
-      fANNIETree->Branch("LAPPD_TSPPSBefore", &fLAPPD_TSPPSBefore);
-      fANNIETree->Branch("LAPPD_TSPPSAfter", &fLAPPD_TSPPSAfter);
-      fANNIETree->Branch("LAPPD_TSPPSDiff", &fLAPPD_TSPPSDiff);
-      fANNIETree->Branch("LAPPD_TSPPSMissing", &fLAPPD_TSPPSMissing);
+      // Board 0 PPS
+      fANNIETree->Branch("LAPPD_BGPPSBefore_0", &fLAPPD_BGPPSBefore_0);
+      fANNIETree->Branch("LAPPD_BGPPSAfter_0", &fLAPPD_BGPPSAfter_0);
+      fANNIETree->Branch("LAPPD_BGPPSDiff_0", &fLAPPD_BGPPSDiff_0);
+      fANNIETree->Branch("LAPPD_BGPPSMissing_0", &fLAPPD_BGPPSMissing_0);
+      fANNIETree->Branch("LAPPD_TSPPSBefore_0", &fLAPPD_TSPPSBefore_0);
+      fANNIETree->Branch("LAPPD_TSPPSAfter_0", &fLAPPD_TSPPSAfter_0);
+      fANNIETree->Branch("LAPPD_TSPPSDiff_0", &fLAPPD_TSPPSDiff_0);
+      fANNIETree->Branch("LAPPD_TSPPSMissing_0", &fLAPPD_TSPPSMissing_0);
+
+      // Board 1 PPS
+      fANNIETree->Branch("LAPPD_BGPPSBefore_1", &fLAPPD_BGPPSBefore_1);
+      fANNIETree->Branch("LAPPD_BGPPSAfter_1", &fLAPPD_BGPPSAfter_1);
+      fANNIETree->Branch("LAPPD_BGPPSDiff_1", &fLAPPD_BGPPSDiff_1);
+      fANNIETree->Branch("LAPPD_BGPPSMissing_1", &fLAPPD_BGPPSMissing_1);
+      fANNIETree->Branch("LAPPD_TSPPSBefore_1", &fLAPPD_TSPPSBefore_1);
+      fANNIETree->Branch("LAPPD_TSPPSAfter_1", &fLAPPD_TSPPSAfter_1);
+      fANNIETree->Branch("LAPPD_TSPPSDiff_1", &fLAPPD_TSPPSDiff_1);
+      fANNIETree->Branch("LAPPD_TSPPSMissing_1", &fLAPPD_TSPPSMissing_1);
     }
+
     fANNIETree->Branch("LAPPD_BG_switchBit0", &fLAPPD_BG_switchBit0);
     fANNIETree->Branch("LAPPD_BG_switchBit1", &fLAPPD_BG_switchBit1);
 
@@ -769,25 +794,45 @@ void ANNIEEventTreeMaker::ResetVariables()
   fLAPPD_Count = 0;
   fLAPPD_ID.clear();
   fLAPPD_Position.clear();
-  fLAPPD_Beamgate_ns.clear();
-  fLAPPD_Timestamp_ns.clear();
-  fLAPPD_Beamgate_Raw.clear();
-  fLAPPD_Timestamp_Raw.clear();
-  fLAPPD_Offset.clear();
-  fLAPPD_TSCorrection.clear();
-  fLAPPD_BGCorrection.clear();
-  fLAPPD_OSInMinusPS.clear();
+  // Clear Board 0
+  fLAPPD_Beamgate_ns_0.clear();
+  fLAPPD_Timestamp_ns_0.clear();
+  fLAPPD_Beamgate_Raw_0.clear();
+  fLAPPD_Timestamp_Raw_0.clear();
+  fLAPPD_Offset_0.clear();
+  fLAPPD_TSCorrection_0.clear();
+  fLAPPD_BGCorrection_0.clear();
+  fLAPPD_OSInMinusPS_0.clear();
+  // Clear Board 1
+  fLAPPD_Beamgate_ns_1.clear();
+  fLAPPD_Timestamp_ns_1.clear();
+  fLAPPD_Beamgate_Raw_1.clear();
+  fLAPPD_Timestamp_Raw_1.clear();
+  fLAPPD_Offset_1.clear();
+  fLAPPD_TSCorrection_1.clear();
+  fLAPPD_BGCorrection_1.clear();
+  fLAPPD_OSInMinusPS_1.clear();
   fLAPPD_BG_switchBit0.clear();
   fLAPPD_BG_switchBit1.clear();
   // LAPPD_PPS_fill
-  fLAPPD_BGPPSBefore.clear();
-  fLAPPD_BGPPSAfter.clear();
-  fLAPPD_BGPPSDiff.clear();
-  fLAPPD_BGPPSMissing.clear();
-  fLAPPD_TSPPSBefore.clear();
-  fLAPPD_TSPPSAfter.clear();
-  fLAPPD_TSPPSDiff.clear();
-  fLAPPD_TSPPSMissing.clear();
+  // Clear Board 0 PPS
+  fLAPPD_BGPPSBefore_0.clear();
+  fLAPPD_BGPPSAfter_0.clear();
+  fLAPPD_BGPPSDiff_0.clear();
+  fLAPPD_BGPPSMissing_0.clear();
+  fLAPPD_TSPPSBefore_0.clear();
+  fLAPPD_TSPPSAfter_0.clear();
+  fLAPPD_TSPPSDiff_0.clear();
+  fLAPPD_TSPPSMissing_0.clear();
+  // Clear Board 1 PPS
+  fLAPPD_BGPPSBefore_1.clear();
+  fLAPPD_BGPPSAfter_1.clear();
+  fLAPPD_BGPPSDiff_1.clear();
+  fLAPPD_BGPPSMissing_1.clear();
+  fLAPPD_TSPPSBefore_1.clear();
+  fLAPPD_TSPPSAfter_1.clear();
+  fLAPPD_TSPPSDiff_1.clear();
+  fLAPPD_TSPPSMissing_1.clear();
 
   // LAPPD Reco Fill
   fLAPPDPulseTimeStampUL.clear();
@@ -837,13 +882,6 @@ void ANNIEEventTreeMaker::ResetVariables()
   fLAPPDHitP2FollowTime.clear();
   fLAPPDHitP1FollowCharge.clear();
   fLAPPDHitP2FollowCharge.clear();
-
-  LAPPDWaveformChankey.clear();
-  waveformMaxValue.clear();
-  waveformRMSValue.clear();
-  waveformMaxFoundNear.clear();
-  waveformMaxNearingValue.clear();
-  waveformMaxTimeBinValue.clear();
 
   // LAPPD waveform fill
   fLAPPDWaveforms.clear();
@@ -1076,34 +1114,45 @@ void ANNIEEventTreeMaker::ResetVariables()
 
   // LAPPDData_fill
   LAPPDDataMap.clear();
-  LAPPDBeamgate_ns.clear();
-  LAPPDTimeStamps_ns.clear();
-  LAPPDTimeStampsRaw.clear();
-  LAPPDBeamgatesRaw.clear();
-  LAPPDOffsets.clear();
-  LAPPDTSCorrection.clear();
-  LAPPDBGCorrection.clear();
-  LAPPDOSInMinusPS.clear();
+  LAPPDBeamgate_ns_0.clear();
+  LAPPDTimeStamps_ns_0.clear();
+  LAPPDTimeStampsRaw_0.clear();
+  LAPPDBeamgatesRaw_0.clear();
+  LAPPDOffsets_0.clear();
+  LAPPDTSCorrection_0.clear();
+  LAPPDBGCorrection_0.clear();
+  LAPPDOSInMinusPS_0.clear();
+  LAPPDBeamgate_ns_1.clear();
+  LAPPDTimeStamps_ns_1.clear();
+  LAPPDTimeStampsRaw_1.clear();
+  LAPPDBeamgatesRaw_1.clear();
+  LAPPDOffsets_1.clear();
+  LAPPDTSCorrection_1.clear();
+  LAPPDBGCorrection_1.clear();
+  LAPPDOSInMinusPS_1.clear();
   SwitchBitBG.clear();
+  
   // LAPPD_PPS_fill
-  LAPPDBG_PPSBefore.clear();
-  LAPPDBG_PPSAfter.clear();
-  LAPPDBG_PPSDiff.clear();
-  LAPPDBG_PPSMissing.clear();
-  LAPPDTS_PPSBefore.clear();
-  LAPPDTS_PPSAfter.clear();
-  LAPPDTS_PPSDiff.clear();
-  LAPPDTS_PPSMissing.clear();
+  LAPPDBG_PPSBefore_0.clear();
+  LAPPDBG_PPSAfter_0.clear();
+  LAPPDBG_PPSDiff_0.clear();
+  LAPPDBG_PPSMissing_0.clear();
+  LAPPDTS_PPSBefore_0.clear();
+  LAPPDTS_PPSAfter_0.clear();
+  LAPPDTS_PPSDiff_0.clear();
+  LAPPDTS_PPSMissing_0.clear();
+  LAPPDBG_PPSBefore_1.clear();
+  LAPPDBG_PPSAfter_1.clear();
+  LAPPDBG_PPSDiff_1.clear();
+  LAPPDBG_PPSMissing_1.clear();
+  LAPPDTS_PPSBefore_1.clear();
+  LAPPDTS_PPSAfter_1.clear();
+  LAPPDTS_PPSDiff_1.clear();
+  LAPPDTS_PPSMissing_1.clear();
 
   // LAPPD Reco Fill
   lappdPulses.clear();
   lappdHits.clear();
-
-  waveformMax.clear();
-  waveformRMS.clear();
-  waveformMaxLast.clear();
-  waveformMaxNearing.clear();
-  waveformMaxTimeBin.clear();
 }
 
 bool ANNIEEventTreeMaker::LoadEventInfo()
@@ -1422,24 +1471,42 @@ void ANNIEEventTreeMaker::LoadSiPMHits()
 }
 
 void ANNIEEventTreeMaker::LoadLAPPDInfo()
-{
+{ 
   m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", LAPPDDataMap);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore", LAPPDBG_PPSBefore);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter", LAPPDBG_PPSAfter);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff", LAPPDBG_PPSDiff);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing", LAPPDBG_PPSMissing);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore", LAPPDTS_PPSBefore);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_0", LAPPDBeamgatesRaw_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_0", LAPPDOffsets_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_0", LAPPDTSCorrection_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_0", LAPPDBGCorrection_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_0", LAPPDOSInMinusPS_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_1", LAPPDBeamgate_ns_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_1", LAPPDBeamgatesRaw_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_1", LAPPDOffsets_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_1", LAPPDTSCorrection_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_1", LAPPDBGCorrection_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_1", LAPPDOSInMinusPS_1);
+
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore_0", LAPPDBG_PPSBefore_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter_0", LAPPDBG_PPSAfter_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff_0", LAPPDBG_PPSDiff_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing_0", LAPPDBG_PPSMissing_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore_0", LAPPDTS_PPSBefore_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter_0", LAPPDTS_PPSAfter_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff_0", LAPPDTS_PPSDiff_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_0", LAPPDTS_PPSMissing_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore_1", LAPPDBG_PPSBefore_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter_1", LAPPDBG_PPSAfter_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff_1", LAPPDBG_PPSDiff_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing_1", LAPPDBG_PPSMissing_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore_1", LAPPDTS_PPSBefore_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter_1", LAPPDTS_PPSAfter_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff_1", LAPPDTS_PPSDiff_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_1", LAPPDTS_PPSMissing_1);
+
   m_data->Stores["ANNIEEvent"]->Get("SwitchBitBG", SwitchBitBG);
 
   if (LAPPDDataMap.size() != 0)
@@ -1482,22 +1549,41 @@ void ANNIEEventTreeMaker::FillLAPPDInfo()
 
     fLAPPD_ID.push_back(LAPPD_IDInit);
     fLAPPD_Position.push_back(position);
-    fLAPPD_Beamgate_ns.push_back(LAPPDBeamgate_ns[key]);
-    fLAPPD_Timestamp_ns.push_back(LAPPDTimeStamps_ns[key]);
-    fLAPPD_Beamgate_Raw.push_back(LAPPDBeamgatesRaw[key]);
-    fLAPPD_Timestamp_Raw.push_back(LAPPDTimeStampsRaw[key]);
-    fLAPPD_Offset.push_back(LAPPDOffsets[key]);
-    fLAPPD_TSCorrection.push_back(LAPPDTSCorrection[key]);
-    fLAPPD_BGCorrection.push_back(LAPPDBGCorrection[key]);
-    fLAPPD_OSInMinusPS.push_back(LAPPDOSInMinusPS[key]);
-    fLAPPD_BGPPSBefore.push_back(LAPPDBG_PPSBefore[key]);
-    fLAPPD_BGPPSAfter.push_back(LAPPDBG_PPSAfter[key]);
-    fLAPPD_BGPPSDiff.push_back(LAPPDBG_PPSDiff[key]);
-    fLAPPD_BGPPSMissing.push_back(LAPPDBG_PPSMissing[key]);
-    fLAPPD_TSPPSBefore.push_back(LAPPDTS_PPSBefore[key]);
-    fLAPPD_TSPPSAfter.push_back(LAPPDTS_PPSAfter[key]);
-    fLAPPD_TSPPSDiff.push_back(LAPPDTS_PPSDiff[key]);
-    fLAPPD_TSPPSMissing.push_back(LAPPDTS_PPSMissing[key]);
+    
+    fLAPPD_Beamgate_ns_0.push_back(LAPPDBeamgate_ns_0[key]);
+    fLAPPD_Timestamp_ns_0.push_back(LAPPDTimeStamps_ns_0[key]);
+    fLAPPD_Beamgate_Raw_0.push_back(LAPPDBeamgatesRaw_0[key]);
+    fLAPPD_Timestamp_Raw_0.push_back(LAPPDTimeStampsRaw_0[key]);
+    fLAPPD_Offset_0.push_back(LAPPDOffsets_0[key]);
+    fLAPPD_TSCorrection_0.push_back(LAPPDTSCorrection_0[key]);
+    fLAPPD_BGCorrection_0.push_back(LAPPDBGCorrection_0[key]);
+    fLAPPD_OSInMinusPS_0.push_back(LAPPDOSInMinusPS_0[key]);
+    fLAPPD_Beamgate_ns_1.push_back(LAPPDBeamgate_ns_1[key]);
+    fLAPPD_Timestamp_ns_1.push_back(LAPPDTimeStamps_ns_1[key]);
+    fLAPPD_Beamgate_Raw_1.push_back(LAPPDBeamgatesRaw_1[key]);
+    fLAPPD_Timestamp_Raw_1.push_back(LAPPDTimeStampsRaw_1[key]);
+    fLAPPD_Offset_1.push_back(LAPPDOffsets_1[key]);
+    fLAPPD_TSCorrection_1.push_back(LAPPDTSCorrection_1[key]);
+    fLAPPD_BGCorrection_1.push_back(LAPPDBGCorrection_1[key]);
+    fLAPPD_OSInMinusPS_1.push_back(LAPPDOSInMinusPS_1[key]);
+
+    fLAPPD_BGPPSBefore_0.push_back(LAPPDBG_PPSBefore_0[key]);
+    fLAPPD_BGPPSAfter_0.push_back(LAPPDBG_PPSAfter_0[key]);
+    fLAPPD_BGPPSDiff_0.push_back(LAPPDBG_PPSDiff_0[key]);
+    fLAPPD_BGPPSMissing_0.push_back(LAPPDBG_PPSMissing_0[key]);
+    fLAPPD_TSPPSBefore_0.push_back(LAPPDTS_PPSBefore_0[key]);
+    fLAPPD_TSPPSAfter_0.push_back(LAPPDTS_PPSAfter_0[key]);
+    fLAPPD_TSPPSDiff_0.push_back(LAPPDTS_PPSDiff_0[key]);
+    fLAPPD_TSPPSMissing_0.push_back(LAPPDTS_PPSMissing_0[key]);
+    fLAPPD_BGPPSBefore_1.push_back(LAPPDBG_PPSBefore_1[key]);
+    fLAPPD_BGPPSAfter_1.push_back(LAPPDBG_PPSAfter_1[key]);
+    fLAPPD_BGPPSDiff_1.push_back(LAPPDBG_PPSDiff_1[key]);
+    fLAPPD_BGPPSMissing_1.push_back(LAPPDBG_PPSMissing_1[key]);
+    fLAPPD_TSPPSBefore_1.push_back(LAPPDTS_PPSBefore_1[key]);
+    fLAPPD_TSPPSAfter_1.push_back(LAPPDTS_PPSAfter_1[key]);
+    fLAPPD_TSPPSDiff_1.push_back(LAPPDTS_PPSDiff_1[key]);
+    fLAPPD_TSPPSMissing_1.push_back(LAPPDTS_PPSMissing_1[key]);
+ 
     // check if SwitchBitBG has the key
     if (SwitchBitBG.find(psecData.LAPPD_ID) != SwitchBitBG.end())
     {

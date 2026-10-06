@@ -490,24 +490,44 @@ class PhaseIITreeMaker: public Tool {
   bool LAPPDData_fill = 0;
   int gotLAPPDNumber;
   std::map<uint64_t, PsecData> LAPPDDataMap;
-  std::map<uint64_t, uint64_t> LAPPDBeamgate_ns;
-  std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns; // data and key are the same
-  std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw;
-  std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw;
-  std::map<uint64_t, uint64_t> LAPPDOffsets;
-  std::map<uint64_t, int> LAPPDTSCorrection;
-  std::map<uint64_t, int> LAPPDBGCorrection;
-  std::map<uint64_t, int> LAPPDOSInMinusPS;
+
+  std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_0;
+  std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_0;
+  std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_0;
+  std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_0;
+  std::map<uint64_t, uint64_t> LAPPDOffsets_0;
+  std::map<uint64_t, int> LAPPDTSCorrection_0;
+  std::map<uint64_t, int> LAPPDBGCorrection_0;
+  std::map<uint64_t, int> LAPPDOSInMinusPS_0;
+
+  std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_1;
+  std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_1;
+  std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_1;
+  std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_1;
+  std::map<uint64_t, uint64_t> LAPPDOffsets_1;
+  std::map<uint64_t, int> LAPPDTSCorrection_1;
+  std::map<uint64_t, int> LAPPDBGCorrection_1;
+  std::map<uint64_t, int> LAPPDOSInMinusPS_1;
 
   vector<int> fLAPPD_ID;
-  vector<uint64_t> fLAPPD_Beamgate_ns;
-  vector<uint64_t> fLAPPD_Timestamp_ns;
-  vector<uint64_t> fLAPPD_Beamgate_Raw;
-  vector<uint64_t> fLAPPD_Timestamp_Raw;
-  vector<uint64_t> fLAPPD_Offset;
-  vector<int> fLAPPD_TSCorrection;
-  vector<int> fLAPPD_BGCorrection;
-  vector<int> fLAPPD_OSInMinusPS;
+
+  vector<uint64_t> fLAPPD_Beamgate_ns_0;
+  vector<uint64_t> fLAPPD_Timestamp_ns_0;
+  vector<uint64_t> fLAPPD_Beamgate_Raw_0;
+  vector<uint64_t> fLAPPD_Timestamp_Raw_0;
+  vector<uint64_t> fLAPPD_Offset_0;
+  vector<int> fLAPPD_TSCorrection_0;
+  vector<int> fLAPPD_BGCorrection_0;
+  vector<int> fLAPPD_OSInMinusPS_0;
+
+  vector<uint64_t> fLAPPD_Beamgate_ns_1;
+  vector<uint64_t> fLAPPD_Timestamp_ns_1;
+  vector<uint64_t> fLAPPD_Beamgate_Raw_1;
+  vector<uint64_t> fLAPPD_Timestamp_Raw_1;
+  vector<uint64_t> fLAPPD_Offset_1;
+  vector<int> fLAPPD_TSCorrection_1;
+  vector<int> fLAPPD_BGCorrection_1;
+  vector<int> fLAPPD_OSInMinusPS_1;
 
   std::map<uint64_t, uint32_t> GroupedTrigger;
 

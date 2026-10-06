@@ -1,0 +1,32 @@
+LAPPDLoadStoreVerbosity 0
+
+ReadStore 0
+loadFromStoreDirectly 0
+
+num_vector_data 7795
+num_vector_pps 16
+SelectSingleLAPPD false
+SelectedLAPPD 0
+loadPSEC 1
+loadPPS 0
+loadOffsets 0
+LoadBuiltPPSInfo 1
+
+Nboards 6 	#Number of pedestal files to read
+PedinputfileTXT /pnfs/annie/persistent/processed/LAPPD_Pedestals_corrected/Pedestals/2025_LAPPD645839/P
+DoPedSubtraction 1
+
+mergingModeReadIn 0
+
+MultiLAPPDMap 1
+PsecReceiveMode 0
+stopEntries 10000000000
+
+# General Parameters
+NChannels 30
+Nsamples 256 	# Number of samples in a waveform
+TrigChannel 5 	# Specified channel for the trigger signal
+SampleSize 100 	# Sample size for baseline substraction
+LAPPDchannelOffset 1000
+
+ACCIDConfigFile ./configfiles/LAPPDProcessedAna/LAPPDIDConfig.csv
