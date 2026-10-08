@@ -495,16 +495,11 @@ void EBPMT::CorrectVMEOffset()
       InProgressRecoADCHitsAux->erase(SmallerMapTS);
 
       if (FinishedTankEvents != nullptr && FinishedTankEvents->count(SmallerMapTS) > 0) {
-              std::map<std::vector<int>, std::vector<uint16_t>> FirstRaw = FinishedTankEvents->at(SmallerMapTS);
-              std::map<std::vector<int>, std::vector<uint16_t>> SecondRaw;
+              const std::map<std::vector<int>, std::vector<uint16_t>>& FirstRaw = FinishedTankEvents->at(SmallerMapTS);
+
+              std::map<std::vector<int>, std::vector<uint16_t>>* SecondRaw = &(*FinishedTankEvents)[LargerMapTS];
+              SecondRaw->insert(FirstRaw.begin(), FirstRaw.end());
               
-              if (FinishedTankEvents->count(LargerMapTS) > 0) {
-                  SecondRaw = FinishedTankEvents->at(LargerMapTS);
-              }
-              
-              SecondRaw.insert(FirstRaw.begin(), FirstRaw.end());
-              
-              (*FinishedTankEvents)[LargerMapTS] = SecondRaw;
               FinishedTankEvents->erase(SmallerMapTS);
       }
 

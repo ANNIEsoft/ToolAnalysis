@@ -747,21 +747,19 @@ bool EBSaver::SavePMTData(uint64_t PMTTime)
 
   if (FinishedTankEvents != nullptr && FinishedTankEvents->count(PMTTime) > 0)
   {
-    std::map<std::vector<int>, std::vector<uint16_t>> RawMap = FinishedTankEvents->at(PMTTime);
+    const std::map<std::vector<int>, std::vector<uint16_t>>& RawMap = FinishedTankEvents->at(PMTTime);
     std::map<std::vector<int>, std::vector<Waveform<uint16_t>>> RawWaveformMap;
 
     ANNIEEvent->Get("RawWaveformMap", RawWaveformMap);            // keep waveforms already in this event, otherwise the map will be empty
 
     for (const auto& apair : RawMap) {
-        Waveform<uint16_t> TheWave(static_cast<double>(PMTTime), apair.second);
-        RawWaveformMap[apair.first].push_back(TheWave);
+        RawWaveformMap[apair.first].emplace_back(static_cast<double>(PMTTime), apair.second);
     }
-
     ANNIEEvent->Set("RawWaveformMap", RawWaveformMap);
     
+    Log("EBSaver: Saved RawWaveformMap of size " + std::to_string(RawMap.size()) + " with PMTTime " + std::to_string(PMTTime), v_message, verbosityEBSaver);
     // Erase to prevent memory leaks as we build events
     FinishedTankEvents->erase(PMTTime);
-    Log("EBSaver: Saved RawWaveformMap of size " + std::to_string(RawMap.size()) + " with PMTTime " + std::to_string(PMTTime), v_message, verbosityEBSaver);
   }
   else
   {
