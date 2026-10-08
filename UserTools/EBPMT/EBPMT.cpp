@@ -413,11 +413,6 @@ void EBPMT::CorrectVMEOffset()
 
   Log("EBPMT: Found " + std::to_string(timestamps.size()) + " timestamps", v_message, verbosityEBPMT);
 
-  // loop timestamps，对于每一个时间戳，检查它与它之前的时间戳的差值是否是8或者16
-  // 如果是，获得InProgressHits在这两个时间戳上的map的size
-  // 在timestamps_to_shift中记录pair，第一个时间戳是size较小的那个，第二个是较大的那个
-  
-  // Comment in English using AI
   // Loop over the timestamps. For each one, check whether its difference from the previous timestamp is 8 or 16 ns.
   // If so, get the size of the InProgressHits map at both timestamps.
   // Record the pair in timestamps_to_shift: first the timestamp with the smaller map, then the one with the larger map.
