@@ -161,7 +161,7 @@ bool DigitBuilder::Execute(){
     }
     auto get_mclappdhits = m_data->Stores.at("ANNIEEvent")->Get("MCLAPPDHits",fMCLAPPDHits);
     if(!get_mclappdhits){
-      Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_error,verbosity); 
+      Log("DigitBuilder Tool: Error retrieving MCLAPPDHits from ANNIEEvent!",v_debug,verbosity);
       return false;
     }
   } else {

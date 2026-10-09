@@ -46,6 +46,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
   m_variables.Get("RingCounting_fill", RingCounting_fill);
+  m_variables.Get("DirectParent_MCHit_fill", DirectParent_MCHit_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
   m_variables.Get("OutputFile", output_filename);
@@ -179,6 +180,32 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("hitChankey", &fHitChankey);
     fANNIETree->Branch("hitChankeyMC", &fHitChankeyMC);
     fANNIETree->Branch("hitPMTType", &fHitPMTType);
+  }
+
+  if (DirectParent_MCHit_fill){
+    fANNIETree->Branch("DirectParent_PMTID", &fDirectParent_PMTID);
+    fANNIETree->Branch("DirectParent_HitTime", &fDirectParent_HitTime);
+    fANNIETree->Branch("DirectParent_TrackIDs", &fDirectParent_TrackIDs);
+    fANNIETree->Branch("DirectParent_PDGs", &fDirectParent_PDGs);
+    fANNIETree->Branch("DirectParent_NeutronAncestorTrackID", &fDirectParent_NeutronAncestorTrackID);
+    fANNIETree->Branch("DirectParent_NeutronAncestorPDG", &fDirectParent_NeutronAncestorPDG);
+    fANNIETree->Branch("DirectParent_NeutronAncestorClass", &fDirectParent_NeutronAncestorClass);
+    fANNIETree->Branch("DirectParent_NeutronParentTrackID", &fDirectParent_NeutronParentTrackID);
+    fANNIETree->Branch("DirectParent_NeutronParentPDG", &fDirectParent_NeutronParentPDG);
+    fANNIETree->Branch("DirectParent_IsDarknoise", &fDirectParent_IsDarknoise);
+    fANNIETree->Branch("DirectParent_InteractionMode", &fDirectParent_InteractionMode);
+    fANNIETree->Branch("DirectParent_ImmediateAncestorTrackID", &fDirectParent_ImmediateAncestorTrackID);
+    fANNIETree->Branch("DirectParent_ImmediateAncestorPDG", &fDirectParent_ImmediateAncestorPDG);
+    fANNIETree->Branch("DirectParent_ImmediateAncestorClass", &fDirectParent_ImmediateAncestorClass);
+    // DISABLED: PrimaryAncestor
+    // fANNIETree->Branch("DirectParent_PrimaryAncestorTrackID", &fDirectParent_PrimaryAncestorTrackID);
+    // fANNIETree->Branch("DirectParent_PrimaryAncestorPDG", &fDirectParent_PrimaryAncestorPDG);
+    fANNIETree->Branch("DirectParent_RootAncestorTrackID", &fDirectParent_RootAncestorTrackID);
+    fANNIETree->Branch("DirectParent_RootAncestorPDG", &fDirectParent_RootAncestorPDG);
+    fANNIETree->Branch("DirectParent_LineagePDG", &fDirectParent_LineagePDG);
+    fANNIETree->Branch("DirectParent_LineageTrackID", &fDirectParent_LineageTrackID);
+    fANNIETree->Branch("DirectParent_LineageDepth", &fDirectParent_LineageDepth);
+    fANNIETree->Branch("DirectParent_LineageStatus", &fDirectParent_LineageStatus);
   }
 
   if (SiPMPulseInfo_fill)
@@ -463,6 +490,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("trueKPlusCher", &fTrueKPlusCher, "trueKPlusCher/I");
     fANNIETree->Branch("trueKMinus", &fTrueKMinus, "trueKMinus/I");
     fANNIETree->Branch("trueKMinusCher", &fTrueKMinusCher, "trueKMinusCher/I");
+    fANNIETree->Branch("trueWCSimMode", &fTrueWCSimMode, "trueWCSimMode/I");
   }
 
   // Reconstructed variables after full Muon Reco Analysis
@@ -588,6 +616,12 @@ bool ANNIEEventTreeMaker::Execute()
   {
     // this will fill all hits in this event
     LoadAllTankHits();
+  }
+
+  //****************************** Fill MCHit DirectParent TrackIDs Info *************************************//
+  if (DirectParent_MCHit_fill)
+  {
+    LoadDirectParentIDsMCHits();
   }
   if (SiPMPulseInfo_fill)
   {
@@ -756,6 +790,31 @@ void ANNIEEventTreeMaker::ResetVariables()
   fHitChankey.clear();
   fHitChankeyMC.clear();
   fHitPMTType.clear();
+
+  // MCHit DirectParent TrackIDs info
+  fDirectParent_PMTID.clear();
+  fDirectParent_HitTime.clear();
+  fDirectParent_TrackIDs.clear();
+  fDirectParent_PDGs.clear();
+  fDirectParent_NeutronAncestorTrackID.clear();
+  fDirectParent_NeutronAncestorPDG.clear();
+  fDirectParent_NeutronAncestorClass.clear();
+  fDirectParent_NeutronParentTrackID.clear();
+  fDirectParent_NeutronParentPDG.clear();
+  fDirectParent_IsDarknoise.clear();
+  fDirectParent_InteractionMode.clear();
+  fDirectParent_ImmediateAncestorTrackID.clear();
+  fDirectParent_ImmediateAncestorPDG.clear();
+  fDirectParent_ImmediateAncestorClass.clear();
+  // DISABLED: PrimaryAncestor
+  // fDirectParent_PrimaryAncestorTrackID.clear();
+  // fDirectParent_PrimaryAncestorPDG.clear();
+  fDirectParent_RootAncestorTrackID.clear();
+  fDirectParent_RootAncestorPDG.clear();
+  fDirectParent_LineagePDG.clear();
+  fDirectParent_LineageTrackID.clear();
+  fDirectParent_LineageDepth.clear();
+  fDirectParent_LineageStatus.clear();
 
   // SiPMPulse Info
   fSiPM1NPulses = 0;
@@ -999,6 +1058,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fTrueKPlusCher = -9999;
   fTrueKMinus = -9999;
   fTrueKMinusCher = -9999;
+  fTrueWCSimMode = -9999;
 
   // TankReco_fill
   fRecoVtxX = -9999;
@@ -1372,6 +1432,226 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
       it_tank_mc++;
       if (it_tank_mc == (*MCHits).end())
         loop_tank = false;
+    }
+  }
+  return;
+}
+
+// **************MCHit Directparent TrackIDs Info ************************** //
+
+void ANNIEEventTreeMaker::LoadDirectParentIDsMCHits(){
+  //I will make changes here//
+  //It will help me to store the information about the direct parent track IDs for each MCHit in the tree
+  Log("ANNIEEventTreeMaker Tool: LoadDirectParentIDsMCHits", v_debug, ANNIEEventTreeMakerVerbosity);
+  std::map<unsigned long, std::map<double, std::vector<int>>> *fMCHitToDirectParents = nullptr;
+  std::vector<MCParticle> *fMCParticles = nullptr;
+  std::map<int, int> *fTrackIdToIndex = nullptr;
+  std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronAncestor = nullptr;
+  std::map<unsigned long, std::map<double, int>> *fMCHitToNeutronAncestorClass = nullptr;
+  std::map<unsigned long, std::map<double, std::pair<int,int>>> *fMCHitToNeutronParent = nullptr;
+  std::map<unsigned long, std::map<double, bool>> *fMCHitToIsDarknoise = nullptr;
+
+  bool got_MCHitToDirectParents = m_data->Stores["ANNIEEvent"]->Get("MCHitToDirectParents", fMCHitToDirectParents);
+  if (!got_MCHitToDirectParents)  {
+    std::cout << "No MCHitToDirectParents store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  bool got_MCParticles = m_data->Stores["ANNIEEvent"]->Get("MCParticles", fMCParticles);
+  if (!got_MCParticles) {
+    std::cout << "No MCParticles store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  bool got_TrackIdToIndex = m_data->Stores["ANNIEEvent"]->Get("TrackId_to_MCParticleIndex", fTrackIdToIndex);
+  if (!got_TrackIdToIndex) {
+    std::cout << "No TrackId_to_MCParticleIndex store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+
+  bool got_neutronAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronAncestor", fMCHitToNeutronAncestor);
+  if (!got_neutronAncestor) {
+    std::cout << "No MCHitToNeutronAncestor store in ANNIEEvent. Continuing to build tree " << std::endl;
+    return;
+  }
+  bool got_neutronAncestorClass = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronAncestorClass", fMCHitToNeutronAncestorClass);
+  bool got_neutronParent = m_data->Stores["ANNIEEvent"]->Get("MCHitToNeutronParent", fMCHitToNeutronParent);
+  bool got_isDarknoise = m_data->Stores["ANNIEEvent"]->Get("MCHitToIsDarknoise", fMCHitToIsDarknoise);
+  std::map<unsigned long, std::map<double, int>>* fMCHitToInteractionMode = nullptr;
+  bool got_interactionMode = m_data->Stores["ANNIEEvent"]->Get("MCHitToInteractionMode", fMCHitToInteractionMode);
+  std::map<unsigned long, std::map<double, std::pair<int,int>>>* fMCHitToImmediateAncestor = nullptr;
+  bool got_immediateAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToImmediateAncestor", fMCHitToImmediateAncestor);
+  std::map<unsigned long, std::map<double, int>>* fMCHitToImmediateAncestorClass = nullptr;
+  bool got_immediateAncestorClass = m_data->Stores["ANNIEEvent"]->Get("MCHitToImmediateAncestorClass", fMCHitToImmediateAncestorClass);
+  // DISABLED: PrimaryAncestor
+  // std::map<unsigned long, std::map<double, std::pair<int,int>>>* fMCHitToPrimaryAncestor = nullptr;
+  // bool got_primaryAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToPrimaryAncestor", fMCHitToPrimaryAncestor);
+  std::map<unsigned long, std::map<double, std::pair<int,int>>>* fMCHitToRootAncestor = nullptr;
+  bool got_rootAncestor = m_data->Stores["ANNIEEvent"]->Get("MCHitToRootAncestor", fMCHitToRootAncestor);
+  std::map<unsigned long, std::map<double, std::vector<std::pair<int,int>>>>* fMCHitToLineage = nullptr;
+  bool got_lineage = m_data->Stores["ANNIEEvent"]->Get("MCHitToLineage", fMCHitToLineage);
+  std::map<unsigned long, std::map<double, int>>* fMCHitToLineageStatus = nullptr;
+  bool got_lineageStatus = m_data->Stores["ANNIEEvent"]->Get("MCHitToLineageStatus", fMCHitToLineageStatus);
+
+  for (auto const& apair : *fMCHitToDirectParents) {
+    unsigned long pmtID = apair.first;
+    for (auto const& hit_directparent_pair : apair.second){
+      double hitTime = hit_directparent_pair.first;
+      std::vector<int> const& directparentids = hit_directparent_pair.second;
+
+      fDirectParent_PMTID.push_back(pmtID);
+      fDirectParent_HitTime.push_back(hitTime);
+      fDirectParent_TrackIDs.push_back(directparentids);
+
+      std::vector<int> pdgcodes;
+      if (got_MCParticles && got_TrackIdToIndex){
+        for (int directparentid : directparentids){
+          auto it = fTrackIdToIndex->find(directparentid);
+          if (it != fTrackIdToIndex->end()) {
+            int MCParticleIndex = it->second;
+            int pdg = fMCParticles->at(MCParticleIndex).GetPdgCode();;
+
+            std::cout << "DEBUG DirectParent | "
+                      << "TrackID(from hit)=" << directparentid
+                      << ", MCParticle.GetPdgCode()=" << pdg
+                      << std::endl;
+
+            pdgcodes.push_back(pdg);
+          }
+          else {
+            std::cout << "DEBUG DirectParent | TrackID=" << directparentid
+                      << " NOT FOUND in MCParticles (will use -999)" << std::endl;
+            pdgcodes.push_back(-999);
+          }
+        }
+      }
+      fDirectParent_PDGs.push_back(pdgcodes);
+
+      int neutronAncestorTrackID = -5;
+      int neutronAncestorPDG = -5;
+      int neutronAncestorClass = -5;
+      int neutronParentTrackID = -5;
+      int neutronParentPDG = -5;
+      if (got_neutronAncestor && fMCHitToNeutronAncestor->find(pmtID) != fMCHitToNeutronAncestor->end()){
+        auto const& pmtAncestors = fMCHitToNeutronAncestor->at(pmtID);
+        if (pmtAncestors.find(hitTime) != pmtAncestors.end()){
+          auto const& ancestorPair = pmtAncestors.at(hitTime);
+          neutronAncestorTrackID = ancestorPair.first;   
+          neutronAncestorPDG = ancestorPair.second;      
+        }
+      }
+      if (got_neutronAncestorClass && fMCHitToNeutronAncestorClass->find(pmtID) != fMCHitToNeutronAncestorClass->end()){
+        auto const& pmtClasses = fMCHitToNeutronAncestorClass->at(pmtID);
+        if (pmtClasses.find(hitTime) != pmtClasses.end()){
+          neutronAncestorClass = pmtClasses.at(hitTime);
+        }
+      }
+      if (got_neutronParent && fMCHitToNeutronParent->find(pmtID) != fMCHitToNeutronParent->end()){
+        auto const& pmtParents = fMCHitToNeutronParent->at(pmtID);
+        if (pmtParents.find(hitTime) != pmtParents.end()){
+          auto const& parentPair = pmtParents.at(hitTime);
+          neutronParentTrackID = parentPair.first;
+          neutronParentPDG = parentPair.second;
+        }
+      }
+      fDirectParent_NeutronAncestorTrackID.push_back(neutronAncestorTrackID);
+      fDirectParent_NeutronAncestorPDG.push_back(neutronAncestorPDG);
+      fDirectParent_NeutronAncestorClass.push_back(neutronAncestorClass);
+      fDirectParent_NeutronParentTrackID.push_back(neutronParentTrackID);
+      fDirectParent_NeutronParentPDG.push_back(neutronParentPDG);
+
+      int isDarknoise = 0;
+      if (got_isDarknoise && fMCHitToIsDarknoise->find(pmtID) != fMCHitToIsDarknoise->end()){
+        auto const& pmtNoise = fMCHitToIsDarknoise->at(pmtID);
+        if (pmtNoise.find(hitTime) != pmtNoise.end()){
+          isDarknoise = pmtNoise.at(hitTime) ? 1 : 0;
+        }
+      }
+      fDirectParent_IsDarknoise.push_back(isDarknoise);
+
+      int interactionMode = -9999;
+      if (got_interactionMode && fMCHitToInteractionMode) {
+        auto pmtIt = fMCHitToInteractionMode->find(pmtID);
+        if (pmtIt != fMCHitToInteractionMode->end()) {
+          auto modeIt = pmtIt->second.find(hitTime);
+          if (modeIt != pmtIt->second.end()) interactionMode = modeIt->second;
+        }
+      }
+      fDirectParent_InteractionMode.push_back(interactionMode);
+
+      int immediateAncestorTrackID = -5;
+      int immediateAncestorPDG = -5;
+      if (got_immediateAncestor && fMCHitToImmediateAncestor->find(pmtID) != fMCHitToImmediateAncestor->end()){
+        auto const& pmtAncestors = fMCHitToImmediateAncestor->at(pmtID);
+        if (pmtAncestors.find(hitTime) != pmtAncestors.end()){
+          auto const& ancestorPair = pmtAncestors.at(hitTime);
+          immediateAncestorTrackID = ancestorPair.first;
+          immediateAncestorPDG = ancestorPair.second;
+        }
+      }
+      fDirectParent_ImmediateAncestorTrackID.push_back(immediateAncestorTrackID);
+      fDirectParent_ImmediateAncestorPDG.push_back(immediateAncestorPDG);
+
+      int immediateAncestorClass = -5;
+      if (got_immediateAncestorClass && fMCHitToImmediateAncestorClass->find(pmtID) != fMCHitToImmediateAncestorClass->end()){
+        auto const& pmtClasses = fMCHitToImmediateAncestorClass->at(pmtID);
+        if (pmtClasses.find(hitTime) != pmtClasses.end()){
+          immediateAncestorClass = pmtClasses.at(hitTime);
+        }
+      }
+      fDirectParent_ImmediateAncestorClass.push_back(immediateAncestorClass);
+
+      // ---------------------------------------------------------------------------------
+      // DISABLED: PrimaryAncestor. Original fill, kept verbatim for future retrieval.
+      // int primaryAncestorTrackID = -5;
+      // int primaryAncestorPDG = -5;
+      // if (got_primaryAncestor && fMCHitToPrimaryAncestor->find(pmtID) != fMCHitToPrimaryAncestor->end()){
+      //   auto const& pmtPrimaries = fMCHitToPrimaryAncestor->at(pmtID);
+      //   if (pmtPrimaries.find(hitTime) != pmtPrimaries.end()){
+      //     auto const& primaryPair = pmtPrimaries.at(hitTime);
+      //     primaryAncestorTrackID = primaryPair.first;
+      //     primaryAncestorPDG = primaryPair.second;
+      //   }
+      // }
+      // fDirectParent_PrimaryAncestorTrackID.push_back(primaryAncestorTrackID);
+      // fDirectParent_PrimaryAncestorPDG.push_back(primaryAncestorPDG);
+      // ---------------------------------------------------------------------------------
+
+      int rootAncestorTrackID = -5;
+      int rootAncestorPDG = -5;
+      if (got_rootAncestor && fMCHitToRootAncestor->find(pmtID) != fMCHitToRootAncestor->end()){
+        auto const& pmtRoots = fMCHitToRootAncestor->at(pmtID);
+        if (pmtRoots.find(hitTime) != pmtRoots.end()){
+          auto const& rootPair = pmtRoots.at(hitTime);
+          rootAncestorTrackID = rootPair.first;
+          rootAncestorPDG = rootPair.second;
+        }
+      }
+      fDirectParent_RootAncestorTrackID.push_back(rootAncestorTrackID);
+      fDirectParent_RootAncestorPDG.push_back(rootAncestorPDG);
+
+      // Flatten this hit's lineage onto the concatenated arrays and record its depth, so the
+      // per-hit chain stays recoverable without a nested-vector branch.
+      int lineageDepth = 0;
+      if (got_lineage && fMCHitToLineage->find(pmtID) != fMCHitToLineage->end()){
+        auto const& pmtLineages = fMCHitToLineage->at(pmtID);
+        if (pmtLineages.find(hitTime) != pmtLineages.end()){
+          auto const& chain = pmtLineages.at(hitTime);
+          for (auto const& step : chain){
+            fDirectParent_LineageTrackID.push_back(step.first);
+            fDirectParent_LineagePDG.push_back(step.second);
+          }
+          lineageDepth = (int)chain.size();
+        }
+      }
+      fDirectParent_LineageDepth.push_back(lineageDepth);
+
+      int lineageStatus = -5;
+      if (got_lineageStatus && fMCHitToLineageStatus->find(pmtID) != fMCHitToLineageStatus->end()){
+        auto const& pmtStatus = fMCHitToLineageStatus->at(pmtID);
+        if (pmtStatus.find(hitTime) != pmtStatus.end()) lineageStatus = pmtStatus.at(hitTime);
+      }
+      fDirectParent_LineageStatus.push_back(lineageStatus);
     }
   }
   return;
@@ -2329,6 +2609,14 @@ bool ANNIEEventTreeMaker::FillMCTruthInfo()
   Log(logmessage, v_message, ANNIEEventTreeMakerVerbosity);
 
   fiMCTriggerNum = (int)fMCTriggerNum;
+
+  {
+    std::vector<int> wcSimModes;
+    if (m_data->Stores.at("ANNIEEvent")->Get("WCSimInteractionModes", wcSimModes) && !wcSimModes.empty()) {
+      int trigIdx = fiMCTriggerNum;
+      fTrueWCSimMode = (trigIdx >= 0 && trigIdx < (int)wcSimModes.size()) ? wcSimModes[trigIdx] : wcSimModes[0];
+    }
+  }
 
   std::map<std::string, std::vector<double>> MCNeutCap;
   bool get_neutcap = m_data->Stores.at("ANNIEEvent")->Get("MCNeutCap", MCNeutCap);

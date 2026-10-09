@@ -291,6 +291,9 @@ bool LoadWCSimLAPPD::Execute(){
 					digits->Fill(relativedigitst);
 				}
 				std::vector<int> parents; // info about which particle generated the photon for this hit
+				std::vector<int> directparents; 
+				//#### Do I need to add the DirectParentId for the TrackId_to_MCParticleIndex lookup? 
+				// #### We may be interested in using TrackID_to_MCParticleIndex map for grabbing the pdg code of the given direct parent hit (DJA)
 				if(TrackId_to_MCParticleIndex->count(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount))){
 					parents.push_back(TrackId_to_MCParticleIndex->at(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount)));
 				}
@@ -306,15 +309,15 @@ bool LoadWCSimLAPPD::Execute(){
 					relativedigitst<(posttriggerwindow) ){
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					if(MCLAPPDHits->count(key)==0){
-						MCLAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos, parents);
+						MCLAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos, parents, directparents);
 						MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					} else {
 						MCLAPPDHits->at(key).emplace_back(key, relativedigitst, digiq,
-															globalpos, localpos, parents);
+															globalpos, localpos, parents, directparents);
 					}
 					if(verbosity>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents);
+					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents, directparents);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event
