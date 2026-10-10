@@ -87,7 +87,6 @@ public:
   void FitPointDirectionWithMinuit();
   void FitPointVertexWithMinuit();
   void FitExtendedVertexWithMinuit();
-  void FitExtendedVertexWithMinuit(TH1D pdf);
   
   double GetTime() {return fVtxTime;}
   double GetFOM() {return fVtxFOM;}

@@ -18,6 +18,7 @@
 #include "TTree.h"
 #include "ANNIEGeometry.h"
 #include "TMath.h"
+#include "RecoCluster.h"
 
 #include "BeamStatus.h"
 
@@ -131,6 +132,8 @@ class EventSelector: public Tool {
   /// particles and selecting charged particles above Cherenkov threshold
   bool EventSelectionByMCSingleRing();
 
+  bool EventSelectionByClusterSingleRing();
+
   /// \brief Event selection by Multi Rings
   ////
   /// This event selection criteria requires events to have multiple
@@ -207,6 +210,8 @@ class EventSelector: public Tool {
   RecoVertex* fMuonStartVertex = nullptr; 	 ///< true muon start vertex
   RecoVertex* fMuonStopVertex = nullptr; 	 ///< true muon stop vertex
   std::vector<RecoDigit>* fDigitList;		///< Reconstructed Hits including both LAPPD hits and PMT hits
+  std::vector<int>* fHitLAPPDs;
+  int fHitLAPPDSize = 0;
   RecoVertex* fRecoVertex = nullptr; 	 ///< Reconstructed Vertex 
   std::map<double,std::vector<Hit>>* m_all_clusters;   ///< clustered PMT hits
   std::map<double,std::vector<MCHit>>* m_all_clusters_MC;   ///< clustered PMT hits
@@ -220,6 +225,8 @@ class EventSelector: public Tool {
   std::vector<double> *vec_mrdclusters_time = nullptr;
   std::map<int,double>* ChannelNumToTankPMTSPEChargeMap = nullptr;   ///< PMT SPE Gain Map
 
+  std::vector<RecoCluster>* fRecoClusters=nullptr;
+
   //verbosity initialization
   int verbosity=1;
   
@@ -232,6 +239,8 @@ class EventSelector: public Tool {
   bool fMCIsMuonCut = false;
   bool fMCIsElectronCut = false;
   bool fMCIsSingleRingCut = false;
+  bool fClusterIsSingleRingCut = false;
+
   bool fMCIsMultiRingCut = false;
   bool fMCProjectedMRDHit = false;
   bool fMCEnergyCut = false;
@@ -249,12 +258,14 @@ class EventSelector: public Tool {
   bool fThroughGoing = false;
   bool fEventCutStatus;
   bool fIsMC; 
-  bool fMCWaveform;
   int fTriggerWord;
   int fRecoPDG;
   bool fTriggerExtended = false;
   bool fBeamOK = false;
+  int fLAPPDMultMin = 0;
+  bool fImportStatus = false;
   std::string fCutConfigurationName;  
+  std::vector<BoostStore>* theMrdTracks;
 
   bool get_mrd = false;
   double pmt_time = 0; 

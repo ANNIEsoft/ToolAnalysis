@@ -52,10 +52,15 @@ class NeutronCheck: public Tool {
 
 	 int verbosity;
 	 std::string outfile;
-	 bool useClean=0;
+	 bool useCleanEvent=0;
+	 bool useCleanCluster=0;
+	 bool useCleanDigit=0;
 	 std::string EventStore;
 	 bool fFinderCompare;
 	 bool fParticleInfo;
+	 double fDelayThreshold=10000;
+	 bool fVertexInfo;
+	 bool fIsData;
 
 	 TTree* NeutCheckTree = nullptr;
 
@@ -82,19 +87,23 @@ class NeutronCheck: public Tool {
 	 std::vector<double> cluster_charges;
 	 std::vector<double> cluster_cb;
 
+	 std::vector<double> fDigitCharges;
+	 std::vector<double> fDigitTimes;
+
 	 std::map<double, int>* fClusterToBestParticleID = nullptr;
 	 std::map<double, int>* fClusterToBestParticlePDG = nullptr;
 	 std::map<double, double>* fClusterEfficiency = nullptr;
 	 std::map<double, double>* fClusterPurityMap = nullptr;
 	 std::map<double, double>* fClusterTotalCharge = nullptr;
 	 std::vector<RecoDigit>* fDigitList=nullptr;
-	 vector<RecoCluster*>* fRecoClusters;
+	 vector<RecoCluster>* fRecoClusters;
 
 	 std::vector<MCParticle>* fMCParticles;
 	 std::vector<double> fMCNeutCapTimes;
 	 std::vector<double> fMCNeutCapX;
 	 std::vector<double> fMCNeutCapY;
 	 std::vector<double> fMCNeutCapZ;
+	 std::vector<double> fMCNeutCapNucleus;
 
 
 	 std::map<double,std::vector<MCHit>>* m_all_clusters;
@@ -106,8 +115,10 @@ class NeutronCheck: public Tool {
 	 vector<int> fClusterNum;
 	 int fClusterCount;
 
+	 vector<int> fClusterNDigits;
 	 vector<int> fClusterPDG;
 	 vector<int> fClusterParentPDG;
+	 vector<int> fClusterCoincPDG;
 	 vector<double> fClusterParticleEnergy;
 	 vector<double> fClusterCharge;
 	 vector<double> fClusterPurity;
@@ -118,17 +129,23 @@ class NeutronCheck: public Tool {
 	 vector<double> fClusterAS2;
 	 vector<double> fClusterASC;
 	 vector<double> fClusterAMD;
+	 vector<double> fClusterAW;
+	 vector<double> fClusterB1,fClusterB2,fClusterB3,fClusterB4,fClusterB5;
+	 vector<double> fClusterTRT,fClusterTRC,fClusterTRQ,fClusterTRRTQ,fClusterTRRTC,fClusterTRRQC;
 	 //vector<double> fClusterSA;
 	 //vector<Position> fClusterCV;
 	 vector<double> fClusterCVX,fClusterCVY,fClusterCVZ,fClusterCVR;
+	 vector<double> fClusterSphericity, fClusterPlanarity;
 
 	 vector<int> fClusterMode;
 	 vector<int> fClusterHits;
 
+	 vector<int> fParticleNumber;
 	 vector<int> fParticlePDG;
 	 vector<int> fParticleParent;
 	 vector<double> fParticleStartEnergy;
 	 vector<double> fParticleStartTime;
+	 vector<double> fParticleStopTime;
 
 	 vector<int> fFinderClusterNum;
 	 int fFinderClusterCount;
@@ -146,6 +163,18 @@ class NeutronCheck: public Tool {
 	 double true_Emu;
 	 double true_Enu;
 	 double TrueQ2;
+	 double CalcQ2;
+
+	 double classicEmu;
+	 double classicPt;
+
+	 double trueVtxX, trueVtxY, trueVtxZ;
+	 double recoVtxX, recoVtxY, recoVtxZ;
+	 double deltaVtxX, deltaVtxY, deltaVtxZ, deltaVtxR;
+	 double trueDirX,trueDirY,trueDirZ;
+	 double recoDirX,recoDirY,recoDirZ;
+	 double recoVtxFOM;
+	 int vtxRecoStatus;
 
 	 /// \brief trigger number
 	 uint16_t fMCTriggerNum;

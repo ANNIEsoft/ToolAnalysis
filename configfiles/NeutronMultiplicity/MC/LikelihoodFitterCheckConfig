@@ -1,0 +1,11 @@
+verbosity 0
+
+OutputFile /Data/1225beamsim/LFCheck-0223-Testtimedir.root
+ifPlot2DFOM 1
+ShowEvent 0
+EventRange 50
+CleanEventsOnly 1
+UsePDFFile 0
+2DMode Direction
+PDFFile /Data/Singletest/VGCheck-pdfcharge2.root
+SimpleDirectionTest 0

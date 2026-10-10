@@ -70,6 +70,9 @@ class DigitBuilder: public Tool {
   /// Fills the parameter name and appropriate parameter values into
   /// the parameter container, to be used in the fit
   void ClearDigitList() {fDigitList->clear();}
+
+  void CollectHitsDirect(const std::vector<double>& hit_times, const std::vector<double>& hit_charges, const std::vector<int>& hit_parents, Position pos_reco, int PMTId, double window_ns = 5.0);
+  double compute_median(const std::vector<double>& times);
  	
   int verbosity=1;
   std::string fInputfile;
@@ -79,6 +82,7 @@ class DigitBuilder: public Tool {
   std::string fPhotodetectorConfiguration; ///< "PMTs_Only", "LAPPDs_Only", "All_Detectors"
   int fParametricModel;     ///< configures how PMTs hits for each event are accumulated into one hit per PMT 0: they are not, 1: median hit time, 2: first hit time, 3: average first 20% of hits, 4: average all hits, 5: highest charge hit time
   bool fIsMC;     ///< Configure whether to load from MCHits or Hits in boost store 
+  bool fUseWaveforms; ///< Configure whether to use simulated waveforms.  Handled approximately like data, looks for Hits in boost store.
   std::string  fLAPPDIDFile="none";
   double fDigitChargeThr;
   std::string path_chankeymap;
@@ -87,8 +91,10 @@ class DigitBuilder: public Tool {
   double MCPMTResolution = 0;
 
   bool fCollectHits;
+  double fCollectionWindow=10.0;
   int AcqTimeWindow;
   double end_of_window_time_cut;
+  double fWaveformshift = 0;   //shift all times to counter simulated waveform effects     TEMP if we can figure out better solution.
 
   Geometry* fGeometry=nullptr;    ///< ANNIE Geometry
   TRandom3 frand;  ///< Random number generator

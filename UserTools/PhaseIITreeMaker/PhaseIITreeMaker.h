@@ -48,6 +48,9 @@
 #include "TChain.h"
 #include "TVector3.h"
 #include "TLorentzVector.h"
+#include "Position.h"
+#include "RecoVertex.h"
+#include "RecoCluster.h"
 
 class PhaseIITreeMaker: public Tool {
 
@@ -73,6 +76,7 @@ class PhaseIITreeMaker: public Tool {
   void FillWeightInfo();
   void FillTruthRecoDiffInfo(bool got_mc, bool got_reco);
   void LoadDigitHits();
+  void CSCheck();
 
   /// \brief Summary of Reconstructed vertex
   void RecoSummary();
@@ -85,7 +89,7 @@ class PhaseIITreeMaker: public Tool {
   void LoadLAPPDData();
   void FillLAPPDData();
 
-  void FillLAPPDHit();
+  //void FillLAPPDHit();
   void FillLAPPDPulse();
 
  private:
@@ -216,6 +220,39 @@ class PhaseIITreeMaker: public Tool {
   double fClusterChargeBalance;
   std::vector<int> fADCWaveformChankeys; 
   std::vector<int> fADCWaveformSamples;  
+
+  // ************** RecoCluster Information ********** //
+  vector<RecoCluster>* fRecoClusters;
+  bool RecoCluster_fill = 0;
+  vector<int> fRClusterNum;
+  int fRClusterCount;
+
+  vector<int> fRClusterNDigits;
+  vector<int> fRClusterPDG;
+  vector<int> fRClusterParentPDG;
+  vector<double> fRClusterParticleEnergy;
+  vector<double> fRCDigitCharges;
+  vector<double> fRCDigitTimes;
+  vector<double> fRClusterCharge;
+  vector<double> fRClusterPurity;
+  vector<double> fRClusterCB;
+  vector<double> fRClusterTime;
+  vector<double> fRClusterAW;
+  vector<double> fRClusterTRT, fRClusterTRC, fRClusterTRQ, fRClusterTRRTQ, fRClusterTRRTC, fRClusterTRRQC;
+  vector<double> fRClusterSphericity, fRClusterPlanarity;
+
+  vector<int> fRClusterMode;
+
+
+  int fTrueNeutronMult;
+  int fTrueNeutronDelayed;
+  int fNeutronMult;
+
+  double fDelayThreshold=10000;
+  std::vector<MCParticle>* fMCParticles;
+
+  double classicEmu;
+  double classicPt;
 
   // ************** MC BNB Spill Structure ************* //
   std::map<double,double> bunchTimes;

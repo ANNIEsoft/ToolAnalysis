@@ -36,6 +36,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("muonTruthRecoDiff_fill", muonTruthRecoDiff_fill);
   m_variables.Get("LAPPDData_fill", LAPPDData_fill);
   m_variables.Get("LAPPDReco_fill", LAPPDReco_fill);
+  m_variables.Get("RecoCluster_fill", RecoCluster_fill);
 
   m_variables.Get("SiPMPulseInfo_fill",SiPMPulseInfo_fill);
   m_variables.Get("TankClusterProcessing",TankClusterProcessing);
@@ -291,6 +292,34 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     }
  //DIGITS   
 
+  //CLUSTERS
+  if (RecoCluster_fill) {
+      fPhaseIITrigTree->Branch("RClusterNDigits", &fRClusterNDigits);
+      fPhaseIITrigTree->Branch("RClusterMode", &fRClusterMode);
+      fPhaseIITrigTree->Branch("RClusterPDG", &fRClusterPDG);
+      fPhaseIITrigTree->Branch("RClusterParentPDG", &fRClusterParentPDG);
+      fPhaseIITrigTree->Branch("RClusterParticleEnergy", &fRClusterParticleEnergy);
+      fPhaseIITrigTree->Branch("RClusterTime", &fRClusterTime);
+      fPhaseIITrigTree->Branch("RClusterCharge", &fRClusterCharge);
+      fPhaseIITrigTree->Branch("RCDigitCharges", &fRCDigitCharges);
+      fPhaseIITrigTree->Branch("RCDigitTimes", &fRCDigitTimes);
+      fPhaseIITrigTree->Branch("RClusterPurity", &fRClusterPurity);
+      fPhaseIITrigTree->Branch("RClusterCB", &fRClusterCB);
+
+      fPhaseIITrigTree->Branch("RClusterAW", &fRClusterAW);
+      fPhaseIITrigTree->Branch("RClusterPlanarity", &fRClusterPlanarity);
+      fPhaseIITrigTree->Branch("RClusterSphericity", &fRClusterSphericity);
+      fPhaseIITrigTree->Branch("RClusterTRT", &fRClusterTRT);
+      fPhaseIITrigTree->Branch("RClusterTRQ", &fRClusterTRQ);
+      fPhaseIITrigTree->Branch("RClusterTRC", &fRClusterTRC);
+      fPhaseIITrigTree->Branch("RClusterTRRTQ", &fRClusterTRRTQ);
+      fPhaseIITrigTree->Branch("RClusterTRRTC", &fRClusterTRRTC);
+      fPhaseIITrigTree->Branch("RClusterTRRQC", &fRClusterTRRQC);
+
+      fPhaseIITrigTree->Branch("TrueNeutronMult", &fTrueNeutronMult,"trueNeutronMult/I");
+      fPhaseIITrigTree->Branch("TrueNeutronDelayed", &fTrueNeutronDelayed,"trueNeutronDel/I");
+  }
+
     //Some lower level information to save
     fPhaseIITrigTree->Branch("eventNumber",&fEventNumber,"eventNumber/I");
     fPhaseIITrigTree->Branch("eventTimeTank",&fEventTimeTank_Tree,"eventTimeTank/l");
@@ -312,10 +341,9 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     fPhaseIITrigTree->Branch("beam_ok",&fBeamok);
 
     //Event Staus Flag Information
-    if(fillCleanEventsOnly){
+    //Output event selection status even if rejected events are shown.
       fPhaseIITrigTree->Branch("eventStatusApplied",&fEventStatusApplied,"eventStatusApplied/I");
       fPhaseIITrigTree->Branch("eventStatusFlagged",&fEventStatusFlagged,"eventStatusFlagged/I");
-    }
     //Hit information (PMT and LAPPD)
     if(SiPMPulseInfo_fill){
       fPhaseIITrigTree->Branch("SiPM1NPulses",&fSiPM1NPulses,"SiPM1NPulses/I");
@@ -1154,6 +1182,15 @@ bool PhaseIITreeMaker::Execute(){
     //DIGITS
     if(Digit_fill) this->LoadDigitHits();
     //DIGITS
+
+    //CLUSTERS
+    bool goodMCParticles = m_data->Stores.at("ANNIEEvent")->Get("MCParticles", fMCParticles);
+    if (!goodMCParticles) {
+        std::cerr << "BackTracker: no MCParticles in the ANNIEEvent!" << endl;
+        return false;
+    }
+    if(RecoCluster_fill) CSCheck();
+    //CLUSTERS
     /*
     if(Digit_fill){
        // get digits from RecoDigit store
@@ -1587,6 +1624,36 @@ void PhaseIITreeMaker::ResetVariables() {
     }
    //DIGITS 
 
+  //CLUSTERS
+  if (RecoCluster_fill) {
+      fRClusterNum.clear();
+      fRClusterCount = 0;
+      fRClusterMode.clear();
+      fRClusterNDigits.clear();
+      fRClusterPDG.clear();
+      fRClusterParentPDG.clear();
+      fRClusterParticleEnergy.clear();
+      fRClusterCharge.clear();
+      fRCDigitCharges.clear();
+      fRCDigitTimes.clear();
+      fRClusterPurity.clear();
+      fRClusterCB.clear();
+      fRClusterTime.clear();
+      fRClusterAW.clear();
+      fRClusterPlanarity.clear();
+      fRClusterSphericity.clear();
+
+      fRClusterTRT.clear();
+      fRClusterTRQ.clear();
+      fRClusterTRC.clear();
+      fRClusterTRRTQ.clear();
+      fRClusterTRRTC.clear();
+      fRClusterTRRQC.clear();
+
+      fNeutronMult = 0;
+
+  }
+//CLUSTERS
   if (MuonFitter_fill)
   {
     fRecoMuonVtxX = -9999;
@@ -1866,6 +1933,154 @@ void PhaseIITreeMaker::LoadDigitHits(){
    return;
 }       
 //DIGITS
+
+//CLUSTERS
+void PhaseIITreeMaker::CSCheck() {
+
+    std::map<int, int>* fMCParticleIndexMap;
+
+    Log("PhaseIITreeMakerTool: Cluster Check!", v_message, verbosity);
+   
+    fTrueNeutronMult = 0;
+    fTrueNeutronDelayed = 0;
+    Log("PhaseIITreeMakerTool Tool: Scanning " + to_string(fMCParticles->size()) + " MCParticles", v_debug, verbosity);
+    for (int i = 0; i < fMCParticles->size(); i++) {
+        if (fMCParticles->at(i).GetPdgCode() == 2112 && fMCParticles->at(i).GetParentPdg() == 0) {
+            fTrueNeutronMult++;
+
+            if (fMCParticles->at(i).GetStopTime() > fDelayThreshold) fTrueNeutronDelayed++;
+        }
+        else if (fMCParticles->at(i).GetPdgCode() == 2112 && fMCParticles->at(i).GetParentPdg() != 0) {
+            Log("Found non-primary neutron at particle " + to_string(i) + " with parent PDG " + to_string(fMCParticles->at(i).GetParentPdg()), v_debug, verbosity);
+        }
+        //if (fParticleInfo) {
+        //    fParticleNumber.push_back(i);
+        //    fParticlePDG.push_back(fMCParticles->at(i).GetPdgCode());
+        //    fParticleParent.push_back(fMCParticles->at(i).GetParentPdg());
+        //    fParticleStartEnergy.push_back(fMCParticles->at(i).GetStartEnergy());
+        //    fParticleStartTime.push_back(fMCParticles->at(i).GetStartTime());
+        //    fParticleStopTime.push_back(fMCParticles->at(i).GetStopTime());
+
+
+        //    /*if (fMCParticles->at(i).GetPdgCode() == 2112) {
+        //        fMCNeutCapTimes.push_back(fMCParticles->at(i).GetStopTime());
+        //        fMCNeutCapX.push_back(fMCParticles->at(i).GetStopVertex().X());
+        //        fMCNeutCapY.push_back(fMCParticles->at(i).GetStopVertex().Y());
+        //        fMCNeutCapZ.push_back(fMCParticles->at(i).GetStopVertex().Z());
+        //    }*/
+        //}
+
+
+    }
+
+
+
+    bool cluster_status = m_data->Stores.at("RecoEvent")->Get("RecoClusters", fRecoClusters);
+    if (!cluster_status) {
+        Log("Neutcheck tool found no recoclusters.", v_debug, verbosity);
+        return;
+    }
+
+    int cluster_size = fRecoClusters->size();
+    if (cluster_size == 0) {
+        Log("Neutcheck tool found empty recoclusterlist.", v_debug, verbosity);
+        return;
+    }
+    Log("Neutcheck tool found this many clusters: " + to_string(cluster_size), v_debug, verbosity);
+
+    int bestParent;
+    int bestParticleID = -5;
+    int bestPDG = -5;
+    double CVX, CVY, CVZ, CVR;
+
+    Log("Checka", v_debug, verbosity);
+    for (int i = 0; i < fRecoClusters->size(); i++) {
+
+        Log("Checkb", v_debug, verbosity);
+        fRecoClusters->at(i).CheckFilter();
+        Log("Checkb1", v_debug, verbosity);
+        //if (useCleanCluster && !(fRecoClusters->at(i).GetFilterStatus())) continue;
+
+        Log("Checkc", v_debug, verbosity);
+        fRClusterNum.push_back(i);
+        fRClusterCount++;
+        Log("Checkd", v_debug, verbosity);
+        bestParent = fRecoClusters->at(i).calcBestParent();
+        //bestParent = fRecoClusters->at(i).GetBestParent();
+        Log("Check 1: Particle ID " + to_string(bestParent), v_debug, verbosity);
+        if (bestParent >= fMCParticles->size()) {
+            Log("Invalid particle ID " + to_string(bestParent) + " vs number of particles: " + to_string(fMCParticles->size()) + "; skipping.", v_error, verbosity);
+            continue;
+        }
+
+        bestPDG = fMCParticles->at(bestParent).GetPdgCode();
+
+
+        if (fMCParticles->at(bestParent).GetFlag() != 0) {
+            Log("Flagged particle!  PDG " + to_string(bestPDG) + " excluding.", v_message, verbosity);
+            bestPDG = -5;
+        }
+        if (fMCParticles->at(bestParent).GetParentPdg() != 0) {
+
+            Log("NeutCheck: PDG " + to_string(bestPDG) + " Finding parent.", v_message, verbosity);
+            fRClusterParentPDG.push_back(fMCParticles->at(bestParent).GetParentPdg());
+            Log("Parent PDG " + to_string(fRClusterParentPDG.at(fRClusterParentPDG.size() - 1)), v_message, verbosity);
+        }
+        else {
+            Log("NeutCheck tool: no parent found.  Treating as primary. PDG " + to_string(bestPDG), v_message, verbosity);
+            fRClusterParentPDG.push_back(0);
+            if (bestPDG == 2212 && fRecoClusters->at(i).GetTime() > fDelayThreshold) {
+
+                Log("Primary proton found ID " + to_string(bestParent) + " at time " + to_string(fRecoClusters->at(i).GetTime()) + " but particle start, stop " + to_string(fMCParticles->at(bestParent).GetStartTime()) + ", " + to_string(fMCParticles->at(bestParent).GetStopTime()), v_debug, verbosity);
+            }
+            if (bestPDG == 13 && fRecoClusters->at(i).GetTime() > fDelayThreshold) {
+
+                Log("Primary muon found ID " + to_string(bestParent) + " at time " + to_string(fRecoClusters->at(i).GetTime()) + " but particle start, stop " + to_string(fMCParticles->at(bestParent).GetStartTime()) + ", " + to_string(fMCParticles->at(bestParent).GetStopTime()), v_debug, verbosity);
+            }
+            if (bestPDG == 2112 && fRecoClusters->at(i).GetTime() > fDelayThreshold) {
+
+                Log("Primary neutron found ID " + to_string(bestParent) + " at time " + to_string(fRecoClusters->at(i).GetTime()) + " but particle start, stop " + to_string(fMCParticles->at(bestParent).GetStartTime()) + ", " + to_string(fMCParticles->at(bestParent).GetStopTime()), v_debug, verbosity);
+            }
+        }
+
+
+        fRecoClusters->at(i).SetPDG(bestPDG);
+        fRClusterParticleEnergy.push_back(fMCParticles->at(bestParent).GetStartEnergy());
+
+        fRClusterMode.push_back(fRecoClusters->at(i).GetClusterMode());
+        fRClusterPDG.push_back(fRecoClusters->at(i).GetPDG());
+        if (fRClusterPDG.at(fRClusterPDG.size() - 1) == 2112) {
+            fNeutronMult++;
+
+        }
+
+        fRClusterNDigits.push_back(fRecoClusters->at(i).GetNDigits());
+        fRClusterCharge.push_back(fRecoClusters->at(i).GetCharge());
+        fRClusterPurity.push_back(fRecoClusters->at(i).Purity());
+        fRClusterTime.push_back(fRecoClusters->at(i).GetTime());
+        fRClusterCB.push_back(fRecoClusters->at(i).GetCB());
+        for (int j = 0; j < fRecoClusters->at(i).GetNDigits(); j++) {
+
+            fRCDigitCharges.push_back(fRecoClusters->at(i).GetDigit(j).GetCalCharge());
+            fRCDigitTimes.push_back(fRecoClusters->at(i).GetDigit(j).GetCalTime());
+        }
+        
+        fRClusterAW.push_back(fRecoClusters->at(i).GetAW());
+        fRClusterPlanarity.push_back(fRecoClusters->at(i).GetPlanarity());
+        fRClusterSphericity.push_back(fRecoClusters->at(i).GetSphericity());
+
+        fRClusterTRT.push_back(fRecoClusters->at(i).GetTimeRangeT());
+        fRClusterTRQ.push_back(fRecoClusters->at(i).GetTimeRangeQ());
+        fRClusterTRC.push_back(fRecoClusters->at(i).GetTimeRangeC());
+        fRClusterTRRTQ.push_back(fRecoClusters->at(i).GetTRRTQ());
+        fRClusterTRRTC.push_back(fRecoClusters->at(i).GetTRRTC());
+        fRClusterTRRQC.push_back(fRecoClusters->at(i).GetTRRQC());
+
+
+    }
+
+    return;
+}
 
 int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
   //Check for valid track criteria
@@ -2613,7 +2828,7 @@ void PhaseIITreeMaker::LoadLAPPDData()
       //cout<<"Found LAPPDData, LAPPDDataMap Size: "<<LAPPDDataMap.size()<<endl;
       if(LAPPDReco_fill){
       FillLAPPDPulse();
-      FillLAPPDHit();
+      //FillLAPPDHit();
       }
     }
 }
@@ -2668,7 +2883,7 @@ void PhaseIITreeMaker::FillLAPPDPulse()
 }
 
 
-void PhaseIITreeMaker::FillLAPPDHit(){
+/*void PhaseIITreeMaker::FillLAPPDHit() {
   bool gotHit = m_data->Stores["ANNIEEvent"]->Get("LAPPDHits", lappdHits);
 
   if(gotHit)
@@ -2689,7 +2904,7 @@ void PhaseIITreeMaker::FillLAPPDHit(){
       /*
       XPosTank = position.at(0);
       YPosTank = position.at(1);
-      ZPosTank = position.at(2);*/
+      ZPosTank = position.at(2);* /
       vector<double> localPosition = thisHit.GetLocalPosition();
       fLAPPDHitParallelPos.push_back(localPosition.at(0));
       fLAPPDHitTransversePos.push_back(localPosition.at(1));
@@ -2700,4 +2915,4 @@ void PhaseIITreeMaker::FillLAPPDHit(){
     }
   }
   }
-}
+}*/

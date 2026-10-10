@@ -42,6 +42,7 @@ class RecoDigit : public SerialisableObject{
 		fDigitType=origin->GetDigitType();
 		fDetectorID=origin->GetDetectorID();
 		fIsFiltered=origin->GetFilterStatus();
+		Parents=origin->GetParents();
 
 	}
 	~RecoDigit() {/*ANNIERecoObjectTable::Instance()->DeleteDigit();*/}

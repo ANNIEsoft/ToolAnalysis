@@ -48,6 +48,7 @@ class VtxSeedFineGrid: public Tool {
 	 std::vector<RecoVertex>* vSeedVtxList = nullptr;
 	 std::vector<int> vSeedDigitList;
 	 std::vector<RecoDigit>* fDigitList = nullptr;
+	 std::vector<RecoCluster>* fClusterList = nullptr;
 
 	 std::vector<RecoVertex>* SeedGridList = nullptr;
 	 RecoVertex* fTrueVertex = 0;
@@ -67,6 +68,7 @@ class VtxSeedFineGrid: public Tool {
 	 bool usePastResolution = 0;
 	 bool useDirectionGrid = 0;
 	 bool multiGrid = 0;
+	 bool fRecoClusters = 0;
 
 	 // \brief Event Status flag masks
 	  int fEventStatusApplied;

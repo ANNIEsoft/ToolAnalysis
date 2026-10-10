@@ -1,0 +1,19 @@
+# EventSelector config file
+
+verbosity 0
+MCPMTVolCut 0
+MCFVCut 0
+MCMRDCut 0
+MCPiKCut 0
+MCIsMuonCut 0
+MRDRecoCut 1
+RecoPMTVolCut 0
+RecoFVCut 0 
+ArgonFV 0
+MCIsSingleRingCut 0
+ClusterIsSingleRingCut 1
+NHitCut 1
+LAPPDMult 0
+TriggerWord 0
+PromptTrigOnly 0
+SaveStatusToStore 1
