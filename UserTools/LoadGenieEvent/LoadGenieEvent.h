@@ -105,6 +105,7 @@ class LoadGenieEvent: public Tool {
 	int tchainentrynum=0;         // 
 	bool manualmatch=0;			//to be used when GENIE information is not stored properly in file
 	int fileevents=0;
+        bool countpot=0;
 
 	// common input/output variables to both Robert/Zarko filesets
 	int parentpdg;
