@@ -87,7 +87,7 @@ bool LoadReweightGenieEvent::Initialise(std::string configfile, DataModel &data)
 	/////////////////////////////////////////////////////////////////
 	
 	
-	int evoffset;
+	int evoffset = 0;
 
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
