@@ -1,0 +1,71 @@
+# cMrdMlReco configuration -- release cMrdMlReco-B2v042, adapter output contract v6
+# ==============================================================================
+# Every value below equals the tool's built-in default except the paths, which
+# have no default.  See UserTools/cMrdMlReco/README.md for the full contract.
+#
+# Release rule: changing a threshold, model/hash, geometry identity, bypass rule
+# or packet/feature implementation is a physics-facing release change.  OutputMode
+# is the exception: production/debug may change only how much is published.
+#
+# Release on PNFS: /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/
+#   release/geometry/                                frozen geometry package
+#   release/gate/{model_meta.json,saved_model/}      gate          b72962be...4fd240
+#   release/reconstruction/{model_meta.json,saved_model/}
+#                                                    reconstruction 27aba803...cbc36
+#   runtime/cmrd_v5_{inference,runtime_features,features}.py
+# Before freezing, confirm the installed reconstruction tree hash on PNFS:
+#   the daemon's READY handshake must report 27aba803...cbc36 or startup fails.
+#   (Deprecated trees: f0a28b40...361832ef and b77e854a...c9304ee.)
+
+verbosity 0
+IsData 1
+
+# production | debug (legacy smoke-test alias maps to debug). PhaseIITreeMaker follows this.
+OutputMode production
+
+# MRD-hit prefilter: off for the first production release (see README).
+PrefilterMinMRDHits 0
+
+# ---- Python runtime and release paths (required) ---------------------------
+PythonExe python3
+InferenceScript /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/runtime/cmrd_v5_inference.py
+GateModelDir /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/release/gate/saved_model
+ReconstructionModelDir /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/release/reconstruction/saved_model
+GateModelMeta /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/release/gate/model_meta.json
+ReconstructionModelMeta /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/release/reconstruction/model_meta.json
+GeometryDir /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/release/geometry
+
+# ---- Frozen release identity (checked against the daemon READY handshake) ---
+ModelRelease cMrdMlReco-B2v042
+ExpectedGeometryManifestSHA256 8c63f966f8a3948d43f2ee3f71c41610adc0d72e3cb9cbbdcb84383f878fe8ab
+ExpectedGateModelTreeSHA256 b72962be6eaf03b501c996aa858b933e9104c264ca556e37dfb28105714fd240
+ExpectedReconstructionModelTreeSHA256 27aba803f3bc5f5364281fda98b85f4ba2016fc98f67c29605616cf8744cbc36
+
+# ---- Gate policy (validated world-MC commissioning working point) ----------
+# HasTarget is the loose target gate.  Reconstructable is kept as a quality
+# score and never hard-rejects.  The MRD-only Tank-bypass policy is frozen in
+# the daemon (HasTarget >= 0.90, >= 4 live MRD hits, >= 4 layers, retained
+# TimeCluster) and flagged per event as RecoUsedTankBypass.
+GateHasTargetThreshold 0.5
+GateReconstructableThreshold 0.0
+RequireGateCategoryZero 0
+
+# ---- TensorFlow and daemon supervision -------------------------------------
+AllowTFVersionMismatch 0
+TensorFlowIntraOpThreads 1
+TensorFlowInterOpThreads 1
+DaemonStartupTimeoutSec 240
+DaemonResponseTimeoutSec 60
+DaemonShutdownTimeoutSec 5
+RestartDaemonOnFailure 1
+MaxDaemonRestarts 3
+MaxProtocolLineMB 8
+
+# ---- Inputs ----------------------------------------------------------------
+MCTDCDataKey TDCData
+# AdditionalDeadMRDChankeys 52,123   # debug diagnostics only; frozen mask unchanged
+
+# ---- Debug dumps (OutputMode debug only) -----------------------------------
+#DebugPacketDirectory /tmp/cmrd_packets
+#DebugPacketMaxEvents 25
+#DebugResponseFile /tmp/cmrd_responses.jsonl

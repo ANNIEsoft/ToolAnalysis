@@ -1,5 +1,8 @@
 #include "PhaseIITreeMaker.h"
 
+#include <algorithm>
+#include <cctype>
+
 PhaseIITreeMaker::PhaseIITreeMaker():Tool(){}
 
 
@@ -45,6 +48,75 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Digit_fill",Digit_fill);
 
   m_variables.Get("MuonFitter_fill", MuonFitter_fill);
+
+  // ---------------------------------------------------------------- cMrdMlReco
+  // MRDRecoSource is an explicit compatibility boundary:
+  //   Legacy    -> upstream PhaseIITreeMaker behavior remains unchanged.
+  //   MrdMLReco -> ML-only output; do not silently mix classical reco fields.
+  //   Both      -> legacy and mrd_ml_* branches side by side for validation.
+  // Keeping Legacy as the default means adding cMrdMlReco cannot alter an old
+  // ToolChain unless that chain opts in through its configuration.
+  MRDRecoSource = "Legacy";
+  m_variables.Get("MRDRecoSource", MRDRecoSource);
+  if(MRDRecoSource == "Legacy"){
+    MrdMLReco_fill = false;
+  } else if(MRDRecoSource == "MrdMLReco" || MRDRecoSource == "Both"){
+    MrdMLReco_fill = true;
+  } else {
+    Log("PhaseIITreeMaker Tool: MRDRecoSource must be exactly 'Legacy', "
+        "'MrdMLReco', or 'Both'; received '" + MRDRecoSource + "'.", v_error, verbosity);
+    return false;
+  }
+  if(MrdMLReco_fill && !TriggerProcessing){
+    Log("PhaseIITreeMaker Tool: MRDRecoSource=" + MRDRecoSource +
+        " requires TriggerProcessing=1 (cMRD ML outputs are trigger-level).", v_error, verbosity);
+    return false;
+  }
+  if(MRDRecoSource == "MrdMLReco" && (MRDReco_fill || MuonFitter_fill || SimpleReco_fill)){
+    Log("PhaseIITreeMaker Tool: MRDRecoSource=MrdMLReco is ML-only. Set MRDReco_fill, "
+        "MuonFitter_fill and SimpleReco_fill to 0, or use MRDRecoSource=Both.", v_error, verbosity);
+    return false;
+  }
+  if(MrdMLReco_fill){
+    // Producer handshake: cMrdMlReco::Initialise() publishes its OutputMode.
+    // Its absence means cMrdMlReco is missing or placed after this tool.
+    auto normalize = [](std::string m){
+      std::transform(m.begin(), m.end(), m.begin(),
+                     [](unsigned char ch){ return static_cast<char>(std::tolower(ch)); });
+      if(m == "smoke-test" || m == "smoke_test" || m == "smoketest") m = "debug";
+      return m;
+    };
+    std::string producer_mode;
+    if(!m_data->CStore.Get("MrdMLOutputMode", producer_mode) || producer_mode.empty()){
+      Log("PhaseIITreeMaker Tool: MRDRecoSource=" + MRDRecoSource + " but CStore "
+          "\"MrdMLOutputMode\" is missing: cMrdMlReco must precede PhaseIITreeMaker "
+          "in the ToolChain.", v_error, verbosity);
+      return false;
+    }
+    producer_mode = normalize(producer_mode);
+    // Optional writer-side narrowing: a debug producer contains the complete
+    // production subset, so it may be written as production.  The reverse is
+    // forbidden because a production producer never created the debug keys.
+    // This keeps OutputMode a publication choice rather than an inference knob.
+    std::string requested_mode = producer_mode;
+    m_variables.Get("MrdMLOutputMode", requested_mode);
+    requested_mode = normalize(requested_mode);
+    if(requested_mode != "production" && requested_mode != "debug"){
+      Log("PhaseIITreeMaker Tool: MrdMLOutputMode must be 'production' or 'debug'; "
+          "received '" + requested_mode + "'.", v_error, verbosity);
+      return false;
+    }
+    if(requested_mode == "debug" && producer_mode != "debug"){
+      Log("PhaseIITreeMaker Tool: MrdMLOutputMode=debug requested but cMrdMlReco runs "
+          "with OutputMode=" + producer_mode + "; debug keys will not exist.", v_error, verbosity);
+      return false;
+    }
+    MrdMLOutputMode = requested_mode;
+    MrdMLDebug_fill = (MrdMLOutputMode == "debug");
+  }
+  Log("PhaseIITreeMaker Tool: MRD reconstruction source = " + MRDRecoSource +
+      (MrdMLReco_fill ? ", mrd_ml branch set = " + MrdMLOutputMode : std::string()),
+      v_message, verbosity);
 
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
@@ -272,6 +344,134 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   }
 
   if(TriggerProcessing){
+    if(MrdMLReco_fill){
+      // cMrdMlReco production branches
+      fPhaseIITrigTree->Branch("mrd_ml_failure_code", &fMrdMlFailureCode, "mrd_ml_failure_code/I");
+      fPhaseIITrigTree->Branch("mrd_ml_reco_skip_reason", &fMrdMlRecoSkipReason, "mrd_ml_reco_skip_reason/I");
+      fPhaseIITrigTree->Branch("mrd_ml_gate_passed", &fMrdMlGatePassed, "mrd_ml_gate_passed/O");
+      fPhaseIITrigTree->Branch("mrd_ml_reconstruction_available", &fMrdMlReconstructionAvailable, "mrd_ml_reconstruction_available/O");
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_input_source", &fMrdMlMRDInputSource);
+      fPhaseIITrigTree->Branch("mrd_ml_number_mrd_time_clusters", &fMrdMlNumberMrdTimeClusters, "mrd_ml_number_mrd_time_clusters/I");
+      fPhaseIITrigTree->Branch("mrd_ml_selected_mrd_cluster_index", &fMrdMlSelectedMrdClusterIndex, "mrd_ml_selected_mrd_cluster_index/I");
+      fPhaseIITrigTree->Branch("mrd_ml_selected_tank_cluster_index", &fMrdMlSelectedTankClusterIndex, "mrd_ml_selected_tank_cluster_index/I");
+      fPhaseIITrigTree->Branch("mrd_ml_input_tank_hits", &fMrdMlInputTankHits, "mrd_ml_input_tank_hits/I");
+      fPhaseIITrigTree->Branch("mrd_ml_reco_used_tank_bypass", &fMrdMlRecoUsedTankBypass, "mrd_ml_reco_used_tank_bypass/O");
+      fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_association_found", &fMrdMlTankMrdAssociationFound, "mrd_ml_tank_mrd_association_found/O");
+      fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_selected_tank_cluster_index", &fMrdMlTankMrdSelectedTankClusterIndex, "mrd_ml_tank_mrd_selected_tank_cluster_index/I");
+      fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_selected_mrd_subevent_id", &fMrdMlTankMrdSelectedMrdSubEventID, "mrd_ml_tank_mrd_selected_mrd_subevent_id/I");
+      fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_timing_residual_ns", &fMrdMlTankMrdTimingResidualNs, "mrd_ml_tank_mrd_timing_residual_ns/D");
+      fPhaseIITrigTree->Branch("mrd_ml_has_target_muon_probability", &fMrdMlHasTargetMuonProbability, "mrd_ml_has_target_muon_probability/D");
+      fPhaseIITrigTree->Branch("mrd_ml_reconstructable_probability", &fMrdMlReconstructableProbability, "mrd_ml_reconstructable_probability/D");
+      fPhaseIITrigTree->Branch("mrd_ml_event_category", &fMrdMlEventCategory, "mrd_ml_event_category/I");
+      fPhaseIITrigTree->Branch("mrd_ml_topology_class", &fMrdMlTopologyClass, "mrd_ml_topology_class/I");
+      fPhaseIITrigTree->Branch("mrd_ml_topology_probabilities", &fMrdMlTopologyProbabilities);
+      fPhaseIITrigTree->Branch("mrd_ml_stopped_probability", &fMrdMlStoppedProbability, "mrd_ml_stopped_probability/D");
+      fPhaseIITrigTree->Branch("mrd_ml_exit_face_class", &fMrdMlExitFaceClass, "mrd_ml_exit_face_class/I");
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_track_length_cm", &fMrdMlMRDTrackLengthCm, "mrd_ml_mrd_track_length_cm/D");
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_track_length_sigma_cm", &fMrdMlMRDTrackLengthSigmaCm, "mrd_ml_mrd_track_length_sigma_cm/D");
+      fPhaseIITrigTree->Branch("mrd_ml_cos_theta", &fMrdMlCosTheta, "mrd_ml_cos_theta/D");
+      fPhaseIITrigTree->Branch("mrd_ml_cos_theta_sigma", &fMrdMlCosThetaSigma, "mrd_ml_cos_theta_sigma/D");
+      fPhaseIITrigTree->Branch("mrd_ml_theta_rad", &fMrdMlThetaRad, "mrd_ml_theta_rad/D");
+      fPhaseIITrigTree->Branch("mrd_ml_theta_sigma_rad", &fMrdMlThetaSigmaRad, "mrd_ml_theta_sigma_rad/D");
+      fPhaseIITrigTree->Branch("mrd_ml_theta_sigma_valid", &fMrdMlThetaSigmaValid, "mrd_ml_theta_sigma_valid/O");
+      fPhaseIITrigTree->Branch("mrd_ml_phi_rad", &fMrdMlPhiRad, "mrd_ml_phi_rad/D");
+      fPhaseIITrigTree->Branch("mrd_ml_penetration_cm", &fMrdMlPenetrationCm, "mrd_ml_penetration_cm/D");
+      fPhaseIITrigTree->Branch("mrd_ml_penetration_sigma_cm", &fMrdMlPenetrationSigmaCm, "mrd_ml_penetration_sigma_cm/D");
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_energy_loss_mev", &fMrdMlMRDEnergyLossMeV, "mrd_ml_mrd_energy_loss_mev/D");
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_energy_loss_sigma_mev", &fMrdMlMRDEnergyLossSigmaMeV, "mrd_ml_mrd_energy_loss_sigma_mev/D");
+      fPhaseIITrigTree->Branch("mrd_ml_muon_ke_mev", &fMrdMlMuonKEMeV, "mrd_ml_muon_ke_mev/D");
+      fPhaseIITrigTree->Branch("mrd_ml_muon_ke_sigma_mev", &fMrdMlMuonKESigmaMeV, "mrd_ml_muon_ke_sigma_mev/D");
+      fPhaseIITrigTree->Branch("mrd_ml_cherenkov_angle_rad", &fMrdMlCherenkovAngleRad, "mrd_ml_cherenkov_angle_rad/D");
+      fPhaseIITrigTree->Branch("mrd_ml_cherenkov_angle_sigma_rad", &fMrdMlCherenkovAngleSigmaRad, "mrd_ml_cherenkov_angle_sigma_rad/D");
+      fPhaseIITrigTree->Branch("mrd_ml_tank_vertex_cm", &fMrdMlTankVertexCm);
+      fPhaseIITrigTree->Branch("mrd_ml_tank_vertex_sigma_cm", &fMrdMlTankVertexSigmaCm);
+      fPhaseIITrigTree->Branch("mrd_ml_tank_exit_cm", &fMrdMlTankExitCm);
+      fPhaseIITrigTree->Branch("mrd_ml_tank_exit_sigma_cm", &fMrdMlTankExitSigmaCm);
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_entry_cm", &fMrdMlMRDEntryCm);
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_entry_sigma_cm", &fMrdMlMRDEntrySigmaCm);
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_exit_cm", &fMrdMlMRDExitCm);
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_exit_sigma_cm", &fMrdMlMRDExitSigmaCm);
+      fPhaseIITrigTree->Branch("mrd_ml_selected_endpoint_cm", &fMrdMlSelectedEndpointCm);
+      fPhaseIITrigTree->Branch("mrd_ml_selected_endpoint_sigma_cm", &fMrdMlSelectedEndpointSigmaCm);
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_scatter_rad", &fMrdMlMRDScatterRad);
+      fPhaseIITrigTree->Branch("mrd_ml_mrd_scatter_sigma_rad", &fMrdMlMRDScatterSigmaRad);
+      fPhaseIITrigTree->Branch("mrd_ml_tank_scatter_rad", &fMrdMlTankScatterRad);
+      fPhaseIITrigTree->Branch("mrd_ml_tank_scatter_sigma_rad", &fMrdMlTankScatterSigmaRad);
+      fPhaseIITrigTree->Branch("mrd_ml_schema_version", &fMrdMlSchemaVersion, "mrd_ml_schema_version/I");
+      fPhaseIITrigTree->Branch("mrd_ml_output_mode", &fMrdMlOutputMode);
+      fPhaseIITrigTree->Branch("mrd_ml_model_release", &fMrdMlModelRelease);
+      if(MrdMLDebug_fill){
+        // cMrdMlReco debug branches
+        fPhaseIITrigTree->Branch("mrd_ml_protocol_version", &fMrdMlProtocolVersion, "mrd_ml_protocol_version/I");
+        fPhaseIITrigTree->Branch("mrd_ml_status_text", &fMrdMlStatusText);
+        fPhaseIITrigTree->Branch("mrd_ml_error_text", &fMrdMlErrorText);
+        fPhaseIITrigTree->Branch("mrd_ml_input_build_ok", &fMrdMlInputBuildOK, "mrd_ml_input_build_ok/O");
+        fPhaseIITrigTree->Branch("mrd_ml_gate_attempted", &fMrdMlGateAttempted, "mrd_ml_gate_attempted/O");
+        fPhaseIITrigTree->Branch("mrd_ml_gate_inference_ok", &fMrdMlGateInferenceOK, "mrd_ml_gate_inference_ok/O");
+        fPhaseIITrigTree->Branch("mrd_ml_reco_attempted", &fMrdMlRecoAttempted, "mrd_ml_reco_attempted/O");
+        fPhaseIITrigTree->Branch("mrd_ml_reco_inference_ok", &fMrdMlRecoInferenceOK, "mrd_ml_reco_inference_ok/O");
+        fPhaseIITrigTree->Branch("mrd_ml_daemon_restart_count", &fMrdMlDaemonRestartCount, "mrd_ml_daemon_restart_count/I");
+        fPhaseIITrigTree->Branch("mrd_ml_selected_mrd_cluster_start_time_ns", &fMrdMlSelectedMrdClusterStartTimeNs, "mrd_ml_selected_mrd_cluster_start_time_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_selected_mrd_cluster_end_time_ns", &fMrdMlSelectedMrdClusterEndTimeNs, "mrd_ml_selected_mrd_cluster_end_time_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_selected_mrd_cluster_time_span_ns", &fMrdMlSelectedMrdClusterTimeSpanNs, "mrd_ml_selected_mrd_cluster_time_span_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_raw_hits", &fMrdMlInputMRDRawHits, "mrd_ml_input_mrd_raw_hits/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_selected_raw_hits", &fMrdMlInputMRDSelectedRawHits, "mrd_ml_input_mrd_selected_raw_hits/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_geometry_valid_hits_before_dead_mask", &fMrdMlInputMRDGeometryValidHitsBeforeDeadMask, "mrd_ml_input_mrd_geometry_valid_hits_before_dead_mask/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_known_dead_removed", &fMrdMlInputMRDKnownDeadRemoved, "mrd_ml_input_mrd_known_dead_removed/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_live_hits_before_dedup", &fMrdMlInputMRDLiveHitsBeforeDedup, "mrd_ml_input_mrd_live_hits_before_dedup/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_live_unique_hits", &fMrdMlInputMRDLiveUniqueHits, "mrd_ml_input_mrd_live_unique_hits/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_dedup_removed", &fMrdMlInputMRDDedupRemoved, "mrd_ml_input_mrd_dedup_removed/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_unassigned_hits", &fMrdMlInputMRDUnassignedHits, "mrd_ml_input_mrd_unassigned_hits/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_layers", &fMrdMlInputMRDLayers, "mrd_ml_input_mrd_layers/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_first_layer", &fMrdMlInputMRDFirstLayer, "mrd_ml_input_mrd_first_layer/I");
+        fPhaseIITrigTree->Branch("mrd_ml_input_mrd_last_layer", &fMrdMlInputMRDLastLayer, "mrd_ml_input_mrd_last_layer/I");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_input_source", &fMrdMlTankInputSource);
+        fPhaseIITrigTree->Branch("mrd_ml_number_tank_clusters", &fMrdMlNumberTankClusters, "mrd_ml_number_tank_clusters/I");
+        fPhaseIITrigTree->Branch("mrd_ml_selected_tank_cluster_time_ns", &fMrdMlSelectedTankClusterTimeNs, "mrd_ml_selected_tank_cluster_time_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_selected_tank_cluster_charge_pe", &fMrdMlSelectedTankClusterChargePE, "mrd_ml_selected_tank_cluster_charge_pe/D");
+        fPhaseIITrigTree->Branch("mrd_ml_selected_tank_cluster_time_span_ns", &fMrdMlSelectedTankClusterTimeSpanNs, "mrd_ml_selected_tank_cluster_time_span_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_packet_reordered_by_time", &fMrdMlTankPacketReorderedByTime, "mrd_ml_tank_packet_reordered_by_time/O");
+        fPhaseIITrigTree->Branch("mrd_ml_additional_dead_mrd_chankeys", &fMrdMlAdditionalDeadMRDChankeys);
+        fPhaseIITrigTree->Branch("mrd_ml_reco_structurally_eligible", &fMrdMlRecoStructurallyEligible, "mrd_ml_reco_structurally_eligible/O");
+        fPhaseIITrigTree->Branch("mrd_ml_physics_is_raw_unstandardized", &fMrdMlPhysicsIsRawUnstandardized, "mrd_ml_physics_is_raw_unstandardized/O");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_association_applied", &fMrdMlTankMrdAssociationApplied, "mrd_ml_tank_mrd_association_applied/O");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_compatible_pair_count", &fMrdMlTankMrdCompatiblePairCount, "mrd_ml_tank_mrd_compatible_pair_count/I");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_expected_offset_ns", &fMrdMlTankMrdExpectedOffsetNs, "mrd_ml_tank_mrd_expected_offset_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_coincidence_window_ns", &fMrdMlTankMrdCoincidenceWindowNs, "mrd_ml_tank_mrd_coincidence_window_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_tank_mean_time_ns", &fMrdMlTankMrdTankMeanTimeNs, "mrd_ml_tank_mrd_tank_mean_time_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_mrd_mean_time_ns", &fMrdMlTankMrdMrdMeanTimeNs, "mrd_ml_tank_mrd_mrd_mean_time_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_tank_mrd_dt_ns", &fMrdMlTankMrdDtNs, "mrd_ml_tank_mrd_dt_ns/D");
+        fPhaseIITrigTree->Branch("mrd_ml_event_category_confidence", &fMrdMlEventCategoryConfidence, "mrd_ml_event_category_confidence/D");
+        fPhaseIITrigTree->Branch("mrd_ml_event_category_margin", &fMrdMlEventCategoryMargin, "mrd_ml_event_category_margin/D");
+        fPhaseIITrigTree->Branch("mrd_ml_event_category_probabilities", &fMrdMlEventCategoryProbabilities);
+        fPhaseIITrigTree->Branch("mrd_ml_single_muon_compatibility_probability", &fMrdMlSingleMuonCompatibilityProbability, "mrd_ml_single_muon_compatibility_probability/D");
+        fPhaseIITrigTree->Branch("mrd_ml_single_muon_compatibility_validated", &fMrdMlSingleMuonCompatibilityValidated, "mrd_ml_single_muon_compatibility_validated/O");
+        fPhaseIITrigTree->Branch("mrd_ml_topology_confidence", &fMrdMlTopologyConfidence, "mrd_ml_topology_confidence/D");
+        fPhaseIITrigTree->Branch("mrd_ml_topology_margin", &fMrdMlTopologyMargin, "mrd_ml_topology_margin/D");
+        fPhaseIITrigTree->Branch("mrd_ml_topology_p_stopped", &fMrdMlTopologyPStopped, "mrd_ml_topology_p_stopped/D");
+        fPhaseIITrigTree->Branch("mrd_ml_topology_p_back_exit", &fMrdMlTopologyPBackExit, "mrd_ml_topology_p_back_exit/D");
+        fPhaseIITrigTree->Branch("mrd_ml_topology_p_side_exit", &fMrdMlTopologyPSideExit, "mrd_ml_topology_p_side_exit/D");
+        fPhaseIITrigTree->Branch("mrd_ml_exit_face_confidence", &fMrdMlExitFaceConfidence, "mrd_ml_exit_face_confidence/D");
+        fPhaseIITrigTree->Branch("mrd_ml_exit_face_margin", &fMrdMlExitFaceMargin, "mrd_ml_exit_face_margin/D");
+        fPhaseIITrigTree->Branch("mrd_ml_exit_face_probabilities", &fMrdMlExitFaceProbabilities);
+        fPhaseIITrigTree->Branch("mrd_ml_endpoint_expert_used", &fMrdMlEndpointExpertUsed, "mrd_ml_endpoint_expert_used/I");
+        fPhaseIITrigTree->Branch("mrd_ml_sin_phi", &fMrdMlSinPhi, "mrd_ml_sin_phi/D");
+        fPhaseIITrigTree->Branch("mrd_ml_cos_phi", &fMrdMlCosPhi, "mrd_ml_cos_phi/D");
+        fPhaseIITrigTree->Branch("mrd_ml_phi_vector_norm", &fMrdMlPhiVectorNorm, "mrd_ml_phi_vector_norm/D");
+        fPhaseIITrigTree->Branch("mrd_ml_stop_endpoint_cm", &fMrdMlStopEndpointCm);
+        fPhaseIITrigTree->Branch("mrd_ml_stop_endpoint_sigma_cm", &fMrdMlStopEndpointSigmaCm);
+        fPhaseIITrigTree->Branch("mrd_ml_back_exit_endpoint_cm", &fMrdMlBackExitEndpointCm);
+        fPhaseIITrigTree->Branch("mrd_ml_back_exit_endpoint_sigma_cm", &fMrdMlBackExitEndpointSigmaCm);
+        fPhaseIITrigTree->Branch("mrd_ml_side_exit_endpoint_cm", &fMrdMlSideExitEndpointCm);
+        fPhaseIITrigTree->Branch("mrd_ml_side_exit_endpoint_sigma_cm", &fMrdMlSideExitEndpointSigmaCm);
+        fPhaseIITrigTree->Branch("mrd_ml_quality_baseline", &fMrdMlQualityBaseline, "mrd_ml_quality_baseline/O");
+        fPhaseIITrigTree->Branch("mrd_ml_quality_topology", &fMrdMlQualityTopology, "mrd_ml_quality_topology/O");
+        fPhaseIITrigTree->Branch("mrd_ml_quality_direction", &fMrdMlQualityDirection, "mrd_ml_quality_direction/O");
+        fPhaseIITrigTree->Branch("mrd_ml_quality_endpoint", &fMrdMlQualityEndpoint, "mrd_ml_quality_endpoint/O");
+        fPhaseIITrigTree->Branch("mrd_ml_quality_tier", &fMrdMlQualityTier, "mrd_ml_quality_tier/I");
+      }
+    }
+
     //Metadata for standard Events
     fPhaseIITrigTree->Branch("runNumber",&fRunNumber,"runNumber/I");
     fPhaseIITrigTree->Branch("subrunNumber",&fSubrunNumber,"subrunNumber/I");
@@ -674,6 +874,17 @@ bool PhaseIITreeMaker::Execute(){
 
   // Reset variables
   this->ResetVariables();
+
+  // RecoEvent flags are optional for lean chains without EventSelector (e.g. a
+  // cMRD-only chain).  ResetVariables() keeps the sentinels when unavailable.
+  auto LoadOptionalRecoEventFlags = [this]() {
+    auto recoevent_it = m_data->Stores.find("RecoEvent");
+    if (recoevent_it == m_data->Stores.end() || recoevent_it->second == nullptr) return;
+    bool pmtmrdcoinc = false;
+    bool noveto = false;
+    if (recoevent_it->second->Get("PMTMRDCoinc",pmtmrdcoinc)) fTankMRDCoinc = pmtmrdcoinc ? 1 : 0;
+    if (recoevent_it->second->Get("NoVeto",noveto)) fNoVeto = noveto ? 1 : 0;
+  };
   // Get a pointer to the ANNIEEvent Store
   if (LAPPDData_fill) this->LoadLAPPDData();
 
@@ -796,15 +1007,7 @@ bool PhaseIITreeMaker::Execute(){
       if(!gotpot) fPot = -99999;
       }
 
-      bool pmtmrdcoinc, noveto;
-      m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",pmtmrdcoinc);
-      m_data->Stores.at("RecoEvent")->Get("NoVeto",noveto);
-      if (verbosity > 1) std::cout <<"Tank cluster processing: PMTMRDCoinc: "<<pmtmrdcoinc<<std::endl;
-
-      if (pmtmrdcoinc) fTankMRDCoinc = 1;
-      else fTankMRDCoinc = 0;
-      if (noveto) fNoVeto = 1;
-      else fNoVeto = 0;
+      LoadOptionalRecoEventFlags();
 
       //Number of ADC samples
       std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
@@ -978,14 +1181,7 @@ bool PhaseIITreeMaker::Execute(){
       if(!gotpot) fPot = -99999;
       }
 
-      bool pmtmrdcoinc, noveto;
-      m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",pmtmrdcoinc);
-      m_data->Stores.at("RecoEvent")->Get("NoVeto",noveto);
-	
-      if (pmtmrdcoinc) fTankMRDCoinc = 1;
-      else fTankMRDCoinc = 0;
-      if (noveto) fNoVeto = 1;
-      else fNoVeto = 0;
+      LoadOptionalRecoEventFlags();
       fMRDClusterHits = 0;
       if (has_tdc){
         if(tdcdata_size>0){
@@ -1102,7 +1298,6 @@ bool PhaseIITreeMaker::Execute(){
     m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
     fEventTimeTank_Tree = (ULong64_t) fEventTimeTank;
 
-    bool pmtmrdcoinc, noveto;
     uint32_t trigword_temp;
 
     m_data->Stores.at("ANNIEEvent")->Get("TriggerWord",trigword_temp);
@@ -1123,23 +1318,20 @@ bool PhaseIITreeMaker::Execute(){
       if(!gotpot) fPot = -99999;
       }
  
-    m_data->Stores.at("ANNIEEvent")->Get("DataStreams",fDataStreams);
-    m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",pmtmrdcoinc);
-    m_data->Stores.at("RecoEvent")->Get("NoVeto",noveto);
-
-    if (pmtmrdcoinc) fTankMRDCoinc = 1;
-    else fTankMRDCoinc = 0;
-    if (noveto) fNoVeto = 1;
-    else fNoVeto = 0;
-
-    if (fDataStreams["Tank"]==1) fHasTank = 1;
-    else fHasTank = 0;
-    if (fDataStreams["MRD"]==1) fHasMRD = 1;
-    else fHasMRD = 0;
+    // Optional event metadata: keep ResetVariables() sentinels if unavailable.
+    fDataStreams.clear();
+    bool got_data_streams = m_data->Stores.at("ANNIEEvent")->Get("DataStreams",fDataStreams);
+    LoadOptionalRecoEventFlags();
+    if (got_data_streams) {
+      auto tank_stream_it = fDataStreams.find("Tank");
+      auto mrd_stream_it = fDataStreams.find("MRD");
+      if (tank_stream_it != fDataStreams.end()) fHasTank = tank_stream_it->second ? 1 : 0;
+      if (mrd_stream_it != fDataStreams.end()) fHasMRD = mrd_stream_it->second ? 1 : 0;
+    }
 
 
-    m_data->Stores.at("ANNIEEvent")->Get("EventTimeMRD",fEventTimeMRD);
-    fEventTimeMRD_Tree = (ULong64_t) fEventTimeMRD.GetNs();
+    if (m_data->Stores.at("ANNIEEvent")->Get("EventTimeMRD",fEventTimeMRD))
+      fEventTimeMRD_Tree = (ULong64_t) fEventTimeMRD.GetNs();
     // bool got_mrdtime = m_data->Stores.at("ANNIEEvent")->Get("EventTime",mrd_timestamp);
     //if(got_mrdtime) fEventTimeMRD = static_cast<uint64_t>(mrd_timestamp->GetNs());
 
@@ -1183,12 +1375,17 @@ bool PhaseIITreeMaker::Execute(){
 
     if(MRDReco_fill){
       fNumClusterTracks=0;
+      // Missing MRD clustering means zero legacy tracks for this trigger; it
+      // must not drop the trigger (or, with MRDRecoSource=Both, its mrd_ml_*
+      // outputs) from the tree.
+      MrdTimeClusters.clear();
       bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
       if(!get_clusters){
-        std::cout << "PhaseIITreeMaker tool: No MRD clusters found.  Will be no tracks." << std::endl;
-        return false;
+        Log("PhaseIITreeMaker tool: No MrdTimeClusters for this trigger; writing "
+            "numMRDTracks=0 and continuing.", v_debug, verbosity);
+      } else {
+        for(int i=0; i < (int) MrdTimeClusters.size(); i++) fNumClusterTracks += this->LoadMRDTrackReco(i);
       }
-      for(int i=0; i < (int) MrdTimeClusters.size(); i++) fNumClusterTracks += this->LoadMRDTrackReco(i);
     }
 
     if(SimpleReco_fill) this->FillSimpleRecoInfo();
@@ -1223,6 +1420,10 @@ bool PhaseIITreeMaker::Execute(){
       m_data->CStore.Get("NLyers", fNumMrdLayers);
     }
 
+    // Load immediately before Fill(): the native Store already contains the
+    // complete result for this trigger, and a missing required key must stop the
+    // event before ROOT can receive a partially valid mrd_ml_* branch set.
+    if(MrdMLReco_fill && !LoadMrdMLReco()) return false;
     fPhaseIITrigTree->Fill();
   }
   return true;
@@ -1234,9 +1435,13 @@ bool PhaseIITreeMaker::Finalise(){
   fPhaseIITrigTree->Write();
   fPhaseIIMRDClusterTree->Write();
   fPhaseIITankClusterTree->Write();
+  // The metadata tree is part of the cMrdMlReco release contract: an
+  // incomplete one is still written for inspection, but Finalise() fails.
+  const bool mrdml_metadata_ok = !MrdMLReco_fill || WriteMrdMLMetadata();
   fOutput_tfile->Close();
   if(verbosity>0) cout<<"PhaseIITreeMaker exitting"<<endl;
 
+  if(!mrdml_metadata_ok) return false;
   return true;
 }
 
@@ -2700,4 +2905,359 @@ void PhaseIITreeMaker::FillLAPPDHit(){
     }
   }
   }
+}
+
+// ============================================================================
+// cMrdMlReco support (MRDRecoSource = MrdMLReco or Both)
+// ============================================================================
+// This block is intentionally an output bridge, not a second reconstruction
+// implementation.  cMrdMlReco owns inference and the native MrdMLReco Store;
+// PhaseIITreeMaker only copies the frozen Store contract into ROOT branches.
+//
+// The integration is additive to the legacy MRD path.  MRDRecoSource=Legacy
+// remains the default, MrdMLReco is ML-only, and Both permits side-by-side
+// validation without making either reconstruction depend on the other.
+//
+// Reset before every load so a missing/failing producer can never leave values
+// from the previous trigger in the ROOT tree.
+
+void PhaseIITreeMaker::ResetMrdMLReco(){
+  fMrdMlFailureCode = -1;
+  fMrdMlRecoSkipReason = 0;
+  fMrdMlGatePassed = false;
+  fMrdMlReconstructionAvailable = false;
+  fMrdMlMRDInputSource.clear();
+  fMrdMlNumberMrdTimeClusters = -1;
+  fMrdMlSelectedMrdClusterIndex = -1;
+  fMrdMlSelectedTankClusterIndex = -1;
+  fMrdMlInputTankHits = -1;
+  fMrdMlRecoUsedTankBypass = false;
+  fMrdMlTankMrdAssociationFound = false;
+  fMrdMlTankMrdSelectedTankClusterIndex = -1;
+  fMrdMlTankMrdSelectedMrdSubEventID = -1;
+  fMrdMlTankMrdTimingResidualNs = -999.0;
+  fMrdMlHasTargetMuonProbability = -1.0;
+  fMrdMlReconstructableProbability = -1.0;
+  fMrdMlEventCategory = -1;
+  fMrdMlTopologyClass = -1;
+  fMrdMlTopologyProbabilities.clear();
+  fMrdMlStoppedProbability = -1.0;
+  fMrdMlExitFaceClass = -1;
+  fMrdMlMRDTrackLengthCm = -999.0;
+  fMrdMlMRDTrackLengthSigmaCm = -999.0;
+  fMrdMlCosTheta = -999.0;
+  fMrdMlCosThetaSigma = -999.0;
+  fMrdMlThetaRad = -999.0;
+  fMrdMlThetaSigmaRad = -999.0;
+  fMrdMlThetaSigmaValid = false;
+  fMrdMlPhiRad = -999.0;
+  fMrdMlPenetrationCm = -999.0;
+  fMrdMlPenetrationSigmaCm = -999.0;
+  fMrdMlMRDEnergyLossMeV = -999.0;
+  fMrdMlMRDEnergyLossSigmaMeV = -999.0;
+  fMrdMlMuonKEMeV = -999.0;
+  fMrdMlMuonKESigmaMeV = -999.0;
+  fMrdMlCherenkovAngleRad = -999.0;
+  fMrdMlCherenkovAngleSigmaRad = -999.0;
+  fMrdMlTankVertexCm.clear();
+  fMrdMlTankVertexSigmaCm.clear();
+  fMrdMlTankExitCm.clear();
+  fMrdMlTankExitSigmaCm.clear();
+  fMrdMlMRDEntryCm.clear();
+  fMrdMlMRDEntrySigmaCm.clear();
+  fMrdMlMRDExitCm.clear();
+  fMrdMlMRDExitSigmaCm.clear();
+  fMrdMlSelectedEndpointCm.clear();
+  fMrdMlSelectedEndpointSigmaCm.clear();
+  fMrdMlMRDScatterRad.clear();
+  fMrdMlMRDScatterSigmaRad.clear();
+  fMrdMlTankScatterRad.clear();
+  fMrdMlTankScatterSigmaRad.clear();
+  fMrdMlSchemaVersion = -1;
+  fMrdMlOutputMode.clear();
+  fMrdMlModelRelease.clear();
+  fMrdMlProtocolVersion = -1;
+  fMrdMlStatusText.clear();
+  fMrdMlErrorText.clear();
+  fMrdMlInputBuildOK = false;
+  fMrdMlGateAttempted = false;
+  fMrdMlGateInferenceOK = false;
+  fMrdMlRecoAttempted = false;
+  fMrdMlRecoInferenceOK = false;
+  fMrdMlDaemonRestartCount = 0;
+  fMrdMlSelectedMrdClusterStartTimeNs = -999.0;
+  fMrdMlSelectedMrdClusterEndTimeNs = -999.0;
+  fMrdMlSelectedMrdClusterTimeSpanNs = -999.0;
+  fMrdMlInputMRDRawHits = -1;
+  fMrdMlInputMRDSelectedRawHits = -1;
+  fMrdMlInputMRDGeometryValidHitsBeforeDeadMask = -1;
+  fMrdMlInputMRDKnownDeadRemoved = -1;
+  fMrdMlInputMRDLiveHitsBeforeDedup = -1;
+  fMrdMlInputMRDLiveUniqueHits = -1;
+  fMrdMlInputMRDDedupRemoved = -1;
+  fMrdMlInputMRDUnassignedHits = -1;
+  fMrdMlInputMRDLayers = -1;
+  fMrdMlInputMRDFirstLayer = -1;
+  fMrdMlInputMRDLastLayer = -1;
+  fMrdMlTankInputSource.clear();
+  fMrdMlNumberTankClusters = -1;
+  fMrdMlSelectedTankClusterTimeNs = -999.0;
+  fMrdMlSelectedTankClusterChargePE = -999.0;
+  fMrdMlSelectedTankClusterTimeSpanNs = -999.0;
+  fMrdMlTankPacketReorderedByTime = false;
+  fMrdMlAdditionalDeadMRDChankeys.clear();
+  fMrdMlRecoStructurallyEligible = false;
+  fMrdMlPhysicsIsRawUnstandardized = false;
+  fMrdMlTankMrdAssociationApplied = false;
+  fMrdMlTankMrdCompatiblePairCount = 0;
+  fMrdMlTankMrdExpectedOffsetNs = -999.0;
+  fMrdMlTankMrdCoincidenceWindowNs = -999.0;
+  fMrdMlTankMrdTankMeanTimeNs = -999.0;
+  fMrdMlTankMrdMrdMeanTimeNs = -999.0;
+  fMrdMlTankMrdDtNs = -999.0;
+  fMrdMlEventCategoryConfidence = -1.0;
+  fMrdMlEventCategoryMargin = -1.0;
+  fMrdMlEventCategoryProbabilities.clear();
+  fMrdMlSingleMuonCompatibilityProbability = -1.0;
+  fMrdMlSingleMuonCompatibilityValidated = false;
+  fMrdMlTopologyConfidence = -1.0;
+  fMrdMlTopologyMargin = -1.0;
+  fMrdMlTopologyPStopped = -1.0;
+  fMrdMlTopologyPBackExit = -1.0;
+  fMrdMlTopologyPSideExit = -1.0;
+  fMrdMlExitFaceConfidence = -1.0;
+  fMrdMlExitFaceMargin = -1.0;
+  fMrdMlExitFaceProbabilities.clear();
+  fMrdMlEndpointExpertUsed = -1;
+  fMrdMlSinPhi = -999.0;
+  fMrdMlCosPhi = -999.0;
+  fMrdMlPhiVectorNorm = -999.0;
+  fMrdMlStopEndpointCm.clear();
+  fMrdMlStopEndpointSigmaCm.clear();
+  fMrdMlBackExitEndpointCm.clear();
+  fMrdMlBackExitEndpointSigmaCm.clear();
+  fMrdMlSideExitEndpointCm.clear();
+  fMrdMlSideExitEndpointSigmaCm.clear();
+  fMrdMlQualityBaseline = false;
+  fMrdMlQualityTopology = false;
+  fMrdMlQualityDirection = false;
+  fMrdMlQualityEndpoint = false;
+  fMrdMlQualityTier = 0;
+}
+
+// Reads Stores["MrdMLReco"] for the current trigger.  Every key of the active
+// branch set is required: cMrdMlReco writes all of them for every event, so a
+// missing key means the producer/consumer contracts do not match and the job
+// stops rather than writing a partially valid event.  Production/debug decides
+// only which documented branch set is expected; it does not alter values.
+bool PhaseIITreeMaker::LoadMrdMLReco(){
+  ResetMrdMLReco();
+  auto store_it = m_data->Stores.find("MrdMLReco");
+  if(store_it == m_data->Stores.end() || store_it->second == nullptr){
+    Log("PhaseIITreeMaker Tool: Stores[\"MrdMLReco\"] is missing.", v_error, verbosity);
+    return false;
+  }
+  BoostStore* store = store_it->second;
+
+#define MRDML_GET(KEY, VARIABLE) \
+  do { \
+    if(!store->Get(KEY, VARIABLE)){ \
+      Log(std::string("PhaseIITreeMaker Tool: missing MrdMLReco key ") + KEY, \
+          v_error, verbosity); \
+      return false; \
+    } \
+  } while(0)
+
+  MRDML_GET("FailureCode", fMrdMlFailureCode);
+  MRDML_GET("RecoSkipReason", fMrdMlRecoSkipReason);
+  MRDML_GET("GatePassed", fMrdMlGatePassed);
+  MRDML_GET("ReconstructionAvailable", fMrdMlReconstructionAvailable);
+  MRDML_GET("MRDInputSource", fMrdMlMRDInputSource);
+  MRDML_GET("NumberMrdTimeClusters", fMrdMlNumberMrdTimeClusters);
+  MRDML_GET("SelectedMrdClusterIndex", fMrdMlSelectedMrdClusterIndex);
+  MRDML_GET("SelectedTankClusterIndex", fMrdMlSelectedTankClusterIndex);
+  MRDML_GET("InputTankHits", fMrdMlInputTankHits);
+  MRDML_GET("RecoUsedTankBypass", fMrdMlRecoUsedTankBypass);
+  MRDML_GET("TankMrdAssociationFound", fMrdMlTankMrdAssociationFound);
+  MRDML_GET("TankMrdSelectedTankClusterIndex", fMrdMlTankMrdSelectedTankClusterIndex);
+  MRDML_GET("TankMrdSelectedMrdSubEventID", fMrdMlTankMrdSelectedMrdSubEventID);
+  MRDML_GET("TankMrdTimingResidualNs", fMrdMlTankMrdTimingResidualNs);
+  MRDML_GET("HasTargetMuonProbability", fMrdMlHasTargetMuonProbability);
+  MRDML_GET("ReconstructableProbability", fMrdMlReconstructableProbability);
+  MRDML_GET("EventCategory", fMrdMlEventCategory);
+  MRDML_GET("TopologyClass", fMrdMlTopologyClass);
+  MRDML_GET("TopologyProbabilities", fMrdMlTopologyProbabilities);
+  MRDML_GET("StoppedProbability", fMrdMlStoppedProbability);
+  MRDML_GET("ExitFaceClass", fMrdMlExitFaceClass);
+  MRDML_GET("MRDTrackLengthCm", fMrdMlMRDTrackLengthCm);
+  MRDML_GET("MRDTrackLengthSigmaCm", fMrdMlMRDTrackLengthSigmaCm);
+  MRDML_GET("CosTheta", fMrdMlCosTheta);
+  MRDML_GET("CosThetaSigma", fMrdMlCosThetaSigma);
+  MRDML_GET("ThetaRad", fMrdMlThetaRad);
+  MRDML_GET("ThetaSigmaRad", fMrdMlThetaSigmaRad);
+  MRDML_GET("ThetaSigmaValid", fMrdMlThetaSigmaValid);
+  MRDML_GET("PhiRad", fMrdMlPhiRad);
+  MRDML_GET("PenetrationCm", fMrdMlPenetrationCm);
+  MRDML_GET("PenetrationSigmaCm", fMrdMlPenetrationSigmaCm);
+  MRDML_GET("MRDEnergyLossMeV", fMrdMlMRDEnergyLossMeV);
+  MRDML_GET("MRDEnergyLossSigmaMeV", fMrdMlMRDEnergyLossSigmaMeV);
+  MRDML_GET("MuonKEMeV", fMrdMlMuonKEMeV);
+  MRDML_GET("MuonKESigmaMeV", fMrdMlMuonKESigmaMeV);
+  MRDML_GET("CherenkovAngleRad", fMrdMlCherenkovAngleRad);
+  MRDML_GET("CherenkovAngleSigmaRad", fMrdMlCherenkovAngleSigmaRad);
+  MRDML_GET("TankVertexCm", fMrdMlTankVertexCm);
+  MRDML_GET("TankVertexSigmaCm", fMrdMlTankVertexSigmaCm);
+  MRDML_GET("TankExitCm", fMrdMlTankExitCm);
+  MRDML_GET("TankExitSigmaCm", fMrdMlTankExitSigmaCm);
+  MRDML_GET("MRDEntryCm", fMrdMlMRDEntryCm);
+  MRDML_GET("MRDEntrySigmaCm", fMrdMlMRDEntrySigmaCm);
+  MRDML_GET("MRDExitCm", fMrdMlMRDExitCm);
+  MRDML_GET("MRDExitSigmaCm", fMrdMlMRDExitSigmaCm);
+  MRDML_GET("SelectedEndpointCm", fMrdMlSelectedEndpointCm);
+  MRDML_GET("SelectedEndpointSigmaCm", fMrdMlSelectedEndpointSigmaCm);
+  MRDML_GET("MRDScatterRad", fMrdMlMRDScatterRad);
+  MRDML_GET("MRDScatterSigmaRad", fMrdMlMRDScatterSigmaRad);
+  MRDML_GET("TankScatterRad", fMrdMlTankScatterRad);
+  MRDML_GET("TankScatterSigmaRad", fMrdMlTankScatterSigmaRad);
+  MRDML_GET("SchemaVersion", fMrdMlSchemaVersion);
+  MRDML_GET("OutputMode", fMrdMlOutputMode);
+  MRDML_GET("ModelRelease", fMrdMlModelRelease);
+  if(MrdMLDebug_fill){
+    MRDML_GET("ProtocolVersion", fMrdMlProtocolVersion);
+    MRDML_GET("StatusText", fMrdMlStatusText);
+    MRDML_GET("ErrorText", fMrdMlErrorText);
+    MRDML_GET("InputBuildOK", fMrdMlInputBuildOK);
+    MRDML_GET("GateAttempted", fMrdMlGateAttempted);
+    MRDML_GET("GateInferenceOK", fMrdMlGateInferenceOK);
+    MRDML_GET("RecoAttempted", fMrdMlRecoAttempted);
+    MRDML_GET("RecoInferenceOK", fMrdMlRecoInferenceOK);
+    MRDML_GET("DaemonRestartCount", fMrdMlDaemonRestartCount);
+    MRDML_GET("SelectedMrdClusterStartTimeNs", fMrdMlSelectedMrdClusterStartTimeNs);
+    MRDML_GET("SelectedMrdClusterEndTimeNs", fMrdMlSelectedMrdClusterEndTimeNs);
+    MRDML_GET("SelectedMrdClusterTimeSpanNs", fMrdMlSelectedMrdClusterTimeSpanNs);
+    MRDML_GET("InputMRDRawHits", fMrdMlInputMRDRawHits);
+    MRDML_GET("InputMRDSelectedRawHits", fMrdMlInputMRDSelectedRawHits);
+    MRDML_GET("InputMRDGeometryValidHitsBeforeDeadMask", fMrdMlInputMRDGeometryValidHitsBeforeDeadMask);
+    MRDML_GET("InputMRDKnownDeadRemoved", fMrdMlInputMRDKnownDeadRemoved);
+    MRDML_GET("InputMRDLiveHitsBeforeDedup", fMrdMlInputMRDLiveHitsBeforeDedup);
+    MRDML_GET("InputMRDLiveUniqueHits", fMrdMlInputMRDLiveUniqueHits);
+    MRDML_GET("InputMRDDedupRemoved", fMrdMlInputMRDDedupRemoved);
+    MRDML_GET("InputMRDUnassignedHits", fMrdMlInputMRDUnassignedHits);
+    MRDML_GET("InputMRDLayers", fMrdMlInputMRDLayers);
+    MRDML_GET("InputMRDFirstLayer", fMrdMlInputMRDFirstLayer);
+    MRDML_GET("InputMRDLastLayer", fMrdMlInputMRDLastLayer);
+    MRDML_GET("TankInputSource", fMrdMlTankInputSource);
+    MRDML_GET("NumberTankClusters", fMrdMlNumberTankClusters);
+    MRDML_GET("SelectedTankClusterTimeNs", fMrdMlSelectedTankClusterTimeNs);
+    MRDML_GET("SelectedTankClusterChargePE", fMrdMlSelectedTankClusterChargePE);
+    MRDML_GET("SelectedTankClusterTimeSpanNs", fMrdMlSelectedTankClusterTimeSpanNs);
+    MRDML_GET("TankPacketReorderedByTime", fMrdMlTankPacketReorderedByTime);
+    MRDML_GET("AdditionalDeadMRDChankeys", fMrdMlAdditionalDeadMRDChankeys);
+    MRDML_GET("RecoStructurallyEligible", fMrdMlRecoStructurallyEligible);
+    MRDML_GET("PhysicsIsRawUnstandardized", fMrdMlPhysicsIsRawUnstandardized);
+    MRDML_GET("TankMrdAssociationApplied", fMrdMlTankMrdAssociationApplied);
+    MRDML_GET("TankMrdCompatiblePairCount", fMrdMlTankMrdCompatiblePairCount);
+    MRDML_GET("TankMrdExpectedOffsetNs", fMrdMlTankMrdExpectedOffsetNs);
+    MRDML_GET("TankMrdCoincidenceWindowNs", fMrdMlTankMrdCoincidenceWindowNs);
+    MRDML_GET("TankMrdTankMeanTimeNs", fMrdMlTankMrdTankMeanTimeNs);
+    MRDML_GET("TankMrdMrdMeanTimeNs", fMrdMlTankMrdMrdMeanTimeNs);
+    MRDML_GET("TankMrdDtNs", fMrdMlTankMrdDtNs);
+    MRDML_GET("EventCategoryConfidence", fMrdMlEventCategoryConfidence);
+    MRDML_GET("EventCategoryMargin", fMrdMlEventCategoryMargin);
+    MRDML_GET("EventCategoryProbabilities", fMrdMlEventCategoryProbabilities);
+    MRDML_GET("SingleMuonCompatibilityProbability", fMrdMlSingleMuonCompatibilityProbability);
+    MRDML_GET("SingleMuonCompatibilityValidated", fMrdMlSingleMuonCompatibilityValidated);
+    MRDML_GET("TopologyConfidence", fMrdMlTopologyConfidence);
+    MRDML_GET("TopologyMargin", fMrdMlTopologyMargin);
+    MRDML_GET("TopologyPStopped", fMrdMlTopologyPStopped);
+    MRDML_GET("TopologyPBackExit", fMrdMlTopologyPBackExit);
+    MRDML_GET("TopologyPSideExit", fMrdMlTopologyPSideExit);
+    MRDML_GET("ExitFaceConfidence", fMrdMlExitFaceConfidence);
+    MRDML_GET("ExitFaceMargin", fMrdMlExitFaceMargin);
+    MRDML_GET("ExitFaceProbabilities", fMrdMlExitFaceProbabilities);
+    MRDML_GET("EndpointExpertUsed", fMrdMlEndpointExpertUsed);
+    MRDML_GET("SinPhi", fMrdMlSinPhi);
+    MRDML_GET("CosPhi", fMrdMlCosPhi);
+    MRDML_GET("PhiVectorNorm", fMrdMlPhiVectorNorm);
+    MRDML_GET("StopEndpointCm", fMrdMlStopEndpointCm);
+    MRDML_GET("StopEndpointSigmaCm", fMrdMlStopEndpointSigmaCm);
+    MRDML_GET("BackExitEndpointCm", fMrdMlBackExitEndpointCm);
+    MRDML_GET("BackExitEndpointSigmaCm", fMrdMlBackExitEndpointSigmaCm);
+    MRDML_GET("SideExitEndpointCm", fMrdMlSideExitEndpointCm);
+    MRDML_GET("SideExitEndpointSigmaCm", fMrdMlSideExitEndpointSigmaCm);
+    MRDML_GET("QualityBaseline", fMrdMlQualityBaseline);
+    MRDML_GET("QualityTopology", fMrdMlQualityTopology);
+    MRDML_GET("QualityDirection", fMrdMlQualityDirection);
+    MRDML_GET("QualityEndpoint", fMrdMlQualityEndpoint);
+    MRDML_GET("QualityTier", fMrdMlQualityTier);
+  }
+
+#undef MRDML_GET
+  return true;
+}
+
+// One-entry tree "mrd_ml_metadata": model / geometry / runtime identity and
+// the event-selection policy of the cMrdMlReco job.  This is intentionally
+// job-level provenance: hashes and thresholds describe the whole file, so they
+// belong in one metadata entry instead of being duplicated for every trigger.
+//
+// Missing metadata is a release-integrity failure.  We still write the partial
+// tree for diagnosis, then Finalise() returns false so the file cannot be
+// mistaken for a complete production output.
+bool PhaseIITreeMaker::WriteMrdMLMetadata(){
+  auto store_it = m_data->Stores.find("MrdMLReco");
+  if(store_it == m_data->Stores.end() || store_it->second == nullptr){
+    Log("PhaseIITreeMaker Tool: cannot write mrd_ml_metadata, Stores[\"MrdMLReco\"] missing.",
+        v_error, verbosity);
+    return false;
+  }
+  BoostStore* store = store_it->second;
+  bool complete = true;
+  complete = store->Get("SchemaVersion", fMrdMlMetaSchemaVersion) && complete;
+  complete = store->Get("OutputMode", fMrdMlMetaOutputMode) && complete;
+  complete = store->Get("AdapterVersion", fMrdMlMetaAdapterVersion) && complete;
+  complete = store->Get("ModelRelease", fMrdMlMetaModelRelease) && complete;
+  complete = store->Get("DaemonVersion", fMrdMlMetaDaemonVersion) && complete;
+  complete = store->Get("RuntimeFeatureVersion", fMrdMlMetaRuntimeFeatureVersion) && complete;
+  complete = store->Get("TensorFlowVersion", fMrdMlMetaTensorFlowVersion) && complete;
+  complete = store->Get("GateModelName", fMrdMlMetaGateModelName) && complete;
+  complete = store->Get("ReconstructionModelName", fMrdMlMetaReconstructionModelName) && complete;
+  complete = store->Get("GateModelTreeSHA256", fMrdMlMetaGateModelTreeSHA256) && complete;
+  complete = store->Get("ReconstructionModelTreeSHA256", fMrdMlMetaReconstructionModelTreeSHA256) && complete;
+  complete = store->Get("GateTrainerVersion", fMrdMlMetaGateTrainerVersion) && complete;
+  complete = store->Get("ReconstructionTrainerVersion", fMrdMlMetaReconstructionTrainerVersion) && complete;
+  complete = store->Get("GeometryVersion", fMrdMlMetaGeometryVersion) && complete;
+  complete = store->Get("GeometryManifestSHA256", fMrdMlMetaGeometryManifestSHA256) && complete;
+  complete = store->Get("GateHasTargetThreshold", fMrdMlMetaGateHasTargetThreshold) && complete;
+  complete = store->Get("GateReconstructableThreshold", fMrdMlMetaGateReconstructableThreshold) && complete;
+  complete = store->Get("RequireGateCategoryZero", fMrdMlMetaRequireGateCategoryZero) && complete;
+  complete = store->Get("PrefilterMinMRDHits", fMrdMlMetaPrefilterMinMRDHits) && complete;
+  if(!complete) Log("PhaseIITreeMaker Tool: mrd_ml_metadata is incomplete (missing "
+                    "cMrdMlReco job-level keys); Finalise will fail.", v_error, verbosity);
+
+  TTree* meta = new TTree("mrd_ml_metadata", "cMrdMlReco job identity (one entry)");
+  meta->Branch("mrd_reco_source", &MRDRecoSource);
+  meta->Branch("branch_set", &MrdMLOutputMode);
+  meta->Branch("schema_version", &fMrdMlMetaSchemaVersion, "schema_version/I");
+  meta->Branch("output_mode", &fMrdMlMetaOutputMode);
+  meta->Branch("adapter_version", &fMrdMlMetaAdapterVersion);
+  meta->Branch("model_release", &fMrdMlMetaModelRelease);
+  meta->Branch("daemon_version", &fMrdMlMetaDaemonVersion);
+  meta->Branch("runtime_feature_version", &fMrdMlMetaRuntimeFeatureVersion);
+  meta->Branch("tensorflow_version", &fMrdMlMetaTensorFlowVersion);
+  meta->Branch("gate_model_name", &fMrdMlMetaGateModelName);
+  meta->Branch("reconstruction_model_name", &fMrdMlMetaReconstructionModelName);
+  meta->Branch("gate_model_tree_sha256", &fMrdMlMetaGateModelTreeSHA256);
+  meta->Branch("reconstruction_model_tree_sha256", &fMrdMlMetaReconstructionModelTreeSHA256);
+  meta->Branch("gate_trainer_version", &fMrdMlMetaGateTrainerVersion);
+  meta->Branch("reconstruction_trainer_version", &fMrdMlMetaReconstructionTrainerVersion);
+  meta->Branch("geometry_version", &fMrdMlMetaGeometryVersion);
+  meta->Branch("geometry_manifest_sha256", &fMrdMlMetaGeometryManifestSHA256);
+  meta->Branch("gate_has_target_threshold", &fMrdMlMetaGateHasTargetThreshold, "gate_has_target_threshold/D");
+  meta->Branch("gate_reconstructable_threshold", &fMrdMlMetaGateReconstructableThreshold, "gate_reconstructable_threshold/D");
+  meta->Branch("require_gate_category_zero", &fMrdMlMetaRequireGateCategoryZero, "require_gate_category_zero/O");
+  meta->Branch("prefilter_min_mrd_hits", &fMrdMlMetaPrefilterMinMRDHits, "prefilter_min_mrd_hits/I");
+  meta->Fill();
+  meta->Write();
+  return complete;
 }

@@ -109,6 +109,12 @@ class PhaseIITreeMaker: public Tool {
 
   /// \brief Reset all variables. 
   void ResetVariables();	
+
+  /// \brief Copy the current cMrdMlReco Store contract into tree buffers.
+  /// This is publication only: no ML selection or reconstruction is repeated here.
+  bool LoadMrdMLReco();
+  void ResetMrdMLReco();
+  bool WriteMrdMLMetadata();
  	
   /// \brief ROOT TFile that will be used to store the output from this tool
   TFile* fOutput_tfile = nullptr;
@@ -451,6 +457,152 @@ class PhaseIITreeMaker: public Tool {
   double fDeltaAzimuth;
   double fDeltaZenith;  
   double fDeltaAngle;
+
+  // cMrdMlReco per-event branch variables (generated from one field table;
+  // production + job-level first, then debug-only).
+  int fMrdMlFailureCode = -1;
+  int fMrdMlRecoSkipReason = 0;
+  bool fMrdMlGatePassed = false;
+  bool fMrdMlReconstructionAvailable = false;
+  std::string fMrdMlMRDInputSource;
+  int fMrdMlNumberMrdTimeClusters = -1;
+  int fMrdMlSelectedMrdClusterIndex = -1;
+  int fMrdMlSelectedTankClusterIndex = -1;
+  int fMrdMlInputTankHits = -1;
+  bool fMrdMlRecoUsedTankBypass = false;
+  bool fMrdMlTankMrdAssociationFound = false;
+  int fMrdMlTankMrdSelectedTankClusterIndex = -1;
+  int fMrdMlTankMrdSelectedMrdSubEventID = -1;
+  double fMrdMlTankMrdTimingResidualNs = -999.0;
+  double fMrdMlHasTargetMuonProbability = -1.0;
+  double fMrdMlReconstructableProbability = -1.0;
+  int fMrdMlEventCategory = -1;
+  int fMrdMlTopologyClass = -1;
+  std::vector<double> fMrdMlTopologyProbabilities;
+  double fMrdMlStoppedProbability = -1.0;
+  int fMrdMlExitFaceClass = -1;
+  double fMrdMlMRDTrackLengthCm = -999.0;
+  double fMrdMlMRDTrackLengthSigmaCm = -999.0;
+  double fMrdMlCosTheta = -999.0;
+  double fMrdMlCosThetaSigma = -999.0;
+  double fMrdMlThetaRad = -999.0;
+  double fMrdMlThetaSigmaRad = -999.0;
+  bool fMrdMlThetaSigmaValid = false;
+  double fMrdMlPhiRad = -999.0;
+  double fMrdMlPenetrationCm = -999.0;
+  double fMrdMlPenetrationSigmaCm = -999.0;
+  double fMrdMlMRDEnergyLossMeV = -999.0;
+  double fMrdMlMRDEnergyLossSigmaMeV = -999.0;
+  double fMrdMlMuonKEMeV = -999.0;
+  double fMrdMlMuonKESigmaMeV = -999.0;
+  double fMrdMlCherenkovAngleRad = -999.0;
+  double fMrdMlCherenkovAngleSigmaRad = -999.0;
+  std::vector<double> fMrdMlTankVertexCm;
+  std::vector<double> fMrdMlTankVertexSigmaCm;
+  std::vector<double> fMrdMlTankExitCm;
+  std::vector<double> fMrdMlTankExitSigmaCm;
+  std::vector<double> fMrdMlMRDEntryCm;
+  std::vector<double> fMrdMlMRDEntrySigmaCm;
+  std::vector<double> fMrdMlMRDExitCm;
+  std::vector<double> fMrdMlMRDExitSigmaCm;
+  std::vector<double> fMrdMlSelectedEndpointCm;
+  std::vector<double> fMrdMlSelectedEndpointSigmaCm;
+  std::vector<double> fMrdMlMRDScatterRad;
+  std::vector<double> fMrdMlMRDScatterSigmaRad;
+  std::vector<double> fMrdMlTankScatterRad;
+  std::vector<double> fMrdMlTankScatterSigmaRad;
+  int fMrdMlSchemaVersion = -1;
+  std::string fMrdMlOutputMode;
+  std::string fMrdMlModelRelease;
+  // debug / smoke-test only
+  int fMrdMlProtocolVersion = -1;
+  std::string fMrdMlStatusText;
+  std::string fMrdMlErrorText;
+  bool fMrdMlInputBuildOK = false;
+  bool fMrdMlGateAttempted = false;
+  bool fMrdMlGateInferenceOK = false;
+  bool fMrdMlRecoAttempted = false;
+  bool fMrdMlRecoInferenceOK = false;
+  int fMrdMlDaemonRestartCount = 0;
+  double fMrdMlSelectedMrdClusterStartTimeNs = -999.0;
+  double fMrdMlSelectedMrdClusterEndTimeNs = -999.0;
+  double fMrdMlSelectedMrdClusterTimeSpanNs = -999.0;
+  int fMrdMlInputMRDRawHits = -1;
+  int fMrdMlInputMRDSelectedRawHits = -1;
+  int fMrdMlInputMRDGeometryValidHitsBeforeDeadMask = -1;
+  int fMrdMlInputMRDKnownDeadRemoved = -1;
+  int fMrdMlInputMRDLiveHitsBeforeDedup = -1;
+  int fMrdMlInputMRDLiveUniqueHits = -1;
+  int fMrdMlInputMRDDedupRemoved = -1;
+  int fMrdMlInputMRDUnassignedHits = -1;
+  int fMrdMlInputMRDLayers = -1;
+  int fMrdMlInputMRDFirstLayer = -1;
+  int fMrdMlInputMRDLastLayer = -1;
+  std::string fMrdMlTankInputSource;
+  int fMrdMlNumberTankClusters = -1;
+  double fMrdMlSelectedTankClusterTimeNs = -999.0;
+  double fMrdMlSelectedTankClusterChargePE = -999.0;
+  double fMrdMlSelectedTankClusterTimeSpanNs = -999.0;
+  bool fMrdMlTankPacketReorderedByTime = false;
+  std::vector<int> fMrdMlAdditionalDeadMRDChankeys;
+  bool fMrdMlRecoStructurallyEligible = false;
+  bool fMrdMlPhysicsIsRawUnstandardized = false;
+  bool fMrdMlTankMrdAssociationApplied = false;
+  int fMrdMlTankMrdCompatiblePairCount = 0;
+  double fMrdMlTankMrdExpectedOffsetNs = -999.0;
+  double fMrdMlTankMrdCoincidenceWindowNs = -999.0;
+  double fMrdMlTankMrdTankMeanTimeNs = -999.0;
+  double fMrdMlTankMrdMrdMeanTimeNs = -999.0;
+  double fMrdMlTankMrdDtNs = -999.0;
+  double fMrdMlEventCategoryConfidence = -1.0;
+  double fMrdMlEventCategoryMargin = -1.0;
+  std::vector<double> fMrdMlEventCategoryProbabilities;
+  double fMrdMlSingleMuonCompatibilityProbability = -1.0;
+  bool fMrdMlSingleMuonCompatibilityValidated = false;
+  double fMrdMlTopologyConfidence = -1.0;
+  double fMrdMlTopologyMargin = -1.0;
+  double fMrdMlTopologyPStopped = -1.0;
+  double fMrdMlTopologyPBackExit = -1.0;
+  double fMrdMlTopologyPSideExit = -1.0;
+  double fMrdMlExitFaceConfidence = -1.0;
+  double fMrdMlExitFaceMargin = -1.0;
+  std::vector<double> fMrdMlExitFaceProbabilities;
+  int fMrdMlEndpointExpertUsed = -1;
+  double fMrdMlSinPhi = -999.0;
+  double fMrdMlCosPhi = -999.0;
+  double fMrdMlPhiVectorNorm = -999.0;
+  std::vector<double> fMrdMlStopEndpointCm;
+  std::vector<double> fMrdMlStopEndpointSigmaCm;
+  std::vector<double> fMrdMlBackExitEndpointCm;
+  std::vector<double> fMrdMlBackExitEndpointSigmaCm;
+  std::vector<double> fMrdMlSideExitEndpointCm;
+  std::vector<double> fMrdMlSideExitEndpointSigmaCm;
+  bool fMrdMlQualityBaseline = false;
+  bool fMrdMlQualityTopology = false;
+  bool fMrdMlQualityDirection = false;
+  bool fMrdMlQualityEndpoint = false;
+  int fMrdMlQualityTier = 0;
+  // cMrdMlReco one-entry metadata tree (mrd_ml_metadata).  These values are
+  // job-level release provenance and are intentionally not repeated per event.
+  int fMrdMlMetaSchemaVersion = -1;
+  std::string fMrdMlMetaOutputMode;
+  std::string fMrdMlMetaAdapterVersion;
+  std::string fMrdMlMetaModelRelease;
+  std::string fMrdMlMetaDaemonVersion;
+  std::string fMrdMlMetaRuntimeFeatureVersion;
+  std::string fMrdMlMetaTensorFlowVersion;
+  std::string fMrdMlMetaGateModelName;
+  std::string fMrdMlMetaReconstructionModelName;
+  std::string fMrdMlMetaGateModelTreeSHA256;
+  std::string fMrdMlMetaReconstructionModelTreeSHA256;
+  std::string fMrdMlMetaGateTrainerVersion;
+  std::string fMrdMlMetaReconstructionTrainerVersion;
+  std::string fMrdMlMetaGeometryVersion;
+  std::string fMrdMlMetaGeometryManifestSHA256;
+  double fMrdMlMetaGateHasTargetThreshold = -999.0;
+  double fMrdMlMetaGateReconstructableThreshold = -999.0;
+  bool fMrdMlMetaRequireGateCategoryZero = false;
+  int fMrdMlMetaPrefilterMinMRDHits = -1;
   
   // MuonFitter vertex
   double fRecoMuonVtxX;
@@ -479,6 +631,13 @@ class PhaseIITreeMaker: public Tool {
   bool MCTruth_fill = 0; //Output the MC truth information
   bool TankReco_fill = 0;
   bool MRDReco_fill = 0;
+
+  /// \brief MRD reconstruction source: Legacy (default), MrdMLReco, or Both
+  std::string MRDRecoSource = "Legacy";
+  bool MrdMLReco_fill = false;
+  /// \brief cMrdMlReco branch set: production or debug (from the producer handshake)
+  std::string MrdMLOutputMode = "production";
+  bool MrdMLDebug_fill = false;
   bool Reweight_fill = 0;
   bool SimpleReco_fill = 0;
   bool RingCounting_fill = 0;
