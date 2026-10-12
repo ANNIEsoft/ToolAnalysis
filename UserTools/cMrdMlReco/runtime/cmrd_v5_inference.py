@@ -31,6 +31,21 @@ Per event, stdin receives one compact JSON object and stdout returns one compact
 JSON object.  ``QUIT`` on its own line ends the daemon without a response.
 """
 
+# ---------------------------------------------------------------------------
+# Ownership boundary (kept explicit from the alpha commissioning release)
+# ---------------------------------------------------------------------------
+# The daemon owns every operation that is part of the learned v5 model
+# contract: MRD/Tank selection, the frozen dead mask, geometry lookup, feature
+# construction, tensor validation, gate routing, and interpretation of named
+# SavedModel outputs.  The C++ adapter deliberately does not reproduce those
+# steps.  ToolAnalysis instead owns detector-product collection, data charge
+# to PE conversion, process supervision, and publication to ANNIE Stores.
+#
+# No truth, GENIE, particle identity, SimpleReco, MuonFitter, or FindMrdTracks
+# fit is permitted to enter the model tensors.  That detector-only boundary is
+# part of the physics validity of the release, not just a software preference.
+# ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import argparse
@@ -599,6 +614,13 @@ class CmrdV5InferenceRuntime:
             self._warm_up()  # Validate the loaded release with a batch-one execution.
 
     @classmethod
+    # ------------------------------------------------------------------
+    # Release construction / startup validation
+    # ------------------------------------------------------------------
+    # Startup is intentionally fail-closed.  Metadata, frozen geometry,
+    # SavedModel signatures and tree hashes are checked before READY is ever
+    # printed.  A fallback model, regenerated geometry, positional output map,
+    # or partially matching signature would make the release unreproducible.
     def load_from_paths(
         cls,
         tf_module: Any,
@@ -693,6 +715,12 @@ class CmrdV5InferenceRuntime:
     def release_identity(self) -> Dict[str, Any]:
         return self.identity.as_dict(self.thresholds)
     # Build the ten named model inputs through the authoritative runtime feature layer.
+    # ------------------------------------------------------------------
+    # Detector packet -> frozen v5 tensors
+    # ------------------------------------------------------------------
+    # RuntimeFeatureBuilder is the only production implementation of cluster
+    # selection and feature assembly.  Keep this method as an adapter/validator
+    # around that builder rather than duplicating feature mathematics here.
     def _tensor_inputs(self, packet: Mapping[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         try:
             built = self.feature_builder.build(packet)
@@ -778,6 +806,10 @@ class CmrdV5InferenceRuntime:
             "passed": bool(passed),
         }
 
+    # Reconstruction routing is physics policy, not an optimization.  Keep
+    # the normal Tank-supported route and the validated MRD-only bypass visibly
+    # separate so later changes cannot accidentally make one inherit the other
+    # route's cuts (notably the Reconstructable head).
     def _reco_skip_reason(self, gate: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> int:
         """Return the primary reason detailed reconstruction should be skipped.
 
@@ -857,6 +889,10 @@ class CmrdV5InferenceRuntime:
     # Theta uncertainty is propagated from sigma(cos theta).
     # The derivative diverges near theta = 0 or pi, so theta sigma is invalid there.
     # Selected endpoint experts follow the predicted topology class.
+    # Convert named SavedModel outputs into the physical response contract.
+    # The deployment graph already returns physical means/sigmas; applying an
+    # external denormalization here would be a double transform.  Derived theta
+    # and phi are bookkeeping only and retain the underlying head values too.
     def _reconstruction_object(self, outputs: Mapping[str, np.ndarray]) -> Dict[str, Any]:
         topology_class, topology_confidence, topology_margin, topology_probs = _classification(
             outputs["out_topology"][0]
@@ -994,6 +1030,13 @@ class CmrdV5InferenceRuntime:
             "quality_tier": 0,
         }
 
+    # ------------------------------------------------------------------
+    # One event: build -> gate -> route -> optional reconstruction
+    # ------------------------------------------------------------------
+    # A successful gate does not imply reconstruction ran.  reco_skip_reason
+    # records the first frozen policy reason that stopped reconstruction, while
+    # the gate object and diagnostics are still returned for commissioning and
+    # downstream selections.
     def process(self, packet: Mapping[str, Any]) -> Dict[str, Any]:
         diagnostics: Dict[str, Any] = {}
         gate: Optional[Dict[str, Any]] = None
@@ -1048,6 +1091,10 @@ class CmrdV5InferenceRuntime:
                 exc.gate = dict(gate)
             raise
 
+    # Convert known per-event exceptions into structured responses.  This is
+    # deliberately different from startup errors: a bad trigger should not kill
+    # a long ANNIE job, but the response must still say exactly how far the event
+    # progressed so C++ cannot mistake a technical failure for a physics skip.
     def process_safe(self, packet: Mapping[str, Any]) -> Dict[str, Any]:
         try:
             return self.process(packet)

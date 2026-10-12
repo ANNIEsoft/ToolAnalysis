@@ -33,6 +33,20 @@ The daemon starts once at `Initialise`. It is accepted only after a `READY` hand
 - the gate and reconstruction SavedModel tree hashes,
 - the gate thresholds.
 
+
+## Maintenance invariants
+
+The source comments intentionally preserve the same ownership boundaries used during the alpha commissioning release:
+
+- **C++ is plumbing, not a second feature builder.** Detector products are collected and serialized in C++; cluster choice, dead masking, geometry lookup and tensor construction stay in the frozen Python feature path.
+- **No classical/truth leakage.** GENIE/truth, `SimpleReco`, `MuonFitter` and `FindMrdTracks` fitted quantities are not model inputs.
+- **Fail closed on release identity, fail soft on an event.** A model/geometry/protocol mismatch prevents startup; an isolated bad trigger is published with sentinels and a `FailureCode`.
+- **One event, one publication.** `Stores["MrdMLReco"]` is rewritten from one result object after processing finishes, preventing stale values from surviving a late failure.
+- **Production/debug is publication-only.** Shared outputs must be exactly equal between modes; use `parity_check.py` to enforce this.
+- **Do not casually duplicate the Python logic in C++.** If feature semantics must change, treat that as a new model-interface release and validate it explicitly.
+
+These comments are deliberately more explanatory than normal line-by-line comments so a future maintainer can tell which choices are accidental implementation details and which are frozen reconstruction invariants.
+
 ## Required ToolChain order
 
 ```

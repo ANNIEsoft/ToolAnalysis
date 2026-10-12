@@ -110,7 +110,8 @@ class PhaseIITreeMaker: public Tool {
   /// \brief Reset all variables. 
   void ResetVariables();	
 
-  /// \brief cMrdMlReco outputs (MRDRecoSource = MrdMLReco or Both)
+  /// \brief Copy the current cMrdMlReco Store contract into tree buffers.
+  /// This is publication only: no ML selection or reconstruction is repeated here.
   bool LoadMrdMLReco();
   void ResetMrdMLReco();
   bool WriteMrdMLMetadata();
@@ -581,7 +582,8 @@ class PhaseIITreeMaker: public Tool {
   bool fMrdMlQualityDirection = false;
   bool fMrdMlQualityEndpoint = false;
   int fMrdMlQualityTier = 0;
-  // cMrdMlReco one-entry metadata tree (mrd_ml_metadata)
+  // cMrdMlReco one-entry metadata tree (mrd_ml_metadata).  These values are
+  // job-level release provenance and are intentionally not repeated per event.
   int fMrdMlMetaSchemaVersion = -1;
   std::string fMrdMlMetaOutputMode;
   std::string fMrdMlMetaAdapterVersion;

@@ -19,6 +19,24 @@
  * Feature construction, cluster selection, the Tank-bypass decision and
  * TensorFlow inference live in the frozen Python runtime.
  *
+ * Design invariants carried forward from the alpha commissioning release
+ * ----------------------------------------------------------------------
+ *   - Detector-only boundary: truth, GENIE, SimpleReco, MuonFitter fits and
+ *     classical FindMrdTracks outputs are never model inputs.
+ *   - One source of feature semantics: C++ never reimplements the frozen v5
+ *     feature builder.  It forwards detector products; Python owns selection,
+ *     masking, geometry lookup and tensor construction.
+ *   - Release identity is fail-closed: model / geometry / protocol mismatches
+ *     are startup failures, not warnings or fallbacks.
+ *   - Event failures are fail-soft: one malformed event receives sentinels and
+ *     a structured FailureCode so the rest of the ToolChain can continue.
+ *   - Production/debug changes publication breadth only.  It must not change
+ *     the packet, gate decision, reconstruction route or physics values.
+ *   - Every active per-event Store key is rewritten every event.  No previous
+ *     trigger is allowed to leak into a later one.
+ *   - The MRD-only Tank bypass is an intentional, frozen reconstruction route
+ *     and is explicitly published as RecoUsedTankBypass.
+ *
  * Output modes (config key "OutputMode", default production)
  * ---------------------------------------------------------
  *   production : physics products (gate probabilities, topology / exit-face
@@ -99,6 +117,9 @@ private:
   };
 
   // ---- Request side -------------------------------------------------------
+  // These structs mirror detector products only.  They deliberately stop at
+  // the ToolAnalysis/Python boundary: no ML feature vectors are constructed
+  // here, which keeps the deployed feature definition in one frozen module.
 
   struct EventIdentity {
     int run_number;
@@ -135,6 +156,10 @@ private:
   };
 
   // ---- Response side ------------------------------------------------------
+  // ReleaseIdentity belongs to the READY handshake and is job-level state.
+  // Diagnostics/Gate/Reconstruction belong to one event.  Keeping those two
+  // lifetimes separate is what lets PhaseIITreeMaker write one metadata entry
+  // while still rewriting every event-level branch each trigger.
 
   struct ReleaseIdentity {
     bool valid;

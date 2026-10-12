@@ -61,6 +61,9 @@ DECISION_BRANCHES = (
 )
 # Allowed to differ between a v6 file and an older reference: identity, schema,
 # and status text (B2-era daemons used different version strings).
+# These are release/publication identity fields rather than event physics.
+# A reference build may legitimately carry older strings/schema metadata while
+# still being a valid physics-value reference.
 REFERENCE_IGNORED = {
     "mrd_ml_schema_version", "mrd_ml_output_mode", "mrd_ml_model_release",
     "mrd_ml_status_text", "mrd_ml_error_text", "mrd_ml_daemon_restart_count",
@@ -169,6 +172,9 @@ def compare(a, b, branches, atol, ia, ib, label_a, label_b, max_report=5):
     return failures, set(ia) ^ set(ib)
 
 
+# Same input, same release, two publication modes.  Every production branch
+# must exist in debug and agree exactly; metadata must identify the same release
+# apart from the intentional mode/branch-set labels.
 def cmd_modes(args):
     dbg, dbg_names, dbg_keys, dbg_meta, dbg_n = load(args.debug)
     prod, prod_names, prod_keys, prod_meta, prod_n = load(args.production)
@@ -196,6 +202,9 @@ def cmd_modes(args):
     return 0 if ok else 1
 
 
+# Compare the candidate against a known-good reconstruction file.  This is
+# stricter than histogram closure: events are aligned by identity and compared
+# value-by-value so a small but systematic software change cannot average away.
 def cmd_reference(args):
     new, new_names, new_keys, new_meta, new_n = load(args.candidate)
     ref, ref_names, ref_keys, _, _ = load(args.reference)

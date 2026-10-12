@@ -3,6 +3,10 @@
 # Every value below equals the tool's built-in default except the paths, which
 # have no default.  See UserTools/cMrdMlReco/README.md for the full contract.
 #
+# Release rule: changing a threshold, model/hash, geometry identity, bypass rule
+# or packet/feature implementation is a physics-facing release change.  OutputMode
+# is the exception: production/debug may change only how much is published.
+#
 # Release on PNFS: /pnfs/annie/persistent/reconstruction/cMrdMlreco/current/
 #   release/geometry/                                frozen geometry package
 #   release/gate/{model_meta.json,saved_model/}      gate          b72962be...4fd240

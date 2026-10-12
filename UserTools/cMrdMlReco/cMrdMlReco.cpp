@@ -1,5 +1,11 @@
 #include "cMrdMlReco.h"
 
+// cMrdMlReco intentionally contains very little detector/reconstruction
+// physics.  Its job is to make the boundary between ToolAnalysis and the
+// frozen Python/SavedModel release explicit and auditable.  Comments below
+// therefore emphasize ownership and invariants: what C++ is allowed to do,
+// what Python owns, and which failures must stop the job versus only the event.
+
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
@@ -553,6 +559,15 @@ cMrdMlReco::DaemonResponse::DaemonResponse()
 // ===========================================================================
 // Lifecycle and configuration
 // ===========================================================================
+// The alpha release taught us that configuration drift is as dangerous as a
+// code change.  The constructor therefore mirrors the frozen production
+// policy, while ValidateConfiguration() turns unsupported combinations into
+// explicit startup failures.  Only environment-specific release paths must be
+// supplied by the config file.
+//
+// Initialise() also establishes the producer/consumer handshake used by
+// PhaseIITreeMaker.  If the ToolChain order is wrong, the job should fail
+// before processing events rather than silently emit a partial tree.
 
 // Defaults equal the frozen production configuration (cMrdMlRecoConfig), so a
 // missing config key can never silently resurrect an older policy.  Paths to
@@ -776,11 +791,20 @@ bool cMrdMlReco::Initialise(std::string configfile, DataModel& data) {
 // ===========================================================================
 // Per-event execution
 // ===========================================================================
-//   read identity -> check geometry/mapping -> collect MRD + tank input
+// Event flow is intentionally linear and has a single publication point:
+//
+//   read identity -> check geometry/mapping -> collect MRD + Tank input
 //   -> (optional prefilter) -> serialize -> daemon round trip -> parse
 //   -> Publish() exactly once.
+//
+// This is an important invariant.  Partial results are accumulated only in the
+// local DaemonResponse object; the BoostStore is not incrementally mutated as
+// the event progresses.  That prevents a late failure from leaving a mixture
+// of current-event and previous-event values in Stores["MrdMLReco"].
+//
 // Event-level failures are recorded in the Store and Execute() returns true so
-// the ToolChain continues.  Startup failures make Initialise() return false.
+// the ToolChain continues.  Startup/release-contract failures make Initialise()
+// return false.
 
 bool cMrdMlReco::Execute() {
   ++event_counter_;
@@ -917,7 +941,18 @@ bool cMrdMlReco::Finalise() {
 // Input collection
 // ===========================================================================
 // C++ forwards detector-level products only.  It does not select the final
-// MRD/tank cluster, apply the frozen dead mask, or build model tensors.
+// MRD/Tank cluster, apply the frozen dead mask, build geometry embeddings, or
+// assemble model tensors.  Those operations are part of the trained feature
+// contract and stay in cmrd_v5_runtime_features.py / cmrd_v5_features.py.
+//
+// Preferred MRD source: TimeClustering CStore products, because they retain the
+// subevent structure used during training.  Raw TDCData is only the inclusive
+// fallback used when those products are absent/inconsistent; Python records the
+// source and will not allow the MRD-only Tank bypass on raw-TDC fallback input.
+//
+// Tank input is similarly forwarded cluster-by-cluster.  C++ converts data
+// charge to PE because that calibration is a ToolAnalysis runtime product, but
+// it does not choose the winning Tank cluster.
 
 // Provenance fields are optional and may be stored with different integral
 // types; missing fields keep their defaults.
@@ -1133,8 +1168,15 @@ bool cMrdMlReco::CollectTankInput(TankPacket& out, int& failure_code, std::strin
 // ===========================================================================
 // JSON packet encoding (schema annie_cmrd_v5_event_packet v1, unchanged)
 // ===========================================================================
-// Values and structure are serialized exactly as collected.  Any NaN/Inf in
-// the detector input is rejected here with the offending array named.
+// Packet compatibility is deliberately stricter than the v6 Store contract:
+// the detector packet remains the frozen v5 schema so a new output/publication
+// layer cannot accidentally retrain or reinterpret the model input.  Values and
+// structure are serialized exactly as collected.  Any NaN/Inf in detector input
+// is rejected here with the offending array named.
+//
+// Keep this function boring.  Changing field names, nesting, ordering-sensitive
+// numeric formatting, or units is a model-interface change and requires a new
+// packet contract plus parity validation.
 
 bool cMrdMlReco::BuildEventPacketJSON(const EventIdentity& identity,
                                       const MRDPacket& mrd, const TankPacket& tank,
@@ -1236,9 +1278,16 @@ void cMrdMlReco::MaybeWriteDebugResponse(const EventIdentity& identity,
 // ===========================================================================
 // Daemon process management
 // ===========================================================================
-// One request line on the daemon's stdin, one response line on its stdout;
-// stderr stays attached for daemon logging.  The daemon is accepted only after
-// a validated READY handshake.
+// The Python process is persistent by design: TensorFlow/model loading happens
+// once per job rather than once per trigger.  Stdout is reserved exclusively
+// for the line protocol (READY, then one response per request); stderr remains
+// attached for human-readable diagnostics.
+//
+// The daemon is not considered usable merely because execvp() succeeded.  The
+// READY handshake must prove that C++ and Python agree on protocol version,
+// release label, model hashes, geometry hash and gate policy.  Any transport or
+// protocol ambiguity tears the process down; a later event may restart it from
+// a fresh READY handshake.
 
 bool cMrdMlReco::StartDaemon() {
   StopDaemon();
@@ -1537,6 +1586,9 @@ bool cMrdMlReco::ReadProtocolLine(std::string& line, int timeout_sec, bool& time
 // READY {json}: the daemon reports which release it loaded.  Protocol,
 // release name, geometry and model hashes, and gate policy must all match
 // the C++ configuration before any event is sent.
+// READY is the release-integrity boundary.  Do not weaken these checks into
+// warnings: accepting a daemon with the wrong SavedModel/geometry/thresholds
+// would produce plausible-looking but irreproducible physics output.
 bool cMrdMlReco::ParseReadyLine(const std::string& line, std::string& error) {
   const std::string prefix = "READY ";
   if (line.compare(0, prefix.size(), prefix) != 0) {
@@ -1633,6 +1685,11 @@ bool cMrdMlReco::SendPacketAndReceive(std::string& packet, std::string& response
 // ===========================================================================
 // Daemon response parsing -- last boundary before the Store
 // ===========================================================================
+// Treat the daemon response as untrusted protocol data even though both sides
+// live in the same release.  A malformed response is more dangerous than an
+// ordinary reconstruction failure because C++ can no longer know which fields
+// are safe to publish or whether request/response synchronization was retained.
+
 // Both modes:
 //   * strict JSON parse; required status fields; protocol version;
 //   * object presence consistent with the inference flags;
@@ -1906,6 +1963,11 @@ bool cMrdMlReco::ParseDaemonResponse(const std::string& line, DaemonResponse& re
 // ===========================================================================
 // Store publication
 // ===========================================================================
+// Publication is intentionally separated from inference.  Production and
+// debug use the same DaemonResponse; OutputMode only decides how much of that
+// already-computed state is exposed downstream.  This is the core reason a
+// production/debug parity run can require exact agreement on every shared key.
+//
 // Per-event keys are written exactly once per event from the result struct
 // (sentinels unless filled), so no value from a previous event can survive.
 // Job-level keys are written by PublishJobIdentity() after every READY
@@ -2075,6 +2137,9 @@ void cMrdMlReco::Publish(const EventIdentity& identity, const DaemonResponse& re
 // Job-level identity: schema/mode, adapter, the release confirmed by the READY
 // handshake (names, hashes, versions), and the event-selection policy in
 // force.  Everything needed to make an output file self-describing.
+// Job identity is republished after every successful READY handshake so a
+// daemon restart cannot leave stale provenance.  PhaseIITreeMaker copies these
+// values once into mrd_ml_metadata instead of repeating long hashes per event.
 void cMrdMlReco::PublishJobIdentity() {
   if (!native_store_) return;
   BoostStore& s = *native_store_;

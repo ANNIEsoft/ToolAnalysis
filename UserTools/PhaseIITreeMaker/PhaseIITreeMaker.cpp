@@ -50,8 +50,12 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("MuonFitter_fill", MuonFitter_fill);
 
   // ---------------------------------------------------------------- cMrdMlReco
-  // MRDRecoSource: Legacy (default, unchanged behaviour), MrdMLReco (ML-only),
-  // or Both (legacy and mrd_ml_* branches side by side).
+  // MRDRecoSource is an explicit compatibility boundary:
+  //   Legacy    -> upstream PhaseIITreeMaker behavior remains unchanged.
+  //   MrdMLReco -> ML-only output; do not silently mix classical reco fields.
+  //   Both      -> legacy and mrd_ml_* branches side by side for validation.
+  // Keeping Legacy as the default means adding cMrdMlReco cannot alter an old
+  // ToolChain unless that chain opts in through its configuration.
   MRDRecoSource = "Legacy";
   m_variables.Get("MRDRecoSource", MRDRecoSource);
   if(MRDRecoSource == "Legacy"){
@@ -90,8 +94,10 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       return false;
     }
     producer_mode = normalize(producer_mode);
-    // Optional override: a debug producer may be written with production
-    // branches, never the reverse.
+    // Optional writer-side narrowing: a debug producer contains the complete
+    // production subset, so it may be written as production.  The reverse is
+    // forbidden because a production producer never created the debug keys.
+    // This keeps OutputMode a publication choice rather than an inference knob.
     std::string requested_mode = producer_mode;
     m_variables.Get("MrdMLOutputMode", requested_mode);
     requested_mode = normalize(requested_mode);
@@ -1414,6 +1420,9 @@ bool PhaseIITreeMaker::Execute(){
       m_data->CStore.Get("NLyers", fNumMrdLayers);
     }
 
+    // Load immediately before Fill(): the native Store already contains the
+    // complete result for this trigger, and a missing required key must stop the
+    // event before ROOT can receive a partially valid mrd_ml_* branch set.
     if(MrdMLReco_fill && !LoadMrdMLReco()) return false;
     fPhaseIITrigTree->Fill();
   }
@@ -2901,6 +2910,16 @@ void PhaseIITreeMaker::FillLAPPDHit(){
 // ============================================================================
 // cMrdMlReco support (MRDRecoSource = MrdMLReco or Both)
 // ============================================================================
+// This block is intentionally an output bridge, not a second reconstruction
+// implementation.  cMrdMlReco owns inference and the native MrdMLReco Store;
+// PhaseIITreeMaker only copies the frozen Store contract into ROOT branches.
+//
+// The integration is additive to the legacy MRD path.  MRDRecoSource=Legacy
+// remains the default, MrdMLReco is ML-only, and Both permits side-by-side
+// validation without making either reconstruction depend on the other.
+//
+// Reset before every load so a missing/failing producer can never leave values
+// from the previous trigger in the ROOT tree.
 
 void PhaseIITreeMaker::ResetMrdMLReco(){
   fMrdMlFailureCode = -1;
@@ -3028,7 +3047,9 @@ void PhaseIITreeMaker::ResetMrdMLReco(){
 
 // Reads Stores["MrdMLReco"] for the current trigger.  Every key of the active
 // branch set is required: cMrdMlReco writes all of them for every event, so a
-// missing key means a mismatched producer and stops the ToolChain.
+// missing key means the producer/consumer contracts do not match and the job
+// stops rather than writing a partially valid event.  Production/debug decides
+// only which documented branch set is expected; it does not alter values.
 bool PhaseIITreeMaker::LoadMrdMLReco(){
   ResetMrdMLReco();
   auto store_it = m_data->Stores.find("MrdMLReco");
@@ -3176,8 +3197,13 @@ bool PhaseIITreeMaker::LoadMrdMLReco(){
 }
 
 // One-entry tree "mrd_ml_metadata": model / geometry / runtime identity and
-// the event-selection policy of the cMrdMlReco job, so the file is
-// self-describing without repeating 64-character hashes on every entry.
+// the event-selection policy of the cMrdMlReco job.  This is intentionally
+// job-level provenance: hashes and thresholds describe the whole file, so they
+// belong in one metadata entry instead of being duplicated for every trigger.
+//
+// Missing metadata is a release-integrity failure.  We still write the partial
+// tree for diagnosis, then Finalise() returns false so the file cannot be
+// mistaken for a complete production output.
 bool PhaseIITreeMaker::WriteMrdMLMetadata(){
   auto store_it = m_data->Stores.find("MrdMLReco");
   if(store_it == m_data->Stores.end() || store_it->second == nullptr){
