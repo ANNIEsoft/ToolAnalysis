@@ -868,6 +868,17 @@ bool PhaseIITreeMaker::Execute(){
 
   // Reset variables
   this->ResetVariables();
+
+  // RecoEvent flags are optional for lean chains without EventSelector (e.g. a
+  // cMRD-only chain).  ResetVariables() keeps the sentinels when unavailable.
+  auto LoadOptionalRecoEventFlags = [this]() {
+    auto recoevent_it = m_data->Stores.find("RecoEvent");
+    if (recoevent_it == m_data->Stores.end() || recoevent_it->second == nullptr) return;
+    bool pmtmrdcoinc = false;
+    bool noveto = false;
+    if (recoevent_it->second->Get("PMTMRDCoinc",pmtmrdcoinc)) fTankMRDCoinc = pmtmrdcoinc ? 1 : 0;
+    if (recoevent_it->second->Get("NoVeto",noveto)) fNoVeto = noveto ? 1 : 0;
+  };
   // Get a pointer to the ANNIEEvent Store
   if (LAPPDData_fill) this->LoadLAPPDData();
 
@@ -990,15 +1001,7 @@ bool PhaseIITreeMaker::Execute(){
       if(!gotpot) fPot = -99999;
       }
 
-      bool pmtmrdcoinc, noveto;
-      m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",pmtmrdcoinc);
-      m_data->Stores.at("RecoEvent")->Get("NoVeto",noveto);
-      if (verbosity > 1) std::cout <<"Tank cluster processing: PMTMRDCoinc: "<<pmtmrdcoinc<<std::endl;
-
-      if (pmtmrdcoinc) fTankMRDCoinc = 1;
-      else fTankMRDCoinc = 0;
-      if (noveto) fNoVeto = 1;
-      else fNoVeto = 0;
+      LoadOptionalRecoEventFlags();
 
       //Number of ADC samples
       std::map<unsigned long, std::vector<Waveform<unsigned short>>> raw_waveform_map;
@@ -1172,14 +1175,7 @@ bool PhaseIITreeMaker::Execute(){
       if(!gotpot) fPot = -99999;
       }
 
-      bool pmtmrdcoinc, noveto;
-      m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",pmtmrdcoinc);
-      m_data->Stores.at("RecoEvent")->Get("NoVeto",noveto);
-	
-      if (pmtmrdcoinc) fTankMRDCoinc = 1;
-      else fTankMRDCoinc = 0;
-      if (noveto) fNoVeto = 1;
-      else fNoVeto = 0;
+      LoadOptionalRecoEventFlags();
       fMRDClusterHits = 0;
       if (has_tdc){
         if(tdcdata_size>0){
@@ -1296,7 +1292,6 @@ bool PhaseIITreeMaker::Execute(){
     m_data->Stores.at("ANNIEEvent")->Get("EventTimeTank",fEventTimeTank);
     fEventTimeTank_Tree = (ULong64_t) fEventTimeTank;
 
-    bool pmtmrdcoinc, noveto;
     uint32_t trigword_temp;
 
     m_data->Stores.at("ANNIEEvent")->Get("TriggerWord",trigword_temp);
@@ -1317,23 +1312,20 @@ bool PhaseIITreeMaker::Execute(){
       if(!gotpot) fPot = -99999;
       }
  
-    m_data->Stores.at("ANNIEEvent")->Get("DataStreams",fDataStreams);
-    m_data->Stores.at("RecoEvent")->Get("PMTMRDCoinc",pmtmrdcoinc);
-    m_data->Stores.at("RecoEvent")->Get("NoVeto",noveto);
-
-    if (pmtmrdcoinc) fTankMRDCoinc = 1;
-    else fTankMRDCoinc = 0;
-    if (noveto) fNoVeto = 1;
-    else fNoVeto = 0;
-
-    if (fDataStreams["Tank"]==1) fHasTank = 1;
-    else fHasTank = 0;
-    if (fDataStreams["MRD"]==1) fHasMRD = 1;
-    else fHasMRD = 0;
+    // Optional event metadata: keep ResetVariables() sentinels if unavailable.
+    fDataStreams.clear();
+    bool got_data_streams = m_data->Stores.at("ANNIEEvent")->Get("DataStreams",fDataStreams);
+    LoadOptionalRecoEventFlags();
+    if (got_data_streams) {
+      auto tank_stream_it = fDataStreams.find("Tank");
+      auto mrd_stream_it = fDataStreams.find("MRD");
+      if (tank_stream_it != fDataStreams.end()) fHasTank = tank_stream_it->second ? 1 : 0;
+      if (mrd_stream_it != fDataStreams.end()) fHasMRD = mrd_stream_it->second ? 1 : 0;
+    }
 
 
-    m_data->Stores.at("ANNIEEvent")->Get("EventTimeMRD",fEventTimeMRD);
-    fEventTimeMRD_Tree = (ULong64_t) fEventTimeMRD.GetNs();
+    if (m_data->Stores.at("ANNIEEvent")->Get("EventTimeMRD",fEventTimeMRD))
+      fEventTimeMRD_Tree = (ULong64_t) fEventTimeMRD.GetNs();
     // bool got_mrdtime = m_data->Stores.at("ANNIEEvent")->Get("EventTime",mrd_timestamp);
     //if(got_mrdtime) fEventTimeMRD = static_cast<uint64_t>(mrd_timestamp->GetNs());
 
@@ -1377,12 +1369,17 @@ bool PhaseIITreeMaker::Execute(){
 
     if(MRDReco_fill){
       fNumClusterTracks=0;
+      // Missing MRD clustering means zero legacy tracks for this trigger; it
+      // must not drop the trigger (or, with MRDRecoSource=Both, its mrd_ml_*
+      // outputs) from the tree.
+      MrdTimeClusters.clear();
       bool get_clusters = m_data->CStore.Get("MrdTimeClusters",MrdTimeClusters);
       if(!get_clusters){
-        std::cout << "PhaseIITreeMaker tool: No MRD clusters found.  Will be no tracks." << std::endl;
-        return false;
+        Log("PhaseIITreeMaker tool: No MrdTimeClusters for this trigger; writing "
+            "numMRDTracks=0 and continuing.", v_debug, verbosity);
+      } else {
+        for(int i=0; i < (int) MrdTimeClusters.size(); i++) fNumClusterTracks += this->LoadMRDTrackReco(i);
       }
-      for(int i=0; i < (int) MrdTimeClusters.size(); i++) fNumClusterTracks += this->LoadMRDTrackReco(i);
     }
 
     if(SimpleReco_fill) this->FillSimpleRecoInfo();
