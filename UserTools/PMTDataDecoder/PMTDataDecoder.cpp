@@ -48,10 +48,13 @@ bool PMTDataDecoder::Initialise(std::string configfile, DataModel &data){
 
   saveRWMRaw = true;
   saveBRFRaw = true;
+  saveBESRaw = true;
   m_variables.Get("saveRWMRaw",saveRWMRaw);
   m_variables.Get("saveBRFRaw",saveBRFRaw);
+  m_variables.Get("saveBESRaw",saveBESRaw);
   RWMRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
   BRFRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
+  BESRawWaveforms = new std::map<uint64_t, std::vector<uint16_t>>;
 
   std::cout << "PMTDataDecoder Tool: Initialized successfully" << std::endl;
   return true;
@@ -313,7 +316,7 @@ bool PMTDataDecoder::Execute(){
     m_data->CStore.Set("TimestampsFromTheFuture",TimestampsFromTheFuture);
 
     // loop the FinishedPMTWaves, for each timestamp, put the RWM and BRF waveform to RWMRawWaveforms and BRFRawWaveforms
-    if(saveBRFRaw || saveRWMRaw)
+    if(saveBRFRaw || saveRWMRaw || saveBESRaw)
     {
       for (std::map<uint64_t, std::map<std::vector<int>, std::vector<uint16_t>>>::iterator it = FinishedPMTWaves->begin(); it != FinishedPMTWaves->end(); it++)
       {
@@ -333,14 +336,20 @@ bool PMTDataDecoder::Execute(){
           
           if(RunNumber >= 5870)
           {
-            // BRF is at crate 1, slot 2 , channel 1 after run 5870 (first run for beamyear 2025-2026)
+            // BRF is at crate 1, slot 2 , channel 1 after run 5870 (first run for FY26 beam year 2025-2026)
             // the timeline is:
             // around 5870 we started taking beam runs to check DAQ was ok. no BNB
             // run 5887 LAPPD IDs were changed. no BNB
             // run 5896 BNB returns
-			// BRF is moved back to crate 1, slot 15, channel 1 and tested working since run 5914, by swapping the Level Translator
-			// The BRF (create 1, slot 15, channel 1), RWM (crate 1, slot 15, channel 3) and BES (crate 1, slot 3, channel 1)
-			if(saveBRFRaw){
+	    // BRF is moved back to crate 1, slot 15, channel 1 and tested working since run 5914, by swapping the Level Translator
+	    // The BRF (crate 1, slot 15, channel 1), RWM (crate 1, slot 15, channel 3) and BES (crate 1, slot 3, channel 1)
+	   
+            // Updated by Anuj Gupta (2026.10.10)
+            // TODO: For runs 5870-5914 the BRF channel moved (see Yue's comment above),
+            // but this is not handled in the code yet.
+            // The range includes test runs without BNB, but also good beam runs.
+            // Confirm the BRF channel for these runs before FY26 ANNIE production.
+	    if(saveBRFRaw){
             if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
             {
               std::vector<uint16_t> BRFWaveform = apair.second;
@@ -355,8 +364,17 @@ bool PMTDataDecoder::Execute(){
               (*RWMRawWaveforms)[timestamp] = RWMWaveform;
             }
             }
+
+            if(saveBESRaw){
+            if(uCrateNum == 1 && uSlotNum == 3 && ChannelID == 1)
+            {
+              std::vector<uint16_t> BESWaveform = apair.second;
+              (*BESRawWaveforms)[timestamp] = BESWaveform;
+            }
+            }
+
           }else{
-            // BRF is at crate 1, slot 15 , channel 1 after run 5870 (first run for beamyear 2025-2026)
+          // The BRF (crate 1, slot 15, channel 1), RWM (crate 1, slot 15, channel 2)
           if(saveBRFRaw){
             if(uCrateNum == 1 && uSlotNum == 15 && ChannelID == 1)
             {
@@ -380,6 +398,7 @@ bool PMTDataDecoder::Execute(){
     }
     m_data->CStore.Set("RWMRawWaveforms",RWMRawWaveforms);
     m_data->CStore.Set("BRFRawWaveforms",BRFRawWaveforms);
+    m_data->CStore.Set("BESRawWaveforms",BESRawWaveforms);
 
     //Check the size of the WaveBank to see if things are bloating
     Log("PMTDataDecoder Tool: Size of WaveBank (# waveforms partially built): " + 
@@ -518,6 +537,15 @@ void PMTDataDecoder::ParseFrame(int CardID, DecodedFrame DF)
       //Since we have acquired the wave up to the next record header, the wave is done.
       //Store it in the FinishedWaves map.
       this->StoreFinishedWaveform(CardID, ChannelID);
+      
+      // the 8-sample header must fit inside this 40-sample frame
+      if (DF.recordheader_starts.at(j) + SAMPLES_RIGHTOF_000 + 1 > (int)DF.samples.size()) {
+        Log("PMTDataDecoder Tool: Record header split across frames for CardID,ChannelID "
+            + to_string(CardID) + "," + to_string(ChannelID) + ", skipping it; next waveform on this channel is lost", v_warning, verbosity);
+        WaveSecBegin = DF.samples.size();   // nothing usable left in this frame
+        break;
+      }
+
       //Now, we have the header coming next.  Get it and parse it, starting whatever
       //Entries in maps are needed. 
       std::vector<uint16_t> RecordHeader(DF.samples.begin()+
