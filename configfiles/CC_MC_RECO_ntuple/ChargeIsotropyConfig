@@ -1,0 +1,7 @@
+# ChargeIsotropy config file
+
+verbosity 0
+
+time_window 20 #time window in microseconds
+IsData 0
+PMTWaveformSim 0

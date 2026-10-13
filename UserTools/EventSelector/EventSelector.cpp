@@ -671,8 +671,6 @@ bool EventSelector::EventSelectionByPMTMRDCoinc() {
   double max_charge = 0;
   n_hits = 0;
 
-  pmt_time = -1;
-
   // MC Waveform or Data
   if (!fIsMC || fMCWaveform) {
     if (m_all_clusters->size()){

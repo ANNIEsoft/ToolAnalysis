@@ -13,6 +13,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   /////////////////////////////////////////////////////////////////
   
   hasGenie = false;
+  hasNuis = false;
   hasBNBtimingMC = false;
   MCWaveform = false;
   ApplyDeadMask = false;
@@ -21,7 +22,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("IsData",isData);
   m_variables.Get("PMTWaveformSim",MCWaveform);
   m_variables.Get("ApplyDeadMask",ApplyDeadMask);
-  m_variables.Get("HasGenie",hasGenie);
+  m_variables.Get("IntGen",intGen);
   m_variables.Get("HasBNBtimingMC",hasBNBtimingMC);
   m_variables.Get("TankHitInfo_fill", TankHitInfo_fill);
   m_variables.Get("MRDHitInfo_fill", MRDHitInfo_fill);
@@ -45,6 +46,15 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("Digit_fill",Digit_fill);
 
   m_variables.Get("MuonFitter_fill", MuonFitter_fill);
+
+  switch(intGen){
+    case 1:
+      hasGenie = true;
+      break;
+    case 2:
+      hasNuis = true;
+      break;
+  }
 
   std::string output_filename;
   m_variables.Get("OutputFile", output_filename);
@@ -333,6 +343,9 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("hitZ",&fHitZ);
       fPhaseIITrigTree->Branch("hitT",&fHitT);
       fPhaseIITrigTree->Branch("hitQ",&fHitQ);
+      if(MCTruth_fill){
+        fPhaseIITrigTree->Branch("hitParentPDGs",&fHitParentPDGs);
+      }
       fPhaseIITrigTree->Branch("hitPE",&fHitPE);
       fPhaseIITrigTree->Branch("hitType", &fHitType);
       fPhaseIITrigTree->Branch("hitDetID", &fHitDetID);
@@ -370,6 +383,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("MRDSide",&fMRDSide);
       fPhaseIITrigTree->Branch("MRDStop",&fMRDStop);
       fPhaseIITrigTree->Branch("MRDThrough",&fMRDThrough);
+      fPhaseIITrigTree->Branch("MRDEff",&fMRDEff);
+      fPhaseIITrigTree->Branch("weight_MRDUnc",&fMRDUnc);
     }
 
     //Reconstructed variables after full Muon Reco Analysis
@@ -385,6 +400,8 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("recoPhi",&fRecoPhi,"recoPhi/D");
       fPhaseIITrigTree->Branch("recoVtxFOM",&fRecoVtxFOM,"recoVtxFOM/D");
       fPhaseIITrigTree->Branch("recoStatus",&fRecoStatus,"recoStatus/I");
+      fPhaseIITrigTree->Branch("promptMuonTotalPE",&fPromptMuonTotalPE,"promptMuonTotalPE/D");
+      fPhaseIITrigTree->Branch("Qij",&fChargeIsotropy,"Qij/D");
     }
 
     //Michael's Simple Reconstruction
@@ -429,6 +446,24 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fTrueNeutCapE = new std::vector<double>;
       fTrueNeutCapGammaE = new std::vector<double>;
       fTruePrimaryPdgs = new std::vector<int>;
+      fTrueFSPTankLength = new std::vector<double>;
+      fTrueFSPMrdLength = new std::vector<double>;
+      fTrueFSPContained = new std::vector<bool>;
+      fTrueFSPMrdAngle = new std::vector<double>;
+      fTrueFSPE = new std::vector<double>;
+      fTrueFSPStartT = new std::vector<double>;
+      fTrueFSPStopT = new std::vector<double>;
+      fTrueFSPX = new std::vector<double>;
+      fTrueFSPY = new std::vector<double>;
+      fTrueFSPZ = new std::vector<double>;
+      fTrueFollowerE = new std::vector<double>;
+      fTrueFollowerStartT = new std::vector<double>;
+      fTrueFollowerStopT = new std::vector<double>;
+      fTrueFollowerX = new std::vector<double>;
+      fTrueFollowerY = new std::vector<double>;
+      fTrueFollowerZ = new std::vector<double>;
+      fTrueFollowerPDG = new std::vector<int>;
+      fTrueFollowerParentPDG = new std::vector<int>;
       fPhaseIITrigTree->Branch("triggerNumber",&fiMCTriggerNum,"triggerNumber/I");
       fPhaseIITrigTree->Branch("mcEntryNumber",&fMCEventNum,"mcEntryNumber/I");
       fPhaseIITrigTree->Branch("trueVtxX",&fTrueVtxX,"trueVtxX/D");
@@ -452,6 +487,24 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("KPlusCount",&fKPlusCount,"KPlusCount/I");
       fPhaseIITrigTree->Branch("KMinusCount",&fKMinusCount,"KMinusCount/I");
       fPhaseIITrigTree->Branch("truePrimaryPdgs",&fTruePrimaryPdgs);
+      fPhaseIITrigTree->Branch("trueFSPTankLength",&fTrueFSPTankLength);
+      fPhaseIITrigTree->Branch("trueFSPMrdLength",&fTrueFSPMrdLength);
+      fPhaseIITrigTree->Branch("trueFSPContained",&fTrueFSPContained);
+      fPhaseIITrigTree->Branch("trueFSPMrdAngle",&fTrueFSPMrdAngle);
+      fPhaseIITrigTree->Branch("trueFSPE",&fTrueFSPE);
+      fPhaseIITrigTree->Branch("trueFSPStartT",&fTrueFSPStartT);
+      fPhaseIITrigTree->Branch("trueFSPStopT",&fTrueFSPStopT);
+      fPhaseIITrigTree->Branch("trueFSPX",&fTrueFSPX);
+      fPhaseIITrigTree->Branch("trueFSPY",&fTrueFSPY);
+      fPhaseIITrigTree->Branch("trueFSPZ",&fTrueFSPZ);
+      fPhaseIITrigTree->Branch("trueFollowerE",&fTrueFollowerE);
+      fPhaseIITrigTree->Branch("trueFollowerStartT",&fTrueFollowerStartT);
+      fPhaseIITrigTree->Branch("trueFollowerStopT",&fTrueFollowerStartT);
+      fPhaseIITrigTree->Branch("trueFollowerX",&fTrueFollowerX);
+      fPhaseIITrigTree->Branch("trueFollowerY",&fTrueFollowerY);
+      fPhaseIITrigTree->Branch("trueFollowerZ",&fTrueFollowerZ);
+      fPhaseIITrigTree->Branch("trueFollowerPDG",&fTrueFollowerPDG);
+      fPhaseIITrigTree->Branch("trueFollowerParentPDG",&fTrueFollowerParentPDG);
       fPhaseIITrigTree->Branch("trueNeutCapVtxX",&fTrueNeutCapVtxX);
       fPhaseIITrigTree->Branch("trueNeutCapVtxY",&fTrueNeutCapVtxY);
       fPhaseIITrigTree->Branch("trueNeutCapVtxZ",&fTrueNeutCapVtxZ);
@@ -468,25 +521,13 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueNuIntxVtx_X",&fTrueNuIntxVtx_X,"trueNuIntxVtx_X/D");
       fPhaseIITrigTree->Branch("trueNuIntxVtx_Y",&fTrueNuIntxVtx_Y,"trueNuIntxVtx_Y/D");
       fPhaseIITrigTree->Branch("trueNuIntxVtx_Z",&fTrueNuIntxVtx_Z,"trueNuIntxVtx_Z/D");
-      fPhaseIITrigTree->Branch("trueNuIntxVtx_T",&fTrueNuIntxVtx_T,"trueNuIntxVtx_T/D");
-      fPhaseIITrigTree->Branch("trueFSLVtx_X",&fTrueFSLVtx_X,"trueFSLVtx_X/D");
-      fPhaseIITrigTree->Branch("trueFSLVtx_Y",&fTrueFSLVtx_Y,"trueFSLVtx_Y/D");
-      fPhaseIITrigTree->Branch("trueFSLVtx_Z",&fTrueFSLVtx_Z,"trueFSLVtx_Z/D");
       fPhaseIITrigTree->Branch("trueFSLMomentum_X",&fTrueFSLMomentum_X,"trueFSLMomentum_X/D");
       fPhaseIITrigTree->Branch("trueFSLMomentum_Y",&fTrueFSLMomentum_Y,"trueFSLMomentum_Y/D");
       fPhaseIITrigTree->Branch("trueFSLMomentum_Z",&fTrueFSLMomentum_Z,"trueFSLMomentum_Z/D");
-      fPhaseIITrigTree->Branch("trueFSLTime",&fTrueFSLTime,"trueFSLTime/D");
-      fPhaseIITrigTree->Branch("trueFSLMass",&fTrueFSLMass,"trueFSLMass/D");
       fPhaseIITrigTree->Branch("trueFSLPdg",&fTrueFSLPdg,"trueFSLPdg/I");
       fPhaseIITrigTree->Branch("trueFSLEnergy",&fTrueFSLEnergy,"trueFSLEnergy/D");
       fPhaseIITrigTree->Branch("trueQ2",&fTrueQ2,"trueQ2/D");
       fPhaseIITrigTree->Branch("trueCC",&fTrueCC,"trueCC/I");
-      fPhaseIITrigTree->Branch("trueNC",&fTrueNC,"trueNC/I");
-      fPhaseIITrigTree->Branch("trueQEL",&fTrueQEL,"trueQEL/I");
-      fPhaseIITrigTree->Branch("trueRES",&fTrueRES,"trueRES/I");
-      fPhaseIITrigTree->Branch("trueDIS",&fTrueDIS,"trueDIS/I");
-      fPhaseIITrigTree->Branch("trueCOH",&fTrueCOH,"trueCOH/I");
-      fPhaseIITrigTree->Branch("trueMEC",&fTrueMEC,"trueMEC/I");
       fPhaseIITrigTree->Branch("trueNeutrons",&fTrueNeutrons,"trueNeutrons/I");
       fPhaseIITrigTree->Branch("trueProtons",&fTrueProtons,"trueProtons/I");
       fPhaseIITrigTree->Branch("truePi0",&fTruePi0,"truePi0/I");
@@ -504,6 +545,44 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("trueq3",&fTrueq3,"trueq3/D");
       fPhaseIITrigTree->Branch("trueTargetZ",&fTrueTarget,"trueTargetZ/I");
       fPhaseIITrigTree->Branch("trueW2",&fTrueW2,"trueW2/D");
+      if(hasGenie){
+        fPhaseIITrigTree->Branch("trueNuIntxVtx_T",&fTrueNuIntxVtx_T,"trueNuIntxVtx_T/D");
+        fPhaseIITrigTree->Branch("trueFSLVtx_X",&fTrueFSLVtx_X,"trueFSLVtx_X/D");
+        fPhaseIITrigTree->Branch("trueFSLVtx_Y",&fTrueFSLVtx_Y,"trueFSLVtx_Y/D");
+        fPhaseIITrigTree->Branch("trueFSLVtx_Z",&fTrueFSLVtx_Z,"trueFSLVtx_Z/D");
+        fPhaseIITrigTree->Branch("trueFSLTime",&fTrueFSLTime,"trueFSLTime/D");
+        fPhaseIITrigTree->Branch("trueFSLMass",&fTrueFSLMass,"trueFSLMass/D");
+        fPhaseIITrigTree->Branch("DirtMu",&fDirtMu,"DirtMu/D");
+        fPhaseIITrigTree->Branch("weight_DirtUnc",&fDirtUnc);
+        fPhaseIITrigTree->Branch("trueNC",&fTrueNC,"trueNC/I");
+        fPhaseIITrigTree->Branch("trueQEL",&fTrueQEL,"trueQEL/I");
+        fPhaseIITrigTree->Branch("trueRES",&fTrueRES,"trueRES/I");
+        fPhaseIITrigTree->Branch("trueDIS",&fTrueDIS,"trueDIS/I");
+        fPhaseIITrigTree->Branch("trueCOH",&fTrueCOH,"trueCOH/I");
+        fPhaseIITrigTree->Branch("trueMEC",&fTrueMEC,"trueMEC/I");
+      } else if(hasNuis){
+        fPhaseIITrigTree->Branch("trueQ2QE",&fTrueQ2QE,"trueQ2QE/D");
+        fPhaseIITrigTree->Branch("trueNeutCode",&fTrueNeutCode,"trueNeutCode/I");
+        fPhaseIITrigTree->Branch("IsCCINC",&fIsCCINC,"IsCCINC/I");
+        fPhaseIITrigTree->Branch("IsNCINC",&fIsNCINC,"IsNCINC/I");
+        fPhaseIITrigTree->Branch("IsCCQE",&fIsCCQE,"IsCCQE/I");
+        fPhaseIITrigTree->Branch("IsCC0pi",&fIsCC0pi,"IsCC0pi/I");
+        fPhaseIITrigTree->Branch("IsCCQELike",&fIsCCQELike,"IsCCQELike/I");
+        fPhaseIITrigTree->Branch("IsNCEL",&fIsNCEL,"IsNCEL/I");
+        fPhaseIITrigTree->Branch("IsNC0pi",&fIsNC0pi,"IsNC0pi/I");
+        fPhaseIITrigTree->Branch("IsCCcoh",&fIsCCcoh,"IsCCcoh/I");
+        fPhaseIITrigTree->Branch("IsNCcoh",&fIsNCcoh,"IsNCcoh/I");
+        fPhaseIITrigTree->Branch("IsCC1pip",&fIsCC1pip,"IsCC1pip/I");
+        fPhaseIITrigTree->Branch("IsNC1pip",&fIsNC1pip,"IsNC1pip/I");
+        fPhaseIITrigTree->Branch("IsCC1pim",&fIsCC1pim,"IsCC1pim/I");
+        fPhaseIITrigTree->Branch("IsNC1pim",&fIsNC1pim,"IsNC1pim/I");
+        fPhaseIITrigTree->Branch("IsCC1pi0",&fIsCC1pi0,"IsCC1pi0/I");
+        fPhaseIITrigTree->Branch("IsNC1pi0",&fIsNC1pi0,"IsNC1pi0/I");
+        fPhaseIITrigTree->Branch("IsCC0piMINERvA",&fIsCC0piMINERvA,"IsCC0piMINERvA/I");
+        fPhaseIITrigTree->Branch("IsCC0Pi_T2K_AnaI",&fIsCC0Pi_T2K_AnaI,"IsCC0Pi_T2K_AnaI/I");
+        fPhaseIITrigTree->Branch("IsCC0Pi_T2K_AnaII",&fIsCC0Pi_T2K_AnaII,"IsCC0Pi_T2K_AnaII/I");
+        fPhaseIITrigTree->Branch("fScaleFactor",&fScaleFactor,"fScaleFactor/D");
+      }
     }
 
     if (Reweight_fill){
@@ -518,7 +597,7 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
       fPhaseIITrigTree->Branch("weight_AxFFCCQEshape_UBGenie",&fAxFFCCQEshape);
       fPhaseIITrigTree->Branch("weight_DecayAngMEC_UBGenie",&fDecayAngMEC);
       fPhaseIITrigTree->Branch("weight_NormCCCOH_UBGenie",&fNormCCCOH);
-      fPhaseIITrigTree->Branch("weight_Norm_NCCOH_UBGenie",&fNorm_NCCOH);
+      fPhaseIITrigTree->Branch("weight_NormNCCOH_UBGenie",&fNorm_NCCOH);
       fPhaseIITrigTree->Branch("weight_RPA_CCQE_UBGenie",&fRPA_CCQE);
       fPhaseIITrigTree->Branch("weight_RootinoFix_UBGenie",&fRootinoFix);
       fPhaseIITrigTree->Branch("weight_ThetaDelta2NRad_UBGenie",&fThetaDelta2NRad);
@@ -1307,6 +1386,24 @@ void PhaseIITreeMaker::ResetVariables() {
     fKMinusCount = -9999;
     fTrueMultiRing = -9999;
     fTruePrimaryPdgs->clear();
+    fTrueFSPTankLength->clear();
+    fTrueFSPMrdLength->clear();
+    fTrueFSPContained->clear();
+    fTrueFSPMrdAngle->clear();
+    fTrueFSPE->clear();
+    fTrueFSPStartT->clear();
+    fTrueFSPStopT->clear();
+    fTrueFSPX->clear();
+    fTrueFSPY->clear();
+    fTrueFSPZ->clear();
+    fTrueFollowerE->clear();
+    fTrueFollowerStartT->clear();
+    fTrueFollowerStopT->clear();
+    fTrueFollowerX->clear();
+    fTrueFollowerY->clear();
+    fTrueFollowerZ->clear();
+    fTrueFollowerPDG->clear();
+    fTrueFollowerParentPDG->clear();
     fTrueNeutCapVtxX->clear();
     fTrueNeutCapVtxY->clear();
     fTrueNeutCapVtxZ->clear();
@@ -1335,6 +1432,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueFSLPdg = -9999;
     fTrueFSLEnergy = -9999;
     fTrueQ2 = -9999;
+    fTrueNeutCode = -9999;
     fTrueCC = -9999;
     fTrueNC = -9999;
     fTrueQEL = -9999;
@@ -1353,12 +1451,34 @@ void PhaseIITreeMaker::ResetVariables() {
     fTrueKPlusCher = -9999;
     fTrueKMinus = -9999;
     fTrueKMinusCher = -9999;
+    fDirtMu = 1.; //weight - does not exclude event, but skips weight
+    fDirtUnc.clear();
     fTrueW2 = -9999;
     fTrueBJx = -9999;
     fTruey = -9999;
     fTrueTarget = -9999;
     fTrueq0 = -9999;
     fTrueq3 = -9999;
+    fTrueQ2QE = -9999;
+    fIsCCINC = -9999;
+    fIsNCINC = -9999;
+    fIsCCQE = -9999;
+    fIsCC0pi = -9999;
+    fIsCCQELike = -9999;
+    fIsNCEL = -9999;
+    fIsNC0pi = -9999;
+    fIsCCcoh = -9999;
+    fIsNCcoh = -9999;
+    fIsCC1pip = -9999;
+    fIsNC1pip = -9999;
+    fIsCC1pim = -9999;
+    fIsNC1pim = -9999;
+    fIsCC1pi0 = -9999;
+    fIsNC1pi0 = -9999;
+    fIsCC0piMINERvA = -9999;
+    fIsCC0Pi_T2K_AnaI = -9999;
+    fIsCC0Pi_T2K_AnaII = -9999;
+    fScaleFactor = -9999;
   }
 
   if (Reweight_fill){
@@ -1435,6 +1555,8 @@ void PhaseIITreeMaker::ResetVariables() {
     fRecoDirZ = -9999;
     fRecoAngle = -9999;
     fRecoPhi = -9999;
+    fPromptMuonTotalPE = -9999;
+    fChargeIsotropy = -9999;
   }
 
   if(MRDClusterProcessing){
@@ -1470,6 +1592,8 @@ void PhaseIITreeMaker::ResetVariables() {
     fMRDSide.clear();
     fMRDStop.clear();
     fMRDThrough.clear();
+    fMRDEff = 1.; //weight - excludes weight from final plot
+    fMRDUnc.clear();
   }
   if(SimpleReco_fill){
     fSimpleFlag = -9999;
@@ -1505,6 +1629,7 @@ void PhaseIITreeMaker::ResetVariables() {
     fHitT.clear();
     fHitQ.clear();
     fHitPE.clear();
+    fHitParentPDGs.clear();
     fHitType.clear();
     fHitDetID.clear();
     fHitChankey.clear();
@@ -1888,6 +2013,19 @@ int PhaseIITreeMaker::LoadMRDTrackReco(int SubEventID) {
   bool IsMrdStopped;
   bool IsMrdSideExit;
 
+  double mrd_eff = 0.;
+  std::vector<double> mrd_unc;
+  auto get_mrdeff = m_data->Stores.at("RecoEvent")->Get("MRDEff",mrd_eff);
+  auto get_mrdunc = m_data->Stores.at("RecoEvent")->Get("MRDUnc",mrd_unc);
+
+  if(get_mrdeff && get_mrdunc) {
+    fMRDEff = mrd_eff;
+    fMRDUnc = mrd_unc;
+  } else {
+    Log("Warning: The PhaseIITreeMaker tool could not find MRDEff. Continuing to build tree", v_message, verbosity);
+  }
+  mrd_unc.clear();
+
   int NumClusterTracks = 0;
   for(int tracki=0; tracki<numtracksinev; tracki++){
     BoostStore* thisTrackAsBoostStore = &(theMrdTracks->at(tracki));
@@ -1948,6 +2086,9 @@ void PhaseIITreeMaker::LoadAllTankHits(bool isData, bool MCWaveform) {
             got_hits = m_data->Stores["ANNIEEvent"]->Get("Hits", Hits);
         } else {
             got_hits = m_data->Stores["ANNIEEvent"]->Get("MCHits", MCHits);
+        }
+        if(got_hits){
+            auto get_mcparticles = m_data->Stores.at("ANNIEEvent")->Get("MCParticles", fMCParticles);
         }
     }
 
@@ -2021,6 +2162,12 @@ void PhaseIITreeMaker::LoadAllTankHits(bool isData, bool MCWaveform) {
                     fHitT.push_back(ahit.GetTime());
                     fHitQ.push_back(hit_charge);
                     fHitPE.push_back(hit_PE);
+                    if(ahit.GetParents()->size() == 0){
+                        fHitParentPDGs.push_back(-9999); //No parent
+                    } else {
+                        int MCindex = ahit.GetParents()->at(0);
+                        fHitParentPDGs.push_back(fMCParticles->at(MCindex).GetPdgCode());
+                    }
                     fHitDetID.push_back(detkey);
                     fHitChankey.push_back(channel_key_data);
                     fHitChankeyMC.push_back(channel_key);
@@ -2051,6 +2198,26 @@ bool PhaseIITreeMaker::FillTankRecoInfo() {
   // Read reconstructed Vertex
   RecoVertex* recovtx = 0;
   auto get_extendedvtx = m_data->Stores.at("RecoEvent")->Get("ExtendedVertex",recovtx); 
+
+  double promptmutotPE = 0;
+  auto get_pe = m_data->Stores.at("RecoEvent")->Get("PromptMuonTotalPE",promptmutotPE);
+
+  if(get_pe) {
+    fPromptMuonTotalPE = promptmutotPE;
+  } else {
+    Log("Warning: The PhaseIITreeMaker tool could not find PromptMuonTotalE. Continuing to build tree", v_message, verbosity);
+    got_reco_info = false;
+  }
+
+  double Qij = 0;
+  auto get_qij = m_data->Stores.at("RecoEvent")->Get("Qij",Qij);
+
+  if(get_qij) {
+    fChargeIsotropy = Qij;
+  } else {
+    Log("Warning: The PhaseIITreeMaker tool could not find ChargeIsotropy. Continuing to build tree", v_message, verbosity);
+  }
+
   if(!get_extendedvtx) {
     Log("Warning: The PhaseITreeMaker tool could not find ExtendedVertex. Continuing to build tree", v_message, verbosity);
     got_reco_info = false;
@@ -2249,7 +2416,7 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
   for (int i_cap=0; i_cap < (int) mcneutgammas.size(); i_cap++){
     std::vector<double> capgammas = mcneutgammas.at(i_cap);
     for (int i_gamma=0; i_gamma < (int) capgammas.size(); i_gamma++){
-      std::cout <<"gamma # "<<i_gamma<<", energy: "<<capgammas.at(i_gamma)<<std::endl;
+//      std::cout <<"gamma # "<<i_gamma<<", energy: "<<capgammas.at(i_gamma)<<std::endl;
     }
   }
   }
@@ -2283,6 +2450,77 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     }
   } else {
     Log("PhaseIITreeMaker Tool: Missing MC Energy/Vertex info; is this MC?  Continuing to build remaining tree",v_message,verbosity);
+    successful_load = false;
+  }
+  std::vector<double> fsptanklength;
+  std::vector<double> fspmrdlength;
+  std::vector<bool> fspcontained;
+  std::vector<double> fspmrdangle;
+  std::vector<double> fspE;
+  std::vector<double> fspstartT;
+  std::vector<double> fspstopT;
+  std::vector<double> fspx;
+  std::vector<double> fspy;
+  std::vector<double> fspz;
+  bool has_tanktrack = m_data->Stores.at("RecoEvent")->Get("FSPTankTrackLengths",fsptanklength);
+  bool has_mrdtrack = m_data->Stores.at("RecoEvent")->Get("FSPMrdTrackLengths",fspmrdlength);
+  bool has_contain = m_data->Stores.at("RecoEvent")->Get("FSPContained",fspcontained);
+  bool has_mrdangle = m_data->Stores.at("RecoEvent")->Get("FSPMrdAngles",fspmrdangle);
+  bool has_fspE = m_data->Stores.at("RecoEvent")->Get("FSPEnergies",fspE);
+  bool has_fspstartt = m_data->Stores.at("RecoEvent")->Get("FSPStartT",fspstartT);
+  bool has_fspstopt = m_data->Stores.at("RecoEvent")->Get("FSPStopT",fspstopT);
+  bool has_fspdirx = m_data->Stores.at("RecoEvent")->Get("FSPDirX",fspx);
+  bool has_fspdiry = m_data->Stores.at("RecoEvent")->Get("FSPDirY",fspy);
+  bool has_fspdirz = m_data->Stores.at("RecoEvent")->Get("FSPDirZ",fspz);
+
+  if (has_tanktrack && has_mrdtrack && has_contain && has_mrdangle && has_fspE){
+    for (int i_part=0; i_part < (int) fspE.size(); i_part++){
+      fTrueFSPTankLength->push_back(fsptanklength.at(i_part));
+      fTrueFSPMrdLength->push_back(fspmrdlength.at(i_part));
+      fTrueFSPContained->push_back(fspcontained.at(i_part));
+      fTrueFSPMrdAngle->push_back(fspmrdangle.at(i_part));
+      fTrueFSPE->push_back(fspE.at(i_part));
+      fTrueFSPStartT->push_back(fspstartT.at(i_part));
+      fTrueFSPStopT->push_back(fspstopT.at(i_part));
+      fTrueFSPX->push_back(fspx.at(i_part));
+      fTrueFSPY->push_back(fspy.at(i_part));
+      fTrueFSPZ->push_back(fspz.at(i_part));
+    }
+  } else {
+    Log("PhaseIITreeMaker Tool: FSP information missing. Continuing to build tree",v_message,verbosity);
+    successful_load = false;
+  }
+
+  std::vector<int> folpdg;
+  std::vector<int> folppdg;
+  std::vector<double> folE;
+  std::vector<double> folstartT;
+  std::vector<double> folstopT;
+  std::vector<double> folx;
+  std::vector<double> foly;
+  std::vector<double> folz;
+  bool has_pdg = m_data->Stores.at("RecoEvent")->Get("FollowerPDG",folpdg);
+  bool has_ppdg = m_data->Stores.at("RecoEvent")->Get("FollowerParentPDG",folppdg);
+  bool has_folE = m_data->Stores.at("RecoEvent")->Get("FollowerE",folE);
+  bool has_folstartt = m_data->Stores.at("RecoEvent")->Get("FollowerStartT",folstartT);
+  bool has_folstopt = m_data->Stores.at("RecoEvent")->Get("FollowerStopT",folstopT);
+  bool has_foldirx = m_data->Stores.at("RecoEvent")->Get("FollowerDirX",folx);
+  bool has_foldiry = m_data->Stores.at("RecoEvent")->Get("FollowerDirY",foly);
+  bool has_foldirz = m_data->Stores.at("RecoEvent")->Get("FollowerDirZ",folz);
+
+  if (has_pdg && has_ppdg && has_folstartt && has_folstopt && has_folE){
+    for (int i_part=0; i_part < (int) folE.size(); i_part++){
+      fTrueFollowerPDG->push_back(folpdg.at(i_part));
+      fTrueFollowerParentPDG->push_back(folppdg.at(i_part));
+      fTrueFollowerE->push_back(folE.at(i_part));
+      fTrueFollowerStartT->push_back(folstartT.at(i_part));
+      fTrueFollowerStopT->push_back(folstopT.at(i_part));
+      fTrueFollowerX->push_back(folx.at(i_part));
+      fTrueFollowerY->push_back(foly.at(i_part));
+      fTrueFollowerZ->push_back(folz.at(i_part));
+    }
+  } else {
+    Log("PhaseIITreeMaker Tool: Follower information missing. Continuing to build tree",v_message,verbosity);
     successful_load = false;
   }
   double waterT, MRDT;
@@ -2357,17 +2595,142 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     }
   }
 
-  std::cout <<"MCNeutCapGammas count CaptGammas: "<<MCNeutCapGammas.count("CaptGammas")<<std::endl;
+  //std::cout <<"MCNeutCapGammas count CaptGammas: "<<MCNeutCapGammas.count("CaptGammas")<<std::endl;
   if (MCNeutCapGammas.count("CaptGammas")>0){
     std::vector<std::vector<double>> cap_energies = MCNeutCapGammas["CaptGammas"];
-    std::cout <<"cap_energies size: "<<cap_energies.size()<<std::endl;
+    //std::cout <<"cap_energies size: "<<cap_energies.size()<<std::endl;
     for (int i_cap = 0; i_cap < (int) cap_energies.size(); i_cap++){
       for (int i_gamma=0; i_gamma < cap_energies.at(i_cap).size(); i_gamma++){
-        std::cout <<"gamma energy: "<<cap_energies.at(i_cap).at(i_gamma)<<std::endl;
+        //std::cout <<"gamma energy: "<<cap_energies.at(i_cap).at(i_gamma)<<std::endl;
         fTrueNeutCapGammaE->push_back(cap_energies.at(i_cap).at(i_gamma));
       }
     }
   }
+
+  //Load nuisance information
+  if (hasNuis){
+    double TrueNeutrinoEnergy, TrueQ2, TrueNuIntxVtx_X, TrueNuIntxVtx_Y, TrueNuIntxVtx_Z, TrueQ2QE;
+    double TrueFSLeptonEnergy;
+    bool TrueCC, TrueCCINC, TrueNCINC, TrueCCQE, TrueCC0pi, TrueCCQELike, TrueNCEL, TrueNC0pi;
+    bool TrueCCcoh, TrueNCcoh, TrueCC1pip, TrueNC1pip, TrueCC1pim, TrueNC1pim;
+    bool TrueCC1pi0, TrueNC1pi0, TrueCC0piMINERvA, TrueCC0Pi_T2K_AnaI, TrueCC0Pi_T2K_AnaII;
+    int fsNeutrons, fsProtons, fsPi0, fsPiPlus, fsPiPlusCher, fsPiMinus, fsPiMinusCher;
+    int fsKPlus, fsKPlusCher, fsKMinus, fsKMinusCher, TrueNuPDG, TrueFSLeptonPdg;
+    int TrueTarget, TrueNeutCode;
+    double TrueW2, TrueBJx, Truey, Trueq0, Trueq3;
+    double TrueNuIntxVtxDisToEdge, True_scale_factor;
+    Direction TrueFSLeptonMomentum;
+    Direction TrueNeutrinoMomentum;
+
+    bool get_neutrino_energy = m_data->Stores["NuisanceInfo"]->Get("NeutrinoEnergy",TrueNeutrinoEnergy);
+    bool get_neutrino_mom = m_data->Stores["NuisanceInfo"]->Get("NeutrinoMomentum",TrueNeutrinoMomentum);
+    bool get_neutrino_vtxx = m_data->Stores["NuisanceInfo"]->Get("NuIntxVtx_X",TrueNuIntxVtx_X);
+    bool get_neutrino_vtxy = m_data->Stores["NuisanceInfo"]->Get("NuIntxVtx_Y",TrueNuIntxVtx_Y);
+    bool get_neutrino_vtxz = m_data->Stores["NuisanceInfo"]->Get("NuIntxVtx_Z",TrueNuIntxVtx_Z);
+    bool get_q2 = m_data->Stores["NuisanceInfo"]->Get("EventQ2",TrueQ2);
+    bool get_q2qe = m_data->Stores["NuisanceInfo"]->Get("EventQ2QE",TrueQ2QE);
+    bool get_cc = m_data->Stores["NuisanceInfo"]->Get("IsCC",TrueCC);
+    bool get_ccinc = m_data->Stores["NuisanceInfo"]->Get("IsCCINC",TrueCCINC);
+    bool get_ncinc = m_data->Stores["NuisanceInfo"]->Get("IsNCINC",TrueNCINC);
+    bool get_ccqe = m_data->Stores["NuisanceInfo"]->Get("IsCCQE",TrueCCQE);
+    bool get_cc0pi = m_data->Stores["NuisanceInfo"]->Get("IsCC0pi",TrueCC0pi);
+    bool get_ccqel = m_data->Stores["NuisanceInfo"]->Get("IsCCQELike",TrueCCQELike);
+    bool get_ncel = m_data->Stores["NuisanceInfo"]->Get("IsNCEL",TrueNCEL);
+    bool get_nc0pi = m_data->Stores["NuisanceInfo"]->Get("IsNC0pi",TrueNC0pi);
+    bool get_cccoh = m_data->Stores["NuisanceInfo"]->Get("IsCCcoh",TrueCCcoh);
+    bool get_nccoh = m_data->Stores["NuisanceInfo"]->Get("IsNCcoh",TrueNCcoh);
+    bool get_cc1pip = m_data->Stores["NuisanceInfo"]->Get("IsCC1pip",TrueCC1pip);
+    bool get_nc1pip = m_data->Stores["NuisanceInfo"]->Get("IsNC1pip",TrueNC1pip);
+    bool get_cc1pim = m_data->Stores["NuisanceInfo"]->Get("IsCC1pim",TrueCC1pim);
+    bool get_nc1pim = m_data->Stores["NuisanceInfo"]->Get("IsNC1pim",TrueNC1pim);
+    bool get_cc1pi0 = m_data->Stores["NuisanceInfo"]->Get("IsCC1pi0",TrueCC1pi0);
+    bool get_nc1pi0 = m_data->Stores["NuisanceInfo"]->Get("IsNC1pi0",TrueNC1pi0);
+    bool get_ccM = m_data->Stores["NuisanceInfo"]->Get("IsCC0piMINERvA",TrueCC0piMINERvA);
+    bool get_ccAI = m_data->Stores["NuisanceInfo"]->Get("IsCC0Pi_T2K_AnaI",TrueCC0Pi_T2K_AnaI);
+    bool get_ccAII = m_data->Stores["NuisanceInfo"]->Get("IsCC0Pi_T2K_AnaII",TrueCC0Pi_T2K_AnaII);
+    bool get_neut = m_data->Stores["NuisanceInfo"]->Get("NeutCode",TrueNeutCode);
+    bool get_sf = m_data->Stores["NuisanceInfo"]->Get("ScaleFactor",True_scale_factor);
+    bool get_n = m_data->Stores["NuisanceInfo"]->Get("NumFSNeutrons",fsNeutrons);
+    bool get_p = m_data->Stores["NuisanceInfo"]->Get("NumFSProtons",fsProtons);
+    bool get_pi0 = m_data->Stores["NuisanceInfo"]->Get("NumFSPi0",fsPi0);
+    bool get_piplus = m_data->Stores["NuisanceInfo"]->Get("NumFSPiPlus",fsPiPlus);
+    bool get_pipluscher = m_data->Stores["NuisanceInfo"]->Get("NumFSPiPlusCher",fsPiPlusCher);
+    bool get_piminus = m_data->Stores["NuisanceInfo"]->Get("NumFSPiMinus",fsPiMinus);
+    bool get_piminuscher = m_data->Stores["NuisanceInfo"]->Get("NumFSPiMinusCher",fsPiMinusCher);
+    bool get_kplus = m_data->Stores["NuisanceInfo"]->Get("NumFSKPlus",fsKPlus);
+    bool get_kpluscher = m_data->Stores["NuisanceInfo"]->Get("NumFSKPlusCher",fsKPlusCher);
+    bool get_kminus = m_data->Stores["NuisanceInfo"]->Get("NumFSKMinus",fsKMinus);
+    bool get_kminuscher = m_data->Stores["NuisanceInfo"]->Get("NumFSKMinusCher",fsKMinusCher);
+    bool get_fsl_momentum = m_data->Stores["NuisanceInfo"]->Get("FSLeptonMomentum",TrueFSLeptonMomentum);
+    bool get_fsl_pdg = m_data->Stores["NuisanceInfo"]->Get("FSLeptonPdg",TrueFSLeptonPdg);
+    bool get_fsl_energy = m_data->Stores["NuisanceInfo"]->Get("FSLeptonEnergy",TrueFSLeptonEnergy);
+    bool get_w = m_data->Stores["NuisanceInfo"]->Get("EventW2",TrueW2);
+    bool get_bjx = m_data->Stores["NuisanceInfo"]->Get("EventBjx",TrueBJx);
+    bool get_y = m_data->Stores["NuisanceInfo"]->Get("Eventy",Truey);
+    bool get_targetZ = m_data->Stores["NuisanceInfo"]->Get("TargetZ",TrueTarget);
+    bool get_q0 = m_data->Stores["NuisanceInfo"]->Get("Eventq0",Trueq0);
+    bool get_q3 = m_data->Stores["NuisanceInfo"]->Get("Eventq3",Trueq3);
+    bool get_nu_pdg = m_data->Stores["NuisanceInfo"]->Get("NeutrinoPDG",TrueNuPDG);
+
+    if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_q2 && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_momentum && get_fsl_pdg && get_fsl_energy && get_bjx && get_y && get_targetZ && get_q0 && get_q3 && get_w ){
+      fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
+      fTrueNuPDG = TrueNuPDG;
+      fTrueNeutrinoMomentum_X = TrueNeutrinoMomentum.X();
+      fTrueNeutrinoMomentum_Y = TrueNeutrinoMomentum.Y();
+      fTrueNeutrinoMomentum_Z = TrueNeutrinoMomentum.Z();
+      fTrueNuIntxVtx_X = TrueNuIntxVtx_X;
+      fTrueNuIntxVtx_Y = TrueNuIntxVtx_Y;
+      fTrueNuIntxVtx_Z = TrueNuIntxVtx_Z;
+      fTrueFSLMomentum_X = TrueFSLeptonMomentum.X();
+      fTrueFSLMomentum_Y = TrueFSLeptonMomentum.Y();
+      fTrueFSLMomentum_Z = TrueFSLeptonMomentum.Z();
+      fTrueFSLPdg = TrueFSLeptonPdg;
+      fTrueFSLEnergy = TrueFSLeptonEnergy;
+      fTrueQ2 = TrueQ2;
+      fTrueQ2QE = TrueQ2QE;
+      fTrueW2 = TrueW2;
+      fTrueBJx = TrueBJx;
+      fTruey = Truey;
+      fTrueTarget = TrueTarget;
+      fTrueq0 = Trueq0;
+      fTrueq3 = Trueq3;
+      fTrueNeutCode = TrueNeutCode;
+      fTrueCC     = (TrueCC)? 1 : 0;
+      fIsCCINC    = (TrueCCINC)? 1 : 0;
+      fIsNCINC    = (TrueNCINC)? 1 : 0;
+      fIsCCQE     = (TrueCCQE)? 1 : 0;
+      fIsCC0pi    = (TrueCC0pi)? 1 : 0;
+      fIsCCQELike = (TrueCCQELike)? 1 : 0;
+      fIsNCEL     = (TrueNCEL)? 1 : 0;
+      fIsNC0pi    = (TrueNC0pi)? 1 : 0;
+      fIsCCcoh    = (TrueCCcoh)? 1 : 0;
+      fIsNCcoh    = (TrueNCcoh)? 1 : 0;
+      fIsCC1pip = (TrueCC1pip)? 1 : 0;
+      fIsNC1pip = (TrueNC1pip)? 1 : 0;
+      fIsCC1pim = (TrueCC1pim)? 1 : 0;
+      fIsNC1pim = (TrueNC1pim)? 1 : 0;
+      fIsCC1pi0 = (TrueCC1pi0)? 1 : 0;
+      fIsNC1pi0 = (TrueNC1pi0)? 1 : 0;
+      fIsCC0piMINERvA    = (TrueCC0piMINERvA)? 1 : 0;
+      fIsCC0Pi_T2K_AnaI  = (TrueCC0Pi_T2K_AnaI)? 1 : 0;
+      fIsCC0Pi_T2K_AnaII = (TrueCC0Pi_T2K_AnaII)? 1 : 0;
+      fScaleFactor = True_scale_factor;
+      fTrueNeutrons = fsNeutrons;
+      fTrueProtons = fsProtons;
+      fTruePi0 = fsPi0;
+      fTruePiPlus = fsPiPlus;
+      fTruePiPlusCher = fsPiPlusCher;
+      fTruePiMinus = fsPiMinus;
+      fTruePiMinusCher = fsPiMinusCher;
+      fTrueKPlus = fsKPlus;
+      fTrueKPlusCher = fsKPlusCher;
+      fTrueKMinus = fsKMinus;
+      fTrueKMinusCher = fsKMinusCher;
+    } else {
+      Log("PhaseIITreeMaker tool: Did not find NUISANCE information. Continuing building remaining tree",v_message,verbosity);
+      successful_load = false;
+    }
+  } // end if hasNuis
 
   //Load genie information
   if (hasGenie){
@@ -2379,6 +2742,8 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     int TrueTarget;
     double TrueW2, TrueBJx, Truey, Trueq0, Trueq3;
     double TrueNuIntxVtxDisToEdge;
+    double dirt_mu;
+    vector<double> dirt_unc;
     Position TrueFSLeptonVtx;
     Direction TrueFSLeptonMomentum;
     Direction TrueNeutrinoMomentum;
@@ -2420,10 +2785,12 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
     bool get_q0 = m_data->Stores["GenieInfo"]->Get("Eventq0",Trueq0);
     bool get_q3 = m_data->Stores["GenieInfo"]->Get("Eventq3",Trueq3);
     bool get_nu_pdg = m_data->Stores["GenieInfo"]->Get("NeutrinoPDG",TrueNuPDG);
-    std::cout <<"get_neutrino_energy: "<<get_neutrino_energy<<"get_neutrino_vtxx: "<<get_neutrino_vtxx<<"get_neutrino_vtxy: "<<get_neutrino_vtxy<<"get_neutrino_vtxz: "<<get_neutrino_vtxz<<"get_neutrino_time: "<<get_neutrino_vtxt<<std::endl;
-    std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
-    std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
-    std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
+    bool get_dirtmu = m_data->Stores["RecoEvent"]->Get("DirtScale",dirt_mu);
+    bool get_dirtunc = m_data->Stores["RecoEvent"]->Get("DirtUnc",dirt_unc);
+    //std::cout <<"get_neutrino_energy: "<<get_neutrino_energy<<"get_neutrino_vtxx: "<<get_neutrino_vtxx<<"get_neutrino_vtxy: "<<get_neutrino_vtxy<<"get_neutrino_vtxz: "<<get_neutrino_vtxz<<"get_neutrino_time: "<<get_neutrino_vtxt<<std::endl;
+    //std::cout <<"get_q2: "<<get_q2<<", get_cc: "<<get_cc<<", get_qel: "<<get_qel<<", get_res: "<<get_res<<", get_dis: "<<get_dis<<", get_coh: "<<get_coh<<", get_mec: "<<get_mec<<std::endl;
+    //std::cout <<"get_n: "<<get_n<<", get_p: "<<get_p<<", get_pi0: "<<get_pi0<<", get_piplus: "<<get_piplus<<", get_pipluscher: "<<get_pipluscher<<", get_piminus: "<<get_piminus<<", get_piminuscher: "<<get_piminuscher<<", get_kplus: "<<get_kplus<<", get_kpluscher: "<<get_kpluscher<<", get_kminus: "<<get_kminus<<", get_kminuscher: "<<get_kminuscher<<std::endl;
+    //std::cout <<"get_fsl_vtx: "<<get_fsl_vtx<<", get_fsl_momentum: "<<get_fsl_momentum<<", get_fsl_time: "<<get_fsl_time<<", get_fsl_mass: "<<get_fsl_mass<<", get_fsl_pdg: "<<get_fsl_pdg<<", get_fsl_energy: "<<get_fsl_energy<<std::endl;
     if (get_neutrino_energy && get_neutrino_mom && get_neutrino_vtxx && get_neutrino_vtxy && get_neutrino_vtxz && get_neutrino_vtxt && get_q2 && get_cc && get_nc && get_qel && get_res && get_dis && get_coh && get_mec && get_n && get_p && get_pi0 && get_piplus && get_pipluscher && get_piminus && get_piminuscher && get_kplus && get_kpluscher && get_kminus && get_kminuscher && get_fsl_vtx && get_fsl_momentum && get_fsl_time && get_fsl_mass && get_fsl_pdg && get_fsl_energy && get_bjx && get_y && get_targetZ && get_q0 && get_q3 && get_w ){
       fTrueNeutrinoEnergy = TrueNeutrinoEnergy;
       fTrueNuPDG = TrueNuPDG;
@@ -2469,10 +2836,13 @@ bool PhaseIITreeMaker::FillMCTruthInfo() {
       fTrueKPlusCher = fsKPlusCher;
       fTrueKMinus = fsKMinus;
       fTrueKMinusCher = fsKMinusCher;
+      fDirtMu = dirt_mu;
+      fDirtUnc = dirt_unc;
     } else {
       Log("PhaseIITreeMaker tool: Did not find GENIE information. Continuing building remaining tree",v_message,verbosity);
       successful_load = false;
     }
+    dirt_unc.clear();
   } // end if hasGenie
 
   return successful_load;
