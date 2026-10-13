@@ -164,6 +164,7 @@ void LoadGeometry::InitializeGeometry(){
     }
     //Loop over lines, collect all detector data (should only be one line here)
     while(getline(myfile,line)){
+      if (!line.empty() && line.back() == '\r') line.pop_back();
       if(verbosity>3) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
@@ -229,6 +230,7 @@ void LoadGeometry::LoadFACCMRDDetectors(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
+      if (!line.empty() && line.back() == '\r') line.pop_back();
       if(verbosity > 4) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
@@ -418,6 +420,7 @@ void LoadGeometry::LoadAuxiliaryChannels(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
+      if (!line.empty() && line.back() == '\r') line.pop_back();
       if(verbosity > 3)std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
@@ -512,6 +515,7 @@ void LoadGeometry::LoadTankPMTDetectors(){
     }
     //Loop over lines, collect all detector specs
     while(getline(myfile,line)){
+      if (!line.empty() && line.back() == '\r') line.pop_back();
       if(verbosity > 3)std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
@@ -703,6 +707,7 @@ void LoadGeometry::LoadLAPPDs(){
     detector_num_store = 100000;
     counter = 0;
     while(getline(myfile,line)){
+      if (!line.empty() && line.back() == '\r') line.pop_back();
       if(verbosity>4) std::cout << line << std::endl; //has our stuff;
       if(line.find("#")!=std::string::npos) continue;
       if(line.find(DataEndLineLabel)!=std::string::npos) break;
@@ -903,6 +908,7 @@ std::string LoadGeometry::GetLegendLine(std::string name) {
       if(line.find(LegendLineLabel) != std::string::npos){
         //Next line is the title line
         getline(myfile,line);
+        if (!line.empty() && line.back() == '\r') line.pop_back();
         legendline = line;
         if(verbosity>4) std::cout<<"Legend line loaded. Legend is: " << legendline << std::endl;
         break;
