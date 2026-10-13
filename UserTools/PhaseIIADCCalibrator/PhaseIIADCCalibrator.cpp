@@ -206,7 +206,7 @@ bool PhaseIIADCCalibrator::Execute() {
           } 
           else {
               Log("PhaseIIADCCalibrator:: Cannot find channel key for Card " + std::to_string(CardID) + 
-                  " Ch " + std::to_string(ChannelID), v_error, verbosity);
+                  " Ch " + std::to_string(ChannelID), v_debug, verbosity);
               continue;
           }
       }
