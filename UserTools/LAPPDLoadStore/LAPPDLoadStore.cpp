@@ -198,6 +198,7 @@ void LAPPDLoadStore::CleanDataObjects()
     // DataStreams.clear();
     runInfoLoaded = false;
 
+    LAPPDLoadedTimeStamps.clear();
     LAPPD_IDs.clear();
     LAPPDLoadedTimeStampsRaw.clear();
     LAPPDLoadedBeamgatesRaw.clear();
@@ -215,6 +216,7 @@ bool LAPPDLoadStore::Execute()
 
     CleanDataObjects();
     m_data->CStore.Set("LAPPD_new_event", false);
+    m_data->CStore.Set("NewLAPPDDataAvailable", false);
     LoadRunInfo();
 
     if (MultiLAPPDMap)
@@ -260,6 +262,8 @@ bool LAPPDLoadStore::Execute()
 
     // decide loading data or not, set to LAPPDana for later tools
     LAPPDana = LoadData();
+    if (LAPPD_ID == -1) return false;          // no ACC ID mapping, stop toolchain
+
     m_data->CStore.Set("LAPPDana", LAPPDana);
     if (LAPPDStoreReadInVerbosity > 0)
         cout << "LAPPDana for loading was set to " << LAPPDana << endl;
@@ -346,9 +350,12 @@ bool LAPPDLoadStore::Execute()
         m_data->Stores["ANNIEEvent"]->Set("ACDCReadedLAPPDID", ACDCReadedLAPPDID);
         m_data->Stores["ANNIEEvent"]->Set("ReadedBoards", ReadedBoards);
 
-        m_data->CStore.Set("NewLAPPDDataAvailable", true);
-        if (LAPPDStoreReadInVerbosity > 11)
-            debugStoreReadIn << " Set NewLAPPDDataAvailable to true" << endl;
+        bool newEvent = false;
+        m_data->CStore.Get("LAPPD_new_event", newEvent);    // true only if SaveTimeStamps() saved this event
+        m_data->CStore.Set("NewLAPPDDataAvailable", newEvent);
+
+        if (LAPPDLoadStoreVerbosity > 5)
+            debugLoadStore << " Set NewLAPPDDataAvailable to true" << endl;
 
         NonEmptyEvents += 1;
         eventNo++;
@@ -389,6 +396,7 @@ bool LAPPDLoadStore::Execute()
                     cout << "LAPPDLoadStore: Mapped ManufacturerID " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
               
 	  	LAPPD_ID = get<0>(queryResult);
+                if (LAPPD_ID == -1) return false;
             }
 
             if (LAPPD_ID != SelectedLAPPD && SelectSingleLAPPD)
@@ -1117,7 +1125,10 @@ bool LAPPDLoadStore::ParsePSECData()
     if (nbi % 2 != 0)
     {
         errorEventsNumber++;
-        cout << "LAPPDStoreReadIn: uneven number of boards in this event" << endl;
+        cout << "LAPPDLoadStore: uneven number of boards in this event" << endl;
+        return false;
+
+        /*
         if (nbi == 1)
         {
             ParaBoards.push_back(ReadBoards[0]);
@@ -1126,6 +1137,7 @@ bool LAPPDLoadStore::ParsePSECData()
         {
             return false;
         }
+        */
     }
     else
     {
@@ -1754,7 +1766,10 @@ tuple<int, string> LAPPDLoadStore::queryNearestACCID(const vector<IDConfigRecord
         }
     }
 
-    if (bestRun == -1)
+    if (bestRun == -1) {
+        Log("LAPPDLoadStore: no ACC ID found for ManufacturerID " + std::to_string(manufacturerID) 
+            + " at run " + std::to_string(targetRun) +" in ACCIDConfigFile. Stopping the toolchain.", v_error, LAPPDLoadStoreVerbosity);
         return {-1, ""};
+    }
     return {bestACCID, bestPosition};
 }
