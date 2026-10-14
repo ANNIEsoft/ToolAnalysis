@@ -457,6 +457,7 @@ void LoadRawData::LoadLAPPDData(){
   Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
   if(BuildType == "TankAndMRDAndCTCAndLAPPD" || BuildType == "LAPPD" || BuildType == "LAPPDMerging" || BuildType == "LAPPDAndCTC" || BuildType == "CTCAndLAPPD"){
     Log("LoadRawData Tool: Accessing LAPPD Data in raw data",v_message,verbosity);
+    lappdtotalentries = 0; 
     try{
       RawData->Get("LAPPDData",*LAPPDData);
       LAPPDData->Header->Get("TotalEntries",lappdtotalentries);

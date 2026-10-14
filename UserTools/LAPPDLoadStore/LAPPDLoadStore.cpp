@@ -24,7 +24,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_variables.Get("StorePedinputfile", PedFileName);
     m_variables.Get("PedinputfileTXT", PedFileNameTXT);
     m_variables.Get("DoPedSubtraction", DoPedSubtract);
-    m_variables.Get("LAPPDStoreReadInVerbosity", LAPPDStoreReadInVerbosity);
+    m_variables.Get("LAPPDLoadStoreVerbosity", LAPPDLoadStoreVerbosity);
     m_variables.Get("num_vector_data", num_vector_data);
     m_variables.Get("num_vector_pps", num_vector_pps);
     m_variables.Get("SelectSingleLAPPD", SelectSingleLAPPD);
@@ -86,11 +86,11 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
         // get data from a StoreFile in ANNIEEvent format
         m_data->Stores["ANNIEEvent"] = new BoostStore(false, 2);
         m_data->Stores["ANNIEEvent"]->Initialise(NewFileName);
-        cout << "LAPPDStoreReadIn Reading new ANNIEevent from " << NewFileName << endl;
+        cout << "LAPPDLoadStore Reading new ANNIEevent from " << NewFileName << endl;
     }
     else if (ReadStore == 0)
     { // get data from previous chain, or m_data
-        cout << "LAPPDStoreReadIn Using ANNIEevent or CStore" << endl;
+        cout << "LAPPDLoadStore Using ANNIEevent or CStore" << endl;
     }*/
     // Grab all pedestal files and prepare the map channel|pedestal-vector for substraction
     if (DoPedSubtract == 1)
@@ -111,7 +111,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
                 m_data->Stores["PedestalFile"]->Initialise(PedFileName);
                 long Pedentries;
                 m_data->Stores["PedestalFile"]->Header->Get("TotalEntries", Pedentries);
-                if (LAPPDStoreReadInVerbosity > 0)
+                if (LAPPDLoadStoreVerbosity > 0)
                     cout << PedFileName << " got " << Pedentries << endl;
                 m_data->Stores["PedestalFile"]->Get("PedestalMap", PedestalValues);
             }
@@ -120,12 +120,12 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
         {
             for (int i = 0; i < Nboards; i++)
             {
-                if (LAPPDStoreReadInVerbosity > 0)
+                if (LAPPDLoadStoreVerbosity > 0)
                     cout << "Reading Pedestal File " << PedFileNameTXT << " " << i << endl;
                 ReadPedestals(i);
             }
         }
-        if (LAPPDStoreReadInVerbosity > 0)
+        if (LAPPDLoadStoreVerbosity > 0)
             cout << "PEDSIZES: " << PedestalValues->size() << " " << PedestalValues->at(0).size() << " " << PedestalValues->at(4).at(5) << endl;
     }
 
@@ -143,18 +143,18 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     LAPPDEventIndex_ID = {0, 0, 0, 0, 0}; // initialize for five LAPPDs
     if (loadOffsets)
         LoadOffsetsAndCorrections();
-    if (LAPPDStoreReadInVerbosity > 11)
-        debugStoreReadIn.open("debugStoreReadIn.txt");
+    if (LAPPDLoadStoreVerbosity > 11)
+        debugLoadStore.open("debugLoadStore.txt");
 
     std::string ACCIDConfigFile;
     get_ok = m_variables.Get("ACCIDConfigFile", ACCIDConfigFile);
     if(!get_ok) {
-	    Log("LAPPDLoadStore: Missing ACCIDConfigFile in config!",v_error,LAPPDStoreReadInVerbosity);
+	    Log("LAPPDLoadStore: Missing ACCIDConfigFile in config!",v_error,LAPPDLoadStoreVerbosity);
 	    return false;
     }
 
     idConfigRecords = LoadIDConfig(ACCIDConfigFile);
-    if (LAPPDStoreReadInVerbosity > 1)
+    if (LAPPDLoadStoreVerbosity > 1)
     {
         // print the ACCID config records for debug
         cout << "Loaded LAPPD ID Config Records from " << ACCIDConfigFile << ":" << endl;
@@ -198,6 +198,7 @@ void LAPPDLoadStore::CleanDataObjects()
     // DataStreams.clear();
     runInfoLoaded = false;
 
+    LAPPDLoadedTimeStamps.clear();
     LAPPD_IDs.clear();
     LAPPDLoadedTimeStampsRaw.clear();
     LAPPDLoadedBeamgatesRaw.clear();
@@ -215,6 +216,7 @@ bool LAPPDLoadStore::Execute()
 
     CleanDataObjects();
     m_data->CStore.Set("LAPPD_new_event", false);
+    m_data->CStore.Set("NewLAPPDDataAvailable", false);
     LoadRunInfo();
 
     if (MultiLAPPDMap)
@@ -242,7 +244,7 @@ bool LAPPDLoadStore::Execute()
                 bool gotTS_PPSAfter = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter);
                 bool gotTS_PPSDiff = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff);
                 bool gotTS_PPSMissing = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
-                if (LAPPDStoreReadInVerbosity > 3)
+                if (LAPPDLoadStoreVerbosity > 3)
                 {
                     cout << "LAPPDLoadStore: gotOffsets = " << gotOffsets << ", gotBG_PPSBefore = " << gotBG_PPSBefore << ", gotTS_PPSBefore = " << gotTS_PPSBefore << endl;
                     cout << "Size of LAPPDDataMap = " << LAPPDDataMap.size() << ", LAPPDOffsets = " << LAPPDOffsets.size() << ", LAPPDBG_PPSBefore = " << LAPPDBG_PPSBefore.size() << ", LAPPDTS_PPSBefore = " << LAPPDTS_PPSBefore.size() << endl;
@@ -260,8 +262,10 @@ bool LAPPDLoadStore::Execute()
 
     // decide loading data or not, set to LAPPDana for later tools
     LAPPDana = LoadData();
+    if (LAPPD_ID == -1) return false;          // no ACC ID mapping, stop toolchain
+
     m_data->CStore.Set("LAPPDana", LAPPDana);
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "LAPPDana for loading was set to " << LAPPDana << endl;
     if (!LAPPDana)
     {
@@ -295,8 +299,8 @@ bool LAPPDLoadStore::Execute()
             m_data->CStore.Set("LAPPD_ID", LAPPD_ID);
             m_data->Stores["ANNIEEvent"]->Set("LAPPD_ID", LAPPD_ID);
             m_data->CStore.Set("LoadingPPS", true);
-            if (LAPPDStoreReadInVerbosity > 0)
-                cout << "LAPPDStoreReadIn: PPS data loaded, LAPPDanaData is false, set LAPPDana to false" << endl;
+            if (LAPPDLoadStoreVerbosity > 0)
+                cout << "LAPPDLoadStore: PPS data loaded, LAPPDanaData is false, set LAPPDana to false" << endl;
             return true;
         }
 
@@ -312,7 +316,7 @@ bool LAPPDLoadStore::Execute()
 
             if (!parsData)
             {
-                cout << "LAPPDStoreReadIn: PSEC data parsing failed, set LAPPDana to false and return" << endl;
+                cout << "LAPPDLoadStore: PSEC data parsing failed, set LAPPDana to false and return" << endl;
 
                 return true;
             }
@@ -333,8 +337,8 @@ bool LAPPDLoadStore::Execute()
             // cout << "ReadedBoards loaded with " << *it << endl;
         }
 
-        if (LAPPDStoreReadInVerbosity > 0)
-            cout << "*************************END LAPPDStoreReadIn************************************" << endl;
+        if (LAPPDLoadStoreVerbosity > 0)
+            cout << "*************************END LAPPDLoadStore************************************" << endl;
         m_data->CStore.Set("LAPPD_ID", LAPPD_ID);
         m_data->Stores["ANNIEEvent"]->Set("LAPPD_ID", LAPPD_ID);
         m_data->Stores["ANNIEEvent"]->Set("RawLAPPDData", LAPPDWaveforms); // leave this only for the merger tool
@@ -346,15 +350,18 @@ bool LAPPDLoadStore::Execute()
         m_data->Stores["ANNIEEvent"]->Set("ACDCReadedLAPPDID", ACDCReadedLAPPDID);
         m_data->Stores["ANNIEEvent"]->Set("ReadedBoards", ReadedBoards);
 
-        m_data->CStore.Set("NewLAPPDDataAvailable", true);
-        if (LAPPDStoreReadInVerbosity > 11)
-            debugStoreReadIn << " Set NewLAPPDDataAvailable to true" << endl;
+        bool newEvent = false;
+        m_data->CStore.Get("LAPPD_new_event", newEvent);    // true only if SaveTimeStamps() saved this event
+        m_data->CStore.Set("NewLAPPDDataAvailable", newEvent);
+
+        if (LAPPDLoadStoreVerbosity > 5)
+            debugLoadStore << " Set NewLAPPDDataAvailable to true" << endl;
 
         NonEmptyEvents += 1;
         eventNo++;
-        if (LAPPDStoreReadInVerbosity > 2)
+        if (LAPPDLoadStoreVerbosity > 2)
         {
-            cout << "Finish LAPPDStoreReadIn, Printing the ANNIEEvent" << endl;
+            cout << "Finish LAPPDLoadStore, Printing the ANNIEEvent" << endl;
             m_data->Stores["ANNIEEvent"]->Print(false);
         }
     }
@@ -370,8 +377,8 @@ bool LAPPDLoadStore::Execute()
         vector<int> ReadedBoards;
         vector<int> ACDCReadedLAPPDID;
 
-        if (LAPPDStoreReadInVerbosity > 0)
-            cout << "LAPPDStoreReadIn: LAPPDDataMap has " << LAPPDDataMap.size() << " LAPPD PSEC data " << endl;
+        if (LAPPDLoadStoreVerbosity > 0)
+            cout << "LAPPDLoadStore: LAPPDDataMap has " << LAPPDDataMap.size() << " LAPPD PSEC data " << endl;
         bool ValidDataLoaded = false;
         std::map<unsigned long, PsecData>::iterator it;
         for (it = LAPPDDataMap.begin(); it != LAPPDDataMap.end(); it++)
@@ -385,10 +392,11 @@ bool LAPPDLoadStore::Execute()
 
 	    if (LAPPD_ID>20) {
                 tuple<int, string> queryResult = queryNearestACCID(idConfigRecords, runNumber, LAPPD_ID);
-                if (LAPPDStoreReadInVerbosity > 2)
+                if (LAPPDLoadStoreVerbosity > 2)
                     cout << "LAPPDLoadStore: Mapped ManufacturerID " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
               
 	  	LAPPD_ID = get<0>(queryResult);
+                if (LAPPD_ID == -1) return false;
             }
 
             if (LAPPD_ID != SelectedLAPPD && SelectSingleLAPPD)
@@ -402,7 +410,7 @@ bool LAPPDLoadStore::Execute()
                 // return true;
             }
 
-            if (LAPPDStoreReadInVerbosity > 0)
+            if (LAPPDLoadStoreVerbosity > 0)
             {
                 // print ReadBoards
                 cout << "LAPPD ID " << LAPPD_ID << " ReadBoards size is " << ReadBoards.size() << ", data: " << endl;
@@ -424,11 +432,11 @@ bool LAPPDLoadStore::Execute()
             int frametype = static_cast<int>(Raw_buffer.size() / ReadBoards.size());
             if (frametype != num_vector_data)
             {
-                cout << "LAPPDStoreReadIn: For LAPPD_ID " << LAPPD_ID << " frametype is not num_vector_data, skip this LAPPD" << endl;
+                cout << "LAPPDLoadStore: For LAPPD_ID " << LAPPD_ID << " frametype is not num_vector_data, skip this LAPPD" << endl;
                 continue;
             }
             m_data->CStore.Set("LAPPDanaData", true);
-            if (LAPPDStoreReadInVerbosity > 3)
+            if (LAPPDLoadStoreVerbosity > 3)
             {
                 cout << "Before parsing data, printing size and element in ReadBoards, ReadedBoards, ParaBoards" << endl;
                 cout << "ReadBoards size is " << ReadBoards.size() << endl;
@@ -454,12 +462,12 @@ bool LAPPDLoadStore::Execute()
             if (parsData)
             {
                 ValidDataLoaded = true;
-                if (LAPPDStoreReadInVerbosity > 2)
+                if (LAPPDLoadStoreVerbosity > 2)
                     cout << "LAPPDLoadStore: Loaded LAPPD data for LAPPD_ID " << LAPPD_ID << " at time " << time << endl;
                 LAPPDLoadedTimeStamps.push_back(time);
                 LAPPD_IDs.push_back(LAPPD_ID);
                 // print the size of LAPPDTimeStampsRaw, print all keys in it
-                if (LAPPDStoreReadInVerbosity > 0)
+                if (LAPPDLoadStoreVerbosity > 0)
                 {
                     cout << "LAPPDTimeStampsRaw size is " << LAPPDTimeStampsRaw.size() << endl;
                     for (auto it = LAPPDTimeStampsRaw.begin(); it != LAPPDTimeStampsRaw.end(); it++)
@@ -468,7 +476,7 @@ bool LAPPDLoadStore::Execute()
                     }
                 }
                 // print the size of LAPPDOffsets, print all keys in it
-                if (LAPPDStoreReadInVerbosity > 0)
+                if (LAPPDLoadStoreVerbosity > 0)
                 {
                     cout << "LAPPDOffsets size is " << LAPPDOffsets.size() << endl;
                     for (auto it = LAPPDOffsets.begin(); it != LAPPDOffsets.end(); it++)
@@ -484,7 +492,7 @@ bool LAPPDLoadStore::Execute()
                 LAPPDLoadedBGCorrections.push_back(LAPPDBGCorrection.at(time));
                 LAPPDLoadedOSInMinusPS.push_back(LAPPDOSInMinusPS.at(time));
 
-                if (LAPPDStoreReadInVerbosity > 2)
+                if (LAPPDLoadStoreVerbosity > 2)
                     cout << "parsing finished for LAPPD_ID " << LAPPD_ID << " at time " << time << endl;
 
                 if (LoadBuiltPPSInfo)
@@ -549,7 +557,7 @@ bool LAPPDLoadStore::Execute()
         }
     }
 
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "LAPPDLoadStore: Finished loading LAPPD data" << endl;
 
     return true;
@@ -569,7 +577,7 @@ bool LAPPDLoadStore::Finalise()
 bool LAPPDLoadStore::ReadPedestals(int boardNo)
 {
 
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "Getting Pedestals " << boardNo << endl;
 
     std::string LoadName = PedFileNameTXT;
@@ -584,7 +592,7 @@ bool LAPPDLoadStore::ReadPedestals(int boardNo)
         cout << "Failed to open " << LoadName << "!" << endl;
         return false;
     }
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "Opened file: " << LoadName << endl;
 
     int sampleNo = 0; // sample number
@@ -607,7 +615,7 @@ bool LAPPDLoadStore::ReadPedestals(int boardNo)
                 tempPed.push_back(tempValue);
                 // cout<<"First time: "<<channelNo<<" "<<tempValue<<endl;
                 PedestalValues->insert(pair<unsigned long, vector<int>>(channelNo, tempPed));
-                if (LAPPDStoreReadInVerbosity > 0)
+                if (LAPPDLoadStoreVerbosity > 0)
                     cout << "Inserting pedestal at channelNo " << channelNo << endl;
                 // newboard=false;
             }
@@ -621,7 +629,7 @@ bool LAPPDLoadStore::ReadPedestals(int boardNo)
         }
         sampleNo++;
     }
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "FINAL SAMPLE NUMBER: " << PedestalValues->size() << " " << (((PedestalValues->find(0))->second)).size() << endl;
     PedFile.close();
     return true;
@@ -691,17 +699,17 @@ int LAPPDLoadStore::getParsedMeta(std::vector<unsigned short> buffer, int BoardI
     {
         for (int ch = 0; ch < NUM_CH / NUM_PSEC; ch++)
         {
-            if (LAPPDStoreReadInVerbosity > 10)
+            if (LAPPDLoadStoreVerbosity > 10)
                 cout << "parsing meta step1-1" << endl;
             // Find the trigger data at begin + last_metadata_start + 13_info_words + 1_end_word + 1
             bit = buffer.begin() + start_indices[4] + 13 + 1 + 1 + ch + (chip * (NUM_CH / NUM_PSEC));
-            if (LAPPDStoreReadInVerbosity > 10)
+            if (LAPPDLoadStoreVerbosity > 10)
                 cout << "parsing meta step1-2" << endl;
             PsecTriggerInfo[chip].push_back(*bit);
         }
     }
 
-    if (LAPPDStoreReadInVerbosity > 10)
+    if (LAPPDLoadStoreVerbosity > 10)
         cout << "parsing meta step1.5" << endl;
     // Fill the combined trigger
     CombinedTriggerRateCount = buffer[7792];
@@ -717,7 +725,7 @@ int LAPPDLoadStore::getParsedMeta(std::vector<unsigned short> buffer, int BoardI
         // cout<<"size of trigger word is "<<PsecTriggerInfo[CHIP].size()<<endl;
         for (int INFOWORD = 0; INFOWORD < 13; INFOWORD++)
         {
-            if (LAPPDStoreReadInVerbosity > 10)
+            if (LAPPDLoadStoreVerbosity > 10)
                 cout << "parsing meta step2-1 infoword " << INFOWORD << endl;
             if (PsecInfo[CHIP].size() < 13)
             {
@@ -743,7 +751,7 @@ int LAPPDLoadStore::getParsedMeta(std::vector<unsigned short> buffer, int BoardI
         }
         for (int TRIGGERWORD = 0; TRIGGERWORD < 6; TRIGGERWORD++)
         {
-            if (LAPPDStoreReadInVerbosity > 10)
+            if (LAPPDLoadStoreVerbosity > 10)
                 cout << "parsing meta step2-2 trigger word" << endl;
 
             if (PsecTriggerInfo[CHIP].size() < 6)
@@ -813,7 +821,7 @@ int LAPPDLoadStore::getParsedData(std::vector<unsigned short> buffer, int ch_sta
             if (InfoWord.size() == NUM_SAMP)
             {
                 data.insert(pair<int, vector<unsigned short>>(ch_start + channel_count, InfoWord));
-                if (LAPPDStoreReadInVerbosity > 5)
+                if (LAPPDLoadStoreVerbosity > 5)
                     cout << "inserted data to channel " << ch_start + channel_count << endl;
                 InfoWord.clear();
                 channel_count++;
@@ -833,14 +841,14 @@ bool LAPPDLoadStore::LoadData()
 
     if (loadFromStoreDirectly)
         m_data->Stores["ANNIEEvent"]->GetEntry(eventNo);
-    if (LAPPDStoreReadInVerbosity > 2)
+    if (LAPPDLoadStoreVerbosity > 2)
         cout << "Got eventNo " << eventNo << endl;
 
     // if loaded enough events, stop the loop and return false
     if (NonEmptyEvents == stopEntries || NonEmptyEvents > stopEntries || NonEmptyDataEvents == stopEntries || NonEmptyDataEvents > stopEntries)
     {
-        if (LAPPDStoreReadInVerbosity > 0)
-            cout << "LAPPDStoreReadIn: NonEmptyEvents is " << NonEmptyEvents << ", NonEmptyDataEvents is " << NonEmptyDataEvents << ", stopEntries is " << stopEntries << ", stop the loop" << endl;
+        if (LAPPDLoadStoreVerbosity > 0)
+            cout << "LAPPDLoadStore: NonEmptyEvents is " << NonEmptyEvents << ", NonEmptyDataEvents is " << NonEmptyDataEvents << ", stopEntries is " << stopEntries << ", stop the loop" << endl;
         m_data->vars.Set("StopLoop", 1);
         return false;
     }
@@ -849,9 +857,9 @@ bool LAPPDLoadStore::LoadData()
     //     DataStreams["LAPPD"] = true;
 
     // print the load information: DataStreams["LAPPD"] value, PsecReceiveMode, MultiLAPPDMap
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
     {
-        cout << "LAPPDStoreReadIn: DataStreams[LAPPD] is " << DataStreams["LAPPD"] << ", PsecReceiveMode is " << PsecReceiveMode << ", MultiLAPPDMap is " << MultiLAPPDMap << endl;
+        cout << "LAPPDLoadStore: DataStreams[LAPPD] is " << DataStreams["LAPPD"] << ", PsecReceiveMode is " << PsecReceiveMode << ", MultiLAPPDMap is " << MultiLAPPDMap << endl;
     }
 
     if (loadPSEC || loadPPS)
@@ -878,15 +886,15 @@ bool LAPPDLoadStore::LoadData()
             {
                 m_data->CStore.Set("StoreLoadedLAPPDData", dat);
             }
-            if (LAPPDStoreReadInVerbosity > 0)
-                cout << "LAPPDStoreReadIn: getting LAPPDData from CStore" << endl;
+            if (LAPPDLoadStoreVerbosity > 0)
+                cout << "LAPPDLoadStore: getting LAPPDData from CStore" << endl;
             bool mergingLoad;
             // if in merging mode, but no LAPPD data in CStore, return false, don't load
             m_data->CStore.Get("LAPPDanaData", mergingLoad);
             if (!mergingLoad && mergingModeReadIn)
             {
-                if (LAPPDStoreReadInVerbosity > 0)
-                    cout << "LAPPDStoreReadIn: mergingMode is true but LAPPDanaData is false, set LAPPDana to false" << endl;
+                if (LAPPDLoadStoreVerbosity > 0)
+                    cout << "LAPPDLoadStore: mergingMode is true but LAPPDanaData is false, set LAPPDana to false" << endl;
                 return false;
             }
             if (getData)
@@ -894,7 +902,7 @@ bool LAPPDLoadStore::LoadData()
                 vector<unsigned int> errorcodes = dat.errorcodes;
                 if (errorcodes.size() == 1 && errorcodes[0] == 0x00000000)
                 {
-                    if (LAPPDStoreReadInVerbosity > 1)
+                    if (LAPPDLoadStoreVerbosity > 1)
                         printf("No errorcodes found all good: 0x%08x\n", errorcodes[0]);
                 }
                 else
@@ -918,7 +926,7 @@ bool LAPPDLoadStore::LoadData()
 
 		if (LAPPD_ID>20) {
                     tuple<int, string> queryResult = queryNearestACCID(idConfigRecords, runNumber, LAPPD_ID);
-                    if (LAPPDStoreReadInVerbosity > 2)
+                    if (LAPPDLoadStoreVerbosity > 2)
                         cout << "LAPPDLoadStore: Mapped ManufacturerID  " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
                   
 	      	    LAPPD_ID = get<0>(queryResult);
@@ -927,14 +935,14 @@ bool LAPPDLoadStore::LoadData()
                 if (LAPPD_ID != SelectedLAPPD && SelectSingleLAPPD)
                     return false;
                 m_data->CStore.Set("PsecTimestamp", dat.Timestamp);
-                if (LAPPDStoreReadInVerbosity > 2)
+                if (LAPPDLoadStoreVerbosity > 2)
                 {
                     cout << " Got Data " << endl;
                     dat.Print();
                 }
                 int frameType = static_cast<int>(Raw_buffer.size() / ReadBoards.size());
-                if (LAPPDStoreReadInVerbosity > 0)
-                    cout << "LAPPDStoreReadIn: got Data from CStore, frame type is " << frameType << endl;
+                if (LAPPDLoadStoreVerbosity > 0)
+                    cout << "LAPPDLoadStore: got Data from CStore, frame type is " << frameType << endl;
                 if (loadPSEC)
                 {
                     if (frameType == num_vector_data)
@@ -968,7 +976,7 @@ bool LAPPDLoadStore::LoadData()
 
 	    if (LAPPD_ID>20) {
                 tuple<int, string> queryResult = queryNearestACCID(idConfigRecords, runNumber, LAPPD_ID);
-                if (LAPPDStoreReadInVerbosity > 2)
+                if (LAPPDLoadStoreVerbosity > 2)
                     cout << "LAPPDLoadStore: Mapped ManufacturerID  " << LAPPD_ID << " to ACCID " << get<0>(queryResult) << " for run " << runNumber << endl;
                     
 		LAPPD_ID = get<0>(queryResult);
@@ -980,7 +988,7 @@ bool LAPPDLoadStore::LoadData()
 
             if (Raw_buffer.size() != 0 || ReadBoards.size() != 0)
             {
-                if (LAPPDStoreReadInVerbosity > 0)
+                if (LAPPDLoadStoreVerbosity > 0)
                 {
                     cout << "Getting data length format" << static_cast<int>(Raw_buffer.size() / ReadBoards.size()) << ", psec timestamp is " << dat.Timestamp << endl;
                     cout << "ReadBoards size " << ReadBoards.size() << " Raw_buffer size " << Raw_buffer.size() << " LAPPD_ID " << LAPPD_ID << endl;
@@ -988,7 +996,7 @@ bool LAPPDLoadStore::LoadData()
             }
             else
             {
-                cout << "LAPPDStoreReadIn: loading data with raw buffer size 0 or ReadBoards size 0, skip loading" << endl;
+                cout << "LAPPDLoadStore: loading data with raw buffer size 0 or ReadBoards size 0, skip loading" << endl;
                 cout << "ReadBoards size " << ReadBoards.size() << " Raw_buffer size " << Raw_buffer.size() << " LAPPD_ID " << LAPPD_ID << endl;
 
                 return false;
@@ -997,7 +1005,7 @@ bool LAPPDLoadStore::LoadData()
         }
         else if (DataStreams["LAPPD"] && PsecReceiveMode == 0 && MultiLAPPDMap) // if not receive from cstore, and load multi lappd map
         {
-            if (LAPPDStoreReadInVerbosity > 0)
+            if (LAPPDLoadStoreVerbosity > 0)
                 cout << "LAPPDLoadStore: Loading multiple LAPPD data from ANNIEEvent" << "Inside, size of LAPPDDatamap = " << LAPPDDataMap.size() << endl;
 
             if (LAPPDDataMap.size() == 0)
@@ -1014,7 +1022,7 @@ bool LAPPDLoadStore::LoadData()
 
 void LAPPDLoadStore::ParsePPSData()
 {
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "Loading PPS frame size " << pps.size() << endl;
     std::vector<unsigned short> pps = Raw_buffer;
     std::vector<unsigned long> pps_vector;
@@ -1033,13 +1041,13 @@ void LAPPDLoadStore::ParsePPSData()
         std::bitset<16> bits_pps_31_16(pps_31_16);
         std::bitset<16> bits_pps_15_0(pps_15_0);
         unsigned long pps_63_0 = (static_cast<unsigned long>(pps_63_48) << 48) + (static_cast<unsigned long>(pps_47_32) << 32) + (static_cast<unsigned long>(pps_31_16) << 16) + (static_cast<unsigned long>(pps_15_0));
-        if (LAPPDStoreReadInVerbosity > 0)
+        if (LAPPDLoadStoreVerbosity > 0)
             std::cout << "pps combined: " << pps_63_0 << std::endl;
         std::bitset<64> bits_pps_63_0(pps_63_0);
         // pps_timestamp = pps_63_0 * (CLOCK_to_NSEC); // NOTE: Don't do convert to ns because of the precision, do this in later tools
         pps_timestamp = pps_63_0;
         // LAPPDPPS->push_back(pps_timestamp);
-        if (LAPPDStoreReadInVerbosity > 0)
+        if (LAPPDLoadStoreVerbosity > 0)
             std::cout << "Adding timestamp " << pps_timestamp << " to LAPPDPPS" << std::endl;
         pps_vector.push_back(pps_timestamp);
 
@@ -1048,13 +1056,13 @@ void LAPPDLoadStore::ParsePPSData()
         std::bitset<16> bits_ppscount_31_16(ppscount_31_16);
         std::bitset<16> bits_ppscount_15_0(ppscount_15_0);
         unsigned long ppscount_31_0 = (static_cast<unsigned long>(ppscount_31_16) << 16) + (static_cast<unsigned long>(ppscount_15_0));
-        if (LAPPDStoreReadInVerbosity > 0)
+        if (LAPPDLoadStoreVerbosity > 0)
             std::cout << "pps count combined: " << ppscount_31_0 << std::endl;
         std::bitset<32> bits_ppscount_31_0(ppscount_31_0);
         ppscount = ppscount_31_0;
         pps_count_vector.push_back(ppscount);
 
-        if (LAPPDStoreReadInVerbosity > 8)
+        if (LAPPDLoadStoreVerbosity > 8)
         {
             // Print the bitsets
             cout << "******************************" << endl;
@@ -1098,7 +1106,7 @@ void LAPPDLoadStore::ParsePPSData()
 
 bool LAPPDLoadStore::ParsePSECData()
 {
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         std::cout << "PSEC Data Frame was read! Starting the parsing!" << std::endl;
 
     // while loading single PsecData Object, parse the data by LAPPDID and number of boards on each LAPPD and channel on each board
@@ -1106,18 +1114,21 @@ bool LAPPDLoadStore::ParsePSECData()
     //  the board indices goes with LAPPD ID. For example, LAPPD ID = 2, we will have board = 4,5
     //  this need to be converted to 0,1
     int nbi = ReadBoards.size();
-    if (LAPPDStoreReadInVerbosity > 0 && nbi != 2)
+    if (LAPPDLoadStoreVerbosity > 0 && nbi != 2)
         cout << "Number of board is " << nbi << endl;
     if (nbi == 0)
     {
-        cout << "LAPPDStoreReadIn: error here! number of board is 0" << endl;
+        cout << "LAPPDLoadStore: error here! number of board is 0" << endl;
         errorEventsNumber++;
         return false;
     }
     if (nbi % 2 != 0)
     {
         errorEventsNumber++;
-        cout << "LAPPDStoreReadIn: uneven number of boards in this event" << endl;
+        cout << "LAPPDLoadStore: uneven number of boards in this event" << endl;
+        return false;
+
+        /*
         if (nbi == 1)
         {
             ParaBoards.push_back(ReadBoards[0]);
@@ -1126,18 +1137,19 @@ bool LAPPDLoadStore::ParsePSECData()
         {
             return false;
         }
+        */
     }
     else
     {
         for (int cbi = 0; cbi < nbi; cbi++)
         {
             ParaBoards.push_back(cbi);
-            if (LAPPDStoreReadInVerbosity > 2)
+            if (LAPPDLoadStoreVerbosity > 2)
                 cout << "Board " << cbi << " is added to the list of boards to be parsed!" << endl;
         }
     }
     // loop all boards, 0, 1
-    if (LAPPDStoreReadInVerbosity > 2)
+    if (LAPPDLoadStoreVerbosity > 2)
     {
         cout << "ParaBoards size is " << ParaBoards.size() << endl;
         for (int i = 0; i < ParaBoards.size(); i++)
@@ -1149,7 +1161,7 @@ bool LAPPDLoadStore::ParsePSECData()
     {
         int bi = ParaBoards.at(i) % 2;
         Parse_buffer.clear();
-        if (LAPPDStoreReadInVerbosity > 2)
+        if (LAPPDLoadStoreVerbosity > 2)
             std::cout << "Parsing board with ReadBoards ID" << ReadBoards[bi] << std::endl;
         // Go over all ACDC board data frames by seperating them
         int frametype = static_cast<int>(Raw_buffer.size() / ReadBoards.size());
@@ -1157,20 +1169,20 @@ bool LAPPDLoadStore::ParsePSECData()
         {
             Parse_buffer.push_back(Raw_buffer[c]);
         }
-        if (LAPPDStoreReadInVerbosity > 2)
+        if (LAPPDLoadStoreVerbosity > 2)
             std::cout << "Data for " << i << "_th board with board number = " << ReadBoards[bi] << " was grabbed!" << std::endl;
 
         // Grab the parsed data and give it to a global variable 'data'
         // insert the data start with channel number 30*ReadBoards[bi]
         // for instance, when bi=0 , LAPPD ID = 2, ReadBoards[bi] = 4, insert to channel number start with 120, to 150
         int channelShift = bi * NUM_CH + LAPPD_ID * NUM_CH * 2;
-	if (LAPPDStoreReadInVerbosity > 2) 
+	if (LAPPDLoadStoreVerbosity > 2) 
 	    std::cout << "bi= " << bi << ", LAPPD_ID= " << LAPPD_ID << ", NUM_CH= " << NUM_CH << ", channelShift= " << channelShift << std::endl;
 
 	retval = getParsedData(Parse_buffer, channelShift); //(because there are only 2 boards, so it's 0*30 or 1*30). Inserting the channel number start from this then ++ to 30
         if (retval == 0)
         {
-            if (LAPPDStoreReadInVerbosity > 2)
+            if (LAPPDLoadStoreVerbosity > 2)
                 std::cout << "Data for board with number = " << ReadBoards[bi] << " was parsed with channel shift " << channelShift << endl;
             // Grab the parsed metadata and give it to a global variable 'meta'
             retval = getParsedMeta(Parse_buffer, bi + LAPPD_ID * 2);
@@ -1181,7 +1193,7 @@ bool LAPPDLoadStore::ParsePSECData()
             }
             else
             {
-                if (LAPPDStoreReadInVerbosity > 2)
+                if (LAPPDLoadStoreVerbosity > 2)
                     std::cout << "Meta for board " << ReadBoards[bi] << " was parsed!" << std::endl;
             }
         }
@@ -1194,7 +1206,7 @@ bool LAPPDLoadStore::ParsePSECData()
 
 
     LAPPDEventIndex_ID[LAPPD_ID] += 1;
-    if (LAPPDStoreReadInVerbosity > 1)
+    if (LAPPDLoadStoreVerbosity > 1)
     {
         cout << "Adding one new event with LAPPD_ID = " << LAPPD_ID << " to the LAPPDEventIndex_ID, now it is: " << endl;
         for (int i = 0; i < LAPPDEventIndex_ID.size(); i++)
@@ -1204,21 +1216,21 @@ bool LAPPDLoadStore::ParsePSECData()
         cout << endl;
     }
 
-    if (LAPPDStoreReadInVerbosity > 2)
+    if (LAPPDLoadStoreVerbosity > 2)
         cout << "Parsed all boards for this event finished" << endl;
     return true;
 }
 
 bool LAPPDLoadStore::DoPedestalSubtract()
 {
-    if (LAPPDStoreReadInVerbosity > 0)
+    if (LAPPDLoadStoreVerbosity > 0)
         cout << "LAPPDLoadStore::DoPedestalSubtract()" << endl;
     if (DoPedSubtract == 0)
         return true;
     Waveform<double> tmpWave;
     vector<Waveform<double>> VecTmpWave;
     int pedval, val;
-    if (LAPPDStoreReadInVerbosity > 3)
+    if (LAPPDLoadStoreVerbosity > 3)
     {
         // print the size of data and all keys, and the size of PedestalValues and all keys
         cout << "Size of data is " << data.size() << endl;
@@ -1238,7 +1250,7 @@ bool LAPPDLoadStore::DoPedestalSubtract()
     for (std::map<int, vector<unsigned short>>::iterator it = data.begin(); it != data.end(); ++it) // looping over the data map by channel number, from 0 to 60
     {
         int wrongPedChannel = 0;
-        if (LAPPDStoreReadInVerbosity > 5)
+        if (LAPPDLoadStoreVerbosity > 5)
             cout << "Do Pedestal sub at Channel " << it->first;
 
         for (int kvec = 0; kvec < it->second.size(); kvec++)
@@ -1246,7 +1258,7 @@ bool LAPPDLoadStore::DoPedestalSubtract()
             if (DoPedSubtract == 1)
             {
                 auto iter = PedestalValues->find((it->first));
-                if (kvec == 0 && LAPPDStoreReadInVerbosity > 5)
+                if (kvec == 0 && LAPPDLoadStoreVerbosity > 5)
                     cout << std::fixed << ", found PedestalValues for channel " << it->first << " with value = " << iter->second.at(0);
                 if (iter != PedestalValues->end() && iter->second.size() > kvec)
                 {
@@ -1264,7 +1276,7 @@ bool LAPPDLoadStore::DoPedestalSubtract()
             }
             val = it->second.at(kvec);
             tmpWave.PushSample(0.3 * (double)(val - pedval));
-            if (LAPPDStoreReadInVerbosity > 5 && kvec < 10)
+            if (LAPPDLoadStoreVerbosity > 5 && kvec < 10)
                 cout << ", " << val << "-" << pedval << "=" << 0.3 * (double)(val - pedval);
         }
         if (wrongPedChannel != 0)
@@ -1336,8 +1348,8 @@ void LAPPDLoadStore::SaveTimeStamps()
     m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_Raw", beamgate_63_0);
     m_data->Stores["ANNIEEvent"]->Set("LAPPDTimestamp_Raw", timestamp_63_0);
 
-    if (LAPPDStoreReadInVerbosity > 11)
-        debugStoreReadIn << eventNo << " LAPPDStoreReadIn, Saving timestamps, beamgate_timestamp: " << beamgate_63_0 << ", lappd_timestamp: " << timestamp_63_0 << endl;
+    if (LAPPDLoadStoreVerbosity > 11)
+        debugLoadStore << eventNo << " LAPPDLoadStore, Saving timestamps, beamgate_timestamp: " << beamgate_63_0 << ", lappd_timestamp: " << timestamp_63_0 << endl;
 
     if (loadOffsets && runInfoLoaded)
     {
@@ -1357,8 +1369,8 @@ void LAPPDLoadStore::SaveOffsets()
         LAPPDEventIndex_ID.resize(LoadingOffsetID+1);
     }
     int GetOffsetIndex_byID = LAPPDEventIndex_ID[LoadingOffsetID];
-    if(LAPPDStoreReadInVerbosity>0)
-        cout << "LAPPDStoreReadIn, SavingOffsets, LoadingOffset for LAPPD_ID: " << LoadingOffsetID << ", OffsetIndex of this event: " << GetOffsetIndex_byID << endl;
+    if(LAPPDLoadStoreVerbosity>0)
+        cout << "LAPPDLoadStore, SavingOffsets, LoadingOffset for LAPPD_ID: " << LoadingOffsetID << ", OffsetIndex of this event: " << GetOffsetIndex_byID << endl;
 
     std::string key = std::to_string(runNumber) + "_" + std::to_string(subRunNumber) + "_" + std::to_string(partFileNumber) + "_" + std::to_string(LAPPD_ID);
 
@@ -1558,10 +1570,10 @@ void LAPPDLoadStore::SaveOffsets()
         cout << "LAPPDLoadStore: BG_PPSMissing != TS_PPSMissing, BG_PPSMissing: " << BG_PPSMissing << ", TS_PPSMissing: " << TS_PPSMissing << endl;
     }
 
-    // cout << "LAPPDStoreReadIn, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << ", BG_PPSBefore: " << BG_PPSBefore << ", BG_PPSAfter: " << BG_PPSAfter << ", BG_PPSDiff: " << BG_PPSDiff << ", BG_PPSMissing: " << BG_PPSMissing << ", TS_PPSBefore: " << TS_PPSBefore << ", TS_PPSAfter: " << TS_PPSAfter << ", TS_PPSDiff: " << TS_PPSDiff << ", TS_PPSMissing: " << TS_PPSMissing << endl;
+    // cout << "LAPPDLoadStore, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << ", BG_PPSBefore: " << BG_PPSBefore << ", BG_PPSAfter: " << BG_PPSAfter << ", BG_PPSDiff: " << BG_PPSDiff << ", BG_PPSMissing: " << BG_PPSMissing << ", TS_PPSBefore: " << TS_PPSBefore << ", TS_PPSAfter: " << TS_PPSAfter << ", TS_PPSDiff: " << TS_PPSDiff << ", TS_PPSMissing: " << TS_PPSMissing << endl;
 
-    if (LAPPDStoreReadInVerbosity > 11)
-        debugStoreReadIn << eventNo << "+LAPPDStoreReadIn, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << endl;
+    if (LAPPDLoadStoreVerbosity > 11)
+        debugLoadStore << eventNo << "+LAPPDLoadStore, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << endl;
 }
 
 void LAPPDLoadStore::LoadOffsetsAndCorrections()
@@ -1580,7 +1592,7 @@ void LAPPDLoadStore::LoadOffsetsAndCorrections()
 
     if (!tree)
     {
-        std::cerr << "LAPPDStoreReadIn Loading offsets, Tree not found!" << std::endl;
+        std::cerr << "LAPPDLoadStore Loading offsets, Tree not found!" << std::endl;
         return;
     }
 
@@ -1620,7 +1632,7 @@ void LAPPDLoadStore::LoadOffsetsAndCorrections()
     tree->SetBranchAddress("BG_driftCorrection_ns", &BG_driftCorrection_ns);
 
     Long64_t nentries = tree->GetEntries();
-    cout << "LAPPDStoreReadIn Loading offsets and corrections, total entries: " << nentries << endl;
+    cout << "LAPPDLoadStore Loading offsets and corrections, total entries: " << nentries << endl;
     for (Long64_t i = 0; i < nentries; ++i)
     {
         tree->GetEntry(i);
@@ -1661,7 +1673,7 @@ void LAPPDLoadStore::LoadOffsetsAndCorrections()
 
         if (nentries > 10 && i % (static_cast<int>(nentries / 10)) == 0)
         {
-            cout << "LAPPDStoreReadIn Loading offsets and corrections, " << i << " entries loaded" << endl;
+            cout << "LAPPDLoadStore Loading offsets and corrections, " << i << " entries loaded" << endl;
             cout << "Printing key: " << key << ", EventIndex: " << EventIndex << ", final_offset_ns_0: " << final_offset_ns_0 << ", final_offset_ps_negative_0: " << final_offset_ps_negative_0 << ", BGCorrection_tick: " << BGCorrection_tick << ", TSCorrection_tick: " << TSCorrection_tick << ", BG_PPSMissing_tick: " << BG_PPSMissing_tick << ", TS_PPSMissing_tick: " << TS_PPSMissing_tick << ", TS_driftCorrection_ns: " << TS_driftCorrection_ns << ", BG_driftCorrection_ns: " << BG_driftCorrection_ns << endl;
         }
     }
@@ -1674,8 +1686,8 @@ void LAPPDLoadStore::LoadOffsetsAndCorrections()
 
 void LAPPDLoadStore::LoadRunInfo()
 {
-    if (LAPPDStoreReadInVerbosity > 0)
-        cout << "LAPPDStoreReadIn, Loading run info" << endl;
+    if (LAPPDLoadStoreVerbosity > 0)
+        cout << "LAPPDLoadStore, Loading run info" << endl;
     int PFNumberBeforeGet = partFileNumber;
     m_data->CStore.Get("rawFileNumber", partFileNumber);
     m_data->CStore.Get("runNumber", runNumber);
@@ -1694,19 +1706,19 @@ void LAPPDLoadStore::LoadRunInfo()
     {
         eventNumberInPF++;
     }
-    if (LAPPDStoreReadInVerbosity > 0)
-        cout << "LAPPDStoreReadIn, Loaded run info, runNumber: " << runNumber << ", subRunNumber: " << subRunNumber << ", partFileNumber: " << partFileNumber << ", eventNumberInPF: " << eventNumberInPF << endl;
+    if (LAPPDLoadStoreVerbosity > 0)
+        cout << "LAPPDLoadStore, Loaded run info, runNumber: " << runNumber << ", subRunNumber: " << subRunNumber << ", partFileNumber: " << partFileNumber << ", eventNumberInPF: " << eventNumberInPF << endl;
 
     if (runNumber<1) {
-        if (LAPPDStoreReadInVerbosity > 1)
-            cout << "LAPPDStoreReadIn, runNumber is "<< runNumber << ", trying to get from ANNIEEvent Store" << endl;
+        if (LAPPDLoadStoreVerbosity > 1)
+            cout << "LAPPDLoadStore, runNumber is "<< runNumber << ", trying to get from ANNIEEvent Store" << endl;
        
        	m_data->Stores["ANNIEEvent"]->Get("RunNumber", runNumber);
         m_data->Stores["ANNIEEvent"]->Get("SubRunNumber", subRunNumber);
         m_data->Stores["ANNIEEvent"]->Get("PartNumber", partFileNumber);
        
-       	if (LAPPDStoreReadInVerbosity > 1)
-            cout << "LAPPDStoreReadIn, Got run info from ANNIEEvent Store, runNumber: " << runNumber << ", subRunNumber: " << subRunNumber << ", partFileNumber: " << partFileNumber << endl;
+       	if (LAPPDLoadStoreVerbosity > 1)
+            cout << "LAPPDLoadStore, Got run info from ANNIEEvent Store, runNumber: " << runNumber << ", subRunNumber: " << subRunNumber << ", partFileNumber: " << partFileNumber << endl;
     }
 }
 
@@ -1754,7 +1766,10 @@ tuple<int, string> LAPPDLoadStore::queryNearestACCID(const vector<IDConfigRecord
         }
     }
 
-    if (bestRun == -1)
+    if (bestRun == -1) {
+        Log("LAPPDLoadStore: no ACC ID found for ManufacturerID " + std::to_string(manufacturerID) 
+            + " at run " + std::to_string(targetRun) +" in ACCIDConfigFile. Stopping the toolchain.", v_error, LAPPDLoadStoreVerbosity);
         return {-1, ""};
+    }
     return {bestACCID, bestPosition};
 }
