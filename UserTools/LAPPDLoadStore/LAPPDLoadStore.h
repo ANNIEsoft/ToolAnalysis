@@ -57,7 +57,7 @@ private:
     int Nboards;           	// total number of boards to load pedestal file, LAPPD count * 2
     string PedFileNameTXT; 	// txt format pedestal file name
     int DoPedSubtract;     	// 1: do pedestal subtraction, 0: don't do pedestal subtraction
-    int LAPPDLoadStoreVerbosity;
+    int LAPPDLoadStoreVerbosity = 0;
     int num_vector_data;
     int num_vector_pps;
     bool SelectSingleLAPPD;

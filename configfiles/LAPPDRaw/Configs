@@ -8,7 +8,7 @@ NUM_VECTOR_METADATA 103 #Fixed META vector size
 LAPPDchannelOffset 1000
 NChannels 30
 
-LAPPDStoreReadInVerbosity 0
+LAPPDLoadStoreVerbosity 0
 
 mergingModeReadIn 0
 RawDataInputWavLabel RawWaveform
