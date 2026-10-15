@@ -267,8 +267,8 @@ bool EBLAPPD::LoadLAPPDData()
   m_data->CStore.Get("LAPPDOffset_0", LAPPDOffset_0);
 
   // Convert to ns
-  LAPPDBeamgate_ns_0 = (LAPPDBeamgate_Raw_0 + LAPPDBGCorrection_0) * 3.125 + LAPPDOffset_0;
-  LAPPDTimestamp_ns_0 = (LAPPDTimestamp_Raw_0 + LAPPDTSCorrection_0) * 3.125 + LAPPDOffset_0;
+  LAPPDBeamgate_ns_0 = static_cast<uint64_t>((LAPPDBeamgate_Raw_0 + LAPPDBGCorrection_0) * 3.125) + LAPPDOffset_0;
+  LAPPDTimestamp_ns_0 = static_cast<uint64_t>((LAPPDTimestamp_Raw_0 + LAPPDTSCorrection_0) * 3.125) + LAPPDOffset_0;
 
   m_data->CStore.Get("BG_PPSBefore_0", LAPPDBG_PPSBefore_0);
   m_data->CStore.Get("BG_PPSAfter_0", LAPPDBG_PPSAfter_0);
@@ -288,8 +288,8 @@ bool EBLAPPD::LoadLAPPDData()
   m_data->CStore.Get("LAPPDOffset_1", LAPPDOffset_1);
 
   // Convert to ns
-  LAPPDBeamgate_ns_1 = (LAPPDBeamgate_Raw_1 + LAPPDBGCorrection_1) * 3.125 + LAPPDOffset_1;
-  LAPPDTimestamp_ns_1 = (LAPPDTimestamp_Raw_1 + LAPPDTSCorrection_1) * 3.125 + LAPPDOffset_1;
+  LAPPDBeamgate_ns_1 = static_cast<uint64_t>((LAPPDBeamgate_Raw_1 + LAPPDBGCorrection_1) * 3.125) + LAPPDOffset_1;
+  LAPPDTimestamp_ns_1 = static_cast<uint64_t>((LAPPDTimestamp_Raw_1 + LAPPDTSCorrection_1) * 3.125) + LAPPDOffset_1;
 
   m_data->CStore.Get("BG_PPSBefore_1", LAPPDBG_PPSBefore_1);
   m_data->CStore.Get("BG_PPSAfter_1", LAPPDBG_PPSAfter_1);
