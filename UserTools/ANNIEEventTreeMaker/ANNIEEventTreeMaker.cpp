@@ -1609,6 +1609,7 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
     for (it = lappdPulses.begin(); it != lappdPulses.end(); it++)
     {
       int stripno = it->first;
+      
       vector<vector<LAPPDPulse>> stripPulses = it->second;
 
       vector<LAPPDPulse> pulse0 = stripPulses.at(0);
@@ -1680,6 +1681,7 @@ void ANNIEEventTreeMaker::FillLAPPDHit()
     for (it = lappdHits.begin(); it != lappdHits.end(); it++)
     {
       int stripno = it->first;
+
       vector<LAPPDHit> stripHits = it->second;
       for (int i = 0; i < stripHits.size(); i++)
       {
@@ -2761,8 +2763,7 @@ void ANNIEEventTreeMaker::FillLAPPDWaveform()
     // get the waveforms from channel number
     unsigned long channel = it->first;
     channel = channel % 1000 + 1000;
-    if ((channel % 1000) % 30 == 5)
-      continue;
+    
     Waveform<double> waveforms = it->second.at(0);
     vector<double> wav = *waveforms.GetSamples();
     vector<double> wave = wav;

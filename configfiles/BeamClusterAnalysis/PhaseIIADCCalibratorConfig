@@ -1,4 +1,3 @@
-# Dummy config file
 verbosity 0
 
 BaselineEstimationType ze3ra_multi
@@ -9,3 +8,5 @@ SamplesPerBaselineEstimate 2000
 BaselineUncertaintyTolerance 2
 PCritical 0.01
 MakeCalLEDWaveforms 0
+
+EventBuilding 0
