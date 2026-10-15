@@ -103,7 +103,7 @@ bool PrintDQ::Finalise()
     float_t clusters_in_spill = totalclusters_in_spill * 100 / totalclusters;                  
     float_t clusters_in_prompt = totalclusters_in_prompt * 100 / totalclusters;
     float_t clusters_in_ext = totalclusters_in_ext * 100 / totalclusters;
-    float_t okay_pps_quality = totalPassPPS_check * 100 / totalhas_lappd;
+    float_t okay_pps_quality = (totalhas_lappd > 0) ? totalPassPPS_check * 100 / totalhas_lappd : 0;    
 
     if (verbosity >= v_debug) {
         std::cout << "PrintDQ: Calculating errors" << std::endl;
