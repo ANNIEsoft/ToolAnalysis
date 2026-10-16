@@ -119,14 +119,24 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     if(LAPPDData_fill)
     {
       fPhaseIITankClusterTree->Branch("LAPPD_ID",&fLAPPD_ID);
-      fPhaseIITankClusterTree->Branch("LAPPD_Beamgate_ns",&fLAPPD_Beamgate_ns);
-      fPhaseIITankClusterTree->Branch("LAPPD_Timestamp_ns",&fLAPPD_Timestamp_ns);
-      fPhaseIITankClusterTree->Branch("LAPPD_Beamgate_Raw",&fLAPPD_Beamgate_Raw);
-      fPhaseIITankClusterTree->Branch("LAPPD_Timestamp_Raw",&fLAPPD_Timestamp_Raw);
-      fPhaseIITankClusterTree->Branch("LAPPD_Offset",&fLAPPD_Offset);
-      fPhaseIITankClusterTree->Branch("LAPPD_TSCorrection",&fLAPPD_TSCorrection);
-      fPhaseIITankClusterTree->Branch("LAPPD_BGCorrection",&fLAPPD_BGCorrection);
-      fPhaseIITankClusterTree->Branch("LAPPD_OSInMinusPS",&fLAPPD_OSInMinusPS);
+      
+      fPhaseIITankClusterTree->Branch("LAPPD_Beamgate_ns_0",&fLAPPD_Beamgate_ns_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_Timestamp_ns_0",&fLAPPD_Timestamp_ns_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_Beamgate_Raw_0",&fLAPPD_Beamgate_Raw_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_Timestamp_Raw_0",&fLAPPD_Timestamp_Raw_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_Offset_0",&fLAPPD_Offset_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_TSCorrection_0",&fLAPPD_TSCorrection_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_BGCorrection_0",&fLAPPD_BGCorrection_0);
+      fPhaseIITankClusterTree->Branch("LAPPD_OSInMinusPS_0",&fLAPPD_OSInMinusPS_0);
+
+      fPhaseIITankClusterTree->Branch("LAPPD_Beamgate_ns_1",&fLAPPD_Beamgate_ns_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_Timestamp_ns_1",&fLAPPD_Timestamp_ns_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_Beamgate_Raw_1",&fLAPPD_Beamgate_Raw_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_Timestamp_Raw_1",&fLAPPD_Timestamp_Raw_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_Offset_1",&fLAPPD_Offset_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_TSCorrection_1",&fLAPPD_TSCorrection_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_BGCorrection_1",&fLAPPD_BGCorrection_1);
+      fPhaseIITankClusterTree->Branch("LAPPD_OSInMinusPS_1",&fLAPPD_OSInMinusPS_1);
 
       fPhaseIITankClusterTree->Branch("GroupedTriggerTime",&fGroupedTriggerTime);
       fPhaseIITankClusterTree->Branch("GroupedTriggerWord",&fGroupedTriggerWord);
@@ -229,14 +239,24 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     if(LAPPDData_fill)
     {
       fPhaseIIMRDClusterTree->Branch("LAPPD_ID",&fLAPPD_ID);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_Beamgate_ns",&fLAPPD_Beamgate_ns);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_Timestamp_ns",&fLAPPD_Timestamp_ns);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_Beamgate_Raw",&fLAPPD_Beamgate_Raw);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_Timestamp_Raw",&fLAPPD_Timestamp_Raw);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_Offset",&fLAPPD_Offset);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_TSCorrection",&fLAPPD_TSCorrection);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_BGCorrection",&fLAPPD_BGCorrection);
-      fPhaseIIMRDClusterTree->Branch("LAPPD_OSInMinusPS",&fLAPPD_OSInMinusPS);
+      
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Beamgate_ns_0",&fLAPPD_Beamgate_ns_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Timestamp_ns_0",&fLAPPD_Timestamp_ns_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Beamgate_Raw_0",&fLAPPD_Beamgate_Raw_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Timestamp_Raw_0",&fLAPPD_Timestamp_Raw_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Offset_0",&fLAPPD_Offset_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_TSCorrection_0",&fLAPPD_TSCorrection_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_BGCorrection_0",&fLAPPD_BGCorrection_0);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_OSInMinusPS_0",&fLAPPD_OSInMinusPS_0);
+
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Beamgate_ns_1",&fLAPPD_Beamgate_ns_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Timestamp_ns_1",&fLAPPD_Timestamp_ns_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Beamgate_Raw_1",&fLAPPD_Beamgate_Raw_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Timestamp_Raw_1",&fLAPPD_Timestamp_Raw_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_Offset_1",&fLAPPD_Offset_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_TSCorrection_1",&fLAPPD_TSCorrection_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_BGCorrection_1",&fLAPPD_BGCorrection_1);
+      fPhaseIIMRDClusterTree->Branch("LAPPD_OSInMinusPS_1",&fLAPPD_OSInMinusPS_1);
 
       fPhaseIIMRDClusterTree->Branch("GroupedTriggerTime",&fGroupedTriggerTime);
       fPhaseIIMRDClusterTree->Branch("GroupedTriggerWord",&fGroupedTriggerWord);
@@ -604,14 +624,24 @@ bool PhaseIITreeMaker::Initialise(std::string configfile, DataModel &data){
     if(LAPPDData_fill)
     {
       fPhaseIITrigTree->Branch("LAPPD_ID",&fLAPPD_ID);
-      fPhaseIITrigTree->Branch("LAPPD_Beamgate_ns",&fLAPPD_Beamgate_ns);
-      fPhaseIITrigTree->Branch("LAPPD_Timestamp_ns",&fLAPPD_Timestamp_ns);
-      fPhaseIITrigTree->Branch("LAPPD_Beamgate_Raw",&fLAPPD_Beamgate_Raw);
-      fPhaseIITrigTree->Branch("LAPPD_Timestamp_Raw",&fLAPPD_Timestamp_Raw);
-      fPhaseIITrigTree->Branch("LAPPD_Offset",&fLAPPD_Offset);
-      fPhaseIITrigTree->Branch("LAPPD_TSCorrection",&fLAPPD_TSCorrection);
-      fPhaseIITrigTree->Branch("LAPPD_BGCorrection",&fLAPPD_BGCorrection);
-      fPhaseIITrigTree->Branch("LAPPD_OSInMinusPS",&fLAPPD_OSInMinusPS);
+      
+      fPhaseIITrigTree->Branch("LAPPD_Beamgate_ns_0",&fLAPPD_Beamgate_ns_0);
+      fPhaseIITrigTree->Branch("LAPPD_Timestamp_ns_0",&fLAPPD_Timestamp_ns_0);
+      fPhaseIITrigTree->Branch("LAPPD_Beamgate_Raw_0",&fLAPPD_Beamgate_Raw_0);
+      fPhaseIITrigTree->Branch("LAPPD_Timestamp_Raw_0",&fLAPPD_Timestamp_Raw_0);
+      fPhaseIITrigTree->Branch("LAPPD_Offset_0",&fLAPPD_Offset_0);
+      fPhaseIITrigTree->Branch("LAPPD_TSCorrection_0",&fLAPPD_TSCorrection_0);
+      fPhaseIITrigTree->Branch("LAPPD_BGCorrection_0",&fLAPPD_BGCorrection_0);
+      fPhaseIITrigTree->Branch("LAPPD_OSInMinusPS_0",&fLAPPD_OSInMinusPS_0);
+
+      fPhaseIITrigTree->Branch("LAPPD_Beamgate_ns_1",&fLAPPD_Beamgate_ns_1);
+      fPhaseIITrigTree->Branch("LAPPD_Timestamp_ns_1",&fLAPPD_Timestamp_ns_1);
+      fPhaseIITrigTree->Branch("LAPPD_Beamgate_Raw_1",&fLAPPD_Beamgate_Raw_1);
+      fPhaseIITrigTree->Branch("LAPPD_Timestamp_Raw_1",&fLAPPD_Timestamp_Raw_1);
+      fPhaseIITrigTree->Branch("LAPPD_Offset_1",&fLAPPD_Offset_1);
+      fPhaseIITrigTree->Branch("LAPPD_TSCorrection_1",&fLAPPD_TSCorrection_1);
+      fPhaseIITrigTree->Branch("LAPPD_BGCorrection_1",&fLAPPD_BGCorrection_1);
+      fPhaseIITrigTree->Branch("LAPPD_OSInMinusPS_1",&fLAPPD_OSInMinusPS_1);
 
       fPhaseIITrigTree->Branch("GroupedTriggerTime",&fGroupedTriggerTime);
       fPhaseIITrigTree->Branch("GroupedTriggerWord",&fGroupedTriggerWord);
@@ -1526,24 +1556,44 @@ void PhaseIITreeMaker::ResetVariables() {
 
   if(LAPPDData_fill){
     LAPPDDataMap.clear();
-    LAPPDBeamgate_ns.clear();
-    LAPPDTimeStamps_ns.clear();
-    LAPPDTimeStampsRaw.clear();
-    LAPPDBeamgatesRaw.clear();
-    LAPPDOffsets.clear();
-    LAPPDTSCorrection.clear();
-    LAPPDBGCorrection.clear();
-    LAPPDOSInMinusPS.clear();
+   
+    LAPPDBeamgate_ns_0.clear();
+    LAPPDTimeStamps_ns_0.clear();
+    LAPPDTimeStampsRaw_0.clear();
+    LAPPDBeamgatesRaw_0.clear();
+    LAPPDOffsets_0.clear();
+    LAPPDTSCorrection_0.clear();
+    LAPPDBGCorrection_0.clear();
+    LAPPDOSInMinusPS_0.clear();
+
+    LAPPDBeamgate_ns_1.clear();
+    LAPPDTimeStamps_ns_1.clear();
+    LAPPDTimeStampsRaw_1.clear();
+    LAPPDBeamgatesRaw_1.clear();
+    LAPPDOffsets_1.clear();
+    LAPPDTSCorrection_1.clear();
+    LAPPDBGCorrection_1.clear();
+    LAPPDOSInMinusPS_1.clear();
 
     fLAPPD_ID.clear();
-    fLAPPD_Beamgate_ns.clear();
-    fLAPPD_Timestamp_ns.clear();
-    fLAPPD_Beamgate_Raw.clear();
-    fLAPPD_Timestamp_Raw.clear();
-    fLAPPD_Offset.clear();
-    fLAPPD_TSCorrection.clear();
-    fLAPPD_BGCorrection.clear();
-    fLAPPD_OSInMinusPS.clear();
+   
+    fLAPPD_Beamgate_ns_0.clear();
+    fLAPPD_Timestamp_ns_0.clear();
+    fLAPPD_Beamgate_Raw_0.clear();
+    fLAPPD_Timestamp_Raw_0.clear();
+    fLAPPD_Offset_0.clear();
+    fLAPPD_TSCorrection_0.clear();
+    fLAPPD_BGCorrection_0.clear();
+    fLAPPD_OSInMinusPS_0.clear();
+
+    fLAPPD_Beamgate_ns_1.clear();
+    fLAPPD_Timestamp_ns_1.clear();
+    fLAPPD_Beamgate_Raw_1.clear();
+    fLAPPD_Timestamp_Raw_1.clear();
+    fLAPPD_Offset_1.clear();
+    fLAPPD_TSCorrection_1.clear();
+    fLAPPD_BGCorrection_1.clear();
+    fLAPPD_OSInMinusPS_1.clear();
 
     GroupedTrigger.clear();
 
@@ -2570,14 +2620,23 @@ for (std::map<uint64_t, PsecData>::iterator it = LAPPDDataMap.begin(); it != LAP
 
     fLAPPD_ID.push_back(psecData.LAPPD_ID);
 
-    fLAPPD_Beamgate_ns.push_back(LAPPDBeamgate_ns[key]);
-    fLAPPD_Timestamp_ns.push_back(LAPPDTimeStamps_ns[key]);
-    fLAPPD_Beamgate_Raw.push_back(LAPPDBeamgatesRaw[key]);
-    fLAPPD_Timestamp_Raw.push_back(LAPPDTimeStampsRaw[key]);
-    fLAPPD_Offset.push_back(LAPPDOffsets[key]);
-    fLAPPD_TSCorrection.push_back(LAPPDTSCorrection[key]);
-    fLAPPD_BGCorrection.push_back(LAPPDBGCorrection[key]);
-    fLAPPD_OSInMinusPS.push_back(LAPPDOSInMinusPS[key]);
+    fLAPPD_Beamgate_ns_0.push_back(LAPPDBeamgate_ns_0[key]);
+    fLAPPD_Timestamp_ns_0.push_back(LAPPDTimeStamps_ns_0[key]);
+    fLAPPD_Beamgate_Raw_0.push_back(LAPPDBeamgatesRaw_0[key]);
+    fLAPPD_Timestamp_Raw_0.push_back(LAPPDTimeStampsRaw_0[key]);
+    fLAPPD_Offset_0.push_back(LAPPDOffsets_0[key]);
+    fLAPPD_TSCorrection_0.push_back(LAPPDTSCorrection_0[key]);
+    fLAPPD_BGCorrection_0.push_back(LAPPDBGCorrection_0[key]);
+    fLAPPD_OSInMinusPS_0.push_back(LAPPDOSInMinusPS_0[key]);
+
+    fLAPPD_Beamgate_ns_1.push_back(LAPPDBeamgate_ns_1[key]);
+    fLAPPD_Timestamp_ns_1.push_back(LAPPDTimeStamps_ns_1[key]);
+    fLAPPD_Beamgate_Raw_1.push_back(LAPPDBeamgatesRaw_1[key]);
+    fLAPPD_Timestamp_Raw_1.push_back(LAPPDTimeStampsRaw_1[key]);
+    fLAPPD_Offset_1.push_back(LAPPDOffsets_1[key]);
+    fLAPPD_TSCorrection_1.push_back(LAPPDTSCorrection_1[key]);
+    fLAPPD_BGCorrection_1.push_back(LAPPDBGCorrection_1[key]);
+    fLAPPD_OSInMinusPS_1.push_back(LAPPDOSInMinusPS_1[key]);
   }
 
   //cout<<"Grouped Trigger Size: "<<GroupedTrigger.size()<<endl;
@@ -2595,15 +2654,24 @@ for (std::map<uint64_t, PsecData>::iterator it = LAPPDDataMap.begin(); it != LAP
 void PhaseIITreeMaker::LoadLAPPDData()
 {
   m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", LAPPDDataMap);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
   
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_0", LAPPDBeamgatesRaw_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_0", LAPPDOffsets_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_0", LAPPDTSCorrection_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_0", LAPPDBGCorrection_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_0", LAPPDOSInMinusPS_0);
+
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_1", LAPPDBeamgate_ns_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_1", LAPPDBeamgatesRaw_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_1", LAPPDOffsets_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_1", LAPPDTSCorrection_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_1", LAPPDBGCorrection_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_1", LAPPDOSInMinusPS_1);
   
   m_data->Stores["ANNIEEvent"]->Get("GroupedTrigger", GroupedTrigger);
   if(LAPPDDataMap.size() != 0)

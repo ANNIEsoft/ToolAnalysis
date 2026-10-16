@@ -29,10 +29,12 @@
 /**
  * \class ANNIEEventTreeMaker
  *
- *
  * $Author: Yue Feng $
  * $Date: 2024/8 $
  * Contact: yuef@iastate.edu
+ *
+ * Updated by: Anuj Gupta (2026.09.07)
+ *
  */
 
 class ANNIEEventTreeMaker : public Tool
@@ -108,7 +110,6 @@ private:
 
     // What events will be filled - status
     bool fillCleanEventsOnly = 0; // Only output events not flagged by EventSelector tool
-    bool fillLAPPDEventsOnly = 0; // Only fill events with LAPPD data
 
     // What information will be filled
     bool TankHitInfo_fill = 1;
@@ -225,22 +226,41 @@ private:
     int fLAPPD_Count;
     vector<int> fLAPPD_ID;
     vector<string> fLAPPD_Position;
-    vector<uint64_t> fLAPPD_Beamgate_ns;
-    vector<uint64_t> fLAPPD_Timestamp_ns;
-    vector<uint64_t> fLAPPD_Beamgate_Raw;
-    vector<uint64_t> fLAPPD_Timestamp_Raw;
-    vector<uint64_t> fLAPPD_Offset;
-    vector<int> fLAPPD_TSCorrection;
-    vector<int> fLAPPD_BGCorrection;
-    vector<int> fLAPPD_OSInMinusPS;
-    vector<uint64_t> fLAPPD_BGPPSBefore;
-    vector<uint64_t> fLAPPD_BGPPSAfter;
-    vector<uint64_t> fLAPPD_BGPPSDiff;
-    vector<int> fLAPPD_BGPPSMissing;
-    vector<uint64_t> fLAPPD_TSPPSBefore;
-    vector<uint64_t> fLAPPD_TSPPSAfter;
-    vector<uint64_t> fLAPPD_TSPPSDiff;
-    vector<int> fLAPPD_TSPPSMissing;
+    
+    vector<uint64_t> fLAPPD_Beamgate_ns_0;
+    vector<uint64_t> fLAPPD_Timestamp_ns_0;
+    vector<uint64_t> fLAPPD_Beamgate_Raw_0;
+    vector<uint64_t> fLAPPD_Timestamp_Raw_0;
+    vector<uint64_t> fLAPPD_Offset_0;
+    vector<int> fLAPPD_TSCorrection_0;
+    vector<int> fLAPPD_BGCorrection_0;
+    vector<int> fLAPPD_OSInMinusPS_0;
+    vector<uint64_t> fLAPPD_Beamgate_ns_1;
+    vector<uint64_t> fLAPPD_Timestamp_ns_1;
+    vector<uint64_t> fLAPPD_Beamgate_Raw_1;
+    vector<uint64_t> fLAPPD_Timestamp_Raw_1;
+    vector<uint64_t> fLAPPD_Offset_1;
+    vector<int> fLAPPD_TSCorrection_1;
+    vector<int> fLAPPD_BGCorrection_1;
+    vector<int> fLAPPD_OSInMinusPS_1;
+
+    vector<uint64_t> fLAPPD_BGPPSBefore_0;
+    vector<uint64_t> fLAPPD_BGPPSAfter_0;
+    vector<uint64_t> fLAPPD_BGPPSDiff_0;
+    vector<int> fLAPPD_BGPPSMissing_0;
+    vector<uint64_t> fLAPPD_TSPPSBefore_0;
+    vector<uint64_t> fLAPPD_TSPPSAfter_0;
+    vector<uint64_t> fLAPPD_TSPPSDiff_0;
+    vector<int> fLAPPD_TSPPSMissing_0;
+    vector<uint64_t> fLAPPD_BGPPSBefore_1;
+    vector<uint64_t> fLAPPD_BGPPSAfter_1;
+    vector<uint64_t> fLAPPD_BGPPSDiff_1;
+    vector<int> fLAPPD_BGPPSMissing_1;
+    vector<uint64_t> fLAPPD_TSPPSBefore_1;
+    vector<uint64_t> fLAPPD_TSPPSAfter_1;
+    vector<uint64_t> fLAPPD_TSPPSDiff_1;
+    vector<int> fLAPPD_TSPPSMissing_1;
+
     vector<int> fLAPPD_BG_switchBit0;
     vector<int> fLAPPD_BG_switchBit1;
 
@@ -292,14 +312,6 @@ private:
     vector<double> fLAPPDHitP2FollowTime;
     vector<double> fLAPPDHitP1FollowCharge;
     vector<double> fLAPPDHitP2FollowCharge;
-
-    // waveform
-    vector<int> LAPPDWaveformChankey;
-    vector<double> waveformMaxValue;
-    vector<double> waveformRMSValue;
-    vector<bool> waveformMaxFoundNear;
-    vector<double> waveformMaxNearingValue;
-    vector<int> waveformMaxTimeBinValue;
 
     // LAPPD waveform Fill
     string LAPPDWaveformInputLabel;
@@ -544,22 +556,41 @@ private:
 
     // LAPPDData_fill
     std::map<uint64_t, PsecData> LAPPDDataMap;
-    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns;
-    std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns; // data and key are the same
-    std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw;
-    std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw;
-    std::map<uint64_t, uint64_t> LAPPDOffsets;
-    std::map<uint64_t, int> LAPPDTSCorrection;
-    std::map<uint64_t, int> LAPPDBGCorrection;
-    std::map<uint64_t, int> LAPPDOSInMinusPS;
-    std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore;
-    std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter;
-    std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff;
-    std::map<uint64_t, int> LAPPDBG_PPSMissing;
-    std::map<uint64_t, uint64_t> LAPPDTS_PPSBefore;
-    std::map<uint64_t, uint64_t> LAPPDTS_PPSAfter;
-    std::map<uint64_t, uint64_t> LAPPDTS_PPSDiff;
-    std::map<uint64_t, int> LAPPDTS_PPSMissing;
+    
+    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_0;
+    std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_0;
+    std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_0;
+    std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_0;
+    std::map<uint64_t, uint64_t> LAPPDOffsets_0;
+    std::map<uint64_t, int> LAPPDTSCorrection_0;
+    std::map<uint64_t, int> LAPPDBGCorrection_0;
+    std::map<uint64_t, int> LAPPDOSInMinusPS_0;
+    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_1;
+    std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_1;
+    std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_1;
+    std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_1;
+    std::map<uint64_t, uint64_t> LAPPDOffsets_1;
+    std::map<uint64_t, int> LAPPDTSCorrection_1;
+    std::map<uint64_t, int> LAPPDBGCorrection_1;
+    std::map<uint64_t, int> LAPPDOSInMinusPS_1;
+
+    std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore_0;
+    std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter_0;
+    std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff_0;
+    std::map<uint64_t, int> LAPPDBG_PPSMissing_0;
+    std::map<uint64_t, uint64_t> LAPPDTS_PPSBefore_0;
+    std::map<uint64_t, uint64_t> LAPPDTS_PPSAfter_0;
+    std::map<uint64_t, uint64_t> LAPPDTS_PPSDiff_0;
+    std::map<uint64_t, int> LAPPDTS_PPSMissing_0;
+    std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore_1;
+    std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter_1;
+    std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff_1;
+    std::map<uint64_t, int> LAPPDBG_PPSMissing_1;
+    std::map<uint64_t, uint64_t> LAPPDTS_PPSBefore_1;
+    std::map<uint64_t, uint64_t> LAPPDTS_PPSAfter_1;
+    std::map<uint64_t, uint64_t> LAPPDTS_PPSDiff_1;
+    std::map<uint64_t, int> LAPPDTS_PPSMissing_1;
+
     std::map<int, vector<int>> SwitchBitBG; 
 
     std::map<unsigned long, vector<vector<LAPPDPulse>>> lappdPulses;
@@ -587,14 +618,6 @@ private:
 
     // ************ Muon reconstruction level information ******** //
     std::string MRDTriggertype;
-
-    // ************* LAPPD RecoInfo *********** //
-    // left for LAPPD waveforms if needed
-    std::map<unsigned long, vector<double>> waveformMax; // strip number+30*side, value
-    std::map<unsigned long, vector<double>> waveformRMS;
-    std::map<unsigned long, vector<double>> waveformMaxLast;
-    std::map<unsigned long, vector<double>> waveformMaxNearing;
-    std::map<unsigned long, vector<int>> waveformMaxTimeBin;
 };
 
 #endif

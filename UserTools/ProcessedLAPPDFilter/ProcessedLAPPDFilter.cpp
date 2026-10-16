@@ -267,10 +267,9 @@ bool ProcessedLAPPDFilter::Execute()
 
     
 
-    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns;
-    m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-    PsecDataNumber += LAPPDBeamgate_ns.size();
-    m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
+    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_0;
+    m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+    PsecDataNumber += LAPPDBeamgate_ns_0.size();
 
     std::vector<std::vector<int>> MrdTimeClusters;
     bool get_clusters_mrd = m_data->CStore.Get("MrdTimeClusters", MrdTimeClusters);
@@ -325,9 +324,9 @@ bool ProcessedLAPPDFilter::Execute()
 
   if (filterType == "PMTCluster")
   {
-    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns;
-    m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-    PsecDataNumber += LAPPDBeamgate_ns.size();
+    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_0;
+    m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+    PsecDataNumber += LAPPDBeamgate_ns_0.size();
 
     gotEventPMTCluster = false;
 
@@ -571,33 +570,63 @@ bool ProcessedLAPPDFilter::GotANNIEEventAndSave(BoostStore *BS, string savePath)
   BS->Set("CTCWordExtended", CTCWordExtended);
 
   std::map<uint64_t, PsecData> LAPPDDataMap;
-  std::map<uint64_t, uint64_t> LAPPDBeamgate_ns;
-  std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns; // data and key are the same
-  std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw;
-  std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw;
-  std::map<uint64_t, uint64_t> LAPPDOffsets;
-  std::map<uint64_t, int> LAPPDTSCorrection;
-  std::map<uint64_t, int> LAPPDBGCorrection;
-  std::map<uint64_t, int> LAPPDOSInMinusPS;
+  
+  std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_0;
+  std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_0;
+  std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_0;
+  std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_0;
+  std::map<uint64_t, uint64_t> LAPPDOffsets_0;
+  std::map<uint64_t, int> LAPPDTSCorrection_0;
+  std::map<uint64_t, int> LAPPDBGCorrection_0;
+  std::map<uint64_t, int> LAPPDOSInMinusPS_0;
+
+  std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_1;
+  std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_1;
+  std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_1;
+  std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_1;
+  std::map<uint64_t, uint64_t> LAPPDOffsets_1;
+  std::map<uint64_t, int> LAPPDTSCorrection_1;
+  std::map<uint64_t, int> LAPPDBGCorrection_1;
+  std::map<uint64_t, int> LAPPDOSInMinusPS_1;
 
   m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", LAPPDDataMap);
   BS->Set("LAPPDDataMap", LAPPDDataMap);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-  BS->Set("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-  BS->Set("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-  BS->Set("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-  BS->Set("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets);
-  BS->Set("LAPPDOffsets", LAPPDOffsets);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection);
-  BS->Set("LAPPDTSCorrection", LAPPDTSCorrection);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection);
-  BS->Set("LAPPDBGCorrection", LAPPDBGCorrection);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
-  BS->Set("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
+  
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0",   LAPPDBeamgate_ns_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_0",  LAPPDBeamgatesRaw_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_0",       LAPPDOffsets_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_0",  LAPPDTSCorrection_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_0",  LAPPDBGCorrection_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_0",   LAPPDOSInMinusPS_0);
+
+  BS->Set("LAPPDBeamgate_ns_0",   LAPPDBeamgate_ns_0);
+  BS->Set("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+  BS->Set("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+  BS->Set("LAPPDBeamgatesRaw_0",  LAPPDBeamgatesRaw_0);
+  BS->Set("LAPPDOffsets_0",       LAPPDOffsets_0);
+  BS->Set("LAPPDTSCorrection_0",  LAPPDTSCorrection_0);
+  BS->Set("LAPPDBGCorrection_0",  LAPPDBGCorrection_0);
+  BS->Set("LAPPDOSInMinusPS_0",   LAPPDOSInMinusPS_0);
+
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_1",   LAPPDBeamgate_ns_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_1",  LAPPDBeamgatesRaw_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_1",       LAPPDOffsets_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_1",  LAPPDTSCorrection_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_1",  LAPPDBGCorrection_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_1",   LAPPDOSInMinusPS_1);
+
+  BS->Set("LAPPDBeamgate_ns_1",   LAPPDBeamgate_ns_1);
+  BS->Set("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+  BS->Set("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+  BS->Set("LAPPDBeamgatesRaw_1",  LAPPDBeamgatesRaw_1);
+  BS->Set("LAPPDOffsets_1",       LAPPDOffsets_1);
+  BS->Set("LAPPDTSCorrection_1",  LAPPDTSCorrection_1);
+  BS->Set("LAPPDBGCorrection_1",  LAPPDBGCorrection_1);
+  BS->Set("LAPPDOSInMinusPS_1",   LAPPDOSInMinusPS_1);
 
   uint64_t beamInfoTime = 0;
   int64_t timeDiff = -9999;
@@ -653,31 +682,59 @@ bool ProcessedLAPPDFilter::GotANNIEEventAndSave(BoostStore *BS, string savePath)
   m_data->Stores["ANNIEEvent"]->Get("BRFRawWaveform", BRFRawWaveform);
   BS->Set("BRFRawWaveform", BRFRawWaveform);
 
-  std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore;
-  std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter;
-  std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff;
-  std::map<uint64_t, int> LAPPDBG_PPSMissing;
-  std::map<uint64_t, uint64_t> LAPPDTS_PPSBefore;
-  std::map<uint64_t, uint64_t> LAPPDTS_PPSAfter;
-  std::map<uint64_t, uint64_t> LAPPDTS_PPSDiff;
-  std::map<uint64_t, int> LAPPDTS_PPSMissing;
+  std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore_0;
+  std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter_0;
+  std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff_0;
+  std::map<uint64_t, int> LAPPDBG_PPSMissing_0;
+  std::map<uint64_t, uint64_t> LAPPDTS_PPSBefore_0;
+  std::map<uint64_t, uint64_t> LAPPDTS_PPSAfter_0;
+  std::map<uint64_t, uint64_t> LAPPDTS_PPSDiff_0;
+  std::map<uint64_t, int> LAPPDTS_PPSMissing_0;
 
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore", LAPPDBG_PPSBefore);
-  BS->Set("LAPPDBG_PPSBefore", LAPPDBG_PPSBefore);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter", LAPPDBG_PPSAfter);
-  BS->Set("LAPPDBG_PPSAfter", LAPPDBG_PPSAfter);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff", LAPPDBG_PPSDiff);
-  BS->Set("LAPPDBG_PPSDiff", LAPPDBG_PPSDiff);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing", LAPPDBG_PPSMissing);
-  BS->Set("LAPPDBG_PPSMissing", LAPPDBG_PPSMissing);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore", LAPPDTS_PPSBefore);
-  BS->Set("LAPPDTS_PPSBefore", LAPPDTS_PPSBefore);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter);
-  BS->Set("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff);
-  BS->Set("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff);
-  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
-  BS->Set("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
+  std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore_1;
+  std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter_1;
+  std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff_1;
+  std::map<uint64_t, int> LAPPDBG_PPSMissing_1;
+  std::map<uint64_t, uint64_t> LAPPDTS_PPSBefore_1;
+  std::map<uint64_t, uint64_t> LAPPDTS_PPSAfter_1;
+  std::map<uint64_t, uint64_t> LAPPDTS_PPSDiff_1;
+  std::map<uint64_t, int> LAPPDTS_PPSMissing_1;
+
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore_0",  LAPPDBG_PPSBefore_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter_0",   LAPPDBG_PPSAfter_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff_0",    LAPPDBG_PPSDiff_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing_0", LAPPDBG_PPSMissing_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore_0",  LAPPDTS_PPSBefore_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter_0",   LAPPDTS_PPSAfter_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff_0",    LAPPDTS_PPSDiff_0);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_0", LAPPDTS_PPSMissing_0);
+
+  BS->Set("LAPPDBG_PPSBefore_0",  LAPPDBG_PPSBefore_0);
+  BS->Set("LAPPDBG_PPSAfter_0",   LAPPDBG_PPSAfter_0);
+  BS->Set("LAPPDBG_PPSDiff_0",    LAPPDBG_PPSDiff_0);
+  BS->Set("LAPPDBG_PPSMissing_0", LAPPDBG_PPSMissing_0);
+  BS->Set("LAPPDTS_PPSBefore_0",  LAPPDTS_PPSBefore_0);
+  BS->Set("LAPPDTS_PPSAfter_0",   LAPPDTS_PPSAfter_0);
+  BS->Set("LAPPDTS_PPSDiff_0",    LAPPDTS_PPSDiff_0);
+  BS->Set("LAPPDTS_PPSMissing_0", LAPPDTS_PPSMissing_0);
+
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore_1",  LAPPDBG_PPSBefore_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter_1",   LAPPDBG_PPSAfter_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff_1",    LAPPDBG_PPSDiff_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing_1", LAPPDBG_PPSMissing_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore_1",  LAPPDTS_PPSBefore_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter_1",   LAPPDTS_PPSAfter_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff_1",    LAPPDTS_PPSDiff_1);
+  m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_1", LAPPDTS_PPSMissing_1);
+
+  BS->Set("LAPPDBG_PPSBefore_1",  LAPPDBG_PPSBefore_1);
+  BS->Set("LAPPDBG_PPSAfter_1",   LAPPDBG_PPSAfter_1);
+  BS->Set("LAPPDBG_PPSDiff_1",    LAPPDBG_PPSDiff_1);
+  BS->Set("LAPPDBG_PPSMissing_1", LAPPDBG_PPSMissing_1);
+  BS->Set("LAPPDTS_PPSBefore_1",  LAPPDTS_PPSBefore_1);
+  BS->Set("LAPPDTS_PPSAfter_1",   LAPPDTS_PPSAfter_1);
+  BS->Set("LAPPDTS_PPSDiff_1",    LAPPDTS_PPSDiff_1);
+  BS->Set("LAPPDTS_PPSMissing_1", LAPPDTS_PPSMissing_1);
 
   BS->Save(savePath);
   if (FilterVerbosity > 2)

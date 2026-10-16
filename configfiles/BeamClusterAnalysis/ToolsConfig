@@ -18,7 +18,7 @@ LAPPDThresReco LAPPDThresReco configfiles/LAPPDProcessedAna/ConfigPlot
 
 FitRWMWaveform FitRWMWaveform ./configfiles/BeamClusterAnalysis/FitRWMWaveformConfig
 
-myCNNImage CNNImage ./configfiles/BeamClusterAnalysis/CNNImageConfig
-myRingCounting PythonScript configfiles/BeamClusterAnalysis/RingCountingConfig
+#myCNNImage CNNImage ./configfiles/BeamClusterAnalysis/CNNImageConfig
+#myRingCounting PythonScript configfiles/BeamClusterAnalysis/RingCountingConfig
 
 ANNIEEventTreeMaker ANNIEEventTreeMaker ./configfiles/BeamClusterAnalysis/ANNIEEventTreeMakerConfig

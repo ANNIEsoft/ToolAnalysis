@@ -134,12 +134,21 @@ private:
     double Pulse1LastTime;
     double Pulse2LastTime;
 
-    unsigned long LAPPDDataTimeStampUL;
-    unsigned long LAPPDDataBeamgateUL;
-    unsigned long LAPPDDataTimestampPart1;
-    unsigned long LAPPDDataBeamgatePart1;
-    double LAPPDDataTimestampPart2;
-    double LAPPDDataBeamgatePart2;
+    // ACDC 0
+    unsigned long LAPPDDataTimeStamp0_UL;
+    unsigned long LAPPDDataBeamgate0_UL;
+    unsigned long LAPPDDataTimestamp0_Part1;
+    unsigned long LAPPDDataBeamgate0_Part1;
+    double LAPPDDataTimestamp0_Part2;
+    double LAPPDDataBeamgate0_Part2;
+
+    // ACDC 1
+    unsigned long LAPPDDataTimeStamp1_UL;
+    unsigned long LAPPDDataBeamgate1_UL;
+    unsigned long LAPPDDataTimestamp1_Part1;
+    unsigned long LAPPDDataBeamgate1_Part1;
+    double LAPPDDataTimestamp1_Part2;
+    double LAPPDDataBeamgate1_Part2;
 
     vector<unsigned long> pps_vector;
     vector<unsigned long> pps_count_vector;
@@ -155,30 +164,55 @@ private:
 
     bool MultiLAPPDMapTreeMaker;
     vector<int> LAPPD_IDs;
-    vector<uint64_t> LAPPDMapTimeStampRaw;
-    vector<uint64_t> LAPPDMapBeamgateRaw;
-    vector<uint64_t> LAPPDMapOffsets;
-    vector<int> LAPPDMapTSCorrections;
-    vector<int> LAPPDMapBGCorrections;
-    vector<int> LAPPDMapOSInMinusPS;
+
+    vector<uint64_t> LAPPDMapTimeStampRaw_0;
+    vector<uint64_t> LAPPDMapBeamgateRaw_0;
+    vector<uint64_t> LAPPDMapOffsets_0;
+    vector<int> LAPPDMapTSCorrections_0;
+    vector<int> LAPPDMapBGCorrections_0;
+    vector<int> LAPPDMapOSInMinusPS_0;
+
+    vector<uint64_t> LAPPDMapTimeStampRaw_1;
+    vector<uint64_t> LAPPDMapBeamgateRaw_1;
+    vector<uint64_t> LAPPDMapOffsets_1;
+    vector<int> LAPPDMapTSCorrections_1;
+    vector<int> LAPPDMapBGCorrections_1;
+    vector<int> LAPPDMapOSInMinusPS_1;
 
     std::map<uint64_t, PsecData> LAPPDDataMap;
-    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns;
-    std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns; // data and key are the same
-    std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw;
-    std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw;
-    std::map<uint64_t, uint64_t> LAPPDOffsets;
-    std::map<uint64_t, int> LAPPDTSCorrection;
-    std::map<uint64_t, int> LAPPDBGCorrection;
-    std::map<uint64_t, int> LAPPDOSInMinusPS;
+    
+    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_0;
+    std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_0; 
+    std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_0;
+    std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_0;
+    std::map<uint64_t, uint64_t> LAPPDOffsets_0;
+    std::map<uint64_t, int> LAPPDTSCorrection_0;
+    std::map<uint64_t, int> LAPPDBGCorrection_0;
+    std::map<uint64_t, int> LAPPDOSInMinusPS_0;
 
+    std::map<uint64_t, uint64_t> LAPPDBeamgate_ns_1;
+    std::map<uint64_t, uint64_t> LAPPDTimeStamps_ns_1; 
+    std::map<uint64_t, uint64_t> LAPPDTimeStampsRaw_1;
+    std::map<uint64_t, uint64_t> LAPPDBeamgatesRaw_1;
+    std::map<uint64_t, uint64_t> LAPPDOffsets_1;
+    std::map<uint64_t, int> LAPPDTSCorrection_1;
+    std::map<uint64_t, int> LAPPDBGCorrection_1;
+    std::map<uint64_t, int> LAPPDOSInMinusPS_1;
 
-    uint64_t LTSRaw;
-    uint64_t LBGRaw;
-    uint64_t LOffset_ns;
-    int LTSCorrection;
-    int LBGCorrection;
-    int LOSInMinusPS;
+    uint64_t LTSRaw_0;
+    uint64_t LBGRaw_0;
+    uint64_t LOffset_ns_0;
+    int LTSCorrection_0;
+    int LBGCorrection_0;
+    int LOSInMinusPS_0;
+
+    uint64_t LTSRaw_1;
+    uint64_t LBGRaw_1;
+    uint64_t LOffset_ns_1;
+    int LTSCorrection_1;
+    int LBGCorrection_1;
+    int LOSInMinusPS_1;
+
     uint64_t CTCPrimeTriggerTime;
 };
 
