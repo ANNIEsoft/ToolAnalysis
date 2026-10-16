@@ -14,7 +14,7 @@ LoadBuiltPPSInfo 1
 
 Nboards 6 	#Number of pedestal files to read
 PedinputfileTXT /pnfs/annie/persistent/processed/LAPPD_Pedestals_corrected/Pedestals/2025_LAPPD645839/P
-DoPedSubtraction 1
+DoPedSubtraction 0
 
 mergingModeReadIn 0
 
