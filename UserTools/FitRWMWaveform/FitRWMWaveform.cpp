@@ -26,6 +26,11 @@ bool FitRWMWaveform::Execute()
 {
 
   Log("FitRWMWaveform: Execute()", v_debug, verbosityFitRWMWaveform);
+ 
+  RWMRawWaveform.clear();
+  BRFRawWaveform.clear();
+  BESRawWaveform.clear();
+
   m_data->Stores["ANNIEEvent"]->Get("RWMRawWaveform", RWMRawWaveform);
   m_data->Stores["ANNIEEvent"]->Get("BRFRawWaveform", BRFRawWaveform);
   m_data->Stores["ANNIEEvent"]->Get("BESRawWaveform", BESRawWaveform);
@@ -81,6 +86,7 @@ bool FitRWMWaveform::Finalise()
     int RWMCount = 0;
     for (const auto &kv : ToBePrintedRWMWaveforms)
     {
+      if (kv.second.empty()) continue;
       const auto &key = kv.first;
       const auto &val = kv.second;
       TH1D *hRWM = new TH1D(Form("RWM_%d_%lu", RWMCount, key), Form("RWM_%d_%lu", RWMCount, key), val.size(), 0, val.size());
@@ -96,6 +102,7 @@ bool FitRWMWaveform::Finalise()
     int BRFCount = 0;
     for (const auto &kv : ToBePrintedBRFWaveforms)
     {
+      if (kv.second.empty()) continue;
       const auto &key = kv.first;
       const auto &val = kv.second;
       TH1D *hBRF = new TH1D(Form("BRF_%d_%lu", BRFCount, key), Form("BRF_%d_%lu", BRFCount, key), val.size(), 0, val.size());
@@ -111,6 +118,7 @@ bool FitRWMWaveform::Finalise()
     int BESCount = 0;
     for (const auto &kv : ToBePrintedBESWaveforms)
     {
+      if (kv.second.empty()) continue;
       const auto &key = kv.first;
       const auto &val = kv.second;
       TH1D *hBES = new TH1D(Form("BES_%d_%lu", BESCount, key), Form("BES_%d_%lu", BESCount, key), val.size(), 0, val.size());
