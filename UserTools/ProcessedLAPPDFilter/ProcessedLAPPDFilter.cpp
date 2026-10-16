@@ -647,11 +647,14 @@ bool ProcessedLAPPDFilter::GotANNIEEventAndSave(BoostStore *BS, string savePath)
 
   std::vector<uint16_t> RWMRawWaveform;
   std::vector<uint16_t> BRFRawWaveform;
+  std::vector<uint16_t> BESRawWaveform;
 
   m_data->Stores["ANNIEEvent"]->Get("RWMRawWaveform", RWMRawWaveform);
   BS->Set("RWMRawWaveform", RWMRawWaveform);
   m_data->Stores["ANNIEEvent"]->Get("BRFRawWaveform", BRFRawWaveform);
   BS->Set("BRFRawWaveform", BRFRawWaveform);
+  m_data->Stores["ANNIEEvent"]->Get("BESRawWaveform", BESRawWaveform);
+  BS->Set("BESRawWaveform", BESRawWaveform);
 
   std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore;
   std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter;
