@@ -652,7 +652,7 @@ bool EBSaver::SaveGroupedTriggers(int triggerTrack, int groupIndex)
     {
       if (trigger.second == 41)
       {
-        NCExtended = true;
+        CCExtended = true;
         ExtendedTriggerTime = trigger.first;
         CTCWordExtended = 1;
         break;
@@ -662,7 +662,7 @@ bool EBSaver::SaveGroupedTriggers(int triggerTrack, int groupIndex)
     {
       if (trigger.second == 40)
       {
-        CCExtended = true;
+        NCExtended = true;
         ExtendedTriggerTime = trigger.first;
         CTCWordExtended = 2;
         break;
@@ -683,7 +683,7 @@ bool EBSaver::SaveGroupedTriggers(int triggerTrack, int groupIndex)
   ANNIEEvent->Set("NCExtended", NCExtended);
   ANNIEEvent->Set("CCExtended", CCExtended);
   ANNIEEvent->Set("TriggerType", TriggerType);
-  ANNIEEvent->Set("TriggerExtended", CTCWordExtended); // 0: normal, 1: NC extended, 2: CC extended
+  ANNIEEvent->Set("TriggerExtended", CTCWordExtended); // 0: normal, 1: CC extended, 2: NC extended
   // Notice, in the V1 eventbuilder, there is a requirement that the matched trigger time -  extended trigger time <5000, if not the extended will be 0
   // we don't have it here because the PMT was not matched to a single trigger, but a group.
   // you may need to select the events based on the time difference in the grouped trigger
