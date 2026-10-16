@@ -45,9 +45,11 @@ private:
 
     std::vector<uint16_t> RWMRawWaveform;
     std::vector<uint16_t> BRFRawWaveform;
+    std::vector<uint16_t> BESRawWaveform;
 
     std::map<uint64_t, std::vector<uint16_t>> ToBePrintedRWMWaveforms;
     std::map<uint64_t, std::vector<uint16_t>> ToBePrintedBRFWaveforms;
+    std::map<uint64_t, std::vector<uint16_t>> ToBePrintedBESWaveforms;
 
     double RWMRisingStart;
     double RWMRisingEnd;
