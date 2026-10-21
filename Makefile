@@ -35,8 +35,11 @@ ZMQInclude= -isystem$(ToolDAQPath)/zeromq-4.0.7/include/
 BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization  -lboost_iostreams -lboost_system -lboost_filesystem -lboost_regex
 BoostInclude= -isystem$(ToolDAQPath)/boost_1_66_0/install/include
 
-WCSimLib= -L $(ToolDAQPath)/WCSimLib -lWCSimRoot
-WCSimInclude= -I $(ToolDAQPath)/WCSimLib/include
+#WCSimLib= -L $(ToolDAQPath)/WCSimLib -lWCSimRoot
+#WCSimInclude= -I $(ToolDAQPath)/WCSimLib/include
+#Temp WCSim (DJA)
+WCSimLib= -L ../WCSim/WCSim -lWCSimRoot
+WCSimInclude= -I ../WCSim/WCSim/include
 
 GenieIncludeDir := $(shell genie-config --topsrcdir)
 GenieInclude= -isystem$(GenieIncludeDir)/Framework -isystem$(GenieIncludeDir) `gsl-config --cflags` -isystem$(GENIE_REWEIGHT)/src

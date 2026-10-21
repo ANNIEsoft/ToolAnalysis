@@ -1,6 +1,6 @@
 verbose 1
-InputFile wcsim_0.root
-
+#InputFile wcsim_0.root
+InputFile /exp/annie/app/users/dajana/WCSim/build/wcsim_0.root
 WCSimVersion 3
 HistoricTriggeroffset 0
 UseDigitSmearedTime 0

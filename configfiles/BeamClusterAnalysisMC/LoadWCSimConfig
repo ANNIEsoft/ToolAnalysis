@@ -7,7 +7,10 @@ verbose 0
 # where X = run number for the corresponding GENIE file (gntp.X.ghep.root)
 #       Y = offset multiple for GENIE event number
 
-InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/pmt/wcsim_0.99.1.root
+#InputFile /pnfs/annie/persistent/simulations/wcsim/G1810a0211a/standard/tank/pmt/wcsim_0.99.1.root
+#InputFile /exp/annie/app/users/dajana/WCSim/build/wcsim_0.root
+InputFile /exp/annie/app/users/dajana/WCSim/build/wcsimwithsectrueformuon_0.root
+#InputFile /pnfs/annie/persistent/simulations/wcsim/wcsim_QE_retuning_AmBe_neutrons/QE_1.25/port5_z0_QE_1.25/wcsim_0_999.root
 
 WCSimVersion 3               ## should reflect the WCSim version of the files being loaded
 HistoricTriggeroffset 0      ## time offset of digits relative to the trigger

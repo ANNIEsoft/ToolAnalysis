@@ -3,3 +3,4 @@ LoadWCSim LoadWCSim configfiles/PMTWaveformSim/LoadWCSimConfig
 PMTWaveformSim PMTWaveformSim configfiles/PMTWaveformSim/PMTWaveformSimConfig
 PhaseIIADCHitFinder PhaseIIADCHitFinder configfiles/PMTWaveformSim/PhaseIIADCHitFinderConfig
 ClusterFinder ClusterFinder configfiles/PMTWaveformSim/ClusterFinderConfig
+BackTracker BackTracker configfiles/PMTWaveformSim/BackTrackerConfig
