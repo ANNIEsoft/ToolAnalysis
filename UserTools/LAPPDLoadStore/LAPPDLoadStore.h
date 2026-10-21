@@ -57,7 +57,7 @@ private:
     string PedFileName;    // store format pedestal file name
     string PedFileNameTXT; // txt format pedestal file name
     int DoPedSubtract;     // 1: do pedestal subtraction, 0: don't do pedestal subtraction
-    int LAPPDStoreReadInVerbosity;
+    int LAPPDLoadStoreVerbosity;
     int num_vector_data;
     int num_vector_pps;
     bool SelectSingleLAPPD;
@@ -178,7 +178,7 @@ private:
     int subRunNumber;
     int partFileNumber;
     int eventNumberInPF;
-    std::ofstream debugStoreReadIn;
+    std::ofstream debugLoadStore;
 
     // verbosity levels: if 'verbosity' < this level, the message type will be logged.
     int v_error=0;
