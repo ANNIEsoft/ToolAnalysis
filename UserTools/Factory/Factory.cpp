@@ -196,5 +196,6 @@ if (tool=="VertexLeastSquares") ret=new VertexLeastSquares;
 if (tool=="ClusterSearcher") ret=new ClusterSearcher;
 if (tool=="NeutronCheck") ret=new NeutronCheck;
 if (tool=="PrintADCTraces") ret=new PrintADCTraces;
+if (tool=="cMrdMlReco") ret=new cMrdMlReco;
 return ret;
 }

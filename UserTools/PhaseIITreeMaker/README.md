@@ -98,3 +98,34 @@ Must have HasGenie 1 and TankClusterProcessing 1 enabled.
 
 ```
 
+
+
+## cMRD machine-learning reconstruction (cMrdMlReco)
+
+    MRDRecoSource Legacy        # Legacy (default) | MrdMLReco | Both
+    MrdMLOutputMode production  # optional; defaults to the cMrdMlReco OutputMode
+
+`MRDRecoSource` selects the MRD reconstruction output:
+
+- `Legacy` is the default and does not require `cMrdMlReco`.
+- `MrdMLReco` writes the native `mrd_ml_*` branches from `Stores["MrdMLReco"]`. In this mode `MRDReco_fill`, `MuonFitter_fill`, and `SimpleReco_fill` must be 0.
+- `Both` writes the legacy MRD reconstruction and `mrd_ml_*` branches side by side for validation.
+
+The ML modes require `TriggerProcessing 1`. `cMrdMlReco` must run before
+`PhaseIITreeMaker`; the writer reads the producer's
+`CStore["MrdMLOutputMode"]` handshake during initialization.
+
+`MrdMLOutputMode` controls only the ROOT publication breadth:
+
+- `production` writes the stable physics/provenance branch set.
+- `debug` additionally writes detailed reconstruction and input diagnostics.
+
+The default is the producer's mode. A debug producer may be narrowed to the
+production branch set, but debug branches cannot be requested from a production
+producer.
+
+A one-entry `mrd_ml_metadata` tree records the model release, SavedModel and
+geometry hashes, runtime versions, and gate policy for the file. See
+`UserTools/cMrdMlReco/README.md` for the full cMrdMlReco contract.
+
+For lean ToolChains without `RecoEvent`, use `fillCleanEventsOnly 0`.
