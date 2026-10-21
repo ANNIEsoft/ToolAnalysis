@@ -374,7 +374,7 @@ bool EBPMT::Matching(int targetTrigger, int matchToTrack)
 
     if (saveRWMWaveforms)
     {
-      // check does RWMRawWaveforms have key PMTCounterTimeNs, if not, print a log waring and skip
+      // check does RWMRawWaveforms have key PMTCounterTimeNs, if not, print a log warning
       if (RWMRawWaveforms->find(PMTCounterTimeNs) == RWMRawWaveforms->end())
       {
         Log("EBPMT: After matching, RWMRawWaveforms does not have key PMTCounterTimeNs: " + std::to_string(PMTCounterTimeNs), v_warning, verbosityEBPMT);
@@ -383,7 +383,7 @@ bool EBPMT::Matching(int targetTrigger, int matchToTrack)
 
     if (saveBRFWaveforms)
     {
-      // check does BRFRawWaveforms have key PMTCounterTimeNs, if not, print a log waring and skip
+      // check does BRFRawWaveforms have key PMTCounterTimeNs, if not, print a log warning
       if (BRFRawWaveforms->find(PMTCounterTimeNs) == BRFRawWaveforms->end())
       {
         Log("EBPMT: After matching, BRFRawWaveforms does not have key PMTCounterTimeNs: " + std::to_string(PMTCounterTimeNs), v_warning, verbosityEBPMT);
@@ -392,7 +392,7 @@ bool EBPMT::Matching(int targetTrigger, int matchToTrack)
 
     if (saveBESWaveforms && !BESRawWaveforms->empty())
     {
-      // check does BESRawWaveforms have key PMTCounterTimeNs, if not, print a log waring and skip
+      // check does BESRawWaveforms have key PMTCounterTimeNs, if not, print a log warning
       if (BESRawWaveforms->find(PMTCounterTimeNs) == BESRawWaveforms->end())
       {
         Log("EBPMT: After matching, BESRawWaveforms does not have key PMTCounterTimeNs: " + std::to_string(PMTCounterTimeNs), v_warning, verbosityEBPMT);
