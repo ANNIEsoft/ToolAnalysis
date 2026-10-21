@@ -12,16 +12,13 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_data = &data; // assigning transient data pointer
     /////////////////////////////////////////////////////////////////
 
-    // Control variables
     // Control variables used in this tool
     retval = 0;
     eventNo = 0;
-    CLOCK_to_NSEC = 3.125; // 3.125 ns per clock cycle
     errorEventsNumber = 0;
-    // Control variables that you get from the config file, for this tool
-    m_variables.Get("ReadStore", ReadStore);
+
+    // Load Config Variables for this tool
     m_variables.Get("Nboards", Nboards);
-    m_variables.Get("StorePedinputfile", PedFileName);
     m_variables.Get("PedinputfileTXT", PedFileNameTXT);
     m_variables.Get("DoPedSubtraction", DoPedSubtract);
     m_variables.Get("LAPPDLoadStoreVerbosity", LAPPDLoadStoreVerbosity);
@@ -29,10 +26,9 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_variables.Get("num_vector_pps", num_vector_pps);
     m_variables.Get("SelectSingleLAPPD", SelectSingleLAPPD);
     m_variables.Get("SelectedLAPPD", SelectedLAPPD);
+    
     mergingModeReadIn = false;
     m_variables.Get("mergingModeReadIn", mergingModeReadIn);
-    ReadStorePdeFile = false;
-    m_variables.Get("ReadStorePdeFile", ReadStorePdeFile);
     MultiLAPPDMap = false;
     m_variables.Get("MultiLAPPDMap", MultiLAPPDMap);
     loadPSEC = true;
@@ -45,7 +41,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_variables.Get("LoadBuiltPPSInfo", LoadBuiltPPSInfo);
     loadFromStoreDirectly = false;
     m_variables.Get("loadFromStoreDirectly", loadFromStoreDirectly);
-    // Control variables in this tool, initialized in this tool
+    
     NonEmptyEvents = 0;
     NonEmptyDataEvents = 0;
     PPSnumber = 0;
@@ -53,6 +49,7 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     isFiltered = false;
     isBLsub = false;
     isCFD = false;
+    
     // Global Control variables that you get from the config file
     m_variables.Get("stopEntries", stopEntries);
     m_variables.Get("PsecReceiveMode", PsecReceiveMode);
@@ -63,70 +60,25 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_variables.Get("TrigChannel", TrigChannel);
     m_variables.Get("SampleSize", SampleSize);
     m_variables.Get("LAPPDchannelOffset", LAPPDchannelOffset);
-    // Data variables
-    // Data variables you get from other tools (it not initialized in execute)
-    // Data variables you use in this tool
-    m_variables.Get("PSECinputfile", NewFileName);
-    // Verbosity
-    // Details on channels, samples and max vector sizes and trigger channel
-    m_variables.Get("Nsamples", Nsamples);
-    m_variables.Get("TrigChannel", TrigChannel);
 
     runNumber = 0;
     subRunNumber = 0;
     partFileNumber = 0;
     eventNumberInPF = 0;
 
-    ReadStore = 0;
-
-    // get data file
-    /*
-    if (ReadStore == 1)
-    {
-        // get data from a StoreFile in ANNIEEvent format
-        m_data->Stores["ANNIEEvent"] = new BoostStore(false, 2);
-        m_data->Stores["ANNIEEvent"]->Initialise(NewFileName);
-        cout << "LAPPDLoadStore Reading new ANNIEevent from " << NewFileName << endl;
-    }
-    else if (ReadStore == 0)
-    { // get data from previous chain, or m_data
-        cout << "LAPPDLoadStore Using ANNIEevent or CStore" << endl;
-    }*/
     // Grab all pedestal files and prepare the map channel|pedestal-vector for substraction
     if (DoPedSubtract == 1)
     {
         PedestalValues = new std::map<unsigned long, vector<int>>;
-        /*if (ReadStorePdeFile)
-        {
-            m_data->Stores["PedestalFile"] = new BoostStore(false, 2);
-            bool ret = false;
-            if (FILE *file = fopen(PedFileName.c_str(), "r"))
-            {
-                fclose(file);
-                ret = true;
-                cout << "Using Store Pedestal File" << endl;
+        for (int i = 0; i < Nboards; i++) {
+            if (LAPPDLoadStoreVerbosity > 0) {
+                std::cout << "Reading Pedestal File " << PedFileNameTXT << " " << i << std::endl;
             }
-            if (ret)
-            {
-                m_data->Stores["PedestalFile"]->Initialise(PedFileName);
-                long Pedentries;
-                m_data->Stores["PedestalFile"]->Header->Get("TotalEntries", Pedentries);
-                if (LAPPDLoadStoreVerbosity > 0)
-                    cout << PedFileName << " got " << Pedentries << endl;
-                m_data->Stores["PedestalFile"]->Get("PedestalMap", PedestalValues);
-            }
+            ReadPedestals(i);
         }
-        else*/
-        {
-            for (int i = 0; i < Nboards; i++)
-            {
-                if (LAPPDLoadStoreVerbosity > 0)
-                    cout << "Reading Pedestal File " << PedFileNameTXT << " " << i << endl;
-                ReadPedestals(i);
-            }
-        }
-        if (LAPPDLoadStoreVerbosity > 0)
+        if (LAPPDLoadStoreVerbosity > 0) {
             cout << "PEDSIZES: " << PedestalValues->size() << " " << PedestalValues->at(0).size() << " " << PedestalValues->at(4).at(5) << endl;
+        }
     }
 
     // set some control variables for later tools
@@ -141,9 +93,11 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     m_data->Stores["ANNIEEvent"]->Set("isCFD", isCFD);
 
     LAPPDEventIndex_ID = {0, 0, 0, 0, 0}; // initialize for five LAPPDs
+    
     if (loadOffsets)
         LoadOffsetsAndCorrections();
-    if (LAPPDLoadStoreVerbosity > 11)
+    
+    if (LAPPDLoadStoreVerbosity > 5)
         debugLoadStore.open("debugLoadStore.txt");
 
     std::string ACCIDConfigFile;
@@ -184,9 +138,7 @@ void LAPPDLoadStore::CleanDataObjects()
     Parse_buffer.clear();
     ReadBoards.clear();
     data.clear();
-    meta.clear();
     pps.clear();
-    LAPPDWaveforms.clear();
     EventType = -9999;
     LAPPDana = false;
     ParaBoards.clear();
@@ -200,19 +152,43 @@ void LAPPDLoadStore::CleanDataObjects()
 
     LAPPDLoadedTimeStamps.clear();
     LAPPD_IDs.clear();
-    LAPPDLoadedTimeStampsRaw.clear();
-    LAPPDLoadedBeamgatesRaw.clear();
-    LAPPDLoadedOffsets.clear();
-    LAPPDLoadedTSCorrections.clear();
-    LAPPDLoadedBGCorrections.clear();
-    LAPPDLoadedOSInMinusPS.clear();
+
+    LAPPDLoadedTimeStampsRaw_0.clear();
+    LAPPDLoadedBeamgatesRaw_0.clear();
+    LAPPDLoadedOffsets_0.clear();
+    LAPPDLoadedTSCorrections_0.clear();
+    LAPPDLoadedBGCorrections_0.clear();
+    LAPPDLoadedOSInMinusPS_0.clear();
+    LAPPDLoadedBG_PPSBefore_0.clear();
+    LAPPDLoadedBG_PPSAfter_0.clear();
+    LAPPDLoadedBG_PPSDiff_0.clear();
+    LAPPDLoadedBG_PPSMissing_0.clear();
+    LAPPDLoadedTS_PPSBefore_0.clear();
+    LAPPDLoadedTS_PPSAfter_0.clear();
+    LAPPDLoadedTS_PPSDiff_0.clear();
+    LAPPDLoadedTS_PPSMissing_0.clear();
+
+    LAPPDLoadedTimeStampsRaw_1.clear();
+    LAPPDLoadedBeamgatesRaw_1.clear();
+    LAPPDLoadedOffsets_1.clear();
+    LAPPDLoadedTSCorrections_1.clear();
+    LAPPDLoadedBGCorrections_1.clear();
+    LAPPDLoadedOSInMinusPS_1.clear();
+    LAPPDLoadedBG_PPSBefore_1.clear();
+    LAPPDLoadedBG_PPSAfter_1.clear();
+    LAPPDLoadedBG_PPSDiff_1.clear();
+    LAPPDLoadedBG_PPSMissing_1.clear();
+    LAPPDLoadedTS_PPSBefore_1.clear();
+    LAPPDLoadedTS_PPSAfter_1.clear();
+    LAPPDLoadedTS_PPSDiff_1.clear();
+    LAPPDLoadedTS_PPSMissing_1.clear();
 }
 
 bool LAPPDLoadStore::Execute()
 {
-    // 1. clean data variables
-    // 2. decide loading data or not, load the data from PsecData dat to tool
-    // 3. parse and pass data to later tools
+    // 1. Clean data variables
+    // 2. Decide loading data or not, load the data from PsecData data to tool
+    // 3. Parse and pass data to later tools
 
     CleanDataObjects();
     m_data->CStore.Set("LAPPD_new_event", false);
@@ -223,36 +199,106 @@ bool LAPPDLoadStore::Execute()
     {
         bool gotDataStream = m_data->Stores["ANNIEEvent"]->Get("DataStreams", DataStreams);
         bool getMap = m_data->Stores["ANNIEEvent"]->Get("LAPPDDataMap", LAPPDDataMap);
+        
         if (getMap && DataStreams["LAPPD"] == true && LAPPDDataMap.size() > 0)
         {
-            // cout << "Outside, size of LAPPDDatamap = " << LAPPDDataMap.size() << endl;
-            bool gotBeamgates_ns = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-            bool gotTimeStamps_ns = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-            bool gotTimeStampsRaw = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-            bool gotBeamgatesRaw = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-            bool gotOffsets = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets);
-            bool gotTSCorrection = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection);
-            bool gotDBGCorrection = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection);
-            bool gotOSInMinusPS = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
+            bool gotBeamgates_ns_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+            bool gotTimeStamps_ns_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+            bool gotTimeStampsRaw_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+            bool gotBeamgatesRaw_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_0", LAPPDBeamgatesRaw_0);
+            bool gotOffsets_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_0", LAPPDOffsets_0);
+            bool gotTSCorrection_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_0", LAPPDTSCorrection_0);
+            bool gotDBGCorrection_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_0", LAPPDBGCorrection_0);
+            bool gotOSInMinusPS_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_0", LAPPDOSInMinusPS_0);
+
+            bool gotBeamgates_ns_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns_1", LAPPDBeamgate_ns_1);
+            bool gotTimeStamps_ns_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+            bool gotTimeStampsRaw_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+            bool gotBeamgatesRaw_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw_1", LAPPDBeamgatesRaw_1);
+            bool gotOffsets_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets_1", LAPPDOffsets_1);
+            bool gotTSCorrection_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection_1", LAPPDTSCorrection_1);
+            bool gotDBGCorrection_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection_1", LAPPDBGCorrection_1);
+            bool gotOSInMinusPS_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS_1", LAPPDOSInMinusPS_1);
+
             if (LoadBuiltPPSInfo)
             {
-                bool gotBG_PPSBefore = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore", LAPPDBG_PPSBefore);
-                bool gotBG_PPSAfter = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter", LAPPDBG_PPSAfter);
-                bool gotBG_PPSDiff = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff", LAPPDBG_PPSDiff);
-                bool gotBG_PPSMissing = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing", LAPPDBG_PPSMissing);
-                bool gotTS_PPSBefore = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore", LAPPDTS_PPSBefore);
-                bool gotTS_PPSAfter = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter);
-                bool gotTS_PPSDiff = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff);
-                bool gotTS_PPSMissing = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
+                bool gotBG_PPSBefore_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore_0", LAPPDBG_PPSBefore_0);
+                bool gotBG_PPSAfter_0  = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter_0", LAPPDBG_PPSAfter_0);
+                bool gotBG_PPSDiff_0   = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff_0", LAPPDBG_PPSDiff_0);
+                bool gotBG_PPSMissing_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing_0", LAPPDBG_PPSMissing_0); 
+                bool gotTS_PPSBefore_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore_0", LAPPDTS_PPSBefore_0);
+                bool gotTS_PPSAfter_0  = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter_0", LAPPDTS_PPSAfter_0);
+                bool gotTS_PPSDiff_0   = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff_0", LAPPDTS_PPSDiff_0);
+                bool gotTS_PPSMissing_0 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_0", LAPPDTS_PPSMissing_0);
+
+                bool gotBG_PPSBefore_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore_1", LAPPDBG_PPSBefore_1);
+                bool gotBG_PPSAfter_1  = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter_1", LAPPDBG_PPSAfter_1);
+                bool gotBG_PPSDiff_1   = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff_1", LAPPDBG_PPSDiff_1);
+                bool gotBG_PPSMissing_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing_1", LAPPDBG_PPSMissing_1);
+                bool gotTS_PPSBefore_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore_1", LAPPDTS_PPSBefore_1);
+                bool gotTS_PPSAfter_1  = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter_1", LAPPDTS_PPSAfter_1);
+                bool gotTS_PPSDiff_1   = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff_1", LAPPDTS_PPSDiff_1);
+                bool gotTS_PPSMissing_1 = m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing_1", LAPPDTS_PPSMissing_1);
+
                 if (LAPPDLoadStoreVerbosity > 3)
                 {
-                    cout << "LAPPDLoadStore: gotOffsets = " << gotOffsets << ", gotBG_PPSBefore = " << gotBG_PPSBefore << ", gotTS_PPSBefore = " << gotTS_PPSBefore << endl;
-                    cout << "Size of LAPPDDataMap = " << LAPPDDataMap.size() << ", LAPPDOffsets = " << LAPPDOffsets.size() << ", LAPPDBG_PPSBefore = " << LAPPDBG_PPSBefore.size() << ", LAPPDTS_PPSBefore = " << LAPPDTS_PPSBefore.size() << endl;
+                    std::cout << "LAPPDLoadStore: gotOffsets = " << gotOffsets_0 << std::endl;		 
+                    std::cout << "Size of LAPPDDataMap = " << LAPPDDataMap.size() 
+                              << ", LAPPDOffsets_0 = " << LAPPDOffsets_0.size() 
+                              << ", LAPPDOffsets_1 = " << LAPPDOffsets_1.size()
+                              << ", LAPPDBG_PPSBefore_0 = " << LAPPDBG_PPSBefore_0.size() 
+                              << ", LAPPDTS_PPSBefore_0 = " << LAPPDTS_PPSBefore_0.size() 
+                              << ", LAPPDBG_PPSBefore_1 = " << LAPPDBG_PPSBefore_1.size() 
+                              << ", LAPPDTS_PPSBefore_1 = " << LAPPDTS_PPSBefore_1.size() << std::endl;
 
-                    cout << "gotBG_PPSBefore = " << gotBG_PPSBefore << ", gotBG_PPSAfter = " << gotBG_PPSAfter << ", gotBG_PPSDiff = " << gotBG_PPSDiff << ", gotBG_PPSMissing = " << gotBG_PPSMissing << endl;
-                    cout << "gotTS_PPSBefore = " << gotTS_PPSBefore << ", gotTS_PPSAfter = " << gotTS_PPSAfter << ", gotTS_PPSDiff = " << gotTS_PPSDiff << ", gotTS_PPSMissing = " << gotTS_PPSMissing << endl;
+                    std::cout << "Board 0: gotBG_PPSBefore = " << gotBG_PPSBefore_0 << ", gotBG_PPSAfter = " << gotBG_PPSAfter_0 
+                              << ", gotBG_PPSDiff = " << gotBG_PPSDiff_0 << ", gotBG_PPSMissing = " << gotBG_PPSMissing_0 << std::endl;
+                    
+                    std::cout << "Board 0: gotTS_PPSBefore = " << gotTS_PPSBefore_0 << ", gotTS_PPSAfter = " << gotTS_PPSAfter_0 
+                              << ", gotTS_PPSDiff = " << gotTS_PPSDiff_0 << ", gotTS_PPSMissing = " << gotTS_PPSMissing_0 << std::endl;
+                         
+                    std::cout << "Board 1: gotBG_PPSBefore = " << gotBG_PPSBefore_1 << ", gotBG_PPSAfter = " << gotBG_PPSAfter_1 
+                              << ", gotBG_PPSDiff = " << gotBG_PPSDiff_1 << ", gotBG_PPSMissing = " << gotBG_PPSMissing_1 << std::endl;
+                    
+                    std::cout << "Board 1: gotTS_PPSBefore = " << gotTS_PPSBefore_1 << ", gotTS_PPSAfter = " << gotTS_PPSAfter_1 
+                              << ", gotTS_PPSDiff = " << gotTS_PPSDiff_1 << ", gotTS_PPSMissing = " << gotTS_PPSMissing_1 << std::endl;\
                 }
             }
+
+            // --- BACKWARD COMPATIBILITY BLOCK ---
+            // If the _0 identifiers were not found, this is older processed data.
+            // Fetch the legacy variables (no suffixes) and map them to ACDC 0.
+            if (!gotBeamgates_ns_0) 
+            {
+                if (LAPPDLoadStoreVerbosity > 0)
+                    std::cout << "LAPPDLoadStore: Legacy data detected. Mapping old variables to ACDC 0." << std::endl;
+                
+                bool gotLegacy = m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgate_ns", LAPPDBeamgate_ns_0);
+                
+                if (gotLegacy) 
+                {
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDOffsets", LAPPDOffsets_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTSCorrection", LAPPDTSCorrection_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDBGCorrection", LAPPDBGCorrection_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDOSInMinusPS", LAPPDOSInMinusPS_0);
+                }
+
+                if (LoadBuiltPPSInfo && gotLegacy) 
+                {
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSBefore", LAPPDBG_PPSBefore_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSAfter", LAPPDBG_PPSAfter_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSDiff", LAPPDBG_PPSDiff_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDBG_PPSMissing", LAPPDBG_PPSMissing_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSBefore", LAPPDTS_PPSBefore_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff_0);
+                    m_data->Stores["ANNIEEvent"]->Get("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing_0);
+                }
+            }
+            // --- END BACKWARD COMPATIBILITY BLOCK ---   
         }
         else
         {
@@ -466,50 +512,129 @@ bool LAPPDLoadStore::Execute()
                     cout << "LAPPDLoadStore: Loaded LAPPD data for LAPPD_ID " << LAPPD_ID << " at time " << time << endl;
                 LAPPDLoadedTimeStamps.push_back(time);
                 LAPPD_IDs.push_back(LAPPD_ID);
-                // print the size of LAPPDTimeStampsRaw, print all keys in it
+
+                // print the size of LAPPDTimeStampsRaw for Board 0 and Board 1, print all keys in them
                 if (LAPPDLoadStoreVerbosity > 0)
                 {
-                    cout << "LAPPDTimeStampsRaw size is " << LAPPDTimeStampsRaw.size() << endl;
-                    for (auto it = LAPPDTimeStampsRaw.begin(); it != LAPPDTimeStampsRaw.end(); it++)
+                    std::cout << "LAPPDTimeStampsRaw_0 size is " << LAPPDTimeStampsRaw_0.size() << std::endl;
+                    for (auto it = LAPPDTimeStampsRaw_0.begin(); it != LAPPDTimeStampsRaw_0.end(); it++)
                     {
-                        cout << "LAPPDTimeStampsRaw key is " << it->first << endl;
+                        std::cout << "LAPPDTimeStampsRaw_0 key is " << it->first << std::endl;
+                    }
+                    std::cout << "LAPPDTimeStampsRaw_1 size is " << LAPPDTimeStampsRaw_1.size() << std::endl;
+                    for (auto it = LAPPDTimeStampsRaw_1.begin(); it != LAPPDTimeStampsRaw_1.end(); it++)
+                    {
+                        std::cout << "LAPPDTimeStampsRaw_1 key is " << it->first << std::endl;
                     }
                 }
-                // print the size of LAPPDOffsets, print all keys in it
+                
+                // print the size of LAPPDOffsets for Board 0 and Board 1, print all keys in it
                 if (LAPPDLoadStoreVerbosity > 0)
                 {
-                    cout << "LAPPDOffsets size is " << LAPPDOffsets.size() << endl;
-                    for (auto it = LAPPDOffsets.begin(); it != LAPPDOffsets.end(); it++)
+                    std::cout << "LAPPDOffsets_0 size is " << LAPPDOffsets_0.size() << std::endl;
+                    for (auto it = LAPPDOffsets_0.begin(); it != LAPPDOffsets_0.end(); it++)
                     {
-                        cout << "LAPPDOffsets key is " << it->first << endl;
+                        std::cout << "LAPPDOffsets_0 key is " << it->first << std::endl;
+                    }
+                    std::cout << "LAPPDOffsets_1 size is " << LAPPDOffsets_1.size() << std::endl;
+                    for (auto it = LAPPDOffsets_1.begin(); it != LAPPDOffsets_1.end(); it++)
+                    {
+                        std::cout << "LAPPDOffsets_1 key is " << it->first << std::endl;
                     }
                 }
 
-                LAPPDLoadedTimeStampsRaw.push_back(LAPPDTimeStampsRaw.at(time));
-                LAPPDLoadedBeamgatesRaw.push_back(LAPPDBeamgatesRaw.at(time));
-                LAPPDLoadedOffsets.push_back(LAPPDOffsets.at(time));
-                LAPPDLoadedTSCorrections.push_back(LAPPDTSCorrection.at(time));
-                LAPPDLoadedBGCorrections.push_back(LAPPDBGCorrection.at(time));
-                LAPPDLoadedOSInMinusPS.push_back(LAPPDOSInMinusPS.at(time));
+                // --- ACDC 0 Loading ---
+                // (Legacy data was mapped to _0, so these maps are guaranteed to have data)
+                LAPPDLoadedTimeStampsRaw_0.push_back(LAPPDTimeStampsRaw_0.at(time));
+                LAPPDLoadedBeamgatesRaw_0.push_back(LAPPDBeamgatesRaw_0.at(time));
+                LAPPDLoadedOffsets_0.push_back(LAPPDOffsets_0.at(time));
+                LAPPDLoadedTSCorrections_0.push_back(LAPPDTSCorrection_0.at(time));
+                LAPPDLoadedBGCorrections_0.push_back(LAPPDBGCorrection_0.at(time));
+                LAPPDLoadedOSInMinusPS_0.push_back(LAPPDOSInMinusPS_0.at(time));
+
+                // --- ACDC 1 Loading ---
+                // Check whether ACDC 1 has data; if not, this is legacy data with no ACDC 1 identifier
+                if (LAPPDTimeStampsRaw_1.count(time) > 0) 
+                {
+                    LAPPDLoadedTimeStampsRaw_1.push_back(LAPPDTimeStampsRaw_1.at(time));
+                    LAPPDLoadedBeamgatesRaw_1.push_back(LAPPDBeamgatesRaw_1.at(time));
+                    LAPPDLoadedOffsets_1.push_back(LAPPDOffsets_1.at(time));
+                    LAPPDLoadedTSCorrections_1.push_back(LAPPDTSCorrection_1.at(time));
+                    LAPPDLoadedBGCorrections_1.push_back(LAPPDBGCorrection_1.at(time));
+                    LAPPDLoadedOSInMinusPS_1.push_back(LAPPDOSInMinusPS_1.at(time));
+                } 
+                else 
+                {
+                    // Legacy data fallback: safely fill ACDC 1 with dummy zeros
+                    LAPPDLoadedTimeStampsRaw_1.push_back(-1);
+                    LAPPDLoadedBeamgatesRaw_1.push_back(-1);
+                    LAPPDLoadedOffsets_1.push_back(-1);
+                    LAPPDLoadedTSCorrections_1.push_back(-1);
+                    LAPPDLoadedBGCorrections_1.push_back(-1);
+                    LAPPDLoadedOSInMinusPS_1.push_back(-1);
+                }
 
                 if (LAPPDLoadStoreVerbosity > 2)
                     cout << "parsing finished for LAPPD_ID " << LAPPD_ID << " at time " << time << endl;
 
                 if (LoadBuiltPPSInfo)
                 {
-                    LAPPDLoadedBG_PPSBefore.push_back(LAPPDBG_PPSBefore.at(time));
-                    LAPPDLoadedBG_PPSAfter.push_back(LAPPDBG_PPSAfter.at(time));
-                    LAPPDLoadedBG_PPSDiff.push_back(LAPPDBG_PPSDiff.at(time));
-                    LAPPDLoadedBG_PPSMissing.push_back(LAPPDBG_PPSMissing.at(time));
-                    LAPPDLoadedTS_PPSBefore.push_back(LAPPDTS_PPSBefore.at(time));
-                    LAPPDLoadedTS_PPSAfter.push_back(LAPPDTS_PPSAfter.at(time));
-                    LAPPDLoadedTS_PPSDiff.push_back(LAPPDTS_PPSDiff.at(time));
-                    LAPPDLoadedTS_PPSMissing.push_back(LAPPDTS_PPSMissing.at(time));
+                    LAPPDLoadedBG_PPSBefore_0.push_back(LAPPDBG_PPSBefore_0.at(time));
+                    LAPPDLoadedBG_PPSAfter_0.push_back(LAPPDBG_PPSAfter_0.at(time));
+                    LAPPDLoadedBG_PPSDiff_0.push_back(LAPPDBG_PPSDiff_0.at(time));
+                    LAPPDLoadedBG_PPSMissing_0.push_back(LAPPDBG_PPSMissing_0.at(time));
+                    LAPPDLoadedTS_PPSBefore_0.push_back(LAPPDTS_PPSBefore_0.at(time));
+                    LAPPDLoadedTS_PPSAfter_0.push_back(LAPPDTS_PPSAfter_0.at(time));
+                    LAPPDLoadedTS_PPSDiff_0.push_back(LAPPDTS_PPSDiff_0.at(time));
+                    LAPPDLoadedTS_PPSMissing_0.push_back(LAPPDTS_PPSMissing_0.at(time));
 
-                    if (LAPPDTS_PPSMissing.at(time) != LAPPDBG_PPSMissing.at(time) && ((LAPPDTS_PPSMissing.at(time) > -100 && LAPPDTS_PPSMissing.at(time) < 100) || (LAPPDBG_PPSMissing.at(time) > -100 && LAPPDBG_PPSMissing.at(time) < 100)))
+                    if (LAPPDBG_PPSBefore_1.count(time) > 0) 
                     {
-                        cout << "LAPPDLoadStore: PPS missing number is not the same on BG and TS for LAPPD_ID " << LAPPD_ID << " at time " << time << ", BG: " << LAPPDBG_PPSMissing.at(time) << ", TS: " << LAPPDTS_PPSMissing.at(time) << endl;
-                        cout << "LAPPDLoadStore: BG_PPSDiff: " << LAPPDBG_PPSDiff.at(time) << ", TS_PPSDiff: " << LAPPDTS_PPSDiff.at(time) << endl;
+                        LAPPDLoadedBG_PPSBefore_1.push_back(LAPPDBG_PPSBefore_1.at(time));
+                        LAPPDLoadedBG_PPSAfter_1.push_back(LAPPDBG_PPSAfter_1.at(time));
+                        LAPPDLoadedBG_PPSDiff_1.push_back(LAPPDBG_PPSDiff_1.at(time));
+                        LAPPDLoadedBG_PPSMissing_1.push_back(LAPPDBG_PPSMissing_1.at(time));
+                        LAPPDLoadedTS_PPSBefore_1.push_back(LAPPDTS_PPSBefore_1.at(time));
+                        LAPPDLoadedTS_PPSAfter_1.push_back(LAPPDTS_PPSAfter_1.at(time));
+                        LAPPDLoadedTS_PPSDiff_1.push_back(LAPPDTS_PPSDiff_1.at(time));
+                        LAPPDLoadedTS_PPSMissing_1.push_back(LAPPDTS_PPSMissing_1.at(time));
+                    } 
+                    else 
+                    {
+                        LAPPDLoadedBG_PPSBefore_1.push_back(-1);
+                        LAPPDLoadedBG_PPSAfter_1.push_back(-1);
+                        LAPPDLoadedBG_PPSDiff_1.push_back(-1);
+                        LAPPDLoadedBG_PPSMissing_1.push_back(-1);
+                        LAPPDLoadedTS_PPSBefore_1.push_back(-1);
+                        LAPPDLoadedTS_PPSAfter_1.push_back(-1);
+                        LAPPDLoadedTS_PPSDiff_1.push_back(-1);
+                        LAPPDLoadedTS_PPSMissing_1.push_back(-1);
+                    }
+
+                    // --- Board 0 Check ---
+                    if (LAPPDTS_PPSMissing_0.at(time) != LAPPDBG_PPSMissing_0.at(time) && 
+                        ((LAPPDTS_PPSMissing_0.at(time) > -100 && LAPPDTS_PPSMissing_0.at(time) < 100) || 
+                         (LAPPDBG_PPSMissing_0.at(time) > -100 && LAPPDBG_PPSMissing_0.at(time) < 100)))
+                    {
+                        std::cout << "LAPPDLoadStore: [Board 0] PPS missing mismatch for LAPPD_ID " << LAPPD_ID 
+                              << " at time " << time << ", BG: " << LAPPDBG_PPSMissing_0.at(time) 
+                              << ", TS: " << LAPPDTS_PPSMissing_0.at(time) << std::endl;
+                        std::cout << "LAPPDLoadStore: [Board 0] BG_PPSDiff: " << LAPPDBG_PPSDiff_0.at(time) 
+                              << ", TS_PPSDiff: " << LAPPDTS_PPSDiff_0.at(time) << std::endl;
+                    }
+
+                    // --- Board 1 Check ---
+                    if (LAPPDTS_PPSMissing_1.count(time) > 0) {
+                        if (LAPPDTS_PPSMissing_1.at(time) != LAPPDBG_PPSMissing_1.at(time) && 
+                            ((LAPPDTS_PPSMissing_1.at(time) > -100 && LAPPDTS_PPSMissing_1.at(time) < 100) || 
+                             (LAPPDBG_PPSMissing_1.at(time) > -100 && LAPPDBG_PPSMissing_1.at(time) < 100)))
+                        {
+                            std::cout << "LAPPDLoadStore: [Board 1] PPS missing mismatch for LAPPD_ID " << LAPPD_ID 
+                              << " at time " << time << ", BG: " << LAPPDBG_PPSMissing_1.at(time) 
+                              << ", TS: " << LAPPDTS_PPSMissing_1.at(time) << std::endl;
+                            std::cout << "LAPPDLoadStore: [Board 1] BG_PPSDiff: " << LAPPDBG_PPSDiff_1.at(time) 
+                              << ", TS_PPSDiff: " << LAPPDTS_PPSDiff_1.at(time) << std::endl;
+                        }
                     }
                 }
             }
@@ -517,6 +642,7 @@ bool LAPPDLoadStore::Execute()
             NonEmptyDataEvents += 1;
         }
         eventNo++;
+        
         LAPPDana = ValidDataLoaded;
         m_data->CStore.Set("LAPPDana", LAPPDana);
         DoPedestalSubtract();
@@ -530,30 +656,49 @@ bool LAPPDLoadStore::Execute()
 
         m_data->Stores["ANNIEEvent"]->Set("LAPPDDataMap", LAPPDDataMap);
 
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_ns", LAPPDBeamgate_ns);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDTimeStamps_ns", LAPPDTimeStamps_ns);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDTimeStampsRaw", LAPPDTimeStampsRaw);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgatesRaw", LAPPDBeamgatesRaw);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDOffsets", LAPPDOffsets);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDTSCorrection", LAPPDTSCorrection);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDBGCorrection", LAPPDBGCorrection);
-        m_data->Stores["ANNIEEvent"]->Set("LAPPDOSInMinusPS", LAPPDOSInMinusPS);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_ns_0", LAPPDBeamgate_ns_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDTimeStamps_ns_0", LAPPDTimeStamps_ns_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDTimeStampsRaw_0", LAPPDTimeStampsRaw_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgatesRaw_0", LAPPDBeamgatesRaw_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDOffsets_0", LAPPDOffsets_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDTSCorrection_0", LAPPDTSCorrection_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDBGCorrection_0", LAPPDBGCorrection_0);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDOSInMinusPS_0", LAPPDOSInMinusPS_0);
+
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_ns_1", LAPPDBeamgate_ns_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDTimeStamps_ns_1", LAPPDTimeStamps_ns_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDTimeStampsRaw_1", LAPPDTimeStampsRaw_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgatesRaw_1", LAPPDBeamgatesRaw_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDOffsets_1", LAPPDOffsets_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDTSCorrection_1", LAPPDTSCorrection_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDBGCorrection_1", LAPPDBGCorrection_1);
+        m_data->Stores["ANNIEEvent"]->Set("LAPPDOSInMinusPS_1", LAPPDOSInMinusPS_1);
+
         if (LoadBuiltPPSInfo)
         {
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSBefore", LAPPDBG_PPSBefore);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSAfter", LAPPDBG_PPSAfter);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSDiff", LAPPDBG_PPSDiff);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSMissing", LAPPDBG_PPSMissing);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSBefore", LAPPDTS_PPSBefore);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSAfter", LAPPDTS_PPSAfter);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSDiff", LAPPDTS_PPSDiff);
-            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSMissing", LAPPDTS_PPSMissing);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSBefore_0", LAPPDBG_PPSBefore_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSAfter_0", LAPPDBG_PPSAfter_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSDiff_0", LAPPDBG_PPSDiff_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSMissing_0", LAPPDBG_PPSMissing_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSBefore_0", LAPPDTS_PPSBefore_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSAfter_0", LAPPDTS_PPSAfter_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSDiff_0", LAPPDTS_PPSDiff_0);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSMissing_0", LAPPDTS_PPSMissing_0);
+        
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSBefore_1", LAPPDBG_PPSBefore_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSAfter_1", LAPPDBG_PPSAfter_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSDiff_1", LAPPDBG_PPSDiff_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDBG_PPSMissing_1", LAPPDBG_PPSMissing_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSBefore_1", LAPPDTS_PPSBefore_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSAfter_1", LAPPDTS_PPSAfter_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSDiff_1", LAPPDTS_PPSDiff_1);
+            m_data->Stores["ANNIEEvent"]->Set("LAPPDTS_PPSMissing_1", LAPPDTS_PPSMissing_1);
         }
+
         // TODO: save other timestamps, variables and metadata for later use
 
-        if (eventNo % 100 == 0)
-        {
-            cout << "LAPPDLoadStore: Loaded " << eventNo << " events, " << NonEmptyDataEvents << " non empty LAPPD PSEC data loaded from all LAPPDs" << endl;
+        if (eventNo % 100 == 0) {
+            std::cout << "LAPPDLoadStore: Loaded " << eventNo << " events, " << NonEmptyDataEvents << " non empty LAPPD PSEC data loaded from all LAPPDs" << std::endl;
         }
     }
 
@@ -1204,7 +1349,6 @@ bool LAPPDLoadStore::ParsePSECData()
         }
     }
 
-
     LAPPDEventIndex_ID[LAPPD_ID] += 1;
     if (LAPPDLoadStoreVerbosity > 1)
     {
@@ -1296,60 +1440,150 @@ bool LAPPDLoadStore::DoPedestalSubtract()
 
 void LAPPDLoadStore::SaveTimeStamps()
 {
-    unsigned short beamgate_63_48 = meta.at(7);
-    unsigned short beamgate_47_32 = meta.at(27);
-    unsigned short beamgate_31_16 = meta.at(47);
-    unsigned short beamgate_15_0 = meta.at(67);
-    std::bitset<16> bits_beamgate_63_48(beamgate_63_48);
-    std::bitset<16> bits_beamgate_47_32(beamgate_47_32);
-    std::bitset<16> bits_beamgate_31_16(beamgate_31_16);
-    std::bitset<16> bits_beamgate_15_0(beamgate_15_0);
-    unsigned long beamgate_63_0 = (static_cast<unsigned long>(beamgate_63_48) << 48) + (static_cast<unsigned long>(beamgate_47_32) << 32) + (static_cast<unsigned long>(beamgate_31_16) << 16) + (static_cast<unsigned long>(beamgate_15_0));
-    std::bitset<64> bits_beamgate_63_0(beamgate_63_0);
-    unsigned long beamgate_timestamp = beamgate_63_0 * (CLOCK_to_NSEC);
-    m_data->CStore.Set("LAPPDbeamgate", beamgate_timestamp);
-    m_data->CStore.Set("LAPPDBeamgate_Raw", beamgate_63_0);
 
-    unsigned long BGTruncation = beamgate_63_0 % 8;
-    unsigned long BGTruncated = beamgate_63_0 - BGTruncation;
-    unsigned long BGInt = BGTruncated / 8 * 25;
-    unsigned long BGIntTruncation = BGTruncation * 3;
-    // save these two to CStore
-    double BGFloat = BGTruncation * 0.125;
-    unsigned long BGIntCombined = BGInt + BGIntTruncation;
-    m_data->CStore.Set("LAPPDBGIntCombined", BGIntCombined);
-    m_data->CStore.Set("LAPPDBGFloat", BGFloat);
+    // PROTECTION: We expect exactly two boards (ACDC 0 and ACDC 1) for each LAPPD. 
+    // Each board produces 103 metadata words (total 206).
+    // If either ACDC 0 OR ACDC 1 is missing, the offset fitting script ignored this event.
+    // We must abort and roll back the index to prevent desynchronization from the ROOT tree.
+    if (meta.size() < 206) 
+    {
+        std::cout << "LAPPDLoadStore::SaveTimeStamps, WARNING: Event " << eventNo 
+                  << " is missing a board (meta size: " << meta.size() 
+                  << "). Expected = 206. Skipping to maintain offset index sync!" << std::endl;
+        
+        // Roll back the index that was incremented in ParsePSECData
+        if (LAPPDEventIndex_ID[LAPPD_ID] > 0) {
+            LAPPDEventIndex_ID[LAPPD_ID] -= 1;
+        }
+        return; 
+    }
 
-    unsigned short timestamp_63_48 = meta.at(70);
-    unsigned short timestamp_47_32 = meta.at(50);
-    unsigned short timestamp_31_16 = meta.at(30);
-    unsigned short timestamp_15_0 = meta.at(10);
-    std::bitset<16> bits_timestamp_63_48(timestamp_63_48);
-    std::bitset<16> bits_timestamp_47_32(timestamp_47_32);
-    std::bitset<16> bits_timestamp_31_16(timestamp_31_16);
-    std::bitset<16> bits_timestamp_15_0(timestamp_15_0);
-    unsigned long timestamp_63_0 = (static_cast<unsigned long>(timestamp_63_48) << 48) + (static_cast<unsigned long>(timestamp_47_32) << 32) + (static_cast<unsigned long>(timestamp_31_16) << 16) + (static_cast<unsigned long>(timestamp_15_0));
-    unsigned long lappd_timestamp = timestamp_63_0 * (CLOCK_to_NSEC);
-    m_data->CStore.Set("LAPPDtimestamp", lappd_timestamp);
-    m_data->CStore.Set("LAPPDTimestamp_Raw", timestamp_63_0);
+    // Reconstructing beamgate from ACDC 0
+    unsigned short beamgate0_63_48 = meta.at(7);
+    unsigned short beamgate0_47_32 = meta.at(27);
+    unsigned short beamgate0_31_16 = meta.at(47);
+    unsigned short beamgate0_15_0 = meta.at(67);
+    
+    unsigned long beamgate0_63_0 = (static_cast<unsigned long>(beamgate0_63_48) << 48) 
+        + (static_cast<unsigned long>(beamgate0_47_32) << 32) 
+        + (static_cast<unsigned long>(beamgate0_31_16) << 16) 
+        + (static_cast<unsigned long>(beamgate0_15_0));
+    
+    unsigned long beamgate0_timestamp = beamgate0_63_0 * CLOCK_TO_NSEC;
+    
+    // Reconstructing beamgate from ACDC 1
+    // There are 103 metadata words per ACDC, so the ACDC 1 beamgate is located 103 words after the corresponding ACDC 0 beamgate words.
+    unsigned short beamgate1_63_48 = meta.at(7 + ACDC_META_WORDS);
+    unsigned short beamgate1_47_32 = meta.at(27 + ACDC_META_WORDS);
+    unsigned short beamgate1_31_16 = meta.at(47 + ACDC_META_WORDS);
+    unsigned short beamgate1_15_0  = meta.at(67 + ACDC_META_WORDS);
 
-    unsigned long TSTruncation = timestamp_63_0 % 8;
-    unsigned long TSTruncated = timestamp_63_0 - TSTruncation;
-    unsigned long TSInt = TSTruncated / 8 * 25;
-    unsigned long TSIntTruncation = TSTruncation * 3;
-    // save these two to CStore
-    double TSFloat = TSTruncation * 0.125;
-    unsigned long TSIntCombined = TSInt + TSIntTruncation;
-    m_data->CStore.Set("LAPPDTSIntCombined", TSIntCombined);
-    m_data->CStore.Set("LAPPDTSFloat", TSFloat);
+    unsigned long beamgate1_63_0 =
+        (static_cast<unsigned long>(beamgate1_63_48) << 48) +
+        (static_cast<unsigned long>(beamgate1_47_32) << 32) +
+        (static_cast<unsigned long>(beamgate1_31_16) << 16) +
+        static_cast<unsigned long>(beamgate1_15_0);
 
-    m_data->Stores["ANNIEEvent"]->Set("LAPPDbeamgate", beamgate_timestamp); // in ns
-    m_data->Stores["ANNIEEvent"]->Set("LAPPDtimestamp", lappd_timestamp);   // in ns
-    m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate_Raw", beamgate_63_0);
-    m_data->Stores["ANNIEEvent"]->Set("LAPPDTimestamp_Raw", timestamp_63_0);
+    unsigned long beamgate1_timestamp = beamgate1_63_0 * CLOCK_TO_NSEC;
 
-    if (LAPPDLoadStoreVerbosity > 11)
-        debugLoadStore << eventNo << " LAPPDLoadStore, Saving timestamps, beamgate_timestamp: " << beamgate_63_0 << ", lappd_timestamp: " << timestamp_63_0 << endl;
+    m_data->CStore.Set("LAPPDbeamgate0", beamgate0_timestamp);
+    m_data->CStore.Set("LAPPDBeamgate0_Raw", beamgate0_63_0);
+    m_data->CStore.Set("LAPPDbeamgate1", beamgate1_timestamp);
+    m_data->CStore.Set("LAPPDBeamgate1_Raw", beamgate1_63_0);
+
+    unsigned long BG0_Truncation = beamgate0_63_0 % 8;
+    unsigned long BG0_Truncated = beamgate0_63_0 - BG0_Truncation;
+    unsigned long BG0_Int = BG0_Truncated / 8 * 25;
+    unsigned long BG0_IntTruncation = BG0_Truncation * 3;
+    double BG0_Float = BG0_Truncation * 0.125;
+    unsigned long BG0_IntCombined = BG0_Int + BG0_IntTruncation;
+
+    unsigned long BG1_Truncation = beamgate1_63_0 % 8;
+    unsigned long BG1_Truncated = beamgate1_63_0 - BG1_Truncation;
+    unsigned long BG1_Int = BG1_Truncated / 8 * 25;
+    unsigned long BG1_IntTruncation = BG1_Truncation * 3;
+    double BG1_Float = BG1_Truncation * 0.125;
+    unsigned long BG1_IntCombined = BG1_Int + BG1_IntTruncation;
+
+    m_data->CStore.Set("LAPPDBG0_IntCombined", BG0_IntCombined);
+    m_data->CStore.Set("LAPPDBG0_Float", BG0_Float);
+    m_data->CStore.Set("LAPPDBG1_IntCombined", BG1_IntCombined);
+    m_data->CStore.Set("LAPPDBG1_Float", BG1_Float);
+
+    // Reconstructing timestamp from ACDC 0
+    unsigned short timestamp0_63_48 = meta.at(70);
+    unsigned short timestamp0_47_32 = meta.at(50);
+    unsigned short timestamp0_31_16 = meta.at(30);
+    unsigned short timestamp0_15_0 = meta.at(10);
+    
+    unsigned long timestamp0_63_0 = 
+        (static_cast<unsigned long>(timestamp0_63_48) << 48) + 
+        (static_cast<unsigned long>(timestamp0_47_32) << 32) + 
+        (static_cast<unsigned long>(timestamp0_31_16) << 16) + 
+        (static_cast<unsigned long>(timestamp0_15_0));
+
+    unsigned long lappd_timestamp0 = timestamp0_63_0 * CLOCK_TO_NSEC;
+
+    // Reconstructing timestamp from ACDC 1
+    unsigned short timestamp1_63_48 = meta.at(70 + ACDC_META_WORDS);
+    unsigned short timestamp1_47_32 = meta.at(50 + ACDC_META_WORDS);
+    unsigned short timestamp1_31_16 = meta.at(30 + ACDC_META_WORDS);
+    unsigned short timestamp1_15_0 = meta.at(10 + ACDC_META_WORDS);
+    
+    unsigned long timestamp1_63_0 = 
+        (static_cast<unsigned long>(timestamp1_63_48) << 48) + 
+        (static_cast<unsigned long>(timestamp1_47_32) << 32) + 
+        (static_cast<unsigned long>(timestamp1_31_16) << 16) + 
+        (static_cast<unsigned long>(timestamp1_15_0));
+
+    unsigned long lappd_timestamp1 = timestamp1_63_0 * CLOCK_TO_NSEC;
+
+    m_data->CStore.Set("LAPPDtimestamp0", lappd_timestamp0);
+    m_data->CStore.Set("LAPPDTimestamp0_Raw", timestamp0_63_0);
+    m_data->CStore.Set("LAPPDtimestamp1", lappd_timestamp1);
+    m_data->CStore.Set("LAPPDTimestamp1_Raw", timestamp1_63_0);
+
+    unsigned long TS0_Truncation = timestamp0_63_0 % 8;
+    unsigned long TS0_Truncated = timestamp0_63_0 - TS0_Truncation;
+    unsigned long TS0_Int = TS0_Truncated / 8 * 25;
+    unsigned long TS0_IntTruncation = TS0_Truncation * 3;
+    double TS0_Float = TS0_Truncation * 0.125;
+    unsigned long TS0_IntCombined = TS0_Int + TS0_IntTruncation;
+
+    unsigned long TS1_Truncation = timestamp1_63_0 % 8;
+    unsigned long TS1_Truncated = timestamp1_63_0 - TS1_Truncation;
+    unsigned long TS1_Int = TS1_Truncated / 8 * 25;
+    unsigned long TS1_IntTruncation = TS1_Truncation * 3;
+    double TS1_Float = TS1_Truncation * 0.125;
+    unsigned long TS1_IntCombined = TS1_Int + TS1_IntTruncation;
+
+    m_data->CStore.Set("LAPPDTS0_IntCombined", TS0_IntCombined);
+    m_data->CStore.Set("LAPPDTS0_Float", TS0_Float);
+    m_data->CStore.Set("LAPPDTS1_IntCombined", TS1_IntCombined);
+    m_data->CStore.Set("LAPPDTS1_Float", TS1_Float);
+
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDbeamgate0", beamgate0_timestamp); // in ns
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDtimestamp0", lappd_timestamp0);   // in ns
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate0_Raw", beamgate0_63_0);
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDTimestamp0_Raw", timestamp0_63_0);
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDbeamgate1", beamgate1_timestamp); // in ns
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDtimestamp1", lappd_timestamp1);   // in ns
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDBeamgate1_Raw", beamgate1_63_0);
+    m_data->Stores["ANNIEEvent"]->Set("LAPPDTimestamp1_Raw", timestamp1_63_0);
+
+    if (LAPPDLoadStoreVerbosity > 5) {
+        debugLoadStore
+            << "Event number: " << eventNo
+            << ", LAPPD ID: " << LAPPD_ID
+            << ", PSEC index: " << LAPPDEventIndex_ID[LAPPD_ID]
+            << ", ACC: " << meta[0]
+            << ", PPS index: " << PPSnumber
+            << ", Timestamp0: " << timestamp0_63_0
+            << ", Beamgate0: " << beamgate0_63_0
+            << ", Timestamp1: " << timestamp1_63_0
+            << ", Beamgate1: " << beamgate1_63_0
+            << std::endl;
+    }
 
     if (loadOffsets && runInfoLoaded)
     {
@@ -1364,221 +1598,146 @@ void LAPPDLoadStore::SaveTimeStamps()
 void LAPPDLoadStore::SaveOffsets()
 {
     int LoadingOffsetID = LAPPD_ID;
-    if(LoadingOffsetID+1 > LAPPDEventIndex_ID.size())
+    if(LoadingOffsetID + 1 > LAPPDEventIndex_ID.size())
     {
-        LAPPDEventIndex_ID.resize(LoadingOffsetID+1);
+        LAPPDEventIndex_ID.resize(LoadingOffsetID + 1);
     }
-    int GetOffsetIndex_byID = LAPPDEventIndex_ID[LoadingOffsetID];
-    if(LAPPDLoadStoreVerbosity>0)
-        cout << "LAPPDLoadStore, SavingOffsets, LoadingOffset for LAPPD_ID: " << LoadingOffsetID << ", OffsetIndex of this event: " << GetOffsetIndex_byID << endl;
+    
+    int GetOffsetIndex_byID = LAPPDEventIndex_ID[LoadingOffsetID] - 1;
+
+    if(LAPPDLoadStoreVerbosity > 0) {
+        cout << "LAPPDLoadStore::SaveOffsets, Loading offset for LAPPD_ID: " << LoadingOffsetID << ", OffsetIndex of this event: " << GetOffsetIndex_byID << endl;
+    }
 
     std::string key = std::to_string(runNumber) + "_" + std::to_string(subRunNumber) + "_" + std::to_string(partFileNumber) + "_" + std::to_string(LAPPD_ID);
 
-    int LAPPDBGCorrection = 0;
-    int LAPPDTSCorrection = 0;
-    int LAPPDOffset_minus_ps = 0;
-    uint64_t LAPPDOffset = 0;
+    // Variables for Board 0
+    int LAPPDBGCorrection_0 = 0, LAPPDTSCorrection_0 = 0; 
+    int LAPPDOffset_minus_ps_0 = 0;
+    uint64_t LAPPDOffset_0 = 0;
+    uint64_t BG_PPSBefore_0 = 0, BG_PPSAfter_0 = 0, BG_PPSDiff_0 = 0;
+    uint64_t TS_PPSBefore_0 = 0, TS_PPSAfter_0 = 0, TS_PPSDiff_0 = 0;
+    int BG_PPSMissing_0 = 0, TS_PPSMissing_0 = 0;
 
-    uint64_t BG_PPSBefore = 0;
-    uint64_t BG_PPSAfter = 0;
-    uint64_t BG_PPSDiff = 0;
-    uint64_t TS_PPSBefore = 0;
-    uint64_t TS_PPSAfter = 0;
-    uint64_t TS_PPSDiff = 0;
-    int BG_PPSMissing = 0;
-    int TS_PPSMissing = 0;
+    // Variables for Board 1
+    int LAPPDBGCorrection_1 = 0, LAPPDTSCorrection_1 = 0;
+    int LAPPDOffset_minus_ps_1 = 0;
+    uint64_t LAPPDOffset_1 = 0;
+    uint64_t BG_PPSBefore_1 = 0, BG_PPSAfter_1 = 0, BG_PPSDiff_1 = 0;
+    uint64_t TS_PPSBefore_1 = 0, TS_PPSAfter_1 = 0, TS_PPSDiff_1 = 0;
+    int BG_PPSMissing_1 = 0, TS_PPSMissing_1 = 0;
 
-    // Check if the key exists and the index is within range for BGCorrections
-    if (BGCorrections.find(key) != BGCorrections.end() && GetOffsetIndex_byID < BGCorrections[key].size())
-    {
-        LAPPDBGCorrection = BGCorrections[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (BGCorrections.find(key) == BGCorrections.end())
-        {
-            std::cerr << "Error: Key not found in BGCorrections: " << key << std::endl;
+    // Check if the key exists and the index is within range for loaded offsets and corrections
+    auto fetchValue = [&](const auto& mapObj, const std::string& mapName, auto& targetVar) {
+        auto it = mapObj.find(key);
+        if (it != mapObj.end() && GetOffsetIndex_byID < it->second.size()) {
+            targetVar = it->second[GetOffsetIndex_byID];
+        } else {
+            if (it == mapObj.end()) {
+                std::cerr << "Error: Key not found in " << mapName << ": " << key << std::endl;
+            } else {
+                std::cerr << "Error: Index out of range for " << mapName << " with key: " << key << std::endl;
+            }
         }
-        else
-        {
-            std::cerr << "Error: GetOffsetIndex_byID out of range for BGCorrections with key: " << key << std::endl;
-        }
-    }
+    };
 
-    // Repeat the checks for TSCorrections, Offsets_minus_ps, and Offsets
-    if (TSCorrections.find(key) != TSCorrections.end() && GetOffsetIndex_byID < TSCorrections[key].size())
-    {
-        LAPPDTSCorrection = TSCorrections[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (TSCorrections.find(key) == TSCorrections.end())
-        {
-            std::cerr << "Error: Key not found in TSCorrections: " << key << std::endl;
-        }
-        else
-        {
-            std::cerr << "Error: GetOffsetIndex_byID out of range for TSCorrections with key: " << key << std::endl;
-        }
-    }
+    // Fetch Board 0 variables
+    fetchValue(BGCorrections_0, "BGCorrections_0", LAPPDBGCorrection_0);
+    fetchValue(TSCorrections_0, "TSCorrections_0", LAPPDTSCorrection_0);
+    fetchValue(Offsets_minus_ps_0, "Offsets_minus_ps_0", LAPPDOffset_minus_ps_0);
+    fetchValue(Offsets_0, "Offsets_0", LAPPDOffset_0);
+    fetchValue(BG_PPSBefore_loaded_0, "BG_PPSBefore_loaded_0", BG_PPSBefore_0);
+    fetchValue(BG_PPSAfter_loaded_0, "BG_PPSAfter_loaded_0", BG_PPSAfter_0);
+    fetchValue(BG_PPSDiff_loaded_0, "BG_PPSDiff_loaded_0", BG_PPSDiff_0);
+    fetchValue(BG_PPSMissing_loaded_0, "BG_PPSMissing_loaded_0", BG_PPSMissing_0);
+    fetchValue(TS_PPSBefore_loaded_0, "TS_PPSBefore_loaded_0", TS_PPSBefore_0);
+    fetchValue(TS_PPSAfter_loaded_0, "TS_PPSAfter_loaded_0", TS_PPSAfter_0);
+    fetchValue(TS_PPSDiff_loaded_0, "TS_PPSDiff_loaded_0", TS_PPSDiff_0);
+    fetchValue(TS_PPSMissing_loaded_0, "TS_PPSMissing_loaded_0", TS_PPSMissing_0);
 
-    if (Offsets_minus_ps.find(key) != Offsets_minus_ps.end() && GetOffsetIndex_byID < Offsets_minus_ps[key].size())
-    {
-        LAPPDOffset_minus_ps = Offsets_minus_ps[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (Offsets_minus_ps.find(key) == Offsets_minus_ps.end())
-        {
-            std::cerr << "Error: Key not found in Offsets_minus_ps: " << key << std::endl;
-        }
-        else
-        {
-            std::cerr << "Error: GetOffsetIndex_byID out of range for Offsets_minus_ps with key: " << key << std::endl;
-        }
-    }
+    // Fetch Board 1 variables
+    fetchValue(BGCorrections_1, "BGCorrections_1", LAPPDBGCorrection_1);
+    fetchValue(TSCorrections_1, "TSCorrections_1", LAPPDTSCorrection_1);
+    fetchValue(Offsets_minus_ps_1, "Offsets_minus_ps_1", LAPPDOffset_minus_ps_1);
+    fetchValue(Offsets_1, "Offsets_1", LAPPDOffset_1);
+    fetchValue(BG_PPSBefore_loaded_1, "BG_PPSBefore_loaded_1", BG_PPSBefore_1);
+    fetchValue(BG_PPSAfter_loaded_1, "BG_PPSAfter_loaded_1", BG_PPSAfter_1);
+    fetchValue(BG_PPSDiff_loaded_1, "BG_PPSDiff_loaded_1", BG_PPSDiff_1);
+    fetchValue(BG_PPSMissing_loaded_1, "BG_PPSMissing_loaded_1", BG_PPSMissing_1);
+    fetchValue(TS_PPSBefore_loaded_1, "TS_PPSBefore_loaded_1", TS_PPSBefore_1);
+    fetchValue(TS_PPSAfter_loaded_1, "TS_PPSAfter_loaded_1", TS_PPSAfter_1);
+    fetchValue(TS_PPSDiff_loaded_1, "TS_PPSDiff_loaded_1", TS_PPSDiff_1);
+    fetchValue(TS_PPSMissing_loaded_1, "TS_PPSMissing_loaded_1", TS_PPSMissing_1);
 
-    if (Offsets.find(key) != Offsets.end() && GetOffsetIndex_byID < Offsets[key].size())
-    {
-        LAPPDOffset = Offsets[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (Offsets.find(key) == Offsets.end())
-        {
-            std::cerr << "Error: Key not found in Offsets: " << key << std::endl;
-        }
-        else
-        {
-            std::cerr << "Error: GetOffsetIndex_byID out of range for Offsets with key: " << key << std::endl;
-        }
-    }
+    // Push Board 0 to CStore
+    m_data->CStore.Set("LAPPDBGCorrection_0", LAPPDBGCorrection_0);
+    m_data->CStore.Set("LAPPDTSCorrection_0", LAPPDTSCorrection_0);
+    m_data->CStore.Set("LAPPDOffset_0", LAPPDOffset_0);
+    m_data->CStore.Set("LAPPDOffset_minus_ps_0", LAPPDOffset_minus_ps_0);
+    m_data->CStore.Set("BG_PPSBefore_0", BG_PPSBefore_0);
+    m_data->CStore.Set("BG_PPSAfter_0", BG_PPSAfter_0);
+    m_data->CStore.Set("BG_PPSDiff_0", BG_PPSDiff_0);
+    m_data->CStore.Set("BG_PPSMissing_0", BG_PPSMissing_0);
+    m_data->CStore.Set("TS_PPSBefore_0", TS_PPSBefore_0);
+    m_data->CStore.Set("TS_PPSAfter_0", TS_PPSAfter_0);
+    m_data->CStore.Set("TS_PPSDiff_0", TS_PPSDiff_0);
+    m_data->CStore.Set("TS_PPSMissing_0", TS_PPSMissing_0);
 
-    if (BG_PPSBefore_loaded.find(key) != BG_PPSBefore_loaded.end() && GetOffsetIndex_byID < BG_PPSBefore_loaded[key].size())
-    {
-        BG_PPSBefore = BG_PPSBefore_loaded[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (BG_PPSBefore_loaded.find(key) == BG_PPSBefore_loaded.end())
-            std::cerr << "Error: Key not found in BG_PPSBefore_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSBefore_loaded with key: " << key << std::endl;
-    }
+    // Push Board 1 to CStore
+    m_data->CStore.Set("LAPPDBGCorrection_1", LAPPDBGCorrection_1);
+    m_data->CStore.Set("LAPPDTSCorrection_1", LAPPDTSCorrection_1);
+    m_data->CStore.Set("LAPPDOffset_1", LAPPDOffset_1);
+    m_data->CStore.Set("LAPPDOffset_minus_ps_1", LAPPDOffset_minus_ps_1);
+    m_data->CStore.Set("BG_PPSBefore_1", BG_PPSBefore_1);
+    m_data->CStore.Set("BG_PPSAfter_1", BG_PPSAfter_1);
+    m_data->CStore.Set("BG_PPSDiff_1", BG_PPSDiff_1);
+    m_data->CStore.Set("BG_PPSMissing_1", BG_PPSMissing_1);
+    m_data->CStore.Set("TS_PPSBefore_1", TS_PPSBefore_1);
+    m_data->CStore.Set("TS_PPSAfter_1", TS_PPSAfter_1);
+    m_data->CStore.Set("TS_PPSDiff_1", TS_PPSDiff_1);
+    m_data->CStore.Set("TS_PPSMissing_1", TS_PPSMissing_1);
 
-    if (BG_PPSAfter_loaded.find(key) != BG_PPSAfter_loaded.end() && GetOffsetIndex_byID < BG_PPSAfter_loaded[key].size())
-    {
-        BG_PPSAfter = BG_PPSAfter_loaded[key][GetOffsetIndex_byID];
+    if (TS_PPSMissing_0 != BG_PPSMissing_0 || TS_PPSMissing_1 != BG_PPSMissing_1) {
+        std::cout << "LAPPDLoadStore::SaveOffsets, PPS Missing mismatch detected. BG_0: " << BG_PPSMissing_0 
+             << " TS_0: " << TS_PPSMissing_0 << " | BG_1: " << BG_PPSMissing_1 
+             << " TS_1: " << TS_PPSMissing_1 << std::endl;
     }
-    else
-    {
-        if (BG_PPSAfter_loaded.find(key) == BG_PPSAfter_loaded.end())
-            std::cerr << "Error: Key not found in BG_PPSAfter_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSAfter_loaded with key: " << key << std::endl;
-    }
+    
+    if (LAPPDLoadStoreVerbosity > 5) {
+        debugLoadStore
+            << "Event number: " << eventNo
+            << ", LAPPDLoadStore, Saving offsets, key: " << key
+            << ", LAPPD_ID: " << LAPPD_ID
+            << ", idx: " << GetOffsetIndex_byID
+            << std::endl;
+    
+        debugLoadStore
+            << ", TS_PPSBefore_0: " << TS_PPSBefore_0
+            << ", BG_PPSBefore_0: " << BG_PPSBefore_0
+            << ", TS_PPSAfter_0: " << TS_PPSAfter_0
+            << ", BG_PPSAfter_0: " << BG_PPSAfter_0
+            << ", LAPPDOffset_0: " << LAPPDOffset_0
+	    << ", LAPPDOffset_minus_ps_0: " << LAPPDOffset_minus_ps_0
+	    << ", LAPPDTSCorrection_0: " << LAPPDTSCorrection_0
+	    << ", LAPPDBGCorrection_0: " << LAPPDBGCorrection_0
+            << std::endl;
 
-    if (BG_PPSDiff_loaded.find(key) != BG_PPSDiff_loaded.end() && GetOffsetIndex_byID < BG_PPSDiff_loaded[key].size())
-    {
-        BG_PPSDiff = BG_PPSDiff_loaded[key][GetOffsetIndex_byID];
+        debugLoadStore
+            << ", TS_PPSBefore_1: " << TS_PPSBefore_1
+            << ", BG_PPSBefore_1: " << BG_PPSBefore_1
+            << ", TS_PPSAfter_1: " << TS_PPSAfter_1
+            << ", BG_PPSAfter_1: " << BG_PPSAfter_1
+            << ", LAPPDOffset_1: " << LAPPDOffset_1
+            << ", LAPPDOffset_minus_ps_1: " << LAPPDOffset_minus_ps_1
+            << ", LAPPDTSCorrection_1: " << LAPPDTSCorrection_1
+            << ", LAPPDBGCorrection_1: " << LAPPDBGCorrection_1
+            << std::endl;
     }
-    else
-    {
-        if (BG_PPSDiff_loaded.find(key) == BG_PPSDiff_loaded.end())
-            std::cerr << "Error: Key not found in BG_PPSDiff_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSDiff_loaded with key: " << key << std::endl;
-    }
-
-    if (BG_PPSMissing_loaded.find(key) != BG_PPSMissing_loaded.end() && GetOffsetIndex_byID < BG_PPSMissing_loaded[key].size())
-    {
-        BG_PPSMissing = BG_PPSMissing_loaded[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (BG_PPSMissing_loaded.find(key) == BG_PPSMissing_loaded.end())
-            std::cerr << "Error: Key not found in BG_PPSMissing_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for BG_PPSMissing_loaded with key: " << key << std::endl;
-    }
-
-    if (TS_PPSBefore_loaded.find(key) != TS_PPSBefore_loaded.end() && GetOffsetIndex_byID < TS_PPSBefore_loaded[key].size())
-    {
-        TS_PPSBefore = TS_PPSBefore_loaded[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (TS_PPSBefore_loaded.find(key) == TS_PPSBefore_loaded.end())
-            std::cerr << "Error: Key not found in TS_PPSBefore_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSBefore_loaded with key: " << key << std::endl;
-    }
-
-    if (TS_PPSAfter_loaded.find(key) != TS_PPSAfter_loaded.end() && GetOffsetIndex_byID < TS_PPSAfter_loaded[key].size())
-    {
-        TS_PPSAfter = TS_PPSAfter_loaded[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (TS_PPSAfter_loaded.find(key) == TS_PPSAfter_loaded.end())
-            std::cerr << "Error: Key not found in TS_PPSAfter_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSAfter_loaded with key: " << key << std::endl;
-    }
-
-    if (TS_PPSDiff_loaded.find(key) != TS_PPSDiff_loaded.end() && GetOffsetIndex_byID < TS_PPSDiff_loaded[key].size())
-    {
-        TS_PPSDiff = TS_PPSDiff_loaded[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (TS_PPSDiff_loaded.find(key) == TS_PPSDiff_loaded.end())
-            std::cerr << "Error: Key not found in TS_PPSDiff_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSDiff_loaded with key: " << key << std::endl;
-    }
-
-    if (TS_PPSMissing_loaded.find(key) != TS_PPSMissing_loaded.end() && GetOffsetIndex_byID < TS_PPSMissing_loaded[key].size())
-    {
-        TS_PPSMissing = TS_PPSMissing_loaded[key][GetOffsetIndex_byID];
-    }
-    else
-    {
-        if (TS_PPSMissing_loaded.find(key) == TS_PPSMissing_loaded.end())
-            std::cerr << "Error: Key not found in TS_PPSMissing_loaded: " << key << std::endl;
-        else
-            std::cerr << "Error: GetOffsetIndex_byID out of range for TS_PPSMissing_loaded with key: " << key << std::endl;
-    }
-
-    // start to fill data
-    m_data->CStore.Set("LAPPDBGCorrection", LAPPDBGCorrection);
-    m_data->CStore.Set("LAPPDTSCorrection", LAPPDTSCorrection);
-    m_data->CStore.Set("LAPPDOffset", LAPPDOffset);
-    m_data->CStore.Set("LAPPDOffset_minus_ps", LAPPDOffset_minus_ps);
-
-    m_data->CStore.Set("BG_PPSBefore", BG_PPSBefore);
-    m_data->CStore.Set("BG_PPSAfter", BG_PPSAfter);
-    m_data->CStore.Set("BG_PPSDiff", BG_PPSDiff);
-    m_data->CStore.Set("BG_PPSMissing", BG_PPSMissing);
-    m_data->CStore.Set("TS_PPSBefore", TS_PPSBefore);
-    m_data->CStore.Set("TS_PPSAfter", TS_PPSAfter);
-    m_data->CStore.Set("TS_PPSDiff", TS_PPSDiff);
-    m_data->CStore.Set("TS_PPSMissing", TS_PPSMissing);
-
-    if (TS_PPSMissing != BG_PPSMissing)
-    {
-        cout << "LAPPDLoadStore: BG_PPSMissing != TS_PPSMissing, BG_PPSMissing: " << BG_PPSMissing << ", TS_PPSMissing: " << TS_PPSMissing << endl;
-    }
-
-    // cout << "LAPPDLoadStore, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << ", BG_PPSBefore: " << BG_PPSBefore << ", BG_PPSAfter: " << BG_PPSAfter << ", BG_PPSDiff: " << BG_PPSDiff << ", BG_PPSMissing: " << BG_PPSMissing << ", TS_PPSBefore: " << TS_PPSBefore << ", TS_PPSAfter: " << TS_PPSAfter << ", TS_PPSDiff: " << TS_PPSDiff << ", TS_PPSMissing: " << TS_PPSMissing << endl;
-
-    if (LAPPDLoadStoreVerbosity > 11)
-        debugLoadStore << eventNo << "+LAPPDLoadStore, Saving offsets and corrections, key: " << key << ", LAPPDOffset: " << LAPPDOffset << ", LAPPDOffset_minus_ps: " << LAPPDOffset_minus_ps << ", LAPPDBGCorrection: " << LAPPDBGCorrection << ", LAPPDTSCorrection: " << LAPPDTSCorrection << endl;
 }
 
 void LAPPDLoadStore::LoadOffsetsAndCorrections()
 {
-    // load here from the root tree to:
+    // Load Offsets from both ACDCs here from the offsetFitResult.root output.
     /*
     std::map<string, vector<uint64_t>> Offsets; //Loaded offset, use string = run number + sub run number + partfile number as key.
     std::map<string, vector<int>> Offsets_minus_ps; //offset in ps, use offset - this/1e3 as the real offset
@@ -1597,84 +1756,127 @@ void LAPPDLoadStore::LoadOffsetsAndCorrections()
     }
 
     int runNumber, subRunNumber, partFileNumber, LAPPD_ID;
-    ULong64_t final_offset_ns_0, final_offset_ps_negative_0, EventIndex;
-    ULong64_t BGCorrection_tick, TSCorrection_tick;
+    ULong64_t EventIndex;
 
-    ULong64_t BG_PPSBefore_tick;
-    ULong64_t BG_PPSAfter_tick;
-    ULong64_t BG_PPSDiff_tick;
-    ULong64_t BG_PPSMissing_tick;
-    ULong64_t TS_PPSBefore_tick;
-    ULong64_t TS_PPSAfter_tick;
-    ULong64_t TS_PPSDiff_tick;
-    ULong64_t TS_PPSMissing_tick;
-    ULong64_t TS_driftCorrection_ns;
-    ULong64_t BG_driftCorrection_ns;
+    // ACDC 0 variables
+    ULong64_t final_offset_ns_0, final_offset_ps_negative_0;
+    ULong64_t BGCorrection_tick_0, TSCorrection_tick_0;
+    ULong64_t BG_PPSBefore_tick_0, BG_PPSAfter_tick_0, BG_PPSDiff_tick_0, BG_PPSMissing_tick_0;
+    ULong64_t TS_PPSBefore_tick_0, TS_PPSAfter_tick_0, TS_PPSDiff_tick_0, TS_PPSMissing_tick_0;
+    ULong64_t TS_driftCorrection_ns_0, BG_driftCorrection_ns_0;
+
+    // ACDC 1 variables
+    ULong64_t final_offset_ns_1, final_offset_ps_negative_1;
+    ULong64_t BGCorrection_tick_1, TSCorrection_tick_1;
+    ULong64_t BG_PPSBefore_tick_1, BG_PPSAfter_tick_1, BG_PPSDiff_tick_1, BG_PPSMissing_tick_1;
+    ULong64_t TS_PPSBefore_tick_1, TS_PPSAfter_tick_1, TS_PPSDiff_tick_1, TS_PPSMissing_tick_1;
+    ULong64_t TS_driftCorrection_ns_1, BG_driftCorrection_ns_1;
 
     tree->SetBranchAddress("runNumber", &runNumber);
     tree->SetBranchAddress("subRunNumber", &subRunNumber);
     tree->SetBranchAddress("partFileNumber", &partFileNumber);
     tree->SetBranchAddress("LAPPD_ID", &LAPPD_ID);
     tree->SetBranchAddress("EventIndex", &EventIndex);
+
+    // Map ACDC 0 branches
     tree->SetBranchAddress("final_offset_ns_0", &final_offset_ns_0);
     tree->SetBranchAddress("final_offset_ps_negative_0", &final_offset_ps_negative_0);
-    tree->SetBranchAddress("BGCorrection_tick", &BGCorrection_tick);
-    tree->SetBranchAddress("TSCorrection_tick", &TSCorrection_tick);
-    tree->SetBranchAddress("BG_PPSBefore_tick", &BG_PPSBefore_tick);
-    tree->SetBranchAddress("BG_PPSAfter_tick", &BG_PPSAfter_tick);
-    tree->SetBranchAddress("BG_PPSDiff_tick", &BG_PPSDiff_tick);
-    tree->SetBranchAddress("BG_PPSMissing_tick", &BG_PPSMissing_tick);
-    tree->SetBranchAddress("TS_PPSBefore_tick", &TS_PPSBefore_tick);
-    tree->SetBranchAddress("TS_PPSAfter_tick", &TS_PPSAfter_tick);
-    tree->SetBranchAddress("TS_PPSDiff_tick", &TS_PPSDiff_tick);
-    tree->SetBranchAddress("TS_PPSMissing_tick", &TS_PPSMissing_tick);
-    tree->SetBranchAddress("TS_driftCorrection_ns", &TS_driftCorrection_ns);
-    tree->SetBranchAddress("BG_driftCorrection_ns", &BG_driftCorrection_ns);
+    tree->SetBranchAddress("BGCorrection_tick_0", &BGCorrection_tick_0);
+    tree->SetBranchAddress("TSCorrection_tick_0", &TSCorrection_tick_0);
+    tree->SetBranchAddress("BG_PPSBefore_tick_0", &BG_PPSBefore_tick_0);
+    tree->SetBranchAddress("BG_PPSAfter_tick_0", &BG_PPSAfter_tick_0);
+    tree->SetBranchAddress("BG_PPSDiff_tick_0", &BG_PPSDiff_tick_0);
+    tree->SetBranchAddress("BG_PPSMissing_tick_0", &BG_PPSMissing_tick_0);
+    tree->SetBranchAddress("TS_PPSBefore_tick_0", &TS_PPSBefore_tick_0);
+    tree->SetBranchAddress("TS_PPSAfter_tick_0", &TS_PPSAfter_tick_0);
+    tree->SetBranchAddress("TS_PPSDiff_tick_0", &TS_PPSDiff_tick_0);
+    tree->SetBranchAddress("TS_PPSMissing_tick_0", &TS_PPSMissing_tick_0);
+    tree->SetBranchAddress("TS_driftCorrection_ns_0", &TS_driftCorrection_ns_0);
+    tree->SetBranchAddress("BG_driftCorrection_ns_0", &BG_driftCorrection_ns_0);
+
+    // Map ACDC 1 branches
+    tree->SetBranchAddress("final_offset_ns_1", &final_offset_ns_1);
+    tree->SetBranchAddress("final_offset_ps_negative_1", &final_offset_ps_negative_1);
+    tree->SetBranchAddress("BGCorrection_tick_1", &BGCorrection_tick_1);
+    tree->SetBranchAddress("TSCorrection_tick_1", &TSCorrection_tick_1);
+    tree->SetBranchAddress("BG_PPSBefore_tick_1", &BG_PPSBefore_tick_1);
+    tree->SetBranchAddress("BG_PPSAfter_tick_1", &BG_PPSAfter_tick_1);
+    tree->SetBranchAddress("BG_PPSDiff_tick_1", &BG_PPSDiff_tick_1);
+    tree->SetBranchAddress("BG_PPSMissing_tick_1", &BG_PPSMissing_tick_1);
+    tree->SetBranchAddress("TS_PPSBefore_tick_1", &TS_PPSBefore_tick_1);
+    tree->SetBranchAddress("TS_PPSAfter_tick_1", &TS_PPSAfter_tick_1);
+    tree->SetBranchAddress("TS_PPSDiff_tick_1", &TS_PPSDiff_tick_1);
+    tree->SetBranchAddress("TS_PPSMissing_tick_1", &TS_PPSMissing_tick_1);
+    tree->SetBranchAddress("TS_driftCorrection_ns_1", &TS_driftCorrection_ns_1);
+    tree->SetBranchAddress("BG_driftCorrection_ns_1", &BG_driftCorrection_ns_1);
 
     Long64_t nentries = tree->GetEntries();
-    cout << "LAPPDLoadStore Loading offsets and corrections, total entries: " << nentries << endl;
+    std::cout << "LAPPDLoadStore::LoadOffsetsAndCorrections, total entries: " << nentries << std::endl;
     for (Long64_t i = 0; i < nentries; ++i)
     {
         tree->GetEntry(i);
-
         std::string key = std::to_string(runNumber) + "_" + std::to_string(subRunNumber) + "_" + std::to_string(partFileNumber) + "_" + std::to_string(LAPPD_ID);
 
-        // Prepare the vector sizes for each map
-        if (Offsets[key].size() <= EventIndex)
+        // Resize vectors dynamically for EventIndex
+        if (Offsets_0[key].size() <= EventIndex)
         {
-            Offsets[key].resize(EventIndex + 1);
-            Offsets_minus_ps[key].resize(EventIndex + 1);
-            BGCorrections[key].resize(EventIndex + 1);
-            TSCorrections[key].resize(EventIndex + 1);
-            BG_PPSBefore_loaded[key].resize(EventIndex + 1);
-            BG_PPSAfter_loaded[key].resize(EventIndex + 1);
-            BG_PPSDiff_loaded[key].resize(EventIndex + 1);
-            BG_PPSMissing_loaded[key].resize(EventIndex + 1);
-            TS_PPSBefore_loaded[key].resize(EventIndex + 1);
-            TS_PPSAfter_loaded[key].resize(EventIndex + 1);
-            TS_PPSDiff_loaded[key].resize(EventIndex + 1);
-            TS_PPSMissing_loaded[key].resize(EventIndex + 1);
+            Offsets_0[key].resize(EventIndex + 1);
+            Offsets_minus_ps_0[key].resize(EventIndex + 1);
+            BGCorrections_0[key].resize(EventIndex + 1);
+            TSCorrections_0[key].resize(EventIndex + 1);
+            BG_PPSBefore_loaded_0[key].resize(EventIndex + 1);
+            BG_PPSAfter_loaded_0[key].resize(EventIndex + 1);
+            BG_PPSDiff_loaded_0[key].resize(EventIndex + 1);
+            BG_PPSMissing_loaded_0[key].resize(EventIndex + 1);
+            TS_PPSBefore_loaded_0[key].resize(EventIndex + 1);
+            TS_PPSAfter_loaded_0[key].resize(EventIndex + 1);
+            TS_PPSDiff_loaded_0[key].resize(EventIndex + 1);
+            TS_PPSMissing_loaded_0[key].resize(EventIndex + 1);
+        
+            Offsets_1[key].resize(EventIndex + 1);
+            Offsets_minus_ps_1[key].resize(EventIndex + 1);
+            BGCorrections_1[key].resize(EventIndex + 1);
+            TSCorrections_1[key].resize(EventIndex + 1);
+            BG_PPSBefore_loaded_1[key].resize(EventIndex + 1);
+            BG_PPSAfter_loaded_1[key].resize(EventIndex + 1);
+            BG_PPSDiff_loaded_1[key].resize(EventIndex + 1);
+            BG_PPSMissing_loaded_1[key].resize(EventIndex + 1);
+            TS_PPSBefore_loaded_1[key].resize(EventIndex + 1);
+            TS_PPSAfter_loaded_1[key].resize(EventIndex + 1);
+            TS_PPSDiff_loaded_1[key].resize(EventIndex + 1);
+            TS_PPSMissing_loaded_1[key].resize(EventIndex + 1);
         }
 
         // Now using EventIndex to place each event correctly
-        Offsets[key][EventIndex] = final_offset_ns_0 + TS_driftCorrection_ns;
-        Offsets_minus_ps[key][EventIndex] = static_cast<int>(final_offset_ps_negative_0);
-        BGCorrections[key][EventIndex] = static_cast<int>(BGCorrection_tick) - 1000;
-        TSCorrections[key][EventIndex] = static_cast<int>(TSCorrection_tick) - 1000;
+        Offsets_0[key][EventIndex] = final_offset_ns_0 + TS_driftCorrection_ns_0;
+        Offsets_minus_ps_0[key][EventIndex] = static_cast<int>(final_offset_ps_negative_0);
+        BGCorrections_0[key][EventIndex] = static_cast<int>(BGCorrection_tick_0) - 1000;
+        TSCorrections_0[key][EventIndex] = static_cast<int>(TSCorrection_tick_0) - 1000;
+        BG_PPSBefore_loaded_0[key][EventIndex] = BG_PPSBefore_tick_0;
+        BG_PPSAfter_loaded_0[key][EventIndex] = BG_PPSAfter_tick_0;
+        BG_PPSDiff_loaded_0[key][EventIndex] = BG_PPSDiff_tick_0;
+        BG_PPSMissing_loaded_0[key][EventIndex] = static_cast<int>(BG_PPSMissing_tick_0) - 1000;
+        TS_PPSBefore_loaded_0[key][EventIndex] = TS_PPSBefore_tick_0;
+        TS_PPSAfter_loaded_0[key][EventIndex] = TS_PPSAfter_tick_0;
+        TS_PPSDiff_loaded_0[key][EventIndex] = TS_PPSDiff_tick_0;
+        TS_PPSMissing_loaded_0[key][EventIndex] = static_cast<int>(TS_PPSMissing_tick_0) - 1000;
 
-        BG_PPSBefore_loaded[key][EventIndex] = BG_PPSBefore_tick;
-        BG_PPSAfter_loaded[key][EventIndex] = BG_PPSAfter_tick;
-        BG_PPSDiff_loaded[key][EventIndex] = BG_PPSDiff_tick;
-        BG_PPSMissing_loaded[key][EventIndex] = static_cast<int>(BG_PPSMissing_tick) - 1000;
-        TS_PPSBefore_loaded[key][EventIndex] = TS_PPSBefore_tick;
-        TS_PPSAfter_loaded[key][EventIndex] = TS_PPSAfter_tick;
-        TS_PPSDiff_loaded[key][EventIndex] = TS_PPSDiff_tick;
-        TS_PPSMissing_loaded[key][EventIndex] = static_cast<int>(TS_PPSMissing_tick) - 1000;
+        Offsets_1[key][EventIndex] = final_offset_ns_1 + TS_driftCorrection_ns_1;
+        Offsets_minus_ps_1[key][EventIndex] = static_cast<int>(final_offset_ps_negative_1);
+        BGCorrections_1[key][EventIndex] = static_cast<int>(BGCorrection_tick_1) - 1000;
+        TSCorrections_1[key][EventIndex] = static_cast<int>(TSCorrection_tick_1) - 1000;
+        BG_PPSBefore_loaded_1[key][EventIndex] = BG_PPSBefore_tick_1;
+        BG_PPSAfter_loaded_1[key][EventIndex] = BG_PPSAfter_tick_1;
+        BG_PPSDiff_loaded_1[key][EventIndex] = BG_PPSDiff_tick_1;
+        BG_PPSMissing_loaded_1[key][EventIndex] = static_cast<int>(BG_PPSMissing_tick_1) - 1000;        
+        TS_PPSBefore_loaded_1[key][EventIndex] = TS_PPSBefore_tick_1;
+        TS_PPSAfter_loaded_1[key][EventIndex] = TS_PPSAfter_tick_1;
+        TS_PPSDiff_loaded_1[key][EventIndex] = TS_PPSDiff_tick_1;
+        TS_PPSMissing_loaded_1[key][EventIndex] = static_cast<int>(TS_PPSMissing_tick_1) - 1000;
 
         if (nentries > 10 && i % (static_cast<int>(nentries / 10)) == 0)
         {
-            cout << "LAPPDLoadStore Loading offsets and corrections, " << i << " entries loaded" << endl;
-            cout << "Printing key: " << key << ", EventIndex: " << EventIndex << ", final_offset_ns_0: " << final_offset_ns_0 << ", final_offset_ps_negative_0: " << final_offset_ps_negative_0 << ", BGCorrection_tick: " << BGCorrection_tick << ", TSCorrection_tick: " << TSCorrection_tick << ", BG_PPSMissing_tick: " << BG_PPSMissing_tick << ", TS_PPSMissing_tick: " << TS_PPSMissing_tick << ", TS_driftCorrection_ns: " << TS_driftCorrection_ns << ", BG_driftCorrection_ns: " << BG_driftCorrection_ns << endl;
+            std::cout << "LAPPDLoadStore::LoadOffsetsAndCorrections, " << i << " entries loaded" << std::endl;
         }
     }
 

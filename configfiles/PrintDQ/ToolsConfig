@@ -5,6 +5,7 @@ myFindMrdTracks FindMrdTracks configfiles/PrintDQ/FindMrdTracksConfig
 myClusterFinder ClusterFinder ./configfiles/PrintDQ/ClusterFinderConfig
 myClusterClassifiers ClusterClassifiers ./configfiles/PrintDQ/ClusterClassifiersConfig
 myEventSelector EventSelector ./configfiles/PrintDQ/EventSelectorConfig
+myLAPPDLoadStore LAPPDLoadStore ./configfiles/PrintDQ/LAPPDLoadStoreConfig
 myFitRWMWaveform FitRWMWaveform ./configfiles/PrintDQ/FitRWMWaveformConfig
 
 myPrintDQ PrintDQ ./configfiles/PrintDQ/PrintDQConfig

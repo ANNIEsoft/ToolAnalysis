@@ -15,6 +15,8 @@
  * $Date: 2024/04 $
  * Contact: yuef@iaistate.edu
  *
+ * Updated by: Anuj gupta (2026.09.03)
+ *
  */
 
 class EBLAPPD : public Tool
@@ -35,45 +37,84 @@ private:
     int exePerMatch;
 
     PsecData dat;
-    uint64_t LAPPDBeamgate_ns;
-    uint64_t LAPPDTimestamp_ns;
-    uint64_t LAPPDOffset;
-    unsigned long LAPPDBeamgate_Raw;
-    unsigned long LAPPDTimestamp_Raw;
-    int LAPPDBGCorrection;
-    int LAPPDTSCorrection;
-    int LAPPDOffset_minus_ps;
-    uint64_t LAPPDBG_PPSBefore;
-    uint64_t LAPPDBG_PPSAfter;
-    uint64_t LAPPDBG_PPSDiff;
-    int LAPPDBG_PPSMissing;
-    uint64_t LAPPDTS_PPSBefore;
-    uint64_t LAPPDTS_PPSAfter;
-    uint64_t LAPPDTS_PPSDiff;
-    int LAPPDTS_PPSMissing;
+    
+    uint64_t LAPPDBeamgate_ns_0;
+    uint64_t LAPPDTimestamp_ns_0;
+    uint64_t LAPPDOffset_0;
+    unsigned long LAPPDBeamgate_Raw_0;
+    unsigned long LAPPDTimestamp_Raw_0;
+    int LAPPDBGCorrection_0;
+    int LAPPDTSCorrection_0;
+    int LAPPDOffset_minus_ps_0;
+    uint64_t LAPPDBG_PPSBefore_0;
+    uint64_t LAPPDBG_PPSAfter_0;
+    uint64_t LAPPDBG_PPSDiff_0;
+    int LAPPDBG_PPSMissing_0;
+    uint64_t LAPPDTS_PPSBefore_0;
+    uint64_t LAPPDTS_PPSAfter_0;
+    uint64_t LAPPDTS_PPSDiff_0;
+    int LAPPDTS_PPSMissing_0;
 
-    vector<uint64_t> MatchBuffer_LAPPDTimestamp_ns; // used to indexing data for unmatched
+    uint64_t LAPPDBeamgate_ns_1;
+    uint64_t LAPPDTimestamp_ns_1;
+    uint64_t LAPPDOffset_1;
+    unsigned long LAPPDBeamgate_Raw_1;
+    unsigned long LAPPDTimestamp_Raw_1;
+    int LAPPDBGCorrection_1;
+    int LAPPDTSCorrection_1;
+    int LAPPDOffset_minus_ps_1;    
+    uint64_t LAPPDBG_PPSBefore_1;
+    uint64_t LAPPDBG_PPSAfter_1;
+    uint64_t LAPPDBG_PPSDiff_1;
+    int LAPPDBG_PPSMissing_1;
+    uint64_t LAPPDTS_PPSBefore_1;
+    uint64_t LAPPDTS_PPSAfter_1;
+    uint64_t LAPPDTS_PPSDiff_1;
+    int LAPPDTS_PPSMissing_1;
+
+    vector<uint64_t> MatchBuffer_LAPPDTimestamp_ns_0; // used to indexing data for unmatched
+    vector<uint64_t> MatchBuffer_LAPPDTimestamp_ns_1;
 
     // TODO, maybe make a new "LAPPDBuildData" class?
-    vector<uint64_t> Buffer_LAPPDTimestamp_ns; // used to indexing the data
+    // Shared buffers 
     vector<PsecData> Buffer_LAPPDData;
-    vector<uint64_t> Buffer_LAPPDBeamgate_ns;
-    vector<uint64_t> Buffer_LAPPDOffset;
-    vector<unsigned long> Buffer_LAPPDBeamgate_Raw;
-    vector<unsigned long> Buffer_LAPPDTimestamp_Raw;
-    vector<int> Buffer_LAPPDBGCorrection;
-    vector<int> Buffer_LAPPDTSCorrection;
-    vector<int> Buffer_LAPPDOffset_minus_ps;
     vector<int> Buffer_RunCode;
-    vector<uint64_t> Buffer_LAPPDBG_PPSBefore;
-    vector<uint64_t> Buffer_LAPPDBG_PPSAfter;
-    vector<uint64_t> Buffer_LAPPDBG_PPSDiff;
-    vector<int> Buffer_LAPPDBG_PPSMissing;
-    vector<uint64_t> Buffer_LAPPDTS_PPSBefore;
-    vector<uint64_t> Buffer_LAPPDTS_PPSAfter;
-    vector<uint64_t> Buffer_LAPPDTS_PPSDiff;
-    vector<int> Buffer_LAPPDTS_PPSMissing;
 
+    vector<uint64_t> Buffer_LAPPDTimestamp_ns_0; 
+    vector<uint64_t> Buffer_LAPPDBeamgate_ns_0;
+    vector<uint64_t> Buffer_LAPPDOffset_0;
+    vector<unsigned long> Buffer_LAPPDBeamgate_Raw_0;
+    vector<unsigned long> Buffer_LAPPDTimestamp_Raw_0;
+    vector<int> Buffer_LAPPDBGCorrection_0;
+    vector<int> Buffer_LAPPDTSCorrection_0;
+    vector<int> Buffer_LAPPDOffset_minus_ps_0;
+    vector<uint64_t> Buffer_LAPPDBG_PPSBefore_0;
+    vector<uint64_t> Buffer_LAPPDBG_PPSAfter_0;
+    vector<uint64_t> Buffer_LAPPDBG_PPSDiff_0;
+    vector<int> Buffer_LAPPDBG_PPSMissing_0;
+    vector<uint64_t> Buffer_LAPPDTS_PPSBefore_0;
+    vector<uint64_t> Buffer_LAPPDTS_PPSAfter_0;
+    vector<uint64_t> Buffer_LAPPDTS_PPSDiff_0;
+    vector<int> Buffer_LAPPDTS_PPSMissing_0;
+
+
+    vector<uint64_t> Buffer_LAPPDTimestamp_ns_1; 
+    vector<uint64_t> Buffer_LAPPDBeamgate_ns_1;
+    vector<uint64_t> Buffer_LAPPDOffset_1;
+    vector<unsigned long> Buffer_LAPPDBeamgate_Raw_1;
+    vector<unsigned long> Buffer_LAPPDTimestamp_Raw_1;
+    vector<int> Buffer_LAPPDBGCorrection_1;
+    vector<int> Buffer_LAPPDTSCorrection_1;
+    vector<int> Buffer_LAPPDOffset_minus_ps_1;
+    vector<uint64_t> Buffer_LAPPDBG_PPSBefore_1;
+    vector<uint64_t> Buffer_LAPPDBG_PPSAfter_1;
+    vector<uint64_t> Buffer_LAPPDBG_PPSDiff_1;
+    vector<int> Buffer_LAPPDBG_PPSMissing_1;
+    vector<uint64_t> Buffer_LAPPDTS_PPSBefore_1;
+    vector<uint64_t> Buffer_LAPPDTS_PPSAfter_1;
+    vector<uint64_t> Buffer_LAPPDTS_PPSDiff_1;
+    vector<int> Buffer_LAPPDTS_PPSMissing_1;
+    
     std::map<int, vector<uint64_t>> PairedCTCTimeStamps;
     std::map<int, vector<int>> PairedLAPPD_TriggerIndex;
     std::map<int, vector<uint64_t>> PairedLAPPDTimeStamps;

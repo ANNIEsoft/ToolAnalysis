@@ -6,6 +6,7 @@
 
 #include "Tool.h"
 #include "Hit.h"
+#include "PsecData.h"
 
 
 /**
@@ -45,7 +46,13 @@ class PrintDQ: public Tool {
         vector<uint32_t> fGroupedTriggerWord;                                  ///< corresponding trigger number for each trigger
         vector<double> fClusterTime;                                           ///< PMT cluster times
         std::vector<int> fNumClusterTracks;                                    ///< MRD Tracks corresponding to MRD clusters (NumClusterTracks)
-        
+
+        std::map<uint64_t, PsecData> fLAPPDDataMap;       
+        std::map<uint64_t, int> fLAPPDTS_PPSMissing_0;
+        std::vector<int> fLAPPD_TSPPSMissing_0;
+        std::map<uint64_t, int> fLAPPDTS_PPSMissing_1;
+        std::vector<int> fLAPPD_TSPPSMissing_1;
+          
         int fRunNumber;                                                        ///< run number (tool assumes you're running over 1 run at a time)
         int fExtended;                                                         ///< extended window trigger (0 = none, 1 = charge-based, 2 = forced)
         ULong64_t fEventTimeTank;                                              ///< ADC waveform timestamp
@@ -73,7 +80,7 @@ class PrintDQ: public Tool {
         float_t totalhas_lappd;                                                ///< total events with LAPPD data present in the data stream (% out of total events)
         float_t totalhas_BRF;                                                  ///< total events with a fit to the BRF waveform (% out of total events)
         float_t totaltimezero;                                                 ///< total events with no timestamp for the ADC waveforms (% out of total events)
-        
+        float_t totalPassPPS_check; 
 
 
         /// \brief verbosity levels: if 'verbosity' < this level, the message type will be logged.
