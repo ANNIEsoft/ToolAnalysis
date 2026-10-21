@@ -58,9 +58,9 @@ bool EBTriggerGrouper::Initialise(std::string configfile, DataModel &data)
   PPSTriggers = {32, 34}; // 32 first, then 34, (~20us in run 4802 data)
   m_data->CStore.Set("PPSTriggersUsedForGroupping", PPSTriggers);
 
-  CosmicTriggerMain = 45; // TODO need to check
+  CosmicTriggerMain = 36;
   m_variables.Get("CosmicTriggerMain", CosmicTriggerMain);
-  CosmicTolerance = 100; // 330000ns, TODO
+  CosmicTolerance = 100;
   m_variables.Get("CosmicTolerance", CosmicTolerance);
   CosmicTriggers = {44, 45, 36, 27, 28, 29, 30, 46}; // TODO: check the trigger words in cosmic run
   m_data->CStore.Set("CosmicTriggersUsedForGroupping", CosmicTriggers);
@@ -541,6 +541,7 @@ int EBTriggerGrouper::GroupByTrigWord(uint32_t mainTrigWord, vector<uint32_t> Tr
   uint64_t prev_target_time = 0;
   std::map<uint64_t, uint32_t> ThisGroup;
   vector<int> toRemove;
+  size_t openGroupStart = 0;
   int totalGroupedTriggerNumber = 0;
   uint64_t trackTriggerTime = 0;
   uint32_t trackTriggerWord = 0;
@@ -558,6 +559,7 @@ int EBTriggerGrouper::GroupByTrigWord(uint32_t mainTrigWord, vector<uint32_t> Tr
     if (!found && TrigWordForGroup[i] == mainTrigWord)
     {
       found = true;
+      openGroupStart = toRemove.size();
       ThisGroup.clear();
       prev_target_time = TrigTimeForGroup[i];
       ThisGroup.insert(std::pair<uint64_t, uint32_t>(TrigTimeForGroup[i], TrigWordForGroup[i]));
@@ -636,6 +638,11 @@ int EBTriggerGrouper::GroupByTrigWord(uint32_t mainTrigWord, vector<uint32_t> Tr
       found = false;
     }
   }
+
+  // unfinished group at the end of the buffer: keep its triggers for the next pass
+  if (found)
+    toRemove.resize(openGroupStart);
+
   int totalToRemoveTriggerNumber = toRemove.size();
   // from end to beginning, remove the triggers in buffer based on toRemove index
   for (int i = toRemove.size() - 1; i >= 0; i--)

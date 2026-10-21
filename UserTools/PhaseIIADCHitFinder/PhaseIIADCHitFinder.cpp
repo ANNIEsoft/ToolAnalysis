@@ -589,12 +589,14 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
    // Determine the ADC threshold to use for the current channel
     unsigned short thispmt_adc_threshold = BOGUS_INT;
     //std::cout <<"get db threshold"<<std::endl;
-    thispmt_adc_threshold = this->get_db_threshold(channel_key);
+   unsigned short db_adc_threshold = this->get_db_threshold(channel_key); 
+   thispmt_adc_threshold = db_adc_threshold;
 
    // std::cout <<"go through minibuffers"<<std::endl;
     //For each minibuffer, adjust threshold for baseline calibration and find pulses
     for (size_t mb = 0; mb < num_minibuffers; ++mb) {
       //std::cout <<mb<<"/"<<num_minibuffers<<std::endl;
+      thispmt_adc_threshold = db_adc_threshold;
       if (threshold_type == "relative") {
         thispmt_adc_threshold = thispmt_adc_threshold
           + std::round( calibrated_waveforms.at(mb).GetBaseline() );
@@ -622,7 +624,7 @@ bool PhaseIIADCHitFinder::build_pulse_and_hit_map(
   if(verbosity > v_debug) std::cout << "Number of pulses in pulse_vec's first entry: " << pulse_vec.at(0).size() << std::endl;
   for (int j=0; j< (int) pulse_vec.size(); j++){
     std::vector<ADCPulse> apulsevec = pulse_vec.at(j);
-    if (pmap.count(channel_key) == 0) pmap.emplace(channel_key,pulse_vec);
+    if (pmap.count(channel_key) == 0) pmap.emplace(channel_key,std::vector<std::vector<ADCPulse>>{apulsevec});
     else pmap.at(channel_key).push_back(apulsevec);
   }
   //Convert ADCPulses to Hits and fill into Hit map

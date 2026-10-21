@@ -203,6 +203,7 @@ bool LAPPDTreeMaker::Initialise(std::string configfile, DataModel &data)
 
   m_data->Stores["ANNIEEvent"]->Header->Get("AnnieGeometry", _geom);
   EventNumber = 0;
+  TriggerWordMap = nullptr;
 
   return true;
 }

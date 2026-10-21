@@ -32,7 +32,7 @@ public:
     bool Matching(int targetTrigger, int matchToTrack);
 
 private:
-    int thisRunNum;
+    int thisRunNum = -1;
     bool matchToAllTriggers;
     int exePerMatch;
 

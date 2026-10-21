@@ -153,6 +153,12 @@ bool EBLoadRaw::Execute()
   {
     FileCompleted = true;
     JumpBecauseLAPPD = false;
+    // skip this file: pause all decoders for this loop, but tell them it's not an error
+    m_data->CStore.Set("PauseTankDecoding", true);
+    m_data->CStore.Set("PauseMRDDecoding", true);
+    m_data->CStore.Set("PauseCTCDecoding", true);
+    m_data->CStore.Set("PauseLAPPDDecoding", true);
+    m_data->CStore.Set("NewRawDataEntryAccessed", true);
     Log("EBLoadRaw: Jumping to next file due to LAPPD data.", v_message, verbosityEBLoadRaw);
     return true;
   }
@@ -554,6 +560,7 @@ bool EBLoadRaw::LoadCTCData()
 bool EBLoadRaw::LoadLAPPDData()
 {
   Log("EBLoadRaw: Loading LAPPDData.", v_message, verbosityEBLoadRaw);
+  LAPPDTotalEntries = 0; 
   try
   {
     RawData->Get("LAPPDData", *LAPPDData);
@@ -702,7 +709,13 @@ bool EBLoadRaw::LoadNextCTCData()
         m_data->CStore.Set("usingTriggerOverlap", true);
       }
       else
-        std::cout << "EBLoadRaw: Trigger Overlap data not found while loading" << std::endl;
+      {
+        // no overlap store → this is the last REAL entry, read it from the file
+        CTCData->GetEntry(CTCEntryNum);
+        CTCData->Get("TrigData", *TData);
+        m_data->CStore.Set("usingTriggerOverlap", false);
+        std::cout << "EBLoadRaw: no Trigger Overlap store, reading last real CTC entry " << CTCEntryNum << std::endl;
+      }
     }
     m_data->CStore.Set("TrigData", TData);
 
