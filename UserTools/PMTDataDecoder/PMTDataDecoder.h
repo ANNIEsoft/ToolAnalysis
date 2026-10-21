@@ -24,6 +24,9 @@
 * $Author: Teal Pershing $
 * $Date: 2019/05/28 10:44:00 $
 * Contact: tjpershing@ucdavis.edu 
+* 
+* Last updated: Anuj Gupta (2026.10.10)
+*
 */
 
 
@@ -135,8 +138,10 @@ class PMTDataDecoder: public Tool {
   //option about whether to save raw RWM and BRF waveforms
   bool saveRWMRaw;
   bool saveBRFRaw;
+  bool saveBESRaw;
   std::map<uint64_t, std::vector<uint16_t>>* RWMRawWaveforms; //Key: MTCTime, Value: RWM waveform
   std::map<uint64_t, std::vector<uint16_t>>* BRFRawWaveforms; //Key: MTCTime, Value: BRF waveform
+  std::map<uint64_t, std::vector<uint16_t>>* BESRawWaveforms; //Key: MTCTime, Value: BES waveform
 
 };
 

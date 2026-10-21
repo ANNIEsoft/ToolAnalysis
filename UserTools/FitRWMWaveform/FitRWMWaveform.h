@@ -34,10 +34,10 @@ public:
 
 private:
     int verbosityFitRWMWaveform;
-    int v_message = 1;
-    int v_warning = 2;
-    int v_error = 3;
-    int v_debug = 4;
+    int v_error = 0;
+    int v_warning = 1;
+    int v_message = 2;
+    int v_debug = 3;
 
     bool printToRootFile;
     int maxPrintNumber;
@@ -45,9 +45,11 @@ private:
 
     std::vector<uint16_t> RWMRawWaveform;
     std::vector<uint16_t> BRFRawWaveform;
+    std::vector<uint16_t> BESRawWaveform;
 
     std::map<uint64_t, std::vector<uint16_t>> ToBePrintedRWMWaveforms;
     std::map<uint64_t, std::vector<uint16_t>> ToBePrintedBRFWaveforms;
+    std::map<uint64_t, std::vector<uint16_t>> ToBePrintedBESWaveforms;
 
     double RWMRisingStart;
     double RWMRisingEnd;
