@@ -16,6 +16,33 @@
 
 TimeClustering::TimeClustering():Tool(){}
 
+bool TimeClustering::LoadDeadList() {
+
+	std::ifstream fin(deadlist_file);
+	if(!fin.is_open()) {
+		Log("TimeClustering: could not open dead list file " + deadlist_file, v_error, verbosity);
+		return false;
+	}
+
+	std::string line;
+	while(std::getline(fin, line)) {
+		// strip comments
+		auto hashpos = line.find('#');
+		if(hashpos != std::string::npos) line = line.substr(0, hashpos);
+
+		std::stringstream ss(line);
+		unsigned long val;
+		while (ss >> val) {
+			dead_chankeys.insert(val);
+			// optional delimiters , or ;
+			if (ss.peek() == ',' || ss.peek() == ';') ss.ignore();
+		}
+	}
+
+	Log("TimeClustering: loaded " + std::to_string(dead_chankeys.size()) + " dead channel keys",v_message, verbosity);
+
+	return true;
+}
 
 bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	
@@ -50,7 +77,9 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("MapChankey_WCSimID",file_chankeymap);
 	m_variables.Get("ModifiedTDCData",ModifiedTDCData);
         m_variables.Get("TimeShiftChannels",TimeShiftChannels);
-
+	m_variables.Get("DropDeadHitsBeforeClustering",drop_dead_hits_before_clustering);
+	m_variables.Get("DeadListFile",deadlist_file);
+ 
 	if (!MakeMrdDigitTimePlot) LaunchTApplication = false;  //no use launching TApplication when histograms are not produced
 	
 	if(LaunchTApplication){
@@ -177,6 +206,16 @@ bool TimeClustering::Initialise(std::string configfile, DataModel &data){
 			Log("TimeClustering Tool: Error! Timeshift file "+TimeShiftChannels+" does not exist!",v_error,verbosity);
 			return false;
 		}
+	}
+
+	// load dead list if requested
+	if (drop_dead_hits_before_clustering && !deadlist_file.empty()) {
+		if (!LoadDeadList()) {
+			Log("TimeClustering: failed to load DeadListFile "+ deadlist_file, v_error, verbosity);
+			return false;
+		}
+	} else if (drop_dead_hits_before_clustering){
+		Log("TimeClustering: DropDeadHitsBeforeClustering=1 but DeadListFile is empty; continuing without masking.", v_warning, verbosity);
 	}
 	
 	// Get Detectors map to divide in horizontal and vertical layers
@@ -346,6 +385,11 @@ bool TimeClustering::Execute(){
 			} /*else if(channelkey_to_faccpmtid.count(chankey)){ /////omit facc hits for MRD clusters
 				pmtidwcsim = channelkey_to_faccpmtid.at(chankey)-1;
 			}*/
+			// dead-channel mask
+			if(drop_dead_hits_before_clustering && dead_chankeys.count(chankey)){
+				pmtidwcsim=-1;
+				Log("TimeClustering tool: Skipping dead channel "+std::to_string(chankey),v_warning,verbosity);
+			}
 			for(auto&& hitsonthismrdpmt : anmrdpmt.second){
 				if(pmtidwcsim>=0){
 					mrddigitpmtsthisevent.push_back(pmtidwcsim);
