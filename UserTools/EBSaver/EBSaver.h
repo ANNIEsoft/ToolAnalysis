@@ -24,7 +24,7 @@
  * $Date: 2024/04 $
  * Contact: yuef@iaistate.edu
  *
- * Updated by: Anuj Gupta (2026.09.25)
+ * Updated by: Anuj Gupta (2026.10.11)
  *
  */
 
@@ -79,6 +79,7 @@ private:
 
     bool saveRawRWMWaveform;
     bool saveRawBRFWaveform;
+    bool saveRawBESWaveform;
 
     string savePath;
     string saveName;
@@ -144,6 +145,7 @@ private:
 
     std::map<uint64_t, std::vector<uint16_t>> *RWMRawWaveforms; // Key: MTCTime, Value: RWM waveform
     std::map<uint64_t, std::vector<uint16_t>> *BRFRawWaveforms; // Key: MTCTime, Value: BRF waveform
+    std::map<uint64_t, std::vector<uint16_t>> *BESRawWaveforms; // Key: MTCTime, Value: BES waveform
 
     std::map<int, vector<uint64_t>> PairedPMTTriggerTimestamp;
     std::map<int, vector<int>> PairedPMT_TriggerIndex;

@@ -10,4 +10,8 @@ DATA_START,,,,,,,,,,,,,,,,,,,,,,,,,
 10006,2,19,4,spare,ok
 10007,2,13,3,broken,broken
 10008,2,15,1,broken,broken
+10009,1,3,1,BES,ok
+10010,1,3,2,spare,ok
+10011,1,3,3,spare,ok
+10012,1,3,4,spare,ok
 DATA_END,,,,,,,,,,,,,,,,,,,,,,,,,

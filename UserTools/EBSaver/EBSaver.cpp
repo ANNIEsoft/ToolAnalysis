@@ -39,6 +39,8 @@ bool EBSaver::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("saveRawBRFWaveform", saveRawBRFWaveform);
   saveRawRWMWaveform = true;
   m_variables.Get("saveRawRWMWaveform", saveRawRWMWaveform);
+  saveRawBESWaveform = true;
+  m_variables.Get("saveRawBESWaveform", saveRawBESWaveform);
 
   ANNIEEvent = new BoostStore(false, 2);
 
@@ -463,9 +465,10 @@ bool EBSaver::SaveToANNIEEvent(string saveFileName, int runCode, int triggerTrac
 
           bool saved = SavePMTData(PMTTime);
           PMTSaved = saved;
-          DataStreams["Tank"] = 1;
-          if (saved)
+          if (saved){
+            DataStreams["Tank"] = 1;
             PMTPairInfoToRemoveTime[triggerTrack].push_back(PMTTime);
+          }
           Log("EBSaver: Saved " + std::to_string(savedPMTHitMapNumber) + " PMT data with PMTTime " + std::to_string(PMTTime), v_debug, verbosityEBSaver);
           // break;
         }
@@ -512,9 +515,10 @@ bool EBSaver::SaveToANNIEEvent(string saveFileName, int runCode, int triggerTrac
               uint64_t MRDTime = PairedMRDTimeStamps.at(triggerTrack).at(i);
               bool saved = SaveMRDData(MRDTime);
               MRDSaved = saved;
-              DataStreams["MRD"] = 1;
-              if (MRDSaved)
+              if (MRDSaved) {
+                DataStreams["MRD"] = 1;
                 MRDPairInfoToRemoveTime[triggerTrack].push_back(MRDTime);
+              }
               Log("EBSaver: Saved " + std::to_string(savedMRDNumber) + " MRD data with MRDTime " + std::to_string(MRDTime), v_debug, verbosityEBSaver);
               Log("EBSaver: Found trigger with time " + std::to_string(triggerTime) + " in PairedMRDTriggerTimestamp " + std::to_string(i) + " match with MRDTime " + std::to_string(MRDTime), v_debug, verbosityEBSaver);
               // break;
@@ -535,9 +539,10 @@ bool EBSaver::SaveToANNIEEvent(string saveFileName, int runCode, int triggerTrac
           uint64_t LAPPDTime = PairedLAPPDTimeStamps.at(triggerTrack).at(i);
           bool saved = SaveLAPPDData(LAPPDTime);
           LAPPDSaved = saved;
-          DataStreams["LAPPD"] = 1;
-          if (LAPPDSaved)
+          if (LAPPDSaved) {
+            DataStreams["LAPPD"] = 1;
             LAPPDPairInfoToRemoveTime[triggerTrack].push_back(LAPPDTime);
+          }
           Log("EBSaver: Saved " + std::to_string(savedLAPPDNumber) + " LAPPD data with LAPPDTime " + std::to_string(LAPPDTime), v_debug, verbosityEBSaver);
           Log("EBSaver: Found trigger with time " + std::to_string(triggerTime) + " in PairedLAPPDTriggerTimestamp " + std::to_string(i) + " match with LAPPDTime " + std::to_string(LAPPDTime), v_debug, verbosityEBSaver);
           // break;
@@ -587,6 +592,11 @@ bool EBSaver::SaveToANNIEEvent(string saveFileName, int runCode, int triggerTrac
 
   if (DataStreams["LAPPD"] == 0)
     BuildEmptyLAPPDData();
+
+  // Adding commit and config info to ANNIEEvent Header
+  std::string config_info;
+  if (m_data->CStore.Get("ConfigInfo", config_info))
+    ANNIEEvent->Header->Set("ConfigInfo", config_info);
 
   Log("EBSaver: Print ANNIEEvent, Saving to " + saveFileName, v_debug, verbosityEBSaver);
   if (verbosityEBSaver > 8)
@@ -810,6 +820,23 @@ bool EBSaver::SavePMTData(uint64_t PMTTime)
       std::vector<uint16_t> BRFRawWaveform;
       ANNIEEvent->Set("BRFRawWaveform", BRFRawWaveform);
       Log("EBSaver: Saved empty BRF data with PMTTime " + std::to_string(PMTTime), v_debug, verbosityEBSaver);
+    }
+  }
+  if (saveRawBESWaveform)
+  {
+    // find PMTTime as key in BESRawWaveforms, if found, save it, if not, save an empty vector
+    if (BESRawWaveforms->find(PMTTime) != BESRawWaveforms->end() && BESRawWaveforms->at(PMTTime).size() > 0)
+    {
+      std::vector<uint16_t> BESRawWaveform = BESRawWaveforms->at(PMTTime);
+      ANNIEEvent->Set("BESRawWaveform", BESRawWaveform);
+      Log("EBSaver: Saved BES data with PMTTime " + std::to_string(PMTTime), v_debug, verbosityEBSaver);
+      BESRawWaveforms->erase(PMTTime);
+    }
+    else
+    {
+      std::vector<uint16_t> BESRawWaveform;
+      ANNIEEvent->Set("BESRawWaveform", BESRawWaveform);
+      Log("EBSaver: Saved empty BES data with PMTTime " + std::to_string(PMTTime), v_debug, verbosityEBSaver);
     }
   }
 
@@ -1164,6 +1191,7 @@ bool EBSaver::GotAllDataFromOriginalBuffer()
   bool gotFRAS = m_data->CStore.Get("FinishedRawAcqSize", FinishedRawAcqSize); // Filled in PhaseIIADCCalibrator
   bool gotRWM = m_data->CStore.Get("RWMRawWaveforms", RWMRawWaveforms);
   bool gotBRF = m_data->CStore.Get("BRFRawWaveforms", BRFRawWaveforms);
+  bool gotBES = m_data->CStore.Get("BESRawWaveforms", BESRawWaveforms);
 
   if (!gotRawTankEvents || !gotPMTHits || !gotPMTChkey || !gotIPRecoADCHits || !gotIPHitsAux || !gotIPRADCH || !gotFRAS)
   {
@@ -1364,7 +1392,8 @@ void EBSaver::SetDataObjects()
   m_data->CStore.Set("FinishedRawAcqSize", FinishedRawAcqSize);
   m_data->CStore.Set("RWMRawWaveforms", RWMRawWaveforms);
   m_data->CStore.Set("BRFRawWaveforms", BRFRawWaveforms);
-  
+  m_data->CStore.Set("BESRawWaveforms", BESRawWaveforms);
+
   // set PMT match info
   m_data->CStore.Set("PairedPMTTriggerTimestamp", PairedPMTTriggerTimestamp);
   m_data->CStore.Set("PairedPMTTimeStamps", PairedPMTTimeStamps);
@@ -1443,6 +1472,22 @@ void EBSaver::BuildEmptyPMTData()
   ANNIEEvent->Set("AuxHits", PMTHitsAux, true);
   ANNIEEvent->Set("RecoAuxADCData", PMTRecoADCHitsAux);
   ANNIEEvent->Set("RawAcqSize", PMTRawAcqSize);
+  
+  if (saveRawRWMWaveform)
+  {
+    std::vector<uint16_t> RWMRawWaveform;
+    ANNIEEvent->Set("RWMRawWaveform", RWMRawWaveform);
+  }
+  if (saveRawBRFWaveform)
+  {
+    std::vector<uint16_t> BRFRawWaveform;
+    ANNIEEvent->Set("BRFRawWaveform", BRFRawWaveform);
+  }
+  if (saveRawBESWaveform)
+  {
+    std::vector<uint16_t> BESRawWaveform;
+    ANNIEEvent->Set("BESRawWaveform", BESRawWaveform);
+  }
 }
 
 void EBSaver::BuildEmptyMRDData()
