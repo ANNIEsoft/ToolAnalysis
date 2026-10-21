@@ -132,7 +132,7 @@ class Position : public SerialisableObject{
 			double arg = Dot(q)/sqrt(ptot2);
 			if(arg > 1.0) arg = 1.0;
 			if(arg < -1.0) arg = -1.0;
-			return cos(arg);
+			return acos(arg);
 		}
 	}
 	

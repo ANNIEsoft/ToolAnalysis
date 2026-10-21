@@ -2,6 +2,7 @@ myLoadANNIEEvent LoadANNIEEvent ./configfiles/NeutronMultiplicity/LoadANNIEEvent
 myLoadGeometry LoadGeometry ./configfiles/LoadGeometry/LoadGeometryConfig
 myTimeClustering TimeClustering configfiles/NeutronMultiplicity/TimeClusteringConfig
 myFindMrdTracks FindMrdTracks configfiles/NeutronMultiplicity/FindMrdTracksConfig
+DigitBuilder DigitBuilder ./configfiles/NeutronMultiplicity/DigitBuilderConfig
 myClusterFinder ClusterFinder ./configfiles/NeutronMultiplicity/ClusterFinderConfig
 myClusterClassifiers ClusterClassifiers ./configfiles/NeutronMultiplicity/ClusterClassifiersConfig
 myEventSelector EventSelector ./configfiles/NeutronMultiplicity/EventSelectorConfig

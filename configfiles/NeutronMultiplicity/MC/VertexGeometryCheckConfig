@@ -1,0 +1,9 @@
+verbosity 5
+
+OutputFile /Data/1225beamsim/VGCheck-beam-nwfrc-lappd.root
+ShowEvent -1
+#Theta 1.0
+#Phi 1.0
+StripTimePlot 0
+CleanHitsOnly 0
+RecoCluster 0

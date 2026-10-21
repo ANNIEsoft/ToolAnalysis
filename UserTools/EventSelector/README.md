@@ -106,6 +106,5 @@ ThroughGoing
 TriggerWord
 RecoPDG
 IsMC
-PMTWaveformSim
 SaveStatusToStore
 ```

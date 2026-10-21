@@ -44,7 +44,13 @@ class LikelihoodFitterCheck: public Tool {
   
   /// \brief Selecte a particular event to show
   int fShowEvent = 0;
+  /// \brief Give a maximum number of events to show after the selected event (set to 0 to show only the selected)
+  int fEventRange = 0;
+  int fEventsShown;
   
+ 	/// \brief Determine whether or not to show events that failed to pass selection cuts
+  bool ifCleanEventsOnly;
+
  	std::vector<RecoDigit>* fDigitList = 0;
  	RecoVertex* fTrueVertex = 0;
  	
@@ -69,6 +75,7 @@ class LikelihoodFitterCheck: public Tool {
 	bool ifPlot2DFOM = false;
     std::string pdffile;
     bool fUsePDFFile = 0;
+    std::string mode;
     TH1D pdf;
 	
 

@@ -77,6 +77,8 @@ class PMTWaveformSim: public Tool {
   double fT1, fT2, fR1, fR2;                   // reflection amplitudes and time spacings
   double fTimeSmear;
 
+  int factivePMTs = 0;
+
 
   bool fDebug;
   TFile *fOutFile;

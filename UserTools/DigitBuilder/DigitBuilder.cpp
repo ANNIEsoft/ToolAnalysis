@@ -47,6 +47,9 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("end_of_window_time_cut", end_of_window_time_cut);
   m_variables.Get("AcqTimeWindow", AcqTimeWindow);
   m_variables.Get("CollectHits",fCollectHits);
+  m_variables.Get("CollectWindow",fCollectionWindow);
+  m_variables.Get("UseWaveforms",fUseWaveforms);
+  m_variables.Get("WaveformShift",fWaveformshift);
 
   /// Construct the other objects we'll be setting at event level,
   fDigitList = new std::vector<RecoDigit>;
@@ -67,7 +70,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
   // Some hard-coded values of old WCSim LAPPDIDs are in this Tool
   // I would recommend moving away from the use of WCSim IDs if possible as they are liable to change
   // but for tools that need them, in the LoadWCSim tool I put a map of WCSim TubeId to channelkey
-  if (fIsMC){
+  if (fIsMC && !fUseWaveforms){
     m_data->CStore.Get("detectorkey_to_lappdid",detectorkey_to_lappdid);
     m_data->CStore.Get("channelkey_to_pmtid",channelkey_to_pmtid);
   } else {
@@ -99,6 +102,7 @@ bool DigitBuilder::Initialise(std::string configfile, DataModel &data){
 
     std::string line;
     if (file_singlepe.is_open()) {
+        Log("THE FILE IS OPEN",v_debug,verbosity);
         //Loop over lines, collect all detector data (should only be one line here)
         while (getline(file_singlepe, line)) {
             if (verbosity > 3) std::cout << line << std::endl; //has our stuff;
@@ -153,7 +157,7 @@ bool DigitBuilder::Execute(){
   };
 	
     
-  if (fIsMC){
+  if (fIsMC && !fUseWaveforms){
     auto get_mchits = m_data->Stores.at("ANNIEEvent")->Get("MCHits",fMCPMTHits);
     if(!get_mchits){ 
       Log("DigitBuilder Tool: Error retrieving MCHits from ANNIEEvent!",v_error,verbosity); 
@@ -173,7 +177,7 @@ bool DigitBuilder::Execute(){
   }
 
   /// Build RecoDigit
-  if (fIsMC){
+  if (fIsMC && !fUseWaveforms){
     this->BuildMCRecoDigit();
   } else {
     this->BuildDataRecoDigit();
@@ -249,7 +253,46 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
   if(fMCPMTHits){
       if (fCollectHits) {
           Log("DigitBuilder Tool: Collecting Hits to make Digits",v_message,verbosity);
-          CollectMCPMTHits();
+          //CollectMCPMTHits();
+
+          for (std::pair<unsigned long, std::vector<MCHit>>&& apair : *fMCPMTHits) {
+
+              unsigned long chankey = apair.first;
+              Detector* thistube = fGeometry->ChannelToDetector(chankey);
+              int detectorkey = thistube->GetDetectorID();
+              int PMTId = channelkey_to_pmtid.at(chankey);
+              Log("DigitBuilder Tool: collecting hits for PMT " + to_string(detectorkey) + ", which corresponds to PMTId " + to_string(PMTId), v_debug, verbosity);
+              if (thistube->GetDetectorElement() == "Tank") {
+                  std::vector<MCHit>& hits = apair.second;
+                  if(hits.size()==0) continue;
+                  std::vector<double> hit_times;
+                  std::vector<double> hit_charges;
+                  std::vector<int> Parents_by_hit;
+
+                  for (MCHit ahit : hits) {
+                      hit_times.push_back(ahit.GetTime());
+                      hit_charges.push_back(ahit.GetCharge());
+                      Log("Parents to this hit: "+to_string(ahit.GetParents()->size()),v_debug,verbosity);
+                      if(ahit.GetParents()->size()>0) Log("Parent to this hit: " + to_string(ahit.GetParents()->at(0)), v_debug, verbosity);
+                      else Log("Hit has no parent?",v_debug,verbosity);
+                      if(ahit.GetParents()->size() == 0)Parents_by_hit.push_back(-5);
+                      else Parents_by_hit.push_back(ahit.GetParents()->at(0));
+
+                      Log("Parents_by_hit size: "+to_string(Parents_by_hit.size()),v_debug,verbosity);
+                  }
+
+                  pos_sim = thistube->GetDetectorPosition();
+                  pos_sim.UnitToCentimeter();
+                  pos_reco.SetX(pos_sim.X() + xshift);
+                  pos_reco.SetY(pos_sim.Y() + yshift);
+                  pos_reco.SetZ(pos_sim.Z() + zshift);
+          CollectHitsDirect(hit_times,hit_charges,Parents_by_hit,pos_reco,PMTId, fCollectionWindow);
+          hit_times.clear();
+          hit_charges.clear();
+          Parents_by_hit.clear();
+              }
+          }
+          
           Log("DigitBuilder Tool: # of digits in this event: "+to_string(fDigitList->size()),v_debug,verbosity);
       }
       else {
@@ -284,8 +327,9 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
           for(MCHit& ahit : hits){
               Log("This HIT'S TIME AND CHARGE: " + to_string(ahit.GetTime()) + ", " + to_string(ahit.GetCharge()),v_debug,verbosity);
             double hitTime = ahit.GetTime()*1.0;
-          	if(hitTime>-10 && hitTime<AcqTimeWindow/1000) {
+          	if(hitTime>-10 && hitTime<AcqTimeWindow) {
 			  hitTimes.push_back(ahit.GetTime()*1.0); 
+              Log("Hit Time: "+to_string(ahit.GetTime()),v_debug,verbosity);
               hitCharges.push_back(ahit.GetCharge());
               //hitIDs.push_back(ahit.GetHitID());
             }
@@ -295,12 +339,14 @@ bool DigitBuilder::BuildMCPMTRecoDigit() {
           size_t timesize = hitTimes.size();
           if (timesize == 0) continue;
           if (fParametricModel == 1) {                //Mean hit time
+              Log("Number of hits: "+to_string(timesize),v_debug,verbosity);
               if (timesize % 2 == 0) {
                   calT = (hitTimes.at(timesize / 2 - 1) + hitTimes.at(timesize / 2)) / 2;
               }
               else {
                   calT = hitTimes.at(timesize / 2);
               }
+              Log("Found Digit with time "+to_string(calT),v_debug,verbosity);
           }
           else if (fParametricModel == 2) {         //first hit time
               calT = hitTimes.at(0);
@@ -450,7 +496,7 @@ bool DigitBuilder::BuildMCLAPPDRecoDigit() {
                         RecoDigit recoDigit(region, pos_reco, calT, calQ, digitType, LAPPDId);
                         //if(v_message<verbosity) recoDigit.Print();
                       //make some cuts here. It will be moved to the Hitcleaning tool
-                        if (calT > 40 || calT < -10) continue; // cut off delayed hits
+                        //if (calT > 40 || calT < -10) continue; // cut off delayed hits
                         //recoDigit.SetHitIDs(hitIDs);
                         fDigitList->push_back(recoDigit);
 
@@ -519,7 +565,6 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
 
 	Log("DigitBuilder Tool: Build PMT reconstructed digits (data)",v_message,verbosity);
 	/// now move to digit retrieval
-
     int region = -999;
     double calT;
     double calQ = 0.;
@@ -529,7 +574,9 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
     Position  pos_sim, pos_reco;
 
     for (std::pair<unsigned long, std::vector<Hit>>&& apair : *Hits) {
+        
         unsigned long chankey = apair.first;
+
         Detector* thistube = fGeometry->ChannelToDetector(chankey);
         det = fGeometry->ChannelToDetector(chankey);
         int detectorkey = thistube->GetDetectorID();
@@ -537,16 +584,26 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
         if (thistube->GetDetectorElement() == "Tank") {
             std::vector<Hit>& ThisPMTHits = apair.second;
             for (Hit& ahit : ThisPMTHits) {
-                pos_reco=det->GetDetectorPosition();
+                if(fIsMC){
+                pos_sim = det->GetDetectorPosition();
+                pos_sim.UnitToCentimeter();
+                pos_reco.SetX(pos_sim.X() + xshift);
+                pos_reco.SetY(pos_sim.Y() + yshift);
+                pos_reco.SetZ(pos_sim.Z() + zshift);
+                }
+                else pos_reco=det->GetDetectorPosition();
+
                 calT = ahit.GetTime();
+                Log("Found digit at time "+to_string(calT),v_debug,verbosity);
 
                 calQ = ahit.GetCharge();
-          
                 if (pmt_gains.find(chankey) != pmt_gains.end() && pmt_gains.at(chankey) > 0.0) {
                     calQ_temp = calQ / pmt_gains.at(chankey);
                 }
+
                 if (calQ_temp > fDigitChargeThr) {
                     digitType = RecoDigit::PMT8inch;
+                    if(fUseWaveforms) calT-=fWaveformshift;
                     RecoDigit recoDigit(region, pos_reco, calT, calQ_temp, digitType, PMTId);
 
                     //recoDigit.SetHitIDs(hitIDs);
@@ -556,8 +613,11 @@ bool DigitBuilder::BuildDataPMTRecoDigit(){
             }
             
         }
+
     }
-     
+    
+    Log("Check 2: "+to_string(fDigitList->size())+" Digits",v_debug,verbosity);
+
      return true;
 
 }
@@ -594,10 +654,10 @@ void DigitBuilder::CollectMCPMTHits() {
     double calT = 0;
     double calQ = 0;
     Position pos_reco, pos_sim;
-    std::map<unsigned long, int> PMT_ishit;
 
 
     for (std::pair<unsigned long, std::vector<MCHit>>&& apair : *fMCPMTHits) {
+
         unsigned long chankey = apair.first;
         Detector* thistube = fGeometry->ChannelToDetector(chankey);
         int detectorkey = thistube->GetDetectorID();
@@ -605,7 +665,6 @@ void DigitBuilder::CollectMCPMTHits() {
         Log("DigitBuilder Tool: collecting hits for PMT "+to_string(detectorkey)+", which corresponds to PMTId "+to_string(PMTId),v_debug,verbosity);
         if (thistube->GetDetectorElement() == "Tank") {
             std::vector<MCHit>& hits = apair.second;
-            PMT_ishit[detectorkey] = 1;
             std::vector<double> hit_times;
             std::vector<double> temp_times;
             double first_time=0;
@@ -620,7 +679,6 @@ void DigitBuilder::CollectMCPMTHits() {
             pos_reco.SetX(pos_sim.X() + xshift);
             pos_reco.SetY(pos_sim.Y() + yshift);
             pos_reco.SetZ(pos_sim.Z() + zshift);
-
 
             for (MCHit& ahit : hits) {
 
@@ -663,25 +721,26 @@ void DigitBuilder::CollectMCPMTHits() {
 
                     for (int j_hit = 0; j_hit < (int)datalike_hits.size(); j_hit++) {
                         
-                        if (fabs(first_time - hit1) < 10.) {
+                        if (fabs(first_time - hit1) < 1000.) {
                             new_pulse = false;
                             datalike_hits_charge.at(j_hit) += hits.at(i_hit).GetCharge();
-                            temp_times.push_back(hit1);
+                            
                             
                         }
                         else {
                             new_pulse = true;
-                            temp_times.push_back(hit1);
+                            
                             
                         }
 
                     }
+                    temp_times.push_back(hit1);
 
                     if (new_pulse) {
                         first_time=hit1;
                         
                         // following the DigitBuilder tool --> take median photon hit time as the hit time of the "pulse"
-                        sort(temp_times.begin(),temp_times.end());
+                        /*sort(temp_times.begin(), temp_times.end());
                         if (temp_times.size() % 2 == 0) {
                             mid_time = (temp_times.at(temp_times.size() / 2 - 1) + temp_times.at(temp_times.size() / 2)) / 2;
                         }
@@ -689,11 +748,13 @@ void DigitBuilder::CollectMCPMTHits() {
                             mid_time = temp_times.at(temp_times.size() / 2);
                         }
 
-                        datalike_hits.at(j_hit)=mid_time;  //datalike_hits.push_back(mid_time);      //Only count as a new pulse if it was 10ns away from every other pulse
+                        datalike_hits.at(j_hit)=mid_time;*/  //datalike_hits.push_back(mid_time);      //Only count as a new pulse if it was 10ns away from every other pulse
+                        
+                       //Take the first hit time as the pulse time  (Median time caused issues)
                         datalike_hits_charge.push_back(hits.at(i_hit).GetCharge());
-                        j_hit++;
+                        //j_hit++;
 
-                        datalike_hits.push_back(hit1);
+                        datalike_hits.push_back(first_time);
 
                         if (hits.at(i_hit).GetParents()->size() == 0) Parents_by_hit.push_back(-5);
                         else {
@@ -713,7 +774,9 @@ void DigitBuilder::CollectMCPMTHits() {
 
                 calT = datalike_hits.at(i_hit);
 
+
                 if (MCPMTResolution > 0) calT= frand.Gaus(calT, MCPMTResolution);
+
                 calQ = datalike_hits_charge.at(i_hit);
 
                 RecoDigit recoDigit(-999 /*region*/, pos_reco, calT, calQ, RecoDigit::PMT8inch, PMTId);
@@ -727,7 +790,99 @@ void DigitBuilder::CollectMCPMTHits() {
                 Log("PMT Charge,Time: " + to_string(calQ) + "," + to_string(calT), v_debug, verbosity);
                 //newMCHits.push_back(MCHit(chankey, datalike_hits.at(i_hit), datalike_hits_charge.at(i_hit), parents));
             }
+
+            datalike_hits.clear();
+            datalike_hits_charge.clear();
+
             
         }
     }
+}
+
+
+
+struct TimeCluster { 
+    std::vector<double> times;
+    double total_charge = 0.0;
+    double median_time = 0.0;
+    vector<int> Parents;
+};
+
+
+void DigitBuilder::CollectHitsDirect(const std::vector<double>&hit_times, const std::vector<double>&hit_charges, const std::vector<int>&hit_parents, Position pos_reco, int PMTId, double window_ns){
+    std::vector<TimeCluster> clusters;
+        if (hit_times.empty() || hit_times.size() != hit_charges.size()) return;
+        // Indices to keep time/charge paired while sorting
+        std::vector<size_t> indices(hit_times.size());
+        for (size_t i = 0; i < indices.size(); ++i)
+            indices[i] = i;
+        std::sort(indices.begin(), indices.end(),
+            [&](size_t a, size_t b)
+            {
+                return hit_times[a] < hit_times[b];
+            });
+        int j = 0;
+        // Start first cluster
+        double time = hit_times[indices[0]];
+        TimeCluster current;
+        /*while ((time<-10 || time>AcqTimeWindow) && j<indices.size()) {
+            j++;
+            time=hit_times[indices[j]];
+        }
+        if(j<indices.size()){*/
+        current.times.push_back(hit_times[indices[j]]);
+        current.total_charge += hit_charges[indices[j]];
+        current.Parents.push_back(hit_parents[indices[j]]);
+        Log("Hit time, charge: " + to_string(hit_times[indices[j]])+", "+to_string(hit_charges[indices[j]]), v_debug, verbosity);
+        /*}
+        else{
+            Log("No hits found in window!",v_message,verbosity);
+            return;
+        }*/
+        for (int i=j+1; i < indices.size(); ++i){
+            time = hit_times[indices[i]];
+            double charge = hit_charges[indices[i]];
+            if(time<-10 || time>AcqTimeWindow) continue;
+            if (std::fabs(time - current.times.back()) <= window_ns){
+                current.times.push_back(time);
+                current.total_charge += charge;
+                current.Parents.push_back(hit_parents[indices[i]]);
+                Log("Hit time, charge: "+to_string(time)+", "+to_string(charge), v_debug, verbosity);
+            }
+            else {
+                // Finalize current cluster
+                current.median_time = compute_median(current.times);
+            clusters.push_back(current);
+            // Start new cluster    
+            current = TimeCluster{};
+            current.times.push_back(time);
+            current.total_charge += charge;
+            current.Parents.push_back(hit_parents[indices[i]]);
+
+            Log("Hit time: " + to_string(time), v_debug, verbosity);
+            }
+        }
+        // Finalize last cluster    
+        current.median_time = compute_median(current.times);
+        clusters.push_back(current);
+
+
+        for (TimeCluster pulse : clusters) {
+            RecoDigit fDigit(-999,pos_reco,pulse.median_time,pulse.total_charge,RecoDigit::PMT8inch,PMTId);
+            fDigit.SetParents(pulse.Parents);
+            if(fDigit.GetCalCharge()>fDigitChargeThr){ 
+                fDigitList->push_back(fDigit);
+            Log("Found Digit with time "+to_string(fDigit.GetCalTime())+" and charge "+to_string(fDigit.GetCalCharge()), v_debug, verbosity);
+            Log("Parent: "+to_string(fDigit.GetParents().at(0))+", "+to_string(fDigitList->at(fDigitList->size()-1).GetParents().at(0)), v_debug, verbosity);
+            }
+        }
+}
+
+
+double DigitBuilder::compute_median(const std::vector<double>& times){
+    size_t n = times.size();
+    Log("number of hits: "+to_string(n),v_debug,verbosity);
+    if (n == 0) return 0.0;
+    if (n % 2 == 1) return times[n / 2];
+    else return 0.5f * (times[n / 2 - 1] + times[n / 2]);
 }

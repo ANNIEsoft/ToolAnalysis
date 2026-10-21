@@ -1,0 +1,5 @@
+# VtxPointPositionFinder config file
+
+verbosity 0
+UseTrueVertexAsSeed 0
+UseMinuitForPos 1

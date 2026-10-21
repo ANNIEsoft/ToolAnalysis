@@ -68,4 +68,5 @@ outfile /path/to/output/file	#'.root' is added to the end.
 UseClean 0	#whether to exclude events that do not pass event selection
 FinderCompare 0 #whether to add similar plots from ClusterFinder map-clusters to output for comparison purposes (not all parameters are written into Finder clusters)
 ParticleInfo 1	#whether to add true particle information directly from MCParticles list to output
+DelayThreshold 10000 #time in ns that delayed window starts.  Defaults to 10000 if excluded.
 ```

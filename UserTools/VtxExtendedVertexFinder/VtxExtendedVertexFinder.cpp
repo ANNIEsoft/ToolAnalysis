@@ -22,8 +22,7 @@ bool VtxExtendedVertexFinder::Initialise(std::string configfile, DataModel &data
   m_variables.Get("verbosity", verbosity);
   m_variables.Get("FitTimeWindowMin", fTmin);
   m_variables.Get("FitTimeWindowMax", fTmax);
-  m_variables.Get("UsePDFFile", fUsePDFFile);
-  m_variables.Get("PDFFile", pdffile);
+  m_variables.Get("RecoCluster",fRecoCluster);
   
   /// Create extended vertex
   /// Note that the objects created by "new" must be added to the "RecoEvent" store. 
@@ -41,6 +40,7 @@ bool VtxExtendedVertexFinder::Execute(){
   Log("VtxExtendedVertexFinder Tool: Executing",v_debug,verbosity);
   // Reset everything
   this->Reset();
+  tempDigitList.clear();
   
   // check if event passes the cut
   bool EventCutstatus = false;
@@ -66,11 +66,38 @@ bool VtxExtendedVertexFinder::Execute(){
   
   std::cout<<"event number = "<<fEventNumber<<std::endl;
 	
+  if(!fRecoCluster){
   // Retrive digits from RecoEvent
   get_ok = m_data->Stores.at("RecoEvent")->Get("RecoDigit",fDigitList);  ///> Get digits from "RecoEvent" 
   if(not get_ok){
     Log("VtxExtendedVertexFinder  Tool: Error retrieving RecoDigits,no digit from the RecoEvent!",v_error,verbosity); 
     return false;
+  }
+  }
+  else {
+      //Get focused digits from RecoCluster list.  Note that 'ClusterMode 1' must refer to dense, directional, hit-cleaned clusters for this to work.
+      get_ok = m_data->Stores.at("RecoEvent")->Get("RecoClusters",fClusterList);
+      if (not get_ok) {
+          Log("VtxExtendedVertexFinder Tool: Error retrieving RecoClusters, no clusters from the RecoEvent!",v_error,verbosity);
+          return false;
+      }
+      
+      for(int i =0; i<fClusterList->size(); i++){
+          cout<<"check1"<<fClusterList->at(i).GetNDigits()<<", "<<fClusterList->at(i).GetDigitList().size() << endl;
+          fClusterList->at(i).Print();
+      if(fClusterList->at(i).GetClusterMode()==1 && fClusterList->at(i).GetTime()<10000 && fClusterList->at(i).GetNDigits()>0) {  //Todo: Set Time Window in config
+          cout<<"check2 "<<fClusterList->at(i).GetDigitList().size()<<endl;
+          tempDigitList=fClusterList->at(i).GetDigitList();
+          fDigitList=&tempDigitList;
+          cout<<"check3"<<endl;
+                  Log("VtxEVF Tool: DigitCount, number, time: "+to_string(fDigitList->size())+", "+to_string(i)/* + ", "+to_string(fDigitList->at(i).GetCalTime())*/,v_debug,verbosity);
+                  break;
+      }
+      }
+      if(fDigitList==nullptr) {
+          Log("VtxExtendedVertexFinder Tool: No primary Cherenkov Cluster.  Aborting",v_error,verbosity);
+          return false;
+      }
   }
 	
   // Load digits to VertexGeometry
@@ -143,8 +170,7 @@ bool VtxExtendedVertexFinder::Finalise(){
 }
 
 RecoVertex* VtxExtendedVertexFinder::FitExtendedVertex(RecoVertex* myVertex) {
-  
-	//fit with Minuit
+  //fit with Minuit
   MinuitOptimizer* myOptimizer = new MinuitOptimizer();
   myOptimizer->SetPrintLevel(-1);
   myOptimizer->SetMeanTimeCalculatorType(1); //Type 1: most probable time
@@ -180,14 +206,6 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
   RecoVertex* fSimpleVertex = new RecoVertex();
   RecoVertex* bestGridVertex = new RecoVertex(); // FIXME: pointer must be deleted by the invoker
   
-  if (fUsePDFFile) {
-	  bool pdftest = this->GetPDF(pdf);
-	  if (!pdftest) {
-		  Log("pdffile error; continuing with fom reconstruction", v_error, verbosity);
-		  fUsePDFFile = 0;
-	  }
-  }
-
   for( unsigned int n=0; n<nlast; n++ ){
     //Find best time with Minuit
     MinuitOptimizer* myOptimizer = new MinuitOptimizer();
@@ -198,13 +216,7 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
     fSeedPos = &(vSeedVtxList->at(n));
   	fSimpleVertex= this->FindSimpleDirection(fSeedPos);
     myOptimizer->LoadVertex(fSimpleVertex); //Load vertex seed
-    if (!fUsePDFFile) {
-        myOptimizer->FitExtendedVertexWithMinuit(); //scan the point position in 4D space
-    }
-    else {
-        myOptimizer->FitExtendedVertexWithMinuit(pdf);
-    }
-
+    myOptimizer->FitExtendedVertexWithMinuit(); //scan the point position in 4D space
     vtxFOM = myOptimizer->GetFittedVertex()->GetFOM();
     vtxRecoStatus = myOptimizer->GetFittedVertex()->GetStatus();
  
@@ -220,7 +232,6 @@ RecoVertex* VtxExtendedVertexFinder::FitGridSeeds(std::vector<RecoVertex>* vSeed
     std::cout << "best fit reco status: " << bestGridVertex->GetStatus() << std::endl;
     std::cout << "BestVertex info: " << bestGridVertex->Print() << std::endl;
   }
-
   return bestGridVertex;
 }
 
@@ -314,16 +325,6 @@ void VtxExtendedVertexFinder::PushExtendedVertex(RecoVertex* vtx, bool savetodis
   // push vertex to RecoEvent store
   Log("VtxExtendedVertexFinder Tool: Push extended vertex to the RecoEvent store",v_message,verbosity);
 	m_data->Stores.at("RecoEvent")->Set("ExtendedVertex", fExtendedVertex, savetodisk);
-}
-
-bool VtxExtendedVertexFinder::GetPDF(TH1D& pdf) {
-    TFile f1(pdffile.c_str(), "READ");
-    if (!f1.IsOpen()) {
-        Log("VtxExtendedVertexFinder: pdffile does not exist", v_error, verbosity);
-        return false;
-    }
-    pdf = *(TH1D*)f1.Get("zenith");
-    return true;
 }
 
 void VtxExtendedVertexFinder::Reset() {
