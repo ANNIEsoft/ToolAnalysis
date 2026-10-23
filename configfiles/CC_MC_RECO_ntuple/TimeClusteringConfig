@@ -2,6 +2,9 @@
 
 verbosity 0
 IsData 0
+DropDeadHitsBeforeClustering 1
+# NEW: file of MRD channel keys (one per line, commas/semicolons/comments OK)
+DeadListFile ./configfiles/CC_MC_RECO_ntuple/DeadListChannelNum
 MinDigitsForTrack 4
 MaxMrdSubEventDuration 30  # [ns] if all hits are within this period, just make one subevent
 MinSubeventTimeSep 30      # [ns] gaps of at leas this long delimit subevents
