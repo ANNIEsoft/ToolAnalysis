@@ -218,15 +218,28 @@ bool ClusterFinder::Execute(){
         std::vector<double> hits_2ns_res_charge;
         std::vector<double> datalike_hits;
         std::vector<double> datalike_hits_charge;
+        std::vector<MCHit*> window_hits;
         for (MCHit &ahit : ThisPMTHits){
           if (ahit.GetTime() < end_of_window_time_cut*AcqTimeWindow) {
             //Make MC more like data --> combine multiple photons if they are within a 10ns range
-            hits_2ns_res.push_back(ahit.GetTime());
-            hits_2ns_res_charge.push_back(ahit.GetCharge());
+            window_hits.push_back(&ahit);
           }
         }
 	//Combine multiple MC hits to one pulse
-        std::sort(hits_2ns_res.begin(),hits_2ns_res.end());
+        // Sort the hits themselves, not just their times, so each pulse keeps the charges
+        // and parents of the photons it is built from.
+        std::stable_sort(window_hits.begin(), window_hits.end(),
+                         [](MCHit* a, MCHit* b) { return a->GetTime() < b->GetTime(); });
+        for (MCHit* h : window_hits) {
+          hits_2ns_res.push_back(h->GetTime());
+          hits_2ns_res_charge.push_back(h->GetCharge());
+        }
+        std::vector<std::vector<int>> datalike_parents;
+        std::vector<int> temp_parents;
+        auto add_parents = [&](int i) {
+          const std::vector<int>* pp = window_hits.at(i)->GetParents();
+          temp_parents.insert(temp_parents.end(), pp->begin(), pp->end());
+        };
 	std::vector<double> temp_times;
 	double temp_charges = 0.0;
 	double mid_time;
@@ -241,6 +254,7 @@ bool ClusterFinder::Execute(){
             if (temp_times.size()==0) {
               temp_times.push_back(hit1);
               temp_charges += hits_2ns_res_charge.at(i_hit);
+              add_parents(i_hit);
             }
         
 	else {
@@ -249,6 +263,7 @@ bool ClusterFinder::Execute(){
                 new_pulse=false;
                 temp_charges+=hits_2ns_res_charge.at(i_hit);
 		temp_times.push_back(hit1);
+                add_parents(i_hit);
               } else new_pulse=true;
 		  
             if (new_pulse) {
@@ -261,11 +276,14 @@ bool ClusterFinder::Execute(){
 
               datalike_hits.push_back(mid_time);
               datalike_hits_charge.push_back(temp_charges);
+              datalike_parents.push_back(temp_parents);
               temp_times.clear();
               temp_charges = 0;
+              temp_parents.clear();
               temp_times.push_back(hit1);
               temp_charges += hits_2ns_res_charge.at(i_hit);
-              
+              add_parents(i_hit);
+
             }
           }
         }
@@ -278,6 +296,7 @@ bool ClusterFinder::Execute(){
 
         datalike_hits.push_back(mid_time);
         datalike_hits_charge.push_back(temp_charges);
+        datalike_parents.push_back(temp_parents);
 
         if (verbose > 0){
           std::cout << " " << std::endl;
@@ -301,12 +320,12 @@ bool ClusterFinder::Execute(){
           //v_hittimes.push_back(ahit.GetTime()); // fill a vector with all hit times (unsorted)
           v_hittimes.push_back(datalike_hits.at(i_hit));
         }
-        std::vector<int> parents = *(ThisPMTHits.at(0).GetParents());
-        ThisPMTHits.clear();
         std::vector<MCHit> newMCHits;
         for (int i_hit=0; i_hit < (int) datalike_hits.size(); i_hit++){
-          newMCHits.push_back(MCHit(chankey,datalike_hits.at(i_hit),datalike_hits_charge.at(i_hit),parents));
+          newMCHits.push_back(MCHit(chankey,datalike_hits.at(i_hit),datalike_hits_charge.at(i_hit),
+                                    datalike_parents.at(i_hit)));
         }
+        ThisPMTHits.clear();
         MCHits->at(chankey) = newMCHits;
       }
     }

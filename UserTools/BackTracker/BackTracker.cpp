@@ -95,9 +95,8 @@ void BackTracker::SumParticleTankCharge()
     std::vector<MCHit> mcHits = mcHitsIt.second;
     for (uint mcHitIdx = 0; mcHitIdx < mcHits.size(); ++mcHitIdx) {
 
-      // technically a MCHit could have multiple parents, but they don't appear to in practice
-      // skip any cases we come across
-      std::vector<int> parentIdxs = *(mcHits[mcHitIdx].GetParents());
+      // skip hits made by more than one distinct particle
+      std::vector<int> parentIdxs = UniqueParents(mcHits[mcHitIdx]);
       if (parentIdxs.size() != 1) continue;
       
       int particleId = -5;
@@ -116,6 +115,17 @@ void BackTracker::SumParticleTankCharge()
 }
 
 //------------------------------------------------------------------------------
+// An MCHit lists one parent per photon; a hit whose photons all share one parent
+// counts as coming from that particle.
+std::vector<int> BackTracker::UniqueParents(const MCHit &mchit) const
+{
+  std::vector<int> parents = *(mchit.GetParents());
+  std::sort(parents.begin(), parents.end());
+  parents.erase(std::unique(parents.begin(), parents.end()), parents.end());
+  return parents;
+}
+
+//------------------------------------------------------------------------------
 void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, int &prtPdg, double &eff, double &pur, double &totalCharge)
 {
   // Loop over the hits and get all of their parents and the energy that each one contributed
@@ -124,7 +134,7 @@ void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, 
   totalCharge = 0;
 
   for (auto mchit : mchits) {    
-    std::vector<int> parentIdxs = *(mchit.GetParents());
+    std::vector<int> parentIdxs = UniqueParents(mchit);
     if (parentIdxs.size() != 1) {
       logmessage = "BackTracker::MatchMCParticle: this MCHit has ";
       logmessage += std::to_string(parentIdxs.size()) + " parents!";
