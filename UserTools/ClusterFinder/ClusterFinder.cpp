@@ -29,6 +29,10 @@ bool ClusterFinder::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("end_of_window_time_cut",end_of_window_time_cut);
   m_variables.Get("MC_pulse_width",mc_pulse_width);
   m_variables.Get("ApplyDeadMask",ApplyDeadMask);
+  if (!m_variables.Get("TimeMergeWindow",time_merge_window)) time_merge_window = 0.;
+  if (!m_variables.Get("TimeMergeMinTime",time_merge_min_time)) time_merge_min_time = 0.;
+  if (time_merge_window > 0 && verbose > 0) std::cout << "ClusterFinder: merging clusters whose median times are within "
+                                       << time_merge_window << " ns (clusters after " << time_merge_min_time << " ns)" << std::endl;
 
   //----------------------------------------------------------------------------
   //---------------Get basic geometry properties -------------------------------
@@ -561,6 +565,15 @@ bool ClusterFinder::Execute(){
         }
       }
     }
+  }
+
+  if (time_merge_window > 0) {
+    int nmerged = 0;
+    if (HitStoreName == "Hits")
+      nmerged = ClusterTimeMerge::Merge(*m_all_clusters, *m_all_clusters_detkey, time_merge_window, time_merge_min_time);
+    else if (HitStoreName == "MCHits")
+      nmerged = ClusterTimeMerge::Merge(*m_all_clusters_MC, *m_all_clusters_detkey, time_merge_window, time_merge_min_time);
+    if (verbose > 0) std::cout << "ClusterFinder: merged away " << nmerged << " clusters" << std::endl;
   }
 
   // Load the cluster map in a CStore for use by a subsequent tool
