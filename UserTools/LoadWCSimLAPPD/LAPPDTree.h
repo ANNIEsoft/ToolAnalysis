@@ -56,6 +56,7 @@ public :
    vector<double>  *lappdhit_globalcoorz;
    vector<double>  lappdhit_globalcoorxdummy, lappdhit_globalcoorydummy, lappdhit_globalcoorzdummy;
    vector<int>     *lappdhit_primaryParentID2;      // G4 internal trackID of photon parent
+   vector<int>     *lappdhit_directParentID2;       // G4 trackID of the track that emitted the photon, if present
    
    /* DISABLED BRANCHES */
    //Int_t           lappdhit_totalpes_perevt;        // total photons on all LAPPDs in this event
@@ -100,6 +101,7 @@ public :
    TBranch        *b_lappdhit_truetime2;              //!
    TBranch        *b_lappdhit_smeartime2;             //!
    TBranch        *b_lappdhit_primaryParentID2;       //!
+   TBranch        *b_lappdhit_directParentID2;        //!
    TBranch        *b_lappdhit_NoOfneighstripsHit;     //!
    TBranch        *b_lappdhit_neighstripnum;          //!
    TBranch        *b_lappdhit_neighstrippeak;         //!
@@ -202,6 +204,7 @@ void LAPPDTree::Init(TTree *tree)
    lappdhit_globalcoory = 0;
    lappdhit_globalcoorz = 0;
    lappdhit_primaryParentID2 = 0;
+   lappdhit_directParentID2 = 0;
    //lappdhit_stripcoorz = 0;
    //lappdhit_totalpes_perlappd2 = 0;
    //lappdhit_stripnum = 0;
@@ -244,6 +247,8 @@ void LAPPDTree::Init(TTree *tree)
    fChain->SetBranchAddress("lappdhit_edep", lappdhit_edep, &b_lappdhit_edep);
    fChain->SetBranchAddress("lappdhit_objnum", lappdhit_objnum, &b_lappdhit_objnum);
    fChain->SetBranchAddress("lappdhit_primaryParentID2", &lappdhit_primaryParentID2, &b_lappdhit_primaryParentID2);
+   if (fChain->GetBranch("lappdhit_directParentID2"))
+      fChain->SetBranchAddress("lappdhit_directParentID2", &lappdhit_directParentID2, &b_lappdhit_directParentID2);
    
    //fChain->SetBranchAddress("lappdhit_stripcoorz", &lappdhit_stripcoorz, &b_lappdhit_stripcoorz);
    //fChain->SetBranchAddress("lappdhit_process", lappdhit_process, &b_lappdhit_process);

@@ -14,6 +14,12 @@ Details on the fits used can be found here: https://github.com/S81D/PMTPulseFit
 **CalibratedADCData** `std::map<unsigned long, std::vector<CalibratedADCWaveform<double>> >`
 * The "calibrated" simulated waveforms. The baseline and sigma are the true, randomly-generated values. The key is PMT channel number, then inner vector should always have size == 1
 
+**PMTToDirectParentMap**, **PMTToPrimaryParentMap** `std::map<unsigned long, std::map<uint16_t, std::vector<int>>>`
+* For each PMT and MC hit time (in ADC ticks): the Geant4 track IDs of the particles that emitted the photons (direct parents), and of their primary ancestors. Used by `BackTracker` (`UseDirectParentClockTickMatching 1`)
+
+**PMTSimPrewindowTicks**, **PMTSimReadoutWindowTicks** `uint16_t`
+* The `Prewindow` and `ReadoutWindow` settings, so that `BackTracker` matches pulses over the same window
+
 
 ## Configuration
 

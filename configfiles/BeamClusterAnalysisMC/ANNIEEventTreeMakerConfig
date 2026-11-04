@@ -9,6 +9,7 @@ fill_singleTrigger 0
 fillCleanEventsOnly 0
 
 TankHitInfo_fill 1
+DirectParent_MCHit_fill 1
 TankCluster_fill 1
 cluster_TankHitInfo_fill 1
 MRDHitInfo_fill 1

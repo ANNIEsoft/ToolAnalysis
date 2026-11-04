@@ -137,13 +137,13 @@ class MCParticle : public Particle {
 	public:
 	
 	MCParticle() : Particle(0, 0., 0., Position(), Position(), 0., 0., Direction(), 0.,
-				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0), Flag(0), MCTriggerNum(0) {serialise=true;}
+				tracktype::UNCONTAINED), ParticleID(0), ParentPdg(0), PrimaryParentID(0), DirectParentID(0), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0), Flag(0), MCTriggerNum(0) {serialise=true;}
 	
 	MCParticle(int pdg, double sttE, double stpE, Position sttpos, Position stppos, 
 	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein,
-	  int partid, int parentpdg, int flagid, int triggernum)
+	  int partid, int parentpdg, int primaryparentid, int directparentid, int flagid, int triggernum)
 	: Particle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein), 
-	  ParticleID(partid), ParentPdg(parentpdg), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0), Flag(flagid), MCTriggerNum(triggernum)
+	  ParticleID(partid), ParentPdg(parentpdg), PrimaryParentID(primaryparentid), DirectParentID(directparentid), StartsInFiducialVolume(false), TrackAngleX(0), TrackAngleY(0), TrackAngleFromBeam(0), EntersTank(false), TankEntryPoint(Position()), ExitsTank(false), TankExitPoint(Position()), TrackLengthInTank(0), EntersMrd(false), MrdEntryPoint(Position()), ExitsMrd(false), MrdExitPoint(Position()), PenetratesMrd(false), TrackLengthInMrd(0), MrdPenetration(0), MrdLayersPenetrated(0), MrdEnergyLoss(0), Flag(flagid), MCTriggerNum(triggernum)
 	  {
 		serialise=true;
 		// override Hit tracktype
@@ -158,8 +158,17 @@ class MCParticle : public Particle {
 		}
 	}
 	
+	// without primary and direct parent IDs (left at 0, as in the default constructor)
+	MCParticle(int pdg, double sttE, double stpE, Position sttpos, Position stppos,
+	  double sttt, double stpt, Direction startdir, double len, tracktype tracktypein,
+	  int partid, int parentpdg, int flagid, int triggernum)
+	: MCParticle(pdg, sttE, stpE, sttpos, stppos, sttt, stpt, startdir, len, tracktypein,
+	  partid, parentpdg, 0, 0, flagid, triggernum) {}
+
 	inline int GetParticleID(){return ParticleID;}
 	inline int GetParentPdg(){return ParentPdg;}
+	inline int GetPrimaryParentID(){return PrimaryParentID;}
+	inline int GetDirectParentID(){return DirectParentID;}
 	inline int GetFlag(){return Flag;}
 	inline int GetMCTriggerNum(){return MCTriggerNum;}
 	
@@ -188,6 +197,8 @@ class MCParticle : public Particle {
 	
 	inline void SetParticleID(int partidin){ParticleID=partidin;}
 	inline void SetParentPdg(int parentpdgin){ParentPdg=parentpdgin;}
+	inline void SetPrimaryParentID(int primaryparentidin){PrimaryParentID=primaryparentidin;}
+	inline void SetDirectParentID(int directparentidin){DirectParentID=directparentidin;}
 	inline void SetFlag(int flagidin){Flag=flagidin;}
 	inline void SetMCTriggerNum(int triggernumin){MCTriggerNum=triggernumin;}
 	
@@ -228,6 +239,7 @@ class MCParticle : public Particle {
 	bool Print() {
 		std::cout<<"ParticlePDG : "<<ParticlePDG<<std::endl;
 		std::cout<<"Particle Name : "<<PdgToString(ParticlePDG)<<std::endl;
+		std::cout<<"DirectParentID : "<<DirectParentID<<std::endl;
 		std::cout<<"startEnergy : "<<startEnergy<<std::endl;
 		std::cout<<"stopEnergy : "<<stopEnergy<<std::endl;
 		std::cout<<"startVertex : "; startVertex.Print();
@@ -271,6 +283,8 @@ class MCParticle : public Particle {
 	protected:
 	int ParticleID;
 	int ParentPdg;
+	int PrimaryParentID;
+	int DirectParentID;
 	int Flag;
 	int MCTriggerNum; // trigger window in which the particle was created
 	
@@ -312,7 +326,6 @@ class MCParticle : public Particle {
 			
 			ar & ParticleID;
 			ar & ParentPdg;
-			
 			ar & StartsInFiducialVolume;
 			
 			ar & TrackAngleX;
@@ -336,8 +349,15 @@ class MCParticle : public Particle {
 			ar & MrdLayersPenetrated;
 			ar & MrdEnergyLoss;
 			ar & Flag;
+
+			if (version > 0) {
+				ar & PrimaryParentID;
+				ar & DirectParentID;
+			}
 		}
 	}
 };
+
+BOOST_CLASS_VERSION(MCParticle, 1)
 
 #endif

@@ -291,8 +291,16 @@ bool LoadWCSimLAPPD::Execute(){
 					digits->Fill(relativedigitst);
 				}
 				std::vector<int> parents; // info about which particle generated the photon for this hit
+				std::vector<int> directparents; // same convention as MCHit: index, -1 dark noise, -2 track not saved
 				if(TrackId_to_MCParticleIndex->count(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount))){
 					parents.push_back(TrackId_to_MCParticleIndex->at(LAPPDEntry->lappdhit_primaryParentID2->at(runningcount)));
+				}
+				if(LAPPDEntry->lappdhit_directParentID2){
+					int directparentid = LAPPDEntry->lappdhit_directParentID2->at(runningcount);
+					if(directparentid==-1) directparents.push_back(-1);
+					else if(TrackId_to_MCParticleIndex->count(directparentid))
+						directparents.push_back(TrackId_to_MCParticleIndex->at(directparentid));
+					else directparents.push_back(-2);
 				}
 				
 				// we now have all the necessary info about this LAPPD hit:
@@ -306,15 +314,15 @@ bool LoadWCSimLAPPD::Execute(){
 					relativedigitst<(posttriggerwindow) ){
 					//cout<<"LAPPD hit at absolute time "<<digitst<<", relative time "<<relativedigitst<<endl;
 					if(MCLAPPDHits->count(key)==0){
-						MCLAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos, parents);
+						MCLAPPDHit nexthit(key, relativedigitst, digiq, globalpos, localpos, parents, directparents);
 						MCLAPPDHits->emplace(key, std::vector<MCLAPPDHit>{nexthit});
 					} else {
 						MCLAPPDHits->at(key).emplace_back(key, relativedigitst, digiq,
-															globalpos, localpos, parents);
+															globalpos, localpos, parents, directparents);
 					}
 					if(verbosity>3) cout<<"new lappd digit added"<<endl;
 				} else { // store it for checking against future triggers in this event
-					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents);
+					unassignedhits.emplace_back(key, digitst, digiq, globalpos, localpos, parents, directparents);
 				}
 			} // end loop over photons on this lappd
 		}     // end loop over lappds hit in this event
