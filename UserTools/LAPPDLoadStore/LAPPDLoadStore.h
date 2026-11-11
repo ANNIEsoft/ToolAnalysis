@@ -17,8 +17,13 @@
 
 using namespace std;
 
-// class LAPPDLoadStore
-// Load LAPPD PSEC data and PPS data from BoostStore.
+/**
+ * \class LAPPDLoadStore
+ *
+ * Load LAPPD PSEC data and PPS data from BoostStore.
+ *
+ * Updated by: Anuj Gupta (2026.10.25)
+ */
 
 class LAPPDLoadStore : public Tool
 {
@@ -30,7 +35,8 @@ public:
     bool Finalise();                                          ///< Finalise function used to clean up resources.
     
     bool ReadPedestals(int boardNo);                          ///< Read in the Pedestal Files
-    bool MakePedestals();                                     ///< Make a Pedestal File
+    bool DoPedestalSubtract();                                ///< Waveforms as ADC_TO_MV * (ADC - pedestal)
+    bool BuildRawWaveforms();                                 ///< Waveforms as raw ADC counts
 
     int getParsedData(vector<unsigned short> buffer, int ch_start);
     int getParsedMeta(vector<unsigned short> buffer, int BoardId);
@@ -39,7 +45,6 @@ public:
     bool LoadData();
     bool ParsePSECData();
     void ParsePPSData();
-    bool DoPedestalSubtract();
     void SaveTimeStamps(); // save some timestamps relate to this event
     void LoadOffsetsAndCorrections();
     void LoadRunInfo();
@@ -51,12 +56,14 @@ public:
 private:
     static constexpr double CLOCK_TO_NSEC = 3.125;
     static constexpr int ACDC_META_WORDS = 103;
+    static constexpr double ADC_TO_MV = 0.3;          // mV per ADC count (approximate PSEC conversion)
 
     // Tool Control Variables (Loaded from config file)
-    int ReadStore;         	// read data from a StoreFile (tool chain start with this tool rather than LoadANNIEEvent)
-    int Nboards;           	// total number of boards to load pedestal file, LAPPD count * 2
-    string PedFileNameTXT; 	// txt format pedestal file name
-    int DoPedSubtract;     	// 1: do pedestal subtraction, 0: don't do pedestal subtraction
+    int DoPedSubtract;            				// 1: subtract pedestals, 0: store raw ADC counts
+    int Nboards;                  				// total number of pedestal files to load, LAPPD count * 2 (only if DoPedSubtract == 1)
+    string PedFileNameTXT;        				// pedestal file prefix (only if DoPedSubtract == 1)
+    std::map<unsigned long, vector<int>> PedestalValues;   	// channel -> pedestal per sample    
+
     int LAPPDLoadStoreVerbosity = 0;
     int num_vector_data;
     int num_vector_pps;
@@ -137,8 +144,6 @@ private:
     vector<int> ParaBoards; 	// save the board index for this PsecData
     std::map<unsigned long, vector<Waveform<double>>> LAPPDWaveforms;
 
-    ifstream PedFile;   	// stream for reading in the Pedestal Files
-    std::map<unsigned long, vector<int>> *PedestalValues;
     std::vector<unsigned short> Raw_buffer;
     std::vector<unsigned short> Parse_buffer;
     std::vector<int> ReadBoards;
@@ -177,7 +182,6 @@ private:
     vector<IDConfigRecord> idConfigRecords;
 
     // save PPS info for the second order correction
-    // save PPS info for the second order correction
     std::map<uint64_t, uint64_t> LAPPDBG_PPSBefore_0;
     std::map<uint64_t, uint64_t> LAPPDBG_PPSAfter_0;
     std::map<uint64_t, uint64_t> LAPPDBG_PPSDiff_0;
@@ -198,7 +202,7 @@ private:
 
     // data variables don't need to be cleared in each loop
     // these are loaded offset for event building
-    std::map<string, vector<uint64_t>> Offsets_0;
+    std::map<string, vector<uint64_t>> Offsets_0;		// key = run + subrun + partfile number
     std::map<string, vector<int>> Offsets_minus_ps_0;
     std::map<string, vector<int>> BGCorrections_0;
     std::map<string, vector<int>> TSCorrections_0;

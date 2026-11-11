@@ -13,11 +13,11 @@ myEventSelector EventSelector ./configfiles/BeamClusterAnalysis/EventSelectorCon
 
 myDigitBuilder DigitBuilder ./configfiles/BeamClusterAnalysis/DigitBuilderConfig
 
-LAPPDLoadStore LAPPDLoadStore configfiles/LAPPDProcessedAna/Configs
-LAPPDStoreReorder LAPPDStoreReorder configfiles/LAPPDProcessedAna/ConfigStoreReadIn
-LAPPDTimeAlignment LAPPDTimeAlignment configfiles/LAPPDProcessedAna/ConfigPreProcess
-LAPPDBaseline LAPPDBaseline configfiles/LAPPDProcessedAna/ConfigPreProcess
-LAPPDThresReco LAPPDThresReco configfiles/LAPPDProcessedAna/ConfigPlot
+LAPPDLoadStore LAPPDLoadStore ./configfiles/BeamClusterAnalysis/LAPPDLoadStoreConfig
+#LAPPDStoreReorder LAPPDStoreReorder configfiles/LAPPDProcessedAna/ConfigStoreReadIn
+#LAPPDTimeAlignment LAPPDTimeAlignment configfiles/LAPPDProcessedAna/ConfigPreProcess
+#LAPPDBaseline LAPPDBaseline configfiles/LAPPDProcessedAna/ConfigPreProcess
+#LAPPDThresReco LAPPDThresReco configfiles/LAPPDProcessedAna/ConfigPlot
 #LAPPDPlots LAPPDPlots configfiles/LAPPDProcessedAna/ConfigPlot
 
 FitRWMWaveform FitRWMWaveform ./configfiles/BeamClusterAnalysis/FitRWMWaveformConfig

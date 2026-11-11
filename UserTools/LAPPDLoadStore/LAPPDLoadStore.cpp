@@ -18,9 +18,6 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     errorEventsNumber = 0;
 
     // Load Config Variables for this tool
-    m_variables.Get("Nboards", Nboards);
-    m_variables.Get("PedinputfileTXT", PedFileNameTXT);
-    m_variables.Get("DoPedSubtraction", DoPedSubtract);
     m_variables.Get("LAPPDLoadStoreVerbosity", LAPPDLoadStoreVerbosity);
     m_variables.Get("num_vector_data", num_vector_data);
     m_variables.Get("num_vector_pps", num_vector_pps);
@@ -66,19 +63,30 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     partFileNumber = 0;
     eventNumberInPF = 0;
 
-    // Grab all pedestal files and prepare the map channel|pedestal-vector for substraction
+    // Pedestal subtraction (off by default: LAPPD waveforms are stored as raw ADC counts)
+    DoPedSubtract = 0;
+    m_variables.Get("DoPedSubtraction", DoPedSubtract);
+
     if (DoPedSubtract == 1)
     {
-        PedestalValues = new std::map<unsigned long, vector<int>>;
-        for (int i = 0; i < Nboards; i++) {
-            if (LAPPDLoadStoreVerbosity > 0) {
-                std::cout << "Reading Pedestal File " << PedFileNameTXT << " " << i << std::endl;
+        bool got_NBoards = m_variables.Get("Nboards", Nboards);
+        bool got_PedFile = m_variables.Get("PedinputfileTXT", PedFileNameTXT);
+        
+        if (!got_NBoards || !got_PedFile) {
+            Log("LAPPDLoadStore: DoPedSubtraction is 1 but Nboards or PedinputfileTXT is missing in config!", v_error, LAPPDLoadStoreVerbosity);
+            return false;
+        }
+        
+        PedestalValues.clear();
+        for (int i = 0; i < Nboards; i++)
+        {
+            if (!ReadPedestals(i))
+            {
+                Log("LAPPDLoadStore: failed to read pedestal file for board " + std::to_string(i), v_error, LAPPDLoadStoreVerbosity);
+                return false;
             }
-            ReadPedestals(i);
         }
-        if (LAPPDLoadStoreVerbosity > 0) {
-            cout << "PEDSIZES: " << PedestalValues->size() << " " << PedestalValues->at(0).size() << " " << PedestalValues->at(4).at(5) << endl;
-        }
+        Log("LAPPDLoadStore: Loaded pedestals for " + std::to_string(PedestalValues.size()) + " channels.", v_message, LAPPDLoadStoreVerbosity);
     }
 
     // set some control variables for later tools
@@ -108,24 +116,16 @@ bool LAPPDLoadStore::Initialise(std::string configfile, DataModel &data)
     }
 
     idConfigRecords = LoadIDConfig(ACCIDConfigFile);
-    if (LAPPDLoadStoreVerbosity > 1)
+    if (LAPPDLoadStoreVerbosity >= v_debug)
     {
         // print the ACCID config records for debug
         cout << "Loaded LAPPD ID Config Records from " << ACCIDConfigFile << ":" << endl;
         for (const auto& record : idConfigRecords) {
-            cout << "RunNumber: " << record.RunNumber
+            std::cout << "RunNumber: " << record.RunNumber
                  << ", ACCID: " << record.ACCID
                  << ", ManufacturerID: " << record.ManufacturerID
-                 << ", Position: " << record.Position << endl;
+                 << ", Position: " << record.Position << std::endl;
         }
-
-	int testRunNum = 5907;
-        int testManuID = 39; // example ManufacturerID to query
-        auto result= queryNearestACCID(idConfigRecords, testRunNum, testManuID);
-        int nearestACCID = std::get<0>(result);
-        std::string position = std::get<1>(result);
-        cout << "Querying nearest ACCID for RunNumber: " << testRunNum << ", ManufacturerID: " << testManuID << endl;
-        cout << "Nearest ACCID: " << nearestACCID << ", Position: " << position << endl;
     }
 
     return true;
@@ -369,9 +369,8 @@ bool LAPPDLoadStore::Execute()
             NonEmptyDataEvents += 1;
         }
 
-        // parsing finished, do pedestal subtraction
-        DoPedestalSubtract();
-        // save some timestamps relate to this event, for later using
+        // Event building: no waveforms are built here,
+        // they are made later from the processed data (MultiLAPPDMap 1)
         SaveTimeStamps();
 
         vector<int> ReadedBoards;
@@ -645,7 +644,11 @@ bool LAPPDLoadStore::Execute()
         
         LAPPDana = ValidDataLoaded;
         m_data->CStore.Set("LAPPDana", LAPPDana);
-        DoPedestalSubtract();
+
+        if (DoPedSubtract == 1)
+            DoPedestalSubtract();
+        else
+            BuildRawWaveforms();
 
         m_data->Stores["ANNIEEvent"]->Set("RawLAPPDData", LAPPDWaveforms); // leave this only for the merger tool
         m_data->Stores["ANNIEEvent"]->Set("LAPPD_IDs", LAPPD_IDs);
@@ -722,70 +725,40 @@ bool LAPPDLoadStore::Finalise()
 bool LAPPDLoadStore::ReadPedestals(int boardNo)
 {
 
-    if (LAPPDLoadStoreVerbosity > 0)
-        cout << "Getting Pedestals " << boardNo << endl;
-
-    std::string LoadName = PedFileNameTXT;
-    string nextLine; // temp line to parse
-    double finalsampleNo;
-    std::string ext = std::to_string(boardNo);
-    ext += ".txt";
-    LoadName += ext;
-    PedFile.open(LoadName); // final name: PedFileNameTXT + boardNo + .txt
-    if (!PedFile.is_open())
+    // File name: PedFileNameTXT + boardNo + ".txt"
+    // Each line is one sample, each column one channel of this board
+    std::string LoadName = PedFileNameTXT + std::to_string(boardNo) + ".txt";
+    std::ifstream pedFile(LoadName);
+    if (!pedFile.is_open())
     {
-        cout << "Failed to open " << LoadName << "!" << endl;
+        Log("LAPPDLoadStore: Failed to open pedestal file " + LoadName + ".", v_error, LAPPDLoadStoreVerbosity);
         return false;
     }
-    if (LAPPDLoadStoreVerbosity > 0)
-        cout << "Opened file: " << LoadName << endl;
+    
+    Log("LAPPDLoadStore: Reading pedestal file " + LoadName + ".", v_message, LAPPDLoadStoreVerbosity);
 
-    int sampleNo = 0; // sample number
-    while (getline(PedFile, nextLine))
+    std::string line;
+    int sampleNo = 0;
+    while (std::getline(pedFile, line))
     {
-        istringstream iss(nextLine);            // copies the current line in the file
-        int location = -1;                      // counts the current perameter in the line
-        string stempValue;                      // current string in the line
-        int tempValue;                          // current int in the line
-        unsigned long channelNo = boardNo * 30; // channel number
-        // cout<<"NEW BOARD "<<channelNo<<" "<<sampleNo<<endl;
-        // starts the loop at the beginning of the line
-        while (iss >> stempValue)
+        std::istringstream iss(line);
+        unsigned long channelNo = boardNo * NUM_CH;
+        double value;
+        while (iss >> value)
         {
-            location++;
-            int tempValue = stoi(stempValue, 0, 10);
-            if (sampleNo == 0)
-            {
-                vector<int> tempPed;
-                tempPed.push_back(tempValue);
-                // cout<<"First time: "<<channelNo<<" "<<tempValue<<endl;
-                PedestalValues->insert(pair<unsigned long, vector<int>>(channelNo, tempPed));
-                if (LAPPDLoadStoreVerbosity > 0)
-                    cout << "Inserting pedestal at channelNo " << channelNo << endl;
-                // newboard=false;
-            }
-            else
-            {
-                // cout<<"Following time: "<<channelNo<<" "<<tempValue<<"    F    "<<PedestalValues->count(channelNo)<<endl;
-                (((PedestalValues->find(channelNo))->second)).push_back(tempValue);
-            }
-
+            PedestalValues[channelNo].push_back((int)value);
             channelNo++;
+        }
+        int nChannels = channelNo - boardNo * NUM_CH;
+        if (nChannels != NUM_CH) {
+            Log("LAPPDLoadStore: Board " + std::to_string(boardNo) + ", sample " + std::to_string(sampleNo) + " has " + std::to_string(nChannels) 
+                + " channels, expected " + std::to_string(NUM_CH) + ".", v_error, LAPPDLoadStoreVerbosity);
+            return false;
         }
         sampleNo++;
     }
-    if (LAPPDLoadStoreVerbosity > 0)
-        cout << "FINAL SAMPLE NUMBER: " << PedestalValues->size() << " " << (((PedestalValues->find(0))->second)).size() << endl;
-    PedFile.close();
-    return true;
-}
 
-bool LAPPDLoadStore::MakePedestals()
-{
-
-    // Empty for now...
-    // should be moved to ASCII readin?
-
+    Log("LAPPDLoadStore: Board " + std::to_string(boardNo) + ": loaded " + std::to_string(sampleNo) + " samples.", v_message, LAPPDLoadStoreVerbosity);
     return true;
 }
 
@@ -1365,72 +1338,86 @@ bool LAPPDLoadStore::ParsePSECData()
     return true;
 }
 
-bool LAPPDLoadStore::DoPedestalSubtract()
+bool LAPPDLoadStore::BuildRawWaveforms()
 {
-    if (LAPPDLoadStoreVerbosity > 0)
-        cout << "LAPPDLoadStore::DoPedestalSubtract()" << endl;
-    if (DoPedSubtract == 0)
-        return true;
+    Log("LAPPDLoadStore: BuildRawWaveforms (raw ADC counts, no pedestal subtraction).", v_message, LAPPDLoadStoreVerbosity);
+
     Waveform<double> tmpWave;
     vector<Waveform<double>> VecTmpWave;
-    int pedval, val;
-    if (LAPPDLoadStoreVerbosity > 3)
-    {
-        // print the size of data and all keys, and the size of PedestalValues and all keys
-        cout << "Size of data is " << data.size() << endl;
-        for (std::map<int, vector<unsigned short>>::iterator it = data.begin(); it != data.end(); ++it) // looping over the data map by channel number, from 0 to 60
-        {
-            cout << it->first << ", ";
-        }
-        cout << endl;
-        cout << "Size of PedestalValues is " << PedestalValues->size() << endl;
-        for (auto it = PedestalValues->begin(); it != PedestalValues->end(); ++it) // looping over the data map by channel number, from 0 to 60
-        {
-            cout << it->first << ", ";
-        }
-        cout << endl;
-    }
+    int val;
     // Loop over data stream
-    for (std::map<int, vector<unsigned short>>::iterator it = data.begin(); it != data.end(); ++it) // looping over the data map by channel number, from 0 to 60
+    for (std::map<int, vector<unsigned short>>::iterator it = data.begin(); it != data.end(); ++it) // looping over the data map by channel number
     {
-        int wrongPedChannel = 0;
-        if (LAPPDLoadStoreVerbosity > 5)
-            cout << "Do Pedestal sub at Channel " << it->first;
-
+        std::string firstSamples;
         for (int kvec = 0; kvec < it->second.size(); kvec++)
-        { // loop all data point in this channel
-            if (DoPedSubtract == 1)
-            {
-                auto iter = PedestalValues->find((it->first));
-                if (kvec == 0 && LAPPDLoadStoreVerbosity > 5)
-                    cout << std::fixed << ", found PedestalValues for channel " << it->first << " with value = " << iter->second.at(0);
-                if (iter != PedestalValues->end() && iter->second.size() > kvec)
-                {
-                    pedval = iter->second.at(kvec);
-                }
-                else
-                {
-                    pedval = 0;
-                    wrongPedChannel = (it->first);
-                }
-            }
-            else
-            {
-                pedval = 0;
-            }
+        {
+            // loop all data point in this channel
             val = it->second.at(kvec);
-            tmpWave.PushSample(0.3 * (double)(val - pedval));
-            if (LAPPDLoadStoreVerbosity > 5 && kvec < 10)
-                cout << ", " << val << "-" << pedval << "=" << 0.3 * (double)(val - pedval);
+            tmpWave.PushSample((double)val);
+
+            if (LAPPDLoadStoreVerbosity >= v_debug && kvec < 10)
+                firstSamples += std::to_string(val) + " ";
         }
-        if (wrongPedChannel != 0)
-            cout << "Pedestal value not found for channel " << wrongPedChannel << "with it->first channel" << it->first << ", LAPPD channel shift " << LAPPD_ID * 60 << endl;
+
+        Log("LAPPDLoadStore: Raw ADC at channel " + std::to_string(it->first) + ": " + firstSamples, v_debug, LAPPDLoadStoreVerbosity);
 
         VecTmpWave.push_back(tmpWave);
-
         unsigned long pushChannelNo = (unsigned long)it->first;
         LAPPDWaveforms.insert(pair<unsigned long, vector<Waveform<double>>>(pushChannelNo, VecTmpWave));
-        // cout<<", Pushed to LAPPDWaveforms with channel number "<<pushChannelNo<<endl;
+
+        tmpWave.ClearSamples();
+        VecTmpWave.clear();
+    }
+    return true;
+}
+        
+bool LAPPDLoadStore::DoPedestalSubtract()
+{
+    // One waveform per channel: ADC_TO_MV * (ADC - pedestal)
+    Log("LAPPDLoadStore: DoPedestalSubtract initiated.", v_message, LAPPDLoadStoreVerbosity);
+
+    if (LAPPDLoadStoreVerbosity >= v_debug)
+    {
+        std::string dataCh, pedCh;
+        for (std::map<int, std::vector<unsigned short>>::const_iterator it = data.begin(); it != data.end(); ++it)
+            dataCh += std::to_string(it->first) + " ";
+        
+        for (std::map<unsigned long, std::vector<int>>::const_iterator it = PedestalValues.begin(); it != PedestalValues.end(); ++it)
+            pedCh += std::to_string(it->first) + " ";
+        
+        Log("LAPPDLoadStore: Data channels (" + std::to_string(data.size()) + "): " + dataCh, v_debug, LAPPDLoadStoreVerbosity);
+        Log("LAPPDLoadStore: Pedestal channels (" + std::to_string(PedestalValues.size()) + "): " + pedCh, v_debug, LAPPDLoadStoreVerbosity);
+    }
+
+    Waveform<double> tmpWave;
+    vector<Waveform<double>> VecTmpWave;
+    int val, pedval;
+    
+    for (std::map<int, vector<unsigned short>>::iterator it = data.begin(); it != data.end(); ++it) // looping over the data map by channel number
+    {
+        // Pedestal for this channel, looked up once
+        std::map<unsigned long, vector<int>>::iterator pedIt = PedestalValues.find(it->first);
+        bool foundPed = (pedIt != PedestalValues.end());
+        
+        if (!foundPed || pedIt->second.size() < it->second.size())
+            Log("LAPPDLoadStore: Pedestal missing or incomplete for channel " + std::to_string(it->first) + ", using 0.", v_warning, LAPPDLoadStoreVerbosity);
+
+        std::string firstSamples;
+        for (int kvec = 0; kvec < it->second.size(); kvec++)
+        { 
+            // loop all data point in this channel
+            val = it->second.at(kvec);
+            pedval = (foundPed && kvec < pedIt->second.size()) ? pedIt->second.at(kvec) : 0;
+            tmpWave.PushSample(ADC_TO_MV * (double)(val - pedval));
+            
+            if (LAPPDLoadStoreVerbosity >= v_debug && kvec < 10)
+                firstSamples += std::to_string(val) + "-" + std::to_string(pedval) + " ";
+        }
+        Log("LAPPDLoadStore: Pedestal sub at channel " + std::to_string(it->first) + ": " + firstSamples, v_debug, LAPPDLoadStoreVerbosity);
+
+        VecTmpWave.push_back(tmpWave);
+        unsigned long pushChannelNo = (unsigned long)it->first;
+        LAPPDWaveforms.insert(pair<unsigned long, vector<Waveform<double>>>(pushChannelNo, VecTmpWave));
 
         tmpWave.ClearSamples();
         VecTmpWave.clear();

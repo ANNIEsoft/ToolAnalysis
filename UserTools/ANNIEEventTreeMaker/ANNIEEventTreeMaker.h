@@ -33,7 +33,7 @@
  * $Date: 2024/8 $
  * Contact: yuef@iastate.edu
  *
- * Updated by: Anuj Gupta (2026.09.07)
+ * Updated by: Anuj Gupta (2026.10.30)
  *
  */
 
@@ -120,6 +120,7 @@ private:
     bool RWMBRF_fill = 1;
     bool LAPPD_PPS_fill = 1;
     bool LAPPD_Waveform_fill = 1;
+    bool LAPPD_RawMeta_fill = 0;
     bool LAPPD_MC_fill = 0;
 
     // What reco information will be filled
@@ -143,9 +144,7 @@ private:
 
     // EventInfo
     int fRunNumber;
-    int fSubrunNumber;
     int fPartFileNumber;
-    int fRunType = 0;
     int fEventNumber;
     int fPrimaryTriggerWord;
     int trigword;
@@ -208,9 +207,7 @@ private:
     std::vector<double> fHitQ;
     std::vector<double> fHitPE;
     std::vector<int> fHitType;
-    std::vector<int> fHitDetID;
     std::vector<int> fHitChankey;
-    std::vector<int> fHitChankeyMC;
     std::vector<int> fHitPMTType;
 
     // SiPMPulseInfo_fill
@@ -263,6 +260,11 @@ private:
 
     vector<int> fLAPPD_BG_switchBit0;
     vector<int> fLAPPD_BG_switchBit1;
+    
+    // LAPPD_RawMeta_fill
+    vector<unsigned short> fACDCmetadata;
+    vector<int> fACDCboards;
+    vector<int> fACDCReadedLAPPDID;
 
     // LAPPD Reco Fill
     vector<uint64_t> fLAPPDPulseTimeStampUL;
@@ -275,7 +277,6 @@ private:
     vector<double> fPulsePeakAmp;
     vector<double> fPulseStart;
     vector<double> fPulseEnd;
-    vector<double> fPulseWidth;
     vector<int> fPulseSide;
     vector<int> fPulseStripNum;
     vector<double> fPulseBaseline;
@@ -292,26 +293,6 @@ private:
     vector<double> fLAPPDHitAmp;
     vector<double> fLAPPDHitParallelPos;
     vector<double> fLAPPDHitTransversePos;
-    vector<double> fLAPPDHitP1StartTime;
-    vector<double> fLAPPDHitP2StartTime;
-    vector<double> fLAPPDHitP1EndTime;
-    vector<double> fLAPPDHitP2EndTime;
-    vector<double> fLAPPDHitP1PeakTime;
-    vector<double> fLAPPDHitP2PeakTime;
-    vector<double> fLAPPDHitP1PeakAmp;
-    vector<double> fLAPPDHitP2PeakAmp;
-    vector<double> fLAPPDHitP1HalfHeightTime;
-    vector<double> fLAPPDHitP2HalfHeightTime;
-    vector<double> fLAPPDHitP1HalfEndTime;
-    vector<double> fLAPPDHitP2HalfEndTime;
-    vector<double> fLAPPDHitP1Charge;
-    vector<double> fLAPPDHitP2Charge;
-    vector<double> fLAPPDHitP1Baseline;
-    vector<double> fLAPPDHitP2Baseline;
-    vector<double> fLAPPDHitP1FollowTime;
-    vector<double> fLAPPDHitP2FollowTime;
-    vector<double> fLAPPDHitP1FollowCharge;
-    vector<double> fLAPPDHitP2FollowCharge;
 
     // LAPPD waveform Fill
     string LAPPDWaveformInputLabel;
@@ -346,15 +327,10 @@ private:
     vector<vector<double>> fCluster_HitQ;
     vector<vector<double>> fCluster_HitPE;
     vector<vector<int>> fCluster_HitType;
-    vector<vector<int>> fCluster_HitDetID;
     vector<vector<int>> fCluster_HitChankey;
-    vector<vector<int>> fCluster_HitChankeyMC;
     vector<vector<int>> fCluster_HitPMTType;
 
     vector<double> fClusterMaxPEV;
-    vector<double> fClusterChargePointXV;
-    vector<double> fClusterChargePointYV;
-    vector<double> fClusterChargePointZV;
     vector<double> fClusterChargeBalanceV;
 
     // MRD cluster information
@@ -370,14 +346,10 @@ private:
     std::vector<double> fMRDHitT;
     std::vector<double> fMRDHitCharge;
     std::vector<int> fMRDHitDigitPMT;
-    std::vector<int> fMRDHitDetID;
     std::vector<int> fMRDHitChankey;
-    std::vector<int> fMRDHitChankeyMC;
 
     std::vector<double> fFMVHitT;
-    std::vector<int> fFMVHitDetID;
     std::vector<int> fFMVHitChankey;
-    std::vector<int> fFMVHitChankeyMC;
 
     // MRDReco_fill
     int fNumMRDClusterTracks;

@@ -23,7 +23,8 @@ muonTruthRecoDiff_fill 0
 RingCounting_fill 0
 
 LAPPDData_fill 1
-LAPPDReco_fill 1
+LAPPDReco_fill 0
 LAPPD_PPS_fill 1
 LAPPD_Waveform_fill 1
+LAPPD_RawMeta_fill 1
 LAPPD_MC_fill 0

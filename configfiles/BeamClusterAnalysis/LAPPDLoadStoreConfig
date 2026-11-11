@@ -1,0 +1,32 @@
+LAPPDLoadStoreVerbosity 0
+
+Nsamples 256                # samples per waveform
+SampleSize 100              # samples used for baseline subtraction
+TrigChannel 5               # trigger channel
+NChannels 30                # channels per board
+LAPPDchannelOffset 1000
+
+NUM_VECTOR_METADATA 103     # Fixed META vector size per board
+num_vector_data 7795        # PSEC data frame size per board
+num_vector_pps 16           # PPS frame size per board
+
+# Input mode
+PsecReceiveMode 0
+MultiLAPPDMap 1             # 1: processed data (multi-LAPPD map), 0: event building
+mergingModeReadIn 0
+loadFromStoreDirectly 0
+RawDataInputWavLabel RawWaveform
+RawDataOutputWavLabel RawLAPPDData
+
+SelectSingleLAPPD 0
+SelectedLAPPD 0
+loadPSEC 1
+loadPPS 0
+loadOffsets 0
+LoadBuiltPPSInfo 1
+stopEntries 2000000000
+
+# LAPPD ID mapping
+ACCIDConfigFile ./configfiles/LAPPDProcessedAna/LAPPDIDConfig.csv
+
+DoPedSubtraction 0

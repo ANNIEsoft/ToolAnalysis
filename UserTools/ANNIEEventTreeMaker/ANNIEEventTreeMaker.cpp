@@ -45,6 +45,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   m_variables.Get("LAPPDReco_fill", LAPPDReco_fill);
   m_variables.Get("LAPPD_PPS_fill", LAPPD_PPS_fill);
   m_variables.Get("LAPPD_Waveform_fill", LAPPD_Waveform_fill);
+  m_variables.Get("LAPPD_RawMeta_fill", LAPPD_RawMeta_fill);
   m_variables.Get("LAPPD_MC_fill", LAPPD_MC_fill);
 
   std::string output_filename = "ANNIEEventTree.root";
@@ -69,9 +70,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
 
   // general information in an event
   fANNIETree->Branch("runNumber", &fRunNumber, "runNumber/I");
-  fANNIETree->Branch("subrunNumber", &fSubrunNumber, "subrunNumber/I");
   fANNIETree->Branch("partFileNumber", &fPartFileNumber, "partFileNumber/I");
-  fANNIETree->Branch("runType", &fRunType, "runType/I");
   fANNIETree->Branch("eventNumber", &fEventNumber, "eventNumber/I"); //
   fANNIETree->Branch("PrimaryTriggerWord", &fPrimaryTriggerWord, "PrimaryTriggerWord/I");
   fANNIETree->Branch("GroupedTriggerTime", &fGroupedTriggerTime);
@@ -86,7 +85,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fANNIETree->Branch("TankMRDCoinc", &fTankMRDCoinc, "TankMRDCoinc/I");
   fANNIETree->Branch("NoVeto", &fNoVeto, "NoVeto/I");
   fANNIETree->Branch("MRDTriggerType", &fMRDTriggerTypeInt, "MRDTriggerType/I");
-  //fANNIETree->Branch("MRDTriggerTypeString", &fMRDTriggerType);
+  // fANNIETree->Branch("MRDTriggerTypeString", &fMRDTriggerType);
 
   // event information of data
   fANNIETree->Branch("eventTimeTank", &fEventTimeTank, "eventTimeTank/l");
@@ -139,9 +138,6 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fANNIETree->Branch("clusterCharge", &fClusterChargeV);
   fANNIETree->Branch("clusterPE", &fClusterPEV);
   fANNIETree->Branch("clusterMaxPE", &fClusterMaxPEV);
-  fANNIETree->Branch("clusterChargePointX", &fClusterChargePointXV);
-  fANNIETree->Branch("clusterChargePointY", &fClusterChargePointYV);
-  fANNIETree->Branch("clusterChargePointZ", &fClusterChargePointZV);
   fANNIETree->Branch("clusterChargeBalance", &fClusterChargeBalanceV);
   fANNIETree->Branch("clusterHits", &fClusterHits);
   fANNIETree->Branch("Cluster_HitX", &fCluster_HitX);
@@ -151,9 +147,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
   fANNIETree->Branch("Cluster_HitQ", &fCluster_HitQ);
   fANNIETree->Branch("Cluster_HitPE", &fCluster_HitPE);
   fANNIETree->Branch("Cluster_HitType", &fCluster_HitType);
-  fANNIETree->Branch("Cluster_HitDetID", &fCluster_HitDetID);
   fANNIETree->Branch("Cluster_HitChankey", &fCluster_HitChankey);
-  fANNIETree->Branch("Cluster_HitChankeyMC", &fCluster_HitChankeyMC);
   fANNIETree->Branch("Cluster_HitPMTType", &fCluster_HitPMTType);
 
   // MRD cluster information
@@ -175,9 +169,7 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("hitQ", &fHitQ);
     fANNIETree->Branch("hitPE", &fHitPE);
     fANNIETree->Branch("hitType", &fHitType);
-    fANNIETree->Branch("hitDetID", &fHitDetID);
     fANNIETree->Branch("hitChankey", &fHitChankey);
-    fANNIETree->Branch("hitChankeyMC", &fHitChankeyMC);
     fANNIETree->Branch("hitPMTType", &fHitPMTType);
   }
 
@@ -243,39 +235,29 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPD_BG_switchBit0", &fLAPPD_BG_switchBit0);
     fANNIETree->Branch("LAPPD_BG_switchBit1", &fLAPPD_BG_switchBit1);
 
+    if (LAPPD_RawMeta_fill)
+    {
+      fANNIETree->Branch("ACDCmetadata", &fACDCmetadata);
+      fANNIETree->Branch("ACDCboards", &fACDCboards);
+      fANNIETree->Branch("ACDCReadedLAPPDID", &fACDCReadedLAPPDID);
+    }
+
     // load the ID conversion table
     std::string ACCIDConfigFile = "./configfiles/LAPPDProcessedAna/LAPPDIDConfig.csv";
     m_variables.Get("ACCIDConfigFile", ACCIDConfigFile);
     idConfigRecords = LoadIDConfig(ACCIDConfigFile);
     
     //print the loaded records
-    if (ANNIEEventTreeMakerVerbosity > 1)
-    {
-        // print the ACCID config records for debug
-        cout << "Loaded LAPPD ID Config Records from " << ACCIDConfigFile << ":" << endl;
-        for (const auto& record : idConfigRecords) {
-            cout << "RunNumber: " << record.RunNumber
-                 << ", ACCID: " << record.ACCID
-                 << ", ManufacturerID: " << record.ManufacturerID
-                 << ", Position: " << record.Position << endl;
+        // Print the loaded ACC ID config records (debug only)
+    if (ANNIEEventTreeMakerVerbosity >= v_debug) {
+        Log("ANNIEEventTreeMaker: Loaded LAPPD ID config records from " + ACCIDConfigFile + ":", v_debug, ANNIEEventTreeMakerVerbosity);
+        for (const IDConfigRecord &record : idConfigRecords) {
+            Log("  RunNumber: " + std::to_string(record.RunNumber) +
+                ", ACCID: " + std::to_string(record.ACCID) +
+                ", ManufacturerID: " + std::to_string(record.ManufacturerID) +
+                ", Position: " + record.Position, v_debug, ANNIEEventTreeMakerVerbosity);
         }
-
-	int testRunNum = 6050;
-        int testACCID = 0; // example ACCID to query
-        auto result = queryNearestID(idConfigRecords, testRunNum, testACCID);
-        int nearestManuID = std::get<0>(result);
-        std::string position = std::get<1>(result);
-        cout << "Querying nearest ID for RunNumber: " << testRunNum << ", ACCID: " << testACCID << endl;
-        cout << "Nearest ManufacturerID: " << nearestManuID << ", Position: " << position << endl;
-
-	testRunNum = 5907;
-        int testManuID = 39; // example ManufacturerID to query
-        result= queryNearestACCID(idConfigRecords, testRunNum, testManuID);
-        int nearestACCID = std::get<0>(result);
-        position = std::get<1>(result);
-        cout << "Querying nearest ACCID for RunNumber: " << testRunNum << ", ManufacturerID: " << testManuID << endl;
-        cout << "Nearest ACCID: " << nearestACCID << ", Position: " << position << endl;
-     }
+    }
   }
 
   // LAPPD reconstruction information
@@ -295,7 +277,6 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPD_Charge", &fPulseCharge);
     fANNIETree->Branch("LAPPD_PulseStart", &fPulseStart);
     fANNIETree->Branch("LAPPD_PulseEnd", &fPulseEnd);
-    fANNIETree->Branch("LAPPD_PulseWidth", &fPulseWidth);
     fANNIETree->Branch("LAPPD_PulseSide", &fPulseSide);
     fANNIETree->Branch("LAPPD_PulseStripNum", &fPulseStripNum);
     fANNIETree->Branch("LAPPD_PulseBaseline", &fPulseBaseline);
@@ -312,39 +293,9 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("LAPPDHitAmp", &fLAPPDHitAmp);
     fANNIETree->Branch("LAPPDHitParallelPos", &fLAPPDHitParallelPos);
     fANNIETree->Branch("LAPPDHitTransversePos", &fLAPPDHitTransversePos);
-    fANNIETree->Branch("LAPPDHitP1StartTime", &fLAPPDHitP1StartTime);
-    fANNIETree->Branch("LAPPDHitP2StartTime", &fLAPPDHitP2StartTime);
-    fANNIETree->Branch("LAPPDHitP1EndTime", &fLAPPDHitP1EndTime);
-    fANNIETree->Branch("LAPPDHitP2EndTime", &fLAPPDHitP2EndTime);
-
-    fANNIETree->Branch("LAPPDHitP1PeakTime", &fLAPPDHitP1PeakTime);
-    fANNIETree->Branch("LAPPDHitP2PeakTime", &fLAPPDHitP2PeakTime);
-    fANNIETree->Branch("LAPPDHitP1PeakAmp", &fLAPPDHitP1PeakAmp);
-    fANNIETree->Branch("LAPPDHitP2PeakAmp", &fLAPPDHitP2PeakAmp);
-    fANNIETree->Branch("LAPPDHitP1HalfHeightTime", &fLAPPDHitP1HalfHeightTime);
-    fANNIETree->Branch("LAPPDHitP2HalfHeightTime", &fLAPPDHitP2HalfHeightTime);
-    fANNIETree->Branch("LAPPDHitP1HalfEndTime", &fLAPPDHitP1HalfEndTime);
-    fANNIETree->Branch("LAPPDHitP2HalfEndTime", &fLAPPDHitP2HalfEndTime);
-    fANNIETree->Branch("LAPPDHitP1Charge", &fLAPPDHitP1Charge);
-    fANNIETree->Branch("LAPPDHitP2Charge", &fLAPPDHitP2Charge);
-    fANNIETree->Branch("LAPPDHitP1Baseline", &fLAPPDHitP1Baseline);
-    fANNIETree->Branch("LAPPDHitP2Baseline", &fLAPPDHitP2Baseline);
-    fANNIETree->Branch("LAPPDHitP1FollowTime", &fLAPPDHitP1FollowTime);
-    fANNIETree->Branch("LAPPDHitP2FollowTime", &fLAPPDHitP2FollowTime);
-    fANNIETree->Branch("LAPPDHitP1FollowCharge", &fLAPPDHitP1FollowCharge);
-    fANNIETree->Branch("LAPPDHitP2FollowCharge", &fLAPPDHitP2FollowCharge);
-
-    /*
-    fANNIETree->Branch("LAPPDWaveformChankey", &LAPPDWaveformChankey, "LAPPDWaveformChankey/I");
-    fANNIETree->Branch("WaveformMax", &waveformMaxValue, "WaveformMax/D");
-    fANNIETree->Branch("WaveformRMS", &waveformRMSValue, "WaveformRMS/D");
-    fANNIETree->Branch("WaveformMaxTimeBin", &waveformMaxTimeBinValue, "WaveformMaxTimeBin/I");
-    fANNIETree->Branch("waveformMaxFoundNear", &waveformMaxFoundNear, "waveformMaxFoundNear/O"); // O is boolean
-    fANNIETree->Branch("WaveformMaxNearing", &waveformMaxNearingValue, "WaveformMaxNearing/D");
-    */
   }
 
-  LAPPDWaveformInputLabel = "BLsubtractedLAPPDData";
+  LAPPDWaveformInputLabel = "RawLAPPDData";
   m_variables.Get("LAPPDWaveformInputLabel", LAPPDWaveformInputLabel);
   if (LAPPD_Waveform_fill)
   {
@@ -372,13 +323,9 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("MRDHitCharge", &fMRDHitCharge);
     fANNIETree->Branch("MRDHitDigitPMT", &fMRDHitDigitPMT);
 
-    fANNIETree->Branch("MRDhitDetID", &fMRDHitDetID);
     fANNIETree->Branch("MRDhitChankey", &fMRDHitChankey);
-    fANNIETree->Branch("MRDhitChankeyMC", &fMRDHitChankeyMC);
     fANNIETree->Branch("FMVhitT", &fFMVHitT);
-    fANNIETree->Branch("FMVhitDetID", &fFMVHitDetID);
     fANNIETree->Branch("FMVhitChankey", &fFMVHitChankey);
-    fANNIETree->Branch("FMVhitChankeyMC", &fFMVHitChankeyMC);
     fANNIETree->Branch("vetoHit", &fVetoHit, "vetoHit/I");
   }
 
@@ -715,7 +662,6 @@ void ANNIEEventTreeMaker::ResetVariables()
 
   // Event Info
   fRunNumber = 0;
-  fSubrunNumber = 0;
   fPartFileNumber = 0;
   fEventNumber = 0;
   fPrimaryTriggerWord = 0;
@@ -777,9 +723,7 @@ void ANNIEEventTreeMaker::ResetVariables()
   fHitQ.clear();
   fHitPE.clear();
   fHitType.clear();
-  fHitDetID.clear();
   fHitChankey.clear();
-  fHitChankeyMC.clear();
   fHitPMTType.clear();
 
   // SiPMPulse Info
@@ -845,7 +789,6 @@ void ANNIEEventTreeMaker::ResetVariables()
   fPulsePeakAmp.clear();
   fPulseStart.clear();
   fPulseEnd.clear();
-  fPulseWidth.clear();
   fPulseSide.clear();
   fPulseStripNum.clear();
   fPulseBaseline.clear();
@@ -862,26 +805,6 @@ void ANNIEEventTreeMaker::ResetVariables()
   fLAPPDHitAmp.clear();
   fLAPPDHitParallelPos.clear();
   fLAPPDHitTransversePos.clear();
-  fLAPPDHitP1StartTime.clear();
-  fLAPPDHitP2StartTime.clear();
-  fLAPPDHitP1EndTime.clear();
-  fLAPPDHitP2EndTime.clear();
-  fLAPPDHitP1PeakTime.clear();
-  fLAPPDHitP2PeakTime.clear();
-  fLAPPDHitP1PeakAmp.clear();
-  fLAPPDHitP2PeakAmp.clear();
-  fLAPPDHitP1HalfHeightTime.clear();
-  fLAPPDHitP2HalfHeightTime.clear();
-  fLAPPDHitP1HalfEndTime.clear();
-  fLAPPDHitP2HalfEndTime.clear();
-  fLAPPDHitP1Charge.clear();
-  fLAPPDHitP2Charge.clear();
-  fLAPPDHitP1Baseline.clear();
-  fLAPPDHitP2Baseline.clear();
-  fLAPPDHitP1FollowTime.clear();
-  fLAPPDHitP2FollowTime.clear();
-  fLAPPDHitP1FollowCharge.clear();
-  fLAPPDHitP2FollowCharge.clear();
 
   // LAPPD waveform fill
   fLAPPDWaveforms.clear();
@@ -912,15 +835,10 @@ void ANNIEEventTreeMaker::ResetVariables()
   fCluster_HitQ.clear();
   fCluster_HitPE.clear();
   fCluster_HitType.clear();
-  fCluster_HitDetID.clear();
   fCluster_HitChankey.clear();
-  fCluster_HitChankeyMC.clear();
   fCluster_HitPMTType.clear();
 
   fClusterMaxPEV.clear();
-  fClusterChargePointXV.clear();
-  fClusterChargePointYV.clear();
-  fClusterChargePointZV.clear();
   fClusterChargeBalanceV.clear();
 
   // MRD cluster information
@@ -935,13 +853,9 @@ void ANNIEEventTreeMaker::ResetVariables()
   fMRDHitT.clear();
   fMRDHitCharge.clear();
   fMRDHitDigitPMT.clear();
-  fMRDHitDetID.clear();
   fMRDHitChankey.clear();
-  fMRDHitChankeyMC.clear();
   fFMVHitT.clear();
-  fFMVHitDetID.clear();
   fFMVHitChankey.clear();
-  fFMVHitChankeyMC.clear();
 
   fNumMRDClusterTracks = 0;
   fMRDTrackAngle.clear();
@@ -1131,7 +1045,12 @@ void ANNIEEventTreeMaker::ResetVariables()
   LAPPDBGCorrection_1.clear();
   LAPPDOSInMinusPS_1.clear();
   SwitchBitBG.clear();
-  
+
+  // LAPPD_RawMeta_fill 
+  fACDCmetadata.clear();
+  fACDCboards.clear();
+  fACDCReadedLAPPDID.clear();
+ 
   // LAPPD_PPS_fill
   LAPPDBG_PPSBefore_0.clear();
   LAPPDBG_PPSAfter_0.clear();
@@ -1159,7 +1078,6 @@ bool ANNIEEventTreeMaker::LoadEventInfo()
 {
   Log("ANNIEEventTreeMaker Tool: LoadEventInfo", v_warning, ANNIEEventTreeMakerVerbosity);
   m_data->Stores["ANNIEEvent"]->Get("RunNumber", fRunNumber);
-  m_data->Stores["ANNIEEvent"]->Get("SubRunNumber", fSubrunNumber);
   m_data->Stores["ANNIEEvent"]->Get("PartNumber", fPartFileNumber);
   bool gotEventNumber = m_data->Stores["ANNIEEvent"]->Get("EventNumber", fEventNumber);
   if (!gotEventNumber)
@@ -1378,9 +1296,7 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
           fHitT.push_back(ahit.GetTime());
           fHitQ.push_back(hit_charge);
           fHitPE.push_back(hit_PE);
-          fHitDetID.push_back(detkey);
           fHitChankey.push_back(channel_key);
-          fHitChankeyMC.push_back(channel_key);
           Channel *thisHitChannel = geom->GetChannel(channel_key);
           fHitPMTType.push_back(thisHitChannel->GetChannelType());
           fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
@@ -1400,9 +1316,7 @@ void ANNIEEventTreeMaker::LoadAllTankHits()
           fHitT.push_back(ahit.GetTime());
           fHitQ.push_back(hit_charge);
           fHitPE.push_back(hit_PE);
-          fHitDetID.push_back(detkey);
           fHitChankey.push_back(channel_key_data);
-          fHitChankeyMC.push_back(channel_key);
           Channel *thisHitChannel = geom->GetChannel(channel_key);
           fHitPMTType.push_back(thisHitChannel->GetChannelType());
           fHitType.push_back(RecoDigit::PMT8inch); // 0 For PMTs
@@ -1509,6 +1423,13 @@ void ANNIEEventTreeMaker::LoadLAPPDInfo()
 
   m_data->Stores["ANNIEEvent"]->Get("SwitchBitBG", SwitchBitBG);
 
+  if (LAPPD_RawMeta_fill)
+  {
+    m_data->Stores["ANNIEEvent"]->Get("ACDCmetadata", fACDCmetadata);
+    m_data->Stores["ANNIEEvent"]->Get("ACDCboards", fACDCboards);
+    m_data->Stores["ANNIEEvent"]->Get("ACDCReadedLAPPDID", fACDCReadedLAPPDID);
+  }
+
   if (LAPPDDataMap.size() != 0)
   {
     FillLAPPDInfo();
@@ -1528,24 +1449,34 @@ void ANNIEEventTreeMaker::FillLAPPDInfo()
   for (std::map<uint64_t, PsecData>::iterator it = LAPPDDataMap.begin(); it != LAPPDDataMap.end(); ++it)
   {
     uint64_t key = it->first;
-    PsecData psecData = it->second;
+    const PsecData &psecData = it->second;
     int LAPPD_IDInit = psecData.LAPPD_ID;
-    // now check what ID should be used
+   
+     // now check what ID should be used
     // the Incom ID is implemented first in run 5887, all runs before that use the ACC ID (i.e., 0,1,2) in the psecData.
     // So for those runs, we need to map the ACC ID to Incom ID using the config.
     // also for positions, we use string for now, to avoid confusion with int IDs, can be changed later.
-    string position;
-     
-    auto config = queryNearestID(idConfigRecords, fRunNumber, LAPPD_IDInit);
-    position = std::get<1>(config);
-    
-    if (LAPPD_IDInit < 20)
+    std::tuple<int, std::string> config;
+    if (LAPPD_IDInit > 20)
     {
-      LAPPD_IDInit = std::get<0>(config);
+        // manufacturer ID -> (ACC ID, position)
+        config = queryNearestACCID(idConfigRecords, fRunNumber, LAPPD_IDInit);
     }
-    
-    if (ANNIEEventTreeMakerVerbosity > 3)
-      cout << "ANNIEEventTreeMaker: Filling LAPPD Info, Original LAPPD_ID: " << psecData.LAPPD_ID << ", Mapped LAPPD_ID: " << LAPPD_IDInit << ", Position: " << position << ", using run number: " << fRunNumber << endl;
+    else
+    {
+        // ACC ID -> (manufacturer ID, position)
+        config = queryNearestID(idConfigRecords, fRunNumber, LAPPD_IDInit);
+        LAPPD_IDInit = std::get<0>(config);
+    }
+    std::string position = std::get<1>(config);
+  
+    if (position.empty()) {
+        Log("ANNIEEventTreeMaker: No ID config entry for LAPPD_ID " + std::to_string(psecData.LAPPD_ID) + " at run " + std::to_string(fRunNumber), 
+            v_warning, ANNIEEventTreeMakerVerbosity);
+    }
+
+    Log("ANNIEEventTreeMaker: Original LAPPD_ID " + std::to_string(psecData.LAPPD_ID) + ", mapped LAPPD_ID " + std::to_string(LAPPD_IDInit) 
+        + ", position " + position + ", run " + std::to_string(fRunNumber), v_debug, ANNIEEventTreeMakerVerbosity); 
 
     fLAPPD_ID.push_back(LAPPD_IDInit);
     fLAPPD_Position.push_back(position);
@@ -1636,7 +1567,6 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
         fPulsePeakAmp.push_back(thisPulse.GetPeak());
         fPulseStart.push_back(thisPulse.GetLowRange());
         fPulseEnd.push_back(thisPulse.GetHiRange());
-        fPulseWidth.push_back(thisPulse.GetHiRange() - thisPulse.GetLowRange());
         fPulseBaseline.push_back(thisPulse.GetBaseline());
         fPulseFollowTime.push_back(thisPulse.GetPulseFollowTime());
         fPulseFollowCharge.push_back(thisPulse.GetPulseFollowCharge());
@@ -1662,7 +1592,6 @@ void ANNIEEventTreeMaker::FillLAPPDPulse()
         fPulsePeakAmp.push_back(thisPulse.GetPeak());
         fPulseStart.push_back(thisPulse.GetLowRange());
         fPulseEnd.push_back(thisPulse.GetHiRange());
-        fPulseWidth.push_back(thisPulse.GetHiRange() - thisPulse.GetLowRange());
         fPulseBaseline.push_back(thisPulse.GetBaseline());
         fPulseFollowTime.push_back(thisPulse.GetPulseFollowTime());
         fPulseFollowCharge.push_back(thisPulse.GetPulseFollowCharge());
@@ -1708,38 +1637,6 @@ void ANNIEEventTreeMaker::FillLAPPDHit()
         vector<double> localPosition = thisHit.GetLocalPosition();
         fLAPPDHitParallelPos.push_back(localPosition.at(0));
         fLAPPDHitTransversePos.push_back(localPosition.at(1));
-        // fLAPPDHitP1StartTime.push_back(thisHit.GetPulse1StartTime());
-        // fLAPPDHitP2StartTime.push_back(thisHit.GetPulse2StartTime());
-        // fLAPPDHitP1EndTime.push_back(thisHit.GetPulse1LastTime());
-        // fLAPPDHitP2EndTime.push_back(thisHit.GetPulse2LastTime());
-        // cout<<"Pulse 1 start time: "<<p1.GetLowRange()<<", Pulse 2 start time: "<<p2.GetLowRange()<<endl;
-        fLAPPDHitP1StartTime.push_back(p1.GetLowRange());
-        fLAPPDHitP2StartTime.push_back(p2.GetLowRange());
-        fLAPPDHitP1EndTime.push_back(p1.GetHiRange());
-        fLAPPDHitP2EndTime.push_back(p2.GetHiRange());
-
-        fLAPPDHitP1PeakTime.push_back(p1.GetTime());
-        fLAPPDHitP2PeakTime.push_back(p2.GetTime());
-        fLAPPDHitP1PeakAmp.push_back(p1.GetPeak());
-        fLAPPDHitP2PeakAmp.push_back(p2.GetPeak());
-
-        fLAPPDHitP1HalfHeightTime.push_back(p1.GetHalfHeightTime());
-        fLAPPDHitP2HalfHeightTime.push_back(p2.GetHalfHeightTime());
-
-        fLAPPDHitP1HalfEndTime.push_back(p1.GetHalfEndTime());
-        fLAPPDHitP2HalfEndTime.push_back(p2.GetHalfEndTime());
-
-        fLAPPDHitP1Charge.push_back(p1.GetCharge());
-        fLAPPDHitP2Charge.push_back(p2.GetCharge());
-
-        fLAPPDHitP1Baseline.push_back(p1.GetBaseline());
-        fLAPPDHitP2Baseline.push_back(p2.GetBaseline());
-
-        fLAPPDHitP1FollowTime.push_back(p1.GetPulseFollowTime());
-        fLAPPDHitP2FollowTime.push_back(p2.GetPulseFollowTime());
-
-        fLAPPDHitP1FollowCharge.push_back(p1.GetPulseFollowCharge());
-        fLAPPDHitP2FollowCharge.push_back(p2.GetPulseFollowCharge());
       }
     }
   }
@@ -1871,9 +1768,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
   vector<double> HitQV;
   vector<double> HitPEV;
   vector<int> HitTypeV;
-  vector<int> HitDetIDV;
   vector<int> HitChankeyV;
-  vector<int> HitCKMC;
   vector<int> HitPMTType;
 
   for (int i = 0; i < (int)cluster_hits.size(); i++)
@@ -1893,10 +1788,8 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
       HitQV.push_back(hit_charge);
       HitPEV.push_back(hit_PE);
       HitTV.push_back(cluster_hits.at(i).GetTime());
-      HitDetIDV.push_back(detkey);
 
       HitChankeyV.push_back(channel_key);
-      HitCKMC.push_back(channel_key);
       Channel* thisHitChannel = geom->GetChannel(channel_key);
       HitPMTType.push_back(thisHitChannel->GetChannelType());
       HitTypeV.push_back(RecoDigit::PMT8inch);
@@ -1923,9 +1816,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHits(std::vector<Hit> cluster_hits)
   fCluster_HitQ.push_back(HitQV);
   fCluster_HitPE.push_back(HitPEV);
   fCluster_HitType.push_back(HitTypeV);
-  fCluster_HitDetID.push_back(HitDetIDV);
   fCluster_HitChankey.push_back(HitChankeyV);
-  fCluster_HitChankeyMC.push_back(HitCKMC);
   fCluster_HitPMTType.push_back(HitPMTType);
 
   return;
@@ -1948,9 +1839,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
   vector<double> HitQV;
   vector<double> HitPEV;
   vector<int> HitTypeV;
-  vector<int> HitDetIDV;
   vector<int> HitChankeyV;
-  vector<int> HitCKMC;
   vector<int> HitPMTType;
 
   for (int i = 0; i < (int)cluster_hits.size(); i++)
@@ -1976,9 +1865,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
       HitQV.push_back(hit_charge);
       HitPEV.push_back(hit_PE);
       HitTV.push_back(cluster_hits.at(i).GetTime());
-      HitDetIDV.push_back(detkey);
       HitChankeyV.push_back(channel_key_data);
-      HitCKMC.push_back(channel_key);
       Channel* thisHitChannel = geom->GetChannel(channel_key_data);
       HitPMTType.push_back(thisHitChannel->GetChannelType());
       HitTypeV.push_back(RecoDigit::PMT8inch);
@@ -2005,9 +1892,7 @@ void ANNIEEventTreeMaker::LoadTankClusterHitsMC(std::vector<MCHit> cluster_hits,
   fCluster_HitQ.push_back(HitQV);
   fCluster_HitPE.push_back(HitPEV);
   fCluster_HitType.push_back(HitTypeV);
-  fCluster_HitDetID.push_back(HitDetIDV);
   fCluster_HitChankey.push_back(HitChankeyV);
-  fCluster_HitChankeyMC.push_back(HitCKMC);
   fCluster_HitPMTType.push_back(HitPMTType);
 
   return;
@@ -2033,10 +1918,6 @@ bool ANNIEEventTreeMaker::LoadTankClusterClassifiers(double cluster_time)
   {
     Log("PhaseITreeMaker tool: Setting fCluster variables to classifier parameters", v_debug, ANNIEEventTreeMakerVerbosity);
     fClusterMaxPEV.push_back(ClusterMaxPEs.at(cluster_time));
-    Position ClusterChargePoint = ClusterChargePoints.at(cluster_time);
-    fClusterChargePointXV.push_back(ClusterChargePoint.X());
-    fClusterChargePointYV.push_back(ClusterChargePoint.Y());
-    fClusterChargePointZV.push_back(ClusterChargePoint.Z());
     fClusterChargeBalanceV.push_back(ClusterChargeBalances.at(cluster_time));
   }
   return good_classifiers;
@@ -2106,9 +1987,7 @@ void ANNIEEventTreeMaker::LoadMRDCluster()
             for (int j = 0; j < (int)mrdhits.size(); j++)
             {
               fFMVHitT.push_back(mrdhits.at(j).GetTime());
-              fFMVHitDetID.push_back(detkey);
               fFMVHitChankey.push_back(chankey);
-              fFMVHitChankeyMC.push_back(chankey);
             }
           }
         }
@@ -2129,9 +2008,7 @@ void ANNIEEventTreeMaker::LoadMRDCluster()
             for (int j = 0; j < (int)mrdhits.size(); j++)
             {
               fFMVHitT.push_back(mrdhits.at(j).GetTime());
-              fFMVHitDetID.push_back(detkey);
               fFMVHitChankey.push_back(chankey_data);
-              fFMVHitChankeyMC.push_back(chankey);
             }
           }
         }
@@ -2149,7 +2026,6 @@ void ANNIEEventTreeMaker::LoadMRDCluster()
       fMRDHitClusterIndex.push_back(i);
       fMRDHitCharge.push_back(mrddigitchargesthisevent.at(ThisClusterIndices.at(j)));
       fMRDHitDigitPMT.push_back(mrddigitpmtsthisevent.at(ThisClusterIndices.at(j)));
-      fMRDHitDetID.push_back(detkey);
       if (isData)
         fMRDHitChankey.push_back(mrddigitchankeysthisevent.at(ThisClusterIndices.at(j)));
       else
@@ -2158,7 +2034,6 @@ void ANNIEEventTreeMaker::LoadMRDCluster()
         unsigned long chankey_data = mrdpmtid_to_channelkey_data[wcsimid];
         fMRDHitChankey.push_back(chankey_data);
       }
-      fMRDHitChankeyMC.push_back(mrddigitchankeysthisevent.at(ThisClusterIndices.at(j)));
       fMRDClusterHits += 1;
     }
 
