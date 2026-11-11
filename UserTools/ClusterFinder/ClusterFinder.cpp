@@ -221,6 +221,7 @@ bool ClusterFinder::Execute(){
         for (MCHit &ahit : ThisPMTHits){
           if (ahit.GetTime() < end_of_window_time_cut*AcqTimeWindow) {
             //Make MC more like data --> combine multiple photons if they are within a 10ns range
+            //^--- Change by Yue ---^ Set mc_pulse_width to 10 in config file instead of hard-coding :)
             hits_2ns_res.push_back(ahit.GetTime());
             hits_2ns_res_charge.push_back(ahit.GetCharge());
           }
@@ -245,7 +246,7 @@ bool ClusterFinder::Execute(){
         
 	else {
             bool new_pulse = false;
-        	if (fabs(temp_times[0]-hit1)<10.) {
+        	if (fabs(temp_times[0]-hit1)<mc_pulse_width) {
                 new_pulse=false;
                 temp_charges+=hits_2ns_res_charge.at(i_hit);
 		temp_times.push_back(hit1);

@@ -196,5 +196,9 @@ if (tool=="VertexLeastSquares") ret=new VertexLeastSquares;
 if (tool=="ClusterSearcher") ret=new ClusterSearcher;
 if (tool=="NeutronCheck") ret=new NeutronCheck;
 if (tool=="PrintADCTraces") ret=new PrintADCTraces;
+if (tool=="ChargeIsotropy") ret=new ChargeIsotropy;
+if (tool=="CCMCCorrection") ret=new CCMCCorrection;
+if (tool=="LoadNUISANCEEvent") ret=new LoadNUISANCEEvent;
+if (tool=="CCMCRecoEventLoader") ret=new CCMCRecoEventLoader;
 return ret;
 }

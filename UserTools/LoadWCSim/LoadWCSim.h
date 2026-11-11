@@ -74,6 +74,7 @@ class LoadWCSim: public Tool {
 	std::string path_mrd_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
 	std::string path_fmv_chankeymap;  // Mapping chankeys generated from WCSim to chankeys in data
 	int RunType;			// Which run type was simulated?
+    int runNumberFromFilename;  // should we get Run & Subrun numbers from WCSimRootEvent or from the file name
 	std::string PMTMask;		// PMT mask for dead PMTs
 	bool splitSubtriggers;		// should subtriggers be split into different Execute steps?
 

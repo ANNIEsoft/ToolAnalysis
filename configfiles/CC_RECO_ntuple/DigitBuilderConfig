@@ -1,0 +1,9 @@
+# DigitBuilder config file
+
+verbosity 0
+IsMC 0
+ParametricModel 1
+ChankeytoPMTIDMap
+PhotoDetectorConfiguration All
+LAPPDIDFile ./configfiles/VertexReco/PhaseIIRecoTruth/LAPPDIDs.txt
+DigitChargeThr 10
