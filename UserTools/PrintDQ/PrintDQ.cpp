@@ -297,7 +297,7 @@ void PrintDQ::FindCounts() {
             totalhas_tank++;
             Log("PrintDQ: Tank data found for this event", v_debug, verbosity);
 
-            if (fRWMHalfRising > 0) {
+            if (fRWMFHWM > 0) {
                 totalhas_RWM++;
                 Log("PrintDQ: RWM fit found for this event", v_debug, verbosity);
             }
@@ -407,9 +407,9 @@ bool PrintDQ::LoadStores()
         Log("PrintDQ: BRFFirstPeakFit not present in the ANNIEEvent! Are you sure you ran the FitRWMWaveform tool?", v_debug, verbosity);
     }
 
-    bool get_RWM = m_data->Stores["ANNIEEvent"]->Get("RWMHalfRising", fRWMHalfRising);
-    if (!get_RWM) {
-        Log("PrintDQ: RWMHalfRising not present in the ANNIEEvent! Are you sure you ran the FitRWMWaveform tool?", v_debug, verbosity);
+    bool get_RWMwidth = m_data->Stores["ANNIEEvent"]->Get("RWMFHWM", fRWMFHWM);
+    if (!get_RWMwidth) {
+        Log("PrintDQ: RWMFHWM not present in the ANNIEEvent! Are you sure you ran the FitRWMWaveform tool?", v_debug, verbosity);
     }
 
     bool get_BES = m_data->Stores["ANNIEEvent"]->Get("BESwidth", fBESwidth);
@@ -472,7 +472,7 @@ void PrintDQ::ResetVariables() {
     fPMTMRDCoinc = 0;
     fHasLAPPD = 0;
     fBRFFirstPeakFit = 0;
-    fRWMHalfRising = 0;
+    fRWMFHWM = 0;
     fBESwidth = 0;
     fBeamok = 0;
 
@@ -536,7 +536,6 @@ bool PrintDQ::GrabVariables() {
         Log("PrintDQ: Finding MRD Tracks", v_debug, verbosity);
         for (int tracki = 0; tracki < fnumtracksinev; tracki++) {
             
-            NumClusterTracks += 1;
             BoostStore *thisTrackAsBoostStore = &(ftheMrdTracks->at(tracki));
             int TrackEventID = -1;
             thisTrackAsBoostStore->Get("MrdSubEventID", TrackEventID);

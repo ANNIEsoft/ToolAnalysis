@@ -59,7 +59,7 @@ class PrintDQ: public Tool {
         bool fNoVeto;                                                          ///< was the veto hit in coincidence with tank PMT activity? (NoVeto = 1 is no coincidence activity)
         bool fPMTMRDCoinc;                                                     ///< was there an MRD cluster in coincidence with tank PMT activity?
         double fBRFFirstPeakFit;                                               ///< first peak of the BRF waveform, Gaussian fit
-        double fRWMHalfRising;                                                 ///< RWM 50% rising time from FitRWMWaveform (ps), 0 if the fit failed
+        double fRWMFHWM;                                                       ///< RWM full width at half maximum (ps), 0 if the fit failed
         double fBESwidth;                                                      ///< BES width from FitRWMWaveform (ps), 0 if the fit failed
         int fBeamok;                                                           ///< beam "ok" condition: (0.5e12 < pot < 8e12), (172 < horn val < 176), (downstream/upstream toroids within 5%)
         int fnumtracksinev;                                                    ///< number of MRD tracks found in the event
