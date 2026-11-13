@@ -117,16 +117,23 @@ void FitRWMWaveform::FitRWM()
   int bin_size = 2; // 2ns per bin
   int max_bin_RWM = RWMRawWaveform.size();
 
-  // RWM
-  RWMRisingStart = 300;
+  // RWM: find the first sharp rise (> 400 ADC and a jump > threshold) from sample 300
+  int RWMRisingStartBin = -1;   // no rising edge found
   for (int i = 300; i < max_bin_RWM; ++i)
   {
     if (RWMRawWaveform[i] > 400 && RWMRawWaveform[i] - RWMRawWaveform[i - 1] > threshold)
     {
-      RWMRisingStart = i - 1;
+      RWMRisingStartBin = i - 1;
       break;
     }
   }
+  if (RWMRisingStartBin < 0)
+  {
+    // no RWM pulse: leave all RWM values at 0 (= no fit)
+    Log("FitRWMWaveform: FitRWM(): no RWM rising edge found", v_debug, verbosityFitRWMWaveform);
+    return;
+  }
+  RWMRisingStart = RWMRisingStartBin;
 
   RWMRisingEnd = RWMRisingStart;
   for (int i = RWMRisingStart; i < RWMRisingStart + 60 && i < max_bin_RWM; ++i)
@@ -177,7 +184,8 @@ void FitRWMWaveform::FitRWM()
     }
   }
 
-  double RWMHalfTimeInPs = (best_bin_RWM + best_interval_RWM * interval_size) * 10 + RWMRisingStart * 2000;
+  // sample index + sub-sample fraction, converted to ps (2000 ps per sample)
+  double RWMHalfTimeInPs = (best_bin_RWM + best_interval_RWM * interval_size) * 2000;
 
   RWMHalfRising = RWMHalfTimeInPs;
   Log("FitRWMWaveform: FitRWM(): Found RWMHalfRising = " + std::to_string(RWMHalfRising), v_debug, verbosityFitRWMWaveform);
@@ -226,7 +234,7 @@ void FitRWMWaveform::FitRWM()
     }
   }
   Log("FitRWMWaveform: FitRWM(): Found falling end", v_debug, verbosityFitRWMWaveform);
-  double RWMHalfEnd = (bin_close * 2000) + (best_interval_RWM * 10);
+  double RWMHalfEnd = (bin_close + best_interval_RWM * interval_size) * 2000;
   RWMFHWM = RWMHalfEnd - RWMHalfRising;
 
   int RWMFirstPeakBin = -1;
