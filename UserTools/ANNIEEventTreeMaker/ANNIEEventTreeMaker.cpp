@@ -128,6 +128,10 @@ bool ANNIEEventTreeMaker::Initialise(std::string configfile, DataModel &data)
     fANNIETree->Branch("BRFFirstPeak", &fBRFFirstPeak, "fBRFFirstPeak/D");
     fANNIETree->Branch("BRFAveragePeak", &fBRFAveragePeak, "fBRFAveragePeak/D");
     fANNIETree->Branch("BRFFirstPeakFit", &fBRFFirstPeakFit, "fBRFFirstPeakFit/D");
+  
+    fANNIETree->Branch("BESstartTime", &fBESstartTime, "fBESstartTime/D");
+    fANNIETree->Branch("BESendTime", &fBESendTime, "fBESendTime/D");
+    fANNIETree->Branch("BESwidth", &fBESwidth, "fBESwidth/D");
   }
 
   //********************************************************//
@@ -602,10 +606,10 @@ bool ANNIEEventTreeMaker::Execute()
   LoadBeamInfo();
   // done
 
-  //****************************** Fill RWM BRF Info *************************************//
+  //****************************** Fill RWM BRF BES Info *************************************//
   if (RWMBRF_fill)
   {
-    LoadRWMBRFInfo();
+    LoadRWMBRFBESInfo();
   }
 
   //****************************** Fill Hit Info *************************************//
@@ -766,6 +770,9 @@ void ANNIEEventTreeMaker::ResetVariables()
   fBRFFirstPeak = -9999;
   fBRFAveragePeak = -9999;
   fBRFFirstPeakFit = -9999;
+  fBESstartTime = -9999;
+  fBESendTime = -9999;
+  fBESwidth = -9999;
 
   // TankHitInfo
   fNHits = 0;
@@ -1291,9 +1298,9 @@ void ANNIEEventTreeMaker::LoadBeamInfo()
   m_data->Stores["ANNIEEvent"]->Get("BeamInfoTimeToTriggerDiff", fBeamInfoTimeToTriggerDiff);
 }
 
-void ANNIEEventTreeMaker::LoadRWMBRFInfo()
+void ANNIEEventTreeMaker::LoadRWMBRFBESInfo()
 {
-  Log("ANNIEEventTreeMaker Tool: LoadRWMBRFInfo", v_debug, ANNIEEventTreeMakerVerbosity);
+  Log("ANNIEEventTreeMaker Tool: LoadRWMBRFBESInfo", v_debug, ANNIEEventTreeMakerVerbosity);
   m_data->Stores["ANNIEEvent"]->Get("RWMRisingStart", fRWMRisingStart);
   m_data->Stores["ANNIEEvent"]->Get("RWMRisingEnd", fRWMRisingEnd);
   m_data->Stores["ANNIEEvent"]->Get("RWMHalfRising", fRWMHalfRising);
@@ -1303,6 +1310,10 @@ void ANNIEEventTreeMaker::LoadRWMBRFInfo()
   m_data->Stores["ANNIEEvent"]->Get("BRFFirstPeak", fBRFFirstPeak);
   m_data->Stores["ANNIEEvent"]->Get("BRFAveragePeak", fBRFAveragePeak);
   m_data->Stores["ANNIEEvent"]->Get("BRFFirstPeakFit", fBRFFirstPeakFit);
+  
+  m_data->Stores["ANNIEEvent"]->Get("BESstartTime", fBESstartTime);
+  m_data->Stores["ANNIEEvent"]->Get("BESendTime", fBESendTime);
+  m_data->Stores["ANNIEEvent"]->Get("BESwidth", fBESwidth);
 }
 
 void ANNIEEventTreeMaker::LoadAllTankHits()

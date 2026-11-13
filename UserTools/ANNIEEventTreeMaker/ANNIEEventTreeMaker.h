@@ -49,7 +49,7 @@ public:
     bool LoadEventInfo();
     void LoadBeamInfo();
 
-    void LoadRWMBRFInfo();
+    void LoadRWMBRFBESInfo();
 
     void LoadAllTankHits();
     void LoadSiPMHits();
@@ -187,16 +187,20 @@ private:
     uint64_t fBeamInfoTime;
     int64_t fBeamInfoTimeToTriggerDiff;
 
-    // RWM and BRF information
-    double fRWMRisingStart; // start of the rising of the waveform
-    double fRWMRisingEnd;   // maximum of the rising of the waveform
-    double fRWMHalfRising;  // half of the rising of the waveform, from start to maximum
-    double fRWMFHWM;        // full width at half maximum of the waveform
-    double fRWMFirstPeak;   // first peak of the waveform
+    // RWM, BRF and BES information
+    double fRWMRisingStart;  // start of the rising of the waveform
+    double fRWMRisingEnd;    // maximum of the rising of the waveform
+    double fRWMHalfRising;   // half of the rising of the waveform, from start to maximum
+    double fRWMFHWM;         // full width at half maximum of the waveform
+    double fRWMFirstPeak;    // first peak of the waveform
 
     double fBRFFirstPeak;    // first peak of the waveform
     double fBRFAveragePeak;  // average peak of the waveform
     double fBRFFirstPeakFit; // first peak of the waveform, Gaussian fit
+
+    double fBESstartTime;    // BES negative-pulse (ps)
+    double fBESendTime;      // BES positive-pulse (ps)
+    double fBESwidth;        // BES end - BES start (ps)
 
     // TankHitInfo_fill
     int fNHits = 0;
