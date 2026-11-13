@@ -33,6 +33,9 @@ bool PrintDQ::Initialise(std::string configfile, DataModel &data){
     totalhas_track = 0;
     totalhas_lappd = 0;
     totalhas_BRF = 0;
+    totalhas_tank = 0;
+    totalhas_RWM = 0;
+    totalhas_BES = 0;
     totaltimezero = 0;
     totalclusters_in_spill = 0;
 
@@ -94,8 +97,11 @@ bool PrintDQ::Finalise()
     float_t ext_rate_2 = totalext_rate_2 * 100 / totalevents;
     float_t okay_beam = totalokay_beam * 100 / totalevents;                                    
     float_t has_track = totalhas_track * 100 / totalevents;                                    
+    float_t has_tank = totalhas_tank * 100 / totalevents;
     float_t has_lappd = totalhas_lappd * 100 / totalevents;
-    float_t has_BRF = totalhas_BRF * 100 / totalevents;
+    float_t has_RWM = (totalhas_tank > 0) ? totalhas_RWM * 100 / totalhas_tank : 0;
+    float_t has_BRF = (totalhas_tank > 0) ? totalhas_BRF * 100 / totalhas_tank : 0;
+    float_t has_BES = (totalhas_tank > 0) ? totalhas_BES * 100 / totalhas_tank : 0;
     float_t timezero = totaltimezero * 100 / totalevents;
     float_t tmrd_coinc = totaltmrd_coinc * 100 / totalevents;
     float_t veto_hit = totalveto_hit * 100 / totalevents;
@@ -114,8 +120,11 @@ bool PrintDQ::Finalise()
     float_t er_ext_rate_1 = CalculateStatError(totalext_rate_1, totalevents);
     float_t er_ext_rate_2 = CalculateStatError(totalext_rate_2, totalevents);
     float_t er_okay_beam = CalculateStatError(totalokay_beam, totalevents);
+    float_t er_has_tank = CalculateStatError(totalhas_tank, totalevents);
     float_t er_has_lappd = CalculateStatError(totalhas_lappd, totalevents);
-    float_t er_has_BRF = CalculateStatError(totalhas_BRF, totalevents);
+    float_t er_has_RWM = CalculateStatError(totalhas_RWM, totalhas_tank);
+    float_t er_has_BRF = CalculateStatError(totalhas_BRF, totalhas_tank);
+    float_t er_has_BES = CalculateStatError(totalhas_BES, totalhas_tank);
     float_t er_timezero = CalculateStatError(totaltimezero, totalevents);
     float_t er_tmrd_coinc = CalculateStatError(totaltmrd_coinc, totalevents);
     float_t er_veto_hit = CalculateStatError(totalveto_hit, totalevents);
@@ -135,7 +144,10 @@ bool PrintDQ::Finalise()
     std::cout << "" << std::endl;
     std::cout << "total events:         " << totalevents << std::endl;
     std::cout << "has LAPPD data:       " << totalhas_lappd << "    (" << has_lappd << "% +/- " << er_has_lappd << "%)" << std::endl;
+    std::cout << "has Tank data:        " << totalhas_tank << "    (" << has_tank << "% +/- " << er_has_tank << "%)" << std::endl;
+    std::cout << "has RWM fit:          " << totalhas_RWM << "    (" << has_RWM << "% +/- " << er_has_RWM << "%)" << std::endl;
     std::cout << "has BRF fit:          " << totalhas_BRF << "    (" << has_BRF << "% +/- " << er_has_BRF << "%)" << std::endl;
+    std::cout << "has BES fit:          " << totalhas_BES << "    (" << has_BES << "% +/- " << er_has_BES << "%)" << std::endl;
     std::cout << "eventTimeTank = 0:    " << totaltimezero << "    (" << timezero << "% +/- " << er_timezero << "%)" << std::endl;
     std::cout << "beam_ok:              " << totalokay_beam << "    (" << okay_beam << "% +/- " << er_okay_beam << "%)" << std::endl;
     std::cout << "total clusters:       " << totalclusters << "    (" << events_per_cluster << " +/- " << er_events_per_cluster << ")" << std::endl;
@@ -162,8 +174,11 @@ bool PrintDQ::Finalise()
 
     csv_file << "Metric,Counts,Rate (%),Rate Error (+/- %)\n";
     WritetoCSV(csv_file, "Total Events", totalevents, 0.0, 0.0);  // no corresponding rate for total events
+    WritetoCSV(csv_file, "Has Tank Data", totalhas_tank, has_tank, er_has_tank);
     WritetoCSV(csv_file, "Has LAPPD Data", totalhas_lappd, has_lappd, er_has_lappd);
+    WritetoCSV(csv_file, "Has RWM Fit", totalhas_RWM, has_RWM, er_has_RWM);
     WritetoCSV(csv_file, "Has BRF Fit", totalhas_BRF, has_BRF, er_has_BRF);
+    WritetoCSV(csv_file, "Has BES Fit", totalhas_BES, has_BES, er_has_BES);
     WritetoCSV(csv_file, "EventTimeTank = 0", totaltimezero, timezero, er_timezero);
     WritetoCSV(csv_file, "Beam OK", totalokay_beam, okay_beam, er_okay_beam);
     WritetoCSV(csv_file, "Total Clusters (rate given as clusters / event)", totalclusters, events_per_cluster, er_events_per_cluster);
@@ -277,11 +292,24 @@ void PrintDQ::FindCounts() {
         }
 
 
-        // Does the event have a usable BRF signal (+ fit)
-        if (fBRFFirstPeakFit != 0) {
-            totalhas_BRF++;
-            Log("PrintDQ: BRF fit found for this event", v_debug, verbosity);
-        } 
+        // Beam-monitor fits (RWM, BRF, BES): only expected for beam events with tank data
+        if (fDataStreams["Tank"]) {
+            totalhas_tank++;
+            Log("PrintDQ: Tank data found for this event", v_debug, verbosity);
+
+            if (fRWMHalfRising > 0) {
+                totalhas_RWM++;
+                Log("PrintDQ: RWM fit found for this event", v_debug, verbosity);
+            }
+            if (fBRFFirstPeakFit != 0) {
+                totalhas_BRF++;
+                Log("PrintDQ: BRF fit found for this event", v_debug, verbosity);
+            }
+            if (fBESwidth > 0) {
+                totalhas_BES++;
+                Log("PrintDQ: BES fit found for this event", v_debug, verbosity);
+            }
+        }
 
 
         // find total number of clusters, and how many of the prompt clusters are in the beam spill
@@ -379,6 +407,16 @@ bool PrintDQ::LoadStores()
         Log("PrintDQ: BRFFirstPeakFit not present in the ANNIEEvent! Are you sure you ran the FitRWMWaveform tool?", v_debug, verbosity);
     }
 
+    bool get_RWM = m_data->Stores["ANNIEEvent"]->Get("RWMHalfRising", fRWMHalfRising);
+    if (!get_RWM) {
+        Log("PrintDQ: RWMHalfRising not present in the ANNIEEvent! Are you sure you ran the FitRWMWaveform tool?", v_debug, verbosity);
+    }
+
+    bool get_BES = m_data->Stores["ANNIEEvent"]->Get("BESwidth", fBESwidth);
+    if (!get_BES) {
+        Log("PrintDQ: BESwidth not present in the ANNIEEvent! Are you sure you ran the FitRWMWaveform tool?", v_debug, verbosity);
+    }
+
     bool get_beam = m_data->Stores["ANNIEEvent"]->Get("beam_good", fBeamok);
     if (!get_beam) {
         Log("PrintDQ: no beam_good in the ANNIEEvent!", v_debug, verbosity);
@@ -434,6 +472,8 @@ void PrintDQ::ResetVariables() {
     fPMTMRDCoinc = 0;
     fHasLAPPD = 0;
     fBRFFirstPeakFit = 0;
+    fRWMHalfRising = 0;
+    fBESwidth = 0;
     fBeamok = 0;
 
     fClusterTime.clear();

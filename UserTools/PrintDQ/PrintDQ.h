@@ -59,6 +59,8 @@ class PrintDQ: public Tool {
         bool fNoVeto;                                                          ///< was the veto hit in coincidence with tank PMT activity? (NoVeto = 1 is no coincidence activity)
         bool fPMTMRDCoinc;                                                     ///< was there an MRD cluster in coincidence with tank PMT activity?
         double fBRFFirstPeakFit;                                               ///< first peak of the BRF waveform, Gaussian fit
+        double fRWMHalfRising;                                                 ///< RWM 50% rising time from FitRWMWaveform (ps), 0 if the fit failed
+        double fBESwidth;                                                      ///< BES width from FitRWMWaveform (ps), 0 if the fit failed
         int fBeamok;                                                           ///< beam "ok" condition: (0.5e12 < pot < 8e12), (172 < horn val < 176), (downstream/upstream toroids within 5%)
         int fnumtracksinev;                                                    ///< number of MRD tracks found in the event
         int fHasLAPPD;                                                         ///< whether DataStreams contains LAPPDs
@@ -78,7 +80,10 @@ class PrintDQ: public Tool {
         float_t totalveto_tmrd_coinc;                                          ///< total events with PMT+MRD+Veto coincidence (% out of total events)
         float_t totalhas_track;                                                ///< total events with at least one instance of a single MRD track for a given MRD cluster (% out of total events)
         float_t totalhas_lappd;                                                ///< total events with LAPPD data present in the data stream (% out of total events)
-        float_t totalhas_BRF;                                                  ///< total events with a fit to the BRF waveform (% out of total events)
+        float_t totalhas_BRF;                                                  ///< total beam+tank events with a BRF fit (% out of beam+tank events)
+        float_t totalhas_tank;                                                ///< total beam events with tank data (denominator for the RWM/BRF/BES fit rates)
+        float_t totalhas_RWM;                                                  ///< total beam+tank events with an RWM fit (% out of beam+tank events)
+        float_t totalhas_BES;                                                  ///< total beam+tank events with a BES fit (% out of beam+tank events)
         float_t totaltimezero;                                                 ///< total events with no timestamp for the ADC waveforms (% out of total events)
         float_t totalPassPPS_check; 
 
