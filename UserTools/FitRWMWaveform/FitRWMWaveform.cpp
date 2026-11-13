@@ -45,7 +45,7 @@ bool FitRWMWaveform::Execute()
     ToBePrintedBRFWaveforms.emplace(WaveformTime, BRFRawWaveform);
     ToBePrintedBESWaveforms.emplace(WaveformTime, BESRawWaveform);
 
-    Log("FitRWMWaveform: Execute(): Added RWM and BRF waveforms to be printed to root file", v_debug, verbosityFitRWMWaveform);
+    Log("FitRWMWaveform: Execute(): Added RWM, BRF and BES waveforms to be printed to root file", v_debug, verbosityFitRWMWaveform);
   }
 
   RWMRisingStart = 0;
@@ -58,10 +58,18 @@ bool FitRWMWaveform::Execute()
   BRFAveragePeak = 0;
   BRFFirstPeakFit = 0;
 
+  BESstartTime = 0;
+  BESendTime = 0;
+  BESwidth = 0;
+
   // Fit the RWM waveform, find the rising start, rising end and half rising time
   FitRWM();
 
+  // Fit the BRF waveform, find the first peak, average peak and first peak fit
   FitBRF();
+
+  // Fit the BES waveform, find the start time, end time and width of the signal
+  FitBES();
 
   m_data->Stores["ANNIEEvent"]->Set("RWMRisingStart", RWMRisingStart);
   m_data->Stores["ANNIEEvent"]->Set("RWMRisingEnd", RWMRisingEnd);
@@ -73,6 +81,9 @@ bool FitRWMWaveform::Execute()
   m_data->Stores["ANNIEEvent"]->Set("BRFAveragePeak", BRFAveragePeak);
   m_data->Stores["ANNIEEvent"]->Set("BRFFirstPeakFit", BRFFirstPeakFit);
 
+  m_data->Stores["ANNIEEvent"]->Set("BESstartTime", BESstartTime);
+  m_data->Stores["ANNIEEvent"]->Set("BESendTime", BESendTime);
+  m_data->Stores["ANNIEEvent"]->Set("BESwidth", BESwidth);
   return true;
 }
 bool FitRWMWaveform::Finalise()
@@ -81,55 +92,11 @@ bool FitRWMWaveform::Finalise()
   {
     TFile *fOutput_tfile = new TFile(output_filename.c_str(), "recreate");
 
-    // Loop ToBePrintedRWMWaveforms and ToBePrintedBRFWaveforms, fill each waveform to a histogram and save it to the root file
-    // Use the RWM+event number + key as the name of the histogram
-    int RWMCount = 0;
-    for (const auto &kv : ToBePrintedRWMWaveforms)
-    {
-      if (kv.second.empty()) continue;
-      const auto &key = kv.first;
-      const auto &val = kv.second;
-      TH1D *hRWM = new TH1D(Form("RWM_%d_%lu", RWMCount, key), Form("RWM_%d_%lu", RWMCount, key), val.size(), 0, val.size());
-      for (int i = 0; i < val.size(); i++)
-      {
-        hRWM->SetBinContent(i + 1, val[i]); // Note the 1-based index
-      }
-      hRWM->Write();
-      delete hRWM;
-      RWMCount++;
-    }
-
-    int BRFCount = 0;
-    for (const auto &kv : ToBePrintedBRFWaveforms)
-    {
-      if (kv.second.empty()) continue;
-      const auto &key = kv.first;
-      const auto &val = kv.second;
-      TH1D *hBRF = new TH1D(Form("BRF_%d_%lu", BRFCount, key), Form("BRF_%d_%lu", BRFCount, key), val.size(), 0, val.size());
-      for (int i = 0; i < val.size(); i++)
-      {
-        hBRF->SetBinContent(i + 1, val[i]); // Note the 1-based index
-      }
-      hBRF->Write();
-      delete hBRF;
-      BRFCount++;
-    }
-
-    int BESCount = 0;
-    for (const auto &kv : ToBePrintedBESWaveforms)
-    {
-      if (kv.second.empty()) continue;
-      const auto &key = kv.first;
-      const auto &val = kv.second;
-      TH1D *hBES = new TH1D(Form("BES_%d_%lu", BESCount, key), Form("BES_%d_%lu", BESCount, key), val.size(), 0, val.size());
-      for (int i = 0; i < val.size(); i++)
-      {
-        hBES->SetBinContent(i + 1, val[i]); // Note the 1-based index
-      }
-      hBES->Write();
-      delete hBES;
-      BESCount++;
-    }
+    // Loop ToBePrintedRWMWaveforms, ToBePrintedBRFWaveforms and ToBePrintedBESWaveforms, fill each waveform to a histogram and save it to the root file
+    // Write each waveform as a histogram named <prefix>_<count>_<time>
+    WriteHist(ToBePrintedRWMWaveforms, "RWM");
+    WriteHist(ToBePrintedBRFWaveforms, "BRF");
+    WriteHist(ToBePrintedBESWaveforms, "BES");
 
     fOutput_tfile->Close();
     delete fOutput_tfile;
@@ -418,4 +385,113 @@ void FitRWMWaveform::FitBRF()
 
   double BRFRisingHalfLinearFit = min_difference_bin; // in ps
   BRFFirstPeakFit = BRFRisingHalfLinearFit; 
+}
+
+void FitRWMWaveform::FitBES(){
+
+  Log("FitRWMWaveform: FitBES()", v_debug, verbosityFitRWMWaveform);
+  
+  double threshold = 0.5;
+  size_t NSamples = 100;
+  double binWidth = 2000.0; // in ps
+
+  if (BESRawWaveform.size() == 0)
+  {
+    Log("FitRWMWaveform: FitBES(): BESRawWaveform is empty", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  if (BESRawWaveform.size() <= 800)
+  {
+    Log("FitRWMWaveform: FitBES(): BESRawWaveform too short (" + std::to_string(BESRawWaveform.size()) + " samples)", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  //determine baseline by averaging the 1st 100 samples
+
+  //baseline and noise
+  double baseline = std::accumulate(BESRawWaveform.begin(), BESRawWaveform.begin() + NSamples, 0.0);
+  baseline /= NSamples;
+
+  double variance = 0.0;
+  for(int bin = 0; bin < NSamples; bin++){
+    variance += std::pow( BESRawWaveform[bin] - baseline, 2.0 );
+  }
+
+  variance /= NSamples;
+  double sigma = std::sqrt(variance);
+  
+  //pulse windows
+  const size_t negLow = 250;
+  const size_t negHigh = 450;
+  const size_t posLow = 800;
+  const size_t posHigh = BESRawWaveform.size();
+
+  // minimum inside the negative window
+  auto minIt = std::min_element(BESRawWaveform.begin() + negLow, BESRawWaveform.begin() + negHigh);
+  const double minVal = *minIt;
+  const size_t minIdx = std::distance(BESRawWaveform.begin(), minIt);
+
+  // maximum inside the positive window
+  auto maxIt = std::max_element(BESRawWaveform.begin() + posLow, BESRawWaveform.begin() + posHigh);
+  const double maxVal = *maxIt;
+  const size_t maxIdx = std::distance(BESRawWaveform.begin(), maxIt);
+
+
+  //check if the min and max val are above 5*sigma above baseline
+  if( baseline - minVal < 5.0*sigma ){
+    Log("FitRWMWaveform: FitBES(): no BES negative pulse found", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  if( maxVal - baseline < 5.0*sigma ){
+    Log("FitRWMWaveform: FitBES(): no BES positive pulse found", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  auto findCrossing = [&](size_t peakIdx, size_t low, double level, bool negative) -> double {
+    for (size_t i = peakIdx; i > low; i--) {
+      bool beyond = negative ? (BESRawWaveform[i - 1] > level)
+                             : (BESRawWaveform[i - 1] < level);
+      if (beyond) {
+        double y0 = BESRawWaveform[i - 1], y1 = BESRawWaveform[i];
+        if (y1 == y0) return -1.0;
+        return (i - 1) + (level - y0) / (y1 - y0);
+      }
+    }
+    return -1.0;
+  };
+
+  double startIdx = findCrossing(minIdx, negLow, baseline - threshold * (baseline - minVal), true);
+  double endIdx = findCrossing(maxIdx, posLow, baseline + threshold * (maxVal - baseline), false);
+
+  if ( startIdx < 0 || endIdx < 0 || endIdx <= startIdx )
+  {
+    Log("FitRWMWaveform: FitBES(): failed to find valid crossings", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  BESstartTime = startIdx * binWidth;
+  BESendTime = endIdx * binWidth;
+  BESwidth = BESendTime - BESstartTime;
+}
+
+void FitRWMWaveform::WriteHist(const std::map<uint64_t, std::vector<uint16_t>> &waveforms, const std::string &prefix)
+{
+  int count = 0;
+  for (const auto &kv : waveforms)
+  {
+    if (kv.second.empty()) continue;
+    const auto &key = kv.first;
+    const auto &val = kv.second;
+    TH1D *h = new TH1D(Form("%s_%d_%lu", prefix.c_str(), count, key), Form("%s_%d_%lu", prefix.c_str(), count, key), val.size(), 0, val.size());
+    for (size_t i = 0; i < val.size(); i++)
+    {
+      h->SetBinContent(i + 1, val[i]); // Note the 1-based index
+    }
+    h->Write();
+    delete h;
+    count++;
+  }
+  Log("FitRWMWaveform: wrote " + std::to_string(count) + " " + prefix + " waveforms", v_message, verbosityFitRWMWaveform);
 }

@@ -31,6 +31,9 @@ public:
 
     void FitRWM();
     void FitBRF();
+    void FitBES();
+
+    void WriteHist(const std::map<uint64_t, std::vector<uint16_t>> &waveforms, const std::string &prefix);
 
 private:
     int verbosityFitRWMWaveform;
@@ -60,6 +63,10 @@ private:
     double BRFFirstPeak;
     double BRFAveragePeak;
     double BRFFirstPeakFit;
+
+    double BESstartTime;
+    double BESendTime;
+    double BESwidth;
 };
 
 #endif
