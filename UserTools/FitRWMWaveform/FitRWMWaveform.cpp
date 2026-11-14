@@ -280,9 +280,6 @@ void FitRWMWaveform::FitRWM()
 
 void FitRWMWaveform::FitBRF()
 {
-  // fit the first peak, and the average of peaks of std::vector<uint16_t> BRFRawWaveform.
-  // find the size of the vector, in the first 10 bin interval, find the bin with highest value, as the first peak
-  // for each 10 bin interval, find the highest value bin position in each interval, and minus the beginning of the interval, and average them.
   double maximum = 0;
   double first_peak = 0;
   double average = 0;
@@ -296,7 +293,7 @@ void FitRWMWaveform::FitBRF()
 
   int max_bin_BRF = BRFRawWaveform.size();
 
-  // Find the first peak in the first 10 bin interval
+  // Find the highest peak in the first 10 bins
   for (int i = 0; i < 10 && i < max_bin_BRF; ++i)
   {
     if (BRFRawWaveform[i] > maximum)
@@ -306,7 +303,7 @@ void FitRWMWaveform::FitBRF()
     }
   }
 
-  // Find the highest value bin position in each 10 bin interval and calculate the average
+  // Find the average position of the highest peaks in each 10-bin block
   int interval_count = 0;
   for (int i = 0; i <= max_bin_BRF - 10; i += 10)
   {
@@ -323,99 +320,117 @@ void FitRWMWaveform::FitBRF()
     average += (max_bin - i);
     ++interval_count;
   }
+  if (interval_count > 0) average /= interval_count;
 
-  if (interval_count > 0)
-  {
-    average /= interval_count;
-  }
-
-  // Logging results
   Log("FitRWMWaveform: FitBRF(): First peak at bin = " + std::to_string(first_peak), v_debug, verbosityFitRWMWaveform);
   Log("FitRWMWaveform: FitBRF(): Average peak position = " + std::to_string(average), v_debug, verbosityFitRWMWaveform);
 
   BRFFirstPeak = first_peak * bin_size;
   BRFAveragePeak = average * bin_size;
 
+  // ---------------------------------------------------------------------------
+  // BRFFirstPeakFit: 50% time of the first full rising edge, in ps
+  //   1. find the valleys in the first 60 samples
+  //   2. merge valleys that are only 1-2 samples apart
+  //   3. keep one valley per RF cycle (valleys < 8 samples apart: keep the deeper one)
+  //   4. first full edge = first kept valley -> highest sample before the next kept valley
+  //   5. 50% crossing between the two samples around the halfway level
+  // Leaves BRFFirstPeakFit = 0 if no edge can be found.
+  // ---------------------------------------------------------------------------
   BRFFirstPeakFit = 0;
-  // now, we use a simple Gaussian fit to find the first peak in the first 10 bins (before understanding the Booster RF properties)
-  // first, in the first 10 bins, find the maximum value and its position, if the maximum value is smaller than 3050, return
-  // then check the side bins. check from the max bin to zero, find the first bin with value less than 2920, or until the first bin, save this bin as fitting start bin
-  //  then check from the max bin to the 10th bin, find the first bin with value less than 3020. check if the next bin has value less than this bin, if yes, set next bin as the fitting end, if not, set this bin as fitting end.
-  //  in the fitting range, fit the waveform with a Gaussian function, and find the peak position.
-  //  save the peak position as BRFFirstPeakFit
 
-  if (maximum < 3050)
+  const int searchEnd    = 60;     // look for valleys in the first 60 samples
+  const int minValleyGap = 3;      // valleys closer than this are the same valley
+  const int sameCycleGap = 8;      // valleys closer than this are in the same RF cycle (~9.4 samples per cycle)
+  const double samplePs  = 2000.0; // 2 ns per sample
+
+  const std::vector<uint16_t> &w = BRFRawWaveform;
+  if ((int)w.size() <= searchEnd)
+  {
+    Log("FitRWMWaveform: FitBRF(): BRF waveform too short", v_debug, verbosityFitRWMWaveform);
     return;
-
-  int fit_start_bin = 0;
-  for (int i = first_peak; i >= 0; --i)
-  {
-    if (BRFRawWaveform[i] < 2920)
-    {
-      fit_start_bin = i;
-      break;
-    }
   }
 
-  int fit_end_bin = first_peak;
-  for (int i = first_peak; i < 10 && i < max_bin_BRF; ++i)
+  // 1. all valleys (local minima) in the first 60 samples
+  std::vector<int> valleys;
+  if (w[1] < w[0] && w[1] < w[2] && w[1] < w[3]) valleys.push_back(1);   // valley right at the start
+  for (int s = 2; s < searchEnd - 1; s++)
   {
-    if (BRFRawWaveform[i] < 3020)
-    {
-      if (BRFRawWaveform[i + 1] < BRFRawWaveform[i])
-      {
-        fit_end_bin = i + 1;
-      }
-      else
-      {
-        fit_end_bin = i;
-      }
-      break;
-    }
+    if (w[s] <= w[s - 1] && w[s] < w[s - 2] && w[s] <= w[s + 1] && w[s] < w[s + 2])
+      valleys.push_back(s);
   }
 
-  if (fit_end_bin <= fit_start_bin)
+  // 2. merge valleys that are only 1-2 samples apart (flat bottoms)
+  std::vector<int> merged;
+  for (int v : valleys)
+  {
+    if (merged.empty() || v - merged.back() >= minValleyGap) merged.push_back(v);
+  }
+  if (merged.size() < 2)
+  {
+    Log("FitRWMWaveform: FitBRF(): fewer than 2 valleys found", v_debug, verbosityFitRWMWaveform);
     return;
-
-  std::vector<double> x_vals, y_vals;
-  for (int i = fit_start_bin; i <= fit_end_bin; ++i)
-  {
-    x_vals.push_back(i * bin_size);
-    y_vals.push_back(BRFRawWaveform[i]);
   }
 
-  // Find the bin with the minimum value between the 5th and 15th bins
-  auto min_it = std::min_element(BRFRawWaveform.begin() + 4, BRFRawWaveform.begin() + 15);
-  int bin_minimum = std::distance(BRFRawWaveform.begin(), min_it);
-
-  // Find the bin with the maximum value between bin_minimum + 2 and bin_minimum + 4
-  auto max_it = std::max_element(BRFRawWaveform.begin() + bin_minimum + 2, BRFRawWaveform.begin() + bin_minimum + 5);
-  int bin_maximum = std::distance(BRFRawWaveform.begin(), max_it);
-
-  // Calculate the half height
-  double half_height = (BRFRawWaveform[bin_minimum] + BRFRawWaveform[bin_maximum]) / 2.0;
-
-  // Perform linear interpolation
-  const int intervals_per_bin = 2000;
-  double min_difference = std::numeric_limits<double>::max();
-  int min_difference_bin = -1;
-
-  for (int bin = bin_minimum; bin < bin_maximum; ++bin)
+  // 3. one valley per RF cycle
+  std::vector<int> cycleStart;
+  if (merged[1] - merged[0] < sameCycleGap)
   {
-    for (int interval = 0; interval < intervals_per_bin; ++interval)
+    if (w[merged[0]] < w[merged[1]]) cycleStart.push_back(merged[0]);
+  }
+  else
+  {
+    cycleStart.push_back(merged[0]);
+  }
+  for (size_t i = 1; i + 1 < merged.size(); i++)
+  {
+    if (merged[i] - merged[i - 1] < sameCycleGap)
     {
-      double fraction = interval / static_cast<double>(intervals_per_bin);
-      double interpolated_value = BRFRawWaveform[bin] + fraction * (BRFRawWaveform[bin + 1] - BRFRawWaveform[bin]);
-      double difference = std::abs(interpolated_value - half_height);
-
-      if (difference < min_difference)
-      {
-        min_difference = difference;
-        min_difference_bin = bin * intervals_per_bin + interval;
-      }
+      if (w[merged[i]] < w[merged[i - 1]] && w[merged[i]] < w[merged[i + 1]]) cycleStart.push_back(merged[i]);
+    }
+    else
+    {
+      cycleStart.push_back(merged[i]);
     }
   }
+  if (cycleStart.size() < 3)
+  {
+    Log("FitRWMWaveform: FitBRF(): fewer than 3 RF cycles found", v_debug, verbosityFitRWMWaveform);
+    return;
+  }
 
-  double BRFRisingHalfLinearFit = min_difference_bin; // in ps
-  BRFFirstPeakFit = BRFRisingHalfLinearFit; 
+  // 4. first full edge: first cycle valley -> highest sample before the next cycle valley
+  int edgeStart = cycleStart[0];
+  int peak = edgeStart;
+  for (int k = edgeStart; k < cycleStart[1]; k++)
+  {
+    if (w[k] > w[peak]) peak = k;
+  }
+
+  double lo = w[edgeStart];
+  double hi = w[edgeStart];
+  int hiIdx = edgeStart;
+  for (int k = edgeStart; k <= peak; k++)
+  {
+    if (w[k] < lo) lo = w[k];
+    if (w[k] > hi) { hi = w[k]; hiIdx = k; }
+  }
+
+  // 5. 50% crossing between the last sample below halfway and the next one
+  double halfway = lo + (hi - lo) / 2.0;
+  int below = -1;
+  for (int k = hiIdx; k >= edgeStart; k--)
+  {
+    if (w[k] < halfway) { below = k; break; }
+  }
+  if (below < 0 || below + 1 > hiIdx)
+  {
+    Log("FitRWMWaveform: FitBRF(): no 50% crossing found", v_debug, verbosityFitRWMWaveform);
+    return;
+  }
+
+  double crossing = below + (halfway - w[below]) / ((double)w[below + 1] - w[below]);   // in samples
+  BRFFirstPeakFit = crossing * samplePs;                                                  // in ps
+
+  Log("FitRWMWaveform: FitBRF(): BRFFirstPeakFit = " + std::to_string(BRFFirstPeakFit) + " ps", v_debug, verbosityFitRWMWaveform);
 }

@@ -51,15 +51,19 @@ private:
     std::map<uint64_t, std::vector<uint16_t>> ToBePrintedBRFWaveforms;
     std::map<uint64_t, std::vector<uint16_t>> ToBePrintedBESWaveforms;
 
-    double RWMRisingStart;
-    double RWMRisingEnd;
-    double RWMHalfRising;
-    double RWMFHWM;
-    double RWMFirstPeak;
+    double RWMRisingStart;      // in ns, sample before the rising edge
+    double RWMRisingEnd;        // in ns, top of the rising edge
+    double RWMHalfRising;       // in ps, 50% point on the rising edge (interpolated)
+    double RWMFHWM;             // in ps, full width at half maximum (interpolated)
+    double RWMFirstPeak;        // in ns, first sample above 1600 ADC
 
-    double BRFFirstPeak;
-    double BRFAveragePeak;
-    double BRFFirstPeakFit;
+    double BRFFirstPeak;        // in ns, highest sample in the first 10 samples
+    double BRFAveragePeak;      // in ns, average peak position in 10-sample blocks
+    double BRFFirstPeakFit;     // in ps, 50% point on the first full rising edge (interpolated)
+
+    double BESstartTime;        // in ps, 50% point on the negative pulse's leading edge
+    double BESendTime;          // in ps, 50% point on the positive pulse's leading edge
+    double BESwidth;            // in ps, BESendTime - BESstartTime
 };
 
 #endif
