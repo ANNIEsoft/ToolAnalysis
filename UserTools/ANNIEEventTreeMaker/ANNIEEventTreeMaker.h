@@ -49,7 +49,7 @@ public:
     bool LoadEventInfo();
     void LoadBeamInfo();
 
-    void LoadRWMBRFInfo();
+    void LoadRWMBRFBESInfo();
 
     void LoadAllTankHits();
     void LoadSiPMHits();
@@ -187,16 +187,20 @@ private:
     uint64_t fBeamInfoTime;
     int64_t fBeamInfoTimeToTriggerDiff;
 
-    // RWM and BRF information
-    double fRWMRisingStart; // start of the rising of the waveform
-    double fRWMRisingEnd;   // maximum of the rising of the waveform
-    double fRWMHalfRising;  // half of the rising of the waveform, from start to maximum
-    double fRWMFHWM;        // full width at half maximum of the waveform
-    double fRWMFirstPeak;   // first peak of the waveform
+    // RWM, BRF and BES information
+    double fRWMRisingStart;      // in ns, sample before the rising edge
+    double fRWMRisingEnd;        // in ns, top of the rising edge
+    double fRWMHalfRising;       // in ps, 50% point on the rising edge (interpolated)
+    double fRWMFHWM;             // in ps, full width at half maximum (interpolated)
+    double fRWMFirstPeak;        // in ns, first sample above 1600 ADC
 
-    double fBRFFirstPeak;    // first peak of the waveform
-    double fBRFAveragePeak;  // average peak of the waveform
-    double fBRFFirstPeakFit; // first peak of the waveform, Gaussian fit
+    double fBRFFirstPeak;        // in ns, highest sample in the first 10 samples
+    double fBRFAveragePeak;      // in ns, average peak position in 10-sample blocks
+    double fBRFFirstPeakFit;     // in ps, 50% point on the first full rising edge (interpolated)
+
+    double fBESstartTime;        // in ps, 50% point on the negative pulse's leading edge
+    double fBESendTime;          // in ps, 50% point on the positive pulse's leading edge
+    double fBESwidth;            // in ps, BESendTime - BESstartTime
 
     // TankHitInfo_fill
     int fNHits = 0;
