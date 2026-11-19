@@ -93,8 +93,10 @@ class PhaseIITreeMaker: public Tool {
   //General variables
   bool isData;
   bool MCWaveform;
+  int intGen;
   bool ApplyDeadMask;
   bool hasGenie;
+  bool hasNuis;
   bool hasBNBtimingMC;
 
   std::map<int,std::string>* AuxChannelNumToTypeMap;
@@ -160,6 +162,8 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fHitZ;
   std::vector<double> fHitT;
   std::vector<double> fHitQ; 
+  std::vector<MCParticle>* fMCParticles=nullptr;  ///< truth particles for MCHits
+  std::vector<int> fHitParentPDGs;
   std::vector<double> fHitPE; 
   std::vector<int> fHitType;
   std::vector<int> fHitDetID;
@@ -214,6 +218,7 @@ class PhaseIITreeMaker: public Tool {
   double fClusterChargePointY;
   double fClusterChargePointZ;
   double fClusterChargeBalance;
+  double fChargeIsotropy;
   std::vector<int> fADCWaveformChankeys; 
   std::vector<int> fADCWaveformSamples;  
 
@@ -241,6 +246,8 @@ class PhaseIITreeMaker: public Tool {
   std::vector<bool> fMRDSide;
   std::vector<bool> fMRDStop;
   std::vector<bool> fMRDThrough;
+  double fMRDEff;
+  std::vector<double> fMRDUnc;
 
   // Trigger-level information
   std::map<std::string,bool> fDataStreams;
@@ -267,8 +274,29 @@ class PhaseIITreeMaker: public Tool {
   double fTrueMuonEnergy;
   int fTruePrimaryPdg;
   double fTrueTrackLengthInWater; 
-  double fTrueTrackLengthInMRD; 
+  double fTrueTrackLengthInMRD;
+  double fDirtMu;
+  std::vector<double> fDirtUnc;
   std::vector<int> *fTruePrimaryPdgs = nullptr;
+  std::vector<double> *fTrueFSPTankLength = nullptr;
+  std::vector<double> *fTrueFSPMrdLength = nullptr;
+  std::vector<bool> *fTrueFSPContained = nullptr;
+  std::vector<double> *fTrueFSPMrdAngle = nullptr;
+  std::vector<double> *fTrueFSPE = nullptr;
+  std::vector<double> *fTrueFSPStartT = nullptr;
+  std::vector<double> *fTrueFSPStopT = nullptr;
+  std::vector<double> *fTrueFSPX = nullptr;
+  std::vector<double> *fTrueFSPY = nullptr;
+  std::vector<double> *fTrueFSPZ = nullptr;
+
+  std::vector<double> *fTrueFollowerE = nullptr;
+  std::vector<double> *fTrueFollowerStartT = nullptr;
+  std::vector<double> *fTrueFollowerStopT = nullptr;
+  std::vector<double> *fTrueFollowerX = nullptr;
+  std::vector<double> *fTrueFollowerY = nullptr;
+  std::vector<double> *fTrueFollowerZ = nullptr;
+  std::vector<int> *fTrueFollowerPDG = nullptr;
+  std::vector<int> *fTrueFollowerParentPDG = nullptr;
   std::vector<double> *fTrueNeutCapVtxX = nullptr;
   std::vector<double> *fTrueNeutCapVtxY = nullptr;
   std::vector<double> *fTrueNeutCapVtxZ = nullptr;
@@ -313,7 +341,7 @@ class PhaseIITreeMaker: public Tool {
   std::vector<double> fnucleonqexsec;
   std::vector<double> fnucleontotxsec;
 
-  //Genie information for event
+  //Interaction information for event
   double fTrueNeutrinoEnergy;
   int fTrueNuPDG;
   double fTrueNeutrinoMomentum_X;
@@ -322,15 +350,9 @@ class PhaseIITreeMaker: public Tool {
   double fTrueNuIntxVtx_X;
   double fTrueNuIntxVtx_Y;
   double fTrueNuIntxVtx_Z;
-  double fTrueNuIntxVtx_T;
-  double fTrueFSLVtx_X;
-  double fTrueFSLVtx_Y;
-  double fTrueFSLVtx_Z;
   double fTrueFSLMomentum_X;
   double fTrueFSLMomentum_Y;
   double fTrueFSLMomentum_Z;
-  double fTrueFSLTime;
-  double fTrueFSLMass;
   int fTrueFSLPdg;
   double fTrueFSLEnergy;
   double fTrueQ2;
@@ -341,12 +363,6 @@ class PhaseIITreeMaker: public Tool {
   double fTrueq3;
   int fTrueTarget;
   int fTrueCC;
-  int fTrueNC;
-  int fTrueQEL;
-  int fTrueRES;
-  int fTrueDIS;
-  int fTrueCOH;
-  int fTrueMEC;
   int fTrueNeutrons;
   int fTrueProtons;
   int fTruePi0;
@@ -358,6 +374,43 @@ class PhaseIITreeMaker: public Tool {
   int fTrueKPlusCher;
   int fTrueKMinus;
   int fTrueKMinusCher;
+
+  //Genie specific info
+  double fTrueNuIntxVtx_T;
+  double fTrueFSLVtx_X;
+  double fTrueFSLVtx_Y;
+  double fTrueFSLVtx_Z;
+  double fTrueFSLTime;
+  double fTrueFSLMass;
+  int fTrueNC;
+  int fTrueQEL;
+  int fTrueRES;
+  int fTrueDIS;
+  int fTrueCOH;
+  int fTrueMEC;
+
+  //Nuisance specific info
+  double fTrueQ2QE;
+  int fTrueNeutCode;
+  int fIsCCINC;
+  int fIsNCINC;
+  int fIsCCQE;
+  int fIsCC0pi;
+  int fIsCCQELike;
+  int fIsNCEL;
+  int fIsNC0pi;
+  int fIsCCcoh;
+  int fIsNCcoh;
+  int fIsCC1pip;
+  int fIsNC1pip;
+  int fIsCC1pim;
+  int fIsNC1pim;
+  int fIsCC1pi0;
+  int fIsNC1pi0;
+  int fIsCC0piMINERvA;
+  int fIsCC0Pi_T2K_AnaI;
+  int fIsCC0Pi_T2K_AnaII;
+  double fScaleFactor;
 
   // Pion and kaon counts for event
   int fPi0Count;
@@ -422,7 +475,8 @@ class PhaseIITreeMaker: public Tool {
   double fSimpleMRDStopX;
   double fSimpleMRDStopY;
   double fSimpleMRDStopZ;
- 
+  double fPromptMuonTotalPE;
+
   // Ring Counting
   double fRCSRPred;
   double fRCMRPred;

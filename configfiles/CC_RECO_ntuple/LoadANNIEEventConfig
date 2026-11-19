@@ -1,0 +1,4 @@
+verbose 0
+FileForListOfInputs ./configfiles/CC_RECO_ntuple/my_inputs_2.txt
+EventOffset 0
+GlobalEvNr 1
