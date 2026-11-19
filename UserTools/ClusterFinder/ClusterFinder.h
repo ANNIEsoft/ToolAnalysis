@@ -10,6 +10,7 @@
 #include "TObjectTable.h"
 
 #include "Tool.h"
+#include "ClusterTimeMerge.h"
 #include "Hit.h"
 #include "ADCPulse.h"
 #include "BeamStatus.h"
@@ -69,6 +70,8 @@ class ClusterFinder: public Tool {
   double end_of_window_time_cut;
   double mc_pulse_width;
   bool ApplyDeadMask;
+  double time_merge_window;
+  double time_merge_min_time;
 
   // define ANNIEEvent variables
   int evnum;

@@ -3,7 +3,10 @@
 Verbosity 0
 HitStore Hits #Either MCHits or Hits (accessed in ANNIEEvent store)
 OutputFile ClusterFinder_Output #Output root prefix name for the current run
-ClusterFindingWindow 50 # in ns, size of the window used to "clusterize"
+# Before the time merge (PR #401): ClusterFindingWindow 50, ClusterIntegrationWindow 50. With those windows keep TimeMergeWindow 0; TimeMergeWindow 50 and TimeMergeMinTime 0 go with the 20 ns window.
+ClusterFindingWindow 20 # in ns, size of the window used to "clusterize"
 AcqTimeWindow 70000 # in ns, size of the acquisition window
-ClusterIntegrationWindow 50 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
+ClusterIntegrationWindow 20 # in ns, all hits with +/- 1/2 of this window are considered in the cluster
 MinHitsPerCluster 5 # group of hits are considered clusters above this amount of hits
+TimeMergeWindow 50 # in ns, merge clusters whose median hit times are closer than this, chained in time order; 0 = off
+TimeMergeMinTime 0 # in ns, clusters with an earlier median time are never merged; 0 = the whole window (e.g. 2000 leaves the prompt window alone)
