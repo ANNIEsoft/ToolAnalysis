@@ -14,7 +14,7 @@ double Median(std::vector<double> t) {
   if (t.empty()) return 0.;
   std::sort(t.begin(), t.end());
   size_t n = t.size();
-  return (n % 2) ? t[n / 2] : 0.5 * (t[n / 2 - 1] + t[n / 2]);
+  return (n % 2) ? t.at(n / 2) : 0.5 * (t.at(n / 2 - 1) + t.at(n / 2));
 }
 
 template <typename HitT>
@@ -34,6 +34,8 @@ std::vector<std::vector<double>> Groups(const std::map<double, std::vector<HitT>
                    [](const std::pair<double, double>& a, const std::pair<double, double>& b) {
                      return a.first < b.first;
                    });
+  // Sorted by median, so every cluster earlier than min_time comes first as its own group; from the first
+  // eligible cluster on, groups.back() is always the chain being built.
   std::vector<std::vector<double>> groups;
   bool have_prev = false;
   double prev = 0.;
@@ -65,13 +67,16 @@ int Merge(std::map<double, std::vector<HitT>>& clusters,
       const std::vector<unsigned long>& ckeys = detkeys.at(key);
       std::set<std::pair<int, double>> mine;
       for (size_t i = 0; i < chits.size(); ++i) {
-        std::pair<int, double> id(chits[i].GetTubeId(), chits[i].GetTime());
+        std::pair<int, double> id(chits.at(i).GetTubeId(), chits.at(i).GetTime());
         if (seen.count(id)) continue;
         mine.insert(id);
-        hits.push_back(chits[i]);
+        hits.push_back(chits.at(i));
         keys.push_back(ckeys.at(i));
       }
       seen.insert(mine.begin(), mine.end());
+    }
+    if (hits.empty()) continue;  // a group of clusters without hits is left as it is
+    for (double key : group) {
       clusters.erase(key);
       detkeys.erase(key);
     }
