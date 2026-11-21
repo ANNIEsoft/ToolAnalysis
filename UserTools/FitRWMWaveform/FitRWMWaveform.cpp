@@ -60,6 +60,7 @@ bool FitRWMWaveform::Execute()
   BRFFirstPeak = 0;
   BRFAveragePeak = 0;
   BRFFirstPeakFit = 0;
+  BRFPeriodFit = 0;
 
   // Fit the RWM waveform, find the rising start, rising end and half rising time
   FitRWM();
@@ -77,6 +78,7 @@ bool FitRWMWaveform::Execute()
   m_data->Stores["ANNIEEvent"]->Set("BRFFirstPeak", BRFFirstPeak);
   m_data->Stores["ANNIEEvent"]->Set("BRFAveragePeak", BRFAveragePeak);
   m_data->Stores["ANNIEEvent"]->Set("BRFFirstPeakFit", BRFFirstPeakFit);
+  m_data->Stores["ANNIEEvent"]->Set("BRFPeriodFit", BRFPeriodFit);
 
   return true;
 }
@@ -551,18 +553,48 @@ void FitRWMWaveform::FitBRF_v1()
   }
 
   // 4. first full edge: first cycle valley -> highest sample before the next cycle valley
-  int edgeStart = cycleStart[0];
-  int peak = edgeStart;
-  for (int k = edgeStart; k < cycleStart[1]; k++)
-  {
-    if (w[k] > w[peak]) peak = k;
-  }
+  double c1 = BRFEdgeCrossing(w, cycleStart[0], cycleStart[1]);
+  if (c1 < 0) return;
+  BRFFirstPeakFit = c1 * samplePs;
 
-  double lo = w[edgeStart];
-  double hi = w[edgeStart];
-  int hiIdx = edgeStart;
-  for (int k = edgeStart; k <= peak; k++)
-  {
+  Log("FitRWMWaveform: FitBRF_v1(): BRFFirstPeakFit = " + std::to_string(BRFFirstPeakFit) + " ps", v_debug, verbosityFitRWMWaveform);
+
+  // second rising edge -> period of this event.
+  // If a cycle was skipped, the 2nd edge is 2 or 3 periods after the 1st: count the cycles
+  // using the shortest full-cycle gap between kept valleys in this waveform (= one cycle).
+
+  // the second edge needs a full cycle after the second valley
+  // (two valleys closer than sameCycleGap are dips of the same cycle)
+  if (cycleStart[2] - cycleStart[1] < sameCycleGap) return;
+
+  // fit the second edge
+  double c2 = BRFEdgeCrossing(w, cycleStart[1], cycleStart[2]);
+  if (c2 < 0) return;
+
+  // length of one cycle = shortest gap between kept valleys,
+  // ignoring gaps shorter than sameCycleGap
+  int oneCycle = 0;                                  // 0 = not found yet
+  for (size_t i = 1; i < cycleStart.size(); i++) {
+    int gap = cycleStart[i] - cycleStart[i - 1];
+    if (gap < sameCycleGap) continue;                // same cycle, skip
+    if (oneCycle == 0 || gap < oneCycle) oneCycle = gap;
+  }
+  if (oneCycle == 0) return;                         // safety: no full-cycle gap found
+
+  int nCycles = std::max(1, (int)std::lround((c2 - c1) / oneCycle));
+  BRFPeriodFit = (c2 - c1) / nCycles * samplePs;
+
+  Log("FitRWMWaveform: FitBRF_v1(): BRFPeriodFit = " + std::to_string(BRFPeriodFit) + " ps", v_debug, verbosityFitRWMWaveform);
+}
+
+double FitRWMWaveform::BRFEdgeCrossing(const std::vector<uint16_t> &w, int start, int stop)
+{
+  int peak = start;
+  for (int k = start; k < stop; k++)
+    if (w[k] > w[peak]) peak = k;
+
+  int lo = w[start], hi = w[start], hiIdx = start;
+  for (int k = start; k <= peak; k++) {
     if (w[k] < lo) lo = w[k];
     if (w[k] > hi) { hi = w[k]; hiIdx = k; }
   }
@@ -570,18 +602,13 @@ void FitRWMWaveform::FitBRF_v1()
   // 5. 50% crossing between the last sample below halfway and the next one
   double halfway = lo + (hi - lo) / 2.0;
   int below = -1;
-  for (int k = hiIdx; k >= edgeStart; k--)
-  {
+  for (int k = hiIdx; k >= start; k--)
     if (w[k] < halfway) { below = k; break; }
-  }
-  if (below < 0 || below + 1 > hiIdx)
-  {
-    Log("FitRWMWaveform: FitBRF(): no 50% crossing found", v_debug, verbosityFitRWMWaveform);
-    return;
+
+  if (below < 0 || below + 1 > hiIdx) {
+      Log("FitRWMWaveform: FitBRF_v1(): no 50% crossing found", v_debug, verbosityFitRWMWaveform);
+      return -1;
   }
 
-  double crossing = below + (halfway - w[below]) / ((double)w[below + 1] - w[below]);   // in samples
-  BRFFirstPeakFit = crossing * samplePs;                                                  // in ps
-
-  Log("FitRWMWaveform: FitBRF(): BRFFirstPeakFit = " + std::to_string(BRFFirstPeakFit) + " ps", v_debug, verbosityFitRWMWaveform);
+  return below + (halfway - w[below]) / ((double)w[below + 1] - w[below]);
 }

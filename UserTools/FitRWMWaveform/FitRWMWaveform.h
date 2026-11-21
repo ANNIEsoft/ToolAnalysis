@@ -35,6 +35,7 @@ public:
     void FitBES();
 
     void WriteHist(const std::map<uint64_t, std::vector<uint16_t>> &waveforms, const std::string &prefix);
+    double BRFEdgeCrossing(const std::vector<uint16_t> &w, int start, int stop);   // 50% crossing (samples) of one rising edge
 
 private:
     int verbosityFitRWMWaveform;
@@ -66,6 +67,7 @@ private:
     double BRFFirstPeak;        // in ns, highest sample in the first 10 samples
     double BRFAveragePeak;      // in ns, average peak position in 10-sample blocks
     double BRFFirstPeakFit;     // in ps, 50% point on the first full rising edge (interpolated)
+    double BRFPeriodFit;        // in ps, BRF period from the 1st and 2nd rising edges, corrected for skipped cycles
 
     double BESstartTime;        // in ps, 50% point on the negative pulse's leading edge
     double BESendTime;          // in ps, 50% point on the positive pulse's leading edge
