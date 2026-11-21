@@ -1,4 +1,4 @@
 verbosityFitRWMWaveform 1
 printToRootFile 1
 
-
+BRFFitVersion 1   # 0 = original BRF fit, 1 = new BRF fit (default)

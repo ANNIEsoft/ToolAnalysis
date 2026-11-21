@@ -19,6 +19,9 @@ bool FitRWMWaveform::Initialise(std::string configfile, DataModel &data)
   output_filename = "RWMBRFWaveforms.root";
   m_variables.Get("output_filename", output_filename);
 
+  m_variables.Get("BRFFitVersion", BRFFitVersion);
+  Log("FitRWMWaveform: BRF fit version " + std::to_string(BRFFitVersion), v_message, verbosityFitRWMWaveform);
+
   return true;
 }
 
@@ -61,7 +64,9 @@ bool FitRWMWaveform::Execute()
   // Fit the RWM waveform, find the rising start, rising end and half rising time
   FitRWM();
 
-  FitBRF();
+  // Fit the BRF waveform, find the first peak, average peak and first peak fit
+  if (BRFFitVersion == 0) FitBRF();
+  else FitBRF_v1();
 
   m_data->Stores["ANNIEEvent"]->Set("RWMRisingStart", RWMRisingStart);
   m_data->Stores["ANNIEEvent"]->Set("RWMRisingEnd", RWMRisingEnd);
@@ -279,6 +284,152 @@ void FitRWMWaveform::FitRWM()
 }
 
 void FitRWMWaveform::FitBRF()
+{
+  // fit the first peak, and the average of peaks of std::vector<uint16_t> BRFRawWaveform.
+  // find the size of the vector, in the first 10 bin interval, find the bin with highest value, as the first peak
+  // for each 10 bin interval, find the highest value bin position in each interval, and minus the beginning of the interval, and average them.
+  double maximum = 0;
+  double first_peak = 0;
+  double average = 0;
+  int bin_size = 2; // 2ns per bin
+
+  if (BRFRawWaveform.size() == 0)
+  {
+    Log("FitRWMWaveform: FitBRF(): BRFRawWaveform is empty", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  int max_bin_BRF = BRFRawWaveform.size();
+
+  // Find the first peak in the first 10 bin interval
+  for (int i = 0; i < 10 && i < max_bin_BRF; ++i)
+  {
+    if (BRFRawWaveform[i] > maximum)
+    {
+      maximum = BRFRawWaveform[i];
+      first_peak = i;
+    }
+  }
+
+  // Find the highest value bin position in each 10 bin interval and calculate the average
+  int interval_count = 0;
+  for (int i = 0; i <= max_bin_BRF - 10; i += 10)
+  {
+    double max = 0;
+    int max_bin = 0;
+    for (int j = i; j < i + 10; ++j)
+    {
+      if (BRFRawWaveform[j] > max)
+      {
+        max = BRFRawWaveform[j];
+        max_bin = j;
+      }
+    }
+    average += (max_bin - i);
+    ++interval_count;
+  }
+
+  if (interval_count > 0)
+  {
+    average /= interval_count;
+  }
+
+  // Logging results
+  Log("FitRWMWaveform: FitBRF(): First peak at bin = " + std::to_string(first_peak), v_debug, verbosityFitRWMWaveform);
+  Log("FitRWMWaveform: FitBRF(): Average peak position = " + std::to_string(average), v_debug, verbosityFitRWMWaveform);
+
+  BRFFirstPeak = first_peak * bin_size;
+  BRFAveragePeak = average * bin_size;
+
+  BRFFirstPeakFit = 0;
+  // now, we use a simple Gaussian fit to find the first peak in the first 10 bins (before understanding the Booster RF properties)
+  // first, in the first 10 bins, find the maximum value and its position, if the maximum value is smaller than 3050, return
+  // then check the side bins. check from the max bin to zero, find the first bin with value less than 2920, or until the first bin, save this bin as fitting start bin
+  //  then check from the max bin to the 10th bin, find the first bin with value less than 3020. check if the next bin has value less than this bin, if yes, set next bin as the fitting end, if not, set this bin as fitting end.
+  //  in the fitting range, fit the waveform with a Gaussian function, and find the peak position.
+  //  save the peak position as BRFFirstPeakFit
+
+  if (maximum < 3050)
+    return;
+
+  int fit_start_bin = 0;
+  for (int i = first_peak; i >= 0; --i)
+  {
+    if (BRFRawWaveform[i] < 2920)
+    {
+      fit_start_bin = i;
+      break;
+    }
+  }
+
+  int fit_end_bin = first_peak;
+  for (int i = first_peak; i < 10 && i < max_bin_BRF; ++i)
+  {
+    if (BRFRawWaveform[i] < 3020)
+    {
+      if (BRFRawWaveform[i + 1] < BRFRawWaveform[i])
+      {
+        fit_end_bin = i + 1;
+      }
+      else
+      {
+        fit_end_bin = i;
+      }
+      break;
+    }
+  }
+
+  if (fit_end_bin <= fit_start_bin)
+    return;
+
+  std::vector<double> x_vals, y_vals;
+  for (int i = fit_start_bin; i <= fit_end_bin; ++i)
+  {
+    x_vals.push_back(i * bin_size);
+    y_vals.push_back(BRFRawWaveform[i]);
+  }
+
+  // Find the bin with the minimum value between the 5th and 15th bins
+  auto min_it = std::min_element(BRFRawWaveform.begin() + 4, BRFRawWaveform.begin() + 15);
+  int bin_minimum = std::distance(BRFRawWaveform.begin(), min_it);
+
+  // Find the bin with the maximum value between bin_minimum + 2 and bin_minimum + 4
+  auto max_it = std::max_element(BRFRawWaveform.begin() + bin_minimum + 2, BRFRawWaveform.begin() + bin_minimum + 5);
+  int bin_maximum = std::distance(BRFRawWaveform.begin(), max_it);
+
+  // Calculate the half height
+  double half_height = (BRFRawWaveform[bin_minimum] + BRFRawWaveform[bin_maximum]) / 2.0;
+
+  // Perform linear interpolation
+  const int intervals_per_bin = 2000;
+  double min_difference = std::numeric_limits<double>::max();
+  int min_difference_bin = -1;
+
+  for (int bin = bin_minimum; bin < bin_maximum; ++bin)
+  {
+    for (int interval = 0; interval < intervals_per_bin; ++interval)
+    {
+      double fraction = interval / static_cast<double>(intervals_per_bin);
+      double interpolated_value = BRFRawWaveform[bin] + fraction * (BRFRawWaveform[bin + 1] - BRFRawWaveform[bin]);
+      double difference = std::abs(interpolated_value - half_height);
+
+      if (difference < min_difference)
+      {
+        min_difference = difference;
+        min_difference_bin = bin * intervals_per_bin + interval;
+      }
+    }
+  }
+
+  double BRFRisingHalfLinearFit = min_difference_bin; // in ps
+  BRFFirstPeakFit = BRFRisingHalfLinearFit; 
+}
+
+// FitBRF_v1(): new fit of the BRF waveform (default).
+// Works for all the ways the BRF has been recorded:
+//   - routed through the Level Translator (LT), well recorded or badly recorded (before R6360)
+//   - routed through the FIFO (from R6360 on)
+void FitRWMWaveform::FitBRF_v1()
 {
   double maximum = 0;
   double first_peak = 0;

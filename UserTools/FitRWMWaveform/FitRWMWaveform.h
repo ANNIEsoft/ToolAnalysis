@@ -30,7 +30,11 @@ public:
     bool Finalise();                                          ///< Finalise function used to clean up resources.
 
     void FitRWM();
-    void FitBRF();
+    void FitBRF();		// Original method for BRF Fit
+    void FitBRF_v1();		// New method for BRF Fit (Default)
+    void FitBES();
+
+    void WriteHist(const std::map<uint64_t, std::vector<uint16_t>> &waveforms, const std::string &prefix);
 
 private:
     int verbosityFitRWMWaveform;
@@ -42,6 +46,8 @@ private:
     bool printToRootFile;
     int maxPrintNumber;
     std::string output_filename;
+
+    int BRFFitVersion = 1;   	// 0 = FitBRF() (original), 1 = FitBRF_v1() (new, default)
 
     std::vector<uint16_t> RWMRawWaveform;
     std::vector<uint16_t> BRFRawWaveform;
