@@ -19,6 +19,9 @@ bool FitRWMWaveform::Initialise(std::string configfile, DataModel &data)
   output_filename = "RWMBRFWaveforms.root";
   m_variables.Get("output_filename", output_filename);
 
+  m_variables.Get("BRFFitVersion", BRFFitVersion);
+  Log("FitRWMWaveform: BRF fit version " + std::to_string(BRFFitVersion), v_message, verbosityFitRWMWaveform);
+
   return true;
 }
 
@@ -57,11 +60,14 @@ bool FitRWMWaveform::Execute()
   BRFFirstPeak = 0;
   BRFAveragePeak = 0;
   BRFFirstPeakFit = 0;
+  BRFPeriodFit = 0;
 
   // Fit the RWM waveform, find the rising start, rising end and half rising time
   FitRWM();
 
-  FitBRF();
+  // Fit the BRF waveform, find the first peak, average peak and first peak fit
+  if (BRFFitVersion == 0) FitBRF();
+  else FitBRF_v1();
 
   m_data->Stores["ANNIEEvent"]->Set("RWMRisingStart", RWMRisingStart);
   m_data->Stores["ANNIEEvent"]->Set("RWMRisingEnd", RWMRisingEnd);
@@ -72,6 +78,7 @@ bool FitRWMWaveform::Execute()
   m_data->Stores["ANNIEEvent"]->Set("BRFFirstPeak", BRFFirstPeak);
   m_data->Stores["ANNIEEvent"]->Set("BRFAveragePeak", BRFAveragePeak);
   m_data->Stores["ANNIEEvent"]->Set("BRFFirstPeakFit", BRFFirstPeakFit);
+  m_data->Stores["ANNIEEvent"]->Set("BRFPeriodFit", BRFPeriodFit);
 
   return true;
 }
@@ -418,4 +425,190 @@ void FitRWMWaveform::FitBRF()
 
   double BRFRisingHalfLinearFit = min_difference_bin; // in ps
   BRFFirstPeakFit = BRFRisingHalfLinearFit; 
+}
+
+// FitBRF_v1(): new fit of the BRF waveform (default).
+// Works for all the ways the BRF has been recorded:
+//   - routed through the Level Translator (LT), well recorded or badly recorded (before R6360)
+//   - routed through the FIFO (from R6360 on)
+void FitRWMWaveform::FitBRF_v1()
+{
+  double maximum = 0;
+  double first_peak = 0;
+  double average = 0;
+  int bin_size = 2; // 2ns per bin
+
+  if (BRFRawWaveform.size() == 0)
+  {
+    Log("FitRWMWaveform: FitBRF(): BRFRawWaveform is empty", v_message, verbosityFitRWMWaveform);
+    return;
+  }
+
+  int max_bin_BRF = BRFRawWaveform.size();
+
+  // Find the highest peak in the first 10 bins
+  for (int i = 0; i < 10 && i < max_bin_BRF; ++i)
+  {
+    if (BRFRawWaveform[i] > maximum)
+    {
+      maximum = BRFRawWaveform[i];
+      first_peak = i;
+    }
+  }
+
+  // Find the average position of the highest peaks in each 10-bin block
+  int interval_count = 0;
+  for (int i = 0; i <= max_bin_BRF - 10; i += 10)
+  {
+    double max = 0;
+    int max_bin = 0;
+    for (int j = i; j < i + 10; ++j)
+    {
+      if (BRFRawWaveform[j] > max)
+      {
+        max = BRFRawWaveform[j];
+        max_bin = j;
+      }
+    }
+    average += (max_bin - i);
+    ++interval_count;
+  }
+  if (interval_count > 0) average /= interval_count;
+
+  Log("FitRWMWaveform: FitBRF(): First peak at bin = " + std::to_string(first_peak), v_debug, verbosityFitRWMWaveform);
+  Log("FitRWMWaveform: FitBRF(): Average peak position = " + std::to_string(average), v_debug, verbosityFitRWMWaveform);
+
+  BRFFirstPeak = first_peak * bin_size;
+  BRFAveragePeak = average * bin_size;
+
+  // ---------------------------------------------------------------------------
+  // BRFFirstPeakFit: 50% time of the first full rising edge, in ps
+  //   1. find the valleys in the first 60 samples
+  //   2. merge valleys that are only 1-2 samples apart
+  //   3. keep one valley per RF cycle (valleys < 8 samples apart: keep the deeper one)
+  //   4. first full edge = first kept valley -> highest sample before the next kept valley
+  //   5. 50% crossing between the two samples around the halfway level
+  // Leaves BRFFirstPeakFit = 0 if no edge can be found.
+  // ---------------------------------------------------------------------------
+  BRFFirstPeakFit = 0;
+
+  const int searchEnd    = 60;     // look for valleys in the first 60 samples
+  const int minValleyGap = 3;      // valleys closer than this are the same valley
+  const int sameCycleGap = 8;      // valleys closer than this are in the same RF cycle (~9.4 samples per cycle)
+  const double samplePs  = 2000.0; // 2 ns per sample
+
+  const std::vector<uint16_t> &w = BRFRawWaveform;
+  if ((int)w.size() <= searchEnd)
+  {
+    Log("FitRWMWaveform: FitBRF(): BRF waveform too short", v_debug, verbosityFitRWMWaveform);
+    return;
+  }
+
+  // 1. all valleys (local minima) in the first 60 samples
+  std::vector<int> valleys;
+  if (w[1] < w[0] && w[1] < w[2] && w[1] < w[3]) valleys.push_back(1);   // valley right at the start
+  for (int s = 2; s < searchEnd - 1; s++)
+  {
+    if (w[s] <= w[s - 1] && w[s] < w[s - 2] && w[s] <= w[s + 1] && w[s] < w[s + 2])
+      valleys.push_back(s);
+  }
+
+  // 2. merge valleys that are only 1-2 samples apart (flat bottoms)
+  std::vector<int> merged;
+  for (int v : valleys)
+  {
+    if (merged.empty() || v - merged.back() >= minValleyGap) merged.push_back(v);
+  }
+  if (merged.size() < 2)
+  {
+    Log("FitRWMWaveform: FitBRF(): fewer than 2 valleys found", v_debug, verbosityFitRWMWaveform);
+    return;
+  }
+
+  // 3. one valley per RF cycle
+  std::vector<int> cycleStart;
+  if (merged[1] - merged[0] < sameCycleGap)
+  {
+    if (w[merged[0]] < w[merged[1]]) cycleStart.push_back(merged[0]);
+  }
+  else
+  {
+    cycleStart.push_back(merged[0]);
+  }
+  for (size_t i = 1; i + 1 < merged.size(); i++)
+  {
+    if (merged[i] - merged[i - 1] < sameCycleGap)
+    {
+      if (w[merged[i]] < w[merged[i - 1]] && w[merged[i]] < w[merged[i + 1]]) cycleStart.push_back(merged[i]);
+    }
+    else
+    {
+      cycleStart.push_back(merged[i]);
+    }
+  }
+  if (cycleStart.size() < 3)
+  {
+    Log("FitRWMWaveform: FitBRF(): fewer than 3 RF cycles found", v_debug, verbosityFitRWMWaveform);
+    return;
+  }
+
+  // 4. first full edge: first cycle valley -> highest sample before the next cycle valley
+  double c1 = BRFEdgeCrossing(w, cycleStart[0], cycleStart[1]);
+  if (c1 < 0) return;
+  BRFFirstPeakFit = c1 * samplePs;
+
+  Log("FitRWMWaveform: FitBRF_v1(): BRFFirstPeakFit = " + std::to_string(BRFFirstPeakFit) + " ps", v_debug, verbosityFitRWMWaveform);
+
+  // second rising edge -> period of this event.
+  // If a cycle was skipped, the 2nd edge is 2 or 3 periods after the 1st: count the cycles
+  // using the shortest full-cycle gap between kept valleys in this waveform (= one cycle).
+
+  // the second edge needs a full cycle after the second valley
+  // (two valleys closer than sameCycleGap are dips of the same cycle)
+  if (cycleStart[2] - cycleStart[1] < sameCycleGap) return;
+
+  // fit the second edge
+  double c2 = BRFEdgeCrossing(w, cycleStart[1], cycleStart[2]);
+  if (c2 < 0) return;
+
+  // length of one cycle = shortest gap between kept valleys,
+  // ignoring gaps shorter than sameCycleGap
+  int oneCycle = 0;                                  // 0 = not found yet
+  for (size_t i = 1; i < cycleStart.size(); i++) {
+    int gap = cycleStart[i] - cycleStart[i - 1];
+    if (gap < sameCycleGap) continue;                // same cycle, skip
+    if (oneCycle == 0 || gap < oneCycle) oneCycle = gap;
+  }
+  if (oneCycle == 0) return;                         // safety: no full-cycle gap found
+
+  int nCycles = std::max(1, (int)std::lround((c2 - c1) / oneCycle));
+  BRFPeriodFit = (c2 - c1) / nCycles * samplePs;
+
+  Log("FitRWMWaveform: FitBRF_v1(): BRFPeriodFit = " + std::to_string(BRFPeriodFit) + " ps", v_debug, verbosityFitRWMWaveform);
+}
+
+double FitRWMWaveform::BRFEdgeCrossing(const std::vector<uint16_t> &w, int start, int stop)
+{
+  int peak = start;
+  for (int k = start; k < stop; k++)
+    if (w[k] > w[peak]) peak = k;
+
+  int lo = w[start], hi = w[start], hiIdx = start;
+  for (int k = start; k <= peak; k++) {
+    if (w[k] < lo) lo = w[k];
+    if (w[k] > hi) { hi = w[k]; hiIdx = k; }
+  }
+
+  // 5. 50% crossing between the last sample below halfway and the next one
+  double halfway = lo + (hi - lo) / 2.0;
+  int below = -1;
+  for (int k = hiIdx; k >= start; k--)
+    if (w[k] < halfway) { below = k; break; }
+
+  if (below < 0 || below + 1 > hiIdx) {
+      Log("FitRWMWaveform: FitBRF_v1(): no 50% crossing found", v_debug, verbosityFitRWMWaveform);
+      return -1;
+  }
+
+  return below + (halfway - w[below]) / ((double)w[below + 1] - w[below]);
 }
