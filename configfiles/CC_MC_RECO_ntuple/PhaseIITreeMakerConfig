@@ -1,21 +1,21 @@
-verbose 0
+verbose -1
 
 IsData 0
-HasGenie 1
-RecoDebug_fill 1
+IntGen 1          # Interaction generator: 0 for data, 1 for GENIE, 2 for NUISANCE
+RecoDebug_fill 1     #1
 MCTruth_fill 1
 muonTruthRecoDiff_fill 0
 pionKaonCount_fill 0
-TankHitInfo_fill 0
-MRDHitInfo 0
+TankHitInfo_fill 1   #1
+MRDHitInfo 1         #1
 fillCleanEventsOnly 0
-MRDReco_fill 1
-TankReco_fill 1
-SimpleReco_fill 1
-RingCounting_fill 1
+MRDReco_fill 1       #1
+TankReco_fill 1      #1
+SimpleReco_fill 1    #1
+RingCounting_fill 0  #1
 Reweight_fill 1
-MuonFitter_fill 1
-HasBNBtimingMC 1
+MuonFitter_fill 0
+HasBNBtimingMC 0
 TankClusterProcessing 1
 MRDClusterProcessing 1
 TriggerProcessing 1

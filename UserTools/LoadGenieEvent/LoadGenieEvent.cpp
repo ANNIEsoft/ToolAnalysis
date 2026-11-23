@@ -72,7 +72,7 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	/////////////////////////////////////////////////////////////////
 	
 	
-	int evoffset;
+	int evoffset = 0;
 
 	m_variables.Get("verbosity",verbosity);
 	m_variables.Get("FluxVersion",fluxver); // flux version: 0=rhatcher files, 1=zarko files
@@ -81,6 +81,7 @@ bool LoadGenieEvent::Initialise(std::string configfile, DataModel &data){
 	m_variables.Get("ManualFileMatching",manualmatch);
 	m_variables.Get("EventOffset",evoffset);
 	m_variables.Get("FileEvents",fileevents);
+	m_variables.Get("CountPOT",countpot);
 
 	// create a store for holding Genie information to pass to downstream Tools
 	// will be a single entry BoostStore containing a vector of single entry BoostStores
@@ -197,7 +198,15 @@ bool LoadGenieEvent::Execute(){
 	
 	// Expand out the neutrino event info
 	// =======================================================
-	
+
+	if(countpot){
+		std::ofstream outfile;
+		outfile.open("POT.txt", std::ios_base::app);
+		outfile << flux->GetWeight() << "\n";
+		outfile.close();
+		return true;
+	}
+
 	// header only contains the event number
 	genie::NtpMCRecHeader hdr = genieintx->hdr;
 	unsigned int genie_event_num = hdr.ievent;
