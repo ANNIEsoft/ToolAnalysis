@@ -96,16 +96,16 @@ void BackTracker::SumParticleTankCharge()
     for (uint mcHitIdx = 0; mcHitIdx < mcHits.size(); ++mcHitIdx) {
 
       // skip hits made by more than one distinct particle
-      std::vector<int> parentIdxs = UniqueParents(mcHits[mcHitIdx]);
+      std::vector<int> parentIdxs = UniqueParents(mcHits.at(mcHitIdx));
       if (parentIdxs.size() != 1) continue;
       
       int particleId = -5;
       for (auto it : *fMCParticleIndexMap) {
-	if (it.second == parentIdxs[0]) particleId = it.first;
+	if (it.second == parentIdxs.at(0)) particleId = it.first;
       }
       if (particleId == -5) continue;
 	
-      double depositedCharge = mcHits[mcHitIdx].GetCharge();      
+      double depositedCharge = mcHits.at(mcHitIdx).GetCharge();      
       if (!fParticleToTankTotalCharge.count(particleId)) 
 	fParticleToTankTotalCharge.emplace(particleId, depositedCharge);
       else 
@@ -144,7 +144,7 @@ void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, 
     
     int particleId = -5;
     for (auto it : *fMCParticleIndexMap) {
-      if (it.second == parentIdxs[0]) particleId = it.first;
+      if (it.second == parentIdxs.at(0)) particleId = it.first;
     }
     if (particleId == -5) continue;
     
