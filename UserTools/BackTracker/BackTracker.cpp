@@ -95,24 +95,34 @@ void BackTracker::SumParticleTankCharge()
     std::vector<MCHit> mcHits = mcHitsIt.second;
     for (uint mcHitIdx = 0; mcHitIdx < mcHits.size(); ++mcHitIdx) {
 
-      // technically a MCHit could have multiple parents, but they don't appear to in practice
-      // skip any cases we come across
-      std::vector<int> parentIdxs = *(mcHits[mcHitIdx].GetParents());
+      // skip hits made by more than one distinct particle
+      std::vector<int> parentIdxs = UniqueParents(mcHits.at(mcHitIdx));
       if (parentIdxs.size() != 1) continue;
       
       int particleId = -5;
       for (auto it : *fMCParticleIndexMap) {
-	if (it.second == parentIdxs[0]) particleId = it.first;
+	if (it.second == parentIdxs.at(0)) particleId = it.first;
       }
       if (particleId == -5) continue;
 	
-      double depositedCharge = mcHits[mcHitIdx].GetCharge();      
+      double depositedCharge = mcHits.at(mcHitIdx).GetCharge();      
       if (!fParticleToTankTotalCharge.count(particleId)) 
 	fParticleToTankTotalCharge.emplace(particleId, depositedCharge);
       else 
 	fParticleToTankTotalCharge.at(particleId) += depositedCharge;
     }    
   }
+}
+
+//------------------------------------------------------------------------------
+// An MCHit lists one parent per photon; a hit whose photons all share one parent
+// counts as coming from that particle.
+std::vector<int> BackTracker::UniqueParents(const MCHit &mchit) const
+{
+  std::vector<int> parents = *(mchit.GetParents());
+  std::sort(parents.begin(), parents.end());
+  parents.erase(std::unique(parents.begin(), parents.end()), parents.end());
+  return parents;
 }
 
 //------------------------------------------------------------------------------
@@ -124,7 +134,7 @@ void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, 
   totalCharge = 0;
 
   for (auto mchit : mchits) {    
-    std::vector<int> parentIdxs = *(mchit.GetParents());
+    std::vector<int> parentIdxs = UniqueParents(mchit);
     if (parentIdxs.size() != 1) {
       logmessage = "BackTracker::MatchMCParticle: this MCHit has ";
       logmessage += std::to_string(parentIdxs.size()) + " parents!";
@@ -134,7 +144,7 @@ void BackTracker::MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, 
     
     int particleId = -5;
     for (auto it : *fMCParticleIndexMap) {
-      if (it.second == parentIdxs[0]) particleId = it.first;
+      if (it.second == parentIdxs.at(0)) particleId = it.first;
     }
     if (particleId == -5) continue;
     

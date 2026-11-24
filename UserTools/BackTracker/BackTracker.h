@@ -30,6 +30,7 @@ class BackTracker: public Tool {
 
   bool LoadFromStores(); ///< Does all the loading so I can move it away from the Execute function
   void SumParticleTankCharge();
+  std::vector<int> UniqueParents(const MCHit &mchit) const;
   void MatchMCParticle(std::vector<MCHit> const &mchits, int &prtId, int &prtPdg, double &eff, double &pur, double &totalCharge); ///< The meat and potatoes
   
  private:
